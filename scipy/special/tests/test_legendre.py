@@ -699,7 +699,8 @@ class TestLegendreFunctions:
 
 def assoc_legendre_factor(m, n, norm):
     if norm:
-        return math.sqrt((2 * n + 1) * math.factorial(n - m) / (2 * math.factorial(n + m)))
+        return math.sqrt((2 * n + 1) * \
+            math.factorial(n - m) / (2 * math.factorial(n + m)))
 
     return 1
 
@@ -719,13 +720,16 @@ def assoc_legendre_p_1_1(typ, z, *, norm = False):
     typ_sign = np.where(typ == 3, -1, 1)
     fac = assoc_legendre_factor(1, 1, norm)
 
-    return typ_sign * branch_sign * fac * np.sqrt(np.where(typ == 3, z * z - 1, 1 - z * z))
+    w = np.sqrt(np.where(typ == 3, z * z - 1, 1 - z * z))
+
+    return typ_sign * branch_sign * fac * w
 
 def assoc_legendre_p_m1_1(typ, z, *, norm = False):
     typ_sign = np.where(typ == 3, -1, 1)
     fac = assoc_legendre_factor(-1, 1, norm)
 
-    return -typ_sign * fac * assoc_legendre_p_1_1(typ, z) / 2
+    return -typ_sign * fac * \
+        assoc_legendre_p_1_1(typ, z) / 2
 
 def assoc_legendre_p_0_2(typ, z, *, norm = False):
     fac = assoc_legendre_factor(0, 2, norm)
@@ -735,7 +739,8 @@ def assoc_legendre_p_0_2(typ, z, *, norm = False):
 def assoc_legendre_p_1_2(typ, z, *, norm = False):
     fac = assoc_legendre_factor(1, 2, norm)
 
-    return 3 * fac * z * assoc_legendre_p_1_1(typ, z)
+    return 3 * fac * z * \
+        assoc_legendre_p_1_1(typ, z)
 
 def assoc_legendre_p_2_2(typ, z, *, norm = False):
     typ_sign = np.where(typ == 3, -1, 1)
@@ -753,7 +758,8 @@ def assoc_legendre_p_m1_2(typ, z, *, norm = False):
     typ_sign = np.where(typ == 3, -1, 1)
     fac = assoc_legendre_factor(-1, 2, norm)
 
-    return -typ_sign * fac * z * assoc_legendre_p_1_1(typ, z) / 2
+    return -typ_sign * fac * z * \
+        assoc_legendre_p_1_1(typ, z) / 2
 
 def assoc_legendre_p_0_3(typ, z, *, norm = False):
     fac = assoc_legendre_factor(0, 3, norm)
@@ -763,7 +769,8 @@ def assoc_legendre_p_0_3(typ, z, *, norm = False):
 def assoc_legendre_p_1_3(typ, z, *, norm = False):
     fac = assoc_legendre_factor(1, 3, norm)
 
-    return 3 * fac * (5 * z * z - 1) * assoc_legendre_p_1_1(typ, z) / 2
+    return 3 * fac * (5 * z * z - 1) * \
+        assoc_legendre_p_1_1(typ, z) / 2
 
 def assoc_legendre_p_2_3(typ, z, *, norm = False):
     typ_sign = np.where(typ == 3, -1, 1)
@@ -775,12 +782,14 @@ def assoc_legendre_p_3_3(typ, z, *, norm = False):
     typ_sign = np.where(typ == 3, -1, 1)
     fac = assoc_legendre_factor(3, 3, norm)
 
-    return 15 * typ_sign * fac * (1 - z * z) * assoc_legendre_p_1_1(typ, z)
+    return 15 * typ_sign * fac * (1 - z * z) * \
+        assoc_legendre_p_1_1(typ, z)
 
 def assoc_legendre_p_m3_3(typ, z, *, norm = False):
     fac = assoc_legendre_factor(-3, 3, norm)
 
-    return fac * (z * z - 1) * assoc_legendre_p_1_1(typ, z) / 48
+    return fac * (z * z - 1) * \
+        assoc_legendre_p_1_1(typ, z) / 48
 
 def assoc_legendre_p_m2_3(typ, z, *, norm = False):
     typ_sign = np.where(typ == 3, -1, 1)
@@ -792,7 +801,8 @@ def assoc_legendre_p_m1_3(typ, z, *, norm = False):
     typ_sign = np.where(typ == 3, -1, 1)
     fac = assoc_legendre_factor(-1, 3, norm)
 
-    return typ_sign * fac * (1 - 5 * z * z) * assoc_legendre_p_1_1(typ, z) / 8
+    return typ_sign * fac * (1 - 5 * z * z) * \
+        assoc_legendre_p_1_1(typ, z) / 8
 
 def assoc_legendre_p_0_4(typ, z, *, norm = False):
     fac = assoc_legendre_factor(0, 4, norm)
@@ -802,7 +812,8 @@ def assoc_legendre_p_0_4(typ, z, *, norm = False):
 def assoc_legendre_p_1_4(typ, z, *, norm = False):
     fac = assoc_legendre_factor(1, 4, norm)
 
-    return 5 * fac * (7 * z * z - 3) * z * assoc_legendre_p_1_1(typ, z) / 2
+    return 5 * fac * (7 * z * z - 3) * z * \
+        assoc_legendre_p_1_1(typ, z) / 2
 
 def assoc_legendre_p_2_4(typ, z, *, norm = False):
     typ_sign = np.where(typ == 3, -1, 1)
@@ -814,7 +825,8 @@ def assoc_legendre_p_3_4(typ, z, *, norm = False):
     typ_sign = np.where(typ == 3, -1, 1)
     fac = assoc_legendre_factor(3, 4, norm)
 
-    return 105 * typ_sign * fac * (1 - z * z) * z * assoc_legendre_p_1_1(typ, z)
+    return 105 * typ_sign * fac * (1 - z * z) * z * \
+        assoc_legendre_p_1_1(typ, z)
 
 def assoc_legendre_p_4_4(typ, z, *, norm = False):
     fac = assoc_legendre_factor(4, 4, norm)
@@ -829,7 +841,8 @@ def assoc_legendre_p_m4_4(typ, z, *, norm = False):
 def assoc_legendre_p_m3_4(typ, z, *, norm = False):
     fac = assoc_legendre_factor(-3, 4, norm)
 
-    return fac * (z * z - 1) * z * assoc_legendre_p_1_1(typ, z) / 48
+    return fac * (z * z - 1) * z * \
+        assoc_legendre_p_1_1(typ, z) / 48
 
 def assoc_legendre_p_m2_4(typ, z, *, norm = False):
     typ_sign = np.where(typ == 3, -1, 1)
@@ -841,7 +854,8 @@ def assoc_legendre_p_m1_4(typ, z, *, norm = False):
     typ_sign = np.where(typ == 3, -1, 1)
     fac = assoc_legendre_factor(-1, 4, norm)
 
-    return typ_sign * fac * (3 - 7 * z * z) * z * assoc_legendre_p_1_1(typ, z) / 8
+    return typ_sign * fac * (3 - 7 * z * z) * z * \
+        assoc_legendre_p_1_1(typ, z) / 8
 
 def assoc_legendre_p_1_1_jac_div_z(typ, z):
     branch_sign = np.where(typ == 3, np.where(np.signbit(np.real(z)), 1, -1), -1)
@@ -861,13 +875,15 @@ def assoc_legendre_p_0_1_jac(typ, z, *, norm = False):
 def assoc_legendre_p_1_1_jac(typ, z, *, norm = False):
     fac = assoc_legendre_factor(1, 1, norm)
 
-    return fac * z * assoc_legendre_p_1_1_jac_div_z(typ, z)
+    return fac * z * \
+        assoc_legendre_p_1_1_jac_div_z(typ, z)
 
 def assoc_legendre_p_m1_1_jac(typ, z, *, norm = False):
     typ_sign = np.where(typ == 3, -1, 1)
     fac = assoc_legendre_factor(-1, 1, norm)
 
-    return -typ_sign * fac * z * assoc_legendre_p_1_1_jac_div_z(typ, z) / 2
+    return -typ_sign * fac * z * \
+        assoc_legendre_p_1_1_jac_div_z(typ, z) / 2
 
 def assoc_legendre_p_0_2_jac(typ, z, *, norm = False):
     fac = assoc_legendre_factor(0, 2, norm)
@@ -877,7 +893,8 @@ def assoc_legendre_p_0_2_jac(typ, z, *, norm = False):
 def assoc_legendre_p_1_2_jac(typ, z, *, norm = False):
     fac = assoc_legendre_factor(1, 2, norm)
 
-    return 3 * fac * (2 * z * z - 1) * assoc_legendre_p_1_1_jac_div_z(typ, z)
+    return 3 * fac * (2 * z * z - 1) * \
+        assoc_legendre_p_1_1_jac_div_z(typ, z)
 
 def assoc_legendre_p_2_2_jac(typ, z, *, norm = False):
     typ_sign = np.where(typ == 3, -1, 1)
@@ -889,7 +906,8 @@ def assoc_legendre_p_m1_2_jac(typ, z, *, norm = False):
     typ_sign = np.where(typ == 3, -1, 1)
     fac = assoc_legendre_factor(-1, 2, norm)
 
-    return typ_sign * fac * (1 - 2 * z * z)* assoc_legendre_p_1_1_jac_div_z(typ, z) / 2
+    return typ_sign * fac * (1 - 2 * z * z) * \
+        assoc_legendre_p_1_1_jac_div_z(typ, z) / 2
 
 def assoc_legendre_p_m2_2_jac(typ, z, *, norm = False):
     typ_sign = np.where(typ == 3, -1, 1)
@@ -905,7 +923,8 @@ def assoc_legendre_p_0_3_jac(typ, z, *, norm = False):
 def assoc_legendre_p_1_3_jac(typ, z, *, norm = False):
     fac = assoc_legendre_factor(1, 3, norm)
 
-    return 3 * fac * (15 * z * z - 11) * z * assoc_legendre_p_1_1_jac_div_z(typ, z) / 2
+    return 3 * fac * (15 * z * z - 11) * z * \
+        assoc_legendre_p_1_1_jac_div_z(typ, z) / 2
 
 def assoc_legendre_p_2_3_jac(typ, z, *, norm = False):
     typ_sign = np.where(typ == 3, -1, 1)
@@ -917,12 +936,14 @@ def assoc_legendre_p_3_3_jac(typ, z, *, norm = False):
     typ_sign = np.where(typ == 3, -1, 1)
     fac = assoc_legendre_factor(3, 3, norm)
 
-    return 45 * typ_sign * fac * (1 - z * z) * z * assoc_legendre_p_1_1_jac_div_z(typ, z)
+    return 45 * typ_sign * fac * (1 - z * z) * z * \
+        assoc_legendre_p_1_1_jac_div_z(typ, z)
 
 def assoc_legendre_p_m3_3_jac(typ, z, *, norm = False):
     fac = assoc_legendre_factor(-3, 3, norm)
 
-    return fac * (z * z - 1) * z * assoc_legendre_p_1_1_jac_div_z(typ, z) / 16
+    return fac * (z * z - 1) * z * \
+        assoc_legendre_p_1_1_jac_div_z(typ, z) / 16
 
 def assoc_legendre_p_m2_3_jac(typ, z, *, norm = False):
     typ_sign = np.where(typ == 3, -1, 1)
@@ -934,7 +955,8 @@ def assoc_legendre_p_m1_3_jac(typ, z, *, norm = False):
     typ_sign = np.where(typ == 3, -1, 1)
     fac = assoc_legendre_factor(-1, 3, norm)
 
-    return typ_sign * fac * (11 - 15 * z * z) * z * assoc_legendre_p_1_1_jac_div_z(typ, z) / 8
+    return typ_sign * fac * (11 - 15 * z * z) * z * \
+        assoc_legendre_p_1_1_jac_div_z(typ, z) / 8
 
 def assoc_legendre_p_0_4_jac(typ, z, *, norm = False):
     fac = assoc_legendre_factor(0, 4, norm)
@@ -944,7 +966,8 @@ def assoc_legendre_p_0_4_jac(typ, z, *, norm = False):
 def assoc_legendre_p_1_4_jac(typ, z, *, norm = False):
     fac = assoc_legendre_factor(1, 4, norm)
 
-    return 5 * fac * ((28 * z * z - 27) * z * z + 3) * assoc_legendre_p_1_1_jac_div_z(typ, z) / 2
+    return 5 * fac * ((28 * z * z - 27) * z * z + 3) * \
+        assoc_legendre_p_1_1_jac_div_z(typ, z) / 2
 
 def assoc_legendre_p_2_4_jac(typ, z, *, norm = False):
     typ_sign = np.where(typ == 3, -1, 1)
@@ -956,7 +979,8 @@ def assoc_legendre_p_3_4_jac(typ, z, *, norm = False):
     typ_sign = np.where(typ == 3, -1, 1)
     fac = assoc_legendre_factor(3, 4, norm)
 
-    return 105 * typ_sign * fac * ((5 - 4 * z * z) * z * z - 1) * assoc_legendre_p_1_1_jac_div_z(typ, z)
+    return 105 * typ_sign * fac * ((5 - 4 * z * z) * z * z - 1) * \
+        assoc_legendre_p_1_1_jac_div_z(typ, z)
 
 def assoc_legendre_p_4_4_jac(typ, z, *, norm = False):
     fac = assoc_legendre_factor(4, 4, norm)
@@ -971,7 +995,8 @@ def assoc_legendre_p_m4_4_jac(typ, z, *, norm = False):
 def assoc_legendre_p_m3_4_jac(typ, z, *, norm = False):
     fac = assoc_legendre_factor(-3, 4, norm)
 
-    return fac * ((4 * z * z - 5) * z * z + 1) * assoc_legendre_p_1_1_jac_div_z(typ, z) / 48
+    return fac * ((4 * z * z - 5) * z * z + 1) * \
+        assoc_legendre_p_1_1_jac_div_z(typ, z) / 48
 
 def assoc_legendre_p_m2_4_jac(typ, z, *, norm = False):
     typ_sign = np.where(typ == 3, -1, 1)
@@ -983,4 +1008,5 @@ def assoc_legendre_p_m1_4_jac(typ, z, *, norm = False):
     typ_sign = np.where(typ == 3, -1, 1)
     fac = assoc_legendre_factor(-1, 4, norm)
 
-    return typ_sign * fac * ((27 - 28 * z * z) * z * z - 3) * assoc_legendre_p_1_1_jac_div_z(typ, z) / 8
+    return typ_sign * fac * ((27 - 28 * z * z) * z * z - 3) * \
+        assoc_legendre_p_1_1_jac_div_z(typ, z) / 8
