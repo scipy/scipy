@@ -2304,7 +2304,7 @@ class _TestInplaceArithmetic:
             y @= b.T
             assert_array_equal(x, y)
 
-        # Matrix (non-elementwise) floor division is not defined
+        # Floor division is not supported
         with assert_raises(TypeError, match="unsupported operand"):
             x //= b
 
@@ -4243,11 +4243,11 @@ class TestDOK(sparse_test_class(minmax=False, nnz_axis=False)):
     math_dtypes = [np.int_, np.float64, np.complex128]
 
     def test_mult(self):
-        A = dok_matrix((10,12))
-        A[0,3] = 10
-        A[5,6] = 20
-        D = A@A.T
-        E = A@A.T.conjugate()
+        A = dok_matrix((10, 12))
+        A[0, 3] = 10
+        A[5, 6] = 20
+        D = A @ A.T
+        E = A @ A.T.conjugate()
         assert_array_equal(D.toarray(), E.toarray())
 
     def test_add_nonzero(self):
