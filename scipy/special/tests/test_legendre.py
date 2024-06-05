@@ -122,7 +122,7 @@ class TestLegendreFunctions:
         m = np.expand_dims(m, axis = tuple(range(1, x.ndim + 2)))
 
         x = np.expand_dims(x, axis = (0, 1))
-        p, p_jac, p_hess = special.assoc_legendre_p(m, n, x, diff_n = 2)
+        p, p_jac, p_hess = special.assoc_legendre_p(n, m, x, diff_n = 2)
 
         np.testing.assert_allclose(p, p_all)
         np.testing.assert_allclose(p_jac, p_all_jac)
@@ -136,7 +136,7 @@ class TestLegendreFunctions:
         m = rng.integers(-10, 10, shape)
         x = rng.uniform(-1, 1, shape)
 
-        p, p_jac, p_hess = special.assoc_legendre_p(m, n, x, diff_n = 2)
+        p, p_jac, p_hess = special.assoc_legendre_p(n, m, x, diff_n = 2)
 
         assert p.shape == shape
         assert p_jac.shape == p.shape

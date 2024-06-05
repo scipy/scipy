@@ -39,8 +39,11 @@ void lpn_all(T z, OutputVec1 res, OutputVec2 res_jac, OutputVec3 res_hess) {
     special::legendre_p_all(z, res, res_jac, res_hess);
 }
 
+using special::assoc_legendre_unnorm;
+using special::assoc_legendre_norm;
+
 template <typename NormPolicy, typename T>
-T lpmn(NormPolicy norm, long long int m, long long int n, T z) {
+T assoc_legendre_p(NormPolicy norm, long long int n, long long int m, T z) {
     int type;
     if (std::abs(z) <= 1) {
         type = 2;
@@ -52,7 +55,7 @@ T lpmn(NormPolicy norm, long long int m, long long int n, T z) {
 }
 
 template <typename NormPolicy, typename T>
-void lpmn(NormPolicy norm, long long int m, long long int n, T z, T &res, T &res_jac) {
+void assoc_legendre_p(NormPolicy norm, long long int n, long long int m, T z, T &res, T &res_jac) {
     int type;
     if (std::abs(z) <= 1) {
         type = 2;
@@ -64,7 +67,7 @@ void lpmn(NormPolicy norm, long long int m, long long int n, T z, T &res, T &res
 }
 
 template <typename NormPolicy, typename T>
-void lpmn(NormPolicy norm, long long int m, long long int n, T z, T &res, T &res_jac, T &res_hess) {
+void assoc_legendre_p(NormPolicy norm, long long int n, long long int m, T z, T &res, T &res_jac, T &res_hess) {
     int type;
     if (std::abs(z) <= 1) {
         type = 2;
