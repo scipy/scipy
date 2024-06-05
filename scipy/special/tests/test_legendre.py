@@ -35,77 +35,47 @@ class TestLegendre:
         assert_allclose(reslpn[0], resclpmn[0][0])
         assert_allclose(reslpn[1], resclpmn[1][0])
 
+class TestLegendreP:
+    @pytest.mark.parametrize("shape", [(10,), (4, 9), (3, 5, 7)])
+    def test_ode(self, shape):
+        rng = np.random.default_rng(1234)
 
-class TestLegendreFunctions:
-    def test_clpmn(self):
-        z = 0.5+0.3j
-        clp = special.clpmn(2, 2, z, 3)
-        assert_array_almost_equal(clp,
-                   (np.array([[1.0000, z, 0.5*(3*z*z-1)],
-                           [0.0000, np.sqrt(z*z-1), 3*z*np.sqrt(z*z-1)],
-                           [0.0000, 0.0000, 3*(z*z-1)]]),
-                    np.array([[0.0000, 1.0000, 3*z],
-                           [0.0000, z/np.sqrt(z*z-1), 3*(2*z*z-1)/np.sqrt(z*z-1)],
-                           [0.0000, 0.0000, 6*z]])),
-                    7)
+        n = rng.integers(0, 100, shape)
+        x = rng.uniform(-1, 1, shape)
 
-    def test_clpmn_close_to_real_2(self):
-        eps = 1e-10
-        m = 1
-        n = 3
-        x = 0.5
-        clp_plus = special.clpmn(m, n, x+1j*eps, 2)[0][m, n]
-        clp_minus = special.clpmn(m, n, x-1j*eps, 2)[0][m, n]
-        assert_array_almost_equal(np.array([clp_plus, clp_minus]),
-                                  np.array([special.lpmv(m, n, x),
-                                         special.lpmv(m, n, x)]),
-                                  7)
+        p, p_jac, p_hess = special.legendre_p(n, x, diff_n = 2)
 
-    def test_clpmn_close_to_real_3(self):
-        eps = 1e-10
-        m = 1
-        n = 3
-        x = 0.5
-        clp_plus = special.clpmn(m, n, x+1j*eps, 3)[0][m, n]
-        clp_minus = special.clpmn(m, n, x-1j*eps, 3)[0][m, n]
-        assert_array_almost_equal(np.array([clp_plus, clp_minus]),
-                                  np.array([special.lpmv(m, n, x)*np.exp(-0.5j*m*np.pi),
-                                         special.lpmv(m, n, x)*np.exp(0.5j*m*np.pi)]),
-                                  7)
+        assert p.shape == shape
+        assert p_jac.shape == p.shape
+        assert p_hess.shape == p_jac.shape
 
-    def test_clpmn_across_unit_circle(self):
-        eps = 1e-7
-        m = 1
-        n = 1
-        x = 1j
-        for type in [2, 3]:
-            assert_almost_equal(special.clpmn(m, n, x+1j*eps, type)[0][m, n],
-                            special.clpmn(m, n, x-1j*eps, type)[0][m, n], 6)
+        err = (1 - x * x) * p_hess - 2 * x * p_jac + n * (n + 1) * p
+        np.testing.assert_allclose(err, 0, atol = 1e-10)
 
-    def test_inf(self):
-        for z in (1, -1):
-            for n in range(4):
-                for m in range(1, n):
-                    lp = special.clpmn(m, n, z)
-                    assert_(np.isinf(lp[1][1,1:]).all())
-                    lp = special.lpmn(m, n, z)
-                    assert_(np.isinf(lp[1][1,1:]).all())
+    @pytest.mark.parametrize("n_max", [1, 2, 4, 8, 16, 32])
+    @pytest.mark.parametrize("x_shape", [(10,), (4, 9), (3, 5, 7)])
+    def test_all_ode(self, n_max, x_shape):
+        rng = np.random.default_rng(1234)
 
-    def test_deriv_clpmn(self):
-        # data inside and outside of the unit circle
-        zvals = [0.5+0.5j, -0.5+0.5j, -0.5-0.5j, 0.5-0.5j,
-                 1+1j, -1+1j, -1-1j, 1-1j]
-        m = 2
-        n = 3
-        for type in [2, 3]:
-            for z in zvals:
-                for h in [1e-3, 1e-3j]:
-                    approx_derivative = (special.clpmn(m, n, z+0.5*h, type)[0]
-                                         - special.clpmn(m, n, z-0.5*h, type)[0])/h
-                    assert_allclose(special.clpmn(m, n, z, type)[1],
-                                    approx_derivative,
-                                    rtol=1e-4)
+        x = rng.uniform(-1, 1, x_shape)
+        p, p_jac, p_hess = special.legendre_p_all(n_max, x, diff_n = 2)
 
+        n = np.arange(n_max + 1)
+        n = np.expand_dims(n, axis = tuple(range(1, x.ndim + 1)))
+
+        assert p.shape == (len(n),) + x.shape
+        assert p_jac.shape == p.shape
+        assert p_hess.shape == p_jac.shape
+
+        err = (1 - x * x) * p_hess - 2 * x * p_jac + n * (n + 1) * p
+        np.testing.assert_allclose(err, 0, atol = 1e-10)
+
+    def test_legacy(self):
+        p, pd = special.lpn(2, 0.5)
+        assert_array_almost_equal(p, [1.00000, 0.50000, -0.12500], 4)
+        assert_array_almost_equal(pd, [0.00000, 1.00000, 1.50000], 4)
+
+class TestAssocLegendreP:
     @pytest.mark.parametrize("shape", [(10,), (4, 9), (3, 5, 7, 10)])
     @pytest.mark.parametrize("m_max", [5, 4])
     @pytest.mark.parametrize("n_max", [7, 10])
@@ -130,7 +100,7 @@ class TestLegendreFunctions:
         np.testing.assert_allclose(p_hess, p_all_hess)
 
     @pytest.mark.parametrize("shape", [(10,), (4, 9), (3, 5, 7, 10)])
-    def test_lpmn_ode(self, shape):
+    def test_ode(self, shape):
         rng = np.random.default_rng(1234)
 
         n = rng.integers(0, 10, shape)
@@ -148,7 +118,7 @@ class TestLegendreFunctions:
             rtol = 1e-05, atol = 1e-08)
 
     @pytest.mark.parametrize("shape", [(10,), (4, 9), (3, 5, 7)])
-    def test_lpmn_all(self, shape):
+    def test_all(self, shape):
         rng = np.random.default_rng(1234)
 
         n_max = 20
@@ -169,7 +139,7 @@ class TestLegendreFunctions:
 
     @pytest.mark.parametrize("shape", [(10,), (4, 9), (3, 5, 7)])
     @pytest.mark.parametrize("norm", [True, False])
-    def test_lpmn_all_specific(self, shape, norm):
+    def test_specific(self, shape, norm):
         rng = np.random.default_rng(1234)
 
         x = rng.uniform(-5, 5, shape)
@@ -329,7 +299,7 @@ class TestLegendreFunctions:
     @pytest.mark.parametrize("m_max", [7])
     @pytest.mark.parametrize("n_max", [10])
     @pytest.mark.parametrize("x", [1, -1])
-    def test_lpmn_all_limits(self, m_max, n_max, x):
+    def test_all_limits(self, m_max, n_max, x):
         p, p_jac = special.assoc_legendre_p_all(n_max, m_max, x, diff_n = 1)
 
         n = np.arange(n_max + 1)
@@ -351,7 +321,7 @@ class TestLegendreFunctions:
 
     @pytest.mark.parametrize("m_max", [3, 5, 10])
     @pytest.mark.parametrize("n_max", [10])
-    def test_lpmn_legacy(self, m_max, n_max):
+    def test_legacy(self, m_max, n_max):
         x = 0.5
         p, p_jac = special.assoc_legendre_p_all(n_max, m_max, x, diff_n = 1)
 
@@ -362,6 +332,76 @@ class TestLegendreFunctions:
         p_legacy, p_jac_legacy = special.lpmn(-m_max, n_max, x)
         for m in range(m_max + 1):
             np.testing.assert_allclose(p_legacy[m], p[:, -m])
+
+class TestLegendreFunctions:
+    def test_clpmn(self):
+        z = 0.5+0.3j
+        clp = special.clpmn(2, 2, z, 3)
+        assert_array_almost_equal(clp,
+                   (np.array([[1.0000, z, 0.5*(3*z*z-1)],
+                           [0.0000, np.sqrt(z*z-1), 3*z*np.sqrt(z*z-1)],
+                           [0.0000, 0.0000, 3*(z*z-1)]]),
+                    np.array([[0.0000, 1.0000, 3*z],
+                           [0.0000, z/np.sqrt(z*z-1), 3*(2*z*z-1)/np.sqrt(z*z-1)],
+                           [0.0000, 0.0000, 6*z]])),
+                    7)
+
+    def test_clpmn_close_to_real_2(self):
+        eps = 1e-10
+        m = 1
+        n = 3
+        x = 0.5
+        clp_plus = special.clpmn(m, n, x+1j*eps, 2)[0][m, n]
+        clp_minus = special.clpmn(m, n, x-1j*eps, 2)[0][m, n]
+        assert_array_almost_equal(np.array([clp_plus, clp_minus]),
+                                  np.array([special.lpmv(m, n, x),
+                                         special.lpmv(m, n, x)]),
+                                  7)
+
+    def test_clpmn_close_to_real_3(self):
+        eps = 1e-10
+        m = 1
+        n = 3
+        x = 0.5
+        clp_plus = special.clpmn(m, n, x+1j*eps, 3)[0][m, n]
+        clp_minus = special.clpmn(m, n, x-1j*eps, 3)[0][m, n]
+        assert_array_almost_equal(np.array([clp_plus, clp_minus]),
+                                  np.array([special.lpmv(m, n, x)*np.exp(-0.5j*m*np.pi),
+                                         special.lpmv(m, n, x)*np.exp(0.5j*m*np.pi)]),
+                                  7)
+
+    def test_clpmn_across_unit_circle(self):
+        eps = 1e-7
+        m = 1
+        n = 1
+        x = 1j
+        for type in [2, 3]:
+            assert_almost_equal(special.clpmn(m, n, x+1j*eps, type)[0][m, n],
+                            special.clpmn(m, n, x-1j*eps, type)[0][m, n], 6)
+
+    def test_inf(self):
+        for z in (1, -1):
+            for n in range(4):
+                for m in range(1, n):
+                    lp = special.clpmn(m, n, z)
+                    assert_(np.isinf(lp[1][1,1:]).all())
+                    lp = special.lpmn(m, n, z)
+                    assert_(np.isinf(lp[1][1,1:]).all())
+
+    def test_deriv_clpmn(self):
+        # data inside and outside of the unit circle
+        zvals = [0.5+0.5j, -0.5+0.5j, -0.5-0.5j, 0.5-0.5j,
+                 1+1j, -1+1j, -1-1j, 1-1j]
+        m = 2
+        n = 3
+        for type in [2, 3]:
+            for z in zvals:
+                for h in [1e-3, 1e-3j]:
+                    approx_derivative = (special.clpmn(m, n, z+0.5*h, type)[0]
+                                         - special.clpmn(m, n, z-0.5*h, type)[0])/h
+                    assert_allclose(special.clpmn(m, n, z, type)[1],
+                                    approx_derivative,
+                                    rtol=1e-4)
 
     @pytest.mark.parametrize("shape", [(1000,), (4, 9), (3, 5, 7)])
     @pytest.mark.parametrize("typ", [2, 3])
@@ -552,45 +592,6 @@ class TestLegendreFunctions:
             np.testing.assert_allclose(p_jac[m], 0)
             np.testing.assert_allclose(p_jac[-m], 0)
     """
-
-    @pytest.mark.parametrize("shape", [(10,), (4, 9), (3, 5, 7)])
-    def test_lpn_ode(self, shape):
-        rng = np.random.default_rng(1234)
-
-        n = rng.integers(0, 100, shape)
-        x = rng.uniform(-1, 1, shape)
-
-        p, p_jac, p_hess = special.legendre_p(n, x, diff_n = 2)
-
-        assert p.shape == shape
-        assert p_jac.shape == p.shape
-        assert p_hess.shape == p_jac.shape
-
-        err = (1 - x * x) * p_hess - 2 * x * p_jac + n * (n + 1) * p
-        np.testing.assert_allclose(err, 0, atol = 1e-10)
-
-    @pytest.mark.parametrize("n_max", [1, 2, 4, 8, 16, 32])
-    @pytest.mark.parametrize("x_shape", [(10,), (4, 9), (3, 5, 7)])
-    def test_lpn_all_ode(self, n_max, x_shape):
-        rng = np.random.default_rng(1234)
-
-        x = rng.uniform(-1, 1, x_shape)
-        p, p_jac, p_hess = special.legendre_p_all(n_max, x, diff_n = 2)
-
-        n = np.arange(n_max + 1)
-        n = np.expand_dims(n, axis = tuple(range(1, x.ndim + 1)))
-
-        assert p.shape == (len(n),) + x.shape
-        assert p_jac.shape == p.shape
-        assert p_hess.shape == p_jac.shape
-
-        err = (1 - x * x) * p_hess - 2 * x * p_jac + n * (n + 1) * p
-        np.testing.assert_allclose(err, 0, atol = 1e-10)
-
-    def test_lpn_legacy(self):
-        p, pd = special.lpn(2, 0.5)
-        assert_array_almost_equal(p, [1.00000, 0.50000, -0.12500], 4)
-        assert_array_almost_equal(pd, [0.00000, 1.00000, 1.50000], 4)
 
     def test_lpmv(self):
         lp = special.lpmv(0,2,.5)
