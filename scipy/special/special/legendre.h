@@ -421,8 +421,8 @@ struct assoc_legendre_p_recurrence_m_m_abs<T, assoc_legendre_norm_policy> {
 
         T fac = type_sign * std::sqrt(T((2 * n + 1) * (2 * n - 1)) / T(4 * n * (n - 1)));
 
-        res_jac[0] = -T(2) * fac;
-        res_jac[1] = 0;
+        res_hess[0] = -T(2) * fac;
+        res_hess[1] = 0;
     }
 };
 
