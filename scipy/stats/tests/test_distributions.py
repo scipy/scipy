@@ -6572,6 +6572,14 @@ class TestNct:
         # gh-17916 reported a crash with large `nc` values
         assert_allclose(stats.nct.cdf(2, 2, float(2**16)), 0)
 
+    @pytest.mark.parametrize("x, df, nc, expected", [
+        (10000, 10, 16, 3.394646922945872e-30),
+        (-10, 8, 16, 4.282769500264159e-70)
+        ])
+    def test_pdf_large_nc(self, x, df, nc, expected):
+        # gh-#20693 reported zero values for large `nc` values
+        assert_allclose(stats.nct.pdf(x, df, nc), expected, rtol=1e-12)
+
 
 class TestRecipInvGauss:
 
