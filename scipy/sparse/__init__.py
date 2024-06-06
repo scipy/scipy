@@ -32,6 +32,7 @@ SciPy 2-D sparse array package for numeric data.
      that all *slicing* operations on these objects must produce
      two-dimensional results, or they will result in an error. This
      will be addressed in a future version.
+     Currently *slicing* is not supported by `bsr_array`.
 
    The construction utilities (`eye`, `kron`, `random`, `diags`, etc.)
    have not yet been ported, but their results can be wrapped into arrays::
