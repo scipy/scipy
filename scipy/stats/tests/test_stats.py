@@ -7999,6 +7999,7 @@ class TestCombinePvalues:
     @pytest.mark.parametrize("variant", ["single", "all", "random"])
     @pytest.mark.parametrize("method", methods)
     def test_monotonicity(self, variant, method, xp):
+        xp_test = array_namespace(xp.asarray(1))
         # Test that result increases monotonically with respect to input.
         m, n = 10, 7
         rng = np.random.default_rng(278448169958891062669391462690811630763)
@@ -8008,12 +8009,12 @@ class TestCombinePvalues:
         # monotonically down one column (single), simultaneously down each
         # column (all), or independently down each column (random).
         if variant == "single":
-            pvaluess = copy(xp.broadcast_to(xp.asarray(rng.random(n)), (m, n)))
-            pvaluess[:, 0] = xp.linspace(0.1, 0.9, m)
+            pvaluess = xp.broadcast_to(xp.asarray(rng.random(n)), (m, n))
+            pvaluess = xp_test.concat([xp.reshape(xp.linspace(0.1, 0.9, m), (-1, 1)),
+                                       pvaluess[:, 1:]], axis=1)
         elif variant == "all":
             pvaluess = xp.broadcast_to(xp.linspace(0.1, 0.9, m), (n, m)).T
         elif variant == "random":
-            xp_test = array_namespace(xp.asarray(1))
             pvaluess = xp_test.sort(xp.asarray(rng.uniform(0, 1, size=(m, n))), axis=0)
 
         combined_pvalues = xp.asarray([
