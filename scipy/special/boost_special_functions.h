@@ -899,7 +899,6 @@ nct_pdf_wrap(const Real x, const Real v, const Real l)
         return boost::math::pdf(
             boost::math::non_central_t_distribution<Real, StatsPolicy>(v, l), x);
     }
-    // -inf => 0, inf => 1
     return NAN;
 }
 
