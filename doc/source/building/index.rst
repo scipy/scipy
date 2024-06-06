@@ -135,8 +135,8 @@ your system.
     .. note::
 
         As of SciPy 1.14.0, we have added support for the Accelerate library
-        for BLAS and LAPACK. It requires macOS 13.3 or greater. This support
-        can be enabled with ``python dev.py build --with-accelerate``.
+        for BLAS and LAPACK. It requires macOS 13.3 or greater. To build with
+        Accelerate instead of OpenBLAS, see :ref:`blas-lapack-selection`.
 
   .. tab-item:: Windows
     :sync: windows
