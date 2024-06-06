@@ -28,12 +28,14 @@ python_sources = [
 
 py3.install_sources(
   python_sources,
-  subdir: 'scipy/linalg/tests'
+  subdir: 'scipy/linalg/tests',
+  install_tag: 'tests'
 )
 
 py3.install_sources(
   ['_cython_examples/extending.pyx', '_cython_examples/meson.build'],
-  subdir: 'scipy/linalg/tests/_cython_examples'
+  subdir: 'scipy/linalg/tests/_cython_examples',
+  install_tag: 'tests'
 )
 
 subdir('data')

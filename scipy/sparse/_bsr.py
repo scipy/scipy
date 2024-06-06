@@ -24,8 +24,9 @@ from ._sparsetools import (bsr_matvec, bsr_matvecs, csr_matmat_maxnnz,
 class _bsr_base(_cs_matrix, _minmax_mixin):
     _format = 'bsr'
 
-    def __init__(self, arg1, shape=None, dtype=None, copy=False, blocksize=None):
-        _data_matrix.__init__(self, arg1)
+    def __init__(self, arg1, shape=None, dtype=None, copy=False,
+                 blocksize=None, *, maxprint=None):
+        _data_matrix.__init__(self, arg1, maxprint=maxprint)
 
         if issparse(arg1):
             if arg1.format == self.format and copy:
@@ -219,14 +220,22 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
 
     _getnnz.__doc__ = _spbase._getnnz.__doc__
 
+    def count_nonzero(self, axis=None):
+        if axis is not None:
+            raise NotImplementedError(
+                "count_nonzero over axis is not implemented for BSR format."
+            )
+        return np.count_nonzero(self._deduped_data())
+
+    count_nonzero.__doc__ = _spbase.count_nonzero.__doc__
+
     def __repr__(self):
         _, fmt = _formats[self.format]
         sparse_cls = 'array' if isinstance(self, sparray) else 'matrix'
-        shape_str = 'x'.join(str(x) for x in self.shape)
-        blksz = 'x'.join(str(x) for x in self.blocksize)
+        b = 'x'.join(str(x) for x in self.blocksize)
         return (
-            f"<{shape_str} sparse {sparse_cls} of type '{self.dtype.type}'\n"
-            f"\twith {self.nnz} stored elements (blocksize = {blksz}) in {fmt} format>"
+            f"<{fmt} sparse {sparse_cls} of dtype '{self.dtype}'\n"
+            f"\twith {self.nnz} stored elements (blocksize={b}) and shape {self.shape}>"
         )
 
     def diagonal(self, k=0):

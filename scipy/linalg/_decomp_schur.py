@@ -42,6 +42,9 @@ def schur(a, output='real', lwork=None, overwrite_a=False, sort=None,
         Specifies whether the upper eigenvalues should be sorted. A callable
         may be passed that, given a eigenvalue, returns a boolean denoting
         whether the eigenvalue should be sorted to the top-left (True).
+        If output='real', the callable should have two arguments, the first
+        one being the real part of the eigenvalue, the second one being
+        the imaginary part.
         Alternatively, string parameters may be used::
 
             'lhp'   Left-hand plane (x.real < 0.0)

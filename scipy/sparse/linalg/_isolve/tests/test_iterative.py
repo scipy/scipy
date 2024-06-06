@@ -308,6 +308,7 @@ def test_precond_dummy(case):
 
 
 # Specific test for poisson1d and poisson2d cases
+@pytest.mark.fail_slow(10)
 @pytest.mark.parametrize('case', [x for x in IterativeParams().cases
                                   if x.name in ('poisson1d', 'poisson2d')],
                          ids=['poisson1d', 'poisson2d'])
@@ -684,6 +685,7 @@ class TestGMRES:
         assert_allclose(r_x, x)
         assert r_info == info
 
+    @pytest.mark.fail_slow(10)
     def test_atol_legacy(self):
 
         A = eye(2)

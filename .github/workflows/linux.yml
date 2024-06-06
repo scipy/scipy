@@ -84,7 +84,7 @@ jobs:
         echo "timestamp=${NOW}" >> $GITHUB_OUTPUT
 
     - name: Setup compiler cache
-      uses:  actions/cache@v3
+      uses:  actions/cache@v4
       id:    cache-ccache
       # Reference: https://docs.github.com/en/actions/guides/caching-dependencies-to-speed-up-workflows#matching-a-cache-key
       # NOTE: The caching strategy is modeled in a way that it will always have a unique cache key for each workflow run
@@ -113,6 +113,15 @@ jobs:
         python check_installation.py ${{ env.INSTALLDIR }}
         ./check_pyext_symbol_hiding.sh ../build
         popd
+
+    - name: Check usage of install tags
+      run: |
+        rm -r ${{ env.INSTALLDIR }}
+        python dev.py build --tags=runtime,python-runtime,devel
+        python tools/check_installation.py ${{ env.INSTALLDIR }} --no-tests
+        rm -r ${{ env.INSTALLDIR }}
+        python dev.py build --tags=runtime,python-runtime,devel,tests
+        python tools/check_installation.py ${{ env.INSTALLDIR }}
 
     - name: Mypy
       if: matrix.python-version == '3.10'
@@ -179,7 +188,7 @@ jobs:
         # Non-isolated build, so we use dependencies installed inside the source tree
         python -m pip install -U pip  # need pip >=23 for `--config-settings`
         python -m pip install . --no-build-isolation --config-settings=compile-args=-j2
-        
+
         # Basic tests
         cd ..
         python -c "import scipy"
@@ -299,7 +308,7 @@ jobs:
         sudo apt-get install -y libgmp-dev libmpfr-dev libmpc-dev ccache gfortran
 
     - name: Caching Python dependencies
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       id: cache
       with:
         path: ~/.cache/pip
@@ -312,10 +321,8 @@ jobs:
         # (it can be put back after matplotlib has made a 2.0-compatible
         # release on PyPI.
         python -m pip install --pre --upgrade pytest pytest-cov pytest-xdist mpmath gmpy2 threadpoolctl pooch hypothesis
-        # TODO: once the scipy_ symbol prefix issue is fixed, install
-        # scipy-openblas32 from the pre-releases bucket again (see gh-19640)
-        python -m pip install "scipy-openblas32<=0.3.23.293.2"
-        # Install numpy last, to ensure we get 2.0.0-dev (avoid possible <2.0 constraints).
+        python -m pip install -r requirements/openblas.txt
+        # Install numpy last, to ensure we get nightly (avoid possible <2.0 constraints).
         python -m pip install --pre --upgrade --timeout=60 -i https://pypi.anaconda.org/scientific-python-nightly-wheels/simple numpy
 
     - name:  Prepare compiler cache
@@ -328,7 +335,7 @@ jobs:
         echo "timestamp=${NOW}" >> $GITHUB_OUTPUT
 
     - name: Setup compiler cache
-      uses:  actions/cache@v3
+      uses:  actions/cache@v4
       id:    cache-ccache
       with:
         path: ${{ steps.prep-ccache.outputs.dir }}
@@ -373,20 +380,27 @@ jobs:
 
     - name: build + test
       run: |
-        set -euo pipefail
+        set -exuo pipefail
         docker pull quay.io/pypa/manylinux2014_i686
         docker run -v $(pwd):/scipy --platform=linux/i386 quay.io/pypa/manylinux2014_i686 /bin/bash -c "cd /scipy && \
         uname -a && \
-        basedir=\$(python3.10 tools/openblas_support.py) && \
-        cp -r \$basedir/lib/* /usr/local/lib && \
-        cp \$basedir/include/* /usr/local/include && \
-        export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig && \
         python3.10 -m venv test && \
         source test/bin/activate && \
         python -m pip install doit click rich_click pydevtool meson ninja && \
+        python -m pip install -r requirements/openblas.txt && \
+        # Ensure that scipy-openblas is picked up by the numpy<1.26 build
+        cat > \$HOME/.numpy-site.cfg <<EOL
+        [openblas]
+        libraries = \$(python -c 'import scipy_openblas32; print(scipy_openblas32.get_library())')
+        library_dirs = \$(python -c 'import scipy_openblas32; print(scipy_openblas32.get_lib_dir())')
+        include_dirs = \$(python -c 'import scipy_openblas32; print(scipy_openblas32.get_include_dir())')
+        runtime_library_dirs = \$(python -c 'import scipy_openblas32; print(scipy_openblas32.get_lib_dir())')
+        symbol_prefix = scipy_
+        EOL
         python -m pip install numpy==1.23.5 cython pybind11 pytest pytest-timeout pytest-xdist pytest-env 'Pillow<10.0.0' mpmath pythran pooch meson hypothesis && \
-        LD_LIBRARY_PATH=/usr/local/lib python dev.py build && \
-        LD_LIBRARY_PATH=/usr/local/lib python dev.py test"
+        python -c 'import numpy as np; np.show_config()' && \
+        python dev.py build --with-scipy-openblas && \
+        python dev.py --no-build test"
 
   #################################################################################
   distro_multiple_pythons:
@@ -432,3 +446,91 @@ jobs:
           python3.11 -m pytest --pyargs scipy.cluster
           python3.11 -m pytest --pyargs scipy.linalg
           popd
+
+  free-threaded:
+    needs: get_commit_message
+    runs-on: ubuntu-latest
+    if: >
+      needs.get_commit_message.outputs.message == 1
+      && (github.repository == 'scipy/scipy' || github.repository == '')
+    steps:
+    - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+      with:
+        submodules: recursive
+        fetch-tags: true
+    # TODO: replace with setup-python when there is support
+    - uses: deadsnakes/action@6c8b9b82fe0b4344f4b98f2775fcc395df45e494 # v3.1.0
+      with:
+          python-version: '3.13-dev'
+          nogil: true
+    - name: Install Ubuntu dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libgmp-dev libmpfr-dev libmpc-dev ccache gfortran
+    # TODO: remove pip pre-release install after Python 3.13 release
+    - name: Install pre-release pip
+      run: |
+        pip install -U --pre pip
+    # TODO: remove cython nightly install when cython does a release
+    - name: Install nightly Cython
+      run: |
+        pip install git+https://github.com/cython/cython
+    - name: Install nightly NumPy
+      run: |
+        pip install -i https://pypi.anaconda.org/scientific-python-nightly-wheels/simple numpy
+    - name: Install Python dependencies
+      run: |
+        pip install git+https://github.com/serge-sans-paille/pythran
+        pip install ninja meson-python pybind11 click rich_click pydevtool
+        pip install --pre --upgrade pytest pytest-xdist gmpy2 threadpoolctl pooch hypothesis
+        pip install -r requirements/openblas.txt
+    - name: Build and run tests
+      env:
+        PYTHON_GIL: 0
+      # TODO: For some reason the Meson installation path points to
+      # python3/site-packages as opposed to python3.13/site-packages,
+      # then the dev.py scripts do not work as expected.
+      run: |
+        # python dev.py build --with-scipy-openblas
+        # python dev.py --no-build test -j2 --mode full
+        python -c "import scipy_openblas32; print(scipy_openblas32.get_pkg_config())" > scipy-openblas.pc
+        PKG_CONFIG_PATH="$PWD" pip install . -vv --no-build-isolation
+        pushd $RUNNER_TEMP
+        PYTHON_GIL=0 python -m pytest --pyargs scipy -n2 --durations=10
+  #################################################################################
+  clang-17-build-only:
+    # Purpose is to check for warnings in builds with latest clang.
+    # We do not run the test suite here.
+    name: Clang-17 build-only (-Werror)
+    needs: get_commit_message
+    if: >
+      needs.get_commit_message.outputs.message == 1
+      && (github.repository == 'scipy/scipy' || github.repository == '')
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4.1.1
+        with:
+          submodules: recursive
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Setup system dependencies
+        run: |
+          sudo apt-get -y update
+          wget https://apt.llvm.org/llvm.sh
+          chmod u+x llvm.sh
+          sudo ./llvm.sh 17
+          sudo apt install -y libopenblas-dev liblapack-dev
+
+      - name: Setup Python build deps
+        run: |
+          pip install -r requirements/build.txt
+          pip install build
+
+      - name: Build wheel, check for compiler warnings
+        run: |
+          # specify which compilers to use using environment variables
+          CC=clang-17 CXX=clang++-17 FC=gfortran python -m build -wnx -Csetup-args=--werror

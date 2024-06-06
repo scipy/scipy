@@ -971,6 +971,7 @@ def test_kdtree_list_k(kdtree_type):
     assert_equal(dd, np.ravel(dd1))
     assert_equal(ii, np.ravel(ii1))
 
+@pytest.mark.fail_slow(10)
 def test_kdtree_box(kdtree_type):
     # check ckdtree periodic boundary
     n = 2000
@@ -1145,6 +1146,7 @@ def test_kdtree_weights(kdtree_type):
         assert_raises(ValueError, tree1.count_neighbors,
             tree2, np.linspace(0, 10, 100), weights=w1)
 
+@pytest.mark.fail_slow(10)
 def test_kdtree_count_neighbous_multiple_r(kdtree_type):
     n = 2000
     m = 2

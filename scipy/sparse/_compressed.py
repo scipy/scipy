@@ -2,6 +2,7 @@
 __all__ = []
 
 from warnings import warn
+import itertools
 import operator
 
 import numpy as np
@@ -24,8 +25,8 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
     base array/matrix class for compressed row- and column-oriented arrays/matrices
     """
 
-    def __init__(self, arg1, shape=None, dtype=None, copy=False):
-        _data_matrix.__init__(self, arg1)
+    def __init__(self, arg1, shape=None, dtype=None, copy=False, *, maxprint=None):
+        _data_matrix.__init__(self, arg1, maxprint=maxprint)
         is_array = isinstance(self, sparray)
 
         if issparse(arg1):
@@ -55,6 +56,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                     coo = self._coo_container(arg1, shape=shape, dtype=dtype)
                     arrays = coo._coo_to_compressed(self._swap)
                     self.indptr, self.indices, self.data, self._shape = arrays
+                    self.sum_duplicates()
                 elif len(arg1) == 3:
                     # (data, indices, indptr) format
                     (data, indices, indptr) = arg1
@@ -106,7 +108,8 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             self._shape = check_shape(self._swap((major_d, minor_d)), allow_1d=is_array)
 
         if dtype is not None:
-            self.data = self.data.astype(dtype, copy=False)
+            newdtype = getdtype(dtype)
+            self.data = self.data.astype(newdtype, copy=False)
 
         self.check_format(full_check=False)
 
@@ -123,13 +126,40 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             axis, _ = self._swap((axis, 1 - axis))
             _, N = self._swap(self.shape)
             if axis == 0:
-                return np.bincount(downcast_intp_index(self.indices),
-                                   minlength=N)
+                return np.bincount(downcast_intp_index(self.indices), minlength=N)
             elif axis == 1:
                 return np.diff(self.indptr)
             raise ValueError('axis out of bounds')
 
     _getnnz.__doc__ = _spbase._getnnz.__doc__
+
+    def count_nonzero(self, axis=None):
+        self.sum_duplicates()
+        if axis is None:
+            return np.count_nonzero(self.data)
+
+        if self.ndim == 1:
+            if axis not in (0, -1):
+                raise ValueError('axis out of bounds')
+            return np.count_nonzero(self.data)
+
+        if axis < 0:
+            axis += 2
+        axis, _ = self._swap((axis, 1 - axis))
+        if axis == 0:
+            _, N = self._swap(self.shape)
+            mask = self.data != 0
+            idx = self.indices if mask.all() else self.indices[mask]
+            return np.bincount(downcast_intp_index(idx), minlength=N)
+        elif axis == 1:
+            if self.data.all():
+                return np.diff(self.indptr)
+            pairs = itertools.pairwise(self.indptr)
+            return np.array([np.count_nonzero(self.data[i:j]) for i, j in pairs])
+        else:
+            raise ValueError('axis out of bounds')
+
+    count_nonzero.__doc__ = _spbase.count_nonzero.__doc__
 
     def check_format(self, full_check=True):
         """Check whether the array/matrix respects the CSR or CSC format.
