@@ -29,6 +29,19 @@ Other options that should work (as long as they're installed with
 ``pkg-config`` or CMake support) include ``mkl``, ``atlas``, ``blis`` and
 ``accelerate``.
 
+To create a development build using Accelerate, you can use the following
+command::
+
+    $ python dev.py build --with-accelerate
+
+To create a wheel with Accelerate, use the following command::
+
+    $ python -m build -Csetup-args=-Dblas=accelerate -Csetup-args=-Dlapack=accelerate
+
+.. note::
+
+    Using Accelerate with SciPy is only supported on macOS 13.3 or greater.
+
 
 Using pkg-config to detect libraries in a nonstandard location
 --------------------------------------------------------------
