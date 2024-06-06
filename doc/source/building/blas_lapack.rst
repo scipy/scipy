@@ -26,7 +26,8 @@ implementations on conda-forge), use::
     $ python -m pip -Csetup-args=-Dblas=blas -Csetup-args=-Dlapack=lapack
 
 Other options that should work (as long as they're installed with
-``pkg-config`` or CMake support) include ``mkl``, ``atlas`` and ``blis``.
+``pkg-config`` or CMake support) include ``mkl``, ``atlas``, ``blis`` and
+``accelerate``.
 
 
 Using pkg-config to detect libraries in a nonstandard location
