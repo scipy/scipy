@@ -320,11 +320,7 @@ struct assoc_legendre_p_initializer_m_m_abs<T, assoc_legendre_norm_policy> {
         operator()(res, res_jac);
 
         res_hess[0] = 0;
-        res_hess[1] = T(1) / ((z * z - T(1)) * w);
-
-        if (m_signbit) {
-            res_hess[1] /= 2;
-        }
+        res_hess[1] = std::sqrt(T(3)) * T(1) / ((z * z - T(1)) * w) / (T(2));
     }
 };
 
@@ -423,15 +419,10 @@ struct assoc_legendre_p_recurrence_m_m_abs<T, assoc_legendre_norm_policy> {
     void operator()(int n, T (&res)[2], T (&res_jac)[2], T (&res_hess)[2]) const {
         operator()(n, res, res_jac);
 
-        T fac;
-        if (m_signbit) {
-            fac = type_sign / T((2 * n) * (2 * n - 2));
-        } else {
-            fac = type_sign * T((2 * n - 1) * (2 * n - 3));
-        }
+        T fac = type_sign * std::sqrt(T((2 * n + 1) * (2 * n - 1)) / T(4 * n * (n - 1)));
 
-        res_hess[0] = -T(2) * fac;
-        res_hess[1] = 0;
+        res_jac[0] = -T(2) * fac;
+        res_jac[1] = 0;
     }
 };
 
@@ -661,9 +652,9 @@ struct assoc_legendre_p_initializer_n<T, assoc_legendre_norm_policy> {
             res_hess[0] = res_hess[1];
         }
 
-        res[1] = T(2 * (m_abs + 1) - 1) * z * res[0] / T(m_abs + 1 - m);
-        res_jac[1] = T(2 * (m_abs + 1) - 1) * (res[0] + z * res_jac[0]) / T(m_abs + 1 - m);
-        res_hess[1] = T(2 * (m_abs + 1) - 1) * (T(2) * res_jac[0] + z * res_hess[0]) / T(m_abs + 1 - m);
+        res[1] = std::sqrt(T(2 * m_abs + 3)) * z * res[0];
+        res_jac[1] = std::sqrt(T(2 * m_abs + 3)) * (res[0] + z * res_jac[0]);
+        res_hess[1] = std::sqrt(T(2 * m_abs + 3)) * (T(2) * res_jac[0] + z * res_hess[0]);
     }
 };
 
@@ -1019,7 +1010,7 @@ void assoc_legendre_p_for_each_n_m(
  * @return value of the polynomial
  */
 template <typename NormPolicy, typename T>
-T assoc_legendre_p(NormPolicy norm, int n, int m, int type, T z) {
+T multi_assoc_legendre_p(NormPolicy norm, int n, int m, int type, T z) {
     T p[2];
     assoc_legendre_p_for_each_n(norm, n, m, type, z, true, p, [](int n, const T(&p)[2]) {});
 
@@ -1027,7 +1018,7 @@ T assoc_legendre_p(NormPolicy norm, int n, int m, int type, T z) {
 }
 
 template <typename NormPolicy, typename T>
-void assoc_legendre_p(NormPolicy norm, int n, int m, int type, T z, T &res, T &res_jac) {
+void multi_assoc_legendre_p(NormPolicy norm, int n, int m, int type, T z, T &res, T &res_jac) {
     T p[2];
     T p_jac[2];
     assoc_legendre_p_for_each_n(norm, n, m, type, z, true, p, p_jac, [](int n, const T(&p)[2], const T(&p_jac)[2]) {});
@@ -1037,7 +1028,7 @@ void assoc_legendre_p(NormPolicy norm, int n, int m, int type, T z, T &res, T &r
 }
 
 template <typename NormPolicy, typename T>
-void assoc_legendre_p(NormPolicy norm, int n, int m, int type, T z, T &res, T &res_jac, T &res_hess) {
+void multi_assoc_legendre_p(NormPolicy norm, int n, int m, int type, T z, T &res, T &res_jac, T &res_hess) {
     T p[2];
     T p_jac[2];
     T p_hess[2];
@@ -1061,7 +1052,7 @@ void assoc_legendre_p(NormPolicy norm, int n, int m, int type, T z, T &res, T &r
  * @return value of the polynomial
  */
 template <typename NormPolicy, typename T, typename OutputMat1>
-void assoc_legendre_p_all(NormPolicy norm, int type, T z, OutputMat1 res) {
+void multi_assoc_legendre_p_all(NormPolicy norm, int type, T z, OutputMat1 res) {
     int n = res.extent(0) - 1;
     int m = (res.extent(1) - 1) / 2;
 
@@ -1076,7 +1067,7 @@ void assoc_legendre_p_all(NormPolicy norm, int type, T z, OutputMat1 res) {
 }
 
 template <typename NormPolicy, typename T, typename OutputMat1, typename OutputMat2>
-void assoc_legendre_p_all(NormPolicy norm, int type, T z, OutputMat1 res, OutputMat2 res_jac) {
+void multi_assoc_legendre_p_all(NormPolicy norm, int type, T z, OutputMat1 res, OutputMat2 res_jac) {
     int n = res.extent(0) - 1;
     int m = (res.extent(1) - 1) / 2;
 
@@ -1097,7 +1088,9 @@ void assoc_legendre_p_all(NormPolicy norm, int type, T z, OutputMat1 res, Output
 }
 
 template <typename NormPolicy, typename T, typename OutputMat1, typename OutputMat2, typename OutputMat3>
-void assoc_legendre_p_all(NormPolicy norm, int type, T z, OutputMat1 res, OutputMat2 res_jac, OutputMat3 res_hess) {
+void multi_assoc_legendre_p_all(
+    NormPolicy norm, int type, T z, OutputMat1 res, OutputMat2 res_jac, OutputMat3 res_hess
+) {
     int n = res.extent(0) - 1;
     int m = (res.extent(1) - 1) / 2;
 
@@ -1118,6 +1111,78 @@ void assoc_legendre_p_all(NormPolicy norm, int type, T z, OutputMat1 res, Output
             }
         }
     );
+}
+
+template <typename NormPolicy, typename T>
+T assoc_legendre_p(NormPolicy norm, int n, int m, T z) {
+    int type;
+    if (std::abs(z) <= 1) {
+        type = 2;
+    } else {
+        type = 3;
+    }
+
+    return multi_assoc_legendre_p(norm, n, m, type, z);
+}
+
+template <typename NormPolicy, typename T>
+void assoc_legendre_p(NormPolicy norm, int n, int m, T z, T &res, T &res_jac) {
+    int type;
+    if (std::abs(z) <= 1) {
+        type = 2;
+    } else {
+        type = 3;
+    }
+
+    multi_assoc_legendre_p(norm, n, m, type, z, res, res_jac);
+}
+
+template <typename NormPolicy, typename T>
+void assoc_legendre_p(NormPolicy norm, int n, int m, T z, T &res, T &res_jac, T &res_hess) {
+    int type;
+    if (std::abs(z) <= 1) {
+        type = 2;
+    } else {
+        type = 3;
+    }
+
+    multi_assoc_legendre_p(norm, n, m, type, z, res, res_jac, res_hess);
+}
+
+template <typename NormPolicy, typename T, typename OutputMat>
+void assoc_legendre_p_all(NormPolicy norm, T z, OutputMat res) {
+    int type;
+    if (std::abs(z) <= 1) {
+        type = 2;
+    } else {
+        type = 3;
+    }
+
+    multi_assoc_legendre_p_all(norm, type, z, res);
+}
+
+template <typename NormPolicy, typename T, typename OutputMat1, typename OutputMat2>
+void assoc_legendre_p_all(NormPolicy norm, T z, OutputMat1 res, OutputMat2 res_jac) {
+    int type;
+    if (std::abs(z) <= 1) {
+        type = 2;
+    } else {
+        type = 3;
+    }
+
+    multi_assoc_legendre_p_all(norm, type, z, res, res_jac);
+}
+
+template <typename NormPolicy, typename T, typename OutputMat1, typename OutputMat2, typename OutputMat3>
+void assoc_legendre_p_all(NormPolicy norm, T z, OutputMat1 res, OutputMat2 res_jac, OutputMat3 res_hess) {
+    int type;
+    if (std::abs(z) <= 1) {
+        type = 2;
+    } else {
+        type = 3;
+    }
+
+    multi_assoc_legendre_p_all(norm, type, z, res, res_jac, res_hess);
 }
 
 template <typename T, typename Callable>

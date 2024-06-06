@@ -100,14 +100,15 @@ class TestAssocLegendreP:
         np.testing.assert_allclose(p_hess, p_all_hess)
 
     @pytest.mark.parametrize("shape", [(10,), (4, 9), (3, 5, 7, 10)])
-    def test_ode(self, shape):
+    @pytest.mark.parametrize("norm", [True, False])
+    def test_ode(self, shape, norm):
         rng = np.random.default_rng(1234)
 
         n = rng.integers(0, 10, shape)
         m = rng.integers(-10, 10, shape)
         x = rng.uniform(-1, 1, shape)
 
-        p, p_jac, p_hess = special.assoc_legendre_p(n, m, x, diff_n = 2)
+        p, p_jac, p_hess = special.assoc_legendre_p(n, m, x, norm = norm, diff_n = 2)
 
         assert p.shape == shape
         assert p_jac.shape == p.shape
