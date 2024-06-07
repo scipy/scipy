@@ -9249,21 +9249,23 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
     if xp_size(pvalues) == 0:
         NaN = _get_nan(pvalues)
         return SignificanceResult(NaN, NaN)
+    
+    n = pvalues.shape[0]
 
     if method == 'fisher':
         statistic = -2 * xp.sum(xp.log(pvalues))
-        chi2 = _SimpleChi2(xp.asarray(2 * xp_size(pvalues), dtype=pvalues.dtype))
+        chi2 = _SimpleChi2(xp.asarray(2*n, dtype=pvalues.dtype))
         pval = _get_pvalue(statistic, chi2, alternative='greater',
                            symmetric=False, xp=xp)
     elif method == 'pearson':
         statistic = 2 * xp.sum(xp.log1p(-pvalues))
-        chi2 = _SimpleChi2(xp.asarray(2 * xp_size(pvalues), dtype=pvalues.dtype))
+        chi2 = _SimpleChi2(xp.asarray(2*n, dtype=pvalues.dtype))
         pval = _get_pvalue(-statistic, chi2, alternative='less',
                            symmetric=False, xp=xp)
     elif method == 'mudholkar_george':
-        normalizing_factor = math.sqrt(3/xp_size(pvalues))/xp.pi
+        normalizing_factor = math.sqrt(3/n)/xp.pi
         statistic = -xp.sum(xp.log(pvalues)) + xp.sum(xp.log1p(-pvalues))
-        nu = xp.asarray(5 * xp_size(pvalues) + 4, dtype=pvalues.dtype)
+        nu = xp.asarray(5*n  + 4, dtype=pvalues.dtype)
         approx_factor = math.sqrt(nu / (nu - 2))
         t = _SimpleStudentT(nu)
         pval = _get_pvalue(statistic * normalizing_factor * approx_factor, t,
@@ -9271,13 +9273,13 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
     elif method == 'tippett':
         statistic = xp.min(pvalues)
         beta = _SimpleBeta(xp.asarray(1.),
-                           xp.asarray(xp_size(pvalues), dtype=statistic.dtype))
+                           xp.asarray(n, dtype=statistic.dtype))
         pval = _get_pvalue(statistic, beta, alternative='less',
                            symmetric=False, xp=xp)
     elif method == 'stouffer':
         if weights is None:
             weights = xp.ones_like(pvalues, dtype=pvalues.dtype)
-        elif xp_size(weights) != xp_size(pvalues):
+        elif weights.shape[0] != n:
             raise ValueError("pvalues and weights must be of the same size.")
 
         norm = _SimpleNormal()
