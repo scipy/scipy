@@ -9244,41 +9244,47 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
     .. [8] https://en.wikipedia.org/wiki/Extensions_of_Fisher%27s_method
 
     """
-    if pvalues.size == 0:
+    xp = array_namespace(pvalues)
+    pvalues = xp.asarray(pvalues)
+    if xp_size(pvalues) == 0:
         NaN = _get_nan(pvalues)
         return SignificanceResult(NaN, NaN)
+    
+    n = pvalues.shape[0]
+    # used to convert Python scalar to the right dtype
+    one = xp.asarray(1, dtype=pvalues.dtype)
 
     if method == 'fisher':
-        statistic = -2 * np.sum(np.log(pvalues))
-        chi2 = _SimpleChi2(2 * len(pvalues))
+        statistic = -2 * xp.sum(xp.log(pvalues))
+        chi2 = _SimpleChi2(2*n*one)
         pval = _get_pvalue(statistic, chi2, alternative='greater',
-                           symmetric=False, xp=np)
+                           symmetric=False, xp=xp)
     elif method == 'pearson':
-        statistic = 2 * np.sum(np.log1p(-pvalues))
-        chi2 = _SimpleChi2(2 * len(pvalues))
-        pval = _get_pvalue(-statistic, chi2, alternative='less',
-                           symmetric=False, xp=np)
+        statistic = 2 * xp.sum(xp.log1p(-pvalues))
+        chi2 = _SimpleChi2(2*n*one)
+        pval = _get_pvalue(-statistic, chi2, alternative='less', symmetric=False, xp=xp)
     elif method == 'mudholkar_george':
-        normalizing_factor = np.sqrt(3/len(pvalues))/np.pi
-        statistic = -np.sum(np.log(pvalues)) + np.sum(np.log1p(-pvalues))
-        nu = 5 * len(pvalues) + 4
-        approx_factor = np.sqrt(nu / (nu - 2))
-        pval = distributions.t.sf(statistic * normalizing_factor
-                                  * approx_factor, nu)
+        normalizing_factor = math.sqrt(3/n)/xp.pi
+        statistic = -xp.sum(xp.log(pvalues)) + xp.sum(xp.log1p(-pvalues))
+        nu = 5*n  + 4
+        approx_factor = math.sqrt(nu / (nu - 2))
+        t = _SimpleStudentT(nu*one)
+        pval = _get_pvalue(statistic * normalizing_factor * approx_factor, t,
+                           alternative="greater", xp=xp)
     elif method == 'tippett':
-        statistic = np.min(pvalues)
-        beta = _SimpleBeta(1, len(pvalues))
-        pval = _get_pvalue(statistic, beta, alternative='less',
-                           symmetric=False, xp=np)
+        statistic = xp.min(pvalues)
+        beta = _SimpleBeta(one, n*one)
+        pval = _get_pvalue(statistic, beta, alternative='less', symmetric=False, xp=xp)
     elif method == 'stouffer':
         if weights is None:
-            weights = np.ones_like(pvalues)
-        elif len(weights) != len(pvalues):
+            weights = xp.ones_like(pvalues, dtype=pvalues.dtype)
+        elif weights.shape[0] != n:
             raise ValueError("pvalues and weights must be of the same size.")
 
-        Zi = distributions.norm.isf(pvalues)
-        statistic = np.dot(weights, Zi) / np.linalg.norm(weights)
-        pval = distributions.norm.sf(statistic)
+        norm = _SimpleNormal()
+        Zi = norm.isf(pvalues)
+        statistic = weights @ Zi / xp.linalg.vector_norm(weights)
+        pval = _get_pvalue(statistic, norm, alternative="greater", xp=xp)
 
     else:
         raise ValueError(
@@ -10890,6 +10896,9 @@ class _SimpleNormal:
 
     def sf(self, x):
         return special.ndtr(-x)
+    
+    def isf(self, x):
+        return -special.ndtri(x)
 
 
 class _SimpleChi2:
