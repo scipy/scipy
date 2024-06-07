@@ -1,11 +1,10 @@
-import os
 import sys
 import functools
 
 import numpy as np
 import scipy
 from scipy._lib._array_api import (
-    array_namespace, scipy_namespace_for, is_numpy, is_torch
+    array_namespace, scipy_namespace_for, is_numpy, is_torch, SCIPY_ARRAY_API
 )
 from . import _ufuncs
 # These don't really need to be imported, but otherwise IDEs might not realize
@@ -16,7 +15,6 @@ from ._ufuncs import (
     chdtr, chdtrc, betainc, betaincc, stdtr  # noqa: F401
 )
 
-_SCIPY_ARRAY_API = os.environ.get("SCIPY_ARRAY_API", False)
 array_api_compat_prefix = "scipy._lib.array_api_compat"
 
 
@@ -196,7 +194,8 @@ array_special_func_map = {
 }
 
 for f_name, n_array_args in array_special_func_map.items():
-    f = (support_alternative_backends(f_name, n_array_args) if _SCIPY_ARRAY_API
+    f = (support_alternative_backends(f_name, n_array_args)
+         if SCIPY_ARRAY_API
          else getattr(_ufuncs, f_name))
     sys.modules[__name__].__dict__[f_name] = f
 

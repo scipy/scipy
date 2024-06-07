@@ -392,7 +392,41 @@ def xp_unsupported_param_msg(param: Any) -> str:
 
 
 def is_complex(x: Array, xp: ModuleType) -> bool:
-    return xp.isdtype(x.dtype, 'complex floating')
+    """While xp.isdtype is not always available."""
+    try:
+        return xp.isdtype(x.dtype, 'complex floating')
+    except AttributeError:
+        return x.dtype in (xp.complex64, xp.complex128)
+
+
+def is_integer(x: Array, xp: ModuleType) -> bool:
+    """While xp.isdtype is not always available."""
+    return is_integer_dtype(x.dtype, xp)
+
+
+def is_integer_dtype(dtyp, xp: ModuleType) -> bool:
+    try:
+        return xp.isdtype(dtyp, 'integral')
+    except AttributeError:
+        result = dtyp in (xp.uint8, xp.int8, xp.int16, xp.int32, xp.int32)
+        if not is_torch(xp):
+            result = result or dtyp in (xp.uint16, xp.uint32, xp.uint64)
+        return result
+
+
+def is_bool_dtype(dtyp, xp: ModuleType) -> bool:
+    """While xp.isdtype is not always available."""
+    if is_numpy(xp) or is_cupy(xp):
+        return dtyp == xp.bool_
+    else:
+        return dtyp == xp.bool
+
+
+def xp_astype(x: Array, dtyp, xp: ModuleType) -> Array:
+    try:
+        return xp.astype(x, dtyp)
+    except AttributeError:
+        return x.astype(dtyp)
 
 
 def get_xp_devices(xp: ModuleType) -> list[str] | list[None]:

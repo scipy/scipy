@@ -12,7 +12,6 @@ from numpy.testing import (
     assert_almost_equal, assert_array_equal, assert_array_almost_equal,
     assert_allclose, assert_, assert_array_less,
     suppress_warnings)
-from numpy import array, arange
 import numpy as np
 
 from scipy.fft import fft
@@ -33,70 +32,93 @@ from scipy.signal._upfirdn import _upfirdn_modes
 from scipy._lib import _testutils
 from scipy._lib._util import ComplexWarning, np_long, np_ulong
 
+from scipy._lib._array_api import (
+    xp_assert_close, xp_assert_equal, is_numpy,
+)
+from scipy.conftest import array_api_compatible
 
-class _TestConvolve:
+skip_xp_backends = pytest.mark.skip_xp_backends
 
-    def test_basic(self):
-        a = [3, 4, 5, 6, 5, 4]
-        b = [1, 2, 3]
+
+@pytest.mark.usefixtures("skip_xp_backends")
+class TestConvolve:
+
+    @skip_xp_backends("jax.numpy", reasons=["dtypes do not match"])
+    @array_api_compatible
+    def test_basic(self, xp):
+        a = xp.asarray([3, 4, 5, 6, 5, 4])
+        b = xp.asarray([1, 2, 3])
         c = convolve(a, b)
-        assert_array_equal(c, array([3, 10, 22, 28, 32, 32, 23, 12]))
+        xp_assert_equal(c, xp.asarray([3, 10, 22, 28, 32, 32, 23, 12]))
 
-    def test_same(self):
-        a = [3, 4, 5]
-        b = [1, 2, 3, 4]
+    @skip_xp_backends("jax.numpy", reasons=["dtypes do not match"])
+    @array_api_compatible
+    def test_same(self, xp):
+        a = xp.asarray([3, 4, 5])
+        b = xp.asarray([1, 2, 3, 4])
         c = convolve(a, b, mode="same")
-        assert_array_equal(c, array([10, 22, 34]))
+        xp_assert_equal(c, xp.asarray([10, 22, 34]))
 
-    def test_same_eq(self):
-        a = [3, 4, 5]
-        b = [1, 2, 3]
+    @skip_xp_backends("jax.numpy", reasons=["dtypes do not match"])
+    @array_api_compatible
+    def test_same_eq(self, xp):
+        a = xp.asarray([3, 4, 5])
+        b = xp.asarray([1, 2, 3])
         c = convolve(a, b, mode="same")
-        assert_array_equal(c, array([10, 22, 22]))
+        xp_assert_equal(c, xp.asarray([10, 22, 22]))
 
-    def test_complex(self):
-        x = array([1 + 1j, 2 + 1j, 3 + 1j])
-        y = array([1 + 1j, 2 + 1j])
+    @array_api_compatible
+    def test_complex(self, xp):
+        x = xp.asarray([1 + 1j, 2 + 1j, 3 + 1j])
+        y = xp.asarray([1 + 1j, 2 + 1j])
         z = convolve(x, y)
-        assert_array_equal(z, array([2j, 2 + 6j, 5 + 8j, 5 + 5j]))
+        xp_assert_equal(z, xp.asarray([2j, 2 + 6j, 5 + 8j, 5 + 5j]))
 
-    def test_zero_rank(self):
+    @array_api_compatible
+    def test_zero_rank(self, xp):
         a = 1289
         b = 4567
         c = convolve(a, b)
-        assert_equal(c, a * b)
+        xp_assert_equal(c, a * b)
 
-    def test_broadcastable(self):
-        a = np.arange(27).reshape(3, 3, 3)
-        b = np.arange(3)
+    @array_api_compatible
+    def test_broadcastable(self, xp):
+        a = xp.reshape(xp.arange(27), (3, 3, 3))
+        b = xp.arange(3)
         for i in range(3):
             b_shape = [1]*3
             b_shape[i] = 3
-            x = convolve(a, b.reshape(b_shape), method='direct')
-            y = convolve(a, b.reshape(b_shape), method='fft')
-            assert_allclose(x, y)
 
-    def test_single_element(self):
-        a = array([4967])
-        b = array([3920])
-        c = convolve(a, b)
-        assert_equal(c, a * b)
+            x = convolve(a, xp.reshape(b, b_shape), method='direct')
+            y = convolve(a, xp.reshape(b, b_shape), method='fft')
+            xp_assert_close(x, y, atol=1e-14)
 
-    def test_2d_arrays(self):
-        a = [[1, 2, 3], [3, 4, 5]]
-        b = [[2, 3, 4], [4, 5, 6]]
+    @array_api_compatible
+    def test_single_element(self, xp):
+        a = np.array([4967])
+        b = np.array([3920])
         c = convolve(a, b)
-        d = array([[2, 7, 16, 17, 12],
+        xp_assert_equal(c, a * b)
+
+    @skip_xp_backends("jax.numpy", "cupy")
+    @array_api_compatible
+    def test_2d_arrays(self, xp):
+        a = xp.asarray([[1, 2, 3], [3, 4, 5]])
+        b = xp.asarray([[2, 3, 4], [4, 5, 6]])
+        c = convolve(a, b)
+        d = xp.asarray([[2, 7, 16, 17, 12],
                    [10, 30, 62, 58, 38],
                    [12, 31, 58, 49, 30]])
-        assert_array_equal(c, d)
+        xp_assert_equal(c, d)
 
-    def test_input_swapping(self):
-        small = arange(8).reshape(2, 2, 2)
-        big = 1j * arange(27).reshape(3, 3, 3)
-        big += arange(27)[::-1].reshape(3, 3, 3)
+    @skip_xp_backends("cupy", "torch")
+    @array_api_compatible
+    def test_input_swapping(self, xp):
+        small = xp.reshape(xp.arange(8), (2, 2, 2))
+        big = 1j * xp.reshape(xp.arange(27, dtype=xp.complex128), (3, 3, 3))
+        big += xp.reshape(xp.arange(27, dtype=xp.complex128)[::-1], (3, 3, 3))
 
-        out_array = array(
+        out_array = xp.asarray(
             [[[0 + 0j, 26 + 0j, 25 + 1j, 24 + 2j],
               [52 + 0j, 151 + 5j, 145 + 11j, 93 + 11j],
               [46 + 6j, 133 + 23j, 127 + 29j, 81 + 23j],
@@ -117,71 +139,79 @@ class _TestConvolve:
               [38 + 222j, 73 + 499j, 51 + 521j, 21 + 291j],
               [12 + 144j, 20 + 318j, 7 + 331j, 0 + 182j]]])
 
-        assert_array_equal(convolve(small, big, 'full'), out_array)
-        assert_array_equal(convolve(big, small, 'full'), out_array)
-        assert_array_equal(convolve(small, big, 'same'),
+        xp_assert_equal(convolve(small, big, 'full'), out_array)
+        xp_assert_equal(convolve(big, small, 'full'), out_array)
+        xp_assert_equal(convolve(small, big, 'same'),
                            out_array[1:3, 1:3, 1:3])
-        assert_array_equal(convolve(big, small, 'same'),
+        xp_assert_equal(convolve(big, small, 'same'),
                            out_array[0:3, 0:3, 0:3])
-        assert_array_equal(convolve(small, big, 'valid'),
+        xp_assert_equal(convolve(small, big, 'valid'),
                            out_array[1:3, 1:3, 1:3])
-        assert_array_equal(convolve(big, small, 'valid'),
+        xp_assert_equal(convolve(big, small, 'valid'),
                            out_array[1:3, 1:3, 1:3])
 
-    def test_invalid_params(self):
-        a = [3, 4, 5]
-        b = [1, 2, 3]
+    @array_api_compatible
+    def test_invalid_params(self, xp):
+        a = xp.asarray([3, 4, 5])
+        b = xp.asarray([1, 2, 3])
         assert_raises(ValueError, convolve, a, b, mode='spam')
         assert_raises(ValueError, convolve, a, b, mode='eggs', method='fft')
         assert_raises(ValueError, convolve, a, b, mode='ham', method='direct')
         assert_raises(ValueError, convolve, a, b, mode='full', method='bacon')
         assert_raises(ValueError, convolve, a, b, mode='same', method='bacon')
 
-
-class TestConvolve(_TestConvolve):
-
-    def test_valid_mode2(self):
+    @skip_xp_backends("jax.numpy", reason="dtypes do not match")
+    @array_api_compatible
+    def test_valid_mode2(self, xp):
         # See gh-5897
-        a = [1, 2, 3, 6, 5, 3]
-        b = [2, 3, 4, 5, 3, 4, 2, 2, 1]
-        expected = [70, 78, 73, 65]
+        a = xp.asarray([1, 2, 3, 6, 5, 3])
+        b = xp.asarray([2, 3, 4, 5, 3, 4, 2, 2, 1])
+        expected = xp.asarray([70, 78, 73, 65])
 
         out = convolve(a, b, 'valid')
-        assert_array_equal(out, expected)
+        xp_assert_equal(out, expected)
 
         out = convolve(b, a, 'valid')
-        assert_array_equal(out, expected)
+        xp_assert_equal(out, expected)
 
-        a = [1 + 5j, 2 - 1j, 3 + 0j]
-        b = [2 - 3j, 1 + 0j]
-        expected = [2 - 3j, 8 - 10j]
+        a = xp.asarray([1 + 5j, 2 - 1j, 3 + 0j])
+        b = xp.asarray([2 - 3j, 1 + 0j])
+        expected = xp.asarray([2 - 3j, 8 - 10j])
 
         out = convolve(a, b, 'valid')
-        assert_array_equal(out, expected)
+        xp_assert_equal(out, expected)
 
         out = convolve(b, a, 'valid')
-        assert_array_equal(out, expected)
+        xp_assert_equal(out, expected)
 
-    def test_same_mode(self):
-        a = [1, 2, 3, 3, 1, 2]
-        b = [1, 4, 3, 4, 5, 6, 7, 4, 3, 2, 1, 1, 3]
+    @skip_xp_backends("jax.numpy", reasons=["dtypes do not match"])
+    @array_api_compatible
+    def test_same_mode(self, xp):
+        a = xp.asarray([1, 2, 3, 3, 1, 2])
+        b = xp.asarray([1, 4, 3, 4, 5, 6, 7, 4, 3, 2, 1, 1, 3])
         c = convolve(a, b, 'same')
-        d = array([57, 61, 63, 57, 45, 36])
-        assert_array_equal(c, d)
+        d = xp.asarray([57, 61, 63, 57, 45, 36])
+        xp_assert_equal(c, d)
 
-    def test_invalid_shapes(self):
+    @skip_xp_backends("cupy", reasons=["different exception"])
+    @array_api_compatible
+    def test_invalid_shapes(self, xp):
         # By "invalid," we mean that no one
         # array has dimensions that are all at
         # least as large as the corresponding
         # dimensions of the other array. This
         # setup should throw a ValueError.
-        a = np.arange(1, 7).reshape((2, 3))
-        b = np.arange(-6, 0).reshape((3, 2))
+        a = xp.reshape(xp.arange(1, 7), (2, 3))
+        b = xp.reshape(xp.arange(-6, 0), (3, 2))
 
         assert_raises(ValueError, convolve, *(a, b), **{'mode': 'valid'})
         assert_raises(ValueError, convolve, *(b, a), **{'mode': 'valid'})
 
-    def test_convolve_method(self, n=100):
+    @array_api_compatible
+    def test_convolve_method(self, xp, n=100):
+        if xp != np:
+            pytest.skip(reason="TODO: convert this test")
+
         # this types data structure was manually encoded instead of
         # using custom filters on the soon-to-be-removed np.sctypes
         types = {'uint16', 'uint64', 'int64', 'int32',
@@ -225,22 +255,27 @@ class TestConvolve(_TestConvolve):
 
             assert_allclose(results['fft'], results['direct'], **kwargs)
 
-    def test_convolve_method_large_input(self):
+    @skip_xp_backends("jax.numpy", reason="dtypes do not match")
+    @array_api_compatible
+    def test_convolve_method_large_input(self, xp):
         # This is really a test that convolving two large integers goes to the
         # direct method even if they're in the fft method.
         for n in [10, 20, 50, 51, 52, 53, 54, 60, 62]:
-            z = np.array([2**n], dtype=np.int64)
+            z = xp.asarray([2**n], dtype=xp.int64)
             fft = convolve(z, z, method='fft')
             direct = convolve(z, z, method='direct')
 
             # this is the case when integer precision gets to us
             # issue #6076 has more detail, hopefully more tests after resolved
+            # # XXX: revisit check_dtype under np 2.0: 32bit linux & windows
             if n < 50:
-                assert_equal(fft, direct)
-                assert_equal(fft, 2**(2*n))
-                assert_equal(direct, 2**(2*n))
+                val = xp.asarray([2**(2*n)])
+                xp_assert_equal(fft, direct)
+                xp_assert_equal(fft, val, check_dtype=False)
+                xp_assert_equal(direct, val, check_dtype=False)
 
-    def test_mismatched_dims(self):
+    @array_api_compatible
+    def test_mismatched_dims(self, xp):
         # Input arrays should have the same number of dimensions
         assert_raises(ValueError, convolve, [1], 2, method='direct')
         assert_raises(ValueError, convolve, 1, [2], method='direct')
@@ -250,52 +285,62 @@ class TestConvolve(_TestConvolve):
         assert_raises(ValueError, convolve, [3], 2)
 
 
-class _TestConvolve2d:
+@pytest.mark.usefixtures("skip_xp_backends")
+class TestConvolve2d:
 
-    def test_2d_arrays(self):
-        a = [[1, 2, 3], [3, 4, 5]]
-        b = [[2, 3, 4], [4, 5, 6]]
-        d = array([[2, 7, 16, 17, 12],
+    @array_api_compatible
+    @skip_xp_backends("jax.numpy", reasons=["dtypes do not match"])
+    def test_2d_arrays(self, xp):
+        a = xp.asarray([[1, 2, 3], [3, 4, 5]])
+        b = xp.asarray([[2, 3, 4], [4, 5, 6]])
+        d = xp.asarray([[2, 7, 16, 17, 12],
                    [10, 30, 62, 58, 38],
                    [12, 31, 58, 49, 30]])
         e = convolve2d(a, b)
-        assert_array_equal(e, d)
+        xp_assert_equal(e, d)
 
-    def test_valid_mode(self):
-        e = [[2, 3, 4, 5, 6, 7, 8], [4, 5, 6, 7, 8, 9, 10]]
-        f = [[1, 2, 3], [3, 4, 5]]
-        h = array([[62, 80, 98, 116, 134]])
+    @array_api_compatible
+    @skip_xp_backends("jax.numpy", reasons=["dtypes do not match"])
+    def test_valid_mode(self, xp):
+        e = xp.asarray([[2, 3, 4, 5, 6, 7, 8], [4, 5, 6, 7, 8, 9, 10]])
+        f = xp.asarray([[1, 2, 3], [3, 4, 5]])
+        h = xp.asarray([[62, 80, 98, 116, 134]])
 
         g = convolve2d(e, f, 'valid')
-        assert_array_equal(g, h)
+        xp_assert_equal(g, h)
 
         # See gh-5897
         g = convolve2d(f, e, 'valid')
-        assert_array_equal(g, h)
+        xp_assert_equal(g, h)
 
-    def test_valid_mode_complx(self):
-        e = [[2, 3, 4, 5, 6, 7, 8], [4, 5, 6, 7, 8, 9, 10]]
-        f = np.array([[1, 2, 3], [3, 4, 5]], dtype=complex) + 1j
-        h = array([[62.+24.j, 80.+30.j, 98.+36.j, 116.+42.j, 134.+48.j]])
+    @array_api_compatible
+    @skip_xp_backends("torch", reasons=["dtypes do not match"])
+    def test_valid_mode_complx(self, xp):
+        e = xp.asarray([[2, 3, 4, 5, 6, 7, 8], [4, 5, 6, 7, 8, 9, 10]])
+        f = xp.asarray([[1, 2, 3], [3, 4, 5]], dtype=xp.complex128) + 1j
+        h = xp.asarray([[62.+24.j, 80.+30.j, 98.+36.j, 116.+42.j, 134.+48.j]])
 
         g = convolve2d(e, f, 'valid')
-        assert_array_almost_equal(g, h)
+        xp_assert_close(g, h)
 
         # See gh-5897
         g = convolve2d(f, e, 'valid')
-        assert_array_equal(g, h)
+        xp_assert_equal(g, h)
 
-    def test_fillvalue(self):
-        a = [[1, 2, 3], [3, 4, 5]]
-        b = [[2, 3, 4], [4, 5, 6]]
+    @skip_xp_backends("jax.numpy", reasons=["jax limitation"])
+    @array_api_compatible
+    def test_fillvalue(self, xp):
+        a = xp.asarray([[1, 2, 3], [3, 4, 5]])
+        b = xp.asarray([[2, 3, 4], [4, 5, 6]])
         fillval = 1
         c = convolve2d(a, b, 'full', 'fill', fillval)
-        d = array([[24, 26, 31, 34, 32],
+        d = xp.asarray([[24, 26, 31, 34, 32],
                    [28, 40, 62, 64, 52],
                    [32, 46, 67, 62, 48]])
-        assert_array_equal(c, d)
+        xp_assert_equal(c, d)
 
-    def test_fillvalue_errors(self):
+    @array_api_compatible
+    def test_fillvalue_errors(self, xp):
         msg = "could not cast `fillvalue` directly to the output "
         with np.testing.suppress_warnings() as sup:
             sup.filter(ComplexWarning, "Casting complex values")
@@ -306,138 +351,168 @@ class _TestConvolve2d:
         with assert_raises(ValueError, match=msg):
             convolve2d([[1]], [[1, 2]], fillvalue=[1, 2])
 
-    def test_fillvalue_empty(self):
+    @array_api_compatible
+    def test_fillvalue_empty(self, xp):
         # Check that fillvalue being empty raises an error:
         assert_raises(ValueError, convolve2d, [[1]], [[1, 2]],
                       fillvalue=[])
 
-    def test_wrap_boundary(self):
-        a = [[1, 2, 3], [3, 4, 5]]
-        b = [[2, 3, 4], [4, 5, 6]]
+    @array_api_compatible
+    @skip_xp_backends("jax.numpy", reasons=["jax limitation"])
+    def test_wrap_boundary(self, xp):
+        a = xp.asarray([[1, 2, 3], [3, 4, 5]])
+        b = xp.asarray([[2, 3, 4], [4, 5, 6]])
         c = convolve2d(a, b, 'full', 'wrap')
-        d = array([[80, 80, 74, 80, 80],
+        d = xp.asarray([[80, 80, 74, 80, 80],
                    [68, 68, 62, 68, 68],
                    [80, 80, 74, 80, 80]])
-        assert_array_equal(c, d)
+        xp_assert_equal(c, d)
 
-    def test_sym_boundary(self):
-        a = [[1, 2, 3], [3, 4, 5]]
-        b = [[2, 3, 4], [4, 5, 6]]
+    @array_api_compatible
+    @skip_xp_backends("jax.numpy", reasons=["jax limitation"])
+    def test_sym_boundary(self, xp):
+        a = xp.asarray([[1, 2, 3], [3, 4, 5]])
+        b = xp.asarray([[2, 3, 4], [4, 5, 6]])
         c = convolve2d(a, b, 'full', 'symm')
-        d = array([[34, 30, 44, 62, 66],
+        d = xp.asarray([[34, 30, 44, 62, 66],
                    [52, 48, 62, 80, 84],
                    [82, 78, 92, 110, 114]])
-        assert_array_equal(c, d)
+        xp_assert_equal(c, d)
 
+    @array_api_compatible
+    @skip_xp_backends("jax.numpy", reasons=["jax limitation"])
     @pytest.mark.parametrize('func', [convolve2d, correlate2d])
     @pytest.mark.parametrize('boundary, expected',
                              [('symm', [[37.0, 42.0, 44.0, 45.0]]),
                               ('wrap', [[43.0, 44.0, 42.0, 39.0]])])
-    def test_same_with_boundary(self, func, boundary, expected):
+    def test_same_with_boundary(self, func, boundary, expected, xp):
         # Test boundary='symm' and boundary='wrap' with a "long" kernel.
         # The size of the kernel requires that the values in the "image"
         # be extended more than once to handle the requested boundary method.
         # This is a regression test for gh-8684 and gh-8814.
-        image = np.array([[2.0, -1.0, 3.0, 4.0]])
-        kernel = np.ones((1, 21))
+        image = xp.asarray([[2.0, -1.0, 3.0, 4.0]])
+        kernel = xp.ones((1, 21))
+        if not is_numpy(xp) and func == correlate2d:
+            pytest.xfail(reason="signal.correlate2d TODO accelerator")
+
         result = func(image, kernel, mode='same', boundary=boundary)
         # The expected results were calculated "by hand".  Because the
         # kernel is all ones, the same result is expected for convolve2d
         # and correlate2d.
-        assert_array_equal(result, expected)
+        if func == correlate2d:
+            # XXX: remove when correlate2d is converted
+            result = xp.asarray(result)
+        xp_assert_equal(result, xp.asarray(expected))
 
-    def test_boundary_extension_same(self):
+    @array_api_compatible
+    def test_boundary_extension_same(self, xp):
         # Regression test for gh-12686.
         # Use ndimage.convolve with appropriate arguments to create the
         # expected result.
+        if not is_numpy(xp):
+            pytest.xfail(reason="ndi.convolve TODO accelerator")
+
         import scipy.ndimage as ndi
-        a = np.arange(1, 10*3+1, dtype=float).reshape(10, 3)
-        b = np.arange(1, 10*10+1, dtype=float).reshape(10, 10)
+        a = xp.arange(1, 10*3+1, dtype=float).reshape(10, 3)
+        b = xp.arange(1, 10*10+1, dtype=float).reshape(10, 10)
         c = convolve2d(a, b, mode='same', boundary='wrap')
-        assert_array_equal(c, ndi.convolve(a, b, mode='wrap', origin=(-1, -1)))
+        xp_assert_equal(c, ndi.convolve(a, b, mode='wrap', origin=(-1, -1)))
 
-    def test_boundary_extension_full(self):
+    @array_api_compatible
+    def test_boundary_extension_full(self, xp):
         # Regression test for gh-12686.
         # Use ndimage.convolve with appropriate arguments to create the
         # expected result.
-        import scipy.ndimage as ndi
-        a = np.arange(1, 3*3+1, dtype=float).reshape(3, 3)
-        b = np.arange(1, 6*6+1, dtype=float).reshape(6, 6)
-        c = convolve2d(a, b, mode='full', boundary='wrap')
-        apad = np.pad(a, ((3, 3), (3, 3)), 'wrap')
-        assert_array_equal(c, ndi.convolve(apad, b, mode='wrap')[:-1, :-1])
+        if not is_numpy(xp):
+            pytest.xfail(reason="ndimage TODO accelerators")
 
-    def test_invalid_shapes(self):
+        import scipy.ndimage as ndi
+        a = xp.arange(1, 3*3+1, dtype=float).reshape(3, 3)
+        b = xp.arange(1, 6*6+1, dtype=float).reshape(6, 6)
+        c = convolve2d(a, b, mode='full', boundary='wrap')
+        apad = xp.pad(a, ((3, 3), (3, 3)), 'wrap')
+        xp_assert_equal(c, xp.asarray(ndi.convolve(apad, b, mode='wrap')[:-1, :-1]))
+
+    @array_api_compatible
+    def test_invalid_shapes(self, xp):
         # By "invalid," we mean that no one
         # array has dimensions that are all at
         # least as large as the corresponding
         # dimensions of the other array. This
         # setup should throw a ValueError.
-        a = np.arange(1, 7).reshape((2, 3))
-        b = np.arange(-6, 0).reshape((3, 2))
+        a = xp.reshape(xp.arange(1, 7), (2, 3))
+        b = xp.reshape(xp.arange(-6, 0), (3, 2))
 
         assert_raises(ValueError, convolve2d, *(a, b), **{'mode': 'valid'})
         assert_raises(ValueError, convolve2d, *(b, a), **{'mode': 'valid'})
 
-
-class TestConvolve2d(_TestConvolve2d):
-
-    def test_same_mode(self):
-        e = [[1, 2, 3], [3, 4, 5]]
-        f = [[2, 3, 4, 5, 6, 7, 8], [4, 5, 6, 7, 8, 9, 10]]
+    @array_api_compatible
+    @skip_xp_backends("jax.numpy", reasons=["jax limitation"])
+    def test_same_mode(self, xp):
+        e = xp.asarray([[1, 2, 3], [3, 4, 5]])
+        f = xp.asarray([[2, 3, 4, 5, 6, 7, 8], [4, 5, 6, 7, 8, 9, 10]])
         g = convolve2d(e, f, 'same')
-        h = array([[22, 28, 34],
+        h = xp.asarray([[22, 28, 34],
                    [80, 98, 116]])
-        assert_array_equal(g, h)
+        xp_assert_equal(g, h)
 
-    def test_valid_mode2(self):
+    @array_api_compatible
+    @skip_xp_backends("jax.numpy", reasons=["jax limitation"])
+    def test_valid_mode2(self, xp):
         # See gh-5897
-        e = [[1, 2, 3], [3, 4, 5]]
-        f = [[2, 3, 4, 5, 6, 7, 8], [4, 5, 6, 7, 8, 9, 10]]
-        expected = [[62, 80, 98, 116, 134]]
+        e = xp.asarray([[1, 2, 3], [3, 4, 5]])
+        f = xp.asarray([[2, 3, 4, 5, 6, 7, 8], [4, 5, 6, 7, 8, 9, 10]])
+        expected = xp.asarray([[62, 80, 98, 116, 134]])
 
         out = convolve2d(e, f, 'valid')
-        assert_array_equal(out, expected)
+        xp_assert_equal(out, expected)
 
         out = convolve2d(f, e, 'valid')
-        assert_array_equal(out, expected)
+        xp_assert_equal(out, expected)
 
-        e = [[1 + 1j, 2 - 3j], [3 + 1j, 4 + 0j]]
-        f = [[2 - 1j, 3 + 2j, 4 + 0j], [4 - 0j, 5 + 1j, 6 - 3j]]
-        expected = [[27 - 1j, 46. + 2j]]
+        e = xp.asarray([[1 + 1j, 2 - 3j], [3 + 1j, 4 + 0j]])
+        f = xp.asarray([[2 - 1j, 3 + 2j, 4 + 0j], [4 - 0j, 5 + 1j, 6 - 3j]])
+        expected = xp.asarray([[27 - 1j, 46. + 2j]])
 
         out = convolve2d(e, f, 'valid')
-        assert_array_equal(out, expected)
+        xp_assert_equal(out, expected)
 
         # See gh-5897
         out = convolve2d(f, e, 'valid')
-        assert_array_equal(out, expected)
+        xp_assert_equal(out, expected)
 
-    def test_consistency_convolve_funcs(self):
+    @array_api_compatible
+    @skip_xp_backends("torch",
+        reasons=["only integer tensors of a single element can be converted"]
+    )
+    def test_consistency_convolve_funcs(self, xp):
         # Compare np.convolve, signal.convolve, signal.convolve2d
-        a = np.arange(5)
-        b = np.array([3.2, 1.4, 3])
+        a = xp.arange(5)
+        b = xp.asarray([3.2, 1.4, 3])
         for mode in ['full', 'valid', 'same']:
-            assert_almost_equal(np.convolve(a, b, mode=mode),
-                                signal.convolve(a, b, mode=mode))
-            assert_almost_equal(np.squeeze(
-                signal.convolve2d([a], [b], mode=mode)),
+            xp_assert_close(xp.asarray(np.convolve(a, b, mode=mode)),
+                            signal.convolve(a, b, mode=mode))
+            xp_assert_close(xp.squeeze(
+                signal.convolve2d(
+                    xp.asarray([a]), xp.asarray([b]), mode=mode), axis=None),
                 signal.convolve(a, b, mode=mode))
 
-    def test_invalid_dims(self):
+    @array_api_compatible
+    def test_invalid_dims(self, xp):
         assert_raises(ValueError, convolve2d, 3, 4)
         assert_raises(ValueError, convolve2d, [3], [4])
         assert_raises(ValueError, convolve2d, [[[3]]], [[[4]]])
 
+    @array_api_compatible
     @pytest.mark.slow
     @pytest.mark.xfail_on_32bit("Can't create large array for test")
-    def test_large_array(self):
+    def test_large_array(self, xp):
         # Test indexing doesn't overflow an int (gh-10761)
-        n = 2**31 // (1000 * np.int64().itemsize)
+        n = 2**31 // (1000 * xp.int64().itemsize)
         _testutils.check_free_memory(2 * n * 1001 * np.int64().itemsize / 1e6)
 
         # Create a chequered pattern of 1s and 0s
-        a = np.zeros(1001 * n, dtype=np.int64)
+        a = xp.zeros(1001 * n, dtype=xp.int64)
         a[::2] = 1
         a = np.lib.stride_tricks.as_strided(a, shape=(n, 1000), strides=(8008, 8))
 
@@ -446,52 +521,69 @@ class TestConvolve2d(_TestConvolve2d):
         assert fails[0].size == 0
 
 
+@pytest.mark.usefixtures("skip_xp_backends")
 class TestFFTConvolve:
 
+    @array_api_compatible
+    @skip_xp_backends("torch", reasons=["dtyped do not match"])
     @pytest.mark.parametrize('axes', ['', None, 0, [0], -1, [-1]])
-    def test_real(self, axes):
-        a = array([1, 2, 3])
-        expected = array([1, 4, 10, 12, 9.])
+    def test_real(self, axes, xp):
+        a = xp.asarray([1, 2, 3])
+        expected = xp.asarray([1, 4, 10, 12, 9.])
 
         if axes == '':
             out = fftconvolve(a, a)
         else:
+            if isinstance(axes, list):
+                axes = tuple(axes)
             out = fftconvolve(a, a, axes=axes)
 
-        assert_array_almost_equal(out, expected)
+        xp_assert_close(out, expected, atol=1.5e-6)
 
+    @array_api_compatible
+    @skip_xp_backends("torch", reasons=["dtyped do not match"])
     @pytest.mark.parametrize('axes', [1, [1], -1, [-1]])
-    def test_real_axes(self, axes):
-        a = array([1, 2, 3])
-        expected = array([1, 4, 10, 12, 9.])
+    def test_real_axes(self, axes, xp):
+        a = xp.asarray([1, 2, 3])
+        expected = xp.asarray([1, 4, 10, 12, 9.])
 
-        a = np.tile(a, [2, 1])
-        expected = np.tile(expected, [2, 1])
+        a = xp.asarray(np.tile(a, [2, 1]))
+        expected = xp.asarray(np.tile(expected, [2, 1]))
+
+        if isinstance(axes, list):
+            axes = tuple(axes)
 
         out = fftconvolve(a, a, axes=axes)
-        assert_array_almost_equal(out, expected)
+        xp_assert_close(out, expected, atol=1.5e-6)
 
+    @array_api_compatible
     @pytest.mark.parametrize('axes', ['', None, 0, [0], -1, [-1]])
-    def test_complex(self, axes):
-        a = array([1 + 1j, 2 + 2j, 3 + 3j])
-        expected = array([0 + 2j, 0 + 8j, 0 + 20j, 0 + 24j, 0 + 18j])
+    def test_complex(self, axes, xp):
+        a = xp.asarray([1 + 1j, 2 + 2j, 3 + 3j])
+        expected = xp.asarray([0 + 2j, 0 + 8j, 0 + 20j, 0 + 24j, 0 + 18j])
 
         if axes == '':
             out = fftconvolve(a, a)
         else:
+            if isinstance(axes, list):
+                axes = tuple(axes)
             out = fftconvolve(a, a, axes=axes)
-        assert_array_almost_equal(out, expected)
+        xp_assert_close(out, expected, atol=1.5e-6)
 
+    @array_api_compatible
     @pytest.mark.parametrize('axes', [1, [1], -1, [-1]])
-    def test_complex_axes(self, axes):
-        a = array([1 + 1j, 2 + 2j, 3 + 3j])
-        expected = array([0 + 2j, 0 + 8j, 0 + 20j, 0 + 24j, 0 + 18j])
+    def test_complex_axes(self, axes, xp):
+        a = xp.asarray([1 + 1j, 2 + 2j, 3 + 3j])
+        expected = xp.asarray([0 + 2j, 0 + 8j, 0 + 20j, 0 + 24j, 0 + 18j])
 
-        a = np.tile(a, [2, 1])
-        expected = np.tile(expected, [2, 1])
+        a = xp.asarray(np.tile(a, [2, 1]))
+        expected = xp.asarray(np.tile(expected, [2, 1]))
+
+        if isinstance(axes, list):
+            axes = tuple(axes)
 
         out = fftconvolve(a, a, axes=axes)
-        assert_array_almost_equal(out, expected)
+        xp_assert_close(out, expected, atol=1.5e-6)
 
     @pytest.mark.parametrize('axes', ['',
                                       None,
@@ -503,18 +595,21 @@ class TestFFTConvolve:
                                       [1, -2],
                                       [-2, -1],
                                       [-1, -2]])
-    def test_2d_real_same(self, axes):
-        a = array([[1, 2, 3],
+    @array_api_compatible
+    def test_2d_real_same(self, axes, xp):
+        a = xp.asarray([[1, 2, 3],
                    [4, 5, 6]])
-        expected = array([[1, 4, 10, 12, 9],
+        expected = xp.asarray([[1, 4, 10, 12, 9],
                           [8, 26, 56, 54, 36],
                           [16, 40, 73, 60, 36]])
 
         if axes == '':
             out = fftconvolve(a, a)
         else:
+            if isinstance(axes, list):
+                axes = tuple(axes)
             out = fftconvolve(a, a, axes=axes)
-        assert_array_almost_equal(out, expected)
+        xp_assert_close(out, expected, atol=1.5e-6, check_dtype=False)
 
     @pytest.mark.parametrize('axes', [[1, 2],
                                       [2, 1],
@@ -524,18 +619,22 @@ class TestFFTConvolve:
                                       [2, -2],
                                       [-2, -1],
                                       [-1, -2]])
-    def test_2d_real_same_axes(self, axes):
-        a = array([[1, 2, 3],
+    @array_api_compatible
+    def test_2d_real_same_axes(self, axes, xp):
+        a = xp.asarray([[1, 2, 3],
                    [4, 5, 6]])
-        expected = array([[1, 4, 10, 12, 9],
+        expected = xp.asarray([[1, 4, 10, 12, 9],
                           [8, 26, 56, 54, 36],
                           [16, 40, 73, 60, 36]])
 
-        a = np.tile(a, [2, 1, 1])
-        expected = np.tile(expected, [2, 1, 1])
+        a = xp.asarray(np.tile(a, [2, 1, 1]))
+        expected = xp.asarray(np.tile(expected, [2, 1, 1]))
+
+        if isinstance(axes, list):
+            axes = tuple(axes)
 
         out = fftconvolve(a, a, axes=axes)
-        assert_array_almost_equal(out, expected)
+        xp_assert_close(out, expected, atol=1.5e-6, check_dtype=False)
 
     @pytest.mark.parametrize('axes', ['',
                                       None,
@@ -547,10 +646,11 @@ class TestFFTConvolve:
                                       [1, -2],
                                       [-2, -1],
                                       [-1, -2]])
-    def test_2d_complex_same(self, axes):
-        a = array([[1 + 2j, 3 + 4j, 5 + 6j],
+    @array_api_compatible
+    def test_2d_complex_same(self, axes, xp):
+        a = xp.asarray([[1 + 2j, 3 + 4j, 5 + 6j],
                    [2 + 1j, 4 + 3j, 6 + 5j]])
-        expected = array([
+        expected = xp.asarray([
             [-3 + 4j, -10 + 20j, -21 + 56j, -18 + 76j, -11 + 60j],
             [10j, 44j, 118j, 156j, 122j],
             [3 + 4j, 10 + 20j, 21 + 56j, 18 + 76j, 11 + 60j]
@@ -559,9 +659,11 @@ class TestFFTConvolve:
         if axes == '':
             out = fftconvolve(a, a)
         else:
+            if isinstance(axes, list):
+                axes = tuple(axes)
             out = fftconvolve(a, a, axes=axes)
 
-        assert_array_almost_equal(out, expected)
+        xp_assert_close(out, expected, atol=1.5e-6)
 
     @pytest.mark.parametrize('axes', [[1, 2],
                                       [2, 1],
@@ -571,182 +673,232 @@ class TestFFTConvolve:
                                       [2, -2],
                                       [-2, -1],
                                       [-1, -2]])
-    def test_2d_complex_same_axes(self, axes):
-        a = array([[1 + 2j, 3 + 4j, 5 + 6j],
+    @array_api_compatible
+    def test_2d_complex_same_axes(self, axes, xp):
+        a = xp.asarray([[1 + 2j, 3 + 4j, 5 + 6j],
                    [2 + 1j, 4 + 3j, 6 + 5j]])
-        expected = array([
+        expected = xp.asarray([
             [-3 + 4j, -10 + 20j, -21 + 56j, -18 + 76j, -11 + 60j],
             [10j, 44j, 118j, 156j, 122j],
             [3 + 4j, 10 + 20j, 21 + 56j, 18 + 76j, 11 + 60j]
             ])
 
-        a = np.tile(a, [2, 1, 1])
-        expected = np.tile(expected, [2, 1, 1])
+        a = xp.asarray(np.tile(a, [2, 1, 1]))
+        expected = xp.asarray(np.tile(expected, [2, 1, 1]))
+
+        if isinstance(axes, list):
+            axes = tuple(axes)
 
         out = fftconvolve(a, a, axes=axes)
-        assert_array_almost_equal(out, expected)
+        xp_assert_close(out, expected, atol=1.5e-6)
 
+    @skip_xp_backends("torch", reasons=["dtyped do not match"])
     @pytest.mark.parametrize('axes', ['', None, 0, [0], -1, [-1]])
-    def test_real_same_mode(self, axes):
-        a = array([1, 2, 3])
-        b = array([3, 3, 5, 6, 8, 7, 9, 0, 1])
-        expected_1 = array([35., 41., 47.])
-        expected_2 = array([9., 20., 25., 35., 41., 47., 39., 28., 2.])
+    @array_api_compatible
+    def test_real_same_mode(self, axes, xp):
+        a = xp.asarray([1, 2, 3])
+        b = xp.asarray([3, 3, 5, 6, 8, 7, 9, 0, 1])
+        expected_1 = xp.asarray([35., 41., 47.])
+        expected_2 = xp.asarray([9., 20., 25., 35., 41., 47., 39., 28., 2.])
 
         if axes == '':
             out = fftconvolve(a, b, 'same')
         else:
+            if isinstance(axes, list):
+                axes = tuple(axes)
             out = fftconvolve(a, b, 'same', axes=axes)
-        assert_array_almost_equal(out, expected_1)
+        xp_assert_close(out, expected_1)
 
         if axes == '':
             out = fftconvolve(b, a, 'same')
         else:
+            if isinstance(axes, list):
+                axes = tuple(axes)
             out = fftconvolve(b, a, 'same', axes=axes)
-        assert_array_almost_equal(out, expected_2)
+        xp_assert_close(out, expected_2, atol=1.5e-6)
 
+    @skip_xp_backends("torch", reasons=["dtyped do not match"])
     @pytest.mark.parametrize('axes', [1, -1, [1], [-1]])
-    def test_real_same_mode_axes(self, axes):
-        a = array([1, 2, 3])
-        b = array([3, 3, 5, 6, 8, 7, 9, 0, 1])
-        expected_1 = array([35., 41., 47.])
-        expected_2 = array([9., 20., 25., 35., 41., 47., 39., 28., 2.])
+    @array_api_compatible
+    def test_real_same_mode_axes(self, axes, xp):
+        a = xp.asarray([1, 2, 3])
+        b = xp.asarray([3, 3, 5, 6, 8, 7, 9, 0, 1])
+        expected_1 = xp.asarray([35., 41., 47.])
+        expected_2 = xp.asarray([9., 20., 25., 35., 41., 47., 39., 28., 2.])
 
-        a = np.tile(a, [2, 1])
-        b = np.tile(b, [2, 1])
-        expected_1 = np.tile(expected_1, [2, 1])
-        expected_2 = np.tile(expected_2, [2, 1])
+        a = xp.asarray(np.tile(a, [2, 1]))
+        b = xp.asarray(np.tile(b, [2, 1]))
+        expected_1 = xp.asarray(np.tile(expected_1, [2, 1]))
+        expected_2 = xp.asarray(np.tile(expected_2, [2, 1]))
+
+        if isinstance(axes, list):
+            axes = tuple(axes)
 
         out = fftconvolve(a, b, 'same', axes=axes)
-        assert_array_almost_equal(out, expected_1)
+        xp_assert_close(out, expected_1, atol=1.5e-6)
 
         out = fftconvolve(b, a, 'same', axes=axes)
-        assert_array_almost_equal(out, expected_2)
+        xp_assert_close(out, expected_2, atol=1.5e-6)
 
+    @skip_xp_backends("torch", reasons=["dtyped do not match"])
     @pytest.mark.parametrize('axes', ['', None, 0, [0], -1, [-1]])
-    def test_valid_mode_real(self, axes):
+    @array_api_compatible
+    def test_valid_mode_real(self, axes, xp):
         # See gh-5897
-        a = array([3, 2, 1])
-        b = array([3, 3, 5, 6, 8, 7, 9, 0, 1])
-        expected = array([24., 31., 41., 43., 49., 25., 12.])
+        a = xp.asarray([3, 2, 1])
+        b = xp.asarray([3, 3, 5, 6, 8, 7, 9, 0, 1])
+        expected = xp.asarray([24., 31., 41., 43., 49., 25., 12.])
 
         if axes == '':
             out = fftconvolve(a, b, 'valid')
         else:
+            if isinstance(axes, list):
+                axes = tuple(axes)
             out = fftconvolve(a, b, 'valid', axes=axes)
-        assert_array_almost_equal(out, expected)
+        xp_assert_close(out, expected, atol=1.5e-6)
 
         if axes == '':
             out = fftconvolve(b, a, 'valid')
         else:
+            if isinstance(axes, list):
+                axes = tuple(axes)
             out = fftconvolve(b, a, 'valid', axes=axes)
-        assert_array_almost_equal(out, expected)
+        xp_assert_close(out, expected, atol=1.5e-6)
 
+    @skip_xp_backends("torch", reasons=["dtyped do not match"])
     @pytest.mark.parametrize('axes', [1, [1]])
-    def test_valid_mode_real_axes(self, axes):
+    @array_api_compatible
+    def test_valid_mode_real_axes(self, axes, xp):
         # See gh-5897
-        a = array([3, 2, 1])
-        b = array([3, 3, 5, 6, 8, 7, 9, 0, 1])
-        expected = array([24., 31., 41., 43., 49., 25., 12.])
+        a = xp.asarray([3, 2, 1])
+        b = xp.asarray([3, 3, 5, 6, 8, 7, 9, 0, 1])
+        expected = xp.asarray([24., 31., 41., 43., 49., 25., 12.])
 
-        a = np.tile(a, [2, 1])
-        b = np.tile(b, [2, 1])
-        expected = np.tile(expected, [2, 1])
+        a = xp.asarray(np.tile(a, [2, 1]))
+        b = xp.asarray(np.tile(b, [2, 1]))
+        expected = xp.asarray(np.tile(expected, [2, 1]))
+
+        if isinstance(axes, list):
+            axes = tuple(axes)
 
         out = fftconvolve(a, b, 'valid', axes=axes)
-        assert_array_almost_equal(out, expected)
+        xp_assert_close(out, expected, atol=1.5e-6)
 
     @pytest.mark.parametrize('axes', ['', None, 0, [0], -1, [-1]])
-    def test_valid_mode_complex(self, axes):
-        a = array([3 - 1j, 2 + 7j, 1 + 0j])
-        b = array([3 + 2j, 3 - 3j, 5 + 0j, 6 - 1j, 8 + 0j])
-        expected = array([45. + 12.j, 30. + 23.j, 48 + 32.j])
+    @array_api_compatible
+    def test_valid_mode_complex(self, axes, xp):
+        a = xp.asarray([3 - 1j, 2 + 7j, 1 + 0j])
+        b = xp.asarray([3 + 2j, 3 - 3j, 5 + 0j, 6 - 1j, 8 + 0j])
+        expected = xp.asarray([45. + 12.j, 30. + 23.j, 48 + 32.j])
 
         if axes == '':
             out = fftconvolve(a, b, 'valid')
         else:
+            if isinstance(axes, list):
+                axes = tuple(axes)
             out = fftconvolve(a, b, 'valid', axes=axes)
-        assert_array_almost_equal(out, expected)
+        xp_assert_close(out, expected, atol=1.5e-6)
 
         if axes == '':
             out = fftconvolve(b, a, 'valid')
         else:
+            if isinstance(axes, list):
+                axes = tuple(axes)
             out = fftconvolve(b, a, 'valid', axes=axes)
-        assert_array_almost_equal(out, expected)
+        xp_assert_close(out, expected, atol=1.5e-6)
 
     @pytest.mark.parametrize('axes', [1, [1], -1, [-1]])
-    def test_valid_mode_complex_axes(self, axes):
-        a = array([3 - 1j, 2 + 7j, 1 + 0j])
-        b = array([3 + 2j, 3 - 3j, 5 + 0j, 6 - 1j, 8 + 0j])
-        expected = array([45. + 12.j, 30. + 23.j, 48 + 32.j])
+    @array_api_compatible
+    def test_valid_mode_complex_axes(self, axes, xp):
+        a = xp.asarray([3 - 1j, 2 + 7j, 1 + 0j])
+        b = xp.asarray([3 + 2j, 3 - 3j, 5 + 0j, 6 - 1j, 8 + 0j])
+        expected = xp.asarray([45. + 12.j, 30. + 23.j, 48 + 32.j])
 
-        a = np.tile(a, [2, 1])
-        b = np.tile(b, [2, 1])
-        expected = np.tile(expected, [2, 1])
+        a = xp.asarray(np.tile(a, [2, 1]))
+        b = xp.asarray(np.tile(b, [2, 1]))
+        expected = xp.asarray(np.tile(expected, [2, 1]))
+
+        if isinstance(axes, list):
+            axes = tuple(axes)
 
         out = fftconvolve(a, b, 'valid', axes=axes)
-        assert_array_almost_equal(out, expected)
+        xp_assert_close(out, expected, atol=1.5e-6)
 
         out = fftconvolve(b, a, 'valid', axes=axes)
-        assert_array_almost_equal(out, expected)
+        xp_assert_close(out, expected, atol=1.5e-6)
 
-    def test_valid_mode_ignore_nonaxes(self):
+    @array_api_compatible
+    @skip_xp_backends("jax.numpy", "torch",
+        reasons=["mapped axes must have same shape", "dtypes do not match"])
+    def test_valid_mode_ignore_nonaxes(self, xp):
         # See gh-5897
-        a = array([3, 2, 1])
-        b = array([3, 3, 5, 6, 8, 7, 9, 0, 1])
-        expected = array([24., 31., 41., 43., 49., 25., 12.])
+        a = xp.asarray([3, 2, 1])
+        b = xp.asarray([3, 3, 5, 6, 8, 7, 9, 0, 1])
+        expected = xp.asarray([24., 31., 41., 43., 49., 25., 12.])
 
-        a = np.tile(a, [2, 1])
-        b = np.tile(b, [1, 1])
-        expected = np.tile(expected, [2, 1])
+        a = xp.asarray(np.tile(a, [2, 1]))
+        b = xp.asarray(np.tile(b, [1, 1]))
+        expected = xp.asarray(np.tile(expected, [2, 1]))
 
         out = fftconvolve(a, b, 'valid', axes=1)
-        assert_array_almost_equal(out, expected)
+        xp_assert_close(out, expected, atol=1.5e-6)
 
-    def test_empty(self):
+    @array_api_compatible
+    def test_empty(self, xp):
         # Regression test for #1745: crashes with 0-length input.
-        assert_(fftconvolve([], []).size == 0)
-        assert_(fftconvolve([5, 6], []).size == 0)
-        assert_(fftconvolve([], [7]).size == 0)
+        assert fftconvolve([], []).size == 0
+        assert fftconvolve([5, 6], []).size == 0
+        assert fftconvolve([], [7]).size == 0
 
-    def test_zero_rank(self):
-        a = array(4967)
-        b = array(3920)
+    @array_api_compatible
+    @skip_xp_backends("jax.numpy", reasons=["jnp.pad: pad_width with nd=0"])
+    def test_zero_rank(self, xp):
+        a = xp.asarray(4967)
+        b = xp.asarray(3920)
         out = fftconvolve(a, b)
-        assert_equal(out, a * b)
+        xp_assert_equal(out, a * b)
 
-    def test_single_element(self):
-        a = array([4967])
-        b = array([3920])
+    @array_api_compatible
+    def test_single_element(self, xp):
+        a = xp.asarray([4967])
+        b = xp.asarray([3920])
         out = fftconvolve(a, b)
-        assert_equal(out, a * b)
+        xp_assert_equal(out,
+                        xp.asarray(a * b, dtype=out.dtype))
 
+    @array_api_compatible
     @pytest.mark.parametrize('axes', ['', None, 0, [0], -1, [-1]])
-    def test_random_data(self, axes):
+    def test_random_data(self, axes, xp):
         np.random.seed(1234)
-        a = np.random.rand(1233) + 1j * np.random.rand(1233)
-        b = np.random.rand(1321) + 1j * np.random.rand(1321)
-        expected = np.convolve(a, b, 'full')
+        a = xp.asarray(np.random.rand(1233) + 1j * np.random.rand(1233))
+        b = xp.asarray(np.random.rand(1321) + 1j * np.random.rand(1321))
+        expected = xp.asarray(np.convolve(a, b, 'full'))
 
         if axes == '':
             out = fftconvolve(a, b, 'full')
         else:
+            if isinstance(axes, list):
+                axes = tuple(axes)
             out = fftconvolve(a, b, 'full', axes=axes)
-        assert_(np.allclose(out, expected, rtol=1e-10))
+        xp_assert_close(out, expected, rtol=1e-10)
 
+    @array_api_compatible
     @pytest.mark.parametrize('axes', [1, [1], -1, [-1]])
-    def test_random_data_axes(self, axes):
+    def test_random_data_axes(self, axes, xp):
         np.random.seed(1234)
-        a = np.random.rand(1233) + 1j * np.random.rand(1233)
-        b = np.random.rand(1321) + 1j * np.random.rand(1321)
-        expected = np.convolve(a, b, 'full')
+        a = xp.asarray(np.random.rand(1233) + 1j * np.random.rand(1233))
+        b = xp.asarray(np.random.rand(1321) + 1j * np.random.rand(1321))
+        expected = xp.asarray(np.convolve(a, b, 'full'))
 
-        a = np.tile(a, [2, 1])
-        b = np.tile(b, [2, 1])
-        expected = np.tile(expected, [2, 1])
+        a = xp.asarray(np.tile(a, [2, 1]))
+        b = xp.asarray(np.tile(b, [2, 1]))
+        expected = xp.asarray(np.tile(expected, [2, 1]))
+
+        if isinstance(axes, list):
+            axes = tuple(axes)
 
         out = fftconvolve(a, b, 'full', axes=axes)
-        assert_(np.allclose(out, expected, rtol=1e-10))
+        xp_assert_close(out, expected, rtol=1e-10)
 
     @pytest.mark.parametrize('axes', [[1, 4],
                                       [4, 1],
@@ -756,28 +908,32 @@ class TestFFTConvolve:
                                       [4, -4],
                                       [-4, -1],
                                       [-1, -4]])
-    def test_random_data_multidim_axes(self, axes):
+    @array_api_compatible
+    def test_random_data_multidim_axes(self, axes, xp):
+        if xp != np:
+            pytest.xfail("XXX: moveaxis new in 2023.12 standard")
+
         a_shape, b_shape = (123, 22), (132, 11)
         np.random.seed(1234)
-        a = np.random.rand(*a_shape) + 1j * np.random.rand(*a_shape)
-        b = np.random.rand(*b_shape) + 1j * np.random.rand(*b_shape)
+        a = xp.asarray(np.random.rand(*a_shape) + 1j * np.random.rand(*a_shape))
+        b = xp.asarray(np.random.rand(*b_shape) + 1j * np.random.rand(*b_shape))
         expected = convolve2d(a, b, 'full')
 
         a = a[:, :, None, None, None]
         b = b[:, :, None, None, None]
         expected = expected[:, :, None, None, None]
 
-        a = np.moveaxis(a.swapaxes(0, 2), 1, 4)
-        b = np.moveaxis(b.swapaxes(0, 2), 1, 4)
-        expected = np.moveaxis(expected.swapaxes(0, 2), 1, 4)
+        a = xp.moveaxis(a.swapaxes(0, 2), 1, 4)
+        b = xp.moveaxis(b.swapaxes(0, 2), 1, 4)
+        expected = xp.moveaxis(expected.swapaxes(0, 2), 1, 4)
 
         # use 1 for dimension 2 in a and 3 in b to test broadcasting
-        a = np.tile(a, [2, 1, 3, 1, 1])
-        b = np.tile(b, [2, 1, 1, 4, 1])
-        expected = np.tile(expected, [2, 1, 3, 4, 1])
+        a = xp.asarray(np.tile(a, [2, 1, 3, 1, 1]))
+        b = xp.asarray(np.tile(b, [2, 1, 1, 4, 1]))
+        expected = xp.asarray(np.tile(expected, [2, 1, 3, 4, 1]))
 
         out = fftconvolve(a, b, 'full', axes=axes)
-        assert_allclose(out, expected, rtol=1e-10, atol=1e-10)
+        xp_assert_close(out, expected, rtol=1e-10, atol=1e-10)
 
     @pytest.mark.slow
     @pytest.mark.parametrize(
@@ -785,29 +941,36 @@ class TestFFTConvolve:
         list(range(1, 100)) +
         list(range(1000, 1500)) +
         np.random.RandomState(1234).randint(1001, 10000, 5).tolist())
-    def test_many_sizes(self, n):
-        a = np.random.rand(n) + 1j * np.random.rand(n)
-        b = np.random.rand(n) + 1j * np.random.rand(n)
-        expected = np.convolve(a, b, 'full')
+    @array_api_compatible
+    def test_many_sizes(self, n, xp):
+        a = xp.asarray(np.random.rand(n) + 1j * np.random.rand(n))
+        b = xp.asarray(np.random.rand(n) + 1j * np.random.rand(n))
+        expected = xp.asarray(np.convolve(a, b, 'full'))
 
         out = fftconvolve(a, b, 'full')
-        assert_allclose(out, expected, atol=1e-10)
+        xp_assert_close(out, expected, atol=1e-10)
 
         out = fftconvolve(a, b, 'full', axes=[0])
-        assert_allclose(out, expected, atol=1e-10)
+        xp_assert_close(out, expected, atol=1e-10)
 
-    def test_fft_nan(self):
+    @array_api_compatible
+    def test_fft_nan(self, xp):
+
+        if not is_numpy(xp):
+            pytest.skip(reason="SciPy-specific test")
+
         n = 1000
         rng = np.random.default_rng(43876432987)
-        sig_nan = rng.standard_normal(n)
+        sig_nan = xp.asarray(rng.standard_normal(n))
 
         for val in [np.nan, np.inf]:
             sig_nan[100] = val
-            coeffs = signal.firwin(200, 0.2)
+            coeffs = xp.asarray(signal.firwin(200, 0.2))
 
             msg = "Use of fft convolution.*|invalid value encountered.*"
             with pytest.warns(RuntimeWarning, match=msg):
                 signal.convolve(sig_nan, coeffs, mode='same', method='fft')
+
 
 def fftconvolve_err(*args, **kwargs):
     raise RuntimeError('Fell back to fftconvolve')
@@ -960,14 +1123,14 @@ class TestOAConvolve:
         assert_(oaconvolve([], [7]).size == 0)
 
     def test_zero_rank(self):
-        a = array(4967)
-        b = array(3920)
+        a = np.array(4967)
+        b = np.array(3920)
         out = oaconvolve(a, b)
         assert_equal(out, a * b)
 
     def test_single_element(self):
-        a = array([4967])
-        b = array([3920])
+        a = np.array([4967])
+        b = np.array([3920])
         out = oaconvolve(a, b)
         assert_equal(out, a * b)
 
@@ -1081,7 +1244,7 @@ class TestMedFilt:
     def test_basic(self):
         d = signal.medfilt(self.IN, self.KERNEL_SIZE)
         e = signal.medfilt2d(np.array(self.IN, float), self.KERNEL_SIZE)
-        assert_array_equal(d, self.OUT)
+        xp_assert_equal(d, self.OUT)
         assert_array_equal(d, e)
 
     @pytest.mark.parametrize('dtype', [np.ubyte, np.byte, np.ushort, np.short,
@@ -1185,11 +1348,11 @@ class TestMedFilt:
 class TestWiener:
 
     def test_basic(self):
-        g = array([[5, 6, 4, 3],
+        g = np.array([[5, 6, 4, 3],
                    [3, 5, 6, 2],
                    [2, 3, 5, 6],
                    [1, 6, 9, 7]], 'd')
-        h = array([[2.16374269, 3.2222222222, 2.8888888889, 1.6666666667],
+        h = np.array([[2.16374269, 3.2222222222, 2.8888888889, 1.6666666667],
                    [2.666666667, 4.33333333333, 4.44444444444, 2.8888888888],
                    [2.222222222, 4.4444444444, 5.4444444444, 4.801066874837],
                    [1.33333333333, 3.92735042735, 6.0712560386, 5.0404040404]])
@@ -1410,12 +1573,12 @@ class TestResample:
 class TestCSpline1DEval:
 
     def test_basic(self):
-        y = array([1, 2, 3, 4, 3, 2, 1, 2, 3.0])
-        x = arange(len(y))
+        y = np.array([1, 2, 3, 4, 3, 2, 1, 2, 3.0])
+        x = np.arange(len(y))
         dx = x[1] - x[0]
         cj = signal.cspline1d(y)
 
-        x2 = arange(len(y) * 10.0) / 10.0
+        x2 = np.arange(len(y) * 10.0) / 10.0
         y2 = signal.cspline1d_eval(cj, x2, dx=dx, x0=x[0])
 
         # make sure interpolated values are on knot points
@@ -1973,7 +2136,7 @@ class TestCorrelateReal:
         b = np.linspace(0, 23, 24).reshape((2, 3, 4), order='F').astype(
             dt)
 
-        y_r = array([[[0., 184., 504., 912., 1360., 888., 472., 160.],
+        y_r = np.array([[[0., 184., 504., 912., 1360., 888., 472., 160.],
                       [46., 432., 1062., 1840., 2672., 1698., 864., 266.],
                       [134., 736., 1662., 2768., 3920., 2418., 1168., 314.],
                       [260., 952., 1932., 3056., 4208., 2580., 1240., 332.],
@@ -2068,7 +2231,10 @@ class TestCorrelate:
 
 @pytest.mark.parametrize("mode", ["valid", "same", "full"])
 @pytest.mark.parametrize("behind", [True, False])
-@pytest.mark.parametrize("input_size", [100, 101, 1000, 1001, 10000, 10001])
+@pytest.mark.parametrize("input_size", [100, 101, 1000, 1001,
+                                        pytest.param(10000, marks=[pytest.mark.slow]),
+                                        pytest.param(10001, marks=[pytest.mark.slow])]
+)
 def test_correlation_lags(mode, behind, input_size):
     # generate random data
     rng = np.random.RandomState(0)
@@ -2269,7 +2435,7 @@ class TestFiltFilt:
     def test_basic(self):
         zpk = tf2zpk([1, 2, 3], [1, 2, 3])
         out = self.filtfilt(zpk, np.arange(12))
-        assert_allclose(out, arange(12), atol=5.28e-11)
+        assert_allclose(out, np.arange(12), atol=5.28e-11)
 
     def test_sine(self):
         rate = 2000
@@ -3547,12 +3713,12 @@ class TestDeconvolve:
 class TestDetrend:
 
     def test_basic(self):
-        detrended = detrend(array([1, 2, 3]))
-        detrended_exact = array([0, 0, 0])
+        detrended = detrend(np.array([1, 2, 3]))
+        detrended_exact = np.array([0, 0, 0])
         assert_array_almost_equal(detrended, detrended_exact)
 
     def test_copy(self):
-        x = array([1, 1.2, 1.5, 1.6, 2.4])
+        x = np.array([1, 1.2, 1.5, 1.6, 2.4])
         copy_array = detrend(x, overwrite_data=False)
         inplace = detrend(x, overwrite_data=True)
         assert_array_almost_equal(copy_array, inplace)
