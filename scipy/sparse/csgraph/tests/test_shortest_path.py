@@ -33,10 +33,13 @@ directed_SP = [[0, 3, 3, 5, 7],
 directed_2SP_0_to_3 = [[-9999, 0, -9999, 1, -9999],
                        [-9999, 0, -9999, 4, 1]]
 
-directed_sparse_zero_G = scipy.sparse.csr_matrix(([0, 1, 2, 3, 1],
-                                            ([0, 1, 2, 3, 4],
-                                             [1, 2, 0, 4, 3])),
-                                            shape = (5, 5))
+directed_sparse_zero_G = scipy.sparse.csr_matrix(
+    (
+        [0, 1, 2, 3, 1],
+        ([0, 1, 2, 3, 4], [1, 2, 0, 4, 3]),
+    ),
+    shape=(5, 5),
+)
 
 directed_sparse_zero_SP = [[0, 0, 1, np.inf, np.inf],
                       [3, 0, 1, np.inf, np.inf],
@@ -44,10 +47,13 @@ directed_sparse_zero_SP = [[0, 0, 1, np.inf, np.inf],
                       [np.inf, np.inf, np.inf, 0, 3],
                       [np.inf, np.inf, np.inf, 1, 0]]
 
-undirected_sparse_zero_G = scipy.sparse.csr_matrix(([0, 0, 1, 1, 2, 2, 1, 1],
-                                              ([0, 1, 1, 2, 2, 0, 3, 4],
-                                               [1, 0, 2, 1, 0, 2, 4, 3])),
-                                              shape = (5, 5))
+undirected_sparse_zero_G = scipy.sparse.csr_matrix(
+    (
+        [0, 0, 1, 1, 2, 2, 1, 1],
+        ([0, 1, 1, 2, 2, 0, 3, 4], [1, 0, 2, 1, 0, 2, 4, 3])
+    ),
+    shape=(5, 5),
+)
 
 undirected_sparse_zero_SP = [[0, 0, 1, np.inf, np.inf],
                         [0, 0, 1, np.inf, np.inf],
