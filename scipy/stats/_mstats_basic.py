@@ -92,11 +92,11 @@ def _ttest_finish(df, t, alternative):
     # We use ``stdtr`` directly here to preserve masked arrays
 
     if alternative == 'less':
-        pval = special.stdtr(df, t)
+        pval = special._ufuncs.stdtr(df, t)
     elif alternative == 'greater':
-        pval = special.stdtr(df, -t)
+        pval = special._ufuncs.stdtr(df, -t)
     elif alternative == 'two-sided':
-        pval = special.stdtr(df, -np.abs(t))*2
+        pval = special._ufuncs.stdtr(df, -np.abs(t))*2
     else:
         raise ValueError("alternative must be "
                          "'less', 'greater' or 'two-sided'")
