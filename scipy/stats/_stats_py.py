@@ -9262,8 +9262,7 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
     elif method == 'pearson':
         statistic = 2 * xp.sum(xp.log1p(-pvalues))
         chi2 = _SimpleChi2(2*n*one)
-        pval = _get_pvalue(-statistic, chi2, alternative='less',
-                           symmetric=False, xp=xp)
+        pval = _get_pvalue(-statistic, chi2, alternative='less', symmetric=False, xp=xp)
     elif method == 'mudholkar_george':
         normalizing_factor = math.sqrt(3/n)/xp.pi
         statistic = -xp.sum(xp.log(pvalues)) + xp.sum(xp.log1p(-pvalues))
@@ -9275,8 +9274,7 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
     elif method == 'tippett':
         statistic = xp.min(pvalues)
         beta = _SimpleBeta(one, n*one)
-        pval = _get_pvalue(statistic, beta, alternative='less',
-                           symmetric=False, xp=xp)
+        pval = _get_pvalue(statistic, beta, alternative='less', symmetric=False, xp=xp)
     elif method == 'stouffer':
         if weights is None:
             weights = xp.ones_like(pvalues, dtype=pvalues.dtype)
@@ -9286,8 +9284,7 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
         norm = _SimpleNormal()
         Zi = norm.isf(pvalues)
         statistic = weights @ Zi / xp.linalg.vector_norm(weights)
-        pval = _get_pvalue(statistic, norm, alternative="greater", symmetric=True,
-                           xp=xp)
+        pval = _get_pvalue(statistic, norm, alternative="greater", xp=xp)
 
     else:
         raise ValueError(
