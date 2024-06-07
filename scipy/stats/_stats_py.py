@@ -9271,7 +9271,7 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
         approx_factor = math.sqrt(nu / (nu - 2))
         t = _SimpleStudentT(nu*one)
         pval = _get_pvalue(statistic * normalizing_factor * approx_factor, t,
-                           alternative="greater", symmetric=False, xp=xp)
+                           alternative="greater", xp=xp)
     elif method == 'tippett':
         statistic = xp.min(pvalues)
         beta = _SimpleBeta(one, n*one)
