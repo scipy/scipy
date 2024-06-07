@@ -9251,7 +9251,7 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
         return SignificanceResult(NaN, NaN)
     
     n = pvalues.shape[0]
-    # used to convert Python scalar to the rigt dtype
+    # used to convert Python scalar to the right dtype
     one = xp.asarray(1, dtype=pvalues.dtype)
 
     if method == 'fisher':
