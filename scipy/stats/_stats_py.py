@@ -9251,29 +9251,30 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
         return SignificanceResult(NaN, NaN)
     
     n = pvalues.shape[0]
+    # used to convert Python scalar to the rigt dtype
+    one = xp.asarray(1, dtype=pvalues.dtype)
 
     if method == 'fisher':
         statistic = -2 * xp.sum(xp.log(pvalues))
-        chi2 = _SimpleChi2(xp.asarray(2*n, dtype=pvalues.dtype))
+        chi2 = _SimpleChi2(2*n*one)
         pval = _get_pvalue(statistic, chi2, alternative='greater',
                            symmetric=False, xp=xp)
     elif method == 'pearson':
         statistic = 2 * xp.sum(xp.log1p(-pvalues))
-        chi2 = _SimpleChi2(xp.asarray(2*n, dtype=pvalues.dtype))
+        chi2 = _SimpleChi2(2*n*one)
         pval = _get_pvalue(-statistic, chi2, alternative='less',
                            symmetric=False, xp=xp)
     elif method == 'mudholkar_george':
         normalizing_factor = math.sqrt(3/n)/xp.pi
         statistic = -xp.sum(xp.log(pvalues)) + xp.sum(xp.log1p(-pvalues))
-        nu = xp.asarray(5*n  + 4, dtype=pvalues.dtype)
+        nu = 5*n  + 4
         approx_factor = math.sqrt(nu / (nu - 2))
-        t = _SimpleStudentT(nu)
+        t = _SimpleStudentT(nu*one)
         pval = _get_pvalue(statistic * normalizing_factor * approx_factor, t,
                            alternative="greater", symmetric=False, xp=xp)
     elif method == 'tippett':
         statistic = xp.min(pvalues)
-        beta = _SimpleBeta(xp.asarray(1.),
-                           xp.asarray(n, dtype=statistic.dtype))
+        beta = _SimpleBeta(one, n*one)
         pval = _get_pvalue(statistic, beta, alternative='less',
                            symmetric=False, xp=xp)
     elif method == 'stouffer':
