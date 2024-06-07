@@ -550,7 +550,10 @@ def dijkstra(csgraph, directed=True, indices=None,
     # initialize/validate indices
     if indices is None:
         indices = np.arange(N, dtype=ITYPE)
-        return_shape = indices.shape + (N,)
+        if min_only:
+            return_shape = (N,)
+        else:
+            return_shape = indices.shape + (N,)
     else:
         indices = np.array(indices, order='C', dtype=ITYPE, copy=True)
         if min_only:
@@ -598,16 +601,22 @@ def dijkstra(csgraph, directed=True, indices=None,
     else:
         csr_data = csgraph.data
 
+    csgraph_indices = csgraph.indices
+    csgraph_indptr = csgraph.indptr
+    if csgraph_indices.dtype != ITYPE:
+        csgraph_indices = csgraph_indices.astype(ITYPE)
+    if csgraph_indptr.dtype != ITYPE:
+        csgraph_indptr = csgraph_indptr.astype(ITYPE)
     if directed:
         if min_only:
             _dijkstra_directed_multi(indices,
-                                     csr_data, csgraph.indices,
-                                     csgraph.indptr,
+                                     csr_data, csgraph_indices,
+                                     csgraph_indptr,
                                      dist_matrix, predecessor_matrix,
                                      source_matrix, limitf)
         else:
             _dijkstra_directed(indices,
-                               csr_data, csgraph.indices, csgraph.indptr,
+                               csr_data, csgraph_indices, csgraph_indptr,
                                dist_matrix, predecessor_matrix, limitf)
     else:
         csgraphT = csgraph.T.tocsr()
@@ -617,15 +626,15 @@ def dijkstra(csgraph, directed=True, indices=None,
             csrT_data = csgraphT.data
         if min_only:
             _dijkstra_undirected_multi(indices,
-                                       csr_data, csgraph.indices,
-                                       csgraph.indptr,
+                                       csr_data, csgraph_indices,
+                                       csgraph_indptr,
                                        csrT_data, csgraphT.indices,
                                        csgraphT.indptr,
                                        dist_matrix, predecessor_matrix,
                                        source_matrix, limitf)
         else:
             _dijkstra_undirected(indices,
-                                 csr_data, csgraph.indices, csgraph.indptr,
+                                 csr_data, csgraph_indices, csgraph_indptr,
                                  csrT_data, csgraphT.indices, csgraphT.indptr,
                                  dist_matrix, predecessor_matrix, limitf)
 
