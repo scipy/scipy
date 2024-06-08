@@ -53,8 +53,8 @@ namespace detail {
 
         grad_tuple(const typename grad_tuple_leaf<T, I>::value_type &...args) : grad_tuple_leaf<T, I>(args)... {}
 
-        grad_tuple(const std::tuple<typename grad_tuple_leaf<T, I>::value_type...> &args)
-            : grad_tuple_leaf<T, I>(std::get<I>(args))... {}
+        template <typename... Args>
+        grad_tuple(const std::tuple<Args...> &args) : grad_tuple_leaf<T, I>(std::get<I>(args))... {}
 
         grad_tuple(const grad_tuple &other) = default;
 
