@@ -46,7 +46,7 @@ namespace detail {
         grad_tuple(const typename grad_tuple_leaf<T, I>::value_type &...args) : grad_tuple_leaf<T, I>(args)... {}
 
         template <typename... U>
-        explicit grad_tuple(const std::tuple<U...> &other) : grad_tuple_leaf<T, I>(std::get<I>(other))... {}
+        grad_tuple(const std::tuple<U...> &other) : grad_tuple_leaf<T, I>(std::get<I>(other))... {}
 
         grad_tuple(const grad_tuple &other) = delete;
 

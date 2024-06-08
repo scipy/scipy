@@ -16,7 +16,7 @@ struct legendre_p_initializer_n {
 
     void operator()(grad_tuple<T[2], 1> &res) const { res = {{T(1), z}, {T(0), T(1)}}; }
 
-    void operator()(grad_tuple<T[2], 2> &res) const { res = {{T(1), z}, {T(0), T(1)}, {T(0), T(0)}}; }
+    void operator()(grad_tuple<T[2], 2> &res) const { res = {{1, z}, {0, 1}, {0, 0}}; }
 };
 
 template <typename T>
