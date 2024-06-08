@@ -11,6 +11,11 @@ void forward_recur_shift_left(T (&res)[K]) {
     }
 }
 
+template <typename T, size_t K, size_t N>
+void forward_recur_shift_left(grad<T[K], N> &res) {
+    std::apply([](auto &...args) { (forward_recur_shift_left(args), ...); }, res.refs_as_tuple());
+}
+
 template <typename T, size_t K>
 void forward_recur_rotate_left(T (&res)[K]) {
     T tmp = res[0];

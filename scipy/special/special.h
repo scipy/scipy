@@ -53,25 +53,53 @@ using special::assoc_legendre_unnorm;
 
 template <typename NormPolicy, typename T>
 T assoc_legendre_p(NormPolicy norm, long long int n, long long int m, T z) {
-    return special::assoc_legendre_p(norm, n, m, z);
+    special::grad<T, 0> tmp;
+    special::assoc_legendre_p(norm, n, m, z, tmp);
+
+    return special::get<0>(tmp);
 }
 
 template <typename NormPolicy, typename T>
 void assoc_legendre_p(NormPolicy norm, long long int n, long long int m, T z, T &res, T &res_jac) {
-    special::assoc_legendre_p(norm, n, m, z, res, res_jac);
+    special::grad<T, 1> tmp;
+    special::assoc_legendre_p(norm, n, m, z, tmp);
+
+    std::tie(res, res_jac) = tmp.refs_as_tuple();
 }
 
 template <typename NormPolicy, typename T>
 void assoc_legendre_p(NormPolicy norm, long long int n, long long int m, T z, T &res, T &res_jac, T &res_hess) {
-    special::assoc_legendre_p(norm, n, m, z, res, res_jac, res_hess);
+    special::grad<T, 2> tmp;
+    special::assoc_legendre_p(norm, n, m, z, tmp);
+
+    std::tie(res, res_jac, res_hess) = tmp.refs_as_tuple();
 }
 
-using special::assoc_legendre_p_all;
+template <typename NormPolicy, typename T, typename OutputMat1>
+void assoc_legendre_p_all(NormPolicy norm, T z, OutputMat1 res) {
+    special::grad<OutputMat1, 0> tmp(res);
+    special::assoc_legendre_p_all(norm, z, tmp);
+}
+
+template <typename NormPolicy, typename T, typename OutputMat1, typename OutputMat2>
+void assoc_legendre_p_all(NormPolicy norm, T z, OutputMat1 res, OutputMat2 res_jac) {
+    special::grad<OutputMat1, 1> tmp(res, res_jac);
+    special::assoc_legendre_p_all(norm, z, tmp);
+}
+
+template <typename NormPolicy, typename T, typename OutputMat1, typename OutputMat2, typename OutputMat3>
+void assoc_legendre_p_all(NormPolicy norm, T z, OutputMat1 res, OutputMat2 res_jac, OutputMat3 res_hess) {
+    special::grad<OutputMat1, 2> tmp(res, res_jac, res_hess);
+    special::assoc_legendre_p_all(norm, z, tmp);
+}
 
 template <typename NormPolicy, typename T>
 std::complex<T>
 multi_assoc_legendre_p(NormPolicy norm, long long int n, long long int m, long long int type, std::complex<T> z) {
-    return special::multi_assoc_legendre_p(norm, n, m, type, z);
+    special::grad<std::complex<T>, 0> tmp;
+    special::multi_assoc_legendre_p(norm, n, m, type, z, tmp);
+
+    return special::get<0>(tmp);
 }
 
 template <typename NormPolicy, typename T>
@@ -79,7 +107,10 @@ void multi_assoc_legendre_p(
     NormPolicy norm, long long int n, long long int m, long long int type, std::complex<T> z, std::complex<T> &res,
     std::complex<T> &res_jac
 ) {
-    special::multi_assoc_legendre_p(norm, n, m, type, z, res, res_jac);
+    special::grad<std::complex<T>, 1> tmp;
+    special::multi_assoc_legendre_p(norm, n, m, type, z, tmp);
+
+    std::tie(res, res_jac) = tmp.refs_as_tuple();
 }
 
 template <typename NormPolicy, typename T>
@@ -87,19 +118,22 @@ void multi_assoc_legendre_p(
     NormPolicy norm, long long int n, long long int m, long long int type, std::complex<T> z, std::complex<T> &res,
     std::complex<T> &res_jac, std::complex<T> &res_hess
 ) {
-    special::multi_assoc_legendre_p(norm, n, m, type, z, res, res_jac, res_hess);
+    special::grad<std::complex<T>, 2> tmp;
+    special::multi_assoc_legendre_p(norm, n, m, type, z, tmp);
+
+    std::tie(res, res_jac, res_hess) = tmp.refs_as_tuple();
 }
 
 template <typename NormPolicy, typename T, typename OutputMat1>
 void multi_assoc_legendre_p_all(NormPolicy norm, int type, T z, OutputMat1 res) {
     special::grad<OutputMat1, 0> tmp(res);
-    special::multi_assoc_legendre_p_all_(norm, type, z, tmp);
+    special::multi_assoc_legendre_p_all(norm, type, z, tmp);
 }
 
 template <typename NormPolicy, typename T, typename OutputMat1, typename OutputMat2>
 void multi_assoc_legendre_p_all(NormPolicy norm, int type, T z, OutputMat1 res, OutputMat2 res_jac) {
     special::grad<OutputMat1, 1> tmp(res, res_jac);
-    special::multi_assoc_legendre_p_all_(norm, type, z, tmp);
+    special::multi_assoc_legendre_p_all(norm, type, z, tmp);
 }
 
 template <typename NormPolicy, typename T, typename OutputMat1, typename OutputMat2, typename OutputMat3>
@@ -107,7 +141,7 @@ void multi_assoc_legendre_p_all(
     NormPolicy norm, int type, T z, OutputMat1 res, OutputMat2 res_jac, OutputMat3 res_hess
 ) {
     special::grad<OutputMat1, 2> tmp(res, res_jac, res_hess);
-    special::multi_assoc_legendre_p_all_(norm, type, z, tmp);
+    special::multi_assoc_legendre_p_all(norm, type, z, tmp);
 }
 
 template <typename T>
