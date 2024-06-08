@@ -45,8 +45,9 @@ namespace detail {
       public:
         grad_tuple() = default;
 
-        template <typename... Args>
-        explicit grad_tuple(Args &&...args) : grad_tuple_leaf<T, I>(std::forward<Args>(args))... {}
+        explicit grad_tuple(const grad_tuple_leaf<T, I> &...args) : grad_tuple_leaf<T, I>(args)... {}
+
+        grad_tuple(const std::tuple<grad_tuple_leaf<T, I>...> &args) : grad_tuple_leaf<T, I>(std::get<I>(args))... {}
 
         std::tuple<typename grad_tuple_leaf<T, I>::value_type &...> refs() {
             return std::tie(static_cast<grad_tuple_leaf<T, I> *>(this)->value...);
