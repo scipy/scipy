@@ -24,21 +24,24 @@ struct legendre_p_recurrence_n {
     T z;
 
     void operator()(int n, grad_tuple<T[2], 0> &res) const {
-        T fac[2] = {-T(n - 1) / T(n), T(2 * n - 1) / T(n)};
+        T fac0 = -T(n - 1) / T(n);
+        T fac1 = T(2 * n - 1) / T(n);
 
-        res = {{fac[0], fac[1] * z}};
+        res = {{fac0, fac1 * z}};
     }
 
     void operator()(int n, grad_tuple<T[2], 1> &res) const {
-        T fac[2] = {-T(n - 1) / T(n), T(2 * n - 1) / T(n)};
+        T fac0 = -T(n - 1) / T(n);
+        T fac1 = T(2 * n - 1) / T(n);
 
-        res = {{fac[0], fac[1] * z}, {0, fac[1]}};
+        res = {{fac0, fac1 * z}, {0, fac1}};
     }
 
     void operator()(int n, grad_tuple<T[2], 2> &res) const {
-        T fac[2] = {-T(n - 1) / T(n), T(2 * n - 1) / T(n)};
+        T fac0 = -T(n - 1) / T(n);
+        T fac1 = T(2 * n - 1) / T(n);
 
-        res = {{fac[0], fac[1] * z}, {0, fac[1]}, {0, 0}};
+        res = {{fac0, fac1 * z}, {0, fac1}, {0, 0}};
     }
 };
 

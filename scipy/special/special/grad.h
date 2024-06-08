@@ -19,6 +19,26 @@ namespace detail {
         grad_tuple_leaf(T other) : value(other) {}
     };
 
+    template <typename T, size_t I, size_t K>
+    struct grad_tuple_leaf<T[K], I> {
+        using value_type = T[K];
+
+        T value[K];
+
+      public:
+        grad_tuple_leaf() = default;
+
+        grad_tuple_leaf(T (&other)[K]) {}
+
+        grad_tuple_leaf &operator=(const T (&other)[K]) {
+            for (size_t k = 0; k < K; ++k) {
+                value[k] = other[k];
+            }
+
+            return *this;
+        }
+    };
+
     template <typename T, typename Indices>
     class grad_tuple;
 
@@ -48,8 +68,7 @@ namespace detail {
         }
 
         grad_tuple &operator=(std::initializer_list<T> other) {
-            // ...
-            (memcpy(&static_cast<grad_tuple_leaf<T, I> *>(this)->value, other.begin() + I, sizeof(T)), ...);
+            ((*static_cast<grad_tuple_leaf<T, I> *>(this) = *(other.begin() + I)), ...);
 
             return *this;
         }
