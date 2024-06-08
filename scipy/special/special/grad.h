@@ -56,6 +56,8 @@ namespace detail {
         grad_tuple(const std::tuple<typename grad_tuple_leaf<T, I>::value_type...> &args)
             : grad_tuple_leaf<T, I>(std::get<I>(args))... {}
 
+        grad_tuple(const grad_tuple &other) = default;
+
         std::tuple<typename grad_tuple_leaf<T, I>::value_type &...> refs() {
             return std::tie(static_cast<grad_tuple_leaf<T, I> *>(this)->value...);
         }
@@ -64,12 +66,6 @@ namespace detail {
 
         std::tuple<const typename grad_tuple_leaf<T, I>::value_type &...> crefs() const {
             return std::tie(static_cast<const grad_tuple_leaf<T, I> *>(this)->value...);
-        }
-
-        grad_tuple &operator=(const grad_tuple &other) {
-            new (this) grad_tuple(other);
-
-            return *this;
         }
 
         //        grad_tuple &operator=(const std::tuple<grad_tuple_leaf<T, I>...> &other) {
