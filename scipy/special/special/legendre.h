@@ -12,12 +12,7 @@ template <typename T>
 struct legendre_p_initializer_n {
     T z;
 
-    void operator()(grad_tuple<T[2], 0> &res) const {
-        auto &[res0] = res;
-
-        res0[0] = 1;
-        res0[1] = z;
-    }
+    void operator()(grad_tuple<T[2], 0> &res) const { res = {{1, z}}; }
 
     void operator()(grad_tuple<T[2], 1> &res) const {
         auto &[res0, res1] = res;
@@ -103,7 +98,7 @@ void legendre_p_for_each_n(int n, T z, grad_tuple<T[2], N> &res, Func f) {
     init_n(res);
 
     legendre_p_recurrence_n<T> re_n{z};
-    tuple_forward_recur(0, n + 1, re_n, res, f);
+    forward_recur(0, n + 1, re_n, res, f);
 }
 
 /**

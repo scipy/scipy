@@ -28,7 +28,11 @@ namespace detail {
       public:
         grad_tuple_leaf() = default;
 
-        grad_tuple_leaf(T (&other)[K]) {}
+        grad_tuple_leaf(const T (&other)[K]) {
+            for (size_t k = 0; k < K; ++k) {
+                value[k] = other[k];
+            }
+        }
 
         grad_tuple_leaf &operator=(const T (&other)[K]) {
             for (size_t k = 0; k < K; ++k) {

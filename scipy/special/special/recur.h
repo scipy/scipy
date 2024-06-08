@@ -108,7 +108,7 @@ void forward_recur(InputIt first, InputIt last, Recurrence r, T (&res)[N], T (&r
 }
 
 template <typename InputIt, typename Recurrence, typename T, ssize_t K, size_t N, typename Func>
-void tuple_forward_recur(InputIt first, InputIt last, Recurrence r, grad_tuple<T[K], N> &res, Func f) {
+void forward_recur(InputIt first, InputIt last, Recurrence r, grad_tuple<T[K], N> &res, Func f) {
     InputIt it = first;
     while (it - first != K && it != last) {
         forward_recur_rotate_left(res);
