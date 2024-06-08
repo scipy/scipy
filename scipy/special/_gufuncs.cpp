@@ -128,7 +128,7 @@ PyMODINIT_FUNC PyInit__gufuncs() {
             {[](double z, double_2d res, double_2d res_jac, double_2d res_hess) {
                  ::assoc_legendre_p_all(assoc_legendre_norm, z, res, res_jac, res_hess);
              },
-             [](float z, float_2d res, float_2d res_jac, double_2d res_hess) {
+             [](float z, float_2d res, float_2d res_jac, float_2d res_hess) {
                  ::assoc_legendre_p_all(assoc_legendre_norm, z, res, res_jac, res_hess);
              }},
             3, "assoc_legendre_p_all", nullptr, "()->(np1,mpmp1),(np1,mpmp1),(np1,mpmp1)"
@@ -152,7 +152,7 @@ PyMODINIT_FUNC PyInit__gufuncs() {
             {[](double z, double_2d res, double_2d res_jac, double_2d res_hess) {
                  ::assoc_legendre_p_all(assoc_legendre_unnorm, z, res, res_jac, res_hess);
              },
-             [](float z, float_2d res, float_2d res_jac, double_2d res_hess) {
+             [](float z, float_2d res, float_2d res_jac, float_2d res_hess) {
                  ::assoc_legendre_p_all(assoc_legendre_unnorm, z, res, res_jac, res_hess);
              }},
             3, "assoc_legendre_p_all", nullptr, "()->(np1,mpmp1),(np1,mpmp1),(np1,mpmp1)"
