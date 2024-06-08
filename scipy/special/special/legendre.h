@@ -12,20 +12,34 @@ template <typename T>
 struct legendre_p_initializer_n {
     T z;
 
-    void operator()(grad_tuple<T[2], 0> &res) const { res = {{1, z}}; }
+    void operator()(grad_tuple<T[2], 0> &res_with_grad) const {
+        auto &[res] = res_with_grad;
 
-    void operator()(grad_tuple<T[2], 1> &res) const {
-        auto &[res0, res1] = res;
-
-        res0[0] = 1;
-        res0[1] = z;
-
-        res1[0] = 0;
-        res1[1] = 1;
+        res[0] = 1;
+        res[1] = z;
     }
 
-    void operator()(grad_tuple<T[2], 2> &res) const {
-        res = {{1, z}, {0, 1}, {0, 0}};
+    void operator()(grad_tuple<T[2], 1> &res_with_grad) const {
+        auto &[res, res_jac] = res_with_grad;
+
+        res[0] = 1;
+        res[1] = z;
+
+        res_jac[0] = 0;
+        res_jac[1] = 1;
+    }
+
+    void operator()(grad_tuple<T[2], 2> &res_with_grad) const {
+        auto &[res, res_jac, res_hess] = res_with_grad;
+
+        res[0] = 1;
+        res[1] = z;
+
+        res_jac[0] = 0;
+        res_jac[1] = 1;
+
+        res_hess[0] = 0;
+        res_hess[1] = 0;
     }
 };
 

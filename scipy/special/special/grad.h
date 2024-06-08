@@ -28,20 +28,6 @@ namespace detail {
       public:
         grad_tuple_leaf() = default;
 
-        grad_tuple_leaf(std::initializer_list<T> other) {
-            for (size_t k = 0; k < K; ++k) {
-                value[k] = *(other.begin() + k);
-            }
-        }
-
-        grad_tuple_leaf &operator=(std::initializer_list<T> other) {
-            for (size_t k = 0; k < K; ++k) {
-                value[k] = *(other.begin() + k);
-            }
-
-            return *this;
-        }
-
         grad_tuple_leaf &operator=(const T (&other)[K]) {
             for (size_t k = 0; k < K; ++k) {
                 value[k] = other[k];
@@ -75,18 +61,6 @@ namespace detail {
         template <typename... Args>
         grad_tuple &operator=(const std::tuple<Args...> &other) {
             ((static_cast<grad_tuple_leaf<T, I> *>(this)->value = std::get<I>(other)), ...);
-
-            return *this;
-        }
-
-        grad_tuple &operator=(std::initializer_list<T> other) {
-            ((*static_cast<grad_tuple_leaf<T, I> *>(this) = *(other.begin() + I)), ...);
-
-            return *this;
-        }
-
-        grad_tuple &operator=(std::initializer_list<std::initializer_list<T>> other) {
-            ((*static_cast<grad_tuple_leaf<T, I> *>(this) = *(other.begin() + I)), ...);
 
             return *this;
         }
