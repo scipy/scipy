@@ -16,7 +16,8 @@ T legendre_p(long long int n, T z) {
 
 template <typename T>
 void legendre_p(long long int n, T z, T &res, T &res_jac) {
-    special::legendre_p(n, z, res, res_jac);
+    special::tuple_legendre_p(n, z, std::tie(res, res_jac));
+    //    special::legendre_p(n, z, res, res_jac);
 }
 
 template <typename T>
@@ -24,7 +25,22 @@ void legendre_p(long long int n, T z, T &res, T &res_jac, T &res_hess) {
     special::legendre_p(n, z, res, res_jac, res_hess);
 }
 
-using special::legendre_p_all;
+template <typename T, typename OutputVec1>
+void legendre_p_all(T z, OutputVec1 res) {
+    special::legendre_p_all(z, res);
+}
+
+template <typename T, typename OutputVec1, typename OutputVec2>
+void legendre_p_all(T z, OutputVec1 res, OutputVec2 res_jac) {
+    special::grad_tuple<OutputVec1, 1> tup(res, res_jac);
+
+    special::tuple_legendre_p_all(z, tup);
+}
+
+template <typename T, typename OutputVec1, typename OutputVec2, typename OutputVec3>
+void legendre_p_all(T z, OutputVec1 res, OutputVec2 res_jac, OutputVec3 res_hess) {
+    special::legendre_p_all(z, res, res_jac, res_hess);
+}
 
 using special::assoc_legendre_norm;
 using special::assoc_legendre_unnorm;

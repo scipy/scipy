@@ -102,6 +102,45 @@ void forward_recur(InputIt first, InputIt last, Recurrence r, T (&res)[N], T (&r
     }
 }
 
+template <typename InputIt, typename Recurrence, ssize_t N, typename T, typename Func>
+void tuple_forward_recur(InputIt first, InputIt last, Recurrence r, grad_tuple<T[N], 1> &tuple_res, Func f) {
+    T(&res)[N] = get<0>(tuple_res);
+    T(&res_jac)[N] = get<1>(tuple_res);
+
+    InputIt it = first;
+    while (it - first != N && it != last) {
+        forward_recur_rotate_left(res);
+        forward_recur_rotate_left(res_jac);
+
+        f(it, tuple_res);
+        ++it;
+    }
+
+    if (last - first > N) {
+        while (it != last) {
+            T coef[N];
+            T coef_jac[N];
+            r(it, coef, coef_jac);
+
+            T res_next = 0;
+            T res_next_jac = 0;
+            for (ssize_t n = 0; n < N; ++n) {
+                res_next += coef[n] * res[n];
+                res_next_jac += coef[n] * res_jac[n] + coef_jac[n] * res[n];
+            }
+
+            forward_recur_shift_left(res);
+            res[N - 1] = res_next;
+
+            forward_recur_shift_left(res_jac);
+            res_jac[N - 1] = res_next_jac;
+
+            f(it, tuple_res);
+            ++it;
+        }
+    }
+}
+
 /**
  * Compute a forward recurrence that depends on N previous values.
  *

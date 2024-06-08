@@ -3,6 +3,7 @@
 #include <iostream>
 
 #include "error.h"
+#include "grad.h"
 #include "recur.h"
 
 namespace special {
@@ -92,6 +93,15 @@ void legendre_p_for_each_n(int n, T z, T (&res)[2], T (&res_jac)[2], T (&res_hes
     forward_recur(0, n + 1, re_n, res, res_jac, res_hess, f);
 }
 
+template <typename T, typename Func>
+void tuple_legendre_p_for_each_n(int n, T z, grad_tuple<T[2], 1> &res, Func f) {
+    legendre_p_initializer_n<T> init_n{z};
+    std::apply(init_n, res.refs());
+
+    legendre_p_recurrence_n<T> re_n{z};
+    tuple_forward_recur(0, n + 1, re_n, res, f);
+}
+
 /**
  * Compute the Legendre polynomial of degree n.
  *
@@ -124,6 +134,11 @@ void legendre_p(int n, T z, T &res, T &res_jac) {
 
     res = p[1];
     res_jac = p_jac[1];
+}
+
+template <typename T>
+void tuple_legendre_p(int n, T z, std::tuple<T &, T &> res) {
+    // ...
 }
 
 /**
@@ -180,6 +195,18 @@ void legendre_p_all(T z, OutputVec1 res, OutputVec2 res_jac) {
     legendre_p_for_each_n(n, z, p, p_jac, [res, res_jac](int n, const T(&p)[2], const T(&p_jac)[2]) {
         res(n) = p[1];
         res_jac(n) = p_jac[1];
+    });
+}
+
+template <typename T, typename OutputVec, size_t N>
+void tuple_legendre_p_all(T z, grad_tuple<OutputVec, N> res) {
+    const OutputVec &res0 = get<0>(res);
+    int n = res0.extent(0) - 1;
+
+    grad_tuple<T[2], N> p;
+    tuple_legendre_p_for_each_n(n, z, p, [&res](int n, const grad_tuple<T[2], N> &p) {
+        std::apply([n](auto &...args) { return std::tie(args(n)...); }, res.refs()) =
+            std::apply([](const auto &...args) { return std::tie(args[1]...); }, p.refs());
     });
 }
 
