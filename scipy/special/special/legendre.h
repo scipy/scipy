@@ -711,6 +711,14 @@ void multi_assoc_legendre_p(NormPolicy norm, int n, int m, int type, T z, grad<T
     res.refs_as_tuple() = std::apply([](const auto &...args) { return std::tie(args[1]...); }, res_n.refs_as_tuple());
 }
 
+template <typename NormPolicy, typename T>
+T multi_assoc_legendre_p(NormPolicy norm, int n, int m, int type, T z) {
+    grad<T, 0> tmp;
+    multi_assoc_legendre_p(norm, n, m, type, z, tmp);
+
+    return tmp.value();
+}
+
 /**
  * Compute all associated Legendre polynomials of degree j and order i, where 0 <= j <= n and -m <= i <= m.
  *
@@ -749,6 +757,14 @@ void assoc_legendre_p(NormPolicy norm, int n, int m, T z, grad<T, N> &res) {
     }
 
     multi_assoc_legendre_p(norm, n, m, type, z, res);
+}
+
+template <typename NormPolicy, typename T>
+T assoc_legendre_p(NormPolicy norm, int n, int m, T z) {
+    grad<T, 0> tmp;
+    assoc_legendre_p(norm, n, m, z, tmp);
+
+    return tmp.value();
 }
 
 template <typename NormPolicy, typename T, typename OutputMat, size_t N>

@@ -53,10 +53,7 @@ using special::assoc_legendre_unnorm;
 
 template <typename NormPolicy, typename T>
 T assoc_legendre_p(NormPolicy norm, long long int n, long long int m, T z) {
-    special::grad<T, 0> tmp;
-    special::assoc_legendre_p(norm, n, m, z, tmp);
-
-    return special::get<0>(tmp);
+    return special::assoc_legendre_p(norm, n, m, z);
 }
 
 template <typename NormPolicy, typename T>
@@ -96,10 +93,7 @@ void assoc_legendre_p_all(NormPolicy norm, T z, OutputMat1 res, OutputMat2 res_j
 template <typename NormPolicy, typename T>
 std::complex<T>
 multi_assoc_legendre_p(NormPolicy norm, long long int n, long long int m, long long int type, std::complex<T> z) {
-    special::grad<std::complex<T>, 0> tmp;
-    special::multi_assoc_legendre_p(norm, n, m, type, z, tmp);
-
-    return special::get<0>(tmp);
+    return special::multi_assoc_legendre_p(norm, n, m, type, z);
 }
 
 template <typename NormPolicy, typename T>
