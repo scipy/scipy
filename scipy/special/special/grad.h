@@ -84,6 +84,12 @@ namespace detail {
 
             return *this;
         }
+
+        grad_tuple &operator=(std::initializer_list<std::initializer_list<T>> other) {
+            ((*static_cast<grad_tuple_leaf<T, I> *>(this) = *(other.begin() + I)), ...);
+
+            return *this;
+        }
     };
 
 } // namespace detail
