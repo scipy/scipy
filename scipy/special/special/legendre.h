@@ -12,11 +12,35 @@ template <typename T>
 struct legendre_p_initializer_n {
     T z;
 
-    void operator()(grad_tuple<T[2], 0> &res) const { res = {{1, z}}; }
+    void operator()(grad_tuple<T[2], 0> &res) const {
+        auto &[res0] = res;
 
-    void operator()(grad_tuple<T[2], 1> &res) const { res = {{1, z}, {0, 1}}; }
+        res0[0] = 1;
+        res0[1] = z;
+    }
 
-    void operator()(grad_tuple<T[2], 2> &res) const { res = {{1, z}, {0, 1}, {0, 0}}; }
+    void operator()(grad_tuple<T[2], 1> &res) const {
+        auto &[res0, res1] = res;
+
+        res0[0] = 1;
+        res0[1] = z;
+
+        res1[0] = 0;
+        res1[1] = 1;
+    }
+
+    void operator()(grad_tuple<T[2], 2> &res) const {
+        auto &[res0, res1, res2] = res;
+
+        res0[0] = 1;
+        res0[1] = z;
+
+        res1[0] = 0;
+        res1[1] = 1;
+
+        res2[0] = 0;
+        res2[1] = 0;
+    }
 };
 
 template <typename T>
@@ -27,21 +51,39 @@ struct legendre_p_recurrence_n {
         T fac0 = -T(n - 1) / T(n);
         T fac1 = T(2 * n - 1) / T(n);
 
-        res = {{fac0, fac1 * z}};
+        auto &[res0] = res;
+
+        res0[0] = fac0;
+        res0[1] = fac1 * z;
     }
 
     void operator()(int n, grad_tuple<T[2], 1> &res) const {
         T fac0 = -T(n - 1) / T(n);
         T fac1 = T(2 * n - 1) / T(n);
 
-        res = {{fac0, fac1 * z}, {0, fac1}};
+        auto &[res0, res1] = res;
+
+        res0[0] = fac0;
+        res0[1] = fac1 * z;
+
+        res1[0] = 0;
+        res1[1] = fac1;
     }
 
     void operator()(int n, grad_tuple<T[2], 2> &res) const {
         T fac0 = -T(n - 1) / T(n);
         T fac1 = T(2 * n - 1) / T(n);
 
-        res = {{fac0, fac1 * z}, {0, fac1}, {0, 0}};
+        auto &[res0, res1, res2] = res;
+
+        res0[0] = fac0;
+        res0[1] = fac1 * z;
+
+        res1[0] = 0;
+        res1[1] = fac1;
+
+        res2[0] = 0;
+        res2[1] = 0;
     }
 };
 
