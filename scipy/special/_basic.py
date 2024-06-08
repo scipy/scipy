@@ -2766,8 +2766,8 @@ def perm(N, k, exact=False):
         Number of elements taken.
     exact : bool, optional
         If ``True``, calculate the answer exactly using long integer arithmetic (`N`
-        and `k` must be scalar integers). If ``False``, result is approximated in
-        floating point rapidly using `poch`. Default is ``False``.
+        and `k` must be scalar integers). If ``False``, a floating point approximation
+        is calculated (more rapidly) using `poch`. Default is ``False``.
     Returns
     -------
     val : int, ndarray
