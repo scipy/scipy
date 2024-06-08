@@ -107,29 +107,26 @@ void forward_recur(InputIt first, InputIt last, Recurrence r, T (&res)[N], T (&r
     }
 }
 
-template <typename InputIt, typename Recurrence, ssize_t N, typename T, typename Func>
-void tuple_forward_recur(InputIt first, InputIt last, Recurrence r, grad_tuple<T[N], 1> &res, Func f) {
+template <typename InputIt, typename Recurrence, typename T, ssize_t K, size_t N, typename Func>
+void tuple_forward_recur(InputIt first, InputIt last, Recurrence r, grad_tuple<T[K], N> &res, Func f) {
     InputIt it = first;
-    while (it - first != N && it != last) {
+    while (it - first != K && it != last) {
         forward_recur_rotate_left(res);
 
         f(it, res);
         ++it;
     }
 
-    if (last - first > N) {
+    if (last - first > K) {
         while (it != last) {
-            grad_tuple<T[N], 1> coef;
-            std::apply([it, &r](auto &...args) { r(it, args...); }, coef.refs());
+            grad_tuple<T[K], N> coef;
+            r(it, coef);
 
-            grad_tuple<T, 1> res_next{0, 0};
-            for (ssize_t n = 0; n < N; ++n) {
-                get<0>(res_next) += get<0>(coef)[n] * get<0>(res)[n];
-                get<1>(res_next) += get<0>(coef)[n] * get<1>(res)[n] + get<1>(coef)[n] * get<0>(res)[n];
-            }
+            grad_tuple<T, N> res_next;
+            dot(coef, res, res_next);
 
             std::apply([](auto &...args) { (forward_recur_shift_left(args), ...); }, res.refs());
-            std::apply([](auto &...args) { return std::tie(args[N - 1]...); }, res.refs()) = res_next.refs();
+            std::apply([](auto &...args) { return std::tie(args[K - 1]...); }, res.refs()) = res_next.refs();
 
             f(it, res);
             ++it;

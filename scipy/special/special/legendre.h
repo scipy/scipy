@@ -12,47 +12,33 @@ template <typename T>
 struct legendre_p_initializer_n {
     T z;
 
-    void operator()(T (&res)[2]) const {
-        res[0] = 1;
-        res[1] = z;
-    }
+    void operator()(grad_tuple<T[2], 0> &res) const { res = {{1, z}}; }
 
-    void operator()(T (&res)[2], T (&res_jac)[2]) const {
-        operator()(res);
+    void operator()(grad_tuple<T[2], 1> &res) const { res = {{1, z}, {0, 1}}; }
 
-        res_jac[0] = 0;
-        res_jac[1] = 1;
-    }
-
-    void operator()(T (&res)[2], T (&res_jac)[2], T (&res_hess)[2]) const {
-        operator()(res, res_jac);
-
-        res_hess[0] = 0;
-        res_hess[1] = 0;
-    }
+    void operator()(grad_tuple<T[2], 2> &res) const { res = {{1, z}, {0, 1}, {0, 0}}; }
 };
 
 template <typename T>
 struct legendre_p_recurrence_n {
     T z;
 
-    void operator()(int n, T (&res)[2]) const {
-        res[0] = -T(n - 1) / T(n);
-        res[1] = T(2 * n - 1) * z / T(n);
+    void operator()(int n, grad_tuple<T[2], 0> &res) const {
+        T fac[2] = {-T(n - 1) / T(n), T(2 * n - 1) / T(n)};
+
+        res = {{fac[0], fac[1] * z}};
     }
 
-    void operator()(int n, T (&res)[2], T (&res_jac)[2]) const {
-        operator()(n, res);
+    void operator()(int n, grad_tuple<T[2], 1> &res) const {
+        T fac[2] = {-T(n - 1) / T(n), T(2 * n - 1) / T(n)};
 
-        res_jac[0] = 0;
-        res_jac[1] = T(2 * n - 1) / T(n);
+        res = {{fac[0], fac[1] * z}, {0, fac[1]}};
     }
 
-    void operator()(int n, T (&res)[2], T (&res_jac)[2], T (&res_hess)[2]) const {
-        operator()(n, res, res_jac);
+    void operator()(int n, grad_tuple<T[2], 2> &res) const {
+        T fac[2] = {-T(n - 1) / T(n), T(2 * n - 1) / T(n)};
 
-        res_hess[0] = 0;
-        res_hess[1] = 0;
+        res = {{fac[0], fac[1] * z}, {0, fac[1]}, {0, 0}};
     }
 };
 
@@ -66,37 +52,10 @@ struct legendre_p_recurrence_n {
  *
  * @return value of the polynomial
  */
-template <typename T, typename Func>
-void legendre_p_for_each_n(int n, T z, T (&res)[2], Func f) {
+template <typename T, size_t N, typename Func>
+void legendre_p_for_each_n(int n, T z, grad_tuple<T[2], N> &res, Func f) {
     legendre_p_initializer_n<T> init_n{z};
     init_n(res);
-
-    legendre_p_recurrence_n<T> re_n{z};
-    forward_recur(0, n + 1, re_n, res, f);
-}
-
-template <typename T, typename Func>
-void legendre_p_for_each_n(int n, T z, T (&res)[2], T (&res_jac)[2], Func f) {
-    legendre_p_initializer_n<T> init_n{z};
-    init_n(res, res_jac);
-
-    legendre_p_recurrence_n<T> re_n{z};
-    forward_recur(0, n + 1, re_n, res, res_jac, f);
-}
-
-template <typename T, typename Func>
-void legendre_p_for_each_n(int n, T z, T (&res)[2], T (&res_jac)[2], T (&res_hess)[2], Func f) {
-    legendre_p_initializer_n<T> init_n{z};
-    init_n(res, res_jac, res_hess);
-
-    legendre_p_recurrence_n<T> re_n{z};
-    forward_recur(0, n + 1, re_n, res, res_jac, res_hess, f);
-}
-
-template <typename T, size_t N, typename Func>
-void tuple_legendre_p_for_each_n(int n, T z, grad_tuple<T[2], N> &res, Func f) {
-    legendre_p_initializer_n<T> init_n{z};
-    std::apply(init_n, res.refs());
 
     legendre_p_recurrence_n<T> re_n{z};
     tuple_forward_recur(0, n + 1, re_n, res, f);
@@ -110,57 +69,12 @@ void tuple_legendre_p_for_each_n(int n, T z, grad_tuple<T[2], N> &res, Func f) {
  *
  * @return value of the polynomial
  */
-template <typename T>
-T legendre_p(int n, T z) {
-    T p[2];
-    legendre_p_for_each_n(n, z, p, [](int n, const T(&p)[2]) {});
+template <typename T, size_t N>
+void legendre_p(int n, T z, grad_tuple<T, N> &res) {
+    grad_tuple<T[2], N> p;
+    legendre_p_for_each_n(n, z, p, [](int n, const auto &p) {});
 
-    return p[1];
-}
-
-/**
- * Compute the Legendre polynomial of degree n.
- *
- * @param n degree of the polynomial
- * @param z argument of the polynomial, either real or complex
- * @param res value of the polynomial
- * @param res_jac value of the polynomial first derivative
- */
-template <typename T>
-void legendre_p(int n, T z, T &res, T &res_jac) {
-    T p[2];
-    T p_jac[2];
-    legendre_p_for_each_n(n, z, p, p_jac, [](int n, const T(&p)[2], const T(&p_jac)[2]) {});
-
-    res = p[1];
-    res_jac = p_jac[1];
-}
-
-template <typename T>
-void tuple_legendre_p(int n, T z, std::tuple<T &, T &> res) {
-    // ...
-}
-
-/**
- * Compute the Legendre polynomial of degree n.
- *
- * @param n degree of the polynomial
- * @param z argument of the polynomial, either real or complex
- * @param res value of the polynomial
- * @param res_jac value of the polynomial first derivative
- * @param res_hess value of the polynomial second derivative
- */
-template <typename T>
-void legendre_p(int n, T z, T &res, T &res_jac, T &res_hess) {
-    T p[2];
-    T p_jac[2];
-    T p_hess[2];
-    legendre_p_for_each_n(n, z, p, p_jac, p_hess, [](int n, const T(&p)[2], const T(&p_jac)[2], const T(&p_hess)[2]) {
-    });
-
-    res = p[1];
-    res_jac = p_jac[1];
-    res_hess = p_hess[1];
+    res = std::apply([](const auto &...args) { return std::tie(args[1]...); }, p.refs());
 }
 
 /**
@@ -170,70 +84,16 @@ void legendre_p(int n, T z, T &res, T &res_jac, T &res_hess) {
  * @param res a view into a multidimensional array with element type T and size n + 1 to store the value of each
  *            polynomial
  */
-template <typename T, typename OutputVec>
-void legendre_p_all(T z, OutputVec res) {
-    int n = res.extent(0) - 1;
-
-    T p[2];
-    legendre_p_for_each_n(n, z, p, [res](int n, const T(&p)[2]) { res(n) = p[1]; });
-}
-
-/**
- * Compute all Legendre polynomials of degree j, where 0 <= j <= n.
- *
- * @param z argument of the polynomials, either real or complex
- * @param res a view into a multidimensional array with element type T and size n + 1 to store the value of each
- *            polynomial
- * @param res_jac same as res, but for the polynomial first derivatives
- */
-template <typename T, typename OutputVec1, typename OutputVec2>
-void legendre_p_all(T z, OutputVec1 res, OutputVec2 res_jac) {
-    int n = res.extent(0) - 1;
-
-    T p[2];
-    T p_jac[2];
-    legendre_p_for_each_n(n, z, p, p_jac, [res, res_jac](int n, const T(&p)[2], const T(&p_jac)[2]) {
-        res(n) = p[1];
-        res_jac(n) = p_jac[1];
-    });
-}
-
 template <typename T, typename OutputVec, size_t N>
-void tuple_legendre_p_all(T z, grad_tuple<OutputVec, N> res) {
-    const OutputVec &res0 = get<0>(res);
+void legendre_p_all(T z, grad_tuple<OutputVec, N> &res) {
+    OutputVec &res0 = get<0>(res);
     int n = res0.extent(0) - 1;
 
     grad_tuple<T[2], N> p;
-    tuple_legendre_p_for_each_n(n, z, p, [&res](int n, const grad_tuple<T[2], N> &p) {
+    legendre_p_for_each_n(n, z, p, [&res](int n, const grad_tuple<T[2], N> &p) {
         std::apply([n](auto &...args) { return std::tie(args(n)...); }, res.refs()) =
             std::apply([](const auto &...args) { return std::tie(args[1]...); }, p.refs());
     });
-}
-
-/**
- * Compute all Legendre polynomials of degree j, where 0 <= j <= n.
- *
- * @param z argument of the polynomials, either real or complex
- * @param res a view into a multidimensional array with element type T and size n + 1 to store the value of each
- *            polynomial
- * @param res_jac same as res, but for the polynomial first derivatives
- * @param res_hess same as res, but for the polynomial second derivatives
- */
-template <typename T, typename OutputVec1, typename OutputVec2, typename OutputVec3>
-void legendre_p_all(T z, OutputVec1 res, OutputVec2 res_jac, OutputVec3 res_hess) {
-    int n = res.extent(0) - 1;
-
-    T p[2];
-    T p_jac[2];
-    T p_hess[2];
-    legendre_p_for_each_n(
-        n, z, p, p_jac, p_hess,
-        [res, res_jac, res_hess](int n, const T(&p)[2], const T(&p_jac)[2], const T(&p_hess)[2]) {
-            res(n) = p[1];
-            res_jac(n) = p_jac[1];
-            res_hess(n) = p_hess[1];
-        }
-    );
 }
 
 struct assoc_legendre_unnorm_policy {};

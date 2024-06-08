@@ -11,35 +11,47 @@ namespace {
 
 template <typename T>
 T legendre_p(long long int n, T z) {
-    return special::legendre_p(n, z);
+    special::grad_tuple<T, 0> tup;
+    special::legendre_p(n, z, tup);
+
+    return std::get<0>(tup.refs());
 }
 
 template <typename T>
 void legendre_p(long long int n, T z, T &res, T &res_jac) {
-    special::tuple_legendre_p(n, z, std::tie(res, res_jac));
-    //    special::legendre_p(n, z, res, res_jac);
+    special::grad_tuple<T, 1> tup;
+    special::legendre_p(n, z, tup);
+
+    std::tie(res, res_jac) = tup.refs();
 }
 
 template <typename T>
 void legendre_p(long long int n, T z, T &res, T &res_jac, T &res_hess) {
-    special::legendre_p(n, z, res, res_jac, res_hess);
+    special::grad_tuple<T, 2> tup;
+    special::legendre_p(n, z, tup);
+
+    std::tie(res, res_jac, res_hess) = tup.refs();
 }
 
 template <typename T, typename OutputVec1>
 void legendre_p_all(T z, OutputVec1 res) {
-    special::legendre_p_all(z, res);
+    special::grad_tuple<OutputVec1, 0> tup(res);
+
+    special::legendre_p_all(z, tup);
 }
 
 template <typename T, typename OutputVec1, typename OutputVec2>
 void legendre_p_all(T z, OutputVec1 res, OutputVec2 res_jac) {
     special::grad_tuple<OutputVec1, 1> tup(res, res_jac);
 
-    special::tuple_legendre_p_all(z, tup);
+    special::legendre_p_all(z, tup);
 }
 
 template <typename T, typename OutputVec1, typename OutputVec2, typename OutputVec3>
 void legendre_p_all(T z, OutputVec1 res, OutputVec2 res_jac, OutputVec3 res_hess) {
-    special::legendre_p_all(z, res, res_jac, res_hess);
+    special::grad_tuple<OutputVec1, 2> tup(res, res_jac, res_hess);
+
+    special::legendre_p_all(z, tup);
 }
 
 using special::assoc_legendre_norm;
