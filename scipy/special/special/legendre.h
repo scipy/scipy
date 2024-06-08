@@ -12,34 +12,29 @@ template <typename T>
 struct legendre_p_initializer_n {
     T z;
 
-    void operator()(grad_tuple<T[2], 0> &res_with_grad) const {
-        auto &[res] = res_with_grad;
+    void operator()(grad_tuple<T[2], 0> &res) const { res.template emplace<0>({1, z}); }
 
-        res[0] = 1;
-        res[1] = z;
+    void operator()(grad_tuple<T[2], 1> &res) const {
+        auto &[res0, res1] = res;
+
+        res0[0] = 1;
+        res0[1] = z;
+
+        res1[0] = 0;
+        res1[1] = 1;
     }
 
-    void operator()(grad_tuple<T[2], 1> &res_with_grad) const {
-        auto &[res, res_jac] = res_with_grad;
+    void operator()(grad_tuple<T[2], 2> &res) const {
+        auto &[p, p_jac, p_hess] = res;
 
-        res[0] = 1;
-        res[1] = z;
+        p[0] = 1;
+        p[1] = z;
 
-        res_jac[0] = 0;
-        res_jac[1] = 1;
-    }
+        p_jac[0] = 0;
+        p_jac[1] = 1;
 
-    void operator()(grad_tuple<T[2], 2> &res_with_grad) const {
-        auto &[res, res_jac, res_hess] = res_with_grad;
-
-        res[0] = 1;
-        res[1] = z;
-
-        res_jac[0] = 0;
-        res_jac[1] = 1;
-
-        res_hess[0] = 0;
-        res_hess[1] = 0;
+        p_hess[0] = 0;
+        p_hess[1] = 0;
     }
 };
 
@@ -130,13 +125,13 @@ void legendre_p(int n, T z, grad_tuple<T, N> &res) {
  *            polynomial
  */
 template <typename T, typename OutputVec, size_t N>
-void legendre_p_all(T z, grad_tuple<OutputVec, N> &res) {
-    OutputVec &res0 = get<0>(res);
-    int n = res0.extent(0) - 1;
+void legendre_p_all(T z, grad_tuple<OutputVec, N> &res_with_grad) {
+    OutputVec &res = res_with_grad.value();
+    int n = res.extent(0) - 1;
 
     grad_tuple<T[2], N> p;
-    legendre_p_for_each_n(n, z, p, [&res](int n, const grad_tuple<T[2], N> &p) {
-        std::apply([n](auto &...args) { return std::tie(args(n)...); }, res.refs()) =
+    legendre_p_for_each_n(n, z, p, [&res_with_grad](int n, const grad_tuple<T[2], N> &p) {
+        std::apply([n](auto &...args) { return std::tie(args(n)...); }, res_with_grad.refs()) =
             std::apply([](const auto &...args) { return std::tie(args[1]...); }, p.refs());
     });
 }

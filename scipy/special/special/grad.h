@@ -64,6 +64,15 @@ namespace detail {
 
             return *this;
         }
+
+        T &value() { return static_cast<grad_tuple_leaf<T, 0> *>(this)->value; }
+
+        const T &value() const { return static_cast<const grad_tuple_leaf<T, 0> *>(this)->value; }
+
+        template <size_t K>
+        void emplace(const grad_tuple_leaf<T, K> &value) {
+            *static_cast<grad_tuple_leaf<T, K> *>(this) = value;
+        }
     };
 
 } // namespace detail
