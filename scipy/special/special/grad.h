@@ -88,13 +88,6 @@ template <typename T, size_t N>
 class grad_tuple : public detail::grad_tuple<T, std::make_index_sequence<N + 1>> {
   public:
     using detail::grad_tuple<T, std::make_index_sequence<N + 1>>::grad_tuple;
-
-    template <typename... U>
-    grad_tuple &operator=(const std::tuple<U...> &other) {
-        *this = grad_tuple(other);
-
-        return *this;
-    }
 };
 
 template <size_t I, typename T, size_t N>
