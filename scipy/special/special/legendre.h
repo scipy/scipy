@@ -95,7 +95,7 @@ void legendre_p(int n, T z, grad_tuple<T, N> &res) {
     grad_tuple<T[2], N> p;
     legendre_p_for_each_n(n, z, p, [](int n, const auto &p) {});
 
-    res.refs() = std::apply([](const auto &...args) { return std::tie(args[1]...); }, p.refs());
+    res = std::apply([](const auto &...args) { return std::tie(args[1]...); }, p.refs());
 }
 
 /**

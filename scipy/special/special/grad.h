@@ -16,7 +16,7 @@ namespace detail {
       public:
         grad_tuple_leaf() = default;
 
-        grad_tuple_leaf(T other) : value(other) {}
+        grad_tuple_leaf(const T &other) : value(other) {}
     };
 
     template <typename T, size_t I, size_t K>
@@ -33,14 +33,6 @@ namespace detail {
                 value[k] = other[k];
             }
         }
-
-        grad_tuple_leaf &operator=(const T (&other)[K]) {
-            for (size_t k = 0; k < K; ++k) {
-                value[k] = other[k];
-            }
-
-            return *this;
-        }
     };
 
     template <typename T, typename Indices>
@@ -53,8 +45,8 @@ namespace detail {
 
         grad_tuple(const typename grad_tuple_leaf<T, I>::value_type &...args) : grad_tuple_leaf<T, I>(args)... {}
 
-        template <typename... Args>
-        grad_tuple(const std::tuple<Args...> &args) : grad_tuple_leaf<T, I>(std::get<I>(args))... {}
+        template <typename... U>
+        grad_tuple(const std::tuple<U...> &other) : grad_tuple_leaf<T, I>(std::get<I>(other))... {}
 
         grad_tuple(const grad_tuple &other) = default;
 

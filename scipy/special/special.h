@@ -35,8 +35,7 @@ void legendre_p(long long int n, T z, T &res, T &res_jac, T &res_hess) {
 
 template <typename T, typename OutputVec1>
 void legendre_p_all(T z, OutputVec1 res) {
-    special::grad_tuple<OutputVec1, 0> tup;
-    tup.template emplace<0>(res);
+    special::grad_tuple<OutputVec1, 0> tup{res};
 
     special::legendre_p_all(z, tup);
 }
