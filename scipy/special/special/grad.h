@@ -7,7 +7,7 @@
 namespace special {
 
 template <typename T, size_t N>
-class grad_tuple;
+class grad;
 
 namespace detail {
 
@@ -73,13 +73,11 @@ namespace detail {
             return std::forward_as_tuple(static_cast<const grad_tuple_leaf<T, I> *>(this)->value...);
         }
 
-        special::grad_tuple<T &, sizeof...(I) - 1> refs() {
-            return {static_cast<grad_tuple_leaf<T, I> *>(this)->value...};
-        }
+        special::grad<T &, sizeof...(I) - 1> refs() { return {static_cast<grad_tuple_leaf<T, I> *>(this)->value...}; }
 
-        special::grad_tuple<const T &, sizeof...(I) - 1> refs() const { return crefs(); }
+        special::grad<const T &, sizeof...(I) - 1> refs() const { return crefs(); }
 
-        special::grad_tuple<const T &, sizeof...(I) - 1> crefs() const {
+        special::grad<const T &, sizeof...(I) - 1> crefs() const {
             return {static_cast<const grad_tuple_leaf<T, I> *>(this)->value...};
         }
 
@@ -93,23 +91,23 @@ namespace detail {
 } // namespace detail
 
 template <typename T, size_t N>
-class grad_tuple : public detail::grad_tuple<T, std::make_index_sequence<N + 1>> {
+class grad : public detail::grad_tuple<T, std::make_index_sequence<N + 1>> {
   public:
     using detail::grad_tuple<T, std::make_index_sequence<N + 1>>::grad_tuple;
 };
 
 template <size_t I, typename T, size_t N>
-T &get(grad_tuple<T, N> &t) {
+T &get(grad<T, N> &t) {
     return static_cast<detail::grad_tuple_leaf<T, I> *>(&t)->value;
 }
 
 template <size_t I, typename T, size_t N>
-const T &get(const grad_tuple<T, N> &t) {
+const T &get(const grad<T, N> &t) {
     return static_cast<const detail::grad_tuple_leaf<T, I> *>(&t)->value;
 }
 
 template <typename T, size_t K>
-void dot(const grad_tuple<T[K], 0> &x, const grad_tuple<T[K], 0> &y, grad_tuple<T, 0> &res) {
+void dot(const grad<T[K], 0> &x, const grad<T[K], 0> &y, grad<T, 0> &res) {
     const auto &[x0] = x;
     const auto &[y0] = y;
     auto &[res0] = res;
@@ -121,7 +119,7 @@ void dot(const grad_tuple<T[K], 0> &x, const grad_tuple<T[K], 0> &y, grad_tuple<
 }
 
 template <typename T, size_t K>
-void dot(const grad_tuple<T[K], 1> &x, const grad_tuple<T[K], 1> &y, grad_tuple<T, 1> &res) {
+void dot(const grad<T[K], 1> &x, const grad<T[K], 1> &y, grad<T, 1> &res) {
     const auto &[x0, x1] = x;
     const auto &[y0, y1] = y;
     auto &[res0, res1] = res;
@@ -135,7 +133,7 @@ void dot(const grad_tuple<T[K], 1> &x, const grad_tuple<T[K], 1> &y, grad_tuple<
 }
 
 template <typename T, size_t K>
-void dot(const grad_tuple<T[K], 2> &x, const grad_tuple<T[K], 2> &y, grad_tuple<T, 2> &res) {
+void dot(const grad<T[K], 2> &x, const grad<T[K], 2> &y, grad<T, 2> &res) {
     const auto &[x0, x1, x2] = x;
     const auto &[y0, y1, y2] = y;
     auto &[res0, res1, res2] = res;
@@ -155,11 +153,11 @@ void dot(const grad_tuple<T[K], 2> &x, const grad_tuple<T[K], 2> &y, grad_tuple<
 namespace std {
 
 template <size_t I, typename T, size_t N>
-struct tuple_element<I, special::grad_tuple<T, N>> {
+struct tuple_element<I, special::grad<T, N>> {
     using type = T;
 };
 
 template <typename T, size_t N>
-struct tuple_size<special::grad_tuple<T, N>> : std::integral_constant<size_t, N + 1> {};
+struct tuple_size<special::grad<T, N>> : std::integral_constant<size_t, N + 1> {};
 
 } // namespace std

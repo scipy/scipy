@@ -11,15 +11,12 @@ namespace {
 
 template <typename T>
 T legendre_p(long long int n, T z) {
-    special::grad_tuple<T, 0> tup;
-    special::legendre_p(n, z, tup);
-
-    return std::get<0>(tup.refs_as_tuple());
+    return special::legendre_p(n, z);
 }
 
 template <typename T>
 void legendre_p(long long int n, T z, T &res, T &res_jac) {
-    special::grad_tuple<T, 1> tup;
+    special::grad<T, 1> tup;
     special::legendre_p(n, z, tup);
 
     std::tie(res, res_jac) = tup.refs_as_tuple();
@@ -27,7 +24,7 @@ void legendre_p(long long int n, T z, T &res, T &res_jac) {
 
 template <typename T>
 void legendre_p(long long int n, T z, T &res, T &res_jac, T &res_hess) {
-    special::grad_tuple<T, 2> tup;
+    special::grad<T, 2> tup;
     special::legendre_p(n, z, tup);
 
     std::tie(res, res_jac, res_hess) = tup.refs_as_tuple();
@@ -35,22 +32,19 @@ void legendre_p(long long int n, T z, T &res, T &res_jac, T &res_hess) {
 
 template <typename T, typename OutputVec1>
 void legendre_p_all(T z, OutputVec1 res) {
-    special::grad_tuple<OutputVec1, 0> tup{res};
-
+    special::grad<OutputVec1, 0> tup{res};
     special::legendre_p_all(z, tup);
 }
 
 template <typename T, typename OutputVec1, typename OutputVec2>
 void legendre_p_all(T z, OutputVec1 res, OutputVec2 res_jac) {
-    special::grad_tuple<OutputVec1, 1> tup{res, res_jac};
-
+    special::grad<OutputVec1, 1> tup{res, res_jac};
     special::legendre_p_all(z, tup);
 }
 
 template <typename T, typename OutputVec1, typename OutputVec2, typename OutputVec3>
 void legendre_p_all(T z, OutputVec1 res, OutputVec2 res_jac, OutputVec3 res_hess) {
-    special::grad_tuple<OutputVec1, 2> tup{res, res_jac, res_hess};
-
+    special::grad<OutputVec1, 2> tup{res, res_jac, res_hess};
     special::legendre_p_all(z, tup);
 }
 
@@ -96,7 +90,23 @@ void multi_assoc_legendre_p(
     special::multi_assoc_legendre_p(norm, n, m, type, z, res, res_jac, res_hess);
 }
 
-using special::multi_assoc_legendre_p_all;
+template <typename NormPolicy, typename T, typename OutputMat1>
+void multi_assoc_legendre_p_all(NormPolicy norm, int type, T z, OutputMat1 res) {
+    special::multi_assoc_legendre_p_all(norm, type, z, res);
+}
+
+template <typename NormPolicy, typename T, typename OutputMat1, typename OutputMat2>
+void multi_assoc_legendre_p_all(NormPolicy norm, int type, T z, OutputMat1 res, OutputMat2 res_jac) {
+    special::grad<OutputMat1, 1> g(res, res_jac);
+    special::multi_assoc_legendre_p_all_(norm, type, z, g);
+}
+
+template <typename NormPolicy, typename T, typename OutputMat1, typename OutputMat2, typename OutputMat3>
+void multi_assoc_legendre_p_all(
+    NormPolicy norm, int type, T z, OutputMat1 res, OutputMat2 res_jac, OutputMat3 res_hess
+) {
+    special::multi_assoc_legendre_p_all(norm, type, z, res, res_jac, res_hess);
+}
 
 template <typename T>
 std::complex<T> sph_harm(long long int m, long long int n, T theta, T phi) {

@@ -12,32 +12,32 @@ template <typename T>
 struct legendre_p_initializer_n {
     T z;
 
-    void operator()(grad_tuple<T[2], 0> &res) const { res = {{1, z}}; }
+    void operator()(grad<T[2], 0> &res) const { res = {{1, z}}; }
 
-    void operator()(grad_tuple<T[2], 1> &res) const { res = {{1, z}, {0, 1}}; }
+    void operator()(grad<T[2], 1> &res) const { res = {{1, z}, {0, 1}}; }
 
-    void operator()(grad_tuple<T[2], 2> &res) const { res = {{1, z}, {0, 1}, {0, 0}}; }
+    void operator()(grad<T[2], 2> &res) const { res = {{1, z}, {0, 1}, {0, 0}}; }
 };
 
 template <typename T>
 struct legendre_p_recurrence_n {
     T z;
 
-    void operator()(int n, grad_tuple<T[2], 0> &res) const {
+    void operator()(int n, grad<T[2], 0> &res) const {
         T fac0 = -T(n - 1) / T(n);
         T fac1 = T(2 * n - 1) / T(n);
 
         res = {{fac0, fac1 * z}};
     }
 
-    void operator()(int n, grad_tuple<T[2], 1> &res) const {
+    void operator()(int n, grad<T[2], 1> &res) const {
         T fac0 = -T(n - 1) / T(n);
         T fac1 = T(2 * n - 1) / T(n);
 
         res = {{fac0, fac1 * z}, {0, fac1}};
     }
 
-    void operator()(int n, grad_tuple<T[2], 2> &res) const {
+    void operator()(int n, grad<T[2], 2> &res) const {
         T fac0 = -T(n - 1) / T(n);
         T fac1 = T(2 * n - 1) / T(n);
 
@@ -56,7 +56,7 @@ struct legendre_p_recurrence_n {
  * @return value of the polynomial
  */
 template <typename T, size_t N, typename Func>
-void legendre_p_for_each_n(int n, T z, grad_tuple<T[2], N> &res, Func f) {
+void legendre_p_for_each_n(int n, T z, grad<T[2], N> &res, Func f) {
     legendre_p_initializer_n<T> init_n{z};
     init_n(res);
 
@@ -69,15 +69,30 @@ void legendre_p_for_each_n(int n, T z, grad_tuple<T[2], N> &res, Func f) {
  *
  * @param n degree of the polynomial
  * @param z argument of the polynomial, either real or complex
+ * @param res result (gradient)
+ */
+template <typename T, size_t N>
+void legendre_p(int n, T z, grad<T, N> &res) {
+    grad<T[2], N> res_n;
+    legendre_p_for_each_n(n, z, res_n, [](int n, const grad<T[2], N> &res_n) {});
+
+    res = std::apply([](const auto &...args) { return std::tie(args[1]...); }, res_n.refs_as_tuple());
+}
+
+/**
+ * Compute the Legendre polynomial of degree n.
+ *
+ * @param n degree of the polynomial
+ * @param z argument of the polynomial, either real or complex
  *
  * @return value of the polynomial
  */
-template <typename T, size_t N>
-void legendre_p(int n, T z, grad_tuple<T, N> &res) {
-    grad_tuple<T[2], N> res_n;
-    legendre_p_for_each_n(n, z, res_n, [](int n, const grad_tuple<T[2], N> &res_n) {});
+template <typename T>
+T legendre_p(int n, T z) {
+    grad<T, 0> res;
+    legendre_p(n, z, res);
 
-    res = std::apply([](const auto &...args) { return std::tie(args[1]...); }, res_n.refs_as_tuple());
+    return res.value();
 }
 
 /**
@@ -88,14 +103,14 @@ void legendre_p(int n, T z, grad_tuple<T, N> &res) {
  *            polynomial
  */
 template <typename T, typename OutputVec, size_t N>
-void legendre_p_all(T z, grad_tuple<OutputVec, N> &res) {
+void legendre_p_all(T z, grad<OutputVec, N> &res) {
     OutputVec &res0 = res.value();
     int n = res0.extent(0) - 1;
 
-    grad_tuple<T[2], N> p;
-    legendre_p_for_each_n(n, z, p, [&res](int n, const grad_tuple<T[2], N> &p) {
+    grad<T[2], N> res_n;
+    legendre_p_for_each_n(n, z, res_n, [&res](int n, const grad<T[2], N> &res_n) {
         std::apply([n](auto &...args) { return std::tie(args(n)...); }, res.refs_as_tuple()) =
-            std::apply([](const auto &...args) { return std::tie(args[1]...); }, p.refs_as_tuple());
+            std::apply([](const auto &...args) { return std::tie(args[1]...); }, res_n.refs_as_tuple());
     });
 }
 
@@ -956,8 +971,11 @@ void multi_assoc_legendre_p_all(NormPolicy norm, int type, T z, OutputMat1 res) 
     });
 }
 
-template <typename NormPolicy, typename T, typename OutputMat1, typename OutputMat2>
-void multi_assoc_legendre_p_all(NormPolicy norm, int type, T z, OutputMat1 res, OutputMat2 res_jac) {
+template <typename NormPolicy, typename T, typename OutputMat>
+void multi_assoc_legendre_p_all_(NormPolicy norm, int type, T z, grad<OutputMat, 1> &tup) {
+    OutputMat res = get<0>(tup);
+    OutputMat res_jac = get<1>(tup);
+
     int n = res.extent(0) - 1;
     int m = (res.extent(1) - 1) / 2;
 
@@ -1060,7 +1078,8 @@ void assoc_legendre_p_all(NormPolicy norm, T z, OutputMat1 res, OutputMat2 res_j
         type = 3;
     }
 
-    multi_assoc_legendre_p_all(norm, type, z, res, res_jac);
+    grad<OutputMat1, 1> g(res, res_jac);
+    multi_assoc_legendre_p_all_(norm, type, z, g);
 }
 
 template <typename NormPolicy, typename T, typename OutputMat1, typename OutputMat2, typename OutputMat3>

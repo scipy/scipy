@@ -19,7 +19,7 @@ void forward_recur_rotate_left(T (&res)[K]) {
 }
 
 template <typename T, size_t K, size_t N>
-void forward_recur_rotate_left(grad_tuple<T[K], N> &res) {
+void forward_recur_rotate_left(grad<T[K], N> &res) {
     std::apply([](auto &...args) { (forward_recur_rotate_left(args), ...); }, res.refs_as_tuple());
 }
 
@@ -108,7 +108,7 @@ void forward_recur(InputIt first, InputIt last, Recurrence r, T (&res)[N], T (&r
 }
 
 template <typename InputIt, typename Recurrence, typename T, ssize_t K, size_t N, typename Func>
-void forward_recur(InputIt first, InputIt last, Recurrence r, grad_tuple<T[K], N> &res, Func f) {
+void forward_recur(InputIt first, InputIt last, Recurrence r, grad<T[K], N> &res, Func f) {
     InputIt it = first;
     while (it - first != K && it != last) {
         forward_recur_rotate_left(res);
@@ -119,14 +119,15 @@ void forward_recur(InputIt first, InputIt last, Recurrence r, grad_tuple<T[K], N
 
     if (last - first > K) {
         while (it != last) {
-            grad_tuple<T[K], N> coef;
+            grad<T[K], N> coef;
             r(it, coef);
 
-            grad_tuple<T, N> res_next;
-            dot(coef, res, res_next);
+            grad<T, N> tmp;
+            dot(coef, res, tmp);
 
             std::apply([](auto &...args) { (forward_recur_shift_left(args), ...); }, res.refs_as_tuple());
-            std::apply([](auto &...args) { return std::tie(args[K - 1]...); }, res.refs_as_tuple()) = res_next.refs_as_tuple();
+            std::apply([](auto &...args) { return std::tie(args[K - 1]...); }, res.refs_as_tuple()) =
+                tmp.refs_as_tuple();
 
             f(it, res);
             ++it;
