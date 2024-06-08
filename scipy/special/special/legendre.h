@@ -74,10 +74,10 @@ void legendre_p_for_each_n(int n, T z, grad_tuple<T[2], N> &res, Func f) {
  */
 template <typename T, size_t N>
 void legendre_p(int n, T z, grad_tuple<T, N> &res) {
-    grad_tuple<T[2], N> p;
-    legendre_p_for_each_n(n, z, p, [](int n, const auto &p) {});
+    grad_tuple<T[2], N> res_n;
+    legendre_p_for_each_n(n, z, res_n, [](int n, const grad_tuple<T[2], N> &res_n) {});
 
-    res = std::apply([](const auto &...args) { return std::tie(args[1]...); }, p.refs());
+    res = std::apply([](const auto &...args) { return std::tie(args[1]...); }, res_n.refs_as_tuple());
 }
 
 /**
@@ -88,14 +88,14 @@ void legendre_p(int n, T z, grad_tuple<T, N> &res) {
  *            polynomial
  */
 template <typename T, typename OutputVec, size_t N>
-void legendre_p_all(T z, grad_tuple<OutputVec, N> &res_with_grad) {
-    OutputVec &res = res_with_grad.value();
-    int n = res.extent(0) - 1;
+void legendre_p_all(T z, grad_tuple<OutputVec, N> &res) {
+    OutputVec &res0 = res.value();
+    int n = res0.extent(0) - 1;
 
     grad_tuple<T[2], N> p;
-    legendre_p_for_each_n(n, z, p, [&res_with_grad](int n, const grad_tuple<T[2], N> &p) {
-        std::apply([n](auto &...args) { return std::tie(args(n)...); }, res_with_grad.refs()) =
-            std::apply([](const auto &...args) { return std::tie(args[1]...); }, p.refs());
+    legendre_p_for_each_n(n, z, p, [&res](int n, const grad_tuple<T[2], N> &p) {
+        std::apply([n](auto &...args) { return std::tie(args(n)...); }, res.refs_as_tuple()) =
+            std::apply([](const auto &...args) { return std::tie(args[1]...); }, p.refs_as_tuple());
     });
 }
 

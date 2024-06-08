@@ -20,7 +20,7 @@ void forward_recur_rotate_left(T (&res)[K]) {
 
 template <typename T, size_t K, size_t N>
 void forward_recur_rotate_left(grad_tuple<T[K], N> &res) {
-    std::apply([](auto &...args) { (forward_recur_rotate_left(args), ...); }, res.refs());
+    std::apply([](auto &...args) { (forward_recur_rotate_left(args), ...); }, res.refs_as_tuple());
 }
 
 /**
@@ -125,8 +125,8 @@ void forward_recur(InputIt first, InputIt last, Recurrence r, grad_tuple<T[K], N
             grad_tuple<T, N> res_next;
             dot(coef, res, res_next);
 
-            std::apply([](auto &...args) { (forward_recur_shift_left(args), ...); }, res.refs());
-            std::apply([](auto &...args) { return std::tie(args[K - 1]...); }, res.refs()) = res_next.refs();
+            std::apply([](auto &...args) { (forward_recur_shift_left(args), ...); }, res.refs_as_tuple());
+            std::apply([](auto &...args) { return std::tie(args[K - 1]...); }, res.refs_as_tuple()) = res_next.refs_as_tuple();
 
             f(it, res);
             ++it;

@@ -14,7 +14,7 @@ T legendre_p(long long int n, T z) {
     special::grad_tuple<T, 0> tup;
     special::legendre_p(n, z, tup);
 
-    return std::get<0>(tup.refs());
+    return std::get<0>(tup.refs_as_tuple());
 }
 
 template <typename T>
@@ -22,7 +22,7 @@ void legendre_p(long long int n, T z, T &res, T &res_jac) {
     special::grad_tuple<T, 1> tup;
     special::legendre_p(n, z, tup);
 
-    std::tie(res, res_jac) = tup.refs();
+    std::tie(res, res_jac) = tup.refs_as_tuple();
 }
 
 template <typename T>
@@ -30,7 +30,7 @@ void legendre_p(long long int n, T z, T &res, T &res_jac, T &res_hess) {
     special::grad_tuple<T, 2> tup;
     special::legendre_p(n, z, tup);
 
-    std::tie(res, res_jac, res_hess) = tup.refs();
+    std::tie(res, res_jac, res_hess) = tup.refs_as_tuple();
 }
 
 template <typename T, typename OutputVec1>
