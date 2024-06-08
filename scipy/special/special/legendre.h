@@ -12,7 +12,7 @@ template <typename T>
 struct legendre_p_initializer_n {
     T z;
 
-    void operator()(grad_tuple<T[2], 0> &res) const { res.template emplace<0>({1, z}); }
+    void operator()(grad_tuple<T[2], 0> &res) const { res = {{1, z}}; }
 
     void operator()(grad_tuple<T[2], 1> &res) const {
         auto &[res0, res1] = res;

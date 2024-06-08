@@ -58,9 +58,8 @@ namespace detail {
             return std::tie(static_cast<const grad_tuple_leaf<T, I> *>(this)->value...);
         }
 
-        template <typename... Args>
-        grad_tuple &operator=(const std::tuple<Args...> &other) {
-            ((static_cast<grad_tuple_leaf<T, I> *>(this)->value = std::get<I>(other)), ...);
+        grad_tuple &operator=(const std::tuple<grad_tuple_leaf<T, I>...> &other) {
+            ((*static_cast<grad_tuple_leaf<T, I> *>(this) = std::get<I>(other)), ...);
 
             return *this;
         }
