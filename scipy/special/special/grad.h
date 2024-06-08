@@ -62,24 +62,15 @@ namespace detail {
             return std::tie(static_cast<const grad_tuple_leaf<T, I> *>(this)->value...);
         }
 
-        template <typename... U>
-        grad_tuple &operator=(const std::tuple<U...> &other) {
-            return *this;
-        }
-
-        grad_tuple &operator=(const grad_tuple &) {
-            return *this;
-        }
-
-        grad_tuple &operator=(grad_tuple &&) {
-            return *this;
-        }
-
         //        grad_tuple &operator=(const std::tuple<grad_tuple_leaf<T, I>...> &other) {
         //          ((*static_cast<grad_tuple_leaf<T, I> *>(this) = std::get<I>(other)), ...);
 
         //        return *this;
         //  }
+
+        grad_tuple &operator=(const grad_tuple &other) = default;
+
+        grad_tuple &operator=(grad_tuple &&other) = default;
 
         T &value() { return static_cast<grad_tuple_leaf<T, 0> *>(this)->value; }
 
@@ -100,6 +91,8 @@ class grad_tuple : public detail::grad_tuple<T, std::make_index_sequence<N + 1>>
 
     template <typename... U>
     grad_tuple &operator=(const std::tuple<U...> &other) {
+        *this = grad_tuple(other);
+
         return *this;
     }
 };
