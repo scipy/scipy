@@ -46,10 +46,7 @@ namespace detail {
         grad_tuple(const typename grad_tuple_leaf<T, I>::value_type &...args) : grad_tuple_leaf<T, I>(args)... {}
 
         template <typename... U>
-        grad_tuple(const std::tuple<U...> &other) : grad_tuple_leaf<T, I>(std::get<I>(other))... {}
-
-        template <typename... U>
-        grad_tuple(std::tuple<U...> &&other) : grad_tuple_leaf<T, I>(std::get<I>(other))... {}
+        explicit grad_tuple(const std::tuple<U...> &other) : grad_tuple_leaf<T, I>(std::get<I>(other))... {}
 
         grad_tuple(const grad_tuple &other) = default;
 
@@ -67,11 +64,6 @@ namespace detail {
 
         template <typename... U>
         grad_tuple &operator=(const std::tuple<U...> &other) {
-            return *this;
-        }
-
-        template <typename... U>
-        grad_tuple &operator=(std::tuple<U...> &&other) {
             return *this;
         }
 
