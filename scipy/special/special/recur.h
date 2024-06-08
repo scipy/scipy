@@ -4,18 +4,23 @@
 
 namespace special {
 
-template <typename T, size_t N>
-void forward_recur_shift_left(T (&res)[N]) {
-    for (size_t n = 1; n < N; ++n) {
-        res[n - 1] = res[n];
+template <typename T, size_t K>
+void forward_recur_shift_left(T (&res)[K]) {
+    for (size_t k = 1; k < K; ++k) {
+        res[k - 1] = res[k];
     }
 }
 
-template <typename T, size_t N>
-void forward_recur_rotate_left(T (&res)[N]) {
+template <typename T, size_t K>
+void forward_recur_rotate_left(T (&res)[K]) {
     T tmp = res[0];
     forward_recur_shift_left(res);
-    res[N - 1] = tmp;
+    res[K - 1] = tmp;
+}
+
+template <typename T, size_t K, size_t N>
+void forward_recur_rotate_left(grad_tuple<T[K], N> &res) {
+    std::apply([](auto &...args) { (forward_recur_rotate_left(args), ...); }, res.refs());
 }
 
 /**
@@ -103,39 +108,30 @@ void forward_recur(InputIt first, InputIt last, Recurrence r, T (&res)[N], T (&r
 }
 
 template <typename InputIt, typename Recurrence, ssize_t N, typename T, typename Func>
-void tuple_forward_recur(InputIt first, InputIt last, Recurrence r, grad_tuple<T[N], 1> &tuple_res, Func f) {
-    T(&res)[N] = get<0>(tuple_res);
-    T(&res_jac)[N] = get<1>(tuple_res);
-
+void tuple_forward_recur(InputIt first, InputIt last, Recurrence r, grad_tuple<T[N], 1> &res, Func f) {
     InputIt it = first;
     while (it - first != N && it != last) {
         forward_recur_rotate_left(res);
-        forward_recur_rotate_left(res_jac);
 
-        f(it, tuple_res);
+        f(it, res);
         ++it;
     }
 
     if (last - first > N) {
         while (it != last) {
-            T coef[N];
-            T coef_jac[N];
-            r(it, coef, coef_jac);
+            grad_tuple<T[N], 1> coef;
+            std::apply([it, &r](auto &...args) { r(it, args...); }, coef.refs());
 
-            T res_next = 0;
-            T res_next_jac = 0;
+            grad_tuple<T, 1> res_next{0, 0};
             for (ssize_t n = 0; n < N; ++n) {
-                res_next += coef[n] * res[n];
-                res_next_jac += coef[n] * res_jac[n] + coef_jac[n] * res[n];
+                get<0>(res_next) += get<0>(coef)[n] * get<0>(res)[n];
+                get<1>(res_next) += get<0>(coef)[n] * get<1>(res)[n] + get<1>(coef)[n] * get<0>(res)[n];
             }
 
-            forward_recur_shift_left(res);
-            res[N - 1] = res_next;
+            std::apply([](auto &...args) { (forward_recur_shift_left(args), ...); }, res.refs());
+            std::apply([](auto &...args) { return std::tie(args[N - 1]...); }, res.refs()) = res_next.refs();
 
-            forward_recur_shift_left(res_jac);
-            res_jac[N - 1] = res_next_jac;
-
-            f(it, tuple_res);
+            f(it, res);
             ++it;
         }
     }

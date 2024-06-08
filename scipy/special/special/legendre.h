@@ -93,8 +93,8 @@ void legendre_p_for_each_n(int n, T z, T (&res)[2], T (&res_jac)[2], T (&res_hes
     forward_recur(0, n + 1, re_n, res, res_jac, res_hess, f);
 }
 
-template <typename T, typename Func>
-void tuple_legendre_p_for_each_n(int n, T z, grad_tuple<T[2], 1> &res, Func f) {
+template <typename T, size_t N, typename Func>
+void tuple_legendre_p_for_each_n(int n, T z, grad_tuple<T[2], N> &res, Func f) {
     legendre_p_initializer_n<T> init_n{z};
     std::apply(init_n, res.refs());
 
