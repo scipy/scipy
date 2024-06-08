@@ -28,6 +28,12 @@ namespace detail {
       public:
         grad_tuple_leaf() = default;
 
+        grad_tuple_leaf(const T (&other)[K]) {
+            for (size_t k = 0; k < K; ++k) {
+                value[k] = other[k];
+            }
+        }
+
         grad_tuple_leaf &operator=(const T (&other)[K]) {
             for (size_t k = 0; k < K; ++k) {
                 value[k] = other[k];
@@ -45,9 +51,10 @@ namespace detail {
       public:
         grad_tuple() = default;
 
-        explicit grad_tuple(const grad_tuple_leaf<T, I> &...args) : grad_tuple_leaf<T, I>(args)... {}
+        grad_tuple(const typename grad_tuple_leaf<T, I>::value_type &...args) : grad_tuple_leaf<T, I>(args)... {}
 
-        grad_tuple(const std::tuple<grad_tuple_leaf<T, I>...> &args) : grad_tuple_leaf<T, I>(std::get<I>(args))... {}
+        grad_tuple(const std::tuple<typename grad_tuple_leaf<T, I>::value_type...> &args)
+            : grad_tuple_leaf<T, I>(std::get<I>(args))... {}
 
         std::tuple<typename grad_tuple_leaf<T, I>::value_type &...> refs() {
             return std::tie(static_cast<grad_tuple_leaf<T, I> *>(this)->value...);
@@ -59,11 +66,17 @@ namespace detail {
             return std::tie(static_cast<const grad_tuple_leaf<T, I> *>(this)->value...);
         }
 
-        grad_tuple &operator=(const std::tuple<grad_tuple_leaf<T, I>...> &other) {
-            ((*static_cast<grad_tuple_leaf<T, I> *>(this) = std::get<I>(other)), ...);
+        grad_tuple &operator=(const grad_tuple &other) {
+            new (this) grad_tuple(other);
 
             return *this;
         }
+
+        //        grad_tuple &operator=(const std::tuple<grad_tuple_leaf<T, I>...> &other) {
+        //          ((*static_cast<grad_tuple_leaf<T, I> *>(this) = std::get<I>(other)), ...);
+
+        //        return *this;
+        //  }
 
         T &value() { return static_cast<grad_tuple_leaf<T, 0> *>(this)->value; }
 
