@@ -48,7 +48,12 @@ namespace detail {
         template <typename... U>
         grad_tuple(const std::tuple<U...> &other) : grad_tuple_leaf<T, I>(std::get<I>(other))... {}
 
+        template <typename... U>
+        grad_tuple(std::tuple<U...> &&other) : grad_tuple_leaf<T, I>(std::get<I>(other))... {}
+
         grad_tuple(const grad_tuple &other) = default;
+
+        grad_tuple(grad_tuple &&other) = default;
 
         std::tuple<typename grad_tuple_leaf<T, I>::value_type &...> refs() {
             return std::tie(static_cast<grad_tuple_leaf<T, I> *>(this)->value...);
@@ -61,7 +66,24 @@ namespace detail {
         }
 
         template <typename... U>
-        grad_tuple &operator=(const std::tuple<U...> &other) { return *this; }
+        grad_tuple &operator=(const std::tuple<U...> &other) {
+            return *this;
+        }
+
+        template <typename... U>
+        grad_tuple &operator=(std::tuple<U...> &&other) {
+            return *this;
+        }
+
+        template <typename... U>
+        grad_tuple &operator=(const grad_tuple &) {
+            return *this;
+        }
+
+        template <typename... U>
+        grad_tuple &operator=(grad_tuple &&) {
+            return *this;
+        }
 
         //        grad_tuple &operator=(const std::tuple<grad_tuple_leaf<T, I>...> &other) {
         //          ((*static_cast<grad_tuple_leaf<T, I> *>(this) = std::get<I>(other)), ...);
