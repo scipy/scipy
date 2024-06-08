@@ -28,10 +28,18 @@ namespace detail {
       public:
         grad_tuple_leaf() = default;
 
-        grad_tuple_leaf(const T (&other)[K]) {
+        grad_tuple_leaf(std::initializer_list<T> other) {
             for (size_t k = 0; k < K; ++k) {
-                value[k] = other[k];
+                value[k] = *(other.begin() + k);
             }
+        }
+
+        grad_tuple_leaf &operator=(std::initializer_list<T> other) {
+            for (size_t k = 0; k < K; ++k) {
+                value[k] = *(other.begin() + k);
+            }
+
+            return *this;
         }
 
         grad_tuple_leaf &operator=(const T (&other)[K]) {

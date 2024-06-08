@@ -25,16 +25,7 @@ struct legendre_p_initializer_n {
     }
 
     void operator()(grad_tuple<T[2], 2> &res) const {
-        auto &[res0, res1, res2] = res;
-
-        res0[0] = 1;
-        res0[1] = z;
-
-        res1[0] = 0;
-        res1[1] = 1;
-
-        res2[0] = 0;
-        res2[1] = 0;
+        res = {{1, z}, {0, 1}, {0, 0}};
     }
 };
 
