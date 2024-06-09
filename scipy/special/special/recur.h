@@ -11,6 +11,13 @@ void forward_recur_shift_left(T (&res)[K]) {
     }
 }
 
+template <typename T, size_t K>
+void forward_recur_shift_left(std::array<T, K> &res) {
+    for (size_t k = 1; k < K; ++k) {
+        res[k - 1] = res[k];
+    }
+}
+
 template <typename T, size_t K, size_t N>
 void forward_recur_shift_left(grad<T (&)[K], N> &res) {
     std::apply([](auto &...args) { (forward_recur_shift_left(args), ...); }, res.underlying_tuple());
@@ -18,6 +25,13 @@ void forward_recur_shift_left(grad<T (&)[K], N> &res) {
 
 template <typename T, size_t K>
 void forward_recur_rotate_left(T (&res)[K]) {
+    T tmp = res[0];
+    forward_recur_shift_left(res);
+    res[K - 1] = tmp;
+}
+
+template <typename T, size_t K>
+void forward_recur_rotate_left(std::array<T, K> &res) {
     T tmp = res[0];
     forward_recur_shift_left(res);
     res[K - 1] = tmp;
