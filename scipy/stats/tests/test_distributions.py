@@ -4924,10 +4924,16 @@ class TestCauchy:
                             decimal=15)
         assert_equal(stats.cauchy.ppf(0.5), 0)
 
+        assert np.isneginf(stats.cauchy.ppf(0))
+        assert np.isposinf(stats.cauchy.ppf(1))
+
     def test_isf(self):
         assert_almost_equal(stats.cauchy.isf(2**-32), 1.36713055115286317932e9,
                             decimal=15)
         assert_equal(stats.cauchy.isf(0.5), 0)
+
+        assert np.isposinf(stats.cauchy.isf(0))
+        assert np.isneginf(stats.cauchy.isf(1))
 
 class TestChi2:
     # regression tests after precision improvements, ticket:1041, not verified
