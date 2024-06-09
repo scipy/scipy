@@ -883,11 +883,13 @@ def convolve(input, weights, output=None, mode='reflect', cval=0.0,
     cval : scalar, optional
         Value to fill past edges of input if `mode` is 'constant'. Default
         is 0.0
-    origin : int, optional
-        Controls the origin of the input signal, which is where the
-        filter is centered to produce the first element of the output.
-        Positive values shift the filter to the right, and negative values
-        shift the filter to the left. Default is 0.
+    origin : int or sequence, optional
+        Controls the placement of the filter on the input array's pixels.
+        A value of 0 (the default) centers the filter over the pixel, with
+        positive values shifting the filter to the right, and negative ones
+        to the left. By passing a sequence of origins with length equal to
+        the number of dimensions of the input array, different shifts can
+        be specified along each axis.
 
     Returns
     -------

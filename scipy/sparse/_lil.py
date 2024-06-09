@@ -32,7 +32,8 @@ class _lil_base(_spbase, IndexMixin):
                 A = arg1.tolil()
 
             if dtype is not None:
-                A = A.astype(dtype, copy=False)
+                newdtype = getdtype(dtype)
+                A = A.astype(newdtype, copy=False)
 
             self._shape = check_shape(A.shape)
             self.dtype = A.dtype
@@ -62,7 +63,7 @@ class _lil_base(_spbase, IndexMixin):
             A = self._csr_container(A, dtype=dtype).tolil()
 
             self._shape = check_shape(A.shape)
-            self.dtype = A.dtype
+            self.dtype = getdtype(A.dtype)
             self.rows = A.rows
             self.data = A.data
 

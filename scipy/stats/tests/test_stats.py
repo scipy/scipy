@@ -7947,54 +7947,59 @@ class TestKruskal:
             stats.kruskal()
 
 
+@array_api_compatible
 class TestCombinePvalues:
 
-    def test_fisher(self):
+    def test_fisher(self, xp):
         # Example taken from https://en.wikipedia.org/wiki/Fisher%27s_exact_test#Example
-        xsq, p = stats.combine_pvalues([.01, .2, .3], method='fisher')
-        assert_approx_equal(p, 0.02156, significant=4)
+        xsq, p = stats.combine_pvalues(xp.asarray([.01, .2, .3]), method='fisher')
+        xp_assert_close(p, xp.asarray(0.02156), rtol=1e-4)
 
-    def test_stouffer(self):
-        Z, p = stats.combine_pvalues([.01, .2, .3], method='stouffer')
-        assert_approx_equal(p, 0.01651, significant=4)
+    def test_stouffer(self, xp):
+        Z, p = stats.combine_pvalues(xp.asarray([.01, .2, .3]), method='stouffer')
+        xp_assert_close(p, xp.asarray(0.01651), rtol=1e-3)
 
-    def test_stouffer2(self):
-        Z, p = stats.combine_pvalues([.5, .5, .5], method='stouffer')
-        assert_approx_equal(p, 0.5, significant=4)
+    def test_stouffer2(self, xp):
+        Z, p = stats.combine_pvalues(xp.asarray([.5, .5, .5]), method='stouffer')
+        xp_assert_close(p, xp.asarray(0.5), rtol=1e-4)
 
-    def test_weighted_stouffer(self):
-        Z, p = stats.combine_pvalues([.01, .2, .3], method='stouffer',
-                                     weights=np.ones(3))
-        assert_approx_equal(p, 0.01651, significant=4)
+    def test_weighted_stouffer(self, xp):
+        pvalues = xp.asarray([.01, .2, .3])
+        Z, p = stats.combine_pvalues(pvalues, method='stouffer',
+                                     weights=xp.ones(3, dtype=pvalues.dtype))
+        xp_assert_close(p, xp.asarray(0.01651), rtol=1e-3)
 
-    def test_weighted_stouffer2(self):
-        Z, p = stats.combine_pvalues([.01, .2, .3], method='stouffer',
-                                     weights=np.array((1, 4, 9)))
-        assert_approx_equal(p, 0.1464, significant=4)
+    def test_weighted_stouffer2(self, xp):
+        Z, p = stats.combine_pvalues(xp.asarray([.01, .2, .3]), method='stouffer',
+                                     weights=xp.asarray([1., 4., 9.]))
+        xp_assert_close(p, xp.asarray(0.1464), rtol=1e-3)
 
-    def test_pearson(self):
-        Z, p = stats.combine_pvalues([.01, .2, .3], method='pearson')
-        assert_approx_equal(p, 0.02213, significant=4)
+    def test_pearson(self, xp):
+        Z, p = stats.combine_pvalues(xp.asarray([.01, .2, .3]), method='pearson')
+        xp_assert_close(p, xp.asarray(0.02213), rtol=1e-3)
 
-    def test_tippett(self):
-        Z, p = stats.combine_pvalues([.01, .2, .3], method='tippett')
-        assert_approx_equal(p, 0.0297, significant=4)
+    def test_tippett(self, xp):
+        Z, p = stats.combine_pvalues(xp.asarray([.01, .2, .3]), method='tippett')
+        xp_assert_close(p, xp.asarray(0.0297), rtol=1e-4)
 
-    def test_mudholkar_george(self):
-        Z, p = stats.combine_pvalues([.1, .1, .1], method='mudholkar_george')
-        assert_approx_equal(p, 0.019462, significant=4)
+    def test_mudholkar_george(self, xp):
+        Z, p = stats.combine_pvalues(xp.asarray([.1, .1, .1]),
+                                     method='mudholkar_george')
+        xp_assert_close(p, xp.asarray(0.019462), rtol=1e-4)
 
-    def test_mudholkar_george_equal_fisher_pearson_average(self):
-        Z, p = stats.combine_pvalues([.01, .2, .3], method='mudholkar_george')
-        Z_f, p_f = stats.combine_pvalues([.01, .2, .3], method='fisher')
-        Z_p, p_p = stats.combine_pvalues([.01, .2, .3], method='pearson')
-        assert_approx_equal(0.5 * (Z_f+Z_p), Z, significant=4)
+    def test_mudholkar_george_equal_fisher_pearson_average(self, xp):
+        Z, p = stats.combine_pvalues(xp.asarray([.01, .2, .3]),
+                                     method='mudholkar_george')
+        Z_f, p_f = stats.combine_pvalues(xp.asarray([.01, .2, .3]), method='fisher')
+        Z_p, p_p = stats.combine_pvalues(xp.asarray([.01, .2, .3]), method='pearson')
+        xp_assert_close(0.5 * (Z_f+Z_p), Z, rtol=1e-4)
 
     methods = ["fisher", "pearson", "tippett", "stouffer", "mudholkar_george"]
 
     @pytest.mark.parametrize("variant", ["single", "all", "random"])
     @pytest.mark.parametrize("method", methods)
-    def test_monotonicity(self, variant, method):
+    def test_monotonicity(self, variant, method, xp):
+        xp_test = array_namespace(xp.asarray(1))
         # Test that result increases monotonically with respect to input.
         m, n = 10, 7
         rng = np.random.default_rng(278448169958891062669391462690811630763)
@@ -8004,23 +8009,25 @@ class TestCombinePvalues:
         # monotonically down one column (single), simultaneously down each
         # column (all), or independently down each column (random).
         if variant == "single":
-            pvaluess = np.full((m, n), rng.random(n))
-            pvaluess[:, 0] = np.linspace(0.1, 0.9, m)
+            pvaluess = xp.broadcast_to(xp.asarray(rng.random(n)), (m, n))
+            pvaluess = xp_test.concat([xp.reshape(xp.linspace(0.1, 0.9, m), (-1, 1)),
+                                       pvaluess[:, 1:]], axis=1)
         elif variant == "all":
-            pvaluess = np.full((n, m), np.linspace(0.1, 0.9, m)).T
+            pvaluess = xp.broadcast_to(xp.linspace(0.1, 0.9, m), (n, m)).T
         elif variant == "random":
-            pvaluess = np.sort(rng.uniform(0, 1, size=(m, n)), axis=0)
+            pvaluess = xp_test.sort(xp.asarray(rng.uniform(0, 1, size=(m, n))), axis=0)
 
-        combined_pvalues = [
-            stats.combine_pvalues(pvalues, method=method)[1]
-            for pvalues in pvaluess
-        ]
-        assert np.all(np.diff(combined_pvalues) >= 0)
+        combined_pvalues = xp.asarray([
+            stats.combine_pvalues(pvaluess[i, :], method=method)[1]
+            for i in range(pvaluess.shape[0])
+        ])
+        assert xp.all(combined_pvalues[1:] - combined_pvalues[:-1] >= 0)
 
     @pytest.mark.parametrize("method", methods)
-    def test_result(self, method):
-        res = stats.combine_pvalues([.01, .2, .3], method=method)
-        assert_equal((res.statistic, res.pvalue), res)
+    def test_result(self, method, xp):
+        res = stats.combine_pvalues(xp.asarray([.01, .2, .3]), method=method)
+        xp_assert_equal(res.statistic, res[0])
+        xp_assert_equal(res.pvalue, res[1])
 
 
 class TestCdfDistanceValidation:

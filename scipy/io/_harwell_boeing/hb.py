@@ -211,8 +211,6 @@ class HBInfo:
             pointer_format_str, indices_format_str, values_format_str,
             right_hand_sides_nlines=0, nelementals=0):
         """Do not use this directly, but the class ctrs (from_* functions)."""
-        self.title = title
-        self.key = key
         if title is None:
             title = "No Title"
         if len(title) > 72:
@@ -223,6 +221,8 @@ class HBInfo:
         if len(key) > 8:
             warnings.warn("key is > 8 characters (key is %s)" % key,
                           LineOverflow, stacklevel=3)
+        self.title = title
+        self.key = key
 
         self.total_nlines = total_nlines
         self.pointer_nlines = pointer_nlines

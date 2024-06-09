@@ -108,7 +108,8 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             self._shape = check_shape(self._swap((major_d, minor_d)), allow_1d=is_array)
 
         if dtype is not None:
-            self.data = self.data.astype(dtype, copy=False)
+            newdtype = getdtype(dtype)
+            self.data = self.data.astype(newdtype, copy=False)
 
         self.check_format(full_check=False)
 

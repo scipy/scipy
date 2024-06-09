@@ -1,8 +1,6 @@
-:orphan:
-
 .. raw:: html
 
-   <div class="prename">{{ module }}.{{ class }}.</div>
+   <div class="prename">{{ module }}.</div>
    <div class="empty"></div>
 
 {{ name }}
@@ -10,4 +8,4 @@
 
 .. currentmodule:: {{ module }}
 
-.. automethod:: {{ objname }}
+.. autofunction:: {{ objname }}

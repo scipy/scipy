@@ -152,17 +152,19 @@ jobs:
           echo "CIBW_ENVIRONMENT_MACOS=$CIBW" >> "$GITHUB_ENV"
 
           echo "REPAIR_PATH=$LIB_PATH" >> "$GITHUB_ENV"
-          if [[ ${{ matrix.buildplat[3] }} == 'accelerate' ]]; then
-            PREFIX=DYLD_LIBRARY_PATH=$(dirname $(gfortran --print-file-name libgfortran.dylib))
-          else
-            # Use libgfortran and friends from the scipy-openblas wheel,
-            # which should be exactly the same as the ones from gfortran
-            # This will exclude the duplicates from gfortran in /opt/gfortran*
-            EXCLUDE="-e /gfortran"
-          fi
-          CIBW="$PREFIX delocate-listdeps {wheel} &&\
-            $PREFIX delocate-wheel $EXCLUDE --require-archs \
-            {delocate_archs} -w {dest_dir} {wheel}"
+          
+          PREFIX=DYLD_LIBRARY_PATH="\$(dirname \$(gfortran --print-file-name libgfortran.dylib))"
+          # remove libgfortran from location used for linking (if any), to
+          # check wheel has bundled things correctly and all tests pass without
+          # needing installed gfortran
+          POSTFIX=" sudo rm -rf /opt/gfortran-darwin-x86_64-native &&\
+                    sudo rm -rf /usr/local/gfortran/lib"
+          CIBW="$PREFIX delocate-listdeps -d {wheel} && echo "-----------" &&\
+            $PREFIX delocate-wheel -v $EXCLUDE --require-archs \
+            {delocate_archs} -w {dest_dir} {wheel} && echo "-----------" &&\
+            delocate-listdeps -d {dest_dir}/*.whl && echo "-----------" &&\
+            $POSTFIX"
+          
           # Rename x86 Accelerate wheel to test on macOS 13 runner
           if [[ ${{ matrix.buildplat[0] }} == 'macos-13' && ${{ matrix.buildplat[4] }} == '14.0' ]]; then
             CIBW+=" && mv {dest_dir}/\$(basename {wheel}) \

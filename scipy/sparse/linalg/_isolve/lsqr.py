@@ -54,6 +54,7 @@ __all__ = ['lsqr']
 import numpy as np
 from math import sqrt
 from scipy.sparse.linalg._interface import aslinearoperator
+from scipy.sparse._sputils import convert_pydata_sparse_to_scipy
 
 eps = np.finfo(np.float64).eps
 
@@ -319,6 +320,7 @@ def lsqr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
     approximate solution to the corresponding least-squares problem. `r1norm`
     contains the norm of the minimal residual that was found.
     """
+    A = convert_pydata_sparse_to_scipy(A)
     A = aslinearoperator(A)
     b = np.atleast_1d(b)
     if b.ndim > 1:

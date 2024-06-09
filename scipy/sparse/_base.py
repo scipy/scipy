@@ -4,7 +4,7 @@ import numpy as np
 
 from ._sputils import (asmatrix, check_reshape_kwargs, check_shape,
                        get_sum_dtype, isdense, isscalarlike,
-                       matrix, validateaxis,)
+                       matrix, validateaxis, getdtype)
 
 from ._matrix import spmatrix
 
@@ -217,7 +217,7 @@ class _spbase:
             this array/matrix do not share any memory.
         """
 
-        dtype = np.dtype(dtype)
+        dtype = getdtype(dtype)
         if self.dtype != dtype:
             return self.tocsr().astype(
                 dtype, casting=casting, copy=copy).asformat(self.format)
@@ -947,7 +947,7 @@ class _spbase:
 
     def todense(self, order=None, out=None):
         """
-        Return a dense representation of this sparse array/matrix.
+        Return a dense representation of this sparse array.
 
         Parameters
         ----------
@@ -959,21 +959,19 @@ class _spbase:
             argument.
 
         out : ndarray, 2-D, optional
-            If specified, uses this array (or `numpy.matrix`) as the
-            output buffer instead of allocating a new array to
-            return. The provided array must have the same shape and
-            dtype as the sparse array/matrix on which you are calling the
-            method.
+            If specified, uses this array as the output buffer
+            instead of allocating a new array to return. The
+            provided array must have the same shape and dtype as
+            the sparse array on which you are calling the method.
 
         Returns
         -------
-        arr : numpy.matrix, 2-D
-            A NumPy matrix object with the same shape and containing
-            the same data represented by the sparse array/matrix, with the
-            requested memory order. If `out` was passed and was an
-            array (rather than a `numpy.matrix`), it will be filled
-            with the appropriate values and returned wrapped in a
-            `numpy.matrix` object that shares the same memory.
+        arr : ndarray, 2-D
+            An array with the same shape and containing the same
+            data represented by the sparse array, with the requested
+            memory order. If `out` was passed, the same object is
+            returned after being modified in-place to contain the
+            appropriate values.
         """
         return self._ascontainer(self.toarray(order=order, out=out))
 
