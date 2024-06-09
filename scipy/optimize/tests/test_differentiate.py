@@ -16,9 +16,8 @@ from scipy.optimize._differentiate import (_differentiate as differentiate,
 @array_api_compatible
 @pytest.mark.usefixtures("skip_xp_backends")
 @pytest.mark.skip_xp_backends('array_api_strict', 'jax.numpy',
-                              reasons=[
-                                  'Currently uses fancy indexing assignment.',
-                                  'JAX arrays do not support item assignment.'])
+                              reasons=['Currently uses fancy indexing assignment.',
+                                       'JAX arrays do not support item assignment.'])
 class TestDifferentiate:
 
     def f(self, x):
@@ -396,6 +395,7 @@ class TestDifferentiate:
         res = differentiate(f, xp.asarray(2), args=xp.asarray(3))
         xp_assert_close(res.df, xp.asarray(3.))
 
+    # no need to run a test on multiple backends if it's xfailed
     @pytest.mark.skip_xp_backends(np_only=True)
     @pytest.mark.xfail
     @pytest.mark.parametrize("case", (  # function, evaluation point
