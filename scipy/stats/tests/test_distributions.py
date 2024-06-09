@@ -4902,11 +4902,13 @@ class TestCauchy:
     def test_cdf(self):
         assert_almost_equal(stats.cauchy.cdf(-100000), 3.18309886173180341999e-6,
                             decimal=15)
+        assert_equal(stats.cauchy.cdf(-1), 0.25)
         assert_equal(stats.cauchy.cdf(0), 0.5)
 
     def test_sf(self):
         assert_almost_equal(stats.cauchy.sf(100000), 3.18309886173180341999e-6,
                             decimal=15)
+        assert_equal(stats.cauchy.sf(1), 0.25)
         assert_equal(stats.cauchy.sf(0), 0.5)
 
     def test_ppf(self):
