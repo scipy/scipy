@@ -105,7 +105,7 @@ T legendre_p(int n, T z) {
  */
 template <typename T, typename OutputVec, size_t N>
 void legendre_p_all(T z, grad<OutputVec, N> res) {
-    OutputVec &res0 = get<0>(res);
+    OutputVec &res0 = std::get<0>(res.underlying_tuple());
     int n = res0.extent(0) - 1;
 
     grad<T[2], N> res_n;
@@ -529,7 +529,7 @@ T assoc_legendre_p_pm1(assoc_legendre_norm_policy norm, int n, int m, int type, 
 
 template <typename NormPolicy, typename T>
 void tuple_assoc_legendre_p_pm1(NormPolicy norm, int n, int m, int type, T z, grad<T &, 0> res) {
-    get<0>(res) = assoc_legendre_p_pm1(norm, n, m, type, z);
+    std::get<0>(res.underlying_tuple()) = assoc_legendre_p_pm1(norm, n, m, type, z);
 }
 
 template <typename NormPolicy, typename T>
@@ -716,7 +716,7 @@ T multi_assoc_legendre_p(NormPolicy norm, int n, int m, int type, T z) {
  */
 template <typename NormPolicy, typename T, typename OutputMat, size_t N>
 void multi_assoc_legendre_p_all(NormPolicy norm, int type, T z, grad<OutputMat, N> res) {
-    OutputMat &res0 = get<0>(res);
+    OutputMat &res0 = std::get<0>(res.underlying_tuple());
     int n = res0.extent(0) - 1;
     int m = (res0.extent(1) - 1) / 2;
 
