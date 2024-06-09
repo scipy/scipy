@@ -1447,19 +1447,29 @@ class cauchy_gen(rv_continuous):
 
     def _pdf(self, x):
         # cauchy.pdf(x) = 1 / (pi * (1 + x**2))
-        return 1.0/np.pi/(1.0+x*x)
+        return 1.0 / np.pi / (1.0 + x * x)
 
     def _cdf(self, x):
-        return 0.5 + 1.0/np.pi*np.arctan(x)
+        return _lazywhere(
+             x > -2.0, (x, ),
+             lambda x: 0.5 + np.arctan(x) / np.pi, 
+             f2=lambda x: -np.arctan(1.0 / x) / np.pi
+        )
 
     def _ppf(self, q):
-        return np.tan(np.pi*q-np.pi/2.0)
+        # return -1.0 / np.tan(q * np.pi)
+        return -np.cotPi(q)
 
     def _sf(self, x):
-        return 0.5 - 1.0/np.pi*np.arctan(x)
+        return _lazywhere(
+             x < 2.0, (x, ),
+             lambda x: 0.5 - np.arctan(x) / np.pi, 
+             f2=lambda x: np.arctan(1.0 / x) / np.pi
+        )
 
     def _isf(self, q):
-        return np.tan(np.pi/2.0-np.pi*q)
+        # return 1.0 / np.tan(q * np.pi)
+        return np.cotPi(q)
 
     def _stats(self):
         return np.nan, np.nan, np.nan, np.nan

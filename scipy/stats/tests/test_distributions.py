@@ -4898,6 +4898,26 @@ class TestDgamma:
         for i in range(len(y)):
             assert y[i] == stats.dgamma.entropy(x[i])
 
+class TestCauchy:
+    def test_cdf(self):
+        assert_almost_equal(stats.cauchy.cdf(-100000), 3.18309886173180341999e-6,
+                            decimal=15)
+        assert_equal(stats.cauchy.cdf(0), 0.5)
+
+    def test_sf(self):
+        assert_almost_equal(stats.cauchy.sf(100000), 3.18309886173180341999e-6,
+                            decimal=15)
+        assert_equal(stats.cauchy.sf(0), 0.5)
+
+    def test_ppf(self):
+        assert_almost_equal(stats.cauchy.ppf(2**-32), -1.36713055115286317932e9,
+                            decimal=15)
+        assert_equal(stats.cauchy.ppf(0.5), 0)
+
+    def test_isf(self):
+        assert_almost_equal(stats.cauchy.isf(2**-32), 1.36713055115286317932e9,
+                            decimal=15)
+        assert_equal(stats.cauchy.isf(0.5), 0)
 
 class TestChi2:
     # regression tests after precision improvements, ticket:1041, not verified
