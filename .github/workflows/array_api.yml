@@ -105,3 +105,4 @@ jobs:
         python dev.py --no-build test -b all -t scipy.stats.tests.test_variation -- --durations 3 --timeout=60
         python dev.py --no-build test -b all -t scipy.stats.tests.test_resampling -- --durations 3 --timeout=60
         python dev.py --no-build test -b all -t scipy.optimize.tests.test_chandrupatla -- --durations 3 --timeout=60
+        python dev.py --no-build test -b all -t scipy.optimize.tests.test_differentiate -- --durations 3 --timeout=60
