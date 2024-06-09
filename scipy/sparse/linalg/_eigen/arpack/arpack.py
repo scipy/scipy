@@ -40,7 +40,9 @@ import warnings
 from scipy.sparse.linalg._interface import aslinearoperator, LinearOperator
 from scipy.sparse import eye, issparse
 from scipy.linalg import eig, eigh, lu_factor, lu_solve
-from scipy.sparse._sputils import isdense, is_pydata_spmatrix
+from scipy.sparse._sputils import (
+    convert_pydata_sparse_to_scipy, isdense, is_pydata_spmatrix,
+)
 from scipy.sparse.linalg import gmres, splu
 from scipy._lib._util import _aligned_zeros
 from scipy._lib._threadsafety import ReentrancyLock
@@ -1256,6 +1258,8 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
     (13, 6)
 
     """
+    A = convert_pydata_sparse_to_scipy(A)
+    M = convert_pydata_sparse_to_scipy(M)
     if A.shape[0] != A.shape[1]:
         raise ValueError(f'expected square matrix (shape={A.shape})')
     if M is not None:

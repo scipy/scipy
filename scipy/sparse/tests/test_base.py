@@ -1685,7 +1685,7 @@ class _TestCommon:
         assert_equal(A @ np.ones((1, 1)), array([[1], [2], [3]]))
         assert_equal(A @ np.ones((1, 0)), np.ones((3, 0)))
 
-    def test_start_vs_at_sign_for_sparray_and_spmatrix(self):
+    def test_star_vs_at_sign_for_sparray_and_spmatrix(self):
         # test that * is matmul for spmatrix and mul for sparray
         A = self.spcreator([[1],[2],[3]])
 
@@ -1775,10 +1775,6 @@ class _TestCommon:
         assert_array_almost_equal(matmul(M, B).toarray(), (M @ B).toarray())
         assert_array_almost_equal(matmul(M.toarray(), B), (M @ B).toarray())
         assert_array_almost_equal(matmul(M, B.toarray()), (M @ B).toarray())
-        if not isinstance(M, sparray):
-            assert_array_almost_equal(matmul(M, B).toarray(), (M * B).toarray())
-            assert_array_almost_equal(matmul(M.toarray(), B), (M * B).toarray())
-            assert_array_almost_equal(matmul(M, B.toarray()), (M * B).toarray())
 
         # check error on matrix-scalar
         assert_raises(ValueError, matmul, M, 1)
@@ -1803,7 +1799,7 @@ class _TestCommon:
         bad_vecs = [array([1,2]), array([1,2,3,4]), array([[1],[2]]),
                     matrix([1,2,3]), matrix([[1],[2]])]
         for x in bad_vecs:
-            assert_raises(ValueError, M.__mul__, x)
+            assert_raises(ValueError, M.__matmul__, x)
 
         # The current relationship between sparse matrix products and array
         # products is as follows:
@@ -2272,21 +2268,45 @@ class _TestInplaceArithmetic:
         y -= b
         assert_array_equal(x, y)
 
-        x = a.copy()
-        y = a.copy()
         if isinstance(b, sparray):
-            assert_raises(ValueError, operator.imul, x, b.T)
+            # Elementwise multiply from __rmul__
+            x = a.copy()
+            y = a.copy()
+            with assert_raises(ValueError, match="dimension mismatch"):
+                x *= b.T
             x = x * a
             y *= b
+            assert_array_equal(x, y)
         else:
-            # This is matrix product, from __rmul__
-            assert_raises(ValueError, operator.imul, x, b)
+            # Matrix Product from __rmul__
+            x = a.copy()
+            y = a.copy()
+            with assert_raises(ValueError, match="dimension mismatch"):
+                x *= b
             x = x.dot(a.T)
             y *= b.T
-        assert_array_equal(x, y)
+            assert_array_equal(x, y)
 
-        # Matrix (non-elementwise) floor division is not defined
-        assert_raises(TypeError, operator.ifloordiv, x, b)
+        # Now matrix product, from __rmatmul__
+        y = a.copy()
+        # skip this test if numpy doesn't support __imatmul__ yet.
+        # move out of the try/except once numpy 1.24 is no longer supported.
+        try:
+            y @= b.T
+        except TypeError:
+            pass
+        else:
+            x = a.copy()
+            y = a.copy()
+            with assert_raises(ValueError, match="dimension mismatch"):
+                x @= b
+            x = x.dot(a.T)
+            y @= b.T
+            assert_array_equal(x, y)
+
+        # Floor division is not supported
+        with assert_raises(TypeError, match="unsupported operand"):
+            x //= b
 
     def test_imul_scalar(self):
         def check(dtype):
@@ -2347,15 +2367,21 @@ class _TestInplaceArithmetic:
         bp = bp + a
         assert_allclose(b.toarray(), bp.toarray())
 
-        b *= a
-        bp = bp * a
+        if isinstance(b, sparray):
+            b *= a
+            bp = bp * a
+            assert_allclose(b.toarray(), bp.toarray())
+
+        b @= a
+        bp = bp @ a
         assert_allclose(b.toarray(), bp.toarray())
 
         b -= a
         bp = bp - a
         assert_allclose(b.toarray(), bp.toarray())
 
-        assert_raises(TypeError, operator.ifloordiv, a, b)
+        with assert_raises(TypeError, match="unsupported operand"):
+            a //= b
 
 
 class _TestGetSet:
@@ -4217,11 +4243,11 @@ class TestDOK(sparse_test_class(minmax=False, nnz_axis=False)):
     math_dtypes = [np.int_, np.float64, np.complex128]
 
     def test_mult(self):
-        A = dok_matrix((10,10))
-        A[0,3] = 10
-        A[5,6] = 20
-        D = A*A.T
-        E = A*A.T.conjugate()
+        A = dok_matrix((10, 12))
+        A[0, 3] = 10
+        A[5, 6] = 20
+        D = A @ A.T
+        E = A @ A.T.conjugate()
         assert_array_equal(D.toarray(), E.toarray())
 
     def test_add_nonzero(self):
@@ -4328,9 +4354,9 @@ class TestLIL(sparse_test_class(minmax=False)):
 
         # TODO: properly handle this assertion on ppc64le
         if platform.machine() != 'ppc64le':
-            assert_array_equal(A @ A.T, (B * B.T).toarray())
+            assert_array_equal(A @ A.T, (B @ B.T).toarray())
 
-        assert_array_equal(A @ A.conjugate().T, (B * B.conjugate().T).toarray())
+        assert_array_equal(A @ A.conjugate().T, (B @ B.conjugate().T).toarray())
 
     def test_scalar_mul(self):
         x = lil_matrix((3, 3))
@@ -4804,12 +4830,12 @@ class TestBSR(sparse_test_class(getset=False,
     def test_bsr_matvec(self):
         A = bsr_matrix(arange(2*3*4*5).reshape(2*4,3*5), blocksize=(4,5))
         x = arange(A.shape[1]).reshape(-1,1)
-        assert_equal(A*x, A.toarray() @ x)
+        assert_equal(A @ x, A.toarray() @ x)
 
     def test_bsr_matvecs(self):
         A = bsr_matrix(arange(2*3*4*5).reshape(2*4,3*5), blocksize=(4,5))
         x = arange(A.shape[1]*6).reshape(-1,6)
-        assert_equal(A*x, A.toarray() @ x)
+        assert_equal(A @ x, A.toarray() @ x)
 
     @pytest.mark.xfail(run=False, reason='BSR does not have a __getitem__')
     def test_iterator(self):

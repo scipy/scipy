@@ -436,7 +436,9 @@ def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
     >>> from scipy.stats import ttest_ind
     >>> res = ttest_ind(females, males, alternative="less")
     >>> print(res)
-    Ttest_indResult(statistic=-2.239334696520584, pvalue=0.030068441095757924)
+    TtestResult(statistic=-2.239334696520584,
+                pvalue=0.030068441095757924,
+                df=7.0)
 
     Under this assumption, the *p*-value would be low enough to reject the
     null hypothesis in favor of the alternative.

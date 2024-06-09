@@ -56,8 +56,7 @@ class _data_matrix(_spbase):
         if isscalarlike(other):
             self.data *= other
             return self
-        else:
-            return NotImplemented
+        return NotImplemented
 
     def __itruediv__(self, other):  # self /= other
         if isscalarlike(other):
