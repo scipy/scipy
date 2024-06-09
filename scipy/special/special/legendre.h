@@ -23,21 +23,21 @@ template <typename T>
 struct legendre_p_recurrence_n {
     T z;
 
-    void operator()(int n, grad<T[2], 0> &res) const {
+    void operator()(int n, grad<T (&)[2], 0> res) const {
         T fac0 = -T(n - 1) / T(n);
         T fac1 = T(2 * n - 1) / T(n);
 
         res = {{fac0, fac1 * z}};
     }
 
-    void operator()(int n, grad<T[2], 1> &res) const {
+    void operator()(int n, grad<T (&)[2], 1> res) const {
         T fac0 = -T(n - 1) / T(n);
         T fac1 = T(2 * n - 1) / T(n);
 
         res = {{fac0, fac1 * z}, {0, fac1}};
     }
 
-    void operator()(int n, grad<T[2], 2> &res) const {
+    void operator()(int n, grad<T (&)[2], 2> res) const {
         T fac0 = -T(n - 1) / T(n);
         T fac1 = T(2 * n - 1) / T(n);
 
@@ -56,9 +56,9 @@ struct legendre_p_recurrence_n {
  * @return value of the polynomial
  */
 template <typename T, size_t N, typename Func>
-void legendre_p_for_each_n(int n, T z, grad<T[2], N> &res, Func f) {
+void legendre_p_for_each_n(int n, T z, grad<T (&)[2], N> res, Func f) {
     legendre_p_initializer_n<T> init_n{z};
-    init_n(res.refs());
+    init_n(res);
 
     legendre_p_recurrence_n<T> re_n{z};
     forward_recur(0, n + 1, re_n, res, f);
@@ -72,11 +72,12 @@ void legendre_p_for_each_n(int n, T z, grad<T[2], N> &res, Func f) {
  * @param res result (gradient)
  */
 template <typename T, size_t N>
-void legendre_p(int n, T z, grad<T, N> &res) {
+void legendre_p(int n, T z, grad<T &, N> res) {
     grad<T[2], N> res_n;
-    legendre_p_for_each_n(n, z, res_n, [](int n, const grad<T[2], N> &res_n) {});
+    legendre_p_for_each_n(n, z, res_n.refs(), [](int n, grad<T(&)[2], N> res_n) {});
 
-    res = std::apply([](const auto &...args) { return std::tie(args[1]...); }, res_n.refs_as_tuple());
+    res.underlying_tuple() =
+        std::apply([](const auto &...args) { return std::tie(args[1]...); }, res_n.underlying_tuple());
 }
 
 /**
@@ -90,7 +91,7 @@ void legendre_p(int n, T z, grad<T, N> &res) {
 template <typename T>
 T legendre_p(int n, T z) {
     grad<T, 0> res;
-    legendre_p(n, z, res);
+    legendre_p(n, z, res.refs());
 
     return get<0>(res);
 }
@@ -103,14 +104,14 @@ T legendre_p(int n, T z) {
  *            polynomial
  */
 template <typename T, typename OutputVec, size_t N>
-void legendre_p_all(T z, grad<OutputVec, N> &res) {
+void legendre_p_all(T z, grad<OutputVec, N> res) {
     OutputVec &res0 = get<0>(res);
     int n = res0.extent(0) - 1;
 
     grad<T[2], N> res_n;
-    legendre_p_for_each_n(n, z, res_n, [&res](int n, const grad<T[2], N> &res_n) {
-        std::apply([n](auto &...args) { return std::tie(args(n)...); }, res.refs_as_tuple()) =
-            std::apply([](const auto &...args) { return std::tie(args[1]...); }, res_n.refs_as_tuple());
+    legendre_p_for_each_n(n, z, res_n.refs(), [&res](int n, grad<T(&)[2], N> res_n) {
+        std::apply([n](auto &...args) { return std::tie(args(n)...); }, res.underlying_tuple()) =
+            std::apply([](const auto &...args) { return std::tie(args[1]...); }, res_n.underlying_tuple());
     });
 }
 

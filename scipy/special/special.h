@@ -16,18 +16,14 @@ T legendre_p(long long int n, T z) {
 
 template <typename T>
 void legendre_p(long long int n, T z, T &res, T &res_jac) {
-    special::grad<T, 1> tmp;
+    special::grad<T &, 1> tmp(res, res_jac);
     special::legendre_p(n, z, tmp);
-
-    std::tie(res, res_jac) = tmp.refs_as_tuple();
 }
 
 template <typename T>
 void legendre_p(long long int n, T z, T &res, T &res_jac, T &res_hess) {
-    special::grad<T, 2> tmp;
+    special::grad<T &, 2> tmp(res, res_jac, res_hess);
     special::legendre_p(n, z, tmp);
-
-    std::tie(res, res_jac, res_hess) = tmp.refs_as_tuple();
 }
 
 template <typename T, typename OutputVec1>

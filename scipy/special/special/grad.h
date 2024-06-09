@@ -196,7 +196,8 @@ class grad<T &, N> : public detail::base_grad<std::make_index_sequence<N + 1>, T
         std::apply(
             [&other](auto &...args) {
                 std::apply(
-                    [&args...](const auto &...other_args) { (detail::assign(args, other_args), ...); }, other.underlying_tuple()
+                    [&args...](const auto &...other_args) { (detail::assign(args, other_args), ...); },
+                    other.underlying_tuple()
                 );
             },
             base::underlying_tuple()
@@ -217,7 +218,7 @@ const T &get(const grad<T, N> &t) {
 }
 
 template <typename T, size_t K>
-void dot(const grad<T[K], 0> &x, const grad<T[K], 0> &y, grad<T, 0> &res) {
+void dot(grad<T (&)[K], 0> x, const grad<T (&)[K], 0> y, grad<T &, 0> res) {
     const auto &[x0] = x;
     const auto &[y0] = y;
     auto &[res0] = res;
@@ -229,7 +230,7 @@ void dot(const grad<T[K], 0> &x, const grad<T[K], 0> &y, grad<T, 0> &res) {
 }
 
 template <typename T, size_t K>
-void dot(const grad<T[K], 1> &x, const grad<T[K], 1> &y, grad<T, 1> &res) {
+void dot(grad<T (&)[K], 1> x, grad<T (&)[K], 1> y, grad<T &, 1> res) {
     const auto &[x0, x1] = x;
     const auto &[y0, y1] = y;
     auto &[res0, res1] = res;
@@ -243,7 +244,7 @@ void dot(const grad<T[K], 1> &x, const grad<T[K], 1> &y, grad<T, 1> &res) {
 }
 
 template <typename T, size_t K>
-void dot(const grad<T[K], 2> &x, const grad<T[K], 2> &y, grad<T, 2> &res) {
+void dot(grad<T (&)[K], 2> x, grad<T (&)[K], 2> y, grad<T &, 2> res) {
     const auto &[x0, x1, x2] = x;
     const auto &[y0, y1, y2] = y;
     auto &[res0, res1, res2] = res;
@@ -256,6 +257,11 @@ void dot(const grad<T[K], 2> &x, const grad<T[K], 2> &y, grad<T, 2> &res) {
         res1 += x0[k] * y1[k] + x1[k] * y0[k];
         res2 += x0[k] * y2[k] + T(2) * x1[k] * y1[k] + x2[k] * y0[k];
     }
+}
+
+template <typename T, size_t K, size_t N>
+void dot(grad<T[K], N> &x, grad<T[K], N> &y, grad<T, N> &res) {
+    dot(x.refs(), y.refs(), res.refs());
 }
 
 } // namespace special

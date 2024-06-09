@@ -28,6 +28,11 @@ void forward_recur_rotate_left(grad<T[K], N> &res) {
     std::apply([](auto &...args) { (forward_recur_rotate_left(args), ...); }, res.refs_as_tuple());
 }
 
+template <typename T, size_t K, size_t N>
+void forward_recur_rotate_left(grad<T (&)[K], N> &res) {
+    std::apply([](auto &...args) { (forward_recur_rotate_left(args), ...); }, res.refs_as_tuple());
+}
+
 /**
  * Compute a forward recurrence that depends on K previous values.
  *
@@ -60,6 +65,34 @@ void forward_recur(InputIt first, InputIt last, Recurrence r, grad<T[K], N> &res
                 tmp.refs_as_tuple();
 
             f(it, res);
+            ++it;
+        }
+    }
+}
+
+template <typename InputIt, typename Recurrence, typename T, ssize_t K, size_t N, typename Func>
+void forward_recur(InputIt first, InputIt last, Recurrence r, grad<T (&)[K], N> res, Func f) {
+    InputIt it = first;
+    while (it - first != K && it != last) {
+        forward_recur_rotate_left(res);
+
+                f(it, res);
+        ++it;
+    }
+
+    if (last - first > K) {
+        while (it != last) {
+            grad<T[K], N> coef;
+            r(it, coef.refs());
+
+            grad<T, N> tmp;
+            dot(coef.refs(), res, tmp.refs());
+
+            std::apply([](auto &...args) { (forward_recur_shift_left(args), ...); }, res.refs_as_tuple());
+            std::apply([](auto &...args) { return std::tie(args[K - 1]...); }, res.refs_as_tuple()) =
+                tmp.refs_as_tuple();
+
+                        f(it, res);
             ++it;
         }
     }
