@@ -238,9 +238,4 @@ void dot(grad<T (&)[K], 2> x, grad<T (&)[K], 2> y, grad<T &, 2> res) {
     }
 }
 
-template <typename T, size_t K, size_t N>
-void dot(grad<T[K], N> &x, grad<T[K], N> &y, grad<T, N> &res) {
-    dot(x.refs(), y.refs(), res.refs());
-}
-
 } // namespace special
