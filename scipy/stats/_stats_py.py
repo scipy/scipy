@@ -10836,6 +10836,7 @@ def lmoment(sample, order=[1, 2, 3, 4], *, axis=0, sorted=False, standardize=Tru
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import stats
     >>> rng = np.random.default_rng(328458568356392)
     >>> sample = rng.exponential(size=100000)
