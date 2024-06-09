@@ -101,9 +101,5 @@ jobs:
         python dev.py --no-build test -b all -t scipy._lib.tests.test_array_api -- --durations 3 --timeout=60
         python dev.py --no-build test -b all -t scipy._lib.tests.test__util -- --durations 3 --timeout=60
         python dev.py --no-build test -b all -t scipy.optimize.tests.test_chandrupatla -- --durations 3 --timeout=60
-        python dev.py --no-build test -b all -s stats -- --durations 3 --timeout=60
         python dev.py --no-build test -b all -t scipy.optimize.tests.test_differentiate -- --durations 3 --timeout=60
-        
-
-        
-
+        python dev.py --no-build test -b all -s stats -- --durations 3 --timeout=60

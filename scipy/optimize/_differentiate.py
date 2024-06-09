@@ -629,7 +629,7 @@ def _differentiate_weights(work, n, xp):
     if len(_differentiate_weights.central) != 2*n + 1:
         # Central difference weights. Consider refactoring this; it could
         # probably be more compact.
-        # Note: `n` and `fac` are NumPy scalars; we convert to xp-type at the end
+        # Note: Using NumPy here is OK; we convert to xp-type at the end
         i = np.arange(-n, n + 1)
         p = np.abs(i) - 1.  # center point has power `p` -1, but sign `s` is 0
         s = np.sign(i)

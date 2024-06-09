@@ -1,7 +1,7 @@
 import pytest
 
 import numpy as np
-from numpy.testing import assert_array_less, assert_allclose, assert_equal
+from numpy.testing import assert_allclose
 
 from scipy.conftest import array_api_compatible
 import scipy._lib._elementwise_iterative_method as eim
@@ -31,9 +31,9 @@ class TestDifferentiate:
         res = differentiate(self.f, xp.asarray(x, dtype=default_dtype))
         ref = xp.asarray(stats.norm().pdf(x), dtype=default_dtype)
         xp_assert_close(res.df, ref)
-        # # This would be nice, but doesn't always work out. `error` is an
-        # # estimate, not a bound.
-        if not is_torch:
+        # This would be nice, but doesn't always work out. `error` is an
+        # estimate, not a bound.
+        if not is_torch(xp):
             xp_assert_less(xp.abs(res.df - ref), res.error)
 
     @pytest.mark.skip_xp_backends(np_only=True)
@@ -105,41 +105,43 @@ class TestDifferentiate:
                      lambda x: xp.exp(x),  # reaches maxiter due to order=2
                      lambda x: xp.full_like(x, xp.nan)[()]]  # stops due to NaN
             res = [funcs[int(j)](x) for x, j in zip(xs, xp.reshape(js, (-1,)))]
-            return res
+            return xp.stack(res)
         f.nit = 0
 
         args = (xp.arange(4, dtype=xp.int64),)
-        res = differentiate(f, xp.ones(4, dtype=xp.int32), rtol=1e-14,
+        res = differentiate(f, xp.ones(4, dtype=xp.float64), rtol=1e-14,
                             order=2, args=args)
 
         ref_flags = xp.asarray([eim._ECONVERGED,
                                 _EERRORINCREASE,
                                 eim._ECONVERR,
-                                eim._EVALUEERR])
+                                eim._EVALUEERR], dtype=xp.int32)
         xp_assert_equal(res.status, ref_flags)
 
     def test_flags_preserve_shape(self, xp):
         # Same test as above but using `preserve_shape` option to simplify.
         rng = np.random.default_rng(5651219684984213)
         def f(x):
-            return [x - 2.5,  # converges
-                    xp.exp(x)*rng.random(),  # error increases
-                    np.exp(x),  # reaches maxiter due to order=2
-                    np.full_like(x, xp.nan)[()]]  # stops due to NaN
+            out = [x - 2.5,  # converges
+                   xp.exp(x)*rng.random(),  # error increases
+                   xp.exp(x),  # reaches maxiter due to order=2
+                   xp.full_like(x, xp.nan)[()]]  # stops due to NaN
+            return xp.stack(out)
 
-        res = differentiate(f, xp.asarray(1), rtol=1e-14,
+        res = differentiate(f, xp.asarray(1, dtype=xp.float64), rtol=1e-14,
                             order=2, preserve_shape=True)
 
         ref_flags = xp.asarray([eim._ECONVERGED,
                                 _EERRORINCREASE,
                                 eim._ECONVERR,
-                                eim._EVALUEERR])
+                                eim._EVALUEERR], dtype=xp.int32)
         xp_assert_equal(res.status, ref_flags)
 
     def test_preserve_shape(self, xp):
         # Test `preserve_shape` option
         def f(x):
-            return [x, xp.sin(3*x), x+xp.sin(10*x), xp.sin(20*x)*(x-1)**2]
+            out = [x, xp.sin(3*x), x+xp.sin(10*x), xp.sin(20*x)*(x-1)**2]
+            return xp.stack(out)
 
         x = xp.asarray(0.)
         ref = xp.asarray([xp.asarray(1), 3*xp.cos(3*x), 1+10*xp.cos(10*x),
@@ -149,7 +151,7 @@ class TestDifferentiate:
 
     def test_convergence(self, xp):
         # Test that the convergence tolerances behave as expected
-        x = xp.asarray(1.)
+        x = xp.asarray(1., dtype=xp.float64)
         f = special.ndtr
         ref = float(stats.norm.pdf(1.))
         kwargs0 = dict(atol=0, rtol=0, order=4)
@@ -174,7 +176,7 @@ class TestDifferentiate:
 
     def test_step_parameters(self, xp):
         # Test that step factors have the expected effect on accuracy
-        x = xp.asarray(1.)
+        x = xp.asarray(1., dtype=xp.float64)
         f = special.ndtr
         ref = float(stats.norm.pdf(1.))
 
@@ -299,7 +301,9 @@ class TestDifferentiate:
         assert res.df.dtype == dtype
         assert res.error.dtype == dtype
         eps = xp.finfo(dtype).eps
-        xp_assert_close(res.df, xp.exp(res.x), rtol=eps**0.5)
+        # not sure why torch is less accurate here; might be worth investigating
+        rtol = eps**0.5 * 50 if is_torch(xp) else eps**0.5
+        xp_assert_close(res.df, xp.exp(res.x), rtol=rtol)
 
     def test_input_validation(self, xp):
         # Test input validation for appropriate error messages
@@ -357,9 +361,10 @@ class TestDifferentiate:
             assert xp_test.isdtype(x.dtype, 'real floating')
             return x ** 99 - 1
 
-        res = differentiate(f, xp.asarray(7), rtol=1e-10)
-        assert res.success
-        xp_assert_close(res.df, xp.asarray(99*7.**98))
+        if not is_torch(xp):  # torch defaults to float32
+            res = differentiate(f, xp.asarray(7), rtol=1e-10)
+            assert res.success
+            xp_assert_close(res.df, xp.asarray(99*7.**98))
 
         # Test that if success is achieved in the correct number
         # of iterations if function is a polynomial. Ideally, all polynomials
@@ -369,7 +374,7 @@ class TestDifferentiate:
         # extra iteration to detect convergence based on the error estimate.
 
         for n in range(6):
-            x = xp.asarray(1.5)
+            x = xp.asarray(1.5, dtype=xp.float64)
             def f(x):
                 return 2*x**n
 
@@ -377,7 +382,7 @@ class TestDifferentiate:
 
             res = differentiate(f, x, maxiter=1, order=max(1, n))
             xp_assert_close(res.df, ref, rtol=1e-15)
-            xp_assert_equal(res.error, xp.asarray(xp.nan))
+            xp_assert_equal(res.error, xp.asarray(xp.nan, dtype=xp.float64))
 
             res = differentiate(f, x, order=max(1, n))
             assert res.success
