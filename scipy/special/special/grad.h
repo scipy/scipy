@@ -207,6 +207,9 @@ class grad<T &, N> : public detail::base_grad<std::make_index_sequence<N + 1>, T
     }
 };
 
+template <typename T0, typename... T>
+grad(T0 &, T &...) -> grad<T0 &, sizeof...(T)>;
+
 template <size_t I, typename T, size_t N>
 T &get(grad<T, N> &t) {
     return std::get<I>(t.underlying_tuple());

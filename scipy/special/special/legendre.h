@@ -90,10 +90,10 @@ void legendre_p(int n, T z, grad<T &, N> res) {
  */
 template <typename T>
 T legendre_p(int n, T z) {
-    grad<T, 0> res;
-    legendre_p(n, z, res.refs());
+    T res;
+    legendre_p(n, z, grad(res));
 
-    return get<0>(res);
+    return res;
 }
 
 /**

@@ -16,32 +16,27 @@ T legendre_p(long long int n, T z) {
 
 template <typename T>
 void legendre_p(long long int n, T z, T &res, T &res_jac) {
-    special::grad<T &, 1> tmp(res, res_jac);
-    special::legendre_p(n, z, tmp);
+    special::legendre_p(n, z, special::grad(res, res_jac));
 }
 
 template <typename T>
 void legendre_p(long long int n, T z, T &res, T &res_jac, T &res_hess) {
-    special::grad<T &, 2> tmp(res, res_jac, res_hess);
-    special::legendre_p(n, z, tmp);
+    special::legendre_p(n, z, special::grad(res, res_jac, res_hess));
 }
 
 template <typename T, typename OutputVec1>
 void legendre_p_all(T z, OutputVec1 res) {
-    special::grad<OutputVec1, 0> tmp{res};
-    special::legendre_p_all(z, tmp);
+    special::legendre_p_all(z, special::grad(res));
 }
 
 template <typename T, typename OutputVec1, typename OutputVec2>
 void legendre_p_all(T z, OutputVec1 res, OutputVec2 res_jac) {
-    special::grad<OutputVec1, 1> tmp{res, res_jac};
-    special::legendre_p_all(z, tmp);
+    special::legendre_p_all(z, special::grad(res, res_jac));
 }
 
 template <typename T, typename OutputVec1, typename OutputVec2, typename OutputVec3>
 void legendre_p_all(T z, OutputVec1 res, OutputVec2 res_jac, OutputVec3 res_hess) {
-    special::grad<OutputVec1, 2> tmp{res, res_jac, res_hess};
-    special::legendre_p_all(z, tmp);
+    special::legendre_p_all(z, special::grad(res, res_jac, res_hess));
 }
 
 using special::assoc_legendre_norm;
