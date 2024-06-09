@@ -26,79 +26,108 @@ struct tuple_size<special::grad<T, N>> : std::integral_constant<size_t, N + 1> {
 namespace special {
 namespace detail {
 
-    template <typename T, size_t I>
-    struct grad_leaf {
-        T value;
+    template <typename T>
+    void assign(T &dst, const T &src) {
+        dst = src;
+    }
 
-      public:
-        grad_leaf() = default;
-
-        grad_leaf(const T &other) : value(other) {}
-    };
-
-    template <typename T, size_t I, size_t K>
-    struct grad_leaf<T[K], I> {
-        T value[K];
-
-      public:
-        grad_leaf() = default;
-
-        grad_leaf(const T (&other)[K]) {
-            for (size_t k = 0; k < K; ++k) {
-                value[k] = other[k];
-            }
+    template <typename T, size_t K>
+    void assign(T (&dst)[K], const T (&src)[K]) {
+        for (size_t k = 0; k < K; ++k) {
+            dst[k] = src[k];
         }
-    };
+    }
 
     template <typename Indices, typename T>
-    class grad_sequence;
+    class base_grad;
 
     template <size_t... I, typename T>
-    class grad_sequence<std::index_sequence<I...>, T> : public grad_leaf<T, I>... {
-        using indices = std::index_sequence<I...>;
-        static constexpr size_t N = sizeof...(I) - 1;
+    class base_grad<std::index_sequence<I...>, T> {
+      public:
+        using tuple_type = std::tuple<std::tuple_element_t<I, grad<T, sizeof...(I) - 1>>...>;
 
-        //        std::tuple<T...> m_tup;
+      protected:
+        tuple_type m_underlying;
 
       public:
-        grad_sequence() = default;
+        base_grad() = default;
 
-        grad_sequence(const std::tuple_element_t<I, grad<T, N>> &...args) : grad_leaf<T, I>(args)... {}
+        base_grad(const std::tuple_element_t<I, tuple_type> &...args) {
+            (assign(std::get<I>(m_underlying), args), ...);
+        }
 
         template <typename... U>
-        grad_sequence(const std::tuple<U...> &other) : grad_leaf<T, I>(std::get<I>(other))... {}
+        base_grad(const std::tuple<U...> &other) : m_underlying(other) {}
 
-        grad_sequence(const grad_sequence &other) = default;
+        base_grad(const base_grad &other) = default;
 
-        grad_sequence(grad_sequence &&other) = default;
+        base_grad(base_grad &&other) = default;
 
-        grad_sequence &operator=(const grad_sequence &other) = default; // { return *this; }
+        base_grad &operator=(const base_grad &other) {
+            (assign(std::get<I>(m_underlying), std::get<I>(other.m_underlying)), ...);
 
-        grad_sequence &operator=(grad_sequence &&other) = default; // { return *this; }
-
-        //        T &value() { return static_cast<grad_leaf<T, 0> *>(this)->value; }
-
-        //      const T &value() const { return static_cast<const grad_leaf<T, 0> *>(this)->value; }
-
-        // underlying_tuple
-        std::tuple<std::tuple_element_t<I, grad<T, N>>...> as_tuple() const {
-            return std::forward_as_tuple(static_cast<const grad_leaf<T, I> *>(this)->value...);
+            return *this;
         }
 
-        grad_sequence<indices, T &> refs() { return {static_cast<grad_leaf<T, I> *>(this)->value...}; }
+        base_grad &operator=(base_grad &&other) = default; // { return *this; }
 
-        grad_sequence<indices, const T &> refs() const { return crefs(); }
+        tuple_type &underlying_tuple() { return m_underlying; }
 
-        grad_sequence<indices, const T &> crefs() const {
-            return {static_cast<const grad_leaf<T, I> *>(this)->value...};
+        const tuple_type &underlying_tuple() const { return m_underlying; }
+    };
+
+    template <size_t... I, typename T>
+    class base_grad<std::index_sequence<I...>, T &> {
+      public:
+        using indices = std::index_sequence<I...>;
+        using tuple_type = std::tuple<std::tuple_element_t<I, grad<T &, sizeof...(I) - 1>>...>;
+
+      protected:
+        tuple_type m_underlying;
+
+      public:
+        base_grad() = default;
+
+        base_grad(const std::tuple_element_t<I, tuple_type> &...args) : m_underlying(args...) {}
+
+        template <typename... U>
+        base_grad(const std::tuple<U...> &other) : m_underlying(other) {}
+
+        base_grad(const base_grad &other) = default;
+
+        base_grad(const base_grad<indices, T> &other){};
+
+        base_grad(base_grad &&other) = default;
+
+        base_grad &operator=(base_grad &&other) = default; // { return *this; }
+                                                           // { return *this; }
+
+        tuple_type &underlying_tuple() { return m_underlying; }
+
+        const tuple_type &underlying_tuple() const { return m_underlying; }
+
+        base_grad &operator=(base_grad<indices, T> &other) { return *this; }
+
+        base_grad &operator=(const base_grad &other) {
+            (assign(std::get<I>(m_underlying), std::get<I>(other.m_underlying)), ...);
+
+            return *this;
         }
+
+        //        base_grad &operator=(const base_grad<indices, T> &other) {
+        //            (assign(std::get<I>(m_underlying), std::get<I>(other.m_underlying)), ...);
+
+        //          return *this;
+        //    }
     };
 
 } // namespace detail
 
 template <typename T, size_t N>
-class grad : public detail::grad_sequence<std::make_index_sequence<N + 1>, T> {
-    using base = detail::grad_sequence<std::make_index_sequence<N + 1>, T>;
+class grad : public detail::base_grad<std::make_index_sequence<N + 1>, T> {
+  public:
+    using base = detail::base_grad<std::make_index_sequence<N + 1>, T>;
+    using tuple_type = typename base::tuple_type;
 
   public:
     grad(const base &other) : base(other) {}
@@ -106,44 +135,85 @@ class grad : public detail::grad_sequence<std::make_index_sequence<N + 1>, T> {
   public:
     using base::base;
 
-    grad<T &, N> refs() { return base::refs(); }
-
-    grad<const T &, N> refs() const { return base::refs(); }
-
-    grad<const T &, N> crefs() const { return base::refs(); }
-
-    decltype(auto) refs_as_tuple() {
-        const auto &tmp = base::refs();
-        return tmp.as_tuple();
+    grad<T &, N> refs() {
+        return std::apply([](auto &...args) { return std::tie(args...); }, base::underlying_tuple());
     }
 
-    decltype(auto) refs_as_tuple() const { return crefs_as_tuple(); }
+    grad<const T &, N> refs() const { return crefs(); }
 
-    decltype(auto) crefs_as_tuple() const {
-        const auto &tmp = base::crefs();
-        return tmp.as_tuple();
+    grad<const T &, N> crefs() const {
+        return std::apply([](const auto &...args) { return std::tie(args...); }, base::underlying_tuple());
+    }
+
+    typename grad<T &, N>::tuple_type refs_as_tuple() {
+        const auto &tmp = refs();
+        return tmp.underlying_tuple();
+    }
+
+    typename grad<const T &, N>::tuple_type refs_as_tuple() const { return crefs_as_tuple(); }
+
+    typename grad<const T &, N>::tuple_type crefs_as_tuple() const {
+        const auto &tmp = crefs();
+        return tmp.underlying_tuple();
     }
 };
 
-/*
 template <typename T, size_t N>
-class grad<T &, N> : public detail::grad_tuple<T &, std::make_index_sequence<N + 1>> {
+class grad<T &, N> : public detail::base_grad<std::make_index_sequence<N + 1>, T &> {
   public:
-    using detail::grad_tuple<T &, std::make_index_sequence<N + 1>>::grad_tuple;
+    using base = detail::base_grad<std::make_index_sequence<N + 1>, T &>;
+    using tuple_type = typename base::tuple_type;
 
-    grad &operator=(const grad<T, N> &other) { return *this; }
+  public:
+    grad(const base &other) : base(other) {}
 
+  public:
+    using base::base;
+
+    grad<T &, N> refs() {
+        return std::apply([](auto &...args) { return std::tie(args...); }, base::underlying_tuple());
+    }
+
+    grad<const T &, N> refs() const { return crefs(); }
+
+    grad<const T &, N> crefs() const {
+        return std::apply([](const auto &...args) { return std::tie(args...); }, base::underlying_tuple());
+    }
+
+    typename grad<T &, N>::tuple_type refs_as_tuple() {
+        const auto &tmp = refs();
+        return tmp.underlying_tuple();
+    }
+
+    typename grad<const T &, N>::tuple_type refs_as_tuple() const { return crefs_as_tuple(); }
+
+    typename grad<const T &, N>::tuple_type crefs_as_tuple() const {
+        const auto &tmp = crefs();
+        return tmp.underlying_tuple();
+    }
+
+    grad &operator=(const grad<T, N> &other) {
+        std::apply(
+            [&other](auto &...args) {
+                std::apply(
+                    [&args...](const auto &...other_args) { (detail::assign(args, other_args), ...); }, other.underlying_tuple()
+                );
+            },
+            base::underlying_tuple()
+        );
+
+        return *this;
+    }
 };
-*/
 
 template <size_t I, typename T, size_t N>
 T &get(grad<T, N> &t) {
-    return static_cast<detail::grad_leaf<T, I> *>(&t)->value;
+    return std::get<I>(t.underlying_tuple());
 }
 
 template <size_t I, typename T, size_t N>
 const T &get(const grad<T, N> &t) {
-    return static_cast<const detail::grad_leaf<T, I> *>(&t)->value;
+    return std::get<I>(t.underlying_tuple());
 }
 
 template <typename T, size_t K>
