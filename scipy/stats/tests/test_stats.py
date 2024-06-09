@@ -9202,6 +9202,7 @@ class TestXP_Mean:
         xp_assert_equal(_xp_mean(x), _xp_mean(y))
         xp_assert_equal(_xp_mean(y, weights=x), _xp_mean(y, weights=y))
 
+
 @array_api_compatible
 def test_chk_asarray(xp):
     rng = np.random.default_rng(2348923425434)

@@ -32,7 +32,6 @@ from math import gcd
 from collections import namedtuple
 from collections.abc import Sequence
 
-
 import numpy as np
 from numpy import array, asarray, ma
 
@@ -9311,7 +9310,7 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
     if xp_size(pvalues) == 0:
         NaN = _get_nan(pvalues)
         return SignificanceResult(NaN, NaN)
-    
+
     n = pvalues.shape[0]
     # used to convert Python scalar to the right dtype
     one = xp.asarray(1, dtype=pvalues.dtype)
@@ -11025,6 +11024,13 @@ def _xp_mean(x, /, *, axis=None, weights=None, keepdims=False, nan_policy='propa
     x = xp.asarray(x, dtype=dtype)
     weights = xp.asarray(weights, dtype=dtype) if weights is not None else weights
 
+    # to ensure that this matches the behavior of decorated functions when one of the
+    # arguments has size zero, it's easiest to call a similar decorated function.
+    if is_numpy(xp) and (xp_size(x) == 0
+                         or (weights is not None and xp_size(weights) == 0)):
+        return gmean(x, weights=weights, axis=axis, keepdims=keepdims)
+
+    # handle non-broadcastable inputs
     if weights is not None and x.shape != weights.shape:
         try:
             x, weights = _broadcast_arrays((x, weights), xp=xp)
@@ -11044,15 +11050,12 @@ def _xp_mean(x, /, *, axis=None, weights=None, keepdims=False, nan_policy='propa
     message = (too_small_1d_not_omit if (x.ndim == 1 or axis is None)
                else too_small_nd_not_omit)
     if xp_size(x) == 0:
-        if is_numpy(xp):
-            return skew(x, axis=axis, keepdims=keepdims)
-        else:
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore")
-                res = xp.mean(x, axis=axis, keepdims=keepdims)
-            if xp_size(res) != 0:
-                warnings.warn(message, SmallSampleWarning, stacklevel=2)
-            return res
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            res = xp.mean(x, axis=axis, keepdims=keepdims)
+        if xp_size(res) != 0:
+            warnings.warn(message, SmallSampleWarning, stacklevel=2)
+        return res
 
     # avoid circular import
     contains_nan, _ = _contains_nan(x, nan_policy, xp_ok=True, xp=xp)
@@ -11109,7 +11112,7 @@ class _SimpleNormal:
 
     def sf(self, x):
         return special.ndtr(-x)
-    
+
     def isf(self, x):
         return -special.ndtri(x)
 
