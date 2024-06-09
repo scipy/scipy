@@ -13,7 +13,7 @@ void forward_recur_shift_left(T (&res)[K]) {
 
 template <typename T, size_t K, size_t N>
 void forward_recur_shift_left(grad<T[K], N> &res) {
-    std::apply([](auto &...args) { (forward_recur_shift_left(args), ...); }, res.refs_as_tuple());
+    std::apply([](auto &...args) { (forward_recur_shift_left(args), ...); }, res.underlying_tuple());
 }
 
 template <typename T, size_t K>
@@ -25,12 +25,12 @@ void forward_recur_rotate_left(T (&res)[K]) {
 
 template <typename T, size_t K, size_t N>
 void forward_recur_rotate_left(grad<T[K], N> &res) {
-    std::apply([](auto &...args) { (forward_recur_rotate_left(args), ...); }, res.refs_as_tuple());
+    std::apply([](auto &...args) { (forward_recur_rotate_left(args), ...); }, res.underlying_tuple());
 }
 
 template <typename T, size_t K, size_t N>
 void forward_recur_rotate_left(grad<T (&)[K], N> &res) {
-    std::apply([](auto &...args) { (forward_recur_rotate_left(args), ...); }, res.refs_as_tuple());
+    std::apply([](auto &...args) { (forward_recur_rotate_left(args), ...); }, res.underlying_tuple());
 }
 
 /**
@@ -60,9 +60,9 @@ void forward_recur(InputIt first, InputIt last, Recurrence r, grad<T[K], N> &res
             grad<T, N> tmp;
             dot(coef, res, tmp);
 
-            std::apply([](auto &...args) { (forward_recur_shift_left(args), ...); }, res.refs_as_tuple());
-            std::apply([](auto &...args) { return std::tie(args[K - 1]...); }, res.refs_as_tuple()) =
-                tmp.refs_as_tuple();
+            std::apply([](auto &...args) { (forward_recur_shift_left(args), ...); }, res.underlying_tuple());
+            std::apply([](auto &...args) { return std::tie(args[K - 1]...); }, res.underlying_tuple()) =
+                tmp.underlying_tuple();
 
             f(it, res);
             ++it;
@@ -76,7 +76,7 @@ void forward_recur(InputIt first, InputIt last, Recurrence r, grad<T (&)[K], N> 
     while (it - first != K && it != last) {
         forward_recur_rotate_left(res);
 
-                f(it, res);
+        f(it, res);
         ++it;
     }
 
@@ -88,11 +88,11 @@ void forward_recur(InputIt first, InputIt last, Recurrence r, grad<T (&)[K], N> 
             grad<T, N> tmp;
             dot(coef.refs(), res, tmp.refs());
 
-            std::apply([](auto &...args) { (forward_recur_shift_left(args), ...); }, res.refs_as_tuple());
-            std::apply([](auto &...args) { return std::tie(args[K - 1]...); }, res.refs_as_tuple()) =
-                tmp.refs_as_tuple();
+            std::apply([](auto &...args) { (forward_recur_shift_left(args), ...); }, res.underlying_tuple());
+            std::apply([](auto &...args) { return std::tie(args[K - 1]...); }, res.underlying_tuple()) =
+                tmp.underlying_tuple();
 
-                        f(it, res);
+            f(it, res);
             ++it;
         }
     }

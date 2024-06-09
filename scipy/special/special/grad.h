@@ -144,18 +144,6 @@ class grad : public detail::base_grad<std::make_index_sequence<N + 1>, T> {
     grad<const T &, N> crefs() const {
         return std::apply([](const auto &...args) { return std::tie(args...); }, base::underlying_tuple());
     }
-
-    typename grad<T &, N>::tuple_type refs_as_tuple() {
-        const auto &tmp = refs();
-        return tmp.underlying_tuple();
-    }
-
-    typename grad<const T &, N>::tuple_type refs_as_tuple() const { return crefs_as_tuple(); }
-
-    typename grad<const T &, N>::tuple_type crefs_as_tuple() const {
-        const auto &tmp = crefs();
-        return tmp.underlying_tuple();
-    }
 };
 
 template <typename T, size_t N>
@@ -178,18 +166,6 @@ class grad<T &, N> : public detail::base_grad<std::make_index_sequence<N + 1>, T
 
     grad<const T &, N> crefs() const {
         return std::apply([](const auto &...args) { return std::tie(args...); }, base::underlying_tuple());
-    }
-
-    typename grad<T &, N>::tuple_type refs_as_tuple() {
-        const auto &tmp = refs();
-        return tmp.underlying_tuple();
-    }
-
-    typename grad<const T &, N>::tuple_type refs_as_tuple() const { return crefs_as_tuple(); }
-
-    typename grad<const T &, N>::tuple_type crefs_as_tuple() const {
-        const auto &tmp = crefs();
-        return tmp.underlying_tuple();
     }
 
     grad &operator=(const grad<T, N> &other) {

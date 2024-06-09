@@ -52,7 +52,7 @@ void assoc_legendre_p(NormPolicy norm, long long int n, long long int m, T z, T 
     special::grad<T, 1> tmp;
     special::assoc_legendre_p(norm, n, m, z, tmp);
 
-    std::tie(res, res_jac) = tmp.refs_as_tuple();
+    std::tie(res, res_jac) = tmp.underlying_tuple();
 }
 
 template <typename NormPolicy, typename T>
@@ -60,7 +60,7 @@ void assoc_legendre_p(NormPolicy norm, long long int n, long long int m, T z, T 
     special::grad<T, 2> tmp;
     special::assoc_legendre_p(norm, n, m, z, tmp);
 
-    std::tie(res, res_jac, res_hess) = tmp.refs_as_tuple();
+    std::tie(res, res_jac, res_hess) = tmp.underlying_tuple();
 }
 
 template <typename NormPolicy, typename T, typename OutputMat1>
@@ -95,7 +95,7 @@ void multi_assoc_legendre_p(
     special::grad<std::complex<T>, 1> tmp;
     special::multi_assoc_legendre_p(norm, n, m, type, z, tmp);
 
-    std::tie(res, res_jac) = tmp.refs_as_tuple();
+    std::tie(res, res_jac) = tmp.underlying_tuple();
 }
 
 template <typename NormPolicy, typename T>
@@ -106,7 +106,7 @@ void multi_assoc_legendre_p(
     special::grad<std::complex<T>, 2> tmp;
     special::multi_assoc_legendre_p(norm, n, m, type, z, tmp);
 
-    std::tie(res, res_jac, res_hess) = tmp.refs_as_tuple();
+    std::tie(res, res_jac, res_hess) = tmp.underlying_tuple();
 }
 
 template <typename NormPolicy, typename T, typename OutputMat1>

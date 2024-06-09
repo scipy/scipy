@@ -615,10 +615,10 @@ void assoc_legendre_p_for_each_n(
 ) {
     grad<T, N> res_m_m_abs;
     if (!recur_m_m_abs) {
-        res_m_m_abs = std::apply([](const auto &...args) { return std::tie(args[0]...); }, res.refs_as_tuple());
+        res_m_m_abs = std::apply([](const auto &...args) { return std::tie(args[0]...); }, res.underlying_tuple());
     }
 
-    std::apply([](auto &...args) { ((args[0] = 0, args[1] = 0), ...); }, res.refs_as_tuple());
+    std::apply([](auto &...args) { ((args[0] = 0, args[1] = 0), ...); }, res.underlying_tuple());
 
     int m_abs = std::abs(m);
     if (m_abs > n) {
@@ -636,15 +636,15 @@ void assoc_legendre_p_for_each_n(
 
                 grad<T, N> tmp;
                 tuple_assoc_legendre_p_pm1(norm, j, m, type, z, tmp.refs());
-                std::apply([](auto &...args) { return std::tie(args[1]...); }, res.refs_as_tuple()) =
-                    tmp.refs_as_tuple();
+                std::apply([](auto &...args) { return std::tie(args[1]...); }, res.underlying_tuple()) =
+                    tmp.underlying_tuple();
 
                 f(j, res);
             }
         } else {
             if (!recur_m_m_abs) {
-                std::apply([](auto &...args) { return std::tie(args[0]...); }, res.refs_as_tuple()) =
-                    res_m_m_abs.refs_as_tuple();
+                std::apply([](auto &...args) { return std::tie(args[0]...); }, res.underlying_tuple()) =
+                    res_m_m_abs.underlying_tuple();
             }
 
             assoc_legendre_p_initializer_n<T, NormPolicy> init_n{m, type, z, recur_m_m_abs};
@@ -662,8 +662,8 @@ void assoc_legendre_p_for_each_n_m(NormPolicy norm, int n, int m, int type, T z,
     assoc_legendre_p_for_each_m_m_abs(
         norm, m, type, z, res_m_m_abs,
         [norm, n, type, z, &res, f](int i, const grad<T[2], N> &res_m_m_abs) {
-            std::apply([](auto &...args) { return std::tie(args[0]...); }, res.refs_as_tuple()) =
-                std::apply([](const auto &...args) { return std::tie(args[1]...); }, res_m_m_abs.refs_as_tuple());
+            std::apply([](auto &...args) { return std::tie(args[0]...); }, res.underlying_tuple()) =
+                std::apply([](const auto &...args) { return std::tie(args[1]...); }, res_m_m_abs.underlying_tuple());
 
             assoc_legendre_p_for_each_n(norm, n, i, type, z, false, res, [f, i](int j, const grad<T[2], N> &res_n) {
                 f(j, i, res_n);
@@ -674,8 +674,8 @@ void assoc_legendre_p_for_each_n_m(NormPolicy norm, int n, int m, int type, T z,
     assoc_legendre_p_for_each_m_m_abs(
         norm, -m, type, z, res_m_m_abs,
         [norm, n, type, z, &res, f](int i_abs, const grad<T[2], N> &res_m_m_abs) {
-            std::apply([](auto &...args) { return std::tie(args[0]...); }, res.refs_as_tuple()) =
-                std::apply([](const auto &...args) { return std::tie(args[1]...); }, res_m_m_abs.refs_as_tuple());
+            std::apply([](auto &...args) { return std::tie(args[0]...); }, res.underlying_tuple()) =
+                std::apply([](const auto &...args) { return std::tie(args[1]...); }, res_m_m_abs.underlying_tuple());
 
             int i = -i_abs;
             assoc_legendre_p_for_each_n(norm, n, i, type, z, false, res, [f, i](int j, const grad<T[2], N> &res_n) {
@@ -700,7 +700,8 @@ void multi_assoc_legendre_p(NormPolicy norm, int n, int m, int type, T z, grad<T
     grad<T[2], N> res_n;
     assoc_legendre_p_for_each_n(norm, n, m, type, z, true, res_n, [](int n, const grad<T[2], N> &res_n) {});
 
-    res.refs_as_tuple() = std::apply([](const auto &...args) { return std::tie(args[1]...); }, res_n.refs_as_tuple());
+    res.underlying_tuple() =
+        std::apply([](const auto &...args) { return std::tie(args[1]...); }, res_n.underlying_tuple());
 }
 
 template <typename NormPolicy, typename T>
@@ -729,12 +730,12 @@ void multi_assoc_legendre_p_all(NormPolicy norm, int type, T z, grad<OutputMat, 
     grad<T[2], N> p;
     assoc_legendre_p_for_each_n_m(norm, n, m, type, z, p, [&res](int n, int m, const auto &res_n_m) {
         if (m >= 0) {
-            std::apply([n, m](auto &...args) { return std::tie(args(n, m)...); }, res.refs_as_tuple()) =
-                std::apply([](const auto &...args) { return std::tie(args[1]...); }, res_n_m.refs_as_tuple());
+            std::apply([n, m](auto &...args) { return std::tie(args(n, m)...); }, res.underlying_tuple()) =
+                std::apply([](const auto &...args) { return std::tie(args[1]...); }, res_n_m.underlying_tuple());
         } else {
             std::apply(
-                [n, m](auto &...args) { return std::tie(args(n, m + args.extent(1))...); }, res.refs_as_tuple()
-            ) = std::apply([](const auto &...args) { return std::tie(args[1]...); }, res_n_m.refs_as_tuple());
+                [n, m](auto &...args) { return std::tie(args(n, m + args.extent(1))...); }, res.underlying_tuple()
+            ) = std::apply([](const auto &...args) { return std::tie(args[1]...); }, res_n_m.underlying_tuple());
         }
     });
 }
