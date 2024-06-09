@@ -183,11 +183,18 @@ struct assoc_legendre_p_initializer_m_m_abs<T, assoc_legendre_unnorm_policy> {
         }
     }
 
-    void operator()(grad<T (&)[2], 0> res) const { operator()(get<0>(res)); }
+    void operator()(grad<T (&)[2], 0> res) const { operator()(std::get<0>(res.underlying_tuple())); }
 
-    void operator()(grad<T (&)[2], 1> res) const { operator()(get<0>(res), get<1>(res)); }
+    void operator()(grad<T (&)[2], 1> res) const {
+        operator()(std::get<0>(res.underlying_tuple()), std::get<1>(res.underlying_tuple()));
+    }
 
-    void operator()(grad<T (&)[2], 2> res) const { operator()(get<0>(res), get<1>(res), get<2>(res)); }
+    void operator()(grad<T (&)[2], 2> res) const {
+        operator()(
+            std::get<0>(res.underlying_tuple()), std::get<1>(res.underlying_tuple()),
+            std::get<2>(res.underlying_tuple())
+        );
+    }
 };
 
 template <typename T>
