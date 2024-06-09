@@ -1795,6 +1795,7 @@ class TestSmoothingSpline:
                         spline_interp(grid),
                         atol=1e-15)
 
+    @pytest.mark.fail_slow(2)
     def test_weighted_smoothing_spline(self):
         # create data sample
         np.random.seed(1234)

@@ -59,9 +59,8 @@ from ._resampling import (MonteCarloMethod, PermutationMethod, BootstrapMethod,
                           monte_carlo_test, permutation_test, bootstrap,
                           _batch_generator)
 from ._axis_nan_policy import (_axis_nan_policy_factory,
-                               _broadcast_concatenate,
-                               _broadcast_shapes,
-                               SmallSampleWarning)
+                               _broadcast_concatenate, _broadcast_shapes,
+                               _broadcast_array_shapes_remove_axis, SmallSampleWarning)
 from ._binomtest import _binary_search_for_binom_tst as _binary_search
 from scipy._lib._bunch import _make_tuple_bunch
 from scipy import stats
@@ -4920,11 +4919,9 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
 
     # As explained in the docstring, the distribution of `r` under the null
     # hypothesis is the beta distribution on (-1, 1) with a = b = n/2 - 1.
-    # This needs to be done with NumPy arrays given the existing infrastructure.
-    ab = n/2 - 1
-    dist = stats.beta(ab, ab, loc=-1, scale=2)
-    pvalue = _get_pvalue(np.asarray(r), dist, alternative, xp=np)
-    pvalue = xp.asarray(pvalue, dtype=dtype)
+    ab = xp.asarray(n/2 - 1)
+    dist = _SimpleBeta(ab, ab, loc=-1, scale=2)
+    pvalue = _get_pvalue(r, dist, alternative, xp=xp)
 
     r = r[()] if r.ndim == 0 else r
     pvalue = pvalue[()] if pvalue.ndim == 0 else pvalue
@@ -5543,7 +5540,8 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate',
         # errors before taking the square root
         t = rs * np.sqrt((dof/((rs+1.0)*(1.0-rs))).clip(0))
 
-    prob = _get_pvalue(t, distributions.t(dof), alternative, xp=np)
+    dist = _SimpleStudentT(dof)
+    prob = _get_pvalue(t, dist, alternative, xp=np)
 
     # For backwards compatibility, return scalars when comparing 2 columns
     if rs.shape == (2, 2):
@@ -6460,12 +6458,9 @@ def ttest_1samp(a, popmean, axis=0, nan_policy="propagate", alternative="two-sid
     with np.errstate(divide='ignore', invalid='ignore'):
         t = xp.divide(d, denom)
         t = t[()] if t.ndim == 0 else t
-    # This will only work for CPU backends for now. That's OK. In time,
-    # `from_dlpack` will enable the transfer from other devices, and
-    # `_get_pvalue` will even be reworked to support the native backend.
-    t_np = np.asarray(t)
-    prob = _get_pvalue(t_np, distributions.t(df), alternative, xp=np)
-    prob = xp.asarray(prob, dtype=t.dtype)
+
+    dist = _SimpleStudentT(xp.asarray(df, dtype=t.dtype))
+    prob = _get_pvalue(t, dist, alternative, xp=xp)
     prob = prob[()] if prob.ndim == 0 else prob
 
     # when nan_policy='omit', `df` can be different for different axis-slices
@@ -6475,7 +6470,7 @@ def ttest_1samp(a, popmean, axis=0, nan_policy="propagate", alternative="two-sid
     alternative_num = {"less": -1, "two-sided": 0, "greater": 1}[alternative]
     return TtestResult(t, prob, df=df, alternative=alternative_num,
                        standard_error=denom, estimate=mean,
-                       statistic_np=t_np, xp=xp)
+                       statistic_np=xp.asarray(t), xp=xp)
 
 
 def _t_confidence_interval(df, t, confidence_level, alternative, dtype=None, xp=None):
@@ -6511,17 +6506,25 @@ def _t_confidence_interval(df, t, confidence_level, alternative, dtype=None, xp=
     return low, high
 
 
-def _ttest_ind_from_stats(mean1, mean2, denom, df, alternative):
+def _ttest_ind_from_stats(mean1, mean2, denom, df, alternative, xp=None):
+    xp = array_namespace(mean1, mean2, denom) if xp is None else xp
 
     d = mean1 - mean2
     with np.errstate(divide='ignore', invalid='ignore'):
-        t = np.divide(d, denom)[()]
-    prob = _get_pvalue(t, distributions.t(df), alternative, xp=np)
+        t = xp.divide(d, denom)
 
-    return (t, prob)
+    t_np = np.asarray(t)
+    df_np = np.asarray(df)
+    prob = _get_pvalue(t_np, distributions.t(df_np), alternative, xp=np)
+    prob = xp.asarray(prob, dtype=t.dtype)
+
+    t = t[()] if t.ndim == 0 else t
+    prob = prob[()] if prob.ndim == 0 else prob
+    return t, prob
 
 
-def _unequal_var_ttest_denom(v1, n1, v2, n2):
+def _unequal_var_ttest_denom(v1, n1, v2, n2, xp=None):
+    xp = array_namespace(v1, v2) if xp is None else xp
     vn1 = v1 / n1
     vn2 = v2 / n2
     with np.errstate(divide='ignore', invalid='ignore'):
@@ -6529,23 +6532,26 @@ def _unequal_var_ttest_denom(v1, n1, v2, n2):
 
     # If df is undefined, variances are zero (assumes n1 > 0 & n2 > 0).
     # Hence it doesn't matter what df is as long as it's not NaN.
-    df = np.where(np.isnan(df), 1, df)
-    denom = np.sqrt(vn1 + vn2)
+    df = xp.where(xp.isnan(df), xp.asarray(1.), df)
+    denom = xp.sqrt(vn1 + vn2)
     return df, denom
 
 
-def _equal_var_ttest_denom(v1, n1, v2, n2):
+def _equal_var_ttest_denom(v1, n1, v2, n2, xp=None):
+    xp = array_namespace(v1, v2) if xp is None else xp
+
     # If there is a single observation in one sample, this formula for pooled
     # variance breaks down because the variance of that sample is undefined.
     # The pooled variance is still defined, though, because the (n-1) in the
     # numerator should cancel with the (n-1) in the denominator, leaving only
     # the sum of squared differences from the mean: zero.
-    v1 = np.where(n1 == 1, 0, v1)[()]
-    v2 = np.where(n2 == 1, 0, v2)[()]
+    zero = xp.asarray(0.)
+    v1 = xp.where(xp.asarray(n1 == 1), zero, v1)
+    v2 = xp.where(xp.asarray(n2 == 1), zero, v2)
 
     df = n1 + n2 - 2.0
     svar = ((n1 - 1) * v1 + (n2 - 1) * v2) / df
-    denom = np.sqrt(svar * (1.0 / n1 + 1.0 / n2))
+    denom = xp.sqrt(svar * (1.0 / n1 + 1.0 / n2))
     return df, denom
 
 
@@ -6647,7 +6653,9 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
     >>> b = np.array([2, 4, 6, 9, 11, 13, 14, 15, 18, 19, 21])
     >>> from scipy.stats import ttest_ind
     >>> ttest_ind(a, b)
-    Ttest_indResult(statistic=0.905135809331027, pvalue=0.3751996797581486)
+    TtestResult(statistic=0.905135809331027,
+                pvalue=0.3751996797581486,
+                df=22.0)
 
     Suppose we instead have binary data and would like to apply a t-test to
     compare the proportion of 1s in two independent groups::
@@ -6671,18 +6679,22 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
     >>> group1 = np.array([1]*30 + [0]*(150-30))
     >>> group2 = np.array([1]*45 + [0]*(200-45))
     >>> ttest_ind(group1, group2)
-    Ttest_indResult(statistic=-0.5627179589855622, pvalue=0.573989277115258)
+    TtestResult(statistic=-0.5627179589855622,
+                pvalue=0.573989277115258,
+                df=348.0)
 
     """
-    mean1 = np.asarray(mean1)
-    std1 = np.asarray(std1)
-    mean2 = np.asarray(mean2)
-    std2 = np.asarray(std2)
+    xp = array_namespace(mean1, std1, mean2, std2)
+
+    mean1 = xp.asarray(mean1)
+    std1 = xp.asarray(std1)
+    mean2 = xp.asarray(mean2)
+    std2 = xp.asarray(std2)
+
     if equal_var:
-        df, denom = _equal_var_ttest_denom(std1**2, nobs1, std2**2, nobs2)
+        df, denom = _equal_var_ttest_denom(std1**2, nobs1, std2**2, nobs2, xp=xp)
     else:
-        df, denom = _unequal_var_ttest_denom(std1**2, nobs1,
-                                             std2**2, nobs2)
+        df, denom = _unequal_var_ttest_denom(std1**2, nobs1, std2**2, nobs2, xp=xp)
 
     res = _ttest_ind_from_stats(mean1, mean2, denom, df, alternative)
     return Ttest_indResult(*res)
@@ -6886,34 +6898,50 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
     >>> rvs1 = stats.norm.rvs(loc=5, scale=10, size=500, random_state=rng)
     >>> rvs2 = stats.norm.rvs(loc=5, scale=10, size=500, random_state=rng)
     >>> stats.ttest_ind(rvs1, rvs2)
-    Ttest_indResult(statistic=-0.4390847099199348, pvalue=0.6606952038870015)
+    TtestResult(statistic=-0.4390847099199348,
+                pvalue=0.6606952038870015,
+                df=998.0)
     >>> stats.ttest_ind(rvs1, rvs2, equal_var=False)
-    Ttest_indResult(statistic=-0.4390847099199348, pvalue=0.6606952553131064)
+    TtestResult(statistic=-0.4390847099199348,
+                pvalue=0.6606952553131064,
+                df=997.4602304121448)
 
     `ttest_ind` underestimates p for unequal variances:
 
     >>> rvs3 = stats.norm.rvs(loc=5, scale=20, size=500, random_state=rng)
     >>> stats.ttest_ind(rvs1, rvs3)
-    Ttest_indResult(statistic=-1.6370984482905417, pvalue=0.1019251574705033)
+    TtestResult(statistic=-1.6370984482905417,
+                pvalue=0.1019251574705033,
+                df=998.0)
     >>> stats.ttest_ind(rvs1, rvs3, equal_var=False)
-    Ttest_indResult(statistic=-1.637098448290542, pvalue=0.10202110497954867)
+    TtestResult(statistic=-1.637098448290542,
+                pvalue=0.10202110497954867,
+                df=765.1098655246868)
 
     When ``n1 != n2``, the equal variance t-statistic is no longer equal to the
     unequal variance t-statistic:
 
     >>> rvs4 = stats.norm.rvs(loc=5, scale=20, size=100, random_state=rng)
     >>> stats.ttest_ind(rvs1, rvs4)
-    Ttest_indResult(statistic=-1.9481646859513422, pvalue=0.05186270935842703)
+    TtestResult(statistic=-1.9481646859513422,
+                pvalue=0.05186270935842703,
+                df=598.0)
     >>> stats.ttest_ind(rvs1, rvs4, equal_var=False)
-    Ttest_indResult(statistic=-1.3146566100751664, pvalue=0.1913495266513811)
+    TtestResult(statistic=-1.3146566100751664,
+                pvalue=0.1913495266513811,
+                df=110.41349083985212)
 
     T-test with different means, variance, and n:
 
     >>> rvs5 = stats.norm.rvs(loc=8, scale=20, size=100, random_state=rng)
     >>> stats.ttest_ind(rvs1, rvs5)
-    Ttest_indResult(statistic=-2.8415950600298774, pvalue=0.0046418707568707885)
+    TtestResult(statistic=-2.8415950600298774,
+                pvalue=0.0046418707568707885,
+                df=598.0)
     >>> stats.ttest_ind(rvs1, rvs5, equal_var=False)
-    Ttest_indResult(statistic=-1.8686598649188084, pvalue=0.06434714193919686)
+    TtestResult(statistic=-1.8686598649188084,
+                pvalue=0.06434714193919686,
+                df=109.32167496550137)
 
     When performing a permutation test, more permutations typically yields
     more accurate results. Use a ``np.random.Generator`` to ensure
@@ -6921,7 +6949,9 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
 
     >>> stats.ttest_ind(rvs1, rvs5, permutations=10000,
     ...                 random_state=rng)
-    Ttest_indResult(statistic=-2.8415950600298774, pvalue=0.0052994700529947)
+    TtestResult(statistic=-2.8415950600298774,
+                pvalue=0.0052994700529947,
+                df=nan)
 
     Take these two samples, one of which has an extreme tail.
 
@@ -6934,26 +6964,39 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
     have no effect on sample `b` because ``np.floor(trim*len(b))`` is 0.
 
     >>> stats.ttest_ind(a, b, trim=.2)
-    Ttest_indResult(statistic=3.4463884028073513,
-                    pvalue=0.01369338726499547)
+    TtestResult(statistic=3.4463884028073513,
+                pvalue=0.01369338726499547,
+                df=6.0)
     """
+    xp = array_namespace(a, b)
+
+    default_float = xp.asarray(1.).dtype
+    if xp.isdtype(a.dtype, 'integral'):
+        a = xp.astype(a, default_float)
+    if xp.isdtype(b.dtype, 'integral'):
+        b = xp.astype(b, default_float)
+
     if not (0 <= trim < .5):
         raise ValueError("Trimming percentage should be 0 <= `trim` < .5.")
 
-    NaN = _get_nan(a, b)
-
-    if a.size == 0 or b.size == 0:
-        # _axis_nan_policy decorator ensures this only happens with 1d input
+    result_shape = _broadcast_array_shapes_remove_axis((a, b), axis=axis)
+    NaN = xp.full(result_shape, _get_nan(a, b, xp=xp))
+    NaN = NaN[()] if NaN.ndim == 0 else NaN
+    if xp_size(a) == 0 or xp_size(b) == 0:
         return TtestResult(NaN, NaN, df=NaN, alternative=NaN,
                            standard_error=NaN, estimate=NaN)
 
+    alternative_nums = {"less": -1, "two-sided": 0, "greater": 1}
+
+    # This probably should be deprecated and replaced with a `method` argument
     if permutations is not None and permutations != 0:
+        message = "Use of `permutations` is compatible only with NumPy arrays."
+        if not is_numpy(xp):
+            raise NotImplementedError(message)
+
+        message = "Use of `permutations` is incompatible with with use of `trim`."
         if trim != 0:
-            raise ValueError("Permutations are currently not supported "
-                             "with trimming.")
-        if permutations < 0 or (np.isfinite(permutations) and
-                                int(permutations) != permutations):
-            raise ValueError("Permutations must be a non-negative integer.")
+            raise NotImplementedError(message)
 
         t, prob = _permutation_ttest(a, b, permutations=permutations,
                                      axis=axis, equal_var=equal_var,
@@ -6962,37 +7005,40 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
                                      alternative=alternative)
         df, denom, estimate = NaN, NaN, NaN
 
+        # _axis_nan_policy decorator doesn't play well with strings
+        return TtestResult(t, prob, df=df, alternative=alternative_nums[alternative],
+                           standard_error=denom, estimate=estimate)
+
+    n1 = xp.asarray(a.shape[axis], dtype=a.dtype)
+    n2 = xp.asarray(b.shape[axis], dtype=b.dtype)
+
+    if trim == 0:
+        with np.errstate(divide='ignore', invalid='ignore'):
+            v1 = _var(a, axis, ddof=1, xp=xp)
+            v2 = _var(b, axis, ddof=1, xp=xp)
+
+        m1 = xp.mean(a, axis=axis)
+        m2 = xp.mean(b, axis=axis)
     else:
-        n1 = a.shape[axis]
-        n2 = b.shape[axis]
+        message = "Use of `trim` is compatible only with NumPy arrays."
+        if not is_numpy(xp):
+            raise NotImplementedError(message)
 
-        if trim == 0:
-            if equal_var:
-                old_errstate = np.geterr()
-                np.seterr(divide='ignore', invalid='ignore')
-            v1 = _var(a, axis, ddof=1)
-            v2 = _var(b, axis, ddof=1)
-            if equal_var:
-                np.seterr(**old_errstate)
-            m1 = np.mean(a, axis)
-            m2 = np.mean(b, axis)
-        else:
-            v1, m1, n1 = _ttest_trim_var_mean_len(a, trim, axis)
-            v2, m2, n2 = _ttest_trim_var_mean_len(b, trim, axis)
+        v1, m1, n1 = _ttest_trim_var_mean_len(a, trim, axis)
+        v2, m2, n2 = _ttest_trim_var_mean_len(b, trim, axis)
 
-        if equal_var:
-            df, denom = _equal_var_ttest_denom(v1, n1, v2, n2)
-        else:
-            df, denom = _unequal_var_ttest_denom(v1, n1, v2, n2)
-        t, prob = _ttest_ind_from_stats(m1, m2, denom, df, alternative)
+    if equal_var:
+        df, denom = _equal_var_ttest_denom(v1, n1, v2, n2, xp=xp)
+    else:
+        df, denom = _unequal_var_ttest_denom(v1, n1, v2, n2, xp=xp)
+    t, prob = _ttest_ind_from_stats(m1, m2, denom, df, alternative)
 
-        # when nan_policy='omit', `df` can be different for different axis-slices
-        df = np.broadcast_to(df, t.shape)[()]
-        estimate = m1-m2
+    # when nan_policy='omit', `df` can be different for different axis-slices
+    df = xp.broadcast_to(df, t.shape)
+    df = df[()] if df.ndim ==0 else df
+    estimate = m1 - m2
 
-    # _axis_nan_policy decorator doesn't play well with strings
-    alternative_num = {"less": -1, "two-sided": 0, "greater": 1}[alternative]
-    return TtestResult(t, prob, df=df, alternative=alternative_num,
+    return TtestResult(t, prob, df=df, alternative=alternative_nums[alternative],
                        standard_error=denom, estimate=estimate)
 
 
@@ -7103,9 +7149,9 @@ def _calc_t_stat(a, b, equal_var, axis=-1):
     var_b = _var(b, axis=axis, ddof=1)
 
     if not equal_var:
-        denom = _unequal_var_ttest_denom(var_a, na, var_b, nb)[1]
+        _, denom = _unequal_var_ttest_denom(var_a, na, var_b, nb)
     else:
-        denom = _equal_var_ttest_denom(var_a, na, var_b, nb)[1]
+        _, denom = _equal_var_ttest_denom(var_a, na, var_b, nb)
 
     return (avg_a-avg_b)/denom
 
@@ -7151,6 +7197,10 @@ def _permutation_ttest(a, b, permutations, axis=0, equal_var=True,
         The p-value.
 
     """
+    if permutations < 0 or (np.isfinite(permutations) and
+                            int(permutations) != permutations):
+        raise ValueError("Permutations must be a non-negative integer.")
+
     random_state = check_random_state(random_state)
 
     t_stat_observed = _calc_t_stat(a, b, equal_var, axis=axis)
@@ -7295,38 +7345,8 @@ def ttest_rel(a, b, axis=0, nan_policy='propagate', alternative="two-sided"):
     TtestResult(statistic=-5.879467544540889, pvalue=7.540777129099917e-09, df=499)
 
     """
-    a, b, axis = _chk2_asarray(a, b, axis)
-
-    na = _get_len(a, axis, "first argument")
-    nb = _get_len(b, axis, "second argument")
-    if na != nb:
-        raise ValueError('unequal length arrays')
-
-    if na == 0 or nb == 0:
-        # _axis_nan_policy decorator ensures this only happens with 1d input
-        NaN = _get_nan(a, b)
-        return TtestResult(NaN, NaN, df=NaN, alternative=NaN,
-                           standard_error=NaN, estimate=NaN)
-
-    n = a.shape[axis]
-    df = n - 1
-
-    d = (a - b).astype(np.float64)
-    v = _var(d, axis, ddof=1)
-    dm = np.mean(d, axis)
-    denom = np.sqrt(v / n)
-
-    with np.errstate(divide='ignore', invalid='ignore'):
-        t = np.divide(dm, denom)[()]
-    prob = _get_pvalue(t, distributions.t(df), alternative, xp=np)
-
-    # when nan_policy='omit', `df` can be different for different axis-slices
-    df = np.broadcast_to(df, t.shape)[()]
-
-    # _axis_nan_policy decorator doesn't play well with strings
-    alternative_num = {"less": -1, "two-sided": 0, "greater": 1}[alternative]
-    return TtestResult(t, prob, df=df, alternative=alternative_num,
-                       standard_error=denom, estimate=dm)
+    return ttest_1samp(a - b, popmean=0, axis=axis, alternative=alternative,
+                       _no_deco=True)
 
 
 # Map from names to lambda_ values used in power_divergence().
@@ -7971,7 +7991,10 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', method='auto'):
     >>> rng = np.random.default_rng()
     >>> stats.ks_1samp(stats.uniform.rvs(size=100, random_state=rng),
     ...                stats.norm.cdf)
-    KstestResult(statistic=0.5001899973268688, pvalue=1.1616392184763533e-23)
+    KstestResult(statistic=0.5001899973268688,
+                 pvalue=1.1616392184763533e-23,
+                 statistic_location=0.00047625268963724654,
+                 statistic_sign=-1)
 
     Indeed, the p-value is lower than our threshold of 0.05, so we reject the
     null hypothesis in favor of the default "two-sided" alternative: the data
@@ -7982,7 +8005,10 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', method='auto'):
 
     >>> x = stats.norm.rvs(size=100, random_state=rng)
     >>> stats.ks_1samp(x, stats.norm.cdf)
-    KstestResult(statistic=0.05345882212970396, pvalue=0.9227159037744717)
+    KstestResult(statistic=0.05345882212970396,
+                 pvalue=0.9227159037744717,
+                 statistic_location=-1.2451343873745018,
+                 statistic_sign=1)
 
     As expected, the p-value of 0.92 is not below our threshold of 0.05, so
     we cannot reject the null hypothesis.
@@ -7995,7 +8021,10 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', method='auto'):
 
     >>> x = stats.norm.rvs(size=100, loc=0.5, random_state=rng)
     >>> stats.ks_1samp(x, stats.norm.cdf, alternative='less')
-    KstestResult(statistic=0.17482387821055168, pvalue=0.001913921057766743)
+    KstestResult(statistic=0.17482387821055168,
+                 pvalue=0.001913921057766743,
+                 statistic_location=0.3713830565352756,
+                 statistic_sign=-1)
 
     and indeed, with p-value smaller than our threshold, we reject the null
     hypothesis in favor of the alternative.
@@ -8333,7 +8362,11 @@ def ks_2samp(data1, data2, alternative='two-sided', method='auto'):
     >>> sample1 = stats.uniform.rvs(size=100, random_state=rng)
     >>> sample2 = stats.norm.rvs(size=110, random_state=rng)
     >>> stats.ks_2samp(sample1, sample2)
-    KstestResult(statistic=0.5454545454545454, pvalue=7.37417839555191e-15)
+    KstestResult(statistic=0.5454545454545454,
+                 pvalue=7.37417839555191e-15,
+                 statistic_location=-0.014071496412861274,
+                 statistic_sign=-1)
+
 
     Indeed, the p-value is lower than our threshold of 0.05, so we reject the
     null hypothesis in favor of the default "two-sided" alternative: the data
@@ -8345,7 +8378,10 @@ def ks_2samp(data1, data2, alternative='two-sided', method='auto'):
     >>> sample1 = stats.norm.rvs(size=105, random_state=rng)
     >>> sample2 = stats.norm.rvs(size=95, random_state=rng)
     >>> stats.ks_2samp(sample1, sample2)
-    KstestResult(statistic=0.10927318295739348, pvalue=0.5438289009927495)
+    KstestResult(statistic=0.10927318295739348,
+                 pvalue=0.5438289009927495,
+                 statistic_location=-0.1670157701848795,
+                 statistic_sign=-1)
 
     As expected, the p-value of 0.54 is not below our threshold of 0.05, so
     we cannot reject the null hypothesis.
@@ -8358,7 +8394,10 @@ def ks_2samp(data1, data2, alternative='two-sided', method='auto'):
 
     >>> sample1 = stats.norm.rvs(size=105, loc=0.5, random_state=rng)
     >>> stats.ks_2samp(sample1, sample2, alternative='less')
-    KstestResult(statistic=0.4055137844611529, pvalue=3.5474563068855554e-08)
+    KstestResult(statistic=0.4055137844611529,
+                 pvalue=3.5474563068855554e-08,
+                 statistic_location=-0.13249370614972575,
+                 statistic_sign=-1)
 
     and indeed, with p-value smaller than our threshold, we reject the null
     hypothesis in favor of the alternative.
@@ -8605,7 +8644,10 @@ def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', method='auto'):
     >>> rng = np.random.default_rng()
     >>> stats.kstest(stats.uniform.rvs(size=100, random_state=rng),
     ...              stats.norm.cdf)
-    KstestResult(statistic=0.5001899973268688, pvalue=1.1616392184763533e-23)
+    KstestResult(statistic=0.5001899973268688,
+                 pvalue=1.1616392184763533e-23,
+                 statistic_location=0.00047625268963724654,
+                 statistic_sign=-1)
 
     Indeed, the p-value is lower than our threshold of 0.05, so we reject the
     null hypothesis in favor of the default "two-sided" alternative: the data
@@ -8616,7 +8658,11 @@ def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', method='auto'):
 
     >>> x = stats.norm.rvs(size=100, random_state=rng)
     >>> stats.kstest(x, stats.norm.cdf)
-    KstestResult(statistic=0.05345882212970396, pvalue=0.9227159037744717)
+    KstestResult(statistic=0.05345882212970396,
+                 pvalue=0.9227159037744717,
+                 statistic_location=-1.2451343873745018,
+                 statistic_sign=1)
+
 
     As expected, the p-value of 0.92 is not below our threshold of 0.05, so
     we cannot reject the null hypothesis.
@@ -8629,7 +8675,10 @@ def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', method='auto'):
 
     >>> x = stats.norm.rvs(size=100, loc=0.5, random_state=rng)
     >>> stats.kstest(x, stats.norm.cdf, alternative='less')
-    KstestResult(statistic=0.17482387821055168, pvalue=0.001913921057766743)
+    KstestResult(statistic=0.17482387821055168,
+                 pvalue=0.001913921057766743,
+                 statistic_location=0.3713830565352756,
+                 statistic_sign=-1)
 
     and indeed, with p-value smaller than our threshold, we reject the null
     hypothesis in favor of the alternative.
@@ -8638,7 +8687,10 @@ def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', method='auto'):
     distribution as the second argument.
 
     >>> stats.kstest(x, "norm", alternative='less')
-    KstestResult(statistic=0.17482387821055168, pvalue=0.001913921057766743)
+    KstestResult(statistic=0.17482387821055168,
+                 pvalue=0.001913921057766743,
+                 statistic_location=0.3713830565352756,
+                 statistic_sign=-1)
 
     The examples above have all been one-sample tests identical to those
     performed by `ks_1samp`. Note that `kstest` can also perform two-sample
@@ -8649,7 +8701,10 @@ def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', method='auto'):
     >>> sample1 = stats.laplace.rvs(size=105, random_state=rng)
     >>> sample2 = stats.laplace.rvs(size=95, random_state=rng)
     >>> stats.kstest(sample1, sample2)
-    KstestResult(statistic=0.11779448621553884, pvalue=0.4494256912629795)
+    KstestResult(statistic=0.11779448621553884,
+                 pvalue=0.4494256912629795,
+                 statistic_location=0.6138814275424155,
+                 statistic_sign=1)
 
     As expected, the p-value of 0.45 is not below our threshold of 0.05, so
     we cannot reject the null hypothesis.
@@ -9113,7 +9168,7 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t",
                        "(0/0). Try using `distribution='normal'")
             warnings.warn(message, RuntimeWarning, stacklevel=2)
 
-        distribution = distributions.t(df)
+        distribution = _SimpleStudentT(df)
     elif distribution == "normal":
         distribution = _SimpleNormal()
     else:
@@ -9247,39 +9302,47 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
     .. [8] https://en.wikipedia.org/wiki/Extensions_of_Fisher%27s_method
 
     """
-    if pvalues.size == 0:
+    xp = array_namespace(pvalues)
+    pvalues = xp.asarray(pvalues)
+    if xp_size(pvalues) == 0:
         NaN = _get_nan(pvalues)
         return SignificanceResult(NaN, NaN)
+    
+    n = pvalues.shape[0]
+    # used to convert Python scalar to the right dtype
+    one = xp.asarray(1, dtype=pvalues.dtype)
 
     if method == 'fisher':
-        statistic = -2 * np.sum(np.log(pvalues))
-        chi2 = _SimpleChi2(2 * len(pvalues))
+        statistic = -2 * xp.sum(xp.log(pvalues))
+        chi2 = _SimpleChi2(2*n*one)
         pval = _get_pvalue(statistic, chi2, alternative='greater',
-                           symmetric=False, xp=np)
+                           symmetric=False, xp=xp)
     elif method == 'pearson':
-        statistic = 2 * np.sum(np.log1p(-pvalues))
-        # _SimpleChi2 doesn't have `cdf` yet;
-        # add it when `combine_pvalues` is converted to array API
-        pval = distributions.chi2.cdf(-statistic, 2 * len(pvalues))
+        statistic = 2 * xp.sum(xp.log1p(-pvalues))
+        chi2 = _SimpleChi2(2*n*one)
+        pval = _get_pvalue(-statistic, chi2, alternative='less', symmetric=False, xp=xp)
     elif method == 'mudholkar_george':
-        normalizing_factor = np.sqrt(3/len(pvalues))/np.pi
-        statistic = -np.sum(np.log(pvalues)) + np.sum(np.log1p(-pvalues))
-        nu = 5 * len(pvalues) + 4
-        approx_factor = np.sqrt(nu / (nu - 2))
-        pval = distributions.t.sf(statistic * normalizing_factor
-                                  * approx_factor, nu)
+        normalizing_factor = math.sqrt(3/n)/xp.pi
+        statistic = -xp.sum(xp.log(pvalues)) + xp.sum(xp.log1p(-pvalues))
+        nu = 5*n  + 4
+        approx_factor = math.sqrt(nu / (nu - 2))
+        t = _SimpleStudentT(nu*one)
+        pval = _get_pvalue(statistic * normalizing_factor * approx_factor, t,
+                           alternative="greater", xp=xp)
     elif method == 'tippett':
-        statistic = np.min(pvalues)
-        pval = distributions.beta.cdf(statistic, 1, len(pvalues))
+        statistic = xp.min(pvalues)
+        beta = _SimpleBeta(one, n*one)
+        pval = _get_pvalue(statistic, beta, alternative='less', symmetric=False, xp=xp)
     elif method == 'stouffer':
         if weights is None:
-            weights = np.ones_like(pvalues)
-        elif len(weights) != len(pvalues):
+            weights = xp.ones_like(pvalues, dtype=pvalues.dtype)
+        elif weights.shape[0] != n:
             raise ValueError("pvalues and weights must be of the same size.")
 
-        Zi = distributions.norm.isf(pvalues)
-        statistic = np.dot(weights, Zi) / np.linalg.norm(weights)
-        pval = distributions.norm.sf(statistic)
+        norm = _SimpleNormal()
+        Zi = norm.isf(pvalues)
+        statistic = weights @ Zi / xp.linalg.vector_norm(weights)
+        pval = _get_pvalue(statistic, norm, alternative="greater", xp=xp)
 
     else:
         raise ValueError(
@@ -10862,7 +10925,10 @@ def linregress(x, y=None, alternative='two-sided'):
         # n-2 degrees of freedom because 2 has been used up
         # to estimate the mean and standard deviation
         t = r * np.sqrt(df / ((1.0 - r + TINY)*(1.0 + r + TINY)))
-        prob = _get_pvalue(t, distributions.t(df), alternative)
+
+        dist = _SimpleStudentT(df)
+        prob = _get_pvalue(t, dist, alternative, xp=np)
+        prob = prob[()] if prob.ndim == 0 else prob
 
         slope_stderr = np.sqrt((1 - r**2) * ssym / ssxm / df)
 
@@ -10888,6 +10954,9 @@ class _SimpleNormal:
 
     def sf(self, x):
         return special.ndtr(-x)
+    
+    def isf(self, x):
+        return -special.ndtri(x)
 
 
 class _SimpleChi2:
@@ -10897,5 +10966,47 @@ class _SimpleChi2:
     def __init__(self, df):
         self.df = df
 
+    def cdf(self, x):
+        return special.chdtr(self.df, x)
+
     def sf(self, x):
         return special.chdtrc(self.df, x)
+
+
+class _SimpleBeta:
+    # A very simple, array-API compatible beta distribution for use in
+    # hypothesis tests. May be replaced by new infrastructure beta
+    # distribution in due time.
+    def __init__(self, a, b, *, loc=None, scale=None):
+        self.a = a
+        self.b = b
+        self.loc = loc
+        self.scale = scale
+
+    def cdf(self, x):
+        if self.loc is not None or self.scale is not None:
+            loc = 0 if self.loc is None else self.loc
+            scale = 1 if self.scale is None else self.scale
+            return special.betainc(self.a, self.b, (x - loc)/scale)
+        return special.betainc(self.a, self.b, x)
+
+    def sf(self, x):
+        if self.loc is not None or self.scale is not None:
+            loc = 0 if self.loc is None else self.loc
+            scale = 1 if self.scale is None else self.scale
+            return special.betaincc(self.a, self.b, (x - loc)/scale)
+        return special.betaincc(self.a, self.b, x)
+
+
+class _SimpleStudentT:
+    # A very simple, array-API compatible t distribution for use in
+    # hypothesis tests. May be replaced by new infrastructure t
+    # distribution in due time.
+    def __init__(self, df):
+        self.df = df
+
+    def cdf(self, t):
+        return special.stdtr(self.df, t)
+
+    def sf(self, t):
+        return special.stdtr(self.df, -t)

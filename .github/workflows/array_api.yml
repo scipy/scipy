@@ -78,7 +78,7 @@ jobs:
         echo "timestamp=${NOW}" >> $GITHUB_OUTPUT
 
     - name: Setup compiler cache
-      uses:  actions/cache@v3
+      uses:  actions/cache@v4
       id:    cache-ccache
       with:
         path: ${{ steps.prep-ccache.outputs.dir }}
@@ -100,9 +100,10 @@ jobs:
         python dev.py --no-build test -b all -t scipy.special.tests.test_support_alternative_backends -- --durations 3 --timeout=60
         python dev.py --no-build test -b all -t scipy._lib.tests.test_array_api -- --durations 3 --timeout=60
         python dev.py --no-build test -b all -t scipy._lib.tests.test__util -- --durations 3 --timeout=60
-        python dev.py --no-build test -b all -t scipy.stats.tests.test_stats -- --durations 3 --timeout=60
-        python dev.py --no-build test -b all -t scipy.stats.tests.test_morestats -- --durations 3 --timeout=60
-        python dev.py --no-build test -b all -t scipy.stats.tests.test_variation -- --durations 3 --timeout=60
-        python dev.py --no-build test -b all -t scipy.stats.tests.test_resampling -- --durations 3 --timeout=60
         python dev.py --no-build test -b all -t scipy.optimize.tests.test_chandrupatla -- --durations 3 --timeout=60
+        python dev.py --no-build test -b all -s stats -- --durations 3 --timeout=60
         python dev.py --no-build test -b all -t scipy.optimize.tests.test_differentiate -- --durations 3 --timeout=60
+        
+
+        
+

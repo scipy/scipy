@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     # label based on issue title
-    - uses: github/issue-labeler@v3.3
+    - uses: github/issue-labeler@v3.4
       if: github.repository == 'scipy/scipy'
       with:
         configuration-path: .github/labeler.yml

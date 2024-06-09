@@ -377,13 +377,13 @@ def _make_tails(a):
 
 
 cdef ITYPE_t[:] _edmonds_karp(
-        ITYPE_t[:] edge_ptr,
-        ITYPE_t[:] tails,
-        ITYPE_t[:] heads,
-        ITYPE_t[:] capacities,
-        ITYPE_t[:] rev_edge_ptr,
-        ITYPE_t source,
-        ITYPE_t sink) noexcept:
+        const ITYPE_t[:] edge_ptr,
+        const ITYPE_t[:] tails,
+        const ITYPE_t[:] heads,
+        const ITYPE_t[:] capacities,
+        const ITYPE_t[:] rev_edge_ptr,
+        const ITYPE_t source,
+        const ITYPE_t sink) noexcept:
     """Solves the maximum flow problem using the Edmonds--Karp algorithm.
 
     This assumes that for every edge in the graph, the edge in the opposite
@@ -619,12 +619,12 @@ cdef bint _augment_paths(
             progress[current] += 1
 
 cdef ITYPE_t[:] _dinic(
-        ITYPE_t[:] edge_ptr,
-        ITYPE_t[:] heads,
+        const ITYPE_t[:] edge_ptr,
+        const ITYPE_t[:] heads,
         ITYPE_t[:] capacities,
-        ITYPE_t[:] rev_edge_ptr,
-        ITYPE_t source,
-        ITYPE_t sink) noexcept:
+        const ITYPE_t[:] rev_edge_ptr,
+        const ITYPE_t source,
+        const ITYPE_t sink) noexcept:
     """Solves the maximum flow problem using the Dinic's algorithm.
 
     This assumes that for every edge in the graph, the edge in the opposite

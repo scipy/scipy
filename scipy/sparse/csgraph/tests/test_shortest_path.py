@@ -33,10 +33,13 @@ directed_SP = [[0, 3, 3, 5, 7],
 directed_2SP_0_to_3 = [[-9999, 0, -9999, 1, -9999],
                        [-9999, 0, -9999, 4, 1]]
 
-directed_sparse_zero_G = scipy.sparse.csr_matrix(([0, 1, 2, 3, 1], 
-                                            ([0, 1, 2, 3, 4], 
-                                             [1, 2, 0, 4, 3])), 
-                                            shape = (5, 5))
+directed_sparse_zero_G = scipy.sparse.csr_matrix(
+    (
+        [0, 1, 2, 3, 1],
+        ([0, 1, 2, 3, 4], [1, 2, 0, 4, 3]),
+    ),
+    shape=(5, 5),
+)
 
 directed_sparse_zero_SP = [[0, 0, 1, np.inf, np.inf],
                       [3, 0, 1, np.inf, np.inf],
@@ -44,10 +47,13 @@ directed_sparse_zero_SP = [[0, 0, 1, np.inf, np.inf],
                       [np.inf, np.inf, np.inf, 0, 3],
                       [np.inf, np.inf, np.inf, 1, 0]]
 
-undirected_sparse_zero_G = scipy.sparse.csr_matrix(([0, 0, 1, 1, 2, 2, 1, 1], 
-                                              ([0, 1, 1, 2, 2, 0, 3, 4], 
-                                               [1, 0, 2, 1, 0, 2, 4, 3])), 
-                                              shape = (5, 5))
+undirected_sparse_zero_G = scipy.sparse.csr_matrix(
+    (
+        [0, 0, 1, 1, 2, 2, 1, 1],
+        ([0, 1, 1, 2, 2, 0, 3, 4], [1, 0, 2, 1, 0, 2, 4, 3])
+    ),
+    shape=(5, 5),
+)
 
 undirected_sparse_zero_SP = [[0, 0, 1, np.inf, np.inf],
                         [0, 0, 1, np.inf, np.inf],
@@ -452,3 +458,27 @@ def test_yen_negative_weights():
         K=1,
     )
     assert_allclose(distances, [-2.])
+
+
+@pytest.mark.parametrize("min_only", (True, False))
+@pytest.mark.parametrize("directed", (True, False))
+@pytest.mark.parametrize("return_predecessors", (True, False))
+@pytest.mark.parametrize("index_dtype", (np.int32, np.int64))
+@pytest.mark.parametrize("indices", (None, [1]))
+def test_20904(min_only, directed, return_predecessors, index_dtype, indices):
+    """Test two failures from gh-20904: int32 and indices-as-None."""
+    adj_mat = scipy.sparse.eye(4, format="csr")
+    adj_mat = scipy.sparse.csr_array(
+        (
+            adj_mat.data,
+            adj_mat.indices.astype(index_dtype),
+            adj_mat.indptr.astype(index_dtype),
+        ),
+    )
+    dijkstra(
+        adj_mat,
+        directed,
+        indices=indices,
+        min_only=min_only,
+        return_predecessors=return_predecessors,
+    )

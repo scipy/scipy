@@ -275,7 +275,7 @@ class TestIterativeSubproblem:
                                       -0.84954934])
         assert_array_almost_equal(hits_boundary, True)
 
-    @pytest.mark.fail_slow(5)
+    @pytest.mark.fail_slow(10)
     def test_for_random_entries(self):
         # Seed
         np.random.seed(1)

@@ -9,7 +9,7 @@ import numpy as np
 
 from scipy.interpolate import (interp1d, interp2d, lagrange, PPoly, BPoly,
         splrep, splev, splantider, splint, sproot, Akima1DInterpolator,
-        NdPPoly, BSpline)
+        NdPPoly, BSpline, PchipInterpolator)
 
 from scipy.special import poch, gamma
 
@@ -947,16 +947,16 @@ class TestAkima1DInterpolator:
         # Testing extrapoation to actual function.
         assert_allclose(y_ext, ak_true(x_ext), atol=1e-15)
 
-    def test_complex(self):
-        # Complex-valued data deprecated
-        x = np.arange(0., 11.)
-        y = np.array([0., 2., 1., 3., 2., 6., 5.5, 5.5, 2.7, 5.1, 3.])
-        y = y - 2j*y
-        # actually raises ComplexWarning, which subclasses RuntimeWarning, see
-        # https://github.com/numpy/numpy/blob/main/numpy/exceptions.py
-        msg = "Passing an array with a complex.*|Casting complex values to real.*"
-        with pytest.warns((RuntimeWarning, DeprecationWarning), match=msg):
-            Akima1DInterpolator(x, y)
+
+@pytest.mark.parametrize("method", [Akima1DInterpolator, PchipInterpolator])
+def test_complex(method):
+    # Complex-valued data deprecated
+    x = np.arange(0., 11.)
+    y = np.array([0., 2., 1., 3., 2., 6., 5.5, 5.5, 2.7, 5.1, 3.])
+    y = y - 2j*y
+    msg = "real values"
+    with pytest.raises(ValueError, match=msg):
+        method(x, y)
 
 
 class TestPPolyCommon:
