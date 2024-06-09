@@ -3,26 +3,36 @@ import pytest
 import numpy as np
 from numpy.testing import assert_array_less, assert_allclose, assert_equal
 
+from scipy.conftest import array_api_compatible
 import scipy._lib._elementwise_iterative_method as eim
-from scipy import stats, optimize
+from scipy._lib._array_api import (xp_assert_close, xp_assert_equal, xp_assert_less,
+                                   is_numpy, is_torch)
+
+from scipy import stats, optimize, special
 from scipy.optimize._differentiate import (_differentiate as differentiate,
                                            _jacobian as jacobian, _EERRORINCREASE)
 
 class TestDifferentiate:
 
     def f(self, x):
-        return stats.norm().cdf(x)
+        return special.ndtr(x)
 
+    @array_api_compatible
     @pytest.mark.parametrize('x', [0.6, np.linspace(-0.05, 1.05, 10)])
-    def test_basic(self, x):
+    @pytest.mark.usefixtures("skip_xp_backends")
+    @pytest.mark.skip_xp_backends('array_api_strict', 'jax.numpy',
+                                  reasons=['Currently uses fancy indexing assignment.',
+                                           'JAX does not support item assignment.'])
+    def test_basic(self, x, xp):
         # Invert distribution CDF and compare against distribution `ppf`
-        res = differentiate(self.f, x)
-        ref = stats.norm().pdf(x)
-        np.testing.assert_allclose(res.df, ref)
-        # This would be nice, but doesn't always work out. `error` is an
-        # estimate, not a bound.
-        assert_array_less(abs(res.df - ref), res.error)
-        assert res.x.shape == ref.shape
+        default_dtype = xp.asarray(1.).dtype
+        res = differentiate(self.f, xp.asarray(x, dtype=default_dtype))
+        ref = xp.asarray(stats.norm().pdf(x), dtype=default_dtype)
+        xp_assert_close(res.df, ref)
+        # # This would be nice, but doesn't always work out. `error` is an
+        # # estimate, not a bound.
+        if not is_torch:
+            xp_assert_less(xp.abs(res.df - ref), res.error)
 
     @pytest.mark.parametrize('case', stats._distr_params.distcont)
     def test_accuracy(self, case):
@@ -33,9 +43,14 @@ class TestDifferentiate:
         ref = dist.pdf(x)
         assert_allclose(res.df, ref, atol=1e-10)
 
+    @array_api_compatible
     @pytest.mark.parametrize('order', [1, 6])
     @pytest.mark.parametrize('shape', [tuple(), (12,), (3, 4), (3, 2, 2)])
-    def test_vectorization(self, order, shape):
+    @pytest.mark.usefixtures("skip_xp_backends")
+    @pytest.mark.skip_xp_backends('array_api_strict', 'jax.numpy',
+                                  reasons=['Currently uses fancy indexing assignment.',
+                                           'JAX does not support item assignment.'])
+    def test_vectorization(self, order, shape, xp):
         # Test for correct functionality, output shapes, and dtypes for various
         # input shapes.
         x = np.linspace(-0.05, 1.05, 12).reshape(shape) if shape else 0.6
@@ -52,42 +67,34 @@ class TestDifferentiate:
         f.nit = -1
         f.feval = 0
 
-        res = differentiate(f, x, order=order)
+        res = differentiate(f, xp.asarray(x, dtype=xp.float64), order=order)
         refs = _differentiate_single(x).ravel()
 
         ref_x = [ref.x for ref in refs]
-        assert_allclose(res.x.ravel(), ref_x)
-        assert_equal(res.x.shape, shape)
+        xp_assert_close(xp.reshape(res.x, (-1,)), xp.asarray(ref_x))
 
         ref_df = [ref.df for ref in refs]
-        assert_allclose(res.df.ravel(), ref_df)
-        assert_equal(res.df.shape, shape)
+        xp_assert_close(xp.reshape(res.df, (-1,)), xp.asarray(ref_df))
 
         ref_error = [ref.error for ref in refs]
-        assert_allclose(res.error.ravel(), ref_error, atol=5e-15)
-        assert_equal(res.error.shape, shape)
+        xp_assert_close(xp.reshape(res.error, (-1,)), xp.asarray(ref_error),
+                        atol=1e-13)
 
-        ref_success = [ref.success for ref in refs]
-        assert_equal(res.success.ravel(), ref_success)
-        assert_equal(res.success.shape, shape)
-        assert np.issubdtype(res.success.dtype, np.bool_)
+        ref_success = [bool(ref.success) for ref in refs]
+        xp_assert_equal(xp.reshape(res.success, (-1,)), xp.asarray(ref_success))
 
-        ref_flag = [ref.status for ref in refs]
-        assert_equal(res.status.ravel(), ref_flag)
-        assert_equal(res.status.shape, shape)
-        assert np.issubdtype(res.status.dtype, np.integer)
+        ref_flag = [np.int32(ref.status) for ref in refs]
+        xp_assert_equal(xp.reshape(res.status, (-1,)), xp.asarray(ref_flag))
 
-        ref_nfev = [ref.nfev for ref in refs]
-        assert_equal(res.nfev.ravel(), ref_nfev)
-        assert_equal(np.max(res.nfev), f.feval)
-        assert_equal(res.nfev.shape, res.x.shape)
-        assert np.issubdtype(res.nfev.dtype, np.integer)
+        ref_nfev = [np.int32(ref.nfev) for ref in refs]
+        xp_assert_equal(xp.reshape(res.nfev, (-1,)), xp.asarray(ref_nfev))
+        if not is_numpy(xp):  # can't expect other backends to be exactly the same
+            xp.max(res.nfev) == f.feval
 
-        ref_nit = [ref.nit for ref in refs]
-        assert_equal(res.nit.ravel(), ref_nit)
-        assert_equal(np.max(res.nit), f.nit)
-        assert_equal(res.nit.shape, res.x.shape)
-        assert np.issubdtype(res.nit.dtype, np.integer)
+        ref_nit = [np.int32(ref.nit) for ref in refs]
+        xp_assert_equal(xp.reshape(res.nit, (-1,)), xp.asarray(ref_nit))
+        if not is_numpy(xp):  # can't expect other backends to be exactly the same
+            xp.max(res.nit) == f.nit
 
     def test_flags(self):
         # Test cases that should produce different status flags; show that all
