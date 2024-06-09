@@ -80,6 +80,13 @@ void legendre_p(int n, T z, grad<T &, N> res) {
         std::apply([](const auto &...args) { return std::tie(args[1]...); }, res_n.underlying_tuple());
 }
 
+/*
+template <typename T, typename... OutputVal>
+void legendre_p2(int n, T z, std::tuple<OutputVal &...> res) {
+    // ...
+}
+*/
+
 /**
  * Compute the Legendre polynomial of degree n.
  *
@@ -152,48 +159,31 @@ struct assoc_legendre_p_initializer_m_m_abs<T, assoc_legendre_unnorm_policy> {
         }
     }
 
-    void operator()(T (&res)[2]) const {
-        res[0] = 1;
-        res[1] = w;
+    void operator()(grad<T (&)[2], 0> res) const {
+        res = {{1, w}};
 
         if (m_signbit) {
-            res[1] /= 2;
+            get<0>(res)[1] /= 2;
         }
     }
-
-    void operator()(T (&res)[2], T (&res_jac)[2]) const {
-        operator()(res);
-
-        res_jac[0] = 0;
-        res_jac[1] = -type_sign * z / w;
-
-        if (m_signbit) {
-            res_jac[1] /= 2;
-        }
-    }
-
-    void operator()(T (&res)[2], T (&res_jac)[2], T (&res_hess)[2]) const {
-        operator()(res, res_jac);
-
-        res_hess[0] = 0;
-        res_hess[1] = T(1) / ((z * z - T(1)) * w);
-
-        if (m_signbit) {
-            res_hess[1] /= 2;
-        }
-    }
-
-    void operator()(grad<T (&)[2], 0> res) const { operator()(std::get<0>(res.underlying_tuple())); }
 
     void operator()(grad<T (&)[2], 1> res) const {
-        operator()(std::get<0>(res.underlying_tuple()), std::get<1>(res.underlying_tuple()));
+        res = {{1, w}, {0, -type_sign * z / w}};
+
+        if (m_signbit) {
+            get<0>(res)[1] /= 2;
+            get<1>(res)[1] /= 2;
+        }
     }
 
     void operator()(grad<T (&)[2], 2> res) const {
-        operator()(
-            std::get<0>(res.underlying_tuple()), std::get<1>(res.underlying_tuple()),
-            std::get<2>(res.underlying_tuple())
-        );
+        res = {{1, w}, {0, -type_sign * z / w}, {0, T(1) / ((z * z - T(1)) * w)}};
+
+        if (m_signbit) {
+            get<0>(res)[1] /= 2;
+            get<1>(res)[1] /= 2;
+            get<2>(res)[1] /= 2;
+        }
     }
 };
 
@@ -711,6 +701,14 @@ T multi_assoc_legendre_p(NormPolicy norm, int n, int m, int type, T z) {
 
     return res;
 }
+
+// NormPolicy norm, int n, int m, int type, T z, grad<T &, N> res
+
+// NormPolicy norm, int n, int m, int type, T z
+
+// NormPolicy norm, int n, int m, T z, grad<T &, N> res
+
+// NormPolicy norm, int n, int m, T z
 
 /**
  * Compute all associated Legendre polynomials of degree j and order i, where 0 <= j <= n and -m <= i <= m.

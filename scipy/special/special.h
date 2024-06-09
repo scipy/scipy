@@ -22,6 +22,7 @@ void legendre_p(long long int n, T z, T &res, T &res_jac) {
 template <typename T>
 void legendre_p(long long int n, T z, T &res, T &res_jac, T &res_hess) {
     special::legendre_p(n, z, special::grad(res, res_jac, res_hess));
+//    special::legendre_p2(n, z, std::tie(res, res_jac, res_hess));
 }
 
 template <typename T, typename OutputVec1>
