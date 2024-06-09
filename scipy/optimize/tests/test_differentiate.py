@@ -238,7 +238,7 @@ class TestDifferentiate:
 
     def test_maxiter_callback(self, xp):
         # Test behavior of `maxiter` parameter and `callback` interface
-        x = xp.asarray(0.612814)
+        x = xp.asarray(0.612814, dtype=xp.float64)
         maxiter = 3
 
         def f(x):
