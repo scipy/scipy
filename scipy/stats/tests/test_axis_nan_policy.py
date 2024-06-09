@@ -20,7 +20,6 @@ from scipy.stats._axis_nan_policy import (_masked_arrays_2_sentinel_arrays,
                                           too_small_nd_omit, too_small_nd_not_omit,
                                           too_small_1d_omit, too_small_1d_not_omit)
 from scipy._lib._util import AxisError
-from scipy._lib._array_api import xp_mean
 from scipy.conftest import skip_xp_invalid_arg
 
 
@@ -43,13 +42,13 @@ def _get_ttest_ci(ttest):
 
 def xp_mean_1samp(*args, **kwargs):
     kwargs.pop('_no_deco', None)
-    return xp_mean(*args, **kwargs)
+    return stats._stats_py._xp_mean(*args, **kwargs)
 
 
 def xp_mean_2samp(*args, **kwargs):
     kwargs.pop('_no_deco', None)
     weights = args[1]
-    return xp_mean(args[0], *args[2:], weights=weights, **kwargs)
+    return stats._stats_py._xp_mean(args[0], *args[2:], weights=weights, **kwargs)
 
 
 axis_nan_policy_cases = [
