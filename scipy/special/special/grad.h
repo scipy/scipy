@@ -63,12 +63,6 @@ namespace detail {
 
         base_grad(base_grad &&other) = default;
 
-        base_grad &operator=(const base_grad &other) {
-            (assign(std::get<I>(m_underlying), std::get<I>(other.m_underlying)), ...);
-
-            return *this;
-        }
-
         base_grad &operator=(base_grad &&other) = default; // { return *this; }
 
         tuple_type &underlying_tuple() { return m_underlying; }
@@ -105,14 +99,6 @@ namespace detail {
         tuple_type &underlying_tuple() { return m_underlying; }
 
         const tuple_type &underlying_tuple() const { return m_underlying; }
-
-        base_grad &operator=(base_grad<indices, T> &other) { return *this; }
-
-        base_grad &operator=(const base_grad &other) {
-            (assign(std::get<I>(m_underlying), std::get<I>(other.m_underlying)), ...);
-
-            return *this;
-        }
 
         //        base_grad &operator=(const base_grad<indices, T> &other) {
         //            (assign(std::get<I>(m_underlying), std::get<I>(other.m_underlying)), ...);
