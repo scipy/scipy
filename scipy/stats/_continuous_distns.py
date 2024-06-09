@@ -1447,7 +1447,7 @@ class cauchy_gen(rv_continuous):
 
     def _pdf(self, x):
         # cauchy.pdf(x) = 1 / (pi * (1 + x**2))
-        return 1.0 / np.pi / (1.0 + x * x)
+        return 1.0 / (np.pi * (1.0 + x * x))
 
     def _cdf(self, x):
         return _lazywhere(
