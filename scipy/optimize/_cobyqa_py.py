@@ -10,7 +10,7 @@ def _minimize_cobyqa(fun, x0, args=(), bounds=None, constraints=(),
                      **unknown_options):
     """
     Minimize a scalar function of one or more variables using the
-    Constrained Optimization BY Quadratic Approximations (COBYQA) algorithm.
+    Constrained Optimization BY Quadratic Approximations (COBYQA) algorithm [1]_.
 
     .. versionadded:: 1.14.0
 
@@ -40,6 +40,11 @@ def _minimize_cobyqa(fun, x0, args=(), bounds=None, constraints=(),
         if all the lower and upper bounds are finite, the variables are scaled
         to be within the range :math:`[-1, 1]`. If any of the lower or upper
         bounds is infinite, the variables are not scaled.
+
+    References
+    ----------
+    .. [1] COBYQA
+           https://www.cobyqa.com/stable/
     """
     from .._lib.cobyqa import minimize  # import here to avoid circular imports
 

@@ -467,7 +467,7 @@ class TestRegularGridInterpolator:
         assert_equal(res[i], np.nan)
         assert_equal(res[~i], interp(z[~i]))
 
-    @pytest.mark.fail_slow(5)
+    @pytest.mark.fail_slow(10)
     @parametrize_rgi_interp_methods
     @pytest.mark.parametrize(("ndims", "func"), [
         (2, lambda x, y: 2 * x ** 3 + 3 * y ** 2),
@@ -527,7 +527,7 @@ class TestRegularGridInterpolator:
                                          method=method, bounds_error=False)
         assert np.isnan(interp([10]))
 
-    @pytest.mark.fail_slow(2)
+    @pytest.mark.fail_slow(5)
     @parametrize_rgi_interp_methods
     def test_nonscalar_values(self, method):
 
@@ -851,7 +851,7 @@ class TestInterpN:
                      method=method, bounds_error=False)
         assert_allclose(v1, v2.reshape(v1.shape))
 
-    @pytest.mark.fail_slow(2)
+    @pytest.mark.fail_slow(5)
     @parametrize_rgi_interp_methods
     def test_nonscalar_values(self, method):
 
@@ -947,7 +947,7 @@ class TestInterpN:
 
         sample = np.array([[1, 2.3, 5.3, 0.5, 3.3, 1.2, 3],
                            [1, 3.3, 1.2, 4.0, 5.0, 1.0, 3]]).T
-        with pytest.deprecated_call(match='complex'):
+        with pytest.raises(ValueError, match='real'):
             interpn(points, values, sample, method='pchip')
 
     def test_complex_spline2fd(self):

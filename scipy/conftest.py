@@ -267,7 +267,7 @@ if HAVE_SCPDT:
 
     # FIXME: populate the dict once
     @contextmanager
-    def warnings_errors_and_rng(test):
+    def warnings_errors_and_rng(test=None):
         """Temporarily turn (almost) all warnings to errors.
 
         Filter out known warnings which we allow.
@@ -337,11 +337,11 @@ if HAVE_SCPDT:
         with _fixed_default_rng():
             np.random.seed(None)
             with warnings.catch_warnings():
-                if test.name in known_warnings:
+                if test and test.name in known_warnings:
                     warnings.filterwarnings('ignore',
                                             **known_warnings[test.name])
                     yield
-                elif test.name in legit:
+                elif test and test.name in legit:
                     yield
                 else:
                     warnings.simplefilter('error', Warning)

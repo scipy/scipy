@@ -24,8 +24,9 @@ from ._sparsetools import (bsr_matvec, bsr_matvecs, csr_matmat_maxnnz,
 class _bsr_base(_cs_matrix, _minmax_mixin):
     _format = 'bsr'
 
-    def __init__(self, arg1, shape=None, dtype=None, copy=False, blocksize=None):
-        _data_matrix.__init__(self, arg1)
+    def __init__(self, arg1, shape=None, dtype=None, copy=False,
+                 blocksize=None, *, maxprint=None):
+        _data_matrix.__init__(self, arg1, maxprint=maxprint)
 
         if issparse(arg1):
             if arg1.format == self.format and copy:
@@ -218,6 +219,15 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
         return int(self.indptr[-1] * R * C)
 
     _getnnz.__doc__ = _spbase._getnnz.__doc__
+
+    def count_nonzero(self, axis=None):
+        if axis is not None:
+            raise NotImplementedError(
+                "count_nonzero over axis is not implemented for BSR format."
+            )
+        return np.count_nonzero(self._deduped_data())
+
+    count_nonzero.__doc__ = _spbase.count_nonzero.__doc__
 
     def __repr__(self):
         _, fmt = _formats[self.format]
