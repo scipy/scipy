@@ -4899,6 +4899,14 @@ class TestDgamma:
             assert y[i] == stats.dgamma.entropy(x[i])
 
 class TestCauchy:
+    def test_pdf(self):
+        assert_almost_equal(stats.cauchy.pdf(0), 3.18309886183790671538e-1,
+                            decimal=15)
+        assert_almost_equal(stats.cauchy.pdf(1), 1.59154943091895335769e-1,
+                            decimal=15)
+        assert_almost_equal(stats.cauchy.pdf(2), 6.36619772367581343076e-2,
+                            decimal=15)
+
     def test_cdf(self):
         assert_almost_equal(stats.cauchy.cdf(-100000), 3.18309886173180341999e-6,
                             decimal=15)
