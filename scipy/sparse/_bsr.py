@@ -703,6 +703,7 @@ class bsr_array(_bsr_base, sparray):
     -----
     Sparse arrays can be used in arithmetic operations: they support
     addition, subtraction, multiplication, division, and matrix power.
+    Block Sparse Row format sparse arrays do not support slicing.
 
     **Summary of BSR format**
 
@@ -810,6 +811,7 @@ class bsr_matrix(spmatrix, _bsr_base):
     -----
     Sparse matrices can be used in arithmetic operations: they support
     addition, subtraction, multiplication, division, and matrix power.
+    Block Sparse Row format sparse matrices do not support slicing.
 
     **Summary of BSR format**
 
