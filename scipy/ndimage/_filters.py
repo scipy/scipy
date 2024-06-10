@@ -38,7 +38,8 @@ from scipy._lib._util import normalize_axis_index
 from . import _ni_support
 from . import _nd_image
 from . import _ni_docstrings
-from . import _rank_filter_1d
+from . import _robust_filters_1d
+
 
 __all__ = ['correlate1d', 'convolve1d', 'gaussian_filter1d', 'gaussian_filter',
            'prewitt', 'sobel', 'generic_laplace', 'laplace',
@@ -1512,7 +1513,7 @@ def _rank_filter(input, rank, size=None, footprint=None, output=None,
             else:
                 raise RuntimeError('Unsupported array type')
             cval = x.dtype.type(cval)
-            _rank_filter_1d.rank_filter(x, rank, footprint.size, x_out, mode, cval,
+            _robust_filters_1d.rank_filter(x, rank, footprint.size, x_out, mode, cval,
                                         origin)
             if input.dtype not in (np.int64, np.float64, np.float32):
                 np.copyto(output, x_out, casting='unsafe')
