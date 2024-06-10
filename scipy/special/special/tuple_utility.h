@@ -66,4 +66,30 @@ std::tuple<T &...> tuple_ref_each(std::tuple<T...> &t) {
     return std::apply([](auto &...args) { return std::tie(args...); }, t);
 }
 
+template <size_t I, typename Res, size_t NArgs = 1>
+struct grad_tuple_element;
+
+template <size_t I, typename Res>
+struct grad_tuple_element<I, Res, 1> {
+    using type = Res;
+};
+
+template <size_t I, typename Res, size_t NArgs>
+using grad_tuple_element_t = typename grad_tuple_element<I, Res, NArgs>::type;
+
+namespace detail {
+
+    template <typename Res, typename I, size_t NArgs>
+    struct grad_tuple;
+
+    template <typename Res, size_t... I, size_t NArgs>
+    struct grad_tuple<Res, std::index_sequence<I...>, NArgs> {
+        using type = std::tuple<grad_tuple_element_t<I, Res, NArgs>...>;
+    };
+
+} // namespace detail
+
+template <typename Res, size_t N, size_t NArgs = 1>
+using grad_tuple_t = typename detail::grad_tuple<Res, std::make_index_sequence<N + 1>, NArgs>::type;
+
 } // namespace special

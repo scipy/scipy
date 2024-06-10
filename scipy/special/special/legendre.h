@@ -71,8 +71,10 @@ void legendre_p_for_each_n(int n, T z, std::tuple<OutputVals (&)[2]...> res, Fun
  */
 template <typename T, typename... OutputVals>
 void legendre_p(int n, T z, std::tuple<OutputVals &...> res) {
-    std::tuple<OutputVals[2]...> res_n;
-    legendre_p_for_each_n(n, z, tuple_ref_each(res_n), [](int n, std::tuple<OutputVals(&)[2]...> res_n) {});
+    static constexpr size_t N = sizeof...(OutputVals) - 1;
+
+    grad_tuple_t<T[2], N> res_n;
+    legendre_p_for_each_n(n, z, tuple_ref_each(res_n), [](int n, grad_tuple_t<T(&)[2], N> res_n) {});
 
     res = tuple_access_each(res_n, 1);
 }
@@ -102,11 +104,13 @@ T legendre_p(int n, T z) {
  */
 template <typename T, typename... OutputVecs>
 void legendre_p_all(T z, std::tuple<OutputVecs &...> res) {
+    static constexpr size_t N = sizeof...(OutputVecs) - 1;
+
     auto &res0 = std::get<0>(res);
     int n = res0.extent(0) - 1;
 
-    std::tuple<typename OutputVecs::value_type[2]...> res_n;
-    legendre_p_for_each_n(n, z, tuple_ref_each(res_n), [&res](int n, auto res_n) {
+    grad_tuple_t<T[2], N> res_n;
+    legendre_p_for_each_n(n, z, tuple_ref_each(res_n), [&res](int n, grad_tuple_t<T(&)[2], N> res_n) {
         tuple_call_each(res, n) = tuple_access_each(res_n, 1);
     });
 }
@@ -626,29 +630,28 @@ template <typename NormPolicy, typename T, typename... OutputVals, typename Func
 void assoc_legendre_p_for_each_n_m(
     NormPolicy norm, int n, int m, int type, T z, std::tuple<OutputVals (&)[2]...> res, Func f
 ) {
-    std::tuple<OutputVals[2]...> res_m_m_abs;
+    static constexpr size_t N = sizeof...(OutputVals) - 1;
+
+    grad_tuple_t<T[2], N> res_m_m_abs;
     assoc_legendre_p_for_each_m_m_abs(
         norm, m, type, z, tuple_ref_each(res_m_m_abs),
-        [norm, n, type, z, &res, f](int i, std::tuple<OutputVals(&)[2]...> res_m_m_abs) {
+        [norm, n, type, z, &res, f](int i, grad_tuple_t<T(&)[2], N> res_m_m_abs) {
             tuple_access_each(res, 0) = tuple_access_each(res_m_m_abs, 1);
 
-            assoc_legendre_p_for_each_n(
-                norm, n, i, type, z, false, res,
-                [f, i](int j, std::tuple<OutputVals(&)[2]...> res_n) { f(j, i, res_n); }
-            );
+            assoc_legendre_p_for_each_n(norm, n, i, type, z, false, res, [f, i](int j, grad_tuple_t<T(&)[2], N> res_n) {
+                f(j, i, res_n);
+            });
         }
     );
-
     assoc_legendre_p_for_each_m_m_abs(
         norm, -m, type, z, tuple_ref_each(res_m_m_abs),
-        [norm, n, type, z, &res, f](int i_abs, std::tuple<OutputVals(&)[2]...> res_m_m_abs) {
+        [norm, n, type, z, &res, f](int i_abs, grad_tuple_t<T(&)[2], N> res_m_m_abs) {
             tuple_access_each(res, 0) = tuple_access_each(res_m_m_abs, 1);
 
             int i = -i_abs;
-            assoc_legendre_p_for_each_n(
-                norm, n, i, type, z, false, res,
-                [f, i](int j, std::tuple<OutputVals(&)[2]...> res_n) { f(j, i, res_n); }
-            );
+            assoc_legendre_p_for_each_n(norm, n, i, type, z, false, res, [f, i](int j, grad_tuple_t<T(&)[2], N> res_n) {
+                f(j, i, res_n);
+            });
         }
     );
 }
@@ -665,9 +668,11 @@ void assoc_legendre_p_for_each_n_m(
  */
 template <typename NormPolicy, typename T, typename... OutputVals>
 void multi_assoc_legendre_p(NormPolicy norm, int n, int m, int type, T z, std::tuple<OutputVals &...> res) {
-    std::tuple<OutputVals[2]...> res_n;
+    static constexpr size_t N = sizeof...(OutputVals) - 1;
+
+    grad_tuple_t<T[2], N> res_n;
     assoc_legendre_p_for_each_n(
-        norm, n, m, type, z, true, tuple_ref_each(res_n), [](int n, std::tuple<OutputVals(&)[2]...> res_n) {}
+        norm, n, m, type, z, true, tuple_ref_each(res_n), [](int n, grad_tuple_t<T(&)[2], N> res_n) {}
     );
 
     res = tuple_access_each(res_n, 1);
@@ -692,19 +697,24 @@ T multi_assoc_legendre_p(NormPolicy norm, int n, int m, int type, T z) {
  */
 template <typename NormPolicy, typename T, typename... OutputMats>
 void multi_assoc_legendre_p_all(NormPolicy norm, int type, T z, std::tuple<OutputMats &...> res) {
+    static constexpr size_t N = sizeof...(OutputMats) - 1;
+
     auto &res0 = std::get<0>(res);
     int n = res0.extent(0) - 1;
     int m = (res0.extent(1) - 1) / 2;
 
-    std::tuple<typename OutputMats::value_type[2]...> p;
-    assoc_legendre_p_for_each_n_m(norm, n, m, type, z, tuple_ref_each(p), [&res](int n, int m, auto res_n_m) {
-        if (m >= 0) {
-            tuple_call_each(res, n, m) = tuple_access_each(res_n_m, 1);
-        } else {
-            auto &res0 = std::get<0>(res);
-            tuple_call_each(res, n, m + res0.extent(1)) = tuple_access_each(res_n_m, 1);
+    grad_tuple_t<T[2], N> p;
+    assoc_legendre_p_for_each_n_m(
+        norm, n, m, type, z, tuple_ref_each(p),
+        [&res](int n, int m, grad_tuple_t<T(&)[2], N> res_n_m) {
+            if (m >= 0) {
+                tuple_call_each(res, n, m) = tuple_access_each(res_n_m, 1);
+            } else {
+                auto &res0 = std::get<0>(res);
+                tuple_call_each(res, n, m + res0.extent(1)) = tuple_access_each(res_n_m, 1);
+            }
         }
-    });
+    );
 }
 
 template <typename NormPolicy, typename T, typename... OutputVals>
