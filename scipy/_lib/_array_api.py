@@ -501,6 +501,43 @@ def xp_moveaxis_to_end(
     return xp.permute_dims(x, axes)
 
 
+# utility to broadcast arrays and promote to common dtype
+def xp_broadcast_promote(*args, ensure_writeable=False, xp=None):
+    xp = array_namespace(*args) if xp is None else xp
+
+    args = [(xp.asarray(arg) if arg is not None else arg) for arg in args]
+    args_not_none = [arg for arg in args if arg is not None]
+
+    # determine minimum dtype
+    dtypes = [arg.dtype for arg in args_not_none
+              if not xp.isdtype(arg.dtype, 'integral')]
+    dtypes.append(xp.asarray(1.).dtype)
+    dtype = xp.result_type(*dtypes)
+
+    # determine result shape
+    shapes = {arg.shape for arg in args_not_none}
+    shape = np.broadcast_shapes(*shapes) if len(shapes) != 1 else args_not_none[0].shape
+
+    out = []
+    for arg in args:
+        if arg is None:
+            out.append(arg)
+            continue
+
+        # broadcast only if needed
+        # Even if two arguments need broadcasting, this is faster than
+        # `broadcast_arrays`, especially since we've already determined `shape`
+        if arg.shape != shape:
+            arg = xp.broadcast_to(arg, shape)
+
+        # convert dtype/copy only if needed
+        if (arg.dtype != dtype) or ((arg.shape != shape) and ensure_writeable):
+            arg = xp.astype(arg, dtype, copy=True)
+        out.append(arg)
+
+    return out
+
+
 # temporary substitute for xp.copysign, which is not yet in all backends
 # or covered by array_api_compat.
 def xp_copysign(x1: Array, x2: Array, /, *, xp: ModuleType | None = None) -> Array:
