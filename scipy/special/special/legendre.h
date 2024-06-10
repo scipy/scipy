@@ -308,8 +308,10 @@ struct assoc_legendre_p_recurrence_m_m_abs<T, assoc_legendre_norm_policy> {
     }
 };
 
-template <typename NormPolicy, typename T, typename... U, typename Func>
-void assoc_legendre_p_for_each_m_m_abs(NormPolicy norm, int m, int type, T z, tuple_wrapper<U (&)[2]...> res, Func f) {
+template <typename NormPolicy, typename T, typename... OutputVals, typename Func>
+void assoc_legendre_p_for_each_m_m_abs(
+    NormPolicy norm, int m, int type, T z, tuple_wrapper<OutputVals (&)[2]...> res, Func f
+) {
     int m_abs = std::abs(m);
     bool m_signbit = std::signbit(m);
 
@@ -642,32 +644,34 @@ void assoc_legendre_p_for_each_n(
     }
 }
 
-template <typename NormPolicy, typename T, typename... U, typename Func>
+template <typename NormPolicy, typename T, typename... OutputVals, typename Func>
 void assoc_legendre_p_for_each_n_m(
-    NormPolicy norm, int n, int m, int type, T z, tuple_wrapper<U (&)[2]...> res, Func f
+    NormPolicy norm, int n, int m, int type, T z, tuple_wrapper<OutputVals (&)[2]...> res, Func f
 ) {
-    tuple_wrapper<U[2]...> res_m_m_abs;
+    tuple_wrapper<OutputVals[2]...> res_m_m_abs;
     assoc_legendre_p_for_each_m_m_abs(
         norm, m, type, z, res_m_m_abs.refs(),
-        [norm, n, type, z, &res, f](int i, tuple_wrapper<U(&)[2]...> res_m_m_abs) {
+        [norm, n, type, z, &res, f](int i, tuple_wrapper<OutputVals(&)[2]...> res_m_m_abs) {
             std::apply([](auto &...args) { return std::tie(args[0]...); }, res.underlying_tuple()) =
                 std::apply([](const auto &...args) { return std::tie(args[1]...); }, res_m_m_abs.underlying_tuple());
 
             assoc_legendre_p_for_each_n(
-                norm, n, i, type, z, false, res, [f, i](int j, tuple_wrapper<U(&)[2]...> res_n) { f(j, i, res_n); }
+                norm, n, i, type, z, false, res,
+                [f, i](int j, tuple_wrapper<OutputVals(&)[2]...> res_n) { f(j, i, res_n); }
             );
         }
     );
 
     assoc_legendre_p_for_each_m_m_abs(
         norm, -m, type, z, res_m_m_abs.refs(),
-        [norm, n, type, z, &res, f](int i_abs, tuple_wrapper<U(&)[2]...> res_m_m_abs) {
+        [norm, n, type, z, &res, f](int i_abs, tuple_wrapper<OutputVals(&)[2]...> res_m_m_abs) {
             std::apply([](auto &...args) { return std::tie(args[0]...); }, res.underlying_tuple()) =
                 std::apply([](const auto &...args) { return std::tie(args[1]...); }, res_m_m_abs.underlying_tuple());
 
             int i = -i_abs;
             assoc_legendre_p_for_each_n(
-                norm, n, i, type, z, false, res, [f, i](int j, tuple_wrapper<U(&)[2]...> res_n) { f(j, i, res_n); }
+                norm, n, i, type, z, false, res,
+                [f, i](int j, tuple_wrapper<OutputVals(&)[2]...> res_n) { f(j, i, res_n); }
             );
         }
     );
