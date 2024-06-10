@@ -45,7 +45,7 @@ decltype(auto) tuple_access_each(std::tuple<T...> &t, Arg n) {
 }
 
 template <typename... T, typename... Args>
-decltype(auto) tuple_call_each(std::tuple<T...> &t, Args &&...args) {
+std::tuple<std::result_of_t<T(Args...)>...> tuple_call_each(std::tuple<T...> &t, Args &&...args) {
     return std::apply([&args...](auto &...elements) { return std::tie(elements(std::forward<Args>(args)...)...); }, t);
 }
 
