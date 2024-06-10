@@ -5,99 +5,57 @@
 #include "config.h"
 
 namespace special {
+namespace detail {
 
-template <typename T>
-void assign(T &dst, const T &src) {
-    dst = src;
-}
-
-template <typename T, size_t N>
-void assign(T (&dst)[N], const T (&src)[N]) {
-    for (size_t i = 0; i < N; ++i) {
-        dst[i] = src[i];
-    }
-}
-
-template <typename... T>
-class tuple_wrapper {
-  public:
-    using tuple_type = std::tuple<T...>;
-
-  protected:
-    tuple_type m_underlying;
-
-  public:
-    tuple_wrapper() = default;
-
-    tuple_wrapper(const T &...args) {
-        std::apply([&args...](auto &...other_args) { (assign(other_args, args), ...); }, m_underlying);
+    template <typename T>
+    void assign(T &dst, const T &src) {
+        dst = src;
     }
 
-    template <typename... U>
-    tuple_wrapper(const std::tuple<U...> &other) : m_underlying(other) {}
-
-    tuple_wrapper(const tuple_wrapper &other) = default;
-
-    tuple_wrapper(tuple_wrapper &&other) = default;
-
-    tuple_type &underlying_tuple() { return m_underlying; }
-
-    const tuple_type &underlying_tuple() const { return m_underlying; }
-
-    tuple_wrapper &operator=(const tuple_wrapper &other) = default;
-
-    tuple_wrapper &operator=(tuple_wrapper &&other) = default;
-};
-
-template <typename... T>
-class tuple_wrapper<T &...> {
-  public:
-    using tuple_type = std::tuple<T &...>;
-
-  protected:
-    tuple_type m_underlying;
-
-  public:
-    tuple_wrapper() = default;
-
-    tuple_wrapper(T &...args) : m_underlying(args...) {}
-
-    tuple_wrapper(const tuple_type &other) : m_underlying(other) {}
-
-    tuple_wrapper(const tuple_wrapper &other) = default;
-
-    tuple_wrapper(tuple_wrapper &&other) = default;
-
-    tuple_type &underlying_tuple() { return m_underlying; }
-
-    const tuple_type &underlying_tuple() const { return m_underlying; }
-
-    tuple_wrapper &operator=(const tuple_wrapper &other) = default;
-
-    tuple_wrapper &operator=(tuple_wrapper &&other) = default;
-
-    tuple_wrapper &operator=(const tuple_wrapper<T...> &other) {
-        std::apply(
-            [&other](auto &...args) {
-                std::apply(
-                    [&args...](const auto &...other_args) { (assign(args, other_args), ...); }, other.underlying_tuple()
-                );
-            },
-            m_underlying
-        );
-
-        return *this;
+    template <typename T, size_t N>
+    void assign(T (&dst)[N], const T (&src)[N]) {
+        for (size_t i = 0; i < N; ++i) {
+            dst[i] = src[i];
+        }
     }
-};
 
-template <typename... T>
-tuple_wrapper<T...> tuple_assigner(std::tuple<T...> t) {
-    return std::apply([](auto &...args) { return tuple_wrapper<T...>(args...); }, t);
-}
+    template <typename... T>
+    struct tuple_wrapper {
+        std::tuple<T...> underlying;
+
+        tuple_wrapper(const T &...args) {
+            std::apply([&args...](auto &...other_args) { (assign(other_args, args), ...); }, underlying);
+        }
+    };
+
+    template <typename... T>
+    struct tuple_assigner {
+        std::tuple<T...> &assignee;
+
+        tuple_assigner(std::tuple<T...> &assignee) : assignee(assignee) {}
+
+        tuple_assigner &operator=(const tuple_wrapper<std::remove_reference_t<T>...> &other) {
+            std::apply(
+                [this](const auto &...other_args) {
+                    std::apply([&other_args...](auto &...args) { (assign(args, other_args), ...); }, assignee);
+                },
+                other.underlying
+            );
+
+            return *this;
+        }
+    };
+
+} // namespace detail
 
 template <typename... T>
 std::tuple<T &...> apply_tie(std::tuple<T...> &t) {
     return std::apply([](auto &...args) { return std::tie(args...); }, t);
+}
+
+template <typename... T>
+detail::tuple_assigner<T...> tuple_assigner(std::tuple<T...> &t) {
+    return t;
 }
 
 template <typename T, size_t K>
@@ -146,15 +104,3 @@ void dot(
 }
 
 } // namespace special
-
-namespace std {
-
-template <size_t I, typename... T>
-struct tuple_element<I, special::tuple_wrapper<T...>> {
-    using type = std::tuple_element_t<I, typename special::tuple_wrapper<T...>::tuple_type>;
-};
-
-template <typename... T>
-struct tuple_size<special::tuple_wrapper<T...>> : std::integral_constant<size_t, sizeof...(T)> {};
-
-} // namespace std
