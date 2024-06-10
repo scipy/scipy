@@ -1,6 +1,7 @@
 #pragma once
 
 #include "config.h"
+#include "tuple_wrapper.h"
 
 namespace special {
 

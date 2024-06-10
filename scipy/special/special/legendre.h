@@ -1,10 +1,8 @@
 #pragma once
 
-#include <iostream>
-
 #include "error.h"
-#include "grad.h"
 #include "recur.h"
+#include "tuple_wrapper.h"
 
 namespace special {
 
@@ -55,8 +53,8 @@ struct legendre_p_recurrence_n {
  *
  * @return value of the polynomial
  */
-template <typename T, typename... U, typename Func>
-void legendre_p_for_each_n(int n, T z, tuple_wrapper<U (&)[2]...> res, Func f) {
+template <typename T, typename... OutputVals, typename Func>
+void legendre_p_for_each_n(int n, T z, tuple_wrapper<OutputVals (&)[2]...> res, Func f) {
     legendre_p_initializer_n<T> init_n{z};
     init_n(res);
 
@@ -598,11 +596,11 @@ void tuple_assoc_legendre_p_pm1(NormPolicy norm, int n, int m, int type, T z, tu
  *
  * @return value of the polynomial
  */
-template <typename NormPolicy, typename T, typename... U, typename Func>
+template <typename NormPolicy, typename T, typename... OutputVals, typename Func>
 void assoc_legendre_p_for_each_n(
-    NormPolicy norm, int n, int m, int type, T z, bool recur_m_m_abs, tuple_wrapper<U (&)[2]...> res, Func f
+    NormPolicy norm, int n, int m, int type, T z, bool recur_m_m_abs, tuple_wrapper<OutputVals (&)[2]...> res, Func f
 ) {
-    tuple_wrapper<U...> res_m_m_abs;
+    tuple_wrapper<OutputVals...> res_m_m_abs;
     if (!recur_m_m_abs) {
         res_m_m_abs = std::apply([](const auto &...args) { return std::tie(args[0]...); }, res.underlying_tuple());
     }
@@ -623,7 +621,7 @@ void assoc_legendre_p_for_each_n(
             for (int j = m_abs; j <= n; ++j) {
                 forward_recur_shift_left(res);
 
-                tuple_wrapper<U &...> tmp =
+                tuple_wrapper<OutputVals &...> tmp =
                     std::apply([](auto &...args) { return std::tie(args[1]...); }, res.underlying_tuple());
                 tuple_assoc_legendre_p_pm1(norm, j, m, type, z, tmp);
 
