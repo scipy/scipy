@@ -72,7 +72,7 @@ void legendre_p_for_each_n(int n, T z, tuple_wrapper<OutputVals (&)[2]...> res, 
 template <typename T, typename... OutputVals>
 void legendre_p(int n, T z, std::tuple<OutputVals &...> res) {
     tuple_wrapper<OutputVals[2]...> res_n;
-    legendre_p_for_each_n(n, z, res_n.refs(), [](int n, tuple_wrapper<OutputVals(&)[2]...> res_n) {});
+    legendre_p_for_each_n(n, z, apply_tie(res_n), [](int n, tuple_wrapper<OutputVals(&)[2]...> res_n) {});
 
     res = std::apply([](const auto &...args) { return std::tie(args[1]...); }, res_n.underlying_tuple());
 }
@@ -106,7 +106,7 @@ void legendre_p_all(T z, std::tuple<OutputVecs &...> res) {
     int n = res0.extent(0) - 1;
 
     tuple_wrapper<typename OutputVecs::value_type[2]...> res_n;
-    legendre_p_for_each_n(n, z, res_n.refs(), [&res](int n, auto res_n) {
+    legendre_p_for_each_n(n, z, apply_tie(res_n), [&res](int n, auto res_n) {
         std::apply([n](auto &...args) { return std::tie(args(n)...); }, res) =
             std::apply([](const auto &...args) { return std::tie(args[1]...); }, res_n.underlying_tuple());
     });
@@ -650,7 +650,7 @@ void assoc_legendre_p_for_each_n_m(
 ) {
     tuple_wrapper<OutputVals[2]...> res_m_m_abs;
     assoc_legendre_p_for_each_m_m_abs(
-        norm, m, type, z, res_m_m_abs.refs(),
+        norm, m, type, z, apply_tie(res_m_m_abs),
         [norm, n, type, z, &res, f](int i, tuple_wrapper<OutputVals(&)[2]...> res_m_m_abs) {
             std::apply([](auto &...args) { return std::tie(args[0]...); }, res.underlying_tuple()) =
                 std::apply([](const auto &...args) { return std::tie(args[1]...); }, res_m_m_abs.underlying_tuple());
@@ -663,7 +663,7 @@ void assoc_legendre_p_for_each_n_m(
     );
 
     assoc_legendre_p_for_each_m_m_abs(
-        norm, -m, type, z, res_m_m_abs.refs(),
+        norm, -m, type, z, apply_tie(res_m_m_abs),
         [norm, n, type, z, &res, f](int i_abs, tuple_wrapper<OutputVals(&)[2]...> res_m_m_abs) {
             std::apply([](auto &...args) { return std::tie(args[0]...); }, res.underlying_tuple()) =
                 std::apply([](const auto &...args) { return std::tie(args[1]...); }, res_m_m_abs.underlying_tuple());
@@ -691,7 +691,7 @@ template <typename NormPolicy, typename T, typename... OutputVals>
 void multi_assoc_legendre_p(NormPolicy norm, int n, int m, int type, T z, std::tuple<OutputVals &...> res) {
     tuple_wrapper<OutputVals[2]...> res_n;
     assoc_legendre_p_for_each_n(
-        norm, n, m, type, z, true, res_n.refs(), [](int n, tuple_wrapper<OutputVals(&)[2]...> res_n) {}
+        norm, n, m, type, z, true, apply_tie(res_n), [](int n, tuple_wrapper<OutputVals(&)[2]...> res_n) {}
     );
 
     res = std::apply([](const auto &...args) { return std::tie(args[1]...); }, res_n.underlying_tuple());
@@ -721,7 +721,7 @@ void multi_assoc_legendre_p_all(NormPolicy norm, int type, T z, std::tuple<Outpu
     int m = (res0.extent(1) - 1) / 2;
 
     tuple_wrapper<typename OutputMats::value_type[2]...> p;
-    assoc_legendre_p_for_each_n_m(norm, n, m, type, z, p.refs(), [&res](int n, int m, auto res_n_m) {
+    assoc_legendre_p_for_each_n_m(norm, n, m, type, z, apply_tie(p), [&res](int n, int m, auto res_n_m) {
         if (m >= 0) {
             std::apply([n, m](auto &...args) { return std::tie(args(n, m)...); }, res) =
                 std::apply([](const auto &...args) { return std::tie(args[1]...); }, res_n_m.underlying_tuple());

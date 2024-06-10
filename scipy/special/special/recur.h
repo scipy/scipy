@@ -12,13 +12,6 @@ void forward_recur_shift_left(T (&res)[K]) {
     }
 }
 
-template <typename T, size_t K>
-void forward_recur_shift_left(std::array<T, K> &res) {
-    for (size_t k = 1; k < K; ++k) {
-        res[k - 1] = res[k];
-    }
-}
-
 template <typename... T, size_t K>
 void forward_recur_shift_left(tuple_wrapper<T (&)[K]...> &res) {
     std::apply([](auto &...args) { (forward_recur_shift_left(args), ...); }, res.underlying_tuple());
@@ -26,13 +19,6 @@ void forward_recur_shift_left(tuple_wrapper<T (&)[K]...> &res) {
 
 template <typename T, size_t K>
 void forward_recur_rotate_left(T (&res)[K]) {
-    T tmp = res[0];
-    forward_recur_shift_left(res);
-    res[K - 1] = tmp;
-}
-
-template <typename T, size_t K>
-void forward_recur_rotate_left(std::array<T, K> &res) {
     T tmp = res[0];
     forward_recur_shift_left(res);
     res[K - 1] = tmp;
@@ -65,10 +51,10 @@ void forward_recur(InputIt first, InputIt last, Recurrence r, tuple_wrapper<T (&
     if (last - first > K) {
         while (it != last) {
             tuple_wrapper<T[K]...> coef;
-            r(it, coef.refs());
+            r(it, apply_tie(coef));
 
             tuple_wrapper<T...> tmp;
-            dot(coef.refs(), res, tmp.refs());
+            dot(apply_tie(coef), res, apply_tie(tmp));
 
             std::apply([](auto &...args) { (forward_recur_shift_left(args), ...); }, res.underlying_tuple());
             std::apply([](auto &...args) { return std::tie(args[K - 1]...); }, res.underlying_tuple()) =

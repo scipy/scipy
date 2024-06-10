@@ -7,37 +7,21 @@
 namespace special {
 
 template <typename T>
-struct standardize {
-    using type = T;
-};
+void assign(T &dst, const T &src) {
+    dst = src;
+}
 
 template <typename T, size_t N>
-struct standardize<T[N]> {
-    using type = std::array<T, N>;
-};
-
-template <typename T, size_t N>
-struct standardize<const T[N]> {
-    using type = std::array<const T, N>;
-};
-
-template <typename T, size_t N>
-struct standardize<T (&)[N]> {
-    using type = std::array<T, N> &;
-};
-
-template <typename T, size_t N>
-struct standardize<const T (&)[N]> {
-    using type = const std::array<T, N> &;
-};
-
-template <typename T>
-using standardize_t = typename standardize<T>::type;
+void assign(T (&dst)[N], const T (&src)[N]) {
+    for (size_t i = 0; i < N; ++i) {
+        dst[i] = src[i];
+    }
+}
 
 template <typename... T>
 class tuple_wrapper {
   public:
-    using tuple_type = std::tuple<standardize_t<T>...>;
+    using tuple_type = std::tuple<T...>;
 
   protected:
     tuple_type m_underlying;
@@ -45,7 +29,9 @@ class tuple_wrapper {
   public:
     tuple_wrapper() = default;
 
-    tuple_wrapper(const standardize_t<T> &...args) : m_underlying(args...) {}
+    tuple_wrapper(const T &...args) {
+        std::apply([&args...](auto &...other_args) { (assign(other_args, args), ...); }, m_underlying);
+    }
 
     template <typename... U>
     tuple_wrapper(const std::tuple<U...> &other) : m_underlying(other) {}
@@ -61,22 +47,12 @@ class tuple_wrapper {
     tuple_wrapper &operator=(const tuple_wrapper &other) = default;
 
     tuple_wrapper &operator=(tuple_wrapper &&other) = default;
-
-    tuple_wrapper<T &...> refs() {
-        return std::apply([](auto &...args) { return std::tie(args...); }, underlying_tuple());
-    }
-
-    tuple_wrapper<const T &...> refs() const { return crefs(); }
-
-    tuple_wrapper<const T &...> crefs() const {
-        return std::apply([](const auto &...args) { return std::tie(args...); }, underlying_tuple());
-    }
 };
 
 template <typename... T>
 class tuple_wrapper<T &...> {
   public:
-    using tuple_type = std::tuple<standardize_t<T &>...>;
+    using tuple_type = std::tuple<T &...>;
 
   protected:
     tuple_type m_underlying;
@@ -84,7 +60,9 @@ class tuple_wrapper<T &...> {
   public:
     tuple_wrapper() = default;
 
-    tuple_wrapper(const standardize_t<T &> &...args) : m_underlying(args...) {}
+    tuple_wrapper(T &...args) : m_underlying(args...) {}
+
+    tuple_wrapper(const tuple_type &other) : m_underlying(other) {}
 
     template <typename... U>
     tuple_wrapper(const std::tuple<U...> &other) : m_underlying(other) {}
@@ -101,25 +79,29 @@ class tuple_wrapper<T &...> {
 
     tuple_wrapper &operator=(tuple_wrapper &&other) = default;
 
-    tuple_wrapper<T &...> refs() {
-        return std::apply([](auto &...args) { return std::tie(args...); }, underlying_tuple());
-    }
-
-    tuple_wrapper<const T &...> refs() const { return crefs(); }
-
-    tuple_wrapper<const T &...> crefs() const {
-        return std::apply([](const auto &...args) { return std::tie(args...); }, underlying_tuple());
-    }
-
     tuple_wrapper &operator=(const tuple_wrapper<T...> &other) {
-        underlying_tuple() = other.underlying_tuple();
+        std::apply(
+            [&other](auto &...args) {
+                std::apply(
+                    [&args...](const auto &...other_args) { (assign(args, other_args), ...); }, other.underlying_tuple()
+                );
+            },
+            m_underlying
+        );
 
         return *this;
     }
 };
 
-// tuple_refs
-// tuple_crefs
+template <typename... T>
+tuple_wrapper<T &...> apply_tie(tuple_wrapper<T...> &t) {
+    return std::apply([](auto &...args) { return std::tie(args...); }, t.underlying_tuple());
+}
+
+template <typename... T>
+std::tuple<T &...> apply_tie(std::tuple<T...> &t) {
+    return std::apply([](auto &...args) { return std::tie(args...); }, t);
+}
 
 template <size_t I, typename... T>
 std::tuple_element_t<I, tuple_wrapper<T...>> &get(tuple_wrapper<T...> &t) {
