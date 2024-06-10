@@ -19,7 +19,7 @@ void forward_recur_shift_left(std::array<T, K> &res) {
 }
 
 template <typename... T, size_t K>
-void forward_recur_shift_left(grad<T (&)[K]...> &res) {
+void forward_recur_shift_left(tuple_wrapper<T (&)[K]...> &res) {
     std::apply([](auto &...args) { (forward_recur_shift_left(args), ...); }, res.underlying_tuple());
 }
 
@@ -38,7 +38,7 @@ void forward_recur_rotate_left(std::array<T, K> &res) {
 }
 
 template <typename... T, size_t K>
-void forward_recur_rotate_left(grad<T (&)[K]...> &res) {
+void forward_recur_rotate_left(tuple_wrapper<T (&)[K]...> &res) {
     std::apply([](auto &...args) { (forward_recur_rotate_left(args), ...); }, res.underlying_tuple());
 }
 
@@ -52,7 +52,7 @@ void forward_recur_rotate_left(grad<T (&)[K]...> &res) {
  * @param f a function to be called as f(it, res)
  */
 template <typename InputIt, typename Recurrence, typename... T, ssize_t K, typename Func>
-void forward_recur(InputIt first, InputIt last, Recurrence r, grad<T (&)[K]...> res, Func f) {
+void forward_recur(InputIt first, InputIt last, Recurrence r, tuple_wrapper<T (&)[K]...> res, Func f) {
     InputIt it = first;
     while (it - first != K && it != last) {
         forward_recur_rotate_left(res);
@@ -63,10 +63,10 @@ void forward_recur(InputIt first, InputIt last, Recurrence r, grad<T (&)[K]...> 
 
     if (last - first > K) {
         while (it != last) {
-            grad<T[K]...> coef;
+            tuple_wrapper<T[K]...> coef;
             r(it, coef.refs());
 
-            grad<T...> tmp;
+            tuple_wrapper<T...> tmp;
             dot(coef.refs(), res, tmp.refs());
 
             std::apply([](auto &...args) { (forward_recur_shift_left(args), ...); }, res.underlying_tuple());

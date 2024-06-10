@@ -8,7 +8,6 @@ namespace special {
 
 template <typename T>
 struct standardize {
-    static_assert(!std::is_array_v<T>, "asf");
     using type = T;
 };
 
@@ -36,7 +35,7 @@ template <typename T>
 using standardize_t = typename standardize<T>::type;
 
 template <typename... T>
-class grad {
+class tuple_wrapper {
   public:
     using tuple_type = std::tuple<standardize_t<T>...>;
 
@@ -44,38 +43,38 @@ class grad {
     tuple_type m_underlying;
 
   public:
-    grad() = default;
+    tuple_wrapper() = default;
 
-    grad(const standardize_t<T> &...args) : m_underlying(args...) {}
+    tuple_wrapper(const standardize_t<T> &...args) : m_underlying(args...) {}
 
     template <typename... U>
-    grad(const std::tuple<U...> &other) : m_underlying(other) {}
+    tuple_wrapper(const std::tuple<U...> &other) : m_underlying(other) {}
 
-    grad(const grad &other) = default;
+    tuple_wrapper(const tuple_wrapper &other) = default;
 
-    grad(grad &&other) = default;
+    tuple_wrapper(tuple_wrapper &&other) = default;
 
     tuple_type &underlying_tuple() { return m_underlying; }
 
     const tuple_type &underlying_tuple() const { return m_underlying; }
 
-    grad &operator=(const grad &other) = default;
+    tuple_wrapper &operator=(const tuple_wrapper &other) = default;
 
-    grad &operator=(grad &&other) = default;
+    tuple_wrapper &operator=(tuple_wrapper &&other) = default;
 
-    grad<T &...> refs() {
+    tuple_wrapper<T &...> refs() {
         return std::apply([](auto &...args) { return std::tie(args...); }, underlying_tuple());
     }
 
-    grad<const T &...> refs() const { return crefs(); }
+    tuple_wrapper<const T &...> refs() const { return crefs(); }
 
-    grad<const T &...> crefs() const {
+    tuple_wrapper<const T &...> crefs() const {
         return std::apply([](const auto &...args) { return std::tie(args...); }, underlying_tuple());
     }
 };
 
 template <typename... T>
-class grad<T &...> {
+class tuple_wrapper<T &...> {
   public:
     using tuple_type = std::tuple<standardize_t<T &>...>;
 
@@ -83,36 +82,36 @@ class grad<T &...> {
     tuple_type m_underlying;
 
   public:
-    grad() = default;
+    tuple_wrapper() = default;
 
-    grad(const standardize_t<T &> &...args) : m_underlying(args...) {}
+    tuple_wrapper(const standardize_t<T &> &...args) : m_underlying(args...) {}
 
     template <typename... U>
-    grad(const std::tuple<U...> &other) : m_underlying(other) {}
+    tuple_wrapper(const std::tuple<U...> &other) : m_underlying(other) {}
 
-    grad(const grad &other) = default;
+    tuple_wrapper(const tuple_wrapper &other) = default;
 
-    grad(grad &&other) = default;
+    tuple_wrapper(tuple_wrapper &&other) = default;
 
     tuple_type &underlying_tuple() { return m_underlying; }
 
     const tuple_type &underlying_tuple() const { return m_underlying; }
 
-    grad &operator=(const grad &other) = default;
+    tuple_wrapper &operator=(const tuple_wrapper &other) = default;
 
-    grad &operator=(grad &&other) = default;
+    tuple_wrapper &operator=(tuple_wrapper &&other) = default;
 
-    grad<T &...> refs() {
+    tuple_wrapper<T &...> refs() {
         return std::apply([](auto &...args) { return std::tie(args...); }, underlying_tuple());
     }
 
-    grad<const T &...> refs() const { return crefs(); }
+    tuple_wrapper<const T &...> refs() const { return crefs(); }
 
-    grad<const T &...> crefs() const {
+    tuple_wrapper<const T &...> crefs() const {
         return std::apply([](const auto &...args) { return std::tie(args...); }, underlying_tuple());
     }
 
-    grad &operator=(const grad<T...> &other) {
+    tuple_wrapper &operator=(const tuple_wrapper<T...> &other) {
         underlying_tuple() = other.underlying_tuple();
 
         return *this;
@@ -120,17 +119,17 @@ class grad<T &...> {
 };
 
 template <size_t I, typename... T>
-std::tuple_element_t<I, grad<T...>> &get(grad<T...> &t) {
+std::tuple_element_t<I, tuple_wrapper<T...>> &get(tuple_wrapper<T...> &t) {
     return std::get<I>(t.underlying_tuple());
 }
 
 template <size_t I, typename... T>
-const std::tuple_element_t<I, grad<T...>> &get(const grad<T...> &t) {
+const std::tuple_element_t<I, tuple_wrapper<T...>> &get(const tuple_wrapper<T...> &t) {
     return std::get<I>(t.underlying_tuple());
 }
 
 template <typename T, size_t K>
-void dot(grad<T (&)[K]> x, const grad<T (&)[K]> y, grad<T &> res) {
+void dot(tuple_wrapper<T (&)[K]> x, const tuple_wrapper<T (&)[K]> y, tuple_wrapper<T &> res) {
     const auto &[x0] = x;
     const auto &[y0] = y;
     auto &[res0] = res;
@@ -142,7 +141,7 @@ void dot(grad<T (&)[K]> x, const grad<T (&)[K]> y, grad<T &> res) {
 }
 
 template <typename T, size_t K>
-void dot(grad<T (&)[K], T (&)[K]> x, grad<T (&)[K], T (&)[K]> y, grad<T &, T &> res) {
+void dot(tuple_wrapper<T (&)[K], T (&)[K]> x, tuple_wrapper<T (&)[K], T (&)[K]> y, tuple_wrapper<T &, T &> res) {
     const auto &[x0, x1] = x;
     const auto &[y0, y1] = y;
     auto &[res0, res1] = res;
@@ -156,7 +155,10 @@ void dot(grad<T (&)[K], T (&)[K]> x, grad<T (&)[K], T (&)[K]> y, grad<T &, T &> 
 }
 
 template <typename T, size_t K>
-void dot(grad<T (&)[K], T (&)[K], T (&)[K]> x, grad<T (&)[K], T (&)[K], T (&)[K]> y, grad<T &, T &, T &> res) {
+void dot(
+    tuple_wrapper<T (&)[K], T (&)[K], T (&)[K]> x, tuple_wrapper<T (&)[K], T (&)[K], T (&)[K]> y,
+    tuple_wrapper<T &, T &, T &> res
+) {
     const auto &[x0, x1, x2] = x;
     const auto &[y0, y1, y2] = y;
     auto &[res0, res1, res2] = res;
@@ -176,11 +178,11 @@ void dot(grad<T (&)[K], T (&)[K], T (&)[K]> x, grad<T (&)[K], T (&)[K], T (&)[K]
 namespace std {
 
 template <size_t I, typename... T>
-struct tuple_element<I, special::grad<T...>> {
-    using type = std::tuple_element_t<I, typename special::grad<T...>::tuple_type>;
+struct tuple_element<I, special::tuple_wrapper<T...>> {
+    using type = std::tuple_element_t<I, typename special::tuple_wrapper<T...>::tuple_type>;
 };
 
 template <typename... T>
-struct tuple_size<special::grad<T...>> : std::integral_constant<size_t, sizeof...(T)> {};
+struct tuple_size<special::tuple_wrapper<T...>> : std::integral_constant<size_t, sizeof...(T)> {};
 
 } // namespace std
