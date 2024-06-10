@@ -343,31 +343,32 @@ struct assoc_legendre_p_initializer_n<T, assoc_legendre_unnorm_policy> {
     int type;
     T z;
 
-    void operator()(std::tuple<T (&)[2]> res) const {
-        auto &[res0] = res;
-
+    void operator()(std::tuple<T &> res_m_m_abs, std::tuple<T (&)[2]> res) const {
         int m_abs = std::abs(m);
+        T fac = T(2 * (m_abs + 1) - 1) / T(m_abs + 1 - m);
 
-        res0[1] = T(2 * (m_abs + 1) - 1) * z * res0[0] / T(m_abs + 1 - m);
+        tuple_assign(res, {{std::get<0>(res_m_m_abs), fac * z * std::get<0>(res_m_m_abs)}});
     }
 
-    void operator()(std::tuple<T (&)[2], T (&)[2]> res) const {
-        auto &[res0, res1] = res;
-
+    void operator()(std::tuple<T &, T &> res_m_m_abs, std::tuple<T (&)[2], T (&)[2]> res) const {
         int m_abs = std::abs(m);
+        T fac = T(2 * (m_abs + 1) - 1) / T(m_abs + 1 - m);
 
-        res0[1] = T(2 * (m_abs + 1) - 1) * z * res0[0] / T(m_abs + 1 - m);
-        res1[1] = T(2 * (m_abs + 1) - 1) * (res0[0] + z * res1[0]) / T(m_abs + 1 - m);
+        tuple_assign(
+            res, {{std::get<0>(res_m_m_abs), fac * z * std::get<0>(res_m_m_abs)},
+                  {std::get<1>(res_m_m_abs), fac * (std::get<0>(res_m_m_abs) + z * std::get<1>(res_m_m_abs))}}
+        );
     }
 
-    void operator()(std::tuple<T (&)[2], T (&)[2], T (&)[2]> res) const {
-        auto &[res0, res1, res2] = res;
-
+    void operator()(std::tuple<T &, T &, T &> res_m_m_abs, std::tuple<T (&)[2], T (&)[2], T (&)[2]> res) const {
         int m_abs = std::abs(m);
+        T fac = T(2 * (m_abs + 1) - 1) / T(m_abs + 1 - m);
 
-        res0[1] = T(2 * (m_abs + 1) - 1) * z * res0[0] / T(m_abs + 1 - m);
-        res1[1] = T(2 * (m_abs + 1) - 1) * (res0[0] + z * res1[0]) / T(m_abs + 1 - m);
-        res2[1] = T(2 * (m_abs + 1) - 1) * (T(2) * res1[0] + z * res2[0]) / T(m_abs + 1 - m);
+        tuple_assign(
+            res, {{std::get<0>(res_m_m_abs), fac * z * std::get<0>(res_m_m_abs)},
+                  {std::get<1>(res_m_m_abs), fac * (std::get<0>(res_m_m_abs) + z * std::get<1>(res_m_m_abs))},
+                  {std::get<2>(res_m_m_abs), fac * (T(2) * std::get<1>(res_m_m_abs) + z * std::get<2>(res_m_m_abs))}}
+        );
     }
 };
 
@@ -377,30 +378,28 @@ struct assoc_legendre_p_initializer_n<T, assoc_legendre_norm_policy> {
     int type;
     T z;
 
-    void operator()(std::tuple<T (&)[2]> res) const {
-        auto &[res0] = res;
+    void operator()(std::tuple<T &> res_m_m_abs, std::tuple<T (&)[2]> res) const {
+        T fac = std::sqrt(T(2 * std::abs(m) + 3));
 
-        int m_abs = std::abs(m);
-        res0[1] = std::sqrt(T(2 * m_abs + 3)) * z * res0[0];
+        tuple_assign(res, {{std::get<0>(res_m_m_abs), fac * z * std::get<0>(res_m_m_abs)}});
     }
 
-    void operator()(std::tuple<T (&)[2], T (&)[2]> res) const {
-        auto &[res0, res1] = res;
-
-        int m_abs = std::abs(m);
-        res0[1] = std::sqrt(T(2 * m_abs + 3)) * z * res0[0];
-        res1[1] = std::sqrt(T(2 * m_abs + 3)) * (res0[0] + z * res1[0]);
-    }
-
-    void operator()(std::tuple<T (&)[2], T (&)[2], T (&)[2]> res) const {
-        auto &[res0, res1, res2] = res;
-
-        int m_abs = std::abs(m);
+    void operator()(std::tuple<T &, T &> res_m_m_abs, std::tuple<T (&)[2], T (&)[2]> res) const {
+        T fac = std::sqrt(T(2 * std::abs(m) + 3));
 
         tuple_assign(
-            tuple_access_each(res, 1),
-            {std::sqrt(T(2 * m_abs + 3)) * z * res0[0], std::sqrt(T(2 * m_abs + 3)) * (res0[0] + z * res1[0]),
-             std::sqrt(T(2 * m_abs + 3)) * (T(2) * res1[0] + z * res2[0])}
+            res, {{std::get<0>(res_m_m_abs), fac * z * std::get<0>(res_m_m_abs)},
+                  {std::get<1>(res_m_m_abs), fac * (std::get<0>(res_m_m_abs) + z * std::get<1>(res_m_m_abs))}}
+        );
+    }
+
+    void operator()(std::tuple<T &, T &, T &> res_m_m_abs, std::tuple<T (&)[2], T (&)[2], T (&)[2]> res) const {
+        T fac = std::sqrt(T(2 * std::abs(m) + 3));
+
+        tuple_assign(
+            res, {{std::get<0>(res_m_m_abs), fac * z * std::get<0>(res_m_m_abs)},
+                  {std::get<1>(res_m_m_abs), fac * (std::get<0>(res_m_m_abs) + z * std::get<1>(res_m_m_abs))},
+                  {std::get<2>(res_m_m_abs), fac * (T(2) * std::get<1>(res_m_m_abs) + z * std::get<2>(res_m_m_abs))}}
         );
     }
 };
@@ -567,10 +566,8 @@ void assoc_legendre_p_for_each_n(
                 f(j, res);
             }
         } else {
-            tuple_access_each(res, 0) = res_m_m_abs;
-
             assoc_legendre_p_initializer_n<T, NormPolicy> init_n{m, type, z};
-            init_n(res);
+            init_n(res_m_m_abs, res);
 
             assoc_legendre_p_recurrence_n<T, NormPolicy> re_n{m, type, z};
             forward_recur(m_abs, n + 1, re_n, res, f);
