@@ -575,16 +575,17 @@ void assoc_legendre_p_for_each_n(
     }
 }
 
+
 template <typename NormPolicy, typename T, typename... OutputVals, typename Func>
 void assoc_legendre_p_for_each_n(
     NormPolicy norm, int n, int m, int type, T z, std::tuple<OutputVals (&)[2]...> res, Func f
 ) {
     static constexpr size_t N = sizeof...(OutputVals) - 1;
 
-    grad_tuple_t<T, N> res_m_m_abs;
     assoc_legendre_p_for_each_m_m_abs(norm, m, type, z, res, [](int n, grad_tuple_t<T(&)[2], N>) {});
-    tuple_ref_each(res_m_m_abs) = tuple_access_each(res, 1);
 
+    grad_tuple_t<T, N> res_m_m_abs = tuple_access_each(res, 1);
+    // tuple_map(res, [](T(&arg)[2]) { return arg[1]; })
     assoc_legendre_p_for_each_n(norm, n, m, type, z, tuple_ref_each(res_m_m_abs), res, f);
 }
 
