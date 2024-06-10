@@ -2768,6 +2768,7 @@ def perm(N, k, exact=False):
         If ``True``, calculate the answer exactly using long integer arithmetic (`N`
         and `k` must be scalar integers). If ``False``, a floating point approximation
         is calculated (more rapidly) using `poch`. Default is ``False``.
+
     Returns
     -------
     val : int, ndarray
