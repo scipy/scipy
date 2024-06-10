@@ -466,8 +466,7 @@ struct assoc_legendre_p_initializer_n<T, assoc_legendre_norm_policy> {
         auto &[res0] = res;
         if (diag) {
             assoc_legendre_p_for_each_m_m_abs(assoc_legendre_unnorm, m, type, z, res, [](int n, auto) {});
-
-            res0[0] = res0[1];
+            tuple_access_each(res, 0) = tuple_access_each(res, 1);
         }
 
         int m_abs = std::abs(m);
@@ -478,9 +477,7 @@ struct assoc_legendre_p_initializer_n<T, assoc_legendre_norm_policy> {
         auto &[res0, res1] = res;
         if (diag) {
             assoc_legendre_p_for_each_m_m_abs(assoc_legendre_unnorm, m, type, z, res, [](int n, auto) {});
-
-            res0[0] = res0[1];
-            res1[0] = res1[1];
+            tuple_access_each(res, 0) = tuple_access_each(res, 1);
         }
 
         int m_abs = std::abs(m);
@@ -492,16 +489,16 @@ struct assoc_legendre_p_initializer_n<T, assoc_legendre_norm_policy> {
         auto &[res0, res1, res2] = res;
         if (diag) {
             assoc_legendre_p_for_each_m_m_abs(assoc_legendre_unnorm, m, type, z, res, [](int n, auto) {});
-
-            res0[0] = res0[1];
-            res1[0] = res1[1];
-            res2[0] = res2[1];
+            tuple_access_each(res, 0) = tuple_access_each(res, 1);
         }
 
         int m_abs = std::abs(m);
-        res0[1] = std::sqrt(T(2 * m_abs + 3)) * z * res0[0];
-        res1[1] = std::sqrt(T(2 * m_abs + 3)) * (res0[0] + z * res1[0]);
-        res2[1] = std::sqrt(T(2 * m_abs + 3)) * (T(2) * res1[0] + z * res2[0]);
+
+        tuple_assign(
+            tuple_access_each(res, 1),
+            {std::sqrt(T(2 * m_abs + 3)) * z * res0[0], std::sqrt(T(2 * m_abs + 3)) * (res0[0] + z * res1[0]),
+             std::sqrt(T(2 * m_abs + 3)) * (T(2) * res1[0] + z * res2[0])}
+        );
     }
 };
 

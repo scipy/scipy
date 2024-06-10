@@ -6,6 +6,51 @@
 namespace special {
 
 template <typename T, size_t K>
+void dot(std::tuple<T (&)[K]> x, const std::tuple<T (&)[K]> y, std::tuple<T &> res) {
+    const auto &[x0] = x;
+    const auto &[y0] = y;
+    auto &[res0] = res;
+
+    res0 = 0;
+    for (size_t k = 0; k < K; ++k) {
+        res0 += x0[k] * y0[k];
+    }
+}
+
+template <typename T, size_t K>
+void dot(std::tuple<T (&)[K], T (&)[K]> x, std::tuple<T (&)[K], T (&)[K]> y, std::tuple<T &, T &> res) {
+    const auto &[x0, x1] = x;
+    const auto &[y0, y1] = y;
+    auto &[res0, res1] = res;
+
+    res0 = 0;
+    res1 = 0;
+    for (size_t k = 0; k < K; ++k) {
+        res0 += x0[k] * y0[k];
+        res1 += x0[k] * y1[k] + x1[k] * y0[k];
+    }
+}
+
+template <typename T, size_t K>
+void dot(
+    std::tuple<T (&)[K], T (&)[K], T (&)[K]> x, std::tuple<T (&)[K], T (&)[K], T (&)[K]> y,
+    std::tuple<T &, T &, T &> res
+) {
+    const auto &[x0, x1, x2] = x;
+    const auto &[y0, y1, y2] = y;
+    auto &[res0, res1, res2] = res;
+
+    res0 = 0;
+    res1 = 0;
+    res2 = 0;
+    for (size_t k = 0; k < K; ++k) {
+        res0 += x0[k] * y0[k];
+        res1 += x0[k] * y1[k] + x1[k] * y0[k];
+        res2 += x0[k] * y2[k] + T(2) * x1[k] * y1[k] + x2[k] * y0[k];
+    }
+}
+
+template <typename T, size_t K>
 void forward_recur_shift_left(T (&res)[K]) {
     for (size_t k = 1; k < K; ++k) {
         res[k - 1] = res[k];
