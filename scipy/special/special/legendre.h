@@ -48,10 +48,8 @@ struct legendre_p_recurrence_n {
  *
  * @param n degree of the polynomial
  * @param z argument of the polynomial, either real or complex
- * @param callback a function to be called as callback(j, z, p, args...) for 0 <= j <= n
- * @param args arguments to forward to the callback
- *
- * @return value of the polynomial
+ * @param f a function to be called as callback(j, res) for 0 <= j <= n
+ * @param res value and derivatives of the polynomial
  */
 template <typename T, typename... OutputVals, typename Func>
 void legendre_p_for_each_n(int n, T z, std::tuple<OutputVals (&)[2]...> res, Func f) {
@@ -469,7 +467,9 @@ struct assoc_legendre_p_initializer_n<T, assoc_legendre_norm_policy> {
     void operator()(std::tuple<T (&)[2]> res) const {
         auto &[res0] = res;
         if (diag) {
-            assoc_legendre_p_for_each_m_m_abs(assoc_legendre_unnorm, m, type, z, res, [](int n, auto) {});
+            assoc_legendre_p_for_each_m_m_abs(
+                assoc_legendre_unnorm, m, type, z, res, [](int n, std::tuple<T(&)[2]> res) {}
+            );
             tuple_access_each(res, 0) = tuple_access_each(res, 1);
         }
 
@@ -588,7 +588,9 @@ template <typename NormPolicy, typename T, typename... OutputVals, typename Func
 void assoc_legendre_p_for_each_n(
     NormPolicy norm, int n, int m, int type, T z, bool recur_m_m_abs, std::tuple<OutputVals (&)[2]...> res, Func f
 ) {
-    std::tuple<OutputVals...> res_m_m_abs;
+    static constexpr size_t N = sizeof...(OutputVals) - 1;
+
+    grad_tuple_t<T, N> res_m_m_abs;
     if (!recur_m_m_abs) {
         res_m_m_abs = tuple_access_each(res, 0);
     }
