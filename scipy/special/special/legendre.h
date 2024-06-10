@@ -502,33 +502,18 @@ struct assoc_legendre_p_initializer_n<T, assoc_legendre_norm_policy> {
     }
 };
 
-template <typename T>
-T assoc_legendre_p_pm1(assoc_legendre_unnorm_policy norm, int n, int m, int type, T z) {
-    if (m == 0) {
-        return 1;
-    }
-
-    return 0;
-}
-
-template <typename T>
-T assoc_legendre_p_pm1(assoc_legendre_norm_policy norm, int n, int m, int type, T z) {
-    if (m == 0) {
-        return 1;
-    }
-
-    return 0;
-}
-
 template <typename NormPolicy, typename T>
 void assoc_legendre_p_pm1(NormPolicy norm, int n, int m, int type, T z, std::tuple<T &> res) {
-    std::get<0>(res) = assoc_legendre_p_pm1(norm, n, m, type, z);
+    if (m == 0) {
+        std::get<0>(res) = 1;
+    } else {
+        std::get<0>(res) = 0;
+    }
 }
 
 template <typename NormPolicy, typename T>
-void assoc_legendre_p_pm1(NormPolicy norm, int n, int m, int type, T z, std::tuple<T &, T &> res_) {
-    auto &[res, res_jac] = res_;
-    res = assoc_legendre_p_pm1(norm, n, m, type, z);
+void assoc_legendre_p_pm1(NormPolicy norm, int n, int m, int type, T z, std::tuple<T &, T &> res) {
+    assoc_legendre_p_pm1(norm, n, m, type, z, std::tie(std::get<0>(res)));
 
     T type_sign;
     if (type == 3) {
@@ -538,49 +523,48 @@ void assoc_legendre_p_pm1(NormPolicy norm, int n, int m, int type, T z, std::tup
     }
 
     if (std::abs(m) > n) {
-        res_jac = 0;
+        std::get<1>(res) = 0;
     } else if (m == 0) {
-        res_jac = T(n) * T(n + 1) * std::pow(z, T(n + 1)) / T(2);
+        std::get<1>(res) = T(n) * T(n + 1) * std::pow(z, T(n + 1)) / T(2);
     } else if (m == 1) {
-        res_jac = std::pow(z, T(n)) * std::numeric_limits<remove_complex_t<T>>::infinity();
+        std::get<1>(res) = std::pow(z, T(n)) * std::numeric_limits<remove_complex_t<T>>::infinity();
     } else if (m == 2) {
-        res_jac = -type_sign * T(n + 2) * T(n + 1) * T(n) * T(n - 1) * std::pow(z, T(n + 1)) / T(4);
+        std::get<1>(res) = -type_sign * T(n + 2) * T(n + 1) * T(n) * T(n - 1) * std::pow(z, T(n + 1)) / T(4);
     } else if (m == -2) {
-        res_jac = -type_sign * std::pow(z, T(n + 1)) / T(4);
+        std::get<1>(res) = -type_sign * std::pow(z, T(n + 1)) / T(4);
     } else if (m == -1) {
-        res_jac = -std::pow(z, T(n)) * std::numeric_limits<remove_complex_t<T>>::infinity();
+        std::get<1>(res) = -std::pow(z, T(n)) * std::numeric_limits<remove_complex_t<T>>::infinity();
     } else {
-        res_jac = 0;
+        std::get<1>(res) = 0;
     }
 }
 
 template <typename NormPolicy, typename T>
-void assoc_legendre_p_pm1(NormPolicy norm, int n, int m, int type, T z, std::tuple<T &, T &, T &> res_) {
-    auto &[res, res_jac, res_hess] = res_;
-    assoc_legendre_p_pm1(norm, n, m, type, z, std::tie(res, res_jac));
+void assoc_legendre_p_pm1(NormPolicy norm, int n, int m, int type, T z, std::tuple<T &, T &, T &> res) {
+    assoc_legendre_p_pm1(norm, n, m, type, z, std::tie(std::get<0>(res), std::get<1>(res)));
 
     if (std::abs(m) > n) {
-        res_hess = 0;
+        std::get<2>(res) = 0;
     } else if (m == 0) {
-        res_hess = T(n + 2) * T(n + 1) * T(n) * T(n - 1) / T(8);
+        std::get<2>(res) = T(n + 2) * T(n + 1) * T(n) * T(n - 1) / T(8);
     } else if (m == 1) {
-        res_hess = std::numeric_limits<remove_complex_t<T>>::infinity();
+        std::get<2>(res) = std::numeric_limits<remove_complex_t<T>>::infinity();
     } else if (m == 2) {
-        res_hess = -T((n + 1) * n - 3) * T(n + 2) * T(n + 1) * T(n) * T(n - 1) / T(12);
+        std::get<2>(res) = -T((n + 1) * n - 3) * T(n + 2) * T(n + 1) * T(n) * T(n - 1) / T(12);
     } else if (m == 3) {
-        res_hess = std::numeric_limits<remove_complex_t<T>>::infinity();
+        std::get<2>(res) = std::numeric_limits<remove_complex_t<T>>::infinity();
     } else if (m == 4) {
-        res_hess = T(n + 4) * T(n + 3) * T(n + 2) * T(n + 1) * T(n) * T(n - 1) * T(n - 2) * T(n - 3) / T(48);
+        std::get<2>(res) = T(n + 4) * T(n + 3) * T(n + 2) * T(n + 1) * T(n) * T(n - 1) * T(n - 2) * T(n - 3) / T(48);
     } else if (m == -4) {
-        res_hess = 0;
+        std::get<2>(res) = 0;
     } else if (m == -3) {
-        res_hess = -std::numeric_limits<remove_complex_t<T>>::infinity();
+        std::get<2>(res) = -std::numeric_limits<remove_complex_t<T>>::infinity();
     } else if (m == -2) {
-        res_hess = -T(1) / T(4);
+        std::get<2>(res) = -T(1) / T(4);
     } else if (m == -1) {
-        res_hess = -std::numeric_limits<remove_complex_t<T>>::infinity();
+        std::get<2>(res) = -std::numeric_limits<remove_complex_t<T>>::infinity();
     } else {
-        res_hess = 0;
+        std::get<2>(res) = 0;
     }
 }
 
