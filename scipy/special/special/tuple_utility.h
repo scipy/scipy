@@ -64,9 +64,6 @@ class tuple_wrapper<T &...> {
 
     tuple_wrapper(const tuple_type &other) : m_underlying(other) {}
 
-    template <typename... U>
-    tuple_wrapper(const std::tuple<U...> &other) : m_underlying(other) {}
-
     tuple_wrapper(const tuple_wrapper &other) = default;
 
     tuple_wrapper(tuple_wrapper &&other) = default;
@@ -94,8 +91,8 @@ class tuple_wrapper<T &...> {
 };
 
 template <typename... T>
-tuple_wrapper<T &...> apply_tie(tuple_wrapper<T...> &t) {
-    return std::apply([](auto &...args) { return std::tie(args...); }, t.underlying_tuple());
+tuple_wrapper<T...> tuple_assigner(std::tuple<T...> t) {
+    return std::apply([](auto &...args) { return tuple_wrapper<T...>(args...); }, t);
 }
 
 template <typename... T>
@@ -103,18 +100,8 @@ std::tuple<T &...> apply_tie(std::tuple<T...> &t) {
     return std::apply([](auto &...args) { return std::tie(args...); }, t);
 }
 
-template <size_t I, typename... T>
-std::tuple_element_t<I, tuple_wrapper<T...>> &get(tuple_wrapper<T...> &t) {
-    return std::get<I>(t.underlying_tuple());
-}
-
-template <size_t I, typename... T>
-const std::tuple_element_t<I, tuple_wrapper<T...>> &get(const tuple_wrapper<T...> &t) {
-    return std::get<I>(t.underlying_tuple());
-}
-
 template <typename T, size_t K>
-void dot(tuple_wrapper<T (&)[K]> x, const tuple_wrapper<T (&)[K]> y, tuple_wrapper<T &> res) {
+void dot(std::tuple<T (&)[K]> x, const std::tuple<T (&)[K]> y, std::tuple<T &> res) {
     const auto &[x0] = x;
     const auto &[y0] = y;
     auto &[res0] = res;
@@ -126,7 +113,7 @@ void dot(tuple_wrapper<T (&)[K]> x, const tuple_wrapper<T (&)[K]> y, tuple_wrapp
 }
 
 template <typename T, size_t K>
-void dot(tuple_wrapper<T (&)[K], T (&)[K]> x, tuple_wrapper<T (&)[K], T (&)[K]> y, tuple_wrapper<T &, T &> res) {
+void dot(std::tuple<T (&)[K], T (&)[K]> x, std::tuple<T (&)[K], T (&)[K]> y, std::tuple<T &, T &> res) {
     const auto &[x0, x1] = x;
     const auto &[y0, y1] = y;
     auto &[res0, res1] = res;
@@ -141,8 +128,8 @@ void dot(tuple_wrapper<T (&)[K], T (&)[K]> x, tuple_wrapper<T (&)[K], T (&)[K]> 
 
 template <typename T, size_t K>
 void dot(
-    tuple_wrapper<T (&)[K], T (&)[K], T (&)[K]> x, tuple_wrapper<T (&)[K], T (&)[K], T (&)[K]> y,
-    tuple_wrapper<T &, T &, T &> res
+    std::tuple<T (&)[K], T (&)[K], T (&)[K]> x, std::tuple<T (&)[K], T (&)[K], T (&)[K]> y,
+    std::tuple<T &, T &, T &> res
 ) {
     const auto &[x0, x1, x2] = x;
     const auto &[y0, y1, y2] = y;
