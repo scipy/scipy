@@ -3,7 +3,6 @@ import numpy as np
 import numpy.testing as npt
 import scipy.sparse
 import scipy.sparse.linalg as spla
-from scipy._lib._util import VisibleDeprecationWarning
 
 
 sparray_types = ('bsr', 'coo', 'csc', 'csr', 'dia', 'dok', 'lil')
@@ -172,13 +171,13 @@ def test_dense_divide(A):
 
 @parametrize_sparrays
 def test_no_A_attr(A):
-    with pytest.warns(VisibleDeprecationWarning):
+    with pytest.raises(AttributeError):
         A.A
 
 
 @parametrize_sparrays
 def test_no_H_attr(A):
-    with pytest.warns(VisibleDeprecationWarning):
+    with pytest.raises(AttributeError):
         A.H
 
 
@@ -257,13 +256,18 @@ def test_spsolve(B):
     )
 
 
-def test_spsolve_triangular():
-    X = scipy.sparse.csr_array([
+@pytest.mark.parametrize("fmt",["csr","csc"])
+def test_spsolve_triangular(fmt):
+    arr = [
         [1, 0, 0, 0],
         [2, 1, 0, 0],
         [3, 2, 1, 0],
         [4, 3, 2, 1],
-    ])
+    ]
+    if fmt == "csr":
+      X = scipy.sparse.csr_array(arr)
+    else:
+      X = scipy.sparse.csc_array(arr)
     spla.spsolve_triangular(X, [1, 2, 3, 4])
 
 

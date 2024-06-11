@@ -1,12 +1,10 @@
 """Base class for sparse matrices"""
-from warnings import warn
 
 import numpy as np
-from scipy._lib._util import VisibleDeprecationWarning
 
 from ._sputils import (asmatrix, check_reshape_kwargs, check_shape,
                        get_sum_dtype, isdense, isscalarlike,
-                       matrix, validateaxis,)
+                       matrix, validateaxis, getdtype)
 
 from ._matrix import spmatrix
 
@@ -67,7 +65,7 @@ class _spbase:
 
     __array_priority__ = 10.1
     _format = 'und'  # undefined
-    
+
     @property
     def ndim(self) -> int:
         return len(self._shape)
@@ -112,18 +110,20 @@ class _spbase:
         from ._lil import lil_array
         return lil_array
 
-    def __init__(self, maxprint=MAXPRINT):
+    def __init__(self, arg1, *, maxprint=None):
         self._shape = None
         if self.__class__.__name__ == '_spbase':
             raise ValueError("This class is not intended"
                              " to be instantiated directly.")
-        self.maxprint = maxprint
+        if isinstance(self, sparray) and np.isscalar(arg1):
+            raise ValueError(
+                "scipy sparse array classes do not support instantiation from a scalar"
+            )
+        self.maxprint = MAXPRINT if maxprint is None else maxprint
 
-    # Use this in 1.13.0 and later:
-    #
-    # @property
-    # def shape(self):
-    #   return self._shape
+    @property
+    def shape(self):
+        return self._shape
 
     def reshape(self, *args, **kwargs):
         """reshape(self, shape, order='C', copy=False)
@@ -157,7 +157,8 @@ class _spbase:
         """
         # If the shape already matches, don't bother doing an actual reshape
         # Otherwise, the default is to convert to COO and use its reshape
-        shape = check_shape(args, self.shape)
+        is_array = isinstance(self, sparray)
+        shape = check_shape(args, self.shape, allow_1d=is_array)
         order, copy = check_reshape_kwargs(kwargs)
         if shape == self.shape:
             if copy:
@@ -216,7 +217,7 @@ class _spbase:
             this array/matrix do not share any memory.
         """
 
-        dtype = np.dtype(dtype)
+        dtype = getdtype(dtype)
         if self.dtype != dtype:
             return self.tocsr().astype(
                 dtype, casting=casting, copy=copy).asformat(self.format)
@@ -256,32 +257,77 @@ class _spbase:
 
     def __iter__(self):
         for r in range(self.shape[0]):
-            yield self[r, :]
+            yield self[r]
 
     def _getmaxprint(self):
         """Maximum number of elements to display when printed."""
         return self.maxprint
 
-    def count_nonzero(self):
+    def count_nonzero(self, axis=None):
         """Number of non-zero entries, equivalent to
 
-        np.count_nonzero(a.toarray())
+        np.count_nonzero(a.toarray(), axis=axis)
 
         Unlike the nnz property, which return the number of stored
         entries (the length of the data attribute), this method counts the
         actual number of non-zero entries in data.
+
+        Duplicate entries are summed before counting.
+
+        Parameters
+        ----------
+        axis : {-2, -1, 0, 1, None} optional
+            Count nonzeros for the whole array, or along a specified axis.
+
+            .. versionadded:: 1.15.0
+
+        Returns
+        -------
+        numpy array
+            A reduced array (no axis `axis`) holding the number of nonzero values
+            for each of the indices of the nonaxis dimensions.
+
+        Notes
+        -----
+        If you want to count nonzero and explicit zero stored values (e.g. nnz)
+        along an axis, two fast idioms are provided by `numpy` functions for the
+        common CSR, CSC, COO formats.
+
+        For the major axis in CSR (rows) and CSC (cols) use `np.diff`:
+
+            >>> import numpy as np
+            >>> import scipy as sp
+            >>> A = sp.sparse.csr_array([[4, 5, 0], [7, 0, 0]])
+            >>> major_axis_stored_values = np.diff(A.indptr)  # -> np.array([2, 1])
+
+        For the minor axis in CSR (cols) and CSC (rows) use `numpy.bincount` with
+        minlength ``A.shape[1]`` for CSR and ``A.shape[0]`` for CSC:
+
+            >>> csr_minor_stored_values = np.bincount(A.indices, minlength=A.shape[1])
+
+        For COO, use the minor axis approach for either `axis`:
+
+            >>> A = A.tocoo()
+            >>> coo_axis0_stored_values = np.bincount(A.coords[0], minlength=A.shape[1])
+            >>> coo_axis1_stored_values = np.bincount(A.coords[1], minlength=A.shape[0])
+
+        Examples
+        --------
+
+            >>> A = sp.sparse.csr_array([[4, 5, 0], [7, 0, 0]])
+            >>> A.count_nonzero(axis=0)
+            array([2, 1, 0])
         """
-        raise NotImplementedError("count_nonzero not implemented for %s." %
-                                  self.__class__.__name__)
+        clsname = self.__class__.__name__
+        raise NotImplementedError(f"count_nonzero not implemented for {clsname}.")
 
     def _getnnz(self, axis=None):
         """Number of stored values, including explicit zeros.
 
         Parameters
         ----------
-        axis : None, 0, or 1
-            Select between the number of values across the whole array, in
-            each column, or in each row.
+        axis : {-2, -1, 0, 1, None} optional
+            Report stored values for the whole array, or along a specified axis.
 
         See also
         --------
@@ -316,39 +362,9 @@ class _spbase:
         return self._format
 
     @property
-    def A(self) -> np.ndarray:
-        """DEPRECATED: Return a dense array.
-
-        .. deprecated:: 1.11.0
-
-            `.A` is deprecated and will be removed in v1.13.0.
-            Use `.toarray()` instead.
-        """
-        if isinstance(self, sparray):
-            message = ("`.A` is deprecated and will be removed in v1.13.0. "
-                       "Use `.toarray()` instead.")
-            warn(VisibleDeprecationWarning(message), stacklevel=2)
-        return self.toarray()
-
-    @property
     def T(self):
         """Transpose."""
         return self.transpose()
-
-    @property
-    def H(self):
-        """DEPRECATED: Returns the (complex) conjugate transpose.
-
-        .. deprecated:: 1.11.0
-
-            `.H` is deprecated and will be removed in v1.13.0.
-            Please use `.T.conjugate()` instead.
-        """
-        if isinstance(self, sparray):
-            message = ("`.H` is deprecated and will be removed in v1.13.0. "
-                       "Please use `.T.conjugate()` instead.")
-            warn(VisibleDeprecationWarning(message), stacklevel=2)
-        return self.T.conjugate()
 
     @property
     def real(self):
@@ -361,10 +377,9 @@ class _spbase:
     def __repr__(self):
         _, format_name = _formats[self.format]
         sparse_cls = 'array' if isinstance(self, sparray) else 'matrix'
-        shape_str = 'x'.join(str(x) for x in self.shape)
         return (
-            f"<{shape_str} sparse {sparse_cls} of type '{self.dtype.type}'\n"
-            f"\twith {self.nnz} stored elements in {format_name} format>"
+            f"<{format_name} sparse {sparse_cls} of dtype '{self.dtype}'\n"
+            f"\twith {self.nnz} stored elements and shape {self.shape}>"
         )
 
     def __str__(self):
@@ -373,18 +388,23 @@ class _spbase:
         A = self.tocoo()
 
         # helper function, outputs "(i,j)  v"
-        def tostr(row, col, data):
-            triples = zip(list(zip(row, col)), data)
-            return '\n'.join([('  {}\t{}'.format(*t)) for t in triples])
+        def tostr(coords, data):
+            pairs = zip(zip(*(c.tolist() for c in coords)), data)
+            return '\n'.join(f'  {idx}\t{val}' for idx, val in pairs)
 
+        out = repr(self)
+        if self.nnz == 0:
+            return out
+
+        out += '\n  Coords\tValues\n'
         if self.nnz > maxprint:
             half = maxprint // 2
-            out = tostr(A.row[:half], A.col[:half], A.data[:half])
+            out += tostr(tuple(c[:half] for c in A.coords), A.data[:half])
             out += "\n  :\t:\n"
-            half = maxprint - maxprint//2
-            out += tostr(A.row[-half:], A.col[-half:], A.data[-half:])
+            half = maxprint - half
+            out += tostr(tuple(c[-half:] for c in A.coords), A.data[-half:])
         else:
-            out = tostr(A.row, A.col, A.data)
+            out += tostr(A.coords, A.data)
 
         return out
 
@@ -444,6 +464,8 @@ class _spbase:
 
     def multiply(self, other):
         """Point-wise multiplication by another array/matrix."""
+        if isscalarlike(other):
+            return self._mul_scalar(other)
         return self.tocsr().multiply(other)
 
     def maximum(self, other):
@@ -564,14 +586,14 @@ class _spbase:
         else:
             return NotImplemented
 
-    def _mul_dispatch(self, other):
-        """`np.matrix`-compatible mul, i.e. `dot` or `NotImplemented`
+    def _matmul_dispatch(self, other):
+        """np.array-like matmul & `np.matrix`-like mul, i.e. `dot` or `NotImplemented`
 
         interpret other and call one of the following
         self._mul_scalar()
-        self._mul_vector()
-        self._mul_multivector()
-        self._mul_sparse_matrix()
+        self._matmul_vector()
+        self._matmul_multivector()
+        self._matmul_sparse()
         """
         # This method has to be different from `__matmul__` because it is also
         # called by sparse matrix classes.
@@ -584,29 +606,30 @@ class _spbase:
         if other.__class__ is np.ndarray:
             # Fast path for the most common case
             if other.shape == (N,):
-                return self._mul_vector(other)
+                return self._matmul_vector(other)
             elif other.shape == (N, 1):
-                return self._mul_vector(other.ravel()).reshape(M, 1)
+                result = self._matmul_vector(other.ravel())
+                if self.ndim == 1:
+                    return result
+                return result.reshape(M, 1)
             elif other.ndim == 2 and other.shape[0] == N:
-                return self._mul_multivector(other)
+                return self._matmul_multivector(other)
 
         if isscalarlike(other):
             # scalar value
             return self._mul_scalar(other)
 
         if issparse(other):
-            if self.shape[1] != other.shape[0]:
+            if self.shape[-1] != other.shape[0]:
                 raise ValueError('dimension mismatch')
-            if other.ndim == 1:
-                raise ValueError('Cannot yet multiply a 1d sparse array')
-            return self._mul_sparse_matrix(other)
+            return self._matmul_sparse(other)
 
         # If it's a list or whatever, treat it like an array
         other_a = np.asanyarray(other)
 
         if other_a.ndim == 0 and other_a.dtype == np.object_:
             # Not interpretable as an array; return NotImplemented so that
-            # other's __rmul__ can kick in if that's implemented.
+            # other's __rmatmul__ can kick in if that's implemented.
             return NotImplemented
 
         try:
@@ -619,7 +642,7 @@ class _spbase:
             if other.shape != (N,) and other.shape != (N, 1):
                 raise ValueError('dimension mismatch')
 
-            result = self._mul_vector(np.ravel(other))
+            result = self._matmul_vector(np.ravel(other))
 
             if isinstance(other, np.matrix):
                 result = self._ascontainer(result)
@@ -634,10 +657,10 @@ class _spbase:
             ##
             # dense 2D array or matrix ("multivector")
 
-            if other.shape[0] != self.shape[1]:
+            if other.shape[0] != N:
                 raise ValueError('dimension mismatch')
 
-            result = self._mul_multivector(np.asarray(other))
+            result = self._matmul_multivector(np.asarray(other))
 
             if isinstance(other, np.matrix):
                 result = self._ascontainer(result)
@@ -647,23 +670,26 @@ class _spbase:
         else:
             raise ValueError('could not interpret dimensions')
 
-    def __mul__(self, *args, **kwargs):
-        return self.multiply(*args, **kwargs)
+    def __mul__(self, other):
+        return self.multiply(other)
+
+    def __rmul__(self, other):  # other * self
+        return self.multiply(other)
 
     # by default, use CSR for __mul__ handlers
     def _mul_scalar(self, other):
         return self.tocsr()._mul_scalar(other)
 
-    def _mul_vector(self, other):
-        return self.tocsr()._mul_vector(other)
+    def _matmul_vector(self, other):
+        return self.tocsr()._matmul_vector(other)
 
-    def _mul_multivector(self, other):
-        return self.tocsr()._mul_multivector(other)
+    def _matmul_multivector(self, other):
+        return self.tocsr()._matmul_multivector(other)
 
-    def _mul_sparse_matrix(self, other):
-        return self.tocsr()._mul_sparse_matrix(other)
+    def _matmul_sparse(self, other):
+        return self.tocsr()._matmul_sparse(other)
 
-    def _rmul_dispatch(self, other):
+    def _rmatmul_dispatch(self, other):
         if isscalarlike(other):
             return self._mul_scalar(other)
         else:
@@ -672,13 +698,10 @@ class _spbase:
                 tr = other.transpose()
             except AttributeError:
                 tr = np.asarray(other).transpose()
-            ret = self.transpose()._mul_dispatch(tr)
+            ret = self.transpose()._matmul_dispatch(tr)
             if ret is NotImplemented:
                 return NotImplemented
             return ret.transpose()
-
-    def __rmul__(self, *args, **kwargs):  # other * self
-        return self.multiply(*args, **kwargs)
 
     #######################
     # matmul (@) operator #
@@ -688,13 +711,13 @@ class _spbase:
         if isscalarlike(other):
             raise ValueError("Scalar operands are not allowed, "
                              "use '*' instead")
-        return self._mul_dispatch(other)
+        return self._matmul_dispatch(other)
 
     def __rmatmul__(self, other):
         if isscalarlike(other):
             raise ValueError("Scalar operands are not allowed, "
                              "use '*' instead")
-        return self._rmul_dispatch(other)
+        return self._rmatmul_dispatch(other)
 
     ####################
     # Other Arithmetic #
@@ -800,6 +823,11 @@ class _spbase:
         -------
         p : `self` with the dimensions reversed.
 
+        Notes
+        -----
+        If `self` is a `csr_array` or a `csc_array`, then this will return a
+        `csc_array` or a `csr_array`, respectively.
+
         See Also
         --------
         numpy.transpose : NumPy's implementation of 'transpose' for ndarrays
@@ -864,32 +892,37 @@ class _spbase:
         """Returns a copy of column j of the array, as an (m x 1) sparse
         array (column vector).
         """
+        if self.ndim == 1:
+            raise ValueError("getcol not provided for 1d arrays. Use indexing A[j]")
         # Subclasses should override this method for efficiency.
         # Post-multiply by a (n x 1) column vector 'a' containing all zeros
         # except for a_j = 1
-        n = self.shape[1]
+        N = self.shape[-1]
         if j < 0:
-            j += n
-        if j < 0 or j >= n:
+            j += N
+        if j < 0 or j >= N:
             raise IndexError("index out of bounds")
         col_selector = self._csc_container(([1], [[j], [0]]),
-                                           shape=(n, 1), dtype=self.dtype)
-        return self @ col_selector
+                                           shape=(N, 1), dtype=self.dtype)
+        result = self @ col_selector
+        return result
 
     def _getrow(self, i):
         """Returns a copy of row i of the array, as a (1 x n) sparse
         array (row vector).
         """
+        if self.ndim == 1:
+            raise ValueError("getrow not meaningful for a 1d array")
         # Subclasses should override this method for efficiency.
         # Pre-multiply by a (1 x m) row vector 'a' containing all zeros
         # except for a_i = 1
-        m = self.shape[0]
+        M = self.shape[0]
         if i < 0:
-            i += m
-        if i < 0 or i >= m:
+            i += M
+        if i < 0 or i >= M:
             raise IndexError("index out of bounds")
         row_selector = self._csr_container(([1], [[0], [i]]),
-                                           shape=(1, m), dtype=self.dtype)
+                                           shape=(1, M), dtype=self.dtype)
         return row_selector @ self
 
     # The following dunder methods cannot be implemented.
@@ -914,7 +947,7 @@ class _spbase:
 
     def todense(self, order=None, out=None):
         """
-        Return a dense representation of this sparse array/matrix.
+        Return a dense representation of this sparse array.
 
         Parameters
         ----------
@@ -926,21 +959,19 @@ class _spbase:
             argument.
 
         out : ndarray, 2-D, optional
-            If specified, uses this array (or `numpy.matrix`) as the
-            output buffer instead of allocating a new array to
-            return. The provided array must have the same shape and
-            dtype as the sparse array/matrix on which you are calling the
-            method.
+            If specified, uses this array as the output buffer
+            instead of allocating a new array to return. The
+            provided array must have the same shape and dtype as
+            the sparse array on which you are calling the method.
 
         Returns
         -------
-        arr : numpy.matrix, 2-D
-            A NumPy matrix object with the same shape and containing
-            the same data represented by the sparse array/matrix, with the
-            requested memory order. If `out` was passed and was an
-            array (rather than a `numpy.matrix`), it will be filled
-            with the appropriate values and returned wrapped in a
-            `numpy.matrix` object that shares the same memory.
+        arr : ndarray, 2-D
+            An array with the same shape and containing the same
+            data represented by the sparse array, with the requested
+            memory order. If `out` was passed, the same object is
+            returned after being modified in-place to contain the
+            appropriate values.
         """
         return self._ascontainer(self.toarray(order=order, out=out))
 
@@ -1086,18 +1117,29 @@ class _spbase:
         """
         validateaxis(axis)
 
+        # Mimic numpy's casting.
+        res_dtype = get_sum_dtype(self.dtype)
+
+        if self.ndim == 1:
+            if axis not in (None, -1, 0):
+                raise ValueError("axis must be None, -1 or 0")
+            ret = (self @ np.ones(self.shape, dtype=res_dtype)).astype(dtype)
+
+            if out is not None:
+                if any(dim != 1 for dim in out.shape):
+                    raise ValueError("dimensions do not match")
+                out[...] = ret
+            return ret
+
         # We use multiplication by a matrix of ones to achieve this.
         # For some sparse array formats more efficient methods are
         # possible -- these should override this function.
-        m, n = self.shape
-
-        # Mimic numpy's casting.
-        res_dtype = get_sum_dtype(self.dtype)
+        M, N = self.shape
 
         if axis is None:
             # sum over rows and columns
             return (
-                self @ self._ascontainer(np.ones((n, 1), dtype=res_dtype))
+                self @ self._ascontainer(np.ones((N, 1), dtype=res_dtype))
             ).sum(dtype=dtype, out=out)
 
         if axis < 0:
@@ -1107,12 +1149,12 @@ class _spbase:
         if axis == 0:
             # sum over columns
             ret = self._ascontainer(
-                np.ones((1, m), dtype=res_dtype)
+                np.ones((1, M), dtype=res_dtype)
             ) @ self
         else:
             # sum over rows
             ret = self @ self._ascontainer(
-                np.ones((n, 1), dtype=res_dtype)
+                np.ones((N, 1), dtype=res_dtype)
             )
 
         if out is not None and out.shape != ret.shape:
@@ -1157,14 +1199,11 @@ class _spbase:
         numpy.matrix.mean : NumPy's implementation of 'mean' for matrices
 
         """
-        def _is_integral(dtype):
-            return (np.issubdtype(dtype, np.integer) or
-                    np.issubdtype(dtype, np.bool_))
-
         validateaxis(axis)
 
         res_dtype = self.dtype.type
-        integral = _is_integral(self.dtype)
+        integral = (np.issubdtype(self.dtype, np.integer) or
+                    np.issubdtype(self.dtype, np.bool_))
 
         # output dtype
         if dtype is None:
@@ -1177,9 +1216,14 @@ class _spbase:
         inter_dtype = np.float64 if integral else res_dtype
         inter_self = self.astype(inter_dtype)
 
+        if self.ndim == 1:
+            if axis not in (None, -1, 0):
+                raise ValueError("axis must be None, -1 or 0")
+            res = inter_self / self.shape[-1]
+            return res.sum(dtype=res_dtype, out=out)
+
         if axis is None:
-            return (inter_self / np.array(
-                self.shape[0] * self.shape[1]))\
+            return (inter_self / (self.shape[0] * self.shape[1]))\
                 .sum(dtype=res_dtype, out=out)
 
         if axis < 0:
@@ -1324,171 +1368,9 @@ class _spbase:
                                (check_contents and not isinstance(self, sparray)))
 
 
-    ## All methods below are deprecated and should be removed in
-    ## scipy 1.13.0
-    ##
-    ## Also uncomment the definition of shape above.
-
-    def get_shape(self):
-        """Get shape of a sparse array/matrix.
-
-        .. deprecated:: 1.11.0
-           This method will be removed in SciPy 1.13.0.
-           Use `X.shape` instead.
-        """
-        msg = (
-            "`get_shape` is deprecated and will be removed in v1.13.0; "
-            "use `X.shape` instead."
-        )
-        warn(msg, DeprecationWarning, stacklevel=2)
-
-        return self._shape
-
-    def set_shape(self, shape):
-        """See `reshape`.
-
-        .. deprecated:: 1.11.0
-           This method will be removed in SciPy 1.13.0.
-           Use `X.reshape` instead.
-        """
-        msg = (
-            "Shape assignment is deprecated and will be removed in v1.13.0; "
-            "use `reshape` instead."
-        )
-        warn(msg, DeprecationWarning, stacklevel=2)
-
-        # Make sure copy is False since this is in place
-        # Make sure format is unchanged because we are doing a __dict__ swap
-        new_self = self.reshape(shape, copy=False).asformat(self.format)
-        self.__dict__ = new_self.__dict__
-
-    shape = property(
-        fget=lambda self: self._shape,
-        fset=set_shape,
-        doc="""The shape of the array.
-
-Note that, starting in SciPy 1.13.0, this property will no longer be
-settable. To change the array shape, use `X.reshape` instead.
-"""
-    )
-
-    def asfptype(self):
-        """Upcast array/matrix to a floating point format (if necessary)
-
-        .. deprecated:: 1.11.0
-           This method is for internal use only, and will be removed from the
-           public API in SciPy 1.13.0.
-        """
-        msg = (
-            "`asfptype` is an internal function, and is deprecated "
-            "as part of the public API. It will be removed in v1.13.0."
-        )
-        warn(msg, DeprecationWarning, stacklevel=2)
-        return self._asfptype()
-
-    def getmaxprint(self):
-        """Maximum number of elements to display when printed.
-
-        .. deprecated:: 1.11.0
-           This method is for internal use only, and will be removed from the
-           public API in SciPy 1.13.0.
-        """
-        msg = (
-            "`getmaxprint` is an internal function, and is deprecated "
-            "as part of the public API. It will be removed in v1.13.0."
-        )
-        warn(msg, DeprecationWarning, stacklevel=2)
-        return self._getmaxprint()
-
-    def getformat(self):
-        """Sparse array/matrix storage format.
-
-        .. deprecated:: 1.11.0
-           This method will be removed in SciPy 1.13.0.
-           Use `X.format` instead.
-        """
-        msg = (
-            "`getformat` is deprecated and will be removed in v1.13.0; "
-            "use `X.format` instead."
-        )
-        warn(msg, DeprecationWarning, stacklevel=2)
-        return self.format
-
-    def getnnz(self, axis=None):
-        """Number of stored values, including explicit zeros.
-
-        .. deprecated:: 1.11.0
-           This method will be removed in SciPy 1.13.0. Use `X.nnz`
-           instead.  The `axis` argument will no longer be supported;
-           please let us know if you still need this functionality.
-
-        Parameters
-        ----------
-        axis : None, 0, or 1
-            Select between the number of values across the whole array/matrix, in
-            each column, or in each row.
-
-        See also
-        --------
-        count_nonzero : Number of non-zero entries
-        """
-        msg = (
-            "`getnnz` is deprecated and will be removed in v1.13.0; "
-            "use `X.nnz` instead."
-        )
-        warn(msg, DeprecationWarning, stacklevel=2)
-        return self._getnnz(axis=axis)
-
-    def getH(self):
-        """Return the Hermitian transpose of this array/matrix.
-
-        .. deprecated:: 1.11.0
-           This method will be removed in SciPy 1.13.0.
-           Use `X.conj().T` instead.
-        """
-        msg = (
-            "`getH` is deprecated and will be removed in v1.13.0; "
-            "use `X.conj().T` instead."
-        )
-        warn(msg, DeprecationWarning, stacklevel=2)
-        return self.conjugate().transpose()
-
-    def getcol(self, j):
-        """Returns a copy of column j of the array/matrix, as an (m x 1) sparse
-        array/matrix (column vector).
-
-        .. deprecated:: 1.11.0
-           This method will be removed in SciPy 1.13.0.
-           Use array/matrix indexing instead.
-        """
-        msg = (
-            "`getcol` is deprecated and will be removed in v1.13.0; "
-            f"use `X[:, [{j}]]` instead."
-        )
-        warn(msg, DeprecationWarning, stacklevel=2)
-        return self._getcol(j)
-
-    def getrow(self, i):
-        """Returns a copy of row i of the array/matrix, as a (1 x n) sparse
-        array/matrix (row vector).
-
-        .. deprecated:: 1.11.0
-           This method will be removed in SciPy 1.13.0.
-           Use array/matrix indexing instead.
-        """
-        msg = (
-            "`getrow` is deprecated and will be removed in v1.13.0; "
-            f"use `X[[{i}]]` instead."
-        )
-        warn(msg, DeprecationWarning, stacklevel=2)
-        return self._getrow(i)
-
-    ## End 1.13.0 deprecated methods
-
-
 class sparray:
     """A namespace class to separate sparray from spmatrix"""
-    pass
+
 
 sparray.__doc__ = _spbase.__doc__
 

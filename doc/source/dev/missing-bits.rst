@@ -82,7 +82,7 @@ is simple enough to fully document all attributes immediately below its name.
 Some return classes are sufficiently complex to deserve their own rendered
 documentation. This is fairly standard if the return class is public, but
 return classes should only be public if 1) they are intended to be imported by
-end-users and 2) if they have been approved by the mailing list. For complex,
+end-users and 2) if they have been approved by the forum. For complex,
 private return classes, please see  how `~scipy.stats.binomtest` summarizes
 `~scipy.stats._result_classes.BinomTestResult` and links to its documentation,
 and note that ``BinomTestResult`` cannot be imported from `~scipy.stats`.
@@ -104,8 +104,7 @@ Finally, hide private attributes if any::
 Test functions from `numpy.testing`
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 In new code, don't use `assert_almost_equal`, `assert_approx_equal` or
-`assert_array_almost_equal`. This is from the docstrings of these
-functions::
+`assert_array_almost_equal`. This is from the docstrings of these functions::
 
     It is recommended to use one of `assert_allclose`,
     `assert_array_almost_equal_nulp` or `assert_array_max_ulp`
@@ -116,14 +115,16 @@ For more information about writing unit tests, see the
 :doc:`NumPy Testing Guidelines <numpy:reference/testing>`.
 
 
-Testing that expected exceptions are raised
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-When writing a new test that a function call raises a certain exception,
-the preferred style is to use ``pytest.raises`` as a context manager, with
-the code that is supposed to raise the exception in the code block defined
-by the context manager.  The `match` keyword argument of ``pytest.raises``
-is given with enough of the expected error message attached to the exception
-to ensure that the expected exception is raised.
+Testing expected exceptions/ warnings
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+When writing a new test that a function call raises an exception or emits a
+warning, the preferred style is to use ``pytest.raises``/``pytest.warns`` as
+a context manager, with the code that is supposed to raise the exception in
+the code block defined by the context manager. The ``match`` keyword argument
+is given with enough of the expected message attached to the exception/warning
+to distinguish it from other exceptions/warnings of the same class. Do not use
+``np.testing.assert_raises`` or ``np.testing.assert_warns``, as they do not
+support a ``match`` parameter.
 
 For example, the function `scipy.stats.zmap` is supposed to raise a
 ``ValueError`` if the input contains ``nan`` and ``nan_policy`` is ``"raise"``.

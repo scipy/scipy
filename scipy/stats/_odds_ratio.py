@@ -401,7 +401,7 @@ def odds_ratio(table, *, kind='conditional'):
     between being exposed and being a case.
 
     Interchanging the rows or columns of the contingency table inverts
-    the odds ratio, so it is import to understand the meaning of labels
+    the odds ratio, so it is important to understand the meaning of labels
     given to the rows and columns of the table when interpreting the
     odds ratio.
 

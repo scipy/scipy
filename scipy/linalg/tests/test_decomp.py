@@ -1,6 +1,5 @@
 import itertools
 import platform
-import sys
 
 import numpy as np
 from numpy.testing import (assert_equal, assert_almost_equal,
@@ -57,22 +56,6 @@ def _random_hermitian_matrix(n, posdef=False, dtype=float):
 REAL_DTYPES = [np.float32, np.float64]
 COMPLEX_DTYPES = [np.complex64, np.complex128]
 DTYPES = REAL_DTYPES + COMPLEX_DTYPES
-
-
-def clear_fuss(ar, fuss_binary_bits=7):
-    """Clears trailing `fuss_binary_bits` of mantissa of a floating number"""
-    x = np.asanyarray(ar)
-    if np.iscomplexobj(x):
-        return clear_fuss(x.real) + 1j * clear_fuss(x.imag)
-
-    significant_binary_bits = np.finfo(x.dtype).nmant
-    x_mant, x_exp = np.frexp(x)
-    f = 2.0**(significant_binary_bits - fuss_binary_bits)
-    x_mant *= f
-    np.rint(x_mant, out=x_mant)
-    x_mant /= f
-
-    return np.ldexp(x_mant, x_exp)
 
 
 # XXX: This function should not be defined here, but somewhere in
@@ -133,6 +116,17 @@ class TestEigVals:
         exact_w = [(9+sqrt(93))/2, 0, (9-sqrt(93))/2]
         assert_array_almost_equal(w, exact_w)
 
+    @pytest.mark.parametrize('dt', [int, float, float32, complex, complex64])
+    def test_empty(self, dt):
+        a = np.empty((0, 0), dtype=dt)
+        w = eigvals(a)
+        assert w.shape == (0,)
+        assert w.dtype == eigvals(np.eye(2, dtype=dt)).dtype
+
+        w = eigvals(a, homogeneous_eigvals=True)
+        assert w.shape == (2, 0)
+        assert w.dtype == eigvals(np.eye(2, dtype=dt)).dtype
+
 
 class TestEig:
 
@@ -187,7 +181,8 @@ class TestEig:
         assert_equal(w, np.inf)
         assert_allclose(vr, 1)
 
-    def _check_gen_eig(self, A, B):
+    def _check_gen_eig(self, A, B, atol_homog=1e-13, rtol_homog=1e-13,
+                                   atol=1e-13, rtol=1e-13):
         if B is not None:
             A, B = asarray(A), asarray(B)
             B0 = B
@@ -204,7 +199,7 @@ class TestEig:
         val2 = B @ vr * w[0, :]
         for i in range(val1.shape[1]):
             assert_allclose(val1[:, i], val2[:, i],
-                            rtol=1e-13, atol=1e-13, err_msg=msg)
+                            rtol=rtol_homog, atol=atol_homog, err_msg=msg)
 
         if B0 is None:
             assert_allclose(w[1, :], 1)
@@ -236,13 +231,20 @@ class TestEig:
         for i in range(res.shape[1]):
             if np.all(isfinite(res[:, i])):
                 assert_allclose(res[:, i], 0,
-                                rtol=1e-13, atol=1e-13, err_msg=msg)
+                                rtol=rtol, atol=atol, err_msg=msg)
 
+        # try to consistently order eigenvalues, including complex conjugate pairs
         w_fin = w[isfinite(w)]
         wt_fin = wt[isfinite(wt)]
-        perm = argsort(clear_fuss(w_fin))
-        permt = argsort(clear_fuss(wt_fin))
-        assert_allclose(w[perm], wt[permt],
+
+        # prune noise in the real parts
+        w_fin = -1j * np.real_if_close(1j*w_fin, tol=1e-10)
+        wt_fin = -1j * np.real_if_close(1j*wt_fin, tol=1e-10)
+
+        perm = argsort(abs(w_fin) + w_fin.imag)
+        permt = argsort(abs(wt_fin) + wt_fin.imag)
+
+        assert_allclose(w_fin[perm], wt_fin[permt],
                         atol=1e-7, rtol=1e-7, err_msg=msg)
 
         length = np.empty(len(vr))
@@ -253,7 +255,6 @@ class TestEig:
         # Compare homogeneous and nonhomogeneous versions
         assert_allclose(sort(wh), sort(w[np.isfinite(w)]))
 
-    @pytest.mark.xfail(reason="See gh-2254")
     def test_singular(self):
         # Example taken from
         # https://web.archive.org/web/20040903121217/http://www.cs.umu.se/research/nla/singular_pairs/guptri/matlab.html
@@ -269,7 +270,7 @@ class TestEig:
                    [24, 35, 18, 21, 22]])
 
         with np.errstate(all='ignore'):
-            self._check_gen_eig(A, B)
+            self._check_gen_eig(A, B, atol_homog=5e-13, atol=5e-13)
 
     def test_falker(self):
         # Test matrices giving some Nan generalized eigenvalues.
@@ -350,6 +351,56 @@ class TestEig:
         B = np.arange(9.0).reshape(3, 3)
         assert_raises(ValueError, eig, A, B)
         assert_raises(ValueError, eig, B, A)
+
+    def test_gh_11577(self):
+        # https://github.com/scipy/scipy/issues/11577
+        # `A - lambda B` should have 4 and 8 among the eigenvalues, and this
+        # was apparently broken on some platforms
+        A = np.array([[12.0, 28.0, 76.0, 220.0],
+                      [16.0, 32.0, 80.0, 224.0],
+                      [24.0, 40.0, 88.0, 232.0],
+                      [40.0, 56.0, 104.0, 248.0]], dtype='float64')
+        B = np.array([[2.0, 4.0, 10.0, 28.0],
+                      [3.0, 5.0, 11.0, 29.0],
+                      [5.0, 7.0, 13.0, 31.0],
+                      [9.0, 11.0, 17.0, 35.0]], dtype='float64')
+
+        D, V = eig(A, B)
+
+        # The problem is ill-conditioned, and two other eigenvalues
+        # depend on ATLAS/OpenBLAS version, compiler version etc
+        # see gh-11577 for discussion
+        #
+        # NB: it is tempting to use `assert_allclose(D[:2], [4, 8])` instead but
+        # the ordering of eigenvalues also comes out different on different
+        # systems depending on who knows what.
+        with np.testing.suppress_warnings() as sup:
+            # isclose chokes on inf/nan values
+            sup.filter(RuntimeWarning, "invalid value encountered in multiply")
+            assert np.isclose(D, 4.0, atol=1e-14).any()
+            assert np.isclose(D, 8.0, atol=1e-14).any()
+
+    @pytest.mark.parametrize('dt', [int, float, np.float32, complex, np.complex64])
+    def test_empty(self, dt):
+        a = np.empty((0, 0), dtype=dt)
+        w, vr = eig(a)
+
+        w_n, vr_n = eig(np.eye(2, dtype=dt))
+
+        assert w.shape == (0,)
+        assert w.dtype == w_n.dtype  #eigvals(np.eye(2, dtype=dt)).dtype
+
+        assert_allclose(vr, np.empty((0, 0)))
+        assert vr.shape == (0, 0)
+        assert vr.dtype == vr_n.dtype
+
+        w, vr = eig(a, homogeneous_eigvals=True)
+        assert w.shape == (2, 0)
+        assert w.dtype == w_n.dtype
+
+        assert vr.shape == (0, 0)
+        assert vr.dtype == vr_n.dtype
+
 
 
 class TestEigBanded:
@@ -631,6 +682,22 @@ class TestEigBanded:
         y_lin = linalg.solve(self.comp_mat, self.bc)
         assert_array_almost_equal(y, y_lin)
 
+    @pytest.mark.parametrize('dt', [int, float, np.float32, complex, np.complex64])
+    def test_empty(self, dt):
+        a_band = np.empty((0, 0), dtype=dt)
+        w, v = eig_banded(a_band)
+
+        w_n, v_n = eig_banded(np.array([[0, 0], [1, 1]], dtype=dt))
+
+        assert w.shape == (0,)
+        assert w.dtype == w_n.dtype
+
+        assert v.shape == (0, 0)
+        assert v.dtype == v_n.dtype
+
+        w = eig_banded(a_band, eigvals_only=True)
+        assert w.shape == (0,)
+        assert w.dtype == w_n.dtype
 
 class TestEigTridiagonal:
     def setup_method(self):
@@ -742,6 +809,24 @@ class TestEigTridiagonal:
             assert_array_almost_equal(abs(evec),
                                       abs(self.evec[:, ind1:ind2+1]))
 
+    def test_eigh_tridiagonal_1x1(self):
+        """See gh-20075"""
+        a = np.array([-2.0])
+        b = np.array([])
+        x = eigh_tridiagonal(a, b, eigvals_only=True)
+        assert x.ndim == 1
+        assert_allclose(x, a)
+        x, V = eigh_tridiagonal(a, b, select="i", select_range=(0, 0))
+        assert x.ndim == 1
+        assert V.ndim == 2
+        assert_allclose(x, a)
+        assert_allclose(V, array([[1.]]))
+
+        x, V = eigh_tridiagonal(a, b, select="v", select_range=(-2, 0))
+        assert x.size == 0
+        assert x.shape == (0,)
+        assert V.shape == (1, 0)
+
 
 class TestEigh:
     def setup_class(self):
@@ -760,31 +845,15 @@ class TestEigh:
         # Both value and index subsets requested
         assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([3, 3]),
                       subset_by_value=[1, 2], subset_by_index=[2, 4])
-        with np.testing.suppress_warnings() as sup:
-            sup.filter(DeprecationWarning, "Keyword argument 'eigvals")
-            assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([3, 3]),
-                          subset_by_value=[1, 2], eigvals=[2, 4])
         # Invalid upper index spec
         assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([3, 3]),
                       subset_by_index=[0, 4])
-        with np.testing.suppress_warnings() as sup:
-            sup.filter(DeprecationWarning, "Keyword argument 'eigvals")
-            assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([3, 3]),
-                          eigvals=[0, 4])
         # Invalid lower index
         assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([3, 3]),
                       subset_by_index=[-2, 2])
-        with np.testing.suppress_warnings() as sup:
-            sup.filter(DeprecationWarning, "Keyword argument 'eigvals")
-            assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([3, 3]),
-                          eigvals=[-2, 2])
         # Invalid index spec #2
         assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([3, 3]),
                       subset_by_index=[2, 0])
-        with np.testing.suppress_warnings() as sup:
-            sup.filter(DeprecationWarning, "Keyword argument 'eigvals")
-            assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([3, 3]),
-                          subset_by_index=[2, 0])
         # Invalid value spec
         assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([3, 3]),
                       subset_by_value=[2, 0])
@@ -841,6 +910,17 @@ class TestEigh:
                         atol=1000*np.finfo(dtype_).eps,
                         rtol=0.)
 
+    @pytest.mark.parametrize('driver', ("ev", "evd", "evr", "evx"))
+    def test_1x1_lwork(self, driver):
+        w, v = eigh([[1]], driver=driver)
+        assert_allclose(w, array([1.]), atol=1e-15)
+        assert_allclose(v, array([[1.]]), atol=1e-15)
+
+        # complex case now
+        w, v = eigh([[1j]], driver=driver)
+        assert_allclose(w, array([0]), atol=1e-15)
+        assert_allclose(v, array([[1.]]), atol=1e-15)
+
     @pytest.mark.parametrize('type', (1, 2, 3))
     @pytest.mark.parametrize('driver', ("gv", "gvd", "gvx"))
     def test_various_drivers_generalized(self, driver, type):
@@ -869,37 +949,24 @@ class TestEigh:
         assert_equal(len(w3), 2)
         assert_allclose(w3, np.array([1.2, 1.3]))
 
-    @pytest.mark.parametrize("method", [eigh, eigvalsh])
-    def test_deprecation_warnings(self, method):
-        with pytest.warns(DeprecationWarning,
-                          match="Keyword argument 'turbo'"):
-            method(np.zeros((2, 2)), turbo=True)
-        with pytest.warns(DeprecationWarning,
-                          match="Keyword argument 'eigvals'"):
-            method(np.zeros((2, 2)), eigvals=[0, 1])
-        with pytest.deprecated_call(match="use keyword arguments"):
-            method(np.zeros((2,2)), np.eye(2, 2), True)
+    @pytest.mark.parametrize('dt', [int, float, np.float32, complex, np.complex64])
+    def test_empty(self, dt):
+        a = np.empty((0, 0), dtype=dt)
+        w, v = eigh(a)
 
-    def test_deprecation_results(self):
-        a = _random_hermitian_matrix(3)
-        b = _random_hermitian_matrix(3, posdef=True)
+        w_n, v_n = eigh(np.eye(2, dtype=dt))
 
-        # check turbo gives same result as driver='gvd'
-        with np.testing.suppress_warnings() as sup:
-            sup.filter(DeprecationWarning, "Keyword argument 'turbo'")
-            w_dep, v_dep = eigh(a, b, turbo=True)
-        w, v = eigh(a, b, driver='gvd')
-        assert_allclose(w_dep, w)
-        assert_allclose(v_dep, v)
+        assert w.shape == (0,)
+        assert w.dtype == w_n.dtype
 
-        # check eigvals gives the same result as subset_by_index
-        with np.testing.suppress_warnings() as sup:
-            sup.filter(DeprecationWarning, "Keyword argument 'eigvals'")
-            w_dep, v_dep = eigh(a, eigvals=[0, 1])
-        w, v = eigh(a, subset_by_index=[0, 1])
-        assert_allclose(w_dep, w)
-        assert_allclose(v_dep, v)
+        assert v.shape == (0, 0)
+        assert v.dtype == v_n.dtype
 
+        w = eigh(a, eigvals_only=True)
+        assert_allclose(w, np.empty((0,)))
+
+        assert w.shape == (0,)
+        assert w.dtype == w_n.dtype
 
 class TestSVD_GESDD:
     lapack_driver = 'gesdd'
@@ -1049,17 +1116,89 @@ class TestSVD_GESDD:
         assert_allclose(s[0], 1.0)
         assert_allclose(u[0, 0] * vh[0, -1], 1.0)
 
+    @pytest.mark.parametrize("m", [0, 1, 2])
+    @pytest.mark.parametrize("n", [0, 1, 2])
+    @pytest.mark.parametrize('dtype', DTYPES)
+    def test_shape_dtype(self, m, n, dtype):
+        a = np.zeros((m, n), dtype=dtype)
+        k = min(m, n)
+        dchar = a.dtype.char
+        real_dchar = dchar.lower() if dchar in 'FD' else dchar
+
+        u, s, v = svd(a)
+        assert_equal(u.shape, (m, m))
+        assert_equal(u.dtype, dtype)
+        assert_equal(s.shape, (k,))
+        assert_equal(s.dtype, np.dtype(real_dchar))
+        assert_equal(v.shape, (n, n))
+        assert_equal(v.dtype, dtype)
+
+        u, s, v = svd(a, full_matrices=False)
+        assert_equal(u.shape, (m, k))
+        assert_equal(u.dtype, dtype)
+        assert_equal(s.shape, (k,))
+        assert_equal(s.dtype, np.dtype(real_dchar))
+        assert_equal(v.shape, (k, n))
+        assert_equal(v.dtype, dtype)
+
+        s = svd(a, compute_uv=False)
+        assert_equal(s.shape, (k,))
+        assert_equal(s.dtype, np.dtype(real_dchar))
+
+    @pytest.mark.parametrize('dt', [int, float, np.float32, complex, np.complex64])
+    @pytest.mark.parametrize(("m", "n"), [(0, 0), (0, 2), (2, 0)])
+    def test_empty(self, dt, m, n):
+        a0 = np.eye(3, dtype=dt)
+        u0, s0, v0 = svd(a0)
+
+        a = np.empty((m, n), dtype=dt)
+        u, s, v = svd(a)
+        assert_allclose(u, np.identity(m))
+        assert_allclose(s, np.empty((0,)))
+        assert_allclose(v, np.identity(n))
+
+        assert u.dtype == u0.dtype
+        assert v.dtype == v0.dtype
+        assert s.dtype == s0.dtype
+
+        u, s, v = svd(a, full_matrices=False)
+        assert_allclose(u, np.empty((m, 0)))
+        assert_allclose(s, np.empty((0,)))
+        assert_allclose(v, np.empty((0, n)))
+
+        assert u.dtype == u0.dtype
+        assert v.dtype == v0.dtype
+        assert s.dtype == s0.dtype
+
+        s = svd(a, compute_uv=False)
+        assert_allclose(s, np.empty((0,)))
+
+        assert s.dtype == s0.dtype
 
 class TestSVD_GESVD(TestSVD_GESDD):
     lapack_driver = 'gesvd'
 
 
+@pytest.mark.fail_slow(10)
+def test_svd_gesdd_nofegfault():
+    # svd(a) with {U,VT}.size > INT_MAX does not segfault
+    # cf https://github.com/scipy/scipy/issues/14001
+    df=np.ones((4799, 53130), dtype=np.float64)
+    with assert_raises(ValueError):
+        svd(df)
+
+
 class TestSVDVals:
 
-    def test_empty(self):
+    @pytest.mark.parametrize('dt', [int, float, np.float32, complex, np.complex64])
+    def test_empty(self, dt):
         for a in [[]], np.empty((2, 0)), np.ones((0, 3)):
+            a = np.array(a, dtype=dt)
             s = svdvals(a)
             assert_equal(s, np.empty(0))
+
+            s0 = svdvals(np.eye(2, dtype=dt))
+            assert s.dtype == s0.dtype
 
     def test_simple(self):
         a = [[1, 2, 3], [1, 2, 3], [2, 5, 6]]
@@ -1671,6 +1810,100 @@ class TestQR:
         assert_raises(Exception, qr, (a,), {'lwork': 0})
         assert_raises(Exception, qr, (a,), {'lwork': 2})
 
+    @pytest.mark.parametrize("m", [0, 1, 2])
+    @pytest.mark.parametrize("n", [0, 1, 2])
+    @pytest.mark.parametrize("pivoting", [False, True])
+    @pytest.mark.parametrize('dtype', DTYPES)
+    def test_shape_dtype(self, m, n, pivoting, dtype):
+        k = min(m, n)
+
+        a = np.zeros((m, n), dtype=dtype)
+        q, r, *other = qr(a, pivoting=pivoting)
+        assert_equal(q.shape, (m, m))
+        assert_equal(q.dtype, dtype)
+        assert_equal(r.shape, (m, n))
+        assert_equal(r.dtype, dtype)
+        assert len(other) == (1 if pivoting else 0)
+        if pivoting:
+            p, = other
+            assert_equal(p.shape, (n,))
+            assert_equal(p.dtype, np.int32)
+
+        r, *other = qr(a, mode='r', pivoting=pivoting)
+        assert_equal(r.shape, (m, n))
+        assert_equal(r.dtype, dtype)
+        assert len(other) == (1 if pivoting else 0)
+        if pivoting:
+            p, = other
+            assert_equal(p.shape, (n,))
+            assert_equal(p.dtype, np.int32)
+
+        q, r, *other = qr(a, mode='economic', pivoting=pivoting)
+        assert_equal(q.shape, (m, k))
+        assert_equal(q.dtype, dtype)
+        assert_equal(r.shape, (k, n))
+        assert_equal(r.dtype, dtype)
+        assert len(other) == (1 if pivoting else 0)
+        if pivoting:
+            p, = other
+            assert_equal(p.shape, (n,))
+            assert_equal(p.dtype, np.int32)
+
+        (raw, tau), r, *other = qr(a, mode='raw', pivoting=pivoting)
+        assert_equal(raw.shape, (m, n))
+        assert_equal(raw.dtype, dtype)
+        assert_equal(tau.shape, (k,))
+        assert_equal(tau.dtype, dtype)
+        assert_equal(r.shape, (k, n))
+        assert_equal(r.dtype, dtype)
+        assert len(other) == (1 if pivoting else 0)
+        if pivoting:
+            p, = other
+            assert_equal(p.shape, (n,))
+            assert_equal(p.dtype, np.int32)
+
+    @pytest.mark.parametrize(("m", "n"), [(0, 0), (0, 2), (2, 0)])
+    def test_empty(self, m, n):
+        k = min(m, n)
+
+        a = np.empty((m, n))
+        q, r = qr(a)
+        assert_allclose(q, np.identity(m))
+        assert_allclose(r, np.empty((m, n)))
+
+        q, r, p = qr(a, pivoting=True)
+        assert_allclose(q, np.identity(m))
+        assert_allclose(r, np.empty((m, n)))
+        assert_allclose(p, np.arange(n))
+
+        r, = qr(a, mode='r')
+        assert_allclose(r, np.empty((m, n)))
+
+        q, r = qr(a, mode='economic')
+        assert_allclose(q, np.empty((m, k)))
+        assert_allclose(r, np.empty((k, n)))
+
+        (raw, tau), r = qr(a, mode='raw')
+        assert_allclose(raw, np.empty((m, n)))
+        assert_allclose(tau, np.empty((k,)))
+        assert_allclose(r, np.empty((k, n)))
+
+    def test_multiply_empty(self):
+        a = np.empty((0, 0))
+        c = np.empty((0, 0))
+        cq, r = qr_multiply(a, c)
+        assert_allclose(cq, np.empty((0, 0)))
+
+        a = np.empty((0, 2))
+        c = np.empty((2, 0))
+        cq, r = qr_multiply(a, c)
+        assert_allclose(cq, np.empty((2, 0)))
+
+        a = np.empty((2, 0))
+        c = np.empty((0, 2))
+        cq, r = qr_multiply(a, c)
+        assert_allclose(cq, np.empty((0, 2)))
+
 
 class TestRQ:
     def test_simple(self):
@@ -1777,6 +2010,45 @@ class TestRQ:
         assert_array_almost_equal(q @ q.T, eye(3))
         assert_array_almost_equal(r @ q, a)
 
+    @pytest.mark.parametrize("m", [0, 1, 2])
+    @pytest.mark.parametrize("n", [0, 1, 2])
+    @pytest.mark.parametrize('dtype', DTYPES)
+    def test_shape_dtype(self, m, n, dtype):
+        k = min(m, n)
+
+        a = np.zeros((m, n), dtype=dtype)
+        r, q = rq(a)
+        assert_equal(q.shape, (n, n))
+        assert_equal(r.shape, (m, n))
+        assert_equal(r.dtype, dtype)
+        assert_equal(q.dtype, dtype)
+
+        r = rq(a, mode='r')
+        assert_equal(r.shape, (m, n))
+        assert_equal(r.dtype, dtype)
+
+        r, q = rq(a, mode='economic')
+        assert_equal(r.shape, (m, k))
+        assert_equal(r.dtype, dtype)
+        assert_equal(q.shape, (k, n))
+        assert_equal(q.dtype, dtype)
+
+    @pytest.mark.parametrize(("m", "n"), [(0, 0), (0, 2), (2, 0)])
+    def test_empty(self, m, n):
+        k = min(m, n)
+
+        a = np.empty((m, n))
+        r, q = rq(a)
+        assert_allclose(r, np.empty((m, n)))
+        assert_allclose(q, np.identity(n))
+
+        r = rq(a, mode='r')
+        assert_allclose(r, np.empty((m, n)))
+
+        r, q = rq(a, mode='economic')
+        assert_allclose(r, np.empty((m, k)))
+        assert_allclose(q, np.empty((k, n)))
+
 
 class TestSchur:
 
@@ -1831,6 +2103,23 @@ class TestSchur:
         a = [[8, 12, 3], [2, 9, 3], [10, 3, 6]]
         t, z = schur(a, check_finite=False)
         assert_array_almost_equal(z @ t @ z.conj().T, a)
+
+    @pytest.mark.parametrize('dt', [int, float, np.float32, complex, np.complex64])
+    def test_empty(self, dt):
+        a = np.empty((0, 0), dtype=dt)
+        t, z = schur(a)
+        t0, z0 = schur(np.eye(2, dtype=dt))
+        assert_allclose(t, np.empty((0, 0)))
+        assert_allclose(z, np.empty((0, 0)))
+        assert t.dtype == t0.dtype
+        assert z.dtype == z0.dtype
+
+        t, z, sdim = schur(a, sort='lhp')
+        assert_allclose(t, np.empty((0, 0)))
+        assert_allclose(z, np.empty((0, 0)))
+        assert_equal(sdim, 0)
+        assert t.dtype == t0.dtype
+        assert z.dtype == z0.dtype
 
 
 class TestHessenberg:
@@ -1909,6 +2198,21 @@ class TestHessenberg:
         assert_array_almost_equal(q2, np.eye(2))
         assert_array_almost_equal(h2, b)
 
+    @pytest.mark.parametrize('dt', [int, float, float32, complex, complex64])
+    def test_empty(self, dt):
+        a = np.empty((0, 0), dtype=dt)
+        h = hessenberg(a)
+        assert h.shape == (0, 0)
+        assert h.dtype == hessenberg(np.eye(3, dtype=dt)).dtype
+
+        h, q = hessenberg(a, calc_q=True)
+        h3, q3 = hessenberg(a, calc_q=True)
+        assert h.shape == (0, 0)
+        assert h.dtype == h3.dtype
+
+        assert q.shape == (0, 0)
+        assert q.dtype == q3.dtype
+
 
 blas_provider = blas_version = None
 if CONFIG is not None:
@@ -1917,12 +2221,6 @@ if CONFIG is not None:
 
 
 class TestQZ:
-    @pytest.mark.xfail(
-        sys.platform == 'darwin' and
-        blas_provider == 'openblas' and
-        blas_version < "0.3.21.dev",
-        reason="gges[float32] broken for OpenBLAS on macOS, see gh-16949"
-    )
     def test_qz_single(self):
         rng = np.random.RandomState(12345)
         n = 5
@@ -2304,6 +2602,7 @@ class TestOrdQZ:
 
 
 class TestOrdQZWorkspaceSize:
+    @pytest.mark.fail_slow(5)
     def test_decompose(self):
         rng = np.random.RandomState(12345)
         N = 202
@@ -2343,7 +2642,7 @@ class TestDatacopied:
         M2 = M.copy()
 
         class Fake1:
-            def __array__(self):
+            def __array__(self, dtype=None, copy=None):
                 return A
 
         class Fake2:
@@ -2559,6 +2858,15 @@ def test_orth():
     for dt, n in itertools.product(dtypes, sizes):
         _check_orth(n, dt)
 
+@pytest.mark.parametrize('dt', [int, float, np.float32, complex, np.complex64])
+def test_orth_empty(dt):
+    a = np.empty((0, 0), dtype=dt)
+    a0 = np.eye(2, dtype=dt)
+
+    oa = orth(a)
+    assert oa.dtype == orth(a0).dtype
+    assert oa.shape == (0, 0)
+
 
 def test_null_space():
     np.random.seed(1)
@@ -2596,6 +2904,16 @@ def test_null_space():
 
             Y = null_space(X, rcond=1e-6)
             assert_equal(Y.shape, (n, n - 6))
+
+
+@pytest.mark.parametrize('dt', [int, float, np.float32, complex, np.complex64])
+def test_null_space_empty(dt):
+    a = np.empty((0, 0), dtype=dt)
+    a0 = np.eye(2, dtype=dt)
+    nsa = null_space(a)
+
+    assert nsa.shape == (0, 0)
+    assert nsa.dtype == null_space(a0).dtype
 
 
 def test_subspace_angles():
@@ -2654,6 +2972,17 @@ def test_subspace_angles():
     b = [[1 - 1j, 0], [0, 1]]
     assert_allclose(subspace_angles(a, b), 0., atol=1e-14)
     assert_allclose(subspace_angles(b, a), 0., atol=1e-14)
+
+    # Empty
+    a = np.empty((0, 0))
+    b = np.empty((0, 0))
+    assert_allclose(subspace_angles(a, b), np.empty((0,)))
+    a = np.empty((2, 0))
+    b = np.empty((2, 0))
+    assert_allclose(subspace_angles(a, b), np.empty((0,)))
+    a = np.empty((0, 2))
+    b = np.empty((0, 3))
+    assert_allclose(subspace_angles(a, b), np.empty((0,)))
 
 
 class TestCDF2RDF:

@@ -24,8 +24,7 @@ import numpy as np
 from scipy.sparse import csc_matrix
 from ._fortran_format_parser import FortranFormatParser, IntFormat, ExpFormat
 
-__all__ = ["MalformedHeader", "hb_read", "hb_write", "HBInfo", "HBFile",
-           "HBMatrixType"]
+__all__ = ["hb_read", "hb_write"]
 
 
 class MalformedHeader(Exception):
@@ -212,8 +211,6 @@ class HBInfo:
             pointer_format_str, indices_format_str, values_format_str,
             right_hand_sides_nlines=0, nelementals=0):
         """Do not use this directly, but the class ctrs (from_* functions)."""
-        self.title = title
-        self.key = key
         if title is None:
             title = "No Title"
         if len(title) > 72:
@@ -224,6 +221,8 @@ class HBInfo:
         if len(key) > 8:
             warnings.warn("key is > 8 characters (key is %s)" % key,
                           LineOverflow, stacklevel=3)
+        self.title = title
+        self.key = key
 
         self.total_nlines = total_nlines
         self.pointer_nlines = pointer_nlines
@@ -495,14 +494,13 @@ def hb_read(path_or_open_file):
     We can read and write a harwell-boeing format file:
 
     >>> from scipy.io import hb_read, hb_write
-    >>> from scipy.sparse import csr_matrix, eye
-    >>> data = csr_matrix(eye(3))  # create a sparse matrix
+    >>> from scipy.sparse import csr_array, eye
+    >>> data = csr_array(eye(3))  # create a sparse array
     >>> hb_write("data.hb", data)  # write a hb file
     >>> print(hb_read("data.hb"))  # read a hb file
-      (0, 0)	1.0
-      (1, 1)	1.0
-      (2, 2)	1.0
-
+    (np.int32(0), np.int32(0))	1.0
+    (np.int32(1), np.int32(1))	1.0
+    (np.int32(2), np.int32(2))	1.0
     """
     def _get_matrix(fid):
         hb = HBFile(fid)
@@ -546,14 +544,13 @@ def hb_write(path_or_open_file, m, hb_info=None):
     We can read and write a harwell-boeing format file:
 
     >>> from scipy.io import hb_read, hb_write
-    >>> from scipy.sparse import csr_matrix, eye
-    >>> data = csr_matrix(eye(3))  # create a sparse matrix
+    >>> from scipy.sparse import csr_array, eye
+    >>> data = csr_array(eye(3))  # create a sparse array
     >>> hb_write("data.hb", data)  # write a hb file
     >>> print(hb_read("data.hb"))  # read a hb file
-      (0, 0)	1.0
-      (1, 1)	1.0
-      (2, 2)	1.0
-
+    (np.int32(0), np.int32(0))	1.0
+    (np.int32(1), np.int32(1))	1.0
+    (np.int32(2), np.int32(2))	1.0
     """
     m = m.tocsc(copy=False)
 

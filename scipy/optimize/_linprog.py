@@ -168,7 +168,7 @@ def linprog_terse_callback(res):
 
 
 def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
-            bounds=None, method='highs', callback=None,
+            bounds=(0, None), method='highs', callback=None,
             options=None, x0=None, integrality=None):
     r"""
     Linear programming: minimize a linear objective function subject to linear
@@ -625,6 +625,8 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         warn(warning_message, OptimizeWarning, stacklevel=2)
     elif np.any(integrality):
         integrality = np.broadcast_to(integrality, np.shape(c))
+    else:
+        integrality = None
 
     lp = _LPProblem(c, A_ub, b_ub, A_eq, b_eq, bounds, x0, integrality)
     lp, solver_options = _parse_linprog(lp, options, meth)

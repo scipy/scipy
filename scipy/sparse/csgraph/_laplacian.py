@@ -5,6 +5,7 @@ Laplacian of a compressed-sparse graph
 import numpy as np
 from scipy.sparse import issparse
 from scipy.sparse.linalg import LinearOperator
+from scipy.sparse._sputils import convert_pydata_sparse_to_scipy, is_pydata_spmatrix
 
 
 ###############################################################################
@@ -314,7 +315,7 @@ def laplacian(
     >>> for cut in ["max", "min"]:
     ...     G = -G  # 1.
     ...     L = csgraph.laplacian(G, symmetrized=True, form="lo")  # 2.
-    ...     _, eves = lobpcg(L, X, Y=Y, largest=False, tol=1e-3)  # 3.
+    ...     _, eves = lobpcg(L, X, Y=Y, largest=False, tol=1e-2)  # 3.
     ...     eves *= np.sign(eves[0, 0])  # 4.
     ...     print(cut + "-cut labels:\\n", 1 * (eves[:, 0]>0))  # 5.
     max-cut labels:
@@ -329,6 +330,10 @@ def laplacian(
     in the middle by deleting a single edge.
     Both determined partitions are optimal.
     """
+    is_pydata_sparse = is_pydata_spmatrix(csgraph)
+    if is_pydata_sparse:
+        pydata_sparse_cls = csgraph.__class__
+        csgraph = convert_pydata_sparse_to_scipy(csgraph)
     if csgraph.ndim != 2 or csgraph.shape[0] != csgraph.shape[1]:
         raise ValueError('csgraph must be a square matrix or array')
 
@@ -360,6 +365,8 @@ def laplacian(
         dtype=dtype,
         symmetrized=symmetrized,
     )
+    if is_pydata_sparse:
+        lap = pydata_sparse_cls.from_scipy_sparse(lap)
     if return_diag:
         return lap, d
     return lap

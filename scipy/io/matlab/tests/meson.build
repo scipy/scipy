@@ -9,7 +9,8 @@ py3.install_sources([
     'test_pathological.py',
     'test_streams.py'
   ],
-  subdir: 'scipy/io/matlab/tests'
+  subdir: 'scipy/io/matlab/tests',
+  install_tag: 'tests'
 )
 
 py3.install_sources([
@@ -124,5 +125,6 @@ py3.install_sources([
     'data/testunicode_7.4_GLNX86.mat',
     'data/testvec_4_GLNX86.mat'
   ],
-  subdir: 'scipy/io/matlab/tests/data'
+  subdir: 'scipy/io/matlab/tests/data',
+  install_tag: 'tests'
 )

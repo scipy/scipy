@@ -12,11 +12,7 @@ from scipy._lib import doccer
 from . import _byteordercodes as boc
 
 __all__ = [
-    'MatFileReader', 'MatReadError', 'MatReadWarning',
-    'MatVarReader', 'MatWriteError', 'arr_dtype_number',
-    'arr_to_chars', 'convert_dtypes', 'doc_dict',
-    'docfiller', 'get_matfile_version',
-    'matdims', 'read_dtype'
+    'MatReadError', 'MatReadWarning', 'MatWriteError',
 ]
 
 class MatReadError(Exception):

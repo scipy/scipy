@@ -20,8 +20,8 @@ from . import _csparsetools
 class _lil_base(_spbase, IndexMixin):
     _format = 'lil'
 
-    def __init__(self, arg1, shape=None, dtype=None, copy=False):
-        _spbase.__init__(self)
+    def __init__(self, arg1, shape=None, dtype=None, copy=False, *, maxprint=None):
+        _spbase.__init__(self, arg1, maxprint=maxprint)
         self.dtype = getdtype(dtype, arg1, default=float)
 
         # First get the shape
@@ -32,7 +32,8 @@ class _lil_base(_spbase, IndexMixin):
                 A = arg1.tolil()
 
             if dtype is not None:
-                A = A.astype(dtype, copy=False)
+                newdtype = getdtype(dtype)
+                A = A.astype(newdtype, copy=False)
 
             self._shape = check_shape(A.shape)
             self.dtype = A.dtype
@@ -57,13 +58,14 @@ class _lil_base(_spbase, IndexMixin):
                 A = self._ascontainer(arg1)
             except TypeError as e:
                 raise TypeError('unsupported matrix type') from e
-            else:
-                A = self._csr_container(A, dtype=dtype).tolil()
+            if isinstance(self, sparray) and A.ndim != 2:
+                raise ValueError(f"LIL arrays don't support {A.ndim}D input. Use 2D")
+            A = self._csr_container(A, dtype=dtype).tolil()
 
-                self._shape = check_shape(A.shape)
-                self.dtype = A.dtype
-                self.rows = A.rows
-                self.data = A.data
+            self._shape = check_shape(A.shape)
+            self.dtype = getdtype(A.dtype)
+            self.rows = A.rows
+            self.data = A.data
 
     def __iadd__(self,other):
         self[:,:] = self + other
@@ -105,18 +107,28 @@ class _lil_base(_spbase, IndexMixin):
         else:
             raise ValueError('axis out of bounds')
 
-    def count_nonzero(self):
-        return sum(np.count_nonzero(rowvals) for rowvals in self.data)
-
     _getnnz.__doc__ = _spbase._getnnz.__doc__
-    count_nonzero.__doc__ = _spbase.count_nonzero.__doc__
 
-    def __str__(self):
-        val = ''
-        for i, row in enumerate(self.rows):
-            for pos, j in enumerate(row):
-                val += f"  {str((i, j))}\t{str(self.data[i][pos])}\n"
-        return val[:-1]
+    def count_nonzero(self, axis=None):
+        if axis is None:
+            return sum(np.count_nonzero(rowvals) for rowvals in self.data)
+
+        if axis < 0:
+            axis += 2
+        if axis == 0:
+            out = np.zeros(self.shape[1], dtype=np.intp)
+            for row, data in zip(self.rows, self.data):
+                mask = [c for c, d in zip(row, data) if d != 0]
+                out[mask] += 1
+            return out
+        elif axis == 1:
+            return np.array(
+                [np.count_nonzero(rowvals) for rowvals in self.data], dtype=np.intp,
+            )
+        else:
+            raise ValueError('axis out of bounds')
+
+    count_nonzero.__doc__ = _spbase.count_nonzero.__doc__
 
     def getrowview(self, i):
         """Returns a view of the 'i'th row (without copying).

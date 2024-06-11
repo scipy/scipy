@@ -239,6 +239,11 @@ class PchipInterpolator(CubicHermiteSpline):
 
     def __init__(self, x, y, axis=0, extrapolate=None):
         x, _, y, axis, _ = prepare_input(x, y, axis)
+        if np.iscomplexobj(y):
+            msg = ("`PchipInterpolator` only works with real values for `y`. "
+                   "If you are trying to use the real components of the passed array, "
+                   "use `np.real` on the array before passing to `PchipInterpolator`.")
+            raise ValueError(msg)
         xp = x.reshape((x.shape[0],) + (1,)*(y.ndim-1))
         dk = self._find_derivatives(xp, y)
         super().__init__(x, y, dk, axis=0, extrapolate=extrapolate)
@@ -327,6 +332,12 @@ def pchip_interpolate(xi, yi, x, der=0, axis=0):
         A 1-D array of real values. `yi`'s length along the interpolation
         axis must be equal to the length of `xi`. If N-D array, use axis
         parameter to select correct axis.
+
+        .. deprecated:: 1.13.0
+            Complex data is deprecated and will raise an error in
+            SciPy 1.15.0. If you are trying to use the real components of
+            the passed array, use ``np.real`` on `yi`.
+
     x : scalar or array_like
         Of length M.
     der : int or list, optional
@@ -397,6 +408,11 @@ class Akima1DInterpolator(CubicHermiteSpline):
 
         .. versionadded:: 1.13.0
 
+    extrapolate : {bool, None}, optional
+        If bool, determines whether to extrapolate to out-of-bounds points 
+        based on first and last intervals, or to return NaNs. If None, 
+        ``extrapolate`` is set to False.
+        
     Methods
     -------
     __call__
@@ -478,12 +494,23 @@ class Akima1DInterpolator(CubicHermiteSpline):
 
     """
 
-    def __init__(self, x, y, axis=0, *, method: Literal["akima", "makima"]="akima"):
+    def __init__(self, x, y, axis=0, *, method: Literal["akima", "makima"]="akima", 
+                 extrapolate:bool | None = None):
         if method not in {"akima", "makima"}:
             raise NotImplementedError(f"`method`={method} is unsupported.")
         # Original implementation in MATLAB by N. Shamsundar (BSD licensed), see
         # https://www.mathworks.com/matlabcentral/fileexchange/1814-akima-interpolation
         x, dx, y, axis, _ = prepare_input(x, y, axis)
+
+        if np.iscomplexobj(y):
+            msg = ("`Akima1DInterpolator` only works with real values for `y`. "
+                   "If you are trying to use the real components of the passed array, "
+                   "use `np.real` on the array before passing to "
+                   "`Akima1DInterpolator`.")
+            raise ValueError(msg)
+
+        # Akima extrapolation historically False; parent class defaults to True.
+        extrapolate = False if extrapolate is None else extrapolate
 
         # determine slopes between breakpoints
         m = np.empty((x.size + 3, ) + y.shape[1:])
@@ -517,7 +544,7 @@ class Akima1DInterpolator(CubicHermiteSpline):
         t[ind] = (f1[ind] * m[(x_ind + 1,) + y_ind] +
                   f2[ind] * m[(x_ind + 2,) + y_ind]) / f12[ind]
 
-        super().__init__(x, y, t, axis=0, extrapolate=False)
+        super().__init__(x, y, t, axis=0, extrapolate=extrapolate)
         self.axis = axis
 
     def extend(self, c, x, right=True):
@@ -757,9 +784,8 @@ class CubicSpline(CubicHermiteSpline):
             elif n == 3 and bc[0] == 'periodic':
                 # In case when number of points is 3 we compute the derivatives
                 # manually
-                s = np.empty((n,) + y.shape[1:], dtype=y.dtype)
-                t = (slope / dxr).sum() / (1. / dxr).sum()
-                s.fill(t)
+                t = (slope / dxr).sum(0) / (1. / dxr).sum(0)
+                s = np.broadcast_to(t, (n,) + y.shape[1:])
             else:
                 # Find derivative values at each x[i] by solving a tridiagonal
                 # system.
@@ -925,8 +951,9 @@ class CubicSpline(CubicHermiteSpline):
                 deriv_value = np.asarray(deriv_value)
                 if deriv_value.shape != expected_deriv_shape:
                     raise ValueError(
-                        "`deriv_value` shape {} is not the expected one {}."
-                        .format(deriv_value.shape, expected_deriv_shape))
+                        f"`deriv_value` shape {deriv_value.shape} is not "
+                        f"the expected one {expected_deriv_shape}."
+                    )
 
                 if np.issubdtype(deriv_value.dtype, np.complexfloating):
                     y = y.astype(complex, copy=False)

@@ -97,6 +97,7 @@ Continuous distributions
    invgamma          -- Inverse Gamma
    invgauss          -- Inverse Gaussian
    invweibull        -- Inverse Weibull
+   irwinhall         -- Irwin-Hall
    jf_skew_t         -- Jones and Faddy Skew-T
    johnsonsb         -- Johnson SB
    johnsonsu         -- Johnson SU
@@ -285,6 +286,8 @@ Frequency statistics
    binned_statistic_2d  -- Compute a 2-D binned statistic for a set of data.
    binned_statistic_dd  -- Compute a d-D binned statistic for a set of data.
 
+.. _hypotests:
+
 Hypothesis Tests and related functions
 ======================================
 SciPy has many functions for performing hypothesis tests that return a
@@ -424,6 +427,7 @@ at the cost of greater computational requirements and stochastic results.
    monte_carlo_test
    permutation_test
    bootstrap
+   power
 
 Instances of the following object can be passed into some hypothesis test
 functions to perform a resampling or Monte Carlo version of the hypothesis
@@ -506,6 +510,7 @@ Statistical distances
    :toctree: generated/
 
    wasserstein_distance
+   wasserstein_distance_nd
    energy_distance
 
 Sampling
@@ -515,14 +520,6 @@ Sampling
    :maxdepth: 4
 
    stats.sampling
-
-Random variate generation / CDF Inversion
------------------------------------------
-
-.. autosummary::
-   :toctree: generated/
-
-   rvs_ratio_uniforms
 
 Fitting / Survival Analysis
 ---------------------------
@@ -616,11 +613,10 @@ from ._multivariate import *
 from . import contingency
 from .contingency import chi2_contingency
 from ._censored_data import CensoredData
-from ._resampling import (bootstrap, monte_carlo_test, permutation_test,
+from ._resampling import (bootstrap, monte_carlo_test, permutation_test, power,
                           MonteCarloMethod, PermutationMethod, BootstrapMethod)
 from ._entropy import *
 from ._hypotests import *
-from ._rvs_sampling import rvs_ratio_uniforms
 from ._page_trend_test import page_trend_test
 from ._mannwhitneyu import mannwhitneyu
 from ._bws_test import bws_test
@@ -628,6 +624,8 @@ from ._fit import fit, goodness_of_fit
 from ._covariance import Covariance
 from ._sensitivity_analysis import *
 from ._survival import *
+from ._mgc import multiscale_graphcorr
+
 
 # Deprecated namespaces, to be removed in v2.0.0
 from . import (

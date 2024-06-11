@@ -9,7 +9,6 @@ __all__ = [  # noqa: F822
     'spline_filter1d', 'spline_filter',
     'geometric_transform', 'map_coordinates',
     'affine_transform', 'shift', 'zoom', 'rotate',
-    'docfiller'
 ]
 
 
