@@ -1,6 +1,6 @@
 import numpy as np
 from scipy._lib._util import _asarray_validated
-from scipy._lib._array_api import (array_namespace, size as xp_size, is_jax,
+from scipy._lib._array_api import (array_namespace, size as xp_size,
                                    xp_broadcast_promote)
 
 
