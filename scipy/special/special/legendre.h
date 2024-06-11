@@ -2,7 +2,6 @@
 
 #include "error.h"
 #include "recur.h"
-#include "tuple_utility.h"
 
 namespace special {
 
@@ -10,11 +9,13 @@ template <typename T>
 struct legendre_p_initializer_n {
     T z;
 
-    void operator()(std::tuple<T (&)[2]> res) const { tuple_assign(res, {{1, z}}); }
+    void operator()(std::tuple<T (&)[2]> res) const { tuples::assign(res, {{1, z}}); }
 
-    void operator()(std::tuple<T (&)[2], T (&)[2]> res) const { tuple_assign(res, {{1, z}, {0, 1}}); }
+    void operator()(std::tuple<T (&)[2], T (&)[2]> res) const { tuples::assign(res, {{1, z}, {0, 1}}); }
 
-    void operator()(std::tuple<T (&)[2], T (&)[2], T (&)[2]> res) const { tuple_assign(res, {{1, z}, {0, 1}, {0, 0}}); }
+    void operator()(std::tuple<T (&)[2], T (&)[2], T (&)[2]> res) const {
+        tuples::assign(res, {{1, z}, {0, 1}, {0, 0}});
+    }
 };
 
 template <typename T>
@@ -25,21 +26,21 @@ struct legendre_p_recurrence_n {
         T fac0 = -T(n - 1) / T(n);
         T fac1 = T(2 * n - 1) / T(n);
 
-        tuple_assign(res, {{fac0, fac1 * z}});
+        tuples::assign(res, {{fac0, fac1 * z}});
     }
 
     void operator()(int n, std::tuple<T (&)[2], T (&)[2]> res) const {
         T fac0 = -T(n - 1) / T(n);
         T fac1 = T(2 * n - 1) / T(n);
 
-        tuple_assign(res, {{fac0, fac1 * z}, {0, fac1}});
+        tuples::assign(res, {{fac0, fac1 * z}, {0, fac1}});
     }
 
     void operator()(int n, std::tuple<T (&)[2], T (&)[2], T (&)[2]> res) const {
         T fac0 = -T(n - 1) / T(n);
         T fac1 = T(2 * n - 1) / T(n);
 
-        tuple_assign(res, {{fac0, fac1 * z}, {0, fac1}, {0, 0}});
+        tuples::assign(res, {{fac0, fac1 * z}, {0, fac1}, {0, 0}});
     }
 };
 
@@ -72,9 +73,9 @@ void legendre_p(int n, T z, std::tuple<OutputVals &...> res) {
     static constexpr size_t N = sizeof...(OutputVals) - 1;
 
     grad_tuple_t<T[2], N> res_n;
-    legendre_p_for_each_n(n, z, tuple_ref_each(res_n), [](int n, grad_tuple_t<T(&)[2], N> res_n) {});
+    legendre_p_for_each_n(n, z, tuples::ref(res_n), [](int n, grad_tuple_t<T(&)[2], N> res_n) {});
 
-    res = tuple_access_each(res_n, 1);
+    res = tuples::access(res_n, 1);
 }
 
 /**
@@ -108,8 +109,8 @@ void legendre_p_all(T z, std::tuple<OutputVecs &...> res) {
     int n = res0.extent(0) - 1;
 
     grad_tuple_t<T[2], N> res_n;
-    legendre_p_for_each_n(n, z, tuple_ref_each(res_n), [&res](int n, grad_tuple_t<T(&)[2], N> res_n) {
-        tuple_call_each(res, n) = tuple_access_each(res_n, 1);
+    legendre_p_for_each_n(n, z, tuples::ref(res_n), [&res](int n, grad_tuple_t<T(&)[2], N> res_n) {
+        tuples::call(res, n) = tuples::access(res_n, 1);
     });
 }
 
@@ -151,7 +152,7 @@ struct multi_assoc_legendre_p_initializer_m_abs_m<T, assoc_legendre_unnorm_polic
     }
 
     void operator()(std::tuple<T (&)[2]> res) const {
-        tuple_assign(res, {{1, w}});
+        tuples::assign(res, {{1, w}});
 
         if (m_signbit) {
             std::get<0>(res)[1] /= 2;
@@ -159,7 +160,7 @@ struct multi_assoc_legendre_p_initializer_m_abs_m<T, assoc_legendre_unnorm_polic
     }
 
     void operator()(std::tuple<T (&)[2], T (&)[2]> res) const {
-        tuple_assign(res, {{1, w}, {0, -type_sign * z / w}});
+        tuples::assign(res, {{1, w}, {0, -type_sign * z / w}});
 
         if (m_signbit) {
             std::get<0>(res)[1] /= 2;
@@ -168,7 +169,7 @@ struct multi_assoc_legendre_p_initializer_m_abs_m<T, assoc_legendre_unnorm_polic
     }
 
     void operator()(std::tuple<T (&)[2], T (&)[2], T (&)[2]> res) const {
-        tuple_assign(res, {{1, w}, {0, -type_sign * z / w}, {0, T(1) / ((z * z - T(1)) * w)}});
+        tuples::assign(res, {{1, w}, {0, -type_sign * z / w}, {0, T(1) / ((z * z - T(1)) * w)}});
 
         if (m_signbit) {
             std::get<0>(res)[1] /= 2;
@@ -205,18 +206,18 @@ struct multi_assoc_legendre_p_initializer_m_abs_m<T, assoc_legendre_norm_policy>
     }
 
     void operator()(std::tuple<T (&)[2]> res) const {
-        tuple_assign(res, {{T(1) / std::sqrt(T(2)), std::sqrt(T(3)) * w / T(2)}});
+        tuples::assign(res, {{T(1) / std::sqrt(T(2)), std::sqrt(T(3)) * w / T(2)}});
     }
 
     void operator()(std::tuple<T (&)[2], T (&)[2]> res) const {
-        tuple_assign(
+        tuples::assign(
             res,
             {{T(1) / std::sqrt(T(2)), std::sqrt(T(3)) * w / T(2)}, {0, -type_sign * std::sqrt(T(3)) * z / (T(2) * w)}}
         );
     }
 
     void operator()(std::tuple<T (&)[2], T (&)[2], T (&)[2]> res) const {
-        tuple_assign(
+        tuples::assign(
             res, {{T(1) / std::sqrt(T(2)), std::sqrt(T(3)) * w / T(2)},
                   {0, -type_sign * std::sqrt(T(3)) * z / (T(2) * w)},
                   {0, std::sqrt(T(3)) * T(1) / ((z * z - T(1)) * w) / (T(2))}}
@@ -253,7 +254,7 @@ struct multi_assoc_legendre_p_recurrence_m_abs_m<T, assoc_legendre_unnorm_policy
             fac = type_sign * T((2 * m_abs - 1) * (2 * m_abs - 3));
         }
 
-        tuple_assign(res, {{fac * (T(1) - z * z), 0}});
+        tuples::assign(res, {{fac * (T(1) - z * z), 0}});
     }
 
     void operator()(int m, std::tuple<T (&)[2], T (&)[2]> res) const {
@@ -266,7 +267,7 @@ struct multi_assoc_legendre_p_recurrence_m_abs_m<T, assoc_legendre_unnorm_policy
             fac = type_sign * T((2 * m_abs - 1) * (2 * m_abs - 3));
         }
 
-        tuple_assign(res, {{fac * (T(1) - z * z), 0}, {-T(2) * fac * z, 0}});
+        tuples::assign(res, {{fac * (T(1) - z * z), 0}, {-T(2) * fac * z, 0}});
     }
 
     void operator()(int m, std::tuple<T (&)[2], T (&)[2], T (&)[2]> res) const {
@@ -279,7 +280,7 @@ struct multi_assoc_legendre_p_recurrence_m_abs_m<T, assoc_legendre_unnorm_policy
             fac = type_sign * T((2 * m_abs - 1) * (2 * m_abs - 3));
         }
 
-        tuple_assign(res, {{fac * (T(1) - z * z), 0}, {-T(2) * fac * z, 0}, {-T(2) * fac, 0}});
+        tuples::assign(res, {{fac * (T(1) - z * z), 0}, {-T(2) * fac * z, 0}, {-T(2) * fac, 0}});
     }
 };
 
@@ -302,7 +303,7 @@ struct multi_assoc_legendre_p_recurrence_m_abs_m<T, assoc_legendre_norm_policy> 
 
         T fac = type_sign * std::sqrt(T((2 * m_abs + 1) * (2 * m_abs - 1)) / T(4 * m_abs * (m_abs - 1)));
 
-        tuple_assign(res, {{fac * (T(1) - z * z), 0}});
+        tuples::assign(res, {{fac * (T(1) - z * z), 0}});
     }
 
     void operator()(int m, std::tuple<T (&)[2], T (&)[2]> res) const {
@@ -310,7 +311,7 @@ struct multi_assoc_legendre_p_recurrence_m_abs_m<T, assoc_legendre_norm_policy> 
 
         T fac = type_sign * std::sqrt(T((2 * m_abs + 1) * (2 * m_abs - 1)) / T(4 * m_abs * (m_abs - 1)));
 
-        tuple_assign(res, {{fac * (T(1) - z * z), 0}, {-T(2) * fac * z, 0}});
+        tuples::assign(res, {{fac * (T(1) - z * z), 0}, {-T(2) * fac * z, 0}});
     }
 
     void operator()(int m, std::tuple<T (&)[2], T (&)[2], T (&)[2]> res) const {
@@ -318,7 +319,7 @@ struct multi_assoc_legendre_p_recurrence_m_abs_m<T, assoc_legendre_norm_policy> 
 
         T fac = type_sign * std::sqrt(T((2 * m_abs + 1) * (2 * m_abs - 1)) / T(4 * m_abs * (m_abs - 1)));
 
-        tuple_assign(res, {{fac * (T(1) - z * z), 0}, {-T(2) * fac * z, 0}, {-T(2) * fac, 0}});
+        tuples::assign(res, {{fac * (T(1) - z * z), 0}, {-T(2) * fac * z, 0}, {-T(2) * fac, 0}});
     }
 };
 
@@ -360,14 +361,14 @@ struct multi_assoc_legendre_p_initializer_n<T, assoc_legendre_unnorm_policy> {
         int m_abs = std::abs(m);
         T fac = T(2 * (m_abs + 1) - 1) / T(m_abs + 1 - m);
 
-        tuple_assign(res, {{std::get<0>(res_m_abs_m), fac * z * std::get<0>(res_m_abs_m)}});
+        tuples::assign(res, {{std::get<0>(res_m_abs_m), fac * z * std::get<0>(res_m_abs_m)}});
     }
 
     void operator()(std::tuple<const T &, const T &> res_m_abs_m, std::tuple<T (&)[2], T (&)[2]> res) const {
         int m_abs = std::abs(m);
         T fac = T(2 * (m_abs + 1) - 1) / T(m_abs + 1 - m);
 
-        tuple_assign(
+        tuples::assign(
             res, {{std::get<0>(res_m_abs_m), fac * z * std::get<0>(res_m_abs_m)},
                   {std::get<1>(res_m_abs_m), fac * (std::get<0>(res_m_abs_m) + z * std::get<1>(res_m_abs_m))}}
         );
@@ -379,7 +380,7 @@ struct multi_assoc_legendre_p_initializer_n<T, assoc_legendre_unnorm_policy> {
         int m_abs = std::abs(m);
         T fac = T(2 * (m_abs + 1) - 1) / T(m_abs + 1 - m);
 
-        tuple_assign(
+        tuples::assign(
             res, {{std::get<0>(res_m_abs_m), fac * z * std::get<0>(res_m_abs_m)},
                   {std::get<1>(res_m_abs_m), fac * (std::get<0>(res_m_abs_m) + z * std::get<1>(res_m_abs_m))},
                   {std::get<2>(res_m_abs_m), fac * (T(2) * std::get<1>(res_m_abs_m) + z * std::get<2>(res_m_abs_m))}}
@@ -396,13 +397,13 @@ struct multi_assoc_legendre_p_initializer_n<T, assoc_legendre_norm_policy> {
     void operator()(std::tuple<const T &> res_m_abs_m, std::tuple<T (&)[2]> res) const {
         T fac = std::sqrt(T(2 * std::abs(m) + 3));
 
-        tuple_assign(res, {{std::get<0>(res_m_abs_m), fac * z * std::get<0>(res_m_abs_m)}});
+        tuples::assign(res, {{std::get<0>(res_m_abs_m), fac * z * std::get<0>(res_m_abs_m)}});
     }
 
     void operator()(std::tuple<const T &, const T &> res_m_abs_m, std::tuple<T (&)[2], T (&)[2]> res) const {
         T fac = std::sqrt(T(2 * std::abs(m) + 3));
 
-        tuple_assign(
+        tuples::assign(
             res, {{std::get<0>(res_m_abs_m), fac * z * std::get<0>(res_m_abs_m)},
                   {std::get<1>(res_m_abs_m), fac * (std::get<0>(res_m_abs_m) + z * std::get<1>(res_m_abs_m))}}
         );
@@ -413,7 +414,7 @@ struct multi_assoc_legendre_p_initializer_n<T, assoc_legendre_norm_policy> {
     ) const {
         T fac = std::sqrt(T(2 * std::abs(m) + 3));
 
-        tuple_assign(
+        tuples::assign(
             res, {{std::get<0>(res_m_abs_m), fac * z * std::get<0>(res_m_abs_m)},
                   {std::get<1>(res_m_abs_m), fac * (std::get<0>(res_m_abs_m) + z * std::get<1>(res_m_abs_m))},
                   {std::get<2>(res_m_abs_m), fac * (T(2) * std::get<1>(res_m_abs_m) + z * std::get<2>(res_m_abs_m))}}
@@ -434,21 +435,21 @@ struct multi_assoc_legendre_p_recurrence_n<T, assoc_legendre_unnorm_policy> {
         T fac0 = -T(n + m - 1) / T(n - m);
         T fac1 = T(2 * n - 1) / T(n - m);
 
-        tuple_assign(res, {{fac0, fac1 * z}});
+        tuples::assign(res, {{fac0, fac1 * z}});
     }
 
     void operator()(int n, std::tuple<T (&)[2], T (&)[2]> res) const {
         T fac0 = -T(n + m - 1) / T(n - m);
         T fac1 = T(2 * n - 1) / T(n - m);
 
-        tuple_assign(res, {{fac0, fac1 * z}, {0, fac1}});
+        tuples::assign(res, {{fac0, fac1 * z}, {0, fac1}});
     }
 
     void operator()(int n, std::tuple<T (&)[2], T (&)[2], T (&)[2]> res) const {
         T fac0 = -T(n + m - 1) / T(n - m);
         T fac1 = T(2 * n - 1) / T(n - m);
 
-        tuple_assign(res, {{fac0, fac1 * z}, {0, fac1}, {0, 0}});
+        tuples::assign(res, {{fac0, fac1 * z}, {0, fac1}, {0, 0}});
     }
 };
 
@@ -462,21 +463,21 @@ struct multi_assoc_legendre_p_recurrence_n<T, assoc_legendre_norm_policy> {
         T fac0 = -std::sqrt(T((2 * n + 1) * ((n - 1) * (n - 1) - m * m)) / T((2 * n - 3) * (n * n - m * m)));
         T fac1 = std::sqrt(T((2 * n + 1) * (4 * (n - 1) * (n - 1) - 1)) / T((2 * n - 3) * (n * n - m * m)));
 
-        tuple_assign(res, {{fac0, fac1 * z}});
+        tuples::assign(res, {{fac0, fac1 * z}});
     }
 
     void operator()(int n, std::tuple<T (&)[2], T (&)[2]> res) const {
         T fac0 = -std::sqrt(T((2 * n + 1) * ((n - 1) * (n - 1) - m * m)) / T((2 * n - 3) * (n * n - m * m)));
         T fac1 = std::sqrt(T((2 * n + 1) * (4 * (n - 1) * (n - 1) - 1)) / T((2 * n - 3) * (n * n - m * m)));
 
-        tuple_assign(res, {{fac0, fac1 * z}, {0, fac1}});
+        tuples::assign(res, {{fac0, fac1 * z}, {0, fac1}});
     }
 
     void operator()(int n, std::tuple<T (&)[2], T (&)[2], T (&)[2]> res) const {
         T fac0 = -std::sqrt(T((2 * n + 1) * ((n - 1) * (n - 1) - m * m)) / T((2 * n - 3) * (n * n - m * m)));
         T fac1 = std::sqrt(T((2 * n + 1) * (4 * (n - 1) * (n - 1) - 1)) / T((2 * n - 3) * (n * n - m * m)));
 
-        tuple_assign(res, {{fac0, fac1 * z}, {0, fac1}, {0, 0}});
+        tuples::assign(res, {{fac0, fac1 * z}, {0, fac1}, {0, 0}});
     }
 };
 
@@ -563,7 +564,7 @@ void multi_assoc_legendre_p_for_each_n(
     NormPolicy norm, int n, int m, int type, T z, std::tuple<OutputVals &...> res_m_abs_m,
     std::tuple<OutputVals (&)[2]...> res, Func f
 ) {
-    tuple_fill_each(res, 0);
+    tuples::fill(res, 0);
 
     int m_abs = std::abs(m);
     if (m_abs > n) {
@@ -578,7 +579,7 @@ void multi_assoc_legendre_p_for_each_n(
         if (std::abs(std::real(z)) == 1 && std::imag(z) == 0) {
             for (int j = m_abs; j <= n; ++j) {
                 forward_recur_shift_left(res);
-                multi_assoc_legendre_p_pm1(norm, j, m, type, z, tuple_access_each(res, 1));
+                multi_assoc_legendre_p_pm1(norm, j, m, type, z, tuples::access(res, 1));
 
                 f(j, res);
             }
@@ -600,8 +601,8 @@ void multi_assoc_legendre_p_for_each_n(
 
     multi_assoc_legendre_p_for_each_m_abs_m(norm, m, type, z, res, [](int m, grad_tuple_t<T(&)[2], N>) {});
 
-    grad_tuple_t<T, N> res_m_abs_m = tuple_access_each(res, 1);
-    multi_assoc_legendre_p_for_each_n(norm, n, m, type, z, tuple_ref_each(res_m_abs_m), res, f);
+    grad_tuple_t<T, N> res_m_abs_m = tuples::access(res, 1);
+    multi_assoc_legendre_p_for_each_n(norm, n, m, type, z, tuples::ref(res_m_abs_m), res, f);
 }
 
 template <typename NormPolicy, typename T, typename... OutputVals, typename Func>
@@ -612,23 +613,23 @@ void multi_assoc_legendre_p_for_each_n_m(
 
     grad_tuple_t<T[2], N> res_m_abs_m;
     multi_assoc_legendre_p_for_each_m_abs_m(
-        norm, m, type, z, tuple_ref_each(res_m_abs_m),
+        norm, m, type, z, tuples::ref(res_m_abs_m),
         [norm, n, type, z, &res, f](int m, grad_tuple_t<T(&)[2], N> res_m_abs_m) {
-            tuple_access_each(res, 0) = tuple_access_each(res_m_abs_m, 1);
+            tuples::access(res, 0) = tuples::access(res_m_abs_m, 1);
 
             multi_assoc_legendre_p_for_each_n(
-                norm, n, m, type, z, tuple_access_each(res_m_abs_m, 1), res,
+                norm, n, m, type, z, tuples::access(res_m_abs_m, 1), res,
                 [f, m](int n, grad_tuple_t<T(&)[2], N> res_n) { f(n, m, res_n); }
             );
         }
     );
     multi_assoc_legendre_p_for_each_m_abs_m(
-        norm, -m, type, z, tuple_ref_each(res_m_abs_m),
+        norm, -m, type, z, tuples::ref(res_m_abs_m),
         [norm, n, type, z, &res, f](int m, grad_tuple_t<T(&)[2], N> res_m_abs_m) {
-            tuple_access_each(res, 0) = tuple_access_each(res_m_abs_m, 1);
+            tuples::access(res, 0) = tuples::access(res_m_abs_m, 1);
 
             multi_assoc_legendre_p_for_each_n(
-                norm, n, m, type, z, tuple_access_each(res_m_abs_m, 1), res,
+                norm, n, m, type, z, tuples::access(res_m_abs_m, 1), res,
                 [f, m](int n, grad_tuple_t<T(&)[2], N> res_n) { f(n, m, res_n); }
             );
         }
@@ -651,10 +652,10 @@ void multi_assoc_legendre_p(NormPolicy norm, int n, int m, int type, T z, std::t
 
     grad_tuple_t<T[2], N> res_n;
     multi_assoc_legendre_p_for_each_n(
-        norm, n, m, type, z, tuple_ref_each(res_n), [](int n, grad_tuple_t<T(&)[2], N> res_n) {}
+        norm, n, m, type, z, tuples::ref(res_n), [](int n, grad_tuple_t<T(&)[2], N> res_n) {}
     );
 
-    res = tuple_access_each(res_n, 1);
+    res = tuples::access(res_n, 1);
 }
 
 template <typename NormPolicy, typename T>
@@ -684,13 +685,13 @@ void multi_assoc_legendre_p_all(NormPolicy norm, int type, T z, std::tuple<Outpu
 
     grad_tuple_t<T[2], N> p;
     multi_assoc_legendre_p_for_each_n_m(
-        norm, n, m, type, z, tuple_ref_each(p),
+        norm, n, m, type, z, tuples::ref(p),
         [&res](int n, int m, grad_tuple_t<T(&)[2], N> res_n_m) {
             if (m >= 0) {
-                tuple_call_each(res, n, m) = tuple_access_each(res_n_m, 1);
+                tuples::call(res, n, m) = tuples::access(res_n_m, 1);
             } else {
                 auto &res0 = std::get<0>(res);
-                tuple_call_each(res, n, m + res0.extent(1)) = tuple_access_each(res_n_m, 1);
+                tuples::call(res, n, m + res0.extent(1)) = tuples::access(res_n_m, 1);
             }
         }
     );
@@ -732,10 +733,11 @@ template <typename T>
 struct sph_legendre_p_initializer_m_abs_m {
     bool m_signbit;
     T phi;
+    T phi_cos;
     T phi_sin;
 
     sph_legendre_p_initializer_m_abs_m(bool m_signbit, T phi)
-        : m_signbit(m_signbit), phi(phi), phi_sin(std::sin(phi)) {}
+        : m_signbit(m_signbit), phi(phi), phi_cos(std::cos(phi)), phi_sin(std::sin(phi)) {}
 
     void operator()(std::tuple<T (&)[2]> res) const {
         T fac0 = T(1) / (T(2) * std::sqrt(T(M_PI)));
@@ -744,7 +746,27 @@ struct sph_legendre_p_initializer_m_abs_m {
             fac1 = -fac1;
         }
 
-        tuple_assign(res, {{fac0, fac1 * phi_sin}});
+        tuples::assign(res, {{fac0, fac1 * phi_sin}});
+    }
+
+    void operator()(std::tuple<T (&)[2], T (&)[2]> res) const {
+        T fac0 = T(1) / (T(2) * std::sqrt(T(M_PI)));
+        T fac1 = -std::sqrt(T(3)) / (T(2) * std::sqrt(T(2) * T(M_PI)));
+        if (m_signbit) {
+            fac1 = -fac1;
+        }
+
+        tuples::assign(res, {{fac0, fac1 * phi_sin}, {0, fac1 * phi_cos}});
+    }
+
+    void operator()(std::tuple<T (&)[2], T (&)[2], T (&)[2]> res) const {
+        T fac0 = T(1) / (T(2) * std::sqrt(T(M_PI)));
+        T fac1 = -std::sqrt(T(3)) / (T(2) * std::sqrt(T(2) * T(M_PI)));
+        if (m_signbit) {
+            fac1 = -fac1;
+        }
+
+        tuples::assign(res, {{fac0, fac1 * phi_sin}, {0, fac1 * phi_cos}, {0, -fac1 * phi_sin}});
     }
 };
 
@@ -760,7 +782,7 @@ struct sph_legendre_p_recurrence_m_abs_m {
 
         T fac = std::sqrt(T((2 * m_abs + 1) * (2 * m_abs - 1)) / T(4 * m_abs * (m_abs - 1)));
 
-        tuple_assign(res, {{fac * phi_sin * phi_sin, 0}});
+        tuples::assign(res, {{fac * phi_sin * phi_sin, 0}});
     }
 };
 
@@ -790,7 +812,7 @@ struct sph_legendre_p_initializer_n {
     void operator()(std::tuple<const T &> res_m_abs_m, std::tuple<T (&)[2]> res) const {
         T fac = std::sqrt(T(2 * std::abs(m) + 3));
 
-        tuple_assign(res, {{std::get<0>(res_m_abs_m), fac * phi_cos * std::get<0>(res_m_abs_m)}});
+        tuples::assign(res, {{std::get<0>(res_m_abs_m), fac * phi_cos * std::get<0>(res_m_abs_m)}});
     }
 };
 
@@ -806,7 +828,7 @@ struct sph_legendre_p_recurrence_n {
         T fac0 = -std::sqrt(T((2 * n + 1) * ((n - 1) * (n - 1) - m * m)) / T((2 * n - 3) * (n * n - m * m)));
         T fac1 = std::sqrt(T((2 * n + 1) * (4 * (n - 1) * (n - 1) - 1)) / T((2 * n - 3) * (n * n - m * m)));
 
-        tuple_assign(res, {{fac0, fac1 * phi_cos}});
+        tuples::assign(res, {{fac0, fac1 * phi_cos}});
     }
 };
 
@@ -825,7 +847,7 @@ template <typename T, typename... OutputVals, typename Func>
 void sph_legendre_p_for_each_n(
     int n, int m, T phi, std::tuple<OutputVals &...> res_m_abs_m, std::tuple<OutputVals (&)[2]...> res, Func f
 ) {
-    tuple_fill_each(res, 0);
+    tuples::fill(res, 0);
 
     int m_abs = std::abs(m);
     if (m_abs > n) {
@@ -851,8 +873,8 @@ void sph_legendre_p_for_each_n(int n, int m, T phi, std::tuple<OutputVals (&)[2]
 
     sph_legendre_p_for_each_m_abs_m(m, phi, res, [](int m, grad_tuple_t<T(&)[2], N>) {});
 
-    grad_tuple_t<T, N> res_m_abs_m = tuple_access_each(res, 1);
-    sph_legendre_p_for_each_n(n, m, phi, tuple_ref_each(res_m_abs_m), res, f);
+    grad_tuple_t<T, N> res_m_abs_m = tuples::access(res, 1);
+    sph_legendre_p_for_each_n(n, m, phi, tuples::ref(res_m_abs_m), res, f);
 }
 
 template <typename T, typename... OutputVals, typename Func>
@@ -861,23 +883,23 @@ void sph_legendre_p_for_each_n_m(int n, int m, T phi, std::tuple<OutputVals (&)[
 
     grad_tuple_t<T[2], N> res_m_abs_m;
     sph_legendre_p_for_each_m_abs_m(
-        m, phi, tuple_ref_each(res_m_abs_m),
+        m, phi, tuples::ref(res_m_abs_m),
         [n, phi, &res, f](int m, grad_tuple_t<T(&)[2], N> res_m_abs_m) {
-            tuple_access_each(res, 0) = tuple_access_each(res_m_abs_m, 1);
+            tuples::access(res, 0) = tuples::access(res_m_abs_m, 1);
 
             sph_legendre_p_for_each_n(
-                n, m, phi, tuple_access_each(res_m_abs_m, 1), res,
+                n, m, phi, tuples::access(res_m_abs_m, 1), res,
                 [f, m](int n, grad_tuple_t<T(&)[2], N> res_n) { f(n, m, res_n); }
             );
         }
     );
     sph_legendre_p_for_each_m_abs_m(
-        -m, phi, tuple_ref_each(res_m_abs_m),
+        -m, phi, tuples::ref(res_m_abs_m),
         [n, phi, &res, f](int m, grad_tuple_t<T(&)[2], N> res_m_abs_m) {
-            tuple_access_each(res, 0) = tuple_access_each(res_m_abs_m, 1);
+            tuples::access(res, 0) = tuples::access(res_m_abs_m, 1);
 
             sph_legendre_p_for_each_n(
-                n, m, phi, tuple_access_each(res_m_abs_m, 1), res,
+                n, m, phi, tuples::access(res_m_abs_m, 1), res,
                 [f, m](int n, grad_tuple_t<T(&)[2], N> res_n) { f(n, m, res_n); }
             );
         }
@@ -889,9 +911,9 @@ void sph_legendre_p(int n, int m, T phi, std::tuple<OutputVals &...> res) {
     static constexpr size_t N = sizeof...(OutputVals) - 1;
 
     grad_tuple_t<T[2], N> res_n;
-    sph_legendre_p_for_each_n(n, m, phi, tuple_ref_each(res_n), [](int n, grad_tuple_t<T(&)[2], N> res_n) {});
+    sph_legendre_p_for_each_n(n, m, phi, tuples::ref(res_n), [](int n, grad_tuple_t<T(&)[2], N> res_n) {});
 
-    res = tuple_access_each(res_n, 1);
+    res = tuples::access(res_n, 1);
 }
 
 template <typename T>

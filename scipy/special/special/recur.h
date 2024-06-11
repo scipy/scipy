@@ -1,7 +1,7 @@
 #pragma once
 
 #include "config.h"
-#include "tuple_utility.h"
+#include "tuples.h"
 
 namespace special {
 
@@ -59,7 +59,7 @@ void forward_recur_shift_left(T (&res)[K]) {
 
 template <typename... T, size_t K>
 void forward_recur_shift_left(std::tuple<T (&)[K]...> &res) {
-    tuple_for_each(res, [](auto &elem) { forward_recur_shift_left(elem); });
+    tuples::for_each(res, [](auto &elem) { forward_recur_shift_left(elem); });
 }
 
 template <typename T, size_t K>
@@ -71,7 +71,7 @@ void forward_recur_rotate_left(T (&res)[K]) {
 
 template <typename... T, size_t K>
 void forward_recur_rotate_left(std::tuple<T (&)[K]...> &res) {
-    tuple_for_each(res, [](auto &elem) { forward_recur_rotate_left(elem); });
+    tuples::for_each(res, [](auto &elem) { forward_recur_rotate_left(elem); });
 }
 
 /**
@@ -96,13 +96,13 @@ void forward_recur(InputIt first, InputIt last, Recurrence r, std::tuple<T (&)[K
     if (last - first > K) {
         while (it != last) {
             std::tuple<T[K]...> coef;
-            r(it, tuple_ref_each(coef));
+            r(it, tuples::ref(coef));
 
             std::tuple<T...> tmp;
-            dot(tuple_ref_each(coef), res, tuple_ref_each(tmp));
+            dot(tuples::ref(coef), res, tuples::ref(tmp));
 
             forward_recur_shift_left(res);
-            tuple_access_each(res, K - 1) = tmp;
+            tuples::access(res, K - 1) = tmp;
 
             f(it, res);
             ++it;
@@ -123,13 +123,13 @@ void backward_recur(InputIt first, InputIt last, Recurrence r, std::tuple<T (&)[
     if (std::abs(last - first) > K) {
         while (it != last) {
             std::tuple<T[K]...> coef;
-            r(it, tuple_ref_each(coef));
+            r(it, tuples::ref(coef));
 
             std::tuple<T...> tmp;
-            dot(tuple_ref_each(coef), res, tuple_ref_each(tmp));
+            dot(tuples::ref(coef), res, tuples::ref(tmp));
 
             forward_recur_shift_left(res);
-            tuple_access_each(res, K - 1) = tmp;
+            tuples::access(res, K - 1) = tmp;
 
             f(it, res);
             --it;
