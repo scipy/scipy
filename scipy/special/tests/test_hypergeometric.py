@@ -75,7 +75,7 @@ class TestHyp1f1:
     ])
     def test_a_negative_integer(self, a, b, x, result):
         # Desired answers computed using Mpmath.
-        assert_allclose(sc.hyp1f1(a, b, x), result, atol=0, rtol=1.5e-14)
+        assert_allclose(sc.hyp1f1(a, b, x), result, atol=0, rtol=2e-14)
 
     @pytest.mark.parametrize('a, b, x, expected', [
         (0.01, 150, -4, 0.99973683897677527773),        # gh-3492
@@ -116,6 +116,38 @@ class TestHyp1f1:
     @pytest.mark.parametrize('a', [-3, -2])
     def test_x_zero_a_and_b_neg_ints_and_a_ge_b(self, a):
         assert sc.hyp1f1(a, -3, 0) == 1
+
+    # In the following tests with complex z, the reference values
+    # were computed with mpmath.hyp1f1(a, b, z), and verified with
+    # Wolfram Alpha Hypergeometric1F1(a, b, z), except for the
+    # case a=0.1, b=1, z=7-24j, where Wolfram Alpha reported
+    # "Standard computation time exceeded".  That reference value
+    # was confirmed in an online Matlab session, with the commands
+    #
+    #  > format long
+    #  > hypergeom(0.1, 1, 7-24i)
+    #  ans =
+    #   -3.712349651834209 + 4.554636556672912i
+    #
+    @pytest.mark.parametrize(
+        'a, b, z, ref',
+        [(-0.25, 0.5, 1+2j, 1.1814553180903435-1.2792130661292984j),
+         (0.25, 0.5, 1+2j, 0.24636797405707597+1.293434354945675j),
+         (25, 1.5, -2j, -516.1771262822523+407.04142751922024j),
+         (12, -1.5, -10+20j, -5098507.422706547-1341962.8043508842j),
+         pytest.param(
+             10, 250, 10-15j, 1.1985998416598884-0.8613474402403436j,
+             marks=pytest.mark.xfail,
+         ),
+         pytest.param(
+             0.1, 1, 7-24j, -3.712349651834209+4.554636556672913j,
+             marks=pytest.mark.xfail,
+         )
+         ],
+    )
+    def test_complex_z(self, a, b, z, ref):
+        h = sc.hyp1f1(a, b, z)
+        assert_allclose(h, ref, rtol=4e-15)
 
     # The "legacy edge cases" mentioned in the comments in the following
     # tests refers to the behavior of hyp1f1(a, b, x) when b is a nonpositive

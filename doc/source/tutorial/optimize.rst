@@ -94,8 +94,8 @@ code block for the example parameters ``a=0.5`` and ``b=1``.
     ...	               args=(0.5, 1.), options={'xatol': 1e-8, 'disp': True})
     Optimization terminated successfully.
              Current function value: 1.000000
-             Iterations: 319
-             Function evaluations: 525
+             Iterations: 319 # may vary
+             Function evaluations: 525 # may vary
 
     >>> print(res.x)
     [1.         1.         1.         1.         0.99999999]
@@ -541,8 +541,8 @@ Constrained minimization of multivariate scalar functions (:func:`minimize`)
 ----------------------------------------------------------------------------
 
 The :func:`minimize` function provides algorithms for constrained minimization,
-namely ``'trust-constr'`` ,  ``'SLSQP'`` and ``'COBYLA'``. They require the constraints
-to be defined using slightly different structures. The method ``'trust-constr'`` requires
+namely ``'trust-constr'`` ,  ``'SLSQP'``, ``'COBYLA'``, and ``'COBYQA'``. They require the constraints
+to be defined using slightly different structures. The methods ``'trust-constr'`` and ``'COBYQA'`` require
 the  constraints to be defined as a sequence of objects :func:`LinearConstraint` and
 :func:`NonlinearConstraint`. Methods ``'SLSQP'`` and ``'COBYLA'``, on the other hand,
 require constraints to be defined  as a sequence of dictionaries, with keys
@@ -837,7 +837,7 @@ This function looks like an egg carton::
    >>> plt.show()
 
 .. plot:: tutorial/examples/optimize_global_2.py
-   :alt: "A 3-D plot shown from a three-quarter view. The function is very noisy with dozens of valleys and peaks. There is no clear min or max discernable from this view and it's not possible to see all the local peaks and valleys from this view."
+   :alt: "A 3-D plot shown from a three-quarter view. The function is very noisy with dozens of valleys and peaks. There is no clear min or max discernible from this view and it's not possible to see all the local peaks and valleys from this view."
    :align: center
    :include-source: 0
 

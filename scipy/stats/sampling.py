@@ -42,14 +42,32 @@ Warnings / Errors used in :mod:`scipy.stats.sampling`
    :toctree: generated/
 
    UNURANError
+
+
+Generators for pre-defined distributions
+========================================
+
+To easily apply the above methods for some of the continuous distributions
+in :mod:`scipy.stats`, the following functionality can be used:
+
+.. autosummary::
+   :toctree: generated/
+
+   FastGeneratorInversion
+
 """
-from ._sampling import RatioUniforms  # noqa: F401
+from ._sampling import FastGeneratorInversion, RatioUniforms  # noqa: F401
 from ._unuran.unuran_wrapper import (  # noqa: F401
-    TransformedDensityRejection,
-    DiscreteAliasUrn,
-    DiscreteGuideTable,
-    NumericalInversePolynomial,
-    NumericalInverseHermite,
-    SimpleRatioUniforms,
-    UNURANError
+   TransformedDensityRejection,
+   DiscreteAliasUrn,
+   DiscreteGuideTable,
+   NumericalInversePolynomial,
+   NumericalInverseHermite,
+   SimpleRatioUniforms,
+   UNURANError
 )
+
+__all__ = ["NumericalInverseHermite", "NumericalInversePolynomial",
+           "TransformedDensityRejection", "SimpleRatioUniforms",
+           "RatioUniforms", "DiscreteAliasUrn", "DiscreteGuideTable",
+           "UNURANError", "FastGeneratorInversion"]

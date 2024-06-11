@@ -8,13 +8,14 @@ import scipy.stats
 from scipy.optimize import shgo
 from . import distributions
 from ._common import ConfidenceInterval
-from ._continuous_distns import chi2, norm
+from ._continuous_distns import norm
 from scipy.special import gamma, kv, gammaln
 from scipy.fft import ifft
 from ._stats_pythran import _a_ij_Aij_Dij2
 from ._stats_pythran import (
     _concordant_pairs as _P, _discordant_pairs as _Q
 )
+from ._axis_nan_policy import _axis_nan_policy_factory
 from scipy.stats import _stats_py
 
 __all__ = ['epps_singleton_2samp', 'cramervonmises', 'somersd',
@@ -25,6 +26,7 @@ Epps_Singleton_2sampResult = namedtuple('Epps_Singleton_2sampResult',
                                         ('statistic', 'pvalue'))
 
 
+@_axis_nan_policy_factory(Epps_Singleton_2sampResult, n_samples=2, too_small=4)
 def epps_singleton_2samp(x, y, t=(0.4, 0.8)):
     """Compute the Epps-Singleton (ES) test statistic.
 
@@ -35,7 +37,8 @@ def epps_singleton_2samp(x, y, t=(0.4, 0.8)):
     ----------
     x, y : array-like
         The two samples of observations to be tested. Input must not have more
-        than one dimension. Samples can have different lengths.
+        than one dimension. Samples can have different lengths, but both
+        must have at least five observations.
     t : array-like, optional
         The points (t1, ..., tn) where the empirical characteristic function is
         to be evaluated. It should be positive distinct numbers. The default
@@ -91,16 +94,13 @@ def epps_singleton_2samp(x, y, t=(0.4, 0.8)):
        function", The Stata Journal 9(3), p. 454--465, 2009.
 
     """
-    x, y, t = np.asarray(x), np.asarray(y), np.asarray(t)
+    # x and y are converted to arrays by the decorator
+    t = np.asarray(t)
     # check if x and y are valid inputs
-    if x.ndim > 1:
-        raise ValueError(f'x must be 1d, but x.ndim equals {x.ndim}.')
-    if y.ndim > 1:
-        raise ValueError(f'y must be 1d, but y.ndim equals {y.ndim}.')
     nx, ny = len(x), len(y)
     if (nx < 5) or (ny < 5):
         raise ValueError('x and y should have at least 5 elements, but len(x) '
-                         '= {} and len(y) = {}.'.format(nx, ny))
+                         f'= {nx} and len(y) = {ny}.')
     if not np.isfinite(x).all():
         raise ValueError('x must not contain nonfinite values.')
     if not np.isfinite(y).all():
@@ -130,7 +130,8 @@ def epps_singleton_2samp(x, y, t=(0.4, 0.8)):
     if r < 2*len(t):
         warnings.warn('Estimated covariance matrix does not have full rank. '
                       'This indicates a bad choice of the input t and the '
-                      'test might not be consistent.')  # see p. 183 in [1]_
+                      'test might not be consistent.', # see p. 183 in [1]_
+                      stacklevel=2)
 
     # compute test statistic w distributed asympt. as chisquare with df=r
     g_diff = np.mean(gx, axis=0) - np.mean(gy, axis=0)
@@ -141,7 +142,8 @@ def epps_singleton_2samp(x, y, t=(0.4, 0.8)):
         corr = 1.0/(1.0 + n**(-0.45) + 10.1*(nx**(-1.7) + ny**(-1.7)))
         w = corr * w
 
-    p = chi2.sf(w, r)
+    chi2 = _stats_py._SimpleChi2(r)
+    p = _stats_py._get_pvalue(w, chi2, alternative='greater', symmetric=False, xp=np)
 
     return Epps_Singleton_2sampResult(w, p)
 
@@ -480,6 +482,12 @@ def _cdf_cvm(x, n=None):
     return y
 
 
+def _cvm_result_to_tuple(res):
+    return res.statistic, res.pvalue
+
+
+@_axis_nan_policy_factory(CramerVonMisesResult, n_samples=1, too_small=1,
+                          result_to_tuple=_cvm_result_to_tuple)
 def cramervonmises(rvs, cdf, args=()):
     """Perform the one-sample Cramér-von Mises test for goodness of fit.
 
@@ -494,6 +502,7 @@ def cramervonmises(rvs, cdf, args=()):
     ----------
     rvs : array_like
         A 1-D array of observed values of the random variables :math:`X_i`.
+        The sample must contain at least two observations.
     cdf : str or callable
         The cumulative distribution function :math:`F` to test the
         observations against. If a string, it should be the name of a
@@ -582,8 +591,6 @@ def cramervonmises(rvs, cdf, args=()):
 
     if vals.size <= 1:
         raise ValueError('The sample must contain at least two observations.')
-    if vals.ndim > 1:
-        raise ValueError('The sample must be one-dimensional.')
 
     n = len(vals)
     cdfvals = cdf(vals, *args)
@@ -604,10 +611,10 @@ def _get_wilcoxon_distr(n):
     Returns an array with the probabilities of all the possible ranks
     r = 0, ..., n*(n+1)/2
     """
-    c = np.ones(1, dtype=np.double)
+    c = np.ones(1, dtype=np.float64)
     for k in range(1, n + 1):
         prev_c = c
-        c = np.zeros(k * (k + 1) // 2 + 1, dtype=np.double)
+        c = np.zeros(k * (k + 1) // 2 + 1, dtype=np.float64)
         m = len(prev_c)
         c[:m] = prev_c * 0.5
         c[-m:] += prev_c * 0.5
@@ -689,7 +696,8 @@ def _somers_d(A, alternative='two-sided'):
     with np.errstate(divide='ignore'):
         Z = (PA - QA)/(4*(S))**0.5
 
-    _, p = scipy.stats._stats_py._normtest_finish(Z, alternative)
+    norm = _stats_py._SimpleNormal()
+    p = _stats_py._get_pvalue(Z, norm, alternative, xp=np)
 
     return d, p
 
@@ -1079,9 +1087,9 @@ def barnard_exact(table, alternative="two-sided", pooled=True, n=32):
     >>> import scipy.stats as stats
     >>> res = stats.barnard_exact([[7, 12], [8, 3]], alternative="less")
     >>> res.statistic
-    -1.894...
+    -1.894
     >>> res.pvalue
-    0.03407...
+    0.03407
 
     Under the null hypothesis that the vaccine will not lower the chance of
     becoming infected, the probability of obtaining test results at least as
@@ -1093,7 +1101,7 @@ def barnard_exact(table, alternative="two-sided", pooled=True, n=32):
 
     >>> _, pvalue = stats.fisher_exact([[7, 12], [8, 3]], alternative="less")
     >>> pvalue
-    0.0640...
+    0.0640
 
     With the same threshold significance of 5%, we would not have been able
     to reject the null hypothesis in favor of the alternative. As stated in
@@ -1303,9 +1311,9 @@ def boschloo_exact(table, alternative="two-sided", n=32):
     >>> import scipy.stats as stats
     >>> res = stats.boschloo_exact([[74, 31], [43, 32]], alternative="greater")
     >>> res.statistic
-    0.0483...
+    0.0483
     >>> res.pvalue
-    0.0355...
+    0.0355
 
     Under the null hypothesis that scientists are happier in their work than
     college professors, the probability of obtaining test
@@ -1416,7 +1424,7 @@ def _get_binomial_log_p_value_with_nuisance_param(
     Returns
     -------
     p_value : float
-        Return the maximum p-value considering every nuisance paramater
+        Return the maximum p-value considering every nuisance parameter
         between 0 and 1
 
     Notes
@@ -1528,13 +1536,16 @@ def _pval_cvm_2samp_exact(s, m, n):
                 np.delete(tmp, i0, 1),
                 np.delete(g, i1, 1)
             ], 1)
-            tmp[0] += (a * v - b * u) ** 2
+            res = (a * v - b * u) ** 2
+            tmp[0] += res.astype(dtype)
             next_gs.append(tmp)
         gs = next_gs
     value, freq = gs[m]
     return np.float64(np.sum(freq[value >= zeta]) / combinations)
 
 
+@_axis_nan_policy_factory(CramerVonMisesResult, n_samples=2, too_small=1,
+                          result_to_tuple=_cvm_result_to_tuple)
 def cramervonmises_2samp(x, y, method='auto'):
     """Perform the two-sample Cramér-von Mises test for goodness of fit.
 
@@ -1547,8 +1558,10 @@ def cramervonmises_2samp(x, y, method='auto'):
     ----------
     x : array_like
         A 1-D array of observed values of the random variables :math:`X_i`.
+        Must contain at least two observations.
     y : array_like
         A 1-D array of observed values of the random variables :math:`Y_i`.
+        Must contain at least two observations.
     method : {'auto', 'asymptotic', 'exact'}, optional
         The method used to compute the p-value, see Notes for details.
         The default is 'auto'.
@@ -1637,8 +1650,6 @@ def cramervonmises_2samp(x, y, method='auto'):
 
     if xa.size <= 1 or ya.size <= 1:
         raise ValueError('x and y must contain at least two observations.')
-    if xa.ndim > 1 or ya.ndim > 1:
-        raise ValueError('The samples must be one-dimensional.')
     if method not in ['auto', 'exact', 'asymptotic']:
         raise ValueError('method must be either auto, exact or asymptotic.')
 

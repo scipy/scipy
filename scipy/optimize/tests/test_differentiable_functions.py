@@ -1,8 +1,10 @@
 import pytest
+import platform
 import numpy as np
 from numpy.testing import (TestCase, assert_array_almost_equal,
                            assert_array_equal, assert_, assert_allclose,
                            assert_equal)
+from scipy._lib._gcutils import assert_deallocated
 from scipy.sparse import csr_matrix
 from scipy.sparse.linalg import LinearOperator
 from scipy.optimize._differentiable_functions import (ScalarFunction,
@@ -362,6 +364,20 @@ class TestScalarFunction(TestCase):
         assert_equal(sf._lowest_f, 0.0)
         assert_equal(sf._lowest_x, [1.0, 1.0, 1.0])
 
+    def test_float_size(self):
+        x0 = np.array([2, 3, 4]).astype(np.float32)
+
+        # check that ScalarFunction/approx_derivative always send the correct
+        # float width
+        def rosen_(x):
+            assert x.dtype == np.float32
+            return rosen(x)
+
+        sf = ScalarFunction(rosen_, x0, (), '2-point', rosen_hess,
+                            None, (-np.inf, np.inf))
+        res = sf.fun(x0)
+        assert res.dtype == np.float32
+
 
 class ExVectorialFunction:
 
@@ -373,12 +389,12 @@ class ExVectorialFunction:
     def fun(self, x):
         self.nfev += 1
         return np.array([2*(x[0]**2 + x[1]**2 - 1) - x[0],
-                         4*(x[0]**3 + x[1]**2 - 4) - 3*x[0]])
+                         4*(x[0]**3 + x[1]**2 - 4) - 3*x[0]], dtype=x.dtype)
 
     def jac(self, x):
         self.njev += 1
         return np.array([[4*x[0]-1, 4*x[1]],
-                         [12*x[0]**2-3, 8*x[1]]])
+                         [12*x[0]**2-3, 8*x[1]]], dtype=x.dtype)
 
     def hess(self, x, v):
         self.nhev += 1
@@ -655,6 +671,19 @@ class TestVectorialFunction(TestCase):
             assert_equal(vf.fun(x0), ex.fun(x0))
             assert x0 is not vf.x
 
+    def test_float_size(self):
+        ex = ExVectorialFunction()
+        x0 = np.array([1.0, 0.0]).astype(np.float32)
+
+        vf = VectorFunction(ex.fun, x0, ex.jac, ex.hess, None, None,
+                            (-np.inf, np.inf), None)
+
+        res = vf.fun(x0)
+        assert res.dtype == np.float32
+
+        res = vf.jac(x0)
+        assert res.dtype == np.float32
+
 
 def test_LinearVectorFunction():
     A_dense = np.array([
@@ -729,3 +758,46 @@ def test_IdentityVectorFunction():
     assert_array_equal(f2.jac(x), np.eye(3))
 
     assert_array_equal(f1.hess(x, v).toarray(), np.zeros((3, 3)))
+
+
+@pytest.mark.skipif(
+    platform.python_implementation() == "PyPy",
+    reason="assert_deallocate not available on PyPy"
+)
+def test_ScalarFunctionNoReferenceCycle():
+    """Regression test for gh-20768."""
+    ex = ExScalarFunction()
+    x0 = np.zeros(3)
+    with assert_deallocated(lambda: ScalarFunction(ex.fun, x0, (), ex.grad,
+                            ex.hess, None, (-np.inf, np.inf))):
+        pass
+
+
+@pytest.mark.skipif(
+    platform.python_implementation() == "PyPy",
+    reason="assert_deallocate not available on PyPy"
+)
+@pytest.mark.xfail(reason="TODO remove reference cycle from VectorFunction")
+def test_VectorFunctionNoReferenceCycle():
+    """Regression test for gh-20768."""
+    ex = ExVectorialFunction()
+    x0 = [1.0, 0.0]
+    with assert_deallocated(lambda: VectorFunction(ex.fun, x0, ex.jac,
+                            ex.hess, None, None, (-np.inf, np.inf), None)):
+        pass
+
+
+@pytest.mark.skipif(
+    platform.python_implementation() == "PyPy",
+    reason="assert_deallocate not available on PyPy"
+)
+def test_LinearVectorFunctionNoReferenceCycle():
+    """Regression test for gh-20768."""
+    A_dense = np.array([
+        [-1, 2, 0],
+        [0, 4, 2]
+    ])
+    x0 = np.zeros(3)
+    A_sparse = csr_matrix(A_dense)
+    with assert_deallocated(lambda: LinearVectorFunction(A_sparse, x0, None)):
+        pass

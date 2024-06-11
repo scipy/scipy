@@ -390,7 +390,7 @@ class gaussian_kde:
         if inform:
             msg = ('An integral in _mvn.mvnun requires more points than %s' %
                    (self.d * 1000))
-            warnings.warn(msg)
+            warnings.warn(msg, stacklevel=2)
 
         return value
 
@@ -466,7 +466,7 @@ class gaussian_kde:
         resample : (self.d, `size`) ndarray
             The sampled dataset.
 
-        """
+        """ # numpy/numpydoc#87  # noqa: E501
         if size is None:
             size = int(self.neff)
 

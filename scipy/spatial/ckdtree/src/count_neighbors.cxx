@@ -1,3 +1,6 @@
+#include "ckdtree_decl.h"
+#include "rectangle.h"
+
 #include <cmath>
 #include <cstdlib>
 #include <cstring>
@@ -10,9 +13,6 @@
 #include <typeinfo>
 #include <stdexcept>
 #include <ios>
-
-#include "ckdtree_decl.h"
-#include "rectangle.h"
 
 struct WeightedTree {
     const ckdtree *tree;

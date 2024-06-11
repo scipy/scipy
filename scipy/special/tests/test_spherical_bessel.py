@@ -199,15 +199,19 @@ class TestSphericalKn:
         # https://dlmf.nist.gov/10.51.E4
         n = np.array([1, 2, 3, 7, 12])
         x = 0.12
-        assert_allclose((-1)**(n - 1)*spherical_kn(n - 1, x) - (-1)**(n + 1)*spherical_kn(n + 1,x),
-                        (-1)**n*(2*n + 1)/x*spherical_kn(n, x))
+        assert_allclose(
+            (-1)**(n - 1)*spherical_kn(n - 1, x) - (-1)**(n + 1)*spherical_kn(n + 1,x),
+            (-1)**n*(2*n + 1)/x*spherical_kn(n, x)
+        )
 
     def test_spherical_kn_recurrence_complex(self):
         # https://dlmf.nist.gov/10.51.E4
         n = np.array([1, 2, 3, 7, 12])
         x = 1.1 + 1.5j
-        assert_allclose((-1)**(n - 1)*spherical_kn(n - 1, x) - (-1)**(n + 1)*spherical_kn(n + 1,x),
-                        (-1)**n*(2*n + 1)/x*spherical_kn(n, x))
+        assert_allclose(
+            (-1)**(n - 1)*spherical_kn(n - 1, x) - (-1)**(n + 1)*spherical_kn(n + 1,x),
+            (-1)**n*(2*n + 1)/x*spherical_kn(n, x)
+        )
 
     def test_spherical_kn_inf_real(self):
         # https://dlmf.nist.gov/10.52.E6
@@ -282,9 +286,10 @@ class TestSphericalInDerivatives(SphericalDerivativesTestCase):
         return spherical_in(n, z, derivative=True)
 
     def test_spherical_in_d_zero(self):
-        n = np.array([1, 2, 3, 7, 15])
+        n = np.array([0, 1, 2, 3, 7, 15])
+        spherical_in(n, 0, derivative=False)
         assert_allclose(spherical_in(n, 0, derivative=True),
-                        np.zeros(5))
+                        np.array([0, 1/3, 0, 0, 0, 0]))
 
 
 class TestSphericalKnDerivatives(SphericalDerivativesTestCase):
@@ -376,4 +381,5 @@ class TestSphericalOld:
         assert_almost_equal(sy2,-4.9003329,5)
         sphpy = (spherical_yn(0, 0.2) - 2*spherical_yn(2, 0.2))/3
         sy3 = spherical_yn(1, 0.2, derivative=True)
-        assert_almost_equal(sy3,sphpy,4)  # compare correct derivative val. (correct =-system val).
+        # compare correct derivative val. (correct =-system val).
+        assert_almost_equal(sy3,sphpy,4)

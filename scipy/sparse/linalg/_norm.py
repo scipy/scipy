@@ -4,6 +4,7 @@
 import numpy as np
 from scipy.sparse import issparse
 from scipy.sparse.linalg import svds
+from scipy.sparse._sputils import convert_pydata_sparse_to_scipy
 import scipy.sparse as sp
 
 from numpy import sqrt, abs
@@ -110,6 +111,7 @@ def norm(x, ord=None, axis=None):
     >>> norm(b, 2)
     1.9753...
     """
+    x = convert_pydata_sparse_to_scipy(x, target_format="csr")
     if not issparse(x):
         raise TypeError("input is not sparse. use numpy.linalg.norm")
 
@@ -136,8 +138,8 @@ def norm(x, ord=None, axis=None):
     if len(axis) == 2:
         row_axis, col_axis = axis
         if not (-nd <= row_axis < nd and -nd <= col_axis < nd):
-            raise ValueError('Invalid axis %r for an array with shape %r' %
-                             (axis, x.shape))
+            message = f'Invalid axis {axis!r} for an array with shape {x.shape!r}'
+            raise ValueError(message)
         if row_axis % nd == col_axis % nd:
             raise ValueError('Duplicate axes given.')
         if ord == 2:
@@ -163,8 +165,8 @@ def norm(x, ord=None, axis=None):
     elif len(axis) == 1:
         a, = axis
         if not (-nd <= a < nd):
-            raise ValueError('Invalid axis %r for an array with shape %r' %
-                             (axis, x.shape))
+            message = f'Invalid axis {axis!r} for an array with shape {x.shape!r}'
+            raise ValueError(message)
         if ord == np.inf:
             M = abs(x).max(axis=a)
         elif ord == -np.inf:

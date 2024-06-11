@@ -6,6 +6,7 @@ from numpy.linalg import norm
 from scipy.sparse.linalg import LinearOperator
 from ..sparse import issparse, csc_matrix, csr_matrix, coo_matrix, find
 from ._group_columns import group_dense, group_sparse
+from scipy._lib._array_api import atleast_nd, array_namespace
 
 
 def _adjust_scheme_to_bounds(x0, h, num_steps, scheme, lb, ub):
@@ -438,7 +439,15 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, abs_step=None,
     if method not in ['2-point', '3-point', 'cs']:
         raise ValueError("Unknown method '%s'. " % method)
 
-    x0 = np.atleast_1d(x0)
+    xp = array_namespace(x0)
+    _x = atleast_nd(x0, ndim=1, xp=xp)
+    _dtype = xp.float64
+    if xp.isdtype(_x.dtype, "real floating"):
+        _dtype = _x.dtype
+
+    # promotes to floating
+    x0 = xp.astype(_x, _dtype)
+
     if x0.ndim > 1:
         raise ValueError("`x0` must have at most 1 dimension.")
 
@@ -453,6 +462,11 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, abs_step=None,
                          "`as_linear_operator` is True.")
 
     def fun_wrapped(x):
+        # send user function same fp type as x0. (but only if cs is not being
+        # used
+        if xp.isdtype(x.dtype, "real floating"):
+            x = xp.astype(x, x0.dtype)
+
         f = np.atleast_1d(fun(x, *args, **kwargs))
         if f.ndim > 1:
             raise RuntimeError("`fun` return value has "
@@ -567,35 +581,39 @@ def _dense_difference(fun, x0, f0, h, use_one_sided, method):
     m = f0.size
     n = x0.size
     J_transposed = np.empty((n, m))
-    h_vecs = np.diag(h)
+    x1 = x0.copy()
+    x2 = x0.copy()
+    xc = x0.astype(complex, copy=True)
 
     for i in range(h.size):
         if method == '2-point':
-            x = x0 + h_vecs[i]
-            dx = x[i] - x0[i]  # Recompute dx as exactly representable number.
-            df = fun(x) - f0
+            x1[i] += h[i]
+            dx = x1[i] - x0[i]  # Recompute dx as exactly representable number.
+            df = fun(x1) - f0
         elif method == '3-point' and use_one_sided[i]:
-            x1 = x0 + h_vecs[i]
-            x2 = x0 + 2 * h_vecs[i]
+            x1[i] += h[i]
+            x2[i] += 2 * h[i]
             dx = x2[i] - x0[i]
             f1 = fun(x1)
             f2 = fun(x2)
             df = -3.0 * f0 + 4 * f1 - f2
         elif method == '3-point' and not use_one_sided[i]:
-            x1 = x0 - h_vecs[i]
-            x2 = x0 + h_vecs[i]
+            x1[i] -= h[i]
+            x2[i] += h[i]
             dx = x2[i] - x1[i]
             f1 = fun(x1)
             f2 = fun(x2)
             df = f2 - f1
         elif method == 'cs':
-            f1 = fun(x0 + h_vecs[i]*1.j)
+            xc[i] += h[i] * 1.j
+            f1 = fun(xc)
             df = f1.imag
-            dx = h_vecs[i, i]
+            dx = h[i]
         else:
             raise RuntimeError("Never be here.")
 
         J_transposed[i] = df / dx
+        x1[i] = x2[i] = xc[i] = x0[i]
 
     if m == 1:
         J_transposed = np.ravel(J_transposed)

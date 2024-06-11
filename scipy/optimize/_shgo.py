@@ -46,12 +46,12 @@ def shgo(
         Any additional fixed parameters needed to completely specify the
         objective function.
     constraints : {Constraint, dict} or List of {Constraint, dict}, optional
-        Constraints definition. Only for COBYLA, SLSQP and trust-constr.
+        Constraints definition. Only for COBYLA, COBYQA, SLSQP and trust-constr.
         See the tutorial [5]_ for further details on specifying constraints.
 
         .. note::
 
-           Only COBYLA, SLSQP, and trust-constr local minimize methods
+           Only COBYLA, COBYQA, SLSQP, and trust-constr local minimize methods
            currently support constraint arguments. If the ``constraints``
            sequence used in the local optimization problem is not defined in
            ``minimizer_kwargs`` and a constrained method is used then the
@@ -73,7 +73,7 @@ def shgo(
         sampling points are generated instead of the default `n=100`. For all
         other specified values `n` sampling points are generated. For
         ``sobol``, ``halton`` and other arbitrary `sampling_methods` `n=100` or
-        another speciefied number of sampling points are generated.
+        another specified number of sampling points are generated.
     iters : int, optional
         Number of iterations used in the construction of the simplicial
         complex. Default is 1.
@@ -164,7 +164,7 @@ def shgo(
             along with the objective function. If False, the gradient will be
             estimated numerically. ``jac`` can also be a callable returning the
             gradient of the objective. In this case, it must accept the same
-            arguments as ``fun``. (Passed to `scipy.optimize.minmize`
+            arguments as ``fun``. (Passed to `scipy.optimize.minimize`
             automatically)
 
         * hess, hessp : callable, optional
@@ -175,7 +175,7 @@ def shgo(
             ``hessp`` will be ignored. If neither ``hess`` nor ``hessp`` is
             provided, then the Hessian product will be approximated using
             finite differences on ``jac``. ``hessp`` must compute the Hessian
-            times an arbitrary vector. (Passed to `scipy.optimize.minmize`
+            times an arbitrary vector. (Passed to `scipy.optimize.minimize`
             automatically)
 
         Algorithm settings:
@@ -273,8 +273,9 @@ def shgo(
     The local search method may be specified using the ``minimizer_kwargs``
     parameter which is passed on to ``scipy.optimize.minimize``. By default,
     the ``SLSQP`` method is used. In general, it is recommended to use the
-    ``SLSQP`` or ``COBYLA`` local minimization if inequality constraints
-    are defined for the problem since the other methods do not use constraints.
+    ``SLSQP``, ``COBYLA``, or ``COBYQA`` local minimization if inequality
+    constraints are defined for the problem since the other methods do not use
+    constraints.
 
     The ``halton`` and ``sobol`` method points are generated using
     `scipy.stats.qmc`. Any other QMC method could be used.
@@ -426,11 +427,11 @@ def shgo(
      success: True
          fun: 29.894378159142136
         funl: [ 2.989e+01]
-           x: [ 6.355e-01  1.137e-13  3.127e-01  5.178e-02]
-          xl: [[ 6.355e-01  1.137e-13  3.127e-01  5.178e-02]]
+           x: [ 6.355e-01  1.137e-13  3.127e-01  5.178e-02] # may vary
+          xl: [[ 6.355e-01  1.137e-13  3.127e-01  5.178e-02]] # may vary
          nit: 1
-        nfev: 142
-       nlfev: 35
+        nfev: 142 # may vary
+       nlfev: 35 # may vary
        nljev: 5
        nlhev: 0
 
@@ -464,7 +465,7 @@ def shgo(
         shc.find_lowest_vertex()
         shc.break_routine = True
         shc.fail_routine(mes="Failed to find a feasible minimizer point. "
-                             "Lowest sampling point = {}".format(shc.f_lowest))
+                             f"Lowest sampling point = {shc.f_lowest}")
         shc.res.fun = shc.f_lowest
         shc.res.x = shc.x_lowest
         shc.res.nfev = shc.fn
@@ -541,7 +542,7 @@ class SHGO:
             # self.constraints is used to create Complex, so need
             # to be stored internally in old-style.
             # `minimize` takes care of normalising these constraints
-            # for slsqp/cobyla/trust-constr.
+            # for slsqp/cobyla/cobyqa/trust-constr.
             self.constraints = standardize_constraints(
                 constraints,
                 np.empty(self.dim, float),
@@ -575,8 +576,10 @@ class SHGO:
             self.minimizer_kwargs['options'] = {'ftol': 1e-12}
 
         if (
-            self.minimizer_kwargs['method'].lower() in ('slsqp', 'cobyla', 'trust-constr') and
-            (
+            self.minimizer_kwargs['method'].lower() in ('slsqp', 'cobyla',
+                                                        'cobyqa',
+                                                        'trust-constr')
+            and (
                 minimizer_kwargs is not None and
                 'constraints' not in minimizer_kwargs and
                 constraints is not None
@@ -625,6 +628,7 @@ class SHGO:
             'l-bfgs-b': ['jac', 'bounds'],
             'tnc': ['jac', 'bounds'],
             'cobyla': ['constraints', 'catol'],
+            'cobyqa': ['bounds', 'constraints', 'feasibility_tol'],
             'slsqp': ['jac', 'bounds', 'constraints'],
             'dogleg': ['jac', 'hess'],
             'trust-ncg': ['jac', 'hess', 'hessp'],
@@ -797,7 +801,7 @@ class SHGO:
         else:
             self.symmetry = None
         # Algorithm functionality
-        # Only evaluate a few of the best candiates
+        # Only evaluate a few of the best candidates
         self.local_iter = options.get('local_iter', False)
         self.infty_cons_sampl = options.get('infty_constraints', True)
 
@@ -951,10 +955,11 @@ class SHGO:
                 self.stop_global = True
                 # 2if (pe - self.f_tol) <= abs(1.0 / abs(self.f_min_true)):
                 if abs(pe) >= 2 * self.f_tol:
-                    warnings.warn("A much lower value than expected f* =" +
-                                  f" {self.f_min_true} than" +
-                                  " the was found f_lowest =" +
-                                  f"{self.f_lowest} ")
+                    warnings.warn(
+                        f"A much lower value than expected f* = {self.f_min_true} "
+                        f"was found f_lowest = {self.f_lowest}",
+                        stacklevel=3
+                    )
             if pe <= self.f_tol:
                 self.stop_global = True
 
@@ -1029,10 +1034,10 @@ class SHGO:
             self.n_sampled += self.n
 
         if self.disp:
-            logging.info('Triangulation completed, evaluating all contraints '
+            logging.info('Triangulation completed, evaluating all constraints '
                          'and objective function values.')
 
-        # Readd minimisers to complex
+        # Re-add minimisers to complex
         if len(self.LMC.xl_maps) > 0:
             for xl in self.LMC.cache:
                 v = self.HC.V[xl]
@@ -1101,7 +1106,7 @@ class SHGO:
         # Process all pools
         # Evaluate all constraints and functions
         if self.disp:
-            logging.info('Triangulation completed, evaluating all contraints '
+            logging.info('Triangulation completed, evaluating all constraints '
                          'and objective function values.')
 
         # Evaluate all constraints and functions
@@ -1175,7 +1180,7 @@ class SHGO:
         Parameters
         ----------
         force_iter : int
-                     Number of starting minimizers to process (can be sepcified
+                     Number of starting minimizers to process (can be specified
                      globally or locally)
 
         """
@@ -1332,12 +1337,10 @@ class SHGO:
             return self.LMC[x_min].lres
 
         if self.callback is not None:
-            logging.info('Callback for '
-                  'minimizer starting at {}:'.format(x_min))
+            logging.info(f'Callback for minimizer starting at {x_min}:')
 
         if self.disp:
-            logging.info('Starting '
-                  'minimization at {}...'.format(x_min))
+            logging.info(f'Starting minimization at {x_min}...')
 
         if self.sampling_method == 'simplicial':
             x_min_t = tuple(x_min)

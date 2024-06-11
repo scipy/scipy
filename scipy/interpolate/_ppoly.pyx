@@ -104,9 +104,9 @@ def evaluate(const double_or_complex[:,:,::1] c,
 @cython.cdivision(True)
 def evaluate_nd(const double_or_complex[:,:,::1] c,
                 tuple xs,
-                int[:] ks,
-                double[:,:] xp,
-                int[:] dx,
+                const int[:] ks,
+                const double[:,:] xp,
+                const int[:] dx,
                 int extrapolate,
                 double_or_complex[:,::1] out):
     """
@@ -181,7 +181,6 @@ def evaluate_nd(const double_or_complex[:,:,::1] c,
         # grab array pointers
         nxx[ip] = y.shape[0]
         xx[ip] = <double*>&y[0]
-        y = None
 
     if c.shape[1] != ntot:
         raise ValueError("xs and c have incompatible shapes")
@@ -257,7 +256,7 @@ def evaluate_nd(const double_or_complex[:,:,::1] c,
 @cython.boundscheck(False)
 @cython.cdivision(True)
 def fix_continuity(double_or_complex[:,:,::1] c,
-                   double[::1] x,
+                   const double[::1] x,
                    int order):
     """
     Make a piecewise polynomial continuously differentiable to given order.
@@ -408,7 +407,7 @@ def integrate(const double_or_complex[:,:,::1] c,
 @cython.wraparound(False)
 @cython.boundscheck(False)
 @cython.cdivision(True)
-def real_roots(const double[:,:,::1] c, double[::1] x, double y, bint report_discont,
+def real_roots(const double[:,:,::1] c, const double[::1] x, double y, bint report_discont,
                bint extrapolate):
     """
     Compute real roots of a real-valued piecewise polynomial function.
@@ -1044,8 +1043,8 @@ cdef double_or_complex evaluate_bpoly1_deriv(double_or_complex s,
 @cython.boundscheck(False)
 @cython.cdivision(True)
 def evaluate_bernstein(const double_or_complex[:,:,::1] c,
-             double[::1] x,
-             double[::1] xp,
+             const double[::1] x,
+             const double[::1] xp,
              int nu,
              bint extrapolate,
              double_or_complex[:,::1] out):
@@ -1094,9 +1093,9 @@ def evaluate_bernstein(const double_or_complex[:,:,::1] c,
 
     if nu > 0:
         if double_or_complex is double_complex:
-            wrk = np.empty((c.shape[0]-nu, 1, 1), dtype=np.complex_)
+            wrk = np.empty((c.shape[0]-nu, 1, 1), dtype=np.complex128)
         else:
-            wrk = np.empty((c.shape[0]-nu, 1, 1), dtype=np.float_)
+            wrk = np.empty((c.shape[0]-nu, 1, 1), dtype=np.float64)
 
 
     interval = 0

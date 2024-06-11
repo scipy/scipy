@@ -18,9 +18,9 @@ going and where help is needed most.
 
 General
 -------
-This roadmap will be evolving together with SciPy.  Updates can be submitted as
-pull requests.  For large or disruptive changes you may want to discuss
-those first on the scipy-dev mailing list.
+This roadmap will be evolving together with SciPy. Updates can be submitted as
+pull requests. For large or disruptive changes you may want to discuss
+those first on the scipy-dev forum.
 
 
 API changes
@@ -59,29 +59,23 @@ add new benchmarks, however running the benchmarks is not very intuitive.
 Making this easier is a priority.
 
 
-Moving to the Meson build system
-````````````````````````````````
-Support for the Meson build system was merged into SciPy main in Dec 2021,
-and SciPy 1.9.3 was the first release where all wheels were also built with
-Meson. What is left to do is removing support for
-``numpy.distutils``/``setuptools``, this will happen soon.
-
-
 Use of Cython
 `````````````
 Cython's old syntax for using NumPy arrays should be removed and replaced with
-Cython memoryviews. When Cython 3.0 is released, the last use of the deprecated
-NumPy C API (by Cython, everything in SciPy was fixed) will disappear. Then we
-can define ``NPY_NO_DEPRECATED_API`` unconditionally.
+Cython memoryviews.
+
+Binary sizes of extensions built from Cython code are large, and compile times
+are long. We should aim to combine extension modules where possible (e.g.,
+``stats._boost`` contains many extension modules now), and limit the use of
+Cython to places where it's the best choice. Note that conversion of Cython
+to C++ is ongoing in ``scipy.special``.
 
 
 Use of Pythran
 ``````````````
 Pythran is still an optional build dependency, and can be disabled with
-``SCIPY_USE_PYTHRAN=0``. The aim is to make it a hard dependency - for that to
-happen it must be clear that the maintenance burden is low enough (Meson will
-help here, because it removes the monkey patching that is now done to enable
-Pythran).
+``-Duse-pythran=false``. The aim is to make it a hard dependency - for that to
+happen it must be clear that the maintenance burden is low enough.
 
 
 Use of venerable Fortran libraries
@@ -165,11 +159,6 @@ includes
 Once we have a reasonably feature complete set, we can start taking a long look
 at the future of the venerable FITPACK Fortran library, which currently is the
 only way of constructing smoothing splines in SciPy.
-
-*Tensor-product splines*: `RegularGridInterpolator` provides a minimal
-implementation. We want to evolve it both for new features (e.g. derivatives),
-performance and API (possibly provide a transparent N-dimensional tensor-product
-B-spline object).
 
 *Scalability and performance*: For the FITPACK-based functionality, the data
 size is limited by 32-bit Fortran integer size (for non-ILP64 builds).
@@ -310,28 +299,22 @@ fftconvolve, convolve2d, correlate2d, and sepfir2d.) Eliminate the overlap with
 convolution and correlation, put the implementation somewhere, and use that
 consistently throughout SciPy.
 
-*B-splines*: (Relevant functions are bspline, cubic, quadratic, gauss_spline,
+*B-splines*: (Relevant functions are gauss_spline,
 cspline1d, qspline1d, cspline2d, qspline2d, cspline1d_eval, and spline_filter.)
 Move the good stuff to `interpolate` (with appropriate API changes to match how
 things are done in `interpolate`), and eliminate any duplication.
 
 *Filter design*: merge `firwin` and `firwin2` so `firwin2` can be removed.
 
-*Continuous-Time Linear Systems*: remove `lsim2`, `impulse2`, `step2`.  The
-`lsim`, `impulse` and `step` functions now "just work" for any input system.
-Further improve the performance of ``ltisys`` (fewer internal transformations
-between different representations). Fill gaps in lti system conversion functions.
+*Continuous-Time Linear Systems*: Further improve the performance of ``ltisys``
+(fewer internal transformations between different representations). Fill gaps in lti
+system conversion functions.
 
 *Second Order Sections*: Make SOS filtering equally capable as existing
 methods. This includes ltisys objects, an `lfiltic` equivalent, and numerically
 stable conversions to and from other filter representations. SOS filters could
 be considered as the default filtering method for ltisys objects, for their
 numerical stability.
-
-*Wavelets*: what's there now doesn't make much sense.  Continuous wavelets
-only at the moment - decide whether to completely rewrite or remove them.
-Discrete wavelet transforms are out of scope (PyWavelets does a good job
-for those).
 
 
 sparse
@@ -340,27 +323,44 @@ The sparse matrix formats are mostly feature-complete, however the main issue
 is that they act like ``numpy.matrix`` (which will be deprecated in NumPy at
 some point).
 
-What we want is sparse arrays, that act like ``numpy.ndarray``. In SciPy
-``1.8.0`` a new set of classes (``csr_array`` et al.) has been added - these
-need testing in the real world, as well as a few extra features like 1-D array
-support.
-An alternative (more ambitious, and unclear if it will materialize at this
-point) plan is being worked on in https://github.com/pydata/sparse.  The
-tentative plan for that was/is:
+What we want is sparse arrays that act like ``numpy.ndarray``. Initial
+support for a new set of classes (``csr_array`` et al.) was added in SciPy
+``1.8.0`` and stabilized in ``1.12.0`` when construction functions for
+arrays were added. Support for 1-D array is expected in ``1.13.0``.
 
-- Start depending on ``pydata/sparse`` once it's feature-complete enough (it
-  still needs a CSC/CSR equivalent) and okay performance-wise.
-- Add support for ``pydata/sparse`` to ``scipy.sparse.linalg`` (and perhaps to
-  ``scipy.sparse.csgraph`` after that).
-- Indicate in the documentation that for new code users should prefer
-  ``pydata/sparse`` over sparse matrices.
-- When NumPy deprecates ``numpy.matrix``, vendor that or maintain it as a
-  stand-alone package.
+Next steps toward sparse array support:
+
+- Extend sparse array API to 1-D arrays.
+    - Support for COO, CSR and DOK formats.
+    - CSR 1D support for min-max, indexing, arithmetic.
+- Help other libraries convert to sparse arrays from sparse matrices.
+  Create transition guide and helpful scripts to flag code that needs
+  further examination. NetworkX, scikit-learn and scikit-image are in
+  progress or have completed conversion to sparse arrays.
+- After sparse array code is mature (~1 release cycle?) add deprecation
+  warnings for sparse matrix.
+- Work with NumPy on deprecation/removal of ``numpy.matrix``.
+- Deprecate and then remove sparse matrix in favor of sparse array.
+- Start API shift of construction function names (``diags``, ``block``, etc.)
+    - Note: as a whole, the construction functions undergo two name shifts.
+      Once to move from matrix creation to new functions for array creation
+      (i.e. ``eye`` -> ``eye_array``). Then a second move to change names to match
+      the ``array_api`` name (i.e. ``eye_array`` to ``eye``) after sparse matrices are
+      removed. We will keep the ``*_array`` versions for a long time as
+      (maybe hidden) aliases.
+- Add construction function names matching ``array_api`` names.
+- Deprecate the transition construction function names.
+
+An alternative (more ambitious, and unclear if it will materialize)
+plan is being worked on in https://github.com/pydata/sparse.
+To support that effort we aim to support PyData Sparse in all functions that
+accept sparse arrays.  Support for ``pydata/sparse`` in ``scipy.sparse.linalg``
+and ``scipy.sparse.csgraph`` is mostly complete.
 
 Regarding the different sparse matrix formats: there are a lot of them.  These
 should be kept, but improvements/optimizations should go into CSR/CSC, which
-are the preferred formats.  LIL may be the exception, it's inherently
-inefficient.  It could be dropped if DOK is extended to support all the
+are the preferred formats. LIL may be the exception, it's inherently
+inefficient. It could be dropped if DOK is extended to support all the
 operations LIL currently provides.
 
 
@@ -378,7 +378,7 @@ There are a significant number of open issues for ``_arpack`` and ``lobpcg``.
 
 - callback keyword is inconsistent
 - tol keyword is broken, should be relative tol
-- Fortran code not re-entrant (but we don't solve, maybe re-use from
+- Fortran code not re-entrant (but we don't solve, maybe reuse from
   PyKrilov)
 
 ``_dsolve``:
@@ -473,7 +473,7 @@ improvements will help SciPy better serve this role.
 - Improve the core calculations provided by SciPy's probability distributions
   so they can robustly handle wide ranges of parameter values.  Specifically,
   replace many of the PDF and CDF methods from the Fortran library CDFLIB
-  used in scipy.special with Boost implementations as in
+  used in ``scipy.special`` with Boost implementations as in
   `gh-13328 <https://github.com/scipy/scipy/pull/13328>`__.
 
 In addition, we should:

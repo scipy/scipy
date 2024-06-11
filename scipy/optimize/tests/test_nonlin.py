@@ -6,9 +6,11 @@ from numpy.testing import assert_
 import pytest
 
 from scipy.optimize import _nonlin as nonlin, root
+from scipy.sparse import csr_array
 from numpy import diag, dot
 from numpy.linalg import inv
 import numpy as np
+import scipy
 
 from .test_minpack import pressure_network
 
@@ -207,6 +209,13 @@ class TestNonlin:
                     continue
                 self._check_root(f, meth)
 
+    def test_no_convergence(self):
+        def wont_converge(x):
+            return 1e3 + x
+        
+        with pytest.raises(scipy.optimize.NoConvergence):
+            nonlin.newton_krylov(wont_converge, xin=[0], maxiter=1)
+
 
 class TestSecant:
     """Check that some Jacobian approximations satisfy the secant condition"""
@@ -324,6 +333,33 @@ class TestLinear:
         # Krylov methods solve linear systems exactly in N inner steps
         self._check(nonlin.KrylovJacobian, 20, 2, False, inner_m=10)
         self._check(nonlin.KrylovJacobian, 20, 2, True, inner_m=10)
+
+    def _check_autojac(self, A, b):
+        def func(x):
+            return A.dot(x) - b
+
+        def jac(v):
+            return A
+
+        sol = nonlin.nonlin_solve(func, np.zeros(b.shape[0]), jac, maxiter=2,
+                                  f_tol=1e-6, line_search=None, verbose=0)
+        np.testing.assert_allclose(A @ sol, b, atol=1e-6)
+        # test jac input as array -- not a function
+        sol = nonlin.nonlin_solve(func, np.zeros(b.shape[0]), A, maxiter=2,
+                                  f_tol=1e-6, line_search=None, verbose=0)
+        np.testing.assert_allclose(A @ sol, b, atol=1e-6)
+
+    def test_jac_sparse(self):
+        A = csr_array([[1, 2], [2, 1]])
+        b = np.array([1, -1])
+        self._check_autojac(A, b)
+        self._check_autojac((1 + 2j) * A, (2 + 2j) * b)
+
+    def test_jac_ndarray(self):
+        A = np.array([[1, 2], [2, 1]])
+        b = np.array([1, -1])
+        self._check_autojac(A, b)
+        self._check_autojac((1 + 2j) * A, (2 + 2j) * b)
 
 
 class TestJacobianDotSolve:

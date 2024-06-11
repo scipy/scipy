@@ -5,7 +5,7 @@ _defaults: &defaults
   docker:
     # CircleCI maintains a library of pre-built images
     # documented at https://circleci.com/docs/2.0/circleci-images/
-    - image: cimg/python:3.9
+    - image: cimg/python:3.11
   working_directory: ~/repo
 
 commands:
@@ -22,7 +22,7 @@ commands:
             export git_log=$(git log --max-count=1 --pretty=format:"%B" | tr "\n" " ")
             echo "Got commit message:"
             echo "${git_log}"
-            if [[ -v CIRCLE_PULL_REQUEST ]] && ([[ "$git_log" == *"[skip circle]"* ]] || [[ "$git_log" == *"[circle skip]"* ]]); then
+            if [[ -v CIRCLE_PULL_REQUEST ]] && ([[ "$git_log" == *"[skip circle]"* ]] || [[ "$git_log" == *"[circle skip]"* ]] || [[ "$git_log" == *"[lint only]"* ]]); then
               echo "Skip detected, exiting job ${CIRCLE_JOB} for PR ${CIRCLE_PULL_REQUEST}."
               circleci-agent step halt;
             fi
@@ -74,12 +74,9 @@ jobs:
       - run:
           name: setup Python venv
           command: |
-            pip install cython
-            pip install numpy==1.23.5
-            pip install -r doc_requirements.txt
-            # `asv` pin because of slowdowns reported in gh-15568
-            pip install mpmath gmpy2 "asv==0.4.2" pythran ninja meson click rich-click doit pydevtool pooch
-            pip install pybind11
+            pip install numpy cython pybind11 pythran ninja meson
+            pip install -r requirements/doc.txt
+            pip install mpmath gmpy2 "asv>=0.6.0" click rich-click doit pydevtool pooch threadpoolctl
             # extra benchmark deps
             pip install pyfftw cffi pytest
 
@@ -118,8 +115,14 @@ jobs:
           name: build docs
           no_output_timeout: 25m
           command: |
-            export PYTHONPATH=$PWD/build-install/lib/python3.9/site-packages
-            python dev.py --no-build doc -j2
+            export PYTHONPATH=$PWD/build-install/lib/python3.11/site-packages
+            python dev.py --no-build doc 2>&1 | tee sphinx_log.txt
+
+      - run:
+          name: Check sphinx log for warnings (which are treated as errors)
+          when: always
+          command: |
+            ! grep "^.* WARNING: .*$" sphinx_log.txt
 
       - store_artifacts:
           path: doc/build/html
@@ -145,13 +148,13 @@ jobs:
           name: run asv
           no_output_timeout: 30m
           command: |
-            export PYTHONPATH=$PWD/build-install/lib/python3.9/site-packages
+            export PYTHONPATH=$PWD/build-install/lib/python3.11/site-packages
             cd benchmarks
             asv machine --machine CircleCI
             export SCIPY_GLOBAL_BENCH_NUMTRIALS=1
             export SCIPY_ALLOW_BENCH_IMPORT_ERRORS=0
             export OPENBLAS_NUM_THREADS=1
-            time asv --config asv.conf.json dev -m CircleCI --python=same --bench '^((?!BenchGlobal|QuadraticAssignment).)*$'
+            time asv --config asv.conf.json run -m CircleCI --quick --python=same --bench '^((?!BenchGlobal|QuadraticAssignment).)*$'
             asv --config asv.conf.json publish
 
       - store_artifacts:
@@ -173,8 +176,22 @@ jobs:
           no_output_timeout: 25m
           command: |
             sudo apt-get install -y wamerican-small
-            export PYTHONPATH=$PWD/build-install/lib/python3.9/site-packages
+            export PYTHONPATH=$PWD/build-install/lib/python3.11/site-packages
             python dev.py --no-build refguide-check
+
+      - run:
+          name: smoke-docs
+          no_output_timeout: 35m
+          command: |
+            pip install matplotlib hypothesis
+            pip install scipy-doctest
+            python dev.py smoke-docs
+
+      - run:
+          name: smoke-tutorials
+          no_output_timeout: 10m
+          command: |
+            python dev.py smoke-tutorials
 
 # Upload build output to scipy/devdocs repository, using SSH deploy keys.
 # The keys are only available for builds on main branch.

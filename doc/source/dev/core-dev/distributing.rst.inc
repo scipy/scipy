@@ -13,55 +13,18 @@ Dependencies
 ------------
 Dependencies are things that a user has to install in order to use (or
 build/test) a package.  They usually cause trouble, especially if they're not
-optional.  SciPy tries to keep its dependencies to a minimum; currently they
-are:
+optional.  SciPy tries to keep its dependencies to a minimum; the current required
+and optional build time dependencies can be seen in `SciPy's configuration file`_, 
+``pyproject.toml``. The only non-optional runtime dependency is NumPy_.
 
-*Unconditional run-time dependencies:*
-
-- Numpy_
-
-*Conditional run-time dependencies:*
-
-- pytest (to run the test suite)
-- asv_ (to run the benchmarks)
-- matplotlib_ (for some functions that can produce plots)
-- pooch_ (for the scipy.datasets module)
-- Pillow_ (for image loading/saving)
-- scikits.umfpack_ (optionally used in ``sparse.linalg``)
-- mpmath_ (for more extended tests in ``special``)
-- pydata/sparse (compatibility support in ``scipy.sparse``)
-- threadpoolctl_ (to control BLAS/LAPACK threading in test suite)
-
-*Unconditional build-time dependencies:*
-
-- Numpy_
-- A BLAS and LAPACK implementation (reference BLAS/LAPACK, ATLAS, OpenBLAS,
-  MKL are all known to work)
-- Cython_
-- setuptools_
-- pybind11_
-
-*Conditional build-time dependencies:*
-
-- wheel_ (``python setup.py bdist_wheel``)
-- Sphinx_ (docs)
-- `PyData Sphinx theme`_ (docs)
-- `Sphinx-Design`_  (docs)
-- matplotlib_ (docs)
-- MyST-NB_ (docs)
-
-Furthermore of course one needs C, C++ and Fortran compilers to build SciPy,
-but those we don't consider to be dependencies and are therefore not discussed
-here.  For details, see https://scipy.github.io/devdocs/dev/contributor/building.html.
+Furthermore, of course one needs C, C++ and Fortran compilers to build SciPy,
+but we don't consider those to be dependencies, and therefore they are not discussed
+here.  For details, see :ref:`building-from-source`.
 
 When a package provides useful functionality and it's proposed as a new
 dependency, consider also if it makes sense to vendor (i.e. ship a copy of it with
-scipy) the package instead.  For example, decorator_ is vendored in
+SciPy) the package instead.  For example, decorator_ is vendored in
 ``scipy._lib``.
-
-The only dependency that is reported to pip_  is Numpy_, see
-``install_requires`` in SciPy's main ``setup.py``.  The other dependencies
-aren't needed for SciPy to function correctly
 
 Issues with dependency handling
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -114,7 +77,7 @@ classifiers in ``setup.py``, and mentioned in the release notes for each
 release.  All newly released Python versions will be supported as soon as
 possible.  For the general policy on dropping support for a Python or NumPy
 version, see :ref:`NEP 29 <NEP29>`.  The final decision on dropping support is
-always taken on the scipy-dev mailing list.
+always taken on the scipy-dev forum.
 
 The lowest supported Numpy_ version for a SciPy version is mentioned in the
 release notes and is encoded in ``pyproject.toml``, ``scipy/__init__.py`` and the
@@ -127,7 +90,7 @@ Supported versions of optional dependencies and compilers is documented in
 :ref:`toolchain-roadmap`. Note that not all versions of optional dependencies
 that are supported are tested well or at all by SciPy's Continuous
 Integration setup.  Issues regarding this are dealt with as they come up in the
-issue tracker or mailing list.
+issue tracker or forum.
 
 
 Building binary installers
@@ -188,6 +151,7 @@ would need to be distributed via custom channels, e.g. in a
 Wheelhouse_, see at the wheel_ and Wheelhouse_ docs.
 
 
+.. _`SciPy's configuration file`: https://github.com/scipy/scipy/blob/main/pyproject.toml
 .. _Numpy: https://numpy.org
 .. _Python: https://www.python.org
 .. _nose: https://nose.readthedocs.io
@@ -213,3 +177,4 @@ Wheelhouse_, see at the wheel_ and Wheelhouse_ docs.
 .. _manylinux: https://github.com/pypa/manylinux/
 .. _threadpoolctl: https://github.com/joblib/threadpoolctl
 .. _MyST-NB: https://myst-nb.readthedocs.io/
+.. _Hypothesis: https://hypothesis.readthedocs.io/en/latest/index.html

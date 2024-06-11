@@ -24,10 +24,6 @@ ctypedef fused vq_type:
     float32_t
     float64_t
 
-# When the number of features is less than this number,
-# switch back to the naive algorithm to avoid high overhead.
-DEF NFEATURES_CUTOFF=5
-
 # Initialize the NumPy C API
 np.import_array()
 
@@ -81,8 +77,9 @@ cdef int _vq(vq_type *obs, vq_type *code_book,
         low_dist[i] is the Euclidean distance from obs[i] to the corresponding
         centroid.
     """
-    # Naive algorithm is preferred when nfeat is small
-    if nfeat < NFEATURES_CUTOFF:
+    # When the number of features is less than this number,
+    # switch back to the naive algorithm to avoid high overhead.
+    if nfeat < 5:
         _vq_small_nf(obs, code_book, ncodes, nfeat, nobs, codes, low_dist)
         return 0
 
@@ -243,7 +240,7 @@ def vq(np.ndarray obs, np.ndarray codes):
 
 @cython.cdivision(True)
 cdef np.ndarray _update_cluster_means(vq_type *obs, int32_t *labels,
-                                      vq_type *cb, int nobs, int nc, int nfeat) noexcept:
+                                      vq_type *cb, int nobs, int nc, int nfeat):
     """
     The underlying function (template) of _vq.update_cluster_means.
 

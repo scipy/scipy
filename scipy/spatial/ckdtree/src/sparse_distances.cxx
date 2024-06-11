@@ -1,3 +1,7 @@
+#include "ckdtree_decl.h"
+#include "rectangle.h"
+#include "coo_entries.h"
+
 #include <cmath>
 #include <cstdlib>
 #include <cstring>
@@ -9,10 +13,6 @@
 #include <typeinfo>
 #include <stdexcept>
 #include <ios>
-
-#include "ckdtree_decl.h"
-#include "rectangle.h"
-#include "coo_entries.h"
 
 template <typename MinMaxDist> static void
 traverse(const ckdtree *self, const ckdtree *other,
