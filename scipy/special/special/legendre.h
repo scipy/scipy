@@ -333,10 +333,10 @@ void multi_assoc_legendre_p_for_each_m_abs_m(
     init_m_abs_m(res);
 
     multi_assoc_legendre_p_recurrence_m_abs_m<T, NormPolicy> re_m_abs_m{type, z};
-    if (m < 0) {
-        backward_recur(0, m - 1, re_m_abs_m, res, f);
-    } else {
+    if (m >= 0) {
         forward_recur(0, m + 1, re_m_abs_m, res, f);
+    } else {
+        backward_recur(0, m - 1, re_m_abs_m, res, f);
     }
 }
 
@@ -794,10 +794,10 @@ void sph_legendre_p_for_each_m_abs_m(int m, T phi, std::tuple<OutputVals (&)[2].
     init_m_abs_m(res);
 
     sph_legendre_p_recurrence_m_abs_m<T> re_m_abs_m{phi};
-    if (m < 0) {
-        backward_recur(0, m - 1, re_m_abs_m, res, f);
-    } else {
+    if (m >= 0) {
         forward_recur(0, m + 1, re_m_abs_m, res, f);
+    } else {
+        backward_recur(0, m - 1, re_m_abs_m, res, f);
     }
 }
 
