@@ -105,10 +105,19 @@ Support is provided in `scipy.special` for the following functions:
 `scipy.special.erf`, `scipy.special.erfc`, `scipy.special.i0`,
 `scipy.special.i0e`, `scipy.special.i1`, `scipy.special.i1e`,
 `scipy.special.gammaln`, `scipy.special.gammainc`, `scipy.special.gammaincc`,
-`scipy.special.logit`, and `scipy.special.expit`.
+`scipy.special.logit`, `scipy.special.expit`, `scipy.special.entr`,
+`scipy.special.rel_entr`, `scipy.special.rel_entr`, `scipy.special.xlogy`,
+and `scipy.special.chdtrc`.
 
 Support is provided in `scipy.stats` for the following functions:
-`scipy.stats.pearsonr` and `scipy.stats.moment`.
+`scipy.stats.describe`, `scipy.stats.moment`, `scipy.stats.skew`,
+`scipy.stats.kurtosis`, `scipy.stats.kstat`, `scipy.stats.kstatvar`,
+`scipy.stats.circmean`, `scipy.stats.circvar`, `scipy.stats.circstd`,
+`scipy.stats.entropy`, `scipy.stats.variation` , `scipy.stats.sem`,
+`scipy.stats.ttest_1samp`, `scipy.stats.pearsonr`, `scipy.stats.chisquare`,
+`scipy.stats.skewtest`, `scipy.stats.kurtosistest`, `scipy.stats.normaltest`,
+`scipy.stats.jarque_bera`, `scipy.stats.bartlett`, `scipy.stats.power_divergence`,
+and `scipy.stats.monte_carlo_test`.
 
 
 Implementation notes
