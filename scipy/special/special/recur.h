@@ -1,39 +1,41 @@
 #pragma once
 
-#include "config.h"
 #include "tuples.h"
 
 namespace special {
 
-template <typename T, size_t K>
-void dot(std::tuple<T (&)[K]> x, const std::tuple<T (&)[K]> y, std::tuple<T &> res) {
-    const auto &[x0] = x;
-    const auto &[y0] = y;
-    auto &[res0] = res;
-
-    res0 = 0;
-    for (size_t k = 0; k < K; ++k) {
-        res0 += x0[k] * y0[k];
+template <typename T, size_t N>
+T dot(const T (&x)[N], const T (&y)[N]) {
+    T res = 0;
+    for (size_t i = 0; i < N; ++i) {
+        res += x[i] * y[i];
     }
+
+    return res;
 }
 
 template <typename T, size_t K>
-void dot(std::tuple<T (&)[K], T (&)[K]> x, std::tuple<T (&)[K], T (&)[K]> y, std::tuple<T &, T &> res) {
+void dot(std::tuple<T (&)[K]> x, const std::tuple<T (&)[K]> y, std::tuple<T &> res) {
+    std::get<0>(res) = dot(std::get<0>(x), std::get<0>(y));
+}
+
+template <typename T, size_t N>
+void dot(std::tuple<T (&)[N], T (&)[N]> x, std::tuple<T (&)[N], T (&)[N]> y, std::tuple<T &, T &> res) {
     const auto &[x0, x1] = x;
     const auto &[y0, y1] = y;
     auto &[res0, res1] = res;
 
     res0 = 0;
     res1 = 0;
-    for (size_t k = 0; k < K; ++k) {
-        res0 += x0[k] * y0[k];
-        res1 += x0[k] * y1[k] + x1[k] * y0[k];
+    for (size_t i = 0; i < N; ++i) {
+        res0 += x0[i] * y0[i];
+        res1 += x0[i] * y1[i] + x1[i] * y0[i];
     }
 }
 
-template <typename T, size_t K>
+template <typename T, size_t N>
 void dot(
-    std::tuple<T (&)[K], T (&)[K], T (&)[K]> x, std::tuple<T (&)[K], T (&)[K], T (&)[K]> y,
+    std::tuple<T (&)[N], T (&)[N], T (&)[N]> x, std::tuple<T (&)[N], T (&)[N], T (&)[N]> y,
     std::tuple<T &, T &, T &> res
 ) {
     const auto &[x0, x1, x2] = x;
@@ -43,10 +45,10 @@ void dot(
     res0 = 0;
     res1 = 0;
     res2 = 0;
-    for (size_t k = 0; k < K; ++k) {
-        res0 += x0[k] * y0[k];
-        res1 += x0[k] * y1[k] + x1[k] * y0[k];
-        res2 += x0[k] * y2[k] + T(2) * x1[k] * y1[k] + x2[k] * y0[k];
+    for (size_t i = 0; i < N; ++i) {
+        res0 += x0[i] * y0[i];
+        res1 += x0[i] * y1[i] + x1[i] * y0[i];
+        res2 += x0[i] * y2[i] + T(2) * x1[i] * y1[i] + x2[i] * y0[i];
     }
 }
 
