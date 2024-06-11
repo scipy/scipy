@@ -2026,19 +2026,19 @@ def test_gaussian_truncate():
     x[25] = 1
     f = ndimage.gaussian_filter1d(x, sigma=2, truncate=3.5)
     n = (f > 0).sum()
-    assert_equal(n, 15)
+    assert n == 15
 
     # Test gaussian_laplace
     y = ndimage.gaussian_laplace(x, sigma=2, truncate=3.5)
     nonzero_indices = np.nonzero(y != 0)[0]
     n = np.ptp(nonzero_indices) + 1
-    assert_equal(n, 15)
+    assert n == 15
 
     # Test gaussian_gradient_magnitude
     y = ndimage.gaussian_gradient_magnitude(x, sigma=2, truncate=3.5)
     nonzero_indices = np.nonzero(y != 0)[0]
     n = np.ptp(nonzero_indices) + 1
-    assert_equal(n, 15)
+    assert n == 15
 
 
 def test_gaussian_radius():
