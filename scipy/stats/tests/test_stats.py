@@ -7953,30 +7953,35 @@ class TestCombinePvalues:
     # > options(digits=16)
     # > library(metap)
     # > x1 = c(0.01, 0.2, 0.3)
-    # > x2 = c(0.5, 0.5, 0.5)
-    @pytest.mark.parametrize("method,pvalues,expected",
-                             # > sumlog(x1)
-                             [("fisher", [.01, .2, .3], 0.02156175132483465),
-                              # > sumz(x1)
-                              ("stouffer", [.01, .2, .3], 0.01651203260896294),
-                              # > sumz(x2)
-                              ("stouffer", [.5, .5, .5], 0.5),
-                              # > sumlog(x1)
-                              ("pearson", [.01, .2, .3], 0.02213),
-                              # > minimump(x1)
-                              ("tippett", [.01, .2, .3], 0.02970100000000002),
-                              # need to work out how to generate this
-                              # (mean of fisher and pearson)
-                              ("mudholkar_george", [.01, .2, .3], 0.019462)])
-    def test_reference_values(self, xp, method, pvalues, expected):
+    @pytest.mark.parametrize("method,pvalues,expected_statistic,expected_pvalue",
+    # > sumlog(x1)
+                             [("fisher", [.01, .2, .3],
+                               14.83716180549625 , 0.02156175132483465),
+    # > sumz(x1)
+                              ("stouffer", [.01, .2, .3],
+                               2.131790594240385, 0.01651203260896294),
+    # > sumlog(1-x)
+    # minus sign is flipped for the statistic and 1-p for the pvalue
+                              ("pearson", [.01, .2, .3],
+                               -1.179737662212887, 1-0.9778736999143087),
+    # > minimump(x1)
+                              ("tippett", [.01, .2, .3],
+                               0.01, 0.02970100000000002),
+    # > library(transite)
+    # > p_combine(x1, method="MG")
+                              ("mudholkar_george", [.01, .2, .3],
+                               6.828712071641684, 0.01654551838539527)])
+    def test_reference_values(self, xp, method, pvalues, expected_statistic,
+                              expected_pvalue):
         res = stats.combine_pvalues(xp.asarray(pvalues), method=method)
-        xp_assert_close(res.pvalue, xp.asarray(expected))
+        xp_assert_close(res.statistic, xp.asarray(expected_statistic))
+        xp_assert_close(res.pvalue, xp.asarray(expected_pvalue))
 
     @pytest.mark.parametrize("weights,expected",
-                             # Same as no weights
+    # Same as no weights
                              [([1., 1., 1.], 0.01651203260896294),
-                              # > weights = c(1., 4., 9.)
-                              # > sumz(x1, weights=weights)
+    # > weights = c(1., 4., 9.)
+    # > sumz(x1, weights=weights)
                               ([1., 4., 9.], 0.1464422142261314)])
     def test_weighted_stouffer(self, xp, weights, expected):
         pvalues = xp.asarray([.01, .2, .3])
