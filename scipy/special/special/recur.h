@@ -110,4 +110,31 @@ void forward_recur(InputIt first, InputIt last, Recurrence r, std::tuple<T (&)[K
     }
 }
 
+template <typename InputIt, typename Recurrence, typename... T, ssize_t K, typename Func>
+void backward_recur(InputIt first, InputIt last, Recurrence r, std::tuple<T (&)[K]...> res, Func f) {
+    InputIt it = first;
+    while (std::abs(it - first) != K && it != last) {
+        forward_recur_rotate_left(res);
+
+        f(it, res);
+        --it;
+    }
+
+    if (std::abs(last - first) > K) {
+        while (it != last) {
+            std::tuple<T[K]...> coef;
+            r(it, tuple_ref_each(coef));
+
+            std::tuple<T...> tmp;
+            dot(tuple_ref_each(coef), res, tuple_ref_each(tmp));
+
+            forward_recur_shift_left(res);
+            tuple_access_each(res, K - 1) = tmp;
+
+            f(it, res);
+            --it;
+        }
+    }
+}
+
 } // namespace special

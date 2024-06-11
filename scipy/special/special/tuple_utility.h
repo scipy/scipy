@@ -71,6 +71,11 @@ std::tuple<T &...> tuple_ref_each(std::tuple<T...> &t) {
     return std::apply([](auto &...args) { return std::tie(args...); }, t);
 }
 
+template <typename... T>
+std::tuple<const T &...> tuple_cref_each(std::tuple<T...> &t) {
+    return std::apply([](const auto &...args) { return std::tie(args...); }, t);
+}
+
 template <size_t I, typename Res, size_t NArgs = 1>
 struct grad_tuple_element;
 
