@@ -19,8 +19,8 @@ from scipy._lib._array_api import (
     SCIPY_ARRAY_API, copy, cov, xp_assert_close, xp_assert_equal
 )
 
-pytestmark = [array_api_compatible, pytest.mark.usefixtures("skip_if_array_api")]
-skip_if_array_api = pytest.mark.skip_if_array_api
+pytestmark = [array_api_compatible, pytest.mark.usefixtures("skip_xp_backends")]
+skip_xp_backends = pytest.mark.skip_xp_backends
 
 TESTDATA_2D = np.array([
     -2.2, 1.17, -1.63, 1.69, -2.04, 4.38, -3.09, 0.95, -1.7, 4.79, -1.68, 0.68,
@@ -94,6 +94,8 @@ class TestWhiten:
                           [0.45067590, 0.45464607]])
         xp_assert_close(whiten(obs), desired, rtol=1e-5)
 
+    @skip_xp_backends('jax.numpy',
+                      reasons=['jax arrays do not support item assignment'])
     def test_whiten_zero_std(self, xp):
         desired = xp.asarray([[0., 1.0, 2.86666544],
                               [0., 1.0, 1.32460034],
@@ -133,14 +135,14 @@ class TestWhiten:
 
 class TestVq:
 
-    @skip_if_array_api(cpu_only=True)
+    @skip_xp_backends(cpu_only=True)
     def test_py_vq(self, xp):
         initc = np.concatenate([[X[0]], [X[1]], [X[2]]])
         # label1.dtype varies between int32 and int64 over platforms
         label1 = py_vq(xp.asarray(X), xp.asarray(initc))[0]
         xp_assert_equal(label1, xp.asarray(LABEL1, dtype=xp.int64),
                         check_dtype=False)
-      
+
     @pytest.mark.skipif(SCIPY_ARRAY_API,
                         reason='`np.matrix` unsupported in array API mode')
     def test_py_vq_matrix(self, xp):
@@ -149,7 +151,7 @@ class TestVq:
         label1 = py_vq(matrix(X), matrix(initc))[0]
         assert_array_equal(label1, LABEL1)
 
-    @skip_if_array_api(np_only=True, reasons=['`_vq` only supports NumPy backend'])
+    @skip_xp_backends(np_only=True, reasons=['`_vq` only supports NumPy backend'])
     def test_vq(self, xp):
         initc = np.concatenate([[X[0]], [X[1]], [X[2]]])
         label1, _ = _vq.vq(xp.asarray(X), xp.asarray(initc))
@@ -164,7 +166,7 @@ class TestVq:
         assert_array_equal(label1, LABEL1)
         _, _ = vq(matrix(X), matrix(initc))
 
-    @skip_if_array_api(cpu_only=True)
+    @skip_xp_backends(cpu_only=True)
     def test_vq_1d(self, xp):
         # Test special rank 1 vq algo, python implementation.
         data = X[:, 0]
@@ -177,18 +179,18 @@ class TestVq:
         xp_assert_equal(ta, xp.asarray(a, dtype=xp.int64), check_dtype=False)
         xp_assert_equal(tb, xp.asarray(b))
 
-    @skip_if_array_api(np_only=True, reasons=['`_vq` only supports NumPy backend'])
+    @skip_xp_backends(np_only=True, reasons=['`_vq` only supports NumPy backend'])
     def test__vq_sametype(self, xp):
         a = xp.asarray([1.0, 2.0], dtype=xp.float64)
         b = a.astype(xp.float32)
         assert_raises(TypeError, _vq.vq, a, b)
 
-    @skip_if_array_api(np_only=True, reasons=['`_vq` only supports NumPy backend'])
+    @skip_xp_backends(np_only=True, reasons=['`_vq` only supports NumPy backend'])
     def test__vq_invalid_type(self, xp):
         a = xp.asarray([1, 2], dtype=int)
         assert_raises(TypeError, _vq.vq, a, a)
 
-    @skip_if_array_api(cpu_only=True)
+    @skip_xp_backends(cpu_only=True)
     def test_vq_large_nfeat(self, xp):
         X = np.random.rand(20, 20)
         code_book = np.random.rand(3, 20)
@@ -212,7 +214,7 @@ class TestVq:
         # codes1.dtype varies between int32 and int64 over platforms
         xp_assert_equal(codes1, xp.asarray(codes0, dtype=xp.int64), check_dtype=False)
 
-    @skip_if_array_api(cpu_only=True)
+    @skip_xp_backends(cpu_only=True)
     def test_vq_large_features(self, xp):
         X = np.random.rand(10, 5) * 1000000
         code_book = np.random.rand(2, 5) * 1000000
@@ -228,7 +230,7 @@ class TestVq:
 
 # Whole class skipped on GPU for now;
 # once pdist/cdist are hooked up for CuPy, more tests will work
-@skip_if_array_api(cpu_only=True)
+@skip_xp_backends(cpu_only=True)
 class TestKMean:
 
     def test_large_features(self, xp):
@@ -321,22 +323,25 @@ class TestKMean:
         data = xp.reshape(data, (20, 20))[:10, :]
         kmeans2(data, 2)
 
+    @skip_xp_backends('jax.numpy',
+                      reasons=['jax arrays do not support item assignment'],
+                      cpu_only=True)
     def test_kmeans2_init(self, xp):
         np.random.seed(12345)
         data = xp.asarray(TESTDATA_2D)
         k = 3
 
         kmeans2(data, k, minit='points')
-        kmeans2(data[:, :1], k, minit='points')  # special case (1-D)
+        kmeans2(data[:, 1], k, minit='points')  # special case (1-D)
 
         kmeans2(data, k, minit='++')
-        kmeans2(data[:, :1], k, minit='++')  # special case (1-D)
+        kmeans2(data[:, 1], k, minit='++')  # special case (1-D)
 
         # minit='random' can give warnings, filter those
         with suppress_warnings() as sup:
             sup.filter(message="One of the clusters is empty. Re-run.")
             kmeans2(data, k, minit='random')
-            kmeans2(data[:, :1], k, minit='random')  # special case (1-D)
+            kmeans2(data[:, 1], k, minit='random')  # special case (1-D)
 
     @pytest.mark.skipif(sys.platform == 'win32',
                         reason='Fails with MemoryError in Wine.')
@@ -369,6 +374,9 @@ class TestKMean:
         xp_assert_close(res[0], xp.asarray([4.], dtype=xp.float64))
         xp_assert_close(res[1], xp.asarray(2.3999999999999999, dtype=xp.float64)[()])
 
+    @skip_xp_backends('jax.numpy',
+                      reasons=['jax arrays do not support item assignment'],
+                      cpu_only=True)
     def test_kmeans2_kpp_low_dim(self, xp):
         # Regression test for gh-11462
         prev_res = xp.asarray([[-1.95266667, 0.898],
@@ -377,6 +385,9 @@ class TestKMean:
         res, _ = kmeans2(xp.asarray(TESTDATA_2D), 2, minit='++')
         xp_assert_close(res, prev_res)
 
+    @skip_xp_backends('jax.numpy',
+                      reasons=['jax arrays do not support item assignment'],
+                      cpu_only=True)
     def test_kmeans2_kpp_high_dim(self, xp):
         # Regression test for gh-11462
         n_dim = 100
@@ -400,6 +411,9 @@ class TestKMean:
         xp_assert_close(res[0], xp.asarray([-0.4,  8.], dtype=xp.float64))
         xp_assert_close(res[1], xp.asarray(1.0666666666666667, dtype=xp.float64)[()])
 
+    @skip_xp_backends('jax.numpy',
+                      reasons=['jax arrays do not support item assignment'],
+                      cpu_only=True)
     def test_kmeans_and_kmeans2_random_seed(self, xp):
 
         seed_list = [
@@ -413,9 +427,9 @@ class TestKMean:
             # test for kmeans
             res1, _ = kmeans(data, 2, seed=seed1)
             res2, _ = kmeans(data, 2, seed=seed2)
-            xp_assert_close(res1, res2, xp=xp)  # should be same results
+            xp_assert_close(res1, res2)  # should be same results
             # test for kmeans2
             for minit in ["random", "points", "++"]:
                 res1, _ = kmeans2(data, 2, minit=minit, seed=seed1)
                 res2, _ = kmeans2(data, 2, minit=minit, seed=seed2)
-                xp_assert_close(res1, res2, xp=xp)  # should be same results
+                xp_assert_close(res1, res2)  # should be same results

@@ -6,9 +6,10 @@
 
 """
 
+import math
 import numpy as np
 
-from ._base import _spbase, _ufuncs_with_fixed_point_at_zero
+from ._base import _spbase, sparray, _ufuncs_with_fixed_point_at_zero
 from ._sputils import isscalarlike, validateaxis
 
 __all__ = []
@@ -17,8 +18,8 @@ __all__ = []
 # TODO implement all relevant operations
 # use .data.__methods__() instead of /=, *=, etc.
 class _data_matrix(_spbase):
-    def __init__(self):
-        _spbase.__init__(self)
+    def __init__(self, arg1, *, maxprint=None):
+        _spbase.__init__(self, arg1, maxprint=maxprint)
 
     @property
     def dtype(self):
@@ -55,8 +56,7 @@ class _data_matrix(_spbase):
         if isscalarlike(other):
             self.data *= other
             return self
-        else:
-            return NotImplemented
+        return NotImplemented
 
     def __itruediv__(self, other):  # self /= other
         if isscalarlike(other):
@@ -95,11 +95,6 @@ class _data_matrix(_spbase):
         return self._with_data(self.data.copy(), copy=True)
 
     copy.__doc__ = _spbase.copy.__doc__
-
-    def count_nonzero(self):
-        return np.count_nonzero(self._deduped_data())
-
-    count_nonzero.__doc__ = _spbase.count_nonzero.__doc__
 
     def power(self, n, dtype=None):
         """
@@ -194,6 +189,11 @@ class _minmax_mixin:
         major_index = np.compress(mask, major_index)
         value = np.compress(mask, value)
 
+        if isinstance(self, sparray):
+            coords = (major_index,)
+            shape = (M,)
+            return self._coo_container((value, coords), shape=shape, dtype=self.dtype)
+
         if axis == 0:
             return self._coo_container(
                 (value, (np.zeros(len(value), dtype=idx_dtype), major_index)),
@@ -223,7 +223,7 @@ class _minmax_mixin:
             if self.nnz == 0:
                 return zero
             m = min_or_max.reduce(self._deduped_data().ravel())
-            if self.nnz != np.prod(self.shape):
+            if self.nnz != math.prod(self.shape):
                 m = min_or_max(zero, m)
             return m
 
@@ -266,6 +266,9 @@ class _minmax_mixin:
                 else:
                     ret[i] = zero_ind
 
+        if isinstance(self, sparray):
+            return ret
+
         if axis == 1:
             ret = ret.reshape(-1, 1)
 
@@ -306,7 +309,7 @@ class _minmax_mixin:
             return int(mat.row[extreme_index]) * num_col + int(mat.col[extreme_index])
 
         # Cheap test for the rare case where we have no implicit zeros.
-        size = np.prod(self.shape)
+        size = math.prod(self.shape)
         if size == mat.nnz:
             return int(mat.row[extreme_index]) * num_col + int(mat.col[extreme_index])
 

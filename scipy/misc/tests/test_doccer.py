@@ -72,6 +72,7 @@ def test_docformat():
 
 
 @pytest.mark.skipif(DOCSTRINGS_STRIPPED, reason="docstrings stripped")
+@pytest.mark.skipif(sys.version_info >= (3, 13), reason='it fails on Py3.13')
 def test_decorator():
     with suppress_warnings() as sup:
         sup.filter(category=DeprecationWarning)

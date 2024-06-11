@@ -15,7 +15,7 @@ from typing import (
 )
 
 import numpy as np
-from scipy._lib._array_api import array_namespace
+from scipy._lib._array_api import array_namespace, is_numpy, size as xp_size
 
 
 AxisError: type[Exception]
@@ -55,6 +55,20 @@ else:
 
 IntNumber = Union[int, np.integer]
 DecimalNumber = Union[float, np.floating, np.integer]
+
+copy_if_needed: Optional[bool]
+
+if np.lib.NumpyVersion(np.__version__) >= "2.0.0":
+    copy_if_needed = None
+elif np.lib.NumpyVersion(np.__version__) < "1.28.0":
+    copy_if_needed = False
+else:
+    # 2.0.0 dev versions, handle cases where copy may or may not exist
+    try:
+        np.array([1]).__array__(copy=None)  # type: ignore[call-overload]
+        copy_if_needed = None
+    except TypeError:
+        copy_if_needed = False
 
 # Since Generator was introduced in numpy 1.17, the following condition is needed for
 # backward compatibility
@@ -254,8 +268,8 @@ def check_random_state(seed):
     if isinstance(seed, (np.random.RandomState, np.random.Generator)):
         return seed
 
-    raise ValueError('%r cannot be used to seed a numpy.random.RandomState'
-                     ' instance' % seed)
+    raise ValueError(f"'{seed}' cannot be used to seed a numpy.random.RandomState"
+                     " instance")
 
 
 def _asarray_validated(a, check_finite=True,
@@ -693,24 +707,24 @@ def _nan_allsame(a, axis, keepdims=False):
     return ((a0 == a) | np.isnan(a)).all(axis=axis, keepdims=keepdims)
 
 
-def _contains_nan(a, nan_policy='propagate', use_summation=True,
-                  policies=None):
-    if not isinstance(a, np.ndarray):
-        use_summation = False  # some array_likes ignore nans (e.g. pandas)
-    if policies is None:
-        policies = ['propagate', 'raise', 'omit']
-    if nan_policy not in policies:
-        raise ValueError("nan_policy must be one of {%s}" %
-                         ', '.join("'%s'" % s for s in policies))
+def _contains_nan(a, nan_policy='propagate', policies=None, *, xp=None):
+    if xp is None:
+        xp = array_namespace(a)
+    not_numpy = not is_numpy(xp)
 
-    if np.issubdtype(a.dtype, np.inexact):
-        # The summation method avoids creating a (potentially huge) array.
-        if use_summation:
-            with np.errstate(invalid='ignore', over='ignore'):
-                contains_nan = np.isnan(np.sum(a))
-        else:
-            contains_nan = np.isnan(a).any()
-    elif np.issubdtype(a.dtype, object):
+    if policies is None:
+        policies = {'propagate', 'raise', 'omit'}
+    if nan_policy not in policies:
+        raise ValueError(f"nan_policy must be one of {set(policies)}.")
+
+    inexact = (xp.isdtype(a.dtype, "real floating")
+               or xp.isdtype(a.dtype, "complex floating"))
+    if xp_size(a) == 0:
+        contains_nan = False
+    elif inexact:
+        # Faster and less memory-intensive than xp.any(xp.isnan(a))
+        contains_nan = xp.isnan(xp.max(a))
+    elif is_numpy(xp) and np.issubdtype(a.dtype, object):
         contains_nan = False
         for el in a.ravel():
             # isnan doesn't work on non-numeric elements
@@ -723,6 +737,10 @@ def _contains_nan(a, nan_policy='propagate', use_summation=True,
 
     if contains_nan and nan_policy == 'raise':
         raise ValueError("The input contains nan values")
+
+    if not_numpy and contains_nan and nan_policy=='omit':
+        message = "`nan_policy='omit' is incompatible with non-NumPy arrays."
+        raise ValueError(message)
 
     return contains_nan, nan_policy
 
@@ -791,15 +809,17 @@ def _rng_spawn(rng, n_children):
     return child_rngs
 
 
-def _get_nan(*data):
+def _get_nan(*data, xp=None):
+    xp = array_namespace(*data) if xp is None else xp
     # Get NaN of appropriate dtype for data
-    data = [np.asarray(item) for item in data]
+    data = [xp.asarray(item) for item in data]
     try:
-        dtype = np.result_type(*data, np.half)  # must be a float16 at least
+        min_float = getattr(xp, 'float16', xp.float32)
+        dtype = xp.result_type(*data, min_float)  # must be at least a float
     except DTypePromotionError:
         # fallback to float64
-        return np.array(np.nan, dtype=np.float64)[()]
-    return np.array(np.nan, dtype=dtype)[()]
+        dtype = xp.float64
+    return xp.asarray(xp.nan, dtype=dtype)[()]
 
 
 def normalize_axis_index(axis, ndim):
@@ -847,8 +867,8 @@ class _RichResult(dict):
         except KeyError as e:
             raise AttributeError(name) from e
 
-    __setattr__ = dict.__setitem__
-    __delattr__ = dict.__delitem__
+    __setattr__ = dict.__setitem__  # type: ignore[assignment]
+    __delattr__ = dict.__delitem__  # type: ignore[assignment]
 
     def __repr__(self):
         order_keys = ['message', 'success', 'status', 'fun', 'funl', 'x', 'xl',

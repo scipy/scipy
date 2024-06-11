@@ -9,11 +9,12 @@ from warnings import warn
 
 import numpy as np
 
+from .._lib._util import copy_if_needed
 from ._matrix import spmatrix
 from ._sparsetools import coo_tocsr, coo_todense, coo_matvec
 from ._base import issparse, SparseEfficiencyWarning, _spbase, sparray
 from ._data import _data_matrix, _minmax_mixin
-from ._sputils import (upcast, upcast_char, to_native, isshape, getdtype,
+from ._sputils import (upcast_char, to_native, isshape, getdtype,
                        getdata, downcast_intp_index, get_index_dtype,
                        check_shape, check_reshape_kwargs)
 
@@ -23,9 +24,11 @@ import operator
 class _coo_base(_data_matrix, _minmax_mixin):
     _format = 'coo'
 
-    def __init__(self, arg1, shape=None, dtype=None, copy=False):
-        _data_matrix.__init__(self)
+    def __init__(self, arg1, shape=None, dtype=None, copy=False, *, maxprint=None):
+        _data_matrix.__init__(self, arg1, maxprint=maxprint)
         is_array = isinstance(self, sparray)
+        if not copy:
+            copy = copy_if_needed
 
         if isinstance(arg1, tuple):
             if isshape(arg1, allow_1d=is_array):
@@ -76,7 +79,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
                 if not is_array:
                     M = np.atleast_2d(M)
                     if M.ndim != 2:
-                        raise TypeError('expected dimension <= 2 array or matrix')
+                        raise TypeError(f'expected 2D array or matrix, not {M.ndim}D')
 
                 self._shape = check_shape(M.shape, allow_1d=is_array)
                 if shape is not None:
@@ -91,7 +94,8 @@ class _coo_base(_data_matrix, _minmax_mixin):
                 self.has_canonical_format = True
 
         if dtype is not None:
-            self.data = self.data.astype(dtype, copy=False)
+            newdtype = getdtype(dtype)
+            self.data = self.data.astype(newdtype, copy=False)
 
         self._check()
 
@@ -178,6 +182,21 @@ class _coo_base(_data_matrix, _minmax_mixin):
                            minlength=self.shape[1 - axis])
 
     _getnnz.__doc__ = _spbase._getnnz.__doc__
+
+    def count_nonzero(self, axis=None):
+        self.sum_duplicates()
+        if axis is None:
+            return np.count_nonzero(self.data)
+
+        if axis < 0:
+            axis += self.ndim
+        if axis < 0 or axis >= self.ndim:
+            raise ValueError('axis out of bounds')
+        mask = self.data != 0
+        coord = self.coords[1 - axis][mask]
+        return np.bincount(downcast_intp_index(coord), minlength=self.shape[1 - axis])
+
+    count_nonzero.__doc__ = _spbase.count_nonzero.__doc__
 
     def _check(self):
         """ Checks data structure for consistency """
@@ -304,19 +323,10 @@ class _coo_base(_data_matrix, _minmax_mixin):
         if self.nnz == 0:
             return self._csc_container(self.shape, dtype=self.dtype)
         else:
-            M,N = self.shape
-            idx_dtype = self._get_index_dtype(self.coords, maxval=max(self.nnz, M))
-            row = self.row.astype(idx_dtype, copy=False)
-            col = self.col.astype(idx_dtype, copy=False)
+            from ._csc import csc_array
+            indptr, indices, data, shape = self._coo_to_compressed(csc_array._swap)
 
-            indptr = np.empty(N + 1, dtype=idx_dtype)
-            indices = np.empty_like(row, dtype=idx_dtype)
-            data = np.empty_like(self.data, dtype=upcast(self.dtype))
-
-            coo_tocsr(N, M, self.nnz, col, row, self.data,
-                      indptr, indices, data)
-
-            x = self._csc_container((data, indices, indptr), shape=self.shape)
+            x = self._csc_container((data, indices, indptr), shape=shape)
             if not self.has_canonical_format:
                 x.sum_duplicates()
             return x
@@ -341,27 +351,44 @@ class _coo_base(_data_matrix, _minmax_mixin):
                [0, 0, 0, 1]])
 
         """
-        if self.ndim != 2:
-            raise ValueError("Cannot convert a 1d sparse array to csr format")
         if self.nnz == 0:
             return self._csr_container(self.shape, dtype=self.dtype)
         else:
-            M,N = self.shape
-            idx_dtype = self._get_index_dtype(self.coords, maxval=max(self.nnz, N))
-            row = self.row.astype(idx_dtype, copy=False)
-            col = self.col.astype(idx_dtype, copy=False)
-
-            indptr = np.empty(M + 1, dtype=idx_dtype)
-            indices = np.empty_like(col, dtype=idx_dtype)
-            data = np.empty_like(self.data, dtype=upcast(self.dtype))
-
-            coo_tocsr(M, N, self.nnz, row, col, self.data,
-                      indptr, indices, data)
+            from ._csr import csr_array
+            arrays = self._coo_to_compressed(csr_array._swap, copy=copy)
+            indptr, indices, data, shape = arrays
 
             x = self._csr_container((data, indices, indptr), shape=self.shape)
             if not self.has_canonical_format:
                 x.sum_duplicates()
             return x
+
+    def _coo_to_compressed(self, swap, copy=False):
+        """convert (shape, coords, data) to (indptr, indices, data, shape)"""
+        M, N = swap(self._shape_as_2d)
+        # convert idx_dtype intc to int32 for pythran.
+        # tested in scipy/optimize/tests/test__numdiff.py::test_group_columns
+        idx_dtype = self._get_index_dtype(self.coords, maxval=max(self.nnz, N))
+
+        if self.ndim == 1:
+            indices = self.coords[0].copy() if copy else self.coords[0]
+            nnz = len(indices)
+            indptr = np.array([0, nnz], dtype=idx_dtype)
+            data = self.data.copy() if copy else self.data
+            return indptr, indices, data, self.shape
+
+        # ndim == 2
+        major, minor = swap(self.coords)
+        nnz = len(major)
+        major = major.astype(idx_dtype, copy=False)
+        minor = minor.astype(idx_dtype, copy=False)
+
+        indptr = np.empty(M + 1, dtype=idx_dtype)
+        indices = np.empty_like(minor, dtype=idx_dtype)
+        data = np.empty_like(self.data, dtype=self.dtype)
+
+        coo_tocsr(M, N, nnz, major, minor, self.data, indptr, indices, data)
+        return indptr, indices, data, self.shape
 
     def tocoo(self, copy=False):
         if copy:
@@ -396,12 +423,15 @@ class _coo_base(_data_matrix, _minmax_mixin):
     todia.__doc__ = _spbase.todia.__doc__
 
     def todok(self, copy=False):
-        if self.ndim != 2:
-            raise ValueError("Cannot convert a 1d sparse array to dok format")
         self.sum_duplicates()
-        dok = self._dok_container((self.shape), dtype=self.dtype)
-        dok._update(zip(zip(self.row,self.col),self.data))
+        dok = self._dok_container(self.shape, dtype=self.dtype)
+        # ensure that 1d coordinates are not tuples
+        if self.ndim == 1:
+            coords = self.coords[0]
+        else:
+            coords = zip(*self.coords)
 
+        dok._dict = dict(zip(coords, self.data))
         return dok
 
     todok.__doc__ = _spbase.todok.__doc__

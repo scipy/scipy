@@ -328,68 +328,51 @@ int NRFormat_from_spMatrix(SuperMatrix * A, int m, int n, int nnz,
                            PyArrayObject * nzvals, PyArrayObject * colind,
                            PyArrayObject * rowptr, int typenum)
 {
-    volatile int ok = 0;
-    volatile jmp_buf *jmpbuf_ptr;
-
-    ok = (PyArray_EquivTypenums(PyArray_TYPE(nzvals), typenum) &&
-          PyArray_EquivTypenums(PyArray_TYPE(colind), NPY_INT) &&
-          PyArray_EquivTypenums(PyArray_TYPE(rowptr), NPY_INT) &&
-          PyArray_NDIM(nzvals) == 1 &&
-          PyArray_NDIM(colind) == 1 &&
-          PyArray_NDIM(rowptr) == 1 &&
-          PyArray_IS_C_CONTIGUOUS(nzvals) &&
-          PyArray_IS_C_CONTIGUOUS(colind) &&
-          PyArray_IS_C_CONTIGUOUS(rowptr) &&
-          nnz <= PyArray_DIM(nzvals, 0) &&
-          nnz <= PyArray_DIM(colind, 0) &&
-          m+1 <= PyArray_DIM(rowptr, 0));
-    if (!ok) {
-        PyErr_SetString(PyExc_ValueError,
-                        "sparse matrix arrays must be 1-D C-contiguous and of proper "
-                        "sizes and types");
-        return -1;
-    }
-
-    jmpbuf_ptr = (volatile jmp_buf *)superlu_python_jmpbuf();
-    if (setjmp(*(jmp_buf*)jmpbuf_ptr)) {
-        return -1;
-    }
-    else {
-        if (!CHECK_SLU_TYPE(PyArray_TYPE(nzvals))) {
-            PyErr_SetString(PyExc_TypeError, "Invalid type for array.");
-            return -1;
-        }
-        Create_CompRow_Matrix(PyArray_TYPE(nzvals),
-                              A, m, n, nnz, PyArray_DATA((PyArrayObject*)nzvals),
-                              (int *) PyArray_DATA((PyArrayObject*)colind),
-                              (int *) PyArray_DATA((PyArrayObject*)rowptr),
-                              SLU_NR,
-                              NPY_TYPECODE_TO_SLU(PyArray_TYPE((PyArrayObject*)nzvals)),
-                              SLU_GE);
-    }
-
-    return 0;
+    return SparseFormat_from_spMatrix(A, m, n, nnz, 1, nzvals, colind, rowptr,
+                                      typenum, SLU_NR, SLU_GE, NULL, NULL);
 }
 
 int NCFormat_from_spMatrix(SuperMatrix * A, int m, int n, int nnz,
                            PyArrayObject * nzvals, PyArrayObject * rowind,
                            PyArrayObject * colptr, int typenum)
 {
+    return SparseFormat_from_spMatrix(A, m, n, nnz, 0, nzvals, rowind, colptr,
+                                      typenum, SLU_NC, SLU_GE, NULL, NULL);
+}
+
+/*
+ * Create a matrix in CSR, CSC or supernodal CSC format
+ *
+ * Notes on a few of the parameters:
+ *
+ * - `csr`: selects matrix format: 1=CSR, 0=CSC, -1=supernodal CSC
+ * - `identity_col_to_sup`: (for supernodal CSC only) must be int array {0,1,2,...,n-2,n-1,n-1}
+ * - `identity_sup_to_col`: (for supernodal CSC only) must be int array {0,1,...,n}
+ */
+int SparseFormat_from_spMatrix(SuperMatrix * A, int m, int n, int nnz, int csr,
+                               PyArrayObject * nzvals,
+                               PyArrayObject * indices,
+                               PyArrayObject * pointers,
+                               int typenum,
+                               Stype_t stype, Mtype_t mtype,
+                               int* identity_col_to_sup,
+                               int* identity_sup_to_col)
+{
     volatile int ok = 0;
     volatile jmp_buf *jmpbuf_ptr;
 
     ok = (PyArray_EquivTypenums(PyArray_TYPE(nzvals), typenum) &&
-          PyArray_EquivTypenums(PyArray_TYPE(rowind), NPY_INT) &&
-          PyArray_EquivTypenums(PyArray_TYPE(colptr), NPY_INT) &&
+          PyArray_EquivTypenums(PyArray_TYPE(indices), NPY_INT) &&
+          PyArray_EquivTypenums(PyArray_TYPE(pointers), NPY_INT) &&
           PyArray_NDIM(nzvals) == 1 &&
-          PyArray_NDIM(rowind) == 1 &&
-          PyArray_NDIM(colptr) == 1 &&
+          PyArray_NDIM(indices) == 1 &&
+          PyArray_NDIM(pointers) == 1 &&
           PyArray_IS_C_CONTIGUOUS(nzvals) &&
-          PyArray_IS_C_CONTIGUOUS(rowind) &&
-          PyArray_IS_C_CONTIGUOUS(colptr) &&
+          PyArray_IS_C_CONTIGUOUS(indices) &&
+          PyArray_IS_C_CONTIGUOUS(pointers) &&
           nnz <= PyArray_DIM(nzvals, 0) &&
-          nnz <= PyArray_DIM(rowind, 0) &&
-          n+1 <= PyArray_DIM(colptr, 0));
+          nnz <= PyArray_DIM(indices, 0) &&
+          (csr ? (m+1) : (n+1)) <= PyArray_DIM(pointers, 0));
     if (!ok) {
         PyErr_SetString(PyExc_ValueError,
                         "sparse matrix arrays must be 1-D C-contiguous and of proper "
@@ -406,12 +389,35 @@ int NCFormat_from_spMatrix(SuperMatrix * A, int m, int n, int nnz,
             PyErr_SetString(PyExc_TypeError, "Invalid type for array.");
             return -1;
         }
-        Create_CompCol_Matrix(PyArray_TYPE(nzvals),
-                              A, m, n, nnz, PyArray_DATA(nzvals),
-                              (int *) PyArray_DATA(rowind), (int *) PyArray_DATA(colptr),
-                              SLU_NC,
-                              NPY_TYPECODE_TO_SLU(PyArray_TYPE(nzvals)),
-                              SLU_GE);
+        if (csr == 1) {
+            Create_CompRow_Matrix(PyArray_TYPE(nzvals),
+                                  A, m, n, nnz, PyArray_DATA(nzvals),
+                                  (int *) PyArray_DATA(indices),
+                                  (int *) PyArray_DATA(pointers),
+                                  stype,
+                                  NPY_TYPECODE_TO_SLU(PyArray_TYPE(nzvals)),
+                                  mtype);
+        } else if (csr == 0) {
+            Create_CompCol_Matrix(PyArray_TYPE(nzvals),
+                                  A, m, n, nnz, PyArray_DATA(nzvals),
+                                  (int *) PyArray_DATA(indices),
+                                  (int *) PyArray_DATA(pointers),
+                                  stype,
+                                  NPY_TYPECODE_TO_SLU(PyArray_TYPE(nzvals)),
+                                  mtype);
+        } else if (csr == -1) {
+            /* We do not know if/which columns have the same sparsity structure, therefore
+             * nzval_colptr and rowind_colptr are both initialized from the pointers argument. */
+            Create_SuperNode_Matrix(PyArray_TYPE(nzvals),
+                                    A, m, n, nnz, PyArray_DATA(nzvals),
+                                    (int *) PyArray_DATA(pointers),
+                                    (int *) PyArray_DATA(indices),
+                                    (int *) PyArray_DATA(pointers),
+                                    identity_col_to_sup, identity_sup_to_col,
+                                    stype,
+                                    NPY_TYPECODE_TO_SLU(PyArray_TYPE(nzvals)),
+                                    mtype);
+        }
     }
 
     return 0;

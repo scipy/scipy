@@ -14,15 +14,13 @@ from numpy import floor, ceil, log, exp, sqrt, log1p, expm1, tanh, cosh, sinh
 import numpy as np
 
 from ._distn_infrastructure import (rv_discrete, get_distribution_names,
-                                    _check_shape, _ShapeInfo)
-import scipy.stats._boost as _boost
+                                    _vectorize_rvs_over_shapes,
+                                    _ShapeInfo, _isintegral)
 from ._biasedurn import (_PyFishersNCHypergeometric,
                          _PyWalleniusNCHypergeometric,
                          _PyStochasticLib3)
+import scipy.special._ufuncs as scu
 
-
-def _isintegral(x):
-    return x == np.round(x)
 
 
 class binom_gen(rv_discrete):
@@ -73,30 +71,38 @@ class binom_gen(rv_discrete):
 
     def _pmf(self, x, n, p):
         # binom.pmf(k) = choose(n, k) * p**k * (1-p)**(n-k)
-        return _boost._binom_pdf(x, n, p)
+        return scu._binom_pmf(x, n, p)
 
     def _cdf(self, x, n, p):
         k = floor(x)
-        return _boost._binom_cdf(k, n, p)
+        return scu._binom_cdf(k, n, p)
 
     def _sf(self, x, n, p):
         k = floor(x)
-        return _boost._binom_sf(k, n, p)
+        return scu._binom_sf(k, n, p)
 
     def _isf(self, x, n, p):
-        return _boost._binom_isf(x, n, p)
+        return scu._binom_isf(x, n, p)
 
     def _ppf(self, q, n, p):
-        return _boost._binom_ppf(q, n, p)
+        return scu._binom_ppf(q, n, p)
 
     def _stats(self, n, p, moments='mv'):
-        mu = _boost._binom_mean(n, p)
-        var = _boost._binom_variance(n, p)
+        mu = n * p
+        var = mu - n * np.square(p)
         g1, g2 = None, None
         if 's' in moments:
-            g1 = _boost._binom_skewness(n, p)
+            pq = p - np.square(p)
+            npq_sqrt = np.sqrt(n * pq)
+            t1 = np.reciprocal(npq_sqrt)
+            t2 = (2.0 * p) / npq_sqrt
+            g1 = t1 - t2
         if 'k' in moments:
-            g2 = _boost._binom_kurtosis_excess(n, p)
+            pq = p - np.square(p)
+            npq = n * pq
+            t1 = np.reciprocal(npq)
+            t2 = 6.0/n
+            g2 = t1 - t2
         return mu, var, g1, g2
 
     def _entropy(self, n, p):
@@ -324,7 +330,7 @@ class nbinom_gen(rv_discrete):
 
     def _pmf(self, x, n, p):
         # nbinom.pmf(k) = choose(k+n-1, n-1) * p**n * (1-p)**k
-        return _boost._nbinom_pdf(x, n, p)
+        return scu._nbinom_pmf(x, n, p)
 
     def _logpmf(self, x, n, p):
         coeff = gamln(n+x) - gamln(x+1) - gamln(n)
@@ -332,7 +338,7 @@ class nbinom_gen(rv_discrete):
 
     def _cdf(self, x, n, p):
         k = floor(x)
-        return _boost._nbinom_cdf(k, n, p)
+        return scu._nbinom_cdf(k, n, p)
 
     def _logcdf(self, x, n, p):
         k = floor(x)
@@ -351,22 +357,22 @@ class nbinom_gen(rv_discrete):
 
     def _sf(self, x, n, p):
         k = floor(x)
-        return _boost._nbinom_sf(k, n, p)
+        return scu._nbinom_sf(k, n, p)
 
     def _isf(self, x, n, p):
         with np.errstate(over='ignore'):  # see gh-17432
-            return _boost._nbinom_isf(x, n, p)
+            return scu._nbinom_isf(x, n, p)
 
     def _ppf(self, q, n, p):
         with np.errstate(over='ignore'):  # see gh-17432
-            return _boost._nbinom_ppf(q, n, p)
+            return scu._nbinom_ppf(q, n, p)
 
     def _stats(self, n, p):
         return (
-            _boost._nbinom_mean(n, p),
-            _boost._nbinom_variance(n, p),
-            _boost._nbinom_skewness(n, p),
-            _boost._nbinom_kurtosis_excess(n, p),
+            scu._nbinom_mean(n, p),
+            scu._nbinom_variance(n, p),
+            scu._nbinom_skewness(n, p),
+            scu._nbinom_kurtosis_excess(n, p),
         )
 
 
@@ -637,10 +643,10 @@ class hypergeom_gen(rv_discrete):
         return result
 
     def _pmf(self, k, M, n, N):
-        return _boost._hypergeom_pdf(k, n, N, M)
+        return scu._hypergeom_pmf(k, n, N, M)
 
     def _cdf(self, k, M, n, N):
-        return _boost._hypergeom_cdf(k, n, N, M)
+        return scu._hypergeom_cdf(k, n, N, M)
 
     def _stats(self, M, n, N):
         M, n, N = 1. * M, 1. * n, 1. * N
@@ -653,9 +659,9 @@ class hypergeom_gen(rv_discrete):
         g2 += 6. * n * N * (M - N) * m * (5. * M - 6)
         g2 /= n * N * (M - N) * m * (M - 2.) * (M - 3.)
         return (
-            _boost._hypergeom_mean(n, N, M),
-            _boost._hypergeom_variance(n, N, M),
-            _boost._hypergeom_skewness(n, N, M),
+            scu._hypergeom_mean(n, N, M),
+            scu._hypergeom_variance(n, N, M),
+            scu._hypergeom_skewness(n, N, M),
             g2,
         )
 
@@ -665,7 +671,7 @@ class hypergeom_gen(rv_discrete):
         return np.sum(entr(vals), axis=0)
 
     def _sf(self, k, M, n, N):
-        return _boost._hypergeom_sf(k, n, N, M)
+        return scu._hypergeom_sf(k, n, N, M)
 
     def _logsf(self, k, M, n, N):
         res = []
@@ -1164,8 +1170,8 @@ class randint_gen(rv_discrete):
     >>> x = np.arange(low - 5, high + 5)
     >>> ax.plot(x, randint.pmf(x, low, high), 'bo', ms=8, label='randint pmf')
     >>> ax.vlines(x, 0, randint.pmf(x, low, high), colors='b', lw=5, alpha=0.5)
-    
-    Alternatively, the distribution object can be called (as a function) to 
+
+    Alternatively, the distribution object can be called (as a function) to
     fix the shape and location. This returns a "frozen" RV object holding the
     given parameters fixed.
 
@@ -1176,7 +1182,7 @@ class randint_gen(rv_discrete):
     ...           lw=1, label='frozen pmf')
     >>> ax.legend(loc='lower center')
     >>> plt.show()
-    
+
     Check the relationship between the cumulative distribution function
     (``cdf``) and its inverse, the percent point function (``ppf``):
 
@@ -1305,8 +1311,9 @@ class zipf_gen(rv_discrete):
         return a > 1
 
     def _pmf(self, k, a):
+        k = k.astype(np.float64)
         # zipf.pmf(k, a) = 1/(zeta(a) * k**a)
-        Pk = 1.0 / special.zeta(a, 1) / k**a
+        Pk = 1.0 / special.zeta(a, 1) * k**-a
         return Pk
 
     def _munp(self, n, a):
@@ -1404,7 +1411,8 @@ class zipfian_gen(rv_discrete):
         return 1, n
 
     def _pmf(self, k, a, n):
-        return 1.0 / _gen_harmonic(n, a) / k**a
+        k = k.astype(np.float64)
+        return 1.0 / _gen_harmonic(n, a) * k**-a
 
     def _cdf(self, k, a, n):
         return _gen_harmonic(k, a) / _gen_harmonic(n, a)
@@ -1562,8 +1570,8 @@ class skellam_gen(rv_discrete):
     def _pmf(self, x, mu1, mu2):
         with np.errstate(over='ignore'):  # see gh-17432
             px = np.where(x < 0,
-                          _boost._ncx2_pdf(2*mu2, 2*(1-x), 2*mu1)*2,
-                          _boost._ncx2_pdf(2*mu1, 2*(1+x), 2*mu2)*2)
+                          scu._ncx2_pdf(2*mu2, 2*(1-x), 2*mu1)*2,
+                          scu._ncx2_pdf(2*mu1, 2*(1+x), 2*mu2)*2)
             # ncx2.pdf() returns nan's for extremely low probabilities
         return px
 
@@ -1571,8 +1579,8 @@ class skellam_gen(rv_discrete):
         x = floor(x)
         with np.errstate(over='ignore'):  # see gh-17432
             px = np.where(x < 0,
-                          _boost._ncx2_cdf(2*mu2, -2*x, 2*mu1),
-                          1 - _boost._ncx2_cdf(2*mu1, 2*(x+1), 2*mu2))
+                          scu._ncx2_cdf(2*mu2, -2*x, 2*mu1),
+                          1 - scu._ncx2_cdf(2*mu1, 2*(x+1), 2*mu2))
         return px
 
     def _stats(self, mu1, mu2):
@@ -1658,7 +1666,7 @@ class yulesimon_gen(rv_discrete):
                       np.inf)
         g1 = np.where(alpha <= 2, np.nan, g1)
         g2 = np.where(alpha > 4,
-                      alpha + 3 + ((alpha**3 - 49 * alpha - 22) /
+                      alpha + 3 + ((11 * alpha**3 - 49 * alpha - 22) /
                                    (alpha * (alpha - 4) * (alpha - 3))),
                       np.inf)
         g2 = np.where(alpha <= 2, np.nan, g2)
@@ -1666,44 +1674,6 @@ class yulesimon_gen(rv_discrete):
 
 
 yulesimon = yulesimon_gen(name='yulesimon', a=1)
-
-
-def _vectorize_rvs_over_shapes(_rvs1):
-    """Decorator that vectorizes _rvs method to work on ndarray shapes"""
-    # _rvs1 must be a _function_ that accepts _scalar_ args as positional
-    # arguments, `size` and `random_state` as keyword arguments.
-    # _rvs1 must return a random variate array with shape `size`. If `size` is
-    # None, _rvs1 must return a scalar.
-    # When applied to _rvs1, this decorator broadcasts ndarray args
-    # and loops over them, calling _rvs1 for each set of scalar args.
-    # For usage example, see _nchypergeom_gen
-    def _rvs(*args, size, random_state):
-        _rvs1_size, _rvs1_indices = _check_shape(args[0].shape, size)
-
-        size = np.array(size)
-        _rvs1_size = np.array(_rvs1_size)
-        _rvs1_indices = np.array(_rvs1_indices)
-
-        if np.all(_rvs1_indices):  # all args are scalars
-            return _rvs1(*args, size, random_state)
-
-        out = np.empty(size)
-
-        # out.shape can mix dimensions associated with arg_shape and _rvs1_size
-        # Sort them to arg_shape + _rvs1_size for easy indexing of dimensions
-        # corresponding with the different sets of scalar args
-        j0 = np.arange(out.ndim)
-        j1 = np.hstack((j0[~_rvs1_indices], j0[_rvs1_indices]))
-        out = np.moveaxis(out, j1, j0)
-
-        for i in np.ndindex(*size[~_rvs1_indices]):
-            # arg can be squeezed because singleton dimensions will be
-            # associated with _rvs1_size, not arg_shape per _check_shape
-            out[i] = _rvs1(*[np.squeeze(arg)[i] for arg in args],
-                           _rvs1_size, random_state)
-
-        return np.moveaxis(out, j0, j1)  # move axes back before returning
-    return _rvs
 
 
 class _nchypergeom_gen(rv_discrete):

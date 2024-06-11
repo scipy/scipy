@@ -8,6 +8,7 @@ py3.extension_module('_sigtools',
   ],
   dependencies: np_dep,
   link_args: version_link_args,
+  include_directories: ['../_build_utils/src'],
   install: true,
   subdir: 'scipy/signal'
 )
@@ -93,6 +94,8 @@ py3.install_sources([
     '_short_time_fft.py',
     '_signaltools.py',
     '_spectral_py.py',
+    '_spline.pyi',
+    '_splines.py',
     '_upfirdn.py',
     '_waveforms.py',
     '_wavelets.py',

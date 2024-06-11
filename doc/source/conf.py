@@ -8,6 +8,7 @@ from datetime import date
 from docutils import nodes
 from docutils.parsers.rst import Directive
 
+from intersphinx_registry import get_intersphinx_mapping
 import matplotlib
 import matplotlib.pyplot as plt
 from numpydoc.docscrape_sphinx import SphinxDocString
@@ -52,6 +53,7 @@ extensions = [
     'doi_role',
     'matplotlib.sphinxext.plot_directive',
     'myst_nb',
+    'jupyterlite_sphinx',
 ]
 
 
@@ -100,6 +102,9 @@ default_role = "autolink"
 # List of directories, relative to source directories, that shouldn't be searched
 # for source files.
 exclude_dirs = []
+exclude_patterns = [  # glob-style
+    "**.ipynb",
+]
 
 # If true, '()' will be appended to :func: etc. cross-reference text.
 add_function_parentheses = False
@@ -130,10 +135,6 @@ nitpick_ignore = [
     ("py:class", "(k, v), remove and return some (key, value) pair as a"),
     ("py:class", "None.  Update D from dict/iterable E and F."),
     ("py:class", "v, remove specified key and return the corresponding value."),
-]
-
-exclude_patterns = [  # glob-style
-
 ]
 
 # be strict about warnings in our examples, we should write clean code
@@ -205,30 +206,35 @@ html_sidebars = {
 }
 
 html_theme_options = {
-  "github_url": "https://github.com/scipy/scipy",
-  "twitter_url": "https://twitter.com/SciPy_team",
-  "header_links_before_dropdown": 6,
-  "icon_links": [],
-  "navbar_start": ["navbar-logo", "version-switcher"],
-  "navbar_persistent": [],
-  "switcher": {
-      "json_url": "https://scipy.github.io/devdocs/_static/version_switcher.json",
-      "version_match": version,
-  },
-  "show_version_warning_banner": True,
-  "secondary_sidebar_items": ["page-toc"],
-  # The service https://plausible.io is used to gather simple
-  # and privacy-friendly analytics for the site. The dashboard can be accessed
-  # at https://analytics.scientific-python.org/docs.scipy.org
-  # The Scientific-Python community is hosting and managing the account.
-  "analytics": {
-      "plausible_analytics_domain": "docs.scipy.org",
-      "plausible_analytics_url": "https://views.scientific-python.org/js/script.js",
-  }
+    "github_url": "https://github.com/scipy/scipy",
+    "twitter_url": "https://twitter.com/SciPy_team",
+    "header_links_before_dropdown": 6,
+    "icon_links": [],
+    "logo": {
+        "text": "SciPy",
+    },
+    "navbar_start": ["navbar-logo"],
+    "navbar_end": ["version-switcher", "theme-switcher", "navbar-icon-links"],
+    "navbar_persistent": [],
+    "switcher": {
+        "json_url": "https://scipy.github.io/devdocs/_static/version_switcher.json",
+        "version_match": version,
+    },
+    "show_version_warning_banner": True,
+    "secondary_sidebar_items": ["page-toc"],
+    # The service https://plausible.io is used to gather simple
+    # and privacy-friendly analytics for the site. The dashboard can be accessed
+    # at https://analytics.scientific-python.org/docs.scipy.org
+    # The Scientific-Python community is hosting and managing the account.
+    "analytics": {
+        "plausible_analytics_domain": "docs.scipy.org",
+        "plausible_analytics_url": "https://views.scientific-python.org/js/script.js",
+    },
 }
 
 if 'dev' in version:
     html_theme_options["switcher"]["version_match"] = "development"
+    html_theme_options["show_version_warning_banner"] = False
 
 if 'versionwarning' in tags:  # noqa: F821
     # Specific to docs.scipy.org deployment.
@@ -248,6 +254,7 @@ html_last_updated_fmt = '%b %d, %Y'
 
 html_css_files = [
     "scipy.css",
+    "try_examples.css",
 ]
 
 # html_additional_pages = {
@@ -266,15 +273,9 @@ mathjax_path = "scipy-mathjax/MathJax.js?config=scipy-mathjax"
 # -----------------------------------------------------------------------------
 # Intersphinx configuration
 # -----------------------------------------------------------------------------
-intersphinx_mapping = {
-    'python': ('https://docs.python.org/3', None),
-    'numpy': ('https://numpy.org/devdocs', None),
-    'neps': ('https://numpy.org/neps', None),
-    'matplotlib': ('https://matplotlib.org/stable', None),
-    'asv': ('https://asv.readthedocs.io/en/stable/', None),
-    'statsmodels': ('https://www.statsmodels.org/stable', None),
-}
-
+intersphinx_mapping = get_intersphinx_mapping(
+    packages={"python", "numpy", "neps", "matplotlib", "asv", "statsmodels", "mpmath"}
+)
 
 # -----------------------------------------------------------------------------
 # Numpy extensions
@@ -343,14 +344,7 @@ import warnings
 for key in (
         'interp2d` is deprecated',  # Deprecation of scipy.interpolate.interp2d
         'scipy.misc',  # scipy.misc deprecated in v1.10.0; use scipy.datasets
-        'kurtosistest only valid',  # intentionally "bad" excample in docstring
-        'scipy.signal.daub is deprecated',
-        'scipy.signal.qmf is deprecated',
-        'scipy.signal.cascade is deprecated',
-        'scipy.signal.morlet is deprecated',
-        'scipy.signal.morlet2 is deprecated',
-        'scipy.signal.ricker is deprecated',
-        'scipy.signal.cwt is deprecated',
+        '`kurtosistest` p-value may be',  # intentionally "bad" example in docstring
         ):
     warnings.filterwarnings(action='ignore', message='.*' + key + '.*')
 
@@ -388,6 +382,34 @@ plot_rcparams = {
 # -----------------------------------------------------------------------------
 
 nb_execution_mode = "auto"
+# Ignore notebooks generated by jupyterlite-sphinx for interactive examples.
+nb_execution_excludepatterns = ["_contents/*.ipynb"]
+# Prevent creation of transition syntax when adding footnotes
+# See https://github.com/executablebooks/MyST-Parser/issues/352
+myst_footnote_transition = False
+myst_enable_extensions = [
+    "colon_fence",
+    "dollarmath",
+    "substitution",
+]
+nb_render_markdown_format = "myst"
+render_markdown_format = "myst"
+# Fix rendering of MathJax objects in Jupyter notebooks
+myst_update_mathjax = False
+
+#------------------------------------------------------------------------------
+# Interactive examples with jupyterlite-sphinx
+#------------------------------------------------------------------------------
+global_enable_try_examples = True
+try_examples_global_button_text = "Try it in your browser!"
+try_examples_global_warning_text = (
+    "SciPy's interactive examples with Jupyterlite are experimental and may"
+    " not always work as expected. Execution of cells containing imports may"
+    " result in large downloads (up to 60MB of content for the first import"
+    " from SciPy). Load times when importing from SciPy may take roughly 10-20"
+    " seconds. If you notice any problems, feel free to open an"
+    " [issue](https://github.com/scipy/scipy/issues/new/choose)."
+)
 
 # -----------------------------------------------------------------------------
 # Source code links
