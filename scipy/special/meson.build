@@ -25,18 +25,19 @@ _ufuncs_pxi_pxd_sources = [
   fs.copyfile('_ufuncs_extra_code_common.pxi'),
 ]
 
-if meson.get_compiler('cpp').get_id() == 'msvc'
-  sf_error_state_extra_args = ['-DSCIPY_DLL_EXPORTS']
-  sf_error_state_consumer_extra_args = ['-DSCIPY_DLL_IMPORTS']
+if meson.get_compiler('cpp').get_id() in ['msvc', 'clang-cl', 'intel-cl']
+  scipy_export_dll_args = ['-DSCIPY_DLL_EXPORTS']
+  scipy_import_dll_args = ['-DSCIPY_DLL_IMPORTS']
 else
-  sf_error_state_extra_args = []
-  sf_error_state_consumer_extra_args = []
+  scipy_export_dll_args = []
+  scipy_import_dll_args = []
 endif
 
 sf_error_state_lib = shared_library('sf_error_state',
   ['sf_error_state.c'],
   include_directories: ['../_lib', '../_build_utils/src'],
-  cpp_args: ['-DSP_SPECFUN_ERROR'] + sf_error_state_extra_args,
+  cpp_args: ['-DSP_SPECFUN_ERROR'],
+  c_args: scipy_export_dll_args,
   install: true,
   install_dir: py3.get_install_dir() / 'scipy/special',
 )
@@ -66,7 +67,7 @@ cdflib_lib = static_library('cdflib',
 py3.extension_module('_special_ufuncs',
   ['_special_ufuncs.cpp', '_special_ufuncs_docs.cpp', 'sf_error.cc'],
   include_directories: ['../_lib', '../_build_utils/src'],
-  cpp_args: ['-DSP_SPECFUN_ERROR'] + sf_error_state_consumer_extra_args,
+  cpp_args: ['-DSP_SPECFUN_ERROR'] + scipy_import_dll_args,
   dependencies: [np_dep],
   link_with: [sf_error_state_lib],
   link_args: version_link_args,
@@ -78,7 +79,7 @@ py3.extension_module('_special_ufuncs',
 py3.extension_module('_gufuncs',
   ['_gufuncs.cpp', '_gufuncs_docs.cpp', 'sf_error.cc'],
   include_directories: ['../_lib', '../_build_utils/src'],
-  cpp_args: ['-DSP_SPECFUN_ERROR'] + sf_error_state_consumer_extra_args,
+  cpp_args: ['-DSP_SPECFUN_ERROR'] + scipy_import_dll_args,
   dependencies: [np_dep],
   link_with: [sf_error_state_lib],
   link_args: version_link_args,
@@ -134,8 +135,8 @@ py3.extension_module('_ufuncs',
     ufuncs_sources,
     uf_cython_gen.process(cython_special[0]),  # _ufuncs.pyx
   ],
-  c_args: [cython_c_args, Wno_maybe_uninitialized],
-  cpp_args: ['-DSP_SPECFUN_ERROR'] + sf_error_state_consumer_extra_args,
+  c_args: [cython_c_args, Wno_maybe_uninitialized] + scipy_import_dll_args,
+  cpp_args: ['-DSP_SPECFUN_ERROR'] + scipy_import_dll_args,
   include_directories: ['../_lib', '../_build_utils/src'],
   dependencies: [
     lapack_dep,
@@ -174,7 +175,7 @@ ufuncs_cxx_cpp_args = [
   '-DBOOST_MATH_STANDALONE=1',
   '-DCYTHON_EXTERN_C=extern "C"',
   '-DSP_SPECFUN_ERROR', # For error handling in special functions.
-] + sf_error_state_consumer_extra_args
+] + scipy_import_dll_args
 
 py3.extension_module('_ufuncs_cxx',
   [ufuncs_cxx_sources,
@@ -194,7 +195,7 @@ py3.extension_module('_ufuncs_cxx',
 py3.extension_module('_ellip_harm_2',
   [uf_cython_gen.process('_ellip_harm_2.pyx'), 'sf_error.cc'],
   c_args: cython_c_args,
-  cpp_args: ['-DSP_SPECFUN_ERROR'] + sf_error_state_consumer_extra_args,
+  cpp_args: ['-DSP_SPECFUN_ERROR'] + scipy_import_dll_args,
   include_directories: ['../_lib', '../_build_utils/src'],
   link_with: [sf_error_state_lib],
   link_args: version_link_args,
@@ -212,8 +213,8 @@ py3.extension_module('cython_special',
     'sf_error.cc',
     'dd_real_wrappers.cpp'
   ],
-  c_args: [cython_c_args, Wno_maybe_uninitialized],
-  cpp_args: ['-DSP_SPECFUN_ERROR'] + sf_error_state_consumer_extra_args,
+  c_args: [cython_c_args, Wno_maybe_uninitialized] + scipy_import_dll_args,
+  cpp_args: ['-DSP_SPECFUN_ERROR'] + scipy_import_dll_args,
   include_directories: ['../_lib', '../_build_utils/src'],
   link_args: version_link_args,
   dependencies: [np_dep, npymath_lib],
