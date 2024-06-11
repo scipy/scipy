@@ -9155,13 +9155,11 @@ class TestXP_Mean:
         # Check for warning if omitting NaNs causes empty slice
         message = 'After omitting NaNs...'
         with pytest.warns(RuntimeWarning, match=message):
-            res = _xp_mean(x * np.nan,  nan_policy='omit')
+            res = _xp_mean(x * np.nan, nan_policy='omit')
             ref = xp.asarray(xp.nan)
             xp_assert_equal(res, ref)
 
     def test_empty(self, xp):
-        # it's really a `SmallSampleWarning`, but not sure
-        # where it will be imported from yet
         message = 'One or more sample arguments is too small...'
         with pytest.warns(SmallSampleWarning, match=message):
             res = _xp_mean(xp.asarray([]))

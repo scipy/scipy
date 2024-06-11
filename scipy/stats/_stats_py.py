@@ -10953,20 +10953,20 @@ def _xp_mean(x, /, *, axis=None, weights=None, keepdims=False, nan_policy='propa
 
     Parameters
     ----------
-    x : real floating array
+    x : real array
         Array containing real numbers whose mean is desired.
     axis : int or tuple of ints, default: None
         If an int or tuple of ints, the axis or axes of the input along which
         to compute the statistic. The statistic of each axis-slice (e.g. row)
         of the input will appear in a corresponding element of the output.
         If ``None``, the input will be raveled before computing the statistic.
-    weights : real floating array, optional
+    weights : real array, optional
         If specified, an array of weights associated with the values in `x`;
         otherwise ``1``. If `weights` and `x` do not have the same shape, the
         arrays will be broadcasted before performing the calculation. See
         Notes for details.
     keepdims : boolean, optional
-        If this is set to True, the axes which are reduced are left
+        If this is set to ``True``, the axes which are reduced are left
         in the result as dimensions with length one. With this option,
         the result will broadcast correctly against the input array.
     nan_policy : {'propagate', 'omit', 'raise'}, default: 'propagate'
@@ -11000,7 +11000,7 @@ def _xp_mean(x, /, *, axis=None, weights=None, keepdims=False, nan_policy='propa
     .. math::
 
         \bar{x}_w = \frac{ \sum_{i=0}^{n-1} w_i x_i }
-                         { \sum_{i=0}^{n-1} i w_i }
+                         { \sum_{i=0}^{n-1} w_i }
 
     where :math:`n` is the number of elements along a slice. Note that this simplifies
     to the familiar :math:`(\sum_i x_i) / n` when the weights are all ``1`` (default).
@@ -11057,10 +11057,9 @@ def _xp_mean(x, /, *, axis=None, weights=None, keepdims=False, nan_policy='propa
             warnings.warn(message, SmallSampleWarning, stacklevel=2)
         return res
 
-    # avoid circular import
-    contains_nan, _ = _contains_nan(x, nan_policy, xp_ok=True, xp=xp)
+    contains_nan, _ = _contains_nan(x, nan_policy, xp_omit_okay=True, xp=xp)
     if weights is not None:
-        contains_nan_w, _ = _contains_nan(weights, nan_policy, xp_ok=True, xp=xp)
+        contains_nan_w, _ = _contains_nan(weights, nan_policy, xp_omit_okay=True, xp=xp)
         contains_nan = contains_nan | contains_nan_w
 
     # Handle `nan_policy='omit'` by giving zero weight to NaNs, whether they
@@ -11068,13 +11067,14 @@ def _xp_mean(x, /, *, axis=None, weights=None, keepdims=False, nan_policy='propa
     message = (too_small_1d_omit if (x.ndim == 1 or axis is None)
                else too_small_nd_omit)
     if contains_nan and nan_policy == 'omit':
-        i = xp.isnan(x)
-        i = (i | xp.isnan(weights)) if weights is not None else i
-        if xp.any(xp.all(i, axis=axis)):
+        nan_mask = xp.isnan(x)
+        if weights is not None:
+            nan_mask |= xp.isnan(weights)
+        if xp.any(xp.all(nan_mask, axis=axis)):
             warnings.warn(message, SmallSampleWarning, stacklevel=2)
         weights = xp.ones_like(x) if weights is None else weights
-        x = xp.where(i, xp.asarray(0, dtype=x.dtype), x)
-        weights = xp.where(i, xp.asarray(0, dtype=x.dtype), weights)
+        x = xp.where(nan_mask, xp.asarray(0, dtype=x.dtype), x)
+        weights = xp.where(nan_mask, xp.asarray(0, dtype=x.dtype), weights)
 
     # Perform the mean calculation itself
     if weights is None:

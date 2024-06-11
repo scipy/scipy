@@ -422,7 +422,7 @@ def _axis_nan_policy_test(hypotest, args, kwds, n_samples, n_outputs, paired,
             res = hypotest(*data1d, *args, nan_policy=nan_policy, **kwds)
         res_1db = unpacker(res)
 
-        assert_allclose(res_1db, res_1da, 1e-15)
+        assert_allclose(res_1db, res_1da, rtol=1e-15)
         res_1d[i] = res_1db
 
     res_1d = np.moveaxis(res_1d, -1, 0)
@@ -547,7 +547,7 @@ def test_axis_nan_policy_axis_is_None(hypotest, args, kwds, n_samples,
     all_results = list(res1db) + list(res1dc)
 
     if res1da is not None:
-        assert_allclose(res1db, res1da, 1e-15)
+        assert_allclose(res1db, res1da, rtol=1e-15)
         all_results += list(res1da)
 
     for item in all_results:
