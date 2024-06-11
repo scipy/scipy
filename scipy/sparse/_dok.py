@@ -422,7 +422,7 @@ class _dok_base(_spbase, IndexMixin, dict):
         .. deprecated:: 1.14.0
 
             `conjtransp` is deprecated and will be removed in v1.16.0.
-            Use `.T.conj()` instead.
+            Use ``.T.conj()`` instead.
         """
         msg = ("`conjtransp` is deprecated and will be removed in v1.16.0. "
                    "Use `.T.conj()` instead.")
