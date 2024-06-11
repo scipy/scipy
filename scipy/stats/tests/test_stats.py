@@ -8059,8 +8059,10 @@ class TestCdfDistanceValidation:
     def test_empty_distribution(self):
         # A ValueError should be raised when trying to measure the distance
         # between something and nothing.
-        assert_raises(ValueError, stats.wasserstein_distance, [], [2, 2])
-        assert_raises(ValueError, stats.wasserstein_distance, [1], [])
+        with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
+            stats.wasserstein_distance([], [2, 2])
+        with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
+            stats.wasserstein_distance([1], [])
 
     def test_inf_weight(self):
         # An inf weight is not valid.
