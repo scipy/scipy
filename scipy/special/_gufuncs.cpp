@@ -235,8 +235,8 @@ PyMODINIT_FUNC PyInit__gufuncs() {
     PyModule_AddObjectRef(_gufuncs, "_lqmn", _lqmn);
 
     PyObject *_sph_harm_all = SpecFun_NewGUFunc(
-        {static_cast<func_dd_D2_t>(special::sph_harm_all), static_cast<func_ff_F2_t>(special::sph_harm_all)}, 1,
-        "_sph_harm_all", sph_harm_all_doc, "(),()->(mp1,np1)"
+        {static_cast<func_dd_D2_t>(special::sph_harm_y_all), static_cast<func_ff_F2_t>(special::sph_harm_y_all)}, 1,
+        "_sph_harm_all", sph_harm_all_doc, "(),()->(mpmp1,np1)"
     );
     PyModule_AddObjectRef(_gufuncs, "_sph_harm_all", _sph_harm_all);
 

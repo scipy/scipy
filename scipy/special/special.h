@@ -112,7 +112,7 @@ void multi_assoc_legendre_p_all(
 }
 
 template <typename T>
-std::complex<T> sph_harm(long long int m, long long int n, T theta, T phi) {
+std::complex<T> sph_harm_y(long long int m, long long int n, T theta, T phi) {
     if (n < 0) {
         special::set_error("sph_harm", SF_ERROR_ARG, "n should not be negative");
         return std::numeric_limits<T>::quiet_NaN();
@@ -123,18 +123,18 @@ std::complex<T> sph_harm(long long int m, long long int n, T theta, T phi) {
         return std::numeric_limits<T>::quiet_NaN();
     }
 
-    return special::sph_harm(n, m, theta, phi);
+    return special::sph_harm_y(n, m, theta, phi);
 }
 
 template <typename T>
-std::complex<T> sph_harm(T m, T n, T theta, T phi) {
+std::complex<T> sph_harm_y(T m, T n, T theta, T phi) {
     if (static_cast<long>(m) != m || static_cast<long>(n) != n) {
         PyGILState_STATE gstate = PyGILState_Ensure();
         PyErr_WarnEx(PyExc_RuntimeWarning, "floating point number truncated to an integer", 1);
         PyGILState_Release(gstate);
     }
 
-    return sph_harm(static_cast<long>(m), static_cast<long>(n), theta, phi);
+    return sph_harm_y(static_cast<long>(m), static_cast<long>(n), theta, phi);
 }
 
 } // namespace

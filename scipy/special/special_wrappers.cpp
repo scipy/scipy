@@ -447,11 +447,11 @@ npy_cdouble special_lambertw(npy_cdouble z, long k, double tol) {
 }
 
 npy_cdouble special_sph_harm(long m, long n, double theta, double phi) {
-    return to_ccomplex(::sph_harm(m, n, theta, phi));
+    return to_ccomplex(::sph_harm_y(m, n, theta, phi));
 }
 
 npy_cdouble special_sph_harm_unsafe(double m, double n, double theta, double phi) {
-    return to_ccomplex(::sph_harm(static_cast<long>(m), static_cast<long>(n), theta, phi));
+    return to_ccomplex(::sph_harm_y(static_cast<long>(m), static_cast<long>(n), theta, phi));
 }
 
 double cephes_hyp2f1_wrap(double a, double b, double c, double x) { return special::cephes::hyp2f1(a, b, c, x); }

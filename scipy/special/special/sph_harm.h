@@ -4,37 +4,35 @@
 
 namespace special {
 
+template <typename T>
+void sph_harm_y_next(int m, T theta, std::tuple<const T (&)[2]> p, std::tuple<std::complex<T> (&)[2]> res) {
+    const auto &[p0] = p;
+    auto &[res0] = res;
+
+    res0[1] = p0[1] * std::exp(std::complex(T(0), m * theta));
+}
+
 template <typename T, typename... OutputVals, typename Func>
-void sph_harm_for_each_n(int n, int m, T theta, T phi, std::tuple<OutputVals (&)[2]...> res, Func f) {
+void sph_harm_y_for_each_n(int n, int m, T theta, T phi, std::tuple<OutputVals (&)[2]...> res, Func f) {
     static constexpr size_t N = sizeof...(OutputVals) - 1;
 
     grad_tuple_t<T[2], N> p;
-    sph_legendre_p_for_each_n(n, m, phi, tuples::ref(p), [m, res, f, theta](int n, auto &p_res) {
-        tuples::for_each(tuples::zip(p_res, res), [m, theta](auto &pr) {
-            const T(&p)[2] = std::get<0>(pr);
-            std::complex<T>(&res)[2] = std::get<1>(pr);
-
-            res[1] = p[1] * std::exp(std::complex(T(0), m * theta));
-        });
+    sph_legendre_p_for_each_n(n, m, phi, tuples::ref(p), [m, theta, res, &f](int n, grad_tuple_t<const T(&)[2], N> p) {
+        sph_harm_y_next(m, theta, p, res);
 
         f(n, m, res);
     });
 }
 
 template <typename T, typename... OutputVals, typename Func>
-void sph_harm_for_each_n_m(int n, int m, T theta, T phi, std::tuple<OutputVals (&)[2]...> res, Func f) {
+void sph_harm_y_for_each_n_m(int n, int m, T theta, T phi, std::tuple<OutputVals (&)[2]...> res, Func f) {
     static constexpr size_t N = sizeof...(OutputVals) - 1;
 
     grad_tuple_t<T[2], N> p;
     sph_legendre_p_for_each_n_m(
         n, m, phi, tuples::ref(p),
-        [theta, res, &f](int n, int m, grad_tuple_t<const T(&)[2], N> p_res) {
-            tuples::for_each(tuples::zip(p_res, res), [m, theta](auto &pr) {
-                const T(&p)[2] = std::get<0>(pr);
-                std::complex<T>(&res)[2] = std::get<1>(pr);
-
-                res[1] = p[1] * std::exp(std::complex(T(0), m * theta));
-            });
+        [theta, res, &f](int n, int m, grad_tuple_t<const T(&)[2], N> p) {
+            sph_harm_y_next(m, theta, p, res);
 
             f(n, m, res);
         }
@@ -42,11 +40,11 @@ void sph_harm_for_each_n_m(int n, int m, T theta, T phi, std::tuple<OutputVals (
 }
 
 template <typename T, typename... OutputVals>
-void sph_harm(int n, int m, T theta, T phi, std::tuple<OutputVals &...> res) {
+void sph_harm_y(int n, int m, T theta, T phi, std::tuple<OutputVals &...> res) {
     static constexpr size_t N = sizeof...(OutputVals) - 1;
 
     grad_tuple_t<std::complex<T>[2], N> res_n;
-    sph_harm_for_each_n(
+    sph_harm_y_for_each_n(
         n, m, theta, phi, tuples::ref(res_n), [](int n, int m, grad_tuple_t<const std::complex<T>(&)[2], N> res_n) {}
     );
 
@@ -54,20 +52,20 @@ void sph_harm(int n, int m, T theta, T phi, std::tuple<OutputVals &...> res) {
 }
 
 template <typename T>
-std::complex<T> sph_harm(int n, int m, T theta, T phi) {
+std::complex<T> sph_harm_y(int n, int m, T theta, T phi) {
     std::complex<T> res;
-    sph_harm(n, m, theta, phi, std::tie(res));
+    sph_harm_y(n, m, theta, phi, std::tie(res));
 
     return res;
 }
 
 template <typename T, typename OutMat>
-void sph_harm_all(T theta, T phi, OutMat y) {
+void sph_harm_y_all(T theta, T phi, OutMat y) {
     int m = (y.extent(0) - 1) / 2;
     int n = y.extent(1) - 1;
 
     std::tuple<std::complex<T>[2]> res;
-    sph_harm_for_each_n_m(
+    sph_harm_y_for_each_n_m(
         n, m, theta, phi, tuples::ref(res),
         [y](int n, int m, std::tuple<const std::complex<T>(&)[2]> res) {
             if (m >= 0) {

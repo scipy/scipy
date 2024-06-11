@@ -935,8 +935,8 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
     PyModule_AddObjectRef(_special_ufuncs, "_spherical_kn_d", _spherical_kn_d);
 
     PyObject *sph_harm = SpecFun_NewUFunc(
-        {static_cast<func_qqdd_D_t>(::sph_harm), static_cast<func_dddd_D_t>(::sph_harm),
-         static_cast<func_qqff_F_t>(::sph_harm), static_cast<func_ffff_F_t>(::sph_harm)},
+        {static_cast<func_qqdd_D_t>(::sph_harm_y), static_cast<func_dddd_D_t>(::sph_harm_y),
+         static_cast<func_qqff_F_t>(::sph_harm_y), static_cast<func_ffff_F_t>(::sph_harm_y)},
         "sph_harm", sph_harm_doc
     );
     PyModule_AddObjectRef(_special_ufuncs, "sph_harm", sph_harm);
