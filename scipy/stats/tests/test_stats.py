@@ -7950,44 +7950,42 @@ class TestKruskal:
 @array_api_compatible
 class TestCombinePvalues:
     # Reference values computed using the following R code:
-    # > options(digits=16)
-    # > library(metap)
-    # > x1 = c(0.01, 0.2, 0.3)
-    @pytest.mark.parametrize("method,pvalues,expected_statistic,expected_pvalue",
-    # > sumlog(x1)
-                             [("fisher", [.01, .2, .3],
-                               14.83716180549625 , 0.02156175132483465),
-    # > sumz(x1)
-                              ("stouffer", [.01, .2, .3],
-                               2.131790594240385, 0.01651203260896294),
-    # > sumlog(1-x)
-    # minus sign is flipped for the statistic and 1-p for the pvalue
-                              ("pearson", [.01, .2, .3],
-                               -1.179737662212887, 1-0.9778736999143087),
-    # > minimump(x1)
-                              ("tippett", [.01, .2, .3],
-                               0.01, 0.02970100000000002),
-    # > library(transite)
-    # > p_combine(x1, method="MG")
-                              ("mudholkar_george", [.01, .2, .3],
-                               6.828712071641684, 0.01654551838539527)])
-    def test_reference_values(self, xp, method, pvalues, expected_statistic,
-                              expected_pvalue):
-        res = stats.combine_pvalues(xp.asarray(pvalues), method=method)
+    # options(digits=16)
+    # library(metap)
+    # x = c(0.01, 0.2, 0.3)
+    # sumlog(x)  # fisher
+    # sumz(x)  # stouffer
+    # sumlog(1-x)  # pearson (negative statistic and complement of p-value)
+    # minimump(x)  # tippett
+    @pytest.mark.parametrize(
+        "method, expected_statistic, expected_pvalue",
+        [("fisher", 14.83716180549625 , 0.02156175132483465),
+         ("stouffer", 2.131790594240385, 0.01651203260896294),
+         ("pearson", -1.179737662212887, 1-0.9778736999143087),
+         ("tippett", 0.01, 0.02970100000000002),
+         # mudholkar_george: library(transite); p_combine(x, method="MG")
+         ("mudholkar_george", 6.828712071641684, 0.01654551838539527)])
+    def test_reference_values(self, xp, method, expected_statistic, expected_pvalue):
+        x = [.01, .2, .3]
+        res = stats.combine_pvalues(xp.asarray(x), method=method)
         xp_assert_close(res.statistic, xp.asarray(expected_statistic))
         xp_assert_close(res.pvalue, xp.asarray(expected_pvalue))
 
-    @pytest.mark.parametrize("weights,expected",
-    # Same as no weights
-                             [([1., 1., 1.], 0.01651203260896294),
-    # > weights = c(1., 4., 9.)
-    # > sumz(x1, weights=weights)
-                              ([1., 4., 9.], 0.1464422142261314)])
-    def test_weighted_stouffer(self, xp, weights, expected):
-        pvalues = xp.asarray([.01, .2, .3])
-        res = stats.combine_pvalues(pvalues, method='stouffer',
-                                     weights=xp.asarray(weights))
-        xp_assert_close(res.pvalue, xp.asarray(expected), rtol=1e-3)
+    @pytest.mark.parametrize(
+        # Reference values computed using R `metap` `sumz`:
+        # options(digits=16)
+        # library(metap)
+        # x = c(0.01, 0.2, 0.3)
+        # sumz(x, weights=c(1., 1., 1.))
+        # sumz(x, weights=c(1., 4., 9.))
+        "weights, expected_statistic, expected_pvalue",
+        [([1., 1., 1.], 2.131790594240385, 0.01651203260896294),
+         ([1., 4., 9.], 1.051815015753598, 0.1464422142261314)])
+    def test_weighted_stouffer(self, xp, weights, expected_statistic, expected_pvalue):
+        x = xp.asarray([.01, .2, .3])
+        res = stats.combine_pvalues(x, method='stouffer', weights=xp.asarray(weights))
+        xp_assert_close(res.statistic, xp.asarray(expected_statistic))
+        xp_assert_close(res.pvalue, xp.asarray(expected_pvalue))
 
     methods = ["fisher", "pearson", "tippett", "stouffer", "mudholkar_george"]
 
