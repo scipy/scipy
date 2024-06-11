@@ -107,7 +107,7 @@ class TestNdimageFilters:
         # test correlate output dtype
         output = correlate(array, kernel, output=type2)
         assert_array_almost_equal(expected, output)
-        assert_equal(output.dtype.type, type2)
+        assert output.dtype.type == type2
 
         # test correlate with pre-allocated output
         output = np.zeros_like(array, dtype=type2)
@@ -120,12 +120,12 @@ class TestNdimageFilters:
             array, kernel, real_dtype, convolve=True, mode=mode, cval=cval,
         )
         assert_array_almost_equal(expected, output)
-        assert_equal(output.dtype.type, type2)
+        assert output.dtype.type == type2
 
         # convolve with pre-allocated output
         convolve(array, kernel, output=output)
         assert_array_almost_equal(expected, output)
-        assert_equal(output.dtype.type, type2)
+        assert output.dtype.type == type2
 
         # warns if the output is not a complex dtype
         with pytest.warns(UserWarning,
@@ -320,12 +320,12 @@ class TestNdimageFilters:
                           [4, 5, 6]], dtype_array)
         output = ndimage.correlate(array, kernel, output=dtype_kernel)
         assert_array_almost_equal([[2, 3, 5], [5, 6, 8]], output)
-        assert_equal(output.dtype.type, dtype_kernel)
+        assert output.dtype.type == dtype_kernel
 
         output = ndimage.convolve(array, kernel,
                                   output=dtype_kernel)
         assert_array_almost_equal([[6, 8, 9], [9, 11, 12]], output)
-        assert_equal(output.dtype.type, dtype_kernel)
+        assert output.dtype.type == dtype_kernel
 
     @pytest.mark.parametrize('dtype_array', types)
     @pytest.mark.parametrize('dtype_output', types)
@@ -337,11 +337,11 @@ class TestNdimageFilters:
         output = np.zeros(array.shape, dtype_output)
         ndimage.correlate(array, kernel, output=output)
         assert_array_almost_equal([[2, 3, 5], [5, 6, 8]], output)
-        assert_equal(output.dtype.type, dtype_output)
+        assert output.dtype.type == dtype_output
 
         ndimage.convolve(array, kernel, output=output)
         assert_array_almost_equal([[6, 8, 9], [9, 11, 12]], output)
-        assert_equal(output.dtype.type, dtype_output)
+        assert output.dtype.type == dtype_output
 
     @pytest.mark.parametrize('dtype_array', types)
     def test_correlate15(self, dtype_array):
@@ -351,11 +351,11 @@ class TestNdimageFilters:
                           [4, 5, 6]], dtype_array)
         output = ndimage.correlate(array, kernel, output=np.float32)
         assert_array_almost_equal([[2, 3, 5], [5, 6, 8]], output)
-        assert_equal(output.dtype.type, np.float32)
+        assert output.dtype.type == np.float32
 
         output = ndimage.convolve(array, kernel, output=np.float32)
         assert_array_almost_equal([[6, 8, 9], [9, 11, 12]], output)
-        assert_equal(output.dtype.type, np.float32)
+        assert output.dtype.type == np.float32
 
     @pytest.mark.parametrize('dtype_array', types)
     def test_correlate16(self, dtype_array):
@@ -364,11 +364,11 @@ class TestNdimageFilters:
         array = np.array([[1, 2, 3], [4, 5, 6]], dtype_array)
         output = ndimage.correlate(array, kernel, output=np.float32)
         assert_array_almost_equal([[1, 1.5, 2.5], [2.5, 3, 4]], output)
-        assert_equal(output.dtype.type, np.float32)
+        assert output.dtype.type == np.float32
 
         output = ndimage.convolve(array, kernel, output=np.float32)
         assert_array_almost_equal([[3, 4, 4.5], [4.5, 5.5, 6]], output)
-        assert_equal(output.dtype.type, np.float32)
+        assert output.dtype.type == np.float32
 
     def test_correlate17(self):
         array = np.array([1, 2, 3])
@@ -394,13 +394,13 @@ class TestNdimageFilters:
                                    output=np.float32,
                                    mode='nearest', origin=-1)
         assert_array_almost_equal([[6, 8, 9], [9, 11, 12]], output)
-        assert_equal(output.dtype.type, np.float32)
+        assert output.dtype.type == np.float32
 
         output = ndimage.convolve(array, kernel,
                                   output=np.float32,
                                   mode='nearest', origin=-1)
         assert_array_almost_equal([[2, 3, 5], [5, 6, 8]], output)
-        assert_equal(output.dtype.type, np.float32)
+        assert output.dtype.type == np.float32
 
     def test_correlate_mode_sequence(self):
         kernel = np.ones((2, 2))
@@ -420,13 +420,13 @@ class TestNdimageFilters:
                                    output=np.float32,
                                    mode='nearest', origin=[-1, 0])
         assert_array_almost_equal([[5, 6, 8], [8, 9, 11]], output)
-        assert_equal(output.dtype.type, np.float32)
+        assert output.dtype.type == np.float32
 
         output = ndimage.convolve(array, kernel,
                                   output=np.float32,
                                   mode='nearest', origin=[-1, 0])
         assert_array_almost_equal([[3, 5, 6], [6, 8, 9]], output)
-        assert_equal(output.dtype.type, np.float32)
+        assert output.dtype.type == np.float32
 
     @pytest.mark.parametrize('dtype_array', types)
     @pytest.mark.parametrize('dtype_output', types)
@@ -657,8 +657,8 @@ class TestNdimageFilters:
         input = np.array([[1, 2, 3],
                           [2, 4, 6]], np.float32)
         output = ndimage.gaussian_filter(input, 1.0)
-        assert_equal(input.dtype, output.dtype)
-        assert_equal(input.shape, output.shape)
+        assert input.dtype == output.dtype
+        assert input.shape == output.shape
 
     def test_gauss03(self):
         # single precision data
@@ -666,8 +666,8 @@ class TestNdimageFilters:
         input.shape = (100, 100)
         output = ndimage.gaussian_filter(input, [1.0, 1.0])
 
-        assert_equal(input.dtype, output.dtype)
-        assert_equal(input.shape, output.shape)
+        assert input.dtype == output.dtype
+        assert input.shape == output.shape
 
         # input.sum() is 49995000.0.  With single precision floats, we can't
         # expect more than 8 digits of accuracy, so use decimal=0 in this test.
@@ -680,8 +680,8 @@ class TestNdimageFilters:
         input.shape = (100, 100)
         otype = np.float64
         output = ndimage.gaussian_filter(input, [1.0, 1.0], output=otype)
-        assert_equal(output.dtype.type, np.float64)
-        assert_equal(input.shape, output.shape)
+        assert output.dtype.type == np.float64
+        assert input.shape == output.shape
         assert_(sumsq(input, output) > 1.0)
 
     def test_gauss05(self):
@@ -690,8 +690,8 @@ class TestNdimageFilters:
         otype = np.float64
         output = ndimage.gaussian_filter(input, [1.0, 1.0],
                                          order=1, output=otype)
-        assert_equal(output.dtype.type, np.float64)
-        assert_equal(input.shape, output.shape)
+        assert output.dtype.type == np.float64
+        assert input.shape == output.shape
         assert_(sumsq(input, output) > 1.0)
 
     def test_gauss06(self):
@@ -1123,7 +1123,7 @@ class TestNdimageFilters:
         output = ndimage.uniform_filter(
             array, filter_shape, output=dtype_output)
         assert_array_almost_equal([[4, 6, 10], [10, 12, 16]], output)
-        assert_equal(output.dtype.type, dtype_output)
+        assert output.dtype.type == dtype_output
 
     @pytest.mark.parametrize('dtype_array', complex_types)
     @pytest.mark.parametrize('dtype_output', complex_types)
@@ -1134,7 +1134,7 @@ class TestNdimageFilters:
         output = ndimage.uniform_filter(
             array, filter_shape, output=dtype_output)
         assert_array_almost_equal([[4, 6, 10], [10, 12, 16]], output.real)
-        assert_equal(output.dtype.type, dtype_output)
+        assert output.dtype.type == dtype_output
 
     def test_minimum_filter01(self):
         array = np.array([1, 2, 3, 4, 5])
@@ -2007,19 +2007,19 @@ def test_gaussian_truncate():
     arr = np.zeros((100, 100), float)
     arr[50, 50] = 1
     num_nonzeros_2 = (ndimage.gaussian_filter(arr, 5, truncate=2) > 0).sum()
-    assert_equal(num_nonzeros_2, 21**2)
+    assert num_nonzeros_2 == 21**2
     num_nonzeros_5 = (ndimage.gaussian_filter(arr, 5, truncate=5) > 0).sum()
-    assert_equal(num_nonzeros_5, 51**2)
+    assert num_nonzeros_5 == 51**2
 
     # Test truncate when sigma is a sequence.
     f = ndimage.gaussian_filter(arr, [0.5, 2.5], truncate=3.5)
     fpos = f > 0
     n0 = fpos.any(axis=0).sum()
     # n0 should be 2*int(2.5*3.5 + 0.5) + 1
-    assert_equal(n0, 19)
+    assert n0 == 19
     n1 = fpos.any(axis=1).sum()
     # n1 should be 2*int(0.5*3.5 + 0.5) + 1
-    assert_equal(n1, 5)
+    assert n1 == 5
 
     # Test gaussian_filter1d.
     x = np.zeros(51)

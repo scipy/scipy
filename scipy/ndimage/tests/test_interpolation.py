@@ -1084,7 +1084,7 @@ class TestNdimageInterpolation:
         for z in [2, [2, 2]]:
             arr = np.array(list(range(25))).reshape((5, 5)).astype(float)
             arr = ndimage.zoom(arr, z, order=order)
-            assert_equal(arr.shape, (10, 10))
+            assert arr.shape == (10, 10)
             assert_(np.all(arr[-1, :] != 0))
             assert_(np.all(arr[-1, :] >= (20 - eps)))
             assert_(np.all(arr[0, :] <= (5 + eps)))
