@@ -473,7 +473,7 @@ def cumulative_trapezoid(y, x=None, dx=1.0, axis=-1, initial=None):
 
     if initial is not None:
         if initial != 0:
-            raise ValueError("`initial` must be None or 0.")
+            raise ValueError("`initial` must be `None` or `0`.")
         if not np.isscalar(initial):
             raise ValueError("`initial` parameter should be a scalar.")
 
