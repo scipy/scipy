@@ -110,14 +110,14 @@ Support is provided in `scipy.special` for the following functions:
 and `scipy.special.chdtrc`.
 
 Support is provided in `scipy.stats` for the following functions:
-`scipy.stats.moment`, `scipy.stats.skew`, `scipy.stats.kurtosis`,
-`scipy.stats.kstat`, `scipy.stats.kstatvar`, `scipy.stats.circmean`,
-`scipy.stats.circvar`, `scipy.stats.circstd`, `scipy.stats.entropy`,
-`scipy.stats.variation` , `scipy.stats.sem`, `scipy.stats.ttest_1samp`,
-`scipy.stats.pearsonr`, `scipy.stats.chisquare`, `scipy.stats.skewtest`,
-`scipy.stats.kurtosistest`, `scipy.stats.normaltest`, `scipy.stats.jarque_bera`,
-`scipy.stats.bartlett`, `scipy.stats.power_divergence`, and
-`scipy.stats.monte_carlo_test`.
+`scipy.stats.describe`, `scipy.stats.moment`, `scipy.stats.skew`,
+`scipy.stats.kurtosis`, `scipy.stats.kstat`, `scipy.stats.kstatvar`,
+`scipy.stats.circmean`, `scipy.stats.circvar`, `scipy.stats.circstd`,
+`scipy.stats.entropy`, `scipy.stats.variation` , `scipy.stats.sem`,
+`scipy.stats.ttest_1samp`, `scipy.stats.pearsonr`, `scipy.stats.chisquare`,
+`scipy.stats.skewtest`, `scipy.stats.kurtosistest`, `scipy.stats.normaltest`,
+`scipy.stats.jarque_bera`, `scipy.stats.bartlett`, `scipy.stats.power_divergence`,
+and `scipy.stats.monte_carlo_test`.
 
 
 Implementation notes
