@@ -1,6 +1,6 @@
 import numpy as np
 from scipy._lib._util import _asarray_validated
-from scipy._lib._array_api import (array_namespace, size as xp_size,
+from scipy._lib._array_api import (array_namespace, size as xp_size, is_jax,
                                    xp_broadcast_promote)
 
 
@@ -97,10 +97,13 @@ def logsumexp(a, axis=None, b=None, keepdims=False, return_sign=False):
 
     """
     xp = array_namespace(a, b)
+    if is_jax(xp):
+        return xp.special.logsumexp(a, axis=axis, b=b, keepdims=keepdims,
+                                    return_sign=return_sign)
     a, b = xp_broadcast_promote(a, b, ensure_writeable=True)
     axis = tuple(range(a.ndim)) if axis is None else axis
 
-    if b is not None and xp.any(b==0):
+    if b is not None:
         a[b == 0] = -xp.inf
 
     # Scale by real part for complex inputs, because this affects

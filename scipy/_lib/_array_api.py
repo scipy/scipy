@@ -531,7 +531,7 @@ def xp_broadcast_promote(*args, ensure_writeable=False, xp=None):
             arg = xp.broadcast_to(arg, shape)
 
         # convert dtype/copy only if needed
-        if (arg.dtype != dtype) or ((arg.shape != shape) and ensure_writeable):
+        if (arg.dtype != dtype) or ensure_writeable:
             arg = xp.astype(arg, dtype, copy=True)
         out.append(arg)
 
