@@ -49,6 +49,11 @@ decltype(auto) tuple_map(std::tuple<T...> &t, Func f) {
     return std::apply([f](auto &...args) { return std::make_tuple(f(args)...); }, t);
 }
 
+template <typename... T, typename Func>
+decltype(auto) tuple_map(const std::tuple<T...> &t, Func f) {
+    return std::apply([f](const auto &...args) { return std::make_tuple(f(args)...); }, t);
+}
+
 template <typename... T, typename... Args>
 std::tuple<std::result_of_t<T(Args...)>...> tuple_call_each(std::tuple<T...> &t, Args &&...args) {
     return std::apply([&args...](auto &...elements) { return std::tie(elements(std::forward<Args>(args)...)...); }, t);
