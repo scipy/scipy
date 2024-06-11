@@ -11,6 +11,8 @@ from scipy.special import logsumexp, softmax
 
 @array_api_compatible
 @pytest.mark.usefixtures("skip_xp_backends")
+@pytest.mark.skip_xp_backends('jax.numpy',
+                              reasons=["JAX arrays do not support item assignment"])
 class TestLogSumExp:
     def test_logsumexp(self, xp):
         # Test with zero-size array

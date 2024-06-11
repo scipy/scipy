@@ -97,9 +97,6 @@ def logsumexp(a, axis=None, b=None, keepdims=False, return_sign=False):
 
     """
     xp = array_namespace(a, b)
-    if is_jax(xp):
-        return xp.special.logsumexp(a, axis=axis, b=b, keepdims=keepdims,
-                                    return_sign=return_sign)
     a, b = xp_broadcast_promote(a, b, ensure_writeable=True)
     axis = tuple(range(a.ndim)) if axis is None else axis
 
