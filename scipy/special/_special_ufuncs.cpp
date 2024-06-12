@@ -969,17 +969,17 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
     PyModule_AddObjectRef(_special_ufuncs, "sph_harm", sph_harm);
 
     PyObject *sph_harm_y = Py_BuildValue(
-        "(N,N)",
+        "(N,N,N)",
         SpecFun_NewUFunc(
             {static_cast<func_qqdd_D_t>(::sph_harm_y), static_cast<func_qqff_F_t>(::sph_harm_y)}, "sph_harm_y", nullptr
         ),
-        SpecFun_NewUFunc(
+        SpecFun_NewGUFunc(
             {static_cast<func_qqdd_DD2_t>(::sph_harm_y), static_cast<func_qqff_FF2_t>(::sph_harm_y)}, 2, "sph_harm_y",
-            nullptr
+            nullptr, "(),(),(),()->(),(2)"
         ),
-        SpecFun_NewUFunc(
+        SpecFun_NewGUFunc(
             {static_cast<func_qqdd_DD2D22_t>(::sph_harm_y), static_cast<func_qqff_FF2F22_t>(::sph_harm_y)}, 3,
-            "sph_harm_y", nullptr
+            "sph_harm_y", nullptr, "(),(),(),()->(),(2),(2,2)"
         )
     );
     PyModule_AddObjectRef(_special_ufuncs, "sph_harm_y", sph_harm_y);

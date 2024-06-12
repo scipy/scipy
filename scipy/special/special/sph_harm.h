@@ -5,41 +5,42 @@
 namespace special {
 
 template <typename T>
-void sph_harm_y_next(int m, T theta, std::tuple<const T (&)[2]> p, std::tuple<std::complex<T> (&)[2]> res) {
+void sph_harm_y_next(int m, T theta, std::tuple<const T (&)[2]> p, std::tuple<std::complex<T> &> res) {
     const auto &[p0] = p;
-    auto &[res0] = res;
 
-    res0[1] = p0[1] * std::exp(std::complex(T(0), m * theta));
+    std::complex<T> z = std::exp(std::complex(T(0), m * theta));
+    tuples::assign(res, {p0[1] * z});
 }
 
 template <typename T>
 void sph_harm_y_next(
     int m, T theta, std::tuple<const T (&)[2], const T (&)[2]> p,
-    std::tuple<std::complex<T> (&)[2], std::complex<T> (&)[2][2]> res
+    std::tuple<std::complex<T> &, std::complex<T> (&)[2]> res
 ) {
-    // incomplete
-
     const auto &[p0, p1] = p;
-    auto &[res0, res1] = res;
 
-    res0[1] = p0[1] * std::exp(std::complex(T(0), m * theta));
+    std::complex<T> z = std::exp(std::complex(T(0), m * theta));
+    tuples::assign(res, {p0[1] * z, {std::complex(T(0), T(m)) * p0[1] * z, p1[1] * z}});
 }
 
 template <typename T>
 void sph_harm_y_next(
     int m, T theta, std::tuple<const T (&)[2], const T (&)[2], const T (&)[2]> p,
-    std::tuple<std::complex<T> (&)[2], std::complex<T> (&)[2][2], std::complex<T> (&)[2][2][2]> res
+    std::tuple<std::complex<T> &, std::complex<T> (&)[2], std::complex<T> (&)[2][2]> res
 ) {
-    // incomplete
-
     const auto &[p0, p1, p2] = p;
-    auto &[res0, res1, res2] = res;
 
-    res0[1] = p0[1] * std::exp(std::complex(T(0), m * theta));
+    std::complex<T> z = std::exp(std::complex(T(0), m * theta));
+    tuples::assign(
+        res, {p0[1] * z,
+              {std::complex(T(0), T(m)) * p0[1] * z, p1[1] * z},
+              {{-T(m * m) * p0[0] * z, std::complex(T(0), T(m)) * p1[1] * z},
+               {std::complex(T(0), T(m)) * p1[1] * z, p2[1] * z}}}
+    );
 }
 
 template <typename T, typename... OutputVals, typename Func>
-void sph_harm_y_for_each_n(int n, int m, T theta, T phi, std::tuple<OutputVals (&)[2]...> res, Func f) {
+void sph_harm_y_for_each_n(int n, int m, T theta, T phi, std::tuple<OutputVals &...> res, Func f) {
     static constexpr size_t N = sizeof...(OutputVals) - 1;
 
     grad_tuple_t<T[2], N> p;
@@ -51,7 +52,7 @@ void sph_harm_y_for_each_n(int n, int m, T theta, T phi, std::tuple<OutputVals (
 }
 
 template <typename T, typename... OutputVals, typename Func>
-void sph_harm_y_for_each_n_m(int n, int m, T theta, T phi, std::tuple<OutputVals (&)[2]...> res, Func f) {
+void sph_harm_y_for_each_n_m(int n, int m, T theta, T phi, std::tuple<OutputVals &...> res, Func f) {
     static constexpr size_t N = sizeof...(OutputVals) - 1;
 
     grad_tuple_t<T[2], N> p;
@@ -69,12 +70,12 @@ template <typename T, typename... OutputVals>
 void sph_harm_y(int n, int m, T theta, T phi, std::tuple<OutputVals &...> res) {
     static constexpr size_t N = sizeof...(OutputVals) - 1;
 
-    grad_tuple_t<std::complex<T>[2], N, 2> res_n;
+    grad_tuple_t<std::complex<T>, N, 2> res_n;
     sph_harm_y_for_each_n(
-        n, m, theta, phi, tuples::ref(res_n), [](int n, int m, grad_tuple_t<const std::complex<T>(&)[2], N, 2> res_n) {}
+        n, m, theta, phi, tuples::ref(res_n), [](int n, int m, grad_tuple_t<std::complex<T> &, N, 2> res_n) {}
     );
 
-    std::get<0>(res) = std::get<0>(tuples::access(res_n, 1)); // needs to be updated to handle 
+    tuples::assign(res, res_n);
 }
 
 template <typename T>
@@ -93,14 +94,14 @@ void sph_harm_y_all(T theta, T phi, std::tuple<OutMats...> res) {
     int m_max = (res0.extent(0) - 1) / 2;
     int n_max = res0.extent(1) - 1;
 
-    grad_tuple_t<std::complex<T>[2], N> res_n_m;
+    grad_tuple_t<std::complex<T>, N, 2> res_n_m;
     sph_harm_y_for_each_n_m(
         n_max, m_max, theta, phi, tuples::ref(res_n_m),
-        [m_max, res](int n, int m, grad_tuple_t<std::complex<T>(&)[2], N> res_n_m) {
+        [m_max, res](int n, int m, grad_tuple_t<std::complex<T> &, N, 2> res_n_m) {
             if (m >= 0) {
-                tuples::call(res, m, n) = tuples::access(res_n_m, 1);
+                tuples::call(res, m, n) = res_n_m;
             } else {
-                tuples::call(res, m + 2 * m_max + 1, n) = tuples::access(res_n_m, 1);
+                tuples::call(res, m + 2 * m_max + 1, n) = res_n_m;
             }
         }
     );
