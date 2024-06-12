@@ -5,8 +5,7 @@ import numpy as np
 class MultiUFunc:
     __slots__ = ["_ufuncs_map", "resolve_out_shapes", "resolve_ufunc",
                  "__forces_complex_output", "_ufuncs"]
-    def __init__(self, ufuncs_map, *, resolve_ufunc=None,
-                 resolve_out_shapes=None, force_complex_output=False):
+    def __init__(self, ufuncs_map, *, force_complex_output=False):
 
         # Gather leaf level ufuncs from ufuncs_map.
         ufuncs = []
@@ -31,7 +30,6 @@ class MultiUFunc:
             if not isinstance(ufunc, np.ufunc):
                 raise ValueError("All leaf elements of ufuncs_map must have"
                                  f" type `numpy.ufunc`. Received {ufuncs_map}")
-
             if ufunc.__name__ in seen_names:
                 raise ValueError("ufuncs within ufuncs_map must all have"
                                  f" distinct names. Received {ufuncs_map}")
@@ -43,8 +41,8 @@ class MultiUFunc:
 
         self._ufuncs = tuple(ufuncs)
         self._ufuncs_map = ufuncs_map
-        self.resolve_out_shapes = resolve_out_shapes
-        self.resolve_ufunc = resolve_ufunc
+        self.resolve_out_shapes = None
+        self.resolve_ufunc = None
         self.__forces_complex_output = force_complex_output
 
     @property
