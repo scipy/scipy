@@ -20,15 +20,22 @@ class MultiUFunc:
         params = list(inspect.signature(func).parameters.values())[1:]
         new_sig = sig.replace(parameters=params)
 
-        def wrapper(**kwargs):
+        def resolve_ufunc(**kwargs):
             return func(self.ufuncs, **kwargs)
 
-        wrapper.__signature__ = new_sig
-        wrapper.__doc__ = \
+        resolve_ufunc.__signature__ = new_sig
+        docstring = func.__doc__
+        if docstring is not None:
+            resolve_ufunc.__doc__ = docstring
+        resolve_ufunc.__doc__ = \
             """Resolve to a ufunc based on keyword arguments."""
-        self.resolve_ufunc = wrapper
+        self.resolve_ufunc = resolve_ufunc
 
     def as_resolve_out_shapes(self, func):
+        if func.__doc__ is None:
+            func.__doc__ = \
+                """Resolve to output shapes based on relevant inputs."""
+        func.__name__ = "resolve_out_shapes"
         self.resolve_out_shapes = func
 
     def __call__(self, *args, **kwargs):
