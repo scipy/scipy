@@ -3476,4 +3476,5 @@ def _(n, m, theta_shape, phi_shape, nout):
     if ((not np.isscalar(n)) or (n < 0)):
         raise ValueError("n must be a non-negative integer.")
 
-    return nout * ((n + 1, 2 * abs(m) + 1) + np.broadcast_shapes(theta_shape, phi_shape),)
+    return nout * ((n + 1, 2 * abs(m) + 1) +
+        np.broadcast_shapes(theta_shape, phi_shape),)
