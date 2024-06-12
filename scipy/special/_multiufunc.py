@@ -4,7 +4,7 @@ import numpy as np
 
 class MultiUFunc:
     __slots__ = ["_ufuncs_map", "resolve_out_shapes", "resolve_ufunc",
-                 "__forces_complex_output", "_ufuncs"]
+                 "__forces_complex_output", "_ufuncs", "__instance_doc"]
     def __init__(self, ufuncs_map, *, force_complex_output=False):
 
         # Gather leaf level ufuncs from ufuncs_map.
@@ -44,6 +44,7 @@ class MultiUFunc:
         self.resolve_out_shapes = None
         self.resolve_ufunc = None
         self.__forces_complex_output = force_complex_output
+        self.__instance_doc = None
 
     @property
     def forces_complex_output(self):
@@ -85,8 +86,12 @@ class MultiUFunc:
         self.resolve_out_shapes = func
 
     def docstring(self, func):
-        """Set Call docstring to docstring of a decorated function."""
-        self.__call__.__doc__ = func.__doc__
+        """Set Docstring to docstring of decorated function."""
+        self.__instance_doc = func.__doc__
+
+    @property
+    def __doc__(self):
+        return self.__instance_doc
 
     def __call__(self, *args, **kwargs):
         ufunc = self.resolve_ufunc(**kwargs)
