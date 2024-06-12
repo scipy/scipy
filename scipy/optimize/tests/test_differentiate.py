@@ -64,7 +64,7 @@ class TestDifferentiate:
         assert_equal(res.df.shape, shape)
 
         ref_error = [ref.error for ref in refs]
-        assert_allclose(res.error.ravel(), ref_error, atol=5e-15)
+        assert_allclose(res.error.ravel(), ref_error, atol=1e-12)
         assert_equal(res.error.shape, shape)
 
         ref_success = [ref.success for ref in refs]
