@@ -2515,33 +2515,29 @@ cdef class Rotation:
             raise ValueError("Expected input of shape (3,) or (P, 3), "
                              "got {}.".format(vectors.shape))
 
-        single_vector = False
-        if vectors.shape == (3,):
-            single_vector = True
-            vectors = vectors[None, :]
-
         matrix = self.as_matrix()
+        if inverse:
+            matrix = np.swapaxes(matrix, -1, -2)
+
+        if vectors.shape == (3,):
+            return np.matmul(matrix, vectors)
         if self._single:
             matrix = matrix[None, :, :]
 
         n_vectors = vectors.shape[0]
         n_rotations = len(self._quat)
 
-        if n_vectors != 1 and n_rotations != 1 and n_vectors != n_rotations:
-            raise ValueError("Expected equal numbers of rotations and vectors "
-                             ", or a single rotation, or a single vector, got "
-                             "{} rotations and {} vectors.".format(
-                                n_rotations, n_vectors))
+        if n_rotations == 1:
+            return np.matmul(matrix, vectors, axes=[(-2, -1), (-1, -2), (-1, -2)])[0]
+        elif n_vectors == 1 or n_vectors == n_rotations:
+            return np.matmul(
+                matrix, vectors[:, None, :], axes=[(-2, -1), (-1, -2), (-1, 0)]
+            )[0]
 
-        if inverse:
-            result = np.einsum('ikj,ik->ij', matrix, vectors)
-        else:
-            result = np.einsum('ijk,ik->ij', matrix, vectors)
-
-        if self._single and single_vector:
-            return result[0]
-        else:
-            return result
+        raise ValueError("Expected equal numbers of rotations and vectors "
+                         ", or a single rotation, or a single vector, got "
+                         "{} rotations and {} vectors.".format(
+                         n_rotations, n_vectors))
 
     @cython.embedsignature(True)
     def __mul__(Rotation self, Rotation other):
