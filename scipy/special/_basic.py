@@ -1728,18 +1728,18 @@ def mathieu_odd_coef(m, q):
 
 assoc_legendre_p = MultiUFunc(assoc_legendre_p)
 
-@assoc_legendre_p.resolve_ufunc
+@assoc_legendre_p.as_resolve_ufunc
 def _(ufuncs, norm = False, diff_n = 0):
     return ufuncs[norm][diff_n]
 
 assoc_legendre_p_all = MultiUFunc(assoc_legendre_p_all)
 
-@assoc_legendre_p_all.resolve_ufunc
+@assoc_legendre_p_all.as_resolve_ufunc
 def _(ufuncs, norm = False, diff_n = 0):
     return ufuncs[norm][diff_n]
 
-@assoc_legendre_p_all.resolve_out_shapes
-def _(n, m, z_shape, nout):
+@assoc_legendre_p_all.as_resolve_out_shapes
+def _(m, n, z_shape, nout):
     if ((not np.isscalar(m)) or (abs(m) > n)):
         raise ValueError("m must be <= n.")
 
@@ -1750,17 +1750,17 @@ def _(n, m, z_shape, nout):
 
 sph_legendre_p = MultiUFunc(sph_legendre_p)
 
-@sph_legendre_p.resolve_ufunc
+@sph_legendre_p.as_resolve_ufunc
 def _(ufuncs, diff_n = 0):
     return ufuncs[diff_n]
 
 sph_legendre_p_all = MultiUFunc(sph_legendre_p_all)
 
-@sph_legendre_p_all.resolve_ufunc
+@sph_legendre_p_all.as_resolve_ufunc
 def _(ufuncs, diff_n = 0):
     return ufuncs[diff_n]
 
-@sph_legendre_p_all.resolve_out_shapes
+@sph_legendre_p_all.as_resolve_out_shapes
 def _(n, m, z_shape, nout):
     if ((not np.isscalar(m)) or (abs(m) > n)):
         raise ValueError("m must be <= n.")
@@ -1840,11 +1840,12 @@ def lpmn(m, n, z):
     return p, pd
 
 multi_assoc_legendre_p_all = MultiUFunc(multi_assoc_legendre_p_all,
-    force_out_complex = True)
+                                        force_complex_output=True)
 
-@multi_assoc_legendre_p_all.resolve_ufunc
-def _(ufuncs, norm = False, diff_n = 0):
+@multi_assoc_legendre_p_all.as_resolve_ufunc
+def _(ufuncs, norm=False, diff_n=0):
     return ufuncs[norm][diff_n]
+
 
 @multi_assoc_legendre_p_all.resolve_out_shapes
 def _(n, m, type_shape, z_shape, nout):
@@ -1854,6 +1855,7 @@ def _(n, m, type_shape, z_shape, nout):
         raise ValueError("n must be a non-negative integer.")
 
     return nout * ((n + 1, 2 * abs(m) + 1) + np.broadcast_shapes(type_shape, z_shape),)
+
 
 def clpmn(m, n, z, type = 3):
     """Associated Legendre function of the first kind for complex arguments.
@@ -2094,17 +2096,17 @@ def euler(n):
 
 legendre_p = MultiUFunc(legendre_p)
 
-@legendre_p.resolve_ufunc
+@legendre_p.as_resolve_ufunc
 def _(ufuncs, diff_n = 0):
     return ufuncs[diff_n]
 
 legendre_p_all = MultiUFunc(legendre_p_all)
 
-@legendre_p_all.resolve_ufunc
+@legendre_p_all.as_resolve_ufunc
 def _(ufuncs, diff_n = 0):
     return ufuncs[diff_n]
 
-@legendre_p_all.resolve_out_shapes
+@legendre_p_all.as_resolve_out_shapes
 def _(n, z_shape, nout):
     n = _nonneg_int_or_fail(n, 'n', strict=False)
 
@@ -3456,19 +3458,22 @@ def zeta(x, q=None, out=None):
     else:
         return _ufuncs._zeta(x, q, out)
 
-sph_harm_y = MultiUFunc(sph_harm_y, force_out_complex = True)
+sph_harm_y = MultiUFunc(sph_harm_y, force_complex_output=True)
 
-@sph_harm_y.resolve_ufunc
-def _(ufuncs, diff_n = 0):
+
+@sph_harm_y.as_resolve_ufunc
+def _(ufuncs, diff_n=0):
     return ufuncs[diff_n]
 
-sph_harm_y_all = MultiUFunc(sph_harm_y_all, force_out_complex = True)
+sph_harm_y_all = MultiUFunc(sph_harm_y_all, force_complex_output=True)
 
-@sph_harm_y_all.resolve_ufunc
-def _(ufuncs, diff_n = 0):
+
+@sph_harm_y_all.as_resolve_ufunc
+def _(ufuncs, diff_n=0):
     return ufuncs
 
-@sph_harm_y_all.resolve_out_shapes
+
+@sph_harm_y_all.as_resolve_out_shapes
 def _(n, m, theta_shape, phi_shape, nout):
     if ((not np.isscalar(m)) or (abs(m) > n)):
         raise ValueError("m must be <= n.")

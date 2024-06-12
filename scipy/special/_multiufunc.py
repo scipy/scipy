@@ -1,28 +1,32 @@
 import numpy as np
 
 class MultiUFunc:
-    def __init__(self, ufuncs, resolve_ufunc = None, resolve_out_shapes = None,
-                 force_out_complex = False):
+    def __init__(self, ufuncs, *, resolve_ufunc=None, resolve_out_shapes=None,
+                 force_complex_output=False):
         self.ufuncs = ufuncs
-        self._resolve_out_shapes = resolve_out_shapes
-        self._resolve_ufunc = resolve_ufunc
-        self._force_out_complex = force_out_complex
+        self.resolve_out_shapes = resolve_out_shapes
+        self.resolve_ufunc = resolve_ufunc
+        self.__forces_complex_output = force_complex_output
 
-    def resolve_ufunc(self, func):
-        self._resolve_ufunc = func
+    @property
+    def forces_complex_output(self):
+        return self.__forces_complex_output
 
-    def resolve_out_shapes(self, func):
-        self._resolve_out_shapes = func
+    def as_resolve_ufunc(self, func):
+        self.resolve_ufunc = func
+
+    def as_resolve_out_shapes(self, func):
+        self.resolve_out_shapes = func
 
     def __call__(self, *args, **kwargs):
-        ufunc = self._resolve_ufunc(self.ufuncs, **kwargs)
-        if ((ufunc.nout == 0) or (self._resolve_out_shapes is None)):
+        ufunc = self.resolve_ufunc(self.ufuncs, **kwargs)
+        if ((ufunc.nout == 0) or (self.resolve_out_shapes is None)):
             return ufunc(*args)
 
         ufunc_args = args[-ufunc.nin:] # array arguments to be passed to the ufunc
 
         ufunc_arg_shapes = tuple(np.shape(ufunc_arg) for ufunc_arg in ufunc_args)
-        ufunc_out_shapes = self._resolve_out_shapes(*args[:-ufunc.nin],
+        ufunc_out_shapes = self.resolve_out_shapes(*args[:-ufunc.nin],
             *ufunc_arg_shapes, ufunc.nout)
 
         ufunc_arg_dtypes = tuple((ufunc_arg.dtype if hasattr(ufunc_arg, 'dtype')
@@ -38,7 +42,7 @@ class MultiUFunc:
 
             ufunc_out_dtypes = ufunc.nout * (ufunc_out_dtype,)
 
-        if self._force_out_complex:
+        if self.forces_complex_output:
             ufunc_out_dtypes = tuple(np.result_type(1j, ufunc_out_dtype)
                 for ufunc_out_dtype in ufunc_out_dtypes)
 
