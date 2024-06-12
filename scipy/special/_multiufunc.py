@@ -1,6 +1,8 @@
 import numpy as np
 
 class MultiUFunc:
+    __slots__ = ["ufuncs", "resolve_out_shapes", "resolve_ufunc",
+                 "__forces_complex_output"]
     def __init__(self, ufuncs, *, resolve_ufunc=None, resolve_out_shapes=None,
                  force_complex_output=False):
         self.ufuncs = ufuncs
