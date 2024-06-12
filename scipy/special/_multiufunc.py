@@ -8,6 +8,7 @@ class MultiUFunc:
     def __init__(self, ufuncs_map, *, resolve_ufunc=None,
                  resolve_out_shapes=None, force_complex_output=False):
 
+        # Gather leaf level ufuncs from ufuncs_map.
         ufuncs = []
         def traverse(obj):
             if isinstance(obj, collections.abc.Mapping):
@@ -21,6 +22,9 @@ class MultiUFunc:
                 ufuncs.append(obj)
         traverse(ufuncs_map)
 
+        # Perform input validation to ensure all ufuncs in ufuncs_map are
+        # actually ufuncs, have distinct names, and all take the same input
+        # types.
         seen_names = set()
         seen_input_types = set()
         for ufunc in ufuncs:
@@ -48,6 +52,17 @@ class MultiUFunc:
         return self.__forces_complex_output
 
     def as_resolve_ufunc(self, func):
+        """Set `resolve_ufunc` method by decorating a function.
+
+        The decorated function's first argument should be a JSON-like
+        `ufuncs_map`, and additional arguments should be keywords which 
+        are used to dispatch to the correct ufunc at the leaf level of
+        `ufuncs_map`.
+        """
+        # Given func, we construct a wrapper which no longer takes the
+        # `ufuncs_map` as input, but instead gets it from the
+        # class. Use inspect to add an informative signature. Add a
+        # a docstring if none exists.
         sig = inspect.signature(func)
         params = list(inspect.signature(func).parameters.values())[1:]
         new_sig = sig.replace(parameters=params)
@@ -64,6 +79,7 @@ class MultiUFunc:
         self.resolve_ufunc = resolve_ufunc
 
     def as_resolve_out_shapes(self, func):
+        """Set `resolve_out_shapes` method by decorating a function."""
         if func.__doc__ is None:
             func.__doc__ = \
                 """Resolve to output shapes based on relevant inputs."""
