@@ -1,0 +1,78 @@
+name: Windows tests (MSVC + ifx + OpenBLAS)
+
+on:
+  push:
+    branches:
+      - maintenance/**
+  pull_request:
+    branches:
+      - main
+      - maintenance/**
+
+permissions:
+   contents: read  # to fetch code (actions/checkout)
+
+env:
+  WINDOWS_BASEKIT_URL: https://registrationcenter-download.intel.com/akdlm/IRC_NAS/7dff44ba-e3af-4448-841c-0d616c8da6e7/w_BaseKit_p_2024.1.0.595_offline.exe
+  CACHE_NUMBER: 6
+  SAMPLES_TAG: 2024.1.0
+  COMPILER_VERSION: 2024.1.0
+  TBB_VERSION: 2021.12.0
+  VS_VER: vs2022
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  get_commit_message:
+    name: Get commit message
+    uses: ./.github/workflows/commit_message.yml
+
+  fast_dev_py_fail_slow:
+    name: fail slow, fast, py3.12/npAny, dev.py
+    needs: get_commit_message
+    # Ensure (a) this doesn't run on forks by default, and
+    #        (b) it does run with Act locally (`github` doesn't exist there)
+    if: >
+      needs.get_commit_message.outputs.message == 1
+      && (github.repository == 'scipy/scipy' || github.repository == '')
+    runs-on: windows-2019
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4.1.1
+        with:
+          submodules: recursive
+      - name: cache install
+        id: cache-install
+        uses: actions/cache@v2
+        with:
+          path: |
+              C:\"Program Files (x86)"\Intel\oneAPI\setvars-vcvarsall.bat
+              C:\"Program Files (x86)"\Intel\oneAPI\setvars.bat
+              C:\"Program Files (x86)"\Intel\oneAPI\compiler
+          key: install-${{ env.CACHE_NUMBER }}-${{ env.WINDOWS_BASEKIT_URL }}-compiler
+      - name: install
+        if: steps.cache-install.outputs.cache-hit != 'true'
+        run: install_intel_oneAPI_windows.bat $WINDOWS_BASEKIT_URL
+      - name: Initialise Intel oneAPI
+        run: |
+          "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvarsx86_amd64.bat"
+          C:\"Program Files (x86)"\Intel\oneAPI\setvars.bat
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          architecture: 'x64'
+          cache: 'pip'
+          cache-dependency-path: 'environment.yml'
+
+      - name: pip-packages
+        run: |
+          pip install numpy cython pybind11 pythran meson ninja pytest pytest-xdist pytest-timeout pytest-fail-slow pooch rich_click click doit pydevtool hypothesis
+          python -m pip install -r requirements/openblas.txt
+
+      - name: Build
+        run: |
+          set CC=cl
+          python dev.py build -C-Duse-pythran=false
