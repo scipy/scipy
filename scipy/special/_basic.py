@@ -1729,14 +1729,14 @@ def mathieu_odd_coef(m, q):
 assoc_legendre_p = MultiUFunc(assoc_legendre_p)
 
 @assoc_legendre_p.as_resolve_ufunc
-def _(ufuncs, norm = False, diff_n = 0):
-    return ufuncs[norm][diff_n]
+def _(ufuncs_map, norm = False, diff_n = 0):
+    return ufuncs_map[norm][diff_n]
 
 assoc_legendre_p_all = MultiUFunc(assoc_legendre_p_all)
 
 @assoc_legendre_p_all.as_resolve_ufunc
-def _(ufuncs, norm = False, diff_n = 0):
-    return ufuncs[norm][diff_n]
+def _(ufuncs_map, norm = False, diff_n = 0):
+    return ufuncs_map[norm][diff_n]
 
 @assoc_legendre_p_all.as_resolve_out_shapes
 def _(m, n, z_shape, nout):
@@ -1841,6 +1841,7 @@ def lpmn(m, n, z):
 
 multi_assoc_legendre_p_all = MultiUFunc(multi_assoc_legendre_p_all,
                                         force_complex_output=True)
+
 
 @multi_assoc_legendre_p_all.as_resolve_ufunc
 def _(ufuncs, norm=False, diff_n=0):
@@ -2097,14 +2098,14 @@ def euler(n):
 legendre_p = MultiUFunc(legendre_p)
 
 @legendre_p.as_resolve_ufunc
-def _(ufuncs, diff_n = 0):
-    return ufuncs[diff_n]
+def _(ufuncs_map, diff_n = 0):
+    return ufuncs_map[diff_n]
 
 legendre_p_all = MultiUFunc(legendre_p_all)
 
 @legendre_p_all.as_resolve_ufunc
-def _(ufuncs, diff_n = 0):
-    return ufuncs[diff_n]
+def _(ufuncs_map, diff_n = 0):
+    return ufuncs_map[diff_n]
 
 @legendre_p_all.as_resolve_out_shapes
 def _(n, z_shape, nout):

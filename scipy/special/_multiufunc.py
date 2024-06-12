@@ -1,12 +1,44 @@
+import collections
 import inspect
 import numpy as np
 
 class MultiUFunc:
-    __slots__ = ["ufuncs", "resolve_out_shapes", "resolve_ufunc",
-                 "__forces_complex_output"]
-    def __init__(self, ufuncs, *, resolve_ufunc=None, resolve_out_shapes=None,
-                 force_complex_output=False):
-        self.ufuncs = ufuncs
+    __slots__ = ["_ufuncs_map", "resolve_out_shapes", "resolve_ufunc",
+                 "__forces_complex_output", "_ufuncs"]
+    def __init__(self, ufuncs_map, *, resolve_ufunc=None,
+                 resolve_out_shapes=None, force_complex_output=False):
+
+        ufuncs = []
+        def traverse(obj):
+            if isinstance(obj, collections.abc.Mapping):
+                for value in obj.values():
+                    traverse(value)
+            elif (isinstance(obj, collections.abc.Iterable)
+                and not isinstance(obj, (str, bytes))):
+                for item in obj:
+                    traverse(item)
+            else:
+                ufuncs.append(obj)
+        traverse(ufuncs_map)
+
+        seen_names = set()
+        seen_input_types = set()
+        for ufunc in ufuncs:
+            if not isinstance(ufunc, np.ufunc):
+                raise ValueError("All leaf elements of ufuncs_map must have"
+                                 f" type `numpy.ufunc`. Received {ufuncs_map}")
+
+            if ufunc.__name__ in seen_names:
+                raise ValueError("ufuncs within ufuncs_map must all have"
+                                 f" distinct names. Received {ufuncs_map}")
+            seen_names.add(ufunc.__name__)
+            seen_input_types.add(frozenset(x.split("->")[0] for x in ufunc.types))
+        if len(seen_input_types) > 1:
+            raise ValueError("All ufuncs in ufuncs_map must take the same"
+                             " input types.")
+
+        self._ufuncs = tuple(ufuncs)
+        self._ufuncs_map = ufuncs_map
         self.resolve_out_shapes = resolve_out_shapes
         self.resolve_ufunc = resolve_ufunc
         self.__forces_complex_output = force_complex_output
@@ -21,7 +53,7 @@ class MultiUFunc:
         new_sig = sig.replace(parameters=params)
 
         def resolve_ufunc(**kwargs):
-            return func(self.ufuncs, **kwargs)
+            return func(self._ufuncs_map, **kwargs)
 
         resolve_ufunc.__signature__ = new_sig
         docstring = func.__doc__
