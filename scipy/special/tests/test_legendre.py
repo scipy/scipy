@@ -670,8 +670,8 @@ class TestSphLegendreP:
         assert p_jac.shape == p.shape
         assert p_hess.shape == p_jac.shape
 
-        np.testing.assert_allclose(np.sin(phi) * p_hess,
-            -np.cos(phi) * p_jac - (n * (n + 1) * np.sin(phi) - m * m / np.sin(phi)) * p,
+        np.testing.assert_allclose(np.sin(phi) * p_hess, -np.cos(phi) * p_jac
+            - (n * (n + 1) * np.sin(phi) - m * m / np.sin(phi)) * p,
             rtol = 1e-05, atol = 1e-08)
 
 class TestLegendreFunctions:
@@ -1245,17 +1245,20 @@ def sph_legendre_p_2_m1(phi):
 def sph_legendre_p_3_0(phi):
     fac = sph_legendre_factor(3, 0)
 
-    return fac * (5 * np.square(np.cos(phi)) - 3) * np.cos(phi) / 2
+    return fac * (5 * np.square(np.cos(phi)) - 3) * \
+        np.cos(phi) / 2
 
 def sph_legendre_p_3_1(phi):
     fac = sph_legendre_factor(3, 1)
 
-    return -3 * fac * (5 * np.square(np.cos(phi)) - 1) * np.abs(np.sin(phi)) / 2
+    return -3 * fac * (5 * np.square(np.cos(phi)) - 1) * \
+        np.abs(np.sin(phi)) / 2
 
 def sph_legendre_p_3_2(phi):
     fac = sph_legendre_factor(3, 2)
 
-    return -15 * fac * (np.square(np.cos(phi)) - 1) * np.cos(phi)
+    return -15 * fac * (np.square(np.cos(phi)) - 1) * \
+        np.cos(phi)
 
 def sph_legendre_p_3_3(phi):
     fac = sph_legendre_factor(3, 3)
@@ -1270,27 +1273,32 @@ def sph_legendre_p_3_m3(phi):
 def sph_legendre_p_3_m2(phi):
     fac = sph_legendre_factor(3, -2)
 
-    return -fac * (np.square(np.cos(phi)) - 1) * np.cos(phi) / 8
+    return -fac * (np.square(np.cos(phi)) - 1) * \
+        np.cos(phi) / 8
 
 def sph_legendre_p_3_m1(phi):
     fac = sph_legendre_factor(3, -1)
 
-    return fac * (5 * np.square(np.cos(phi)) - 1) * np.abs(np.sin(phi)) / 8
+    return fac * (5 * np.square(np.cos(phi)) - 1) * \
+        np.abs(np.sin(phi)) / 8
 
 def sph_legendre_p_4_0(phi):
     fac = sph_legendre_factor(4, 0)
 
-    return fac * (35 * np.square(np.square(np.cos(phi))) - 30 * np.square(np.cos(phi)) + 3) / 8
+    return fac * (35 * np.square(np.square(np.cos(phi))) - \
+        30 * np.square(np.cos(phi)) + 3) / 8
 
 def sph_legendre_p_4_1(phi):
     fac = sph_legendre_factor(4, 1)
 
-    return -5 * fac * (7 * np.square(np.cos(phi)) - 3) * np.cos(phi) * np.abs(np.sin(phi)) / 2
+    return -5 * fac * (7 * np.square(np.cos(phi)) - 3) * \
+        np.cos(phi) * np.abs(np.sin(phi)) / 2
 
 def sph_legendre_p_4_2(phi):
     fac = sph_legendre_factor(4, 2)
 
-    return -15 * fac * (7 * np.square(np.cos(phi)) - 1) * (np.square(np.cos(phi)) - 1) / 2
+    return -15 * fac * (7 * np.square(np.cos(phi)) - 1) * \
+        (np.square(np.cos(phi)) - 1) / 2
 
 def sph_legendre_p_4_3(phi):
     fac = sph_legendre_factor(4, 3)
@@ -1310,17 +1318,20 @@ def sph_legendre_p_4_m4(phi):
 def sph_legendre_p_4_m3(phi):
     fac = sph_legendre_factor(4, -3)
 
-    return fac * np.power(np.abs(np.sin(phi)), 3) * np.cos(phi) / 48
+    return fac * np.power(np.abs(np.sin(phi)), 3) * \
+        np.cos(phi) / 48
 
 def sph_legendre_p_4_m2(phi):
     fac = sph_legendre_factor(4, -2)
 
-    return -fac * (7 * np.square(np.cos(phi)) - 1) * (np.square(np.cos(phi)) - 1) / 48
+    return -fac * (7 * np.square(np.cos(phi)) - 1) * \
+        (np.square(np.cos(phi)) - 1) / 48
 
 def sph_legendre_p_4_m1(phi):
     fac = sph_legendre_factor(4, -1)
 
-    return fac * (7 * np.square(np.cos(phi)) - 3) * np.cos(phi) * np.abs(np.sin(phi)) / 8
+    return fac * (7 * np.square(np.cos(phi)) - 3) * \
+        np.cos(phi) * np.abs(np.sin(phi)) / 8
 
 def sph_legendre_p_0_0_jac(phi):
     return np.zeros_like(phi)
@@ -1348,7 +1359,9 @@ def sph_legendre_p_2_0_jac(phi):
 def sph_legendre_p_2_1_jac(phi):
     fac = sph_legendre_factor(2, 1)
 
-    return 3 * fac * (-np.square(np.cos(phi)) * (2 * np.heaviside(np.sin(phi), 1) - 1) + np.abs(np.sin(phi)) * np.sin(phi))
+    return 3 * fac * (-np.square(np.cos(phi)) * \
+        (2 * np.heaviside(np.sin(phi), 1) - 1) + \
+        np.abs(np.sin(phi)) * np.sin(phi))
 
 def sph_legendre_p_2_2_jac(phi):
     fac = sph_legendre_factor(2, 2)
@@ -1363,7 +1376,9 @@ def sph_legendre_p_2_m2_jac(phi):
 def sph_legendre_p_2_m1_jac(phi):
     fac = sph_legendre_factor(2, -1)
 
-    return -fac * (-np.square(np.cos(phi)) * (2 * np.heaviside(np.sin(phi), 1) - 1) + np.abs(np.sin(phi)) * np.sin(phi)) / 2
+    return -fac * (-np.square(np.cos(phi)) * \
+        (2 * np.heaviside(np.sin(phi), 1) - 1) + \
+        np.abs(np.sin(phi)) * np.sin(phi)) / 2
 
 def sph_legendre_p_3_0_jac(phi):
     fac = sph_legendre_factor(3, 0)
@@ -1373,7 +1388,8 @@ def sph_legendre_p_3_0_jac(phi):
 def sph_legendre_p_3_1_jac(phi):
     fac = sph_legendre_factor(3, 1)
 
-    return 3 * fac * (11 - 15 * np.square(np.cos(phi))) * np.cos(phi) * (2 * np.heaviside(np.sin(phi), 1) - 1) / 2
+    return 3 * fac * (11 - 15 * np.square(np.cos(phi))) * np.cos(phi) * \
+        (2 * np.heaviside(np.sin(phi), 1) - 1) / 2
 
 def sph_legendre_p_3_2_jac(phi):
     fac = sph_legendre_factor(3, 2)
@@ -1398,49 +1414,62 @@ def sph_legendre_p_3_m2_jac(phi):
 def sph_legendre_p_3_m1_jac(phi):
     fac = sph_legendre_factor(3, -1)
 
-    return -fac * (11 - 15 * np.square(np.cos(phi))) * np.cos(phi) * (2 * np.heaviside(np.sin(phi), 1) - 1) / 8
+    return -fac * (11 - 15 * np.square(np.cos(phi))) * \
+        np.cos(phi) * \
+        (2 * np.heaviside(np.sin(phi), 1) - 1) / 8
 
 def sph_legendre_p_4_0_jac(phi):
     fac = sph_legendre_factor(4, 0)
 
-    return -5 * fac * (7 * np.square(np.cos(phi)) - 3) * np.sin(phi) * np.cos(phi) / 2
+    return -5 * fac * (7 * np.square(np.cos(phi)) - 3) * \
+        np.sin(phi) * np.cos(phi) / 2
 
 def sph_legendre_p_4_1_jac(phi):
     fac = sph_legendre_factor(4, 1)
 
-    return 5 * fac * (-3 + 27 * np.square(np.cos(phi)) - 28 * np.square(np.square(np.cos(phi)))) * (2 * np.heaviside(np.sin(phi), 1) - 1) / 2
+    return 5 * fac * (-3 + 27 * np.square(np.cos(phi)) - \
+        28 * np.square(np.square(np.cos(phi)))) * \
+        (2 * np.heaviside(np.sin(phi), 1) - 1) / 2
 
 def sph_legendre_p_4_2_jac(phi):
     fac = sph_legendre_factor(4, 2)
 
-    return 30 * fac * (7 * np.square(np.cos(phi)) - 4) * np.sin(phi) * np.cos(phi)
+    return 30 * fac * (7 * np.square(np.cos(phi)) - 4) * \
+        np.sin(phi) * np.cos(phi)
 
 def sph_legendre_p_4_3_jac(phi):
     fac = sph_legendre_factor(4, 3)
 
-    return -105 * fac * (4 * np.square(np.cos(phi)) - 1) * np.abs(np.sin(phi)) * np.sin(phi)
+    return -105 * fac * (4 * np.square(np.cos(phi)) - 1) * \
+        np.abs(np.sin(phi)) * np.sin(phi)
 
 def sph_legendre_p_4_4_jac(phi):
     fac = sph_legendre_factor(4, 4)
 
-    return -420 * fac * (np.square(np.cos(phi)) - 1) * np.sin(phi) * np.cos(phi)
+    return -420 * fac * (np.square(np.cos(phi)) - 1) * \
+        np.sin(phi) * np.cos(phi)
 
 def sph_legendre_p_4_m4_jac(phi):
     fac = sph_legendre_factor(4, -4)
 
-    return -fac * (np.square(np.cos(phi)) - 1) * np.sin(phi) * np.cos(phi) / 96
+    return -fac * (np.square(np.cos(phi)) - 1) * \
+        np.sin(phi) * np.cos(phi) / 96
 
 def sph_legendre_p_4_m3_jac(phi):
     fac = sph_legendre_factor(4, -3)
 
-    return fac * (4 * np.square(np.cos(phi)) - 1) * np.abs(np.sin(phi)) * np.sin(phi) / 48
+    return fac * (4 * np.square(np.cos(phi)) - 1) \
+        * np.abs(np.sin(phi)) * np.sin(phi) / 48
 
 def sph_legendre_p_4_m2_jac(phi):
     fac = sph_legendre_factor(4, -2)
 
-    return fac * (7 * np.square(np.cos(phi)) - 4) * np.sin(phi) * np.cos(phi) / 12
+    return fac * (7 * np.square(np.cos(phi)) - 4) * np.sin(phi) * \
+        np.cos(phi) / 12
 
 def sph_legendre_p_4_m1_jac(phi):
     fac = sph_legendre_factor(4, -1)
 
-    return -fac * (-3 + 27 * np.square(np.cos(phi)) - 28 * np.square(np.square(np.cos(phi)))) * (2 * np.heaviside(np.sin(phi), 1) - 1) / 8
+    return -fac * (-3 + 27 * np.square(np.cos(phi)) - \
+        28 * np.square(np.square(np.cos(phi)))) * \
+        (2 * np.heaviside(np.sin(phi), 1) - 1) / 8
