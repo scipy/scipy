@@ -6753,8 +6753,8 @@ def test_obrientransform():
     assert_array_almost_equal(result[0], expected, decimal=4)
 
 
-def check_equal_gmean(array_like, desired, axis=None, dtype=None, rtol=1e-7,
-                      weights=None, *, xp):
+def check_equal_gmean(array_like, desired, *, xp, axis=None, dtype=None, rtol=1e-7,
+                      weights=None):
     # Note this doesn't test when axis is not specified
     dtype = dtype or xp.float64
     array_like = xp.asarray(array_like, dtype=dtype)
@@ -6988,7 +6988,8 @@ class TestGeoMean:
         weights = np.ma.array([2, 5, 6, 4, 3, 5], mask=[0, 0, 0, 0, 0, 1])
         desired = 2.77748
         xp = np.ma  # check_equal_gmean uses xp.asarray; this will preserve the mask
-        check_equal_gmean(a, desired, weights=weights, rtol=1e-5, dtype=np.float64, xp=xp)
+        check_equal_gmean(a, desired, weights=weights, rtol=1e-5,
+                          dtype=np.float64, xp=xp)
 
 
 class TestPowMean:
