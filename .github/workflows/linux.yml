@@ -471,13 +471,9 @@ jobs:
     - name: Install pre-release pip
       run: |
         pip install -U --pre pip
-    # TODO: remove cython nightly install when cython does a release
-    - name: Install nightly Cython
+    - name: Install nightly NumPy and Cython
       run: |
-        pip install git+https://github.com/cython/cython
-    - name: Install nightly NumPy
-      run: |
-        pip install -i https://pypi.anaconda.org/scientific-python-nightly-wheels/simple numpy
+        pip install -i https://pypi.anaconda.org/scientific-python-nightly-wheels/simple cython numpy
     - name: Install Python dependencies
       run: |
         pip install git+https://github.com/serge-sans-paille/pythran
