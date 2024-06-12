@@ -1,3 +1,4 @@
+import inspect
 import numpy as np
 
 class MultiUFunc:
@@ -15,13 +16,23 @@ class MultiUFunc:
         return self.__forces_complex_output
 
     def as_resolve_ufunc(self, func):
-        self.resolve_ufunc = func
+        sig = inspect.signature(func)
+        params = list(inspect.signature(func).parameters.values())[1:]
+        new_sig = sig.replace(parameters=params)
+
+        def wrapper(**kwargs):
+            return func(self.ufuncs, **kwargs)
+
+        wrapper.__signature__ = new_sig
+        wrapper.__doc__ = \
+            """Resolve to a ufunc based on keyword arguments."""
+        self.resolve_ufunc = wrapper
 
     def as_resolve_out_shapes(self, func):
         self.resolve_out_shapes = func
 
     def __call__(self, *args, **kwargs):
-        ufunc = self.resolve_ufunc(self.ufuncs, **kwargs)
+        ufunc = self.resolve_ufunc(**kwargs)
         if ((ufunc.nout == 0) or (self.resolve_out_shapes is None)):
             return ufunc(*args)
 
