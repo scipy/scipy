@@ -93,17 +93,17 @@ PyMODINIT_FUNC PyInit__gufuncs() {
         SpecFun_NewGUFunc(
             {static_cast<func_d_d1_t>(::legendre_p_all), static_cast<func_f_f1_t>(::legendre_p_all),
              static_cast<func_D_D1_t>(::legendre_p_all), static_cast<func_F_F1_t>(::legendre_p_all)},
-            1, "legendre_p_all", nullptr, "()->(np1)"
+            1, "legendre_p_all_diff_0", nullptr, "()->(np1)"
         ),
         SpecFun_NewGUFunc(
             {static_cast<func_d_d1d1_t>(::legendre_p_all), static_cast<func_f_f1f1_t>(::legendre_p_all),
              static_cast<func_D_D1D1_t>(::legendre_p_all), static_cast<func_F_F1F1_t>(::legendre_p_all)},
-            2, "legendre_p_all", nullptr, "()->(np1),(np1)"
+            2, "legendre_p_all_diff_1", nullptr, "()->(np1),(np1)"
         ),
         SpecFun_NewGUFunc(
             {static_cast<func_d_d1d1d1_t>(::legendre_p_all), static_cast<func_f_f1f1f1_t>(::legendre_p_all),
              static_cast<func_D_D1D1D1_t>(::legendre_p_all), static_cast<func_F_F1F1F1_t>(::legendre_p_all)},
-            3, "legendre_p_all", nullptr, "()->(np1),(np1),(np1)"
+            3, "legendre_p_all_diff_2", nullptr, "()->(np1),(np1),(np1)"
         )
     );
     PyModule_AddObjectRef(_gufuncs, "legendre_p_all", legendre_p_all);
@@ -113,7 +113,7 @@ PyMODINIT_FUNC PyInit__gufuncs() {
         SpecFun_NewGUFunc(
             {[](double z, double_2d res) { ::assoc_legendre_p_all(assoc_legendre_norm, z, res); },
              [](float z, float_2d res) { ::assoc_legendre_p_all(assoc_legendre_norm, z, res); }},
-            1, "assoc_legendre_p_all", nullptr, "()->(np1,mpmp1)"
+            1, "assoc_legendre_p_all_norm_diff_0", nullptr, "()->(np1,mpmp1)"
         ),
         SpecFun_NewGUFunc(
             {[](double z, double_2d res, double_2d res_jac) {
@@ -122,7 +122,7 @@ PyMODINIT_FUNC PyInit__gufuncs() {
              [](float z, float_2d res, float_2d res_jac) {
                  ::assoc_legendre_p_all(assoc_legendre_norm, z, res, res_jac);
              }},
-            2, "assoc_legendre_p_all", nullptr, "()->(np1,mpmp1),(np1,mpmp1)"
+            2, "assoc_legendre_p_all_norm_diff_1", nullptr, "()->(np1,mpmp1),(np1,mpmp1)"
         ),
         SpecFun_NewGUFunc(
             {[](double z, double_2d res, double_2d res_jac, double_2d res_hess) {
@@ -131,13 +131,13 @@ PyMODINIT_FUNC PyInit__gufuncs() {
              [](float z, float_2d res, float_2d res_jac, float_2d res_hess) {
                  ::assoc_legendre_p_all(assoc_legendre_norm, z, res, res_jac, res_hess);
              }},
-            3, "assoc_legendre_p_all", nullptr, "()->(np1,mpmp1),(np1,mpmp1),(np1,mpmp1)"
+            3, "assoc_legendre_p_all_norm_diff_2", nullptr, "()->(np1,mpmp1),(np1,mpmp1),(np1,mpmp1)"
         ),
         Py_False,
         SpecFun_NewGUFunc(
             {[](double z, double_2d res) { ::assoc_legendre_p_all(assoc_legendre_unnorm, z, res); },
              [](float z, float_2d res) { ::assoc_legendre_p_all(assoc_legendre_unnorm, z, res); }},
-            1, "assoc_legendre_p_all", nullptr, "()->(np1,mpmp1)"
+            1, "assoc_legendre_p_all_unnorm_diff_0", nullptr, "()->(np1,mpmp1)"
         ),
         SpecFun_NewGUFunc(
             {[](double z, double_2d res, double_2d res_jac) {
@@ -146,7 +146,7 @@ PyMODINIT_FUNC PyInit__gufuncs() {
              [](float z, float_2d res, float_2d res_jac) {
                  ::assoc_legendre_p_all(assoc_legendre_unnorm, z, res, res_jac);
              }},
-            2, "assoc_legendre_p_all", nullptr, "()->(np1,mpmp1),(np1,mpmp1)"
+            2, "assoc_legendre_p_all_unnorm_diff_1", nullptr, "()->(np1,mpmp1),(np1,mpmp1)"
         ),
         SpecFun_NewGUFunc(
             {[](double z, double_2d res, double_2d res_jac, double_2d res_hess) {
@@ -155,7 +155,7 @@ PyMODINIT_FUNC PyInit__gufuncs() {
              [](float z, float_2d res, float_2d res_jac, float_2d res_hess) {
                  ::assoc_legendre_p_all(assoc_legendre_unnorm, z, res, res_jac, res_hess);
              }},
-            3, "assoc_legendre_p_all", nullptr, "()->(np1,mpmp1),(np1,mpmp1),(np1,mpmp1)"
+            3, "assoc_legendre_p_all_unnorm_diff_1", nullptr, "()->(np1,mpmp1),(np1,mpmp1),(np1,mpmp1)"
         )
     );
     PyModule_AddObjectRef(_gufuncs, "assoc_legendre_p_all", assoc_legendre_p_all);
@@ -169,7 +169,7 @@ PyMODINIT_FUNC PyInit__gufuncs() {
              [](long long int type, cfloat z, cfloat_2d res) {
                  ::multi_assoc_legendre_p_all(assoc_legendre_norm, type, z, res);
              }},
-            1, "multi_assoc_legendre_p_all", nullptr, "(),()->(np1,mpmp1)"
+            1, "multi_assoc_legendre_p_all_norm_diff_0", nullptr, "(),()->(np1,mpmp1)"
         ),
         SpecFun_NewGUFunc(
             {[](long long int type, cdouble z, cdouble_2d res, cdouble_2d res_jac) {
@@ -178,7 +178,7 @@ PyMODINIT_FUNC PyInit__gufuncs() {
              [](long long int type, cfloat z, cfloat_2d res, cfloat_2d res_jac) {
                  ::multi_assoc_legendre_p_all(assoc_legendre_norm, type, z, res, res_jac);
              }},
-            2, "multi_assoc_legendre_p_all", nullptr, "(),()->(np1,mpmp1),(np1,mpmp1)"
+            2, "multi_assoc_legendre_p_all_norm_diff_1", nullptr, "(),()->(np1,mpmp1),(np1,mpmp1)"
         ),
         SpecFun_NewGUFunc(
             {[](long long int type, cdouble z, cdouble_2d res, cdouble_2d res_jac, cdouble_2d res_hess) {
@@ -187,7 +187,7 @@ PyMODINIT_FUNC PyInit__gufuncs() {
              [](long long int type, cfloat z, cfloat_2d res, cfloat_2d res_jac, cfloat_2d res_hess) {
                  ::multi_assoc_legendre_p_all(assoc_legendre_norm, type, z, res, res_jac, res_hess);
              }},
-            3, "multi_assoc_legendre_p_all", nullptr, "(),()->(np1,mpmp1),(np1,mpmp1),(np1,mpmp1)"
+            3, "multi_assoc_legendre_p_all_norm_diff_2", nullptr, "(),()->(np1,mpmp1),(np1,mpmp1),(np1,mpmp1)"
         ),
         Py_False,
         SpecFun_NewGUFunc(
@@ -197,7 +197,7 @@ PyMODINIT_FUNC PyInit__gufuncs() {
              [](long long int type, cfloat z, cfloat_2d res) {
                  ::multi_assoc_legendre_p_all(assoc_legendre_unnorm, type, z, res);
              }},
-            1, "multi_assoc_legendre_p_all", nullptr, "(),()->(np1,mpmp1)"
+            1, "multi_assoc_legendre_p_all_unnorm_diff_0", nullptr, "(),()->(np1,mpmp1)"
         ),
         SpecFun_NewGUFunc(
             {[](long long int type, cdouble z, cdouble_2d res, cdouble_2d res_jac) {
@@ -206,7 +206,7 @@ PyMODINIT_FUNC PyInit__gufuncs() {
              [](long long int type, cfloat z, cfloat_2d res, cfloat_2d res_jac) {
                  ::multi_assoc_legendre_p_all(assoc_legendre_unnorm, type, z, res, res_jac);
              }},
-            2, "multi_assoc_legendre_p_all", nullptr, "(),()->(np1,mpmp1),(np1,mpmp1)"
+            2, "multi_assoc_legendre_p_all_unnorm_diff_1", nullptr, "(),()->(np1,mpmp1),(np1,mpmp1)"
         ),
         SpecFun_NewGUFunc(
             {[](long long int type, cdouble z, cdouble_2d res, cdouble_2d res_jac, cdouble_2d res_hess) {
@@ -215,7 +215,7 @@ PyMODINIT_FUNC PyInit__gufuncs() {
              [](long long int type, cfloat z, cfloat_2d res, cfloat_2d res_jac, cfloat_2d res_hess) {
                  ::multi_assoc_legendre_p_all(assoc_legendre_unnorm, type, z, res, res_jac, res_hess);
              }},
-            3, "multi_assoc_legendre_p_all", nullptr, "(),()->(np1,mpmp1),(np1,mpmp1),(np1,mpmp1)"
+            3, "multi_assoc_legendre_p_all_unnorm_diff_2", nullptr, "(),()->(np1,mpmp1),(np1,mpmp1),(np1,mpmp1)"
         )
     );
     PyModule_AddObjectRef(_gufuncs, "multi_assoc_legendre_p_all", multi_assoc_legendre_p_all);
@@ -224,15 +224,15 @@ PyMODINIT_FUNC PyInit__gufuncs() {
         "(N,N,N)",
         SpecFun_NewGUFunc(
             {static_cast<func_d_d2_t>(::sph_legendre_p_all), static_cast<func_f_f2_t>(::sph_legendre_p_all)}, 1,
-            "sph_legendre_p_all", nullptr, "()->(np1,mpmp1)"
+            "sph_legendre_p_all_diff_0", nullptr, "()->(np1,mpmp1)"
         ),
         SpecFun_NewGUFunc(
             {static_cast<func_d_d2d2_t>(::sph_legendre_p_all), static_cast<func_f_f2f2_t>(::sph_legendre_p_all)}, 2,
-            "sph_legendre_p_all", nullptr, "()->(np1,mpmp1),(np1,mpmp1)"
+            "sph_legendre_p_all_diff_1", nullptr, "()->(np1,mpmp1),(np1,mpmp1)"
         ),
         SpecFun_NewGUFunc(
             {static_cast<func_d_d2d2d2_t>(::sph_legendre_p_all), static_cast<func_f_f2f2f2_t>(::sph_legendre_p_all)}, 3,
-            "sph_legendre_p_all", nullptr, "()->(np1,mpmp1),(np1,mpmp1),(np1,mpmp1)"
+            "sph_legendre_p_all_diff_2", nullptr, "()->(np1,mpmp1),(np1,mpmp1),(np1,mpmp1)"
         )
     );
     PyModule_AddObjectRef(_gufuncs, "sph_legendre_p_all", sph_legendre_p_all);
