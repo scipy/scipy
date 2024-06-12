@@ -138,12 +138,22 @@ using func_qqqd_dd_t = void (*)(long long int, long long int, long long int, dou
 using func_dddd_dd_t = void (*)(double, double, double, double, double &, double &);
 using func_qqqF_FF_t = void (*)(long long int, long long int, long long int, cfloat, cfloat &, cfloat &);
 using func_qqqD_DD_t = void (*)(long long int, long long int, long long int, cdouble, cdouble &, cdouble &);
+using func_qqff_FF_t = void (*)(long long int, long long int, float, float, cfloat &, cfloat &);
+using func_qqdd_DD_t = void (*)(long long int, long long int, double, double, cdouble &, cdouble &);
+using func_qqff_FF2_t = void (*)(long long int, long long int, float, float, cfloat &, cfloat (&)[2]);
+using func_qqdd_DD2_t = void (*)(long long int, long long int, double, double, cdouble &, cdouble (&)[2]);
 
 // 4 inputs, 3 outputs
 using func_qqqf_fff_t = void (*)(long long int, long long int, long long int, float, float &, float &, float &);
 using func_qqqd_ddd_t = void (*)(long long int, long long int, long long int, double, double &, double &, double &);
 using func_qqqF_FFF_t = void (*)(long long int, long long int, long long int, cfloat, cfloat &, cfloat &, cfloat &);
 using func_qqqD_DDD_t = void (*)(long long int, long long int, long long int, cdouble, cdouble &, cdouble &, cdouble &);
+using func_qqff_FFF_t = void (*)(long long int, long long int, float, float, cfloat &, cfloat &, cfloat &);
+using func_qqdd_DDD_t = void (*)(long long int, long long int, double, double, cdouble &, cdouble &, cdouble &);
+using func_qqff_FF2F22_t =
+    void (*)(long long int, long long int, float, float, cfloat &, cfloat (&)[2], cfloat (&)[2][2]);
+using func_qqdd_DD2D22_t =
+    void (*)(long long int, long long int, double, double, cdouble &, cdouble (&)[2], cdouble (&)[2][2]);
 
 // 5 inputs, 2 outputs
 using func_fffff_ff_t = void (*)(float, float, float, float, float, float &, float &);
@@ -952,11 +962,27 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
     PyModule_AddObjectRef(_special_ufuncs, "sph_legendre_p", sph_legendre_p);
 
     PyObject *sph_harm = SpecFun_NewUFunc(
-        {static_cast<func_qqdd_D_t>(::sph_harm_y), static_cast<func_dddd_D_t>(::sph_harm_y),
-         static_cast<func_qqff_F_t>(::sph_harm_y), static_cast<func_ffff_F_t>(::sph_harm_y)},
+        {static_cast<func_qqdd_D_t>(::sph_harm), static_cast<func_dddd_D_t>(::sph_harm),
+         static_cast<func_qqff_F_t>(::sph_harm), static_cast<func_ffff_F_t>(::sph_harm)},
         "sph_harm", sph_harm_doc
     );
     PyModule_AddObjectRef(_special_ufuncs, "sph_harm", sph_harm);
+
+    PyObject *sph_harm_y = Py_BuildValue(
+        "(N,N)",
+        SpecFun_NewUFunc(
+            {static_cast<func_qqdd_D_t>(::sph_harm_y), static_cast<func_qqff_F_t>(::sph_harm_y)}, "sph_harm_y", nullptr
+        ),
+        SpecFun_NewUFunc(
+            {static_cast<func_qqdd_DD2_t>(::sph_harm_y), static_cast<func_qqff_FF2_t>(::sph_harm_y)}, 2, "sph_harm_y",
+            nullptr
+        ),
+        SpecFun_NewUFunc(
+            {static_cast<func_qqdd_DD2D22_t>(::sph_harm_y), static_cast<func_qqff_FF2F22_t>(::sph_harm_y)}, 3,
+            "sph_harm_y", nullptr
+        )
+    );
+    PyModule_AddObjectRef(_special_ufuncs, "sph_harm_y", sph_harm_y);
 
     PyObject *wright_bessel = SpecFun_NewUFunc(
         {static_cast<func_ddd_d_t>(special::wright_bessel), static_cast<func_fff_f_t>(special::wright_bessel)},

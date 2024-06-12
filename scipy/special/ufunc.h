@@ -298,6 +298,11 @@ struct npy_typenum<T &> {
     static constexpr NPY_TYPES value = npy_typenum<T>::value;
 };
 
+template <typename T, size_t N>
+struct npy_typenum<T[N]> {
+    static constexpr NPY_TYPES value = npy_typenum<T>::value;
+};
+
 template <typename T, typename Extents, typename LayoutPolicy, typename AccessorPolicy>
 struct npy_typenum<std::mdspan<T, Extents, LayoutPolicy, AccessorPolicy>> {
     static constexpr NPY_TYPES value = npy_typenum<T>::value;
@@ -340,6 +345,28 @@ struct npy_traits<T &> {
         static_assert(sizeof(T) == sizeof(npy_type_t<T>), "NumPy type has different size than argument type");
 
         return *reinterpret_cast<T *>(src);
+    }
+};
+
+template <typename T, size_t N>
+struct npy_traits<T (&)[N]> {
+    using dst_type = T (&)[N];
+
+    static dst_type get(char *src, const npy_intp *dimensions, const npy_intp *steps) {
+        static_assert(sizeof(T) == sizeof(npy_type_t<T>), "NumPy type has different size than argument type");
+
+        return *reinterpret_cast<T(*)[N]>(src);
+    }
+};
+
+template <typename T, size_t N>
+struct npy_traits<T (&)[N][N]> {
+    using dst_type = T (&)[N][N];
+
+    static dst_type get(char *src, const npy_intp *dimensions, const npy_intp *steps) {
+        static_assert(sizeof(T) == sizeof(npy_type_t<T>), "NumPy type has different size than argument type");
+
+        return *reinterpret_cast<T(*)[N][N]>(src);
     }
 };
 

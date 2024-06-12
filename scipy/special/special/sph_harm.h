@@ -12,6 +12,32 @@ void sph_harm_y_next(int m, T theta, std::tuple<const T (&)[2]> p, std::tuple<st
     res0[1] = p0[1] * std::exp(std::complex(T(0), m * theta));
 }
 
+template <typename T>
+void sph_harm_y_next(
+    int m, T theta, std::tuple<const T (&)[2], const T (&)[2]> p,
+    std::tuple<std::complex<T> (&)[2], std::complex<T> (&)[2][2]> res
+) {
+    // incomplete
+
+    const auto &[p0, p1] = p;
+    auto &[res0, res1] = res;
+
+    res0[1] = p0[1] * std::exp(std::complex(T(0), m * theta));
+}
+
+template <typename T>
+void sph_harm_y_next(
+    int m, T theta, std::tuple<const T (&)[2], const T (&)[2], const T (&)[2]> p,
+    std::tuple<std::complex<T> (&)[2], std::complex<T> (&)[2][2], std::complex<T> (&)[2][2][2]> res
+) {
+    // incomplete
+
+    const auto &[p0, p1, p2] = p;
+    auto &[res0, res1, res2] = res;
+
+    res0[1] = p0[1] * std::exp(std::complex(T(0), m * theta));
+}
+
 template <typename T, typename... OutputVals, typename Func>
 void sph_harm_y_for_each_n(int n, int m, T theta, T phi, std::tuple<OutputVals (&)[2]...> res, Func f) {
     static constexpr size_t N = sizeof...(OutputVals) - 1;
@@ -43,12 +69,12 @@ template <typename T, typename... OutputVals>
 void sph_harm_y(int n, int m, T theta, T phi, std::tuple<OutputVals &...> res) {
     static constexpr size_t N = sizeof...(OutputVals) - 1;
 
-    grad_tuple_t<std::complex<T>[2], N> res_n;
+    grad_tuple_t<std::complex<T>[2], N, 2> res_n;
     sph_harm_y_for_each_n(
-        n, m, theta, phi, tuples::ref(res_n), [](int n, int m, grad_tuple_t<const std::complex<T>(&)[2], N> res_n) {}
+        n, m, theta, phi, tuples::ref(res_n), [](int n, int m, grad_tuple_t<const std::complex<T>(&)[2], N, 2> res_n) {}
     );
 
-    res = tuples::access(res_n, 1);
+    std::get<0>(res) = std::get<0>(tuples::access(res_n, 1)); // needs to be updated to handle 
 }
 
 template <typename T>

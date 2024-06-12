@@ -9,9 +9,38 @@ namespace special {
 template <size_t I, typename Res, size_t NArgs = 1>
 struct grad_tuple_element;
 
+template <typename Res>
+struct grad_tuple_element<0, Res, 1> {
+    using type = Res;
+};
+
 template <size_t I, typename Res>
 struct grad_tuple_element<I, Res, 1> {
     using type = Res;
+};
+
+template <typename Res, size_t NArgs>
+struct grad_tuple_element<0, Res, NArgs> {
+    using type = Res;
+};
+
+template <typename T, typename U>
+struct reference_like {
+    using type = U;
+};
+
+template <typename T, typename U>
+struct reference_like<T &, U> {
+    using type = U &;
+};
+
+template <typename T, typename U>
+using reference_like_t = typename reference_like<T, U>::type;
+
+template <size_t I, typename Res, size_t NArgs>
+struct grad_tuple_element {
+    using type =
+        reference_like_t<Res, typename grad_tuple_element<I - 1, std::remove_reference_t<Res>, NArgs>::type[NArgs]>;
 };
 
 template <size_t I, typename Res, size_t NArgs>
