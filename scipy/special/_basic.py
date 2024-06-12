@@ -3456,13 +3456,13 @@ def zeta(x, q=None, out=None):
     else:
         return _ufuncs._zeta(x, q, out)
 
-sph_harm_y = MultiUFunc(sph_harm_y)
+sph_harm_y = MultiUFunc(sph_harm_y, force_out_complex = True)
 
 @sph_harm_y.resolve_ufunc
 def _(ufuncs, diff_n = 0):
     return ufuncs[diff_n]
 
-sph_harm_y_all = MultiUFunc(sph_harm_y_all)
+sph_harm_y_all = MultiUFunc(sph_harm_y_all, force_out_complex = True)
 
 @sph_harm_y_all.resolve_ufunc
 def _(ufuncs, diff_n = 0):
