@@ -54,7 +54,7 @@ jobs:
           key: install-${{ env.CACHE_NUMBER }}-${{ env.WINDOWS_BASEKIT_URL }}-compiler
       - name: install
         if: steps.cache-install.outputs.cache-hit != 'true'
-        run: install_intel_oneAPI_windows.bat $WINDOWS_BASEKIT_URL
+        run: tools/install_intel_oneAPI_windows.bat $WINDOWS_BASEKIT_URL
       - name: Initialise Intel oneAPI
         run: |
           "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvarsx86_amd64.bat"
