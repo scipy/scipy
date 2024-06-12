@@ -5457,7 +5457,7 @@ add_newdoc("gdtria",
     Returns
     -------
     a : scalar or ndarray
-        Values of the `a` parameter such that `p = gdtr(a, b, x)`.  `1/a`
+        Values of the `a` parameter such that ``p = gdtr(a, b, x)`.  ``1/a``
         is the "scale" parameter of the gamma distribution.
 
     See Also
@@ -5512,7 +5512,7 @@ add_newdoc("gdtrib",
     Parameters
     ----------
     a : array_like
-        `a` parameter values of `gdtr(a, b, x)`. `1/a` is the "scale"
+        `a` parameter values of ``gdtr(a, b, x)`. ``1/a`` is the "scale"
         parameter of the gamma distribution.
     p : array_like
         Probability values.
@@ -5582,10 +5582,10 @@ add_newdoc("gdtrix",
     Parameters
     ----------
     a : array_like
-        `a` parameter values of `gdtr(a, b, x)`. `1/a` is the "scale"
+        `a` parameter values of ``gdtr(a, b, x)``. ``1/a`` is the "scale"
         parameter of the gamma distribution.
     b : array_like
-        `b` parameter values of `gdtr(a, b, x)`. `b` is the "shape" parameter
+        `b` parameter values of ``gdtr(a, b, x)``. `b` is the "shape" parameter
         of the gamma distribution.
     p : array_like
         Probability values.
@@ -5602,8 +5602,8 @@ add_newdoc("gdtrix",
     See Also
     --------
     gdtr : CDF of the gamma distribution.
-    gdtria : Inverse with respect to `a` of `gdtr(a, b, x)`.
-    gdtrib : Inverse with respect to `b` of `gdtr(a, b, x)`.
+    gdtria : Inverse with respect to `a` of ``gdtr(a, b, x)``.
+    gdtrib : Inverse with respect to `b` of ``gdtr(a, b, x)``.
 
     Notes
     -----
