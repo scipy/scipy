@@ -1729,13 +1729,17 @@ def mathieu_odd_coef(m, q):
 assoc_legendre_p = MultiUFunc(assoc_legendre_p)
 
 @assoc_legendre_p.as_resolve_ufunc
-def _(ufuncs_map, norm = False, diff_n = 0):
+def _(ufuncs_map, norm=False, diff_n=0):
     return ufuncs_map[norm][diff_n]
+
+@assoc_legendre_p.docstring
+def _():
+    """assoc_legendre_p(n, m, z, *, norm=False, diff_n=0)"""
 
 assoc_legendre_p_all = MultiUFunc(assoc_legendre_p_all)
 
 @assoc_legendre_p_all.as_resolve_ufunc
-def _(ufuncs_map, norm = False, diff_n = 0):
+def _(ufuncs_map, norm=False, diff_n = 0):
     return ufuncs_map[norm][diff_n]
 
 @assoc_legendre_p_all.as_resolve_out_shapes
@@ -1769,6 +1773,10 @@ def _(n, m, z_shape, nout):
         raise ValueError("n must be a non-negative integer.")
 
     return nout * ((n + 1, 2 * abs(m) + 1) + z_shape,)
+
+@assoc_legendre_p_all.docstring
+def _():
+    """assoc_legendre_p_all(n, m, z, *, norm=False, diff_n=0)"""
 
 def lpmn(m, n, z):
     """Sequence of associated Legendre functions of the first kind.
@@ -1858,6 +1866,11 @@ def _(n, m, type_shape, z_shape, nout):
     return nout * ((n + 1, 2 * abs(m) + 1) + np.broadcast_shapes(type_shape, z_shape),)
 
 
+@multi_assoc_legendre_p_all.docstring
+def _():
+    """multi_assoc_legendre_p_all(m, n, z, *, norm=False, diff_n=0)"""
+
+
 def clpmn(m, n, z, type = 3):
     """Associated Legendre function of the first kind for complex arguments.
 
@@ -1919,7 +1932,7 @@ def clpmn(m, n, z, type = 3):
 
     m, n = int(m), int(n)  # Convert to int to maintain backwards compatibility.
 
-    out, out_jac = multi_assoc_legendre_p_all(n, abs(m), type, z, diff_n = 1)
+    out, out_jac = multi_assoc_legendre_p_all(n, abs(m), type, z, diff_n=1)
     out = np.swapaxes(out, 0, 1)
     out_jac = np.swapaxes(out_jac, 0, 1)
 
@@ -2101,6 +2114,10 @@ legendre_p = MultiUFunc(legendre_p)
 def _(ufuncs_map, diff_n = 0):
     return ufuncs_map[diff_n]
 
+@legendre_p.docstring
+def _():
+    """legendre_p(n, z, *, diff_n=0)"""
+
 legendre_p_all = MultiUFunc(legendre_p_all)
 
 @legendre_p_all.as_resolve_ufunc
@@ -2113,8 +2130,12 @@ def _(n, z_shape, nout):
 
     return nout * ((n + 1,) + z_shape,)
 
+@legendre_p_all.docstring
+def _():
+    """legendre_p_all(n, z, *, diff_n=0)"""
+
 def lpn(n, z):
-    return legendre_p_all(n, z, diff_n = 1)
+    return legendre_p_all(n, z, diff_n=1)
 
 def lqn(n, z):
     """Legendre function of the second kind.

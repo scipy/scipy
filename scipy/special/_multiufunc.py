@@ -84,6 +84,10 @@ class MultiUFunc:
         func.__name__ = "resolve_out_shapes"
         self.resolve_out_shapes = func
 
+    def docstring(self, func):
+        """Set Call docstring to docstring of a decorated function."""
+        self.__call__.__doc__ = func.__doc__
+
     def __call__(self, *args, **kwargs):
         ufunc = self.resolve_ufunc(**kwargs)
         if ((ufunc.nout == 0) or (self.resolve_out_shapes is None)):
