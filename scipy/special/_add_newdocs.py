@@ -5582,7 +5582,7 @@ add_newdoc("gdtrix",
     Parameters
     ----------
     a : array_like
-        `a` parameter values of ``gdtr(a, b, x)`. ``1/a`` is the "scale"
+        `a` parameter values of ``gdtr(a, b, x)``. ``1/a`` is the "scale"
         parameter of the gamma distribution.
     b : array_like
         `b` parameter values of ``gdtr(a, b, x)`. `b` is the "shape" parameter
