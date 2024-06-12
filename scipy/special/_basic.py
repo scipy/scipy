@@ -16,10 +16,9 @@ from ._ufuncs import (mathieu_a, mathieu_b, iv, jv, gamma,
                       psi, hankel1, hankel2, yv, kv, poch, binom,
                       _stirling2_inexact)
 from ._special_ufuncs import (legendre_p, assoc_legendre_p, multi_assoc_legendre_p,
-                              sph_legendre_p)
+                              sph_legendre_p, sph_harm_y)
 from ._gufuncs import (legendre_p_all, assoc_legendre_p_all, multi_assoc_legendre_p_all,
-                        sph_legendre_p_all, _lqn, _lqmn, _rctj, _rcty,
-                        _sph_harm_all as _sph_harm_all_gufunc)
+                        sph_legendre_p_all, _lqn, _lqmn, _rctj, _rcty, sph_harm_y_all)
 from . import _specfun
 from ._comb import _comb_int
 from ._multiufunc import MultiUFunc
@@ -83,6 +82,8 @@ __all__ = [
     'riccati_yn',
     'sph_legendre_p',
     'sph_legendre_p_all',
+    'sph_harm_y',
+    'sph_harm_y_all',
     'sinc',
     'stirling2',
     'y0_zeros',
@@ -3455,20 +3456,24 @@ def zeta(x, q=None, out=None):
     else:
         return _ufuncs._zeta(x, q, out)
 
+sph_harm_y = MultiUFunc(sph_harm_y)
 
-def _sph_harm_all(m, n, theta, phi):
-    """Private function. This may be removed or modified at any time."""
+@sph_harm_y.resolve_ufunc
+def _(ufuncs, diff_n = 0):
+    return ufuncs[diff_n]
 
-    theta = np.asarray(theta)
-    if (not np.issubdtype(theta.dtype, np.inexact)):
-        theta = theta.astype(np.float64)
+sph_harm_y_all = MultiUFunc(sph_harm_y_all)
 
-    phi = np.asarray(phi)
-    if (not np.issubdtype(phi.dtype, np.inexact)):
-        phi = phi.astype(np.float64)
+@sph_harm_y_all.resolve_ufunc
+def _(ufuncs, diff_n = 0):
+    return ufuncs
 
-    out = np.empty((2 * m + 1, n + 1) + np.broadcast_shapes(theta.shape, phi.shape),
-        dtype = np.result_type(1j, theta.dtype, phi.dtype))
-    _sph_harm_all_gufunc(theta, phi, out = np.moveaxis(out, (0, 1), (-2, -1)))
+@sph_harm_y_all.resolve_out_shapes
+def _(n, m, theta_shape, phi_shape, nout):
+    if ((not np.isscalar(m)) or (abs(m) > n)):
+        raise ValueError("m must be <= n.")
 
-    return out
+    if ((not np.isscalar(n)) or (n < 0)):
+        raise ValueError("n must be a non-negative integer.")
+
+    return nout * ((n + 1, 2 * abs(m) + 1) + np.broadcast_shapes(theta_shape, phi_shape),)

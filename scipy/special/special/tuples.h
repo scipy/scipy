@@ -117,7 +117,7 @@ namespace tuples {
     }
 
     template <typename... T, typename... U>
-    const std::tuple<T &...> &assign(const std::tuple<T &...> &t, const std::tuple<U...> &other) {
+    const std::tuple<T &...> &assign(std::tuple<T &...> &t, const std::tuple<U...> &other) {
         std::apply(
             [&t](const auto &...other_args) {
                 std::apply([&other_args...](auto &...args) { (detail::assign(args, other_args), ...); }, t);

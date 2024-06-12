@@ -169,12 +169,12 @@ std::complex<T> sph_harm(T m, T n, T theta, T phi) {
 
 template <typename T>
 std::complex<T> sph_harm_y(long long int m, long long int n, T theta, T phi) {
-    return special::sph_harm_y(m, n, theta, phi);
+    return special::sph_harm_y(n, m, theta, phi);
 }
 
 template <typename T>
 void sph_harm_y(long long int m, long long int n, T theta, T phi, std::complex<T> &res, std::complex<T> (&res_jac)[2]) {
-    special::sph_harm_y(m, n, theta, phi, std::tie(res, res_jac));
+    special::sph_harm_y(n, m, theta, phi, std::tie(res, res_jac));
 }
 
 template <typename T>
@@ -182,7 +182,7 @@ void sph_harm_y(
     long long int m, long long int n, T theta, T phi, std::complex<T> &res, std::complex<T> (&res_jac)[2],
     std::complex<T> (&res_hess)[2][2]
 ) {
-    special::sph_harm_y(m, n, theta, phi, std::tie(res, res_jac, res_hess));
+    special::sph_harm_y(n, m, theta, phi, std::tie(res, res_jac, res_hess));
 }
 
 template <typename T, typename OutputMat1>

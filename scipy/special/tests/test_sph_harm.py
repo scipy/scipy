@@ -1,7 +1,6 @@
 import numpy as np
 from numpy.testing import assert_allclose
 import scipy.special as sc
-from scipy.special._basic import _sph_harm_all
 
 
 def test_first_harmonics():
@@ -37,14 +36,13 @@ def test_first_harmonics():
                         rtol=1e-15, atol=1e-15,
                         err_msg=f"Y^{m}_{n} incorrect")
 
-
 def test_all_harmonics():
     n_max = 50
 
     theta = np.linspace(0, 2 * np.pi)
     phi = np.linspace(0, np.pi)
 
-    y_actual = _sph_harm_all(2 * n_max, n_max, theta, phi)
+    y_actual = sc.sph_harm_y_all(2 * n_max, n_max, theta, phi)
 
     for n in [0, 1, 2, 5, 10, 20, 50]:
         for m in [0, 1, 2, 5, 10, 20, 50]:
