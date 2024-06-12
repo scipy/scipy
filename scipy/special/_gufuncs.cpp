@@ -220,6 +220,22 @@ PyMODINIT_FUNC PyInit__gufuncs() {
     );
     PyModule_AddObjectRef(_gufuncs, "multi_assoc_legendre_p_all", multi_assoc_legendre_p_all);
 
+    PyObject *sph_legendre_p_all = Py_BuildValue("(N,N,N)",
+        SpecFun_NewGUFunc(
+            {static_cast<func_d_d2_t>(::sph_legendre_p_all), static_cast<func_f_f2_t>(::sph_legendre_p_all)}, 1,
+            "sph_legendre_p_all", nullptr, "()->(np1,mpmp1)"
+        ),
+        SpecFun_NewGUFunc(
+            {static_cast<func_d_d2d2_t>(::sph_legendre_p_all), static_cast<func_f_f2f2_t>(::sph_legendre_p_all)}, 2,
+            "sph_legendre_p_all", nullptr, "()->(np1,mpmp1),(np1,mpmp1)"
+        ),
+        SpecFun_NewGUFunc(
+            {static_cast<func_d_d2d2d2_t>(::sph_legendre_p_all), static_cast<func_f_f2f2f2_t>(::sph_legendre_p_all)}, 3,
+            "sph_legendre_p_all", nullptr, "()->(np1,mpmp1),(np1,mpmp1),(np1,mpmp1)"
+        )
+    );
+    PyModule_AddObjectRef(_gufuncs, "sph_legendre_p_all", sph_legendre_p_all);
+
     PyObject *_lqn = SpecFun_NewGUFunc(
         {static_cast<func_d_d1d1_t>(special::lqn), static_cast<func_f_f1f1_t>(special::lqn),
          static_cast<func_D_D1D1_t>(special::lqn), static_cast<func_F_F1F1_t>(special::lqn)},
@@ -235,8 +251,8 @@ PyMODINIT_FUNC PyInit__gufuncs() {
     PyModule_AddObjectRef(_gufuncs, "_lqmn", _lqmn);
 
     PyObject *_sph_harm_all = SpecFun_NewGUFunc(
-        {static_cast<func_dd_D2_t>(special::sph_harm_y_all), static_cast<func_ff_F2_t>(special::sph_harm_y_all)}, 1,
-        "_sph_harm_all", sph_harm_all_doc, "(),()->(mpmp1,np1)"
+        {static_cast<func_dd_D2_t>(::sph_harm_y_all), static_cast<func_ff_F2_t>(::sph_harm_y_all)}, 1, "_sph_harm_all",
+        sph_harm_all_doc, "(),()->(mpmp1,np1)"
     );
     PyModule_AddObjectRef(_gufuncs, "_sph_harm_all", _sph_harm_all);
 

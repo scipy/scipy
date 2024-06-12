@@ -112,6 +112,36 @@ void multi_assoc_legendre_p_all(
 }
 
 template <typename T>
+T sph_legendre_p(long long int n, long long int m, T phi) {
+    return special::sph_legendre_p(n, m, phi);
+}
+
+template <typename T>
+void sph_legendre_p(long long int n, long long int m, T phi, T &res, T &res_jac) {
+    special::sph_legendre_p(n, m, phi, std::tie(res, res_jac));
+}
+
+template <typename T>
+void sph_legendre_p(long long int n, long long int m, T phi, T &res, T &res_jac, T &res_hess) {
+    special::sph_legendre_p(n, m, phi, std::tie(res, res_jac, res_hess));
+}
+
+template <typename T, typename OutputMat1>
+void sph_legendre_p_all(T phi, OutputMat1 res) {
+    special::sph_legendre_p_all(phi, std::tie(res));
+}
+
+template <typename T, typename OutputMat1, typename OutputMat2>
+void sph_legendre_p_all(T phi, OutputMat1 res, OutputMat2 res_jac) {
+    special::sph_legendre_p_all(phi, std::tie(res, res_jac));
+}
+
+template <typename T, typename OutputMat1, typename OutputMat2, typename OutputMat3>
+void sph_legendre_p_all(T phi, OutputMat1 res, OutputMat2 res_jac, OutputMat3 res_hess) {
+    special::sph_legendre_p_all(phi, std::tie(res, res_jac, res_hess));
+}
+
+template <typename T>
 std::complex<T> sph_harm_y(long long int m, long long int n, T theta, T phi) {
     if (n < 0) {
         special::set_error("sph_harm", SF_ERROR_ARG, "n should not be negative");
@@ -135,6 +165,11 @@ std::complex<T> sph_harm_y(T m, T n, T theta, T phi) {
     }
 
     return sph_harm_y(static_cast<long>(m), static_cast<long>(n), theta, phi);
+}
+
+template <typename T, typename OutputMat1>
+void sph_harm_y_all(T theta, T phi, OutputMat1 res) {
+    special::sph_harm_y_all(theta, phi, std::tie(res));
 }
 
 } // namespace

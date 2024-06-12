@@ -109,6 +109,13 @@ namespace tuples {
         );
     }
 
+    template <typename... T, typename... Args>
+    std::tuple<std::result_of_t<T(Args...)>...> call(const std::tuple<T...> &t, Args &&...args) {
+        return std::apply(
+            [&args...](auto &...elements) { return std::tie(elements(std::forward<Args>(args)...)...); }, t
+        );
+    }
+
     template <typename... T, typename... U>
     std::tuple<std::tuple<T, U>...> zip(std::tuple<T...> t, std::tuple<U...> u) {
         return std::apply(

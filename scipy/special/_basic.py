@@ -15,9 +15,10 @@ from . import _ufuncs
 from ._ufuncs import (mathieu_a, mathieu_b, iv, jv, gamma,
                       psi, hankel1, hankel2, yv, kv, poch, binom,
                       _stirling2_inexact)
-from ._special_ufuncs import legendre_p, assoc_legendre_p, multi_assoc_legendre_p
+from ._special_ufuncs import (legendre_p, assoc_legendre_p, multi_assoc_legendre_p,
+                              sph_legendre_p)
 from ._gufuncs import (legendre_p_all, assoc_legendre_p_all, multi_assoc_legendre_p_all,
-                        _lqn, _lqmn, _rctj, _rcty,
+                        sph_legendre_p_all, _lqn, _lqmn, _rctj, _rcty,
                         _sph_harm_all as _sph_harm_all_gufunc)
 from . import _specfun
 from ._comb import _comb_int
@@ -80,6 +81,8 @@ __all__ = [
     'pro_cv_seq',
     'riccati_jn',
     'riccati_yn',
+    'sph_legendre_p',
+    'sph_legendre_p_all',
     'sinc',
     'stirling2',
     'y0_zeros',
@@ -1735,6 +1738,28 @@ def _(ufuncs, norm = False, diff_n = 0):
     return ufuncs[norm][diff_n]
 
 @assoc_legendre_p_all.resolve_out_shapes
+def _(n, m, z_shape, nout):
+    if ((not np.isscalar(m)) or (abs(m) > n)):
+        raise ValueError("m must be <= n.")
+
+    if ((not np.isscalar(n)) or (n < 0)):
+        raise ValueError("n must be a non-negative integer.")
+
+    return nout * ((n + 1, 2 * abs(m) + 1) + z_shape,)
+
+sph_legendre_p = MultiUFunc(sph_legendre_p)
+
+@sph_legendre_p.resolve_ufunc
+def _(ufuncs, diff_n = 0):
+    return ufuncs[diff_n]
+
+sph_legendre_p_all = MultiUFunc(sph_legendre_p_all)
+
+@sph_legendre_p_all.resolve_ufunc
+def _(ufuncs, diff_n = 0):
+    return ufuncs[diff_n]
+
+@sph_legendre_p_all.resolve_out_shapes
 def _(n, m, z_shape, nout):
     if ((not np.isscalar(m)) or (abs(m) > n)):
         raise ValueError("m must be <= n.")

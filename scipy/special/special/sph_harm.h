@@ -59,19 +59,22 @@ std::complex<T> sph_harm_y(int n, int m, T theta, T phi) {
     return res;
 }
 
-template <typename T, typename OutMat>
-void sph_harm_y_all(T theta, T phi, OutMat y) {
-    int m = (y.extent(0) - 1) / 2;
-    int n = y.extent(1) - 1;
+template <typename T, typename... OutMats>
+void sph_harm_y_all(T theta, T phi, std::tuple<OutMats...> res) {
+    static constexpr size_t N = sizeof...(OutMats) - 1;
 
-    std::tuple<std::complex<T>[2]> res;
+    auto &res0 = std::get<0>(res);
+    int m_max = (res0.extent(0) - 1) / 2;
+    int n_max = res0.extent(1) - 1;
+
+    grad_tuple_t<std::complex<T>[2], N> res_n_m;
     sph_harm_y_for_each_n_m(
-        n, m, theta, phi, tuples::ref(res),
-        [y](int n, int m, std::tuple<const std::complex<T>(&)[2]> res) {
+        n_max, m_max, theta, phi, tuples::ref(res_n_m),
+        [m_max, res](int n, int m, grad_tuple_t<std::complex<T>(&)[2], N> res_n_m) {
             if (m >= 0) {
-                y(m, n) = std::get<0>(res)[1];
+                tuples::call(res, m, n) = tuples::access(res_n_m, 1);
             } else {
-                y(m + y.extent(0), n) = std::get<0>(res)[1];
+                tuples::call(res, m + 2 * m_max + 1, n) = tuples::access(res_n_m, 1);
             }
         }
     );

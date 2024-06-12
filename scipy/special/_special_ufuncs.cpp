@@ -934,6 +934,23 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
     );
     PyModule_AddObjectRef(_special_ufuncs, "_spherical_kn_d", _spherical_kn_d);
 
+    PyObject *sph_legendre_p = Py_BuildValue(
+        "(N,N,N)",
+        SpecFun_NewUFunc(
+            {static_cast<func_qqd_d_t>(::sph_legendre_p), static_cast<func_qqf_f_t>(::sph_legendre_p)},
+            "sph_legendre_p", nullptr
+        ),
+        SpecFun_NewUFunc(
+            {static_cast<func_qqd_dd_t>(::sph_legendre_p), static_cast<func_qqf_ff_t>(::sph_legendre_p)}, 2,
+            "sph_legendre_p", nullptr
+        ),
+        SpecFun_NewUFunc(
+            {static_cast<func_qqd_ddd_t>(::sph_legendre_p), static_cast<func_qqf_fff_t>(::sph_legendre_p)}, 3,
+            "sph_legendre_p", nullptr
+        )
+    );
+    PyModule_AddObjectRef(_special_ufuncs, "sph_legendre_p", sph_legendre_p);
+
     PyObject *sph_harm = SpecFun_NewUFunc(
         {static_cast<func_qqdd_D_t>(::sph_harm_y), static_cast<func_dddd_D_t>(::sph_harm_y),
          static_cast<func_qqff_F_t>(::sph_harm_y), static_cast<func_ffff_F_t>(::sph_harm_y)},
