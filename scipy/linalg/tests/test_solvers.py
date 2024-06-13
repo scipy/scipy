@@ -26,6 +26,9 @@ def _load_data(name):
 class TestSolveLyapunov:
 
     cases = [
+        # empty case
+        (np.empty((0, 0)),
+         np.empty((0, 0))),
         (np.array([[1, 2], [3, 4]]),
          np.array([[9, 10], [11, 12]])),
         # a, q all complex.
@@ -725,6 +728,16 @@ def test_are_validate_args():
 class TestSolveSylvester:
 
     cases = [
+        # empty cases
+        (np.empty((0, 0)),
+         np.empty((0, 0)),
+         np.empty((0, 0))),
+         (np.empty((0, 0)),
+         np.empty((2, 2)),
+         np.empty((0, 2))),
+         (np.empty((2, 2)),
+         np.empty((0, 0)),
+         np.empty((2, 0))),
         # a, b, c all real.
         (np.array([[1, 2], [0, 4]]),
          np.array([[5, 6], [0, 8]]),
