@@ -1077,7 +1077,7 @@ def chebyshev(u, v, w=None):
         if has_weight.sum() < w.size:
             u = u[has_weight]
             v = v[has_weight]
-    return max(abs(u - v))
+    return np.max(abs(u - v))
 
 
 def braycurtis(u, v, w=None):
