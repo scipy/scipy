@@ -6964,13 +6964,20 @@ class TestGeoMean:
         with np.errstate(invalid='ignore'):
             check_equal_gmean(a, desired, xp=xp)
 
+    @pytest.mark.skip_xp_backends(np_only=True)
+    @pytest.mark.usefixtures("skip_xp_backends")
     def test_weights_1d_list(self, xp):
         # Desired result from:
         # https://www.dummies.com/education/math/business-statistics/how-to-find-the-weighted-geometric-mean-of-a-data-set/
         a = [1, 2, 3, 4, 5]
         weights = [2, 5, 6, 4, 3]
         desired = 2.77748
-        check_equal_gmean(a, desired, weights=weights, rtol=1e-5, xp=xp)
+
+        # all the other tests use `check_equal_gmean`, which now converts
+        # the input to an xp-array before calling `gmean`. This time, check
+        # that the function still accepts the lists of ints.
+        res = stats.gmean(a, weights=weights)
+        xp_assert_close(res, np.asarray(desired), rtol=1e-5)
 
     def test_weights_1d_array(self, xp):
         # Desired result from:
