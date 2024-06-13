@@ -2154,12 +2154,12 @@ add_newdoc("ellipe",
     -----
     Wrapper for the Cephes [1]_ routine `ellpe`.
 
-    For `m > 0` the computation uses the approximation,
+    For ``m > 0`` the computation uses the approximation,
 
     .. math:: E(m) \approx P(1-m) - (1-m) \log(1-m) Q(1-m),
 
     where :math:`P` and :math:`Q` are tenth-order polynomials.  For
-    `m < 0`, the relation
+    ``m < 0``, the relation
 
     .. math:: E(m) = E(m/(m - 1)) \sqrt(1-m)
 
@@ -2371,14 +2371,14 @@ add_newdoc("ellipkm1",
     -----
     Wrapper for the Cephes [1]_ routine `ellpk`.
 
-    For `p <= 1`, computation uses the approximation,
+    For ``p <= 1``, computation uses the approximation,
 
     .. math:: K(p) \\approx P(p) - \\log(p) Q(p),
 
     where :math:`P` and :math:`Q` are tenth-order polynomials.  The
     argument `p` is used internally rather than `m` so that the logarithmic
-    singularity at `m = 1` will be shifted to the origin; this preserves
-    maximum accuracy.  For `p > 1`, the identity
+    singularity at ``m = 1`` will be shifted to the origin; this preserves
+    maximum accuracy.  For ``p > 1``, the identity
 
     .. math:: K(p) = K(1/p)/\\sqrt(p)
 
@@ -5172,7 +5172,7 @@ add_newdoc("gammasgn",
     >>> import numpy as np
     >>> import scipy.special as sc
 
-    It is 1 for `x > 0`.
+    It is 1 for ``x > 0``.
 
     >>> sc.gammasgn([1, 2, 3, 4])
     array([1., 1., 1., 1.])
@@ -6062,7 +6062,7 @@ add_newdoc("hyp1f1",
     >>> 1 + (a / b) * x
     array([-1., -3., -5., -7.])
 
-    It reduces to the exponential function when `a = b`.
+    It reduces to the exponential function when ``a = b``.
 
     >>> sc.hyp1f1(2, 2, [1, 2, 3, 4])
     array([ 2.71828183,  7.3890561 , 20.08553692, 54.59815003])
@@ -11329,7 +11329,7 @@ add_newdoc("yn",
     Wrapper for the Cephes [1]_ routine `yn`.
 
     The function is evaluated by forward recurrence on `n`, starting with
-    values computed by the Cephes routines `y0` and `y1`. If `n = 0` or 1,
+    values computed by the Cephes routines `y0` and `y1`. If ``n = 0`` or 1,
     the routine for `y0` or `y1` is called directly.
 
     References
