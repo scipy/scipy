@@ -202,16 +202,16 @@ def gmean(a, axis=0, dtype=None, weights=None):
     2.80668351922014
 
     """
-
-    a = np.asarray(a, dtype=dtype)
+    xp = array_namespace(a, weights)
+    a = xp.asarray(a, dtype=dtype)
 
     if weights is not None:
-        weights = np.asarray(weights, dtype=dtype)
+        weights = xp.asarray(weights, dtype=dtype)
 
     with np.errstate(divide='ignore'):
-        log_a = np.log(a)
+        log_a = xp.log(a)
 
-    return np.exp(np.average(log_a, axis=axis, weights=weights))
+    return xp.exp(_xp_mean(log_a, axis=axis, weights=weights))
 
 
 @_axis_nan_policy_factory(
