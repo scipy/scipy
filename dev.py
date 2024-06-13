@@ -702,7 +702,8 @@ class Test(Task):
         multiple=True,
         help=(
             "Array API backend "
-            "('all', 'numpy', 'pytorch', 'cupy', 'array_api_strict', 'jax.numpy')."
+            "('all', 'numpy', 'pytorch', 'cupy', 'array_api_strict',"
+            " 'jax.numpy', 'dask.array')."
         )
     )
     # Argument can't have `help=`; used to consume all of `-- arg1 arg2 arg3`

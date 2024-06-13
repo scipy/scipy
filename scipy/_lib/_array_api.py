@@ -232,6 +232,9 @@ def is_torch(xp: ModuleType) -> bool:
 def is_jax(xp):
     return xp.__name__ in ('jax.numpy', 'jax.experimental.array_api')
 
+def is_dask(xp):
+    return xp.__name__ in ('dask.array', 'scipy._lib.array_api_compat.dask')
+
 
 def _strict_check(actual, desired, xp,
                   check_namespace=True, check_dtype=True, check_shape=True):
