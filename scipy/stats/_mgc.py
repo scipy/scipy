@@ -536,7 +536,7 @@ def _two_sample_transform(u, v):
     Returns
     -------
     x : ndarray
-        Concatenate `u` and `v` along the `axis = 0`. `x` thus has shape
+        Concatenate `u` and `v` along the ``axis = 0``. `x` thus has shape
         `(2n, p)`.
     y : ndarray
         Label matrix for `x` where 0 refers to samples that comes from `u` and

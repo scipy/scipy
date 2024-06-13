@@ -105,7 +105,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         of 2 after ``popsize * (N - N_equal)``.
     tol : float, optional
         Relative tolerance for convergence, the solving stops when
-        ``np.std(pop) <= atol + tol * np.abs(np.mean(population_energies))``,
+        ``np.std(population_energies) <= atol + tol * np.abs(np.mean(population_energies))``,
         where and `atol` and `tol` are the absolute and relative tolerance
         respectively.
     mutation : float or tuple(float, float), optional
@@ -481,7 +481,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     ...     trial = np.where(crossovers, bprime, trial)
     ...     return trial
 
-    """
+    """# noqa: E501
 
     # using a context manager means that any created Pool objects are
     # cleared up.
@@ -575,7 +575,7 @@ class DifferentialEvolutionSolver:
         of 2 after ``popsize * (N - N_equal)``.
     tol : float, optional
         Relative tolerance for convergence, the solving stops when
-        ``np.std(pop) <= atol + tol * np.abs(np.mean(population_energies))``,
+        ``np.std(population_energies) <= atol + tol * np.abs(np.mean(population_energies))``,
         where and `atol` and `tol` are the absolute and relative tolerance
         respectively.
     mutation : float or tuple(float, float), optional
@@ -723,7 +723,7 @@ class DifferentialEvolutionSolver:
         ignored if ``workers != 1``.
         This option will override the `updating` keyword to
         ``updating='deferred'``.
-    """
+    """ # noqa: E501
 
     # Dispatch of mutation strategy method (binomial or exponential).
     _binomial = {'best1bin': '_best1',

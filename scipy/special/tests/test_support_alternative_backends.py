@@ -50,7 +50,8 @@ def test_rel_entr_generic(dtype):
 @pytest.mark.fail_slow(5)
 @array_api_compatible
 @given(data=strategies.data())
-@pytest.mark.parametrize('f_name_n_args', array_special_func_map.items())
+# `reversed` is for developer convenience: test new function first = less waiting
+@pytest.mark.parametrize('f_name_n_args', reversed(array_special_func_map.items()))
 def test_support_alternative_backends(xp, data, f_name_n_args):
     f_name, n_args = f_name_n_args
 

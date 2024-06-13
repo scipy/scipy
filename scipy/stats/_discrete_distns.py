@@ -1389,7 +1389,7 @@ class zipfian_gen(rv_discrete):
 
     %(example)s
 
-    Confirm that `zipfian` reduces to `zipf` for large `n`, `a > 1`.
+    Confirm that `zipfian` reduces to `zipf` for large `n`, ``a > 1``.
 
     >>> import numpy as np
     >>> from scipy.stats import zipf, zipfian

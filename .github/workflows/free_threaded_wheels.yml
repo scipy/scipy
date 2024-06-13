@@ -1,0 +1,160 @@
+# Workflow to build and test wheels for the free-threaded Python build.
+#
+# This should be merged back into wheels.yml when free-threaded wheel
+# builds can be uploaded to pypi along with the rest of scipy's release
+# artifacts.
+#
+# To work on the wheel building infrastructure on a fork, comment out:
+#
+# if: github.repository == 'scipy/scipy'
+#
+# in the get_commit_message job. Be sure to include [wheel build] in your commit
+# message to trigger the build. All files related to wheel building are located
+# at tools/wheels/
+name: Free-Threaded Wheel Builder
+
+on:
+    schedule:
+    #        ┌───────────── minute (0 - 59)
+    #        │  ┌───────────── hour (0 - 23)
+    #        │  │ ┌───────────── day of the month (1 - 31)
+    #        │  │ │ ┌───────────── month (1 - 12 or JAN-DEC)
+    #        │  │ │ │ ┌───────────── day of the week (0 - 6 or SUN-SAT)
+    #        │  │ │ │ │
+    - cron: "9  9 * * *"
+    push:
+      branches:
+        - maintenance/**
+    pull_request:
+      branches:
+        - main
+        - maintenance/**
+    workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read # to fetch code (actions/checkout)
+
+jobs:
+  get_commit_message:
+    name: Get commit message
+    runs-on: ubuntu-latest
+    if: github.repository == 'scipy/scipy'
+    outputs:
+      message: ${{ steps.commit_message.outputs.message }}
+    steps:
+      - name: Checkout scipy
+        uses: actions/checkout@v4.1.1
+        # Gets the correct commit message for pull request
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - name: Get commit message
+        id: commit_message
+        run: |
+          set -xe
+          COMMIT_MSG=$(git log --no-merges -1)
+          RUN="0"
+          if [[ "$COMMIT_MSG" == *"[wheel build]"* ]]; then
+              RUN="1"
+          fi
+          echo "message=$RUN" >> $GITHUB_OUTPUT
+          echo github.ref ${{ github.ref }}
+
+  build_wheels:
+    name: Wheel, ${{ matrix.python[0] }}-${{ matrix.buildplat[1] }}
+      ${{ matrix.buildplat[2] }} ${{ matrix.buildplat[3] }}
+      ${{ matrix.buildplat[4] }}
+    needs: get_commit_message
+    if: >-
+      contains(needs.get_commit_message.outputs.message, '1') ||
+      github.event_name == 'schedule' ||
+      github.event_name == 'workflow_dispatch'
+    runs-on: ${{ matrix.buildplat[0] }}
+    strategy:
+      # Ensure that a wheel builder finishes even if another fails
+      fail-fast: false
+      matrix:
+        # Github Actions doesn't support pairing matrix values together, let's improvise
+        # https://github.com/github/feedback/discussions/7835#discussioncomment-1769026
+        buildplat:
+          - [ubuntu-22.04, manylinux, x86_64, "", ""]
+          - [ubuntu-22.04, musllinux, x86_64, "", ""]
+          # TODO: build scipy and set up Windows and MacOS
+          # cibuildwheel does not yet support Mac for free-threaded python
+          # windows is supported but numpy doesn't build on the image yet
+        python: [["cp313t", '3.13']]
+    env:
+      IS_32_BIT: ${{ matrix.buildplat[2] == 'x86' }}
+      # upload to staging if it's a push to a maintenance branch and the last
+      # commit message contains '[wheel build]'
+      IS_PUSH: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/heads/maintenance') && contains(needs.get_commit_message.outputs.message, '1') }}
+      IS_SCHEDULE_DISPATCH: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
+    steps:
+      - name: Checkout scipy
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+        with:
+          submodules: true
+
+      # Used to push the built wheels
+      - uses: actions/setup-python@82c7e631bb3cdc910f68e0081d67478d79c6982d # v5.1.0
+        with:
+          python-version: "3.x"
+
+      - name: Build wheels
+        uses: pypa/cibuildwheel@ba8be0d98853f5744f24e7f902c8adef7ae2e7f3  # v2.18.1
+        env:
+          CIBW_PRERELEASE_PYTHONS: True
+          CIBW_FREE_THREADED_SUPPORT: True
+          CIBW_BUILD: ${{ matrix.python[0] }}-${{ matrix.buildplat[1] }}*
+          CIBW_ARCHS: ${{ matrix.buildplat[2] }}
+          # TODO: remove along with installing build deps in
+          # cibw_before_build.sh when a released cython can build numpy
+          CIBW_BUILD_FRONTEND: "pip; args: --no-build-isolation"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          path: ./wheelhouse/*.whl
+          name: ${{ matrix.python[0] }}-${{ matrix.buildplat[1] }}
+            ${{ matrix.buildplat[2] }} ${{ matrix.buildplat[3] }}
+            ${{ matrix.buildplat[4] }}
+
+      - uses: mamba-org/setup-micromamba@422500192359a097648154e8db4e39bdb6c6eed7
+        with:
+          # for installation of anaconda-client, required for upload to
+          # anaconda.org
+          # Note that this step is *after* specific pythons have been used to
+          # build and test the wheel
+          # for installation of anaconda-client, for upload to anaconda.org
+          # environment will be activated after creation, and in future bash steps
+          init-shell: bash
+          environment-name: upload-env
+          create-args: >-
+            anaconda-client
+
+      - name: Upload wheels
+        if: success()
+        shell: bash -el {0}
+        # see https://github.com/marketplace/actions/setup-miniconda for why
+        # `-el {0}` is required.
+        env:
+          SCIPY_STAGING_UPLOAD_TOKEN: ${{ secrets.SCIPY_STAGING_UPLOAD_TOKEN }}
+          SCIPY_NIGHTLY_UPLOAD_TOKEN: ${{ secrets.SCIPY_NIGHTLY_UPLOAD_TOKEN }}
+        run: |
+          conda install -y anaconda-client
+          source tools/wheels/upload_wheels.sh
+          set_upload_vars
+          # For cron jobs (restricted to main branch) or "Run workflow" trigger
+          # an upload to:
+          #
+          # https://anaconda.org/scientific-python-nightly-wheels/scipy
+          #
+          # Pushes to a maintenance branch that contain '[wheel build]' will
+          # cause wheels to be built and uploaded to:
+          #
+          # https://anaconda.org/multibuild-wheels-staging/scipy
+          #
+          # The tokens were originally generated at anaconda.org
+          upload_wheels

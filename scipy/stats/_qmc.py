@@ -704,10 +704,10 @@ def _van_der_corput_permutations(
     Notes
     -----
     In Algorithm 1 of Owen 2017, a permutation of `np.arange(base)` is
-    created for each positive integer `k` such that `1 - base**-k < 1`
+    created for each positive integer `k` such that ``1 - base**-k < 1``
     using floating-point arithmetic. For double precision floats, the
-    condition `1 - base**-k < 1` can also be written as `base**-k >
-    2**-54`, which makes it more apparent how many permutations we need
+    condition ``1 - base**-k < 1`` can also be written as ``base**-k >
+    2**-54``, which makes it more apparent how many permutations we need
     to create.
     """
     rng = check_random_state(random_state)

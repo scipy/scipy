@@ -36,6 +36,7 @@ dependencies:
   - types-psutil
   # For building docs
   - sphinx
+  - intersphinx-registry
   - numpydoc
   - ipython
   - setuptools<67.3  # avoid pkg_resources deprecation warnings from MPL/scikit-umfpack
@@ -45,6 +46,7 @@ dependencies:
   - jupytext
   - myst-nb
   - jupyterlite-sphinx>=0.13.1
+  - jupyterlite-pyodide-kernel
   # Some optional test dependencies
   - mpmath
   - gmpy2

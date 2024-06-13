@@ -40,6 +40,17 @@ def _get_ttest_ci(ttest):
     return ttest_ci
 
 
+def xp_mean_1samp(*args, **kwargs):
+    kwargs.pop('_no_deco', None)
+    return stats._stats_py._xp_mean(*args, **kwargs)
+
+
+def xp_mean_2samp(*args, **kwargs):
+    kwargs.pop('_no_deco', None)
+    weights = args[1]
+    return stats._stats_py._xp_mean(args[0], *args[2:], weights=weights, **kwargs)
+
+
 axis_nan_policy_cases = [
     # function, args, kwds, number of samples, number of outputs,
     # ... paired, unpacker function
@@ -115,6 +126,8 @@ axis_nan_policy_cases = [
     (stats.alexandergovern, tuple(), {}, 2, 2, False,
      lambda res: (res.statistic, res.pvalue)),
     (stats.combine_pvalues, tuple(), {}, 1, 2, False, None),
+    (xp_mean_1samp, tuple(), dict(), 1, 1, False, lambda x: (x,)),
+    (xp_mean_2samp, tuple(), dict(), 2, 1, True, lambda x: (x,)),
 ]
 
 # If the message is one of those expected, put nans in
@@ -143,8 +156,11 @@ too_small_messages = {"Degrees of freedom <= 0 for slice",
                       "attempt to get argmax of an empty sequence",
                       "No array values within given limits",
                       "Input sample size must be greater than one.",
+                      "At least one slice along `axis` has zero length",
+                      "One or more sample arguments is too small",
                       "invalid value encountered",
-                      "divide by zero encountered",}
+                      "divide by zero encountered",
+}
 
 # If the message is one of these, results of the function may be inaccurate,
 # but NaNs are not to be placed
@@ -406,7 +422,7 @@ def _axis_nan_policy_test(hypotest, args, kwds, n_samples, n_outputs, paired,
             res = hypotest(*data1d, *args, nan_policy=nan_policy, **kwds)
         res_1db = unpacker(res)
 
-        assert_equal(res_1db, res_1da)
+        assert_allclose(res_1db, res_1da, rtol=1e-15)
         res_1d[i] = res_1db
 
     res_1d = np.moveaxis(res_1d, -1, 0)
@@ -531,7 +547,7 @@ def test_axis_nan_policy_axis_is_None(hypotest, args, kwds, n_samples,
     all_results = list(res1db) + list(res1dc)
 
     if res1da is not None:
-        assert_equal(res1db, res1da)
+        assert_allclose(res1db, res1da, rtol=1e-15)
         all_results += list(res1da)
 
     for item in all_results:
@@ -555,7 +571,9 @@ def test_axis_nan_policy_axis_is_None(hypotest, args, kwds, n_samples,
     ("hypotest", "args", "kwds", "n_samples", "unpacker"),
     ((stats.gmean, tuple(), dict(), 1, lambda x: (x,)),
      (stats.mannwhitneyu, tuple(), {'method': 'asymptotic'}, 2, None),
-     (stats.ttest_1samp, (0,), dict(), 1, unpack_ttest_result))
+     (stats.ttest_1samp, (0,), dict(), 1, unpack_ttest_result),
+     (xp_mean_1samp, tuple(), dict(), 1, lambda x: (x,)),
+     (xp_mean_2samp, tuple(), dict(), 2, lambda x: (x,))),
 )
 @pytest.mark.parametrize(
     ("sample_shape", "axis_cases"),

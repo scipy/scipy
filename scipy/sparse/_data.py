@@ -18,8 +18,8 @@ __all__ = []
 # TODO implement all relevant operations
 # use .data.__methods__() instead of /=, *=, etc.
 class _data_matrix(_spbase):
-    def __init__(self, arg1):
-        _spbase.__init__(self, arg1)
+    def __init__(self, arg1, *, maxprint=None):
+        _spbase.__init__(self, arg1, maxprint=maxprint)
 
     @property
     def dtype(self):
@@ -56,8 +56,7 @@ class _data_matrix(_spbase):
         if isscalarlike(other):
             self.data *= other
             return self
-        else:
-            return NotImplemented
+        return NotImplemented
 
     def __itruediv__(self, other):  # self /= other
         if isscalarlike(other):
@@ -97,11 +96,6 @@ class _data_matrix(_spbase):
 
     copy.__doc__ = _spbase.copy.__doc__
 
-    def count_nonzero(self):
-        return np.count_nonzero(self._deduped_data())
-
-    count_nonzero.__doc__ = _spbase.count_nonzero.__doc__
-
     def power(self, n, dtype=None):
         """
         This function performs element-wise power.
@@ -118,7 +112,7 @@ class _data_matrix(_spbase):
         ------
         NotImplementedError : if n is a zero scalar
             If zero power is desired, special case it to use
-            `np.ones(A.shape, dtype=A.dtype)`
+            ``np.ones(A.shape, dtype=A.dtype)``
         """
         if not isscalarlike(n):
             raise NotImplementedError("input is not scalar")

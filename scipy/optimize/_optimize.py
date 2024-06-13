@@ -3709,7 +3709,7 @@ def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin,
     the `finish` program's results usually will not coincide with any
     gridpoint, and may fall outside the grid's boundary. Thus, if a
     minimum only needs to be found over the provided grid points, make
-    sure to pass in `finish=None`.
+    sure to pass in ``finish=None``.
 
     *Note 2*: The grid of points is a `numpy.mgrid` object.
     For `brute` the `ranges` and `Ns` inputs have the following effect.

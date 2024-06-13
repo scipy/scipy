@@ -707,7 +707,13 @@ def _nan_allsame(a, axis, keepdims=False):
     return ((a0 == a) | np.isnan(a)).all(axis=axis, keepdims=keepdims)
 
 
-def _contains_nan(a, nan_policy='propagate', policies=None, *, xp=None):
+def _contains_nan(a, nan_policy='propagate', policies=None, *,
+                  xp_omit_okay=False, xp=None):
+    # Regarding `xp_omit_okay`: Temporarily, while `_axis_nan_policy` does not
+    # handle non-NumPy arrays, most functions that call `_contains_nan` want
+    # it to raise an error if `nan_policy='omit'` and `xp` is not `np`.
+    # Some functions support `nan_policy='omit'` natively, so setting this to
+    # `True` prevents the error from being raised.
     if xp is None:
         xp = array_namespace(a)
     not_numpy = not is_numpy(xp)
@@ -738,7 +744,7 @@ def _contains_nan(a, nan_policy='propagate', policies=None, *, xp=None):
     if contains_nan and nan_policy == 'raise':
         raise ValueError("The input contains nan values")
 
-    if not_numpy and contains_nan and nan_policy=='omit':
+    if not xp_omit_okay and not_numpy and contains_nan and nan_policy=='omit':
         message = "`nan_policy='omit' is incompatible with non-NumPy arrays."
         raise ValueError(message)
 
