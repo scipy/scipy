@@ -31,7 +31,7 @@ def test_first_harmonics():
     theta, phi = np.meshgrid(theta, phi)
 
     for harm, m, n in zip(harms, m, n):
-        assert_allclose(sc.sph_harm(m, n, theta, phi),
+        assert_allclose(sc.sph_harm_y(m, n, theta, phi),
                         harm(theta, phi),
                         rtol=1e-15, atol=1e-15,
                         err_msg=f"Y^{m}_{n} incorrect")

@@ -16,6 +16,9 @@ using cfloat_2d = mdspan<cfloat, dextents<ptrdiff_t, 2>, layout_stride>;
 using cdouble_1d = mdspan<cdouble, dextents<ptrdiff_t, 1>, layout_stride>;
 using cdouble_2d = mdspan<cdouble, dextents<ptrdiff_t, 2>, layout_stride>;
 
+using cfloat2_2d = mdspan<cfloat[2], dextents<ptrdiff_t, 2>, layout_stride>;
+using cdouble2_2d = mdspan<cdouble[2], dextents<ptrdiff_t, 2>, layout_stride>;
+
 // 1 input, 1 output
 using func_f_f1_t = void (*)(float, float_1d);
 using func_f_f2_t = void (*)(float, float_2d);
