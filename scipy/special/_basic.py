@@ -1728,22 +1728,26 @@ def mathieu_odd_coef(m, q):
 
 assoc_legendre_p = MultiUFunc(assoc_legendre_p)
 
+
 @assoc_legendre_p.as_resolve_ufunc
-def _(ufuncs_map, norm=False, diff_n=0):
-    return ufuncs_map[norm][diff_n]
+def _(ufuncs, norm=False, diff_n=0):
+    return ufuncs[norm][diff_n]
+
+assoc_legendre_p_all = MultiUFunc(assoc_legendre_p_all)
+
 
 @assoc_legendre_p.docstring
 def _():
     """assoc_legendre_p(n, m, z, *, norm=False, diff_n=0)"""
 
-assoc_legendre_p_all = MultiUFunc(assoc_legendre_p_all)
 
 @assoc_legendre_p_all.as_resolve_ufunc
-def _(ufuncs_map, norm=False, diff_n = 0):
-    return ufuncs_map[norm][diff_n]
+def _(ufuncs, norm=False, diff_n=0):
+    return ufuncs[norm][diff_n]
+
 
 @assoc_legendre_p_all.as_resolve_out_shapes
-def _(m, n, z_shape, nout):
+def _(n, m, z_shape, nout):
     if ((not np.isscalar(m)) or (abs(m) > n)):
         raise ValueError("m must be <= n.")
 
@@ -1752,17 +1756,32 @@ def _(m, n, z_shape, nout):
 
     return nout * ((n + 1, 2 * abs(m) + 1) + z_shape,)
 
+
+@assoc_legendre_p_all.docstring
+def _():
+    """assoc_legendre_p_all(n, m, z, *, norm=False, diff_n=0)"""
+
+
 sph_legendre_p = MultiUFunc(sph_legendre_p)
+
 
 @sph_legendre_p.as_resolve_ufunc
 def _(ufuncs, diff_n = 0):
     return ufuncs[diff_n]
 
+
+@sph_legendre_p.docstring
+def _():
+    """sph_legendre_p(n, m, z, *, diff_n=0)"""
+
+
 sph_legendre_p_all = MultiUFunc(sph_legendre_p_all)
+
 
 @sph_legendre_p_all.as_resolve_ufunc
 def _(ufuncs, diff_n = 0):
     return ufuncs[diff_n]
+
 
 @sph_legendre_p_all.as_resolve_out_shapes
 def _(n, m, z_shape, nout):
@@ -1774,9 +1793,11 @@ def _(n, m, z_shape, nout):
 
     return nout * ((n + 1, 2 * abs(m) + 1) + z_shape,)
 
-@assoc_legendre_p_all.docstring
+
+@sph_legendre_p_all.docstring
 def _():
-    """assoc_legendre_p_all(n, m, z, *, norm=False, diff_n=0)"""
+    """sph_legendre_p_all(n, m, z, *, diff_n=0)"""
+
 
 def lpmn(m, n, z):
     """Sequence of associated Legendre functions of the first kind.
@@ -1856,7 +1877,7 @@ def _(ufuncs, norm=False, diff_n=0):
     return ufuncs[norm][diff_n]
 
 
-@multi_assoc_legendre_p_all.resolve_out_shapes
+@multi_assoc_legendre_p_all.as_resolve_out_shapes
 def _(n, m, type_shape, z_shape, nout):
     if not isinstance(m, numbers.Integral) or (abs(m) > n):
         raise ValueError("m must be <= n.")
@@ -1868,7 +1889,7 @@ def _(n, m, type_shape, z_shape, nout):
 
 @multi_assoc_legendre_p_all.docstring
 def _():
-    """multi_assoc_legendre_p_all(m, n, z, *, norm=False, diff_n=0)"""
+    """multi_assoc_legendre_p_all(n, m, type, z, *, norm=False, diff_n=0)"""
 
 
 def clpmn(m, n, z, type = 3):
@@ -1932,7 +1953,7 @@ def clpmn(m, n, z, type = 3):
 
     m, n = int(m), int(n)  # Convert to int to maintain backwards compatibility.
 
-    out, out_jac = multi_assoc_legendre_p_all(n, abs(m), type, z, diff_n=1)
+    out, out_jac = multi_assoc_legendre_p_all(n, abs(m), type, z, diff_n = 1)
     out = np.swapaxes(out, 0, 1)
     out_jac = np.swapaxes(out_jac, 0, 1)
 
@@ -2110,19 +2131,24 @@ def euler(n):
 
 legendre_p = MultiUFunc(legendre_p)
 
+
 @legendre_p.as_resolve_ufunc
-def _(ufuncs_map, diff_n = 0):
-    return ufuncs_map[diff_n]
+def _(ufuncs, diff_n = 0):
+    return ufuncs[diff_n]
+
 
 @legendre_p.docstring
 def _():
     """legendre_p(n, z, *, diff_n=0)"""
 
+
 legendre_p_all = MultiUFunc(legendre_p_all)
 
+
 @legendre_p_all.as_resolve_ufunc
-def _(ufuncs_map, diff_n = 0):
-    return ufuncs_map[diff_n]
+def _(ufuncs, diff_n = 0):
+    return ufuncs[diff_n]
+
 
 @legendre_p_all.as_resolve_out_shapes
 def _(n, z_shape, nout):
@@ -2130,12 +2156,14 @@ def _(n, z_shape, nout):
 
     return nout * ((n + 1,) + z_shape,)
 
+
 @legendre_p_all.docstring
 def _():
     """legendre_p_all(n, z, *, diff_n=0)"""
 
+    
 def lpn(n, z):
-    return legendre_p_all(n, z, diff_n=1)
+    return legendre_p_all(n, z, diff_n = 1)
 
 def lqn(n, z):
     """Legendre function of the second kind.
@@ -3487,6 +3515,12 @@ sph_harm_y = MultiUFunc(sph_harm_y, force_complex_output=True)
 def _(ufuncs, diff_n=0):
     return ufuncs[diff_n]
 
+
+@sph_harm_y.docstring
+def _():
+    """sph_harm_y(n, m, theta, phi, * diff_n)"""
+
+
 sph_harm_y_all = MultiUFunc(sph_harm_y_all, force_complex_output=True)
 
 
@@ -3505,3 +3539,8 @@ def _(n, m, theta_shape, phi_shape, nout):
 
     return nout * ((n + 1, 2 * abs(m) + 1) +
         np.broadcast_shapes(theta_shape, phi_shape),)
+
+
+@sph_harm_y_all.docstring
+def _():
+    """sph_harm_y_all(n, m, theta, phi, *, diff_n)"""
