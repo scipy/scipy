@@ -6804,7 +6804,9 @@ class TestHarMean:
 
     def test_1d_array_with_negative_value(self):
         a = np.array([1, 0, -1])
-        assert_raises(ValueError, stats.hmean, a)
+        message = "The harmonic mean is only defined..."
+        with pytest.warns(RuntimeWarning, match=message):
+            stats.hmean(a)
 
     # Note the next tests use axis=None as default, not axis=0
     def test_2d_list(self):
@@ -7020,7 +7022,8 @@ class TestPowMean:
 
     def test_1d_array_with_negative_value(self):
         a, p = np.array([1, 0, -1]), 1.23
-        with pytest.raises(ValueError, match='Power mean only defined if all'):
+        message = "The power mean is only defined..."
+        with pytest.warns(RuntimeWarning, match=message):
             stats.pmean(a, p)
 
     @pytest.mark.parametrize(
