@@ -1748,7 +1748,10 @@ assoc_legendre_p_all = MultiUFunc(assoc_legendre_p_all)
 
 @assoc_legendre_p.docstring
 def _():
-    """assoc_legendre_p(n, m, z, *, norm=False, diff_n=0)"""
+    """assoc_legendre_p(n, m, z, *, norm=False, diff_n=0)
+
+    Associated Legendre function of the first kind.
+    """
 
 
 @assoc_legendre_p_all.as_resolve_ufunc
@@ -1779,7 +1782,10 @@ def _(n, m, z_shape, nout):
 
 @assoc_legendre_p_all.docstring
 def _():
-    """assoc_legendre_p_all(n, m, z, *, norm=False, diff_n=0)"""
+    """assoc_legendre_p_all(n, m, z, *, norm=False, diff_n=0)
+
+    Table of associated Legendre functions of the first kind.
+    """
 
 
 sph_legendre_p = MultiUFunc(sph_legendre_p)
@@ -1802,7 +1808,10 @@ def _(ufuncs, diff_n = 0):
 
 @sph_legendre_p.docstring
 def _():
-    """sph_legendre_p(n, m, z, *, diff_n=0)"""
+    """sph_legendre_p(n, m, z, *, diff_n=0)
+
+    Spherical associated Legendre function of the first kind.
+    """
 
 
 sph_legendre_p_all = MultiUFunc(sph_legendre_p_all)
@@ -1836,7 +1845,10 @@ def _(n, m, z_shape, nout):
 
 @sph_legendre_p_all.docstring
 def _():
-    """sph_legendre_p_all(n, m, z, *, diff_n=0)"""
+    """sph_legendre_p_all(n, m, z, *, diff_n=0)
+
+    Table of spherical associated Legendre functions of the first kind.
+    """
 
 
 def lpmn(m, n, z):
@@ -1908,6 +1920,34 @@ def lpmn(m, n, z):
 
     return p, pd
 
+
+multi_assoc_legendre_p = MultiUFunc(multi_assoc_legendre_p,
+                                    force_complex_output=True)
+
+
+@multi_assoc_legendre_p.as_resolve_ufunc
+def _(ufuncs, norm=False, diff_n=0):
+    if not ((isinstance(diff_n, int) or np.issubdtype(diff_n, np.integer))
+            and diff_n >= 0):
+        raise ValueError(
+            f"diff_n must be a non-negative integer, received: {diff_n}."
+        )
+    if not 0 <= diff_n <= 2:
+        raise ValueError(
+            "diff_n is currently only implemented for orders 0, 1, and 2,"
+            f" received: {diff_n}."
+        )
+    return ufuncs[norm][diff_n]
+
+
+@multi_assoc_legendre_p.docstring
+def _():
+    """multi_assoc_legendre_p_all(n, m, type, z, *, norm=False, diff_n=0)
+
+    Complex valued associated Legendre functions of the first kind.
+    """
+
+
 multi_assoc_legendre_p_all = MultiUFunc(multi_assoc_legendre_p_all,
                                         force_complex_output=True)
 
@@ -1939,7 +1979,10 @@ def _(n, m, type_shape, z_shape, nout):
 
 @multi_assoc_legendre_p_all.docstring
 def _():
-    """multi_assoc_legendre_p_all(n, m, type, z, *, norm=False, diff_n=0)"""
+    """multi_assoc_legendre_p_all(n, m, type, z, *, norm=False, diff_n=0)
+
+    Table of complex valued associated Legendre functions of the first kind.
+    """
 
 
 def clpmn(m, n, z, type = 3):
@@ -2199,7 +2242,10 @@ def _(ufuncs, diff_n=0):
 
 @legendre_p.docstring
 def _():
-    """legendre_p(n, z, *, diff_n=0)"""
+    """legendre_p(n, z, *, diff_n=0)
+
+    Legendre function of the first kind.
+    """
 
 
 legendre_p_all = MultiUFunc(legendre_p_all)
@@ -2229,7 +2275,10 @@ def _(n, z_shape, nout):
 
 @legendre_p_all.docstring
 def _():
-    """legendre_p_all(n, z, *, diff_n=0)"""
+    """legendre_p_all(n, z, *, diff_n=0)
+
+    Sequence of Legendre functions of the first kind.
+    """
 
     
 def lpn(n, z):
@@ -3598,7 +3647,10 @@ def _(ufuncs, diff_n=0):
 
 @sph_harm_y.docstring
 def _():
-    """sph_harm_y(n, m, theta, phi, * diff_n)"""
+    """sph_harm_y(n, m, theta, phi, * diff_n)
+
+    Spherical harmonics
+    """
 
 
 sph_harm_y_all = MultiUFunc(sph_harm_y_all, force_complex_output=True)
@@ -3633,4 +3685,7 @@ def _(n, m, theta_shape, phi_shape, nout):
 
 @sph_harm_y_all.docstring
 def _():
-    """sph_harm_y_all(n, m, theta, phi, *, diff_n)"""
+    """sph_harm_y_all(n, m, theta, phi, *, diff_n)
+
+    Table of spherical harmonics.
+    """
