@@ -409,15 +409,15 @@ def pmean(a, p, *, axis=0, dtype=None, weights=None):
 
     a = np.asarray(a, dtype=dtype)
 
+    if weights is not None:
+        weights = np.asanyarray(weights, dtype=dtype)
+
     if not np.all(a >= 0):
         message = ("The power mean is only defined if all elements are greater "
                    "than or equal to zero; otherwise, the result is NaN.")
         warnings.warn(message, RuntimeWarning, stacklevel=2)
 
-    if weights is not None:
-        weights = np.asanyarray(weights, dtype=dtype)
-
-    with np.errstate(divide='ignore'):
+    with np.errstate(divide='ignore', invalid='ignore'):
         return _xp_mean(a**float(p), axis=axis, weights=weights)**(1/p)
 
 
