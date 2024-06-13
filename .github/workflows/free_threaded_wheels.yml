@@ -179,18 +179,16 @@ jobs:
             ${{ matrix.buildplat[2] }} ${{ matrix.buildplat[3] }}
             ${{ matrix.buildplat[4] }}
 
-      - uses: mamba-org/setup-micromamba@422500192359a097648154e8db4e39bdb6c6eed7
+      - uses: conda-incubator/setup-miniconda@v3
         with:
           # for installation of anaconda-client, required for upload to
           # anaconda.org
+          # default (and activated) environment name is test
           # Note that this step is *after* specific pythons have been used to
           # build and test the wheel
-          # for installation of anaconda-client, for upload to anaconda.org
-          # environment will be activated after creation, and in future bash steps
-          init-shell: bash
-          environment-name: upload-env
-          create-args: >-
-            anaconda-client
+          auto-update-conda: true
+          python-version: "3.10"
+          miniconda-version: "latest"
 
       - name: Upload wheels
         if: success()
