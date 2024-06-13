@@ -206,9 +206,15 @@ extern const char *yve_doc;
 extern "C" int wrap_PyUFunc_getfperr() { return PyUFunc_getfperr(); }
 
 static PyModuleDef _special_ufuncs_def = {
-    .m_base = PyModuleDef_HEAD_INIT,
-    .m_name = "_special_ufuncs",
-    .m_size = -1,
+    PyModuleDef_HEAD_INIT,
+    "_special_ufuncs",
+    NULL,
+    -1,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL
 };
 
 PyMODINIT_FUNC PyInit__special_ufuncs() {
