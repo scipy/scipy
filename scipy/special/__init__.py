@@ -472,15 +472,16 @@ Legendre functions
 
    lpmv     -- Associated Legendre function of integer order and real degree.
    sph_harm -- Compute spherical harmonics.
-
-.. autosummary::
-   :toctree: generated/
-
    clpmn -- Associated Legendre function of the first kind for complex arguments.
+   clpmn_all -- lorem ipsum
    lpn   -- Legendre function of the first kind.
    lqn   -- Legendre function of the second kind.
    lpmn  -- Sequence of associated Legendre functions of the first kind.
    lqmn  -- Sequence of associated Legendre functions of the second kind.
+   legendre_p -- lorem ipsum
+   legendre_p_all -- lorem ipsum
+   assoc_legendre_p -- lorem ipsum
+   assoc_legendre_p_all -- lorem ipsum
 
 Ellipsoidal harmonics
 ---------------------
