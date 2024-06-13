@@ -6964,7 +6964,10 @@ class TestGeoMean:
         with np.errstate(invalid='ignore'):
             check_equal_gmean(a, desired, xp=xp)
 
-    @pytest.mark.skip_xp_backends(np_only=True)
+    @pytest.mark.skip_xp_backends(
+        np_only=True,
+        reasons=['array-likes only supported for NumPy backend'],
+    )
     @pytest.mark.usefixtures("skip_xp_backends")
     def test_weights_1d_list(self, xp):
         # Desired result from:
