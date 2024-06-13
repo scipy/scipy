@@ -70,9 +70,9 @@ def shgo(
     n : int, optional
         Number of sampling points used in the construction of the simplicial
         complex. For the default ``simplicial`` sampling method 2**dim + 1
-        sampling points are generated instead of the default `n=100`. For all
+        sampling points are generated instead of the default ``n=100``. For all
         other specified values `n` sampling points are generated. For
-        ``sobol``, ``halton`` and other arbitrary `sampling_methods` `n=100` or
+        ``sobol``, ``halton`` and other arbitrary `sampling_methods` ``n=100`` or
         another specified number of sampling points are generated.
     iters : int, optional
         Number of iterations used in the construction of the simplicial

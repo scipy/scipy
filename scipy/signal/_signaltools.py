@@ -1371,7 +1371,7 @@ def convolve(in1, in2, mode='full', method='auto'):
     `choose_conv_method` to choose the fastest method using pre-computed
     values (`choose_conv_method` can also measure real-world timing with a
     keyword argument). Because `fftconvolve` relies on floating point numbers,
-    there are certain constraints that may force `method=direct` (more detail
+    there are certain constraints that may force ``method='direct'`` (more detail
     in `choose_conv_method` docstring).
 
     Examples

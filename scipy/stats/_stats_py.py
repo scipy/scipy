@@ -2194,7 +2194,7 @@ def scoreatpercentile(a, per, limit=(), interpolation_method='fraction',
                       axis=None):
     """Calculate the score at a given percentile of the input sequence.
 
-    For example, the score at `per=50` is the median. If the desired quantile
+    For example, the score at ``per=50`` is the median. If the desired quantile
     lies between two data points, we interpolate between them, according to
     the value of `interpolation`. If the parameter `limit` is provided, it
     should be a tuple (lower, upper) of two values.
@@ -2982,7 +2982,7 @@ def zscore(a, axis=0, ddof=0, nan_policy='propagate'):
            [-0.22095197,  0.24468594,  1.19042819, -1.21416216],
            [-0.82780366,  1.4457416 , -0.43867764, -0.1792603 ]])
 
-    An example with `nan_policy='omit'`:
+    An example with ``nan_policy='omit'``:
 
     >>> x = np.array([[25.11, 30.10, np.nan, 32.02, 43.15],
     ...               [14.95, 16.06, 121.25, 94.35, 29.81]])
@@ -10626,7 +10626,7 @@ def expectile(a, alpha=0.5, *, weights=None):
     a : array_like
         Array containing numbers whose expectile is desired.
     alpha : float, default: 0.5
-        The level of the expectile; e.g., `alpha=0.5` gives the mean.
+        The level of the expectile; e.g., ``alpha=0.5`` gives the mean.
     weights : array_like, optional
         An array of weights associated with the values in `a`.
         The `weights` must be broadcastable to the same shape as `a`.
@@ -11014,7 +11014,7 @@ def _xp_mean(x, /, *, axis=None, weights=None, keepdims=False, nan_policy='propa
     interface to be consistent with the rest of `scipy.stats`.
 
     Note that according to the formula, including NaNs with zero weights is not
-    the same as *omitting* NaNs with `nan_policy='omit'`; in the former case,
+    the same as *omitting* NaNs with ``nan_policy='omit'``; in the former case,
     the NaNs will continue to propagate through the calculation whereas in the
     latter case, the NaNs are excluded entirely.
 

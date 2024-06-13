@@ -63,8 +63,8 @@ def bayes_mvs(data, alpha=0.90):
 
             (center, (lower, upper))
 
-        with `center` the mean of the conditional pdf of the value given the
-        data, and `(lower, upper)` a confidence interval, centered on the
+        with ``center`` the mean of the conditional pdf of the value given the
+        data, and ``(lower, upper)`` a confidence interval, centered on the
         median, containing the estimate to a probability ``alpha``.
 
     See Also
@@ -4374,7 +4374,7 @@ def circmean(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     r"""Compute the circular mean of a sample of angle observations.
 
     Given :math:`n` angle observations :math:`x_1, \cdots, x_n` measured in
-    radians, their `circular mean` is defined by ([1]_, Eq. 2.2.4)
+    radians, their *circular mean* is defined by ([1]_, Eq. 2.2.4)
 
     .. math::
 
@@ -4466,7 +4466,7 @@ def circvar(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     r"""Compute the circular variance of a sample of angle observations.
 
     Given :math:`n` angle observations :math:`x_1, \cdots, x_n` measured in
-    radians, their `circular variance` is defined by ([2]_, Eq. 2.3.3)
+    radians, their *circular variance* is defined by ([2]_, Eq. 2.3.3)
 
     .. math::
 
