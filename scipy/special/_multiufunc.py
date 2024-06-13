@@ -2,11 +2,16 @@ import collections
 import inspect
 import numpy as np
 
+
+_MultiUFunc_class_docstring = (
+    """Handles dispatch between multiple ufuncs."""
+)
+
 class MultiUFunc:
+
     __slots__ = ["_ufuncs_map", "resolve_out_shapes", "resolve_ufunc",
                  "__forces_complex_output", "_ufuncs", "__instance_doc"]
     def __init__(self, ufuncs_map, *, force_complex_output=False):
-
         # Gather leaf level ufuncs from ufuncs_map.
         ufuncs = []
         def traverse(obj):
@@ -91,7 +96,8 @@ class MultiUFunc:
 
     @property
     def __doc__(self):
-        return self.__instance_doc
+        return (f"{self.__instance_doc}\nClass docstring:\n"
+                f"{_MultiUFunc_class_docstring}")
 
     def __call__(self, *args, **kwargs):
         ufunc = self.resolve_ufunc(**kwargs)
