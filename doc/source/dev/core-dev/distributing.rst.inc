@@ -109,8 +109,8 @@ and distributing them on PyPI or elsewhere.
 
 - A binary is specific for a single (major) Python version (because different
   major Python versions aren't ABI-compatible, at least up to Python 3.12).
-- Build against the lowest NumPy 2.x version that you need to support, then it
-  will work for all NumPy versions with the same major version number (NumPy
+- Build against NumPy ``2.0.0``, then it will work for all NumPy versions with
+  the same major version number (NumPy
   does maintain backwards ABI compatibility), and as far back as NumPy ``1.19``
   series at the time of writing.
 - The easiest available toolchain for building portable SciPy binaries
