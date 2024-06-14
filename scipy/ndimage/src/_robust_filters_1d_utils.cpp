@@ -11,7 +11,6 @@ int mmexchange(Mediator *m, int i, int j) {
   return 1;
 }
 
-
 //creates new Mediator: to calculate `nItems` running rank.
 Mediator* MediatorNew(int nItems, int rank, bool buffer)
 {
@@ -33,7 +32,7 @@ Mediator* MediatorNew(int nItems, int rank, bool buffer)
    return m;
 }
 
-// Frees Mediator
+// Deletes Mediator
 void MediatorDel(Mediator* m, int nItems, int rank, bool buffer)
 {
     m->heap -= buffer ? rank + (nItems - 1) / 2 :rank; //points to rank

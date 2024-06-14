@@ -48,7 +48,7 @@ __all__ = ['correlate1d', 'convolve1d', 'gaussian_filter1d', 'gaussian_filter',
            'uniform_filter1d', 'uniform_filter', 'minimum_filter1d',
            'maximum_filter1d', 'minimum_filter', 'maximum_filter',
            'rank_filter', 'median_filter', 'percentile_filter',
-           'generic_filter1d', 'generic_filter']
+           'generic_filter1d', 'generic_filter', 'hampel']
 
 
 def _invalid_origin(origin, lenw):
@@ -1409,6 +1409,33 @@ def maximum_filter(input, size=None, footprint=None, output=None,
     """
     return _min_or_max_filter(input, size, footprint, None, output, mode,
                               cval, origin, 0, axes)
+
+
+def hampel(input: np.ndarray, win_size: int, thresh=1):
+    """
+    TBD
+    """
+    if input.dtype in (np.int64, np.float64, np.float32):
+        x = input
+    elif input.dtype == np.float16:
+        x = input.astype('float32')
+    elif np.result_type(input, np.int64) == np.int64:
+        x = input.astype('int64')
+    elif input.dtype.kind in 'biu':
+        # cast any other boolean, integer or unsigned type to int64
+        x = input.astype('int64')
+    else:
+        raise RuntimeError('Unsupported array type')
+    x_out = np.empty_like(x)
+    median = np.empty_like(x)
+    mad = np.empty_like(x)
+    thresh = x.dtype.type(thresh)
+    _robust_filters_1d.hampel_filter(x, win_size, median, mad, x_out, thresh)
+    if input.dtype not in (np.int64, np.float64, np.float32):
+        x_out = x_out.astype(input.dtype)
+        median = median.astype(input.dtype)
+        mad = mad.astype(input.dtype)
+    return x_out, median, mad
 
 
 @_ni_docstrings.docfiller

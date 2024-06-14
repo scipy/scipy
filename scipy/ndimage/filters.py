@@ -13,7 +13,7 @@ __all__ = [  # noqa: F822
     'uniform_filter1d', 'uniform_filter', 'minimum_filter1d',
     'maximum_filter1d', 'minimum_filter', 'maximum_filter',
     'rank_filter', 'median_filter', 'percentile_filter',
-    'generic_filter1d', 'generic_filter'
+    'generic_filter1d', 'generic_filter', 'hampel'
 ]
 
 

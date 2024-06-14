@@ -131,6 +131,7 @@ void _hampel_filter(T* in_arr, int arr_len, int win_len, T* median, T* mad, T* o
    delete[] data;
    data = nullptr;
    MediatorDel(m, win_len, rank);
-   MediatorDel(m_top, win_len, m_top->maxCt, true);
-   MediatorDel(m_bottom, win_len, m_bottom->maxCt, true);
+//   printf("here\n");
+//   MediatorDel(m_top, win_len, m_top->maxCt, true);
+//   MediatorDel(m_bottom, win_len, m_bottom->maxCt, true);
 }

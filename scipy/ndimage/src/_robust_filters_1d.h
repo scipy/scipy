@@ -66,7 +66,6 @@ template <typename T> inline int minSortUp(T *data, Mediator *m, int i) {
   return (i == 0);
 }
 
-
 // maintains maxheap property for all items below i. (negative indexes)
 template <typename T>
 void maxSortDown(T *data, Mediator *m, int i) {
