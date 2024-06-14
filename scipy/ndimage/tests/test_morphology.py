@@ -1,7 +1,5 @@
 import numpy as np
-from numpy.testing import (
-                           assert_array_almost_equal)
-from scipy._lib._array_api import (xp_assert_equal,)
+from scipy._lib._array_api import (xp_assert_equal, assert_array_almost_equal)
 import pytest
 from pytest import raises as assert_raises
 
@@ -80,6 +78,7 @@ class TestNdimageMorphology:
                     [0, 0, 0, 1, 1, 1, 0, 0, 0],
                     [0, 0, 0, 0, 0, 0, 0, 0, 0],
                     [0, 0, 0, 0, 0, 0, 0, 0, 0]]
+        expected = np.asarray(expected)
         assert_array_almost_equal(out, expected)
 
         expected = [[[0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -100,6 +99,7 @@ class TestNdimageMorphology:
                      [0, 1, 2, 3, 4, 5, 6, 7, 8],
                      [0, 1, 2, 3, 4, 5, 6, 7, 8],
                      [0, 1, 2, 3, 4, 5, 6, 7, 8]]]
+        expected = np.asarray(expected)
         assert_array_almost_equal(expected, ft)
 
     @pytest.mark.parametrize('dtype', types)
@@ -1238,13 +1238,13 @@ class TestNdimageMorphology:
     def test_binary_dilation01(self, dtype):
         data = np.ones([], dtype)
         out = ndimage.binary_dilation(data)
-        assert_array_almost_equal(out, 1)
+        assert_array_almost_equal(out, np.asarray(1))
 
     @pytest.mark.parametrize('dtype', types)
     def test_binary_dilation02(self, dtype):
         data = np.zeros([], dtype)
         out = ndimage.binary_dilation(data)
-        assert_array_almost_equal(out, 0)
+        assert_array_almost_equal(out, np.asarray(False))
 
     @pytest.mark.parametrize('dtype', types)
     def test_binary_dilation03(self, dtype):
@@ -1899,9 +1899,9 @@ class TestNdimageMorphology:
                           [5, 8, 3, 7, 1]])
         footprint = [[1, 0, 1], [1, 1, 0]]
         output = ndimage.grey_erosion(array, footprint=footprint)
-        assert_array_almost_equal([[2, 2, 1, 1, 1],
-                                   [2, 3, 1, 3, 1],
-                                   [5, 5, 3, 3, 1]], output)
+        assert_array_almost_equal(np.asarray([[2, 2, 1, 1, 1],
+                                              [2, 3, 1, 3, 1],
+                                              [5, 5, 3, 3, 1]]), output)
 
     def test_grey_erosion01_overlap(self):
         array = np.array([[3, 2, 5, 1, 4],
@@ -1909,9 +1909,9 @@ class TestNdimageMorphology:
                            [5, 8, 3, 7, 1]])
         footprint = [[1, 0, 1], [1, 1, 0]]
         ndimage.grey_erosion(array, footprint=footprint, output=array)
-        assert_array_almost_equal([[2, 2, 1, 1, 1],
-                                   [2, 3, 1, 3, 1],
-                                   [5, 5, 3, 3, 1]], array)
+        assert_array_almost_equal(np.asarray([[2, 2, 1, 1, 1],
+                                              [2, 3, 1, 3, 1],
+                                              [5, 5, 3, 3, 1]]), array)
 
     def test_grey_erosion02(self):
         array = np.array([[3, 2, 5, 1, 4],
@@ -1921,9 +1921,9 @@ class TestNdimageMorphology:
         structure = [[0, 0, 0], [0, 0, 0]]
         output = ndimage.grey_erosion(array, footprint=footprint,
                                       structure=structure)
-        assert_array_almost_equal([[2, 2, 1, 1, 1],
-                                   [2, 3, 1, 3, 1],
-                                   [5, 5, 3, 3, 1]], output)
+        assert_array_almost_equal(np.asarray([[2, 2, 1, 1, 1],
+                                              [2, 3, 1, 3, 1],
+                                              [5, 5, 3, 3, 1]]), output)
 
     def test_grey_erosion03(self):
         array = np.array([[3, 2, 5, 1, 4],
@@ -1933,9 +1933,9 @@ class TestNdimageMorphology:
         structure = [[1, 1, 1], [1, 1, 1]]
         output = ndimage.grey_erosion(array, footprint=footprint,
                                       structure=structure)
-        assert_array_almost_equal([[1, 1, 0, 0, 0],
-                                   [1, 2, 0, 2, 0],
-                                   [4, 4, 2, 2, 0]], output)
+        assert_array_almost_equal(np.asarray([[1, 1, 0, 0, 0],
+                                              [1, 2, 0, 2, 0],
+                                              [4, 4, 2, 2, 0]]), output)
 
     def test_grey_dilation01(self):
         array = np.array([[3, 2, 5, 1, 4],
@@ -1943,9 +1943,10 @@ class TestNdimageMorphology:
                           [5, 8, 3, 7, 1]])
         footprint = [[0, 1, 1], [1, 0, 1]]
         output = ndimage.grey_dilation(array, footprint=footprint)
-        assert_array_almost_equal([[7, 7, 9, 9, 5],
-                                   [7, 9, 8, 9, 7],
-                                   [8, 8, 8, 7, 7]], output)
+        assert_array_almost_equal(np.asarray([[7, 7, 9, 9, 5],
+                                              [7, 9, 8, 9, 7],
+                                              [8, 8, 8, 7, 7]]),
+                                  output)
 
     def test_grey_dilation02(self):
         array = np.array([[3, 2, 5, 1, 4],
@@ -1955,9 +1956,10 @@ class TestNdimageMorphology:
         structure = [[0, 0, 0], [0, 0, 0]]
         output = ndimage.grey_dilation(array, footprint=footprint,
                                        structure=structure)
-        assert_array_almost_equal([[7, 7, 9, 9, 5],
-                                   [7, 9, 8, 9, 7],
-                                   [8, 8, 8, 7, 7]], output)
+        assert_array_almost_equal(np.asarray([[7, 7, 9, 9, 5],
+                                              [7, 9, 8, 9, 7],
+                                              [8, 8, 8, 7, 7]]),
+                                  output)
 
     def test_grey_dilation03(self):
         array = np.array([[3, 2, 5, 1, 4],
@@ -1967,9 +1969,10 @@ class TestNdimageMorphology:
         structure = [[1, 1, 1], [1, 1, 1]]
         output = ndimage.grey_dilation(array, footprint=footprint,
                                        structure=structure)
-        assert_array_almost_equal([[8, 8, 10, 10, 6],
-                                   [8, 10, 9, 10, 8],
-                                   [9, 9, 9, 8, 8]], output)
+        assert_array_almost_equal(np.asarray([[8, 8, 10, 10, 6],
+                                              [8, 10, 9, 10, 8],
+                                              [9, 9, 9, 8, 8]]),
+                                  output)
 
     def test_grey_opening01(self):
         array = np.array([[3, 2, 5, 1, 4],
@@ -2204,6 +2207,7 @@ class TestNdimageMorphology:
                     [0, 0, 0, 0, 0],
                     [0, 0, 0, 0, 0],
                     [0, 0, 0, 0, 0]]
+        expected = np.asarray(expected)
         data = np.array([[0, 1, 0, 0, 0],
                          [1, 1, 1, 0, 0],
                          [0, 1, 0, 1, 1],
@@ -2225,6 +2229,7 @@ class TestNdimageMorphology:
                     [0, 1, 0, 0, 0, 0, 0, 0],
                     [0, 0, 0, 0, 0, 0, 0, 0],
                     [0, 0, 0, 0, 0, 0, 0, 0]]
+        expected = np.asarray(expected)
         data = np.array([[0, 1, 0, 0, 1, 1, 1, 0],
                          [1, 1, 1, 0, 0, 1, 0, 0],
                          [0, 1, 0, 1, 1, 1, 1, 0],
@@ -2248,6 +2253,7 @@ class TestNdimageMorphology:
                     [0, 0, 0, 0, 0, 0, 0, 0],
                     [0, 0, 1, 0, 0, 0, 0, 0],
                     [0, 0, 0, 0, 0, 0, 0, 0]]
+        expected = np.asarray(expected)
         data = np.array([[0, 1, 0, 0, 1, 1, 1, 0],
                          [1, 1, 1, 0, 0, 0, 0, 0],
                          [0, 1, 0, 1, 1, 1, 1, 0],
