@@ -4,11 +4,13 @@ import itertools
 import math
 import numpy as np
 
-from scipy._lib._array_api import (xp_assert_equal, xp_assert_close)
+from scipy._lib._array_api import (
+    xp_assert_equal, xp_assert_close,
+)
 
 from numpy.testing import (
                            assert_array_almost_equal,
-                           assert_array_equal, assert_almost_equal,
+                           assert_almost_equal,
                            suppress_warnings, assert_)
 import pytest
 from pytest import raises as assert_raises
@@ -518,10 +520,10 @@ class TestNdimageFilters:
     def test_correlate26(self):
         # test fix for gh-11661 (mirror extension of a length 1 signal)
         y = ndimage.convolve1d(np.ones(1), np.ones(5), mode='mirror')
-        assert_array_equal(y, np.array(5.))
+        xp_assert_equal(y, np.array([5.]))
 
         y = ndimage.correlate1d(np.ones(1), np.ones(5), mode='mirror')
-        assert_array_equal(y, np.array(5.))
+        xp_assert_equal(y, np.array([5.]))
 
     @pytest.mark.parametrize('dtype_kernel', complex_types)
     @pytest.mark.parametrize('dtype_input', types)
@@ -818,7 +820,7 @@ class TestNdimageFilters:
 
         # output has origin shift on last axis relative to output0, so
         # expect shifted arrays to be equal.
-        np.testing.assert_array_equal(output[:, :, 1:], output0[:, :, :-1])
+        xp_assert_equal(output[:, :, 1:], output0[:, :, :-1])
 
     @pytest.mark.parametrize(
         'filter_func, args',
@@ -1599,7 +1601,7 @@ class TestNdimageFilters:
         array = np.array([1, 2, 3])
         weights = np.array([1, 0])
         output = ndimage.correlate1d(array, weights, 0, mode=mode, cval=0)
-        assert_array_equal(output, expected_value)
+        xp_assert_equal(output, expected_value)
 
     @pytest.mark.parametrize(
         'mode, expected_value',
@@ -1613,7 +1615,7 @@ class TestNdimageFilters:
         array = np.array([1, 2, 3])
         weights = np.array([1, 0, 0, 0, 0, 0, 0, 0])
         output = ndimage.correlate1d(array, weights, 0, mode=mode, cval=0)
-        assert_array_equal(output, expected_value)
+        xp_assert_equal(output, expected_value)
 
     @pytest.mark.parametrize(
         'mode, expected_value',
@@ -1627,7 +1629,7 @@ class TestNdimageFilters:
         array = np.array([1, 2, 3])
         weights = np.array([0, 0, 1])
         output = ndimage.correlate1d(array, weights, 0, mode=mode, cval=0)
-        assert_array_equal(output, expected_value)
+        xp_assert_equal(output, expected_value)
 
     @pytest.mark.parametrize(
         'mode, expected_value',
@@ -1641,7 +1643,7 @@ class TestNdimageFilters:
         array = np.array([1, 2, 3])
         weights = np.array([0, 0, 0, 0, 0, 0, 0, 0, 1])
         output = ndimage.correlate1d(array, weights, 0, mode=mode, cval=0)
-        assert_array_equal(output, expected_value)
+        xp_assert_equal(output, expected_value)
 
     @pytest.mark.parametrize(
         'mode, expected_value',
@@ -1657,7 +1659,7 @@ class TestNdimageFilters:
                           [7, 8, 9]])
         weights = np.array([[1, 0], [0, 0]])
         output = ndimage.correlate(array, weights, mode=mode, cval=0)
-        assert_array_equal(output, expected_value)
+        xp_assert_equal(output, expected_value)
 
     @pytest.mark.parametrize(
         'mode, expected_value',
@@ -1673,7 +1675,7 @@ class TestNdimageFilters:
                           [7, 8, 9]])
         weights = np.array([[0, 0, 0], [0, 0, 0], [0, 0, 1]])
         output = ndimage.correlate(array, weights, mode=mode, cval=0)
-        assert_array_equal(output, expected_value)
+        xp_assert_equal(output, expected_value)
 
     @pytest.mark.parametrize(
         'mode, expected_value',
@@ -1687,7 +1689,7 @@ class TestNdimageFilters:
         array = np.array([1, 2, 3])
         weights = np.array([0, 0, 0, 0, 0, 0, 0, 0, 1])
         output = ndimage.correlate(array, weights, mode=mode, cval=0)
-        assert_array_equal(output, expected_value)
+        xp_assert_equal(output, expected_value)
 
     @pytest.mark.parametrize(
         'mode, expected_value',
@@ -1701,7 +1703,7 @@ class TestNdimageFilters:
         array = np.array([[1], [2], [3]])
         weights = np.array([[0], [0], [0], [0], [0], [0], [0], [0], [1]])
         output = ndimage.correlate(array, weights, mode=mode, cval=0)
-        assert_array_equal(output, expected_value)
+        xp_assert_equal(output, expected_value)
 
     @pytest.mark.parametrize(
         'mode, expected_value',
@@ -1715,7 +1717,7 @@ class TestNdimageFilters:
         array = np.array([1, 2, 3])
         weights = np.array([0, 0, 0, 0, 0, 0, 0, 0, 1])
         output = ndimage.correlate(array, weights, mode=mode, cval=0)
-        assert_array_equal(output, expected_value)
+        xp_assert_equal(output, expected_value)
 
     @pytest.mark.parametrize(
         'mode, expected_value',
@@ -1729,7 +1731,7 @@ class TestNdimageFilters:
         array = np.array([[1], [2], [3]])
         weights = np.array([[0], [0], [0], [0], [0], [0], [0], [0], [1]])
         output = ndimage.correlate(array, weights, mode=mode, cval=0)
-        assert_array_equal(output, expected_value)
+        xp_assert_equal(output, expected_value)
 
 
 def test_ticket_701():
@@ -2096,7 +2098,7 @@ class TestThreading:
         k = np.arange(5)
         self.check_func_serial(4, ndimage.correlate1d, (d, k), os)
         self.check_func_thread(4, ndimage.correlate1d, (d, k), ot)
-        assert_array_equal(os, ot)
+        xp_assert_equal(os, ot)
 
     def test_correlate(self):
         d = np.random.randn(500, 500)
@@ -2105,7 +2107,7 @@ class TestThreading:
         ot = np.empty_like(os)
         self.check_func_serial(4, ndimage.correlate, (d, k), os)
         self.check_func_thread(4, ndimage.correlate, (d, k), ot)
-        assert_array_equal(os, ot)
+        xp_assert_equal(os, ot)
 
     def test_median_filter(self):
         d = np.random.randn(500, 500)
@@ -2113,7 +2115,7 @@ class TestThreading:
         ot = np.empty_like(os)
         self.check_func_serial(4, ndimage.median_filter, (d, 3), os)
         self.check_func_thread(4, ndimage.median_filter, (d, 3), ot)
-        assert_array_equal(os, ot)
+        xp_assert_equal(os, ot)
 
     def test_uniform_filter1d(self):
         d = np.random.randn(5000)
@@ -2121,7 +2123,7 @@ class TestThreading:
         ot = np.empty_like(os)
         self.check_func_serial(4, ndimage.uniform_filter1d, (d, 5), os)
         self.check_func_thread(4, ndimage.uniform_filter1d, (d, 5), ot)
-        assert_array_equal(os, ot)
+        xp_assert_equal(os, ot)
 
     def test_minmax_filter(self):
         d = np.random.randn(500, 500)
@@ -2129,10 +2131,10 @@ class TestThreading:
         ot = np.empty_like(os)
         self.check_func_serial(4, ndimage.maximum_filter, (d, 3), os)
         self.check_func_thread(4, ndimage.maximum_filter, (d, 3), ot)
-        assert_array_equal(os, ot)
+        xp_assert_equal(os, ot)
         self.check_func_serial(4, ndimage.minimum_filter, (d, 3), os)
         self.check_func_thread(4, ndimage.minimum_filter, (d, 3), ot)
-        assert_array_equal(os, ot)
+        xp_assert_equal(os, ot)
 
 
 def test_minmaximum_filter1d():

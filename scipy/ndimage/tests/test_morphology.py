@@ -1,5 +1,5 @@
 import numpy as np
-from numpy.testing import (assert_, assert_array_equal,
+from numpy.testing import (assert_,
                            assert_array_almost_equal)
 from scipy._lib._array_api import (xp_assert_equal,)
 import pytest
@@ -1173,7 +1173,7 @@ class TestNdimageMorphology:
         out = ndimage.binary_erosion(a, structure=a, output=b, iterations=0,
                                      border_value=True, brute_force=True)
         assert_(out is b)
-        assert_array_equal(
+        xp_assert_equal(
             ndimage.binary_erosion(a, structure=a, iterations=0,
                                    border_value=True),
             b)
@@ -2139,7 +2139,7 @@ class TestNdimageMorphology:
                              [0, 0, 0, 1, 1, 1, 1]], dtype=np.bool_)
 
         output = ndimage.white_tophat(array, structure=structure)
-        assert_array_equal(expected, output)
+        xp_assert_equal(expected, output)
 
     def test_white_tophat04(self):
         array = np.eye(5, dtype=np.bool_)
@@ -2194,7 +2194,7 @@ class TestNdimageMorphology:
                              [1, 1, 1, 1, 1, 1, 0]], dtype=np.bool_)
 
         output = ndimage.black_tophat(array, structure=structure)
-        assert_array_equal(expected, output)
+        xp_assert_equal(expected, output)
 
     def test_black_tophat04(self):
         array = np.eye(5, dtype=np.bool_)
@@ -2313,12 +2313,12 @@ class TestBinaryOpeningClosing:
     def test_opening_new_arguments(self):
         opened_new = ndimage.binary_opening(self.array, self.sq3x3, 1, None,
                                             0, None, 0, False)
-        assert_array_equal(opened_new, self.opened_old)
+        xp_assert_equal(opened_new, self.opened_old)
 
     def test_closing_new_arguments(self):
         closed_new = ndimage.binary_closing(self.array, self.sq3x3, 1, None,
                                             0, None, 0, False)
-        assert_array_equal(closed_new, self.closed_old)
+        xp_assert_equal(closed_new, self.closed_old)
 
 
 def test_binary_erosion_noninteger_iterations():
@@ -2380,11 +2380,11 @@ def test_binary_input_as_output(function, iterations, brute_force):
     # input data is not modified
     data_orig = data.copy()
     expected = ndi_func(data, brute_force=brute_force, iterations=iterations)
-    assert_array_equal(data, data_orig)
+    xp_assert_equal(data, data_orig)
 
     # data should now contain the expected result
     ndi_func(data, brute_force=brute_force, iterations=iterations, output=data)
-    assert_array_equal(expected, data)
+    xp_assert_equal(expected, data)
 
 
 def test_binary_hit_or_miss_input_as_output():
@@ -2394,11 +2394,11 @@ def test_binary_hit_or_miss_input_as_output():
     # input data is not modified
     data_orig = data.copy()
     expected = ndimage.binary_hit_or_miss(data)
-    assert_array_equal(data, data_orig)
+    xp_assert_equal(data, data_orig)
 
     # data should now contain the expected result
     ndimage.binary_hit_or_miss(data, output=data)
-    assert_array_equal(expected, data)
+    xp_assert_equal(expected, data)
 
 
 def test_distance_transform_cdt_invalid_metric():
