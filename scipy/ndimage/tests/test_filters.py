@@ -1748,18 +1748,18 @@ def test_gh_5430():
     # one arbitrary precision integer type, so both should fail.
     sigma = np.int32(1)
     out = ndimage._ni_support._normalize_sequence(sigma, 1)
-    assert_equal(out, [sigma])
+    assert out == [sigma]
     sigma = np.int64(1)
     out = ndimage._ni_support._normalize_sequence(sigma, 1)
-    assert_equal(out, [sigma])
+    assert out == [sigma]
     # This worked before; make sure it still works
     sigma = 1
     out = ndimage._ni_support._normalize_sequence(sigma, 1)
-    assert_equal(out, [sigma])
+    assert out == [sigma]
     # This worked before; make sure it still works
     sigma = [1, 1]
     out = ndimage._ni_support._normalize_sequence(sigma, 2)
-    assert_equal(out, sigma)
+    assert out == sigma
     # Also include the OPs original example to make sure we fixed the issue
     x = np.random.normal(size=(256, 256))
     perlin = np.zeros_like(x)
