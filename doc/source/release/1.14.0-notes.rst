@@ -288,6 +288,7 @@ Authors
 * Steven Adams (1) +
 * Max Aehle (1) +
 * Ataf Fazledin Ahamed (2) +
+* Luiz Eduardo Amaral (1) +
 * Trinh Quoc Anh (1) +
 * Miguel A. Batalla (7) +
 * Tim Beyer (1) +
@@ -338,7 +339,7 @@ Authors
 * pwcnorthrop (3) +
 * Bharat Raghunathan (1)
 * Tom M. Ragonneau (2) +
-* Tyler Reddy (81)
+* Tyler Reddy (84)
 * Pamphile Roy (18)
 * Atsushi Sakai (9)
 * Daniel Schmitz (5)
@@ -369,7 +370,7 @@ Authors
 * Zaikun ZHANG (1)
 * ਗਗਨਦੀਪ ਸਿੰਘ (Gagandeep Singh) (4) +
 
-A total of 84 people contributed to this release.
+A total of 85 people contributed to this release.
 People with a "+" by their names contributed a patch for the first time.
 This list of names is automatically generated, and may not be fully complete.
 
@@ -472,6 +473,7 @@ Issues closed for 1.14.0
 * `#20860 <https://github.com/scipy/scipy/issues/20860>`__: BUG/BLD: scipy-1.13.1 fails to build with msvc
 * `#20901 <https://github.com/scipy/scipy/issues/20901>`__: BUG: \`zsh: abort python\` after \`scipy.linalg.sqrtm\` on empty...
 * `#20911 <https://github.com/scipy/scipy/issues/20911>`__: TST: TestEig.test_singular failing tolerance with generic BLAS...
+* `#20921 <https://github.com/scipy/scipy/issues/20921>`__: DOC: stats: wrong docstrings of \`\*Result\` classes
 * `#20938 <https://github.com/scipy/scipy/issues/20938>`__: TST: tolerance violations with SciPy 1.14.0rc1 on linux-{aarch64,ppc64le}
 
 ************************
@@ -729,6 +731,7 @@ Pull requests for 1.14.0
 * `#20914 <https://github.com/scipy/scipy/pull/20914>`__: TST: linalg: bump tolerance in \`TestEig::test_singular\`
 * `#20919 <https://github.com/scipy/scipy/pull/20919>`__: BLD: optimize: use hidden visibility for static HiGHS libraries
 * `#20920 <https://github.com/scipy/scipy/pull/20920>`__: MAINT: special: fix msvc build by using \`new\` and \`delete\`...
+* `#20923 <https://github.com/scipy/scipy/pull/20923>`__: DOC: update doctests to satisfy scipy-doctests==1.2.0
 * `#20927 <https://github.com/scipy/scipy/pull/20927>`__: MAINT: adapt to a scipy-doctests change
 * `#20936 <https://github.com/scipy/scipy/pull/20936>`__: DOC: \`array_api.rst\`: update 1.14 functions with array API...
 * `#20937 <https://github.com/scipy/scipy/pull/20937>`__: BUG/BLD: special: Ensure symbols in \`sf_error_state\` shared...
