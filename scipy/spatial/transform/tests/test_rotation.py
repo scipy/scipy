@@ -1172,9 +1172,9 @@ def test_apply_shapes():
         if not r.single and (v.shape == (3,) or v.shape == (1, 3)):
             shape = (len(r), 3)
         x = r.apply(v)
-        assert np.all(x.shape == shape)
+        assert x.shape == shape
         x = r.apply(v, inverse=True)
-        assert np.all(x.shape == shape)
+        assert x.shape == shape
 
 def test_getitem():
     mat = np.empty((2, 3, 3))
