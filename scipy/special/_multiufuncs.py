@@ -167,11 +167,7 @@ assoc_legendre_p = MultiUFunc(assoc_legendre_p)
 
 @assoc_legendre_p.as_resolve_ufunc
 def _(ufuncs, norm=False, diff_n=0):
-    if not ((isinstance(diff_n, int) or np.issubdtype(diff_n, np.integer))
-            and diff_n >= 0):
-        raise ValueError(
-            f"diff_n must be a non-negative integer, received: {diff_n}."
-        )
+    diff_n = _nonneg_int_or_fail(diff_n, "diff_n", strict=False)
     if not 0 <= diff_n <= 2:
         raise ValueError(
             "diff_n is currently only implemented for orders 0, 1, and 2,"
@@ -226,16 +222,7 @@ assoc_legendre_p_all = MultiUFunc(assoc_legendre_p_all)
 
 @assoc_legendre_p_all.as_resolve_ufunc
 def _(ufuncs, norm=False, diff_n=0):
-    if not ((isinstance(diff_n, int) or np.issubdtype(diff_n, np.integer))
-            and diff_n >= 0):
-        raise ValueError(
-            f"diff_n must be a non-negative integer, received: {diff_n}."
-        )
-    if not 0 <= diff_n <= 2:
-        raise ValueError(
-            "diff_n is currently only implemented for orders 0, 1, and 2,"
-            f" received: {diff_n}."
-        )
+    diff_n = _nonneg_int_or_fail(diff_n, "diff_n", strict=False)
     return ufuncs[norm][diff_n]
 
 
@@ -275,11 +262,7 @@ sph_legendre_p = MultiUFunc(sph_legendre_p)
 
 @sph_legendre_p.as_resolve_ufunc
 def _(ufuncs, diff_n = 0):
-    if not ((isinstance(diff_n, int) or np.issubdtype(diff_n, np.integer))
-            and diff_n >= 0):
-        raise ValueError(
-            f"diff_n must be a non-negative integer, received: {diff_n}."
-        )
+    diff_n = _nonneg_int_or_fail(diff_n, "diff_n", strict=False)
     if not 0 <= diff_n <= 2:
         raise ValueError(
             "diff_n is currently only implemented for orders 0, 1, and 2,"
@@ -301,11 +284,7 @@ sph_legendre_p_all = MultiUFunc(sph_legendre_p_all)
 
 @sph_legendre_p_all.as_resolve_ufunc
 def _(ufuncs, diff_n=0):
-    if not ((isinstance(diff_n, int) or np.issubdtype(diff_n, np.integer))
-            and diff_n >= 0):
-        raise ValueError(
-            f"diff_n must be a non-negative integer, received: {diff_n}."
-        )
+    diff_n = _nonneg_int_or_fail(diff_n, "diff_n", strict=False)
     if not 0 <= diff_n <= 2:
         raise ValueError(
             "diff_n is currently only implemented for orders 0, 1, and 2,"
@@ -339,11 +318,7 @@ multi_assoc_legendre_p = MultiUFunc(multi_assoc_legendre_p,
 
 @multi_assoc_legendre_p.as_resolve_ufunc
 def _(ufuncs, norm=False, diff_n=0):
-    if not ((isinstance(diff_n, int) or np.issubdtype(diff_n, np.integer))
-            and diff_n >= 0):
-        raise ValueError(
-            f"diff_n must be a non-negative integer, received: {diff_n}."
-        )
+    diff_n = _nonneg_int_or_fail(diff_n, "diff_n", strict=False)
     if not 0 <= diff_n <= 2:
         raise ValueError(
             "diff_n is currently only implemented for orders 0, 1, and 2,"
@@ -428,11 +403,7 @@ legendre_p_all = MultiUFunc(legendre_p_all)
 
 @legendre_p_all.as_resolve_ufunc
 def _(ufuncs, diff_n=0):
-    if not ((isinstance(diff_n, int) or np.issubdtype(diff_n, np.integer))
-            and diff_n >= 0):
-        raise ValueError(
-            f"diff_n must be a non-negative integer, received: {diff_n}."
-        )
+    diff_n = _nonneg_int_or_fail(diff_n, "diff_n", strict=False)
     if not 0 <= diff_n <= 2:
         raise ValueError(
             "diff_n is currently only implemented for orders 0, 1, and 2,"
@@ -461,11 +432,7 @@ sph_harm_y = MultiUFunc(sph_harm_y, force_complex_output=True)
 
 @sph_harm_y.as_resolve_ufunc
 def _(ufuncs, diff_n=0):
-    if not ((isinstance(diff_n, int) or np.issubdtype(diff_n, np.integer))
-            and diff_n >= 0):
-        raise ValueError(
-            f"diff_n must be a non-negative integer, received: {diff_n}."
-        )
+    diff_n = _nonneg_int_or_fail(diff_n, "diff_n", strict=False)
     if not 0 <= diff_n <= 2:
         raise ValueError(
             "diff_n is currently only implemented for orders 0, 1, and 2,"
@@ -487,11 +454,7 @@ sph_harm_y_all = MultiUFunc(sph_harm_y_all, force_complex_output=True)
 
 @sph_harm_y_all.as_resolve_ufunc
 def _(ufuncs, diff_n=0):
-    if not ((isinstance(diff_n, int) or np.issubdtype(diff_n, np.integer))
-            and diff_n >= 0):
-        raise ValueError(
-            f"diff_n must be a non-negative integer, received: {diff_n}."
-        )
+    diff_n = _nonneg_int_or_fail(diff_n, "diff_n", strict=False)
     if not 0 <= diff_n <= 2:
         raise ValueError(
             "diff_n is currently only implemented for orders 2,"
