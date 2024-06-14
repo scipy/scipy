@@ -2,7 +2,6 @@ import os.path
 
 import numpy as np
 from numpy.testing import (
-    assert_,
     assert_almost_equal,
     assert_array_almost_equal,
     suppress_warnings,
@@ -100,14 +99,14 @@ class Test_measurements_select:
         for labels, index in cases:
             result = ndimage._measurements._select(
                 x, labels=labels, index=index)
-            assert_(len(result) == 0)
+            assert len(result) == 0
             result = ndimage._measurements._select(
                 x, labels=labels, index=index, find_max=True)
-            assert_(len(result) == 1)
+            assert len(result) == 1
             xp_assert_equal(result[0], [1, 6])
             result = ndimage._measurements._select(
                 x, labels=labels, index=index, find_min=True)
-            assert_(len(result) == 1)
+            assert len(result) == 1
             xp_assert_equal(result[0], [0, 2])
             result = ndimage._measurements._select(
                 x, labels=labels, index=index, find_min=True,
@@ -119,7 +118,7 @@ class Test_measurements_select:
             result = ndimage._measurements._select(
                 x, labels=labels, index=index, find_max=True,
                 find_max_positions=True)
-            assert_(len(result) == 2)
+            assert len(result) == 2
             xp_assert_equal(result[0], [1, 6])
             xp_assert_equal(result[1], [1, 2])
             assert result[1].dtype.kind == 'i'
@@ -377,7 +376,7 @@ def test_gh_issue_3025():
 def test_label_default_dtype():
     test_array = np.random.rand(10, 10)
     label, no_features = ndimage.label(test_array > 0.5)
-    assert_(label.dtype in (np.int32, np.int64))
+    assert label.dtype in (np.int32, np.int64)
     # Shouldn't raise an exception
     ndimage.find_objects(label)
 
@@ -385,13 +384,13 @@ def test_label_default_dtype():
 def test_find_objects01():
     data = np.ones([], dtype=int)
     out = ndimage.find_objects(data)
-    assert_(out == [()])
+    assert out == [()]
 
 
 def test_find_objects02():
     data = np.zeros([], dtype=int)
     out = ndimage.find_objects(data)
-    assert_(out == [])
+    assert out == []
 
 
 def test_find_objects03():
@@ -640,7 +639,7 @@ def test_mean04():
             output = ndimage.mean(input, labels=labels,
                                   index=[4, 8, 2])
             assert_array_almost_equal(output[[0, 2]], [4.0, 2.5])
-            assert_(np.isnan(output[1]))
+            assert np.isnan(output[1])
 
 
 def test_minimum01():
@@ -771,7 +770,7 @@ def test_variance01():
             with suppress_warnings() as sup:
                 sup.filter(RuntimeWarning, "Mean of empty slice")
                 output = ndimage.variance(input)
-            assert_(np.isnan(output))
+            assert np.isnan(output)
 
 
 def test_variance02():
@@ -818,7 +817,7 @@ def test_standard_deviation01():
             with suppress_warnings() as sup:
                 sup.filter(RuntimeWarning, "Mean of empty slice")
                 output = ndimage.standard_deviation(input)
-            assert_(np.isnan(output))
+            assert np.isnan(output)
 
 
 def test_standard_deviation02():
