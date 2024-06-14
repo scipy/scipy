@@ -821,6 +821,9 @@ from ._basic import *
 
 from ._logsumexp import logsumexp, softmax, log_softmax
 
+from . import _multiufuncs
+from ._multiufuncs import *
+
 from . import _orthogonal
 from ._orthogonal import *
 

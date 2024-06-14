@@ -5,29 +5,28 @@
 import operator
 import numpy as np
 import math
-import numbers
 import warnings
 from collections import defaultdict
 from heapq import heapify, heappop
 from numpy import (pi, asarray, floor, isscalar, sqrt, where,
                    sin, place, issubdtype, extract, inexact, nan, zeros, sinc)
+
 from . import _ufuncs
 from ._ufuncs import (mathieu_a, mathieu_b, iv, jv, gamma,
                       psi, hankel1, hankel2, yv, kv, poch, binom,
                       _stirling2_inexact)
-from ._special_ufuncs import (legendre_p, assoc_legendre_p, multi_assoc_legendre_p,
-                              sph_legendre_p, sph_harm_y)
-from ._gufuncs import (legendre_p_all, assoc_legendre_p_all, multi_assoc_legendre_p_all,
-                        sph_legendre_p_all, _lqn, _lqmn, _rctj, _rcty, sph_harm_y_all)
+
+from ._gufuncs import _lqn, _lqmn, _rctj, _rcty
+from ._input_validation import _nonneg_int_or_fail
 from . import _specfun
 from ._comb import _comb_int
-from ._multiufunc import MultiUFunc
+from ._multiufuncs import (assoc_legendre_p_all, multi_assoc_legendre_p_all,
+                           legendre_p_all)
+
 
 __all__ = [
     'ai_zeros',
     'assoc_laguerre',
-    'assoc_legendre_p',
-    'assoc_legendre_p_all',
     'bei_zeros',
     'beip_zeros',
     'ber_zeros',
@@ -60,8 +59,6 @@ __all__ = [
     'ker_zeros',
     'kerp_zeros',
     'kvp',
-    'legendre_p',
-    'legendre_p_all',
     'lmbda',
     'lpmn',
     'lpn',
@@ -69,8 +66,6 @@ __all__ = [
     'lqn',
     'mathieu_even_coef',
     'mathieu_odd_coef',
-    'multi_assoc_legendre_p',
-    'multi_assoc_legendre_p_all',
     'obl_cv_seq',
     'pbdn_seq',
     'pbdv_seq',
@@ -80,10 +75,6 @@ __all__ = [
     'pro_cv_seq',
     'riccati_jn',
     'riccati_yn',
-    'sph_legendre_p',
-    'sph_legendre_p_all',
-    'sph_harm_y',
-    'sph_harm_y_all',
     'sinc',
     'stirling2',
     'y0_zeros',
@@ -102,22 +93,6 @@ _FACTORIALK_LIMITS_64BITS = {1: 20, 2: 33, 3: 44, 4: 54, 5: 65,
 # mapping k to last n such that factorialk(n, k) < np.iinfo(np.int32).max
 _FACTORIALK_LIMITS_32BITS = {1: 12, 2: 19, 3: 25, 4: 31, 5: 37,
                              6: 43, 7: 47, 8: 51, 9: 56}
-
-
-def _nonneg_int_or_fail(n, var_name, strict=True):
-    try:
-        if strict:
-            # Raises an exception if float
-            n = operator.index(n)
-        elif n == floor(n):
-            n = int(n)
-        else:
-            raise ValueError()
-        if n < 0:
-            raise ValueError()
-    except (ValueError, TypeError) as err:
-        raise err.__class__(f"{var_name} must be a non-negative integer") from err
-    return n
 
 
 def diric(x, n):
@@ -1726,177 +1701,6 @@ def mathieu_odd_coef(m, q):
     fc = _specfun.fcoef(kd, m, q, b)
     return fc[:km]
 
-assoc_legendre_p = MultiUFunc(assoc_legendre_p)
-
-
-@assoc_legendre_p.as_resolve_ufunc
-def _(ufuncs, norm=False, diff_n=0):
-    if not ((isinstance(diff_n, int) or np.issubdtype(diff_n, np.integer))
-            and diff_n >= 0):
-        raise ValueError(
-            f"diff_n must be a non-negative integer, received: {diff_n}."
-        )
-    if not 0 <= diff_n <= 2:
-        raise ValueError(
-            "diff_n is currently only implemented for orders 0, 1, and 2,"
-            f" received: {diff_n}."
-        )
-    return ufuncs[norm][diff_n]
-
-
-@assoc_legendre_p.docstring
-def _():
-    r"""assoc_legendre_p(n, m, z, *, norm=False, diff_n=0)
-
-    Associated Legendre function of the first kind and its derivatives.
-
-    Parameters
-    ----------
-    n : array_like, int
-        The order of the Legendre function
-    m : array_like, int
-        The degree of the Legendre function
-    z : array_like, float
-        Input value
-    norm : Optional[bool]
-        If True, compute the normalized associated Legendre function.
-        Default is False.
-    diff_n : Optional[int]
-        A non-negative integer. Compute and return all derivatives up
-        to order ``diff_n``.
-
-    Returns
-    -------
-    ndarray or tuple of ndarray
-        If ``diff_n == 0``, then return only the associated Legendre function
-        ifself. If ``diff_n > 0`` then return a tuple of length ``diff_n + 1``
-        containing the associated Legendre function and all of its derivatives
-        up to order `diff_n`.
-
-    Notes
-    -----
-    The relationship between the associated Legendre function
-    :math:`P_{m}^{n}(x)` and the normalized associated Legendre function
-    :math:`\bar{P}_{n}^{n}(x)` is:
-
-    .. math::
-
-        P^{m}_{n}(x) =
-        \sqrt{\frac{2(n + m)!}{(2n + 1)(n - m)!}}\bar{P}_{n}^{m}(x)
-    """
-
-
-assoc_legendre_p_all = MultiUFunc(assoc_legendre_p_all)
-
-
-@assoc_legendre_p_all.as_resolve_ufunc
-def _(ufuncs, norm=False, diff_n=0):
-    if not ((isinstance(diff_n, int) or np.issubdtype(diff_n, np.integer))
-            and diff_n >= 0):
-        raise ValueError(
-            f"diff_n must be a non-negative integer, received: {diff_n}."
-        )
-    if not 0 <= diff_n <= 2:
-        raise ValueError(
-            "diff_n is currently only implemented for orders 0, 1, and 2,"
-            f" received: {diff_n}."
-        )
-    return ufuncs[norm][diff_n]
-
-
-@assoc_legendre_p_all.as_resolve_out_shapes
-def _(n, m, z_shape, nout):
-    if ((not np.isscalar(m)) or (abs(m) > n)):
-        raise ValueError("m must be <= n.")
-
-    if ((not np.isscalar(n)) or (n < 0)):
-        raise ValueError("n must be a non-negative integer.")
-
-    return nout * ((n + 1, 2 * abs(m) + 1) + z_shape,)
-
-
-@assoc_legendre_p_all.docstring
-def _():
-    """assoc_legendre_p_all(n, m, z, *, norm=False, diff_n=0)
-
-    Tables of associated Legendre functions of the first kind
-    and their derivatives.
-
-    Parameters
-    ----------
-    n : int
-        The order of the Legendre function
-    m : int
-        The degree of the Legendre function
-    z : array_like, float
-    
-        If True, compute tables for the normalized associated Legendre
-        function. Default is False.
-    """
-
-
-sph_legendre_p = MultiUFunc(sph_legendre_p)
-
-
-@sph_legendre_p.as_resolve_ufunc
-def _(ufuncs, diff_n = 0):
-    if not ((isinstance(diff_n, int) or np.issubdtype(diff_n, np.integer))
-            and diff_n >= 0):
-        raise ValueError(
-            f"diff_n must be a non-negative integer, received: {diff_n}."
-        )
-    if not 0 <= diff_n <= 2:
-        raise ValueError(
-            "diff_n is currently only implemented for orders 0, 1, and 2,"
-            f" received: {diff_n}."
-        )
-    return ufuncs[diff_n]
-
-
-@sph_legendre_p.docstring
-def _():
-    """sph_legendre_p(n, m, z, *, diff_n=0)
-
-    Spherical associated Legendre function of the first kind.
-    """
-
-
-sph_legendre_p_all = MultiUFunc(sph_legendre_p_all)
-
-
-@sph_legendre_p_all.as_resolve_ufunc
-def _(ufuncs, diff_n=0):
-    if not ((isinstance(diff_n, int) or np.issubdtype(diff_n, np.integer))
-            and diff_n >= 0):
-        raise ValueError(
-            f"diff_n must be a non-negative integer, received: {diff_n}."
-        )
-    if not 0 <= diff_n <= 2:
-        raise ValueError(
-            "diff_n is currently only implemented for orders 0, 1, and 2,"
-            f" received: {diff_n}."
-        )
-    return ufuncs[diff_n]
-
-
-@sph_legendre_p_all.as_resolve_out_shapes
-def _(n, m, z_shape, nout):
-    if ((not np.isscalar(m)) or (abs(m) > n)):
-        raise ValueError("m must be <= n.")
-
-    if ((not np.isscalar(n)) or (n < 0)):
-        raise ValueError("n must be a non-negative integer.")
-
-    return nout * ((n + 1, 2 * abs(m) + 1) + z_shape,)
-
-
-@sph_legendre_p_all.docstring
-def _():
-    """sph_legendre_p_all(n, m, z, *, diff_n=0)
-
-    Table of spherical associated Legendre functions of the first kind.
-    """
-
 
 def lpmn(m, n, z):
     """Sequence of associated Legendre functions of the first kind.
@@ -1968,68 +1772,7 @@ def lpmn(m, n, z):
     return p, pd
 
 
-multi_assoc_legendre_p = MultiUFunc(multi_assoc_legendre_p,
-                                    force_complex_output=True)
 
-
-@multi_assoc_legendre_p.as_resolve_ufunc
-def _(ufuncs, norm=False, diff_n=0):
-    if not ((isinstance(diff_n, int) or np.issubdtype(diff_n, np.integer))
-            and diff_n >= 0):
-        raise ValueError(
-            f"diff_n must be a non-negative integer, received: {diff_n}."
-        )
-    if not 0 <= diff_n <= 2:
-        raise ValueError(
-            "diff_n is currently only implemented for orders 0, 1, and 2,"
-            f" received: {diff_n}."
-        )
-    return ufuncs[norm][diff_n]
-
-
-@multi_assoc_legendre_p.docstring
-def _():
-    """multi_assoc_legendre_p_all(n, m, type, z, *, norm=False, diff_n=0)
-
-    Complex valued associated Legendre functions of the first kind.
-    """
-
-
-multi_assoc_legendre_p_all = MultiUFunc(multi_assoc_legendre_p_all,
-                                        force_complex_output=True)
-
-
-@multi_assoc_legendre_p_all.as_resolve_ufunc
-def _(ufuncs, norm=False, diff_n=0):
-    if not ((isinstance(diff_n, int) or np.issubdtype(diff_n, np.integer))
-            and diff_n >= 0):
-        raise ValueError(
-            f"diff_n must be a non-negative integer, received: {diff_n}."
-        )
-    if not 0 <= diff_n <= 2:
-        raise ValueError(
-            "diff_n is currently only implemented for orders 0, 1, and 2,"
-            f" received: {diff_n}."
-        )
-    return ufuncs[norm][diff_n]
-
-
-@multi_assoc_legendre_p_all.as_resolve_out_shapes
-def _(n, m, type_shape, z_shape, nout):
-    if not isinstance(m, numbers.Integral) or (abs(m) > n):
-        raise ValueError("m must be <= n.")
-    if not isinstance(n, numbers.Integral) or (n < 0):
-        raise ValueError("n must be a non-negative integer.")
-
-    return nout * ((n + 1, 2 * abs(m) + 1) + np.broadcast_shapes(type_shape, z_shape),)
-
-
-@multi_assoc_legendre_p_all.docstring
-def _():
-    """multi_assoc_legendre_p_all(n, m, type, z, *, norm=False, diff_n=0)
-
-    Table of complex valued associated Legendre functions of the first kind.
-    """
 
 
 def clpmn(m, n, z, type = 3):
@@ -2268,64 +2011,6 @@ def euler(n):
     else:
         n1 = n
     return _specfun.eulerb(n1)[:(n+1)]
-
-legendre_p = MultiUFunc(legendre_p)
-
-
-@legendre_p.as_resolve_ufunc
-def _(ufuncs, diff_n=0):
-    if not ((isinstance(diff_n, int) or np.issubdtype(diff_n, np.integer))
-            and diff_n >= 0):
-        raise ValueError(
-            f"diff_n must be a non-negative integer, received: {diff_n}."
-        )
-    if not 0 <= diff_n <= 2:
-        raise ValueError(
-            "diff_n is currently only implemented for orders 0, 1, and 2,"
-            f" received: {diff_n}."
-        )
-    return ufuncs[diff_n]
-
-
-@legendre_p.docstring
-def _():
-    """legendre_p(n, z, *, diff_n=0)
-
-    Legendre function of the first kind.
-    """
-
-
-legendre_p_all = MultiUFunc(legendre_p_all)
-
-
-@legendre_p_all.as_resolve_ufunc
-def _(ufuncs, diff_n=0):
-    if not ((isinstance(diff_n, int) or np.issubdtype(diff_n, np.integer))
-            and diff_n >= 0):
-        raise ValueError(
-            f"diff_n must be a non-negative integer, received: {diff_n}."
-        )
-    if not 0 <= diff_n <= 2:
-        raise ValueError(
-            "diff_n is currently only implemented for orders 0, 1, and 2,"
-            f" received: {diff_n}."
-        )
-    return ufuncs[diff_n]
-
-
-@legendre_p_all.as_resolve_out_shapes
-def _(n, z_shape, nout):
-    n = _nonneg_int_or_fail(n, 'n', strict=False)
-
-    return nout * ((n + 1,) + z_shape,)
-
-
-@legendre_p_all.docstring
-def _():
-    """legendre_p_all(n, z, *, diff_n=0)
-
-    Sequence of Legendre functions of the first kind.
-    """
 
     
 def lpn(n, z):
@@ -3673,66 +3358,3 @@ def zeta(x, q=None, out=None):
         return _ufuncs._riemann_zeta(x, out)
     else:
         return _ufuncs._zeta(x, q, out)
-
-sph_harm_y = MultiUFunc(sph_harm_y, force_complex_output=True)
-
-
-@sph_harm_y.as_resolve_ufunc
-def _(ufuncs, diff_n=0):
-    if not ((isinstance(diff_n, int) or np.issubdtype(diff_n, np.integer))
-            and diff_n >= 0):
-        raise ValueError(
-            f"diff_n must be a non-negative integer, received: {diff_n}."
-        )
-    if not 0 <= diff_n <= 2:
-        raise ValueError(
-            "diff_n is currently only implemented for orders 0, 1, and 2,"
-            f" received: {diff_n}."
-        )
-    return ufuncs[diff_n]
-
-
-@sph_harm_y.docstring
-def _():
-    """sph_harm_y(n, m, theta, phi, * diff_n)
-
-    Spherical harmonics
-    """
-
-
-sph_harm_y_all = MultiUFunc(sph_harm_y_all, force_complex_output=True)
-
-
-@sph_harm_y_all.as_resolve_ufunc
-def _(ufuncs, diff_n=0):
-    if not ((isinstance(diff_n, int) or np.issubdtype(diff_n, np.integer))
-            and diff_n >= 0):
-        raise ValueError(
-            f"diff_n must be a non-negative integer, received: {diff_n}."
-        )
-    if not 0 <= diff_n <= 2:
-        raise ValueError(
-            "diff_n is currently only implemented for orders 2,"
-            f" received: {diff_n}."
-        )
-    return ufuncs
-
-
-@sph_harm_y_all.as_resolve_out_shapes
-def _(n, m, theta_shape, phi_shape, nout):
-    if ((not np.isscalar(m)) or (abs(m) > n)):
-        raise ValueError("m must be <= n.")
-
-    if ((not np.isscalar(n)) or (n < 0)):
-        raise ValueError("n must be a non-negative integer.")
-
-    return nout * ((n + 1, 2 * abs(m) + 1) +
-        np.broadcast_shapes(theta_shape, phi_shape),)
-
-
-@sph_harm_y_all.docstring
-def _():
-    """sph_harm_y_all(n, m, theta, phi, *, diff_n)
-
-    Table of spherical harmonics.
-    """
