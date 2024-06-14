@@ -1,6 +1,7 @@
 import numpy as np
-from numpy.testing import (assert_, assert_equal, assert_array_equal,
+from numpy.testing import (assert_, assert_array_equal,
                            assert_array_almost_equal)
+from scipy._lib._array_api import (xp_assert_equal,)
 import pytest
 from pytest import raises as assert_raises
 
@@ -638,7 +639,7 @@ class TestNdimageMorphology:
                     [0, 1, 1, 1, 0],
                     [0, 0, 1, 0, 0]]
         assert_array_almost_equal(out[0], expected)
-        assert_equal(out[1], [2, 2])
+        assert out[1] == [2, 2]
 
     @pytest.mark.parametrize('dtype', types)
     def test_binary_erosion01(self, dtype):

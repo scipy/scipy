@@ -7,9 +7,10 @@ from numpy.testing import (
     assert_almost_equal,
     assert_array_almost_equal,
     assert_array_equal,
-    assert_equal,
     suppress_warnings,
 )
+from scipy._lib._array_api import (xp_assert_equal,)
+
 import pytest
 from pytest import raises as assert_raises
 
@@ -113,17 +114,17 @@ class Test_measurements_select:
             result = ndimage._measurements._select(
                 x, labels=labels, index=index, find_min=True,
                 find_min_positions=True)
-            assert_(len(result) == 2)
+            assert len(result) == 2
             assert_array_equal(result[0], [0, 2])
             assert_array_equal(result[1], [0, 3])
-            assert_equal(result[1].dtype.kind, 'i')
+            assert result[1].dtype.kind == 'i'
             result = ndimage._measurements._select(
                 x, labels=labels, index=index, find_max=True,
                 find_max_positions=True)
             assert_(len(result) == 2)
             assert_array_equal(result[0], [1, 6])
             assert_array_equal(result[1], [1, 2])
-            assert_equal(result[1].dtype.kind, 'i')
+            assert result[1].dtype.kind == 'i'
 
 
 def test_label01():
@@ -345,7 +346,7 @@ def test_label_structuring_elements():
         d = data[i, :, :]
         for j in range(strels.shape[0]):
             s = strels[j, :, :]
-            assert_equal(ndimage.label(d, s)[0], results[r, :, :])
+            xp_assert_equal(ndimage.label(d, s)[0], results[r, :, :], check_dtype=False)
             r += 1
 
 
@@ -398,27 +399,27 @@ def test_find_objects02():
 def test_find_objects03():
     data = np.ones([1], dtype=int)
     out = ndimage.find_objects(data)
-    assert_equal(out, [(slice(0, 1, None),)])
+    assert out == [(slice(0, 1, None),)]
 
 
 def test_find_objects04():
     data = np.zeros([1], dtype=int)
     out = ndimage.find_objects(data)
-    assert_equal(out, [])
+    assert out == []
 
 
 def test_find_objects05():
     data = np.ones([5], dtype=int)
     out = ndimage.find_objects(data)
-    assert_equal(out, [(slice(0, 5, None),)])
+    assert out == [(slice(0, 5, None),)]
 
 
 def test_find_objects06():
     data = np.array([1, 0, 2, 2, 0, 3])
     out = ndimage.find_objects(data)
-    assert_equal(out, [(slice(0, 1, None),),
+    assert out == [(slice(0, 1, None),),
                        (slice(2, 4, None),),
-                       (slice(5, 6, None),)])
+                       (slice(5, 6, None),)]
 
 
 def test_find_objects07():
@@ -429,7 +430,7 @@ def test_find_objects07():
                      [0, 0, 0, 0, 0, 0],
                      [0, 0, 0, 0, 0, 0]])
     out = ndimage.find_objects(data)
-    assert_equal(out, [])
+    assert out == []
 
 
 def test_find_objects08():
@@ -440,10 +441,10 @@ def test_find_objects08():
                      [3, 3, 0, 0, 0, 0],
                      [0, 0, 0, 4, 4, 0]])
     out = ndimage.find_objects(data)
-    assert_equal(out, [(slice(0, 1, None), slice(0, 1, None)),
+    assert out == [(slice(0, 1, None), slice(0, 1, None)),
                        (slice(1, 3, None), slice(2, 5, None)),
                        (slice(3, 5, None), slice(0, 2, None)),
-                       (slice(5, 6, None), slice(3, 5, None))])
+                       (slice(5, 6, None), slice(3, 5, None))]
 
 
 def test_find_objects09():
@@ -454,10 +455,10 @@ def test_find_objects09():
                      [0, 0, 0, 0, 0, 0],
                      [0, 0, 0, 4, 4, 0]])
     out = ndimage.find_objects(data)
-    assert_equal(out, [(slice(0, 1, None), slice(0, 1, None)),
+    assert out == [(slice(0, 1, None), slice(0, 1, None)),
                        (slice(1, 3, None), slice(2, 5, None)),
                        None,
-                       (slice(5, 6, None), slice(3, 5, None))])
+                       (slice(5, 6, None), slice(3, 5, None))]
 
 
 def test_value_indices01():
@@ -470,14 +471,18 @@ def test_value_indices01():
                      [0, 0, 0, 4, 4, 0]])
     vi = ndimage.value_indices(data, ignore_value=0)
     true_keys = [1, 2, 4]
-    assert_equal(list(vi.keys()), true_keys)
+    assert list(vi.keys()) == true_keys
 
     truevi = {}
     for k in true_keys:
         truevi[k] = np.where(data == k)
 
     vi = ndimage.value_indices(data, ignore_value=0)
-    assert_equal(vi, truevi)
+    assert vi.keys() == truevi.keys()
+    for key in vi.keys():
+        assert len(vi[key]) == len(truevi[key])
+        for v, true_v in zip(vi[key], truevi[key]):
+            xp_assert_equal(v, true_v)
 
 
 def test_value_indices02():
@@ -494,24 +499,26 @@ def test_value_indices03():
         a = np.array((12*[1]+12*[2]+12*[3]), dtype=np.int32).reshape(shape)
         trueKeys = np.unique(a)
         vi = ndimage.value_indices(a)
-        assert_equal(list(vi.keys()), list(trueKeys))
+        assert list(vi.keys()) == list(trueKeys)
         for k in trueKeys:
             trueNdx = np.where(a == k)
-            assert_equal(vi[k], trueNdx)
+            assert len(vi[k]) == len(trueNdx)
+            for vik, true_vik in zip(vi[k], trueNdx):
+                xp_assert_equal(vik, true_vik)
 
 
 def test_sum01():
     for type in types:
         input = np.array([], type)
         output = ndimage.sum(input)
-        assert_equal(output, 0.0)
+        assert output == 0.0
 
 
 def test_sum02():
     for type in types:
         input = np.zeros([0, 4], type)
         output = ndimage.sum(input)
-        assert_equal(output, 0.0)
+        assert output == 0.0
 
 
 def test_sum03():
@@ -540,7 +547,7 @@ def test_sum06():
     for type in types:
         input = np.array([], type)
         output = ndimage.sum(input, labels=labels)
-        assert_equal(output, 0.0)
+        assert output == 0.0
 
 
 def test_sum07():
@@ -548,7 +555,7 @@ def test_sum07():
     for type in types:
         input = np.zeros([0, 4], type)
         output = ndimage.sum(input, labels=labels)
-        assert_equal(output, 0.0)
+        assert output == 0.0
 
 
 def test_sum08():
@@ -556,7 +563,7 @@ def test_sum08():
     for type in types:
         input = np.array([1, 2], type)
         output = ndimage.sum(input, labels=labels)
-        assert_equal(output, 1.0)
+        assert output == 1.0
 
 
 def test_sum09():
@@ -707,7 +714,7 @@ def test_maximum04():
 def test_maximum05():
     # Regression test for ticket #501 (Trac)
     x = np.array([-3, -2, -1])
-    assert_equal(ndimage.maximum(x), -1)
+    assert ndimage.maximum(x) == -1 
 
 
 def test_median01():
@@ -867,7 +874,7 @@ def test_minimum_position01():
     for type in types:
         input = np.array([[1, 2], [3, 4]], type)
         output = ndimage.minimum_position(input, labels=labels)
-        assert_equal(output, (0, 0))
+        assert output == (0, 0)
 
 
 def test_minimum_position02():
@@ -876,7 +883,7 @@ def test_minimum_position02():
                           [3, 7, 0, 2],
                           [1, 5, 1, 1]], type)
         output = ndimage.minimum_position(input)
-        assert_equal(output, (1, 2))
+        assert output == (1, 2)
 
 
 def test_minimum_position03():
@@ -884,7 +891,7 @@ def test_minimum_position03():
                       [3, 7, 0, 2],
                       [1, 5, 1, 1]], bool)
     output = ndimage.minimum_position(input)
-    assert_equal(output, (1, 2))
+    assert output == (1, 2)
 
 
 def test_minimum_position04():
@@ -892,7 +899,7 @@ def test_minimum_position04():
                       [3, 7, 1, 2],
                       [1, 5, 1, 1]], bool)
     output = ndimage.minimum_position(input)
-    assert_equal(output, (0, 0))
+    assert output == (0, 0)
 
 
 def test_minimum_position05():
@@ -902,7 +909,7 @@ def test_minimum_position05():
                           [3, 7, 0, 2],
                           [1, 5, 2, 3]], type)
         output = ndimage.minimum_position(input, labels)
-        assert_equal(output, (2, 0))
+        assert output == (2, 0)
 
 
 def test_minimum_position06():
@@ -912,7 +919,7 @@ def test_minimum_position06():
                           [3, 7, 0, 2],
                           [1, 5, 1, 1]], type)
         output = ndimage.minimum_position(input, labels, 2)
-        assert_equal(output, (0, 1))
+        assert output == (0, 1)
 
 
 def test_minimum_position07():
@@ -923,8 +930,8 @@ def test_minimum_position07():
                           [1, 5, 1, 1]], type)
         output = ndimage.minimum_position(input, labels,
                                           [2, 3])
-        assert_equal(output[0], (0, 1))
-        assert_equal(output[1], (1, 2))
+        assert output[0] == (0, 1)
+        assert output[1] == (1, 2)
 
 
 def test_maximum_position01():
@@ -933,7 +940,7 @@ def test_maximum_position01():
         input = np.array([[1, 2], [3, 4]], type)
         output = ndimage.maximum_position(input,
                                           labels=labels)
-        assert_equal(output, (1, 0))
+        assert output == (1, 0)
 
 
 def test_maximum_position02():
@@ -942,7 +949,7 @@ def test_maximum_position02():
                           [3, 7, 8, 2],
                           [1, 5, 1, 1]], type)
         output = ndimage.maximum_position(input)
-        assert_equal(output, (1, 2))
+        assert output == (1, 2)
 
 
 def test_maximum_position03():
@@ -950,7 +957,7 @@ def test_maximum_position03():
                       [3, 7, 8, 2],
                       [1, 5, 1, 1]], bool)
     output = ndimage.maximum_position(input)
-    assert_equal(output, (0, 0))
+    assert output == (0, 0)
 
 
 def test_maximum_position04():
@@ -960,7 +967,7 @@ def test_maximum_position04():
                           [3, 7, 8, 2],
                           [1, 5, 1, 1]], type)
         output = ndimage.maximum_position(input, labels)
-        assert_equal(output, (1, 1))
+        assert output == (1, 1)
 
 
 def test_maximum_position05():
@@ -970,7 +977,7 @@ def test_maximum_position05():
                           [3, 7, 8, 2],
                           [1, 5, 1, 1]], type)
         output = ndimage.maximum_position(input, labels, 1)
-        assert_equal(output, (0, 0))
+        assert output == (0, 0)
 
 
 def test_maximum_position06():
@@ -981,8 +988,8 @@ def test_maximum_position06():
                           [1, 5, 1, 1]], type)
         output = ndimage.maximum_position(input, labels,
                                           [1, 2])
-        assert_equal(output[0], (0, 0))
-        assert_equal(output[1], (1, 1))
+        assert output[0] == (0, 0)
+        assert output[1] == (1, 1)
 
 
 def test_maximum_position07():
@@ -994,8 +1001,8 @@ def test_maximum_position07():
                           [1, 5, 1, 1]], type)
         output = ndimage.maximum_position(input, labels,
                                           [1.0, 4.5])
-        assert_equal(output[0], (0, 0))
-        assert_equal(output[1], (0, 3))
+        assert output[0] == (0, 0)
+        assert output[1] == (0, 3)
 
 
 def test_extrema01():
@@ -1009,7 +1016,7 @@ def test_extrema01():
                                            labels=labels)
         output5 = ndimage.maximum_position(input,
                                            labels=labels)
-        assert_equal(output1, (output2, output3, output4, output5))
+        assert output1 == (output2, output3, output4, output5)
 
 
 def test_extrema02():
@@ -1026,7 +1033,7 @@ def test_extrema02():
                                            labels=labels, index=2)
         output5 = ndimage.maximum_position(input,
                                            labels=labels, index=2)
-        assert_equal(output1, (output2, output3, output4, output5))
+        assert output1 == (output2, output3, output4, output5)
 
 
 def test_extrema03():

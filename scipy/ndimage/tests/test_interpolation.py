@@ -1,9 +1,11 @@
 import sys
 
 import numpy as np
-from numpy.testing import (assert_, assert_equal, assert_array_equal,
+from numpy.testing import (assert_, assert_array_equal,
                            assert_array_almost_equal, assert_allclose,
                            suppress_warnings)
+from scipy._lib._array_api import (xp_assert_equal,)
+
 import pytest
 from pytest import raises as assert_raises
 import scipy.ndimage as ndimage
@@ -1318,7 +1320,7 @@ class TestNdimageInterpolation:
     def test_rotate_exact_180(self):
         a = np.tile(np.arange(5), (5, 1))
         b = ndimage.rotate(ndimage.rotate(a, 180), -180)
-        assert_equal(a, b)
+        xp_assert_equal(a, b)
 
 
 def test_zoom_output_shape():

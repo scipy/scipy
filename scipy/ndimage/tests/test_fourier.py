@@ -1,7 +1,7 @@
 import numpy as np
 from numpy import fft
-from numpy.testing import (assert_almost_equal, assert_array_almost_equal,
-                           assert_equal)
+from numpy.testing import (assert_almost_equal, assert_array_almost_equal,)
+from scipy._lib._array_api import (xp_assert_equal,)
 
 import pytest
 
@@ -134,4 +134,4 @@ class TestNdimageFourier:
     def test_fourier_zero_length_dims(self, shape, dtype, test_func):
         a = np.ones(shape, dtype)
         b = test_func(a, 3)
-        assert_equal(a, b)
+        xp_assert_equal(a, b)
