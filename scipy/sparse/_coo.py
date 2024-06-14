@@ -699,7 +699,6 @@ class coo_array(_coo_base, sparray):
 
     Sparse arrays can be used in arithmetic operations: they support
     addition, subtraction, multiplication, division, and matrix power.
-    Sparse arrays in COOrdinate format do not support slicing.
 
     Advantages of the COO format
         - facilitates fast conversion among sparse formats
@@ -814,8 +813,7 @@ class coo_matrix(spmatrix, _coo_base):
 
     Sparse matrices can be used in arithmetic operations: they support
     addition, subtraction, multiplication, division, and matrix power.
-    Sparse matrices in COOrdinate format do not support slicing.
-
+    
     Advantages of the COO format
         - facilitates fast conversion among sparse formats
         - permits duplicate entries (see example)
