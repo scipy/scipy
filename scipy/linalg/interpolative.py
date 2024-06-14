@@ -27,16 +27,16 @@
 #   POSSIBILITY OF SUCH DAMAGE.
 #  ******************************************************************************
 
-# Python module for interfacing with `id_dist`.
-
 r"""
 ======================================================================
 Interpolative matrix decomposition (:mod:`scipy.linalg.interpolative`)
 ======================================================================
 
-.. moduleauthor:: Kenneth L. Ho <klho@stanford.edu>
-
 .. versionadded:: 0.13
+
+.. versionchanged:: 1.15.0
+    The underlying algorithms have been ported to Python from the original Fortran77
+    code. See references below for more details.
 
 .. currentmodule:: scipy.linalg.interpolative
 
@@ -94,7 +94,7 @@ Main functionality:
    estimate_spectral_norm_diff
    estimate_rank
 
-Support functions:
+Following support functions are deprecated and will be removed in SciPy 1.17.0:
 
 .. autosummary::
    :toctree: generated/
@@ -106,16 +106,13 @@ Support functions:
 References
 ==========
 
-This module uses the ID software package [1]_ by Martinsson, Rokhlin,
-Shkolnisky, and Tygert, which is a Fortran library for computing IDs
-using various algorithms, including the rank-revealing QR approach of
-[2]_ and the more recent randomized methods described in [3]_, [4]_,
-and [5]_. This module exposes its functionality in a way convenient
-for Python users. Note that this module does not add any functionality
-beyond that of organizing a simpler and more consistent interface.
+This module uses the algorithms found in ID software package [1]_ by Martinsson,
+Rokhlin, Shkolnisky, and Tygert, which is a Fortran library for computing IDs using
+various algorithms, including the rank-revealing QR approach of [2]_ and the more
+recent randomized methods described in [3]_, [4]_, and [5]_.
 
-We advise the user to consult also the `documentation for the ID package
-<http://tygert.com/id_doc.4.pdf>`_.
+We advise the user to consult also the documentation for the `ID package
+<http://tygert.com/software.html>`_.
 
 .. [1] P.G. Martinsson, V. Rokhlin, Y. Shkolnisky, M. Tygert. "ID: a
     software package for low-rank approximation of matrices via interpolative
@@ -356,25 +353,8 @@ depending on the representation. The parameter ``eps`` controls the definition
 of the numerical rank.
 
 Finally, the random number generation required for all randomized routines can
-be controlled via :func:`scipy.linalg.interpolative.seed`. To reset the seed
-values to their original values, use:
-
->>> sli.seed('default')
-
-To specify the seed values, use:
-
->>> s = 42
->>> sli.seed(s)
-
-where ``s`` must be an integer or array of 55 floats. If an integer, the array
-of floats is obtained by using ``numpy.random.rand`` with the given integer
-seed.
-
-To simply generate some random numbers, type:
-
->>> arr = sli.rand(n)
-
-where ``n`` is the number of random numbers to generate.
+be controlled via providing NumPy pseudo-random generators with a fixed seed. See
+:class:`numpy.random.Generator` and :func:`numpy.random.default_rng` for more details.
 
 Remarks
 -------
@@ -433,31 +413,29 @@ def _is_real(A):
 
 def seed(seed=None):
     """
-    This function used to set the seed of the randomization algorithms used in the
-    `scipy.linalg.interpolative` functions written in Fortran77.
+    This function, historically, used to set the seed of the randomization algorithms
+    used in the `scipy.linalg.interpolative` functions written in Fortran77.
 
     The library has been ported to Python and now the functions use the native NumPy
     generators and this function has no content and returns None. Thus this function
     should not be used and will be removed in SciPy version 1.17.0.
     """
     warnings.warn("`scipy.linalg.interpolative.seed` is deprecated and will be "
-                  "removed in SciPy 1.17.0.", DeprecationWarning, stacklevel=2)
+                  "removed in SciPy 1.17.0.", DeprecationWarning, stacklevel=3)
 
 
 def rand(*shape):
     """
-    This function used to set the seed of the randomization algorithms used in the
-    `scipy.linalg.interpolative` functions written in Fortran77.
+    This function, historically, used to generate uniformly distributed random number
+    for the randomization algorithms used in the `scipy.linalg.interpolative` functions
+    written in Fortran77.
 
     The library has been ported to Python and now the functions use the native NumPy
     generators. Thus this function should not be used and will be removed in the
     SciPy version 1.17.0.
 
-    If pseudo-random numbers are needed, NumPy should be used instead:
-
-        >>> import numpy as np
-        >>> rng = np.random.default_rng()
-        >>> rng.uniform(low=0., high=1.0, size=shape)
+    If pseudo-random numbers are needed, NumPy pseudo-random generators should be used
+    instead.
 
     Parameters
     ----------
@@ -466,7 +444,7 @@ def rand(*shape):
 
     """
     warnings.warn("`scipy.linalg.interpolative.rand` is deprecated and will be "
-                  "removed in SciPy 1.17.0.", DeprecationWarning, stacklevel=2)
+                  "removed in SciPy 1.17.0.", DeprecationWarning, stacklevel=3)
     rng = np.random.default_rng()
     return rng.uniform(low=0., high=1.0, size=shape)
 
@@ -776,6 +754,8 @@ def estimate_spectral_norm(A, its=20, rng=None):
         `matvec` and `rmatvec` methods (to apply the matrix and its adjoint).
     its : int, optional
         Number of power method iterations.
+    rng : :class:`numpy.random.Generator`
+        NumPy generator for the randomization steps in the algorithm.
 
     Returns
     -------
@@ -810,6 +790,8 @@ def estimate_spectral_norm_diff(A, B, its=20, rng=None):
         the `matvec` and `rmatvec` methods (to apply the matrix and its adjoint).
     its : int, optional
         Number of power method iterations.
+    rng : :class:`numpy.random.Generator`
+        NumPy generator for the randomization steps in the algorithm.
 
     Returns
     -------
@@ -832,7 +814,7 @@ def svd(A, eps_or_k, rand=True, rng=None):
 
     An SVD of a matrix `A` is a factorization::
 
-        A = numpy.dot(U, numpy.dot(numpy.diag(S), V.conj().T))
+        A = U @ np.diag(S) @ V.conj().T
 
     where `U` and `V` have orthonormal columns and `S` is nonnegative.
 
@@ -863,15 +845,18 @@ def svd(A, eps_or_k, rand=True, rng=None):
         Whether to use random sampling if `A` is of type :class:`numpy.ndarray`
         (randomized algorithms are always used if `A` is of type
         :class:`scipy.sparse.linalg.LinearOperator`).
+    rng : :class:`numpy.random.Generator`
+        NumPy generator for the randomization steps in the algorithm. If ``rand`` is
+        ``False``, the argument is ignored.
 
     Returns
     -------
     U : :class:`numpy.ndarray`
-        Left singular vectors.
+        2D array of left singular vectors.
     S : :class:`numpy.ndarray`
-        Singular values.
+        1D array of singular values.
     V : :class:`numpy.ndarray`
-        Right singular vectors.
+        2D array right singular vectors.
     """
     from scipy.sparse.linalg import LinearOperator
 
@@ -951,6 +936,8 @@ def estimate_rank(A, eps, rng=None):
         with the `rmatvec` method (to apply the matrix adjoint).
     eps : float
         Relative error for numerical rank definition.
+    rng : :class:`numpy.random.Generator`
+        NumPy generator for the randomization steps in the algorithm.
 
     Returns
     -------
@@ -962,6 +949,7 @@ def estimate_rank(A, eps, rng=None):
     real = _is_real(A)
 
     if isinstance(A, np.ndarray):
+        A = _C_contiguous_copy(A)
         if real:
             rank, _ = _backend.idd_estrank(A, eps, rng=rng)
         else:
