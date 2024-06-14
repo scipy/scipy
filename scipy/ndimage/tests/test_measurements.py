@@ -3,13 +3,12 @@ import os.path
 import numpy as np
 from numpy.testing import (
     assert_,
-    assert_allclose,
     assert_almost_equal,
     assert_array_almost_equal,
     assert_array_equal,
     suppress_warnings,
 )
-from scipy._lib._array_api import (xp_assert_equal,)
+from scipy._lib._array_api import (xp_assert_equal, xp_assert_close)
 
 import pytest
 from pytest import raises as assert_raises
@@ -1414,7 +1413,7 @@ class TestWatershedIft:
         out = ndimage.watershed_ift(data, markers)
         expected = [[1, 1],
                     [1, 1]]
-        assert_allclose(out, expected)
+        xp_assert_close(out, expected, check_dtype=False)
 
 
 @pytest.mark.parametrize("dt", [np.intc, np.uintc])

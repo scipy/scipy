@@ -4,9 +4,9 @@ import itertools
 import math
 import numpy as np
 
-from scipy._lib._array_api import (xp_assert_equal, )
+from scipy._lib._array_api import (xp_assert_equal, xp_assert_close)
 
-from numpy.testing import (assert_allclose,
+from numpy.testing import (
                            assert_array_almost_equal,
                            assert_array_equal, assert_almost_equal,
                            suppress_warnings, assert_)
@@ -740,7 +740,7 @@ class TestNdimageFilters:
         all_sizes = (size if ax in (axes % array.ndim) else size0
                      for ax in range(array.ndim))
         expected = filter_func(array, *extra_args, all_sizes)
-        assert_allclose(output, expected)
+        xp_assert_close(output, expected)
 
     kwargs_gauss = dict(radius=[4, 2, 3], order=[0, 1, 2],
                         mode=['reflect', 'nearest', 'constant'])
@@ -792,7 +792,7 @@ class TestNdimageFilters:
             origin[axes] = reduced_kwargs['origin']
             kwargs['origin'] = origin
         expected = filter_func(array, *args, size_3d, **kwargs)
-        assert_allclose(output, expected)
+        xp_assert_close(output, expected)
 
     @pytest.mark.parametrize("filter_func, kwargs",
                              [(ndimage.minimum_filter, {}),
@@ -1340,7 +1340,7 @@ class TestNdimageFilters:
         missing_axis = tuple(set(range(3)) - set(axes % array.ndim))[0]
         footprint_3d = np.expand_dims(footprint, missing_axis)
         expected = filter_func(array, footprint=footprint_3d, **kwargs)
-        assert_allclose(output, expected)
+        xp_assert_close(output, expected)
 
     def test_rank01(self):
         array = np.array([1, 2, 3, 4, 5])
@@ -1779,11 +1779,11 @@ def test_gaussian_kernel1d():
     x = np.arange(-radius, radius + 1, dtype=np.double)
     phi_x = np.exp(-0.5 * x * x / sigma2)
     phi_x /= phi_x.sum()
-    assert_allclose(phi_x, _gaussian_kernel1d(sigma, 0, radius))
-    assert_allclose(-phi_x * x / sigma2, _gaussian_kernel1d(sigma, 1, radius))
-    assert_allclose(phi_x * (x * x / sigma2 - 1) / sigma2,
+    xp_assert_close(phi_x, _gaussian_kernel1d(sigma, 0, radius))
+    xp_assert_close(-phi_x * x / sigma2, _gaussian_kernel1d(sigma, 1, radius))
+    xp_assert_close(phi_x * (x * x / sigma2 - 1) / sigma2,
                     _gaussian_kernel1d(sigma, 2, radius))
-    assert_allclose(phi_x * (3 - x * x / sigma2) * x / (sigma2 * sigma2),
+    xp_assert_close(phi_x * (3 - x * x / sigma2) * x / (sigma2 * sigma2),
                     _gaussian_kernel1d(sigma, 3, radius))
 
 
