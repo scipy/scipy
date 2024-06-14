@@ -1,10 +1,12 @@
 import sys
 
 import numpy as np
-from numpy.testing import (assert_, assert_array_equal,
+from numpy.testing import (assert_,
                            assert_array_almost_equal,
                            suppress_warnings)
-from scipy._lib._array_api import (xp_assert_equal, xp_assert_close)
+from scipy._lib._array_api import (
+    xp_assert_equal, xp_assert_close
+)
 
 import pytest
 from pytest import raises as assert_raises
@@ -41,8 +43,8 @@ class TestNdimageInterpolation:
             return (x[0] + 0.5,)
 
         data = np.array([1, 2, 3, 4.])
-        assert_array_equal(
-            expected_value,
+        xp_assert_equal(
+            np.asarray(expected_value),
             ndimage.geometric_transform(data, shift, cval=-1, mode=mode,
                                         output_shape=(7,), order=1))
 
@@ -61,8 +63,8 @@ class TestNdimageInterpolation:
             return (x[0] - 0.9,)
 
         data = np.array([1, 2, 3, 4])
-        assert_array_equal(
-            expected_value,
+        xp_assert_equal(
+            np.asarray(expected_value),
             ndimage.geometric_transform(data, shift, cval=-1, mode=mode,
                                         output_shape=(4,)))
 
@@ -1096,7 +1098,7 @@ class TestNdimageInterpolation:
     def test_zoom2(self):
         arr = np.arange(12).reshape((3, 4))
         out = ndimage.zoom(ndimage.zoom(arr, 2), 0.5)
-        assert_array_equal(out, arr)
+        xp_assert_equal(out, arr)
 
     def test_zoom3(self):
         arr = np.array([[1, 2]])
@@ -1140,7 +1142,7 @@ class TestNdimageInterpolation:
         arr = np.zeros((3, 11, 25))
         zoom = (4.0 / 3, 15.0 / 11, 29.0 / 25)
         out = ndimage.zoom(arr, zoom)
-        assert_array_equal(out.shape, (4, 15, 29))
+        assert out.shape == (4, 15, 29)
 
     @pytest.mark.parametrize('zoom', [(1, 1), (3, 5), (8, 2), (8, 8)])
     @pytest.mark.parametrize('mode', ['nearest', 'constant', 'wrap', 'reflect',
