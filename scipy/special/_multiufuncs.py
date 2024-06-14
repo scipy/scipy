@@ -180,7 +180,7 @@ def _(ufuncs, norm=False, diff_n=0):
 def _():
     r"""assoc_legendre_p(n, m, z, *, norm=False, diff_n=0)
 
-    Associated Legendre function of the first kind and its derivatives.
+    Associated Legendre function of the first kind.
 
     Parameters
     ----------
@@ -241,8 +241,7 @@ def _(n, m, z_shape, nout):
 def _():
     """assoc_legendre_p_all(n, m, z, *, norm=False, diff_n=0)
 
-    Tables of associated Legendre functions of the first kind
-    and their derivatives.
+    Table of associated Legendre functions of the first kind.
 
     Parameters
     ----------
@@ -251,9 +250,34 @@ def _():
     m : int
         The degree of the Legendre function
     z : array_like, float
-    
+        Input value
+    norm : Optional[bool]
         If True, compute tables for the normalized associated Legendre
         function. Default is False.
+    diff_n : Optional[int]
+        A non-negative integer. Compute and return tables for all
+        derivatives up to order ``diff_n``.
+
+    Returns
+    -------
+    ndarray or tuple of ndarray
+        For each entry in `z`
+    
+        If ``diff_n == 0``, then return tables for only the associated Legendre
+        function ifself. If ``diff_n > 0`` then return a tuple of length
+        ``diff_n + 1`` containing tables for the associated Legendre function
+        and all of its derivatives up to order `diff_n`.
+
+    Notes
+    -----
+    The relationship between the associated Legendre function
+    :math:`P_{m}^{n}(x)` and the normalized associated Legendre function
+    :math:`\bar{P}_{n}^{n}(x)` is:
+
+    .. math::
+
+        P^{m}_{n}(x) =
+        \sqrt{\frac{2(n + m)!}{(2n + 1)(n - m)!}}\bar{P}_{n}^{m}(x)
     """
 
 
@@ -331,7 +355,7 @@ def _(ufuncs, norm=False, diff_n=0):
 def _():
     """multi_assoc_legendre_p_all(n, m, type, z, *, norm=False, diff_n=0)
 
-    Complex valued associated Legendre functions of the first kind.
+    Associated Legendre function of the first kind for complex arguments.
     """
 
 
@@ -368,7 +392,8 @@ def _(n, m, type_shape, z_shape, nout):
 def _():
     """multi_assoc_legendre_p_all(n, m, type, z, *, norm=False, diff_n=0)
 
-    Table of complex valued associated Legendre functions of the first kind.
+    Table of associated Legendre functions of the first kind for complex
+    arguments.
     """
 
 
@@ -445,7 +470,7 @@ def _(ufuncs, diff_n=0):
 def _():
     """sph_harm_y(n, m, theta, phi, * diff_n)
 
-    Spherical harmonics
+    Spherical harmonics.
     """
 
 

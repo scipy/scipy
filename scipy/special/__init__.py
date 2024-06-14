@@ -492,7 +492,7 @@ the matching functions above are being deprecated.
    multi_assoc_legendre_p_all -- Table of associated Legendre functions of the first kind for complex arguments.
    sph_harm_y                 -- Spherical harmonics
    sph_harm_y_all             -- Table of spherical harmonics
-   sph_legendre               -- Spherical Associated Legendre function of the first kind.
+   sph_legendre               -- Spherical associated Legendre function of the first kind.
    sph_legendre_all           -- Table of spherical associated Legendre functions of the first kind.
 
 Ellipsoidal harmonics
