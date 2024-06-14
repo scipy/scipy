@@ -295,7 +295,7 @@ Authors
 * boatwrong (1)
 * Jake Bowhay (50)
 * Dietrich Brunn (2)
-* Evgeni Burovski (175)
+* Evgeni Burovski (177)
 * Tim Butters (7) +
 * CJ Carey (5)
 * Sean Cheah (46)
@@ -338,7 +338,7 @@ Authors
 * pwcnorthrop (3) +
 * Bharat Raghunathan (1)
 * Tom M. Ragonneau (2) +
-* Tyler Reddy (77)
+* Tyler Reddy (81)
 * Pamphile Roy (18)
 * Atsushi Sakai (9)
 * Daniel Schmitz (5)
@@ -729,6 +729,7 @@ Pull requests for 1.14.0
 * `#20914 <https://github.com/scipy/scipy/pull/20914>`__: TST: linalg: bump tolerance in \`TestEig::test_singular\`
 * `#20919 <https://github.com/scipy/scipy/pull/20919>`__: BLD: optimize: use hidden visibility for static HiGHS libraries
 * `#20920 <https://github.com/scipy/scipy/pull/20920>`__: MAINT: special: fix msvc build by using \`new\` and \`delete\`...
+* `#20927 <https://github.com/scipy/scipy/pull/20927>`__: MAINT: adapt to a scipy-doctests change
 * `#20936 <https://github.com/scipy/scipy/pull/20936>`__: DOC: \`array_api.rst\`: update 1.14 functions with array API...
 * `#20937 <https://github.com/scipy/scipy/pull/20937>`__: BUG/BLD: special: Ensure symbols in \`sf_error_state\` shared...
 * `#20945 <https://github.com/scipy/scipy/pull/20945>`__: TST: address tolerance violations with SciPy 1.14.0rc1 on linux-{aarch64,ppc64le}
