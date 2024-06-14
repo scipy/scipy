@@ -2528,11 +2528,13 @@ cdef class Rotation:
         n_rotations = len(self._quat)
 
         if n_rotations == 1:
+            # Single rotation/many vectors, use matmul for speed: The axes argument
+            # is such that the input arguments don't need to be transposed and the
+            # output argument is contineous in memory.
             return np.matmul(matrix, vectors, axes=[(-2, -1), (-1, -2), (-1, -2)])[0]
         elif n_vectors == 1 or n_vectors == n_rotations:
-            return np.matmul(
-                matrix, vectors[:, None, :], axes=[(-2, -1), (-1, -2), (-1, 0)]
-            )[0]
+            # for stacks of matrices einsum is faster
+            return np.einsum('ijk,ik->ij', matrix, vectors)
 
         raise ValueError("Expected equal numbers of rotations and vectors "
                          ", or a single rotation, or a single vector, got "

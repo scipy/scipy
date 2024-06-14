@@ -5,7 +5,8 @@ from numpy.testing import assert_equal, assert_array_almost_equal
 from numpy.testing import assert_allclose
 from scipy.spatial.transform import Rotation, Slerp
 from scipy.stats import special_ortho_group
-from itertools import permutations
+from itertools import permutations, product
+
 
 import pickle
 import copy
@@ -1158,6 +1159,23 @@ def test_apply_multiple_rotations_multiple_points():
     v_inverse = np.array([[2, -1, 3], [4, 6, -5]])
     assert_allclose(r.apply(v, inverse=True), v_inverse)
 
+def test_apply_shapes():
+    vector0 = np.array([1.0, 2.0, 3.0])
+    vector1 = np.array([vector0])
+    vector2 = np.array([vector0, vector0])
+    matrix0 = np.identity(3)
+    matrix1 = np.array([matrix0])
+    matrix2 = np.array([matrix0, matrix0])
+
+    for m, v in product([matrix0, matrix1, matrix2], [vector0, vector1, vector2]):
+        r = Rotation.from_matrix(m)
+        shape = v.shape
+        if not r.single and (v.shape == (3,) or v.shape == (1, 3)):
+            shape = (len(r), 3)
+        x = r.apply(v)
+        assert np.all(x.shape == shape)
+        x = r.apply(v, inverse=True)
+        assert np.all(x.shape == shape)
 
 def test_getitem():
     mat = np.empty((2, 3, 3))
