@@ -7,7 +7,6 @@ from scipy.spatial.transform import Rotation, Slerp
 from scipy.stats import special_ortho_group
 from itertools import permutations, product
 
-
 import pickle
 import copy
 
