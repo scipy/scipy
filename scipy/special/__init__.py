@@ -477,14 +477,23 @@ Legendre functions
    lqn                        -- Legendre function of the second kind.
    lpmn                       -- Sequence of associated Legendre functions of the first kind.
    lqmn                       -- Sequence of associated Legendre functions of the second kind.
-   legendre_p                 -- lorem ipsum
-   legendre_p_all             -- lorem ipsum
-   assoc_legendre_p           -- lorem ipsum
-   assoc_legendre_p_all       -- lorem ipsum
-   multi_assoc_legendre_p     -- lorem ipsum
-   multi_assoc_legendre_p_all -- lorem ipsum
-   sph_harm_y                 -- lorem ipsum
-   sph_harm_y_all             -- lorem ipsum
+
+.. autosummary::
+   :toctree: generated/
+
+The following functions offer a new interface for calculating Legendre functions and
+the matching functions above are being deprecated.
+
+   legendre_p                 -- Legendre function of the first kind.
+   legendre_p_all             -- Sequence of Legendre functions of the first kind.
+   assoc_legendre_p           -- Associated Legendre function of the first kind.
+   assoc_legendre_p_all       -- Table of associated Legendre functions of the first kind.
+   multi_assoc_legendre_p     -- Associated Legendre function of the first kind for complex arguments.
+   multi_assoc_legendre_p_all -- Table of associated Legendre functions of the first kind for complex arguments.
+   sph_harm_y                 -- Spherical harmonics
+   sph_harm_y_all             -- Table of spherical harmonics
+   sph_legendre               -- Spherical Associated Legendre function of the first kind.
+   sph_legendre_all           -- Table of spherical associated Legendre functions of the first kind.
 
 Ellipsoidal harmonics
 ---------------------
