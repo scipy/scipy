@@ -261,8 +261,6 @@ def _():
     Returns
     -------
     ndarray or tuple of ndarray
-        For each entry in `z`
-    
         If ``diff_n == 0``, then return tables for only the associated Legendre
         function ifself. If ``diff_n > 0`` then return a tuple of length
         ``diff_n + 1`` containing tables for the associated Legendre function
