@@ -4,7 +4,9 @@ import itertools
 import math
 import numpy as np
 
-from numpy.testing import (assert_equal, assert_allclose,
+from scipy._lib._array_api import (xp_assert_equal, )
+
+from numpy.testing import (assert_allclose,
                            assert_array_almost_equal,
                            assert_array_equal, assert_almost_equal,
                            suppress_warnings, assert_)
@@ -1738,7 +1740,7 @@ def test_ticket_701():
     res = ndimage.generic_filter(arr, func, size=(1, 1))
     # The following raises an error unless ticket 701 is fixed
     res2 = ndimage.generic_filter(arr, func, size=1)
-    assert_equal(res, res2)
+    xp_assert_equal(res, res2)
 
 
 def test_gh_5430():
@@ -1788,11 +1790,11 @@ def test_gaussian_kernel1d():
 def test_orders_gauss():
     # Check order inputs to Gaussians
     arr = np.zeros((1,))
-    assert_equal(0, ndimage.gaussian_filter(arr, 1, order=0))
-    assert_equal(0, ndimage.gaussian_filter(arr, 1, order=3))
+    xp_assert_equal(ndimage.gaussian_filter(arr, 1, order=0), np.array([0.]))
+    xp_assert_equal(ndimage.gaussian_filter(arr, 1, order=3), np.array([0.]))
     assert_raises(ValueError, ndimage.gaussian_filter, arr, 1, -1)
-    assert_equal(0, ndimage.gaussian_filter1d(arr, 1, axis=-1, order=0))
-    assert_equal(0, ndimage.gaussian_filter1d(arr, 1, axis=-1, order=3))
+    xp_assert_equal(ndimage.gaussian_filter1d(arr, 1, axis=-1, order=0), np.array([0.]))
+    xp_assert_equal(ndimage.gaussian_filter1d(arr, 1, axis=-1, order=3), np.array([0.]))
     assert_raises(ValueError, ndimage.gaussian_filter1d, arr, 1, -1, -1)
 
 
@@ -1849,23 +1851,23 @@ def test_multiple_modes():
     mode1 = 'reflect'
     mode2 = ['reflect', 'reflect']
 
-    assert_equal(ndimage.gaussian_filter(arr, 1, mode=mode1),
+    xp_assert_equal(ndimage.gaussian_filter(arr, 1, mode=mode1),
                  ndimage.gaussian_filter(arr, 1, mode=mode2))
-    assert_equal(ndimage.prewitt(arr, mode=mode1),
+    xp_assert_equal(ndimage.prewitt(arr, mode=mode1),
                  ndimage.prewitt(arr, mode=mode2))
-    assert_equal(ndimage.sobel(arr, mode=mode1),
+    xp_assert_equal(ndimage.sobel(arr, mode=mode1),
                  ndimage.sobel(arr, mode=mode2))
-    assert_equal(ndimage.laplace(arr, mode=mode1),
+    xp_assert_equal(ndimage.laplace(arr, mode=mode1),
                  ndimage.laplace(arr, mode=mode2))
-    assert_equal(ndimage.gaussian_laplace(arr, 1, mode=mode1),
+    xp_assert_equal(ndimage.gaussian_laplace(arr, 1, mode=mode1),
                  ndimage.gaussian_laplace(arr, 1, mode=mode2))
-    assert_equal(ndimage.maximum_filter(arr, size=5, mode=mode1),
+    xp_assert_equal(ndimage.maximum_filter(arr, size=5, mode=mode1),
                  ndimage.maximum_filter(arr, size=5, mode=mode2))
-    assert_equal(ndimage.minimum_filter(arr, size=5, mode=mode1),
+    xp_assert_equal(ndimage.minimum_filter(arr, size=5, mode=mode1),
                  ndimage.minimum_filter(arr, size=5, mode=mode2))
-    assert_equal(ndimage.gaussian_gradient_magnitude(arr, 1, mode=mode1),
+    xp_assert_equal(ndimage.gaussian_gradient_magnitude(arr, 1, mode=mode1),
                  ndimage.gaussian_gradient_magnitude(arr, 1, mode=mode2))
-    assert_equal(ndimage.uniform_filter(arr, 5, mode=mode1),
+    xp_assert_equal(ndimage.uniform_filter(arr, 5, mode=mode1),
                  ndimage.uniform_filter(arr, 5, mode=mode2))
 
 
@@ -1881,24 +1883,24 @@ def test_multiple_modes_sequentially():
 
     expected = ndimage.gaussian_filter1d(arr, 1, axis=0, mode=modes[0])
     expected = ndimage.gaussian_filter1d(expected, 1, axis=1, mode=modes[1])
-    assert_equal(expected,
+    xp_assert_equal(expected,
                  ndimage.gaussian_filter(arr, 1, mode=modes))
 
     expected = ndimage.uniform_filter1d(arr, 5, axis=0, mode=modes[0])
     expected = ndimage.uniform_filter1d(expected, 5, axis=1, mode=modes[1])
-    assert_equal(expected,
+    xp_assert_equal(expected,
                  ndimage.uniform_filter(arr, 5, mode=modes))
 
     expected = ndimage.maximum_filter1d(arr, size=5, axis=0, mode=modes[0])
     expected = ndimage.maximum_filter1d(expected, size=5, axis=1,
                                         mode=modes[1])
-    assert_equal(expected,
+    xp_assert_equal(expected,
                  ndimage.maximum_filter(arr, size=5, mode=modes))
 
     expected = ndimage.minimum_filter1d(arr, size=5, axis=0, mode=modes[0])
     expected = ndimage.minimum_filter1d(expected, size=5, axis=1,
                                         mode=modes[1])
-    assert_equal(expected,
+    xp_assert_equal(expected,
                  ndimage.minimum_filter(arr, size=5, mode=modes))
 
 
@@ -1914,7 +1916,7 @@ def test_multiple_modes_prewitt():
 
     modes = ['reflect', 'wrap']
 
-    assert_equal(expected,
+    xp_assert_equal(expected,
                  ndimage.prewitt(arr, mode=modes))
 
 
@@ -1930,7 +1932,7 @@ def test_multiple_modes_sobel():
 
     modes = ['reflect', 'wrap']
 
-    assert_equal(expected,
+    xp_assert_equal(expected,
                  ndimage.sobel(arr, mode=modes))
 
 
@@ -1946,7 +1948,7 @@ def test_multiple_modes_laplace():
 
     modes = ['reflect', 'wrap']
 
-    assert_equal(expected,
+    xp_assert_equal(expected,
                  ndimage.laplace(arr, mode=modes))
 
 
@@ -2050,21 +2052,21 @@ def test_gaussian_radius():
     x[3] = 1
     f1 = ndimage.gaussian_filter1d(x, sigma=2, truncate=1.5)
     f2 = ndimage.gaussian_filter1d(x, sigma=2, radius=3)
-    assert_equal(f1, f2)
+    xp_assert_equal(f1, f2)
 
     # Test gaussian_filter when sigma is a number.
     a = np.zeros((9, 9))
     a[4, 4] = 1
     f1 = ndimage.gaussian_filter(a, sigma=0.5, truncate=3.5)
     f2 = ndimage.gaussian_filter(a, sigma=0.5, radius=2)
-    assert_equal(f1, f2)
+    xp_assert_equal(f1, f2)
 
     # Test gaussian_filter when sigma is a sequence.
     a = np.zeros((50, 50))
     a[25, 25] = 1
     f1 = ndimage.gaussian_filter(a, sigma=[0.5, 2.5], truncate=3.5)
     f2 = ndimage.gaussian_filter(a, sigma=[0.5, 2.5], radius=[2, 9])
-    assert_equal(f1, f2)
+    xp_assert_equal(f1, f2)
 
 
 def test_gaussian_radius_invalid():
@@ -2137,29 +2139,29 @@ def test_minmaximum_filter1d():
     # Regression gh-3898
     in_ = np.arange(10)
     out = ndimage.minimum_filter1d(in_, 1)
-    assert_equal(in_, out)
+    xp_assert_equal(in_, out)
     out = ndimage.maximum_filter1d(in_, 1)
-    assert_equal(in_, out)
+    xp_assert_equal(in_, out)
     # Test reflect
     out = ndimage.minimum_filter1d(in_, 5, mode='reflect')
-    assert_equal([0, 0, 0, 1, 2, 3, 4, 5, 6, 7], out)
+    xp_assert_equal(np.array([0, 0, 0, 1, 2, 3, 4, 5, 6, 7]), out)
     out = ndimage.maximum_filter1d(in_, 5, mode='reflect')
-    assert_equal([2, 3, 4, 5, 6, 7, 8, 9, 9, 9], out)
+    xp_assert_equal(np.array([2, 3, 4, 5, 6, 7, 8, 9, 9, 9]), out)
     # Test constant
     out = ndimage.minimum_filter1d(in_, 5, mode='constant', cval=-1)
-    assert_equal([-1, -1, 0, 1, 2, 3, 4, 5, -1, -1], out)
+    xp_assert_equal(np.array([-1, -1, 0, 1, 2, 3, 4, 5, -1, -1]), out)
     out = ndimage.maximum_filter1d(in_, 5, mode='constant', cval=10)
-    assert_equal([10, 10, 4, 5, 6, 7, 8, 9, 10, 10], out)
+    xp_assert_equal(np.array([10, 10, 4, 5, 6, 7, 8, 9, 10, 10]), out)
     # Test nearest
     out = ndimage.minimum_filter1d(in_, 5, mode='nearest')
-    assert_equal([0, 0, 0, 1, 2, 3, 4, 5, 6, 7], out)
+    xp_assert_equal(np.array([0, 0, 0, 1, 2, 3, 4, 5, 6, 7]), out)
     out = ndimage.maximum_filter1d(in_, 5, mode='nearest')
-    assert_equal([2, 3, 4, 5, 6, 7, 8, 9, 9, 9], out)
+    xp_assert_equal(np.array([2, 3, 4, 5, 6, 7, 8, 9, 9, 9]), out)
     # Test wrap
     out = ndimage.minimum_filter1d(in_, 5, mode='wrap')
-    assert_equal([0, 0, 0, 1, 2, 3, 4, 5, 0, 0], out)
+    xp_assert_equal(np.array([0, 0, 0, 1, 2, 3, 4, 5, 0, 0]), out)
     out = ndimage.maximum_filter1d(in_, 5, mode='wrap')
-    assert_equal([9, 9, 4, 5, 6, 7, 8, 9, 9, 9], out)
+    xp_assert_equal(np.array([9, 9, 4, 5, 6, 7, 8, 9, 9, 9]), out)
 
 
 def test_uniform_filter1d_roundoff_errors():
@@ -2167,7 +2169,7 @@ def test_uniform_filter1d_roundoff_errors():
     in_ = np.repeat([0, 1, 0], [9, 9, 9])
     for filter_size in range(3, 10):
         out = ndimage.uniform_filter1d(in_, filter_size)
-        assert_equal(out.sum(), 10 - filter_size)
+        xp_assert_equal(out.sum(), 10 - filter_size)
 
 
 def test_footprint_all_zeros():
