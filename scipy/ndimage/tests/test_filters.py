@@ -6,10 +6,10 @@ import numpy as np
 
 from scipy._lib._array_api import (
     xp_assert_equal, xp_assert_close,
+    assert_array_almost_equal,
 )
 
 from numpy.testing import (
-                           assert_array_almost_equal,
                            assert_almost_equal,
                            suppress_warnings, assert_)
 import pytest
@@ -222,8 +222,8 @@ class TestNdimageFilters:
 
     def test_correlate05(self):
         array = np.array([1, 2, 3])
-        tcor = [2, 3, 5]
-        tcov = [3, 5, 6]
+        tcor = np.asarray([2, 3, 5])
+        tcov = np.asarray([3, 5, 6])
         kernel = np.array([1, 1])
         output = ndimage.correlate(array, kernel)
         assert_array_almost_equal(tcor, output)
@@ -236,8 +236,8 @@ class TestNdimageFilters:
 
     def test_correlate06(self):
         array = np.array([1, 2, 3])
-        tcor = [9, 14, 17]
-        tcov = [7, 10, 15]
+        tcor = np.asarray([9, 14, 17])
+        tcov = np.asarray([7, 10, 15])
         weights = np.array([1, 2, 3])
         output = ndimage.correlate(array, weights)
         assert_array_almost_equal(output, tcor)
@@ -250,7 +250,7 @@ class TestNdimageFilters:
 
     def test_correlate07(self):
         array = np.array([1, 2, 3])
-        expected = [5, 8, 11]
+        expected = np.asarray([5, 8, 11])
         weights = np.array([1, 2, 1])
         output = ndimage.correlate(array, weights)
         assert_array_almost_equal(output, expected)
@@ -263,8 +263,8 @@ class TestNdimageFilters:
 
     def test_correlate08(self):
         array = np.array([1, 2, 3])
-        tcor = [1, 2, 5]
-        tcov = [3, 6, 7]
+        tcor = np.asarray([1, 2, 5])
+        tcov = np.asarray([3, 6, 7])
         weights = np.array([1, 2, -1])
         output = ndimage.correlate(array, weights)
         assert_array_almost_equal(output, tcor)
@@ -276,7 +276,7 @@ class TestNdimageFilters:
         assert_array_almost_equal(output, tcov)
 
     def test_correlate09(self):
-        array = []
+        array = np.asarray([])
         kernel = np.array([1, 1])
         output = ndimage.correlate(array, kernel)
         assert_array_almost_equal(array, output)
@@ -288,7 +288,7 @@ class TestNdimageFilters:
         assert_array_almost_equal(array, output)
 
     def test_correlate10(self):
-        array = [[]]
+        array = np.asarray([[]])
         kernel = np.array([[1, 1]])
         output = ndimage.correlate(array, kernel)
         assert_array_almost_equal(array, output)
@@ -301,9 +301,9 @@ class TestNdimageFilters:
         kernel = np.array([[1, 1],
                            [1, 1]])
         output = ndimage.correlate(array, kernel)
-        assert_array_almost_equal([[4, 6, 10], [10, 12, 16]], output)
+        assert_array_almost_equal(np.asarray([[4, 6, 10], [10, 12, 16]]), output)
         output = ndimage.convolve(array, kernel)
-        assert_array_almost_equal([[12, 16, 18], [18, 22, 24]], output)
+        assert_array_almost_equal(np.asarray([[12, 16, 18], [18, 22, 24]]), output)
 
     def test_correlate12(self):
         array = np.array([[1, 2, 3],
@@ -311,9 +311,9 @@ class TestNdimageFilters:
         kernel = np.array([[1, 0],
                            [0, 1]])
         output = ndimage.correlate(array, kernel)
-        assert_array_almost_equal([[2, 3, 5], [5, 6, 8]], output)
+        assert_array_almost_equal(np.asarray([[2, 3, 5], [5, 6, 8]]), output)
         output = ndimage.convolve(array, kernel)
-        assert_array_almost_equal([[6, 8, 9], [9, 11, 12]], output)
+        assert_array_almost_equal(np.asarray([[6, 8, 9], [9, 11, 12]]), output)
 
     @pytest.mark.parametrize('dtype_array', types)
     @pytest.mark.parametrize('dtype_kernel', types)
@@ -323,12 +323,12 @@ class TestNdimageFilters:
         array = np.array([[1, 2, 3],
                           [4, 5, 6]], dtype_array)
         output = ndimage.correlate(array, kernel, output=dtype_kernel)
-        assert_array_almost_equal([[2, 3, 5], [5, 6, 8]], output)
+        assert_array_almost_equal(np.asarray([[2, 3, 5], [5, 6, 8]]), output)
         assert output.dtype.type == dtype_kernel
 
         output = ndimage.convolve(array, kernel,
                                   output=dtype_kernel)
-        assert_array_almost_equal([[6, 8, 9], [9, 11, 12]], output)
+        assert_array_almost_equal(np.asarray([[6, 8, 9], [9, 11, 12]]), output)
         assert output.dtype.type == dtype_kernel
 
     @pytest.mark.parametrize('dtype_array', types)
@@ -340,11 +340,11 @@ class TestNdimageFilters:
                           [4, 5, 6]], dtype_array)
         output = np.zeros(array.shape, dtype_output)
         ndimage.correlate(array, kernel, output=output)
-        assert_array_almost_equal([[2, 3, 5], [5, 6, 8]], output)
+        assert_array_almost_equal(np.asarray([[2, 3, 5], [5, 6, 8]]), output)
         assert output.dtype.type == dtype_output
 
         ndimage.convolve(array, kernel, output=output)
-        assert_array_almost_equal([[6, 8, 9], [9, 11, 12]], output)
+        assert_array_almost_equal(np.asarray([[6, 8, 9], [9, 11, 12]]), output)
         assert output.dtype.type == dtype_output
 
     @pytest.mark.parametrize('dtype_array', types)
@@ -354,11 +354,11 @@ class TestNdimageFilters:
         array = np.array([[1, 2, 3],
                           [4, 5, 6]], dtype_array)
         output = ndimage.correlate(array, kernel, output=np.float32)
-        assert_array_almost_equal([[2, 3, 5], [5, 6, 8]], output)
+        assert_array_almost_equal(np.asarray([[2, 3, 5], [5, 6, 8]]), output)
         assert output.dtype.type == np.float32
 
         output = ndimage.convolve(array, kernel, output=np.float32)
-        assert_array_almost_equal([[6, 8, 9], [9, 11, 12]], output)
+        assert_array_almost_equal(np.asarray([[6, 8, 9], [9, 11, 12]]), output)
         assert output.dtype.type == np.float32
 
     @pytest.mark.parametrize('dtype_array', types)
@@ -367,17 +367,17 @@ class TestNdimageFilters:
                            [0, 0.5]])
         array = np.array([[1, 2, 3], [4, 5, 6]], dtype_array)
         output = ndimage.correlate(array, kernel, output=np.float32)
-        assert_array_almost_equal([[1, 1.5, 2.5], [2.5, 3, 4]], output)
+        assert_array_almost_equal(np.asarray([[1, 1.5, 2.5], [2.5, 3, 4]]), output)
         assert output.dtype.type == np.float32
 
         output = ndimage.convolve(array, kernel, output=np.float32)
-        assert_array_almost_equal([[3, 4, 4.5], [4.5, 5.5, 6]], output)
+        assert_array_almost_equal(np.asarray([[3, 4, 4.5], [4.5, 5.5, 6]]), output)
         assert output.dtype.type == np.float32
 
     def test_correlate17(self):
         array = np.array([1, 2, 3])
-        tcor = [3, 5, 6]
-        tcov = [2, 3, 5]
+        tcor = np.asarray([3, 5, 6])
+        tcov = np.asarray([2, 3, 5])
         kernel = np.array([1, 1])
         output = ndimage.correlate(array, kernel, origin=-1)
         assert_array_almost_equal(tcor, output)
@@ -397,13 +397,13 @@ class TestNdimageFilters:
         output = ndimage.correlate(array, kernel,
                                    output=np.float32,
                                    mode='nearest', origin=-1)
-        assert_array_almost_equal([[6, 8, 9], [9, 11, 12]], output)
+        assert_array_almost_equal(np.asarray([[6, 8, 9], [9, 11, 12]]), output)
         assert output.dtype.type == np.float32
 
         output = ndimage.convolve(array, kernel,
                                   output=np.float32,
                                   mode='nearest', origin=-1)
-        assert_array_almost_equal([[2, 3, 5], [5, 6, 8]], output)
+        assert_array_almost_equal(np.asarray([[2, 3, 5], [5, 6, 8]]), output)
         assert output.dtype.type == np.float32
 
     def test_correlate_mode_sequence(self):
@@ -423,20 +423,20 @@ class TestNdimageFilters:
         output = ndimage.correlate(array, kernel,
                                    output=np.float32,
                                    mode='nearest', origin=[-1, 0])
-        assert_array_almost_equal([[5, 6, 8], [8, 9, 11]], output)
+        assert_array_almost_equal(np.asarray([[5, 6, 8], [8, 9, 11]]), output)
         assert output.dtype.type == np.float32
 
         output = ndimage.convolve(array, kernel,
                                   output=np.float32,
                                   mode='nearest', origin=[-1, 0])
-        assert_array_almost_equal([[3, 5, 6], [6, 8, 9]], output)
+        assert_array_almost_equal(np.asarray([[3, 5, 6], [6, 8, 9]]), output)
         assert output.dtype.type == np.float32
 
     @pytest.mark.parametrize('dtype_array', types)
     @pytest.mark.parametrize('dtype_output', types)
     def test_correlate20(self, dtype_array, dtype_output):
         weights = np.array([1, 2, 1])
-        expected = [[5, 10, 15], [7, 14, 21]]
+        expected = np.asarray([[5, 10, 15], [7, 14, 21]])
         array = np.array([[1, 2, 3],
                           [2, 4, 6]], dtype_array)
         output = np.zeros((2, 3), dtype_output)
@@ -448,7 +448,7 @@ class TestNdimageFilters:
     def test_correlate21(self):
         array = np.array([[1, 2, 3],
                           [2, 4, 6]])
-        expected = [[5, 10, 15], [7, 14, 21]]
+        expected = np.asarray([[5, 10, 15], [7, 14, 21]])
         weights = np.array([1, 2, 1])
         output = ndimage.correlate1d(array, weights, axis=0)
         assert_array_almost_equal(output, expected)
@@ -459,7 +459,7 @@ class TestNdimageFilters:
     @pytest.mark.parametrize('dtype_output', types)
     def test_correlate22(self, dtype_array, dtype_output):
         weights = np.array([1, 2, 1])
-        expected = [[6, 12, 18], [6, 12, 18]]
+        expected = np.asarray([[6, 12, 18], [6, 12, 18]])
         array = np.array([[1, 2, 3],
                           [2, 4, 6]], dtype_array)
         output = np.zeros((2, 3), dtype_output)
@@ -474,7 +474,7 @@ class TestNdimageFilters:
     @pytest.mark.parametrize('dtype_output', types)
     def test_correlate23(self, dtype_array, dtype_output):
         weights = np.array([1, 2, 1])
-        expected = [[5, 10, 15], [7, 14, 21]]
+        expected = np.asarray([[5, 10, 15], [7, 14, 21]])
         array = np.array([[1, 2, 3],
                           [2, 4, 6]], dtype_array)
         output = np.zeros((2, 3), dtype_output)
@@ -489,8 +489,8 @@ class TestNdimageFilters:
     @pytest.mark.parametrize('dtype_output', types)
     def test_correlate24(self, dtype_array, dtype_output):
         weights = np.array([1, 2, 1])
-        tcor = [[7, 14, 21], [8, 16, 24]]
-        tcov = [[4, 8, 12], [5, 10, 15]]
+        tcor = np.asarray([[7, 14, 21], [8, 16, 24]])
+        tcov = np.asarray([[4, 8, 12], [5, 10, 15]])
         array = np.array([[1, 2, 3],
                           [2, 4, 6]], dtype_array)
         output = np.zeros((2, 3), dtype_output)
@@ -505,8 +505,8 @@ class TestNdimageFilters:
     @pytest.mark.parametrize('dtype_output', types)
     def test_correlate25(self, dtype_array, dtype_output):
         weights = np.array([1, 2, 1])
-        tcor = [[4, 8, 12], [5, 10, 15]]
-        tcov = [[7, 14, 21], [8, 16, 24]]
+        tcor = np.asarray([[4, 8, 12], [5, 10, 15]])
+        tcov = np.asarray([[7, 14, 21], [8, 16, 24]])
         array = np.array([[1, 2, 3],
                           [2, 4, 6]], dtype_array)
         output = np.zeros((2, 3), dtype_output)
@@ -1085,14 +1085,14 @@ class TestNdimageFilters:
         array = np.array([2, 4, 6])
         size = 2
         output = ndimage.uniform_filter1d(array, size, origin=-1)
-        assert_array_almost_equal([3, 5, 6], output)
+        assert_array_almost_equal(np.asarray([3, 5, 6]), output)
 
     def test_uniform01_complex(self):
         array = np.array([2 + 1j, 4 + 2j, 6 + 3j], dtype=np.complex128)
         size = 2
         output = ndimage.uniform_filter1d(array, size, origin=-1)
-        assert_array_almost_equal([3, 5, 6], output.real)
-        assert_array_almost_equal([1.5, 2.5, 3], output.imag)
+        assert_array_almost_equal(np.asarray([3, 5, 6]), output.real)
+        assert_array_almost_equal(np.asarray([1.5, 2.5, 3]), output.imag)
 
     def test_uniform02(self):
         array = np.array([1, 2, 3])
@@ -1110,13 +1110,13 @@ class TestNdimageFilters:
         array = np.array([2, 4, 6])
         filter_shape = [2]
         output = ndimage.uniform_filter(array, filter_shape)
-        assert_array_almost_equal([2, 3, 5], output)
+        assert_array_almost_equal(np.asarray([2, 3, 5]), output)
 
     def test_uniform05(self):
         array = []
         filter_shape = [1]
         output = ndimage.uniform_filter(array, filter_shape)
-        assert_array_almost_equal([], output)
+        assert_array_almost_equal(np.asarray([]), output)
 
     @pytest.mark.parametrize('dtype_array', types)
     @pytest.mark.parametrize('dtype_output', types)
@@ -1126,7 +1126,7 @@ class TestNdimageFilters:
                           [16, 20, 24]], dtype_array)
         output = ndimage.uniform_filter(
             array, filter_shape, output=dtype_output)
-        assert_array_almost_equal([[4, 6, 10], [10, 12, 16]], output)
+        assert_array_almost_equal(np.asarray([[4, 6, 10], [10, 12, 16]]), output)
         assert output.dtype.type == dtype_output
 
     @pytest.mark.parametrize('dtype_array', complex_types)
@@ -1137,32 +1137,32 @@ class TestNdimageFilters:
                           [16, 20, 24]], dtype_array)
         output = ndimage.uniform_filter(
             array, filter_shape, output=dtype_output)
-        assert_array_almost_equal([[4, 6, 10], [10, 12, 16]], output.real)
+        assert_array_almost_equal(np.asarray([[4, 6, 10], [10, 12, 16]]), output.real)
         assert output.dtype.type == dtype_output
 
     def test_minimum_filter01(self):
         array = np.array([1, 2, 3, 4, 5])
         filter_shape = np.array([2])
         output = ndimage.minimum_filter(array, filter_shape)
-        assert_array_almost_equal([1, 1, 2, 3, 4], output)
+        assert_array_almost_equal(np.asarray([1, 1, 2, 3, 4]), output)
 
     def test_minimum_filter02(self):
         array = np.array([1, 2, 3, 4, 5])
         filter_shape = np.array([3])
         output = ndimage.minimum_filter(array, filter_shape)
-        assert_array_almost_equal([1, 1, 2, 3, 4], output)
+        assert_array_almost_equal(np.asarray([1, 1, 2, 3, 4]), output)
 
     def test_minimum_filter03(self):
         array = np.array([3, 2, 5, 1, 4])
         filter_shape = np.array([2])
         output = ndimage.minimum_filter(array, filter_shape)
-        assert_array_almost_equal([3, 2, 2, 1, 1], output)
+        assert_array_almost_equal(np.asarray([3, 2, 2, 1, 1]), output)
 
     def test_minimum_filter04(self):
         array = np.array([3, 2, 5, 1, 4])
         filter_shape = np.array([3])
         output = ndimage.minimum_filter(array, filter_shape)
-        assert_array_almost_equal([2, 2, 1, 1, 1], output)
+        assert_array_almost_equal(np.asarray([2, 2, 1, 1, 1]), output)
 
     def test_minimum_filter05(self):
         array = np.array([[3, 2, 5, 1, 4],
@@ -1170,9 +1170,9 @@ class TestNdimageFilters:
                           [5, 8, 3, 7, 1]])
         filter_shape = np.array([2, 3])
         output = ndimage.minimum_filter(array, filter_shape)
-        assert_array_almost_equal([[2, 2, 1, 1, 1],
-                                   [2, 2, 1, 1, 1],
-                                   [5, 3, 3, 1, 1]], output)
+        assert_array_almost_equal(np.asarray([[2, 2, 1, 1, 1],
+                                              [2, 2, 1, 1, 1],
+                                              [5, 3, 3, 1, 1]]), output)
 
     def test_minimum_filter05_overlap(self):
         array = np.array([[3, 2, 5, 1, 4],
@@ -1180,9 +1180,9 @@ class TestNdimageFilters:
                           [5, 8, 3, 7, 1]])
         filter_shape = np.array([2, 3])
         ndimage.minimum_filter(array, filter_shape, output=array)
-        assert_array_almost_equal([[2, 2, 1, 1, 1],
-                                   [2, 2, 1, 1, 1],
-                                   [5, 3, 3, 1, 1]], array)
+        assert_array_almost_equal(np.asarray([[2, 2, 1, 1, 1],
+                                              [2, 2, 1, 1, 1],
+                                              [5, 3, 3, 1, 1]]), array)
 
     def test_minimum_filter06(self):
         array = np.array([[3, 2, 5, 1, 4],
@@ -1190,9 +1190,9 @@ class TestNdimageFilters:
                           [5, 8, 3, 7, 1]])
         footprint = [[1, 1, 1], [1, 1, 1]]
         output = ndimage.minimum_filter(array, footprint=footprint)
-        assert_array_almost_equal([[2, 2, 1, 1, 1],
-                                   [2, 2, 1, 1, 1],
-                                   [5, 3, 3, 1, 1]], output)
+        assert_array_almost_equal(np.asarray([[2, 2, 1, 1, 1],
+                                              [2, 2, 1, 1, 1],
+                                              [5, 3, 3, 1, 1]]), output)
         # separable footprint should allow mode sequence
         output2 = ndimage.minimum_filter(array, footprint=footprint,
                                          mode=['reflect', 'reflect'])
@@ -1204,9 +1204,9 @@ class TestNdimageFilters:
                           [5, 8, 3, 7, 1]])
         footprint = [[1, 0, 1], [1, 1, 0]]
         output = ndimage.minimum_filter(array, footprint=footprint)
-        assert_array_almost_equal([[2, 2, 1, 1, 1],
-                                   [2, 3, 1, 3, 1],
-                                   [5, 5, 3, 3, 1]], output)
+        assert_array_almost_equal(np.asarray([[2, 2, 1, 1, 1],
+                                              [2, 3, 1, 3, 1],
+                                              [5, 5, 3, 3, 1]]), output)
         with assert_raises(RuntimeError):
             ndimage.minimum_filter(array, footprint=footprint,
                                    mode=['reflect', 'constant'])
@@ -1217,9 +1217,9 @@ class TestNdimageFilters:
                           [5, 8, 3, 7, 1]])
         footprint = [[1, 0, 1], [1, 1, 0]]
         output = ndimage.minimum_filter(array, footprint=footprint, origin=-1)
-        assert_array_almost_equal([[3, 1, 3, 1, 1],
-                                   [5, 3, 3, 1, 1],
-                                   [3, 3, 1, 1, 1]], output)
+        assert_array_almost_equal(np.asarray([[3, 1, 3, 1, 1],
+                                              [5, 3, 3, 1, 1],
+                                              [3, 3, 1, 1, 1]]), output)
 
     def test_minimum_filter09(self):
         array = np.array([[3, 2, 5, 1, 4],
@@ -1228,33 +1228,33 @@ class TestNdimageFilters:
         footprint = [[1, 0, 1], [1, 1, 0]]
         output = ndimage.minimum_filter(array, footprint=footprint,
                                         origin=[-1, 0])
-        assert_array_almost_equal([[2, 3, 1, 3, 1],
-                                   [5, 5, 3, 3, 1],
-                                   [5, 3, 3, 1, 1]], output)
+        assert_array_almost_equal(np.asarray([[2, 3, 1, 3, 1],
+                                              [5, 5, 3, 3, 1],
+                                              [5, 3, 3, 1, 1]]), output)
 
     def test_maximum_filter01(self):
         array = np.array([1, 2, 3, 4, 5])
         filter_shape = np.array([2])
         output = ndimage.maximum_filter(array, filter_shape)
-        assert_array_almost_equal([1, 2, 3, 4, 5], output)
+        assert_array_almost_equal(np.asarray([1, 2, 3, 4, 5]), output)
 
     def test_maximum_filter02(self):
         array = np.array([1, 2, 3, 4, 5])
         filter_shape = np.array([3])
         output = ndimage.maximum_filter(array, filter_shape)
-        assert_array_almost_equal([2, 3, 4, 5, 5], output)
+        assert_array_almost_equal(np.asarray([2, 3, 4, 5, 5]), output)
 
     def test_maximum_filter03(self):
         array = np.array([3, 2, 5, 1, 4])
         filter_shape = np.array([2])
         output = ndimage.maximum_filter(array, filter_shape)
-        assert_array_almost_equal([3, 3, 5, 5, 4], output)
+        assert_array_almost_equal(np.asarray([3, 3, 5, 5, 4]), output)
 
     def test_maximum_filter04(self):
         array = np.array([3, 2, 5, 1, 4])
         filter_shape = np.array([3])
         output = ndimage.maximum_filter(array, filter_shape)
-        assert_array_almost_equal([3, 5, 5, 5, 4], output)
+        assert_array_almost_equal(np.asarray([3, 5, 5, 5, 4]), output)
 
     def test_maximum_filter05(self):
         array = np.array([[3, 2, 5, 1, 4],
@@ -1262,9 +1262,9 @@ class TestNdimageFilters:
                           [5, 8, 3, 7, 1]])
         filter_shape = np.array([2, 3])
         output = ndimage.maximum_filter(array, filter_shape)
-        assert_array_almost_equal([[3, 5, 5, 5, 4],
-                                   [7, 9, 9, 9, 5],
-                                   [8, 9, 9, 9, 7]], output)
+        assert_array_almost_equal(np.asarray([[3, 5, 5, 5, 4],
+                                              [7, 9, 9, 9, 5],
+                                              [8, 9, 9, 9, 7]]), output)
 
     def test_maximum_filter06(self):
         array = np.array([[3, 2, 5, 1, 4],
@@ -1272,9 +1272,9 @@ class TestNdimageFilters:
                           [5, 8, 3, 7, 1]])
         footprint = [[1, 1, 1], [1, 1, 1]]
         output = ndimage.maximum_filter(array, footprint=footprint)
-        assert_array_almost_equal([[3, 5, 5, 5, 4],
-                                   [7, 9, 9, 9, 5],
-                                   [8, 9, 9, 9, 7]], output)
+        assert_array_almost_equal(np.asarray([[3, 5, 5, 5, 4],
+                                              [7, 9, 9, 9, 5],
+                                              [8, 9, 9, 9, 7]]), output)
         # separable footprint should allow mode sequence
         output2 = ndimage.maximum_filter(array, footprint=footprint,
                                          mode=['reflect', 'reflect'])
@@ -1286,9 +1286,9 @@ class TestNdimageFilters:
                           [5, 8, 3, 7, 1]])
         footprint = [[1, 0, 1], [1, 1, 0]]
         output = ndimage.maximum_filter(array, footprint=footprint)
-        assert_array_almost_equal([[3, 5, 5, 5, 4],
-                                   [7, 7, 9, 9, 5],
-                                   [7, 9, 8, 9, 7]], output)
+        assert_array_almost_equal(np.asarray([[3, 5, 5, 5, 4],
+                                              [7, 7, 9, 9, 5],
+                                              [7, 9, 8, 9, 7]]), output)
         # non-separable footprint should not allow mode sequence
         with assert_raises(RuntimeError):
             ndimage.maximum_filter(array, footprint=footprint,
@@ -1300,9 +1300,9 @@ class TestNdimageFilters:
                           [5, 8, 3, 7, 1]])
         footprint = [[1, 0, 1], [1, 1, 0]]
         output = ndimage.maximum_filter(array, footprint=footprint, origin=-1)
-        assert_array_almost_equal([[7, 9, 9, 5, 5],
-                                   [9, 8, 9, 7, 5],
-                                   [8, 8, 7, 7, 7]], output)
+        assert_array_almost_equal(np.asarray([[7, 9, 9, 5, 5],
+                                              [9, 8, 9, 7, 5],
+                                              [8, 8, 7, 7, 7]]), output)
 
     def test_maximum_filter09(self):
         array = np.array([[3, 2, 5, 1, 4],
@@ -1311,9 +1311,9 @@ class TestNdimageFilters:
         footprint = [[1, 0, 1], [1, 1, 0]]
         output = ndimage.maximum_filter(array, footprint=footprint,
                                         origin=[-1, 0])
-        assert_array_almost_equal([[7, 7, 9, 9, 5],
-                                   [7, 9, 8, 9, 7],
-                                   [8, 8, 8, 7, 7]], output)
+        assert_array_almost_equal(np.asarray([[7, 7, 9, 9, 5],
+                                             [7, 9, 8, 9, 7],
+                                             [8, 8, 8, 7, 7]]), output)
 
     @pytest.mark.parametrize(
         'axes', tuple(itertools.combinations(range(-3, 3), 2))
@@ -1365,13 +1365,13 @@ class TestNdimageFilters:
     def test_rank03(self):
         array = np.array([3, 2, 5, 1, 4])
         output = ndimage.rank_filter(array, 1, size=[2])
-        assert_array_almost_equal([3, 3, 5, 5, 4], output)
+        assert_array_almost_equal(np.asarray([3, 3, 5, 5, 4]), output)
         output = ndimage.percentile_filter(array, 100, size=2)
-        assert_array_almost_equal([3, 3, 5, 5, 4], output)
+        assert_array_almost_equal(np.asarray([3, 3, 5, 5, 4]), output)
 
     def test_rank04(self):
         array = np.array([3, 2, 5, 1, 4])
-        expected = [3, 3, 2, 4, 4]
+        expected = np.asarray([3, 3, 2, 4, 4])
         output = ndimage.rank_filter(array, 1, size=3)
         assert_array_almost_equal(expected, output)
         output = ndimage.percentile_filter(array, 50, size=3)
@@ -1381,7 +1381,7 @@ class TestNdimageFilters:
 
     def test_rank05(self):
         array = np.array([3, 2, 5, 1, 4])
-        expected = [3, 3, 2, 4, 4]
+        expected = np.asarray([3, 3, 2, 4, 4])
         output = ndimage.rank_filter(array, -2, size=3)
         assert_array_almost_equal(expected, output)
 
@@ -1392,6 +1392,7 @@ class TestNdimageFilters:
         expected = [[2, 2, 1, 1, 1],
                     [3, 3, 2, 1, 1],
                     [5, 5, 3, 3, 1]]
+        expected = np.asarray(expected)
         output = ndimage.rank_filter(array, 1, size=[2, 3])
         assert_array_almost_equal(expected, output)
         output = ndimage.percentile_filter(array, 17, size=(2, 3))
@@ -1405,6 +1406,7 @@ class TestNdimageFilters:
         expected = [[2, 2, 1, 1, 1],
                     [3, 3, 2, 1, 1],
                     [5, 5, 3, 3, 1]]
+        expected = np.asarray(expected)
         ndimage.rank_filter(array, 1, size=[2, 3], output=array)
         assert_array_almost_equal(expected, array)
 
@@ -1419,6 +1421,7 @@ class TestNdimageFilters:
         expected = [[3, 5, 5, 5, 4],
                     [5, 5, 7, 5, 4],
                     [6, 8, 8, 7, 5]]
+        expected = np.asarray(expected)
         output = ndimage.rank_filter(array, -2, size=[2, 3])
         assert_array_almost_equal(expected, output)
 
@@ -1429,6 +1432,7 @@ class TestNdimageFilters:
         expected = [[3, 3, 2, 4, 4],
                     [5, 5, 5, 4, 4],
                     [5, 6, 7, 5, 5]]
+        expected = np.asarray(expected)
         output = ndimage.percentile_filter(array, 50.0, size=(2, 3))
         assert_array_almost_equal(expected, output)
         output = ndimage.rank_filter(array, 3, size=(2, 3))
@@ -1450,6 +1454,7 @@ class TestNdimageFilters:
         expected = [[3, 3, 2, 4, 4],
                     [3, 5, 2, 5, 1],
                     [5, 5, 8, 3, 5]]
+        expected = np.asarray(expected)
         footprint = [[1, 0, 1], [0, 1, 0]]
         array = np.array([[3, 2, 5, 1, 4],
                           [5, 8, 3, 7, 1],
@@ -1466,6 +1471,7 @@ class TestNdimageFilters:
         expected = [[2, 2, 1, 1, 1],
                     [2, 3, 1, 3, 1],
                     [5, 5, 3, 3, 1]]
+        expected = np.asarray(expected)
         footprint = [[1, 0, 1], [1, 1, 0]]
         output = ndimage.rank_filter(array, 0, footprint=footprint)
         assert_array_almost_equal(expected, output)
@@ -1479,6 +1485,7 @@ class TestNdimageFilters:
         expected = [[3, 5, 5, 5, 4],
                     [7, 7, 9, 9, 5],
                     [7, 9, 8, 9, 7]]
+        expected = np.asarray(expected)
         footprint = [[1, 0, 1], [1, 1, 0]]
         output = ndimage.rank_filter(array, -1, footprint=footprint)
         assert_array_almost_equal(expected, output)
@@ -1490,6 +1497,7 @@ class TestNdimageFilters:
         expected = [[3, 3, 2, 4, 4],
                     [3, 5, 2, 5, 1],
                     [5, 5, 8, 3, 5]]
+        expected = np.asarray(expected, dtype=dtype)
         footprint = [[1, 0, 1], [0, 1, 0]]
         array = np.array([[3, 2, 5, 1, 4],
                           [5, 8, 3, 7, 1],
@@ -1507,6 +1515,7 @@ class TestNdimageFilters:
         expected = [[5, 2, 5, 1, 1],
                     [5, 8, 3, 5, 5],
                     [6, 6, 5, 5, 5]]
+        expected = np.asarray(expected, dtype=dtype)
         footprint = [[1, 0, 1], [0, 1, 0]]
         array = np.array([[3, 2, 5, 1, 4],
                           [5, 8, 3, 7, 1],
@@ -1520,6 +1529,7 @@ class TestNdimageFilters:
         expected = [[3, 5, 2, 5, 1],
                     [5, 5, 8, 3, 5],
                     [5, 6, 6, 5, 5]]
+        expected = np.asarray(expected, dtype=dtype)
         footprint = [[1, 0, 1], [0, 1, 0]]
         array = np.array([[3, 2, 5, 1, 4],
                           [5, 8, 3, 7, 1],
@@ -1533,6 +1543,7 @@ class TestNdimageFilters:
         expected = [[2, 3, 1, 4, 1],
                     [5, 3, 7, 1, 1],
                     [5, 5, 3, 3, 3]]
+        expected = np.asarray(expected, dtype=dtype)
         footprint = [[1, 0, 1], [0, 1, 0]]
         array = np.array([[3, 2, 5, 1, 4],
                           [5, 8, 3, 7, 1],

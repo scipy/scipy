@@ -3,10 +3,9 @@ import os.path
 import numpy as np
 from numpy.testing import (
     assert_almost_equal,
-    assert_array_almost_equal,
     suppress_warnings,
 )
-from scipy._lib._array_api import (xp_assert_equal, xp_assert_close)
+from scipy._lib._array_api import (xp_assert_equal, xp_assert_close, assert_array_almost_equal)
 
 import pytest
 from pytest import raises as assert_raises
@@ -308,7 +307,8 @@ def test_label_output_typed():
     for t in types:
         output = np.zeros([5], dtype=t)
         n = ndimage.label(data, output=output)
-        assert_array_almost_equal(output, 1)
+        assert_array_almost_equal(output,
+                                  np.ones(output.shape, dtype=output.dtype))
         assert n == 1
 
 
@@ -316,7 +316,8 @@ def test_label_output_dtype():
     data = np.ones([5])
     for t in types:
         output, n = ndimage.label(data, output=t)
-        assert_array_almost_equal(output, 1)
+        assert_array_almost_equal(output,
+                                  np.ones(output.shape, dtype=output.dtype))
         assert output.dtype == t
 
 
@@ -1049,8 +1050,8 @@ def test_extrema03():
                                            labels=labels, index=[2, 3, 8])
         assert_array_almost_equal(output1[0], output2)
         assert_array_almost_equal(output1[1], output3)
-        assert_array_almost_equal(output1[2], output4)
-        assert_array_almost_equal(output1[3], output5)
+        assert output1[2] == output4
+        assert output1[3] == output5
 
 
 def test_extrema04():
@@ -1068,79 +1069,79 @@ def test_extrema04():
                                            [1, 2])
         assert_array_almost_equal(output1[0], output2)
         assert_array_almost_equal(output1[1], output3)
-        assert_array_almost_equal(output1[2], output4)
-        assert_array_almost_equal(output1[3], output5)
+        assert output1[2] == output4
+        assert output1[3] == output5
 
 
 def test_center_of_mass01():
-    expected = [0.0, 0.0]
+    expected = (0.0, 0.0)
     for type in types:
         input = np.array([[1, 0], [0, 0]], type)
         output = ndimage.center_of_mass(input)
-        assert_array_almost_equal(output, expected)
+        assert output == expected
 
 
 def test_center_of_mass02():
-    expected = [1, 0]
+    expected = (1, 0)
     for type in types:
         input = np.array([[0, 0], [1, 0]], type)
         output = ndimage.center_of_mass(input)
-        assert_array_almost_equal(output, expected)
+        assert output == expected
 
 
 def test_center_of_mass03():
-    expected = [0, 1]
+    expected = (0, 1)
     for type in types:
         input = np.array([[0, 1], [0, 0]], type)
         output = ndimage.center_of_mass(input)
-        assert_array_almost_equal(output, expected)
+        assert output == expected
 
 
 def test_center_of_mass04():
-    expected = [1, 1]
+    expected = (1, 1)
     for type in types:
         input = np.array([[0, 0], [0, 1]], type)
         output = ndimage.center_of_mass(input)
-        assert_array_almost_equal(output, expected)
+        assert output == expected
 
 
 def test_center_of_mass05():
-    expected = [0.5, 0.5]
+    expected = (0.5, 0.5)
     for type in types:
         input = np.array([[1, 1], [1, 1]], type)
         output = ndimage.center_of_mass(input)
-        assert_array_almost_equal(output, expected)
+        assert output == expected
 
 
 def test_center_of_mass06():
-    expected = [0.5, 0.5]
+    expected = (0.5, 0.5)
     input = np.array([[1, 2], [3, 1]], bool)
     output = ndimage.center_of_mass(input)
-    assert_array_almost_equal(output, expected)
+    assert output == expected
 
 
 def test_center_of_mass07():
-    labels = [1, 0]
-    expected = [0.5, 0.0]
+    labels = (1, 0)
+    expected = (0.5, 0.0)
     input = np.array([[1, 2], [3, 1]], bool)
     output = ndimage.center_of_mass(input, labels)
-    assert_array_almost_equal(output, expected)
+    assert output == expected
 
 
 def test_center_of_mass08():
-    labels = [1, 2]
-    expected = [0.5, 1.0]
+    labels = np.asarray([1, 2])
+    expected = (0.5, 1.0)
     input = np.array([[5, 2], [3, 1]], bool)
     output = ndimage.center_of_mass(input, labels, 2)
-    assert_array_almost_equal(output, expected)
+    assert output == expected
 
 
 def test_center_of_mass09():
-    labels = [1, 2]
+    labels = (1, 2)
     expected = [(0.5, 0.0), (0.5, 1.0)]
     input = np.array([[1, 2], [1, 1]], bool)
     output = ndimage.center_of_mass(input, labels, [1, 2])
-    assert_array_almost_equal(output, expected)
+    assert output == expected
 
 
 def test_histogram01():
