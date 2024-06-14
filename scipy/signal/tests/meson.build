@@ -17,7 +17,6 @@ py3.install_sources([
     'test_short_time_fft.py',
     'test_signaltools.py',
     'test_spectral.py',
-    'test_splines.py',
     'test_upfirdn.py',
     'test_waveforms.py',
     'test_wavelets.py',
