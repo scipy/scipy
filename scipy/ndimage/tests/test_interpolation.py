@@ -2,9 +2,9 @@ import sys
 
 import numpy as np
 from numpy.testing import (assert_, assert_array_equal,
-                           assert_array_almost_equal, assert_allclose,
+                           assert_array_almost_equal,
                            suppress_warnings)
-from scipy._lib._array_api import (xp_assert_equal,)
+from scipy._lib._array_api import (xp_assert_equal, xp_assert_close)
 
 import pytest
 from pytest import raises as assert_raises
@@ -84,7 +84,7 @@ class TestNdimageInterpolation:
                                            mode=mode)
 
         atol = 1e-5 if mode == 'grid-constant' else 1e-12
-        assert_allclose(y, expected, rtol=1e-7, atol=atol)
+        xp_assert_close(y, expected, rtol=1e-7, atol=atol)
 
     @pytest.mark.parametrize('order', range(2, 6))
     @pytest.mark.parametrize('dtype', types)
@@ -439,7 +439,7 @@ class TestNdimageInterpolation:
         expected_result = ndimage.geometric_transform(
             xp, mapping, mode=mode, order=order)[center_slice]
 
-        assert_allclose(
+        xp_assert_close(
             ndimage.geometric_transform(x, mapping, mode=mode,
                                         order=order),
             expected_result,
@@ -1075,7 +1075,7 @@ class TestNdimageInterpolation:
         expected_result = ndimage.shift(
             xp, shift, mode=mode, order=order)[center_slice]
 
-        assert_allclose(
+        xp_assert_close(
             ndimage.shift(x, shift, mode=mode, order=order),
             expected_result,
             rtol=1e-7,
