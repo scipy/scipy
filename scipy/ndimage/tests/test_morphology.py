@@ -1,5 +1,5 @@
 import numpy as np
-from numpy.testing import (assert_,
+from numpy.testing import (
                            assert_array_almost_equal)
 from scipy._lib._array_api import (xp_assert_equal,)
 import pytest
@@ -1172,7 +1172,7 @@ class TestNdimageMorphology:
         b = np.zeros_like(a)
         out = ndimage.binary_erosion(a, structure=a, output=b, iterations=0,
                                      border_value=True, brute_force=True)
-        assert_(out is b)
+        assert out is b
         xp_assert_equal(
             ndimage.binary_erosion(a, structure=a, iterations=0,
                                    border_value=True),

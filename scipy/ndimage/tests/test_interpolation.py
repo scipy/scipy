@@ -1,7 +1,7 @@
 import sys
 
 import numpy as np
-from numpy.testing import (assert_,
+from numpy.testing import (
                            assert_array_almost_equal,
                            suppress_warnings)
 from scipy._lib._array_api import (
@@ -471,7 +471,7 @@ class TestNdimageInterpolation:
             return x
 
         out = ndimage.geometric_transform(data, mapping, output='f')
-        assert_(out.dtype is np.dtype('f'))
+        assert out.dtype is np.dtype('f')
         assert_array_almost_equal(out, [1])
 
     @pytest.mark.parametrize('order', range(0, 6))
@@ -546,7 +546,7 @@ class TestNdimageInterpolation:
         data = np.array([[1]])
         idx = np.indices(data.shape)
         out = ndimage.map_coordinates(data, idx, output='f')
-        assert_(out.dtype is np.dtype('f'))
+        assert out.dtype is np.dtype('f')
         assert_array_almost_equal(out, [[1]])
 
     @pytest.mark.skipif('win32' in sys.platform or np.intp(0).itemsize < 8,
@@ -871,7 +871,7 @@ class TestNdimageInterpolation:
     def test_affine_transform_with_string_output(self):
         data = np.array([1])
         out = ndimage.affine_transform(data, [[1]], output='f')
-        assert_(out.dtype is np.dtype('f'))
+        assert out.dtype is np.dtype('f')
         assert_array_almost_equal(out, [1])
 
     @pytest.mark.parametrize('shift',
@@ -1089,11 +1089,11 @@ class TestNdimageInterpolation:
             arr = np.array(list(range(25))).reshape((5, 5)).astype(float)
             arr = ndimage.zoom(arr, z, order=order)
             assert arr.shape == (10, 10)
-            assert_(np.all(arr[-1, :] != 0))
-            assert_(np.all(arr[-1, :] >= (20 - eps)))
-            assert_(np.all(arr[0, :] <= (5 + eps)))
-            assert_(np.all(arr >= (0 - eps)))
-            assert_(np.all(arr <= (24 + eps)))
+            assert np.all(arr[-1, :] != 0)
+            assert np.all(arr[-1, :] >= (20 - eps))
+            assert np.all(arr[0, :] <= (5 + eps))
+            assert np.all(arr >= (0 - eps))
+            assert np.all(arr <= (24 + eps))
 
     def test_zoom2(self):
         arr = np.arange(12).reshape((3, 4))

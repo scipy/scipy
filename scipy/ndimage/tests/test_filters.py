@@ -677,7 +677,7 @@ class TestNdimageFilters:
         # expect more than 8 digits of accuracy, so use decimal=0 in this test.
         assert_almost_equal(output.sum(dtype='d'), input.sum(dtype='d'),
                             decimal=0)
-        assert_(sumsq(input, output) > 1.0)
+        assert sumsq(input, output) > 1.0
 
     def test_gauss04(self):
         input = np.arange(100 * 100).astype(np.float32)
@@ -686,7 +686,7 @@ class TestNdimageFilters:
         output = ndimage.gaussian_filter(input, [1.0, 1.0], output=otype)
         assert output.dtype.type == np.float64
         assert input.shape == output.shape
-        assert_(sumsq(input, output) > 1.0)
+        assert sumsq(input, output) > 1.0
 
     def test_gauss05(self):
         input = np.arange(100 * 100).astype(np.float32)
@@ -696,7 +696,7 @@ class TestNdimageFilters:
                                          order=1, output=otype)
         assert output.dtype.type == np.float64
         assert input.shape == output.shape
-        assert_(sumsq(input, output) > 1.0)
+        assert sumsq(input, output) > 1.0
 
     def test_gauss06(self):
         input = np.arange(100 * 100).astype(np.float32)
