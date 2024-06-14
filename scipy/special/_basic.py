@@ -1743,15 +1743,50 @@ def _(ufuncs, norm=False, diff_n=0):
         )
     return ufuncs[norm][diff_n]
 
-assoc_legendre_p_all = MultiUFunc(assoc_legendre_p_all)
-
 
 @assoc_legendre_p.docstring
 def _():
-    """assoc_legendre_p(n, m, z, *, norm=False, diff_n=0)
+    r"""assoc_legendre_p(n, m, z, *, norm=False, diff_n=0)
 
-    Associated Legendre function of the first kind.
+    Associated Legendre function of the first kind and its derivatives.
+
+    Parameters
+    ----------
+    n : array_like, int
+        The order of the Legendre function
+    m : array_like, int
+        The degree of the Legendre function
+    z : array_like, float
+        Input value
+    norm : Optional[bool]
+        If True, compute the normalized associated Legendre function.
+        Default is False.
+    diff_n : Optional[int]
+        A non-negative integer. Compute and return all derivatives up
+        to order ``diff_n``.
+
+    Returns
+    -------
+    ndarray or tuple of ndarray
+        If ``diff_n == 0``, then return only the associated Legendre function
+        ifself. If ``diff_n > 0`` then return a tuple of length ``diff_n + 1``
+        containing the associated Legendre function and all of its derivatives
+        up to order `diff_n`.
+
+    Notes
+    -----
+    The relationship between the associated Legendre function
+    :math:`P_{m}^{n}(x)` and the normalized associated Legendre function
+    :math:`\bar{P}_{n}^{n}(x)` is:
+
+    .. math::
+
+        P^{m}_{n}(x) =
+        \sqrt{\frac{2(n + m)!}{(2n + 1)(n - m)!}}\bar{P}_{n}^{m}(x)
     """
+
+
+assoc_legendre_p_all = MultiUFunc(assoc_legendre_p_all)
 
 
 @assoc_legendre_p_all.as_resolve_ufunc
@@ -1784,7 +1819,19 @@ def _(n, m, z_shape, nout):
 def _():
     """assoc_legendre_p_all(n, m, z, *, norm=False, diff_n=0)
 
-    Table of associated Legendre functions of the first kind.
+    Tables of associated Legendre functions of the first kind
+    and their derivatives.
+
+    Parameters
+    ----------
+    n : int
+        The order of the Legendre function
+    m : int
+        The degree of the Legendre function
+    z : array_like, float
+    
+        If True, compute tables for the normalized associated Legendre
+        function. Default is False.
     """
 
 
