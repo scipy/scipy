@@ -56,6 +56,8 @@ def test_support_alternative_backends(xp, data, f_name_n_args):
     f_name, n_args = f_name_n_args
 
     if is_jax(xp):
+        if f_name in ['betainc']:
+            pytest.skip("google/jax#21900")
         if f_name in ['gammainc', 'gammaincc']:
             pytest.skip("google/jax#20507")
         if f_name == 'rel_entr':
