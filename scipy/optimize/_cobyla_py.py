@@ -192,7 +192,7 @@ def fmin_cobyla(func, x0, cons, args=(), consargs=None, rhobeg=1.0,
 @synchronized
 def _minimize_cobyla(fun, x0, args=(), constraints=(),
                      rhobeg=1.0, tol=1e-4, maxiter=1000,
-                     disp=False, catol=None, f_target=-np.inf,
+                     disp=0, catol=None, f_target=-np.inf,
                      callback=None, bounds=None, **unknown_options):
     """
     Minimize a scalar function of one or more variables using the
@@ -205,13 +205,22 @@ def _minimize_cobyla(fun, x0, args=(), constraints=(),
     tol : float
         Final accuracy in the optimization (not precisely guaranteed).
         This is a lower bound on the size of the trust region.
-    disp : bool
-        Set to True to print convergence messages. If False,
-        `verbosity` is ignored as set to 0.
+    disp : int
+        Controls the frequency of output:
+
+            0. (default) There will be no printing
+            1. A message will be printed to the screen at the end of iteration, showing
+               the best vector of variables found and its objective function value
+            2. in addition to 1, each new value of RHO is printed to the screen,
+               with the best vector of variables so far and its objective function
+               value.
+            3. in addition to 2, each function evaluation with its variables will
+               be printed to the screen.
+
     maxiter : int
         Maximum number of function evaluations.
     catol : float
-        Tolerance (absolute) for constraint violations
+        Tolerance (absolute) for constraint violations.
     f_target : float
         Stop if the objective function is less than `f_target`.
 
@@ -224,7 +233,10 @@ def _minimize_cobyla(fun, x0, args=(), constraints=(),
     _check_unknown_options(unknown_options)
     maxfun = maxiter
     rhoend = tol
-    iprint = int(bool(disp))
+    iprint = disp if disp is not None else 0
+    if iprint != 0 and iprint != 1 and iprint != 2 and iprint != 3:
+        raise ValueError(f'disp argument to minimize must be 0, 1, 2, or 3,\
+                          received {iprint}')
 
     # create the ScalarFunction, cobyla doesn't require derivative function
     def _jac(x, *args):
