@@ -4,7 +4,7 @@ import numpy as np
 from numpy.testing import assert_allclose, assert_, assert_array_almost_equal
 
 from scipy.optimize import (fmin_cobyla, minimize, Bounds, NonlinearConstraint,
-    LinearConstraint)
+    LinearConstraint, OptimizeResult)
 
 
 class TestCobyla:
@@ -38,14 +38,25 @@ class TestCobyla:
             def __call__(self, x):
                 self.n_calls += 1
                 self.last_x = x
+        
+        class CallbackNewSyntax:
+            def __init__(self):
+                self.n_calls = 0
+
+            def __call__(self, intermediate_result):
+                assert isinstance(intermediate_result, OptimizeResult)
+                self.n_calls += 1
 
         callback = Callback()
+        callback_new_syntax = CallbackNewSyntax()
 
         # Minimize with method='COBYLA'
         cons = (NonlinearConstraint(self.con1, 0, np.inf),
                 {'type': 'ineq', 'fun': self.con2})
         sol = minimize(self.fun, self.x0, method='cobyla', constraints=cons,
                        callback=callback, options=self.opts)
+        sol_new = minimize(self.fun, self.x0, method='cobyla', constraints=cons,
+                       callback=callback_new_syntax, options=self.opts)
         assert_allclose(sol.x, self.solution, atol=1e-4)
         assert_(sol.success, sol.message)
         assert_(sol.maxcv < 1e-5, sol)
@@ -60,6 +71,13 @@ class TestCobyla:
             err_msg=
             "Last design vector sent to the callback is not equal to returned value.",
         )
+        assert sol_new.success, sol_new.message
+        assert sol.fun == sol_new.fun
+        assert sol.maxcv == sol_new.maxcv
+        assert sol.nfev == sol_new.nfev
+        assert callback.n_calls == callback_new_syntax.n_calls, \
+            "Callback is not called the same amount of times for old and new syntax."
+        
 
     def test_minimize_constraint_violation(self):
         # We set up conflicting constraints so that the algorithm will be

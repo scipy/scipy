@@ -12,6 +12,7 @@ Functions
 
 import functools
 from threading import RLock
+from inspect import signature
 
 import numpy as np
 from ._optimize import (OptimizeResult, _check_unknown_options,
@@ -229,9 +230,24 @@ def _minimize_cobyla(fun, x0, args=(), constraints=(),
 
     sf = _prepare_scalar_function(fun, x0, args=args, jac=_jac)
 
-    def wrapped_callback(x):
-        if callback is not None:
-            callback(np.copy(x))
+    if callback is not None:
+        sig = signature(callback)
+        if set(sig.parameters) == {"intermediate_result"}:
+            def wrapped_callback_intermediate(x, f, nf, tr, cstrv, nlconstrlist):
+                intermediate_result = OptimizeResult(x=np.copy(x), fun=f, nfev=nf,
+                                                     nit=tr, maxcv=cstrv)
+                callback(intermediate_result=intermediate_result)
+        else:
+            def wrapped_callback_intermediate(x, f, nf, tr, cstrv, nlconstrlist):
+                callback(np.copy(x))
+        def wrapped_callback(x, f, nf, tr, cstrv, nlconstrlist):
+            try:
+                wrapped_callback_intermediate(x, f, nf, tr, cstrv, nlconstrlist)
+                return False
+            except StopIteration:
+                return True
+    else:
+        wrapped_callback = None
 
     linear_constraints = []
     nonlinear_constraints = []
@@ -314,9 +330,7 @@ def _minimize_cobyla(fun, x0, args=(), constraints=(),
         A_ineq=A_ineq,
         b_ineq=b_ineq,
         nonlinear_constraint_function=nonlinear_constraint_function,
-        # TODO: Like COBYQA, we'd like to be able to accept the new callback
-        # syntax with IntermediateResult
-        callback=lambda x, *args: wrapped_callback(x),
+        callback=wrapped_callback,
         options=options
     )
 
