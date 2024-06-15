@@ -206,7 +206,7 @@ def _(ufuncs, norm=False, diff_n=0):
 
 
 assoc_legendre_p_all = MultiUFunc(assoc_legendre_p_all,
-    """assoc_legendre_p_all(n, m, z, *, norm=False, diff_n=0)
+    r"""assoc_legendre_p_all(n, m, z, *, norm=False, diff_n=0)
 
     Table of associated Legendre functions of the first kind.
 
