@@ -28,7 +28,7 @@ __all__ = [
 
 
 class MultiUFunc:
-    def __init__(self, ufuncs_map, *, force_complex_output=False):
+    def __init__(self, ufuncs_map, doc = None, *, force_complex_output=False):
         # Gather leaf level ufuncs from ufuncs_map.
         ufuncs = []
         def traverse(obj):
@@ -66,7 +66,7 @@ class MultiUFunc:
         self.resolve_out_shapes = None
         self.resolve_ufunc = None
         self.__forces_complex_output = force_complex_output
-        self.__instance_doc = None
+        self.__doc = doc
 
     @property
     def forces_complex_output(self):
@@ -107,13 +107,9 @@ class MultiUFunc:
         func.__name__ = "resolve_out_shapes"
         self.resolve_out_shapes = func
 
-    def docstring(self, func):
-        """Set Docstring to docstring of decorated function."""
-        self.__instance_doc = func.__doc__
-
     @property
     def __doc__(self):
-        return self.__instance_doc
+        return self.__doc
 
     def __call__(self, *args, **kwargs):
         ufunc = self.resolve_ufunc(**kwargs)
@@ -162,22 +158,7 @@ class MultiUFunc:
         return out
 
 
-assoc_legendre_p = MultiUFunc(assoc_legendre_p)
-
-
-@assoc_legendre_p.as_resolve_ufunc
-def _(ufuncs, norm=False, diff_n=0):
-    diff_n = _nonneg_int_or_fail(diff_n, "diff_n", strict=False)
-    if not 0 <= diff_n <= 2:
-        raise ValueError(
-            "diff_n is currently only implemented for orders 0, 1, and 2,"
-            f" received: {diff_n}."
-        )
-    return ufuncs[norm][diff_n]
-
-
-@assoc_legendre_p.docstring
-def _():
+assoc_legendre_p = MultiUFunc(assoc_legendre_p,
     r"""assoc_legendre_p(n, m, z, *, norm=False, diff_n=0)
 
     Associated Legendre function of the first kind.
@@ -216,29 +197,21 @@ def _():
         P^{m}_{n}(x) =
         \sqrt{\frac{2(n + m)!}{(2n + 1)(n - m)!}}\bar{P}_{n}^{m}(x)
     """
+)
 
 
-assoc_legendre_p_all = MultiUFunc(assoc_legendre_p_all)
-
-@assoc_legendre_p_all.as_resolve_ufunc
+@assoc_legendre_p.as_resolve_ufunc
 def _(ufuncs, norm=False, diff_n=0):
     diff_n = _nonneg_int_or_fail(diff_n, "diff_n", strict=False)
+    if not 0 <= diff_n <= 2:
+        raise ValueError(
+            "diff_n is currently only implemented for orders 0, 1, and 2,"
+            f" received: {diff_n}."
+        )
     return ufuncs[norm][diff_n]
 
 
-@assoc_legendre_p_all.as_resolve_out_shapes
-def _(n, m, z_shape, nout):
-    if ((not np.isscalar(m)) or (abs(m) > n)):
-        raise ValueError("m must be <= n.")
-
-    if ((not np.isscalar(n)) or (n < 0)):
-        raise ValueError("n must be a non-negative integer.")
-
-    return nout * ((n + 1, 2 * abs(m) + 1) + z_shape,)
-
-
-@assoc_legendre_p_all.docstring
-def _():
+assoc_legendre_p_all = MultiUFunc(assoc_legendre_p_all,
     """assoc_legendre_p_all(n, m, z, *, norm=False, diff_n=0)
 
     Table of associated Legendre functions of the first kind.
@@ -277,9 +250,31 @@ def _():
         P^{m}_{n}(x) =
         \sqrt{\frac{2(n + m)!}{(2n + 1)(n - m)!}}\bar{P}_{n}^{m}(x)
     """
+)
+
+@assoc_legendre_p_all.as_resolve_ufunc
+def _(ufuncs, norm=False, diff_n=0):
+    diff_n = _nonneg_int_or_fail(diff_n, "diff_n", strict=False)
+    return ufuncs[norm][diff_n]
 
 
-sph_legendre_p = MultiUFunc(sph_legendre_p)
+@assoc_legendre_p_all.as_resolve_out_shapes
+def _(n, m, z_shape, nout):
+    if ((not np.isscalar(m)) or (abs(m) > n)):
+        raise ValueError("m must be <= n.")
+
+    if ((not np.isscalar(n)) or (n < 0)):
+        raise ValueError("n must be a non-negative integer.")
+
+    return nout * ((n + 1, 2 * abs(m) + 1) + z_shape,)
+
+
+sph_legendre_p = MultiUFunc(sph_legendre_p,
+    """sph_legendre_p(n, m, z, *, diff_n=0)
+
+    Spherical associated Legendre function of the first kind.
+    """
+)
 
 
 @sph_legendre_p.as_resolve_ufunc
@@ -293,15 +288,12 @@ def _(ufuncs, diff_n = 0):
     return ufuncs[diff_n]
 
 
-@sph_legendre_p.docstring
-def _():
-    """sph_legendre_p(n, m, z, *, diff_n=0)
+sph_legendre_p_all = MultiUFunc(sph_legendre_p_all,
+    """sph_legendre_p_all(n, m, z, *, diff_n=0)
 
-    Spherical associated Legendre function of the first kind.
+    Table of spherical associated Legendre functions of the first kind.
     """
-
-
-sph_legendre_p_all = MultiUFunc(sph_legendre_p_all)
+)
 
 
 @sph_legendre_p_all.as_resolve_ufunc
@@ -326,16 +318,13 @@ def _(n, m, z_shape, nout):
     return nout * ((n + 1, 2 * abs(m) + 1) + z_shape,)
 
 
-@sph_legendre_p_all.docstring
-def _():
-    """sph_legendre_p_all(n, m, z, *, diff_n=0)
-
-    Table of spherical associated Legendre functions of the first kind.
-    """
-
-
 multi_assoc_legendre_p = MultiUFunc(multi_assoc_legendre_p,
-                                    force_complex_output=True)
+    """
+    multi_assoc_legendre_p_all(n, m, type, z, *, norm=False, diff_n=0)
+
+    Associated Legendre function of the first kind for complex arguments.
+    """, force_complex_output=True
+)
 
 
 @multi_assoc_legendre_p.as_resolve_ufunc
@@ -349,16 +338,14 @@ def _(ufuncs, norm=False, diff_n=0):
     return ufuncs[norm][diff_n]
 
 
-@multi_assoc_legendre_p.docstring
-def _():
-    """multi_assoc_legendre_p_all(n, m, type, z, *, norm=False, diff_n=0)
-
-    Associated Legendre function of the first kind for complex arguments.
-    """
-
-
 multi_assoc_legendre_p_all = MultiUFunc(multi_assoc_legendre_p_all,
-                                        force_complex_output=True)
+    """
+    multi_assoc_legendre_p_all(n, m, type, z, *, norm=False, diff_n=0)
+
+    Table of associated Legendre functions of the first kind for complex
+    arguments.
+    """, force_complex_output=True
+)
 
 
 @multi_assoc_legendre_p_all.as_resolve_ufunc
@@ -386,16 +373,13 @@ def _(n, m, type_shape, z_shape, nout):
     return nout * ((n + 1, 2 * abs(m) + 1) + np.broadcast_shapes(type_shape, z_shape),)
 
 
-@multi_assoc_legendre_p_all.docstring
-def _():
-    """multi_assoc_legendre_p_all(n, m, type, z, *, norm=False, diff_n=0)
-
-    Table of associated Legendre functions of the first kind for complex
-    arguments.
+legendre_p = MultiUFunc(legendre_p,
     """
+    legendre_p(n, z, *, diff_n=0)
 
-
-legendre_p = MultiUFunc(legendre_p)
+    Legendre function of the first kind.
+    """
+)
 
 
 @legendre_p.as_resolve_ufunc
@@ -413,15 +397,13 @@ def _(ufuncs, diff_n=0):
     return ufuncs[diff_n]
 
 
-@legendre_p.docstring
-def _():
-    """legendre_p(n, z, *, diff_n=0)
-
-    Legendre function of the first kind.
+legendre_p_all = MultiUFunc(legendre_p_all,
     """
+    legendre_p_all(n, z, *, diff_n=0)
 
-
-legendre_p_all = MultiUFunc(legendre_p_all)
+    Sequence of Legendre functions of the first kind.
+    """
+)
 
 
 @legendre_p_all.as_resolve_ufunc
@@ -442,15 +424,13 @@ def _(n, z_shape, nout):
     return nout * ((n + 1,) + z_shape,)
 
 
-@legendre_p_all.docstring
-def _():
-    """legendre_p_all(n, z, *, diff_n=0)
-
-    Sequence of Legendre functions of the first kind.
+sph_harm_y = MultiUFunc(sph_harm_y,
     """
+    sph_harm_y(n, m, theta, phi, * diff_n)
 
-
-sph_harm_y = MultiUFunc(sph_harm_y, force_complex_output=True)
+    Spherical harmonics.
+    """, force_complex_output=True
+)
 
 
 @sph_harm_y.as_resolve_ufunc
@@ -464,15 +444,13 @@ def _(ufuncs, diff_n=0):
     return ufuncs[diff_n]
 
 
-@sph_harm_y.docstring
-def _():
-    """sph_harm_y(n, m, theta, phi, * diff_n)
-
-    Spherical harmonics.
+sph_harm_y_all = MultiUFunc(sph_harm_y_all, 
     """
+    sph_harm_y_all(n, m, theta, phi, *, diff_n)
 
-
-sph_harm_y_all = MultiUFunc(sph_harm_y_all, force_complex_output=True)
+    Table of spherical harmonics.
+    """, force_complex_output=True
+)
 
 
 @sph_harm_y_all.as_resolve_ufunc
@@ -496,11 +474,3 @@ def _(n, m, theta_shape, phi_shape, nout):
 
     return nout * ((n + 1, 2 * abs(m) + 1) +
         np.broadcast_shapes(theta_shape, phi_shape),)
-
-
-@sph_harm_y_all.docstring
-def _():
-    """sph_harm_y_all(n, m, theta, phi, *, diff_n)
-
-    Table of spherical harmonics.
-    """
