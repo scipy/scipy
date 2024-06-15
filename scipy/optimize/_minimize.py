@@ -166,14 +166,14 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     constraints : {Constraint, dict} or List of {Constraint, dict}, optional
         Constraints definition. Only for COBYLA, COBYQA, SLSQP and trust-constr.
 
-        Constraints for 'trust-constr' and 'cobyqa' are defined as a single object
-        or a list of objects specifying constraints to the optimization problem.
-        Available constraints are:
+        Constraints for 'trust-constr', 'cobyqa', and 'cobyla' are defined as a
+        single object or a list of objects specifying constraints to the
+        optimization problem. Available constraints are:
 
         - `LinearConstraint`
         - `NonlinearConstraint`
 
-        Constraints for COBYLA, SLSQP are defined as a list of dictionaries.
+        Constraints for SLSQP are defined as a list of dictionaries.
         Each dictionary with fields:
 
         type : str
@@ -187,7 +187,6 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
 
         Equality constraint means that the constraint function result is to
         be zero whereas inequality means that it is to be non-negative.
-        Note that COBYLA only supports inequality constraints.
 
     tol : float, optional
         Tolerance for termination. When `tol` is specified, the selected
@@ -342,7 +341,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     Constrained Optimization BY Linear Approximation (COBYLA) method
     [9]_, [10]_, [11]_. The algorithm is based on linear
     approximations to the objective function and each constraint. The
-    method wraps a FORTRAN implementation of the algorithm. The
+    method wraps a Fortran implementation of the algorithm. The
     constraints functions 'fun' may return either a single number
     or an array or list of numbers.
 
@@ -1074,7 +1073,7 @@ def standardize_constraints(constraints, x0, meth):
     else:
         constraints = list(constraints)  # ensure it's a mutable sequence
 
-    if meth in ['trust-constr', 'cobyqa', 'new']:
+    if meth in ['trust-constr', 'cobyqa', 'new', 'cobyla']:
         for i, con in enumerate(constraints):
             if not isinstance(con, new_constraint_types):
                 constraints[i] = old_constraint_to_new(i, con)
