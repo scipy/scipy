@@ -62,7 +62,7 @@ def spline_filter(Iin, lmbda=5.0):
 
     # XXX: note that complex-valued computations are done in single precision
     # this is historic, and the root reason is unclear,
-    # see https://github.com/scipy/scipy/issues/9091
+    # see https://github.com/scipy/scipy/issues/9209
     # Attempting to work in complex double precision leads to symiirorder1
     # failing to converge for the boundary conditions.
     intype = Iin.dtype
@@ -666,7 +666,7 @@ def symiirorder1(signal, c0, z1, precision=-1.0):
 
     Parameters
     ----------
-    input : ndarray
+    signal : ndarray
         The input signal. If 2D, then the filter will be applied in a batched
         fashion across the last axis.
     c0, z1 : scalar

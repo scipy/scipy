@@ -182,7 +182,7 @@ static PyObject *IIRsymorder1_ic(PyObject *NPY_UNUSED(dummy), PyObject *args) {
     a_sig = (PyArrayObject *) PyArray_FromObject(sig, thetype, 1, 2);
 
     if (a_sig == NULL) {
-        // goto fail: block
+        // Duplicate the `goto fail` block to avoid "crosses initialization" build errors.
         Py_XDECREF(a_sig);
         Py_XDECREF(out);
         return NULL;
@@ -201,7 +201,7 @@ static PyObject *IIRsymorder1_ic(PyObject *NPY_UNUSED(dummy), PyObject *args) {
     dtype = PyArray_DescrFromType(thetype);
     out = (PyArrayObject *) PyArray_Empty(2, sz, dtype, 0);
     if (out == NULL) {
-        // goto fail: block
+        // Duplicate the `goto fail` block to avoid "crosses initialization" build errors.
         Py_XDECREF(a_sig);
         Py_XDECREF(out);
         return NULL;
@@ -318,7 +318,7 @@ static PyObject *IIRsymorder2_ic_fwd(PyObject *NPY_UNUSED(dummy), PyObject *args
     a_sig = (PyArrayObject *) PyArray_FromObject(sig, thetype, 1, 2);
 
     if (a_sig == NULL) {
-        // goto fail: block
+        // Duplicate the `goto fail` block to avoid "crosses initialization" build errors.
         Py_XDECREF(a_sig);
         Py_XDECREF(out);
         return NULL;
@@ -337,7 +337,7 @@ static PyObject *IIRsymorder2_ic_fwd(PyObject *NPY_UNUSED(dummy), PyObject *args
     const npy_intp sz[2] = {M, 2};
     out = (PyArrayObject *) PyArray_Empty(2, sz, dtype, 0);
     if (out == NULL) {
-        // goto fail: block
+        // Duplicate the `goto fail` block to avoid "crosses initialization" build errors.
         Py_XDECREF(a_sig);
         Py_XDECREF(out);
         return NULL;
@@ -433,7 +433,7 @@ static PyObject *IIRsymorder2_ic_bwd(PyObject *NPY_UNUSED(dummy), PyObject *args
     a_sig = (PyArrayObject *) PyArray_FromObject(sig, thetype, 1, 2);
 
     if (a_sig == NULL) {
-        // goto fail: block
+        // Duplicate the `goto fail` block to avoid "crosses initialization" build errors.
         Py_XDECREF(a_sig);
         Py_XDECREF(out);
         return NULL;
@@ -452,7 +452,7 @@ static PyObject *IIRsymorder2_ic_bwd(PyObject *NPY_UNUSED(dummy), PyObject *args
     const npy_intp sz[2] = {M, 2};
     out = (PyArrayObject *) PyArray_Zeros(2, sz, dtype, 0);
     if (out == NULL) {
-        // goto fail: block
+        // Duplicate the `goto fail` block to avoid "crosses initialization" build errors.
         Py_XDECREF(a_sig);
         Py_XDECREF(out);
         return NULL;
