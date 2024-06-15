@@ -7004,10 +7004,16 @@ class TestGeometricStandardDeviation:
         with pytest.raises(TypeError, match="ufunc 'log' not supported"):
             stats.gstd('You cannot take the logarithm of a string.')
 
-    @pytest.mark.parametrize('bad_value', (0, -1, np.inf))
+    @pytest.mark.parametrize('bad_value', (0, -1, np.inf, np.nan))
     def test_returns_nan_invalid_value(self, bad_value):
         x = np.append(self.array_1d, [bad_value])
-        assert_equal(stats.gstd(x), np.nan)
+        if np.isfinite(bad_value):
+            message = "The geometric standard deviation is only defined..."
+            with pytest.warns(RuntimeWarning, match=message):
+                res = stats.gstd(x)
+        else:
+            res = stats.gstd(x)
+        assert_equal(res, np.nan)
 
     def test_propagates_nan_values(self):
         a = array([[1, 1, 1, 16], [np.nan, 1, 2, 3]])
