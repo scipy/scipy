@@ -44,18 +44,12 @@ class MultiUFunc:
         traverse(ufuncs_map)
 
         # Perform input validation to ensure all ufuncs in ufuncs_map are
-        # actually ufuncs, have distinct names, and all take the same input
-        # types.
-        seen_names = set()
+        # actually ufuncs and all take the same input types.
         seen_input_types = set()
         for ufunc in ufuncs:
             if not isinstance(ufunc, np.ufunc):
                 raise ValueError("All leaf elements of ufuncs_map must have"
                                  f" type `numpy.ufunc`. Received {ufuncs_map}")
-            if ufunc.__name__ in seen_names:
-                raise ValueError("ufuncs within ufuncs_map must all have"
-                                 f" distinct names. Received {ufuncs_map}")
-            seen_names.add(ufunc.__name__)
             seen_input_types.add(frozenset(x.split("->")[0] for x in ufunc.types))
         if len(seen_input_types) > 1:
             raise ValueError("All ufuncs in ufuncs_map must take the same"
