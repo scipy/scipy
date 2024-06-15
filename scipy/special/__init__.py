@@ -470,17 +470,30 @@ Legendre functions
 .. autosummary::
    :toctree: generated/
 
-   lpmv     -- Associated Legendre function of integer order and real degree.
-   sph_harm -- Compute spherical harmonics.
+   lpmv                       -- Associated Legendre function of integer order and real degree.
+   sph_harm                   -- Compute spherical harmonics.
+   clpmn                      -- Associated Legendre function of the first kind for complex arguments.
+   lpn                        -- Legendre function of the first kind.
+   lqn                        -- Legendre function of the second kind.
+   lpmn                       -- Sequence of associated Legendre functions of the first kind.
+   lqmn                       -- Sequence of associated Legendre functions of the second kind.
 
 .. autosummary::
    :toctree: generated/
 
-   clpmn -- Associated Legendre function of the first kind for complex arguments.
-   lpn   -- Legendre function of the first kind.
-   lqn   -- Legendre function of the second kind.
-   lpmn  -- Sequence of associated Legendre functions of the first kind.
-   lqmn  -- Sequence of associated Legendre functions of the second kind.
+The following functions offer a new interface for calculating Legendre functions and
+the matching functions above are being deprecated.
+
+   legendre_p                 -- Legendre function of the first kind.
+   legendre_p_all             -- Sequence of Legendre functions of the first kind.
+   assoc_legendre_p           -- Associated Legendre function of the first kind.
+   assoc_legendre_p_all       -- Table of associated Legendre functions of the first kind.
+   multi_assoc_legendre_p     -- Associated Legendre function of the first kind for complex arguments.
+   multi_assoc_legendre_p_all -- Table of associated Legendre functions of the first kind for complex arguments.
+   sph_harm_y                 -- Spherical harmonics
+   sph_harm_y_all             -- Table of spherical harmonics
+   sph_legendre               -- Spherical associated Legendre function of the first kind.
+   sph_legendre_all           -- Table of spherical associated Legendre functions of the first kind.
 
 Ellipsoidal harmonics
 ---------------------
@@ -817,6 +830,9 @@ from . import _basic
 from ._basic import *
 
 from ._logsumexp import logsumexp, softmax, log_softmax
+
+from . import _multiufuncs
+from ._multiufuncs import *
 
 from . import _orthogonal
 from ._orthogonal import *

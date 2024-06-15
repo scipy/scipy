@@ -5,29 +5,28 @@
 import operator
 import numpy as np
 import math
-import numbers
 import warnings
 from collections import defaultdict
 from heapq import heapify, heappop
 from numpy import (pi, asarray, floor, isscalar, sqrt, where,
                    sin, place, issubdtype, extract, inexact, nan, zeros, sinc)
+
 from . import _ufuncs
 from ._ufuncs import (mathieu_a, mathieu_b, iv, jv, gamma,
                       psi, hankel1, hankel2, yv, kv, poch, binom,
                       _stirling2_inexact)
-from ._special_ufuncs import (legendre_p, assoc_legendre_p, multi_assoc_legendre_p,
-                              sph_legendre_p, sph_harm_y)
-from ._gufuncs import (legendre_p_all, assoc_legendre_p_all, multi_assoc_legendre_p_all,
-                        sph_legendre_p_all, _lqn, _lqmn, _rctj, _rcty, sph_harm_y_all)
+
+from ._gufuncs import _lqn, _lqmn, _rctj, _rcty
+from ._input_validation import _nonneg_int_or_fail
 from . import _specfun
 from ._comb import _comb_int
-from ._multiufunc import MultiUFunc
+from ._multiufuncs import (assoc_legendre_p_all, multi_assoc_legendre_p_all,
+                           legendre_p_all)
+
 
 __all__ = [
     'ai_zeros',
     'assoc_laguerre',
-    'assoc_legendre_p',
-    'assoc_legendre_p_all',
     'bei_zeros',
     'beip_zeros',
     'ber_zeros',
@@ -60,8 +59,6 @@ __all__ = [
     'ker_zeros',
     'kerp_zeros',
     'kvp',
-    'legendre_p',
-    'legendre_p_all',
     'lmbda',
     'lpmn',
     'lpn',
@@ -69,8 +66,6 @@ __all__ = [
     'lqn',
     'mathieu_even_coef',
     'mathieu_odd_coef',
-    'multi_assoc_legendre_p',
-    'multi_assoc_legendre_p_all',
     'obl_cv_seq',
     'pbdn_seq',
     'pbdv_seq',
@@ -80,10 +75,6 @@ __all__ = [
     'pro_cv_seq',
     'riccati_jn',
     'riccati_yn',
-    'sph_legendre_p',
-    'sph_legendre_p_all',
-    'sph_harm_y',
-    'sph_harm_y_all',
     'sinc',
     'stirling2',
     'y0_zeros',
@@ -102,22 +93,6 @@ _FACTORIALK_LIMITS_64BITS = {1: 20, 2: 33, 3: 44, 4: 54, 5: 65,
 # mapping k to last n such that factorialk(n, k) < np.iinfo(np.int32).max
 _FACTORIALK_LIMITS_32BITS = {1: 12, 2: 19, 3: 25, 4: 31, 5: 37,
                              6: 43, 7: 47, 8: 51, 9: 56}
-
-
-def _nonneg_int_or_fail(n, var_name, strict=True):
-    try:
-        if strict:
-            # Raises an exception if float
-            n = operator.index(n)
-        elif n == floor(n):
-            n = int(n)
-        else:
-            raise ValueError()
-        if n < 0:
-            raise ValueError()
-    except (ValueError, TypeError) as err:
-        raise err.__class__(f"{var_name} must be a non-negative integer") from err
-    return n
 
 
 def diric(x, n):
@@ -1726,49 +1701,6 @@ def mathieu_odd_coef(m, q):
     fc = _specfun.fcoef(kd, m, q, b)
     return fc[:km]
 
-assoc_legendre_p = MultiUFunc(assoc_legendre_p)
-
-@assoc_legendre_p.resolve_ufunc
-def _(ufuncs, norm = False, diff_n = 0):
-    return ufuncs[norm][diff_n]
-
-assoc_legendre_p_all = MultiUFunc(assoc_legendre_p_all)
-
-@assoc_legendre_p_all.resolve_ufunc
-def _(ufuncs, norm = False, diff_n = 0):
-    return ufuncs[norm][diff_n]
-
-@assoc_legendre_p_all.resolve_out_shapes
-def _(n, m, z_shape, nout):
-    if ((not np.isscalar(m)) or (abs(m) > n)):
-        raise ValueError("m must be <= n.")
-
-    if ((not np.isscalar(n)) or (n < 0)):
-        raise ValueError("n must be a non-negative integer.")
-
-    return nout * ((n + 1, 2 * abs(m) + 1) + z_shape,)
-
-sph_legendre_p = MultiUFunc(sph_legendre_p)
-
-@sph_legendre_p.resolve_ufunc
-def _(ufuncs, diff_n = 0):
-    return ufuncs[diff_n]
-
-sph_legendre_p_all = MultiUFunc(sph_legendre_p_all)
-
-@sph_legendre_p_all.resolve_ufunc
-def _(ufuncs, diff_n = 0):
-    return ufuncs[diff_n]
-
-@sph_legendre_p_all.resolve_out_shapes
-def _(n, m, z_shape, nout):
-    if ((not np.isscalar(m)) or (abs(m) > n)):
-        raise ValueError("m must be <= n.")
-
-    if ((not np.isscalar(n)) or (n < 0)):
-        raise ValueError("n must be a non-negative integer.")
-
-    return nout * ((n + 1, 2 * abs(m) + 1) + z_shape,)
 
 def lpmn(m, n, z):
     """Sequence of associated Legendre functions of the first kind.
@@ -1839,21 +1771,9 @@ def lpmn(m, n, z):
 
     return p, pd
 
-multi_assoc_legendre_p_all = MultiUFunc(multi_assoc_legendre_p_all,
-    force_out_complex = True)
 
-@multi_assoc_legendre_p_all.resolve_ufunc
-def _(ufuncs, norm = False, diff_n = 0):
-    return ufuncs[norm][diff_n]
 
-@multi_assoc_legendre_p_all.resolve_out_shapes
-def _(n, m, type_shape, z_shape, nout):
-    if not isinstance(m, numbers.Integral) or (abs(m) > n):
-        raise ValueError("m must be <= n.")
-    if not isinstance(n, numbers.Integral) or (n < 0):
-        raise ValueError("n must be a non-negative integer.")
 
-    return nout * ((n + 1, 2 * abs(m) + 1) + np.broadcast_shapes(type_shape, z_shape),)
 
 def clpmn(m, n, z, type = 3):
     """Associated Legendre function of the first kind for complex arguments.
@@ -2092,24 +2012,7 @@ def euler(n):
         n1 = n
     return _specfun.eulerb(n1)[:(n+1)]
 
-legendre_p = MultiUFunc(legendre_p)
-
-@legendre_p.resolve_ufunc
-def _(ufuncs, diff_n = 0):
-    return ufuncs[diff_n]
-
-legendre_p_all = MultiUFunc(legendre_p_all)
-
-@legendre_p_all.resolve_ufunc
-def _(ufuncs, diff_n = 0):
-    return ufuncs[diff_n]
-
-@legendre_p_all.resolve_out_shapes
-def _(n, z_shape, nout):
-    n = _nonneg_int_or_fail(n, 'n', strict=False)
-
-    return nout * ((n + 1,) + z_shape,)
-
+    
 def lpn(n, z):
     return legendre_p_all(n, z, diff_n = 1)
 
@@ -3455,26 +3358,3 @@ def zeta(x, q=None, out=None):
         return _ufuncs._riemann_zeta(x, out)
     else:
         return _ufuncs._zeta(x, q, out)
-
-sph_harm_y = MultiUFunc(sph_harm_y, force_out_complex = True)
-
-@sph_harm_y.resolve_ufunc
-def _(ufuncs, diff_n = 0):
-    return ufuncs[diff_n]
-
-sph_harm_y_all = MultiUFunc(sph_harm_y_all, force_out_complex = True)
-
-@sph_harm_y_all.resolve_ufunc
-def _(ufuncs, diff_n = 0):
-    return ufuncs
-
-@sph_harm_y_all.resolve_out_shapes
-def _(n, m, theta_shape, phi_shape, nout):
-    if ((not np.isscalar(m)) or (abs(m) > n)):
-        raise ValueError("m must be <= n.")
-
-    if ((not np.isscalar(n)) or (n < 0)):
-        raise ValueError("n must be a non-negative integer.")
-
-    return nout * ((n + 1, 2 * abs(m) + 1) +
-        np.broadcast_shapes(theta_shape, phi_shape),)
