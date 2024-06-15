@@ -79,14 +79,10 @@ Recommended steps for migration:
    -  Test your code. And **read** your code. You have migrated to
       sparray.
 
-Details:
---------
 
-Construction Functions:
-~~~~~~~~~~~~~~~~~~~~~~~
-
-New functions
-^^^^^^^^^^^^^
+===================================
+Details: New Construction functions
+===================================
 
 ::
 
@@ -101,6 +97,9 @@ Existing functions you should be careful while migrating
 These functions return sparray or spmatrix dependent on their input. Use
 of these should be examined and inputs adjusted to ensure return values
 are sparrays. And in turn the outputs should be treated as sparrays.
+To return sparrays, at least one input must be an sparray. If you use
+list-of-lists or numpy arrays as input you should convert one of them
+to a sparse array to get sparse arrays out.
 
 ::
 
@@ -112,25 +111,26 @@ are sparrays. And in turn the outputs should be treated as sparrays.
    def tril(A, k=0, format=None):
    def triu(A, k=0, format=None):
 
-Functions that you have to convert while migrating
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Functions that changed names for the migration
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 ::
 
-::
+   +=========+=============+
+   |Function | New function|
+   +=========+=============+
+   |eye      | eye_array   |
+   |identity | eye_array   |
+   |diags    | diags_array |
+   |spdiags  | diags_array |
+   |bmat     | block       |
+   |rand     | random_arra |
+   |random   | random_arra |
+   +=========+=============+
 
-   Function | New function
-   --- | ---
-   eye      | eye_array
-   identity | eye_array
-   diags    | diags_array
-   spdiags  | diags_array
-   bmat     | block
-   rand     | random_array
-   random   | random_array
-
-Shape changes and reductions:
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+=====================================
+Details: Shape changes and reductions
+=====================================
 
 -  Construction using 1d-list of values:
 
@@ -157,18 +157,18 @@ Shape changes and reductions:
 
    ::
 
-   ::
-
-      Method | result
-      ---  | ---
-      sum(axis)    | dense
-      mean(axis)   | dense
-      argmin(axis) | dense
-      argmax(axis) | dense
-      min(axis)    | sparse
-      max(axis)    | sparse
-      nanmin(axis) | sparse
-      nanmax(axis) | sparse
+      +-------------+--------+
+      |Method       | Result |
+      +=============|========+
+      |sum(axis)    | dense  |
+      |mean(axis)   | dense  |
+      |argmin(axis) | dense  |
+      |argmax(axis) | dense  |
+      |min(axis)    | sparse |
+      |max(axis)    | sparse |
+      |nanmin(axis) | sparse |
+      |nanmax(axis) | sparse |
+      +-------------|--------+
 
    Generally, 2D ``sparray`` inputs lead to 1D results. 2D ``spmatrix``
    inputs lead to 2D.
@@ -177,55 +177,62 @@ Shape changes and reductions:
    before and shouldn’t need to be considered during migration. E.g.
    ``A.sum()``
 
-Removed methods:
-~~~~~~~~~~~~~~~~
+===============
+Removed methods
+===============
 
--  getrow, getcol, asfptype, getnnz, getH. Attributes M.A and M.H. It is
-   recommended that you replace these functions with alternatives before
-   starting the shift to sparray.
+-  ``getrow``, ``getcol``, ``asfptype``, ``getnnz``, ``getH``.
+   Attributes ``M.A`` and ``M.H``. It is recommended that you replace
+   these functions with alternatives before starting the shift to sparray.
 
-   =============== =====================
-   Function        Alternative
-   =============== =====================
-   M.get_shape()   M.shape
-   M.getformat()   M.format
-   M.asfptype(…)   M.astype(…)
-   M.getmaxprint() M.maxprint
-   M.getnnz()      M.nnz
-   M.getnnz(axis)  M.count_nonzero(axis)
-   M.getH()        M.conj().T
-   M.getrow(i)     M[i, :]
-   M.getcol(j)     M[:, j]
-   M.A             M.toarray()
-   M.H             M.conj().T
-   =============== =====================
+   ::
+
+       +---------------+---------------------+
+       |Function       |Alternative          |
+       +===============+=====================+
+       |M.get_shape()  |A.shape              |
+       |M.getformat()  |A.format             |
+       |M.asfptype(…)  |A.astype(…)          |
+       |M.getmaxprint()|A.maxprint           |
+       |M.getnnz()     |A.nnz                |
+       |M.getnnz(axis) |A.count_nonzero(axis)|
+       |M.getH()       |A.conj().T           |
+       |M.getrow(i)    |A[i, :]              |
+       |M.getcol(j)    |A[:, j]              |
+       |M.A            |A.toarray()          |
+       |M.H            |A.conj().T           |
+       +---------------+---------------------+
 
 -  Shape assignment (``M.shape = (2, 6)``) is not permitted for sparray.
    Instead you should use ``A.reshape``.
 
--  ``A.getnnz()`` returns the number of stored values – not the number
-   of non-zeros. ``A.nnz`` does the same. If you want the number of
-   non-zeros, use ``M.count_nonzero()``. (This is not new to the
-   migration, but can be confusing.) If you want the ``axis`` parameter
-   of ``A.getnnz(axis=...)``, you can use the axis parameter of
-   ``M.count_nonzero(axis=...)`` but it is not an exact replacement
-   because it counts nonzero values instead of stored values. The
-   difference is the number of explicitly stored zero values. If you
-   really want the number of stored values by axis you will need to use
-   some numpy tools. These options work for COO, CSR, CSC formats, so
-   convert to one of them. For CSR and CSC, the major axis is compressed
-   and ``np.diff(A.indptr)`` returns a dense 1D array with the number of
-   stored values for each major axis value (row for CSR and column for
-   CSC). The minor axes can be computed using
-   ``np.bincount(A.indices, minlength=N)`` where N is the length of the
-   minor axis (e.g. ``A.shape[0]`` for CSR). the ``bincount`` function
-   works for any axis of COO format using ``A.coords[axis]`` in place of
-   ``A.indices``.
+-  ``M.getnnz()`` returns the number of stored values – not the number
+   of non-zeros. ``A.nnz`` does the same. To get the number of
+   non-zeros, use ``A.count_nonzero()``. This is not new to the
+   migration, but can be confusing.
 
-Other:
-~~~~~~
+   To use the ``axis`` parameter of ``M.getnnz(axis=...)``,
+   you can use ``A.count_nonzero(axis=...)``
+   but it is not an exact replacement because it counts nonzero
+   values instead of stored values. The difference is the number
+   of explicitly stored zero values. If you really want the number
+   of stored values by axis you will need to use some numpy tools.
 
--  If you provide compressed dat to a constructor,
+   The numpy tools approach works for COO, CSR, CSC formats, so convert
+   to one of them. For CSR and CSC, the major axis is compressed and
+   ``np.diff(A.indptr)`` returns a dense 1D array with the number of
+   stored values for each major axis value (row for CSR and column
+   for CSC). The minor axes can be computed using
+   ``np.bincount(A.indices, minlength=N)`` where ``N`` is the length
+   of the minor axis (e.g. ``A.shape[1]`` for CSR). the ``bincount``
+   function works for any axis of COO format using ``A.coords[axis]``
+   in place of ``A.indices``.
+
+=====
+Other
+=====
+
+-  If you provide compressed data to a constructor,
    e.g. ``csr_array((data, indices, indptr))`` both arrays and matrices
    set the index dtype (``idxdtype``) without checking the content of
    the indices. See gh-18509

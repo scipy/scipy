@@ -178,38 +178,42 @@ Usage information
 
 There are seven available sparse array types:
 
-    1. `csc_array`: Compressed Sparse Column format
-    2. `csr_array`: Compressed Sparse Row format
-    3. `bsr_array`: Block Sparse Row format
-    4. `lil_array`: List of Lists format
-    5. `dok_array`: Dictionary of Keys format
-    6. `coo_array`: COOrdinate format (aka IJV, triplet format)
-    7. `dia_array`: DIAgonal format
+    1. csc_array: Compressed Sparse Column format
+    2. csr_array: Compressed Sparse Row format
+    3. bsr_array: Block Sparse Row format
+    4. lil_array: List of Lists format
+    5. dok_array: Dictionary of Keys format
+    6. coo_array: COOrdinate format (aka IJV, triplet format)
+    7. dia_array: DIAgonal format
 
-To construct an array efficiently, use either `dok_array` or `lil_array`.
-The `lil_array` class supports basic slicing and fancy indexing with a
-similar syntax to NumPy arrays. As illustrated below, the COO format
-may also be used to efficiently construct arrays. Despite their
-similarity to NumPy arrays, it is **strongly discouraged** to use NumPy
-functions directly on these arrays because NumPy may not properly convert
-them for computations, leading to unexpected (and incorrect) results. If you
-do want to apply a NumPy function to these arrays, first check if SciPy has
-its own implementation for the given sparse array class, or **convert the
-sparse array to a NumPy array** (e.g., using the ``toarray`` method of the
-class) first before applying the method.
+To construct an array efficiently, use any of ``coo_array``,
+``dok_array`` or ``lil_array``. ``dok_array`` and ``lil_array``
+support basic slicing and fancy indexing with a similar syntax
+to NumPy arrays. The COO format does not support indexing (yet)
+but can also be used to efficiently construct arrays using coord
+and value info.
 
-To perform manipulations such as multiplication or inversion, first
-convert the array to either CSC or CSR format. The `lil_array` format is
-row-based, so conversion to CSR is efficient, whereas conversion to CSC
-is less so.
+Despite their similarity to NumPy arrays, it is **strongly discouraged**
+to use NumPy functions directly on these arrays because NumPy typically
+treats them as generic Python objects rather than arrays, leading to
+unexpected (and incorrect) results. If you do want to apply a NumPy
+function to these arrays, first check if SciPy has its own implementation
+for the given sparse array class, or **convert the sparse array to
+a NumPy array** (e.g., using the ``toarray`` method of the class)
+before applying the method.
 
 All conversions among the CSR, CSC, and COO formats are efficient,
 linear-time operations.
 
+To perform manipulations such as multiplication or inversion, first
+convert the array to either CSC or CSR format. The ``lil_array``
+format is row-based, so conversion to CSR is efficient, whereas
+conversion to CSC is less so.
+
 Matrix vector product
 ---------------------
 
-To do a vector product between a 2D sparse array and a vector simply use
+To do a vector product between a 2D sparse array and a vector use
 the matmul operator which performs a dot product like the ``dot`` method.
 
 >>> import numpy as np
@@ -220,7 +224,7 @@ the matmul operator which performs a dot product like the ``dot`` method.
 array([ 1, -3, -1], dtype=int64)
 
 .. warning:: As of NumPy 1.7, ``np.dot`` treats sparse arrays as
-  general python objects which leads to unexpected results or errors.
+  generic Python objects which leads to unexpected results or errors.
   So either use the scipy.sparse ``A.dot(v)`` method or the ``@`` operator.
 
 The CSR format is especially suitable for fast matrix vector products.
@@ -236,13 +240,13 @@ Construct a 1000x1000 `lil_array` and add some values to it:
 >>> from numpy.random import rand
 
 >>> A = lil_array((1000, 1000))
->>> A[0, :100] = rand(100)
->>> A.setdiag(rand(1000))
+>>> A[0, :100] = random_array(100)
+>>> A.setdiag(random_array(1000))
 
 Now convert it to CSR format and solve A x = b for x:
 
 >>> A = A.tocsr()
->>> b = rand(1000)
+>>> b = random_array(1000)
 >>> x = spsolve(A, b)
 
 Convert it to a dense array and solve, and check that the result
