@@ -51,6 +51,11 @@ def xp_mean_2samp(*args, **kwargs):
     return stats._stats_py._xp_mean(args[0], *args[2:], weights=weights, **kwargs)
 
 
+def xp_var(*args, **kwargs):
+    kwargs.pop('_no_deco', None)
+    return stats._stats_py._xp_var(*args, **kwargs)
+
+
 axis_nan_policy_cases = [
     # function, args, kwds, number of samples, number of outputs,
     # ... paired, unpacker function
@@ -128,6 +133,7 @@ axis_nan_policy_cases = [
     (stats.combine_pvalues, tuple(), {}, 1, 2, False, None),
     (xp_mean_1samp, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (xp_mean_2samp, tuple(), dict(), 2, 1, True, lambda x: (x,)),
+    (xp_var, tuple(), dict(), 1, 1, False, lambda x: (x,)),
 ]
 
 # If the message is one of those expected, put nans in
