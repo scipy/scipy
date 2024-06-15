@@ -59,12 +59,12 @@ class MultiUFunc:
         self._ufuncs_map = ufuncs_map
         self.resolve_out_shapes = None
         self.resolve_ufunc = None
-        self.__forces_complex_output = force_complex_output
+        self.__force_complex_output = force_complex_output
         self.__doc = doc
 
     @property
-    def forces_complex_output(self):
-        return self.__forces_complex_output
+    def force_complex_output(self):
+        return self.__force_complex_output
 
     def as_resolve_ufunc(self, func):
         """Set `resolve_ufunc` method by decorating a function.
@@ -129,7 +129,7 @@ class MultiUFunc:
 
             ufunc_out_dtypes = ufunc.nout * (ufunc_out_dtype,)
 
-        if self.forces_complex_output:
+        if self.force_complex_output:
             ufunc_out_dtypes = tuple(np.result_type(1j, ufunc_out_dtype)
                 for ufunc_out_dtype in ufunc_out_dtypes)
 
