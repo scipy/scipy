@@ -1539,10 +1539,9 @@ class TestOptimizeSimple(CheckOptimize):
                 pass
 
     @pytest.mark.parametrize('method', ['nelder-mead', 'powell', 'cg', 'bfgs',
-                                        'newton-cg', 'l-bfgs-b', 'tnc',
-                                        'cobyla', 'cobyqa', 'slsqp',
-                                        'trust-constr', 'dogleg', 'trust-ncg',
-                                        'trust-exact', 'trust-krylov'])
+                                        'newton-cg', 'l-bfgs-b', 'tnc', 'cobyqa',
+                                        'slsqp', 'trust-constr', 'dogleg',
+                                        'trust-ncg', 'trust-exact', 'trust-krylov'])
     def test_nan_values(self, method):
         # Check nan values result to failed exit status
         np.random.seed(1234)
@@ -1663,11 +1662,27 @@ class TestOptimizeSimple(CheckOptimize):
                   'fun': f, 'jac': g, 'hess': h}
 
         res = optimize.minimize(**kwargs, callback=callback_interface)
+
         if method == 'nelder-mead':
             maxiter = maxiter + 1  # nelder-mead counts differently
+
         if method == 'cobyqa':
             ref = optimize.minimize(**kwargs, options={'maxfev': maxiter})
             assert res.nfev == ref.nfev == maxiter
+        elif method == 'cobyla':
+            # COBYLA calls the callback once per iteration, not once per function
+            # evaluation, so this test is not applicable. However we can test
+            # the COBYLA status to verify that res stopped back on the callback
+            # and ref stopped based on the iteration limit.
+            ref = optimize.minimize(**kwargs, options={'maxiter': maxiter})
+            assert res.status == 30
+            assert res.message == "Callback function requested termination of " \
+                "optimization"
+            assert ref.status == 3
+            assert ref.message == "Maximum number of function evaluations reached"
+            # Return early because res/ref will be unequal for COBYLA for the reasons
+            # mentioned above.
+            return
         else:
             ref = optimize.minimize(**kwargs, options={'maxiter': maxiter})
             assert res.nit == ref.nit == maxiter
