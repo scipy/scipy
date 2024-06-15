@@ -281,7 +281,8 @@ def hmean(a, axis=0, dtype=None, *, weights=None):
     array, axis=0 by default, or all values in the array if axis=None.
     float64 intermediate and return values are used for integer inputs.
 
-    The harmonic mean is only defined for positive real observations.
+    The harmonic mean is only defined if all observations are non-negative;
+    otherwise, the result is NaN.
 
     References
     ----------
@@ -306,9 +307,13 @@ def hmean(a, axis=0, dtype=None, *, weights=None):
     if weights is not None:
         weights = np.asarray(weights, dtype=dtype)
 
-    if not np.all(a >= 0):
-        message = ("The harmonic mean is only defined if all elements are greater "
-                   "than or equal to zero; otherwise, the result is NaN.")
+    negative_mask = a < 0
+    if np.any(negative_mask):
+        # `where` avoids having to be careful about dtypes and will work with
+        # JAX. This is the exceptional case, so it's OK to be a little slower.
+        a = np.where(negative_mask, np.nan, a)
+        message = ("The harmonic mean is only defined if all elements are "
+                   "non-negative; otherwise, the result is NaN.")
         warnings.warn(message, RuntimeWarning, stacklevel=2)
 
     with np.errstate(divide='ignore'):
@@ -378,7 +383,8 @@ def pmean(a, p, *, axis=0, dtype=None, weights=None):
     array, ``axis=0`` by default, or all values in the array if ``axis=None``.
     float64 intermediate and return values are used for integer inputs.
 
-    The power mean is only defined for positive real observations.
+    The power mean is only defined if all observations are non-negative;
+    otherwise, the result is NaN.
 
     .. versionadded:: 1.9
 
@@ -427,9 +433,13 @@ def pmean(a, p, *, axis=0, dtype=None, weights=None):
     if weights is not None:
         weights = np.asanyarray(weights, dtype=dtype)
 
-    if not np.all(a >= 0):
-        message = ("The power mean is only defined if all elements are greater "
-                   "than or equal to zero; otherwise, the result is NaN.")
+    negative_mask = a < 0
+    if np.any(negative_mask):
+        # `where` avoids having to be careful about dtypes and will work with
+        # JAX. This is the exceptional case, so it's OK to be a little slower.
+        a = np.where(negative_mask, np.nan, a)
+        message = ("The power mean is only defined if all elements are "
+                   "non-negative; otherwise, the result is NaN.")
         warnings.warn(message, RuntimeWarning, stacklevel=2)
 
     with np.errstate(divide='ignore', invalid='ignore'):
