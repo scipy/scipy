@@ -2,7 +2,6 @@
 # Author:  Travis Oliphant, 2002
 #
 
-import operator
 import numpy as np
 import math
 import warnings
