@@ -90,37 +90,41 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
+#pragma once
 
 #include <stdlib.h>
 
 #include <math.h>
 #include <complex.h>
 
-static int amos_acai(std::complex<double>, double, int, int, int, std::complex<double> *, double, double, double, double);
-static int amos_acon(std::complex<double>, double, int, int, int, std::complex<double> *, double, double, double, double, double);
-static int amos_asyi(std::complex<double>, double, int, int, std::complex<double> *, double, double, double, double);
-static int amos_binu(std::complex<double>, double fnu, int, int, std::complex<double> *, double, double, double, double, double);
-static int amos_bknu(std::complex<double>, double, int, int, std::complex<double> *, double, double, double);
-static int amos_buni(std::complex<double>, double, int, int, std::complex<double> *, int, int *, double, double, double, double);
-static int amos_bunk(std::complex<double>, double, int, int, int, std::complex<double> *, double, double, double);
-static double amos_gamln(double);
-static int amos_kscl(std::complex<double>, double, int, std::complex<double> *, std::complex<double>, double *, double, double);
-static int amos_mlri(std::complex<double>, double, int, int, std::complex<double> *, double);
-static void amos_rati(std::complex<double>, double, int, std::complex<double> *, double);
-static int amos_seri(std::complex<double>, double, int, int, std::complex<double> *, double, double, double);
-static int amos_s1s2(std::complex<double>, std::complex<double> *, std::complex<double> *, double, double, int *);
-static int amos_uchk(std::complex<double>, double, double);
-static void amos_unhj(std::complex<double>, double, int, double, std::complex<double> *, std::complex<double> *, std::complex<double> *, std::complex<double> *, std::complex<double> *, std::complex<double> *);
-static void amos_uni1(std::complex<double>, double, int, int, std::complex<double> *, int *, int *, double, double, double, double);
-static void amos_uni2(std::complex<double>, double, int, int, std::complex<double> *, int *, int *, double, double, double, double);
-static void amos_unik(std::complex<double>, double, int, int, double, int *, std::complex<double> *, std::complex<double> *, std::complex<double> *, std::complex<double> *, std::complex<double> *);
-static int amos_unk1(std::complex<double>, double, int, int, int, std::complex<double> *, double, double, double);
-static int amos_unk2(std::complex<double>, double, int, int, int, std::complex<double> *, double, double, double);
-static int amos_uoik(std::complex<double>, double, int, int, int, std::complex<double> *, double, double, double);
-static int amos_wrsk(std::complex<double>, double, int, int, std::complex<double> *, std::complex<double> *, double, double, double);
+namespace special {
+namespace amos {
+
+int acai(std::complex<double>, double, int, int, int, std::complex<double> *, double, double, double, double);
+int acon(std::complex<double>, double, int, int, int, std::complex<double> *, double, double, double, double, double);
+int asyi(std::complex<double>, double, int, int, std::complex<double> *, double, double, double, double);
+int binu(std::complex<double>, double fnu, int, int, std::complex<double> *, double, double, double, double, double);
+int bknu(std::complex<double>, double, int, int, std::complex<double> *, double, double, double);
+int buni(std::complex<double>, double, int, int, std::complex<double> *, int, int *, double, double, double, double);
+int bunk(std::complex<double>, double, int, int, int, std::complex<double> *, double, double, double);
+double gamln(double);
+int kscl(std::complex<double>, double, int, std::complex<double> *, std::complex<double>, double *, double, double);
+int mlri(std::complex<double>, double, int, int, std::complex<double> *, double);
+void rati(std::complex<double>, double, int, std::complex<double> *, double);
+int seri(std::complex<double>, double, int, int, std::complex<double> *, double, double, double);
+int s1s2(std::complex<double>, std::complex<double> *, std::complex<double> *, double, double, int *);
+int uchk(std::complex<double>, double, double);
+void unhj(std::complex<double>, double, int, double, std::complex<double> *, std::complex<double> *, std::complex<double> *, std::complex<double> *, std::complex<double> *, std::complex<double> *);
+void uni1(std::complex<double>, double, int, int, std::complex<double> *, int *, int *, double, double, double, double);
+void uni2(std::complex<double>, double, int, int, std::complex<double> *, int *, int *, double, double, double, double);
+void unik(std::complex<double>, double, int, int, double, int *, std::complex<double> *, std::complex<double> *, std::complex<double> *, std::complex<double> *, std::complex<double> *);
+int unk1(std::complex<double>, double, int, int, int, std::complex<double> *, double, double, double);
+int unk2(std::complex<double>, double, int, int, int, std::complex<double> *, double, double, double);
+int uoik(std::complex<double>, double, int, int, int, std::complex<double> *, double, double, double);
+int wrsk(std::complex<double>, double, int, int, std::complex<double> *, std::complex<double> *, double, double, double);
 
 
-static const double d1mach[5] = {
+constexpr double d1mach[5] = {
     2.2250738585072014e-308,  /* np.finfo(np.float64).tiny      */
     1.7976931348623157e+308,  /* np.finfo(np.float64).max       */
     1.1102230246251565e-16,   /* 0.5 * np.finfo(np.float64).eps */
@@ -128,7 +132,7 @@ static const double d1mach[5] = {
     0.3010299956639812        /* np.log10(2)                    */
 };
 
-static const double i1mach[16] = {
+constexpr double i1mach[16] = {
     5,           /* standard input         */
     6,           /* standard output        */
     7,           /* standard punch         */
@@ -147,22 +151,22 @@ static const double i1mach[16] = {
     1024         /* DBL_MAX_EXP;           */
 };
 
-static const double zunhj_ar[14] = {
-    1.00000000000000000e+00, 1.04166666666666667e-01, 8.35503472222222222e-02, 1.28226574556327160e-01,      //  0 
+constexpr double zunhj_ar[14] = {
+    1.00000000000000000e+00, 1.04166666666666667e-01, 8.35503472222222222e-02, 1.28226574556327160e-01,      //  0
     2.91849026464140464e-01, 8.81627267443757652e-01, 3.32140828186276754e+00, 1.49957629868625547e+01,      //  4
     7.89230130115865181e+01, 4.74451538868264323e+02, 3.20749009089066193e+03, 2.40865496408740049e+04,      //  8
-    1.98923119169509794e+05, 1.79190200777534383e+06                                                         // 12 
+    1.98923119169509794e+05, 1.79190200777534383e+06                                                         // 12
 };
 
-static const double zunhj_br[14] = {
+constexpr double zunhj_br[14] = {
      1.00000000000000000e+00, -1.45833333333333333e-01, -9.87413194444444444e-02, -1.43312053915895062e-01,  //  0
     -3.17227202678413548e-01, -9.42429147957120249e-01, -3.51120304082635426e+00, -1.57272636203680451e+01,  //  4
     -8.22814390971859444e+01, -4.92355370523670524e+02, -3.31621856854797251e+03, -2.48276742452085896e+04,  //  8
     -2.04526587315129788e+05, -1.83844491706820990e+06                                                       // 12
 };
 
-static const double  zunhj_c[105] = {
-     1.00000000000000000e+00, -2.08333333333333333e-01,  1.25000000000000000e-01,  3.34201388888888889e-01,  //   0  
+constexpr double  zunhj_c[105] = {
+     1.00000000000000000e+00, -2.08333333333333333e-01,  1.25000000000000000e-01,  3.34201388888888889e-01,  //   0
     -4.01041666666666667e-01,  7.03125000000000000e-02, -1.02581259645061728e+00,  1.84646267361111111e+00,  //   4
     -8.91210937500000000e-01,  7.32421875000000000e-02,  4.66958442342624743e+00, -1.12070026162229938e+01,  //   8
      8.78912353515625000e+00, -2.36408691406250000e+00,  1.12152099609375000e-01, -2.82120725582002449e+01,  //  12
@@ -187,59 +191,59 @@ static const double  zunhj_c[105] = {
      1.73951075539781645e+07, -5.49842327572288687e+05,  3.03809051092238427e+03, -1.46792612476956167e+10,  //  88
      1.14498237732025810e+11, -3.99096175224466498e+11,  8.19218669548577329e+11, -1.09837515608122331e+12,  //  92
      1.00815810686538209e+12, -6.45364869245376503e+11,  2.87900649906150589e+11, -8.78670721780232657e+10,  //  96
-     1.76347306068349694e+10, -2.16716498322379509e+09,  1.43157876718888981e+08, -3.87183344257261262e+06,  // 100 
+     1.76347306068349694e+10, -2.16716498322379509e+09,  1.43157876718888981e+08, -3.87183344257261262e+06,  // 100
      1.82577554742931747e+04                                                                                 // 104
 };
 
-static const double zunhj_alfa[180] = {
+constexpr double zunhj_alfa[180] = {
     -4.44444444444444444e-03, -9.22077922077922078e-04, -8.84892884892884893e-05,  1.65927687832449737e-04,  //   0
      2.46691372741792910e-04,  2.65995589346254780e-04,  2.61824297061500945e-04,  2.48730437344655609e-04,  //   4
      2.32721040083232098e-04,  2.16362485712365082e-04,  2.00738858762752355e-04,  1.86267636637545172e-04,  //   8
      1.73060775917876493e-04,  1.61091705929015752e-04,  1.50274774160908134e-04,  1.40503497391269794e-04,  //  12
-     1.31668816545922806e-04,  1.23667445598253261e-04,  1.16405271474737902e-04,  1.09798298372713369e-04,  //  16  
-     1.03772410422992823e-04,  9.82626078369363448e-05,  9.32120517249503256e-05,  8.85710852478711718e-05,  //  20  
-     8.42963105715700223e-05,  8.03497548407791151e-05,  7.66981345359207388e-05,  7.33122157481777809e-05,  //  24  
-     7.01662625163141333e-05,  6.72375633790160292e-05,  6.93735541354588974e-04,  2.32241745182921654e-04,  //  28  
-    -1.41986273556691197e-05, -1.16444931672048640e-04, -1.50803558053048762e-04, -1.55121924918096223e-04,  //  32  
-    -1.46809756646465549e-04, -1.33815503867491367e-04, -1.19744975684254051e-04, -1.06184319207974020e-04,  //  36  
-    -9.37699549891194492e-05, -8.26923045588193274e-05, -7.29374348155221211e-05, -6.44042357721016283e-05,  //  40  
-    -5.69611566009369048e-05, -5.04731044303561628e-05, -4.48134868008882786e-05, -3.98688727717598864e-05,  //  44  
-    -3.55400532972042498e-05, -3.17414256609022480e-05, -2.83996793904174811e-05, -2.54522720634870566e-05,  //  48  
-    -2.28459297164724555e-05, -2.05352753106480604e-05, -1.84816217627666085e-05, -1.66519330021393806e-05,  //  52  
-    -1.50179412980119482e-05, -1.35554031379040526e-05, -1.22434746473858131e-05, -1.10641884811308169e-05,  //  56  
-    -3.54211971457743841e-04, -1.56161263945159416e-04,  3.04465503594936410e-05,  1.30198655773242693e-04,  //  60  
-     1.67471106699712269e-04,  1.70222587683592569e-04,  1.56501427608594704e-04,  1.36339170977445120e-04,  //  64  
-     1.14886692029825128e-04,  9.45869093034688111e-05,  7.64498419250898258e-05,  6.07570334965197354e-05,  //  68  
-     4.74394299290508799e-05,  3.62757512005344297e-05,  2.69939714979224901e-05,  1.93210938247939253e-05,  //  72  
-     1.30056674793963203e-05,  7.82620866744496661e-06,  3.59257485819351583e-06,  1.44040049814251817e-07,  //  76  
-    -2.65396769697939116e-06, -4.91346867098485910e-06, -6.72739296091248287e-06, -8.17269379678657923e-06,  //  80  
-    -9.31304715093561232e-06, -1.02011418798016441e-05, -1.08805962510592880e-05, -1.13875481509603555e-05,  //  84  
-    -1.17519675674556414e-05, -1.19987364870944141e-05,  3.78194199201772914e-04,  2.02471952761816167e-04,  //  88  
-    -6.37938506318862408e-05, -2.38598230603005903e-04, -3.10916256027361568e-04, -3.13680115247576316e-04,  //  92  
-    -2.78950273791323387e-04, -2.28564082619141374e-04, -1.75245280340846749e-04, -1.25544063060690348e-04,  //  96  
-    -8.22982872820208365e-05, -4.62860730588116458e-05, -1.72334302366962267e-05,  5.60690482304602267e-06,  // 100  
-     2.31395443148286800e-05,  3.62642745856793957e-05,  4.58006124490188752e-05,  5.24595294959114050e-05,  // 104  
-     5.68396208545815266e-05,  5.94349820393104052e-05,  6.06478527578421742e-05,  6.08023907788436497e-05,  // 108  
-     6.01577894539460388e-05,  5.89199657344698500e-05,  5.72515823777593053e-05,  5.52804375585852577e-05,  // 112  
-     5.31063773802880170e-05,  5.08069302012325706e-05,  4.84418647620094842e-05,  4.60568581607475370e-05,  // 116  
-    -6.91141397288294174e-04, -4.29976633058871912e-04,  1.83067735980039018e-04,  6.60088147542014144e-04,  // 120  
-     8.75964969951185931e-04,  8.77335235958235514e-04,  7.49369585378990637e-04,  5.63832329756980918e-04,  // 124  
-     3.68059319971443156e-04,  1.88464535514455599e-04,  3.70663057664904149e-05, -8.28520220232137023e-05,  // 128  
-    -1.72751952869172998e-04, -2.36314873605872983e-04, -2.77966150694906658e-04, -3.02079514155456919e-04,  // 132  
-    -3.12594712643820127e-04, -3.12872558758067163e-04, -3.05678038466324377e-04, -2.93226470614557331e-04,  // 136  
-    -2.77255655582934777e-04, -2.59103928467031709e-04, -2.39784014396480342e-04, -2.20048260045422848e-04,  // 140  
-    -2.00443911094971498e-04, -1.81358692210970687e-04, -1.63057674478657464e-04, -1.45712672175205844e-04,  // 144  
-    -1.29425421983924587e-04, -1.14245691942445952e-04,  1.92821964248775885e-03,  1.35592576302022234e-03,  // 148  
-    -7.17858090421302995e-04, -2.58084802575270346e-03, -3.49271130826168475e-03, -3.46986299340960628e-03,  // 152  
-    -2.82285233351310182e-03, -1.88103076404891354e-03, -8.89531718383947600e-04,  3.87912102631035228e-06,  // 156  
-     7.28688540119691412e-04,  1.26566373053457758e-03,  1.62518158372674427e-03,  1.83203153216373172e-03,  // 160  
-     1.91588388990527909e-03,  1.90588846755546138e-03,  1.82798982421825727e-03,  1.70389506421121530e-03,  // 164  
-     1.55097127171097686e-03,  1.38261421852276159e-03,  1.20881424230064774e-03,  1.03676532638344962e-03,  // 168  
-     8.71437918068619115e-04,  7.16080155297701002e-04,  5.72637002558129372e-04,  4.42089819465802277e-04,  // 172  
-     3.24724948503090564e-04,  2.20342042730246599e-04,  1.28412898401353882e-04,  4.82005924552095464e-05   // 176  
-};                                                                                                             
-  
-static const double zunhj_beta[210] = {
+     1.31668816545922806e-04,  1.23667445598253261e-04,  1.16405271474737902e-04,  1.09798298372713369e-04,  //  16
+     1.03772410422992823e-04,  9.82626078369363448e-05,  9.32120517249503256e-05,  8.85710852478711718e-05,  //  20
+     8.42963105715700223e-05,  8.03497548407791151e-05,  7.66981345359207388e-05,  7.33122157481777809e-05,  //  24
+     7.01662625163141333e-05,  6.72375633790160292e-05,  6.93735541354588974e-04,  2.32241745182921654e-04,  //  28
+    -1.41986273556691197e-05, -1.16444931672048640e-04, -1.50803558053048762e-04, -1.55121924918096223e-04,  //  32
+    -1.46809756646465549e-04, -1.33815503867491367e-04, -1.19744975684254051e-04, -1.06184319207974020e-04,  //  36
+    -9.37699549891194492e-05, -8.26923045588193274e-05, -7.29374348155221211e-05, -6.44042357721016283e-05,  //  40
+    -5.69611566009369048e-05, -5.04731044303561628e-05, -4.48134868008882786e-05, -3.98688727717598864e-05,  //  44
+    -3.55400532972042498e-05, -3.17414256609022480e-05, -2.83996793904174811e-05, -2.54522720634870566e-05,  //  48
+    -2.28459297164724555e-05, -2.05352753106480604e-05, -1.84816217627666085e-05, -1.66519330021393806e-05,  //  52
+    -1.50179412980119482e-05, -1.35554031379040526e-05, -1.22434746473858131e-05, -1.10641884811308169e-05,  //  56
+    -3.54211971457743841e-04, -1.56161263945159416e-04,  3.04465503594936410e-05,  1.30198655773242693e-04,  //  60
+     1.67471106699712269e-04,  1.70222587683592569e-04,  1.56501427608594704e-04,  1.36339170977445120e-04,  //  64
+     1.14886692029825128e-04,  9.45869093034688111e-05,  7.64498419250898258e-05,  6.07570334965197354e-05,  //  68
+     4.74394299290508799e-05,  3.62757512005344297e-05,  2.69939714979224901e-05,  1.93210938247939253e-05,  //  72
+     1.30056674793963203e-05,  7.82620866744496661e-06,  3.59257485819351583e-06,  1.44040049814251817e-07,  //  76
+    -2.65396769697939116e-06, -4.91346867098485910e-06, -6.72739296091248287e-06, -8.17269379678657923e-06,  //  80
+    -9.31304715093561232e-06, -1.02011418798016441e-05, -1.08805962510592880e-05, -1.13875481509603555e-05,  //  84
+    -1.17519675674556414e-05, -1.19987364870944141e-05,  3.78194199201772914e-04,  2.02471952761816167e-04,  //  88
+    -6.37938506318862408e-05, -2.38598230603005903e-04, -3.10916256027361568e-04, -3.13680115247576316e-04,  //  92
+    -2.78950273791323387e-04, -2.28564082619141374e-04, -1.75245280340846749e-04, -1.25544063060690348e-04,  //  96
+    -8.22982872820208365e-05, -4.62860730588116458e-05, -1.72334302366962267e-05,  5.60690482304602267e-06,  // 100
+     2.31395443148286800e-05,  3.62642745856793957e-05,  4.58006124490188752e-05,  5.24595294959114050e-05,  // 104
+     5.68396208545815266e-05,  5.94349820393104052e-05,  6.06478527578421742e-05,  6.08023907788436497e-05,  // 108
+     6.01577894539460388e-05,  5.89199657344698500e-05,  5.72515823777593053e-05,  5.52804375585852577e-05,  // 112
+     5.31063773802880170e-05,  5.08069302012325706e-05,  4.84418647620094842e-05,  4.60568581607475370e-05,  // 116
+    -6.91141397288294174e-04, -4.29976633058871912e-04,  1.83067735980039018e-04,  6.60088147542014144e-04,  // 120
+     8.75964969951185931e-04,  8.77335235958235514e-04,  7.49369585378990637e-04,  5.63832329756980918e-04,  // 124
+     3.68059319971443156e-04,  1.88464535514455599e-04,  3.70663057664904149e-05, -8.28520220232137023e-05,  // 128
+    -1.72751952869172998e-04, -2.36314873605872983e-04, -2.77966150694906658e-04, -3.02079514155456919e-04,  // 132
+    -3.12594712643820127e-04, -3.12872558758067163e-04, -3.05678038466324377e-04, -2.93226470614557331e-04,  // 136
+    -2.77255655582934777e-04, -2.59103928467031709e-04, -2.39784014396480342e-04, -2.20048260045422848e-04,  // 140
+    -2.00443911094971498e-04, -1.81358692210970687e-04, -1.63057674478657464e-04, -1.45712672175205844e-04,  // 144
+    -1.29425421983924587e-04, -1.14245691942445952e-04,  1.92821964248775885e-03,  1.35592576302022234e-03,  // 148
+    -7.17858090421302995e-04, -2.58084802575270346e-03, -3.49271130826168475e-03, -3.46986299340960628e-03,  // 152
+    -2.82285233351310182e-03, -1.88103076404891354e-03, -8.89531718383947600e-04,  3.87912102631035228e-06,  // 156
+     7.28688540119691412e-04,  1.26566373053457758e-03,  1.62518158372674427e-03,  1.83203153216373172e-03,  // 160
+     1.91588388990527909e-03,  1.90588846755546138e-03,  1.82798982421825727e-03,  1.70389506421121530e-03,  // 164
+     1.55097127171097686e-03,  1.38261421852276159e-03,  1.20881424230064774e-03,  1.03676532638344962e-03,  // 168
+     8.71437918068619115e-04,  7.16080155297701002e-04,  5.72637002558129372e-04,  4.42089819465802277e-04,  // 172
+     3.24724948503090564e-04,  2.20342042730246599e-04,  1.28412898401353882e-04,  4.82005924552095464e-05   // 176
+};
+
+constexpr double zunhj_beta[210] = {
      1.79988721413553309e-02,  5.59964911064388073e-03,  2.88501402231132779e-03,  1.80096606761053941e-03,  //   0
      1.24753110589199202e-03,  9.22878876572938311e-04,  7.14430421727287357e-04,  5.71787281789704872e-04,  //   4
      4.69431007606481533e-04,  3.93232835462916638e-04,  3.34818889318297664e-04,  2.88952148495751517e-04,  //   8
@@ -295,7 +299,7 @@ static const double zunhj_beta[210] = {
      1.59690280765839059e-03,  1.42111975664438546e-03                                                       // 208
 };
 
-static const double zunhj_gama[30] = {
+constexpr double zunhj_gama[30] = {
     6.29960524947436582e-01, 2.51984209978974633e-01, 1.54790300415655846e-01, 1.10713062416159013e-01,      //  0
     8.57309395527394825e-02, 6.97161316958684292e-02, 5.86085671893713576e-02, 5.04698873536310685e-02,      //  4
     4.42600580689154809e-02, 3.93720661543509966e-02, 3.54283195924455368e-02, 3.21818857502098231e-02,      //  8
@@ -306,7 +310,7 @@ static const double zunhj_gama[30] = {
     1.22761545318762767e-02, 1.18338262398482403e-02                                                         // 28
 };
 
-static const double zunik_c[120] = {
+constexpr double zunik_c[120] = {
      1.00000000000000000e+00, -2.08333333333333333e-01,  1.25000000000000000e-01,  3.34201388888888889e-01,  //   0
     -4.01041666666666667e-01,  7.03125000000000000e-02, -1.02581259645061728e+00,  1.84646267361111111e+00,  //   4
     -8.91210937500000000e-01,  7.32421875000000000e-02,  4.66958442342624743e+00, -1.12070026162229938e+01,  //   8
@@ -339,7 +343,7 @@ static const double zunik_c[120] = {
     -2.18229277575292237e+10,  1.24700929351271032e+09, -2.91883881222208134e+07,  1.18838426256783253e+05   // 116
 };
 
-static const double dgamln_gln[100] = {
+constexpr double dgamln_gln[100] = {
     0.00000000000000000e+00, 0.00000000000000000e+00, 6.93147180559945309e-01, 1.79175946922805500e+00,      //   0
     3.17805383034794562e+00, 4.78749174278204599e+00, 6.57925121201010100e+00, 8.52516136106541430e+00,      //   4
     1.06046029027452502e+01, 1.28018274800814696e+01, 1.51044125730755153e+01, 1.75023078458738858e+01,      //   8
@@ -367,8 +371,8 @@ static const double dgamln_gln[100] = {
     3.45379407062266854e+02, 3.49954118040770237e+02, 3.54539085519440809e+02, 3.59134205369575399e+02       //  96
 };
 
-static const double dgamln_cf[22] = {
-    8.33333333333333333e-02, -2.77777777777777778e-03, 7.93650793650793651e-04, -5.95238095238095238e-04,    //  0 
+constexpr double dgamln_cf[22] = {
+    8.33333333333333333e-02, -2.77777777777777778e-03, 7.93650793650793651e-04, -5.95238095238095238e-04,    //  0
     8.41750841750841751e-04, -1.91752691752691753e-03, 6.41025641025641026e-03, -2.95506535947712418e-02,    //  4
     1.79644372368830573e-01, -1.39243221690590112e+00, 1.34028640441683920e+01, -1.56848284626002017e+02,    //  8
     2.19310333333333333e+03, -3.61087712537249894e+04, 6.91472268851313067e+05, -1.52382215394074162e+07,    // 12
@@ -377,7 +381,7 @@ static const double dgamln_cf[22] = {
 };
 
 
-int amos_acai(
+inline int acai(
     std::complex<double> z,
     double fnu,
     int kode,
@@ -422,12 +426,12 @@ int amos_acai(
             //
             // ASYMPTOTIC EXPANSION FOR LARGE Z FOR THE I FUNCTION
             //
-            nw = amos_asyi(zn, fnu, kode, nn, y, rl, tol, elim, alim);
+            nw = asyi(zn, fnu, kode, nn, y, rl, tol, elim, alim);
         } else {
             //
             // MILLER ALGORITHM NORMALIZED BY THE SERIES FOR THE I FUNCTION
             //
-            nw = amos_mlri(zn, fnu, kode, nn, y, tol);
+            nw = mlri(zn, fnu, kode, nn, y, tol);
         }
         if (nw < 0) {
             nz = -1;
@@ -438,13 +442,13 @@ int amos_acai(
         //
         // POWER SERIES FOR THE I FUNCTION
         //
-        amos_seri(zn, fnu, kode, nn, y, tol, elim, alim);
+        seri(zn, fnu, kode, nn, y, tol, elim, alim);
     }
     /* 40 */
     //
     // ANALYTIC CONTINUATION TO THE LEFT HALF PLANE FOR THE K FUNCTION
     //
-    nw = amos_bknu(zn, fnu, kode, 1, &cy[0], tol, elim, alim);
+    nw = bknu(zn, fnu, kode, 1, &cy[0], tol, elim, alim);
     if (nw != 0) {
         nz = -1;
         if (nw == -2) { nz = -2; }
@@ -474,7 +478,7 @@ int amos_acai(
     if (kode != 1) {
         iuf = 0;
         ascle = 1e3 * d1mach[0] / tol;
-        nw = amos_s1s2(zn, &c1, &c2, ascle, alim, &iuf);
+        nw = s1s2(zn, &c1, &c2, ascle, alim, &iuf);
         nz += nw;
     }
     y[0] = cspn*c1 + csgn*c2;
@@ -482,7 +486,7 @@ int amos_acai(
 }
 
 
-int amos_acon(
+inline int acon(
     std::complex<double> z,
     double fnu,
     int kode,
@@ -523,13 +527,13 @@ int amos_acon(
     nz = 0;
     zn = -z;
     nn = n;
-    nw = amos_binu(zn, fnu, kode, nn, y, rl, fnul, tol, elim, alim);
+    nw = binu(zn, fnu, kode, nn, y, rl, fnul, tol, elim, alim);
     if (nw >= 0) {
         //
         // ANALYTIC CONTINUATION TO THE LEFT HALF PLANE FOR THE K FUNCTION
         //
         nn = (n > 2 ? 2 : n);
-        nw = amos_bknu(zn, fnu, kode, nn, cy, tol, elim, alim);
+        nw = bknu(zn, fnu, kode, nn, cy, tol, elim, alim);
         if (nw == 0) {
             s1 = cy[0];
             fmr = mr;
@@ -548,7 +552,7 @@ int amos_acon(
             c2 = y[0];
             ascle = 1e3*d1mach[0]/tol;
             if (kode != 1) {
-                nw = amos_s1s2(zn, &c1, &c2, ascle, alim, &iuf);
+                nw = s1s2(zn, &c1, &c2, ascle, alim, &iuf);
                 nz += nw;
                 sc1 = c1;
             }
@@ -559,7 +563,7 @@ int amos_acon(
             c1 = s2;
             c2 = y[1];
             if (kode != 1) {
-                nw = amos_s1s2(zn, &c1, &c2, ascle, alim, &iuf);
+                nw = s1s2(zn, &c1, &c2, ascle, alim, &iuf);
                 nz += nw;
                 sc2 = c1;
             }
@@ -605,7 +609,7 @@ int amos_acon(
                 c2 = y[i-1];
                 if (kode != 1) {
                     if (iuf >= 0) {
-                        nw = amos_s1s2(zn, &c1, &c2, ascle, alim, &iuf);
+                        nw = s1s2(zn, &c1, &c2, ascle, alim, &iuf);
                         nz += nw;
                         sc1 = sc2;
                         sc2 = c1;
@@ -644,7 +648,7 @@ int amos_acon(
 }
 
 
-std::complex<double> amos_airy(
+inline std::complex<double> airy(
     std::complex<double> z,
     int id,
     int kode,
@@ -944,7 +948,7 @@ std::complex<double> amos_airy(
         //
         mr = 1;
         if (zi < 0.0) { mr = -1; }
-        nn = amos_acai(zta, fnu, kode, mr, 1, &cy[0], rl, tol, elim, alim);
+        nn = acai(zta, fnu, kode, mr, 1, &cy[0], rl, tol, elim, alim);
         if (nn < 0) {
             if (nn == -1) {
                 *nz = 1;
@@ -971,7 +975,7 @@ std::complex<double> amos_airy(
                 }
             }
         }
-        *nz = amos_bknu(zta, fnu, kode, 1, &cy[0], tol, elim, alim);
+        *nz = bknu(zta, fnu, kode, 1, &cy[0], tol, elim, alim);
     }
     s1 = cy[0]*coef;
 
@@ -991,7 +995,7 @@ std::complex<double> amos_airy(
 }
 
 
-int amos_asyi(
+inline int asyi(
     std::complex<double> z,
     double fnu,
     int kode,
@@ -1120,7 +1124,7 @@ int amos_asyi(
 }
 
 
-int amos_besh(
+inline int besh(
     std::complex<double> z,
     double fnu,
     int kode,
@@ -1365,7 +1369,7 @@ int amos_besh(
             /* Failed all but the az > tol hence do nothing and GO TO 70 */
         } else if ((fn > 1.0) && (fn > 2.0)) {
             /* GO TO 60 */
-            nuf = amos_uoik(zn, fnu, kode, 2, nn, cy, tol, elim, alim);
+            nuf = uoik(zn, fnu, kode, 2, nn, cy, tol, elim, alim);
             if (nuf < 0) { *ierr = 2; return 0; }  /* GO TO 230 */
             nz += nuf;
             nn -= nuf;
@@ -1390,7 +1394,7 @@ int amos_besh(
         if ((xn < 0.0) || ((xn == 0.0) && (yn < 0.0) && (m == 2))) {
             /* GO TO 80 */
             mr = -mm;
-            nw = amos_acon(zn, fnu, kode, mr, nn, cy, rl, fnul, tol, elim, alim);
+            nw = acon(zn, fnu, kode, mr, nn, cy, rl, fnul, tol, elim, alim);
             if (nw < 0) {
                 /* GO TO 240 */
                 if (nw == -1) { *ierr = 2; return 0; }  /* GO TO 230 */
@@ -1404,7 +1408,7 @@ int amos_besh(
             // RIGHT HALF PLANE COMPUTATION, XN >= 0.  .AND.  (XN.NE.0.  .OR.
             // YN >= 0.  .OR.  M=1)
             //
-            nz = amos_bknu(zn, fnu, kode, nn, cy, tol, elim, alim);
+            nz = bknu(zn, fnu, kode, nn, cy, tol, elim, alim);
             /* GO TO 110 */
         }
     } else {
@@ -1418,7 +1422,7 @@ int amos_besh(
             if ((xn == 0.0) && (yn < 0.0)) { zn = -zn; }
         }
         /* GO TO 100 */
-        nw = amos_bunk(zn, fnu, kode, mr, nn, cy, tol, elim, alim);
+        nw = bunk(zn, fnu, kode, mr, nn, cy, tol, elim, alim);
         if (nw < 0) {
             /* GO TO 240 */
             if (nw == -1) { *ierr = 2; return 0; }  /* GO TO 230 */
@@ -1464,7 +1468,7 @@ int amos_besh(
 }
 
 
-int amos_besi(
+inline int besi(
     std::complex<double> z,
     double fnu,
     int kode,
@@ -1692,7 +1696,7 @@ int amos_besi(
         if (inu % 2 == 1) { csgn = -csgn; }
     }
     /* 40 */
-    nz = amos_binu(zn, fnu, kode, n, cy, rl, fnul, tol, elim, alim);
+    nz = binu(zn, fnu, kode, n, cy, rl, fnul, tol, elim, alim);
     if (nz < 0) {
         if (nz == -2) {
             *ierr = 5;
@@ -1725,7 +1729,7 @@ int amos_besi(
 }
 
 
-int amos_besj(
+inline int besj(
     std::complex<double> z,
     double fnu,
     int kode,
@@ -1954,7 +1958,7 @@ int amos_besj(
         csgn = conj(csgn);
         ci = conj(ci);
     }
-    nz = amos_binu(zn, fnu, kode, n, cy, rl, fnul, tol, elim, alim);
+    nz = binu(zn, fnu, kode, n, cy, rl, fnul, tol, elim, alim);
     if (nz < 0) {
         if (nz == -2) { *ierr = 5; return 0; }
         *ierr = 2;
@@ -1981,7 +1985,7 @@ int amos_besj(
 }
 
 
-int amos_besk(
+inline int besk(
     std::complex<double> z,
     double fnu,
     int kode,
@@ -2213,7 +2217,7 @@ int amos_besk(
                 }
                 /* GO TO 60 */
             } else {
-                nuf = amos_uoik(z, fnu, kode, 2, nn, cy, tol, elim, alim);
+                nuf = uoik(z, fnu, kode, 2, nn, cy, tol, elim, alim);
                 if (nuf < 0) { *ierr = 2; return 0; }
                 nz += nuf;
                 nn -= nuf;
@@ -2233,7 +2237,7 @@ int amos_besk(
             //
             // RIGHT HALF PLANE COMPUTATION, REAL(Z) >= 0.
             //
-            nw = amos_bknu(z, fnu, kode, nn, cy, tol, elim, alim);
+            nw = bknu(z, fnu, kode, nn, cy, tol, elim, alim);
             if (nw < 0) {
                 if (nw == -1) {
                     *ierr = 2;
@@ -2252,7 +2256,7 @@ int amos_besk(
         if (nz != 0) { *ierr = 2; return 0; }
         mr = 1;
         if (yy < 0.0) { mr = -1; }
-        nw = amos_acon(z, fnu, kode, mr, nn, cy, rl, fnul, tol, elim, alim);
+        nw = acon(z, fnu, kode, mr, nn, cy, rl, fnul, tol, elim, alim);
         if (nw < 0) {
             if (nw == -1) {
                 *ierr = 2;
@@ -2273,7 +2277,7 @@ int amos_besk(
         mr = 1;
         if (yy < 0.0) { mr = -1; }
     }
-    nw = amos_bunk(z, fnu, kode, mr, nn, cy, tol, elim, alim);
+    nw = bunk(z, fnu, kode, mr, nn, cy, tol, elim, alim);
     if (nw < 0) {
         if (nw == -1) {
             *ierr = 2;
@@ -2287,7 +2291,7 @@ int amos_besk(
 }
 
 
-int amos_besy(
+inline int besy(
     std::complex<double> z,
     double fnu,
     int kode,
@@ -2446,7 +2450,7 @@ int amos_besy(
     std::complex<double> c1, c2, hci, st;
     double elim, exr, exi, ey, tay, xx, yy, ascle, rtol, atol, tol, aa, bb, r1m5;
     int i, k, k1, k2, nz, nz1, nz2;
-    std::complex<double> cwrk[n];
+    std::complex<double>* cwrk = new std::complex<double>[n];
 
     xx = std::real(z);
     yy = std::imag(z);
@@ -2460,10 +2464,10 @@ int amos_besy(
     if (*ierr != 0) { return nz; }
 
     hci = std::complex<double>(0.0, 0.5);
-    nz1 = amos_besh(z, fnu, kode, 1, n, cy, ierr);
+    nz1 = besh(z, fnu, kode, 1, n, cy, ierr);
     if ((*ierr != 0) && (*ierr != 3)) { return 0; }
 
-    nz2 = amos_besh(z, fnu, kode, 2, n, cwrk, ierr);
+    nz2 = besh(z, fnu, kode, 2, n, cwrk, ierr);
     if ((*ierr != 0) && (*ierr != 3)) { return 0; }
 
     nz = (nz1 > nz2 ? nz2 : nz1);
@@ -2526,11 +2530,13 @@ int amos_besy(
         cy[i-1] = st*hci;
         if ((st == 0.0) && (ey == 0.0)) { nz += 1; }
     }
+
+    delete [] cwrk;
     return nz;
 }
 
 
-int amos_binu(
+inline int binu(
     std::complex<double> z,
     double fnu,
     int kode,
@@ -2561,7 +2567,7 @@ int amos_binu(
     dfnu = fnu + n - 1;
     if ((az <= 2.) || (az*az*0.25 <= (dfnu + 1.0))) {
         /* GOTO 10 */
-        nw = amos_seri(z,fnu, kode, n, cy, tol, elim, alim);
+        nw = seri(z,fnu, kode, n, cy, tol, elim, alim);
         inw = abs(nw);
         nz += inw;
         nn -= inw;
@@ -2580,7 +2586,7 @@ int amos_binu(
             //
             // MILLER ALGORITHM NORMALIZED BY THE SERIES
             //
-            nw = amos_mlri(z, fnu, kode, n, cy, tol);
+            nw = mlri(z, fnu, kode, n, cy, tol);
             if (nw < 0) {
                 nz = -1;
                 if (nw == -2) {
@@ -2597,7 +2603,7 @@ int amos_binu(
             //
             // ASYMPTOTIC EXPANSION FOR LARGE Z
             //
-            nw = amos_asyi(z, fnu, kode, n, cy, rl, tol, elim, alim);
+            nw = asyi(z, fnu, kode, n, cy, rl, tol, elim, alim);
             if (nw < 0) {
                 nz = -1;
                 if (nw == -2) {
@@ -2613,7 +2619,7 @@ int amos_binu(
     //
     // OVERFLOW AND UNDERFLOW TEST ON I SEQUENCE FOR MILLER ALGORITHM
     //
-    nw = amos_uoik(z, fnu, kode, 1, nn, cy, tol, elim, alim);
+    nw = uoik(z, fnu, kode, 1, nn, cy, tol, elim, alim);
     if (nw < 0) {
         nz = -1;
         if (nw == -2) { nz = -2; }
@@ -2630,7 +2636,7 @@ int amos_binu(
         //
         nui = (int)(fnul-dfnu) + 1;
         nui = (nui > 0 ? nui : 0);
-        nw = amos_buni(z, fnu, kode, nn, cy, nui, &nlast, fnul, tol, elim, alim);
+        nw = buni(z, fnu, kode, nn, cy, nui, &nlast, fnul, tol, elim, alim);
         if (nw < 0) {
             nz = -1;
             if (nw == -2) { nz = -2; }
@@ -2643,7 +2649,7 @@ int amos_binu(
     /* 60 */
     if (az <= rl) {
         /* 70 */
-        nw = amos_mlri(z, fnu, kode, n, cy, tol);
+        nw = mlri(z, fnu, kode, n, cy, tol);
         if (nw < 0) {
             nz = -1;
             if (nw == -2) { nz = -2; }
@@ -2658,7 +2664,7 @@ int amos_binu(
     //
     // OVERFLOW TEST ON K FUNCTIONS USED IN WRONSKIAN
     //
-    nw = amos_uoik(z, fnu, kode, 2, 2, cw, tol, elim, alim);
+    nw = uoik(z, fnu, kode, 2, 2, cw, tol, elim, alim);
     if (nw < 0) {
         nz = nn;
         /* 90 */
@@ -2669,7 +2675,7 @@ int amos_binu(
     if (nw > 0) {
         return -1;
     }
-    nw = amos_wrsk(z, fnu, kode, nn, cy, cw, tol, elim, alim);
+    nw = wrsk(z, fnu, kode, nn, cy, cw, tol, elim, alim);
     if (nw < 0) {
         nz = -1;
         if (nw == -2) {
@@ -2681,7 +2687,7 @@ int amos_binu(
 }
 
 
-std::complex<double> amos_biry(
+inline std::complex<double> biry(
     std::complex<double> z,
     int id,
     int kode,
@@ -2968,7 +2974,7 @@ std::complex<double> amos_biry(
     // AA=FACTOR FOR ANALYTIC CONTINUATION OF I(FNU,ZTA)
     // KODE=2 RETURNS EXP(-ABS(XZTA))*I(FNU,ZTA) FROM CBINU
     //
-    nz = amos_binu(zta, fnu, kode, 1, cy, rl, fnul, tol, elim, alim);
+    nz = binu(zta, fnu, kode, 1, cy, rl, fnul, tol, elim, alim);
     if (nz < 0) {
         if (nz == -1) {
             *ierr = 2;
@@ -2981,7 +2987,7 @@ std::complex<double> amos_biry(
     z3 = sfac;
     s1 = cy[0] * std::complex<double>(cos(aa), sin(aa)) * z3;
     fnu = (2.0 - fid) / 3.0;
-    nz = amos_binu(zta, fnu, kode, 2, cy, rl, fnul, tol, elim, alim);
+    nz = binu(zta, fnu, kode, 2, cy, rl, fnul, tol, elim, alim);
     cy[0] *= z3;
     cy[1] *= z3;
     //
@@ -3002,7 +3008,7 @@ std::complex<double> amos_biry(
 }
 
 
-int amos_bknu(
+inline int bknu(
     std::complex<double> z,
     double fnu,
     int kode,
@@ -3083,7 +3089,7 @@ int amos_bknu(
             //
             // GAM(1-Z)*GAM(1+Z)=PI*Z/SIN(PI*Z), T1=1/GAM(1-DNU), T2=1/GAM(1+DNU)
             //
-            t2 = exp(-amos_gamln(a2));
+            t2 = exp(-gamln(a2));
             t1 = 1. / (t2*fc);
             if (fabs(dnu) <= 0.1) {
                 //
@@ -3419,7 +3425,7 @@ L160:
             p2i = std::imag(p2);
             p2m = exp(p2r) / tol;
             p1 = p2m * std::complex<double>(cos(p2i), sin(p2i));
-            if (!(amos_uchk(p1, ascle, tol))) {
+            if (!(uchk(p1, ascle, tol))) {
                 j = 3 - j;
                 cy[j-1] = p1;
                 if (ic == i-1) { goto L180; }
@@ -3449,7 +3455,7 @@ L190:
     y[0] = s1;
     if (n != 1) { y[1] = s2; }
     ascle = bry[0];
-    nz = amos_kscl(zd, fnu, n, &y[0], rz, &ascle, tol, elim);
+    nz = kscl(zd, fnu, n, &y[0], rz, &ascle, tol, elim);
     inu = n - nz;
     if (inu <= 0) { return nz; }
     kk = nz + 1;
@@ -3467,7 +3473,7 @@ L190:
 }
 
 
-int amos_buni(
+inline int buni(
     std::complex<double> z,
     double fnu,
     int kode,
@@ -3508,9 +3514,9 @@ int amos_buni(
     if (ay > ax) { iform = 2; }
     if (nui == 0) {
         if (iform != 2) {
-            amos_uni1(z, fnu, kode, n, y, &nw, nlast, fnul, tol, elim, alim);
+            uni1(z, fnu, kode, n, y, &nw, nlast, fnul, tol, elim, alim);
         } else {
-            amos_uni2(z, fnu, kode, n, y, &nw, nlast, fnul, tol, elim, alim);
+            uni2(z, fnu, kode, n, y, &nw, nlast, fnul, tol, elim, alim);
         }
         if (nw < 0) {
             nz = -1;
@@ -3528,9 +3534,9 @@ int amos_buni(
         // ASYMPTOTIC EXPANSION FOR I(FNU,Z) FOR LARGE FNU APPLIED IN
         // -PI/3 <= ARG(Z) <= PI/3
         //
-        amos_uni1(z, gnu, kode, 2, cy, &nw, nlast, fnul, tol, elim, alim);
+        uni1(z, gnu, kode, 2, cy, &nw, nlast, fnul, tol, elim, alim);
     } else {
-        amos_uni2(z, gnu, kode, 2, cy, &nw, nlast, fnul, tol, elim, alim);
+        uni2(z, gnu, kode, 2, cy, &nw, nlast, fnul, tol, elim, alim);
     }
     if (nw >= 0) {
         if (nw != 0) { *nlast = n; return nz; }
@@ -3630,7 +3636,7 @@ int amos_buni(
 }
 
 
-int amos_bunk(
+inline int bunk(
     std::complex<double> z,
     double fnu,
     int kode,
@@ -3663,19 +3669,19 @@ int amos_bunk(
         // Asymptotic expansion for K(FNU,Z) for large FNU applied in
         // -PI/3 <= ARG(Z) <= PI/3
         //
-        nz = amos_unk1(z, fnu, kode, mr, n, y, tol, elim, alim);
+        nz = unk1(z, fnu, kode, mr, n, y, tol, elim, alim);
     } else {
         //
         // Asymptotic expansion for H(2, FNU, Z*EXP(M*HPI)) for large FNU
         // applied in PI/3 < ABS(ARG(Z)) <= PI/2 where M = +I or -I and HPI = PI/2
         //
-        nz = amos_unk2(z, fnu, kode, mr, n, y, tol, elim, alim);
+        nz = unk2(z, fnu, kode, mr, n, y, tol, elim, alim);
     }
     return nz;
 }
 
 
-double amos_gamln(double z) {
+inline double gamln(double z) {
 
     //***BEGIN PROLOGUE  DGAMLN
     //***DATE WRITTEN   830501   (YYMMDD)
@@ -3775,7 +3781,7 @@ double amos_gamln(double z) {
 }
 
 
-int amos_mlri(
+inline int mlri(
     std::complex<double> z,
     double fnu,
     int kode,
@@ -3882,7 +3888,7 @@ int amos_mlri(
     p2 = scle;
     fnf = fnu - ifnu;
     tfnf = fnf + fnf;
-    bk = amos_gamln(fkk + tfnf + 1.0) - amos_gamln(fkk + 1.0) - amos_gamln(tfnf + 1.0);
+    bk = gamln(fkk + tfnf + 1.0) - gamln(fkk + 1.0) - gamln(tfnf + 1.0);
     bk = exp(bk);
     sum = 0.;
     km = kk - inu;
@@ -3929,7 +3935,7 @@ int amos_mlri(
     pt = z;
     if (kode == 2) { pt -= x; }
     p1 = -fnf * std::log(rz) + pt;
-    ap = amos_gamln(1. + fnf);
+    ap = gamln(1. + fnf);
     pt = p1 - ap;
     //
     // THE DIVISION EXP(PT)/(SUM+P2) IS ALTERED TO AVOID OVERFLOW
@@ -3946,7 +3952,7 @@ int amos_mlri(
 }
 
 
-int amos_kscl(
+inline int kscl(
     std::complex<double> zr,
     double fnu,
     int n,
@@ -3991,7 +3997,7 @@ int amos_kscl(
         }
         cs = -zr + std::log(s1);
         cs = (exp(std::real(cs))/tol)*(cos(std::imag(cs)) + sin(std::imag(cs)*std::complex<double>(0, 1)));
-        if (!amos_uchk(cs, *ascle, tol)) {
+        if (!uchk(cs, *ascle, tol)) {
             y[i-1] = cs;
             nz -= 1;
             ic = i;
@@ -4034,7 +4040,7 @@ int amos_kscl(
             cs = std::log(s2);
             cs -= zd;
             cs = (exp(std::real(cs))/tol)*std::complex<double>(cos(std::imag(cs)), sin(std::imag(cs)));
-            if (!amos_uchk(cs, *ascle, tol)) {
+            if (!uchk(cs, *ascle, tol)) {
                 y[i-1] = cs;
                 nz -= 1;
                 if (ic == kk-1) {
@@ -4063,7 +4069,7 @@ int amos_kscl(
 }
 
 
-void amos_rati(
+inline void rati(
     std::complex<double> z,
     double fnu,
     int n,
@@ -4178,7 +4184,7 @@ void amos_rati(
 }
 
 
-int amos_seri(
+inline int seri(
     std::complex<double> z,
     double fnu,
     int kode,
@@ -4236,7 +4242,7 @@ L10:
         // UNDERFLOW TEST
         //
         ak1 = ck * dfnu;
-        ak = amos_gamln(fnup);
+        ak = gamln(fnup);
         ak1 -= ak;
         if (kode == 2) { ak1 -= x; }
         rak1 = std::real(ak1);
@@ -4290,7 +4296,7 @@ L30:
             s2 = s1 * coef;
             w[i-1] = s2;
             if (iflag != 0) {
-                if (amos_uchk(s2, ascle, tol)) { goto L20; }
+                if (uchk(s2, ascle, tol)) { goto L20; }
             }
             m = nn - i + 1;
             y[m-1] = s2 * crsc;
@@ -4348,7 +4354,7 @@ L100:
 }
 
 
-int amos_s1s2(
+inline int s1s2(
     std::complex<double> zr,
     std::complex<double> *s1,
     std::complex<double> *s2,
@@ -4405,7 +4411,7 @@ int amos_s1s2(
 }
 
 
-int amos_uchk(
+inline int uchk(
     std::complex<double> y,
     double ascle,
     double tol
@@ -4442,7 +4448,7 @@ int amos_uchk(
 }
 
 
-void amos_unhj(
+inline void unhj(
     std::complex<double> z,
     double fnu,
     int ipmtr,
@@ -4747,7 +4753,7 @@ void amos_unhj(
 }
 
 
-void amos_uni1(
+inline void uni1(
     std::complex<double> z,
     double fnu,
     int kode,
@@ -4801,7 +4807,7 @@ void amos_uni1(
     //
     fn = fmax(fnu, 1.0);
     init = 0;
-    amos_unik(z, fn, 1, 1, tol, &init, &phi, &zeta1, &zeta2, &sum, &cwrk[0]);
+    unik(z, fn, 1, 1, tol, &init, &phi, &zeta1, &zeta2, &sum, &cwrk[0]);
     if (kode != 1) {
         s1 = -zeta1 + fn*(fn / (z + zeta2));
     } else {
@@ -4823,7 +4829,7 @@ L30:
     {
         fn = fnu + nd - i;
         init = 0;
-        amos_unik(z, fn, 1, 0, tol, &init, &phi, &zeta1, &zeta2, &sum, &cwrk[0]);
+        unik(z, fn, 1, 0, tol, &init, &phi, &zeta1, &zeta2, &sum, &cwrk[0]);
         if (kode != 1) {
             s1 = -zeta1 + fn*(fn / (z + zeta2)) + std::complex<double>(0.0, std::imag(z));
         } else {
@@ -4852,7 +4858,7 @@ L30:
         s2 = phi*sum;
         s1 = exp(std::real(s1))*css[iflag-1]*std::complex<double>(cos(std::imag(s1)), sin(std::imag(s1)));
         s2 *= s1;
-        if (iflag == 1) { if (amos_uchk(s2, bry[0], tol)) { goto L110; } }
+        if (iflag == 1) { if (uchk(s2, bry[0], tol)) { goto L110; } }
     /* 70 */
         cy[i-1] = s2;
         m = nd - i + 1;
@@ -4896,7 +4902,7 @@ L110:
     *nz += 1;
     nd -= 1;
     if (nd == 0) { return; }
-    nuf = amos_uoik(z, fnu, kode, 1, nd, y, tol, elim, alim);
+    nuf = uoik(z, fnu, kode, 1, nd, y, tol, elim, alim);
     if (nuf < 0) { *nz = -1; return; }
     nd -= nuf;
     *nz += nuf;
@@ -4908,7 +4914,7 @@ L110:
 }
 
 
-void amos_uni2(
+inline void uni2(
     std::complex<double> z,
     double fnu,
     int kode,
@@ -4984,7 +4990,7 @@ void amos_uni2(
     // CHECK FOR UNDERFLOW AND OVERFLOW ON FIRST MEMBER
     //
     fn = fmax(fnu, 1.0);
-    amos_unhj(zn, fn, 0, tol, &phi, &arg, &zeta1, &zeta2, &asum, &bsum);
+    unhj(zn, fn, 0, tol, &phi, &arg, &zeta1, &zeta2, &asum, &bsum);
     if (kode != 1) {
         cfn = fnu;
         s1 = -zeta1 + cfn*(cfn/(zb + zeta2));
@@ -5008,7 +5014,7 @@ L10:
     for (i = 1; i < (nn+1); i++)
     {
         fn = fnu + (nd-i);
-        amos_unhj(zn, fn, 0, tol, &phi, &arg, &zeta1, &zeta2, &asum, &bsum);
+        unhj(zn, fn, 0, tol, &phi, &arg, &zeta1, &zeta2, &asum, &bsum);
         if (kode != 1) {
             cfn = fn;
             ay = fabs(yy);
@@ -5037,14 +5043,14 @@ L10:
         // SCALE S1 TO KEEP INTERMEDIATE ARITHMETIC ON SCALE NEAR
         // EXPONENT EXTREMES
         //
-        ai = amos_airy(arg, 0, 2, &nai, &idum);
-        dai = amos_airy(arg, 1, 2, &ndai, &idum);
+        ai = airy(arg, 0, 2, &nai, &idum);
+        dai = airy(arg, 1, 2, &ndai, &idum);
         s2 = phi * (ai*asum + dai*bsum);
         c2r = std::exp(std::real(s1))*std::real(css[iflag-1]);
         c2i = std::imag(s1);
         s1 = c2r*std::complex<double>(cos(c2i), sin(c2i));
         s2 *= s1;
-        if (iflag == 1) { if (amos_uchk(s2, bry[0], tol)) { goto L50; } }
+        if (iflag == 1) { if (uchk(s2, bry[0], tol)) { goto L50; } }
         if (yy <= 0.0) { s2 = conj(s2); }
         j = nd - i + 1;
         s2 *= c2;
@@ -5096,7 +5102,7 @@ L50:
         nz += 1;
         nd -= 1;
         if (nd == 0) { return; }
-        nuf = amos_uoik(z, fnu, kode, 1, nd, y, tol, elim, alim);
+        nuf = uoik(z, fnu, kode, 1, nd, y, tol, elim, alim);
         if (nuf >= 0) {
             nd -= nuf;
             nz += nuf;
@@ -5127,7 +5133,7 @@ L50:
 }
 
 
-void amos_unik(
+inline void unik(
     std::complex<double> zr,
     double fnu,
     int ikflg,
@@ -5245,7 +5251,7 @@ void amos_unik(
 }
 
 
-int amos_unk1(
+inline int unk1(
     std::complex<double> z,
     double fnu,
     int kode,
@@ -5303,7 +5309,7 @@ int amos_unk1(
         jc = j - 1; /* dummy index for 0-indexing */
         fn = fnu + (i - 1);
         init[jc] = 0;
-        amos_unik(zr, fn, 2, 0, tol, &init[jc], &phi[jc], &zeta1[jc], &zeta2[jc], &sum[jc], &cwrk[jc][0]);
+        unik(zr, fn, 2, 0, tol, &init[jc], &phi[jc], &zeta1[jc], &zeta2[jc], &sum[jc], &cwrk[jc][0]);
         if (kode != 1) {
             cfn = fn;
             s1 = zeta1[jc] - cfn*(cfn / (zr + zeta2[jc]));
@@ -5337,7 +5343,7 @@ int amos_unk1(
             c2m = exp(c2r)*std::real(css[kflag-1]);
             s1 = c2m * std::complex<double>(cos(c2i), sin(c2i));
             s2 *= s1;
-            if (!((kflag == 1) && (amos_uchk(s2, bry[0], tol)))) {
+            if (!((kflag == 1) && (uchk(s2, bry[0], tol)))) {
                 cy[kdflg-1] = s2;
                 y[i-1] = s2*csr[kflag-1];
                 if (kdflg == 2) { break; }
@@ -5373,7 +5379,7 @@ L10:
         ipard = 1;
         if (mr != 0) { ipard = 0; }
         initd = 0;
-        amos_unik(zr, fn, 2, ipard, tol, &initd, &phid, &zeta1d, &zeta2d, &sumd, &cwrk[2][0]);
+        unik(zr, fn, 2, ipard, tol, &initd, &phid, &zeta1d, &zeta2d, &sumd, &cwrk[2][0]);
         if (kode != 1) {
             cfn = fn;
             s1 = zeta1d - cfn*(cfn / (zr + zeta2d));
@@ -5476,7 +5482,7 @@ L80:
             initd = 0;
         }
 L90:
-        amos_unik(zr, fn, 1, 0, tol, &initd, &phid, &zeta1d, &zeta2d, &sumd, &cwrk[m-1][0]);
+        unik(zr, fn, 1, 0, tol, &initd, &phid, &zeta1d, &zeta2d, &sumd, &cwrk[m-1][0]);
         if (kode != 1) {
             cfn = fn;
             s1 = -zeta1d + cfn * (cfn/(zr + zeta2d));
@@ -5506,7 +5512,7 @@ L90:
         c2m = exp(c2r) * std::real(css[iflag-1]);
         s1 = c2m * std::complex<double>(cos(c2i), sin(c2i));
         s2 *= s1;
-        if (iflag == 1) { if (amos_uchk(s2, bry[0], tol)) { s2 = 0.0; } }
+        if (iflag == 1) { if (uchk(s2, bry[0], tol)) { s2 = 0.0; } }
 L100:
         cy[kdflg -1] = s2;
         c2 = s2;
@@ -5516,7 +5522,7 @@ L100:
         //
         s1 = y[kk-1];
         if (kode != 1) {
-            nw = amos_s1s2(zr, &s1, &s2, asc, alim, &iuf);
+            nw = s1s2(zr, &s1, &s2, asc, alim, &iuf);
             nz += nw;
         }
         y[kk-1] = s1*cspn + s2;
@@ -5554,7 +5560,7 @@ L130:
         ck = c2;
         c1 = y[kk-1];
         if (kode != 1) {
-            nw = amos_s1s2(zr, &c1, &c2, asc, alim, &iuf);
+            nw = s1s2(zr, &c1, &c2, asc, alim, &iuf);
             nz = nz + nw;
         }
         y[kk-1] = c1 * cspn + c2;
@@ -5577,7 +5583,7 @@ L130:
 }
 
 
-int amos_unk2(
+inline int unk2(
     std::complex<double> z,
     double fnu,
     int kode,
@@ -5668,7 +5674,7 @@ int amos_unk2(
     {
         j = 3 - j;
         fn = fnu + (i-1);
-        amos_unhj(zn, fn, 0, tol, &phi[j-1], &arg[j-1], &zeta1[j-1], &zeta2[j-1], &asum[j-1], &bsum[j-1]);
+        unhj(zn, fn, 0, tol, &phi[j-1], &arg[j-1], &zeta1[j-1], &zeta2[j-1], &asum[j-1], &bsum[j-1]);
         if (kode != 1) {
             cfn = fn;
             s1 = zeta1[j-1] - cfn*(cfn/(zb + zeta2[j-1]));
@@ -5708,8 +5714,8 @@ int amos_unk2(
             // EXPONENT EXTREMES
             //
             c2 = arg[j-1] * cr2;
-            ai = amos_airy(c2, 0, 2, &nai, &idum);
-            dai = amos_airy(c2, 1, 2, &ndai, &idum);
+            ai = airy(c2, 0, 2, &nai, &idum);
+            dai = airy(c2, 1, 2, &ndai, &idum);
             s2 = cs * phi[j-1] * (ai*asum[j-1] + cr2*dai*bsum[j-1]);
             c2r = std::real(s1);
             c2i = std::imag(s1);
@@ -5717,7 +5723,7 @@ int amos_unk2(
             s1 = c2m * std::complex<double>(cos(c2i), sin(c2i));
             s2 *= s1;
             if (kflag == 1) {
-                if (amos_uchk(s2, bry[0], tol)) {
+                if (uchk(s2, bry[0], tol)) {
                     /* GO TO 70 */
                     if (rs1 > 0.0) { return -1; }
                     /* FOR X < 0.0, THE I FUNCTION TO BE ADDED WILL OVERFLOW */
@@ -5738,6 +5744,16 @@ int amos_unk2(
             kdflg = 2;
             continue;
         }
+        /* GO TO 70 */
+        if (rs1 > 0.0) { return -1; }
+        /* FOR X < 0.0, THE I FUNCTION TO BE ADDED WILL OVERFLOW */
+        if (x < 0.0) { return -1; }
+        kdflg = 1;
+        y[i-1] = 0.0;
+        cs *= -std::complex<double>(0, 1);
+        nz += 1;
+        if (i != 1) { if (y[i-2] != 0.0) { y[i-2] = 0.0;nz += 1; } }
+        continue;
     }
     /* Check for exhausted loop */
     if (i == n+1) { i = n; }
@@ -5749,7 +5765,7 @@ int amos_unk2(
         fn = fnu + (n - 1);
         ipard = 1;
         if (mr != 0) { ipard = 0; }
-        amos_unhj(zn, fn, ipard, tol, &phid, &argd, &zeta1d, &zeta2d, &asumd, &bsumd);
+        unhj(zn, fn, ipard, tol, &phid, &argd, &zeta1d, &zeta2d, &asumd, &bsumd);
         if (kode != 1) {
             cfn = fn;
             s1 = zeta1d - cfn * (cfn / (zb + zeta2d));
@@ -5852,7 +5868,7 @@ L172:
 L175:
         if (!((kk == n) && (ib < n))) {
             if ((kk == ib) || (kk == ic)) { goto L172; }
-            amos_unhj(zn, fn, 0, tol, &phid, &argd, &zeta1d, &zeta2d, &asumd, &bsumd);
+            unhj(zn, fn, 0, tol, &phid, &argd, &zeta1d, &zeta2d, &asumd, &bsumd);
         }
 L210:
         if (kode != 1) {
@@ -5887,15 +5903,15 @@ L210:
             if (rs1 >= 0.0) { if (kdflg == 1) {iflag = 3;} }
         }
 
-        ai = amos_airy(argd, 0, 2, &nai, &idum);
-        dai = amos_airy(argd, 1, 2, &ndai, &idum);
+        ai = airy(argd, 0, 2, &nai, &idum);
+        dai = airy(argd, 1, 2, &ndai, &idum);
         s2 = cs * phid * (ai*asumd + dai*bsumd);
         c2r = std::real(s1);
         c2i = std::imag(s1);
         c2m = exp(c2r) * std::real(css[iflag-1]);
         s1 = c2m * std::complex<double>(cos(c2i), sin(c2i));
         s2 *= s1;
-        if (iflag == 1) { if (amos_uchk(s2, bry[0], tol)) { s2 = 0.0; } }
+        if (iflag == 1) { if (uchk(s2, bry[0], tol)) { s2 = 0.0; } }
 L250:
         if (yy <= 0.0) { s2 = conj(s2); }
         cy[kdflg-1] = s2;
@@ -5906,7 +5922,7 @@ L250:
         //
         s1 = y[kk-1];
         if (kode != 1) {
-            nw = amos_s1s2(zr, &s1, &s2, asc, alim, &iuf);
+            nw = s1s2(zr, &s1, &s2, asc, alim, &iuf);
             nz += nw;
         }
         y[kk-1] = s1 * cspn + s2;
@@ -5945,7 +5961,7 @@ L250:
         ck = c2;
         c1 = y[kk-1];
         if (kode != 1) {
-            nw = amos_s1s2(zr, &c1, &c2, asc, alim, &iuf);
+            nw = s1s2(zr, &c1, &c2, asc, alim, &iuf);
             nz = nz + nw;
         }
         y[kk-1] = c1 * cspn + c2;
@@ -5968,7 +5984,7 @@ L250:
 }
 
 
-int amos_uoik(
+inline int uoik(
     std::complex<double> z,
     double fnu,
     int kode,
@@ -6033,14 +6049,14 @@ int amos_uoik(
 
     if (iform != 2) {
         init = 0;
-        amos_unik(zr, gnu, ikflg, 1, tol, &init, &phi, &zeta1, &zeta2, &sum, &cwrk[0]);
+        unik(zr, gnu, ikflg, 1, tol, &init, &phi, &zeta1, &zeta2, &sum, &cwrk[0]);
         cz = -zeta1 + zeta2;
     } else {
         zn = -zr * std::complex<double>(0, 1);
         if (yy <= 0.) {
             zn = conj(zn);
         }
-        amos_unhj(zn, gnu, 1, tol, &phi, &arg, &zeta1, &zeta2, &asum, &bsum);
+        unhj(zn, gnu, 1, tol, &phi, &arg, &zeta1, &zeta2, &asum, &bsum);
         cz = zeta2 - zeta1;
         aarg = std::abs(arg);
     }
@@ -6071,7 +6087,7 @@ int amos_uoik(
                     ax = exp(rcz) / tol;
                     ay = std::imag(cz);
                     cz = ax*std::exp(ay);
-                    if (amos_uchk(cz, ascle, tol)) {
+                    if (uchk(cz, ascle, tol)) {
                         for (int i = 0; i < nn; i++){ y[i] = 0.; }
                         return nn;
                     }
@@ -6091,10 +6107,10 @@ int amos_uoik(
         gnu = fnu + (nn -1);
         if (iform != 2) {
             init = 0;
-            amos_unik(zr, gnu, ikflg, 1, tol, &init, &phi, &zeta1, &zeta2, &sum, &cwrk[0]);
+            unik(zr, gnu, ikflg, 1, tol, &init, &phi, &zeta1, &zeta2, &sum, &cwrk[0]);
             cz = zeta2 - zeta1;
         } else {
-            amos_unhj(zn, gnu, 1, tol, &phi, &arg, &zeta1, &zeta2, &asum, &bsum);
+            unhj(zn, gnu, 1, tol, &phi, &arg, &zeta1, &zeta2, &asum, &bsum);
             cz = zeta2 - zeta1;
             aarg = std::abs(phi);
         }
@@ -6115,7 +6131,7 @@ int amos_uoik(
                 ax = exp(rcz)/tol;
                 ay = std::imag(cz);
                 cz = ax*(cos(ay)+sin(ay*std::complex<double>(0, 1)));
-                if (!(amos_uchk(cz, ascle, tol))) { return nuf; }
+                if (!(uchk(cz, ascle, tol))) { return nuf; }
             }
         }
 
@@ -6128,7 +6144,7 @@ int amos_uoik(
 }
 
 
-int amos_wrsk(
+inline int wrsk(
     std::complex<double> zr,
     double fnu,
     int kode,
@@ -6159,7 +6175,7 @@ int amos_wrsk(
     // WRONSKIAN WITH K(FNU,Z) AND K(FNU+1,Z) FROM CBKNU.
     //
     nz = 0;
-    nw = amos_bknu(zr, fnu, kode, 2, cw, tol, elim, alim);
+    nw = bknu(zr, fnu, kode, 2, cw, tol, elim, alim);
     if (nw != 0) {
         /* 50 */
         nz = -1;
@@ -6168,7 +6184,7 @@ int amos_wrsk(
         }
         return nz;
     }
-    amos_rati(zr, fnu, n, y, tol);
+    rati(zr, fnu, n, y, tol);
     //
     // RECUR FORWARD ON I(FNU+1,Z) = R(FNU,Z)*I(FNU,Z),
     // R(FNU+J-1,Z)=Y(J),  J=1,...,N
@@ -6217,4 +6233,6 @@ int amos_wrsk(
         y[i-1] = cinu*cscl;
     }
     return nz;
+}
+}
 }

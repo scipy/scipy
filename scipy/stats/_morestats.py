@@ -5,22 +5,24 @@ from collections import namedtuple
 
 import numpy as np
 from numpy import (isscalar, r_, log, around, unique, asarray, zeros,
-                   arange, sort, amin, amax, sqrt, array, atleast_1d,  # noqa: F401
-                   compress, pi, exp, ravel, count_nonzero, sin, cos,  # noqa: F401
-                   arctan2, hypot)
+                   arange, sort, amin, amax, sqrt, array,
+                   pi, exp, ravel, count_nonzero)
 
 from scipy import optimize, special, interpolate, stats
 from scipy._lib._bunch import _make_tuple_bunch
 from scipy._lib._util import _rename_parameter, _contains_nan, _get_nan
+from scipy._lib._array_api import (array_namespace, xp_minimum, size as xp_size,
+                                   xp_moveaxis_to_end)
 
 from ._ansari_swilk_statistics import gscale, swilk
 from . import _stats_py, _wilcoxon
 from ._fit import FitResult
-from ._stats_py import find_repeats, _get_pvalue, SignificanceResult  # noqa: F401
+from ._stats_py import (find_repeats, _get_pvalue, SignificanceResult,  # noqa:F401
+                        _SimpleNormal, _SimpleChi2)
 from .contingency import chi2_contingency
 from . import distributions
 from ._distn_infrastructure import rv_generic
-from ._axis_nan_policy import _axis_nan_policy_factory
+from ._axis_nan_policy import _axis_nan_policy_factory, _broadcast_arrays
 
 
 __all__ = ['mvsdist',
@@ -61,8 +63,8 @@ def bayes_mvs(data, alpha=0.90):
 
             (center, (lower, upper))
 
-        with `center` the mean of the conditional pdf of the value given the
-        data, and `(lower, upper)` a confidence interval, centered on the
+        with ``center`` the mean of the conditional pdf of the value given the
+        data, and ``(lower, upper)`` a confidence interval, centered on the
         median, containing the estimate to a probability ``alpha``.
 
     See Also
@@ -98,7 +100,7 @@ def bayes_mvs(data, alpha=0.90):
     >>> mean
     Mean(statistic=9.0, minmax=(7.103650222612533, 10.896349777387467))
     >>> var
-    Variance(statistic=10.0, minmax=(3.176724206..., 24.45910382...))
+    Variance(statistic=10.0, minmax=(3.176724206, 24.45910382))
     >>> std
     Std_dev(statistic=2.9724954732045084,
             minmax=(1.7823367265645143, 4.945614605014631))
@@ -130,8 +132,7 @@ def bayes_mvs(data, alpha=0.90):
     """
     m, v, s = mvsdist(data)
     if alpha >= 1 or alpha <= 0:
-        raise ValueError("0 < alpha < 1 is required, but alpha=%s was given."
-                         % alpha)
+        raise ValueError(f"0 < alpha < 1 is required, but {alpha=} was given.")
 
     m_res = Mean(m.mean(), m.interval(alpha))
     v_res = Variance(v.mean(), v.interval(alpha))
@@ -218,24 +219,29 @@ def mvsdist(data):
 @_axis_nan_policy_factory(
     lambda x: x, result_to_tuple=lambda x: (x,), n_outputs=1, default_axis=None
 )
-def kstat(data, n=2):
+def kstat(data, n=2, *, axis=None):
     r"""
-    Return the nth k-statistic (1<=n<=4 so far).
+    Return the `n` th k-statistic ( ``1<=n<=4`` so far).
 
-    The nth k-statistic k_n is the unique symmetric unbiased estimator of the
-    nth cumulant kappa_n.
+    The `n` th k-statistic ``k_n`` is the unique symmetric unbiased estimator of the
+    `n` th cumulant :math:`\kappa_n` [1]_ [2]_.
 
     Parameters
     ----------
     data : array_like
-        Input array. Note that n-D input gets flattened.
+        Input array.
     n : int, {1, 2, 3, 4}, optional
         Default is equal to 2.
+    axis : int or None, default: None
+        If an int, the axis of the input along which to compute the statistic.
+        The statistic of each axis-slice (e.g. row) of the input will appear
+        in a corresponding element of the output. If ``None``, the input will
+        be raveled before computing the statistic.
 
     Returns
     -------
     kstat : float
-        The nth k-statistic.
+        The `n` th k-statistic.
 
     See Also
     --------
@@ -244,23 +250,29 @@ def kstat(data, n=2):
 
     Notes
     -----
-    For a sample size n, the first few k-statistics are given by:
+    For a sample size :math:`n`, the first few k-statistics are given by
 
     .. math::
 
-        k_{1} = \mu
-        k_{2} = \frac{n}{n-1} m_{2}
-        k_{3} = \frac{ n^{2} } {(n-1) (n-2)} m_{3}
-        k_{4} = \frac{ n^{2} [(n + 1)m_{4} - 3(n - 1) m^2_{2}]} {(n-1) (n-2) (n-3)}
+        k_1 &= \frac{S_1}{n}, \\
+        k_2 &= \frac{nS_2 - S_1^2}{n(n-1)}, \\
+        k_3 &= \frac{2S_1^3 - 3nS_1S_2 + n^2S_3}{n(n-1)(n-2)}, \\
+        k_4 &= \frac{-6S_1^4 + 12nS_1^2S_2 - 3n(n-1)S_2^2 - 4n(n+1)S_1S_3
+        + n^2(n+1)S_4}{n (n-1)(n-2)(n-3)},
 
-    where :math:`\mu` is the sample mean, :math:`m_2` is the sample
-    variance, and :math:`m_i` is the i-th sample central moment.
+    where
+
+    .. math::
+
+        S_r \equiv \sum_{i=1}^n X_i^r,
+
+    and :math:`X_i` is the :math:`i` th data point.
 
     References
     ----------
-    http://mathworld.wolfram.com/k-Statistic.html
+    .. [1] http://mathworld.wolfram.com/k-Statistic.html
 
-    http://mathworld.wolfram.com/Cumulant.html
+    .. [2] http://mathworld.wolfram.com/Cumulant.html
 
     Examples
     --------
@@ -268,38 +280,33 @@ def kstat(data, n=2):
     >>> from numpy.random import default_rng
     >>> rng = default_rng()
 
-    As sample size increases, n-th moment and n-th k-statistic converge to the
+    As sample size increases, `n`-th moment and `n`-th k-statistic converge to the
     same number (although they aren't identical). In the case of the normal
     distribution, they converge to zero.
 
-    >>> for n in [2, 3, 4, 5, 6, 7]:
-    ...     x = rng.normal(size=10**n)
+    >>> for i in range(2,8):
+    ...     x = rng.normal(size=10**i)
     ...     m, k = stats.moment(x, 3), stats.kstat(x, 3)
-    ...     print("%.3g %.3g %.3g" % (m, k, m-k))
-    -0.631 -0.651 0.0194  # random
-    0.0282 0.0283 -8.49e-05
-    -0.0454 -0.0454 1.36e-05
-    7.53e-05 7.53e-05 -2.26e-09
-    0.00166 0.00166 -4.99e-09
-    -2.88e-06 -2.88e-06 8.63e-13
+    ...     print(f"{i=}: {m=:.3g}, {k=:.3g}, {(m-k)=:.3g}")
+    i=2: m=-0.631, k=-0.651, (m-k)=0.0194  # random
+    i=3: m=0.0282, k=0.0283, (m-k)=-8.49e-05
+    i=4: m=-0.0454, k=-0.0454, (m-k)=1.36e-05
+    i=6: m=7.53e-05, k=7.53e-05, (m-k)=-2.26e-09
+    i=7: m=0.00166, k=0.00166, (m-k)=-4.99e-09
+    i=8: m=-2.88e-06 k=-2.88e-06, (m-k)=8.63e-13
     """
+    xp = array_namespace(data)
+    data = xp.asarray(data)
     if n > 4 or n < 1:
         raise ValueError("k-statistics only supported for 1<=n<=4")
     n = int(n)
-    S = np.zeros(n + 1, np.float64)
-    data = ravel(data)
-    N = data.size
+    if axis is None:
+        data = xp.reshape(data, (-1,))
+        axis = 0
 
-    # raise ValueError on empty input
-    if N == 0:
-        raise ValueError("Data input must not be empty")
+    N = data.shape[axis]
 
-    # on nan input, return nan without warning
-    if np.isnan(np.sum(data)):
-        return np.nan
-
-    for k in range(1, n + 1):
-        S[k] = np.sum(data**k, axis=0)
+    S = [None] + [xp.sum(data**k, axis=axis) for k in range(1, n + 1)]
     if n == 1:
         return S[1] * 1.0/N
     elif n == 2:
@@ -317,22 +324,27 @@ def kstat(data, n=2):
 @_axis_nan_policy_factory(
     lambda x: x, result_to_tuple=lambda x: (x,), n_outputs=1, default_axis=None
 )
-def kstatvar(data, n=2):
+def kstatvar(data, n=2, *, axis=None):
     r"""Return an unbiased estimator of the variance of the k-statistic.
 
-    See `kstat` for more details of the k-statistic.
+    See `kstat` and [1]_ for more details about the k-statistic.
 
     Parameters
     ----------
     data : array_like
-        Input array. Note that n-D input gets flattened.
+        Input array.
     n : int, {1, 2}, optional
         Default is equal to 2.
+    axis : int or None, default: None
+        If an int, the axis of the input along which to compute the statistic.
+        The statistic of each axis-slice (e.g. row) of the input will appear
+        in a corresponding element of the output. If ``None``, the input will
+        be raveled before computing the statistic.
 
     Returns
     -------
     kstatvar : float
-        The nth k-statistic variance.
+        The `n` th k-statistic variance.
 
     See Also
     --------
@@ -341,29 +353,30 @@ def kstatvar(data, n=2):
 
     Notes
     -----
-    The variances of the first few k-statistics are given by:
+    Unbiased estimators of the variances of the first two k-statistics are given by
 
     .. math::
 
-        var(k_{1}) = \frac{\kappa^2}{n}
-        var(k_{2}) = \frac{\kappa^4}{n} + \frac{2\kappa^2_{2}}{n - 1}
-        var(k_{3}) = \frac{\kappa^6}{n} + \frac{9 \kappa_2 \kappa_4}{n - 1} +
-                     \frac{9 \kappa^2_{3}}{n - 1} +
-                     \frac{6 n \kappa^3_{2}}{(n-1) (n-2)}
-        var(k_{4}) = \frac{\kappa^8}{n} + \frac{16 \kappa_2 \kappa_6}{n - 1} +
-                     \frac{48 \kappa_{3} \kappa_5}{n - 1} +
-                     \frac{34 \kappa^2_{4}}{n-1} +
-                     \frac{72 n \kappa^2_{2} \kappa_4}{(n - 1) (n - 2)} +
-                     \frac{144 n \kappa_{2} \kappa^2_{3}}{(n - 1) (n - 2)} +
-                     \frac{24 (n + 1) n \kappa^4_{2}}{(n - 1) (n - 2) (n - 3)}
+        \mathrm{var}(k_1) &= \frac{k_2}{n}, \\
+        \mathrm{var}(k_2) &= \frac{2k_2^2n + (n-1)k_4}{n(n - 1)}.
+
+    References
+    ----------
+    .. [1] http://mathworld.wolfram.com/k-Statistic.html
+
     """  # noqa: E501
-    data = ravel(data)
-    N = len(data)
+    xp = array_namespace(data)
+    data = xp.asarray(data)
+    if axis is None:
+        data = xp.reshape(data, (-1,))
+        axis = 0
+    N = data.shape[axis]
+
     if n == 1:
-        return kstat(data, n=2) * 1.0/N
+        return kstat(data, n=2, axis=axis, _no_deco=True) * 1.0/N
     elif n == 2:
-        k2 = kstat(data, n=2)
-        k4 = kstat(data, n=4)
+        k2 = kstat(data, n=2, axis=axis, _no_deco=True)
+        k4 = kstat(data, n=4, axis=axis, _no_deco=True)
         return (2*N*k2**2 + (N-1)*k4) / (N*(N+1))
     else:
         raise ValueError("Only n=1 or n=2 supported.")
@@ -454,7 +467,7 @@ def _parse_dist_kw(dist, enforce_subclass=True):
         try:
             dist = getattr(distributions, dist)
         except AttributeError as e:
-            raise ValueError("%s is not a valid distribution name" % dist) from e
+            raise ValueError(f"{dist} is not a valid distribution name") from e
     elif enforce_subclass:
         msg = ("`dist` should be a stats.distributions instance or a string "
                "with the name of such a distribution.")
@@ -831,7 +844,7 @@ def ppcc_plot(x, a, b, dist='tukeylambda', plot=None, N=80):
         plot.plot(svals, ppcc, 'x')
         _add_axis_labels_title(plot, xlabel='Shape Values',
                                ylabel='Prob Plot Corr. Coef.',
-                               title='(%s) PPCC Plot' % dist)
+                               title=f'({dist}) PPCC Plot')
 
     return svals, ppcc
 
@@ -1247,7 +1260,7 @@ def boxcox_normmax(
     ...     return optimize.minimize_scalar(fun, bounds=(6, 7),
     ...                                     method="bounded", options=options)
     >>> stats.boxcox_normmax(x, optimizer=optimizer)
-    6.000...
+    6.000000000
     """
     x = np.asarray(x)
 
@@ -1323,7 +1336,7 @@ def boxcox_normmax(
                'mle': _mle,
                'all': _all}
     if method not in methods.keys():
-        raise ValueError("Method %s not recognized." % method)
+        raise ValueError(f"Method {method} not recognized.")
 
     optimfunc = methods[method]
 
@@ -1866,7 +1879,7 @@ def shapiro(x):
     Parameters
     ----------
     x : array_like
-        Array of sample data.
+        Array of sample data. Must contain at least three observations.
 
     Returns
     -------
@@ -2820,7 +2833,7 @@ def ansari(x, y, alternative='two-sided'):
     # Large values of AB indicate larger dispersion for the y sample.
     # This is opposite to the way we define the ratio of scales. see [1]_.
     z = (mnAB - AB) / sqrt(varAB)
-    pvalue = _get_pvalue(z, distributions.norm, alternative)
+    pvalue = _get_pvalue(z, _SimpleNormal(), alternative, xp=np)
     return AnsariResult(AB[()], pvalue[()])
 
 
@@ -2828,7 +2841,7 @@ BartlettResult = namedtuple('BartlettResult', ('statistic', 'pvalue'))
 
 
 @_axis_nan_policy_factory(BartlettResult, n_samples=None)
-def bartlett(*samples):
+def bartlett(*samples, axis=0):
     r"""Perform Bartlett's test for equal variances.
 
     Bartlett's test tests the null hypothesis that all input samples
@@ -3038,30 +3051,35 @@ def bartlett(*samples):
     [0.007054444444444413, 0.13073888888888888, 0.008890000000000002]
 
     """
+    xp = array_namespace(*samples)
+
     k = len(samples)
     if k < 2:
         raise ValueError("Must enter at least two input sample vectors.")
 
-    # Handle empty input and input that is not 1d
-    for sample in samples:
-        if np.asanyarray(sample).size == 0:
-            NaN = _get_nan(*samples)  # get NaN of result_dtype of all samples
-            return BartlettResult(NaN, NaN)
+    samples = _broadcast_arrays(samples, axis=axis, xp=xp)
+    samples = [xp_moveaxis_to_end(sample, axis, xp=xp) for sample in samples]
 
-    Ni = np.empty(k)
-    ssq = np.empty(k, 'd')
-    for j in range(k):
-        Ni[j] = len(samples[j])
-        ssq[j] = np.var(samples[j], ddof=1)
-    Ntot = np.sum(Ni, axis=0)
-    spsq = np.sum((Ni - 1)*ssq, axis=0) / (1.0*(Ntot - k))
-    numer = (Ntot*1.0 - k) * log(spsq) - np.sum((Ni - 1.0)*log(ssq), axis=0)
-    denom = 1.0 + 1.0/(3*(k - 1)) * ((np.sum(1.0/(Ni - 1.0), axis=0)) -
-                                     1.0/(Ntot - k))
+    Ni = [xp.asarray(sample.shape[-1], dtype=sample.dtype) for sample in samples]
+    Ni = [xp.broadcast_to(N, samples[0].shape[:-1]) for N in Ni]
+    ssq = [xp.var(sample, correction=1, axis=-1) for sample in samples]
+    Ni = [arr[xp.newaxis, ...] for arr in Ni]
+    ssq = [arr[xp.newaxis, ...] for arr in ssq]
+    Ni = xp.concat(Ni, axis=0)
+    ssq = xp.concat(ssq, axis=0)
+    Ntot = xp.sum(Ni, axis=0)
+    spsq = xp.sum((Ni - 1)*ssq, axis=0) / (Ntot - k)
+    numer = (Ntot - k) * xp.log(spsq) - xp.sum((Ni - 1)*xp.log(ssq), axis=0)
+    denom = 1 + 1/(3*(k - 1)) * ((xp.sum(1/(Ni - 1), axis=0)) - 1/(Ntot - k))
     T = numer / denom
-    pval = distributions.chi2.sf(T, k - 1)  # 1 - cdf
 
-    return BartlettResult(T, pval)
+    chi2 = _SimpleChi2(xp.asarray(k-1))
+    pvalue = _get_pvalue(T, chi2, alternative='greater', symmetric=False, xp=xp)
+
+    T = T[()] if T.ndim == 0 else T
+    pvalue = pvalue[()] if pvalue.ndim == 0 else pvalue
+
+    return BartlettResult(T, pvalue)
 
 
 LeveneResult = namedtuple('LeveneResult', ('statistic', 'pvalue'))
@@ -3631,9 +3649,10 @@ def fligner(*samples, center='median', proportiontocut=0.05):
     Aibar = _apply_func(sample, g, np.sum) / Ni
     anbar = np.mean(sample, axis=0)
     varsq = np.var(sample, axis=0, ddof=1)
-    Xsq = np.sum(Ni * (asarray(Aibar) - anbar)**2.0, axis=0) / varsq
-    pval = distributions.chi2.sf(Xsq, k - 1)  # 1 - cdf
-    return FlignerResult(Xsq, pval)
+    statistic = np.sum(Ni * (asarray(Aibar) - anbar)**2.0, axis=0) / varsq
+    chi2 = _SimpleChi2(k-1)
+    pval = _get_pvalue(statistic, chi2, alternative='greater', symmetric=False, xp=np)
+    return FlignerResult(statistic, pval)
 
 
 @_axis_nan_policy_factory(lambda x1: (x1,), n_samples=4, n_outputs=1)
@@ -3729,7 +3748,8 @@ def mood(x, y, axis=0, alternative="two-sided"):
     Parameters
     ----------
     x, y : array_like
-        Arrays of sample data.
+        Arrays of sample data. There must be at least three observations
+        total.
     axis : int, optional
         The axis along which the samples are tested.  `x` and `y` can be of
         different length along `axis`.
@@ -3852,7 +3872,7 @@ def mood(x, y, axis=0, alternative="two-sided"):
         mnM = n * (N * N - 1.0) / 12
         varM = m * n * (N + 1.0) * (N + 2) * (N - 2) / 180
         z = (M - mnM) / sqrt(varM)
-    pval = _get_pvalue(z, distributions.norm, alternative)
+    pval = _get_pvalue(z, _SimpleNormal(), alternative, xp=np)
 
     if res_shape == ():
         # Return scalars, not 0-D arrays
@@ -4311,11 +4331,9 @@ def median_test(*samples, ties='below', correction=True, lambda_=1,
     # a zero in the table of expected frequencies.
     rowsums = table.sum(axis=1)
     if rowsums[0] == 0:
-        raise ValueError("All values are below the grand median (%r)." %
-                         grand_median)
+        raise ValueError(f"All values are below the grand median ({grand_median}).")
     if rowsums[1] == 0:
-        raise ValueError("All values are above the grand median (%r)." %
-                         grand_median)
+        raise ValueError(f"All values are above the grand median ({grand_median}).")
     if ties == "ignore":
         # We already checked that each sample has at least one value, but it
         # is possible that all those values equal the grand median.  If `ties`
@@ -4333,16 +4351,18 @@ def median_test(*samples, ties='below', correction=True, lambda_=1,
     return MedianTestResult(stat, p, grand_median, table)
 
 
-def _circfuncs_common(samples, high, low):
-    # Ensure samples are array-like and size is not zero
-    if samples.size == 0:
-        NaN = _get_nan(samples)
-        return NaN, NaN, NaN
+def _circfuncs_common(samples, period, xp=None):
+    xp = array_namespace(samples) if xp is None else xp
+
+    if xp.isdtype(samples.dtype, 'integral'):
+        dtype = xp.asarray(1.).dtype  # get default float type
+        samples = xp.asarray(samples, dtype=dtype)
 
     # Recast samples as radians that range between 0 and 2 pi and calculate
     # the sine and cosine
-    sin_samp = sin((samples - low)*2.*pi / (high - low))
-    cos_samp = cos((samples - low)*2.*pi / (high - low))
+    scaled_samples = samples * ((2.0 * pi) / period)
+    sin_samp = xp.sin(scaled_samples)
+    cos_samp = xp.cos(scaled_samples)
 
     return samples, sin_samp, cos_samp
 
@@ -4352,30 +4372,52 @@ def _circfuncs_common(samples, high, low):
     result_to_tuple=lambda x: (x,)
 )
 def circmean(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
-    """Compute the circular mean for samples in a range.
+    r"""Compute the circular mean of a sample of angle observations.
+
+    Given :math:`n` angle observations :math:`x_1, \cdots, x_n` measured in
+    radians, their *circular mean* is defined by ([1]_, Eq. 2.2.4)
+
+    .. math::
+
+       \mathrm{Arg} \left( \frac{1}{n} \sum_{k=1}^n e^{i x_k} \right)
+
+    where :math:`i` is the imaginary unit and :math:`\mathop{\mathrm{Arg}} z`
+    gives the principal value of the argument of complex number :math:`z`,
+    restricted to the range :math:`[0,2\pi]` by default.  :math:`z` in the
+    above expression is known as the `mean resultant vector`.
 
     Parameters
     ----------
     samples : array_like
-        Input array.
-    high : float or int, optional
-        High boundary for the sample range. Default is ``2*pi``.
-    low : float or int, optional
-        Low boundary for the sample range. Default is 0.
+        Input array of angle observations.  The value of a full angle is
+        equal to ``(high - low)``.
+    high : float, optional
+        Upper boundary of the principal value of an angle.  Default is ``2*pi``.
+    low : float, optional
+        Lower boundary of the principal value of an angle.  Default is ``0``.
 
     Returns
     -------
     circmean : float
-        Circular mean.
+        Circular mean, restricted to the range ``[low, high]``.
+
+        If the mean resultant vector is zero, an input-dependent,
+        implementation-defined number between ``[low, high]`` is returned.
+        If the input array is empty, ``np.nan`` is returned.
 
     See Also
     --------
     circstd : Circular standard deviation.
     circvar : Circular variance.
 
+    References
+    ----------
+    .. [1] Mardia, K. V. and Jupp, P. E. *Directional Statistics*.
+           John Wiley & Sons, 1999.
+
     Examples
     --------
-    For simplicity, all angles are printed out in degrees.
+    For readability, all angles are printed out in degrees.
 
     >>> import numpy as np
     >>> from scipy.stats import circmean
@@ -4403,16 +4445,19 @@ def circmean(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     >>> plt.show()
 
     """
-    samples, sin_samp, cos_samp = _circfuncs_common(samples, high, low)
-    sin_sum = sin_samp.sum(axis)
-    cos_sum = cos_samp.sum(axis)
-    res = arctan2(sin_sum, cos_sum)
+    xp = array_namespace(samples)
+    # Needed for non-NumPy arrays to get appropriate NaN result
+    # Apparently atan2(0, 0) is 0, even though it is mathematically undefined
+    if xp_size(samples) == 0:
+        return xp.mean(samples, axis=axis)
+    period = high - low
+    samples, sin_samp, cos_samp = _circfuncs_common(samples, period, xp=xp)
+    sin_sum = xp.sum(sin_samp, axis=axis)
+    cos_sum = xp.sum(cos_samp, axis=axis)
+    res = xp.atan2(sin_sum, cos_sum)
 
-    res = np.asarray(res)
-    res[res < 0] += 2*pi
-    res = res[()]
-
-    return res*(high - low)/2.0/pi + low
+    res = res[()] if res.ndim == 0 else res
+    return (res * (period / (2.0 * pi)) - low) % period + low
 
 
 @_axis_nan_policy_factory(
@@ -4420,21 +4465,36 @@ def circmean(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     result_to_tuple=lambda x: (x,)
 )
 def circvar(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
-    """Compute the circular variance for samples assumed to be in a range.
+    r"""Compute the circular variance of a sample of angle observations.
+
+    Given :math:`n` angle observations :math:`x_1, \cdots, x_n` measured in
+    radians, their *circular variance* is defined by ([2]_, Eq. 2.3.3)
+
+    .. math::
+
+       1 - \left| \frac{1}{n} \sum_{k=1}^n e^{i x_k} \right|
+
+    where :math:`i` is the imaginary unit and :math:`|z|` gives the length
+    of the complex number :math:`z`.  :math:`|z|` in the above expression
+    is known as the `mean resultant length`.
 
     Parameters
     ----------
     samples : array_like
-        Input array.
-    high : float or int, optional
-        High boundary for the sample range. Default is ``2*pi``.
-    low : float or int, optional
-        Low boundary for the sample range. Default is 0.
+        Input array of angle observations.  The value of a full angle is
+        equal to ``(high - low)``.
+    high : float, optional
+        Upper boundary of the principal value of an angle.  Default is ``2*pi``.
+    low : float, optional
+        Lower boundary of the principal value of an angle.  Default is ``0``.
 
     Returns
     -------
     circvar : float
-        Circular variance.
+        Circular variance.  The returned value is in the range ``[0, 1]``,
+        where ``0`` indicates no variance and ``1`` indicates large variance.
+
+        If the input array is empty, ``np.nan`` is returned.
 
     See Also
     --------
@@ -4443,16 +4503,15 @@ def circvar(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
 
     Notes
     -----
-    This uses the following definition of circular variance: ``1-R``, where
-    ``R`` is the mean resultant vector. The
-    returned value is in the range [0, 1], 0 standing for no variance, and 1
-    for a large variance. In the limit of small angles, this value is similar
-    to half the 'linear' variance.
+    In the limit of small angles, the circular variance is close to
+    half the 'linear' variance if measured in radians.
 
     References
     ----------
     .. [1] Fisher, N.I. *Statistical analysis of circular data*. Cambridge
-          University Press, 1993.
+           University Press, 1993.
+    .. [2] Mardia, K. V. and Jupp, P. E. *Directional Statistics*.
+           John Wiley & Sons, 1999.
 
     Examples
     --------
@@ -4482,12 +4541,14 @@ def circvar(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     >>> plt.show()
 
     """
-    samples, sin_samp, cos_samp = _circfuncs_common(samples, high, low)
-    sin_mean = sin_samp.mean(axis)
-    cos_mean = cos_samp.mean(axis)
-    # hypot can go slightly above 1 due to rounding errors
-    with np.errstate(invalid='ignore'):
-        R = np.minimum(1, hypot(sin_mean, cos_mean))
+    xp = array_namespace(samples)
+    period = high - low
+    samples, sin_samp, cos_samp = _circfuncs_common(samples, period, xp=xp)
+    sin_mean = xp.mean(sin_samp, axis=axis)
+    cos_mean = xp.mean(cos_samp, axis=axis)
+    hypotenuse = (sin_mean**2. + cos_mean**2.)**0.5
+    # hypotenuse can go slightly above 1 due to rounding errors
+    R = xp_minimum(xp.asarray(1.), hypotenuse)
 
     res = 1. - R
     return res
@@ -4499,27 +4560,42 @@ def circvar(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
 )
 def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate', *,
             normalize=False):
-    """
-    Compute the circular standard deviation for samples assumed to be in the
-    range [low to high].
+    r"""
+    Compute the circular standard deviation of a sample of angle observations.
+
+    Given :math:`n` angle observations :math:`x_1, \cdots, x_n` measured in
+    radians, their `circular standard deviation` is defined by
+    ([2]_, Eq. 2.3.11)
+
+    .. math::
+
+       \sqrt{ -2 \log \left| \frac{1}{n} \sum_{k=1}^n e^{i x_k} \right| }
+
+    where :math:`i` is the imaginary unit and :math:`|z|` gives the length
+    of the complex number :math:`z`.  :math:`|z|` in the above expression
+    is known as the `mean resultant length`.
 
     Parameters
     ----------
     samples : array_like
-        Input array.
-    high : float or int, optional
-        High boundary for the sample range. Default is ``2*pi``.
-    low : float or int, optional
-        Low boundary for the sample range. Default is 0.
+        Input array of angle observations.  The value of a full angle is
+        equal to ``(high - low)``.
+    high : float, optional
+        Upper boundary of the principal value of an angle.  Default is ``2*pi``.
+    low : float, optional
+        Lower boundary of the principal value of an angle.  Default is ``0``.
     normalize : boolean, optional
-        If True, the returned value is equal to ``sqrt(-2*log(R))`` and does
-        not depend on the variable units. If False (default), the returned
-        value is scaled by ``((high-low)/(2*pi))``.
+        If ``False`` (the default), the return value is computed from the
+        above formula with the input scaled by ``(2*pi)/(high-low)`` and
+        the output scaled (back) by ``(high-low)/(2*pi)``.  If ``True``,
+        the output is not scaled and is returned directly.
 
     Returns
     -------
     circstd : float
-        Circular standard deviation.
+        Circular standard deviation, optionally normalized.
+
+        If the input array is empty, ``np.nan`` is returned.
 
     See Also
     --------
@@ -4528,25 +4604,15 @@ def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate', *,
 
     Notes
     -----
-    This uses a definition of circular standard deviation from [1]_.
-    Essentially, the calculation is as follows.
-
-    .. code-block:: python
-
-        import numpy as np
-        C = np.cos(samples).mean()
-        S = np.sin(samples).mean()
-        R = np.sqrt(C**2 + S**2)
-        l = 2*np.pi / (high-low)
-        circstd = np.sqrt(-2*np.log(R)) / l
-
-    In the limit of small angles, it returns a number close to the 'linear'
-    standard deviation.
+    In the limit of small angles, the circular standard deviation is close
+    to the 'linear' standard deviation if ``normalize`` is ``False``.
 
     References
     ----------
     .. [1] Mardia, K. V. (1972). 2. In *Statistics of Directional Data*
        (pp. 18-24). Academic Press. :doi:`10.1016/C2013-0-07425-7`.
+    .. [2] Mardia, K. V. and Jupp, P. E. *Directional Statistics*.
+           John Wiley & Sons, 1999.
 
     Examples
     --------
@@ -4579,14 +4645,16 @@ def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate', *,
     >>> plt.show()
 
     """
-    samples, sin_samp, cos_samp = _circfuncs_common(samples, high, low)
-    sin_mean = sin_samp.mean(axis)  # [1] (2.2.3)
-    cos_mean = cos_samp.mean(axis)  # [1] (2.2.3)
-    # hypot can go slightly above 1 due to rounding errors
-    with np.errstate(invalid='ignore'):
-        R = np.minimum(1, hypot(sin_mean, cos_mean))  # [1] (2.2.4)
+    xp = array_namespace(samples)
+    period = high - low
+    samples, sin_samp, cos_samp = _circfuncs_common(samples, period, xp=xp)
+    sin_mean = xp.mean(sin_samp, axis=axis)  # [1] (2.2.3)
+    cos_mean = xp.mean(cos_samp, axis=axis)  # [1] (2.2.3)
+    hypotenuse = (sin_mean**2. + cos_mean**2.)**0.5
+    # hypotenuse can go slightly above 1 due to rounding errors
+    R = xp_minimum(xp.asarray(1.), hypotenuse)  # [1] (2.2.4)
 
-    res = sqrt(-2*log(R))
+    res = (-2*xp.log(R))**0.5+0.0  # torch.pow returns -0.0 if R==1
     if not normalize:
         res *= (high-low)/(2.*pi)  # [1] (2.3.14) w/ (2.3.7)
     return res

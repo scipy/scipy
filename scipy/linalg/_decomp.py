@@ -16,8 +16,6 @@ __all__ = ['eig', 'eigvals', 'eigh', 'eigvalsh',
            'eig_banded', 'eigvals_banded',
            'eigh_tridiagonal', 'eigvalsh_tridiagonal', 'hessenberg', 'cdf2rdf']
 
-import warnings
-
 import numpy as np
 from numpy import (array, isfinite, inexact, nonzero, iscomplexobj,
                    flatnonzero, conj, asarray, argsort, empty,
@@ -26,7 +24,6 @@ from numpy import (array, isfinite, inexact, nonzero, iscomplexobj,
 from scipy._lib._util import _asarray_validated
 from ._misc import LinAlgError, _datacopied, norm
 from .lapack import get_lapack_funcs, _compute_lwork
-from scipy._lib.deprecation import _NoValue, _deprecate_positional_args
 
 from scipy._lib._array_api import (
     array_namespace, is_numpy, _asarray, xp_unsupported_args
@@ -286,11 +283,9 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False,
     return w, vr
 
 
-@_deprecate_positional_args(version="1.14.0")
 def eigh(a, b=None, *, lower=True, eigvals_only=False, overwrite_a=False,
-         overwrite_b=False, turbo=_NoValue, eigvals=_NoValue, type=1,
-         check_finite=True, subset_by_index=None, subset_by_value=None,
-         driver=None):
+         overwrite_b=False, type=1, check_finite=True, subset_by_index=None,
+         subset_by_value=None, driver=None):
     """
     Solve a standard or generalized eigenvalue problem for a complex
     Hermitian or real symmetric matrix.
@@ -358,16 +353,6 @@ def eigh(a, b=None, *, lower=True, eigvals_only=False, overwrite_a=False,
         Whether to check that the input matrices contain only finite numbers.
         Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
-    turbo : bool, optional, deprecated
-            .. deprecated:: 1.5.0
-                `eigh` keyword argument `turbo` is deprecated in favour of
-                ``driver=gvd`` keyword instead and will be removed in SciPy
-                1.14.0.
-    eigvals : tuple (lo, hi), optional, deprecated
-            .. deprecated:: 1.5.0
-                `eigh` keyword argument `eigvals` is deprecated in favour of
-                `subset_by_index` keyword instead and will be removed in SciPy
-                1.14.0.
 
     Returns
     -------
@@ -469,15 +454,12 @@ def eigh(a, b=None, *, lower=True, eigvals_only=False, overwrite_a=False,
     if is_numpy(xp):
         return _eigh(a, b=b, lower=lower, eigvals_only=eigvals_only,
                      overwrite_a=overwrite_a, overwrite_b=overwrite_b,
-                     turbo=turbo, eigvals=eigvals, type=type,
-                     subset_by_index=subset_by_index,
+                     type=type, subset_by_index=subset_by_index,
                      subset_by_value=subset_by_value, driver=driver)
     unsupported_args = {
         'b': b is not None,
         'lower': not lower,
         'eigvals_only': eigvals_only,
-        'turbo': turbo != _NoValue,
-        'eigvals': eigvals != _NoValue,
         'type': type != 1,
         'subset_by_index': subset_by_index is not None,
         'subset_by_value': subset_by_value is not None,
@@ -492,19 +474,8 @@ def eigh(a, b=None, *, lower=True, eigvals_only=False, overwrite_a=False,
 
 
 def _eigh(a, b=None, *, lower=True, eigvals_only=False, overwrite_a=False,
-          overwrite_b=False, turbo=_NoValue, eigvals=_NoValue, type=1,
-          subset_by_index=None, subset_by_value=None, driver=None):
-    if turbo is not _NoValue:
-        warnings.warn("Keyword argument 'turbo' is deprecated in favour of '"
-                      "driver=gvd' keyword instead and will be removed in "
-                      "SciPy 1.14.0.",
-                      DeprecationWarning, stacklevel=2)
-    if eigvals is not _NoValue:
-        warnings.warn("Keyword argument 'eigvals' is deprecated in favour of "
-                      "'subset_by_index' keyword instead and will be removed "
-                      "in SciPy 1.14.0.",
-                      DeprecationWarning, stacklevel=2)
-
+          overwrite_b=False, type=1, subset_by_index=None,
+          subset_by_value=None, driver=None):
     # set lower
     uplo = 'L' if lower else 'U'
     # Set job for Fortran routines
@@ -550,18 +521,11 @@ def _eigh(a, b=None, *, lower=True, eigvals_only=False, overwrite_a=False,
         cplx = True if iscomplexobj(b1) else (cplx or False)
         drv_args.update({'overwrite_b': overwrite_b, 'itype': type})
 
-    # backwards-compatibility handling
-    subset_by_index = subset_by_index if (eigvals in (None, _NoValue)) else eigvals
-
     subset = (subset_by_index is not None) or (subset_by_value is not None)
 
     # Both subsets can't be given
     if subset_by_index and subset_by_value:
         raise ValueError('Either index or value subset can be requested.')
-
-    # Take turbo into account if all conditions are met otherwise ignore
-    if turbo not in (None, _NoValue) and b is not None:
-        driver = 'gvx' if subset else 'gvd'
 
     # Check indices if given
     if subset_by_index:
@@ -977,11 +941,9 @@ def eigvals(a, b=None, overwrite_a=False, check_finite=True,
                homogeneous_eigvals=homogeneous_eigvals)
 
 
-@_deprecate_positional_args(version="1.14.0")
 def eigvalsh(a, b=None, *, lower=True, overwrite_a=False,
-             overwrite_b=False, turbo=_NoValue, eigvals=_NoValue, type=1,
-             check_finite=True, subset_by_index=None, subset_by_value=None,
-             driver=None):
+             overwrite_b=False, type=1, check_finite=True, subset_by_index=None,
+             subset_by_value=None, driver=None):
     """
     Solves a standard or generalized eigenvalue problem for a complex
     Hermitian or real symmetric matrix.
@@ -1044,15 +1006,6 @@ def eigvalsh(a, b=None, *, lower=True, overwrite_a=False,
         "evd", "evr", "evx" for standard problems and "gv", "gvd", "gvx" for
         generalized (where b is not None) problems. See the Notes section of
         `scipy.linalg.eigh`.
-    turbo : bool, optional, deprecated
-        .. deprecated:: 1.5.0
-            'eigvalsh' keyword argument `turbo` is deprecated in favor of
-            ``driver=gvd`` option and will be removed in SciPy 1.14.0.
-
-    eigvals : tuple (lo, hi), optional
-        .. deprecated:: 1.5.0
-            'eigvalsh' keyword argument `eigvals` is deprecated in favor of
-            `subset_by_index` option and will be removed in SciPy 1.14.0.
 
     Returns
     -------
@@ -1106,14 +1059,11 @@ def eigvalsh(a, b=None, *, lower=True, overwrite_a=False,
     if is_numpy(xp):
         return _eigh(a, b=b, lower=lower, eigvals_only=True,
                      overwrite_a=overwrite_a, overwrite_b=overwrite_b,
-                     turbo=turbo, eigvals=eigvals, type=type,
-                     subset_by_index=subset_by_index,
+                     type=type, subset_by_index=subset_by_index,
                      subset_by_value=subset_by_value, driver=driver)
     unsupported_args = {
         'b': b is not None,
         'lower': not lower,
-        'turbo': turbo != _NoValue,
-        'eigvals': eigvals != _NoValue,
         'type': type != 1,
         'subset_by_index': subset_by_index is not None,
         'subset_by_value': subset_by_value is not None,

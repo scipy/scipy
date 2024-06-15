@@ -14,7 +14,6 @@ from ._decomp import _asarray_validated
 from . import _decomp, _decomp_svd
 from ._solve_toeplitz import levinson
 from ._cythonized_array_utils import find_det_from_lu
-from scipy._lib.deprecation import _NoValue, _deprecate_positional_args
 
 from scipy._lib._array_api import (
     array_namespace, is_numpy, _asarray, xp_unsupported_args
@@ -295,14 +294,14 @@ def _solve(a, b, lower=False, overwrite_a=False, overwrite_b=False,
 def solve_triangular(a, b, trans=0, lower=False, unit_diagonal=False,
                      overwrite_b=False, check_finite=True):
     """
-    Solve the equation `a x = b` for `x`, assuming a is a triangular matrix.
+    Solve the equation ``a x = b`` for `x`, assuming a is a triangular matrix.
 
     Parameters
     ----------
     a : (M, M) array_like
         A triangular matrix
     b : (M,) or (M, N) array_like
-        Right-hand side matrix in `a x = b`
+        Right-hand side matrix in ``a x = b``
     lower : bool, optional
         Use only data contained in the lower triangle of `a`.
         Default is to use upper triangle.
@@ -329,7 +328,7 @@ def solve_triangular(a, b, trans=0, lower=False, unit_diagonal=False,
     Returns
     -------
     x : (M,) or (M, N) ndarray
-        Solution to the system `a x = b`.  Shape of return matches `b`.
+        Solution to the system ``a x = b``.  Shape of return matches `b`.
 
     Raises
     ------
@@ -1181,7 +1180,7 @@ def _det(a, overwrite_a=False):
 
     if a1.ndim == 2:
         det = find_det_from_lu(a1)
-        # Convert float, complex to to NumPy scalars
+        # Convert float, complex to NumPy scalars
         return (np.float64(det) if np.isrealobj(det) else np.complex128(det))
 
     # loop over the stacked array, and avoid overflows for single precision
@@ -1403,9 +1402,7 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
 lstsq.default_lapack_driver = 'gelsd'
 
 
-@_deprecate_positional_args(version="1.14")
-def pinv(a, *, atol=None, rtol=None, return_rank=False, check_finite=True,
-         cond=_NoValue, rcond=_NoValue):
+def pinv(a, *, atol=None, rtol=None, return_rank=False, check_finite=True):
     """
     Compute the (Moore-Penrose) pseudo-inverse of a matrix.
 
@@ -1439,20 +1436,6 @@ def pinv(a, *, atol=None, rtol=None, return_rank=False, check_finite=True,
         Whether to check that the input matrix contains only finite numbers.
         Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
-    cond, rcond : float, optional
-        In older versions, these values were meant to be used as ``atol`` with
-        ``rtol=0``. If both were given ``rcond`` overwrote ``cond`` and hence
-        the code was not correct. Thus using these are strongly discouraged and
-        the tolerances above are recommended instead. In fact, if provided,
-        atol, rtol takes precedence over these keywords.
-
-        .. deprecated:: 1.7.0
-            Deprecated in favor of ``rtol`` and ``atol`` parameters above and
-            will be removed in SciPy 1.14.0.
-
-        .. versionchanged:: 1.3.0
-            Previously the default cutoff value was just ``eps*f`` where ``f``
-            was ``1e3`` for single precision and ``1e6`` for double precision.
 
     Returns
     -------
@@ -1522,13 +1505,10 @@ def pinv(a, *, atol=None, rtol=None, return_rank=False, check_finite=True,
     if check_finite:
         a = _asarray(a, check_finite=True, xp=xp)
     if is_numpy(xp):
-        return _pinv(a, atol=atol, rtol=rtol, return_rank=return_rank,
-                     cond=cond, rcond=rcond)
+        return _pinv(a, atol=atol, rtol=rtol, return_rank=return_rank)
     unsupported_args = {
         'atol': atol is not None,
         'return_rank': return_rank,
-        'cond': cond != _NoValue,
-        'rcond': rcond != _NoValue
     }
     if any(unsupported_args.values()):
         xp_unsupported_args(unsupported_args)
@@ -1540,22 +1520,11 @@ def pinv(a, *, atol=None, rtol=None, return_rank=False, check_finite=True,
     return xp.asarray(_pinv(a, rtol=rtol))
  
 
-def _pinv(a, *, atol=None, rtol=None, return_rank=False, cond=_NoValue, rcond=_NoValue):
+def _pinv(a, *, atol=None, rtol=None, return_rank=False):
     a = _asarray_validated(a, check_finite=False)
     u, s, vh = _decomp_svd.svd(a, full_matrices=False, check_finite=False)
     t = u.dtype.char.lower()
     maxS = np.max(s, initial=0.)
-
-    if rcond is not _NoValue or cond is not _NoValue:
-        warn('Use of the "cond" and "rcond" keywords are deprecated and '
-             'will be removed in SciPy 1.14.0. Use "atol" and '
-             '"rtol" keywords instead', DeprecationWarning, stacklevel=2)
-
-    # backwards compatible only atol and rtol are both missing
-    if ((rcond not in (_NoValue, None) or cond not in (_NoValue, None))
-            and (atol is None) and (rtol is None)):
-        atol = rcond if rcond not in (_NoValue, None) else cond
-        rtol = 0.
 
     atol = 0. if atol is None else atol
     rtol = max(a.shape) * np.finfo(t).eps if (rtol is None) else rtol

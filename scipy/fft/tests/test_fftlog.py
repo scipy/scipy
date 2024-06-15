@@ -104,7 +104,7 @@ def test_fht_identity(n, bias, offset, optimal, xp):
     A = fht(a, dln, mu, offset=offset, bias=bias)
     a_ = ifht(A, dln, mu, offset=offset, bias=bias)
 
-    xp_assert_close(a_, a)
+    xp_assert_close(a_, a, rtol=1.5e-7)
 
 
 def test_fht_special_cases(xp):

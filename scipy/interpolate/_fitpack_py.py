@@ -140,7 +140,7 @@ def splprep(x, w=None, u=None, ub=None, ue=None, k=3, task=0, s=None, t=None,
     >>> tck, u = splprep([x, y], s=0)
     >>> new_points = splev(u, tck)
 
-    Notice that (i) we force interpolation by using `s=0`,
+    Notice that (i) we force interpolation by using ``s=0``,
     (ii) the parameterization, ``u``, is generated automatically.
     Now plot the result:
 
@@ -508,7 +508,7 @@ def sproot(tck, mest=10):
     >>> sproot(tck)
     array([], dtype=float64)
 
-    Converting to a PPoly object does find the roots at `x=2`:
+    Converting to a PPoly object does find the roots at ``x=2``:
 
     >>> ppoly = PPoly.from_spline(tck)
     >>> ppoly.roots(extrapolate=False)

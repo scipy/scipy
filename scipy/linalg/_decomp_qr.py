@@ -154,7 +154,7 @@ def _qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False):
     # 'qr' are used below.
     # 'raw' is used internally by qr_multiply
     if mode not in ['full', 'qr', 'r', 'economic', 'raw']:
-        raise ValueError("Mode argument should be one of ['full', 'r',"
+        raise ValueError("Mode argument should be one of ['full', 'r', "
                          "'economic', 'raw']")
 
     a1 = np.asarray(a)

@@ -8,15 +8,16 @@ import math
 import warnings
 from collections import defaultdict
 from heapq import heapify, heappop
-from numpy import (pi, asarray, floor, isscalar, iscomplex, sqrt, where, mgrid,
+from numpy import (pi, asarray, floor, isscalar, sqrt, where,
                    sin, place, issubdtype, extract, inexact, nan, zeros, sinc)
 from . import _ufuncs
 from ._ufuncs import (mathieu_a, mathieu_b, iv, jv, gamma,
                       psi, hankel1, hankel2, yv, kv, poch, binom,
                       _stirling2_inexact)
+from ._gufuncs import (_lpn, _lpmn, _clpmn, _lqn, _lqmn, _rctj, _rcty,
+                       _sph_harm_all as _sph_harm_all_gufunc)
 from . import _specfun
 from ._comb import _comb_int
-from scipy._lib.deprecation import _NoValue, _deprecate_positional_args
 
 
 __all__ = [
@@ -1338,7 +1339,11 @@ def riccati_jn(n, x):
         n1 = 1
     else:
         n1 = n
-    nm, jn, jnp = _specfun.rctj(n1, x)
+
+    jn = np.empty((n1 + 1,), dtype = np.float64)
+    jnp = np.empty_like(jn)
+
+    _rctj(x, out = (jn, jnp))
     return jn[:(n+1)], jnp[:(n+1)]
 
 
@@ -1390,8 +1395,12 @@ def riccati_yn(n, x):
         n1 = 1
     else:
         n1 = n
-    nm, jn, jnp = _specfun.rcty(n1, x)
-    return jn[:(n+1)], jnp[:(n+1)]
+
+    yn = np.empty((n1 + 1,), dtype = np.float64)
+    ynp = np.empty_like(yn)
+    _rcty(x, out = (yn, ynp))
+
+    return yn[:(n+1)], ynp[:(n+1)]
 
 
 def erf_zeros(nt):
@@ -1724,7 +1733,7 @@ def lpmn(m, n, z):
        where ``n >= 0``; the degree of the Legendre function.  Often
        called ``l`` (lower case L) in descriptions of the associated
        Legendre function
-    z : float
+    z : array_like
         Input value.
 
     Returns
@@ -1753,31 +1762,34 @@ def lpmn(m, n, z):
            https://dlmf.nist.gov/14.3
 
     """
+    n = _nonneg_int_or_fail(n, 'n', strict=False)
     if not isscalar(m) or (abs(m) > n):
         raise ValueError("m must be <= n.")
     if not isscalar(n) or (n < 0):
         raise ValueError("n must be a non-negative integer.")
-    if not isscalar(z):
-        raise ValueError("z must be scalar.")
-    if iscomplex(z):
+    if np.iscomplexobj(z):
         raise ValueError("Argument must be real. Use clpmn instead.")
+
+    m, n = int(m), int(n)  # Convert to int to maintain backwards compatibility.
     if (m < 0):
-        mp = -m
-        mf, nf = mgrid[0:mp+1, 0:n+1]
-        with _ufuncs.errstate(all='ignore'):
-            if abs(z) < 1:
-                # Ferrer function; DLMF 14.9.3
-                fixarr = where(mf > nf, 0.0,
-                               (-1)**mf * gamma(nf-mf+1) / gamma(nf+mf+1))
-            else:
-                # Match to clpmn; DLMF 14.9.13
-                fixarr = where(mf > nf, 0.0, gamma(nf-mf+1) / gamma(nf+mf+1))
+        m_signbit = True
+        m_abs = -m
     else:
-        mp = m
-    p, pd = _specfun.lpmn(mp, n, z)
-    if (m < 0):
-        p = p * fixarr
-        pd = pd * fixarr
+        m_signbit = False
+        m_abs = m
+
+    z = np.asarray(z)
+    if (not np.issubdtype(z.dtype, np.inexact)):
+        z = z.astype(np.float64)
+
+    p = np.empty((m_abs + 1, n + 1) + z.shape, dtype=np.float64)
+    pd = np.empty_like(p)
+    if (z.ndim == 0):
+        _lpmn(z, m_signbit, out = (p, pd))
+    else:
+        _lpmn(z, m_signbit, out = (np.moveaxis(p, (0, 1), (-2, -1)),
+            np.moveaxis(pd, (0, 1), (-2, -1))))  # new axes must be last for the ufunc
+
     return p, pd
 
 
@@ -1797,7 +1809,7 @@ def clpmn(m, n, z, type=3):
        where ``n >= 0``; the degree of the Legendre function.  Often
        called ``l`` (lower case L) in descriptions of the associated
        Legendre function
-    z : float or complex
+    z : array_like, float or complex
         Input value.
     type : int, optional
        takes values 2 or 3
@@ -1840,25 +1852,29 @@ def clpmn(m, n, z, type=3):
         raise ValueError("m must be <= n.")
     if not isscalar(n) or (n < 0):
         raise ValueError("n must be a non-negative integer.")
-    if not isscalar(z):
-        raise ValueError("z must be scalar.")
     if not (type == 2 or type == 3):
         raise ValueError("type must be either 2 or 3.")
+
+    m, n = int(m), int(n)  # Convert to int to maintain backwards compatibility.
     if (m < 0):
         mp = -m
-        mf, nf = mgrid[0:mp+1, 0:n+1]
-        with _ufuncs.errstate(all='ignore'):
-            if type == 2:
-                fixarr = where(mf > nf, 0.0,
-                               (-1)**mf * gamma(nf-mf+1) / gamma(nf+mf+1))
-            else:
-                fixarr = where(mf > nf, 0.0, gamma(nf-mf+1) / gamma(nf+mf+1))
+        m_signbit = True
     else:
         mp = m
-    p, pd = _specfun.clpmn(mp, n, z, type)
-    if (m < 0):
-        p = p * fixarr
-        pd = pd * fixarr
+        m_signbit = False
+
+    z = np.asarray(z)
+    if (not np.issubdtype(z.dtype, np.inexact)):
+        z = z.astype(np.complex128)
+
+    p = np.empty((mp + 1, n + 1) + z.shape, dtype=np.complex128)
+    pd = np.empty_like(p)
+    if (z.ndim == 0):
+        _clpmn(z, type, m_signbit, out = (p, pd))
+    else:
+        _clpmn(z, type, m_signbit, out = (np.moveaxis(p, (0, 1), (-2, -1)),
+            np.moveaxis(pd, (0, 1), (-2, -1))))  # new axes must be last for the ufunc
+
     return p, pd
 
 
@@ -1878,7 +1894,7 @@ def lqmn(m, n, z):
        where ``n >= 0``; the degree of the Legendre function.  Often
        called ``l`` (lower case L) in descriptions of the associated
        Legendre function
-    z : complex
+    z : array_like, complex
         Input value.
 
     Returns
@@ -1899,19 +1915,27 @@ def lqmn(m, n, z):
         raise ValueError("m must be a non-negative integer.")
     if not isscalar(n) or (n < 0):
         raise ValueError("n must be a non-negative integer.")
-    if not isscalar(z):
-        raise ValueError("z must be scalar.")
-    m = int(m)
-    n = int(n)
 
+    m, n = int(m), int(n)  # Convert to int to maintain backwards compatibility.
     # Ensure neither m nor n == 0
     mm = max(1, m)
     nn = max(1, n)
 
-    if iscomplex(z):
-        q, qd = _specfun.clqmn(mm, nn, z)
+    z = np.asarray(z)
+    if (not np.issubdtype(z.dtype, np.inexact)):
+        z = z.astype(np.float64)
+
+    if np.iscomplexobj(z):
+        q = np.empty((mm + 1, nn + 1) + z.shape, dtype = np.complex128)
     else:
-        q, qd = _specfun.lqmn(mm, nn, z)
+        q = np.empty((mm + 1, nn + 1) + z.shape, dtype = np.float64)
+    qd = np.empty_like(q)
+    if (z.ndim == 0):
+        _lqmn(z, out = (q, qd))
+    else:
+        _lqmn(z, out = (np.moveaxis(q, (0, 1), (-2, -1)),
+            np.moveaxis(qd, (0, 1), (-2, -1))))  # new axes must be last for the ufunc
+
     return q[:(m+1), :(n+1)], qd[:(m+1), :(n+1)]
 
 
@@ -2033,18 +2057,21 @@ def lpn(n, z):
            https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
 
     """
-    if not (isscalar(n) and isscalar(z)):
-        raise ValueError("arguments must be scalars.")
     n = _nonneg_int_or_fail(n, 'n', strict=False)
-    if (n < 1):
-        n1 = 1
+
+    z = np.asarray(z)
+    if (not np.issubdtype(z.dtype, np.inexact)):
+        z = z.astype(np.float64)
+
+    pn = np.empty((n + 1,) + z.shape, dtype=z.dtype)
+    pd = np.empty_like(pn)
+    if (z.ndim == 0):
+        _lpn(z, out = (pn, pd))
     else:
-        n1 = n
-    if iscomplex(z):
-        pn, pd = _specfun.clpn(n1, z)
-    else:
-        pn, pd = _specfun.lpn(n1, z)
-    return pn[:(n+1)], pd[:(n+1)]
+        _lpn(z, out = (np.moveaxis(pn, 0, -1),
+            np.moveaxis(pd, 0, -1))) # new axes must be last for the ufunc
+
+    return pn, pd
 
 
 def lqn(n, z):
@@ -2060,17 +2087,27 @@ def lqn(n, z):
            https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
 
     """
-    if not (isscalar(n) and isscalar(z)):
-        raise ValueError("arguments must be scalars.")
     n = _nonneg_int_or_fail(n, 'n', strict=False)
     if (n < 1):
         n1 = 1
     else:
         n1 = n
-    if iscomplex(z):
-        qn, qd = _specfun.clqn(n1, z)
+
+    z = np.asarray(z)
+    if (not np.issubdtype(z.dtype, np.inexact)):
+        z = z.astype(float)
+
+    if np.iscomplexobj(z):
+        qn = np.empty((n1 + 1,) + z.shape, dtype=np.complex128)
     else:
-        qn, qd = _specfun.lqnb(n1, z)
+        qn = np.empty((n1 + 1,) + z.shape, dtype=np.float64)
+    qd = np.empty_like(qn)
+    if (z.ndim == 0):
+        _lqn(z, out = (qn, qd))
+    else:
+        _lqn(z, out = (np.moveaxis(qn, 0, -1),
+            np.moveaxis(qd, 0, -1))) # new axes must be last for the ufunc
+
     return qn[:(n+1)], qd[:(n+1)]
 
 
@@ -2641,8 +2678,7 @@ def obl_cv_seq(m, n, c):
     return _specfun.segv(m, n, c, -1)[1][:maxL]
 
 
-@_deprecate_positional_args(version="1.14")
-def comb(N, k, *, exact=False, repetition=False, legacy=_NoValue):
+def comb(N, k, *, exact=False, repetition=False):
     """The number of combinations of N things taken k at a time.
 
     This is often expressed as "N choose k".
@@ -2655,21 +2691,14 @@ def comb(N, k, *, exact=False, repetition=False, legacy=_NoValue):
         Number of elements taken.
     exact : bool, optional
         For integers, if `exact` is False, then floating point precision is
-        used, otherwise the result is computed exactly. For non-integers, if
-        `exact` is True, is disregarded.
+        used, otherwise the result is computed exactly.
+
+        .. deprecated:: 1.14.0
+            ``exact=True`` is deprecated for non-integer `N` and `k` and will raise an
+            error in SciPy 1.16.0
     repetition : bool, optional
         If `repetition` is True, then the number of combinations with
         repetition is computed.
-    legacy : bool, optional
-        If `legacy` is True and `exact` is True, then non-integral arguments
-        are cast to ints; if `legacy` is False, the result for non-integral
-        arguments is unaffected by the value of `exact`.
-
-        .. deprecated:: 1.9.0
-            Using `legacy` is deprecated and will removed by
-            Scipy 1.14.0. If you want to keep the legacy behaviour, cast
-            your inputs directly, e.g.
-            ``comb(int(your_N), int(your_k), exact=True)``.
 
     Returns
     -------
@@ -2701,27 +2730,17 @@ def comb(N, k, *, exact=False, repetition=False, legacy=_NoValue):
     220
 
     """
-    if legacy is not _NoValue:
-        warnings.warn(
-            "Using 'legacy' keyword is deprecated and will be removed by "
-            "Scipy 1.14.0. If you want to keep the legacy behaviour, cast "
-            "your inputs directly, e.g. "
-            "'comb(int(your_N), int(your_k), exact=True)'.",
-            DeprecationWarning,
-            stacklevel=2
-        )
     if repetition:
-        return comb(N + k - 1, k, exact=exact, legacy=legacy)
+        return comb(N + k - 1, k, exact=exact)
     if exact:
         if int(N) == N and int(k) == k:
             # _comb_int casts inputs to integers, which is safe & intended here
             return _comb_int(N, k)
-        elif legacy:
-            # here at least one number is not an integer; legacy behavior uses
-            # lossy casts to int
-            return _comb_int(N, k)
         # otherwise, we disregard `exact=True`; it makes no sense for
         # non-integral arguments
+        msg = ("`exact=True` is deprecated for non-integer `N` and `k` and will raise "
+               "an error in SciPy 1.16.0")
+        warnings.warn(msg, DeprecationWarning, stacklevel=2)
         return comb(N, k)
     else:
         k, N = asarray(k), asarray(N)
@@ -2931,7 +2950,8 @@ def _factorialx_approx_core(n, k):
     for r in np.unique(n_mod_k):
         if r == 0:
             continue
-        result[n_mod_k == r] *= corr(k, r)
+        # cast to int because uint types break on `-r`
+        result[n_mod_k == r] *= corr(k, int(r))
     return result
 
 
@@ -3000,8 +3020,8 @@ def factorial(n, exact=False):
             return math.factorial(n)
         elif exact:
             msg = ("Non-integer values of `n` together with `exact=True` are "
-                   "deprecated. Either ensure integer `n` or use `exact=False`.")
-            warnings.warn(msg, DeprecationWarning, stacklevel=2)
+                   "not supported. Either ensure integer `n` or use `exact=False`.")
+            raise ValueError(msg)
         return _factorialx_approx_core(n, k=1)
 
     # arrays & array-likes
@@ -3227,10 +3247,10 @@ def stirling2(N, K, *, exact=False):
         numbers for smaller arrays and uses a second order approximation due to
         Temme for larger entries  of `N` and `K` that allows trading speed for
         accuracy. See [2]_ for a description. Temme approximation is used for
-        values `n>50`. The max error from the DP has max relative error
-        `4.5*10^-16` for `n<=50` and the max error from the Temme approximation
-        has max relative error `5*10^-5` for `51 <= n < 70` and
-        `9*10^-6` for `70 <= n < 101`. Note that these max relative errors will
+        values ``n>50``. The max error from the DP has max relative error
+        ``4.5*10^-16`` for ``n<=50`` and the max error from the Temme approximation
+        has max relative error ``5*10^-5`` for ``51 <= n < 70`` and
+        ``9*10^-6`` for ``70 <= n < 101``. Note that these max relative errors will
         decrease further as `n` increases.
 
     Returns
@@ -3396,3 +3416,21 @@ def zeta(x, q=None, out=None):
         return _ufuncs._riemann_zeta(x, out)
     else:
         return _ufuncs._zeta(x, q, out)
+
+
+def _sph_harm_all(m, n, theta, phi):
+    """Private function. This may be removed or modified at any time."""
+
+    theta = np.asarray(theta)
+    if (not np.issubdtype(theta.dtype, np.inexact)):
+        theta = theta.astype(np.float64)
+
+    phi = np.asarray(phi)
+    if (not np.issubdtype(phi.dtype, np.inexact)):
+        phi = phi.astype(np.float64)
+
+    out = np.empty((2 * m + 1, n + 1) + np.broadcast_shapes(theta.shape, phi.shape),
+        dtype = np.result_type(1j, theta.dtype, phi.dtype))
+    _sph_harm_all_gufunc(theta, phi, out = np.moveaxis(out, (0, 1), (-2, -1)))
+
+    return out

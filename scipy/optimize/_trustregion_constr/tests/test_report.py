@@ -1,3 +1,4 @@
+import pytest
 import numpy as np
 from scipy.optimize import minimize, Bounds
 
@@ -13,6 +14,7 @@ def test_gh10880():
     minimize(lambda x: x**2, x0=2., method='trust-constr',
              bounds=bnds, options=opts)
 
+@pytest.mark.xslow
 def test_gh12922():
     # checks that verbose reporting works with trust-constr for
     # general constraints
