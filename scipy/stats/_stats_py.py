@@ -184,6 +184,14 @@ def gmean(a, axis=0, dtype=None, weights=None):
     numpy.average : Weighted average
     hmean : Harmonic mean
 
+    Notes
+    -----
+    The sample geometric mean is the exponential of the mean of the natural
+    logarithms of the observations.
+    Negative observations will produce NaNs in the output because the *natural*
+    logarithm (as opposed to the *complex* logarithm) is defined only for
+    non-negative reals.
+
     References
     ----------
     .. [1] "Weighted Geometric Mean", *Wikipedia*,
@@ -266,9 +274,14 @@ def hmean(a, axis=0, dtype=None, *, weights=None):
 
     Notes
     -----
+    The sample harmonic mean is the reciprocal of the mean of the reciprocals
+    of the observations.
+
     The harmonic mean is computed over a single dimension of the input
     array, axis=0 by default, or all values in the array if axis=None.
     float64 intermediate and return values are used for integer inputs.
+
+    The harmonic mean is only defined for positive real observations.
 
     References
     ----------
@@ -364,6 +377,8 @@ def pmean(a, p, *, axis=0, dtype=None, weights=None):
     The power mean is computed over a single dimension of the input
     array, ``axis=0`` by default, or all values in the array if ``axis=None``.
     float64 intermediate and return values are used for integer inputs.
+
+    The power mean is only defined for positive real observations.
 
     .. versionadded:: 1.9
 
