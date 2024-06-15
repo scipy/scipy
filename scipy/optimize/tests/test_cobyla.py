@@ -11,7 +11,7 @@ class TestCobyla:
     def setup_method(self):
         self.x0 = [4.95, 0.66]
         self.solution = [math.sqrt(25 - (2.0/3)**2), 2.0/3]
-        self.opts = {'disp': False, 'rhobeg': 1, 'tol': 1e-5,
+        self.opts = {'disp': 0, 'rhobeg': 1, 'tol': 1e-5,
                      'maxiter': 100}
 
     def fun(self, x):
@@ -24,9 +24,9 @@ class TestCobyla:
         return -self.con1(x)
 
     def test_simple(self):
-        # use disp=True as smoke test for gh-8118
+        # use disp=1 as smoke test for gh-8118
         x = fmin_cobyla(self.fun, self.x0, [self.con1, self.con2], rhobeg=1,
-                        rhoend=1e-5, maxfun=100, disp=True)
+                        rhoend=1e-5, maxfun=100, disp=1)
         assert_allclose(x, self.solution, atol=1e-4)
 
     def test_minimize_simple(self):
