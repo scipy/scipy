@@ -389,6 +389,14 @@ def assert_array_almost_equal(actual, desired, decimal=6, *args, **kwds):
                             atol=atol, rtol=rtol, check_dtype=False, *args, **kwds)
 
 
+def assert_almost_equal(actual, desired, decimal=7, *args, **kwds):
+    """Backwards compatible replacement. In new code, use xp_assert_close instead.
+    """
+    rtol, atol = 0, 1.5*10**(-decimal)
+    return xp_assert_close(actual, desired,
+                            atol=atol, rtol=rtol, check_dtype=False, *args, **kwds)
+
+
 def cov(x: Array, *, xp: ModuleType | None = None) -> Array:
     if xp is None:
         xp = array_namespace(x)
