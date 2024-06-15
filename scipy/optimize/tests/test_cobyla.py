@@ -93,6 +93,13 @@ class TestCobyla:
         assert_(sol.maxcv > 0.1)
         assert_(not sol.success)
 
+    def test_f_target(self):
+        f_target = 250
+        sol = minimize(lambda x: x**2, [500], method='cobyla',
+                       options={'f_target': f_target})
+        assert_(sol.status == 1)
+        assert_(sol.success)
+        assert_(sol.fun <= f_target)
 
     def test_minimize_linear_constraints(self):
         constraints = LinearConstraint([1.0, 1.0], 1.0, 1.0)
