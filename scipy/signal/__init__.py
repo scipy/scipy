@@ -310,10 +310,13 @@ from ._max_len_seq import max_len_seq
 from ._upfirdn import upfirdn
 
 from ._spline import (
-    sepfir2d
+    cspline2d,
+    qspline2d,
+    sepfir2d,
+    symiirorder1,
+    symiirorder2,
 )
 
-from ._splines import *
 from ._bsplines import *
 from ._filter_design import *
 from ._fir_filter_design import *
