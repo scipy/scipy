@@ -7969,50 +7969,43 @@ class TestKruskal:
 
 @array_api_compatible
 class TestCombinePvalues:
+    # Reference values computed using the following R code:
+    # options(digits=16)
+    # library(metap)
+    # x = c(0.01, 0.2, 0.3)
+    # sumlog(x)  # fisher
+    # sumz(x)  # stouffer
+    # sumlog(1-x)  # pearson (negative statistic and complement of p-value)
+    # minimump(x)  # tippett
+    @pytest.mark.parametrize(
+        "method, expected_statistic, expected_pvalue",
+        [("fisher", 14.83716180549625 , 0.02156175132483465),
+         ("stouffer", 2.131790594240385, 0.01651203260896294),
+         ("pearson", -1.179737662212887, 1-0.9778736999143087),
+         ("tippett", 0.01, 0.02970100000000002),
+         # mudholkar_george: library(transite); p_combine(x, method="MG")
+         ("mudholkar_george", 6.828712071641684, 0.01654551838539527)])
+    def test_reference_values(self, xp, method, expected_statistic, expected_pvalue):
+        x = [.01, .2, .3]
+        res = stats.combine_pvalues(xp.asarray(x), method=method)
+        xp_assert_close(res.statistic, xp.asarray(expected_statistic))
+        xp_assert_close(res.pvalue, xp.asarray(expected_pvalue))
 
-    def test_fisher(self, xp):
-        # Example taken from https://en.wikipedia.org/wiki/Fisher%27s_exact_test#Example
-        xsq, p = stats.combine_pvalues(xp.asarray([.01, .2, .3]), method='fisher')
-        xp_assert_close(p, xp.asarray(0.02156), rtol=1e-4)
-
-    def test_stouffer(self, xp):
-        Z, p = stats.combine_pvalues(xp.asarray([.01, .2, .3]), method='stouffer')
-        xp_assert_close(p, xp.asarray(0.01651), rtol=1e-3)
-
-    def test_stouffer2(self, xp):
-        Z, p = stats.combine_pvalues(xp.asarray([.5, .5, .5]), method='stouffer')
-        xp_assert_close(p, xp.asarray(0.5), rtol=1e-4)
-
-    def test_weighted_stouffer(self, xp):
-        pvalues = xp.asarray([.01, .2, .3])
-        Z, p = stats.combine_pvalues(pvalues, method='stouffer',
-                                     weights=xp.ones(3, dtype=pvalues.dtype))
-        xp_assert_close(p, xp.asarray(0.01651), rtol=1e-3)
-
-    def test_weighted_stouffer2(self, xp):
-        Z, p = stats.combine_pvalues(xp.asarray([.01, .2, .3]), method='stouffer',
-                                     weights=xp.asarray([1., 4., 9.]))
-        xp_assert_close(p, xp.asarray(0.1464), rtol=1e-3)
-
-    def test_pearson(self, xp):
-        Z, p = stats.combine_pvalues(xp.asarray([.01, .2, .3]), method='pearson')
-        xp_assert_close(p, xp.asarray(0.02213), rtol=1e-3)
-
-    def test_tippett(self, xp):
-        Z, p = stats.combine_pvalues(xp.asarray([.01, .2, .3]), method='tippett')
-        xp_assert_close(p, xp.asarray(0.0297), rtol=1e-4)
-
-    def test_mudholkar_george(self, xp):
-        Z, p = stats.combine_pvalues(xp.asarray([.1, .1, .1]),
-                                     method='mudholkar_george')
-        xp_assert_close(p, xp.asarray(0.019462), rtol=1e-4)
-
-    def test_mudholkar_george_equal_fisher_pearson_average(self, xp):
-        Z, p = stats.combine_pvalues(xp.asarray([.01, .2, .3]),
-                                     method='mudholkar_george')
-        Z_f, p_f = stats.combine_pvalues(xp.asarray([.01, .2, .3]), method='fisher')
-        Z_p, p_p = stats.combine_pvalues(xp.asarray([.01, .2, .3]), method='pearson')
-        xp_assert_close(0.5 * (Z_f+Z_p), Z, rtol=1e-4)
+    @pytest.mark.parametrize(
+        # Reference values computed using R `metap` `sumz`:
+        # options(digits=16)
+        # library(metap)
+        # x = c(0.01, 0.2, 0.3)
+        # sumz(x, weights=c(1., 1., 1.))
+        # sumz(x, weights=c(1., 4., 9.))
+        "weights, expected_statistic, expected_pvalue",
+        [([1., 1., 1.], 2.131790594240385, 0.01651203260896294),
+         ([1., 4., 9.], 1.051815015753598, 0.1464422142261314)])
+    def test_weighted_stouffer(self, xp, weights, expected_statistic, expected_pvalue):
+        x = xp.asarray([.01, .2, .3])
+        res = stats.combine_pvalues(x, method='stouffer', weights=xp.asarray(weights))
+        xp_assert_close(res.statistic, xp.asarray(expected_statistic))
+        xp_assert_close(res.pvalue, xp.asarray(expected_pvalue))
 
     methods = ["fisher", "pearson", "tippett", "stouffer", "mudholkar_george"]
 
