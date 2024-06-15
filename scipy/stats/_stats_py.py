@@ -41,7 +41,7 @@ from scipy.spatial import distance_matrix
 from scipy.optimize import milp, LinearConstraint
 from scipy._lib._util import (check_random_state, _get_nan,
                               _rename_parameter, _contains_nan,
-                              AxisError)
+                              AxisError, _lazywhere)
 
 import scipy.special as special
 # Import unused here but needs to stay until end of deprecation periode
@@ -534,7 +534,7 @@ def mode(a, axis=0, nan_policy='propagate', keepdims=False):
     return ModeResult(modes[()], counts[()])
 
 
-def _put_nan_to_limits(a, limits, inclusive):
+def _put_val_to_limits(a, limits, inclusive, val=np.nan, xp=None):
     """Put NaNs in an array for values outside of given limits.
 
     This is primarily a utility function.
@@ -551,21 +551,21 @@ def _put_nan_to_limits(a, limits, inclusive):
         determine whether values exactly equal to lower or upper are allowed.
 
     """
+    xp = array_namespace(a) if xp is None else xp
+    mask = xp.zeros(a.shape, dtype=xp.bool)
     if limits is None:
-        return a
-    mask = np.full_like(a, False, dtype=np.bool_)
+        return a, mask
     lower_limit, upper_limit = limits
     lower_include, upper_include = inclusive
     if lower_limit is not None:
         mask |= (a < lower_limit) if lower_include else a <= lower_limit
     if upper_limit is not None:
         mask |= (a > upper_limit) if upper_include else a >= upper_limit
-    if np.all(mask):
+    if xp.all(mask):
         raise ValueError("No array values within given limits")
-    if np.any(mask):
-        a = a.copy() if np.issubdtype(a.dtype, np.inexact) else a.astype(np.float64)
-        a[mask] = np.nan
-    return a
+    if xp.any(mask):
+        a = xp.where(mask, xp.asarray(val), a)
+    return a, mask
 
 
 @_axis_nan_policy_factory(
@@ -614,8 +614,12 @@ def tmean(a, limits=None, inclusive=(True, True), axis=None):
     10.0
 
     """
-    a = _put_nan_to_limits(a, limits, inclusive)
-    return np.nanmean(a, axis=axis)
+    xp = array_namespace(a)
+    a, mask = _put_val_to_limits(a, limits, inclusive, val=0., xp=xp)
+    sum = xp.sum(a, axis=axis)
+    n = xp.sum(xp.asarray(~mask, dtype=a.dtype), axis=axis)
+    mean = _lazywhere(n != 0, (sum, n), xp.divide, xp.nan)
+    return mean[()] if mean.ndim == 0 else mean
 
 
 @_axis_nan_policy_factory(
@@ -667,7 +671,7 @@ def tvar(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
     20.0
 
     """
-    a = _put_nan_to_limits(a, limits, inclusive)
+    a, _ = _put_val_to_limits(a, limits, inclusive)
     return np.nanvar(a, ddof=ddof, axis=axis)
 
 
@@ -717,7 +721,7 @@ def tmin(a, lowerlimit=None, axis=0, inclusive=True, nan_policy='propagate'):
 
     """
     dtype = a.dtype
-    a = _put_nan_to_limits(a, (lowerlimit, None), (inclusive, None))
+    a, _ = _put_val_to_limits(a, (lowerlimit, None), (inclusive, None))
     res = np.nanmin(a, axis=axis)
     if not np.any(np.isnan(res)):
         # needed if input is of integer dtype
@@ -770,7 +774,7 @@ def tmax(a, upperlimit=None, axis=0, inclusive=True, nan_policy='propagate'):
 
     """
     dtype = a.dtype
-    a = _put_nan_to_limits(a, (None, upperlimit), (None, inclusive))
+    a, _ = _put_val_to_limits(a, (None, upperlimit), (None, inclusive))
     res = np.nanmax(a, axis=axis)
     if not np.any(np.isnan(res)):
         # needed if input is of integer dtype
@@ -879,7 +883,7 @@ def tsem(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
     1.1547005383792515
 
     """
-    a = _put_nan_to_limits(a, limits, inclusive)
+    a, _ = _put_val_to_limits(a, limits, inclusive)
     sd = np.sqrt(np.nanvar(a, ddof=ddof, axis=axis))
     n_obs = (~np.isnan(a)).sum(axis=axis)
     return sd / np.sqrt(n_obs, dtype=sd.dtype)
