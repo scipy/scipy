@@ -1,11 +1,13 @@
 import os.path
 
 import numpy as np
-from numpy.testing import (
+from numpy.testing import suppress_warnings
+from scipy._lib._array_api import (
+    xp_assert_equal,
+    xp_assert_close,
+    assert_array_almost_equal,
     assert_almost_equal,
-    suppress_warnings,
 )
-from scipy._lib._array_api import (xp_assert_equal, xp_assert_close, assert_array_almost_equal)
 
 import pytest
 from pytest import raises as assert_raises

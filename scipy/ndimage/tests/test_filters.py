@@ -7,11 +7,10 @@ import numpy as np
 from scipy._lib._array_api import (
     xp_assert_equal, xp_assert_close,
     assert_array_almost_equal,
+    assert_almost_equal,
 )
 
-from numpy.testing import (
-                           assert_almost_equal,
-                           suppress_warnings, assert_)
+from numpy.testing import suppress_warnings
 import pytest
 from pytest import raises as assert_raises
 

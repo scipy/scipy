@@ -1,7 +1,10 @@
 import numpy as np
 from numpy import fft
-from numpy.testing import (assert_almost_equal, )
-from scipy._lib._array_api import (xp_assert_equal, assert_array_almost_equal)
+from scipy._lib._array_api import (
+    xp_assert_equal,
+    assert_array_almost_equal,
+    assert_almost_equal,
+)
 
 import pytest
 
