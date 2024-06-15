@@ -211,6 +211,14 @@ py3.install_sources(
 
 py3.install_sources(
   [
+    'prima/python/prima/_linear_constraints.py',
+    'prima/python/prima/_nonlinear_constraints.py',
+  ],
+  subdir: 'scipy/_lib/prima',
+)
+
+py3.install_sources(
+  [
     'cobyqa/cobyqa/__init__.py',
     'cobyqa/cobyqa/framework.py',
     'cobyqa/cobyqa/main.py',

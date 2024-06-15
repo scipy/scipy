@@ -16,10 +16,8 @@ from threading import RLock
 import numpy as np
 from ._optimize import (OptimizeResult, _check_unknown_options,
     _prepare_scalar_function)
-try:
-    from itertools import izip
-except ImportError:
-    izip = zip
+from ._constraints import (NonlinearConstraint, LinearConstraint,
+    old_constraint_to_new)
 
 from ._prima._prima import minimize as _prima_minimize
 
@@ -170,7 +168,10 @@ def fmin_cobyla(func, x0, cons, args=(), consargs=None, rhobeg=1.0,
         consargs = args
 
     # build constraints
-    con = tuple({'type': 'ineq', 'fun': c, 'args': consargs} for c in cons)
+    con = tuple(
+        old_constraint_to_new(i, {'type': 'ineq', 'fun': c, 'args': consargs})
+        for i, c in enumerate(cons)
+    )
 
     # options
     opts = {'rhobeg': rhobeg,
@@ -212,50 +213,15 @@ def _minimize_cobyla(fun, x0, args=(), constraints=(),
         Tolerance (absolute) for constraint violations
 
     """
+    # import here to avoid circular imports
+    from .._lib.prima._linear_constraints import (
+        combine_multiple_linear_constraints, separate_LC_into_eq_and_ineq)
+    from .._lib.prima._nonlinear_constraints import process_nl_constraints
+
     _check_unknown_options(unknown_options)
     maxfun = maxiter
     rhoend = tol
     iprint = int(bool(disp))
-
-    # check constraints
-    if isinstance(constraints, dict):
-        constraints = (constraints, )
-
-    for ic, con in enumerate(constraints):
-        # check type
-        try:
-            ctype = con['type'].lower()
-        except KeyError as e:
-            raise KeyError('Constraint %d has no type defined.' % ic) from e
-        except TypeError as e:
-            raise TypeError('Constraints must be defined using a '
-                            'dictionary.') from e
-        except AttributeError as e:
-            raise TypeError("Constraint's type must be a string.") from e
-        else:
-            if ctype != 'ineq':
-                raise ValueError(f"Constraints of type '{con['type']}' not handled by "
-                                 "COBYLA.")
-
-        # check function
-        if 'fun' not in con:
-            raise KeyError('Constraint %d has no function defined.' % ic)
-
-        # check extra arguments
-        if 'args' not in con:
-            con['args'] = ()
-
-    # m is the total number of constraint values
-    # it takes into account that some constraints may be vector-valued
-    cons_lengths = []
-    for c in constraints:
-        f = c['fun'](x0, *c['args'])
-        try:
-            cons_length = len(f)
-        except TypeError:
-            cons_length = 1
-        cons_lengths.append(cons_length)
-    m = sum(cons_lengths)
 
     # create the ScalarFunction, cobyla doesn't require derivative function
     def _jac(x, *args):
@@ -263,29 +229,78 @@ def _minimize_cobyla(fun, x0, args=(), constraints=(),
 
     sf = _prepare_scalar_function(fun, x0, args=args, jac=_jac)
 
-    def nonlinear_constraint_function(x):
-        i = 0
-        con = np.zeros(m)
-        for size, c in izip(cons_lengths, constraints):
-            con[i: i + size] = c['fun'](x, *c['args'])
-            i += size
-        # We return the negative of the constraints because PRIMA COBYLA
-        # expects the constraint function to be of the form
-        # constraint(x) <= 0
-        return -con
-
     def wrapped_callback(x):
         if callback is not None:
             callback(np.copy(x))
+
+    linear_constraints = []
+    nonlinear_constraints = []
+    for constraint in constraints:
+        if isinstance(constraint, LinearConstraint):
+            linear_constraints.append(constraint)
+        elif isinstance(constraint, NonlinearConstraint):
+            nonlinear_constraints.append(constraint)
+        else:
+            raise ValueError(f"Uknown constraint type '{type(constraint)}'.")
+
+    # Combine the linear constraints
+    if len(linear_constraints) > 1:
+        linear_constraint = \
+            combine_multiple_linear_constraints(linear_constraints)
+    elif len(linear_constraints) == 1:
+        linear_constraint = linear_constraints[0]
+    else:
+        linear_constraint = None
+
+    # Then process the linear constraints into separate matrices for equality
+    # and inequality.
+    if linear_constraint is not None:
+        A_eq, b_eq, A_ineq, b_ineq = \
+            separate_LC_into_eq_and_ineq(linear_constraint)
+    else:
+        A_eq, b_eq, A_ineq, b_ineq = None, None, None, None
 
     options = {
         'rhobeg': rhobeg,
         'rhoend': rhoend,
         'iprint': iprint,
         'maxfev': maxfun,
-        'm_nlcon': m,
         'ctol': catol if catol is not None else np.sqrt(np.finfo(float).eps),
     }
+
+    if len(nonlinear_constraints) > 0:
+        # PRIMA's process_nl_constraints expects the constraints to be either a
+        # number or to have attribute __len__, but did not expect that it is
+        # possible to be both. For this case we want the constraint to be a number
+        # so that it can be broadcast to the length of the output of the constraint
+        # function.
+        for nlc in nonlinear_constraints:
+            if hasattr(nlc.lb, '__len__') and isinstance(nlc.lb, np.ndarray) \
+                    and nlc.lb.shape == ():
+                nlc.lb = nlc.lb.tolist()
+            if hasattr(nlc.ub, '__len__') and isinstance(nlc.ub, np.ndarray) \
+                    and nlc.ub.shape == ():
+                nlc.ub = nlc.ub.tolist()
+
+        nonlinear_constraint_function = \
+            process_nl_constraints(nonlinear_constraints)
+
+        # COBYLA requires knowledge of the number of nonlinear constraints. In
+        # order to get this number we need to evaluate the constraint function
+        # at x0. The constraint value at x0 (nlconstr0) is not discarded but
+        # passed down to the Fortran backend, as its evaluation is assumed to
+        # be expensive. We also evaluate the objective function at x0 and pass
+        # the result # (f0) down to the Fortran backend, which expects
+        # nlconstr0 and f0 to be provided in sync.
+
+        f0 = sf.fun(x0)
+        nlconstr0 = nonlinear_constraint_function(x0)
+        options['f0'] = f0
+        options['nlconstr0'] = nlconstr0
+        options['m_nlcon'] = len(nlconstr0)
+    else:
+        nonlinear_constraint_function = None
+        options['m_nlcon'] = 0
 
     result = _prima_minimize(
         sf.fun,
@@ -294,12 +309,14 @@ def _minimize_cobyla(fun, x0, args=(), constraints=(),
         method='cobyla',
         lb=bounds.lb if bounds else None,
         ub=bounds.ub if bounds else None,
-        A_eq=None,  # To be implemented in a future commit
-        b_eq=None,  # To be implemented in a future commit
-        A_ineq=None,  # To be implemented in a future commit
-        b_ineq=None,  # To be implemented in a future commit
+        A_eq=A_eq,
+        b_eq=b_eq,
+        A_ineq=A_ineq,
+        b_ineq=b_ineq,
         nonlinear_constraint_function=nonlinear_constraint_function,
-        callback=lambda x, *args: wrapped_callback(x),  # TODO: Like COBYQA, we'd like to be able to accept the new callback syntax with IntermediateResult
+        # TODO: Like COBYQA, we'd like to be able to accept the new callback
+        # syntax with IntermediateResult
+        callback=lambda x, *args: wrapped_callback(x),
         options=options
     )
 

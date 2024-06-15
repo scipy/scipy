@@ -3,7 +3,8 @@ import math
 import numpy as np
 from numpy.testing import assert_allclose, assert_, assert_array_almost_equal
 
-from scipy.optimize import fmin_cobyla, minimize, Bounds
+from scipy.optimize import (fmin_cobyla, minimize, Bounds, NonlinearConstraint,
+    LinearConstraint)
 
 
 class TestCobyla:
@@ -41,7 +42,7 @@ class TestCobyla:
         callback = Callback()
 
         # Minimize with method='COBYLA'
-        cons = ({'type': 'ineq', 'fun': self.con1},
+        cons = (NonlinearConstraint(self.con1, 0, np.inf),
                 {'type': 'ineq', 'fun': self.con2})
         sol = minimize(self.fun, self.x0, method='cobyla', constraints=cons,
                        callback=callback, options=self.opts)
@@ -73,6 +74,23 @@ class TestCobyla:
                        options={'catol': 0.4})
         assert_(sol.maxcv > 0.1)
         assert_(not sol.success)
+
+
+    def test_minimize_linear_constraints(self):
+        constraints = LinearConstraint([1.0, 1.0], 1.0, 1.0)
+        sol = minimize(
+            self.fun,
+            self.x0,
+            method='cobyla',
+            constraints=constraints,
+            options=self.opts,
+        )
+        solution = [(4 - np.sqrt(7)) / 3, (np.sqrt(7) - 1) / 3]
+        assert_allclose(sol.x, solution, atol=1e-4)
+        assert sol.success, sol.message
+        assert sol.maxcv < 1e-8, sol
+        assert sol.nfev <= 100, sol
+        assert sol.fun < self.fun(solution) + 1e-3, sol
 
 
 def test_vector_constraints():
