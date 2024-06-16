@@ -28,9 +28,9 @@ py3.extension_module('_ni_label',
 py3.extension_module('_robust_filters_1d',
   [
   'src/_robust_filters_1d.cpp',
-  'src/_robust_filters_1d_utils.cpp',
-  'src/_hampel_filter.h',
-  'src/_rank_filter_1d.h'
+  'src/_hampel.h',
+  'src/_rank_filter_1d.h',
+  'src/_robust_filters_utils.h'
   ],
   link_args: version_link_args,
   install: true,

@@ -1,4 +1,37 @@
-#include "_robust_filters_1d.h"
+#include "_robust_filters_utils.h"
+#include <algorithm>
+
+//Replaces item, maintains rank in O(lg nItems)
+template <typename T>
+void MediatorReplaceHampel(T* data, Mediator* m, Mediator* m_bottom, Mediator* m_top, T v)
+{
+   int p = m->pos[m->idx];
+   int p_top = m_top->pos[m_top->idx];
+   int p_bottom = m_bottom->pos[m_bottom->idx];
+   
+   T old = data[m->idx];
+   data[m->idx] = v;
+
+   // can use the same index for all mediators - later optimization
+   promoteIndex(m);
+   promoteIndex(m_top);
+   promoteIndex(m_bottom);
+
+   sortHeap(data, m, v, p, old);
+   sortHeap(data, m_top, v, p_top, old);
+   sortHeap(data, m_bottom, v, p_bottom, old);
+}
+
+//Replaces item, maintains rank in O(lg nItems)
+template <typename T>
+void MediatorReplaceRank(T* data, Mediator* m, T v)
+{
+   int p = m->pos[m->idx];
+   T old = data[m->idx];
+   data[m->idx] = v;
+   promoteIndex(m);
+   sortHeap(data, m, v, p, old);
+}
 
 // Mediator rank = rank - 1; in O(lg nItems)
 template <typename T>
@@ -19,27 +52,7 @@ void rank_plus_1(Mediator* m, T* data)
    m->maxCt++;
    m->heap[-m->maxCt] = m->heap[m->minCt + 1];
    m->pos[m->heap[-m->maxCt]] = m->pos[m->heap[m->minCt + 1]];
-   if (maxSortUp(data, m, -m->maxCt) && mmCmpExch(data, m, 1, 0)) {minSortDown(data, m, 1); }
-}
-
-template <typename T>
-void MediatorReplaceHampel(T* data, Mediator* m, Mediator* m_bottom, Mediator* m_top, T v)
-{
-    int index = m->idx;
-    int p = m->pos[index];
-    int p_top = m_top->pos[index];
-    int p_bottom = m_bottom->pos[index];
-
-    T old = data[index];
-    data[index] = v;
-
-    // can use the same index for all mediators - later optimization
-    promoteIndex(m);
-    m_top->idx = m_bottom->idx = m->idx;
-
-    sortHeap(data, m, v, p, old);
-    sortHeap(data, m_top, v, p_top, old);
-    sortHeap(data, m_bottom, v, p_bottom, old);
+   if (maxSortUp(data, m, -m->maxCt) && mmCmpExch(data, m, 1, 0)) { minSortDown(data, m, 1); }
 }
 
 template <typename T>
@@ -62,7 +75,7 @@ T get_mad(Mediator* m_top, Mediator* m_bottom, T median, T* data, const int win_
       bottom_order_value = data[m_bottom->heap[0]];
    }
    while (median - bottom_order_value > data[m_top->heap[1]] - median)
-   {
+   {  
       if (m_top->minCt == 1)
          {
             bottom_diff = median - data[m_bottom->heap[1]];
@@ -130,8 +143,7 @@ void _hampel_filter(T* in_arr, int arr_len, int win_len, T* median, T* mad, T* o
    }
    delete[] data;
    data = nullptr;
-   MediatorDel(m, win_len, rank);
-//   printf("here\n");
-//   MediatorDel(m_top, win_len, m_top->maxCt, true);
-//   MediatorDel(m_bottom, win_len, m_bottom->maxCt, true);
+   MediatorDel(m, win_len);
+   MediatorDel(m_top, win_len, true);
+   MediatorDel(m_bottom, win_len, true);
 }

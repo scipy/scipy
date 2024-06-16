@@ -1,4 +1,8 @@
-#include "_hampel_filter.h"
+#include <Python.h>
+#include <numpy/arrayobject.h>
+
+
+#include "_hampel.h"
 #include "_rank_filter_1d.h"
 
 // Python wrapper for rank_filter

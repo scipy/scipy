@@ -1,7 +1,7 @@
 // Copyright (c) 2011 ashelly.myopenid.com under
 // <http://www.opensource.org/licenses/mit-license>
 // Modified in 2024 by Gideon Genadi Kogan
-#include "_robust_filters_1d.h"
+#include "_robust_filters_utils.h"
 
 template <typename T>
 void _rank_filter(T *in_arr, int rank, int arr_len, int win_len, T *out_arr,
@@ -82,7 +82,7 @@ void _rank_filter(T *in_arr, int rank, int arr_len, int win_len, T *out_arr,
     break;
   }
 
-  MediatorDel(m, win_len, rank);
+  MediatorDel(m, win_len);
   delete[] data;
   data = nullptr;
 }
