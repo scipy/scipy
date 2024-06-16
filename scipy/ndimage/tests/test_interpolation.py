@@ -92,7 +92,7 @@ class TestNdimageInterpolation:
     def test_spline01(self, dtype, order):
         data = np.ones([], dtype)
         out = ndimage.spline_filter(data, order=order)
-        assert_array_almost_equal(out, 1)
+        assert out == np.asarray(1)
 
     @pytest.mark.parametrize('order', range(2, 6))
     @pytest.mark.parametrize('dtype', types)
@@ -106,7 +106,7 @@ class TestNdimageInterpolation:
     def test_spline03(self, dtype, order):
         data = np.ones([], dtype)
         out = ndimage.spline_filter(data, order, output=dtype)
-        assert_array_almost_equal(out, 1)
+        assert out == np.asarray(1)
 
     @pytest.mark.parametrize('order', range(2, 6))
     @pytest.mark.parametrize('dtype', types)
