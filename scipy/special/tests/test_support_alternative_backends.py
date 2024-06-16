@@ -78,7 +78,7 @@ def test_support_alternative_backends(xp, data, f_name_n_args):
             assume(not np.any((x == 0) & (y == 1)))
         if f_name == 'betainc':  # google/jax#21900
             a = args_np[0]
-            assume(np.all(a < 1e-30))
+            assume(np.all(a > 1e-30))
 
     # `torch.asarray(np.asarray(1.))` produces
     # TypeError: can't convert np.ndarray of type numpy.object_.
