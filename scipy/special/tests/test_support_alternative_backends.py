@@ -72,8 +72,7 @@ def test_support_alternative_backends(xp, data, f_name_n_args):
     # Make exceptions for counterexamples
     if is_jax(xp):
         if f_name in {'gammainc', 'gammaincc'}:  # google/jax#20507
-            a = args_np[0]
-            assume(np.all(a != 0))
+            pytest.skip("google/jax#20507")
         if f_name == 'rel_entr':  # google/jax#21265
             x, y = args_np[0], args_np[1]
             assume(not np.any((x == 0) & (y == 1)))
