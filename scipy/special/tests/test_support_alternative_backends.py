@@ -69,14 +69,11 @@ def test_support_alternative_backends(xp, data, f_name_n_args):
     args_np = [np.asarray(data.draw(npst.arrays(dtype_np, shape, elements=elements)))
                for shape in shapes]
 
-    # Make exceptions for counter-examples
+    # Make exceptions for counterexamples
     if is_jax(xp):
-        if f_name == 'gammainc':  # google/jax#20507
-            a, x = args_np[0], args_np[1]
-            assume(not np.any((a == 0) & (x == 1)))
-        if f_name == 'gammaincc':  # google/jax#20507
-            a, x = args_np[0], args_np[1]
-            assume(not np.any((a == 0) & (x == 0)))
+        if f_name in {'gammainc', 'gammaincc'}:  # google/jax#20507
+            a = args_np[0]
+            assume(np.all(a != 0))
         if f_name == 'rel_entr':  # google/jax#21265
             x, y = args_np[0], args_np[1]
             assume(not np.any((x == 0) & (y == 1)))
