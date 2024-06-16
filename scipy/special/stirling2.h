@@ -117,5 +117,72 @@ double _stirling2_inexact(double n, double k) {
   }
 }
 
+// Dynamic programming
+
+double _stirling1_dp(double n, double k){
+    if ((n == 0 && k == 0) || (n==1 && k==1)) {
+        return 1.;
+    }
+    if (k <= 0 || k > n || n < 0){
+        return 0.;
+    }
+    int arraySize = k <= n - k + 1 ? k : n - k + 1;
+    double *curr = (double *) malloc(arraySize * sizeof(double));
+    for (int i = 0; i < arraySize; i++){
+        curr[i] = 1.;
+    }
+    if (k <= n - k + 1) {
+        for (int i = 1; i < n - k + 1; i++){
+            for (int j = 1; j < k; j++){
+                curr[j] = i * curr[j] + curr[j - 1];
+                if (isinf(curr[j])){
+                    free(curr);
+                    return INFINITY; // numeric overflow
+                }
+            }
+        }
+    } else {
+        for (int i = 1; i < k; i++){
+            for (int j = 1; j < n - k + 1; j++){
+                curr[j] =  curr[j - 1] + i * curr[j];
+                if (isinf(curr[j])){
+                    free(curr);
+                    return INFINITY; // numeric overflow
+                }
+            }
+        }
+    }
+    double output = curr[arraySize - 1];
+    free(curr);
+    return output;
+}
+
+// second order Temme approximation
+
+double _stirling1_temme(double n, double k){
+  if ((n == k && n >= 0) || (n > 0 && k==1)){
+      return 1.;
+  }
+  if (k <= 0 || k > n || n < 0){
+      return 0.;
+  }
+  double mu = (double)k / (double)n;
+  // TODO: fill this in...
+  return 1;
+}
+/*
+ *  This is the main entrypoint from stirling1 which handles dispatch to each
+ *  of the (private) functions here in the file that implement specific
+ *  ways of approximating the stirling numbers of the first kind
+ *
+ */
+
+double _stirling1_inexact(double n, double k) {
+  if (n<=50) {
+    return _stirling1_dp(n, k);
+  } else {
+    return _stirling1_temme(n, k);
+  }
+}
 
 #endif
