@@ -3527,7 +3527,7 @@ def detrend(data: np.ndarray, axis: int = -1,
 
     Notes
     -----
-    Detrending can be interpreted as substracting a least squares fit polyonimial:
+    Detrending can be interpreted as subtracting a least squares fit polyonimial:
     Setting the parameter `type` to 'constant' corresponds to fitting a zeroth degree
     polynomial, 'linear' to a first degree polynomial. Consult the example below.
 

@@ -482,7 +482,7 @@ class Akima1DInterpolator(CubicHermiteSpline):
     >>> ax.legend()
     >>> fig.show()
 
-    The overshoot that occured in ``"akima"`` has been avoided in ``"makima"``.
+    The overshoot that occurred in ``"akima"`` has been avoided in ``"makima"``.
 
     References
     ----------

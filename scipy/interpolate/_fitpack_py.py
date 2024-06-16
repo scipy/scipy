@@ -587,7 +587,7 @@ def spalde(x, tck):
     ...        (0, 0, 0, 6, 0, 0, 0),  # coefficients
     ...        3)  # degree (cubic)
     >>> # Instance a B-spline object
-    >>> # `BSpline` objects are prefered, except for spalde()
+    >>> # `BSpline` objects are preferred, except for spalde()
     >>> bspl = BSpline(tck[0], tck[1], tck[2])
     >>> # Generate extra points to get a smooth curve
     >>> x = np.linspace(min(tck[0]), max(tck[0]), 100)

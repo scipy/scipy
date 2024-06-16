@@ -1222,7 +1222,7 @@ def minimum_phase(h: np.ndarray,
     minimum phase filters clearly show a reduced (negative) phase slope in the pass and
     transition band. The plots also illustrate that the filter with parameters
     ``method='homomorphic', half=False`` has same order and magnitude response as the
-    linear filter `h` wheras the other minimum phase filters have only half the order
+    linear filter `h` whereas the other minimum phase filters have only half the order
     and the square root  of the magnitude response.
     """
     h = np.asarray(h)
