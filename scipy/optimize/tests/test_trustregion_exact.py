@@ -458,17 +458,19 @@ class TestIterativeSubproblem:
             1.67123246e-06, 1.46624675e-08, 4.22723383e-08
         ])
 
-        subproblem_maxiter = 10  # without this, this test hangs.
+        subproblem_maxiter = [None, 10]
+        for maxiter in subproblem_maxiter:
+            # Solve Subproblem
+            subprob = IterativeSubproblem(
+                x=0,
+                fun=lambda x: 0,
+                jac=lambda x: J,
+                hess=lambda x: H,
+                k_easy=0.1,
+                k_hard=0.2,
+                maxiter=maxiter,
+            )
+            trust_radius = 1
+            p, hits_boundary = subprob.solve(trust_radius)
 
-        # Solve Subproblem
-        subprob = IterativeSubproblem(
-            x=0,
-            fun=lambda x: 0,
-            jac=lambda x: J,
-            hess=lambda x: H,
-            k_easy=0.1,
-            k_hard=0.2,
-            maxiter=subproblem_maxiter,
-        )
-        trust_radius = 1
-        p, hits_boundary = subprob.solve(trust_radius)
+            assert subprob.niter == (maxiter or IterativeSubproblem.MAXITER_DEFAULT)
