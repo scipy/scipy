@@ -55,12 +55,6 @@ def test_rel_entr_generic(dtype):
 def test_support_alternative_backends(xp, data, f_name_n_args):
     f_name, n_args = f_name_n_args
 
-    if is_jax(xp):
-        if f_name in ['gammainc', 'gammaincc']:
-            pytest.skip("google/jax#20507")
-        if f_name == 'rel_entr':
-            pytest.skip("google/jax#21265")
-
     f = getattr(special, f_name)
 
     mbs = npst.mutually_broadcastable_shapes(num_shapes=n_args)
@@ -75,13 +69,25 @@ def test_support_alternative_backends(xp, data, f_name_n_args):
     args_np = [np.asarray(data.draw(npst.arrays(dtype_np, shape, elements=elements)))
                for shape in shapes]
 
+    # Make exceptions for counter-examples
+    if is_jax(xp):
+        if f_name == 'gammainc':  # google/jax#20507
+            a, x = args_np[0], args_np[1]
+            assume(not np.any((a == 0) & (x == 1)))
+        if f_name == 'gammaincc':  # google/jax#20507
+            a, x = args_np[0], args_np[1]
+            assume(not np.any((a == 0) & (x == 0)))
+        if f_name == 'rel_entr':  # google/jax#21265
+            x, y = args_np[0], args_np[1]
+            assume(not np.any((x == 0) & (y == 1)))
+        if f_name == 'betainc':  # google/jax#21900
+            a = args_np[0]
+            assume(np.all(a < 1e-30))
+
     # `torch.asarray(np.asarray(1.))` produces
     # TypeError: can't convert np.ndarray of type numpy.object_.
     # So we extract the scalar from 0d arrays.
     args_xp = [xp.asarray(arg[()], dtype=dtype_xp) for arg in args_np]
-
-    if is_jax(xp) and f_name == 'betainc':
-        assume(np.all(args_xp[0] > 1e-30))
 
     ref = np.asarray(f(*args_np))
     res = f(*args_xp)
