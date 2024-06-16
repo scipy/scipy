@@ -66,7 +66,7 @@ class MultiUFunc:
     def force_complex_output(self):
         return self.__force_complex_output
 
-    def as_resolve_ufunc(self, func):
+    def register_resolve_ufunc(self, func):
         """Set `resolve_ufunc` method by decorating a function.
 
         The decorated function's first argument should be a JSON-like
@@ -93,7 +93,7 @@ class MultiUFunc:
             """Resolve to a ufunc based on keyword arguments."""
         self.resolve_ufunc = resolve_ufunc
 
-    def as_resolve_out_shapes(self, func):
+    def register_resolve_out_shapes(self, func):
         """Set `resolve_out_shapes` method by decorating a function."""
         if func.__doc__ is None:
             func.__doc__ = \
@@ -194,7 +194,7 @@ assoc_legendre_p = MultiUFunc(assoc_legendre_p,
 )
 
 
-@assoc_legendre_p.as_resolve_ufunc
+@assoc_legendre_p.register_resolve_ufunc
 def _(ufuncs, norm=False, diff_n=0):
     diff_n = _nonneg_int_or_fail(diff_n, "diff_n", strict=False)
     if not 0 <= diff_n <= 2:
@@ -246,13 +246,13 @@ assoc_legendre_p_all = MultiUFunc(assoc_legendre_p_all,
     """
 )
 
-@assoc_legendre_p_all.as_resolve_ufunc
+@assoc_legendre_p_all.register_resolve_ufunc
 def _(ufuncs, norm=False, diff_n=0):
     diff_n = _nonneg_int_or_fail(diff_n, "diff_n", strict=False)
     return ufuncs[norm][diff_n]
 
 
-@assoc_legendre_p_all.as_resolve_out_shapes
+@assoc_legendre_p_all.register_resolve_out_shapes
 def _(n, m, z_shape, nout):
     if ((not np.isscalar(m)) or (abs(m) > n)):
         raise ValueError("m must be <= n.")
@@ -271,7 +271,7 @@ sph_legendre_p = MultiUFunc(sph_legendre_p,
 )
 
 
-@sph_legendre_p.as_resolve_ufunc
+@sph_legendre_p.register_resolve_ufunc
 def _(ufuncs, diff_n = 0):
     diff_n = _nonneg_int_or_fail(diff_n, "diff_n", strict=False)
     if not 0 <= diff_n <= 2:
@@ -290,7 +290,7 @@ sph_legendre_p_all = MultiUFunc(sph_legendre_p_all,
 )
 
 
-@sph_legendre_p_all.as_resolve_ufunc
+@sph_legendre_p_all.register_resolve_ufunc
 def _(ufuncs, diff_n=0):
     diff_n = _nonneg_int_or_fail(diff_n, "diff_n", strict=False)
     if not 0 <= diff_n <= 2:
@@ -301,7 +301,7 @@ def _(ufuncs, diff_n=0):
     return ufuncs[diff_n]
 
 
-@sph_legendre_p_all.as_resolve_out_shapes
+@sph_legendre_p_all.register_resolve_out_shapes
 def _(n, m, z_shape, nout):
     if ((not np.isscalar(m)) or (abs(m) > n)):
         raise ValueError("m must be <= n.")
@@ -321,7 +321,7 @@ multi_assoc_legendre_p = MultiUFunc(multi_assoc_legendre_p,
 )
 
 
-@multi_assoc_legendre_p.as_resolve_ufunc
+@multi_assoc_legendre_p.register_resolve_ufunc
 def _(ufuncs, norm=False, diff_n=0):
     diff_n = _nonneg_int_or_fail(diff_n, "diff_n", strict=False)
     if not 0 <= diff_n <= 2:
@@ -342,7 +342,7 @@ multi_assoc_legendre_p_all = MultiUFunc(multi_assoc_legendre_p_all,
 )
 
 
-@multi_assoc_legendre_p_all.as_resolve_ufunc
+@multi_assoc_legendre_p_all.register_resolve_ufunc
 def _(ufuncs, norm=False, diff_n=0):
     if not ((isinstance(diff_n, int) or np.issubdtype(diff_n, np.integer))
             and diff_n >= 0):
@@ -357,7 +357,7 @@ def _(ufuncs, norm=False, diff_n=0):
     return ufuncs[norm][diff_n]
 
 
-@multi_assoc_legendre_p_all.as_resolve_out_shapes
+@multi_assoc_legendre_p_all.register_resolve_out_shapes
 def _(n, m, type_shape, z_shape, nout):
     if not isinstance(m, numbers.Integral) or (abs(m) > n):
         raise ValueError("m must be <= n.")
@@ -376,7 +376,7 @@ legendre_p = MultiUFunc(legendre_p,
 )
 
 
-@legendre_p.as_resolve_ufunc
+@legendre_p.register_resolve_ufunc
 def _(ufuncs, diff_n=0):
     if not ((isinstance(diff_n, int) or np.issubdtype(diff_n, np.integer))
             and diff_n >= 0):
@@ -400,7 +400,7 @@ legendre_p_all = MultiUFunc(legendre_p_all,
 )
 
 
-@legendre_p_all.as_resolve_ufunc
+@legendre_p_all.register_resolve_ufunc
 def _(ufuncs, diff_n=0):
     diff_n = _nonneg_int_or_fail(diff_n, "diff_n", strict=False)
     if not 0 <= diff_n <= 2:
@@ -411,7 +411,7 @@ def _(ufuncs, diff_n=0):
     return ufuncs[diff_n]
 
 
-@legendre_p_all.as_resolve_out_shapes
+@legendre_p_all.register_resolve_out_shapes
 def _(n, z_shape, nout):
     n = _nonneg_int_or_fail(n, 'n', strict=False)
 
@@ -427,7 +427,7 @@ sph_harm_y = MultiUFunc(sph_harm_y,
 )
 
 
-@sph_harm_y.as_resolve_ufunc
+@sph_harm_y.register_resolve_ufunc
 def _(ufuncs, diff_n=0):
     diff_n = _nonneg_int_or_fail(diff_n, "diff_n", strict=False)
     if not 0 <= diff_n <= 2:
@@ -447,7 +447,7 @@ sph_harm_y_all = MultiUFunc(sph_harm_y_all,
 )
 
 
-@sph_harm_y_all.as_resolve_ufunc
+@sph_harm_y_all.register_resolve_ufunc
 def _(ufuncs, diff_n=0):
     diff_n = _nonneg_int_or_fail(diff_n, "diff_n", strict=False)
     if not 0 <= diff_n <= 2:
@@ -458,7 +458,7 @@ def _(ufuncs, diff_n=0):
     return ufuncs
 
 
-@sph_harm_y_all.as_resolve_out_shapes
+@sph_harm_y_all.register_resolve_out_shapes
 def _(n, m, theta_shape, phi_shape, nout):
     if ((not np.isscalar(m)) or (abs(m) > n)):
         raise ValueError("m must be <= n.")
