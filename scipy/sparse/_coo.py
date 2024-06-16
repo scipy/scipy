@@ -813,7 +813,7 @@ class coo_matrix(spmatrix, _coo_base):
 
     Sparse matrices can be used in arithmetic operations: they support
     addition, subtraction, multiplication, division, and matrix power.
-    
+
     Advantages of the COO format
         - facilitates fast conversion among sparse formats
         - permits duplicate entries (see example)
