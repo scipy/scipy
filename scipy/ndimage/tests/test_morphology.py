@@ -588,7 +588,7 @@ class TestNdimageMorphology:
 
     def test_generate_structure01(self):
         struct = ndimage.generate_binary_structure(0, 1)
-        assert_array_almost_equal(struct, 1)
+        assert struct == 1
 
     def test_generate_structure02(self):
         struct = ndimage.generate_binary_structure(1, 1)
@@ -645,13 +645,13 @@ class TestNdimageMorphology:
     def test_binary_erosion01(self, dtype):
         data = np.ones([], dtype)
         out = ndimage.binary_erosion(data)
-        assert_array_almost_equal(out, 1)
+        assert out == 1
 
     @pytest.mark.parametrize('dtype', types)
     def test_binary_erosion02(self, dtype):
         data = np.ones([], dtype)
         out = ndimage.binary_erosion(data, border_value=1)
-        assert_array_almost_equal(out, 1)
+        assert out == 1
 
     @pytest.mark.parametrize('dtype', types)
     def test_binary_erosion03(self, dtype):
@@ -1238,13 +1238,13 @@ class TestNdimageMorphology:
     def test_binary_dilation01(self, dtype):
         data = np.ones([], dtype)
         out = ndimage.binary_dilation(data)
-        assert_array_almost_equal(out, np.asarray(1))
+        assert out == np.asarray(1)
 
     @pytest.mark.parametrize('dtype', types)
     def test_binary_dilation02(self, dtype):
         data = np.zeros([], dtype)
         out = ndimage.binary_dilation(data)
-        assert_array_almost_equal(out, np.asarray(False))
+        assert out == np.asarray(False)
 
     @pytest.mark.parametrize('dtype', types)
     def test_binary_dilation03(self, dtype):

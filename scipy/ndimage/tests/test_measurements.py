@@ -128,14 +128,14 @@ class Test_measurements_select:
 def test_label01():
     data = np.ones([])
     out, n = ndimage.label(data)
-    assert_array_almost_equal(out, 1)
+    assert out == 1
     assert n == 1
 
 
 def test_label02():
     data = np.zeros([])
     out, n = ndimage.label(data)
-    assert_array_almost_equal(out, 0)
+    assert out == 0
     assert n == 0
 
 
