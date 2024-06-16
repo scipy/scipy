@@ -1,5 +1,5 @@
 import pytest
-from hypothesis import given, strategies, reproduce_failure  # noqa: F401
+from hypothesis import given, strategies, reproduce_failure, assume  # noqa: F401
 import hypothesis.extra.numpy as npst
 
 from scipy.special._support_alternative_backends import (get_array_special_func,
@@ -79,6 +79,9 @@ def test_support_alternative_backends(xp, data, f_name_n_args):
     # TypeError: can't convert np.ndarray of type numpy.object_.
     # So we extract the scalar from 0d arrays.
     args_xp = [xp.asarray(arg[()], dtype=dtype_xp) for arg in args_np]
+
+    if is_jax(xp) and f_name == 'betainc':
+        assume(np.all(args_xp[0] > 1e-30))
 
     ref = np.asarray(f(*args_np))
     res = f(*args_xp)
