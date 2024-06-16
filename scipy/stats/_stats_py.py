@@ -9888,7 +9888,7 @@ def wasserstein_distance_nd(u_values, v_values, u_weights=None, v_weights=None):
     :math:`d_{ij} = d(x_i, y_j)`.
 
     Given :math:`\Gamma`, :math:`D`, :math:`b`, the Monge problem can be
-    tranformed into a linear programming problem by
+    transformed into a linear programming problem by
     taking :math:`A x = b` as constraints and :math:`z = c^T x` as minimization
     target (sum of costs) , where matrix :math:`A` has the form
 
@@ -10589,7 +10589,7 @@ def _rankdata(x, method, return_ties=False):
         # - Functions that use `t` usually don't need to which each element of the
         #   original array is associated with each tie count; they perform a reduction
         #   over the tie counts onnly. The tie counts are naturally computed in a
-        #   sorted order, so this does not unnecesarily reorder them.
+        #   sorted order, so this does not unnecessarily reorder them.
         # - One exception is `wilcoxon`, which needs the number of zeros. Zeros always
         #   have the lowest rank, so it is easy to find them at the zeroth index.
         t = np.zeros(shape, dtype=float)
