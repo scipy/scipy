@@ -428,17 +428,16 @@ def get_xp_devices(xp: ModuleType) -> list[str] | list[None]:
 
     # given namespace is not known to have a list of available devices;
     # return `[None]` so that one can use this in tests for `device=None`.
-    return [None] 
+    return [None]
 
 
-def scipy_namespace_for(xp: ModuleType) -> ModuleType:
+def scipylike_namespace_for(xp: ModuleType) -> ModuleType:
+    """Return the `scipy`-like namespace of a non-NumPy backend
+
+    That is, return the namespace corresponding with backend `xp` that contains
+    `scipy` sub-namespaces like `linalg` and `special`. If no such namespace exists,
+    return None. Useful for dispatching.
     """
-    Return the `scipy` namespace for alternative backends, where it exists,
-    such as `cupyx.scipy` and `jax.scipy`. Useful for ad hoc dispatching.
-
-    Default: return `scipy` (this package).
-    """
-
 
     if is_cupy(xp):
         import cupyx  # type: ignore[import-not-found,import-untyped]
@@ -448,8 +447,10 @@ def scipy_namespace_for(xp: ModuleType) -> ModuleType:
         import jax  # type: ignore[import-not-found]
         return jax.scipy
 
-    import scipy
-    return scipy
+    if is_torch(xp):
+        return xp
+
+    return None
 
 
 # temporary substitute for xp.minimum, which is not yet in all backends

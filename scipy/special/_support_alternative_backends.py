@@ -3,9 +3,8 @@ import sys
 import functools
 
 import numpy as np
-import scipy
 from scipy._lib._array_api import (
-    array_namespace, scipy_namespace_for, is_numpy, is_torch
+    array_namespace, scipylike_namespace_for, is_numpy
 )
 from . import _ufuncs
 # These don't really need to be imported, but otherwise IDEs might not realize
@@ -21,13 +20,11 @@ array_api_compat_prefix = "scipy._lib.array_api_compat"
 
 
 def get_array_special_func(f_name, xp, n_array_args):
-    spx = scipy_namespace_for(xp)
+    spx = scipylike_namespace_for(xp)
     f = None
     if is_numpy(xp):
         f = getattr(_ufuncs, f_name, None)
-    elif is_torch(xp):
-        f = getattr(xp.special, f_name, None)
-    elif spx is not scipy:
+    elif spx is not None:
         f = getattr(spx.special, f_name, None)
 
     if f is not None:
@@ -82,11 +79,13 @@ def _xlogy(xp, spx):
 
 
 def _chdtr(xp, spx):
+    if spx is None:
+        return None
     # The difference between this and just using `gammainc`
     # defined by `get_array_special_func` is that if `gammainc`
     # isn't found, we don't want to use the SciPy version; we'll
     # return None here and use the SciPy version of `chdtr`.
-    gammainc = getattr(spx, 'gammainc', None)  # noqa: F811
+    gammainc = getattr(spx.special, 'gammainc', None)  # noqa: F811
     if gammainc is None and hasattr(xp, 'special'):
         gammainc = getattr(xp.special, 'gammainc', None)
     if gammainc is None:
@@ -101,11 +100,13 @@ def _chdtr(xp, spx):
 
 
 def _chdtrc(xp, spx):
+    if spx is None:
+        return None
     # The difference between this and just using `gammaincc`
     # defined by `get_array_special_func` is that if `gammaincc`
     # isn't found, we don't want to use the SciPy version; we'll
     # return None here and use the SciPy version of `chdtrc`.
-    gammaincc = getattr(spx, 'gammaincc', None)  # noqa: F811
+    gammaincc = getattr(spx.special, 'gammaincc', None)  # noqa: F811
     if gammaincc is None and hasattr(xp, 'special'):
         gammaincc = getattr(xp.special, 'gammaincc', None)
     if gammaincc is None:
@@ -120,7 +121,9 @@ def _chdtrc(xp, spx):
 
 
 def _betaincc(xp, spx):
-    betainc = getattr(spx, 'betainc', None)  # noqa: F811
+    if spx is None:
+        return None
+    betainc = getattr(spx.special, 'betainc', None)  # noqa: F811
     if betainc is None and hasattr(xp, 'special'):
         betainc = getattr(xp.special, 'betainc', None)
     if betainc is None:
@@ -133,7 +136,9 @@ def _betaincc(xp, spx):
 
 
 def _stdtr(xp, spx):
-    betainc = getattr(spx, 'betainc', None)  # noqa: F811
+    if spx is None:
+        return None
+    betainc = getattr(spx.special, 'betainc', None)  # noqa: F811
     if betainc is None and hasattr(xp, 'special'):
         betainc = getattr(xp.special, 'betainc', None)
     if betainc is None:
@@ -141,8 +146,8 @@ def _stdtr(xp, spx):
 
     def __stdtr(df, t):
         x = df / (t ** 2 + df)
-        tail = betainc(df / 2, xp.asarray(0.5), x) / 2
-        return xp.where(x < 0, tail, 1 - tail)
+        tail = betainc(df / 2, 0.5, x) / 2
+        return xp.where(t < 0, tail, 1 - tail)
 
     return __stdtr
 
