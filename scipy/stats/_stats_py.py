@@ -9168,7 +9168,7 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t",
 
 
 @_axis_nan_policy_factory(SignificanceResult, kwd_samples=['weights'], paired=True)
-def combine_pvalues(pvalues, method='fisher', weights=None, axis=0):
+def combine_pvalues(pvalues, method='fisher', weights=None, *, axis=0):
     """
     Combine p-values from independent tests that bear upon the same hypothesis.
 
@@ -9292,6 +9292,8 @@ def combine_pvalues(pvalues, method='fisher', weights=None, axis=0):
     xp = array_namespace(pvalues)
     pvalues = xp.asarray(pvalues)
     if xp_size(pvalues) == 0:
+        # This is really only needed for *testing* _axis_nan_policy decorator
+        # It won't happen when the decorator is used.
         NaN = _get_nan(pvalues)
         return SignificanceResult(NaN, NaN)
 
@@ -9326,7 +9328,7 @@ def combine_pvalues(pvalues, method='fisher', weights=None, axis=0):
             weights = xp.ones_like(pvalues, dtype=pvalues.dtype)
         elif weights.shape[axis] != n:
             raise ValueError("pvalues and weights must be of the same "
-                             "size along `axis`.")
+                             "length along `axis`.")
 
         norm = _SimpleNormal()
         Zi = norm.isf(pvalues)
