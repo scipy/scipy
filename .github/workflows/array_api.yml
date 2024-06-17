@@ -26,7 +26,7 @@ jobs:
     uses: ./.github/workflows/commit_message.yml
 
   pytorch_cpu:
-    name: Linux PyTorch CPU
+    name: Linux PyTorch/JAX/xp-strict CPU
     needs: get_commit_message
     if: >
       needs.get_commit_message.outputs.message == 1
@@ -62,7 +62,11 @@ jobs:
 
     - name: Install PyTorch CPU
       run: |
-        python -m pip install "torch<2.1" --index-url https://download.pytorch.org/whl/cpu
+        python -m pip install "torch==2.3" --index-url https://download.pytorch.org/whl/cpu
+
+    - name: Install JAX
+      run: |
+        python -m pip install "jax[cpu]"
 
     - name:  Prepare compiler cache
       id:    prep-ccache
@@ -74,7 +78,7 @@ jobs:
         echo "timestamp=${NOW}" >> $GITHUB_OUTPUT
 
     - name: Setup compiler cache
-      uses:  actions/cache@v3
+      uses:  actions/cache@v4
       id:    cache-ccache
       with:
         path: ${{ steps.prep-ccache.outputs.dir }}
@@ -94,6 +98,6 @@ jobs:
         python dev.py --no-build test -b all -s constants -- --durations 3 --timeout=60
         python dev.py --no-build test -b all -s fft -- --durations 3 --timeout=60
         python dev.py --no-build test -b all -t scipy.special.tests.test_support_alternative_backends -- --durations 3 --timeout=60
-        python dev.py --no-build test -b all -t scipy._lib.tests.test_array_api
+        python dev.py --no-build test -b all -t scipy._lib.tests.test_array_api -- --durations 3 --timeout=60
         python dev.py --no-build test -b all -t scipy._lib.tests.test__util -- --durations 3 --timeout=60
-        python dev.py --no-build test -b all -t scipy.stats.tests.test_stats -- --durations 3 --timeout=60
+        python dev.py --no-build test -b all -s stats -- --durations 3 --timeout=60

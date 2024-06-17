@@ -76,29 +76,30 @@ Bessel functions
 .. autosummary::
    :toctree: generated/
 
-   jv            -- Bessel function of the first kind of real order and \
-                    complex argument.
-   jve           -- Exponentially scaled Bessel function of order `v`.
-   yn            -- Bessel function of the second kind of integer order and \
-                    real argument.
-   yv            -- Bessel function of the second kind of real order and \
-                    complex argument.
-   yve           -- Exponentially scaled Bessel function of the second kind \
-                    of real order.
-   kn            -- Modified Bessel function of the second kind of integer \
-                    order `n`
-   kv            -- Modified Bessel function of the second kind of real order \
-                    `v`
-   kve           -- Exponentially scaled modified Bessel function of the \
-                    second kind.
-   iv            -- Modified Bessel function of the first kind of real order.
-   ive           -- Exponentially scaled modified Bessel function of the \
-                    first kind.
-   hankel1       -- Hankel function of the first kind.
-   hankel1e      -- Exponentially scaled Hankel function of the first kind.
-   hankel2       -- Hankel function of the second kind.
-   hankel2e      -- Exponentially scaled Hankel function of the second kind.
-   wright_bessel -- Wright's generalized Bessel function.
+   jv                -- Bessel function of the first kind of real order and \
+                        complex argument.
+   jve               -- Exponentially scaled Bessel function of order `v`.
+   yn                -- Bessel function of the second kind of integer order and \
+                        real argument.
+   yv                -- Bessel function of the second kind of real order and \
+                        complex argument.
+   yve               -- Exponentially scaled Bessel function of the second kind \
+                        of real order.
+   kn                -- Modified Bessel function of the second kind of integer \
+                        order `n`
+   kv                -- Modified Bessel function of the second kind of real order \
+                        `v`
+   kve               -- Exponentially scaled modified Bessel function of the \
+                        second kind.
+   iv                -- Modified Bessel function of the first kind of real order.
+   ive               -- Exponentially scaled modified Bessel function of the \
+                        first kind.
+   hankel1           -- Hankel function of the first kind.
+   hankel1e          -- Exponentially scaled Hankel function of the first kind.
+   hankel2           -- Hankel function of the second kind.
+   hankel2e          -- Exponentially scaled Hankel function of the second kind.
+   wright_bessel     -- Wright's generalized Bessel function.
+   log_wright_bessel -- Logarithm of Wright's generalized Bessel function.
 
 The following function does not accept NumPy arrays (it is not a
 universal function):
@@ -808,8 +809,9 @@ from ._ufuncs import *
 
 # Replace some function definitions from _ufuncs to add Array API support
 from ._support_alternative_backends import (
-    log_ndtr, ndtr, ndtri, erf, erfc, i0, i0e, i1, i1e,
-    gammaln, gammainc, gammaincc, logit, expit)
+    log_ndtr, ndtr, ndtri, erf, erfc, i0, i0e, i1, i1e, gammaln,
+    gammainc, gammaincc, logit, expit, entr, rel_entr, xlogy,
+    chdtr, chdtrc, betainc, betaincc, stdtr)
 
 from . import _basic
 from ._basic import *

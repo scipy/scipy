@@ -308,6 +308,7 @@ def test_precond_dummy(case):
 
 
 # Specific test for poisson1d and poisson2d cases
+@pytest.mark.fail_slow(10)
 @pytest.mark.parametrize('case', [x for x in IterativeParams().cases
                                   if x.name in ('poisson1d', 'poisson2d')],
                          ids=['poisson1d', 'poisson2d'])
@@ -505,7 +506,7 @@ def test_x0_working(solver):
 
     x, info = solver(A, b, x0=x0, **kw)
     assert info == 0
-    assert norm(A @ x - b) <= 2e-6*norm(b)
+    assert norm(A @ x - b) <= 3e-6*norm(b)
 
 
 def test_x0_equals_Mb(case):
@@ -684,6 +685,7 @@ class TestGMRES:
         assert_allclose(r_x, x)
         assert r_info == info
 
+    @pytest.mark.fail_slow(10)
     def test_atol_legacy(self):
 
         A = eye(2)

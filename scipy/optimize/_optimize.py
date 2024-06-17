@@ -86,7 +86,7 @@ class MemoizeJac:
 
 def _wrap_callback(callback, method=None):
     """Wrap a user-provided callback so that attributes can be attached."""
-    if callback is None or method in {'tnc', 'slsqp', 'cobyla'}:
+    if callback is None or method in {'tnc', 'slsqp', 'cobyla', 'cobyqa'}:
         return callback  # don't wrap
 
     sig = inspect.signature(callback)
@@ -3709,7 +3709,7 @@ def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin,
     the `finish` program's results usually will not coincide with any
     gridpoint, and may fall outside the grid's boundary. Thus, if a
     minimum only needs to be found over the provided grid points, make
-    sure to pass in `finish=None`.
+    sure to pass in ``finish=None``.
 
     *Note 2*: The grid of points is a `numpy.mgrid` object.
     For `brute` the `ranges` and `Ns` inputs have the following effect.
@@ -3908,6 +3908,7 @@ def show_options(solver=None, method=None, disp=True):
     - :ref:`L-BFGS-B    <optimize.minimize-lbfgsb>`
     - :ref:`TNC         <optimize.minimize-tnc>`
     - :ref:`COBYLA      <optimize.minimize-cobyla>`
+    - :ref:`COBYQA      <optimize.minimize-cobyqa>`
     - :ref:`SLSQP       <optimize.minimize-slsqp>`
     - :ref:`dogleg      <optimize.minimize-dogleg>`
     - :ref:`trust-ncg   <optimize.minimize-trustncg>`
@@ -3982,6 +3983,7 @@ def show_options(solver=None, method=None, disp=True):
             ('bfgs', 'scipy.optimize._optimize._minimize_bfgs'),
             ('cg', 'scipy.optimize._optimize._minimize_cg'),
             ('cobyla', 'scipy.optimize._cobyla_py._minimize_cobyla'),
+            ('cobyqa', 'scipy.optimize._cobyqa_py._minimize_cobyqa'),
             ('dogleg', 'scipy.optimize._trustregion_dogleg._minimize_dogleg'),
             ('l-bfgs-b', 'scipy.optimize._lbfgsb_py._minimize_lbfgsb'),
             ('nelder-mead', 'scipy.optimize._optimize._minimize_neldermead'),

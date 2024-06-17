@@ -17,6 +17,7 @@ from scipy.stats._hypotests import (epps_singleton_2samp, cramervonmises,
 from scipy.stats._mannwhitneyu import mannwhitneyu, _mwu_state
 from .common_tests import check_named_results
 from scipy._lib._testutils import _TestPythranFunc
+from scipy.stats._axis_nan_policy import SmallSampleWarning, too_small_1d_not_omit
 
 
 class TestEppsSingleton:
@@ -55,9 +56,12 @@ class TestEppsSingleton:
         assert_(p1 == p2 == p3)
 
     def test_epps_singleton_size(self):
-        # raise error if less than 5 elements
+        # warns if sample contains fewer than 5 elements
         x, y = (1, 2, 3, 4), np.arange(10)
-        assert_raises(ValueError, epps_singleton_2samp, x, y)
+        with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
+            res = epps_singleton_2samp(x, y)
+            assert_equal(res.statistic, np.nan)
+            assert_equal(res.pvalue, np.nan)
 
     def test_epps_singleton_nonfinite(self):
         # raise error if there are non-finite values
@@ -128,9 +132,12 @@ class TestCvm:
         assert_(_cdf_cvm(res.statistic, n) > 1.0)
         assert_equal(res.pvalue, 0)
 
-    def test_invalid_input(self):
-        assert_raises(ValueError, cramervonmises, [1.5], "norm")
-        assert_raises(ValueError, cramervonmises, (), "norm")
+    @pytest.mark.parametrize('x', [(), [1.5]])
+    def test_invalid_input(self, x):
+        with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
+            res = cramervonmises(x, "norm")
+            assert_equal(res.statistic, np.nan)
+            assert_equal(res.pvalue, np.nan)
 
     def test_values_R(self):
         # compared against R package goftest, version 1.1.1
@@ -168,13 +175,21 @@ class TestMannWhitneyU:
 
     # --- Test Input Validation ---
 
+    @pytest.mark.parametrize('kwargs_update', [{'x': []}, {'y': []},
+                                               {'x': [], 'y': []}])
+    def test_empty(self, kwargs_update):
+        x = np.array([1, 2])  # generic, valid inputs
+        y = np.array([3, 4])
+        kwargs = dict(x=x, y=y)
+        kwargs.update(kwargs_update)
+        with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
+            res = mannwhitneyu(**kwargs)
+            assert_equal(res.statistic, np.nan)
+            assert_equal(res.pvalue, np.nan)
+
     def test_input_validation(self):
         x = np.array([1, 2])  # generic, valid inputs
         y = np.array([3, 4])
-        with assert_raises(ValueError, match="`x` and `y` must be of nonzero"):
-            mannwhitneyu([], y)
-        with assert_raises(ValueError, match="`x` and `y` must be of nonzero"):
-            mannwhitneyu(x, [])
         with assert_raises(ValueError, match="`use_continuity` must be one"):
             mannwhitneyu(x, y, use_continuity='ekki')
         with assert_raises(ValueError, match="`alternative` must be one of"):
@@ -571,11 +586,6 @@ class TestMannWhitneyU:
                            alternative=alternative, method=method)
         assert_equal(res.statistic, statistic_exp)
         assert_allclose(res.pvalue, pvalue_exp)
-
-    def test_gh_6897(self):
-        # Test for correct behavior with empty input
-        with assert_raises(ValueError, match="`x` and `y` must be of nonzero"):
-            mannwhitneyu([], [])
 
     def test_gh_4067(self):
         # Test for correct behavior with all NaN input - default is propagate
@@ -1314,13 +1324,16 @@ class TestBoschlooExact:
 
 
 class TestCvm_2samp:
+    @pytest.mark.parametrize('args', [([], np.arange(5)),
+                                      (np.arange(5), [1])])
+    def test_too_small_input(self, args):
+        with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
+            res = cramervonmises_2samp(*args)
+            assert_equal(res.statistic, np.nan)
+            assert_equal(res.pvalue, np.nan)
+
     def test_invalid_input(self):
         y = np.arange(5)
-        msg = 'x and y must contain at least two observations.'
-        with pytest.raises(ValueError, match=msg):
-            cramervonmises_2samp([], y)
-        with pytest.raises(ValueError, match=msg):
-            cramervonmises_2samp(y, [1])
         msg = 'method must be either auto, exact or asymptotic'
         with pytest.raises(ValueError, match=msg):
             cramervonmises_2samp(y, y, 'xyz')
@@ -1353,7 +1366,7 @@ class TestCvm_2samp:
         # The values are taken from Table 2, 3, 4 and 5
         assert_equal(_pval_cvm_2samp_exact(statistic, m, n), pval)
 
-    @pytest.mark.slow
+    @pytest.mark.xslow
     def test_large_sample(self):
         # for large samples, the statistic U gets very large
         # do a sanity check that p-value is not 0, 1 or nan

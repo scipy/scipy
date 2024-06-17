@@ -26,9 +26,6 @@ from ._numdiff import approx_derivative
 from ._constraints import old_bound_to_new, _arr_to_scalar
 from scipy._lib._array_api import atleast_nd, array_namespace
 
-# deprecated imports to be removed in SciPy 1.13.0
-from numpy import exp, inf  # noqa: F401
-
 
 __docformat__ = "restructuredtext en"
 

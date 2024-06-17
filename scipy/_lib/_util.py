@@ -15,7 +15,7 @@ from typing import (
 )
 
 import numpy as np
-from scipy._lib._array_api import array_namespace, is_numpy
+from scipy._lib._array_api import array_namespace, is_numpy, size as xp_size
 
 
 AxisError: type[Exception]
@@ -268,8 +268,8 @@ def check_random_state(seed):
     if isinstance(seed, (np.random.RandomState, np.random.Generator)):
         return seed
 
-    raise ValueError('%r cannot be used to seed a numpy.random.RandomState'
-                     ' instance' % seed)
+    raise ValueError(f"'{seed}' cannot be used to seed a numpy.random.RandomState"
+                     " instance")
 
 
 def _asarray_validated(a, check_finite=True,
@@ -707,29 +707,29 @@ def _nan_allsame(a, axis, keepdims=False):
     return ((a0 == a) | np.isnan(a)).all(axis=axis, keepdims=keepdims)
 
 
-def _contains_nan(a, nan_policy='propagate', use_summation=True,
-                  policies=None, *, xp=None):
+def _contains_nan(a, nan_policy='propagate', policies=None, *,
+                  xp_omit_okay=False, xp=None):
+    # Regarding `xp_omit_okay`: Temporarily, while `_axis_nan_policy` does not
+    # handle non-NumPy arrays, most functions that call `_contains_nan` want
+    # it to raise an error if `nan_policy='omit'` and `xp` is not `np`.
+    # Some functions support `nan_policy='omit'` natively, so setting this to
+    # `True` prevents the error from being raised.
     if xp is None:
         xp = array_namespace(a)
     not_numpy = not is_numpy(xp)
 
-    if not_numpy:
-        use_summation = False  # some array_likes ignore nans (e.g. pandas)
     if policies is None:
-        policies = ['propagate', 'raise', 'omit']
+        policies = {'propagate', 'raise', 'omit'}
     if nan_policy not in policies:
-        raise ValueError("nan_policy must be one of {%s}" %
-                         ', '.join("'%s'" % s for s in policies))
+        raise ValueError(f"nan_policy must be one of {set(policies)}.")
 
     inexact = (xp.isdtype(a.dtype, "real floating")
                or xp.isdtype(a.dtype, "complex floating"))
-    if inexact:
-        # The summation method avoids creating another (potentially huge) array
-        if use_summation:
-            with np.errstate(invalid='ignore', over='ignore'):
-                contains_nan = xp.isnan(xp.sum(a))
-        else:
-            contains_nan = xp.any(xp.isnan(a))
+    if xp_size(a) == 0:
+        contains_nan = False
+    elif inexact:
+        # Faster and less memory-intensive than xp.any(xp.isnan(a))
+        contains_nan = xp.isnan(xp.max(a))
     elif is_numpy(xp) and np.issubdtype(a.dtype, object):
         contains_nan = False
         for el in a.ravel():
@@ -744,7 +744,7 @@ def _contains_nan(a, nan_policy='propagate', use_summation=True,
     if contains_nan and nan_policy == 'raise':
         raise ValueError("The input contains nan values")
 
-    if not_numpy and contains_nan and nan_policy=='omit':
+    if not xp_omit_okay and not_numpy and contains_nan and nan_policy=='omit':
         message = "`nan_policy='omit' is incompatible with non-NumPy arrays."
         raise ValueError(message)
 
@@ -815,15 +815,17 @@ def _rng_spawn(rng, n_children):
     return child_rngs
 
 
-def _get_nan(*data):
+def _get_nan(*data, xp=None):
+    xp = array_namespace(*data) if xp is None else xp
     # Get NaN of appropriate dtype for data
-    data = [np.asarray(item) for item in data]
+    data = [xp.asarray(item) for item in data]
     try:
-        dtype = np.result_type(*data, np.half)  # must be a float16 at least
+        min_float = getattr(xp, 'float16', xp.float32)
+        dtype = xp.result_type(*data, min_float)  # must be at least a float
     except DTypePromotionError:
         # fallback to float64
-        return np.array(np.nan, dtype=np.float64)[()]
-    return np.array(np.nan, dtype=dtype)[()]
+        dtype = xp.float64
+    return xp.asarray(xp.nan, dtype=dtype)[()]
 
 
 def normalize_axis_index(axis, ndim):

@@ -24,8 +24,9 @@ from ._sparsetools import (bsr_matvec, bsr_matvecs, csr_matmat_maxnnz,
 class _bsr_base(_cs_matrix, _minmax_mixin):
     _format = 'bsr'
 
-    def __init__(self, arg1, shape=None, dtype=None, copy=False, blocksize=None):
-        _data_matrix.__init__(self)
+    def __init__(self, arg1, shape=None, dtype=None, copy=False,
+                 blocksize=None, *, maxprint=None):
+        _data_matrix.__init__(self, arg1, maxprint=maxprint)
 
         if issparse(arg1):
             if arg1.format == self.format and copy:
@@ -94,8 +95,10 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
                     if not isshape(blocksize):
                         raise ValueError(f'invalid blocksize={blocksize}')
                     if tuple(blocksize) != self.data.shape[1:]:
-                        raise ValueError('mismatching blocksize={} vs {}'.format(
-                            blocksize, self.data.shape[1:]))
+                        raise ValueError(
+                            f'mismatching blocksize={blocksize}'
+                            f' vs {self.data.shape[1:]}'
+                        )
             else:
                 raise ValueError('unrecognized bsr_array constructor usage')
         else:
@@ -105,9 +108,9 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
             except Exception as e:
                 raise ValueError("unrecognized form for"
                         " %s_matrix constructor" % self.format) from e
-            arg1 = self._coo_container(
-                arg1, dtype=dtype
-            ).tobsr(blocksize=blocksize)
+            if isinstance(self, sparray) and arg1.ndim != 2:
+                raise ValueError(f"BSR arrays don't support {arg1.ndim}D input. Use 2D")
+            arg1 = self._coo_container(arg1, dtype=dtype).tobsr(blocksize=blocksize)
             self.indptr, self.indices, self.data, self._shape = (
                 arg1.indptr, arg1.indices, arg1.data, arg1._shape
             )
@@ -217,14 +220,22 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
 
     _getnnz.__doc__ = _spbase._getnnz.__doc__
 
+    def count_nonzero(self, axis=None):
+        if axis is not None:
+            raise NotImplementedError(
+                "count_nonzero over axis is not implemented for BSR format."
+            )
+        return np.count_nonzero(self._deduped_data())
+
+    count_nonzero.__doc__ = _spbase.count_nonzero.__doc__
+
     def __repr__(self):
         _, fmt = _formats[self.format]
         sparse_cls = 'array' if isinstance(self, sparray) else 'matrix'
-        shape_str = 'x'.join(str(x) for x in self.shape)
-        blksz = 'x'.join(str(x) for x in self.blocksize)
+        b = 'x'.join(str(x) for x in self.blocksize)
         return (
-            f"<{shape_str} sparse {sparse_cls} of type '{self.dtype.type}'\n"
-            f"\twith {self.nnz} stored elements (blocksize = {blksz}) in {fmt} format>"
+            f"<{fmt} sparse {sparse_cls} of dtype '{self.dtype}'\n"
+            f"\twith {self.nnz} stored elements (blocksize={b}) and shape {self.shape}>"
         )
 
     def diagonal(self, k=0):

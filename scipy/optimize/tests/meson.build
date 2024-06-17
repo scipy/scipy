@@ -12,6 +12,7 @@ py3.install_sources([
     'test_bracket.py',
     'test_chandrupatla.py',
     'test_cobyla.py',
+    'test_cobyqa.py',
     'test_constraint_conversion.py',
     'test_constraints.py',
     'test_cython_optimize.py',
@@ -44,10 +45,12 @@ py3.install_sources([
     'test_trustregion_krylov.py',
     'test_zeros.py'
   ],
-  subdir: 'scipy/optimize/tests'
+  subdir: 'scipy/optimize/tests',
+  install_tag: 'tests'
 )
 
 py3.install_sources(
   ['_cython_examples/extending.pyx', '_cython_examples/meson.build'],
-  subdir: 'scipy/optimize/tests/_cython_examples'
+  subdir: 'scipy/optimize/tests/_cython_examples',
+  install_tag: 'tests'
 )

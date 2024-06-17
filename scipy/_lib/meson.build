@@ -14,6 +14,9 @@ endif
 if not fs.exists('pocketfft/README.md')
   error('Missing the `pocketfft` submodule! Run `git submodule update --init` to fix this.')
 endif
+if not fs.exists('cobyqa/README.rst')
+  error('Missing the `cobyqa` submodule! Run `git submodule update --init` to fix this.')
+endif
 
 _lib_pxd = [
   fs.copyfile('__init__.py'),
@@ -42,7 +45,8 @@ py3.extension_module('_test_ccallback',
   include_directories: 'src',
   link_args: version_link_args,
   install: true,
-  subdir: 'scipy/_lib'
+  subdir: 'scipy/_lib',
+  install_tag: 'tests'
 )
 
 py3.extension_module('_fpumode',
@@ -59,7 +63,8 @@ py3.extension_module('_test_deprecation_call',
   include_directories: 'src',
   link_args: version_link_args,
   install: true,
-  subdir: 'scipy/_lib'
+  subdir: 'scipy/_lib',
+  install_tag: 'tests'
 )
 
 py3.extension_module('_test_deprecation_def',
@@ -68,7 +73,8 @@ py3.extension_module('_test_deprecation_def',
   include_directories: 'src',
   link_args: version_link_args,
   install: true,
-  subdir: 'scipy/_lib'
+  subdir: 'scipy/_lib',
+  install_tag: 'tests'
 )
 
 # May be easier as a compile flag, but use a config header file to stay
@@ -197,6 +203,37 @@ py3.install_sources(
     'array_api_compat/array_api_compat/torch/linalg.py',
   ],
   subdir: 'scipy/_lib/array_api_compat/torch',
+)
+
+py3.install_sources(
+  [
+    'cobyqa/cobyqa/__init__.py',
+    'cobyqa/cobyqa/framework.py',
+    'cobyqa/cobyqa/main.py',
+    'cobyqa/cobyqa/models.py',
+    'cobyqa/cobyqa/problem.py',
+    'cobyqa/cobyqa/settings.py',
+  ],
+  subdir: 'scipy/_lib/cobyqa',
+)
+
+py3.install_sources(
+  [
+    'cobyqa/cobyqa/subsolvers/__init__.py',
+    'cobyqa/cobyqa/subsolvers/geometry.py',
+    'cobyqa/cobyqa/subsolvers/optim.py',
+  ],
+  subdir: 'scipy/_lib/cobyqa/subsolvers',
+)
+
+py3.install_sources(
+  [
+    'cobyqa/cobyqa/utils/__init__.py',
+    'cobyqa/cobyqa/utils/exceptions.py',
+    'cobyqa/cobyqa/utils/math.py',
+    'cobyqa/cobyqa/utils/versions.py',
+  ],
+  subdir: 'scipy/_lib/cobyqa/utils',
 )
 
 subdir('_uarray')

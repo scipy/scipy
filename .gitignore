@@ -138,6 +138,7 @@ Thumbs.db
 doc/frontpage/build
 doc/source/reference/generated
 **/.ipynb_checkpoints
+doc/source/_contents
 
 # Things specific to this project #
 ###################################

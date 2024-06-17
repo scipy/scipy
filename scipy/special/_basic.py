@@ -2692,6 +2692,10 @@ def comb(N, k, *, exact=False, repetition=False):
     exact : bool, optional
         For integers, if `exact` is False, then floating point precision is
         used, otherwise the result is computed exactly.
+
+        .. deprecated:: 1.14.0
+            ``exact=True`` is deprecated for non-integer `N` and `k` and will raise an
+            error in SciPy 1.16.0
     repetition : bool, optional
         If `repetition` is True, then the number of combinations with
         repetition is computed.
@@ -2734,6 +2738,9 @@ def comb(N, k, *, exact=False, repetition=False):
             return _comb_int(N, k)
         # otherwise, we disregard `exact=True`; it makes no sense for
         # non-integral arguments
+        msg = ("`exact=True` is deprecated for non-integer `N` and `k` and will raise "
+               "an error in SciPy 1.16.0")
+        warnings.warn(msg, DeprecationWarning, stacklevel=2)
         return comb(N, k)
     else:
         k, N = asarray(k), asarray(N)
@@ -3013,8 +3020,8 @@ def factorial(n, exact=False):
             return math.factorial(n)
         elif exact:
             msg = ("Non-integer values of `n` together with `exact=True` are "
-                   "deprecated. Either ensure integer `n` or use `exact=False`.")
-            warnings.warn(msg, DeprecationWarning, stacklevel=2)
+                   "not supported. Either ensure integer `n` or use `exact=False`.")
+            raise ValueError(msg)
         return _factorialx_approx_core(n, k=1)
 
     # arrays & array-likes
@@ -3240,10 +3247,10 @@ def stirling2(N, K, *, exact=False):
         numbers for smaller arrays and uses a second order approximation due to
         Temme for larger entries  of `N` and `K` that allows trading speed for
         accuracy. See [2]_ for a description. Temme approximation is used for
-        values `n>50`. The max error from the DP has max relative error
-        `4.5*10^-16` for `n<=50` and the max error from the Temme approximation
-        has max relative error `5*10^-5` for `51 <= n < 70` and
-        `9*10^-6` for `70 <= n < 101`. Note that these max relative errors will
+        values ``n>50``. The max error from the DP has max relative error
+        ``4.5*10^-16`` for ``n<=50`` and the max error from the Temme approximation
+        has max relative error ``5*10^-5`` for ``51 <= n < 70`` and
+        ``9*10^-6`` for ``70 <= n < 101``. Note that these max relative errors will
         decrease further as `n` increases.
 
     Returns

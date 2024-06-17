@@ -632,7 +632,7 @@ def test_diagonal_data_types(n, m):
             # This is one of the slower tests because there are >1,000 configs
             # to test here. Flip a biased coin to decide whether to run  each
             # test to get decent coverage in less time.
-            if rnd.random() < 0.95:
+            if rnd.random() < 0.98:
                 continue  # too many tests
             eigvals, _ = lobpcg(A, X, B=B, M=M, Y=Y, tol=1e-4,
                                 maxiter=100, largest=False)

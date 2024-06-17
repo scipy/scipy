@@ -1,6 +1,6 @@
 #pragma once
 
-
+#include "scipy_dll.h"
 #include "special/error.h"
 
 
@@ -14,9 +14,9 @@ extern "C" {
         SF_ERROR_RAISE        /* Raise on errors */
     } sf_action_t;
     
-    void scipy_sf_error_set_action(sf_error_t code, sf_action_t action);
+    SCIPY_DLL void scipy_sf_error_set_action(sf_error_t code, sf_action_t action);
 
-    sf_action_t scipy_sf_error_get_action(sf_error_t code);
+    SCIPY_DLL sf_action_t scipy_sf_error_get_action(sf_error_t code);
 
 #ifdef __cplusplus
 }

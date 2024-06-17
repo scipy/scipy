@@ -19,7 +19,10 @@ from scipy._lib._util import (_aligned_zeros, check_random_state, MapWrapper,
                               rng_integers, _validate_int, _rename_parameter,
                               _contains_nan, _rng_html_rewrite, _lazywhere)
 
+skip_xp_backends = pytest.mark.skip_xp_backends
 
+
+@pytest.mark.slow
 def test__aligned_zeros():
     niter = 10
 
@@ -333,6 +336,9 @@ class TestContainsNaNTest:
         data4 = np.array([["1", 2], [3, np.nan]], dtype='object')
         assert _contains_nan(data4)[0]
 
+    @skip_xp_backends('jax.numpy',
+                      reasons=["JAX arrays do not support item assignment"])
+    @pytest.mark.usefixtures("skip_xp_backends")
     @array_api_compatible
     @pytest.mark.parametrize("nan_policy", ['propagate', 'omit', 'raise'])
     def test_array_api(self, xp, nan_policy):
@@ -389,7 +395,11 @@ class TestLazywhere:
     p = strategies.floats(min_value=0, max_value=1)
     data = strategies.data()
 
+    @pytest.mark.fail_slow(10)
     @pytest.mark.filterwarnings('ignore::RuntimeWarning')  # overflows, etc.
+    @skip_xp_backends('jax.numpy',
+                      reasons=["JAX arrays do not support item assignment"])
+    @pytest.mark.usefixtures("skip_xp_backends")
     @array_api_compatible
     @given(n_arrays=n_arrays, rng_seed=rng_seed, dtype=dtype, p=p, data=data)
     def test_basic(self, n_arrays, rng_seed, dtype, p, data, xp):

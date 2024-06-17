@@ -68,23 +68,6 @@ Below, you can find the complete user guide organized by subpackages.
    ndimage
    io
 
-
-.. _executable-tutorials:
-
-Executable tutorials
---------------------
-
-Below you can also find tutorials in
-`MyST Markdown <https://jupyterbook.org/en/stable/content/myst.html>`_ format.
-These can be opened as Jupyter Notebooks with the help of the
-`Jupytext <https://jupytext.readthedocs.io/en/latest/index.html>`_ extension.
-
-.. toctree::
-   :caption: Executable tutorials
-   :maxdepth: 1
-   
-   ../notebooks/interp_transition_guide
-
 .. raw:: latex
 
    \addtocontents{toc}{\protect\setcounter{tocdepth}{1}}

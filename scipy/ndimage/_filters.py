@@ -883,11 +883,13 @@ def convolve(input, weights, output=None, mode='reflect', cval=0.0,
     cval : scalar, optional
         Value to fill past edges of input if `mode` is 'constant'. Default
         is 0.0
-    origin : int, optional
-        Controls the origin of the input signal, which is where the
-        filter is centered to produce the first element of the output.
-        Positive values shift the filter to the right, and negative values
-        shift the filter to the left. Default is 0.
+    origin : int or sequence, optional
+        Controls the placement of the filter on the input array's pixels.
+        A value of 0 (the default) centers the filter over the pixel, with
+        positive values shifting the filter to the right, and negative ones
+        to the left. By passing a sequence of origins with length equal to
+        the number of dimensions of the input array, different shifts can
+        be specified along each axis.
 
     Returns
     -------
@@ -1240,7 +1242,7 @@ def _min_or_max_filter(input, size, footprint, structure, output, mode,
             footprint = np.asarray(footprint, dtype=bool)
     input = np.asarray(input)
     if np.iscomplexobj(input):
-        raise TypeError('Complex type not supported')
+        raise TypeError("Complex type not supported")
     output = _ni_support._get_output(output, input)
     temp_needed = np.may_share_memory(input, output)
     if temp_needed:
@@ -1266,7 +1268,7 @@ def _min_or_max_filter(input, size, footprint, structure, output, mode,
         else:
             output[...] = input[...]
     else:
-        origins = _ni_support._normalize_sequence(origin, input.ndim)
+        origins = _ni_support._normalize_sequence(origin, num_axes)
         if num_axes < input.ndim:
             if footprint.ndim != num_axes:
                 raise RuntimeError("footprint array has incorrect shape")
@@ -1274,17 +1276,23 @@ def _min_or_max_filter(input, size, footprint, structure, output, mode,
                 footprint,
                 tuple(ax for ax in range(input.ndim) if ax not in axes)
             )
+            # set origin = 0 for any axes not being filtered
+            origins_temp = [0,] * input.ndim
+            for o, ax in zip(origins, axes):
+                origins_temp[ax] = o
+            origins = origins_temp
+
         fshape = [ii for ii in footprint.shape if ii > 0]
         if len(fshape) != input.ndim:
             raise RuntimeError('footprint array has incorrect shape.')
         for origin, lenf in zip(origins, fshape):
             if (lenf // 2 + origin < 0) or (lenf // 2 + origin >= lenf):
-                raise ValueError('invalid origin')
+                raise ValueError("invalid origin")
         if not footprint.flags.contiguous:
             footprint = footprint.copy()
         if structure is not None:
             if len(structure.shape) != input.ndim:
-                raise RuntimeError('structure array has incorrect shape')
+                raise RuntimeError("structure array has incorrect shape")
             if num_axes != structure.ndim:
                 structure = np.expand_dims(
                     structure,

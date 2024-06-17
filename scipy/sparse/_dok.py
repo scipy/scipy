@@ -18,8 +18,8 @@ from ._sputils import (isdense, getdtype, isshape, isintlike, isscalarlike,
 class _dok_base(_spbase, IndexMixin, dict):
     _format = 'dok'
 
-    def __init__(self, arg1, shape=None, dtype=None, copy=False):
-        _spbase.__init__(self)
+    def __init__(self, arg1, shape=None, dtype=None, copy=False, *, maxprint=None):
+        _spbase.__init__(self, arg1, maxprint=maxprint)
 
         is_array = isinstance(self, sparray)
         if isinstance(arg1, tuple) and isshape(arg1, allow_1d=is_array):
@@ -37,7 +37,7 @@ class _dok_base(_spbase, IndexMixin, dict):
 
             self._dict = arg1._dict
             self._shape = check_shape(arg1.shape, allow_1d=is_array)
-            self.dtype = arg1.dtype
+            self.dtype = getdtype(arg1.dtype)
         else:  # Dense ctor
             try:
                 arg1 = np.asarray(arg1)
@@ -51,11 +51,11 @@ class _dok_base(_spbase, IndexMixin, dict):
                 if dtype is not None:
                     arg1 = arg1.astype(dtype)
                 self._dict = {i: v for i, v in enumerate(arg1) if v != 0}
-                self.dtype = arg1.dtype
+                self.dtype = getdtype(arg1.dtype)
             else:
                 d = self._coo_container(arg1, dtype=dtype).todok()
                 self._dict = d._dict
-                self.dtype = d.dtype
+                self.dtype = getdtype(d.dtype)
             self._shape = check_shape(arg1.shape, allow_1d=is_array)
 
     def update(self, val):
@@ -69,7 +69,11 @@ class _dok_base(_spbase, IndexMixin, dict):
             )
         return len(self._dict)
 
-    def count_nonzero(self):
+    def count_nonzero(self, axis=None):
+        if axis is not None:
+            raise NotImplementedError(
+                "count_nonzero over an axis is not implemented for DOK format."
+            )
         return sum(x != 0 for x in self.values())
 
     _getnnz.__doc__ = _spbase._getnnz.__doc__
@@ -418,7 +422,7 @@ class _dok_base(_spbase, IndexMixin, dict):
         .. deprecated:: 1.14.0
 
             `conjtransp` is deprecated and will be removed in v1.16.0.
-            Use `.T.conj()` instead.
+            Use ``.T.conj()`` instead.
         """
         msg = ("`conjtransp` is deprecated and will be removed in v1.16.0. "
                    "Use `.T.conj()` instead.")

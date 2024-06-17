@@ -264,14 +264,14 @@ def solve(a, b, lower=False, overwrite_a=False,
 def solve_triangular(a, b, trans=0, lower=False, unit_diagonal=False,
                      overwrite_b=False, check_finite=True):
     """
-    Solve the equation `a x = b` for `x`, assuming a is a triangular matrix.
+    Solve the equation ``a x = b`` for `x`, assuming a is a triangular matrix.
 
     Parameters
     ----------
     a : (M, M) array_like
         A triangular matrix
     b : (M,) or (M, N) array_like
-        Right-hand side matrix in `a x = b`
+        Right-hand side matrix in ``a x = b``
     lower : bool, optional
         Use only data contained in the lower triangle of `a`.
         Default is to use upper triangle.
@@ -298,7 +298,7 @@ def solve_triangular(a, b, trans=0, lower=False, unit_diagonal=False,
     Returns
     -------
     x : (M,) or (M, N) ndarray
-        Solution to the system `a x = b`.  Shape of return matches `b`.
+        Solution to the system ``a x = b``.  Shape of return matches `b`.
 
     Raises
     ------
