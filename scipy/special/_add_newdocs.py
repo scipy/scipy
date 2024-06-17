@@ -8288,7 +8288,7 @@ add_newdoc(
     nbdtri(k, n, y, out=None)
 
     Returns the inverse with respect to the parameter `p` of
-    `y = nbdtr(k, n, p)`, the negative binomial cumulative distribution
+    ``y = nbdtr(k, n, p)``, the negative binomial cumulative distribution
     function.
 
     Parameters
@@ -8394,7 +8394,7 @@ add_newdoc("nbdtrik",
     Negative binomial percentile function.
 
     Returns the inverse with respect to the parameter `k` of
-    `y = nbdtr(k, n, p)`, the negative binomial cumulative distribution
+    ``y = nbdtr(k, n, p)``, the negative binomial cumulative distribution
     function.
 
     Parameters
@@ -8501,7 +8501,7 @@ add_newdoc("nbdtrin",
     Inverse of `nbdtr` vs `n`.
 
     Returns the inverse with respect to the parameter `n` of
-    `y = nbdtr(k, n, p)`, the negative binomial cumulative distribution
+    ``y = nbdtr(k, n, p)``, the negative binomial cumulative distribution
     function.
 
     Parameters
