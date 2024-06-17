@@ -3,6 +3,33 @@ from numpy.testing import assert_allclose
 import scipy.special as sc
 
 
+class TestSphHarm:
+    def test_sph_harm_y_x(self):
+        m_max = 20
+        n_max = 10
+
+        theta = np.linspace(0, 2*np.pi)
+        phi = np.linspace(0, np.pi)
+        theta, phi = np.meshgrid(theta, phi)
+
+        y = sc.sph_harm_y_all(n_max, m_max, theta, phi, diff_n = 0)
+        p, p_jac, p_hess = sc.sph_legendre_p_all(n_max, m_max, phi, diff_n = 2)
+
+        m = np.concatenate([np.arange(m_max + 1), np.arange(-m_max, 0)])
+        m = np.expand_dims(m, axis = (0,) + tuple(range(2, theta.ndim + 2)))
+
+        assert_allclose(y, p * np.exp(1j * m * theta))
+
+        """
+        assert_allclose(y_jac[:, :, 0], 1j * m * p * np.exp(1j * m * theta))
+        assert_allclose(y_jac[:, :, 1], p_jac * np.exp(1j * m * theta))
+
+        assert_allclose(y_hess[:, :, 0, 0], -m * m * p * np.exp(1j * m * theta))
+        assert_allclose(y_hess[:, :, 0, 1], 1j * m * p_jac * np.exp(1j * m * theta))
+        assert_allclose(y_hess[:, :, 1, 0], y_hess[:, :, 0, 1])
+        assert_allclose(y_hess[:, :, 1, 1], p_hess * np.exp(1j * m * theta))
+        """
+
 def test_first_harmonics():
     # Test against explicit representations of the first four
     # spherical harmonics which use `theta` as the azimuthal angle,
@@ -42,7 +69,7 @@ def test_all_harmonics():
     theta = np.linspace(0, 2 * np.pi)
     phi = np.linspace(0, np.pi)
 
-    y_actual = sc.sph_harm_y_all(2 * n_max, n_max, theta, phi)
+    y_actual = sc.sph_harm_y_all(n_max, 2 * n_max, theta, phi)
 
     for n in [0, 1, 2, 5, 10, 20, 50]:
         for m in [0, 1, 2, 5, 10, 20, 50]:
@@ -50,10 +77,10 @@ def test_all_harmonics():
                 y_desired = sc.sph_harm(m, n, theta, phi)
             else:
                 y_desired = 0
-            np.testing.assert_allclose(y_actual[m, n], y_desired, rtol = 1e-05)
+            np.testing.assert_allclose(y_actual[n, m], y_desired, rtol = 1e-05)
 
             if (m <= n):
                 y_desired = sc.sph_harm(-m, n, theta, phi)
             else:
                 y_desired = 0
-            np.testing.assert_allclose(y_actual[-m, n], y_desired, rtol = 1e-05)
+            np.testing.assert_allclose(y_actual[n, -m], y_desired, rtol = 1e-05)

@@ -9,15 +9,20 @@ using cdouble = complex<double>;
 
 using float_1d = mdspan<float, dextents<ptrdiff_t, 1>, layout_stride>;
 using float_2d = mdspan<float, dextents<ptrdiff_t, 2>, layout_stride>;
+using float_3d = mdspan<float, dextents<ptrdiff_t, 3>, layout_stride>;
+using float_4d = mdspan<float, dextents<ptrdiff_t, 4>, layout_stride>;
 using double_1d = mdspan<double, dextents<ptrdiff_t, 1>, layout_stride>;
 using double_2d = mdspan<double, dextents<ptrdiff_t, 2>, layout_stride>;
+using double_3d = mdspan<double, dextents<ptrdiff_t, 3>, layout_stride>;
+using double_4d = mdspan<double, dextents<ptrdiff_t, 4>, layout_stride>;
 using cfloat_1d = mdspan<cfloat, dextents<ptrdiff_t, 1>, layout_stride>;
 using cfloat_2d = mdspan<cfloat, dextents<ptrdiff_t, 2>, layout_stride>;
+using cfloat_3d = mdspan<cfloat, dextents<ptrdiff_t, 3>, layout_stride>;
+using cfloat_4d = mdspan<cfloat, dextents<ptrdiff_t, 4>, layout_stride>;
 using cdouble_1d = mdspan<cdouble, dextents<ptrdiff_t, 1>, layout_stride>;
 using cdouble_2d = mdspan<cdouble, dextents<ptrdiff_t, 2>, layout_stride>;
-
-using cfloat2_2d = mdspan<cfloat[2], dextents<ptrdiff_t, 2>, layout_stride>;
-using cdouble2_2d = mdspan<cdouble[2], dextents<ptrdiff_t, 2>, layout_stride>;
+using cdouble_3d = mdspan<cdouble, dextents<ptrdiff_t, 3>, layout_stride>;
+using cdouble_4d = mdspan<cdouble, dextents<ptrdiff_t, 4>, layout_stride>;
 
 // 1 input, 1 output
 using func_f_f1_t = void (*)(float, float_1d);
@@ -54,10 +59,16 @@ using func_qD_D2_t = void (*)(long long int, cdouble, cdouble_2d);
 // 2 inputs, 2 outputs
 using func_qF_F2F2_t = void (*)(long long int, cfloat, cfloat_2d, cfloat_2d);
 using func_qD_D2D2_t = void (*)(long long int, cdouble, cdouble_2d, cdouble_2d);
+using func_ff_F2F3_t = void (*)(float, float, cfloat_2d, cfloat_3d);
+using func_dd_D2D3_t = void (*)(double, double, cdouble_2d, cdouble_3d);
 
 // 2 inputs, 3 outputs
 using func_qF_F2F2F2_t = void (*)(long long int, cfloat, cfloat_2d, cfloat_2d, cfloat_2d);
 using func_qD_D2D2D2_t = void (*)(long long int, cdouble, cdouble_2d, cdouble_2d, cdouble_2d);
+
+// 2 inputs, 4 outputs
+using func_ff_F2F3F4_t = void (*)(float, float, cfloat_2d, cfloat_3d, cfloat_4d);
+using func_dd_D2D3D4_t = void (*)(double, double, cdouble_2d, cdouble_3d, cdouble_4d);
 
 extern const char *lpn_all_doc;
 extern const char *lpmn_doc;
@@ -250,9 +261,20 @@ PyMODINIT_FUNC PyInit__gufuncs() {
     );
     PyModule_AddObjectRef(_gufuncs, "_lqmn", _lqmn);
 
-    PyObject *sph_harm_y_all = SpecFun_NewGUFunc(
-        {static_cast<func_dd_D2_t>(::sph_harm_y_all), static_cast<func_ff_F2_t>(::sph_harm_y_all)}, 1, "sph_harm_y_all",
-        sph_harm_all_doc, "(),()->(mpmp1,np1)"
+    PyObject *sph_harm_y_all = Py_BuildValue(
+        "(N,N,N)",
+        SpecFun_NewGUFunc(
+            {static_cast<func_dd_D2_t>(::sph_harm_y_all), static_cast<func_ff_F2_t>(::sph_harm_y_all)}, 1,
+            "sph_harm_y_all", nullptr, "(),()->(np1,mpmp1)"
+        ),
+        SpecFun_NewGUFunc(
+            {static_cast<func_dd_D2D3_t>(::sph_harm_y_all), static_cast<func_ff_F2F3_t>(::sph_harm_y_all)}, 2,
+            "sph_harm_y_all", nullptr, "(),()->(np1,mpmp1),(np1,mpmp1,2)"
+        ),
+        SpecFun_NewGUFunc(
+            {static_cast<func_dd_D2D3D4_t>(::sph_harm_y_all), static_cast<func_ff_F2F3F4_t>(::sph_harm_y_all)}, 3,
+            "sph_harm_y_all", nullptr, "(),()->(np1,mpmp1),(np1,mpmp1,2),(np1,mpmp1,2,2)"
+        )
     );
     PyModule_AddObjectRef(_gufuncs, "sph_harm_y_all", sph_harm_y_all);
 

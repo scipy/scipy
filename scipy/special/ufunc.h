@@ -5,6 +5,7 @@
 
 #include <cassert>
 #include <cstring>
+#include <iostream>
 #include <memory>
 #include <type_traits>
 #include <utility>

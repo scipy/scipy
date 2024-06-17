@@ -231,7 +231,3 @@ const char *rcty_doc = R"(
            https://dlmf.nist.gov/10.51.E1
 
     )";
-
-const char *sph_harm_all_doc = R"(
-    Private function. This may be removed or modified at any time.
-    )";

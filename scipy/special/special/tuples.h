@@ -3,6 +3,7 @@
 #include <tuple>
 
 #include "config.h"
+#include "third_party/kokkos/mdspan.hpp"
 
 namespace special {
 
@@ -76,6 +77,22 @@ namespace tuples {
             }
         }
 
+        template <typename T, typename U, size_t N>
+        void assign(std::mdspan<T, std::dextents<ptrdiff_t, 1>, std::layout_stride> &dst, const U (&src)[N]) {
+            for (size_t i = 0; i < N; ++i) {
+                assign(dst(i), src[i]);
+            }
+        }
+
+        template <typename T, typename U, size_t M, size_t N>
+        void assign(std::mdspan<T, std::dextents<ptrdiff_t, 2>, std::layout_stride> &dst, const U (&src)[M][N]) {
+            for (size_t i = 0; i < M; ++i) {
+                for (size_t j = 0; j < N; ++j) {
+                    assign(dst(i, j), src[i][j]);
+                }
+            }
+        }
+
         template <typename T, typename U>
         void fill(T &dst, const U &src) {
             dst = src;
@@ -105,27 +122,23 @@ namespace tuples {
     }
 
     template <typename... T>
-    const std::tuple<T &...> &assign(const std::tuple<T &...> &t, const initializer_tuple<T...> &other) {
+    void assign(std::tuple<T &...> t, const initializer_tuple<T...> &other) {
         std::apply(
             [&t](const auto &...other_args) {
                 std::apply([&other_args...](auto &...args) { (detail::assign(args, other_args), ...); }, t);
             },
             other.underlying
         );
-
-        return t;
     }
 
     template <typename... T, typename... U>
-    const std::tuple<T &...> &assign(std::tuple<T &...> &t, const std::tuple<U...> &other) {
+    void assign(std::tuple<T &...> t, const std::tuple<U...> &other) {
         std::apply(
             [&t](const auto &...other_args) {
                 std::apply([&other_args...](auto &...args) { (detail::assign(args, other_args), ...); }, t);
             },
             other
         );
-
-        return t;
     }
 
     template <typename... T, typename Arg>
@@ -144,14 +157,7 @@ namespace tuples {
     }
 
     template <typename... T, typename... Args>
-    std::tuple<std::result_of_t<T(Args...)>...> call(std::tuple<T...> &t, Args &&...args) {
-        return std::apply(
-            [&args...](auto &...elements) { return std::tie(elements(std::forward<Args>(args)...)...); }, t
-        );
-    }
-
-    template <typename... T, typename... Args>
-    std::tuple<std::result_of_t<T(Args...)>...> call(const std::tuple<T...> &t, Args &&...args) {
+    std::tuple<std::result_of_t<T(Args...)>...> call(std::tuple<T...> t, Args &&...args) {
         return std::apply(
             [&args...](auto &...elements) { return std::tie(elements(std::forward<Args>(args)...)...); }, t
         );
@@ -169,6 +175,37 @@ namespace tuples {
                 );
             },
             u
+        );
+    }
+
+    struct F {
+        template <typename T, typename... Slices>
+        decltype(auto)
+        operator()(std::mdspan<T, std::dextents<ptrdiff_t, 2>, std::layout_stride> a, Slices... slices) const {
+            return std::ref(a(slices...));
+        }
+
+        template <typename T, typename... Slices>
+        decltype(auto)
+        operator()(std::mdspan<T, std::dextents<ptrdiff_t, 3>, std::layout_stride> a, Slices... slices) const {
+            return std::submdspan(a, slices..., std::full_extent);
+        }
+
+        template <typename T, typename... Slices>
+        decltype(auto)
+        operator()(std::mdspan<T, std::dextents<ptrdiff_t, 4>, std::layout_stride> a, Slices... slices) const {
+            return std::submdspan(a, slices..., std::full_extent, std::full_extent);
+        }
+    };
+
+    template <typename... T, typename... Slices>
+    decltype(auto) submdspan(std::tuple<T...> t, Slices... slices) {
+        return std::apply(
+            [slices...](auto... args) {
+                F f;
+                return std::make_tuple(f(args, slices...)...);
+            },
+            t
         );
     }
 

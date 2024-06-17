@@ -34,7 +34,7 @@ void sph_harm_y_next(
     tuples::assign(
         res, {p0[1] * z,
               {std::complex(T(0), T(m)) * p0[1] * z, p1[1] * z},
-              {{-T(m * m) * p0[0] * z, std::complex(T(0), T(m)) * p1[1] * z},
+              {{-T(m * m) * p0[1] * z, std::complex(T(0), T(m)) * p1[1] * z},
                {std::complex(T(0), T(m)) * p1[1] * z, p2[1] * z}}}
     );
 }
@@ -91,17 +91,19 @@ void sph_harm_y_all(T theta, T phi, std::tuple<OutMats...> res) {
     static constexpr size_t N = sizeof...(OutMats) - 1;
 
     auto &res0 = std::get<0>(res);
-    int m_max = (res0.extent(0) - 1) / 2;
-    int n_max = res0.extent(1) - 1;
+    int n_max = res0.extent(0) - 1;
+    int m_max = (res0.extent(1) - 1) / 2;
 
     grad_tuple_t<std::complex<T>, N, 2> res_n_m;
     sph_harm_y_for_each_n_m(
         n_max, m_max, theta, phi, tuples::ref(res_n_m),
         [m_max, res](int n, int m, grad_tuple_t<std::complex<T> &, N, 2> res_n_m) {
             if (m >= 0) {
-                tuples::call(res, m, n) = res_n_m;
+                auto tmp = tuples::submdspan(res, n, m);
+                tuples::assign(tuples::ref(tmp), res_n_m);
             } else {
-                tuples::call(res, m + 2 * m_max + 1, n) = res_n_m;
+                auto tmp = tuples::submdspan(res, n, m + 2 * m_max + 1);
+                tuples::assign(tuples::ref(tmp), res_n_m);
             }
         }
     );

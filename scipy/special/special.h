@@ -190,4 +190,14 @@ void sph_harm_y_all(T theta, T phi, OutputMat1 res) {
     special::sph_harm_y_all(theta, phi, std::tie(res));
 }
 
+template <typename T, typename OutputMat1, typename OutputMat2>
+void sph_harm_y_all(T theta, T phi, OutputMat1 res, OutputMat2 res_jac) {
+    special::sph_harm_y_all(theta, phi, std::tie(res, res_jac));
+}
+
+template <typename T, typename OutputMat1, typename OutputMat2, typename OutputMat3>
+void sph_harm_y_all(T theta, T phi, OutputMat1 res, OutputMat2 res_jac, OutputMat3 res_hess) {
+    special::sph_harm_y_all(theta, phi, std::tie(res, res_jac, res_hess));
+}
+
 } // namespace
