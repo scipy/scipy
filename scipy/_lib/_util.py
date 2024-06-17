@@ -28,7 +28,7 @@ if np.lib.NumpyVersion(np.__version__) >= '1.25.0':
         DTypePromotionError
     )
 else:
-    from numpy import (
+    from numpy import (  # type: ignore[attr-defined, no-redef]
         AxisError, ComplexWarning, VisibleDeprecationWarning  # noqa: F401
     )
     DTypePromotionError = TypeError  # type: ignore
