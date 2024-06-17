@@ -413,14 +413,20 @@ struct ufunc_traits<Func, Res(Args...), std::index_sequence<I...>> {
 
     static constexpr size_t ranks[sizeof...(Args) + 1] = {rank_of_v<Args>..., rank_of_v<Res>};
 
-    static constexpr size_t steps_offsets[sizeof...(Args) + 1] = {
-        initializer_accumulate(ranks, ranks + I, sizeof...(Args) + 1)...,
-        initializer_accumulate(ranks, ranks + sizeof...(Args) + 1, sizeof...(Args) + 1)};
+    static constexpr size_t ranks_scan[sizeof...(Args) + 2] = {
+        initializer_accumulate(ranks, ranks + I, 0)..., initializer_accumulate(ranks, ranks + sizeof...(Args), 0),
+        initializer_accumulate(ranks, ranks + sizeof...(Args) + 1, 0)};
 
-    static void loop(char **args, const npy_intp *dimensions, const npy_intp *steps, void *data) {
+    static void loop(char **args, const npy_intp *dims, const npy_intp *steps, void *data) {
+        npy_intp new_dims[ranks_scan[sizeof...(Args) + 1]];
+
+        map_dims_type map_dims = static_cast<ufunc_data<Func> *>(data)->map_dims;
+        map_dims(dims + 1, new_dims);
+
         Func func = static_cast<ufunc_data<Func> *>(data)->func;
-        for (npy_intp i = 0; i < dimensions[0]; ++i) {
-            Res res = func(npy_traits<Args>::get(args[I], dimensions + 1, steps + steps_offsets[I])...);
+        for (npy_intp i = 0; i < dims[0]; ++i) {
+            Res res = func(npy_traits<Args>::get(args[I], new_dims + ranks_scan[I],
+                                                 steps + ranks_scan[I] + sizeof...(Args) + 1)...);
             npy_traits<Res>::set(args[sizeof...(Args)], res); // assign to the output pointer
 
             for (npy_uintp j = 0; j <= sizeof...(Args); ++j) {
