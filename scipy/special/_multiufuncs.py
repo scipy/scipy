@@ -418,7 +418,33 @@ legendre_p = MultiUFunc(legendre_p,
     """
     legendre_p(n, z, *, diff_n=0)
 
-    Legendre function of the first kind.
+    Legendre polynomials of the first kind.
+
+    Compute Legendre polynomials of the first kind 
+    :math:`P_{n}(z)`.
+
+    Parameters
+    ----------
+    n : array_like, int
+        Order of the Legendre polynomial, must have ``n >= 0``.
+    z : array_like, float
+        Input value.
+    diff_n : Optional[int]
+        A non-negative integer. Compute and return all derivatives up
+        to order ``diff_n``.
+
+    Returns
+    -------
+    p : ndarray or tuple[ndarray]
+        Legendre polynomial with ``diff_n`` derivatives.
+
+    See also special.legendre for polynomial class.
+
+    References
+    ----------
+    .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
+           Functions", John Wiley and Sons, 1996.
+           https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
     """
 )
 
@@ -440,9 +466,18 @@ def _(ufuncs, diff_n=0):
 
 legendre_p_all = MultiUFunc(legendre_p_all,
     """
-    legendre_p_all(n, z, *, diff_n=0)
+    Legendre polynomials of the first kind.
 
-    Sequence of Legendre functions of the first kind.
+    Compute sequence of Legendre functions of the first kind (polynomials),
+    Pn(z) and derivatives for all degrees from 0 to n (inclusive).
+
+    See also special.legendre for polynomial class.
+
+    References
+    ----------
+    .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
+           Functions", John Wiley and Sons, 1996.
+           https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
     """
 )
 
