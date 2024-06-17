@@ -3672,7 +3672,7 @@ def lfilter_zi(b, a):
         A = scipy.linalg.companion(a).T
         B = b[1:] - a[1:]*b[0]
 
-    assuming `a[0]` is 1.0; if `a[0]` is not 1, `a` and `b` are first
+    assuming ``a[0]`` is 1.0; if ``a[0]`` is not 1, `a` and `b` are first
     divided by a[0].
 
     Examples
@@ -3700,7 +3700,7 @@ def lfilter_zi(b, a):
         0.44399389,  0.35505241])
 
     Note that the `zi` argument to `lfilter` was computed using
-    `lfilter_zi` and scaled by `x[0]`.  Then the output `y` has no
+    `lfilter_zi` and scaled by ``x[0]``.  Then the output `y` has no
     transient until the input drops from 0.5 to 0.0.
 
     """
