@@ -664,5 +664,5 @@ def _(n, m, theta_shape, phi_shape, nout):
     if ((not np.isscalar(n)) or (n < 0)):
         raise ValueError("n must be a non-negative integer.")
 
-    return tuple((n + 1, 2 * abs(m) + 1) + diff_ndims * (2,) +
+    return tuple(diff_ndims * (2,) + (n + 1, 2 * abs(m) + 1) +
         np.broadcast_shapes(theta_shape, phi_shape) for diff_ndims in range(nout))

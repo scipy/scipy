@@ -12,7 +12,7 @@ class TestSphHarm:
         phi = np.linspace(0, np.pi)
         theta, phi = np.meshgrid(theta, phi)
 
-        y = sc.sph_harm_y_all(n_max, m_max, theta, phi, diff_n = 0)
+        y, y_jac, y_hess  = sc.sph_harm_y_all(n_max, m_max, theta, phi, diff_n = 2)
         p, p_jac, p_hess = sc.sph_legendre_p_all(n_max, m_max, phi, diff_n = 2)
 
         m = np.concatenate([np.arange(m_max + 1), np.arange(-m_max, 0)])
@@ -20,15 +20,13 @@ class TestSphHarm:
 
         assert_allclose(y, p * np.exp(1j * m * theta))
 
-        """
-        assert_allclose(y_jac[:, :, 0], 1j * m * p * np.exp(1j * m * theta))
-        assert_allclose(y_jac[:, :, 1], p_jac * np.exp(1j * m * theta))
+        assert_allclose(y_jac[0], 1j * m * p * np.exp(1j * m * theta))
+        assert_allclose(y_jac[1], p_jac * np.exp(1j * m * theta))
 
-        assert_allclose(y_hess[:, :, 0, 0], -m * m * p * np.exp(1j * m * theta))
-        assert_allclose(y_hess[:, :, 0, 1], 1j * m * p_jac * np.exp(1j * m * theta))
-        assert_allclose(y_hess[:, :, 1, 0], y_hess[:, :, 0, 1])
-        assert_allclose(y_hess[:, :, 1, 1], p_hess * np.exp(1j * m * theta))
-        """
+        assert_allclose(y_hess[0, 0], -m * m * p * np.exp(1j * m * theta))
+        assert_allclose(y_hess[0, 1], 1j * m * p_jac * np.exp(1j * m * theta))
+        assert_allclose(y_hess[1, 0], y_hess[0, 1])
+        assert_allclose(y_hess[1, 1], p_hess * np.exp(1j * m * theta))
 
 def test_first_harmonics():
     # Test against explicit representations of the first four

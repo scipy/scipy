@@ -188,13 +188,13 @@ namespace tuples {
         template <typename T, typename... Slices>
         decltype(auto)
         operator()(std::mdspan<T, std::dextents<ptrdiff_t, 3>, std::layout_stride> a, Slices... slices) const {
-            return std::submdspan(a, slices..., std::full_extent);
+            return std::submdspan(a, std::full_extent, slices...);
         }
 
         template <typename T, typename... Slices>
         decltype(auto)
         operator()(std::mdspan<T, std::dextents<ptrdiff_t, 4>, std::layout_stride> a, Slices... slices) const {
-            return std::submdspan(a, slices..., std::full_extent, std::full_extent);
+            return std::submdspan(a, std::full_extent, std::full_extent, slices...);
         }
     };
 

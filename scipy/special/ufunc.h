@@ -373,8 +373,8 @@ struct npy_traits<T (&)[N][N]> {
 
 template <typename T, typename Extents, typename AccessorPolicy>
 struct npy_traits<std::mdspan<T, Extents, std::layout_stride, AccessorPolicy>> {
-    static std::mdspan<T, Extents, std::layout_stride, AccessorPolicy>
-    get(char *src, const npy_intp *dimensions, const npy_intp *steps) {
+    static std::mdspan<T, Extents, std::layout_stride, AccessorPolicy> get(char *src, const npy_intp *dimensions,
+                                                                           const npy_intp *steps) {
         static_assert(sizeof(T) == sizeof(npy_type_t<T>), "NumPy type has different size than argument type");
 
         std::array<ptrdiff_t, Extents::rank()> strides;
@@ -391,8 +391,11 @@ struct npy_traits<std::mdspan<T, Extents, std::layout_stride, AccessorPolicy>> {
     }
 };
 
+using map_dims_type = void (*)(const npy_intp *, npy_intp *);
+
 struct base_ufunc_data {
     const char *name;
+    map_dims_type map_dims;
 };
 
 template <typename Func>
@@ -400,9 +403,8 @@ struct ufunc_data : base_ufunc_data {
     Func func;
 };
 
-template <
-    typename Func, typename Signature = signature_of_t<Func>,
-    typename Indices = std::make_index_sequence<arity_of_v<Signature>>>
+template <typename Func, typename Signature = signature_of_t<Func>,
+          typename Indices = std::make_index_sequence<arity_of_v<Signature>>>
 struct ufunc_traits;
 
 template <typename Func, typename Res, typename... Args, size_t... I>
@@ -413,8 +415,7 @@ struct ufunc_traits<Func, Res(Args...), std::index_sequence<I...>> {
 
     static constexpr size_t steps_offsets[sizeof...(Args) + 1] = {
         initializer_accumulate(ranks, ranks + I, sizeof...(Args) + 1)...,
-        initializer_accumulate(ranks, ranks + sizeof...(Args) + 1, sizeof...(Args) + 1)
-    };
+        initializer_accumulate(ranks, ranks + sizeof...(Args) + 1, sizeof...(Args) + 1)};
 
     static void loop(char **args, const npy_intp *dimensions, const npy_intp *steps, void *data) {
         Func func = static_cast<ufunc_data<Func> *>(data)->func;
@@ -439,13 +440,20 @@ struct ufunc_traits<Func, void(Args...), std::index_sequence<I...>> {
     static constexpr size_t ranks[sizeof...(Args)] = {rank_of_v<Args>...};
 
     static constexpr size_t steps_offsets[sizeof...(Args)] = {
-        initializer_accumulate(ranks, ranks + I, sizeof...(Args))...
-    };
+        initializer_accumulate(ranks, ranks + I, sizeof...(Args))...};
+
+    static constexpr size_t dims_offsets[sizeof...(Args) + 1] = {
+        initializer_accumulate(ranks, ranks + I, 0)..., initializer_accumulate(ranks, ranks + sizeof...(Args), 0)};
 
     static void loop(char **args, const npy_intp *dimensions, const npy_intp *steps, void *data) {
+        npy_intp new_dimensions[dims_offsets[sizeof...(Args)]];
+
+        map_dims_type map_dims = static_cast<ufunc_data<Func> *>(data)->map_dims;
+        map_dims(dimensions + 1, new_dimensions);
+
         Func func = static_cast<ufunc_data<Func> *>(data)->func;
         for (npy_intp i = 0; i < dimensions[0]; ++i) {
-            func(npy_traits<Args>::get(args[I], dimensions + 1, steps + steps_offsets[I])...);
+            func(npy_traits<Args>::get(args[I], new_dimensions + dims_offsets[I], steps + steps_offsets[I])...);
 
             for (npy_uintp j = 0; j < sizeof...(Args); ++j) {
                 args[j] += steps[j];
@@ -537,6 +545,12 @@ class SpecFun_UFunc {
             static_cast<base_ufunc_data *>(m_data[i])->name = name;
         }
     }
+
+    void set_map_dims(map_dims_type map_dims) {
+        for (int i = 0; i < m_ntypes; ++i) {
+            static_cast<base_ufunc_data *>(m_data[i])->map_dims = map_dims;
+        }
+    }
 };
 
 PyObject *SpecFun_NewUFunc(SpecFun_UFunc func, int nout, const char *name, const char *doc) {
@@ -548,11 +562,10 @@ PyObject *SpecFun_NewUFunc(SpecFun_UFunc func, int nout, const char *name, const
 
     SpecFun_UFunc &ufunc = ufuncs.emplace_back(std::move(func));
     ufunc.set_name(name);
+    ufunc.set_map_dims([](const npy_intp *dims, npy_intp *new_dims) {});
 
-    return PyUFunc_FromFuncAndData(
-        ufunc.func(), ufunc.data(), ufunc.types(), ufunc.ntypes(), ufunc.nin_and_nout() - nout, nout, PyUFunc_None,
-        name, doc, 0
-    );
+    return PyUFunc_FromFuncAndData(ufunc.func(), ufunc.data(), ufunc.types(), ufunc.ntypes(),
+                                   ufunc.nin_and_nout() - nout, nout, PyUFunc_None, name, doc, 0);
 }
 
 PyObject *SpecFun_NewUFunc(SpecFun_UFunc func, const char *name, const char *doc) {
@@ -561,7 +574,8 @@ PyObject *SpecFun_NewUFunc(SpecFun_UFunc func, const char *name, const char *doc
     return SpecFun_NewUFunc(std::move(func), nout, name, doc);
 }
 
-PyObject *SpecFun_NewGUFunc(SpecFun_UFunc func, int nout, const char *name, const char *doc, const char *signature) {
+PyObject *SpecFun_NewGUFunc(SpecFun_UFunc func, int nout, const char *name, const char *doc, const char *signature,
+                            map_dims_type map_dims) {
     static std::vector<SpecFun_UFunc> ufuncs;
 
     if (PyErr_Occurred()) {
@@ -570,15 +584,16 @@ PyObject *SpecFun_NewGUFunc(SpecFun_UFunc func, int nout, const char *name, cons
 
     SpecFun_UFunc &ufunc = ufuncs.emplace_back(std::move(func));
     ufunc.set_name(name);
+    ufunc.set_map_dims(map_dims);
 
-    return PyUFunc_FromFuncAndDataAndSignature(
-        ufunc.func(), ufunc.data(), ufunc.types(), ufunc.ntypes(), ufunc.nin_and_nout() - nout, nout, PyUFunc_None,
-        name, doc, 0, signature
-    );
+    return PyUFunc_FromFuncAndDataAndSignature(ufunc.func(), ufunc.data(), ufunc.types(), ufunc.ntypes(),
+                                               ufunc.nin_and_nout() - nout, nout, PyUFunc_None, name, doc, 0,
+                                               signature);
 }
 
-PyObject *SpecFun_NewGUFunc(SpecFun_UFunc func, const char *name, const char *doc, const char *signature) {
+PyObject *SpecFun_NewGUFunc(SpecFun_UFunc func, const char *name, const char *doc, const char *signature,
+                            map_dims_type map_dims) {
     int nout = func.has_return();
 
-    return SpecFun_NewGUFunc(std::move(func), nout, name, doc, signature);
+    return SpecFun_NewGUFunc(std::move(func), nout, name, doc, signature, map_dims);
 }
