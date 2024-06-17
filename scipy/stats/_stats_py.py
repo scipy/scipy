@@ -535,7 +535,7 @@ def mode(a, axis=0, nan_policy='propagate', keepdims=False):
 
 
 def _put_val_to_limits(a, limits, inclusive, val=np.nan, xp=None):
-    """Put NaNs in an array for values outside of given limits.
+    """Replace elements outside limits with a value.
 
     This is primarily a utility function.
 
@@ -543,12 +543,14 @@ def _put_val_to_limits(a, limits, inclusive, val=np.nan, xp=None):
     ----------
     a : array
     limits : (float or None, float or None)
-        A tuple consisting of the (lower limit, upper limit).  Values in the
+        A tuple consisting of the (lower limit, upper limit).  Elements in the
         input array less than the lower limit or greater than the upper limit
-        will be replaced with `np.nan`. None implies no limit.
+        will be replaced with `val`. None implies no limit.
     inclusive : (bool, bool)
         A tuple consisting of the (lower flag, upper flag).  These flags
         determine whether values exactly equal to lower or upper are allowed.
+    val : float, default: NaN
+        The value with which extreme elements of the array are replaced.
 
     """
     xp = array_namespace(a) if xp is None else xp
@@ -564,7 +566,10 @@ def _put_val_to_limits(a, limits, inclusive, val=np.nan, xp=None):
     if xp.all(mask):
         raise ValueError("No array values within given limits")
     if xp.any(mask):
-        a = xp.where(mask, xp.asarray(val), a)
+        # hopefully this (and many other instances of this idiom) are temporary when
+        # data-apis/array-api#807 is resolved
+        dtype = xp.asarray(1.).dtype if xp.isdtype(a.dtype, 'integral') else a.dtype
+        a = xp.where(mask, xp.asarray(val, dtype=dtype), a)
     return a, mask
 
 
@@ -616,8 +621,9 @@ def tmean(a, limits=None, inclusive=(True, True), axis=None):
     """
     xp = array_namespace(a)
     a, mask = _put_val_to_limits(a, limits, inclusive, val=0., xp=xp)
-    sum = xp.sum(a, axis=axis)
-    n = xp.sum(xp.asarray(~mask, dtype=a.dtype), axis=axis)
+    # explicit dtype specification required due to data-apis/array-api-compat#152
+    sum = xp.sum(a, axis=axis, dtype=a.dtype)
+    n = xp.sum(xp.asarray(~mask, dtype=a.dtype), axis=axis, dtype=a.dtype)
     mean = _lazywhere(n != 0, (sum, n), xp.divide, xp.nan)
     return mean[()] if mean.ndim == 0 else mean
 
