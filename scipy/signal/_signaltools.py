@@ -3837,7 +3837,7 @@ def sosfilt_zi(sos):
 def _filtfilt_gust(b, a, x, axis=-1, irlen=None):
     """Forward-backward IIR filter that uses Gustafsson's method.
 
-    Apply the IIR filter defined by `(b,a)` to `x` twice, first forward
+    Apply the IIR filter defined by ``(b,a)`` to `x` twice, first forward
     then backward, using Gustafsson's initial conditions [1]_.
 
     Let ``y_fb`` be the result of filtering first forward and then backward,

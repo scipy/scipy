@@ -293,7 +293,7 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
     maxls : int, optional
         Maximum number of line search steps (per iteration). Default is 20.
     finite_diff_rel_step : None or array_like, optional
-        If `jac in ['2-point', '3-point', 'cs']` the relative step size to
+        If ``jac in ['2-point', '3-point', 'cs']`` the relative step size to
         use for numerical approximation of the jacobian. The absolute step
         size is computed as ``h = rel_step * sign(x) * max(1, abs(x))``,
         possibly adjusted to fit into the bounds. For ``method='3-point'``

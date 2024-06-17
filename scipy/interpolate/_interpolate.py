@@ -1604,7 +1604,7 @@ class BPoly(_PPolyBase):
         >>> from scipy.interpolate import BPoly
         >>> BPoly.from_derivatives([0, 1], [[1, 2], [3, 4]])
 
-        Creates a polynomial `f(x)` of degree 3, defined on `[0, 1]`
+        Creates a polynomial `f(x)` of degree 3, defined on ``[0, 1]``
         such that `f(0) = 1, df/dx(0) = 2, f(1) = 3, df/dx(1) = 4`
 
         >>> BPoly.from_derivatives([0, 1, 2], [[0, 1], [0], [2]])
@@ -1612,7 +1612,7 @@ class BPoly(_PPolyBase):
         Creates a piecewise polynomial `f(x)`, such that
         `f(0) = f(1) = 0`, `f(2) = 2`, and `df/dx(0) = 1`.
         Based on the number of derivatives provided, the order of the
-        local polynomials is 2 on `[0, 1]` and 1 on `[1, 2]`.
+        local polynomials is 2 on ``[0, 1]`` and 1 on ``[1, 2]``.
         Notice that no restriction is imposed on the derivatives at
         ``x = 1`` and ``x = 2``.
 

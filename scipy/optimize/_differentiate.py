@@ -412,7 +412,7 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
         in one call to the function.
 
         For improvement:
-        - Consider measuring the step size actually taken, since `(x + h) - x`
+        - Consider measuring the step size actually taken, since ``(x + h) - x``
           is not identically equal to `h` with floating point arithmetic.
         - Adjust the step size automatically if `x` is too big to resolve the
           step.
