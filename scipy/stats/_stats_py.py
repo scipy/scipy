@@ -9168,7 +9168,7 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t",
 
 
 @_axis_nan_policy_factory(SignificanceResult, kwd_samples=['weights'], paired=True)
-def combine_pvalues(pvalues, method='fisher', weights=None):
+def combine_pvalues(pvalues, method='fisher', weights=None, *, axis=0):
     """
     Combine p-values from independent tests that bear upon the same hypothesis.
 
@@ -9292,43 +9292,47 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
     xp = array_namespace(pvalues)
     pvalues = xp.asarray(pvalues)
     if xp_size(pvalues) == 0:
+        # This is really only needed for *testing* _axis_nan_policy decorator
+        # It won't happen when the decorator is used.
         NaN = _get_nan(pvalues)
         return SignificanceResult(NaN, NaN)
 
-    n = pvalues.shape[0]
+    n = pvalues.shape[axis]
     # used to convert Python scalar to the right dtype
     one = xp.asarray(1, dtype=pvalues.dtype)
 
     if method == 'fisher':
-        statistic = -2 * xp.sum(xp.log(pvalues))
+        statistic = -2 * xp.sum(xp.log(pvalues), axis=axis)
         chi2 = _SimpleChi2(2*n*one)
         pval = _get_pvalue(statistic, chi2, alternative='greater',
                            symmetric=False, xp=xp)
     elif method == 'pearson':
-        statistic = 2 * xp.sum(xp.log1p(-pvalues))
+        statistic = 2 * xp.sum(xp.log1p(-pvalues), axis=axis)
         chi2 = _SimpleChi2(2*n*one)
         pval = _get_pvalue(-statistic, chi2, alternative='less', symmetric=False, xp=xp)
     elif method == 'mudholkar_george':
         normalizing_factor = math.sqrt(3/n)/xp.pi
-        statistic = -xp.sum(xp.log(pvalues)) + xp.sum(xp.log1p(-pvalues))
+        statistic = (-xp.sum(xp.log(pvalues), axis=axis)
+                     + xp.sum(xp.log1p(-pvalues), axis=axis))
         nu = 5*n  + 4
         approx_factor = math.sqrt(nu / (nu - 2))
         t = _SimpleStudentT(nu*one)
         pval = _get_pvalue(statistic * normalizing_factor * approx_factor, t,
                            alternative="greater", xp=xp)
     elif method == 'tippett':
-        statistic = xp.min(pvalues)
+        statistic = xp.min(pvalues, axis=axis)
         beta = _SimpleBeta(one, n*one)
         pval = _get_pvalue(statistic, beta, alternative='less', symmetric=False, xp=xp)
     elif method == 'stouffer':
         if weights is None:
             weights = xp.ones_like(pvalues, dtype=pvalues.dtype)
-        elif weights.shape[0] != n:
-            raise ValueError("pvalues and weights must be of the same size.")
+        elif weights.shape[axis] != n:
+            raise ValueError("pvalues and weights must be of the same "
+                             "length along `axis`.")
 
         norm = _SimpleNormal()
         Zi = norm.isf(pvalues)
-        statistic = weights @ Zi / xp.linalg.vector_norm(weights)
+        statistic = weights @ Zi / xp.linalg.vector_norm(weights, axis=axis)
         pval = _get_pvalue(statistic, norm, alternative="greater", xp=xp)
 
     else:
