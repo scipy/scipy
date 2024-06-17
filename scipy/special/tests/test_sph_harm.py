@@ -4,7 +4,7 @@ import scipy.special as sc
 
 
 class TestSphHarm:
-    def test_sph_harm_y_x(self):
+    def test_sph_harm_y(self):
         m_max = 20
         n_max = 10
 

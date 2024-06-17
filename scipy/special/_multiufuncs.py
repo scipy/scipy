@@ -478,7 +478,8 @@ sph_harm_y = MultiUFunc(sph_harm_y,
         Y^m_n(\theta,\phi) = \sqrt{\frac{2n+1}{4\pi} \frac{(n-m)!}{(n+m)!}}
           e^{i m \theta} P^m_n(\cos(\phi))
 
-    where :math:`P_n^m` are the associated (spherical) Legendre functions; see `sph_legendre_p`.
+    where :math:`P_n^m` are the associated (spherical) Legendre functions;
+    see `sph_legendre_p`.
 
     Parameters
     ----------
@@ -554,7 +555,8 @@ sph_harm_y_all = MultiUFunc(sph_harm_y_all,
 
         Y^m_n(\theta,\phi) = e^{i m \theta} P^m_n(\cos(\phi))
 
-    where :math:`P_n^m` are the associated (spherical) Legendre polynomials; see `sph_legendre_p`.
+    where :math:`P_n^m` are the associated (spherical) Legendre polynomials;
+    see `sph_legendre_p`.
 
     Parameters
     ----------
@@ -627,4 +629,5 @@ def _(n, m, theta_shape, phi_shape, nout):
     if ((not np.isscalar(n)) or (n < 0)):
         raise ValueError("n must be a non-negative integer.")
 
-    return tuple((n + 1, 2 * abs(m) + 1) + i * (2,) + np.broadcast_shapes(theta_shape, phi_shape) for i in range(nout))
+    return tuple((n + 1, 2 * abs(m) + 1) + diff_ndims * (2,) +
+        np.broadcast_shapes(theta_shape, phi_shape) for diff_ndims in range(nout))
