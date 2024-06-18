@@ -12,7 +12,7 @@ class TestSphHarm:
         phi = np.linspace(0, np.pi)
         theta, phi = np.meshgrid(theta, phi)
 
-        y, y_jac, y_hess  = sc.sph_harm_y_all(n_max, m_max, theta, phi, diff_n = 2)
+        y, y_jac, y_hess = sc.sph_harm_y_all(n_max, m_max, theta, phi, diff_n = 2)
         p, p_jac, p_hess = sc.sph_legendre_p_all(n_max, m_max, phi, diff_n = 2)
 
         m = np.concatenate([np.arange(m_max + 1), np.arange(-m_max, 0)])

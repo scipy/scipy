@@ -105,6 +105,22 @@ namespace tuples {
             }
         }
 
+        template <typename T, typename... Slices>
+        decltype(auto)
+        submdspan(std::mdspan<T, std::dextents<ptrdiff_t, sizeof...(Slices)>, std::layout_stride> a, Slices... slices) {
+            return std::ref(a(slices...));
+        }
+
+        template <typename T, typename... Slices>
+        decltype(auto) submdspan(std::mdspan<T, std::dextents<ptrdiff_t, 3>, std::layout_stride> a, Slices... slices) {
+            return std::submdspan(a, std::full_extent, slices...);
+        }
+
+        template <typename T, typename... Slices>
+        decltype(auto) submdspan(std::mdspan<T, std::dextents<ptrdiff_t, 4>, std::layout_stride> a, Slices... slices) {
+            return std::submdspan(a, std::full_extent, std::full_extent, slices...);
+        }
+
     } // namespace detail
 
     template <typename... T>
@@ -122,7 +138,7 @@ namespace tuples {
     }
 
     template <typename... T>
-    void assign(std::tuple<T &...> t, const initializer_tuple<T...> &other) {
+    void assign(std::tuple<T...> &t, const initializer_tuple<std::remove_reference_t<T>...> &other) {
         std::apply(
             [&t](const auto &...other_args) {
                 std::apply([&other_args...](auto &...args) { (detail::assign(args, other_args), ...); }, t);
@@ -132,7 +148,17 @@ namespace tuples {
     }
 
     template <typename... T, typename... U>
-    void assign(std::tuple<T &...> t, const std::tuple<U...> &other) {
+    void assign(std::tuple<T...> &&t, const std::tuple<U...> &other) {
+        std::apply(
+            [&t](const auto &...other_args) {
+                std::apply([&other_args...](auto &...args) { (detail::assign(args, other_args), ...); }, t);
+            },
+            other
+        );
+    }
+
+    template <typename... T, typename... U>
+    void assign(std::tuple<T...> &t, const std::tuple<U...> &other) {
         std::apply(
             [&t](const auto &...other_args) {
                 std::apply([&other_args...](auto &...args) { (detail::assign(args, other_args), ...); }, t);
@@ -178,34 +204,10 @@ namespace tuples {
         );
     }
 
-    struct F {
-        template <typename T, typename... Slices>
-        decltype(auto)
-        operator()(std::mdspan<T, std::dextents<ptrdiff_t, 2>, std::layout_stride> a, Slices... slices) const {
-            return std::ref(a(slices...));
-        }
-
-        template <typename T, typename... Slices>
-        decltype(auto)
-        operator()(std::mdspan<T, std::dextents<ptrdiff_t, 3>, std::layout_stride> a, Slices... slices) const {
-            return std::submdspan(a, std::full_extent, slices...);
-        }
-
-        template <typename T, typename... Slices>
-        decltype(auto)
-        operator()(std::mdspan<T, std::dextents<ptrdiff_t, 4>, std::layout_stride> a, Slices... slices) const {
-            return std::submdspan(a, std::full_extent, std::full_extent, slices...);
-        }
-    };
-
     template <typename... T, typename... Slices>
     decltype(auto) submdspan(std::tuple<T...> t, Slices... slices) {
         return std::apply(
-            [slices...](auto... args) {
-                F f;
-                return std::make_tuple(f(args, slices...)...);
-            },
-            t
+            [slices...](auto... args) { return std::make_tuple(detail::submdspan(args, slices...)...); }, t
         );
     }
 

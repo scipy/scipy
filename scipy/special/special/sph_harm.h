@@ -99,11 +99,9 @@ void sph_harm_y_all(T theta, T phi, std::tuple<OutMats...> res) {
         n_max, m_max, theta, phi, tuples::ref(res_n_m),
         [m_max, res](int n, int m, grad_tuple_t<std::complex<T> &, N, 2> res_n_m) {
             if (m >= 0) {
-                auto tmp = tuples::submdspan(res, n, m);
-                tuples::assign(tuples::ref(tmp), res_n_m);
+                tuples::assign(tuples::submdspan(res, n, m), res_n_m);
             } else {
-                auto tmp = tuples::submdspan(res, n, m + 2 * m_max + 1);
-                tuples::assign(tuples::ref(tmp), res_n_m);
+                tuples::assign(tuples::submdspan(res, n, m + 2 * m_max + 1), res_n_m);
             }
         }
     );
