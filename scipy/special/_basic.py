@@ -1757,7 +1757,9 @@ def lpmn(m, n, z):
 
     m, n = int(m), int(n)  # Convert to int to maintain backwards compatibility.
 
-    p, pd = assoc_legendre_p_all(n, abs(m), z, diff_n = 1)
+    typ = np.where(np.abs(z) <= 1, 2, 3)
+
+    p, pd = multi_assoc_legendre_p_all(n, abs(m), z, typ, diff_n = 1)
     p = np.swapaxes(p, 0, 1)
     pd = np.swapaxes(pd, 0, 1)
 
