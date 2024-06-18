@@ -161,6 +161,7 @@ PyMODINIT_FUNC PyInit__gufuncs() {
             3, "legendre_p_all", nullptr, "()->(np1),(np1),(np1)", legendre_map_dims<3>));
     PyModule_AddObjectRef(_gufuncs, "legendre_p_all", legendre_p_all);
 
+    // key is norm, diff_n
     PyObject *assoc_legendre_p_all = Py_BuildValue(
         "{(O, i): N, (O, i): N, (O, i): N, (O, i): N, (O, i): N,(O, i): N}", Py_True, 0,
         SpecFun_NewGUFunc({[](double z, double_2d res) { ::assoc_legendre_p_all(assoc_legendre_norm, z, res); },

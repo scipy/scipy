@@ -68,31 +68,9 @@ class MultiUFunc:
     def force_complex_output(self):
         return self.__force_complex_output
 
-    def register_key(self, func):
-        """Set `resolve_ufunc` method by decorating a function.
-
-        The decorated function's first argument should be a JSON-like
-        `ufuncs_map`, and additional arguments should be keywords which 
-        are used to dispatch to the correct ufunc at the leaf level of
-        `ufuncs_map`.
+    def register_key(self, key):
+        """Set `key` method by decorating a function.
         """
-        # Given func, we construct a wrapper which no longer takes the
-        # `ufuncs_map` as input, but instead gets it from the
-        # class. Use inspect to add an informative signature. Add a
-        # a docstring if none exists.
-        sig = inspect.signature(func)
-        params = list(inspect.signature(func).parameters.values())[1:]
-        new_sig = sig.replace(parameters=params)
-
-        def key(*args, **kwargs):
-            return func(*args, **kwargs)
-
-        key.__signature__ = new_sig
-        docstring = func.__doc__
-        if docstring is not None:
-            key.__doc__ = docstring
-        key.__doc__ = \
-            """Resolve to a ufunc based on keyword arguments."""
         self.key = key
 
     def register_resolve_out_shapes(self, func):
@@ -103,14 +81,17 @@ class MultiUFunc:
         func.__name__ = "resolve_out_shapes"
         self.resolve_out_shapes = func
 
+    def resolve_ufunc(self, **kwargs):
+        """Resolve to a ufunc based on keyword arguments."""
+        ufunc_key = self.key(**kwargs)
+        return self._ufuncs_map[ufunc_key]
+
     @property
     def __doc__(self):
         return self.__doc
 
     def __call__(self, *args, **kwargs):
-        ufunc_key = self.key(**kwargs)
-
-        ufunc = self._ufuncs_map[ufunc_key]
+        ufunc = self.resolve_ufunc(**kwargs)
         if ((ufunc.nout == 0) or (self.resolve_out_shapes is None)):
             return ufunc(*args)
 
