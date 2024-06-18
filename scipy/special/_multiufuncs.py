@@ -1,20 +1,25 @@
 import collections
+import functools
+import inspect
 import numbers
+import operator
 import numpy as np
 
 from ._input_validation import _nonneg_int_or_fail
 
-from ._special_ufuncs import (legendre_p, multi_assoc_legendre_p,
-                              sph_legendre_p, sph_harm_y)
+from ._special_ufuncs import (legendre_p, assoc_legendre_p,
+                              multi_assoc_legendre_p, sph_legendre_p,
+                              sph_harm_y)
 
 from ._gufuncs import (legendre_p_all, multi_assoc_legendre_p_all,
                        sph_legendre_p_all, sph_harm_y_all)
 
 __all__ = [
-    "multi_assoc_legendre_p",
-    "multi_assoc_legendre_p_all",
+    "assoc_legendre_p",
     "legendre_p",
     "legendre_p_all",
+    "multi_assoc_legendre_p",
+    "multi_assoc_legendre_p_all",
     "sph_harm_y",
     "sph_harm_y_all",
     "sph_legendre_p",
@@ -56,7 +61,7 @@ class MultiUFunc:
         self.key = None
         self.__force_complex_output = force_complex_output
         self.__doc = doc
-        self.default_args = lambda *args, **kwargs: ()
+        self.resolve_defaults = None
 
     @property
     def force_complex_output(self):
@@ -75,8 +80,8 @@ class MultiUFunc:
         func.__name__ = "resolve_out_shapes"
         self.resolve_out_shapes = func
 
-    def register_default_args(self, func):
-        self.default_args = func
+    def register_defaults(self, func):
+        self.resolve_defaults = func
 
     def resolve_ufunc(self, **kwargs):
         """Resolve to a ufunc based on keyword arguments."""
@@ -89,11 +94,15 @@ class MultiUFunc:
 
     def __call__(self, *args, **kwargs):
         ufunc = self.resolve_ufunc(**kwargs)
-
-        args = args + self.default_args(**kwargs)
-
         if ((ufunc.nout == 0) or (self.resolve_out_shapes is None)):
             return ufunc(*args)
+
+        if (self.resolve_defaults is None):
+            ufunc_default_args = ()
+        else:
+            ufunc_default_args = self.resolve_defaults(**kwargs)
+
+        args = args + ufunc_default_args
 
         ufunc_args = args[-ufunc.nin:] # array arguments to be passed to the ufunc
 
@@ -129,6 +138,54 @@ class MultiUFunc:
         ufunc_axes = len(ufunc_args) * [()] + \
             [tuple(range(axis)) for axis in ufunc_out_new_dims]
         return ufunc(*ufunc_args, out = out, axes = ufunc_axes)
+
+
+assoc_legendre_p = MultiUFunc(assoc_legendre_p,
+    r"""assoc_legendre_p(n, m, z, *, norm=False, diff_n=0)
+
+    Associated Legendre polynomial of the first kind.
+
+    Parameters
+    ----------
+    n : array_like, int
+        Order of the Legendre polynomial, must have ``n >= 0``.
+    m : array_like, int
+        Degree of the Legendre polynomial.
+    z : array_like, float
+        Input value.
+    norm : Optional[bool]
+        If True, compute the normalized associated Legendre polynomial.
+        Default is False.
+    diff_n : Optional[int]
+        A non-negative integer. Compute and return all derivatives up
+        to order ``diff_n``.
+
+    Returns
+    -------
+    p : ndarray or tuple[ndarray]
+        The assocated Legendre polynomial with ``diff_n`` derivatives.
+
+    Notes
+    -----
+    With respect to the associated Legendre polynomial :math:`P_{m}^{n}(x)`,
+    the normalised associated Legendre polynomials is defined as
+
+    .. math::
+
+        \sqrt{\frac{(2 n + 1) (n - m)!}{2 (n + m)!}} P_{n}^{m}(x)
+    """
+)
+
+
+@assoc_legendre_p.register_key
+def _(norm=False, diff_n=0):
+    diff_n = _nonneg_int_or_fail(diff_n, "diff_n", strict=False)
+    if not 0 <= diff_n <= 2:
+        raise ValueError(
+            "diff_n is currently only implemented for orders 0, 1, and 2,"
+            f" received: {diff_n}."
+        )
+    return norm, diff_n
 
 
 sph_legendre_p = MultiUFunc(sph_legendre_p,
@@ -277,7 +334,7 @@ multi_assoc_legendre_p = MultiUFunc(multi_assoc_legendre_p,
 
 
 @multi_assoc_legendre_p.register_key
-def _(typ=2, norm=False, diff_n=0):
+def _(norm=False, diff_n=0):
     diff_n = _nonneg_int_or_fail(diff_n, "diff_n", strict=False)
     if not 0 <= diff_n <= 2:
         raise ValueError(
@@ -285,11 +342,6 @@ def _(typ=2, norm=False, diff_n=0):
             f" received: {diff_n}."
         )
     return norm, diff_n
-
-
-@multi_assoc_legendre_p.register_default_args
-def _(typ=2, norm=False, diff_n=0):
-    return typ,
 
 
 multi_assoc_legendre_p_all = MultiUFunc(multi_assoc_legendre_p_all,
@@ -316,16 +368,14 @@ def _(typ=2, norm=False, diff_n=0):
         )
     return norm, diff_n
 
-
-@multi_assoc_legendre_p_all.register_default_args
+@multi_assoc_legendre_p_all.register_defaults
 def _(typ=2, norm=False, diff_n=0):
-    return typ,
-
+    return (typ,)
 
 @multi_assoc_legendre_p_all.register_resolve_out_shapes
 def _(n, m, z_shape, typ_shape, nout):
-    if not isinstance(m, numbers.Integral) or (m < 0):
-        raise ValueError("m must be a non-negative integer.")
+    if not isinstance(m, numbers.Integral) or (abs(m) > n):
+        raise ValueError("m must be <= n.")
     if not isinstance(n, numbers.Integral) or (n < 0):
         raise ValueError("n must be a non-negative integer.")
 

@@ -163,14 +163,8 @@ PyMODINIT_FUNC PyInit__gufuncs() {
 
     // key is norm, diff_n
     PyObject *multi_assoc_legendre_p_all = Py_BuildValue(
-        "{(O, i): N, (O, i): N, (O, i): N, (O, i): N, (O, i): N, (O, i): N}", Py_True, 0,
-        SpecFun_NewGUFunc({[](double z, long long int type, double_2d res) {
-                               ::multi_assoc_legendre_p_all(assoc_legendre_norm, type, z, res);
-                           },
-                           [](float z, long long int type, float_2d res) {
-                               ::multi_assoc_legendre_p_all(assoc_legendre_norm, type, z, res);
-                           },
-                           [](cdouble z, long long int type, cdouble_2d res) {
+        "{(O, i): N, (O, i): N, (O, i): N, (O, i): N, (O, i): N,(O, i): N}", Py_True, 0,
+        SpecFun_NewGUFunc({[](cdouble z, long long int type, cdouble_2d res) {
                                ::multi_assoc_legendre_p_all(assoc_legendre_norm, type, z, res);
                            },
                            [](cfloat z, long long int type, cfloat_2d res) {
@@ -178,13 +172,7 @@ PyMODINIT_FUNC PyInit__gufuncs() {
                            }},
                           1, "multi_assoc_legendre_p_all", nullptr, "(),()->(np1,mpmp1)", assoc_legendre_map_dims<1>),
         Py_True, 1,
-        SpecFun_NewGUFunc({[](double z, long long int type, double_2d res, double_2d res_jac) {
-                               ::multi_assoc_legendre_p_all(assoc_legendre_norm, type, z, res, res_jac);
-                           },
-                           [](float z, long long int type, float_2d res, float_2d res_jac) {
-                               ::multi_assoc_legendre_p_all(assoc_legendre_norm, type, z, res, res_jac);
-                           },
-                           [](cdouble z, long long int type, cdouble_2d res, cdouble_2d res_jac) {
+        SpecFun_NewGUFunc({[](cdouble z, long long int type, cdouble_2d res, cdouble_2d res_jac) {
                                ::multi_assoc_legendre_p_all(assoc_legendre_norm, type, z, res, res_jac);
                            },
                            [](cfloat z, long long int type, cfloat_2d res, cfloat_2d res_jac) {
@@ -193,13 +181,7 @@ PyMODINIT_FUNC PyInit__gufuncs() {
                           2, "multi_assoc_legendre_p_all", nullptr, "(),()->(np1,mpmp1),(np1,mpmp1)",
                           assoc_legendre_map_dims<2>),
         Py_True, 2,
-        SpecFun_NewGUFunc({[](double z, long long int type, double_2d res, double_2d res_jac, double_2d res_hess) {
-                               ::multi_assoc_legendre_p_all(assoc_legendre_norm, type, z, res, res_jac, res_hess);
-                           },
-                           [](float z, long long int type, float_2d res, float_2d res_jac, float_2d res_hess) {
-                               ::multi_assoc_legendre_p_all(assoc_legendre_norm, type, z, res, res_jac, res_hess);
-                           },
-                           [](cdouble z, long long int type, cdouble_2d res, cdouble_2d res_jac, cdouble_2d res_hess) {
+        SpecFun_NewGUFunc({[](cdouble z, long long int type, cdouble_2d res, cdouble_2d res_jac, cdouble_2d res_hess) {
                                ::multi_assoc_legendre_p_all(assoc_legendre_norm, type, z, res, res_jac, res_hess);
                            },
                            [](cfloat z, long long int type, cfloat_2d res, cfloat_2d res_jac, cfloat_2d res_hess) {
@@ -208,13 +190,7 @@ PyMODINIT_FUNC PyInit__gufuncs() {
                           3, "multi_assoc_legendre_p_all", nullptr, "(),()->(np1,mpmp1),(np1,mpmp1),(np1,mpmp1)",
                           assoc_legendre_map_dims<3>),
         Py_False, 0,
-        SpecFun_NewGUFunc({[](double z, long long int type, double_2d res) {
-                               ::multi_assoc_legendre_p_all(assoc_legendre_unnorm, type, z, res);
-                           },
-                           [](float z, long long int type, float_2d res) {
-                               ::multi_assoc_legendre_p_all(assoc_legendre_unnorm, type, z, res);
-                           },
-                           [](cdouble z, long long int type, cdouble_2d res) {
+        SpecFun_NewGUFunc({[](cdouble z, long long int type, cdouble_2d res) {
                                ::multi_assoc_legendre_p_all(assoc_legendre_unnorm, type, z, res);
                            },
                            [](cfloat z, long long int type, cfloat_2d res) {
@@ -222,13 +198,7 @@ PyMODINIT_FUNC PyInit__gufuncs() {
                            }},
                           1, "multi_assoc_legendre_p_all", nullptr, "(),()->(np1,mpmp1)", assoc_legendre_map_dims<1>),
         Py_False, 1,
-        SpecFun_NewGUFunc({[](double z, long long int type, double_2d res, double_2d res_jac) {
-                               ::multi_assoc_legendre_p_all(assoc_legendre_unnorm, type, z, res, res_jac);
-                           },
-                           [](float z, long long int type, float_2d res, float_2d res_jac) {
-                               ::multi_assoc_legendre_p_all(assoc_legendre_unnorm, type, z, res, res_jac);
-                           },
-                           [](cdouble z, long long int type, cdouble_2d res, cdouble_2d res_jac) {
+        SpecFun_NewGUFunc({[](cdouble z, long long int type, cdouble_2d res, cdouble_2d res_jac) {
                                ::multi_assoc_legendre_p_all(assoc_legendre_unnorm, type, z, res, res_jac);
                            },
                            [](cfloat z, long long int type, cfloat_2d res, cfloat_2d res_jac) {
@@ -237,13 +207,7 @@ PyMODINIT_FUNC PyInit__gufuncs() {
                           2, "multi_assoc_legendre_p_all", nullptr, "(),()->(np1,mpmp1),(np1,mpmp1)",
                           assoc_legendre_map_dims<2>),
         Py_False, 2,
-        SpecFun_NewGUFunc({[](double z, long long int type, double_2d res, double_2d res_jac, double_2d res_hess) {
-                               ::multi_assoc_legendre_p_all(assoc_legendre_unnorm, type, z, res, res_jac, res_hess);
-                           },
-                           [](float z, long long int type, float_2d res, float_2d res_jac, float_2d res_hess) {
-                               ::multi_assoc_legendre_p_all(assoc_legendre_unnorm, type, z, res, res_jac, res_hess);
-                           },
-                           [](cdouble z, long long int type, cdouble_2d res, cdouble_2d res_jac, cdouble_2d res_hess) {
+        SpecFun_NewGUFunc({[](cdouble z, long long int type, cdouble_2d res, cdouble_2d res_jac, cdouble_2d res_hess) {
                                ::multi_assoc_legendre_p_all(assoc_legendre_unnorm, type, z, res, res_jac, res_hess);
                            },
                            [](cfloat z, long long int type, cfloat_2d res, cfloat_2d res_jac, cfloat_2d res_hess) {
