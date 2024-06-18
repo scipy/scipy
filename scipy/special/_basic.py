@@ -19,7 +19,7 @@ from ._gufuncs import _lqn, _lqmn, _rctj, _rcty
 from ._input_validation import _nonneg_int_or_fail
 from . import _specfun
 from ._comb import _comb_int
-from ._multiufuncs import (assoc_legendre_p_all, multi_assoc_legendre_p_all,
+from ._multiufuncs import (multi_assoc_legendre_p_all,
                            legendre_p_all)
 
 

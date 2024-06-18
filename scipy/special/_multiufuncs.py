@@ -1,8 +1,5 @@
 import collections
-import functools
-import inspect
 import numbers
-import operator
 import numpy as np
 
 from ._input_validation import _nonneg_int_or_fail
