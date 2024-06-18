@@ -930,22 +930,39 @@ def _remlplen_ichige(fp, fs, dp, ds):
     Filter Length for Optimum FIR Digital Filters, IEEE Transactions on
     Circuits and Systems, 47(10):1008-1017, October 2000.
     """
-
     dF = fs - fp
-    v = lambda dF, dp: 2.325 * ((-np.log10(dp)) ** -0.445) * dF ** (-1.39)
-    g = lambda fp, dF, d: (2.0 / np.pi) * np.arctan(
-        v(dF, dp) * (1.0 / fp - 1.0 / (0.5 - dF))
-    )
-    h = lambda fp, dF, c: (2.0 / np.pi) * np.arctan(
-        (c / dF) * (1.0 / fp - 1.0 / (0.5 - dF))
-    )
+
+    def v(dF, dp):
+        return 2.325 * ((-np.log10(dp)) ** -0.445) * dF ** (-1.39)
+
+    def arctan_g(fp, dF, d):
+        return (2.0 / np.pi) * np.arctan(
+            v(dF, dp) * (1.0 / fp - 1.0 / (0.5 - dF))
+        )
+
+    def arctan_h(fp, dF, c):
+        return (2.0 / np.pi) * np.arctan(
+            (c / dF) * (1.0 / fp - 1.0 / (0.5 - dF))
+        )
+
     Nc = ceil(1.0 + (1.101 / dF) * (-np.log10(2.0 * dp)) ** 1.1)
     Nm = (0.52 / dF) * np.log10(dp / ds) * (-np.log10(dp)) ** 0.17
-    N3 = ceil(Nc * (g(fp, dF, dp) + g(0.5 - dF - fp, dF, dp) + 1.0) / 3.0)
-    DN = ceil(Nm * (h(fp, dF, 1.1) - (h(0.5 - dF - fp, dF, 0.29) - 1.0) / 2.0))
+    N3 = ceil(
+        Nc
+        * (arctan_g(fp, dF, dp) + arctan_g(0.5 - dF - fp, dF, dp) + 1.0)
+        / 3.0
+    )
+    DN = ceil(
+        Nm
+        * (
+            arctan_h(fp, dF, 1.1)
+            - (arctan_h(0.5 - dF - fp, dF, 0.29) - 1.0) / 2.0
+        )
+    )
     N4 = N3 + DN
 
     return int(N4)
+
 
 def remezord(freqs, amps, rips, fs=1.0, alg="ichige"):
     """
