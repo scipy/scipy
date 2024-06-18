@@ -347,7 +347,7 @@ class TestMultiAssocLegendreP:
             1j * rng.uniform(z_min.imag, z_max.imag, shape)
 
         p, p_jac = special.multi_assoc_legendre_p_all(4, 4,
-            typ, z, norm = norm, diff_n = 1)
+            z, typ, norm = norm, diff_n = 1)
 
         np.testing.assert_allclose(p[0, 0],
             multi_assoc_legendre_p_0_0(typ, z, norm = norm))

@@ -385,13 +385,13 @@ def _(norm=False, diff_n=0):
 
 
 @multi_assoc_legendre_p_all.register_resolve_out_shapes
-def _(n, m, type_shape, z_shape, nout):
+def _(n, m, z_shape, type_shape, nout):
     if not isinstance(m, numbers.Integral) or (abs(m) > n):
         raise ValueError("m must be <= n.")
     if not isinstance(n, numbers.Integral) or (n < 0):
         raise ValueError("n must be a non-negative integer.")
 
-    return nout * ((n + 1, 2 * abs(m) + 1) + np.broadcast_shapes(type_shape, z_shape),)
+    return nout * ((n + 1, 2 * abs(m) + 1) + np.broadcast_shapes(z_shape, type_shape),)
 
 
 legendre_p = MultiUFunc(legendre_p,

@@ -1832,7 +1832,7 @@ def clpmn(m, n, z, type = 3):
 
     m, n = int(m), int(n)  # Convert to int to maintain backwards compatibility.
 
-    out, out_jac = multi_assoc_legendre_p_all(n, abs(m), type, z, diff_n = 1)
+    out, out_jac = multi_assoc_legendre_p_all(n, abs(m), z, type, diff_n = 1)
     out = np.swapaxes(out, 0, 1)
     out_jac = np.swapaxes(out_jac, 0, 1)
 
