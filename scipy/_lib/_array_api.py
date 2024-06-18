@@ -431,12 +431,12 @@ def get_xp_devices(xp: ModuleType) -> list[str] | list[None]:
     return [None]
 
 
-def scipylike_namespace_for(xp: ModuleType) -> ModuleType | None:
+def scipy_namespace_for(xp: ModuleType) -> ModuleType | None:
     """Return the `scipy`-like namespace of a non-NumPy backend
 
     That is, return the namespace corresponding with backend `xp` that contains
-    `scipy` sub-namespaces like `linalg` and `special`. If no such namespace exists,
-    return None. Useful for dispatching.
+    `scipy` sub-namespaces like `linalg` and `special`. If no such namespace
+    exists, return ``None``. Useful for dispatching.
     """
 
     if is_cupy(xp):
