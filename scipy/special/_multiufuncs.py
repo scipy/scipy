@@ -141,10 +141,12 @@ class MultiUFunc:
             for ufunc_out_shape, ufunc_out_dtype
             in zip(ufunc_out_shapes, ufunc_out_dtypes))
 
+        axes = len(ufunc_args) * [()] + [tuple(range(axis)) for axis in ufunc_out_new_dims]
+
         ufunc_out = tuple(np.moveaxis(out[i],
             tuple(range(axis)), tuple(range(-axis, 0)))
             for i, axis in enumerate(ufunc_out_new_dims))
-        ufunc(*ufunc_args, out = ufunc_out)
+        ufunc(*ufunc_args, out = out, axes = axes)
 
         if (len(out) == 1):
             out, = out
