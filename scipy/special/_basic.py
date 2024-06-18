@@ -19,8 +19,7 @@ from ._gufuncs import _lqn, _lqmn, _rctj, _rcty
 from ._input_validation import _nonneg_int_or_fail
 from . import _specfun
 from ._comb import _comb_int
-from ._multiufuncs import (assoc_legendre_p_all, multi_assoc_legendre_p_all,
-                           legendre_p_all)
+from ._multiufuncs import (multi_assoc_legendre_p_all, legendre_p_all)
 
 
 __all__ = [
@@ -1757,7 +1756,9 @@ def lpmn(m, n, z):
 
     m, n = int(m), int(n)  # Convert to int to maintain backwards compatibility.
 
-    p, pd = assoc_legendre_p_all(n, abs(m), z, diff_n = 1)
+    typ = np.where(np.abs(z) <= 1, 2, 3)
+
+    p, pd = multi_assoc_legendre_p_all(n, abs(m), z, typ = typ, diff_n = 1)
     p = np.swapaxes(p, 0, 1)
     pd = np.swapaxes(pd, 0, 1)
 
