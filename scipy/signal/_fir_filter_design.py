@@ -961,7 +961,7 @@ def remezord(freqs, amps, rips, fs=1.0, alg="ichige"):
     construct a finite impulse response (FIR) filter that approximately meets
     the specified design.
 
-    Parameters:
+    Parameters
     ----------
     freqs : array_like
         A monotonic sequence of non-negative band edges in Hertz. All elements
@@ -990,8 +990,8 @@ def remezord(freqs, amps, rips, fs=1.0, alg="ichige"):
     weight : ndarray
         A relative weighting to give to each band region.
 
-    Raises:
-    -------
+    Raises
+    ------
     ValueError:
         - If any element in `freqs` is negative, greater than 0.5, or the
           length is not valid.
@@ -1001,7 +1001,7 @@ def remezord(freqs, amps, rips, fs=1.0, alg="ichige"):
         - If `alg` is not a valid string option.
 
     See Also
-    ---
+    --------
     remez
 
     Notes
