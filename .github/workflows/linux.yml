@@ -545,14 +545,7 @@ jobs:
     - uses: actions/checkout@v4.1.1
       with:
         submodules: recursive
-    - name: Checkout array-api-tests
-      uses: actions/checkout@v4
-      with:
-        repository: data-apis/array-api-tests
-    - name: Checkout array-api-stubs
-      uses: actions/checkout@v4
-      with:
-        repository: data-apis/array-api
+
     - name: Setup Python
       uses: actions/setup-python@v5
       with:
@@ -596,7 +589,16 @@ jobs:
 
     - name: Setup build and install scipy
       run: |
-        python dev.py build --werror
+        pip install -e .
+
+    - name: Checkout array-api-tests
+      uses: actions/checkout@v4
+      with:
+        repository: data-apis/array-api-tests
+    - name: Checkout array-api-stubs
+      uses: actions/checkout@v4
+      with:
+        repository: data-apis/array-api
     
     - name: Run array-api-tests against scipy sparse
       run: |
