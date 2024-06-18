@@ -144,12 +144,9 @@ def _lazywhere(cond, arrays, f, fillvalue=None, f2=None):
         # If `fillvalue` is a Python scalar and we convert to `xp.asarray`, it gets the
         # default `int` or `float` type of `xp`, so `result_type` could be wrong.
         # `result_type` should/will handle mixed array/Python scalars
-        # (data-apis/array-api#805) but doesn't yet. So in the meantime, we need our
-        # own logic.
-        if type(fillvalue) in {int, float, complex, bool}:
-            dtype = (xp.asarray([0], dtype=temp1.dtype) * fillvalue).dtype
-        else:
-            dtype = xp.result_type(temp1.dtype, fillvalue.dtype)
+        # (data-apis/array-api#805) but doesn't yet. So in the meantime, this fails
+        # for array-api-strict.
+        dtype = xp.result_type(temp1.dtype, fillvalue)
         out = xp.full(cond.shape, fill_value=xp.asarray(fillvalue), dtype=dtype)
     else:
         ncond = ~cond
