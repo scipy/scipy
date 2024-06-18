@@ -73,24 +73,20 @@ void assoc_legendre_p_all(NormPolicy norm, T z, OutputMat1 res, OutputMat2 res_j
 }
 
 template <typename NormPolicy, typename T>
-std::complex<T>
-multi_assoc_legendre_p(NormPolicy norm, long long int n, long long int m, long long int type, std::complex<T> z) {
+std::complex<T> multi_assoc_legendre_p(NormPolicy norm, long long int n, long long int m, long long int type,
+                                       std::complex<T> z) {
     return special::multi_assoc_legendre_p(norm, n, m, type, z);
 }
 
 template <typename NormPolicy, typename T>
-void multi_assoc_legendre_p(
-    NormPolicy norm, long long int n, long long int m, long long int type, std::complex<T> z, std::complex<T> &res,
-    std::complex<T> &res_jac
-) {
+void multi_assoc_legendre_p(NormPolicy norm, long long int n, long long int m, long long int type, std::complex<T> z,
+                            std::complex<T> &res, std::complex<T> &res_jac) {
     special::multi_assoc_legendre_p(norm, n, m, type, z, std::tie(res, res_jac));
 }
 
 template <typename NormPolicy, typename T>
-void multi_assoc_legendre_p(
-    NormPolicy norm, long long int n, long long int m, long long int type, std::complex<T> z, std::complex<T> &res,
-    std::complex<T> &res_jac, std::complex<T> &res_hess
-) {
+void multi_assoc_legendre_p(NormPolicy norm, long long int n, long long int m, long long int type, std::complex<T> z,
+                            std::complex<T> &res, std::complex<T> &res_jac, std::complex<T> &res_hess) {
     special::multi_assoc_legendre_p(norm, n, m, type, z, std::tie(res, res_jac, res_hess));
 }
 
@@ -105,9 +101,8 @@ void multi_assoc_legendre_p_all(NormPolicy norm, int type, T z, OutputMat1 res, 
 }
 
 template <typename NormPolicy, typename T, typename OutputMat1, typename OutputMat2, typename OutputMat3>
-void multi_assoc_legendre_p_all(
-    NormPolicy norm, int type, T z, OutputMat1 res, OutputMat2 res_jac, OutputMat3 res_hess
-) {
+void multi_assoc_legendre_p_all(NormPolicy norm, int type, T z, OutputMat1 res, OutputMat2 res_jac,
+                                OutputMat3 res_hess) {
     special::multi_assoc_legendre_p_all(norm, type, z, std::tie(res, res_jac, res_hess));
 }
 
@@ -168,20 +163,18 @@ std::complex<T> sph_harm(T m, T n, T theta, T phi) {
 }
 
 template <typename T>
-std::complex<T> sph_harm_y(long long int m, long long int n, T theta, T phi) {
+std::complex<T> sph_harm_y(long long int n, long long int m, T theta, T phi) {
     return special::sph_harm_y(n, m, theta, phi);
 }
 
 template <typename T>
-void sph_harm_y(long long int m, long long int n, T theta, T phi, std::complex<T> &res, std::complex<T> (&res_jac)[2]) {
+void sph_harm_y(long long int n, long long int m, T theta, T phi, std::complex<T> &res, std::complex<T> (&res_jac)[2]) {
     special::sph_harm_y(n, m, theta, phi, std::tie(res, res_jac));
 }
 
 template <typename T>
-void sph_harm_y(
-    long long int m, long long int n, T theta, T phi, std::complex<T> &res, std::complex<T> (&res_jac)[2],
-    std::complex<T> (&res_hess)[2][2]
-) {
+void sph_harm_y(long long int n, long long int m, T theta, T phi, std::complex<T> &res, std::complex<T> (&res_jac)[2],
+                std::complex<T> (&res_hess)[2][2]) {
     special::sph_harm_y(n, m, theta, phi, std::tie(res, res_jac, res_hess));
 }
 

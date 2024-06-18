@@ -1,10 +1,11 @@
 import numpy as np
+import pytest
+
 from numpy.testing import assert_allclose
 import scipy.special as sc
 
-
 class TestSphHarm:
-    def test_sph_harm_y(self):
+    def test_p(self):
         m_max = 20
         n_max = 10
 
@@ -27,6 +28,23 @@ class TestSphHarm:
         assert_allclose(y_hess[0, 1], 1j * m * p_jac * np.exp(1j * m * theta))
         assert_allclose(y_hess[1, 0], y_hess[0, 1])
         assert_allclose(y_hess[1, 1], p_hess * np.exp(1j * m * theta))
+
+    @pytest.mark.parametrize("n_max", [7, 10, 50])
+    @pytest.mark.parametrize("m_max", [1, 4, 5, 9, 14])
+    def test_all(self, n_max, m_max):
+        theta = np.linspace(0, 2 * np.pi)
+        phi = np.linspace(0, np.pi)
+
+        n = np.arange(n_max + 1)
+        n = np.expand_dims(n, axis = tuple(range(1, theta.ndim + 2)))
+
+        m = np.concatenate([np.arange(m_max + 1), np.arange(-m_max, 0)])
+        m = np.expand_dims(m, axis = (0,) + tuple(range(2, theta.ndim + 2)))
+
+        y_actual = sc.sph_harm_y_all(n_max, m_max, theta, phi)
+        y_desired = sc.sph_harm_y(n, m, theta, phi)
+
+        np.testing.assert_allclose(y_actual, y_desired, rtol = 1e-05)
 
 def test_first_harmonics():
     # Test against explicit representations of the first four
@@ -56,29 +74,7 @@ def test_first_harmonics():
     theta, phi = np.meshgrid(theta, phi)
 
     for harm, m, n in zip(harms, m, n):
-        assert_allclose(sc.sph_harm_y(m, n, theta, phi),
+        assert_allclose(sc.sph_harm(m, n, theta, phi),
                         harm(theta, phi),
                         rtol=1e-15, atol=1e-15,
                         err_msg=f"Y^{m}_{n} incorrect")
-
-def test_all_harmonics():
-    n_max = 50
-
-    theta = np.linspace(0, 2 * np.pi)
-    phi = np.linspace(0, np.pi)
-
-    y_actual = sc.sph_harm_y_all(n_max, 2 * n_max, theta, phi)
-
-    for n in [0, 1, 2, 5, 10, 20, 50]:
-        for m in [0, 1, 2, 5, 10, 20, 50]:
-            if (m <= n):
-                y_desired = sc.sph_harm(m, n, theta, phi)
-            else:
-                y_desired = 0
-            np.testing.assert_allclose(y_actual[n, m], y_desired, rtol = 1e-05)
-
-            if (m <= n):
-                y_desired = sc.sph_harm(-m, n, theta, phi)
-            else:
-                y_desired = 0
-            np.testing.assert_allclose(y_actual[n, -m], y_desired, rtol = 1e-05)
