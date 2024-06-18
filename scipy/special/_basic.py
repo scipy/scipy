@@ -1772,9 +1772,6 @@ def lpmn(m, n, z):
     return p, pd
 
 
-
-
-
 def clpmn(m, n, z, type = 3):
     """Associated Legendre function of the first kind for complex arguments.
 
