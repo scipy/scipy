@@ -2132,9 +2132,21 @@ class ResamplingMethod:
         the statistic. Batch sizes >>1 tend to be faster when the statistic
         is vectorized, but memory usage scales linearly with the batch size.
         Default is ``None``, which processes all resamples in a single batch.
+    random_state : {None, int, `numpy.random.Generator`,
+                    `numpy.random.RandomState`}, optional
+
+        Pseudorandom number generator state used to generate resamples.
+
+        If `random_state` is already a ``Generator`` or ``RandomState``
+        instance, then that instance is used.
+        If `random_state` is an int, a new ``RandomState`` instance is used,
+        seeded with `random_state`.
+        If `random_state` is ``None`` (default), the
+        `numpy.random.RandomState` singleton is used.
     """
     n_resamples: int = 9999
     batch: int = None  # type: ignore[assignment]
+    random_state: object = None
 
 
 @dataclass
@@ -2167,13 +2179,34 @@ class MonteCarloMethod(ResamplingMethod):
         samples are drawn from the standard normal distribution, so
         ``rvs = (rng.normal, rng.normal)`` where
         ``rng = np.random.default_rng()``.
+    random_state : {None, int, `numpy.random.Generator`,
+                    `numpy.random.RandomState`}, optional
+
+        Pseudorandom number generator state used to generate resamples.
+        Not accepted by all tests, and where accepted, mutually exclusive with
+        parameter `rvs`.
+
+        If `random_state` is already a ``Generator`` or ``RandomState``
+        instance, then that instance is used.
+        If `random_state` is an int, a new ``RandomState`` instance is used,
+        seeded with `random_state`.
+        If `random_state` is ``None`` (default), the
+        `numpy.random.RandomState` singleton is used.
     """
     rvs: object = None
+    def __init__(self, n_resamples=9999, batch=None, rvs=None, random_state=None):
+        if (rvs is not None) and (random_state is not None):
+            message = 'Use of `rvs` and `random_state` are mutually exclusive.'
+            raise ValueError(message)
+        self.n_resamples = n_resamples
+        self.batch = batch
+        self.rvs = rvs
+        self.random_state = random_state
 
     def _asdict(self):
         # `dataclasses.asdict` deepcopies; we don't want that.
         return dict(n_resamples=self.n_resamples, batch=self.batch,
-                    rvs=self.rvs)
+                    rvs=self.rvs, random_state=self.random_state)
 
 
 @dataclass
@@ -2205,7 +2238,6 @@ class PermutationMethod(ResamplingMethod):
         If `random_state` is ``None`` (default), the
         `numpy.random.RandomState` singleton is used.
     """
-    random_state: object = None
 
     def _asdict(self):
         # `dataclasses.asdict` deepcopies; we don't want that.
@@ -2246,7 +2278,6 @@ class BootstrapMethod(ResamplingMethod):
         (AKA 'reverse') bootstrap ('basic'), or the bias-corrected and
         accelerated bootstrap ('BCa', default).
     """
-    random_state: object = None
     method: str = 'BCa'
 
     def _asdict(self):
