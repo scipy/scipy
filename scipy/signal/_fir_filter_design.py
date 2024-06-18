@@ -877,10 +877,6 @@ def _remlplen_herrmann(fp, fs, dp, ds):
     Note that the filter order is one less than the filter length.
 
     Uses approximation algorithm described by Herrmann et al.:
-
-    O. Herrmann, L.R. Raviner, and D.S.K. Chan, Practical Design Rules for
-    Optimum Finite Impulse Response Low-Pass Digital Filters, Bell Syst. Tech.
-    Jour., 52(6):769-799, Jul./Aug. 1973.
     """
 
     dF = fs - fp
@@ -906,9 +902,6 @@ def _remlplen_kaiser(fp, fs, dp, ds):
     Note that the filter order is one less than the filter length.
 
     Uses approximation algorithm described by Kaiser:
-
-    J.F. Kaiser, Nonrecursive Digital Filter Design Using I_0-sinh Window
-    function, Proc. IEEE Int. Symp. Circuits and Systems, 20-23, April 1974.
     """
 
     dF = fs - fp
@@ -924,11 +917,7 @@ def _remlplen_ichige(fp, fs, dp, ds):
     fp and fs must be normalized with respect to the sampling frequency.
     Note that the filter order is one less than the filter length.
 
-    Uses approximation algorithm described by Ichige et al.:
-
-    K. Ichige, M. Iwaki, and R. Ishii, Accurate Estimation of Minimum
-    Filter Length for Optimum FIR Digital Filters, IEEE Transactions on
-    Circuits and Systems, 47(10):1008-1017, October 2000.
+    Uses approximation algorithm described by Ichige et al.
     """
     dF = fs - fp
 
@@ -986,8 +975,8 @@ def remezord(freqs, amps, rips, fs=1.0, alg="ichige"):
     fs : float, optional
         The sampling frequency of the signal. Defaults to 1.0
     alg : string, optional
-        Filter length approximation algorithm. Valid optionas are: 'herrmann',
-        'kaiser', or 'ichige' (default: 'ichige').
+        Filter length approximation algorithm. Valid optionas are: 'herrmann'
+        [1]_, 'kaiser' [2]_, or 'ichige' [3]_. (default: 'ichige').
 
     Returns
     -------
@@ -1018,6 +1007,18 @@ def remezord(freqs, amps, rips, fs=1.0, alg="ichige"):
     Notes
     -----
     .. versionadded:: 1.15.0
+
+    References
+    ----------
+    .. [1] O. Herrmann, L.R. Raviner, and D.S.K. Chan, Practical Design Rules
+           for Optimum Finite Impulse Response Low-Pass Digital Filters, Bell
+           Syst. Tech. Jour., 52(6):769-799, Jul./Aug. 1973.
+    .. [2] J.F. Kaiser, Nonrecursive Digital Filter Design Using I_0-sinh
+           Window function, Proc. IEEE Int. Symp. Circuits and Systems, 20-23,
+           April 1974.
+    .. [3] K. Ichige, M. Iwaki, and R. Ishii, Accurate Estimation of Minimum
+           Filter Length for Optimum FIR Digital Filters, IEEE Transactions on
+           Circuits and Systems, 47(10):1008-1017, October 2000.
 
     """
 
