@@ -947,8 +947,7 @@ def _remlplen_ichige(fp, fs, dp, ds):
 
     return int(N4)
 
-
-def remezord(freqs, amps, rips, Hz=1, alg="ichige"):
+def remezord(freqs, amps, rips, fs=1.0, alg="ichige"):
     """Filter parameter selection for the Remez exchange algorithm.
 
     Calculate the parameters required by the Remez exchange algorithm to
@@ -961,12 +960,14 @@ def remezord(freqs, amps, rips, Hz=1, alg="ichige"):
     freqs : ndarray
         A monotonic sequence of band edges specified in Hertz. All
         elements must be non-negative and less than 1/2 the
-        sampling frequency as given by the Hz parameter.
+        sampling frequency as given by the `fs` parameter.
     amps : ndarray
         A sequence containing the amplitudes of the signal to be
         filtered over the various bands.
     rips : ndarray
         A sequence specifying the maximum ripples of each band.
+    fs : ndarray
+        Sampling frequency
     alg : string
         Filter length approximation algorithm. May be
         'herrmann', 'kaiser', or 'ichige'.
@@ -998,7 +999,7 @@ def remezord(freqs, amps, rips, Hz=1, alg="ichige"):
     rips /= amps + (amps == 0.0)
 
     # Normalize input frequencies with respect to sampling frequency:
-    freqs /= Hz
+    freqs /= fs
 
     # Select filter length approximation algorithm:
     if alg == "herrmann":
