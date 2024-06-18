@@ -1022,6 +1022,8 @@ def remezord(freqs, amps, rips, fs=1.0, alg="ichige"):
 
     Examples
     --------
+    >>> import numpy as np
+    >>> from scipy.signal import remezord
     >>> rp, rs = 3, 40  # Passband ripple, Stopband ripple
     >>> fs = 2000  # Sampling frequency
     >>> freqs = np.array([500, 600])  # Band edges
