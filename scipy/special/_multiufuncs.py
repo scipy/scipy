@@ -1,6 +1,8 @@
 import collections
+import functools
 import inspect
 import numbers
+import operator
 import numpy as np
 
 from ._input_validation import _nonneg_int_or_fail
@@ -82,8 +84,8 @@ class MultiUFunc:
         params = list(inspect.signature(func).parameters.values())[1:]
         new_sig = sig.replace(parameters=params)
 
-        def resolve_ufunc(**kwargs):
-            return func(self._ufuncs_map, **kwargs)
+        def resolve_ufunc(*args, **kwargs):
+            return func(*args, **kwargs)
 
         resolve_ufunc.__signature__ = new_sig
         docstring = func.__doc__
@@ -106,7 +108,8 @@ class MultiUFunc:
         return self.__doc
 
     def __call__(self, *args, **kwargs):
-        ufunc = self.resolve_ufunc(**kwargs)
+        ufunc_key = self.resolve_ufunc(**kwargs)
+        ufunc = functools.reduce(operator.getitem, ufunc_key, self._ufuncs_map)
         if ((ufunc.nout == 0) or (self.resolve_out_shapes is None)):
             return ufunc(*args)
 
@@ -184,14 +187,14 @@ assoc_legendre_p = MultiUFunc(assoc_legendre_p,
 
 
 @assoc_legendre_p.register_resolve_ufunc
-def _(ufuncs, norm=False, diff_n=0):
+def _(norm=False, diff_n=0):
     diff_n = _nonneg_int_or_fail(diff_n, "diff_n", strict=False)
     if not 0 <= diff_n <= 2:
         raise ValueError(
             "diff_n is currently only implemented for orders 0, 1, and 2,"
             f" received: {diff_n}."
         )
-    return ufuncs[norm][diff_n]
+    return norm, diff_n
 
 
 assoc_legendre_p_all = MultiUFunc(assoc_legendre_p_all,
@@ -232,9 +235,9 @@ assoc_legendre_p_all = MultiUFunc(assoc_legendre_p_all,
 )
 
 @assoc_legendre_p_all.register_resolve_ufunc
-def _(ufuncs, norm=False, diff_n=0):
+def _(norm=False, diff_n=0):
     diff_n = _nonneg_int_or_fail(diff_n, "diff_n", strict=False)
-    return ufuncs[norm][diff_n]
+    return norm, diff_n
 
 
 @assoc_legendre_p_all.register_resolve_out_shapes
@@ -286,14 +289,14 @@ sph_legendre_p = MultiUFunc(sph_legendre_p,
 
 
 @sph_legendre_p.register_resolve_ufunc
-def _(ufuncs, diff_n = 0):
+def _(diff_n = 0):
     diff_n = _nonneg_int_or_fail(diff_n, "diff_n", strict=False)
     if not 0 <= diff_n <= 2:
         raise ValueError(
             "diff_n is currently only implemented for orders 0, 1, and 2,"
             f" received: {diff_n}."
         )
-    return ufuncs[diff_n]
+    return diff_n,
 
 
 sph_legendre_p_all = MultiUFunc(sph_legendre_p_all,
@@ -335,14 +338,14 @@ sph_legendre_p_all = MultiUFunc(sph_legendre_p_all,
 
 
 @sph_legendre_p_all.register_resolve_ufunc
-def _(ufuncs, diff_n=0):
+def _(diff_n=0):
     diff_n = _nonneg_int_or_fail(diff_n, "diff_n", strict=False)
     if not 0 <= diff_n <= 2:
         raise ValueError(
             "diff_n is currently only implemented for orders 0, 1, and 2,"
             f" received: {diff_n}."
         )
-    return ufuncs[diff_n]
+    return diff_n,
 
 
 @sph_legendre_p_all.register_resolve_out_shapes
@@ -370,7 +373,7 @@ def _(ufuncs, norm=False, diff_n=0):
             "diff_n is currently only implemented for orders 0, 1, and 2,"
             f" received: {diff_n}."
         )
-    return ufuncs[norm][diff_n]
+    return norm, diff_n
 
 
 multi_assoc_legendre_p_all = MultiUFunc(multi_assoc_legendre_p_all,
@@ -384,7 +387,7 @@ multi_assoc_legendre_p_all = MultiUFunc(multi_assoc_legendre_p_all,
 
 
 @multi_assoc_legendre_p_all.register_resolve_ufunc
-def _(ufuncs, norm=False, diff_n=0):
+def _(norm=False, diff_n=0):
     if not ((isinstance(diff_n, int) or np.issubdtype(diff_n, np.integer))
             and diff_n >= 0):
         raise ValueError(
@@ -395,7 +398,7 @@ def _(ufuncs, norm=False, diff_n=0):
             "diff_n is currently only implemented for orders 0, 1, and 2,"
             f" received: {diff_n}."
         )
-    return ufuncs[norm][diff_n]
+    return norm, diff_n
 
 
 @multi_assoc_legendre_p_all.register_resolve_out_shapes
@@ -444,7 +447,7 @@ legendre_p = MultiUFunc(legendre_p,
 
 
 @legendre_p.register_resolve_ufunc
-def _(ufuncs, diff_n=0):
+def _(diff_n=0):
     if not ((isinstance(diff_n, int) or np.issubdtype(diff_n, np.integer))
             and diff_n >= 0):
         raise ValueError(
@@ -455,7 +458,7 @@ def _(ufuncs, diff_n=0):
             "diff_n is currently only implemented for orders 0, 1, and 2,"
             f" received: {diff_n}."
         )
-    return ufuncs[diff_n]
+    return diff_n,
 
 
 legendre_p_all = MultiUFunc(legendre_p_all,
@@ -477,14 +480,14 @@ legendre_p_all = MultiUFunc(legendre_p_all,
 
 
 @legendre_p_all.register_resolve_ufunc
-def _(ufuncs, diff_n=0):
+def _(diff_n=0):
     diff_n = _nonneg_int_or_fail(diff_n, "diff_n", strict=False)
     if not 0 <= diff_n <= 2:
         raise ValueError(
             "diff_n is currently only implemented for orders 0, 1, and 2,"
             f" received: {diff_n}."
         )
-    return ufuncs[diff_n]
+    return diff_n,
 
 
 @legendre_p_all.register_resolve_out_shapes
@@ -562,14 +565,14 @@ sph_harm_y = MultiUFunc(sph_harm_y,
 
 
 @sph_harm_y.register_resolve_ufunc
-def _(ufuncs, diff_n=0):
+def _(diff_n=0):
     diff_n = _nonneg_int_or_fail(diff_n, "diff_n", strict=False)
     if not 0 <= diff_n <= 2:
         raise ValueError(
             "diff_n is currently only implemented for orders 0, 1, and 2,"
             f" received: {diff_n}."
         )
-    return ufuncs[diff_n]
+    return diff_n,
 
 
 sph_harm_y_all = MultiUFunc(sph_harm_y_all, 
@@ -643,14 +646,14 @@ sph_harm_y_all = MultiUFunc(sph_harm_y_all,
 
 
 @sph_harm_y_all.register_resolve_ufunc
-def _(ufuncs, diff_n=0):
+def _(diff_n=0):
     diff_n = _nonneg_int_or_fail(diff_n, "diff_n", strict=False)
     if not 0 <= diff_n <= 2:
         raise ValueError(
             "diff_n is currently only implemented for orders 2,"
             f" received: {diff_n}."
         )
-    return ufuncs[diff_n]
+    return diff_n,
 
 
 @sph_harm_y_all.register_resolve_out_shapes
