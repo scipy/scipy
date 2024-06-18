@@ -220,18 +220,18 @@ namespace detail {
     class ContinuedFractionSeriesGenerator {
 
     public:
-        explicit ContinuedFractionSeriesGenerator(Generator &cf) : cf_(cf) {
+        SPECFUN_HOST_DEVICE explicit ContinuedFractionSeriesGenerator(Generator &cf) : cf_(cf) {
             init();
         }
 
-        double operator()() {
+        SPECFUN_HOST_DEVICE double operator()() {
             double v = v_;
             advance();
             return v;
         }
 
     private:
-        void init() {
+        SPECFUN_HOST_DEVICE void init() {
             auto [num, denom] = cf_();
             T a = num;
             T b = denom;
@@ -240,7 +240,7 @@ namespace detail {
             b_ = b;
         }
 
-        void advance() {
+        SPECFUN_HOST_DEVICE void advance() {
             auto [num, denom] = cf_();
             T a = num;
             T b = denom;
