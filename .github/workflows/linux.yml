@@ -549,14 +549,10 @@ jobs:
       uses: actions/checkout@v4
       with:
         repository: data-apis/array-api-tests
-        submodules: 'true'
-        path: array-api-tests
     - name: Checkout array-api-stubs
       uses: actions/checkout@v4
       with:
         repository: data-apis/array-api
-        submodules: 'true'
-        path: array-api
     - name: Setup Python
       uses: actions/setup-python@v5
       with:
