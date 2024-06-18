@@ -225,8 +225,7 @@ Example::
    Then a blank line, then more text if needed.
    References to code names should be enclosed in backticks.
    If changes are limited to certain submodules or functions, they should be
-   included after the acronym(s) - backticks are not needed here unless the code names
-   contain an underscore.
+   included after the acronym(s) - backticks are not needed here.
 
 Example::
 
