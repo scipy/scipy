@@ -431,7 +431,7 @@ def get_xp_devices(xp: ModuleType) -> list[str] | list[None]:
     return [None]
 
 
-def scipylike_namespace_for(xp: ModuleType) -> ModuleType:
+def scipylike_namespace_for(xp: ModuleType) -> ModuleType | None:
     """Return the `scipy`-like namespace of a non-NumPy backend
 
     That is, return the namespace corresponding with backend `xp` that contains
