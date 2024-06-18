@@ -707,14 +707,16 @@ def symiirorder1(signal, c0, z1, precision=-1.0):
     y1, _ = lfilter(b, a, axis_slice(signal, 1), zi=zii)
     y1 = np.c_[y0, y1]
 
-    # Compute backward symmetric condition and apply the system
-    # c0 / (1 - z1 * z)
+    # The initial symmetric condition of the system c0 / (1 - z1 * z)
+    # corresponds to c0 * y[N - 1] * \sum_{n = 0}^{\infty}  z1^{n},
+    # since |z1| < 1.0 , it converges to -c0 / (z1 - 1) * y[N - 1]
     b = np.asarray([c0], dtype=signal.dtype)
     out_last = -c0 / (z1 - 1.0) * axis_slice(y1, -1)
 
     # Compute the initial state for lfilter.
     zii = out_last * z1
 
+    # Apply the system c0 / (1 - z1 * z) by reversing the output of the previous stage
     out, _ = lfilter(b, a, axis_slice(y1, -2, step=-1), zi=zii)
     out = np.c_[axis_reverse(out), out_last]
 
