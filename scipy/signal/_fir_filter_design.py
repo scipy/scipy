@@ -965,18 +965,18 @@ def remezord(freqs, amps, rips, fs=1.0, alg="ichige"):
     ----------
     freqs : array_like
         A monotonic sequence of non-negative band edges in Hertz. All elements
-        must be less than half the sampling frequency (`fs`).
+        must be less than half the sampling frequency ``fs``.
     amps : array_like
         A sequence containing the desired amplitudes of the signal to be
-        filtered over the corresponding frequency bands in `freqs`.
+        filtered over the corresponding frequency bands in ``freqs``.
     rips : array_like
         A sequence specifying the maximum allowable ripples of each band in the
         frequency response.
     fs : float, optional
         The sampling frequency of the signal. Defaults to 1.0
-    alg : string, optional
-        Filter length approximation algorithm. Valid optionas are: 'herrmann'
-        [1]_, 'kaiser' [2]_, or 'ichige' [3]_. (default: 'ichige').
+    alg : {'herrmann', 'kaiser', 'ichige'}, optional
+        Filter length approximation algorithm. Possible algorithms are
+        Herrmann [1]_, Kaiser [2]_, or Ichige [3]_. (Default: 'ichige')
 
     Returns
     -------
@@ -993,12 +993,12 @@ def remezord(freqs, amps, rips, fs=1.0, alg="ichige"):
     Raises
     ------
     ValueError:
-        - If any element in `freqs` is negative, greater than 0.5, or the
+        - If any element in ``freqs`` is negative, greater than 0.5, or the
           length is not valid.
-        - If the lengths of `amps` and `rips` are not equal or one more than
-          half the length of `freqs`.
-        - If any element in `rips` is negative.
-        - If `alg` is not a valid string option.
+        - If the lengths of ``amps`` and ``rips`` are not equal or one more
+          than half the length of ``freqs``.
+        - If any element in ``rips`` is negative.
+        - If ``alg`` is not a valid string option.
 
     See Also
     --------
@@ -1031,11 +1031,11 @@ def remezord(freqs, amps, rips, fs=1.0, alg="ichige"):
     >>> numtaps
     27
     >>> bands
-    [0, 0.25, 0.3, 0.5])
+    [0, 0.25, 0.3, 0.5]
     >>> desired
-    [1., 0.])
+    [1., 0.]
     >>> weights
-    [1., 17.09973573])
+    [1., 17.09973573]
 
     """
     # Make sure the parameters are floating point numpy arrays:
