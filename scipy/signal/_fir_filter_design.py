@@ -1027,13 +1027,12 @@ def remezord(freqs, amps, rips, fs=1.0, alg="ichige"):
     amps = np.asarray(amps, "d")
     rips = np.asarray(rips, "d")
 
-    # Scale ripples with respect to band amplitudes:
-    rips /= amps + (amps == 0.0)
-
-    # Normalize input frequencies with respect to sampling frequency:
-    freqs /= fs
-
-    # Select filter length approximation algorithm:
+    # Validate inputs shapes/types
+    if len(amps) != len(rips):
+        raise ValueError("Number of amplitudes must equal number of ripples.")
+    if len(freqs) != 2 * (len(amps) - 1):
+        raise ValueError("Number of band edges must equal "
+                         "2*((number of amplitudes)-1)")
     if alg == "herrmann":
         remlplen = _remlplen_herrmann
     elif alg == "kaiser":
@@ -1043,7 +1042,12 @@ def remezord(freqs, amps, rips, fs=1.0, alg="ichige"):
     else:
         raise ValueError("Unknown filter length approximation algorithm.")
 
-    # Validate inputs:
+    # Scale ripples with respect to band amplitudes:
+    rips /= amps + (amps == 0.0)
+    # Normalize input frequencies with respect to sampling frequency:
+    freqs /= fs
+
+    # Validate inputs values
     if np.any(freqs > 0.5):
         raise ValueError("Frequency band edges must not exceed the Nyquist "
                          "frequency.")
@@ -1051,11 +1055,6 @@ def remezord(freqs, amps, rips, fs=1.0, alg="ichige"):
         raise ValueError("Frequency band edges must be nonnegative.")
     if np.any(rips < 0.0):
         raise ValueError("Ripples must be nonnegative.")
-    if len(amps) != len(rips):
-        raise ValueError("Number of amplitudes must equal number of ripples.")
-    if len(freqs) != 2 * (len(amps) - 1):
-        raise ValueError("Number of band edges must equal "
-                         "2*((number of amplitudes)-1)")
 
     # Find the longest filter length needed to implement any of the
     # low-pass or high-pass filters with the specified edges:

@@ -11,8 +11,8 @@ from scipy._lib._array_api import (
     array_namespace, xp_default_dtype
 )
 from scipy.fft import fft, fft2
-from scipy.signal import (kaiser_beta, kaiser_atten, kaiserord,
-    firwin, firwin2, freqz, remez, firls, minimum_phase, convolve2d, firwin_2d
+from scipy.signal import (kaiser_beta, kaiser_atten, kaiserord, firwin, firwin2,
+    freqz, remez, remezord, firls, minimum_phase, convolve2d, firwin_2d
 )
 
 skip_xp_backends = pytest.mark.skip_xp_backends
@@ -547,6 +547,72 @@ class TestRemez:
             remez(11, .1, 1, fs=np.array([10, 20]))
 
 
+class TestRemezord:
+    """
+    Test examples taken from:
+    http://www.ece.northwestern.edu/local-apps/matlabhelp/toolbox/signal/remezord.html
+    """
+
+    def test_bad_args(self):
+        freqs = np.array([0.1, 0.2, 0.3, 0.4])
+        amps = np.array([40, 50, 60])
+        rips = np.array([3, 4, 5])
+        # Nonexistent algorithm
+        assert_raises(ValueError, remezord, freqs, amps, rips, alg="no_alg")
+        # Freq greater than 0.5
+        assert_raises(ValueError, remezord, freqs+1, amps, rips)
+        # Negative freqs
+        assert_raises(ValueError, remezord, freqs-1, amps, rips)
+        # Negative rips
+        assert_raises(ValueError, remezord, freqs, amps, -rips)
+        # Amps length different than rips
+        assert_raises(ValueError, remezord, freqs, amps, rips[:2])
+        # Band edges different than 2*len(amps)-1
+        assert_raises(ValueError, remezord, freqs[:3], amps, rips)
+
+    def test_remezord_ichige(self):
+        rp, rs = 3, 40
+        fs = 2000
+        freqs = np.array([500, 600])
+        amps = np.array([1, 0])
+        rips = [(10**(rp/20)-1)/(10**(rp/20)+1), 10**(-rs/20)]
+        numtaps, bands, desired, weights = remezord(freqs, amps, rips, fs=fs,
+                                                    alg="ichige")
+        assert numtaps == 27
+        assert_equal(bands, [0, 0.25, 0.3, 0.5])
+        assert_equal(desired, [1., 0.])
+        assert_almost_equal(weights, [1., 17.09973573])
+
+    def test_remezord_herrmann(self):
+        rp, rs = 3, 40
+        fs = 2000
+        freqs = np.array([500, 600])
+        amps = np.array([1, 0])
+        rips = [(10**(rp/20)-1)/(10**(rp/20)+1), 10**(-rs/20)]
+        numtaps, bands, desired, weights = remezord(freqs, amps, rips, fs=fs,
+                                                    alg="herrmann")
+        assert numtaps == 25
+        assert_equal(bands, [0, 0.25, 0.3, 0.5])
+        assert_equal(desired, [1., 0.])
+        assert_almost_equal(weights, [1., 17.09973573])
+
+    def test_remezord_kaiser(self):
+        rp, rs = 3, 40
+        fs = 2000
+        freqs = np.array([500, 600])
+        amps = np.array([1, 0])
+        rips = [(10**(rp/20)-1)/(10**(rp/20)+1), 10**(-rs/20)]
+        numtaps, bands, desired, weights = remezord(freqs, amps, rips, fs=fs,
+                                                    alg="kaiser")
+        assert numtaps == 23
+        assert_equal(bands, [0, 0.25, 0.3, 0.5])
+        assert_equal(desired, [1., 0.])
+        assert_almost_equal(weights, [1., 17.09973573])
+
+
+
+
+
 
 @skip_xp_backends(cpu_only=True, reason="lstsq")
 class TestFirls:
@@ -588,7 +654,7 @@ class TestFirls:
         assert_array_almost_equal(h[:midx],  flip(h[midx+1:])) # h[:-midx-1:-1])
 
         # make sure the center tap is 0.5
-        assert math.isclose(h[midx], 0.5, abs_tol=1e-8) 
+        assert math.isclose(h[midx], 0.5, abs_tol=1e-8)
 
         # For halfband symmetric, odd coefficients (except the center)
         # should be zero (really small)
@@ -813,8 +879,8 @@ class Testfirwin_2d:
         center = hsize[0] // 2
         for i in range(hsize[0]):
             for j in range(hsize[1]):
-                xp_assert_close(taps[i, j], 
-                                taps[center - (i - center), center - (j - center)], 
+                xp_assert_close(taps[i, j],
+                                taps[center - (i - center), center - (j - center)],
                                 rtol=1e-5)
 
     def test_edge_case_circular(self):
