@@ -29,18 +29,17 @@ Other options that should work (as long as they're installed with
 ``pkg-config`` or CMake support) include ``mkl``, ``atlas``, ``blis`` and
 ``accelerate``.
 
-To create a development build using Accelerate, you can use the following
-command::
+Note that both Accelerate and ``scipy-openblas`` have flags in ``dev.py``
+that are easier to remember, since they're commonly used for development::
 
     $ python dev.py build --with-accelerate
+    $ python dev.py build --with-scipy-openblas
 
-To create a wheel with Accelerate, use the following command::
+The ``-Dlapack`` flag isn't needed for Accelerate, MKL or ``scipy-openblas``,
+since we can be sure that BLAS and LAPACK are the same for those options.
+E.g., to create a wheel with Accelerate (on macOS >=13.3 only), use::
 
-    $ python -m build -Csetup-args=-Dblas=accelerate -Csetup-args=-Dlapack=accelerate
-
-.. note::
-
-    Using Accelerate with SciPy is only supported on macOS 13.3 or greater.
+    $ python -m build -Csetup-args=-Dblas=accelerate
 
 
 Using pkg-config to detect libraries in a nonstandard location
