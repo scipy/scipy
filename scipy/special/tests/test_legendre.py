@@ -305,20 +305,20 @@ class TestAssocLegendreP:
 
         n = np.arange(n_max + 1)
 
-#        np.testing.assert_allclose(p_jac[:, 0],
- #           pow(x, n + 1) * n * (n + 1) / 2)
-  #      np.testing.assert_allclose(p_jac[:, 1],
-   #         np.where(n >= 1, pow(x, n) * np.inf, 0))
-    #    np.testing.assert_allclose(p_jac[:, 2],
-     #       np.where(n >= 2, -pow(x, n + 1) * (n + 2) * (n + 1) * n * (n - 1) / 4, 0))
-      #  np.testing.assert_allclose(p_jac[:, -2],
-       #     np.where(n >= 2, -pow(x, n + 1) / 4, 0))
-       # np.testing.assert_allclose(p_jac[:, -1],
-        #    np.where(n >= 1, -pow(x, n) * np.inf, 0))
+        np.testing.assert_allclose(p_jac[:, 0],
+            pow(x, n + 1) * n * (n + 1) / 2)
+        np.testing.assert_allclose(p_jac[:, 1],
+            np.where(n >= 1, pow(x, n) * np.inf, 0))
+        np.testing.assert_allclose(p_jac[:, 2],
+            np.where(n >= 2, -pow(x, n + 1) * (n + 2) * (n + 1) * n * (n - 1) / 4, 0))
+        np.testing.assert_allclose(p_jac[:, -2],
+            np.where(n >= 2, -pow(x, n + 1) / 4, 0))
+        np.testing.assert_allclose(p_jac[:, -1],
+            np.where(n >= 1, -pow(x, n) * np.inf, 0))
 
-#        for m in range(3, m_max + 1):
- #           np.testing.assert_allclose(p_jac[:, m], 0)
-  #          np.testing.assert_allclose(p_jac[:, -m], 0)
+        for m in range(3, m_max + 1):
+            np.testing.assert_allclose(p_jac[:, m], 0)
+            np.testing.assert_allclose(p_jac[:, -m], 0)
 
     @pytest.mark.parametrize("m_max", [3, 5, 10])
     @pytest.mark.parametrize("n_max", [10])

@@ -272,7 +272,7 @@ multi_assoc_legendre_p = MultiUFunc(multi_assoc_legendre_p,
     .. math::
 
         \sqrt{\frac{(2 n + 1) (n - m)!}{2 (n + m)!}} P_{n}^{m}(x)
-    """, force_complex_output=True
+    """
 )
 
 
@@ -298,7 +298,7 @@ multi_assoc_legendre_p_all = MultiUFunc(multi_assoc_legendre_p_all,
 
     Table of associated Legendre functions of the first kind for complex
     arguments.
-    """, force_complex_output=True
+    """
 )
 
 
