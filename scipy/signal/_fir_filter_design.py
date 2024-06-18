@@ -948,45 +948,60 @@ def _remlplen_ichige(fp, fs, dp, ds):
     return int(N4)
 
 def remezord(freqs, amps, rips, fs=1.0, alg="ichige"):
-    """Filter parameter selection for the Remez exchange algorithm.
+    """
+    Filter parameter selection for the Remez exchange algorithm.
 
     Calculate the parameters required by the Remez exchange algorithm to
-    construct a finite impulse response (FIR) filter that approximately
-    meets the specified design.
+    construct a finite impulse response (FIR) filter that approximately meets
+    the specified design.
 
     Paramters:
     ----------
 
-    freqs : ndarray
-        A monotonic sequence of band edges specified in Hertz. All
-        elements must be non-negative and less than 1/2 the
-        sampling frequency as given by the `fs` parameter.
-    amps : ndarray
-        A sequence containing the amplitudes of the signal to be
-        filtered over the various bands.
-    rips : ndarray
-        A sequence specifying the maximum ripples of each band.
-    fs : ndarray
-        Sampling frequency
-    alg : string
-        Filter length approximation algorithm. May be
-        'herrmann', 'kaiser', or 'ichige'.
+    freqs : array_like
+        A monotonic sequence of non-negative band edges specified in Hertz. All
+        elements must be less than half the sampling frequency (`fs`).
+    amps : array_like
+        A sequence containing the desired amplitudes of the signal to be
+        filtered over the corresponding frequency bands in `freqs`.
+    rips : array_like
+        A sequence specifying the maximum allowable ripples of each band in the
+        frequency response.
+    fs : float, optional
+        The sampling frequency of the signal. Defaults to 1.0
+    alg : string, optional
+        Filter length approximation algorithm. Valid optionas are: 'herrmann',
+        'kaiser', or 'ichige' (default: 'ichige').
 
     Returns
     -------
+    numtaps : int
+        The desired number of taps in the FIR filter.
+    bands : ndarray
+        A monotonic sequence containing the band edges.
+    desired : ndarray
+        A sequence half the size of bands containing the desired gain in each
+        of the specified bands.
+    weight : ndarray
+        A relative weighting to give to each band region.
 
-    numtaps, bands, desired, weight : mixed
-        See help for the remez function.
+    Raises:
+    -------
+    ValueError:
+        - If any element in `freqs` is negative, greater than 0.5, or the
+          length is not valid.
+        - If the lengths of `amps` and `rips` are not equal or one more than
+          half the length of `freqs`.
+        - If any element in `rips` is negative.
+        - If `alg` is not a valid string option.
 
-    See
+    See Also
     ---
-    remez : Calculate the minimax optimal filter using the
-        Remez exchange algorithm.
+    remez
 
     Notes
     -----
-
-    .. versionadded:: 0.15.0
+    .. versionadded:: 1.15.0
 
     """
 
