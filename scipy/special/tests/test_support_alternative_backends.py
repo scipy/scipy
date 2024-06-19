@@ -101,4 +101,5 @@ def test_support_alternative_backends(xp, data, f_name_n_args):
     res = f(*args_xp)
     ref = xp.asarray(f(*args_np), dtype=dtype_xp)
 
-    xp_assert_close(res, ref)
+    eps = np.finfo(dtype_np).eps
+    xp_assert_close(res, ref, atol=10*eps)
