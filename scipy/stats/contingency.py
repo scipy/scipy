@@ -293,7 +293,7 @@ def chi2_contingency(observed, correction=True, lambda_=None, method=None):
     is not equivalent to the effect of placebo".
     Because `scipy.stats.contingency.chi2_contingency` performs a two-sided
     test, the alternative hypothesis does not indicate the direction of the
-    effect. We can use `stats.contingency.odds_ratio` to support the
+    effect. We can use `scipy.stats.contingency.odds_ratio` to support the
     conclusion that aspirin *reduces* the risk of ischemic stroke.
 
     Below are further examples showing how larger contingency tables can be
@@ -399,7 +399,7 @@ def chi2_contingency(observed, correction=True, lambda_=None, method=None):
 def _chi2_resampling_methods(observed, expected, correction, lambda_, method):
 
     if observed.ndim != 2:
-        message = f'Use of `method` is only compatible with two-way tables.'
+        message = 'Use of `method` is only compatible with two-way tables.'
         raise ValueError(message)
 
     if correction:
