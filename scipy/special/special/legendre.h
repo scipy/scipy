@@ -123,17 +123,17 @@ constexpr assoc_legendre_unnorm_policy assoc_legendre_unnorm;
 constexpr assoc_legendre_norm_policy assoc_legendre_norm;
 
 template <typename T, typename NormPolicy>
-struct multi_assoc_legendre_p_initializer_m_abs_m;
+struct assoc_legendre_p_initializer_m_abs_m;
 
 template <typename T>
-struct multi_assoc_legendre_p_initializer_m_abs_m<T, assoc_legendre_unnorm_policy> {
+struct assoc_legendre_p_initializer_m_abs_m<T, assoc_legendre_unnorm_policy> {
     bool m_signbit;
     int type;
     T z;
     T type_sign;
     T w;
 
-    multi_assoc_legendre_p_initializer_m_abs_m(bool m_signbit, int type, T z) : m_signbit(m_signbit), type(type), z(z) {
+    assoc_legendre_p_initializer_m_abs_m(bool m_signbit, int type, T z) : m_signbit(m_signbit), type(type), z(z) {
         if (type == 3) {
             type_sign = -1;
 
@@ -180,14 +180,14 @@ struct multi_assoc_legendre_p_initializer_m_abs_m<T, assoc_legendre_unnorm_polic
 };
 
 template <typename T>
-struct multi_assoc_legendre_p_initializer_m_abs_m<T, assoc_legendre_norm_policy> {
+struct assoc_legendre_p_initializer_m_abs_m<T, assoc_legendre_norm_policy> {
     bool m_signbit;
     int type;
     T z;
     T type_sign;
     T w;
 
-    multi_assoc_legendre_p_initializer_m_abs_m(bool m_signbit, int type, T z) : m_signbit(m_signbit), type(type), z(z) {
+    assoc_legendre_p_initializer_m_abs_m(bool m_signbit, int type, T z) : m_signbit(m_signbit), type(type), z(z) {
         if (type == 3) {
             type_sign = -1;
 
@@ -226,15 +226,15 @@ struct multi_assoc_legendre_p_initializer_m_abs_m<T, assoc_legendre_norm_policy>
 };
 
 template <typename T, typename NormPolicy>
-struct multi_assoc_legendre_p_recurrence_m_abs_m;
+struct assoc_legendre_p_recurrence_m_abs_m;
 
 template <typename T>
-struct multi_assoc_legendre_p_recurrence_m_abs_m<T, assoc_legendre_unnorm_policy> {
+struct assoc_legendre_p_recurrence_m_abs_m<T, assoc_legendre_unnorm_policy> {
     int type;
     T z;
     T type_sign;
 
-    multi_assoc_legendre_p_recurrence_m_abs_m(int type, T z) : type(type), z(z) {
+    assoc_legendre_p_recurrence_m_abs_m(int type, T z) : type(type), z(z) {
         if (type == 3) {
             type_sign = -1;
         } else {
@@ -285,12 +285,12 @@ struct multi_assoc_legendre_p_recurrence_m_abs_m<T, assoc_legendre_unnorm_policy
 };
 
 template <typename T>
-struct multi_assoc_legendre_p_recurrence_m_abs_m<T, assoc_legendre_norm_policy> {
+struct assoc_legendre_p_recurrence_m_abs_m<T, assoc_legendre_norm_policy> {
     int type;
     T z;
     T type_sign;
 
-    multi_assoc_legendre_p_recurrence_m_abs_m(int type, T z) : type(type), z(z) {
+    assoc_legendre_p_recurrence_m_abs_m(int type, T z) : type(type), z(z) {
         if (type == 3) {
             type_sign = -1;
         } else {
@@ -324,15 +324,15 @@ struct multi_assoc_legendre_p_recurrence_m_abs_m<T, assoc_legendre_norm_policy> 
 };
 
 template <typename NormPolicy, typename T, typename... OutputVals, typename Func>
-void multi_assoc_legendre_p_for_each_m_abs_m(
+void assoc_legendre_p_for_each_m_abs_m(
     NormPolicy norm, int m, int type, T z, std::tuple<OutputVals (&)[2]...> res, Func f
 ) {
     bool m_signbit = std::signbit(m);
 
-    multi_assoc_legendre_p_initializer_m_abs_m<T, NormPolicy> init_m_abs_m{m_signbit, type, z};
+    assoc_legendre_p_initializer_m_abs_m<T, NormPolicy> init_m_abs_m{m_signbit, type, z};
     init_m_abs_m(res);
 
-    multi_assoc_legendre_p_recurrence_m_abs_m<T, NormPolicy> re_m_abs_m{type, z};
+    assoc_legendre_p_recurrence_m_abs_m<T, NormPolicy> re_m_abs_m{type, z};
     if (m >= 0) {
         forward_recur(0, m + 1, re_m_abs_m, res, f);
     } else {
@@ -349,10 +349,10 @@ void multi_assoc_legendre_p_for_each_m_abs_m(
  */
 
 template <typename T, typename NormPolicy>
-struct multi_assoc_legendre_p_initializer_n;
+struct assoc_legendre_p_initializer_n;
 
 template <typename T>
-struct multi_assoc_legendre_p_initializer_n<T, assoc_legendre_unnorm_policy> {
+struct assoc_legendre_p_initializer_n<T, assoc_legendre_unnorm_policy> {
     int m;
     int type;
     T z;
@@ -389,7 +389,7 @@ struct multi_assoc_legendre_p_initializer_n<T, assoc_legendre_unnorm_policy> {
 };
 
 template <typename T>
-struct multi_assoc_legendre_p_initializer_n<T, assoc_legendre_norm_policy> {
+struct assoc_legendre_p_initializer_n<T, assoc_legendre_norm_policy> {
     int m;
     int type;
     T z;
@@ -423,10 +423,10 @@ struct multi_assoc_legendre_p_initializer_n<T, assoc_legendre_norm_policy> {
 };
 
 template <typename T, typename NormPolicy>
-struct multi_assoc_legendre_p_recurrence_n;
+struct assoc_legendre_p_recurrence_n;
 
 template <typename T>
-struct multi_assoc_legendre_p_recurrence_n<T, assoc_legendre_unnorm_policy> {
+struct assoc_legendre_p_recurrence_n<T, assoc_legendre_unnorm_policy> {
     int m;
     int type;
     T z;
@@ -454,7 +454,7 @@ struct multi_assoc_legendre_p_recurrence_n<T, assoc_legendre_unnorm_policy> {
 };
 
 template <typename T>
-struct multi_assoc_legendre_p_recurrence_n<T, assoc_legendre_norm_policy> {
+struct assoc_legendre_p_recurrence_n<T, assoc_legendre_norm_policy> {
     int m;
     int type;
     T z;
@@ -482,7 +482,7 @@ struct multi_assoc_legendre_p_recurrence_n<T, assoc_legendre_norm_policy> {
 };
 
 template <typename NormPolicy, typename T>
-void multi_assoc_legendre_p_pm1(NormPolicy norm, int n, int m, int type, T z, std::tuple<T &> res) {
+void assoc_legendre_p_pm1(NormPolicy norm, int n, int m, int type, T z, std::tuple<T &> res) {
     if (m == 0) {
         std::get<0>(res) = 1;
     } else {
@@ -491,8 +491,8 @@ void multi_assoc_legendre_p_pm1(NormPolicy norm, int n, int m, int type, T z, st
 }
 
 template <typename NormPolicy, typename T>
-void multi_assoc_legendre_p_pm1(NormPolicy norm, int n, int m, int type, T z, std::tuple<T &, T &> res) {
-    multi_assoc_legendre_p_pm1(norm, n, m, type, z, std::tie(std::get<0>(res)));
+void assoc_legendre_p_pm1(NormPolicy norm, int n, int m, int type, T z, std::tuple<T &, T &> res) {
+    assoc_legendre_p_pm1(norm, n, m, type, z, std::tie(std::get<0>(res)));
 
     T type_sign;
     if (type == 3) {
@@ -519,8 +519,8 @@ void multi_assoc_legendre_p_pm1(NormPolicy norm, int n, int m, int type, T z, st
 }
 
 template <typename NormPolicy, typename T>
-void multi_assoc_legendre_p_pm1(NormPolicy norm, int n, int m, int type, T z, std::tuple<T &, T &, T &> res) {
-    multi_assoc_legendre_p_pm1(norm, n, m, type, z, std::tie(std::get<0>(res), std::get<1>(res)));
+void assoc_legendre_p_pm1(NormPolicy norm, int n, int m, int type, T z, std::tuple<T &, T &, T &> res) {
+    assoc_legendre_p_pm1(norm, n, m, type, z, std::tie(std::get<0>(res), std::get<1>(res)));
 
     if (std::abs(m) > n) {
         std::get<2>(res) = 0;
@@ -560,7 +560,7 @@ void multi_assoc_legendre_p_pm1(NormPolicy norm, int n, int m, int type, T z, st
  * @return value of the polynomial
  */
 template <typename NormPolicy, typename T, typename... OutputVals, typename Func>
-void multi_assoc_legendre_p_for_each_n(
+void assoc_legendre_p_for_each_n(
     NormPolicy norm, int n, int m, int type, T z, std::tuple<OutputVals &...> res_m_abs_m,
     std::tuple<OutputVals (&)[2]...> res, Func f
 ) {
@@ -579,56 +579,56 @@ void multi_assoc_legendre_p_for_each_n(
         if (std::abs(std::real(z)) == 1 && std::imag(z) == 0) {
             for (int j = m_abs; j <= n; ++j) {
                 forward_recur_shift_left(res);
-                multi_assoc_legendre_p_pm1(norm, j, m, type, z, tuples::access(res, 1));
+                assoc_legendre_p_pm1(norm, j, m, type, z, tuples::access(res, 1));
 
                 f(j, res);
             }
         } else {
-            multi_assoc_legendre_p_initializer_n<T, NormPolicy> init_n{m, type, z};
+            assoc_legendre_p_initializer_n<T, NormPolicy> init_n{m, type, z};
             init_n(res_m_abs_m, res);
 
-            multi_assoc_legendre_p_recurrence_n<T, NormPolicy> re_n{m, type, z};
+            assoc_legendre_p_recurrence_n<T, NormPolicy> re_n{m, type, z};
             forward_recur(m_abs, n + 1, re_n, res, f);
         }
     }
 }
 
 template <typename NormPolicy, typename T, typename... OutputVals, typename Func>
-void multi_assoc_legendre_p_for_each_n(
+void assoc_legendre_p_for_each_n(
     NormPolicy norm, int n, int m, int type, T z, std::tuple<OutputVals (&)[2]...> res, Func f
 ) {
     static constexpr size_t N = sizeof...(OutputVals) - 1;
 
-    multi_assoc_legendre_p_for_each_m_abs_m(norm, m, type, z, res, [](int m, grad_tuple_t<T(&)[2], N>) {});
+    assoc_legendre_p_for_each_m_abs_m(norm, m, type, z, res, [](int m, grad_tuple_t<T(&)[2], N>) {});
 
     grad_tuple_t<T, N> res_m_abs_m = tuples::access(res, 1);
-    multi_assoc_legendre_p_for_each_n(norm, n, m, type, z, tuples::ref(res_m_abs_m), res, f);
+    assoc_legendre_p_for_each_n(norm, n, m, type, z, tuples::ref(res_m_abs_m), res, f);
 }
 
 template <typename NormPolicy, typename T, typename... OutputVals, typename Func>
-void multi_assoc_legendre_p_for_each_n_m(
+void assoc_legendre_p_for_each_n_m(
     NormPolicy norm, int n, int m, int type, T z, std::tuple<OutputVals (&)[2]...> res, Func f
 ) {
     static constexpr size_t N = sizeof...(OutputVals) - 1;
 
     grad_tuple_t<T[2], N> res_m_abs_m;
-    multi_assoc_legendre_p_for_each_m_abs_m(
+    assoc_legendre_p_for_each_m_abs_m(
         norm, m, type, z, tuples::ref(res_m_abs_m),
         [norm, n, type, z, &res, f](int m, grad_tuple_t<T(&)[2], N> res_m_abs_m) {
             tuples::access(res, 0) = tuples::access(res_m_abs_m, 1);
 
-            multi_assoc_legendre_p_for_each_n(
+            assoc_legendre_p_for_each_n(
                 norm, n, m, type, z, tuples::access(res_m_abs_m, 1), res,
                 [f, m](int n, grad_tuple_t<T(&)[2], N> res_n) { f(n, m, res_n); }
             );
         }
     );
-    multi_assoc_legendre_p_for_each_m_abs_m(
+    assoc_legendre_p_for_each_m_abs_m(
         norm, -m, type, z, tuples::ref(res_m_abs_m),
         [norm, n, type, z, &res, f](int m, grad_tuple_t<T(&)[2], N> res_m_abs_m) {
             tuples::access(res, 0) = tuples::access(res_m_abs_m, 1);
 
-            multi_assoc_legendre_p_for_each_n(
+            assoc_legendre_p_for_each_n(
                 norm, n, m, type, z, tuples::access(res_m_abs_m, 1), res,
                 [f, m](int n, grad_tuple_t<T(&)[2], N> res_n) { f(n, m, res_n); }
             );
@@ -647,21 +647,19 @@ void multi_assoc_legendre_p_for_each_n_m(
  * @return value of the polynomial
  */
 template <typename NormPolicy, typename T, typename... OutputVals>
-void multi_assoc_legendre_p(NormPolicy norm, int n, int m, int type, T z, std::tuple<OutputVals &...> res) {
+void assoc_legendre_p(NormPolicy norm, int n, int m, int type, T z, std::tuple<OutputVals &...> res) {
     static constexpr size_t N = sizeof...(OutputVals) - 1;
 
     grad_tuple_t<T[2], N> res_n;
-    multi_assoc_legendre_p_for_each_n(
-        norm, n, m, type, z, tuples::ref(res_n), [](int n, grad_tuple_t<T(&)[2], N> res_n) {}
-    );
+    assoc_legendre_p_for_each_n(norm, n, m, type, z, tuples::ref(res_n), [](int n, grad_tuple_t<T(&)[2], N> res_n) {});
 
     res = tuples::access(res_n, 1);
 }
 
 template <typename NormPolicy, typename T>
-T multi_assoc_legendre_p(NormPolicy norm, int n, int m, int type, T z) {
+T assoc_legendre_p(NormPolicy norm, int n, int m, int type, T z) {
     T res;
-    multi_assoc_legendre_p(norm, n, m, type, z, std::tie(res));
+    assoc_legendre_p(norm, n, m, type, z, std::tie(res));
 
     return res;
 }
@@ -676,7 +674,7 @@ T multi_assoc_legendre_p(NormPolicy norm, int n, int m, int type, T z) {
  * @return value of the polynomial
  */
 template <typename NormPolicy, typename T, typename... OutputMats>
-void multi_assoc_legendre_p_all(NormPolicy norm, int type, T z, std::tuple<OutputMats &...> res) {
+void assoc_legendre_p_all(NormPolicy norm, int type, T z, std::tuple<OutputMats &...> res) {
     static constexpr size_t N = sizeof...(OutputMats) - 1;
 
     auto &res0 = std::get<0>(res);
@@ -684,7 +682,7 @@ void multi_assoc_legendre_p_all(NormPolicy norm, int type, T z, std::tuple<Outpu
     int m = (res0.extent(1) - 1) / 2;
 
     grad_tuple_t<T[2], N> p;
-    multi_assoc_legendre_p_for_each_n_m(
+    assoc_legendre_p_for_each_n_m(
         norm, n, m, type, z, tuples::ref(p),
         [&res](int n, int m, grad_tuple_t<T(&)[2], N> res_n_m) {
             if (m >= 0) {
