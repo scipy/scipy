@@ -727,6 +727,10 @@ class bsr_array(_bsr_base, sparray):
     In canonical format, there are no duplicate blocks and indices are sorted
     per row.
 
+    **Limitations**
+
+    Block Sparse Row format sparse arrays do not support slicing.
+
     Examples
     --------
     >>> import numpy as np
@@ -833,6 +837,10 @@ class bsr_matrix(spmatrix, _bsr_base):
 
     In canonical format, there are no duplicate blocks and indices are sorted
     per row.
+
+    **Limitations**
+
+    Block Sparse Row format sparse matrices do not support slicing.
 
     Examples
     --------

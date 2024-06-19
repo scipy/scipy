@@ -22,7 +22,7 @@ class MemoizeDer:
     time it is called.
 
     This is a simplistic memoizer that calls and caches a single value
-    of `f(x, *args)`.
+    of ``f(x, *args)``.
     It assumes that `args` does not change between invocations.
     It supports the use case of a root-finder where `args` is fixed,
     `x` changes, and only rarely, if at all, does x assume the same value
@@ -86,7 +86,7 @@ def root_scalar(f, args=(), method=None, bracket=None,
             - 'halley'    :ref:`(see here) <optimize.root_scalar-halley>`
 
     bracket: A sequence of 2 floats, optional
-        An interval bracketing a root.  `f(x, *args)` must have different
+        An interval bracketing a root.  ``f(x, *args)`` must have different
         signs at the two endpoints.
     x0 : float, optional
         Initial guess.
@@ -343,7 +343,7 @@ def _root_scalar_brentq_doc():
     args : tuple, optional
         Extra arguments passed to the objective function.
     bracket: A sequence of 2 floats, optional
-        An interval bracketing a root.  `f(x, *args)` must have different
+        An interval bracketing a root.  ``f(x, *args)`` must have different
         signs at the two endpoints.
     xtol : float, optional
         Tolerance (absolute) for termination.
@@ -365,7 +365,7 @@ def _root_scalar_brenth_doc():
     args : tuple, optional
         Extra arguments passed to the objective function.
     bracket: A sequence of 2 floats, optional
-        An interval bracketing a root.  `f(x, *args)` must have different
+        An interval bracketing a root.  ``f(x, *args)`` must have different
         signs at the two endpoints.
     xtol : float, optional
         Tolerance (absolute) for termination.
@@ -386,7 +386,7 @@ def _root_scalar_toms748_doc():
     args : tuple, optional
         Extra arguments passed to the objective function.
     bracket: A sequence of 2 floats, optional
-        An interval bracketing a root.  `f(x, *args)` must have different
+        An interval bracketing a root.  ``f(x, *args)`` must have different
         signs at the two endpoints.
     xtol : float, optional
         Tolerance (absolute) for termination.
@@ -488,7 +488,7 @@ def _root_scalar_ridder_doc():
     args : tuple, optional
         Extra arguments passed to the objective function.
     bracket: A sequence of 2 floats, optional
-        An interval bracketing a root.  `f(x, *args)` must have different
+        An interval bracketing a root.  ``f(x, *args)`` must have different
         signs at the two endpoints.
     xtol : float, optional
         Tolerance (absolute) for termination.
@@ -510,7 +510,7 @@ def _root_scalar_bisect_doc():
     args : tuple, optional
         Extra arguments passed to the objective function.
     bracket: A sequence of 2 floats, optional
-        An interval bracketing a root.  `f(x, *args)` must have different
+        An interval bracketing a root.  ``f(x, *args)`` must have different
         signs at the two endpoints.
     xtol : float, optional
         Tolerance (absolute) for termination.

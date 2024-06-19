@@ -1030,10 +1030,6 @@ class TestFitResult:
             with pytest.raises(ValueError, match=message):
                 res.plot(plot_type='llama')
         except (ModuleNotFoundError, ImportError):
-            # Avoid trying to call MPL with numpy 2.0-dev, because that fails
-            # too often due to ABI mismatches and is hard to avoid. This test
-            # will work fine again once MPL has done a 2.0-compatible release.
-            if not np.__version__.startswith('2.0.0.dev0'):
-                message = r"matplotlib must be installed to use method `plot`."
-                with pytest.raises(ModuleNotFoundError, match=message):
-                    res.plot(plot_type='llama')
+            message = r"matplotlib must be installed to use method `plot`."
+            with pytest.raises(ModuleNotFoundError, match=message):
+                res.plot(plot_type='llama')

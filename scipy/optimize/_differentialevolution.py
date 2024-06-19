@@ -86,7 +86,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         total population size), and ``rng`` is the random number generator
         being used within the solver.
         ``candidate`` will be in the range ``[0, S)``.
-        ``strategy`` must return a trial vector with shape `(N,)`. The
+        ``strategy`` must return a trial vector with shape ``(N,)``. The
         fitness of this trial vector is compared against the fitness of
         ``population[candidate]``.
 
@@ -560,7 +560,7 @@ class DifferentialEvolutionSolver:
         total population size), and ``rng`` is the random number generator
         being used within the solver.
         ``candidate`` will be in the range ``[0, S)``.
-        ``strategy`` must return a trial vector with shape `(N,)`. The
+        ``strategy`` must return a trial vector with shape ``(N,)``. The
         fitness of this trial vector is compared against the fitness of
         ``population[candidate]``.
     maxiter : int, optional

@@ -3770,7 +3770,7 @@ class TestStudentTest:
 
         res = stats.ttest_1samp(xp.asarray(self.X1), 0.)
         attributes = ('statistic', 'pvalue')
-        check_named_results(res, attributes)
+        check_named_results(res, attributes, xp=xp)
 
         t, p = stats.ttest_1samp(xp.asarray(self.X2), 0.)
 
@@ -4190,7 +4190,7 @@ class TestPowerDivergence:
         res = stats.power_divergence(f_obs=f_obs, f_exp=f_exp, ddof=ddof,
                                      axis=axis, lambda_="pearson")
         attributes = ('statistic', 'pvalue')
-        check_named_results(res, attributes)
+        check_named_results(res, attributes, xp=xp)
 
     def test_power_divergence_gh_12282(self, xp):
         # The sums of observed and expected frequencies must match
@@ -6290,9 +6290,10 @@ class TestDescribe:
         with pytest.raises(ValueError, match=message):
             stats.describe(x, nan_policy='foobar')
 
-    @array_api_compatible
-    def test_describe_result_attributes(self, xp):
-        actual = stats.describe(xp.arange(5.))
+    def test_describe_result_attributes(self):
+        # some result attributes are tuples, which aren't meant to be compared
+        # with `xp_assert_close`
+        actual = stats.describe(np.arange(5.))
         attributes = ('nobs', 'minmax', 'mean', 'variance', 'skewness', 'kurtosis')
         check_named_results(actual, attributes)
 
@@ -6391,7 +6392,7 @@ class NormalityTests:
         res_statistic, res_pvalue = res
         xp_assert_close(res_statistic, ref_statistic)
         xp_assert_close(res_pvalue, ref_pvalue)
-        check_named_results(res, ('statistic', 'pvalue'))
+        check_named_results(res, ('statistic', 'pvalue'), xp=xp)
 
     def test_nan(self, xp):
         # nan in input -> nan output (default nan_policy='propagate')
@@ -8041,6 +8042,33 @@ class TestCombinePvalues:
         res = stats.combine_pvalues(xp.asarray([.01, .2, .3]), method=method)
         xp_assert_equal(res.statistic, res[0])
         xp_assert_equal(res.pvalue, res[1])
+
+    @pytest.mark.parametrize("method", methods)
+    # axis=None is currently broken for array API; will be handled when
+    # axis_nan_policy decorator is updated
+    @pytest.mark.parametrize("axis", [0, 1])
+    def test_axis(self, method, axis, xp):
+        rng = np.random.default_rng(234892349810482)
+        x = xp.asarray(rng.random(size=(2, 10)))
+        x = x.T if (axis == 0) else x
+        res = stats.combine_pvalues(x, axis=axis)
+
+        if axis is None:
+            x = xp.reshape(x, (-1,))
+            ref = stats.combine_pvalues(x)
+            xp_assert_close(res.statistic, ref.statistic)
+            xp_assert_close(res.pvalue, ref.pvalue)
+            return
+
+        x = x.T if (axis == 0) else x
+        x0, x1 = x[0, :], x[1, :]
+        ref0 = stats.combine_pvalues(x0)
+        ref1 = stats.combine_pvalues(x1)
+
+        xp_assert_close(res.statistic[0], ref0.statistic)
+        xp_assert_close(res.statistic[1], ref1.statistic)
+        xp_assert_close(res.pvalue[0], ref0.pvalue)
+        xp_assert_close(res.pvalue[1], ref1.pvalue)
 
 
 class TestCdfDistanceValidation:
