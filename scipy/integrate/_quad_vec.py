@@ -222,7 +222,7 @@ def quad_vec(f, a, b, epsabs=1e-200, epsrel=1e-8, norm='2', cache_size=100e6,
     >>> plt.show()
 
     When using the argument ``workers``, one should ensure
-    the main module is import-safe, for instance
+    that the main module is import-safe, for instance
     by rewriting the example above as:
 
     .. code-block:: python
