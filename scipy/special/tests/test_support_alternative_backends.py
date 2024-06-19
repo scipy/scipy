@@ -54,7 +54,7 @@ class RNGKeeper:
 
     def get_rng(self, f_name):
         if f_name not in self.rngs:
-            self.rngs[f_name] = np.random.default_rng(234892348934265)
+            self.rngs[f_name] = np.random.default_rng(23489234893426)
         return self.rngs[f_name]
 
 
