@@ -1834,6 +1834,9 @@ def clpmn(m, n, z, type = 3):
 
     m, n = int(m), int(n)  # Convert to int to maintain backwards compatibility.
 
+    if not np.iscomplexobj(z):
+        z = np.asarray(z, dtype=complex)
+
     out, out_jac = multi_assoc_legendre_p_all(n, abs(m), z, type, diff_n = 1)
     out = np.swapaxes(out, 0, 1)
     out_jac = np.swapaxes(out_jac, 0, 1)
