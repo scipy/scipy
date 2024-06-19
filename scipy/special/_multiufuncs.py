@@ -4,16 +4,14 @@ import numpy as np
 
 from ._input_validation import _nonneg_int_or_fail
 
-from ._special_ufuncs import (legendre_p, assoc_legendre_p,
-                              multi_assoc_legendre_p, sph_legendre_p,
-                              sph_harm_y)
+from ._special_ufuncs import (legendre_p, multi_assoc_legendre_p,
+                              sph_legendre_p, sph_harm_y)
 
 from ._gufuncs import (legendre_p_all, assoc_legendre_p_all,
                        multi_assoc_legendre_p_all,
                        sph_legendre_p_all, sph_harm_y_all)
 
 __all__ = [
-    "assoc_legendre_p",
     "assoc_legendre_p_all",
     "legendre_p",
     "legendre_p_all",
@@ -126,54 +124,6 @@ class MultiUFunc:
         ufunc_axes = len(ufunc_args) * [()] + \
             [tuple(range(axis)) for axis in ufunc_out_new_dims]
         return ufunc(*ufunc_args, out = out, axes = ufunc_axes)
-
-
-assoc_legendre_p = MultiUFunc(assoc_legendre_p,
-    r"""assoc_legendre_p(n, m, z, *, norm=False, diff_n=0)
-
-    Associated Legendre polynomial of the first kind.
-
-    Parameters
-    ----------
-    n : array_like, int
-        Order of the Legendre polynomial, must have ``n >= 0``.
-    m : array_like, int
-        Degree of the Legendre polynomial.
-    z : array_like, float
-        Input value.
-    norm : Optional[bool]
-        If True, compute the normalized associated Legendre polynomial.
-        Default is False.
-    diff_n : Optional[int]
-        A non-negative integer. Compute and return all derivatives up
-        to order ``diff_n``.
-
-    Returns
-    -------
-    p : ndarray or tuple[ndarray]
-        The assocated Legendre polynomial with ``diff_n`` derivatives.
-
-    Notes
-    -----
-    With respect to the associated Legendre polynomial :math:`P_{m}^{n}(x)`,
-    the normalised associated Legendre polynomials is defined as
-
-    .. math::
-
-        \sqrt{\frac{(2 n + 1) (n - m)!}{2 (n + m)!}} P_{n}^{m}(x)
-    """
-)
-
-
-@assoc_legendre_p.register_key
-def _(norm=False, diff_n=0):
-    diff_n = _nonneg_int_or_fail(diff_n, "diff_n", strict=False)
-    if not 0 <= diff_n <= 2:
-        raise ValueError(
-            "diff_n is currently only implemented for orders 0, 1, and 2,"
-            f" received: {diff_n}."
-        )
-    return norm, diff_n
 
 
 assoc_legendre_p_all = MultiUFunc(assoc_legendre_p_all,
@@ -337,10 +287,39 @@ def _(n, m, z_shape, nout):
 
 
 multi_assoc_legendre_p = MultiUFunc(multi_assoc_legendre_p,
-    """
-    multi_assoc_legendre_p_all(n, m, type, z, *, norm=False, diff_n=0)
+    r"""assoc_legendre_p(n, m, z, *, typ=2, norm=False, diff_n=0)
 
-    Associated Legendre function of the first kind for complex arguments.
+    Associated Legendre polynomial of the first kind.
+
+    Parameters
+    ----------
+    n : array_like, int
+        Order of the Legendre polynomial, must have ``n >= 0``.
+    m : array_like, int
+        Degree of the Legendre polynomial.
+    z : array_like, float
+        Input value.
+    typ : Optional[int]
+    norm : Optional[bool]
+        If True, compute the normalized associated Legendre polynomial.
+        Default is False.
+    diff_n : Optional[int]
+        A non-negative integer. Compute and return all derivatives up
+        to order ``diff_n``.
+
+    Returns
+    -------
+    p : ndarray or tuple[ndarray]
+        The assocated Legendre polynomial with ``diff_n`` derivatives.
+
+    Notes
+    -----
+    With respect to the associated Legendre polynomial :math:`P_{m}^{n}(x)`,
+    the normalised associated Legendre polynomials is defined as
+
+    .. math::
+
+        \sqrt{\frac{(2 n + 1) (n - m)!}{2 (n + m)!}} P_{n}^{m}(x)
     """
 )
 

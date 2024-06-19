@@ -309,7 +309,9 @@ class TestAssocLegendreP:
     @pytest.mark.parametrize("n_max", [10])
     @pytest.mark.parametrize("x", [1, -1])
     def test_all_limits(self, m_max, n_max, x):
-        p, p_jac = special.assoc_legendre_p_all(n_max, m_max, x, diff_n = 1)
+        typ = 2
+
+        p, p_jac = special.multi_assoc_legendre_p_all(n_max, m_max, x, typ, diff_n = 1)
 
         n = np.arange(n_max + 1)
 
@@ -331,8 +333,10 @@ class TestAssocLegendreP:
     @pytest.mark.parametrize("m_max", [3, 5, 10])
     @pytest.mark.parametrize("n_max", [10])
     def test_legacy(self, m_max, n_max):
+        typ = 2
+
         x = 0.5
-        p, p_jac = special.assoc_legendre_p_all(n_max, m_max, x, diff_n = 1)
+        p, p_jac = special.multi_assoc_legendre_p_all(n_max, m_max, x, typ, diff_n = 1)
 
         p_legacy, p_jac_legacy = special.lpmn(m_max, n_max, x)
         for m in range(m_max + 1):
