@@ -53,6 +53,7 @@ class MultiUFunc:
         self._ufuncs_map = ufuncs_map
         self.resolve_out_shapes = None
         self.key = None
+        self.default_args = lambda *args, **kwargs: ()
         self.__force_complex_output = force_complex_output
         self.__doc = doc
 
@@ -78,11 +79,16 @@ class MultiUFunc:
         ufunc_key = self.key(**kwargs)
         return self._ufuncs_map[ufunc_key]
 
+    def register_default_args(self, func):
+        self.default_args = func
+
     @property
     def __doc__(self):
         return self.__doc
 
     def __call__(self, *args, **kwargs):
+        args = args + self.default_args(**kwargs)
+
         ufunc = self.resolve_ufunc(**kwargs)
         if ((ufunc.nout == 0) or (self.resolve_out_shapes is None)):
             return ufunc(*args)
@@ -316,7 +322,7 @@ multi_assoc_legendre_p_all = MultiUFunc(multi_assoc_legendre_p_all,
 
 
 @multi_assoc_legendre_p_all.register_key
-def _(norm=False, diff_n=0):
+def _(*, typ, norm=False, diff_n=0):
     if not ((isinstance(diff_n, int) or np.issubdtype(diff_n, np.integer))
             and diff_n >= 0):
         raise ValueError(
@@ -329,6 +335,10 @@ def _(norm=False, diff_n=0):
         )
     return norm, diff_n
 
+
+@multi_assoc_legendre_p_all.register_default_args
+def _(*, typ, norm=False, diff_n=0):
+    return typ,
 
 @multi_assoc_legendre_p_all.register_resolve_out_shapes
 def _(n, m, z_shape, type_shape, nout):

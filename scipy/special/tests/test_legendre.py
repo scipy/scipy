@@ -86,7 +86,7 @@ class TestAssocLegendreP:
 
         x = rng.uniform(-0.99, 0.99, shape)
         p_all, p_all_jac, p_all_hess = \
-            special.multi_assoc_legendre_p_all(n_max, m_max, x, typ, diff_n = 2)
+            special.multi_assoc_legendre_p_all(n_max, m_max, x, typ = typ, diff_n = 2)
 
         n = np.arange(n_max + 1)
         n = np.expand_dims(n, axis = tuple(range(1, x.ndim + 2)))
@@ -133,7 +133,7 @@ class TestAssocLegendreP:
 
         x = rng.uniform(-0.99, 0.99, shape)
 
-        p, p_jac, p_hess = special.multi_assoc_legendre_p_all(n_max, m_max, x, typ, diff_n = 2)
+        p, p_jac, p_hess = special.multi_assoc_legendre_p_all(n_max, m_max, x, typ = typ, diff_n = 2)
 
         m = np.concatenate([np.arange(m_max + 1), np.arange(-m_max, 0)])
         n = np.arange(n_max + 1)
@@ -154,7 +154,7 @@ class TestAssocLegendreP:
         x = rng.uniform(-0.99, 0.99, shape)
         typ = np.where(np.abs(x) <= 1, 2, 3)
 
-        p, p_jac = special.multi_assoc_legendre_p_all(4, 4, x, typ, norm = norm, diff_n = 1)
+        p, p_jac = special.multi_assoc_legendre_p_all(4, 4, x, typ = typ, norm = norm, diff_n = 1)
 
         np.testing.assert_allclose(p[0, 0],
             multi_assoc_legendre_p_0_0(typ, x, norm = norm))
@@ -311,7 +311,7 @@ class TestAssocLegendreP:
     def test_all_limits(self, m_max, n_max, x):
         typ = 2
 
-        p, p_jac = special.multi_assoc_legendre_p_all(n_max, m_max, x, typ, diff_n = 1)
+        p, p_jac = special.multi_assoc_legendre_p_all(n_max, m_max, x, typ = typ, diff_n = 1)
 
         n = np.arange(n_max + 1)
 
@@ -336,7 +336,7 @@ class TestAssocLegendreP:
         typ = 2
 
         x = 0.5
-        p, p_jac = special.multi_assoc_legendre_p_all(n_max, m_max, x, typ, diff_n = 1)
+        p, p_jac = special.multi_assoc_legendre_p_all(n_max, m_max, x, typ = typ, diff_n = 1)
 
         p_legacy, p_jac_legacy = special.lpmn(m_max, n_max, x)
         for m in range(m_max + 1):
@@ -359,7 +359,7 @@ class TestMultiAssocLegendreP:
             1j * rng.uniform(z_min.imag, z_max.imag, shape)
 
         p, p_jac = special.multi_assoc_legendre_p_all(4, 4,
-            z, typ, norm = norm, diff_n = 1)
+            z, typ = typ, norm = norm, diff_n = 1)
 
         np.testing.assert_allclose(p[0, 0],
             multi_assoc_legendre_p_0_0(typ, z, norm = norm))

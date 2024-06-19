@@ -1759,7 +1759,7 @@ def lpmn(m, n, z):
 
     typ = np.where(np.abs(z) <= 1, 2, 3)
 
-    p, pd = multi_assoc_legendre_p_all(n, abs(m), z, typ, diff_n = 1)
+    p, pd = multi_assoc_legendre_p_all(n, abs(m), z, typ = typ, diff_n = 1)
     p = np.swapaxes(p, 0, 1)
     pd = np.swapaxes(pd, 0, 1)
 
@@ -1837,7 +1837,7 @@ def clpmn(m, n, z, type = 3):
     if not np.iscomplexobj(z):
         z = np.asarray(z, dtype=complex)
 
-    out, out_jac = multi_assoc_legendre_p_all(n, abs(m), z, type, diff_n = 1)
+    out, out_jac = multi_assoc_legendre_p_all(n, abs(m), z, typ = type, diff_n = 1)
     out = np.swapaxes(out, 0, 1)
     out_jac = np.swapaxes(out_jac, 0, 1)
 
