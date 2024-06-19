@@ -6484,6 +6484,9 @@ def _t_confidence_interval(df, t, confidence_level, alternative, dtype=None, xp=
     dtype = t.dtype if dtype is None else dtype
     xp = array_namespace(t) if xp is None else xp
 
+    # stdtrit not dispatched yet; use NumPy
+    df, t = np.asarray(df), np.asarray(t)
+
     if confidence_level < 0 or confidence_level > 1:
         message = "`confidence_level` must be a number between 0 and 1."
         raise ValueError(message)
