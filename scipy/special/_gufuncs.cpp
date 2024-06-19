@@ -162,53 +162,6 @@ PyMODINIT_FUNC PyInit__gufuncs() {
     PyModule_AddObjectRef(_gufuncs, "legendre_p_all", legendre_p_all);
 
     // key is norm, diff_n
-    PyObject *assoc_legendre_p_all = Py_BuildValue(
-        "{(O, i): N, (O, i): N, (O, i): N, (O, i): N, (O, i): N,(O, i): N}", Py_True, 0,
-        SpecFun_NewGUFunc({[](double z, double_2d res) { ::assoc_legendre_p_all(assoc_legendre_norm, z, res); },
-                           [](float z, float_2d res) { ::assoc_legendre_p_all(assoc_legendre_norm, z, res); }},
-                          1, "assoc_legendre_p_all", nullptr, "()->(np1,mpmp1)", assoc_legendre_map_dims<1>),
-        Py_True, 1,
-        SpecFun_NewGUFunc({[](double z, double_2d res, double_2d res_jac) {
-                               ::assoc_legendre_p_all(assoc_legendre_norm, z, res, res_jac);
-                           },
-                           [](float z, float_2d res, float_2d res_jac) {
-                               ::assoc_legendre_p_all(assoc_legendre_norm, z, res, res_jac);
-                           }},
-                          2, "assoc_legendre_p_all", nullptr, "()->(np1,mpmp1),(np1,mpmp1)",
-                          assoc_legendre_map_dims<2>),
-        Py_True, 2,
-        SpecFun_NewGUFunc({[](double z, double_2d res, double_2d res_jac, double_2d res_hess) {
-                               ::assoc_legendre_p_all(assoc_legendre_norm, z, res, res_jac, res_hess);
-                           },
-                           [](float z, float_2d res, float_2d res_jac, float_2d res_hess) {
-                               ::assoc_legendre_p_all(assoc_legendre_norm, z, res, res_jac, res_hess);
-                           }},
-                          3, "assoc_legendre_p_all", nullptr, "()->(np1,mpmp1),(np1,mpmp1),(np1,mpmp1)",
-                          assoc_legendre_map_dims<3>),
-        Py_False, 0,
-        SpecFun_NewGUFunc({[](double z, double_2d res) { ::assoc_legendre_p_all(assoc_legendre_unnorm, z, res); },
-                           [](float z, float_2d res) { ::assoc_legendre_p_all(assoc_legendre_unnorm, z, res); }},
-                          1, "assoc_legendre_p_all", nullptr, "()->(np1,mpmp1)", assoc_legendre_map_dims<1>),
-        Py_False, 1,
-        SpecFun_NewGUFunc({[](double z, double_2d res, double_2d res_jac) {
-                               ::assoc_legendre_p_all(assoc_legendre_unnorm, z, res, res_jac);
-                           },
-                           [](float z, float_2d res, float_2d res_jac) {
-                               ::assoc_legendre_p_all(assoc_legendre_unnorm, z, res, res_jac);
-                           }},
-                          2, "assoc_legendre_p_all", nullptr, "()->(np1,mpmp1),(np1,mpmp1)",
-                          assoc_legendre_map_dims<2>),
-        Py_False, 2,
-        SpecFun_NewGUFunc({[](double z, double_2d res, double_2d res_jac, double_2d res_hess) {
-                               ::assoc_legendre_p_all(assoc_legendre_unnorm, z, res, res_jac, res_hess);
-                           },
-                           [](float z, float_2d res, float_2d res_jac, float_2d res_hess) {
-                               ::assoc_legendre_p_all(assoc_legendre_unnorm, z, res, res_jac, res_hess);
-                           }},
-                          3, "assoc_legendre_p_all", nullptr, "()->(np1,mpmp1),(np1,mpmp1),(np1,mpmp1)",
-                          assoc_legendre_map_dims<3>));
-    PyModule_AddObjectRef(_gufuncs, "assoc_legendre_p_all", assoc_legendre_p_all);
-
     PyObject *multi_assoc_legendre_p_all = Py_BuildValue(
         "{(O, i): N, (O, i): N, (O, i): N, (O, i): N, (O, i): N,(O, i): N}", Py_True, 0,
         SpecFun_NewGUFunc({[](double z, long long int type, double_2d res) {
