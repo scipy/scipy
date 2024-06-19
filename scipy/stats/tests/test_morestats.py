@@ -755,7 +755,7 @@ class TestBartlett:
         args = [xp.asarray(arg) for arg in args]
         res = stats.bartlett(*args)
         attributes = ('statistic', 'pvalue')
-        check_named_results(res, attributes)
+        check_named_results(res, attributes, xp=xp)
 
     @pytest.mark.skip_xp_backends(
         "jax.numpy", cpu_only=True,
