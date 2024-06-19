@@ -95,7 +95,7 @@ class TestAssocLegendreP:
         m = np.expand_dims(m, axis = (0,) + tuple(range(2, x.ndim + 2)))
 
         x = np.expand_dims(x, axis = (0, 1))
-        p, p_jac, p_hess = special.multi_assoc_legendre_p(n, m, x, typ, diff_n = 2)
+        p, p_jac, p_hess = special.multi_assoc_legendre_p(n, m, x, typ = typ, diff_n = 2)
 
         np.testing.assert_allclose(p, p_all)
         np.testing.assert_allclose(p_jac, p_all_jac)
@@ -112,7 +112,7 @@ class TestAssocLegendreP:
         m = rng.integers(-10, 10, shape)
         x = rng.uniform(-1, 1, shape)
 
-        p, p_jac, p_hess = special.multi_assoc_legendre_p(n, m, x, typ, norm = norm, diff_n = 2)
+        p, p_jac, p_hess = special.multi_assoc_legendre_p(n, m, x, typ = typ, norm = norm, diff_n = 2)
 
         assert p.shape == shape
         assert p_jac.shape == p.shape

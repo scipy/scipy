@@ -273,7 +273,7 @@ multi_assoc_legendre_p = MultiUFunc(multi_assoc_legendre_p,
 
 
 @multi_assoc_legendre_p.register_key
-def _(norm=False, diff_n=0):
+def _(*, typ, norm=False, diff_n=0):
     diff_n = _nonneg_int_or_fail(diff_n, "diff_n", strict=False)
     if not 0 <= diff_n <= 2:
         raise ValueError(
@@ -281,6 +281,11 @@ def _(norm=False, diff_n=0):
             f" received: {diff_n}."
         )
     return norm, diff_n
+
+
+@multi_assoc_legendre_p.register_default_args
+def _(*, typ, norm=False, diff_n=0):
+    return typ,
 
 
 multi_assoc_legendre_p_all = MultiUFunc(multi_assoc_legendre_p_all,
@@ -340,14 +345,15 @@ def _(*, typ, norm=False, diff_n=0):
 def _(*, typ, norm=False, diff_n=0):
     return typ,
 
+
 @multi_assoc_legendre_p_all.register_resolve_out_shapes
-def _(n, m, z_shape, type_shape, nout):
+def _(n, m, z_shape, typ_shape, nout):
     if not isinstance(m, numbers.Integral) or (abs(m) > n):
         raise ValueError("m must be <= n.")
     if not isinstance(n, numbers.Integral) or (n < 0):
         raise ValueError("n must be a non-negative integer.")
 
-    return nout * ((n + 1, 2 * abs(m) + 1) + np.broadcast_shapes(z_shape, type_shape),)
+    return nout * ((n + 1, 2 * abs(m) + 1) + np.broadcast_shapes(z_shape, typ_shape),)
 
 
 legendre_p = MultiUFunc(legendre_p,
