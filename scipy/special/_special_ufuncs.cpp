@@ -580,7 +580,13 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
 
     PyObject *multi_assoc_legendre_p = Py_BuildValue(
         "{(O, i): N, (O, i): N, (O, i): N, (O, i): N, (O, i): N,(O, i): N}", Py_True, 0,
-        SpecFun_NewUFunc({[](long long int n, long long int m, cdouble z, long long int type) {
+        SpecFun_NewUFunc({[](long long int n, long long int m, double z, long long int type) {
+                              return ::multi_assoc_legendre_p(assoc_legendre_norm, n, m, type, z);
+                          },
+                          [](long long int n, long long int m, float z, long long int type) {
+                              return ::multi_assoc_legendre_p(assoc_legendre_norm, n, m, type, z);
+                          },
+                          [](long long int n, long long int m, cdouble z, long long int type) {
                               return ::multi_assoc_legendre_p(assoc_legendre_norm, n, m, type, z);
                           },
                           [](long long int n, long long int m, cfloat z, long long int type) {
@@ -589,7 +595,13 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
                          "multi_assoc_legendre_p", nullptr),
         Py_True, 1,
         SpecFun_NewUFunc(
-            {[](long long int n, long long int m, cdouble z, long long int type, cdouble &res, cdouble &res_jac) {
+            {[](long long int n, long long int m, double z, long long int type, double &res, double &res_jac) {
+                 ::multi_assoc_legendre_p(assoc_legendre_norm, n, m, type, z, res, res_jac);
+             },
+             [](long long int n, long long int m, float z, long long int type, float &res, float &res_jac) {
+                 ::multi_assoc_legendre_p(assoc_legendre_norm, n, m, type, z, res, res_jac);
+             },
+             [](long long int n, long long int m, cdouble z, long long int type, cdouble &res, cdouble &res_jac) {
                  ::multi_assoc_legendre_p(assoc_legendre_norm, n, m, type, z, res, res_jac);
              },
              [](long long int n, long long int m, cfloat z, long long int type, cfloat &res, cfloat &res_jac) {
@@ -597,7 +609,15 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
              }},
             2, "multi_assoc_legendre_p", nullptr),
         Py_True, 2,
-        SpecFun_NewUFunc({[](long long int n, long long int m, cdouble z, long long int type, cdouble &res,
+        SpecFun_NewUFunc({[](long long int n, long long int m, double z, long long int type, double &res,
+                             double &res_jac, double &res_hess) {
+                              ::multi_assoc_legendre_p(assoc_legendre_norm, n, m, type, z, res, res_jac, res_hess);
+                          },
+                          [](long long int n, long long int m, float z, long long int type, float &res, float &res_jac,
+                             float &res_hess) {
+                              ::multi_assoc_legendre_p(assoc_legendre_norm, n, m, type, z, res, res_jac, res_hess);
+                          },
+                          [](long long int n, long long int m, cdouble z, long long int type, cdouble &res,
                              cdouble &res_jac, cdouble &res_hess) {
                               ::multi_assoc_legendre_p(assoc_legendre_norm, n, m, type, z, res, res_jac, res_hess);
                           },
@@ -607,7 +627,13 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
                           }},
                          3, "multi_assoc_legendre_p", nullptr),
         Py_False, 0,
-        SpecFun_NewUFunc({[](long long int n, long long int m, cdouble z, long long int type) {
+        SpecFun_NewUFunc({[](long long int n, long long int m, double z, long long int type) {
+                              return ::multi_assoc_legendre_p(assoc_legendre_unnorm, n, m, type, z);
+                          },
+                          [](long long int n, long long int m, float z, long long int type) {
+                              return ::multi_assoc_legendre_p(assoc_legendre_unnorm, n, m, type, z);
+                          },
+                          [](long long int n, long long int m, cdouble z, long long int type) {
                               return ::multi_assoc_legendre_p(assoc_legendre_unnorm, n, m, type, z);
                           },
                           [](long long int n, long long int m, cfloat z, long long int type) {
@@ -616,7 +642,13 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
                          "multi_assoc_legendre_p", nullptr),
         Py_False, 1,
         SpecFun_NewUFunc(
-            {[](long long int n, long long int m, cdouble z, long long int type, cdouble &res, cdouble &res_jac) {
+            {[](long long int n, long long int m, double z, long long int type, double &res, double &res_jac) {
+                 ::multi_assoc_legendre_p(assoc_legendre_unnorm, n, m, type, z, res, res_jac);
+             },
+             [](long long int n, long long int m, float z, long long int type, float &res, float &res_jac) {
+                 ::multi_assoc_legendre_p(assoc_legendre_unnorm, n, m, type, z, res, res_jac);
+             },
+             [](long long int n, long long int m, cdouble z, long long int type, cdouble &res, cdouble &res_jac) {
                  ::multi_assoc_legendre_p(assoc_legendre_unnorm, n, m, type, z, res, res_jac);
              },
              [](long long int n, long long int m, cfloat z, long long int type, cfloat &res, cfloat &res_jac) {
@@ -624,7 +656,15 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
              }},
             2, "multi_assoc_legendre_p", nullptr),
         Py_False, 2,
-        SpecFun_NewUFunc({[](long long int n, long long int m, cdouble z, long long int type, cdouble &res,
+        SpecFun_NewUFunc({[](long long int n, long long int m, double z, long long int type, double &res,
+                             double &res_jac, double &res_hess) {
+                              ::multi_assoc_legendre_p(assoc_legendre_unnorm, n, m, type, z, res, res_jac, res_hess);
+                          },
+                          [](long long int n, long long int m, float z, long long int type, float &res, float &res_jac,
+                             float &res_hess) {
+                              ::multi_assoc_legendre_p(assoc_legendre_unnorm, n, m, type, z, res, res_jac, res_hess);
+                          },
+                          [](long long int n, long long int m, cdouble z, long long int type, cdouble &res,
                              cdouble &res_jac, cdouble &res_hess) {
                               ::multi_assoc_legendre_p(assoc_legendre_unnorm, n, m, type, z, res, res_jac, res_hess);
                           },
