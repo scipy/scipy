@@ -4,16 +4,16 @@ import numpy as np
 
 from ._input_validation import _nonneg_int_or_fail
 
-from ._special_ufuncs import (legendre_p, multi_assoc_legendre_p,
+from ._special_ufuncs import (legendre_p, multi_assoc_legendre_p as assoc_legendre_p,
                               sph_legendre_p, sph_harm_y)
-from ._gufuncs import (legendre_p_all, multi_assoc_legendre_p_all,
+from ._gufuncs import (legendre_p_all, multi_assoc_legendre_p_all as assoc_legendre_p_all,
                        sph_legendre_p_all, sph_harm_y_all)
 
 __all__ = [
+    "assoc_legendre_p",
+    "assoc_legendre_p_all",
     "legendre_p",
     "legendre_p_all",
-    "multi_assoc_legendre_p",
-    "multi_assoc_legendre_p_all",
     "sph_harm_y",
     "sph_harm_y_all",
     "sph_legendre_p",
@@ -53,7 +53,7 @@ class MultiUFunc:
         self._ufuncs_map = ufuncs_map
         self.resolve_out_shapes = None
         self.key = None
-        self.default_args = lambda *args, **kwargs: ()
+        self.default_args = None
         self.__force_complex_output = force_complex_output
         self.__doc = doc
 
@@ -61,12 +61,24 @@ class MultiUFunc:
     def force_complex_output(self):
         return self.__force_complex_output
 
-    def register_key(self, key):
+    def resolve_ufunc(self, **kwargs):
+        """Resolve to a ufunc based on keyword arguments."""
+        ufunc_key = self.key(**kwargs)
+        return self._ufuncs_map[ufunc_key]
+
+    @property
+    def __doc__(self):
+        return self.__doc
+
+    def override_key(self, func):
         """Set `key` method by decorating a function.
         """
-        self.key = key
+        self.key = func
 
-    def register_resolve_out_shapes(self, func):
+    def override_default_args(self, func):
+        self.default_args = func
+
+    def override_resolve_out_shapes(self, func):
         """Set `resolve_out_shapes` method by decorating a function."""
         if func.__doc__ is None:
             func.__doc__ = \
@@ -74,20 +86,9 @@ class MultiUFunc:
         func.__name__ = "resolve_out_shapes"
         self.resolve_out_shapes = func
 
-    def resolve_ufunc(self, **kwargs):
-        """Resolve to a ufunc based on keyword arguments."""
-        ufunc_key = self.key(**kwargs)
-        return self._ufuncs_map[ufunc_key]
-
-    def register_default_args(self, func):
-        self.default_args = func
-
-    @property
-    def __doc__(self):
-        return self.__doc
-
     def __call__(self, *args, **kwargs):
-        args = args + self.default_args(**kwargs)
+        if (self.default_args is not None):
+            args += self.default_args(**kwargs)
 
         ufunc = self.resolve_ufunc(**kwargs)
         if ((ufunc.nout == 0) or (self.resolve_out_shapes is None)):
@@ -166,7 +167,7 @@ sph_legendre_p = MultiUFunc(sph_legendre_p,
 )
 
 
-@sph_legendre_p.register_key
+@sph_legendre_p.override_key
 def _(diff_n = 0):
     diff_n = _nonneg_int_or_fail(diff_n, "diff_n", strict=False)
     if not 0 <= diff_n <= 2:
@@ -215,7 +216,7 @@ sph_legendre_p_all = MultiUFunc(sph_legendre_p_all,
 )
 
 
-@sph_legendre_p_all.register_key
+@sph_legendre_p_all.override_key
 def _(diff_n=0):
     diff_n = _nonneg_int_or_fail(diff_n, "diff_n", strict=False)
     if not 0 <= diff_n <= 2:
@@ -226,7 +227,7 @@ def _(diff_n=0):
     return diff_n
 
 
-@sph_legendre_p_all.register_resolve_out_shapes
+@sph_legendre_p_all.override_resolve_out_shapes
 def _(n, m, z_shape, nout):
     if ((not np.isscalar(n)) or (n < 0)):
         raise ValueError("n must be a non-negative integer.")
@@ -234,7 +235,7 @@ def _(n, m, z_shape, nout):
     return nout * ((n + 1, 2 * abs(m) + 1) + z_shape,)
 
 
-multi_assoc_legendre_p = MultiUFunc(multi_assoc_legendre_p,
+assoc_legendre_p = MultiUFunc(assoc_legendre_p,
     r"""assoc_legendre_p(n, m, z, *, typ=2, norm=False, diff_n=0)
 
     Associated Legendre polynomial of the first kind.
@@ -272,7 +273,7 @@ multi_assoc_legendre_p = MultiUFunc(multi_assoc_legendre_p,
 )
 
 
-@multi_assoc_legendre_p.register_key
+@assoc_legendre_p.override_key
 def _(typ=2, norm=False, diff_n=0):
     diff_n = _nonneg_int_or_fail(diff_n, "diff_n", strict=False)
     if not 0 <= diff_n <= 2:
@@ -283,12 +284,12 @@ def _(typ=2, norm=False, diff_n=0):
     return norm, diff_n
 
 
-@multi_assoc_legendre_p.register_default_args
+@assoc_legendre_p.override_default_args
 def _(typ=2, norm=False, diff_n=0):
     return typ,
 
 
-multi_assoc_legendre_p_all = MultiUFunc(multi_assoc_legendre_p_all,
+assoc_legendre_p_all = MultiUFunc(assoc_legendre_p_all,
     r"""assoc_legendre_p_all(n, m, z, *, typ=2, norm=False, diff_n=0)
 
     Associated Legendre polynomial of the first kind.
@@ -326,7 +327,7 @@ multi_assoc_legendre_p_all = MultiUFunc(multi_assoc_legendre_p_all,
 )
 
 
-@multi_assoc_legendre_p_all.register_key
+@assoc_legendre_p_all.override_key
 def _(typ=2, norm=False, diff_n=0):
     if not ((isinstance(diff_n, int) or np.issubdtype(diff_n, np.integer))
             and diff_n >= 0):
@@ -341,12 +342,12 @@ def _(typ=2, norm=False, diff_n=0):
     return norm, diff_n
 
 
-@multi_assoc_legendre_p_all.register_default_args
+@assoc_legendre_p_all.override_default_args
 def _(typ=2, norm=False, diff_n=0):
     return typ,
 
 
-@multi_assoc_legendre_p_all.register_resolve_out_shapes
+@assoc_legendre_p_all.override_resolve_out_shapes
 def _(n, m, z_shape, typ_shape, nout):
     if not isinstance(m, numbers.Integral) or (abs(m) > n):
         raise ValueError("m must be <= n.")
@@ -391,7 +392,7 @@ legendre_p = MultiUFunc(legendre_p,
 )
 
 
-@legendre_p.register_key
+@legendre_p.override_key
 def _(diff_n=0):
     if not ((isinstance(diff_n, int) or np.issubdtype(diff_n, np.integer))
             and diff_n >= 0):
@@ -424,7 +425,7 @@ legendre_p_all = MultiUFunc(legendre_p_all,
 )
 
 
-@legendre_p_all.register_key
+@legendre_p_all.override_key
 def _(diff_n=0):
     diff_n = _nonneg_int_or_fail(diff_n, "diff_n", strict=False)
     if not 0 <= diff_n <= 2:
@@ -435,7 +436,7 @@ def _(diff_n=0):
     return diff_n
 
 
-@legendre_p_all.register_resolve_out_shapes
+@legendre_p_all.override_resolve_out_shapes
 def _(n, z_shape, nout):
     n = _nonneg_int_or_fail(n, 'n', strict=False)
 
@@ -509,7 +510,7 @@ sph_harm_y = MultiUFunc(sph_harm_y,
 )
 
 
-@sph_harm_y.register_key
+@sph_harm_y.override_key
 def _(diff_n=0):
     diff_n = _nonneg_int_or_fail(diff_n, "diff_n", strict=False)
     if not 0 <= diff_n <= 2:
@@ -590,7 +591,7 @@ sph_harm_y_all = MultiUFunc(sph_harm_y_all,
 )
 
 
-@sph_harm_y_all.register_key
+@sph_harm_y_all.override_key
 def _(diff_n=0):
     diff_n = _nonneg_int_or_fail(diff_n, "diff_n", strict=False)
     if not 0 <= diff_n <= 2:
@@ -601,7 +602,7 @@ def _(diff_n=0):
     return diff_n
 
 
-@sph_harm_y_all.register_resolve_out_shapes
+@sph_harm_y_all.override_resolve_out_shapes
 def _(n, m, theta_shape, phi_shape, nout):
     if ((not np.isscalar(n)) or (n < 0)):
         raise ValueError("n must be a non-negative integer.")
