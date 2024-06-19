@@ -346,7 +346,7 @@ multi_assoc_legendre_p = MultiUFunc(multi_assoc_legendre_p,
 
 
 @multi_assoc_legendre_p.register_key
-def _(ufuncs, norm=False, diff_n=0):
+def _(norm=False, diff_n=0):
     diff_n = _nonneg_int_or_fail(diff_n, "diff_n", strict=False)
     if not 0 <= diff_n <= 2:
         raise ValueError(

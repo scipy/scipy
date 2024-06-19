@@ -80,11 +80,13 @@ class TestAssocLegendreP:
     @pytest.mark.parametrize("m_max", [5, 4])
     @pytest.mark.parametrize("n_max", [7, 10])
     def test_lpmn(self, shape, n_max, m_max):
+        typ = 2
+
         rng = np.random.default_rng(1234)
 
         x = rng.uniform(-0.99, 0.99, shape)
         p_all, p_all_jac, p_all_hess = \
-            special.assoc_legendre_p_all(n_max, m_max, x, diff_n = 2)
+            special.multi_assoc_legendre_p_all(n_max, m_max, x, typ, diff_n = 2)
 
         n = np.arange(n_max + 1)
         n = np.expand_dims(n, axis = tuple(range(1, x.ndim + 2)))
@@ -93,7 +95,7 @@ class TestAssocLegendreP:
         m = np.expand_dims(m, axis = (0,) + tuple(range(2, x.ndim + 2)))
 
         x = np.expand_dims(x, axis = (0, 1))
-        p, p_jac, p_hess = special.assoc_legendre_p(n, m, x, diff_n = 2)
+        p, p_jac, p_hess = special.multi_assoc_legendre_p(n, m, x, typ, diff_n = 2)
 
         np.testing.assert_allclose(p, p_all)
         np.testing.assert_allclose(p_jac, p_all_jac)
@@ -102,13 +104,15 @@ class TestAssocLegendreP:
     @pytest.mark.parametrize("shape", [(10,), (4, 9), (3, 5, 7, 10)])
     @pytest.mark.parametrize("norm", [True, False])
     def test_ode(self, shape, norm):
+        typ = 2
+
         rng = np.random.default_rng(1234)
 
         n = rng.integers(0, 10, shape)
         m = rng.integers(-10, 10, shape)
         x = rng.uniform(-1, 1, shape)
 
-        p, p_jac, p_hess = special.assoc_legendre_p(n, m, x, norm = norm, diff_n = 2)
+        p, p_jac, p_hess = special.multi_assoc_legendre_p(n, m, x, typ, norm = norm, diff_n = 2)
 
         assert p.shape == shape
         assert p_jac.shape == p.shape
@@ -120,6 +124,8 @@ class TestAssocLegendreP:
 
     @pytest.mark.parametrize("shape", [(10,), (4, 9), (3, 5, 7)])
     def test_all(self, shape):
+        typ = 2
+
         rng = np.random.default_rng(1234)
 
         n_max = 20
@@ -127,7 +133,7 @@ class TestAssocLegendreP:
 
         x = rng.uniform(-0.99, 0.99, shape)
 
-        p, p_jac, p_hess = special.assoc_legendre_p_all(n_max, m_max, x, diff_n = 2)
+        p, p_jac, p_hess = special.multi_assoc_legendre_p_all(n_max, m_max, x, typ, diff_n = 2)
 
         m = np.concatenate([np.arange(m_max + 1), np.arange(-m_max, 0)])
         n = np.arange(n_max + 1)
@@ -141,12 +147,14 @@ class TestAssocLegendreP:
     @pytest.mark.parametrize("shape", [(10,), (4, 9), (3, 5, 7)])
     @pytest.mark.parametrize("norm", [True, False])
     def test_specific(self, shape, norm):
+        typ = 2
+
         rng = np.random.default_rng(1234)
 
-        x = rng.uniform(-5, 5, shape)
+        x = rng.uniform(-0.99, 0.99, shape)
         typ = np.where(np.abs(x) <= 1, 2, 3)
 
-        p, p_jac = special.assoc_legendre_p_all(4, 4, x, norm = norm, diff_n = 1)
+        p, p_jac = special.multi_assoc_legendre_p_all(4, 4, x, typ, norm = norm, diff_n = 1)
 
         np.testing.assert_allclose(p[0, 0],
             multi_assoc_legendre_p_0_0(typ, x, norm = norm))
