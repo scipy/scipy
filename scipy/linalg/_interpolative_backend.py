@@ -105,7 +105,7 @@ def idd_frm(n, w, x):
     randomly permuted.
 
     :param n:
-        Greatest power-of-two integer satisfying `n <= x.size` as obtained from
+        Greatest power-of-two integer satisfying ``n <= x.size`` as obtained from
         :func:`idd_frmi`; `n` is also the length of the output vector.
     :type n: int
     :param w:
@@ -131,10 +131,10 @@ def idd_sfrm(l, n, w, x):
     the transformed vector is known a priori.
 
     :param l:
-        Length of transformed vector, satisfying `l <= n`.
+        Length of transformed vector, satisfying ``l <= n``.
     :type l: int
     :param n:
-        Greatest power-of-two integer satisfying `n <= x.size` as obtained from
+        Greatest power-of-two integer satisfying ``n <= x.size`` as obtained from
         :func:`idd_sfrmi`.
     :type n: int
     :param w:
@@ -160,7 +160,7 @@ def idd_frmi(m):
     :type m: int
 
     :return:
-        Greatest power-of-two integer `n` satisfying `n <= m`.
+        Greatest power-of-two integer `n` satisfying ``n <= m``.
     :rtype: int
     :return:
         Initialization array to be used by :func:`idd_frm`.
@@ -181,7 +181,7 @@ def idd_sfrmi(l, m):
     :type m: int
 
     :return:
-        Greatest power-of-two integer `n` satisfying `n <= m`.
+        Greatest power-of-two integer `n` satisfying ``n <= m``.
     :rtype: int
     :return:
         Initialization array to be used by :func:`idd_sfrm`.
@@ -899,7 +899,7 @@ def idz_frm(n, w, x):
     randomly permuted.
 
     :param n:
-        Greatest power-of-two integer satisfying `n <= x.size` as obtained from
+        Greatest power-of-two integer satisfying ``n <= x.size`` as obtained from
         :func:`idz_frmi`; `n` is also the length of the output vector.
     :type n: int
     :param w:
@@ -925,10 +925,10 @@ def idz_sfrm(l, n, w, x):
     the transformed vector is known a priori.
 
     :param l:
-        Length of transformed vector, satisfying `l <= n`.
+        Length of transformed vector, satisfying ``l <= n``.
     :type l: int
     :param n:
-        Greatest power-of-two integer satisfying `n <= x.size` as obtained from
+        Greatest power-of-two integer satisfying ``n <= x.size`` as obtained from
         :func:`idz_sfrmi`.
     :type n: int
     :param w:
@@ -954,7 +954,7 @@ def idz_frmi(m):
     :type m: int
 
     :return:
-        Greatest power-of-two integer `n` satisfying `n <= m`.
+        Greatest power-of-two integer `n` satisfying ``n <= m``.
     :rtype: int
     :return:
         Initialization array to be used by :func:`idz_frm`.
@@ -975,7 +975,7 @@ def idz_sfrmi(l, m):
     :type m: int
 
     :return:
-        Greatest power-of-two integer `n` satisfying `n <= m`.
+        Greatest power-of-two integer `n` satisfying ``n <= m``.
     :rtype: int
     :return:
         Initialization array to be used by :func:`idz_sfrm`.

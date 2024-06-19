@@ -41,7 +41,7 @@ cdef bitgen_t* get_bitgen(random_state):
     return <bitgen_t *> PyCapsule_GetPointer(capsule, capsule_name)
 
 
-def rvs_rcont1(tab_t[::1] row, tab_t[::1] col, tab_t ntot,
+def rvs_rcont1(const tab_t[::1] row, const tab_t[::1] col, tab_t ntot,
                int size, random_state):
 
     cdef:
@@ -69,7 +69,7 @@ def rvs_rcont1(tab_t[::1] row, tab_t[::1] col, tab_t ntot,
     return result
 
 
-def rvs_rcont2(tab_t[::1] row, tab_t[::1] col, tab_t ntot,
+def rvs_rcont2(const tab_t[::1] row, const tab_t[::1] col, tab_t ntot,
                int size, random_state):
     cdef:
         bitgen_t *rstate = get_bitgen(random_state)

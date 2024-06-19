@@ -21,8 +21,8 @@ jobs:
     name: Get commit message
     uses: ./.github/workflows/commit_message.yml
 
-  test:
-    name: fast, py3.12/npAny, dev.py
+  fast_dev_py_fail_slow:
+    name: fail slow, fast, py3.12/npAny, dev.py
     needs: get_commit_message
     # Ensure (a) this doesn't run on forks by default, and
     #        (b) it does run with Act locally (`github` doesn't exist there)
@@ -49,7 +49,8 @@ jobs:
 
       - name: pip-packages
         run: |
-          pip install numpy cython pybind11 pythran meson ninja pytest pytest-xdist pytest-timeout pooch rich_click click doit pydevtool hypothesis "scipy-openblas32<=0.3.23.293.2"
+          pip install numpy cython pybind11 pythran meson ninja pytest pytest-xdist pytest-timeout pytest-fail-slow pooch rich_click click doit pydevtool hypothesis
+          python -m pip install -r requirements/openblas.txt
 
       - name: Build
         run: |
@@ -57,12 +58,14 @@ jobs:
 
       - name: Test
         run: |
-          python dev.py test -j2
+          # test runner parallel clashes with OpenBLAS multithreading
+          $env:OPENBLAS_NUM_THREADS=1
+          python dev.py test -j2 -- --durations=0 --durations-min=0.25 --fail-slow=1.0
 
 
   #############################################################################
-  full_dev_py_min_numpy:
-    name: full, py3.10/npMin, dev.py
+  full_dev_py_min_numpy_fail_slow:
+    name: fail slow, full, py3.10/npMin, dev.py
     needs: get_commit_message
     if: >
       needs.get_commit_message.outputs.message == 1
@@ -89,7 +92,8 @@ jobs:
         run: |
           # 1.23.5 is currently the oldest numpy usable on cp3.10 according
           # to pyproject.toml
-          python -m pip install numpy==1.23.5 cython pybind11 pythran meson-python meson ninja pytest pytest-xdist pytest-timeout pooch rich_click click doit pydevtool hypothesis "scipy-openblas32<=0.3.23.293.2"
+          python -m pip install numpy==1.23.5 cython pybind11 pythran meson-python meson ninja pytest pytest-xdist pytest-timeout pytest-fail-slow pooch rich_click click doit pydevtool hypothesis
+          python -m pip install -r requirements/openblas.txt
 
       - name: Build
         run: |
@@ -97,7 +101,9 @@ jobs:
 
       - name: Test
         run: |
-          python dev.py test -j2 --mode full
+          # test runner parallel clashes with OpenBLAS multithreading
+          $env:OPENBLAS_NUM_THREADS=1
+          python dev.py test -j2 --mode full -- --durations=0 --durations-min=1.0 --timeout=60 --fail-slow=5.0
 
 
   #############################################################################
@@ -130,10 +136,10 @@ jobs:
       - name: Install OpenBLAS
         shell: bash
         run: |
-          # Keep this using the OpenBLAS tarballs for now, as long as we use those for wheel builds
           set -xe
+          python -m pip install -r requirements/openblas.txt
           bash tools/wheels/cibw_before_build_win.sh .
-          echo "PKG_CONFIG_PATH=c:\opt\64\lib\pkgconfig;" >> $GITHUB_ENV
+          echo "PKG_CONFIG_PATH=${{ github.workspace }}" >> $GITHUB_ENV
 
       - name: pip-packages
         run: |
@@ -141,19 +147,23 @@ jobs:
           python -m pip install --pre --upgrade --timeout=60 -i https://pypi.anaconda.org/scientific-python-nightly-wheels/simple numpy
 
       - name: Build
+        shell: bash
         run: |
           python -m build --no-isolation -x -Csetup-args="-Duse-pythran=false"
 
           # Vendor openblas.dll and the DLL's it depends on into the wheel
           # Ignore `libsf_error_state.dll` for special function error handling;
           # it will be loaded using ctypes in scipy/special/__init__.py.
-          $env:wheel_name=Get-ChildItem -Path dist/* -Include *.whl
-          delvewheel repair --add-path c:\opt\openblas\openblas_dll --no-dll libsf_error_state.dll -w dist $env:wheel_name
+          wheel_name=$(ls dist/*.whl)
+          openblas_dir=$(python -c"import scipy_openblas32 as sop; print(sop.get_lib_dir())")
+          delvewheel repair --add-path $openblas_dir --no-dll libsf_error_state.dll -w wheelhouse $wheel_name
           
-          python -m pip install $env:wheel_name
+          python -m pip install wheelhouse/*
 
       - name: Test
         run: |
           cd $RUNNER_TEMP
           # run full test suite
+          # test runner parallel clashes with OpenBLAS multithreading
+          $env:OPENBLAS_NUM_THREADS=1
           pytest --pyargs scipy

@@ -58,8 +58,8 @@ _status_message = {'success': 'Optimization terminated successfully.',
 
 
 class MemoizeJac:
-    """ Decorator that caches the return values of a function returning `(fun, grad)`
-        each time it is called. """
+    """Decorator that caches the return values of a function returning ``(fun, grad)``
+    each time it is called."""
 
     def __init__(self, fun):
         self.fun = fun
@@ -86,7 +86,7 @@ class MemoizeJac:
 
 def _wrap_callback(callback, method=None):
     """Wrap a user-provided callback so that attributes can be attached."""
-    if callback is None or method in {'tnc', 'slsqp', 'cobyla'}:
+    if callback is None or method in {'tnc', 'slsqp', 'cobyla', 'cobyqa'}:
         return callback  # don't wrap
 
     sig = inspect.signature(callback)
@@ -232,10 +232,10 @@ def _prepare_scalar_function(fun, x0, jac=None, args=(), bounds=None,
     bounds : sequence, optional
         Bounds on variables. 'new-style' bounds are required.
     eps : float or ndarray
-        If `jac is None` the absolute step size used for numerical
+        If ``jac is None`` the absolute step size used for numerical
         approximation of the jacobian via forward differences.
     finite_diff_rel_step : None or array_like, optional
-        If `jac in ['2-point', '3-point', 'cs']` the relative step size to
+        If ``jac in ['2-point', '3-point', 'cs']`` the relative step size to
         use for numerical approximation of the jacobian. The absolute step
         size is computed as ``h = rel_step * sign(x0) * max(1, abs(x0))``,
         possibly adjusted to fit into the bounds. For ``jac='3-point'``
@@ -998,7 +998,7 @@ def approx_fprime(xk, f, epsilon=_epsilon, *args):
     >>> c0, c1 = (1, 200)
     >>> eps = np.sqrt(np.finfo(float).eps)
     >>> optimize.approx_fprime(x, func, [eps, np.sqrt(200) * eps], c0, c1)
-    array([   2.        ,  400.00004198])
+    array([   2.        ,  400.00004208])
 
     """
     xk = np.asarray(xk, float)
@@ -1329,7 +1329,7 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
         Set to True to return a list of the best solution at each of the
         iterations.
     finite_diff_rel_step : None or array_like, optional
-        If `jac in ['2-point', '3-point', 'cs']` the relative step size to
+        If ``jac in ['2-point', '3-point', 'cs']`` the relative step size to
         use for numerical approximation of the jacobian. The absolute step
         size is computed as ``h = rel_step * sign(x) * max(1, abs(x))``,
         possibly adjusted to fit into the bounds. For ``jac='3-point'``
@@ -1696,7 +1696,7 @@ def _minimize_cg(fun, x0, args=(), jac=None, callback=None,
         Set to True to return a list of the best solution at each of the
         iterations.
     finite_diff_rel_step : None or array_like, optional
-        If `jac in ['2-point', '3-point', 'cs']` the relative step size to
+        If ``jac in ['2-point', '3-point', 'cs']`` the relative step size to
         use for numerical approximation of the jacobian. The absolute step
         size is computed as ``h = rel_step * sign(x) * max(1, abs(x))``,
         possibly adjusted to fit into the bounds. For ``jac='3-point'``
@@ -3709,7 +3709,7 @@ def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin,
     the `finish` program's results usually will not coincide with any
     gridpoint, and may fall outside the grid's boundary. Thus, if a
     minimum only needs to be found over the provided grid points, make
-    sure to pass in `finish=None`.
+    sure to pass in ``finish=None``.
 
     *Note 2*: The grid of points is a `numpy.mgrid` object.
     For `brute` the `ranges` and `Ns` inputs have the following effect.
@@ -3908,6 +3908,7 @@ def show_options(solver=None, method=None, disp=True):
     - :ref:`L-BFGS-B    <optimize.minimize-lbfgsb>`
     - :ref:`TNC         <optimize.minimize-tnc>`
     - :ref:`COBYLA      <optimize.minimize-cobyla>`
+    - :ref:`COBYQA      <optimize.minimize-cobyqa>`
     - :ref:`SLSQP       <optimize.minimize-slsqp>`
     - :ref:`dogleg      <optimize.minimize-dogleg>`
     - :ref:`trust-ncg   <optimize.minimize-trustncg>`
@@ -3982,6 +3983,7 @@ def show_options(solver=None, method=None, disp=True):
             ('bfgs', 'scipy.optimize._optimize._minimize_bfgs'),
             ('cg', 'scipy.optimize._optimize._minimize_cg'),
             ('cobyla', 'scipy.optimize._cobyla_py._minimize_cobyla'),
+            ('cobyqa', 'scipy.optimize._cobyqa_py._minimize_cobyqa'),
             ('dogleg', 'scipy.optimize._trustregion_dogleg._minimize_dogleg'),
             ('l-bfgs-b', 'scipy.optimize._lbfgsb_py._minimize_lbfgsb'),
             ('nelder-mead', 'scipy.optimize._optimize._minimize_neldermead'),

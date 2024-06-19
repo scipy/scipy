@@ -57,7 +57,7 @@ jobs:
         echo "timestamp=${NOW}" >> $GITHUB_OUTPUT
 
     - name: Setup compiler cache
-      uses:  actions/cache@v3
+      uses:  actions/cache@v4
       id:    cache-ccache
       # Reference: https://docs.github.com/en/actions/guides/caching-dependencies-to-speed-up-workflows#matching-a-cache-key
       # NOTE: The caching strategy is modeled in a way that it will always have
@@ -92,7 +92,7 @@ jobs:
       shell: bash
 
     - name: Cache conda
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       env:
         # Increase this value to reset cache if environment.yml has not changed
         CACHE_NUMBER: 1
@@ -110,6 +110,7 @@ jobs:
       shell: bash -l {0}
       run: |
         conda activate scipy-dev
+        mamba install python=${{ matrix.python-version}}
 
         # optional test dependencies
         mamba install scikit-umfpack scikit-sparse
@@ -150,12 +151,12 @@ jobs:
         python-version: ["3.11"]
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         submodules: recursive
 
     - name: Setup Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
         cache: 'pip'
@@ -165,18 +166,17 @@ jobs:
         sudo xcode-select -s /Applications/Xcode_15.2.app
         
         git submodule update --init
-        # for some reason gfortran is not on the path
-        GFORTRAN_LOC=$(brew --prefix gfortran)/bin/gfortran 
+        GFORTRAN_LOC=$(which gfortran-13)
         ln -s $GFORTRAN_LOC gfortran
         export PATH=$PWD:$PATH
 
-        # make sure we have openblas
-        bash tools/wheels/cibw_before_build_macos.sh $PWD
-        export DYLD_LIBRARY_PATH=/usr/local/gfortran/lib:/opt/arm64-builds/lib
-        export PKG_CONFIG_PATH=/opt/arm64-builds/lib/pkgconfig
+        # Ensure we have gfortran dylib
+        GFORTRAN_LIB=$(dirname `gfortran --print-file-name libgfortran.dylib`)
+        export DYLD_LIBRARY_PATH=$GFORTRAN_LIB
     
         pip install click doit pydevtool rich_click meson cython pythran pybind11 ninja numpy
-        python dev.py build
+        pip install -r requirements/openblas.txt
+        python dev.py build --with-scipy-openblas
 
         pip install pooch pytest hypothesis
         python dev.py -n test 
@@ -201,7 +201,7 @@ jobs:
         submodules: recursive
 
     - name: Setup Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
         cache: 'pip'
@@ -211,13 +211,16 @@ jobs:
         sudo xcode-select -s /Applications/Xcode_15.2.app
 
         git submodule update --init
-        # for some reason gfortran is not on the path
-        GFORTRAN_LOC=$(brew --prefix gfortran)/bin/gfortran
+        GFORTRAN_LOC=$(which gfortran-13)
         ln -s $GFORTRAN_LOC gfortran
         export PATH=$PWD:$PATH
 
+        # Ensure we have gfortran dylib
+        GFORTRAN_LIB=$(dirname `gfortran --print-file-name libgfortran.dylib`)
+        export DYLD_LIBRARY_PATH=$GFORTRAN_LIB
+
         pip install click doit pydevtool rich_click meson cython pythran pybind11 ninja numpy
-        python dev.py build -C-Dblas=accelerate
+        python dev.py build --with-accelerate
 
         pip install pooch pytest hypothesis
         python dev.py -n test

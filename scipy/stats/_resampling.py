@@ -4,12 +4,14 @@ import warnings
 import numpy as np
 from itertools import combinations, permutations, product
 from collections.abc import Sequence
+from dataclasses import dataclass
 import inspect
 
-from scipy._lib._util import check_random_state, _rename_parameter
+from scipy._lib._util import check_random_state, _rename_parameter, rng_integers
+from scipy._lib._array_api import (array_namespace, is_numpy, xp_minimum,
+                                   xp_clip, xp_moveaxis_to_end)
 from scipy.special import ndtr, ndtri, comb, factorial
-from scipy._lib._util import rng_integers
-from dataclasses import dataclass
+
 from ._common import ConfidenceInterval
 from ._axis_nan_policy import _broadcast_concatenate, _broadcast_arrays
 from ._warnings_errors import DegenerateDataWarning
@@ -183,9 +185,23 @@ def _bootstrap_iv(data, statistic, vectorized, paired, axis, confidence_level,
     if n_samples == 0:
         raise ValueError("`data` must contain at least one sample.")
 
+    message = ("Ignoring the dimension specified by `axis`, arrays in `data` do not "
+               "have the same shape. Beginning in SciPy 1.16.0, `bootstrap` will "
+               "explicitly broadcast elements of `data` to the same shape (ignoring "
+               "`axis`) before performing the calculation. To avoid this warning in "
+               "the meantime, ensure that all samples have the same shape (except "
+               "potentially along `axis`).")
+    data = [np.atleast_1d(sample) for sample in data]
+    reduced_shapes = set()
+    for sample in data:
+        reduced_shape = list(sample.shape)
+        reduced_shape.pop(axis)
+        reduced_shapes.add(tuple(reduced_shape))
+    if len(reduced_shapes) != 1:
+        warnings.warn(message, FutureWarning, stacklevel=3)
+
     data_iv = []
     for sample in data:
-        sample = np.atleast_1d(sample)
         if sample.shape[axis_int] <= 1:
             raise ValueError("each sample in `data` must contain two or more "
                              "observations along `axis`.")
@@ -313,7 +329,18 @@ def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
     Parameters
     ----------
     data : sequence of array-like
-         Each element of data is a sample from an underlying distribution.
+         Each element of `data` is a sample containing scalar observations from an
+         underlying distribution. Elements of `data` must be broadcastable to the
+         same shape (with the possible exception of the dimension specified by `axis`).
+
+         .. versionchanged:: 1.14.0
+             `bootstrap` will now emit a ``FutureWarning`` if the shapes of the
+             elements of `data` are not the same (with the exception of the dimension
+             specified by `axis`).
+             Beginning in SciPy 1.16.0, `bootstrap` will explicitly broadcast the
+             elements to the same shape (except along `axis`) before performing
+             the calculation.
+
     statistic : callable
         Statistic for which the confidence interval is to be calculated.
         `statistic` must be a callable that accepts ``len(data)`` samples
@@ -662,7 +689,6 @@ def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
 def _monte_carlo_test_iv(data, rvs, statistic, vectorized, n_resamples,
                          batch, alternative, axis):
     """Input validation for `monte_carlo_test`."""
-
     axis_int = int(axis)
     if axis != axis_int:
         raise ValueError("`axis` must be an integer.")
@@ -677,26 +703,45 @@ def _monte_carlo_test_iv(data, rvs, statistic, vectorized, n_resamples,
         if not callable(rvs_i):
             raise TypeError("`rvs` must be callable or sequence of callables.")
 
+    # At this point, `data` should be a sequence
+    # If it isn't, the user passed a sequence for `rvs` but not `data`
+    message = "If `rvs` is a sequence, `len(rvs)` must equal `len(data)`."
+    try:
+        len(data)
+    except TypeError as e:
+        raise ValueError(message) from e
     if not len(rvs) == len(data):
-        message = "If `rvs` is a sequence, `len(rvs)` must equal `len(data)`."
         raise ValueError(message)
 
     if not callable(statistic):
         raise TypeError("`statistic` must be callable.")
 
     if vectorized is None:
-        vectorized = 'axis' in inspect.signature(statistic).parameters
+        try:
+            signature = inspect.signature(statistic).parameters
+        except ValueError as e:
+            message = (f"Signature inspection of {statistic=} failed; "
+                       "pass `vectorize` explicitly.")
+            raise ValueError(message) from e
+        vectorized = 'axis' in signature
+
+    xp = array_namespace(*data)
 
     if not vectorized:
-        statistic_vectorized = _vectorize_statistic(statistic)
+        if is_numpy(xp):
+            statistic_vectorized = _vectorize_statistic(statistic)
+        else:
+            message = ("`statistic` must be vectorized (i.e. support an `axis` "
+                       f"argument) when `data` contains {xp.__name__} arrays.")
+            raise ValueError(message)
     else:
         statistic_vectorized = statistic
 
-    data = _broadcast_arrays(data, axis)
+    data = _broadcast_arrays(data, axis, xp=xp)
     data_iv = []
     for sample in data:
-        sample = np.atleast_1d(sample)
-        sample = np.moveaxis(sample, axis_int, -1)
+        sample = xp.broadcast_to(sample, (1,)) if sample.ndim == 0 else sample
+        sample = xp_moveaxis_to_end(sample, axis_int, xp=xp)
         data_iv.append(sample)
 
     n_resamples_int = int(n_resamples)
@@ -715,8 +760,12 @@ def _monte_carlo_test_iv(data, rvs, statistic, vectorized, n_resamples,
     if alternative not in alternatives:
         raise ValueError(f"`alternative` must be in {alternatives}")
 
+    # Infer the desired p-value dtype based on the input types
+    min_float = getattr(xp, 'float16', xp.float32)
+    dtype = xp.result_type(*data_iv, min_float)
+
     return (data_iv, rvs, statistic_vectorized, vectorized, n_resamples_int,
-            batch_iv, alternative, axis_int)
+            batch_iv, alternative, axis_int, dtype, xp)
 
 
 @dataclass
@@ -908,11 +957,12 @@ def monte_carlo_test(data, rvs, statistic, *, vectorized=None,
     """
     args = _monte_carlo_test_iv(data, rvs, statistic, vectorized,
                                 n_resamples, batch, alternative, axis)
-    (data, rvs, statistic, vectorized,
-     n_resamples, batch, alternative, axis) = args
+    (data, rvs, statistic, vectorized, n_resamples,
+     batch, alternative, axis, dtype, xp) = args
 
     # Some statistics return plain floats; ensure they're at least a NumPy float
-    observed = np.asarray(statistic(*data, axis=-1))[()]
+    observed = xp.asarray(statistic(*data, axis=-1))
+    observed = observed[()] if observed.ndim == 0 else observed
 
     n_observations = [sample.shape[-1] for sample in data]
     batch_nominal = batch or n_resamples
@@ -922,29 +972,31 @@ def monte_carlo_test(data, rvs, statistic, *, vectorized=None,
         resamples = [rvs_i(size=(batch_actual, n_observations_i))
                      for rvs_i, n_observations_i in zip(rvs, n_observations)]
         null_distribution.append(statistic(*resamples, axis=-1))
-    null_distribution = np.concatenate(null_distribution)
-    null_distribution = null_distribution.reshape([-1] + [1]*observed.ndim)
+    null_distribution = xp.concat(null_distribution)
+    null_distribution = xp.reshape(null_distribution, [-1] + [1]*observed.ndim)
 
     # relative tolerance for detecting numerically distinct but
     # theoretically equal values in the null distribution
-    eps =  (0 if not np.issubdtype(observed.dtype, np.inexact)
-            else np.finfo(observed.dtype).eps*100)
-    gamma = np.abs(eps * observed)
+    eps =  (0 if not xp.isdtype(observed.dtype, ('real floating'))
+            else xp.finfo(observed.dtype).eps*100)
+    gamma = xp.abs(eps * observed)
 
     def less(null_distribution, observed):
         cmps = null_distribution <= observed + gamma
-        pvalues = (cmps.sum(axis=0) + 1) / (n_resamples + 1)  # see [1]
+        cmps = xp.asarray(cmps, dtype=dtype)
+        pvalues = (xp.sum(cmps, axis=0, dtype=dtype) + 1.) / (n_resamples + 1.)
         return pvalues
 
     def greater(null_distribution, observed):
         cmps = null_distribution >= observed - gamma
-        pvalues = (cmps.sum(axis=0) + 1) / (n_resamples + 1)  # see [1]
+        cmps = xp.asarray(cmps, dtype=dtype)
+        pvalues = (xp.sum(cmps, axis=0, dtype=dtype) + 1.) / (n_resamples + 1.)
         return pvalues
 
     def two_sided(null_distribution, observed):
         pvalues_less = less(null_distribution, observed)
         pvalues_greater = greater(null_distribution, observed)
-        pvalues = np.minimum(pvalues_less, pvalues_greater) * 2
+        pvalues = xp_minimum(pvalues_less, pvalues_greater) * 2
         return pvalues
 
     compare = {"less": less,
@@ -952,7 +1004,7 @@ def monte_carlo_test(data, rvs, statistic, *, vectorized=None,
                "two-sided": two_sided}
 
     pvalues = compare[alternative](null_distribution, observed)
-    pvalues = np.clip(pvalues, 0, 1)
+    pvalues = xp_clip(pvalues, 0., 1., xp=xp)
 
     return MonteCarloTestResult(observed, pvalues, null_distribution)
 

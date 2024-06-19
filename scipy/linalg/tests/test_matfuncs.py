@@ -752,6 +752,7 @@ class TestExpM:
         a.flags.writeable = False
         expm(a)
 
+    @pytest.mark.fail_slow(5)
     def test_gh18086(self):
         A = np.zeros((400, 400), dtype=float)
         rng = np.random.default_rng(100)

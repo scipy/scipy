@@ -668,7 +668,7 @@ def n_primes(n: IntNumber) -> list[int]:
               677, 683, 691, 701, 709, 719, 727, 733, 739, 743, 751, 757, 761,
               769, 773, 787, 797, 809, 811, 821, 823, 827, 829, 839, 853, 857,
               859, 863, 877, 881, 883, 887, 907, 911, 919, 929, 937, 941, 947,
-              953, 967, 971, 977, 983, 991, 997][:n]  # type: ignore[misc]
+              953, 967, 971, 977, 983, 991, 997][:n]
 
     if len(primes) < n:
         big_number = 2000
@@ -704,10 +704,10 @@ def _van_der_corput_permutations(
     Notes
     -----
     In Algorithm 1 of Owen 2017, a permutation of `np.arange(base)` is
-    created for each positive integer `k` such that `1 - base**-k < 1`
+    created for each positive integer `k` such that ``1 - base**-k < 1``
     using floating-point arithmetic. For double precision floats, the
-    condition `1 - base**-k < 1` can also be written as `base**-k >
-    2**-54`, which makes it more apparent how many permutations we need
+    condition ``1 - base**-k < 1`` can also be written as ``base**-k >
+    2**-54``, which makes it more apparent how many permutations we need
     to create.
     """
     rng = check_random_state(random_state)
@@ -1508,7 +1508,7 @@ class LatinHypercube(QMCEngine):
 
         oa_lhs_sample /= p
 
-        return oa_lhs_sample[:, :self.d]  # type: ignore
+        return oa_lhs_sample[:, :self.d]
 
 
 class Sobol(QMCEngine):
@@ -1767,7 +1767,7 @@ class Sobol(QMCEngine):
                 )
                 sample = np.concatenate(
                     [self._first_point, sample]
-                )[:n]  # type: ignore[misc]
+                )[:n]
         else:
             _draw(
                 n=n, num_gen=self.num_generated - 1, dim=self.d,

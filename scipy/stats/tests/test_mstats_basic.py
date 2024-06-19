@@ -19,8 +19,9 @@ from numpy.ma.testutils import (assert_equal, assert_almost_equal,
                                 assert_array_almost_equal_nulp, assert_,
                                 assert_allclose, assert_array_equal)
 from numpy.testing import suppress_warnings
-from scipy.stats import _mstats_basic
+from scipy.stats import _mstats_basic, _stats_py
 from scipy.conftest import skip_xp_invalid_arg
+from scipy.stats._axis_nan_policy import SmallSampleWarning, too_small_1d_not_omit
 
 class TestMquantiles:
     def test_mquantiles_limit_keyword(self):
@@ -474,6 +475,10 @@ class TestCorr:
             res = _mstats_basic._kendall_p_exact(nc[0], nc[1])
             assert_almost_equal(res, expected)
 
+    @skip_xp_invalid_arg
+    # mstats.pointbiserialr returns a NumPy float for the statistic, but converts
+    # it to a masked array with no masked elements before calling `special.betainc`,
+    # which won't accept masked arrays when `SCIPY_ARRAY_API=1`.
     def test_pointbiserial(self):
         x = [1, 0, 1, 1, 1, 1, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0,
              0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, -1]
@@ -916,7 +921,7 @@ def test_regress_simple():
     result = mstats.linregress(x, y)
 
     # Result is of a correct class and with correct fields
-    lr = stats._stats_mstats_common.LinregressResult
+    lr = _stats_py.LinregressResult
     assert_(isinstance(result, lr))
     attributes = ('slope', 'intercept', 'rvalue', 'pvalue', 'stderr')
     check_named_results(result, attributes, ma=True)
@@ -1085,6 +1090,7 @@ def test_plotting_positions():
     assert_array_almost_equal(pos.data, np.array([0.25, 0.5, 0.75]))
 
 
+@skip_xp_invalid_arg
 class TestNormalitytests:
 
     def test_vs_nonmasked(self):
@@ -1100,7 +1106,10 @@ class TestNormalitytests:
         mfuncs = [mstats.normaltest, mstats.skewtest, mstats.kurtosistest]
         x = [1, 2, 3, 4]
         for func, mfunc in zip(funcs, mfuncs):
-            assert_raises(ValueError, func, x)
+            with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
+                res = func(x)
+                assert np.isnan(res.statistic)
+                assert np.isnan(res.pvalue)
             assert_raises(ValueError, mfunc, x)
 
     def test_axis_None(self):
@@ -1840,6 +1849,7 @@ class TestCompareWithStats:
 
     def test_normaltest(self):
         with np.errstate(over='raise'), suppress_warnings() as sup:
+            sup.filter(UserWarning, "`kurtosistest` p-value may be inaccurate")
             sup.filter(UserWarning, "kurtosistest only valid for n>=20")
             for n in self.get_n():
                 if n > 8:

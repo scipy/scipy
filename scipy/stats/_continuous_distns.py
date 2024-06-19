@@ -9,6 +9,7 @@ import ctypes
 
 import numpy as np
 from numpy.polynomial import Polynomial
+from scipy.interpolate import BSpline
 from scipy._lib.doccer import (extend_notes_in_docstring,
                                replace_notes_in_docstring,
                                inherit_docstring_from)
@@ -23,8 +24,8 @@ from scipy._lib._util import _lazyselect, _lazywhere
 from . import _stats
 from ._tukeylambda_stats import (tukeylambda_variance as _tlvar,
                                  tukeylambda_kurtosis as _tlkurt)
-from ._distn_infrastructure import (
-    get_distribution_names, _kurtosis,
+from ._distn_infrastructure import (_vectorize_rvs_over_shapes,
+    get_distribution_names, _kurtosis, _isintegral,
     rv_continuous, _skew, _get_fixed_fit_value, _check_shape, _ShapeInfo)
 from ._ksstats import kolmogn, kolmognp, kolmogni
 from ._constants import (_XMIN, _LOGXMIN, _EULER, _ZETA3, _SQRT_PI,
@@ -1320,6 +1321,9 @@ class burr12_gen(rv_continuous):
         #   ((1 - q)**(-1.0/d) - 1)**(1.0/c)
         # that does a better job handling small values of q.
         return sc.expm1(-1/d * sc.log1p(-q))**(1/c)
+
+    def _isf(self, p, c, d):
+        return sc.expm1(-1/d * np.log(p))**(1/c)
 
     def _munp(self, n, c, d):
         def moment_if_exists(n, c, d):
@@ -4939,14 +4943,14 @@ class geninvgauss_gen(rv_continuous):
 
         f(x, p, b) = x^{p-1} \exp(-b (x + 1/x) / 2) / (2 K_p(b))
 
-    where `x > 0`, `p` is a real number and `b > 0`\([1]_).
+    where ``x > 0``, `p` is a real number and ``b > 0``\([1]_).
     :math:`K_p` is the modified Bessel function of second kind of order `p`
     (`scipy.special.kv`).
 
     %(after_notes)s
 
     The inverse Gaussian distribution `stats.invgauss(mu)` is a special case of
-    `geninvgauss` with `p = -1/2`, `b = 1 / mu` and `scale = mu`.
+    `geninvgauss` with ``p = -1/2``, ``b = 1 / mu`` and ``scale = mu``.
 
     Generating random variates is challenging for this distribution. The
     implementation is based on [2]_.
@@ -5270,8 +5274,8 @@ class norminvgauss_gen(rv_continuous):
 
     A normal inverse Gaussian random variable `Y` with parameters `a` and `b`
     can be expressed as a normal mean-variance mixture:
-    `Y = b * V + sqrt(V) * X` where `X` is `norm(0,1)` and `V` is
-    `invgauss(mu=1/sqrt(a**2 - b**2))`. This representation is used
+    ``Y = b * V + sqrt(V) * X`` where `X` is ``norm(0,1)`` and `V` is
+    ``invgauss(mu=1/sqrt(a**2 - b**2))``. This representation is used
     to generate random variates.
 
     Another common parametrization of the distribution (see Equation 2.1 in
@@ -9033,6 +9037,133 @@ class rice_gen(rv_continuous):
 
 rice = rice_gen(a=0.0, name="rice")
 
+class irwinhall_gen(rv_continuous):
+    r"""An Irwin-Hall (Uniform Sum) continuous random variable.
+
+    An `Irwin-Hall <https://en.wikipedia.org/wiki/Irwin-Hall_distribution/>`_
+    continuous random variable is the sum of :math:`n` independent
+    standard uniform random variables [1]_ [2]_.
+
+    %(before_notes)s
+
+    Notes
+    -----
+    Applications include `Rao's Spacing Test
+    <https://jammalam.faculty.pstat.ucsb.edu/html/favorite/test.htm>`_,
+    a more powerful alternative to the Rayleigh test
+    when the data are not unimodal, and radar [3]_.
+
+    Conveniently, the pdf and cdf are the :math:`n`-fold convolution of
+    the ones for the standard uniform distribution, which is also the
+    definition of the cardinal B-splines of degree :math:`n-1`
+    having knots evenly spaced from :math:`1` to :math:`n` [4]_ [5]_.
+
+    The Bates distribution, which represents the *mean* of statistically
+    independent, uniformly distributed random variables, is simply the
+    Irwin-Hall distribution scaled by :math:`1/n`. For example, the frozen
+    distribution ``bates = irwinhall(10, scale=1/10)`` represents the
+    distribution of the mean of 10 uniformly distributed random variables.
+    
+    %(after_notes)s
+
+    References
+    ----------
+    .. [1] P. Hall, "The distribution of means for samples of size N drawn
+            from a population in which the variate takes values between 0 and 1,
+            all such values being equally probable",
+            Biometrika, Volume 19, Issue 3-4, December 1927, Pages 240-244,
+            :doi:`10.1093/biomet/19.3-4.240`.
+    .. [2] J. O. Irwin, "On the frequency distribution of the means of samples
+            from a population having any law of frequency with finite moments,
+            with special reference to Pearson's Type II,
+            Biometrika, Volume 19, Issue 3-4, December 1927, Pages 225-239,
+            :doi:`0.1093/biomet/19.3-4.225`.
+    .. [3] K. Buchanan, T. Adeyemi, C. Flores-Molina, S. Wheeland and D. Overturf, 
+            "Sidelobe behavior and bandwidth characteristics
+            of distributed antenna arrays,"
+            2018 United States National Committee of
+            URSI National Radio Science Meeting (USNC-URSI NRSM),
+            Boulder, CO, USA, 2018, pp. 1-2.
+            https://www.usnc-ursi-archive.org/nrsm/2018/papers/B15-9.pdf.
+    .. [4] Amos Ron, "Lecture 1: Cardinal B-splines and convolution operators", p. 1
+            https://pages.cs.wisc.edu/~deboor/887/lec1new.pdf.
+    .. [5] Trefethen, N. (2012, July). B-splines and convolution. Chebfun. 
+            Retrieved April 30, 2024, from http://www.chebfun.org/examples/approx/BSplineConv.html.
+
+    %(example)s
+    """  # noqa: E501
+
+    @replace_notes_in_docstring(rv_continuous, notes="""\
+        Raises a ``NotImplementedError`` for the Irwin-Hall distribution because
+        the generic `fit` implementation is unreliable and no custom implementation
+        is available. Consider using `scipy.stats.fit`.\n\n""")
+    def fit(self, data, *args, **kwds):
+        fit_notes = ("The generic `fit` implementation is unreliable for this "
+                     "distribution, and no custom implementation is available. "
+                     "Consider using `scipy.stats.fit`.")
+        raise NotImplementedError(fit_notes)
+
+    def _argcheck(self, n):
+        return (n > 0) & _isintegral(n) & np.isrealobj(n)
+    
+    def _get_support(self, n):
+        return 0, n 
+    
+    def _shape_info(self):
+        return [_ShapeInfo("n", True, (1, np.inf), (True, False))]
+
+    def _munp(self, order, n):
+        # see https://link.springer.com/content/pdf/10.1007/s10959-020-01050-9.pdf
+        # page 640, with m=n, j=n+order
+        def vmunp(order, n):
+            return (sc.stirling2(n+order, n, exact=True) 
+                    / sc.comb(n+order, n, exact=True))
+
+        # exact rationals, but we convert to float anyway
+        return np.vectorize(vmunp, otypes=[np.float64])(order, n)
+
+    @staticmethod
+    def _cardbspl(n):
+        t = np.arange(n+1) 
+        return BSpline.basis_element(t)
+
+    def _pdf(self, x, n):
+        def vpdf(x, n):
+            return self._cardbspl(n)(x)
+        return np.vectorize(vpdf, otypes=[np.float64])(x, n)
+    
+    def _cdf(self, x, n):
+        def vcdf(x, n):
+            return self._cardbspl(n).antiderivative()(x)
+        return np.vectorize(vcdf, otypes=[np.float64])(x, n)
+
+    def _sf(self, x, n):
+        def vsf(x, n):
+            return self._cardbspl(n).antiderivative()(n-x)
+        return np.vectorize(vsf, otypes=[np.float64])(x, n)
+
+    def _rvs(self, n, size=None, random_state=None, *args):
+        @_vectorize_rvs_over_shapes
+        def _rvs1(n, size=None, random_state=None):
+            n = np.floor(n).astype(int)
+            usize = (n,) if size is None else (n, *size)
+            return random_state.uniform(size=usize).sum(axis=0)
+        return _rvs1(n, size=size, random_state=random_state)
+    
+    def _stats(self, n):
+        # mgf = ((exp(t) - 1)/t)**n
+        # m'th derivative follows from the generalized Leibniz rule
+        # Moments follow directly from the definition as the sum of n iid unif(0,1)
+        # and the summation rules for moments of a sum of iid random variables
+        # E(IH((n))) = n*E(U(0,1)) = n/2
+        # Var(IH((n))) = n*Var(U(0,1)) = n/12
+        # Skew(IH((n))) = Skew(U(0,1))/sqrt(n) = 0
+        # Kurt(IH((n))) = Kurt(U(0,1))/n = -6/(5*n) -- Fisher's excess kurtosis
+        # See e.g. https://en.wikipedia.org/wiki/Irwin%E2%80%93Hall_distribution
+
+        return n/2, n/12, 0, -6/(5*n)
+
+irwinhall = irwinhall_gen(name="irwinhall")    
 
 class recipinvgauss_gen(rv_continuous):
     r"""A reciprocal inverse Gaussian continuous random variable.
@@ -9109,7 +9240,7 @@ class semicircular_gen(rv_continuous):
 
     for :math:`-1 \le x \le 1`.
 
-    The distribution is a special case of `rdist` with `c = 3`.
+    The distribution is a special case of `rdist` with ``c = 3``.
 
     %(after_notes)s
 
@@ -9552,12 +9683,51 @@ class trapezoid_gen(rv_continuous):
         return 0.5 * (1.0-d+c) / (1.0+d-c) + np.log(0.5 * (1.0+d-c))
 
 
+# deprecation of trapz, see #20486
+deprmsg = ("`trapz` is deprecated in favour of `trapezoid` "
+           "and will be removed in SciPy 1.16.0.")
+
+
+class trapz_gen(trapezoid_gen):
+    # override __call__ protocol from rv_generic to also
+    # deprecate instantiation of frozen distributions
+    """
+
+    .. deprecated:: 1.14.0
+        `trapz` is deprecated and will be removed in SciPy 1.16.
+        Plese use `trapezoid` instead!
+    """
+    def __call__(self, *args, **kwds):
+        warnings.warn(deprmsg, DeprecationWarning, stacklevel=2)
+        return self.freeze(*args, **kwds)
+
+
 trapezoid = trapezoid_gen(a=0.0, b=1.0, name="trapezoid")
-# Note: alias kept for backwards compatibility. Rename was done
-# because trapz is a slur in colloquial English (see gh-12924).
-trapz = trapezoid_gen(a=0.0, b=1.0, name="trapz")
-if trapz.__doc__:
-    trapz.__doc__ = "trapz is an alias for `trapezoid`"
+trapz = trapz_gen(a=0.0, b=1.0, name="trapz")
+
+# since the deprecated class gets intantiated upon import (and we only want to
+# warn upon use), add the deprecation to each class method
+_method_names = [
+    "cdf", "entropy", "expect", "fit", "interval", "isf", "logcdf", "logpdf",
+    "logsf", "mean", "median", "moment", "pdf", "ppf", "rvs", "sf", "stats",
+    "std", "var"
+]
+
+
+class _DeprecationWrapper:
+    def __init__(self, method):
+        self.msg = (f"`trapz.{method}` is deprecated in favour of trapezoid.{method}. "
+                     "Please replace all uses of the distribution class "
+                     "`trapz` with `trapezoid`. `trapz` will be removed in SciPy 1.16.")
+        self.method = getattr(trapezoid, method)
+    
+    def __call__(self, *args, **kwargs):
+        warnings.warn(self.msg, DeprecationWarning, stacklevel=2)
+        return self.method(*args, **kwargs)
+
+
+for m in _method_names:
+    setattr(trapz, m, _DeprecationWrapper(m))
 
 
 class triang_gen(rv_continuous):
@@ -10455,7 +10625,7 @@ class uniform_gen(rv_continuous):
         11.0
 
         If we know the data comes from a uniform distribution where the support
-        starts at 0, we can use `floc=0`:
+        starts at 0, we can use ``floc=0``:
 
         >>> loc, scale = uniform.fit(x, floc=0)
         >>> loc
@@ -10464,7 +10634,7 @@ class uniform_gen(rv_continuous):
         13.0
 
         Alternatively, if we know the length of the support is 12, we can use
-        `fscale=12`:
+        ``fscale=12``:
 
         >>> loc, scale = uniform.fit(x, fscale=12)
         >>> loc

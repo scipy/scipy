@@ -54,18 +54,26 @@ extern "C" int wrap_PyUFunc_getfperr() { return PyUFunc_getfperr(); }
 
 static PyModuleDef _gufuncs_def = {
     PyModuleDef_HEAD_INIT,
-    .m_name = "_gufuncs",
-    .m_size = -1,
+    "_gufuncs",
+    NULL,
+    -1,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL
 };
 
 PyMODINIT_FUNC PyInit__gufuncs() {
-    if (!SpecFun_Initialize()) {
-        return nullptr;
+    import_array();
+    import_umath();
+    if (PyErr_Occurred()) {
+        return NULL;
     }
 
     PyObject *_gufuncs = PyModule_Create(&_gufuncs_def);
     if (_gufuncs == nullptr) {
-        return nullptr;
+        return NULL;
     }
 
     PyObject *_lpn = SpecFun_NewGUFunc(

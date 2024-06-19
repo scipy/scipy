@@ -7,6 +7,8 @@ from scipy._lib._testutils import IS_EDITABLE,_test_cython_extension, cython
 from scipy.special import beta, gamma
 
 
+@pytest.mark.fail_slow(40)
+# essential per https://github.com/scipy/scipy/pull/20487#discussion_r1567057247
 @pytest.mark.skipif(IS_EDITABLE,
                     reason='Editable install cannot find .pxd headers.')
 @pytest.mark.skipif(platform.machine() in ["wasm32", "wasm64"],
