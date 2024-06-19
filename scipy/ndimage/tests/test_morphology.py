@@ -2257,6 +2257,54 @@ class TestNdimageMorphology:
         out = ndimage.binary_fill_holes(data)
         assert_array_almost_equal(out, expected)
 
+
+    @pytest.mark.parametrize('border_value',[0, 1])
+    @pytest.mark.parametrize('origin', [(0, 0), (-1, 0)])
+    @pytest.mark.parametrize('expand_axis', [0, 1, 2])
+    @pytest.mark.parametrize('func', [ndimage.binary_erosion,
+                                      ndimage.binary_dilation,
+                                      ndimage.binary_opening,
+                                      ndimage.binary_closing,
+                                      ndimage.binary_hit_or_miss,
+                                      ndimage.binary_propagation,
+                                      ndimage.binary_fill_holes])
+    def test_binary_axes(self, xp, func, expand_axis, origin, border_value):
+        struct = [[0, 1, 0],
+                  [1, 1, 1],
+                  [0, 1, 0]]
+
+        data = xp.array([[0, 0, 0, 1, 0, 0, 0],
+                         [0, 0, 0, 1, 0, 0, 0],
+                         [0, 0, 1, 1, 0, 1, 0],
+                         [0, 1, 0, 1, 1, 0, 1],
+                         [0, 1, 1, 1, 1, 1, 0],
+                         [0, 0, 1, 1, 0, 0, 0],
+                         [0, 0, 0, 1, 0, 0, 0]], bool)
+        if func == ndimage.binary_hit_or_miss:
+            kwargs = dict(origin1=origin, origin2=origin)
+        else:
+            kwargs = dict(origin=origin)
+        border_supported = func not in [ndimage.binary_hit_or_miss,
+                                        ndimage.binary_fill_holes]
+        if border_supported:
+            kwargs['border_value'] = border_value
+        elif border_value != 0:
+            pytest.skip('border_value !=0 unsupported by this function')
+
+        expected = func(data, struct, **kwargs)
+
+        # replicate data and expected result along a new axis
+        n_reps = 5
+        expected = xp.stack([expected] * n_reps, axis=expand_axis)
+        data = xp.stack([data] * n_reps, axis=expand_axis)
+
+        # filter all axes except expand_axis
+        axes = [0, 1, 2]
+        axes.remove(expand_axis)
+        out = xp.zeros(data.shape, bool)
+        func(data, struct, output=out, axes=axes, **kwargs)
+        assert_array_almost_equal(out, expected)
+
     def test_grey_erosion01(self, xp):
         array = xp.asarray([[3, 2, 5, 1, 4],
                             [7, 6, 9, 3, 5],
