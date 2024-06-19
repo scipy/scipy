@@ -341,7 +341,7 @@ multi_assoc_legendre_p = MultiUFunc(multi_assoc_legendre_p,
     multi_assoc_legendre_p_all(n, m, type, z, *, norm=False, diff_n=0)
 
     Associated Legendre function of the first kind for complex arguments.
-    """, force_complex_output=True
+    """
 )
 
 
