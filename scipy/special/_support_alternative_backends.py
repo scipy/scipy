@@ -110,7 +110,7 @@ def _chdtrc(xp, spx):
 
     def __chdtrc(v, x):
         res = xp.where(x >= 0, gammaincc(v/2, x/2), 1)
-        i_nan = ((x == 0) & (v == 0)) | xp.isnan(x) | xp.isnan(v)
+        i_nan = ((x == 0) & (v == 0)) | xp.isnan(x) | xp.isnan(v) | (v <= 0)
         res = xp.where(i_nan, xp.nan, res)
         return res
     return __chdtrc
