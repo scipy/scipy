@@ -273,7 +273,7 @@ multi_assoc_legendre_p = MultiUFunc(multi_assoc_legendre_p,
 
 
 @multi_assoc_legendre_p.register_key
-def _(*, typ, norm=False, diff_n=0):
+def _(typ=2, norm=False, diff_n=0):
     diff_n = _nonneg_int_or_fail(diff_n, "diff_n", strict=False)
     if not 0 <= diff_n <= 2:
         raise ValueError(
@@ -284,7 +284,7 @@ def _(*, typ, norm=False, diff_n=0):
 
 
 @multi_assoc_legendre_p.register_default_args
-def _(*, typ, norm=False, diff_n=0):
+def _(typ=2, norm=False, diff_n=0):
     return typ,
 
 
@@ -327,7 +327,7 @@ multi_assoc_legendre_p_all = MultiUFunc(multi_assoc_legendre_p_all,
 
 
 @multi_assoc_legendre_p_all.register_key
-def _(*, typ, norm=False, diff_n=0):
+def _(typ=2, norm=False, diff_n=0):
     if not ((isinstance(diff_n, int) or np.issubdtype(diff_n, np.integer))
             and diff_n >= 0):
         raise ValueError(
@@ -342,7 +342,7 @@ def _(*, typ, norm=False, diff_n=0):
 
 
 @multi_assoc_legendre_p_all.register_default_args
-def _(*, typ, norm=False, diff_n=0):
+def _(typ=2, norm=False, diff_n=0):
     return typ,
 
 
