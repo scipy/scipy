@@ -91,10 +91,10 @@ def test_support_alternative_backends(xp, data, f_name_n_args):
     rng = rng_keeper.get_rng(f_name)
     args_np = [rng.standard_normal(size=shape, dtype=dtype_np) for shape in shapes]
 
-    if is_jax(xp):
-        if f_name in {'chdtrc',  'gammaincc'}:  # google/jax#20699
-            args_np[0] = np.abs(args_np[0])
-            args_np[1] = np.abs(args_np[1])
+    if (is_jax(xp) and f_name == 'gammaincc'  # google/jax#20699
+            or f_name == 'chdtrc'):  # gh-20972
+        args_np[0] = np.abs(args_np[0])
+        args_np[1] = np.abs(args_np[1])
 
     args_xp = [xp.asarray(arg[()], dtype=dtype_xp) for arg in args_np]
 
