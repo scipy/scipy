@@ -238,10 +238,6 @@ def quad_vec(f, a, b, epsabs=1e-200, epsrel=1e-8, norm='2', cache_size=100e6,
 
         if __name__ == "__main__":
             y, err = quad_vec(f, x0, x1, workers=2)
-            plt.plot(alpha, y)
-            plt.xlabel(r"$\alpha$")
-            plt.ylabel(r"$\int_{0}^{2} x^\alpha dx$")
-            plt.show()
     """
     a = float(a)
     b = float(b)
