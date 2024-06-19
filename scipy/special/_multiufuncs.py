@@ -4,9 +4,9 @@ import numpy as np
 
 from ._input_validation import _nonneg_int_or_fail
 
-from ._special_ufuncs import (legendre_p, multi_assoc_legendre_p as assoc_legendre_p,
+from ._special_ufuncs import (legendre_p, assoc_legendre_p,
                               sph_legendre_p, sph_harm_y)
-from ._gufuncs import (legendre_p_all, multi_assoc_legendre_p_all as assoc_legendre_p_all,
+from ._gufuncs import (legendre_p_all, assoc_legendre_p_all,
                        sph_legendre_p_all, sph_harm_y_all)
 
 __all__ = [
@@ -22,35 +22,26 @@ __all__ = [
 
 
 class MultiUFunc:
-    def __init__(self, ufuncs_map, doc = None, *, force_complex_output=False):
-        # Gather leaf level ufuncs from ufuncs_map.
-        ufuncs = []
-        def traverse(obj):
-            if isinstance(obj, collections.abc.Mapping):
-                for value in obj.values():
-                    traverse(value)
-            elif (isinstance(obj, collections.abc.Iterable)
-                and not isinstance(obj, (str, bytes))):
-                for item in obj:
-                    traverse(item)
-            else:
-                ufuncs.append(obj)
-        traverse(ufuncs_map)
+    def __init__(self, ufuncs, doc = None, *, force_complex_output=False):
+        if isinstance(ufuncs, collections.abc.Mapping):
+            ufuncs_iter = ufuncs.values()
+        elif isinstance(ufuncs, collections.abc.Iterable):
+            ufuncs_iter = ufuncs
+        else:
+            raise ValueError("ufuncs should be a collection.")
 
-        # Perform input validation to ensure all ufuncs in ufuncs_map are
+        # Perform input validation to ensure all ufuncs in ufuncs are
         # actually ufuncs and all take the same input types.
         seen_input_types = set()
-        for ufunc in ufuncs:
+        for ufunc in ufuncs_iter:
             if not isinstance(ufunc, np.ufunc):
-                raise ValueError("All leaf elements of ufuncs_map must have"
-                                 f" type `numpy.ufunc`. Received {ufuncs_map}")
+                raise ValueError("All ufuncs must have"
+                                 f" type `numpy.ufunc`. Received {ufuncs}")
             seen_input_types.add(frozenset(x.split("->")[0] for x in ufunc.types))
         if len(seen_input_types) > 1:
-            raise ValueError("All ufuncs in ufuncs_map must take the same"
-                             " input types.")
+            raise ValueError("All ufuncs must take the same input types.")
 
-        self._ufuncs = tuple(ufuncs)
-        self._ufuncs_map = ufuncs_map
+        self._ufuncs = ufuncs
         self.resolve_out_shapes = None
         self.key = None
         self.default_args = None
@@ -64,7 +55,7 @@ class MultiUFunc:
     def resolve_ufunc(self, **kwargs):
         """Resolve to a ufunc based on keyword arguments."""
         ufunc_key = self.key(**kwargs)
-        return self._ufuncs_map[ufunc_key]
+        return self._ufuncs[ufunc_key]
 
     @property
     def __doc__(self):

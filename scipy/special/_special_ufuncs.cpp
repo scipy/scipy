@@ -525,7 +525,7 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
                          "legendre_p", nullptr));
     PyModule_AddObjectRef(_special_ufuncs, "legendre_p", legendre_p);
 
-    PyObject *multi_assoc_legendre_p = Py_BuildValue(
+    PyObject *assoc_legendre_p = Py_BuildValue(
         "{(O, i): N, (O, i): N, (O, i): N, (O, i): N, (O, i): N,(O, i): N}", Py_True, 0,
         SpecFun_NewUFunc({[](long long int n, long long int m, double z, long long int type) {
                               return ::multi_assoc_legendre_p(assoc_legendre_norm, n, m, type, z);
@@ -539,7 +539,7 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
                           [](long long int n, long long int m, cfloat z, long long int type) {
                               return ::multi_assoc_legendre_p(assoc_legendre_norm, n, m, type, z);
                           }},
-                         "multi_assoc_legendre_p", nullptr),
+                         "assoc_legendre_p", nullptr),
         Py_True, 1,
         SpecFun_NewUFunc(
             {[](long long int n, long long int m, double z, long long int type, double &res, double &res_jac) {
@@ -554,7 +554,7 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
              [](long long int n, long long int m, cfloat z, long long int type, cfloat &res, cfloat &res_jac) {
                  ::multi_assoc_legendre_p(assoc_legendre_norm, n, m, type, z, res, res_jac);
              }},
-            2, "multi_assoc_legendre_p", nullptr),
+            2, "assoc_legendre_p", nullptr),
         Py_True, 2,
         SpecFun_NewUFunc({[](long long int n, long long int m, double z, long long int type, double &res,
                              double &res_jac, double &res_hess) {
@@ -572,7 +572,7 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
                              cfloat &res_jac, cfloat &res_hess) {
                               ::multi_assoc_legendre_p(assoc_legendre_norm, n, m, type, z, res, res_jac, res_hess);
                           }},
-                         3, "multi_assoc_legendre_p", nullptr),
+                         3, "assoc_legendre_p", nullptr),
         Py_False, 0,
         SpecFun_NewUFunc({[](long long int n, long long int m, double z, long long int type) {
                               return ::multi_assoc_legendre_p(assoc_legendre_unnorm, n, m, type, z);
@@ -586,7 +586,7 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
                           [](long long int n, long long int m, cfloat z, long long int type) {
                               return ::multi_assoc_legendre_p(assoc_legendre_unnorm, n, m, type, z);
                           }},
-                         "multi_assoc_legendre_p", nullptr),
+                         "assoc_legendre_p", nullptr),
         Py_False, 1,
         SpecFun_NewUFunc(
             {[](long long int n, long long int m, double z, long long int type, double &res, double &res_jac) {
@@ -601,7 +601,7 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
              [](long long int n, long long int m, cfloat z, long long int type, cfloat &res, cfloat &res_jac) {
                  ::multi_assoc_legendre_p(assoc_legendre_unnorm, n, m, type, z, res, res_jac);
              }},
-            2, "multi_assoc_legendre_p", nullptr),
+            2, "assoc_legendre_p", nullptr),
         Py_False, 2,
         SpecFun_NewUFunc({[](long long int n, long long int m, double z, long long int type, double &res,
                              double &res_jac, double &res_hess) {
@@ -619,8 +619,8 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
                              cfloat &res_jac, cfloat &res_hess) {
                               ::multi_assoc_legendre_p(assoc_legendre_unnorm, n, m, type, z, res, res_jac, res_hess);
                           }},
-                         3, "multi_assoc_legendre_p", nullptr));
-    PyModule_AddObjectRef(_special_ufuncs, "multi_assoc_legendre_p", multi_assoc_legendre_p);
+                         3, "assoc_legendre_p", nullptr));
+    PyModule_AddObjectRef(_special_ufuncs, "assoc_legendre_p", assoc_legendre_p);
 
     PyObject *mathieu_a =
         SpecFun_NewUFunc({static_cast<func_ff_f_t>(special::cem_cva), static_cast<func_dd_d_t>(special::cem_cva)},
