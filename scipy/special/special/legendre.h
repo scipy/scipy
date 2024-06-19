@@ -697,38 +697,6 @@ void multi_assoc_legendre_p_all(NormPolicy norm, int type, T z, std::tuple<Outpu
     );
 }
 
-template <typename NormPolicy, typename T, typename... OutputVals>
-void assoc_legendre_p(NormPolicy norm, int n, int m, T z, std::tuple<OutputVals &...> res) {
-    int type;
-    if (std::abs(z) <= 1) {
-        type = 2;
-    } else {
-        type = 3;
-    }
-
-    multi_assoc_legendre_p(norm, n, m, type, z, res);
-}
-
-template <typename NormPolicy, typename T>
-T assoc_legendre_p(NormPolicy norm, int n, int m, T z) {
-    T res;
-    assoc_legendre_p(norm, n, m, z, std::tie(res));
-
-    return res;
-}
-
-template <typename NormPolicy, typename T, typename... OutputMats>
-void assoc_legendre_p_all(NormPolicy norm, T z, std::tuple<OutputMats &...> res) {
-    int type;
-    if (std::abs(z) <= 1) {
-        type = 2;
-    } else {
-        type = 3;
-    }
-
-    multi_assoc_legendre_p_all(norm, type, z, res);
-}
-
 template <typename T>
 struct sph_legendre_p_initializer_m_abs_m {
     bool m_signbit;
