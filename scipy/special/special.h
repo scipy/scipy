@@ -43,35 +43,33 @@ using special::assoc_legendre_norm;
 using special::assoc_legendre_unnorm;
 
 template <typename NormPolicy, typename T>
-T multi_assoc_legendre_p(NormPolicy norm, long long int n, long long int m, long long int type, T z) {
+T assoc_legendre_p(NormPolicy norm, long long int n, long long int m, long long int type, T z) {
     return special::multi_assoc_legendre_p(norm, n, m, type, z);
 }
 
 template <typename NormPolicy, typename T>
-void multi_assoc_legendre_p(NormPolicy norm, long long int n, long long int m, long long int type, T z, T &res,
-                            T &res_jac) {
+void assoc_legendre_p(NormPolicy norm, long long int n, long long int m, long long int type, T z, T &res, T &res_jac) {
     special::multi_assoc_legendre_p(norm, n, m, type, z, std::tie(res, res_jac));
 }
 
 template <typename NormPolicy, typename T>
-void multi_assoc_legendre_p(NormPolicy norm, long long int n, long long int m, long long int type, T z, T &res,
-                            T &res_jac, T &res_hess) {
+void assoc_legendre_p(NormPolicy norm, long long int n, long long int m, long long int type, T z, T &res, T &res_jac,
+                      T &res_hess) {
     special::multi_assoc_legendre_p(norm, n, m, type, z, std::tie(res, res_jac, res_hess));
 }
 
 template <typename NormPolicy, typename T, typename OutputMat1>
-void multi_assoc_legendre_p_all(NormPolicy norm, int type, T z, OutputMat1 res) {
+void assoc_legendre_p_all(NormPolicy norm, int type, T z, OutputMat1 res) {
     special::multi_assoc_legendre_p_all(norm, type, z, std::tie(res));
 }
 
 template <typename NormPolicy, typename T, typename OutputMat1, typename OutputMat2>
-void multi_assoc_legendre_p_all(NormPolicy norm, int type, T z, OutputMat1 res, OutputMat2 res_jac) {
+void assoc_legendre_p_all(NormPolicy norm, int type, T z, OutputMat1 res, OutputMat2 res_jac) {
     special::multi_assoc_legendre_p_all(norm, type, z, std::tie(res, res_jac));
 }
 
 template <typename NormPolicy, typename T, typename OutputMat1, typename OutputMat2, typename OutputMat3>
-void multi_assoc_legendre_p_all(NormPolicy norm, int type, T z, OutputMat1 res, OutputMat2 res_jac,
-                                OutputMat3 res_hess) {
+void assoc_legendre_p_all(NormPolicy norm, int type, T z, OutputMat1 res, OutputMat2 res_jac, OutputMat3 res_hess) {
     special::multi_assoc_legendre_p_all(norm, type, z, std::tie(res, res_jac, res_hess));
 }
 
