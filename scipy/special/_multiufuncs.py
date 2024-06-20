@@ -45,6 +45,7 @@ class MultiUFunc:
         self.resolve_out_shapes = None
         self.key = None
         self.default_args = None
+        self.default_kwargs = None
         self.__force_complex_output = force_complex_output
         self.__doc = doc
 
@@ -69,6 +70,9 @@ class MultiUFunc:
     def override_default_args(self, func):
         self.default_args = func
 
+    def override_default_kwargs(self, func):
+        self.default_kwargs = func
+
     def override_resolve_out_shapes(self, func):
         """Set `resolve_out_shapes` method by decorating a function."""
         if func.__doc__ is None:
@@ -82,43 +86,43 @@ class MultiUFunc:
             args += self.default_args(**kwargs)
 
         ufunc = self.resolve_ufunc(**kwargs)
-        if ((ufunc.nout == 0) or (self.resolve_out_shapes is None)):
-            return ufunc(*args)
 
         ufunc_args = args[-ufunc.nin:] # array arguments to be passed to the ufunc
 
-        ufunc_arg_shapes = tuple(np.shape(ufunc_arg) for ufunc_arg in ufunc_args)
-        ufunc_out_shapes = self.resolve_out_shapes(*args[:-ufunc.nin],
-            *ufunc_arg_shapes, ufunc.nout)
-
-        ufunc_arg_dtypes = tuple((ufunc_arg.dtype if hasattr(ufunc_arg, 'dtype')
-            else np.dtype(type(ufunc_arg))) for ufunc_arg in ufunc_args)
-        if hasattr(ufunc, 'resolve_dtypes'):
-            ufunc_dtypes = ufunc_arg_dtypes + ufunc.nout * (None,)
-            ufunc_dtypes = ufunc.resolve_dtypes(ufunc_dtypes) 
-            ufunc_out_dtypes = ufunc_dtypes[-ufunc.nout:]
+        if (self.default_kwargs is None):
+            ufunc_kwargs = {}
         else:
-            ufunc_out_dtype = np.result_type(*ufunc_arg_dtypes)
-            if (not np.issubdtype(ufunc_out_dtype, np.inexact)):
-                ufunc_out_dtype = np.float64
+            ufunc_kwargs = self.default_kwargs(**kwargs)
 
-            ufunc_out_dtypes = ufunc.nout * (ufunc_out_dtype,)
+        if (self.resolve_out_shapes is not None):
+            ufunc_arg_shapes = tuple(np.shape(ufunc_arg) for ufunc_arg in ufunc_args)
+            ufunc_out_shapes = self.resolve_out_shapes(*args[:-ufunc.nin],
+                *ufunc_arg_shapes, ufunc.nout)
 
-        if self.force_complex_output:
-            ufunc_out_dtypes = tuple(np.result_type(1j, ufunc_out_dtype)
-                for ufunc_out_dtype in ufunc_out_dtypes)
+            ufunc_arg_dtypes = tuple((ufunc_arg.dtype if hasattr(ufunc_arg, 'dtype')
+                else np.dtype(type(ufunc_arg))) for ufunc_arg in ufunc_args)
+            if hasattr(ufunc, 'resolve_dtypes'):
+                ufunc_dtypes = ufunc_arg_dtypes + ufunc.nout * (None,)
+                ufunc_dtypes = ufunc.resolve_dtypes(ufunc_dtypes) 
+                ufunc_out_dtypes = ufunc_dtypes[-ufunc.nout:]
+            else:
+                ufunc_out_dtype = np.result_type(*ufunc_arg_dtypes)
+                if (not np.issubdtype(ufunc_out_dtype, np.inexact)):
+                    ufunc_out_dtype = np.float64
 
-        b = np.broadcast(*ufunc_args)
-        ufunc_out_new_dims = tuple(len(ufunc_out_shape) - b.ndim
-            for ufunc_out_shape in ufunc_out_shapes)
+                ufunc_out_dtypes = ufunc.nout * (ufunc_out_dtype,)
 
-        out = tuple(np.empty(ufunc_out_shape, dtype = ufunc_out_dtype)
-            for ufunc_out_shape, ufunc_out_dtype
-            in zip(ufunc_out_shapes, ufunc_out_dtypes))
+            if self.force_complex_output:
+                ufunc_out_dtypes = tuple(np.result_type(1j, ufunc_out_dtype)
+                    for ufunc_out_dtype in ufunc_out_dtypes)
 
-        ufunc_axes = len(ufunc_args) * [()] + \
-            [tuple(range(axis)) for axis in ufunc_out_new_dims]
-        return ufunc(*ufunc_args, out = out, axes = ufunc_axes)
+            out = tuple(np.empty(ufunc_out_shape, dtype = ufunc_out_dtype)
+                for ufunc_out_shape, ufunc_out_dtype
+                in zip(ufunc_out_shapes, ufunc_out_dtypes))
+
+            ufunc_kwargs['out'] = out
+
+        return ufunc(*ufunc_args, **ufunc_kwargs)
 
 
 sph_legendre_p = MultiUFunc(sph_legendre_p,
@@ -216,6 +220,11 @@ def _(diff_n=0):
             f" received: {diff_n}."
         )
     return diff_n
+
+
+@sph_legendre_p_all.override_default_kwargs
+def _(diff_n=0):
+    return {'axes': [()] + (diff_n + 1) * [(0, 1)]}
 
 
 @sph_legendre_p_all.override_resolve_out_shapes
@@ -338,6 +347,11 @@ def _(typ=2, norm=False, diff_n=0):
     return typ,
 
 
+@assoc_legendre_p_all.override_default_kwargs
+def _(typ=2, norm=False, diff_n=0):
+    return {'axes': [(), ()] + (diff_n + 1) * [(0, 1)]}
+
+
 @assoc_legendre_p_all.override_resolve_out_shapes
 def _(n, m, z_shape, typ_shape, nout):
     if not isinstance(m, numbers.Integral) or (abs(m) > n):
@@ -427,6 +441,11 @@ def _(diff_n=0):
     return diff_n
 
 
+@legendre_p_all.override_default_kwargs
+def _(diff_n=0):
+    return {'axes': [()] + (diff_n + 1) * [(0,)]}
+
+
 @legendre_p_all.override_resolve_out_shapes
 def _(n, z_shape, nout):
     n = _nonneg_int_or_fail(n, 'n', strict=False)
@@ -512,6 +531,14 @@ def _(diff_n=0):
     return diff_n
 
 
+@sph_harm_y.override_default_kwargs
+def _(diff_n=0):
+    if (diff_n > 0):
+        return {'axes': [(), ()] + [tuple(range(2, 2 + i)) for i in range(diff_n + 1)]}
+
+    return {}
+
+
 sph_harm_y_all = MultiUFunc(sph_harm_y_all, 
     r"""
     sph_harm_y_all(n, m, theta, phi, *, diff_n=0)
@@ -591,6 +618,11 @@ def _(diff_n=0):
             f" received: {diff_n}."
         )
     return diff_n
+
+
+@sph_harm_y_all.override_default_kwargs
+def _(diff_n=0):
+    return {'axes': [(), ()] + [(0, 1) + tuple(range(2, 2 + i)) for i in range(diff_n + 1)]}
 
 
 @sph_harm_y_all.override_resolve_out_shapes
