@@ -652,7 +652,12 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
 
     status = None
     while status is None:
-        message = solver.step()
+        try:
+            message = solver.step()
+        except Exception as e:
+            solver.status = 'other_exception'
+            status = -2
+            message = f'Solver stopped with exception: {e}'
 
         if solver.status == 'finished':
             status = 0
