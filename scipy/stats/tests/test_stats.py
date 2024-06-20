@@ -78,9 +78,11 @@ class TestTrimmedStats:
     dprec = np.finfo(np.float64).precision
 
     @array_api_compatible
-    @skip_xp_backends('array_api_strict',
+    @skip_xp_backends('array_api_strict', 'jax.numpy',
                       reasons=["`array_api_strict.where` `fillvalue` doesn't "
-                               "accept Python floats. See data-apis/array-api#807."])
+                               "accept Python floats. See data-apis/array-api#807.",
+                               "JAX doesn't allow item assignment, and this  "
+                               "function uses _lazywhere."])
     @pytest.mark.usefixtures("skip_xp_backends")
     def test_tmean(self, xp):
         x = xp.asarray(X)
