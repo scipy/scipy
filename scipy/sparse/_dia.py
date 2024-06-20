@@ -481,6 +481,7 @@ class dia_array(_dia_base, sparray):
 
     Sparse arrays can be used in arithmetic operations: they support
     addition, subtraction, multiplication, division, and matrix power.
+    Sparse arrays with DIAgonal storage do not support slicing.
 
     Examples
     --------
@@ -556,6 +557,7 @@ class dia_matrix(spmatrix, _dia_base):
 
     Sparse matrices can be used in arithmetic operations: they support
     addition, subtraction, multiplication, division, and matrix power.
+    Sparse matrices with DIAgonal storage do not support slicing.
 
     Examples
     --------

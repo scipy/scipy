@@ -260,7 +260,7 @@ at a given evaluation point, thus a design matrix built on b-splines has at most
 As an illustration, we consider a toy example. Suppose our data are
 one-dimensional and are confined to an interval :math:`[0, 6]`.
 We construct a 4-regular knot vector which corresponds to 7 data points and
-cubic, `k=3`, splines:
+cubic, ``k=3``, splines:
 
 >>> t = [0., 0., 0., 0., 2., 3., 4., 6., 6., 6., 6.]
 

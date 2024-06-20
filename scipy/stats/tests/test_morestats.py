@@ -2,6 +2,7 @@
 #
 # Further enhancements and tests added by numerous SciPy developers.
 #
+import math
 import warnings
 import sys
 from functools import partial
@@ -754,7 +755,7 @@ class TestBartlett:
         args = [xp.asarray(arg) for arg in args]
         res = stats.bartlett(*args)
         attributes = ('statistic', 'pvalue')
-        check_named_results(res, attributes)
+        check_named_results(res, attributes, xp=xp)
 
     @pytest.mark.skip_xp_backends(
         "jax.numpy", cpu_only=True,
@@ -2708,6 +2709,42 @@ class TestCircFuncs:
         xp_assert_close(stats.circmean(x, high=180), xp.asarray(170.0))
         xp_assert_close(stats.circvar(x, high=180), xp.asarray(0.2339555554617))
         xp_assert_close(stats.circstd(x, high=180), xp.asarray(20.91551378))
+
+    def test_circstd_zero(self, xp):
+        # circstd() of a single number should return positive zero.
+        y = stats.circstd(xp.asarray([0]))
+        assert math.copysign(1.0, y) == 1.0
+
+    def test_circmean_accuracy_tiny_input(self, xp):
+        # For tiny x such that sin(x) == x and cos(x) == 1.0 numerically,
+        # circmean(x) should return x because atan2(sin(x), cos(x)) == x.
+        # This test verifies this.
+        #
+        # The purpose of this test is not to show that circmean() is
+        # accurate in the last digit for certain input, because this is
+        # neither guaranteed not particularly useful.  Rather, it is a
+        # "white-box" sanity check that no undue loss of precision is
+        # introduced by conversion between (high - low) and (2 * pi).
+
+        x = xp.linspace(1e-9, 1e-8, 100)
+        assert xp.all(xp.sin(x) == x) and xp.all(xp.cos(x) == 1.0)
+
+        m = (x * (2 * xp.pi) / (2 * xp.pi)) != x
+        assert xp.any(m)
+        x = x[m]
+
+        y = stats.circmean(x[:, None], axis=1)
+        assert xp.all(y == x)
+
+    def test_circmean_accuracy_huge_input(self, xp):
+        # White-box test that circmean() does not introduce undue loss of
+        # numerical accuracy by eagerly rotating the input.  This is detected
+        # by supplying a huge input x such that (x - low) == x numerically.
+        x = xp.asarray(1e17, dtype=xp.float64)
+        y = math.atan2(xp.sin(x), xp.cos(x))  # -2.6584887370946806
+        expected = xp.asarray(y, dtype=xp.float64)
+        actual = stats.circmean(x, high=xp.pi, low=-xp.pi)
+        xp_assert_close(actual, expected, rtol=1e-15, atol=0.0)
 
 
 class TestCircFuncsNanPolicy:

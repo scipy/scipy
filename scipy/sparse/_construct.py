@@ -1161,7 +1161,7 @@ def random_array(shape, *, density=0.01, format='coo', dtype=None,
     >>> S = sp.sparse.random_array((3, 4), density=0.25, random_state=rng,
     ...                      data_sampler=sp_stats_normal_squared)
 
-    Or we can subclass sp.stats rv_continous or rv_discrete:
+    Or we can subclass sp.stats rv_continuous or rv_discrete:
 
     >>> class NormalSquared(sp.stats.rv_continuous):
     ...     def _rvs(self,  size=None, random_state=rng):
@@ -1319,7 +1319,7 @@ def random(m, n, density=0.01, format='coo', dtype=None,
     >>> S = sp.sparse.random(3, 4, density=0.25, random_state=rng,
     ...                      data_rvs=sp_stats_normal_squared)
 
-    Or we can subclass sp.stats rv_continous or rv_discrete:
+    Or we can subclass sp.stats rv_continuous or rv_discrete:
 
     >>> class NormalSquared(sp.stats.rv_continuous):
     ...     def _rvs(self,  size=None, random_state=rng):

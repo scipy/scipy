@@ -107,7 +107,7 @@ def schur(a, output='real', lwork=None, overwrite_a=False, sort=None,
            [ 0.        , -0.32948354+0.80225456j, -0.59877807+0.56192146j],
            [ 0.        ,  0.                    , -0.32948354-0.80225456j]])
     >>> eigvals(T2)
-    array([2.65896708, -0.32948354+0.80225456j, -0.32948354-0.80225456j])
+    array([2.65896708, -0.32948354+0.80225456j, -0.32948354-0.80225456j])   # may vary
 
     An arbitrary custom eig-sorting condition, having positive imaginary part,
     which is satisfied by only one eigenvalue

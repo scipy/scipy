@@ -103,15 +103,15 @@ def fmin_slsqp(func, x0, eqcons=(), f_eqcons=None, ieqcons=(), f_ieqcons=None,
         A list of tuples specifying the lower and upper bound
         for each independent variable [(xl0, xu0),(xl1, xu1),...]
         Infinite values will be interpreted as large floating values.
-    fprime : callable `f(x,*args)`, optional
+    fprime : callable ``f(x,*args)``, optional
         A function that evaluates the partial derivatives of func.
-    fprime_eqcons : callable `f(x,*args)`, optional
-        A function of the form `f(x, *args)` that returns the m by n
+    fprime_eqcons : callable ``f(x,*args)``, optional
+        A function of the form ``f(x, *args)`` that returns the m by n
         array of equality constraint normals. If not provided,
         the normals will be approximated. The array returned by
         fprime_eqcons should be sized as ( len(eqcons), len(x0) ).
-    fprime_ieqcons : callable `f(x,*args)`, optional
-        A function of the form `f(x, *args)` that returns the m by n
+    fprime_ieqcons : callable ``f(x,*args)``, optional
+        A function of the form ``f(x, *args)`` that returns the m by n
         array of inequality constraint normals. If not provided,
         the normals will be approximated. The array returned by
         fprime_ieqcons should be sized as ( len(ieqcons), len(x0) ).
@@ -233,7 +233,7 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
     maxiter : int
         Maximum number of iterations.
     finite_diff_rel_step : None or array_like, optional
-        If `jac in ['2-point', '3-point', 'cs']` the relative step size to
+        If ``jac in ['2-point', '3-point', 'cs']`` the relative step size to
         use for numerical approximation of `jac`. The absolute step
         size is computed as ``h = rel_step * sign(x) * max(1, abs(x))``,
         possibly adjusted to fit into the bounds. For ``method='3-point'``

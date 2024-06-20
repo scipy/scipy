@@ -41,7 +41,7 @@ from scipy.spatial import distance_matrix
 from scipy.optimize import milp, LinearConstraint
 from scipy._lib._util import (check_random_state, _get_nan,
                               _rename_parameter, _contains_nan,
-                              AxisError)
+                              AxisError, _lazywhere)
 
 import scipy.special as special
 # Import unused here but needs to stay until end of deprecation periode
@@ -202,16 +202,16 @@ def gmean(a, axis=0, dtype=None, weights=None):
     2.80668351922014
 
     """
-
-    a = np.asarray(a, dtype=dtype)
+    xp = array_namespace(a, weights)
+    a = xp.asarray(a, dtype=dtype)
 
     if weights is not None:
-        weights = np.asarray(weights, dtype=dtype)
+        weights = xp.asarray(weights, dtype=dtype)
 
     with np.errstate(divide='ignore'):
-        log_a = np.log(a)
+        log_a = xp.log(a)
 
-    return np.exp(np.average(log_a, axis=axis, weights=weights))
+    return xp.exp(_xp_mean(log_a, axis=axis, weights=weights))
 
 
 @_axis_nan_policy_factory(
@@ -288,25 +288,18 @@ def hmean(a, axis=0, dtype=None, *, weights=None):
     1.9029126213592233
 
     """
-    if not isinstance(a, np.ndarray):
-        a = np.array(a, dtype=dtype)
-    elif dtype:
-        # Must change the default dtype allowing array type
-        if isinstance(a, np.ma.MaskedArray):
-            a = np.ma.asarray(a, dtype=dtype)
-        else:
-            a = np.asarray(a, dtype=dtype)
+    a = np.asarray(a, dtype=dtype)
 
-    if np.all(a >= 0):
-        # Harmonic mean only defined if greater than or equal to zero.
-        if weights is not None:
-            weights = np.asanyarray(weights, dtype=dtype)
+    if weights is not None:
+        weights = np.asarray(weights, dtype=dtype)
 
-        with np.errstate(divide='ignore'):
-            return 1.0 / np.average(1.0 / a, axis=axis, weights=weights)
-    else:
-        raise ValueError("Harmonic mean only defined if all elements greater "
-                         "than or equal to zero")
+    if not np.all(a >= 0):
+        message = ("The harmonic mean is only defined if all elements are greater "
+                   "than or equal to zero; otherwise, the result is NaN.")
+        warnings.warn(message, RuntimeWarning, stacklevel=2)
+
+    with np.errstate(divide='ignore'):
+        return 1.0 / _xp_mean(1.0 / a, axis=axis, weights=weights)
 
 
 @_axis_nan_policy_factory(
@@ -414,27 +407,18 @@ def pmean(a, p, *, axis=0, dtype=None, weights=None):
     if p == 0:
         return gmean(a, axis=axis, dtype=dtype, weights=weights)
 
-    if not isinstance(a, np.ndarray):
-        a = np.array(a, dtype=dtype)
-    elif dtype:
-        # Must change the default dtype allowing array type
-        if isinstance(a, np.ma.MaskedArray):
-            a = np.ma.asarray(a, dtype=dtype)
-        else:
-            a = np.asarray(a, dtype=dtype)
+    a = np.asarray(a, dtype=dtype)
 
-    if np.all(a >= 0):
-        # Power mean only defined if greater than or equal to zero
-        if weights is not None:
-            weights = np.asanyarray(weights, dtype=dtype)
+    if weights is not None:
+        weights = np.asanyarray(weights, dtype=dtype)
 
-        with np.errstate(divide='ignore'):
-            return np.float_power(
-                np.average(np.float_power(a, p), axis=axis, weights=weights),
-                1/p)
-    else:
-        raise ValueError("Power mean only defined if all elements greater "
-                         "than or equal to zero")
+    if not np.all(a >= 0):
+        message = ("The power mean is only defined if all elements are greater "
+                   "than or equal to zero; otherwise, the result is NaN.")
+        warnings.warn(message, RuntimeWarning, stacklevel=2)
+
+    with np.errstate(divide='ignore', invalid='ignore'):
+        return _xp_mean(a**float(p), axis=axis, weights=weights)**(1/p)
 
 
 ModeResult = namedtuple('ModeResult', ('mode', 'count'))
@@ -534,8 +518,8 @@ def mode(a, axis=0, nan_policy='propagate', keepdims=False):
     return ModeResult(modes[()], counts[()])
 
 
-def _put_nan_to_limits(a, limits, inclusive):
-    """Put NaNs in an array for values outside of given limits.
+def _put_val_to_limits(a, limits, inclusive, val=np.nan, xp=None):
+    """Replace elements outside limits with a value.
 
     This is primarily a utility function.
 
@@ -543,29 +527,34 @@ def _put_nan_to_limits(a, limits, inclusive):
     ----------
     a : array
     limits : (float or None, float or None)
-        A tuple consisting of the (lower limit, upper limit).  Values in the
+        A tuple consisting of the (lower limit, upper limit).  Elements in the
         input array less than the lower limit or greater than the upper limit
-        will be replaced with `np.nan`. None implies no limit.
+        will be replaced with `val`. None implies no limit.
     inclusive : (bool, bool)
         A tuple consisting of the (lower flag, upper flag).  These flags
         determine whether values exactly equal to lower or upper are allowed.
+    val : float, default: NaN
+        The value with which extreme elements of the array are replaced.
 
     """
+    xp = array_namespace(a) if xp is None else xp
+    mask = xp.zeros(a.shape, dtype=xp.bool)
     if limits is None:
-        return a
-    mask = np.full_like(a, False, dtype=np.bool_)
+        return a, mask
     lower_limit, upper_limit = limits
     lower_include, upper_include = inclusive
     if lower_limit is not None:
         mask |= (a < lower_limit) if lower_include else a <= lower_limit
     if upper_limit is not None:
         mask |= (a > upper_limit) if upper_include else a >= upper_limit
-    if np.all(mask):
+    if xp.all(mask):
         raise ValueError("No array values within given limits")
-    if np.any(mask):
-        a = a.copy() if np.issubdtype(a.dtype, np.inexact) else a.astype(np.float64)
-        a[mask] = np.nan
-    return a
+    if xp.any(mask):
+        # hopefully this (and many other instances of this idiom) are temporary when
+        # data-apis/array-api#807 is resolved
+        dtype = xp.asarray(1.).dtype if xp.isdtype(a.dtype, 'integral') else a.dtype
+        a = xp.where(mask, xp.asarray(val, dtype=dtype), a)
+    return a, mask
 
 
 @_axis_nan_policy_factory(
@@ -614,8 +603,13 @@ def tmean(a, limits=None, inclusive=(True, True), axis=None):
     10.0
 
     """
-    a = _put_nan_to_limits(a, limits, inclusive)
-    return np.nanmean(a, axis=axis)
+    xp = array_namespace(a)
+    a, mask = _put_val_to_limits(a, limits, inclusive, val=0., xp=xp)
+    # explicit dtype specification required due to data-apis/array-api-compat#152
+    sum = xp.sum(a, axis=axis, dtype=a.dtype)
+    n = xp.sum(xp.asarray(~mask, dtype=a.dtype), axis=axis, dtype=a.dtype)
+    mean = _lazywhere(n != 0, (sum, n), xp.divide, xp.nan)
+    return mean[()] if mean.ndim == 0 else mean
 
 
 @_axis_nan_policy_factory(
@@ -667,7 +661,7 @@ def tvar(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
     20.0
 
     """
-    a = _put_nan_to_limits(a, limits, inclusive)
+    a, _ = _put_val_to_limits(a, limits, inclusive)
     return np.nanvar(a, ddof=ddof, axis=axis)
 
 
@@ -717,7 +711,7 @@ def tmin(a, lowerlimit=None, axis=0, inclusive=True, nan_policy='propagate'):
 
     """
     dtype = a.dtype
-    a = _put_nan_to_limits(a, (lowerlimit, None), (inclusive, None))
+    a, _ = _put_val_to_limits(a, (lowerlimit, None), (inclusive, None))
     res = np.nanmin(a, axis=axis)
     if not np.any(np.isnan(res)):
         # needed if input is of integer dtype
@@ -770,7 +764,7 @@ def tmax(a, upperlimit=None, axis=0, inclusive=True, nan_policy='propagate'):
 
     """
     dtype = a.dtype
-    a = _put_nan_to_limits(a, (None, upperlimit), (None, inclusive))
+    a, _ = _put_val_to_limits(a, (None, upperlimit), (None, inclusive))
     res = np.nanmax(a, axis=axis)
     if not np.any(np.isnan(res)):
         # needed if input is of integer dtype
@@ -879,7 +873,7 @@ def tsem(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
     1.1547005383792515
 
     """
-    a = _put_nan_to_limits(a, limits, inclusive)
+    a, _ = _put_val_to_limits(a, limits, inclusive)
     sd = np.sqrt(np.nanvar(a, ddof=ddof, axis=axis))
     n_obs = (~np.isnan(a)).sum(axis=axis)
     return sd / np.sqrt(n_obs, dtype=sd.dtype)
@@ -6482,6 +6476,9 @@ def _t_confidence_interval(df, t, confidence_level, alternative, dtype=None, xp=
     dtype = t.dtype if dtype is None else dtype
     xp = array_namespace(t) if xp is None else xp
 
+    # stdtrit not dispatched yet; use NumPy
+    df, t = np.asarray(df), np.asarray(t)
+
     if confidence_level < 0 or confidence_level > 1:
         message = "`confidence_level` must be a number between 0 and 1."
         raise ValueError(message)
@@ -9184,7 +9181,7 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t",
 
 
 @_axis_nan_policy_factory(SignificanceResult, kwd_samples=['weights'], paired=True)
-def combine_pvalues(pvalues, method='fisher', weights=None):
+def combine_pvalues(pvalues, method='fisher', weights=None, *, axis=0):
     """
     Combine p-values from independent tests that bear upon the same hypothesis.
 
@@ -9308,43 +9305,47 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
     xp = array_namespace(pvalues)
     pvalues = xp.asarray(pvalues)
     if xp_size(pvalues) == 0:
+        # This is really only needed for *testing* _axis_nan_policy decorator
+        # It won't happen when the decorator is used.
         NaN = _get_nan(pvalues)
         return SignificanceResult(NaN, NaN)
 
-    n = pvalues.shape[0]
+    n = pvalues.shape[axis]
     # used to convert Python scalar to the right dtype
     one = xp.asarray(1, dtype=pvalues.dtype)
 
     if method == 'fisher':
-        statistic = -2 * xp.sum(xp.log(pvalues))
+        statistic = -2 * xp.sum(xp.log(pvalues), axis=axis)
         chi2 = _SimpleChi2(2*n*one)
         pval = _get_pvalue(statistic, chi2, alternative='greater',
                            symmetric=False, xp=xp)
     elif method == 'pearson':
-        statistic = 2 * xp.sum(xp.log1p(-pvalues))
+        statistic = 2 * xp.sum(xp.log1p(-pvalues), axis=axis)
         chi2 = _SimpleChi2(2*n*one)
         pval = _get_pvalue(-statistic, chi2, alternative='less', symmetric=False, xp=xp)
     elif method == 'mudholkar_george':
         normalizing_factor = math.sqrt(3/n)/xp.pi
-        statistic = -xp.sum(xp.log(pvalues)) + xp.sum(xp.log1p(-pvalues))
+        statistic = (-xp.sum(xp.log(pvalues), axis=axis)
+                     + xp.sum(xp.log1p(-pvalues), axis=axis))
         nu = 5*n  + 4
         approx_factor = math.sqrt(nu / (nu - 2))
         t = _SimpleStudentT(nu*one)
         pval = _get_pvalue(statistic * normalizing_factor * approx_factor, t,
                            alternative="greater", xp=xp)
     elif method == 'tippett':
-        statistic = xp.min(pvalues)
+        statistic = xp.min(pvalues, axis=axis)
         beta = _SimpleBeta(one, n*one)
         pval = _get_pvalue(statistic, beta, alternative='less', symmetric=False, xp=xp)
     elif method == 'stouffer':
         if weights is None:
             weights = xp.ones_like(pvalues, dtype=pvalues.dtype)
-        elif weights.shape[0] != n:
-            raise ValueError("pvalues and weights must be of the same size.")
+        elif weights.shape[axis] != n:
+            raise ValueError("pvalues and weights must be of the same "
+                             "length along `axis`.")
 
         norm = _SimpleNormal()
         Zi = norm.isf(pvalues)
-        statistic = weights @ Zi / xp.linalg.vector_norm(weights)
+        statistic = weights @ Zi / xp.linalg.vector_norm(weights, axis=axis)
         pval = _get_pvalue(statistic, norm, alternative="greater", xp=xp)
 
     else:
@@ -9904,7 +9905,7 @@ def wasserstein_distance_nd(u_values, v_values, u_weights=None, v_weights=None):
     :math:`d_{ij} = d(x_i, y_j)`.
 
     Given :math:`\Gamma`, :math:`D`, :math:`b`, the Monge problem can be
-    tranformed into a linear programming problem by
+    transformed into a linear programming problem by
     taking :math:`A x = b` as constraints and :math:`z = c^T x` as minimization
     target (sum of costs) , where matrix :math:`A` has the form
 
@@ -10605,7 +10606,7 @@ def _rankdata(x, method, return_ties=False):
         # - Functions that use `t` usually don't need to which each element of the
         #   original array is associated with each tie count; they perform a reduction
         #   over the tie counts onnly. The tie counts are naturally computed in a
-        #   sorted order, so this does not unnecesarily reorder them.
+        #   sorted order, so this does not unnecessarily reorder them.
         # - One exception is `wilcoxon`, which needs the number of zeros. Zeros always
         #   have the lowest rank, so it is easy to find them at the zeroth index.
         t = np.zeros(shape, dtype=float)

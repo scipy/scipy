@@ -798,7 +798,7 @@ class multivariate_normal_gen(multi_rv_generic):
         fix_mean : ndarray(n, )
             Fixed mean vector. Must have length `n`.
         fix_cov: ndarray (n, n)
-            Fixed covariance matrix. Must have shape `(n, n)`.
+            Fixed covariance matrix. Must have shape ``(n, n)``.
 
         Returns
         -------

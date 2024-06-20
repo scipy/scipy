@@ -293,7 +293,7 @@ if HAVE_SCPDT:
             known_warnings[name] = dict(category=DeprecationWarning)
 
         from scipy import integrate
-        # the funcions are known to emit IntergrationWarnings
+        # the functions are known to emit IntegrationWarnings
         integration_w = ['scipy.special.ellip_normal',
                          'scipy.special.ellip_harm_2',
         ]

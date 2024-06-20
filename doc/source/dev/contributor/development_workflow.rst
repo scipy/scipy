@@ -214,15 +214,28 @@ been added to ``upstream`` that affect your work. In this case, follow the
 Writing the commit message
 --------------------------
 
-Commit messages should be clear and follow a few basic rules.  Example::
+Commit messages should be clear and follow a few basic rules.
 
-   ENH: add functionality X to SciPy.<submodule>.
+Example::
+
+   MAINT/TST: fft: remove xp backend skips, test `fftfreq` `device`
 
    The first line of the commit message starts with a capitalized acronym
-   (options listed below) indicating what type of commit this is. Then a blank
-   line, then more text if needed.  Lines shouldn't be longer than 72
-   characters.  If the commit is related to a ticket, indicate that with
-   "See #3456", "See ticket 3456", "Closes #3456", or similar.
+   (or multiple, options listed below) indicating what type of commit this is.
+   Then a blank line, then more text if needed.
+   References to code names should be enclosed in backticks.
+   If changes are limited to certain submodules or functions, they should be
+   included after the acronym(s) - backticks are not needed here.
+
+Example::
+
+   BUG:sparse.linalg.gmres: add early exit when `x0` already solves problem
+
+   Lines shouldn't be longer than 72 characters. If the commit is related to an issue,
+   indicate that with "See gh-3456", "Closes gh-3456", or similar,
+   in the extended description.
+   However, if you are pushing many commits to a PR, you should avoid including
+   this in every commit message as it will clutter the linked issue.
 
 Describing the motivation for a change, the nature of a bug for bug fixes or
 some details on what an enhancement does are also good to include in a commit
