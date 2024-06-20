@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import os
 import warnings
+import functools
 
 from types import ModuleType
 from typing import Any, Literal, TYPE_CHECKING
@@ -545,3 +546,51 @@ def xp_sign(x: Array, /, *, xp: ModuleType | None = None) -> Array:
     sign = xp.where(x < 0, -one, sign)
     sign = xp.where(x == 0, 0*one, sign)
     return sign
+
+
+_SCIPY_ARRAY_API = os.environ.get("SCIPY_ARRAY_API", False)
+array_api_compat_prefix = "scipy._lib.array_api_compat"
+
+
+def get_array_subpackage_func(f_name, xp, n_array_args, root_namespace,
+                              subpackage, generic_implementations):
+    spx = scipy_namespace_for(xp)
+    f = None
+    if is_numpy(xp):
+        f = getattr(root_namespace, f_name, None)
+    elif spx is not None:
+        f = getattr(getattr(spx, subpackage, None), f_name, None)
+
+    if f is not None:
+        return f
+
+    # if generic array-API implementation is available, use that;
+    # otherwise, fall back to NumPy/SciPy
+    if f_name in generic_implementations:
+        _f = generic_implementations[f_name](xp=xp, spx=spx)
+        if _f is not None:
+            return _f
+
+    _f = getattr(root_namespace, f_name, None)
+    def f(*args, _f=_f, _xp=xp, **kwargs):
+        array_args = args[:n_array_args]
+        other_args = args[n_array_args:]
+        array_args = [np.asarray(arg) for arg in array_args]
+        out = _f(*array_args, *other_args, **kwargs)
+        return _xp.asarray(out)
+
+    return f
+
+
+def support_alternative_backends(f_name, n_array_args, root_namespace,
+                                 subpackage, generic_implementations):
+    func = getattr(root_namespace, f_name)
+
+    @functools.wraps(func)
+    def wrapped(*args, **kwargs):
+        xp = array_namespace(*args[:n_array_args])
+        f = get_array_subpackage_func(f_name, xp, n_array_args, root_namespace,
+                                      subpackage, generic_implementations)
+        return f(*args, **kwargs)
+
+    return wrapped

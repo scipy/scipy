@@ -1,10 +1,9 @@
 import pytest
 
-from scipy.special._support_alternative_backends import (get_array_special_func,
-                                                         array_special_func_map)
+from scipy.special._support_alternative_backends import array_special_func_map
 from scipy.conftest import array_api_compatible
 from scipy import special
-from scipy._lib._array_api import xp_assert_close, is_jax
+from scipy._lib._array_api import xp_assert_close, is_jax, get_array_subpackage_func
 from scipy._lib.array_api_compat import numpy as np
 
 try:
@@ -18,7 +17,10 @@ except ImportError:
                     reason="`array_api_strict` not installed")
 def test_dispatch_to_unrecognize_library():
     xp = array_api_strict
-    f = get_array_special_func('ndtr', xp=xp, n_array_args=1)
+    f = get_array_subpackage_func('ndtr', xp=xp, n_array_args=1,
+                                  root_namespace=special._ufuncs,
+                                  subpackage='special',
+                                  generic_implementations={})
     x = [1, 2, 3]
     res = f(xp.asarray(x))
     ref = xp.asarray(special.ndtr(np.asarray(x)))
@@ -30,7 +32,10 @@ def test_dispatch_to_unrecognize_library():
                     reason="`array_api_strict` not installed")
 def test_rel_entr_generic(dtype):
     xp = array_api_strict
-    f = get_array_special_func('rel_entr', xp=xp, n_array_args=2)
+    f = get_array_subpackage_func('rel_entr', xp=xp, n_array_args=2,
+                                  root_namespace=special._ufuncs,
+                                  subpackage='special',
+                                  generic_implementations={})
     dtype_np = getattr(np, dtype)
     dtype_xp = getattr(xp, dtype)
     x, y = [-1, 0, 0, 1], [1, 0, 2, 3]
