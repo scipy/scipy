@@ -10,13 +10,16 @@ import numpy.ma.testutils as ma_npt
 from scipy._lib._util import (
     getfullargspec_no_self as _getfullargspec, np_long
 )
+from scipy._lib._array_api import xp_assert_equal
 from scipy import stats
 
 
-def check_named_results(res, attributes, ma=False):
+def check_named_results(res, attributes, ma=False, xp=None):
     for i, attr in enumerate(attributes):
         if ma:
             ma_npt.assert_equal(res[i], getattr(res, attr))
+        elif xp is not None:
+            xp_assert_equal(res[i], getattr(res, attr))
         else:
             npt.assert_equal(res[i], getattr(res, attr))
 
