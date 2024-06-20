@@ -777,8 +777,8 @@ def least_squares(
         raise ValueError("`tr_solver` must be None, 'exact' or 'lsmr'.")
 
     if loss not in IMPLEMENTED_LOSSES and not callable(loss):
-        raise ValueError("`loss` must be one of {} or a callable."
-                         .format(IMPLEMENTED_LOSSES.keys()))
+        raise ValueError(f"`loss` must be one of {IMPLEMENTED_LOSSES.keys()} "
+                           "or a callable.")
 
     if method == 'lm' and loss != 'linear':
         raise ValueError("method='lm' supports only 'linear' loss function.")
@@ -817,7 +817,7 @@ def least_squares(
                          "upper bound.")
 
     if not in_bounds(x0, lb, ub):
-        raise ValueError("`x0` is infeasible.")
+        raise ValueError("Initial guess is outside of provided bounds")
 
     x_scale = check_x_scale(x_scale, x0)
 
@@ -959,9 +959,8 @@ def least_squares(
 
     if verbose >= 1:
         print(result.message)
-        print("Function evaluations {}, initial cost {:.4e}, final cost "
-              "{:.4e}, first-order optimality {:.2e}."
-              .format(result.nfev, initial_cost, result.cost,
-                      result.optimality))
+        print(f"Function evaluations {result.nfev}, "
+              f"initial cost {initial_cost:.4e}, final cost "
+              f"{result.cost:.4e}, first-order optimality {result.optimality:.2e}.")
 
     return result
