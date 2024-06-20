@@ -141,6 +141,24 @@ def _is_32bit():
     return np.intp(0).itemsize < 8
 
 
+def _available_integer_dtypes():
+    return [np.int8, np.int16, np.int32, np.int64]
+
+
+def _available_complex_dtypes():
+    return [np.complex64, np.complex128]
+
+
+def _available_float_dtypes():
+    dtypes = [np.float32, np.float64]
+    for dtype in ['float16', 'float128']:
+        # These aren't present in older numpy versions; float128 may also not
+        # be present on all platforms.
+        if hasattr(np, dtype):
+            dtypes.append(getattr(np, dtype))
+    return dtypes
+
+
 def _chk_asarrays(arrays, axis=None):
     arrays = [np.asanyarray(a) for a in arrays]
     if axis is None:
@@ -1953,6 +1971,74 @@ class TestIsValidY:
         return y
 
 
+class TestDtypeStability:
+    x = [1, 2, 3]
+    y = [4, 5, 6]
+
+    def setup_class(self):
+        self.available_integers = _available_integer_dtypes()
+        self.available_floats = _available_float_dtypes()
+        self.available_complex = _available_complex_dtypes()
+        self.test_dtypes = (self.available_integers + self.available_floats
+                            + self.available_integers)
+
+    def _test_stability(self, dist, dtypes):
+        distances = []
+        for dtype in dtypes:
+            distances.append(dist(np.asarray(self.x, dtype=dtype),
+                                  np.asarray(self.y, dtype=dtype)))
+        d = dist(self.x, self.y)
+        assert_allclose(distances, d, rtol=1e-03)
+
+    def test_cosine_stability(self):
+        self._test_stability(cosine,
+                             self.available_integers + self.available_floats)
+
+    @pytest.mark.parametrize("dist", [euclidean, correlation])
+    def test_stability(self, dist):
+        self._test_stability(dist, self.test_dtypes)
+
+
+class TestFloatCasting:
+    x = [1, 2, 3]
+    y = [4, 5, 6]
+
+    def test_cosine_float_casting(self):
+        for dtype in _available_integer_dtypes():
+            d = wcosine(np.asarray(self.x, dtype=dtype),
+                        np.asarray(self.y, dtype=dtype))
+            assert_(np.issubdtype(d.dtype, np.floating))
+
+        for dtype in _available_float_dtypes():
+            d = wcosine(np.asarray(self.x, dtype=dtype),
+                        np.asarray(self.y, dtype=dtype))
+            assert_(np.issubdtype(d.dtype, np.floating))
+
+    def test_sqeuclidean_float_casting(self):
+        # Assert that sqeuclidean returns the right types of values.
+        # Integer types should be converted to floating for stability.
+        # Floating point types should be the same as the input.
+
+        for dtype in _available_integer_dtypes():
+            d = wsqeuclidean(np.asarray(self.x, dtype=dtype),
+                             np.asarray(self.y, dtype=dtype))
+            assert_(np.issubdtype(d.dtype, np.floating))
+
+        for dtype in [np.uint8, np.uint16, np.uint32, np.uint64]:
+            umax = np.iinfo(dtype).max
+            d1 = wsqeuclidean([0], np.asarray([umax], dtype=dtype))
+            d2 = wsqeuclidean(np.asarray([umax], dtype=dtype), [0])
+
+            assert_equal(d1, d2)
+            assert_equal(d1, np.float64(umax)**2)
+
+        dtypes = _available_float_dtypes() + _available_complex_dtypes()
+        for dtype in dtypes:
+            d = wsqeuclidean(np.asarray(self.x, dtype=dtype),
+                             np.asarray(self.y, dtype=dtype))
+            assert_equal(d.dtype, dtype)
+
+
 @pytest.mark.parametrize("p", [-10.0, -0.5, 0.0])
 def test_bad_p(p):
     # Raise ValueError if p <=0.
@@ -2058,37 +2144,6 @@ def test_minkowski_w():
 
     assert_allclose(p0, p1, rtol=1e-15)
     assert_allclose(c0, c1, rtol=1e-15)
-
-
-def test_sqeuclidean_dtypes():
-    # Assert that sqeuclidean returns the right types of values.
-    # Integer types should be converted to floating for stability.
-    # Floating point types should be the same as the input.
-    x = [1, 2, 3]
-    y = [4, 5, 6]
-
-    for dtype in [np.int8, np.int16, np.int32, np.int64]:
-        d = wsqeuclidean(np.asarray(x, dtype=dtype), np.asarray(y, dtype=dtype))
-        assert_(np.issubdtype(d.dtype, np.floating))
-
-    for dtype in [np.uint8, np.uint16, np.uint32, np.uint64]:
-        umax = np.iinfo(dtype).max
-        d1 = wsqeuclidean([0], np.asarray([umax], dtype=dtype))
-        d2 = wsqeuclidean(np.asarray([umax], dtype=dtype), [0])
-
-        assert_equal(d1, d2)
-        assert_equal(d1, np.float64(umax)**2)
-
-    dtypes = [np.float32, np.float64, np.complex64, np.complex128]
-    for dtype in ['float16', 'float128']:
-        # These aren't present in older numpy versions; float128 may also not
-        # be present on all platforms.
-        if hasattr(np, dtype):
-            dtypes.append(getattr(np, dtype))
-
-    for dtype in dtypes:
-        d = wsqeuclidean(np.asarray(x, dtype=dtype), np.asarray(y, dtype=dtype))
-        assert_equal(d.dtype, dtype)
 
 
 def test_sokalmichener():
