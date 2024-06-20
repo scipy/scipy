@@ -1658,6 +1658,14 @@ class TestSomeDistanceFunctions:
             dist = mahalanobis(x, y, vi)
             assert_almost_equal(dist, np.sqrt(6.0))
 
+    def test_correlation_complex(self):
+        # Regression test for gh-20994
+        u = np.asarray([(1+2j), (3+4j)])
+        v = np.asarray([(5+6j), (7+8j)])
+        # should not raise a `ComplexWarning`
+        dist = correlation(u, v, centered=False)
+        assert_allclose(dist, (1.9780295711505111+0.011977004379304905j))
+
 
 class TestSquareForm:
     checked_dtypes = [np.float64, np.float32, np.int32, np.int8, bool]
