@@ -7747,6 +7747,7 @@ def chisquare(f_obs, f_exp=None, ddof=0, axis=0):
     expected frequencies are uniform and given by the mean of the observed
     frequencies:
 
+    >>> import numpy as np
     >>> from scipy.stats import chisquare
     >>> chisquare([16, 18, 16, 14, 12, 12])
     Power_divergenceResult(statistic=2.0, pvalue=0.84914503608460956)
