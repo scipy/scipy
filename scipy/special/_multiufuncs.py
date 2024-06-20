@@ -30,7 +30,8 @@ class MultiUFunc:
             elif isinstance(ufunc_or_ufuncs, collections.abc.Iterable):
                 ufuncs_iter = ufunc_or_ufuncs
             else:
-                raise ValueError("ufunc_or_ufuncs should be a ufunc or a ufunc collection")
+                raise ValueError("ufunc_or_ufuncs should be a ufunc or a"
+                                 f" ufunc collection")
 
             # Perform input validation to ensure all ufuncs in ufuncs are
             # actually ufuncs and all take the same input types.
@@ -627,7 +628,7 @@ def _(diff_n):
 
 @sph_harm_y_all.override_ufunc_default_kwargs
 def _(diff_n):
-    return {'axes': [(), ()] + [(0, 1) + tuple(range(2, 2 + i)) for i in range(diff_n + 1)]}
+    return {'axes': [(), ()] + [tuple(range(axis)) for axis in range(2, diff_n + 3)]}
 
 
 @sph_harm_y_all.override_resolve_out_shapes
