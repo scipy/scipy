@@ -31,7 +31,7 @@ class MultiUFunc:
                 ufuncs_iter = ufunc_or_ufuncs
             else:
                 raise ValueError("ufunc_or_ufuncs should be a ufunc or a"
-                                 f" ufunc collection")
+                                 " ufunc collection")
 
             # Perform input validation to ensure all ufuncs in ufuncs are
             # actually ufuncs and all take the same input types.
