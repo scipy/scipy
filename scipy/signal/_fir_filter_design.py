@@ -15,7 +15,7 @@ from scipy.signal._arraytools import _validate_fs
 from . import _sigtools
 
 __all__ = ['kaiser_beta', 'kaiser_atten', 'kaiserord',
-           'firwin', 'firwin2', 'remez', 'firls', 'minimum_phase']
+           'firwin', 'firwin2', 'remez', 'firls', 'minimum_phase','fwind1']
 
 
 # Some notes on function parameters:
@@ -1280,3 +1280,67 @@ def minimum_phase(h: np.ndarray,
         h_minimum = h_temp.real
     n_out = (n_half + len(h) % 2) if half else len(h)
     return h_minimum[:n_out]
+
+
+def fwind1(hsize, window, fc, fs=2):
+    """
+    2D FIR filter design using the window method.
+
+    This function computes the coefficients of a 2D finite impulse response
+    filter. The filter is separable with linear phase; it will be designed
+    as a product of two 1D filters with dimensions defined by `hsize`.
+
+    Parameters
+    ----------
+    hsize : tuple or list of length 2
+        Lengths of the filter in each dimension. `hsize[0]` specifies the
+        number of coefficients in the row direction and `hsize[1]` specifies
+        the number of coefficients in the column direction.
+    window : tuple or list of length 2
+        Desired window to use for each 1D filter. Each element should be
+        a string or tuple of string and parameter values. See
+        `scipy.signal.get_window` for a list of windows and required
+        parameters.
+    fc : float or 1-D array_like
+        Cutoff frequency of filter (expressed in the same units as `fs`).
+    fs : float, optional
+        The sampling frequency of the signal. Default is 2.
+
+    Returns
+    -------
+    filter_2d : (hsize[0], hsize[1]) ndarray
+        Coefficients of 2D FIR filter.
+
+    Raises
+    ------
+    ValueError
+        If `hsize` and `window` are not 2-element tuples or lists.
+
+    See Also
+    --------
+    scipy.signal.firwin
+
+    Examples
+    --------
+    Generate a 5x5 low-pass filter with cutoff frequency 0.1.
+
+    >>> import numpy as np
+    >>> from scipy.signal import get_window
+    >>> filter_2d = fwind1((5, 5), (get_window(('kaiser', 5.0)), 'boxcar'), 0.1)
+    >>> filter_2d
+    array([[0.003, 0.023, 0.052, 0.023, 0.003],
+           [0.023, 0.173, 0.391, 0.173, 0.023],
+           [0.052, 0.391, 0.882, 0.391, 0.052],
+           [0.023, 0.173, 0.391, 0.173, 0.023],
+           [0.003, 0.023, 0.052, 0.023, 0.003]])
+    """
+    if len(hsize) != 2:
+        raise ValueError("hsize must be a 2-element tuple or list")
+
+    if len(window) != 2:
+        raise ValueError("window must be a 2-element tuple or list")
+
+    row_filter = firwin(hsize[0], cutoff=fc, window=window[0], fs=fs)
+    col_filter = firwin(hsize[1], cutoff=fc, window=window[1], fs=fs)
+
+    return np.outer(row_filter, col_filter)
