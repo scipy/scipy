@@ -22,56 +22,53 @@ __all__ = [
 
 
 class MultiUFunc:
-    def __init__(self, ufuncs, doc = None, *, force_complex_output=False):
-        if isinstance(ufuncs, collections.abc.Mapping):
-            ufuncs_iter = ufuncs.values()
-        elif isinstance(ufuncs, collections.abc.Iterable):
-            ufuncs_iter = ufuncs
-        else:
-            raise ValueError("ufuncs should be a collection.")
+    def __init__(self, ufunc_or_ufuncs, doc = None, *, force_complex_output=False, **default_kwargs):
+        if not isinstance(ufunc_or_ufuncs, np.ufunc):
+            if isinstance(ufunc_or_ufuncs, collections.abc.Mapping):
+                ufuncs_iter = ufunc_or_ufuncs.values()
+            elif isinstance(ufunc_or_ufuncs, collections.abc.Iterable):
+                ufuncs_iter = ufunc_or_ufuncs
+            else:
+                raise ValueError("ufunc_or_ufuncs should be a single ufunc or a collection of them")
 
-        # Perform input validation to ensure all ufuncs in ufuncs are
-        # actually ufuncs and all take the same input types.
-        seen_input_types = set()
-        for ufunc in ufuncs_iter:
-            if not isinstance(ufunc, np.ufunc):
-                raise ValueError("All ufuncs must have"
-                                 f" type `numpy.ufunc`. Received {ufuncs}")
-            seen_input_types.add(frozenset(x.split("->")[0] for x in ufunc.types))
-        if len(seen_input_types) > 1:
-            raise ValueError("All ufuncs must take the same input types.")
+            # Perform input validation to ensure all ufuncs in ufuncs are
+            # actually ufuncs and all take the same input types.
+            seen_input_types = set()
+            for ufunc in ufuncs_iter:
+                if not isinstance(ufunc, np.ufunc):
+                    raise ValueError("All ufuncs must have"
+                                     f" type `numpy.ufunc`. Received {ufuncs}")
+                seen_input_types.add(frozenset(x.split("->")[0] for x in ufunc.types))
+            if len(seen_input_types) > 1:
+                raise ValueError("All ufuncs must take the same input types.")
 
-        self._ufuncs = ufuncs
+        self._ufunc_or_ufuncs = ufunc_or_ufuncs
+        self.__doc = doc
+        self.__force_complex_output = force_complex_output
+        self._default_kwargs = default_kwargs
         self.resolve_out_shapes = None
         self.key = None
-        self.default_args = None
-        self.default_kwargs = None
-        self.__force_complex_output = force_complex_output
-        self.__doc = doc
-
-    @property
-    def force_complex_output(self):
-        return self.__force_complex_output
-
-    def resolve_ufunc(self, **kwargs):
-        """Resolve to a ufunc based on keyword arguments."""
-        ufunc_key = self.key(**kwargs)
-        return self._ufuncs[ufunc_key]
+        self.ufunc_default_args = lambda *args, **kwargs: ()
+        self.ufunc_default_kwargs = lambda *args, **kwargs: {}
 
     @property
     def __doc__(self):
         return self.__doc
+
+    @property
+    def force_complex_output(self):
+        return self.__force_complex_output
 
     def override_key(self, func):
         """Set `key` method by decorating a function.
         """
         self.key = func
 
-    def override_default_args(self, func):
-        self.default_args = func
+    def override_ufunc_default_args(self, func):
+        self.ufunc_default_args = func
 
-    def override_default_kwargs(self, func):
-        self.default_kwargs = func
+    def override_ufunc_default_kwargs(self, func):
+        self.ufunc_default_kwargs = func
 
     def override_resolve_out_shapes(self, func):
         """Set `resolve_out_shapes` method by decorating a function."""
@@ -81,18 +78,25 @@ class MultiUFunc:
         func.__name__ = "resolve_out_shapes"
         self.resolve_out_shapes = func
 
+    def resolve_ufunc(self, **kwargs):
+        """Resolve to a ufunc based on keyword arguments."""
+
+        if isinstance(self._ufunc_or_ufuncs, np.ufunc):
+            return self._ufunc_or_ufuncs
+
+        ufunc_key = self.key(**kwargs)
+        return self._ufunc_or_ufuncs[ufunc_key]
+
     def __call__(self, *args, **kwargs):
-        if (self.default_args is not None):
-            args += self.default_args(**kwargs)
+        kwargs = self._default_kwargs | kwargs
+
+        args += self.ufunc_default_args(**kwargs)
 
         ufunc = self.resolve_ufunc(**kwargs)
 
         ufunc_args = args[-ufunc.nin:] # array arguments to be passed to the ufunc
 
-        if (self.default_kwargs is None):
-            ufunc_kwargs = {}
-        else:
-            ufunc_kwargs = self.default_kwargs(**kwargs)
+        ufunc_kwargs = self.ufunc_default_kwargs(**kwargs)
 
         if (self.resolve_out_shapes is not None):
             ufunc_arg_shapes = tuple(np.shape(ufunc_arg) for ufunc_arg in ufunc_args)
@@ -158,12 +162,12 @@ sph_legendre_p = MultiUFunc(sph_legendre_p,
 
     This is the same as the spherical harmonic :math:`Y_{m}^{n}(\theta, \phi)`
     with :math:`\theta = 0`.
-    """
+    """, diff_n=0
 )
 
 
 @sph_legendre_p.override_key
-def _(diff_n = 0):
+def _(diff_n):
     diff_n = _nonneg_int_or_fail(diff_n, "diff_n", strict=False)
     if not 0 <= diff_n <= 2:
         raise ValueError(
@@ -207,12 +211,12 @@ sph_legendre_p_all = MultiUFunc(sph_legendre_p_all,
 
     This is the same as the spherical harmonic :math:`Y_{m}^{n}(\theta, \phi)`
     with :math:`\theta = 0`.
-    """
+    """, diff_n=0
 )
 
 
 @sph_legendre_p_all.override_key
-def _(diff_n=0):
+def _(diff_n):
     diff_n = _nonneg_int_or_fail(diff_n, "diff_n", strict=False)
     if not 0 <= diff_n <= 2:
         raise ValueError(
@@ -222,8 +226,8 @@ def _(diff_n=0):
     return diff_n
 
 
-@sph_legendre_p_all.override_default_kwargs
-def _(diff_n=0):
+@sph_legendre_p_all.override_ufunc_default_kwargs
+def _(diff_n):
     return {'axes': [()] + (diff_n + 1) * [(0, 1)]}
 
 
@@ -269,12 +273,12 @@ assoc_legendre_p = MultiUFunc(assoc_legendre_p,
     .. math::
 
         \sqrt{\frac{(2 n + 1) (n - m)!}{2 (n + m)!}} P_{n}^{m}(x)
-    """
+    """, typ=2, norm=False, diff_n=0
 )
 
 
 @assoc_legendre_p.override_key
-def _(typ=2, norm=False, diff_n=0):
+def _(typ, norm, diff_n):
     diff_n = _nonneg_int_or_fail(diff_n, "diff_n", strict=False)
     if not 0 <= diff_n <= 2:
         raise ValueError(
@@ -284,8 +288,8 @@ def _(typ=2, norm=False, diff_n=0):
     return norm, diff_n
 
 
-@assoc_legendre_p.override_default_args
-def _(typ=2, norm=False, diff_n=0):
+@assoc_legendre_p.override_ufunc_default_args
+def _(typ, norm, diff_n):
     return typ,
 
 
@@ -323,12 +327,12 @@ assoc_legendre_p_all = MultiUFunc(assoc_legendre_p_all,
     .. math::
 
         \sqrt{\frac{(2 n + 1) (n - m)!}{2 (n + m)!}} P_{n}^{m}(x)
-    """
+    """, typ=2, norm=False, diff_n=0
 )
 
 
 @assoc_legendre_p_all.override_key
-def _(typ=2, norm=False, diff_n=0):
+def _(typ, norm, diff_n):
     if not ((isinstance(diff_n, int) or np.issubdtype(diff_n, np.integer))
             and diff_n >= 0):
         raise ValueError(
@@ -342,13 +346,13 @@ def _(typ=2, norm=False, diff_n=0):
     return norm, diff_n
 
 
-@assoc_legendre_p_all.override_default_args
-def _(typ=2, norm=False, diff_n=0):
+@assoc_legendre_p_all.override_ufunc_default_args
+def _(typ, norm, diff_n):
     return typ,
 
 
-@assoc_legendre_p_all.override_default_kwargs
-def _(typ=2, norm=False, diff_n=0):
+@assoc_legendre_p_all.override_ufunc_default_kwargs
+def _(typ, norm, diff_n):
     return {'axes': [(), ()] + (diff_n + 1) * [(0, 1)]}
 
 
@@ -393,12 +397,12 @@ legendre_p = MultiUFunc(legendre_p,
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
            https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
-    """
+    """, diff_n=0
 )
 
 
 @legendre_p.override_key
-def _(diff_n=0):
+def _(diff_n):
     if not ((isinstance(diff_n, int) or np.issubdtype(diff_n, np.integer))
             and diff_n >= 0):
         raise ValueError(
@@ -426,12 +430,12 @@ legendre_p_all = MultiUFunc(legendre_p_all,
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
            https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
-    """
+    """, diff_n=0
 )
 
 
 @legendre_p_all.override_key
-def _(diff_n=0):
+def _(diff_n):
     diff_n = _nonneg_int_or_fail(diff_n, "diff_n", strict=False)
     if not 0 <= diff_n <= 2:
         raise ValueError(
@@ -441,8 +445,8 @@ def _(diff_n=0):
     return diff_n
 
 
-@legendre_p_all.override_default_kwargs
-def _(diff_n=0):
+@legendre_p_all.override_ufunc_default_kwargs
+def _(diff_n):
     return {'axes': [()] + (diff_n + 1) * [(0,)]}
 
 
@@ -516,12 +520,12 @@ sph_harm_y = MultiUFunc(sph_harm_y,
     .. [1] Digital Library of Mathematical Functions, 14.30.
            https://dlmf.nist.gov/14.30
     .. [2] https://en.wikipedia.org/wiki/Spherical_harmonics#Condon.E2.80.93Shortley_phase
-    """, force_complex_output=True
+    """, force_complex_output=True, diff_n=0
 )
 
 
 @sph_harm_y.override_key
-def _(diff_n=0):
+def _(diff_n):
     diff_n = _nonneg_int_or_fail(diff_n, "diff_n", strict=False)
     if not 0 <= diff_n <= 2:
         raise ValueError(
@@ -531,8 +535,8 @@ def _(diff_n=0):
     return diff_n
 
 
-@sph_harm_y.override_default_kwargs
-def _(diff_n=0):
+@sph_harm_y.override_ufunc_default_kwargs
+def _(diff_n):
     if (diff_n > 0):
         return {'axes': [(), ()] + [tuple(range(2, 2 + i)) for i in range(diff_n + 1)]}
 
@@ -605,12 +609,12 @@ sph_harm_y_all = MultiUFunc(sph_harm_y_all,
     .. [1] Digital Library of Mathematical Functions, 14.30.
            https://dlmf.nist.gov/14.30
     .. [2] https://en.wikipedia.org/wiki/Spherical_harmonics#Condon.E2.80.93Shortley_phase
-    """, force_complex_output=True
+    """, force_complex_output=True, diff_n=0
 )
 
 
 @sph_harm_y_all.override_key
-def _(diff_n=0):
+def _(diff_n):
     diff_n = _nonneg_int_or_fail(diff_n, "diff_n", strict=False)
     if not 0 <= diff_n <= 2:
         raise ValueError(
@@ -620,8 +624,8 @@ def _(diff_n=0):
     return diff_n
 
 
-@sph_harm_y_all.override_default_kwargs
-def _(diff_n=0):
+@sph_harm_y_all.override_ufunc_default_kwargs
+def _(diff_n):
     return {'axes': [(), ()] + [(0, 1) + tuple(range(2, 2 + i)) for i in range(diff_n + 1)]}
 
 
