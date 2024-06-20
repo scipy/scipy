@@ -19,3 +19,4 @@ more detailed examples, see the following sections.
     :maxdepth: 1
 
     hypothesis_chisquare.md
+    hypothesis_fisher_exact.md
