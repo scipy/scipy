@@ -190,12 +190,10 @@ class _csr_base(_cs_matrix):
                               dtype=self.dtype, copy=False)
 
     def _get_int(self, idx):
-        if 0 <= idx <= self.shape[0]:
-            spot = np.flatnonzero(self.indices == idx)
-            if spot.size:
-                return self.data[spot[0]]
-            return self.data.dtype.type(0)
-        raise IndexError(f'index ({idx}) out of range')
+        spot = np.flatnonzero(self.indices == idx)
+        if spot.size:
+            return self.data[spot[0]]
+        return self.data.dtype.type(0)
 
     def _get_slice(self, idx):
         if idx == slice(None):

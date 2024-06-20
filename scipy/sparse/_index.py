@@ -45,6 +45,7 @@ class IndexMixin:
             # package the result and return
             if not isinstance(self, sparray):
                 return res
+            # handle np.newaxis in idx when result would otherwise be a scalar
             if res.shape == () and new_shape != ():
                 if len(new_shape) == 1:
                     return self.__class__([res], shape=new_shape, dtype=self.dtype)
@@ -126,11 +127,13 @@ class IndexMixin:
                 return
 
             if isinstance(idx, slice):
+                # check for simple case of slice that gives 1 item
                 # Note: Python `range` does not use lots of memory
                 idx_range = range(*idx.indices(self.shape[0]))
                 N = len(idx_range)
                 if N == 1 and x.size == 1:
                     self._set_int(idx_range[0], x.flat[0])
+                    return
                 idx = np.arange(*idx.indices(self.shape[0]))
                 idx_shape = idx.shape
             else:
@@ -385,7 +388,8 @@ class IndexMixin:
 
 def _compatible_boolean_index(idx, desired_ndim):
     """Check for boolean array or array-like. peek before asarray for array-like"""
-    # assume already an array if attr ndim exists: skip to bottom
+    # use attribute ndim to indicate a compatible array and check dtype
+    # if not, look at 1st element as quick rejection of bool, else slower asanyarray
     if not hasattr(idx, 'ndim'):
         # is first element boolean?
         try:
@@ -403,3 +407,4 @@ def _compatible_boolean_index(idx, desired_ndim):
 
     if idx.dtype.kind == 'b':
         return idx
+    return None
