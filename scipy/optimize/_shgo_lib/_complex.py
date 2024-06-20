@@ -9,6 +9,8 @@ import numpy as np
 
 from ._vertex import (VertexCacheField, VertexCacheIndex)
 
+logger = logging.getLogger('scipy.optimize.shgo')
+
 
 class Complex:
     """
@@ -420,14 +422,16 @@ class Complex:
                     cbounds[i] = [self.bounds[symmetry[i]][1]]
                     if (self.bounds[symmetry[i]] is not
                             self.bounds[symmetry[j]]):
-                        logging.warning(f"Variable {i} was specified as "
-                                        f"symmetetric to variable {j}, however"
-                                        f", the bounds {i} ="
-                                        f" {self.bounds[symmetry[i]]} and {j}"
-                                        f" ="
-                                        f" {self.bounds[symmetry[j]]} do not "
-                                        f"match, the mismatch was ignored in "
-                                        f"the initial triangulation.")
+                        logger.warning(
+                            "Variable %d was specified as symmetric to"
+                            " variable %d, however, the bounds"
+                            " %d = %s and %d = %s do not match,"
+                            " the mismatch was ignored in "
+                            "the initial triangulation.",
+                            i, j,
+                            i, self.bounds[symmetry[i]],
+                            j, self.bounds[symmetry[j]]
+                        )
                         cbounds[i] = self.bounds[symmetry[j]]
 
         if n is None:

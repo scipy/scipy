@@ -12,6 +12,8 @@ from scipy.optimize import (shgo, Bounds, minimize_scalar, minimize, rosen,
 from scipy.optimize._constraints import new_constraint_to_old
 from scipy.optimize._shgo import SHGO
 
+logger = logging.getLogger('scipy.optimize.tests.shgo')
+
 
 class StructTestFunction:
     def __init__(self, bounds, expected_x, expected_fun=None,
@@ -318,7 +320,7 @@ def run_test(test, args=(), test_atol=1e-5, n=100, iters=None,
                sampling_method=sampling_method, workers=workers)
 
     print(f'res = {res}')
-    logging.info(f'res = {res}')
+    logger.info('res = %s', res)
     if test.expected_x is not None:
         np.testing.assert_allclose(res.x, test.expected_x,
                                    rtol=test_atol,
@@ -668,8 +670,8 @@ class TestShgoArguments:
             minimizer_kwargs = {'method': solver,
                                 'jac': jac,
                                 'hess': hess}
-            logging.info(f"Solver = {solver}")
-            logging.info("=" * 100)
+            logger.info("Solver = %s", solver)
+            logger.info("=" * 100)
             run_test(test1_1, n=100, test_atol=1e-3,
                      minimizer_kwargs=minimizer_kwargs,
                      sampling_method='sobol')
