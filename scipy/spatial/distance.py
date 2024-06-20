@@ -105,7 +105,7 @@ __all__ = [
 ]
 
 
-import math
+import cmath
 import warnings
 import numpy as np
 import dataclasses
@@ -644,7 +644,9 @@ def correlation(u, v, w=None, centered=True):
     uv = np.dot(u, vw)
     uu = np.dot(u, uw)
     vv = np.dot(v, vw)
-    dist = 1.0 - uv / math.sqrt(uu * vv)
+    sqrt_uu_vv = cmath.sqrt(uu * vv)
+    sqrt_uu_vv = sqrt_uu_vv.real if sqrt_uu_vv.imag == 0 else sqrt_uu_vv
+    dist = 1.0 - uv / sqrt_uu_vv
     # Clip the result to avoid rounding error
     return np.clip(dist, 0.0, 2.0)
 
