@@ -128,12 +128,12 @@ struct assoc_legendre_p_initializer_m_abs_m;
 template <typename T>
 struct assoc_legendre_p_initializer_m_abs_m<T, assoc_legendre_unnorm_policy> {
     bool m_signbit;
-    int type;
     T z;
+    int type;
     T type_sign;
     T w;
 
-    assoc_legendre_p_initializer_m_abs_m(bool m_signbit, int type, T z) : m_signbit(m_signbit), type(type), z(z) {
+    assoc_legendre_p_initializer_m_abs_m(bool m_signbit, T z, int type) : m_signbit(m_signbit), z(z), type(type) {
         if (type == 3) {
             type_sign = -1;
 
@@ -182,12 +182,12 @@ struct assoc_legendre_p_initializer_m_abs_m<T, assoc_legendre_unnorm_policy> {
 template <typename T>
 struct assoc_legendre_p_initializer_m_abs_m<T, assoc_legendre_norm_policy> {
     bool m_signbit;
-    int type;
     T z;
+    int type;
     T type_sign;
     T w;
 
-    assoc_legendre_p_initializer_m_abs_m(bool m_signbit, int type, T z) : m_signbit(m_signbit), type(type), z(z) {
+    assoc_legendre_p_initializer_m_abs_m(bool m_signbit, T z, int type) : m_signbit(m_signbit), z(z), type(type) {
         if (type == 3) {
             type_sign = -1;
 
@@ -230,11 +230,11 @@ struct assoc_legendre_p_recurrence_m_abs_m;
 
 template <typename T>
 struct assoc_legendre_p_recurrence_m_abs_m<T, assoc_legendre_unnorm_policy> {
-    int type;
     T z;
+    int type;
     T type_sign;
 
-    assoc_legendre_p_recurrence_m_abs_m(int type, T z) : type(type), z(z) {
+    assoc_legendre_p_recurrence_m_abs_m(T z, int type) : z(z), type(type) {
         if (type == 3) {
             type_sign = -1;
         } else {
@@ -286,11 +286,11 @@ struct assoc_legendre_p_recurrence_m_abs_m<T, assoc_legendre_unnorm_policy> {
 
 template <typename T>
 struct assoc_legendre_p_recurrence_m_abs_m<T, assoc_legendre_norm_policy> {
-    int type;
     T z;
+    int type;
     T type_sign;
 
-    assoc_legendre_p_recurrence_m_abs_m(int type, T z) : type(type), z(z) {
+    assoc_legendre_p_recurrence_m_abs_m(T z, int type) : z(z), type(type) {
         if (type == 3) {
             type_sign = -1;
         } else {
@@ -325,14 +325,14 @@ struct assoc_legendre_p_recurrence_m_abs_m<T, assoc_legendre_norm_policy> {
 
 template <typename NormPolicy, typename T, typename... OutputVals, typename Func>
 void assoc_legendre_p_for_each_m_abs_m(
-    NormPolicy norm, int m, int type, T z, std::tuple<OutputVals (&)[2]...> res, Func f
+    NormPolicy norm, int m, T z, int type, std::tuple<OutputVals (&)[2]...> res, Func f
 ) {
     bool m_signbit = std::signbit(m);
 
-    assoc_legendre_p_initializer_m_abs_m<T, NormPolicy> init_m_abs_m{m_signbit, type, z};
+    assoc_legendre_p_initializer_m_abs_m<T, NormPolicy> init_m_abs_m{m_signbit, z, type};
     init_m_abs_m(res);
 
-    assoc_legendre_p_recurrence_m_abs_m<T, NormPolicy> re_m_abs_m{type, z};
+    assoc_legendre_p_recurrence_m_abs_m<T, NormPolicy> re_m_abs_m{z, type};
     if (m >= 0) {
         forward_recur(0, m + 1, re_m_abs_m, res, f);
     } else {
@@ -354,8 +354,8 @@ struct assoc_legendre_p_initializer_n;
 template <typename T>
 struct assoc_legendre_p_initializer_n<T, assoc_legendre_unnorm_policy> {
     int m;
-    int type;
     T z;
+    int type;
 
     void operator()(std::tuple<const T &> res_m_abs_m, std::tuple<T (&)[2]> res) const {
         int m_abs = std::abs(m);
@@ -391,8 +391,8 @@ struct assoc_legendre_p_initializer_n<T, assoc_legendre_unnorm_policy> {
 template <typename T>
 struct assoc_legendre_p_initializer_n<T, assoc_legendre_norm_policy> {
     int m;
-    int type;
     T z;
+    int type;
 
     void operator()(std::tuple<const T &> res_m_abs_m, std::tuple<T (&)[2]> res) const {
         T fac = std::sqrt(T(2 * std::abs(m) + 3));
@@ -428,8 +428,8 @@ struct assoc_legendre_p_recurrence_n;
 template <typename T>
 struct assoc_legendre_p_recurrence_n<T, assoc_legendre_unnorm_policy> {
     int m;
-    int type;
     T z;
+    int type;
 
     void operator()(int n, std::tuple<T (&)[2]> res) const {
         T fac0 = -T(n + m - 1) / T(n - m);
@@ -456,8 +456,8 @@ struct assoc_legendre_p_recurrence_n<T, assoc_legendre_unnorm_policy> {
 template <typename T>
 struct assoc_legendre_p_recurrence_n<T, assoc_legendre_norm_policy> {
     int m;
-    int type;
     T z;
+    int type;
 
     void operator()(int n, std::tuple<T (&)[2]> res) const {
         T fac0 = -std::sqrt(T((2 * n + 1) * ((n - 1) * (n - 1) - m * m)) / T((2 * n - 3) * (n * n - m * m)));
@@ -584,10 +584,10 @@ void assoc_legendre_p_for_each_n(
                 f(j, res);
             }
         } else {
-            assoc_legendre_p_initializer_n<T, NormPolicy> init_n{m, type, z};
+            assoc_legendre_p_initializer_n<T, NormPolicy> init_n{m, z, type};
             init_n(res_m_abs_m, res);
 
-            assoc_legendre_p_recurrence_n<T, NormPolicy> re_n{m, type, z};
+            assoc_legendre_p_recurrence_n<T, NormPolicy> re_n{m, z, type};
             forward_recur(m_abs, n + 1, re_n, res, f);
         }
     }
@@ -599,7 +599,7 @@ void assoc_legendre_p_for_each_n(
 ) {
     static constexpr size_t N = sizeof...(OutputVals) - 1;
 
-    assoc_legendre_p_for_each_m_abs_m(norm, m, type, z, res, [](int m, grad_tuple_t<T(&)[2], N>) {});
+    assoc_legendre_p_for_each_m_abs_m(norm, m, z, type, res, [](int m, grad_tuple_t<T(&)[2], N>) {});
 
     grad_tuple_t<T, N> res_m_abs_m = tuples::access(res, 1);
     assoc_legendre_p_for_each_n(norm, n, m, z, type, tuples::ref(res_m_abs_m), res, f);
@@ -613,8 +613,8 @@ void assoc_legendre_p_for_each_n_m(
 
     grad_tuple_t<T[2], N> res_m_abs_m;
     assoc_legendre_p_for_each_m_abs_m(
-        norm, m, type, z, tuples::ref(res_m_abs_m),
-        [norm, n, type, z, &res, f](int m, grad_tuple_t<T(&)[2], N> res_m_abs_m) {
+        norm, m, z, type, tuples::ref(res_m_abs_m),
+        [norm, n, z, type, &res, f](int m, grad_tuple_t<T(&)[2], N> res_m_abs_m) {
             tuples::access(res, 0) = tuples::access(res_m_abs_m, 1);
 
             assoc_legendre_p_for_each_n(
@@ -624,8 +624,8 @@ void assoc_legendre_p_for_each_n_m(
         }
     );
     assoc_legendre_p_for_each_m_abs_m(
-        norm, -m, type, z, tuples::ref(res_m_abs_m),
-        [norm, n, type, z, &res, f](int m, grad_tuple_t<T(&)[2], N> res_m_abs_m) {
+        norm, -m, z, type, tuples::ref(res_m_abs_m),
+        [norm, n, z, type, &res, f](int m, grad_tuple_t<T(&)[2], N> res_m_abs_m) {
             tuples::access(res, 0) = tuples::access(res_m_abs_m, 1);
 
             assoc_legendre_p_for_each_n(
