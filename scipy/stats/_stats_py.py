@@ -7736,10 +7736,6 @@ def chisquare(f_obs, f_exp=None, ddof=0, axis=0):
            in the case of a correlated system of variables is such that it can be reasonably
            supposed to have arisen from random sampling", Philosophical Magazine. Series 5. 50
            (1900), pp. 157-175.
-    .. [4] Mannan, R. William and E. Charles. Meslow. "Bird populations and
-           vegetation characteristics in managed and old-growth forests,
-           northeastern Oregon." Journal of Wildlife Management
-           48, 1219-1238, :doi:`10.2307/3801783`, 1984.
 
     Examples
     --------
@@ -7794,6 +7790,7 @@ def chisquare(f_obs, f_exp=None, ddof=0, axis=0):
     ...           axis=1)
     Power_divergenceResult(statistic=array([3.5 , 9.25]), pvalue=array([0.62338763, 0.09949846]))
 
+    For a more detailed example, see :ref:`hypothesis_chisquare`.
     """  # noqa: E501
     return power_divergence(f_obs, f_exp=f_exp, ddof=ddof, axis=axis,
                             lambda_="pearson")

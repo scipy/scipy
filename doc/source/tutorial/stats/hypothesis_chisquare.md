@@ -17,7 +17,7 @@ kernelspec:
 ```
 
 (hypothesis_chisquare)=
-# Hypothesis testing: Chi-square test
+# Chi-square test
 
 The {class}`chi-square test <scipy.stats.chisquare>` tests the null hypothesis
 that the categorical data has the given frequencies.
