@@ -545,7 +545,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         if o_ndim == 1:
             # convert 1d array to a 2d column when on the right of @
             other = other.reshape((1, other.shape[0])).T  # Note: converts to CSC
-        K2, N = other._shape
+        K2, N = other._shape if other.ndim == 2 else (other.shape[0], 1)
 
         # find new_shape: (M, N), (M,), (N,) or ()
         new_shape = ()
@@ -702,43 +702,6 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
     # Getting and Setting #
     #######################
 
-    def _get_int(self, idx):
-        if 0 <= idx <= self.shape[0]:
-            spot = np.flatnonzero(self.indices == idx)
-            if spot.size:
-                return self.data[spot[0]]
-            return self.data.dtype.type(0)
-        raise IndexError(f'index ({idx}) out of range')
-
-#    For now, 1d only has integer indexing. Soon we will add get_slice/array
-#    def _get_slice(self, idx):
-#        if idx == slice(None):
-#            return self.copy()
-#        if idx.step in (1, None):
-#            major, minor = self._swap((0, idx))
-#            ret = self._get_submatrix(major, minor, copy=True)
-#            return ret.reshape(ret.shape[-1])
-#
-#        _slice = self._swap((self._minor_slice, self._major_slice))[0]
-#        return _slice(idx)
-#
-#    def _get_array(self, idx):
-#        idx = np.asarray(idx)
-#        idx_dtype = self.indices.dtype
-#        M, N = self._swap((1, self.shape[0]))
-#        row = np.zeros_like(idx, dtype=idx_dtype)
-#        major, minor = self._swap((row, idx))
-#        major = np.asarray(major, dtype=idx_dtype)
-#        minor = np.asarray(minor, dtype=idx_dtype)
-#        if minor.size == 0:
-#            return self.__class__([], dtype=self.dtype)
-#        new_shape = minor.shape if minor.shape[0] > 1 else (minor.shape[-1],)
-#
-#        val = np.empty(major.size, dtype=self.dtype)
-#        csr_sample_values(M, N, self.indptr, self.indices, self.data,
-#                          major.size, major.ravel(), minor.ravel(), val)
-#        return self.__class__(val.reshape(new_shape))
-
     def _get_intXint(self, row, col):
         M, N = self._swap(self.shape)
         major, minor = self._swap((row, col))
@@ -786,8 +749,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             return self.__class__(new_shape, dtype=self.dtype)
 
         row_nnz = (self.indptr[indices + 1] - self.indptr[indices]).astype(idx_dtype)
-
-        res_indptr = np.zeros(M+1, dtype=idx_dtype)
+        res_indptr = np.zeros(M + 1, dtype=idx_dtype)
         np.cumsum(row_nnz, out=res_indptr[1:])
 
         nnz = res_indptr[-1]
@@ -921,17 +883,6 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             shape = (shape[1],)
         return self.__class__((data, indices, indptr), shape=shape,
                               dtype=self.dtype, copy=False)
-
-    def _set_int(self, idx, x):
-        major, minor = self._swap((0, idx))
-        self._set_many(major, minor, x)
-
-    def _set_array(self, idx, x):
-        major, minor = self._swap((np.zeros_like(idx), idx))
-        broadcast = x.shape[-1] == 1 and minor.shape[-1] != 1
-        if broadcast:
-            x = np.repeat(x.data, idx.shape[-1])
-        self._set_many(major, minor, x)
 
     def _set_intXint(self, row, col, x):
         i, j = self._swap((row, col))
@@ -1460,7 +1411,7 @@ def _make_diagonal_csr(data, is_array=False):
     """build diagonal csc_array/csr_array => self._csr_container
 
     Parameter `data` should be a raveled numpy array holding the
-    values on the diagonal of the resulting sparse matrix. 
+    values on the diagonal of the resulting sparse matrix.
     """
     from ._csr import csr_array, csr_matrix
     csr_array = csr_array if is_array else csr_matrix
