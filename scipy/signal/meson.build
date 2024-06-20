@@ -96,6 +96,7 @@ py3.install_sources([
     '_spectral_py.py',
     '_spline.pyi',
     '_splines.py',
+    '_support_alternative_backends.py',
     '_upfirdn.py',
     '_waveforms.py',
     '_wavelets.py',
