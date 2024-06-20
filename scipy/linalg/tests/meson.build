@@ -22,7 +22,8 @@ python_sources = [
   'test_sketches.py',
   'test_solve_toeplitz.py',
   'test_solvers.py',
-  'test_special_matrices.py'
+  'test_special_matrices.py',
+  'test_support_alternative_backends.py',
 ]
 
 

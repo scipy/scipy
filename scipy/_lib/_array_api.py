@@ -565,6 +565,7 @@ def get_array_subpackage_func(f_name, xp, n_array_args, root_namespace,
         f = getattr(root_namespace, f_name, None)
     elif spx is not None:
         f = getattr(getattr(spx, subpackage, None), f_name, None)
+        f = f or getattr(getattr(xp, subpackage, None), f_name, None)
 
     if f is not None:
         return f
