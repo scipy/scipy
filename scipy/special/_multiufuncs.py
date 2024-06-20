@@ -22,14 +22,15 @@ __all__ = [
 
 
 class MultiUFunc:
-    def __init__(self, ufunc_or_ufuncs, doc = None, *, force_complex_output=False, **default_kwargs):
+    def __init__(self, ufunc_or_ufuncs, doc=None, *,
+                 force_complex_output=False, **default_kwargs):
         if not isinstance(ufunc_or_ufuncs, np.ufunc):
             if isinstance(ufunc_or_ufuncs, collections.abc.Mapping):
                 ufuncs_iter = ufunc_or_ufuncs.values()
             elif isinstance(ufunc_or_ufuncs, collections.abc.Iterable):
                 ufuncs_iter = ufunc_or_ufuncs
             else:
-                raise ValueError("ufunc_or_ufuncs should be a single ufunc or a collection of them")
+                raise ValueError("ufunc_or_ufuncs should be a ufunc or a ufunc collection")
 
             # Perform input validation to ensure all ufuncs in ufuncs are
             # actually ufuncs and all take the same input types.
@@ -37,7 +38,7 @@ class MultiUFunc:
             for ufunc in ufuncs_iter:
                 if not isinstance(ufunc, np.ufunc):
                     raise ValueError("All ufuncs must have"
-                                     f" type `numpy.ufunc`. Received {ufuncs}")
+                                     f" type `numpy.ufunc`. Received {ufunc_or_ufuncs}")
                 seen_input_types.add(frozenset(x.split("->")[0] for x in ufunc.types))
             if len(seen_input_types) > 1:
                 raise ValueError("All ufuncs must take the same input types.")
