@@ -18,8 +18,7 @@ except ImportError:
 def test_dispatch_to_unrecognize_library():
     xp = array_api_strict
     f = get_array_subpackage_func(special._ufuncs.ndtr, xp=xp, n_array_args=1,
-                                  subpackage='special',
-                                  generic_implementations={})
+                                  subpackage='special', func_generic=None)
     x = [1, 2, 3]
     res = f(xp.asarray(x))
     ref = xp.asarray(special.ndtr(np.asarray(x)))
@@ -32,8 +31,7 @@ def test_dispatch_to_unrecognize_library():
 def test_rel_entr_generic(dtype):
     xp = array_api_strict
     f = get_array_subpackage_func(special._ufuncs.rel_entr, xp=xp, n_array_args=2,
-                                  subpackage='special',
-                                  generic_implementations={})
+                                  subpackage='special', func_generic=None)
     dtype_np = getattr(np, dtype)
     dtype_xp = getattr(xp, dtype)
     x, y = [-1, 0, 0, 1], [1, 0, 2, 3]

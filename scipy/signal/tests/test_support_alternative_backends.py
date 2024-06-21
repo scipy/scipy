@@ -3,14 +3,8 @@ import pytest
 from scipy.signal._support_alternative_backends import array_special_func_map
 from scipy.conftest import array_api_compatible
 from scipy import signal
-from scipy._lib._array_api import xp_assert_close, is_jax, get_array_subpackage_func
+from scipy._lib._array_api import xp_assert_close
 from scipy._lib.array_api_compat import numpy as np
-
-try:
-    import array_api_strict
-    HAVE_ARRAY_API_STRICT = True
-except ImportError:
-    HAVE_ARRAY_API_STRICT = False
 
 
 @pytest.mark.fail_slow(5)

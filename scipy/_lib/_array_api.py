@@ -558,7 +558,7 @@ array_api_compat_prefix = "scipy._lib.array_api_compat"
 
 
 def get_array_subpackage_func(func, xp, n_array_args,
-                              subpackage, generic_implementations):
+                              subpackage, func_generic):
     spx = scipy_namespace_for(xp)
     f = None
     f_name = func.__name__
@@ -573,8 +573,8 @@ def get_array_subpackage_func(func, xp, n_array_args,
 
     # if generic array-API implementation is available, use that;
     # otherwise, fall back to NumPy/SciPy
-    if f_name in generic_implementations:
-        _f = generic_implementations[f_name](xp=xp, spx=spx)
+    if func_generic is not None:
+        _f = func_generic(xp=xp, spx=spx)
         if _f is not None:
             return _f
 
@@ -589,14 +589,12 @@ def get_array_subpackage_func(func, xp, n_array_args,
     return f
 
 
-def support_alternative_backends(func, n_array_args,
-                                 subpackage, generic_implementations):
+def support_alternative_backends(func, n_array_args, subpackage, func_generic):
 
     @functools.wraps(func)
     def wrapped(*args, **kwargs):
         xp = array_namespace(*args[:n_array_args])
-        f = get_array_subpackage_func(func, xp, n_array_args,
-                                      subpackage, generic_implementations)
+        f = get_array_subpackage_func(func, xp, n_array_args, subpackage, func_generic)
         return f(*args, **kwargs)
 
     return wrapped
