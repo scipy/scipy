@@ -22,3 +22,4 @@ more detailed examples, see the following sections.
     hypothesis_fisher_exact.md
     hypothesis_odds_ratio.md
     hypothesis_chi2_contingency.md
+    hypothesis_jarque_bera.md
