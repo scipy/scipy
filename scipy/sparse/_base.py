@@ -620,9 +620,13 @@ class _spbase:
             # scalar value
             return self._mul_scalar(other)
 
+        err_prefix = "matmul: dimension mismatch with signature"
         if issparse(other):
-            if self.shape[-1] != other.shape[0]:
-                raise ValueError('dimension mismatch')
+            if N != other.shape[0]:
+                raise ValueError(
+                    f"{err_prefix} (n,k),(k,m)->(n,m) "
+                    f"(size {N} is different from {other.shape[0]})"
+                )
             return self._matmul_sparse(other)
 
         # If it's a list or whatever, treat it like an array
@@ -640,8 +644,11 @@ class _spbase:
 
         if other.ndim == 1 or other.ndim == 2 and other.shape[1] == 1:
             # dense row or column vector
-            if other.shape != (N,) and other.shape != (N, 1):
-                raise ValueError('dimension mismatch')
+            if other.shape[0] != N:  # other.shape == (N,) or (N, 1)
+                raise ValueError(
+                    f"{err_prefix} (n,k),(k,1?)->(n,1?) "
+                    f"(size {N} is different from {other.shape[0]})"
+                )
 
             result = self._matmul_vector(np.ravel(other))
 
@@ -659,7 +666,10 @@ class _spbase:
             # dense 2D array or matrix ("multivector")
 
             if other.shape[0] != N:
-                raise ValueError('dimension mismatch')
+                raise ValueError(
+                    f"{err_prefix} (n,k),(k,m)->(n,m) "
+                    f"(size {N} is different from {other.shape[0]})"
+                )
 
             result = self._matmul_multivector(np.asarray(other))
 
