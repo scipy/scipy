@@ -169,38 +169,46 @@ class TestTrimmedStats:
         y = stats.tstd(X, limits=None)
         assert_approx_equal(y, X.std(ddof=1), significant=self.dprec)
 
-    def test_tmin(self):
+    @array_api_compatible
+    @skip_xp_backends('array_api_strict', 'jax.numpy',
+                      reasons=["`array_api_strict.where` `fillvalue` doesn't "
+                               "accept Python floats. See data-apis/array-api#807.",
+                               "JAX doesn't allow item assignment."])
+    @pytest.mark.usefixtures("skip_xp_backends")
+    def test_tmin(self, xp):
+        x = xp.arange(10)
+        xp_assert_equal(stats.tmin(x), xp.asarray(0))
+        xp_assert_equal(stats.tmin(x, lowerlimit=0), xp.asarray(0))
+        xp_assert_equal(stats.tmin(x, lowerlimit=0, inclusive=False), xp.asarray(1))
+
+        x = xp.reshape(x, (5, 2))
+        xp_assert_equal(stats.tmin(x, lowerlimit=0, inclusive=False), xp.asarray([2, 1]))
+        xp_assert_equal(stats.tmin(x, axis=1), xp.asarray([0, 2, 4, 6, 8]))
+        xp_assert_equal(stats.tmin(x, axis=None), xp.asarray(0))
+
+        x = xp.arange(10.)
+        x[9] = xp.nan
+        xp_assert_equal(stats.tmin(x), xp.asarray(xp.nan))
+
+        # check that if a full slice is masked, the output returns a
+        # nan instead of a garbage value.
+        x = xp.arange(16).reshape(4, 4)
+        res = stats.tmin(x, lowerlimit=4, axis=1)
+        xp_assert_equal(res, xp.asarray([np.nan, 4, 8, 12]))
+
+    def test_tmin_scalar_and_nanpolicy(self):
         assert_equal(stats.tmin(4), 4)
-
-        x = np.arange(10)
-        assert_equal(stats.tmin(x), 0)
-        assert_equal(stats.tmin(x, lowerlimit=0), 0)
-        assert_equal(stats.tmin(x, lowerlimit=0, inclusive=False), 1)
-
-        x = x.reshape((5, 2))
-        assert_equal(stats.tmin(x, lowerlimit=0, inclusive=False), [2, 1])
-        assert_equal(stats.tmin(x, axis=1), [0, 2, 4, 6, 8])
-        assert_equal(stats.tmin(x, axis=None), 0)
 
         x = np.arange(10.)
         x[9] = np.nan
         with suppress_warnings() as sup:
             sup.record(RuntimeWarning, "invalid value*")
-            assert_equal(stats.tmin(x), np.nan)
             assert_equal(stats.tmin(x, nan_policy='omit'), 0.)
             assert_raises(ValueError, stats.tmin, x, nan_policy='raise')
             assert_raises(ValueError, stats.tmin, x, nan_policy='foobar')
             msg = "nan_policy must be one of..."
             with assert_raises(ValueError, match=msg):
                 stats.tmin(x, nan_policy='foo')
-
-        # check that that if a full slice is masked, the output returns a
-        # nan instead of a garbage value.
-        with suppress_warnings() as sup:
-            sup.filter(RuntimeWarning, "All-NaN slice encountered")
-            x = np.arange(16).reshape(4, 4)
-            res = stats.tmin(x, lowerlimit=4, axis=1)
-            assert_equal(res, [np.nan, 4, 8, 12])
 
     def test_tmax(self):
         assert_equal(stats.tmax(4), 4)

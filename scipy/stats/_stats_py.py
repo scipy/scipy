@@ -711,12 +711,19 @@ def tmin(a, lowerlimit=None, axis=0, inclusive=True, nan_policy='propagate'):
 
     """
     dtype = a.dtype
-    a, _ = _put_val_to_limits(a, (lowerlimit, None), (inclusive, None))
-    res = np.nanmin(a, axis=axis)
-    if not np.any(np.isnan(res)):
+
+    xp = array_namespace(a)
+    a, mask = _put_val_to_limits(a, (lowerlimit, None), (inclusive, None),
+                                 val=xp.inf, xp=xp)
+    min = xp.min(a, axis=axis)
+    n = xp.sum(xp.asarray(~mask, dtype=a.dtype), axis=axis)
+    min = xp.where(n != 0, min, xp.nan)
+
+    if not xp.any(xp.isnan(min)):
         # needed if input is of integer dtype
-        return res.astype(dtype, copy=False)
-    return res
+        min = xp.astype(min, dtype, copy=False)
+
+    return min[()] if min.ndim == 0 else min
 
 
 @_axis_nan_policy_factory(
