@@ -86,7 +86,7 @@ jobs:
         - [macos-14, macosx, arm64, openblas, "12.3"]
         #- [macos-14, macosx, arm64, accelerate, "14.0"]
         #- [windows-2019, win, AMD64, "", ""]
-        python: [["cp310", "3.10"], ["cp311", "3.11"], ["cp312", "3.12"], ["cp313", "3.13"]]
+        python: [["cp310", "3.10"]]#, ["cp311", "3.11"], ["cp312", "3.12"], ["cp313", "3.13"]]
         # python[0] is used to specify the python versions made by cibuildwheel
 
     env:
@@ -176,7 +176,7 @@ jobs:
           # has no concept of minor OS versions in packaging land rename the
           # wheel back to 12.
           if [[ ${{ matrix.buildplat[0] }} == 'macos-14' && ${{ matrix.buildplat[4] }} == '12.3' ]]; then
-            CIBW+=" && mv {dest_dir}/\$(basename {wheel}) \
+            CIBW+=" ls {dest_dir} && mv {dest_dir}/\$(basename {wheel}) \
               {dest_dir}/\$(echo \$(basename {wheel}) | sed 's/12_3/12_0/')"
           fi
           
