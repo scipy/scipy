@@ -284,7 +284,7 @@ Other changes
 Authors
 *******
 * Name (commits)
-* h-vetinari (33)
+* h-vetinari (34)
 * Steven Adams (1) +
 * Max Aehle (1) +
 * Ataf Fazledin Ahamed (2) +
@@ -309,11 +309,11 @@ Authors
 * fancidev (2)
 * Anthony Frazier (1) +
 * Ilan Gold (1) +
-* Ralf Gommers (124)
+* Ralf Gommers (125)
 * Rohit Goswami (28)
 * Ben Greiner (1) +
 * Lorenzo Gualniera (1) +
-* Matt Haberland (256)
+* Matt Haberland (257)
 * Shawn Hsu (1) +
 * Budjen Jovan (3) +
 * Jozsef Kutas (1)
@@ -335,11 +335,11 @@ Authors
 * Jacob Ogle (1) +
 * Pearu Peterson (1)
 * Matti Picus (5)
-* Ilhan Polat (8)
+* Ilhan Polat (9)
 * pwcnorthrop (3) +
 * Bharat Raghunathan (1)
 * Tom M. Ragonneau (2) +
-* Tyler Reddy (84)
+* Tyler Reddy (96)
 * Pamphile Roy (18)
 * Atsushi Sakai (9)
 * Daniel Schmitz (5)
@@ -437,6 +437,7 @@ Issues closed for 1.14.0
 * `#20458 <https://github.com/scipy/scipy/issues/20458>`__: MAINT: more potential cleanups related to version bumps
 * `#20461 <https://github.com/scipy/scipy/issues/20461>`__: DOC: some likely changes to release process docs
 * `#20466 <https://github.com/scipy/scipy/issues/20466>`__: BUG: scipy.linalg.bandwidth returns incorrect upper bandwidth
+* `#20470 <https://github.com/scipy/scipy/issues/20470>`__: BUG: \`TestNNLS.test_nnls_inner_loop_case1\` fails with MKL
 * `#20486 <https://github.com/scipy/scipy/issues/20486>`__: DEP: deprecate and remove remaining usages of slur-adjacent "trapz"
 * `#20488 <https://github.com/scipy/scipy/issues/20488>`__: BUG: When given invalid bounds, \`_minimize_neldermead\` raises...
 * `#20492 <https://github.com/scipy/scipy/issues/20492>`__: DOC: linalg.solve_discrete_lyapunov: dead reference link
@@ -475,6 +476,7 @@ Issues closed for 1.14.0
 * `#20911 <https://github.com/scipy/scipy/issues/20911>`__: TST: TestEig.test_singular failing tolerance with generic BLAS...
 * `#20921 <https://github.com/scipy/scipy/issues/20921>`__: DOC: stats: wrong docstrings of \`\*Result\` classes
 * `#20938 <https://github.com/scipy/scipy/issues/20938>`__: TST: tolerance violations with SciPy 1.14.0rc1 on linux-{aarch64,ppc64le}
+* `#20943 <https://github.com/scipy/scipy/issues/20943>`__: TST: test failures on windows with SciPy 1.14.0rc1
 
 ************************
 Pull requests for 1.14.0
@@ -733,8 +735,13 @@ Pull requests for 1.14.0
 * `#20920 <https://github.com/scipy/scipy/pull/20920>`__: MAINT: special: fix msvc build by using \`new\` and \`delete\`...
 * `#20923 <https://github.com/scipy/scipy/pull/20923>`__: DOC: update doctests to satisfy scipy-doctests==1.2.0
 * `#20927 <https://github.com/scipy/scipy/pull/20927>`__: MAINT: adapt to a scipy-doctests change
+* `#20933 <https://github.com/scipy/scipy/pull/20933>`__: MAINT: 1.14.0rc2 backports
 * `#20936 <https://github.com/scipy/scipy/pull/20936>`__: DOC: \`array_api.rst\`: update 1.14 functions with array API...
 * `#20937 <https://github.com/scipy/scipy/pull/20937>`__: BUG/BLD: special: Ensure symbols in \`sf_error_state\` shared...
 * `#20945 <https://github.com/scipy/scipy/pull/20945>`__: TST: address tolerance violations with SciPy 1.14.0rc1 on linux-{aarch64,ppc64le}
 * `#20952 <https://github.com/scipy/scipy/pull/20952>`__: TST: loosen tolerance in test_x0_working to pass with alternate...
 * `#20953 <https://github.com/scipy/scipy/pull/20953>`__: TST: loosen tolerance in test_krandinit slightly to pass with...
+* `#20961 <https://github.com/scipy/scipy/pull/20961>`__: TST: robustify test_nnls_inner_loop_case1
+* `#20970 <https://github.com/scipy/scipy/pull/20970>`__: REL: set 1.14.0 rc3 unreleased
+* `#20973 <https://github.com/scipy/scipy/pull/20973>`__: TST:sparse.linalg: Skip test due to sensitivity to numerical...
+* `#20979 <https://github.com/scipy/scipy/pull/20979>`__: STY: \`_lib._util\`: address new mypy complaint in main
