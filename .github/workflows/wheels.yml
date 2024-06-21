@@ -134,8 +134,8 @@ jobs:
             echo "PATH=$PATH" >> "$GITHUB_ENV"
             LIB_PATH=$(dirname $(gfortran --print-file-name libgfortran.dylib))
           fi
-          if [[ ${{ matrix.buildplat[4] }} == '10.9' ]]; then
-            # Newest version of Xcode that supports macOS 10.9
+          if [[ ${{ matrix.buildplat[4] }} == '10.13' ]]; then
+            # 20240621 macos-12 images span 13.1-->14.2
             XCODE_VER='13.4.1'
           else
             XCODE_VER='15.2'
