@@ -644,7 +644,7 @@ class _spbase:
 
         if other.ndim == 1 or other.ndim == 2 and other.shape[1] == 1:
             # dense row or column vector
-            if other.shape[0] != N:  # other.shape == (N,) or (N, 1)
+            if other.shape[0] != N:
                 raise ValueError(
                     f"{err_prefix} (n,k),(k,1?)->(n,1?) "
                     f"(size {N} is different from {other.shape[0]})"
