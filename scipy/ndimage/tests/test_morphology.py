@@ -2279,7 +2279,7 @@ class TestNdimageMorphology:
                          [0, 1, 0, 1, 1, 0, 1],
                          [0, 1, 1, 1, 1, 1, 0],
                          [0, 0, 1, 1, 0, 0, 0],
-                         [0, 0, 0, 1, 0, 0, 0]], bool)
+                         [0, 0, 0, 1, 0, 0, 0]], xp.bool)
         if func == ndimage.binary_hit_or_miss:
             kwargs = dict(origin1=origin, origin2=origin)
         else:
@@ -2301,7 +2301,7 @@ class TestNdimageMorphology:
         # filter all axes except expand_axis
         axes = [0, 1, 2]
         axes.remove(expand_axis)
-        out = xp.zeros(data.shape, bool)
+        out = xp.zeros(data.shape, xp.bool)
         func(data, struct, output=out, axes=axes, **kwargs)
         assert_array_almost_equal(out, expected)
 
@@ -2644,6 +2644,51 @@ class TestNdimageMorphology:
         # Check that type mismatch is properly handled
         output = xp.empty_like(array, dtype=xp.float64)
         ndimage.black_tophat(array, structure=structure, output=output)
+
+    @pytest.mark.parametrize('origin', [(0, 0), (-1, 0)])
+    @pytest.mark.parametrize('expand_axis', [0, 1, 2])
+    @pytest.mark.parametrize('mode', ['reflect', 'constant', 'nearest',
+                                      'mirror', 'wrap'])
+    @pytest.mark.parametrize('footprint_mode', ['size', 'footprint',
+                                                'structure'])
+    @pytest.mark.parametrize('func', [ndimage.grey_erosion,
+                                      ndimage.grey_dilation,
+                                      ndimage.grey_opening,
+                                      ndimage.grey_closing,
+                                      ndimage.morphological_laplace,
+                                      ndimage.morphological_gradient,
+                                      ndimage.white_tophat,
+                                      ndimage.black_tophat])
+    def test_grey_axes(self, xp, func, expand_axis, origin, footprint_mode,
+                       mode):
+
+        data = xp.array([[0, 0, 0, 1, 0, 0, 0],
+                         [0, 0, 0, 4, 0, 0, 0],
+                         [0, 0, 2, 1, 0, 2, 0],
+                         [0, 3, 0, 6, 5, 0, 1],
+                         [0, 4, 5, 3, 3, 4, 0],
+                         [0, 0, 9, 3, 0, 0, 0],
+                         [0, 0, 0, 2, 0, 0, 0]])
+        kwargs = dict(origin=origin, mode=mode)
+        if footprint_mode == 'size':
+            kwargs['size'] = (2, 3)
+        else:
+            kwargs['footprint'] = xp.array([[1, 0, 1], [1, 1, 0]])
+        if footprint_mode == 'structure':
+            kwargs['structure'] = xp.ones_like(kwargs['footprint'])
+        expected = func(data, **kwargs)
+
+        # replicate data and expected result along a new axis
+        n_reps = 5
+        expected = xp.stack([expected] * n_reps, axis=expand_axis)
+        data = xp.stack([data] * n_reps, axis=expand_axis)
+
+        # filter all axes except expand_axis
+        axes = [0, 1, 2]
+        axes.remove(expand_axis)
+        out = xp.zeros(expected.shape, dtype=expected.dtype)
+        func(data, output=out, axes=axes, **kwargs)
+        assert_array_almost_equal(out, expected)
 
     @pytest.mark.parametrize('dtype', types)
     def test_hit_or_miss01(self, dtype, xp):
