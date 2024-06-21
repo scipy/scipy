@@ -9,7 +9,7 @@ import numpy as np
 from ._matrix import spmatrix
 from ._base import _spbase, sparray
 from ._sparsetools import (csr_tocsc, csr_tobsr, csr_count_blocks,
-                           get_csr_submatrix)
+                           get_csr_submatrix, csr_sample_values)
 from ._sputils import upcast
 
 from ._compressed import _cs_matrix
@@ -17,40 +17,6 @@ from ._compressed import _cs_matrix
 
 class _csr_base(_cs_matrix):
     _format = 'csr'
-
-    # override IndexMixin.__getitem__ for 1d case until fully implemented
-    def __getitem__(self, key):
-        if self.ndim == 2:
-            return super().__getitem__(key)
-
-        if isinstance(key, tuple) and len(key) == 1:
-            key = key[0]
-        INT_TYPES = (int, np.integer)
-        if isinstance(key, INT_TYPES):
-            if key < 0:
-                key += self.shape[-1]
-            if key < 0 or key >= self.shape[-1]:
-                raise IndexError('index value out of bounds')
-            return self._get_int(key)
-        else:
-            raise IndexError('array/slice index for 1d csr_array not yet supported')
-
-    # override IndexMixin.__setitem__ for 1d case until fully implemented
-    def __setitem__(self, key, value):
-        if self.ndim == 2:
-            return super().__setitem__(key, value)
-
-        if isinstance(key, tuple) and len(key) == 1:
-            key = key[0]
-        INT_TYPES = (int, np.integer)
-        if isinstance(key, INT_TYPES):
-            if key < 0:
-                key += self.shape[-1]
-            if key < 0 or key >= self.shape[-1]:
-                raise IndexError('index value out of bounds')
-            return self._set_int(key, value)
-        else:
-            raise IndexError('array index for 1d csr_array not yet provided')
 
     def transpose(self, axes=None, copy=False):
         if axes is not None and axes != (1, 0):
@@ -133,7 +99,7 @@ class _csr_base(_cs_matrix):
             M,N = self.shape
 
             if R < 1 or C < 1 or M % R != 0 or N % C != 0:
-                raise ValueError('invalid blocksize %s' % blocksize)
+                raise ValueError(f'invalid blocksize {blocksize}')
 
             blks = csr_count_blocks(M,N,R,C,self.indptr,self.indices)
 
@@ -223,6 +189,36 @@ class _csr_base(_cs_matrix):
         return self.__class__((data, indices, indptr), shape=(M, 1),
                               dtype=self.dtype, copy=False)
 
+    def _get_int(self, idx):
+        spot = np.flatnonzero(self.indices == idx)
+        if spot.size:
+            return self.data[spot[0]]
+        return self.data.dtype.type(0)
+
+    def _get_slice(self, idx):
+        if idx == slice(None):
+            return self.copy()
+        if idx.step in (1, None):
+            ret = self._get_submatrix(0, idx, copy=True)
+            return ret.reshape(ret.shape[-1])
+        return self._minor_slice(idx)
+
+    def _get_array(self, idx):
+        idx_dtype = self._get_index_dtype(self.indices)
+        idx = np.asarray(idx, dtype=idx_dtype)
+        if idx.size == 0:
+            return self.__class__([], dtype=self.dtype)
+
+        M, N = 1, self.shape[0]
+        row = np.zeros_like(idx, dtype=idx_dtype)
+        col = np.asarray(idx, dtype=idx_dtype)
+        val = np.empty(row.size, dtype=self.dtype)
+        csr_sample_values(M, N, self.indptr, self.indices, self.data,
+                          row.size, row, col, val)
+
+        new_shape = col.shape if col.shape[0] > 1 else (col.shape[0],)
+        return self.__class__(val.reshape(new_shape))
+
     def _get_intXarray(self, row, col):
         return self._getrow(row)._minor_index_fancy(col)
 
@@ -275,6 +271,13 @@ class _csr_base(_cs_matrix):
             col = np.arange(*col.indices(self.shape[1]))
             return self._get_arrayXarray(row, col)
         return self._major_index_fancy(row)._get_submatrix(minor=col)
+
+    def _set_int(self, idx, x):
+        self._set_many(0, idx, x)
+
+    def _set_array(self, idx, x):
+        x = np.broadcast_to(x, idx.shape)
+        self._set_many(np.zeros_like(idx), idx, x)
 
 
 def isspmatrix_csr(x):
