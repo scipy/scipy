@@ -22,7 +22,7 @@ from numpy import (array, isfinite, inexact, nonzero, iscomplexobj,
                    iscomplex, zeros, einsum, eye, inf)
 # Local imports
 from scipy._lib._util import _asarray_validated
-from scipy._lib._array_api import xp_dispatch
+from scipy._lib._array_api import _xp_dispatch
 from ._misc import LinAlgError, _datacopied, norm
 from .lapack import get_lapack_funcs, _compute_lwork
 
@@ -281,7 +281,7 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False,
     return w, vr
 
 
-@xp_dispatch(2,'linalg')
+@_xp_dispatch(2,'linalg')
 def eigh(a, b=None, *, lower=True, eigvals_only=False, overwrite_a=False,
          overwrite_b=False, type=1, check_finite=True, subset_by_index=None,
          subset_by_value=None, driver=None):
