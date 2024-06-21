@@ -389,6 +389,15 @@ if HAVE_SCPDT:
         "scipy.optimize.cython_optimize",
         "scipy.test",
         "scipy.show_config",
+        # equivalent to "pytest --ignore=path/to/file"
+        "scipy/special/_precompute",
+        "scipy/interpolate/_interpnd_info.py",
+        "scipy/_lib/array_api_compat",
+        "scipy/_lib/highs",
+        "scipy/_lib/unuran",
+        "scipy/_lib/_gcutils.py",
+        "scipy/_lib/doccer.py",
+        "scipy/_lib/_uarray",
     ]
 
     dt_config.pytest_extra_xfail = {
