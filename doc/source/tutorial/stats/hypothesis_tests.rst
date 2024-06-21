@@ -23,3 +23,4 @@ more detailed examples, see the following sections.
     hypothesis_odds_ratio.md
     hypothesis_chi2_contingency.md
     hypothesis_jarque_bera.md
+    hypothesis_skewtest.md
