@@ -18,9 +18,10 @@ array_special_func_map = {
 }
 
 for f_name, n_array_args in array_special_func_map.items():
-    f = (support_alternative_backends(f_name, n_array_args, _basic,
-                                      'linalg', _generic_implementations) if SCIPY_ARRAY_API
-         else getattr(_basic, f_name))
+    _f = getattr(_basic, f_name)
+    f = (support_alternative_backends(_f, n_array_args,'linalg',
+                                      _generic_implementations) if SCIPY_ARRAY_API
+         else _f)
     sys.modules[__name__].__dict__[f_name] = f
 
 __all__ = list(array_special_func_map)

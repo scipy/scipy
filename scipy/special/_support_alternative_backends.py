@@ -150,7 +150,8 @@ array_special_func_map = {
 }
 
 for f_name, n_array_args in array_special_func_map.items():
-    f = (support_alternative_backends(f_name, n_array_args, _ufuncs, 'special',
+    _f = getattr(_ufuncs, f_name)
+    f = (support_alternative_backends(_f, n_array_args, 'special',
                                       _generic_implementations) if SCIPY_ARRAY_API
          else getattr(_ufuncs, f_name))
     sys.modules[__name__].__dict__[f_name] = f

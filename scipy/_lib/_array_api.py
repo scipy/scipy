@@ -557,12 +557,13 @@ _SCIPY_ARRAY_API = os.environ.get("SCIPY_ARRAY_API", False)
 array_api_compat_prefix = "scipy._lib.array_api_compat"
 
 
-def get_array_subpackage_func(f_name, xp, n_array_args, root_namespace,
+def get_array_subpackage_func(func, xp, n_array_args,
                               subpackage, generic_implementations):
     spx = scipy_namespace_for(xp)
     f = None
+    f_name = func.__name__
     if is_numpy(xp):
-        f = getattr(root_namespace, f_name, None)
+        f = func
     elif spx is not None:
         f = getattr(getattr(spx, subpackage, None), f_name, None)
         f = f or getattr(getattr(xp, subpackage, None), f_name, None)
@@ -577,7 +578,7 @@ def get_array_subpackage_func(f_name, xp, n_array_args, root_namespace,
         if _f is not None:
             return _f
 
-    _f = getattr(root_namespace, f_name, None)
+    _f = func
     def f(*args, _f=_f, _xp=xp, **kwargs):
         array_args = args[:n_array_args]
         other_args = args[n_array_args:]
@@ -588,14 +589,13 @@ def get_array_subpackage_func(f_name, xp, n_array_args, root_namespace,
     return f
 
 
-def support_alternative_backends(f_name, n_array_args, root_namespace,
+def support_alternative_backends(func, n_array_args,
                                  subpackage, generic_implementations):
-    func = getattr(root_namespace, f_name)
 
     @functools.wraps(func)
     def wrapped(*args, **kwargs):
         xp = array_namespace(*args[:n_array_args])
-        f = get_array_subpackage_func(f_name, xp, n_array_args, root_namespace,
+        f = get_array_subpackage_func(func, xp, n_array_args,
                                       subpackage, generic_implementations)
         return f(*args, **kwargs)
 

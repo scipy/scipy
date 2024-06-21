@@ -17,8 +17,7 @@ except ImportError:
                     reason="`array_api_strict` not installed")
 def test_dispatch_to_unrecognize_library():
     xp = array_api_strict
-    f = get_array_subpackage_func('ndtr', xp=xp, n_array_args=1,
-                                  root_namespace=special._ufuncs,
+    f = get_array_subpackage_func(special._ufuncs.ndtr, xp=xp, n_array_args=1,
                                   subpackage='special',
                                   generic_implementations={})
     x = [1, 2, 3]
@@ -32,8 +31,7 @@ def test_dispatch_to_unrecognize_library():
                     reason="`array_api_strict` not installed")
 def test_rel_entr_generic(dtype):
     xp = array_api_strict
-    f = get_array_subpackage_func('rel_entr', xp=xp, n_array_args=2,
-                                  root_namespace=special._ufuncs,
+    f = get_array_subpackage_func(special._ufuncs.rel_entr, xp=xp, n_array_args=2,
                                   subpackage='special',
                                   generic_implementations={})
     dtype_np = getattr(np, dtype)
