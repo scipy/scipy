@@ -1264,12 +1264,12 @@ class LatinHypercube(QMCEngine):
         Default is None.
 
         * ``random-cd``: random permutations of coordinates to lower the
-          centered discrepancy. The best sample based on the centered
-          discrepancy is constantly updated. Centered discrepancy-based
-          sampling shows better space-filling robustness toward 2D and 3D
-          subprojections compared to using other discrepancy measures.
+            centered discrepancy. The best sample based on the centered
+            discrepancy is constantly updated. Centered discrepancy-based
+            sampling shows better space-filling robustness toward 2D and 3D
+            subprojections compared to using other discrepancy measures.
         * ``lloyd``: Perturb samples using a modified Lloyd-Max algorithm.
-          The process converges to equally spaced samples.
+            The process converges to equally spaced samples.
 
         .. versionadded:: 1.8.0
         .. versionchanged:: 1.10.0
@@ -1289,6 +1289,10 @@ class LatinHypercube(QMCEngine):
         created using ``np.random.default_rng(seed)``.
         If `seed` is already a ``Generator`` instance, then the provided
         instance is used.
+
+    See Also
+    --------
+    :ref:`qmc_latin_hypercube`
 
     Notes
     -----
@@ -1326,66 +1330,56 @@ class LatinHypercube(QMCEngine):
     References
     ----------
     .. [1] Mckay et al., "A Comparison of Three Methods for Selecting Values
-       of Input Variables in the Analysis of Output from a Computer Code."
-       Technometrics, 1979.
+        of Input Variables in the Analysis of Output from a Computer Code."
+        Technometrics, 1979.
     .. [2] M. Stein, "Large sample properties of simulations using Latin
-       hypercube sampling." Technometrics 29, no. 2: 143-151, 1987.
+        hypercube sampling." Technometrics 29, no. 2: 143-151, 1987.
     .. [3] A. B. Owen, "Monte Carlo variance of scrambled net quadrature."
-       SIAM Journal on Numerical Analysis 34, no. 5: 1884-1910, 1997
+        SIAM Journal on Numerical Analysis 34, no. 5: 1884-1910, 1997
     .. [4]  Loh, W.-L. "On Latin hypercube sampling." The annals of statistics
-       24, no. 5: 2058-2080, 1996.
+        24, no. 5: 2058-2080, 1996.
     .. [5] Fang et al. "Design and modeling for computer experiments".
-       Computer Science and Data Analysis Series, 2006.
+        Computer Science and Data Analysis Series, 2006.
     .. [6] Damblin et al., "Numerical studies of space filling designs:
-       optimization of Latin Hypercube Samples and subprojection properties."
-       Journal of Simulation, 2013.
+        optimization of Latin Hypercube Samples and subprojection properties."
+        Journal of Simulation, 2013.
     .. [7] A. B. Owen , "Orthogonal arrays for computer experiments,
-       integration and visualization." Statistica Sinica, 1992.
+        integration and visualization." Statistica Sinica, 1992.
     .. [8] B. Tang, "Orthogonal Array-Based Latin Hypercubes."
-       Journal of the American Statistical Association, 1993.
-    .. [9] Susan K. Seaholm et al. "Latin hypercube sampling and the
-       sensitivity analysis of a Monte Carlo epidemic model".
-       Int J Biomed Comput, 23(1-2), 97-112,
-       :doi:`10.1016/0020-7101(88)90067-0`, 1988.
+        Journal of the American Statistical Association, 1993.
 
     Examples
     --------
-    In [9]_, a Latin Hypercube sampling strategy was used to sample a
-    parameter space to study the importance of each parameter of an epidemic
-    model. Such analysis is also called a sensitivity analysis.
-
-    Since the dimensionality of the problem is high (6), it is computationally
-    expensive to cover the space. When numerical experiments are costly,
-    QMC enables analysis that may not be possible if using a grid.
-
-    The six parameters of the model represented the probability of illness,
-    the probability of withdrawal, and four contact probabilities,
-    The authors assumed uniform distributions for all parameters and generated
-    50 samples.
-
-    Using `scipy.stats.qmc.LatinHypercube` to replicate the protocol, the
-    first step is to create a sample in the unit hypercube:
+    Generate samples from a Latin hypercube generator.
 
     >>> from scipy.stats import qmc
-    >>> sampler = qmc.LatinHypercube(d=6)
-    >>> sample = sampler.random(n=50)
+    >>> sampler = qmc.LatinHypercube(d=2)
+    >>> sample = sampler.random(n=5)
+    >>> sample
+    array([[0.1545328 , 0.53664833], # random
+            [0.84052691, 0.06474907],
+            [0.52177809, 0.93343721],
+            [0.68033825, 0.36265316],
+            [0.26544879, 0.61163943]])
 
-    Then the sample can be scaled to the appropriate bounds:
+    Compute the quality of the sample using the discrepancy criterion.
 
-    >>> l_bounds = [0.000125, 0.01, 0.0025, 0.05, 0.47, 0.7]
-    >>> u_bounds = [0.000375, 0.03, 0.0075, 0.15, 0.87, 0.9]
-    >>> sample_scaled = qmc.scale(sample, l_bounds, u_bounds)
+    >>> qmc.discrepancy(sample)
+    0.0196... # random
 
-    Such a sample was used to run the model 50 times, and a polynomial
-    response surface was constructed. This allowed the authors to study the
-    relative importance of each parameter across the range of
-    possibilities of every other parameter.
-    In this computer experiment, they showed a 14-fold reduction in the number
-    of samples required to maintain an error below 2% on their response surface
-    when compared to a grid sampling.
+    Samples can be scaled to bounds.
 
-    Below are other examples showing alternative ways to construct LHS
-    with even better coverage of the space.
+    >>> l_bounds = [0, 2]
+    >>> u_bounds = [10, 5]
+    >>> qmc.scale(sample, l_bounds, u_bounds)
+    array([[1.54532796, 3.609945 ], # random
+            [8.40526909, 2.1942472 ],
+            [5.2177809 , 4.80031164],
+            [6.80338249, 3.08795949],
+            [2.65448791, 3.83491828]])
+
+    Below are other examples showing alternative ways to construct LHS with
+    even better coverage of the space.
 
     Using a base LHS as a baseline.
 
