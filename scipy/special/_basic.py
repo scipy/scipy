@@ -2794,12 +2794,21 @@ def perm(N, k, exact=False):
     if exact:
         if not (isscalar(N) and isscalar(k)):
             raise ValueError("`N` and `k` must scalar integers be with `exact=True`.")
-        if not (floor(N) == N and floor(k) == k):
-            msg = ("Non-integer `N` and `k` with `exact=True` is deprecated and will "
-                   "raise an error in SciPy 1.17.0.")
-            warnings.warn(msg, DeprecationWarning, stacklevel=2)
         if (k > N) or (N < 0) or (k < 0):
+            if (
+                (not isinstance(N, int) and not np.issubdtype(type(N), np.integer))
+                 or (not isinstance(k, int) and not np.issubdtype(type(k), np.integer))
+            ):
+                msg = ("Non-integer `N` and `k` with `exact=True` is deprecated and "
+                       "will raise an error in SciPy 1.16.0.")
+                warnings.warn(msg, DeprecationWarning, stacklevel=2)
             return 0
+        if (
+            (not isinstance(N, int) and not np.issubdtype(type(N), np.integer))
+                or (not isinstance(k, int) and not np.issubdtype(type(k), np.integer))
+        ):
+            raise ValueError("Non-integer `N` and `k` with `exact=True` is not "
+                             "supported.")
         val = 1
         for i in range(N - k + 1, N + 1):
             val *= i

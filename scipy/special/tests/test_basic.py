@@ -1477,11 +1477,26 @@ class TestCombinatorics:
         assert_equal(special.perm(2, -1, exact=False), 0)
         assert_allclose(special.perm([2, -1, 2, 10], [3, 3, -1, 3]), [0., 0., 0., 720.])
 
-    def test_perm_invalid_inputs(self):
+    def test_perm_iv(self):
+        # currently `exact=True` only support scalars
         with pytest.raises(ValueError, match="scalar integers"):
             special.perm([1, 2], [4, 5], exact=True)
+
+        # Non-integral scalars with N < k, or N,k < 0 used to return 0, this is now
+        # deprecated and will raise an error in SciPy 1.16.0
         with pytest.deprecated_call(match="Non-integer"):
             special.perm(4.6, 6, exact=True)
+        with pytest.deprecated_call(match="Non-integer"):
+            special.perm(-4.6, 3, exact=True)
+        with pytest.deprecated_call(match="Non-integer"):
+            special.perm(4, -3.9, exact=True)
+        
+        # Non-integral scalars which aren't included in the cases above an raise an
+        # error directly without deprecation as this code never worked
+        with pytest.raises(ValueError, match="Non-integer"):
+            special.perm(6.0, 4.6, exact=True)
+        with pytest.raises(ValueError, match="Non-integer"):
+            special.perm(6.0, 4.0, exact=True)
 
 
 class TestTrigonometric:
