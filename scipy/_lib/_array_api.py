@@ -598,3 +598,12 @@ def support_alternative_backends(func, n_array_args, subpackage, func_generic):
         return f(*args, **kwargs)
 
     return wrapped
+
+
+def xp_dispatch(n_array_args, subpackage, func_generic=None):
+    # decorator version of `support_alternative_backends` with a name
+    # I'd prefer for concision
+    def wrapper(func):
+        return support_alternative_backends(func, n_array_args,
+                                            subpackage, func_generic)
+    return wrapper
