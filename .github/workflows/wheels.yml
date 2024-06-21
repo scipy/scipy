@@ -169,6 +169,7 @@ jobs:
             CIBW+=" && mv {dest_dir}/\$(basename {wheel}) \
               {dest_dir}/\$(echo \$(basename {wheel}) | sed 's/14_0/13_0/')"
           fi
+          
           # macos-arm64-openblas wheels that target macos-12 need a
           # MACOS_DEPLOYMENT_TARGET of 12.3 otherwise delocate complains.
           # Unclear of cause, possibly build tool related.
@@ -176,10 +177,9 @@ jobs:
           # has no concept of minor OS versions in packaging land rename the
           # wheel back to 12.
           if [[ ${{ matrix.buildplat[0] }} == 'macos-14' && ${{ matrix.buildplat[4] }} == '12.3' ]]; then
-            CIBW+=" && echo \$(ls {dest_dir}) && mv {dest_dir}/\$(basename {wheel}) \
-              {dest_dir}/\$(echo \$(basename {wheel}) | sed 's/12_3/12_0/')"
-          fi
-          
+            CIBW+=" && echo \$(ls {dest_dir}) && \
+            mv {dest_dir}/*.whl \$(find {dest_dir} -type f -name '*.whl' | sed 's/12_3/12_0/')"
+          fi          
           echo "CIBW_REPAIR_WHEEL_COMMAND_MACOS=$CIBW" >> "$GITHUB_ENV"
 
       - name: Inject environment variable for python dev version
