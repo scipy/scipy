@@ -347,7 +347,6 @@ if HAVE_SCPDT:
                     warnings.simplefilter('error', Warning)
                     yield
 
-
     dt_config.user_context_mgr = warnings_errors_and_rng
     dt_config.skiplist = set([
         'scipy.linalg.LinAlgError',     # comes from numpy
