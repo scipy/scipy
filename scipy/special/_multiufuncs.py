@@ -237,7 +237,7 @@ def _(n, m, z_shape, nout):
 
 
 assoc_legendre_p = MultiUFunc(assoc_legendre_p,
-    r"""assoc_legendre_p(n, m, z, *, typ=2, norm=False, diff_n=0)
+    r"""assoc_legendre_p(n, m, z, *, branch_cut=2, norm=False, diff_n=0)
 
     Associated Legendre polynomial of the first kind.
 
@@ -249,8 +249,8 @@ assoc_legendre_p = MultiUFunc(assoc_legendre_p,
         order of the associated Legendre polynomial.
     z : ArrayLike[float | complex]
         Input value.
-    typ : Optional[ArrayLike[int]]
-        Type of the branch cut. Must be 1, 2, or 3. Default is 2.
+    branch_cut : Optional[ArrayLike[int]]
+        Selects branch cut. Must be 1, 2, or 3. Default is 2.
     norm : Optional[bool]
         If ``True``, compute the normalized associated Legendre polynomial.
         Default is ``False``.
@@ -271,12 +271,12 @@ assoc_legendre_p = MultiUFunc(assoc_legendre_p,
     .. math::
 
         \sqrt{\frac{(2 n + 1) (n - m)!}{2 (n + m)!}}
-    """, typ=2, norm=False, diff_n=0
+    """, branch_cut=2, norm=False, diff_n=0
 )
 
 
 @assoc_legendre_p.override_key
-def _(typ, norm, diff_n):
+def _(branch_cut, norm, diff_n):
     diff_n = _nonneg_int_or_fail(diff_n, "diff_n", strict=False)
     if not 0 <= diff_n <= 2:
         raise ValueError(
@@ -287,12 +287,12 @@ def _(typ, norm, diff_n):
 
 
 @assoc_legendre_p.override_ufunc_default_args
-def _(typ, norm, diff_n):
-    return typ,
+def _(branch_cut, norm, diff_n):
+    return branch_cut,
 
 
 assoc_legendre_p_all = MultiUFunc(assoc_legendre_p_all,
-    r"""assoc_legendre_p_all(n, m, z, *, typ=2, norm=False, diff_n=0)
+    r"""assoc_legendre_p_all(n, m, z, *, branch_cut=2, norm=False, diff_n=0)
 
     All associated Legendre polynomials of the first kind up to a specified order
     and degree.
@@ -305,8 +305,8 @@ assoc_legendre_p_all = MultiUFunc(assoc_legendre_p_all,
         Order (max) of the associated Legendre polynomial. Must have ``m >= 0``.
     z : ArrayLike[float | complex]
         Input value.
-    typ : Optional[ArrayLike[int]]
-        Type of the branch cut. Must be 1, 2, or 3. Default is 2.
+    branch_cut : Optional[ArrayLike[int]]
+        Selects branch cut. Must be 1, 2, or 3. Default is 2.
     norm : Optional[bool]
         If ``True``, compute the normalized associated Legendre polynomial.
         Default is ``False``.
@@ -329,12 +329,12 @@ assoc_legendre_p_all = MultiUFunc(assoc_legendre_p_all,
     .. math::
 
         \sqrt{\frac{(2 n + 1) (n - m)!}{2 (n + m)!}}
-    """, typ=2, norm=False, diff_n=0
+    """, branch_cut=2, norm=False, diff_n=0
 )
 
 
 @assoc_legendre_p_all.override_key
-def _(typ, norm, diff_n):
+def _(branch_cut, norm, diff_n):
     if not ((isinstance(diff_n, int) or np.issubdtype(diff_n, np.integer))
             and diff_n >= 0):
         raise ValueError(
@@ -349,23 +349,23 @@ def _(typ, norm, diff_n):
 
 
 @assoc_legendre_p_all.override_ufunc_default_args
-def _(typ, norm, diff_n):
-    return typ,
+def _(branch_cut, norm, diff_n):
+    return branch_cut,
 
 
 @assoc_legendre_p_all.override_ufunc_default_kwargs
-def _(typ, norm, diff_n):
+def _(branch_cut, norm, diff_n):
     return {'axes': [(), ()] + (diff_n + 1) * [(0, 1)]}
 
 
 @assoc_legendre_p_all.override_resolve_out_shapes
-def _(n, m, z_shape, typ_shape, nout):
+def _(n, m, z_shape, branch_cut_shape, nout):
     if not isinstance(m, numbers.Integral) or (abs(m) > n):
         raise ValueError("m must be <= n.")
     if not isinstance(n, numbers.Integral) or (n < 0):
         raise ValueError("n must be a non-negative integer.")
 
-    return nout * ((n + 1, 2 * abs(m) + 1) + np.broadcast_shapes(z_shape, typ_shape),)
+    return nout * ((n + 1, 2 * abs(m) + 1) + np.broadcast_shapes(z_shape, branch_cut_shape),)
 
 
 legendre_p = MultiUFunc(legendre_p,
