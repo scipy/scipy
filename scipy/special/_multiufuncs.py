@@ -57,10 +57,6 @@ class MultiUFunc:
     def __doc__(self):
         return self.__doc
 
-    @property
-    def force_complex_output(self):
-        return self.__force_complex_output
-
     def override_key(self, func):
         """Set `key` method by decorating a function.
         """
@@ -96,8 +92,7 @@ class MultiUFunc:
 
         ufunc = self.resolve_ufunc(**kwargs)
 
-        ufunc_args = args[-ufunc.nin:] # array arguments to be passed to the ufunc
-
+        ufunc_args = [np.asarray(arg) for arg in args[-ufunc.nin:]]  # array arguments to be passed to the ufunc
         ufunc_kwargs = self.ufunc_default_kwargs(**kwargs)
 
         if (self.resolve_out_shapes is not None):
@@ -118,11 +113,11 @@ class MultiUFunc:
 
                 ufunc_out_dtypes = ufunc.nout * (ufunc_out_dtype,)
 
-            if self.force_complex_output:
+            if self.__force_complex_output:
                 ufunc_out_dtypes = tuple(np.result_type(1j, ufunc_out_dtype)
                     for ufunc_out_dtype in ufunc_out_dtypes)
 
-            out = tuple(np.empty(ufunc_out_shape, dtype = ufunc_out_dtype)
+            out = tuple(np.empty(ufunc_out_shape, dtype=ufunc_out_dtype)
                 for ufunc_out_shape, ufunc_out_dtype
                 in zip(ufunc_out_shapes, ufunc_out_dtypes))
 
@@ -138,32 +133,31 @@ sph_legendre_p = MultiUFunc(sph_legendre_p,
 
     Parameters
     ----------
-    n : array_like, int
-        Order of the Legendre polynomial, must have ``n >= 0``.
-    m : array_like, int
-        Degree of the Legendre polynomial.
-    phi : array_like, float
+    n : ArrayLike[int]
+        Order of the spherical Legendre polynomial. Must have ``n >= 0``.
+    m : ArrayLike[int]
+        Degree of the spherical Legendre polynomial.
+    phi : ArrayLike[float]
         Input value.
     diff_n : Optional[int]
         A non-negative integer. Compute and return all derivatives up
-        to order ``diff_n``.
+        to order ``diff_n``. Default is 0.
 
     Returns
     -------
     p : ndarray or tuple[ndarray]
-        The spherical Legendre polynomial with ``diff_n`` derivatives.
+        Spherical Legendre polynomial with ``diff_n`` derivatives.
 
     Notes
     -----
-    With respect to the associated Legendre polynomial :math:`P_{m}^{n}(\cos \phi)`,
-    the spherical Legendre polynomial is defined as
+    The spherical counterpart of an (unnormalized) associated Legendre polynomial has
+    the additional factor
 
     .. math::
 
-        \sqrt{\frac{(2 n + 1) (n - m)!}{4 \pi (n + m)!}} P_{n}^{m}(\cos \phi)
+        \sqrt{\frac{(2 n + 1) (n - m)!}{4 \pi (n + m)!}}
 
-    This is the same as the spherical harmonic :math:`Y_{m}^{n}(\theta, \phi)`
-    with :math:`\theta = 0`.
+    It is the same as the spherical harmonic :math:`Y_{n}^{m}(\theta, \phi)` with :math:`\theta = 0`.
     """, diff_n=0
 )
 
@@ -182,37 +176,36 @@ def _(diff_n):
 sph_legendre_p_all = MultiUFunc(sph_legendre_p_all,
     r"""sph_legendre_p_all(n, m, phi, *, diff_n=0)
 
-    Spherical Legendre polynomial of the first kind.
+    All spherical Legendre polynomials of the first kind up to a specified order
+    and degree.
 
     Parameters
     ----------
-    n : array_like, int
-        Order (max) of the Legendre polynomial, must have ``n >= 0``.
-    m : array_like, int
-        Degree (max) of the Legendre polynomial, must have ``m >= 0``
-    phi : array_like, float
+    n : int
+        Order (max) of the spherical Legendre polynomial. Must have ``n >= 0``.
+    m : int
+        Degree (max) of the spherical Legendre polynomial. Must have ``m >= 0``.
+    phi : ArrayLike[float]
         Input value.
     diff_n : Optional[int]
         A non-negative integer. Compute and return all derivatives up
-        to order ``diff_n``.
+        to order ``diff_n``. Default is 0.
 
     Returns
     -------
     p : ndarray or tuple[ndarray]
-        The spherical Legendre polynomial with ``diff_n`` derivatives,
-        each having shape (n + 1, 2 * m + 1, ...).
+        All spherical Legendre polynomials with ``diff_n`` derivatives.  Each output has
+        shape ``(n + 1, 2 * m + 1, ...)``. The entry at ``(j, i)`` corresponds to order
+        ``j`` and degree ``i`` for all  ``0 <= j <= n`` and ``-m <= i <= m``. 
 
     Notes
     -----
-    With respect to the associated Legendre polynomial :math:`P_{m}^{n}(\cos \phi)`,
-    the spherical Legendre polynomial is defined as
+    The spherical counterpart of an (unnormalized) associated Legendre polynomial has
+    the additional factor
 
     .. math::
 
-        \sqrt{\frac{(2 n + 1) (n - m)!}{4 \pi (n + m)!}} P_{n}^{m}(\cos \phi)
-
-    This is the same as the spherical harmonic :math:`Y_{m}^{n}(\theta, \phi)`
-    with :math:`\theta = 0`.
+        \sqrt{\frac{(2 n + 1) (n - m)!}{4 \pi (n + m)!}}
     """, diff_n=0
 )
 
@@ -248,33 +241,33 @@ assoc_legendre_p = MultiUFunc(assoc_legendre_p,
 
     Parameters
     ----------
-    n : array_like, int
-        Order of the Legendre polynomial, must have ``n >= 0``.
-    m : array_like, int
-        Degree of the Legendre polynomial.
-    z : array_like, float
+    n : ArrayLike[int]
+        Order of the associated Legendre polynomial. Must have ``n >= 0``.
+    m : ArrayLike[int]
+        Degree of the associated Legendre polynomial.
+    z : ArrayLike[float | complex]
         Input value.
-    typ : Optional[int]
+    typ : Optional[ArrayLike[int]]
+        Type of the branch cut. Must be 1, 2, or 3. Default is 2.
     norm : Optional[bool]
-        If True, compute the normalized associated Legendre polynomial.
-        Default is False.
+        If ``True``, compute the normalized associated Legendre polynomial. Default is ``False``.
     diff_n : Optional[int]
         A non-negative integer. Compute and return all derivatives up
-        to order ``diff_n``.
+        to order ``diff_n``. Default is 0.
 
     Returns
     -------
     p : ndarray or tuple[ndarray]
-        The assocated Legendre polynomial with ``diff_n`` derivatives.
+        Associated Legendre polynomial with ``diff_n`` derivatives.
 
     Notes
     -----
-    With respect to the associated Legendre polynomial :math:`P_{m}^{n}(x)`,
-    the normalised associated Legendre polynomials is defined as
+    The normalized counterpart of an (unnormalized) associated Legendre polynomial has
+    the additional factor
 
     .. math::
 
-        \sqrt{\frac{(2 n + 1) (n - m)!}{2 (n + m)!}} P_{n}^{m}(x)
+        \sqrt{\frac{(2 n + 1) (n - m)!}{2 (n + m)!}}
     """, typ=2, norm=False, diff_n=0
 )
 
@@ -298,37 +291,40 @@ def _(typ, norm, diff_n):
 assoc_legendre_p_all = MultiUFunc(assoc_legendre_p_all,
     r"""assoc_legendre_p_all(n, m, z, *, typ=2, norm=False, diff_n=0)
 
-    Associated Legendre polynomial of the first kind.
+    All associated Legendre polynomials of the first kind up to a specified order
+    and degree.
 
     Parameters
     ----------
     n : int
-        Order (max) of the Legendre polynomial, must have ``n >= 0``.
+        Order (max) of the associated Legendre polynomial. Must have ``n >= 0``.
     m : int
-        Degree (max) of the Legendre polynomial, must have ``m >= 0``.
-    z : array_like, float
-        Input value
+        Degree (max) of the associated Legendre polynomial. Must have ``m >= 0``.
+    z : ArrayLike[float | complex]
+        Input value.
+    typ : Optional[ArrayLike[int]]
+        Type of the branch cut. Must be 1, 2, or 3. Default is 2.
     norm : Optional[bool]
-        If True, compute the normalized associated Legendre polynomial.
-        Default is False.
+        If ``True``, compute the normalized associated Legendre polynomial. Default is ``False``.
     diff_n : Optional[int]
         A non-negative integer. Compute and return all derivatives up
-        to order ``diff_n``.
+        to order ``diff_n``. Default is 0.
 
     Returns
     -------
     p : ndarray or tuple[ndarray]
-        The assocated Legendre polynomial with ``diff_n`` derivatives,
-        each having shape (n + 1, 2 * m + 1, ...).
+        All associated Legendre polynomials with ``diff_n`` derivatives.  Each output has
+        shape ``(n + 1, 2 * m + 1, ...)``. The entry at ``(j, i)`` corresponds to order
+        ``j`` and degree ``i`` for all  ``0 <= j <= n`` and ``-m <= i <= m``. 
 
     Notes
     -----
-    With respect to the associated Legendre polynomial :math:`P_{m}^{n}(x)`,
-    the normalised associated Legendre polynomial is defined as
+    The normalized counterpart of an (unnormalized) associated Legendre polynomial has
+    the additional factor
 
     .. math::
 
-        \sqrt{\frac{(2 n + 1) (n - m)!}{2 (n + m)!}} P_{n}^{m}(x)
+        \sqrt{\frac{(2 n + 1) (n - m)!}{2 (n + m)!}}
     """, typ=2, norm=False, diff_n=0
 )
 
@@ -369,30 +365,28 @@ def _(n, m, z_shape, typ_shape, nout):
 
 
 legendre_p = MultiUFunc(legendre_p,
-    """
-    legendre_p(n, z, *, diff_n=0)
+    """legendre_p(n, z, *, diff_n=0)
 
-    Legendre polynomials of the first kind.
-
-    Compute Legendre polynomials of the first kind 
-    :math:`P_{n}(z)`.
+    Legendre polynomial of the first kind.
 
     Parameters
     ----------
-    n : array_like, int
-        Order of the Legendre polynomial, must have ``n >= 0``.
-    z : array_like, float
+    n : ArrayLike[int]
+        Order of the Legendre polynomial. Must have ``n >= 0``.
+    z : ArrayLike[float]
         Input value.
     diff_n : Optional[int]
         A non-negative integer. Compute and return all derivatives up
-        to order ``diff_n``.
+        to order ``diff_n``. Default is 0.
 
     Returns
     -------
     p : ndarray or tuple[ndarray]
         Legendre polynomial with ``diff_n`` derivatives.
 
-    See also special.legendre for polynomial class.
+    See Also
+    --------
+    legendre
 
     References
     ----------
@@ -419,13 +413,30 @@ def _(diff_n):
 
 
 legendre_p_all = MultiUFunc(legendre_p_all,
-    """
-    Legendre polynomials of the first kind.
+    """legendre_p_all(n, z, *, diff_n=0)
 
-    Compute sequence of Legendre functions of the first kind (polynomials),
-    Pn(z) and derivatives for all degrees from 0 to n (inclusive).
+    All Legendre polynomials of the first kind up to a specified order.
 
-    See also special.legendre for polynomial class.
+    Parameters
+    ----------
+    n : int
+        Order (max) of the Legendre polynomial. Must have ``n >= 0``.
+    z : ArrayLike[float]
+        Input value.
+    diff_n : Optional[int]
+        A non-negative integer. Compute and return all derivatives up
+        to order ``diff_n``. Default is 0.
+
+    Returns
+    -------
+    p : ndarray or tuple[ndarray]
+        All Legendre polynomials with ``diff_n`` derivatives.  Each output has
+        shape ``(n + 1, ...)``. The entry at ``j`` corresponds to order ``j``
+        for all  ``0 <= j <= n``. 
+
+    See Also
+    --------
+    legendre
 
     References
     ----------

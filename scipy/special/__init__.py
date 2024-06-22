@@ -433,7 +433,6 @@ Gamma and related functions
    digamma      -- psi(x[, out]).
    poch         -- Rising factorial (z)_m.
 
-
 Error function and Fresnel integrals
 ------------------------------------
 
@@ -470,6 +469,21 @@ Legendre functions
 .. autosummary::
    :toctree: generated/
 
+   legendre_p                 -- Legendre polynomials of the first kind.
+   legendre_p_all             -- All Legendre polynomials of the first kind up to a specified order.
+   assoc_legendre_p           -- Associated Legendre polynomials of the first kind.
+   assoc_legendre_p_all       -- All associated Legendre polynomials of the first kind up to a specified order and degree.
+   sph_legendre_p             -- Spherical Legendre polynomials of the first kind.
+   sph_legendre_p_all         -- All spherical Legendre polynomials of the first kind up to a specified order and degree.
+   sph_harm_y                 -- Spherical harmonics.
+   sph_harm_y_all             -- All spherical harmonics up to a specified order and degree.
+
+The following functions are in the process of being deprecated in favor of the above,
+which provide a more flexible and consistent interface.
+
+.. autosummary::
+   :toctree: generated/
+
    lpmv                       -- Associated Legendre function of integer order and real degree.
    sph_harm                   -- Compute spherical harmonics.
    clpmn                      -- Associated Legendre function of the first kind for complex arguments.
@@ -477,23 +491,6 @@ Legendre functions
    lqn                        -- Legendre function of the second kind.
    lpmn                       -- Sequence of associated Legendre functions of the first kind.
    lqmn                       -- Sequence of associated Legendre functions of the second kind.
-
-.. autosummary::
-   :toctree: generated/
-
-The following functions offer a new interface for calculating Legendre functions and
-the matching functions above are being deprecated.
-
-   legendre_p                 -- Legendre function of the first kind.
-   legendre_p_all             -- Sequence of Legendre functions of the first kind.
-   assoc_legendre_p           -- Associated Legendre function of the first kind.
-   assoc_legendre_p_all       -- Table of associated Legendre functions of the first kind.
-   multi_assoc_legendre_p     -- Associated Legendre function of the first kind for complex arguments.
-   multi_assoc_legendre_p_all -- Table of associated Legendre functions of the first kind for complex arguments.
-   sph_harm_y                 -- Spherical harmonics
-   sph_harm_y_all             -- Table of spherical harmonics
-   sph_legendre               -- Spherical associated Legendre function of the first kind.
-   sph_legendre_all           -- Table of spherical associated Legendre functions of the first kind.
 
 Ellipsoidal harmonics
 ---------------------

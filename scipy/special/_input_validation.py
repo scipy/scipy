@@ -1,14 +1,12 @@
+import math
 import operator
-
-from numpy import floor
-
 
 def _nonneg_int_or_fail(n, var_name, strict=True):
     try:
         if strict:
             # Raises an exception if float
             n = operator.index(n)
-        elif n == floor(n):
+        elif n == math.floor(n):
             n = int(n)
         else:
             raise ValueError()
