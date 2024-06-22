@@ -92,7 +92,8 @@ class MultiUFunc:
 
         ufunc = self.resolve_ufunc(**kwargs)
 
-        ufunc_args = [np.asarray(arg) for arg in args[-ufunc.nin:]]  # array arguments to be passed to the ufunc
+        ufunc_args = [np.asarray(arg)
+            for arg in args[-ufunc.nin:]]  # array arguments to be passed to the ufunc
         ufunc_kwargs = self.ufunc_default_kwargs(**kwargs)
 
         if (self.resolve_out_shapes is not None):
@@ -157,7 +158,8 @@ sph_legendre_p = MultiUFunc(sph_legendre_p,
 
         \sqrt{\frac{(2 n + 1) (n - m)!}{4 \pi (n + m)!}}
 
-    It is the same as the spherical harmonic :math:`Y_{n}^{m}(\theta, \phi)` with :math:`\theta = 0`.
+    It is the same as the spherical harmonic :math:`Y_{n}^{m}(\theta, \phi)`
+    with :math:`\theta = 0`.
     """, diff_n=0
 )
 
@@ -250,7 +252,8 @@ assoc_legendre_p = MultiUFunc(assoc_legendre_p,
     typ : Optional[ArrayLike[int]]
         Type of the branch cut. Must be 1, 2, or 3. Default is 2.
     norm : Optional[bool]
-        If ``True``, compute the normalized associated Legendre polynomial. Default is ``False``.
+        If ``True``, compute the normalized associated Legendre polynomial.
+        Default is ``False``.
     diff_n : Optional[int]
         A non-negative integer. Compute and return all derivatives up
         to order ``diff_n``. Default is 0.
@@ -305,7 +308,8 @@ assoc_legendre_p_all = MultiUFunc(assoc_legendre_p_all,
     typ : Optional[ArrayLike[int]]
         Type of the branch cut. Must be 1, 2, or 3. Default is 2.
     norm : Optional[bool]
-        If ``True``, compute the normalized associated Legendre polynomial. Default is ``False``.
+        If ``True``, compute the normalized associated Legendre polynomial.
+        Default is ``False``.
     diff_n : Optional[int]
         A non-negative integer. Compute and return all derivatives up
         to order ``diff_n``. Default is 0.
@@ -313,9 +317,9 @@ assoc_legendre_p_all = MultiUFunc(assoc_legendre_p_all,
     Returns
     -------
     p : ndarray or tuple[ndarray]
-        All associated Legendre polynomials with ``diff_n`` derivatives.  Each output has
-        shape ``(n + 1, 2 * m + 1, ...)``. The entry at ``(j, i)`` corresponds to degree
-        ``j`` and order ``i`` for all  ``0 <= j <= n`` and ``-m <= i <= m``. 
+        All associated Legendre polynomials with ``diff_n`` derivatives.  Each output
+        has shape ``(n + 1, 2 * m + 1, ...)``. The entry at ``(j, i)`` corresponds to
+        degree ``j`` and order ``i`` for all  ``0 <= j <= n`` and ``-m <= i <= m``. 
 
     Notes
     -----
