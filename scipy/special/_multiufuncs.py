@@ -76,7 +76,7 @@ class MultiUFunc:
         func.__name__ = "resolve_out_shapes"
         self.resolve_out_shapes = func
 
-    def resolve_ufunc(self, **kwargs):
+    def _resolve_ufunc(self, **kwargs):
         """Resolve to a ufunc based on keyword arguments."""
 
         if isinstance(self._ufunc_or_ufuncs, np.ufunc):
@@ -90,7 +90,7 @@ class MultiUFunc:
 
         args += self.ufunc_default_args(**kwargs)
 
-        ufunc = self.resolve_ufunc(**kwargs)
+        ufunc = self._resolve_ufunc(**kwargs)
 
         ufunc_args = [np.asarray(arg)
             for arg in args[-ufunc.nin:]]  # array arguments to be passed to the ufunc
