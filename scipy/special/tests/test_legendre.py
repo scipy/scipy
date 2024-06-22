@@ -45,14 +45,14 @@ class TestLegendreP:
         n = rng.integers(0, 100, shape)
         x = rng.uniform(-1, 1, shape)
 
-        p, p_jac, p_hess = legendre_p(n, x, diff_n = 2)
+        p, p_jac, p_hess = legendre_p(n, x, diff_n=2)
 
         assert p.shape == shape
         assert p_jac.shape == p.shape
         assert p_hess.shape == p_jac.shape
 
         err = (1 - x * x) * p_hess - 2 * x * p_jac + n * (n + 1) * p
-        np.testing.assert_allclose(err, 0, atol = 1e-10)
+        np.testing.assert_allclose(err, 0, atol=1e-10)
 
     @pytest.mark.parametrize("n_max", [1, 2, 4, 8, 16, 32])
     @pytest.mark.parametrize("x_shape", [(10,), (4, 9), (3, 5, 7)])
@@ -60,7 +60,7 @@ class TestLegendreP:
         rng = np.random.default_rng(1234)
 
         x = rng.uniform(-1, 1, x_shape)
-        p, p_jac, p_hess = legendre_p_all(n_max, x, diff_n = 2)
+        p, p_jac, p_hess = legendre_p_all(n_max, x, diff_n=2)
 
         n = np.arange(n_max + 1)
         n = np.expand_dims(n, axis = tuple(range(1, x.ndim + 1)))
@@ -70,7 +70,7 @@ class TestLegendreP:
         assert p_hess.shape == p_jac.shape
 
         err = (1 - x * x) * p_hess - 2 * x * p_jac + n * (n + 1) * p
-        np.testing.assert_allclose(err, 0, atol = 1e-10)
+        np.testing.assert_allclose(err, 0, atol=1e-10)
 
     def test_legacy(self):
         p, pd = special.lpn(2, 0.5)
@@ -86,7 +86,7 @@ class TestAssocLegendreP:
 
         x = rng.uniform(-0.99, 0.99, shape)
         p_all, p_all_jac, p_all_hess = \
-            assoc_legendre_p_all(n_max, m_max, x, diff_n = 2)
+            assoc_legendre_p_all(n_max, m_max, x, diff_n=2)
 
         n = np.arange(n_max + 1)
         n = np.expand_dims(n, axis = tuple(range(1, x.ndim + 2)))
@@ -95,7 +95,7 @@ class TestAssocLegendreP:
         m = np.expand_dims(m, axis = (0,) + tuple(range(2, x.ndim + 2)))
 
         x = np.expand_dims(x, axis = (0, 1))
-        p, p_jac, p_hess = assoc_legendre_p(n, m, x, diff_n = 2)
+        p, p_jac, p_hess = assoc_legendre_p(n, m, x, diff_n=2)
 
         np.testing.assert_allclose(p, p_all)
         np.testing.assert_allclose(p_jac, p_all_jac)
@@ -110,7 +110,7 @@ class TestAssocLegendreP:
         m = rng.integers(-10, 10, shape)
         x = rng.uniform(-1, 1, shape)
 
-        p, p_jac, p_hess = assoc_legendre_p(n, m, x, norm = norm, diff_n = 2)
+        p, p_jac, p_hess = assoc_legendre_p(n, m, x, norm=norm, diff_n=2)
 
         assert p.shape == shape
         assert p_jac.shape == p.shape
@@ -118,7 +118,7 @@ class TestAssocLegendreP:
 
         np.testing.assert_allclose((1 - x * x) * p_hess,
             2 * x * p_jac - (n * (n + 1) - m * m / (1 - x * x)) * p,
-            rtol = 1e-05, atol = 1e-08)
+            rtol=1e-05, atol=1e-08)
 
     @pytest.mark.parametrize("shape", [(10,), (4, 9), (3, 5, 7)])
     def test_all(self, shape):
@@ -129,7 +129,7 @@ class TestAssocLegendreP:
 
         x = rng.uniform(-0.99, 0.99, shape)
 
-        p, p_jac, p_hess = assoc_legendre_p_all(n_max, m_max, x, diff_n = 2)
+        p, p_jac, p_hess = assoc_legendre_p_all(n_max, m_max, x, diff_n=2)
 
         m = np.concatenate([np.arange(m_max + 1), np.arange(-m_max, 0)])
         n = np.arange(n_max + 1)
@@ -138,7 +138,7 @@ class TestAssocLegendreP:
         m = np.expand_dims(m, axis = (0,) + tuple(range(2, x.ndim + 2)))
         np.testing.assert_allclose((1 - x * x) * p_hess,
             2 * x * p_jac - (n * (n + 1) - m * m / (1 - x * x)) * p,
-            rtol = 1e-05, atol = 1e-08)
+            rtol=1e-05, atol=1e-08)
 
     @pytest.mark.parametrize("shape", [(10,), (4, 9), (3, 5, 7)])
     @pytest.mark.parametrize("norm", [True, False])
@@ -149,10 +149,10 @@ class TestAssocLegendreP:
 
         x = rng.uniform(-0.99, 0.99, shape)
 
-        p, p_jac = assoc_legendre_p_all(4, 4, x, norm = norm, diff_n = 1)
+        p, p_jac = assoc_legendre_p_all(4, 4, x, norm=norm, diff_n=1)
 
         np.testing.assert_allclose(p[0, 0],
-            assoc_legendre_p_0_0(x, typ = typ, norm = norm))
+            assoc_legendre_p_0_0(x, typ=typ, norm=norm))
         np.testing.assert_allclose(p[0, 1], 0)
         np.testing.assert_allclose(p[0, 2], 0)
         np.testing.assert_allclose(p[0, 3], 0)
@@ -162,9 +162,9 @@ class TestAssocLegendreP:
         np.testing.assert_allclose(p[0, -1], 0)
 
         np.testing.assert_allclose(p[1, 0],
-            assoc_legendre_p_1_0(x, typ = typ, norm = norm))
+            assoc_legendre_p_1_0(x, typ=typ, norm=norm))
         np.testing.assert_allclose(p[1, 1],
-            assoc_legendre_p_1_1(x, typ = typ, norm = norm))
+            assoc_legendre_p_1_1(x, typ=typ, norm=norm))
         np.testing.assert_allclose(p[1, 2], 0)
         np.testing.assert_allclose(p[1, 3], 0)
         np.testing.assert_allclose(p[1, 4], 0)
@@ -172,61 +172,61 @@ class TestAssocLegendreP:
         np.testing.assert_allclose(p[1, -3], 0)
         np.testing.assert_allclose(p[1, -2], 0)
         np.testing.assert_allclose(p[1, -1],
-            assoc_legendre_p_1_m1(x, typ = typ, norm = norm))
+            assoc_legendre_p_1_m1(x, typ=typ, norm=norm))
 
         np.testing.assert_allclose(p[2, 0],
-            assoc_legendre_p_2_0(x, typ = typ, norm = norm))
+            assoc_legendre_p_2_0(x, typ=typ, norm=norm))
         np.testing.assert_allclose(p[2, 1],
-            assoc_legendre_p_2_1(x, typ = typ, norm = norm))
+            assoc_legendre_p_2_1(x, typ=typ, norm=norm))
         np.testing.assert_allclose(p[2, 2],
-            assoc_legendre_p_2_2(x, typ = typ, norm = norm))
+            assoc_legendre_p_2_2(x, typ=typ, norm=norm))
         np.testing.assert_allclose(p[2, 3], 0)
         np.testing.assert_allclose(p[2, 4], 0)
         np.testing.assert_allclose(p[2, -4], 0)
         np.testing.assert_allclose(p[2, -3], 0)
         np.testing.assert_allclose(p[2, -2],
-            assoc_legendre_p_2_m2(x, typ = typ, norm = norm))
+            assoc_legendre_p_2_m2(x, typ=typ, norm=norm))
         np.testing.assert_allclose(p[2, -1],
-            assoc_legendre_p_2_m1(x, typ = typ, norm = norm))
+            assoc_legendre_p_2_m1(x, typ=typ, norm=norm))
 
         np.testing.assert_allclose(p[3, 0],
-            assoc_legendre_p_3_0(x, typ = typ, norm = norm))
+            assoc_legendre_p_3_0(x, typ=typ, norm=norm))
         np.testing.assert_allclose(p[3, 1],
-            assoc_legendre_p_3_1(x, typ = typ, norm = norm))
+            assoc_legendre_p_3_1(x, typ=typ, norm=norm))
         np.testing.assert_allclose(p[3, 2],
-            assoc_legendre_p_3_2(x, typ = typ, norm = norm))
+            assoc_legendre_p_3_2(x, typ=typ, norm=norm))
         np.testing.assert_allclose(p[3, 3],
-            assoc_legendre_p_3_3(x, typ = typ, norm = norm))
+            assoc_legendre_p_3_3(x, typ=typ, norm=norm))
         np.testing.assert_allclose(p[3, 4], 0)
         np.testing.assert_allclose(p[3, -4], 0)
         np.testing.assert_allclose(p[3, -3],
-            assoc_legendre_p_3_m3(x, typ = typ, norm = norm))
+            assoc_legendre_p_3_m3(x, typ=typ, norm=norm))
         np.testing.assert_allclose(p[3, -2],
-            assoc_legendre_p_3_m2(x, typ = typ, norm = norm))
+            assoc_legendre_p_3_m2(x, typ=typ, norm=norm))
         np.testing.assert_allclose(p[3, -1],
-            assoc_legendre_p_3_m1(x, typ = typ, norm = norm))
+            assoc_legendre_p_3_m1(x, typ=typ, norm=norm))
 
         np.testing.assert_allclose(p[4, 0],
-            assoc_legendre_p_4_0(x, typ = typ, norm = norm))
+            assoc_legendre_p_4_0(x, typ=typ, norm=norm))
         np.testing.assert_allclose(p[4, 1],
-            assoc_legendre_p_4_1(x, typ = typ, norm = norm))
+            assoc_legendre_p_4_1(x, typ=typ, norm=norm))
         np.testing.assert_allclose(p[4, 2],
-            assoc_legendre_p_4_2(x, typ = typ, norm = norm))
+            assoc_legendre_p_4_2(x, typ=typ, norm=norm))
         np.testing.assert_allclose(p[4, 3],
-            assoc_legendre_p_4_3(x, typ = typ, norm = norm))
+            assoc_legendre_p_4_3(x, typ=typ, norm=norm))
         np.testing.assert_allclose(p[4, 4],
-            assoc_legendre_p_4_4(x, typ = typ, norm = norm))
+            assoc_legendre_p_4_4(x, typ=typ, norm=norm))
         np.testing.assert_allclose(p[4, -4],
-            assoc_legendre_p_4_m4(x, typ = typ, norm = norm))
+            assoc_legendre_p_4_m4(x, typ=typ, norm=norm))
         np.testing.assert_allclose(p[4, -3],
-            assoc_legendre_p_4_m3(x, typ = typ, norm = norm))
+            assoc_legendre_p_4_m3(x, typ=typ, norm=norm))
         np.testing.assert_allclose(p[4, -2],
-            assoc_legendre_p_4_m2(x, typ = typ, norm = norm))
+            assoc_legendre_p_4_m2(x, typ=typ, norm=norm))
         np.testing.assert_allclose(p[4, -1],
-            assoc_legendre_p_4_m1(x, typ = typ, norm = norm))
+            assoc_legendre_p_4_m1(x, typ=typ, norm=norm))
 
         np.testing.assert_allclose(p_jac[0, 0],
-            assoc_legendre_p_0_0_jac(x, typ = typ, norm = norm))
+            assoc_legendre_p_0_0_jac(x, typ=typ, norm=norm))
         np.testing.assert_allclose(p_jac[0, 1], 0)
         np.testing.assert_allclose(p_jac[0, 2], 0)
         np.testing.assert_allclose(p_jac[0, 3], 0)
@@ -237,9 +237,9 @@ class TestAssocLegendreP:
         np.testing.assert_allclose(p_jac[0, -1], 0)
 
         np.testing.assert_allclose(p_jac[1, 0],
-            assoc_legendre_p_1_0_jac(x, typ = typ, norm = norm))
+            assoc_legendre_p_1_0_jac(x, typ=typ, norm=norm))
         np.testing.assert_allclose(p_jac[1, 1],
-            assoc_legendre_p_1_1_jac(x, typ = typ, norm = norm))
+            assoc_legendre_p_1_1_jac(x, typ=typ, norm=norm))
         np.testing.assert_allclose(p_jac[1, 2], 0)
         np.testing.assert_allclose(p_jac[1, 3], 0)
         np.testing.assert_allclose(p_jac[1, 4], 0)
@@ -247,64 +247,64 @@ class TestAssocLegendreP:
         np.testing.assert_allclose(p_jac[1, -3], 0)
         np.testing.assert_allclose(p_jac[1, -2], 0)
         np.testing.assert_allclose(p_jac[1, -1],
-            assoc_legendre_p_1_m1_jac(x, typ = typ, norm = norm))
+            assoc_legendre_p_1_m1_jac(x, typ=typ, norm=norm))
 
         np.testing.assert_allclose(p_jac[2, 0],
-            assoc_legendre_p_2_0_jac(x, typ = typ, norm = norm))
+            assoc_legendre_p_2_0_jac(x, typ=typ, norm=norm))
         np.testing.assert_allclose(p_jac[2, 1],
-            assoc_legendre_p_2_1_jac(x, typ = typ, norm = norm))
+            assoc_legendre_p_2_1_jac(x, typ=typ, norm=norm))
         np.testing.assert_allclose(p_jac[2, 2],
-            assoc_legendre_p_2_2_jac(x, typ = typ, norm = norm))
+            assoc_legendre_p_2_2_jac(x, typ=typ, norm=norm))
         np.testing.assert_allclose(p_jac[2, 3], 0)
         np.testing.assert_allclose(p_jac[2, 4], 0)
         np.testing.assert_allclose(p_jac[2, -4], 0)
         np.testing.assert_allclose(p_jac[2, -3], 0)
         np.testing.assert_allclose(p_jac[2, -2],
-            assoc_legendre_p_2_m2_jac(x, typ = typ, norm = norm))
+            assoc_legendre_p_2_m2_jac(x, typ=typ, norm=norm))
         np.testing.assert_allclose(p_jac[2, -1],
-            assoc_legendre_p_2_m1_jac(x, typ = typ, norm = norm))
+            assoc_legendre_p_2_m1_jac(x, typ=typ, norm=norm))
 
         np.testing.assert_allclose(p_jac[3, 0],
-            assoc_legendre_p_3_0_jac(x, typ = typ, norm = norm))
+            assoc_legendre_p_3_0_jac(x, typ=typ, norm=norm))
         np.testing.assert_allclose(p_jac[3, 1],
-            assoc_legendre_p_3_1_jac(x, typ = typ, norm = norm))
+            assoc_legendre_p_3_1_jac(x, typ=typ, norm=norm))
         np.testing.assert_allclose(p_jac[3, 2],
-            assoc_legendre_p_3_2_jac(x, typ = typ, norm = norm))
+            assoc_legendre_p_3_2_jac(x, typ=typ, norm=norm))
         np.testing.assert_allclose(p_jac[3, 3],
-            assoc_legendre_p_3_3_jac(x, typ = typ, norm = norm))
+            assoc_legendre_p_3_3_jac(x, typ=typ, norm=norm))
         np.testing.assert_allclose(p_jac[3, 4], 0)
         np.testing.assert_allclose(p_jac[3, -4], 0)
         np.testing.assert_allclose(p_jac[3, -3],
-            assoc_legendre_p_3_m3_jac(x, typ = typ, norm = norm))
+            assoc_legendre_p_3_m3_jac(x, typ=typ, norm=norm))
         np.testing.assert_allclose(p_jac[3, -2],
-            assoc_legendre_p_3_m2_jac(x, typ = typ, norm = norm))
+            assoc_legendre_p_3_m2_jac(x, typ=typ, norm=norm))
         np.testing.assert_allclose(p_jac[3, -1],
-            assoc_legendre_p_3_m1_jac(x, typ = typ, norm = norm))
+            assoc_legendre_p_3_m1_jac(x, typ=typ, norm=norm))
 
         np.testing.assert_allclose(p_jac[4, 0],
-            assoc_legendre_p_4_0_jac(x, typ = typ, norm = norm))
+            assoc_legendre_p_4_0_jac(x, typ=typ, norm=norm))
         np.testing.assert_allclose(p_jac[4, 1],
-            assoc_legendre_p_4_1_jac(x, typ = typ, norm = norm))
+            assoc_legendre_p_4_1_jac(x, typ=typ, norm=norm))
         np.testing.assert_allclose(p_jac[4, 2],
-            assoc_legendre_p_4_2_jac(x, typ = typ, norm = norm))
+            assoc_legendre_p_4_2_jac(x, typ=typ, norm=norm))
         np.testing.assert_allclose(p_jac[4, 3],
-            assoc_legendre_p_4_3_jac(x, typ = typ, norm = norm))
+            assoc_legendre_p_4_3_jac(x, typ=typ, norm=norm))
         np.testing.assert_allclose(p_jac[4, 4],
-            assoc_legendre_p_4_4_jac(x, typ = typ, norm = norm))
+            assoc_legendre_p_4_4_jac(x, typ=typ, norm=norm))
         np.testing.assert_allclose(p_jac[4, -4],
-            assoc_legendre_p_4_m4_jac(x, typ = typ, norm = norm))
+            assoc_legendre_p_4_m4_jac(x, typ=typ, norm=norm))
         np.testing.assert_allclose(p_jac[4, -3],
-            assoc_legendre_p_4_m3_jac(x, typ = typ, norm = norm))
+            assoc_legendre_p_4_m3_jac(x, typ=typ, norm=norm))
         np.testing.assert_allclose(p_jac[4, -2],
-            assoc_legendre_p_4_m2_jac(x, typ = typ, norm = norm))
+            assoc_legendre_p_4_m2_jac(x, typ=typ, norm=norm))
         np.testing.assert_allclose(p_jac[4, -1],
-            assoc_legendre_p_4_m1_jac(x, typ = typ, norm = norm))
+            assoc_legendre_p_4_m1_jac(x, typ=typ, norm=norm))
 
     @pytest.mark.parametrize("m_max", [7])
     @pytest.mark.parametrize("n_max", [10])
     @pytest.mark.parametrize("x", [1, -1])
     def test_all_limits(self, m_max, n_max, x):
-        p, p_jac = assoc_legendre_p_all(n_max, m_max, x, diff_n = 1)
+        p, p_jac = assoc_legendre_p_all(n_max, m_max, x, diff_n=1)
 
         n = np.arange(n_max + 1)
 
@@ -327,7 +327,7 @@ class TestAssocLegendreP:
     @pytest.mark.parametrize("n_max", [10])
     def test_legacy(self, m_max, n_max):
         x = 0.5
-        p, p_jac = assoc_legendre_p_all(n_max, m_max, x, diff_n = 1)
+        p, p_jac = assoc_legendre_p_all(n_max, m_max, x, diff_n=1)
 
         p_legacy, p_jac_legacy = special.lpmn(m_max, n_max, x)
         for m in range(m_max + 1):
@@ -350,10 +350,10 @@ class TestMultiAssocLegendreP:
             1j * rng.uniform(z_min.imag, z_max.imag, shape)
 
         p, p_jac = assoc_legendre_p_all(4, 4,
-            z, typ = typ, norm = norm, diff_n = 1)
+            z, typ=typ, norm=norm, diff_n=1)
 
         np.testing.assert_allclose(p[0, 0],
-            assoc_legendre_p_0_0(z, typ = typ, norm = norm))
+            assoc_legendre_p_0_0(z, typ=typ, norm=norm))
         np.testing.assert_allclose(p[0, 1], 0)
         np.testing.assert_allclose(p[0, 2], 0)
         np.testing.assert_allclose(p[0, 3], 0)
@@ -364,9 +364,9 @@ class TestMultiAssocLegendreP:
         np.testing.assert_allclose(p[0, -1], 0)
 
         np.testing.assert_allclose(p[1, 0],
-            assoc_legendre_p_1_0(z, typ = typ, norm = norm))
+            assoc_legendre_p_1_0(z, typ=typ, norm=norm))
         np.testing.assert_allclose(p[1, 1],
-            assoc_legendre_p_1_1(z, typ = typ, norm = norm))
+            assoc_legendre_p_1_1(z, typ=typ, norm=norm))
         np.testing.assert_allclose(p[1, 2], 0)
         np.testing.assert_allclose(p[1, 3], 0)
         np.testing.assert_allclose(p[1, 4], 0)
@@ -374,61 +374,61 @@ class TestMultiAssocLegendreP:
         np.testing.assert_allclose(p[1, -3], 0)
         np.testing.assert_allclose(p[1, -2], 0)
         np.testing.assert_allclose(p[1, -1],
-            assoc_legendre_p_1_m1(z, typ = typ, norm = norm))
+            assoc_legendre_p_1_m1(z, typ=typ, norm=norm))
 
         np.testing.assert_allclose(p[2, 0],
-            assoc_legendre_p_2_0(z, typ = typ, norm = norm))
+            assoc_legendre_p_2_0(z, typ=typ, norm=norm))
         np.testing.assert_allclose(p[2, 1],
-            assoc_legendre_p_2_1(z, typ = typ, norm = norm))
+            assoc_legendre_p_2_1(z, typ=typ, norm=norm))
         np.testing.assert_allclose(p[2, 2],
-            assoc_legendre_p_2_2(z, typ = typ, norm = norm))
+            assoc_legendre_p_2_2(z, typ=typ, norm=norm))
         np.testing.assert_allclose(p[2, 3], 0)
         np.testing.assert_allclose(p[2, 4], 0)
         np.testing.assert_allclose(p[2, -4], 0)
         np.testing.assert_allclose(p[2, -3], 0)
         np.testing.assert_allclose(p[2, -2],
-            assoc_legendre_p_2_m2(z, typ = typ, norm = norm))
+            assoc_legendre_p_2_m2(z, typ=typ, norm=norm))
         np.testing.assert_allclose(p[2, -1],
-            assoc_legendre_p_2_m1(z, typ = typ, norm = norm))
+            assoc_legendre_p_2_m1(z, typ=typ, norm=norm))
  
         np.testing.assert_allclose(p[3, 0],
-            assoc_legendre_p_3_0(z, typ = typ, norm = norm))
+            assoc_legendre_p_3_0(z, typ=typ, norm=norm))
         np.testing.assert_allclose(p[3, 1],
-            assoc_legendre_p_3_1(z, typ = typ, norm = norm))
+            assoc_legendre_p_3_1(z, typ=typ, norm=norm))
         np.testing.assert_allclose(p[3, 2],
-            assoc_legendre_p_3_2(z, typ = typ, norm = norm))
+            assoc_legendre_p_3_2(z, typ=typ, norm=norm))
         np.testing.assert_allclose(p[3, 3],
-            assoc_legendre_p_3_3(z, typ = typ, norm = norm))
+            assoc_legendre_p_3_3(z, typ=typ, norm=norm))
         np.testing.assert_allclose(p[3, 4], 0)
         np.testing.assert_allclose(p[3, -4], 0)
         np.testing.assert_allclose(p[3, -3],
-            assoc_legendre_p_3_m3(z, typ = typ, norm = norm))
+            assoc_legendre_p_3_m3(z, typ=typ, norm=norm))
         np.testing.assert_allclose(p[3, -2],
-            assoc_legendre_p_3_m2(z, typ = typ, norm = norm))
+            assoc_legendre_p_3_m2(z, typ=typ, norm=norm))
         np.testing.assert_allclose(p[3, -1],
-            assoc_legendre_p_3_m1(z, typ = typ, norm = norm))
+            assoc_legendre_p_3_m1(z, typ=typ, norm=norm))
 
         np.testing.assert_allclose(p[4, 0],
-            assoc_legendre_p_4_0(z, typ = typ, norm = norm))
+            assoc_legendre_p_4_0(z, typ=typ, norm=norm))
         np.testing.assert_allclose(p[4, 1],
-            assoc_legendre_p_4_1(z, typ = typ, norm = norm))
+            assoc_legendre_p_4_1(z, typ=typ, norm=norm))
         np.testing.assert_allclose(p[4, 2],
-            assoc_legendre_p_4_2(z, typ = typ, norm = norm))
+            assoc_legendre_p_4_2(z, typ=typ, norm=norm))
         np.testing.assert_allclose(p[4, 3],
-            assoc_legendre_p_4_3(z, typ = typ, norm = norm))
+            assoc_legendre_p_4_3(z, typ=typ, norm=norm))
         np.testing.assert_allclose(p[4, 4],
-            assoc_legendre_p_4_4(z, typ = typ, norm = norm))
+            assoc_legendre_p_4_4(z, typ=typ, norm=norm))
         np.testing.assert_allclose(p[4, -4],
-            assoc_legendre_p_4_m4(z, typ = typ, norm = norm))
+            assoc_legendre_p_4_m4(z, typ=typ, norm=norm))
         np.testing.assert_allclose(p[4, -3],
-            assoc_legendre_p_4_m3(z, typ = typ, norm = norm))
+            assoc_legendre_p_4_m3(z, typ=typ, norm=norm))
         np.testing.assert_allclose(p[4, -2],
-            assoc_legendre_p_4_m2(z, typ = typ, norm = norm))
+            assoc_legendre_p_4_m2(z, typ=typ, norm=norm))
         np.testing.assert_allclose(p[4, -1],
-            assoc_legendre_p_4_m1(z, typ = typ, norm = norm))
+            assoc_legendre_p_4_m1(z, typ=typ, norm=norm))
 
         np.testing.assert_allclose(p_jac[0, 0],
-            assoc_legendre_p_0_0_jac(z, typ = typ, norm = norm))
+            assoc_legendre_p_0_0_jac(z, typ=typ, norm=norm))
         np.testing.assert_allclose(p_jac[0, 1], 0)
         np.testing.assert_allclose(p_jac[0, 2], 0)
         np.testing.assert_allclose(p_jac[0, 3], 0)
@@ -439,9 +439,9 @@ class TestMultiAssocLegendreP:
         np.testing.assert_allclose(p_jac[0, -1], 0)
 
         np.testing.assert_allclose(p_jac[1, 0],
-            assoc_legendre_p_1_0_jac(z, typ = typ, norm = norm))
+            assoc_legendre_p_1_0_jac(z, typ=typ, norm=norm))
         np.testing.assert_allclose(p_jac[1, 1],
-            assoc_legendre_p_1_1_jac(z, typ = typ, norm = norm))
+            assoc_legendre_p_1_1_jac(z, typ=typ, norm=norm))
         np.testing.assert_allclose(p_jac[1, 2], 0)
         np.testing.assert_allclose(p_jac[1, 3], 0)
         np.testing.assert_allclose(p_jac[1, 4], 0)
@@ -449,58 +449,58 @@ class TestMultiAssocLegendreP:
         np.testing.assert_allclose(p_jac[1, -3], 0)
         np.testing.assert_allclose(p_jac[1, -2], 0)
         np.testing.assert_allclose(p_jac[1, -1],
-            assoc_legendre_p_1_m1_jac(z, typ = typ, norm = norm))
+            assoc_legendre_p_1_m1_jac(z, typ=typ, norm=norm))
 
         np.testing.assert_allclose(p_jac[2, 0],
-            assoc_legendre_p_2_0_jac(z, typ = typ, norm = norm))
+            assoc_legendre_p_2_0_jac(z, typ=typ, norm=norm))
         np.testing.assert_allclose(p_jac[2, 1],
-            assoc_legendre_p_2_1_jac(z, typ = typ, norm = norm))
+            assoc_legendre_p_2_1_jac(z, typ=typ, norm=norm))
         np.testing.assert_allclose(p_jac[2, 2],
-            assoc_legendre_p_2_2_jac(z, typ = typ, norm = norm))
+            assoc_legendre_p_2_2_jac(z, typ=typ, norm=norm))
         np.testing.assert_allclose(p_jac[2, 3], 0)
         np.testing.assert_allclose(p_jac[2, 4], 0)
         np.testing.assert_allclose(p_jac[2, -4], 0)
         np.testing.assert_allclose(p_jac[2, -3], 0)
         np.testing.assert_allclose(p_jac[2, -2],
-            assoc_legendre_p_2_m2_jac(z, typ = typ, norm = norm))
+            assoc_legendre_p_2_m2_jac(z, typ=typ, norm=norm))
         np.testing.assert_allclose(p_jac[2, -1],
-            assoc_legendre_p_2_m1_jac(z, typ = typ, norm = norm))
+            assoc_legendre_p_2_m1_jac(z, typ=typ, norm=norm))
 
         np.testing.assert_allclose(p_jac[3, 0],
-            assoc_legendre_p_3_0_jac(z, typ = typ, norm = norm))
+            assoc_legendre_p_3_0_jac(z, typ=typ, norm=norm))
         np.testing.assert_allclose(p_jac[3, 1],
-            assoc_legendre_p_3_1_jac(z, typ = typ, norm = norm))
+            assoc_legendre_p_3_1_jac(z, typ=typ, norm=norm))
         np.testing.assert_allclose(p_jac[3, 2],
-            assoc_legendre_p_3_2_jac(z, typ = typ, norm = norm))
+            assoc_legendre_p_3_2_jac(z, typ=typ, norm=norm))
         np.testing.assert_allclose(p_jac[3, 3],
-            assoc_legendre_p_3_3_jac(z, typ = typ, norm = norm))
+            assoc_legendre_p_3_3_jac(z, typ=typ, norm=norm))
         np.testing.assert_allclose(p_jac[3, 4], 0)
         np.testing.assert_allclose(p_jac[3, -4], 0)
         np.testing.assert_allclose(p_jac[3, -3],
-            assoc_legendre_p_3_m3_jac(z, typ = typ, norm = norm))
+            assoc_legendre_p_3_m3_jac(z, typ=typ, norm=norm))
         np.testing.assert_allclose(p_jac[3, -2],
-            assoc_legendre_p_3_m2_jac(z, typ = typ, norm = norm))
+            assoc_legendre_p_3_m2_jac(z, typ=typ, norm=norm))
         np.testing.assert_allclose(p_jac[3, -1],
-            assoc_legendre_p_3_m1_jac(z, typ = typ, norm = norm))
+            assoc_legendre_p_3_m1_jac(z, typ=typ, norm=norm))
 
         np.testing.assert_allclose(p_jac[4, 0],
-            assoc_legendre_p_4_0_jac(z, typ = typ, norm = norm))
+            assoc_legendre_p_4_0_jac(z, typ=typ, norm=norm))
         np.testing.assert_allclose(p_jac[4, 1],
-            assoc_legendre_p_4_1_jac(z, typ = typ, norm = norm))
+            assoc_legendre_p_4_1_jac(z, typ=typ, norm=norm))
         np.testing.assert_allclose(p_jac[4, 2],
-            assoc_legendre_p_4_2_jac(z, typ = typ, norm = norm))
+            assoc_legendre_p_4_2_jac(z, typ=typ, norm=norm))
         np.testing.assert_allclose(p_jac[4, 3],
-            assoc_legendre_p_4_3_jac(z, typ = typ, norm = norm))
+            assoc_legendre_p_4_3_jac(z, typ=typ, norm=norm))
         np.testing.assert_allclose(p_jac[4, 4],
-            assoc_legendre_p_4_4_jac(z, typ = typ, norm = norm))
+            assoc_legendre_p_4_4_jac(z, typ=typ, norm=norm))
         np.testing.assert_allclose(p_jac[4, -4],
-            assoc_legendre_p_4_m4_jac(z, typ = typ, norm = norm))
+            assoc_legendre_p_4_m4_jac(z, typ=typ, norm=norm))
         np.testing.assert_allclose(p_jac[4, -3],
-            assoc_legendre_p_4_m3_jac(z, typ = typ, norm = norm))
+            assoc_legendre_p_4_m3_jac(z, typ=typ, norm=norm))
         np.testing.assert_allclose(p_jac[4, -2],
-            assoc_legendre_p_4_m2_jac(z, typ = typ, norm = norm))
+            assoc_legendre_p_4_m2_jac(z, typ=typ, norm=norm))
         np.testing.assert_allclose(p_jac[4, -1],
-            assoc_legendre_p_4_m1_jac(z, typ = typ, norm = norm))
+            assoc_legendre_p_4_m1_jac(z, typ=typ, norm=norm))
 
 class TestSphLegendreP:
     @pytest.mark.parametrize("shape", [(10,), (4, 9), (3, 5, 7)])
@@ -509,7 +509,7 @@ class TestSphLegendreP:
 
         phi = rng.uniform(-np.pi, np.pi, shape)
 
-        p, p_jac = sph_legendre_p_all(4, 4, phi, diff_n = 1)
+        p, p_jac = sph_legendre_p_all(4, 4, phi, diff_n=1)
 
         np.testing.assert_allclose(p[0, 0],
             sph_legendre_p_0_0(phi))
@@ -667,7 +667,7 @@ class TestSphLegendreP:
         m = rng.integers(-10, 10, shape)
         phi = rng.uniform(-np.pi, np.pi, shape)
 
-        p, p_jac, p_hess = sph_legendre_p(n, m, phi, diff_n = 2)
+        p, p_jac, p_hess = sph_legendre_p(n, m, phi, diff_n=2)
 
         assert p.shape == shape
         assert p_jac.shape == p.shape
@@ -675,7 +675,7 @@ class TestSphLegendreP:
 
         np.testing.assert_allclose(np.sin(phi) * p_hess, -np.cos(phi) * p_jac
             - (n * (n + 1) * np.sin(phi) - m * m / np.sin(phi)) * p,
-            rtol = 1e-05, atol = 1e-08)
+            rtol=1e-05, atol=1e-08)
 
 class TestLegendreFunctions:
     def test_clpmn(self):
@@ -756,8 +756,7 @@ class TestLegendreFunctions:
 
         type = 2
 
-#        p, p_jac = special.clpmn(m_max, n_max, z, type = type, legacy = False)
-        p, p_jac = special.clpmn_all(m_max, n_max, type, z, diff_n = 1)
+        p, p_jac = special.clpmn_all(m_max, n_max, type, z, diff_n=1)
 
         n = np.arange(n_max + 1)
 
@@ -886,8 +885,8 @@ class TestLegendreFunctions:
 
 def assoc_legendre_factor(n, m, norm):
     if norm:
-        return math.sqrt((2 * n + 1) * \
-            math.factorial(n - m) / (2 * math.factorial(n + m)))
+        return (math.sqrt((2 * n + 1) *
+            math.factorial(n - m) / (2 * math.factorial(n + m))))
 
     return 1
 
@@ -914,8 +913,8 @@ def assoc_legendre_p_1_m1(z, *, typ, norm = False):
     typ_sign = np.where(typ == 3, -1, 1)
     fac = assoc_legendre_factor(1, -1, norm)
 
-    return -typ_sign * fac * \
-        assoc_legendre_p_1_1(z, typ = typ) / 2
+    return (-typ_sign * fac *
+        assoc_legendre_p_1_1(z, typ=typ) / 2)
 
 def assoc_legendre_p_2_0(z, *, typ, norm = False):
     fac = assoc_legendre_factor(2, 0, norm)
@@ -925,8 +924,8 @@ def assoc_legendre_p_2_0(z, *, typ, norm = False):
 def assoc_legendre_p_2_1(z, *, typ, norm = False):
     fac = assoc_legendre_factor(2, 1, norm)
 
-    return 3 * fac * z * \
-        assoc_legendre_p_1_1(z, typ = typ)
+    return (3 * fac * z *
+        assoc_legendre_p_1_1(z, typ=typ))
 
 def assoc_legendre_p_2_2(z, *, typ, norm = False):
     typ_sign = np.where(typ == 3, -1, 1)
@@ -944,8 +943,8 @@ def assoc_legendre_p_2_m1(z, *, typ, norm = False):
     typ_sign = np.where(typ == 3, -1, 1)
     fac = assoc_legendre_factor(2, -1, norm)
 
-    return -typ_sign * fac * z * \
-        assoc_legendre_p_1_1(z, typ = typ) / 2
+    return (-typ_sign * fac * z *
+        assoc_legendre_p_1_1(z, typ=typ) / 2)
 
 def assoc_legendre_p_3_0(z, *, typ, norm = False):
     fac = assoc_legendre_factor(3, 0, norm)
@@ -955,8 +954,8 @@ def assoc_legendre_p_3_0(z, *, typ, norm = False):
 def assoc_legendre_p_3_1(z, *, typ, norm = False):
     fac = assoc_legendre_factor(3, 1, norm)
 
-    return 3 * fac * (5 * z * z - 1) * \
-        assoc_legendre_p_1_1(z, typ = typ) / 2
+    return (3 * fac * (5 * z * z - 1) *
+        assoc_legendre_p_1_1(z, typ=typ) / 2)
 
 def assoc_legendre_p_3_2(z, *, typ, norm = False):
     typ_sign = np.where(typ == 3, -1, 1)
@@ -968,14 +967,14 @@ def assoc_legendre_p_3_3(z, *, typ, norm = False):
     typ_sign = np.where(typ == 3, -1, 1)
     fac = assoc_legendre_factor(3, 3, norm)
 
-    return 15 * typ_sign * fac * (1 - z * z) * \
-        assoc_legendre_p_1_1(z, typ = typ)
+    return (15 * typ_sign * fac * (1 - z * z) *
+        assoc_legendre_p_1_1(z, typ=typ))
 
 def assoc_legendre_p_3_m3(z, *, typ, norm = False):
     fac = assoc_legendre_factor(3, -3, norm)
 
-    return fac * (z * z - 1) * \
-        assoc_legendre_p_1_1(z, typ = typ) / 48
+    return (fac * (z * z - 1) *
+        assoc_legendre_p_1_1(z, typ=typ) / 48)
 
 def assoc_legendre_p_3_m2(z, *, typ, norm = False):
     typ_sign = np.where(typ == 3, -1, 1)
@@ -987,8 +986,8 @@ def assoc_legendre_p_3_m1(z, *, typ, norm = False):
     typ_sign = np.where(typ == 3, -1, 1)
     fac = assoc_legendre_factor(3, -1, norm)
 
-    return typ_sign * fac * (1 - 5 * z * z) * \
-        assoc_legendre_p_1_1(z, typ = typ) / 8
+    return (typ_sign * fac * (1 - 5 * z * z) *
+        assoc_legendre_p_1_1(z, typ=typ) / 8)
 
 def assoc_legendre_p_4_0(z, *, typ, norm = False):
     fac = assoc_legendre_factor(4, 0, norm)
@@ -998,8 +997,8 @@ def assoc_legendre_p_4_0(z, *, typ, norm = False):
 def assoc_legendre_p_4_1(z, *, typ, norm = False):
     fac = assoc_legendre_factor(4, 1, norm)
 
-    return 5 * fac * (7 * z * z - 3) * z * \
-       assoc_legendre_p_1_1(z, typ = typ) / 2
+    return (5 * fac * (7 * z * z - 3) * z *
+       assoc_legendre_p_1_1(z, typ=typ) / 2)
 
 def assoc_legendre_p_4_2(z, *, typ, norm = False):
     typ_sign = np.where(typ == 3, -1, 1)
@@ -1011,8 +1010,8 @@ def assoc_legendre_p_4_3(z, *, typ, norm = False):
     typ_sign = np.where(typ == 3, -1, 1)
     fac = assoc_legendre_factor(4, 3, norm)
 
-    return 105 * typ_sign * fac * (1 - z * z) * z * \
-        assoc_legendre_p_1_1(z, typ = typ)
+    return (105 * typ_sign * fac * (1 - z * z) * z *
+        assoc_legendre_p_1_1(z, typ=typ))
 
 def assoc_legendre_p_4_4(z, *, typ, norm = False):
     fac = assoc_legendre_factor(4, 4, norm)
@@ -1027,8 +1026,8 @@ def assoc_legendre_p_4_m4(z, *, typ, norm = False):
 def assoc_legendre_p_4_m3(z, *, typ, norm = False):
     fac = assoc_legendre_factor(4, -3, norm)
 
-    return fac * (z * z - 1) * z * \
-        assoc_legendre_p_1_1(z, typ = typ) / 48
+    return (fac * (z * z - 1) * z *
+        assoc_legendre_p_1_1(z, typ=typ) / 48)
 
 def assoc_legendre_p_4_m2(z, *, typ, norm = False):
     typ_sign = np.where(typ == 3, -1, 1)
@@ -1040,8 +1039,8 @@ def assoc_legendre_p_4_m1(z, *, typ, norm = False):
     typ_sign = np.where(typ == 3, -1, 1)
     fac = assoc_legendre_factor(4, -1, norm)
 
-    return typ_sign * fac * (3 - 7 * z * z) * z * \
-        assoc_legendre_p_1_1(z, typ = typ) / 8
+    return (typ_sign * fac * (3 - 7 * z * z) * z *
+        assoc_legendre_p_1_1(z, typ=typ) / 8)
 
 def assoc_legendre_p_1_1_jac_div_z(z, typ):
     branch_sign = np.where(typ == 3, np.where(np.signbit(np.real(z)), 1, -1), -1)
@@ -1061,15 +1060,15 @@ def assoc_legendre_p_1_0_jac(z, *, typ, norm = False):
 def assoc_legendre_p_1_1_jac(z, *, typ, norm = False):
     fac = assoc_legendre_factor(1, 1, norm)
 
-    return fac * z * \
-        assoc_legendre_p_1_1_jac_div_z(z, typ = typ)
+    return (fac * z *
+        assoc_legendre_p_1_1_jac_div_z(z, typ=typ))
 
 def assoc_legendre_p_1_m1_jac(z, *, typ, norm = False):
     typ_sign = np.where(typ == 3, -1, 1)
     fac = assoc_legendre_factor(1, -1, norm)
 
-    return -typ_sign * fac * z * \
-        assoc_legendre_p_1_1_jac_div_z(z, typ = typ) / 2
+    return (-typ_sign * fac * z *
+        assoc_legendre_p_1_1_jac_div_z(z, typ=typ) / 2)
 
 def assoc_legendre_p_2_0_jac(z, *, typ, norm = False):
     fac = assoc_legendre_factor(2, 0, norm)
@@ -1079,8 +1078,8 @@ def assoc_legendre_p_2_0_jac(z, *, typ, norm = False):
 def assoc_legendre_p_2_1_jac(z, *, typ, norm = False):
     fac = assoc_legendre_factor(2, 1, norm)
 
-    return 3 * fac * (2 * z * z - 1) * \
-        assoc_legendre_p_1_1_jac_div_z(z, typ = typ)
+    return (3 * fac * (2 * z * z - 1) *
+        assoc_legendre_p_1_1_jac_div_z(z, typ=typ))
 
 def assoc_legendre_p_2_2_jac(z, *, typ, norm = False):
     typ_sign = np.where(typ == 3, -1, 1)
@@ -1092,8 +1091,8 @@ def assoc_legendre_p_2_m1_jac(z, *, typ, norm = False):
     typ_sign = np.where(typ == 3, -1, 1)
     fac = assoc_legendre_factor(2, -1, norm)
 
-    return typ_sign * fac * (1 - 2 * z * z) * \
-        assoc_legendre_p_1_1_jac_div_z(z, typ = typ) / 2
+    return (typ_sign * fac * (1 - 2 * z * z) *
+        assoc_legendre_p_1_1_jac_div_z(z, typ=typ) / 2)
 
 def assoc_legendre_p_2_m2_jac(z, *, typ, norm = False):
     typ_sign = np.where(typ == 3, -1, 1)
@@ -1109,8 +1108,8 @@ def assoc_legendre_p_3_0_jac(z, *, typ, norm = False):
 def assoc_legendre_p_3_1_jac(z, *, typ, norm = False):
     fac = assoc_legendre_factor(3, 1, norm)
 
-    return 3 * fac * (15 * z * z - 11) * z * \
-        assoc_legendre_p_1_1_jac_div_z(z, typ = typ) / 2
+    return (3 * fac * (15 * z * z - 11) * z *
+        assoc_legendre_p_1_1_jac_div_z(z, typ=typ) / 2)
 
 def assoc_legendre_p_3_2_jac(z, *, typ, norm = False):
     typ_sign = np.where(typ == 3, -1, 1)
@@ -1122,14 +1121,14 @@ def assoc_legendre_p_3_3_jac(z, *, typ, norm = False):
     typ_sign = np.where(typ == 3, -1, 1)
     fac = assoc_legendre_factor(3, 3, norm)
 
-    return 45 * typ_sign * fac * (1 - z * z) * z * \
-        assoc_legendre_p_1_1_jac_div_z(z, typ = typ)
+    return (45 * typ_sign * fac * (1 - z * z) * z *
+        assoc_legendre_p_1_1_jac_div_z(z, typ=typ))
 
 def assoc_legendre_p_3_m3_jac(z, *, typ, norm = False):
     fac = assoc_legendre_factor(3, -3, norm)
 
-    return fac * (z * z - 1) * z * \
-        assoc_legendre_p_1_1_jac_div_z(z, typ = typ) / 16
+    return (fac * (z * z - 1) * z *
+        assoc_legendre_p_1_1_jac_div_z(z, typ=typ) / 16)
 
 def assoc_legendre_p_3_m2_jac(z, *, typ, norm = False):
     typ_sign = np.where(typ == 3, -1, 1)
@@ -1141,8 +1140,8 @@ def assoc_legendre_p_3_m1_jac(z, *, typ, norm = False):
     typ_sign = np.where(typ == 3, -1, 1)
     fac = assoc_legendre_factor(3, -1, norm)
 
-    return typ_sign * fac * (11 - 15 * z * z) * z * \
-        assoc_legendre_p_1_1_jac_div_z(z, typ = typ) / 8
+    return (typ_sign * fac * (11 - 15 * z * z) * z *
+        assoc_legendre_p_1_1_jac_div_z(z, typ=typ) / 8)
 
 def assoc_legendre_p_4_0_jac(z, *, typ, norm = False):
     fac = assoc_legendre_factor(4, 0, norm)
@@ -1152,8 +1151,8 @@ def assoc_legendre_p_4_0_jac(z, *, typ, norm = False):
 def assoc_legendre_p_4_1_jac(z, *, typ, norm = False):
     fac = assoc_legendre_factor(4, 1, norm)
 
-    return 5 * fac * ((28 * z * z - 27) * z * z + 3) * \
-        assoc_legendre_p_1_1_jac_div_z(z, typ = typ) / 2
+    return (5 * fac * ((28 * z * z - 27) * z * z + 3) *
+        assoc_legendre_p_1_1_jac_div_z(z, typ=typ) / 2)
 
 def assoc_legendre_p_4_2_jac(z, *, typ, norm = False):
     typ_sign = np.where(typ == 3, -1, 1)
@@ -1165,8 +1164,8 @@ def assoc_legendre_p_4_3_jac(z, *, typ, norm = False):
     typ_sign = np.where(typ == 3, -1, 1)
     fac = assoc_legendre_factor(4, 3, norm)
 
-    return 105 * typ_sign * fac * ((5 - 4 * z * z) * z * z - 1) * \
-        assoc_legendre_p_1_1_jac_div_z(z, typ = typ)
+    return (105 * typ_sign * fac * ((5 - 4 * z * z) * z * z - 1) *
+        assoc_legendre_p_1_1_jac_div_z(z, typ=typ))
 
 def assoc_legendre_p_4_4_jac(z, *, typ, norm = False):
     fac = assoc_legendre_factor(4, 4, norm)
@@ -1181,8 +1180,8 @@ def assoc_legendre_p_4_m4_jac(z, *, typ, norm = False):
 def assoc_legendre_p_4_m3_jac(z, *, typ, norm = False):
     fac = assoc_legendre_factor(4, -3, norm)
 
-    return fac * ((4 * z * z - 5) * z * z + 1) * \
-        assoc_legendre_p_1_1_jac_div_z(z, typ = typ) / 48
+    return (fac * ((4 * z * z - 5) * z * z + 1) *
+        assoc_legendre_p_1_1_jac_div_z(z, typ=typ) / 48)
 
 def assoc_legendre_p_4_m2_jac(z, *, typ, norm = False):
     typ_sign = np.where(typ == 3, -1, 1)
@@ -1194,8 +1193,8 @@ def assoc_legendre_p_4_m1_jac(z, *, typ, norm = False):
     typ_sign = np.where(typ == 3, -1, 1)
     fac = assoc_legendre_factor(4, -1, norm)
 
-    return typ_sign * fac * ((27 - 28 * z * z) * z * z - 3) * \
-        assoc_legendre_p_1_1_jac_div_z(z, typ = typ) / 8
+    return (typ_sign * fac * ((27 - 28 * z * z) * z * z - 3) *
+        assoc_legendre_p_1_1_jac_div_z(z, typ=typ) / 8)
 
 def sph_legendre_factor(n, m):
     return assoc_legendre_factor(n, m, norm = True) / np.sqrt(2 * np.pi)
@@ -1248,20 +1247,20 @@ def sph_legendre_p_2_m1(phi):
 def sph_legendre_p_3_0(phi):
     fac = sph_legendre_factor(3, 0)
 
-    return fac * (5 * np.square(np.cos(phi)) - 3) * \
-        np.cos(phi) / 2
+    return (fac * (5 * np.square(np.cos(phi)) - 3) *
+        np.cos(phi) / 2)
 
 def sph_legendre_p_3_1(phi):
     fac = sph_legendre_factor(3, 1)
 
-    return -3 * fac * (5 * np.square(np.cos(phi)) - 1) * \
-        np.abs(np.sin(phi)) / 2
+    return (-3 * fac * (5 * np.square(np.cos(phi)) - 1) *
+        np.abs(np.sin(phi)) / 2)
 
 def sph_legendre_p_3_2(phi):
     fac = sph_legendre_factor(3, 2)
 
-    return -15 * fac * (np.square(np.cos(phi)) - 1) * \
-        np.cos(phi)
+    return (-15 * fac * (np.square(np.cos(phi)) - 1) *
+        np.cos(phi))
 
 def sph_legendre_p_3_3(phi):
     fac = sph_legendre_factor(3, 3)
@@ -1276,32 +1275,32 @@ def sph_legendre_p_3_m3(phi):
 def sph_legendre_p_3_m2(phi):
     fac = sph_legendre_factor(3, -2)
 
-    return -fac * (np.square(np.cos(phi)) - 1) * \
-        np.cos(phi) / 8
+    return (-fac * (np.square(np.cos(phi)) - 1) *
+        np.cos(phi) / 8)
 
 def sph_legendre_p_3_m1(phi):
     fac = sph_legendre_factor(3, -1)
 
-    return fac * (5 * np.square(np.cos(phi)) - 1) * \
-        np.abs(np.sin(phi)) / 8
+    return (fac * (5 * np.square(np.cos(phi)) - 1) *
+        np.abs(np.sin(phi)) / 8)
 
 def sph_legendre_p_4_0(phi):
     fac = sph_legendre_factor(4, 0)
 
-    return fac * (35 * np.square(np.square(np.cos(phi))) - \
-        30 * np.square(np.cos(phi)) + 3) / 8
+    return (fac * (35 * np.square(np.square(np.cos(phi))) -
+        30 * np.square(np.cos(phi)) + 3) / 8)
 
 def sph_legendre_p_4_1(phi):
     fac = sph_legendre_factor(4, 1)
 
-    return -5 * fac * (7 * np.square(np.cos(phi)) - 3) * \
-        np.cos(phi) * np.abs(np.sin(phi)) / 2
+    return (-5 * fac * (7 * np.square(np.cos(phi)) - 3) *
+        np.cos(phi) * np.abs(np.sin(phi)) / 2)
 
 def sph_legendre_p_4_2(phi):
     fac = sph_legendre_factor(4, 2)
 
-    return -15 * fac * (7 * np.square(np.cos(phi)) - 1) * \
-        (np.square(np.cos(phi)) - 1) / 2
+    return (-15 * fac * (7 * np.square(np.cos(phi)) - 1) *
+        (np.square(np.cos(phi)) - 1) / 2)
 
 def sph_legendre_p_4_3(phi):
     fac = sph_legendre_factor(4, 3)
@@ -1321,20 +1320,20 @@ def sph_legendre_p_4_m4(phi):
 def sph_legendre_p_4_m3(phi):
     fac = sph_legendre_factor(4, -3)
 
-    return fac * np.power(np.abs(np.sin(phi)), 3) * \
-        np.cos(phi) / 48
+    return (fac * np.power(np.abs(np.sin(phi)), 3) *
+        np.cos(phi) / 48)
 
 def sph_legendre_p_4_m2(phi):
     fac = sph_legendre_factor(4, -2)
 
-    return -fac * (7 * np.square(np.cos(phi)) - 1) * \
-        (np.square(np.cos(phi)) - 1) / 48
+    return (-fac * (7 * np.square(np.cos(phi)) - 1) *
+        (np.square(np.cos(phi)) - 1) / 48)
 
 def sph_legendre_p_4_m1(phi):
     fac = sph_legendre_factor(4, -1)
 
-    return fac * (7 * np.square(np.cos(phi)) - 3) * \
-        np.cos(phi) * np.abs(np.sin(phi)) / 8
+    return (fac * (7 * np.square(np.cos(phi)) - 3) *
+        np.cos(phi) * np.abs(np.sin(phi)) / 8)
 
 def sph_legendre_p_0_0_jac(phi):
     return np.zeros_like(phi)
@@ -1362,9 +1361,9 @@ def sph_legendre_p_2_0_jac(phi):
 def sph_legendre_p_2_1_jac(phi):
     fac = sph_legendre_factor(2, 1)
 
-    return 3 * fac * (-np.square(np.cos(phi)) * \
-        (2 * np.heaviside(np.sin(phi), 1) - 1) + \
-        np.abs(np.sin(phi)) * np.sin(phi))
+    return (3 * fac * (-np.square(np.cos(phi)) *
+        (2 * np.heaviside(np.sin(phi), 1) - 1) +
+        np.abs(np.sin(phi)) * np.sin(phi)))
 
 def sph_legendre_p_2_2_jac(phi):
     fac = sph_legendre_factor(2, 2)
@@ -1379,9 +1378,9 @@ def sph_legendre_p_2_m2_jac(phi):
 def sph_legendre_p_2_m1_jac(phi):
     fac = sph_legendre_factor(2, -1)
 
-    return -fac * (-np.square(np.cos(phi)) * \
-        (2 * np.heaviside(np.sin(phi), 1) - 1) + \
-        np.abs(np.sin(phi)) * np.sin(phi)) / 2
+    return (-fac * (-np.square(np.cos(phi)) *
+        (2 * np.heaviside(np.sin(phi), 1) - 1) +
+        np.abs(np.sin(phi)) * np.sin(phi)) / 2)
 
 def sph_legendre_p_3_0_jac(phi):
     fac = sph_legendre_factor(3, 0)
@@ -1391,8 +1390,8 @@ def sph_legendre_p_3_0_jac(phi):
 def sph_legendre_p_3_1_jac(phi):
     fac = sph_legendre_factor(3, 1)
 
-    return 3 * fac * (11 - 15 * np.square(np.cos(phi))) * np.cos(phi) * \
-        (2 * np.heaviside(np.sin(phi), 1) - 1) / 2
+    return (3 * fac * (11 - 15 * np.square(np.cos(phi))) * np.cos(phi) *
+        (2 * np.heaviside(np.sin(phi), 1) - 1) / 2)
 
 def sph_legendre_p_3_2_jac(phi):
     fac = sph_legendre_factor(3, 2)
@@ -1417,62 +1416,62 @@ def sph_legendre_p_3_m2_jac(phi):
 def sph_legendre_p_3_m1_jac(phi):
     fac = sph_legendre_factor(3, -1)
 
-    return -fac * (11 - 15 * np.square(np.cos(phi))) * \
-        np.cos(phi) * \
-        (2 * np.heaviside(np.sin(phi), 1) - 1) / 8
+    return (-fac * (11 - 15 * np.square(np.cos(phi))) *
+        np.cos(phi) *
+        (2 * np.heaviside(np.sin(phi), 1) - 1) / 8)
 
 def sph_legendre_p_4_0_jac(phi):
     fac = sph_legendre_factor(4, 0)
 
-    return -5 * fac * (7 * np.square(np.cos(phi)) - 3) * \
-        np.sin(phi) * np.cos(phi) / 2
+    return (-5 * fac * (7 * np.square(np.cos(phi)) - 3) *
+        np.sin(phi) * np.cos(phi) / 2)
 
 def sph_legendre_p_4_1_jac(phi):
     fac = sph_legendre_factor(4, 1)
 
-    return 5 * fac * (-3 + 27 * np.square(np.cos(phi)) - \
-        28 * np.square(np.square(np.cos(phi)))) * \
-        (2 * np.heaviside(np.sin(phi), 1) - 1) / 2
+    return (5 * fac * (-3 + 27 * np.square(np.cos(phi)) -
+        28 * np.square(np.square(np.cos(phi)))) *
+        (2 * np.heaviside(np.sin(phi), 1) - 1) / 2)
 
 def sph_legendre_p_4_2_jac(phi):
     fac = sph_legendre_factor(4, 2)
 
-    return 30 * fac * (7 * np.square(np.cos(phi)) - 4) * \
-        np.sin(phi) * np.cos(phi)
+    return (30 * fac * (7 * np.square(np.cos(phi)) - 4) *
+        np.sin(phi) * np.cos(phi))
 
 def sph_legendre_p_4_3_jac(phi):
     fac = sph_legendre_factor(4, 3)
 
-    return -105 * fac * (4 * np.square(np.cos(phi)) - 1) * \
-        np.abs(np.sin(phi)) * np.sin(phi)
+    return (-105 * fac * (4 * np.square(np.cos(phi)) - 1) *
+        np.abs(np.sin(phi)) * np.sin(phi))
 
 def sph_legendre_p_4_4_jac(phi):
     fac = sph_legendre_factor(4, 4)
 
-    return -420 * fac * (np.square(np.cos(phi)) - 1) * \
-        np.sin(phi) * np.cos(phi)
+    return (-420 * fac * (np.square(np.cos(phi)) - 1) *
+        np.sin(phi) * np.cos(phi))
 
 def sph_legendre_p_4_m4_jac(phi):
     fac = sph_legendre_factor(4, -4)
 
-    return -fac * (np.square(np.cos(phi)) - 1) * \
-        np.sin(phi) * np.cos(phi) / 96
+    return (-fac * (np.square(np.cos(phi)) - 1) *
+        np.sin(phi) * np.cos(phi) / 96)
 
 def sph_legendre_p_4_m3_jac(phi):
     fac = sph_legendre_factor(4, -3)
 
-    return fac * (4 * np.square(np.cos(phi)) - 1) \
-        * np.abs(np.sin(phi)) * np.sin(phi) / 48
+    return (fac * (4 * np.square(np.cos(phi)) - 1) *
+        np.abs(np.sin(phi)) * np.sin(phi) / 48)
 
 def sph_legendre_p_4_m2_jac(phi):
     fac = sph_legendre_factor(4, -2)
 
-    return fac * (7 * np.square(np.cos(phi)) - 4) * np.sin(phi) * \
-        np.cos(phi) / 12
+    return (fac * (7 * np.square(np.cos(phi)) - 4) * np.sin(phi) *
+        np.cos(phi) / 12)
 
 def sph_legendre_p_4_m1_jac(phi):
     fac = sph_legendre_factor(4, -1)
 
-    return -fac * (-3 + 27 * np.square(np.cos(phi)) - \
-        28 * np.square(np.square(np.cos(phi)))) * \
-        (2 * np.heaviside(np.sin(phi), 1) - 1) / 8
+    return (-fac * (-3 + 27 * np.square(np.cos(phi)) -
+        28 * np.square(np.square(np.cos(phi)))) *
+        (2 * np.heaviside(np.sin(phi), 1) - 1) / 8)

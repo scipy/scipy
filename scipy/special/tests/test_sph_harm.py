@@ -13,11 +13,11 @@ class TestSphHarm:
         phi = np.linspace(0, np.pi)
         theta, phi = np.meshgrid(theta, phi)
 
-        y, y_jac, y_hess = sc.sph_harm_y_all(n_max, m_max, theta, phi, diff_n = 2)
-        p, p_jac, p_hess = sc.sph_legendre_p_all(n_max, m_max, phi, diff_n = 2)
+        y, y_jac, y_hess = sc.sph_harm_y_all(n_max, m_max, theta, phi, diff_n=2)
+        p, p_jac, p_hess = sc.sph_legendre_p_all(n_max, m_max, phi, diff_n=2)
 
         m = np.concatenate([np.arange(m_max + 1), np.arange(-m_max, 0)])
-        m = np.expand_dims(m, axis = (0,) + tuple(range(2, theta.ndim + 2)))
+        m = np.expand_dims(m, axis=(0,)+tuple(range(2,theta.ndim+2)))
 
         assert_allclose(y, p * np.exp(1j * m * theta))
 
@@ -36,15 +36,15 @@ class TestSphHarm:
         phi = np.linspace(0, np.pi)
 
         n = np.arange(n_max + 1)
-        n = np.expand_dims(n, axis = tuple(range(1, theta.ndim + 2)))
+        n = np.expand_dims(n, axis=tuple(range(1,theta.ndim+2)))
 
         m = np.concatenate([np.arange(m_max + 1), np.arange(-m_max, 0)])
-        m = np.expand_dims(m, axis = (0,) + tuple(range(2, theta.ndim + 2)))
+        m = np.expand_dims(m, axis=(0,)+tuple(range(2,theta.ndim+2)))
 
         y_actual = sc.sph_harm_y_all(n_max, m_max, theta, phi)
         y_desired = sc.sph_harm_y(n, m, theta, phi)
 
-        np.testing.assert_allclose(y_actual, y_desired, rtol = 1e-05)
+        np.testing.assert_allclose(y_actual, y_desired, rtol=1e-05)
 
 def test_first_harmonics():
     # Test against explicit representations of the first four
