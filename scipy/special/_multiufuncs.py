@@ -320,7 +320,8 @@ def _(n, m, z_shape, branch_cut_shape, nout):
     if not isinstance(n, numbers.Integral) or (n < 0):
         raise ValueError("n must be a non-negative integer.")
 
-    return nout * ((n + 1, 2 * abs(m) + 1) + np.broadcast_shapes(z_shape, branch_cut_shape),)
+    return nout * ((n + 1, 2 * abs(m) + 1)
+        + np.broadcast_shapes(z_shape, branch_cut_shape),)
 
 
 legendre_p = MultiUFunc(legendre_p,
