@@ -261,7 +261,7 @@ class IndexMixin:
             if any(idx_arrays[0].shape != ix.shape for ix in idx_arrays[1:]):
                 raise IndexError('array indices after broadcast differ in shape')
             idx_shape = list(idx_arrays[0].shape) + idx_shape
-        if len(array_indices) == 1:
+        elif len(array_indices) == 1:
             arr_index = array_indices[0]
             arr_shape = list(index[arr_index].shape)
             idx_shape = idx_shape[:arr_index] + arr_shape + idx_shape[arr_index:]
