@@ -176,38 +176,18 @@ def _(diff_n):
 
 
 sph_legendre_p_all = MultiUFunc(sph_legendre_p_all,
-    r"""sph_legendre_p_all(n, m, phi, *, diff_n=0)
+    """sph_legendre_p_all(n, m, phi, *, diff_n=0)
 
-    All spherical Legendre polynomials of the first kind up to a specified order
-    and degree.
+    All spherical Legendre polynomials of the first kind up to the
+    specified degree ``n`` and order ``m``.
 
-    Parameters
-    ----------
-    n : int
-        Degree (max) of the spherical Legendre polynomial. Must have ``n >= 0``.
-    m : int
-        Order (max) of the spherical Legendre polynomial. Must have ``m >= 0``.
-    phi : ArrayLike[float]
-        Input value.
-    diff_n : Optional[int]
-        A non-negative integer. Compute and return all derivatives up
-        to order ``diff_n``. Default is 0.
+    Output shape is ``(n + 1, 2 * m + 1, ...)``. The entry at ``(j, i)``
+    corresponds to degree ``j`` and order ``i`` for all  ``0 <= j <= n``
+    and ``-m <= i <= m``. 
 
-    Returns
-    -------
-    p : ndarray or tuple[ndarray]
-        All spherical Legendre polynomials with ``diff_n`` derivatives.  Each output has
-        shape ``(n + 1, 2 * m + 1, ...)``. The entry at ``(j, i)`` corresponds to degree
-        ``j`` and order ``i`` for all  ``0 <= j <= n`` and ``-m <= i <= m``. 
-
-    Notes
-    -----
-    The spherical counterpart of an (unnormalized) associated Legendre polynomial has
-    the additional factor
-
-    .. math::
-
-        \sqrt{\frac{(2 n + 1) (n - m)!}{4 \pi (n + m)!}}
+    See Also
+    --------
+    sph_legendre_p
     """, diff_n=0
 )
 
@@ -292,43 +272,18 @@ def _(branch_cut, norm, diff_n):
 
 
 assoc_legendre_p_all = MultiUFunc(assoc_legendre_p_all,
-    r"""assoc_legendre_p_all(n, m, z, *, branch_cut=2, norm=False, diff_n=0)
+    """assoc_legendre_p_all(n, m, z, *, branch_cut=2, norm=False, diff_n=0)
 
-    All associated Legendre polynomials of the first kind up to a specified order
-    and degree.
+    All associated Legendre polynomials of the first kind up to the
+    specified degree ``n`` and order ``m``.
 
-    Parameters
-    ----------
-    n : int
-        Degree (max) of the associated Legendre polynomial. Must have ``n >= 0``.
-    m : int
-        Order (max) of the associated Legendre polynomial. Must have ``m >= 0``.
-    z : ArrayLike[float | complex]
-        Input value.
-    branch_cut : Optional[ArrayLike[int]]
-        Selects branch cut. Must be 1, 2, or 3. Default is 2.
-    norm : Optional[bool]
-        If ``True``, compute the normalized associated Legendre polynomial.
-        Default is ``False``.
-    diff_n : Optional[int]
-        A non-negative integer. Compute and return all derivatives up
-        to order ``diff_n``. Default is 0.
+    Output shape is ``(n + 1, 2 * m + 1, ...)``. The entry at ``(j, i)``
+    corresponds to degree ``j`` and order ``i`` for all  ``0 <= j <= n``
+    and ``-m <= i <= m``. 
 
-    Returns
-    -------
-    p : ndarray or tuple[ndarray]
-        All associated Legendre polynomials with ``diff_n`` derivatives.  Each output
-        has shape ``(n + 1, 2 * m + 1, ...)``. The entry at ``(j, i)`` corresponds to
-        degree ``j`` and order ``i`` for all  ``0 <= j <= n`` and ``-m <= i <= m``. 
-
-    Notes
-    -----
-    The normalized counterpart of an (unnormalized) associated Legendre polynomial has
-    the additional factor
-
-    .. math::
-
-        \sqrt{\frac{(2 n + 1) (n - m)!}{2 (n + m)!}}
+    See Also
+    --------
+    assoc_legendre_p
     """, branch_cut=2, norm=False, diff_n=0
 )
 
@@ -419,34 +374,15 @@ def _(diff_n):
 legendre_p_all = MultiUFunc(legendre_p_all,
     """legendre_p_all(n, z, *, diff_n=0)
 
-    All Legendre polynomials of the first kind up to a specified order.
+    All Legendre polynomials of the first kind up to the
+    specified degree ``n``.
 
-    Parameters
-    ----------
-    n : int
-        Degree (max) of the Legendre polynomial. Must have ``n >= 0``.
-    z : ArrayLike[float]
-        Input value.
-    diff_n : Optional[int]
-        A non-negative integer. Compute and return all derivatives up
-        to degree ``diff_n``. Default is 0.
-
-    Returns
-    -------
-    p : ndarray or tuple[ndarray]
-        All Legendre polynomials with ``diff_n`` derivatives.  Each output has
-        shape ``(n + 1, ...)``. The entry at ``j`` corresponds to degree ``j``
-        for all  ``0 <= j <= n``. 
+    Output shape is ``(n + 1, ...)``. The entry at ``j``
+    corresponds to degree ``j`` for all  ``0 <= j <= n``. 
 
     See Also
     --------
-    legendre
-
-    References
-    ----------
-    .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
-           Functions", John Wiley and Sons, 1996.
-           https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
+    legendre_p
     """, diff_n=0
 )
 
@@ -560,69 +496,17 @@ def _(diff_n):
 
 
 sph_harm_y_all = MultiUFunc(sph_harm_y_all, 
-    r"""sph_harm_y_all(n, m, theta, phi, *, diff_n=0)
+    """sph_harm_y_all(n, m, theta, phi, *, diff_n=0)
 
-    All spherical harmonics up to a specified degree and order. They are defined as
+    All spherical harmonics up to the specified degree ``n`` and order ``m``.
 
-    .. math::
+    Output shape is ``(n + 1, 2 * m + 1, ...)``. The entry at ``(j, i)``
+    corresponds to degree ``j`` and order ``i`` for all  ``0 <= j <= n``
+    and ``-m <= i <= m``. 
 
-        Y_n^m(\theta,\phi) = \sqrt{\frac{2 n + 1}{4 \pi} \frac{(n - m)!}{(n + m)!}}
-            P_n^m(\cos(\phi)) e^{i m \theta}
-
-    where :math:`P_n^m` are the (unnormalized) associated Legendre polynomials.
-
-    Parameters
-    ----------
-    n : int
-        Degree (max) of the harmonic. Must have ``n >= 0``. This is
-        often denoted by ``l`` (lower case L) in descriptions of
-        spherical harmonics.
-    m : int
-        Order (max) of the harmonic. Must have ``m >= 0``.
-    theta : ArrayLike[float]
-        Azimuthal (longitudinal) coordinate; must be in ``[0, 2*pi]``.
-    phi : ArrayLike[float]
-        Polar (colatitudinal) coordinate; must be in ``[0, pi]``.
-    diff_n : Optional[int]
-        A non-negative integer. Compute and return all derivatives up
-        to order ``diff_n``. Default is 0.
-
-    Returns
-    -------
-    y : ndarray[complex] or tuple[ndarray[complex]]
-        All spherical harmonics with ``diff_n`` derivatives. Each output has shape
-        ``(n + 1, 2 * m + 1, ...)``. The entry at ``(j, i)`` corresponds to order
-        ``j`` and degree ``i`` for all  ``0 <= j <= n`` and ``-m <= i <= m``. 
-
-    Notes
-    -----
-    There are different conventions for the meanings of the input
-    arguments ``theta`` and ``phi``. In SciPy ``theta`` is the
-    azimuthal angle and ``phi`` is the polar angle. It is common to
-    see the opposite convention, that is, ``theta`` as the polar angle
-    and ``phi`` as the azimuthal angle.
-
-    Note that SciPy's spherical harmonics include the Condon-Shortley
-    phase [2]_ because it is part of `sph_legendre_p`.
-
-    With SciPy's conventions, the first several spherical harmonics
-    are
-
-    .. math::
-
-        Y_0^0(\theta, \phi) &= \frac{1}{2} \sqrt{\frac{1}{\pi}} \\
-        Y_1^{-1}(\theta, \phi) &= \frac{1}{2} \sqrt{\frac{3}{2\pi}}
-                                    e^{-i\theta} \sin(\phi) \\
-        Y_1^0(\theta, \phi) &= \frac{1}{2} \sqrt{\frac{3}{\pi}}
-                                 \cos(\phi) \\
-        Y_1^1(\theta, \phi) &= -\frac{1}{2} \sqrt{\frac{3}{2\pi}}
-                                 e^{i\theta} \sin(\phi).
-
-    References
-    ----------
-    .. [1] Digital Library of Mathematical Functions, 14.30.
-           https://dlmf.nist.gov/14.30
-    .. [2] https://en.wikipedia.org/wiki/Spherical_harmonics#Condon.E2.80.93Shortley_phase
+    See Also
+    --------
+    sph_harm_y
     """, force_complex_output=True, diff_n=0
 )
 
