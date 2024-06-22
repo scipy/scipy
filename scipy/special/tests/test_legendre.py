@@ -4,7 +4,7 @@ import numpy as np
 
 import pytest
 from numpy.testing import (assert_equal, assert_almost_equal, assert_array_almost_equal,
-    assert_, assert_allclose)
+    assert_allclose)
 
 from scipy import special
 
@@ -726,9 +726,9 @@ class TestLegendreFunctions:
             for n in range(4):
                 for m in range(1, n):
                     lp = special.clpmn(m, n, z)
-                    assert_(np.isinf(lp[1][1,1:]).all())
+                    assert np.isinf(lp[1][1,1:]).all()
                     lp = special.lpmn(m, n, z)
-                    assert_(np.isinf(lp[1][1,1:]).all())
+                    assert np.isinf(lp[1][1,1:]).all()
 
     def test_deriv_clpmn(self):
         # data inside and outside of the unit circle
@@ -781,7 +781,7 @@ class TestLegendreFunctions:
         #      so ensure it returns a NaN rather than a wrong answer.
         with np.errstate(all='ignore'):
             lp = special.lpmv(-1,-1,.001)
-        assert_(lp != 0 or np.isnan(lp))
+        assert lp != 0 or np.isnan(lp)
 
     def test_lqmn(self):
         lqmnf = special.lqmn(0,2,.5)

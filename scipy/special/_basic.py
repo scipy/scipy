@@ -1712,6 +1712,10 @@ def lpmn(m, n, z):
     This function takes a real argument ``z``. For complex arguments ``z``
     use clpmn instead.
 
+    .. deprecated:: 1.15.0
+        This function is deprecated and will be removed in a future version.
+        Use `scipy.special.assoc_legendre_p_all` instead.
+
     Parameters
     ----------
     m : int
@@ -1780,6 +1784,10 @@ def clpmn(m, n, z, type=3):
     degree n, ``Pmn(z)`` = :math:`P_n^m(z)`, and its derivative, ``Pmn'(z)``.
     Returns two arrays of size ``(m+1, n+1)`` containing ``Pmn(z)`` and
     ``Pmn'(z)`` for all orders from ``0..m`` and degrees from ``0..n``.
+
+    .. deprecated:: 1.15.0
+        This function is deprecated and will be removed in a future version.
+        Use `scipy.special.assoc_legendre_p_all` instead.
 
     Parameters
     ----------
@@ -2015,6 +2023,24 @@ def euler(n):
 
     
 def lpn(n, z):
+    """Legendre function of the first kind.
+
+    Compute sequence of Legendre functions of the first kind (polynomials),
+    Pn(z) and derivatives for all degrees from 0 to n (inclusive).
+
+    See also special.legendre for polynomial class.
+
+    .. deprecated:: 1.15.0
+        This function is deprecated and will be removed in a future version.
+        Use `scipy.special.legendre_p_all` instead.
+
+    References
+    ----------
+    .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
+           Functions", John Wiley and Sons, 1996.
+           https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
+    """
+
     return legendre_p_all(n, z, diff_n = 1)
 
 def lqn(n, z):
