@@ -94,9 +94,6 @@ class PytestTester:
 
         pytest_args = ['--showlocals', '--tb=short']
 
-        if doctests:
-            pytest_args += ["--doctest-modules",]
-
         if extra_argv:
             pytest_args += list(extra_argv)
 
