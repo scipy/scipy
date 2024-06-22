@@ -164,93 +164,95 @@ PyMODINIT_FUNC PyInit__gufuncs() {
     // key is norm, diff_n
     PyObject *assoc_legendre_p_all = Py_BuildValue(
         "{(O, i): N, (O, i): N, (O, i): N, (O, i): N, (O, i): N,(O, i): N}", Py_True, 0,
-        SpecFun_NewGUFunc({[](double z, long long int type, double_2d res) {
-                               ::assoc_legendre_p_all(assoc_legendre_norm, z, type, res);
+        SpecFun_NewGUFunc({[](double z, long long int branch_cut, double_2d res) {
+                               ::assoc_legendre_p_all(assoc_legendre_norm, z, branch_cut, res);
                            },
-                           [](float z, long long int type, float_2d res) {
-                               ::assoc_legendre_p_all(assoc_legendre_norm, z, type, res);
+                           [](float z, long long int branch_cut, float_2d res) {
+                               ::assoc_legendre_p_all(assoc_legendre_norm, z, branch_cut, res);
                            },
-                           [](cdouble z, long long int type, cdouble_2d res) {
-                               ::assoc_legendre_p_all(assoc_legendre_norm, z, type, res);
+                           [](cdouble z, long long int branch_cut, cdouble_2d res) {
+                               ::assoc_legendre_p_all(assoc_legendre_norm, z, branch_cut, res);
                            },
-                           [](cfloat z, long long int type, cfloat_2d res) {
-                               ::assoc_legendre_p_all(assoc_legendre_norm, z, type, res);
+                           [](cfloat z, long long int branch_cut, cfloat_2d res) {
+                               ::assoc_legendre_p_all(assoc_legendre_norm, z, branch_cut, res);
                            }},
                           1, "assoc_legendre_p_all", nullptr, "(),()->(np1,mpmp1)", assoc_legendre_map_dims<1>),
         Py_True, 1,
-        SpecFun_NewGUFunc({[](double z, long long int type, double_2d res, double_2d res_jac) {
-                               ::assoc_legendre_p_all(assoc_legendre_norm, z, type, res, res_jac);
+        SpecFun_NewGUFunc({[](double z, long long int branch_cut, double_2d res, double_2d res_jac) {
+                               ::assoc_legendre_p_all(assoc_legendre_norm, z, branch_cut, res, res_jac);
                            },
-                           [](float z, long long int type, float_2d res, float_2d res_jac) {
-                               ::assoc_legendre_p_all(assoc_legendre_norm, z, type, res, res_jac);
+                           [](float z, long long int branch_cut, float_2d res, float_2d res_jac) {
+                               ::assoc_legendre_p_all(assoc_legendre_norm, z, branch_cut, res, res_jac);
                            },
-                           [](cdouble z, long long int type, cdouble_2d res, cdouble_2d res_jac) {
-                               ::assoc_legendre_p_all(assoc_legendre_norm, z, type, res, res_jac);
+                           [](cdouble z, long long int branch_cut, cdouble_2d res, cdouble_2d res_jac) {
+                               ::assoc_legendre_p_all(assoc_legendre_norm, z, branch_cut, res, res_jac);
                            },
-                           [](cfloat z, long long int type, cfloat_2d res, cfloat_2d res_jac) {
-                               ::assoc_legendre_p_all(assoc_legendre_norm, z, type, res, res_jac);
+                           [](cfloat z, long long int branch_cut, cfloat_2d res, cfloat_2d res_jac) {
+                               ::assoc_legendre_p_all(assoc_legendre_norm, z, branch_cut, res, res_jac);
                            }},
                           2, "assoc_legendre_p_all", nullptr, "(),()->(np1,mpmp1),(np1,mpmp1)",
                           assoc_legendre_map_dims<2>),
         Py_True, 2,
-        SpecFun_NewGUFunc({[](double z, long long int type, double_2d res, double_2d res_jac, double_2d res_hess) {
-                               ::assoc_legendre_p_all(assoc_legendre_norm, z, type, res, res_jac, res_hess);
-                           },
-                           [](float z, long long int type, float_2d res, float_2d res_jac, float_2d res_hess) {
-                               ::assoc_legendre_p_all(assoc_legendre_norm, z, type, res, res_jac, res_hess);
-                           },
-                           [](cdouble z, long long int type, cdouble_2d res, cdouble_2d res_jac, cdouble_2d res_hess) {
-                               ::assoc_legendre_p_all(assoc_legendre_norm, z, type, res, res_jac, res_hess);
-                           },
-                           [](cfloat z, long long int type, cfloat_2d res, cfloat_2d res_jac, cfloat_2d res_hess) {
-                               ::assoc_legendre_p_all(assoc_legendre_norm, z, type, res, res_jac, res_hess);
-                           }},
-                          3, "assoc_legendre_p_all", nullptr, "(),()->(np1,mpmp1),(np1,mpmp1),(np1,mpmp1)",
-                          assoc_legendre_map_dims<3>),
+        SpecFun_NewGUFunc(
+            {[](double z, long long int branch_cut, double_2d res, double_2d res_jac, double_2d res_hess) {
+                 ::assoc_legendre_p_all(assoc_legendre_norm, z, branch_cut, res, res_jac, res_hess);
+             },
+             [](float z, long long int branch_cut, float_2d res, float_2d res_jac, float_2d res_hess) {
+                 ::assoc_legendre_p_all(assoc_legendre_norm, z, branch_cut, res, res_jac, res_hess);
+             },
+             [](cdouble z, long long int branch_cut, cdouble_2d res, cdouble_2d res_jac, cdouble_2d res_hess) {
+                 ::assoc_legendre_p_all(assoc_legendre_norm, z, branch_cut, res, res_jac, res_hess);
+             },
+             [](cfloat z, long long int branch_cut, cfloat_2d res, cfloat_2d res_jac, cfloat_2d res_hess) {
+                 ::assoc_legendre_p_all(assoc_legendre_norm, z, branch_cut, res, res_jac, res_hess);
+             }},
+            3, "assoc_legendre_p_all", nullptr, "(),()->(np1,mpmp1),(np1,mpmp1),(np1,mpmp1)",
+            assoc_legendre_map_dims<3>),
         Py_False, 0,
-        SpecFun_NewGUFunc({[](double z, long long int type, double_2d res) {
-                               ::assoc_legendre_p_all(assoc_legendre_unnorm, z, type, res);
+        SpecFun_NewGUFunc({[](double z, long long int branch_cut, double_2d res) {
+                               ::assoc_legendre_p_all(assoc_legendre_unnorm, z, branch_cut, res);
                            },
-                           [](float z, long long int type, float_2d res) {
-                               ::assoc_legendre_p_all(assoc_legendre_unnorm, z, type, res);
+                           [](float z, long long int branch_cut, float_2d res) {
+                               ::assoc_legendre_p_all(assoc_legendre_unnorm, z, branch_cut, res);
                            },
-                           [](cdouble z, long long int type, cdouble_2d res) {
-                               ::assoc_legendre_p_all(assoc_legendre_unnorm, z, type, res);
+                           [](cdouble z, long long int branch_cut, cdouble_2d res) {
+                               ::assoc_legendre_p_all(assoc_legendre_unnorm, z, branch_cut, res);
                            },
-                           [](cfloat z, long long int type, cfloat_2d res) {
-                               ::assoc_legendre_p_all(assoc_legendre_unnorm, z, type, res);
+                           [](cfloat z, long long int branch_cut, cfloat_2d res) {
+                               ::assoc_legendre_p_all(assoc_legendre_unnorm, z, branch_cut, res);
                            }},
                           1, "assoc_legendre_p_all", nullptr, "(),()->(np1,mpmp1)", assoc_legendre_map_dims<1>),
         Py_False, 1,
-        SpecFun_NewGUFunc({[](double z, long long int type, double_2d res, double_2d res_jac) {
-                               ::assoc_legendre_p_all(assoc_legendre_unnorm, z, type, res, res_jac);
+        SpecFun_NewGUFunc({[](double z, long long int branch_cut, double_2d res, double_2d res_jac) {
+                               ::assoc_legendre_p_all(assoc_legendre_unnorm, z, branch_cut, res, res_jac);
                            },
-                           [](float z, long long int type, float_2d res, float_2d res_jac) {
-                               ::assoc_legendre_p_all(assoc_legendre_unnorm, z, type, res, res_jac);
+                           [](float z, long long int branch_cut, float_2d res, float_2d res_jac) {
+                               ::assoc_legendre_p_all(assoc_legendre_unnorm, z, branch_cut, res, res_jac);
                            },
-                           [](cdouble z, long long int type, cdouble_2d res, cdouble_2d res_jac) {
-                               ::assoc_legendre_p_all(assoc_legendre_unnorm, z, type, res, res_jac);
+                           [](cdouble z, long long int branch_cut, cdouble_2d res, cdouble_2d res_jac) {
+                               ::assoc_legendre_p_all(assoc_legendre_unnorm, z, branch_cut, res, res_jac);
                            },
-                           [](cfloat z, long long int type, cfloat_2d res, cfloat_2d res_jac) {
-                               ::assoc_legendre_p_all(assoc_legendre_unnorm, z, type, res, res_jac);
+                           [](cfloat z, long long int branch_cut, cfloat_2d res, cfloat_2d res_jac) {
+                               ::assoc_legendre_p_all(assoc_legendre_unnorm, z, branch_cut, res, res_jac);
                            }},
                           2, "assoc_legendre_p_all", nullptr, "(),()->(np1,mpmp1),(np1,mpmp1)",
                           assoc_legendre_map_dims<2>),
         Py_False, 2,
-        SpecFun_NewGUFunc({[](double z, long long int type, double_2d res, double_2d res_jac, double_2d res_hess) {
-                               ::assoc_legendre_p_all(assoc_legendre_unnorm, z, type, res, res_jac, res_hess);
-                           },
-                           [](float z, long long int type, float_2d res, float_2d res_jac, float_2d res_hess) {
-                               ::assoc_legendre_p_all(assoc_legendre_unnorm, z, type, res, res_jac, res_hess);
-                           },
-                           [](cdouble z, long long int type, cdouble_2d res, cdouble_2d res_jac, cdouble_2d res_hess) {
-                               ::assoc_legendre_p_all(assoc_legendre_unnorm, z, type, res, res_jac, res_hess);
-                           },
-                           [](cfloat z, long long int type, cfloat_2d res, cfloat_2d res_jac, cfloat_2d res_hess) {
-                               ::assoc_legendre_p_all(assoc_legendre_unnorm, z, type, res, res_jac, res_hess);
-                           }},
-                          3, "assoc_legendre_p_all", nullptr, "(),()->(np1,mpmp1),(np1,mpmp1),(np1,mpmp1)",
-                          assoc_legendre_map_dims<3>));
+        SpecFun_NewGUFunc(
+            {[](double z, long long int branch_cut, double_2d res, double_2d res_jac, double_2d res_hess) {
+                 ::assoc_legendre_p_all(assoc_legendre_unnorm, z, branch_cut, res, res_jac, res_hess);
+             },
+             [](float z, long long int branch_cut, float_2d res, float_2d res_jac, float_2d res_hess) {
+                 ::assoc_legendre_p_all(assoc_legendre_unnorm, z, branch_cut, res, res_jac, res_hess);
+             },
+             [](cdouble z, long long int branch_cut, cdouble_2d res, cdouble_2d res_jac, cdouble_2d res_hess) {
+                 ::assoc_legendre_p_all(assoc_legendre_unnorm, z, branch_cut, res, res_jac, res_hess);
+             },
+             [](cfloat z, long long int branch_cut, cfloat_2d res, cfloat_2d res_jac, cfloat_2d res_hess) {
+                 ::assoc_legendre_p_all(assoc_legendre_unnorm, z, branch_cut, res, res_jac, res_hess);
+             }},
+            3, "assoc_legendre_p_all", nullptr, "(),()->(np1,mpmp1),(np1,mpmp1),(np1,mpmp1)",
+            assoc_legendre_map_dims<3>));
     PyModule_AddObjectRef(_gufuncs, "assoc_legendre_p_all", assoc_legendre_p_all);
 
     PyObject *sph_legendre_p_all = Py_BuildValue(

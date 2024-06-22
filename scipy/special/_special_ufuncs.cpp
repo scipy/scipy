@@ -527,89 +527,99 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
 
     PyObject *assoc_legendre_p = Py_BuildValue(
         "{(O, i): N, (O, i): N, (O, i): N, (O, i): N, (O, i): N,(O, i): N}", Py_True, 0,
-        SpecFun_NewUFunc({[](long long int n, long long int m, double z, long long int type) {
-                              return ::assoc_legendre_p(assoc_legendre_norm, n, m, z, type);
+        SpecFun_NewUFunc({[](long long int n, long long int m, double z, long long int branch_cut) {
+                              return ::assoc_legendre_p(assoc_legendre_norm, n, m, z, branch_cut);
                           },
-                          [](long long int n, long long int m, float z, long long int type) {
-                              return ::assoc_legendre_p(assoc_legendre_norm, n, m, z, type);
+                          [](long long int n, long long int m, float z, long long int branch_cut) {
+                              return ::assoc_legendre_p(assoc_legendre_norm, n, m, z, branch_cut);
                           },
-                          [](long long int n, long long int m, cdouble z, long long int type) {
-                              return ::assoc_legendre_p(assoc_legendre_norm, n, m, z, type);
+                          [](long long int n, long long int m, cdouble z, long long int branch_cut) {
+                              return ::assoc_legendre_p(assoc_legendre_norm, n, m, z, branch_cut);
                           },
-                          [](long long int n, long long int m, cfloat z, long long int type) {
-                              return ::assoc_legendre_p(assoc_legendre_norm, n, m, z, type);
+                          [](long long int n, long long int m, cfloat z, long long int branch_cut) {
+                              return ::assoc_legendre_p(assoc_legendre_norm, n, m, z, branch_cut);
                           }},
                          "assoc_legendre_p", nullptr),
         Py_True, 1,
         SpecFun_NewUFunc(
-            {[](long long int n, long long int m, double z, long long int type, double &res, double &res_jac) {
-                 ::assoc_legendre_p(assoc_legendre_norm, n, m, z, type, res, res_jac);
+            {[](long long int n, long long int m, double z, long long int branch_cut, double &res, double &res_jac) {
+                 ::assoc_legendre_p(assoc_legendre_norm, n, m, z, branch_cut, res, res_jac);
              },
-             [](long long int n, long long int m, float z, long long int type, float &res, float &res_jac) {
-                 ::assoc_legendre_p(assoc_legendre_norm, n, m, z, type, res, res_jac);
+             [](long long int n, long long int m, float z, long long int branch_cut, float &res, float &res_jac) {
+                 ::assoc_legendre_p(assoc_legendre_norm, n, m, z, branch_cut, res, res_jac);
              },
-             [](long long int n, long long int m, cdouble z, long long int type, cdouble &res, cdouble &res_jac) {
-                 ::assoc_legendre_p(assoc_legendre_norm, n, m, z, type, res, res_jac);
+             [](long long int n, long long int m, cdouble z, long long int branch_cut, cdouble &res, cdouble &res_jac) {
+                 ::assoc_legendre_p(assoc_legendre_norm, n, m, z, branch_cut, res, res_jac);
              },
-             [](long long int n, long long int m, cfloat z, long long int type, cfloat &res, cfloat &res_jac) {
-                 ::assoc_legendre_p(assoc_legendre_norm, n, m, z, type, res, res_jac);
+             [](long long int n, long long int m, cfloat z, long long int branch_cut, cfloat &res, cfloat &res_jac) {
+                 ::assoc_legendre_p(assoc_legendre_norm, n, m, z, branch_cut, res, res_jac);
              }},
             2, "assoc_legendre_p", nullptr),
         Py_True, 2,
-        SpecFun_NewUFunc(
-            {[](long long int n, long long int m, double z, long long int type, double &res, double &res_jac,
-                double &res_hess) { ::assoc_legendre_p(assoc_legendre_norm, n, m, z, type, res, res_jac, res_hess); },
-             [](long long int n, long long int m, float z, long long int type, float &res, float &res_jac,
-                float &res_hess) { ::assoc_legendre_p(assoc_legendre_norm, n, m, z, type, res, res_jac, res_hess); },
-             [](long long int n, long long int m, cdouble z, long long int type, cdouble &res, cdouble &res_jac,
-                cdouble &res_hess) { ::assoc_legendre_p(assoc_legendre_norm, n, m, z, type, res, res_jac, res_hess); },
-             [](long long int n, long long int m, cfloat z, long long int type, cfloat &res, cfloat &res_jac,
-                cfloat &res_hess) { ::assoc_legendre_p(assoc_legendre_norm, n, m, z, type, res, res_jac, res_hess); }},
-            3, "assoc_legendre_p", nullptr),
+        SpecFun_NewUFunc({[](long long int n, long long int m, double z, long long int branch_cut, double &res,
+                             double &res_jac, double &res_hess) {
+                              ::assoc_legendre_p(assoc_legendre_norm, n, m, z, branch_cut, res, res_jac, res_hess);
+                          },
+                          [](long long int n, long long int m, float z, long long int branch_cut, float &res,
+                             float &res_jac, float &res_hess) {
+                              ::assoc_legendre_p(assoc_legendre_norm, n, m, z, branch_cut, res, res_jac, res_hess);
+                          },
+                          [](long long int n, long long int m, cdouble z, long long int branch_cut, cdouble &res,
+                             cdouble &res_jac, cdouble &res_hess) {
+                              ::assoc_legendre_p(assoc_legendre_norm, n, m, z, branch_cut, res, res_jac, res_hess);
+                          },
+                          [](long long int n, long long int m, cfloat z, long long int branch_cut, cfloat &res,
+                             cfloat &res_jac, cfloat &res_hess) {
+                              ::assoc_legendre_p(assoc_legendre_norm, n, m, z, branch_cut, res, res_jac, res_hess);
+                          }},
+                         3, "assoc_legendre_p", nullptr),
         Py_False, 0,
-        SpecFun_NewUFunc({[](long long int n, long long int m, double z, long long int type) {
-                              return ::assoc_legendre_p(assoc_legendre_unnorm, n, m, z, type);
+        SpecFun_NewUFunc({[](long long int n, long long int m, double z, long long int branch_cut) {
+                              return ::assoc_legendre_p(assoc_legendre_unnorm, n, m, z, branch_cut);
                           },
-                          [](long long int n, long long int m, float z, long long int type) {
-                              return ::assoc_legendre_p(assoc_legendre_unnorm, n, m, z, type);
+                          [](long long int n, long long int m, float z, long long int branch_cut) {
+                              return ::assoc_legendre_p(assoc_legendre_unnorm, n, m, z, branch_cut);
                           },
-                          [](long long int n, long long int m, cdouble z, long long int type) {
-                              return ::assoc_legendre_p(assoc_legendre_unnorm, n, m, z, type);
+                          [](long long int n, long long int m, cdouble z, long long int branch_cut) {
+                              return ::assoc_legendre_p(assoc_legendre_unnorm, n, m, z, branch_cut);
                           },
-                          [](long long int n, long long int m, cfloat z, long long int type) {
-                              return ::assoc_legendre_p(assoc_legendre_unnorm, n, m, z, type);
+                          [](long long int n, long long int m, cfloat z, long long int branch_cut) {
+                              return ::assoc_legendre_p(assoc_legendre_unnorm, n, m, z, branch_cut);
                           }},
                          "assoc_legendre_p", nullptr),
         Py_False, 1,
         SpecFun_NewUFunc(
-            {[](long long int n, long long int m, double z, long long int type, double &res, double &res_jac) {
-                 ::assoc_legendre_p(assoc_legendre_unnorm, n, m, z, type, res, res_jac);
+            {[](long long int n, long long int m, double z, long long int branch_cut, double &res, double &res_jac) {
+                 ::assoc_legendre_p(assoc_legendre_unnorm, n, m, z, branch_cut, res, res_jac);
              },
-             [](long long int n, long long int m, float z, long long int type, float &res, float &res_jac) {
-                 ::assoc_legendre_p(assoc_legendre_unnorm, n, m, z, type, res, res_jac);
+             [](long long int n, long long int m, float z, long long int branch_cut, float &res, float &res_jac) {
+                 ::assoc_legendre_p(assoc_legendre_unnorm, n, m, z, branch_cut, res, res_jac);
              },
-             [](long long int n, long long int m, cdouble z, long long int type, cdouble &res, cdouble &res_jac) {
-                 ::assoc_legendre_p(assoc_legendre_unnorm, n, m, z, type, res, res_jac);
+             [](long long int n, long long int m, cdouble z, long long int branch_cut, cdouble &res, cdouble &res_jac) {
+                 ::assoc_legendre_p(assoc_legendre_unnorm, n, m, z, branch_cut, res, res_jac);
              },
-             [](long long int n, long long int m, cfloat z, long long int type, cfloat &res, cfloat &res_jac) {
-                 ::assoc_legendre_p(assoc_legendre_unnorm, n, m, z, type, res, res_jac);
+             [](long long int n, long long int m, cfloat z, long long int branch_cut, cfloat &res, cfloat &res_jac) {
+                 ::assoc_legendre_p(assoc_legendre_unnorm, n, m, z, branch_cut, res, res_jac);
              }},
             2, "assoc_legendre_p", nullptr),
         Py_False, 2,
-        SpecFun_NewUFunc(
-            {[](long long int n, long long int m, double z, long long int type, double &res, double &res_jac,
-                double &res_hess) { ::assoc_legendre_p(assoc_legendre_unnorm, n, m, z, type, res, res_jac, res_hess); },
-             [](long long int n, long long int m, float z, long long int type, float &res, float &res_jac,
-                float &res_hess) { ::assoc_legendre_p(assoc_legendre_unnorm, n, m, z, type, res, res_jac, res_hess); },
-             [](long long int n, long long int m, cdouble z, long long int type, cdouble &res, cdouble &res_jac,
-                cdouble &res_hess) {
-                 ::assoc_legendre_p(assoc_legendre_unnorm, n, m, z, type, res, res_jac, res_hess);
-             },
-             [](long long int n, long long int m, cfloat z, long long int type, cfloat &res, cfloat &res_jac,
-                cfloat &res_hess) {
-                 ::assoc_legendre_p(assoc_legendre_unnorm, n, m, z, type, res, res_jac, res_hess);
-             }},
-            3, "assoc_legendre_p", nullptr));
+        SpecFun_NewUFunc({[](long long int n, long long int m, double z, long long int branch_cut, double &res,
+                             double &res_jac, double &res_hess) {
+                              ::assoc_legendre_p(assoc_legendre_unnorm, n, m, z, branch_cut, res, res_jac, res_hess);
+                          },
+                          [](long long int n, long long int m, float z, long long int branch_cut, float &res,
+                             float &res_jac, float &res_hess) {
+                              ::assoc_legendre_p(assoc_legendre_unnorm, n, m, z, branch_cut, res, res_jac, res_hess);
+                          },
+                          [](long long int n, long long int m, cdouble z, long long int branch_cut, cdouble &res,
+                             cdouble &res_jac, cdouble &res_hess) {
+                              ::assoc_legendre_p(assoc_legendre_unnorm, n, m, z, branch_cut, res, res_jac, res_hess);
+                          },
+                          [](long long int n, long long int m, cfloat z, long long int branch_cut, cfloat &res,
+                             cfloat &res_jac, cfloat &res_hess) {
+                              ::assoc_legendre_p(assoc_legendre_unnorm, n, m, z, branch_cut, res, res_jac, res_hess);
+                          }},
+                         3, "assoc_legendre_p", nullptr));
     PyModule_AddObjectRef(_special_ufuncs, "assoc_legendre_p", assoc_legendre_p);
 
     PyObject *mathieu_a =

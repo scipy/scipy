@@ -43,35 +43,36 @@ using special::assoc_legendre_norm;
 using special::assoc_legendre_unnorm;
 
 template <typename NormPolicy, typename T>
-T assoc_legendre_p(NormPolicy norm, long long int n, long long int m, T z, long long int type) {
-    return special::assoc_legendre_p(norm, n, m, z, type);
+T assoc_legendre_p(NormPolicy norm, long long int n, long long int m, T z, long long int branch_cut) {
+    return special::assoc_legendre_p(norm, n, m, z, branch_cut);
 }
 
 template <typename NormPolicy, typename T>
-void assoc_legendre_p(NormPolicy norm, long long int n, long long int m, T z, long long int type, T &res, T &res_jac) {
-    special::assoc_legendre_p(norm, n, m, z, type, std::tie(res, res_jac));
+void assoc_legendre_p(NormPolicy norm, long long int n, long long int m, T z, long long int branch_cut, T &res,
+                      T &res_jac) {
+    special::assoc_legendre_p(norm, n, m, z, branch_cut, std::tie(res, res_jac));
 }
 
 template <typename NormPolicy, typename T>
-void assoc_legendre_p(NormPolicy norm, long long int n, long long int m, T z, long long int type, T &res, T &res_jac,
-                      T &res_hess) {
-    special::assoc_legendre_p(norm, n, m, z, type, std::tie(res, res_jac, res_hess));
+void assoc_legendre_p(NormPolicy norm, long long int n, long long int m, T z, long long int branch_cut, T &res,
+                      T &res_jac, T &res_hess) {
+    special::assoc_legendre_p(norm, n, m, z, branch_cut, std::tie(res, res_jac, res_hess));
 }
 
 template <typename NormPolicy, typename T, typename OutputMat1>
-void assoc_legendre_p_all(NormPolicy norm, T z, long long int type, OutputMat1 res) {
-    special::assoc_legendre_p_all(norm, z, type, std::tie(res));
+void assoc_legendre_p_all(NormPolicy norm, T z, long long int branch_cut, OutputMat1 res) {
+    special::assoc_legendre_p_all(norm, z, branch_cut, std::tie(res));
 }
 
 template <typename NormPolicy, typename T, typename OutputMat1, typename OutputMat2>
-void assoc_legendre_p_all(NormPolicy norm, T z, long long int type, OutputMat1 res, OutputMat2 res_jac) {
-    special::assoc_legendre_p_all(norm, z, type, std::tie(res, res_jac));
+void assoc_legendre_p_all(NormPolicy norm, T z, long long int branch_cut, OutputMat1 res, OutputMat2 res_jac) {
+    special::assoc_legendre_p_all(norm, z, branch_cut, std::tie(res, res_jac));
 }
 
 template <typename NormPolicy, typename T, typename OutputMat1, typename OutputMat2, typename OutputMat3>
-void assoc_legendre_p_all(NormPolicy norm, T z, long long int type, OutputMat1 res, OutputMat2 res_jac,
+void assoc_legendre_p_all(NormPolicy norm, T z, long long int branch_cut, OutputMat1 res, OutputMat2 res_jac,
                           OutputMat3 res_hess) {
-    special::assoc_legendre_p_all(norm, z, type, std::tie(res, res_jac, res_hess));
+    special::assoc_legendre_p_all(norm, z, branch_cut, std::tie(res, res_jac, res_hess));
 }
 
 template <typename T>
