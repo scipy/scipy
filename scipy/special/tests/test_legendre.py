@@ -143,8 +143,6 @@ class TestAssocLegendreP:
     @pytest.mark.parametrize("shape", [(10,), (4, 9), (3, 5, 7)])
     @pytest.mark.parametrize("norm", [True, False])
     def test_specific(self, shape, norm):
-        branch_cut = 2
-
         rng = np.random.default_rng(1234)
 
         x = rng.uniform(-0.99, 0.99, shape)
@@ -152,7 +150,7 @@ class TestAssocLegendreP:
         p, p_jac = assoc_legendre_p_all(4, 4, x, norm=norm, diff_n=1)
 
         np.testing.assert_allclose(p[0, 0],
-            assoc_legendre_p_0_0(x, branch_cut=branch_cut, norm=norm))
+            assoc_legendre_p_0_0(x, norm=norm))
         np.testing.assert_allclose(p[0, 1], 0)
         np.testing.assert_allclose(p[0, 2], 0)
         np.testing.assert_allclose(p[0, 3], 0)
@@ -162,9 +160,9 @@ class TestAssocLegendreP:
         np.testing.assert_allclose(p[0, -1], 0)
 
         np.testing.assert_allclose(p[1, 0],
-            assoc_legendre_p_1_0(x, branch_cut=branch_cut, norm=norm))
+            assoc_legendre_p_1_0(x, norm=norm))
         np.testing.assert_allclose(p[1, 1],
-            assoc_legendre_p_1_1(x, branch_cut=branch_cut, norm=norm))
+            assoc_legendre_p_1_1(x, norm=norm))
         np.testing.assert_allclose(p[1, 2], 0)
         np.testing.assert_allclose(p[1, 3], 0)
         np.testing.assert_allclose(p[1, 4], 0)
@@ -172,61 +170,61 @@ class TestAssocLegendreP:
         np.testing.assert_allclose(p[1, -3], 0)
         np.testing.assert_allclose(p[1, -2], 0)
         np.testing.assert_allclose(p[1, -1],
-            assoc_legendre_p_1_m1(x, branch_cut=branch_cut, norm=norm))
+            assoc_legendre_p_1_m1(x, norm=norm))
 
         np.testing.assert_allclose(p[2, 0],
-            assoc_legendre_p_2_0(x, branch_cut=branch_cut, norm=norm))
+            assoc_legendre_p_2_0(x, norm=norm))
         np.testing.assert_allclose(p[2, 1],
-            assoc_legendre_p_2_1(x, branch_cut=branch_cut, norm=norm))
+            assoc_legendre_p_2_1(x, norm=norm))
         np.testing.assert_allclose(p[2, 2],
-            assoc_legendre_p_2_2(x, branch_cut=branch_cut, norm=norm))
+            assoc_legendre_p_2_2(x, norm=norm))
         np.testing.assert_allclose(p[2, 3], 0)
         np.testing.assert_allclose(p[2, 4], 0)
         np.testing.assert_allclose(p[2, -4], 0)
         np.testing.assert_allclose(p[2, -3], 0)
         np.testing.assert_allclose(p[2, -2],
-            assoc_legendre_p_2_m2(x, branch_cut=branch_cut, norm=norm))
+            assoc_legendre_p_2_m2(x, norm=norm))
         np.testing.assert_allclose(p[2, -1],
-            assoc_legendre_p_2_m1(x, branch_cut=branch_cut, norm=norm))
+            assoc_legendre_p_2_m1(x, norm=norm))
 
         np.testing.assert_allclose(p[3, 0],
-            assoc_legendre_p_3_0(x, branch_cut=branch_cut, norm=norm))
+            assoc_legendre_p_3_0(x, norm=norm))
         np.testing.assert_allclose(p[3, 1],
-            assoc_legendre_p_3_1(x, branch_cut=branch_cut, norm=norm))
+            assoc_legendre_p_3_1(x, norm=norm))
         np.testing.assert_allclose(p[3, 2],
-            assoc_legendre_p_3_2(x, branch_cut=branch_cut, norm=norm))
+            assoc_legendre_p_3_2(x, norm=norm))
         np.testing.assert_allclose(p[3, 3],
-            assoc_legendre_p_3_3(x, branch_cut=branch_cut, norm=norm))
+            assoc_legendre_p_3_3(x, norm=norm))
         np.testing.assert_allclose(p[3, 4], 0)
         np.testing.assert_allclose(p[3, -4], 0)
         np.testing.assert_allclose(p[3, -3],
-            assoc_legendre_p_3_m3(x, branch_cut=branch_cut, norm=norm))
+            assoc_legendre_p_3_m3(x, norm=norm))
         np.testing.assert_allclose(p[3, -2],
-            assoc_legendre_p_3_m2(x, branch_cut=branch_cut, norm=norm))
+            assoc_legendre_p_3_m2(x, norm=norm))
         np.testing.assert_allclose(p[3, -1],
-            assoc_legendre_p_3_m1(x, branch_cut=branch_cut, norm=norm))
+            assoc_legendre_p_3_m1(x, norm=norm))
 
         np.testing.assert_allclose(p[4, 0],
-            assoc_legendre_p_4_0(x, branch_cut=branch_cut, norm=norm))
+            assoc_legendre_p_4_0(x, norm=norm))
         np.testing.assert_allclose(p[4, 1],
-            assoc_legendre_p_4_1(x, branch_cut=branch_cut, norm=norm))
+            assoc_legendre_p_4_1(x, norm=norm))
         np.testing.assert_allclose(p[4, 2],
-            assoc_legendre_p_4_2(x, branch_cut=branch_cut, norm=norm))
+            assoc_legendre_p_4_2(x, norm=norm))
         np.testing.assert_allclose(p[4, 3],
-            assoc_legendre_p_4_3(x, branch_cut=branch_cut, norm=norm))
+            assoc_legendre_p_4_3(x, norm=norm))
         np.testing.assert_allclose(p[4, 4],
-            assoc_legendre_p_4_4(x, branch_cut=branch_cut, norm=norm))
+            assoc_legendre_p_4_4(x, norm=norm))
         np.testing.assert_allclose(p[4, -4],
-            assoc_legendre_p_4_m4(x, branch_cut=branch_cut, norm=norm))
+            assoc_legendre_p_4_m4(x, norm=norm))
         np.testing.assert_allclose(p[4, -3],
-            assoc_legendre_p_4_m3(x, branch_cut=branch_cut, norm=norm))
+            assoc_legendre_p_4_m3(x, norm=norm))
         np.testing.assert_allclose(p[4, -2],
-            assoc_legendre_p_4_m2(x, branch_cut=branch_cut, norm=norm))
+            assoc_legendre_p_4_m2(x, norm=norm))
         np.testing.assert_allclose(p[4, -1],
-            assoc_legendre_p_4_m1(x, branch_cut=branch_cut, norm=norm))
+            assoc_legendre_p_4_m1(x, norm=norm))
 
         np.testing.assert_allclose(p_jac[0, 0],
-            assoc_legendre_p_0_0_jac(x, branch_cut=branch_cut, norm=norm))
+            assoc_legendre_p_0_0_jac(x, norm=norm))
         np.testing.assert_allclose(p_jac[0, 1], 0)
         np.testing.assert_allclose(p_jac[0, 2], 0)
         np.testing.assert_allclose(p_jac[0, 3], 0)
@@ -237,9 +235,9 @@ class TestAssocLegendreP:
         np.testing.assert_allclose(p_jac[0, -1], 0)
 
         np.testing.assert_allclose(p_jac[1, 0],
-            assoc_legendre_p_1_0_jac(x, branch_cut=branch_cut, norm=norm))
+            assoc_legendre_p_1_0_jac(x, norm=norm))
         np.testing.assert_allclose(p_jac[1, 1],
-            assoc_legendre_p_1_1_jac(x, branch_cut=branch_cut, norm=norm))
+            assoc_legendre_p_1_1_jac(x, norm=norm))
         np.testing.assert_allclose(p_jac[1, 2], 0)
         np.testing.assert_allclose(p_jac[1, 3], 0)
         np.testing.assert_allclose(p_jac[1, 4], 0)
@@ -247,58 +245,58 @@ class TestAssocLegendreP:
         np.testing.assert_allclose(p_jac[1, -3], 0)
         np.testing.assert_allclose(p_jac[1, -2], 0)
         np.testing.assert_allclose(p_jac[1, -1],
-            assoc_legendre_p_1_m1_jac(x, branch_cut=branch_cut, norm=norm))
+            assoc_legendre_p_1_m1_jac(x, norm=norm))
 
         np.testing.assert_allclose(p_jac[2, 0],
-            assoc_legendre_p_2_0_jac(x, branch_cut=branch_cut, norm=norm))
+            assoc_legendre_p_2_0_jac(x, norm=norm))
         np.testing.assert_allclose(p_jac[2, 1],
-            assoc_legendre_p_2_1_jac(x, branch_cut=branch_cut, norm=norm))
+            assoc_legendre_p_2_1_jac(x, norm=norm))
         np.testing.assert_allclose(p_jac[2, 2],
-            assoc_legendre_p_2_2_jac(x, branch_cut=branch_cut, norm=norm))
+            assoc_legendre_p_2_2_jac(x, norm=norm))
         np.testing.assert_allclose(p_jac[2, 3], 0)
         np.testing.assert_allclose(p_jac[2, 4], 0)
         np.testing.assert_allclose(p_jac[2, -4], 0)
         np.testing.assert_allclose(p_jac[2, -3], 0)
         np.testing.assert_allclose(p_jac[2, -2],
-            assoc_legendre_p_2_m2_jac(x, branch_cut=branch_cut, norm=norm))
+            assoc_legendre_p_2_m2_jac(x, norm=norm))
         np.testing.assert_allclose(p_jac[2, -1],
-            assoc_legendre_p_2_m1_jac(x, branch_cut=branch_cut, norm=norm))
+            assoc_legendre_p_2_m1_jac(x, norm=norm))
 
         np.testing.assert_allclose(p_jac[3, 0],
-            assoc_legendre_p_3_0_jac(x, branch_cut=branch_cut, norm=norm))
+            assoc_legendre_p_3_0_jac(x, norm=norm))
         np.testing.assert_allclose(p_jac[3, 1],
-            assoc_legendre_p_3_1_jac(x, branch_cut=branch_cut, norm=norm))
+            assoc_legendre_p_3_1_jac(x, norm=norm))
         np.testing.assert_allclose(p_jac[3, 2],
-            assoc_legendre_p_3_2_jac(x, branch_cut=branch_cut, norm=norm))
+            assoc_legendre_p_3_2_jac(x, norm=norm))
         np.testing.assert_allclose(p_jac[3, 3],
-            assoc_legendre_p_3_3_jac(x, branch_cut=branch_cut, norm=norm))
+            assoc_legendre_p_3_3_jac(x, norm=norm))
         np.testing.assert_allclose(p_jac[3, 4], 0)
         np.testing.assert_allclose(p_jac[3, -4], 0)
         np.testing.assert_allclose(p_jac[3, -3],
-            assoc_legendre_p_3_m3_jac(x, branch_cut=branch_cut, norm=norm))
+            assoc_legendre_p_3_m3_jac(x, norm=norm))
         np.testing.assert_allclose(p_jac[3, -2],
-            assoc_legendre_p_3_m2_jac(x, branch_cut=branch_cut, norm=norm))
+            assoc_legendre_p_3_m2_jac(x, norm=norm))
         np.testing.assert_allclose(p_jac[3, -1],
-            assoc_legendre_p_3_m1_jac(x, branch_cut=branch_cut, norm=norm))
+            assoc_legendre_p_3_m1_jac(x, norm=norm))
 
         np.testing.assert_allclose(p_jac[4, 0],
-            assoc_legendre_p_4_0_jac(x, branch_cut=branch_cut, norm=norm))
+            assoc_legendre_p_4_0_jac(x, norm=norm))
         np.testing.assert_allclose(p_jac[4, 1],
-            assoc_legendre_p_4_1_jac(x, branch_cut=branch_cut, norm=norm))
+            assoc_legendre_p_4_1_jac(x, norm=norm))
         np.testing.assert_allclose(p_jac[4, 2],
-            assoc_legendre_p_4_2_jac(x, branch_cut=branch_cut, norm=norm))
+            assoc_legendre_p_4_2_jac(x, norm=norm))
         np.testing.assert_allclose(p_jac[4, 3],
-            assoc_legendre_p_4_3_jac(x, branch_cut=branch_cut, norm=norm))
+            assoc_legendre_p_4_3_jac(x, norm=norm))
         np.testing.assert_allclose(p_jac[4, 4],
-            assoc_legendre_p_4_4_jac(x, branch_cut=branch_cut, norm=norm))
+            assoc_legendre_p_4_4_jac(x, norm=norm))
         np.testing.assert_allclose(p_jac[4, -4],
-            assoc_legendre_p_4_m4_jac(x, branch_cut=branch_cut, norm=norm))
+            assoc_legendre_p_4_m4_jac(x, norm=norm))
         np.testing.assert_allclose(p_jac[4, -3],
-            assoc_legendre_p_4_m3_jac(x, branch_cut=branch_cut, norm=norm))
+            assoc_legendre_p_4_m3_jac(x, norm=norm))
         np.testing.assert_allclose(p_jac[4, -2],
-            assoc_legendre_p_4_m2_jac(x, branch_cut=branch_cut, norm=norm))
+            assoc_legendre_p_4_m2_jac(x, norm=norm))
         np.testing.assert_allclose(p_jac[4, -1],
-            assoc_legendre_p_4_m1_jac(x, branch_cut=branch_cut, norm=norm))
+            assoc_legendre_p_4_m1_jac(x, norm=norm))
 
     @pytest.mark.parametrize("m_max", [7])
     @pytest.mark.parametrize("n_max", [10])
