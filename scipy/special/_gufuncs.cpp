@@ -163,7 +163,7 @@ PyMODINIT_FUNC PyInit__gufuncs() {
 
     // key is norm, diff_n
     PyObject *assoc_legendre_p_all = Py_BuildValue(
-        "{(O, i): N, (O, i): N, (O, i): N, (O, i): N, (O, i): N,(O, i): N}", Py_True, 0,
+        "{(O, i): N, (O, i): N, (O, i): N, (O, i): N, (O, i): N, (O, i): N}", Py_True, 0,
         SpecFun_NewGUFunc({[](double z, long long int branch_cut, double_2d res) {
                                ::assoc_legendre_p_all(assoc_legendre_norm, z, branch_cut, res);
                            },
