@@ -25,7 +25,7 @@ __all__ = ['findfreqs', 'freqs', 'freqz', 'tf2zpk', 'zpk2tf', 'normalize',
            'buttap', 'cheb1ap', 'cheb2ap', 'ellipap', 'besselap',
            'BadCoefficients', 'freqs_zpk', 'freqz_zpk',
            'tf2sos', 'sos2tf', 'zpk2sos', 'sos2zpk', 'group_delay',
-           'freqz_sos', 'iirnotch', 'iirpeak', 'bilinear_zpk',
+           'sosfreqz', 'freqz_sos', 'iirnotch', 'iirpeak', 'bilinear_zpk',
            'lp2lp_zpk', 'lp2hp_zpk', 'lp2bp_zpk', 'lp2bs_zpk',
            'gammatone', 'iircomb']
 
@@ -861,6 +861,13 @@ def freqz_sos(sos, worN=512, whole=False, fs=2*pi):
 
 
 def sosfreqz(*args, **kwargs):
+    """
+    Compute the frequency response of a digital filter in SOS format.
+
+    .. warning:: This function is an alias, provided for backward
+                 compatibility. New code should use the function
+                 :func:`scipy.signal.freqz_sos`.
+    """
     return freqz_sos(*args, **kwargs)
 
 

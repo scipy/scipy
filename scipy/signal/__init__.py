@@ -89,8 +89,8 @@ Filter design
    freqs         -- Analog filter frequency response from TF coefficients.
    freqs_zpk     -- Analog filter frequency response from ZPK coefficients.
    freqz         -- Digital filter frequency response from TF coefficients.
-   freqz_zpk     -- Digital filter frequency response from ZPK coefficients.
    freqz_sos     -- Digital filter frequency response for SOS format filter.
+   freqz_zpk     -- Digital filter frequency response from ZPK coefficients.
    gammatone     -- FIR and IIR gammatone filter design.
    group_delay   -- Digital filter group delay.
    iirdesign     -- IIR filter design given bands and gains.
@@ -113,6 +113,11 @@ Filter design
    invres        -- Inverse partial fraction expansion for analog filter.
    invresz       -- Inverse partial fraction expansion for digital filter.
    BadCoefficients  -- Warning on badly conditioned filter coefficients.
+   sosfreqz      -- Digital filter frequency response for SOS format filter.
+                    -- Alias for `freqz_sos`.
+
+``sosfreqz`` is an alias of `freqz_sos` for backward compatibility
+(should not be used in new code).
 
 Lower-level filter design functions:
 
