@@ -210,11 +210,8 @@ def _(diff_n):
 
 @sph_legendre_p_all.override_resolve_out_shapes
 def _(n, m, z_shape, nout):
-    if ((not isinstance(n, numbers.Integral)) or (n < 0)):
+    if ((not np.isscalar(n)) or (n < 0)):
         raise ValueError("n must be a non-negative integer.")
-
-    if ((not isinstance(m, numbers.Integral)) or (m < 0)):
-        raise ValueError("m must be a non-negative integer.")
 
     return nout * ((n + 1, 2 * abs(m) + 1) + z_shape,)
 
@@ -293,7 +290,7 @@ assoc_legendre_p_all = MultiUFunc(assoc_legendre_p_all,
 
 @assoc_legendre_p_all.override_key
 def _(branch_cut, norm, diff_n):
-    if not (isinstance(diff_n, numbers.Integral)
+    if not ((isinstance(diff_n, int) or np.issubdtype(diff_n, np.integer))
             and diff_n >= 0):
         raise ValueError(
             f"diff_n must be a non-negative integer, received: {diff_n}."
@@ -318,7 +315,7 @@ def _(branch_cut, norm, diff_n):
 
 @assoc_legendre_p_all.override_resolve_out_shapes
 def _(n, m, z_shape, branch_cut_shape, nout):
-    if not isinstance(m, numbers.Integral):
+    if not isinstance(m, numbers.Integral) or (abs(m) > n):
         raise ValueError("m must be <= n.")
     if not isinstance(n, numbers.Integral) or (n < 0):
         raise ValueError("n must be a non-negative integer.")
@@ -362,7 +359,7 @@ legendre_p = MultiUFunc(legendre_p,
 
 @legendre_p.override_key
 def _(diff_n):
-    if not ((isinstance(diff_n, int) or isinstance(diff_n, numbers.Integral))
+    if not ((isinstance(diff_n, int) or np.issubdtype(diff_n, np.integer))
             and diff_n >= 0):
         raise ValueError(
             f"diff_n must be a non-negative integer, received: {diff_n}."
@@ -533,10 +530,8 @@ def _(diff_n):
 
 @sph_harm_y_all.override_resolve_out_shapes
 def _(n, m, theta_shape, phi_shape, nout):
-    if ((not isinstance(n, numbers.Integral)) or (n < 0)):
+    if ((not np.isscalar(n)) or (n < 0)):
         raise ValueError("n must be a non-negative integer.")
-    if ((not isinstance(m, numbers.Integral)) or (m < 0)):
-        raise ValueError("m must be a non-negative integer.")
 
     return tuple(diff_ndims * (2,) + (n + 1, 2 * abs(m) + 1) +
         np.broadcast_shapes(theta_shape, phi_shape) for diff_ndims in range(nout))
