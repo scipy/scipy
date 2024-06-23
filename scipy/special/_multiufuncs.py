@@ -210,7 +210,7 @@ def _(diff_n):
 
 @sph_legendre_p_all.override_resolve_out_shapes
 def _(n, m, z_shape, nout):
-    if ((not np.isscalar(n)) or (n < 0)):
+    if not isinstance(n, numbers.Integral) or (n < 0):
         raise ValueError("n must be a non-negative integer.")
 
     return nout * ((n + 1, 2 * abs(m) + 1) + z_shape,)
@@ -290,7 +290,7 @@ assoc_legendre_p_all = MultiUFunc(assoc_legendre_p_all,
 
 @assoc_legendre_p_all.override_key
 def _(branch_cut, norm, diff_n):
-    if not ((isinstance(diff_n, int) or np.issubdtype(diff_n, np.integer))
+    if not ((isinstance(diff_n, numbers.Integral))
             and diff_n >= 0):
         raise ValueError(
             f"diff_n must be a non-negative integer, received: {diff_n}."
@@ -530,7 +530,7 @@ def _(diff_n):
 
 @sph_harm_y_all.override_resolve_out_shapes
 def _(n, m, theta_shape, phi_shape, nout):
-    if ((not np.isscalar(n)) or (n < 0)):
+    if not isinstance(n, numbers.Integral) or (n < 0):
         raise ValueError("n must be a non-negative integer.")
 
     return tuple(diff_ndims * (2,) + (n + 1, 2 * abs(m) + 1) +
