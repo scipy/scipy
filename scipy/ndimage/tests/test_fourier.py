@@ -1,7 +1,7 @@
 import math
 import numpy as np
 
-from scipy._lib._array_api import (
+from scipy._lib._array_api_no_0d import (
     xp_assert_equal,
     assert_array_almost_equal,
     assert_almost_equal,
