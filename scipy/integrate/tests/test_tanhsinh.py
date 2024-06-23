@@ -225,10 +225,10 @@ class TestTanhSinh:
         ref = xp.asarray(ref, dtype=dtype)
 
         res = _tanhsinh(norm_pdf, *limits)
-        xp_assert_close(res.integral, ref)
+        xp_assert_close(res.integral, ref, check_0d=False)
 
         logres = _tanhsinh(norm_logpdf, *limits, log=True)
-        xp_assert_close(xp.exp(logres.integral), ref, check_dtype=False)
+        xp_assert_close(xp.exp(logres.integral), ref, check_0d=False, check_dtype=False)
         # Transformation should not make the result complex unnecessarily
         xp_test = array_namespace(*limits)  # we need xp.isdtype
         assert (xp_test.isdtype(logres.integral.dtype, "real floating") if ref > 0
@@ -538,7 +538,7 @@ class TestTanhSinh:
         a, b = xp.asarray(0.), xp.asarray(xp.pi/4)
         res = _tanhsinh(f, a, b)
         ref = math.sqrt(2)/2 + (1-math.sqrt(2)/2)*1j
-        xp_assert_close(res.integral, xp.asarray(ref))
+        xp_assert_close(res.integral, xp.asarray(ref), check_0d=False)
 
         # Infinite limits
         def f(x):
@@ -546,7 +546,7 @@ class TestTanhSinh:
 
         a, b = xp.asarray(xp.inf), xp.asarray(-xp.inf)
         res = _tanhsinh(f, a, b)
-        xp_assert_close(res.integral, xp.asarray(-(1+1j)))
+        xp_assert_close(res.integral, xp.asarray(-(1+1j)), check_0d=False)
 
     @pytest.mark.parametrize("maxlevel", range(4))
     def test_minlevel(self, maxlevel, xp):
@@ -681,28 +681,28 @@ class TestTanhSinh:
 
         res = _tanhsinh(f, a, b)
         assert res.success
-        xp_assert_close(res.integral, xp.asarray(0.5))
+        xp_assert_close(res.integral, xp.asarray(0.5), check_0d=False)
 
         # Test levels 0 and 1; error is NaN
         res = _tanhsinh(f, a, b, maxlevel=0)
         assert res.integral > 0
-        xp_assert_equal(res.error, xp.asarray(xp.nan))
+        xp_assert_equal(res.error, xp.asarray(xp.nan), check_0d=False)
         res = _tanhsinh(f, a, b, maxlevel=1)
         assert res.integral > 0
-        xp_assert_equal(res.error, xp.asarray(xp.nan))
+        xp_assert_equal(res.error, xp.asarray(xp.nan), check_0d=False)
 
         # Test equal left and right integration limits
         res = _tanhsinh(f, b, b)
         assert res.success
         assert res.maxlevel == -1
-        xp_assert_close(res.integral, xp.asarray(0.))
+        xp_assert_close(res.integral, xp.asarray(0.), check_0d=False)
 
         # Test scalar `args` (not in tuple)
         def f(x, c):
             return x**c
 
         res = _tanhsinh(f, a, b, args=29)
-        xp_assert_close(res.integral, xp.asarray(1/30))
+        xp_assert_close(res.integral, xp.asarray(1/30), check_0d=False)
 
         # Test NaNs
         a = xp.asarray([xp.nan, 0, 0, 0])
@@ -726,9 +726,9 @@ class TestTanhSinh:
         _pair_cache.h0 = None
         a, b = xp.asarray(0), xp.asarray(1)
         res = _tanhsinh(lambda x: xp.asarray(x*1j), a, b)
-        xp_assert_close(res.integral, xp.asarray(0.5*1j))
+        xp_assert_close(res.integral, xp.asarray(0.5*1j), check_0d=False)
         res = _tanhsinh(lambda x: x, a, b)
-        xp_assert_close(res.integral, xp.asarray(0.5))
+        xp_assert_close(res.integral, xp.asarray(0.5), check_0d=False)
 
         # Test zero-size
         shape = (0, 3)

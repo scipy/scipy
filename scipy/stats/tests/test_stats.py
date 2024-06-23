@@ -41,9 +41,9 @@ from scipy.stats._stats_py import (_permutation_distribution_t, _chk_asarray, _m
                                    LinregressResult, _xp_mean, _xp_var)
 from scipy._lib._util import AxisError
 from scipy.conftest import array_api_compatible, skip_xp_invalid_arg
-from scipy._lib._array_api import (xp_assert_close, xp_assert_equal, array_namespace,
-                                   copy, is_numpy, is_torch, SCIPY_ARRAY_API,
-                                   size as xp_size, copy as xp_copy)
+from scipy._lib._array_api import (array_namespace, copy as xp_copy, is_numpy,
+                                   is_torch, size as xp_size, SCIPY_ARRAY_API)
+from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal
 
 skip_xp_backends = pytest.mark.skip_xp_backends
 
@@ -706,7 +706,7 @@ class TestPearsonr:
 
         message = 'An input array is constant'
         with pytest.warns(stats.ConstantInputWarning, match=message):
-            x = copy(x0)
+            x = xp_copy(x0)
             x[0, ...] = 1
             res = stats.pearsonr(x, y0, axis=1)
             ci = res.confidence_interval()

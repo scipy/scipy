@@ -5,8 +5,9 @@ from numpy.testing import assert_allclose, assert_equal, assert_array_less
 from scipy import stats, special
 import scipy._lib._elementwise_iterative_method as eim
 from scipy.conftest import array_api_compatible
-from scipy._lib._array_api import (array_namespace, xp_assert_close, xp_assert_equal,
-                                   xp_assert_less, xp_minimum, is_numpy, is_cupy)
+from scipy._lib._array_api import array_namespace, is_cupy, is_numpy, xp_minimum
+from scipy._lib._array_api_no_0d import (xp_assert_close, xp_assert_equal,
+                                         xp_assert_less)
 
 from scipy.optimize.elementwise import find_minimum, find_root
 from scipy.optimize._tstutils import _CHANDRUPATLA_TESTS
