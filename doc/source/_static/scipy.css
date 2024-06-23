@@ -83,3 +83,17 @@ div.admonition>.admonition-title {
 h1 {
   word-wrap: break-word;
 }
+
+/* Monospace titles for API docs */
+div.empty + section>h1 {
+  font-family: var(--pst-font-family-monospace);
+}
+
+.prename {
+  font-family: var(--pst-font-family-monospace);
+  font-size: var(--pst-font-size-h4);
+}
+
+.sig-prename {
+  display: none;
+}

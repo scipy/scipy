@@ -26,7 +26,20 @@ implementations on conda-forge), use::
     $ python -m pip -Csetup-args=-Dblas=blas -Csetup-args=-Dlapack=lapack
 
 Other options that should work (as long as they're installed with
-``pkg-config`` or CMake support) include ``mkl``, ``atlas`` and ``blis``.
+``pkg-config`` or CMake support) include ``mkl``, ``atlas``, ``blis`` and
+``accelerate``.
+
+Note that both Accelerate and ``scipy-openblas`` have flags in ``dev.py``
+that are easier to remember, since they're commonly used for development::
+
+    $ python dev.py build --with-accelerate
+    $ python dev.py build --with-scipy-openblas
+
+The ``-Dlapack`` flag isn't needed for Accelerate, MKL or ``scipy-openblas``,
+since we can be sure that BLAS and LAPACK are the same for those options.
+E.g., to create a wheel with Accelerate (on macOS >=13.3 only), use::
+
+    $ python -m build -Csetup-args=-Dblas=accelerate
 
 
 Using pkg-config to detect libraries in a nonstandard location

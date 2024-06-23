@@ -1865,7 +1865,7 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
 
     if padded:
         # Pad to integer number of windowed segments
-        # I.e make x.shape[-1] = nperseg + (nseg-1)*nstep, with integer nseg
+        # I.e. make x.shape[-1] = nperseg + (nseg-1)*nstep, with integer nseg
         nadd = (-(x.shape[-1]-nperseg) % nstep) % nperseg
         zeros_shape = list(x.shape[:-1]) + [nadd]
         x = np.concatenate((x, np.zeros(zeros_shape)), axis=-1)

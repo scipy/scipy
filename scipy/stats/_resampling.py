@@ -185,9 +185,23 @@ def _bootstrap_iv(data, statistic, vectorized, paired, axis, confidence_level,
     if n_samples == 0:
         raise ValueError("`data` must contain at least one sample.")
 
+    message = ("Ignoring the dimension specified by `axis`, arrays in `data` do not "
+               "have the same shape. Beginning in SciPy 1.16.0, `bootstrap` will "
+               "explicitly broadcast elements of `data` to the same shape (ignoring "
+               "`axis`) before performing the calculation. To avoid this warning in "
+               "the meantime, ensure that all samples have the same shape (except "
+               "potentially along `axis`).")
+    data = [np.atleast_1d(sample) for sample in data]
+    reduced_shapes = set()
+    for sample in data:
+        reduced_shape = list(sample.shape)
+        reduced_shape.pop(axis)
+        reduced_shapes.add(tuple(reduced_shape))
+    if len(reduced_shapes) != 1:
+        warnings.warn(message, FutureWarning, stacklevel=3)
+
     data_iv = []
     for sample in data:
-        sample = np.atleast_1d(sample)
         if sample.shape[axis_int] <= 1:
             raise ValueError("each sample in `data` must contain two or more "
                              "observations along `axis`.")
@@ -315,7 +329,18 @@ def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
     Parameters
     ----------
     data : sequence of array-like
-         Each element of data is a sample from an underlying distribution.
+         Each element of `data` is a sample containing scalar observations from an
+         underlying distribution. Elements of `data` must be broadcastable to the
+         same shape (with the possible exception of the dimension specified by `axis`).
+
+         .. versionchanged:: 1.14.0
+             `bootstrap` will now emit a ``FutureWarning`` if the shapes of the
+             elements of `data` are not the same (with the exception of the dimension
+             specified by `axis`).
+             Beginning in SciPy 1.16.0, `bootstrap` will explicitly broadcast the
+             elements to the same shape (except along `axis`) before performing
+             the calculation.
+
     statistic : callable
         Statistic for which the confidence interval is to be calculated.
         `statistic` must be a callable that accepts ``len(data)`` samples

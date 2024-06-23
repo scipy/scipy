@@ -1616,7 +1616,7 @@ class _ShapeInfo:
 
 def _get_fixed_fit_value(kwds, names):
     """
-    Given names such as `['f0', 'fa', 'fix_a']`, check that there is
+    Given names such as ``['f0', 'fa', 'fix_a']``, check that there is
     at most one non-None value in `kwds` associaed with those names.
     Return that value, or None if none of the names occur in `kwds`.
     As a side effect, all occurrences of those names in `kwds` are

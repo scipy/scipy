@@ -3,9 +3,8 @@ import sys
 import functools
 
 import numpy as np
-import scipy
 from scipy._lib._array_api import (
-    array_namespace, scipy_namespace_for, is_numpy, is_torch
+    array_namespace, scipy_namespace_for, is_numpy
 )
 from . import _ufuncs
 # These don't really need to be imported, but otherwise IDEs might not realize
@@ -13,7 +12,7 @@ from . import _ufuncs
 from ._ufuncs import (
     log_ndtr, ndtr, ndtri, erf, erfc, i0, i0e, i1, i1e, gammaln,  # noqa: F401
     gammainc, gammaincc, logit, expit, entr, rel_entr, xlogy,  # noqa: F401
-    chdtrc  # noqa: F401
+    chdtr, chdtrc, betainc, betaincc, stdtr  # noqa: F401
 )
 
 _SCIPY_ARRAY_API = os.environ.get("SCIPY_ARRAY_API", False)
@@ -25,9 +24,7 @@ def get_array_special_func(f_name, xp, n_array_args):
     f = None
     if is_numpy(xp):
         f = getattr(_ufuncs, f_name, None)
-    elif is_torch(xp):
-        f = getattr(xp.special, f_name, None)
-    elif spx is not scipy:
+    elif spx is not None:
         f = getattr(spx.special, f_name, None)
 
     if f is not None:
@@ -35,7 +32,7 @@ def get_array_special_func(f_name, xp, n_array_args):
 
     # if generic array-API implementation is available, use that;
     # otherwise, fall back to NumPy/SciPy
-    if f_name in _generic_implementations:
+    if f_name in _generic_implementations and spx is not None:
         _f = _generic_implementations[f_name](xp=xp, spx=spx)
         if _f is not None:
             return _f
@@ -81,12 +78,31 @@ def _xlogy(xp, spx):
     return __xlogy
 
 
+def _chdtr(xp, spx):
+    # The difference between this and just using `gammainc`
+    # defined by `get_array_special_func` is that if `gammainc`
+    # isn't found, we don't want to use the SciPy version; we'll
+    # return None here and use the SciPy version of `chdtr`.
+    gammainc = getattr(spx.special, 'gammainc', None)  # noqa: F811
+    if gammainc is None and hasattr(xp, 'special'):
+        gammainc = getattr(xp.special, 'gammainc', None)
+    if gammainc is None:
+        return None
+
+    def __chdtr(v, x):
+        res = xp.where(x >= 0, gammainc(v/2, x/2), 0)
+        i_nan = ((x == 0) & (v == 0)) | xp.isnan(x) | xp.isnan(v)
+        res = xp.where(i_nan, xp.nan, res)
+        return res
+    return __chdtr
+
+
 def _chdtrc(xp, spx):
     # The difference between this and just using `gammaincc`
     # defined by `get_array_special_func` is that if `gammaincc`
     # isn't found, we don't want to use the SciPy version; we'll
-    # return None here and use the SciPy version of `chdtrc`..
-    gammaincc = getattr(spx, 'gammaincc', None)  # noqa: F811
+    # return None here and use the SciPy version of `chdtrc`.
+    gammaincc = getattr(spx.special, 'gammaincc', None)  # noqa: F811
     if gammaincc is None and hasattr(xp, 'special'):
         gammaincc = getattr(xp.special, 'gammaincc', None)
     if gammaincc is None:
@@ -94,15 +110,47 @@ def _chdtrc(xp, spx):
 
     def __chdtrc(v, x):
         res = xp.where(x >= 0, gammaincc(v/2, x/2), 1)
-        i_nan = ((x == 0) & (v == 0)) | xp.isnan(x) | xp.isnan(v)
+        i_nan = ((x == 0) & (v == 0)) | xp.isnan(x) | xp.isnan(v) | (v <= 0)
         res = xp.where(i_nan, xp.nan, res)
         return res
     return __chdtrc
 
 
+def _betaincc(xp, spx):
+    betainc = getattr(spx.special, 'betainc', None)  # noqa: F811
+    if betainc is None and hasattr(xp, 'special'):
+        betainc = getattr(xp.special, 'betainc', None)
+    if betainc is None:
+        return None
+
+    def __betaincc(a, b, x):
+        # not perfect; might want to just rely on SciPy
+        return betainc(b, a, 1-x)
+    return __betaincc
+
+
+def _stdtr(xp, spx):
+    betainc = getattr(spx.special, 'betainc', None)  # noqa: F811
+    if betainc is None and hasattr(xp, 'special'):
+        betainc = getattr(xp.special, 'betainc', None)
+    if betainc is None:
+        return None
+
+    def __stdtr(df, t):
+        x = df / (t ** 2 + df)
+        tail = betainc(df / 2, 0.5, x) / 2
+        return xp.where(t < 0, tail, 1 - tail)
+
+    return __stdtr
+
+
 _generic_implementations = {'rel_entr': _rel_entr,
                             'xlogy': _xlogy,
-                            'chdtrc': _chdtrc}
+                            'chdtr,': _chdtr,
+                            'chdtrc': _chdtrc,
+                            'betaincc': _betaincc,
+                            'stdtr': _stdtr,
+                            }
 
 
 # functools.wraps doesn't work because:
@@ -137,7 +185,11 @@ array_special_func_map = {
     'entr': 1,
     'rel_entr': 2,
     'xlogy': 2,
+    'chdtr': 2,
     'chdtrc': 2,
+    'betainc': 3,
+    'betaincc': 3,
+    'stdtr': 2,
 }
 
 for f_name, n_array_args in array_special_func_map.items():

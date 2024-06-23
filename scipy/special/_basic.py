@@ -3020,8 +3020,8 @@ def factorial(n, exact=False):
             return math.factorial(n)
         elif exact:
             msg = ("Non-integer values of `n` together with `exact=True` are "
-                   "deprecated. Either ensure integer `n` or use `exact=False`.")
-            warnings.warn(msg, DeprecationWarning, stacklevel=2)
+                   "not supported. Either ensure integer `n` or use `exact=False`.")
+            raise ValueError(msg)
         return _factorialx_approx_core(n, k=1)
 
     # arrays & array-likes
@@ -3247,10 +3247,10 @@ def stirling2(N, K, *, exact=False):
         numbers for smaller arrays and uses a second order approximation due to
         Temme for larger entries  of `N` and `K` that allows trading speed for
         accuracy. See [2]_ for a description. Temme approximation is used for
-        values `n>50`. The max error from the DP has max relative error
-        `4.5*10^-16` for `n<=50` and the max error from the Temme approximation
-        has max relative error `5*10^-5` for `51 <= n < 70` and
-        `9*10^-6` for `70 <= n < 101`. Note that these max relative errors will
+        values ``n>50``. The max error from the DP has max relative error
+        ``4.5*10^-16`` for ``n<=50`` and the max error from the Temme approximation
+        has max relative error ``5*10^-5`` for ``51 <= n < 70`` and
+        ``9*10^-6`` for ``70 <= n < 101``. Note that these max relative errors will
         decrease further as `n` increases.
 
     Returns

@@ -87,6 +87,9 @@ Other useful options include:
 
 -  ``-v`` or ``--verbose``, which activates the verbose option for more
    detailed output. 
+-  ``-b`` or ``--array-api-backend`` *backend* to include alternative
+   array backends in array-api-compatible tests. See :ref:`dev-arrayapi`
+   for details.
 -  ``--coverage`` to generate a test coverage report in
    ``scipy/build/coverage/index.html``. *Note:* |pytest-cov|_ *must be
    installed.*

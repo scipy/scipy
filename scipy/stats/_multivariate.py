@@ -653,7 +653,7 @@ class multivariate_normal_gen(multi_rv_generic):
         %(_mvn_doc_default_callparams)s
         maxpts : integer, optional
             The maximum number of points to use for integration
-            (default `1000000*dim`)
+            (default ``1000000*dim``)
         abseps : float, optional
             Absolute error tolerance (default 1e-5)
         releps : float, optional
@@ -698,7 +698,7 @@ class multivariate_normal_gen(multi_rv_generic):
         %(_mvn_doc_default_callparams)s
         maxpts : integer, optional
             The maximum number of points to use for integration
-            (default `1000000*dim`)
+            (default ``1000000*dim``)
         abseps : float, optional
             Absolute error tolerance (default 1e-5)
         releps : float, optional
@@ -798,7 +798,7 @@ class multivariate_normal_gen(multi_rv_generic):
         fix_mean : ndarray(n, )
             Fixed mean vector. Must have length `n`.
         fix_cov: ndarray (n, n)
-            Fixed covariance matrix. Must have shape `(n, n)`.
+            Fixed covariance matrix. Must have shape ``(n, n)``.
 
         Returns
         -------
@@ -877,7 +877,7 @@ class multivariate_normal_frozen(multi_rv_frozen):
             then that instance is used.
         maxpts : integer, optional
             The maximum number of points to use for integration of the
-            cumulative distribution function (default `1000000*dim`)
+            cumulative distribution function (default ``1000000*dim``)
         abseps : float, optional
             Absolute error tolerance for the cumulative distribution function
             (default 1e-5)
@@ -968,15 +968,15 @@ _matnorm_doc_default_callparams = """\
 mean : array_like, optional
     Mean of the distribution (default: `None`)
 rowcov : array_like, optional
-    Among-row covariance matrix of the distribution (default: `1`)
+    Among-row covariance matrix of the distribution (default: ``1``)
 colcov : array_like, optional
-    Among-column covariance matrix of the distribution (default: `1`)
+    Among-column covariance matrix of the distribution (default: ``1``)
 """
 
 _matnorm_doc_callparams_note = """\
 If `mean` is set to `None` then a matrix of zeros is used for the mean.
 The dimensions of this matrix are inferred from the shape of `rowcov` and
-`colcov`, if these are provided, or set to `1` if ambiguous.
+`colcov`, if these are provided, or set to ``1`` if ambiguous.
 
 `rowcov` and `colcov` can be two-dimensional array_likes specifying the
 covariance matrices directly. Alternatively, a one-dimensional array will
@@ -1329,9 +1329,9 @@ class matrix_normal_gen(multi_rv_generic):
         Parameters
         ----------
         rowcov : array_like, optional
-            Among-row covariance matrix of the distribution (default: `1`)
+            Among-row covariance matrix of the distribution (default: ``1``)
         colcov : array_like, optional
-            Among-column covariance matrix of the distribution (default: `1`)
+            Among-column covariance matrix of the distribution (default: ``1``)
 
         Returns
         -------

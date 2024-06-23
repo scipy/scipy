@@ -785,12 +785,12 @@ def jaccard(u, v, w=None):
 
     Notes
     -----
-    When both `u` and `v` lead to a `0/0` division i.e. there is no overlap
+    When both `u` and `v` lead to a ``0/0`` division i.e. there is no overlap
     between the items in the vectors the returned distance is 0. See the
     Wikipedia page on the Jaccard index [1]_, and this paper [2]_.
 
     .. versionchanged:: 1.2.0
-        Previously, when `u` and `v` lead to a `0/0` division, the function
+        Previously, when `u` and `v` lead to a ``0/0`` division, the function
         would return NaN. This was changed to return 0 instead.
 
     References
@@ -1156,7 +1156,7 @@ def canberra(u, v, w=None):
 
     Notes
     -----
-    When `u[i]` and `v[i]` are 0 for given i, then the fraction 0/0 = 0 is
+    When ``u[i]`` and ``v[i]`` are 0 for given i, then the fraction 0/0 = 0 is
     used in the calculation.
 
     Examples

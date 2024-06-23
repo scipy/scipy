@@ -63,8 +63,8 @@ def bayes_mvs(data, alpha=0.90):
 
             (center, (lower, upper))
 
-        with `center` the mean of the conditional pdf of the value given the
-        data, and `(lower, upper)` a confidence interval, centered on the
+        with ``center`` the mean of the conditional pdf of the value given the
+        data, and ``(lower, upper)`` a confidence interval, centered on the
         median, containing the estimate to a probability ``alpha``.
 
     See Also
@@ -4351,7 +4351,7 @@ def median_test(*samples, ties='below', correction=True, lambda_=1,
     return MedianTestResult(stat, p, grand_median, table)
 
 
-def _circfuncs_common(samples, high, low, xp=None):
+def _circfuncs_common(samples, period, xp=None):
     xp = array_namespace(samples) if xp is None else xp
 
     if xp.isdtype(samples.dtype, 'integral'):
@@ -4360,8 +4360,9 @@ def _circfuncs_common(samples, high, low, xp=None):
 
     # Recast samples as radians that range between 0 and 2 pi and calculate
     # the sine and cosine
-    sin_samp = xp.sin((samples - low)*2.*xp.pi / (high - low))
-    cos_samp = xp.cos((samples - low)*2.*xp.pi / (high - low))
+    scaled_samples = samples * ((2.0 * pi) / period)
+    sin_samp = xp.sin(scaled_samples)
+    cos_samp = xp.cos(scaled_samples)
 
     return samples, sin_samp, cos_samp
 
@@ -4374,7 +4375,7 @@ def circmean(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     r"""Compute the circular mean of a sample of angle observations.
 
     Given :math:`n` angle observations :math:`x_1, \cdots, x_n` measured in
-    radians, their `circular mean` is defined by ([1]_, Eq. 2.2.4)
+    radians, their *circular mean* is defined by ([1]_, Eq. 2.2.4)
 
     .. math::
 
@@ -4449,13 +4450,14 @@ def circmean(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     # Apparently atan2(0, 0) is 0, even though it is mathematically undefined
     if xp_size(samples) == 0:
         return xp.mean(samples, axis=axis)
-    samples, sin_samp, cos_samp = _circfuncs_common(samples, high, low, xp=xp)
+    period = high - low
+    samples, sin_samp, cos_samp = _circfuncs_common(samples, period, xp=xp)
     sin_sum = xp.sum(sin_samp, axis=axis)
     cos_sum = xp.sum(cos_samp, axis=axis)
-    res = xp.atan2(sin_sum, cos_sum) % (2*xp.pi)
+    res = xp.atan2(sin_sum, cos_sum)
 
     res = res[()] if res.ndim == 0 else res
-    return res*(high - low)/2.0/xp.pi + low
+    return (res * (period / (2.0 * pi)) - low) % period + low
 
 
 @_axis_nan_policy_factory(
@@ -4466,7 +4468,7 @@ def circvar(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     r"""Compute the circular variance of a sample of angle observations.
 
     Given :math:`n` angle observations :math:`x_1, \cdots, x_n` measured in
-    radians, their `circular variance` is defined by ([2]_, Eq. 2.3.3)
+    radians, their *circular variance* is defined by ([2]_, Eq. 2.3.3)
 
     .. math::
 
@@ -4540,13 +4542,13 @@ def circvar(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
 
     """
     xp = array_namespace(samples)
-    samples, sin_samp, cos_samp = _circfuncs_common(samples, high, low, xp=xp)
+    period = high - low
+    samples, sin_samp, cos_samp = _circfuncs_common(samples, period, xp=xp)
     sin_mean = xp.mean(sin_samp, axis=axis)
     cos_mean = xp.mean(cos_samp, axis=axis)
     hypotenuse = (sin_mean**2. + cos_mean**2.)**0.5
     # hypotenuse can go slightly above 1 due to rounding errors
-    with np.errstate(invalid='ignore'):
-        R = xp_minimum(xp.asarray(1.), hypotenuse)
+    R = xp_minimum(xp.asarray(1.), hypotenuse)
 
     res = 1. - R
     return res
@@ -4644,17 +4646,17 @@ def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate', *,
 
     """
     xp = array_namespace(samples)
-    samples, sin_samp, cos_samp = _circfuncs_common(samples, high, low, xp=xp)
+    period = high - low
+    samples, sin_samp, cos_samp = _circfuncs_common(samples, period, xp=xp)
     sin_mean = xp.mean(sin_samp, axis=axis)  # [1] (2.2.3)
     cos_mean = xp.mean(cos_samp, axis=axis)  # [1] (2.2.3)
     hypotenuse = (sin_mean**2. + cos_mean**2.)**0.5
     # hypotenuse can go slightly above 1 due to rounding errors
-    with np.errstate(invalid='ignore'):
-        R = xp_minimum(xp.asarray(1.), hypotenuse)  # [1] (2.2.4)
+    R = xp_minimum(xp.asarray(1.), hypotenuse)  # [1] (2.2.4)
 
-    res = xp.sqrt(-2*xp.log(R))
+    res = (-2*xp.log(R))**0.5+0.0  # torch.pow returns -0.0 if R==1
     if not normalize:
-        res *= (high-low)/(2.*xp.pi)  # [1] (2.3.14) w/ (2.3.7)
+        res *= (high-low)/(2.*pi)  # [1] (2.3.14) w/ (2.3.7)
     return res
 
 

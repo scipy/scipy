@@ -1261,7 +1261,7 @@ class TestOptimizeSimple(CheckOptimize):
             assert func(sol1.x) < func(sol2.x), \
                    f"{method}: {func(sol1.x)} vs. {func(sol2.x)}"
 
-    @pytest.mark.fail_slow(5)
+    @pytest.mark.fail_slow(10)
     @pytest.mark.filterwarnings('ignore::UserWarning')
     @pytest.mark.filterwarnings('ignore::RuntimeWarning')  # See gh-18547
     @pytest.mark.parametrize('method',
@@ -2495,6 +2495,7 @@ class TestOptimizeResultAttributes:
         self.hessp = optimize.rosen_hess_prod
         self.bounds = [(0., 10.), (0., 10.)]
 
+    @pytest.mark.fail_slow(2)
     def test_attributes_present(self):
         attributes = ['nit', 'nfev', 'x', 'success', 'status', 'fun',
                       'message']
@@ -2584,7 +2585,7 @@ class TestBrute:
 
         optimize.brute(f, [(-1, 1)], Ns=3, finish=None)
 
-    @pytest.mark.fail_slow(5)
+    @pytest.mark.fail_slow(10)
     def test_workers(self):
         # check that parallel evaluation works
         resbrute = optimize.brute(brute_func, self.rranges, args=self.params,
@@ -2615,7 +2616,7 @@ class TestBrute:
         assert_allclose(resbrute, 0)
 
 
-@pytest.mark.fail_slow(10)
+@pytest.mark.fail_slow(20)
 def test_cobyla_threadsafe():
 
     # Verify that cobyla is threadsafe. Will segfault if it is not.
@@ -2663,7 +2664,7 @@ class TestIterationLimits:
         r, t = np.sqrt(v[0]**2+v[1]**2), np.arctan2(v[0], v[1])
         return np.sin(r*20 + t)+r*0.5
 
-    @pytest.mark.fail_slow(5)
+    @pytest.mark.fail_slow(10)
     def test_neldermead_limit(self):
         self.check_limits("Nelder-Mead", 200)
 

@@ -142,6 +142,7 @@ def test_geninvgauss_uerror():
 
 
 # TODO: add more distributions
+@pytest.mark.fail_slow(5)
 @pytest.mark.parametrize(("distname, args"), [("beta", (0.11, 0.11))])
 def test_error_extreme_params(distname, args):
     # take extreme parameters where u-error might not be below the tolerance

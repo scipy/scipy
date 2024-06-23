@@ -126,11 +126,12 @@ def getdtype(dtype, a=None, default=None):
                 raise TypeError("could not interpret data type") from e
     else:
         newdtype = np.dtype(dtype)
-        if newdtype == np.object_:
-            raise ValueError(
-                "object dtype is not supported by sparse matrices"
-            )
 
+    if newdtype not in supported_dtypes:
+        supported_dtypes_fmt = ", ".join(t.__name__ for t in supported_dtypes)
+        raise ValueError(f"scipy.sparse does not support dtype {newdtype.name}. "
+                         f"The only supported types are: {supported_dtypes_fmt}.")
+    
     return newdtype
 
 
