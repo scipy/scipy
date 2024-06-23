@@ -315,10 +315,10 @@ def _(branch_cut, norm, diff_n):
 
 @assoc_legendre_p_all.override_resolve_out_shapes
 def _(n, m, z_shape, branch_cut_shape, nout):
-    if not isinstance(m, numbers.Integral) or (abs(m) > n):
-        raise ValueError("m must be <= n.")
     if not isinstance(n, numbers.Integral) or (n < 0):
         raise ValueError("n must be a non-negative integer.")
+    if not isinstance(m, numbers.Integral) or (m < 0):
+        raise ValueError("m must be a non-negative integer.")
 
     return nout * ((n + 1, 2 * abs(m) + 1)
         + np.broadcast_shapes(z_shape, branch_cut_shape),)

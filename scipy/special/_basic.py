@@ -1756,6 +1756,9 @@ def lpmn(m, n, z):
 
     n = _nonneg_int_or_fail(n, 'n', strict=False)
 
+    if (abs(m) > n):
+        raise ValueError("m must be <= n.")
+
     if np.iscomplexobj(z):
         raise ValueError("Argument must be real. Use clpmn instead.")
 
@@ -1836,6 +1839,9 @@ def clpmn(m, n, z, type=3):
            https://dlmf.nist.gov/14.21
 
     """
+
+    if (abs(m) > n):
+        raise ValueError("m must be <= n.")
 
     if not (type == 2 or type == 3):
         raise ValueError("type must be either 2 or 3.")
