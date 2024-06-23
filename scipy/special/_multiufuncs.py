@@ -359,13 +359,12 @@ legendre_p = MultiUFunc(legendre_p,
 
 @legendre_p.override_key
 def _(diff_n):
-    if not ((isinstance(diff_n, int) or np.issubdtype(diff_n, np.integer))
-            and diff_n >= 0):
+    if (not isinstance(diff_n, numbers.Integral)) or (diff_n < 0):
         raise ValueError(
             f"diff_n must be a non-negative integer, received: {diff_n}."
         )
     if not 0 <= diff_n <= 2:
-        raise ValueError(
+        raise NotImplementedError(
             "diff_n is currently only implemented for orders 0, 1, and 2,"
             f" received: {diff_n}."
         )
