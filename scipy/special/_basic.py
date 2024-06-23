@@ -2765,8 +2765,9 @@ def perm(N, k, exact=False):
     k : int, ndarray
         Number of elements taken.
     exact : bool, optional
-        If `exact` is False, then floating point precision is used, otherwise
-        exact long integer is computed.
+        If ``True``, calculate the answer exactly using long integer arithmetic (`N`
+        and `k` must be scalar integers). If ``False``, a floating point approximation
+        is calculated (more rapidly) using `poch`. Default is ``False``.
 
     Returns
     -------
@@ -2791,10 +2792,24 @@ def perm(N, k, exact=False):
 
     """
     if exact:
+        N = np.squeeze(N)[()]  # for backward compatibility (accepted size 1 arrays)
+        k = np.squeeze(k)[()]
+        if not (isscalar(N) and isscalar(k)):
+            raise ValueError("`N` and `k` must scalar integers be with `exact=True`.")
+
+        floor_N, floor_k = int(N), int(k)
+        non_integral = not (floor_N == N and floor_k == k)
         if (k > N) or (N < 0) or (k < 0):
+            if non_integral:
+                msg = ("Non-integer `N` and `k` with `exact=True` is deprecated and "
+                       "will raise an error in SciPy 1.16.0.")
+                warnings.warn(msg, DeprecationWarning, stacklevel=2)
             return 0
+        if non_integral:
+            raise ValueError("Non-integer `N` and `k` with `exact=True` is not "
+                             "supported.")
         val = 1
-        for i in range(N - k + 1, N + 1):
+        for i in range(floor_N - floor_k + 1, floor_N + 1):
             val *= i
         return val
     else:
