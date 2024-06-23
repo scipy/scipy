@@ -900,18 +900,18 @@ def assoc_legendre_p_1_0(z, *, branch_cut=2, norm=False):
 
 def assoc_legendre_p_1_1(z, *, branch_cut=2, norm=False):
     branch_sign = np.where(branch_cut == 3, np.where(np.signbit(np.real(z)), 1, -1), -1)
-    typ_sign = np.where(branch_cut == 3, -1, 1)
+    branch_cut_sign = np.where(branch_cut == 3, -1, 1)
     fac = assoc_legendre_factor(1, 1, norm)
 
     w = np.sqrt(np.where(branch_cut == 3, z * z - 1, 1 - z * z))
 
-    return typ_sign * branch_sign * fac * w
+    return branch_cut_sign * branch_sign * fac * w
 
 def assoc_legendre_p_1_m1(z, *, branch_cut=2, norm=False):
-    typ_sign = np.where(branch_cut == 3, -1, 1)
+    branch_cut_sign = np.where(branch_cut == 3, -1, 1)
     fac = assoc_legendre_factor(1, -1, norm)
 
-    return (-typ_sign * fac *
+    return (-branch_cut_sign * fac *
         assoc_legendre_p_1_1(z, branch_cut=branch_cut) / 2)
 
 def assoc_legendre_p_2_0(z, *, branch_cut=2, norm=False):
@@ -926,22 +926,22 @@ def assoc_legendre_p_2_1(z, *, branch_cut=2, norm=False):
         assoc_legendre_p_1_1(z, branch_cut=branch_cut))
 
 def assoc_legendre_p_2_2(z, *, branch_cut=2, norm=False):
-    typ_sign = np.where(branch_cut == 3, -1, 1)
+    branch_cut_sign = np.where(branch_cut == 3, -1, 1)
     fac = assoc_legendre_factor(2, 2, norm)
 
-    return 3 * typ_sign * fac * (1 - z * z)
+    return 3 * branch_cut_sign * fac * (1 - z * z)
 
 def assoc_legendre_p_2_m2(z, *, branch_cut=2, norm=False):
-    typ_sign = np.where(branch_cut == 3, -1, 1)
+    branch_cut_sign = np.where(branch_cut == 3, -1, 1)
     fac = assoc_legendre_factor(2, -2, norm)
 
-    return typ_sign * fac * (1 - z * z) / 8
+    return branch_cut_sign * fac * (1 - z * z) / 8
 
 def assoc_legendre_p_2_m1(z, *, branch_cut=2, norm=False):
-    typ_sign = np.where(branch_cut == 3, -1, 1)
+    branch_cut_sign = np.where(branch_cut == 3, -1, 1)
     fac = assoc_legendre_factor(2, -1, norm)
 
-    return (-typ_sign * fac * z *
+    return (-branch_cut_sign * fac * z *
         assoc_legendre_p_1_1(z, branch_cut=branch_cut) / 2)
 
 def assoc_legendre_p_3_0(z, *, branch_cut=2, norm=False):
@@ -956,16 +956,16 @@ def assoc_legendre_p_3_1(z, *, branch_cut=2, norm=False):
         assoc_legendre_p_1_1(z, branch_cut=branch_cut) / 2)
 
 def assoc_legendre_p_3_2(z, *, branch_cut=2, norm=False):
-    typ_sign = np.where(branch_cut == 3, -1, 1)
+    branch_cut_sign = np.where(branch_cut == 3, -1, 1)
     fac = assoc_legendre_factor(3, 2, norm)
 
-    return 15 * typ_sign * fac * (1 - z * z) * z
+    return 15 * branch_cut_sign * fac * (1 - z * z) * z
 
 def assoc_legendre_p_3_3(z, *, branch_cut=2, norm=False):
-    typ_sign = np.where(branch_cut == 3, -1, 1)
+    branch_cut_sign = np.where(branch_cut == 3, -1, 1)
     fac = assoc_legendre_factor(3, 3, norm)
 
-    return (15 * typ_sign * fac * (1 - z * z) *
+    return (15 * branch_cut_sign * fac * (1 - z * z) *
         assoc_legendre_p_1_1(z, branch_cut=branch_cut))
 
 def assoc_legendre_p_3_m3(z, *, branch_cut=2, norm=False):
@@ -975,16 +975,16 @@ def assoc_legendre_p_3_m3(z, *, branch_cut=2, norm=False):
         assoc_legendre_p_1_1(z, branch_cut=branch_cut) / 48)
 
 def assoc_legendre_p_3_m2(z, *, branch_cut=2, norm=False):
-    typ_sign = np.where(branch_cut == 3, -1, 1)
+    branch_cut_sign = np.where(branch_cut == 3, -1, 1)
     fac = assoc_legendre_factor(3, -2, norm)
 
-    return typ_sign * fac * (1 - z * z) * z / 8
+    return branch_cut_sign * fac * (1 - z * z) * z / 8
 
 def assoc_legendre_p_3_m1(z, *, branch_cut=2, norm=False):
-    typ_sign = np.where(branch_cut == 3, -1, 1)
+    branch_cut_sign = np.where(branch_cut == 3, -1, 1)
     fac = assoc_legendre_factor(3, -1, norm)
 
-    return (typ_sign * fac * (1 - 5 * z * z) *
+    return (branch_cut_sign * fac * (1 - 5 * z * z) *
         assoc_legendre_p_1_1(z, branch_cut=branch_cut) / 8)
 
 def assoc_legendre_p_4_0(z, *, branch_cut=2, norm=False):
@@ -999,16 +999,16 @@ def assoc_legendre_p_4_1(z, *, branch_cut=2, norm=False):
        assoc_legendre_p_1_1(z, branch_cut=branch_cut) / 2)
 
 def assoc_legendre_p_4_2(z, *, branch_cut=2, norm=False):
-    typ_sign = np.where(branch_cut == 3, -1, 1)
+    branch_cut_sign = np.where(branch_cut == 3, -1, 1)
     fac = assoc_legendre_factor(4, 2, norm)
 
-    return 15 * typ_sign * fac * ((8 - 7 * z * z) * z * z - 1) / 2
+    return 15 * branch_cut_sign * fac * ((8 - 7 * z * z) * z * z - 1) / 2
 
 def assoc_legendre_p_4_3(z, *, branch_cut=2, norm=False):
-    typ_sign = np.where(branch_cut == 3, -1, 1)
+    branch_cut_sign = np.where(branch_cut == 3, -1, 1)
     fac = assoc_legendre_factor(4, 3, norm)
 
-    return (105 * typ_sign * fac * (1 - z * z) * z *
+    return (105 * branch_cut_sign * fac * (1 - z * z) * z *
         assoc_legendre_p_1_1(z, branch_cut=branch_cut))
 
 def assoc_legendre_p_4_4(z, *, branch_cut=2, norm=False):
@@ -1028,16 +1028,16 @@ def assoc_legendre_p_4_m3(z, *, branch_cut=2, norm=False):
         assoc_legendre_p_1_1(z, branch_cut=branch_cut) / 48)
 
 def assoc_legendre_p_4_m2(z, *, branch_cut=2, norm=False):
-    typ_sign = np.where(branch_cut == 3, -1, 1)
+    branch_cut_sign = np.where(branch_cut == 3, -1, 1)
     fac = assoc_legendre_factor(4, -2, norm)
 
-    return typ_sign * fac * ((8 - 7 * z * z) * z * z - 1) / 48
+    return branch_cut_sign * fac * ((8 - 7 * z * z) * z * z - 1) / 48
 
 def assoc_legendre_p_4_m1(z, *, branch_cut=2, norm=False):
-    typ_sign = np.where(branch_cut == 3, -1, 1)
+    branch_cut_sign = np.where(branch_cut == 3, -1, 1)
     fac = assoc_legendre_factor(4, -1, norm)
 
-    return (typ_sign * fac * (3 - 7 * z * z) * z *
+    return (branch_cut_sign * fac * (3 - 7 * z * z) * z *
         assoc_legendre_p_1_1(z, branch_cut=branch_cut) / 8)
 
 def assoc_legendre_p_1_1_jac_div_z(z, branch_cut=2):
@@ -1063,10 +1063,10 @@ def assoc_legendre_p_1_1_jac(z, *, branch_cut=2, norm=False):
         assoc_legendre_p_1_1_jac_div_z(z, branch_cut=branch_cut))
 
 def assoc_legendre_p_1_m1_jac(z, *, branch_cut=2, norm=False):
-    typ_sign = np.where(branch_cut == 3, -1, 1)
+    branch_cut_sign = np.where(branch_cut == 3, -1, 1)
     fac = assoc_legendre_factor(1, -1, norm)
 
-    return (-typ_sign * fac * z *
+    return (-branch_cut_sign * fac * z *
         assoc_legendre_p_1_1_jac_div_z(z, branch_cut=branch_cut) / 2)
 
 def assoc_legendre_p_2_0_jac(z, *, branch_cut=2, norm=False):
@@ -1081,23 +1081,23 @@ def assoc_legendre_p_2_1_jac(z, *, branch_cut=2, norm=False):
         assoc_legendre_p_1_1_jac_div_z(z, branch_cut=branch_cut))
 
 def assoc_legendre_p_2_2_jac(z, *, branch_cut=2, norm=False):
-    typ_sign = np.where(branch_cut == 3, -1, 1)
+    branch_cut_sign = np.where(branch_cut == 3, -1, 1)
     fac = assoc_legendre_factor(2, 2, norm)
 
-    return -6 * typ_sign * fac * z
+    return -6 * branch_cut_sign * fac * z
 
 def assoc_legendre_p_2_m1_jac(z, *, branch_cut=2, norm=False):
-    typ_sign = np.where(branch_cut == 3, -1, 1)
+    branch_cut_sign = np.where(branch_cut == 3, -1, 1)
     fac = assoc_legendre_factor(2, -1, norm)
 
-    return (typ_sign * fac * (1 - 2 * z * z) *
+    return (branch_cut_sign * fac * (1 - 2 * z * z) *
         assoc_legendre_p_1_1_jac_div_z(z, branch_cut=branch_cut) / 2)
 
 def assoc_legendre_p_2_m2_jac(z, *, branch_cut=2, norm=False):
-    typ_sign = np.where(branch_cut == 3, -1, 1)
+    branch_cut_sign = np.where(branch_cut == 3, -1, 1)
     fac = assoc_legendre_factor(2, -2, norm)
 
-    return -typ_sign * fac * z / 4
+    return -branch_cut_sign * fac * z / 4
 
 def assoc_legendre_p_3_0_jac(z, *, branch_cut=2, norm=False):
     fac = assoc_legendre_factor(3, 0, norm)
@@ -1111,16 +1111,16 @@ def assoc_legendre_p_3_1_jac(z, *, branch_cut=2, norm=False):
         assoc_legendre_p_1_1_jac_div_z(z, branch_cut=branch_cut) / 2)
 
 def assoc_legendre_p_3_2_jac(z, *, branch_cut=2, norm=False):
-    typ_sign = np.where(branch_cut == 3, -1, 1)
+    branch_cut_sign = np.where(branch_cut == 3, -1, 1)
     fac = assoc_legendre_factor(3, 2, norm)
 
-    return 15 * typ_sign * fac * (1 - 3 * z * z)
+    return 15 * branch_cut_sign * fac * (1 - 3 * z * z)
 
 def assoc_legendre_p_3_3_jac(z, *, branch_cut=2, norm=False):
-    typ_sign = np.where(branch_cut == 3, -1, 1)
+    branch_cut_sign = np.where(branch_cut == 3, -1, 1)
     fac = assoc_legendre_factor(3, 3, norm)
 
-    return (45 * typ_sign * fac * (1 - z * z) * z *
+    return (45 * branch_cut_sign * fac * (1 - z * z) * z *
         assoc_legendre_p_1_1_jac_div_z(z, branch_cut=branch_cut))
 
 def assoc_legendre_p_3_m3_jac(z, *, branch_cut=2, norm=False):
@@ -1130,16 +1130,16 @@ def assoc_legendre_p_3_m3_jac(z, *, branch_cut=2, norm=False):
         assoc_legendre_p_1_1_jac_div_z(z, branch_cut=branch_cut) / 16)
 
 def assoc_legendre_p_3_m2_jac(z, *, branch_cut=2, norm=False):
-    typ_sign = np.where(branch_cut == 3, -1, 1)
+    branch_cut_sign = np.where(branch_cut == 3, -1, 1)
     fac = assoc_legendre_factor(3, -2, norm)
 
-    return typ_sign * fac * (1 - 3 * z * z) / 8
+    return branch_cut_sign * fac * (1 - 3 * z * z) / 8
 
 def assoc_legendre_p_3_m1_jac(z, *, branch_cut=2, norm=False):
-    typ_sign = np.where(branch_cut == 3, -1, 1)
+    branch_cut_sign = np.where(branch_cut == 3, -1, 1)
     fac = assoc_legendre_factor(3, -1, norm)
 
-    return (typ_sign * fac * (11 - 15 * z * z) * z *
+    return (branch_cut_sign * fac * (11 - 15 * z * z) * z *
         assoc_legendre_p_1_1_jac_div_z(z, branch_cut=branch_cut) / 8)
 
 def assoc_legendre_p_4_0_jac(z, *, branch_cut=2, norm=False):
@@ -1154,16 +1154,16 @@ def assoc_legendre_p_4_1_jac(z, *, branch_cut=2, norm=False):
         assoc_legendre_p_1_1_jac_div_z(z, branch_cut=branch_cut) / 2)
 
 def assoc_legendre_p_4_2_jac(z, *, branch_cut=2, norm=False):
-    typ_sign = np.where(branch_cut == 3, -1, 1)
+    branch_cut_sign = np.where(branch_cut == 3, -1, 1)
     fac = assoc_legendre_factor(4, 2, norm)
 
-    return 30 * typ_sign * fac * (4 - 7 * z * z) * z
+    return 30 * branch_cut_sign * fac * (4 - 7 * z * z) * z
 
 def assoc_legendre_p_4_3_jac(z, *, branch_cut=2, norm=False):
-    typ_sign = np.where(branch_cut == 3, -1, 1)
+    branch_cut_sign = np.where(branch_cut == 3, -1, 1)
     fac = assoc_legendre_factor(4, 3, norm)
 
-    return (105 * typ_sign * fac * ((5 - 4 * z * z) * z * z - 1) *
+    return (105 * branch_cut_sign * fac * ((5 - 4 * z * z) * z * z - 1) *
         assoc_legendre_p_1_1_jac_div_z(z, branch_cut=branch_cut))
 
 def assoc_legendre_p_4_4_jac(z, *, branch_cut=2, norm=False):
@@ -1183,16 +1183,16 @@ def assoc_legendre_p_4_m3_jac(z, *, branch_cut=2, norm=False):
         assoc_legendre_p_1_1_jac_div_z(z, branch_cut=branch_cut) / 48)
 
 def assoc_legendre_p_4_m2_jac(z, *, branch_cut=2, norm=False):
-    typ_sign = np.where(branch_cut == 3, -1, 1)
+    branch_cut_sign = np.where(branch_cut == 3, -1, 1)
     fac = assoc_legendre_factor(4, -2, norm)
 
-    return typ_sign * fac * (4 - 7 * z * z) * z / 12
+    return branch_cut_sign * fac * (4 - 7 * z * z) * z / 12
 
 def assoc_legendre_p_4_m1_jac(z, *, branch_cut=2, norm=False):
-    typ_sign = np.where(branch_cut == 3, -1, 1)
+    branch_cut_sign = np.where(branch_cut == 3, -1, 1)
     fac = assoc_legendre_factor(4, -1, norm)
 
-    return (typ_sign * fac * ((27 - 28 * z * z) * z * z - 3) *
+    return (branch_cut_sign * fac * ((27 - 28 * z * z) * z * z - 3) *
         assoc_legendre_p_1_1_jac_div_z(z, branch_cut=branch_cut) / 8)
 
 def sph_legendre_factor(n, m):
