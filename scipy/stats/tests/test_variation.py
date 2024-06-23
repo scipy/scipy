@@ -22,14 +22,15 @@ class TestVariation:
 
     def test_ddof(self, xp):
         x = xp.arange(9.0)
-        xp_assert_close(variation(x, ddof=1), xp.asarray(math.sqrt(60/8)/4))
+        xp_assert_close(variation(x, ddof=1), xp.asarray(math.sqrt(60/8)/4),
+                        check_0d=False)
 
     @pytest.mark.parametrize('sgn', [1, -1])
     def test_sign(self, sgn, xp):
         x = xp.asarray([1., 2., 3., 4., 5.])
         v = variation(sgn*x)
         expected = xp.asarray(sgn*math.sqrt(2)/3)
-        xp_assert_close(v, expected, rtol=1e-10)
+        xp_assert_close(v, expected, rtol=1e-10, check_0d=False)
 
     def test_scalar(self, xp):
         # A scalar is treated like a 1-d sequence with length 1.
@@ -117,7 +118,7 @@ class TestVariation:
         # identically zero but whose mean is zero.
         x = xp.asarray([10., -3., 1., -4., -4.])
         y = variation(x)
-        xp_assert_equal(y, xp.asarray(xp.inf))
+        xp_assert_equal(y, xp.asarray(xp.inf), check_0d=False)
 
         x2 = xp.stack([x, -10.*x])
         y2 = variation(x2, axis=1)
@@ -128,7 +129,7 @@ class TestVariation:
         x = xp.asarray(x)
         # Test some cases where `variation` returns nan.
         y = variation(x)
-        xp_assert_equal(y, xp.asarray(xp.nan, dtype=x.dtype))
+        xp_assert_equal(y, xp.asarray(xp.nan, dtype=x.dtype), check_0d=False)
 
     @pytest.mark.parametrize('axis, expected',
                              [(0, []), (1, [np.nan]*3), (None, np.nan)])
@@ -145,13 +146,13 @@ class TestVariation:
                     y = variation(x, axis=axis)
             else:
                 y = variation(x, axis=axis)
-        xp_assert_equal(y, xp.asarray(expected))
+        xp_assert_equal(y, xp.asarray(expected), check_0d=False)
 
     def test_neg_inf(self, xp):
         # Edge case that produces -inf: ddof equals the number of non-nan
         # values, the values are not constant, and the mean is negative.
         x1 = xp.asarray([-3., -5.])
-        xp_assert_equal(variation(x1, ddof=2), xp.asarray(-xp.inf))
+        xp_assert_equal(variation(x1, ddof=2), xp.asarray(-xp.inf), check_0d=False)
 
     @skip_xp_backends(np_only=True,
                       reasons=['`nan_policy` only supports NumPy backend'])

@@ -742,8 +742,8 @@ class TestBartlett:
         args = [g1, g2, g3, g4, g5, g6, g7, g8, g9, g10]
         args = [xp.asarray(arg) for arg in args]
         T, pval = stats.bartlett(*args)
-        xp_assert_close(T, xp.asarray(20.78587342806484))
-        xp_assert_close(pval, xp.asarray(0.0136358632781))
+        xp_assert_close(T, xp.asarray(20.78587342806484), check_0d=False)
+        xp_assert_close(pval, xp.asarray(0.0136358632781), check_0d=False)
 
     def test_too_few_args(self, xp):
         message = "Must enter at least two input sample vectors."
@@ -775,8 +775,8 @@ class TestBartlett:
                 sup.filter(RuntimeWarning, "Degrees of freedom <= 0 for slice")
                 res = stats.bartlett(*args)
         NaN = xp.asarray(xp.nan)
-        xp_assert_equal(res.statistic, NaN)
-        xp_assert_equal(res.pvalue, NaN)
+        xp_assert_equal(res.statistic, NaN, check_0d=False)
+        xp_assert_equal(res.pvalue, NaN, check_0d=False)
 
 
 class TestLevene:
@@ -1746,13 +1746,13 @@ class TestKstat:
         else:
             with np.errstate(invalid='ignore'):  # for array_api_strict
                 res = stats.kstat(xp.asarray([]))
-        xp_assert_equal(res, xp.asarray(xp.nan))
+        xp_assert_equal(res, xp.asarray(xp.nan), check_0d=False)
 
     def test_nan_input(self, xp):
         data = xp.arange(10.)
         data = xp.where(data == 6, xp.asarray(xp.nan), data)
 
-        xp_assert_equal(stats.kstat(data), xp.asarray(xp.nan))
+        xp_assert_equal(stats.kstat(data), xp.asarray(xp.nan), check_0d=False)
 
     @pytest.mark.parametrize('n', [0, 4.001])
     def test_kstat_bad_arg(self, n, xp):
@@ -1777,7 +1777,7 @@ class TestKstat:
         # nKS(4, data)
         n, ref = case
         res = stats.kstat(xp.asarray(x_kstat), n)
-        xp_assert_close(res, xp.asarray(ref))
+        xp_assert_close(res, xp.asarray(ref), check_0d=False)
 
 
 @array_api_compatible
@@ -1790,13 +1790,13 @@ class TestKstatVar:
         else:
             with np.errstate(invalid='ignore'):  # for array_api_strict
                 res = stats.kstatvar(x)
-        xp_assert_equal(res, xp.asarray(xp.nan))
+        xp_assert_equal(res, xp.asarray(xp.nan), check_0d=False)
 
     def test_nan_input(self, xp):
         data = xp.arange(10.)
         data = xp.where(data == 6, xp.asarray(xp.nan), data)
 
-        xp_assert_equal(stats.kstat(data), xp.asarray(xp.nan))
+        xp_assert_equal(stats.kstat(data), xp.asarray(xp.nan), check_0d=False)
 
     @skip_xp_backends(np_only=True,
                       reasons=['input validation of `n` does not depend on backend'])
@@ -1820,12 +1820,12 @@ class TestKstatVar:
 
         res = stats.kstatvar(xp.asarray(x_kstat), 1)
         ref = k2 / n
-        xp_assert_close(res, xp.asarray(ref))
+        xp_assert_close(res, xp.asarray(ref), check_0d=False)
 
         res = stats.kstatvar(xp.asarray(x_kstat), 2)
         # *unbiased estimator* for var(k2)
         ref = (2*k2**2*n + (n-1)*k4) / (n * (n+1))
-        xp_assert_close(res, xp.asarray(ref))
+        xp_assert_close(res, xp.asarray(ref), check_0d=False)
 
 
 class TestPpccPlot:
@@ -2584,7 +2584,7 @@ class TestCircFuncs:
                               (stats.circstd, 6.520702116)])
     def test_circfuncs(self, test_func, expected, xp):
         x = xp.asarray([355., 5., 2., 359., 10., 350.])
-        xp_assert_close(test_func(x, high=360), xp.asarray(expected))
+        xp_assert_close(test_func(x, high=360), xp.asarray(expected), check_0d=False)
 
     def test_circfuncs_small(self, xp):
         # Default tolerances won't work here because the reference values
@@ -2617,7 +2617,7 @@ class TestCircFuncs:
         x = np.asarray([0.12675364631578953] * 10 + [0.12675365920187928] * 100)
         circstat = test_func(xp.asarray(x))
         normal = xp.asarray(numpy_func(x))
-        xp_assert_close(circstat, normal, atol=2e-8)
+        xp_assert_close(circstat, normal, atol=2e-8, check_0d=False)
 
     @pytest.mark.parametrize('circfunc', [stats.circmean,
                                           stats.circvar,
@@ -2628,7 +2628,7 @@ class TestCircFuncs:
                         [357, 9, 8, 358, 4, 356.]])
         res = circfunc(x, high=360)
         ref = circfunc(xp.reshape(x, (-1,)), high=360)
-        xp_assert_close(res, xp.asarray(ref))
+        xp_assert_close(res, xp.asarray(ref), check_0d=False)
 
         res = circfunc(x, high=360, axis=1)
         ref = [circfunc(x[i, :], high=360) for i in range(x.shape[0])]
@@ -2644,7 +2644,7 @@ class TestCircFuncs:
                               (stats.circstd, 6.520702116)])
     def test_circfuncs_array_like(self, test_func, expected, xp):
         x = xp.asarray([355, 5, 2, 359, 10, 350.])
-        xp_assert_close(test_func(x, high=360), xp.asarray(expected))
+        xp_assert_close(test_func(x, high=360), xp.asarray(expected), check_0d=False)
 
     @pytest.mark.parametrize("test_func", [stats.circmean, stats.circvar,
                                            stats.circstd])
@@ -2660,13 +2660,13 @@ class TestCircFuncs:
                 sup.filter(RuntimeWarning, "Mean of empty slice")
                 sup.filter(RuntimeWarning, "invalid value encountered")
                 res = test_func(x)
-        xp_assert_equal(res, xp.asarray(xp.nan, dtype=dtype))
+        xp_assert_equal(res, xp.asarray(xp.nan, dtype=dtype), check_0d=False)
 
     @pytest.mark.parametrize("test_func", [stats.circmean, stats.circvar,
                                            stats.circstd])
     def test_nan_propagate(self, test_func, xp):
         x = xp.asarray([355, 5, 2, 359, 10, 350, np.nan])
-        xp_assert_equal(test_func(x, high=360), xp.asarray(xp.nan))
+        xp_assert_equal(test_func(x, high=360), xp.asarray(xp.nan), check_0d=False)
 
     @pytest.mark.parametrize("test_func,expected",
                              [(stats.circmean,
@@ -2684,9 +2684,9 @@ class TestCircFuncs:
         for axis in expected.keys():
             out = test_func(x, high=360, axis=axis)
             if axis is None:
-                xp_assert_equal(out, xp.asarray(xp.nan))
+                xp_assert_equal(out, xp.asarray(xp.nan), check_0d=False)
             else:
-                xp_assert_close(out[0], xp.asarray(expected[axis]))
+                xp_assert_close(out[0], xp.asarray(expected[axis]), check_0d=False)
                 xp_assert_equal(out[1:], xp.full_like(out[1:], xp.nan))
 
     def test_circmean_scalar(self, xp):
@@ -2699,16 +2699,18 @@ class TestCircFuncs:
         # regression test for gh-6420: circmean(..., high, low) must be
         # between `high` and `low`
         m = stats.circmean(xp.arange(0, 2, 0.1), xp.pi, -xp.pi)
-        xp_assert_less(m, xp.asarray(xp.pi))
-        xp_assert_less(-m, xp.asarray(xp.pi))
+        xp_assert_less(m, xp.asarray(xp.pi), check_0d=False)
+        xp_assert_less(-m, xp.asarray(xp.pi), check_0d=False)
 
     def test_circfuncs_uint8(self, xp):
         # regression test for gh-7255: overflow when working with
         # numpy uint8 data type
         x = xp.asarray([150, 10], dtype=xp.uint8)
-        xp_assert_close(stats.circmean(x, high=180), xp.asarray(170.0))
-        xp_assert_close(stats.circvar(x, high=180), xp.asarray(0.2339555554617))
-        xp_assert_close(stats.circstd(x, high=180), xp.asarray(20.91551378))
+        xp_assert_close(stats.circmean(x, high=180), xp.asarray(170.0), check_0d=False)
+        xp_assert_close(stats.circvar(x, high=180), xp.asarray(0.2339555554617),
+                        check_0d=False)
+        xp_assert_close(stats.circstd(x, high=180), xp.asarray(20.91551378),
+                        check_0d=False)
 
     def test_circstd_zero(self, xp):
         # circstd() of a single number should return positive zero.
@@ -2744,7 +2746,7 @@ class TestCircFuncs:
         y = math.atan2(xp.sin(x), xp.cos(x))  # -2.6584887370946806
         expected = xp.asarray(y, dtype=xp.float64)
         actual = stats.circmean(x, high=xp.pi, low=-xp.pi)
-        xp_assert_close(actual, expected, rtol=1e-15, atol=0.0)
+        xp_assert_close(actual, expected, rtol=1e-15, atol=0.0, check_0d=False)
 
 
 class TestCircFuncsNanPolicy:
