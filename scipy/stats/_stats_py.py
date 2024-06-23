@@ -710,20 +710,22 @@ def tmin(a, lowerlimit=None, axis=0, inclusive=True, nan_policy='propagate'):
     14
 
     """
-    dtype = a.dtype
-
     xp = array_namespace(a)
+
+    # remember original dtype; _put_val_to_limits might need to change it
+    dtype = a.dtype
     a, mask = _put_val_to_limits(a, (lowerlimit, None), (inclusive, None),
                                  val=xp.inf, xp=xp)
+
     min = xp.min(a, axis=axis)
     n = xp.sum(xp.asarray(~mask, dtype=a.dtype), axis=axis)
-    min = xp.where(n != 0, min, xp.nan)
+    res = xp.where(n != 0, min, xp.nan)
 
-    if not xp.any(xp.isnan(min)):
+    if not xp.any(xp.isnan(res)):
         # needed if input is of integer dtype
-        min = xp.astype(min, dtype, copy=False)
+        res = xp.astype(res, dtype, copy=False)
 
-    return min[()] if min.ndim == 0 else min
+    return res[()] if res.ndim == 0 else res
 
 
 @_axis_nan_policy_factory(
@@ -770,13 +772,22 @@ def tmax(a, upperlimit=None, axis=0, inclusive=True, nan_policy='propagate'):
     12
 
     """
+    xp = array_namespace(a)
+
+    # remember original dtype; _put_val_to_limits might need to change it
     dtype = a.dtype
-    a, _ = _put_val_to_limits(a, (None, upperlimit), (None, inclusive))
-    res = np.nanmax(a, axis=axis)
-    if not np.any(np.isnan(res)):
+    a, mask = _put_val_to_limits(a, (None, upperlimit), (None, inclusive),
+                                 val=-xp.inf, xp=xp)
+
+    max = xp.max(a, axis=axis)
+    n = xp.sum(xp.asarray(~mask, dtype=a.dtype), axis=axis)
+    res = xp.where(n != 0, max, xp.nan)
+
+    if not xp.any(xp.isnan(res)):
         # needed if input is of integer dtype
-        return res.astype(dtype, copy=False)
-    return res
+        res = xp.astype(res, dtype, copy=False)
+
+    return res[()] if res.ndim == 0 else res
 
 
 @_axis_nan_policy_factory(
