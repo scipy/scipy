@@ -43,6 +43,7 @@
 #endif
 #endif
 #include <Python.h>
+
 #include <numpy/arrayobject.h>
 
 #include <stdio.h>

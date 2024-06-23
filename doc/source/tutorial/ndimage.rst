@@ -1705,6 +1705,7 @@ We can also implement the callback function with the following C code:
    /* example.c */
 
    #include <Python.h>
+
    #include <numpy/npy_common.h>
 
    static int

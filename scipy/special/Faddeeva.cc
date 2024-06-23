@@ -21,6 +21,7 @@
  */
 
 #include <Python.h>
+
 #include "Faddeeva.hh"
 
 /* Available at: http://ab-initio.mit.edu/Faddeeva

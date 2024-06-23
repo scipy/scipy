@@ -1,4 +1,5 @@
 #include <Python.h>
+
 #include <numpy/arrayobject.h>
 #include "_directmodule.h"
 

@@ -9,6 +9,7 @@
 #define __SUPERLU_OBJECT
 
 #include <Python.h>
+
 #include <setjmp.h>
 
 /* Undef a macro from Python which conflicts with superlu */
