@@ -551,6 +551,7 @@ class TestRemezord:
     """
     Test examples taken from:
     http://www.ece.northwestern.edu/local-apps/matlabhelp/toolbox/signal/remezord.html
+    with reference values computed in MATLAB.
     """
 
     def test_bad_args(self):
