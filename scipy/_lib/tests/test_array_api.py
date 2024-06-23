@@ -82,26 +82,34 @@ class TestArrayAPI:
         x = x if shape else x[()]
         y = np_compat.asarray(1)[()]
 
-        options = dict(check_namespace=True, check_dtype=False, check_shape=False)
+        kwarg_names = ["check_namespace", "check_dtype", "check_shape", "check_0d"]
+        options = dict(zip(kwarg_names, [True, False, False, False]))
         if xp == np:
             xp_assert_equal(x, y, **options)
         else:
             with pytest.raises(AssertionError, match="Namespaces do not match."):
                 xp_assert_equal(x, y, **options)
 
-        options = dict(check_namespace=False, check_dtype=True, check_shape=False)
+        options = dict(zip(kwarg_names, [False, True, False, False]))
         if y.dtype.name in str(x.dtype):
             xp_assert_equal(x, y, **options)
         else:
             with pytest.raises(AssertionError, match="dtypes do not match."):
                 xp_assert_equal(x, y, **options)
 
-        options = dict(check_namespace=False, check_dtype=False, check_shape=True)
+        options = dict(zip(kwarg_names, [False, False, True, False]))
         if x.shape == y.shape:
             xp_assert_equal(x, y, **options)
         else:
             with pytest.raises(AssertionError, match="Shapes do not match."):
-                xp_assert_equal(x, xp.asarray(y), allow_0d=True, **options)
+                xp_assert_equal(x, xp.asarray(y), **options)
+
+        options = dict(zip(kwarg_names, [False, False, False, True]))
+        if is_numpy(xp) and x.shape == y.shape:
+            xp_assert_equal(x, y, **options)
+        elif is_numpy(xp):
+            with pytest.raises(AssertionError, match="Array-ness does not match."):
+                xp_assert_equal(x, y, **options)
 
 
     @array_api_compatible
@@ -110,20 +118,28 @@ class TestArrayAPI:
             pytest.skip("Scalars only exist in NumPy")
 
         if is_numpy(xp):
-            # Check default convention: 0d arrays are not allowed
-            message = "Result is a NumPy 0d array. Many SciPy functions..."
+            # identity always passes
+            xp_assert_equal(xp.float64(0), xp.float64(0))
+            xp_assert_equal(xp.asarray(0.), xp.asarray(0.))
+            xp_assert_equal(xp.float64(0), xp.float64(0), check_0d=False)
+            xp_assert_equal(xp.asarray(0.), xp.asarray(0.), check_0d=False)
+
+            # Check default convention: 0d arrays are distinguished from scalars
+            message = "Array-ness does not match:.*"
             with pytest.raises(AssertionError, match=message):
                 xp_assert_equal(xp.asarray(0.), xp.float64(0))
             with pytest.raises(AssertionError, match=message):
-                xp_assert_equal(xp.asarray(0.), xp.asarray(0.))
-            xp_assert_equal(xp.float64(0), xp.asarray(0.))
-            xp_assert_equal(xp.float64(0), xp.float64(0))
+                xp_assert_equal(xp.float64(0), xp.asarray(0.))
+            with pytest.raises(AssertionError, match=message):
+                xp_assert_equal(xp.asarray(42), xp.int64(0))
+            with pytest.raises(AssertionError, match=message):
+                xp_assert_equal(xp.int64(0), xp.asarray(42))
 
-            # Check `allow_0d`
-            message = "Types do not match:\n..."
-            with pytest.raises(AssertionError, match=message):
-                xp_assert_equal(xp.asarray(0.), xp.float64(0), allow_0d=True)
-            with pytest.raises(AssertionError, match=message):
-                xp_assert_equal(xp.float64(0), xp.asarray(0.), allow_0d=True)
-            xp_assert_equal(xp.float64(0), xp.float64(0), allow_0d=True)
-            xp_assert_equal(xp.asarray(0.), xp.asarray(0.), allow_0d=True)
+            # with `check_0d=False`, scalars-vs-0d passes (if values match)
+            xp_assert_equal(xp.asarray(0.), xp.float64(0), check_0d=False)
+            xp_assert_equal(xp.float64(0), xp.asarray(0.), check_0d=False)
+            # also with regular python objects
+            xp_assert_equal(xp.asarray(0.), 0., check_0d=False)
+            xp_assert_equal(0., xp.asarray(0.), check_0d=False)
+            xp_assert_equal(xp.asarray(42), 42, check_0d=False)
+            xp_assert_equal(42, xp.asarray(42), check_0d=False)
