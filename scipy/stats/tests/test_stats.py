@@ -6820,8 +6820,8 @@ class TestHMean:
         desired = 0
         check_equal_hmean(a, desired, xp=xp)
 
-    def test_1d_list(self, xp):
-        #  Test a 1d list
+    def test_1d(self, xp):
+        #  Test a 1d case
         a = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
         desired = 34.1417152147
         check_equal_hmean(a, desired, xp=xp)
@@ -6830,13 +6830,7 @@ class TestHMean:
         desired = 4. / (1. / 1 + 1. / 2 + 1. / 3 + 1. / 4)
         check_equal_hmean(a, desired, xp=xp)
 
-    def test_1d_array(self, xp):
-        #  Test a 1d array
-        a = np.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 100])
-        desired = 34.1417152147
-        check_equal_hmean(a, desired, xp=xp)
-
-    def test_1d_array_with_zero(self, xp):
+    def test_1d_with_zero(self, xp):
         a = np.array([1, 0])
         desired = 0.0
         check_equal_hmean(a, desired, xp=xp, rtol=0.0)
@@ -6845,7 +6839,7 @@ class TestHMean:
                       reasons=["`array_api_strict.where` `fillvalue` doesn't "
                                "accept Python scalars. See data-apis/array-api#807."])
     @pytest.mark.usefixtures("skip_xp_backends")
-    def test_1d_array_with_negative_value(self, xp):
+    def test_1d_with_negative_value(self, xp):
         # Won't work for array_api_strict for now, but see data-apis/array-api#807
         a = np.array([1, 0, -1])
         message = "The harmonic mean is only defined..."
@@ -6853,20 +6847,14 @@ class TestHMean:
             check_equal_hmean(a, xp.nan, xp=xp, rtol=0.0)
 
     # Note the next tests use axis=None as default, not axis=0
-    def test_2d_list(self, xp):
-        #  Test a 2d list
-        a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
-        desired = 38.6696271841
-        check_equal_hmean(a, desired, xp=xp)
-
-    def test_2d_array(self, xp):
-        #  Test a 2d array
+    def test_2d(self, xp):
+        #  Test a 2d case
         a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
         desired = 38.6696271841
         check_equal_hmean(np.array(a), desired, xp=xp)
 
     def test_2d_axis0(self, xp):
-        #  Test a 2d list with axis=0
+        #  Test a 2d case with axis=0
         a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
         desired = np.array([22.88135593, 39.13043478, 52.90076336, 65.45454545])
         check_equal_hmean(a, desired, axis=0, xp=xp)
@@ -6877,7 +6865,7 @@ class TestHMean:
         check_equal_hmean(a, desired, axis=0, xp=xp)
 
     def test_2d_axis1(self, xp):
-        #  Test a 2d list with axis=1
+        #  Test a 2d case with axis=1
         a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
         desired = np.array([19.2, 63.03939962, 103.80078637])
         check_equal_hmean(a, desired, axis=1, xp=xp)
@@ -6904,7 +6892,7 @@ class TestHMean:
         res = stats.hmean(a, weights=weights)
         xp_assert_close(res, np.asarray(desired), rtol=1e-5)
 
-    def test_weights_1d_array(self, xp):
+    def test_weights_1d(self, xp):
         # Desired result from:
         # https://www.hackmath.net/en/math-problem/35871
         a = np.asarray([2, 10, 6])
@@ -6912,7 +6900,7 @@ class TestHMean:
         desired = 3
         check_equal_hmean(a, desired, weights=weights, rtol=1e-5, xp=xp)
 
-    def test_weights_2d_array_axis0(self, xp):
+    def test_weights_2d_axis0(self, xp):
         # Desired result from:
         # https://www.hackmath.net/en/math-problem/35871
         a = np.array([[2, 5], [10, 5], [6, 5]])
@@ -6920,7 +6908,7 @@ class TestHMean:
         desired = np.array([3, 5])
         check_equal_hmean(a, desired, axis=0, weights=weights, rtol=1e-5, xp=xp)
 
-    def test_weights_2d_array_axis1(self, xp):
+    def test_weights_2d_axis1(self, xp):
         # Desired result from:
         # https://www.hackmath.net/en/math-problem/35871
         a = np.array([[2, 10, 6], [7, 7, 7]])
@@ -6947,8 +6935,8 @@ class TestGMean:
         desired = 0
         check_equal_gmean(a, desired, xp=xp)
 
-    def test_1d_list(self, xp):
-        #  Test a 1d list
+    def test_1d(self, xp):
+        #  Test a 1d case
         a = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
         desired = 45.2872868812
         check_equal_gmean(a, desired, xp=xp)
@@ -6957,31 +6945,19 @@ class TestGMean:
         desired = power(1 * 2 * 3 * 4, 1. / 4.)
         check_equal_gmean(a, desired, rtol=1e-14, xp=xp)
 
-    def test_1d_array(self, xp):
-        #  Test a 1d array
-        a = np.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 100])
-        desired = 45.2872868812
-        check_equal_gmean(a, desired, xp=xp)
-
         a = array([1, 2, 3, 4], float32)
         desired = power(1 * 2 * 3 * 4, 1. / 4.)
         check_equal_gmean(a, desired, dtype=xp.float32, xp=xp)
 
     # Note the next tests use axis=None as default, not axis=0
-    def test_2d_list(self, xp):
-        #  Test a 2d list
+    def test_2d(self, xp):
+        #  Test a 2d case
         a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
         desired = 52.8885199
         check_equal_gmean(a, desired, xp=xp)
 
-    def test_2d_array(self, xp):
-        #  Test a 2d array
-        a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
-        desired = 52.8885199
-        check_equal_gmean(array(a), desired, xp=xp)
-
     def test_2d_axis0(self, xp):
-        #  Test a 2d list with axis=0
+        #  Test a 2d case with axis=0
         a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
         desired = np.array([35.56893304, 49.32424149, 61.3579244, 72.68482371])
         check_equal_gmean(a, desired, axis=0, xp=xp)
@@ -6991,7 +6967,7 @@ class TestGMean:
         check_equal_gmean(a, desired, axis=0, rtol=1e-14, xp=xp)
 
     def test_2d_axis1(self, xp):
-        #  Test a 2d list with axis=1
+        #  Test a 2d case with axis=1
         a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
         desired = np.array([22.13363839, 64.02171746, 104.40086817])
         check_equal_gmean(a, desired, axis=1, xp=xp)
@@ -7006,22 +6982,15 @@ class TestGMean:
         desired = 1e200
         check_equal_gmean(a, desired, rtol=1e-13, xp=xp)
 
-    def test_1d_list0(self, xp):
-        #  Test a 1d list with zero element
+    def test_1d_with_0(self, xp):
+        #  Test a 1d case with zero element
         a = [10, 20, 30, 40, 50, 60, 70, 80, 90, 0]
         desired = 0.0  # due to exp(-inf)=0
         with np.errstate(all='ignore'):
             check_equal_gmean(a, desired, xp=xp)
 
-    def test_1d_array0(self, xp):
-        #  Test a 1d array with zero element
-        a = np.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 0])
-        desired = 0.0  # due to exp(-inf)=0
-        with np.errstate(divide='ignore'):
-            check_equal_gmean(a, desired, xp=xp)
-
-    def test_1d_list_neg(self, xp):
-        #  Test a 1d list with negative element
+    def test_1d_neg(self, xp):
+        #  Test a 1d case with negative element
         a = [10, 20, 30, 40, 50, 60, 70, 80, 90, -1]
         desired = np.nan  # due to log(-1) = nan
         with np.errstate(invalid='ignore'):
@@ -7045,7 +7014,7 @@ class TestGMean:
         res = stats.gmean(a, weights=weights)
         xp_assert_close(res, np.asarray(desired), rtol=1e-5)
 
-    def test_weights_1d_array(self, xp):
+    def test_weights_1d(self, xp):
         # Desired result from:
         # https://www.dummies.com/education/math/business-statistics/how-to-find-the-weighted-geometric-mean-of-a-data-set/
         a = np.array([1, 2, 3, 4, 5])
@@ -7080,8 +7049,12 @@ class TestPMean:
         with pytest.raises(ValueError, match='Power mean only defined for'):
             stats.pmean(xp.asarray([1, 2, 3]), xp.asarray([0]))
 
-    def test_1d_list(self, xp):
+    def test_1d(self, xp):
         a, p = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100], 3.5
+        desired = TestPMean.pmean_reference(np.array(a), p)
+        check_equal_pmean(a, p, desired, xp=xp)
+
+        a, p = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100], -2.5
         desired = TestPMean.pmean_reference(np.array(a), p)
         check_equal_pmean(a, p, desired, xp=xp)
 
@@ -7089,12 +7062,7 @@ class TestPMean:
         desired = np.sqrt((1**2 + 2**2 + 3**2 + 4**2) / 4)
         check_equal_pmean(a, p, desired, xp=xp)
 
-    def test_1d_array(self, xp):
-        a, p = np.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 100]), -2.5
-        desired = TestPMean.pmean_reference(a, p)
-        check_equal_pmean(a, p, desired, xp=xp)
-
-    def test_1d_array_with_zero(self, xp):
+    def test_1d_with_zero(self, xp):
         a, p = np.array([1, 0]), -1
         desired = 0.0
         check_equal_pmean(a, p, desired, rtol=0.0, xp=xp)
@@ -7103,7 +7071,7 @@ class TestPMean:
                       reasons=["`array_api_strict.where` `fillvalue` doesn't "
                                "accept Python scalars. See data-apis/array-api#807."])
     @pytest.mark.usefixtures("skip_xp_backends")
-    def test_1d_array_with_negative_value(self, xp):
+    def test_1d_with_negative_value(self, xp):
         a, p = np.array([1, 0, -1]), 1.23
         message = "The power mean is only defined..."
         with pytest.warns(RuntimeWarning, match=message):
@@ -7123,7 +7091,7 @@ class TestPMean:
         [([[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]], -0.5),
          ([[10, 0, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]], 0.5)]
     )
-    def test_2d_list_axis0(self, a, p, xp):
+    def test_2d_axis0(self, a, p, xp):
         desired = [
             TestPMean.pmean_reference(
                 np.array([a[i][j] for i in range(len(a))]), p
@@ -7137,11 +7105,11 @@ class TestPMean:
         [([[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]], -0.5),
          ([[10, 0, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]], 0.5)]
     )
-    def test_2d_list_axis1(self, a, p, xp):
+    def test_2d_axis1(self, a, p, xp):
         desired = [TestPMean.pmean_reference(np.array(a_), p) for a_ in a]
         check_equal_pmean(a, p, desired, axis=1, xp=xp)
 
-    def test_weights_1d_array(self, xp):
+    def test_weights_1d(self, xp):
         a, p = [2, 10, 6], -1.23456789
         weights = [10, 5, 3]
         desired = TestPMean.wpmean_reference(np.array(a), p, weights)
@@ -7177,7 +7145,7 @@ class TestPMean:
          (0, "gmean", 0),
          (1, "hmean", -1)]
     )
-    def test_weights_2d_array(self, axis, fun_name, p, xp):
+    def test_weights_2d(self, axis, fun_name, p, xp):
         if fun_name == 'wpmean_reference':
             def fun(a, axis, weights):
                 return TestPMean.wpmean_reference(a, p, weights)

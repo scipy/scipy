@@ -440,6 +440,7 @@ def pmean(a, p, *, axis=0, dtype=None, weights=None):
     if xp.any(negative_mask):
         # `where` avoids having to be careful about dtypes and will work with
         # JAX. This is the exceptional case, so it's OK to be a little slower.
+        # Won't work for array_api_strict for now, but see data-apis/array-api#807
         a = xp.where(negative_mask, np.nan, a)
         message = ("The power mean is only defined if all elements are "
                    "non-negative; otherwise, the result is NaN.")
