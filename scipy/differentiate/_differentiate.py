@@ -6,7 +6,7 @@ from scipy._lib._array_api import array_namespace
 
 _EERRORINCREASE = -1  # used in differentiate
 
-def _differentiate_iv(func, x, args, atol, rtol, maxiter, order, initial_step,
+def _differentiate_iv(func, x, args, tolerances, maxiter, order, initial_step,
                       step_factor, step_direction, preserve_shape, callback):
     # Input validation for `differentiate`
 
@@ -15,6 +15,10 @@ def _differentiate_iv(func, x, args, atol, rtol, maxiter, order, initial_step,
 
     if not np.iterable(args):
         args = (args,)
+
+    tolerances = {} if tolerances is None else tolerances
+    atol = tolerances.get('atol', None)
+    rtol = tolerances.get('rtol', None)
 
     # tolerances are floats, not arrays; OK to use NumPy
     message = 'Tolerances and step parameters must be non-negative scalars.'
@@ -49,33 +53,47 @@ def _differentiate_iv(func, x, args, atol, rtol, maxiter, order, initial_step,
             step_factor, step_direction, preserve_shape, callback)
 
 
-def differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
+def differentiate(f, x, *, args=(), tolerances=None, maxiter=10,
                   order=8, initial_step=0.5, step_factor=2.0,
                   step_direction=0, preserve_shape=False, callback=None):
-    """Evaluate the derivative of an elementwise scalar function numerically.
+    """Evaluate the derivative of a elementwise, real scalar function numerically.
+
+    For each element of the output of `f`, `differentiate` approximates the first
+    derivative of `f` at the corresponding element of `x` using finite difference
+    differentiation.
+
+    This function works elementwise when `x`, `step_direction`, and `args` contain
+    (broadcastable) arrays.
 
     Parameters
     ----------
-    func : callable
+    f : callable
         The function whose derivative is desired. The signature must be::
 
-            func(x: ndarray, *fargs) -> ndarray
+            f(x: ndarray, *fargs) -> ndarray
 
          where each element of ``x`` is a finite real number and ``fargs`` is a tuple,
          which may contain an arbitrary number of arrays that are broadcastable
-         with `x`. ``func`` must be an elementwise function: each element
-         ``func(x)[i]`` must equal ``func(x[i])`` for all indices ``i``.
-    x : array_like
-        Abscissae at which to evaluate the derivative.
-    args : tuple, optional
-        Additional positional arguments to be passed to `func`. Must be arrays
-        broadcastable with `x`. If the callable to be differentiated requires
-        arguments that are not broadcastable with `x`, wrap that callable with
-        `func`. See Examples.
-    atol, rtol : float, optional
-        Absolute and relative tolerances for the stopping condition: iteration
-        will stop when ``res.error < atol + rtol * abs(res.df)``. The default
-        `atol` is the smallest normal number of the appropriate dtype, and
+         with `x`. ``f`` must be an elementwise function: each element
+         ``f(x)[i]`` must equal ``f(x[i])`` for all indices ``i``. It must not mutate
+        the array ``x`` or the arrays in ``fargs``.
+    x : real number array
+        Abscissae at which to evaluate the derivative. Must be broadcastable with
+        `args` and `step_direction`.
+    args : tuple of real number arrays, optional
+        Additional positional array arguments to be passed to `f`. Arrays
+        must be broadcastable with one another and the arrays of `init`.
+        If the callable for which the root is desired requires arguments that are
+        not broadcastable with `x`, wrap that callable with `f` such that `f`
+        accepts only `x` and broadcastable ``*args``.
+    tolerances : dictionary of floats, optional
+        Absolute and relative tolerances. Valid keys of the dictionary are:
+
+        - ``atol`` - absolute tolerance on the derivative
+        - ``rtol`` - relative tolerance on the derivative
+
+        Iteration will stop when ``res.error < atol + rtol * abs(res.df)``. The default
+        ``atol` is the smallest normal number of the appropriate dtype, and
         the default `rtol` is the square root of the precision of the
         appropriate dtype.
     order : int, default: 8
@@ -92,8 +110,8 @@ def differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
         undesirable (e.g. due to subtractive cancellation error).
     maxiter : int, default: 10
         The maximum number of iterations of the algorithm to perform. See
-        notes.
-    step_direction : array_like
+        Notes.
+    step_direction : integer array
         An array representing the direction of the finite difference steps (for
         use when `x` lies near to the boundary of the domain of the function.)
         Must be broadcastable with `x` and all `args`.
@@ -101,7 +119,7 @@ def differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
         -1), steps are non-positive; and where positive (e.g. 1), all steps are
         non-negative.
     preserve_shape : bool, default: False
-        In the following, "arguments of `func`" refers to the array ``x`` and
+        In the following, "arguments of `f`" refers to the array ``x`` and
         any arrays within ``fargs``. Let ``shape`` be the broadcasted shape
         of `x` and all elements of `args` (which is conceptually
         distinct from ``fargs`` passed into `f`).
@@ -123,42 +141,46 @@ def differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
         An optional user-supplied function to be called before the first
         iteration and after each iteration.
         Called as ``callback(res)``, where ``res`` is a ``_RichResult``
-        similar to that returned by `differentiate` (but containing the
-        current iterate's values of all variables). If `callback` raises a
+        similar to that returned by `find_root` (but containing the current
+        iterate's values of all variables). If `callback` raises a
         ``StopIteration``, the algorithm will terminate immediately and
-        `differentiate` will return a result.
+        `find_root` will return a result. `callback` must not mutate
+        `res` or its attributes.
 
     Returns
     -------
     res : _RichResult
-        An instance of `scipy._lib._util._RichResult` with the following
-        attributes. (The descriptions are written as though the values will be
-        scalars; however, if `func` returns an array, the outputs will be
-        arrays of the same shape.)
+        An object similar to an instance of `scipy.optimize.OptimizeResult` with the
+        following attributes. The descriptions are written as though the values will
+        be scalars; however, if `f` returns an array, the outputs will be
+        arrays of the same shape.
 
-        success : bool
-            ``True`` when the algorithm terminated successfully (status ``0``).
-        status : int
+        success : bool array
+            ``True`` where the algorithm terminated successfully (status ``0``);
+            ``False`` otherwise.
+        status : int array
             An integer representing the exit status of the algorithm.
+
             ``0`` : The algorithm converged to the specified tolerances.
             ``-1`` : The error estimate increased, so iteration was terminated.
             ``-2`` : The maximum number of iterations was reached.
             ``-3`` : A non-finite value was encountered.
             ``-4`` : Iteration was terminated by `callback`.
             ``1`` : The algorithm is proceeding normally (in `callback` only).
-        df : float
-            The derivative of `func` at `x`, if the algorithm terminated
+
+        df : float array
+            The derivative of `f` at `x`, if the algorithm terminated
             successfully.
-        error : float
+        error : float array
             An estimate of the error: the magnitude of the difference between
             the current estimate of the derivative and the estimate in the
             previous iteration.
-        nit : int
-            The number of iterations performed.
-        nfev : int
-            The number of points at which `func` was evaluated.
-        x : float
-            The value at which the derivative of `func` was evaluated
+        nit : int array
+            The number of iterations of the algorithm that were performed.
+        nfev : int array
+            The number of points at which `f` was evaluated.
+        x : float array
+            The value at which the derivative of `f` was evaluated
             (after broadcasting with `args` and `step_direction`).
 
     Notes
@@ -175,8 +197,8 @@ def differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
     iteration.
 
     The stencils of the finite difference formulae are designed such that
-    abscissae are "nested": after `func` is evaluated at ``order + 1``
-    points in the first iteration, `func` is evaluated at only two new points
+    abscissae are "nested": after `f` is evaluated at ``order + 1``
+    points in the first iteration, `f` is evaluated at only two new points
     in each subsequent iteration; ``order - 1`` previously evaluated function
     values required by the finite difference formula are reused, and two
     function values (evaluations at the points furthest from `x`) are unused.
@@ -188,7 +210,7 @@ def differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
 
     The default tolerances are challenging to satisfy at points where the
     true derivative is exactly zero. If the derivative may be exactly zero,
-    consider specifying an absolute tolerance (e.g. ``atol=1e-16``) to
+    consider specifying an absolute tolerance (e.g. ``atol=1e-12``) to
     improve convergence.
 
     References
@@ -238,7 +260,8 @@ def differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
     >>> for i in iter:
     ...     res = differentiate(f, x, maxiter=i, step_factor=hfac,
     ...                         step_direction=hdir, order=order,
-    ...                         atol=0, rtol=0)  # prevent early termination
+    ...                         # prevent early termination
+    ...                         tolerances=dict(atol=0, rtol=0))
     ...     errors.append(abs(res.df - ref))
     >>> errors = np.array(errors)
     >>> plt.semilogy(iter, errors[:, 0], label='left differences')
@@ -343,7 +366,7 @@ def differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
     #  - array initial_step / step_factor?
     #  - multivariate functions?
 
-    res = _differentiate_iv(func, x, args, atol, rtol, maxiter, order, initial_step,
+    res = _differentiate_iv(f, x, args, tolerances, maxiter, order, initial_step,
                             step_factor, step_direction, preserve_shape, callback)
     (func, x, args, atol, rtol, maxiter, order,
      h0, fac, hdir, preserve_shape, callback) = res
@@ -669,31 +692,35 @@ _differentiate_weights.right = []
 _differentiate_weights.fac = None
 
 
-def jacobian(func, x, *, atol=None, rtol=None, maxiter=10,
+def jacobian(f, x, *, tolerances=None, maxiter=10,
              order=8, initial_step=0.5, step_factor=2.0):
     r"""Evaluate the Jacobian of a function numerically.
 
     Parameters
     ----------
-    func : callable
+    f : callable
         The function whose Jacobian is desired. The signature must be::
 
-            func(x: ndarray) -> ndarray
+            f(x: ndarray) -> ndarray
 
          where each element of ``x`` is a finite real. If the function to be
          differentiated accepts additional, arguments wrap it (e.g. using
          `functools.partial` or ``lambda``) and pass the wrapped callable
-         into `jacobian`. See Notes regarding vectorization and the dimensionality
-         of the input and output.
+         into `jacobian`. It must not mutate the array ``x``. See Notes
+         regarding vectorization and the dimensionality of the input and output.
     x : array_like
         Points at which to evaluate the Jacobian. Must have at least one dimension.
         See Notes regarding the dimensionality and vectorization.
-    atol, rtol : float, optional
-        Absolute and relative tolerances for the stopping condition: iteration
-        will stop for each element of the Jacobian when
-        ``res.error < atol + rtol * abs(res.df)``. The default `atol` is the
-        smallest normal number of the appropriate dtype, and the default `rtol`
-        is the square root of the precision of the appropriate dtype.
+    tolerances : dictionary of floats, optional
+        Absolute and relative tolerances. Valid keys of the dictionary are:
+
+        - ``atol`` - absolute tolerance on the derivative
+        - ``rtol`` - relative tolerance on the derivative
+
+        Iteration will stop when ``res.error < atol + rtol * abs(res.df)``. The default
+        ``atol` is the smallest normal number of the appropriate dtype, and
+        the default `rtol` is the square root of the precision of the
+        appropriate dtype.
     order : int, default: 8
         The (positive integer) order of the finite difference formula to be
         used. Odd integers will be rounded up to the next even integer.
@@ -707,37 +734,40 @@ def jacobian(func, x, *, atol=None, rtol=None, maxiter=10,
         step; this may be useful if steps smaller than some threshold are
         undesirable (e.g. due to subtractive cancellation error).
     maxiter : int, default: 10
-        The maximum number of iterations of the algorithm to perform.
+        The maximum number of iterations of the algorithm to perform. See
+        Notes.
 
     Returns
     -------
-    res : _RichResult
-        An instance of `scipy._lib._util._RichResult` with the following
-        attributes.
+        res : _RichResult
+        An object similar to an instance of `scipy.optimize.OptimizeResult` with the
+        following attributes. The descriptions are written as though the values will
+        be scalars; however, if `f` returns an array, the outputs will be
+        arrays of the same shape.
 
         success : bool array
-            ``True`` when the algorithm terminated successfully (status ``0``).
+            ``True`` where the algorithm terminated successfully (status ``0``);
+            ``False`` otherwise.
         status : int array
             An integer representing the exit status of the algorithm.
+
             ``0`` : The algorithm converged to the specified tolerances.
             ``-1`` : The error estimate increased, so iteration was terminated.
             ``-2`` : The maximum number of iterations was reached.
             ``-3`` : A non-finite value was encountered.
             ``-4`` : Iteration was terminated by `callback`.
-            ``1`` : The algorithm is proceeding normally (in `callback` only).
+
         df : float array
-            The Jacobian of `func` at `x`, if the algorithm terminated
+            The Jacobian of `f` at `x`, if the algorithm terminated
             successfully.
         error : float array
             An estimate of the error: the magnitude of the difference between
             the current estimate of the derivative and the estimate in the
             previous iteration.
         nit : int array
-            The number of iterations performed.
+            The number of iterations of the algorithm that were performed.
         nfev : int array
-            The number of points at which `func` was evaluated.
-        x : float array
-            The value at which the derivative of `func` was evaluated.
+            The number of points at which `f` was evaluated.
 
     See Also
     --------
@@ -752,10 +782,10 @@ def jacobian(func, x, *, atol=None, rtol=None, maxiter=10,
     then:
 
     - argument `x` must be an array of shape ``(m,)``
-    - argument `func` must be vectorized to accept an array of shape ``(m, p)``.
+    - argument `f` must be vectorized to accept an array of shape ``(m, p)``.
       The first axis represents the :math:`m` inputs of :math:`f`; the second
       is for evaluating the function at multiple points in a single call.
-    - argument `func` must return an array of shape ``(n, p)``. The first
+    - argument `f` must return an array of shape ``(n, p)``. The first
       axis represents the :math:`n` outputs of :math:`f`; the second
       is for the result of evaluating the function at multiple points.
     - attribute ``df`` of the result object will be an array of shape ``(n, m)``,
@@ -763,7 +793,7 @@ def jacobian(func, x, *, atol=None, rtol=None, maxiter=10,
 
     This function is also vectorized in the sense that the Jacobian can be
     evaluated at ``k`` points in a single call. In this case, `x` would be an
-    array of shape ``(m, k)``, `func` would accept an array of shape
+    array of shape ``(m, k)``, `f` would accept an array of shape
     ``(m, k, p)`` and return an array of shape ``(n, k, p)``, and the ``df``
     attribute of the result would have shape ``(n, m, k)``.
 
@@ -847,9 +877,9 @@ def jacobian(func, x, *, atol=None, rtol=None, maxiter=10,
         xph = np.expand_dims(x0, new_dims)
         xph = np.broadcast_to(xph, new_shape).copy()
         xph[i, i] = x
-        return func(xph)
+        return f(xph)
 
-    res = differentiate(wrapped, x, atol=atol, rtol=rtol,
+    res = differentiate(wrapped, x, tolerances=tolerances,
                         maxiter=maxiter, order=order, initial_step=initial_step,
                         step_factor=step_factor, preserve_shape=True)
     del res.x  # the user knows `x`, and the way it gets broadcasted is meaningless here
