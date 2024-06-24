@@ -166,12 +166,22 @@ class TestTrimmedStats:
         xp_assert_close(y[0], xp.asarray(4.666666666666667))
         xp_assert_equal(y[1], xp.asarray(xp.nan))
 
-    def test_tstd(self):
-        y = stats.tstd(X, (2, 8), (True, True))
-        assert_approx_equal(y, 2.1602468994692865, significant=self.dprec)
+    @array_api_compatible
+    @skip_xp_backends('array_api_strict', 'jax.numpy',
+                      reasons=["`array_api_strict.where` `fillvalue` doesn't "
+                               "accept Python floats. See data-apis/array-api#807.",
+                               "JAX doesn't allow item assignment, and this  "
+                               "function uses _lazywhere."])
+    @pytest.mark.usefixtures("skip_xp_backends")
+    def test_tstd(self, xp):
+        x = xp.asarray(X)
+        xp_test = array_namespace(x)  # need array-api-compat var for `correction`
 
-        y = stats.tstd(X, limits=None)
-        assert_approx_equal(y, X.std(ddof=1), significant=self.dprec)
+        y = stats.tstd(x, (2, 8), (True, True))
+        xp_assert_close(y, xp.asarray(2.1602468994692865))
+
+        y = stats.tstd(x, limits=None)
+        xp_assert_close(y, xp_test.std(x, correction=1))
 
     @array_api_compatible
     @skip_xp_backends('array_api_strict', 'jax.numpy',

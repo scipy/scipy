@@ -869,7 +869,7 @@ def tstd(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
     4.4721359549995796
 
     """
-    return np.sqrt(tvar(a, limits, inclusive, axis, ddof, _no_deco=True))
+    return tvar(a, limits, inclusive, axis, ddof, _no_deco=True)**0.5
 
 
 @_axis_nan_policy_factory(
