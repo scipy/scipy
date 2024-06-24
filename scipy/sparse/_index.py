@@ -260,6 +260,11 @@ class IndexMixin:
             idx_arrays = _broadcast_arrays(*(index[i] for i in array_indices))
             if any(idx_arrays[0].shape != ix.shape for ix in idx_arrays[1:]):
                 raise IndexError('array indices after broadcast differ in shape')
+            idx_shape = list(idx_arrays[0].shape) + idx_shape
+        elif len(array_indices) == 1:
+            arr_index = array_indices[0]
+            arr_shape = list(index[arr_index].shape)
+            idx_shape = idx_shape[:arr_index] + arr_shape + idx_shape[arr_index:]
 
         # add slice(None) (which is colon) to fill out full index
         nslice = self.ndim - index_ndim
@@ -270,8 +275,6 @@ class IndexMixin:
             mid_shape = list(self.shape[ellps_pos : ellps_pos + nslice])
             idx_shape = idx_shape[:ellps_pos] + mid_shape + idx_shape[ellps_pos:]
 
-        if array_indices:
-            idx_shape = list(index[array_indices[0]].shape) + idx_shape
         if (ndim := len(idx_shape)) > 2:
             raise IndexError(f'Only 1D or 2D arrays allowed. Index makes {ndim}D')
         return tuple(index), tuple(idx_shape)
