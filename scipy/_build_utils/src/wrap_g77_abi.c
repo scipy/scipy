@@ -25,6 +25,8 @@ return values, struct complex arguments work without segfaulting.
 #include "npy_cblas.h"
 #include "fortran_defs.h"
 
+#include "fortran_defs.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif

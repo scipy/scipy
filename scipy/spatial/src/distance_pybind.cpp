@@ -1,8 +1,10 @@
 #include <pybind11/pybind11.h>
+
 #include <pybind11/numpy.h>
 #include <numpy/arrayobject.h>
-#include <cmath>
+
 #include <cassert>
+#include <cmath>
 
 #include "function_ref.h"
 #include "views.h"

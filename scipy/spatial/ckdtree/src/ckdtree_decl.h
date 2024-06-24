@@ -6,6 +6,7 @@
  * Define these functions for your platform
  * */
 #include <numpy/npy_common.h>
+
 #include <cmath>
 #define CKDTREE_LIKELY(x) NPY_LIKELY(x)
 #define CKDTREE_UNLIKELY(x)  NPY_UNLIKELY(x)

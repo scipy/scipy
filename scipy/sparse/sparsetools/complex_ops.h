@@ -9,6 +9,8 @@
 #include <numpy/npy_math.h>
 #include "npy_2_complexcompat.h"
 
+#include "npy_2_complexcompat.h"
+
 template <class c_type, class npy_type>
 class complex_wrapper {
     private:

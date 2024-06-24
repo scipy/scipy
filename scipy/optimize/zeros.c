@@ -5,6 +5,8 @@
    routines */
 
 #include "Python.h"
+
+#include "Zeros/zeros.h"
 #include <setjmp.h>
 #include "Zeros/zeros.h"
 
