@@ -1022,22 +1022,70 @@ def remezord(freqs, amps, rips, fs=1.0, alg="ichige"):
 
     Examples
     --------
-    >>> import numpy as np
-    >>> from scipy.signal import remezord
+    In these examples, `remezord` is used to design low-pass, and a band-pass
+    filters.
+
+    Designing a low-pass filter with the following specifications:
+        * 500 Hz passband cutoff frequency
+        * 600 Hz stopband cutoff frequency
+        * 40 dB attenuation
+        * 3 dB maximum passband ripple
+        * 2 kHz sampling frequency
+
+    >>> from scipy.signal import freqz, remez, remezord
+    >>> import matplotlib.pyplot as plt
+
     >>> rp, rs = 3, 40  # Passband ripple, Stopband ripple
     >>> fs = 2000  # Sampling frequency
-    >>> freqs = np.array([500, 600])  # Band edges
-    >>> amps = np.array([1, 0])  # Amplitudes
+    >>> freqs = [500, 600]  # Band edges
+    >>> amps = [1, 0]  # Amplitudes
     >>> rips = [(10**(rp/20)-1)/(10**(rp/20)+1), 10**(-rs/20)]  # Max ripples
-    >>> numtaps, bands, desired, weights = remezord(freqs, amps, rips, fs=fs)
+
+    Then, generate the filter parameters with ``remezord``:
+
+    >>> numtaps, bands, desired, weight = remezord(freqs, amps, rips, fs=fs)
     >>> numtaps
     27
     >>> bands
     [0, 0.25, 0.3, 0.5]
     >>> desired
     [1., 0.]
-    >>> weights
+    >>> weight
     [1., 17.09973573]
+
+    The designed filter exhibits the following frequency response
+    characteristics:
+
+    >>> def plot_response(w, h, title):
+    ...     "Utility function to plot response functions"
+    ...     fig = plt.figure()
+    ...     ax = fig.add_subplot(111)
+    ...     ax.plot(w, 20*np.log10(np.abs(h)))
+    ...     ax.set_ylim(-60, 5)
+    ...     ax.grid(True)
+    ...     ax.set_xlabel('Frequency (Hz)')
+    ...     ax.set_ylabel('Gain (dB)')
+    ...     ax.set_title(title)
+
+    >>> taps = remez(numtaps, bands, desired, weight=weight)
+    >>> w, h = freqz(taps, worN=2000, fs=fs)
+    >>> plot_response(w, h, "Remezord Low-pass Filter")
+    >>> plt.show()
+
+    Designing a band-pass filter with the following specifications:
+        * 2-5 kHz passband frequency
+        * 22 kHz sampling frequency
+        * 1e-1 Max ripples
+
+    >>> fs = 22000  # Sampling frequency
+    >>> freqs = [1800, 2000, 5000, 5200]  # Band edges
+    >>> amps = [0, 1, 0]  # Amplitudes
+    >>> rips = [0.1, 0.1, 0.1]  # Max ripples
+    >>> numtaps, bands, desired, weight = remezord(freqs, amps, rips, fs=fs)
+    >>> taps = remez(numtaps, bands, desired, weight=weight)
+    >>> w, h = freqz(taps, worN=2000, fs=fs)
+    >>> plot_response(w, h, "Remezord Band-pass Filter")
+    >>> plt.show()
 
     """
     # Make sure the parameters are floating point numpy arrays:
