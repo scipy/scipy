@@ -27,3 +27,4 @@ more detailed examples, see the following sections.
     hypothesis_kurtosistest.md
     hypothesis_normaltest.md
     hypothesis_shapiro.md
+    hypothesis_kendalltau.md
