@@ -811,6 +811,10 @@ class SmokeDocs(Task):
         dirs.add_sys_path()
         print(f"SciPy from development installed path at: {dirs.site}")
 
+        # prevent obscure error later; cf https://github.com/numpy/numpy/pull/26691/
+        if not importlib.util.find_spec("scipy_doctest"):
+            raise ModuleNotFoundError("Please install scipy-doctest")
+
         # FIXME: support pos-args with doit
         extra_argv = list(pytest_args[:]) if pytest_args else []
         if extra_argv and extra_argv[0] == '--':
@@ -827,7 +831,9 @@ class SmokeDocs(Task):
         else:
             tests = None
 
-        # use strategy=api unless -t path/to/specific/file
+        # Request doctesting; use strategy=api unless -t path/to/specific/file
+        # also switch off assertion rewriting: not useful for doctests
+        extra_argv += ["--doctest-modules", "--assert=plain"]
         if not args.tests:
             extra_argv += ['--doctest-collect=api']
 
