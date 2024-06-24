@@ -11104,7 +11104,8 @@ def _xp_mean(x, /, *, axis=None, weights=None, keepdims=False, nan_policy='propa
 
 def _xp_var(x, /, *, axis=None, correction=0, keepdims=False, nan_policy='propagate',
             dtype=None, xp=None):
-    # an array-api compatible function for variance with
+    # an array-api compatible function for variance with scipy.stats interface
+    # and features (e.g. `nan_policy`).
     xp = array_namespace(x) if xp is None else xp
     x = xp.asarray(x)
 

@@ -9219,6 +9219,8 @@ class TestXP_Mean:
 
 
 @array_api_compatible
+@pytest.mark.usefixtures("skip_xp_backends")
+@skip_xp_backends('jax.numpy', reasons=['JAX arrays do not support item assignment'])
 class TestXP_Var:
     @pytest.mark.parametrize('axis', [None, 1, -1, (-2, 2)])
     @pytest.mark.parametrize('keepdims', [False, True])
