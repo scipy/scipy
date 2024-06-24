@@ -73,17 +73,16 @@ TINY = array([1e-12,2e-12,3e-12,4e-12,5e-12,6e-12,7e-12,8e-12,9e-12], float)
 ROUND = array([0.5,1.5,2.5,3.5,4.5,5.5,6.5,7.5,8.5], float)
 
 
+@array_api_compatible
+@skip_xp_backends('array_api_strict', 'jax.numpy',
+                  reasons=["`array_api_strict.where` `fillvalue` doesn't "
+                           "accept Python floats. See data-apis/array-api#807.",
+                           "JAX doesn't allow item assignment."])
+@pytest.mark.usefixtures("skip_xp_backends")
 class TestTrimmedStats:
     # TODO: write these tests to handle missing values properly
     dprec = np.finfo(np.float64).precision
 
-    @array_api_compatible
-    @skip_xp_backends('array_api_strict', 'jax.numpy',
-                      reasons=["`array_api_strict.where` `fillvalue` doesn't "
-                               "accept Python floats. See data-apis/array-api#807.",
-                               "JAX doesn't allow item assignment, and this  "
-                               "function uses _lazywhere."])
-    @pytest.mark.usefixtures("skip_xp_backends")
     def test_tmean(self, xp):
         x = xp.asarray(X)
 
@@ -130,13 +129,6 @@ class TestTrimmedStats:
         y_true = [4.5, 10, 17, 21, xp.nan, xp.nan, xp.nan, xp.nan, xp.nan]
         xp_assert_close(y, xp.asarray(y_true))
 
-    @array_api_compatible
-    @skip_xp_backends('array_api_strict', 'jax.numpy',
-                      reasons=["`array_api_strict.where` `fillvalue` doesn't "
-                               "accept Python floats. See data-apis/array-api#807.",
-                               "JAX doesn't allow item assignment, and this  "
-                               "function uses _lazywhere."])
-    @pytest.mark.usefixtures("skip_xp_backends")
     def test_tvar(self, xp):
         x = xp.asarray(X)
         xp_test = array_namespace(x)  # need array-api-compat var for `correction`
@@ -166,13 +158,6 @@ class TestTrimmedStats:
         xp_assert_close(y[0], xp.asarray(4.666666666666667))
         xp_assert_equal(y[1], xp.asarray(xp.nan))
 
-    @array_api_compatible
-    @skip_xp_backends('array_api_strict', 'jax.numpy',
-                      reasons=["`array_api_strict.where` `fillvalue` doesn't "
-                               "accept Python floats. See data-apis/array-api#807.",
-                               "JAX doesn't allow item assignment, and this  "
-                               "function uses _lazywhere."])
-    @pytest.mark.usefixtures("skip_xp_backends")
     def test_tstd(self, xp):
         x = xp.asarray(X)
         xp_test = array_namespace(x)  # need array-api-compat var for `correction`
@@ -183,12 +168,6 @@ class TestTrimmedStats:
         y = stats.tstd(x, limits=None)
         xp_assert_close(y, xp_test.std(x, correction=1))
 
-    @array_api_compatible
-    @skip_xp_backends('array_api_strict', 'jax.numpy',
-                      reasons=["`array_api_strict.where` `fillvalue` doesn't "
-                               "accept Python floats. See data-apis/array-api#807.",
-                               "JAX doesn't allow item assignment."])
-    @pytest.mark.usefixtures("skip_xp_backends")
     def test_tmin(self, xp):
         x = xp.arange(10)
         xp_assert_equal(stats.tmin(x), xp.asarray(0))
@@ -211,7 +190,9 @@ class TestTrimmedStats:
         res = stats.tmin(x, lowerlimit=4, axis=1)
         xp_assert_equal(res, xp.asarray([np.nan, 4, 8, 12]))
 
-    def test_tmin_scalar_and_nanpolicy(self):
+    @skip_xp_backends(np_only=True,
+                      reasons=["Only NumPy arrays support scalar input/`nan_policy`."])
+    def test_tmin_scalar_and_nanpolicy(self, xp):
         assert_equal(stats.tmin(4), 4)
 
         x = np.arange(10.)
@@ -226,12 +207,6 @@ class TestTrimmedStats:
             with assert_raises(ValueError, match=msg):
                 stats.tmin(x, nan_policy='foobar')
 
-    @array_api_compatible
-    @skip_xp_backends('array_api_strict', 'jax.numpy',
-                      reasons=["`array_api_strict.where` `fillvalue` doesn't "
-                               "accept Python floats. See data-apis/array-api#807.",
-                               "JAX doesn't allow item assignment."])
-    @pytest.mark.usefixtures("skip_xp_backends")
     def test_tmax(self, xp):
         x = xp.arange(10)
         xp_assert_equal(stats.tmax(x), xp.asarray(9))
@@ -256,7 +231,9 @@ class TestTrimmedStats:
             res = stats.tmax(x, upperlimit=11, axis=1)
             xp_assert_equal(res, xp.asarray([3, 7, 11, np.nan]))
 
-    def test_tax_scalar_and_nanpolicy(self):
+    @skip_xp_backends(np_only=True,
+                      reasons=["Only NumPy arrays support scalar input/`nan_policy`."])
+    def test_tax_scalar_and_nanpolicy(self, xp):
         assert_equal(stats.tmax(4), 4)
 
         x = np.arange(10.)
@@ -271,12 +248,6 @@ class TestTrimmedStats:
             with assert_raises(ValueError, match=msg):
                 stats.tmax(x, nan_policy='foobar')
 
-    @array_api_compatible
-    @skip_xp_backends('array_api_strict', 'jax.numpy',
-                      reasons=["`array_api_strict.where` `fillvalue` doesn't "
-                               "accept Python floats. See data-apis/array-api#807.",
-                               "JAX doesn't allow item assignment."])
-    @pytest.mark.usefixtures("skip_xp_backends")
     def test_tsem(self, xp):
         x = xp.asarray(X)
         xp_test = array_namespace(x)  # need array-api-compat var for `correction`
