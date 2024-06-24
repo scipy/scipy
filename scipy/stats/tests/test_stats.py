@@ -6785,7 +6785,7 @@ def check_equal_pmean(array_like, exp, desired, axis=None, dtype=None,
     assert_equal(x.dtype, dtype)
 
 
-class TestHarMean:
+class TestHMean:
     def test_0(self):
         a = [1, 0, 2]
         desired = 0
@@ -6816,7 +6816,8 @@ class TestHarMean:
         a = np.array([1, 0, -1])
         message = "The harmonic mean is only defined..."
         with pytest.warns(RuntimeWarning, match=message):
-            stats.hmean(a)
+            res = stats.hmean(a)
+        np.testing.assert_equal(res, np.nan)
 
     # Note the next tests use axis=None as default, not axis=0
     def test_2d_list(self):
@@ -6887,7 +6888,7 @@ class TestHarMean:
 
 
 @array_api_compatible
-class TestGeoMean:
+class TestGMean:
     def test_0(self, xp):
         a = [1, 0, 2]
         desired = 0
@@ -7011,7 +7012,7 @@ class TestGeoMean:
                           dtype=np.float64, xp=xp)
 
 
-class TestPowMean:
+class TestPMean:
 
     def pmean_reference(a, p):
         return (np.sum(a**p) / a.size)**(1/p)
@@ -7027,7 +7028,7 @@ class TestPowMean:
 
     def test_1d_list(self):
         a, p = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100], 3.5
-        desired = TestPowMean.pmean_reference(np.array(a), p)
+        desired = TestPMean.pmean_reference(np.array(a), p)
         check_equal_pmean(a, p, desired)
 
         a, p = [1, 2, 3, 4], 2
@@ -7036,7 +7037,7 @@ class TestPowMean:
 
     def test_1d_array(self):
         a, p = np.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 100]), -2.5
-        desired = TestPowMean.pmean_reference(a, p)
+        desired = TestPMean.pmean_reference(a, p)
         check_equal_pmean(a, p, desired)
 
     def test_1d_array_with_zero(self):
@@ -7048,7 +7049,8 @@ class TestPowMean:
         a, p = np.array([1, 0, -1]), 1.23
         message = "The power mean is only defined..."
         with pytest.warns(RuntimeWarning, match=message):
-            stats.pmean(a, p)
+            res = stats.pmean(a, p)
+        np.testing.assert_equal(res, np.nan)
 
     @pytest.mark.parametrize(
         ("a", "p"),
@@ -7056,7 +7058,7 @@ class TestPowMean:
          (np.array([[10, 20], [50, 60], [90, 100]]), 0.5)]
     )
     def test_2d_axisnone(self, a, p):
-        desired = TestPowMean.pmean_reference(np.array(a), p)
+        desired = TestPMean.pmean_reference(np.array(a), p)
         check_equal_pmean(a, p, desired)
 
     @pytest.mark.parametrize(
@@ -7066,7 +7068,7 @@ class TestPowMean:
     )
     def test_2d_list_axis0(self, a, p):
         desired = [
-            TestPowMean.pmean_reference(
+            TestPMean.pmean_reference(
                 np.array([a[i][j] for i in range(len(a))]), p
             )
             for j in range(len(a[0]))
@@ -7079,13 +7081,13 @@ class TestPowMean:
          ([[10, 0, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]], 0.5)]
     )
     def test_2d_list_axis1(self, a, p):
-        desired = [TestPowMean.pmean_reference(np.array(a_), p) for a_ in a]
+        desired = [TestPMean.pmean_reference(np.array(a_), p) for a_ in a]
         check_equal_pmean(a, p, desired, axis=1)
 
     def test_weights_1d_list(self):
         a, p = [2, 10, 6], -1.23456789
         weights = [10, 5, 3]
-        desired = TestPowMean.wpmean_reference(np.array(a), p, weights)
+        desired = TestPMean.wpmean_reference(np.array(a), p, weights)
         check_equal_pmean(a, p, desired, weights=weights, rtol=1e-5)
 
     def test_weights_masked_1d_array(self):
@@ -7103,7 +7105,7 @@ class TestPowMean:
     def test_weights_2d_array(self, axis, fun_name, p):
         if fun_name == 'wpmean_reference':
             def fun(a, axis, weights):
-                return TestPowMean.wpmean_reference(a, p, weights)
+                return TestPMean.wpmean_reference(a, p, weights)
         else:
             fun = getattr(stats, fun_name)
         a = np.array([[2, 5], [10, 5], [6, 5]])
@@ -7112,7 +7114,7 @@ class TestPowMean:
         check_equal_pmean(a, p, desired, axis=axis, weights=weights, rtol=1e-5)
 
 
-class TestGeometricStandardDeviation:
+class TestGSTD:
     # must add 1 as `gstd` is only defined for positive values
     array_1d = np.arange(2 * 3 * 4) + 1
     gstd_array_1d = 2.294407613602
@@ -7131,10 +7133,16 @@ class TestGeometricStandardDeviation:
         with pytest.raises(TypeError, match="ufunc 'log' not supported"):
             stats.gstd('You cannot take the logarithm of a string.')
 
-    @pytest.mark.parametrize('bad_value', (0, -1, np.inf))
+    @pytest.mark.parametrize('bad_value', (0, -1, np.inf, np.nan))
     def test_returns_nan_invalid_value(self, bad_value):
         x = np.append(self.array_1d, [bad_value])
-        assert_equal(stats.gstd(x), np.nan)
+        if np.isfinite(bad_value):
+            message = "The geometric standard deviation is only defined..."
+            with pytest.warns(RuntimeWarning, match=message):
+                res = stats.gstd(x)
+        else:
+            res = stats.gstd(x)
+        assert_equal(res, np.nan)
 
     def test_propagates_nan_values(self):
         a = array([[1, 1, 1, 16], [np.nan, 1, 2, 3]])

@@ -184,6 +184,14 @@ def gmean(a, axis=0, dtype=None, weights=None):
     numpy.average : Weighted average
     hmean : Harmonic mean
 
+    Notes
+    -----
+    The sample geometric mean is the exponential of the mean of the natural
+    logarithms of the observations.
+    Negative observations will produce NaNs in the output because the *natural*
+    logarithm (as opposed to the *complex* logarithm) is defined only for
+    non-negative reals.
+
     References
     ----------
     .. [1] "Weighted Geometric Mean", *Wikipedia*,
@@ -266,9 +274,15 @@ def hmean(a, axis=0, dtype=None, *, weights=None):
 
     Notes
     -----
+    The sample harmonic mean is the reciprocal of the mean of the reciprocals
+    of the observations.
+
     The harmonic mean is computed over a single dimension of the input
     array, axis=0 by default, or all values in the array if axis=None.
     float64 intermediate and return values are used for integer inputs.
+
+    The harmonic mean is only defined if all observations are non-negative;
+    otherwise, the result is NaN.
 
     References
     ----------
@@ -293,9 +307,13 @@ def hmean(a, axis=0, dtype=None, *, weights=None):
     if weights is not None:
         weights = np.asarray(weights, dtype=dtype)
 
-    if not np.all(a >= 0):
-        message = ("The harmonic mean is only defined if all elements are greater "
-                   "than or equal to zero; otherwise, the result is NaN.")
+    negative_mask = a < 0
+    if np.any(negative_mask):
+        # `where` avoids having to be careful about dtypes and will work with
+        # JAX. This is the exceptional case, so it's OK to be a little slower.
+        a = np.where(negative_mask, np.nan, a)
+        message = ("The harmonic mean is only defined if all elements are "
+                   "non-negative; otherwise, the result is NaN.")
         warnings.warn(message, RuntimeWarning, stacklevel=2)
 
     with np.errstate(divide='ignore'):
@@ -365,6 +383,9 @@ def pmean(a, p, *, axis=0, dtype=None, weights=None):
     array, ``axis=0`` by default, or all values in the array if ``axis=None``.
     float64 intermediate and return values are used for integer inputs.
 
+    The power mean is only defined if all observations are non-negative;
+    otherwise, the result is NaN.
+
     .. versionadded:: 1.9
 
     References
@@ -412,9 +433,13 @@ def pmean(a, p, *, axis=0, dtype=None, weights=None):
     if weights is not None:
         weights = np.asanyarray(weights, dtype=dtype)
 
-    if not np.all(a >= 0):
-        message = ("The power mean is only defined if all elements are greater "
-                   "than or equal to zero; otherwise, the result is NaN.")
+    negative_mask = a < 0
+    if np.any(negative_mask):
+        # `where` avoids having to be careful about dtypes and will work with
+        # JAX. This is the exceptional case, so it's OK to be a little slower.
+        a = np.where(negative_mask, np.nan, a)
+        message = ("The power mean is only defined if all elements are "
+                   "non-negative; otherwise, the result is NaN.")
         warnings.warn(message, RuntimeWarning, stacklevel=2)
 
     with np.errstate(divide='ignore', invalid='ignore'):
@@ -3223,7 +3248,7 @@ def gstd(a, axis=0, ddof=1):
     When an observation is infinite, the geometric standard deviation is
     NaN (undefined). Non-positive observations will also produce NaNs in the
     output because the *natural* logarithm (as opposed to the *complex*
-    logarithm) is defined only for positive reals.
+    logarithm) is defined and finite only for positive reals.
     The geometric standard deviation is sometimes confused with the exponential
     of the standard deviation, ``exp(std(a))``. Instead, the geometric standard
     deviation is ``exp(std(log(a)))``.
@@ -3271,8 +3296,14 @@ def gstd(a, axis=0, ddof=1):
         log = np.log
 
     with np.errstate(invalid='ignore', divide='ignore'):
-        return np.exp(np.std(log(a), axis=axis, ddof=ddof))
+        res = np.exp(np.std(log(a), axis=axis, ddof=ddof))
 
+    if (a <= 0).any():
+        message = ("The geometric standard deviation is only defined if all elements "
+                   "are greater than or equal to zero; otherwise, the result is NaN.")
+        warnings.warn(message, RuntimeWarning, stacklevel=2)
+
+    return res
 
 # Private dictionary initialized only once at module level
 # See https://en.wikipedia.org/wiki/Robust_measures_of_scale
