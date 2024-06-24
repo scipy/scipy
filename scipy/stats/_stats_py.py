@@ -302,16 +302,18 @@ def hmean(a, axis=0, dtype=None, *, weights=None):
     1.9029126213592233
 
     """
-    a = np.asarray(a, dtype=dtype)
+    xp = array_namespace(a, weights)
+    a = xp.asarray(a, dtype=dtype)
 
     if weights is not None:
-        weights = np.asarray(weights, dtype=dtype)
+        weights = xp.asarray(weights, dtype=dtype)
 
     negative_mask = a < 0
-    if np.any(negative_mask):
+    if xp.any(negative_mask):
         # `where` avoids having to be careful about dtypes and will work with
         # JAX. This is the exceptional case, so it's OK to be a little slower.
-        a = np.where(negative_mask, np.nan, a)
+        # Won't work for array_api_strict for now, but see data-apis/array-api#807
+        a = xp.where(negative_mask, xp.nan, a)
         message = ("The harmonic mean is only defined if all elements are "
                    "non-negative; otherwise, the result is NaN.")
         warnings.warn(message, RuntimeWarning, stacklevel=2)
@@ -428,16 +430,18 @@ def pmean(a, p, *, axis=0, dtype=None, weights=None):
     if p == 0:
         return gmean(a, axis=axis, dtype=dtype, weights=weights)
 
-    a = np.asarray(a, dtype=dtype)
+    xp = array_namespace(a, weights)
+    a = xp.asarray(a, dtype=dtype)
 
     if weights is not None:
-        weights = np.asanyarray(weights, dtype=dtype)
+        weights = xp.asarray(weights, dtype=dtype)
 
     negative_mask = a < 0
-    if np.any(negative_mask):
+    if xp.any(negative_mask):
         # `where` avoids having to be careful about dtypes and will work with
         # JAX. This is the exceptional case, so it's OK to be a little slower.
-        a = np.where(negative_mask, np.nan, a)
+        # Won't work for array_api_strict for now, but see data-apis/array-api#807
+        a = xp.where(negative_mask, np.nan, a)
         message = ("The power mean is only defined if all elements are "
                    "non-negative; otherwise, the result is NaN.")
         warnings.warn(message, RuntimeWarning, stacklevel=2)
