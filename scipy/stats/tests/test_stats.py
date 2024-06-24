@@ -271,15 +271,20 @@ class TestTrimmedStats:
             with assert_raises(ValueError, match=msg):
                 stats.tmax(x, nan_policy='foobar')
 
-    def test_tsem(self):
-        y = stats.tsem(X, limits=(3, 8), inclusive=(False, True))
-        y_ref = np.array([4, 5, 6, 7, 8])
-        assert_approx_equal(y, y_ref.std(ddof=1) / np.sqrt(y_ref.size),
-                            significant=self.dprec)
+    @array_api_compatible
+    @skip_xp_backends('array_api_strict', 'jax.numpy',
+                      reasons=["`array_api_strict.where` `fillvalue` doesn't "
+                               "accept Python floats. See data-apis/array-api#807.",
+                               "JAX doesn't allow item assignment."])
+    @pytest.mark.usefixtures("skip_xp_backends")
+    def test_tsem(self, xp):
+        x = xp.asarray(X)
+        xp_test = array_namespace(x)  # need array-api-compat var for `correction`
 
-        assert_approx_equal(stats.tsem(X, limits=[-1, 10]),
-                            stats.tsem(X, limits=None),
-                            significant=self.dprec)
+        y = stats.tsem(x, limits=(3, 8), inclusive=(False, True))
+        y_ref = xp.asarray([4, 5, 6, 7, 8])
+        xp_assert_close(y, xp_test.std(y_ref, correction=1) / xp.sqrt(xp_size(y_ref)))
+        xp_assert_close(stats.tsem(x, limits=[-1, 10]), stats.tsem(x, limits=None))
 
 
 class TestPearsonrWilkinson:
