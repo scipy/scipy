@@ -661,9 +661,13 @@ def tvar(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
     20.0
 
     """
-    a, _ = _put_val_to_limits(a, limits, inclusive)
-    return np.nanvar(a, ddof=ddof, axis=axis)
-
+    xp = array_namespace(a)
+    mean = tmean(a, limits=limits, inclusive=inclusive, axis=axis, _no_deco=True)
+    a, mask = _put_val_to_limits(a, limits, inclusive, val=mean, xp=xp)
+    n = xp.sum(xp.asarray(~mask, dtype=a.dtype), axis=axis)
+    len_axis = xp_size(a) if axis is None else a.shape[axis]
+    res = xp.var(a, correction=ddof, axis=axis) * (len_axis - ddof)/(n - ddof)
+    return res[()] if res.ndim == 0 else res
 
 @_axis_nan_policy_factory(
     lambda x: x, n_outputs=1, result_to_tuple=lambda x: (x,)

@@ -130,37 +130,44 @@ class TestTrimmedStats:
         y_true = [4.5, 10, 17, 21, xp.nan, xp.nan, xp.nan, xp.nan, xp.nan]
         xp_assert_close(y, xp.asarray(y_true))
 
-    def test_tvar(self):
-        y = stats.tvar(X, limits=(2, 8), inclusive=(True, True))
-        assert_approx_equal(y, 4.6666666666666661, significant=self.dprec)
+    @array_api_compatible
+    @skip_xp_backends('array_api_strict', 'jax.numpy',
+                      reasons=["`array_api_strict.where` `fillvalue` doesn't "
+                               "accept Python floats. See data-apis/array-api#807.",
+                               "JAX doesn't allow item assignment, and this  "
+                               "function uses _lazywhere."])
+    @pytest.mark.usefixtures("skip_xp_backends")
+    def test_tvar(self, xp):
+        x = xp.asarray(X)
+        xp_test = array_namespace(x)  # need array-api-compat var for `correction`
 
-        y = stats.tvar(X, limits=None)
-        assert_approx_equal(y, X.var(ddof=1), significant=self.dprec)
+        y = stats.tvar(x, limits=(2, 8), inclusive=(True, True))
+        xp_assert_close(y, xp.asarray(4.6666666666666661))
 
-        x_2d = arange(63, dtype=float64).reshape((9, 7))
+        y = stats.tvar(x, limits=None)
+        xp_assert_close(y, xp_test.var(x, correction=1))
+
+        x_2d = xp.reshape(xp.arange(63, dtype=xp.float64), (9, 7))
         y = stats.tvar(x_2d, axis=None)
-        assert_approx_equal(y, x_2d.var(ddof=1), significant=self.dprec)
+        xp_assert_close(y, xp_test.var(x_2d, correction=1))
 
         y = stats.tvar(x_2d, axis=0)
-        assert_array_almost_equal(y[0], np.full((1, 7), 367.50000000), decimal=8)
+        xp_assert_close(y, xp.full(7, 367.5))
 
         y = stats.tvar(x_2d, axis=1)
-        assert_array_almost_equal(y[0], np.full((1, 9), 4.66666667), decimal=8)
-
-        y = stats.tvar(x_2d[3, :])
-        assert_approx_equal(y, 4.666666666666667, significant=self.dprec)
+        xp_assert_close(y, xp.full(9, 4.66666667))
 
         with suppress_warnings() as sup:
             sup.record(RuntimeWarning, "Degrees of freedom <= 0 for slice.")
 
             # Limiting some values along one axis
             y = stats.tvar(x_2d, limits=(1, 5), axis=1, inclusive=(True, True))
-            assert_approx_equal(y[0], 2.5, significant=self.dprec)
+            xp_assert_close(y[0], xp.asarray(2.5))
 
             # Limiting all values along one axis
             y = stats.tvar(x_2d, limits=(0, 6), axis=1, inclusive=(True, True))
-            assert_approx_equal(y[0], 4.666666666666667, significant=self.dprec)
-            assert_equal(y[1], np.nan)
+            xp_assert_close(y[0], xp.asarray(4.666666666666667))
+            xp_assert_equal(y[1], xp.asarray(xp.nan))
 
     def test_tstd(self):
         y = stats.tstd(X, (2, 8), (True, True))
