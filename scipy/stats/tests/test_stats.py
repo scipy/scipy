@@ -84,10 +84,10 @@ class TestTrimmedStats:
     dprec = np.finfo(np.float64).precision
 
     def test_tmean(self, xp):
-        x = xp.asarray(X)
+        x = xp.asarray(X.tolist())  # use default dtype of xp
 
         y = stats.tmean(x, (2, 8), (True, True))
-        xp_assert_close(y, xp.asarray(5.0, dtype=x.dtype))
+        xp_assert_close(y, xp.asarray(5.0))
 
         y1 = stats.tmean(x, limits=(2, 8), inclusive=(False, False))
         y2 = stats.tmean(x, limits=None)
@@ -130,7 +130,7 @@ class TestTrimmedStats:
         xp_assert_close(y, xp.asarray(y_true))
 
     def test_tvar(self, xp):
-        x = xp.asarray(X)
+        x = xp.asarray(X.tolist())  # use default dtype of xp
         xp_test = array_namespace(x)  # need array-api-compat var for `correction`
 
         y = stats.tvar(x, limits=(2, 8), inclusive=(True, True))
@@ -139,15 +139,15 @@ class TestTrimmedStats:
         y = stats.tvar(x, limits=None)
         xp_assert_close(y, xp_test.var(x, correction=1))
 
-        x_2d = xp.reshape(xp.arange(63, dtype=xp.float64), (9, 7))
+        x_2d = xp.reshape(xp.arange(63.), (9, 7))
         y = stats.tvar(x_2d, axis=None)
         xp_assert_close(y, xp_test.var(x_2d, correction=1))
 
         y = stats.tvar(x_2d, axis=0)
-        xp_assert_close(y, xp.full(7, 367.5))
+        xp_assert_close(y, xp.full((7,), 367.5))
 
         y = stats.tvar(x_2d, axis=1)
-        xp_assert_close(y, xp.full(9, 4.66666667))
+        xp_assert_close(y, xp.full((9,), 4.66666667))
 
         # Limiting some values along one axis
         y = stats.tvar(x_2d, limits=(1, 5), axis=1, inclusive=(True, True))
@@ -159,7 +159,7 @@ class TestTrimmedStats:
         xp_assert_equal(y[1], xp.asarray(xp.nan))
 
     def test_tstd(self, xp):
-        x = xp.asarray(X)
+        x = xp.asarray(X.tolist())  # use default dtype of xp
         xp_test = array_namespace(x)  # need array-api-compat std for `correction`
 
         y = stats.tstd(x, (2, 8), (True, True))
@@ -249,12 +249,12 @@ class TestTrimmedStats:
                 stats.tmax(x, nan_policy='foobar')
 
     def test_tsem(self, xp):
-        x = xp.asarray(X)
+        x = xp.asarray(X.tolist())  # use default dtype of xp
         xp_test = array_namespace(x)  # need array-api-compat std for `correction`
 
         y = stats.tsem(x, limits=(3, 8), inclusive=(False, True))
-        y_ref = xp.asarray([4, 5, 6, 7, 8])
-        xp_assert_close(y, xp_test.std(y_ref, correction=1) / xp.sqrt(xp_size(y_ref)))
+        y_ref = xp.asarray([4., 5., 6., 7., 8.])
+        xp_assert_close(y, xp_test.std(y_ref, correction=1) / xp_size(y_ref)**0.5)
         xp_assert_close(stats.tsem(x, limits=[-1, 10]), stats.tsem(x, limits=None))
 
 
