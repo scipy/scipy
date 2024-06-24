@@ -24,3 +24,5 @@ more detailed examples, see the following sections.
     hypothesis_chi2_contingency.md
     hypothesis_jarque_bera.md
     hypothesis_skewtest.md
+    hypothesis_kurtosistest.md
+
