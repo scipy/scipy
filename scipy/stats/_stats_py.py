@@ -3227,7 +3227,7 @@ def gstd(a, axis=0, ddof=1):
     When an observation is infinite, the geometric standard deviation is
     NaN (undefined). Non-positive observations will also produce NaNs in the
     output because the *natural* logarithm (as opposed to the *complex*
-    logarithm) is defined only for positive reals.
+    logarithm) is defined and finite only for positive reals.
     The geometric standard deviation is sometimes confused with the exponential
     of the standard deviation, ``exp(std(a))``. Instead, the geometric standard
     deviation is ``exp(std(log(a)))``.
@@ -3275,8 +3275,14 @@ def gstd(a, axis=0, ddof=1):
         log = np.log
 
     with np.errstate(invalid='ignore', divide='ignore'):
-        return np.exp(np.std(log(a), axis=axis, ddof=ddof))
+        res = np.exp(np.std(log(a), axis=axis, ddof=ddof))
 
+    if (a <= 0).any():
+        message = ("The geometric standard deviation is only defined if all elements "
+                   "are greater than or equal to zero; otherwise, the result is NaN.")
+        warnings.warn(message, RuntimeWarning, stacklevel=2)
+
+    return res
 
 # Private dictionary initialized only once at module level
 # See https://en.wikipedia.org/wiki/Robust_measures_of_scale
@@ -6483,6 +6489,9 @@ def _t_confidence_interval(df, t, confidence_level, alternative, dtype=None, xp=
     # We just need IV on confidence_level
     dtype = t.dtype if dtype is None else dtype
     xp = array_namespace(t) if xp is None else xp
+
+    # stdtrit not dispatched yet; use NumPy
+    df, t = np.asarray(df), np.asarray(t)
 
     if confidence_level < 0 or confidence_level > 1:
         message = "`confidence_level` must be a number between 0 and 1."

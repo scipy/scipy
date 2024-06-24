@@ -510,8 +510,12 @@ def test_x0_working(solver):
 
 
 def test_x0_equals_Mb(case):
+    if (case.solver is bicgstab) and (case.name == 'nonsymposdef-bicgstab'):
+        pytest.skip("Solver fails due to numerical noise "
+                    "on some architectures (see gh-15533).")
     if case.solver is tfqmr:
         pytest.skip("Solver does not support x0='Mb'")
+
     A = case.A
     b = case.b
     x0 = 'Mb'
