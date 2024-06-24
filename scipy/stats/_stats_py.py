@@ -687,12 +687,13 @@ def tvar(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
 
     """
     xp = array_namespace(a)
-    mean = tmean(a, limits=limits, inclusive=inclusive, axis=axis, _no_deco=True)
-    a, mask = _put_val_to_limits(a, limits, inclusive, val=mean, xp=xp)
-    n = xp.sum(xp.asarray(~mask, dtype=a.dtype), axis=axis)
-    len_axis = xp_size(a) if axis is None else a.shape[axis]
-    res = xp.var(a, correction=ddof, axis=axis) * (len_axis - ddof)/(n - ddof)
-    return res[()] if res.ndim == 0 else res
+    a, _ = _put_val_to_limits(a, limits, inclusive, xp=xp)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", SmallSampleWarning)
+        # Currently, this behaves like nan_policy='omit' for alternative array
+        # backends, but nan_policy='propagate' will be handled for other backends
+        # by the axis_nan_policy decorator shortly.
+        return _xp_var(a, correction=ddof, axis=axis, nan_policy='omit', xp=xp)
 
 @_axis_nan_policy_factory(
     lambda x: x, n_outputs=1, result_to_tuple=lambda x: (x,)

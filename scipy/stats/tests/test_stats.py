@@ -157,17 +157,14 @@ class TestTrimmedStats:
         y = stats.tvar(x_2d, axis=1)
         xp_assert_close(y, xp.full(9, 4.66666667))
 
-        with suppress_warnings() as sup:
-            sup.record(RuntimeWarning, "Degrees of freedom <= 0 for slice.")
+        # Limiting some values along one axis
+        y = stats.tvar(x_2d, limits=(1, 5), axis=1, inclusive=(True, True))
+        xp_assert_close(y[0], xp.asarray(2.5))
 
-            # Limiting some values along one axis
-            y = stats.tvar(x_2d, limits=(1, 5), axis=1, inclusive=(True, True))
-            xp_assert_close(y[0], xp.asarray(2.5))
-
-            # Limiting all values along one axis
-            y = stats.tvar(x_2d, limits=(0, 6), axis=1, inclusive=(True, True))
-            xp_assert_close(y[0], xp.asarray(4.666666666666667))
-            xp_assert_equal(y[1], xp.asarray(xp.nan))
+        # Limiting all values along one axis
+        y = stats.tvar(x_2d, limits=(0, 6), axis=1, inclusive=(True, True))
+        xp_assert_close(y[0], xp.asarray(4.666666666666667))
+        xp_assert_equal(y[1], xp.asarray(xp.nan))
 
     def test_tstd(self):
         y = stats.tstd(X, (2, 8), (True, True))
