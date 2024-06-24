@@ -8341,6 +8341,10 @@ def friedmanchisquare(*samples):
         The associated p-value assuming that the test statistic has a chi
         squared distribution.
 
+    See Also
+    --------
+    :ref:`hypothesis_friedmanchisquare`
+
     Notes
     -----
     Due to the assumption that the test statistic has a chi squared
@@ -8350,36 +8354,33 @@ def friedmanchisquare(*samples):
     References
     ----------
     .. [1] https://en.wikipedia.org/wiki/Friedman_test
-    .. [2] P. Sprent and N.C. Smeeton, "Applied Nonparametric Statistical
-           Methods, Third Edition". Chapter 6, Section 6.3.2.
+    .. [2] Demsar, J. (2006). Statistical comparisons of classifiers over
+           multiple data sets. Journal of Machine Learning Research, 7, 1-30.
 
     Examples
     --------
-    In [2]_, the pulse rate (per minute) of a group of seven students was
-    measured before exercise, immediately after exercise and 5 minutes
-    after exercise. Is there evidence to suggest that the pulse rates on
-    these three occasions are similar?
 
-    We begin by formulating a null hypothesis :math:`H_0`:
+    In [2]_, the Friedman test is used to determine if four different
+    classifiers perform differently on 14 different data sets. The data is
+    given below, where each row corresponds to a different data set and each
+    column corresponds to a different classifier.
 
-        The pulse rates are identical on these three occasions.
-
-    Let's assess the plausibility of this hypothesis with a Friedman test.
-
+    >>> import numpy as np
+    >>> x = np.array([[0.763, 0.599, 0.954, 0.628, 0.882, 0.936, 0.661, 0.583,\
+                       0.775, 1.0, 0.94, 0.619, 0.972, 0.957],
+                      [0.768, 0.591, 0.971, 0.661, 0.888, 0.931, 0.668, 0.583,\
+                       0.838, 1.0, 0.962, 0.666, 0.981, 0.978],
+                      [0.771, 0.590, 0.968, 0.654, 0.886, 0.916, 0.609, 0.563,\
+                       0.866, 1.0, 0.965, 0.614, 0.9751, 0.946],
+                      [0.798, 0.569, 0.967, 0.657, 0.898, 0.931, 0.685, 0.625,\
+                       0.875, 1.0, 0.962, 0.669, 0.975, 0.970]])
     >>> from scipy.stats import friedmanchisquare
-    >>> before = [72, 96, 88, 92, 74, 76, 82]
-    >>> immediately_after = [120, 120, 132, 120, 101, 96, 112]
-    >>> five_min_after = [76, 95, 104, 96, 84, 72, 76]
-    >>> res = friedmanchisquare(before, immediately_after, five_min_after)
-    >>> res.statistic
-    10.57142857142857
-    >>> res.pvalue
-    0.005063414171757498
+    >>> res = stats.friedmanchisquare(x1[0], x1[1], x1[2], x1[3])
+    >>> res.statistic, res.pvalue
+    (10.2283464566929, 0.0167215803284414)
 
-    Using a significance level of 5%, we would reject the null hypothesis in
-    favor of the alternative hypothesis: "the pulse rates are different on
-    these three occasions".
-
+    The p-value is less than 0.05; however, as noted above, the results may not
+    be reliable since we have a small amount of repeated samples.
     """
     k = len(samples)
     if k < 3:

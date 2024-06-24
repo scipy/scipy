@@ -32,3 +32,4 @@ more detailed examples, see the following sections.
     hypothesis_levene.md
     hypothesis_bartlett.md
     hypothesis_fligner.md
+    hypothesis_friedmanchisquare.md
