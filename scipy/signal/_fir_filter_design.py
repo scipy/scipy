@@ -953,7 +953,7 @@ def _remlplen_ichige(fp, fs, dp, ds):
     return int(N4)
 
 
-def remezord(freqs, amps, rips, fs=1.0, alg="ichige"):
+def remezord(freqs, amps, rips, *, fs=1.0, alg="ichige"):
     """
     Filter parameter selection for the Remez exchange algorithm.
 
@@ -965,10 +965,10 @@ def remezord(freqs, amps, rips, fs=1.0, alg="ichige"):
     ----------
     freqs : array_like
         A monotonic sequence of non-negative band edges in Hertz. All elements
-        must be less than half the sampling frequency ``fs``.
+        must be less than half the sampling frequency `fs`.
     amps : array_like
         A sequence containing the desired amplitudes of the signal to be
-        filtered over the corresponding frequency bands in ``freqs``.
+        filtered over the corresponding frequency bands in `freqs`.
     rips : array_like
         A sequence specifying the maximum allowable ripples of each band in the
         frequency response.
@@ -993,12 +993,12 @@ def remezord(freqs, amps, rips, fs=1.0, alg="ichige"):
     Raises
     ------
     ValueError:
-        - If any element in ``freqs`` is negative, greater than 0.5, or the
+        - If any element in `freqs` is negative, greater than 0.5, or the
           length is not valid.
-        - If the lengths of ``amps`` and ``rips`` are not equal or one more
-          than half the length of ``freqs``.
-        - If any element in ``rips`` is negative.
-        - If ``alg`` is not a valid string option.
+        - If the lengths of `amps` and `rips` are not equal or one more
+          than half the length of `freqs`.
+        - If any element in `rips` is negative.
+        - If `alg` is not a valid string option.
 
     See Also
     --------
@@ -1025,6 +1025,10 @@ def remezord(freqs, amps, rips, fs=1.0, alg="ichige"):
     In these examples, `remezord` is used to design low-pass, and a band-pass
     filters.
 
+    `freqz` is used to compute the frequency response of each filter, and
+    the utility function ``plot_response`` defined below is used to plot
+    the response.
+
     Designing a low-pass filter with the following specifications:
         * 500 Hz passband cutoff frequency
         * 600 Hz stopband cutoff frequency
@@ -1033,15 +1037,13 @@ def remezord(freqs, amps, rips, fs=1.0, alg="ichige"):
         * 2 kHz sampling frequency
 
     >>> from scipy.signal import freqz, remez, remezord
-    >>> import matplotlib.pyplot as plt
-
     >>> rp, rs = 3, 40  # Passband ripple, Stopband ripple
     >>> fs = 2000  # Sampling frequency
     >>> freqs = [500, 600]  # Band edges
     >>> amps = [1, 0]  # Amplitudes
     >>> rips = [(10**(rp/20)-1)/(10**(rp/20)+1), 10**(-rs/20)]  # Max ripples
 
-    Then, generate the filter parameters with ``remezord``:
+    Then, generate the filter parameters with `remezord`:
 
     >>> numtaps, bands, desired, weight = remezord(freqs, amps, rips, fs=fs)
     >>> numtaps
@@ -1056,10 +1058,11 @@ def remezord(freqs, amps, rips, fs=1.0, alg="ichige"):
     The designed filter exhibits the following frequency response
     characteristics:
 
+    >>> import matplotlib.pyplot as plt
+    >>> import numpy as np
     >>> def plot_response(w, h, title):
     ...     "Utility function to plot response functions"
-    ...     fig = plt.figure()
-    ...     ax = fig.add_subplot(111)
+    ...     fig, ax = plt.subplots()
     ...     ax.plot(w, 20*np.log10(np.abs(h)))
     ...     ax.set_ylim(-60, 5)
     ...     ax.grid(True)
@@ -1144,7 +1147,7 @@ def remezord(freqs, amps, rips, fs=1.0, alg="ichige"):
     # ripple and all of the other ripples:
     weight = max(rips) / rips
 
-    return [L, bands, amps, weight]
+    return L, bands, amps, weight
 
 
 def firls(numtaps, bands, desired, *, weight=None, fs=None):
