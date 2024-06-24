@@ -624,8 +624,7 @@ class _spbase:
         if issparse(other):
             if N != other.shape[0]:
                 raise ValueError(
-                    f"{err_prefix} (n,k),(k,m)->(n,m) "
-                    f"(size {N} is different from {other.shape[0]})"
+                    f"{err_prefix} (n,k={N}),(k={other.shape[0]},m)->(n,m)"
                 )
             return self._matmul_sparse(other)
 
@@ -646,8 +645,7 @@ class _spbase:
             # dense row or column vector
             if other.shape[0] != N:
                 raise ValueError(
-                    f"{err_prefix} (n,k),(k,1?)->(n,1?) "
-                    f"(size {N} is different from {other.shape[0]})"
+                    f"{err_prefix} (n,k={N}),(k={other.shape[0]},1?)->(n,1?)"
                 )
 
             result = self._matmul_vector(np.ravel(other))
@@ -667,8 +665,7 @@ class _spbase:
 
             if other.shape[0] != N:
                 raise ValueError(
-                    f"{err_prefix} (n,k),(k,m)->(n,m) "
-                    f"(size {N} is different from {other.shape[0]})"
+                    f"{err_prefix} (n,k={N}),(k={other.shape[0]},m)->(n,m)"
                 )
 
             result = self._matmul_multivector(np.asarray(other))
