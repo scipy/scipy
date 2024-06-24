@@ -28,3 +28,4 @@ more detailed examples, see the following sections.
     hypothesis_normaltest.md
     hypothesis_shapiro.md
     hypothesis_kendalltau.md
+    hypothesis_spearmanr.md
