@@ -88,7 +88,7 @@ class TestTrimmedStats:
         x = xp.asarray(X)
 
         y = stats.tmean(x, (2, 8), (True, True))
-        xp_assert_close(y, xp.asarray(5.0, dtype=x.dtype))
+        xp_assert_close(y, xp.asarray(5.0, dtype=x.dtype), check_0d=False)
 
         y1 = stats.tmean(x, limits=(2, 8), inclusive=(False, False))
         y2 = stats.tmean(x, limits=None)
@@ -105,7 +105,7 @@ class TestTrimmedStats:
         xp_assert_close(y, xp.mean(x_2d, axis=1))
 
         y = stats.tmean(x_2d, limits=(2, 61), axis=None)
-        xp_assert_close(y, xp.asarray(31.5))
+        xp_assert_close(y, xp.asarray(31.5), check_0d=False)
 
         y = stats.tmean(x_2d, limits=(2, 21), axis=0)
         y_true = [14, 11.5, 9, 10, 11, 12, 13]
@@ -401,10 +401,11 @@ class TestPearsonr:
         a = xp.arange(3.0)
         r, prob = stats.pearsonr(a, a)
 
-        xp_assert_close(r, xp.asarray(1.0), atol=1e-15)
+        xp_assert_close(r, xp.asarray(1.0), atol=1e-15, check_0d=False)
         # With n = len(a) = 3, the error in prob grows like the
         # square root of the error in r.
-        xp_assert_close(prob, xp.asarray(0.0), atol=np.sqrt(2*np.spacing(1.0)))
+        xp_assert_close(prob, xp.asarray(0.0), atol=np.sqrt(2*np.spacing(1.0)),
+                        check_0d=False)
 
     @skip_xp_backends('jax.numpy',
                       reasons=['JAX arrays do not support item assignment'],
@@ -413,10 +414,11 @@ class TestPearsonr:
         a = xp.arange(3.0)
         r, prob = stats.pearsonr(a, -a)
 
-        xp_assert_close(r, xp.asarray(-1.0), atol=1e-15)
+        xp_assert_close(r, xp.asarray(-1.0), atol=1e-15, check_0d=False)
         # With n = len(a) = 3, the error in prob grows like the
         # square root of the error in r.
-        xp_assert_close(prob, xp.asarray(0.0), atol=np.sqrt(2*np.spacing(1.0)))
+        xp_assert_close(prob, xp.asarray(0.0), atol=np.sqrt(2*np.spacing(1.0)),
+                        check_0d=False)
 
     @skip_xp_backends('jax.numpy',
                       reasons=['JAX arrays do not support item assignment'],
@@ -427,8 +429,8 @@ class TestPearsonr:
         a = xp.asarray([-1, 0, 1])
         b = xp.asarray([0, 0, 3])
         r, prob = stats.pearsonr(a, b)
-        xp_assert_close(r, xp.asarray(3**0.5/2))
-        xp_assert_close(prob, xp.asarray(1/3))
+        xp_assert_close(r, xp.asarray(3**0.5/2), check_0d=False)
+        xp_assert_close(prob, xp.asarray(1/3), check_0d=False)
 
     @skip_xp_backends('jax.numpy',
                       reasons=['JAX arrays do not support item assignment'],
@@ -441,8 +443,8 @@ class TestPearsonr:
             x = xp.asarray([0.667, 0.667, 0.667])
             y = xp.asarray([0.123, 0.456, 0.789])
             r, p = stats.pearsonr(x, y)
-            xp_assert_close(r, xp.asarray(xp.nan))
-            xp_assert_close(p, xp.asarray(xp.nan))
+            xp_assert_close(r, xp.asarray(xp.nan), check_0d=False)
+            xp_assert_close(p, xp.asarray(xp.nan), check_0d=False)
 
     @skip_xp_backends('jax.numpy',
                       reasons=['JAX arrays do not support item assignment'],
@@ -475,8 +477,10 @@ class TestPearsonr:
 
         # The expected values were computed using mpmath with 80 digits
         # of precision.
-        xp_assert_close(r, xp.asarray(0.7272930540750450, dtype=xp.float64))
-        xp_assert_close(p, xp.asarray(0.1637805429533202, dtype=xp.float64))
+        xp_assert_close(r, xp.asarray(0.7272930540750450, dtype=xp.float64),
+                        check_0d=False)
+        xp_assert_close(p, xp.asarray(0.1637805429533202, dtype=xp.float64),
+                        check_0d=False)
 
     @skip_xp_backends('jax.numpy',
                       reasons=['JAX arrays do not support item assignment'],
@@ -492,8 +496,10 @@ class TestPearsonr:
 
         # The expected values were computed using mpmath with 80 digits
         # of precision.
-        xp_assert_close(r, xp.asarray(0.8660254037844386, dtype=xp.float64))
-        xp_assert_close(p, xp.asarray(0.011724811003954638, dtype=xp.float64))
+        xp_assert_close(r, xp.asarray(0.8660254037844386, dtype=xp.float64),
+                        check_0d=False)
+        xp_assert_close(p, xp.asarray(0.011724811003954638, dtype=xp.float64),
+                        check_0d=False)
 
     @skip_xp_backends('jax.numpy',
                       reasons=['JAX arrays do not support item assignment'],
@@ -508,8 +514,10 @@ class TestPearsonr:
 
         # The expected values were computed using mpmath with 80 digits
         # of precision.
-        xp_assert_close(r, xp.asarray(0.351312332103289, dtype=xp.float64))
-        xp_assert_close(p, xp.asarray(0.648687667896711, dtype=xp.float64))
+        xp_assert_close(r, xp.asarray(0.351312332103289, dtype=xp.float64),
+                        check_0d=False)
+        xp_assert_close(p, xp.asarray(0.648687667896711, dtype=xp.float64),
+                        check_0d=False)
 
     def test_length_two_pos1(self, xp):
         # Inputs with length 2.
@@ -519,11 +527,11 @@ class TestPearsonr:
         res = stats.pearsonr(x, y)
         r, p = res
         one = xp.asarray(1.)
-        xp_assert_equal(r, one)
-        xp_assert_equal(p, one)
+        xp_assert_equal(r, one, check_0d=False)
+        xp_assert_equal(p, one, check_0d=False)
         low, high = res.confidence_interval()
-        xp_assert_equal(low, -one)
-        xp_assert_equal(high, one)
+        xp_assert_equal(low, -one, check_0d=False)
+        xp_assert_equal(high, one, check_0d=False)
 
     def test_length_two_neg1(self, xp):
         # Inputs with length 2.
@@ -534,10 +542,10 @@ class TestPearsonr:
         r, p = res
         one = xp.asarray(1.)
         xp_assert_equal(r, -one)
-        xp_assert_equal(p, one)
+        xp_assert_equal(p, one, check_0d=False)
         low, high = res.confidence_interval()
         xp_assert_equal(low, -one)
-        xp_assert_equal(high, one)
+        xp_assert_equal(high, one, check_0d=False)
 
     # Expected values computed with R 3.6.2 cor.test, e.g.
     # options(digits=16)
@@ -571,8 +579,8 @@ class TestPearsonr:
         y = -x
         test_greater = stats.pearsonr(x, y, alternative='greater')
         test_less = stats.pearsonr(x, y, alternative='less')
-        xp_assert_close(test_greater.pvalue, xp.asarray(1.))
-        xp_assert_close(test_less.pvalue, xp.asarray(0.), atol=1e-20)
+        xp_assert_close(test_greater.pvalue, xp.asarray(1.), check_0d=False)
+        xp_assert_close(test_less.pvalue, xp.asarray(0.), atol=1e-20, check_0d=False)
 
     @skip_xp_backends('jax.numpy',
                       reasons=['JAX arrays do not support item assignment'],
@@ -589,7 +597,7 @@ class TestPearsonr:
         xp_assert_close(p, 0*one, atol=1e-7)
         low, high = res.confidence_interval()
         xp_assert_equal(low, -one)
-        xp_assert_equal(high, one)
+        xp_assert_equal(high, one, check_0d=False)
 
     @pytest.mark.skip_xp_backends(np_only=True)
     def test_input_validation(self):
@@ -721,10 +729,10 @@ class TestPearsonr:
             res = stats.pearsonr(x, y0, axis=1)
             ci = res.confidence_interval()
             nan = xp.asarray(xp.nan, dtype=xp.float64)
-            xp_assert_equal(res.statistic[0], nan)
-            xp_assert_equal(res.pvalue[0], nan)
-            xp_assert_equal(ci.low[0], nan)
-            xp_assert_equal(ci.high[0], nan)
+            xp_assert_equal(res.statistic[0], nan, check_0d=False)
+            xp_assert_equal(res.pvalue[0], nan, check_0d=False)
+            xp_assert_equal(ci.low[0], nan, check_0d=False)
+            xp_assert_equal(ci.high[0], nan, check_0d=False)
             assert not xp.any(xp.isnan(res.statistic[1:]))
             assert not xp.any(xp.isnan(res.pvalue[1:]))
             assert not xp.any(xp.isnan(ci.low[1:]))
@@ -756,13 +764,13 @@ class TestPearsonr:
         res = stats.pearsonr(xp.asarray(x), xp.asarray(y),
                              axis=axis, alternative=alternative)
         ref = stats.pearsonr(x, y, axis=axis, alternative=alternative)
-        xp_assert_close(res.statistic, xp.asarray(ref.statistic))
-        xp_assert_close(res.pvalue, xp.asarray(ref.pvalue))
+        xp_assert_close(res.statistic, xp.asarray(ref.statistic), check_0d=False)
+        xp_assert_close(res.pvalue, xp.asarray(ref.pvalue), check_0d=False)
 
         res_ci = res.confidence_interval()
         ref_ci = ref.confidence_interval()
-        xp_assert_close(res_ci.low, xp.asarray(ref_ci.low))
-        xp_assert_close(res_ci.high, xp.asarray(ref_ci.high))
+        xp_assert_close(res_ci.low, xp.asarray(ref_ci.low), check_0d=False)
+        xp_assert_close(res_ci.high, xp.asarray(ref_ci.high), check_0d=False)
 
 
 class TestFisherExact:
@@ -2747,14 +2755,14 @@ class TestSEM:
     def test_sem(self, xp):
         testcase = xp.asarray(self.testcase)
         y = stats.sem(testcase)
-        xp_assert_close(y, xp.asarray(0.6454972244))
+        xp_assert_close(y, xp.asarray(0.6454972244), check_0d=False)
         n = len(self.testcase)
         xp_assert_close(stats.sem(testcase, ddof=0) * (n/(n-2))**0.5,
                         stats.sem(testcase, ddof=2))
 
         x = xp.arange(10.)
         x = xp.where(x == 9, xp.asarray(xp.nan), x)
-        xp_assert_equal(stats.sem(x), xp.asarray(xp.nan))
+        xp_assert_equal(stats.sem(x), xp.asarray(xp.nan), check_0d=False)
 
     @skip_xp_backends(np_only=True,
                       reasons=['`nan_policy` only supports NumPy backend'])
@@ -3372,18 +3380,18 @@ class TestMoments:
         testcase = xp.asarray(self.testcase)
 
         y = stats.moment(xp.asarray(self.scalar_testcase))
-        xp_assert_close(y, xp.asarray(0.0))
+        xp_assert_close(y, xp.asarray(0.0), check_0d=False)
 
         y = stats.moment(testcase, 0)
-        xp_assert_close(y, xp.asarray(1.0))
+        xp_assert_close(y, xp.asarray(1.0), check_0d=False)
         y = stats.moment(testcase, 1)
-        xp_assert_close(y, xp.asarray(0.0))
+        xp_assert_close(y, xp.asarray(0.0), check_0d=False)
         y = stats.moment(testcase, 2)
-        xp_assert_close(y, xp.asarray(1.25))
+        xp_assert_close(y, xp.asarray(1.25), check_0d=False)
         y = stats.moment(testcase, 3)
-        xp_assert_close(y, xp.asarray(0.0))
+        xp_assert_close(y, xp.asarray(0.0), check_0d=False)
         y = stats.moment(testcase, 4)
-        xp_assert_close(y, xp.asarray(2.5625))
+        xp_assert_close(y, xp.asarray(2.5625), check_0d=False)
 
         # check array_like input for moment
         y = stats.moment(testcase, [1, 2, 3, 4])
@@ -3391,7 +3399,7 @@ class TestMoments:
 
         # check moment input consists only of integers
         y = stats.moment(testcase, 0.0)
-        xp_assert_close(y, xp.asarray(1.0))
+        xp_assert_close(y, xp.asarray(1.0), check_0d=False)
         message = 'All elements of `order` must be integral.'
         with pytest.raises(ValueError, match=message):
             stats.moment(testcase, 1.2)
@@ -3400,9 +3408,9 @@ class TestMoments:
 
         def test_cases():
             y = stats.moment(xp.asarray([]))
-            xp_assert_equal(y, xp.asarray(xp.nan))
+            xp_assert_equal(y, xp.asarray(xp.nan), check_0d=False)
             y = stats.moment(xp.asarray([], dtype=xp.float32))
-            xp_assert_equal(y, xp.asarray(xp.nan, dtype=xp.float32))
+            xp_assert_equal(y, xp.asarray(xp.nan, dtype=xp.float32), check_0d=False)
             y = stats.moment(xp.zeros((1, 0)), axis=0)
             xp_assert_equal(y, xp.empty((0,)))
             y = stats.moment(xp.asarray([[]]), axis=1)
@@ -3437,7 +3445,7 @@ class TestMoments:
         dtype = getattr(xp, dtype)
         x = xp.asarray(np.random.rand(5), dtype=dtype)
         y = stats.moment(x, order=order)
-        xp_assert_equal(y, xp.asarray(expect, dtype=dtype))
+        xp_assert_equal(y, xp.asarray(expect, dtype=dtype), check_0d=False)
 
         y = stats.moment(xp.broadcast_to(x, (6, 5)), axis=0, order=order)
         xp_assert_equal(y, xp.full((5,), expect, dtype=dtype))
@@ -3448,7 +3456,7 @@ class TestMoments:
 
         y = stats.moment(xp.broadcast_to(x, (1, 2, 3, 4, 5)), axis=None,
                          order=order)
-        xp_assert_equal(y, xp.full((), expect, dtype=dtype))
+        xp_assert_equal(y, xp.full((), expect, dtype=dtype), check_0d=False)
 
     @skip_xp_backends('jax.numpy',
                       reasons=["JAX arrays do not support item assignment"])
@@ -3518,7 +3526,7 @@ class TestSkew(SkewKurtosisTest):
                 sup.filter(RuntimeWarning, "Mean of empty slice")
                 sup.filter(RuntimeWarning, "invalid value encountered")
                 res = stat_fun(x)
-        xp_assert_equal(res, xp.asarray(xp.nan))
+        xp_assert_equal(res, xp.asarray(xp.nan), check_0d=False)
 
     @skip_xp_backends('jax.numpy',
                       reasons=["JAX arrays do not support item assignment"])
@@ -3527,15 +3535,15 @@ class TestSkew(SkewKurtosisTest):
     def test_skewness(self, xp):
         # Scalar test case
         y = stats.skew(xp.asarray(self.scalar_testcase))
-        xp_assert_close(y, xp.asarray(xp.nan))
+        xp_assert_close(y, xp.asarray(xp.nan), check_0d=False)
         # sum((testmathworks-mean(testmathworks,axis=0))**3,axis=0) /
         #     ((sqrt(var(testmathworks)*4/5))**3)/5
         y = stats.skew(xp.asarray(self.testmathworks))
-        xp_assert_close(y, xp.asarray(-0.29322304336607), atol=1e-10)
+        xp_assert_close(y, xp.asarray(-0.29322304336607), atol=1e-10, check_0d=False)
         y = stats.skew(xp.asarray(self.testmathworks), bias=0)
-        xp_assert_close(y, xp.asarray(-0.437111105023940), atol=1e-10)
+        xp_assert_close(y, xp.asarray(-0.437111105023940), atol=1e-10, check_0d=False)
         y = stats.skew(xp.asarray(self.testcase))
-        xp_assert_close(y, xp.asarray(0.0), atol=1e-10)
+        xp_assert_close(y, xp.asarray(0.0), atol=1e-10, check_0d=False)
 
     def test_nan_policy(self):
         # initially, nan_policy is ignored with alternative backends
@@ -3570,16 +3578,17 @@ class TestSkew(SkewKurtosisTest):
         # Skewness of a constant input should be NaN (gh-16061)
         with pytest.warns(RuntimeWarning, match="Precision loss occurred"):
             a = xp.asarray([-0.27829495]*10)  # xp.repeat not currently available
-            xp_assert_equal(stats.skew(a), xp.asarray(xp.nan))
-            xp_assert_equal(stats.skew(a*2.**50), xp.asarray(xp.nan))
-            xp_assert_equal(stats.skew(a/2.**50), xp.asarray(xp.nan))
-            xp_assert_equal(stats.skew(a, bias=False), xp.asarray(xp.nan))
+            xp_assert_equal(stats.skew(a), xp.asarray(xp.nan), check_0d=False)
+            xp_assert_equal(stats.skew(a*2.**50), xp.asarray(xp.nan), check_0d=False)
+            xp_assert_equal(stats.skew(a/2.**50), xp.asarray(xp.nan), check_0d=False)
+            xp_assert_equal(stats.skew(a, bias=False), xp.asarray(xp.nan),
+                            check_0d=False)
 
             # # similarly, from gh-11086:
             a = xp.asarray([14.3]*7)
-            xp_assert_equal(stats.skew(a), xp.asarray(xp.nan))
+            xp_assert_equal(stats.skew(a), xp.asarray(xp.nan), check_0d=False)
             a = 1. + xp.arange(-3., 4)*1e-16
-            xp_assert_equal(stats.skew(a), xp.asarray(xp.nan))
+            xp_assert_equal(stats.skew(a), xp.asarray(xp.nan), check_0d=False)
 
     @skip_xp_backends('jax.numpy',
                       reasons=["JAX arrays do not support item assignment"])
@@ -3649,20 +3658,20 @@ class TestKurtosis(SkewKurtosisTest):
         #   Set flags for axis = 0 and
         #   fisher=0 (Pearson's defn of kurtosis for compatibility with Matlab)
         y = stats.kurtosis(xp.asarray(self.testmathworks), 0, fisher=0, bias=1)
-        xp_assert_close(y, xp.asarray(2.1658856802973))
+        xp_assert_close(y, xp.asarray(2.1658856802973), check_0d=False)
 
         # Note that MATLAB has confusing docs for the following case
         #  kurtosis(x,0) gives an unbiased estimate of Pearson's skewness
         #  kurtosis(x)  gives a biased estimate of Fisher's skewness (Pearson-3)
         #  The MATLAB docs imply that both should give Fisher's
         y = stats.kurtosis(xp.asarray(self.testmathworks), fisher=0, bias=0)
-        xp_assert_close(y, xp.asarray(3.663542721189047))
+        xp_assert_close(y, xp.asarray(3.663542721189047), check_0d=False)
         y = stats.kurtosis(xp.asarray(self.testcase), 0, 0)
-        xp_assert_close(y, xp.asarray(1.64))
+        xp_assert_close(y, xp.asarray(1.64), check_0d=False)
 
         x = xp.arange(10.)
         x = xp.where(x == 8, xp.asarray(xp.nan), x)
-        xp_assert_equal(stats.kurtosis(x), xp.asarray(xp.nan))
+        xp_assert_equal(stats.kurtosis(x), xp.asarray(xp.nan), check_0d=False)
 
     def test_kurtosis_nan_policy(self):
         # nan_policy only for NumPy right now
@@ -3792,12 +3801,12 @@ class TestStudentTest:
             sup.filter(RuntimeWarning, "Degrees of freedom <= 0 for slice")
             a = xp.asarray(4.) if not is_numpy(xp) else 4.
             t, p = stats.ttest_1samp(a, 3.)
-        xp_assert_equal(t, xp.asarray(xp.nan))
-        xp_assert_equal(p, xp.asarray(xp.nan))
+        xp_assert_equal(t, xp.asarray(xp.nan), check_0d=False)
+        xp_assert_equal(p, xp.asarray(xp.nan), check_0d=False)
 
         t, p = stats.ttest_1samp(xp.asarray(self.X1), 0.)
-        xp_assert_close(t, xp.asarray(self.T1_0))
-        xp_assert_close(p, xp.asarray(self.P1_0))
+        xp_assert_close(t, xp.asarray(self.T1_0), check_0d=False)
+        xp_assert_close(p, xp.asarray(self.P1_0), check_0d=False)
 
         res = stats.ttest_1samp(xp.asarray(self.X1), 0.)
         attributes = ('statistic', 'pvalue')
@@ -3805,18 +3814,18 @@ class TestStudentTest:
 
         t, p = stats.ttest_1samp(xp.asarray(self.X2), 0.)
 
-        xp_assert_close(t, xp.asarray(self.T2_0))
-        xp_assert_close(p, xp.asarray(self.P2_0))
+        xp_assert_close(t, xp.asarray(self.T2_0), check_0d=False)
+        xp_assert_close(p, xp.asarray(self.P2_0), check_0d=False)
 
         t, p = stats.ttest_1samp(xp.asarray(self.X1), 1.)
 
-        xp_assert_close(t, xp.asarray(self.T1_1))
-        xp_assert_close(p, xp.asarray(self.P1_1))
+        xp_assert_close(t, xp.asarray(self.T1_1), check_0d=False)
+        xp_assert_close(p, xp.asarray(self.P1_1), check_0d=False)
 
         t, p = stats.ttest_1samp(xp.asarray(self.X1), 2.)
 
-        xp_assert_close(t, xp.asarray(self.T1_2))
-        xp_assert_close(p, xp.asarray(self.P1_2))
+        xp_assert_close(t, xp.asarray(self.T1_2), check_0d=False)
+        xp_assert_close(p, xp.asarray(self.P1_2), check_0d=False)
 
     def test_onesample_nan_policy(self, xp):
         # check nan policy
@@ -3844,12 +3853,12 @@ class TestStudentTest:
             stats.ttest_1samp(xp.asarray(self.X1), 0., alternative="error")
 
         t, p = stats.ttest_1samp(xp.asarray(self.X1), 1., alternative="less")
-        xp_assert_close(p, xp.asarray(self.P1_1_l))
-        xp_assert_close(t, xp.asarray(self.T1_1))
+        xp_assert_close(p, xp.asarray(self.P1_1_l), check_0d=False)
+        xp_assert_close(t, xp.asarray(self.T1_1), check_0d=False)
 
         t, p = stats.ttest_1samp(xp.asarray(self.X1), 1., alternative="greater")
-        xp_assert_close(p, xp.asarray(self.P1_1_g))
-        xp_assert_close(t, xp.asarray(self.T1_1))
+        xp_assert_close(p, xp.asarray(self.P1_1_g), check_0d=False)
+        xp_assert_close(t, xp.asarray(self.T1_1), check_0d=False)
 
     @pytest.mark.parametrize("alternative", ['two-sided', 'less', 'greater'])
     def test_1samp_ci_1d(self, xp, alternative):
@@ -3872,9 +3881,9 @@ class TestStudentTest:
                'less': [-np.inf, 2.545707203262837]}
         res = stats.ttest_1samp(x, popmean=popmean, alternative=alternative)
         ci = res.confidence_interval(confidence_level=0.85)
-        xp_assert_close(ci.low, xp.asarray(ref[alternative][0]))
-        xp_assert_close(ci.high, xp.asarray(ref[alternative][1]))
-        xp_assert_equal(res.df, xp.asarray(n-1))
+        xp_assert_close(ci.low, xp.asarray(ref[alternative][0]), check_0d=False)
+        xp_assert_close(ci.high, xp.asarray(ref[alternative][1]), check_0d=False)
+        xp_assert_equal(res.df, xp.asarray(n-1), check_0d=False)
 
     def test_1samp_ci_iv(self, xp):
         # test `confidence_interval` method input validation
@@ -4106,18 +4115,20 @@ class TestPowerDivergence:
             stat, p = stats.power_divergence(
                                 f_obs=f_obs, f_exp=f_exp, ddof=ddof,
                                 axis=axis, lambda_=lambda_)
-            xp_assert_close(stat, xp.asarray(expected_stat, dtype=dtype))
+            xp_assert_close(stat, xp.asarray(expected_stat, dtype=dtype),
+                            check_0d=False)
 
             if lambda_ == 1 or lambda_ == "pearson":
                 # Also test stats.chisquare.
                 stat, p = stats.chisquare(f_obs=f_obs, f_exp=f_exp, ddof=ddof,
                                           axis=axis)
-                xp_assert_close(stat, xp.asarray(expected_stat, dtype=dtype))
+                xp_assert_close(stat, xp.asarray(expected_stat, dtype=dtype),
+                                check_0d=False)
 
         ddof = np.asarray(ddof)
         expected_p = stats.distributions.chi2.sf(expected_stat,
                                                  num_obs - 1 - ddof)
-        xp_assert_close(p, xp.asarray(expected_p, dtype=dtype))
+        xp_assert_close(p, xp.asarray(expected_p, dtype=dtype), check_0d=False)
 
     @pytest.mark.parametrize('case', power_div_1d_cases)
     @pytest.mark.parametrize('lambda_stat',
@@ -4304,7 +4315,8 @@ class TestChisquare:
         exp = xp.asarray([n // 2, n // 2], dtype=dtype)
         res = stats.chisquare(obs, exp)
         stat, p = res
-        xp_assert_close(stat, xp.asarray(n, dtype=xp.asarray(1.).dtype), rtol=1e-13)
+        xp_assert_close(stat, xp.asarray(n, dtype=xp.asarray(1.).dtype), rtol=1e-13,
+                        check_0d=False)
         # check that attributes are identical to unpacked outputs - see gh-18368
         xp_assert_equal(res.statistic, stat)
         xp_assert_equal(res.pvalue, p)
@@ -5133,13 +5145,13 @@ def test_ttest_ind(xp):
 
     res = stats.ttest_ind(rvs1, rvs2, axis=0)
     t, p = res  # check that result object can be unpacked
-    xp_assert_close(t, tr)
-    xp_assert_close(p, pr)
+    xp_assert_close(t, tr, check_0d=False)
+    xp_assert_close(p, pr, check_0d=False)
 
     res = stats.ttest_ind_from_stats(*_desc_stats(rvs1, rvs2))
     t, p = res  # check that result object can be unpacked
-    xp_assert_close(t, tr)
-    xp_assert_close(p, pr)
+    xp_assert_close(t, tr, check_0d=False)
+    xp_assert_close(p, pr, check_0d=False)
 
     res = stats.ttest_ind(rvs1_2D.T, rvs2_2D.T, axis=0)
     xp_assert_close(res.statistic, tr_2D)
@@ -5171,11 +5183,11 @@ def test_ttest_ind(xp):
 
     t, p = stats.ttest_ind(rvs1, rvs2, alternative="less")
     xp_assert_close(p, 1 - (pr/2))
-    xp_assert_close(t, tr)
+    xp_assert_close(t, tr, check_0d=False)
 
     t, p = stats.ttest_ind(rvs1, rvs2, alternative="greater")
     xp_assert_close(p, pr/2)
-    xp_assert_close(t, tr)
+    xp_assert_close(t, tr, check_0d=False)
 
     # Check that ttest_ind_from_stats agrees with ttest_ind
     res1 = stats.ttest_ind(rvs1_2D.T, rvs2_2D.T, axis=0, alternative="less")
@@ -5195,12 +5207,12 @@ def test_ttest_ind(xp):
     rvs1 = xp.where(xp.arange(rvs1.shape[0]) == 0, NaN, rvs1)
 
     res = stats.ttest_ind(rvs1, rvs2, axis=0)
-    xp_assert_equal(res.statistic, NaN)
-    xp_assert_equal(res.pvalue, NaN)
+    xp_assert_equal(res.statistic, NaN, check_0d=False)
+    xp_assert_equal(res.pvalue, NaN, check_0d=False)
 
     res = stats.ttest_ind_from_stats(*_desc_stats(rvs1, rvs2))
-    xp_assert_equal(res.statistic, NaN)
-    xp_assert_equal(res.pvalue, NaN)
+    xp_assert_equal(res.statistic, NaN, check_0d=False)
+    xp_assert_equal(res.pvalue, NaN, check_0d=False)
 
 
 def test_ttest_ind_nan_policy():
@@ -5815,14 +5827,14 @@ class Test_ttest_CI:
         statistic, df, pvalue, low, high = ref
 
         rtol = 1e-7  # only 7 digits in reference
-        xp_assert_close(res.statistic, xp.asarray(statistic), rtol=rtol)
-        xp_assert_close(res.df, xp.asarray(df), rtol=rtol)
-        xp_assert_close(res.pvalue, xp.asarray(pvalue), rtol=rtol)
+        xp_assert_close(res.statistic, xp.asarray(statistic), rtol=rtol, check_0d=False)
+        xp_assert_close(res.df, xp.asarray(df), rtol=rtol, check_0d=False)
+        xp_assert_close(res.pvalue, xp.asarray(pvalue), rtol=rtol, check_0d=False)
 
         if not equal_var:  # CI not available when `equal_var is True`
             ci = res.confidence_interval(0.9)
-            xp_assert_close(ci.low, xp.asarray(low), rtol=rtol)
-            xp_assert_close(ci.high, xp.asarray(high), rtol=rtol)
+            xp_assert_close(ci.low, xp.asarray(low), rtol=rtol, check_0d=False)
+            xp_assert_close(ci.high, xp.asarray(high), rtol=rtol, check_0d=False)
 
 
 def test__broadcast_concatenate():
@@ -5860,24 +5872,24 @@ def test_ttest_ind_with_uneq_var(xp):
     tr = xp.asarray(-0.686495127355726265)
 
     t, p = stats.ttest_ind(a, b, equal_var=False)
-    xp_assert_close(t, tr)
-    xp_assert_close(p, pr)
+    xp_assert_close(t, tr, check_0d=False)
+    xp_assert_close(p, pr, check_0d=False)
 
     t, p = stats.ttest_ind_from_stats(*_desc_stats(a, b), equal_var=False)
-    xp_assert_close(t, tr)
-    xp_assert_close(p, pr)
+    xp_assert_close(t, tr, check_0d=False)
+    xp_assert_close(p, pr, check_0d=False)
 
     a = xp.asarray([1., 2., 3., 4.])
     pr = xp.asarray(0.84354139131608252)
     tr = xp.asarray(-0.210866331595072315)
 
     t, p = stats.ttest_ind(a, b, equal_var=False)
-    xp_assert_close(t, tr)
-    xp_assert_close(p, pr)
+    xp_assert_close(t, tr, check_0d=False)
+    xp_assert_close(p, pr, check_0d=False)
 
     t, p = stats.ttest_ind_from_stats(*_desc_stats(a, b), equal_var=False)
-    xp_assert_close(t, tr)
-    xp_assert_close(p, pr)
+    xp_assert_close(t, tr, check_0d=False)
+    xp_assert_close(p, pr, check_0d=False)
 
     # regression test
     tr = xp.asarray(1.0912746897927283)
@@ -5894,20 +5906,20 @@ def test_ttest_ind_with_uneq_var(xp):
     rvs2_2D = xp.stack([rvs2, rvs1])
 
     t, p = stats.ttest_ind(rvs1, rvs2, axis=0, equal_var=False)
-    xp_assert_close(t, tr)
-    xp_assert_close(p, pr)
+    xp_assert_close(t, tr, check_0d=False)
+    xp_assert_close(p, pr, check_0d=False)
 
     t, p = stats.ttest_ind_from_stats(*_desc_stats(rvs1, rvs2), equal_var=False)
-    xp_assert_close(t, tr)
-    xp_assert_close(p, pr)
+    xp_assert_close(t, tr, check_0d=False)
+    xp_assert_close(p, pr, check_0d=False)
 
     t, p = stats.ttest_ind(rvs1, rvs3, axis=0, equal_var=False)
-    xp_assert_close(t, tr_uneq_n)
-    xp_assert_close(p, pr_uneq_n)
+    xp_assert_close(t, tr_uneq_n, check_0d=False)
+    xp_assert_close(p, pr_uneq_n, check_0d=False)
 
     t, p = stats.ttest_ind_from_stats(*_desc_stats(rvs1, rvs3), equal_var=False)
-    xp_assert_close(t, tr_uneq_n)
-    xp_assert_close(p, pr_uneq_n)
+    xp_assert_close(t, tr_uneq_n, check_0d=False)
+    xp_assert_close(p, pr_uneq_n, check_0d=False)
 
     res = stats.ttest_ind(rvs1_2D.T, rvs2_2D.T, axis=0, equal_var=False)
     xp_assert_close(res.statistic, tr_2D)
@@ -5938,13 +5950,13 @@ def test_ttest_ind_zero_division(xp):
     y = xp.ones(3)
     with pytest.warns(RuntimeWarning, match="Precision loss occurred"):
         t, p = stats.ttest_ind(x, y, equal_var=False)
-    xp_assert_equal(t, xp.asarray(-xp.inf))
-    xp_assert_equal(p, xp.asarray(0.))
+    xp_assert_equal(t, xp.asarray(-xp.inf), check_0d=False)
+    xp_assert_equal(p, xp.asarray(0.), check_0d=False)
 
     with np.errstate(all='ignore'):
         t, p = stats.ttest_ind(x, x, equal_var=False)
-        xp_assert_equal(t, xp.asarray(xp.nan))
-        xp_assert_equal(p, xp.asarray(xp.nan))
+        xp_assert_equal(t, xp.asarray(xp.nan), check_0d=False)
+        xp_assert_equal(p, xp.asarray(xp.nan), check_0d=False)
 
         # check that nan in input array result in nan output
         anan = xp.asarray([[1, xp.nan], [-1, 1]])
@@ -6061,8 +6073,8 @@ def test_ttest_ind_from_stats_inputs_zero(xp):
     six = xp.asarray(6.)
     NaN = xp.asarray(xp.nan)
     res = stats.ttest_ind_from_stats(zero, zero, six, zero, zero, six, equal_var=False)
-    xp_assert_equal(res.statistic, NaN)
-    xp_assert_equal(res.pvalue, NaN)
+    xp_assert_equal(res.statistic, NaN, check_0d=False)
+    xp_assert_equal(res.pvalue, NaN, check_0d=False)
 
 
 @array_api_compatible
@@ -6093,8 +6105,9 @@ def test_ttest_uniform_pvalues(xp):
 
     res = stats.ttest_ind(x, y, equal_var=True)
     rtol = 1e-6 if is_torch(xp) else 1e-10
-    xp_assert_close(res.statistic, xp.asarray(1.0394023007754), rtol=rtol)
-    xp_assert_close(res.pvalue, xp.asarray(0.407779907736), rtol=rtol)
+    xp_assert_close(res.statistic, xp.asarray(1.0394023007754), rtol=rtol,
+                    check_0d=False)
+    xp_assert_close(res.pvalue, xp.asarray(0.407779907736), rtol=rtol, check_0d=False)
 
 
 def _convert_pvalue_alternative(t, p, alt, xp):
@@ -6239,12 +6252,12 @@ class TestDescribe:
             sup.filter(RuntimeWarning, "Degrees of freedom <= 0 for slice")
             n, mm, m, v, sk, kurt = stats.describe(xp.asarray(4.)[()])
         assert n == 1
-        xp_assert_equal(mm[0], xp.asarray(4.0))
-        xp_assert_equal(mm[1], xp.asarray(4.0))
-        xp_assert_equal(m, xp.asarray(4.0))
-        xp_assert_equal(v ,xp.asarray(xp.nan))
-        xp_assert_equal(sk, xp.asarray(xp.nan))
-        xp_assert_equal(kurt, xp.asarray(xp.nan))
+        xp_assert_equal(mm[0], xp.asarray(4.0), check_0d=False)
+        xp_assert_equal(mm[1], xp.asarray(4.0), check_0d=False)
+        xp_assert_equal(m, xp.asarray(4.0), check_0d=False)
+        xp_assert_equal(v ,xp.asarray(xp.nan), check_0d=False)
+        xp_assert_equal(sk, xp.asarray(xp.nan), check_0d=False)
+        xp_assert_equal(kurt, xp.asarray(xp.nan), check_0d=False)
 
     @array_api_compatible
     def test_describe_numbers(self, xp):
@@ -6364,12 +6377,12 @@ class TestDescribe:
         n, mm, m, v, sk, kurt = stats.describe(x, axis=None)
 
         assert n == nc
-        xp_assert_equal(mm[0], mmc[0])
-        xp_assert_equal(mm[1], mmc[1])
-        xp_assert_close(m, mc)
-        xp_assert_close(v, vc)
-        xp_assert_close(sk, skc)
-        xp_assert_close(kurt, kurtc)
+        xp_assert_equal(mm[0], mmc[0], check_0d=False)
+        xp_assert_equal(mm[1], mmc[1], check_0d=False)
+        xp_assert_close(m, mc, check_0d=False)
+        xp_assert_close(v, vc, check_0d=False)
+        xp_assert_close(sk, skc, check_0d=False)
+        xp_assert_close(kurt, kurtc, check_0d=False)
 
     @array_api_compatible
     def test_describe_empty(self, xp):
@@ -6388,8 +6401,8 @@ class NormalityTests:
             with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
                 res = test_fun(x)
                 NaN = xp.asarray(xp.nan)
-                xp_assert_equal(res.statistic, NaN)
-                xp_assert_equal(res.pvalue, NaN)
+                xp_assert_equal(res.statistic, NaN, check_0d=False)
+                xp_assert_equal(res.pvalue, NaN, check_0d=False)
         else:
             message = "...requires at least..."
             with pytest.raises(ValueError, match=message):
@@ -6433,8 +6446,8 @@ class NormalityTests:
         x = xp.where(x == 29, NaN, x)
         with np.errstate(invalid="ignore"):
             res = test_fun(x)
-            xp_assert_equal(res.statistic, NaN)
-            xp_assert_equal(res.pvalue, NaN)
+            xp_assert_equal(res.statistic, NaN, check_0d=False)
+            xp_assert_equal(res.pvalue, NaN, check_0d=False)
 
 class TestSkewTest(NormalityTests):
     test_name = 'skewtest'
@@ -6445,7 +6458,8 @@ class TestSkewTest(NormalityTests):
         a1 = stats.skewnorm.rvs(a=1, size=10000, random_state=123)
         a1_xp = xp.asarray(a1)
         pval = stats.skewtest(a1_xp, alternative='greater').pvalue
-        xp_assert_close(pval, xp.asarray(0.0, dtype=a1_xp.dtype), atol=9e-6)
+        xp_assert_close(pval, xp.asarray(0.0, dtype=a1_xp.dtype), atol=9e-6,
+                        check_0d=False)
 
     def test_skewtest_too_few_observations(self, xp):
         # Regression test for ticket #1492.
@@ -6457,8 +6471,8 @@ class TestSkewTest(NormalityTests):
             with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
                 res = stats.skewtest(x)
                 NaN = xp.asarray(xp.nan)
-                xp_assert_equal(res.statistic, NaN)
-                xp_assert_equal(res.pvalue, NaN)
+                xp_assert_equal(res.statistic, NaN, check_0d=False)
+                xp_assert_equal(res.pvalue, NaN, check_0d=False)
         else:
             message = "`skewtest` requires at least 8 observations"
             with pytest.raises(ValueError, match=message):
@@ -6474,7 +6488,8 @@ class TestKurtosisTest(NormalityTests):
         a2 = stats.laplace.rvs(size=10000, random_state=123)
         a2_xp = xp.asarray(a2)
         pval = stats.kurtosistest(a2_xp, alternative='greater').pvalue
-        xp_assert_close(pval, xp.asarray(0.0, dtype=a2_xp.dtype), atol=1e-15)
+        xp_assert_close(pval, xp.asarray(0.0, dtype=a2_xp.dtype), atol=1e-15,
+                        check_0d=False)
 
     def test_gh9033_regression(self, xp):
         # regression test for issue gh-9033: x clearly non-normal but power of
@@ -6501,8 +6516,8 @@ class TestKurtosisTest(NormalityTests):
             with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
                 res = stats.skewtest(x)
                 NaN = xp.asarray(xp.nan)
-                xp_assert_equal(res.statistic, NaN)
-                xp_assert_equal(res.pvalue, NaN)
+                xp_assert_equal(res.statistic, NaN, check_0d=False)
+                xp_assert_equal(res.pvalue, NaN, check_0d=False)
         else:
             message = "`kurtosistest` requires at least 5 observations"
             with pytest.raises(ValueError, match=message):
@@ -6572,8 +6587,8 @@ class TestJarqueBera:
             with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
                 res = stats.jarque_bera(x)
             NaN = xp.asarray(xp.nan)
-            xp_assert_equal(res.statistic, NaN)
-            xp_assert_equal(res.pvalue, NaN)
+            xp_assert_equal(res.statistic, NaN, check_0d=False)
+            xp_assert_equal(res.pvalue, NaN, check_0d=False)
         else:
             message = "At least one observation is required."
             with pytest.raises(ValueError, match=message):
@@ -6793,7 +6808,7 @@ def check_equal_gmean(array_like, desired, *, xp, axis=None, dtype=None, rtol=1e
     desired = xp.asarray(desired, dtype=dtype)
     weights = xp.asarray(weights, dtype=dtype) if weights is not None else weights
     x = stats.gmean(array_like, axis=axis, dtype=dtype, weights=weights)
-    xp_assert_close(x, desired, rtol=rtol)
+    xp_assert_close(x, desired, rtol=rtol, check_0d=False)
 
 
 def check_equal_hmean(array_like, desired, axis=None, dtype=None, rtol=1e-7,
@@ -7015,7 +7030,7 @@ class TestGMean:
         # the input to an xp-array before calling `gmean`. This time, check
         # that the function still accepts the lists of ints.
         res = stats.gmean(a, weights=weights)
-        xp_assert_close(res, np.asarray(desired), rtol=1e-5)
+        xp_assert_close(res, np.asarray(desired), rtol=1e-5, check_0d=False)
 
     def test_weights_1d_array(self, xp):
         # Desired result from:
@@ -8028,8 +8043,8 @@ class TestCombinePvalues:
     def test_reference_values(self, xp, method, expected_statistic, expected_pvalue):
         x = [.01, .2, .3]
         res = stats.combine_pvalues(xp.asarray(x), method=method)
-        xp_assert_close(res.statistic, xp.asarray(expected_statistic))
-        xp_assert_close(res.pvalue, xp.asarray(expected_pvalue))
+        xp_assert_close(res.statistic, xp.asarray(expected_statistic), check_0d=False)
+        xp_assert_close(res.pvalue, xp.asarray(expected_pvalue), check_0d=False)
 
     @pytest.mark.parametrize(
         # Reference values computed using R `metap` `sumz`:
@@ -8044,8 +8059,8 @@ class TestCombinePvalues:
     def test_weighted_stouffer(self, xp, weights, expected_statistic, expected_pvalue):
         x = xp.asarray([.01, .2, .3])
         res = stats.combine_pvalues(x, method='stouffer', weights=xp.asarray(weights))
-        xp_assert_close(res.statistic, xp.asarray(expected_statistic))
-        xp_assert_close(res.pvalue, xp.asarray(expected_pvalue))
+        xp_assert_close(res.statistic, xp.asarray(expected_statistic), check_0d=False)
+        xp_assert_close(res.pvalue, xp.asarray(expected_pvalue), check_0d=False)
 
     methods = ["fisher", "pearson", "tippett", "stouffer", "mudholkar_george"]
 
@@ -9181,7 +9196,7 @@ class TestXP_Mean:
         res = _xp_mean(x_xp, weights=w_xp, axis=axis, keepdims=keepdims)
         ref = np.average(x, weights=w, axis=axis, keepdims=keepdims)
 
-        xp_assert_close(res, xp.asarray(ref))
+        xp_assert_close(res, xp.asarray(ref), check_0d=False)
 
     def test_non_broadcastable(self, xp):
         # non-broadcastable x and weights
@@ -9195,13 +9210,13 @@ class TestXP_Mean:
         weights = xp.asarray([-1., 0., 1.])
 
         res = _xp_mean(xp.asarray([1., 1., 1.]), weights=weights)
-        xp_assert_close(res, xp.asarray(xp.nan))
+        xp_assert_close(res, xp.asarray(xp.nan), check_0d=False)
 
         res = _xp_mean(xp.asarray([2., 1., 1.]), weights=weights)
-        xp_assert_close(res, xp.asarray(-np.inf))
+        xp_assert_close(res, xp.asarray(-np.inf), check_0d=False)
 
         res = _xp_mean(xp.asarray([1., 1., 2.]), weights=weights)
-        xp_assert_close(res, xp.asarray(np.inf))
+        xp_assert_close(res, xp.asarray(np.inf), check_0d=False)
 
     def test_nan_policy(self, xp):
         x = xp.arange(10.)
@@ -9217,8 +9232,8 @@ class TestXP_Mean:
         res1 = _xp_mean(x)
         res2 = _xp_mean(x, nan_policy='propagate')
         ref = xp.asarray(xp.nan)
-        xp_assert_equal(res1, ref)
-        xp_assert_equal(res2, ref)
+        xp_assert_equal(res1, ref, check_0d=False)
+        xp_assert_equal(res2, ref, check_0d=False)
 
         # `nan_policy='omit'` omits NaNs in `x`
         res = _xp_mean(x, nan_policy='omit')
@@ -9237,14 +9252,14 @@ class TestXP_Mean:
         with pytest.warns(RuntimeWarning, match=message):
             res = _xp_mean(x * np.nan, nan_policy='omit')
             ref = xp.asarray(xp.nan)
-            xp_assert_equal(res, ref)
+            xp_assert_equal(res, ref, check_0d=False)
 
     def test_empty(self, xp):
         message = 'One or more sample arguments is too small...'
         with pytest.warns(SmallSampleWarning, match=message):
             res = _xp_mean(xp.asarray([]))
             ref = xp.asarray(xp.nan)
-            xp_assert_equal(res, ref)
+            xp_assert_equal(res, ref, check_0d=False)
 
         message = "All axis-slices of one or more sample arguments..."
         with pytest.warns(SmallSampleWarning, match=message):
@@ -9266,12 +9281,12 @@ class TestXP_Mean:
             res = _xp_mean(x_xp)
             ref = np.mean(x_np)
             np.testing.assert_equal(ref, np.inf)
-            xp_assert_close(res, xp.asarray(ref))
+            xp_assert_close(res, xp.asarray(ref), check_0d=False)
 
         # correct result is returned if `float64` is used
         res = _xp_mean(x_xp, dtype=xp.float64)
         ref = xp.asarray(np.mean(np.asarray(x_np, dtype=np.float64)))
-        xp_assert_close(res, ref)
+        xp_assert_close(res, ref, check_0d=False)
 
     def test_integer(self, xp):
         # integer inputs are converted to the appropriate float

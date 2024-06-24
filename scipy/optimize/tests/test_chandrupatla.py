@@ -493,7 +493,7 @@ class TestChandrupatla(TestScalarRootFinders):
         a, b = xp.asarray(-5.), xp.asarray(5.)
         res = _chandrupatla_root(self.f, a, b, args=(xp.asarray(p),))
         ref = xp.asarray(stats.norm().ppf(p), dtype=xp.asarray(p).dtype)
-        xp_assert_close(res.x, ref)
+        xp_assert_close(res.x, ref, check_0d=False)
 
     @pytest.mark.parametrize('shape', [tuple(), (12,), (3, 4), (3, 2, 2)])
     def test_vectorization(self, shape, xp):
@@ -520,25 +520,25 @@ class TestChandrupatla(TestScalarRootFinders):
 
         ref_x = [ref.x for ref in refs]
         ref_x = xp.reshape(xp.asarray(ref_x, dtype=dtype), shape)
-        xp_assert_close(res.x, ref_x)
+        xp_assert_close(res.x, ref_x, check_0d=False)
 
         ref_fun = [ref.fun for ref in refs]
         ref_fun = xp.reshape(xp.asarray(ref_fun, dtype=dtype), shape)
-        xp_assert_close(res.fun, ref_fun, atol=1e-15)
-        xp_assert_equal(res.fun, self.f(res.x, *args_xp))
+        xp_assert_close(res.fun, ref_fun, atol=1e-15, check_0d=False)
+        xp_assert_equal(res.fun, self.f(res.x, *args_xp), check_0d=False)
 
         ref_success = [bool(ref.success) for ref in refs]
         ref_success = xp.reshape(xp.asarray(ref_success, dtype=xp_test.bool), shape)
-        xp_assert_equal(res.success, ref_success)
+        xp_assert_equal(res.success, ref_success, check_0d=False)
 
         ref_flag = [ref.status for ref in refs]
         ref_flag = xp.reshape(xp.asarray(ref_flag, dtype=xp.int32), shape)
-        xp_assert_equal(res.status, ref_flag)
+        xp_assert_equal(res.status, ref_flag, check_0d=False)
 
         ref_nfev = [ref.nfev for ref in refs]
         ref_nfev = xp.reshape(xp.asarray(ref_nfev, dtype=xp.int32), shape)
         if is_numpy(xp):
-            xp_assert_equal(res.nfev, ref_nfev)
+            xp_assert_equal(res.nfev, ref_nfev, check_0d=False)
             assert xp.max(res.nfev) == f.f_evals
         else:  # different backend may lead to different nfev
             assert res.nfev.shape == shape
@@ -547,7 +547,7 @@ class TestChandrupatla(TestScalarRootFinders):
         ref_nit = [ref.nit for ref in refs]
         ref_nit = xp.reshape(xp.asarray(ref_nit, dtype=xp.int32), shape)
         if is_numpy(xp):
-            xp_assert_equal(res.nit, ref_nit)
+            xp_assert_equal(res.nit, ref_nit, check_0d=False)
             assert xp.max(res.nit) == f.f_evals-2
         else:
             assert res.nit.shape == shape
@@ -555,13 +555,13 @@ class TestChandrupatla(TestScalarRootFinders):
 
         ref_xl = [ref.xl for ref in refs]
         ref_xl = xp.reshape(xp.asarray(ref_xl, dtype=dtype), shape)
-        xp_assert_close(res.xl, ref_xl)
+        xp_assert_close(res.xl, ref_xl, check_0d=False)
 
         ref_xr = [ref.xr for ref in refs]
         ref_xr = xp.reshape(xp.asarray(ref_xr, dtype=dtype), shape)
-        xp_assert_close(res.xr, ref_xr)
+        xp_assert_close(res.xr, ref_xr, check_0d=False)
 
-        xp_assert_less(res.xl, res.xr)
+        xp_assert_less(res.xl, res.xr, check_0d=False)
         finite = xp.isfinite(res.x)
         assert xp.all((res.x[finite] == res.xl[finite])
                       | (res.x[finite] == res.xr[finite]))
@@ -571,13 +571,13 @@ class TestChandrupatla(TestScalarRootFinders):
 
         ref_fl = [ref.fl for ref in refs]
         ref_fl = xp.reshape(xp.asarray(ref_fl, dtype=dtype), shape)
-        xp_assert_close(res.fl, ref_fl, atol=atol)
-        xp_assert_equal(res.fl, self.f(res.xl, *args_xp))
+        xp_assert_close(res.fl, ref_fl, atol=atol, check_0d=False)
+        xp_assert_equal(res.fl, self.f(res.xl, *args_xp), check_0d=False)
 
         ref_fr = [ref.fr for ref in refs]
         ref_fr = xp.reshape(xp.asarray(ref_fr, dtype=dtype), shape)
-        xp_assert_close(res.fr, ref_fr, atol=atol)
-        xp_assert_equal(res.fr, self.f(res.xr, *args_xp))
+        xp_assert_close(res.fr, ref_fr, atol=atol, check_0d=False)
+        xp_assert_equal(res.fr, self.f(res.xr, *args_xp), check_0d=False)
 
         assert xp.all(xp.abs(res.fun[finite]) ==
                       xp_minimum(xp.abs(res.fl[finite]),
@@ -710,8 +710,10 @@ class TestChandrupatla(TestScalarRootFinders):
         # (except for `status`)
         for key in res.keys():
             if key == 'status':
-                xp_assert_equal(res[key], xp.asarray(eim._ECONVERR, dtype=xp.int32))
-                xp_assert_equal(res2[key], xp.asarray(eim._ECALLBACK, dtype=xp.int32))
+                xp_assert_equal(res[key], xp.asarray(eim._ECONVERR, dtype=xp.int32),
+                                check_0d=False)
+                xp_assert_equal(res2[key], xp.asarray(eim._ECALLBACK, dtype=xp.int32),
+                                check_0d=False)
             elif key.startswith('_'):
                 continue
             else:
@@ -733,8 +735,8 @@ class TestChandrupatla(TestScalarRootFinders):
 
         res = _chandrupatla_root(f, *bracket, xrtol=4e-10, xatol=1e-5)
         xp_assert_close(res.fun, xp.asarray(f(root), dtype=xp.float64),
-                        rtol=1e-8, atol=2e-3)
-        xp_assert_equal(res.nfev, xp.asarray(nfeval, dtype=xp.int32))
+                        rtol=1e-8, atol=2e-3, check_0d=False)
+        xp_assert_equal(res.nfev, xp.asarray(nfeval, dtype=xp.int32), check_0d=False)
 
     @pytest.mark.parametrize("root", (0.622, [0.622, 0.623]))
     @pytest.mark.parametrize("dtype", ('float16', 'float32', 'float64'))
@@ -837,7 +839,7 @@ class TestChandrupatla(TestScalarRootFinders):
         # note that all inputs are integer type; result is automatically default float
         res = _chandrupatla_root(f, xp.asarray(-7), xp.asarray(5))
         assert res.success
-        xp_assert_close(res.x, xp.asarray(1.))
+        xp_assert_close(res.x, xp.asarray(1.), check_0d=False)
 
         # Test that if both ends of bracket equal root, algorithm reports
         # convergence.
@@ -856,7 +858,7 @@ class TestChandrupatla(TestScalarRootFinders):
             inf = xp.asarray(xp.inf)
             res = _chandrupatla_root(f, inf, inf)
         assert res.success
-        xp_assert_equal(res.x, xp.asarray(np.inf))
+        xp_assert_equal(res.x, xp.asarray(np.inf), check_0d=False)
 
         # Test maxiter = 0. Should do nothing to bracket.
         def f(x):
@@ -864,32 +866,32 @@ class TestChandrupatla(TestScalarRootFinders):
 
         a, b = xp.asarray(-3.), xp.asarray(5.)
         res = _chandrupatla_root(f, a, b, maxiter=0)
-        xp_assert_equal(res.success, xp.asarray(False))
-        xp_assert_equal(res.status, xp.asarray(-2, dtype=xp.int32))
-        xp_assert_equal(res.nit, xp.asarray(0, dtype=xp.int32))
-        xp_assert_equal(res.nfev, xp.asarray(2, dtype=xp.int32))
-        xp_assert_equal(res.xl, a)
-        xp_assert_equal(res.xr, b)
+        xp_assert_equal(res.success, xp.asarray(False), check_0d=False)
+        xp_assert_equal(res.status, xp.asarray(-2, dtype=xp.int32), check_0d=False)
+        xp_assert_equal(res.nit, xp.asarray(0, dtype=xp.int32), check_0d=False)
+        xp_assert_equal(res.nfev, xp.asarray(2, dtype=xp.int32), check_0d=False)
+        xp_assert_equal(res.xl, a, check_0d=False)
+        xp_assert_equal(res.xr, b, check_0d=False)
         # The `x` attribute is the one with the smaller function value
-        xp_assert_equal(res.x, a)
+        xp_assert_equal(res.x, a, check_0d=False)
         # Reverse bracket; check that this is still true
         res = _chandrupatla_root(f, -b, -a, maxiter=0)
-        xp_assert_equal(res.x, -a)
+        xp_assert_equal(res.x, -a, check_0d=False)
 
         # Test maxiter = 1
         res = _chandrupatla_root(f, a, b, maxiter=1)
-        xp_assert_equal(res.success, xp.asarray(True))
-        xp_assert_equal(res.status, xp.asarray(0, dtype=xp.int32))
-        xp_assert_equal(res.nit, xp.asarray(1, dtype=xp.int32))
-        xp_assert_equal(res.nfev, xp.asarray(3, dtype=xp.int32))
-        xp_assert_close(res.x, xp.asarray(1.))
+        xp_assert_equal(res.success, xp.asarray(True), check_0d=False)
+        xp_assert_equal(res.status, xp.asarray(0, dtype=xp.int32), check_0d=False)
+        xp_assert_equal(res.nit, xp.asarray(1, dtype=xp.int32), check_0d=False)
+        xp_assert_equal(res.nfev, xp.asarray(3, dtype=xp.int32), check_0d=False)
+        xp_assert_close(res.x, xp.asarray(1.), check_0d=False)
 
         # Test scalar `args` (not in tuple)
         def f(x, c):
             return c*x - 1
 
         res = _chandrupatla_root(f, xp.asarray(-1), xp.asarray(1), args=xp.asarray(3))
-        xp_assert_close(res.x, xp.asarray(1/3))
+        xp_assert_close(res.x, xp.asarray(1/3), check_0d=False)
 
         # # TODO: Test zero tolerance
         # # ~~What's going on here - why are iterations repeated?~~

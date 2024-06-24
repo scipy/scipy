@@ -17,27 +17,27 @@ class TestEntropy:
         qk = xp.asarray([0.1, 0.25, 0.65])
         eself = stats.entropy(pk, pk)
         edouble = stats.entropy(pk, qk)
-        xp_assert_equal(eself, xp.asarray(0.))
-        xp_assert_less(-edouble, xp.asarray(0.))
+        xp_assert_equal(eself, xp.asarray(0.), check_0d=False)
+        xp_assert_less(-edouble, xp.asarray(0.), check_0d=False)
 
     @array_api_compatible
     def test_entropy_base(self, xp):
         pk = xp.ones(16)
         S = stats.entropy(pk, base=2.)
-        xp_assert_less(xp.abs(S - 4.), xp.asarray(1.e-5))
+        xp_assert_less(xp.abs(S - 4.), xp.asarray(1.e-5), check_0d=False)
 
         qk = xp.ones(16)
         qk = xp.where(xp.arange(16) < 8, xp.asarray(2.), qk)
         S = stats.entropy(pk, qk)
         S2 = stats.entropy(pk, qk, base=2.)
-        xp_assert_less(xp.abs(S/S2 - math.log(2.)), xp.asarray(1.e-5))
+        xp_assert_less(xp.abs(S/S2 - math.log(2.)), xp.asarray(1.e-5), check_0d=False)
 
     @array_api_compatible
     def test_entropy_zero(self, xp):
         # Test for PR-479
         x = xp.asarray([0., 1., 2.])
         xp_assert_close(stats.entropy(x),
-                        xp.asarray(0.63651416829481278))
+                        xp.asarray(0.63651416829481278), check_0d=False)
 
     @array_api_compatible
     def test_entropy_2d(self, xp):

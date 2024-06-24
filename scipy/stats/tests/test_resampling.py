@@ -945,8 +945,9 @@ class TestMonteCarloHypothesisTest:
 
         res = monte_carlo_test(x, rvs, statistic, alternative=alternative)
 
-        xp_assert_close(res.statistic, xp.asarray(ref.statistic))
-        xp_assert_close(res.pvalue, xp.asarray(ref.pvalue), atol=self.atol)
+        xp_assert_close(res.statistic, xp.asarray(ref.statistic), check_0d=False)
+        xp_assert_close(res.pvalue, xp.asarray(ref.pvalue), atol=self.atol,
+                        check_0d=False)
 
 
     # Tests below involve statistics that are not yet array-API compatible.
