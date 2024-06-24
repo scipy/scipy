@@ -33,3 +33,4 @@ more detailed examples, see the following sections.
     hypothesis_bartlett.md
     hypothesis_fligner.md
     hypothesis_friedmanchisquare.md
+    hypothesis_dunnett.md
