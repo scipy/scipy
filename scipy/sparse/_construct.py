@@ -709,8 +709,8 @@ def hstack(blocks, format=None, dtype=None):
         Otherwise return a sparse matrix.
 
         If you want a sparse array built from blocks that are not sparse
-        arrays, use `block(hstack(blocks))` or convert one block
-        e.g. `blocks[0] = csr_array(blocks[0])`.
+        arrays, use ``block(hstack(blocks))`` or convert one block
+        e.g. ``blocks[0] = csr_array(blocks[0])``.
 
     See Also
     --------
@@ -756,7 +756,7 @@ def vstack(blocks, format=None, dtype=None):
         Otherwise return a sparse matrix.
 
         If you want a sparse array built from blocks that are not sparse
-        arrays, use `block(vstack(blocks))` or convert one block
+        arrays, use ``block(vstack(blocks))`` or convert one block
         e.g. `blocks[0] = csr_array(blocks[0])`.
 
     See Also
@@ -815,7 +815,7 @@ def bmat(blocks, format=None, dtype=None):
         Otherwise return a sparse matrix.
 
         If you want a sparse array built from blocks that are not sparse
-        arrays, use `block_array()`.
+        arrays, use ``block_array()``.
 
     See Also
     --------
@@ -1116,7 +1116,7 @@ def random_array(shape, *, density=0.01, format='coo', dtype=None,
         By default, uniform [0, 1) random values are used unless `dtype` is
         an integer (default uniform integers from that dtype) or
         complex (default uniform over the unit square in the complex plane).
-        For these, the `random_state` rng is used e.g. `rng.uniform(size=size)`.
+        For these, the `random_state` rng is used e.g. ``rng.uniform(size=size)``.
 
     Returns
     -------
@@ -1161,7 +1161,7 @@ def random_array(shape, *, density=0.01, format='coo', dtype=None,
     >>> S = sp.sparse.random_array((3, 4), density=0.25, random_state=rng,
     ...                      data_sampler=sp_stats_normal_squared)
 
-    Or we can subclass sp.stats rv_continous or rv_discrete:
+    Or we can subclass sp.stats rv_continuous or rv_discrete:
 
     >>> class NormalSquared(sp.stats.rv_continuous):
     ...     def _rvs(self,  size=None, random_state=rng):
@@ -1319,7 +1319,7 @@ def random(m, n, density=0.01, format='coo', dtype=None,
     >>> S = sp.sparse.random(3, 4, density=0.25, random_state=rng,
     ...                      data_rvs=sp_stats_normal_squared)
 
-    Or we can subclass sp.stats rv_continous or rv_discrete:
+    Or we can subclass sp.stats rv_continuous or rv_discrete:
 
     >>> class NormalSquared(sp.stats.rv_continuous):
     ...     def _rvs(self,  size=None, random_state=rng):

@@ -492,14 +492,14 @@ class Model:
         i.e. ``beta = array([B_1, B_2, ..., B_p])``
     `fjacb`
         if the response variable is multi-dimensional, then the
-        return array's shape is `(q, p, n)` such that ``fjacb(x,beta)[l,k,i] =
-        d f_l(X,B)/d B_k`` evaluated at the ith data point.  If `q == 1`, then
-        the return array is only rank-2 and with shape `(p, n)`.
+        return array's shape is ``(q, p, n)`` such that ``fjacb(x,beta)[l,k,i] =
+        d f_l(X,B)/d B_k`` evaluated at the ith data point.  If ``q == 1``, then
+        the return array is only rank-2 and with shape ``(p, n)``.
     `fjacd`
-        as with fjacb, only the return array's shape is `(q, m, n)`
+        as with fjacb, only the return array's shape is ``(q, m, n)``
         such that ``fjacd(x,beta)[l,j,i] = d f_l(X,B)/d X_j`` at the ith data
-        point.  If `q == 1`, then the return array's shape is `(m, n)`. If
-        `m == 1`, the shape is (q, n). If `m == q == 1`, the shape is `(n,)`.
+        point.  If ``q == 1``, then the return array's shape is ``(m, n)``. If
+        ``m == 1``, the shape is (q, n). If `m == q == 1`, the shape is ``(n,)``.
 
     """
 

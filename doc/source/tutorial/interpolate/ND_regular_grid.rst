@@ -63,7 +63,7 @@ using each method.
    interpolation.
 
 If your data is such that spline methods produce ringing, you may consider
-using `method="pchip"`, which uses the tensor product of PCHIP interpolators,
+using ``method="pchip"``, which uses the tensor product of PCHIP interpolators,
 a `PchipInterpolator` per dimension.
 
 If you prefer a functional interface opposed to explicitly creating a class instance,

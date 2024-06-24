@@ -112,7 +112,7 @@ class _data_matrix(_spbase):
         ------
         NotImplementedError : if n is a zero scalar
             If zero power is desired, special case it to use
-            `np.ones(A.shape, dtype=A.dtype)`
+            ``np.ones(A.shape, dtype=A.dtype)``
         """
         if not isscalarlike(n):
             raise NotImplementedError("input is not scalar")

@@ -85,7 +85,7 @@ def crosstab(*args, levels=None, sparse=False):
     array([[2, 3, 0],
            [1, 0, 4]])
 
-    So `('A', 'X')` occurs twice, `('A', 'Y')` occurs three times, etc.
+    So ``('A', 'X')`` occurs twice, ``('A', 'Y')`` occurs three times, etc.
 
     Higher dimensional contingency tables can be created.
 

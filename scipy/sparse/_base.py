@@ -252,8 +252,9 @@ class _spbase:
                 if self.dtype <= np.dtype(fp_type):
                     return self.astype(fp_type)
 
-            raise TypeError('cannot upcast [%s] to a floating '
-                            'point format' % self.dtype.name)
+            raise TypeError(
+                f'cannot upcast [{self.dtype.name}] to a floating point format'
+            )
 
     def __iter__(self):
         for r in range(self.shape[0]):
@@ -333,8 +334,8 @@ class _spbase:
         --------
         count_nonzero : Number of non-zero entries
         """
-        raise NotImplementedError("getnnz not implemented for %s." %
-                                  self.__class__.__name__)
+        clsname = self.__class__.__name__
+        raise NotImplementedError(f"getnnz not implemented for {clsname}.")
 
     @property
     def nnz(self) -> int:
@@ -886,7 +887,7 @@ class _spbase:
         # convert to COOrdinate format
         A = self.tocoo()
         nz_mask = A.data != 0
-        return (A.row[nz_mask], A.col[nz_mask])
+        return tuple(idx[nz_mask] for idx in A.coords)
 
     def _getcol(self, j):
         """Returns a copy of column j of the array, as an (m x 1) sparse

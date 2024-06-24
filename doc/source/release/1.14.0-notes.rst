@@ -160,6 +160,7 @@ As of 1.14.0, there is support for
 
 - `scipy.stats`: (select functions)
 
+  - `scipy.stats.describe`
   - `scipy.stats.moment`
   - `scipy.stats.skew`
   - `scipy.stats.kurtosis`

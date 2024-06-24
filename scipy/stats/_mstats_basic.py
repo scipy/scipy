@@ -2607,8 +2607,8 @@ def winsorize(a, limits=None, inclusive=(True, True), inplace=False,
 
     >>> a = np.array([10, 4, 9, 8, 5, 3, 7, 2, 1, 6])
 
-    The 10% of the lowest value (i.e., `1`) and the 20% of the highest
-    values (i.e., `9` and `10`) are replaced.
+    The 10% of the lowest value (i.e., ``1``) and the 20% of the highest
+    values (i.e., ``9`` and ``10``) are replaced.
 
     >>> winsorize(a, limits=[0.1, 0.2])
     masked_array(data=[8, 4, 8, 8, 5, 3, 7, 2, 2, 6],

@@ -97,7 +97,7 @@ class TestNNLS:
 
         # Small perturbations can already make the infinite loop go away (just
         # uncomment the next line)
-        # k = k + 1e-10 * np.random.normal(size=N)
+        k = k + 1e-10 * np.random.normal(size=N)
         dact, _ = nnls(W @ A, W @ k)
         assert_allclose(dact, d, rtol=0., atol=1e-10)
 
