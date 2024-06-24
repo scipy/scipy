@@ -30,3 +30,4 @@ more detailed examples, see the following sections.
     hypothesis_kendalltau.md
     hypothesis_spearmanr.md
     hypothesis_levene.md
+    hypothesis_bartlett.md
