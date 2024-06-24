@@ -266,6 +266,11 @@ def hmean(a, axis=0, dtype=None, *, weights=None):
     hmean : ndarray
         See `dtype` parameter above.
 
+    Raises
+    ------
+    ValueError
+        If `a` has elements less than 0.
+
     See Also
     --------
     numpy.mean : Arithmetic average
@@ -370,6 +375,11 @@ def pmean(a, p, *, axis=0, dtype=None, weights=None):
     -------
     pmean : ndarray, see `dtype` parameter above.
         Output array containing the power mean values.
+
+    Raises
+    ------
+    ValueError
+        If `a` has elements less than 0.
 
     See Also
     --------
@@ -1416,6 +1426,11 @@ def describe(a, axis=0, ddof=1, bias=True, nan_policy='propagate'):
         normalized so that it is zero for the normal distribution.  No
         degrees of freedom are used.
 
+    Raises
+    ------
+    ValueError
+        If size of `a` is 0.
+
     See Also
     --------
     skew, kurtosis
@@ -1531,9 +1546,10 @@ def skewtest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
     pvalue : float
         The p-value for the hypothesis test.
 
-    Notes
-    -----
-    The sample size must be at least 8.
+    Raises
+    ------
+    ValueError
+        If shape of `a` along the given `axis` is less than 8.
 
     References
     ----------
@@ -1719,9 +1735,15 @@ def kurtosistest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
     pvalue : float
         The p-value for the hypothesis test.
 
-    Notes
+    Raises
+    ------
+    ValueError
+        If shape of `a` along the given `axis` is less than 5.
+
+    Warns
     -----
     Valid only for n>20. This function uses the method described in [1]_.
+    If any element in the denominator array is 0. Returns `nan` for such cases.
 
     References
     ----------
@@ -2082,6 +2104,11 @@ def jarque_bera(x, *, axis=None):
             The test statistic.
         pvalue : float
             The p-value for the hypothesis test.
+
+    Raises
+    ------
+    ValueError
+        If the shape of `x` along the given `axis` is 0.
 
     References
     ----------
@@ -2775,6 +2802,12 @@ def obrientransform(*samples):
         the return value is a 2-D array; otherwise it is a 1-D array
         of type object, with each element being an ndarray.
 
+    Raises
+    ------
+    ValueError
+        If the mean of the transformed data is not equal to the original
+        variance, indicating a lack of convergence in the O'Brien transform.
+
     References
     ----------
     .. [1] S. E. Maxwell and H. D. Delaney, "Designing Experiments and
@@ -3248,6 +3281,15 @@ def gstd(a, axis=0, ddof=1):
     numpy.std : Standard deviation
     gzscore : Geometric standard score
 
+    Raises
+    ------
+    ValueError
+        As the calculation requires the use of logarithms the geometric standard
+        deviation only supports strictly positive values. Any non-positive or
+        infinite values will raise a `ValueError`.
+
+        If `a` could not be safely coerced to any supported types.
+
     Notes
     -----
     Mathematically, the sample geometric standard deviation :math:`s_G` can be
@@ -3550,6 +3592,11 @@ def median_abs_deviation(x, axis=0, center=np.median, scale=1.0,
         output data-type is ``np.float64``. Otherwise, the output data-type is
         the same as that of the input.
 
+    Raises
+    ------
+    ValueError
+        If `scale` is not a valid value.
+
     See Also
     --------
     numpy.std, numpy.var, numpy.median, scipy.stats.iqr, scipy.stats.tmean,
@@ -3758,6 +3805,11 @@ def trimboth(a, proportiontocut, axis=0):
         Trimmed version of array `a`. The order of the trimmed content
         is undefined.
 
+    Raises
+    ------
+    ValueError
+        If `proportiontocut` is not in the range [0, 1].
+
     See Also
     --------
     trim_mean
@@ -3927,6 +3979,11 @@ def trim_mean(a, proportiontocut, axis=0):
     -------
     trim_mean : ndarray
         Mean of trimmed array.
+
+    Raises
+    ------
+    ValueError
+        If `proportiontocut` is not in the range [0, 1].
 
     See Also
     --------
@@ -4650,6 +4707,13 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
             resample, and this is typical for very small samples (~6
             observations).
 
+    Raises
+    ------
+    ValueError
+        If `x` and `y` do not have the same length along `axis`, `x` and `y` do
+        not have length at least 2, `x` and `y` are not broadcastable, if `x`
+        or `y` are of complex datatypes, or if `method` is invalid.
+
     Warns
     -----
     `~scipy.stats.ConstantInputWarning`
@@ -5015,6 +5079,12 @@ def fisher_exact(table, alternative='two-sided'):
             The probability under the null hypothesis of obtaining a
             table at least as extreme as the one that was actually observed.
 
+    Raises
+    ------
+    ValueError
+        If `table` is not a 2x2 contingency table with non-negative entries.
+        If `alternative` is an invalid value.
+
     See Also
     --------
     chi2_contingency : Chi-square test of independence of variables in a
@@ -5337,6 +5407,13 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate',
             is that two samples have no ordinal correlation. See
             `alternative` above for alternative hypotheses. `pvalue` has the
             same shape as `statistic`.
+
+    Raises
+    ------
+    ValueError
+        If `axis` is not 0, 1 or None, or if dimensions of `a` along the `axis`
+        is greater than 2, or if `b` is None and dimensions of `a` along the
+        `axis` is less than 2.
 
     Warns
     -----
@@ -5754,6 +5831,15 @@ def kendalltau(x, y, *, nan_policy='propagate',
            The p-value for a hypothesis test whose null hypothesis is
            an absence of association, tau = 0.
 
+    Raises
+    ------
+    ValueError
+        If `x` and `y` have different lengths.
+        If `nan_policy` is `omit` and `variant` is not `b`.
+        If `variant` is not either `b` or `c`.
+        If `method` is `exact` and there are ties in `x` and `y`.
+        If invalid `method` is provided.
+
     See Also
     --------
     spearmanr : Calculates a Spearman rank-order correlation coefficient.
@@ -6107,6 +6193,11 @@ def weightedtau(x, y, rank=True, weigher=None, additive=True):
         pvalue : float
            Presently ``np.nan``, as the null distribution of the statistic is
            unknown (even in the additive hyperbolic case).
+
+    Raises
+    ------
+    ValueError
+        If `x` and `y` are of different sizes.
 
     See Also
     --------
