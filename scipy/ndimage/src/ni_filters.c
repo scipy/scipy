@@ -30,6 +30,7 @@
  */
 
 #include "ni_support.h"
+
 #include "ni_filters.h"
 #include <math.h>
 

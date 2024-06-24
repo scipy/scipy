@@ -30,6 +30,7 @@
  */
 
 #include "ni_support.h"
+
 #include "ni_interpolation.h"
 #include "ni_splines.h"
 #include <stdlib.h>

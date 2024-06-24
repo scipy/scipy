@@ -30,6 +30,7 @@
  */
 
 #include "ni_support.h"
+
 #include "ni_fourier.h"
 #include <stdlib.h>
 #include <math.h>

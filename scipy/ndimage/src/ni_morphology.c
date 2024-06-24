@@ -30,6 +30,7 @@
  */
 
 #include "ni_support.h"
+
 #include "ni_morphology.h"
 #include <stdlib.h>
 #include <math.h>

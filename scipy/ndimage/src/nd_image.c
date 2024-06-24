@@ -33,8 +33,9 @@
  * The order of these first two imports should not be changed, see the note
  * in ni_support.h for details.
  */
-#include "nd_image.h"
 #include "ni_support.h"
+
+#include "nd_image.h"
 
 #include "ni_filters.h"
 #include "ni_fourier.h"

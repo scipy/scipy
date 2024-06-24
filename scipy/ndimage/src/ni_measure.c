@@ -30,6 +30,7 @@
  */
 
 #include "ni_support.h"
+
 #include "ni_measure.h"
 #include <stdlib.h>
 #include <math.h>

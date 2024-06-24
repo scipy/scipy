@@ -1,4 +1,5 @@
 #include "ni_support.h"
+
 #include "ni_splines.h"
 #include <math.h>
 
