@@ -551,7 +551,9 @@ class TestRemezord:
     """
     Test examples taken from:
     http://www.ece.northwestern.edu/local-apps/matlabhelp/toolbox/signal/remezord.html
+
     with reference values computed in MATLAB.
+    https://github.com/scipy/scipy/pull/20983#discussion_r1649341010
     """
 
     def test_bad_args(self):
@@ -571,7 +573,7 @@ class TestRemezord:
         # Band edges different than 2*len(amps)-1
         assert_raises(ValueError, remezord, freqs[:3], amps, rips)
 
-    def test_remezord_ichige(self):
+    def test_remezord_example1_ichige(self):
         rp, rs = 3, 40
         fs = 2000
         freqs = np.array([500, 600])
@@ -584,7 +586,7 @@ class TestRemezord:
         assert_equal(desired, [1., 0.])
         assert_almost_equal(weights, [1., 17.09973573])
 
-    def test_remezord_herrmann(self):
+    def test_remezord_example1_herrmann(self):
         rp, rs = 3, 40
         fs = 2000
         freqs = np.array([500, 600])
@@ -597,7 +599,7 @@ class TestRemezord:
         assert_equal(desired, [1., 0.])
         assert_almost_equal(weights, [1., 17.09973573])
 
-    def test_remezord_kaiser(self):
+    def test_remezord_example1_kaiser(self):
         rp, rs = 3, 40
         fs = 2000
         freqs = np.array([500, 600])
@@ -609,6 +611,17 @@ class TestRemezord:
         assert_equal(bands, [0, 0.25, 0.3, 0.5])
         assert_equal(desired, [1., 0.])
         assert_almost_equal(weights, [1., 17.09973573])
+
+    def test_remezord_example2(self):
+        fs = 8000
+        freqs = np.array([1500, 2000])
+        amps = np.array([1, 0])
+        rips = [0.01, 0.1]
+        numtaps, bands, desired, weights = remezord(freqs, amps, rips, fs=fs)
+        assert numtaps == 24
+        assert_equal(bands, [0, 0.1875, 0.25, 0.5])
+        assert_equal(desired, [1., 0.])
+        assert_almost_equal(weights, [10, 1])
 
 
 
