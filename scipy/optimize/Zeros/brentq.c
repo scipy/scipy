@@ -1,7 +1,7 @@
 /* Written by Charles Harris charles.harris@sdl.usu.edu */
 
-#include <math.h>
 #include "zeros.h"
+#include <math.h>
 
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 
@@ -33,10 +33,10 @@
 
 */
 
-double
-brentq(callback_type f, double xa, double xb, double xtol, double rtol,
-       int iter, void *func_data_param, scipy_zeros_info *solver_stats)
-{
+double brentq(
+    callback_type f, double xa, double xb, double xtol, double rtol, int iter, void *func_data_param,
+    scipy_zeros_info *solver_stats
+) {
     double xpre = xa, xcur = xb;
     double xblk = 0., fpre, fcur, fblk = 0., spre = 0., scur = 0., sbis;
     /* the tolerance is 2*delta */
@@ -56,15 +56,14 @@ brentq(callback_type f, double xa, double xb, double xtol, double rtol,
         solver_stats->error_num = CONVERGED;
         return xcur;
     }
-    if (signbit(fpre)==signbit(fcur)) {
+    if (signbit(fpre) == signbit(fcur)) {
         solver_stats->error_num = SIGNERR;
         return 0.;
     }
     solver_stats->iterations = 0;
     for (i = 0; i < iter; i++) {
         solver_stats->iterations++;
-        if (fpre != 0 && fcur != 0 &&
-	    (signbit(fpre) != signbit(fcur))) {
+        if (fpre != 0 && fcur != 0 && (signbit(fpre) != signbit(fcur))) {
             xblk = xpre;
             fblk = fpre;
             spre = scur = xcur - xpre;
@@ -79,8 +78,8 @@ brentq(callback_type f, double xa, double xb, double xtol, double rtol,
             fblk = fpre;
         }
 
-        delta = (xtol + rtol*fabs(xcur))/2;
-        sbis = (xblk - xcur)/2;
+        delta = (xtol + rtol * fabs(xcur)) / 2;
+        sbis = (xblk - xcur) / 2;
         if (fcur == 0 || fabs(sbis) < delta) {
             solver_stats->error_num = CONVERGED;
             return xcur;
@@ -89,16 +88,14 @@ brentq(callback_type f, double xa, double xb, double xtol, double rtol,
         if (fabs(spre) > delta && fabs(fcur) < fabs(fpre)) {
             if (xpre == xblk) {
                 /* interpolate */
-                stry = -fcur*(xcur - xpre)/(fcur - fpre);
-            }
-            else {
+                stry = -fcur * (xcur - xpre) / (fcur - fpre);
+            } else {
                 /* extrapolate */
-                dpre = (fpre - fcur)/(xpre - xcur);
-                dblk = (fblk - fcur)/(xblk - xcur);
-                stry = -fcur*(fblk*dblk - fpre*dpre)
-                    /(dblk*dpre*(fblk - fpre));
+                dpre = (fpre - fcur) / (xpre - xcur);
+                dblk = (fblk - fcur) / (xblk - xcur);
+                stry = -fcur * (fblk * dblk - fpre * dpre) / (dblk * dpre * (fblk - fpre));
             }
-            if (2*fabs(stry) < MIN(fabs(spre), 3*fabs(sbis) - delta)) {
+            if (2 * fabs(stry) < MIN(fabs(spre), 3 * fabs(sbis) - delta)) {
                 /* good short step */
                 spre = scur;
                 scur = stry;
@@ -107,18 +104,17 @@ brentq(callback_type f, double xa, double xb, double xtol, double rtol,
                 spre = sbis;
                 scur = sbis;
             }
-        }
-        else {
+        } else {
             /* bisect */
             spre = sbis;
             scur = sbis;
         }
 
-        xpre = xcur; fpre = fcur;
+        xpre = xcur;
+        fpre = fcur;
         if (fabs(scur) > delta) {
             xcur += scur;
-        }
-        else {
+        } else {
             xcur += (sbis > 0 ? delta : -delta);
         }
 

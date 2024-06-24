@@ -32,14 +32,15 @@
 #include "ni_support.h"
 
 #include "ni_filters.h"
+#include "ni_support.h"
 #include <math.h>
 
 #define BUFFER_SIZE 256000
 
-int NI_Correlate1D(PyArrayObject *input, PyArrayObject *weights,
-                   int axis, PyArrayObject *output, NI_ExtendMode mode,
-                   double cval, npy_intp origin)
-{
+int NI_Correlate1D(
+    PyArrayObject *input, PyArrayObject *weights, int axis, PyArrayObject *output, NI_ExtendMode mode, double cval,
+    npy_intp origin
+) {
     int symmetric = 0, more;
     npy_intp ii, jj, ll, lines, length, size1, size2, filter_size;
     double *ibuffer = NULL, *obuffer = NULL;
@@ -51,10 +52,10 @@ int NI_Correlate1D(PyArrayObject *input, PyArrayObject *weights,
     filter_size = PyArray_SIZE(weights);
     size1 = filter_size / 2;
     size2 = filter_size - size1 - 1;
-    fw = (void *)PyArray_DATA(weights);
+    fw = (void *) PyArray_DATA(weights);
     if (filter_size & 0x1) {
         symmetric = 1;
-        for(ii = 1; ii <= filter_size / 2; ii++) {
+        for (ii = 1; ii <= filter_size / 2; ii++) {
             if (fabs(fw[ii + size1] - fw[size1 - ii]) > DBL_EPSILON) {
                 symmetric = 0;
                 break;
@@ -62,7 +63,7 @@ int NI_Correlate1D(PyArrayObject *input, PyArrayObject *weights,
         }
         if (symmetric == 0) {
             symmetric = -1;
-            for(ii = 1; ii <= filter_size / 2; ii++) {
+            for (ii = 1; ii <= filter_size / 2; ii++) {
                 if (fabs(fw[size1 + ii] + fw[size1 - ii]) > DBL_EPSILON) {
                     symmetric = 0;
                     break;
@@ -72,17 +73,13 @@ int NI_Correlate1D(PyArrayObject *input, PyArrayObject *weights,
     }
     /* allocate and initialize the line buffers: */
     lines = -1;
-    if (!NI_AllocateLineBuffer(input, axis, size1 + origin, size2 - origin,
-                                                         &lines, BUFFER_SIZE, &ibuffer))
+    if (!NI_AllocateLineBuffer(input, axis, size1 + origin, size2 - origin, &lines, BUFFER_SIZE, &ibuffer))
         goto exit;
-    if (!NI_AllocateLineBuffer(output, axis, 0, 0, &lines, BUFFER_SIZE,
-                                                         &obuffer))
+    if (!NI_AllocateLineBuffer(output, axis, 0, 0, &lines, BUFFER_SIZE, &obuffer))
         goto exit;
-    if (!NI_InitLineBuffer(input, axis, size1 + origin, size2 - origin,
-                                                            lines, ibuffer, mode, cval, &iline_buffer))
+    if (!NI_InitLineBuffer(input, axis, size1 + origin, size2 - origin, lines, ibuffer, mode, cval, &iline_buffer))
         goto exit;
-    if (!NI_InitLineBuffer(output, axis, 0, 0, lines, obuffer, mode, 0.0,
-                                                 &oline_buffer))
+    if (!NI_InitLineBuffer(output, axis, 0, 0, lines, obuffer, mode, 0.0, &oline_buffer))
         goto exit;
 
     NPY_BEGIN_THREADS;
@@ -95,29 +92,29 @@ int NI_Correlate1D(PyArrayObject *input, PyArrayObject *weights,
             goto exit;
         }
         /* iterate over the lines in the buffers: */
-        for(ii = 0; ii < lines; ii++) {
+        for (ii = 0; ii < lines; ii++) {
             /* get lines: */
             double *iline = NI_GET_LINE(iline_buffer, ii) + size1;
             double *oline = NI_GET_LINE(oline_buffer, ii);
             /* the correlation calculation: */
             if (symmetric > 0) {
-                for(ll = 0; ll < length; ll++) {
+                for (ll = 0; ll < length; ll++) {
                     oline[ll] = iline[0] * fw[0];
-                    for(jj = -size1 ; jj < 0; jj++)
+                    for (jj = -size1; jj < 0; jj++)
                         oline[ll] += (iline[jj] + iline[-jj]) * fw[jj];
                     ++iline;
                 }
             } else if (symmetric < 0) {
-                for(ll = 0; ll < length; ll++) {
+                for (ll = 0; ll < length; ll++) {
                     oline[ll] = iline[0] * fw[0];
-                    for(jj = -size1 ; jj < 0; jj++)
+                    for (jj = -size1; jj < 0; jj++)
                         oline[ll] += (iline[jj] - iline[-jj]) * fw[jj];
                     ++iline;
                 }
             } else {
-                for(ll = 0; ll < length; ll++) {
+                for (ll = 0; ll < length; ll++) {
                     oline[ll] = iline[size2] * fw[size2];
-                    for(jj = -size1; jj < size2; jj++)
+                    for (jj = -size1; jj < size2; jj++)
                         oline[ll] += iline[jj] * fw[jj];
                     ++iline;
                 }
@@ -127,7 +124,7 @@ int NI_Correlate1D(PyArrayObject *input, PyArrayObject *weights,
         if (!NI_LineBufferToArray(&oline_buffer)) {
             goto exit;
         }
-    } while(more);
+    } while (more);
 exit:
     NPY_END_THREADS;
     free(ibuffer);
@@ -135,38 +132,34 @@ exit:
     return PyErr_Occurred() ? 0 : 1;
 }
 
-#define CASE_CORRELATE_POINT(_TYPE, _type, _pi, _weights, _offsets,        \
-                             _filter_size, _cvalue, _res, _mv)             \
-case _TYPE:                                                                \
-{                                                                          \
-    npy_intp _ii, _offset;                                                 \
-    for (_ii = 0; _ii < _filter_size; ++_ii) {                             \
-        _offset = _offsets[_ii];                                           \
-        if (_offset == _mv) {                                              \
-            _res += _weights[_ii] * _cvalue;                               \
-        }                                                                  \
-        else {                                                             \
-            _res += _weights[_ii] * (double)(*((_type *)(_pi + _offset))); \
-        }                                                                  \
-    }                                                                      \
-}                                                                          \
-break
+#define CASE_CORRELATE_POINT(_TYPE, _type, _pi, _weights, _offsets, _filter_size, _cvalue, _res, _mv)                  \
+    case _TYPE: {                                                                                                      \
+        npy_intp _ii, _offset;                                                                                         \
+        for (_ii = 0; _ii < _filter_size; ++_ii) {                                                                     \
+            _offset = _offsets[_ii];                                                                                   \
+            if (_offset == _mv) {                                                                                      \
+                _res += _weights[_ii] * _cvalue;                                                                       \
+            } else {                                                                                                   \
+                _res += _weights[_ii] * (double) (*((_type *) (_pi + _offset)));                                       \
+            }                                                                                                          \
+        }                                                                                                              \
+    } break
 
-#define CASE_FILTER_OUT(_TYPE, _type, _po, _tmp) \
-case _TYPE:                                      \
-    *(_type *)_po = (_type)_tmp;                 \
-    break
+#define CASE_FILTER_OUT(_TYPE, _type, _po, _tmp)                                                                       \
+    case _TYPE:                                                                                                        \
+        *(_type *) _po = (_type) _tmp;                                                                                 \
+        break
 
 /* Avoid undefined behaviour of float -> unsigned conversions. */
-#define CASE_FILTER_OUT_SAFE(_TYPE, _type, _po, _tmp)                  \
-case _TYPE:                                                            \
-    *(_type *)_po = (_tmp) > -1. ? (_type)(_tmp) : -(_type)(-_tmp);    \
-    break
+#define CASE_FILTER_OUT_SAFE(_TYPE, _type, _po, _tmp)                                                                  \
+    case _TYPE:                                                                                                        \
+        *(_type *) _po = (_tmp) > -1. ? (_type) (_tmp) : -(_type) (-_tmp);                                             \
+        break
 
-int NI_Correlate(PyArrayObject* input, PyArrayObject* weights,
-                 PyArrayObject* output, NI_ExtendMode mode,
-                 double cvalue, npy_intp *origins)
-{
+int NI_Correlate(
+    PyArrayObject *input, PyArrayObject *weights, PyArrayObject *output, NI_ExtendMode mode, double cvalue,
+    npy_intp *origins
+) {
     npy_bool *pf = NULL;
     npy_intp fsize, jj, kk, filter_size = 0, border_flag_value;
     npy_intp *offsets = NULL, *oo, size;
@@ -180,13 +173,13 @@ int NI_Correlate(PyArrayObject* input, PyArrayObject* weights,
 
     /* get the footprint: */
     fsize = PyArray_SIZE(weights);
-    pw = (npy_double*)PyArray_DATA(weights);
+    pw = (npy_double *) PyArray_DATA(weights);
     pf = malloc(fsize * sizeof(npy_bool));
     if (!pf) {
         PyErr_NoMemory();
         goto exit;
     }
-    for(jj = 0; jj < fsize; jj++) {
+    for (jj = 0; jj < fsize; jj++) {
         if (fabs(pw[jj]) > DBL_EPSILON) {
             pf[jj] = 1;
             ++filter_size;
@@ -201,20 +194,19 @@ int NI_Correlate(PyArrayObject* input, PyArrayObject* weights,
         goto exit;
     }
     jj = 0;
-    for(kk = 0; kk < fsize; kk++) {
+    for (kk = 0; kk < fsize; kk++) {
         if (pf[kk]) {
             ww[jj++] = pw[kk];
         }
     }
     /* initialize filter offsets: */
-    if (!NI_InitFilterOffsets(input, pf, PyArray_DIMS(weights), origins,
-                              mode, &offsets, &border_flag_value, NULL)) {
+    if (!NI_InitFilterOffsets(input, pf, PyArray_DIMS(weights), origins, mode, &offsets, &border_flag_value, NULL)) {
         goto exit;
     }
     /* initialize filter iterator: */
-    if (!NI_InitFilterIterator(PyArray_NDIM(input), PyArray_DIMS(weights),
-                               filter_size, PyArray_DIMS(input), origins,
-                               &fi)) {
+    if (!NI_InitFilterIterator(
+            PyArray_NDIM(input), PyArray_DIMS(weights), filter_size, PyArray_DIMS(input), origins, &fi
+        )) {
         goto exit;
     }
     /* initialize input element iterator: */
@@ -226,56 +218,30 @@ int NI_Correlate(PyArrayObject* input, PyArrayObject* weights,
 
     NPY_BEGIN_THREADS;
     /* get data pointers an array size: */
-    pi = (void *)PyArray_DATA(input);
-    po = (void *)PyArray_DATA(output);
+    pi = (void *) PyArray_DATA(input);
+    po = (void *) PyArray_DATA(output);
     size = PyArray_SIZE(input);
     /* iterator over the elements: */
     oo = offsets;
-    for(jj = 0; jj < size; jj++) {
+    for (jj = 0; jj < size; jj++) {
         double tmp = 0.0;
         switch (PyArray_TYPE(input)) {
-            CASE_CORRELATE_POINT(NPY_BOOL, npy_bool,
-                                 pi, ww, oo, filter_size, cvalue, tmp,
-                                 border_flag_value);
-            CASE_CORRELATE_POINT(NPY_UBYTE, npy_ubyte,
-                                 pi, ww, oo, filter_size, cvalue, tmp,
-                                 border_flag_value);
-            CASE_CORRELATE_POINT(NPY_USHORT, npy_ushort,
-                                 pi, ww, oo, filter_size, cvalue, tmp,
-                                 border_flag_value);
-            CASE_CORRELATE_POINT(NPY_UINT, npy_uint,
-                                 pi, ww, oo, filter_size, cvalue, tmp,
-                                 border_flag_value);
-            CASE_CORRELATE_POINT(NPY_ULONG, npy_ulong,
-                                 pi, ww, oo, filter_size, cvalue, tmp,
-                                 border_flag_value);
-            CASE_CORRELATE_POINT(NPY_ULONGLONG, npy_ulonglong,
-                                 pi, ww, oo, filter_size, cvalue, tmp,
-                                 border_flag_value);
-            CASE_CORRELATE_POINT(NPY_BYTE, npy_byte,
-                                 pi, ww, oo, filter_size, cvalue, tmp,
-                                 border_flag_value);
-            CASE_CORRELATE_POINT(NPY_SHORT, npy_short,
-                                 pi, ww, oo, filter_size, cvalue, tmp,
-                                 border_flag_value);
-            CASE_CORRELATE_POINT(NPY_INT, npy_int,
-                                 pi, ww, oo, filter_size, cvalue, tmp,
-                                 border_flag_value);
-            CASE_CORRELATE_POINT(NPY_LONG, npy_long,
-                                 pi, ww, oo, filter_size, cvalue, tmp,
-                                 border_flag_value);
-            CASE_CORRELATE_POINT(NPY_LONGLONG, npy_longlong,
-                                 pi, ww, oo, filter_size, cvalue, tmp,
-                                 border_flag_value);
-            CASE_CORRELATE_POINT(NPY_FLOAT, npy_float,
-                                 pi, ww, oo, filter_size, cvalue, tmp,
-                                 border_flag_value);
-            CASE_CORRELATE_POINT(NPY_DOUBLE, npy_double,
-                                 pi, ww, oo, filter_size, cvalue, tmp,
-                                 border_flag_value);
-            default:
-                err = 1;
-                goto exit;
+            CASE_CORRELATE_POINT(NPY_BOOL, npy_bool, pi, ww, oo, filter_size, cvalue, tmp, border_flag_value);
+            CASE_CORRELATE_POINT(NPY_UBYTE, npy_ubyte, pi, ww, oo, filter_size, cvalue, tmp, border_flag_value);
+            CASE_CORRELATE_POINT(NPY_USHORT, npy_ushort, pi, ww, oo, filter_size, cvalue, tmp, border_flag_value);
+            CASE_CORRELATE_POINT(NPY_UINT, npy_uint, pi, ww, oo, filter_size, cvalue, tmp, border_flag_value);
+            CASE_CORRELATE_POINT(NPY_ULONG, npy_ulong, pi, ww, oo, filter_size, cvalue, tmp, border_flag_value);
+            CASE_CORRELATE_POINT(NPY_ULONGLONG, npy_ulonglong, pi, ww, oo, filter_size, cvalue, tmp, border_flag_value);
+            CASE_CORRELATE_POINT(NPY_BYTE, npy_byte, pi, ww, oo, filter_size, cvalue, tmp, border_flag_value);
+            CASE_CORRELATE_POINT(NPY_SHORT, npy_short, pi, ww, oo, filter_size, cvalue, tmp, border_flag_value);
+            CASE_CORRELATE_POINT(NPY_INT, npy_int, pi, ww, oo, filter_size, cvalue, tmp, border_flag_value);
+            CASE_CORRELATE_POINT(NPY_LONG, npy_long, pi, ww, oo, filter_size, cvalue, tmp, border_flag_value);
+            CASE_CORRELATE_POINT(NPY_LONGLONG, npy_longlong, pi, ww, oo, filter_size, cvalue, tmp, border_flag_value);
+            CASE_CORRELATE_POINT(NPY_FLOAT, npy_float, pi, ww, oo, filter_size, cvalue, tmp, border_flag_value);
+            CASE_CORRELATE_POINT(NPY_DOUBLE, npy_double, pi, ww, oo, filter_size, cvalue, tmp, border_flag_value);
+        default:
+            err = 1;
+            goto exit;
         }
         switch (PyArray_TYPE(output)) {
             CASE_FILTER_OUT_SAFE(NPY_BOOL, npy_bool, po, tmp);
@@ -291,9 +257,9 @@ int NI_Correlate(PyArrayObject* input, PyArrayObject* weights,
             CASE_FILTER_OUT(NPY_LONGLONG, npy_longlong, po, tmp);
             CASE_FILTER_OUT(NPY_FLOAT, npy_float, po, tmp);
             CASE_FILTER_OUT(NPY_DOUBLE, npy_double, po, tmp);
-            default:
-                err = 1;
-                goto exit;
+        default:
+            err = 1;
+            goto exit;
         }
         NI_FILTER_NEXT2(fi, ii, io, oo, pi, po);
     }
@@ -308,11 +274,10 @@ exit:
     return PyErr_Occurred() ? 0 : 1;
 }
 
-int
-NI_UniformFilter1D(PyArrayObject *input, npy_intp filter_size,
-                   int axis, PyArrayObject *output, NI_ExtendMode mode,
-                   double cval, npy_intp origin)
-{
+int NI_UniformFilter1D(
+    PyArrayObject *input, npy_intp filter_size, int axis, PyArrayObject *output, NI_ExtendMode mode, double cval,
+    npy_intp origin
+) {
     npy_intp lines, kk, ll, length, size1, size2;
     int more;
     double *ibuffer = NULL, *obuffer = NULL;
@@ -323,17 +288,13 @@ NI_UniformFilter1D(PyArrayObject *input, npy_intp filter_size,
     size2 = filter_size - size1 - 1;
     /* allocate and initialize the line buffers: */
     lines = -1;
-    if (!NI_AllocateLineBuffer(input, axis, size1 + origin, size2 - origin,
-                                                         &lines, BUFFER_SIZE, &ibuffer))
+    if (!NI_AllocateLineBuffer(input, axis, size1 + origin, size2 - origin, &lines, BUFFER_SIZE, &ibuffer))
         goto exit;
-    if (!NI_AllocateLineBuffer(output, axis, 0, 0, &lines, BUFFER_SIZE,
-                                                         &obuffer))
+    if (!NI_AllocateLineBuffer(output, axis, 0, 0, &lines, BUFFER_SIZE, &obuffer))
         goto exit;
-    if (!NI_InitLineBuffer(input, axis, size1 + origin, size2 - origin,
-                                                            lines, ibuffer, mode, cval, &iline_buffer))
+    if (!NI_InitLineBuffer(input, axis, size1 + origin, size2 - origin, lines, ibuffer, mode, cval, &iline_buffer))
         goto exit;
-    if (!NI_InitLineBuffer(output, axis, 0, 0, lines, obuffer, mode, 0.0,
-                                                 &oline_buffer))
+    if (!NI_InitLineBuffer(output, axis, 0, 0, lines, obuffer, mode, 0.0, &oline_buffer))
         goto exit;
     NPY_BEGIN_THREADS;
     length = PyArray_NDIM(input) > 0 ? PyArray_DIM(input, axis) : 1;
@@ -345,7 +306,7 @@ NI_UniformFilter1D(PyArrayObject *input, npy_intp filter_size,
             goto exit;
         }
         /* iterate over the lines in the buffers: */
-        for(kk = 0; kk < lines; kk++) {
+        for (kk = 0; kk < lines; kk++) {
             /* get lines: */
             double *iline = NI_GET_LINE(iline_buffer, kk);
             double *oline = NI_GET_LINE(oline_buffer, kk);
@@ -366,32 +327,31 @@ NI_UniformFilter1D(PyArrayObject *input, npy_intp filter_size,
         if (!NI_LineBufferToArray(&oline_buffer)) {
             goto exit;
         }
-    } while(more);
+    } while (more);
 
- exit:
+exit:
     NPY_END_THREADS;
     free(ibuffer);
     free(obuffer);
     return PyErr_Occurred() ? 0 : 1;
 }
 
-#define INCREASE_RING_PTR(ptr) \
-    (ptr)++;                   \
-    if ((ptr) >= end) {        \
-        (ptr) = ring;          \
+#define INCREASE_RING_PTR(ptr)                                                                                         \
+    (ptr)++;                                                                                                           \
+    if ((ptr) >= end) {                                                                                                \
+        (ptr) = ring;                                                                                                  \
     }
 
-#define DECREASE_RING_PTR(ptr) \
-    if ((ptr) == ring) {       \
-        (ptr) = end;           \
-    }                          \
+#define DECREASE_RING_PTR(ptr)                                                                                         \
+    if ((ptr) == ring) {                                                                                               \
+        (ptr) = end;                                                                                                   \
+    }                                                                                                                  \
     (ptr)--;
 
-int
-NI_MinOrMaxFilter1D(PyArrayObject *input, npy_intp filter_size,
-                    int axis, PyArrayObject *output, NI_ExtendMode mode,
-                    double cval, npy_intp origin, int minimum)
-{
+int NI_MinOrMaxFilter1D(
+    PyArrayObject *input, npy_intp filter_size, int axis, PyArrayObject *output, NI_ExtendMode mode, double cval,
+    npy_intp origin, int minimum
+) {
     npy_intp lines, kk, ll, length, size1, size2;
     int more;
     double *ibuffer = NULL, *obuffer = NULL;
@@ -408,17 +368,13 @@ NI_MinOrMaxFilter1D(PyArrayObject *input, npy_intp filter_size,
     size2 = filter_size - size1 - 1;
     /* allocate and initialize the line buffers: */
     lines = -1;
-    if (!NI_AllocateLineBuffer(input, axis, size1 + origin, size2 - origin,
-                                            &lines, BUFFER_SIZE, &ibuffer))
+    if (!NI_AllocateLineBuffer(input, axis, size1 + origin, size2 - origin, &lines, BUFFER_SIZE, &ibuffer))
         goto exit;
-    if (!NI_AllocateLineBuffer(output, axis, 0, 0, &lines, BUFFER_SIZE,
-                                                                &obuffer))
+    if (!NI_AllocateLineBuffer(output, axis, 0, 0, &lines, BUFFER_SIZE, &obuffer))
         goto exit;
-    if (!NI_InitLineBuffer(input, axis, size1 + origin, size2 - origin,
-                                lines, ibuffer, mode, cval, &iline_buffer))
+    if (!NI_InitLineBuffer(input, axis, size1 + origin, size2 - origin, lines, ibuffer, mode, cval, &iline_buffer))
         goto exit;
-    if (!NI_InitLineBuffer(output, axis, 0, 0, lines, obuffer, mode, 0.0,
-                                                            &oline_buffer))
+    if (!NI_InitLineBuffer(output, axis, 0, 0, lines, obuffer, mode, 0.0, &oline_buffer))
         goto exit;
 
     NPY_BEGIN_THREADS;
@@ -438,7 +394,7 @@ NI_MinOrMaxFilter1D(PyArrayObject *input, npy_intp filter_size,
             goto exit;
         }
         /* iterate over the lines in the buffers: */
-        for(kk = 0; kk < lines; kk++) {
+        for (kk = 0; kk < lines; kk++) {
             /* get lines: */
             double *iline = NI_GET_LINE(iline_buffer, kk);
             double *oline = NI_GET_LINE(oline_buffer, kk);
@@ -446,8 +402,7 @@ NI_MinOrMaxFilter1D(PyArrayObject *input, npy_intp filter_size,
             /* This check could be moved out to the Python wrapper */
             if (filter_size == 1) {
                 memcpy(oline, iline, sizeof(double) * length);
-            }
-            else {
+            } else {
                 /*
                  * Original code by Richard Harter, adapted from:
                  * http://www.richardhartersworld.com/cri/2001/slidingmin.html
@@ -462,15 +417,12 @@ NI_MinOrMaxFilter1D(PyArrayObject *input, npy_intp filter_size,
                     if (minpair->death == ll) {
                         INCREASE_RING_PTR(minpair)
                     }
-                    if ((minimum && val <= minpair->value) ||
-                        (!minimum && val >= minpair->value)) {
+                    if ((minimum && val <= minpair->value) || (!minimum && val >= minpair->value)) {
                         minpair->value = val;
                         minpair->death = ll + filter_size;
                         last = minpair;
-                    }
-                    else {
-                        while ((minimum && last->value >= val) ||
-                               (!minimum && last->value <= val)) {
+                    } else {
+                        while ((minimum && last->value >= val) || (!minimum && last->value <= val)) {
                             DECREASE_RING_PTR(last)
                         }
                         INCREASE_RING_PTR(last)
@@ -487,9 +439,9 @@ NI_MinOrMaxFilter1D(PyArrayObject *input, npy_intp filter_size,
         if (!NI_LineBufferToArray(&oline_buffer)) {
             goto exit;
         }
-    } while(more);
+    } while (more);
 
- exit:
+exit:
     NPY_END_THREADS;
     free(ibuffer);
     free(obuffer);
@@ -500,44 +452,38 @@ NI_MinOrMaxFilter1D(PyArrayObject *input, npy_intp filter_size,
 #undef DECREASE_RING_PTR
 #undef INCREASE_RING_PTR
 
+#define CASE_MIN_OR_MAX_POINT(_TYPE, _type, _pi, _offsets, _filter_size, _cval, _minimum, _res, _mv, _ss)              \
+    case _TYPE: {                                                                                                      \
+        npy_intp _ii;                                                                                                  \
+        npy_intp _oo = _offsets[0];                                                                                    \
+        _type _tmp;                                                                                                    \
+        _type _cv = (_type) _cval;                                                                                     \
+        _res = _oo == _mv ? _cv : *(_type *) (_pi + _oo);                                                              \
+        if (_ss != NULL) {                                                                                             \
+            _res += _ss[0];                                                                                            \
+        }                                                                                                              \
+        for (_ii = 1; _ii < _filter_size; ++_ii) {                                                                     \
+            _oo = _offsets[_ii];                                                                                       \
+            _tmp = _oo == _mv ? _cv : *(_type *) (_pi + _oo);                                                          \
+            if (_ss != NULL) {                                                                                         \
+                _tmp += (_type) _ss[_ii];                                                                              \
+            }                                                                                                          \
+            if (_minimum) {                                                                                            \
+                if (_tmp < _res) {                                                                                     \
+                    _res = _tmp;                                                                                       \
+                }                                                                                                      \
+            } else {                                                                                                   \
+                if (_tmp > _res) {                                                                                     \
+                    _res = _tmp;                                                                                       \
+                }                                                                                                      \
+            }                                                                                                          \
+        }                                                                                                              \
+    } break
 
-#define CASE_MIN_OR_MAX_POINT(_TYPE, _type, _pi, _offsets, _filter_size, \
-                              _cval, _minimum, _res, _mv, _ss)           \
-case _TYPE:                                                              \
-{                                                                        \
-    npy_intp _ii;                                                        \
-    npy_intp _oo = _offsets[0];                                          \
-    _type _tmp;                                                          \
-    _type _cv = (_type)_cval;                                            \
-    _res = _oo == _mv ? _cv : *(_type *)(_pi + _oo);                     \
-    if (_ss != NULL) {                                                   \
-        _res += _ss[0];                                                  \
-    }                                                                    \
-    for (_ii = 1; _ii < _filter_size; ++_ii) {                           \
-        _oo = _offsets[_ii];                                             \
-        _tmp = _oo == _mv ? _cv : *(_type *)(_pi + _oo);                 \
-        if (_ss != NULL) {                                               \
-            _tmp += (_type) _ss[_ii];                                    \
-        }                                                                \
-        if (_minimum) {                                                  \
-            if (_tmp < _res) {                                           \
-                _res = _tmp;                                             \
-            }                                                            \
-        }                                                                \
-        else {                                                           \
-            if (_tmp > _res) {                                           \
-                _res = _tmp;                                             \
-            }                                                            \
-        }                                                                \
-    }                                                                    \
-}                                                                        \
-break
-
-int NI_MinOrMaxFilter(PyArrayObject* input, PyArrayObject* footprint,
-                      PyArrayObject* structure, PyArrayObject* output,
-                      NI_ExtendMode mode, double cvalue, npy_intp *origins,
-                      int minimum)
-{
+int NI_MinOrMaxFilter(
+    PyArrayObject *input, PyArrayObject *footprint, PyArrayObject *structure, PyArrayObject *output, NI_ExtendMode mode,
+    double cvalue, npy_intp *origins, int minimum
+) {
     npy_bool *pf = NULL;
     npy_intp fsize, jj, kk, filter_size = 0, border_flag_value;
     npy_intp *offsets = NULL, *oo, size;
@@ -551,8 +497,8 @@ int NI_MinOrMaxFilter(PyArrayObject* input, PyArrayObject* footprint,
 
     /* get the footprint: */
     fsize = PyArray_SIZE(footprint);
-    pf = (npy_bool*)PyArray_DATA(footprint);
-    for(jj = 0; jj < fsize; jj++) {
+    pf = (npy_bool *) PyArray_DATA(footprint);
+    for (jj = 0; jj < fsize; jj++) {
         if (pf[jj]) {
             ++filter_size;
         }
@@ -565,21 +511,20 @@ int NI_MinOrMaxFilter(PyArrayObject* input, PyArrayObject* footprint,
             goto exit;
         }
         /* copy the weights to contiguous memory: */
-        ps = (npy_double*)PyArray_DATA(structure);
+        ps = (npy_double *) PyArray_DATA(structure);
         jj = 0;
-        for(kk = 0; kk < fsize; kk++)
+        for (kk = 0; kk < fsize; kk++)
             if (pf[kk])
                 ss[jj++] = minimum ? -ps[kk] : ps[kk];
     }
     /* initialize filter offsets: */
-    if (!NI_InitFilterOffsets(input, pf, PyArray_DIMS(footprint), origins,
-                              mode, &offsets, &border_flag_value, NULL)) {
+    if (!NI_InitFilterOffsets(input, pf, PyArray_DIMS(footprint), origins, mode, &offsets, &border_flag_value, NULL)) {
         goto exit;
     }
     /* initialize filter iterator: */
-    if (!NI_InitFilterIterator(PyArray_NDIM(input), PyArray_DIMS(footprint),
-                               filter_size, PyArray_DIMS(input), origins,
-                               &fi)) {
+    if (!NI_InitFilterIterator(
+            PyArray_NDIM(input), PyArray_DIMS(footprint), filter_size, PyArray_DIMS(input), origins, &fi
+        )) {
         goto exit;
     }
     /* initialize input element iterator: */
@@ -592,56 +537,46 @@ int NI_MinOrMaxFilter(PyArrayObject* input, PyArrayObject* footprint,
     NPY_BEGIN_THREADS;
 
     /* get data pointers an array size: */
-    pi = (void *)PyArray_DATA(input);
-    po = (void *)PyArray_DATA(output);
+    pi = (void *) PyArray_DATA(input);
+    po = (void *) PyArray_DATA(output);
     size = PyArray_SIZE(input);
     /* iterator over the elements: */
     oo = offsets;
-    for(jj = 0; jj < size; jj++) {
+    for (jj = 0; jj < size; jj++) {
         double tmp = 0.0;
         switch (PyArray_TYPE(input)) {
-            CASE_MIN_OR_MAX_POINT(NPY_BOOL, npy_bool,
-                                  pi, oo, filter_size, cvalue, minimum, tmp,
-                                  border_flag_value, ss);
-            CASE_MIN_OR_MAX_POINT(NPY_UBYTE, npy_ubyte,
-                                  pi, oo, filter_size, cvalue, minimum, tmp,
-                                  border_flag_value, ss);
-            CASE_MIN_OR_MAX_POINT(NPY_USHORT, npy_ushort,
-                                  pi, oo, filter_size, cvalue, minimum, tmp,
-                                  border_flag_value, ss);
-            CASE_MIN_OR_MAX_POINT(NPY_UINT, npy_uint,
-                                  pi, oo, filter_size, cvalue, minimum, tmp,
-                                  border_flag_value, ss);
-            CASE_MIN_OR_MAX_POINT(NPY_ULONG, npy_ulong,
-                                  pi, oo, filter_size, cvalue, minimum, tmp,
-                                  border_flag_value, ss);
-            CASE_MIN_OR_MAX_POINT(NPY_ULONGLONG, npy_ulonglong,
-                                  pi, oo, filter_size, cvalue, minimum, tmp,
-                                  border_flag_value, ss);
-            CASE_MIN_OR_MAX_POINT(NPY_BYTE, npy_byte,
-                                  pi, oo, filter_size, cvalue, minimum, tmp,
-                                  border_flag_value, ss);
-            CASE_MIN_OR_MAX_POINT(NPY_SHORT, npy_short,
-                                  pi, oo, filter_size, cvalue, minimum, tmp,
-                                  border_flag_value, ss);
-            CASE_MIN_OR_MAX_POINT(NPY_INT, npy_int,
-                                  pi, oo, filter_size, cvalue, minimum, tmp,
-                                  border_flag_value, ss);
-            CASE_MIN_OR_MAX_POINT(NPY_LONG, npy_long,
-                                  pi, oo, filter_size, cvalue, minimum, tmp,
-                                  border_flag_value, ss);
-            CASE_MIN_OR_MAX_POINT(NPY_LONGLONG, npy_longlong,
-                                  pi, oo, filter_size, cvalue, minimum, tmp,
-                                  border_flag_value, ss);
-            CASE_MIN_OR_MAX_POINT(NPY_FLOAT, npy_float,
-                                  pi, oo, filter_size, cvalue, minimum, tmp,
-                                  border_flag_value, ss);
-            CASE_MIN_OR_MAX_POINT(NPY_DOUBLE, npy_double,
-                                  pi, oo, filter_size, cvalue, minimum, tmp,
-                                  border_flag_value, ss);
-            default:
-                err = 1;
-                goto exit;
+            CASE_MIN_OR_MAX_POINT(NPY_BOOL, npy_bool, pi, oo, filter_size, cvalue, minimum, tmp, border_flag_value, ss);
+            CASE_MIN_OR_MAX_POINT(
+                NPY_UBYTE, npy_ubyte, pi, oo, filter_size, cvalue, minimum, tmp, border_flag_value, ss
+            );
+            CASE_MIN_OR_MAX_POINT(
+                NPY_USHORT, npy_ushort, pi, oo, filter_size, cvalue, minimum, tmp, border_flag_value, ss
+            );
+            CASE_MIN_OR_MAX_POINT(NPY_UINT, npy_uint, pi, oo, filter_size, cvalue, minimum, tmp, border_flag_value, ss);
+            CASE_MIN_OR_MAX_POINT(
+                NPY_ULONG, npy_ulong, pi, oo, filter_size, cvalue, minimum, tmp, border_flag_value, ss
+            );
+            CASE_MIN_OR_MAX_POINT(
+                NPY_ULONGLONG, npy_ulonglong, pi, oo, filter_size, cvalue, minimum, tmp, border_flag_value, ss
+            );
+            CASE_MIN_OR_MAX_POINT(NPY_BYTE, npy_byte, pi, oo, filter_size, cvalue, minimum, tmp, border_flag_value, ss);
+            CASE_MIN_OR_MAX_POINT(
+                NPY_SHORT, npy_short, pi, oo, filter_size, cvalue, minimum, tmp, border_flag_value, ss
+            );
+            CASE_MIN_OR_MAX_POINT(NPY_INT, npy_int, pi, oo, filter_size, cvalue, minimum, tmp, border_flag_value, ss);
+            CASE_MIN_OR_MAX_POINT(NPY_LONG, npy_long, pi, oo, filter_size, cvalue, minimum, tmp, border_flag_value, ss);
+            CASE_MIN_OR_MAX_POINT(
+                NPY_LONGLONG, npy_longlong, pi, oo, filter_size, cvalue, minimum, tmp, border_flag_value, ss
+            );
+            CASE_MIN_OR_MAX_POINT(
+                NPY_FLOAT, npy_float, pi, oo, filter_size, cvalue, minimum, tmp, border_flag_value, ss
+            );
+            CASE_MIN_OR_MAX_POINT(
+                NPY_DOUBLE, npy_double, pi, oo, filter_size, cvalue, minimum, tmp, border_flag_value, ss
+            );
+        default:
+            err = 1;
+            goto exit;
         }
         switch (PyArray_TYPE(output)) {
             CASE_FILTER_OUT_SAFE(NPY_BOOL, npy_bool, po, tmp);
@@ -657,9 +592,9 @@ int NI_MinOrMaxFilter(PyArrayObject* input, PyArrayObject* footprint,
             CASE_FILTER_OUT(NPY_LONGLONG, npy_longlong, po, tmp);
             CASE_FILTER_OUT(NPY_FLOAT, npy_float, po, tmp);
             CASE_FILTER_OUT(NPY_DOUBLE, npy_double, po, tmp);
-            default:
-                err = 1;
-                goto exit;
+        default:
+            err = 1;
+            goto exit;
         }
         NI_FILTER_NEXT2(fi, ii, io, oo, pi, po);
     }
@@ -673,9 +608,7 @@ exit:
     return PyErr_Occurred() ? 0 : 1;
 }
 
-static double NI_Select(double *buffer, npy_intp min,
-                        npy_intp max, npy_intp rank)
-{
+static double NI_Select(double *buffer, npy_intp min, npy_intp max, npy_intp rank) {
     npy_intp ii, jj;
     double x, t;
 
@@ -685,13 +618,13 @@ static double NI_Select(double *buffer, npy_intp min,
     x = buffer[min];
     ii = min - 1;
     jj = max + 1;
-    for(;;) {
+    for (;;) {
         do
             jj--;
-        while(buffer[jj] > x);
+        while (buffer[jj] > x);
         do
             ii++;
-        while(buffer[ii] < x);
+        while (buffer[ii] < x);
         if (ii < jj) {
             t = buffer[ii];
             buffer[ii] = buffer[jj];
@@ -708,30 +641,24 @@ static double NI_Select(double *buffer, npy_intp min,
         return NI_Select(buffer, jj + 1, max, rank - ii);
 }
 
-#define CASE_RANK_POINT(_TYPE, _type, _pi, _offsets, _filter_size, \
-                        _cval, _rank, _buffer, _res, _mv)          \
-case _TYPE:                                                        \
-{                                                                  \
-    npy_intp _ii;                                                  \
-    for (_ii = 0; _ii < _filter_size; ++_ii) {                     \
-        npy_intp _offset = _offsets[_ii];                          \
-        if (_offset == _mv) {                                      \
-            _buffer[_ii] = (_type)_cval;                           \
-        }                                                          \
-        else {                                                     \
-            _buffer[_ii] = *(_type *)(_pi + _offset);              \
-        }                                                          \
-    }                                                              \
-    _res = (_type)NI_Select(_buffer, 0, _filter_size - 1, _rank);  \
-}                                                                  \
-break
+#define CASE_RANK_POINT(_TYPE, _type, _pi, _offsets, _filter_size, _cval, _rank, _buffer, _res, _mv)                   \
+    case _TYPE: {                                                                                                      \
+        npy_intp _ii;                                                                                                  \
+        for (_ii = 0; _ii < _filter_size; ++_ii) {                                                                     \
+            npy_intp _offset = _offsets[_ii];                                                                          \
+            if (_offset == _mv) {                                                                                      \
+                _buffer[_ii] = (_type) _cval;                                                                          \
+            } else {                                                                                                   \
+                _buffer[_ii] = *(_type *) (_pi + _offset);                                                             \
+            }                                                                                                          \
+        }                                                                                                              \
+        _res = (_type) NI_Select(_buffer, 0, _filter_size - 1, _rank);                                                 \
+    } break
 
-
-
-int NI_RankFilter(PyArrayObject* input, int rank,
-                  PyArrayObject* footprint, PyArrayObject* output,
-                  NI_ExtendMode mode, double cvalue, npy_intp *origins)
-{
+int NI_RankFilter(
+    PyArrayObject *input, int rank, PyArrayObject *footprint, PyArrayObject *output, NI_ExtendMode mode, double cvalue,
+    npy_intp *origins
+) {
     npy_intp fsize, jj, filter_size = 0, border_flag_value;
     npy_intp *offsets = NULL, *oo, size;
     NI_FilterIterator fi;
@@ -744,8 +671,8 @@ int NI_RankFilter(PyArrayObject* input, int rank,
 
     /* get the footprint: */
     fsize = PyArray_SIZE(footprint);
-    pf = (npy_bool*)PyArray_DATA(footprint);
-    for(jj = 0; jj < fsize; jj++) {
+    pf = (npy_bool *) PyArray_DATA(footprint);
+    for (jj = 0; jj < fsize; jj++) {
         if (pf[jj]) {
             ++filter_size;
         }
@@ -759,14 +686,13 @@ int NI_RankFilter(PyArrayObject* input, int rank,
     /* iterator over the elements: */
     oo = offsets;
     /* initialize filter offsets: */
-    if (!NI_InitFilterOffsets(input, pf, PyArray_DIMS(footprint), origins,
-                              mode, &offsets, &border_flag_value, NULL)) {
+    if (!NI_InitFilterOffsets(input, pf, PyArray_DIMS(footprint), origins, mode, &offsets, &border_flag_value, NULL)) {
         goto exit;
     }
     /* initialize filter iterator: */
-    if (!NI_InitFilterIterator(PyArray_NDIM(input), PyArray_DIMS(footprint),
-                               filter_size, PyArray_DIMS(input), origins,
-                               &fi)) {
+    if (!NI_InitFilterIterator(
+            PyArray_NDIM(input), PyArray_DIMS(footprint), filter_size, PyArray_DIMS(input), origins, &fi
+        )) {
         goto exit;
     }
     /* initialize input element iterator: */
@@ -778,56 +704,34 @@ int NI_RankFilter(PyArrayObject* input, int rank,
 
     NPY_BEGIN_THREADS;
     /* get data pointers an array size: */
-    pi = (void *)PyArray_DATA(input);
-    po = (void *)PyArray_DATA(output);
+    pi = (void *) PyArray_DATA(input);
+    po = (void *) PyArray_DATA(output);
     size = PyArray_SIZE(input);
     /* iterator over the elements: */
     oo = offsets;
-    for(jj = 0; jj < size; jj++) {
+    for (jj = 0; jj < size; jj++) {
         double tmp = 0.0;
         switch (PyArray_TYPE(input)) {
-            CASE_RANK_POINT(NPY_BOOL, npy_bool,
-                            pi, oo, filter_size, cvalue, rank, buffer, tmp,
-                            border_flag_value);
-            CASE_RANK_POINT(NPY_UBYTE, npy_ubyte,
-                            pi, oo, filter_size, cvalue, rank, buffer, tmp,
-                            border_flag_value);
-            CASE_RANK_POINT(NPY_USHORT, npy_ushort,
-                            pi, oo, filter_size, cvalue, rank, buffer, tmp,
-                            border_flag_value);
-            CASE_RANK_POINT(NPY_UINT, npy_uint,
-                            pi, oo, filter_size, cvalue, rank, buffer, tmp,
-                            border_flag_value);
-            CASE_RANK_POINT(NPY_ULONG, npy_ulong,
-                            pi, oo, filter_size, cvalue, rank, buffer, tmp,
-                            border_flag_value);
-            CASE_RANK_POINT(NPY_ULONGLONG, npy_ulonglong,
-                            pi, oo, filter_size, cvalue, rank, buffer, tmp,
-                            border_flag_value);
-            CASE_RANK_POINT(NPY_BYTE, npy_byte,
-                            pi, oo, filter_size, cvalue, rank, buffer, tmp,
-                            border_flag_value);
-            CASE_RANK_POINT(NPY_SHORT, npy_short,
-                            pi, oo, filter_size, cvalue, rank, buffer, tmp,
-                            border_flag_value);
-            CASE_RANK_POINT(NPY_INT, npy_int,
-                            pi, oo, filter_size, cvalue, rank, buffer, tmp,
-                            border_flag_value);
-            CASE_RANK_POINT(NPY_LONG, npy_long,
-                            pi, oo, filter_size, cvalue, rank, buffer, tmp,
-                            border_flag_value);
-            CASE_RANK_POINT(NPY_LONGLONG, npy_longlong,
-                            pi, oo, filter_size, cvalue, rank, buffer, tmp,
-                            border_flag_value);
-            CASE_RANK_POINT(NPY_FLOAT, npy_float,
-                            pi, oo, filter_size, cvalue, rank, buffer, tmp,
-                            border_flag_value);
-            CASE_RANK_POINT(NPY_DOUBLE, npy_double,
-                            pi, oo, filter_size, cvalue, rank, buffer, tmp,
-                            border_flag_value);
-            default:
-                err = 1;
-                goto exit;
+            CASE_RANK_POINT(NPY_BOOL, npy_bool, pi, oo, filter_size, cvalue, rank, buffer, tmp, border_flag_value);
+            CASE_RANK_POINT(NPY_UBYTE, npy_ubyte, pi, oo, filter_size, cvalue, rank, buffer, tmp, border_flag_value);
+            CASE_RANK_POINT(NPY_USHORT, npy_ushort, pi, oo, filter_size, cvalue, rank, buffer, tmp, border_flag_value);
+            CASE_RANK_POINT(NPY_UINT, npy_uint, pi, oo, filter_size, cvalue, rank, buffer, tmp, border_flag_value);
+            CASE_RANK_POINT(NPY_ULONG, npy_ulong, pi, oo, filter_size, cvalue, rank, buffer, tmp, border_flag_value);
+            CASE_RANK_POINT(
+                NPY_ULONGLONG, npy_ulonglong, pi, oo, filter_size, cvalue, rank, buffer, tmp, border_flag_value
+            );
+            CASE_RANK_POINT(NPY_BYTE, npy_byte, pi, oo, filter_size, cvalue, rank, buffer, tmp, border_flag_value);
+            CASE_RANK_POINT(NPY_SHORT, npy_short, pi, oo, filter_size, cvalue, rank, buffer, tmp, border_flag_value);
+            CASE_RANK_POINT(NPY_INT, npy_int, pi, oo, filter_size, cvalue, rank, buffer, tmp, border_flag_value);
+            CASE_RANK_POINT(NPY_LONG, npy_long, pi, oo, filter_size, cvalue, rank, buffer, tmp, border_flag_value);
+            CASE_RANK_POINT(
+                NPY_LONGLONG, npy_longlong, pi, oo, filter_size, cvalue, rank, buffer, tmp, border_flag_value
+            );
+            CASE_RANK_POINT(NPY_FLOAT, npy_float, pi, oo, filter_size, cvalue, rank, buffer, tmp, border_flag_value);
+            CASE_RANK_POINT(NPY_DOUBLE, npy_double, pi, oo, filter_size, cvalue, rank, buffer, tmp, border_flag_value);
+        default:
+            err = 1;
+            goto exit;
         }
         switch (PyArray_TYPE(output)) {
             CASE_FILTER_OUT_SAFE(NPY_BOOL, npy_bool, po, tmp);
@@ -843,9 +747,9 @@ int NI_RankFilter(PyArrayObject* input, int rank,
             CASE_FILTER_OUT(NPY_LONGLONG, npy_longlong, po, tmp);
             CASE_FILTER_OUT(NPY_FLOAT, npy_float, po, tmp);
             CASE_FILTER_OUT(NPY_DOUBLE, npy_double, po, tmp);
-            default:
-                err = 1;
-                goto exit;
+        default:
+            err = 1;
+            goto exit;
         }
         NI_FILTER_NEXT2(fi, ii, io, oo, pi, po);
     }
@@ -859,11 +763,10 @@ exit:
     return PyErr_Occurred() ? 0 : 1;
 }
 
-int NI_GenericFilter1D(PyArrayObject *input,
-            int (*function)(double*, npy_intp, double*, npy_intp, void*),
-            void* data, npy_intp filter_size, int axis, PyArrayObject *output,
-            NI_ExtendMode mode, double cval, npy_intp origin)
-{
+int NI_GenericFilter1D(
+    PyArrayObject *input, int (*function)(double *, npy_intp, double *, npy_intp, void *), void *data,
+    npy_intp filter_size, int axis, PyArrayObject *output, NI_ExtendMode mode, double cval, npy_intp origin
+) {
     int more;
     npy_intp ii, lines, length, size1, size2;
     double *ibuffer = NULL, *obuffer = NULL;
@@ -873,17 +776,13 @@ int NI_GenericFilter1D(PyArrayObject *input,
     size1 = filter_size / 2;
     size2 = filter_size - size1 - 1;
     lines = -1;
-    if (!NI_AllocateLineBuffer(input, axis, size1 + origin, size2 - origin,
-                                                         &lines, BUFFER_SIZE, &ibuffer))
+    if (!NI_AllocateLineBuffer(input, axis, size1 + origin, size2 - origin, &lines, BUFFER_SIZE, &ibuffer))
         goto exit;
-    if (!NI_AllocateLineBuffer(output, axis, 0, 0, &lines, BUFFER_SIZE,
-                                                         &obuffer))
+    if (!NI_AllocateLineBuffer(output, axis, 0, 0, &lines, BUFFER_SIZE, &obuffer))
         goto exit;
-    if (!NI_InitLineBuffer(input, axis, size1 + origin, size2 - origin,
-                                                            lines, ibuffer, mode, cval, &iline_buffer))
+    if (!NI_InitLineBuffer(input, axis, size1 + origin, size2 - origin, lines, ibuffer, mode, cval, &iline_buffer))
         goto exit;
-    if (!NI_InitLineBuffer(output, axis, 0, 0, lines, obuffer, mode, 0.0,
-                                                 &oline_buffer))
+    if (!NI_InitLineBuffer(output, axis, 0, 0, lines, obuffer, mode, 0.0, &oline_buffer))
         goto exit;
     length = PyArray_NDIM(input) > 0 ? PyArray_DIM(input, axis) : 1;
     /* iterate over all the array lines: */
@@ -893,14 +792,13 @@ int NI_GenericFilter1D(PyArrayObject *input,
             goto exit;
         }
         /* iterate over the lines in the buffers: */
-        for(ii = 0; ii < lines; ii++) {
+        for (ii = 0; ii < lines; ii++) {
             /* get lines: */
             double *iline = NI_GET_LINE(iline_buffer, ii);
             double *oline = NI_GET_LINE(oline_buffer, ii);
             if (!function(iline, length + size1 + size2, oline, length, data)) {
                 if (!PyErr_Occurred()) {
-                    PyErr_SetString(PyExc_RuntimeError,
-                                "unknown error in line processing function");
+                    PyErr_SetString(PyExc_RuntimeError, "unknown error in line processing function");
                 }
                 goto exit;
             }
@@ -909,43 +807,36 @@ int NI_GenericFilter1D(PyArrayObject *input,
         if (!NI_LineBufferToArray(&oline_buffer)) {
             goto exit;
         }
-    } while(more);
+    } while (more);
 exit:
     free(ibuffer);
     free(obuffer);
     return PyErr_Occurred() ? 0 : 1;
 }
 
+#define CASE_FILTER_POINT(_TYPE, _type, _pi, _offsets, _filter_size, _cvalue, _res, _mv, _function, _data, _buffer)    \
+    case _TYPE: {                                                                                                      \
+        npy_intp _ii;                                                                                                  \
+        for (_ii = 0; _ii < _filter_size; ++_ii) {                                                                     \
+            const npy_intp _offset = _offsets[_ii];                                                                    \
+            if (_offset == _mv) {                                                                                      \
+                _buffer[_ii] = (double) _cvalue;                                                                       \
+            } else {                                                                                                   \
+                _buffer[_ii] = (double) (*(_type *) (_pi + _offset));                                                  \
+            }                                                                                                          \
+        }                                                                                                              \
+        if (!_function(_buffer, _filter_size, &_res, _data)) {                                                         \
+            if (!PyErr_Occurred()) {                                                                                   \
+                PyErr_SetString(PyExc_RuntimeError, "unknown error in filter function");                               \
+                goto exit;                                                                                             \
+            }                                                                                                          \
+        }                                                                                                              \
+    } break
 
-#define CASE_FILTER_POINT(_TYPE, _type, _pi, _offsets, _filter_size, _cvalue, \
-                          _res, _mv, _function, _data, _buffer)               \
-case _TYPE:                                                                   \
-{                                                                             \
-    npy_intp _ii;                                                             \
-    for (_ii = 0; _ii < _filter_size; ++_ii) {                                \
-        const npy_intp _offset = _offsets[_ii];                               \
-        if (_offset == _mv) {                                                 \
-            _buffer[_ii] = (double)_cvalue;                                   \
-        }                                                                     \
-        else {                                                                \
-            _buffer[_ii] = (double)(*(_type*)(_pi + _offset));                \
-        }                                                                     \
-    }                                                                         \
-    if (!_function(_buffer, _filter_size, &_res, _data)) {                    \
-        if (!PyErr_Occurred()) {                                              \
-            PyErr_SetString(PyExc_RuntimeError,                               \
-                            "unknown error in filter function");              \
-            goto exit;                                                        \
-        }                                                                     \
-    }                                                                         \
-}                                                                             \
-break
-
-int NI_GenericFilter(PyArrayObject* input,
-            int (*function)(double*, npy_intp, double*, void*), void *data,
-            PyArrayObject* footprint, PyArrayObject* output,
-            NI_ExtendMode mode, double cvalue, npy_intp *origins)
-{
+int NI_GenericFilter(
+    PyArrayObject *input, int (*function)(double *, npy_intp, double *, void *), void *data, PyArrayObject *footprint,
+    PyArrayObject *output, NI_ExtendMode mode, double cvalue, npy_intp *origins
+) {
     npy_bool *pf = NULL;
     npy_intp fsize, jj, filter_size = 0, border_flag_value;
     npy_intp *offsets = NULL, *oo, size;
@@ -956,20 +847,19 @@ int NI_GenericFilter(PyArrayObject* input,
 
     /* get the footprint: */
     fsize = PyArray_SIZE(footprint);
-    pf = (npy_bool*)PyArray_DATA(footprint);
-    for(jj = 0; jj < fsize; jj++) {
+    pf = (npy_bool *) PyArray_DATA(footprint);
+    for (jj = 0; jj < fsize; jj++) {
         if (pf[jj])
             ++filter_size;
     }
     /* initialize filter offsets: */
-    if (!NI_InitFilterOffsets(input, pf, PyArray_DIMS(footprint), origins,
-                              mode, &offsets, &border_flag_value, NULL)) {
+    if (!NI_InitFilterOffsets(input, pf, PyArray_DIMS(footprint), origins, mode, &offsets, &border_flag_value, NULL)) {
         goto exit;
     }
     /* initialize filter iterator: */
-    if (!NI_InitFilterIterator(PyArray_NDIM(input), PyArray_DIMS(footprint),
-                               filter_size, PyArray_DIMS(input), origins,
-                               &fi)) {
+    if (!NI_InitFilterIterator(
+            PyArray_NDIM(input), PyArray_DIMS(footprint), filter_size, PyArray_DIMS(input), origins, &fi
+        )) {
         goto exit;
     }
     /* initialize input element iterator: */
@@ -979,8 +869,8 @@ int NI_GenericFilter(PyArrayObject* input,
     if (!NI_InitPointIterator(output, &io))
         goto exit;
     /* get data pointers an array size: */
-    pi = (void *)PyArray_DATA(input);
-    po = (void *)PyArray_DATA(output);
+    pi = (void *) PyArray_DATA(input);
+    po = (void *) PyArray_DATA(output);
     size = PyArray_SIZE(input);
     /* buffer for filter calculation: */
     buffer = malloc(filter_size * sizeof(double));
@@ -990,52 +880,52 @@ int NI_GenericFilter(PyArrayObject* input,
     }
     /* iterate over the elements: */
     oo = offsets;
-    for(jj = 0; jj < size; jj++) {
+    for (jj = 0; jj < size; jj++) {
         double tmp = 0.0;
         switch (PyArray_TYPE(input)) {
-            CASE_FILTER_POINT(NPY_BOOL, npy_bool,
-                              pi, oo, filter_size, cvalue, tmp,
-                              border_flag_value, function, data, buffer);
-            CASE_FILTER_POINT(NPY_UBYTE, npy_ubyte,
-                              pi, oo, filter_size, cvalue, tmp,
-                              border_flag_value, function, data, buffer);
-            CASE_FILTER_POINT(NPY_USHORT, npy_ushort,
-                              pi, oo, filter_size, cvalue, tmp,
-                              border_flag_value, function, data, buffer);
-            CASE_FILTER_POINT(NPY_UINT, npy_uint,
-                              pi, oo, filter_size, cvalue, tmp,
-                              border_flag_value, function, data, buffer);
-            CASE_FILTER_POINT(NPY_ULONG, npy_ulong,
-                              pi, oo, filter_size, cvalue, tmp,
-                              border_flag_value, function, data, buffer);
-            CASE_FILTER_POINT(NPY_ULONGLONG, npy_ulonglong,
-                              pi, oo, filter_size, cvalue, tmp,
-                              border_flag_value, function, data, buffer);
-            CASE_FILTER_POINT(NPY_BYTE, npy_byte,
-                              pi, oo, filter_size, cvalue, tmp,
-                              border_flag_value, function, data, buffer);
-            CASE_FILTER_POINT(NPY_SHORT, npy_short,
-                              pi, oo, filter_size, cvalue, tmp,
-                              border_flag_value, function, data, buffer);
-            CASE_FILTER_POINT(NPY_INT, npy_int,
-                              pi, oo, filter_size, cvalue, tmp,
-                              border_flag_value, function, data, buffer);
-            CASE_FILTER_POINT(NPY_LONG, npy_long,
-                              pi, oo, filter_size, cvalue, tmp,
-                              border_flag_value, function, data, buffer);
-            CASE_FILTER_POINT(NPY_LONGLONG, npy_longlong,
-                              pi, oo, filter_size, cvalue, tmp,
-                              border_flag_value, function, data, buffer);
-            CASE_FILTER_POINT(NPY_FLOAT, npy_float,
-                              pi, oo, filter_size, cvalue, tmp,
-                              border_flag_value, function, data, buffer);
-            CASE_FILTER_POINT(NPY_DOUBLE, npy_double,
-                              pi, oo, filter_size, cvalue, tmp,
-                              border_flag_value, function, data, buffer);
-            default:
-                PyErr_SetString(PyExc_RuntimeError,
-                                "array type not supported");
-                goto exit;
+            CASE_FILTER_POINT(
+                NPY_BOOL, npy_bool, pi, oo, filter_size, cvalue, tmp, border_flag_value, function, data, buffer
+            );
+            CASE_FILTER_POINT(
+                NPY_UBYTE, npy_ubyte, pi, oo, filter_size, cvalue, tmp, border_flag_value, function, data, buffer
+            );
+            CASE_FILTER_POINT(
+                NPY_USHORT, npy_ushort, pi, oo, filter_size, cvalue, tmp, border_flag_value, function, data, buffer
+            );
+            CASE_FILTER_POINT(
+                NPY_UINT, npy_uint, pi, oo, filter_size, cvalue, tmp, border_flag_value, function, data, buffer
+            );
+            CASE_FILTER_POINT(
+                NPY_ULONG, npy_ulong, pi, oo, filter_size, cvalue, tmp, border_flag_value, function, data, buffer
+            );
+            CASE_FILTER_POINT(
+                NPY_ULONGLONG, npy_ulonglong, pi, oo, filter_size, cvalue, tmp, border_flag_value, function, data,
+                buffer
+            );
+            CASE_FILTER_POINT(
+                NPY_BYTE, npy_byte, pi, oo, filter_size, cvalue, tmp, border_flag_value, function, data, buffer
+            );
+            CASE_FILTER_POINT(
+                NPY_SHORT, npy_short, pi, oo, filter_size, cvalue, tmp, border_flag_value, function, data, buffer
+            );
+            CASE_FILTER_POINT(
+                NPY_INT, npy_int, pi, oo, filter_size, cvalue, tmp, border_flag_value, function, data, buffer
+            );
+            CASE_FILTER_POINT(
+                NPY_LONG, npy_long, pi, oo, filter_size, cvalue, tmp, border_flag_value, function, data, buffer
+            );
+            CASE_FILTER_POINT(
+                NPY_LONGLONG, npy_longlong, pi, oo, filter_size, cvalue, tmp, border_flag_value, function, data, buffer
+            );
+            CASE_FILTER_POINT(
+                NPY_FLOAT, npy_float, pi, oo, filter_size, cvalue, tmp, border_flag_value, function, data, buffer
+            );
+            CASE_FILTER_POINT(
+                NPY_DOUBLE, npy_double, pi, oo, filter_size, cvalue, tmp, border_flag_value, function, data, buffer
+            );
+        default:
+            PyErr_SetString(PyExc_RuntimeError, "array type not supported");
+            goto exit;
         }
         switch (PyArray_TYPE(output)) {
             CASE_FILTER_OUT_SAFE(NPY_BOOL, npy_bool, po, tmp);
@@ -1051,10 +941,9 @@ int NI_GenericFilter(PyArrayObject* input,
             CASE_FILTER_OUT(NPY_LONGLONG, npy_longlong, po, tmp);
             CASE_FILTER_OUT(NPY_FLOAT, npy_float, po, tmp);
             CASE_FILTER_OUT(NPY_DOUBLE, npy_double, po, tmp);
-            default:
-                PyErr_SetString(PyExc_RuntimeError,
-                                "array type not supported");
-                goto exit;
+        default:
+            PyErr_SetString(PyExc_RuntimeError, "array type not supported");
+            goto exit;
         }
         NI_FILTER_NEXT2(fi, ii, io, oo, pi, po);
     }

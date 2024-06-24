@@ -54,31 +54,30 @@ extern "C" {
  * Verbosity level
  */
 typedef enum {
-  TNC_MSG_NONE = 0, /* No messages */
-  TNC_MSG_ITER = 1, /* One line per iteration */
-  TNC_MSG_INFO = 2, /* Informational messages */
-  TNC_MSG_EXIT = 8, /* Exit reasons */
+    TNC_MSG_NONE = 0, /* No messages */
+    TNC_MSG_ITER = 1, /* One line per iteration */
+    TNC_MSG_INFO = 2, /* Informational messages */
+    TNC_MSG_EXIT = 8, /* Exit reasons */
 
-  TNC_MSG_ALL = TNC_MSG_ITER | TNC_MSG_INFO | TNC_MSG_EXIT /* All messages */
+    TNC_MSG_ALL = TNC_MSG_ITER | TNC_MSG_INFO | TNC_MSG_EXIT /* All messages */
 } tnc_message;
 
 /*
  * Possible return values for tnc
  */
-typedef enum
-{
-  TNC_MINRC        = -3, /* Constant to add to get the rc_string */
-  TNC_ENOMEM       = -3, /* Memory allocation failed */
-  TNC_EINVAL       = -2, /* Invalid parameters (n<0) */
-  TNC_INFEASIBLE   = -1, /* Infeasible (low bound > up bound) */
-  TNC_LOCALMINIMUM =  0, /* Local minima reach (|pg| ~= 0) */
-  TNC_FCONVERGED   =  1, /* Converged (|f_n-f_(n-1)| ~= 0) */
-  TNC_XCONVERGED   =  2, /* Converged (|x_n-x_(n-1)| ~= 0) */
-  TNC_MAXFUN       =  3, /* Max. number of function evaluations reach */
-  TNC_LSFAIL       =  4, /* Linear search failed */
-  TNC_CONSTANT     =  5, /* All lower bounds are equal to the upper bounds */
-  TNC_NOPROGRESS   =  6, /* Unable to progress */
-  TNC_USERABORT    =  7  /* User requested end of minization */
+typedef enum {
+    TNC_MINRC = -3,       /* Constant to add to get the rc_string */
+    TNC_ENOMEM = -3,      /* Memory allocation failed */
+    TNC_EINVAL = -2,      /* Invalid parameters (n<0) */
+    TNC_INFEASIBLE = -1,  /* Infeasible (low bound > up bound) */
+    TNC_LOCALMINIMUM = 0, /* Local minima reach (|pg| ~= 0) */
+    TNC_FCONVERGED = 1,   /* Converged (|f_n-f_(n-1)| ~= 0) */
+    TNC_XCONVERGED = 2,   /* Converged (|x_n-x_(n-1)| ~= 0) */
+    TNC_MAXFUN = 3,       /* Max. number of function evaluations reach */
+    TNC_LSFAIL = 4,       /* Linear search failed */
+    TNC_CONSTANT = 5,     /* All lower bounds are equal to the upper bounds */
+    TNC_NOPROGRESS = 6,   /* Unable to progress */
+    TNC_USERABORT = 7     /* User requested end of minization */
 } tnc_rc;
 
 /*
@@ -163,12 +162,11 @@ typedef void tnc_callback(double x[], void *state);
  * On output, x, f and g may be very slightly out of sync because of scaling.
  *
  */
-extern int tnc(int n, double x[], double *f, double g[],
-  tnc_function *function, void *state,
-  double low[], double up[], double scale[], double offset[],
-  int messages, int maxCGit, int maxnfeval, double eta, double stepmx,
-  double accuracy, double fmin, double ftol, double xtol, double pgtol,
-  double rescale, int *nfeval, int *niter, tnc_callback *callback);
+extern int
+tnc(int n, double x[], double *f, double g[], tnc_function *function, void *state, double low[], double up[],
+    double scale[], double offset[], int messages, int maxCGit, int maxnfeval, double eta, double stepmx,
+    double accuracy, double fmin, double ftol, double xtol, double pgtol, double rescale, int *nfeval, int *niter,
+    tnc_callback *callback);
 
 #ifdef __cplusplus
 }

@@ -206,15 +206,7 @@ extern const char *yve_doc;
 extern "C" int wrap_PyUFunc_getfperr() { return PyUFunc_getfperr(); }
 
 static PyModuleDef _special_ufuncs_def = {
-    PyModuleDef_HEAD_INIT,
-    "_special_ufuncs",
-    NULL,
-    -1,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL
+    PyModuleDef_HEAD_INIT, "_special_ufuncs", NULL, -1, NULL, NULL, NULL, NULL, NULL
 };
 
 PyMODINIT_FUNC PyInit__special_ufuncs() {
@@ -424,8 +416,8 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
     PyModule_AddObjectRef(_special_ufuncs, "iv", iv);
 
     PyObject *iv_ratio = SpecFun_NewUFunc(
-        {static_cast<func_dd_d_t>(special::iv_ratio), static_cast<func_ff_f_t>(special::iv_ratio)},
-        "_iv_ratio", iv_ratio_doc
+        {static_cast<func_dd_d_t>(special::iv_ratio), static_cast<func_ff_f_t>(special::iv_ratio)}, "_iv_ratio",
+        iv_ratio_doc
     );
     PyModule_AddObjectRef(_special_ufuncs, "_iv_ratio", iv_ratio);
 

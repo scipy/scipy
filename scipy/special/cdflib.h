@@ -61,52 +61,44 @@
 #define CDFLIB_H
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif /* __cplusplus */
 
 #include <math.h>
 
-struct TupleDD
-{
+struct TupleDD {
     double d1;
     double d2;
 };
 
-struct TupleDI
-{
+struct TupleDI {
     double d1;
     int i1;
 };
 
-struct TupleDDI
-{
+struct TupleDDI {
     double d1;
     double d2;
     int i1;
 };
 
-struct TupleDID
-{
+struct TupleDID {
     double d1;
     int i1;
     double d2;
 };
 
-struct TupleDDID
-{
+struct TupleDDID {
     double d1;
     double d2;
     int i1;
     double d3;
 };
 
-
 typedef struct DinvrState DinvrState;
 typedef struct DzrorState DzrorState;
 
-
-struct TupleDDID cdfbet_which1( double, double, double, double);
+struct TupleDDID cdfbet_which1(double, double, double, double);
 struct TupleDDID cdfbet_which2(double, double, double, double);
 struct TupleDID cdfbet_which3(double, double, double, double, double);
 struct TupleDID cdfbet_which4(double, double, double, double, double);
@@ -154,7 +146,7 @@ struct TupleDID cdftnc_which3(double, double, double, double);
 struct TupleDID cdftnc_which4(double, double, double, double);
 
 #ifdef __cplusplus
-}      /* extern "C" */
+} /* extern "C" */
 #endif /* __cplusplus */
 
 #endif /* ifndef */

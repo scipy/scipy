@@ -382,8 +382,8 @@ namespace cephes {
             return lhs - rhs * n;
         }
 
-        SPECFUN_HOST_DEVICE inline std::pair<double_double, double_double> divrem(const double_double &lhs,
-                                                                                  const double_double &rhs) {
+        SPECFUN_HOST_DEVICE inline std::pair<double_double, double_double>
+        divrem(const double_double &lhs, const double_double &rhs) {
             double_double n = round(lhs / rhs);
             double_double remainder = lhs - n * rhs;
             return {n, remainder};
@@ -436,21 +436,23 @@ namespace cephes {
             return double_double(std::numeric_limits<double>::infinity(), std::numeric_limits<double>::infinity());
         }
 
-        const double_double inv_fact[] = {double_double(1.66666666666666657e-01, 9.25185853854297066e-18),
-                                          double_double(4.16666666666666644e-02, 2.31296463463574266e-18),
-                                          double_double(8.33333333333333322e-03, 1.15648231731787138e-19),
-                                          double_double(1.38888888888888894e-03, -5.30054395437357706e-20),
-                                          double_double(1.98412698412698413e-04, 1.72095582934207053e-22),
-                                          double_double(2.48015873015873016e-05, 2.15119478667758816e-23),
-                                          double_double(2.75573192239858925e-06, -1.85839327404647208e-22),
-                                          double_double(2.75573192239858883e-07, 2.37677146222502973e-23),
-                                          double_double(2.50521083854417202e-08, -1.44881407093591197e-24),
-                                          double_double(2.08767569878681002e-09, -1.20734505911325997e-25),
-                                          double_double(1.60590438368216133e-10, 1.25852945887520981e-26),
-                                          double_double(1.14707455977297245e-11, 2.06555127528307454e-28),
-                                          double_double(7.64716373181981641e-13, 7.03872877733453001e-30),
-                                          double_double(4.77947733238738525e-14, 4.39920548583408126e-31),
-                                          double_double(2.81145725434552060e-15, 1.65088427308614326e-31)};
+        const double_double inv_fact[] = {
+            double_double(1.66666666666666657e-01, 9.25185853854297066e-18),
+            double_double(4.16666666666666644e-02, 2.31296463463574266e-18),
+            double_double(8.33333333333333322e-03, 1.15648231731787138e-19),
+            double_double(1.38888888888888894e-03, -5.30054395437357706e-20),
+            double_double(1.98412698412698413e-04, 1.72095582934207053e-22),
+            double_double(2.48015873015873016e-05, 2.15119478667758816e-23),
+            double_double(2.75573192239858925e-06, -1.85839327404647208e-22),
+            double_double(2.75573192239858883e-07, 2.37677146222502973e-23),
+            double_double(2.50521083854417202e-08, -1.44881407093591197e-24),
+            double_double(2.08767569878681002e-09, -1.20734505911325997e-25),
+            double_double(1.60590438368216133e-10, 1.25852945887520981e-26),
+            double_double(1.14707455977297245e-11, 2.06555127528307454e-28),
+            double_double(7.64716373181981641e-13, 7.03872877733453001e-30),
+            double_double(4.77947733238738525e-14, 4.39920548583408126e-31),
+            double_double(2.81145725434552060e-15, 1.65088427308614326e-31)
+        };
 
         // Math constants
         const double_double E = double_double(2.718281828459045091e+00, 1.445646891729250158e-16);

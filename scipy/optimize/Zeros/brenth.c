@@ -1,7 +1,7 @@
 /* Written by Charles Harris charles.harris@sdl.usu.edu */
 
-#include <math.h>
 #include "zeros.h"
+#include <math.h>
 
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 
@@ -34,10 +34,10 @@
 
 */
 
-double
-brenth(callback_type f, double xa, double xb, double xtol, double rtol,
-       int iter, void *func_data_param, scipy_zeros_info *solver_stats)
-{
+double brenth(
+    callback_type f, double xa, double xb, double xtol, double rtol, int iter, void *func_data_param,
+    scipy_zeros_info *solver_stats
+) {
     double xpre = xa, xcur = xb;
     double xblk = 0., fpre, fcur, fblk = 0., spre = 0., scur = 0., sbis;
     /* the tolerance is 2*delta */
@@ -46,8 +46,8 @@ brenth(callback_type f, double xa, double xb, double xtol, double rtol,
     int i;
     solver_stats->error_num = INPROGRESS;
 
-    fpre = (*f)(xpre,func_data_param);
-    fcur = (*f)(xcur,func_data_param);
+    fpre = (*f)(xpre, func_data_param);
+    fcur = (*f)(xcur, func_data_param);
     solver_stats->funcalls = 2;
     if (fpre == 0) {
         solver_stats->error_num = CONVERGED;
@@ -57,15 +57,14 @@ brenth(callback_type f, double xa, double xb, double xtol, double rtol,
         solver_stats->error_num = CONVERGED;
         return xcur;
     }
-    if (signbit(fpre)==signbit(fcur)) {
+    if (signbit(fpre) == signbit(fcur)) {
         solver_stats->error_num = SIGNERR;
         return 0.;
     }
     solver_stats->iterations = 0;
     for (i = 0; i < iter; i++) {
         solver_stats->iterations++;
-        if (fpre != 0 && fcur != 0 &&
-	    (signbit(fpre) != signbit(fcur))) {
+        if (fpre != 0 && fcur != 0 && (signbit(fpre) != signbit(fcur))) {
             xblk = xpre;
             fblk = fpre;
             spre = scur = xcur - xpre;
@@ -80,8 +79,8 @@ brenth(callback_type f, double xa, double xb, double xtol, double rtol,
             fblk = fpre;
         }
 
-        delta = (xtol + rtol*fabs(xcur))/2;
-        sbis = (xblk - xcur)/2;
+        delta = (xtol + rtol * fabs(xcur)) / 2;
+        sbis = (xblk - xcur) / 2;
         if (fcur == 0 || fabs(sbis) < delta) {
             solver_stats->error_num = CONVERGED;
             return xcur;
@@ -90,27 +89,24 @@ brenth(callback_type f, double xa, double xb, double xtol, double rtol,
         if (fabs(spre) > delta && fabs(fcur) < fabs(fpre)) {
             if (xpre == xblk) {
                 /* interpolate */
-                stry = -fcur*(xcur - xpre)/(fcur - fpre);
-            }
-            else {
+                stry = -fcur * (xcur - xpre) / (fcur - fpre);
+            } else {
                 /* extrapolate */
-                dpre = (fpre - fcur)/(xpre - xcur);
-                dblk = (fblk - fcur)/(xblk - xcur);
-                stry = -fcur*(fblk - fpre)/(fblk*dpre - fpre*dblk);
+                dpre = (fpre - fcur) / (xpre - xcur);
+                dblk = (fblk - fcur) / (xblk - xcur);
+                stry = -fcur * (fblk - fpre) / (fblk * dpre - fpre * dblk);
             }
 
-            if (2*fabs(stry) < MIN(fabs(spre), 3*fabs(sbis) - delta)) {
+            if (2 * fabs(stry) < MIN(fabs(spre), 3 * fabs(sbis) - delta)) {
                 /* accept step */
                 spre = scur;
                 scur = stry;
-            }
-            else {
+            } else {
                 /* bisect */
                 spre = sbis;
                 scur = sbis;
             }
-        }
-        else {
+        } else {
             /* bisect */
             spre = sbis;
             scur = sbis;
@@ -120,8 +116,7 @@ brenth(callback_type f, double xa, double xb, double xtol, double rtol,
         fpre = fcur;
         if (fabs(scur) > delta) {
             xcur += scur;
-        }
-        else {
+        } else {
             xcur += (sbis > 0 ? delta : -delta);
         }
 

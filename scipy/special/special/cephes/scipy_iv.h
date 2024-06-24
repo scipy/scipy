@@ -362,7 +362,8 @@ namespace cephes {
              0.0,
              0.0,
              0.0,
-             0.0}};
+             0.0}
+        };
 
         /*
          * Compute Iv, Kv from (AMS5 9.7.7 + 9.7.8), asymptotic expansion for large v

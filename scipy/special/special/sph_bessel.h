@@ -302,9 +302,8 @@ T sph_bessel_i_jac(long n, T z) {
 
     if (z == static_cast<T>(0)) {
         if (n == 1) {
-            return 1./3.;
-        }
-        else {
+            return 1. / 3.;
+        } else {
             return 0;
         }
     }

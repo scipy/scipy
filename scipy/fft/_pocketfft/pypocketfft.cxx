@@ -15,6 +15,7 @@
 #include <pybind11/pybind11.h>
 
 #include <pybind11/numpy.h>
+#include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
 #include "pocketfft_hdronly.h"
@@ -23,14 +24,13 @@ namespace {
 
 using pocketfft::shape_t;
 using pocketfft::stride_t;
-using std::size_t;
 using std::ptrdiff_t;
+using std::size_t;
 
 namespace py = pybind11;
 
 // Only instantiate long double transforms if they offer more precision
-using ldbl_t = typename std::conditional<
-  sizeof(long double)==sizeof(double), double, long double>::type;
+using ldbl_t = typename std::conditional<sizeof(long double) == sizeof(double), double, long double>::type;
 
 using c64 = std::complex<float>;
 using c128 = std::complex<double>;
@@ -39,399 +39,366 @@ using f32 = float;
 using f64 = double;
 using flong = ldbl_t;
 
-shape_t copy_shape(const py::array &arr)
-  {
-  shape_t res(size_t(arr.ndim()));
-  for (size_t i=0; i<res.size(); ++i)
-    res[i] = size_t(arr.shape(int(i)));
-  return res;
-  }
-
-stride_t copy_strides(const py::array &arr)
-  {
-  stride_t res(size_t(arr.ndim()));
-  for (size_t i=0; i<res.size(); ++i)
-    res[i] = arr.strides(int(i));
-  return res;
-  }
-
-shape_t makeaxes(const py::array &in, const py::object &axes)
-  {
-  if (axes.is_none())
-    {
-    shape_t res(size_t(in.ndim()));
-    for (size_t i=0; i<res.size(); ++i)
-      res[i]=i;
+shape_t copy_shape(const py::array &arr) {
+    shape_t res(size_t(arr.ndim()));
+    for (size_t i = 0; i < res.size(); ++i)
+        res[i] = size_t(arr.shape(int(i)));
     return res;
+}
+
+stride_t copy_strides(const py::array &arr) {
+    stride_t res(size_t(arr.ndim()));
+    for (size_t i = 0; i < res.size(); ++i)
+        res[i] = arr.strides(int(i));
+    return res;
+}
+
+shape_t makeaxes(const py::array &in, const py::object &axes) {
+    if (axes.is_none()) {
+        shape_t res(size_t(in.ndim()));
+        for (size_t i = 0; i < res.size(); ++i)
+            res[i] = i;
+        return res;
     }
-  auto tmp=axes.cast<std::vector<ptrdiff_t>>();
-  auto ndim = in.ndim();
-  if ((tmp.size()>size_t(ndim)) || (tmp.size()==0))
-    throw std::runtime_error("bad axes argument");
-  for (auto& sz: tmp)
+    auto tmp = axes.cast<std::vector<ptrdiff_t>>();
+    auto ndim = in.ndim();
+    if ((tmp.size() > size_t(ndim)) || (tmp.size() == 0))
+        throw std::runtime_error("bad axes argument");
+    for (auto &sz : tmp) {
+        if (sz < 0)
+            sz += ndim;
+        if ((sz >= ndim) || (sz < 0))
+            throw std::invalid_argument("axes exceeds dimensionality of output");
+    }
+    return shape_t(tmp.begin(), tmp.end());
+}
+
+#define DISPATCH(arr, T1, T2, T3, func, args)                                                                          \
+    {                                                                                                                  \
+        if (py::isinstance<py::array_t<T1>>(arr))                                                                      \
+            return func<double> args;                                                                                  \
+        if (py::isinstance<py::array_t<T2>>(arr))                                                                      \
+            return func<float> args;                                                                                   \
+        if (py::isinstance<py::array_t<T3>>(arr))                                                                      \
+            return func<ldbl_t> args;                                                                                  \
+        throw std::runtime_error("unsupported data type");                                                             \
+    }
+
+template <typename T>
+T norm_fct(int inorm, size_t N) {
+    if (inorm == 0)
+        return T(1);
+    if (inorm == 2)
+        return T(1 / ldbl_t(N));
+    if (inorm == 1)
+        return T(1 / sqrt(ldbl_t(N)));
+    throw std::invalid_argument("invalid value for inorm (must be 0, 1, or 2)");
+}
+
+template <typename T>
+T norm_fct(int inorm, const shape_t &shape, const shape_t &axes, size_t fct = 1, int delta = 0) {
+    if (inorm == 0)
+        return T(1);
+    size_t N(1);
+    for (auto a : axes)
+        N *= fct * size_t(int64_t(shape[a]) + delta);
+    return norm_fct<T>(inorm, N);
+}
+
+template <typename T>
+py::array_t<T> prepare_output(py::object &out_, shape_t &dims) {
+    if (out_.is_none())
+        return py::array_t<T>(dims);
+    auto tmp = out_.cast<py::array_t<T>>();
+    if (!tmp.is(out_)) // a new object was created during casting
+        throw std::runtime_error("unexpected data type for output array");
+    return tmp;
+}
+
+template <typename T>
+py::array
+c2c_internal(const py::array &in, const py::object &axes_, bool forward, int inorm, py::object &out_, size_t nthreads) {
+    auto axes = makeaxes(in, axes_);
+    auto dims(copy_shape(in));
+    auto res = prepare_output<std::complex<T>>(out_, dims);
+    auto s_in = copy_strides(in);
+    auto s_out = copy_strides(res);
+    auto d_in = reinterpret_cast<const std::complex<T> *>(in.data());
+    auto d_out = reinterpret_cast<std::complex<T> *>(res.mutable_data());
     {
-    if (sz<0)
-      sz += ndim;
-    if ((sz>=ndim) || (sz<0))
-      throw std::invalid_argument("axes exceeds dimensionality of output");
+        py::gil_scoped_release release;
+        T fct = norm_fct<T>(inorm, dims, axes);
+        pocketfft::c2c(dims, s_in, s_out, axes, forward, d_in, d_out, fct, nthreads);
     }
-  return shape_t(tmp.begin(), tmp.end());
-  }
+    return std::move(res);
+}
 
-#define DISPATCH(arr, T1, T2, T3, func, args) \
-  { \
-  if (py::isinstance<py::array_t<T1>>(arr)) return func<double> args; \
-  if (py::isinstance<py::array_t<T2>>(arr)) return func<float> args;  \
-  if (py::isinstance<py::array_t<T3>>(arr)) return func<ldbl_t> args; \
-  throw std::runtime_error("unsupported data type"); \
-  }
-
-template<typename T> T norm_fct(int inorm, size_t N)
-  {
-  if (inorm==0) return T(1);
-  if (inorm==2) return T(1/ldbl_t(N));
-  if (inorm==1) return T(1/sqrt(ldbl_t(N)));
-  throw std::invalid_argument("invalid value for inorm (must be 0, 1, or 2)");
-  }
-
-template<typename T> T norm_fct(int inorm, const shape_t &shape,
-  const shape_t &axes, size_t fct=1, int delta=0)
-  {
-  if (inorm==0) return T(1);
-  size_t N(1);
-  for (auto a: axes)
-    N *= fct * size_t(int64_t(shape[a])+delta);
-  return norm_fct<T>(inorm, N);
-  }
-
-template<typename T> py::array_t<T> prepare_output(py::object &out_,
-  shape_t &dims)
-  {
-  if (out_.is_none()) return py::array_t<T>(dims);
-  auto tmp = out_.cast<py::array_t<T>>();
-  if (!tmp.is(out_)) // a new object was created during casting
-    throw std::runtime_error("unexpected data type for output array");
-  return tmp;
-  }
-
-template<typename T> py::array c2c_internal(const py::array &in,
-  const py::object &axes_, bool forward, int inorm, py::object &out_,
-  size_t nthreads)
-  {
-  auto axes = makeaxes(in, axes_);
-  auto dims(copy_shape(in));
-  auto res = prepare_output<std::complex<T>>(out_, dims);
-  auto s_in=copy_strides(in);
-  auto s_out=copy_strides(res);
-  auto d_in=reinterpret_cast<const std::complex<T> *>(in.data());
-  auto d_out=reinterpret_cast<std::complex<T> *>(res.mutable_data());
-  {
-  py::gil_scoped_release release;
-  T fct = norm_fct<T>(inorm, dims, axes);
-  pocketfft::c2c(dims, s_in, s_out, axes, forward, d_in, d_out, fct, nthreads);
-  }
-  return std::move(res);
-  }
-
-template<typename T> py::array c2c_sym_internal(const py::array &in,
-  const py::object &axes_, bool forward, int inorm, py::object &out_,
-  size_t nthreads)
-  {
-  auto axes = makeaxes(in, axes_);
-  auto dims(copy_shape(in));
-  auto res = prepare_output<std::complex<T>>(out_, dims);
-  auto s_in=copy_strides(in);
-  auto s_out=copy_strides(res);
-  auto d_in=reinterpret_cast<const T *>(in.data());
-  auto d_out=reinterpret_cast<std::complex<T> *>(res.mutable_data());
-  {
-  py::gil_scoped_release release;
-  T fct = norm_fct<T>(inorm, dims, axes);
-  pocketfft::r2c(dims, s_in, s_out, axes, forward, d_in, d_out, fct, nthreads);
-  // now fill in second half
-  using namespace pocketfft::detail;
-  ndarr<std::complex<T>> ares(res.mutable_data(), dims, s_out);
-  rev_iter iter(ares, axes);
-  while(iter.remaining()>0)
+template <typename T>
+py::array c2c_sym_internal(
+    const py::array &in, const py::object &axes_, bool forward, int inorm, py::object &out_, size_t nthreads
+) {
+    auto axes = makeaxes(in, axes_);
+    auto dims(copy_shape(in));
+    auto res = prepare_output<std::complex<T>>(out_, dims);
+    auto s_in = copy_strides(in);
+    auto s_out = copy_strides(res);
+    auto d_in = reinterpret_cast<const T *>(in.data());
+    auto d_out = reinterpret_cast<std::complex<T> *>(res.mutable_data());
     {
-    auto v = ares[iter.ofs()];
-    ares[iter.rev_ofs()] = conj(v);
-    iter.advance();
+        py::gil_scoped_release release;
+        T fct = norm_fct<T>(inorm, dims, axes);
+        pocketfft::r2c(dims, s_in, s_out, axes, forward, d_in, d_out, fct, nthreads);
+        // now fill in second half
+        using namespace pocketfft::detail;
+        ndarr<std::complex<T>> ares(res.mutable_data(), dims, s_out);
+        rev_iter iter(ares, axes);
+        while (iter.remaining() > 0) {
+            auto v = ares[iter.ofs()];
+            ares[iter.rev_ofs()] = conj(v);
+            iter.advance();
+        }
     }
-  }
-  return std::move(res);
-  }
+    return std::move(res);
+}
 
-py::array c2c(const py::array &a, const py::object &axes_, bool forward,
-  int inorm, py::object &out_, size_t nthreads)
-  {
-  if (a.dtype().kind() == 'c')
-    DISPATCH(a, c128, c64, clong, c2c_internal, (a, axes_, forward,
-             inorm, out_, nthreads))
+py::array c2c(const py::array &a, const py::object &axes_, bool forward, int inorm, py::object &out_, size_t nthreads) {
+    if (a.dtype().kind() == 'c')
+        DISPATCH(a, c128, c64, clong, c2c_internal, (a, axes_, forward, inorm, out_, nthreads))
 
-  DISPATCH(a, f64, f32, flong, c2c_sym_internal, (a, axes_, forward,
-           inorm, out_, nthreads))
-  }
+    DISPATCH(a, f64, f32, flong, c2c_sym_internal, (a, axes_, forward, inorm, out_, nthreads))
+}
 
-template<typename T> py::array r2c_internal(const py::array &in,
-  const py::object &axes_, bool forward, int inorm, py::object &out_,
-  size_t nthreads)
-  {
-  auto axes = makeaxes(in, axes_);
-  auto dims_in(copy_shape(in)), dims_out(dims_in);
-  dims_out[axes.back()] = (dims_out[axes.back()]>>1)+1;
-  py::array res = prepare_output<std::complex<T>>(out_, dims_out);
-  auto s_in=copy_strides(in);
-  auto s_out=copy_strides(res);
-  auto d_in=reinterpret_cast<const T *>(in.data());
-  auto d_out=reinterpret_cast<std::complex<T> *>(res.mutable_data());
-  {
-  py::gil_scoped_release release;
-  T fct = norm_fct<T>(inorm, dims_in, axes);
-  pocketfft::r2c(dims_in, s_in, s_out, axes, forward, d_in, d_out, fct,
-    nthreads);
-  }
-  return res;
-  }
+template <typename T>
+py::array
+r2c_internal(const py::array &in, const py::object &axes_, bool forward, int inorm, py::object &out_, size_t nthreads) {
+    auto axes = makeaxes(in, axes_);
+    auto dims_in(copy_shape(in)), dims_out(dims_in);
+    dims_out[axes.back()] = (dims_out[axes.back()] >> 1) + 1;
+    py::array res = prepare_output<std::complex<T>>(out_, dims_out);
+    auto s_in = copy_strides(in);
+    auto s_out = copy_strides(res);
+    auto d_in = reinterpret_cast<const T *>(in.data());
+    auto d_out = reinterpret_cast<std::complex<T> *>(res.mutable_data());
+    {
+        py::gil_scoped_release release;
+        T fct = norm_fct<T>(inorm, dims_in, axes);
+        pocketfft::r2c(dims_in, s_in, s_out, axes, forward, d_in, d_out, fct, nthreads);
+    }
+    return res;
+}
 
-py::array r2c(const py::array &in, const py::object &axes_, bool forward,
-  int inorm, py::object &out_, size_t nthreads)
-  {
-  DISPATCH(in, f64, f32, flong, r2c_internal, (in, axes_, forward, inorm, out_,
-    nthreads))
-  }
+py::array
+r2c(const py::array &in, const py::object &axes_, bool forward, int inorm, py::object &out_, size_t nthreads) {
+    DISPATCH(in, f64, f32, flong, r2c_internal, (in, axes_, forward, inorm, out_, nthreads))
+}
 
-template<typename T> py::array r2r_fftpack_internal(const py::array &in,
-  const py::object &axes_, bool real2hermitian, bool forward, int inorm,
-  py::object &out_, size_t nthreads)
-  {
-  auto axes = makeaxes(in, axes_);
-  auto dims(copy_shape(in));
-  py::array res = prepare_output<T>(out_, dims);
-  auto s_in=copy_strides(in);
-  auto s_out=copy_strides(res);
-  auto d_in=reinterpret_cast<const T *>(in.data());
-  auto d_out=reinterpret_cast<T *>(res.mutable_data());
-  {
-  py::gil_scoped_release release;
-  T fct = norm_fct<T>(inorm, dims, axes);
-  pocketfft::r2r_fftpack(dims, s_in, s_out, axes, real2hermitian, forward,
-    d_in, d_out, fct, nthreads);
-  }
-  return res;
-  }
+template <typename T>
+py::array r2r_fftpack_internal(
+    const py::array &in, const py::object &axes_, bool real2hermitian, bool forward, int inorm, py::object &out_,
+    size_t nthreads
+) {
+    auto axes = makeaxes(in, axes_);
+    auto dims(copy_shape(in));
+    py::array res = prepare_output<T>(out_, dims);
+    auto s_in = copy_strides(in);
+    auto s_out = copy_strides(res);
+    auto d_in = reinterpret_cast<const T *>(in.data());
+    auto d_out = reinterpret_cast<T *>(res.mutable_data());
+    {
+        py::gil_scoped_release release;
+        T fct = norm_fct<T>(inorm, dims, axes);
+        pocketfft::r2r_fftpack(dims, s_in, s_out, axes, real2hermitian, forward, d_in, d_out, fct, nthreads);
+    }
+    return res;
+}
 
-py::array r2r_fftpack(const py::array &in, const py::object &axes_,
-  bool real2hermitian, bool forward, int inorm, py::object &out_,
-  size_t nthreads)
-  {
-  DISPATCH(in, f64, f32, flong, r2r_fftpack_internal, (in, axes_,
-    real2hermitian, forward, inorm, out_, nthreads))
-  }
+py::array r2r_fftpack(
+    const py::array &in, const py::object &axes_, bool real2hermitian, bool forward, int inorm, py::object &out_,
+    size_t nthreads
+) {
+    DISPATCH(in, f64, f32, flong, r2r_fftpack_internal, (in, axes_, real2hermitian, forward, inorm, out_, nthreads))
+}
 
-template<typename T> py::array dct_internal(const py::array &in,
-  const py::object &axes_, int type, int inorm, py::object &out_,
-  size_t nthreads, bool ortho)
-  {
-  auto axes = makeaxes(in, axes_);
-  auto dims(copy_shape(in));
-  py::array res = prepare_output<T>(out_, dims);
-  auto s_in=copy_strides(in);
-  auto s_out=copy_strides(res);
-  auto d_in=reinterpret_cast<const T *>(in.data());
-  auto d_out=reinterpret_cast<T *>(res.mutable_data());
-  {
-  py::gil_scoped_release release;
-  T fct = (type==1) ? norm_fct<T>(inorm, dims, axes, 2, -1)
-                    : norm_fct<T>(inorm, dims, axes, 2);
-  pocketfft::dct(dims, s_in, s_out, axes, type, d_in, d_out, fct, ortho,
-    nthreads);
-  }
-  return res;
-  }
+template <typename T>
+py::array dct_internal(
+    const py::array &in, const py::object &axes_, int type, int inorm, py::object &out_, size_t nthreads, bool ortho
+) {
+    auto axes = makeaxes(in, axes_);
+    auto dims(copy_shape(in));
+    py::array res = prepare_output<T>(out_, dims);
+    auto s_in = copy_strides(in);
+    auto s_out = copy_strides(res);
+    auto d_in = reinterpret_cast<const T *>(in.data());
+    auto d_out = reinterpret_cast<T *>(res.mutable_data());
+    {
+        py::gil_scoped_release release;
+        T fct = (type == 1) ? norm_fct<T>(inorm, dims, axes, 2, -1) : norm_fct<T>(inorm, dims, axes, 2);
+        pocketfft::dct(dims, s_in, s_out, axes, type, d_in, d_out, fct, ortho, nthreads);
+    }
+    return res;
+}
 
-py::array dct(const py::array &in, int type, const py::object &axes_,
-  int inorm, py::object &out_, size_t nthreads, const py::object & ortho_obj)
-  {
-  bool ortho=inorm==1;
-  if (!ortho_obj.is_none())
-    ortho=ortho_obj.cast<bool>();
+py::array
+dct(const py::array &in, int type, const py::object &axes_, int inorm, py::object &out_, size_t nthreads,
+    const py::object &ortho_obj) {
+    bool ortho = inorm == 1;
+    if (!ortho_obj.is_none())
+        ortho = ortho_obj.cast<bool>();
 
-  if ((type<1) || (type>4)) throw std::invalid_argument("invalid DCT type");
-  DISPATCH(in, f64, f32, flong, dct_internal, (in, axes_, type, inorm, out_,
-    nthreads, ortho))
-  }
+    if ((type < 1) || (type > 4))
+        throw std::invalid_argument("invalid DCT type");
+    DISPATCH(in, f64, f32, flong, dct_internal, (in, axes_, type, inorm, out_, nthreads, ortho))
+}
 
-template<typename T> py::array dst_internal(const py::array &in,
-  const py::object &axes_, int type, int inorm, py::object &out_,
-  size_t nthreads, bool ortho)
-  {
-  auto axes = makeaxes(in, axes_);
-  auto dims(copy_shape(in));
-  py::array res = prepare_output<T>(out_, dims);
-  auto s_in=copy_strides(in);
-  auto s_out=copy_strides(res);
-  auto d_in=reinterpret_cast<const T *>(in.data());
-  auto d_out=reinterpret_cast<T *>(res.mutable_data());
-  {
-  py::gil_scoped_release release;
-  T fct = (type==1) ? norm_fct<T>(inorm, dims, axes, 2, 1)
-                    : norm_fct<T>(inorm, dims, axes, 2);
-  pocketfft::dst(dims, s_in, s_out, axes, type, d_in, d_out, fct, ortho,
-    nthreads);
-  }
-  return res;
-  }
+template <typename T>
+py::array dst_internal(
+    const py::array &in, const py::object &axes_, int type, int inorm, py::object &out_, size_t nthreads, bool ortho
+) {
+    auto axes = makeaxes(in, axes_);
+    auto dims(copy_shape(in));
+    py::array res = prepare_output<T>(out_, dims);
+    auto s_in = copy_strides(in);
+    auto s_out = copy_strides(res);
+    auto d_in = reinterpret_cast<const T *>(in.data());
+    auto d_out = reinterpret_cast<T *>(res.mutable_data());
+    {
+        py::gil_scoped_release release;
+        T fct = (type == 1) ? norm_fct<T>(inorm, dims, axes, 2, 1) : norm_fct<T>(inorm, dims, axes, 2);
+        pocketfft::dst(dims, s_in, s_out, axes, type, d_in, d_out, fct, ortho, nthreads);
+    }
+    return res;
+}
 
-py::array dst(const py::array &in, int type, const py::object &axes_,
-  int inorm, py::object &out_, size_t nthreads, const py::object &ortho_obj)
-  {
-  bool ortho=inorm==1;
-  if (!ortho_obj.is_none())
-    ortho=ortho_obj.cast<bool>();
+py::array
+dst(const py::array &in, int type, const py::object &axes_, int inorm, py::object &out_, size_t nthreads,
+    const py::object &ortho_obj) {
+    bool ortho = inorm == 1;
+    if (!ortho_obj.is_none())
+        ortho = ortho_obj.cast<bool>();
 
-  if ((type<1) || (type>4)) throw std::invalid_argument("invalid DST type");
-  DISPATCH(in, f64, f32, flong, dst_internal, (in, axes_, type, inorm,
-    out_, nthreads, ortho))
-  }
+    if ((type < 1) || (type > 4))
+        throw std::invalid_argument("invalid DST type");
+    DISPATCH(in, f64, f32, flong, dst_internal, (in, axes_, type, inorm, out_, nthreads, ortho))
+}
 
-template<typename T> py::array c2r_internal(const py::array &in,
-  const py::object &axes_, size_t lastsize, bool forward, int inorm,
-  py::object &out_, size_t nthreads)
-  {
-  auto axes = makeaxes(in, axes_);
-  size_t axis = axes.back();
-  shape_t dims_in(copy_shape(in)), dims_out=dims_in;
-  if (lastsize==0) lastsize=2*dims_in[axis]-1;
-  if ((lastsize/2) + 1 != dims_in[axis])
-    throw std::invalid_argument("bad lastsize");
-  dims_out[axis] = lastsize;
-  py::array res = prepare_output<T>(out_, dims_out);
-  auto s_in=copy_strides(in);
-  auto s_out=copy_strides(res);
-  auto d_in=reinterpret_cast<const std::complex<T> *>(in.data());
-  auto d_out=reinterpret_cast<T *>(res.mutable_data());
-  {
-  py::gil_scoped_release release;
-  T fct = norm_fct<T>(inorm, dims_out, axes);
-  pocketfft::c2r(dims_out, s_in, s_out, axes, forward, d_in, d_out, fct,
-    nthreads);
-  }
-  return res;
-  }
+template <typename T>
+py::array c2r_internal(
+    const py::array &in, const py::object &axes_, size_t lastsize, bool forward, int inorm, py::object &out_,
+    size_t nthreads
+) {
+    auto axes = makeaxes(in, axes_);
+    size_t axis = axes.back();
+    shape_t dims_in(copy_shape(in)), dims_out = dims_in;
+    if (lastsize == 0)
+        lastsize = 2 * dims_in[axis] - 1;
+    if ((lastsize / 2) + 1 != dims_in[axis])
+        throw std::invalid_argument("bad lastsize");
+    dims_out[axis] = lastsize;
+    py::array res = prepare_output<T>(out_, dims_out);
+    auto s_in = copy_strides(in);
+    auto s_out = copy_strides(res);
+    auto d_in = reinterpret_cast<const std::complex<T> *>(in.data());
+    auto d_out = reinterpret_cast<T *>(res.mutable_data());
+    {
+        py::gil_scoped_release release;
+        T fct = norm_fct<T>(inorm, dims_out, axes);
+        pocketfft::c2r(dims_out, s_in, s_out, axes, forward, d_in, d_out, fct, nthreads);
+    }
+    return res;
+}
 
-py::array c2r(const py::array &in, const py::object &axes_, size_t lastsize,
-  bool forward, int inorm, py::object &out_, size_t nthreads)
-  {
-  DISPATCH(in, c128, c64, clong, c2r_internal, (in, axes_, lastsize, forward,
-    inorm, out_, nthreads))
-  }
+py::array
+c2r(const py::array &in, const py::object &axes_, size_t lastsize, bool forward, int inorm, py::object &out_,
+    size_t nthreads) {
+    DISPATCH(in, c128, c64, clong, c2r_internal, (in, axes_, lastsize, forward, inorm, out_, nthreads))
+}
 
-template<typename T> py::array separable_hartley_internal(const py::array &in,
-  const py::object &axes_, int inorm, py::object &out_, size_t nthreads)
-  {
-  auto dims(copy_shape(in));
-  py::array res = prepare_output<T>(out_, dims);
-  auto axes = makeaxes(in, axes_);
-  auto s_in=copy_strides(in);
-  auto s_out=copy_strides(res);
-  auto d_in=reinterpret_cast<const T *>(in.data());
-  auto d_out=reinterpret_cast<T *>(res.mutable_data());
-  {
-  py::gil_scoped_release release;
-  T fct = norm_fct<T>(inorm, dims, axes);
-  pocketfft::r2r_separable_hartley(dims, s_in, s_out, axes, d_in, d_out, fct,
-    nthreads);
-  }
-  return res;
-  }
+template <typename T>
+py::array
+separable_hartley_internal(const py::array &in, const py::object &axes_, int inorm, py::object &out_, size_t nthreads) {
+    auto dims(copy_shape(in));
+    py::array res = prepare_output<T>(out_, dims);
+    auto axes = makeaxes(in, axes_);
+    auto s_in = copy_strides(in);
+    auto s_out = copy_strides(res);
+    auto d_in = reinterpret_cast<const T *>(in.data());
+    auto d_out = reinterpret_cast<T *>(res.mutable_data());
+    {
+        py::gil_scoped_release release;
+        T fct = norm_fct<T>(inorm, dims, axes);
+        pocketfft::r2r_separable_hartley(dims, s_in, s_out, axes, d_in, d_out, fct, nthreads);
+    }
+    return res;
+}
 
-py::array separable_hartley(const py::array &in, const py::object &axes_,
-  int inorm, py::object &out_, size_t nthreads)
-  {
-  DISPATCH(in, f64, f32, flong, separable_hartley_internal, (in, axes_, inorm,
-    out_, nthreads))
-  }
+py::array
+separable_hartley(const py::array &in, const py::object &axes_, int inorm, py::object &out_, size_t nthreads) {
+    DISPATCH(in, f64, f32, flong, separable_hartley_internal, (in, axes_, inorm, out_, nthreads))
+}
 
-template<typename T> py::array genuine_hartley_internal(const py::array &in,
-  const py::object &axes_, int inorm, py::object &out_, size_t nthreads)
-  {
-  auto dims(copy_shape(in));
-  py::array res = prepare_output<T>(out_, dims);
-  auto axes = makeaxes(in, axes_);
-  auto s_in=copy_strides(in);
-  auto s_out=copy_strides(res);
-  auto d_in=reinterpret_cast<const T *>(in.data());
-  auto d_out=reinterpret_cast<T *>(res.mutable_data());
-  {
-  py::gil_scoped_release release;
-  T fct = norm_fct<T>(inorm, dims, axes);
-  pocketfft::r2r_genuine_hartley(dims, s_in, s_out, axes, d_in, d_out, fct,
-    nthreads);
-  }
-  return res;
-  }
+template <typename T>
+py::array
+genuine_hartley_internal(const py::array &in, const py::object &axes_, int inorm, py::object &out_, size_t nthreads) {
+    auto dims(copy_shape(in));
+    py::array res = prepare_output<T>(out_, dims);
+    auto axes = makeaxes(in, axes_);
+    auto s_in = copy_strides(in);
+    auto s_out = copy_strides(res);
+    auto d_in = reinterpret_cast<const T *>(in.data());
+    auto d_out = reinterpret_cast<T *>(res.mutable_data());
+    {
+        py::gil_scoped_release release;
+        T fct = norm_fct<T>(inorm, dims, axes);
+        pocketfft::r2r_genuine_hartley(dims, s_in, s_out, axes, d_in, d_out, fct, nthreads);
+    }
+    return res;
+}
 
-py::array genuine_hartley(const py::array &in, const py::object &axes_,
-  int inorm, py::object &out_, size_t nthreads)
-  {
-  DISPATCH(in, f64, f32, flong, genuine_hartley_internal, (in, axes_, inorm,
-    out_, nthreads))
-  }
+py::array genuine_hartley(const py::array &in, const py::object &axes_, int inorm, py::object &out_, size_t nthreads){
+    DISPATCH(in, f64, f32, flong, genuine_hartley_internal, (in, axes_, inorm, out_, nthreads))
+}
 
 // Export good_size in raw C-API to reduce overhead (~4x faster)
-PyObject * good_size(PyObject * /*self*/, PyObject * args, PyObject * kwargs)
-  {
-  Py_ssize_t n_ = -1;
-  int real = false;
-  static const char * keywords[] = {"target", "real", nullptr};
-  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "n|p:good_size",
-                                   (char **) keywords, &n_, &real))
-    return nullptr;
+PyObject *good_size(PyObject * /*self*/, PyObject *args, PyObject *kwargs) {
+    Py_ssize_t n_ = -1;
+    int real = false;
+    static const char *keywords[] = {"target", "real", nullptr};
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "n|p:good_size", (char **) keywords, &n_, &real))
+        return nullptr;
 
-  if (n_<0)
-    {
-    PyErr_SetString(PyExc_ValueError, "Target length must be positive");
-    return nullptr;
+    if (n_ < 0) {
+        PyErr_SetString(PyExc_ValueError, "Target length must be positive");
+        return nullptr;
     }
-  if ((n_-1) > static_cast<Py_ssize_t>(std::numeric_limits<size_t>::max() / 11))
-    {
-    PyErr_Format(PyExc_ValueError,
-                 "Target length is too large to perform an FFT: %zi", n_);
-    return nullptr;
+    if ((n_ - 1) > static_cast<Py_ssize_t>(std::numeric_limits<size_t>::max() / 11)) {
+        PyErr_Format(PyExc_ValueError, "Target length is too large to perform an FFT: %zi", n_);
+        return nullptr;
     }
-  const auto n = static_cast<size_t>(n_);
-  using namespace pocketfft::detail;
-  return PyLong_FromSize_t(
-    real ? util::good_size_real(n) : util::good_size_cmplx(n));
-  }
+    const auto n = static_cast<size_t>(n_);
+    using namespace pocketfft::detail;
+    return PyLong_FromSize_t(real ? util::good_size_real(n) : util::good_size_cmplx(n));
+}
 
 // Export prev_good_size in raw C-API to reduce overhead
-PyObject * prev_good_size(PyObject * /*self*/, PyObject * args, PyObject * kwargs)
-  {
-  Py_ssize_t n_ = -1;
-  int real = false;
-  static const char * keywords[] = {"target", "real", nullptr};
-  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "n|p:prev_good_size",
-                                   (char **) keywords, &n_, &real))
-    return nullptr;
+PyObject *prev_good_size(PyObject * /*self*/, PyObject *args, PyObject *kwargs) {
+    Py_ssize_t n_ = -1;
+    int real = false;
+    static const char *keywords[] = {"target", "real", nullptr};
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "n|p:prev_good_size", (char **) keywords, &n_, &real))
+        return nullptr;
 
-  if (n_<0)
-    {
-    PyErr_SetString(PyExc_ValueError, "Target length must be positive");
-    return nullptr;
+    if (n_ < 0) {
+        PyErr_SetString(PyExc_ValueError, "Target length must be positive");
+        return nullptr;
     }
-  if ((n_-1) > static_cast<Py_ssize_t>(std::numeric_limits<size_t>::max() / 11))
-    {
-    PyErr_Format(PyExc_ValueError,
-                 "Target length is too large to perform an FFT: %zi", n_);
-    return nullptr;
+    if ((n_ - 1) > static_cast<Py_ssize_t>(std::numeric_limits<size_t>::max() / 11)) {
+        PyErr_Format(PyExc_ValueError, "Target length is too large to perform an FFT: %zi", n_);
+        return nullptr;
     }
-  const auto n = static_cast<size_t>(n_);
-  using namespace pocketfft::detail;
-  return PyLong_FromSize_t(
-    real ? util::prev_good_size_real(n) : util::prev_good_size_cmplx(n));
-  }
+    const auto n = static_cast<size_t>(n_);
+    using namespace pocketfft::detail;
+    return PyLong_FromSize_t(real ? util::prev_good_size_real(n) : util::prev_good_size_cmplx(n));
+}
 
 const char *pypocketfft_DS = R"""(Fast Fourier and Hartley transforms.
 
@@ -722,7 +689,7 @@ numpy.ndarray (same shape and data type as `a`)
     The transformed data
 )""";
 
-const char * good_size_DS = R"""(Returns a good length to pad an FFT to.
+const char *good_size_DS = R"""(Returns a good length to pad an FFT to.
 
 Parameters
 ----------
@@ -738,8 +705,7 @@ out : int
 
 )""";
 
-
-const char * prev_good_size_DS = R"""(Returns the largest FFT length less than target length.
+const char *prev_good_size_DS = R"""(Returns the largest FFT length less than target length.
 
 Parameters
 ----------
@@ -757,37 +723,50 @@ out : int
 
 } // unnamed namespace
 
-PYBIND11_MODULE(pypocketfft, m)
-  {
-  using namespace pybind11::literals;
+PYBIND11_MODULE(pypocketfft, m) {
+    using namespace pybind11::literals;
 
-  auto None = py::none();
+    auto None = py::none();
 
-  m.doc() = pypocketfft_DS;
-  m.def("c2c", c2c, c2c_DS, "a"_a, "axes"_a=None, "forward"_a=true,
-    "inorm"_a=0, "out"_a=None, "nthreads"_a=1);
-  m.def("r2c", r2c, r2c_DS, "a"_a, "axes"_a=None, "forward"_a=true,
-    "inorm"_a=0, "out"_a=None, "nthreads"_a=1);
-  m.def("c2r", c2r, c2r_DS, "a"_a, "axes"_a=None, "lastsize"_a=0,
-    "forward"_a=true, "inorm"_a=0, "out"_a=None, "nthreads"_a=1);
-  m.def("r2r_fftpack", r2r_fftpack, r2r_fftpack_DS, "a"_a, "axes"_a,
-    "real2hermitian"_a, "forward"_a, "inorm"_a=0, "out"_a=None, "nthreads"_a=1);
-  m.def("separable_hartley", separable_hartley, separable_hartley_DS, "a"_a,
-    "axes"_a=None, "inorm"_a=0, "out"_a=None, "nthreads"_a=1);
-  m.def("genuine_hartley", genuine_hartley, genuine_hartley_DS, "a"_a,
-    "axes"_a=None, "inorm"_a=0, "out"_a=None, "nthreads"_a=1);
-  m.def("dct", dct, dct_DS, "a"_a, "type"_a, "axes"_a=None, "inorm"_a=0,
-    "out"_a=None, "nthreads"_a=1, "ortho"_a=None);
-  m.def("dst", dst, dst_DS, "a"_a, "type"_a, "axes"_a=None, "inorm"_a=0,
-    "out"_a=None, "nthreads"_a=1, "ortho"_a=None);
+    m.doc() = pypocketfft_DS;
+    m.def(
+        "c2c", c2c, c2c_DS, "a"_a, "axes"_a = None, "forward"_a = true, "inorm"_a = 0, "out"_a = None, "nthreads"_a = 1
+    );
+    m.def(
+        "r2c", r2c, r2c_DS, "a"_a, "axes"_a = None, "forward"_a = true, "inorm"_a = 0, "out"_a = None, "nthreads"_a = 1
+    );
+    m.def(
+        "c2r", c2r, c2r_DS, "a"_a, "axes"_a = None, "lastsize"_a = 0, "forward"_a = true, "inorm"_a = 0, "out"_a = None,
+        "nthreads"_a = 1
+    );
+    m.def(
+        "r2r_fftpack", r2r_fftpack, r2r_fftpack_DS, "a"_a, "axes"_a, "real2hermitian"_a, "forward"_a, "inorm"_a = 0,
+        "out"_a = None, "nthreads"_a = 1
+    );
+    m.def(
+        "separable_hartley", separable_hartley, separable_hartley_DS, "a"_a, "axes"_a = None, "inorm"_a = 0,
+        "out"_a = None, "nthreads"_a = 1
+    );
+    m.def(
+        "genuine_hartley", genuine_hartley, genuine_hartley_DS, "a"_a, "axes"_a = None, "inorm"_a = 0, "out"_a = None,
+        "nthreads"_a = 1
+    );
+    m.def(
+        "dct", dct, dct_DS, "a"_a, "type"_a, "axes"_a = None, "inorm"_a = 0, "out"_a = None, "nthreads"_a = 1,
+        "ortho"_a = None
+    );
+    m.def(
+        "dst", dst, dst_DS, "a"_a, "type"_a, "axes"_a = None, "inorm"_a = 0, "out"_a = None, "nthreads"_a = 1,
+        "ortho"_a = None
+    );
 
-  static PyMethodDef good_size_meth[] =
-    {{"good_size", (PyCFunction)good_size,
-      METH_VARARGS | METH_KEYWORDS, good_size_DS}, {0}};
-  PyModule_AddFunctions(m.ptr(), good_size_meth);
+    static PyMethodDef good_size_meth[] = {
+        {"good_size", (PyCFunction) good_size, METH_VARARGS | METH_KEYWORDS, good_size_DS}, {0}
+    };
+    PyModule_AddFunctions(m.ptr(), good_size_meth);
 
-  static PyMethodDef prev_good_size_meth[] =
-    {{"prev_good_size", (PyCFunction)prev_good_size,
-      METH_VARARGS | METH_KEYWORDS, prev_good_size_DS}, {0}};
-  PyModule_AddFunctions(m.ptr(), prev_good_size_meth);
-  }
+    static PyMethodDef prev_good_size_meth[] = {
+        {"prev_good_size", (PyCFunction) prev_good_size, METH_VARARGS | METH_KEYWORDS, prev_good_size_DS}, {0}
+    };
+    PyModule_AddFunctions(m.ptr(), prev_good_size_meth);
+}

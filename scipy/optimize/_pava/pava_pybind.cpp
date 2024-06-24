@@ -1,6 +1,6 @@
-#include <pybind11/pybind11.h>
-#include <pybind11/numpy.h>
 #include <numpy/arrayobject.h>
+#include <pybind11/numpy.h>
+#include <pybind11/pybind11.h>
 #include <tuple>
 
 namespace py = pybind11;
@@ -42,49 +42,49 @@ auto pava(
     //    r = [0, 1, 2] instead of r = [0, 2].
     //
     // procedure monotone(n, x, w)      // 1: x in expected order and w nonnegative
-    r[0] = 0;  // 2: initialize index 0
-    r[1] = 1;  // 3: initialize index 1
-    intptr_t b = 0;  // 4: initialize block counter
-    double xb_prev = x[b];  // 5: set previous block value
-    double wb_prev = w[b];  // 6: set previous block weight
-    for (intptr_t i = 1; i < n; ++i) {  // 7: loop over elements
-        b++;  // 8: increase number of blocks
-        double xb = x[i];  // 9: set current block value xb (i, not b)
-        double wb = w[i];  // 10: set current block weight wb (i, not b)
+    r[0] = 0;                          // 2: initialize index 0
+    r[1] = 1;                          // 3: initialize index 1
+    intptr_t b = 0;                    // 4: initialize block counter
+    double xb_prev = x[b];             // 5: set previous block value
+    double wb_prev = w[b];             // 6: set previous block weight
+    for (intptr_t i = 1; i < n; ++i) { // 7: loop over elements
+        b++;                           // 8: increase number of blocks
+        double xb = x[i];              // 9: set current block value xb (i, not b)
+        double wb = w[i];              // 10: set current block weight wb (i, not b)
         double sb = 0;
-        if (xb_prev >= xb) {  // 11: check for down violation of x (>= instead of >)
-            b--;  // 12: decrease number of blocks
-            sb = wb_prev * xb_prev + wb * xb;  // 13: set current weighted block sum
-            wb += wb_prev;  // 14: set new current block weight
-            xb = sb / wb;  // 15: set new current block value
-            while (i < n - 1 && xb >= x[i + 1]) {  // 16: repair up violations
+        if (xb_prev >= xb) {                      // 11: check for down violation of x (>= instead of >)
+            b--;                                  // 12: decrease number of blocks
+            sb = wb_prev * xb_prev + wb * xb;     // 13: set current weighted block sum
+            wb += wb_prev;                        // 14: set new current block weight
+            xb = sb / wb;                         // 15: set new current block value
+            while (i < n - 1 && xb >= x[i + 1]) { // 16: repair up violations
                 i++;
-                sb += w[i] * x[i];  // 18: set new current weighted block sum
+                sb += w[i] * x[i]; // 18: set new current weighted block sum
                 wb += w[i];
                 xb = sb / wb;
             }
-            while (b > 0 && x[b - 1] >= xb) {  // 22: repair down violations (>= instead of >)
+            while (b > 0 && x[b - 1] >= xb) { // 22: repair down violations (>= instead of >)
                 b--;
                 sb += w[b] * x[b];
                 wb += w[b];
-                xb = sb / wb;  // 26: set new current block value
+                xb = sb / wb; // 26: set new current block value
             }
         }
-        x[b] = xb_prev = xb;  // 29: save block value
-        w[b] = wb_prev = wb;  // 30: save block weight
-        r[b + 1] = i + 1;  // 31: save block index
+        x[b] = xb_prev = xb; // 29: save block value
+        w[b] = wb_prev = wb; // 30: save block weight
+        r[b + 1] = i + 1;    // 31: save block index
     }
 
-    intptr_t f = n - 1;  // 33: initialize "from" index
-    for (intptr_t k = b; k >= 0; --k) {  // 34: loop over blocks
-        intptr_t t = r[k];  // 35: set "to" index
+    intptr_t f = n - 1;                 // 33: initialize "from" index
+    for (intptr_t k = b; k >= 0; --k) { // 34: loop over blocks
+        intptr_t t = r[k];              // 35: set "to" index
         double xk = x[k];
-        for (intptr_t i = f; i >= t; --i) {  // 37: loop "from" downto "to"
-            x[i] = xk;  // 38: set all elements equal to block value
+        for (intptr_t i = f; i >= t; --i) { // 37: loop "from" downto "to"
+            x[i] = xk;                      // 38: set all elements equal to block value
         }
-        f = t - 1;  // 40: set new "from" equal to old "to" minus one
+        f = t - 1; // 40: set new "from" equal to old "to" minus one
     }
-    return std::make_tuple(xa, wa, ra, b + 1);  // b + 1 is number of blocks
+    return std::make_tuple(xa, wa, ra, b + 1); // b + 1 is number of blocks
 }
 
 PYBIND11_MODULE(_pava_pybind, m) {
@@ -92,8 +92,7 @@ PYBIND11_MODULE(_pava_pybind, m) {
         throw py::error_already_set();
     }
     m.def(
-        "pava",
-        &pava,
+        "pava", &pava,
         "Pool adjacent violators algorithm (PAVA) for isotonic regression\n"
         "\n"
         "The routine might modify the input arguments x, w and r inplace.\n"
@@ -119,4 +118,4 @@ PYBIND11_MODULE(_pava_pybind, m) {
     );
 }
 
-}  // namespace (anonymous)
+} // namespace

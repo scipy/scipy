@@ -52,8 +52,8 @@ namespace detail {
         return res;
     }
 
-    SPECFUN_HOST_DEVICE inline std::complex<double> digamma_forward_recurrence(std::complex<double> z,
-                                                                               std::complex<double> psiz, int n) {
+    SPECFUN_HOST_DEVICE inline std::complex<double>
+    digamma_forward_recurrence(std::complex<double> z, std::complex<double> psiz, int n) {
         /* Compute digamma(z + n) using digamma(z) using the recurrence
          * relation
          *
@@ -68,8 +68,8 @@ namespace detail {
         return res;
     }
 
-    SPECFUN_HOST_DEVICE inline std::complex<double> digamma_backward_recurrence(std::complex<double> z,
-                                                                                std::complex<double> psiz, int n) {
+    SPECFUN_HOST_DEVICE inline std::complex<double>
+    digamma_backward_recurrence(std::complex<double> z, std::complex<double> psiz, int n) {
         /* Compute digamma(z - n) using digamma(z) and a recurrence relation. */
         std::complex<double> res = psiz;
 
@@ -83,11 +83,12 @@ namespace detail {
         /* Evaluate digamma using an asymptotic series. See
          *
          * https://dlmf.nist.gov/5.11#E2 */
-        double bernoulli2k[] = {
-            0.166666666666666667,  -0.0333333333333333333, 0.0238095238095238095, -0.0333333333333333333,
-            0.0757575757575757576, -0.253113553113553114,  1.16666666666666667,   -7.09215686274509804,
-            54.9711779448621554,   -529.124242424242424,   6192.12318840579710,   -86580.2531135531136,
-            1425517.16666666667,   -27298231.0678160920,   601580873.900642368,   -15116315767.0921569};
+        double bernoulli2k[] = {0.166666666666666667,   -0.0333333333333333333, 0.0238095238095238095,
+                                -0.0333333333333333333, 0.0757575757575757576,  -0.253113553113553114,
+                                1.16666666666666667,    -7.09215686274509804,   54.9711779448621554,
+                                -529.124242424242424,   6192.12318840579710,    -86580.2531135531136,
+                                1425517.16666666667,    -27298231.0678160920,   601580873.900642368,
+                                -15116315767.0921569};
         std::complex<double> rzz = 1.0 / z / z;
         std::complex<double> zfac = 1.0;
         std::complex<double> term;

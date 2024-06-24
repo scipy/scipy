@@ -8,22 +8,21 @@
 
 #include "Zeros/zeros.h"
 #include <setjmp.h>
-#include "Zeros/zeros.h"
 
 /*
  * Caller entry point functions
  */
 
 #ifdef PYPY_VERSION
-    /*
-     * As described in http://doc.pypy.org/en/latest/cpython_differences.html#c-api-differences,
-     * "assignment to a PyTupleObject is not supported after the tuple is used internally,
-     * even by another C-API function call."
-     */
-    #define PyArgs(Operation) PyList_##Operation
+/*
+ * As described in http://doc.pypy.org/en/latest/cpython_differences.html#c-api-differences,
+ * "assignment to a PyTupleObject is not supported after the tuple is used internally,
+ * even by another C-API function call."
+ */
+#define PyArgs(Operation) PyList_##Operation
 #else
-    /* Using a list in CPython raises "TypeError: argument list must be a tuple" */
-    #define PyArgs(Operation) PyTuple_##Operation
+/* Using a list in CPython raises "TypeError: argument list must be a tuple" */
+#define PyArgs(Operation) PyTuple_##Operation
 #endif
 
 typedef struct {
@@ -32,13 +31,9 @@ typedef struct {
     jmp_buf env;
 } scipy_zeros_parameters;
 
-
-
-static double
-scipy_zeros_functions_func(double x, void *params)
-{
+static double scipy_zeros_functions_func(double x, void *params) {
     scipy_zeros_parameters *myparams = params;
-    PyObject *args, *xargs, *item, *f, *retval=NULL;
+    PyObject *args, *xargs, *item, *f, *retval = NULL;
     Py_ssize_t i, len;
     double val;
 
@@ -60,11 +55,11 @@ scipy_zeros_functions_func(double x, void *params)
             longjmp(myparams->env, 1);
         }
         Py_INCREF(item);
-        PyArgs(SET_ITEM)(args, i+1, item);
+        PyArgs(SET_ITEM)(args, i + 1, item);
     }
 
     f = myparams->function;
-    retval = PyObject_CallObject(f,args);
+    retval = PyObject_CallObject(f, args);
     Py_DECREF(args);
     if (retval == NULL) {
         longjmp(myparams->env, 1);
@@ -74,22 +69,18 @@ scipy_zeros_functions_func(double x, void *params)
     return val;
 }
 
-
 /*
  * Helper function that calls a Python function with extended arguments
  */
 
-static PyObject *
-call_solver(solver_type solver, PyObject *self, PyObject *args)
-{
+static PyObject *call_solver(solver_type solver, PyObject *self, PyObject *args) {
     double a, b, xtol, rtol, zero;
-    int iter, fulloutput, disp=1, flag=0;
+    int iter, fulloutput, disp = 1, flag = 0;
     scipy_zeros_parameters params;
     scipy_zeros_info solver_stats;
     PyObject *f, *xargs;
 
-    if (!PyArg_ParseTuple(args, "OddddiOi|i",
-                &f, &a, &b, &xtol, &rtol, &iter, &xargs, &fulloutput, &disp)) {
+    if (!PyArg_ParseTuple(args, "OddddiOi|i", &f, &a, &b, &xtol, &rtol, &iter, &xargs, &fulloutput, &disp)) {
         PyErr_SetString(PyExc_RuntimeError, "Unable to parse arguments");
         return NULL;
     }
@@ -108,8 +99,7 @@ call_solver(solver_type solver, PyObject *self, PyObject *args)
     if (!setjmp(params.env)) {
         /* direct return */
         solver_stats.error_num = 0;
-        zero = solver(scipy_zeros_functions_func, a, b, xtol, rtol,
-                      iter, (void*)&params, &solver_stats);
+        zero = solver(scipy_zeros_functions_func, a, b, xtol, rtol, iter, (void *) &params, &solver_stats);
     } else {
         /* error return from Python function */
         return NULL;
@@ -117,30 +107,24 @@ call_solver(solver_type solver, PyObject *self, PyObject *args)
 
     if (solver_stats.error_num != CONVERGED) {
         if (solver_stats.error_num == SIGNERR) {
-            PyErr_SetString(PyExc_ValueError,
-                    "f(a) and f(b) must have different signs");
+            PyErr_SetString(PyExc_ValueError, "f(a) and f(b) must have different signs");
             return NULL;
         }
         if (solver_stats.error_num == CONVERR) {
             if (disp) {
                 char msg[100];
-                PyOS_snprintf(msg, sizeof(msg),
-                        "Failed to converge after %d iterations.",
-                        solver_stats.iterations);
+                PyOS_snprintf(msg, sizeof(msg), "Failed to converge after %d iterations.", solver_stats.iterations);
                 PyErr_SetString(PyExc_RuntimeError, msg);
                 return NULL;
             }
             flag = CONVERR;
         }
-    }
-    else {
+    } else {
         flag = CONVERGED;
     }
     if (fulloutput) {
-        return Py_BuildValue("diii",
-                zero, solver_stats.funcalls, solver_stats.iterations, flag);
-    }
-    else {
+        return Py_BuildValue("diii", zero, solver_stats.funcalls, solver_stats.iterations, flag);
+    } else {
         return Py_BuildValue("d", zero);
     }
 }
@@ -149,58 +133,29 @@ call_solver(solver_type solver, PyObject *self, PyObject *args)
  * These routines interface with the solvers through call_solver
  */
 
-static PyObject *
-_bisect(PyObject *self, PyObject *args)
-{
-        return call_solver(bisect,self,args);
-}
+static PyObject *_bisect(PyObject *self, PyObject *args) { return call_solver(bisect, self, args); }
 
-static PyObject *
-_ridder(PyObject *self, PyObject *args)
-{
-        return call_solver(ridder,self,args);
-}
+static PyObject *_ridder(PyObject *self, PyObject *args) { return call_solver(ridder, self, args); }
 
-static PyObject *
-_brenth(PyObject *self, PyObject *args)
-{
-        return call_solver(brenth,self,args);
-}
+static PyObject *_brenth(PyObject *self, PyObject *args) { return call_solver(brenth, self, args); }
 
-static PyObject *
-_brentq(PyObject *self, PyObject *args)
-{
-        return call_solver(brentq,self,args);
-}
+static PyObject *_brentq(PyObject *self, PyObject *args) { return call_solver(brentq, self, args); }
 
 /*
  * Standard Python module interface
  */
 
-static PyMethodDef
-Zerosmethods[] = {
-	{"_bisect", _bisect, METH_VARARGS, "a"},
-	{"_ridder", _ridder, METH_VARARGS, "a"},
-	{"_brenth", _brenth, METH_VARARGS, "a"},
-	{"_brentq", _brentq, METH_VARARGS, "a"},
-	{NULL, NULL}
+static PyMethodDef Zerosmethods[] = {
+    {"_bisect", _bisect, METH_VARARGS, "a"},
+    {"_ridder", _ridder, METH_VARARGS, "a"},
+    {"_brenth", _brenth, METH_VARARGS, "a"},
+    {"_brentq", _brentq, METH_VARARGS, "a"},
+    {NULL, NULL}
 };
 
-static struct PyModuleDef moduledef = {
-    PyModuleDef_HEAD_INIT,
-    "_zeros",
-    NULL,
-    -1,
-    Zerosmethods,
-    NULL,
-    NULL,
-    NULL,
-    NULL
-};
+static struct PyModuleDef moduledef = {PyModuleDef_HEAD_INIT, "_zeros", NULL, -1, Zerosmethods, NULL, NULL, NULL, NULL};
 
-PyMODINIT_FUNC
-PyInit__zeros(void)
-{
+PyMODINIT_FUNC PyInit__zeros(void) {
     PyObject *m;
 
     m = PyModule_Create(&moduledef);

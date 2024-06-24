@@ -40,43 +40,31 @@
 
 #include "ccallback.h"
 
-
 #define ERROR_VALUE 2
-
 
 /*
  * Example 3rd party library code, to be interfaced with
  */
 
-static double library_call_simple(double value, int *error_flag, double (*callback)(double, int*, void*),
-                                  void *data)
-{
+static double
+library_call_simple(double value, int *error_flag, double (*callback)(double, int *, void *), void *data) {
     *error_flag = 0;
     return callback(value, error_flag, data);
 }
 
-
-static double library_call_nodata(double value, int *error_flag, double (*callback)(double, int*))
-{
+static double library_call_nodata(double value, int *error_flag, double (*callback)(double, int *)) {
     *error_flag = 0;
     return callback(value, error_flag);
 }
 
-
-static double library_call_nonlocal(double value, double (*callback)(double))
-{
-    return callback(value);
-}
-
-
+static double library_call_nonlocal(double value, double (*callback)(double)) { return callback(value); }
 
 /*
  * Callback thunks for the different cases
  */
 
-static double test_thunk_simple(double a, int *error_flag, void *data)
-{
-    ccallback_t *callback = (ccallback_t*)data;
+static double test_thunk_simple(double a, int *error_flag, void *data) {
+    ccallback_t *callback = (ccallback_t *) data;
     double result = 0;
     int error = 0;
 
@@ -88,13 +76,11 @@ static double test_thunk_simple(double a, int *error_flag, void *data)
 
         if (res == NULL) {
             error = 1;
-        }
-        else {
+        } else {
             res2 = PyNumber_Float(res);
             if (res2 == NULL) {
                 error = 1;
-            }
-            else {
+            } else {
                 result = PyFloat_AsDouble(res2);
                 if (PyErr_Occurred()) {
                     error = 1;
@@ -105,15 +91,12 @@ static double test_thunk_simple(double a, int *error_flag, void *data)
         }
 
         PyGILState_Release(state);
-    }
-    else {
+    } else {
         if (callback->signature->value == 0) {
-            result = ((double(*)(double, int *, void *))callback->c_function)(
-                a, &error, callback->user_data);
-        }
-        else {
-            result = ((double(*)(double, double, int *, void *))callback->c_function)(
-                a, 0.0, &error, callback->user_data);
+            result = ((double (*)(double, int *, void *)) callback->c_function)(a, &error, callback->user_data);
+        } else {
+            result =
+                ((double (*)(double, double, int *, void *)) callback->c_function)(a, 0.0, &error, callback->user_data);
         }
     }
 
@@ -124,21 +107,17 @@ static double test_thunk_simple(double a, int *error_flag, void *data)
     return result;
 }
 
-
-static double test_thunk_nodata(double a, int *error_flag)
-{
+static double test_thunk_nodata(double a, int *error_flag) {
     ccallback_t *callback = ccallback_obtain();
-    return test_thunk_simple(a, error_flag, (void *)callback);
+    return test_thunk_simple(a, error_flag, (void *) callback);
 }
 
-
-static double test_thunk_nonlocal(double a)
-{
+static double test_thunk_nonlocal(double a) {
     ccallback_t *callback = ccallback_obtain();
     double result;
     int error_flag = 0;
 
-    result = test_thunk_simple(a, &error_flag, (void *)callback);
+    result = test_thunk_simple(a, &error_flag, (void *) callback);
 
     if (error_flag) {
         longjmp(callback->error_buf, 1);
@@ -146,7 +125,6 @@ static double test_thunk_nonlocal(double a)
 
     return result;
 }
-
 
 /*
  * Caller entry point functions
@@ -166,8 +144,7 @@ static ccallback_signature_t signatures[] = {
     {NULL}
 };
 
-static PyObject *test_call_simple(PyObject *obj, PyObject *args)
-{
+static PyObject *test_call_simple(PyObject *obj, PyObject *args) {
     PyObject *callback_obj;
     double value, result;
     ccallback_t callback;
@@ -184,23 +161,19 @@ static PyObject *test_call_simple(PyObject *obj, PyObject *args)
     }
 
     /* Call 3rd party library code */
-    Py_BEGIN_ALLOW_THREADS
-    result = library_call_simple(value, &error_flag, test_thunk_simple, (void *)&callback);
+    Py_BEGIN_ALLOW_THREADS result = library_call_simple(value, &error_flag, test_thunk_simple, (void *) &callback);
     Py_END_ALLOW_THREADS
 
-    ccallback_release(&callback);
+        ccallback_release(&callback);
 
     if (error_flag) {
         return NULL;
-    }
-    else {
+    } else {
         return PyFloat_FromDouble(result);
     }
 }
 
-
-static PyObject *test_call_nodata(PyObject *obj, PyObject *args)
-{
+static PyObject *test_call_nodata(PyObject *obj, PyObject *args) {
     PyObject *callback_obj;
     double value, result;
     ccallback_t callback;
@@ -217,23 +190,19 @@ static PyObject *test_call_nodata(PyObject *obj, PyObject *args)
     }
 
     /* Call 3rd party library code */
-    Py_BEGIN_ALLOW_THREADS
-    result = library_call_nodata(value, &error_flag, test_thunk_nodata);
+    Py_BEGIN_ALLOW_THREADS result = library_call_nodata(value, &error_flag, test_thunk_nodata);
     Py_END_ALLOW_THREADS
 
-    ccallback_release(&callback);
+        ccallback_release(&callback);
 
     if (error_flag) {
         return NULL;
-    }
-    else {
+    } else {
         return PyFloat_FromDouble(result);
     }
 }
 
-
-static PyObject *test_call_nonlocal(PyObject *obj, PyObject *args)
-{
+static PyObject *test_call_nonlocal(PyObject *obj, PyObject *args) {
     PyObject *callback_obj;
     double value, result;
     int ret;
@@ -270,16 +239,13 @@ static PyObject *test_call_nonlocal(PyObject *obj, PyObject *args)
     return PyFloat_FromDouble(result);
 }
 
-
 /*
  * Functions for testing the PyCapsule interface
  */
 
 static char *test_plus1_signature = "double (double, int *, void *)";
 
-
-static double test_plus1_callback(double a, int *error_flag, void *user_data)
-{
+static double test_plus1_callback(double a, int *error_flag, void *user_data) {
     if (a == ERROR_VALUE) {
         PyGILState_STATE state = PyGILState_Ensure();
         *error_flag = 1;
@@ -290,119 +256,88 @@ static double test_plus1_callback(double a, int *error_flag, void *user_data)
 
     if (user_data == NULL) {
         return a + 1;
-    }
-    else {
-        return a + *(double *)user_data;
+    } else {
+        return a + *(double *) user_data;
     }
 }
 
-
-static PyObject *test_get_plus1_capsule(PyObject *obj, PyObject *args)
-{
+static PyObject *test_get_plus1_capsule(PyObject *obj, PyObject *args) {
     if (!PyArg_ParseTuple(args, "")) {
         return NULL;
     }
 
-    return PyCapsule_New((void *)test_plus1_callback, test_plus1_signature, NULL);
+    return PyCapsule_New((void *) test_plus1_callback, test_plus1_signature, NULL);
 }
-
 
 static char *test_plus1b_signature = "double (double, double, int *, void *)";
 
-
-static double test_plus1b_callback(double a, double b, int *error_flag, void *user_data)
-{
+static double test_plus1b_callback(double a, double b, int *error_flag, void *user_data) {
     return test_plus1_callback(a, error_flag, user_data) + b;
 }
 
-
-static PyObject *test_get_plus1b_capsule(PyObject *obj, PyObject *args)
-{
+static PyObject *test_get_plus1b_capsule(PyObject *obj, PyObject *args) {
     if (!PyArg_ParseTuple(args, "")) {
         return NULL;
     }
 
-    return PyCapsule_New((void *)test_plus1b_callback, test_plus1b_signature, NULL);
+    return PyCapsule_New((void *) test_plus1b_callback, test_plus1b_signature, NULL);
 }
-
 
 static char *test_plus1bc_signature = "double (double, double, double, int *, void *)";
 
-
-static double test_plus1bc_callback(double a, double b, double c, int *error_flag, void *user_data)
-{
+static double test_plus1bc_callback(double a, double b, double c, int *error_flag, void *user_data) {
     return test_plus1_callback(a, error_flag, user_data) + b + c;
 }
 
-
-static PyObject *test_get_plus1bc_capsule(PyObject *obj, PyObject *args)
-{
+static PyObject *test_get_plus1bc_capsule(PyObject *obj, PyObject *args) {
     if (!PyArg_ParseTuple(args, "")) {
         return NULL;
     }
 
-    return PyCapsule_New((void *)test_plus1bc_callback, test_plus1bc_signature, NULL);
+    return PyCapsule_New((void *) test_plus1bc_callback, test_plus1bc_signature, NULL);
 }
 
-
-static void data_capsule_destructor(PyObject *capsule)
-{
+static void data_capsule_destructor(PyObject *capsule) {
     void *data;
     data = PyCapsule_GetPointer(capsule, NULL);
     free(data);
 }
 
-static PyObject *test_get_data_capsule(PyObject *obj, PyObject *args)
-{
+static PyObject *test_get_data_capsule(PyObject *obj, PyObject *args) {
     double *data;
 
     if (!PyArg_ParseTuple(args, "")) {
         return NULL;
     }
 
-    data = (double *)malloc(sizeof(double));
+    data = (double *) malloc(sizeof(double));
     if (data == NULL) {
         return PyErr_NoMemory();
     }
 
     *data = 2.0;
 
-    return PyCapsule_New((void *)data, NULL, data_capsule_destructor);
+    return PyCapsule_New((void *) data, NULL, data_capsule_destructor);
 }
-
 
 /*
  * Initialize the module
  */
 
 static PyMethodDef test_ccallback_methods[] = {
-    {"test_call_simple", (PyCFunction)test_call_simple, METH_VARARGS, ""},
-    {"test_call_nodata", (PyCFunction)test_call_nodata, METH_VARARGS, ""},
-    {"test_call_nonlocal", (PyCFunction)test_call_nonlocal, METH_VARARGS, ""},
-    {"test_get_plus1_capsule", (PyCFunction)test_get_plus1_capsule, METH_VARARGS, ""},
-    {"test_get_plus1b_capsule", (PyCFunction)test_get_plus1b_capsule, METH_VARARGS, ""},
-    {"test_get_plus1bc_capsule", (PyCFunction)test_get_plus1bc_capsule, METH_VARARGS, ""},
-    {"test_get_data_capsule", (PyCFunction)test_get_data_capsule, METH_VARARGS, ""},
-    {"test_get_data_capsule", (PyCFunction)test_get_data_capsule, METH_VARARGS, ""},
+    {"test_call_simple", (PyCFunction) test_call_simple, METH_VARARGS, ""},
+    {"test_call_nodata", (PyCFunction) test_call_nodata, METH_VARARGS, ""},
+    {"test_call_nonlocal", (PyCFunction) test_call_nonlocal, METH_VARARGS, ""},
+    {"test_get_plus1_capsule", (PyCFunction) test_get_plus1_capsule, METH_VARARGS, ""},
+    {"test_get_plus1b_capsule", (PyCFunction) test_get_plus1b_capsule, METH_VARARGS, ""},
+    {"test_get_plus1bc_capsule", (PyCFunction) test_get_plus1bc_capsule, METH_VARARGS, ""},
+    {"test_get_data_capsule", (PyCFunction) test_get_data_capsule, METH_VARARGS, ""},
+    {"test_get_data_capsule", (PyCFunction) test_get_data_capsule, METH_VARARGS, ""},
     {NULL, NULL, 0, NULL}
 };
 
-
 static struct PyModuleDef test_ccallback_module = {
-    PyModuleDef_HEAD_INIT,
-    "_test_ccallback",
-    NULL,
-    -1,
-    test_ccallback_methods,
-    NULL,
-    NULL,
-    NULL,
-    NULL
+    PyModuleDef_HEAD_INIT, "_test_ccallback", NULL, -1, test_ccallback_methods, NULL, NULL, NULL, NULL
 };
 
-
-PyMODINIT_FUNC
-PyInit__test_ccallback(void)
-{
-    return PyModule_Create(&test_ccallback_module);
-}
+PyMODINIT_FUNC PyInit__test_ccallback(void) { return PyModule_Create(&test_ccallback_module); }

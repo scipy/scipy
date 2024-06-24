@@ -14,10 +14,8 @@
  * For an example see `scipy/_lib/src/_test_ccallback.c`.
  */
 
-
 #ifndef CCALLBACK_H_
 #define CCALLBACK_H_
-
 
 #include <Python.h>
 
@@ -26,12 +24,11 @@
 /* Default behavior */
 #define CCALLBACK_DEFAULTS 0x0
 /* Whether calling ccallback_obtain is enabled */
-#define CCALLBACK_OBTAIN   0x1
+#define CCALLBACK_OBTAIN 0x1
 /* Deal with also other input objects than LowLevelCallable.
  * Useful for maintaining legacy behavior.
  */
-#define CCALLBACK_PARSE    0x2
-
+#define CCALLBACK_PARSE 0x2
 
 typedef struct ccallback ccallback_t;
 typedef struct ccallback_signature ccallback_signature_t;
@@ -62,7 +59,6 @@ struct ccallback {
     void *info_p;
 };
 
-
 /*
  * Thread-local storage
  */
@@ -71,13 +67,9 @@ struct ccallback {
 
 static __thread ccallback_t *_active_ccallback = NULL;
 
-static void *ccallback__get_thread_local(void)
-{
-    return (void *)_active_ccallback;
-}
+static void *ccallback__get_thread_local(void) { return (void *) _active_ccallback; }
 
-static int ccallback__set_thread_local(void *value)
-{
+static int ccallback__set_thread_local(void *value) {
     _active_ccallback = value;
     return 0;
 }
@@ -85,22 +77,15 @@ static int ccallback__set_thread_local(void *value)
 /*
  * Obtain a pointer to the current ccallback_t structure.
  */
-static ccallback_t *ccallback_obtain(void)
-{
-    return (ccallback_t *)ccallback__get_thread_local();
-}
+static ccallback_t *ccallback_obtain(void) { return (ccallback_t *) ccallback__get_thread_local(); }
 
 #elif defined(_MSC_VER)
 
 static __declspec(thread) ccallback_t *_active_ccallback = NULL;
 
-static void *ccallback__get_thread_local(void)
-{
-    return (void *)_active_ccallback;
-}
+static void *ccallback__get_thread_local(void) { return (void *) _active_ccallback; }
 
-static int ccallback__set_thread_local(void *value)
-{
+static int ccallback__set_thread_local(void *value) {
     _active_ccallback = value;
     return 0;
 }
@@ -108,17 +93,13 @@ static int ccallback__set_thread_local(void *value)
 /*
  * Obtain a pointer to the current ccallback_t structure.
  */
-static ccallback_t *ccallback_obtain(void)
-{
-    return (ccallback_t *)ccallback__get_thread_local();
-}
+static ccallback_t *ccallback_obtain(void) { return (ccallback_t *) ccallback__get_thread_local(); }
 
 #else
 
 /* Fallback implementation with Python thread API */
 
-static void *ccallback__get_thread_local(void)
-{
+static void *ccallback__get_thread_local(void) {
     PyObject *local_dict, *capsule;
     void *callback_ptr;
 
@@ -140,8 +121,7 @@ static void *ccallback__get_thread_local(void)
     return callback_ptr;
 }
 
-static int ccallback__set_thread_local(void *value)
-{
+static int ccallback__set_thread_local(void *value) {
     PyObject *local_dict;
 
     local_dict = PyThreadState_GetDict();
@@ -151,8 +131,7 @@ static int ccallback__set_thread_local(void *value)
 
     if (value == NULL) {
         return PyDict_DelItemString(local_dict, "__scipy_ccallback");
-    }
-    else {
+    } else {
         PyObject *capsule;
         int ret;
 
@@ -169,14 +148,13 @@ static int ccallback__set_thread_local(void *value)
 /*
  * Obtain a pointer to the current ccallback_t structure.
  */
-static ccallback_t *ccallback_obtain(void)
-{
+static ccallback_t *ccallback_obtain(void) {
     PyGILState_STATE state;
     ccallback_t *callback_ptr;
 
     state = PyGILState_Ensure();
 
-    callback_ptr = (ccallback_t *)ccallback__get_thread_local();
+    callback_ptr = (ccallback_t *) ccallback__get_thread_local();
     if (callback_ptr == NULL) {
         Py_FatalError("scipy/ccallback: failed to get thread local state");
     }
@@ -188,7 +166,6 @@ static ccallback_t *ccallback_obtain(void)
 
 #endif
 
-
 /*
  * Set Python error status indicating a signature mismatch.
  *
@@ -199,9 +176,7 @@ static ccallback_t *ccallback_obtain(void)
  * capsule_signature
  *     The mismatcing signature from user-provided PyCapsule.
  */
-static void ccallback__err_invalid_signature(ccallback_signature_t *signatures,
-                                             const char *capsule_signature)
-{
+static void ccallback__err_invalid_signature(ccallback_signature_t *signatures, const char *capsule_signature) {
     PyObject *sig_list = NULL;
     ccallback_signature_t *sig;
 
@@ -230,15 +205,15 @@ static void ccallback__err_invalid_signature(ccallback_signature_t *signatures,
         }
     }
 
-    PyErr_Format(PyExc_ValueError,
-                 "Invalid scipy.LowLevelCallable signature \"%s\". Expected one of: %R",
-                 capsule_signature, sig_list);
+    PyErr_Format(
+        PyExc_ValueError, "Invalid scipy.LowLevelCallable signature \"%s\". Expected one of: %R", capsule_signature,
+        sig_list
+    );
 
 fail:
     Py_XDECREF(sig_list);
     return;
 }
-
 
 /*
  * Set up callback.
@@ -263,9 +238,8 @@ fail:
  *     0 if success, != 0 on failure (an appropriate Python exception is set).
  *
  */
-static int ccallback_prepare(ccallback_t *callback, ccallback_signature_t *signatures,
-                             PyObject *callback_obj, int flags)
-{
+static int
+ccallback_prepare(ccallback_t *callback, ccallback_signature_t *signatures, PyObject *callback_obj, int flags) {
     static PyTypeObject *lowlevelcallable_type = NULL;
     PyObject *callback_obj2 = NULL;
     PyObject *capsule = NULL;
@@ -278,7 +252,7 @@ static int ccallback_prepare(ccallback_t *callback, ccallback_signature_t *signa
             goto error;
         }
 
-        lowlevelcallable_type = (PyTypeObject *)PyObject_GetAttrString(module, "LowLevelCallable");
+        lowlevelcallable_type = (PyTypeObject *) PyObject_GetAttrString(module, "LowLevelCallable");
         Py_DECREF(module);
         if (lowlevelcallable_type == NULL) {
             goto error;
@@ -287,8 +261,7 @@ static int ccallback_prepare(ccallback_t *callback, ccallback_signature_t *signa
 
     if ((flags & CCALLBACK_PARSE) && !PyObject_TypeCheck(callback_obj, lowlevelcallable_type)) {
         /* Parse callback */
-        callback_obj2 = PyObject_CallMethod((PyObject *)lowlevelcallable_type,
-                                            "_parse_callback", "O", callback_obj);
+        callback_obj2 = PyObject_CallMethod((PyObject *) lowlevelcallable_type, "_parse_callback", "O", callback_obj);
         if (callback_obj2 == NULL) {
             goto error;
         }
@@ -307,10 +280,8 @@ static int ccallback_prepare(ccallback_t *callback, ccallback_signature_t *signa
         callback->c_function = NULL;
         callback->user_data = NULL;
         callback->signature = NULL;
-    }
-    else if (capsule != NULL ||
-             (PyObject_TypeCheck(callback_obj, lowlevelcallable_type) &&
-              PyCapsule_CheckExact(PyTuple_GET_ITEM(callback_obj, 0)))) {
+    } else if (capsule != NULL || (PyObject_TypeCheck(callback_obj, lowlevelcallable_type) &&
+                                   PyCapsule_CheckExact(PyTuple_GET_ITEM(callback_obj, 0)))) {
         /* PyCapsule in LowLevelCallable (or parse result from above) */
         void *ptr, *user_data;
         ccallback_signature_t *sig;
@@ -351,19 +322,17 @@ static int ccallback_prepare(ccallback_t *callback, ccallback_signature_t *signa
         callback->c_function = ptr;
         callback->user_data = user_data;
         callback->signature = sig;
-    }
-    else {
+    } else {
         PyErr_SetString(PyExc_ValueError, "invalid callable given");
         goto error;
     }
 
     if (flags & CCALLBACK_OBTAIN) {
         callback->prev_callback = ccallback__get_thread_local();
-        if (ccallback__set_thread_local((void *)callback) != 0) {
+        if (ccallback__set_thread_local((void *) callback) != 0) {
             goto error;
         }
-    }
-    else {
+    } else {
         callback->prev_callback = NULL;
     }
 
@@ -375,7 +344,6 @@ error:
     return -1;
 }
 
-
 /*
  * Tear down callback.
  *
@@ -385,8 +353,7 @@ error:
  *     A callback structure, previously initialized by ccallback_prepare
  *
  */
-static int ccallback_release(ccallback_t *callback)
-{
+static int ccallback_release(ccallback_t *callback) {
     Py_XDECREF(callback->py_function);
     callback->c_function = NULL;
     callback->py_function = NULL;

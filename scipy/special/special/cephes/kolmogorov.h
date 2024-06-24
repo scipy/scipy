@@ -124,8 +124,10 @@ namespace cephes {
             double sf, cdf, pdf;
 
             if (std::isnan(x)) {
-                return {std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN(),
-                        std::numeric_limits<double>::quiet_NaN()};
+                return {
+                    std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN(),
+                    std::numeric_limits<double>::quiet_NaN()
+                };
             }
             if (x <= 0) {
                 return {1.0, 0.0, 0};
@@ -613,8 +615,10 @@ namespace cephes {
          *  Compute a single term in the summation, A_v(n, x):
          *  A_v(n, x) =  Binomial(n,v) * (1-x-v/n)^(n-v) * (x+v/n)^(v-1)
          */
-        SPECFUN_HOST_DEVICE inline void computeAv(int n, double x, int v, const double_double &Cman, int Cexpt,
-                                                  double_double *pt1, double_double *pt2, double_double *pAv) {
+        SPECFUN_HOST_DEVICE inline void computeAv(
+            int n, double x, int v, const double_double &Cman, int Cexpt, double_double *pt1, double_double *pt2,
+            double_double *pAv
+        ) {
             int t1E, t2E, ansE;
             double_double Av;
             double_double t2x = double_double(n - v) / n - x; /*  1 - x - v/n */
@@ -640,8 +644,10 @@ namespace cephes {
             int nxfl, n1mxfl, n1mxceil;
 
             if (!(n > 0 && x >= 0.0 && x <= 1.0)) {
-                return {std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN(),
-                        std::numeric_limits<double>::quiet_NaN()};
+                return {
+                    std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN(),
+                    std::numeric_limits<double>::quiet_NaN()
+                };
             }
             if (n == 1) {
                 return {1 - x, x, 1.0};
@@ -712,8 +718,9 @@ namespace cephes {
                  */
                 int nUpperTerms = n - n1mxceil + 1;
                 bUseUpperSum = (nUpperTerms <= 1 && x < 0.5);
-                bUseUpperSum = (bUseUpperSum || ((n >= SM_UPPERSUM_MIN_N) && (nUpperTerms <= SM_UPPER_MAX_TERMS) &&
-                                                 (x <= 0.5 / std::sqrt(n))));
+                bUseUpperSum =
+                    (bUseUpperSum ||
+                     ((n >= SM_UPPERSUM_MIN_N) && (nUpperTerms <= SM_UPPER_MAX_TERMS) && (x <= 0.5 / std::sqrt(n))));
             }
             {
                 int start = 0, step = 1, nTerms = n1mxfl + 1;

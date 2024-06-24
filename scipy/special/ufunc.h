@@ -17,7 +17,6 @@
 #include "sf_error.h"
 #include "special/third_party/kokkos/mdspan.hpp"
 
-
 // This is std::accumulate, but that is not constexpr until C++20
 template <typename InputIt, typename T>
 constexpr T initializer_accumulate(InputIt first, InputIt last, T init) {

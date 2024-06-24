@@ -3,8 +3,8 @@
 #pragma once
 
 #include "config.h"
-#include "tools.h"
 #include "error.h"
+#include "tools.h"
 
 namespace special {
 
@@ -34,9 +34,9 @@ struct IvRatioCFTailGenerator {
 
     // It is assumed that v >= 1, x >= 0, c > 0, and all are finite.
     IvRatioCFTailGenerator(double vc, double xc, double c) noexcept {
-        a0_ = -(2*vc-c)*xc;
-        as_ = -2*c*xc;
-        b0_ = 2*(vc+xc);
+        a0_ = -(2 * vc - c) * xc;
+        as_ = -2 * c * xc;
+        b0_ = 2 * (vc + xc);
         bs_ = c;
         k_ = 0;
     }
@@ -46,7 +46,7 @@ struct IvRatioCFTailGenerator {
         return {std::fma(k_, as_, a0_), std::fma(k_, bs_, b0_)};
     }
 
-private:
+  private:
     double a0_, as_;  // a[k] == a0 + as*k, k >= 1
     double b0_, bs_;  // b[k] == b0 + bs*k, k >= 1
     std::uint64_t k_; // current index
@@ -80,16 +80,14 @@ SPECFUN_HOST_DEVICE inline double iv_ratio(double v, double x) {
     // Now v >= 1 and x >= 0 and both are finite.
     int e;
     std::frexp(std::fmax(v, x), &e);
-    double c = std::ldexp(1, 2-e); // rescaling multiplier
+    double c = std::ldexp(1, 2 - e); // rescaling multiplier
     double vc = v * c;
     double xc = x * c;
 
     IvRatioCFTailGenerator cf(vc, xc, c);
     auto [fc, terms] = detail::series_eval_kahan(
-        detail::continued_fraction_series(cf),
-        std::numeric_limits<double>::epsilon() * 0.5,
-        1000,
-        2*vc);
+        detail::continued_fraction_series(cf), std::numeric_limits<double>::epsilon() * 0.5, 1000, 2 * vc
+    );
 
     if (terms == 0) { // failed to converge; should not happen
         set_error("iv_ratio", SF_ERROR_NO_RESULT, NULL);

@@ -1,8 +1,6 @@
 // Testing availability of boost headers
 
-#include <iostream>
 #include <boost/math/distributions.hpp>
+#include <iostream>
 
-void test() {
-  boost::math::binomial_distribution<double> d(10, 0.5);
-}
+void test() { boost::math::binomial_distribution<double> d(10, 0.5); }

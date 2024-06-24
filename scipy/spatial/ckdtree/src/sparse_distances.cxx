@@ -1,31 +1,30 @@
 #include "ckdtree_decl.h"
-#include "rectangle.h"
 #include "coo_entries.h"
+#include "rectangle.h"
 
 #include <cmath>
 #include <cstdlib>
 #include <cstring>
 
-#include <vector>
-#include <string>
-#include <sstream>
-#include <new>
-#include <typeinfo>
-#include <stdexcept>
 #include <ios>
+#include <new>
+#include <sstream>
+#include <stdexcept>
+#include <string>
+#include <typeinfo>
+#include <vector>
 
-template <typename MinMaxDist> static void
-traverse(const ckdtree *self, const ckdtree *other,
-         std::vector<coo_entry> *results,
-         const ckdtreenode *node1, const ckdtreenode *node2,
-         RectRectDistanceTracker<MinMaxDist> *tracker)
-{
+template <typename MinMaxDist>
+static void traverse(
+    const ckdtree *self, const ckdtree *other, std::vector<coo_entry> *results, const ckdtreenode *node1,
+    const ckdtreenode *node2, RectRectDistanceTracker<MinMaxDist> *tracker
+) {
 
     if (tracker->min_distance > tracker->upper_bound)
         return;
-    else if (node1->split_dim == -1) {  /* 1 is leaf node */
+    else if (node1->split_dim == -1) { /* 1 is leaf node */
 
-        if (node2->split_dim == -1) {  /* 1 & 2 are leaves */
+        if (node2->split_dim == -1) { /* 1 & 2 are leaves */
             /* brute-force */
             const double p = tracker->p;
             const double tub = tracker->upper_bound;
@@ -41,27 +40,24 @@ traverse(const ckdtree *self, const ckdtree *other,
 
             CKDTREE_PREFETCH(sdata + sindices[start1] * m, 0, m);
             if (start1 < end1 - 1)
-               CKDTREE_PREFETCH(sdata + sindices[start1+1] * m, 0, m);
+                CKDTREE_PREFETCH(sdata + sindices[start1 + 1] * m, 0, m);
 
             for (ckdtree_intp_t i = start1; i < end1; ++i) {
 
                 if (i < end1 - 2)
-                     CKDTREE_PREFETCH(sdata + sindices[i+2] * m, 0, m);
+                    CKDTREE_PREFETCH(sdata + sindices[i + 2] * m, 0, m);
 
                 CKDTREE_PREFETCH(odata + oindices[start2] * m, 0, m);
                 if (start2 < end2 - 1)
-                    CKDTREE_PREFETCH(sdata + oindices[start2+1] * m, 0, m);
+                    CKDTREE_PREFETCH(sdata + oindices[start2 + 1] * m, 0, m);
 
                 for (ckdtree_intp_t j = start2; j < end2; ++j) {
 
                     if (j < end2 - 2)
-                        CKDTREE_PREFETCH(odata + oindices[j+2] * m, 0, m);
+                        CKDTREE_PREFETCH(odata + oindices[j + 2] * m, 0, m);
 
-                    double d = MinMaxDist::point_point_p(
-                            self,
-                            sdata + sindices[i] * m,
-                            odata + oindices[j] * m,
-                            p, m, tub);
+                    double d =
+                        MinMaxDist::point_point_p(self, sdata + sindices[i] * m, odata + oindices[j] * m, p, m, tub);
 
                     if (d <= tub) {
                         if (CKDTREE_LIKELY(p == 2.0))
@@ -74,8 +70,7 @@ traverse(const ckdtree *self, const ckdtree *other,
                     }
                 }
             }
-        }
-        else {  /* 1 is a leaf node, 2 is inner node */
+        } else { /* 1 is a leaf node, 2 is inner node */
             tracker->push_less_of(2, node2);
             traverse(self, other, results, node1, node2->less, tracker);
             tracker->pop();
@@ -84,8 +79,7 @@ traverse(const ckdtree *self, const ckdtree *other,
             traverse(self, other, results, node1, node2->greater, tracker);
             tracker->pop();
         }
-    }
-    else {  /* 1 is an inner node */
+    } else { /* 1 is an inner node */
         if (node2->split_dim == -1) {
             /* 1 is an inner node, 2 is a leaf node*/
             tracker->push_less_of(1, node1);
@@ -95,8 +89,7 @@ traverse(const ckdtree *self, const ckdtree *other,
             tracker->push_greater_of(1, node1);
             traverse(self, other, results, node1->greater, node2, tracker);
             tracker->pop();
-        }
-        else { /* 1 and 2 are inner nodes */
+        } else { /* 1 and 2 are inner nodes */
             tracker->push_less_of(1, node1);
             tracker->push_less_of(2, node2);
             traverse(self, other, results, node1->less, node2->less, tracker);
@@ -113,41 +106,35 @@ traverse(const ckdtree *self, const ckdtree *other,
             tracker->pop();
 
             tracker->push_greater_of(2, node2);
-            traverse(self, other, results, node1->greater, node2->greater,
-                tracker);
+            traverse(self, other, results, node1->greater, node2->greater, tracker);
             tracker->pop();
             tracker->pop();
         }
     }
 }
 
-
-int
-sparse_distance_matrix(const ckdtree *self, const ckdtree *other,
-                       const double p,
-                       const double max_distance,
-                       std::vector<coo_entry> *results)
-{
-#define HANDLE(cond, kls) \
-    if(cond) { \
-        RectRectDistanceTracker<kls> tracker(self, r1, r2, p, 0, max_distance);\
-        traverse(self, other, results, self->ctree, other->ctree, &tracker); \
+int sparse_distance_matrix(
+    const ckdtree *self, const ckdtree *other, const double p, const double max_distance,
+    std::vector<coo_entry> *results
+) {
+#define HANDLE(cond, kls)                                                                                              \
+    if (cond) {                                                                                                        \
+        RectRectDistanceTracker<kls> tracker(self, r1, r2, p, 0, max_distance);                                        \
+        traverse(self, other, results, self->ctree, other->ctree, &tracker);                                           \
     } else
 
     Rectangle r1(self->m, self->raw_mins, self->raw_maxes);
     Rectangle r2(other->m, other->raw_mins, other->raw_maxes);
-    if(CKDTREE_LIKELY(self->raw_boxsize_data == NULL)) {
+    if (CKDTREE_LIKELY(self->raw_boxsize_data == NULL)) {
         HANDLE(CKDTREE_LIKELY(p == 2), MinkowskiDistP2)
         HANDLE(p == 1, MinkowskiDistP1)
         HANDLE(std::isinf(p), MinkowskiDistPinf)
-        HANDLE(1, MinkowskiDistPp)
-        {}
+        HANDLE(1, MinkowskiDistPp) {}
     } else {
         HANDLE(CKDTREE_LIKELY(p == 2), BoxMinkowskiDistP2)
         HANDLE(p == 1, BoxMinkowskiDistP1)
         HANDLE(std::isinf(p), BoxMinkowskiDistPinf)
-        HANDLE(1, BoxMinkowskiDistPp)
-        {}
+        HANDLE(1, BoxMinkowskiDistPp) {}
     }
 
     return 0;

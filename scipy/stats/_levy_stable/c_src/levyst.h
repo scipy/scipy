@@ -1,8 +1,7 @@
 #ifndef LEVYST_H
 #define LEVYST_H
 
-struct nolan_precanned
-{
+struct nolan_precanned {
     double (*g)(struct nolan_precanned *, double);
     double alpha;
     double zeta;
@@ -21,7 +20,6 @@ struct nolan_precanned
 
 typedef double (*g_callback)(struct nolan_precanned *, double);
 
-extern struct nolan_precanned *
-nolan_precan(double, double, double);
- 
+extern struct nolan_precanned *nolan_precan(double, double, double);
+
 #endif

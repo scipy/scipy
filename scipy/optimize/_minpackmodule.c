@@ -6,29 +6,16 @@
 static PyObject *minpack_error;
 #include "__minpack.h"
 static struct PyMethodDef minpack_module_methods[] = {
-{"_hybrd", minpack_hybrd, METH_VARARGS, doc_hybrd},
-{"_hybrj", minpack_hybrj, METH_VARARGS, doc_hybrj},
-{"_lmdif", minpack_lmdif, METH_VARARGS, doc_lmdif},
-{"_lmder", minpack_lmder, METH_VARARGS, doc_lmder},
-{"_chkder", minpack_chkder, METH_VARARGS, doc_chkder},
-{NULL,		NULL, 0, NULL}
+    {"_hybrd", minpack_hybrd, METH_VARARGS, doc_hybrd},    {"_hybrj", minpack_hybrj, METH_VARARGS, doc_hybrj},
+    {"_lmdif", minpack_lmdif, METH_VARARGS, doc_lmdif},    {"_lmder", minpack_lmder, METH_VARARGS, doc_lmder},
+    {"_chkder", minpack_chkder, METH_VARARGS, doc_chkder}, {NULL, NULL, 0, NULL}
 };
 
 static struct PyModuleDef moduledef = {
-    PyModuleDef_HEAD_INIT,
-    "_minpack",
-    NULL,
-    -1,
-    minpack_module_methods,
-    NULL,
-    NULL,
-    NULL,
-    NULL
+    PyModuleDef_HEAD_INIT, "_minpack", NULL, -1, minpack_module_methods, NULL, NULL, NULL, NULL
 };
 
-PyMODINIT_FUNC
-PyInit__minpack(void)
-{
+PyMODINIT_FUNC PyInit__minpack(void) {
     PyObject *module, *mdict;
 
     import_array();
@@ -42,7 +29,7 @@ PyInit__minpack(void)
     if (mdict == NULL) {
         return NULL;
     }
-    minpack_error = PyErr_NewException ("_minpack.error", NULL, NULL);
+    minpack_error = PyErr_NewException("_minpack.error", NULL, NULL);
     if (minpack_error == NULL) {
         return NULL;
     }

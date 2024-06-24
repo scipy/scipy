@@ -8,4 +8,3 @@ struct coo_entry {
 };
 
 #endif
-

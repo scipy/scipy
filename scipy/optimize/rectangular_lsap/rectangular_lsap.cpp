@@ -40,30 +40,25 @@ pseudocode described in pages 1685-1686 of:
 Author: PM Larsen
 */
 
-#include <cmath>
-#include <vector>
-#include <numeric>
-#include <algorithm>
 #include "rectangular_lsap.h"
+#include <algorithm>
+#include <cmath>
+#include <numeric>
+#include <vector>
 
-
-template <typename T> std::vector<intptr_t> argsort_iter(const std::vector<T> &v)
-{
+template <typename T>
+std::vector<intptr_t> argsort_iter(const std::vector<T> &v) {
     std::vector<intptr_t> index(v.size());
     std::iota(index.begin(), index.end(), 0);
-    std::sort(index.begin(), index.end(), [&v](intptr_t i, intptr_t j)
-              {return v[i] < v[j];});
+    std::sort(index.begin(), index.end(), [&v](intptr_t i, intptr_t j) { return v[i] < v[j]; });
     return index;
 }
 
-static intptr_t
-augmenting_path(intptr_t nc, double *cost, std::vector<double>& u,
-                std::vector<double>& v, std::vector<intptr_t>& path,
-                std::vector<intptr_t>& row4col,
-                std::vector<double>& shortestPathCosts, intptr_t i,
-                std::vector<bool>& SR, std::vector<bool>& SC,
-                std::vector<intptr_t>& remaining, double* p_minVal)
-{
+static intptr_t augmenting_path(
+    intptr_t nc, double *cost, std::vector<double> &u, std::vector<double> &v, std::vector<intptr_t> &path,
+    std::vector<intptr_t> &row4col, std::vector<double> &shortestPathCosts, intptr_t i, std::vector<bool> &SR,
+    std::vector<bool> &SC, std::vector<intptr_t> &remaining, double *p_minVal
+) {
     double minVal = 0;
 
     // Crouse's pseudocode uses set complements to keep track of remaining
@@ -99,8 +94,7 @@ augmenting_path(intptr_t nc, double *cost, std::vector<double>& u,
             // When multiple nodes have the minimum cost, we select one which
             // gives us a new sink node. This is particularly important for
             // integer cost matrices with small co-efficients.
-            if (shortestPathCosts[j] < lowest ||
-                (shortestPathCosts[j] == lowest && row4col[j] == -1)) {
+            if (shortestPathCosts[j] < lowest || (shortestPathCosts[j] == lowest && row4col[j] == -1)) {
                 lowest = shortestPathCosts[j];
                 index = it;
             }
@@ -126,10 +120,7 @@ augmenting_path(intptr_t nc, double *cost, std::vector<double>& u,
     return sink;
 }
 
-static int
-solve(intptr_t nr, intptr_t nc, double* cost, bool maximize,
-      int64_t* a, int64_t* b)
-{
+static int solve(intptr_t nr, intptr_t nc, double *cost, bool maximize, int64_t *a, int64_t *b) {
     // handle trivial inputs
     if (nr == 0 || nc == 0) {
         return 0;
@@ -151,8 +142,7 @@ solve(intptr_t nr, intptr_t nc, double* cost, bool maximize,
             }
 
             std::swap(nr, nc);
-        }
-        else {
+        } else {
             std::copy(cost, cost + nr * nc, temp.begin());
         }
 
@@ -188,9 +178,8 @@ solve(intptr_t nr, intptr_t nc, double* cost, bool maximize,
     for (intptr_t curRow = 0; curRow < nr; curRow++) {
 
         double minVal;
-        intptr_t sink = augmenting_path(nc, cost, u, v, path, row4col,
-                                        shortestPathCosts, curRow, SR, SC,
-                                        remaining, &minVal);
+        intptr_t sink =
+            augmenting_path(nc, cost, u, v, path, row4col, shortestPathCosts, curRow, SR, SC, remaining, &minVal);
         if (sink < 0) {
             return RECTANGULAR_LSAP_INFEASIBLE;
         }
@@ -223,13 +212,12 @@ solve(intptr_t nr, intptr_t nc, double* cost, bool maximize,
 
     if (transpose) {
         intptr_t i = 0;
-        for (auto v: argsort_iter(col4row)) {
+        for (auto v : argsort_iter(col4row)) {
             a[i] = col4row[v];
             b[i] = v;
             i++;
         }
-    }
-    else {
+    } else {
         for (intptr_t i = 0; i < nr; i++) {
             a[i] = i;
             b[i] = col4row[i];
@@ -243,11 +231,9 @@ solve(intptr_t nr, intptr_t nc, double* cost, bool maximize,
 extern "C" {
 #endif
 
-int
-solve_rectangular_linear_sum_assignment(intptr_t nr, intptr_t nc,
-                                        double* input_cost, bool maximize,
-                                        int64_t* a, int64_t* b)
-{
+int solve_rectangular_linear_sum_assignment(
+    intptr_t nr, intptr_t nc, double *input_cost, bool maximize, int64_t *a, int64_t *b
+) {
     return solve(nr, nc, input_cost, maximize, a, b);
 }
 

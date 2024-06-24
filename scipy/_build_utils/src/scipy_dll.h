@@ -10,9 +10,9 @@
 // the macro expands to nothing.
 // Note: SCIPY_DLL_{EX,IM}PORTS are set in scipy/special/meson.build
 #if defined(SCIPY_DLL_EXPORTS)
-    #define SCIPY_DLL __declspec(dllexport)
+#define SCIPY_DLL __declspec(dllexport)
 #elif defined(SCIPY_DLL_IMPORTS)
-    #define SCIPY_DLL __declspec(dllimport)
+#define SCIPY_DLL __declspec(dllimport)
 #else
-    #define SCIPY_DLL
+#define SCIPY_DLL
 #endif
