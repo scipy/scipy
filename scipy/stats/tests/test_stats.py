@@ -23,7 +23,7 @@ from numpy.testing import (assert_, assert_equal,
 import pytest
 from pytest import raises as assert_raises
 import numpy.ma.testutils as mat
-from numpy import array, arange, float32, float64, power
+from numpy import array, arange, float32, power
 import numpy as np
 
 import scipy.stats as stats
@@ -160,7 +160,7 @@ class TestTrimmedStats:
 
     def test_tstd(self, xp):
         x = xp.asarray(X)
-        xp_test = array_namespace(x)  # need array-api-compat var for `correction`
+        xp_test = array_namespace(x)  # need array-api-compat std for `correction`
 
         y = stats.tstd(x, (2, 8), (True, True))
         xp_assert_close(y, xp.asarray(2.1602468994692865))
@@ -250,7 +250,7 @@ class TestTrimmedStats:
 
     def test_tsem(self, xp):
         x = xp.asarray(X)
-        xp_test = array_namespace(x)  # need array-api-compat var for `correction`
+        xp_test = array_namespace(x)  # need array-api-compat std for `correction`
 
         y = stats.tsem(x, limits=(3, 8), inclusive=(False, True))
         y_ref = xp.asarray([4, 5, 6, 7, 8])
