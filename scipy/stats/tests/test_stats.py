@@ -6923,7 +6923,7 @@ class TestHMean:
         a = np.array([2, 10, 6, 42])
         weights = np.ma.array([10, 5, 3, 42], mask=[0, 0, 0, 1])
         desired = 3
-        xp = np.ma  # check_equal_gmean uses xp.asarray; this will preserve the mask
+        xp = np.ma  # check_equal_hmean uses xp.asarray; this will preserve the mask
         check_equal_hmean(a, desired, weights=weights, rtol=1e-5,
                           dtype=np.float64, xp=xp)
 
@@ -7135,7 +7135,7 @@ class TestPMean:
         a, p = np.array([2, 10, 6, 42]), 1
         weights = np.ma.array([10, 5, 3, 42], mask=[0, 0, 0, 1])
         desired = np.average(a, weights=weights)
-        xp = np.ma  # check_equal_gmean uses xp.asarray; this will preserve the mask
+        xp = np.ma  # check_equal_pmean uses xp.asarray; this will preserve the mask
         check_equal_pmean(a, p, desired, weights=weights, rtol=1e-5,
                           dtype=np.float64, xp=xp)
 
