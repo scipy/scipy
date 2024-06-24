@@ -1123,7 +1123,7 @@ def _moment(a, order, axis, *, mean=None, xp=None):
                           keepdims=True) / xp.abs(mean)
     with np.errstate(invalid='ignore'):
         precision_loss = xp.any(rel_diff < eps)
-    n = a.shape[axis] if axis is not None else a.size
+    n = a.shape[axis] if axis is not None else xp_size(a)
     if precision_loss and n > 1:
         message = ("Precision loss occurred in moment calculation due to "
                    "catastrophic cancellation. This occurs when the data "
@@ -1148,7 +1148,7 @@ def _var(x, axis=0, ddof=0, mean=None, xp=None):
     xp = array_namespace(x) if xp is None else xp
     var = _moment(x, 2, axis, mean=mean, xp=xp)
     if ddof != 0:
-        n = x.shape[axis] if axis is not None else x.size
+        n = x.shape[axis] if axis is not None else xp_size(x)
         var *= np.divide(n, n-ddof)  # to avoid error on division by zero
     return var
 
@@ -11112,6 +11112,41 @@ def _xp_mean(x, /, *, axis=None, weights=None, keepdims=False, nan_policy='propa
         res = xp.reshape(res, final_shape)
 
     return res[()] if res.ndim == 0 else res
+
+
+def _xp_var(x, /, *, axis=None, correction=0, keepdims=False, nan_policy='propagate',
+            dtype=None, xp=None):
+    # an array-api compatible function for variance with scipy.stats interface
+    # and features (e.g. `nan_policy`).
+    xp = array_namespace(x) if xp is None else xp
+    x = xp.asarray(x)
+
+    # use `_xp_mean` instead of `xp.var` for desired warning behavior
+    # it would be nice to combine this with `_var`, which uses `_moment`
+    # and therefore warns when precision is lost, but that does not support
+    # `axis` tuples or keepdims. Eventually, `_axis_nan_policy` will simplify
+    # `axis` tuples and implement `keepdims` for non-NumPy arrays; then it will
+    # be easy.
+    kwargs = dict(axis=axis, nan_policy=nan_policy, dtype=dtype, xp=xp)
+    mean = _xp_mean(x, keepdims=True, **kwargs)
+    x = xp.asarray(x, dtype=mean.dtype)
+    var = _xp_mean((x - mean)**2, keepdims=keepdims, **kwargs)
+
+    if correction != 0:
+        n = (xp_size(x) if axis is None
+             # compact way to deal with axis tuples or ints
+             else np.prod(np.asarray(x.shape)[np.asarray(axis)]))
+        n = xp.asarray(n, dtype=var.dtype)
+
+        if nan_policy == 'omit':
+            nan_mask = xp.astype(xp.isnan(x), var.dtype)
+            n = n - xp.sum(nan_mask, axis=axis, keepdims=keepdims)
+
+        # Produce NaNs silently when n - correction <= 0
+        factor = _lazywhere(n-correction > 0, (n, n-correction), xp.divide, xp.nan)
+        var *= factor
+
+    return var[()] if var.ndim == 0 else var
 
 
 class _SimpleNormal:
