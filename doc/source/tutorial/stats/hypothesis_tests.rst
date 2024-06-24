@@ -25,4 +25,4 @@ more detailed examples, see the following sections.
     hypothesis_jarque_bera.md
     hypothesis_skewtest.md
     hypothesis_kurtosistest.md
-
+    hypothesis_normaltest.md
