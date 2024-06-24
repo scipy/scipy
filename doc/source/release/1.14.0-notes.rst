@@ -205,7 +205,7 @@ Deprecated features
 - The option ``quadrature="trapz"`` in `scipy.integrate.quad_vec` has been
   deprecated in favour of ``quadrature="trapezoid"`` and will be removed in
   SciPy 1.16.0.
-- `scipy.special.comb` has deprecated support for use of ``exact=True`` in
+- ``scipy.special.{comb,perm}`` have deprecated support for use of ``exact=True`` in
   conjunction with non-integral ``N`` and/or ``k``.
 
 
@@ -294,13 +294,13 @@ Authors
 * Tim Beyer (1) +
 * Andrea Blengino (1) +
 * boatwrong (1)
-* Jake Bowhay (50)
+* Jake Bowhay (51)
 * Dietrich Brunn (2)
 * Evgeni Burovski (177)
 * Tim Butters (7) +
 * CJ Carey (5)
 * Sean Cheah (46)
-* Lucas Colley (72)
+* Lucas Colley (73)
 * Giuseppe "Peppe" Dilillo (1) +
 * DWesl (2)
 * Pieter Eendebak (5)
@@ -313,7 +313,7 @@ Authors
 * Rohit Goswami (28)
 * Ben Greiner (1) +
 * Lorenzo Gualniera (1) +
-* Matt Haberland (257)
+* Matt Haberland (260)
 * Shawn Hsu (1) +
 * Budjen Jovan (3) +
 * Jozsef Kutas (1)
@@ -339,7 +339,7 @@ Authors
 * pwcnorthrop (3) +
 * Bharat Raghunathan (1)
 * Tom M. Ragonneau (2) +
-* Tyler Reddy (96)
+* Tyler Reddy (101)
 * Pamphile Roy (18)
 * Atsushi Sakai (9)
 * Daniel Schmitz (5)
@@ -730,6 +730,7 @@ Pull requests for 1.14.0
 * `#20870 <https://github.com/scipy/scipy/pull/20870>`__: BLD: test delocate works by removing original lib [wheel build]
 * `#20881 <https://github.com/scipy/scipy/pull/20881>`__: DOC: mailing list to forum
 * `#20890 <https://github.com/scipy/scipy/pull/20890>`__: DOC: Write API reference titles in monospace font
+* `#20909 <https://github.com/scipy/scipy/pull/20909>`__: DEP: special.perm: deprecate non-integer \`N\` and \`k\` with...
 * `#20914 <https://github.com/scipy/scipy/pull/20914>`__: TST: linalg: bump tolerance in \`TestEig::test_singular\`
 * `#20919 <https://github.com/scipy/scipy/pull/20919>`__: BLD: optimize: use hidden visibility for static HiGHS libraries
 * `#20920 <https://github.com/scipy/scipy/pull/20920>`__: MAINT: special: fix msvc build by using \`new\` and \`delete\`...
