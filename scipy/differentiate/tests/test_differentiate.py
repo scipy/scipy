@@ -9,8 +9,8 @@ from scipy._lib._array_api import (xp_assert_close, xp_assert_equal, xp_assert_l
                                    is_numpy, is_torch, array_namespace)
 
 from scipy import stats, optimize, special
-from scipy.optimize._differentiate import (_differentiate as differentiate,
-                                           _jacobian as jacobian, _EERRORINCREASE)
+from scipy.differentiate import differentiate, jacobian
+from scipy.differentiate._differentiate import _EERRORINCREASE
 
 
 @array_api_compatible

@@ -4,11 +4,11 @@ import scipy._lib._elementwise_iterative_method as eim
 from scipy._lib._util import _RichResult
 from scipy._lib._array_api import array_namespace
 
-_EERRORINCREASE = -1  # used in _differentiate
+_EERRORINCREASE = -1  # used in differentiate
 
 def _differentiate_iv(func, x, args, atol, rtol, maxiter, order, initial_step,
                       step_factor, step_direction, preserve_shape, callback):
-    # Input validation for `_differentiate`
+    # Input validation for `differentiate`
 
     if not callable(func):
         raise ValueError('`func` must be callable.')
@@ -49,9 +49,9 @@ def _differentiate_iv(func, x, args, atol, rtol, maxiter, order, initial_step,
             step_factor, step_direction, preserve_shape, callback)
 
 
-def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
-                   order=8, initial_step=0.5, step_factor=2.0,
-                   step_direction=0, preserve_shape=False, callback=None):
+def differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
+                  order=8, initial_step=0.5, step_factor=2.0,
+                  step_direction=0, preserve_shape=False, callback=None):
     """Evaluate the derivative of an elementwise scalar function numerically.
 
     Parameters
@@ -123,10 +123,10 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
         An optional user-supplied function to be called before the first
         iteration and after each iteration.
         Called as ``callback(res)``, where ``res`` is a ``_RichResult``
-        similar to that returned by `_differentiate` (but containing the
+        similar to that returned by `differentiate` (but containing the
         current iterate's values of all variables). If `callback` raises a
         ``StopIteration``, the algorithm will terminate immediately and
-        `_differentiate` will return a result.
+        `differentiate` will return a result.
 
     Returns
     -------
@@ -207,21 +207,19 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
     Evaluate the derivative of ``np.exp`` at several points ``x``.
 
     >>> import numpy as np
-    >>> from scipy.optimize._differentiate import _differentiate
+    >>> from scipy.differentiate import differentiate
     >>> f = np.exp
     >>> df = np.exp  # true derivative
     >>> x = np.linspace(1, 2, 5)
-    >>> res = _differentiate(f, x)
+    >>> res = differentiate(f, x)
     >>> res.df  # approximation of the derivative
     array([2.71828183, 3.49034296, 4.48168907, 5.75460268, 7.3890561 ])
     >>> res.error  # estimate of the error
-    array(
-        [7.12940817e-12, 9.16688947e-12, 1.17594823e-11, 1.50972568e-11, 1.93942640e-11]
-    )
+    array([7.13740178e-12, 9.16600129e-12, 1.17594823e-11, 1.51061386e-11,
+           1.94262384e-11])
     >>> abs(res.df - df(x))  # true error
-    array(
-        [3.06421555e-14, 3.01980663e-14, 5.06261699e-14, 6.30606678e-14, 8.34887715e-14]
-    )
+    array([2.53130850e-14, 3.55271368e-14, 5.77315973e-14, 5.59552404e-14,
+           6.92779167e-14])
 
     Show the convergence of the approximation as the step size is reduced.
     Each iteration, the step size is reduced by `step_factor`, so for
@@ -229,6 +227,7 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
     factor of ``1/step_factor**order`` until finite precision arithmetic
     inhibits further improvement.
 
+    >>> import matplotlib.pyplot as plt
     >>> iter = list(range(1, 12))  # maximum iterations
     >>> hfac = 2  # step size reduction per iteration
     >>> hdir = [-1, 0, 1]  # compare left-, central-, and right- steps
@@ -237,9 +236,9 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
     >>> ref = df(x)
     >>> errors = []  # true error
     >>> for i in iter:
-    ...     res = _differentiate(f, x, maxiter=i, step_factor=hfac,
-    ...                          step_direction=hdir, order=order,
-    ...                          atol=0, rtol=0)  # prevent early termination
+    ...     res = differentiate(f, x, maxiter=i, step_factor=hfac,
+    ...                         step_direction=hdir, order=order,
+    ...                         atol=0, rtol=0)  # prevent early termination
     ...     errors.append(abs(res.df - ref))
     >>> errors = np.array(errors)
     >>> plt.semilogy(iter, errors[:, 0], label='left differences')
@@ -257,7 +256,6 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
     validation and standardization, and once per iteration thereafter.
 
     >>> def f(x, p):
-    ...     print('here')
     ...     f.nit += 1
     ...     return x**p
     >>> f.nit = 0
@@ -266,7 +264,7 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
     >>> x = np.arange(1, 5)
     >>> p = np.arange(1, 6).reshape((-1, 1))
     >>> hdir = np.arange(-1, 2).reshape((-1, 1, 1))
-    >>> res = _differentiate(f, x, args=(p,), step_direction=hdir, maxiter=1)
+    >>> res = differentiate(f, x, args=(p,), step_direction=hdir, maxiter=1)
     >>> np.allclose(res.df, df(x, p))
     True
     >>> res.df.shape
@@ -285,12 +283,12 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
     ...    return np.sin(c*x)
     >>>
     >>> c = [1, 5, 10, 20]
-    >>> res = _differentiate(f, 0, args=(c,))
+    >>> res = differentiate(f, 0, args=(c,))
     >>> shapes
     [(4,), (4, 8), (4, 2), (3, 2), (2, 2), (1, 2)]
 
     To understand where these shapes are coming from - and to better
-    understand how `_differentiate` computes accurate results - note that
+    understand how `differentiate` computes accurate results - note that
     higher values of ``c`` correspond with higher frequency sinusoids.
     The higher frequency sinusoids make the function's derivative change
     faster, so more function evaluations are required to achieve the target
@@ -318,7 +316,7 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
     >>> def f(x):
     ...    return [x, np.sin(3*x), x+np.sin(10*x), np.sin(20*x)*(x-1)**2]
 
-    This integrand is not compatible with `_differentiate` as written; for instance,
+    This integrand is not compatible with `differentiate` as written; for instance,
     the shape of the output will not be the same as the shape of ``x``. Such a
     function *could* be converted to a compatible form with the introduction of
     additional parameters, but this would be inconvenient. In such cases,
@@ -331,7 +329,7 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
     ...     return [x0, np.sin(3*x1), x2+np.sin(10*x2), np.sin(20*x3)*(x3-1)**2]
     >>>
     >>> x = np.zeros(4)
-    >>> res = _differentiate(f, x, preserve_shape=True)
+    >>> res = differentiate(f, x, preserve_shape=True)
     >>> shapes
     [(4,), (4, 8), (4, 2), (4, 2), (4, 2), (4, 2)]
 
@@ -671,8 +669,8 @@ _differentiate_weights.right = []
 _differentiate_weights.fac = None
 
 
-def _jacobian(func, x, *, atol=None, rtol=None, maxiter=10,
-              order=8, initial_step=0.5, step_factor=2.0):
+def jacobian(func, x, *, atol=None, rtol=None, maxiter=10,
+             order=8, initial_step=0.5, step_factor=2.0):
     r"""Evaluate the Jacobian of a function numerically.
 
     Parameters
@@ -685,7 +683,7 @@ def _jacobian(func, x, *, atol=None, rtol=None, maxiter=10,
          where each element of ``x`` is a finite real. If the function to be
          differentiated accepts additional, arguments wrap it (e.g. using
          `functools.partial` or ``lambda``) and pass the wrapped callable
-         into `_jacobian`. See Notes regarding vectorization and the dimensionality
+         into `jacobian`. See Notes regarding vectorization and the dimensionality
          of the input and output.
     x : array_like
         Points at which to evaluate the Jacobian. Must have at least one dimension.
@@ -743,7 +741,7 @@ def _jacobian(func, x, *, atol=None, rtol=None, maxiter=10,
 
     See Also
     --------
-    _differentiate
+    differentiate
 
     Notes
     -----
@@ -783,7 +781,7 @@ def _jacobian(func, x, *, atol=None, rtol=None, maxiter=10,
     at ``[0.5, 0.5, 0.5]``.
 
     >>> import numpy as np
-    >>> from scipy.optimize._differentiate import _jacobian as jacobian
+    >>> from scipy.differentiate import differentiate
     >>> from scipy.optimize import rosen, rosen_der
     >>> m = 3
     >>> x = np.full(m, 0.5)
@@ -796,7 +794,7 @@ def _jacobian(func, x, *, atol=None, rtol=None, maxiter=10,
     from [1]_.
 
     >>> def f(x):
-    ...     x1, x2, x3 = x    ...
+    ...     x1, x2, x3 = x
     ...     return [x1, 5*x3, 4*x2**2 - 2*x3, x3*np.sin(x1)]
 
     The true Jacobian is given by:
@@ -851,8 +849,8 @@ def _jacobian(func, x, *, atol=None, rtol=None, maxiter=10,
         xph[i, i] = x
         return func(xph)
 
-    res = _differentiate(wrapped, x, atol=atol, rtol=rtol,
-                         maxiter=maxiter, order=order, initial_step=initial_step,
-                         step_factor=step_factor, preserve_shape=True)
+    res = differentiate(wrapped, x, atol=atol, rtol=rtol,
+                        maxiter=maxiter, order=order, initial_step=initial_step,
+                        step_factor=step_factor, preserve_shape=True)
     del res.x  # the user knows `x`, and the way it gets broadcasted is meaningless here
     return res
