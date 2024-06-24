@@ -423,7 +423,6 @@ class TestSlicingAndFancy1D:
             B[:, [-1, -3]][[2, -4], :]
         )
 
-
     def test_fancy_indexing(self, spcreator):
         B = np.arange(50)
         A = spcreator(B)
