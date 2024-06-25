@@ -697,19 +697,21 @@ class TestRegularGridInterpolator:
                            [0.5 , 0.5 , 0.5 , 0.5 ]])
         interp = RegularGridInterpolator(points, values, method="slinear")
 
+        # A call to RGI with a method different from the one specified on the
+        # constructor, should not mutate it.
         methods = ['slinear', 'cubic']
-        def worker_fn(interp):
+        def worker_fn(interp, tid):
             spline = interp._spline
             barrier.wait()
-            method = methods[threading.get_ident() % 2]
+            method = methods[tid % 2]
             interp(sample, method=method)
             assert interp._spline is spline
 
         workers = []
-        for _ in range(0, 10):
+        for i in range(0, 10):
             workers.append(threading.Thread(
                 target=worker_fn,
-                args=(interp,)))
+                args=(interp, i)))
 
         for worker in workers:
             worker.start()
