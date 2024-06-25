@@ -5248,14 +5248,14 @@ def test_ttest_ind_nan_policy():
         return 1 - (p / 2)
     converter = np.vectorize(convert)
 
-    tr, pr = stats.ttest_ind(rvs1_3D, rvs2_3D, 0, nan_policy='omit')
+    tr, pr = stats.ttest_ind(rvs1_3D, rvs2_3D, axis=0, nan_policy='omit')
 
-    t, p = stats.ttest_ind(rvs1_3D, rvs2_3D, 0, nan_policy='omit',
+    t, p = stats.ttest_ind(rvs1_3D, rvs2_3D, axis=0, nan_policy='omit',
                            alternative='less')
     assert_allclose(t, tr, rtol=1e-14)
     assert_allclose(p, converter(tr, pr, 'less'), rtol=1e-14)
 
-    t, p = stats.ttest_ind(rvs1_3D, rvs2_3D, 0, nan_policy='omit',
+    t, p = stats.ttest_ind(rvs1_3D, rvs2_3D, axis=0, nan_policy='omit',
                            alternative='greater')
     assert_allclose(t, tr, rtol=1e-14)
     assert_allclose(p, converter(tr, pr, 'greater'), rtol=1e-14)

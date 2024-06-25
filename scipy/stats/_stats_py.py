@@ -41,7 +41,7 @@ from scipy.spatial import distance_matrix
 from scipy.optimize import milp, LinearConstraint
 from scipy._lib._util import (check_random_state, _get_nan,
                               _rename_parameter, _contains_nan,
-                              AxisError, _lazywhere)
+                              AxisError, _lazywhere, _deprecate_pos_kwd_only_args)
 
 import scipy.special as special
 # Import unused here but needs to stay until end of deprecation periode
@@ -6753,6 +6753,10 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
     return Ttest_indResult(*res)
 
 
+@_deprecate_pos_kwd_only_args(['a', 'b'],
+                              ['axis', 'equal_var', 'nan_policy', 'permutations',
+                               'random_state', 'alternative', 'trim'],
+                              "1.15.0")
 @_axis_nan_policy_factory(pack_TtestResult, default_axis=0, n_samples=2,
                           result_to_tuple=unpack_TtestResult, n_outputs=6)
 def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',

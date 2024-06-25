@@ -1094,7 +1094,7 @@ class TestMonteCarloHypothesisTest:
         data = rng.random(size=(2, 5)), rng.random(size=7)  # broadcastable
         rvs = rng.normal, rng.normal
         def statistic(x, y, axis):
-            return stats.ttest_ind(x, y, axis).statistic
+            return stats.ttest_ind(x, y, axis=axis).statistic
 
         res = stats.monte_carlo_test(data, rvs, statistic, axis=-1)
         ref = stats.ttest_ind(data[0], [data[1]], axis=-1)
