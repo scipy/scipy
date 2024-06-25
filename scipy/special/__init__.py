@@ -854,7 +854,7 @@ from . import add_newdocs, basic, orthogonal, specfun, sf_error, spfun_stats
 # We replace some function definitions from _ufuncs with those from
 # _support_alternative_backends above, but those are all listed in _ufuncs.__all__,
 # so there is no need to consider _support_alternative_backends.__all__ here.
-__all__ = _ufuncs.__all__ + _basic.__all__ + _orthogonal.__all__
+__all__ = _ufuncs.__all__ + _basic.__all__ + _orthogonal.__all__ + _multiufuncs.__all__
 __all__ += [
     'SpecialFunctionWarning',
     'SpecialFunctionError',
