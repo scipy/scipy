@@ -1,5 +1,4 @@
 import itertools
-import threading
 
 import pytest
 import numpy as np
@@ -14,6 +13,7 @@ from scipy.interpolate import (RegularGridInterpolator, interpn,
 
 from scipy.sparse._sputils import matrix
 from scipy._lib._util import ComplexWarning
+from scipy._lib._testutils import _run_concurrent_barrier
 
 
 parametrize_rgi_interp_methods = pytest.mark.parametrize(
@@ -690,34 +690,23 @@ class TestRegularGridInterpolator:
             )
 
     def test_concurrency(self):
-        barrier = threading.Barrier(10)
         points, values = self._get_sample_4d()
         sample = np.array([[0.1 , 0.1 , 1.  , 0.9 ],
                            [0.2 , 0.1 , 0.45, 0.8 ],
-                           [0.5 , 0.5 , 0.5 , 0.5 ]])
+                           [0.5 , 0.5 , 0.5 , 0.5 ],
+                           [0.3 , 0.1 , 0.2 , 0.4 ]])
         interp = RegularGridInterpolator(points, values, method="slinear")
 
         # A call to RGI with a method different from the one specified on the
         # constructor, should not mutate it.
-        methods = ['slinear', 'cubic']
-        def worker_fn(interp, tid):
+        methods = ['slinear', 'nearest']
+        def worker_fn(tid, interp):
             spline = interp._spline
-            barrier.wait()
             method = methods[tid % 2]
             interp(sample, method=method)
             assert interp._spline is spline
 
-        workers = []
-        for i in range(0, 10):
-            workers.append(threading.Thread(
-                target=worker_fn,
-                args=(interp, i)))
-
-        for worker in workers:
-            worker.start()
-
-        for worker in workers:
-            worker.join()
+        _run_concurrent_barrier(10, worker_fn, interp)
 
 
 class MyValue:

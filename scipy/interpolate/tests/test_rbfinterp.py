@@ -1,5 +1,4 @@
 import pickle
-import threading
 import pytest
 import numpy as np
 from numpy.linalg import LinAlgError
@@ -11,6 +10,7 @@ from scipy.interpolate._rbfinterp import (
     RBFInterpolator
     )
 from scipy.interpolate import _rbfinterp_pythran
+from scipy._lib._testutils import _run_concurrent_barrier
 
 
 def _vandermonde(x, degree):
@@ -508,20 +508,10 @@ class TestRBFInterpolatorNeighbors20(_TestRBFInterpolator):
 
         interp = self.build(x, y)
 
-        def worker_fn(interp, xp):
+        def worker_fn(_, interp, xp):
             interp(xp)
 
-        workers = []
-        for _ in range(0, 10):
-            workers.append(threading.Thread(
-                target=worker_fn,
-                args=(interp, xitp)))
-
-        for worker in workers:
-            worker.start()
-
-        for worker in workers:
-            worker.join()
+        _run_concurrent_barrier(10, worker_fn, interp, xitp)
 
 
 class TestRBFInterpolatorNeighborsInf(TestRBFInterpolatorNeighborsNone):

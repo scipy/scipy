@@ -1,6 +1,5 @@
 import warnings
 import io
-import threading
 import numpy as np
 
 from numpy.testing import (
@@ -15,6 +14,7 @@ from scipy.interpolate import (
     approximate_taylor_polynomial, CubicHermiteSpline, pchip,
     PchipInterpolator, pchip_interpolate, Akima1DInterpolator, CubicSpline,
     make_interp_spline)
+from scipy._lib._testutils import _run_concurrent_barrier
 
 
 def check_shape(interpolator_cls, x_shape, y_shape, deriv_shape=None, axis=0,
@@ -317,24 +317,12 @@ class TestKrogh:
             KroghInterpolator(np.arange(40), np.ones(40))
 
     def test_concurrency(self):
-        barrier = threading.Barrier(10)
         P = KroghInterpolator(self.xs, self.ys)
 
-        def worker_fn(interp):
-            barrier.wait()
+        def worker_fn(_, interp):
             interp(self.xs)
 
-        workers = []
-        for _ in range(0, 10):
-            workers.append(threading.Thread(
-                target=worker_fn,
-                args=(P,)))
-
-        for worker in workers:
-            worker.start()
-
-        for worker in workers:
-            worker.join()
+        _run_concurrent_barrier(10, worker_fn, P)
 
 
 class TestTaylor:
@@ -536,24 +524,12 @@ class TestBarycentric:
             BarycentricInterpolator(xis, ys)
 
     def test_concurrency(self):
-        barrier = threading.Barrier(10)
         P = BarycentricInterpolator(self.xs, self.ys)
 
-        def worker_fn(interp):
-            barrier.wait()
+        def worker_fn(_, interp):
             interp(self.xs)
 
-        workers = []
-        for _ in range(0, 10):
-            workers.append(threading.Thread(
-                target=worker_fn,
-                args=(P,)))
-
-        for worker in workers:
-            worker.start()
-
-        for worker in workers:
-            worker.join()
+        _run_concurrent_barrier(10, worker_fn, P)
 
 
 class TestPCHIP:

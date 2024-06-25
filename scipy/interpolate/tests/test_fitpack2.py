@@ -1,6 +1,5 @@
 # Created by Pearu Peterson, June 2003
 import itertools
-import threading
 import numpy as np
 from numpy.testing import (assert_equal, assert_almost_equal, assert_array_equal,
         assert_array_almost_equal, assert_allclose, suppress_warnings)
@@ -13,6 +12,8 @@ from scipy.interpolate._fitpack2 import (UnivariateSpline,
         LSQBivariateSpline, SmoothBivariateSpline, RectBivariateSpline,
         LSQSphereBivariateSpline, SmoothSphereBivariateSpline,
         RectSphereBivariateSpline)
+
+from scipy._lib._testutils import _run_concurrent_barrier
 
 
 class TestUnivariateSpline:
@@ -391,30 +392,16 @@ of squared residuals does not satisfy the condition abs\(fp-s\)/s < tol.""")
     def test_concurrency(self):
         # Check that no segfaults appear with concurrent access to
         # UnivariateSpline
-        barrier = threading.Barrier(10)
         xx = np.arange(100, dtype=float)
         yy = xx**3
         x = np.arange(100, dtype=float)
         x[1] = x[0]
-        # y = x**3
-        # w = np.ones_like(x)
         spl = UnivariateSpline(xx, yy, check_finite=True)
 
-        def worker_fn(interp, x):
-            barrier.wait()
+        def worker_fn(_, interp, x):
             interp(x)
 
-        workers = []
-        for _ in range(0, 10):
-            workers.append(threading.Thread(
-                target=worker_fn,
-                args=(spl, x)))
-
-        for worker in workers:
-            worker.start()
-
-        for worker in workers:
-            worker.join()
+        _run_concurrent_barrier(10, worker_fn, spl, x)
 
 
 class TestLSQBivariateSpline:

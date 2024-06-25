@@ -1,7 +1,6 @@
 import os
 import operator
 import itertools
-import threading
 
 import numpy as np
 from numpy.testing import assert_equal, assert_allclose, assert_
@@ -21,6 +20,7 @@ from scipy.interpolate._bsplines import (_not_a_knot, _augknt,
                                          _make_interp_per_full_matr)
 import scipy.interpolate._fitpack_impl as _impl
 from scipy._lib._util import AxisError
+from scipy._lib._testutils import _run_concurrent_barrier
 
 # XXX: move to the interpolate namespace
 from scipy.interpolate._ndbspline import make_ndbspl
@@ -630,22 +630,12 @@ class TestBSpline:
         # Check that no segfaults appear with concurrent access to BSpline
         b = _make_random_spline()
 
-        def worker_fn(b):
+        def worker_fn(_, b):
             t, _, k = b.tck
             xx = np.linspace(t[k], t[-k-1], 10000)
             b(xx)
 
-        workers = []
-        for _ in range(0, 10):
-            workers.append(threading.Thread(
-                target=worker_fn,
-                args=(b,)))
-
-        for worker in workers:
-            worker.start()
-
-        for worker in workers:
-            worker.join()
+        _run_concurrent_barrier(10, worker_fn, b)
 
 
 class TestInsert:
@@ -2355,7 +2345,6 @@ class TestNdBSpline:
             NdBSpline.design_matrix([[1, 2]], t3, [k]*3)
 
     def test_concurrency(self):
-        barrier = threading.Barrier(10)
         rng = np.random.default_rng(12345)
         k = 3
         tx = np.r_[0, 0, 0, 0, np.sort(rng.uniform(size=7)) * 3, 3, 3, 3, 3]
@@ -2365,24 +2354,13 @@ class TestNdBSpline:
 
         spl = NdBSpline((tx, ty, tz), c, k=k)
 
-        def worker_fn(spl):
+        def worker_fn(_, spl):
             xi = np.c_[[1, 1.5, 2],
                        [1.1, 1.6, 2.1],
                        [0.9, 1.4, 1.9]]
-            barrier.wait()
             spl(xi)
 
-        workers = []
-        for _ in range(0, 10):
-            workers.append(threading.Thread(
-                target=worker_fn,
-                args=(spl,)))
-
-        for worker in workers:
-            worker.start()
-
-        for worker in workers:
-            worker.join()
+        _run_concurrent_barrier(10, worker_fn, spl)
 
 
 class TestMakeND:

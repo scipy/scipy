@@ -6,8 +6,8 @@ from numpy.testing import (assert_, assert_array_almost_equal,
                            assert_almost_equal)
 from numpy import linspace, sin, cos, random, exp, allclose
 from scipy.interpolate._rbf import Rbf
+from scipy._lib._testutils import _run_concurrent_barrier
 
-import threading
 
 FUNCTIONS = ('multiquadric', 'inverse multiquadric', 'gaussian',
              'cubic', 'quintic', 'thin-plate', 'linear')
@@ -231,17 +231,7 @@ def test_rbf_concurrency():
     y = np.vstack([y0, y1]).T
     rbf = Rbf(x, y, mode='N-D')
 
-    def worker_fn(interp, xp):
+    def worker_fn(_, interp, xp):
         interp(xp)
 
-    workers = []
-    for _ in range(0, 10):
-        workers.append(threading.Thread(
-            target=worker_fn,
-            args=(rbf, x)))
-
-    for worker in workers:
-        worker.start()
-
-    for worker in workers:
-        worker.join()
+    _run_concurrent_barrier(10, worker_fn, rbf, x)
