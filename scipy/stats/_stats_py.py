@@ -8365,7 +8365,7 @@ def friedmanchisquare(*samples):
     given below, where each row corresponds to a different data set and each
     column corresponds to a different classifier.
 
-    >>> import numpy as np  # doctest: +NORMALIZE_WHITESPACE
+    >>> import numpy as np
     >>> x = np.array([[0.763, 0.599, 0.954, 0.628, 0.882, 0.936, 0.661, 0.583,
     ... 0.775, 1.0, 0.94, 0.619, 0.972, 0.957],
     ...               [0.768, 0.591, 0.971, 0.661, 0.888, 0.931, 0.668, 0.583,
