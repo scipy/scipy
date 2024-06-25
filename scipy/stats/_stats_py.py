@@ -8360,24 +8360,13 @@ def friedmanchisquare(*samples):
     Examples
     --------
 
-    In [2]_, the Friedman test is used to determine if four different
-    classifiers perform differently on 14 different data sets. The data is
-    given below, where each row corresponds to a different data set and each
-    column corresponds to a different classifier.
-
     >>> import numpy as np
-    >>> x = np.array([[0.763, 0.599, 0.954, 0.628, 0.882, 0.936, 0.661, 0.583,
-    ... 0.775, 1.0, 0.94, 0.619, 0.972, 0.957],
-    ...               [0.768, 0.591, 0.971, 0.661, 0.888, 0.931, 0.668, 0.583,
-    ... 0.838, 1.0, 0.962, 0.666, 0.981, 0.978],
-    ...               [0.771, 0.590, 0.968, 0.654, 0.886, 0.916, 0.609, 0.563,
-    ... 0.866, 1.0, 0.965, 0.614, 0.9751, 0.946],
-    ...               [0.798, 0.569, 0.967, 0.657, 0.898, 0.931, 0.685, 0.625,
-    ... 0.875, 1.0, 0.962, 0.669, 0.975, 0.970]])
+    >>> rng = np.random.default_rng(seed=18)
+    >>> x = rng.random((6, 10))
     >>> from scipy.stats import friedmanchisquare
-    >>> res = friedmanchisquare(x[0], x[1], x[2], x[3])
+    >>> res = friedmanchisquare(x[0], x[1], x[2], x[3], x[4], x[5])
     >>> res.statistic, res.pvalue
-    (10.2283464566929, 0.0167215803284414)
+    (11.428571428571416, 0.043514520866727614)
 
     The p-value is less than 0.05; however, as noted above, the results may not
     be reliable since we have a small amount of repeated samples.
