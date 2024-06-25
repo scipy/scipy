@@ -1,7 +1,7 @@
 """
-==========================================================
-Finite Difference Differentiation (:mod:`scipy.integrate`)
-==========================================================
+==============================================================
+Finite Difference Differentiation (:mod:`scipy.differentiate`)
+==============================================================
 
 .. currentmodule:: scipy.differentiate
 

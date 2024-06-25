@@ -22,7 +22,7 @@ env:
     -t scipy.special.tests.test_support_alternative_backends
     -t scipy._lib.tests.test_array_api
     -t scipy._lib.tests.test__util
-    -t scipy.optimize.tests.test_differentiate
+    -t scipy.differentiate.tests.test_differentiate
     -t scipy.stats
 
 concurrency:
