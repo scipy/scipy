@@ -16,12 +16,11 @@ from scipy.special import poch, gamma
 from scipy.interpolate import _ppoly
 
 from scipy._lib._gcutils import assert_deallocated, IS_PYPY
+from scipy._lib._testutils import _run_concurrent_barrier
 
 from scipy.integrate import nquad
 
 from scipy.special import binom
-
-import threading
 
 
 class TestInterp2D:
@@ -967,20 +966,10 @@ def test_complex(method):
         x_ext = np.linspace(-10, 10, 17)
         ak = Akima1DInterpolator(x, y, extrapolate=True)
 
-        def worker_fn(ak, x_ext):
+        def worker_fn(_, ak, x_ext):
             ak(x_ext)
 
-        workers = []
-        for _ in range(0, 10):
-            workers.append(threading.Thread(
-                target=worker_fn,
-                args=(ak, x_ext)))
-
-        for worker in workers:
-            worker.start()
-
-        for worker in workers:
-            worker.join()
+        _run_concurrent_barrier(10, worker_fn, ak, x_ext)
 
 
 class TestPPolyCommon:
@@ -1091,20 +1080,10 @@ class TestPPolyCommon:
         for cls in (PPoly, BPoly):
             interp = cls(c, x)
 
-            def worker_fn(interp, xp):
+            def worker_fn(_, interp, xp):
                 interp(xp)
 
-            workers = []
-            for _ in range(0, 10):
-                workers.append(threading.Thread(
-                    target=worker_fn,
-                    args=(interp, xp)))
-
-            for worker in workers:
-                worker.start()
-
-            for worker in workers:
-                worker.join()
+            _run_concurrent_barrier(10, worker_fn, interp, xp)
 
 
     def test_complex_coef(self):
@@ -2394,7 +2373,6 @@ class TestNdPPoly:
 
 
     def test_concurrency(self):
-        barrier = threading.Barrier(10)
         rng = np.random.default_rng(12345)
 
         c = rng.uniform(size=(4, 5, 6, 7, 8, 9))
@@ -2404,25 +2382,13 @@ class TestNdPPoly:
 
         p = NdPPoly(c, (x, y, z))
 
-        def worker_fn(spl):
+        def worker_fn(_, spl):
             xi = rng.uniform(size=40)
             yi = rng.uniform(size=40)
             zi = rng.uniform(size=40)
-            barrier.wait()
             spl((xi, yi, zi))
 
-        workers = []
-        for _ in range(0, 10):
-            workers.append(threading.Thread(
-                target=worker_fn,
-                args=(p,)))
-
-        for worker in workers:
-            worker.start()
-
-        for worker in workers:
-            worker.join()
-
+        _run_concurrent_barrier(10, worker_fn, p)
 
 
 def _ppoly_eval_1(c, x, xps):
