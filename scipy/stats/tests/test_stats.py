@@ -23,7 +23,7 @@ from numpy.testing import (assert_, assert_equal,
 import pytest
 from pytest import raises as assert_raises
 import numpy.ma.testutils as mat
-from numpy import array, arange, float32, float64, power
+from numpy import array, arange, float32, power
 import numpy as np
 
 import scipy.stats as stats
@@ -73,22 +73,21 @@ TINY = array([1e-12,2e-12,3e-12,4e-12,5e-12,6e-12,7e-12,8e-12,9e-12], float)
 ROUND = array([0.5,1.5,2.5,3.5,4.5,5.5,6.5,7.5,8.5], float)
 
 
+@array_api_compatible
+@skip_xp_backends('array_api_strict', 'jax.numpy',
+                  reasons=["`array_api_strict.where` `fillvalue` doesn't "
+                           "accept Python floats. See data-apis/array-api#807.",
+                           "JAX doesn't allow item assignment."])
+@pytest.mark.usefixtures("skip_xp_backends")
 class TestTrimmedStats:
     # TODO: write these tests to handle missing values properly
     dprec = np.finfo(np.float64).precision
 
-    @array_api_compatible
-    @skip_xp_backends('array_api_strict', 'jax.numpy',
-                      reasons=["`array_api_strict.where` `fillvalue` doesn't "
-                               "accept Python floats. See data-apis/array-api#807.",
-                               "JAX doesn't allow item assignment, and this  "
-                               "function uses _lazywhere."])
-    @pytest.mark.usefixtures("skip_xp_backends")
     def test_tmean(self, xp):
-        x = xp.asarray(X)
+        x = xp.asarray(X.tolist())  # use default dtype of xp
 
         y = stats.tmean(x, (2, 8), (True, True))
-        xp_assert_close(y, xp.asarray(5.0, dtype=x.dtype))
+        xp_assert_close(y, xp.asarray(5.0))
 
         y1 = stats.tmean(x, limits=(2, 8), inclusive=(False, False))
         y2 = stats.tmean(x, limits=None)
@@ -130,51 +129,45 @@ class TestTrimmedStats:
         y_true = [4.5, 10, 17, 21, xp.nan, xp.nan, xp.nan, xp.nan, xp.nan]
         xp_assert_close(y, xp.asarray(y_true))
 
-    def test_tvar(self):
-        y = stats.tvar(X, limits=(2, 8), inclusive=(True, True))
-        assert_approx_equal(y, 4.6666666666666661, significant=self.dprec)
+    def test_tvar(self, xp):
+        x = xp.asarray(X.tolist())  # use default dtype of xp
+        xp_test = array_namespace(x)  # need array-api-compat var for `correction`
 
-        y = stats.tvar(X, limits=None)
-        assert_approx_equal(y, X.var(ddof=1), significant=self.dprec)
+        y = stats.tvar(x, limits=(2, 8), inclusive=(True, True))
+        xp_assert_close(y, xp.asarray(4.6666666666666661))
 
-        x_2d = arange(63, dtype=float64).reshape((9, 7))
+        y = stats.tvar(x, limits=None)
+        xp_assert_close(y, xp_test.var(x, correction=1))
+
+        x_2d = xp.reshape(xp.arange(63.), (9, 7))
         y = stats.tvar(x_2d, axis=None)
-        assert_approx_equal(y, x_2d.var(ddof=1), significant=self.dprec)
+        xp_assert_close(y, xp_test.var(x_2d, correction=1))
 
         y = stats.tvar(x_2d, axis=0)
-        assert_array_almost_equal(y[0], np.full((1, 7), 367.50000000), decimal=8)
+        xp_assert_close(y, xp.full((7,), 367.5))
 
         y = stats.tvar(x_2d, axis=1)
-        assert_array_almost_equal(y[0], np.full((1, 9), 4.66666667), decimal=8)
+        xp_assert_close(y, xp.full((9,), 4.66666667))
 
-        y = stats.tvar(x_2d[3, :])
-        assert_approx_equal(y, 4.666666666666667, significant=self.dprec)
+        # Limiting some values along one axis
+        y = stats.tvar(x_2d, limits=(1, 5), axis=1, inclusive=(True, True))
+        xp_assert_close(y[0], xp.asarray(2.5))
 
-        with suppress_warnings() as sup:
-            sup.record(RuntimeWarning, "Degrees of freedom <= 0 for slice.")
+        # Limiting all values along one axis
+        y = stats.tvar(x_2d, limits=(0, 6), axis=1, inclusive=(True, True))
+        xp_assert_close(y[0], xp.asarray(4.666666666666667))
+        xp_assert_equal(y[1], xp.asarray(xp.nan))
 
-            # Limiting some values along one axis
-            y = stats.tvar(x_2d, limits=(1, 5), axis=1, inclusive=(True, True))
-            assert_approx_equal(y[0], 2.5, significant=self.dprec)
+    def test_tstd(self, xp):
+        x = xp.asarray(X.tolist())  # use default dtype of xp
+        xp_test = array_namespace(x)  # need array-api-compat std for `correction`
 
-            # Limiting all values along one axis
-            y = stats.tvar(x_2d, limits=(0, 6), axis=1, inclusive=(True, True))
-            assert_approx_equal(y[0], 4.666666666666667, significant=self.dprec)
-            assert_equal(y[1], np.nan)
+        y = stats.tstd(x, (2, 8), (True, True))
+        xp_assert_close(y, xp.asarray(2.1602468994692865))
 
-    def test_tstd(self):
-        y = stats.tstd(X, (2, 8), (True, True))
-        assert_approx_equal(y, 2.1602468994692865, significant=self.dprec)
+        y = stats.tstd(x, limits=None)
+        xp_assert_close(y, xp_test.std(x, correction=1))
 
-        y = stats.tstd(X, limits=None)
-        assert_approx_equal(y, X.std(ddof=1), significant=self.dprec)
-
-    @array_api_compatible
-    @skip_xp_backends('array_api_strict', 'jax.numpy',
-                      reasons=["`array_api_strict.where` `fillvalue` doesn't "
-                               "accept Python floats. See data-apis/array-api#807.",
-                               "JAX doesn't allow item assignment."])
-    @pytest.mark.usefixtures("skip_xp_backends")
     def test_tmin(self, xp):
         x = xp.arange(10)
         xp_assert_equal(stats.tmin(x), xp.asarray(0))
@@ -197,7 +190,9 @@ class TestTrimmedStats:
         res = stats.tmin(x, lowerlimit=4, axis=1)
         xp_assert_equal(res, xp.asarray([np.nan, 4, 8, 12]))
 
-    def test_tmin_scalar_and_nanpolicy(self):
+    @skip_xp_backends(np_only=True,
+                      reasons=["Only NumPy arrays support scalar input/`nan_policy`."])
+    def test_tmin_scalar_and_nanpolicy(self, xp):
         assert_equal(stats.tmin(4), 4)
 
         x = np.arange(10.)
@@ -212,12 +207,6 @@ class TestTrimmedStats:
             with assert_raises(ValueError, match=msg):
                 stats.tmin(x, nan_policy='foobar')
 
-    @array_api_compatible
-    @skip_xp_backends('array_api_strict', 'jax.numpy',
-                      reasons=["`array_api_strict.where` `fillvalue` doesn't "
-                               "accept Python floats. See data-apis/array-api#807.",
-                               "JAX doesn't allow item assignment."])
-    @pytest.mark.usefixtures("skip_xp_backends")
     def test_tmax(self, xp):
         x = xp.arange(10)
         xp_assert_equal(stats.tmax(x), xp.asarray(9))
@@ -242,7 +231,9 @@ class TestTrimmedStats:
             res = stats.tmax(x, upperlimit=11, axis=1)
             xp_assert_equal(res, xp.asarray([3, 7, 11, np.nan]))
 
-    def test_tax_scalar_and_nanpolicy(self):
+    @skip_xp_backends(np_only=True,
+                      reasons=["Only NumPy arrays support scalar input/`nan_policy`."])
+    def test_tax_scalar_and_nanpolicy(self, xp):
         assert_equal(stats.tmax(4), 4)
 
         x = np.arange(10.)
@@ -257,15 +248,14 @@ class TestTrimmedStats:
             with assert_raises(ValueError, match=msg):
                 stats.tmax(x, nan_policy='foobar')
 
-    def test_tsem(self):
-        y = stats.tsem(X, limits=(3, 8), inclusive=(False, True))
-        y_ref = np.array([4, 5, 6, 7, 8])
-        assert_approx_equal(y, y_ref.std(ddof=1) / np.sqrt(y_ref.size),
-                            significant=self.dprec)
+    def test_tsem(self, xp):
+        x = xp.asarray(X.tolist())  # use default dtype of xp
+        xp_test = array_namespace(x)  # need array-api-compat std for `correction`
 
-        assert_approx_equal(stats.tsem(X, limits=[-1, 10]),
-                            stats.tsem(X, limits=None),
-                            significant=self.dprec)
+        y = stats.tsem(x, limits=(3, 8), inclusive=(False, True))
+        y_ref = xp.asarray([4., 5., 6., 7., 8.])
+        xp_assert_close(y, xp_test.std(y_ref, correction=1) / xp_size(y_ref)**0.5)
+        xp_assert_close(stats.tsem(x, limits=[-1, 10]), stats.tsem(x, limits=None))
 
 
 class TestPearsonrWilkinson:

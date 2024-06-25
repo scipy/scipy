@@ -690,9 +690,14 @@ def tvar(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
     20.0
 
     """
-    a, _ = _put_val_to_limits(a, limits, inclusive)
-    return np.nanvar(a, ddof=ddof, axis=axis)
-
+    xp = array_namespace(a)
+    a, _ = _put_val_to_limits(a, limits, inclusive, xp=xp)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", SmallSampleWarning)
+        # Currently, this behaves like nan_policy='omit' for alternative array
+        # backends, but nan_policy='propagate' will be handled for other backends
+        # by the axis_nan_policy decorator shortly.
+        return _xp_var(a, correction=ddof, axis=axis, nan_policy='omit', xp=xp)
 
 @_axis_nan_policy_factory(
     lambda x: x, n_outputs=1, result_to_tuple=lambda x: (x,)
@@ -868,7 +873,7 @@ def tstd(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
     4.4721359549995796
 
     """
-    return np.sqrt(tvar(a, limits, inclusive, axis, ddof, _no_deco=True))
+    return tvar(a, limits, inclusive, axis, ddof, _no_deco=True)**0.5
 
 
 @_axis_nan_policy_factory(
@@ -920,10 +925,18 @@ def tsem(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
     1.1547005383792515
 
     """
-    a, _ = _put_val_to_limits(a, limits, inclusive)
-    sd = np.sqrt(np.nanvar(a, ddof=ddof, axis=axis))
-    n_obs = (~np.isnan(a)).sum(axis=axis)
-    return sd / np.sqrt(n_obs, dtype=sd.dtype)
+    xp = array_namespace(a)
+    a, _ = _put_val_to_limits(a, limits, inclusive, xp=xp)
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", SmallSampleWarning)
+        # Currently, this behaves like nan_policy='omit' for alternative array
+        # backends, but nan_policy='propagate' will be handled for other backends
+        # by the axis_nan_policy decorator shortly.
+        sd = _xp_var(a, correction=ddof, axis=axis, nan_policy='omit', xp=xp)**0.5
+
+    n_obs = xp.sum(~xp.isnan(a), axis=axis, dtype=sd.dtype)
+    return sd / n_obs**0.5
 
 
 #####################################
