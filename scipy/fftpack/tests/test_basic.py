@@ -743,7 +743,7 @@ class FakeArray2:
     def __init__(self, data):
         self._data = data
 
-    def __array__(self):
+    def __array__(self, dtype=None, copy=None):
         return self._data
 
 

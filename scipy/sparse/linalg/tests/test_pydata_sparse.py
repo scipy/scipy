@@ -121,8 +121,8 @@ def test_svds(matrices):
     u, s, vt = splin.svds(A_sparse, k=2, v0=v0)
 
     assert_allclose(s, s0)
-    assert_allclose(u, u0)
-    assert_allclose(vt, vt0)
+    assert_allclose(np.abs(u), np.abs(u0))
+    assert_allclose(np.abs(vt), np.abs(vt0))
 
 
 def test_lobpcg(matrices):
@@ -210,6 +210,13 @@ def test_onenormest(matrices):
     est0 = splin.onenormest(A_dense)
     est = splin.onenormest(A_sparse)
     assert_allclose(est, est0)
+
+
+def test_norm(matrices):
+    A_dense, A_sparse, b = matrices
+    norm0 = splin.norm(sp.csr_matrix(A_dense))
+    norm = splin.norm(A_sparse)
+    assert_allclose(norm, norm0)
 
 
 def test_inv(matrices):

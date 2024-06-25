@@ -8,10 +8,8 @@ from scipy._lib.deprecation import _sub_module_deprecation
 __all__ = [  # noqa: F822
     'MatrixRankWarning', 'SuperLU', 'factorized',
     'spilu', 'splu', 'spsolve',
-    'spsolve_triangular', 'use_solver', 'linsolve', 'test'
+    'spsolve_triangular', 'use_solver', 'test'
 ]
-
-dsolve_modules = ['linsolve']
 
 
 def __dir__():

@@ -219,6 +219,12 @@ class TestKron:
                           [33, 44]])
         assert_array_equal(a, expected)
 
+    def test_empty(self):
+        m1 = np.empty((0, 2))
+        m2 = np.empty((1, 3))
+        a = kron(m1, m2)
+        assert_allclose(a, np.empty((0, 6)))
+
 
 class TestHelmert:
 

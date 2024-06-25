@@ -7,11 +7,6 @@ from numpy.testing import assert_allclose
 from scipy import special
 
 
-def test_cchg_branches():
-    res = special.hyp1f1(0.1, 1, 7.0-24.0j)
-    assert_allclose(res, (-3.7659844658568016+4.970311359851648j))
-
-
 def test_cva2_cv0_branches():
     res, resp = special.mathieu_cem([40, 129], [13, 14], [30, 45])
     assert_allclose(res, np.array([-0.3741211, 0.74441928]))

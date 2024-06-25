@@ -6,7 +6,6 @@ import time
 import timeit
 import pickle
 
-import numpy
 import numpy as np
 from numpy import ones, array, asarray, empty
 
@@ -19,9 +18,9 @@ with safe_import():
 
 
 def random_sparse(m, n, nnz_per_row):
-    rows = numpy.arange(m).repeat(nnz_per_row)
-    cols = numpy.random.randint(0, n, size=nnz_per_row*m)
-    vals = numpy.random.random_sample(m*nnz_per_row)
+    rows = np.arange(m).repeat(nnz_per_row)
+    cols = np.random.randint(0, n, size=nnz_per_row*m)
+    vals = np.random.random_sample(m*nnz_per_row)
     return coo_matrix((vals, (rows, cols)), (m, n)).tocsr()
 
 
@@ -278,11 +277,11 @@ class Getset(Benchmark):
         i, j = [], []
         while len(i) < N:
             n = N - len(i)
-            ip = numpy.random.randint(0, A.shape[0], size=n)
-            jp = numpy.random.randint(0, A.shape[1], size=n)
-            i = numpy.r_[i, ip]
-            j = numpy.r_[j, jp]
-        v = numpy.random.rand(n)
+            ip = np.random.randint(0, A.shape[0], size=n)
+            jp = np.random.randint(0, A.shape[1], size=n)
+            i = np.r_[i, ip]
+            j = np.r_[j, jp]
+        v = np.random.rand(n)
 
         if N == 1:
             i = int(i)

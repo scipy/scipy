@@ -93,6 +93,14 @@ namespace detail {
         std::complex<double> term;
         std::complex<double> res;
 
+        if (!(std::isfinite(z.real()) && std::isfinite(z.imag()))) {
+            /* Check for infinity (or nan) and return early.
+             * Result of division by complex infinity is implementation dependent.
+             * and has been observed to vary between C++ stdlib and CUDA stdlib.
+             */
+            return std::log(z);
+        }
+
         res = std::log(z) - 0.5 / z;
 
         for (int k = 1; k < 17; k++) {
@@ -117,6 +125,8 @@ SPECFUN_HOST_DEVICE inline double digamma(double z) {
     }
     return cephes::psi(z);
 }
+
+SPECFUN_HOST_DEVICE inline float digamma(float z) { return static_cast<float>(digamma(static_cast<double>(z))); }
 
 SPECFUN_HOST_DEVICE inline std::complex<double> digamma(std::complex<double> z) {
     /*
@@ -185,6 +195,10 @@ SPECFUN_HOST_DEVICE inline std::complex<double> digamma(std::complex<double> z) 
         res += detail::digamma_forward_recurrence(z - n, init, n);
     }
     return res;
+}
+
+SPECFUN_HOST_DEVICE inline std::complex<float> digamma(std::complex<float> z) {
+    return static_cast<std::complex<float>>(digamma(static_cast<std::complex<double>>(z)));
 }
 
 } // namespace special

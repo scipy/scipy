@@ -73,7 +73,7 @@ class cKDTree(Generic[_BoxType]):
     # The latter gives us more flexibility in setting the generic parameter
     # though.
     @overload
-    def __new__(  # type: ignore[misc]
+    def __new__(  # type: ignore[overload-overlap]
         cls,
         data: npt.ArrayLike,
         leafsize: int = ...,
@@ -111,7 +111,7 @@ class cKDTree(Generic[_BoxType]):
         self,
         x: npt.ArrayLike,
         r: npt.ArrayLike,
-        p: float,
+        p: float = ...,
         eps: float = ...,
         workers: int | None = ...,
         return_sorted: bool | None = ...,
@@ -127,7 +127,7 @@ class cKDTree(Generic[_BoxType]):
     ) -> list[list[int]]: ...
 
     @overload
-    def query_pairs(  # type: ignore[misc]
+    def query_pairs(  # type: ignore[overload-overlap]
         self,
         r: float,
         p: float = ...,
@@ -144,7 +144,7 @@ class cKDTree(Generic[_BoxType]):
     ) -> npt.NDArray[np.intp]: ...
 
     @overload
-    def count_neighbors(  # type: ignore[misc]
+    def count_neighbors(  # type: ignore[overload-overlap]
         self,
         other: cKDTree,
         r: _ArrayLike0D,
@@ -153,7 +153,7 @@ class cKDTree(Generic[_BoxType]):
         cumulative: bool = ...,
     ) -> int: ...
     @overload
-    def count_neighbors(  # type: ignore[misc]
+    def count_neighbors(  # type: ignore[overload-overlap]
         self,
         other: cKDTree,
         r: _ArrayLike0D,
@@ -162,7 +162,7 @@ class cKDTree(Generic[_BoxType]):
         cumulative: bool = ...,
     ) -> np.float64: ...
     @overload
-    def count_neighbors(  # type: ignore[misc]
+    def count_neighbors(  # type: ignore[overload-overlap]
         self,
         other: cKDTree,
         r: npt.ArrayLike,
@@ -181,7 +181,7 @@ class cKDTree(Generic[_BoxType]):
     ) -> npt.NDArray[np.float64]: ...
 
     @overload
-    def sparse_distance_matrix(  # type: ignore[misc]
+    def sparse_distance_matrix(  # type: ignore[overload-overlap]
         self,
         other: cKDTree,
         max_distance: float,
@@ -189,7 +189,7 @@ class cKDTree(Generic[_BoxType]):
         output_type: Literal["dok_matrix"] = ...,
     ) -> dok_matrix: ...
     @overload
-    def sparse_distance_matrix(  # type: ignore[misc]
+    def sparse_distance_matrix(  # type: ignore[overload-overlap]
         self,
         other: cKDTree,
         max_distance: float,
@@ -197,7 +197,7 @@ class cKDTree(Generic[_BoxType]):
         output_type: Literal["coo_matrix"] = ...,
     ) -> coo_matrix: ...
     @overload
-    def sparse_distance_matrix(  # type: ignore[misc]
+    def sparse_distance_matrix(  # type: ignore[overload-overlap]
         self,
         other: cKDTree,
         max_distance: float,

@@ -82,7 +82,7 @@ is simple enough to fully document all attributes immediately below its name.
 Some return classes are sufficiently complex to deserve their own rendered
 documentation. This is fairly standard if the return class is public, but
 return classes should only be public if 1) they are intended to be imported by
-end-users and 2) if they have been approved by the mailing list. For complex,
+end-users and 2) if they have been approved by the forum. For complex,
 private return classes, please see  how `~scipy.stats.binomtest` summarizes
 `~scipy.stats._result_classes.BinomTestResult` and links to its documentation,
 and note that ``BinomTestResult`` cannot be imported from `~scipy.stats`.

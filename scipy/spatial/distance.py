@@ -645,8 +645,8 @@ def correlation(u, v, w=None, centered=True):
     uu = np.dot(u, uw)
     vv = np.dot(v, vw)
     dist = 1.0 - uv / math.sqrt(uu * vv)
-    # Return absolute value to avoid small negative value due to rounding
-    return abs(dist)
+    # Clip the result to avoid rounding error
+    return np.clip(dist, 0.0, 2.0)
 
 
 def cosine(u, v, w=None):
@@ -691,8 +691,7 @@ def cosine(u, v, w=None):
     """
     # cosine distance is also referred to as 'uncentered correlation',
     #   or 'reflective correlation'
-    # clamp the result to 0-2
-    return max(0, min(correlation(u, v, w=w, centered=False), 2.0))
+    return correlation(u, v, w=w, centered=False)
 
 
 def hamming(u, v, w=None):
@@ -786,12 +785,12 @@ def jaccard(u, v, w=None):
 
     Notes
     -----
-    When both `u` and `v` lead to a `0/0` division i.e. there is no overlap
+    When both `u` and `v` lead to a ``0/0`` division i.e. there is no overlap
     between the items in the vectors the returned distance is 0. See the
     Wikipedia page on the Jaccard index [1]_, and this paper [2]_.
 
     .. versionchanged:: 1.2.0
-        Previously, when `u` and `v` lead to a `0/0` division, the function
+        Previously, when `u` and `v` lead to a ``0/0`` division, the function
         would return NaN. This was changed to return 0 instead.
 
     References
@@ -1157,7 +1156,7 @@ def canberra(u, v, w=None):
 
     Notes
     -----
-    When `u[i]` and `v[i]` are 0 for given i, then the fraction 0/0 = 0 is
+    When ``u[i]`` and ``v[i]`` are 0 for given i, then the fraction 0/0 = 0 is
     used in the calculation.
 
     Examples

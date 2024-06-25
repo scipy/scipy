@@ -245,6 +245,8 @@ class DistributionsAll(Benchmark):
             if isinstance(self.dist, stats.rv_discrete):
                 raise NotImplementedError("This attribute is not a member "
                                           "of the distribution")
+            if self.dist.name in {'irwinhall'}:
+                raise NotImplementedError("Fit is unreliable.")
             # the only positional argument is the data to be fitted
             self.args = [self.dist.rvs(*dist_shapes, size=100, random_state=0, **kwds)]
         elif method == 'rvs':
@@ -650,6 +652,22 @@ class BenchQMCSobol(Benchmark):
         seq = stats.qmc.Sobol(d, scramble=False, bits=32, seed=self.rng)
         seq.random_base2(base2)
 
+class BenchPoissonDisk(Benchmark):
+    param_names = ['d', 'radius', 'ncandidates', 'n']
+    params = [
+        [1, 3, 5],
+        [0.2, 0.1, 0.05],
+        [30, 60, 120],
+        [30, 100, 300]
+    ]
+
+    def setup(self, d, radius, ncandidates, n):
+        self.rng = np.random.default_rng(168525179735951991038384544)
+
+    def time_poisson_disk(self, d, radius, ncandidates, n):
+        seq = stats.qmc.PoissonDisk(d, radius=radius, ncandidates=ncandidates,
+                                    seed=self.rng)
+        seq.random(n)
 
 class DistanceFunctions(Benchmark):
     param_names = ['n_size']

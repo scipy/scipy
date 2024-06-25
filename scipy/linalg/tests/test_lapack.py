@@ -2,7 +2,6 @@
 # Created by: Pearu Peterson, September 2002
 #
 
-import sys
 from functools import reduce
 
 from numpy.testing import (assert_equal, assert_array_almost_equal, assert_,
@@ -60,8 +59,14 @@ def test_lapack_documented():
         pytest.skip('lapack.__doc__ is None')
     names = set(lapack.__doc__.split())
     ignore_list = {
-        'absolute_import', 'clapack', 'division', 'find_best_lapack_type',
-        'flapack', 'print_function', 'HAS_ILP64',
+        "absolute_import",
+        "clapack",
+        "division",
+        "find_best_lapack_type",
+        "flapack",
+        "print_function",
+        "HAS_ILP64",
+        "np",
     }
     missing = list()
     for name in dir(lapack):
@@ -600,7 +605,7 @@ class TestTbtrs:
         elif trans == 'T':
             assert_allclose(a.T @ x, b, rtol=5e-5)
         elif trans == 'C':
-            assert_allclose(a.H @ x, b, rtol=5e-5)
+            assert_allclose(a.T.conjugate() @ x, b, rtol=5e-5)
         else:
             raise ValueError('Invalid trans argument')
 
@@ -2078,9 +2083,8 @@ def test_gttrf_gttrs(dtype):
     du[0] = 0
     d[0] = 0
     __dl, __d, __du, _du2, _ipiv, _info = gttrf(dl, d, du)
-    np.testing.assert_(__d[info - 1] == 0,
-                       "?gttrf: _d[info-1] is {}, not the illegal value :0."
-                       .format(__d[info - 1]))
+    np.testing.assert_(__d[info - 1] == 0, (f"?gttrf: _d[info-1] is {__d[info - 1]},"
+                                            " not the illegal value :0."))
 
 
 @pytest.mark.parametrize("du, d, dl, du_exp, d_exp, du2_exp, ipiv_exp, b, x",
@@ -2629,11 +2633,11 @@ def test_gtsvx(dtype, trans_bool, fact):
     assert_(hasattr(rcond, "__len__") is not True,
             f"rcond should be scalar but is {rcond}")
     # ferr should be length of # of cols in x
-    assert_(ferr.shape[0] == b.shape[1], "ferr.shape is {} but should be {},"
-            .format(ferr.shape[0], b.shape[1]))
+    assert_(ferr.shape[0] == b.shape[1], (f"ferr.shape is {ferr.shape[0]} but should"
+                                          f" be {b.shape[1]}"))
     # berr should be length of # of cols in x
-    assert_(berr.shape[0] == b.shape[1], "berr.shape is {} but should be {},"
-            .format(berr.shape[0], b.shape[1]))
+    assert_(berr.shape[0] == b.shape[1], (f"berr.shape is {berr.shape[0]} but should"
+                                          f" be {b.shape[1]}"))
 
 
 @pytest.mark.parametrize("dtype", DTYPES)
@@ -2773,8 +2777,8 @@ def test_gtsvx_NAG(du, d, dl, b, x):
                                                + REAL_DTYPES))
 @pytest.mark.parametrize("fact,df_de_lambda",
                          [("F",
-                           lambda d, e:get_lapack_funcs('pttrf',
-                                                        dtype=e.dtype)(d, e)),
+                           lambda d, e: get_lapack_funcs('pttrf',
+                                                         dtype=e.dtype)(d, e)),
                           ("N", lambda d, e: (None, None, None))])
 def test_ptsvx(dtype, realtype, fact, df_de_lambda):
     '''
@@ -2821,19 +2825,19 @@ def test_ptsvx(dtype, realtype, fact, df_de_lambda):
     assert not hasattr(rcond, "__len__"), \
         f"rcond should be scalar but is {rcond}"
     # ferr should be length of # of cols in x
-    assert_(ferr.shape == (2,), "ferr.shape is {} but should be ({},)"
-            .format(ferr.shape, x_soln.shape[1]))
+    assert_(ferr.shape == (2,), (f"ferr.shape is {ferr.shape} but should be "
+                                 "({x_soln.shape[1]},)"))
     # berr should be length of # of cols in x
-    assert_(berr.shape == (2,), "berr.shape is {} but should be ({},)"
-            .format(berr.shape, x_soln.shape[1]))
+    assert_(berr.shape == (2,), (f"berr.shape is {berr.shape} but should be "
+                                 "({x_soln.shape[1]},)"))
 
 
 @pytest.mark.parametrize("dtype,realtype", zip(DTYPES, REAL_DTYPES
                                                + REAL_DTYPES))
 @pytest.mark.parametrize("fact,df_de_lambda",
                          [("F",
-                           lambda d, e:get_lapack_funcs('pttrf',
-                                                        dtype=e.dtype)(d, e)),
+                           lambda d, e: get_lapack_funcs('pttrf',
+                                                         dtype=e.dtype)(d, e)),
                           ("N", lambda d, e: (None, None, None))])
 def test_ptsvx_error_raise_errors(dtype, realtype, fact, df_de_lambda):
     seed(42)
@@ -2859,8 +2863,8 @@ def test_ptsvx_error_raise_errors(dtype, realtype, fact, df_de_lambda):
                                                + REAL_DTYPES))
 @pytest.mark.parametrize("fact,df_de_lambda",
                          [("F",
-                           lambda d, e:get_lapack_funcs('pttrf',
-                                                        dtype=e.dtype)(d, e)),
+                           lambda d, e: get_lapack_funcs('pttrf',
+                                                         dtype=e.dtype)(d, e)),
                           ("N", lambda d, e: (None, None, None))])
 def test_ptsvx_non_SPD_singular(dtype, realtype, fact, df_de_lambda):
     seed(42)
@@ -3056,14 +3060,6 @@ def test_trexc_NAG(t, ifst, ilst, expect):
 
 @pytest.mark.parametrize('dtype', DTYPES)
 def test_gges_tgexc(dtype):
-    if (
-        dtype == np.float32 and
-        sys.platform == 'darwin' and
-        blas_provider == 'openblas' and
-        blas_version < '0.3.21.dev'
-    ):
-        pytest.xfail("gges[float32] broken for OpenBLAS on macOS, see gh-16949")
-
     seed(1234)
     atol = np.finfo(dtype).eps*100
 
@@ -3233,14 +3229,6 @@ def test_trsen_NAG(t, q, select, expect, expect_s, expect_sep):
 
 @pytest.mark.parametrize('dtype', DTYPES)
 def test_gges_tgsen(dtype):
-    if (
-        dtype == np.float32 and
-        sys.platform == 'darwin' and
-        blas_provider == 'openblas' and
-        blas_version < '0.3.21.dev'
-    ):
-        pytest.xfail("gges[float32] broken for OpenBLAS on macOS, see gh-16949")
-
     seed(1234)
     atol = np.finfo(dtype).eps*100
 

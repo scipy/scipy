@@ -69,7 +69,7 @@ c         On entry fp is the function at stp
 c         On exit fp is unchanged.
 c
 c       dp is a double precision variable.
-c         On entry dp is the the derivative of the function at stp.
+c         On entry dp is the derivative of the function at stp.
 c         On exit dp is unchanged.
 c
 c       brackt is an logical variable.

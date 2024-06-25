@@ -5,7 +5,9 @@ http://scipy.github.io/devdocs/dev/contributor/development_workflow.html#checkli
 
 Also, please name and describe your PR as you would write a
 commit message:
-http://scipy.github.io/devdocs/dev/contributor/development_workflow.html#writing-the-commit-message
+http://scipy.github.io/devdocs/dev/contributor/development_workflow.html#writing-the-commit-message.
+However, please only include an issue number in the description, not the title,
+and please ensure that any code names containing underscores are enclosed in backticks.
 
 Depending on your changes, you can skip CI operations and save time and energy: 
 http://scipy.github.io/devdocs/dev/contributor/continuous_integration.html#skipping

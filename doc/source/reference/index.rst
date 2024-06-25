@@ -84,12 +84,6 @@ section that the submodule in question is public. Of course you can still use::
 .. note:: SciPy is using a lazy loading mechanism which means that modules
           are only loaded in memory when you first try to access them.
 
-.. note::
-
-    The ``scipy`` namespace itself also contains functions imported from ``numpy``.
-    These functions still exist for backwards compatibility, but should be
-    imported from ``numpy`` directly.
-
 API definition
 --------------
 

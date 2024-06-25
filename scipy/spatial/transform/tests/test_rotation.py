@@ -39,6 +39,56 @@ def test_from_single_2d_quaternion():
     assert_array_almost_equal(r.as_quat(), expected_quat)
 
 
+def test_from_quat_scalar_first():
+    rng = np.random.RandomState(0)
+
+    r = Rotation.from_quat([1, 0, 0, 0], scalar_first=True)
+    assert_allclose(r.as_matrix(), np.eye(3), rtol=1e-15, atol=1e-16)
+
+    r = Rotation.from_quat(np.tile([1, 0, 0, 0], (10, 1)), scalar_first=True)
+    assert_allclose(r.as_matrix(), np.tile(np.eye(3), (10, 1, 1)),
+                    rtol=1e-15, atol=1e-16)
+
+    q = rng.randn(100, 4)
+    q /= np.linalg.norm(q, axis=1)[:, None]
+    for qi in q:
+        r = Rotation.from_quat(qi, scalar_first=True)
+        assert_allclose(np.roll(r.as_quat(), 1), qi, rtol=1e-15)
+
+    r = Rotation.from_quat(q, scalar_first=True)
+    assert_allclose(np.roll(r.as_quat(), 1, axis=1), q, rtol=1e-15)
+
+
+def test_as_quat_scalar_first():
+    rng = np.random.RandomState(0)
+
+    r = Rotation.from_euler('xyz', np.zeros(3))
+    assert_allclose(r.as_quat(scalar_first=True), [1, 0, 0, 0],
+                    rtol=1e-15, atol=1e-16)
+
+    r = Rotation.from_euler('xyz', np.zeros((10, 3)))
+    assert_allclose(r.as_quat(scalar_first=True),
+                    np.tile([1, 0, 0, 0], (10, 1)), rtol=1e-15, atol=1e-16)
+
+    q = rng.randn(100, 4)
+    q /= np.linalg.norm(q, axis=1)[:, None]
+    for qi in q:
+        r = Rotation.from_quat(qi)
+        assert_allclose(r.as_quat(scalar_first=True), np.roll(qi, 1),
+                        rtol=1e-15)
+
+        assert_allclose(r.as_quat(canonical=True, scalar_first=True),
+                        np.roll(r.as_quat(canonical=True), 1),
+                        rtol=1e-15)
+
+    r = Rotation.from_quat(q)
+    assert_allclose(r.as_quat(scalar_first=True), np.roll(q, 1, axis=1),
+                    rtol=1e-15)
+
+    assert_allclose(r.as_quat(canonical=True, scalar_first=True),
+                    np.roll(r.as_quat(canonical=True), 1, axis=1), rtol=1e-15)
+
+
 def test_from_square_quat_matrix():
     # Ensure proper norm array broadcasting
     x = np.array([
@@ -1417,6 +1467,32 @@ def test_align_vectors_parallel():
     assert_allclose(R.apply(b[0]), a[0], atol=atol)
 
 
+def test_align_vectors_antiparallel():
+    # Test exact 180 deg rotation
+    atol = 1e-12
+    as_to_test = np.array([[[1, 0, 0], [0, 1, 0]],
+                           [[0, 1, 0], [1, 0, 0]],
+                           [[0, 0, 1], [0, 1, 0]]])
+    bs_to_test = [[-a[0], a[1]] for a in as_to_test]
+    for a, b in zip(as_to_test, bs_to_test):
+        R, _ = Rotation.align_vectors(a, b, weights=[np.inf, 1])
+        assert_allclose(R.magnitude(), np.pi, atol=atol)
+        assert_allclose(R.apply(b[0]), a[0], atol=atol)
+
+    # Test exact rotations near 180 deg
+    Rs = Rotation.random(100, random_state=0)
+    dRs = Rotation.from_rotvec(Rs.as_rotvec()*1e-4)  # scale down to small angle
+    a = [[ 1, 0, 0], [0, 1, 0]]
+    b = [[-1, 0, 0], [0, 1, 0]]
+    as_to_test = []
+    for dR in dRs:
+        as_to_test.append([dR.apply(a[0]), a[1]])
+    for a in as_to_test:
+        R, _ = Rotation.align_vectors(a, b, weights=[np.inf, 1])
+        R2, _ = Rotation.align_vectors(a, b, weights=[1e10, 1])
+        assert_allclose(R.as_matrix(), R2.as_matrix(), atol=atol)
+
+
 def test_align_vectors_primary_only():
     atol = 1e-12
     mats_a = Rotation.random(100, random_state=0).as_matrix()
@@ -1584,6 +1660,7 @@ def test_pow():
     p_inv = p.inv()
     # Test the short-cuts and other integers
     for n in [-5, -2, -1, 0, 1, 2, 5]:
+        # Test accuracy
         q = p ** n
         r = Rotation.identity(10)
         for _ in range(abs(n)):
@@ -1593,6 +1670,12 @@ def test_pow():
                 r = r * p_inv
         ang = (q * r.inv()).magnitude()
         assert np.all(ang < atol)
+
+        # Test shape preservation
+        r = Rotation.from_quat([0, 0, 0, 1])
+        assert (r**n).as_quat().shape == (4,)
+        r = Rotation.from_quat([[0, 0, 0, 1]])
+        assert (r**n).as_quat().shape == (1, 4)
 
     # Large angle fractional
     for n in [-1.5, -0.5, -0.0, 0.0, 0.5, 1.5]:

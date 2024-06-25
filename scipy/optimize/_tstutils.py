@@ -44,6 +44,7 @@ from random import random
 import numpy as np
 
 from scipy.optimize import _zeros_py as cc
+from scipy._lib._array_api import array_namespace
 
 # "description" refers to the original functions
 description = """
@@ -887,18 +888,21 @@ fun6.root = 0
 
 
 def fun7(x):
-    return 0 if abs(x) < 3.8e-4 else x*np.exp(-x**(-2))
+    xp = array_namespace(x)
+    return 0 if xp.abs(x) < 3.8e-4 else x*xp.exp(-x**(-2))
 fun7.root = 0
 
 
 def fun8(x):
+    xp = array_namespace(x)
     xi = 0.61489
-    return -(3062*(1-xi)*np.exp(-x))/(xi + (1-xi)*np.exp(-x)) - 1013 + 1628/x
+    return -(3062*(1-xi)*xp.exp(-x))/(xi + (1-xi)*xp.exp(-x)) - 1013 + 1628/x
 fun8.root = 1.0375360332870405
 
 
 def fun9(x):
-    return np.exp(x) - 2 - 0.01/x**2 + .000002/x**3
+    xp = array_namespace(x)
+    return xp.exp(x) - 2 - 0.01/x**2 + .000002/x**3
 fun9.root = 0.7032048403631358
 
 # Each "chandropatla" test case has

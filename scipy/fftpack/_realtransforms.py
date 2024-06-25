@@ -333,7 +333,7 @@ def dct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
        \cos\left(\frac{\pi(2k+1)n}{2N}\right)
 
     The (unnormalized) DCT-III is the inverse of the (unnormalized) DCT-II, up
-    to a factor `2N`. The orthonormalized DCT-III is exactly the inverse of
+    to a factor ``2N``. The orthonormalized DCT-III is exactly the inverse of
     the orthonormalized DCT-II.
 
     **Type IV**
@@ -489,7 +489,7 @@ def dst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
         y_k = 2 \sum_{n=0}^{N-1} x_n \sin\left(\frac{\pi(k+1)(n+1)}{N+1}\right)
 
     Note that the DST-I is only supported for input size > 1.
-    The (unnormalized) DST-I is its own inverse, up to a factor `2(N+1)`.
+    The (unnormalized) DST-I is its own inverse, up to a factor ``2(N+1)``.
     The orthonormalized DST-I is exactly its own inverse.
 
     **Type II**
@@ -522,7 +522,7 @@ def dst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
         \frac{\pi(2k+1)(n+1)}{2N}\right)
 
     The (unnormalized) DST-III is the inverse of the (unnormalized) DST-II, up
-    to a factor `2N`. The orthonormalized DST-III is exactly the inverse of the
+    to a factor ``2N``. The orthonormalized DST-III is exactly the inverse of the
     orthonormalized DST-II.
 
     .. versionadded:: 0.11.0
@@ -537,7 +537,7 @@ def dst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
 
         y_k = 2 \sum_{n=0}^{N-1} x_n \sin\left(\frac{\pi(2k+1)(2n+1)}{4N}\right)
 
-    The (unnormalized) DST-IV is its own inverse, up to a factor `2N`. The
+    The (unnormalized) DST-IV is its own inverse, up to a factor ``2N``. The
     orthonormalized DST-IV is exactly its own inverse.
 
     .. versionadded:: 1.2.0

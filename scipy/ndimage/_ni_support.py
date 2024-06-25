@@ -31,7 +31,7 @@
 from collections.abc import Iterable
 import operator
 import warnings
-import numpy
+import numpy as np
 
 
 def _extend_mode_to_code(mode):
@@ -76,23 +76,23 @@ def _get_output(output, input, shape=None, complex_output=False):
         shape = input.shape
     if output is None:
         if not complex_output:
-            output = numpy.zeros(shape, dtype=input.dtype.name)
+            output = np.zeros(shape, dtype=input.dtype.name)
         else:
-            complex_type = numpy.promote_types(input.dtype, numpy.complex64)
-            output = numpy.zeros(shape, dtype=complex_type)
-    elif isinstance(output, (type, numpy.dtype)):
+            complex_type = np.promote_types(input.dtype, np.complex64)
+            output = np.zeros(shape, dtype=complex_type)
+    elif isinstance(output, (type, np.dtype)):
         # Classes (like `np.float32`) and dtypes are interpreted as dtype
-        if complex_output and numpy.dtype(output).kind != 'c':
+        if complex_output and np.dtype(output).kind != 'c':
             warnings.warn("promoting specified output dtype to complex", stacklevel=3)
-            output = numpy.promote_types(output, numpy.complex64)
-        output = numpy.zeros(shape, dtype=output)
+            output = np.promote_types(output, np.complex64)
+        output = np.zeros(shape, dtype=output)
     elif isinstance(output, str):
-        output = numpy.dtype(output)
+        output = np.dtype(output)
         if complex_output and output.kind != 'c':
             raise RuntimeError("output must have complex dtype")
-        elif not issubclass(output.type, numpy.number):
+        elif not issubclass(output.type, np.number):
             raise RuntimeError("output must have numeric dtype")
-        output = numpy.zeros(shape, dtype=output)
+        output = np.zeros(shape, dtype=output)
     elif output.shape != shape:
         raise RuntimeError("output shape not correct")
     elif complex_output and output.dtype.kind != 'c':
@@ -103,7 +103,7 @@ def _get_output(output, input, shape=None, complex_output=False):
 def _check_axes(axes, ndim):
     if axes is None:
         return tuple(range(ndim))
-    elif numpy.isscalar(axes):
+    elif np.isscalar(axes):
         axes = (operator.index(axes),)
     elif isinstance(axes, Iterable):
         for ax in axes:

@@ -1276,7 +1276,7 @@ def toms748(f, a, b, args=(), k=1,
     Find a root using TOMS Algorithm 748 method.
 
     Implements the Algorithm 748 method of Alefeld, Potro and Shi to find a
-    root of the function `f` on the interval `[a , b]`, where `f(a)` and
+    root of the function `f` on the interval ``[a , b]``, where ``f(a)`` and
     `f(b)` must have opposite signs.
 
     It uses a mixture of inverse cubic interpolation and

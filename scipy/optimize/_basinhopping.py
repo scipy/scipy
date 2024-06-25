@@ -238,10 +238,9 @@ class AdaptiveStepsize:
             # We're not accepting enough steps. Take smaller steps.
             self.takestep.stepsize *= self.factor
         if self.verbose:
-            print("adaptive stepsize: acceptance rate {:f} target {:f} new "
-                  "stepsize {:g} old stepsize {:g}".format(accept_rate,
-                  self.target_accept_rate, self.takestep.stepsize,
-                  old_stepsize))
+            print(f"adaptive stepsize: acceptance rate {accept_rate:f} target "
+                  f"{self.target_accept_rate:f} new stepsize "
+                  f"{self.takestep.stepsize:g} old stepsize {old_stepsize:g}")
 
     def take_step(self, x):
         self.nstep += 1
@@ -580,8 +579,9 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
     >>> minimizer_kwargs = {"method": "BFGS"}
     >>> ret = basinhopping(func, x0, minimizer_kwargs=minimizer_kwargs,
     ...                    niter=200)
-    >>> print("global minimum: x = %.4f, f(x) = %.4f" % (ret.x, ret.fun))
-    global minimum: x = -0.1951, f(x) = -1.0009
+    >>> # the global minimum is:
+    >>> ret.x, ret.fun
+    -0.1951, -1.0009
 
     Next consider a 2-D minimization problem. Also, this time, we
     will use gradient information to significantly speed up the search.

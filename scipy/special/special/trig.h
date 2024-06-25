@@ -17,12 +17,18 @@
 
 namespace special {
 
-SPECFUN_HOST_DEVICE inline std::complex<double> sinpi(std::complex<double> z) {
-    double x = z.real();
-    double piy = M_PI * z.imag();
-    double abspiy = std::abs(piy);
-    double sinpix = cephes::sinpi(x);
-    double cospix = cephes::cospi(x);
+template <typename T>
+SPECFUN_HOST_DEVICE T sinpi(T x) {
+    return cephes::sinpi(x);
+}
+
+template <typename T>
+SPECFUN_HOST_DEVICE std::complex<T> sinpi(std::complex<T> z) {
+    T x = z.real();
+    T piy = M_PI * z.imag();
+    T abspiy = std::abs(piy);
+    T sinpix = cephes::sinpi(x);
+    T cospix = cephes::cospi(x);
 
     if (abspiy < 700) {
         return {sinpix * std::cosh(piy), cospix * std::sinh(piy)};
@@ -36,21 +42,21 @@ SPECFUN_HOST_DEVICE inline std::complex<double> sinpi(std::complex<double> z) {
      *
      * so we can compute exp(y/2), scale by the right factor of sin/cos
      * and then multiply by exp(y/2) to avoid overflow. */
-    double exphpiy = std::exp(abspiy / 2);
-    double coshfac;
-    double sinhfac;
-    if (exphpiy == std::numeric_limits<double>::infinity()) {
+    T exphpiy = std::exp(abspiy / 2);
+    T coshfac;
+    T sinhfac;
+    if (exphpiy == std::numeric_limits<T>::infinity()) {
         if (sinpix == 0.0) {
             // Preserve the sign of zero.
             coshfac = std::copysign(0.0, sinpix);
         } else {
-            coshfac = std::copysign(std::numeric_limits<double>::infinity(), sinpix);
+            coshfac = std::copysign(std::numeric_limits<T>::infinity(), sinpix);
         }
         if (cospix == 0.0) {
             // Preserve the sign of zero.
             sinhfac = std::copysign(0.0, cospix);
         } else {
-            sinhfac = std::copysign(std::numeric_limits<double>::infinity(), cospix);
+            sinhfac = std::copysign(std::numeric_limits<T>::infinity(), cospix);
         }
         return {coshfac, sinhfac};
     }
@@ -60,33 +66,39 @@ SPECFUN_HOST_DEVICE inline std::complex<double> sinpi(std::complex<double> z) {
     return {coshfac * exphpiy, sinhfac * exphpiy};
 }
 
-SPECFUN_HOST_DEVICE inline std::complex<double> cospi(std::complex<double> z) {
-    double x = z.real();
-    double piy = M_PI * z.imag();
-    double abspiy = std::abs(piy);
-    double sinpix = cephes::sinpi(x);
-    double cospix = cephes::cospi(x);
+template <typename T>
+SPECFUN_HOST_DEVICE T cospi(T x) {
+    return cephes::cospi(x);
+}
+
+template <typename T>
+SPECFUN_HOST_DEVICE std::complex<T> cospi(std::complex<T> z) {
+    T x = z.real();
+    T piy = M_PI * z.imag();
+    T abspiy = std::abs(piy);
+    T sinpix = cephes::sinpi(x);
+    T cospix = cephes::cospi(x);
 
     if (abspiy < 700) {
         return {cospix * std::cosh(piy), -sinpix * std::sinh(piy)};
     }
 
     // See csinpi(z) for an idea of what's going on here.
-    double exphpiy = std::exp(abspiy / 2);
-    double coshfac;
-    double sinhfac;
-    if (exphpiy == std::numeric_limits<double>::infinity()) {
+    T exphpiy = std::exp(abspiy / 2);
+    T coshfac;
+    T sinhfac;
+    if (exphpiy == std::numeric_limits<T>::infinity()) {
         if (sinpix == 0.0) {
             // Preserve the sign of zero.
             coshfac = std::copysign(0.0, cospix);
         } else {
-            coshfac = std::copysign(std::numeric_limits<double>::infinity(), cospix);
+            coshfac = std::copysign(std::numeric_limits<T>::infinity(), cospix);
         }
         if (cospix == 0.0) {
             // Preserve the sign of zero.
             sinhfac = std::copysign(0.0, sinpix);
         } else {
-            sinhfac = std::copysign(std::numeric_limits<double>::infinity(), sinpix);
+            sinhfac = std::copysign(std::numeric_limits<T>::infinity(), sinpix);
         }
         return {coshfac, sinhfac};
     }

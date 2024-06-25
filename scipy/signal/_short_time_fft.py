@@ -1582,7 +1582,7 @@ class ShortTimeFFT:
         if self.fft_mode == 'twosided':
             return fft_lib.fft(x, n=self.mfft, axis=-1)
         if self.fft_mode == 'centered':
-            return fft_lib.fftshift(fft_lib.fft(x, self.mfft, axis=-1))
+            return fft_lib.fftshift(fft_lib.fft(x, self.mfft, axis=-1), axes=-1)
         if self.fft_mode == 'onesided':
             return fft_lib.rfft(x, n=self.mfft, axis=-1)
         if self.fft_mode == 'onesided2X':
@@ -1607,7 +1607,7 @@ class ShortTimeFFT:
         if self.fft_mode == 'twosided':
             x = fft_lib.ifft(X, n=self.mfft, axis=-1)
         elif self.fft_mode == 'centered':
-            x = fft_lib.ifft(fft_lib.ifftshift(X), n=self.mfft, axis=-1)
+            x = fft_lib.ifft(fft_lib.ifftshift(X, axes=-1), n=self.mfft, axis=-1)
         elif self.fft_mode == 'onesided':
             x = fft_lib.irfft(X, n=self.mfft, axis=-1)
         elif self.fft_mode == 'onesided2X':

@@ -1255,8 +1255,6 @@ def find_peaks_cwt(vector, widths, wavelet=None, max_distances=None,
 
     See Also
     --------
-    cwt
-        Continuous wavelet transform.
     find_peaks
         Find peaks inside a signal based on peak properties.
 

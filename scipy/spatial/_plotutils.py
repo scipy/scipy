@@ -249,7 +249,8 @@ def voronoi_plot_2d(vor, ax=None, **kw):
             direction = np.sign(np.dot(midpoint - center, n)) * n
             if (vor.furthest_site):
                 direction = -direction
-            far_point = vor.vertices[i] + direction * ptp_bound.max()
+            aspect_factor = abs(ptp_bound.max() / ptp_bound.min())
+            far_point = vor.vertices[i] + direction * ptp_bound.max() * aspect_factor
 
             infinite_segments.append([vor.vertices[i], far_point])
 

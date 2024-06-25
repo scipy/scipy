@@ -20,7 +20,7 @@ for sets of observations with :math:`m` and :math:`n` samples respectively,
 where :math:`m` and :math:`n` are "big".
 Writing :math:`D_{m,n} = \sup_t \left|F_{1,m}(t)-F_{2,n}(t)\right|`,  where
 :math:`F_{1,m}` and :math:`F_{2,n}` are the two empirical distribution functions, then
-``kstwobign`` is also the limiting distribution of the :math:`\sqrt{\left(\frac{mn}{m+n}\right)D_{m,n}}` values,
+``kstwobign`` is also the limiting distribution of the :math:`\sqrt{\frac{mn}{m+n}}D_{m,n}` values,
 as :math:`m,n\rightarrow\infty` and :math:`m/n\rightarrow a \ne 0, \infty`.
 
 There are no shape parameters, and the support is :math:`x\in\left[0,\infty\right)`.

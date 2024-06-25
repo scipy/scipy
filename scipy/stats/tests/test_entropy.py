@@ -1,111 +1,129 @@
-import numpy as np
-from numpy.testing import assert_equal, assert_allclose
-# avoid new uses of the following; prefer assert/np.testing.assert_allclose
-from numpy.testing import (assert_, assert_almost_equal,
-                           assert_array_almost_equal)
-
+import math
 import pytest
 from pytest import raises as assert_raises
-import scipy.stats as stats
 
+import numpy as np
+from numpy.testing import assert_allclose
+
+from scipy import stats
+from scipy.conftest import array_api_compatible
+from scipy._lib._array_api import xp_assert_close, xp_assert_equal, xp_assert_less
 
 class TestEntropy:
-    def test_entropy_positive(self):
+    @array_api_compatible
+    def test_entropy_positive(self, xp):
         # See ticket #497
-        pk = [0.5, 0.2, 0.3]
-        qk = [0.1, 0.25, 0.65]
+        pk = xp.asarray([0.5, 0.2, 0.3])
+        qk = xp.asarray([0.1, 0.25, 0.65])
         eself = stats.entropy(pk, pk)
         edouble = stats.entropy(pk, qk)
-        assert_(0.0 == eself)
-        assert_(edouble >= 0.0)
+        xp_assert_equal(eself, xp.asarray(0.))
+        xp_assert_less(-edouble, xp.asarray(0.))
 
-    def test_entropy_base(self):
-        pk = np.ones(16, float)
+    @array_api_compatible
+    def test_entropy_base(self, xp):
+        pk = xp.ones(16)
         S = stats.entropy(pk, base=2.)
-        assert_(abs(S - 4.) < 1.e-5)
+        xp_assert_less(xp.abs(S - 4.), xp.asarray(1.e-5))
 
-        qk = np.ones(16, float)
-        qk[:8] = 2.
+        qk = xp.ones(16)
+        qk = xp.where(xp.arange(16) < 8, xp.asarray(2.), qk)
         S = stats.entropy(pk, qk)
         S2 = stats.entropy(pk, qk, base=2.)
-        assert_(abs(S/S2 - np.log(2.)) < 1.e-5)
+        xp_assert_less(xp.abs(S/S2 - math.log(2.)), xp.asarray(1.e-5))
 
-    def test_entropy_zero(self):
+    @array_api_compatible
+    def test_entropy_zero(self, xp):
         # Test for PR-479
-        assert_almost_equal(stats.entropy([0, 1, 2]), 0.63651416829481278,
-                            decimal=12)
+        x = xp.asarray([0., 1., 2.])
+        xp_assert_close(stats.entropy(x),
+                        xp.asarray(0.63651416829481278))
 
-    def test_entropy_2d(self):
-        pk = [[0.1, 0.2], [0.6, 0.3], [0.3, 0.5]]
-        qk = [[0.2, 0.1], [0.3, 0.6], [0.5, 0.3]]
-        assert_array_almost_equal(stats.entropy(pk, qk),
-                                  [0.1933259, 0.18609809])
+    @array_api_compatible
+    def test_entropy_2d(self, xp):
+        pk = xp.asarray([[0.1, 0.2], [0.6, 0.3], [0.3, 0.5]])
+        qk = xp.asarray([[0.2, 0.1], [0.3, 0.6], [0.5, 0.3]])
+        xp_assert_close(stats.entropy(pk, qk),
+                        xp.asarray([0.1933259, 0.18609809]))
 
-    def test_entropy_2d_zero(self):
-        pk = [[0.1, 0.2], [0.6, 0.3], [0.3, 0.5]]
-        qk = [[0.0, 0.1], [0.3, 0.6], [0.5, 0.3]]
-        assert_array_almost_equal(stats.entropy(pk, qk),
-                                  [np.inf, 0.18609809])
+    @array_api_compatible
+    def test_entropy_2d_zero(self, xp):
+        pk = xp.asarray([[0.1, 0.2], [0.6, 0.3], [0.3, 0.5]])
+        qk = xp.asarray([[0.0, 0.1], [0.3, 0.6], [0.5, 0.3]])
+        xp_assert_close(stats.entropy(pk, qk),
+                        xp.asarray([xp.inf, 0.18609809]))
 
-        pk[0][0] = 0.0
-        assert_array_almost_equal(stats.entropy(pk, qk),
-                                  [0.17403988, 0.18609809])
+        pk = xp.asarray([[0.0, 0.2], [0.6, 0.3], [0.3, 0.5]])
+        xp_assert_close(stats.entropy(pk, qk),
+                        xp.asarray([0.17403988, 0.18609809]))
 
-    def test_entropy_base_2d_nondefault_axis(self):
-        pk = [[0.1, 0.2], [0.6, 0.3], [0.3, 0.5]]
-        assert_array_almost_equal(stats.entropy(pk, axis=1),
-                                  [0.63651417, 0.63651417, 0.66156324])
+    @array_api_compatible
+    def test_entropy_base_2d_nondefault_axis(self, xp):
+        pk = xp.asarray([[0.1, 0.2], [0.6, 0.3], [0.3, 0.5]])
+        xp_assert_close(stats.entropy(pk, axis=1),
+                        xp.asarray([0.63651417, 0.63651417, 0.66156324]))
 
-    def test_entropy_2d_nondefault_axis(self):
-        pk = [[0.1, 0.2], [0.6, 0.3], [0.3, 0.5]]
-        qk = [[0.2, 0.1], [0.3, 0.6], [0.5, 0.3]]
-        assert_array_almost_equal(stats.entropy(pk, qk, axis=1),
-                                  [0.231049, 0.231049, 0.127706])
+    @array_api_compatible
+    def test_entropy_2d_nondefault_axis(self, xp):
+        pk = xp.asarray([[0.1, 0.2], [0.6, 0.3], [0.3, 0.5]])
+        qk = xp.asarray([[0.2, 0.1], [0.3, 0.6], [0.5, 0.3]])
+        xp_assert_close(stats.entropy(pk, qk, axis=1),
+                        xp.asarray([0.23104906, 0.23104906, 0.12770641]))
 
-    def test_entropy_raises_value_error(self):
-        pk = [[0.1, 0.2], [0.6, 0.3], [0.3, 0.5]]
-        qk = [[0.1, 0.2], [0.6, 0.3]]
-        assert_raises(ValueError, stats.entropy, pk, qk)
+    @array_api_compatible
+    def test_entropy_raises_value_error(self, xp):
+        pk = xp.asarray([[0.1, 0.2], [0.6, 0.3], [0.3, 0.5]])
+        qk = xp.asarray([[0.1, 0.2], [0.6, 0.3]])
+        message = "Array shapes are incompatible for broadcasting."
+        with pytest.raises(ValueError, match=message):
+            stats.entropy(pk, qk)
 
-    def test_base_entropy_with_axis_0_is_equal_to_default(self):
-        pk = [[0.1, 0.2], [0.6, 0.3], [0.3, 0.5]]
-        assert_array_almost_equal(stats.entropy(pk, axis=0),
-                                  stats.entropy(pk))
+    @array_api_compatible
+    def test_base_entropy_with_axis_0_is_equal_to_default(self, xp):
+        pk = xp.asarray([[0.1, 0.2], [0.6, 0.3], [0.3, 0.5]])
+        xp_assert_close(stats.entropy(pk, axis=0),
+                        stats.entropy(pk))
 
-    def test_entropy_with_axis_0_is_equal_to_default(self):
-        pk = [[0.1, 0.2], [0.6, 0.3], [0.3, 0.5]]
-        qk = [[0.2, 0.1], [0.3, 0.6], [0.5, 0.3]]
-        assert_array_almost_equal(stats.entropy(pk, qk, axis=0),
-                                  stats.entropy(pk, qk))
+    @array_api_compatible
+    def test_entropy_with_axis_0_is_equal_to_default(self, xp):
+        pk = xp.asarray([[0.1, 0.2], [0.6, 0.3], [0.3, 0.5]])
+        qk = xp.asarray([[0.2, 0.1], [0.3, 0.6], [0.5, 0.3]])
+        xp_assert_close(stats.entropy(pk, qk, axis=0),
+                        stats.entropy(pk, qk))
 
-    def test_base_entropy_transposed(self):
-        pk = np.array([[0.1, 0.2], [0.6, 0.3], [0.3, 0.5]])
-        assert_array_almost_equal(stats.entropy(pk.T).T,
-                                  stats.entropy(pk, axis=1))
+    @array_api_compatible
+    def test_base_entropy_transposed(self, xp):
+        pk = xp.asarray([[0.1, 0.2], [0.6, 0.3], [0.3, 0.5]])
+        xp_assert_close(stats.entropy(pk.T),
+                        stats.entropy(pk, axis=1))
 
-    def test_entropy_transposed(self):
-        pk = np.array([[0.1, 0.2], [0.6, 0.3], [0.3, 0.5]])
-        qk = np.array([[0.2, 0.1], [0.3, 0.6], [0.5, 0.3]])
-        assert_array_almost_equal(stats.entropy(pk.T, qk.T).T,
-                                  stats.entropy(pk, qk, axis=1))
+    @array_api_compatible
+    def test_entropy_transposed(self, xp):
+        pk = xp.asarray([[0.1, 0.2], [0.6, 0.3], [0.3, 0.5]])
+        qk = xp.asarray([[0.2, 0.1], [0.3, 0.6], [0.5, 0.3]])
+        xp_assert_close(stats.entropy(pk.T, qk.T),
+                        stats.entropy(pk, qk, axis=1))
 
-    def test_entropy_broadcasting(self):
-        np.random.rand(0)
-        x = np.random.rand(3)
-        y = np.random.rand(2, 1)
+    @array_api_compatible
+    def test_entropy_broadcasting(self, xp):
+        rng = np.random.default_rng(74187315492831452)
+        x = xp.asarray(rng.random(3))
+        y = xp.asarray(rng.random((2, 1)))
         res = stats.entropy(x, y, axis=-1)
-        assert_equal(res[0], stats.entropy(x, y[0]))
-        assert_equal(res[1], stats.entropy(x, y[1]))
+        xp_assert_equal(res[0], stats.entropy(x, y[0, ...]))
+        xp_assert_equal(res[1], stats.entropy(x, y[1, ...]))
 
-    def test_entropy_shape_mismatch(self):
-        x = np.random.rand(10, 1, 12)
-        y = np.random.rand(11, 2)
+    @array_api_compatible
+    def test_entropy_shape_mismatch(self, xp):
+        x = xp.ones((10, 1, 12))
+        y = xp.ones((11, 2))
         message = "Array shapes are incompatible for broadcasting."
         with pytest.raises(ValueError, match=message):
             stats.entropy(x, y)
 
-    def test_input_validation(self):
-        x = np.random.rand(10)
+    @array_api_compatible
+    def test_input_validation(self, xp):
+        x = xp.ones(10)
         message = "`base` must be a positive number."
         with pytest.raises(ValueError, match=message):
             stats.entropy(x, base=-2)

@@ -19,14 +19,29 @@ def _broadcast_concatenate(x, y, axis):
 
 class _MWU:
     '''Distribution of MWU statistic under the null hypothesis'''
-    # Possible improvement: if m and n are small enough, use integer arithmetic
 
-    def __init__(self):
-        '''Minimal initializer'''
-        self._fmnks = -np.ones((1, 1, 1))
-        self._recursive = None
+    def __init__(self, n1, n2):
+        self._reset(n1, n2)
 
-    def pmf(self, k, m, n):
+    def set_shapes(self, n1, n2):
+        n1, n2 = min(n1, n2), max(n1, n2)
+        if (n1, n2) == (self.n1, self.n2):
+            return
+
+        self.n1 = n1
+        self.n2 = n2
+        self.s_array = np.zeros(0, dtype=int)
+        self.configurations = np.zeros(0, dtype=np.uint64)
+
+    def reset(self):
+        self._reset(self.n1, self.n2)
+
+    def _reset(self, n1, n2):
+        self.n1 = None
+        self.n2 = None
+        self.set_shapes(n1, n2)
+
+    def pmf(self, k):
 
         # In practice, `pmf` is never called with k > m*n/2.
         # If it were, we'd exploit symmetry here:
@@ -35,143 +50,100 @@ class _MWU:
         # i = k2 < k
         # k[i] = k2[i]
 
-        if (self._recursive is None and m <= 500 and n <= 500
-                or self._recursive):
-            return self.pmf_recursive(k, m, n)
-        else:
-            return self.pmf_iterative(k, m, n)
+        pmfs = self.build_u_freqs_array(np.max(k))
+        return pmfs[k]
 
-    def pmf_recursive(self, k, m, n):
-        '''Probability mass function, recursive version'''
-        self._resize_fmnks(m, n, np.max(k))
-        # could loop over just the unique elements, but probably not worth
-        # the time to find them
-        for i in np.ravel(k):
-            self._f(m, n, i)
-        return self._fmnks[m, n, k] / special.binom(m + n, m)
-
-    def pmf_iterative(self, k, m, n):
-        '''Probability mass function, iterative version'''
-        fmnks = {}
-        for i in np.ravel(k):
-            fmnks = _mwu_f_iterative(m, n, i, fmnks)
-        return (np.array([fmnks[(m, n, ki)] for ki in k])
-                / special.binom(m + n, m))
-
-    def cdf(self, k, m, n):
+    def cdf(self, k):
         '''Cumulative distribution function'''
 
         # In practice, `cdf` is never called with k > m*n/2.
         # If it were, we'd exploit symmetry here rather than in `sf`
-        pmfs = self.pmf(np.arange(0, np.max(k) + 1), m, n)
+        pmfs = self.build_u_freqs_array(np.max(k))
         cdfs = np.cumsum(pmfs)
         return cdfs[k]
 
-    def sf(self, k, m, n):
+    def sf(self, k):
         '''Survival function'''
         # Note that both CDF and SF include the PMF at k. The p-value is
         # calculated from the SF and should include the mass at k, so this
         # is desirable
 
-        # Use the fact that the distribution is symmetric; i.e.
-        # _f(m, n, m*n-k) = _f(m, n, k), and sum from the left
-        kc = np.asarray(m*n - k)  # complement of k
+        # Use the fact that the distribution is symmetric and sum from the left
+        kc = np.asarray(self.n1*self.n2 - k)  # complement of k
         i = k < kc
         if np.any(i):
             kc[i] = k[i]
-            cdfs = np.asarray(self.cdf(kc, m, n))
-            cdfs[i] = 1. - cdfs[i] + self.pmf(kc[i], m, n)
+            cdfs = np.asarray(self.cdf(kc))
+            cdfs[i] = 1. - cdfs[i] + self.pmf(kc[i])
         else:
-            cdfs = np.asarray(self.cdf(kc, m, n))
+            cdfs = np.asarray(self.cdf(kc))
         return cdfs[()]
 
-    def _resize_fmnks(self, m, n, k):
-        '''If necessary, expand the array that remembers PMF values'''
-        # could probably use `np.pad` but I'm not sure it would save code
-        shape_old = np.array(self._fmnks.shape)
-        shape_new = np.array((m+1, n+1, k+1))
-        if np.any(shape_new > shape_old):
-            shape = np.maximum(shape_old, shape_new)
-            fmnks = -np.ones(shape)             # create the new array
-            m0, n0, k0 = shape_old
-            fmnks[:m0, :n0, :k0] = self._fmnks  # copy remembered values
-            self._fmnks = fmnks
+    # build_sigma_array and build_u_freqs_array adapted from code
+    # by @toobaz with permission. Thanks to @andreasloe for the suggestion.
+    # See https://github.com/scipy/scipy/pull/4933#issuecomment-1898082691
+    def build_sigma_array(self, a):
+        n1, n2 = self.n1, self.n2
+        if a + 1 <= self.s_array.size:
+            return self.s_array[1:a+1]
 
-    def _f(self, m, n, k):
-        '''Recursive implementation of function of [3] Theorem 2.5'''
+        s_array = np.zeros(a + 1, dtype=int)
 
-        # [3] Theorem 2.5 Line 1
-        if k < 0 or m < 0 or n < 0 or k > m*n:
-            return 0
+        for d in np.arange(1, n1 + 1):
+            # All multiples of d, except 0:
+            indices = np.arange(d, a + 1, d)
+            # \epsilon_d = 1:
+            s_array[indices] += d
 
-        # if already calculated, return the value
-        if self._fmnks[m, n, k] >= 0:
-            return self._fmnks[m, n, k]
+        for d in np.arange(n2 + 1, n2 + n1 + 1):
+            # All multiples of d, except 0:
+            indices = np.arange(d, a + 1, d)
+            # \epsilon_d = -1:
+            s_array[indices] -= d
 
-        if k == 0 and m >= 0 and n >= 0:  # [3] Theorem 2.5 Line 2
-            fmnk = 1
-        else:   # [3] Theorem 2.5 Line 3 / Equation 3
-            fmnk = self._f(m-1, n, k-n) + self._f(m, n-1, k)
+        # We don't need 0:
+        self.s_array = s_array
+        return s_array[1:]
 
-        self._fmnks[m, n, k] = fmnk  # remember result
+    def build_u_freqs_array(self, maxu):
+        """
+        Build all the array of frequencies for u from 0 to maxu.
+        Assumptions:
+          n1 <= n2
+          maxu <= n1 * n2 / 2
+        """
+        n1, n2 = self.n1, self.n2
+        total = special.binom(n1 + n2, n1)
 
-        return fmnk
+        if maxu + 1 <= self.configurations.size:
+            return self.configurations[:maxu + 1] / total
+
+        s_array = self.build_sigma_array(maxu)
+
+        # Start working with ints, for maximum precision and efficiency:
+        configurations = np.zeros(maxu + 1, dtype=np.uint64)
+        configurations_is_uint = True
+        uint_max = np.iinfo(np.uint64).max
+        # How many ways to have U=0? 1
+        configurations[0] = 1
+
+        for u in np.arange(1, maxu + 1):
+            coeffs = s_array[u - 1::-1]
+            new_val = np.dot(configurations[:u], coeffs) / u
+            if new_val > uint_max and configurations_is_uint:
+                # OK, we got into numbers too big for uint64.
+                # So now we start working with floats.
+                # By doing this since the beginning, we would have lost precision.
+                # (And working on python long ints would be unbearably slow)
+                configurations = configurations.astype(float)
+                configurations_is_uint = False
+            configurations[u] = new_val
+
+        self.configurations = configurations
+        return configurations / total
 
 
-# Maintain state for faster repeat calls to mannwhitneyu w/ method='exact'
-_mwu_state = _MWU()
-
-
-def _mwu_f_iterative(m, n, k, fmnks):
-    '''Iterative implementation of function of [3] Theorem 2.5'''
-
-    def _base_case(m, n, k):
-        '''Base cases from recursive version'''
-
-        # if already calculated, return the value
-        if fmnks.get((m, n, k), -1) >= 0:
-            return fmnks[(m, n, k)]
-
-        # [3] Theorem 2.5 Line 1
-        elif k < 0 or m < 0 or n < 0 or k > m*n:
-            return 0
-
-        # [3] Theorem 2.5 Line 2
-        elif k == 0 and m >= 0 and n >= 0:
-            return 1
-
-        return None
-
-    stack = [(m, n, k)]
-    fmnk = None
-
-    while stack:
-        # Popping only if necessary would save a tiny bit of time, but NWI.
-        m, n, k = stack.pop()
-
-        # If we're at a base case, continue (stack unwinds)
-        fmnk = _base_case(m, n, k)
-        if fmnk is not None:
-            fmnks[(m, n, k)] = fmnk
-            continue
-
-        # If both terms are base cases, continue (stack unwinds)
-        f1 = _base_case(m-1, n, k-n)
-        f2 = _base_case(m, n-1, k)
-        if f1 is not None and f2 is not None:
-            # [3] Theorem 2.5 Line 3 / Equation 3
-            fmnk = f1 + f2
-            fmnks[(m, n, k)] = fmnk
-            continue
-
-        # recurse deeper
-        stack.append((m, n, k))
-        if f1 is None:
-            stack.append((m-1, n, k-n))
-        if f2 is None:
-            stack.append((m, n-1, k))
-
-    return fmnks
+_mwu_state = _MWU(0, 0)
 
 
 def _get_mwu_z(U, n1, n2, t, axis=0, continuity=True):
@@ -330,8 +302,8 @@ def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
     consider `scipy.stats.wilcoxon`.
 
     `method` ``'exact'`` is recommended when there are no ties and when either
-    sample size is less than 8 [1]_. The implementation follows the recurrence
-    relation originally proposed in [1]_ as it is described in [3]_.
+    sample size is less than 8 [1]_. The implementation follows the algorithm
+    reported in [3]_.
     Note that the exact method is *not* corrected for ties, but
     `mannwhitneyu` will not raise errors or warnings if there are ties in the
     data. If there are ties and either samples is small (fewer than ~10
@@ -353,9 +325,9 @@ def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
            Mathematical Statistics, Vol. 18, pp. 50-60, 1947.
     .. [2] Mann-Whitney U Test, Wikipedia,
            http://en.wikipedia.org/wiki/Mann-Whitney_U_test
-    .. [3] A. Di Bucchianico, "Combinatorics, computer algebra, and the
-           Wilcoxon-Mann-Whitney test", Journal of Statistical Planning and
-           Inference, Vol. 79, pp. 349-364, 1999.
+    .. [3] Andreas Löffler,
+           "Über eine Partition der nat. Zahlen und ihr Anwendung beim U-Test",
+           Wiss. Z. Univ. Halle, XXXII'83 pp. 87-89.
     .. [4] Rosie Shier, "Statistics: 2.3 The Mann-Whitney U Test", Mathematics
            Learning Support Centre, 2004.
     .. [5] Michael P. Fay and Michael A. Proschan. "Wilcoxon-Mann-Whitney
@@ -464,7 +436,9 @@ def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
     >>> from scipy.stats import ttest_ind
     >>> res = ttest_ind(females, males, alternative="less")
     >>> print(res)
-    Ttest_indResult(statistic=-2.239334696520584, pvalue=0.030068441095757924)
+    TtestResult(statistic=-2.239334696520584,
+                pvalue=0.030068441095757924,
+                df=7.0)
 
     Under this assumption, the *p*-value would be low enough to reject the
     null hypothesis in favor of the alternative.
@@ -495,7 +469,8 @@ def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
         method = _mwu_choose_method(n1, n2, np.any(t > 1))
 
     if method == "exact":
-        p = _mwu_state.sf(U.astype(int), min(n1, n2), max(n1, n2))
+        _mwu_state.set_shapes(n1, n2)
+        p = _mwu_state.sf(U.astype(int))
     elif method == "asymptotic":
         z = _get_mwu_z(U, n1, n2, t, continuity=use_continuity)
         p = stats.norm.sf(z)

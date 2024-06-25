@@ -3,6 +3,7 @@ import pytest
 import numpy as np
 import scipy.sparse as sp
 import scipy.sparse.csgraph as spgraph
+from scipy._lib import _pep440
 
 from numpy.testing import assert_equal
 
@@ -20,6 +21,15 @@ msg = "pydata/sparse (0.15.1) does not implement necessary operations"
 
 sparse_params = (pytest.param("COO"),
                  pytest.param("DOK", marks=[pytest.mark.xfail(reason=msg)]))
+
+
+def check_sparse_version(min_ver):
+    if sparse is None:
+        return pytest.mark.skip(reason="sparse is not installed")
+    return pytest.mark.skipif(
+        _pep440.parse(sparse.__version__) < _pep440.Version(min_ver),
+        reason=f"sparse version >= {min_ver} required"
+    )
 
 
 @pytest.fixture(params=sparse_params)
@@ -147,3 +157,38 @@ def test_min_weight_full_bipartite_matching(graphs):
     desired = func(sp.csc_matrix(A_dense)[0:2, 1:3])
 
     assert_equal(actual, desired)
+
+
+@check_sparse_version("0.15.4")
+@pytest.mark.parametrize(
+    "func",
+    [
+        spgraph.shortest_path,
+        spgraph.dijkstra,
+        spgraph.floyd_warshall,
+        spgraph.bellman_ford,
+        spgraph.johnson,
+        spgraph.minimum_spanning_tree,
+    ]
+)
+@pytest.mark.parametrize(
+    "fill_value, comp_func",
+    [(np.inf, np.isposinf), (np.nan, np.isnan)],
+)
+def test_nonzero_fill_value(graphs, func, fill_value, comp_func):
+    A_dense, A_sparse = graphs
+    A_sparse = A_sparse.astype(float)
+    A_sparse.fill_value = fill_value
+    sparse_cls = type(A_sparse)
+
+    actual = func(A_sparse)
+    desired = func(sp.csc_matrix(A_dense))
+
+    if func == spgraph.minimum_spanning_tree:
+        assert isinstance(actual, sparse_cls)
+        assert comp_func(actual.fill_value)
+        actual = actual.todense()
+        actual[comp_func(actual)] = 0.0
+        assert_equal(actual, desired.todense())
+    else:
+        assert_equal(actual, desired)

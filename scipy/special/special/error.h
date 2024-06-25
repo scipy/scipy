@@ -8,10 +8,6 @@
 #define SPECFUN_HOST_DEVICE
 #endif
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 typedef enum {
     SF_ERROR_OK = 0,    /* no error */
     SF_ERROR_SINGULAR,  /* singularity encountered */
@@ -27,16 +23,42 @@ typedef enum {
 } sf_error_t;
 
 #ifdef __cplusplus
+
+#include <complex>
+
 namespace special {
 
 #ifndef SP_SPECFUN_ERROR
-    SPECFUN_HOST_DEVICE inline void set_error(const char *func_name, sf_error_t code, const char *fmt, ...) {
-        // nothing
-    }
+SPECFUN_HOST_DEVICE inline void set_error(const char *func_name, sf_error_t code, const char *fmt, ...) {
+    // nothing
+}
 #else
-    void set_error(const char *func_name, sf_error_t code, const char *fmt, ...);
+void set_error(const char *func_name, sf_error_t code, const char *fmt, ...);
 #endif
+
+template <typename T>
+void set_error_and_nan(const char *name, sf_error_t code, T &value) {
+    if (code != SF_ERROR_OK) {
+        set_error(name, code, nullptr);
+
+        if (code == SF_ERROR_DOMAIN || code == SF_ERROR_OVERFLOW || code == SF_ERROR_NO_RESULT) {
+            value = std::numeric_limits<T>::quiet_NaN();
+        }
+    }
+}
+
+template <typename T>
+void set_error_and_nan(const char *name, sf_error_t code, std::complex<T> &value) {
+    if (code != SF_ERROR_OK) {
+        set_error(name, code, nullptr);
+
+        if (code == SF_ERROR_DOMAIN || code == SF_ERROR_OVERFLOW || code == SF_ERROR_NO_RESULT) {
+            value.real(std::numeric_limits<T>::quiet_NaN());
+            value.imag(std::numeric_limits<T>::quiet_NaN());
+        }
+    }
+}
+
 } // namespace special
 
-} // closes extern "C"
 #endif

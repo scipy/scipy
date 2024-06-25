@@ -602,7 +602,11 @@ def _kpp(data, k, rng, xp):
        on Discrete Algorithms, 2007.
     """
 
-    dims = data.shape[1] if len(data.shape) > 1 else 1
+    ndim = len(data.shape)
+    if ndim == 1:
+        data = data[:, None]
+
+    dims = data.shape[1]
 
     init = xp.empty((int(k), dims))
 
@@ -618,6 +622,8 @@ def _kpp(data, k, rng, xp):
             cumprobs = np.asarray(cumprobs)
             init[i, :] = data[np.searchsorted(cumprobs, r), :]
 
+    if ndim == 1:
+        init = init[:, 0]
     return init
 
 

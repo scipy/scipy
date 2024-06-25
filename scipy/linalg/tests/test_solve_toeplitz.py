@@ -119,3 +119,18 @@ def test_unstable():
 
     assert_allclose(solution1, solution2)
 
+
+@pytest.mark.parametrize('dt_c', [int, float, np.float32, complex, np.complex64])
+@pytest.mark.parametrize('dt_b', [int, float, np.float32, complex, np.complex64])
+def test_empty(dt_c, dt_b):
+    c = np.array([], dtype=dt_c)
+    b = np.array([], dtype=dt_b)
+    x = solve_toeplitz(c, b)
+    assert x.shape == (0,)
+    assert x.dtype == solve_toeplitz(np.array([2, 1], dtype=dt_c),
+                                      np.ones(2, dtype=dt_b)).dtype
+
+    b = np.empty((0, 0), dtype=dt_b)
+    x1 = solve_toeplitz(c, b)
+    assert x1.shape == (0, 0)
+    assert x1.dtype == x.dtype

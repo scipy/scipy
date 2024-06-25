@@ -275,7 +275,7 @@ cases is more accurate p-values, especially for two-sample testing with
 smaller (or quite different) sizes.
 
 `scipy.stats.maxwell` performance improvements include a 20 % speed up for
-`fit()`` and 5 % for ``pdf()``
+``fit()`` and 5 % for ``pdf()``
 
 `scipy.stats.shapiro` and `scipy.stats.jarque_bera` now return a named tuple
 for greater consistency with other ``stats`` functions
@@ -506,7 +506,7 @@ Issues closed for 1.5.0
 * `#9212 <https://github.com/scipy/scipy/issues/9212>`__: EIGH very very slow --> suggesting an easy fix
 * `#9553 <https://github.com/scipy/scipy/issues/9553>`__: ndimage routines behave badly when output has memory overlap...
 * `#9632 <https://github.com/scipy/scipy/issues/9632>`__: ndimage.maximum_filter undocumented behaviour using footprint...
-* `#9658 <https://github.com/scipy/scipy/issues/9658>`__: `scipy.optimize.minimize(method='COBYLA')` not threadsafe
+* `#9658 <https://github.com/scipy/scipy/issues/9658>`__: \`scipy.optimize.minimize(method='COBYLA')\` not threadsafe
 * `#9710 <https://github.com/scipy/scipy/issues/9710>`__: stats.weightedtau([1], [1.0]) SEGFAULTs
 * `#9797 <https://github.com/scipy/scipy/issues/9797>`__: Master Tracker for some Kolmogorov-Smirnov test Issues
 * `#9844 <https://github.com/scipy/scipy/issues/9844>`__: scipy.signal.upfirdn gives different length matrix versus MATLAB...

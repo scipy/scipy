@@ -380,7 +380,7 @@ class TestNewton(TestScalarRootFinders):
         assert_allclose(sol0.root, sol.root, atol=1e-8)
         assert_equal(3*sol.function_calls, sol0.function_calls)
 
-    def test_newton_full_output(self):
+    def test_newton_full_output(self, capsys):
         # Test the full_output capability, both when converging and not.
         # Use simple polynomials, to avoid hitting platform dependencies
         # (e.g., exp & trig) in number of iterations
@@ -582,7 +582,7 @@ def test_complex_halley():
     assert_allclose(f(y, *coeffs), 0, atol=1e-6)
 
 
-def test_zero_der_nz_dp():
+def test_zero_der_nz_dp(capsys):
     """Test secant method with a non-zero dp, but an infinite newton step"""
     # pick a symmetrical functions and choose a point on the side that with dx
     # makes a secant that is a flat line with zero slope, EG: f = (x - 100)**2,

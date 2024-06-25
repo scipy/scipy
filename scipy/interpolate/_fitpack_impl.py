@@ -32,7 +32,7 @@ from numpy import (atleast_1d, array, ones, zeros, sqrt, ravel, transpose,
 
 # Try to replace _fitpack interface with
 #  f2py-generated version
-from . import dfitpack
+from . import _dfitpack as dfitpack
 
 
 dfitpack_int = dfitpack.types.intvar.dtype

@@ -124,7 +124,7 @@ subroutine <prefix2>syevd(compute_v,lower,n,w,a,lda,work,lwork,iwork,liwork,info
     <ftype2> dimension(n),intent(out),depend(n) :: w
 
     integer optional,intent(in),depend(n,compute_v) :: lwork=max((compute_v?1+6*n+2*n*n:2*n+1),1)
-    check(lwork>=(compute_v?1+6*n+2*n*n:2*n+1)) :: lwork
+    check( (lwork>=((compute_v?1+6*n+2*n*n:2*n+1))) || ((n==1)&&(lwork>=1)) ) :: lwork
     <ftype2> dimension(lwork),intent(hide,cache),depend(lwork) :: work
 
     integer optional,intent(in),depend(n,compute_v) :: liwork = (compute_v?3+5*n:1)
@@ -180,7 +180,7 @@ subroutine <prefix2c>heevd(compute_v,lower,n,w,a,lda,work,lwork,iwork,liwork,rwo
     <ftype2> dimension(n),intent(out),depend(n) :: w
 
     integer optional,intent(in),depend(n,compute_v) :: lwork=max((compute_v?2*n+n*n:n+1),1)
-    check(lwork>=(compute_v?2*n+n*n:n+1)) :: lwork
+    check( (lwork>=(compute_v?2*n+n*n:n+1)) || ((n==1)&&(lwork>=1)) ) :: lwork
     <ftype2c> dimension(lwork),intent(hide,cache),depend(lwork) :: work
 
     integer optional,intent(in),depend(n,compute_v) :: liwork = (compute_v?3+5*n:1)

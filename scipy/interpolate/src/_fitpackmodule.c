@@ -28,8 +28,8 @@ static PyObject *fitpack_error;
 
 #else
 
-#define F_INT npy_int32
-#define F_INT_NPY NPY_INT32
+#define F_INT int
+#define F_INT_NPY NPY_INT
 #define F_INT_MAX NPY_MAX_INT32
 #if NPY_BITSOF_SHORT == 32
 #define F_INT_PYFMT   "h"

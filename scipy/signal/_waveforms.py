@@ -203,10 +203,6 @@ def gausspulse(t, fc=1000, bw=0.5, bwr=-6, tpr=-60, retquad=False,
     yenv : ndarray
         Envelope of signal.  Only returned if `retenv` is True.
 
-    See Also
-    --------
-    scipy.signal.morlet
-
     Examples
     --------
     Plot real component, imaginary component, and envelope for a 5 Hz pulse,

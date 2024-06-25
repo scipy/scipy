@@ -540,7 +540,7 @@ def interp_decomp(A, eps_or_k, rand=True):
     A : :class:`numpy.ndarray` or :class:`scipy.sparse.linalg.LinearOperator` with `rmatvec`
         Matrix to be factored
     eps_or_k : float or int
-        Relative error (if `eps_or_k < 1`) or rank (if `eps_or_k >= 1`) of
+        Relative error (if ``eps_or_k < 1``) or rank (if ``eps_or_k >= 1``) of
         approximation.
     rand : bool, optional
         Whether to use random sampling if `A` is of type :class:`numpy.ndarray`
@@ -551,7 +551,7 @@ def interp_decomp(A, eps_or_k, rand=True):
     -------
     k : int
         Rank required to achieve specified relative precision if
-        `eps_or_k < 1`.
+        ``eps_or_k < 1``.
     idx : :class:`numpy.ndarray`
         Column index array.
     proj : :class:`numpy.ndarray`
@@ -883,7 +883,7 @@ def svd(A, eps_or_k, rand=True):
         :class:`scipy.sparse.linalg.LinearOperator` with the `matvec` and
         `rmatvec` methods (to apply the matrix and its adjoint).
     eps_or_k : float or int
-        Relative error (if `eps_or_k < 1`) or rank (if `eps_or_k >= 1`) of
+        Relative error (if ``eps_or_k < 1``) or rank (if ``eps_or_k >= 1``) of
         approximation.
     rand : bool, optional
         Whether to use random sampling if `A` is of type :class:`numpy.ndarray`

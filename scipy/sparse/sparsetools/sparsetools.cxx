@@ -91,7 +91,7 @@ static PyObject *c_array_from_object(PyObject *obj, int typenum, int is_output);
  *     The Python return value
  *
  */
-NPY_VISIBILITY_HIDDEN PyObject *
+PyObject *
 call_thunk(char ret_spec, const char *spec, thunk_t *thunk, PyObject *args)
 {
     void *arg_list[MAX_ARGS];

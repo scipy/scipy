@@ -9,7 +9,7 @@ cdef fused floating:
     complex128_t
 
 
-def within_block_loop(floating[:,::1] R, floating[:,::1] T, start_stop_pairs, intp_t nblocks):
+def within_block_loop(floating[:,::1] R, const floating[:,::1] T, start_stop_pairs, intp_t nblocks):
     cdef intp_t start, stop, i, j, k
     cdef floating s, denom, num
 

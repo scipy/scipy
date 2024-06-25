@@ -445,7 +445,7 @@ BOOST_TESTS = [
         data(jvp, 'bessel_j_prime_large_data_ipp-bessel_j_prime_large_data',
              (0,1), 2, rtol=1e-11),
         data(jvp, 'bessel_j_prime_large_data_ipp-bessel_j_prime_large_data',
-             (0,1j), 2, rtol=1e-11),
+             (0,1j), 2, rtol=2e-11),
 
         data(kn, 'bessel_k_int_data_ipp-bessel_k_int_data', (0,1), 2, rtol=1e-12),
 

@@ -1,5 +1,8 @@
 import numpy as np
+
 from scipy._lib._util import _get_nan
+from scipy._lib._array_api import array_namespace, xp_copysign
+
 from ._axis_nan_policy import _axis_nan_policy_factory
 
 
@@ -91,31 +94,35 @@ def variation(a, axis=0, nan_policy='propagate', ddof=0, *, keepdims=False):
     array([1.05109361, 0.31428986, 0.146483  ])
 
     """
+    xp = array_namespace(a)
+    a = xp.asarray(a)
     # `nan_policy` and `keepdims` are handled by `_axis_nan_policy`
+    # `axis=None` is only handled for NumPy backend
+    if axis is None:
+        a = xp.reshape(a, (-1,))
+        axis = 0
+
     n = a.shape[axis]
     NaN = _get_nan(a)
 
     if a.size == 0 or ddof > n:
         # Handle as a special case to avoid spurious warnings.
         # The return values, if any, are all nan.
-        shp = np.asarray(a.shape)
-        shp = np.delete(shp, axis)
-        result = np.full(shp, fill_value=NaN)
-        return result[()]
+        shp = list(a.shape)
+        shp.pop(axis)
+        result = xp.full(shp, fill_value=NaN)
+        return result[()] if result.ndim == 0 else result
 
-    mean_a = a.mean(axis)
+    mean_a = xp.mean(a, axis=axis)
 
     if ddof == n:
         # Another special case.  Result is either inf or nan.
-        std_a = a.std(axis=axis, ddof=0)
-        result = np.full_like(std_a, fill_value=NaN)
-        i = std_a > 0
-        result[i] = np.inf
-        result[i] = np.copysign(result[i], mean_a[i])
-        return result[()]
+        std_a = xp.std(a, axis=axis, correction=0)
+        result = xp.where(std_a > 0, xp_copysign(xp.asarray(xp.inf), mean_a), NaN)
+        return result[()] if result.ndim == 0 else result
 
     with np.errstate(divide='ignore', invalid='ignore'):
-        std_a = a.std(axis, ddof=ddof)
+        std_a = xp.std(a, axis=axis, correction=ddof)
         result = std_a / mean_a
 
-    return result[()]
+    return result[()] if result.ndim == 0 else result

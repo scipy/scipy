@@ -1865,7 +1865,7 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
 
     if padded:
         # Pad to integer number of windowed segments
-        # I.e make x.shape[-1] = nperseg + (nseg-1)*nstep, with integer nseg
+        # I.e. make x.shape[-1] = nperseg + (nseg-1)*nstep, with integer nseg
         nadd = (-(x.shape[-1]-nperseg) % nstep) % nperseg
         zeros_shape = list(x.shape[:-1]) + [nadd]
         x = np.concatenate((x, np.zeros(zeros_shape)), axis=-1)
@@ -1987,16 +1987,15 @@ def _fft_helper(x, win, detrend_func, nperseg, noverlap, nfft, sides):
 
     .. versionadded:: 0.16.0
     """
-    # Created strided array of data segments
+    # Created sliding window view of array
     if nperseg == 1 and noverlap == 0:
         result = x[..., np.newaxis]
     else:
-        # https://stackoverflow.com/a/5568169
         step = nperseg - noverlap
-        shape = x.shape[:-1]+((x.shape[-1]-noverlap)//step, nperseg)
-        strides = x.strides[:-1]+(step*x.strides[-1], x.strides[-1])
-        result = np.lib.stride_tricks.as_strided(x, shape=shape,
-                                                 strides=strides)
+        result = np.lib.stride_tricks.sliding_window_view(
+            x, window_shape=nperseg, axis=-1, writeable=True
+        )
+        result = result[..., 0::step, :]
 
     # Detrend each data segment individually
     result = detrend_func(result)

@@ -17,39 +17,41 @@ namespace special {
 namespace cephes {
 
     /* Compute sin(pi * x). */
-    SPECFUN_HOST_DEVICE double sinpi(double x) {
-        double s = 1.0;
+    template <typename T>
+    SPECFUN_HOST_DEVICE T sinpi(T x) {
+        T s = 1.0;
 
         if (x < 0.0) {
             x = -x;
             s = -1.0;
         }
 
-        double r = fmod(x, 2.0);
+        T r = std::fmod(x, 2.0);
         if (r < 0.5) {
-            return s * sin(M_PI * r);
+            return s * std::sin(M_PI * r);
         } else if (r > 1.5) {
-            return s * sin(M_PI * (r - 2.0));
+            return s * std::sin(M_PI * (r - 2.0));
         } else {
-            return -s * sin(M_PI * (r - 1.0));
+            return -s * std::sin(M_PI * (r - 1.0));
         }
     }
 
     /* Compute cos(pi * x) */
-    SPECFUN_HOST_DEVICE double cospi(double x) {
+    template <typename T>
+    SPECFUN_HOST_DEVICE T cospi(T x) {
         if (x < 0.0) {
             x = -x;
         }
 
-        double r = fmod(x, 2.0);
+        T r = std::fmod(x, 2.0);
         if (r == 0.5) {
             // We don't want to return -0.0
             return 0.0;
         }
         if (r < 1.0) {
-            return -sin(M_PI * (r - 0.5));
+            return -std::sin(M_PI * (r - 0.5));
         } else {
-            return sin(M_PI * (r - 1.5));
+            return std::sin(M_PI * (r - 1.5));
         }
     }
 } // namespace cephes

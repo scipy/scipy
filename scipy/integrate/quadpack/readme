@@ -36,7 +36,7 @@ by the letter D.
 
 - QAWO : Is a routine for the integration of COS(OMEGA*X)*F(X)
          or SIN(OMEGA*X)*F(X) over a finite interval (A,B).
-         OMEGA is is specified by the user
+         OMEGA is specified by the user
          The rule evaluation component is based on the
          modified Clenshaw-Curtis technique.
          An adaptive subdivision scheme is used connected with

@@ -259,6 +259,27 @@ class TestRootLM:
         assert_array_almost_equal(final_flows, np.ones(4))
 
 
+class TestNfev:
+    def zero_f(self, y):
+        self.nfev += 1
+        return y**2-3
+
+    @pytest.mark.parametrize('method', ['hybr', 'lm', 'broyden1',
+                                        'broyden2', 'anderson',
+                                        'linearmixing', 'diagbroyden',
+                                        'excitingmixing', 'krylov',
+                                        'df-sane'])
+    def test_root_nfev(self, method):
+        self.nfev = 0
+        solution = optimize.root(self.zero_f, 100, method=method)
+        assert solution.nfev == self.nfev
+
+    def test_fsolve_nfev(self):
+        self.nfev = 0
+        x, info, ier, mesg = optimize.fsolve(self.zero_f, 100, full_output=True)
+        assert info['nfev'] == self.nfev
+
+
 class TestLeastSq:
     def setup_method(self):
         x = np.linspace(0, 10, 40)
@@ -300,7 +321,7 @@ class TestLeastSq:
                               args=(self.y_meas, self.x),
                               full_output=True)
         params_fit, cov_x, infodict, mesg, ier = full_output
-        assert_(ier in (1,2,3,4), 'solution not found: %s' % mesg)
+        assert_(ier in (1,2,3,4), f'solution not found: {mesg}')
 
     def test_input_untouched(self):
         p0 = array([0,0,0],dtype=float64)
@@ -309,7 +330,7 @@ class TestLeastSq:
                               args=(self.y_meas, self.x),
                               full_output=True)
         params_fit, cov_x, infodict, mesg, ier = full_output
-        assert_(ier in (1,2,3,4), 'solution not found: %s' % mesg)
+        assert_(ier in (1,2,3,4), f'solution not found: {mesg}')
         assert_array_equal(p0, p0_copy)
 
     def test_wrong_shape_func_callable(self):
@@ -581,8 +602,9 @@ class TestCurveFit:
         assert_allclose(result_with_nan, result_without_nan)
 
         # not valid policy test
-        error_msg = ("nan_policy must be one of "
-                     "{'None', 'raise', 'omit'}")
+        # check for argument names in any order
+        error_msg = (r"nan_policy must be one of \{(?:'raise'|'omit'|None)"
+                     r"(?:, ?(?:'raise'|'omit'|None))*\}")
         with assert_raises(ValueError, match=error_msg):
             curve_fit(**kwargs, nan_policy="hi")
 

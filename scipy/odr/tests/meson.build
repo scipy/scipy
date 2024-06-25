@@ -5,5 +5,6 @@ python_sources = [
 
 py3.install_sources(
   python_sources,
-  subdir: 'scipy/odr/tests'
+  subdir: 'scipy/odr/tests',
+  install_tag: 'tests'
 )

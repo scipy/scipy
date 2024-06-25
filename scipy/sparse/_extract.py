@@ -93,8 +93,8 @@ def tril(A, k=0, format=None):
            [4, 0, 0, 0, 0],
            [0, 0, 0, 0, 0]])
     >>> tril(A, format='csc')
-    <3x5 sparse array of type '<class 'numpy.int32'>'
-            with 4 stored elements in Compressed Sparse Column format>
+    <Compressed Sparse Column sparse array of dtype 'int32'
+        with 4 stored elements and shape (3, 5)>
 
     """
     coo_sparse = coo_array if isinstance(A, sparray) else coo_matrix
@@ -161,8 +161,8 @@ def triu(A, k=0, format=None):
            [4, 5, 0, 6, 7],
            [0, 0, 8, 9, 0]])
     >>> triu(A, format='csc')
-    <3x5 sparse array of type '<class 'numpy.int32'>'
-            with 8 stored elements in Compressed Sparse Column format>
+    <Compressed Sparse Column sparse array of dtype 'int32'
+        with 8 stored elements and shape (3, 5)>
 
     """
     coo_sparse = coo_array if isinstance(A, sparray) else coo_matrix

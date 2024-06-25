@@ -127,6 +127,7 @@ class TestMMIOArray:
         a = np.random.random(sz)
         self.check(a, (20, 15, 300, 'array', 'real', 'general'))
 
+    @pytest.mark.fail_slow(10)
     def test_bad_number_of_array_header_fields(self):
         s = """\
             %%MatrixMarket matrix array real general

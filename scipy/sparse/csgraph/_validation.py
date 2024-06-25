@@ -18,7 +18,12 @@ def validate_graph(csgraph, directed, dtype=DTYPE,
     if not (csr_output or dense_output):
         raise ValueError("Internal: dense or csr output must be true")
 
-    csgraph = convert_pydata_sparse_to_scipy(csgraph)
+    accept_fv = [null_value_in]
+    if infinity_null:
+        accept_fv.append(np.inf)
+    if nan_null:
+        accept_fv.append(np.nan)
+    csgraph = convert_pydata_sparse_to_scipy(csgraph, accept_fv=accept_fv)
 
     # if undirected and csc storage, then transposing in-place
     # is quicker than later converting to csr.
