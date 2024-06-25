@@ -500,7 +500,7 @@ class TestRBFInterpolatorNeighbors20(_TestRBFInterpolator):
     def test_concurrency(self):
         # Check that no segfaults appear with concurrent access to
         # RbfInterpolator
-        seq = Halton(2, scramble=False, seed=np.random.RandomState())
+        seq = Halton(2, scramble=False, seed=np.random.RandomState(0))
         x = seq.random(100)
         xitp = seq.random(100)
 
