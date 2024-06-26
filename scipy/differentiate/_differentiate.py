@@ -811,7 +811,7 @@ def jacobian(f, x, *, tolerances=None, maxiter=10,
     at ``[0.5, 0.5, 0.5]``.
 
     >>> import numpy as np
-    >>> from scipy.differentiate import differentiate
+    >>> from scipy.differentiate import jacobian
     >>> from scipy.optimize import rosen, rosen_der
     >>> m = 3
     >>> x = np.full(m, 0.5)
