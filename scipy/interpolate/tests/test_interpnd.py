@@ -62,6 +62,41 @@ class TestLinearNDInterpolation:
         yi = interpnd.LinearNDInterpolator(tri, y)(x)
         assert_almost_equal(y, yi)
 
+    def test_tri2_input(self):
+        # be sur that Delaunay triangulation is not recompute.
+        #  the fake tri have a hole in the middle if recompute it will be "closed",
+        #  if not center get NAN value.
+        class FakeDelaunay(qhull.Delaunay):
+            def __init__(self):
+                self._points = np.array([(0,0), (0,1), (0,2),
+                                         (1,0), (1,1), (1,2),
+                                         (2,0), (2,1), (2,2)], dtype=np.float64)
+                self.simplices = np.array([(0,1,3),(1,2,5),(3,7,6), (5,8,7)],
+                                          dtype=np.int32)
+                self.neighbors = np.array([(-1,-1,-1),
+                                           (-1,-1,-1),
+                                           (-1,-1,-1),
+                                           (-1,-1,-1)], dtype=np.int32)
+                self.ndim = self._points.shape[1]
+                self.npoints = self._points.shape[0]
+                self.min_bound = self._points.min(axis=0)
+                self.max_bound = self._points.max(axis=0)
+                self.equations = np.zeros((9, 4), dtype=np.double)
+                self.paraboloid_scale = 1
+                self.paraboloid_shift = 0
+                self._transform = None
+
+        y = np.array([(1), (1), (1), (1), (1), (1), (1), (1), (1)], dtype=np.float64)
+        test_points = np.array([(0.1,0.1), (1.5,1.5)], dtype=np.float64)
+        test_res    = np.array([(1), (np.nan)], dtype=np.float64)
+
+        tri = FakeDelaunay()
+        interpolator = interpnd.LinearNDInterpolator(tri, y)
+        res = interpolator(test_points)
+
+        assert_almost_equal(res, test_res)
+        assert interpolator.tri is tri
+
     def test_square(self):
         # Test barycentric interpolation on a square against a manual
         # implementation
