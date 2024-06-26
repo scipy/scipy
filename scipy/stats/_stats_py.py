@@ -2821,18 +2821,19 @@ def obrientransform(*samples):
     that the variances are different.
 
     """
-    TINY = np.sqrt(np.finfo(float).eps)
+    xp = array_namespace(*samples)
+    TINY = xp.sqrt(xp.finfo(xp.asarray(1.).dtype).eps)
 
     # `arrays` will hold the transformed arguments.
     arrays = []
     sLast = None
 
     for sample in samples:
-        a = np.asarray(sample)
+        a = xp.asarray(sample)
         n = len(a)
-        mu = np.mean(a)
+        mu = xp.mean(a)
         sq = (a - mu)**2
-        sumsq = sq.sum()
+        sumsq = xp.sum(sq)
 
         # The O'Brien transform.
         t = ((n - 1.5) * n * sq - 0.5 * sumsq) / ((n - 1) * (n - 2))
@@ -2840,7 +2841,7 @@ def obrientransform(*samples):
         # Check that the mean of the transformed data is equal to the
         # original variance.
         var = sumsq / (n - 1)
-        if abs(var - np.mean(t)) > TINY:
+        if abs(var - xp.mean(t)) > TINY:
             raise ValueError('Lack of convergence in obrientransform.')
 
         arrays.append(t)
@@ -2849,8 +2850,8 @@ def obrientransform(*samples):
     if sLast:
         for arr in arrays[:-1]:
             if sLast != arr.shape:
-                return np.array(arrays, dtype=object)
-    return np.array(arrays)
+                return xp.array(arrays, dtype=object)
+    return xp.array(arrays)
 
 
 @_axis_nan_policy_factory(
