@@ -6773,7 +6773,7 @@ def test_obrientransform(xp):
     data = xp_test.concat([xp.asarray([values[i] for _ in range (rep)])
                            for i, rep in enumerate(reps)])
     transformed_values = xp.asarray([3.1828, 0.5591, 0.0344,
-                                   1.6086, 5.2817, 11.0538])
+                                     1.6086, 5.2817, 11.0538])
     expected = xp_test.concat([xp.asarray([transformed_values[i] for _ in range (rep)])
                                for i, rep in enumerate(reps)])
     result = stats.obrientransform(data)
