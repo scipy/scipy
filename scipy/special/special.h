@@ -76,33 +76,33 @@ void assoc_legendre_p_all(NormPolicy norm, T z, long long int branch_cut, Output
 }
 
 template <typename T>
-T sph_legendre_p(long long int n, long long int m, T phi) {
-    return special::sph_legendre_p(n, m, phi);
+T sph_legendre_p(long long int n, long long int m, T theta) {
+    return special::sph_legendre_p(n, m, theta);
 }
 
 template <typename T>
-void sph_legendre_p(long long int n, long long int m, T phi, T &res, T &res_jac) {
-    special::sph_legendre_p(n, m, phi, std::tie(res, res_jac));
+void sph_legendre_p(long long int n, long long int m, T theta, T &res, T &res_jac) {
+    special::sph_legendre_p(n, m, theta, std::tie(res, res_jac));
 }
 
 template <typename T>
-void sph_legendre_p(long long int n, long long int m, T phi, T &res, T &res_jac, T &res_hess) {
-    special::sph_legendre_p(n, m, phi, std::tie(res, res_jac, res_hess));
+void sph_legendre_p(long long int n, long long int m, T theta, T &res, T &res_jac, T &res_hess) {
+    special::sph_legendre_p(n, m, theta, std::tie(res, res_jac, res_hess));
 }
 
 template <typename T, typename OutputMat1>
-void sph_legendre_p_all(T phi, OutputMat1 res) {
-    special::sph_legendre_p_all(phi, std::tie(res));
+void sph_legendre_p_all(T theta, OutputMat1 res) {
+    special::sph_legendre_p_all(theta, std::tie(res));
 }
 
 template <typename T, typename OutputMat1, typename OutputMat2>
-void sph_legendre_p_all(T phi, OutputMat1 res, OutputMat2 res_jac) {
-    special::sph_legendre_p_all(phi, std::tie(res, res_jac));
+void sph_legendre_p_all(T theta, OutputMat1 res, OutputMat2 res_jac) {
+    special::sph_legendre_p_all(theta, std::tie(res, res_jac));
 }
 
 template <typename T, typename OutputMat1, typename OutputMat2, typename OutputMat3>
-void sph_legendre_p_all(T phi, OutputMat1 res, OutputMat2 res_jac, OutputMat3 res_hess) {
-    special::sph_legendre_p_all(phi, std::tie(res, res_jac, res_hess));
+void sph_legendre_p_all(T theta, OutputMat1 res, OutputMat2 res_jac, OutputMat3 res_hess) {
+    special::sph_legendre_p_all(theta, std::tie(res, res_jac, res_hess));
 }
 
 template <typename T>

@@ -128,7 +128,7 @@ class MultiUFunc:
 
 
 sph_legendre_p = MultiUFunc(sph_legendre_p,
-    r"""sph_legendre_p(n, m, phi, *, diff_n=0)
+    r"""sph_legendre_p(n, m, theta, *, diff_n=0)
 
     Spherical Legendre polynomial of the first kind.
 
@@ -138,7 +138,7 @@ sph_legendre_p = MultiUFunc(sph_legendre_p,
         Degree of the spherical Legendre polynomial. Must have ``n >= 0``.
     m : ArrayLike[int]
         Order of the spherical Legendre polynomial.
-    phi : ArrayLike[float]
+    theta : ArrayLike[float]
         Input value.
     diff_n : Optional[int]
         A non-negative integer. Compute and return all derivatives up
@@ -159,7 +159,7 @@ sph_legendre_p = MultiUFunc(sph_legendre_p,
         \sqrt{\frac{(2 n + 1) (n - m)!}{4 \pi (n + m)!}}
 
     It is the same as the spherical harmonic :math:`Y_{n}^{m}(\theta, \phi)`
-    with :math:`\theta = 0`.
+    with :math:`\phi = 0`.
     """, diff_n=0
 )
 
@@ -176,7 +176,7 @@ def _(diff_n):
 
 
 sph_legendre_p_all = MultiUFunc(sph_legendre_p_all,
-    """sph_legendre_p_all(n, m, phi, *, diff_n=0)
+    """sph_legendre_p_all(n, m, theta, *, diff_n=0)
 
     All spherical Legendre polynomials of the first kind up to the
     specified degree ``n`` and order ``m``.
@@ -209,11 +209,11 @@ def _(diff_n):
 
 
 @sph_legendre_p_all._override_resolve_out_shapes
-def _(n, m, z_shape, nout):
+def _(n, m, theta_shape, nout):
     if not isinstance(n, numbers.Integral) or (n < 0):
         raise ValueError("n must be a non-negative integer.")
 
-    return nout * ((n + 1, 2 * abs(m) + 1) + z_shape,)
+    return nout * ((n + 1, 2 * abs(m) + 1) + theta_shape,)
 
 
 assoc_legendre_p = MultiUFunc(assoc_legendre_p,
@@ -418,7 +418,7 @@ sph_harm_y = MultiUFunc(sph_harm_y,
     .. math::
 
         Y_n^m(\theta,\phi) = \sqrt{\frac{2 n + 1}{4 \pi} \frac{(n - m)!}{(n + m)!}}
-            P_n^m(\cos(\phi)) e^{i m \theta}
+            P_n^m(\cos(\theta)) e^{i m \phi}
 
     where :math:`P_n^m` are the (unnormalized) associated Legendre polynomials.
 
@@ -431,9 +431,9 @@ sph_harm_y = MultiUFunc(sph_harm_y,
     m : ArrayLike[int]
         Order of the harmonic.
     theta : ArrayLike[float]
-        Azimuthal (longitudinal) coordinate; must be in ``[0, 2*pi]``.
-    phi : ArrayLike[float]
         Polar (colatitudinal) coordinate; must be in ``[0, pi]``.
+    phi : ArrayLike[float]
+        Azimuthal (longitudinal) coordinate; must be in ``[0, 2*pi]``.
     diff_n : Optional[int]
         A non-negative integer. Compute and return all derivatives up
         to order ``diff_n``. Default is 0.
@@ -447,9 +447,9 @@ sph_harm_y = MultiUFunc(sph_harm_y,
     -----
     There are different conventions for the meanings of the input
     arguments ``theta`` and ``phi``. In SciPy ``theta`` is the
-    azimuthal angle and ``phi`` is the polar angle. It is common to
-    see the opposite convention, that is, ``theta`` as the polar angle
-    and ``phi`` as the azimuthal angle.
+    polar angle and ``phi`` is the azimuthal angle. It is common to
+    see the opposite convention, that is, ``theta`` as the azimuthal angle
+    and ``phi`` as the polar angle.
 
     Note that SciPy's spherical harmonics include the Condon-Shortley
     phase [2]_ because it is part of `sph_legendre_p`.
@@ -461,11 +461,11 @@ sph_harm_y = MultiUFunc(sph_harm_y,
 
         Y_0^0(\theta, \phi) &= \frac{1}{2} \sqrt{\frac{1}{\pi}} \\
         Y_1^{-1}(\theta, \phi) &= \frac{1}{2} \sqrt{\frac{3}{2\pi}}
-                                    e^{-i\theta} \sin(\phi) \\
+                                    e^{-i\phi} \sin(\theta) \\
         Y_1^0(\theta, \phi) &= \frac{1}{2} \sqrt{\frac{3}{\pi}}
-                                 \cos(\phi) \\
+                                 \cos(\theta) \\
         Y_1^1(\theta, \phi) &= -\frac{1}{2} \sqrt{\frac{3}{2\pi}}
-                                 e^{i\theta} \sin(\phi).
+                                 e^{i\phi} \sin(\theta).
 
     References
     ----------
