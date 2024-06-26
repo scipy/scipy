@@ -2822,7 +2822,8 @@ def obrientransform(*samples):
 
     """
     xp = array_namespace(*samples)
-    TINY = xp.sqrt(xp.finfo(xp.asarray(1.).dtype).eps)
+    default_float = xp.asarray(1.).dtype
+    TINY = math.sqrt(xp.finfo(default_float).eps)
 
     # `arrays` will hold the transformed arguments.
     arrays = []
@@ -2830,7 +2831,9 @@ def obrientransform(*samples):
 
     for sample in samples:
         a = xp.asarray(sample)
-        n = len(a)
+        if xp.isdtype(a.dtype, 'integral'):
+            a = xp.asarray(a, dtype=default_float)
+        n = xp_size(a)
         mu = xp.mean(a)
         sq = (a - mu)**2
         sumsq = xp.sum(sq)
@@ -2850,8 +2853,11 @@ def obrientransform(*samples):
     if sLast:
         for arr in arrays[:-1]:
             if sLast != arr.shape:
-                return xp.array(arrays, dtype=object)
-    return xp.array(arrays)
+                if is_numpy(xp):
+                    return xp.array(arrays, dtype=object)
+                else:
+                    return arrays
+    return xp.stack(arrays)
 
 
 @_axis_nan_policy_factory(
