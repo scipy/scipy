@@ -117,7 +117,7 @@ std::complex<T> sph_harm(long long int m, long long int n, T theta, T phi) {
         return std::numeric_limits<T>::quiet_NaN();
     }
 
-    return special::sph_harm_y(n, m, theta, phi);
+    return special::sph_harm_y(n, m, phi, theta);
 }
 
 template <typename T>
