@@ -2822,16 +2822,16 @@ def obrientransform(*samples):
 
     """
     xp = array_namespace(*samples)
-    default_float = xp.asarray(1.).dtype
-    TINY = math.sqrt(xp.finfo(default_float).eps)
 
     # `arrays` will hold the transformed arguments.
     arrays = []
     sLast = None
+    dtype = None
 
     for sample in samples:
         a = xp.asarray(sample)
         if xp.isdtype(a.dtype, 'integral'):
+            default_float = xp.asarray(1.).dtype
             a = xp.asarray(a, dtype=default_float)
         n = xp_size(a)
         mu = xp.mean(a)
@@ -2844,7 +2844,12 @@ def obrientransform(*samples):
         # Check that the mean of the transformed data is equal to the
         # original variance.
         var = sumsq / (n - 1)
-        if abs(var - xp.mean(t)) > TINY:
+        difference = var - xp.mean(t)
+        # avoid recomputing `TINY` if not required
+        if dtype is None or xp.isdtype(difference.dtype, dtype):
+            dtype = difference.dtype
+            TINY = math.sqrt(xp.finfo(dtype).eps)
+        if abs(difference) > TINY:
             raise ValueError('Lack of convergence in obrientransform.')
 
         arrays.append(t)
