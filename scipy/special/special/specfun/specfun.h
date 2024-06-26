@@ -5597,7 +5597,7 @@ void sphj(T x, int n, int *nm, T *sj, T *dj) {
         }
         sj[0] = 1.0;
         if (n > 0) {
-            dj[0] = 1.0 / 3.0;
+            dj[1] = 1.0 / 3.0;
         }
         return;
     }
@@ -5621,7 +5621,7 @@ void sphj(T x, int n, int *nm, T *sj, T *dj) {
         f1 = 1e-100;
         for (k = m; k >= 0; k--) {
             f = (2.0*k + 3.0)*f1/x - f0;
-            if (k <= *nm) { sj[k - 1] = f; }
+            if (k <= *nm) { sj[k] = f; }
             f0 = f1;
             f1 = f;
         }
@@ -5631,7 +5631,7 @@ void sphj(T x, int n, int *nm, T *sj, T *dj) {
         }
     }
     for (k = 1; k <= *nm; k++) {
-        dj[k] = sj[k - 1] - (k + 1.0)*sj[k - 1]/x;
+        dj[k] = sj[k - 1] - (k + 1.0)*sj[k]/x;
     }
     return;
 }
