@@ -2758,27 +2758,32 @@ class TestSEM:
 
 class TestZmapZscore:
 
+    @array_api_compatible
     @pytest.mark.parametrize(
         'x, y',
         [([1, 2, 3, 4], [1, 2, 3, 4]),
          ([1, 2, 3], [0, 1, 2, 3, 4])]
     )
-    def test_zmap(self, x, y):
-        z = stats.zmap(x, y)
+    def test_zmap(self, x, y, xp):
         # For these simple cases, calculate the expected result directly
         # by using the formula for the z-score.
-        expected = (x - np.mean(y))/np.std(y)
-        assert_allclose(z, expected, rtol=1e-12)
+        expected = (x - np.mean(y)) / np.std(y)
 
-    def test_zmap_axis(self):
+        x, y = xp.asarray(x), xp.asarray(y)
+        z = stats.zmap(x, y)
+        default_float = xp.asarray(1.).dtype
+        xp_assert_close(z, xp.asarray(expected, dtype=default_float))
+
+    @array_api_compatible
+    def test_zmap_axis(self, xp):
         # Test use of 'axis' keyword in zmap.
         x = np.array([[0.0, 0.0, 1.0, 1.0],
                       [1.0, 1.0, 1.0, 2.0],
                       [2.0, 0.0, 2.0, 0.0]])
 
-        t1 = 1.0/np.sqrt(2.0/3)
-        t2 = np.sqrt(3.)/3
-        t3 = np.sqrt(2.)
+        t1 = 1.0/(2.0/3)**0.5
+        t2 = 3.**0.5/3
+        t3 = 2.**0.5
 
         z0 = stats.zmap(x, x, axis=0)
         z1 = stats.zmap(x, x, axis=1)
@@ -2787,53 +2792,57 @@ class TestZmapZscore:
                        [0.0, t3, -t3/2, t1],
                        [t1, -t3/2, t3, -t1]]
         z1_expected = [[-1.0, -1.0, 1.0, 1.0],
-                       [-t2, -t2, -t2, np.sqrt(3.)],
+                       [-t2, -t2, -t2, 3.**0.5],
                        [1.0, -1.0, 1.0, -1.0]]
 
-        assert_array_almost_equal(z0, z0_expected)
-        assert_array_almost_equal(z1, z1_expected)
+        xp_assert_close(z0, z0_expected)
+        xp_assert_close(z1, z1_expected)
 
-    def test_zmap_ddof(self):
+    @array_api_compatible
+    # skip jax - no item assignment
+    def test_zmap_ddof(self, xp):
         # Test use of 'ddof' keyword in zmap.
-        x = np.array([[0.0, 0.0, 1.0, 1.0],
-                      [0.0, 1.0, 2.0, 3.0]])
+        x = xp.asarray([[0.0, 0.0, 1.0, 1.0],
+                        [0.0, 1.0, 2.0, 3.0]])
 
         z = stats.zmap(x, x, axis=1, ddof=1)
 
-        z0_expected = np.array([-0.5, -0.5, 0.5, 0.5])/(1.0/np.sqrt(3))
-        z1_expected = np.array([-1.5, -0.5, 0.5, 1.5])/(np.sqrt(5./3))
-        assert_array_almost_equal(z[0], z0_expected)
-        assert_array_almost_equal(z[1], z1_expected)
+        z0_expected = xp.asarray([-0.5, -0.5, 0.5, 0.5])/(1.0/3**0.5)
+        z1_expected = xp.asarray([-1.5, -0.5, 0.5, 1.5])/(5./3)**0.5
+        xp_assert_close(z[0, :], z0_expected)
+        xp_assert_close(z[1, :], z1_expected)
 
+    @array_api_compatible
     @pytest.mark.parametrize('ddof', [0, 2])
-    def test_zmap_nan_policy_omit(self, ddof):
+    def test_zmap_nan_policy_omit(self, ddof, xp):
         # nans in `scores` are propagated, regardless of `nan_policy`.
         # `nan_policy` only affects how nans in `compare` are handled.
-        scores = np.array([-3, -1, 2, np.nan])
-        compare = np.array([-8, -3, 2, 7, 12, np.nan])
+        scores = xp.asarray([-3, -1, 2, np.nan])
+        compare = xp.asarray([-8, -3, 2, 7, 12, np.nan])
         z = stats.zmap(scores, compare, ddof=ddof, nan_policy='omit')
-        assert_allclose(z, stats.zmap(scores, compare[~np.isnan(compare)],
-                                      ddof=ddof))
+        ref = stats.zmap(scores, compare[~xp.isnan(compare)], ddof=ddof)
+        xp_assert_close(z, ref)
 
+    @array_api_compatible
     @pytest.mark.parametrize('ddof', [0, 2])
-    def test_zmap_nan_policy_omit_with_axis(self, ddof):
-        scores = np.arange(-5.0, 9.0).reshape(2, -1)
-        compare = np.linspace(-8, 6, 24).reshape(2, -1)
-        compare[0, 4] = np.nan
-        compare[0, 6] = np.nan
-        compare[1, 1] = np.nan
+    def test_zmap_nan_policy_omit_with_axis(self, ddof, xp):
+        scores = xp.reshape(xp.arange(-5.0, 9.0), (2, -1))
+        compare = xp.reshape(xp.linspace(-8, 6, 24), (2, -1))
+        compare[0, 4] = xp.nan
+        compare[0, 6] = xp.nan
+        compare[1, 1] = xp.nan
         z = stats.zmap(scores, compare, nan_policy='omit', axis=1, ddof=ddof)
-        expected = np.array([stats.zmap(scores[0],
-                                        compare[0][~np.isnan(compare[0])],
-                                        ddof=ddof),
-                             stats.zmap(scores[1],
-                                        compare[1][~np.isnan(compare[1])],
-                                        ddof=ddof)])
-        assert_allclose(z, expected, rtol=1e-14)
+        res0 = stats.zmap(scores[0, :], compare[0, :][~xp.isnan(compare[0, :])],
+                          ddof=ddof)
+        res1 = stats.zmap(scores[1, :], compare[1, :][~xp.isnan(compare[1, :])],
+                          ddof=ddof)
+        expected = xp.stack((res0, res1))
+        xp_assert_close(z, expected)
 
-    def test_zmap_nan_policy_raise(self):
-        scores = np.array([1, 2, 3])
-        compare = np.array([-8, -3, 2, 7, 12, np.nan])
+    @array_api_compatible
+    def test_zmap_nan_policy_raise(self, xp):
+        scores = xp.asarray([1, 2, 3])
+        compare = xp.asarray([-8, -3, 2, 7, 12, xp.nan])
         with pytest.raises(ValueError, match='input contains nan'):
             stats.zmap(scores, compare, nan_policy='raise')
 

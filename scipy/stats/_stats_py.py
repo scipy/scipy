@@ -42,6 +42,7 @@ from scipy.optimize import milp, LinearConstraint
 from scipy._lib._util import (check_random_state, _get_nan,
                               _rename_parameter, _contains_nan,
                               AxisError, _lazywhere)
+from scipy._lib._array_api import SCIPY_ARRAY_API
 
 import scipy.special as special
 # Import unused here but needs to stay until end of deprecation periode
@@ -3191,6 +3192,23 @@ def zmap(scores, compare, axis=0, ddof=0, nan_policy='propagate'):
     array([-1.06066017,  0.        ,  0.35355339,  0.70710678])
 
     """
+    # The docstring explicitly states that it preserves subclasses.
+    # Let's table deprecating that and just get the array API version
+    # working.
+    implementation = _zmap_array_api if SCIPY_ARRAY_API else _zmap_not_array_api
+    return implementation(scores, compare, axis, ddof, nan_policy)
+
+
+def _zmap_array_api(scores, compare, axis, ddof, nan_policy):
+    xp = array_namespace(scores, compare)
+    scores, compare = xp.asarray(scores), xp.asarray(compare)
+    mn = _xp_mean(compare, axis=axis, keepdims=True, nan_policy=nan_policy)
+    std = _xp_var(compare, axis=axis, correction=ddof,
+                  keepdims=True, nan_policy=nan_policy)**0.5
+    return (scores - mn) / std
+
+
+def _zmap_not_array_api(scores, compare, axis, ddof, nan_policy):
     a = np.asanyarray(compare)
 
     if a.size == 0:
