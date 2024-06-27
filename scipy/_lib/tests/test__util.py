@@ -17,7 +17,8 @@ from scipy._lib._array_api import (xp_assert_equal, xp_assert_close, is_numpy,
 from scipy._lib._util import (_aligned_zeros, check_random_state, MapWrapper,
                               getfullargspec_no_self, FullArgSpec,
                               rng_integers, _validate_int, _rename_parameter,
-                              _contains_nan, _rng_html_rewrite, _lazywhere)
+                              _contains_nan, _rng_html_rewrite, _lazywhere,
+                              _prepare_rng)
 
 skip_xp_backends = pytest.mark.skip_xp_backends
 
@@ -283,6 +284,37 @@ class TestRenameParameter:
         with pytest.raises(TypeError, match=message), \
                 pytest.warns(DeprecationWarning, match=dep_msg):
             self.old_keyword_deprecated(new=10, old=10)
+
+
+@_prepare_rng("random_state")
+def func_with_prepare_rng(rng=None):
+    return rng
+
+
+class TestPrepareRNG:
+    @pytest.mark.parametrize("rs,rng", [(None, None), (1, 2)])
+    def test_both_args(self, rs, rng):
+        with pytest.raises(TypeError):
+            func_with_prepare_rng(random_state=rs, rng=rng)
+
+    @pytest.mark.parametrize("rs", [1, None, np.random.RandomState()])
+    def test_random_state(self, rs):
+        rng = func_with_prepare_rng(random_state=rs)
+        assert isinstance(rng, np.random.RandomState)
+
+    @pytest.mark.parametrize("rng", [1, None, np.random.SeedSequence(3)])
+    def test_rng(self, rng):
+        rng = func_with_prepare_rng(rng=rng)
+        assert isinstance(rng, np.random.Generator)
+
+    def test_futurewarning(self):
+        # if NumPy was (ever) seeded, we give a FutureWarning if nothing
+        # is passed:
+        # NOTE: Since tests usually seed somewhere, we don't test the
+        #       no warning path.
+        np.random.seed(1234)
+        with pytest.warns(FutureWarning, match=".*global rng was seeded"):
+            func_with_prepare_rng()
 
 
 class TestContainsNaNTest:

@@ -1426,7 +1426,8 @@ class TestRatioUniforms:
         gen1 = RatioUniforms(f, umax=umax, vmin=-v, vmax=v, random_state=1234)
         r1 = gen1.rvs(10)
         np.random.seed(1234)
-        gen2 = RatioUniforms(f, umax=umax, vmin=-v, vmax=v)
+        with pytest.warns(FutureWarning, match=".*The NumPy global rng"):
+            gen2 = RatioUniforms(f, umax=umax, vmin=-v, vmax=v)
         r2 = gen2.rvs(10)
         assert_equal(r1, r2)
 
@@ -1434,11 +1435,11 @@ class TestRatioUniforms:
         f = stats.norm.pdf
         # need vmin < vmax
         with assert_raises(ValueError, match="vmin must be smaller than vmax"):
-            RatioUniforms(pdf=f, umax=1, vmin=3, vmax=1)
+            RatioUniforms(pdf=f, umax=1, vmin=3, vmax=1, rng=123)
         with assert_raises(ValueError, match="vmin must be smaller than vmax"):
-            RatioUniforms(pdf=f, umax=1, vmin=1, vmax=1)
+            RatioUniforms(pdf=f, umax=1, vmin=1, vmax=1, rng=123)
         # need umax > 0
         with assert_raises(ValueError, match="umax must be positive"):
-            RatioUniforms(pdf=f, umax=-1, vmin=1, vmax=3)
+            RatioUniforms(pdf=f, umax=-1, vmin=1, vmax=3, rng=None)
         with assert_raises(ValueError, match="umax must be positive"):
-            RatioUniforms(pdf=f, umax=0, vmin=1, vmax=3)
+            RatioUniforms(pdf=f, umax=0, vmin=1, vmax=3, rng=None)
