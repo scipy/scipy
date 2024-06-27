@@ -254,6 +254,7 @@ py3.install_sources([
   '_root_scalar.py',
   '_shgo.py',
   '_slsqp_py.py',
+  '_spectral.py',
   '_tnc.py',
   '_trustregion.py',
   '_trustregion_dogleg.py',
