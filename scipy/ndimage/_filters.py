@@ -82,6 +82,45 @@ def _complex_via_real_components(func, input, weights, output, cval, **kwargs):
     return output
 
 
+def _expand_origin(ndim_image, axes, origin):
+    num_axes = len(axes)
+    origins = _ni_support._normalize_sequence(origin, num_axes)
+    if num_axes < ndim_image:
+        # set origin = 0 for any axes not being filtered
+        origins_temp = [0,] * ndim_image
+        for o, ax in zip(origins, axes):
+            origins_temp[ax] = o
+        origins = origins_temp
+    return origins
+
+
+def _expand_footprint(ndim_image, axes, footprint,
+                      footprint_name="footprint"):
+    num_axes = len(axes)
+    if num_axes < ndim_image:
+        if footprint.ndim != num_axes:
+            raise RuntimeError(f"{footprint_name}.ndim ({footprint.ndim}) "
+                               f"must match len(axes) ({num_axes})")
+
+        footprint = np.expand_dims(
+            footprint,
+            tuple(ax for ax in range(ndim_image) if ax not in axes)
+        )
+    return footprint
+
+
+def _expand_mode(ndim_image, axes, mode):
+    num_axes = len(axes)
+    if not isinstance(mode, str) and isinstance(mode, Iterable):
+        # set mode = 'constant' for any axes not being filtered
+        modes = _ni_support._normalize_sequence(mode, num_axes)
+        modes_temp = ['constant'] * ndim_image
+        for m, ax in zip(modes, axes):
+            modes_temp[ax] = m
+        mode = modes_temp
+    return mode
+
+
 @_ni_docstrings.docfiller
 def correlate1d(input, weights, axis=-1, output=None, mode="reflect",
                 cval=0.0, origin=0):
@@ -749,7 +788,7 @@ def gaussian_gradient_magnitude(input, sigma, output=None,
 
 
 def _correlate_or_convolve(input, weights, output, mode, cval, origin,
-                           convolution):
+                           convolution, axes):
     input = np.asarray(input)
     weights = np.asarray(weights)
     complex_input = input.dtype.kind == 'c'
@@ -759,18 +798,24 @@ def _correlate_or_convolve(input, weights, output, mode, cval, origin,
             # As for np.correlate, conjugate weights rather than input.
             weights = weights.conj()
         kwargs = dict(
-            mode=mode, origin=origin, convolution=convolution
+            mode=mode, origin=origin, convolution=convolution, axes=axes
         )
         output = _ni_support._get_output(output, input, complex_output=True)
 
         return _complex_via_real_components(_correlate_or_convolve, input,
                                             weights, output, cval, **kwargs)
 
-    origins = _ni_support._normalize_sequence(origin, input.ndim)
+    axes = _ni_support._check_axes(axes, input.ndim)
     weights = np.asarray(weights, dtype=np.float64)
+
+    # expand weights and origins if num_axes < input.ndim
+    weights = _expand_footprint(input.ndim, axes, weights, "weights")
+    origins = _expand_origin(input.ndim, axes, origin)
+
     wshape = [ii for ii in weights.shape if ii > 0]
     if len(wshape) != input.ndim:
-        raise RuntimeError('filter weights array has incorrect shape.')
+        raise RuntimeError(f"weights.ndim ({len(wshape)}) must match "
+                           f"len(axes) ({len(axes)})")
     if convolution:
         weights = weights[tuple([slice(None, None, -1)] * weights.ndim)]
         for ii in range(len(origins)):
@@ -803,7 +848,7 @@ def _correlate_or_convolve(input, weights, output, mode, cval, origin,
 
 @_ni_docstrings.docfiller
 def correlate(input, weights, output=None, mode='reflect', cval=0.0,
-              origin=0):
+              origin=0, *, axes=None):
     """
     Multidimensional correlation.
 
@@ -818,6 +863,12 @@ def correlate(input, weights, output=None, mode='reflect', cval=0.0,
     %(mode_reflect)s
     %(cval)s
     %(origin_multiple)s
+    axes : tuple of int or None, optional
+        If None, `input` is filtered along all axes. Otherwise,
+        `input` is filtered along the specified axes. When `axes` is
+        specified, any tuples used for `mode` or `origin` must match the length
+        of `axes`. The ith entry in any of these tuples corresponds to the ith
+        entry in `axes`.
 
     Returns
     -------
@@ -862,12 +913,12 @@ def correlate(input, weights, output=None, mode='reflect', cval=0.0,
 
     """
     return _correlate_or_convolve(input, weights, output, mode, cval,
-                                  origin, False)
+                                  origin, False, axes)
 
 
 @_ni_docstrings.docfiller
 def convolve(input, weights, output=None, mode='reflect', cval=0.0,
-             origin=0):
+             origin=0, *, axes=None):
     """
     Multidimensional convolution.
 
@@ -890,6 +941,12 @@ def convolve(input, weights, output=None, mode='reflect', cval=0.0,
         to the left. By passing a sequence of origins with length equal to
         the number of dimensions of the input array, different shifts can
         be specified along each axis.
+    axes : tuple of int or None, optional
+        If None, `input` is filtered along all axes. Otherwise,
+        `input` is filtered along the specified axes. When `axes` is
+        specified, any tuples used for `mode` or `origin` must match the length
+        of `axes`. The ith entry in any of these tuples corresponds to the ith
+        entry in `axes`.
 
     Returns
     -------
@@ -975,7 +1032,7 @@ def convolve(input, weights, output=None, mode='reflect', cval=0.0,
 
     """
     return _correlate_or_convolve(input, weights, output, mode, cval,
-                                  origin, True)
+                                  origin, True, axes)
 
 
 @_ni_docstrings.docfiller
@@ -1268,23 +1325,14 @@ def _min_or_max_filter(input, size, footprint, structure, output, mode,
         else:
             output[...] = input[...]
     else:
-        origins = _ni_support._normalize_sequence(origin, num_axes)
-        if num_axes < input.ndim:
-            if footprint.ndim != num_axes:
-                raise RuntimeError("footprint array has incorrect shape")
-            footprint = np.expand_dims(
-                footprint,
-                tuple(ax for ax in range(input.ndim) if ax not in axes)
-            )
-            # set origin = 0 for any axes not being filtered
-            origins_temp = [0,] * input.ndim
-            for o, ax in zip(origins, axes):
-                origins_temp[ax] = o
-            origins = origins_temp
+        # expand origins and footprint if num_axes < input.ndim
+        footprint = _expand_footprint(input.ndim, axes, footprint)
+        origins = _expand_origin(input.ndim, axes, origin)
 
         fshape = [ii for ii in footprint.shape if ii > 0]
         if len(fshape) != input.ndim:
-            raise RuntimeError('footprint array has incorrect shape.')
+            raise RuntimeError(f"footprint.ndim ({footprint.ndim}) must match "
+                               f"len(axes) ({len(axes)})")
         for origin, lenf in zip(origins, fshape):
             if (lenf // 2 + origin < 0) or (lenf // 2 + origin >= lenf):
                 raise ValueError("invalid origin")
@@ -1421,7 +1469,6 @@ def _rank_filter(input, rank, size=None, footprint=None, output=None,
         raise TypeError('Complex type not supported')
     axes = _ni_support._check_axes(axes, input.ndim)
     num_axes = len(axes)
-    origins = _ni_support._normalize_sequence(origin, num_axes)
     if footprint is None:
         if size is None:
             raise RuntimeError("no footprint or filter size provided")
@@ -1429,31 +1476,15 @@ def _rank_filter(input, rank, size=None, footprint=None, output=None,
         footprint = np.ones(sizes, dtype=bool)
     else:
         footprint = np.asarray(footprint, dtype=bool)
-    if num_axes < input.ndim:
-        # set origin = 0 for any axes not being filtered
-        origins_temp = [0,] * input.ndim
-        for o, ax in zip(origins, axes):
-            origins_temp[ax] = o
-        origins = origins_temp
+    # expand origins, footprint and modes if num_axes < input.ndim
+    footprint = _expand_footprint(input.ndim, axes, footprint)
+    origins = _expand_origin(input.ndim, axes, origin)
+    mode = _expand_mode(input.ndim, axes, mode)
 
-        if not isinstance(mode, str) and isinstance(mode, Iterable):
-            # set mode = 'constant' for any axes not being filtered
-            modes = _ni_support._normalize_sequence(mode, num_axes)
-            modes_temp = ['constant'] * input.ndim
-            for m, ax in zip(modes, axes):
-                modes_temp[ax] = m
-            mode = modes_temp
-
-        # insert singleton dimension along any non-filtered axes
-        if footprint.ndim != num_axes:
-            raise RuntimeError("footprint array has incorrect shape")
-        footprint = np.expand_dims(
-            footprint,
-            tuple(ax for ax in range(input.ndim) if ax not in axes)
-        )
     fshape = [ii for ii in footprint.shape if ii > 0]
     if len(fshape) != input.ndim:
-        raise RuntimeError('footprint array has incorrect shape.')
+        raise RuntimeError(f"footprint.ndim ({footprint.ndim}) must match "
+                           f"len(axes) ({len(axes)})")
     for origin, lenf in zip(origins, fshape):
         if (lenf // 2 + origin < 0) or (lenf // 2 + origin >= lenf):
             raise ValueError('invalid origin')
@@ -1520,7 +1551,10 @@ def rank_filter(input, rank, size=None, footprint=None, output=None,
     %(origin_multiple)s
     axes : tuple of int or None, optional
         If None, `input` is filtered along all axes. Otherwise,
-        `input` is filtered along the specified axes.
+        `input` is filtered along the specified axes. When `axes` is
+        specified, any tuples used for `size`, `origin`, and/or `mode`
+        must match the length of `axes`. The ith entry in any of these tuples
+        corresponds to the ith entry in `axes`.
 
     Returns
     -------
@@ -1562,7 +1596,10 @@ def median_filter(input, size=None, footprint=None, output=None,
     %(origin_multiple)s
     axes : tuple of int or None, optional
         If None, `input` is filtered along all axes. Otherwise,
-        `input` is filtered along the specified axes.
+        `input` is filtered along the specified axes. When `axes` is
+        specified, any tuples used for `size`, `origin`, and/or `mode`
+        must match the length of `axes`. The ith entry in any of these tuples
+        corresponds to the ith entry in `axes`.
 
     Returns
     -------
@@ -1616,7 +1653,10 @@ def percentile_filter(input, percentile, size=None, footprint=None,
     %(origin_multiple)s
     axes : tuple of int or None, optional
         If None, `input` is filtered along all axes. Otherwise,
-        `input` is filtered along the specified axes.
+        `input` is filtered along the specified axes. When `axes` is
+        specified, any tuples used for `size`, `origin`, and/or `mode`
+        must match the length of `axes`. The ith entry in any of these tuples
+        corresponds to the ith entry in `axes`.
 
     Returns
     -------
