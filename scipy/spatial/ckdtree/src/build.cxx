@@ -12,15 +12,16 @@
 #include <typeinfo>
 #include <stdexcept>
 #include <ios>
+#include <limits>
 
 #define tree_buffer_root(buf) (&(buf)[0][0])
 
 static ckdtree_intp_t
 build(ckdtree *self, ckdtree_intp_t start_idx, intptr_t end_idx,
       double *maxes, double *mins,
-      const int _median, const int _compact)
+      const int _median, const int _compact, 
+      std::vector<bool>& taboo, intptr_t taboo_depth)
 {
-
     const ckdtree_intp_t m = self->m;
     const double *data = self->raw_data;
     ckdtree_intp_t *indices = (intptr_t *)(self->raw_indices);
@@ -41,6 +42,12 @@ build(ckdtree *self, ckdtree_intp_t start_idx, intptr_t end_idx,
     n->end_idx = end_idx;
     n->children = end_idx - start_idx;
 
+    if (taboo_depth == m) {
+       // all dimensions are tabooed, return leafnode
+       n->split_dim = -1;
+       return node_index;
+    }
+      
     if (end_idx-start_idx <= self->leafsize) {
         /* below brute force limit, return leafnode */
         n->split_dim = -1;
@@ -74,6 +81,7 @@ build(ckdtree *self, ckdtree_intp_t start_idx, intptr_t end_idx,
         d = 0;
         size = 0;
         for (i=0; i<m; ++i) {
+            if (taboo[i]) continue; // skip tabooed dimension
             if (maxes[i] - mins[i] > size) {
                 d = i;
                 size = maxes[i] - mins[i];
@@ -112,53 +120,50 @@ build(ckdtree *self, ckdtree_intp_t start_idx, intptr_t end_idx,
             auto mid = node_indices + n_points / 2;
             std::nth_element(
                 node_indices, mid, node_indices + n_points, index_compare);
-
             split = data[*mid * m + d];
-            p = partition_pivot(node_indices, mid, split);
+            p = partition_pivot(indices + start_idx, indices + end_idx, split);
         }
         else {
             /* split with the sliding midpoint rule */
             split = (maxval + minval) / 2;
-
-            p = partition_pivot(indices + start_idx, indices + end_idx, split);
+            p = partition_pivot(indices + start_idx, indices + end_idx, split);            
         }
-
-        /* slide midpoint if necessary */
+        
+        // slide midpoint/pivot if necessary
+        // we might even need to do this for the median pivot to avoid infinite
+        // recursion          
         if (p == start_idx) {
             /* no points less than split */
             auto min_idx = *std::min_element(
-                indices + start_idx, indices + end_idx, index_compare);
-            split = std::nextafter(data[min_idx * m + d], HUGE_VAL);
+                    indices + start_idx, indices + end_idx, index_compare);
+            split = std::nextafter(data[min_idx * m + d], std::numeric_limits<double>::max() );
             p = partition_pivot(indices + start_idx, indices + end_idx, split);
-        }
-        else if (p == end_idx) {
+         }
+         else if (p == end_idx) {
             /* no points greater than split */
             auto max_idx = *std::max_element(
-                indices + start_idx, indices + end_idx, index_compare);
-            split = data[max_idx * m + d];
+                    indices + start_idx, indices + end_idx, index_compare);
+            split = std::nextafter(data[max_idx * m + d], std::numeric_limits<double>::lowest() );
             p = partition_pivot(indices + start_idx, indices + end_idx, split);
-        }
-
-        if (CKDTREE_UNLIKELY(p == start_idx || p == end_idx)) {
-            // All children are equal in this dimension, try again with new bounds
+         }
+          
+         if (CKDTREE_UNLIKELY(p == start_idx || p == end_idx)) {
+            // All children are equal in this dimension, try again with 
+            // this dimension tabooed
             assert(!_compact);
             self->tree_buffer->pop_back();
-            std::vector<double> tmp_bounds(2 * m);
-            double* tmp_mins = &tmp_bounds[0];
-            std::copy_n(mins, m, tmp_mins);
-            double* tmp_maxes = &tmp_bounds[m];
-            std::copy_n(maxes, m, tmp_maxes);
-
-            const auto fixed_val = data[indices[start_idx]*m + d];
-            tmp_mins[d] = fixed_val;
-            tmp_maxes[d] = fixed_val;
-
-            return build(self, start_idx, end_idx, tmp_maxes, tmp_mins, _median, _compact);
+            taboo[d] = true;
+            return build(self, start_idx, end_idx, maxes, mins, _median, _compact, taboo, taboo_depth+1);
         }
-
+          
+        // clear taboo list
+        for (i=0; i<m; ++i) taboo[i] = false; 
+        taboo_depth = 0;
+          
         if (CKDTREE_LIKELY(_compact)) {
-            _less = build(self, start_idx, p, maxes, mins, _median, _compact);
-            _greater = build(self, p, end_idx, maxes, mins, _median, _compact);
+            
+            _less = build(self, start_idx, p, maxes, mins, _median, _compact, taboo, taboo_depth);
+            _greater = build(self, p, end_idx, maxes, mins, _median, _compact, taboo, taboo_depth);
         }
         else
         {
@@ -167,11 +172,11 @@ build(ckdtree *self, ckdtree_intp_t start_idx, intptr_t end_idx,
 
             for (i=0; i<m; ++i) mids[i] = maxes[i];
             mids[d] = split;
-            _less = build(self, start_idx, p, mids, mins, _median, _compact);
+            _less = build(self, start_idx, p, mids, mins, _median, _compact, taboo, taboo_depth);
 
             for (i=0; i<m; ++i) mids[i] = mins[i];
             mids[d] = split;
-            _greater = build(self, p, end_idx, maxes, mids, _median, _compact);
+            _greater = build(self, p, end_idx, maxes, mids, _median, _compact, taboo, taboo_depth);
         }
 
         /* recompute n because std::vector can
@@ -197,7 +202,11 @@ int build_ckdtree(ckdtree *self, ckdtree_intp_t start_idx, intptr_t end_idx,
               double *maxes, double *mins, int _median, int _compact)
 
 {
-    build(self, start_idx, end_idx, maxes, mins, _median, _compact);
+    std::vector<bool> taboo(self->m);
+    for (intptr_t i=0; i<self->m; ++i) taboo[i] = false;
+    intptr_t taboo_depth = 0;
+      
+    build(self, start_idx, end_idx, maxes, mins, _median, _compact, taboo, taboo_depth);
     return 0;
 }
 
