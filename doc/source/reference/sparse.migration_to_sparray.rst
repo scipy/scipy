@@ -3,13 +3,13 @@
 Migration from spmatrix to sparray
 ==================================
 
-This document provides guidance for converting code from sparse matrices
-to sparse arrays in SciPy Sparse.
+This document provides guidance for converting code from sparse *matrices*
+to sparse *arrays* in ``scipy.sparse``.
 
 The change from sparse matrices to sparse arrays mirrors conversion from
 ``np.matrix`` to ``np.array``. Essentially we must move from an all-2D
-matrix multiplication centric ``matrix`` object to a 1D or 2D “array”
-object that supports operand matrix multiplication and elementwise
+matrix-multiplication-centric ``matrix`` object to a 1D or 2D “array”
+object that supports the matrix multiplication operator and elementwise
 computation.
 
 Notation: For this guide we denote the sparse array classes generally as
@@ -27,17 +27,17 @@ Overview and big picture:
 -  the constructor names ``*_matrix``, e.g. ``csr_matrix``, are changed
    to ``*_array``.
 -  spmatrix ``M`` is always 2D (rows x columns) even
-   e.g. ``M.min(axis=0)``. sparray ``A`` can be 1D or 2D. Numpy scalars
-   are used as 0D values where needed.
+   e.g. ``M.min(axis=0)``. sparray ``A`` can be 1D or 2D.
+   Numpy scalars are returned for full (0D) reductions, i.e. ``M.min()``.
 -  Operators change: ``*, @, *=, @=, **``
 
-   -  scalar multiplication uses ``*`` and is not implemented for ``@``.
+   -  scalar multiplication i.e. ``5 * A`` uses ``*`` and ``5 @ A`` is not implemented.
    -  sparrays use ``*`` for elementwise multiplication and ``@`` for
-      matrix multiplication while spmatrices can use both operators
-      ``*`` and @ for matrix multiplication. Either can use
+      matrix multiplication while spmatrices use either operator
+      ``*`` or ``@`` for matrix multiplication. Either can use
       ``A.multiply(B)`` for elementwise multiplication.
    -  scalar exponents ``A**2`` use elementwise power for sparray and
-      matrix power for spmatrix. To get matrix power for arrays use
+      matrix power for spmatrix. To get matrix power for sparrays use
       ``sp.sparse.linalg.matrix_power(A, n)``
 
 -  Checking the sparse type and format:
@@ -56,8 +56,7 @@ Recommended steps for migration:
       multiplication. Note that scalar multiplication with sparse should
       use ``*``.
    -  scalar powers, e.g. ``M**3``, should be converted to
-      ``sp.sparse.linalg.matrix_power(M, 3)`` or ``M @ M @ M`` if the
-      power is known.
+      ``sp.sparse.linalg.matrix_power(A, 3)``
    -  implement alternatives to unsupported functions/methods like
       ``A.getnnz()`` -> ``A.nnz`` (see below: ``Remove Methods``)
    -  change any logic regarding ``issparse()`` and ``isspmatrix()`` as
@@ -124,8 +123,8 @@ Functions that changed names for the migration
    |diags    | diags_array |
    |spdiags  | diags_array |
    |bmat     | block       |
-   |rand     | random_arra |
-   |random   | random_arra |
+   |rand     | random_array|
+   |random   | random_array|
    +=========+=============+
 
 =====================================
