@@ -4777,7 +4777,7 @@ inline void rmn1(int m, int n, T c, T x, int kd, T *df, T *r1f, T *r1d) {
 
     cx = c * x;
     nm2 = 2 * nm + m;
-    sphj(static_cast<T>(nm2), cx, &nm2, sj, dj);
+    sphj(cx, nm2, &nm2, sj, dj);
 
     a0 = pow(1.0 - kd / (x * x), 0.5 * m) / suc;
     *r1f = 0.0;
