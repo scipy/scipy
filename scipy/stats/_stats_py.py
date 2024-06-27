@@ -3136,9 +3136,14 @@ def gzscore(a, *, axis=0, ddof=0, nan_policy='propagate'):
     >>> plt.show()
 
     """
-    a = np.asanyarray(a)
-    log = ma.log if isinstance(a, ma.MaskedArray) else np.log
-
+    if isinstance(a, ma.MaskedArray):
+        log = ma.log
+    else:
+        xp = array_namespace(a)
+        a = xp.asarray(a)
+        dtype = xp.asarray(1.).dtype if xp.isdtype(a.dtype, 'integral') else a.dtype
+        a = xp.astype(a, dtype, copy=False)
+        log = xp.log
     return zscore(log(a), axis=axis, ddof=ddof, nan_policy=nan_policy)
 
 
@@ -3202,6 +3207,10 @@ def zmap(scores, compare, axis=0, ddof=0, nan_policy='propagate'):
 def _zmap_array_api(scores, compare, axis, ddof, nan_policy):
     xp = array_namespace(scores, compare)
     scores, compare = xp.asarray(scores), xp.asarray(compare)
+    dtype = xp.result_type(scores, compare)
+    dtype = xp.asarray(1.).dtype if xp.isdtype(dtype, 'integral') else dtype
+    scores = xp.astype(scores, dtype, copy=False)
+    compare = xp.astype(compare, dtype, copy=False)
     mn = _xp_mean(compare, axis=axis, keepdims=True, nan_policy=nan_policy)
     std = _xp_var(compare, axis=axis, correction=ddof,
                   keepdims=True, nan_policy=nan_policy)**0.5

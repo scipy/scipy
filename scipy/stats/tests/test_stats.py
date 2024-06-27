@@ -2756,9 +2756,9 @@ class TestSEM:
         assert_raises(ValueError, stats.sem, x, nan_policy='foobar')
 
 
+@array_api_compatible
 class TestZmapZscore:
 
-    @array_api_compatible
     @pytest.mark.parametrize(
         'x, y',
         [([1, 2, 3, 4], [1, 2, 3, 4]),
@@ -2774,7 +2774,6 @@ class TestZmapZscore:
         default_float = xp.asarray(1.).dtype
         xp_assert_close(z, xp.asarray(expected, dtype=default_float))
 
-    @array_api_compatible
     def test_zmap_axis(self, xp):
         # Test use of 'axis' keyword in zmap.
         x = np.array([[0.0, 0.0, 1.0, 1.0],
@@ -2798,7 +2797,6 @@ class TestZmapZscore:
         xp_assert_close(z0, z0_expected)
         xp_assert_close(z1, z1_expected)
 
-    @array_api_compatible
     # skip jax - no item assignment
     def test_zmap_ddof(self, xp):
         # Test use of 'ddof' keyword in zmap.
@@ -2812,7 +2810,6 @@ class TestZmapZscore:
         xp_assert_close(z[0, :], z0_expected)
         xp_assert_close(z[1, :], z1_expected)
 
-    @array_api_compatible
     @pytest.mark.parametrize('ddof', [0, 2])
     def test_zmap_nan_policy_omit(self, ddof, xp):
         # nans in `scores` are propagated, regardless of `nan_policy`.
@@ -2823,7 +2820,6 @@ class TestZmapZscore:
         ref = stats.zmap(scores, compare[~xp.isnan(compare)], ddof=ddof)
         xp_assert_close(z, ref)
 
-    @array_api_compatible
     @pytest.mark.parametrize('ddof', [0, 2])
     def test_zmap_nan_policy_omit_with_axis(self, ddof, xp):
         scores = xp.reshape(xp.arange(-5.0, 9.0), (2, -1))
@@ -2839,30 +2835,29 @@ class TestZmapZscore:
         expected = xp.stack((res0, res1))
         xp_assert_close(z, expected)
 
-    @array_api_compatible
     def test_zmap_nan_policy_raise(self, xp):
         scores = xp.asarray([1, 2, 3])
         compare = xp.asarray([-8, -3, 2, 7, 12, xp.nan])
         with pytest.raises(ValueError, match='input contains nan'):
             stats.zmap(scores, compare, nan_policy='raise')
 
-    def test_zscore(self):
+    def test_zscore(self, xp):
         # not in R, so tested by using:
         #    (testcase[i] - mean(testcase, axis=0)) / sqrt(var(testcase) * 3/4)
-        y = stats.zscore([1, 2, 3, 4])
-        desired = ([-1.3416407864999, -0.44721359549996, 0.44721359549996,
-                    1.3416407864999])
-        assert_array_almost_equal(desired, y, decimal=12)
+        y = stats.zscore(xp.asarray([1, 2, 3, 4]))
+        desired = [-1.3416407864999, -0.44721359549996,
+                   0.44721359549996, 1.3416407864999]
+        xp_assert_close(y, xp.asarray(desired))
 
-    def test_zscore_axis(self):
+    def test_zscore_axis(self, xp):
         # Test use of 'axis' keyword in zscore.
-        x = np.array([[0.0, 0.0, 1.0, 1.0],
-                      [1.0, 1.0, 1.0, 2.0],
-                      [2.0, 0.0, 2.0, 0.0]])
+        x = xp.asarray([[0.0, 0.0, 1.0, 1.0],
+                        [1.0, 1.0, 1.0, 2.0],
+                        [2.0, 0.0, 2.0, 0.0]])
 
-        t1 = 1.0/np.sqrt(2.0/3)
-        t2 = np.sqrt(3.)/3
-        t3 = np.sqrt(2.)
+        t1 = 1.0/(2.0/3)**0.5
+        t2 = 3**0.5/3
+        t3 = 2**0.5
 
         z0 = stats.zscore(x, axis=0)
         z1 = stats.zscore(x, axis=1)
@@ -2871,75 +2866,78 @@ class TestZmapZscore:
                        [0.0, t3, -t3/2, t1],
                        [t1, -t3/2, t3, -t1]]
         z1_expected = [[-1.0, -1.0, 1.0, 1.0],
-                       [-t2, -t2, -t2, np.sqrt(3.)],
+                       [-t2, -t2, -t2, 3**0.5],
                        [1.0, -1.0, 1.0, -1.0]]
 
-        assert_array_almost_equal(z0, z0_expected)
-        assert_array_almost_equal(z1, z1_expected)
+        xp_assert_close(z0, xp.asarray(z0_expected))
+        xp_assert_close(z1, xp.asarray(z1_expected))
 
-    def test_zscore_ddof(self):
+    # skip jax; can't do assignment
+    def test_zscore_ddof(self, xp):
         # Test use of 'ddof' keyword in zscore.
-        x = np.array([[0.0, 0.0, 1.0, 1.0],
-                      [0.0, 1.0, 2.0, 3.0]])
+        x = xp.asarray([[0.0, 0.0, 1.0, 1.0],
+                        [0.0, 1.0, 2.0, 3.0]])
 
         z = stats.zscore(x, axis=1, ddof=1)
 
-        z0_expected = np.array([-0.5, -0.5, 0.5, 0.5])/(1.0/np.sqrt(3))
-        z1_expected = np.array([-1.5, -0.5, 0.5, 1.5])/(np.sqrt(5./3))
-        assert_array_almost_equal(z[0], z0_expected)
-        assert_array_almost_equal(z[1], z1_expected)
+        z0_expected = xp.asarray([-0.5, -0.5, 0.5, 0.5])/(1.0/3**0.5)
+        z1_expected = xp.asarray([-1.5, -0.5, 0.5, 1.5])/((5./3)**0.5)
+        xp_assert_close(z[0, :], z0_expected)
+        xp_assert_close(z[1, :], z1_expected)
 
-    def test_zscore_nan_propagate(self):
-        x = np.array([1, 2, np.nan, 4, 5])
+    def test_zscore_nan_propagate(self, xp):
+        x = xp.asarray([1, 2, np.nan, 4, 5])
         z = stats.zscore(x, nan_policy='propagate')
-        assert all(np.isnan(z))
+        xp_assert_equal(z, xp.full(x.shape, xp.nan))
 
-    def test_zscore_nan_omit(self):
-        x = np.array([1, 2, np.nan, 4, 5])
+    def test_zscore_nan_omit(self, xp):
+        x = xp.asarray([1, 2, xp.nan, 4, 5])
 
         z = stats.zscore(x, nan_policy='omit')
 
-        expected = np.array([-1.2649110640673518,
-                             -0.6324555320336759,
-                             np.nan,
-                             0.6324555320336759,
-                             1.2649110640673518
-                             ])
-        assert_array_almost_equal(z, expected)
+        expected = xp.asarray([-1.2649110640673518,
+                               -0.6324555320336759,
+                               xp.nan,
+                               0.6324555320336759,
+                               1.2649110640673518
+                               ])
+        xp_assert_close(z, expected)
 
-    def test_zscore_nan_omit_with_ddof(self):
-        x = np.array([np.nan, 1.0, 3.0, 5.0, 7.0, 9.0])
+    # skip jax; no item assignment
+    def test_zscore_nan_omit_with_ddof(self, xp):
+        x = xp.asarray([xp.nan, 1.0, 3.0, 5.0, 7.0, 9.0])
+        xp_test = array_namespace(x)  # numpy needs concat
         z = stats.zscore(x, ddof=1, nan_policy='omit')
-        expected = np.r_[np.nan, stats.zscore(x[1:], ddof=1)]
-        assert_allclose(z, expected, rtol=1e-13)
+        expected = xp_test.concat([xp.asarray([xp.nan]), stats.zscore(x[1:], ddof=1)])
+        xp_assert_close(z, expected)
 
-    def test_zscore_nan_raise(self):
-        x = np.array([1, 2, np.nan, 4, 5])
+    def test_zscore_nan_raise(self, xp):
+        x = xp.asarray([1, 2, xp.nan, 4, 5])
+        with pytest.raises(ValueError, match="The input contains nan..."):
+            stats.zscore(x, nan_policy='raise')
 
-        assert_raises(ValueError, stats.zscore, x, nan_policy='raise')
-
-    def test_zscore_constant_input_1d(self):
-        x = [-0.087] * 3
+    def test_zscore_constant_input_1d(self, xp):
+        x = xp.asarray([-0.087] * 3)
         z = stats.zscore(x)
-        assert_equal(z, np.full(len(x), np.nan))
+        xp_assert_equal(z, xp.full(x.shape, xp.nan))
 
-    def test_zscore_constant_input_2d(self):
-        x = np.array([[10.0, 10.0, 10.0, 10.0],
-                      [10.0, 11.0, 12.0, 13.0]])
+    def test_zscore_constant_input_2d(self, xp):
+        x = xp.asarray([[10.0, 10.0, 10.0, 10.0],
+                        [10.0, 11.0, 12.0, 13.0]])
         z0 = stats.zscore(x, axis=0)
-        assert_equal(z0, np.array([[np.nan, -1.0, -1.0, -1.0],
-                                   [np.nan, 1.0, 1.0, 1.0]]))
+        xp_assert_close(z0, xp.asarray([[xp.nan, -1.0, -1.0, -1.0],
+                                        [xp.nan, 1.0, 1.0, 1.0]]))
         z1 = stats.zscore(x, axis=1)
-        assert_equal(z1, np.array([[np.nan, np.nan, np.nan, np.nan],
-                                   stats.zscore(x[1])]))
-        z = stats.zscore(x, axis=None)
-        assert_equal(z, stats.zscore(x.ravel()).reshape(x.shape))
+        xp_assert_equal(z1, xp.stack([xp.asarray([xp.nan, xp.nan, xp.nan, xp.nan]),
+                                      stats.zscore(x[1, :])]))
+        # z = stats.zscore(x, axis=None)
+        # xp_assert_equal(z, stats.zscore(x.ravel()).reshape(x.shape))
+        #
+        # y = np.ones((3, 6))
+        # z = stats.zscore(y, axis=None)
+        # assert_equal(z, np.full(y.shape, np.nan))
 
-        y = np.ones((3, 6))
-        z = stats.zscore(y, axis=None)
-        assert_equal(z, np.full(y.shape, np.nan))
-
-    def test_zscore_constant_input_2d_nan_policy_omit(self):
+    def test_zscore_constant_input_2d_nan_policy_omit(self, xp):
         x = np.array([[10.0, 10.0, 10.0, 10.0],
                       [10.0, 11.0, 12.0, np.nan],
                       [10.0, 12.0, np.nan, 10.0]])
@@ -2954,33 +2952,40 @@ class TestZmapZscore:
                                       [-s, 0, s, np.nan],
                                       [-s2/2, s2, np.nan, -s2/2]]))
 
-    def test_zscore_2d_all_nan_row(self):
+    def test_zscore_2d_all_nan_row(self, xp):
         # A row is all nan, and we use axis=1.
-        x = np.array([[np.nan, np.nan, np.nan, np.nan],
-                      [10.0, 10.0, 12.0, 12.0]])
-        z = stats.zscore(x, nan_policy='omit', axis=1)
-        assert_equal(z, np.array([[np.nan, np.nan, np.nan, np.nan],
-                                  [-1.0, -1.0, 1.0, 1.0]]))
+        x = xp.asarray([[np.nan, np.nan, np.nan, np.nan],
+                        [10.0, 10.0, 12.0, 12.0]])
+        with pytest.warns(SmallSampleWarning, match="After omitting..."):
+            z = stats.zscore(x, nan_policy='omit', axis=1)
+        xp_assert_close(z, xp.asarray([[np.nan, np.nan, np.nan, np.nan],
+                                       [-1.0, -1.0, 1.0, 1.0]]))
 
-    def test_zscore_2d_all_nan(self):
+    def test_zscore_2d_all_nan(self, xp):
         # The entire 2d array is nan, and we use axis=None.
-        y = np.full((2, 3), np.nan)
-        z = stats.zscore(y, nan_policy='omit', axis=None)
-        assert_equal(z, y)
+        y = xp.full((2, 3), xp.nan)
+        with pytest.warns(SmallSampleWarning, match="After omitting..."):
+            z = stats.zscore(y, nan_policy='omit', axis=None)
+        xp_assert_equal(z, y)
 
     @pytest.mark.parametrize('x', [np.array([]), np.zeros((3, 0, 5))])
-    def test_zscore_empty_input(self, x):
-        z = stats.zscore(x)
-        assert_equal(z, x)
+    def test_zscore_empty_input(self, x, xp):
+        x = xp.asarray(x)
+        if x.shape[0] == 0:
+            with pytest.warns(SmallSampleWarning, match="One or more sample..."):
+                z = stats.zscore(x)
+        else:
+            z = stats.zscore(x)
+        xp_assert_equal(z, x)
 
-    def test_gzscore_normal_array(self):
-        x = np.array([1, 2, 3, 4])
-        z = stats.gzscore(x)
+    def test_gzscore_normal_array(self, xp):
+        x = np.asarray([1, 2, 3, 4])
+        z = stats.gzscore(xp.asarray(x))
         desired = np.log(x / stats.gmean(x)) / np.log(stats.gstd(x, ddof=0))
-        assert_allclose(desired, z)
+        xp_assert_close(z, xp.asarray(desired, dtype=xp.asarray(1.).dtype))
 
     @skip_xp_invalid_arg
-    def test_gzscore_masked_array(self):
+    def test_gzscore_masked_array(self, xp):
         x = np.array([1, 2, -1, 3, 4])
         mx = np.ma.masked_array(x, mask=[0, 0, 1, 0, 0])
         z = stats.gzscore(mx)
@@ -2989,7 +2994,7 @@ class TestZmapZscore:
         assert_allclose(desired, z)
 
     @skip_xp_invalid_arg
-    def test_zscore_masked_element_0_gh19039(self):
+    def test_zscore_masked_element_0_gh19039(self, xp):
         # zscore returned all NaNs when 0th element was masked. See gh-19039.
         rng = np.random.default_rng(8675309)
         x = rng.standard_normal(10)
