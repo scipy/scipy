@@ -2757,6 +2757,7 @@ class TestSEM:
 
 
 @array_api_compatible
+@pytest.mark.usefixtures("skip_xp_backends")
 class TestZmapZscore:
 
     @pytest.mark.parametrize(
@@ -2797,7 +2798,7 @@ class TestZmapZscore:
         xp_assert_close(z0, z0_expected)
         xp_assert_close(z1, z1_expected)
 
-    # skip jax - no item assignment
+    @skip_xp_backends('jax.numpy', reasons=["JAX can't do item assignment"])
     def test_zmap_ddof(self, xp):
         # Test use of 'ddof' keyword in zmap.
         x = xp.asarray([[0.0, 0.0, 1.0, 1.0],
@@ -2810,6 +2811,7 @@ class TestZmapZscore:
         xp_assert_close(z[0, :], z0_expected)
         xp_assert_close(z[1, :], z1_expected)
 
+    @skip_xp_backends('jax.numpy', reasons=["JAX can't do item assignment"])
     @pytest.mark.parametrize('ddof', [0, 2])
     def test_zmap_nan_policy_omit(self, ddof, xp):
         # nans in `scores` are propagated, regardless of `nan_policy`.
@@ -2820,6 +2822,7 @@ class TestZmapZscore:
         ref = stats.zmap(scores, compare[~xp.isnan(compare)], ddof=ddof)
         xp_assert_close(z, ref)
 
+    @skip_xp_backends('jax.numpy', reasons=["JAX can't do item assignment"])
     @pytest.mark.parametrize('ddof', [0, 2])
     def test_zmap_nan_policy_omit_with_axis(self, ddof, xp):
         scores = xp.reshape(xp.arange(-5.0, 9.0), (2, -1))
@@ -2872,7 +2875,7 @@ class TestZmapZscore:
         xp_assert_close(z0, xp.asarray(z0_expected))
         xp_assert_close(z1, xp.asarray(z1_expected))
 
-    # skip jax; can't do assignment
+    @skip_xp_backends('jax.numpy', reasons=["JAX can't do item assignment"])
     def test_zscore_ddof(self, xp):
         # Test use of 'ddof' keyword in zscore.
         x = xp.asarray([[0.0, 0.0, 1.0, 1.0],
@@ -2903,7 +2906,7 @@ class TestZmapZscore:
                                ])
         xp_assert_close(z, expected)
 
-    # skip jax; no item assignment
+    @skip_xp_backends('jax.numpy', reasons=["JAX can't do item assignment"])
     def test_zscore_nan_omit_with_ddof(self, xp):
         x = xp.asarray([xp.nan, 1.0, 3.0, 5.0, 7.0, 9.0])
         xp_test = array_namespace(x)  # numpy needs concat

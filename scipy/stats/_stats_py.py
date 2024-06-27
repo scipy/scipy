@@ -3151,9 +3151,7 @@ def gzscore(a, *, axis=0, ddof=0, nan_policy='propagate'):
         log = ma.log
     else:
         xp = array_namespace(a)
-        a = xp.asarray(a)
-        dtype = xp.asarray(1.).dtype if xp.isdtype(a.dtype, 'integral') else a.dtype
-        a = xp.astype(a, dtype, copy=False)
+        a = _convert_common_float(a, xp=xp)
         log = xp.log
     return zscore(log(a), axis=axis, ddof=ddof, nan_policy=nan_policy)
 
@@ -3222,7 +3220,7 @@ def _convert_common_float(*arrays, xp=None):
                else array.dtype) for array in arrays]
     dtype = xp.result_type(*dtypes)
     arrays = [xp.astype(array, dtype, copy=False) for array in arrays]
-    return tuple(arrays)
+    return arrays[0] if len(arrays)==1 else tuple(arrays)
 
 
 def _zmap_array_api(scores, compare, axis, ddof, nan_policy):
