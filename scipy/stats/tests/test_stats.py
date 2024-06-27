@@ -2918,39 +2918,49 @@ class TestZmapZscore:
 
     def test_zscore_constant_input_1d(self, xp):
         x = xp.asarray([-0.087] * 3)
-        z = stats.zscore(x)
+        with pytest.warns(RuntimeWarning, match="Precision loss occurred..."):
+            z = stats.zscore(x)
         xp_assert_equal(z, xp.full(x.shape, xp.nan))
 
     def test_zscore_constant_input_2d(self, xp):
         x = xp.asarray([[10.0, 10.0, 10.0, 10.0],
                         [10.0, 11.0, 12.0, 13.0]])
-        z0 = stats.zscore(x, axis=0)
+        with pytest.warns(RuntimeWarning, match="Precision loss occurred..."):
+            z0 = stats.zscore(x, axis=0)
         xp_assert_close(z0, xp.asarray([[xp.nan, -1.0, -1.0, -1.0],
                                         [xp.nan, 1.0, 1.0, 1.0]]))
-        z1 = stats.zscore(x, axis=1)
+
+        with pytest.warns(RuntimeWarning, match="Precision loss occurred..."):
+            z1 = stats.zscore(x, axis=1)
         xp_assert_equal(z1, xp.stack([xp.asarray([xp.nan, xp.nan, xp.nan, xp.nan]),
                                       stats.zscore(x[1, :])]))
-        # z = stats.zscore(x, axis=None)
-        # xp_assert_equal(z, stats.zscore(x.ravel()).reshape(x.shape))
-        #
-        # y = np.ones((3, 6))
-        # z = stats.zscore(y, axis=None)
-        # assert_equal(z, np.full(y.shape, np.nan))
+
+        z = stats.zscore(x, axis=None)
+        xp_assert_equal(z, xp.reshape(stats.zscore(xp.reshape(x, (-1,))), x.shape))
+
+        y = xp.ones((3, 6))
+        with pytest.warns(RuntimeWarning, match="Precision loss occurred..."):
+            z = stats.zscore(y, axis=None)
+        xp_assert_equal(z, xp.full(y.shape, xp.asarray(xp.nan)))
 
     def test_zscore_constant_input_2d_nan_policy_omit(self, xp):
-        x = np.array([[10.0, 10.0, 10.0, 10.0],
-                      [10.0, 11.0, 12.0, np.nan],
-                      [10.0, 12.0, np.nan, 10.0]])
-        z0 = stats.zscore(x, nan_policy='omit', axis=0)
-        s = np.sqrt(3/2)
-        s2 = np.sqrt(2)
-        assert_allclose(z0, np.array([[np.nan, -s, -1.0, np.nan],
-                                      [np.nan, 0, 1.0, np.nan],
-                                      [np.nan, s, np.nan, np.nan]]))
-        z1 = stats.zscore(x, nan_policy='omit', axis=1)
-        assert_allclose(z1, np.array([[np.nan, np.nan, np.nan, np.nan],
-                                      [-s, 0, s, np.nan],
-                                      [-s2/2, s2, np.nan, -s2/2]]))
+        x = xp.asarray([[10.0, 10.0, 10.0, 10.0],
+                        [10.0, 11.0, 12.0, xp.nan],
+                        [10.0, 12.0, xp.nan, 10.0]])
+        s = (3/2)**0.5
+        s2 = 2**0.5
+
+        with pytest.warns(RuntimeWarning, match="Precision loss occurred..."):
+            z0 = stats.zscore(x, nan_policy='omit', axis=0)
+        xp_assert_close(z0, xp.asarray([[xp.nan, -s, -1.0, xp.nan],
+                                        [xp.nan, 0, 1.0, xp.nan],
+                                        [xp.nan, s, xp.nan, xp.nan]]))
+
+        with pytest.warns(RuntimeWarning, match="Precision loss occurred..."):
+            z1 = stats.zscore(x, nan_policy='omit', axis=1)
+        xp_assert_close(z1, xp.asarray([[xp.nan, xp.nan, xp.nan, xp.nan],
+                                        [-s, 0, s, xp.nan],
+                                        [-s2/2, s2, xp.nan, -s2/2]]))
 
     def test_zscore_2d_all_nan_row(self, xp):
         # A row is all nan, and we use axis=1.
@@ -9386,7 +9396,7 @@ class TestXP_Var:
 
     def test_dtype(self, xp):
         max = xp.finfo(xp.float32).max
-        x_np = np.asarray([max, max], dtype=np.float32)
+        x_np = np.asarray([max, max/2], dtype=np.float32)
         x_xp = xp.asarray(x_np)
 
         # Overflow occurs for float32 input

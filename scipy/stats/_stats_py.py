@@ -1090,6 +1090,31 @@ def moment(a, order=1, axis=0, nan_policy='propagate', *, center=None):
         return _moment(a, order, axis, mean=center)
 
 
+def _demean(a, mean, axis, xp):
+    a_zero_mean = a - mean
+
+    if xp_size(a_zero_mean) == 0:
+        return a_zero_mean
+
+    eps = xp.finfo(mean.dtype).eps * 10
+
+    with np.errstate(divide='ignore', invalid='ignore'):
+        rel_diff = xp.max(xp.abs(a_zero_mean), axis=axis,
+                          keepdims=True) / xp.abs(mean)
+    with np.errstate(invalid='ignore'):
+        precision_loss = xp.any(rel_diff < eps)
+    n = (xp_size(a) if axis is None
+         # compact way to deal with axis tuples or ints
+         else np.prod(np.asarray(a.shape)[np.asarray(axis)]))
+
+    if precision_loss and n > 1:
+        message = ("Precision loss occurred in moment calculation due to "
+                   "catastrophic cancellation. This occurs when the data "
+                   "are nearly identical. Results may be unreliable.")
+        warnings.warn(message, RuntimeWarning, stacklevel=5)
+    return a_zero_mean
+
+
 def _moment(a, order, axis, *, mean=None, xp=None):
     """Vectorized calculation of raw moment about specified center
 
@@ -1132,21 +1157,7 @@ def _moment(a, order, axis, *, mean=None, xp=None):
     mean = (xp.mean(a, axis=axis, keepdims=True) if mean is None
             else xp.asarray(mean, dtype=dtype))
     mean = mean[()] if mean.ndim == 0 else mean
-    a_zero_mean = a - mean
-
-    eps = xp.finfo(dtype).eps * 10
-
-    with np.errstate(divide='ignore', invalid='ignore'):
-        rel_diff = xp.max(xp.abs(a_zero_mean), axis=axis,
-                          keepdims=True) / xp.abs(mean)
-    with np.errstate(invalid='ignore'):
-        precision_loss = xp.any(rel_diff < eps)
-    n = a.shape[axis] if axis is not None else xp_size(a)
-    if precision_loss and n > 1:
-        message = ("Precision loss occurred in moment calculation due to "
-                   "catastrophic cancellation. This occurs when the data "
-                   "are nearly identical. Results may be unreliable.")
-        warnings.warn(message, RuntimeWarning, stacklevel=4)
+    a_zero_mean = _demean(a, mean, axis, xp)
 
     if n_list[-1] == 1:
         s = xp.asarray(a_zero_mean, copy=True)
@@ -3204,17 +3215,32 @@ def zmap(scores, compare, axis=0, ddof=0, nan_policy='propagate'):
     return implementation(scores, compare, axis, ddof, nan_policy)
 
 
+def _convert_common_float(*arrays, xp=None):
+    xp = array_namespace(*arrays) if xp is None else xp
+    arrays = [xp.asarray(array) for array in arrays]
+    dtypes = [(xp.asarray(1.).dtype if xp.isdtype(array.dtype, 'integral')
+               else array.dtype) for array in arrays]
+    dtype = xp.result_type(*dtypes)
+    arrays = [xp.astype(array, dtype, copy=False) for array in arrays]
+    return tuple(arrays)
+
+
 def _zmap_array_api(scores, compare, axis, ddof, nan_policy):
     xp = array_namespace(scores, compare)
-    scores, compare = xp.asarray(scores), xp.asarray(compare)
-    dtype = xp.result_type(scores, compare)
-    dtype = xp.asarray(1.).dtype if xp.isdtype(dtype, 'integral') else dtype
-    scores = xp.astype(scores, dtype, copy=False)
-    compare = xp.astype(compare, dtype, copy=False)
+    scores, compare = _convert_common_float(scores, compare, xp=xp)
     mn = _xp_mean(compare, axis=axis, keepdims=True, nan_policy=nan_policy)
     std = _xp_var(compare, axis=axis, correction=ddof,
                   keepdims=True, nan_policy=nan_policy)**0.5
-    return (scores - mn) / std
+
+    with np.errstate(divide='ignore', invalid='ignore'):
+        z = _demean(scores, mn, axis, xp) / std
+
+    with np.errstate(all='ignore'):
+        eps = xp.finfo(z.dtype).eps
+        zero = std <= xp.abs(eps * mn)
+        z = xp.where(zero, xp.asarray(xp.nan, dtype=z.dtype), z)
+
+    return z
 
 
 def _zmap_not_array_api(scores, compare, axis, ddof, nan_policy):
@@ -11174,7 +11200,8 @@ def _xp_var(x, /, *, axis=None, correction=0, keepdims=False, nan_policy='propag
     kwargs = dict(axis=axis, nan_policy=nan_policy, dtype=dtype, xp=xp)
     mean = _xp_mean(x, keepdims=True, **kwargs)
     x = xp.asarray(x, dtype=mean.dtype)
-    var = _xp_mean((x - mean)**2, keepdims=keepdims, **kwargs)
+    x_mean = _demean(x, mean, axis, xp)
+    var = _xp_mean(x_mean**2, keepdims=keepdims, **kwargs)
 
     if correction != 0:
         n = (xp_size(x) if axis is None
