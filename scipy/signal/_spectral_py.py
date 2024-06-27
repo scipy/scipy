@@ -245,12 +245,7 @@ def lombscargle(
         # store final value as power in (y units) ^ 2
         pgram[i] = 2.0 * (a[i] * YC + b[i] * YS)
 
-    if normalize == OUTPUT_POWER:
-        # return the legacy power units
-        pgram *= float(t.shape[0]) / 4.0
-        return pgram
-
-    elif normalize == OUTPUT_NORMALIZE:
+    if normalize == OUTPUT_NORMALIZE:
         # return the normalized power (current frequency wrt the entire signal)
         YY_hat = (weights * y * y).sum()
         YY: float = YY_hat - Y_sum * Y_sum
@@ -262,6 +257,11 @@ def lombscargle(
         phase = np.arctan2(b, a)  # radians
         pgram = np.sqrt(pgram) * (np.cos(phase) + 1j * np.sin(phase))
         return pgram
+    
+    # otherwise, the default, normalize == OUTPUT_POWER
+    # return the legacy power units
+    pgram *= float(t.shape[0]) / 4.0
+    return pgram
 
 
 def periodogram(x, fs=1.0, window='boxcar', nfft=None, detrend='constant',

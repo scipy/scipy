@@ -1165,11 +1165,11 @@ class TestLombscargle:
         f = np.linspace(0.01, 10., nout)
         
         # check each of the valid inputs
-        pgram = lombscargle(t, x, f, normalize=False)
-        pgram = lombscargle(t, x, f, normalize=True)
-        pgram = lombscargle(t, x, f, normalize='power')
-        pgram = lombscargle(t, x, f, normalize='normalize')
-        pgram = lombscargle(t, x, f, normalize='amplitude')
+        lombscargle(t, x, f, normalize=False)
+        lombscargle(t, x, f, normalize=True)
+        lombscargle(t, x, f, normalize='power')
+        lombscargle(t, x, f, normalize='normalize')
+        lombscargle(t, x, f, normalize='amplitude')
 
         # check invalid inputs
         #  1) a string that is not allowed
