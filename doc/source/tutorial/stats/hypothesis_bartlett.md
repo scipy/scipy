@@ -61,7 +61,7 @@ of statistic values derived under the null hypothesis that the population
 variances of the three groups are equal.
 
 For this test, the null distribution follows the
-{ref}`chi-square distribution <continuous-chi2>`as shown below.
+{ref}`chi-square distribution <continuous-chi2>` as shown below.
 
 ```{code-cell}
 import matplotlib.pyplot as plt

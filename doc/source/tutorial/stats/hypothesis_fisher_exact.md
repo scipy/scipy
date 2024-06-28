@@ -22,9 +22,9 @@ kernelspec:
 In [^1], the effective dose of acetazolamide for the prophylaxis of acute
 mountain sickness was investigated. The study notably concluded:
 
-    Acetazolamide 250 mg, 500 mg, and 750 mg daily were all efficacious for
-    preventing acute mountain sickness. Acetazolamide 250 mg was the lowest
-    effective dose with available evidence for this indication.
+> Acetazolamide 250 mg, 500 mg, and 750 mg daily were all efficacious for
+> preventing acute mountain sickness. Acetazolamide 250 mg was the lowest
+> effective dose with available evidence for this indication.
 
 The following table summarizes the results of the experiment in which
 some participants took a daily dose of acetazolamide 250 mg while others
@@ -42,8 +42,8 @@ acute mountain sickness?
 
 We begin by formulating a null hypothesis $H_0$:
 
-    The odds of experiencing acute mountain sickness are the same with
-    the acetazolamide treatment as they are with placebo.
+> The odds of experiencing acute mountain sickness are the same with
+> the acetazolamide treatment as they are with placebo.
 
 Let's assess the plausibility of this hypothesis with
 {class}`Fisher's test <scipy.stats.fisher_exact>`.

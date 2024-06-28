@@ -135,7 +135,7 @@ For samples without ties of moderate size, {func}`scipy.stats.kendalltau` can
 compute the p-value exactly. However, in the presence of ties,
 {func}`scipy.stats.kendalltau` resorts to an asymptotic approximation.
 Nonetheless, we can use a permutation test to compute the null distribution
-exactly: Under the null hypothesis thattotal collagen and free proline are
+exactly: Under the null hypothesis that total collagen and free proline are
 independent, each of the free proline measurements were equally likely to have
 been observed with any of the total collagen measurements. Therefore, we can
 form an *exact* null distribution by calculating the statistic under each

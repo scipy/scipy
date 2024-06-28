@@ -22,9 +22,9 @@ kernelspec:
 In [^1], the use of aspirin to prevent cardiovascular events in women and men
 was investigated. The study notably concluded:
 
-    ...aspirin therapy reduced the risk of a composite of
-    cardiovascular events due to its effect on reducing the risk of
-    ischemic stroke in women [...]
+> ...aspirin therapy reduced the risk of a composite of
+> cardiovascular events due to its effect on reducing the risk of
+> ischemic stroke in women [...]
 
 The article lists studies of various cardiovascular events. Let's focus on the
 ischemic stoke in women.

@@ -1264,12 +1264,12 @@ class LatinHypercube(QMCEngine):
         Default is None.
 
         * ``random-cd``: random permutations of coordinates to lower the
-            centered discrepancy. The best sample based on the centered
-            discrepancy is constantly updated. Centered discrepancy-based
-            sampling shows better space-filling robustness toward 2D and 3D
-            subprojections compared to using other discrepancy measures.
+          centered discrepancy. The best sample based on the centered
+          discrepancy is constantly updated. Centered discrepancy-based
+          sampling shows better space-filling robustness toward 2D and 3D
+          subprojections compared to using other discrepancy measures.
         * ``lloyd``: Perturb samples using a modified Lloyd-Max algorithm.
-            The process converges to equally spaced samples.
+          The process converges to equally spaced samples.
 
         .. versionadded:: 1.8.0
         .. versionchanged:: 1.10.0
@@ -1330,23 +1330,23 @@ class LatinHypercube(QMCEngine):
     References
     ----------
     .. [1] Mckay et al., "A Comparison of Three Methods for Selecting Values
-        of Input Variables in the Analysis of Output from a Computer Code."
-        Technometrics, 1979.
+       of Input Variables in the Analysis of Output from a Computer Code."
+       Technometrics, 1979.
     .. [2] M. Stein, "Large sample properties of simulations using Latin
-        hypercube sampling." Technometrics 29, no. 2: 143-151, 1987.
+       hypercube sampling." Technometrics 29, no. 2: 143-151, 1987.
     .. [3] A. B. Owen, "Monte Carlo variance of scrambled net quadrature."
-        SIAM Journal on Numerical Analysis 34, no. 5: 1884-1910, 1997
+       SIAM Journal on Numerical Analysis 34, no. 5: 1884-1910, 1997
     .. [4]  Loh, W.-L. "On Latin hypercube sampling." The annals of statistics
-        24, no. 5: 2058-2080, 1996.
+       24, no. 5: 2058-2080, 1996.
     .. [5] Fang et al. "Design and modeling for computer experiments".
-        Computer Science and Data Analysis Series, 2006.
+       Computer Science and Data Analysis Series, 2006.
     .. [6] Damblin et al., "Numerical studies of space filling designs:
-        optimization of Latin Hypercube Samples and subprojection properties."
-        Journal of Simulation, 2013.
+       optimization of Latin Hypercube Samples and subprojection properties."
+       Journal of Simulation, 2013.
     .. [7] A. B. Owen , "Orthogonal arrays for computer experiments,
-        integration and visualization." Statistica Sinica, 1992.
+       integration and visualization." Statistica Sinica, 1992.
     .. [8] B. Tang, "Orthogonal Array-Based Latin Hypercubes."
-        Journal of the American Statistical Association, 1993.
+       Journal of the American Statistical Association, 1993.
 
     Examples
     --------

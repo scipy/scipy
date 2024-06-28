@@ -115,6 +115,3 @@ normality (complete samples). Biometrika, Vol. 52, pp. 591-611.
 Zero: Calculating Exact P-values When Permutations Are Randomly Drawn.
 Statistical Applications in Genetics and Molecular Biology, Vol.9.
 {doi}`10.2202/1544-6115.1585`
-[^4]: Panagiotakos, D. B. (2008). The value of p-value in biomedical research.
-The Open Cardiovascular Medicine Journal, Vol.2, pp. 97-99.
-{doi}`10.2174/1874192400802010097`

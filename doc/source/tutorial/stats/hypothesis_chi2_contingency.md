@@ -22,9 +22,9 @@ kernelspec:
 In [^1], the use of aspirin to prevent cardiovascular events in women and men
 was investigated. The study notably concluded:
 
-    ...aspirin therapy reduced the risk of a composite of
-    cardiovascular events due to its effect on reducing the risk of
-    ischemic stroke in women [...]
+> ...aspirin therapy reduced the risk of a composite of
+> cardiovascular events due to its effect on reducing the risk of
+> ischemic stroke in women [...]
 
 The article lists studies of various cardiovascular events. Let's focus on the
 ischemic stoke in women.
@@ -41,7 +41,7 @@ Cases of ischemic stroke were recorded::
 Is there evidence that the aspirin reduces the risk of ischemic stroke? We begin
 by formulating a null hypothesis $H_0$:
 
-    The effect of aspirin is equivalent to that of placebo.
+> The effect of aspirin is equivalent to that of placebo.
 
 Let's assess the plausibility of this hypothesis with a
 {class}`chi-square test <scipy.stats.contingency.chi2_contingency>` with the

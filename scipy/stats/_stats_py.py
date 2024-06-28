@@ -1601,7 +1601,7 @@ def kurtosistest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
 
     References
     ----------
-    .. [1] see e.g. F. J. Anscombe, W. J. Glynn, "Distribution of the kurtosis
+    .. [1] F. J. Anscombe, W. J. Glynn, "Distribution of the kurtosis
        statistic b2 for normal samples", Biometrika, vol. 70, pp. 227-234, 1983.
 
     Examples
@@ -1670,65 +1670,61 @@ NormaltestResult = namedtuple('NormaltestResult', ('statistic', 'pvalue'))
 def normaltest(a, axis=0, nan_policy='propagate'):
     r"""Test whether a sample differs from a normal distribution.
 
-    This function tests the null hypothesis that a sample comes
-    from a normal distribution.  It is based on D'Agostino and
-    Pearson's [1]_, [2]_ test that combines skew and kurtosis to
-    produce an omnibus test of normality.
+        This function tests the null hypothesis that a sample comes
+        from a normal distribution.  It is based on D'Agostino and
+        Pearson's [1]_, [2]_ test that combines skew and kurtosis to
+        produce an omnibus test of normality.
 
-    Parameters
-    ----------
-    a : array_like
-        The array containing the sample to be tested. Must contain
-        at least eight observations.
-    axis : int or None, optional
-        Axis along which to compute test. Default is 0. If None,
-        compute over the whole array `a`.
-    nan_policy : {'propagate', 'raise', 'omit'}, optional
-        Defines how to handle when input contains nan.
-        The following options are available (default is 'propagate'):
+        Parameters
+        ----------
+        a : array_like
+            The array containing the sample to be tested. Must contain
+            at least eight observations.
+        axis : int or None, optional
+            Axis along which to compute test. Default is 0. If None,
+            compute over the whole array `a`.
+        nan_policy : {'propagate', 'raise', 'omit'}, optional
+            Defines how to handle when input contains nan.
+            The following options are available (default is 'propagate'):
 
-          * 'propagate': returns nan
-          * 'raise': throws an error
-          * 'omit': performs the calculations ignoring nan values
+              * 'propagate': returns nan
+              * 'raise': throws an error
+              * 'omit': performs the calculations ignoring nan values
 
-    Returns
-    -------
-    statistic : float or array
-        ``s^2 + k^2``, where ``s`` is the z-score returned by `skewtest` and
-        ``k`` is the z-score returned by `kurtosistest`.
-    pvalue : float or array
-       A 2-sided chi squared probability for the hypothesis test.
+        Returns
+        -------
+        statistic : float or array
+            ``s^2 + k^2``, where ``s`` is the z-score returned by `skewtest` and
+            ``k`` is the z-score returned by `kurtosistest`.
+        pvalue : float or array
+           A 2-sided chi squared probability for the hypothesis test.
 
-    See Also
-    --------
-    :ref:`hypothesis_normaltest`
+        See Also
+        --------
+        :ref:`hypothesis_normaltest`
 
-    References
-    ----------
-    .. [1] D'Agostino, R. B. (1971), "An omnibus test of normality for
-           moderate and large sample size", Biometrika, 58, 341-348
-    .. [2] D'Agostino, R. and Pearson, E. S. (1973), "Tests for departure from
-           normality", Biometrika, 60, 613-622
+        References
+        ----------
+        .. [1] D'Agostino, R. B. (1971), "An omnibus test of normality for
+               moderate and large sample size", Biometrika, 58, 341-348
+        .. [2] D'Agostino, R. and Pearson, E. S. (1973), "Tests for departure from
+               normality", Biometrika, 60, 613-622
 
-    Examples
-    --------
+        Examples
+        --------
 
-    >>> import numpy as np
-    >>> from scipy import stats
-    >>> rng = np.random.default_rng()
-    >>> pts = 1000
-    >>> a = rng.normal(0, 1, size=pts)
-    >>> b = rng.normal(2, 1, size=pts)
-    >>> x = np.concatenate((a, b))
-    >>> k2, p = stats.normaltest(x)
-    >>> alpha = 1e-3
-    >>> print("p = {:g}".format(p))
-    p = 8.4713e-19
-    >>> if p < alpha: # null hypothesis: x comes from a normal distribution
-    ...     print("The null hypothesis can be rejected")
-    ... else:
-    ...     print("The null hypothesis cannot be rejected")
-    The null hypothesis can be rejected
+        >>> import numpy as np
+        >>> from scipy import stats
+        >>> rng = np.random.default_rng()
+        >>> pts = 1000
+        >>> a = rng.normal(0, 1, size=pts)
+        >>> b = rng.normal(2, 1, size=pts)
+        >>> x = np.concatenate((a, b))
+        >>> res = stats.normaltest(x)
+        >>> res.statistic
+        53.619...  # random
+        >>> res.pvalue
+        2.273917413209226e-12  # random
     """
     xp = array_namespace(a)
 
@@ -8369,7 +8365,7 @@ def friedmanchisquare(*samples):
     (11.428571428571416, 0.043514520866727614)
 
     The p-value is less than 0.05; however, as noted above, the results may not
-    be reliable since we have a small amount of repeated samples.
+    be reliable since we have a small number of repeated samples.
     """
     k = len(samples)
     if k < 3:

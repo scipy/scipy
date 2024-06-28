@@ -33,7 +33,7 @@ x = np.array([148, 154, 158, 160, 161, 162, 166, 170, 182, 195, 236])
 ```
 
 The skewness test {func}`scipy.stats.skewtest` from [^2] begins by computing a
-statistic based on the sample skewness with.
+statistic based on the sample skewness.
 
 ```{code-cell}
 from scipy import stats

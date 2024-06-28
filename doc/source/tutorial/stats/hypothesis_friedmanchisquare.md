@@ -26,7 +26,7 @@ similar?
 
 We begin by formulating a null hypothesis $H_0$:
 
-    The pulse rates are identical on these three occasions.
+> The pulse rates are identical on these three occasions.
 
 Let's assess the plausibility of this hypothesis with a Friedman test
 ({func}`scipy.stats.friedmanchisquare`.)
