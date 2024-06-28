@@ -366,9 +366,9 @@ def _pad_along_last_axis(X, m, *, xp):
     """Pad the data for computing the rolling window difference."""
     # scales a  bit better than method in _vasicek_like_entropy
     shape = X.shape[:-1] + (m,)
-    Xl = xp.broadcast_to(X[..., [0]], shape)  # [0] vs 0 to maintain shape
-    Xr = xp.broadcast_to(X[..., [-1]], shape)
-    return np.concatenate((Xl, X, Xr), axis=-1)
+    Xl = xp.broadcast_to(X[..., :1], shape)  # :1 vs 0 to maintain shape
+    Xr = xp.broadcast_to(X[..., -1:], shape)
+    return xp.concat((Xl, X, Xr), axis=-1)
 
 
 def _vasicek_entropy(X, m, *, xp):
@@ -387,8 +387,8 @@ def _van_es_entropy(X, m, *, xp):
     n = X.shape[-1]
     difference = X[..., m:] - X[..., :-m]
     term1 = 1/(n-m) * xp.sum(xp.log((n+1)/m * difference), axis=-1)
-    k = xp.arange(m, n+1)
-    return term1 + xp.sum(1/k) + xp.log(m) - xp.log(n+1)
+    k = xp.arange(m, n+1.)
+    return term1 + xp.sum(1./k) + math.log(m) - math.log(n+1)
 
 
 def _ebrahimi_entropy(X, m, *, xp):
@@ -399,7 +399,7 @@ def _ebrahimi_entropy(X, m, *, xp):
 
     differences = X[..., 2 * m:] - X[..., : -2 * m:]
 
-    i = xp.arange(1, n+1).astype(float)
+    i = xp.arange(1., n+1, dtype=X.dtype)
     ci = xp.ones_like(i)*2
     ci[i <= m] = 1 + (i[i <= m] - 1)/m
     ci[i >= n - m + 1] = 1 + (n - i[i >= n-m+1])/m
