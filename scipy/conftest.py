@@ -117,6 +117,9 @@ if SCIPY_ARRAY_API and isinstance(SCIPY_ARRAY_API, str):
     try:
         import array_api_strict
         xp_available_backends.update({'array_api_strict': array_api_strict})
+        array_api_strict.set_array_api_strict_flags(
+            api_version='2023.12'
+        )
     except ImportError:
         pass
 
