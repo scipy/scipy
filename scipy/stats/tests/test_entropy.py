@@ -129,6 +129,7 @@ class TestEntropy:
             stats.entropy(x, base=-2)
 
 
+@array_api_compatible
 class TestDifferentialEntropy:
     """
     Vasicek results are compared with the R package vsgoftest.
@@ -140,50 +141,47 @@ class TestDifferentialEntropy:
 
     """
 
-    def test_differential_entropy_vasicek(self):
+    def test_differential_entropy_vasicek(self, xp):
 
         random_state = np.random.RandomState(0)
         values = random_state.standard_normal(100)
 
         entropy = stats.differential_entropy(values, method='vasicek')
-        assert_allclose(entropy, 1.342551, rtol=1e-6)
+        assert_allclose(entropy, 1.342551187000946)
 
         entropy = stats.differential_entropy(values, window_length=1,
                                              method='vasicek')
-        assert_allclose(entropy, 1.122044, rtol=1e-6)
+        assert_allclose(entropy, 1.122044177725947)
 
         entropy = stats.differential_entropy(values, window_length=8,
                                              method='vasicek')
-        assert_allclose(entropy, 1.349401, rtol=1e-6)
+        assert_allclose(entropy, 1.349401487550325)
 
-    def test_differential_entropy_vasicek_2d_nondefault_axis(self):
+    def test_differential_entropy_vasicek_2d_nondefault_axis(self, xp):
         random_state = np.random.RandomState(0)
         values = random_state.standard_normal((3, 100))
 
         entropy = stats.differential_entropy(values, axis=1, method='vasicek')
         assert_allclose(
             entropy,
-            [1.342551, 1.341826, 1.293775],
-            rtol=1e-6,
+            [1.342551187000946, 1.341825903922332, 1.293774601883585]
         )
 
         entropy = stats.differential_entropy(values, axis=1, window_length=1,
                                              method='vasicek')
         assert_allclose(
             entropy,
-            [1.122044, 1.102944, 1.129616],
-            rtol=1e-6,
+            [1.122044177725947, 1.10294413850758, 1.129615790292772]
         )
 
         entropy = stats.differential_entropy(values, axis=1, window_length=8,
                                              method='vasicek')
         assert_allclose(
             entropy,
-            [1.349401, 1.338514, 1.292332],
-            rtol=1e-6,
+            [1.349401487550325, 1.338514126301301, 1.292331889365405]
         )
 
-    def test_differential_entropy_raises_value_error(self):
+    def test_differential_entropy_raises_value_error(self, xp):
         random_state = np.random.RandomState(0)
         values = random_state.standard_normal((3, 100))
 
@@ -208,7 +206,7 @@ class TestDifferentialEntropy:
                     axis=1,
                 )
 
-    def test_base_differential_entropy_with_axis_0_is_equal_to_default(self):
+    def test_base_differential_entropy_with_axis_0_is_equal_to_default(self, xp):
         random_state = np.random.RandomState(0)
         values = random_state.standard_normal((100, 3))
 
@@ -216,7 +214,7 @@ class TestDifferentialEntropy:
         default_entropy = stats.differential_entropy(values)
         assert_allclose(entropy, default_entropy)
 
-    def test_base_differential_entropy_transposed(self):
+    def test_base_differential_entropy_transposed(self, xp):
         random_state = np.random.RandomState(0)
         values = random_state.standard_normal((3, 100))
 
@@ -225,7 +223,7 @@ class TestDifferentialEntropy:
             stats.differential_entropy(values, axis=1),
         )
 
-    def test_input_validation(self):
+    def test_input_validation(self, xp):
         x = np.random.rand(10)
 
         message = "`base` must be a positive number or `None`."
@@ -238,7 +236,7 @@ class TestDifferentialEntropy:
 
     @pytest.mark.parametrize('method', ['vasicek', 'van es',
                                         'ebrahimi', 'correa'])
-    def test_consistency(self, method):
+    def test_consistency(self, method, xp):
         # test that method is a consistent estimator
         n = 10000 if method == 'correa' else 1000000
         rvs = stats.norm.rvs(size=n, random_state=0)
@@ -256,7 +254,7 @@ class TestDifferentialEntropy:
 
     @pytest.mark.parametrize('method, expected',
                              list(norm_rmse_std_cases.items()))
-    def test_norm_rmse_std(self, method, expected):
+    def test_norm_rmse_std(self, method, expected, xp):
         # test that RMSE and standard deviation of estimators matches values
         # given in differential_entropy reference [6]. Incidentally, also
         # tests vectorization.
@@ -280,7 +278,7 @@ class TestDifferentialEntropy:
 
     @pytest.mark.parametrize('method, expected',
                              list(expon_rmse_std_cases.items()))
-    def test_expon_rmse_std(self, method, expected):
+    def test_expon_rmse_std(self, method, expected, xp):
         # test that RMSE and standard deviation of estimators matches values
         # given in differential_entropy reference [6]. Incidentally, also
         # tests vectorization.
@@ -297,7 +295,7 @@ class TestDifferentialEntropy:
     @pytest.mark.parametrize('n, method', [(8, 'van es'),
                                            (12, 'ebrahimi'),
                                            (1001, 'vasicek')])
-    def test_method_auto(self, n, method):
+    def test_method_auto(self, n, method, xp):
         rvs = stats.norm.rvs(size=(n,), random_state=0)
         res1 = stats.differential_entropy(rvs)
         res2 = stats.differential_entropy(rvs, method=method)
