@@ -356,7 +356,7 @@ def odds_ratio(table, *, kind='conditional'):
     --------
     scipy.stats.fisher_exact
     relative_risk
-    :ref:`hypothesis_odds_ratio`
+    :ref:`hypothesis_odds_ratio` : Extended example
 
     Notes
     -----
@@ -432,6 +432,7 @@ def odds_ratio(table, *, kind='conditional'):
     The 95% confidence interval for the conditional odds ratio is approximately
     (1.25, 10.4).
 
+    For a more detailed example, see :ref:`hypothesis_odds_ratio`.
     """
     if kind not in ['conditional', 'sample']:
         raise ValueError("`kind` must be 'conditional' or 'sample'.")

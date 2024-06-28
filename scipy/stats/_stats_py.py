@@ -1490,7 +1490,7 @@ def skewtest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
 
     See Also
     --------
-    :ref:`hypothesis_skewtest`
+    :ref:`hypothesis_skewtest` : Extended example
 
     Notes
     -----
@@ -1519,6 +1519,7 @@ def skewtest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
     >>> skewtest([1, 2, 3, 4, 5, 6, 7, 8], alternative='greater')
     SkewtestResult(statistic=1.0108048609177787, pvalue=0.15605491807109484)
 
+    For a more detailed example, see :ref:`hypothesis_skewtest`.
     """
     xp = array_namespace(a)
     a, axis = _chk_asarray(a, axis, xp=xp)
@@ -1593,7 +1594,7 @@ def kurtosistest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
 
     See Also
     --------
-    :ref:`hypothesis_kurtosistest`
+    :ref:`hypothesis_kurtosistest` : Extended example
 
     Notes
     -----
@@ -1620,6 +1621,7 @@ def kurtosistest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
     >>> kurtosistest(s)
     KurtosistestResult(statistic=-1.475047944490622, pvalue=0.14019965402996987)
 
+    For a more detailed example, see :ref:`hypothesis_kurtosistest`.
     """
     xp = array_namespace(a)
     a, axis = _chk_asarray(a, axis, xp=xp)
@@ -1701,7 +1703,7 @@ def normaltest(a, axis=0, nan_policy='propagate'):
 
         See Also
         --------
-        :ref:`hypothesis_normaltest`
+        :ref:`hypothesis_normaltest` : Extended example
 
         References
         ----------
@@ -1725,6 +1727,8 @@ def normaltest(a, axis=0, nan_policy='propagate'):
         53.619...  # random
         >>> res.pvalue
         2.273917413209226e-12  # random
+
+        For a more detailed example, see :ref:`hypothesis_normaltest`.
     """
     xp = array_namespace(a)
 
@@ -1774,7 +1778,7 @@ def jarque_bera(x, *, axis=None):
 
     See Also
     --------
-    :ref:`hypothesis_jarque_bera`
+    :ref:`hypothesis_jarque_bera` : Extended example
 
     References
     ----------
@@ -1797,6 +1801,7 @@ def jarque_bera(x, *, axis=None):
     >>> jarque_bera_test.pvalue
     0.18810419594996775
 
+    For a more detailed example, see :ref:`hypothesis_jarque_bera`.
     """
     xp = array_namespace(x)
     x = xp.asarray(x)
@@ -4621,7 +4626,7 @@ def fisher_exact(table, alternative='two-sided'):
         than Fisher's exact test for 2x2 contingency tables.
     boschloo_exact : Boschloo's exact test, which is a more powerful
         alternative than Fisher's exact test for 2x2 contingency tables.
-    :ref:`hypothesis_fisher_exact`
+    :ref:`hypothesis_fisher_exact` : Extended example
 
     Notes
     -----
@@ -4733,26 +4738,13 @@ def fisher_exact(table, alternative='two-sided'):
 
     Examples
     --------
-    Say we spend a few days counting whales and sharks in the Atlantic and
-    Indian oceans. In the Atlantic ocean we find 8 whales and 1 shark, in
-    the Indian ocean 2 whales and 5 sharks. Then our contingency table is::
 
-                 Atlantic  Indian
-        whales       8        2
-        sharks       1        5
+    >>> from scipy.stats import fisher_exact
+    >>> res = fisher_exact([[8, 2], [1, 5]])
+    >>> res.pvalue
+    0.034965034965034975
 
-    We use this table to find the p-value::
-
-        >>> from scipy.stats import fisher_exact
-        >>> res = fisher_exact([[8, 2], [1, 5]])
-        >>> res.pvalue
-        0.034965034965034975
-
-    The probability that we would observe this or an even more imbalanced ratio
-    by chance is about 3.5%.  A commonly used significance level is 5%--if we
-    adopt that, we can therefore conclude that our observed imbalance is
-    statistically significant; whales prefer the Atlantic while sharks prefer
-    the Indian ocean.
+    For a more detailed example, see :ref:`hypothesis_fisher_exact`.
     """
     hypergeom = distributions.hypergeom
     # int32 is not enough for the algorithm
@@ -4894,7 +4886,7 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate',
 
     See Also
     --------
-    :ref:`hypothesis_spearmanr`
+    :ref:`hypothesis_spearmanr` : Extended example
 
     References
     ----------
@@ -4981,6 +4973,7 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate',
     >>> res_exact.pvalue, res_asymptotic.pvalue # asymptotic pvalue is too low
     (0.10277777777777777, 0.07239650145772594)
 
+    For a more detailed example, see :ref:`hypothesis_spearmanr`.
     """
     if axis is not None and axis > 1:
         raise ValueError("spearmanr only handles 1-D or 2-D arrays, "
@@ -5231,7 +5224,7 @@ def kendalltau(x, y, *, nan_policy='propagate',
     spearmanr : Calculates a Spearman rank-order correlation coefficient.
     theilslopes : Computes the Theil-Sen estimator for a set of points (x, y).
     weightedtau : Computes a weighted version of Kendall's tau.
-    :ref:`hypothesis_kendalltau`
+    :ref:`hypothesis_kendalltau` : Extended example
 
     Notes
     -----
@@ -5272,6 +5265,8 @@ def kendalltau(x, y, *, nan_policy='propagate',
     -0.47140452079103173
     >>> res.pvalue
     0.2827454599327748
+
+    For a more detailed example, see :ref:`hypothesis_kendalltau`.
     """
     x = np.asarray(x).ravel()
     y = np.asarray(y).ravel()
@@ -7099,7 +7094,7 @@ def chisquare(f_obs, f_exp=None, ddof=0, axis=0):
     scipy.stats.fisher_exact : Fisher exact test on a 2x2 contingency table.
     scipy.stats.barnard_exact : An unconditional exact test. An alternative
         to chi-squared test for small sample sizes.
-    :ref:`hypothesis_chisquare`
+    :ref:`hypothesis_chisquare` : Extended example
 
     Notes
     -----
@@ -8339,7 +8334,7 @@ def friedmanchisquare(*samples):
 
     See Also
     --------
-    :ref:`hypothesis_friedmanchisquare`
+    :ref:`hypothesis_friedmanchisquare` : Extended example
 
     Notes
     -----
@@ -8366,6 +8361,8 @@ def friedmanchisquare(*samples):
 
     The p-value is less than 0.05; however, as noted above, the results may not
     be reliable since we have a small number of repeated samples.
+
+    For a more detailed example, see :ref:`hypothesis_friedmanchisquare`.
     """
     k = len(samples)
     if k < 3:

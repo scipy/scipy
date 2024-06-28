@@ -1892,7 +1892,7 @@ def shapiro(x):
     --------
     anderson : The Anderson-Darling test for normality
     kstest : The Kolmogorov-Smirnov test for goodness of fit.
-    :ref:`hypothesis_shapiro`
+    :ref:`hypothesis_shapiro` : Extended example
 
     Notes
     -----
@@ -1928,6 +1928,8 @@ def shapiro(x):
     0.9813305735588074
     >>> shapiro_test.pvalue
     0.16855233907699585
+
+    For a more detailed example, see :ref:`hypothesis_shapiro`.
     """
     x = np.ravel(x).astype(np.float64)
 
@@ -2797,7 +2799,7 @@ def bartlett(*samples, axis=0):
     --------
     fligner : A non-parametric test for the equality of k variances
     levene : A robust parametric test for equality of k variances
-    :ref:`hypothesis_bartlett`
+    :ref:`hypothesis_bartlett` : Extended example
 
     Notes
     -----
@@ -2844,6 +2846,7 @@ def bartlett(*samples, axis=0):
     >>> [np.var(x, ddof=1) for x in [a, b, c]]
     [0.007054444444444413, 0.13073888888888888, 0.008890000000000002]
 
+    For a more detailed example, see :ref:`hypothesis_bartlett`.
     """
     xp = array_namespace(*samples)
 
@@ -2912,7 +2915,7 @@ def levene(*samples, center='median', proportiontocut=0.05):
     --------
     fligner : A non-parametric test for the equality of k variances
     bartlett : A parametric test for equality of k variances in normal samples
-    :ref:`hypothesis_levene`
+    :ref:`hypothesis_levene` : Extended example
 
     Notes
     -----
@@ -2961,6 +2964,7 @@ def levene(*samples, center='median', proportiontocut=0.05):
     >>> [np.var(x, ddof=1) for x in [a, b, c]]
     [0.007054444444444413, 0.13073888888888888, 0.008890000000000002]
 
+    For a more detailed example, see :ref:`hypothesis_levene`.
     """
     if center not in ['mean', 'median', 'trimmed']:
         raise ValueError("center must be 'mean', 'median' or 'trimmed'.")
@@ -3065,7 +3069,7 @@ def fligner(*samples, center='median', proportiontocut=0.05):
     --------
     bartlett : A parametric test for equality of k variances in normal samples
     levene : A robust parametric test for equality of k variances
-    :ref:`hypothesis_fligner`
+    :ref:`hypothesis_fligner` : Extended example
 
     Notes
     -----
@@ -3123,6 +3127,7 @@ def fligner(*samples, center='median', proportiontocut=0.05):
     >>> [np.var(x, ddof=1) for x in [a, b, c]]
     [0.007054444444444413, 0.13073888888888888, 0.008890000000000002]
 
+    For a more detailed example, see :ref:`hypothesis_fligner`.
     """
     if center not in ['mean', 'median', 'trimmed']:
         raise ValueError("center must be 'mean', 'median' or 'trimmed'.")

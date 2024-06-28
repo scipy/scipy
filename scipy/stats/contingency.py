@@ -192,7 +192,7 @@ def chi2_contingency(observed, correction=True, lambda_=None):
     scipy.stats.power_divergence
     scipy.stats.barnard_exact
     scipy.stats.boschloo_exact
-    :ref:`hypothesis_chi2_contingency`
+    :ref:`hypothesis_chi2_contingency` : Extended example
 
     Notes
     -----
@@ -278,6 +278,8 @@ def chi2_contingency(observed, correction=True, lambda_=None):
     8.7584514426741897
     >>> res.pvalue
     0.64417725029295503
+
+    For a more detailed example, see :ref:`hypothesis_chi2_contingency`.
     """
     observed = np.asarray(observed)
     if np.any(observed < 0):

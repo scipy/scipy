@@ -243,7 +243,7 @@ def dunnett(
     See Also
     --------
     tukey_hsd : performs pairwise comparison of means.
-    :ref:`hypothesis_dunnett`
+    :ref:`hypothesis_dunnett` : Extended example
 
     Notes
     -----
@@ -307,6 +307,7 @@ def dunnett(
     >>> res.pvalue
     array([0.30230596, 0.69115597])
 
+    For a more detailed example, see :ref:`hypothesis_dunnett`.
     """
     samples_, control_, rng = _iv_dunnett(
         samples=samples, control=control,

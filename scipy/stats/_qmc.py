@@ -1292,7 +1292,7 @@ class LatinHypercube(QMCEngine):
 
     See Also
     --------
-    :ref:`qmc_latin_hypercube`
+    :ref:`qmc_latin_hypercube` : Extended example
 
     Notes
     -----
@@ -1409,6 +1409,7 @@ class LatinHypercube(QMCEngine):
     orthogonal array based LHS. After optimization, the result would not
     be guaranteed to be of strength 2.
 
+    For a more detailed example, see :ref:`qmc_latin_hypercube`.
     """
 
     def __init__(
