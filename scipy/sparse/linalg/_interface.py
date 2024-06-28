@@ -590,7 +590,11 @@ class _CustomLinearOperator(LinearOperator):
             return super()._matmat(X)
 
     def _matvec(self, x):
-        return self.__matvec_impl(x)
+        if self.__matvec_impl is not None:
+            return self.__matvec_impl(x)
+        else:
+            raise TypeError("Tthis LinearOperator doesn't implement `rmatvec` nor `adjoint`,"
+                " and hence multiplying with it on the right-hand side is not supported.")
 
     def _rmatvec(self, x):
         func = self.__rmatvec_impl
