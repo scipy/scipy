@@ -4741,6 +4741,8 @@ def fisher_exact(table, alternative='two-sided'):
 
     >>> from scipy.stats import fisher_exact
     >>> res = fisher_exact([[8, 2], [1, 5]])
+    >>> res.statistic
+    20.0
     >>> res.pvalue
     0.034965034965034975
 
