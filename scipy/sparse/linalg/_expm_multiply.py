@@ -6,7 +6,7 @@ import numpy as np
 import scipy.linalg
 import scipy.sparse.linalg
 from scipy.linalg._decomp_qr import qr
-from scipy.sparse._sputils import is_pydata_spmatrix
+from scipy.sparse._sputils import convert_pydata_sparse_to_scipy, is_pydata_spmatrix
 from scipy.sparse.linalg import aslinearoperator
 from scipy.sparse.linalg._interface import IdentityOperator
 from scipy.sparse.linalg._onenormest import onenormest
@@ -203,6 +203,8 @@ def expm_multiply(A, B, start=None, stop=None, num=None,
     >>> expm(2*A).dot(B)                # Verify 3rd timestep
     array([ 2.71828183,  1.        ])
     """
+    A = convert_pydata_sparse_to_scipy(A, target_format="csr")
+
     if all(arg is None for arg in (start, stop, num, endpoint)):
         X = _expm_multiply_simple(A, B, traceA=traceA)
     else:
@@ -245,8 +247,8 @@ def _expm_multiply_simple(A, B, t=1.0, traceA=None, balance=False):
     if len(A.shape) != 2 or A.shape[0] != A.shape[1]:
         raise ValueError('expected A to be like a square matrix')
     if A.shape[1] != B.shape[0]:
-        raise ValueError('shapes of matrices A {} and B {} are incompatible'
-                         .format(A.shape, B.shape))
+        raise ValueError(f'shapes of matrices A {A.shape} and B {B.shape} '
+                         'are incompatible')
     ident = _ident_like(A)
     is_linear_operator = isinstance(A, scipy.sparse.linalg.LinearOperator)
     n = A.shape[0]
@@ -443,7 +445,8 @@ class LazyOperatorNormInfo:
 
     def d(self, p):
         """
-        Lazily estimate :math:`d_p(A) ~= || A^p ||^(1/p)` where :math:`||.||` is the 1-norm.
+        Lazily estimate :math:`d_p(A) ~= || A^p ||^(1/p)` where :math:`||.||`
+        is the 1-norm.
         """
         if p not in self._d:
             est = _onenormest_matrix_power(self._A, p, self._ell)
@@ -645,8 +648,8 @@ def _expm_multiply_interval(A, B, start=None, stop=None, num=None,
     if len(A.shape) != 2 or A.shape[0] != A.shape[1]:
         raise ValueError('expected A to be like a square matrix')
     if A.shape[1] != B.shape[0]:
-        raise ValueError('shapes of matrices A {} and B {} are incompatible'
-                         .format(A.shape, B.shape))
+        raise ValueError(f'shapes of matrices A {A.shape} and B {B.shape} '
+                         'are incompatible')
     ident = _ident_like(A)
     is_linear_operator = isinstance(A, scipy.sparse.linalg.LinearOperator)
     n = A.shape[0]
