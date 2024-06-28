@@ -915,61 +915,44 @@ We'll now plot all found minima on a heatmap of the function::
    :alt: "This X-Y plot is a heatmap with the Z value denoted with the lowest points as black and the highest values as white. The image resembles a chess board rotated 45 degrees but heavily smoothed. A red dot is located at many of the minima on the grid resulting from the SHGO optimizer. SHGO shows the global minima as a red X in the top right. A local minima found with dual annealing is a white circle marker in the top left. A different local minima found with basinhopping is a yellow marker in the top center. The code is plotting the differential evolution result as a cyan circle, but it is not visible on the plot. At a glance it's not clear which of these valleys is the true global minima."
    :include-source: 0
 
-Comparison of Optimizer features
-----------------------------------
-
-Global Optimizers
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Global optimization solvers aim to find the global minimum over the entire search space,
-which is especially important when the objective function has multiple local minima.
-
 **Comparison of Global Optimizers:**
 
 .. list-table::
-   :widths: 20 15 15 20 20 15
+   :widths: 20 15 15 20 20
    :header-rows: 1
 
    * - Solver
-     - Uses Gradient
-     - Uses Hessian
      - Bounds Constraints
      - Nonlinear Constraints
-     - Utilizes Sparsity
-   * - dual_annealing
-     - (✓)
-     - (✓)
-     - ✓
-     - 
-     - 
-   * - differential_evolution
-     - 
-     - 
-     - ✓
-     - ✓
-     - 
-   * - shgo
-     - (✓)
-     - (✓)
-     - ✓
-     - ✓
-     - 
-   * - direct
-     - 
-     - 
-     - ✓
-     - 
-     - 
+     - Uses Gradient
+     - Uses Hessian
    * - basinhopping
+     -
+     -
      - (✓)
      - (✓)
-     - 
-     - 
-     - 
+   * - direct
+     - ✓
+     -
+     -
+     -
+   * - dual_annealing
+     - ✓
+     -
+     - (✓)
+     - (✓)
+   * - differential_evolution
+     - ✓
+     - ✓
+     -
+     -
+   * - shgo
+     - ✓
+     - ✓
+     - (✓)
+     - (✓)
 
 (✓) = Depending on the chosen local minimizer
-
-
 
 Local optimization
 ------------------
@@ -977,8 +960,8 @@ Local optimization
 Local Optimizers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Local optimizers are algorithms that search for a local minimum, 
-starting from an initial point. These solvers are particularly useful 
+Local optimizers are algorithms that search for a local minimum,
+starting from an initial point. These solvers are particularly useful
 when the problem is presumed to have a smooth landscape around the initial guess.
 
 **Local Optimization Solver comparison:**
@@ -994,77 +977,77 @@ when the problem is presumed to have a smooth landscape around the initial guess
      - Nonlinear Constraints
      - Utilizes Sparsity
    * - Nelder-Mead
-     - 
-     - 
+     -
+     -
      - ✓
-     - 
-     - 
+     -
+     -
    * - Powell
-     - 
-     - 
+     -
+     -
      - ✓
-     - 
-     - 
+     -
+     -
    * - COBYLA
-     - 
-     - 
+     -
+     -
      - ✓
      - ✓
-     - 
+     -
    * - CG
      - ✓
-     - 
-     - 
-     - 
-     - 
+     -
+     -
+     -
+     -
    * - BFGS
      - ✓
-     - 
-     - 
-     - 
-     - 
+     -
+     -
+     -
+     -
    * - Newton-CG
      - ✓
      - ✓
-     - 
-     - 
+     -
+     -
      - ✓
    * - dogleg
      - ✓
      - (✓)
-     - 
-     - 
-     - 
+     -
+     -
+     -
    * - trust-ncg
      - ✓
      - ✓
-     - 
-     - 
-     - 
+     -
+     -
+     -
    * - trust-krylov
      - ✓
      - ✓
-     - 
-     - 
-     - 
+     -
+     -
+     -
    * - trust-exact
      - ✓
      - ✓
-     - 
-     - 
-     - 
+     -
+     -
+     -
    * - L-BFGS-B
      - ✓
-     - 
+     -
      - ✓
-     - 
-     - 
+     -
+     -
    * - TNC
      - ✓
-     - 
+     -
      - ✓
-     - 
-     - 
+     -
+     -
    * - trust-constr
      - ✓
      - ✓
@@ -1073,10 +1056,10 @@ when the problem is presumed to have a smooth landscape around the initial guess
      - ✓
    * - SLSQP
      - ✓
-     - 
+     -
      - ✓
      - ✓
-     - 
+     -
 
 (✓) = must be positive definite
 
