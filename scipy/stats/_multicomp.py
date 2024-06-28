@@ -12,6 +12,8 @@ from scipy.stats._common import ConfidenceInterval
 from scipy.stats._qmc import check_random_state
 from scipy.stats._stats_py import _var
 
+from numbers import Real, Integral
+
 if TYPE_CHECKING:
     import numpy.typing as npt
     from scipy._lib._util import DecimalNumber, SeedType
@@ -19,7 +21,7 @@ if TYPE_CHECKING:
 
 
 __all__ = [
-    'dunnett'
+    'dunnett', 'dunnett_from_stats'
 ]
 
 
@@ -242,6 +244,8 @@ def dunnett(
 
     See Also
     --------
+    dunnett_from_stats : performs comparison of means of multiple treatment groups
+               against a control group using only summary statistics from these groups.
     tukey_hsd : performs pairwise comparison of means.
 
     Notes
@@ -353,6 +357,221 @@ def dunnett(
         _n_control=n_control,
         _rng=rng
     )
+
+
+def dunnett_from_stats(
+    treatment_means:Sequence[Real],
+    treatment_stds:Sequence[Real],
+    treatment_sample_sizes:Sequence[Integral],
+    control_mean:Real,
+    control_std:Real,
+    control_sample_size:Integral,
+    alternative: Literal['two-sided', 'less', 'greater'] = "two-sided",
+    random_state: SeedType = None
+) -> DunnettResult:
+    """
+    Dunnett's test from descriptive statistics of the treatment groups and control group. 
+    
+    For details about Dunnett's test, see docstring of `dunnett` function in this module.
+
+    Parameters
+    ----------
+    treatment_means: 1D array_like
+        The mean of observations in treatment samples. 
+    treatment_stds: 1D array_like
+        The sample standard deviations (i.e. ``ddof=1`` if ``numpy.std`` is used) of 
+        the observations in each treatment sample. The number of entries must match
+        the number of entries in ``treatment_means``. The entries at the same index in 
+        ``treatment_means`` and ``treatment_stds`` are expected to correspond to the
+        same treatment sample.
+    treatment_sample_sizes: 1D array_like
+        The sample sizes of treatment samples. The number of entries must match
+        the number of entries in ``treatment_means``. The entries at the same index in
+        ``treatment_means``, ``treatment_stds`` and ``treatment_sample_sizes`` should 
+        correspond to the same treatment sample.
+    control_mean: scalar float_like
+        The mean of the observations in control sample.
+    control_std: scalar float_like (non-negative)
+        The sample standard deviation (i.e. ``ddof=1`` if ``numpy.std`` is used) of
+        the observations in control sample.
+    contro_sample_size: scalar int_like (natural number)
+        The sample size of the control sample.
+    alternative : {'two-sided', 'less', 'greater'}, optional
+        Defines the alternative hypothesis.
+
+        The null hypothesis is that the means of the distributions underlying
+        the samples and control are equal. The following alternative
+        hypotheses are available (default is 'two-sided'):
+
+        * 'two-sided': the means of the distributions underlying the samples
+          and control are unequal.
+        * 'less': the means of the distributions underlying the samples
+          are less than the mean of the distribution underlying the control.
+        * 'greater': the means of the distributions underlying the
+          samples are greater than the mean of the distribution underlying
+          the control.
+    random_state : {None, int, `numpy.random.Generator`}, optional
+        If `random_state` is an int or None, a new `numpy.random.Generator` is
+        created using ``np.random.default_rng(random_state)``.
+        If `random_state` is already a ``Generator`` instance, then the
+        provided instance is used.
+
+        The random number generator is used to control the randomized
+        Quasi-Monte Carlo integration of the multivariate-t distribution.
+
+    Returns
+    -------
+    res : `~scipy.stats._result_classes.DunnettResult`
+        An object containing attributes:
+
+        statistic : float ndarray
+            The computed statistic of the test for each comparison. The element
+            at index ``i`` is the statistic for the comparison between
+            groups ``i`` and the control.
+        pvalue : float ndarray
+            The computed p-value of the test for each comparison. The element
+            at index ``i`` is the p-value for the comparison between
+            group ``i`` and the control.
+
+        And the following method:
+
+        confidence_interval(confidence_level=0.95) :
+            Compute the difference in means of the groups
+            with the control +- the allowance.
+            
+    See Also
+    --------
+    dunnett : performs comparison of means of multiple treatment groups
+              against a control group.
+    tukey_hsd : performs pairwise comparison of means.
+
+    """
+    treatment_means, treatment_stds, treatment_sample_sizes, rng = _iv_dunnett_from_stats(
+        treatment_means,
+        treatment_stds,
+        treatment_sample_sizes,
+        control_mean,
+        control_std,
+        control_sample_size,
+        alternative,
+        random_state
+    )
+
+    df = (sum(treatment_sample_sizes)+control_sample_size) - len(treatment_sample_sizes) - 1
+
+    rho = control_sample_size/treatment_sample_sizes+1
+    rho = 1/np.sqrt(rho[:,None]*rho[None,:])
+    # Fills inplace
+    np.fill_diagonal(rho,1)
+
+    all_sd_list = [control_std] + list(treatment_stds)
+    all_n_list = [control_sample_size] + list(treatment_sample_sizes)
+    
+    # Samples with only one observation will not be used in the numerator part of pooled sample variance
+    # This immitates the behavior used in computation of `s2` in `_statistic_dunnett` function
+    pooled_var = np.sum([(current_sd**2)*(current_n-1) for current_sd, current_n in zip(all_sd_list, all_n_list) if current_n>1])/df
+    pooled_std = np.sqrt(pooled_var)
+
+    statistic = (treatment_means - control_mean)/(pooled_std*(np.sqrt(1/treatment_sample_sizes + 1/control_sample_size)))
+    std = pooled_std
+
+    pvalue = _pvalue_dunnett(
+        rho=rho, df=df, statistic=statistic, alternative=alternative, rng=rng
+    )
+
+    return DunnettResult(
+        statistic=statistic, pvalue=pvalue,
+        _alternative=alternative,
+        _rho=rho, _df=df, _std=std,
+        _mean_samples=treatment_means,
+        _mean_control=control_mean,
+        _n_samples=treatment_sample_sizes,
+        _n_control=control_sample_size,
+        _rng=rng
+    )
+
+
+def _iv_dunnett_from_stats(    
+        treatment_means:Sequence[Real],
+        treatment_stds:Sequence[Real],
+        treatment_sample_sizes:Sequence[Integral],
+        control_mean:Real,
+        control_std:Real,
+        control_sample_size:Integral,
+        alternative: Literal['two-sided', 'less', 'greater'],
+        random_state: SeedType
+    ):
+    """
+        Input validation for dunnett_from_stats function
+    """
+    rng = check_random_state(random_state)
+    
+    if alternative not in {'two-sided', 'less', 'greater'}:
+        raise ValueError(
+            "alternative must be 'less', 'greater' or 'two-sided'"
+        )
+        
+    ndim_msg = "Treatment samples' summary statistics should be passed as a 1D sequence"
+    real_num_msg = "Values passed for means or standard deviations should be real numbers"
+    positive_integral_num_msg = "Values passed for sample sizes should be positive integral values"
+    std_negative_msg = "Standard deviation cannot be negative"
+        
+    # means check
+    # has to be real numbers
+    treatment_means = np.asarray(treatment_means) 
+    if treatment_means.ndim != 1:
+        raise ValueError(ndim_msg)
+    # check of each element is plausible because only one number is expected per treatment group
+    for trt_mean in treatment_means:
+        if not isinstance(trt_mean, Real):
+            raise ValueError(real_num_msg)
+    
+    # similar check for control mean
+    if not isinstance(control_mean, Real):
+        raise ValueError(real_num_msg)
+            
+    # standard deviation checks
+    # has to be positive real numbers
+    treatment_stds = np.asarray(treatment_stds) 
+    if treatment_stds.ndim != 1:
+        raise ValueError(ndim_msg)
+    # check of each element is plausible because only one number is expected per treatment group
+    for trt_std in treatment_stds:
+        if not isinstance(trt_std, Real):
+            raise ValueError(real_num_msg)
+        if trt_std <0:
+            raise ValueError(std_negative_msg)
+            
+    # similar check for control standard deviation
+    if not isinstance(control_std, Real):
+        raise ValueError(real_num_msg)
+    if control_std <0:
+        raise ValueError(std_negative_msg)
+
+    # Sample Size checks
+    # has to be positive integral number
+    treatment_sample_sizes = np.asarray(treatment_sample_sizes)
+    if treatment_sample_sizes.ndim != 1:
+        raise ValueError(ndim_msg)
+    # check of each element is plausible because only one number is expected per treatment group
+    for trt_ss in treatment_sample_sizes:
+        if not isinstance(trt_ss, Integral):
+            raise ValueError(positive_integral_num_msg)
+        if trt_ss < 1:
+            raise ValueError(positive_integral_num_msg)
+
+    # similar check for control sample size
+    if not isinstance(control_sample_size, Integral):
+        raise ValueError(positive_integral_num_msg)
+    if control_sample_size < 1:
+        raise ValueError(positive_integral_num_msg)
+        
+        
+    num_treatment_mismatch = "Number of entries in the treatment_means, treatment_stds, treatment_sample_sizes should match"
+    if not (len(treatment_means) == len(treatment_stds) == len(treatment_sample_sizes)):
+        raise ValueError(num_treatment_mismatch)
+    
+    return treatment_means, treatment_stds, treatment_sample_sizes, rng
 
 
 def _iv_dunnett(

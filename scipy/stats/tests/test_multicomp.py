@@ -7,6 +7,25 @@ from numpy.testing import assert_allclose
 from scipy import stats
 from scipy.stats._multicomp import _pvalue_dunnett, DunnettResult
 
+def get_stats(sample_data:list, std_ddof:int=1):
+    """
+    Returns descriptive statistics for a sample dataset
+    """
+    sample_data_size = len(sample_data)
+    # if there is one or zero element, then standard deviation is not defined. but using it as 0 here because it makes no difference in computations
+    return np.mean(sample_data), 0 if sample_data_size<2 else np.std(sample_data, ddof=std_ddof), sample_data_size
+
+def get_stats_for_multiple_samples(samples):
+    """
+    Returns descriptive statistics for multiple samples in the form of : list of means, list of standard deviations, list of sample sizes
+    """
+    trt_means, trt_stds, trt_sizes = list(), list(), list()
+    for sample in samples:
+        current_mean, current_std, current_size = get_stats(sample)
+        trt_means.append(current_mean)
+        trt_stds.append(current_std)
+        trt_sizes.append(current_size)
+    return trt_means, trt_stds, trt_sizes
 
 class TestDunnett:
     # For the following tests, p-values were computed using Matlab, e.g.
@@ -221,7 +240,35 @@ class TestDunnett:
         rng = np.random.default_rng(11681140010308601919115036826969764808)
 
         res = stats.dunnett(*samples, control=control, random_state=rng)
+        print("Result from dunnett : {res}")
+        assert isinstance(res, DunnettResult)
+        assert_allclose(res.statistic, statistic, rtol=5e-5)
+        assert_allclose(res.pvalue, pvalue, rtol=1e-2, atol=1e-4)
 
+    @pytest.mark.parametrize(
+        'samples, control, pvalue, statistic',
+        [
+            (samples_1, control_1, pvalue_1, statistic_1),
+            (samples_2, control_2, pvalue_2, statistic_2),
+            (samples_3, control_3, pvalue_3, statistic_3),
+            (samples_4, control_4, pvalue_4, statistic_4),
+        ]
+    )
+    def test_basic_from_stats(self, samples, control, pvalue, statistic):
+        rng = np.random.default_rng(11681140010308601919115036826969764808)
+        trt_means, trt_stds, trt_sizes = get_stats_for_multiple_samples(samples)
+        ctrl_mean, ctrl_std, ctrl_size = get_stats(control)
+
+        res = stats.dunnett_from_stats(
+            treatment_means=trt_means, 
+            treatment_stds=trt_stds, 
+            treatment_sample_sizes=trt_sizes,
+            control_mean=ctrl_mean, 
+            control_std=ctrl_std, 
+            control_sample_size=ctrl_size, 
+            random_state=rng)
+        print("Result from dunnett_from_stats : {res}")
+        
         assert isinstance(res, DunnettResult)
         assert_allclose(res.statistic, statistic, rtol=5e-5)
         assert_allclose(res.pvalue, pvalue, rtol=1e-2, atol=1e-4)
@@ -245,6 +292,43 @@ class TestDunnett:
             )
             ref = stats.ttest_ind(
                 sample, control,
+                alternative=alternative, random_state=rng
+            )
+
+            assert_allclose(res.statistic, ref.statistic, rtol=1e-3, atol=1e-5)
+            assert_allclose(res.pvalue, ref.pvalue, rtol=1e-3, atol=1e-5)
+
+    @pytest.mark.parametrize(
+        'alternative',
+        ['two-sided', 'less', 'greater']
+    )
+    def test_dunnett_from_stats_close_to_ttest_ind(self, alternative):
+        # check that `dunnett_from_stats` agrees with `ttest_ind`
+        # when there are only two groups
+        rng = np.random.default_rng(114184017807316971636137493526995620351)
+
+        for _ in range(10):
+            trt = rng.integers(-100, 100, size=(10,))
+            ctrl = rng.integers(-100, 100, size=(10,))
+
+            trt_mean, trt_std, trt_size = get_stats(trt)
+            trt_means  = np.array([trt_mean])
+            trt_stds  = np.array([trt_std])
+            trt_sizes  = np.array([trt_size])
+            ctrl_mean, ctrl_std, ctrl_size = get_stats(ctrl)
+
+            res = stats.dunnett_from_stats(
+                treatment_means=trt_means, 
+                treatment_stds=trt_stds, 
+                treatment_sample_sizes=trt_sizes,
+                control_mean=ctrl_mean, 
+                control_std=ctrl_std, 
+                control_sample_size=ctrl_size, 
+                alternative=alternative,
+                random_state=rng
+                )
+            ref = stats.ttest_ind(
+                trt, ctrl,
                 alternative=alternative, random_state=rng
             )
 
@@ -289,10 +373,58 @@ class TestDunnett:
             assert 60 < ci.low[1] < 100
             assert -100 < ci.high[0] < -60
             assert 60 < ci.high[1] < 100
+            
+    @pytest.mark.parametrize(
+        'alternative, pvalue',
+        [
+            ('less', [0, 1]),
+            ('greater', [1, 0]),
+            ('two-sided', [0, 0]),
+        ]
+    )
+    def test_alternatives_dunnett_from_stats(self, alternative, pvalue):
+        rng = np.random.default_rng(114184017807316971636137493526995620351)
+
+        # width of 20 and min diff between samples/control is 60
+        # and maximal diff would be 100
+        sample_less = rng.integers(0, 20, size=(10,))
+        control = rng.integers(80, 100, size=(10,))
+        sample_greater = rng.integers(160, 180, size=(10,))
+        
+        trt_means, trt_stds, trt_sizes = get_stats_for_multiple_samples([sample_less, sample_greater])
+        ctrl_mean, ctrl_std, ctrl_size = get_stats(control)
+
+        res = stats.dunnett_from_stats(
+            treatment_means=trt_means, 
+            treatment_stds=trt_stds, 
+            treatment_sample_sizes=trt_sizes,
+            control_mean=ctrl_mean, 
+            control_std=ctrl_std, 
+            control_sample_size=ctrl_size, 
+            alternative=alternative,
+            random_state=rng
+        )
+        assert_allclose(res.pvalue, pvalue, atol=1e-7)
+
+        ci = res.confidence_interval()
+        # two-sided is comparable for high/low
+        if alternative == 'less':
+            assert np.isneginf(ci.low).all()
+            assert -100 < ci.high[0] < -60
+            assert 60 < ci.high[1] < 100
+        elif alternative == 'greater':
+            assert -100 < ci.low[0] < -60
+            assert 60 < ci.low[1] < 100
+            assert np.isposinf(ci.high).all()
+        elif alternative == 'two-sided':
+            assert -100 < ci.low[0] < -60
+            assert 60 < ci.low[1] < 100
+            assert -100 < ci.high[0] < -60
+            assert 60 < ci.high[1] < 100
 
     @pytest.mark.parametrize("case", [case_1, case_2, case_3, case_4])
     @pytest.mark.parametrize("alternative", ['less', 'greater', 'two-sided'])
-    def test_against_R_multicomp_glht(self, case, alternative):
+    def test_dunnett_against_R_multicomp_glht(self, case, alternative):
         rng = np.random.default_rng(189117774084579816190295271136455278291)
         samples = case['samples']
         control = case['control']
@@ -302,6 +434,50 @@ class TestDunnett:
 
         res = stats.dunnett(*samples, control=control, alternative=alternative,
                             random_state=rng)
+        # atol can't be tighter because R reports some pvalues as "< 1e-4"
+        assert_allclose(res.pvalue, p_ref, rtol=5e-3, atol=1e-4)
+
+        ci_ref = case['cis'][alternatives[alternative]]
+        if alternative == "greater":
+            ci_ref = [ci_ref, np.inf]
+        elif alternative == "less":
+            ci_ref = [-np.inf, ci_ref]
+        assert res._ci is None
+        assert res._ci_cl is None
+        ci = res.confidence_interval(confidence_level=0.95)
+        assert_allclose(ci.low, ci_ref[0], rtol=5e-3, atol=1e-5)
+        assert_allclose(ci.high, ci_ref[1], rtol=5e-3, atol=1e-5)
+
+        # re-run to use the cached value "is" to check id as same object
+        assert res._ci is ci
+        assert res._ci_cl == 0.95
+        ci_ = res.confidence_interval(confidence_level=0.95)
+        assert ci_ is ci
+        
+    @pytest.mark.parametrize("case", [case_1, case_2, case_3, case_4])
+    @pytest.mark.parametrize("alternative", ['less', 'greater', 'two-sided'])
+    def test_dunnett_from_stats_against_R_multicomp_glht(self, case, alternative):
+        rng = np.random.default_rng(189117774084579816190295271136455278291)
+        samples = case['samples']
+        control = case['control']
+        alternatives = {'less': 'less', 'greater': 'greater',
+                        'two-sided': 'twosided'}
+        p_ref = case['pvalues'][alternative.replace('-', '')]
+        
+        trt_means, trt_stds, trt_sizes = get_stats_for_multiple_samples(samples)
+        ctrl_mean, ctrl_std, ctrl_size = get_stats(control)
+
+        res = stats.dunnett_from_stats(
+            treatment_means=trt_means, 
+            treatment_stds=trt_stds, 
+            treatment_sample_sizes=trt_sizes,
+            control_mean=ctrl_mean, 
+            control_std=ctrl_std, 
+            control_sample_size=ctrl_size, 
+            alternative=alternative,
+            random_state=rng
+        )
+        
         # atol can't be tighter because R reports some pvalues as "< 1e-4"
         assert_allclose(res.pvalue, p_ref, rtol=5e-3, atol=1e-4)
 
@@ -345,16 +521,39 @@ class TestDunnett:
         else:
             assert 'inf' not in res_str
             assert '21.' in res_str
-
-    def test_warnings(self):
+            
+    @pytest.mark.parametrize('alternative', ["two-sided", "less", "greater"])
+    def test_str_dunnett_from_stats(self, alternative):
         rng = np.random.default_rng(189117774084579816190295271136455278291)
+        
+        trt_means, trt_stds, trt_sizes = get_stats_for_multiple_samples(self.samples_3)
+        ctrl_mean, ctrl_std, ctrl_size = get_stats(self.control_3)
 
-        res = stats.dunnett(
-            *self.samples_3, control=self.control_3, random_state=rng
+        res = stats.dunnett_from_stats(
+            treatment_means=trt_means, 
+            treatment_stds=trt_stds, 
+            treatment_sample_sizes=trt_sizes,
+            control_mean=ctrl_mean, 
+            control_std=ctrl_std, 
+            control_sample_size=ctrl_size, 
+            alternative=alternative,
+            random_state=rng
         )
-        msg = r"Computation of the confidence interval did not converge"
-        with pytest.warns(UserWarning, match=msg):
-            res._allowance(tol=1e-5)
+
+        # check some str output
+        res_str = str(res)
+        assert '(Sample 2 - Control)' in res_str
+        assert '95.0%' in res_str
+
+        if alternative == 'less':
+            assert '-inf' in res_str
+            assert '19.' in res_str
+        elif alternative == 'greater':
+            assert 'inf' in res_str
+            assert '-13.' in res_str
+        else:
+            assert 'inf' not in res_str
+            assert '21.' in res_str
 
     def test_raises(self):
         samples, control = self.samples_3, self.control_3
@@ -389,6 +588,110 @@ class TestDunnett:
         res = stats.dunnett(*samples, control=control)
         with pytest.raises(ValueError, match="Confidence level must"):
             res.confidence_interval(confidence_level=3)
+            
+    def test_dunnett_from_stats_raises(self):
+        samples, control = self.samples_3, self.control_3
+        
+        trt_means, trt_stds, trt_sizes = get_stats_for_multiple_samples(self.samples_3)
+        ctrl_mean, ctrl_std, ctrl_size = get_stats(self.control_3)
+
+        # alternative
+        with pytest.raises(ValueError, match="alternative must be"):
+
+            res = stats.dunnett_from_stats(
+                treatment_means=trt_means, 
+                treatment_stds=trt_stds, 
+                treatment_sample_sizes=trt_sizes,
+                control_mean=ctrl_mean, 
+                control_std=ctrl_std, 
+                control_sample_size=ctrl_size, 
+                alternative='bob' # input is not one of the handled values
+            )
+            
+        res = stats.dunnett_from_stats(
+                treatment_means=trt_means, 
+                treatment_stds=trt_stds, 
+                treatment_sample_sizes=trt_sizes,
+                control_mean=ctrl_mean, 
+                control_std=ctrl_std, 
+                control_sample_size=ctrl_size
+            )
+        with pytest.raises(ValueError, match="Confidence level must"):
+            res.confidence_interval(confidence_level=3)
+            
+        # passing a scalar input
+        with pytest.raises(ValueError, match="Treatment samples' summary statistics should be passed as a 1D sequence"):
+            stats.dunnett_from_stats(
+                treatment_means=1, # incorrect ndimension
+                treatment_stds=trt_stds, 
+                treatment_sample_sizes=trt_sizes,
+                control_mean=ctrl_mean, 
+                control_std=ctrl_std, 
+                control_sample_size=ctrl_size
+            )
+        # passing a two dimensional input
+        with pytest.raises(ValueError, match="Treatment samples' summary statistics should be passed as a 1D sequence"):
+            stats.dunnett_from_stats(
+                treatment_means=trt_means, 
+                treatment_stds=[[1]], # incorrect ndimension
+                treatment_sample_sizes=trt_sizes,
+                control_mean=ctrl_mean, 
+                control_std=ctrl_std, 
+                control_sample_size=ctrl_size
+            )
+            
+        # passing incorrect data type
+        with pytest.raises(ValueError, match="Values passed for means or standard deviations should be real numbers"):
+            stats.dunnett_from_stats(
+                treatment_means=['unexpected_data_type'], # incorrect type
+                treatment_stds=trt_stds, 
+                treatment_sample_sizes=trt_sizes,
+                control_mean=ctrl_mean, 
+                control_std=ctrl_std, 
+                control_sample_size=ctrl_size
+            )
+        with pytest.raises(ValueError, match="Values passed for means or standard deviations should be real numbers"):
+            stats.dunnett_from_stats(
+                treatment_means=trt_means, 
+                treatment_stds=trt_stds, 
+                treatment_sample_sizes=trt_sizes,
+                control_mean='unexpected_data_type',  # incorrect type
+                control_std=ctrl_std, 
+                control_sample_size=ctrl_size
+            )
+        # passing incorrect data type
+        with pytest.raises(ValueError, match="Values passed for sample sizes should be positive integral values"):
+            stats.dunnett_from_stats(
+                treatment_means=trt_means, 
+                treatment_stds=trt_stds, 
+                treatment_sample_sizes=[4.3,9], # incorrect type (and potentially length mismatch to trt_means, trt_stds)
+                control_mean=ctrl_mean, 
+                control_std=ctrl_std, 
+                control_sample_size=ctrl_size
+            )
+        with pytest.raises(ValueError, match="Values passed for sample sizes should be positive integral values"):
+            stats.dunnett_from_stats(
+                treatment_means=trt_means, 
+                treatment_stds=trt_stds, 
+                treatment_sample_sizes=trt_sizes,
+                control_mean=ctrl_mean, 
+                control_std=ctrl_std, 
+                control_sample_size = -4 # incorrect value (-ve)
+            )
+            
+        # mismatch between length of treatment means collection, standard deviation collection and sample count collection
+        with pytest.raises(
+            ValueError, 
+            match="Number of entries in the treatment_means, treatment_stds, treatment_sample_sizes should match"):
+            stats.dunnett_from_stats(
+                treatment_means=trt_means, 
+                treatment_stds=trt_stds, 
+                treatment_sample_sizes=list(trt_sizes)+[3], # adding another entry in collection of sizes
+                control_mean=ctrl_mean, 
+                control_std=ctrl_std, 
+                control_sample_size = ctrl_size
+            )
+
 
     @pytest.mark.filterwarnings("ignore:Computation of the confidence")
     @pytest.mark.parametrize('n_samples', [1, 2, 3])
@@ -402,3 +705,38 @@ class TestDunnett:
         ci = res.confidence_interval()
         assert ci.low.shape == (n_samples,)
         assert ci.high.shape == (n_samples,)
+        
+    @pytest.mark.filterwarnings("ignore:Computation of the confidence")
+    @pytest.mark.parametrize('n_samples', [1, 2, 3])
+    def test_shapes_dunnett_from_stats(self, n_samples):
+        rng = np.random.default_rng(689448934110805334)
+        samples = rng.normal(size=(n_samples, 10))
+        control = rng.normal(size=10)
+        
+        trt_means, trt_stds, trt_sizes = get_stats_for_multiple_samples(samples)
+        ctrl_mean, ctrl_std, ctrl_size = get_stats(control)
+
+        res = stats.dunnett_from_stats(
+            treatment_means=trt_means, 
+            treatment_stds=trt_stds, 
+            treatment_sample_sizes=trt_sizes,
+            control_mean=ctrl_mean, 
+            control_std=ctrl_std, 
+            control_sample_size=ctrl_size, 
+            random_state=rng
+        )
+        assert res.statistic.shape == (n_samples,)
+        assert res.pvalue.shape == (n_samples,)
+        ci = res.confidence_interval()
+        assert ci.low.shape == (n_samples,)
+        assert ci.high.shape == (n_samples,)
+
+    def test_warnings(self):
+        rng = np.random.default_rng(189117774084579816190295271136455278291)
+
+        res = stats.dunnett(
+            *self.samples_3, control=self.control_3, random_state=rng
+        )
+        msg = r"Computation of the confidence interval did not converge"
+        with pytest.warns(UserWarning, match=msg):
+            res._allowance(tol=1e-5)
