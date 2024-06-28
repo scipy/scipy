@@ -2760,20 +2760,23 @@ class TestSEM:
 @pytest.mark.usefixtures("skip_xp_backends")
 class TestZmapZscore:
 
+    def assert_precision_warning(self):
+        return (pytest.warns(RuntimeWarning, match="Precision loss occurred...")
+                if SCIPY_ARRAY_API else contextlib.nullcontext())
+
     @pytest.mark.parametrize(
         'x, y',
-        [([1, 2, 3, 4], [1, 2, 3, 4]),
-         ([1, 2, 3], [0, 1, 2, 3, 4])]
+        [([1., 2., 3., 4.], [1., 2., 3., 4.]),
+         ([1., 2., 3.], [0., 1., 2., 3., 4.])]
     )
     def test_zmap(self, x, y, xp):
         # For these simple cases, calculate the expected result directly
         # by using the formula for the z-score.
-        expected = (x - np.mean(y)) / np.std(y)
-
         x, y = xp.asarray(x), xp.asarray(y)
+        xp_test = array_namespace(x, y)  # std needs correction
+        expected = (x - xp.mean(y)) / xp_test.std(y, correction=0)
         z = stats.zmap(x, y)
-        default_float = xp.asarray(1.).dtype
-        xp_assert_close(z, xp.asarray(expected, dtype=default_float))
+        xp_assert_close(z, expected)
 
     def test_zmap_axis(self, xp):
         # Test use of 'axis' keyword in zmap.
@@ -2921,19 +2924,19 @@ class TestZmapZscore:
 
     def test_zscore_constant_input_1d(self, xp):
         x = xp.asarray([-0.087] * 3)
-        with pytest.warns(RuntimeWarning, match="Precision loss occurred..."):
+        with self.assert_precision_warning():
             z = stats.zscore(x)
         xp_assert_equal(z, xp.full(x.shape, xp.nan))
 
     def test_zscore_constant_input_2d(self, xp):
         x = xp.asarray([[10.0, 10.0, 10.0, 10.0],
                         [10.0, 11.0, 12.0, 13.0]])
-        with pytest.warns(RuntimeWarning, match="Precision loss occurred..."):
+        with self.assert_precision_warning():
             z0 = stats.zscore(x, axis=0)
         xp_assert_close(z0, xp.asarray([[xp.nan, -1.0, -1.0, -1.0],
                                         [xp.nan, 1.0, 1.0, 1.0]]))
 
-        with pytest.warns(RuntimeWarning, match="Precision loss occurred..."):
+        with self.assert_precision_warning():
             z1 = stats.zscore(x, axis=1)
         xp_assert_equal(z1, xp.stack([xp.asarray([xp.nan, xp.nan, xp.nan, xp.nan]),
                                       stats.zscore(x[1, :])]))
@@ -2942,7 +2945,7 @@ class TestZmapZscore:
         xp_assert_equal(z, xp.reshape(stats.zscore(xp.reshape(x, (-1,))), x.shape))
 
         y = xp.ones((3, 6))
-        with pytest.warns(RuntimeWarning, match="Precision loss occurred..."):
+        with self.assert_precision_warning():
             z = stats.zscore(y, axis=None)
         xp_assert_equal(z, xp.full(y.shape, xp.asarray(xp.nan)))
 
@@ -2953,13 +2956,13 @@ class TestZmapZscore:
         s = (3/2)**0.5
         s2 = 2**0.5
 
-        with pytest.warns(RuntimeWarning, match="Precision loss occurred..."):
+        with self.assert_precision_warning():
             z0 = stats.zscore(x, nan_policy='omit', axis=0)
         xp_assert_close(z0, xp.asarray([[xp.nan, -s, -1.0, xp.nan],
                                         [xp.nan, 0, 1.0, xp.nan],
                                         [xp.nan, s, xp.nan, xp.nan]]))
 
-        with pytest.warns(RuntimeWarning, match="Precision loss occurred..."):
+        with self.assert_precision_warning():
             z1 = stats.zscore(x, nan_policy='omit', axis=1)
         xp_assert_close(z1, xp.asarray([[xp.nan, xp.nan, xp.nan, xp.nan],
                                         [-s, 0, s, xp.nan],
@@ -2969,26 +2972,20 @@ class TestZmapZscore:
         # A row is all nan, and we use axis=1.
         x = xp.asarray([[np.nan, np.nan, np.nan, np.nan],
                         [10.0, 10.0, 12.0, 12.0]])
-        with pytest.warns(SmallSampleWarning, match="After omitting..."):
-            z = stats.zscore(x, nan_policy='omit', axis=1)
+        z = stats.zscore(x, nan_policy='omit', axis=1)
         xp_assert_close(z, xp.asarray([[np.nan, np.nan, np.nan, np.nan],
                                        [-1.0, -1.0, 1.0, 1.0]]))
 
     def test_zscore_2d_all_nan(self, xp):
         # The entire 2d array is nan, and we use axis=None.
         y = xp.full((2, 3), xp.nan)
-        with pytest.warns(SmallSampleWarning, match="After omitting..."):
-            z = stats.zscore(y, nan_policy='omit', axis=None)
+        z = stats.zscore(y, nan_policy='omit', axis=None)
         xp_assert_equal(z, y)
 
     @pytest.mark.parametrize('x', [np.array([]), np.zeros((3, 0, 5))])
     def test_zscore_empty_input(self, x, xp):
         x = xp.asarray(x)
-        if x.shape[0] == 0:
-            with pytest.warns(SmallSampleWarning, match="One or more sample..."):
-                z = stats.zscore(x)
-        else:
-            z = stats.zscore(x)
+        z = stats.zscore(x)
         xp_assert_equal(z, x)
 
     def test_gzscore_normal_array(self, xp):
@@ -3027,6 +3024,19 @@ class TestZmapZscore:
         assert_equal(res[1:], np.nan)
         res = stats.zscore(y, axis=None)
         assert_equal(res[1:], np.nan)
+
+    def test_degenerate_input(self, xp):
+        # Edge case bug fixed only in SCIPY_ARRAY_API implementation
+        if not SCIPY_ARRAY_API:
+            return
+
+        scores = xp.arange(3)
+        compare = xp.ones(3)
+        ref = xp.asarray([-xp.inf, xp.nan, xp.inf])
+        with self.assert_precision_warning():
+            res = stats.zmap(scores, compare)
+        xp_assert_equal(res, ref)
+
 
 class TestMedianAbsDeviation:
     def setup_class(self):

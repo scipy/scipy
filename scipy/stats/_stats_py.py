@@ -1090,7 +1090,11 @@ def moment(a, order=1, axis=0, nan_policy='propagate', *, center=None):
         return _moment(a, order, axis, mean=center)
 
 
-def _demean(a, mean, axis, xp):
+def _demean(a, mean, axis, *, xp, precision_warning=True):
+    # subtracts `mean` from `a` and returns the result,
+    # warning if there is catastrophic cancellation. `mean`
+    # must be the mean of `a` along axis with `keepdims=True`.
+    # Used in e.g. `_moment`, `_zscore`, `_xp_var`. See gh-15905.
     a_zero_mean = a - mean
 
     if xp_size(a_zero_mean) == 0:
@@ -1107,7 +1111,7 @@ def _demean(a, mean, axis, xp):
          # compact way to deal with axis tuples or ints
          else np.prod(np.asarray(a.shape)[np.asarray(axis)]))
 
-    if precision_loss and n > 1:
+    if precision_loss and n > 1 and precision_warning:
         message = ("Precision loss occurred in moment calculation due to "
                    "catastrophic cancellation. This occurs when the data "
                    "are nearly identical. Results may be unreliable.")
@@ -1157,7 +1161,7 @@ def _moment(a, order, axis, *, mean=None, xp=None):
     mean = (xp.mean(a, axis=axis, keepdims=True) if mean is None
             else xp.asarray(mean, dtype=dtype))
     mean = mean[()] if mean.ndim == 0 else mean
-    a_zero_mean = _demean(a, mean, axis, xp)
+    a_zero_mean = _demean(a, mean, axis, xp=xp)
 
     if n_list[-1] == 1:
         s = xp.asarray(a_zero_mean, copy=True)
@@ -3210,7 +3214,12 @@ def zmap(scores, compare, axis=0, ddof=0, nan_policy='propagate'):
     # Let's table deprecating that and just get the array API version
     # working.
     implementation = _zmap_array_api if SCIPY_ARRAY_API else _zmap_not_array_api
-    return implementation(scores, compare, axis, ddof, nan_policy)
+
+    with warnings.catch_warnings():
+        if scores is compare:  # zscore should not emit SmallSampleWarning
+            warnings.simplefilter('ignore', SmallSampleWarning)
+
+        return implementation(scores, compare, axis, ddof, nan_policy)
 
 
 def _convert_common_float(*arrays, xp=None):
@@ -3224,16 +3233,20 @@ def _convert_common_float(*arrays, xp=None):
 
 
 def _zmap_array_api(scores, compare, axis, ddof, nan_policy):
+    like_zscore = (scores is compare)
     xp = array_namespace(scores, compare)
     scores, compare = _convert_common_float(scores, compare, xp=xp)
+
     mn = _xp_mean(compare, axis=axis, keepdims=True, nan_policy=nan_policy)
     std = _xp_var(compare, axis=axis, correction=ddof,
                   keepdims=True, nan_policy=nan_policy)**0.5
 
-    with np.errstate(divide='ignore', invalid='ignore'):
-        z = _demean(scores, mn, axis, xp) / std
+    with np.errstate(invalid='ignore', divide='ignore'):
+        z = _demean(scores, mn, axis, xp=xp, precision_warning=False) / std
 
-    with np.errstate(all='ignore'):
+    # If we know that scores and compare are identical, we can infer that
+    # some slices should have NaNs.
+    if like_zscore:
         eps = xp.finfo(z.dtype).eps
         zero = std <= xp.abs(eps * mn)
         z = xp.where(zero, xp.asarray(xp.nan, dtype=z.dtype), z)
@@ -11198,7 +11211,7 @@ def _xp_var(x, /, *, axis=None, correction=0, keepdims=False, nan_policy='propag
     kwargs = dict(axis=axis, nan_policy=nan_policy, dtype=dtype, xp=xp)
     mean = _xp_mean(x, keepdims=True, **kwargs)
     x = xp.asarray(x, dtype=mean.dtype)
-    x_mean = _demean(x, mean, axis, xp)
+    x_mean = _demean(x, mean, axis, xp=xp)
     var = _xp_mean(x_mean**2, keepdims=keepdims, **kwargs)
 
     if correction != 0:
