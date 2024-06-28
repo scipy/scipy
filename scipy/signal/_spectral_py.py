@@ -99,9 +99,9 @@ def lombscargle(
            Statistical aspects of spectral analysis of unevenly spaced data",
            The Astrophysical Journal, vol 263, pp. 835-853, 1982
     
-    .. [3] M. Zechmeister and M. Kürster, “The generalised Lomb-Scargle periodogram. 
-           A new formalism for the floating-mean and Keplerian periodograms,”
-           Astronomy and Astrophysics, vol. 496, pp. 577–584, 2009
+    .. [3] M. Zechmeister and M. Kürster, "The generalised Lomb-Scargle periodogram. 
+           A new formalism for the floating-mean and Keplerian periodograms,"
+           Astronomy and Astrophysics, vol. 496, pp. 577-584, 2009
     
     Examples
     --------
