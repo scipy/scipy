@@ -1,14 +1,14 @@
 /* Written by Charles Harris charles.harris@sdl.usu.edu */
 
-#include <math.h>
 #include "zeros.h"
+#include <math.h>
 
-double
-bisect(callback_type f, double xa, double xb, double xtol, double rtol,
-       int iter, void *func_data_param, scipy_zeros_info *solver_stats)
-{
+double bisect(
+    callback_type f, double xa, double xb, double xtol, double rtol, int iter, void *func_data_param,
+    scipy_zeros_info *solver_stats
+) {
     int i;
-    double dm,xm,fm,fa,fb;
+    double dm, xm, fm, fa, fb;
     solver_stats->error_num = INPROGRESS;
 
     fa = (*f)(xa, func_data_param);
@@ -22,22 +22,22 @@ bisect(callback_type f, double xa, double xb, double xtol, double rtol,
         solver_stats->error_num = CONVERGED;
         return xb;
     }
-    if (signbit(fa)==signbit(fb)) {
+    if (signbit(fa) == signbit(fb)) {
         solver_stats->error_num = SIGNERR;
         return 0.;
     }
     dm = xb - xa;
     solver_stats->iterations = 0;
-    for (i=0; i<iter; i++) {
+    for (i = 0; i < iter; i++) {
         solver_stats->iterations++;
         dm *= .5;
         xm = xa + dm;
         fm = (*f)(xm, func_data_param);
         solver_stats->funcalls++;
-        if (signbit(fm)==signbit(fa)) {
+        if (signbit(fm) == signbit(fa)) {
             xa = xm;
         }
-        if (fm == 0 || fabs(dm) < xtol + rtol*fabs(xm)) {
+        if (fm == 0 || fabs(dm) < xtol + rtol * fabs(xm)) {
             solver_stats->error_num = CONVERGED;
             return xm;
         }

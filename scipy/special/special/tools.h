@@ -54,8 +54,8 @@ namespace detail {
 
     // Series evaluators.
     template <typename Generator, typename T = generator_result_t<Generator>>
-    SPECFUN_HOST_DEVICE T series_eval(Generator &g, T init_val, real_type_t<T> tol, std::uint64_t max_terms,
-                                      const char *func_name) {
+    SPECFUN_HOST_DEVICE T
+    series_eval(Generator &g, T init_val, real_type_t<T> tol, std::uint64_t max_terms, const char *func_name) {
         /* Sum an infinite series to a given precision.
          *
          * g : a generator of terms for the series.
@@ -107,7 +107,7 @@ namespace detail {
 
     /* Performs one step of Kahan summation. */
     template <typename T>
-    SPECFUN_HOST_DEVICE void kahan_step(T& sum, T& comp, T x) {
+    SPECFUN_HOST_DEVICE void kahan_step(T &sum, T &comp, T x) {
         T y = x - comp;
         T t = sum + y;
         comp = (t - sum) - y;
@@ -153,8 +153,8 @@ namespace detail {
      * returns `(S[n], n)`.  Otherwise, returns `(S[max_terms], 0)`.
      */
     template <typename Generator, typename T = generator_result_t<Generator>>
-    SPECFUN_HOST_DEVICE std::pair<T, std::uint64_t> series_eval_kahan(
-        Generator &&g, real_type_t<T> tol, std::uint64_t max_terms, T init_val = T(0)) {
+    SPECFUN_HOST_DEVICE std::pair<T, std::uint64_t>
+    series_eval_kahan(Generator &&g, real_type_t<T> tol, std::uint64_t max_terms, T init_val = T(0)) {
 
         T sum = init_val;
         T comp = 0;
@@ -218,10 +218,8 @@ namespace detail {
     template <typename Generator, typename T = pair_value_t<generator_result_t<Generator>>>
     class ContinuedFractionSeriesGenerator {
 
-    public:
-        explicit ContinuedFractionSeriesGenerator(Generator &cf) : cf_(cf) {
-            init();
-        }
+      public:
+        explicit ContinuedFractionSeriesGenerator(Generator &cf) : cf_(cf) { init(); }
 
         double operator()() {
             double v = v_;
@@ -229,7 +227,7 @@ namespace detail {
             return v;
         }
 
-    private:
+      private:
         void init() {
             auto [num, denom] = cf_();
             T a = num;
@@ -248,7 +246,7 @@ namespace detail {
             b_ = b;
         }
 
-        Generator& cf_; // reference to continued fraction generator
+        Generator &cf_; // reference to continued fraction generator
         T v_;           // v[n] == f[n] - f[n-1], n >= 1
         T u_;           // u[1] = 1, u[n] = v[n]/v[n-1], n >= 2
         T b_;           // last denominator, i.e. b[n-1]
@@ -260,8 +258,7 @@ namespace detail {
      * See ContinuedFractionSeriesGenerator for details.
      */
     template <typename Generator, typename T = pair_value_t<generator_result_t<Generator>>>
-    SPECFUN_HOST_DEVICE ContinuedFractionSeriesGenerator<Generator, T>
-    continued_fraction_series(Generator &cf) {
+    SPECFUN_HOST_DEVICE ContinuedFractionSeriesGenerator<Generator, T> continued_fraction_series(Generator &cf) {
         return ContinuedFractionSeriesGenerator<Generator, T>(cf);
     }
 

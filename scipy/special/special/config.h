@@ -209,8 +209,8 @@ using cuda::std::uint64_t;
 #include <cassert>
 #include <cmath>
 #include <complex>
-#include <cstdint>
 #include <cstddef>
+#include <cstdint>
 #include <iterator>
 #include <limits>
 #include <math.h>

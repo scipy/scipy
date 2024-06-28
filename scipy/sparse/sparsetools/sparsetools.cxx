@@ -26,10 +26,10 @@
 
 #include <Python.h>
 
-#include <string>
-#include <stdexcept>
-#include <vector>
 #include <cstdlib>
+#include <stdexcept>
+#include <string>
+#include <vector>
 
 #include "numpy/ndarrayobject.h"
 
@@ -41,21 +41,16 @@
 static const int supported_I_typenums[] = {NPY_INT32, NPY_INT64};
 static const int n_supported_I_typenums = sizeof(supported_I_typenums) / sizeof(int);
 
-static const int supported_T_typenums[] = {NPY_BOOL,
-                                           NPY_BYTE, NPY_UBYTE,
-                                           NPY_SHORT, NPY_USHORT,
-                                           NPY_INT, NPY_UINT,
-                                           NPY_LONG, NPY_ULONG,
-                                           NPY_LONGLONG, NPY_ULONGLONG,
-                                           NPY_FLOAT, NPY_DOUBLE, NPY_LONGDOUBLE,
-                                           NPY_CFLOAT, NPY_CDOUBLE, NPY_CLONGDOUBLE};
+static const int supported_T_typenums[] = {NPY_BOOL,      NPY_BYTE,       NPY_UBYTE,  NPY_SHORT,      NPY_USHORT,
+                                           NPY_INT,       NPY_UINT,       NPY_LONG,   NPY_ULONG,      NPY_LONGLONG,
+                                           NPY_ULONGLONG, NPY_FLOAT,      NPY_DOUBLE, NPY_LONGDOUBLE, NPY_CFLOAT,
+                                           NPY_CDOUBLE,   NPY_CLONGDOUBLE};
 static const int n_supported_T_typenums = sizeof(supported_T_typenums) / sizeof(int);
 
 static PyObject *array_from_std_vector_and_free(int typenum, void *p);
 static void *allocate_std_vector_typenum(int typenum);
 static void free_std_vector_typenum(int typenum, void *p);
 static PyObject *c_array_from_object(PyObject *obj, int typenum, int is_output);
-
 
 /*
  * Call a thunk function, dealing with input and output arrays.
@@ -91,9 +86,7 @@ static PyObject *c_array_from_object(PyObject *obj, int typenum, int is_output);
  *     The Python return value
  *
  */
-PyObject *
-call_thunk(char ret_spec, const char *spec, thunk_t *thunk, PyObject *args)
-{
+PyObject *call_thunk(char ret_spec, const char *spec, thunk_t *thunk, PyObject *args) {
     void *arg_list[MAX_ARGS];
     PyObject *arg_arrays[MAX_ARGS];
     int is_output[MAX_ARGS];
@@ -121,7 +114,6 @@ call_thunk(char ret_spec, const char *spec, thunk_t *thunk, PyObject *args)
         is_output[j] = 0;
     }
 
-
     /*
      * Detect data types in the signature
      */
@@ -134,8 +126,7 @@ call_thunk(char ret_spec, const char *spec, thunk_t *thunk, PyObject *args)
         PyObject *arg;
 
         if (j >= MAX_ARGS) {
-            PyErr_SetString(PyExc_ValueError,
-                            "internal error: too many arguments in spec");
+            PyErr_SetString(PyExc_ValueError, "internal error: too many arguments in spec");
             goto fail;
         }
 
@@ -212,23 +203,20 @@ call_thunk(char ret_spec, const char *spec, thunk_t *thunk, PyObject *args)
         /* Find a compatible supported data type */
 
         for (k = 0; k < n_supported_typenums; ++k) {
-            if (PyArray_CanCastSafely(PyArray_TYPE((PyArrayObject *)arg_arrays[j]), supported_typenums[k]) &&
-                (cur_typenum == -1 || PyArray_CanCastSafely(cur_typenum, supported_typenums[k])))
-            {
+            if (PyArray_CanCastSafely(PyArray_TYPE((PyArrayObject *) arg_arrays[j]), supported_typenums[k]) &&
+                (cur_typenum == -1 || PyArray_CanCastSafely(cur_typenum, supported_typenums[k]))) {
                 cur_typenum = supported_typenums[k];
                 break;
             }
         }
         if (k == n_supported_typenums) {
-            PyErr_SetString(PyExc_ValueError,
-                            "unsupported data types in input");
+            PyErr_SetString(PyExc_ValueError, "unsupported data types in input");
             goto fail;
         }
 
         if (*p == 'I') {
             I_typenum = cur_typenum;
-        }
-        else {
+        } else {
             T_typenum = cur_typenum;
         }
     }
@@ -238,13 +226,10 @@ call_thunk(char ret_spec, const char *spec, thunk_t *thunk, PyObject *args)
         goto fail;
     }
 
-    if ((I_in_arglist && I_typenum == -1) ||
-        (T_in_arglist && T_typenum == -1)) {
-        PyErr_SetString(PyExc_ValueError,
-                        "unsupported data types in input");
+    if ((I_in_arglist && I_typenum == -1) || (T_in_arglist && T_typenum == -1)) {
+        PyErr_SetString(PyExc_ValueError, "unsupported data types in input");
         goto fail;
     }
-
 
     /*
      * Cast and extract argument arrays
@@ -257,8 +242,7 @@ call_thunk(char ret_spec, const char *spec, thunk_t *thunk, PyObject *args)
         if (*p == '*') {
             --j;
             continue;
-        }
-        else if (*p == 'i' || *p == 'l') {
+        } else if (*p == 'i' || *p == 'l') {
             /* Integer scalars */
             PY_LONG_LONG value;
 
@@ -267,73 +251,60 @@ call_thunk(char ret_spec, const char *spec, thunk_t *thunk, PyObject *args)
                 goto fail;
             }
 
-            if ((*p == 'l' || PyArray_EquivTypenums(I_typenum, NPY_INT64))
-                    && value == (npy_int64)value) {
+            if ((*p == 'l' || PyArray_EquivTypenums(I_typenum, NPY_INT64)) && value == (npy_int64) value) {
                 arg_list[j] = std::malloc(sizeof(npy_int64));
-                *(npy_int64*)arg_list[j] = (npy_int64)value;
-            }
-            else if (*p == 'i' && PyArray_EquivTypenums(I_typenum, NPY_INT32)
-                     && value == (npy_int32)value) {
+                *(npy_int64 *) arg_list[j] = (npy_int64) value;
+            } else if (*p == 'i' && PyArray_EquivTypenums(I_typenum, NPY_INT32) && value == (npy_int32) value) {
                 arg_list[j] = std::malloc(sizeof(npy_int32));
-                *(npy_int32*)arg_list[j] = (npy_int32)value;
-            }
-            else {
-                PyErr_SetString(PyExc_ValueError,
-                                "could not convert integer scalar");
+                *(npy_int32 *) arg_list[j] = (npy_int32) value;
+            } else {
+                PyErr_SetString(PyExc_ValueError, "could not convert integer scalar");
                 goto fail;
             }
             continue;
-        }
-        else if (*p == 'B') {
+        } else if (*p == 'B') {
             /* Boolean arrays already cast */
-        }
-        else if (*p == 'V') {
+        } else if (*p == 'V') {
             arg_list[j] = allocate_std_vector_typenum(I_typenum);
             if (arg_list[j] == NULL) {
                 goto fail;
             }
             continue;
-        }
-        else if (*p == 'W') {
+        } else if (*p == 'W') {
             arg_list[j] = allocate_std_vector_typenum(T_typenum);
             if (arg_list[j] == NULL) {
                 goto fail;
             }
             continue;
-        }
-        else {
+        } else {
             cur_typenum = (*p == 'I' || *p == 'i') ? I_typenum : T_typenum;
 
             /* Cast if necessary */
             arg = arg_arrays[j];
-            if (PyArray_EquivTypenums(PyArray_TYPE((PyArrayObject *)arg), cur_typenum)) {
+            if (PyArray_EquivTypenums(PyArray_TYPE((PyArrayObject *) arg), cur_typenum)) {
                 /* No cast needed. */
-            }
-            else if (!is_output[j] || PyArray_CanCastSafely(cur_typenum, PyArray_TYPE((PyArrayObject *)arg))) {
+            } else if (!is_output[j] || PyArray_CanCastSafely(cur_typenum, PyArray_TYPE((PyArrayObject *) arg))) {
                 /* Cast needed. Output arrays require safe cast back. */
                 arg_arrays[j] = c_array_from_object(arg, cur_typenum, is_output[j]);
                 Py_DECREF(arg);
                 if (arg_arrays[j] == NULL) {
                     goto fail;
                 }
-            }
-            else {
+            } else {
                 /* Cast back into output array was not safe. */
-                PyErr_SetString(PyExc_ValueError,
-                                "Output dtype not compatible with inputs.");
+                PyErr_SetString(PyExc_ValueError, "Output dtype not compatible with inputs.");
                 goto fail;
             }
         }
 
         /* Grab value */
-        arg_list[j] = PyArray_DATA((PyArrayObject *)arg_arrays[j]);
+        arg_list[j] = PyArray_DATA((PyArrayObject *) arg_arrays[j]);
 
         /* Find maximum array size */
-        if (PyArray_SIZE((PyArrayObject *)arg_arrays[j]) > max_array_size) {
-            max_array_size = PyArray_SIZE((PyArrayObject *)arg_arrays[j]);
+        if (PyArray_SIZE((PyArrayObject *) arg_arrays[j]) > max_array_size) {
+            max_array_size = PyArray_SIZE((PyArrayObject *) arg_arrays[j]);
         }
     }
-
 
     /*
      * Call thunk
@@ -369,8 +340,7 @@ call_thunk(char ret_spec, const char *spec, thunk_t *thunk, PyObject *args)
         return_value = Py_None;
         break;
     default:
-        PyErr_SetString(PyExc_ValueError,
-                        "internal error: invalid return value spec");
+        PyErr_SetString(PyExc_ValueError, "internal error: invalid return value spec");
     }
 
     /*
@@ -390,8 +360,7 @@ call_thunk(char ret_spec, const char *spec, thunk_t *thunk, PyObject *args)
         if (old_ret != Py_None) {
             PyTuple_SET_ITEM(new_ret, 0, old_ret);
             pos = 1;
-        }
-        else {
+        } else {
             Py_DECREF(old_ret);
             pos = 0;
         }
@@ -401,8 +370,7 @@ call_thunk(char ret_spec, const char *spec, thunk_t *thunk, PyObject *args)
             if (*p == '*') {
                 --j;
                 continue;
-            }
-            else if (*p == 'V' || *p == 'W') {
+            } else if (*p == 'V' || *p == 'W') {
                 PyObject *arg;
                 if (*p == 'V') {
                     arg = array_from_std_vector_and_free(I_typenum, arg_list[j]);
@@ -422,7 +390,6 @@ call_thunk(char ret_spec, const char *spec, thunk_t *thunk, PyObject *args)
         return_value = new_ret;
     }
 
-
 fail:
     /*
      * Cleanup
@@ -433,32 +400,28 @@ fail:
             continue;
         }
         if (is_output[j] && arg_arrays[j] != NULL && PyArray_Check(arg_arrays[j])) {
-            PyArray_ResolveWritebackIfCopy((PyArrayObject *)arg_arrays[j]);
+            PyArray_ResolveWritebackIfCopy((PyArrayObject *) arg_arrays[j]);
         }
         Py_XDECREF(arg_arrays[j]);
         if ((*p == 'i' || *p == 'l') && arg_list[j] != NULL) {
             std::free(arg_list[j]);
-        }
-        else if (*p == 'V' && arg_list[j] != NULL) {
+        } else if (*p == 'V' && arg_list[j] != NULL) {
             free_std_vector_typenum(I_typenum, arg_list[j]);
-        }
-        else if (*p == 'W' && arg_list[j] != NULL) {
+        } else if (*p == 'W' && arg_list[j] != NULL) {
             free_std_vector_typenum(T_typenum, arg_list[j]);
         }
     }
     return return_value;
 }
 
-
 /*
  * Helper functions for dealing with std::vector templated instantiation.
  */
 
-static void *allocate_std_vector_typenum(int typenum)
-{
-#define PROCESS(ntype, ctype)                                   \
-    if (PyArray_EquivTypenums(typenum, ntype)) {                \
-        return (void*)(new std::vector<ctype>());               \
+static void *allocate_std_vector_typenum(int typenum) {
+#define PROCESS(ntype, ctype)                                                                                          \
+    if (PyArray_EquivTypenums(typenum, ntype)) {                                                                       \
+        return (void *) (new std::vector<ctype>());                                                                    \
     }
 
     try {
@@ -469,17 +432,15 @@ static void *allocate_std_vector_typenum(int typenum)
 
 #undef PROCESS
 
-    PyErr_SetString(PyExc_RuntimeError,
-                    "failed to allocate std::vector");
+    PyErr_SetString(PyExc_RuntimeError, "failed to allocate std::vector");
     return NULL;
 }
 
-static void free_std_vector_typenum(int typenum, void *p)
-{
-#define PROCESS(ntype, ctype)                                   \
-    if (PyArray_EquivTypenums(typenum, ntype)) {                \
-        delete ((std::vector<ctype>*)p);                        \
-        return;                                                 \
+static void free_std_vector_typenum(int typenum, void *p) {
+#define PROCESS(ntype, ctype)                                                                                          \
+    if (PyArray_EquivTypenums(typenum, ntype)) {                                                                       \
+        delete ((std::vector<ctype> *) p);                                                                             \
+        return;                                                                                                        \
     }
 
     SPTOOLS_FOR_EACH_DATA_TYPE_CODE(PROCESS)
@@ -487,51 +448,43 @@ static void free_std_vector_typenum(int typenum, void *p)
 #undef PROCESS
 }
 
-static PyObject *array_from_std_vector_and_free(int typenum, void *p)
-{
-#define PROCESS(ntype, ctype)                                   \
-    if (PyArray_EquivTypenums(typenum, ntype)) {                \
-        std::vector<ctype> *v = (std::vector<ctype>*)p;         \
-        npy_intp length = v->size();                            \
-        PyObject *obj = PyArray_SimpleNew(1, &length, typenum); \
-        if (length > 0) {                                       \
-            memcpy(PyArray_DATA((PyArrayObject *)obj), &((*v)[0]), \
-                   sizeof(ctype)*length);                       \
-        }                                                       \
-        delete v;                                               \
-        return obj;                                             \
+static PyObject *array_from_std_vector_and_free(int typenum, void *p) {
+#define PROCESS(ntype, ctype)                                                                                          \
+    if (PyArray_EquivTypenums(typenum, ntype)) {                                                                       \
+        std::vector<ctype> *v = (std::vector<ctype> *) p;                                                              \
+        npy_intp length = v->size();                                                                                   \
+        PyObject *obj = PyArray_SimpleNew(1, &length, typenum);                                                        \
+        if (length > 0) {                                                                                              \
+            memcpy(PyArray_DATA((PyArrayObject *) obj), &((*v)[0]), sizeof(ctype) * length);                           \
+        }                                                                                                              \
+        delete v;                                                                                                      \
+        return obj;                                                                                                    \
     }
 
     SPTOOLS_FOR_EACH_DATA_TYPE_CODE(PROCESS)
 
 #undef PROCESS
 
-    PyErr_SetString(PyExc_RuntimeError,
-                    "failed to convert std::vector output array");
+    PyErr_SetString(PyExc_RuntimeError, "failed to convert std::vector output array");
     return NULL;
 }
 
-static PyObject *c_array_from_object(PyObject *obj, int typenum, int is_output)
-{
+static PyObject *c_array_from_object(PyObject *obj, int typenum, int is_output) {
     if (!is_output) {
         if (typenum == -1) {
-            return PyArray_FROM_OF(obj, NPY_ARRAY_C_CONTIGUOUS|NPY_ARRAY_NOTSWAPPED);
+            return PyArray_FROM_OF(obj, NPY_ARRAY_C_CONTIGUOUS | NPY_ARRAY_NOTSWAPPED);
+        } else {
+            return PyArray_FROM_OTF(obj, typenum, NPY_ARRAY_C_CONTIGUOUS | NPY_ARRAY_NOTSWAPPED);
         }
-        else {
-            return PyArray_FROM_OTF(obj, typenum, NPY_ARRAY_C_CONTIGUOUS|NPY_ARRAY_NOTSWAPPED);
-        }
-    }
-    else {
-        int flags = NPY_ARRAY_C_CONTIGUOUS|NPY_ARRAY_WRITEABLE|NPY_ARRAY_WRITEBACKIFCOPY|NPY_ARRAY_NOTSWAPPED;
+    } else {
+        int flags = NPY_ARRAY_C_CONTIGUOUS | NPY_ARRAY_WRITEABLE | NPY_ARRAY_WRITEBACKIFCOPY | NPY_ARRAY_NOTSWAPPED;
         if (typenum == -1) {
             return PyArray_FROM_OF(obj, flags);
-        }
-        else {
+        } else {
             return PyArray_FROM_OTF(obj, typenum, flags);
         }
     }
 }
-
 
 /*
  * Python module initialization
@@ -542,20 +495,10 @@ extern "C" {
 #include "sparsetools_impl.h"
 
 static struct PyModuleDef moduledef = {
-    PyModuleDef_HEAD_INIT,
-    "_sparsetools",
-    NULL,
-    -1,
-    sparsetools_methods,
-    NULL,
-    NULL,
-    NULL,
-    NULL
+    PyModuleDef_HEAD_INIT, "_sparsetools", NULL, -1, sparsetools_methods, NULL, NULL, NULL, NULL
 };
 
-PyMODINIT_FUNC
-PyInit__sparsetools(void)
-{
+PyMODINIT_FUNC PyInit__sparsetools(void) {
     import_array();
     return PyModule_Create(&moduledef);
 }

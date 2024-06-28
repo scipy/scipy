@@ -11,20 +11,19 @@
 
 /* Allow the use in C++ code.  */
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
 /*
  * Enumerated and derived types
  */
-enum CBLAS_ORDER {CblasRowMajor=101, CblasColMajor=102};
-enum CBLAS_TRANSPOSE {CblasNoTrans=111, CblasTrans=112, CblasConjTrans=113};
-enum CBLAS_UPLO {CblasUpper=121, CblasLower=122};
-enum CBLAS_DIAG {CblasNonUnit=131, CblasUnit=132};
-enum CBLAS_SIDE {CblasLeft=141, CblasRight=142};
+enum CBLAS_ORDER { CblasRowMajor = 101, CblasColMajor = 102 };
+enum CBLAS_TRANSPOSE { CblasNoTrans = 111, CblasTrans = 112, CblasConjTrans = 113 };
+enum CBLAS_UPLO { CblasUpper = 121, CblasLower = 122 };
+enum CBLAS_DIAG { CblasNonUnit = 131, CblasUnit = 132 };
+enum CBLAS_SIDE { CblasLeft = 141, CblasRight = 142 };
 
-#define CBLAS_INDEX size_t  /* this may vary between platforms */
+#define CBLAS_INDEX size_t /* this may vary between platforms */
 
 #ifdef NO_APPEND_FORTRAN
 #define BLAS_FORTRAN_SUFFIX
@@ -47,19 +46,19 @@ enum CBLAS_SIDE {CblasLeft=141, CblasRight=142};
 #define BLAS_SYMBOL_SUFFIX
 #endif
 
-#define BLAS_FUNC_CONCAT(name,prefix,suffix,suffix2) prefix ## name ## suffix ## suffix2
-#define BLAS_FUNC_EXPAND(name,prefix,suffix,suffix2) BLAS_FUNC_CONCAT(name,prefix,suffix,suffix2)
+#define BLAS_FUNC_CONCAT(name, prefix, suffix, suffix2) prefix##name##suffix##suffix2
+#define BLAS_FUNC_EXPAND(name, prefix, suffix, suffix2) BLAS_FUNC_CONCAT(name, prefix, suffix, suffix2)
 
-#define CBLAS_FUNC(name) BLAS_FUNC_EXPAND(name,BLAS_SYMBOL_PREFIX,,BLAS_SYMBOL_SUFFIX)
+#define CBLAS_FUNC(name) BLAS_FUNC_EXPAND(name, BLAS_SYMBOL_PREFIX, , BLAS_SYMBOL_SUFFIX)
 /*
  * Use either the OpenBLAS scheme with the `64_` suffix behind the Fortran
  * compiler symbol mangling, or the MKL scheme (and upcoming
  * reference-lapack#666) which does it the other way around and uses `_64`.
  */
 #ifdef OPENBLAS_ILP64_NAMING_SCHEME
-#define BLAS_FUNC(name) BLAS_FUNC_EXPAND(name,BLAS_SYMBOL_PREFIX,BLAS_FORTRAN_SUFFIX,BLAS_SYMBOL_SUFFIX)
+#define BLAS_FUNC(name) BLAS_FUNC_EXPAND(name, BLAS_SYMBOL_PREFIX, BLAS_FORTRAN_SUFFIX, BLAS_SYMBOL_SUFFIX)
 #else
-#define BLAS_FUNC(name) BLAS_FUNC_EXPAND(name,BLAS_SYMBOL_PREFIX,BLAS_SYMBOL_SUFFIX,BLAS_FORTRAN_SUFFIX)
+#define BLAS_FUNC(name) BLAS_FUNC_EXPAND(name, BLAS_SYMBOL_PREFIX, BLAS_SYMBOL_SUFFIX, BLAS_FORTRAN_SUFFIX)
 #endif
 
 #ifdef HAVE_BLAS_ILP64
@@ -78,14 +77,11 @@ enum CBLAS_SIDE {CblasLeft=141, CblasRight=142};
 #undef BLASINT
 #undef BLASNAME
 
-
 /*
  * Convert NumPy stride to BLAS stride. Returns 0 if conversion cannot be done
  * (BLAS won't handle negative or zero strides the way we want).
  */
-static inline CBLAS_INT
-blas_stride(npy_intp stride, unsigned itemsize)
-{
+static inline CBLAS_INT blas_stride(npy_intp stride, unsigned itemsize) {
     /*
      * Should probably check pointer alignment also, but this may cause
      * problems if we require complex to be 16 byte aligned.
@@ -105,14 +101,13 @@ blas_stride(npy_intp stride, unsigned itemsize)
  * The chunksize is the greatest power of two less than CBLAS_INT_MAX.
  */
 #if NPY_MAX_INTP > CBLAS_INT_MAX
-# define NPY_CBLAS_CHUNK  (CBLAS_INT_MAX / 2 + 1)
+#define NPY_CBLAS_CHUNK (CBLAS_INT_MAX / 2 + 1)
 #else
-# define NPY_CBLAS_CHUNK  NPY_MAX_INTP
+#define NPY_CBLAS_CHUNK NPY_MAX_INTP
 #endif
-
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif  /* _NPY_CBLAS_H_ */
+#endif /* _NPY_CBLAS_H_ */

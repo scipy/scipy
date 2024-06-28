@@ -68,7 +68,7 @@ namespace detail {
         return res;
     }
 
-    template<bool log_wb>
+    template <bool log_wb>
     SPECFUN_HOST_DEVICE inline double wb_large_a(double a, double b, double x, int n) {
         /* 2. Taylor series expansion in x=0, for large a.
          *
@@ -102,7 +102,7 @@ namespace detail {
         return res;
     }
 
-    template<bool log_wb>
+    template <bool log_wb>
     SPECFUN_HOST_DEVICE inline double wb_small_a(double a, double b, double x, int order) {
         /* 3. Taylor series in a=0 up to order 5, for tiny a and not too large x
          *
@@ -126,20 +126,22 @@ namespace detail {
          */
         double A[6]; // coefficients of a^k  (1, -x * Psi(b), ...)
         double B[6]; // powers of b^k/k! or terms in polygamma functions
-        constexpr double C[5] = {  // coefficients of a^k1 * b^k2
-            1.0000000000000000,   // C[0]
-            1.1544313298030657,   // C[1]
-            -3.9352684291215233,  // C[2]
-            -1.0080632408182857,  // C[3]
-            19.984633365874979,   // C[4]
+        constexpr double C[5] = {
+            // coefficients of a^k1 * b^k2
+            1.0000000000000000,  // C[0]
+            1.1544313298030657,  // C[1]
+            -3.9352684291215233, // C[2]
+            -1.0080632408182857, // C[3]
+            19.984633365874979,  // C[4]
         };
-        double X[6] = {  // polynomials in x;
-            1,  // X[0]
-            x,  // X[1]
-            x * (x + 1),  // X[2]
-            x * (x * (x + 3) + 1),  // X[3]
-            x * (x * (x * (x + 6) + 7) + 1),  // X[4]
-            x * (x * (x * (x * (x + 10) + 25) + 15) + 1),  // X[5]
+        double X[6] = {
+            // polynomials in x;
+            1,                                            // X[0]
+            x,                                            // X[1]
+            x * (x + 1),                                  // X[2]
+            x * (x * (x + 3) + 1),                        // X[3]
+            x * (x * (x * (x + 6) + 7) + 1),              // X[4]
+            x * (x * (x * (x * (x + 10) + 25) + 15) + 1), // X[5]
         };
         double res;
 
@@ -160,10 +162,10 @@ namespace detail {
             }
             // Note that polevl assumes inverse ordering => A[5] = 0th term
             A[5] = cephes::rgamma(b);
-            A[4] = X[1]        * (C[0] + C[1] * b + C[2] * B[2] + C[3] * B[3] + C[4] * B[4]);
-            A[3] = X[2] / 2.   * (C[1] + C[2] * b + C[3] * B[2] + C[4] * B[3]);
-            A[2] = X[3] / 6.   * (C[2] + C[3] * b + C[4] * B[2]);
-            A[1] = X[4] / 24.  * (C[3] + C[4] * b);
+            A[4] = X[1] * (C[0] + C[1] * b + C[2] * B[2] + C[3] * B[3] + C[4] * B[4]);
+            A[3] = X[2] / 2. * (C[1] + C[2] * b + C[3] * B[2] + C[4] * B[3]);
+            A[2] = X[3] / 6. * (C[2] + C[3] * b + C[4] * B[2]);
+            A[1] = X[4] / 24. * (C[3] + C[4] * b);
             A[0] = X[5] / 120. * C[4];
             // res = exp(x) * (A[5] + A[4] * a + A[3] * a^2 + A[2] * a^3 + ...)
             if (!log_wb) {
@@ -223,7 +225,7 @@ namespace detail {
         return res;
     }
 
-    template<bool log_wb>
+    template <bool log_wb>
     SPECFUN_HOST_DEVICE inline double wb_asymptotic(double a, double b, double x) {
         /* 4. Asymptotic expansion for large x up to order 8
          *
@@ -457,10 +459,10 @@ namespace detail {
         /* Compute integrand Kmod(eps, a, b, x, r) for Gauss-Laguerre quadrature.
          *
          * K(a, b, x, r+eps) = exp(-r-eps) * Kmod(eps, a, b, x, r)
-         * 
+         *
          * Kmod(eps, a, b, x, r) = exp(x * (r+eps)^(-a) * cos(pi*a)) * (r+eps)^(-b)
          *                       * sin(x * (r+eps)^(-a) * sin(pi*a) + pi * b)
-         * 
+         *
          * Note that we additionally factor out exp(exp_term) which helps with large
          * terms in the exponent of exp(...)
          */
@@ -475,7 +477,7 @@ namespace detail {
          * P(eps, a, b, x, phi) = exp(eps * cos(phi) + x * eps^(-a) * cos(a*phi))
          *                      * cos(eps * sin(phi) - x * eps^(-a) * sin(a*phi)
          *                            + (1-b)*phi)
-         * 
+         *
          * Note that we additionally factor out exp(exp_term) which helps with large
          * terms in the exponent of exp(...)
          */
@@ -548,7 +550,7 @@ namespace detail {
      * Call: python _precompute/wright_bessel.py 4 */
     constexpr double wb_A[] = {0.41037, 0.30833, 6.9952, 18.382, -2.8566, 2.1122};
 
-    template<bool log_wb>
+    template <bool log_wb>
     SPECFUN_HOST_DEVICE inline double wright_bessel_integral(double a, double b, double x) {
         /* 5. Integral representation
          *
@@ -622,7 +624,7 @@ namespace detail {
         // exp(..).
         double exp_term = 0;
         // From the exponent of K:
-        double r = wb_x_laguerre[50-1];  // largest value of x used in wb_Kmod
+        double r = wb_x_laguerre[50 - 1]; // largest value of x used in wb_Kmod
         double x_r_a = x * std::pow(r + eps, -a);
         exp_term = std::fmax(exp_term, x_r_a * cephes::cospi(a));
         // From the exponent of P:
@@ -657,7 +659,7 @@ namespace detail {
     }
 } // namespace detail
 
-template<bool log_wb>
+template <bool log_wb>
 SPECFUN_HOST_DEVICE inline double wright_bessel_t(double a, double b, double x) {
     /* Compute Wright's generalized Bessel function for scalar arguments.
      *
@@ -775,7 +777,8 @@ SPECFUN_HOST_DEVICE inline double wright_bessel_t(double a, double b, double x) 
     if (x <= 1) {
         // 18 term Taylor Series => error mostly smaller 5e-14
         double res = detail::wb_series(a, b, x, 0, 18);
-        if (log_wb) res = std::log(res);
+        if (log_wb)
+            res = std::log(res);
         return res;
     }
     if (x <= 2) {
@@ -820,7 +823,6 @@ SPECFUN_HOST_DEVICE inline double wright_bessel_t(double a, double b, double x) 
     }
     return detail::wright_bessel_integral<log_wb>(a, b, x);
 }
-
 
 SPECFUN_HOST_DEVICE inline double wright_bessel(double a, double b, double x) {
     return wright_bessel_t<false>(a, b, x);

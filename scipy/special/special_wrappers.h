@@ -220,7 +220,6 @@ double special_log_wright_bessel(double a, double b, double x);
 
 double special_scaled_exp1(double x);
 
-
 double cephes_besselpoly(double a, double lambda, double nu);
 
 double special_sph_bessel_j(long n, double x);

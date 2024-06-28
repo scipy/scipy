@@ -52,17 +52,7 @@ extern const char *sph_harm_all_doc;
 // already in such a context.
 extern "C" int wrap_PyUFunc_getfperr() { return PyUFunc_getfperr(); }
 
-static PyModuleDef _gufuncs_def = {
-    PyModuleDef_HEAD_INIT,
-    "_gufuncs",
-    NULL,
-    -1,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL
-};
+static PyModuleDef _gufuncs_def = {PyModuleDef_HEAD_INIT, "_gufuncs", NULL, -1, NULL, NULL, NULL, NULL, NULL};
 
 PyMODINIT_FUNC PyInit__gufuncs() {
     import_array();

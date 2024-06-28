@@ -34,8 +34,7 @@
 
 #include <math.h>
 
-static inline void
-_row_norms(const double *X, npy_intp num_rows, const npy_intp num_cols, double *norms_buff){
+static inline void _row_norms(const double *X, npy_intp num_rows, const npy_intp num_cols, double *norms_buff) {
     /* Compute the row norms. */
     npy_intp i, j;
     for (i = 0; i < num_rows; ++i) {
@@ -47,9 +46,7 @@ _row_norms(const double *X, npy_intp num_rows, const npy_intp num_cols, double *
     }
 }
 
-static inline double
-sqeuclidean_distance_double(const double *u, const double *v, const npy_intp n)
-{
+static inline double sqeuclidean_distance_double(const double *u, const double *v, const npy_intp n) {
     double s = 0.0;
     npy_intp i;
 
@@ -60,13 +57,11 @@ sqeuclidean_distance_double(const double *u, const double *v, const npy_intp n)
     return s;
 }
 
-static inline double
-euclidean_distance_double(const double *u, const double *v, const npy_intp n)
-{
+static inline double euclidean_distance_double(const double *u, const double *v, const npy_intp n) {
     return sqrt(sqeuclidean_distance_double(u, v, n));
 }
 
-#if 0   /* XXX unused */
+#if 0 /* XXX unused */
 static inline double
 ess_distance(const double *u, const double *v, const npy_intp n)
 {
@@ -81,9 +76,7 @@ ess_distance(const double *u, const double *v, const npy_intp n)
 }
 #endif
 
-static inline double
-chebyshev_distance_double(const double *u, const double *v, const npy_intp n)
-{
+static inline double chebyshev_distance_double(const double *u, const double *v, const npy_intp n) {
     double maxv = 0.0;
     npy_intp i;
 
@@ -97,13 +90,12 @@ chebyshev_distance_double(const double *u, const double *v, const npy_intp n)
 }
 
 static inline double
-weighted_chebyshev_distance_double(const double *u, const double *v,
-                                   const npy_intp n, const double *w)
-{
+weighted_chebyshev_distance_double(const double *u, const double *v, const npy_intp n, const double *w) {
     npy_intp i;
     double maxv = 0.0;
     for (i = 0; i < n; ++i) {
-        if (w[i] == 0.0) continue;
+        if (w[i] == 0.0)
+            continue;
         const double d = fabs(u[i] - v[i]);
         if (d > maxv) {
             maxv = d;
@@ -112,9 +104,7 @@ weighted_chebyshev_distance_double(const double *u, const double *v,
     return maxv;
 }
 
-static inline double
-canberra_distance_double(const double *u, const double *v, const npy_intp n)
-{
+static inline double canberra_distance_double(const double *u, const double *v, const npy_intp n) {
     double tot = 0.;
     npy_intp i;
 
@@ -129,9 +119,7 @@ canberra_distance_double(const double *u, const double *v, const npy_intp n)
     return tot;
 }
 
-static inline double
-bray_curtis_distance_double(const double *u, const double *v, const npy_intp n)
-{
+static inline double bray_curtis_distance_double(const double *u, const double *v, const npy_intp n) {
     double s1 = 0.0, s2 = 0.0;
     npy_intp i;
 
@@ -147,9 +135,7 @@ bray_curtis_distance_double(const double *u, const double *v, const npy_intp n)
  * OpenBLAS's cblas_ddot here can give some speedup, but only for high-d data
  * and an untuned ATLAS is slower than rolling our own.
  */
-static inline double
-dot_product(const double *u, const double *v, const npy_intp n)
-{
+static inline double dot_product(const double *u, const double *v, const npy_intp n) {
     double s = 0.0;
     npy_intp i;
 
@@ -159,10 +145,9 @@ dot_product(const double *u, const double *v, const npy_intp n)
     return s;
 }
 
-static inline double
-mahalanobis_distance(const double *u, const double *v, const double *covinv,
-                     double *dimbuf1, double *dimbuf2, const npy_intp n)
-{
+static inline double mahalanobis_distance(
+    const double *u, const double *v, const double *covinv, double *dimbuf1, double *dimbuf2, const npy_intp n
+) {
     npy_intp i;
 
     for (i = 0; i < n; ++i) {
@@ -179,9 +164,7 @@ mahalanobis_distance(const double *u, const double *v, const double *covinv,
     return sqrt(dot_product(dimbuf1, dimbuf2, n));
 }
 
-static inline double
-hamming_distance_double(const double *u, const double *v, const npy_intp n, const double *w)
-{
+static inline double hamming_distance_double(const double *u, const double *v, const npy_intp n, const double *w) {
     npy_intp i;
     double s = 0;
     double w_sum = 0;
@@ -194,9 +177,7 @@ hamming_distance_double(const double *u, const double *v, const npy_intp n, cons
     return s / w_sum;
 }
 
-static inline double
-hamming_distance_char(const char *u, const char *v, const npy_intp n, const double *w)
-{
+static inline double hamming_distance_char(const char *u, const char *v, const npy_intp n, const double *w) {
     npy_intp i;
     double s = 0;
     double w_sum = 0;
@@ -209,9 +190,7 @@ hamming_distance_char(const char *u, const char *v, const npy_intp n, const doub
     return s / w_sum;
 }
 
-static inline double
-yule_distance_char(const char *u, const char *v, const npy_intp n)
-{
+static inline double yule_distance_char(const char *u, const char *v, const npy_intp n) {
     npy_intp i;
     npy_intp ntt = 0, nff = 0, nft = 0, ntf = 0;
 
@@ -222,16 +201,14 @@ yule_distance_char(const char *u, const char *v, const npy_intp n)
         nft += (!x) & y;
     }
     nff = n - ntt - ntf - nft;
-    double half_R = (double)ntf * nft;
+    double half_R = (double) ntf * nft;
     if (half_R == 0.0) {
         return 0.0;
     }
-    return (2. * half_R) / ((double)ntt * nff + half_R);
+    return (2. * half_R) / ((double) ntt * nff + half_R);
 }
 
-static inline double
-dice_distance_char(const char *u, const char *v, const npy_intp n)
-{
+static inline double dice_distance_char(const char *u, const char *v, const npy_intp n) {
     npy_intp i;
     npy_intp ntt = 0, ndiff = 0;
 
@@ -243,9 +220,7 @@ dice_distance_char(const char *u, const char *v, const npy_intp n)
     return ndiff / (2. * ntt + ndiff);
 }
 
-static inline double
-rogerstanimoto_distance_char(const char *u, const char *v, const npy_intp n)
-{
+static inline double rogerstanimoto_distance_char(const char *u, const char *v, const npy_intp n) {
     npy_intp i;
     npy_intp ntt = 0, ndiff = 0;
 
@@ -254,25 +229,20 @@ rogerstanimoto_distance_char(const char *u, const char *v, const npy_intp n)
         ntt += x & y;
         ndiff += (x != y);
     }
-    return (2. * ndiff) / ((double)n + ndiff);
+    return (2. * ndiff) / ((double) n + ndiff);
 }
 
-static inline double
-russellrao_distance_char(const char *u, const char *v, const npy_intp n)
-{
+static inline double russellrao_distance_char(const char *u, const char *v, const npy_intp n) {
     npy_intp i;
     npy_intp ntt = 0;
 
     for (i = 0; i < n; ++i) {
         ntt += (u[i] != 0) & (v[i] != 0);
     }
-    return (double)(n - ntt) / n;
+    return (double) (n - ntt) / n;
 }
 
-
-static inline double
-kulczynski1_distance_char(const char *u, const char *v, const npy_intp n)
-{
+static inline double kulczynski1_distance_char(const char *u, const char *v, const npy_intp n) {
     npy_intp i;
     npy_intp ntt = 0, ndiff = 0;
 
@@ -281,12 +251,10 @@ kulczynski1_distance_char(const char *u, const char *v, const npy_intp n)
         ntt += x & y;
         ndiff += (x != y);
     }
-    return ((double)ntt) / ((double)ndiff);
+    return ((double) ntt) / ((double) ndiff);
 }
 
-static inline double
-sokalsneath_distance_char(const char *u, const char *v, const npy_intp n)
-{
+static inline double sokalsneath_distance_char(const char *u, const char *v, const npy_intp n) {
     npy_intp i;
     npy_intp ntt = 0, ndiff = 0;
 
@@ -298,9 +266,7 @@ sokalsneath_distance_char(const char *u, const char *v, const npy_intp n)
     return (2. * ndiff) / (2. * ndiff + ntt);
 }
 
-static inline double
-sokalmichener_distance_char(const char *u, const char *v, const npy_intp n)
-{
+static inline double sokalmichener_distance_char(const char *u, const char *v, const npy_intp n) {
     npy_intp i;
     npy_intp ntt = 0, ndiff = 0;
 
@@ -309,12 +275,10 @@ sokalmichener_distance_char(const char *u, const char *v, const npy_intp n)
         ntt += x & y;
         ndiff += (x != y);
     }
-    return (2. * ndiff) / ((double)ndiff + n);
+    return (2. * ndiff) / ((double) ndiff + n);
 }
 
-static inline double
-jaccard_distance_double(const double *u, const double *v, const npy_intp n)
-{
+static inline double jaccard_distance_double(const double *u, const double *v, const npy_intp n) {
     npy_intp denom = 0, num = 0;
     npy_intp i;
 
@@ -323,12 +287,10 @@ jaccard_distance_double(const double *u, const double *v, const npy_intp n)
         num += (x != y) & ((x != 0.0) | (y != 0.0));
         denom += (x != 0.0) | (y != 0.0);
     }
-    return denom == 0.0 ? 0.0 : (double)num / denom;
+    return denom == 0.0 ? 0.0 : (double) num / denom;
 }
 
-static inline double
-jaccard_distance_char(const char *u, const char *v, const npy_intp n)
-{
+static inline double jaccard_distance_char(const char *u, const char *v, const npy_intp n) {
     npy_intp num = 0, denom = 0;
     npy_intp i;
 
@@ -337,13 +299,10 @@ jaccard_distance_char(const char *u, const char *v, const npy_intp n)
         num += (x != y);
         denom += x | y;
     }
-    return denom == 0.0 ? 0.0 : (double)num / denom;
+    return denom == 0.0 ? 0.0 : (double) num / denom;
 }
 
-
-static inline double
-jensenshannon_distance_double(const double *p, const double *q, const npy_intp n)
-{
+static inline double jensenshannon_distance_double(const double *p, const double *q, const npy_intp n) {
     npy_intp i;
     double s = 0.0;
     double p_sum = 0.0;
@@ -372,11 +331,7 @@ jensenshannon_distance_double(const double *p, const double *q, const npy_intp n
     return sqrt(s / 2.0);
 }
 
-
-static inline double
-seuclidean_distance(const double *var, const double *u, const double *v,
-                    const npy_intp n)
-{
+static inline double seuclidean_distance(const double *var, const double *u, const double *v, const npy_intp n) {
     double s = 0.0;
     npy_intp i;
 
@@ -387,9 +342,7 @@ seuclidean_distance(const double *var, const double *u, const double *v,
     return sqrt(s);
 }
 
-static inline double
-city_block_distance_double(const double *u, const double *v, const npy_intp n)
-{
+static inline double city_block_distance_double(const double *u, const double *v, const npy_intp n) {
     double s = 0.0;
     npy_intp i;
 
@@ -399,9 +352,7 @@ city_block_distance_double(const double *u, const double *v, const npy_intp n)
     return s;
 }
 
-static inline double
-minkowski_distance(const double *u, const double *v, const npy_intp n, const double p)
-{
+static inline double minkowski_distance(const double *u, const double *v, const npy_intp n, const double p) {
     double s = 0.0;
     npy_intp i;
 
@@ -413,9 +364,7 @@ minkowski_distance(const double *u, const double *v, const npy_intp n, const dou
 }
 
 static inline double
-weighted_minkowski_distance(const double *u, const double *v, const npy_intp n,
-                            const double p, const double *w)
-{
+weighted_minkowski_distance(const double *u, const double *v, const npy_intp n, const double p, const double *w) {
     npy_intp i = 0;
     double s = 0.0;
     for (i = 0; i < n; ++i) {
@@ -425,7 +374,7 @@ weighted_minkowski_distance(const double *u, const double *v, const npy_intp n,
     return pow(s, 1.0 / p);
 }
 
-#if 0   /* XXX unused */
+#if 0 /* XXX unused */
 static void
 compute_mean_vector(double *res, const double *X, npy_intp num_rows, const npy_intp n)
 {
@@ -447,22 +396,20 @@ compute_mean_vector(double *res, const double *X, npy_intp num_rows, const npy_i
 }
 #endif
 
-#define DEFINE_CDIST(name, type) \
-    static int cdist_ ## name ## _ ## type(const type *XA, const type *XB, \
-                                           double *dm,                     \
-                                           const npy_intp num_rowsA,       \
-                                           const npy_intp num_rowsB,       \
-                                           const npy_intp num_cols)        \
-    {                                                                      \
-        Py_ssize_t i, j;                                                   \
-        for (i = 0; i < num_rowsA; ++i) {                                  \
-            const type *u = XA + num_cols * i;                             \
-            for (j = 0; j < num_rowsB; ++j, ++dm) {                        \
-                const type *v = XB + num_cols * j;                         \
-                *dm = name ## _distance_ ## type(u, v, num_cols);          \
-            }                                                              \
-        }                                                                  \
-        return 0;\
+#define DEFINE_CDIST(name, type)                                                                                       \
+    static int cdist_##name##_##type(                                                                                  \
+        const type *XA, const type *XB, double *dm, const npy_intp num_rowsA, const npy_intp num_rowsB,                \
+        const npy_intp num_cols                                                                                        \
+    ) {                                                                                                                \
+        Py_ssize_t i, j;                                                                                               \
+        for (i = 0; i < num_rowsA; ++i) {                                                                              \
+            const type *u = XA + num_cols * i;                                                                         \
+            for (j = 0; j < num_rowsB; ++j, ++dm) {                                                                    \
+                const type *v = XB + num_cols * j;                                                                     \
+                *dm = name##_distance_##type(u, v, num_cols);                                                          \
+            }                                                                                                          \
+        }                                                                                                              \
+        return 0;                                                                                                      \
     }
 
 DEFINE_CDIST(bray_curtis, double)
@@ -483,22 +430,18 @@ DEFINE_CDIST(sokalmichener, char)
 DEFINE_CDIST(sokalsneath, char)
 DEFINE_CDIST(yule, char)
 
-
-#define DEFINE_PDIST(name, type) \
-    static int pdist_ ## name ## _ ## type(const type *X, double *dm,       \
-                                           const npy_intp num_rows,         \
-                                           const npy_intp num_cols)         \
-    {                                                                       \
-        Py_ssize_t i, j;                                                    \
-        double *it = dm;                                                    \
-        for (i = 0; i < num_rows; ++i) {                                    \
-            const type *u = X + num_cols * i;                               \
-            for (j = i + 1; j < num_rows; ++j, it++) {                      \
-                const type *v = X + num_cols * j;                           \
-                *it = name ## _distance_ ## type(u, v, num_cols);           \
-            }                                                               \
-        }                                                                   \
-        return 0; \
+#define DEFINE_PDIST(name, type)                                                                                       \
+    static int pdist_##name##_##type(const type *X, double *dm, const npy_intp num_rows, const npy_intp num_cols) {    \
+        Py_ssize_t i, j;                                                                                               \
+        double *it = dm;                                                                                               \
+        for (i = 0; i < num_rows; ++i) {                                                                               \
+            const type *u = X + num_cols * i;                                                                          \
+            for (j = i + 1; j < num_rows; ++j, it++) {                                                                 \
+                const type *v = X + num_cols * j;                                                                      \
+                *it = name##_distance_##type(u, v, num_cols);                                                          \
+            }                                                                                                          \
+        }                                                                                                              \
+        return 0;                                                                                                      \
     }
 
 DEFINE_PDIST(bray_curtis, double)
@@ -520,9 +463,7 @@ DEFINE_PDIST(sokalsneath, char)
 DEFINE_PDIST(yule, char)
 
 static inline int
-pdist_mahalanobis(const double *X, double *dm, const npy_intp num_rows,
-                  const npy_intp num_cols, const double *covinv)
-{
+pdist_mahalanobis(const double *X, double *dm, const npy_intp num_rows, const npy_intp num_cols, const double *covinv) {
     npy_intp i, j;
     double *dimbuf1 = calloc(2 * num_cols, sizeof(double));
     double *dimbuf2;
@@ -544,9 +485,7 @@ pdist_mahalanobis(const double *X, double *dm, const npy_intp num_rows,
 }
 
 static inline int
-pdist_weighted_chebyshev(const double *X, double *dm, npy_intp num_rows,
-                         const npy_intp num_cols, const double *w)
-{
+pdist_weighted_chebyshev(const double *X, double *dm, npy_intp num_rows, const npy_intp num_cols, const double *w) {
     npy_intp i, j;
 
     for (i = 0; i < num_rows; ++i) {
@@ -559,14 +498,11 @@ pdist_weighted_chebyshev(const double *X, double *dm, npy_intp num_rows,
     return 0;
 }
 
-static inline int
-pdist_cosine(const double *X, double *dm, const npy_intp num_rows,
-             const npy_intp num_cols)
-{
+static inline int pdist_cosine(const double *X, double *dm, const npy_intp num_rows, const npy_intp num_cols) {
     double cosine;
     npy_intp i, j;
 
-    double * norms_buff = calloc(num_rows, sizeof(double));
+    double *norms_buff = calloc(num_rows, sizeof(double));
     if (!norms_buff)
         return -1;
 
@@ -589,9 +525,7 @@ pdist_cosine(const double *X, double *dm, const npy_intp num_rows,
 }
 
 static inline int
-pdist_seuclidean(const double *X, const double *var, double *dm,
-                 const npy_intp num_rows, const npy_intp num_cols)
-{
+pdist_seuclidean(const double *X, const double *var, double *dm, const npy_intp num_rows, const npy_intp num_cols) {
     npy_intp i, j;
 
     for (i = 0; i < num_rows; ++i) {
@@ -605,9 +539,7 @@ pdist_seuclidean(const double *X, const double *var, double *dm,
 }
 
 static inline int
-pdist_minkowski(const double *X, double *dm, npy_intp num_rows,
-                const npy_intp num_cols, const double p)
-{
+pdist_minkowski(const double *X, double *dm, npy_intp num_rows, const npy_intp num_cols, const double p) {
     npy_intp i, j;
     if (p == 1.0) {
         return pdist_city_block_double(X, dm, num_rows, num_cols);
@@ -629,10 +561,9 @@ pdist_minkowski(const double *X, double *dm, npy_intp num_rows,
     return 0;
 }
 
-static inline int
-pdist_weighted_minkowski(const double *X, double *dm, npy_intp num_rows,
-                         const npy_intp num_cols, const double p, const double *w)
-{
+static inline int pdist_weighted_minkowski(
+    const double *X, double *dm, npy_intp num_rows, const npy_intp num_cols, const double p, const double *w
+) {
     npy_intp i, j;
 
     if (isinf(p)) {
@@ -650,9 +581,7 @@ pdist_weighted_minkowski(const double *X, double *dm, npy_intp num_rows,
 }
 
 static inline int
-pdist_hamming_double(const double *X, double *dm, npy_intp num_rows,
-                         const npy_intp num_cols, const double *w)
-{
+pdist_hamming_double(const double *X, double *dm, npy_intp num_rows, const npy_intp num_cols, const double *w) {
     npy_intp i, j;
 
     for (i = 0; i < num_rows; ++i) {
@@ -666,9 +595,7 @@ pdist_hamming_double(const double *X, double *dm, npy_intp num_rows,
 }
 
 static inline int
-pdist_hamming_char(const char *X, double *dm, npy_intp num_rows,
-                         const npy_intp num_cols, const double *w)
-{
+pdist_hamming_char(const char *X, double *dm, npy_intp num_rows, const npy_intp num_cols, const double *w) {
     npy_intp i, j;
 
     for (i = 0; i < num_rows; ++i) {
@@ -681,10 +608,7 @@ pdist_hamming_char(const char *X, double *dm, npy_intp num_rows,
     return 0;
 }
 
-static inline void
-dist_to_squareform_from_vector_generic(char *M, const char *v, const npy_intp n,
-                                       npy_intp s)
-{
+static inline void dist_to_squareform_from_vector_generic(char *M, const char *v, const npy_intp n, npy_intp s) {
     char *it1 = M + s;
     char *it2;
     npy_intp i, j;
@@ -697,19 +621,17 @@ dist_to_squareform_from_vector_generic(char *M, const char *v, const npy_intp n,
         for (j = i; j < n; ++j) {
             memcpy(it2, v, s);
             v += s;
-            it2 += n*s;
+            it2 += n * s;
         }
     }
 }
 
-static inline void
-dist_to_squareform_from_vector_double(double *M, const double *v, const npy_intp n)
-{
+static inline void dist_to_squareform_from_vector_double(double *M, const double *v, const npy_intp n) {
     double *it1 = M + 1;
     double *it2;
     npy_intp i, j;
 
-    for (i = 1; i < n; ++i, it1 += n+1) {
+    for (i = 1; i < n; ++i, it1 += n + 1) {
         memcpy(it1, v, (n - i) * sizeof(double));
 
         it2 = M + i * (n + 1) - 1;
@@ -719,9 +641,7 @@ dist_to_squareform_from_vector_double(double *M, const double *v, const npy_intp
     }
 }
 
-static inline void
-dist_to_vector_from_squareform(const char *M, char *v, const npy_intp n, npy_intp s)
-{
+static inline void dist_to_vector_from_squareform(const char *M, char *v, const npy_intp n, npy_intp s) {
     const char *cit = M + s;
     npy_intp i;
 
@@ -733,11 +653,10 @@ dist_to_vector_from_squareform(const char *M, char *v, const npy_intp n, npy_int
     }
 }
 
-static inline int
-cdist_weighted_chebyshev(const double *XA, const double *XB, double *dm,
-                         const npy_intp num_rowsA, const npy_intp num_rowsB,
-                         const npy_intp num_cols, const double *w)
-{
+static inline int cdist_weighted_chebyshev(
+    const double *XA, const double *XB, double *dm, const npy_intp num_rowsA, const npy_intp num_rowsB,
+    const npy_intp num_cols, const double *w
+) {
     npy_intp i, j;
 
     for (i = 0; i < num_rowsA; ++i) {
@@ -750,17 +669,16 @@ cdist_weighted_chebyshev(const double *XA, const double *XB, double *dm,
     return 0;
 }
 
-
 /** cdist */
-static inline int
-cdist_cosine(const double *XA, const double *XB, double *dm, const npy_intp num_rowsA,
-             const npy_intp num_rowsB, const npy_intp num_cols)
-{
+static inline int cdist_cosine(
+    const double *XA, const double *XB, double *dm, const npy_intp num_rowsA, const npy_intp num_rowsB,
+    const npy_intp num_cols
+) {
     double cosine;
     npy_intp i, j;
 
-    double * norms_buffA = calloc(num_rowsA + num_rowsB, sizeof(double));
-    double * norms_buffB;
+    double *norms_buffA = calloc(num_rowsA + num_rowsB, sizeof(double));
+    double *norms_buffB;
     if (!norms_buffA)
         return -1;
 
@@ -785,11 +703,10 @@ cdist_cosine(const double *XA, const double *XB, double *dm, const npy_intp num_
     return 0;
 }
 
-static inline int
-cdist_mahalanobis(const double *XA, const double *XB, double *dm,
-                  const npy_intp num_rowsA, const npy_intp num_rowsB,
-                  const npy_intp num_cols, const double *covinv)
-{
+static inline int cdist_mahalanobis(
+    const double *XA, const double *XB, double *dm, const npy_intp num_rowsA, const npy_intp num_rowsB,
+    const npy_intp num_cols, const double *covinv
+) {
     npy_intp i, j;
 
     double *dimbuf1 = calloc(2 * num_cols, sizeof(double));
@@ -810,11 +727,10 @@ cdist_mahalanobis(const double *XA, const double *XB, double *dm,
     return 0;
 }
 
-static inline int
-cdist_seuclidean(const double *XA, const double *XB, const double *var,
-                 double *dm, const npy_intp num_rowsA, const npy_intp num_rowsB,
-                 const npy_intp num_cols)
-{
+static inline int cdist_seuclidean(
+    const double *XA, const double *XB, const double *var, double *dm, const npy_intp num_rowsA,
+    const npy_intp num_rowsB, const npy_intp num_cols
+) {
     npy_intp i, j;
 
     for (i = 0; i < num_rowsA; ++i) {
@@ -827,11 +743,10 @@ cdist_seuclidean(const double *XA, const double *XB, const double *var,
     return 0;
 }
 
-static inline int
-cdist_minkowski(const double *XA, const double *XB, double *dm,
-                const npy_intp num_rowsA, const npy_intp num_rowsB,
-                const npy_intp num_cols, const double p)
-{
+static inline int cdist_minkowski(
+    const double *XA, const double *XB, double *dm, const npy_intp num_rowsA, const npy_intp num_rowsB,
+    const npy_intp num_cols, const double p
+) {
     npy_intp i, j;
     if (p == 1.0) {
         return cdist_city_block_double(XA, XB, dm, num_rowsA, num_rowsB, num_cols);
@@ -853,12 +768,10 @@ cdist_minkowski(const double *XA, const double *XB, double *dm,
     return 0;
 }
 
-static inline int
-cdist_weighted_minkowski(const double *XA, const double *XB, double *dm,
-                         const npy_intp num_rowsA, const npy_intp num_rowsB,
-                         const npy_intp num_cols, const double p,
-                         const double *w)
-{
+static inline int cdist_weighted_minkowski(
+    const double *XA, const double *XB, double *dm, const npy_intp num_rowsA, const npy_intp num_rowsB,
+    const npy_intp num_cols, const double p, const double *w
+) {
     npy_intp i, j;
 
     if (isinf(p)) {
@@ -875,12 +788,10 @@ cdist_weighted_minkowski(const double *XA, const double *XB, double *dm,
     return 0;
 }
 
-static inline int
-cdist_hamming_double(const double *XA, const double *XB, double *dm,
-                         const npy_intp num_rowsA, const npy_intp num_rowsB,
-                         const npy_intp num_cols,
-                         const double *w)
-{
+static inline int cdist_hamming_double(
+    const double *XA, const double *XB, double *dm, const npy_intp num_rowsA, const npy_intp num_rowsB,
+    const npy_intp num_cols, const double *w
+) {
     npy_intp i, j;
 
     for (i = 0; i < num_rowsA; ++i) {
@@ -893,12 +804,10 @@ cdist_hamming_double(const double *XA, const double *XB, double *dm,
     return 0;
 }
 
-static inline int
-cdist_hamming_char(const char *XA, const char *XB, double *dm,
-                         const npy_intp num_rowsA, const npy_intp num_rowsB,
-                         const npy_intp num_cols,
-                         const double *w)
-{
+static inline int cdist_hamming_char(
+    const char *XA, const char *XB, double *dm, const npy_intp num_rowsA, const npy_intp num_rowsB,
+    const npy_intp num_cols, const double *w
+) {
     npy_intp i, j;
 
     for (i = 0; i < num_rowsA; ++i) {

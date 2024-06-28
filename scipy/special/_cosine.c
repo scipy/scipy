@@ -72,48 +72,36 @@
 //      1.6955280904096042e-11]
 //
 
-
 //
 // Compute the CDF of the standard cosine distribution for x close to but
 // not less than -π.  A Pade approximant is used to avoid the loss of
 // precision that occurs in the formula 1/2 + (x + sin(x))/(2*pi) when
 // x is near -π.
 //
-static
-double cosine_cdf_pade_approx_at_neg_pi(double x)
-{
+static double cosine_cdf_pade_approx_at_neg_pi(double x) {
     double h, h2, h3;
     double numer, denom;
-    double numer_coeffs[] = {-3.8360369451359084e-08,
-                             1.0235408442872927e-05,
-                             -0.0007883197097740538,
-                             0.026525823848649224};
-    double denom_coeffs[] = {1.6955280904096042e-11,
-                             6.498171564823105e-09,
-                             1.4162345851873058e-06,
-                             0.00020944197182753272,
-                             0.020281047093125535,
-                             1.0};
+    double numer_coeffs[] = {
+        -3.8360369451359084e-08, 1.0235408442872927e-05, -0.0007883197097740538, 0.026525823848649224
+    };
+    double denom_coeffs[] = {1.6955280904096042e-11, 6.498171564823105e-09, 1.4162345851873058e-06,
+                             0.00020944197182753272, 0.020281047093125535,  1.0};
 
     // M_PI64 is not exactly π.  In fact, float64(π - M_PI64) is
     // 1.2246467991473532e-16.  h is supposed to be x + π, so to compute
     // h accurately, we write the calculation as:
     h = (x + M_PI64) + 1.2246467991473532e-16;
-    h2 = h*h;
-    h3 = h2*h;
-    numer = h3*cephes_polevl_wrap(h2, numer_coeffs,
-                      sizeof(numer_coeffs)/sizeof(numer_coeffs[0]) - 1);
-    denom = cephes_polevl_wrap(h2, denom_coeffs,
-                   sizeof(denom_coeffs)/sizeof(denom_coeffs[0]) - 1);
+    h2 = h * h;
+    h3 = h2 * h;
+    numer = h3 * cephes_polevl_wrap(h2, numer_coeffs, sizeof(numer_coeffs) / sizeof(numer_coeffs[0]) - 1);
+    denom = cephes_polevl_wrap(h2, denom_coeffs, sizeof(denom_coeffs) / sizeof(denom_coeffs[0]) - 1);
     return numer / denom;
 }
-
 
 //
 // cosine distribution cumulative distribution function (CDF).
 //
-double cosine_cdf(double x)
-{
+double cosine_cdf(double x) {
     if (x >= M_PI64) {
         return 1;
     }
@@ -123,9 +111,8 @@ double cosine_cdf(double x)
     if (x < -1.6) {
         return cosine_cdf_pade_approx_at_neg_pi(x);
     }
-    return 0.5 + (x + sin(x))/(2*M_PI64);
+    return 0.5 + (x + sin(x)) / (2 * M_PI64);
 }
-
 
 // The CDF of the cosine distribution is
 //     p = (pi + x + sin(x)) / (2*pi),
@@ -167,36 +154,23 @@ double cosine_cdf(double x)
 //        y = pi*(2*p - 1)
 //        x = y * _p2(y**2) / _q2(y**2)
 
-static
-double _p2(double t)
-{
-    double coeffs[] = {-6.8448463845552725e-09,
-                       3.4900934227012284e-06,
-                       -0.00030539712907115167,
-                       0.009350454384541677,
-                       -0.11602142940208726,
-                       0.5};
+static double _p2(double t) {
+    double coeffs[] = {-6.8448463845552725e-09, 3.4900934227012284e-06, -0.00030539712907115167,
+                       0.009350454384541677,    -0.11602142940208726,   0.5};
     double v;
 
     v = cephes_polevl_wrap(t, coeffs, sizeof(coeffs) / sizeof(coeffs[0]) - 1);
     return v;
 }
 
-static
-double _q2(double t)
-{
-    double coeffs[] = {-5.579679571562129e-08,
-                       1.3728570152788793e-05,
-                       -0.0008916919927321117,
-                       0.022927496105281435,
-                       -0.25287619213750784,
-                       1.0};
+static double _q2(double t) {
+    double coeffs[] = {-5.579679571562129e-08, 1.3728570152788793e-05, -0.0008916919927321117,
+                       0.022927496105281435,   -0.25287619213750784,   1.0};
     double v;
 
     v = cephes_polevl_wrap(t, coeffs, sizeof(coeffs) / sizeof(coeffs[0]) - 1);
     return v;
 }
-
 
 //
 // Part of the asymptotic expansion of the inverse function at p=0.
@@ -205,18 +179,12 @@ double _q2(double t)
 // (https://en.wikipedia.org/wiki/Kepler%27s_equation).  In particular, see the
 // series expansion for the inverse Kepler equation when the eccentricity e is 1.
 //
-static
-double _poly_approx(double s)
-{
+static double _poly_approx(double s) {
     double s2;
     double p;
-    double coeffs[] = {1.1911667949082915e-08,
-                       1.683039183039183e-07,
-                       43.0/17248000,
-                       1.0/25200,
-                       1.0/1400,
-                       1.0/60,
-                       1.0};
+    double coeffs[] = {
+        1.1911667949082915e-08, 1.683039183039183e-07, 43.0 / 17248000, 1.0 / 25200, 1.0 / 1400, 1.0 / 60, 1.0
+    };
     //
     // p(s) = s + (1/60) * s**3 + (1/1400) * s**5 + (1/25200) * s**7 +
     //        (43/17248000) * s**9 + (1213/7207200000) * s**11 +
@@ -224,17 +192,15 @@ double _poly_approx(double s)
     //
     // Here we include terms up to s**13.
     //
-    s2 = s*s;
-    p = s*cephes_polevl_wrap(s2, coeffs, sizeof(coeffs)/sizeof(coeffs[0]) - 1);
+    s2 = s * s;
+    p = s * cephes_polevl_wrap(s2, coeffs, sizeof(coeffs) / sizeof(coeffs[0]) - 1);
     return p;
 }
-
 
 //
 // cosine distribution inverse CDF (aka percent point function).
 //
-double cosine_invcdf(double p)
-{
+double cosine_invcdf(double p) {
     double x;
     int sgn = 1;
 
@@ -254,12 +220,11 @@ double cosine_invcdf(double p)
     }
 
     if (p < 0.0925) {
-        x = _poly_approx(cbrt(12*M_PI64*p)) - M_PI64;
-    }
-    else {
+        x = _poly_approx(cbrt(12 * M_PI64 * p)) - M_PI64;
+    } else {
         double y, y2;
-        y = M_PI64*(2*p - 1);
-        y2 = y*y;
+        y = M_PI64 * (2 * p - 1);
+        y2 = y * y;
         x = y * _p2(y2) / _q2(y2);
     }
 
@@ -274,11 +239,11 @@ double cosine_invcdf(double p)
         //    f''(x) = -sin(x)
         // where y = 2*pi*p.
         double f0, f1, f2;
-        f0 = M_PI64 + x + sin(x) - 2*M_PI64*p;
+        f0 = M_PI64 + x + sin(x) - 2 * M_PI64 * p;
         f1 = 1 + cos(x);
         f2 = -sin(x);
-        x = x - 2*f0*f1/(2*f1*f1 - f0*f2);
+        x = x - 2 * f0 * f1 / (2 * f1 * f1 - f0 * f2);
     }
 
-    return sgn*x;
+    return sgn * x;
 }

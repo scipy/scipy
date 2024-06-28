@@ -2,13 +2,12 @@
 #ifndef CKDTREE_CPP_RECTANGLE
 #define CKDTREE_CPP_RECTANGLE
 
-#include <new>
-#include <typeinfo>
-#include <stdexcept>
-#include <ios>
 #include <cmath>
 #include <cstring>
-
+#include <ios>
+#include <new>
+#include <stdexcept>
+#include <typeinfo>
 
 /* Interval arithmetic
  * ===================
@@ -21,23 +20,21 @@ struct Rectangle {
     /* the last const is to allow const Rectangle to use these functions;
      * also notice we had to mark buf mutable to avoid writing non const version
      * of the same accessors. */
-    double * const maxes() const { return &buf[0]; }
-    double * const mins() const { return &buf[0] + m; }
+    double *const maxes() const { return &buf[0]; }
+    double *const mins() const { return &buf[0] + m; }
 
-    Rectangle(const ckdtree_intp_t _m,
-              const double *_mins,
-              const double *_maxes) : m(_m), buf(2 * m) {
+    Rectangle(const ckdtree_intp_t _m, const double *_mins, const double *_maxes) : m(_m), buf(2 * m) {
 
         /* copy array data */
         /* FIXME: use std::vector ? */
-        std::memcpy((void*)mins(), (void*)_mins, m*sizeof(double));
-        std::memcpy((void*)maxes(), (void*)_maxes, m*sizeof(double));
+        std::memcpy((void *) mins(), (void *) _mins, m * sizeof(double));
+        std::memcpy((void *) maxes(), (void *) _maxes, m * sizeof(double));
     };
 
-    Rectangle(const Rectangle& rect) : m(rect.m), buf(rect.buf) {};
+    Rectangle(const Rectangle &rect) : m(rect.m), buf(rect.buf) {};
 
-    private:
-        mutable std::vector<double> buf;
+  private:
+    mutable std::vector<double> buf;
 };
 
 #include "distance.h"
@@ -76,8 +73,8 @@ struct Rectangle {
  */
 
 struct RR_stack_item {
-    ckdtree_intp_t    which;
-    ckdtree_intp_t    split_dim;
+    ckdtree_intp_t which;
+    ckdtree_intp_t split_dim;
     double min_along_dim;
     double max_along_dim;
     double min_distance;
@@ -87,10 +84,10 @@ struct RR_stack_item {
 const ckdtree_intp_t LESS = 1;
 const ckdtree_intp_t GREATER = 2;
 
-template<typename MinMaxDist>
-    struct RectRectDistanceTracker {
+template <typename MinMaxDist>
+struct RectRectDistanceTracker {
 
-    const ckdtree * tree;
+    const ckdtree *tree;
     Rectangle rect1;
     Rectangle rect2;
     double p;
@@ -114,10 +111,10 @@ template<typename MinMaxDist>
         stack_max_size = new_max_size;
     };
 
-    RectRectDistanceTracker(const ckdtree *_tree,
-                 const Rectangle& _rect1, const Rectangle& _rect2,
-                 const double _p, const double eps,
-                 const double _upper_bound)
+    RectRectDistanceTracker(
+        const ckdtree *_tree, const Rectangle &_rect1, const Rectangle &_rect2, const double _p, const double eps,
+        const double _upper_bound
+    )
         : tree(_tree), rect1(_rect1), rect2(_rect2), stack_arr(8) {
 
         if (rect1.m != rect2.m) {
@@ -131,16 +128,15 @@ template<typename MinMaxDist>
         if (CKDTREE_LIKELY(p == 2.0))
             upper_bound = _upper_bound * _upper_bound;
         else if ((!std::isinf(p)) && (!std::isinf(_upper_bound)))
-            upper_bound = std::pow(_upper_bound,p);
+            upper_bound = std::pow(_upper_bound, p);
         else
             upper_bound = _upper_bound;
 
         /* fiddle approximation factor */
         if (CKDTREE_LIKELY(p == 2.0)) {
             double tmp = 1. + eps;
-            epsfac = 1. / (tmp*tmp);
-        }
-        else if (eps == 0.)
+            epsfac = 1. / (tmp * tmp);
+        } else if (eps == 0.)
             epsfac = 1.;
         else if (std::isinf(p))
             epsfac = 1. / (1. + eps);
@@ -153,7 +149,7 @@ template<typename MinMaxDist>
 
         /* Compute initial min and max distances */
         MinMaxDist::rect_rect_p(tree, rect1, rect2, p, &min_distance, &max_distance);
-        if(std::isinf(max_distance)) {
+        if (std::isinf(max_distance)) {
             const char *msg = "Encountering floating point overflow. "
                               "The value of p too large for this dataset; "
                               "For such large p, consider using the special case p=np.inf . ";
@@ -162,9 +158,8 @@ template<typename MinMaxDist>
         inaccurate_distance_limit = max_distance;
     };
 
-
-    void push(const ckdtree_intp_t which, const intptr_t direction,
-              const ckdtree_intp_t split_dim, const double split_val) {
+    void
+    push(const ckdtree_intp_t which, const intptr_t direction, const ckdtree_intp_t split_dim, const double split_val) {
 
         const double p = this->p;
         /* subnomial is 1 if round-off is expected to taint the incremental distance tracking.
@@ -220,13 +215,11 @@ template<typename MinMaxDist>
         }
     };
 
-    inline void push_less_of(const ckdtree_intp_t which,
-                                 const ckdtreenode *node) {
+    inline void push_less_of(const ckdtree_intp_t which, const ckdtreenode *node) {
         push(which, LESS, node->split_dim, node->split);
     };
 
-    inline void push_greater_of(const ckdtree_intp_t which,
-                                    const ckdtreenode *node) {
+    inline void push_greater_of(const ckdtree_intp_t which, const ckdtreenode *node) {
         push(which, GREATER, node->split_dim, node->split);
     };
 
@@ -240,21 +233,18 @@ template<typename MinMaxDist>
             throw std::logic_error(msg);
         }
 
-        RR_stack_item* item = &stack[stack_size];
+        RR_stack_item *item = &stack[stack_size];
         min_distance = item->min_distance;
         max_distance = item->max_distance;
 
         if (item->which == 1) {
             rect1.mins()[item->split_dim] = item->min_along_dim;
             rect1.maxes()[item->split_dim] = item->max_along_dim;
-        }
-        else {
+        } else {
             rect2.mins()[item->split_dim] = item->min_along_dim;
             rect2.maxes()[item->split_dim] = item->max_along_dim;
         }
     };
-
 };
-
 
 #endif

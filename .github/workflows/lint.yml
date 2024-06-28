@@ -52,3 +52,15 @@ jobs:
       shell: bash
       run: |
         python tools/check_python_h_first.py 
+
+  clang-format:
+    name: clang-format
+    if: "github.repository == 'scipy/scipy' || github.repository == ''"
+    runs-on: ubuntu-22.04
+    steps:
+    - uses: actions/checkout@v4
+    - name: Run clang-format style check for C/C++/Protobuf programs.
+      uses: jidicula/clang-format-action@v4.13.0
+      with:
+        clang-format-version: '18'
+        exclude-regex: '(meson\.build\.c|scipy\/_lib\/(_uarray|boost_math|highs|pocketfft|unuran)|scipy\/io\/_fast_matrix_market|scipy\/optimize\/_direct|scipy\/sparse\/linalg\/_eigen\/arpack\/ARPACK|scipy\/sparse\/linalg\/_dsolve\/SuperLU|scipy\/sparse\/linalg\/_propack\/PROPACK|scipy\/spatial\/qhull_src|scipy\/optimize\/_trlib|scipy\/special\/special\/third_party|scipy\/stats\/biasedurn|scipy\/stats\/libnpyrandom)'

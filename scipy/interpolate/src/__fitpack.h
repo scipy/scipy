@@ -2,8 +2,7 @@
  * B-spline evaluation routine.
  */
 
-static inline void
-_deBoor_D(const double *t, double x, int k, int ell, int m, double *result) {
+static inline void _deBoor_D(const double *t, double x, int k, int ell, int m, double *result) {
     /*
      * On completion the result array stores
      * the k+1 non-zero values of beta^(m)_i,k(x):  for i=ell, ell-1, ell-2, ell-k.
@@ -25,7 +24,7 @@ _deBoor_D(const double *t, double x, int k, int ell, int m, double *result) {
      */
     result[0] = 1.0;
     for (j = 1; j <= k - m; j++) {
-        memcpy(hh, h, j*sizeof(double));
+        memcpy(hh, h, j * sizeof(double));
         h[0] = 0.0;
         for (n = 1; n <= j; n++) {
             ind = ell + n;
@@ -35,9 +34,9 @@ _deBoor_D(const double *t, double x, int k, int ell, int m, double *result) {
                 h[n] = 0.0;
                 continue;
             }
-            w = hh[n - 1]/(xb - xa);
-            h[n - 1] += w*(xb - x);
-            h[n] = w*(x - xa);
+            w = hh[n - 1] / (xb - xa);
+            h[n - 1] += w * (xb - x);
+            h[n] = w * (x - xa);
         }
     }
 
@@ -46,7 +45,7 @@ _deBoor_D(const double *t, double x, int k, int ell, int m, double *result) {
      * to convert the values of beta into the mth derivative
      */
     for (j = k - m + 1; j <= k; j++) {
-        memcpy(hh, h, j*sizeof(double));
+        memcpy(hh, h, j * sizeof(double));
         h[0] = 0.0;
         for (n = 1; n <= j; n++) {
             ind = ell + n;
@@ -56,7 +55,7 @@ _deBoor_D(const double *t, double x, int k, int ell, int m, double *result) {
                 h[m] = 0.0;
                 continue;
             }
-            w = j*hh[n - 1]/(xb - xa);
+            w = j * hh[n - 1] / (xb - xa);
             h[n - 1] -= w;
             h[n] = w;
         }

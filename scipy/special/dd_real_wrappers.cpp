@@ -9,49 +9,41 @@
 
 using special::cephes::detail::double_double;
 
-double2 dd_create_d(double x) {
-    return {x, 0.0};
-}
+double2 dd_create_d(double x) { return {x, 0.0}; }
 
-double2 dd_create(double x, double y) {
-    return {x, y};
-}
+double2 dd_create(double x, double y) { return {x, y}; }
 
-double2 dd_add(const double2* a, const double2* b) {
+double2 dd_add(const double2 *a, const double2 *b) {
     double_double dd_a(a->hi, a->lo);
     double_double dd_b(b->hi, b->lo);
     double_double result = dd_a + dd_b;
     return {result.hi, result.lo};
 }
 
-double2 dd_mul(const double2* a, const double2* b) {
+double2 dd_mul(const double2 *a, const double2 *b) {
     double_double dd_a(a->hi, a->lo);
     double_double dd_b(b->hi, b->lo);
     double_double result = dd_a * dd_b;
     return {result.hi, result.lo};
 }
 
-double2 dd_div(const double2* a, const double2* b) {
+double2 dd_div(const double2 *a, const double2 *b) {
     double_double dd_a(a->hi, a->lo);
     double_double dd_b(b->hi, b->lo);
     double_double result = dd_a / dd_b;
     return {result.hi, result.lo};
 }
 
-double2 dd_exp(const double2* x) {
+double2 dd_exp(const double2 *x) {
     double_double dd_x(x->hi, x->lo);
     double_double result = special::cephes::detail::exp(dd_x);
     return {result.hi, result.lo};
 }
 
-double2 dd_log(const double2* x) {
+double2 dd_log(const double2 *x) {
     double_double dd_x(x->hi, x->lo);
     double_double result = special::cephes::detail::log(dd_x);
     return {result.hi, result.lo};
 }
 
-double dd_to_double(const double2* a) {
-    return a->hi;
-}
-
-
+double dd_to_double(const double2 *a) { return a->hi; }

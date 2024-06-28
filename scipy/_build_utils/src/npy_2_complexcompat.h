@@ -10,10 +10,10 @@
 #define NPY_CSETIMAGF(c, i) (c)->imag = (i)
 #endif
 #ifndef NPY_CSETREAL
-#define NPY_CSETREAL(c, r)  (c)->real = (r)
+#define NPY_CSETREAL(c, r) (c)->real = (r)
 #endif
 #ifndef NPY_CSETIMAG
-#define NPY_CSETIMAG(c, i)  (c)->imag = (i)
+#define NPY_CSETIMAG(c, i) (c)->imag = (i)
 #endif
 #ifndef NPY_CSETREALL
 #define NPY_CSETREALL(c, r) (c)->real = (r)
