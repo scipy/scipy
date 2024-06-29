@@ -15,7 +15,7 @@ __all__ = ['upcast', 'getdtype', 'getdata', 'isscalarlike', 'isintlike',
 
 supported_dtypes = [np.bool_, np.byte, np.ubyte, np.short, np.ushort, np.intc,
                     np.uintc, np_long, np_ulong, np.longlong, np.ulonglong,
-                    np.float32, np.float64, np.longdouble, 
+                    np.float32, np.float64, np.longdouble,
                     np.complex64, np.complex128, np.clongdouble]
 
 _upcast_memo = {}
@@ -109,12 +109,15 @@ def to_native(A):
 
 
 def getdtype(dtype, a=None, default=None):
-    """Function used to simplify argument processing. If 'dtype' is not
-    specified (is None), returns a.dtype. If 'dtype' and 'a'
-    are both None, return a numpy data type using the 'default' parameter.
-    Furthermore, 'dtype' must not be a np object and must be in supported_dtypes.
+    """Function used to simplify dtype argument processing.
+    If `dtype` is not specified (is None), returns ``a.dtype``. If `dtype`
+    and `a` are both None, return a numpy data type using `default`.
+
+    Furthermore, `dtype` must be in `supported_dtypes`:
+        bool_, int8, uint8, int16, uint16, int32, uint32,
+        int64, uint64, longlong, ulonglong, float32, float64,
+        longdouble, complex64, complex128, clongdouble
     """
-    # TODO is this really what we want?
     if dtype is None:
         try:
             newdtype = a.dtype
@@ -130,7 +133,6 @@ def getdtype(dtype, a=None, default=None):
         supported_dtypes_fmt = ", ".join(t.__name__ for t in supported_dtypes)
         raise ValueError(f"scipy.sparse does not support dtype {newdtype.name}. "
                          f"The only supported types are: {supported_dtypes_fmt}.")
-    
     return newdtype
 
 
