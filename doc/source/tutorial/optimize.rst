@@ -967,72 +967,66 @@ when the problem is presumed to have a smooth landscape around the initial guess
 **Local Optimization Solver comparison:**
 
 .. list-table::
-   :widths: 15 15 15 20 20 15
+   :widths: 15 20 20 15 15 15
    :header-rows: 1
 
    * - Solver
-     - Uses Gradient
-     - Uses Hessian
      - Bounds Constraints
      - Nonlinear Constraints
+     - Uses Gradient
+     - Uses Hessian
      - Utilizes Sparsity
-   * - Nelder-Mead
-     -
-     -
-     - ✓
-     -
-     -
-   * - Powell
-     -
-     -
-     - ✓
-     -
-     -
-   * - COBYLA
-     -
-     -
-     - ✓
-     - ✓
-     -
    * - CG
+     -
+     -
      - ✓
-     -
-     -
      -
      -
    * - BFGS
-     - ✓
-     -
-     -
-     -
-     -
-   * - Newton-CG
-     - ✓
-     - ✓
      -
      -
      - ✓
+     -
+     -
    * - dogleg
+     -
+     -
      - ✓
-     - (✓)
-     -
-     -
+     - ✓
      -
    * - trust-ncg
-     - ✓
-     - ✓
      -
      -
+     - ✓
+     - ✓
      -
    * - trust-krylov
-     - ✓
-     - ✓
      -
      -
+     - ✓
+     - ✓
      -
    * - trust-exact
+     -
+     -
      - ✓
      - ✓
+     -
+   * - Newton-CG
+     -
+     -
+     - ✓
+     - ✓
+     - ✓
+   * - Nelder-Mead
+     - ✓
+     -
+     -
+     -
+     -
+   * - Powell
+     - ✓
+     -
      -
      -
      -
@@ -1048,20 +1042,24 @@ when the problem is presumed to have a smooth landscape around the initial guess
      - ✓
      -
      -
+   * - COBYLA
+     - ✓
+     - ✓
+     -
+     -
+     -
+   * - SLSQP
+     - ✓
+     - ✓
+     - ✓
+     -
+     -
    * - trust-constr
      - ✓
      - ✓
      - ✓
      - ✓
      - ✓
-   * - SLSQP
-     - ✓
-     -
-     - ✓
-     - ✓
-     -
-
-(✓) = must be positive definite
 
 
 Least-squares minimization (:func:`least_squares`)
