@@ -333,9 +333,10 @@ class _minmax_mixin:
         return first_implicit_zero_index
 
     def max(self, axis=None, out=None, *, explicit=False):
-        """
-        Return the maximum of the array/matrix or maximum along an axis.
-        This takes all elements into account, not just the non-zero ones.
+        """Return the maximum of the array/matrix or maximum along an axis.
+
+        By default, all elements are taken into account, not just the non-zero ones.
+        But with `explicit` set, only the stored elements are considered.
 
         Parameters
         ----------
@@ -349,32 +350,33 @@ class _minmax_mixin:
             compatibility reasons. Do not pass in anything except
             for the default value, as this argument is not used.
 
-        explicit : {False, True} optional
-            When set to True, only the nonzero entries of the matrix will be
-            considered. If a row/column is empty, a zero will be returned
-            to indicate it contains no nonzero values. Default is False.
-            .. versionadded:: 1.15.0
+        explicit : {False, True} optional (default: False)
+            When set to True, only the stored elements will be considered.
+            If a row/column is empty, the sparse.coo_array returned
+            has no stored element (i.e. an implicit zero) for that row/column.
 
+            .. versionadded:: 1.15.0
 
         Returns
         -------
-        amax : coo_matrix or scalar
+        amax : coo_array or scalar
             Maximum of `a`. If `axis` is None, the result is a scalar value.
-            If `axis` is given, the result is a sparse.coo_matrix of dimension
+            If `axis` is given, the result is a sparse.coo_array of dimension
             ``a.ndim - 1``.
 
         See Also
         --------
         min : The minimum value of a sparse array/matrix along a given axis.
-        numpy.matrix.max : NumPy's implementation of 'max' for matrices
+        numpy.max : NumPy's implementation of 'max'
 
         """
         return self._min_or_max(axis, out, np.maximum, explicit)
 
     def min(self, axis=None, out=None, *, explicit=False):
-        """
-        Return the minimum of the array/matrix or maximum along an axis.
-        This takes all elements into account, not just the non-zero ones.
+        """Return the minimum of the array/matrix or maximum along an axis.
+
+        By default, all elements are taken into account, not just the non-zero ones.
+        But with `explicit` set, only the stored elements are considered.
 
         Parameters
         ----------
@@ -388,31 +390,34 @@ class _minmax_mixin:
             compatibility reasons. Do not pass in anything except for
             the default value, as this argument is not used.
 
-        explicit : {False, True} optional
-            When set to True, only the nonzero entries of the matrix will be
-            considered. If a row/column is empty, a zero will be returned
-            to indicate it contains no nonzero values. Default is False.
+        explicit : {False, True} optional (default: False)
+            When set to True, only the stored elements will be considered.
+            If a row/column is empty, the sparse.coo_array returned
+            has no stored element (i.e. an implicit zero) for that row/column.
+
             .. versionadded:: 1.15.0
+
         Returns
         -------
         amin : coo_matrix or scalar
             Minimum of `a`. If `axis` is None, the result is a scalar value.
-            If `axis` is given, the result is a sparse.coo_matrix of dimension
+            If `axis` is given, the result is a sparse.coo_array of dimension
             ``a.ndim - 1``.
 
         See Also
         --------
         max : The maximum value of a sparse array/matrix along a given axis.
-        numpy.matrix.min : NumPy's implementation of 'min' for matrices
+        numpy.min : NumPy's implementation of 'min'
 
         """
         return self._min_or_max(axis, out, np.minimum, explicit)
 
     def nanmax(self, axis=None, out=None, *, explicit=False):
-        """
-        Return the maximum of the array/matrix or maximum along an axis, ignoring any
-        NaNs. This takes all elements into account, not just the non-zero
-        ones.
+        """Return the maximum, ignoring any Nans, along an axis.
+
+        Return the maximum, ignoring any Nans, of the array/matrix along an axis.
+        By default this takes all elements into account, but with `explicit` set,
+        only stored elements are considered.
 
         .. versionadded:: 1.11.0
 
@@ -428,17 +433,18 @@ class _minmax_mixin:
             compatibility reasons. Do not pass in anything except
             for the default value, as this argument is not used.
 
-        explicit : {False, True} optional
-            When set to True, only the nonzero entries of the matrix will be
-            considered. If a row/column is empty, a zero will be returned
-            to indicate it contains no nonzero values. Default is False.
+        explicit : {False, True} optional (default: False)
+            When set to True, only the stored elements will be considered.
+            If a row/column is empty, the sparse.coo_array returned
+            has no stored element (i.e. an implicit zero) for that row/column.
+
             .. versionadded:: 1.15.0
 
         Returns
         -------
-        amax : coo_matrix or scalar
+        amax : coo_array or scalar
             Maximum of `a`. If `axis` is None, the result is a scalar value.
-            If `axis` is given, the result is a sparse.coo_matrix of dimension
+            If `axis` is given, the result is a sparse.coo_array of dimension
             ``a.ndim - 1``.
 
         See Also
@@ -453,10 +459,11 @@ class _minmax_mixin:
         return self._min_or_max(axis, out, np.fmax, explicit)
 
     def nanmin(self, axis=None, out=None, *, explicit=False):
-        """
-        Return the minimum of the array/matrix or minimum along an axis, ignoring any
-        NaNs. This takes all elements into account, not just the non-zero
-        ones.
+        """Return the minimum, ignoring any Nans, along an axis.
+
+        Return the minimum, ignoring any Nans, of the array/matrix along an axis.
+        By default this takes all elements into account, but with `explicit` set,
+        only stored elements are considered.
 
         .. versionadded:: 1.11.0
 
@@ -472,17 +479,18 @@ class _minmax_mixin:
             compatibility reasons. Do not pass in anything except for
             the default value, as this argument is not used.
 
-        explicit : {False, True} optional
-            When set to True, only the nonzero entries of the matrix will be
-            considered. If a row/column is empty, a zero will be returned
-            to indicate it contains no nonzero values. Default is False.
+        explicit : {False, True} optional (default: False)
+            When set to True, only the stored elements will be considered.
+            If a row/column is empty, the sparse.coo_array returned
+            has no stored element (i.e. an implicit zero) for that row/column.
+
             .. versionadded:: 1.15.0
 
         Returns
         -------
-        amin : coo_matrix or scalar
+        amin : coo_array or scalar
             Minimum of `a`. If `axis` is None, the result is a scalar value.
-            If `axis` is given, the result is a sparse.coo_matrix of dimension
+            If `axis` is given, the result is a sparse.coo_array of dimension
             ``a.ndim - 1``.
 
         See Also
@@ -499,22 +507,26 @@ class _minmax_mixin:
     def argmax(self, axis=None, out=None, *, explicit=False):
         """Return indices of maximum elements along an axis.
 
-        Implicit zero elements are also taken into account. If there are
-        several maximum values, the index of the first occurrence is returned.
+        By default, implicit zero elements are taken into account. If there are
+        several minimum values, the index of the first occurrence is returned.
+        If `explicit` is set, only stored elements will be considered.
 
         Parameters
         ----------
         axis : {-2, -1, 0, 1, None}, optional
             Axis along which the argmax is computed. If None (default), index
             of the maximum element in the flatten data is returned.
+
         out : None, optional
             This argument is in the signature *solely* for NumPy
             compatibility reasons. Do not pass in anything except for
             the default value, as this argument is not used.
-        explicit : {False, True} optional
-            When set to True, only stored values of the sparse representation
-            will be considered. If a row/column is empty, a zero will be returned
-            to indicate it contains no nonzero values. Default is False.
+
+        explicit : {False, True} optional (default: False)
+            When set to True, only the stored elements will be considered.
+            If a row/column is empty, the sparse.coo_array returned
+            has no stored element (i.e. an implicit zero) for that row/column.
+
             .. versionadded:: 1.15.0
 
         Returns
@@ -527,22 +539,26 @@ class _minmax_mixin:
     def argmin(self, axis=None, out=None, *, explicit=False):
         """Return indices of minimum elements along an axis.
 
-        Implicit zero elements are also taken into account. If there are
+        By default, implicit zero elements are taken into account. If there are
         several minimum values, the index of the first occurrence is returned.
+        If `explicit` is set, only stored elements will be considered.
 
         Parameters
         ----------
         axis : {-2, -1, 0, 1, None}, optional
             Axis along which the argmin is computed. If None (default), index
             of the minimum element in the flatten data is returned.
+
         out : None, optional
             This argument is in the signature *solely* for NumPy
             compatibility reasons. Do not pass in anything except for
             the default value, as this argument is not used.
-        explicit : {False, True} optional
-            When set to True, only stored values of the sparse representation
-            will be considered. If a row/column is empty, a zero will be returned
-            to indicate it contains no nonzero values. Default is False.
+
+        explicit : {False, True} optional (default: False)
+            When set to True, only the stored elements will be considered.
+            If a row/column is empty, the sparse.coo_array returned
+            has no stored element (i.e. an implicit zero) for that row/column.
+
             .. versionadded:: 1.15.0
 
         Returns

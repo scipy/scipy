@@ -3757,8 +3757,6 @@ class _TestMinMax:
         # zero-size matrices
         D6 = self.spcreator(np.empty((0, 5)))
         D7 = self.spcreator(np.empty((5, 0)))
-        axes_even = [0, -2]
-        axes_odd = [1, -1]
         explicits = [True, False]
 
         for mat, axis, ex in itertools.product([D6, D7], [None, 0, 1], explicits):
