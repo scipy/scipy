@@ -6397,7 +6397,8 @@ class NormalityTests:
         # test_result@test$p.value
         test_name = self.test_name
         test_fun = getattr(stats, test_name)
-        ref_statistic, ref_pvalue = xp.asarray(self.case_ref)
+        xp_case_ref = xp.asarray(self.case_ref)
+        ref_statistic, ref_pvalue = xp_case_ref[0], xp_case_ref[1]
 
         kwargs = {}
         if alternative in {'less', 'greater'}:
