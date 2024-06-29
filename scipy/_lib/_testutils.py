@@ -94,18 +94,6 @@ class PytestTester:
 
         pytest_args = ['--showlocals', '--tb=short']
 
-        if doctests:
-            pytest_args += [
-                "--doctest-modules",
-                "--ignore=scipy/interpolate/_interpnd_info.py",
-                "--ignore=scipy/_lib/array_api_compat",
-                "--ignore=scipy/_lib/highs",
-                "--ignore=scipy/_lib/unuran",
-                "--ignore=scipy/_lib/_gcutils.py",
-                "--ignore=scipy/_lib/doccer.py",
-                "--ignore=scipy/_lib/_uarray",
-            ]
-
         if extra_argv:
             pytest_args += list(extra_argv)
 

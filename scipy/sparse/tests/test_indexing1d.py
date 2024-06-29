@@ -330,6 +330,99 @@ class TestSlicingAndFancy1D:
         ):
             A.__getitem__((2, "foo"))
 
+    def test_fancy_indexing_2darray(self, spcreator):
+        B = np.arange(50).reshape((5, 10))
+        A = spcreator(B)
+
+        # [i]
+        assert_equal(A[[1, 3]].toarray(), B[[1, 3]])
+
+        # [i,[1,2]]
+        assert_equal(A[3, [1, 3]].toarray(), B[3, [1, 3]])
+        assert_equal(A[-1, [2, -5]].toarray(), B[-1, [2, -5]])
+        assert_equal(A[np.array(-1), [2, -5]].toarray(), B[-1, [2, -5]])
+        assert_equal(A[-1, np.array([2, -5])].toarray(), B[-1, [2, -5]])
+        assert_equal(A[np.array(-1), np.array([2, -5])].toarray(), B[-1, [2, -5]])
+
+        # [1:2,[1,2]]
+        assert_equal(A[:, [2, 8, 3, -1]].toarray(), B[:, [2, 8, 3, -1]])
+        assert_equal(A[3:4, [9]].toarray(), B[3:4, [9]])
+        assert_equal(A[1:4, [-1, -5]].toarray(), B[1:4, [-1, -5]])
+        assert_equal(A[1:4, np.array([-1, -5])].toarray(), B[1:4, [-1, -5]])
+
+        # [[1,2],j]
+        assert_equal(A[[1, 3], 3].toarray(), B[[1, 3], 3])
+        assert_equal(A[[2, -5], -4].toarray(), B[[2, -5], -4])
+        assert_equal(A[np.array([2, -5]), -4].toarray(), B[[2, -5], -4])
+        assert_equal(A[[2, -5], np.array(-4)].toarray(), B[[2, -5], -4])
+        assert_equal(A[np.array([2, -5]), np.array(-4)].toarray(), B[[2, -5], -4])
+
+        # [[1,2],1:2]
+        assert_equal(A[[1, 3], :].toarray(), B[[1, 3], :])
+        assert_equal(A[[2, -5], 8:-1].toarray(), B[[2, -5], 8:-1])
+        assert_equal(A[np.array([2, -5]), 8:-1].toarray(), B[[2, -5], 8:-1])
+
+        # [[1,2],[1,2]]
+        assert_equal(toarray(A[[1, 3], [2, 4]]), B[[1, 3], [2, 4]])
+        assert_equal(toarray(A[[-1, -3], [2, -4]]), B[[-1, -3], [2, -4]])
+        assert_equal(
+            toarray(A[np.array([-1, -3]), [2, -4]]), B[[-1, -3], [2, -4]]
+        )
+        assert_equal(
+            toarray(A[[-1, -3], np.array([2, -4])]), B[[-1, -3], [2, -4]]
+        )
+        assert_equal(
+            toarray(A[np.array([-1, -3]), np.array([2, -4])]), B[[-1, -3], [2, -4]]
+        )
+
+        # [[[1],[2]],[1,2]]
+        assert_equal(A[[[1], [3]], [2, 4]].toarray(), B[[[1], [3]], [2, 4]])
+        assert_equal(
+            A[[[-1], [-3], [-2]], [2, -4]].toarray(),
+            B[[[-1], [-3], [-2]], [2, -4]]
+        )
+        assert_equal(
+            A[np.array([[-1], [-3], [-2]]), [2, -4]].toarray(),
+            B[[[-1], [-3], [-2]], [2, -4]]
+        )
+        assert_equal(
+            A[[[-1], [-3], [-2]], np.array([2, -4])].toarray(),
+            B[[[-1], [-3], [-2]], [2, -4]]
+        )
+        assert_equal(
+            A[np.array([[-1], [-3], [-2]]), np.array([2, -4])].toarray(),
+            B[[[-1], [-3], [-2]], [2, -4]]
+        )
+
+        # [[1,2]]
+        assert_equal(A[[1, 3]].toarray(), B[[1, 3]])
+        assert_equal(A[[-1, -3]].toarray(), B[[-1, -3]])
+        assert_equal(A[np.array([-1, -3])].toarray(), B[[-1, -3]])
+
+        # [[1,2],:][:,[1,2]]
+        assert_equal(
+            A[[1, 3], :][:, [2, 4]].toarray(), B[[1, 3], :][:, [2, 4]]
+        )
+        assert_equal(
+            A[[-1, -3], :][:, [2, -4]].toarray(), B[[-1, -3], :][:, [2, -4]]
+        )
+        assert_equal(
+            A[np.array([-1, -3]), :][:, np.array([2, -4])].toarray(),
+            B[[-1, -3], :][:, [2, -4]]
+        )
+
+        # [:,[1,2]][[1,2],:]
+        assert_equal(
+            A[:, [1, 3]][[2, 4], :].toarray(), B[:, [1, 3]][[2, 4], :]
+        )
+        assert_equal(
+            A[:, [-1, -3]][[2, -4], :].toarray(), B[:, [-1, -3]][[2, -4], :]
+        )
+        assert_equal(
+            A[:, np.array([-1, -3])][np.array([2, -4]), :].toarray(),
+            B[:, [-1, -3]][[2, -4], :]
+        )
+
     def test_fancy_indexing(self, spcreator):
         B = np.arange(50)
         A = spcreator(B)
