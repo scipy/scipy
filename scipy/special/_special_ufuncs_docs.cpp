@@ -1780,37 +1780,30 @@ const char *iv_ratio_doc = R"(
     Returns
     -------
     scalar or ndarray
-        Ratio between modified Bessel functions of adjacent orders.
-        The return value is between `0` and `1`, inclusive.
+        Ratio between modified Bessel function of the first kind of adjacent
+        orders.  The returned value is between `0` and `1`, inclusive.
 
-        Any `nan` in the input is propagated as follows:
+        If either `v` or `x` is `nan`, `nan` is returned.  Otherwise, the
+        special values are:
 
-        - If `x` is `nan`, return `x`.
-        - If `x` is not `nan` and `v` is `nan`, return `v`.
-
-        If neither `x` nor `v` is `nan`, the special values are:
-
-        - If `x` and `v` are both `+inf`, set "domain" error and return `nan`.
-        - If `x < 0` or `v < 1`, set "domain" error and return `nan`.
-        - If `x == 0` and `v >= 1`, return `x`.
-        - If `x > 0` and `v == +inf`, return `0.0`.
-        - If `x == +inf` and `v == 1`, return `1.0`.
+        - If `v < 1` or `x < 0`, set "domain" error and return `nan`.
+        - If `v >= 1` and `x == 0`, return `x`.
+        - If `v >= 1` and `x == +inf`, return `1.0`.
+        - If `v == +inf` and `0 < x < +inf`, return `0.0`.
+        - If `v == +inf` and `x == +inf`, set "domain" error and return `nan`.
 
     See Also
     --------
-    iv : Compute modified Bessel functions.
+    iv : modified Bessel function of the first kind
 
     Notes
     -----
-    This function does not support complex order or argument.
-
     The function is computed using the _Perron continued fraction_ of [1]_.
     The continued fraction is evaluated using the "series method" of [2]_.
     Kahan summation is used to evaluate the series.
 
-    The accuracy (in terms of relative error) is tested empirically with
-    500,000 trials; the peak relative error is `4.1e-16`, and the RMSE is
-    `0.9e-16`.
+    The accuracy is tested numerically with 600,000 trials.  The peak
+    relative error is `3.4e-16`; the RMSE is `0.9e-16`.
 
     Reference
     ---------
@@ -1836,9 +1829,8 @@ const char *iv_ratio_c_doc = R"(
     See `_iv_ratio` for details about the parameters, return value, and
     algorithm.
 
-    The accuracy (in terms of relative error) is tested empirically with
-    500,000 trials; the peak relative error is `12.5e-16`, and the RMSE is
-    `1.9e-16`.
+    The accuracy is tested numerically with 600,000 trials.  The peak
+    relative error is `9.0e-16`; the RMSE is `1.5e-16`.
 
     )";
 
