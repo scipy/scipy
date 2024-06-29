@@ -44,6 +44,8 @@ Overview and big picture:
 
    -  ``issparse(A)`` returns ``True`` for any sparse array/matrix.
    -  ``isspmatrix(M)`` returns ``True`` for any sparse matrix.
+   -  ``isspmatrix_csr(M)`` checks for a sparse matrix with specific format.
+      It should be replaced with an array compatible version such as:
    -  ``issparse(A) and A.format == 'csr'`` looks for a CSR sparse
       array/matrix
 
@@ -60,7 +62,10 @@ Recommended steps for migration:
    -  implement alternatives to unsupported functions/methods like
       ``A.getnnz()`` -> ``A.nnz`` (see below: ``Remove Methods``)
    -  change any logic regarding ``issparse()`` and ``isspmatrix()`` as
-      needed.
+      needed. Usually, this means replace ``isspmatrix`` with ``issparse``,
+      and ``isspmatrix_csr(G)`` with ``issparse(G) and G.format == "csr"``.
+      Moreover ``isspmatrix_csr(G) or isspmatrix_csc(G)`` becomes
+      ``issparse(G) and G.format in ['csr', 'csc']``.
    -  run all your tests on the resulting code. You are still using
       spmatrix, not sparray. But your code and tests are prepared for
       the change.
