@@ -7,8 +7,8 @@ from numpy.testing import assert_allclose, assert_equal
 
 import scipy._lib._elementwise_iterative_method as eim
 from scipy import special, stats
-from scipy.integrate import quad_vec
-from scipy.integrate._tanhsinh import _tanhsinh, _pair_cache, _nsum
+from scipy.integrate import quad_vec, nsum
+from scipy.integrate._tanhsinh import _tanhsinh, _pair_cache
 from scipy.stats._discrete_distns import _gen_harmonic_gt1
 
 class TestTanhSinh:
@@ -690,63 +690,63 @@ class TestNSum:
 
         message = '`f` must be callable.'
         with pytest.raises(ValueError, match=message):
-            _nsum(42, f.a, f.b)
+            nsum(42, f.a, f.b)
 
         message = '...must be True or False.'
         with pytest.raises(ValueError, match=message):
-            _nsum(f, f.a, f.b, log=2)
+            nsum(f, f.a, f.b, log=2)
 
         message = '...must be real numbers.'
         with pytest.raises(ValueError, match=message):
-            _nsum(f, 1+1j, f.b)
+            nsum(f, 1+1j, f.b)
         with pytest.raises(ValueError, match=message):
-            _nsum(f, f.a, None)
+            nsum(f, f.a, None)
         with pytest.raises(ValueError, match=message):
-            _nsum(f, f.a, f.b, step=object())
+            nsum(f, f.a, f.b, step=object())
         with pytest.raises(ValueError, match=message):
-            _nsum(f, f.a, f.b, atol='ekki')
+            nsum(f, f.a, f.b, tolerances=dict(atol='ekki'))
         with pytest.raises(ValueError, match=message):
-            _nsum(f, f.a, f.b, rtol=pytest)
+            nsum(f, f.a, f.b, tolerances=dict(rtol=pytest))
 
         with np.errstate(all='ignore'):
-            res = _nsum(f, [np.nan, -np.inf, np.inf], 1)
+            res = nsum(f, [np.nan, -np.inf, np.inf], 1)
             assert np.all((res.status == -1) & np.isnan(res.sum)
                           & np.isnan(res.error) & ~res.success & res.nfev == 1)
-            res = _nsum(f, 10, [np.nan, 1])
+            res = nsum(f, 10, [np.nan, 1])
             assert np.all((res.status == -1) & np.isnan(res.sum)
                           & np.isnan(res.error) & ~res.success & res.nfev == 1)
-            res = _nsum(f, 1, 10, step=[np.nan, -np.inf, np.inf, -1, 0])
+            res = nsum(f, 1, 10, step=[np.nan, -np.inf, np.inf, -1, 0])
             assert np.all((res.status == -1) & np.isnan(res.sum)
                           & np.isnan(res.error) & ~res.success & res.nfev == 1)
 
         message = '...must be non-negative and finite.'
         with pytest.raises(ValueError, match=message):
-            _nsum(f, f.a, f.b, rtol=-1)
+            nsum(f, f.a, f.b, tolerances=dict(rtol=-1))
         with pytest.raises(ValueError, match=message):
-            _nsum(f, f.a, f.b, atol=np.inf)
+            nsum(f, f.a, f.b, tolerances=dict(atol=np.inf))
 
         message = '...may not be positive infinity.'
         with pytest.raises(ValueError, match=message):
-            _nsum(f, f.a, f.b, rtol=np.inf, log=True)
+            nsum(f, f.a, f.b, tolerances=dict(rtol=np.inf), log=True)
         with pytest.raises(ValueError, match=message):
-            _nsum(f, f.a, f.b, atol=np.inf, log=True)
+            nsum(f, f.a, f.b, tolerances=dict(atol=np.inf), log=True)
 
         message = '...must be a non-negative integer.'
         with pytest.raises(ValueError, match=message):
-            _nsum(f, f.a, f.b, maxterms=3.5)
+            nsum(f, f.a, f.b, maxterms=3.5)
         with pytest.raises(ValueError, match=message):
-            _nsum(f, f.a, f.b, maxterms=-2)
+            nsum(f, f.a, f.b, maxterms=-2)
 
     @pytest.mark.parametrize('f_number', range(1, 4))
     def test_basic(self, f_number):
         f = getattr(self, f"f{f_number}")
-        res = _nsum(f, f.a, f.b, args=f.args)
+        res = nsum(f, f.a, f.b, args=f.args)
         assert_allclose(res.sum, f.ref)
         assert_equal(res.status, 0)
         assert_equal(res.success, True)
 
         with np.errstate(divide='ignore'):
-            logres = _nsum(lambda *args: np.log(f(*args)),
+            logres = nsum(lambda *args: np.log(f(*args)),
                            f.a, f.b, log=True, args=f.args)
         assert_allclose(np.exp(logres.sum), res.sum)
         assert_allclose(np.exp(logres.error), res.error)
@@ -777,7 +777,7 @@ class TestNSum:
         integral = (F(b) - F(k))/step  # integral approximation of remainder
         low = direct + integral + f(b)  # theoretical lower bound
         high = direct + integral + f(k)  # theoretical upper bound
-        ref_sum = (low + high)/2  # _nsum uses average of the two
+        ref_sum = (low + high)/2  # nsum uses average of the two
         ref_err = (high - low)/2  # error (assuming perfect quadrature)
 
         # correct reference values where number of terms < maxterms
@@ -790,22 +790,19 @@ class TestNSum:
                 ref_err[i] = direct * np.finfo(direct).eps
 
         rtol = 1e-12
-        res = _nsum(f, a, b_original, step=step, maxterms=maxterms, rtol=rtol)
+        res = nsum(f, a, b_original, step=step, maxterms=maxterms,
+                   tolerances=dict(rtol=rtol))
         assert_allclose(res.sum, ref_sum, rtol=10*rtol)
         assert_allclose(res.error, ref_err, rtol=100*rtol)
-        assert_equal(res.status, 0)
-        assert_equal(res.success, True)
 
         i = ((b_original - a)/step + 1 <= maxterms)
         assert_allclose(res.sum[i], ref_sum[i], rtol=1e-15)
         assert_allclose(res.error[i], ref_err[i], rtol=1e-15)
 
-        logres = _nsum(logf, a, b_original, step=step, log=True,
-                       rtol=np.log(rtol), maxterms=maxterms)
+        logres = nsum(logf, a, b_original, step=step, log=True,
+                      tolerances=dict(rtol=np.log(rtol)), maxterms=maxterms)
         assert_allclose(np.exp(logres.sum), res.sum)
         assert_allclose(np.exp(logres.error), res.error)
-        assert_equal(logres.status, 0)
-        assert_equal(logres.success, True)
 
     @pytest.mark.parametrize('shape', [tuple(), (12,), (3, 4), (3, 2, 2)])
     def test_vectorization(self, shape):
@@ -827,11 +824,11 @@ class TestNSum:
         f.feval = 0
 
         @np.vectorize
-        def _nsum_single(a, b, p, maxterms):
-            return _nsum(lambda x: 1 / x**p, a, b, maxterms=maxterms)
+        def nsum_single(a, b, p, maxterms):
+            return nsum(lambda x: 1 / x**p, a, b, maxterms=maxterms)
 
-        res = _nsum(f, a, b, maxterms=1000, args=(p,))
-        refs = _nsum_single(a, b, p, maxterms=1000).ravel()
+        res = nsum(f, a, b, maxterms=1000, args=(p,))
+        refs = nsum_single(a, b, p, maxterms=1000).ravel()
 
         attrs = ['sum', 'error', 'success', 'status', 'nfev']
         for attr in attrs:
@@ -848,16 +845,16 @@ class TestNSum:
     def test_status(self):
         f = self.f2
 
-        p = [2, 2, 0.9, 1.1]
-        a = [0, 0, 1, 1]
-        b = [10, np.inf, np.inf, np.inf]
+        p = [2, 2, 0.9, 1.1, 2, 2]
+        a = [0, 0, 1, 1, 1, np.nan]
+        b = [10, np.inf, np.inf, np.inf, np.inf, np.inf]
         ref = special.zeta(p, 1)
 
         with np.errstate(divide='ignore'):  # intentionally dividing by zero
-            res = _nsum(f, a, b, args=(p,))
+            res = nsum(f, a, b, args=(p,))
 
-        assert_equal(res.success, [False, False, False, True])
-        assert_equal(res.status, [-3, -3, -2, 0])
+        assert_equal(res.success, [False, False, False, False, True, False])
+        assert_equal(res.status, [-3, -3, -2, -4, 0, -1])
         assert_allclose(res.sum[res.success], ref[res.success])
 
     def test_nfev(self):
@@ -866,18 +863,19 @@ class TestNSum:
             return 1 / x**2
 
         f.nfev = 0
-        res = _nsum(f, 1, 10)
+        res = nsum(f, 1, 10)
         assert_equal(res.nfev, f.nfev)
 
         f.nfev = 0
-        res = _nsum(f, 1, np.inf, atol=1e-6)
+        res = nsum(f, 1, np.inf, tolerances=dict(atol=1e-6))
         assert_equal(res.nfev, f.nfev)
 
     def test_inclusive(self):
         # There was an edge case off-by one bug when `_direct` was called with
         # `inclusive=True`. Check that this is resolved.
-        res = _nsum(lambda k: 1 / k ** 2, [1, 4], np.inf, maxterms=500, atol=0.1)
-        ref = _nsum(lambda k: 1 / k ** 2, [1, 4], np.inf)
+        res = nsum(lambda k: 1 / k ** 2, [1, 4], np.inf,
+                   maxterms=500, tolerances=dict(atol=0.1))
+        ref = nsum(lambda k: 1 / k ** 2, [1, 4], np.inf)
         assert np.all(res.sum > (ref.sum - res.error))
         assert np.all(res.sum < (ref.sum + res.error))
 
@@ -885,11 +883,11 @@ class TestNSum:
         # test equal lower/upper limit
         f = self.f1
         a = b = 2
-        res = _nsum(f, a, b)
+        res = nsum(f, a, b)
         assert_equal(res.sum, f(a))
 
         # Test scalar `args` (not in tuple)
-        res = _nsum(self.f2, 1, np.inf, args=2)
+        res = nsum(self.f2, 1, np.inf, args=2)
         assert_allclose(res.sum, self.f1.ref)  # f1.ref is correct w/ args=2
 
         # Test 0 size input
@@ -897,7 +895,7 @@ class TestNSum:
         b = np.empty((0, 1))  # could use Hypothesis
         p = np.empty(4)  # but it's overkill
         shape = np.broadcast_shapes(a.shape, b.shape, p.shape)
-        res = _nsum(self.f2, a, b, args=(p,))
+        res = nsum(self.f2, a, b, args=(p,))
         assert res.sum.shape == shape
         assert res.status.shape == shape
         assert res.nfev.shape == shape
@@ -907,12 +905,12 @@ class TestNSum:
             with np.errstate(divide='ignore'):
                 return 1 / x
 
-        res = _nsum(f, 0, 10, maxterms=0)
+        res = nsum(f, 0, 10, maxterms=0)
         assert np.isnan(res.sum)
         assert np.isnan(res.error)
         assert res.status == -2
 
-        res = _nsum(f, 0, 10, maxterms=1)
+        res = nsum(f, 0, 10, maxterms=1)
         assert np.isnan(res.sum)
         assert np.isnan(res.error)
         assert res.status == -3
@@ -922,7 +920,7 @@ class TestNSum:
         a = [np.nan, 1, 1, 1]
         b = [np.inf, np.nan, np.inf, np.inf]
         p = [2, 2, np.nan, 2]
-        res = _nsum(self.f2, a, b, args=(p,))
+        res = nsum(self.f2, a, b, args=(p,))
         assert_allclose(res.sum, [np.nan, np.nan, np.nan, self.f1.ref])
         assert_allclose(res.error[:3], np.nan)
         assert_equal(res.status, [-1, -1, -3, 0])
@@ -938,10 +936,44 @@ class TestNSum:
 
         a = np.asarray(1, dtype=dtype)
         b = np.asarray([10, np.inf], dtype=dtype)
-        res = _nsum(f, a, b)
+        res = nsum(f, a, b)
         assert res.sum.dtype == dtype
         assert res.error.dtype == dtype
 
         rtol = 1e-12 if dtype == np.float64 else 1e-6
         ref = _gen_harmonic_gt1(b, 2)
         assert_allclose(res.sum, ref, rtol=rtol)
+
+    @pytest.mark.parametrize('case', [(10, 100), (100, 10)])
+    def test_nondivisible_interval(self, case):
+        # When the limits of the sum are such that (b - a)/step
+        # is not exactly integral, check that only floor((b - a)/step)
+        # terms are included.
+        n, maxterms = case
+
+        def f(k):
+            return 1 / k ** 2
+
+        a = np.e
+        step = 1 / 3
+        b0 = a + n * step
+        i = np.arange(-2, 3)
+        b = b0 + i * np.spacing(b0)
+        res = nsum(f, a, b, step=step, maxterms=maxterms)
+        ns = np.floor((b - a) / step)
+        assert_equal(np.diff(ns) > 0, np.diff(res.sum) > 0)
+        assert_allclose(res.sum[-1], res.sum[0] + f(b0))
+        assert len(set(ns)) == 2
+
+    def test_logser_kurtosis_gh20648(self):
+        # Some functions return NaN at infinity rather than 0 like they should.
+        # Check that this is accounted for.
+        ref = stats.yulesimon.moment(4, 5)
+        def f(x):
+            return stats.yulesimon._pmf(x, 5) * x**4
+
+        with np.errstate(invalid='ignore'):
+            assert np.isnan(f(np.inf))
+
+        res = nsum(f, 1, np.inf)
+        assert_allclose(res.sum, ref)
