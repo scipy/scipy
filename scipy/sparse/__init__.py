@@ -240,13 +240,13 @@ Construct a 1000x1000 `lil_array` and add some values to it:
 >>> from numpy.random import rand
 
 >>> A = lil_array((1000, 1000))
->>> A[0, :100] = random_array(100)
->>> A.setdiag(random_array(1000))
+>>> A[0, :100] = rand(100)
+>>> A.setdiag(rand(1000))
 
 Now convert it to CSR format and solve A x = b for x:
 
 >>> A = A.tocsr()
->>> b = random_array(1000)
+>>> b = rand(1000)
 >>> x = spsolve(A, b)
 
 Convert it to a dense array and solve, and check that the result
