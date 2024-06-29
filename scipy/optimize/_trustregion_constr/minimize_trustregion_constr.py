@@ -555,10 +555,10 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
             IPReport.print_footer()
     if verbose >= 1:
         print(result.message)
-        print("Number of iterations: {}, function evaluations: {}, "
-              "CG iterations: {}, optimality: {:.2e}, "
-              "constraint violation: {:.2e}, execution time: {:4.2} s."
-              .format(result.nit, result.nfev, result.cg_niter,
-                      result.optimality, result.constr_violation,
-                      result.execution_time))
+        print(f"Number of iterations: {result.nit}, "
+              f"function evaluations: {result.nfev}, "
+              f"CG iterations: {result.cg_niter}, "
+              f"optimality: {result.optimality:.2e}, "
+              f"constraint violation: {result.constr_violation:.2e}, "
+              f"execution time: {result.execution_time:4.2} s.")
     return result

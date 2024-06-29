@@ -564,7 +564,7 @@ def old_constraint_to_new(ic, con):
         raise TypeError("Constraint's type must be a string.") from e
     else:
         if ctype not in ['eq', 'ineq']:
-            raise ValueError("Unknown constraint type '%s'." % con['type'])
+            raise ValueError(f"Unknown constraint type '{con['type']}'.")
     if 'fun' not in con:
         raise ValueError('Constraint %d has no function defined.' % ic)
 

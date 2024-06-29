@@ -284,7 +284,7 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
             raise TypeError("Constraint's type must be a string.") from e
         else:
             if ctype not in ['eq', 'ineq']:
-                raise ValueError("Unknown constraint type '%s'." % con['type'])
+                raise ValueError(f"Unknown constraint type '{con['type']}'.")
 
         # check function
         if 'fun' not in con:
@@ -367,8 +367,8 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
             bnderr = bnds[:, 0] > bnds[:, 1]
 
         if bnderr.any():
-            raise ValueError('SLSQP Error: lb > ub in bounds %s.' %
-                             ', '.join(str(b) for b in bnderr))
+            raise ValueError("SLSQP Error: lb > ub in bounds "
+                             f"{', '.join(str(b) for b in bnderr)}.")
         xl, xu = bnds[:, 0], bnds[:, 1]
 
         # Mark infinite bounds with nans; the Fortran code understands this

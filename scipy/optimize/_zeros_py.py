@@ -285,7 +285,7 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
 
     """
     if tol <= 0:
-        raise ValueError("tol too small (%g <= 0)" % tol)
+        raise ValueError(f"tol too small ({tol:g} <= 0)")
     maxiter = operator.index(maxiter)
     if maxiter < 1:
         raise ValueError("maxiter must be greater than 0")
@@ -362,7 +362,7 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
         for itr in range(maxiter):
             if q1 == q0:
                 if p1 != p0:
-                    msg = "Tolerance of %s reached." % (p1 - p0)
+                    msg = f"Tolerance of {p1 - p0} reached."
                     if disp:
                         msg += (
                             " Failed to converge after %d iterations, value is %s."
@@ -570,7 +570,7 @@ def bisect(f, a, b, args=(),
         args = (args,)
     maxiter = operator.index(maxiter)
     if xtol <= 0:
-        raise ValueError("xtol too small (%g <= 0)" % xtol)
+        raise ValueError(f"xtol too small ({xtol:g} <= 0)")
     if rtol < _rtol:
         raise ValueError(f"rtol too small ({rtol:g} < {_rtol:g})")
     f = _wrap_nan_raise(f)
@@ -668,7 +668,7 @@ def ridder(f, a, b, args=(),
         args = (args,)
     maxiter = operator.index(maxiter)
     if xtol <= 0:
-        raise ValueError("xtol too small (%g <= 0)" % xtol)
+        raise ValueError(f"xtol too small ({xtol:g} <= 0)")
     if rtol < _rtol:
         raise ValueError(f"rtol too small ({rtol:g} < {_rtol:g})")
     f = _wrap_nan_raise(f)
@@ -799,7 +799,7 @@ def brentq(f, a, b, args=(),
         args = (args,)
     maxiter = operator.index(maxiter)
     if xtol <= 0:
-        raise ValueError("xtol too small (%g <= 0)" % xtol)
+        raise ValueError(f"xtol too small ({xtol:g} <= 0)")
     if rtol < _rtol:
         raise ValueError(f"rtol too small ({rtol:g} < {_rtol:g})")
     f = _wrap_nan_raise(f)
@@ -910,7 +910,7 @@ def brenth(f, a, b, args=(),
         args = (args,)
     maxiter = operator.index(maxiter)
     if xtol <= 0:
-        raise ValueError("xtol too small (%g <= 0)" % xtol)
+        raise ValueError(f"xtol too small ({xtol:g} <= 0)")
     if rtol < _rtol:
         raise ValueError(f"rtol too small ({rtol:g} < {_rtol:g})")
     f = _wrap_nan_raise(f)
@@ -1125,9 +1125,9 @@ class TOMS748Solver:
         self.args = args
         self.ab[:] = [a, b]
         if not np.isfinite(a) or np.imag(a) != 0:
-            raise ValueError("Invalid x value: %s " % (a))
+            raise ValueError(f"Invalid x value: {a} ")
         if not np.isfinite(b) or np.imag(b) != 0:
-            raise ValueError("Invalid x value: %s " % (b))
+            raise ValueError(f"Invalid x value: {b} ")
 
         fa = self._callf(a)
         if not np.isfinite(fa) or np.imag(fa) != 0:
@@ -1377,20 +1377,20 @@ def toms748(f, a, b, args=(), k=1,
              method: toms748
     """
     if xtol <= 0:
-        raise ValueError("xtol too small (%g <= 0)" % xtol)
+        raise ValueError(f"xtol too small ({xtol:g} <= 0)")
     if rtol < _rtol / 4:
         raise ValueError(f"rtol too small ({rtol:g} < {_rtol/4:g})")
     maxiter = operator.index(maxiter)
     if maxiter < 1:
         raise ValueError("maxiter must be greater than 0")
     if not np.isfinite(a):
-        raise ValueError("a is not finite %s" % a)
+        raise ValueError(f"a is not finite {a}")
     if not np.isfinite(b):
-        raise ValueError("b is not finite %s" % b)
+        raise ValueError(f"b is not finite {b}")
     if a >= b:
         raise ValueError(f"a and b are not an interval [{a}, {b}]")
     if not k >= 1:
-        raise ValueError("k too small (%s < 1)" % k)
+        raise ValueError(f"k too small ({k} < 1)")
 
     if not isinstance(args, tuple):
         args = (args,)

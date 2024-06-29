@@ -280,7 +280,7 @@ def validateaxis(axis) -> None:
     # not very useful for sparse matrices given their limited
     # dimensions, so let's make it explicit that they are not
     # allowed to be passed in
-    if axis_type == tuple:
+    if isinstance(axis, tuple):
         raise TypeError("Tuples are not accepted for the 'axis' parameter. "
                         "Please pass in one of the following: "
                         "{-2, -1, 0, 1, None}.")
@@ -345,16 +345,16 @@ def check_shape(args, current_shape=None, *, allow_1d=False) -> tuple[int, ...]:
         if not negative_indexes:
             new_size = prod(new_shape)
             if new_size != current_size:
-                raise ValueError('cannot reshape array of size {} into shape {}'
-                                 .format(current_size, new_shape))
+                raise ValueError(f'cannot reshape array of size {current_size}'
+                                 f' into shape {new_shape}')
         elif len(negative_indexes) == 1:
             skip = negative_indexes[0]
             specified = prod(new_shape[:skip] + new_shape[skip+1:])
             unspecified, remainder = divmod(current_size, specified)
             if remainder != 0:
                 err_shape = tuple('newshape' if x < 0 else x for x in new_shape)
-                raise ValueError('cannot reshape array of size {} into shape {}'
-                                 ''.format(current_size, err_shape))
+                raise ValueError(f'cannot reshape array of size {current_size}'
+                                 f' into shape {err_shape}')
             new_shape = new_shape[:skip] + (unspecified,) + new_shape[skip+1:]
         else:
             raise ValueError('can only specify one unknown dimension')
@@ -377,8 +377,8 @@ def check_reshape_kwargs(kwargs):
     order = kwargs.pop('order', 'C')
     copy = kwargs.pop('copy', False)
     if kwargs:  # Some unused kwargs remain
-        raise TypeError('reshape() got unexpected keywords arguments: {}'
-                        .format(', '.join(kwargs.keys())))
+        raise TypeError("reshape() got unexpected keywords arguments: "
+                        f"{', '.join(kwargs.keys())}")
     return order, copy
 
 
