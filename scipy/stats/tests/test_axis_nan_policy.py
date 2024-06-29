@@ -1298,3 +1298,34 @@ def test_array_like_input(dtype):
     res = stats.mode(ArrLike(x, dtype=dtype))
     assert res.mode == 1
     assert res.count == 2
+
+
+warning_types = (UserWarning, DeprecationWarning, RuntimeWarning, SmallSampleWarning)
+
+
+@pytest.mark.parametrize("warning_type", warning_types)
+def test_warning_uncaught(warning_type):
+    message = "Not caught; should fail"
+    warnings.warn(message, warning_type)
+
+
+@pytest.mark.parametrize("warning_type", warning_types)
+def test_warning_pytested(warning_type):
+    message = "`pytest.warn`ed"
+    with pytest.warns(warning_type, match=message):
+        warnings.warn(message, warning_type)
+
+
+@pytest.mark.parametrize("warning_type", warning_types)
+def test_warning_suppressed(warning_type):
+    message = "`np.testing.suppress`ed"
+    with np.testing.suppress_warnings() as sup:
+        sup.filter(warning_type, message=message)
+        warnings.warn(message, warning_type)
+
+
+@pytest.mark.filterwarnings('ignore:`pytest.mark.filter`ed')
+@pytest.mark.parametrize("warning_type", warning_types)
+def test_warning_filtered(warning_type):
+    message = "`pytest.mark.filter`ed"
+    warnings.warn(message, warning_type)
