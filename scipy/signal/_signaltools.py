@@ -11,6 +11,9 @@ from typing import Literal
 
 from numpy._typing import ArrayLike
 
+from scipy._lib._array_api import (
+    array_namespace, size,
+)
 from scipy.spatial import cKDTree
 from . import _sigtools
 from ._ltisys import dlti
@@ -1944,8 +1947,8 @@ def medfilt2d(input, kernel_size=3):
     if kernel_size.shape == ():
         kernel_size = np.repeat(kernel_size.item(), 2)
 
-    for size in kernel_size:
-        if (size % 2) != 1:
+    for ksize in kernel_size:
+        if (ksize % 2) != 1:
             raise ValueError("Each element of kernel_size should be odd.")
 
     return _sigtools._medfilt2d(image, kernel_size)
@@ -2117,7 +2120,7 @@ def lfilter(b, a, x, axis=-1, zi=None):
         dtype = np.result_type(*inputs)
 
         if dtype.char not in 'fdgFDGO':
-            raise NotImplementedError("input type '%s' not supported" % dtype)
+            raise NotImplementedError(f"input type '{dtype}' not supported")
 
         b = np.array(b, dtype=dtype)
         a = np.asarray(a, dtype=dtype)
@@ -3575,20 +3578,33 @@ def detrend(data: np.ndarray, axis: int = -1,
     degree polynomials. Consult its documentation on how to extract the polynomial
     coefficients.
     """
+    xp = array_namespace(data)
     if type not in ['linear', 'l', 'constant', 'c']:
         raise ValueError("Trend type must be 'linear' or 'constant'.")
-    data = np.asarray(data)
-    dtype = data.dtype.char
-    if dtype not in 'dfDF':
-        dtype = 'd'
+    data = xp.asarray(data)
+    dtype = data.dtype
+    if data.dtype not in [xp.float32, xp.float64, xp.complex64, xp.complex128]:
+        dtype = xp.float64
     if type in ['constant', 'c']:
-        ret = data - np.mean(data, axis, keepdims=True)
+        # TODO: array API standard requires real-valued types in xp.mean()
+        ret = data - xp.mean(xp.astype(data, dtype), axis=axis, keepdims=True)
         return ret
     else:
         dshape = data.shape
         N = dshape[axis]
-        bp = np.sort(np.unique(np.concatenate(np.atleast_1d(0, bp, N))))
-        if np.any(bp > N):
+        if isinstance(bp, int):
+            try:
+                bp = xp.sort(xp.unique(xp.asarray([0, bp, N])))
+            except AttributeError:
+                bp = xp.sort(xp.unique_values(xp.asarray([0, bp, N])))
+
+        else:
+            bp = xp.asarray(bp)
+            new_bp = xp.empty(size(bp) + 1)
+            new_bp[:size(bp)] = bp
+            new_bp[size(bp)] = N
+            bp = xp.sort(xp.unique(xp.asarray([0] + new_bp)))
+        if xp.any(bp > N):
             raise ValueError("Breakpoints must be less than length "
                              "of data along given axis.")
 
@@ -3597,28 +3613,32 @@ def detrend(data: np.ndarray, axis: int = -1,
         rnk = len(dshape)
         if axis < 0:
             axis = axis + rnk
-        newdata = np.moveaxis(data, axis, 0)
+        newdata = xp.moveaxis(data, axis, 0)
         newdata_shape = newdata.shape
         newdata = newdata.reshape(N, -1)
 
         if not overwrite_data:
-            newdata = newdata.copy()  # make sure we have a copy
-        if newdata.dtype.char not in 'dfDF':
+            newdata = xp.asarray(newdata, copy=True)  # make sure we have a copy
+        if newdata.dtype not in [xp.float64, xp.float32, xp.complex128, xp.complex64]:
             newdata = newdata.astype(dtype)
 
 #        Nreg = len(bp) - 1
         # Find leastsq fit and remove it for each piece
         for m in range(len(bp) - 1):
             Npts = bp[m + 1] - bp[m]
-            A = np.ones((Npts, 2), dtype)
-            A[:, 0] = np.arange(1, Npts + 1, dtype=dtype) / Npts
-            sl = slice(bp[m], bp[m + 1])
-            coef, resids, rank, s = linalg.lstsq(A, newdata[sl])
+            A = xp.ones((int(Npts), 2), dtype=dtype)
+            A[:, 0] = xp.arange(1, Npts + 1, dtype=dtype) / Npts
+            sl = slice(int(bp[m]), int(bp[m + 1]))
+            # NOTE: lstsq isn't in the array API standard
+            if "cupy" in xp.__name__ or "torch" in xp.__name__:
+                coef, resids, rank, s = xp.linalg.lstsq(A, newdata[sl], rcond=None)
+            else:
+                coef, resids, rank, s = linalg.lstsq(A, newdata[sl])
             newdata[sl] = newdata[sl] - A @ coef
 
         # Put data back in original shape.
         newdata = newdata.reshape(newdata_shape)
-        ret = np.moveaxis(newdata, 0, axis)
+        ret = xp.moveaxis(newdata, 0, axis)
         return ret
 
 
@@ -4218,9 +4238,8 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None, method='pad',
 def _validate_pad(padtype, padlen, x, axis, ntaps):
     """Helper to validate padding for filtfilt"""
     if padtype not in ['even', 'odd', 'constant', None]:
-        raise ValueError(("Unknown value '%s' given to padtype.  padtype "
-                          "must be 'even', 'odd', 'constant', or None.") %
-                         padtype)
+        raise ValueError(f"Unknown value '{padtype}' given to padtype.  padtype "
+                          "must be 'even', 'odd', 'constant', or None.")
 
     if padtype is None:
         padlen = 0
@@ -4337,7 +4356,7 @@ def sosfilt(sos, x, axis=-1, zi=None):
         inputs.append(np.asarray(zi))
     dtype = np.result_type(*inputs)
     if dtype.char not in 'fdgFDGO':
-        raise NotImplementedError("input type '%s' not supported" % dtype)
+        raise NotImplementedError(f"input type '{dtype}' not supported")
     if zi is not None:
         zi = np.array(zi, dtype)  # make a copy so that we can operate in place
         if zi.shape != x_zi_shape:

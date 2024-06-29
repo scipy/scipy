@@ -31,6 +31,7 @@ from scipy.signal import get_window, welch, stft, istft, spectrogram
 from scipy.signal._short_time_fft import FFT_MODE_TYPE, \
     _calc_dual_canonical_window, ShortTimeFFT, PAD_TYPE
 from scipy.signal.windows import gaussian
+from scipy.conftest import array_api_compatible
 
 
 def test__calc_dual_canonical_window_roundtrip():
@@ -710,13 +711,16 @@ def test_roundtrip_complex_window(signal_type):
                     err_msg="Roundtrip for complex-valued window failed")
 
 
-def test_average_all_segments():
+@array_api_compatible
+@pytest.mark.skip_xp_backends(np_only=True)
+@pytest.mark.usefixtures("skip_xp_backends")
+def test_average_all_segments(xp):
     """Compare `welch` function with stft mean.
 
     Ported from `TestSpectrogram.test_average_all_segments` from file
     ``test__spectral.py``.
     """
-    x = np.random.randn(1024)
+    x = xp.asarray(np.random.randn(1024))
 
     fs = 1.0
     window = ('tukey', 0.25)
@@ -730,7 +734,7 @@ def test_average_all_segments():
                         p1=(len(x)-noverlap)//SFT.hop, k_offset=nperseg//2)
 
     assert_allclose(SFT.f, fw)
-    assert_allclose(np.mean(P, axis=-1), Pw)
+    assert_allclose(xp.mean(P, axis=-1), Pw)
 
 
 @pytest.mark.parametrize('window, N, nperseg, noverlap, mfft',
