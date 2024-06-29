@@ -57,11 +57,8 @@ SPECFUN_HOST_DEVICE inline double _iv_ratio_impl(double v, double x,
 
     const char *func_name = complement ? "iv_ratio_c" : "iv_ratio";
 
-    if (std::isnan(x)) {
-        return x;
-    }
-    if (std::isnan(v)) {
-        return v;
+    if (std::isnan(v) || std::isnan(x)) {
+        return std::numeric_limits<double>::quiet_NaN();
     }
     if (v < 1 || x < 0) {
         set_error(func_name, SF_ERROR_DOMAIN, NULL);
@@ -72,6 +69,7 @@ SPECFUN_HOST_DEVICE inline double _iv_ratio_impl(double v, double x,
         set_error(func_name, SF_ERROR_DOMAIN, NULL);
         return std::numeric_limits<double>::quiet_NaN();
     }
+
     if (x == 0.0) {
         // If x is +/-0.0, return +/-0.0 to agree with the limiting behavior.
         return complement ? 1.0 : x;
@@ -93,7 +91,7 @@ SPECFUN_HOST_DEVICE inline double _iv_ratio_impl(double v, double x,
     IvRatioCFTailGenerator cf(vc, xc, c);
     auto [fc, terms] = detail::series_eval_kahan(
         detail::continued_fraction_series(cf),
-        std::numeric_limits<double>::epsilon() * 0.5,
+        std::numeric_limits<double>::epsilon() / 16,
         1000,
         2*vc);
 
