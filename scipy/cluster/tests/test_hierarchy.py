@@ -946,13 +946,9 @@ class TestDendrogram:
     def test_labels_as_array_or_list(self, xp):
         # test for gh-12418
         Z = linkage(xp.asarray(hierarchy_test_data.ytdist), 'single')
-        labels = xp.asarray([1, 3, 2, 6, 4, 5])
-        result1 = dendrogram(Z, labels=labels, no_plot=True)
-        # imitating `tolist` in a standard-compliant way
-        labels_list = []
-        for i in range(labels.shape[0]):
-            labels_list += [int(labels[i])]
-        result2 = dendrogram(Z, labels=labels_list, no_plot=True)
+        labels = [1, 3, 2, 6, 4, 5]
+        result1 = dendrogram(Z, labels=xp.asarray(labels), no_plot=True)
+        result2 = dendrogram(Z, labels=labels, no_plot=True)
         assert result1 == result2
 
     @pytest.mark.skipif(not have_matplotlib, reason="no matplotlib")
