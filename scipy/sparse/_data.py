@@ -298,7 +298,7 @@ class _minmax_mixin:
 
         if self.nnz == 0:
             if explicit:
-                raise ValueError("Can't apply the operation to zero matrix "
+                raise ValueError("Cannot apply the operation to zero matrix "
                                  "when explicit=True.")
             return 0
 
@@ -512,8 +512,8 @@ class _minmax_mixin:
             compatibility reasons. Do not pass in anything except for
             the default value, as this argument is not used.
         explicit : {False, True} optional
-            When set to True, only the nonzero entries of the matrix will be
-            considered. If a row/column is empty, a zero will be returned
+            When set to True, only stored values of the sparse representation
+            will be considered. If a row/column is empty, a zero will be returned
             to indicate it contains no nonzero values. Default is False.
             .. versionadded:: 1.15.0
 
@@ -540,8 +540,8 @@ class _minmax_mixin:
             compatibility reasons. Do not pass in anything except for
             the default value, as this argument is not used.
         explicit : {False, True} optional
-            When set to True, only the nonzero entries of the matrix will be
-            considered. If a row/column is empty, a zero will be returned
+            When set to True, only stored values of the sparse representation
+            will be considered. If a row/column is empty, a zero will be returned
             to indicate it contains no nonzero values. Default is False.
             .. versionadded:: 1.15.0
 
