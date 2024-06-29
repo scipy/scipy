@@ -1175,7 +1175,7 @@ class TestLombscargle:
         #  1) a string that is not allowed
         assert_raises(ValueError, lombscargle, t, x, f, normalize='lomb')
         #  2) something besides a bool or str
-        assert_raises(ValueError, lombscargle, t, x, f, normalize=2)
+        assert_raises(TypeError, lombscargle, t, x, f, normalize=2)
     
     def test_offset_removal(self):
         # Verify that the amplitude is the same, even with an offset (not removed)

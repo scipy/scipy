@@ -73,8 +73,10 @@ def lombscargle(
         If the the sum of the weights array is 0.
     ValueError
         If any weight is < 0.
+    TypeError
+        If the normalize parameter is not a bool or str.
     ValueError
-        If the normalize parameter is not a bool or one of the allowed strings.
+        If the normalize parameter is not one of the allowed options.
 
     See Also
     --------
@@ -183,7 +185,7 @@ def lombscargle(
     else:
         # if neither a bool or str
         if not isinstance(normalize, str):
-            raise ValueError("Normalize type must a bool or str.")
+            raise TypeError("Normalize type must a bool or str.")
 
     if normalize not in [OUTPUT_POWER, OUTPUT_NORMALIZE, OUTPUT_AMPLITUDE]:
         raise ValueError(
