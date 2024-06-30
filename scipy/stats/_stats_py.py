@@ -3151,12 +3151,12 @@ def gzscore(a, *, axis=0, ddof=0, nan_policy='propagate'):
     >>> plt.show()
 
     """
-    if isinstance(a, ma.MaskedArray):
-        log = ma.log
-    else:
+    if SCIPY_ARRAY_API:
         xp = array_namespace(a)
         a = _convert_common_float(a, xp=xp)
         log = xp.log
+    else:
+        log = ma.log if isinstance(a, ma.MaskedArray) else np.log
     return zscore(log(a), axis=axis, ddof=ddof, nan_policy=nan_policy)
 
 
