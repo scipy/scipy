@@ -2760,10 +2760,6 @@ class TestSEM:
 @pytest.mark.usefixtures("skip_xp_backends")
 class TestZmapZscore:
 
-    def assert_precision_warning(self):
-        return (pytest.warns(RuntimeWarning, match="Precision loss occurred...")
-                if SCIPY_ARRAY_API else contextlib.nullcontext())
-
     @pytest.mark.parametrize(
         'x, y',
         [([1., 2., 3., 4.], [1., 2., 3., 4.]),
@@ -2924,19 +2920,19 @@ class TestZmapZscore:
 
     def test_zscore_constant_input_1d(self, xp):
         x = xp.asarray([-0.087] * 3)
-        with self.assert_precision_warning():
+        with pytest.warns(RuntimeWarning, match="Precision loss occurred..."):
             z = stats.zscore(x)
         xp_assert_equal(z, xp.full(x.shape, xp.nan))
 
     def test_zscore_constant_input_2d(self, xp):
         x = xp.asarray([[10.0, 10.0, 10.0, 10.0],
                         [10.0, 11.0, 12.0, 13.0]])
-        with self.assert_precision_warning():
+        with pytest.warns(RuntimeWarning, match="Precision loss occurred..."):
             z0 = stats.zscore(x, axis=0)
         xp_assert_close(z0, xp.asarray([[xp.nan, -1.0, -1.0, -1.0],
                                         [xp.nan, 1.0, 1.0, 1.0]]))
 
-        with self.assert_precision_warning():
+        with pytest.warns(RuntimeWarning, match="Precision loss occurred..."):
             z1 = stats.zscore(x, axis=1)
         xp_assert_equal(z1, xp.stack([xp.asarray([xp.nan, xp.nan, xp.nan, xp.nan]),
                                       stats.zscore(x[1, :])]))
@@ -2945,7 +2941,7 @@ class TestZmapZscore:
         xp_assert_equal(z, xp.reshape(stats.zscore(xp.reshape(x, (-1,))), x.shape))
 
         y = xp.ones((3, 6))
-        with self.assert_precision_warning():
+        with pytest.warns(RuntimeWarning, match="Precision loss occurred..."):
             z = stats.zscore(y, axis=None)
         xp_assert_equal(z, xp.full(y.shape, xp.asarray(xp.nan)))
 
@@ -2956,13 +2952,13 @@ class TestZmapZscore:
         s = (3/2)**0.5
         s2 = 2**0.5
 
-        with self.assert_precision_warning():
+        with pytest.warns(RuntimeWarning, match="Precision loss occurred..."):
             z0 = stats.zscore(x, nan_policy='omit', axis=0)
         xp_assert_close(z0, xp.asarray([[xp.nan, -s, -1.0, xp.nan],
                                         [xp.nan, 0, 1.0, xp.nan],
                                         [xp.nan, s, xp.nan, xp.nan]]))
 
-        with self.assert_precision_warning():
+        with pytest.warns(RuntimeWarning, match="Precision loss occurred..."):
             z1 = stats.zscore(x, nan_policy='omit', axis=1)
         xp_assert_close(z1, xp.asarray([[xp.nan, xp.nan, xp.nan, xp.nan],
                                         [-s, 0, s, xp.nan],
@@ -2997,11 +2993,15 @@ class TestZmapZscore:
     @skip_xp_invalid_arg
     def test_gzscore_masked_array(self, xp):
         x = np.array([1, 2, -1, 3, 4])
-        mx = np.ma.masked_array(x, mask=[0, 0, 1, 0, 0])
+        mask = [0, 0, 1, 0, 0]
+        mx = np.ma.masked_array(x, mask=mask)
         z = stats.gzscore(mx)
         desired = ([-1.526072095151, -0.194700599824, np.inf, 0.584101799472,
                     1.136670895503])
-        assert_allclose(desired, z)
+        desired = np.ma.masked_array(desired, mask=mask)
+        assert_allclose(z.compressed(), desired.compressed())
+        assert_allclose(z.mask, desired.mask)
+        assert isinstance(z, np.ma.MaskedArray)
 
     @skip_xp_invalid_arg
     def test_zscore_masked_element_0_gh19039(self, xp):
@@ -3020,20 +3020,18 @@ class TestZmapZscore:
         assert_allclose(res[1:], ref)
 
         y[1:] = y[1]  # when non-masked elements are identical, result is nan
-        res = stats.zscore(y)
+        with pytest.warns(RuntimeWarning, match="Precision loss occurred..."):
+            res = stats.zscore(y)
         assert_equal(res[1:], np.nan)
-        res = stats.zscore(y, axis=None)
+        with pytest.warns(RuntimeWarning, match="Precision loss occurred..."):
+            res = stats.zscore(y, axis=None)
         assert_equal(res[1:], np.nan)
 
     def test_degenerate_input(self, xp):
-        # Edge case bug fixed only in SCIPY_ARRAY_API implementation
-        if not SCIPY_ARRAY_API:
-            return
-
         scores = xp.arange(3)
         compare = xp.ones(3)
         ref = xp.asarray([-xp.inf, xp.nan, xp.inf])
-        with self.assert_precision_warning():
+        with pytest.warns(RuntimeWarning, match="Precision loss occurred..."):
             res = stats.zmap(scores, compare)
         xp_assert_equal(res, ref)
 

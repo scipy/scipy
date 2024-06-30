@@ -42,7 +42,7 @@ from scipy.optimize import milp, LinearConstraint
 from scipy._lib._util import (check_random_state, _get_nan,
                               _rename_parameter, _contains_nan,
                               AxisError, _lazywhere)
-from scipy._lib._array_api import SCIPY_ARRAY_API
+from scipy._lib._array_api import SCIPY_ARRAY_API, _asarray as xp_asarray
 
 import scipy.special as special
 # Import unused here but needs to stay until end of deprecation periode
@@ -2950,34 +2950,6 @@ def _isconst(x):
         return (y[0] == y).all(keepdims=True)
 
 
-def _quiet_nanmean(x):
-    """
-    Compute nanmean for the 1d array x, but quietly return nan if x is all nan.
-
-    The return value is a 1d array with length 1, so it can be used
-    in np.apply_along_axis.
-    """
-    y = x[~np.isnan(x)]
-    if y.size == 0:
-        return np.array([np.nan])
-    else:
-        return np.mean(y, keepdims=True)
-
-
-def _quiet_nanstd(x, ddof=0):
-    """
-    Compute nanstd for the 1d array x, but quietly return nan if x is all nan.
-
-    The return value is a 1d array with length 1, so it can be used
-    in np.apply_along_axis.
-    """
-    y = x[~np.isnan(x)]
-    if y.size == 0:
-        return np.array([np.nan])
-    else:
-        return np.std(y, keepdims=True, ddof=ddof)
-
-
 def zscore(a, axis=0, ddof=0, nan_policy='propagate'):
     """
     Compute the z score.
@@ -3151,12 +3123,9 @@ def gzscore(a, *, axis=0, ddof=0, nan_policy='propagate'):
     >>> plt.show()
 
     """
-    if SCIPY_ARRAY_API:
-        xp = array_namespace(a)
-        a = _convert_common_float(a, xp=xp)
-        log = xp.log
-    else:
-        log = ma.log if isinstance(a, ma.MaskedArray) else np.log
+    xp = array_namespace(a)
+    a = _convert_common_float(a, xp=xp)
+    log = ma.log if isinstance(a, ma.MaskedArray) else xp.log
     return zscore(log(a), axis=axis, ddof=ddof, nan_policy=nan_policy)
 
 
@@ -3213,18 +3182,16 @@ def zmap(scores, compare, axis=0, ddof=0, nan_policy='propagate'):
     # The docstring explicitly states that it preserves subclasses.
     # Let's table deprecating that and just get the array API version
     # working.
-    implementation = _zmap_array_api if SCIPY_ARRAY_API else _zmap_not_array_api
 
     with warnings.catch_warnings():
         if scores is compare:  # zscore should not emit SmallSampleWarning
             warnings.simplefilter('ignore', SmallSampleWarning)
-
-        return implementation(scores, compare, axis, ddof, nan_policy)
+        return _zmap(scores, compare, axis, ddof, nan_policy)
 
 
 def _convert_common_float(*arrays, xp=None):
     xp = array_namespace(*arrays) if xp is None else xp
-    arrays = [xp.asarray(array) for array in arrays]
+    arrays = [xp_asarray(array, subok=True) for array in arrays]
     dtypes = [(xp.asarray(1.).dtype if xp.isdtype(array.dtype, 'integral')
                else array.dtype) for array in arrays]
     dtype = xp.result_type(*dtypes)
@@ -3232,7 +3199,7 @@ def _convert_common_float(*arrays, xp=None):
     return arrays[0] if len(arrays)==1 else tuple(arrays)
 
 
-def _zmap_array_api(scores, compare, axis, ddof, nan_policy):
+def _zmap(scores, compare, axis, ddof, nan_policy):
     like_zscore = (scores is compare)
     xp = array_namespace(scores, compare)
     scores, compare = _convert_common_float(scores, compare, xp=xp)
@@ -3249,44 +3216,9 @@ def _zmap_array_api(scores, compare, axis, ddof, nan_policy):
     if like_zscore:
         eps = xp.finfo(z.dtype).eps
         zero = std <= xp.abs(eps * mn)
-        z = xp.where(zero, xp.asarray(xp.nan, dtype=z.dtype), z)
+        where = ma.where if isinstance(z, ma.MaskedArray) else xp.where
+        z = where(zero, xp.asarray(xp.nan, dtype=z.dtype), z)
 
-    return z
-
-
-def _zmap_not_array_api(scores, compare, axis, ddof, nan_policy):
-    a = np.asanyarray(compare)
-
-    if a.size == 0:
-        return np.empty(a.shape)
-
-    contains_nan, nan_policy = _contains_nan(a, nan_policy)
-
-    if contains_nan and nan_policy == 'omit':
-        if axis is None:
-            mn = _quiet_nanmean(a.ravel())
-            std = _quiet_nanstd(a.ravel(), ddof=ddof)
-            isconst = _isconst(a.ravel())
-        else:
-            mn = np.apply_along_axis(_quiet_nanmean, axis, a)
-            std = np.apply_along_axis(_quiet_nanstd, axis, a, ddof=ddof)
-            isconst = np.apply_along_axis(_isconst, axis, a)
-    else:
-        mn = a.mean(axis=axis, keepdims=True)
-        std = a.std(axis=axis, ddof=ddof, keepdims=True)
-        # The intent is to check whether all elements of `a` along `axis` are
-        # identical. Due to finite precision arithmetic, comparing elements
-        # against `mn` doesn't work. Previously, this compared elements to
-        # `_first`, but that extracts the element at index 0 regardless of
-        # whether it is masked. As a simple fix, compare against `min`.
-        a0 = a.min(axis=axis, keepdims=True)
-        isconst = (a == a0).all(axis=axis, keepdims=True)
-
-    # Set std deviations that are 0 to 1 to avoid division by 0.
-    std[isconst] = 1.0
-    z = (scores - mn) / std
-    # Set the outputs associated with a constant input to nan.
-    z[np.broadcast_to(isconst, z.shape)] = np.nan
     return z
 
 
