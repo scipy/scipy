@@ -1,6 +1,6 @@
-      subroutine dqagpe(f,a,b,npts2,points,epsabs,epsrel,limit,result,
-     *   abserr,neval,ier,alist,blist,rlist,elist,pts,iord,level,ndin,
-     *   last)
+      recursive subroutine dqagpe(f,a,b,npts2,points,epsabs,epsrel,
+     *   limit,result,abserr,neval,ier,alist,blist,rlist,elist,pts,
+     *   iord,level,ndin,last)
 c***begin prologue  dqagpe
 c***date written   800101   (yymmdd)
 c***revision date  830518   (yymmdd)

@@ -1,17 +1,15 @@
+# cython: cpow=True
 
 import cython
 
-from libc.math cimport log, exp, fabs, sqrt
-
-cdef extern from "_c99compat.h":
-    int sc_isnan(double x) nogil
-    int sc_isinf(double x) nogil
-
-from ._cephes cimport ellpk
-from ._complexstuff cimport pi, nan
+from libc.math cimport log, exp, fabs, sqrt, isnan, isinf, NAN, M_PI
 
 
-cdef inline double _agm_iter(double a, double b) nogil:
+cdef extern from "special_wrappers.h" nogil:
+    double cephes_ellpk_wrap(double x)
+
+
+cdef inline double _agm_iter(double a, double b) noexcept nogil:
     # Arithmetic-geometric mean, iterative implementation
     # a and b must be positive (not zero, not nan).
 
@@ -29,7 +27,7 @@ cdef inline double _agm_iter(double a, double b) nogil:
 
 
 @cython.cdivision(True)
-cdef inline double agm(double a, double b) nogil:
+cdef inline double agm(double a, double b) noexcept nogil:
     # Arithmetic-geometric mean
 
     # sqrthalfmax is sqrt(np.finfo(1.0).max/2)
@@ -40,16 +38,16 @@ cdef inline double agm(double a, double b) nogil:
     cdef double e
     cdef int sgn
 
-    if sc_isnan(a) or sc_isnan(b):
-        return nan
+    if isnan(a) or isnan(b):
+        return NAN
 
     if (a < 0 and b > 0) or (a > 0 and b < 0):
         # a and b have opposite sign.
-        return nan
+        return NAN
 
-    if (sc_isinf(a) or sc_isinf(b)) and (a == 0 or b == 0):
+    if (isinf(a) or isinf(b)) and (a == 0 or b == 0):
         # One value is inf and the other is 0.
-        return nan
+        return NAN
 
     if a == 0 or b == 0:
         # At least one of the arguments is 0.
@@ -68,7 +66,7 @@ cdef inline double agm(double a, double b) nogil:
 
     if (invsqrthalfmax < a < sqrthalfmax) and (invsqrthalfmax < b < sqrthalfmax):
         e = 4*a*b/(a + b)**2
-        return sgn*(pi/4)*(a + b)/ellpk(e)
+        return sgn*(M_PI/4)*(a + b)/cephes_ellpk_wrap(e)
     else:
         # At least one value is "extreme" (very big or very small).
         # Use the iteration to avoid overflow or underflow.

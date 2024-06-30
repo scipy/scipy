@@ -1,7 +1,6 @@
 """
 Ensure that we can use pathlib.Path objects in all relevant IO functions.
 """
-import sys
 from pathlib import Path
 
 import numpy as np
@@ -48,16 +47,16 @@ class TestPaths:
         with tempdir() as temp_dir:
             data = scipy.sparse.csr_matrix(scipy.sparse.eye(3))
             path = Path(temp_dir) / 'data.hb'
-            scipy.io.harwell_boeing.hb_write(str(path), data)
+            scipy.io.hb_write(str(path), data)
 
-            data_new = scipy.io.harwell_boeing.hb_read(path)
+            data_new = scipy.io.hb_read(path)
             assert (data_new != data).nnz == 0
 
     def test_hb_write(self):
         with tempdir() as temp_dir:
             data = scipy.sparse.csr_matrix(scipy.sparse.eye(3))
             path = Path(temp_dir) / 'data.hb'
-            scipy.io.harwell_boeing.hb_write(path, data)
+            scipy.io.hb_write(path, data)
             assert path.is_file()
 
     def test_mmio_read(self):
@@ -78,7 +77,7 @@ class TestPaths:
 
     def test_netcdf_file(self):
         path = Path(__file__).parent / 'data/example_1.nc'
-        scipy.io.netcdf.netcdf_file(path)
+        scipy.io.netcdf_file(path)
 
     def test_wavfile_read(self):
         path = Path(__file__).parent / 'data/test-8000Hz-le-2ch-1byteu.wav'

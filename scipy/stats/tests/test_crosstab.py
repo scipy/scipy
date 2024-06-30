@@ -1,6 +1,6 @@
 import pytest
 import numpy as np
-from numpy.testing import assert_array_equal
+from numpy.testing import assert_array_equal, assert_equal
 from scipy.stats.contingency import crosstab
 
 
@@ -16,7 +16,7 @@ def test_crosstab_basic(sparse):
     assert_array_equal(avals, expected_avals)
     assert_array_equal(bvals, expected_bvals)
     if sparse:
-        assert_array_equal(count.A, expected_count)
+        assert_array_equal(count.toarray(), expected_count)
     else:
         assert_array_equal(count, expected_count)
 
@@ -65,7 +65,7 @@ def test_crosstab_levels(sparse):
     assert_array_equal(avals, expected_avals)
     assert_array_equal(bvals, expected_bvals)
     if sparse:
-        assert_array_equal(count.A, expected_count)
+        assert_array_equal(count.toarray(), expected_count)
     else:
         assert_array_equal(count, expected_count)
 
@@ -85,7 +85,7 @@ def test_crosstab_extra_levels(sparse):
     assert_array_equal(avals, expected_avals)
     assert_array_equal(bvals, expected_bvals)
     if sparse:
-        assert_array_equal(count.A, expected_count)
+        assert_array_equal(count.toarray(), expected_count)
     else:
         assert_array_equal(count, expected_count)
 
@@ -108,3 +108,8 @@ def test_validation_sparse_only_two_args():
 def test_validation_len_levels_matches_args():
     with pytest.raises(ValueError, match='number of input sequences'):
         crosstab([0, 1, 1], [8, 8, 9], levels=([0, 1, 2, 3],))
+
+
+def test_result():
+    res = crosstab([0, 1], [1, 2])
+    assert_equal((res.elements, res.count), res)

@@ -2,13 +2,14 @@
 # Use the `scipy.ndimage` namespace for importing the functions
 # included below.
 
-import warnings
-from . import _interpolation
+from scipy._lib.deprecation import _sub_module_deprecation
 
 
-__all__ = ['spline_filter1d', 'spline_filter',  # noqa: F822
-           'geometric_transform', 'map_coordinates',
-           'affine_transform', 'shift', 'zoom', 'rotate']
+__all__ = [  # noqa: F822
+    'spline_filter1d', 'spline_filter',
+    'geometric_transform', 'map_coordinates',
+    'affine_transform', 'shift', 'zoom', 'rotate',
+]
 
 
 def __dir__():
@@ -16,13 +17,6 @@ def __dir__():
 
 
 def __getattr__(name):
-    if name not in __all__:
-        raise AttributeError(
-            "scipy.ndimage.interpolation is deprecated and has no attribute "
-            f"{name}. Try looking in scipy.ndimage instead.")
-
-    warnings.warn(f"Please use `{name}` from the `scipy.ndimage` namespace, "
-                  "the `scipy.ndimage.interpolation` namespace is deprecated.",
-                  category=DeprecationWarning, stacklevel=2)
-
-    return getattr(_interpolation, name)
+    return _sub_module_deprecation(sub_package='ndimage', module='interpolation',
+                                   private_modules=['_interpolation'], all=__all__,
+                                   attribute=name)

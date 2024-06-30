@@ -24,15 +24,11 @@ ctypedef fused vq_type:
     float32_t
     float64_t
 
-# When the number of features is less than this number,
-# switch back to the naive algorithm to avoid high overhead.
-DEF NFEATURES_CUTOFF=5
-
 # Initialize the NumPy C API
 np.import_array()
 
 
-cdef inline vq_type vec_sqr(int n, vq_type *p):
+cdef inline vq_type vec_sqr(int n, vq_type *p) noexcept:
     cdef vq_type result = 0.0
     cdef int i
     for i in range(n):
@@ -41,7 +37,7 @@ cdef inline vq_type vec_sqr(int n, vq_type *p):
 
 
 cdef inline void cal_M(int nobs, int ncodes, int nfeat, vq_type *obs,
-                       vq_type *code_book, vq_type *M):
+                       vq_type *code_book, vq_type *M) noexcept:
     """
     Calculate M = obs * code_book.T
     """
@@ -81,8 +77,9 @@ cdef int _vq(vq_type *obs, vq_type *code_book,
         low_dist[i] is the Euclidean distance from obs[i] to the corresponding
         centroid.
     """
-    # Naive algorithm is preferred when nfeat is small
-    if nfeat < NFEATURES_CUTOFF:
+    # When the number of features is less than this number,
+    # switch back to the naive algorithm to avoid high overhead.
+    if nfeat < 5:
         _vq_small_nf(obs, code_book, ncodes, nfeat, nobs, codes, low_dist)
         return 0
 
@@ -137,7 +134,7 @@ cdef int _vq(vq_type *obs, vq_type *code_book,
 
 cdef void _vq_small_nf(vq_type *obs, vq_type *code_book,
                        int ncodes, int nfeat, int nobs,
-                       int32_t *codes, vq_type *low_dist):
+                       int32_t *codes, vq_type *low_dist) noexcept:
     """
     Vector quantization using naive algorithm.
     This is preferred when nfeat is small.

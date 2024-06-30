@@ -16,7 +16,7 @@ import numpy as np
 from numpy.testing import assert_, assert_equal
 from pytest import raises as assert_raises
 
-from scipy.io.matlab.streams import (make_stream,
+from scipy.io.matlab._streams import (make_stream,
     GenericStream, ZlibInputStream,
     _read_into, _read_string, BLOCK_SIZE)
 
@@ -75,14 +75,14 @@ def test_read():
             assert_equal(res, b'a\x00st')
             res = _read_into(st, 4)
             assert_equal(res, b'ring')
-            assert_raises(IOError, _read_into, st, 2)
+            assert_raises(OSError, _read_into, st, 2)
             # read alloc
             st.seek(0)
             res = _read_string(st, 4)
             assert_equal(res, b'a\x00st')
             res = _read_string(st, 4)
             assert_equal(res, b'ring')
-            assert_raises(IOError, _read_string, st, 2)
+            assert_raises(OSError, _read_string, st, 2)
 
 
 class TestZlibInputStream:
@@ -127,14 +127,15 @@ class TestZlibInputStream:
         stream.read(len(data))
         assert_equal(compressed_stream.tell(), len(compressed_data))
 
-        assert_raises(IOError, stream.read, 1)
+        assert_raises(OSError, stream.read, 1)
 
     def test_read_bad_checksum(self):
         data = np.random.randint(0, 256, 10).astype(np.uint8).tobytes()
         compressed_data = zlib.compress(data)
 
         # break checksum
-        compressed_data = compressed_data[:-1] + bytes([(compressed_data[-1] + 1) & 255])
+        compressed_data = (compressed_data[:-1]
+                           + bytes([(compressed_data[-1] + 1) & 255]))
 
         compressed_stream = BytesIO(compressed_data)
         stream = ZlibInputStream(compressed_stream, len(compressed_data))
@@ -164,19 +165,20 @@ class TestZlibInputStream:
         d3 = stream.read(11)
         assert_equal(d3, data[p:p+11])
 
-        assert_raises(IOError, stream.seek, 10, 2)
-        assert_raises(IOError, stream.seek, -1, 1)
+        assert_raises(OSError, stream.seek, 10, 2)
+        assert_raises(OSError, stream.seek, -1, 1)
         assert_raises(ValueError, stream.seek, 1, 123)
 
         stream.seek(10000, 1)
-        assert_raises(IOError, stream.read, 12)
+        assert_raises(OSError, stream.read, 12)
 
     def test_seek_bad_checksum(self):
         data = np.random.randint(0, 256, 10).astype(np.uint8).tobytes()
         compressed_data = zlib.compress(data)
 
         # break checksum
-        compressed_data = compressed_data[:-1] + bytes([(compressed_data[-1] + 1) & 255])
+        compressed_data = (compressed_data[:-1]
+                           + bytes([(compressed_data[-1] + 1) & 255]))
 
         compressed_stream = BytesIO(compressed_data)
         stream = ZlibInputStream(compressed_stream, len(compressed_data))
@@ -219,7 +221,8 @@ class TestZlibInputStream:
         assert_(compressed_data_len == BLOCK_SIZE + 2)
 
         # break checksum
-        compressed_data = compressed_data[:-1] + bytes([(compressed_data[-1] + 1) & 255])
+        compressed_data = (compressed_data[:-1]
+                           + bytes([(compressed_data[-1] + 1) & 255]))
 
         compressed_stream = BytesIO(compressed_data)
         stream = ZlibInputStream(compressed_stream, compressed_data_len)

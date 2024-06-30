@@ -1,4 +1,4 @@
-      subroutine dqcheb(x,fval,cheb12,cheb24)
+      recursive subroutine dqcheb(x,fval,cheb12,cheb24)
 c***begin prologue  dqcheb
 c***refer to  dqc25c,dqc25f,dqc25s
 c***routines called  (none)

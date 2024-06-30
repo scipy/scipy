@@ -12,14 +12,14 @@ import warnings
 import numpy as np
 from numpy.linalg import inv, LinAlgError, norm, cond, svd
 
-from .basic import solve, solve_triangular, matrix_balance
+from ._basic import solve, solve_triangular, matrix_balance
 from .lapack import get_lapack_funcs
-from .decomp_schur import schur
-from .decomp_lu import lu
-from .decomp_qr import qr
+from ._decomp_schur import schur
+from ._decomp_lu import lu
+from ._decomp_qr import qr
 from ._decomp_qz import ordqz
-from .decomp import _asarray_validated
-from .special_matrices import kron, block_diag
+from ._decomp import _asarray_validated
+from ._special_matrices import kron, block_diag
 
 __all__ = ['solve_sylvester',
            'solve_continuous_lyapunov', 'solve_discrete_lyapunov',
@@ -66,6 +66,7 @@ def solve_sylvester(a, b, q):
     --------
     Given `a`, `b`, and `q` solve for `x`:
 
+    >>> import numpy as np
     >>> from scipy import linalg
     >>> a = np.array([[-3, -2, 0], [-1, -1, 3], [3, -5, -1]])
     >>> b = np.array([[1]])
@@ -141,6 +142,7 @@ def solve_continuous_lyapunov(a, q):
     --------
     Given `a` and `q` solve for `x`:
 
+    >>> import numpy as np
     >>> from scipy import linalg
     >>> a = np.array([[-3, -2, 0], [-1, -1, 0], [0, -5, -1]])
     >>> b = np.array([2, 4, -1])
@@ -184,14 +186,13 @@ def solve_continuous_lyapunov(a, q):
 
     if info < 0:
         raise ValueError('?TRSYL exited with the internal error '
-                         '"illegal value in argument number {}.". See '
-                         'LAPACK documentation for the ?TRSYL error codes.'
-                         ''.format(-info))
+                         f'"illegal value in argument number {-info}.". See '
+                         'LAPACK documentation for the ?TRSYL error codes.')
     elif info == 1:
         warnings.warn('Input "a" has an eigenvalue pair whose sum is '
                       'very close to or exactly zero. The solution is '
                       'obtained via perturbing the coefficients.',
-                      RuntimeWarning)
+                      RuntimeWarning, stacklevel=2)
     y *= scale
 
     return u.dot(y).dot(u.conj().T)
@@ -279,9 +280,8 @@ def solve_discrete_lyapunov(a, q, method=None):
 
     References
     ----------
-    .. [1] Hamilton, James D. Time Series Analysis, Princeton: Princeton
-       University Press, 1994.  265.  Print.
-       http://doc1.lbfl.li/aca/FLMF037168.pdf
+    .. [1] "Lyapunov equation", Wikipedia,
+       https://en.wikipedia.org/wiki/Lyapunov_equation#Discrete_time
     .. [2] Gajic, Z., and M.T.J. Qureshi. 2008.
        Lyapunov Matrix Equation in System Stability and Control.
        Dover Books on Engineering Series. Dover Publications.
@@ -290,6 +290,7 @@ def solve_discrete_lyapunov(a, q, method=None):
     --------
     Given `a` and `q` solve for `x`:
 
+    >>> import numpy as np
     >>> from scipy import linalg
     >>> a = np.array([[0.2, 0.5],[0.7, -0.9]])
     >>> q = np.eye(2)
@@ -426,6 +427,7 @@ def solve_continuous_are(a, b, q, r, e=None, s=None, balanced=True):
     --------
     Given `a`, `b`, `q`, and `r` solve for `x`:
 
+    >>> import numpy as np
     >>> from scipy import linalg
     >>> a = np.array([[4, 3], [-4.5, -3.5]])
     >>> b = np.array([[1], [-1]])
@@ -464,7 +466,7 @@ def solve_continuous_are(a, b, q, r, e=None, s=None, balanced=True):
         # xGEBAL does not remove the diagonals before scaling. Also
         # to avoid destroying the Symplectic structure, we follow Ref.3
         M = np.abs(H) + np.abs(J)
-        M[np.diag_indices_from(M)] = 0.
+        np.fill_diagonal(M, 0.)
         _, (sca, _) = matrix_balance(M, separate=1, permute=0)
         # do we need to bother?
         if not np.allclose(sca, np.ones_like(sca)):
@@ -631,6 +633,7 @@ def solve_discrete_are(a, b, q, r, e=None, s=None, balanced=True):
     --------
     Given `a`, `b`, `q`, and `r` solve for `x`:
 
+    >>> import numpy as np
     >>> from scipy import linalg as la
     >>> a = np.array([[0, 1], [0, -1]])
     >>> b = np.array([[1, 0], [2, 1]])
@@ -669,7 +672,7 @@ def solve_discrete_are(a, b, q, r, e=None, s=None, balanced=True):
         # xGEBAL does not remove the diagonals before scaling. Also
         # to avoid destroying the Symplectic structure, we follow Ref.3
         M = np.abs(H) + np.abs(J)
-        M[np.diag_indices_from(M)] = 0.
+        np.fill_diagonal(M, 0.)
         _, (sca, _) = matrix_balance(M, separate=1, permute=0)
         # do we need to bother?
         if not np.allclose(sca, np.ones_like(sca)):
@@ -728,7 +731,7 @@ def solve_discrete_are(a, b, q, r, e=None, s=None, balanced=True):
     sym_threshold = np.max([np.spacing(1000.), 0.1*n_u_sym])
 
     if norm(u_sym, 1) > sym_threshold:
-        raise LinAlgError('The associated symplectic pencil has eigenvalues'
+        raise LinAlgError('The associated symplectic pencil has eigenvalues '
                           'too close to the unit circle')
 
     return (x + x.conj().T)/2
@@ -773,7 +776,7 @@ def _are_validate_args(a, b, q, r, e, s, eq_type='care'):
 
     """
 
-    if not eq_type.lower() in ('dare', 'care'):
+    if eq_type.lower() not in ("dare", "care"):
         raise ValueError("Equation type unknown. "
                          "Only 'care' and 'dare' is understood")
 

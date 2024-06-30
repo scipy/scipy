@@ -6,6 +6,11 @@ from scipy.special import logsumexp, softmax
 
 
 def test_logsumexp():
+    # Test with zero-size array
+    a = []
+    desired = -np.inf
+    assert_equal(logsumexp(a), desired)
+
     # Test whether logsumexp() function correctly handles large inputs.
     a = np.arange(200)
     desired = np.log(np.sum(np.exp(a)))
@@ -113,6 +118,19 @@ def test_logsumexp_sign_shape():
 
     assert_equal(r.shape, s.shape)
     assert_equal(r.shape, (1,3))
+
+
+def test_logsumexp_complex_sign():
+    a = np.array([1 + 1j, 2 - 1j, -2 + 3j])
+
+    r, s = logsumexp(a, return_sign=True)
+
+    expected_sumexp = np.exp(a).sum()
+    # This is the numpy>=2.0 convention for np.sign
+    expected_sign = expected_sumexp / abs(expected_sumexp)
+
+    assert_allclose(s, expected_sign)
+    assert_allclose(s * np.exp(r), expected_sumexp)
 
 
 def test_logsumexp_shape():

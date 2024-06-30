@@ -9,11 +9,10 @@ import numpy as np
 
 from numpy.testing import (assert_array_almost_equal,
                            assert_array_equal, assert_equal, assert_)
-import pytest
 from pytest import raises as assert_raises
 
-from scipy.io.arff.arffread import loadarff
-from scipy.io.arff.arffread import read_header, ParseArffError
+from scipy.io.arff import loadarff
+from scipy.io.arff._arffread import read_header, ParseArffError
 
 
 data_path = pjoin(os.path.dirname(__file__), 'data')
@@ -57,7 +56,7 @@ class TestData:
     def test3(self):
         # Parsing trivial file with nominal attribute of 1 character.
         self._test(test6)
-        
+
     def test4(self):
         # Parsing trivial file with trailing spaces in attribute declaration.
         self._test(test11)
@@ -104,10 +103,14 @@ class TestNoData:
         # Reading it should result in an array with length 0.
         nodata_filename = os.path.join(data_path, 'nodata.arff')
         data, meta = loadarff(nodata_filename)
-        expected_dtype = np.dtype([('sepallength', '<f8'),
-                                   ('sepalwidth', '<f8'),
-                                   ('petallength', '<f8'),
-                                   ('petalwidth', '<f8'),
+        if sys.byteorder == 'big':
+            end = '>'
+        else:
+            end = '<'
+        expected_dtype = np.dtype([('sepallength', f'{end}f8'),
+                                   ('sepalwidth', f'{end}f8'),
+                                   ('petallength', f'{end}f8'),
+                                   ('petalwidth', f'{end}f8'),
                                    ('class', 'S15')])
         assert_equal(data.dtype, expected_dtype)
         assert_equal(data.size, 0)
@@ -273,7 +276,7 @@ class TestRelationalAttribute:
 
     def test_data(self):
         dtype_instance = [('attr_date', 'datetime64[D]'),
-                          ('attr_number', np.float_)]
+                          ('attr_number', np.float64)]
 
         expected = [
             np.array([('1999-01-31', 1), ('1935-11-27', 10)],
@@ -313,7 +316,7 @@ class TestRelationalAttributeLong:
         assert_equal(relational.attributes[0].type_name, 'numeric')
 
     def test_data(self):
-        dtype_instance = [('attr_number', np.float_)]
+        dtype_instance = [('attr_number', np.float64)]
 
         expected = np.array([(n,) for n in range(30000)],
                             dtype=dtype_instance)
@@ -324,7 +327,9 @@ class TestRelationalAttributeLong:
 
 class TestQuotedNominal:
     """
-    Regression test for issue #10232 : Exception in loadarff with quoted nominal attributes.
+    Regression test for issue #10232:
+    
+    Exception in loadarff with quoted nominal attributes.
     """
 
     def setup_method(self):
@@ -343,7 +348,7 @@ class TestQuotedNominal:
 
     def test_data(self):
 
-        age_dtype_instance = np.float_
+        age_dtype_instance = np.float64
         smoker_dtype_instance = '<S3'
 
         age_expected = np.array([
@@ -370,7 +375,9 @@ class TestQuotedNominal:
 
 class TestQuotedNominalSpaces:
     """
-    Regression test for issue #10232 : Exception in loadarff with quoted nominal attributes.
+    Regression test for issue #10232:
+    
+    Exception in loadarff with quoted nominal attributes.
     """
 
     def setup_method(self):
@@ -389,7 +396,7 @@ class TestQuotedNominalSpaces:
 
     def test_data(self):
 
-        age_dtype_instance = np.float_
+        age_dtype_instance = np.float64
         smoker_dtype_instance = '<S5'
 
         age_expected = np.array([

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 ''' Nose test generators
 
 Need function load / save / roundtrip tests
@@ -9,6 +8,7 @@ from collections import OrderedDict
 from os.path import join as pjoin, dirname
 from glob import glob
 from io import BytesIO
+import re
 from tempfile import mkdtemp
 
 import warnings
@@ -16,20 +16,26 @@ import shutil
 import gzip
 
 from numpy.testing import (assert_array_equal, assert_array_almost_equal,
-                           assert_equal, assert_)
+                           assert_equal, assert_, assert_warns, assert_allclose)
+import pytest
 from pytest import raises as assert_raises
 
 import numpy as np
 from numpy import array
 import scipy.sparse as SP
 
-import scipy.io.matlab.byteordercodes as boc
-from scipy.io.matlab.miobase import matdims, MatWriteError, MatReadError
-from scipy.io.matlab.mio import (mat_reader_factory, loadmat, savemat, whosmat)
-from scipy.io.matlab.mio5 import (MatlabObject, MatFile5Writer, MatFile5Reader,
-                                  MatlabFunction, varmats_from_mat,
-                                  to_writeable, EmptyStructMarker)
-from scipy.io.matlab import mio5_params as mio5p
+import scipy.io
+from scipy.io.matlab import MatlabOpaque, MatlabFunction, MatlabObject
+import scipy.io.matlab._byteordercodes as boc
+from scipy.io.matlab._miobase import (
+    matdims, MatWriteError, MatReadError, matfile_version)
+from scipy.io.matlab._mio import mat_reader_factory, loadmat, savemat, whosmat
+from scipy.io.matlab._mio5 import (
+    MatFile5Writer, MatFile5Reader, varmats_from_mat, to_writeable,
+    EmptyStructMarker)
+import scipy.io.matlab._mio5_params as mio5p
+from scipy._lib._util import VisibleDeprecationWarning
+
 
 test_data_path = pjoin(dirname(__file__), 'data')
 
@@ -247,15 +253,14 @@ def _check_level(label, expected, actual):
     """ Check one level of a potentially nested array """
     if SP.issparse(expected):  # allow different types of sparse matrices
         assert_(SP.issparse(actual))
-        assert_array_almost_equal(actual.todense(),
-                                  expected.todense(),
+        assert_array_almost_equal(actual.toarray(),
+                                  expected.toarray(),
                                   err_msg=label,
                                   decimal=5)
         return
     # Check types are as expected
     assert_(types_compatible(expected, actual),
-            "Expected type %s, got %s at %s" %
-            (type(expected), type(actual), label))
+            f"Expected type {type(expected)}, got {type(actual)} at {label}")
     # A field in a record array may not be an ndarray
     # A scalar from a record array will be type np.void
     if not isinstance(expected,
@@ -264,9 +269,7 @@ def _check_level(label, expected, actual):
         return
     # This is an ndarray-like thing
     assert_(expected.shape == actual.shape,
-            msg='Expected shape %s, got %s at %s' % (expected.shape,
-                                                     actual.shape,
-                                                     label))
+            msg=f'Expected shape {expected.shape}, got {actual.shape} at {label}')
     ex_dtype = expected.dtype
     if ex_dtype.hasobject:  # array of objects
         if isinstance(expected, MatlabObject):
@@ -277,12 +280,12 @@ def _check_level(label, expected, actual):
         return
     if ex_dtype.fields:  # probably recarray
         for fn in ex_dtype.fields:
-            level_label = "%s, field %s, " % (label, fn)
+            level_label = f"{label}, field {fn}, "
             _check_level(level_label,
                          expected[fn], actual[fn])
         return
     if ex_dtype.type in (str,  # string or bool
-                         np.unicode_,
+                         np.str_,
                          np.bool_):
         assert_equal(actual, expected, err_msg=label)
         return
@@ -293,16 +296,16 @@ def _check_level(label, expected, actual):
 def _load_check_case(name, files, case):
     for file_name in files:
         matdict = loadmat(file_name, struct_as_record=True)
-        label = "test %s; file %s" % (name, file_name)
+        label = f"test {name}; file {file_name}"
         for k, expected in case.items():
-            k_label = "%s, variable %s" % (label, k)
+            k_label = f"{label}, variable {k}"
             assert_(k in matdict, "Missing key at %s" % k_label)
             _check_level(k_label, expected, matdict[k])
 
 
 def _whos_check_case(name, files, case, classes):
     for file_name in files:
-        label = "test %s; file %s" % (name, file_name)
+        label = f"test {name}; file {file_name}"
 
         whos = whosmat(file_name)
 
@@ -312,7 +315,7 @@ def _whos_check_case(name, files, case, classes):
         whos.sort()
         expected_whos.sort()
         assert_equal(whos, expected_whos,
-                     "%s: %r != %r" % (label, whos, expected_whos)
+                     f"{label}: {whos!r} != {expected_whos!r}"
                      )
 
 
@@ -324,39 +327,50 @@ def _rt_check_case(name, expected, format):
     _load_check_case(name, [mat_stream], expected)
 
 
-# generator for load tests
-def test_load():
-    for case in case_table4 + case_table5:
+# generator for tests
+def _cases(version, filt='test%(name)s_*.mat'):
+    if version == '4':
+        cases = case_table4
+    elif version == '5':
+        cases = case_table5
+    else:
+        assert version == '5_rt'
+        cases = case_table5_rt
+    for case in cases:
         name = case['name']
         expected = case['expected']
-        filt = pjoin(test_data_path, 'test%s_*.mat' % name)
-        files = glob(filt)
-        assert_(len(files) > 0,
-                "No files for test %s using filter %s" % (name, filt))
-        _load_check_case(name, files, expected)
-
-
-# generator for whos tests
-def test_whos():
-    for case in case_table4 + case_table5:
-        name = case['name']
-        expected = case['expected']
+        if filt is None:
+            files = None
+        else:
+            use_filt = pjoin(test_data_path, filt % dict(name=name))
+            files = glob(use_filt)
+            assert len(files) > 0, \
+                f"No files for test {name} using filter {filt}"
         classes = case['classes']
-        filt = pjoin(test_data_path, 'test%s_*.mat' % name)
-        files = glob(filt)
-        assert_(len(files) > 0,
-                "No files for test %s using filter %s" % (name, filt))
-        _whos_check_case(name, files, expected, classes)
+        yield name, files, expected, classes
+
+
+@pytest.mark.parametrize('version', ('4', '5'))
+def test_load(version):
+    for case in _cases(version):
+        _load_check_case(*case[:3])
+
+
+@pytest.mark.parametrize('version', ('4', '5'))
+def test_whos(version):
+    for case in _cases(version):
+        _whos_check_case(*case)
 
 
 # generator for round trip tests
-def test_round_trip():
-    for case in case_table4 + case_table5_rt:
-        case_table4_names = [case['name'] for case in case_table4]
-        name = case['name'] + '_round_trip'
-        expected = case['expected']
-        for format in (['4', '5'] if case['name'] in case_table4_names else ['5']):
-            _rt_check_case(name, expected, format)
+@pytest.mark.parametrize('version, fmts', [
+    ('4', ['4', '5']),
+    ('5_rt', ['5']),
+])
+def test_round_trip(version, fmts):
+    for case in _cases(version, filt=None):
+        for fmt in fmts:
+            _rt_check_case(case[0], case[2], fmt)
 
 
 def test_gzip_simple():
@@ -382,8 +396,8 @@ def test_gzip_simple():
     finally:
         shutil.rmtree(tmpdir)
 
-    assert_array_almost_equal(actual['x'].todense(),
-                              expected['x'].todense(),
+    assert_array_almost_equal(actual['x'].toarray(),
+                              expected['x'].toarray(),
                               err_msg=repr(actual))
 
 
@@ -902,9 +916,11 @@ def test_write_opposite_endian():
     int_arr = np.arange(6).reshape((2, 3))
     uni_arr = np.array(['hello', 'world'], dtype='U')
     stream = BytesIO()
-    savemat(stream, {'floats': float_arr.byteswap().newbyteorder(),
-                            'ints': int_arr.byteswap().newbyteorder(),
-                            'uni_arr': uni_arr.byteswap().newbyteorder()})
+    savemat(stream, {
+        'floats': float_arr.byteswap().view(float_arr.dtype.newbyteorder()),
+        'ints': int_arr.byteswap().view(int_arr.dtype.newbyteorder()),
+        'uni_arr': uni_arr.byteswap().view(uni_arr.dtype.newbyteorder()),
+    })
     rdr = MatFile5Reader(stream)
     d = rdr.get_variables()
     assert_array_equal(d['floats'], float_arr)
@@ -961,7 +977,7 @@ def test_func_read():
     rdr = MatFile5Reader(fp)
     d = rdr.get_variables()
     fp.close()
-    assert_(isinstance(d['testfunc'], MatlabFunction))
+    assert isinstance(d['testfunc'], MatlabFunction)
     stream = BytesIO()
     wtr = MatFile5Writer(stream)
     assert_raises(MatWriteError, wtr.put_variables, d)
@@ -989,7 +1005,7 @@ def test_sparse_in_struct():
     stream = BytesIO()
     savemat(stream, {'a':st})
     d = loadmat(stream, struct_as_record=True)
-    assert_array_equal(d['a'][0,0]['sparsefield'].todense(), np.eye(4))
+    assert_array_equal(d['a'][0, 0]['sparsefield'].toarray(), np.eye(4))
 
 
 def test_mat_struct_squeeze():
@@ -1047,7 +1063,7 @@ def test_fieldnames():
     savemat(stream, {'a': {'a':1, 'b':2}})
     res = loadmat(stream)
     field_names = res['a'].dtype.names
-    assert_equal(set(field_names), set(('a', 'b')))
+    assert_equal(set(field_names), {'a', 'b'})
 
 
 def test_loadmat_varnames():
@@ -1167,7 +1183,7 @@ def test_empty_sparse():
     sio.seek(0)
     res = loadmat(sio)
     assert_array_equal(res['x'].shape, empty_sparse.shape)
-    assert_array_equal(res['x'].todense(), 0)
+    assert_array_equal(res['x'].toarray(), 0)
     # Do empty sparse matrices get written with max nnz 1?
     # See https://github.com/scipy/scipy/issues/4208
     sio.seek(0)
@@ -1217,14 +1233,25 @@ def test_bad_utf8():
 
 def test_save_unicode_field(tmpdir):
     filename = os.path.join(str(tmpdir), 'test.mat')
-    test_dict = {u'a':{u'b':1,u'c':'test_str'}}
+    test_dict = {'a':{'b':1,'c':'test_str'}}
     savemat(filename, test_dict)
+
+
+def test_save_custom_array_type(tmpdir):
+    class CustomArray:
+        def __array__(self, dtype=None, copy=None):
+            return np.arange(6.0).reshape(2, 3)
+    a = CustomArray()
+    filename = os.path.join(str(tmpdir), 'test.mat')
+    savemat(filename, {'a': a})
+    out = loadmat(filename)
+    assert_array_equal(out['a'], np.array(a))
 
 
 def test_filenotfound():
     # Check the correct error is thrown
-    assert_raises(IOError, loadmat, "NotExistentFile00.mat")
-    assert_raises(IOError, loadmat, "NotExistentFile00")
+    assert_raises(OSError, loadmat, "NotExistentFile00.mat")
+    assert_raises(OSError, loadmat, "NotExistentFile00")
 
 
 def test_simplify_cells():
@@ -1235,3 +1262,78 @@ def test_simplify_cells():
     assert_(isinstance(res1["s"], dict))
     assert_(isinstance(res2["s"], np.ndarray))
     assert_array_equal(res1["s"]["mycell"], np.array(["a", "b", "c"]))
+
+
+@pytest.mark.parametrize('version, filt, regex', [
+    (0, '_4*_*', None),
+    (1, '_5*_*', None),
+    (1, '_6*_*', None),
+    (1, '_7*_*', '^((?!hdf5).)*$'),  # not containing hdf5
+    (2, '_7*_*', '.*hdf5.*'),
+    (1, '8*_*', None),
+])
+def test_matfile_version(version, filt, regex):
+    use_filt = pjoin(test_data_path, 'test*%s.mat' % filt)
+    files = glob(use_filt)
+    if regex is not None:
+        files = [file for file in files if re.match(regex, file) is not None]
+    assert len(files) > 0, \
+        f"No files for version {version} using filter {filt}"
+    for file in files:
+        got_version = matfile_version(file)
+        assert got_version[0] == version
+
+
+def test_opaque():
+    """Test that we can read a MatlabOpaque object."""
+    data = loadmat(pjoin(test_data_path, 'parabola.mat'))
+    assert isinstance(data['parabola'], MatlabFunction)
+    assert isinstance(data['parabola'].item()[3].item()[3], MatlabOpaque)
+
+
+def test_opaque_simplify():
+    """Test that we can read a MatlabOpaque object when simplify_cells=True."""
+    data = loadmat(pjoin(test_data_path, 'parabola.mat'), simplify_cells=True)
+    assert isinstance(data['parabola'], MatlabFunction)
+
+
+def test_deprecation():
+    """Test that access to previous attributes still works."""
+    # This should be accessible immediately from scipy.io import
+    with assert_warns(DeprecationWarning):
+        scipy.io.matlab.mio5_params.MatlabOpaque
+
+    # These should be importable but warn as well
+    with assert_warns(DeprecationWarning):
+        from scipy.io.matlab.miobase import MatReadError  # noqa: F401
+
+
+def test_gh_17992(tmp_path):
+    rng = np.random.default_rng(12345)
+    outfile = tmp_path / "lists.mat"
+    array_one = rng.random((5,3))
+    array_two = rng.random((6,3))
+    list_of_arrays = [array_one, array_two]
+    # warning suppression only needed for NumPy < 1.24.0
+    with np.testing.suppress_warnings() as sup:
+        sup.filter(VisibleDeprecationWarning)
+        savemat(outfile,
+                {'data': list_of_arrays},
+                long_field_names=True,
+                do_compression=True)
+    # round trip check
+    new_dict = {}
+    loadmat(outfile,
+            new_dict)
+    assert_allclose(new_dict["data"][0][0], array_one)
+    assert_allclose(new_dict["data"][0][1], array_two)
+
+
+def test_gh_19659(tmp_path):
+    d = {
+        "char_array": np.array([list("char"), list("char")], dtype="U1"),
+        "string_array": np.array(["string", "string"]),
+        }
+    outfile = tmp_path / "tmp.mat"
+    # should not error:
+    savemat(outfile, d, format="4")

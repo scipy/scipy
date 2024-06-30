@@ -1,4 +1,5 @@
-      subroutine fpdisc(t,n,k2,b,nest)
+      recursive subroutine fpdisc(t,n,k2,b,nest)
+      implicit none
 c  subroutine fpdisc calculates the discontinuity jumps of the kth
 c  derivative of the b-splines of degree k at the knots t(k+2)..t(n-k-1)
 c  ..scalar arguments..

@@ -4,7 +4,7 @@
 
 #define UNURAN_THUNK(CAST_FUNC, FUNCNAME, LEN)                                              \
     PyGILState_STATE gstate = PyGILState_Ensure();                                          \
-    /* If an error has occured, return INFINITY. */                                         \
+    /* If an error has occurred, return INFINITY. */                                        \
     if (PyErr_Occurred()) return UNUR_INFINITY;                                             \
     ccallback_t *callback = ccallback_obtain();                                             \
                                                                                             \
@@ -68,6 +68,9 @@ done:                                                                           
 void error_handler(const char *objid, const char *file, int line, const char *errortype, int unur_errno, const char *reason)
 {
     if ( unur_errno != UNUR_SUCCESS ) {
+        if (PyErr_Occurred()) {
+            return;
+        }
         FILE *LOG = unur_get_stream();
         char objid_[256], reason_[256];
         (objid == NULL || strcmp(objid, "") == 0) ? strcpy(objid_, "unknown") : strcpy(objid_, objid);
@@ -124,6 +127,11 @@ double pdf_thunk(double x, const struct unur_distr *distr)
 double dpdf_thunk(double x, const struct unur_distr *distr)
 {
     UNURAN_THUNK(PyFloat_FromDouble, "dpdf", 4);
+}
+
+double logpdf_thunk(double x, const struct unur_distr *distr)
+{
+    UNURAN_THUNK(PyFloat_FromDouble, "logpdf", 6);
 }
 
 double cont_cdf_thunk(double x, const struct unur_distr *distr)

@@ -1,4 +1,6 @@
-      subroutine fpbisp(tx,nx,ty,ny,c,kx,ky,x,mx,y,my,z,wx,wy,lx,ly)
+      recursive subroutine fpbisp(tx,nx,ty,ny,c,kx,ky,x,mx,y,my,
+     *     z,wx,wy,lx,ly)
+      implicit none
 c  ..scalar arguments..
       integer nx,ny,kx,ky,mx,my
 c  ..array arguments..
@@ -6,7 +8,7 @@ c  ..array arguments..
       real*8 tx(nx),ty(ny),c((nx-kx-1)*(ny-ky-1)),x(mx),y(my),z(mx*my),
      * wx(mx,kx+1),wy(my,ky+1)
 c  ..local scalars..
-      integer kx1,ky1,l,l1,l2,m,nkx1,nky1
+      integer kx1,ky1,l,l1,l2,m,nkx1,nky1, i, i1, j, j1
       real*8 arg,sp,tb,te
 c  ..local arrays..
       real*8 h(6)

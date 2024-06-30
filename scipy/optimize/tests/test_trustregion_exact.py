@@ -5,6 +5,7 @@ To run it in its simplest form::
   nosetests test_optimize.py
 
 """
+import pytest
 import numpy as np
 from scipy.optimize._trustregion_exact import (
     estimate_smallest_singular_value,
@@ -93,7 +94,7 @@ class TestSingularLeadingSubmatrix:
         # Check if the leading submatrix is singular.
         assert_array_almost_equal(det(A[:k, :k]), 0)
 
-        # Check if `v` fullfil the specified properties
+        # Check if `v` fulfil the specified properties
         quadratic_term = np.dot(v, np.dot(A, v))
         assert_array_almost_equal(quadratic_term, 0)
 
@@ -120,7 +121,7 @@ class TestSingularLeadingSubmatrix:
         # Check if the leading submatrix is singular.
         assert_array_almost_equal(det(A[:k, :k]), 0)
 
-        # Check if `v` fullfil the specified properties
+        # Check if `v` fulfil the specified properties
         quadratic_term = np.dot(v, np.dot(A, v))
         assert_array_almost_equal(quadratic_term, 0)
 
@@ -145,7 +146,7 @@ class TestSingularLeadingSubmatrix:
         # Check if the leading submatrix is singular
         assert_array_almost_equal(det(A[:k, :k]), 0)
 
-        # Check if `v` fullfil the specified properties
+        # Check if `v` fulfil the specified properties
         quadratic_term = np.dot(v, np.dot(A, v))
         assert_array_almost_equal(quadratic_term, 0)
 
@@ -274,6 +275,7 @@ class TestIterativeSubproblem:
                                       -0.84954934])
         assert_array_almost_equal(hits_boundary, True)
 
+    @pytest.mark.fail_slow(10)
     def test_for_random_entries(self):
         # Seed
         np.random.seed(1)

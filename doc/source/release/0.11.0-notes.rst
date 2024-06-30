@@ -1,0 +1,320 @@
+==========================
+SciPy 0.11.0 Release Notes
+==========================
+
+.. contents::
+
+SciPy 0.11.0 is the culmination of 8 months of hard work. It contains
+many new features, numerous bug-fixes, improved test coverage and
+better documentation.  Highlights of this release are:
+
+  - A new module has been added which provides a number of common sparse graph
+    algorithms.
+  - New unified interfaces to the existing optimization and root finding
+    functions have been added.
+
+All users are encouraged to upgrade to this release, as there are a large
+number of bug-fixes and optimizations.  Our development attention will now
+shift to bug-fix releases on the 0.11.x branch, and on adding new features on
+the master branch.
+
+This release requires Python 2.4-2.7 or 3.1-3.2 and NumPy 1.5.1 or greater.
+
+
+New features
+============
+
+.. currentmodule:: scipy.sparse.csgraph
+
+Sparse Graph Submodule
+----------------------
+The new submodule :mod:`scipy.sparse.csgraph` implements a number of efficient
+graph algorithms for graphs stored as sparse adjacency matrices.  Available
+routines are:
+
+   - :func:`connected_components` - determine connected components of a graph
+   - :func:`laplacian` - compute the laplacian of a graph
+   - :func:`shortest_path` - compute the shortest path between points on a
+     positive graph
+   - :func:`dijkstra` - use Dijkstra's algorithm for shortest path
+   - :func:`floyd_warshall` - use the Floyd-Warshall algorithm for
+     shortest path
+   - :func:`breadth_first_order` - compute a breadth-first order of nodes
+   - :func:`depth_first_order` - compute a depth-first order of nodes
+   - :func:`breadth_first_tree` - construct the breadth-first tree from
+     a given node
+   - :func:`depth_first_tree` - construct a depth-first tree from a given node
+   - :func:`minimum_spanning_tree` - construct the minimum spanning
+     tree of a graph
+
+
+``scipy.optimize`` improvements
+-------------------------------
+
+The optimize module has received a lot of attention this release.  In addition
+to added tests, documentation improvements, bug fixes and code clean-up, the
+following improvements were made:
+
+- A unified interface to minimizers of univariate and multivariate
+  functions has been added.
+- A unified interface to root finding algorithms for multivariate functions
+  has been added.
+- The L-BFGS-B algorithm has been updated to version 3.0.
+
+
+Unified interfaces to minimizers
+````````````````````````````````
+
+.. currentmodule:: scipy.optimize
+
+Two new functions ``scipy.optimize.minimize`` and
+``scipy.optimize.minimize_scalar`` were added to provide a common interface
+to minimizers of multivariate and univariate functions respectively.
+For multivariate functions, ``scipy.optimize.minimize`` provides an
+interface to methods for unconstrained optimization (`fmin`, `fmin_powell`,
+`fmin_cg`, `fmin_ncg`, `fmin_bfgs` and `anneal`) or constrained
+optimization (`fmin_l_bfgs_b`, `fmin_tnc`, `fmin_cobyla` and `fmin_slsqp`).
+For univariate functions, ``scipy.optimize.minimize_scalar`` provides an
+interface to methods for unconstrained and bounded optimization (`brent`,
+`golden`, `fminbound`).
+This allows for easier comparing and switching between solvers.
+
+Unified interface to root finding algorithms
+````````````````````````````````````````````
+
+The new function ``scipy.optimize.root`` provides a common interface to
+root finding algorithms for multivariate functions, embedding `fsolve`,
+`leastsq` and ``nonlin`` solvers.
+
+
+``scipy.linalg`` improvements
+-----------------------------
+
+New matrix equation solvers
+```````````````````````````
+
+Solvers for the Sylvester equation (``scipy.linalg.solve_sylvester``, discrete
+and continuous Lyapunov equations (``scipy.linalg.solve_lyapunov``,
+``scipy.linalg.solve_discrete_lyapunov``) and discrete and continuous algebraic
+Riccati equations (``scipy.linalg.solve_continuous_are``,
+``scipy.linalg.solve_discrete_are``) have been added to ``scipy.linalg``.
+These solvers are often used in the field of linear control theory.
+
+QZ and QR Decomposition
+````````````````````````
+
+It is now possible to calculate the QZ, or Generalized Schur, decomposition
+using ``scipy.linalg.qz``. This function wraps the LAPACK routines sgges,
+dgges, cgges, and zgges.
+
+The function ``scipy.linalg.qr_multiply``, which allows efficient computation
+of the matrix product of Q (from a QR decomposition) and a vector, has been
+added.
+
+Pascal matrices
+```````````````
+
+A function for creating Pascal matrices, ``scipy.linalg.pascal``, was added.
+
+
+Sparse matrix construction and operations
+-----------------------------------------
+
+Two new functions, ``scipy.sparse.diags`` and ``scipy.sparse.block_diag``, were
+added to easily construct diagonal and block-diagonal sparse matrices
+respectively.
+
+``scipy.sparse.csc_matrix`` and ``csr_matrix`` now support the operations
+``sin``, ``tan``, ``arcsin``, ``arctan``, ``sinh``, ``tanh``, ``arcsinh``,
+``arctanh``, ``rint``, ``sign``, ``expm1``, ``log1p``, ``deg2rad``, ``rad2deg``,
+``floor``, ``ceil`` and ``trunc``.  Previously, these operations had to be
+performed by operating on the matrices' ``data`` attribute.
+
+
+LSMR iterative solver
+---------------------
+
+LSMR, an iterative method for solving (sparse) linear and linear
+least-squares systems, was added as ``scipy.sparse.linalg.lsmr``.
+
+
+Discrete Sine Transform
+-----------------------
+
+Bindings for the discrete sine transform functions have been added to
+``scipy.fftpack``.
+
+
+``scipy.interpolate`` improvements
+----------------------------------
+
+For interpolation in spherical coordinates, the three classes
+``scipy.interpolate.SmoothSphereBivariateSpline``,
+``scipy.interpolate.LSQSphereBivariateSpline``, and
+``scipy.interpolate.RectSphereBivariateSpline`` have been added.
+
+
+Binned statistics (``scipy.stats``)
+-----------------------------------
+
+The stats module has gained functions to do binned statistics, which are a
+generalization of histograms, in 1-D, 2-D and multiple dimensions:
+``scipy.stats.binned_statistic``, ``scipy.stats.binned_statistic_2d`` and
+``scipy.stats.binned_statistic_dd``.
+
+
+Deprecated features
+===================
+
+``scipy.sparse.cs_graph_components`` has been made a part of the sparse graph
+submodule, and renamed to ``scipy.sparse.csgraph.connected_components``.
+Calling the former routine will result in a deprecation warning.
+
+``scipy.misc.radon`` has been deprecated.  A more full-featured radon transform
+can be found in scikits-image.
+
+``scipy.io.save_as_module`` has been deprecated.  A better way to save multiple
+Numpy arrays is the ``numpy.savez`` function.
+
+The `xa` and `xb` parameters for all distributions in
+``scipy.stats.distributions`` already weren't used; they have now been
+deprecated.
+
+
+Backwards incompatible changes
+==============================
+
+Removal of ``scipy.maxentropy``
+-------------------------------
+
+The ``scipy.maxentropy`` module, which was deprecated in the 0.10.0 release,
+has been removed.  Logistic regression in scikits.learn is a good and modern
+alternative for this functionality.
+
+
+Minor change in behavior of ``splev``
+-------------------------------------
+
+The spline evaluation function now behaves similarly to ``interp1d``
+for size-1 arrays.  Previous behavior::
+
+    >>> from scipy.interpolate import splev, splrep, interp1d
+    >>> x = [1,2,3,4,5]
+    >>> y = [4,5,6,7,8]
+    >>> tck = splrep(x, y)
+    >>> splev([1], tck)
+    4.
+    >>> splev(1, tck)
+    4.
+
+Corrected behavior::
+
+    >>> splev([1], tck)
+    array([ 4.])
+    >>> splev(1, tck)
+    array(4.)
+
+This affects also the ``UnivariateSpline`` classes.
+
+
+Behavior of ``scipy.integrate.complex_ode``
+-------------------------------------------
+
+The behavior of the ``y`` attribute of ``complex_ode`` is changed.
+Previously, it expressed the complex-valued solution in the form::
+
+    z = ode.y[::2] + 1j * ode.y[1::2]
+
+Now, it is directly the complex-valued solution::
+
+    z = ode.y
+
+
+Minor change in behavior of T-tests
+-----------------------------------
+
+The T-tests ``scipy.stats.ttest_ind``, ``scipy.stats.ttest_rel`` and
+``scipy.stats.ttest_1samp`` have been changed so that 0 / 0 now returns NaN
+instead of 1.
+
+
+Other changes
+=============
+
+The SuperLU sources in ``scipy.sparse.linalg`` have been updated to version 4.3
+from upstream.
+
+The function ``scipy.signal.bode``, which calculates magnitude and phase data
+for a continuous-time system, has been added.
+
+The two-sample T-test ``scipy.stats.ttest_ind`` gained an option to compare
+samples with unequal variances, i.e. Welch's T-test.
+
+``scipy.misc.logsumexp`` now takes an optional ``axis`` keyword argument.
+
+
+Authors
+=======
+
+This release contains work by the following people (contributed at least
+one patch to this release, names in alphabetical order):
+
+* Jeff Armstrong
+* Chad Baker
+* Brandon Beacher +
+* behrisch +
+* borishim +
+* Matthew Brett
+* Lars Buitinck
+* Luis Pedro Coelho +
+* Johann Cohen-Tanugi
+* David Cournapeau
+* dougal +
+* Ali Ebrahim +
+* endolith +
+* Bjørn Forsman +
+* Robert Gantner +
+* Sebastian Gassner +
+* Christoph Gohlke
+* Ralf Gommers
+* Yaroslav Halchenko
+* Charles Harris
+* Jonathan Helmus +
+* Andreas Hilboll +
+* Marc Honnorat +
+* Jonathan Hunt +
+* Maxim Ivanov +
+* Thouis (Ray) Jones
+* Christopher Kuster +
+* Josh Lawrence +
+* Denis Laxalde +
+* Travis Oliphant
+* Joonas Paalasmaa +
+* Fabian Pedregosa
+* Josef Perktold
+* Gavin Price +
+* Jim Radford +
+* Andrew Schein +
+* Skipper Seabold
+* Jacob Silterra +
+* Scott Sinclair
+* Alexis Tabary +
+* Martin Teichmann
+* Matt Terry +
+* Nicky van Foreest +
+* Jacob Vanderplas
+* Patrick Varilly +
+* Pauli Virtanen
+* Nils Wagner +
+* Darryl Wally +
+* Stefan van der Walt
+* Liming Wang +
+* David Warde-Farley +
+* Warren Weckesser
+* Sebastian Werk +
+* Mike Wimmer +
+* Tony S Yu +
+
+A total of 55 people contributed to this release.
+People with a "+" by their names contributed a patch for the first time.
+

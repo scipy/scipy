@@ -2,6 +2,7 @@ import numpy as np
 from collections import namedtuple
 from scipy import special
 from scipy import stats
+from scipy.stats._stats_py import _rankdata
 from ._axis_nan_policy import _axis_nan_policy_factory
 
 
@@ -18,97 +19,143 @@ def _broadcast_concatenate(x, y, axis):
 
 class _MWU:
     '''Distribution of MWU statistic under the null hypothesis'''
-    # Possible improvement: if m and n are small enough, use integer arithmetic
 
-    def __init__(self):
-        '''Minimal initializer'''
-        self._fmnks = -np.ones((1, 1, 1))
+    def __init__(self, n1, n2):
+        self._reset(n1, n2)
 
-    def pmf(self, k, m, n):
-        '''Probability mass function'''
-        self._resize_fmnks(m, n, np.max(k))
-        # could loop over just the unique elements, but probably not worth
-        # the time to find them
-        for i in np.ravel(k):
-            self._f(m, n, i)
-        return self._fmnks[m, n, k] / special.binom(m + n, m)
+    def set_shapes(self, n1, n2):
+        n1, n2 = min(n1, n2), max(n1, n2)
+        if (n1, n2) == (self.n1, self.n2):
+            return
 
-    def cdf(self, k, m, n):
+        self.n1 = n1
+        self.n2 = n2
+        self.s_array = np.zeros(0, dtype=int)
+        self.configurations = np.zeros(0, dtype=np.uint64)
+
+    def reset(self):
+        self._reset(self.n1, self.n2)
+
+    def _reset(self, n1, n2):
+        self.n1 = None
+        self.n2 = None
+        self.set_shapes(n1, n2)
+
+    def pmf(self, k):
+
+        # In practice, `pmf` is never called with k > m*n/2.
+        # If it were, we'd exploit symmetry here:
+        # k = np.array(k, copy=True)
+        # k2 = m*n - k
+        # i = k2 < k
+        # k[i] = k2[i]
+
+        pmfs = self.build_u_freqs_array(np.max(k))
+        return pmfs[k]
+
+    def cdf(self, k):
         '''Cumulative distribution function'''
-        # We could use the fact that the distribution is symmetric to avoid
-        # summing more than m*n/2 terms, but it might not be worth the
-        # overhead. Let's leave that to an improvement.
-        pmfs = self.pmf(np.arange(0, np.max(k) + 1), m, n)
+
+        # In practice, `cdf` is never called with k > m*n/2.
+        # If it were, we'd exploit symmetry here rather than in `sf`
+        pmfs = self.build_u_freqs_array(np.max(k))
         cdfs = np.cumsum(pmfs)
         return cdfs[k]
 
-    def sf(self, k, m, n):
+    def sf(self, k):
         '''Survival function'''
-        # Use the fact that the distribution is symmetric; i.e.
-        # _f(m, n, m*n-k) = _f(m, n, k), and sum from the left
-        k = m*n - k
         # Note that both CDF and SF include the PMF at k. The p-value is
         # calculated from the SF and should include the mass at k, so this
         # is desirable
-        return self.cdf(k, m, n)
 
-    def _resize_fmnks(self, m, n, k):
-        '''If necessary, expand the array that remembers PMF values'''
-        # could probably use `np.pad` but I'm not sure it would save code
-        shape_old = np.array(self._fmnks.shape)
-        shape_new = np.array((m+1, n+1, k+1))
-        if np.any(shape_new > shape_old):
-            shape = np.maximum(shape_old, shape_new)
-            fmnks = -np.ones(shape)             # create the new array
-            m0, n0, k0 = shape_old
-            fmnks[:m0, :n0, :k0] = self._fmnks  # copy remembered values
-            self._fmnks = fmnks
+        # Use the fact that the distribution is symmetric and sum from the left
+        kc = np.asarray(self.n1*self.n2 - k)  # complement of k
+        i = k < kc
+        if np.any(i):
+            kc[i] = k[i]
+            cdfs = np.asarray(self.cdf(kc))
+            cdfs[i] = 1. - cdfs[i] + self.pmf(kc[i])
+        else:
+            cdfs = np.asarray(self.cdf(kc))
+        return cdfs[()]
 
-    def _f(self, m, n, k):
-        '''Recursive implementation of function of [3] Theorem 2.5'''
+    # build_sigma_array and build_u_freqs_array adapted from code
+    # by @toobaz with permission. Thanks to @andreasloe for the suggestion.
+    # See https://github.com/scipy/scipy/pull/4933#issuecomment-1898082691
+    def build_sigma_array(self, a):
+        n1, n2 = self.n1, self.n2
+        if a + 1 <= self.s_array.size:
+            return self.s_array[1:a+1]
 
-        # [3] Theorem 2.5 Line 1
-        if k < 0 or m < 0 or n < 0 or k > m*n:
-            return 0
+        s_array = np.zeros(a + 1, dtype=int)
 
-        # if already calculated, return the value
-        if self._fmnks[m, n, k] >= 0:
-            return self._fmnks[m, n, k]
+        for d in np.arange(1, n1 + 1):
+            # All multiples of d, except 0:
+            indices = np.arange(d, a + 1, d)
+            # \epsilon_d = 1:
+            s_array[indices] += d
 
-        if k == 0 and m >= 0 and n >= 0:  # [3] Theorem 2.5 Line 2
-            fmnk = 1
-        else:   # [3] Theorem 2.5 Line 3 / Equation 3
-            fmnk = self._f(m-1, n, k-n) + self._f(m, n-1, k)
+        for d in np.arange(n2 + 1, n2 + n1 + 1):
+            # All multiples of d, except 0:
+            indices = np.arange(d, a + 1, d)
+            # \epsilon_d = -1:
+            s_array[indices] -= d
 
-        self._fmnks[m, n, k] = fmnk  # remember result
+        # We don't need 0:
+        self.s_array = s_array
+        return s_array[1:]
 
-        return fmnk
+    def build_u_freqs_array(self, maxu):
+        """
+        Build all the array of frequencies for u from 0 to maxu.
+        Assumptions:
+          n1 <= n2
+          maxu <= n1 * n2 / 2
+        """
+        n1, n2 = self.n1, self.n2
+        total = special.binom(n1 + n2, n1)
+
+        if maxu + 1 <= self.configurations.size:
+            return self.configurations[:maxu + 1] / total
+
+        s_array = self.build_sigma_array(maxu)
+
+        # Start working with ints, for maximum precision and efficiency:
+        configurations = np.zeros(maxu + 1, dtype=np.uint64)
+        configurations_is_uint = True
+        uint_max = np.iinfo(np.uint64).max
+        # How many ways to have U=0? 1
+        configurations[0] = 1
+
+        for u in np.arange(1, maxu + 1):
+            coeffs = s_array[u - 1::-1]
+            new_val = np.dot(configurations[:u], coeffs) / u
+            if new_val > uint_max and configurations_is_uint:
+                # OK, we got into numbers too big for uint64.
+                # So now we start working with floats.
+                # By doing this since the beginning, we would have lost precision.
+                # (And working on python long ints would be unbearably slow)
+                configurations = configurations.astype(float)
+                configurations_is_uint = False
+            configurations[u] = new_val
+
+        self.configurations = configurations
+        return configurations / total
 
 
-# Maintain state for faster repeat calls to mannwhitneyu w/ method='exact'
-_mwu_state = _MWU()
+_mwu_state = _MWU(0, 0)
 
 
-def _tie_term(ranks):
-    """Tie correction term"""
-    # element i of t is the number of elements sharing rank i
-    _, t = np.unique(ranks, return_counts=True, axis=-1)
-    return (t**3 - t).sum(axis=-1)
-
-
-def _get_mwu_z(U, n1, n2, ranks, axis=0, continuity=True):
+def _get_mwu_z(U, n1, n2, t, axis=0, continuity=True):
     '''Standardized MWU statistic'''
     # Follows mannwhitneyu [2]
     mu = n1 * n2 / 2
     n = n1 + n2
 
-    # Tie correction according to [2]
-    tie_term = np.apply_along_axis(_tie_term, -1, ranks)
+    # Tie correction according to [2], "Normal approximation and tie correction"
+    # "A more computationally-efficient form..."
+    tie_term = (t**3 - t).sum(axis=-1)
     s = np.sqrt(n1*n2/12 * ((n + 1) - tie_term/(n*(n-1))))
-
-    # equivalent to using scipy.stats.tiecorrect
-    # T = np.apply_along_axis(stats.tiecorrect, -1, ranks)
-    # s = np.sqrt(T * n1 * n2 * (n1+n2+1) / 12.0)
 
     numerator = U - mu
 
@@ -147,21 +194,16 @@ def _mwu_input_validation(x, y, use_continuity, alternative, axis, method):
     if axis != axis_int:
         raise ValueError('`axis` must be an integer.')
 
-    methods = {"asymptotic", "exact", "auto"}
-    method = method.lower()
-    if method not in methods:
-        raise ValueError(f'`method` must be one of {methods}.')
+    if not isinstance(method, stats.PermutationMethod):
+        methods = {"asymptotic", "exact", "auto"}
+        method = method.lower()
+        if method not in methods:
+            raise ValueError(f'`method` must be one of {methods}.')
 
     return x, y, use_continuity, alternative, axis_int, method
 
 
-def _tie_check(xy):
-    """Find any ties in data"""
-    _, t = np.unique(xy, return_counts=True, axis=-1)
-    return np.any(t != 1)
-
-
-def _mwu_choose_method(n1, n2, xy, method):
+def _mwu_choose_method(n1, n2, ties):
     """Choose method 'asymptotic' or 'exact' depending on input size, ties"""
 
     # if both inputs are large, asymptotic is OK
@@ -169,7 +211,7 @@ def _mwu_choose_method(n1, n2, xy, method):
         return "asymptotic"
 
     # if there are any ties, asymptotic is preferred
-    if np.apply_along_axis(_tie_check, -1, xy).any():
+    if ties:
         return "asymptotic"
 
     return "exact"
@@ -210,12 +252,20 @@ def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
         * 'greater': the distribution underlying `x` is stochastically greater
           than the distribution underlying `y`, i.e. *F(u) < G(u)* for all *u*.
 
+        Note that the mathematical expressions in the alternative hypotheses
+        above describe the CDFs of the underlying distributions. The directions
+        of the inequalities appear inconsistent with the natural language
+        description at first glance, but they are not. For example, suppose
+        *X* and *Y* are random variables that follow distributions with CDFs
+        *F* and *G*, respectively. If *F(u) > G(u)* for all *u*, samples drawn
+        from *X* tend to be less than those drawn from *Y*.
+
         Under a more restrictive set of assumptions, the alternative hypotheses
         can be expressed in terms of the locations of the distributions;
         see [5] section 5.1.
     axis : int, optional
         Axis along which to perform the test. Default is 0.
-    method : {'auto', 'asymptotic', 'exact'}, optional
+    method : {'auto', 'asymptotic', 'exact'} or `PermutationMethod` instance, optional
         Selects the method used to calculate the *p*-value.
         Default is 'auto'. The following options are available.
 
@@ -225,8 +275,11 @@ def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
           :math:`U` statistic against the exact distribution of the :math:`U`
           statistic under the null hypothesis. No correction is made for ties.
         * ``'auto'``: chooses ``'exact'`` when the size of one of the samples
-          is less than 8 and there are no ties; chooses ``'asymptotic'``
-          otherwise.
+          is less than or equal to 8 and there are no ties;
+          chooses ``'asymptotic'`` otherwise.
+        * `PermutationMethod` instance. In this case, the p-value
+          is computed using `permutation_test` with the provided
+          configuration options and other appropriate settings.
 
     Returns
     -------
@@ -243,20 +296,22 @@ def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
     -----
     If ``U1`` is the statistic corresponding with sample `x`, then the
     statistic corresponding with sample `y` is
-    `U2 = `x.shape[axis] * y.shape[axis] - U1``.
+    ``U2 = x.shape[axis] * y.shape[axis] - U1``.
 
     `mannwhitneyu` is for independent samples. For related / paired samples,
     consider `scipy.stats.wilcoxon`.
 
     `method` ``'exact'`` is recommended when there are no ties and when either
-    sample size is less than 8 [1]_. The implementation follows the recurrence
-    relation originally proposed in [1]_ as it is described in [3]_.
+    sample size is less than 8 [1]_. The implementation follows the algorithm
+    reported in [3]_.
     Note that the exact method is *not* corrected for ties, but
     `mannwhitneyu` will not raise errors or warnings if there are ties in the
-    data.
+    data. If there are ties and either samples is small (fewer than ~10
+    observations), consider passing an instance of `PermutationMethod`
+    as the `method` to perform a permutation test.
 
     The Mann-Whitney U test is a non-parametric version of the t-test for
-    independent samples. When the the means of samples from the populations
+    independent samples. When the means of samples from the populations
     are normally distributed, consider `scipy.stats.ttest_ind`.
 
     See Also
@@ -270,9 +325,9 @@ def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
            Mathematical Statistics, Vol. 18, pp. 50-60, 1947.
     .. [2] Mann-Whitney U Test, Wikipedia,
            http://en.wikipedia.org/wiki/Mann-Whitney_U_test
-    .. [3] A. Di Bucchianico, "Combinatorics, computer algebra, and the
-           Wilcoxon-Mann-Whitney test", Journal of Statistical Planning and
-           Inference, Vol. 79, pp. 349-364, 1999.
+    .. [3] Andreas Löffler,
+           "Über eine Partition der nat. Zahlen und ihr Anwendung beim U-Test",
+           Wiss. Z. Univ. Halle, XXXII'83 pp. 87-89.
     .. [4] Rosie Shier, "Statistics: 2.3 The Mann-Whitney U Test", Mathematics
            Learning Support Centre, 2004.
     .. [5] Michael P. Fay and Michael A. Proschan. "Wilcoxon-Mann-Whitney
@@ -381,7 +436,9 @@ def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
     >>> from scipy.stats import ttest_ind
     >>> res = ttest_ind(females, males, alternative="less")
     >>> print(res)
-    Ttest_indResult(statistic=-2.239334696520584, pvalue=0.030068441095757924)
+    TtestResult(statistic=-2.239334696520584,
+                pvalue=0.030068441095757924,
+                df=7.0)
 
     Under this assumption, the *p*-value would be low enough to reject the
     null hypothesis in favor of the alternative.
@@ -395,14 +452,11 @@ def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
 
     n1, n2 = x.shape[-1], y.shape[-1]
 
-    if method == "auto":
-        method = _mwu_choose_method(n1, n2, xy, method)
-
     # Follows [2]
-    ranks = stats.rankdata(xy, axis=-1)  # method 2, step 1
-    R1 = ranks[..., :n1].sum(axis=-1)    # method 2, step 2
-    U1 = R1 - n1*(n1+1)/2                # method 2, step 3
-    U2 = n1 * n2 - U1                    # as U1 + U2 = n1 * n2
+    ranks, t = _rankdata(xy, 'average', return_ties=True)  # method 2, step 1
+    R1 = ranks[..., :n1].sum(axis=-1)                      # method 2, step 2
+    U1 = R1 - n1*(n1+1)/2                                  # method 2, step 3
+    U2 = n1 * n2 - U1                                      # as U1 + U2 = n1 * n2
 
     if alternative == "greater":
         U, f = U1, 1  # U is the statistic to use for p-value, f is a factor
@@ -411,11 +465,26 @@ def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
     else:
         U, f = np.maximum(U1, U2), 2  # multiply SF by two for two-sided test
 
+    if method == "auto":
+        method = _mwu_choose_method(n1, n2, np.any(t > 1))
+
     if method == "exact":
-        p = _mwu_state.sf(U.astype(int), n1, n2)
+        _mwu_state.set_shapes(n1, n2)
+        p = _mwu_state.sf(U.astype(int))
     elif method == "asymptotic":
-        z = _get_mwu_z(U, n1, n2, ranks, continuity=use_continuity)
+        z = _get_mwu_z(U, n1, n2, t, continuity=use_continuity)
         p = stats.norm.sf(z)
+    else:  # `PermutationMethod` instance (already validated)
+        def statistic(x, y, axis):
+            return mannwhitneyu(x, y, use_continuity=use_continuity,
+                                alternative=alternative, axis=axis,
+                                method="asymptotic").statistic
+
+        res = stats.permutation_test((x, y), statistic, axis=axis,
+                                     **method._asdict(), alternative=alternative)
+        p = res.pvalue
+        f = 1
+
     p *= f
 
     # Ensure that test statistic is not greater than 1

@@ -24,7 +24,7 @@ for y < ~ -745.1.
 When p > 1 - exp(-2), the Cephes implementation of ndtri uses the symmetry
 of the normal distribution and calculates ndtri(p) as -ndtri(1 - p) allowing
 for the use of the same approximation. When y > log(1 - exp(-2)) this
-implementation calculates ndtri_exp as -ndtri(-exp1m(y)).
+implementation calculates ndtri_exp as -ndtri(-expm1(y)).
 
 
 Accuracy
@@ -100,19 +100,16 @@ ndtri itself, leading to an error profile that is still favorable.
 
 import cython
 from libc.float cimport DBL_MAX
-from libc.math cimport exp, expm1, log, log1p, sqrt, M_SQRT2
+from libc.math cimport exp, expm1, log, log1p, sqrt, M_SQRT2, INFINITY
 
-cdef extern from "cephes/polevl.h":
-    double polevl(double x, const double coef[], int N) nogil
-    double p1evl(double x, const double coef[], int N) nogil
 
-cdef extern from "numpy/npy_math.h":
-    double NPY_INFINITY
-
-from ._cephes cimport ndtri
+cdef extern from "special_wrappers.h" nogil:
+    double cephes_ndtri_wrap(double x)
+    double cephes_polevl_wrap(double x, const double coef[], int N)
+    double cephes_p1evl_wrap(double x, const double coef[], int N)
 
 @cython.cdivision(True)
-cdef inline double _ndtri_exp_small_y(double y) nogil:
+cdef inline double _ndtri_exp_small_y(double y) noexcept nogil:
     """Return inverse of log CDF of normal distribution for very small y
 
     For p sufficiently small, the inverse of the CDF of the normal
@@ -157,19 +154,19 @@ cdef inline double _ndtri_exp_small_y(double y) nogil:
     x0 = x - log(x) / x
     z = 1 / x
     if x < 8.0:
-        x1 = z * polevl(z, P1, 8) / p1evl(z, Q1, 8)
+        x1 = z * cephes_polevl_wrap(z, P1, 8) / cephes_p1evl_wrap(z, Q1, 8)
     else:
-        x1 = z * polevl(z, P2, 8) / p1evl(z, Q2, 8)
+        x1 = z * cephes_polevl_wrap(z, P2, 8) / cephes_p1evl_wrap(z, Q2, 8)
     return x1 - x0
 
 
-cdef inline double ndtri_exp(double y) nogil:
+cdef inline double ndtri_exp(double y) noexcept nogil:
     """Return inverse of logarithm of Normal CDF evaluated at y."""
     if y < -DBL_MAX:
-        return -NPY_INFINITY
+        return -INFINITY
     elif y < - 2.0:
         return _ndtri_exp_small_y(y)
     elif y > -0.14541345786885906: # log1p(-exp(-2))
-        return -ndtri(-expm1(y))
+        return -cephes_ndtri_wrap(-expm1(y))
     else:
-        return ndtri(exp(y))
+        return cephes_ndtri_wrap(exp(y))

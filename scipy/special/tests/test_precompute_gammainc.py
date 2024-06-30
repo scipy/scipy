@@ -1,4 +1,3 @@
-import numpy as np  # np is actually used, in the decorators below.
 import pytest
 
 from scipy.special._testutils import MissingModule, check_version
@@ -9,7 +8,7 @@ from scipy.special._precompute.gammainc_asy import (
 from scipy.special._precompute.gammainc_data import gammainc, gammaincc
 
 try:
-    import sympy  # type: ignore[import]
+    import sympy
 except ImportError:
     sympy = MissingModule('sympy')
 
@@ -77,7 +76,7 @@ def test_d():
                    (9, 12, mp.mpf('0.870823417786464116761231237189e-6'))]
         d = compute_d(10, 13)
         res = [d[k][n] for k, n, std in dataset]
-        std = map(lambda x: x[2], dataset)
+        std = [x[2] for x in dataset]
         mp_assert_allclose(res, std)
 
 

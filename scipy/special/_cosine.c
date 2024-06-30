@@ -14,14 +14,17 @@
  *  The ufuncs are used by the class scipy.stats.cosine_gen.
  */
 
-#include <stdio.h>
+#include "special_wrappers.h"
 #include <math.h>
 
-#include "cephes/polevl.h"
-
-#if !defined(M_PI)
-#define M_PI 0x1.921fb54442d18p+1
-#endif
+// M_PI64 is the 64 bit floating point representation of π, e.g.
+//   >>> math.pi.hex()
+//   '0x1.921fb54442d18p+1'
+// It is used in the function cosine_cdf_pade_approx_at_neg_pi,
+// which depends on this value being the 64 bit representation.
+// Do not replace this with M_PI from math.h or NPY_PI from the
+// numpy header files.
+#define M_PI64 0x1.921fb54442d18p+1
 
 //
 // p and q (below) are the coefficients in the numerator and denominator
@@ -92,15 +95,15 @@ double cosine_cdf_pade_approx_at_neg_pi(double x)
                              0.020281047093125535,
                              1.0};
 
-    // M_PI is not exactly π.  In fact, float64(π - M_PI) is
+    // M_PI64 is not exactly π.  In fact, float64(π - M_PI64) is
     // 1.2246467991473532e-16.  h is supposed to be x + π, so to compute
     // h accurately, we write the calculation as:
-    h = (x + M_PI) + 1.2246467991473532e-16;
+    h = (x + M_PI64) + 1.2246467991473532e-16;
     h2 = h*h;
     h3 = h2*h;
-    numer = h3*polevl(h2, numer_coeffs,
+    numer = h3*cephes_polevl_wrap(h2, numer_coeffs,
                       sizeof(numer_coeffs)/sizeof(numer_coeffs[0]) - 1);
-    denom = polevl(h2, denom_coeffs,
+    denom = cephes_polevl_wrap(h2, denom_coeffs,
                    sizeof(denom_coeffs)/sizeof(denom_coeffs[0]) - 1);
     return numer / denom;
 }
@@ -111,16 +114,16 @@ double cosine_cdf_pade_approx_at_neg_pi(double x)
 //
 double cosine_cdf(double x)
 {
-    if (x >= M_PI) {
+    if (x >= M_PI64) {
         return 1;
     }
-    if (x < -M_PI) {
+    if (x < -M_PI64) {
         return 0;
     }
     if (x < -1.6) {
         return cosine_cdf_pade_approx_at_neg_pi(x);
     }
-    return 0.5 + (x + sin(x))/(2*M_PI);
+    return 0.5 + (x + sin(x))/(2*M_PI64);
 }
 
 
@@ -175,7 +178,7 @@ double _p2(double t)
                        0.5};
     double v;
 
-    v = polevl(t, coeffs, sizeof(coeffs) / sizeof(coeffs[0]) - 1);
+    v = cephes_polevl_wrap(t, coeffs, sizeof(coeffs) / sizeof(coeffs[0]) - 1);
     return v;
 }
 
@@ -190,7 +193,7 @@ double _q2(double t)
                        1.0};
     double v;
 
-    v = polevl(t, coeffs, sizeof(coeffs) / sizeof(coeffs[0]) - 1);
+    v = cephes_polevl_wrap(t, coeffs, sizeof(coeffs) / sizeof(coeffs[0]) - 1);
     return v;
 }
 
@@ -222,7 +225,7 @@ double _poly_approx(double s)
     // Here we include terms up to s**13.
     //
     s2 = s*s;
-    p = s*polevl(s2, coeffs, sizeof(coeffs)/sizeof(coeffs[0]) - 1);
+    p = s*cephes_polevl_wrap(s2, coeffs, sizeof(coeffs)/sizeof(coeffs[0]) - 1);
     return p;
 }
 
@@ -239,10 +242,10 @@ double cosine_invcdf(double p)
         return NAN;
     }
     if (p <= 1e-48) {
-        return -M_PI;
+        return -M_PI64;
     }
     if (p == 1) {
-        return M_PI;
+        return M_PI64;
     }
 
     if (p > 0.5) {
@@ -251,16 +254,16 @@ double cosine_invcdf(double p)
     }
 
     if (p < 0.0925) {
-        x = _poly_approx(cbrt(12*M_PI*p)) - M_PI;
+        x = _poly_approx(cbrt(12*M_PI64*p)) - M_PI64;
     }
     else {
         double y, y2;
-        y = M_PI*(2*p - 1);
+        y = M_PI64*(2*p - 1);
         y2 = y*y;
         x = y * _p2(y2) / _q2(y2);
     }
 
-    // For p < 0.0018, the asymptotic expansion at p=0 is sufficently
+    // For p < 0.0018, the asymptotic expansion at p=0 is sufficiently
     // accurate that no more work is needed.  Similarly, for p > 0.42,
     // the Pade approximant is sufficiently accurate.  In between these
     // bounds, we refine the estimate with Halley's method.
@@ -271,7 +274,7 @@ double cosine_invcdf(double p)
         //    f''(x) = -sin(x)
         // where y = 2*pi*p.
         double f0, f1, f2;
-        f0 = M_PI + x + sin(x) - 2*M_PI*p;
+        f0 = M_PI64 + x + sin(x) - 2*M_PI64*p;
         f1 = 1 + cos(x);
         f2 = -sin(x);
         x = x - 2*f0*f1/(2*f1*f1 - f0*f2);

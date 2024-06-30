@@ -5,7 +5,7 @@ import numpy as np
 from numpy.testing import (assert_, assert_array_almost_equal,
                            assert_almost_equal)
 from numpy import linspace, sin, cos, random, exp, allclose
-from scipy.interpolate.rbf import Rbf
+from scipy.interpolate._rbf import Rbf
 
 FUNCTIONS = ('multiquadric', 'inverse multiquadric', 'gaussian',
              'cubic', 'quintic', 'thin-plate', 'linear')
@@ -186,7 +186,8 @@ def test_function_is_callable():
     # Check that the Rbf class can be constructed with function=callable.
     x = linspace(0,10,9)
     y = sin(x)
-    linfunc = lambda x:x
+    def linfunc(x):
+        return x
     rbf = Rbf(x, y, function=linfunc)
     yi = rbf(x)
     assert_array_almost_equal(y, yi)

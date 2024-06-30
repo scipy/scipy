@@ -1,5 +1,5 @@
-      subroutine dqc25f(f,a,b,omega,integr,nrmom,maxp1,ksave,result,
-     *   abserr,neval,resabs,resasc,momcom,chebmo)
+      recursive subroutine dqc25f(f,a,b,omega,integr,nrmom,maxp1,
+     *   ksave,result,abserr,neval,resabs,resasc,momcom,chebmo)
 c***begin prologue  dqc25f
 c***date written   810101   (yymmdd)
 c***revision date  830518   (yymmdd)
@@ -339,7 +339,7 @@ c
       do 150 j = 1,12
         resc24 = resc24+cheb24(k)*chebmo(m,k)
         ress24 = ress24+cheb24(k+1)*chebmo(m,k+1)
-        resabs = dabs(cheb24(k))+dabs(cheb24(k+1))
+        resabs = resabs+dabs(cheb24(k))+dabs(cheb24(k+1))
         k = k-2
   150 continue
       estc = dabs(resc24-resc12)
