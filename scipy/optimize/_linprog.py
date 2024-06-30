@@ -197,15 +197,15 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
 
     Alternatively, that's:
 
-        - minimize ::
+    - minimize ::
 
-            c @ x
+        c @ x
 
-        - such that ::
+    - such that ::
 
-            A_ub @ x <= b_ub
-            A_eq @ x == b_eq
-            lb <= x <= ub
+        A_ub @ x <= b_ub
+        A_eq @ x == b_eq
+        lb <= x <= ub
 
     Note that by default ``lb = 0`` and ``ub = None``. Other bounds can be
     specified with ``bounds``.

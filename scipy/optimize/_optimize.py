@@ -702,9 +702,9 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
     bounds : sequence or `Bounds`, optional
         Bounds on variables. There are two ways to specify the bounds:
 
-            1. Instance of `Bounds` class.
-            2. Sequence of ``(min, max)`` pairs for each element in `x`. None
-               is used to specify no bound.
+        1. Instance of `Bounds` class.
+        2. Sequence of ``(min, max)`` pairs for each element in `x`. None
+           is used to specify no bound.
 
         Note that this just clips all vertices in simplex based on
         the bounds.
@@ -2150,13 +2150,16 @@ def fminbound(func, x1, x2, args=(), xtol=1e-5, maxfun=500,
         Maximum number of function evaluations allowed.
     full_output : bool, optional
         If True, return optional outputs.
-    disp : int, optional
+    disp: int, optional
         If non-zero, print messages.
-            0 : no message printing.
-            1 : non-convergence notification messages only.
-            2 : print a message on convergence too.
-            3 : print iteration results.
 
+        ``0`` : no message printing.
+
+        ``1`` : non-convergence notification messages only.
+
+        ``2`` : print a message on convergence too.
+
+        ``3`` : print iteration results.
 
     Returns
     -------
@@ -2233,10 +2236,15 @@ def _minimize_scalar_bounded(func, bounds, args=(),
         Maximum number of iterations to perform.
     disp: int, optional
         If non-zero, print messages.
-            0 : no message printing.
-            1 : non-convergence notification messages only.
-            2 : print a message on convergence too.
-            3 : print iteration results.
+
+        ``0`` : no message printing.
+
+        ``1`` : non-convergence notification messages only.
+
+        ``2`` : print a message on convergence too.
+
+        ``3`` : print iteration results.
+
     xatol : float
         Absolute error in solution `xopt` acceptable for convergence.
 
@@ -2639,12 +2647,17 @@ def _minimize_scalar_brent(func, brack=None, args=(), xtol=1.48e-8,
         Maximum number of iterations to perform.
     xtol : float
         Relative error in solution `xopt` acceptable for convergence.
-    disp: int, optional
+    disp : int, optional
         If non-zero, print messages.
-            0 : no message printing.
-            1 : non-convergence notification messages only.
-            2 : print a message on convergence too.
-            3 : print iteration results.
+
+        ``0`` : no message printing.
+
+        ``1`` : non-convergence notification messages only.
+
+        ``2`` : print a message on convergence too.
+
+        ``3`` : print iteration results.
+
     Notes
     -----
     Uses inverse parabolic interpolation when possible to speed up
@@ -2770,10 +2783,14 @@ def _minimize_scalar_golden(func, brack=None, args=(),
         Maximum number of iterations to perform.
     disp: int, optional
         If non-zero, print messages.
-            0 : no message printing.
-            1 : non-convergence notification messages only.
-            2 : print a message on convergence too.
-            3 : print iteration results.
+
+        ``0`` : no message printing.
+
+        ``1`` : non-convergence notification messages only.
+
+        ``2`` : print a message on convergence too.
+
+        ``3`` : print iteration results.
     """
     _check_unknown_options(unknown_options)
     tol = xtol
@@ -3344,9 +3361,9 @@ def _minimize_powell(func, x0, args=(), callback=None, bounds=None,
     Parameters
     ----------
     fun : callable
-        The objective function to be minimized.
+        The objective function to be minimized::
 
-            ``fun(x, *args) -> float``
+            fun(x, *args) -> float
 
         where ``x`` is a 1-D array with shape (n,) and ``args``
         is a tuple of the fixed parameters needed to completely
@@ -3363,9 +3380,9 @@ def _minimize_powell(func, x0, args=(), callback=None, bounds=None,
     bounds : sequence or `Bounds`, optional
         Bounds on decision variables. There are two ways to specify the bounds:
 
-            1. Instance of `Bounds` class.
-            2. Sequence of ``(min, max)`` pairs for each element in `x`. None
-               is used to specify no bound.
+        1. Instance of `Bounds` class.
+        2. Sequence of ``(min, max)`` pairs for each element in `x`. None
+           is used to specify no bound.
 
         If bounds are not provided, then an unbounded line search will be used.
         If bounds are provided and the initial guess is within the bounds, then
@@ -3382,17 +3399,17 @@ def _minimize_powell(func, x0, args=(), callback=None, bounds=None,
         A dictionary of solver options. All methods accept the following
         generic options:
 
-            maxiter : int
-                Maximum number of iterations to perform. Depending on the
-                method each iteration may use several function evaluations.
-            disp : bool
-                Set to True to print convergence messages.
+        maxiter : int
+            Maximum number of iterations to perform. Depending on the
+            method each iteration may use several function evaluations.
+        disp : bool
+            Set to True to print convergence messages.
 
         See method-specific options for ``method='powell'`` below.
     callback : callable, optional
-        Called after each iteration. The signature is:
+        Called after each iteration. The signature is::
 
-            ``callback(xk)``
+            callback(xk)
 
         where ``xk`` is the current parameter vector.
 

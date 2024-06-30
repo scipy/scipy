@@ -58,13 +58,12 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
         Lower and upper bounds on parameters. Defaults to no bounds.
         There are two ways to specify the bounds:
 
-            - Instance of `Bounds` class.
-
-            - 2-tuple of array_like: Each element of the tuple must be either
-              an array with the length equal to the number of parameters, or a
-              scalar (in which case the bound is taken to be the same for all
-              parameters). Use ``np.inf`` with an appropriate sign to disable
-              bounds on all or some parameters.
+        - Instance of `Bounds` class.
+        - 2-tuple of array_like: Each element of the tuple must be either
+          an array with the length equal to the number of parameters, or a
+          scalar (in which case the bound is taken to be the same for all
+          parameters). Use ``np.inf`` with an appropriate sign to disable
+          bounds on all or some parameters.
 
     method : 'trf' or 'bvls', optional
         Method to perform minimization.

@@ -433,7 +433,6 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
         Stop the run if the global minimum candidate remains the same for this
         number of iterations.
     seed : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
-
         If `seed` is None (or `np.random`), the `numpy.random.RandomState`
         singleton is used.
         If `seed` is an int, a new ``RandomState`` instance is used,

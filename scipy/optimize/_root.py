@@ -416,14 +416,12 @@ def _root_broyden1_doc():
 
             Methods available:
 
-            ``restart`` : Drop all matrix columns. Has no extra parameters.
-
-            ``simple`` : Drop oldest matrix column. Has no extra parameters.
-
-            ``svd`` : Keep only the most significant SVD components. The number
-                      of SVD components to retain when rank reduction is done may
-                      also be specified as the second element in the tuple.
-                      Default is ``max_rank - 2``.
+            - ``restart``: drop all matrix columns. Has no extra parameters.
+            - ``simple``: drop oldest matrix column. Has no extra parameters.
+            - ``svd``: keep only the most significant SVD components.
+              Takes an extra parameter, ``to_retain``, which determines the
+              number of SVD components to retain when rank reduction is done.
+              Default is ``max_rank - 2``.
 
         max_rank : int, optional
             Maximum rank for the Broyden matrix.
@@ -488,14 +486,12 @@ def _root_broyden2_doc():
 
             Methods available:
 
-            ``restart`` : Drop all matrix columns. Has no extra parameters.
-
-            ``simple`` : Drop oldest matrix column. Has no extra parameters.
-
-            ``svd`` : Keep only the most significant SVD components. The number
-                      of SVD components to retain when rank reduction is done may
-                      also be specified as the second element in the tuple.
-                      Default is ``max_rank - 2``.
+            - ``restart``: drop all matrix columns. Has no extra parameters.
+            - ``simple``: drop oldest matrix column. Has no extra parameters.
+            - ``svd``: keep only the most significant SVD components.
+              Takes an extra parameter, ``to_retain``, which determines the
+              number of SVD components to retain when rank reduction is done.
+              Default is ``max_rank - 2``.
 
         max_rank : int, optional
             Maximum rank for the Broyden matrix.

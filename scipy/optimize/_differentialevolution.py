@@ -47,10 +47,10 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     bounds : sequence or `Bounds`
         Bounds for variables. There are two ways to specify the bounds:
 
-            1. Instance of `Bounds` class.
-            2. ``(min, max)`` pairs for each element in ``x``, defining the
-               finite lower and upper bounds for the optimizing argument of
-               `func`.
+        1. Instance of `Bounds` class.
+        2. ``(min, max)`` pairs for each element in ``x``, defining the
+           finite lower and upper bounds for the optimizing argument of
+           `func`.
 
         The total number of bounds is used to determine the number of
         parameters, N. If there are parameters whose bounds are equal the total
@@ -135,9 +135,9 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     disp : bool, optional
         Prints the evaluated `func` at every iteration.
     callback : callable, optional
-        A callable called after each iteration. Has the signature:
+        A callable called after each iteration. Has the signature::
 
-            ``callback(intermediate_result: OptimizeResult)``
+            callback(intermediate_result: OptimizeResult)
 
         where ``intermediate_result`` is a keyword parameter containing an
         `OptimizeResult` with attributes ``x`` and ``fun``, the best solution
@@ -145,9 +145,9 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         of the parameter must be ``intermediate_result`` for the callback
         to be passed an `OptimizeResult`.
 
-        The callback also supports a signature like:
+        The callback also supports a signature like::
 
-            ``callback(x, convergence: float=val)``
+            callback(x, convergence: float=val)
 
         ``val`` represents the fractional value of the population convergence.
         When ``val`` is greater than ``1.0``, the function halts.

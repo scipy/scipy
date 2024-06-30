@@ -60,8 +60,7 @@ def quadratic_assignment(A, B, method="faq", options=None):
             ``partial_match[i, 1]`` of `B`. The array has shape ``(m, 2)``,
             where ``m`` is not greater than the number of nodes, :math:`n`.
 
-        rng : {None, int, `numpy.random.Generator`,
-               `numpy.random.RandomState`}, optional
+        rng : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}
 
             If `seed` is None (or `np.random`), the `numpy.random.RandomState`
             singleton is used.
@@ -286,8 +285,7 @@ def _quadratic_assignment_faq(A, B,
         ``partial_match[i, 1]`` of `B`. The array has shape ``(m, 2)``, where
         ``m`` is not greater than the number of nodes, :math:`n`.
 
-    rng : {None, int, `numpy.random.Generator`,
-           `numpy.random.RandomState`}, optional
+    rng : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
 
         If `seed` is None (or `np.random`), the `numpy.random.RandomState`
         singleton is used.
@@ -582,8 +580,7 @@ def _quadratic_assignment_2opt(A, B, maximize=False, rng=None,
     -------
     maximize : bool (default: False)
         Maximizes the objective function if ``True``.
-    rng : {None, int, `numpy.random.Generator`,
-           `numpy.random.RandomState`}, optional
+    rng : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
 
         If `seed` is None (or `np.random`), the `numpy.random.RandomState`
         singleton is used.
@@ -612,7 +609,7 @@ def _quadratic_assignment_2opt(A, B, maximize=False, rng=None,
         ``partial_guess[i, 1]`` of `B`. The array has shape ``(m, 2)``,
         where ``m`` is not greater than the number of nodes, :math:`n`.
 
-        .. note:: 
+        .. note::
                 `partial_guess` must be sorted by the first column.
 
     Returns

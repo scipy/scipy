@@ -191,7 +191,6 @@ def shgo(
             minimization routine.
 
         infty_constraints : bool
-
             If True then any sampling points generated which are outside will
             the feasible domain will be saved and given an objective function
             value of ``inf``. If False then these points will be discarded.

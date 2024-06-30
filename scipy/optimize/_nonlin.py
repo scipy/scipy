@@ -820,10 +820,10 @@ _doc_parts['broyden_params'] = """
 
 
 class BroydenFirst(GenericBroyden):
-    r"""
+    """
     Find a root of a function, using Broyden's first Jacobian approximation.
 
-    This method is also known as \"Broyden's good method\".
+    This method is also known as "Broyden's good method".
 
     Parameters
     ----------
@@ -840,21 +840,20 @@ class BroydenFirst(GenericBroyden):
     -----
     This algorithm implements the inverse Jacobian Quasi-Newton update
 
-    .. math:: H_+ = H + (dx - H df) dx^\dagger H / ( dx^\dagger H df)
+    .. math:: H_+ = H + (dx - H df) dx^\\dagger H / ( dx^\\dagger H df)
 
     which corresponds to Broyden's first Jacobian update
 
-    .. math:: J_+ = J + (df - J dx) dx^\dagger / dx^\dagger dx
+    .. math:: J_+ = J + (df - J dx) dx^\\dagger / dx^\\dagger dx
 
 
     References
     ----------
     .. [1] B.A. van der Rotten, PhD thesis,
-       \"A limited memory Broyden method to solve high-dimensional
-       systems of nonlinear equations\". Mathematisch Instituut,
+       "A limited memory Broyden method to solve high-dimensional
+       systems of nonlinear equations". Mathematisch Instituut,
        Universiteit Leiden, The Netherlands (2003).
-
-       https://web.archive.org/web/20161022015821/http://www.math.leidenuniv.nl/scripties/Rotten.pdf
+       https://math.leidenuniv.nl/scripties/Rotten.pdf
 
     Examples
     --------
@@ -1331,7 +1330,7 @@ class ExcitingMixing(GenericBroyden):
 #------------------------------------------------------------------------------
 
 class KrylovJacobian(Jacobian):
-    r"""
+    """
     Find a root of a function, using Krylov approximation for inverse Jacobian.
 
     This method is suitable for solving large-scale problems.
@@ -1390,7 +1389,7 @@ class KrylovJacobian(Jacobian):
     method. These methods require only evaluating the Jacobian-vector
     products, which are conveniently approximated by a finite difference:
 
-    .. math:: J v \approx (f(x + \omega*v/|v|) - f(x)) / \omega
+    .. math:: J v \\approx (f(x + \\omega*v/|v|) - f(x)) / \\omega
 
     Due to the use of iterative matrix inverses, these methods can
     deal with large nonlinear problems.

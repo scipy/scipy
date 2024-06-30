@@ -744,28 +744,20 @@ def brentq(f, a, b, args=(),
         Object containing information about the convergence. In particular,
         ``r.converged`` is True if the routine converged.
 
+    See Also
+    --------
+    fmin, fmin_powell, fmin_cg, fmin_bfgs, fmin_ncg : multivariate local optimizers
+    leastsq : nonlinear least squares minimizer
+    fmin_l_bfgs_b, fmin_tnc, fmin_cobyla : constrained multivariate optimizers
+    basinhopping, differential_evolution, brute : global optimizers
+    fminbound, brent, golden, bracket : local scalar minimizers
+    fsolve : N-D root-finding
+    brenth, ridder, bisect, newton : 1-D root-finding
+    fixed_point : scalar fixed-point finder
+
     Notes
     -----
     `f` must be continuous.  f(a) and f(b) must have opposite signs.
-
-    Related functions fall into several classes:
-
-    multivariate local optimizers
-      `fmin`, `fmin_powell`, `fmin_cg`, `fmin_bfgs`, `fmin_ncg`
-    nonlinear least squares minimizer
-      `leastsq`
-    constrained multivariate optimizers
-      `fmin_l_bfgs_b`, `fmin_tnc`, `fmin_cobyla`
-    global optimizers
-      `basinhopping`, `brute`, `differential_evolution`
-    local scalar minimizers
-      `fminbound`, `brent`, `golden`, `bracket`
-    N-D root-finding
-      `fsolve`
-    1-D root-finding
-      `brenth`, `ridder`, `bisect`, `newton`
-    scalar fixed-point finder
-      `fixed_point`
 
     References
     ----------
@@ -878,7 +870,7 @@ def brenth(f, a, b, args=(),
     basinhopping, differential_evolution, brute : global optimizers
     fminbound, brent, golden, bracket : local scalar minimizers
     fsolve : N-D root-finding
-    brentq, brenth, ridder, bisect, newton : 1-D root-finding
+    brentq, ridder, bisect, newton : 1-D root-finding
     fixed_point : scalar fixed-point finder
 
     References
