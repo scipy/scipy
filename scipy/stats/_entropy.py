@@ -320,7 +320,7 @@ def differential_entropy(
     xp = array_namespace(values)
     values = xp.asarray(values)
     values = xp_moveaxis_to_end(values, axis, xp=xp)
-    n = values.shape[-1]  # number of observations
+    n = values.shape[-1]  # type: ignore[union-attr]
 
     if window_length is None:
         window_length = math.floor(math.sqrt(n) + 0.5)

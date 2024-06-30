@@ -5,6 +5,7 @@ from pytest import raises as assert_raises
 import numpy as np
 
 from scipy import stats
+from scipy.stats import norm, expon  # type: ignore[attr-defined]
 from scipy.conftest import array_api_compatible
 from scipy._lib._array_api import (xp_assert_close, xp_assert_equal, xp_assert_less,
                                    is_jax, is_array_api_strict, array_namespace)
@@ -271,11 +272,11 @@ class TestDifferentialEntropy:
                             'ebrahimi': (0.151, 0.148)
                             }
 
-    rmse_std_cases = {stats.norm: norm_rmse_std_cases,
-                      stats.expon: expon_rmse_std_cases}
+    rmse_std_cases = {norm: norm_rmse_std_cases,
+                      expon: expon_rmse_std_cases}
 
     @pytest.mark.parametrize('method', ['vasicek', 'van es', 'ebrahimi', 'correa'])
-    @pytest.mark.parametrize('dist', [stats.norm, stats.expon])
+    @pytest.mark.parametrize('dist', [norm, expon])
     def test_rmse_std(self, method, dist, xp):
         # test that RMSE and standard deviation of estimators matches values
         # given in differential_entropy reference [6]. Incidentally, also
