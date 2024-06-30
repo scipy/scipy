@@ -42,7 +42,7 @@ from scipy.optimize import milp, LinearConstraint
 from scipy._lib._util import (check_random_state, _get_nan,
                               _rename_parameter, _contains_nan,
                               AxisError, _lazywhere)
-from scipy._lib._array_api import SCIPY_ARRAY_API, _asarray as xp_asarray
+from scipy._lib._array_api import _asarray as xp_asarray
 
 import scipy.special as special
 # Import unused here but needs to stay until end of deprecation periode
