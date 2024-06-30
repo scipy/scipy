@@ -3321,7 +3321,7 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
 
     if color_threshold is None or (isinstance(color_threshold, str) and
                                    color_threshold == 'default'):
-        color_threshold = max(Z[:, 2]) * 0.7
+        color_threshold = xp.max(Z[:, 2]) * 0.7
 
     R = {'icoord': icoord_list, 'dcoord': dcoord_list, 'ivl': ivl,
          'leaves': lvs, 'color_list': color_list}
@@ -3355,7 +3355,7 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
         above_threshold_color=above_threshold_color)
 
     if not no_plot:
-        mh = max(Z[:, 2])
+        mh = xp.max(Z[:, 2])
         _plot_dendrogram(icoord_list, dcoord_list, ivl, p, n, mh, orientation,
                          no_labels, color_list,
                          leaf_font_size=leaf_font_size,
