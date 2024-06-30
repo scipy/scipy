@@ -276,7 +276,7 @@ class TestDifferentialEntropy:
 
     @pytest.mark.parametrize('method', ['vasicek', 'van es', 'ebrahimi', 'correa'])
     @pytest.mark.parametrize('dist', [stats.norm, stats.expon])
-    def test_norm_rmse_std(self, method, dist, xp):
+    def test_rmse_std(self, method, dist, xp):
         # test that RMSE and standard deviation of estimators matches values
         # given in differential_entropy reference [6]. Incidentally, also
         # tests vectorization.
