@@ -1329,3 +1329,12 @@ def test_warning_suppressed(warning_type):
 def test_warning_filtered(warning_type):
     message = "`pytest.mark.filter`ed"
     warnings.warn(message, warning_type)
+
+
+@pytest.mark.parametrize("warning_type", warning_types)
+def test_warning_try_excepted(warning_type):
+    message = "`try-except`ed"
+    try:
+        warnings.warn(message, warning_type)
+    except warning_type:
+        pass
