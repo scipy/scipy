@@ -915,7 +915,7 @@ def seuclidean(u, v, V):
         Input array.
     V : (N,) array_like
         `V` is an 1-D array of component variances. It is usually computed
-        among a larger collection vectors.
+        among a larger collection of vectors.
 
     Returns
     -------
