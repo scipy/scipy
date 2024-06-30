@@ -1,11 +1,9 @@
-import sys
 import functools
 from scipy._lib._array_api import (
-    array_namespace, is_cupy, is_jax, scipy_namespace_for, SCIPY_ARRAY_API
+    is_cupy, is_jax, scipy_namespace_for, SCIPY_ARRAY_API
 )
 
-
-from ._ndimage_api import *
+from ._ndimage_api import *   # noqa: F403
 from . import _ndimage_api
 from . import _dispatchers
 __all__ = _ndimage_api.__all__

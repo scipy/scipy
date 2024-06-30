@@ -6,17 +6,17 @@ from scipy._lib._array_api import (
     xp_assert_equal, xp_assert_close,
     assert_array_almost_equal,
 )
-from scipy._lib._array_api import is_cupy, SCIPY_ARRAY_API
+from scipy._lib._array_api import is_cupy
 
 import pytest
 from pytest import raises as assert_raises
 import scipy.ndimage as ndimage
 
+from . import types
+
 from scipy.conftest import array_api_compatible
 pytestmark = [array_api_compatible, pytest.mark.usefixtures("skip_xp_backends")]
 skip_xp_backends = pytest.mark.skip_xp_backends
-
-from . import types
 
 eps = 1e-12
 

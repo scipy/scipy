@@ -8,7 +8,7 @@ from scipy._lib._array_api import (
     assert_array_almost_equal,
     assert_almost_equal,
 )
-from scipy._lib._array_api import is_cupy, SCIPY_ARRAY_API
+from scipy._lib._array_api import is_cupy
 
 import pytest
 from pytest import raises as assert_raises

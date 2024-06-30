@@ -2,7 +2,6 @@
 import functools
 import itertools
 import math
-import numpy as np
 
 from scipy._lib._array_api import (
     xp_assert_equal, xp_assert_close,
@@ -19,10 +18,6 @@ from scipy import ndimage
 from scipy.ndimage._filters import _gaussian_kernel1d
 
 from . import types, float_types, complex_types
-
-#from scipy._lib._array_api import (
-#    SCIPY_ARRAY_API, copy, cov, xp_assert_close, xp_assert_equal
-#)
 
 from scipy.conftest import array_api_compatible
 pytestmark = [array_api_compatible, pytest.mark.usefixtures("skip_xp_backends")]

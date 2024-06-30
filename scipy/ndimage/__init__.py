@@ -155,9 +155,7 @@ from ._support_alternative_backends import *
 # adjust __all__ and do not leak implementation details
 from . import _support_alternative_backends
 __all__ = _support_alternative_backends.__all__
-del _support_alternative_backends
-del _ndimage_api
-del _dispatchers
+del _support_alternative_backends, _ndimage_api, _dispatchers  # noqa: F821
 
 
 # Deprecated namespaces, to be removed in v2.0.0

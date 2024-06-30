@@ -6,10 +6,10 @@ The latter --- also private! --- module adds dispatch to CuPy etc and
 re-exports decorated names to __init__.py
 """
 
-from ._filters import *
-from ._fourier import *
-from ._interpolation import *
-from ._measurements import *
-from ._morphology import *
+from ._filters import *    # noqa: F403
+from ._fourier import *   # noqa: F403
+from ._interpolation import *   # noqa: F403
+from ._measurements import *   # noqa: F403
+from ._morphology import *   # noqa: F403
 
 __all__ = [s for s in dir() if not s.startswith('_')]
