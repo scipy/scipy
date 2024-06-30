@@ -309,13 +309,6 @@ def _validate_weights(w, dtype=np.float64):
     return w
 
 
-def _deprecate_complex(u):
-    if np.iscomplexobj(u):
-        message = ("Complex input is deprecated and will be rejected "
-                   "in a future version of SciPy.")
-        warnings.warn(message, DeprecationWarning, stacklevel=2)
-
-
 def directed_hausdorff(u, v, seed=0):
     """
     Compute the directed Hausdorff distance between two 2-D arrays.
@@ -596,11 +589,11 @@ def correlation(u, v, w=None, centered=True):
 
     Parameters
     ----------
-    u : (N,) array_like of float
+    u : (N,) array_like of floats
         Input array.
-    v : (N,) array_like of float
+    v : (N,) array_like of floats
         Input array.
-    w : (N,) array_like of float, optional
+    w : (N,) array_like of floats, optional
         The weights for each value in `u` and `v`. Default is None,
         which gives each value a weight of 1.0
     centered : bool, optional
@@ -631,8 +624,11 @@ def correlation(u, v, w=None, centered=True):
     """
     u = _validate_vector(u)
     v = _validate_vector(v)
-    _deprecate_complex(u)
-    _deprecate_complex(v)
+    if np.iscomplexobj(u) or np.iscomplexobj(v):
+        message = (
+            "Complex `u` and `v` are deprecated and will raise an error in "
+            "SciPy 1.17.0.")
+        warnings.warn(message, DeprecationWarning, stacklevel=1)
     if w is not None:
         w = _validate_weights(w)
         w = w / w.sum()
@@ -674,11 +670,11 @@ def cosine(u, v, w=None):
 
     Parameters
     ----------
-    u : (N,) array_like of float
+    u : (N,) array_like of floats
         Input array.
-    v : (N,) array_like of float
+    v : (N,) array_like of floats
         Input array.
-    w : (N,) array_like of float, optional
+    w : (N,) array_like of floats, optional
         The weights for each value in `u` and `v`. Default is None,
         which gives each value a weight of 1.0
 
