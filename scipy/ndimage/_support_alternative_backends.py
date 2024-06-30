@@ -1,7 +1,7 @@
 import sys
 import functools
 from scipy._lib._array_api import (
-    array_namespace, is_cupy, is_jax, scipy_namespace_for, SCIPY_ARRAY_API
+    is_cupy, is_jax, scipy_namespace_for, SCIPY_ARRAY_API
 )
 
 

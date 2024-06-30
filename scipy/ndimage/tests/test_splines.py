@@ -1,5 +1,4 @@
 """Tests for spline filtering."""
-import numpy as np
 import pytest
 
 from scipy._lib._array_api import assert_almost_equal

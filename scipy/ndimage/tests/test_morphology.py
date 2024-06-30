@@ -1,5 +1,5 @@
 import numpy as np
-from scipy._lib._array_api import is_cupy, SCIPY_ARRAY_API
+from scipy._lib._array_api import is_cupy
 from scipy._lib._array_api import (xp_assert_equal, assert_array_almost_equal)
 import pytest
 from pytest import raises as assert_raises
