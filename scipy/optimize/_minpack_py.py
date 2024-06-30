@@ -690,8 +690,8 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         * 'raise': throws an error
         * 'omit': performs the calculations ignoring nan values
         * None: no special handling of NaNs is performed
-        (except what is done by check_finite); the behavior when NaNs
-        are present is implementation-dependent and may change.
+          (except what is done by check_finite); the behavior when NaNs
+          are present is implementation-dependent and may change.
 
         Note that if this value is specified explicitly (not None),
         `check_finite` will be set as False.
@@ -712,7 +712,7 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         deviation errors on the parameters, use
         ``perr = np.sqrt(np.diag(pcov))``. Note that the relationship between
         `cov` and parameter error estimates is derived based on a linear
-        approximation to the model function around the optimum [1].
+        approximation to the model function around the optimum [1]_.
         When this approximation becomes inaccurate, `cov` may not provide an
         accurate measure of uncertainty.
 
@@ -803,9 +803,9 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
 
     References
     ----------
-    [1] K. Vugrin et al. Confidence region estimation techniques for nonlinear
-        regression in groundwater flow: Three case studies. Water Resources
-        Research, Vol. 43, W03423, :doi:`10.1029/2005WR004804`
+    .. [1] K. Vugrin et al. Confidence region estimation techniques for nonlinear
+           regression in groundwater flow: Three case studies. Water Resources
+           Research, Vol. 43, W03423, :doi:`10.1029/2005WR004804`
 
     Examples
     --------

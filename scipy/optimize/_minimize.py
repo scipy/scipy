@@ -118,7 +118,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     hess : {callable, '2-point', '3-point', 'cs', HessianUpdateStrategy}, optional
         Method for computing the Hessian matrix. Only for Newton-CG, dogleg,
         trust-ncg, trust-krylov, trust-exact and trust-constr.
-        If it is callable, it should return the Hessian matrix:
+        If it is callable, it should return the Hessian matrix::
 
             hess(x, *args) -> {LinearOperator, spmatrix, array}, (n, n)
 
@@ -140,7 +140,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         Newton-CG, trust-ncg, trust-krylov, trust-constr.
         Only one of `hessp` or `hess` needs to be given. If `hess` is
         provided, then `hessp` will be ignored. `hessp` must compute the
-        Hessian times an arbitrary vector:
+        Hessian times an arbitrary vector::
 
             hessp(x, p, *args) ->  ndarray shape (n,)
 
@@ -204,9 +204,9 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         A callable called after each iteration.
 
         All methods except TNC, SLSQP, and COBYLA support a callable with
-        the signature:
+        the signature::
 
-            ``callback(intermediate_result: OptimizeResult)``
+            callback(intermediate_result: OptimizeResult)
 
         where ``intermediate_result`` is a keyword parameter containing an
         `OptimizeResult` with attributes ``x`` and ``fun``, the present values
@@ -215,7 +215,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         to be passed an `OptimizeResult`. These methods will also terminate if
         the callback raises ``StopIteration``.
 
-        All methods except trust-constr (also) support a signature like:
+        All methods except trust-constr (also) support a signature like::
 
             callback(xk)
 
