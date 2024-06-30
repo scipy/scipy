@@ -13,6 +13,7 @@ import hypothesis
 from scipy._lib._fpumode import get_fpu_mode
 from scipy._lib._testutils import FPUModeChangeWarning
 from scipy._lib._array_api import SCIPY_ARRAY_API, SCIPY_DEVICE
+from scipy._lib import _pep440
 
 try:
     from scipy_doctest.conftest import dt_config
@@ -117,6 +118,11 @@ if SCIPY_ARRAY_API and isinstance(SCIPY_ARRAY_API, str):
     try:
         import array_api_strict
         xp_available_backends.update({'array_api_strict': array_api_strict})
+        if _pep440.parse(array_api_strict.__version__) < _pep440.Version('2.0'):
+            raise ImportError("array-api-strict must be >= version 2.0")
+        array_api_strict.set_array_api_strict_flags(
+            api_version='2023.12'
+        )
     except ImportError:
         pass
 

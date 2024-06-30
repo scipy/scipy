@@ -1079,11 +1079,12 @@ def moment(a, order=1, axis=0, nan_policy='propagate', *, center=None):
         calculate_mean = center is None and xp.any(order > 1)
         mean = xp.mean(a, axis=axis, keepdims=True) if calculate_mean else None
         mmnt = []
-        for i in order:
-            if center is None and i > 1:
-                mmnt.append(_moment(a, i, axis, mean=mean)[np.newaxis, ...])
+        for i in range(order.shape[0]):
+            order_i = order[i]
+            if center is None and order_i > 1:
+                mmnt.append(_moment(a, order_i, axis, mean=mean)[np.newaxis, ...])
             else:
-                mmnt.append(_moment(a, i, axis, mean=center)[np.newaxis, ...])
+                mmnt.append(_moment(a, order_i, axis, mean=center)[np.newaxis, ...])
         return xp.concat(mmnt, axis=0)
     else:
         return _moment(a, order, axis, mean=center)
@@ -4449,7 +4450,8 @@ def _pearsonr_fisher_ci(r, n, confidence_level, alternative):
         zr = xp.atanh(r)
 
     ones = xp.ones_like(r)
-    n, confidence_level = xp.asarray([n, confidence_level], dtype=r.dtype)
+    n = xp.asarray(n, dtype=r.dtype)
+    confidence_level = xp.asarray(confidence_level, dtype=r.dtype)
     if n > 3:
         se = xp.sqrt(1 / (n - 3))
         if alternative == "two-sided":
