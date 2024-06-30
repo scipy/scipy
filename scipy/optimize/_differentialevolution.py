@@ -110,7 +110,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         respectively.
     mutation : float or tuple(float, float), optional
         The mutation constant. In the literature this is also known as
-        differential weight, being denoted by F.
+        differential weight, being denoted by :math:`F`.
         If specified as a float it should be in the range [0, 2].
         If specified as a tuple ``(min, max)`` dithering is employed. Dithering
         randomly changes the mutation constant on a generation by generation
@@ -178,7 +178,8 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         - array specifying the initial population. The array should have
           shape ``(S, N)``, where S is the total population size and N is
           the number of parameters.
-          `init` is clipped to `bounds` before use.
+
+        `init` is clipped to `bounds` before use.
 
         The default is 'latinhypercube'. Latin Hypercube sampling tries to
         maximize coverage of the available parameter space.
@@ -302,8 +303,9 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
 
     .. math::
 
-        b' = x_0 + mutation * (x_{r_0} - x_{r_1})
+        b' = x_0 + F * (x_{r_0} - x_{r_1})
 
+    where :math:`F` is the `mutation` parameter.
     A trial vector is then constructed. Starting with a randomly chosen ith
     parameter the trial is sequentially filled (in modulo) with parameters
     from ``b'`` or the original candidate. The choice of whether to use ``b'``
@@ -319,22 +321,13 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     The other strategies available are outlined in Qiang and
     Mitchell (2014) [3]_.
 
-    .. math::
-            rand1* : b' = x_{r_0} + mutation*(x_{r_1} - x_{r_2})
 
-            rand2* : b' = x_{r_0} + mutation*(x_{r_1} + x_{r_2}
-                                                - x_{r_3} - x_{r_4})
-
-            best1* : b' = x_0 + mutation*(x_{r_0} - x_{r_1})
-
-            best2* : b' = x_0 + mutation*(x_{r_0} + x_{r_1}
-                                            - x_{r_2} - x_{r_3})
-
-            currenttobest1* : b' = x_i + mutation*(x_0 - x_i
-                                                     + x_{r_0} - x_{r_1})
-
-            randtobest1* : b' = x_{r_0} + mutation*(x_0 - x_{r_0}
-                                                      + x_{r_1} - x_{r_2})
+    - ``rand1`` : :math:`b' = x_{r_0} + F \cdot (x_{r_1} - x_{r_2})`
+    - ``rand2`` : :math:`b' = x_{r_0} + F \cdot (x_{r_1} + x_{r_2} - x_{r_3} - x_{r_4})`
+    - ``best1`` : :math:`b' = x_0 + F \cdot (x_{r_0} - x_{r_1})`
+    - ``best2`` : :math:`b' = x_0 + F \cdot (x_{r_0} + x_{r_1} - x_{r_2} - x_{r_3})`
+    - ``currenttobest1`` : :math:`b' = x_i + F \cdot (x_0 - x_i + x_{r_0} - x_{r_1})`
+    - ``randtobest1`` : :math:`b' = x_{r_0} + F \cdot (x_0 - x_{r_0} + x_{r_1} - x_{r_2})`
 
     where the integers :math:`r_0, r_1, r_2, r_3, r_4` are chosen randomly
     from the interval [0, NP) with `NP` being the total population size and
