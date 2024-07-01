@@ -303,7 +303,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
 
     .. math::
 
-        b' = x_0 + F * (x_{r_0} - x_{r_1})
+        b' = x_0 + F \cdot (x_{r_0} - x_{r_1})
 
     where :math:`F` is the `mutation` parameter.
     A trial vector is then constructed. Starting with a randomly chosen ith

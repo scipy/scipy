@@ -237,13 +237,14 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         i.e. all variables are allowed to be any real.
     method : str, optional
         The algorithm used to solve the standard form problem.
+        The following are supported.
 
-        - :ref:`'highs' <optimize.linprog-highs>` (default),
-        - :ref:`'highs-ds' <optimize.linprog-highs-ds>`,
-        - :ref:`'highs-ipm' <optimize.linprog-highs-ipm>`,
-        - :ref:`'interior-point' <optimize.linprog-interior-point>` (legacy),
-        - :ref:`'revised simplex' <optimize.linprog-revised_simplex>` (legacy),
-        - :ref:`'simplex' <optimize.linprog-simplex>` (legacy) are supported.
+        - :ref:`'highs' <optimize.linprog-highs>` (default)
+        - :ref:`'highs-ds' <optimize.linprog-highs-ds>`
+        - :ref:`'highs-ipm' <optimize.linprog-highs-ipm>`
+        - :ref:`'interior-point' <optimize.linprog-interior-point>` (legacy)
+        - :ref:`'revised simplex' <optimize.linprog-revised_simplex>` (legacy)
+        - :ref:`'simplex' <optimize.linprog-simplex>` (legacy)
 
         The legacy methods are deprecated and will be removed in SciPy 1.11.0.
     callback : callable, optional
@@ -368,10 +369,10 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
 
         For mixed integrality constraints, supply an array of shape ``c.shape``.
         To infer a constraint on each decision variable from shorter inputs,
-        the argument will be broadcasted to ``c.shape`` using ``numpy.broadcast_to`.
+        the argument will be broadcasted to ``c.shape`` using `numpy.broadcast_to`.
 
-        This argument is currently used only by the ``'highs'`` method and
-        ignored otherwise.
+        This argument is currently used only by the
+        :ref:`'highs' <optimize.linprog-highs>` method and is ignored otherwise.
 
     Returns
     -------
@@ -422,7 +423,7 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     This section describes the available solvers that can be selected by the
     'method' parameter.
 
-    `:ref:`'highs-ds' <optimize.linprog-highs-ds>`, and
+    :ref:`'highs-ds' <optimize.linprog-highs-ds>`, and
     :ref:`'highs-ipm' <optimize.linprog-highs-ipm>` are interfaces to the
     HiGHS simplex and interior-point method solvers [13]_, respectively.
     :ref:`'highs' <optimize.linprog-highs>` (default) chooses between
@@ -437,7 +438,8 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     Method :ref:`'highs-ipm' <optimize.linprog-highs-ipm>` is a wrapper of a C++
     implementation of an **i**\ nterior-\ **p**\ oint **m**\ ethod [13]_; it
     features a crossover routine, so it is as accurate as a simplex solver.
-    Method :ref:`'highs' <optimize.linprog-highs>` chooses between the two automatically.
+    Method :ref:`'highs' <optimize.linprog-highs>` chooses between the two
+    automatically.
     For new code involving `linprog`, we recommend explicitly choosing one of
     these three method values.
 

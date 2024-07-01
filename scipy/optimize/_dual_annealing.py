@@ -529,7 +529,7 @@ def dual_annealing(func, bounds, args=(), maxiter=1000,
         latest minimum found, and ``context`` has one of the following
         values:
 
-        - ``0````: minimum detected in the annealing process.
+        - ``0``: minimum detected in the annealing process.
         - ``1``: detection occurred in the local search process.
         - ``2``: detection done in the dual annealing process.
 
