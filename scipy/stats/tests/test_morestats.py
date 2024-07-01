@@ -2967,16 +2967,18 @@ class TestDirectionalStats:
         # Data from Fisher: Dispersion on a sphere, 1953 and
         # Mardia and Jupp, Directional Statistics.
         # angles were converted to radians
-        decl = xp.asarray([-5.98996999, -1.08210414, -0.64402649, -0.4712389,
-                           -6.26573201, -0.09948377, -0.87964594, -6.24129741,
-                           -0.76794487])
-        incl = xp.asarray([-1.15366264, -1.1990412 , -1.22347581, -1.43291532,
-                           -1.38753676, -1.27409035, -1.20951317, -1.0262536,
-                           -0.89709924])
-        data = xp.stack((xp.cos(incl) * xp.cos(decl),
-                         xp.cos(incl) * xp.sin(decl),
-                         xp.sin(incl)),
+        decl = -np.deg2rad(np.array([343.2, 62., 36.9, 27., 359.,
+                                     5.7, 50.4, 357.6, 44.]))
+        incl = -np.deg2rad(np.array([66.1, 68.7, 70.1, 82.1, 79.5,
+                                     73., 69.3, 58.8, 51.4]))
+        data = np.stack((np.cos(incl) * np.cos(decl),
+                         np.cos(incl) * np.sin(decl),
+                         np.sin(incl)),
                         axis=1)
+        
+        decl = xp.asarray(decl)
+        incl = xp.asarray(incl)
+        data = xp.asarray(data)
 
         dirstats = stats.directional_stats(data)
         directional_mean = dirstats.mean_direction
