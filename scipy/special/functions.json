@@ -1123,6 +1123,12 @@
             "nct_cdf_double": "ddd->d"
         }
     },
+    "_nct_pdf": {
+        "boost_special_functions.h++": {
+            "nct_pdf_float": "fff->f",
+            "nct_pdf_double": "ddd->d"
+        }
+    },
     "_nct_ppf": {
         "boost_special_functions.h++": {
             "nct_ppf_float": "fff->f",
