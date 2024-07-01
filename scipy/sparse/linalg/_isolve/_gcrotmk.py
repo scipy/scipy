@@ -205,14 +205,14 @@ def gcrotmk(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=1000, M=None, callback
         Maximum number of iterations.  Iteration will stop after maxiter
         steps even if the specified tolerance has not been achieved.
     M : {sparse matrix, ndarray, LinearOperator}, optional
-        Preconditioner for A.  The preconditioner should approximate the
-        inverse of A. gcrotmk is a 'flexible' algorithm and the preconditioner
+        Preconditioner for ``A``.  The preconditioner should approximate the
+        inverse of ``A``. gcrotmk is a 'flexible' algorithm and the preconditioner
         can vary from iteration to iteration. Effective preconditioning
         dramatically improves the rate of convergence, which implies that
         fewer iterations are needed to reach a given error tolerance.
     callback : function, optional
         User-supplied function to call after each iteration.  It is called
-        as callback(xk), where xk is the current solution vector.
+        as ``callback(xk)``, where xk is the current solution vector.
     m : int, optional
         Number of inner FGMRES iterations per each outer iteration.
         Default: 20
