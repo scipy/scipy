@@ -554,12 +554,11 @@ def xp_vector_norm(x: Array, /, *,
                    xp: ModuleType | None = None) -> Array:
     xp = array_namespace(x) if xp is None else xp
 
-	# check for optional `linalg` extension
+    # check for optional `linalg` extension
     if SCIPY_ARRAY_API and hasattr(xp, 'linalg'):
         return xp.linalg.vector_norm(x, axis=axis, keepdims=keepdims, ord=ord)
 
     else:
-        # note: we do not currently validate that `ord` is not `inf` or `-inf`
         if ord != 2:
             raise ValueError(
                 "only the Euclidean norm (`ord=2`) is currently supported in "

@@ -33,7 +33,6 @@ from scipy._lib._array_api import (
     xp_assert_close,
     xp_assert_equal,
     xp_assert_less,
-    xp_vector_norm,
 )
 
 
@@ -3061,16 +3060,16 @@ class TestDirectionalStats:
         # test that directional stats calculations yield same results
         # for unnormalized input with normalize=True and normalized
         # input with normalize=False
-        data = xp.asarray([[0.8660254, 0.5, 0.],
-                           [1.7320508, -1., 0.]])
-        res = stats.directional_stats(data, normalize=True)
-        # get `xp.linalg.vector_norm` for `xp_vector_norm`
-        xp_test = array_namespace(data)
-        data_norm = xp_vector_norm(data, axis=-1, keepdims=True, xp=xp_test)
-        normalized_data = data / data_norm
+        data = np.array([[0.8660254, 0.5, 0.],
+                         [1.7320508, -1., 0.]])
+        res = stats.directional_stats(xp.asarray(data), normalize=True)
+        normalized_data = data / np.linalg.norm(data, axis=-1,
+                                                keepdims=True)
         ref = stats.directional_stats(normalized_data, normalize=False)
-        xp_assert_close(res.mean_direction, ref.mean_direction)
-        xp_assert_close(res.mean_resultant_length, ref.mean_resultant_length)
+        xp_assert_close(res.mean_direction,
+                        xp.asarray(ref.mean_direction))
+        xp_assert_close(res.mean_resultant_length,
+                        xp.asarray(ref.mean_resultant_length))
 
 
 class TestFDRControl:
