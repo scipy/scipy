@@ -76,14 +76,14 @@ def root_scalar(f, args=(), method=None, bracket=None,
     method : str, optional
         Type of solver.  Should be one of
 
-            - 'bisect'    :ref:`(see here) <optimize.root_scalar-bisect>`
-            - 'brentq'    :ref:`(see here) <optimize.root_scalar-brentq>`
-            - 'brenth'    :ref:`(see here) <optimize.root_scalar-brenth>`
-            - 'ridder'    :ref:`(see here) <optimize.root_scalar-ridder>`
-            - 'toms748'    :ref:`(see here) <optimize.root_scalar-toms748>`
-            - 'newton'    :ref:`(see here) <optimize.root_scalar-newton>`
-            - 'secant'    :ref:`(see here) <optimize.root_scalar-secant>`
-            - 'halley'    :ref:`(see here) <optimize.root_scalar-halley>`
+        - 'bisect'    :ref:`(see here) <optimize.root_scalar-bisect>`
+        - 'brentq'    :ref:`(see here) <optimize.root_scalar-brentq>`
+        - 'brenth'    :ref:`(see here) <optimize.root_scalar-brenth>`
+        - 'ridder'    :ref:`(see here) <optimize.root_scalar-ridder>`
+        - 'toms748'    :ref:`(see here) <optimize.root_scalar-toms748>`
+        - 'newton'    :ref:`(see here) <optimize.root_scalar-newton>`
+        - 'secant'    :ref:`(see here) <optimize.root_scalar-secant>`
+        - 'halley'    :ref:`(see here) <optimize.root_scalar-halley>`
 
     bracket: A sequence of 2 floats, optional
         An interval bracketing a root.  ``f(x, *args)`` must have different

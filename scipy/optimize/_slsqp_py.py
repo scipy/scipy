@@ -159,19 +159,19 @@ def fmin_slsqp(func, x0, eqcons=(), f_eqcons=None, ieqcons=(), f_ieqcons=None,
 
     Notes
     -----
-    Exit modes are defined as follows ::
+    Exit modes are defined as follows:
 
-        -1 : Gradient evaluation required (g & a)
-         0 : Optimization terminated successfully
-         1 : Function evaluation required (f & c)
-         2 : More equality constraints than independent variables
-         3 : More than 3*n iterations in LSQ subproblem
-         4 : Inequality constraints incompatible
-         5 : Singular matrix E in LSQ subproblem
-         6 : Singular matrix C in LSQ subproblem
-         7 : Rank-deficient equality constraint subproblem HFTI
-         8 : Positive directional derivative for linesearch
-         9 : Iteration limit reached
+    - ``-1`` : Gradient evaluation required (g & a)
+    - ``0`` : Optimization terminated successfully
+    - ``1`` : Function evaluation required (f & c)
+    - ``2`` : More equality constraints than independent variables
+    - ``3`` : More than 3*n iterations in LSQ subproblem
+    - ``4`` : Inequality constraints incompatible
+    - ``5`` : Singular matrix E in LSQ subproblem
+    - ``6`` : Singular matrix C in LSQ subproblem
+    - ``7`` : Rank-deficient equality constraint subproblem HFTI
+    - ``8`` : Positive directional derivative for linesearch
+    - ``9`` : Iteration limit reached
 
     Examples
     --------

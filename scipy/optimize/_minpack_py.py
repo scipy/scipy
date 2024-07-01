@@ -620,15 +620,15 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         ``r = ydata - f(xdata, *popt)``, then the interpretation of `sigma`
         depends on its number of dimensions:
 
-            - A scalar or 1-D `sigma` should contain values of standard deviations of
-              errors in `ydata`. In this case, the optimized function is
-              ``chisq = sum((r / sigma) ** 2)``.
+        - A scalar or 1-D `sigma` should contain values of standard deviations of
+          errors in `ydata`. In this case, the optimized function is
+          ``chisq = sum((r / sigma) ** 2)``.
 
-            - A 2-D `sigma` should contain the covariance matrix of
-              errors in `ydata`. In this case, the optimized function is
-              ``chisq = r.T @ inv(sigma) @ r``.
+        - A 2-D `sigma` should contain the covariance matrix of
+          errors in `ydata`. In this case, the optimized function is
+          ``chisq = r.T @ inv(sigma) @ r``.
 
-              .. versionadded:: 0.19
+          .. versionadded:: 0.19
 
         None (default) is equivalent of 1-D `sigma` filled with ones.
     absolute_sigma : bool, optional
@@ -653,13 +653,13 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         Lower and upper bounds on parameters. Defaults to no bounds.
         There are two ways to specify the bounds:
 
-            - Instance of `Bounds` class.
+        - Instance of `Bounds` class.
 
-            - 2-tuple of array_like: Each element of the tuple must be either
-              an array with the length equal to the number of parameters, or a
-              scalar (in which case the bound is taken to be the same for all
-              parameters). Use ``np.inf`` with an appropriate sign to disable
-              bounds on all or some parameters.
+        - 2-tuple of array_like: Each element of the tuple must be either
+          an array with the length equal to the number of parameters, or a
+          scalar (in which case the bound is taken to be the same for all
+          parameters). Use ``np.inf`` with an appropriate sign to disable
+          bounds on all or some parameters.
 
     method : {'lm', 'trf', 'dogbox'}, optional
         Method to use for optimization. See `least_squares` for more details.
@@ -687,11 +687,11 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         Defines how to handle when input contains nan.
         The following options are available (default is None):
 
-          * 'raise': throws an error
-          * 'omit': performs the calculations ignoring nan values
-          * None: no special handling of NaNs is performed
-            (except what is done by check_finite); the behavior when NaNs
-            are present is implementation-dependent and may change.
+        * 'raise': throws an error
+        * 'omit': performs the calculations ignoring nan values
+        * None: no special handling of NaNs is performed
+          (except what is done by check_finite); the behavior when NaNs
+          are present is implementation-dependent and may change.
 
         Note that if this value is specified explicitly (not None),
         `check_finite` will be set as False.
@@ -712,7 +712,7 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         deviation errors on the parameters, use
         ``perr = np.sqrt(np.diag(pcov))``. Note that the relationship between
         `cov` and parameter error estimates is derived based on a linear
-        approximation to the model function around the optimum [1].
+        approximation to the model function around the optimum [1]_.
         When this approximation becomes inaccurate, `cov` may not provide an
         accurate measure of uncertainty.
 
@@ -803,9 +803,9 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
 
     References
     ----------
-    [1] K. Vugrin et al. Confidence region estimation techniques for nonlinear
-        regression in groundwater flow: Three case studies. Water Resources
-        Research, Vol. 43, W03423, :doi:`10.1029/2005WR004804`
+    .. [1] K. Vugrin et al. Confidence region estimation techniques for nonlinear
+           regression in groundwater flow: Three case studies. Water Resources
+           Research, Vol. 43, W03423, :doi:`10.1029/2005WR004804`
 
     Examples
     --------
