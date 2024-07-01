@@ -2982,7 +2982,7 @@ class TestDirectionalStats:
         directional_mean = dirstats.mean_direction
 
         reference_mean = xp.asarray([0.2984, -0.1346, -0.9449])
-        xp_assert_close(directional_mean, reference_mean, atol=1e-4, rtol=1e-4)
+        xp_assert_close(directional_mean, reference_mean, atol=1e-4)
 
     @pytest.mark.parametrize('angles, ref', [
         ([-np.pi/2, np.pi/2], 1.),
@@ -3006,8 +3006,9 @@ class TestDirectionalStats:
                                    axis=1)
         dirstats = stats.directional_stats(testdata_vector)
         directional_mean = dirstats.mean_direction
-        directional_mean_angle = np.arctan2(directional_mean[1],
-                                            directional_mean[0])
+        xp_test = array_namespace(directional_mean)  # np needs atan2
+        directional_mean_angle = xp_test.arctan2(directional_mean[1],
+                                                 directional_mean[0])
         directional_mean_angle = directional_mean_angle % (2 * xp.pi)
         circmean = stats.circmean(testdata)
         xp_assert_close(circmean, directional_mean_angle)
@@ -3060,7 +3061,7 @@ class TestDirectionalStats:
                                       normalize=False)
         xp_assert_close(res.mean_direction, ref.mean_direction)
         xp_assert_close(res.mean_resultant_length,
-                           ref.mean_resultant_length)
+                        ref.mean_resultant_length)
 
 
 class TestFDRControl:
