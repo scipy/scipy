@@ -2976,9 +2976,9 @@ class TestDirectionalStats:
                          np.sin(incl)),
                         axis=1)
         
-        decl = xp.asarray(decl)
-        incl = xp.asarray(incl)
-        data = xp.asarray(data)
+        decl = xp.asarray(decl.tolist())
+        incl = xp.asarray(incl.tolist())
+        data = xp.asarray(data.tolist())
 
         dirstats = stats.directional_stats(data)
         directional_mean = dirstats.mean_direction
