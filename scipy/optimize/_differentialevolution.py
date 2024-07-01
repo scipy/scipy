@@ -27,7 +27,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
                            init='latinhypercube', atol=0, updating='immediate',
                            workers=1, constraints=(), x0=None, *,
                            integrality=None, vectorized=False):
-    """Finds the global minimum of a multivariate function.
+    r"""Finds the global minimum of a multivariate function.
 
     The differential evolution method [1]_ is stochastic in nature. It does
     not use gradient methods to find the minimum, and can search large areas
