@@ -200,7 +200,7 @@ def gcrotmk(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=1000, M=None, callback
     rtol, atol : float, optional
         Parameters for the convergence test. For convergence,
         ``norm(b - A @ x) <= max(rtol*norm(b), atol)`` should be satisfied.
-        The default is ``rtol=1e-5``, the default for `atol` is ``0.0``.
+        The default is ``rtol=1e-5`` and ``atol=0.0``.
     maxiter : int, optional
         Maximum number of iterations.  Iteration will stop after maxiter
         steps even if the specified tolerance has not been achieved. The default is ``1000``.
