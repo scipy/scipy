@@ -574,34 +574,34 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     # check if optional parameters are supported by the selected method
     # - jac
     if meth in ('nelder-mead', 'powell', 'cobyla', 'cobyqa') and bool(jac):
-        warn('Method %s does not use gradient information (jac).' % method,
+        warn(f'Method {method} does not use gradient information (jac).',
              RuntimeWarning, stacklevel=2)
     # - hess
     if meth not in ('newton-cg', 'dogleg', 'trust-ncg', 'trust-constr',
                     'trust-krylov', 'trust-exact', '_custom') and hess is not None:
-        warn('Method %s does not use Hessian information (hess).' % method,
+        warn(f'Method {method} does not use Hessian information (hess).',
              RuntimeWarning, stacklevel=2)
     # - hessp
     if meth not in ('newton-cg', 'trust-ncg', 'trust-constr',
                     'trust-krylov', '_custom') \
        and hessp is not None:
-        warn('Method %s does not use Hessian-vector product '
-             'information (hessp).' % method,
+        warn(f'Method {method} does not use Hessian-vector product'
+             ' information (hessp).',
              RuntimeWarning, stacklevel=2)
     # - constraints or bounds
     if (meth not in ('cobyla', 'cobyqa', 'slsqp', 'trust-constr', '_custom') and
             np.any(constraints)):
-        warn('Method %s cannot handle constraints.' % method,
+        warn(f'Method {method} cannot handle constraints.',
              RuntimeWarning, stacklevel=2)
     if meth not in (
             'nelder-mead', 'powell', 'l-bfgs-b', 'cobyla', 'cobyqa', 'slsqp',
             'tnc', 'trust-constr', '_custom') and bounds is not None:
-        warn('Method %s cannot handle bounds.' % method,
+        warn(f'Method {method} cannot handle bounds.',
              RuntimeWarning, stacklevel=2)
     # - return_all
     if (meth in ('l-bfgs-b', 'tnc', 'cobyla', 'cobyqa', 'slsqp') and
             options.get('return_all', False)):
-        warn('Method %s does not support the return_all option.' % method,
+        warn(f'Method {method} does not support the return_all option.',
              RuntimeWarning, stacklevel=2)
 
     # check gradient vector
@@ -759,7 +759,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         res = _minimize_trustregion_exact(fun, x0, args, jac, hess,
                                           callback=callback, **options)
     else:
-        raise ValueError('Unknown solver %s' % method)
+        raise ValueError(f'Unknown solver {method}')
 
     if remove_vars:
         res.x = _add_to_array(res.x, i_fixed, x_fixed)
@@ -968,7 +968,7 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
         res = _recover_from_bracket_error(_minimize_scalar_golden,
                                           fun, bracket, args, **options)
     else:
-        raise ValueError('Unknown solver %s' % method)
+        raise ValueError(f'Unknown solver {method}')
 
     # gh-16196 reported inconsistencies in the output shape of `res.x`. While
     # fixing this, future-proof it for when the function is vectorized:

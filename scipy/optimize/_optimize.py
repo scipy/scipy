@@ -175,7 +175,7 @@ def _check_unknown_options(unknown_options):
         # Stack level 4: this is called from _minimize_*, which is
         # called from another function in SciPy. Level 4 is the first
         # level in user code.
-        warnings.warn("Unknown solver options: %s" % msg, OptimizeWarning, stacklevel=4)
+        warnings.warn(f"Unknown solver options: {msg}", OptimizeWarning, stacklevel=4)
 
 
 def is_finite_scalar(x):
@@ -922,7 +922,7 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
         msg = _status_message['success']
         if disp:
             print(msg)
-            print("         Current function value: %f" % fval)
+            print(f"         Current function value: {fval:f}")
             print("         Iterations: %d" % iterations)
             print("         Function evaluations: %d" % fcalls[0])
 
@@ -1466,7 +1466,7 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
 
     if disp:
         _print_success_message_or_warn(warnflag, msg)
-        print("         Current function value: %f" % fval)
+        print(f"         Current function value: {fval:f}")
         print("         Iterations: %d" % k)
         print("         Function evaluations: %d" % sf.nfev)
         print("         Gradient evaluations: %d" % sf.ngev)
@@ -1810,7 +1810,7 @@ def _minimize_cg(fun, x0, args=(), jac=None, callback=None,
 
     if disp:
         _print_success_message_or_warn(warnflag, msg)
-        print("         Current function value: %f" % fval)
+        print(f"         Current function value: {fval:f}")
         print("         Iterations: %d" % k)
         print("         Function evaluations: %d" % sf.nfev)
         print("         Gradient evaluations: %d" % sf.ngev)
@@ -2013,7 +2013,7 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
     def terminate(warnflag, msg):
         if disp:
             _print_success_message_or_warn(warnflag, msg)
-            print("         Current function value: %f" % old_fval)
+            print(f"         Current function value: {old_fval:f}")
             print("         Iterations: %d" % k)
             print("         Function evaluations: %d" % sf.nfev)
             print("         Gradient evaluations: %d" % sf.ngev)
@@ -2667,7 +2667,7 @@ def _minimize_scalar_brent(func, brack=None, args=(), xtol=1.48e-8,
     _check_unknown_options(unknown_options)
     tol = xtol
     if tol < 0:
-        raise ValueError('tolerance should be >= 0, got %r' % tol)
+        raise ValueError(f'tolerance should be >= 0, got {tol!r}')
 
     brent = Brent(func=func, args=args, tol=tol,
                   full_output=True, maxiter=maxiter, disp=disp)
@@ -3581,7 +3581,7 @@ def _minimize_powell(func, x0, args=(), callback=None, bounds=None,
 
     if disp:
         _print_success_message_or_warn(warnflag, msg, RuntimeWarning)
-        print("         Current function value: %f" % fval)
+        print(f"         Current function value: {fval:f}")
         print("         Iterations: %d" % iter)
         print("         Function evaluations: %d" % fcalls[0])
 
@@ -3605,7 +3605,7 @@ def _endprint(x, flag, fval, maxfun, xtol, disp):
         msg = ("\nMaximum number of function evaluations exceeded --- "
                "increase maxfun argument.\n")
     elif flag == 2:
-        msg = "\n{}".format(_status_message['nan'])
+        msg = f"\n{_status_message['nan']}"
 
     _print_success_message_or_warn(flag, msg)
     return

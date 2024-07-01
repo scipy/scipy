@@ -80,7 +80,7 @@ def orthogonal_procrustes(A, B, check_finite=True):
         A = np.asanyarray(A)
         B = np.asanyarray(B)
     if A.ndim != 2:
-        raise ValueError('expected ndim to be 2, but observed %s' % A.ndim)
+        raise ValueError(f'expected ndim to be 2, but observed {A.ndim}')
     if A.shape != B.shape:
         raise ValueError(f'the shapes of A and B differ ({A.shape} vs {B.shape})')
     # Be clever with transposes, with the intention to save memory.

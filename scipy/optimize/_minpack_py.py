@@ -30,7 +30,7 @@ def _check_func(checker, argname, thefunc, x0, args, numinputs,
                   f"shape of the '{argname}' argument"
             func_name = getattr(thefunc, '__name__', None)
             if func_name:
-                msg += " '%s'." % func_name
+                msg += f" '{func_name}'."
             else:
                 msg += "."
             msg += f'Shape should be {output_shape} but it is {shape(res)}.'
@@ -261,14 +261,13 @@ def _root_hybr(func, x0, args=(), jac=None,
               1: "The solution converged.",
               2: "The number of calls to function has "
                   "reached maxfev = %d." % maxfev,
-              3: "xtol=%f is too small, no further improvement "
-                  "in the approximate\n  solution "
-                  "is possible." % xtol,
+              3: f"xtol={xtol:f} is too small, no further improvement "
+                  "in the approximate\n solution is possible.",
               4: "The iteration is not making good progress, as measured "
-                  "by the \n  improvement from the last five "
+                  "by the \n improvement from the last five "
                   "Jacobian evaluations.",
               5: "The iteration is not making good progress, "
-                  "as measured by the \n  improvement from the last "
+                  "as measured by the \n improvement from the last "
                   "ten iterations.",
               'unknown': "An error occurred."}
 
@@ -451,27 +450,26 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=False,
 
     errors = {0: ["Improper input parameters.", TypeError],
               1: ["Both actual and predicted relative reductions "
-                  "in the sum of squares\n  are at most %f" % ftol, None],
+                  f"in the sum of squares\n  are at most {ftol:f}", None],
               2: ["The relative error between two consecutive "
-                  "iterates is at most %f" % xtol, None],
+                  f"iterates is at most {xtol:f}", None],
               3: ["Both actual and predicted relative reductions in "
                   f"the sum of squares\n  are at most {ftol:f} and the "
                   "relative error between two consecutive "
                   f"iterates is at \n  most {xtol:f}", None],
               4: ["The cosine of the angle between func(x) and any "
-                  "column of the\n  Jacobian is at most %f in "
-                  "absolute value" % gtol, None],
+                  f"column of the\n  Jacobian is at most {gtol:f} in "
+                  "absolute value", None],
               5: ["Number of calls to function has reached "
                   "maxfev = %d." % maxfev, ValueError],
-              6: ["ftol=%f is too small, no further reduction "
-                  "in the sum of squares\n  is possible." % ftol,
+              6: [f"ftol={ftol:f} is too small, no further reduction "
+                  "in the sum of squares\n  is possible.",
                   ValueError],
-              7: ["xtol=%f is too small, no further improvement in "
-                  "the approximate\n  solution is possible." % xtol,
+              7: [f"xtol={xtol:f} is too small, no further improvement in "
+                  "the approximate\n  solution is possible.",
                   ValueError],
-              8: ["gtol=%f is too small, func(x) is orthogonal to the "
-                  "columns of\n  the Jacobian to machine "
-                  "precision." % gtol, ValueError]}
+              8: [f"gtol={gtol:f} is too small, func(x) is orthogonal to the "
+                  "columns of\n  the Jacobian to machine precision.", ValueError]}
 
     # The FORTRAN return value (possible return values are >= 0 and <= 8)
     info = retval[-1]

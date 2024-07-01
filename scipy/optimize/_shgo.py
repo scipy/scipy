@@ -527,8 +527,8 @@ class SHGO:
         # Check if bounds are correctly specified
         bnderr = abound[:, 0] > abound[:, 1]
         if bnderr.any():
-            raise ValueError('Error: lb > ub in bounds {}.'
-                             .format(', '.join(str(b) for b in bnderr)))
+            raise ValueError("Error: lb > ub in bounds "
+                             f"{', '.join(str(b) for b in bnderr)}.")
 
         self.bounds = abound
 

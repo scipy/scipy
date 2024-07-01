@@ -421,7 +421,7 @@ class Jacobian:
                  "matmat", "todense", "shape", "dtype"]
         for name, value in kw.items():
             if name not in names:
-                raise ValueError("Unknown keyword argument %s" % name)
+                raise ValueError(f"Unknown keyword argument {name}")
             if value is not None:
                 setattr(self, name, kw[name])
 
@@ -895,8 +895,7 @@ class BroydenFirst(GenericBroyden):
         elif reduction_method == 'restart':
             self._reduce = lambda: self.Gm.restart_reduce(*reduce_params)
         else:
-            raise ValueError("Unknown rank reduction method '%s'" %
-                             reduction_method)
+            raise ValueError(f"Unknown rank reduction method '{reduction_method}'")
 
     def setup(self, x, F, func):
         GenericBroyden.setup(self, x, F, func)
@@ -1475,7 +1474,7 @@ class KrylovJacobian(Jacobian):
 
         for key, value in kw.items():
             if not key.startswith('inner_'):
-                raise ValueError("Unknown parameter %s" % key)
+                raise ValueError(f"Unknown parameter {key}")
             self.method_kw[key[6:]] = value
 
     def _update_diff_step(self):
@@ -1550,7 +1549,7 @@ def _nonlin_wrapper(name, jac):
     if kwkw_str:
         kwkw_str = kwkw_str + ", "
     if kwonlyargs:
-        raise ValueError('Unexpected signature %s' % signature)
+        raise ValueError(f'Unexpected signature {signature}')
 
     # Construct the wrapper function so that its keyword arguments
     # are visible in pydoc.help etc.
