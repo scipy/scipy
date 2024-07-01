@@ -71,7 +71,7 @@ from scipy.optimize import root_scalar
 from scipy._lib._util import normalize_axis_index
 from scipy._lib._array_api import (array_namespace, is_numpy, atleast_nd,
                                    xp_clip, xp_moveaxis_to_end, xp_sign,
-                                   xp_minimum)
+                                   xp_minimum, _asarray as xp_asarray)
 from scipy._lib.array_api_compat import size as xp_size
 
 
@@ -3322,19 +3322,21 @@ def gstd(a, axis=0, ddof=1):
     array([2.12939215, 1.22120169])
 
     """
-    a = np.asanyarray(a)
+    xp = array_namespace(a)
+    a = xp_asarray(a, subok=True)
+
     if isinstance(a, ma.MaskedArray):
         message = ("`gstd` support for masked array input was deprecated in "
                    "SciPy 1.14.0 and will be removed in version 1.16.0.")
         warnings.warn(message, DeprecationWarning, stacklevel=2)
         log = ma.log
     else:
-        log = np.log
+        log = xp.log
 
     with np.errstate(invalid='ignore', divide='ignore'):
-        res = np.exp(np.std(log(a), axis=axis, ddof=ddof))
+        res = xp.exp(_xp_var(log(a), axis=axis, correction=ddof)**0.5)
 
-    if (a <= 0).any():
+    if xp.any(a <= 0):
         message = ("The geometric standard deviation is only defined if all elements "
                    "are greater than or equal to zero; otherwise, the result is NaN.")
         warnings.warn(message, RuntimeWarning, stacklevel=2)
