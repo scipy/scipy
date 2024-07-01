@@ -224,7 +224,7 @@ def gcrotmk(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=1000, M=None, callback
         List of tuples ``(c, u)`` which contain the columns of the matrices
         C and U in the GCROT(m,k) algorithm. For details, see [2]_.
         The list given and vectors contained in it are modified in-place.
-        If not given, start from empty matrices. The `c` elements in the
+        If not given, start from empty matrices. The ``c`` elements in the
         tuples can be ``None``, in which case the vectors are recomputed
         via ``c = A u`` on start and orthogonalized as described in [3]_.
     discard_C : bool, optional
