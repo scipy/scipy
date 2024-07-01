@@ -555,7 +555,7 @@ def xp_vector_norm(x: Array, /, *,
     xp = array_namespace(x) if xp is None else xp
 
 	# check for optional `linalg` extension
-    if hasattr(xp, 'linalg'):
+    if SCIPY_ARRAY_API and hasattr(xp, 'linalg'):
         return xp.linalg.vector_norm(x, axis=axis, keepdims=keepdims, ord=ord)
 
     else:

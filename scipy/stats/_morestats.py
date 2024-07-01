@@ -4799,13 +4799,14 @@ def directional_stats(samples, *, axis=0, normalize=True):
                          f"Instead samples has shape: {samples.shape!r}")
     samples = xp.moveaxis(samples, axis, 0)
     if normalize:
-        vectornorms = xp_vector_norm(samples, axis=-1, keepdims=True)
+        vectornorms = xp_vector_norm(samples, axis=-1, keepdims=True, xp=xp)
         samples = samples/vectornorms
     mean = xp.mean(samples, axis=0)
-    mean_resultant_length = xp_vector_norm(mean, axis=-1, keepdims=True)
+    mean_resultant_length = xp_vector_norm(mean, axis=-1, keepdims=True, xp=xp)
     mean_direction = mean / mean_resultant_length
-    return DirectionalStats(mean_direction,
-                            mean_resultant_length.squeeze(-1)[()])
+    mrl = xp.squeeze(mean_resultant_length, axis=-1)
+    mean_resultant_length = mrl[()] if mrl.ndim == 0 else mrl
+    return DirectionalStats(mean_direction, mean_resultant_length)
 
 
 def false_discovery_control(ps, *, axis=0, method='bh'):

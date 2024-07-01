@@ -27,8 +27,14 @@ from scipy.stats._axis_nan_policy import (SmallSampleWarning, too_small_nd_omit,
                                           too_small_1d_omit, too_small_1d_not_omit)
 
 from scipy.conftest import array_api_compatible
-from scipy._lib._array_api import (array_namespace, xp_assert_close, xp_assert_less,
-                                   xp_assert_equal, is_numpy)
+from scipy._lib._array_api import (
+    array_namespace,
+    is_numpy,
+    xp_assert_close,
+    xp_assert_equal,
+    xp_assert_less,
+    xp_vector_norm,
+)
 
 
 skip_xp_backends = pytest.mark.skip_xp_backends
@@ -2991,9 +2997,8 @@ class TestDirectionalStats:
         ([0, 2 * np.pi], 0.)
     ])
     def test_directional_stats_2d_special_cases(self, angles, ref, xp):
-        if callable(ref):
-            ref = ref(angles)
         angles = xp.asarray(angles)
+        ref = xp.asarray(ref)
         data = xp.stack([xp.cos(angles), xp.sin(angles)], axis=1)
         res = 1 - stats.directional_stats(data).mean_resultant_length
         xp_assert_close(res, ref)
@@ -3009,11 +3014,11 @@ class TestDirectionalStats:
         dirstats = stats.directional_stats(testdata_vector)
         directional_mean = dirstats.mean_direction
         xp_test = array_namespace(directional_mean)  # np needs atan2
-        directional_mean_angle = xp_test.arctan2(directional_mean[1],
-                                                 directional_mean[0])
+        directional_mean_angle = xp_test.atan2(directional_mean[1],
+                                               directional_mean[0])
         directional_mean_angle = directional_mean_angle % (2 * xp.pi)
         circmean = stats.circmean(testdata)
-        xp_assert_close(circmean, directional_mean_angle)
+        xp_assert_close(directional_mean_angle, circmean)
 
         directional_var = 1. - dirstats.mean_resultant_length
         circular_var = stats.circvar(testdata)
@@ -3028,19 +3033,21 @@ class TestDirectionalStats:
         expected = xp.asarray([[[1., 0., 0.],
                                 [1., 0., 0.]],
                                [[1., 0., 0.],
-                                [1., 0., 0.]]])
+                                [1., 0., 0.]]],
+                              dtype=xp.float64)
         dirstats = stats.directional_stats(full_array, axis=2)
-        xp_assert_close(expected, dirstats.mean_direction)
+        xp_assert_close(dirstats.mean_direction, expected)
 
     def test_directional_stats_list_ndarray_input(self, xp):
         # test that list and numpy array inputs yield same results
         data = [[0.8660254, 0.5, 0.], [0.8660254, -0.5, 0]]
-        data_array = xp.asarray(data)
-        res = stats.directional_stats(data)
-        ref = stats.directional_stats(data_array)
-        xp_assert_close(res.mean_direction, ref.mean_direction)
+        data_array = xp.asarray(data, dtype=xp.float64)
+        ref = stats.directional_stats(data)
+        res = stats.directional_stats(data_array)
+        xp_assert_close(res.mean_direction,
+                        xp.asarray(ref.mean_direction))
         xp_assert_close(res.mean_resultant_length,
-                        res.mean_resultant_length)
+                        xp.asarray(res.mean_resultant_length))
 
     def test_directional_stats_1d_error(self, xp):
         # test that one-dimensional data raises ValueError
@@ -3057,13 +3064,13 @@ class TestDirectionalStats:
         data = xp.asarray([[0.8660254, 0.5, 0.],
                            [1.7320508, -1., 0.]])
         res = stats.directional_stats(data, normalize=True)
-        normalized_data = data / xp.linalg.vector_norm(data, axis=-1,
-                                                       keepdims=True)
-        ref = stats.directional_stats(normalized_data,
-                                      normalize=False)
+        # get `xp.linalg.vector_norm` for `xp_vector_norm`
+        xp_test = array_namespace(data)
+        data_norm = xp_vector_norm(data, axis=-1, keepdims=True, xp=xp_test)
+        normalized_data = data / data_norm
+        ref = stats.directional_stats(normalized_data, normalize=False)
         xp_assert_close(res.mean_direction, ref.mean_direction)
-        xp_assert_close(res.mean_resultant_length,
-                        ref.mean_resultant_length)
+        xp_assert_close(res.mean_resultant_length, ref.mean_resultant_length)
 
 
 class TestFDRControl:
