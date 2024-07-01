@@ -212,7 +212,7 @@ def gcrotmk(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=1000, M=None, callback
         fewer iterations are needed to reach a given error tolerance.
     callback : function, optional
         User-supplied function to call after each iteration.  It is called
-        as ``callback(xk)``, where xk is the current solution vector.
+        as ``callback(xk)``, where ``xk`` is the current solution vector.
     m : int, optional
         Number of inner FGMRES iterations per each outer iteration.
         Default: 20
