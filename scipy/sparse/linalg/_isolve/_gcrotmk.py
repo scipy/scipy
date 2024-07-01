@@ -203,7 +203,7 @@ def gcrotmk(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=1000, M=None, callback
         The default is ``rtol=1e-5``, the default for ``atol`` is ``0.0``.
     maxiter : int, optional
         Maximum number of iterations.  Iteration will stop after maxiter
-        steps even if the specified tolerance has not been achieved.
+        steps even if the specified tolerance has not been achieved. The default is ``1000``.
     M : {sparse matrix, ndarray, LinearOperator}, optional
         Preconditioner for ``A``.  The preconditioner should approximate the
         inverse of ``A``. gcrotmk is a 'flexible' algorithm and the preconditioner
