@@ -3494,10 +3494,10 @@ def _minimize_powell(func, x0, args=(), callback=None, bounds=None,
                           OptimizeWarning, stacklevel=3)
 
     fval = squeeze(func(x))
-    x1 = x.copy()
     iter = 0
     while True:
         try:
+            x1 = x.copy()
             fx = fval
             bigind = 0
             delta = 0.0
@@ -3515,7 +3515,7 @@ def _minimize_powell(func, x0, args=(), callback=None, bounds=None,
             iter += 1
             if retall:
                 allvecs.append(x)
-            intermediate_result = OptimizeResult(x=x, fun=fval)
+            intermediate_result = OptimizeResult(x=x, fun=fval, xl=x1, funl=fx)
             if _call_callback_maybe_halt(callback, intermediate_result):
                 break
             bnd = ftol * (np.abs(fx) + np.abs(fval)) + 1e-20
