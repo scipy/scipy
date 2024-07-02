@@ -240,6 +240,14 @@ The `root` function supports the following methods:
    optimize.root-excitingmixing
    optimize.root-krylov
    optimize.root-dfsane
+   
+Elementwise Minimization and Root Finding
+=========================================
+
+.. toctree::
+   :maxdepth: 3
+
+   optimize.elementwise
 
 Linear programming / MILP
 =========================

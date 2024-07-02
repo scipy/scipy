@@ -3,9 +3,40 @@ import pytest
 import numpy as np
 from numpy.testing import assert_array_less, assert_allclose, assert_equal
 
-from scipy.optimize._bracket import _bracket_root, _bracket_minimum, _ELIMITS
+from scipy.optimize._bracket import _ELIMITS
+from scipy.optimize.elementwise import bracket_root, bracket_minimum
 import scipy._lib._elementwise_iterative_method as eim
 from scipy import stats
+
+
+# These tests were originally written for the private `optimize._bracket`
+# interfaces, but now we want the tests to check the behavior of the public
+# `optimize.elementwise` interfaces. Therefore, rather than importing
+# `_bracket_root`/`_bracket_minimum` from `_bracket.py`, we import
+# `bracket_root`/`bracket_minimum` from `optimize.elementwise` and wrap those
+# functions to conform to the private interface. This may look a little strange,
+# since it effectly just inverts the interface transformation done within the
+# `bracket_root`/`bracket_minimum` functions, but it allows us to run the original,
+# unmodified tests on the public interfaces, simplifying the PR that adds
+# the public interfaces. We'll refactor this when we want to @parametrize the
+# tests over multiple `method`s.
+def _bracket_root(*args, **kwargs):
+    res = bracket_root(*args, **kwargs)
+    res.xl, res.xr = res.bracket
+    res.fl, res.fr = res.f_bracket
+    del res.bracket
+    del res.f_bracket
+    return res
+
+
+def _bracket_minimum(*args, **kwargs):
+    res = bracket_minimum(*args, **kwargs)
+    res.xl, res.xm, res.xr = res.bracket
+    res.fl, res.fm, res.fr = res.f_bracket
+    del res.bracket
+    del res.f_bracket
+    return res
+
 
 class TestBracketRoot:
     @pytest.mark.parametrize("seed", (615655101, 3141866013, 238075752))
@@ -231,6 +262,9 @@ class TestBracketRoot:
             _bracket_root(lambda x: x, -4, 4, maxiter=1.5)
         with pytest.raises(ValueError, match=message):
             _bracket_root(lambda x: x, -4, 4, maxiter=-1)
+        with pytest.raises(ValueError, match=message):
+            _bracket_root(lambda x: x, -4, 4, maxiter="shrubbery")
+
 
     def test_special_cases(self):
         # Test edge cases and other special cases
@@ -462,6 +496,8 @@ class TestBracketMinimum:
         with pytest.raises(ValueError, match=message):
             _bracket_minimum(lambda x: x**2, -4, xl0='hello')
         with pytest.raises(ValueError, match=message):
+            _bracket_minimum(lambda x: x**2, -4, xr0='farcical aquatic ceremony')
+        with pytest.raises(ValueError, match=message):
             _bracket_minimum(lambda x: x**2, -4, xmin=np)
         with pytest.raises(ValueError, match=message):
             _bracket_minimum(lambda x: x**2, -4, xmax=object())
@@ -482,6 +518,8 @@ class TestBracketMinimum:
             _bracket_minimum(lambda x: x**2, -4, xr0=4, maxiter=1.5)
         with pytest.raises(ValueError, match=message):
             _bracket_minimum(lambda x: x**2, -4, xr0=4, maxiter=-1)
+        with pytest.raises(ValueError, match=message):
+            _bracket_minimum(lambda x: x**2, -4, xr0=4, maxiter="ekki")
 
     @pytest.mark.parametrize("xl0", [0.0, None])
     @pytest.mark.parametrize("xm0", (0.05, 0.1, 0.15))
@@ -581,12 +619,12 @@ class TestBracketMinimum:
         (
             (   # Case 1:
                 # Initial bracket.
-                0.2, 
+                0.2,
                 0.3,
                 0.4,
                 # Function slopes down to the right from the bracket to a minimum
                 # at 1.0. xmax is also at 1.0
-                None, 
+                None,
                 1.0,
                 (1.0, 0.0)
             ),

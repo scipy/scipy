@@ -53,6 +53,7 @@ PUBLIC_MODULES = ["scipy." + s for s in [
     "ndimage",
     "odr",
     "optimize",
+    "optimize.elementwise",
     "signal",
     "signal.windows",
     "sparse",
@@ -489,7 +490,7 @@ def test_misc_doccer_deprecation():
             getattr(module, attr_name)
 
     # Attributes that were not in `scipy.misc.doccer` get an error
-    # notifying the user that the attribute is not in `scipy.misc.doccer` 
+    # notifying the user that the attribute is not in `scipy.misc.doccer`
     # and that `scipy.misc.doccer` is deprecated.
     message = "`scipy.misc.doccer` is deprecated..."
     with pytest.raises(AttributeError, match=message):
