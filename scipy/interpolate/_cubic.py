@@ -101,24 +101,6 @@ class CubicHermiteSpline(PPoly):
         based on first and last intervals, or to return NaNs. If 'periodic',
         periodic extrapolation is used. If None (default), it is set to True.
 
-    See Also
-    --------
-    Akima1DInterpolator : Akima 1D interpolator.
-    PchipInterpolator : PCHIP 1-D monotonic cubic interpolator.
-    CubicSpline : Cubic spline data interpolator.
-    PPoly : Piecewise polynomial in terms of coefficients and breakpoints
-
-    Notes
-    -----
-    If you want to create a higher-order spline matching higher-order
-    derivatives, use `BPoly.from_derivatives`.
-
-    References
-    ----------
-    .. [1] `Cubic Hermite spline
-            <https://en.wikipedia.org/wiki/Cubic_Hermite_spline>`_
-            on Wikipedia.
-
     Attributes
     ----------
     x : ndarray, shape (n,)
@@ -140,6 +122,23 @@ class CubicHermiteSpline(PPoly):
     integrate
     roots
 
+    See Also
+    --------
+    Akima1DInterpolator : Akima 1D interpolator.
+    PchipInterpolator : PCHIP 1-D monotonic cubic interpolator.
+    CubicSpline : Cubic spline data interpolator.
+    PPoly : Piecewise polynomial in terms of coefficients and breakpoints
+
+    Notes
+    -----
+    If you want to create a higher-order spline matching higher-order
+    derivatives, use `BPoly.from_derivatives`.
+
+    References
+    ----------
+    .. [1] `Cubic Hermite spline
+            <https://en.wikipedia.org/wiki/Cubic_Hermite_spline>`_
+            on Wikipedia.
     """
 
     def __init__(self, x, y, dydx, axis=0, extrapolate=None):
