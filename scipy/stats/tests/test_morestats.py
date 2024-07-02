@@ -2971,7 +2971,6 @@ class TestDirectionalStats:
     def test_directional_stats_correctness(self, xp):
         # Data from Fisher: Dispersion on a sphere, 1953 and
         # Mardia and Jupp, Directional Statistics.
-        # angles were converted to radians
         decl = -np.deg2rad(np.array([343.2, 62., 36.9, 27., 359.,
                                      5.7, 50.4, 357.6, 44.]))
         incl = -np.deg2rad(np.array([66.1, 68.7, 70.1, 82.1, 79.5,
@@ -3026,17 +3025,17 @@ class TestDirectionalStats:
     def test_directional_mean_higher_dim(self, xp):
         # test that directional_stats works for higher dimensions
         # here a 4D array is reduced over axis = 2
-        data = np.array([[0.8660254, 0.5, 0.],
+        data = xp.asarray([[0.8660254, 0.5, 0.],
                          [0.8660254, -0.5, 0.]])
-        full_array = xp.asarray(np.tile(data, (2, 2, 2, 1)))
+        full_array = xp.asarray(xp.tile(data, (2, 2, 2, 1)))
         expected = xp.asarray([[[1., 0., 0.],
                                 [1., 0., 0.]],
                                [[1., 0., 0.],
-                                [1., 0., 0.]]],
-                              dtype=xp.float64)
+                                [1., 0., 0.]]])
         dirstats = stats.directional_stats(full_array, axis=2)
         xp_assert_close(dirstats.mean_direction, expected)
 
+    @skip_xp_backends(np_only=True, reasons=['checking array-like input'])
     def test_directional_stats_list_ndarray_input(self, xp):
         # test that list and numpy array inputs yield same results
         data = [[0.8660254, 0.5, 0.], [0.8660254, -0.5, 0]]
@@ -3056,13 +3055,15 @@ class TestDirectionalStats:
         with pytest.raises(ValueError, match=re.escape(message)):
             stats.directional_stats(data)
 
-    def test_directional_stats_normalize(self, xp):
+    @pytest.mark.parametrize("dtype", ["float32", "float64"])
+    def test_directional_stats_normalize(self, dtype, xp):
         # test that directional stats calculations yield same results
         # for unnormalized input with normalize=True and normalized
         # input with normalize=False
+        dt = getattr(xp, dtype)
         data = np.array([[0.8660254, 0.5, 0.],
                          [1.7320508, -1., 0.]])
-        res = stats.directional_stats(xp.asarray(data), normalize=True)
+        res = stats.directional_stats(xp.asarray(data, dtype=dt), normalize=True)
         normalized_data = data / np.linalg.norm(data, axis=-1,
                                                 keepdims=True)
         ref = stats.directional_stats(normalized_data, normalize=False)

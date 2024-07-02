@@ -4796,7 +4796,7 @@ def directional_stats(samples, *, axis=0, normalize=True):
     
     if samples.ndim < 2:
         raise ValueError("samples must at least be two-dimensional. "
-                         f"Instead samples has shape: {samples.shape!r}")
+                         f"Instead samples has shape: {tuple(samples.shape)}")
     samples = xp.moveaxis(samples, axis, 0)
     if normalize:
         vectornorms = xp_vector_norm(samples, axis=-1, keepdims=True, xp=xp)
