@@ -2323,7 +2323,7 @@ add_newdoc("ellipj",
 
     Relation to incomplete elliptic integral: If ``u = ellipkinc(phi,m)``, then
     ``sn(u|m) = sin(phi)``, and ``cn(u|m) = cos(phi)``. The ``phi`` is called
-    the amplitude of ``u``.
+    the amplitude of `u`.
 
     Computation is by means of the arithmetic-geometric mean algorithm,
     except when `m` is within 1e-9 of 0 or 1. In the latter case with `m`
