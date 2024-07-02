@@ -18,6 +18,7 @@ py3.install_sources([
     'test_signaltools.py',
     'test_spectral.py',
     'test_splines.py',
+    'test_support_alternative_backends.py',
     'test_upfirdn.py',
     'test_waveforms.py',
     'test_wavelets.py',

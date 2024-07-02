@@ -318,6 +318,11 @@ from . import (
     spectral, signaltools, waveforms, wavelets, spline
 )
 
+# Replace some function definitions from _ufuncs to add Array API support
+from ._support_alternative_backends import (
+    convolve, correlate, fftconvolve
+)
+
 __all__ = [
     s for s in dir() if not s.startswith("_")
 ]

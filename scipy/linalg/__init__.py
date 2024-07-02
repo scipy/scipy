@@ -222,6 +222,11 @@ from ._decomp_update import *
 from ._sketches import *
 from ._decomp_cossin import *
 
+# Replace some function definitions from _ufuncs to add Array API support
+from ._support_alternative_backends import (
+    solve, inv, det, pinv
+)
+
 # Deprecated namespaces, to be removed in v2.0.0
 from . import (
     decomp, decomp_cholesky, decomp_lu, decomp_qr, decomp_svd, decomp_schur,

@@ -32,6 +32,7 @@ from scipy.signal._signaltools import (_filtfilt_gust, _compute_factors,
 from scipy.signal._upfirdn import _upfirdn_modes
 from scipy._lib import _testutils
 from scipy._lib._util import ComplexWarning, np_long, np_ulong
+from scipy._lib._array_api import SCIPY_ARRAY_API
 
 
 class _TestConvolve:
@@ -1102,7 +1103,7 @@ class TestMedFilt:
         if (dtype in ["float96", "float128"]
                 and np.finfo(np.longdouble).dtype != dtype):
             pytest.skip(f"Platform does not support {dtype}")
-        
+
         in_typed = np.array(self.IN, dtype=dtype)
         with pytest.raises(ValueError, match="not supported"):
             signal.medfilt(in_typed)
@@ -1895,10 +1896,16 @@ def test_lfilter_notimplemented_input():
     assert_raises(NotImplementedError, lfilter, [2,3], [4,5], [1,2,3,4,5])
 
 
-@pytest.mark.parametrize('dt', [np.ubyte, np.byte, np.ushort, np.short,
-                                np_ulong, np_long, np.ulonglong, np.ulonglong,
-                                np.float32, np.float64, np.longdouble,
-                                Decimal])
+def dtypes_TestCorrelateReal():
+    # Can't test with `Decimal` type when SCIPY_ARRAY_API=1
+    dtypes = [np.ubyte, np.byte, np.ushort, np.short,
+              np_ulong, np_long, np.ulonglong, np.ulonglong,
+              np.float32, np.float64, np.longdouble,
+              Decimal]
+    return dtypes[:-1] if SCIPY_ARRAY_API else dtypes
+
+
+@pytest.mark.parametrize('dt', dtypes_TestCorrelateReal())
 class TestCorrelateReal:
     def _setup_rank1(self, dt):
         a = np.linspace(0, 3, 4).astype(dt)
