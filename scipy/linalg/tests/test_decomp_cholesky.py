@@ -3,72 +3,101 @@ import numpy as np
 from numpy.testing import assert_array_almost_equal
 from pytest import raises as assert_raises
 
-from numpy import array, transpose, dot, conjugate, zeros_like, empty
+from numpy import array, dot, zeros_like, empty
 from numpy.random import random
-from scipy.linalg import (cholesky, cholesky_banded, cho_solve_banded,
-     cho_factor, cho_solve)
+from scipy.linalg import (
+    cholesky, cholesky_banded, cho_solve_banded, cho_factor, cho_solve
+)
 
 from scipy.linalg._testutils import assert_no_overwrite
 
+from scipy.conftest import array_api_compatible
+from scipy._lib._array_api import xp_assert_close
 
+skip_xp_backends = pytest.mark.skip_xp_backends
+
+
+@pytest.mark.usefixtures("skip_xp_backends")
+@array_api_compatible
 class TestCholesky:
 
-    def test_simple(self):
-        a = [[8, 2, 3], [2, 9, 3], [3, 3, 6]]
+    def test_simple(self, xp):
+        a = xp.asarray([[8., 2, 3], [2, 9, 3], [3, 3, 6]])
         c = cholesky(a)
-        assert_array_almost_equal(dot(transpose(c), c), a)
-        c = transpose(c)
-        a = dot(c, transpose(c))
-        assert_array_almost_equal(cholesky(a, lower=1), c)
+        xp_assert_close(c.T @ c, a, rtol=1e-6)
+        c = c.T
+        a = c @ c.T
+        xp_assert_close(cholesky(a, lower=True), c)
 
-    def test_check_finite(self):
-        a = [[8, 2, 3], [2, 9, 3], [3, 3, 6]]
+    def test_check_finite(self, xp):
+        a = xp.asarray([[8., 2, 3], [2, 9, 3], [3, 3, 6]])
         c = cholesky(a, check_finite=False)
-        assert_array_almost_equal(dot(transpose(c), c), a)
-        c = transpose(c)
-        a = dot(c, transpose(c))
-        assert_array_almost_equal(cholesky(a, lower=1, check_finite=False), c)
+        xp_assert_close(c.T @ c, a, rtol=1e-6)
+        c = c.T
+        a = c @ c.T
+        xp_assert_close(cholesky(a, lower=True, check_finite=False), c)
 
-    def test_simple_complex(self):
-        m = array([[3+1j, 3+4j, 5], [0, 2+2j, 2+7j], [0, 0, 7+4j]])
-        a = dot(transpose(conjugate(m)), m)
+    def test_simple_complex(self, xp):
+        m = xp.asarray([[3+1j, 3+4j, 5], [0, 2+2j, 2+7j], [0, 0, 7+4j]])
+        a = xp.conj(m).T @ m
         c = cholesky(a)
-        a1 = dot(transpose(conjugate(c)), c)
-        assert_array_almost_equal(a, a1)
-        c = transpose(c)
-        a = dot(c, transpose(conjugate(c)))
-        assert_array_almost_equal(cholesky(a, lower=1), c)
+        a1 = xp.conj(c).T @ c
+        xp_assert_close(a, a1)
+        c = c.T
+        a = c @ xp.conj(c).T
+        xp_assert_close(cholesky(a, lower=True), c)
 
-    def test_random(self):
+    def test_random(self, xp):
         n = 20
         for k in range(2):
             m = random([n, n])
             for i in range(n):
                 m[i, i] = 20*(.1+m[i, i])
-            a = dot(transpose(m), m)
+            m = xp.asarray(m)
+            a = m.T @ m
             c = cholesky(a)
-            a1 = dot(transpose(c), c)
-            assert_array_almost_equal(a, a1)
-            c = transpose(c)
-            a = dot(c, transpose(c))
-            assert_array_almost_equal(cholesky(a, lower=1), c)
+            a1 = c.T @ c
+            xp_assert_close(a, a1)
+            c = c.T
+            a = c @ c.T
+            xp_assert_close(cholesky(a, lower=True), c)
 
-    def test_random_complex(self):
+    def test_random_complex(self, xp):
         n = 20
         for k in range(2):
             m = random([n, n])+1j*random([n, n])
             for i in range(n):
                 m[i, i] = 20*(.1+abs(m[i, i]))
-            a = dot(transpose(conjugate(m)), m)
+            m = xp.asarray(m)
+            a = xp.conj(m).T @ m
             c = cholesky(a)
-            a1 = dot(transpose(conjugate(c)), c)
-            assert_array_almost_equal(a, a1)
-            c = transpose(c)
-            a = dot(c, transpose(conjugate(c)))
-            assert_array_almost_equal(cholesky(a, lower=1), c)
+            a1 = xp.conj(c).T @ c
+            xp_assert_close(a, a1)
+            c = c.T
+            a = c @ xp.conj(c).T
+            xp_assert_close(cholesky(a, lower=True), c)
 
+    @pytest.mark.parametrize("dtype", ["float32", "float64"])
+    def test_dtypes_standard(self, dtype, xp):
+        dtype = getattr(xp, dtype)
+        a = xp.asarray([[8, 2, 3], [2, 9, 3], [3, 3, 6]], dtype=dtype)
+        c = cholesky(a)
+        rtol = 1e-7 if dtype == "float64" else 1e-6
+        xp_assert_close(c.T @ c, xp.asarray(a, dtype=dtype), rtol=rtol)
+
+    @skip_xp_backends(np_only=True,
+                      reasons=["Integer dtypes only supported for NumPy arrays"])
+    @pytest.mark.parametrize("dtype", ["int32", "int64"])
+    def test_dtypes_nonstandard(self, dtype, xp):
+        dtype = getattr(xp, dtype)
+        a = xp.asarray([[8, 2, 3], [2, 9, 3], [3, 3, 6]], dtype=dtype)
+        c = cholesky(a)
+        xp_assert_close(c.T @ c, a.astype(xp.float64))
+
+    @skip_xp_backends(np_only=True,
+                      reasons=["`order='F'` only supported for NumPy arrays"])
     @pytest.mark.xslow
-    def test_int_overflow(self):
+    def test_int_overflow(self, xp):
        # regression test for
        # https://github.com/scipy/scipy/issues/17436
        # the problem was an int overflow in zeroing out
@@ -236,6 +265,7 @@ class TestCholeskyBanded:
 
 
 class TestOverwrite:
+
     def test_cholesky(self):
         assert_no_overwrite(cholesky, [(3, 3)])
 

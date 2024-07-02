@@ -5,6 +5,10 @@ import numpy as np
 from .lapack import get_lapack_funcs
 from ._misc import _datacopied
 
+from scipy._lib._array_api import (
+    array_namespace, is_numpy, _asarray, xp_unsupported_args
+)
+
 __all__ = ['qr', 'qr_multiply', 'rq']
 
 
@@ -118,6 +122,34 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False,
     ((9, 6), (6, 6), (6,))
 
     """
+    xp = array_namespace(a)
+    if check_finite:
+        a = _asarray(a, check_finite=True, xp=xp)
+    if is_numpy(xp):
+        return _qr(a, overwrite_a=overwrite_a, lwork=lwork, mode=mode,
+                   pivoting=pivoting)
+    unsupported_args = {
+        'lwork': lwork is not None,
+        'pivoting': pivoting
+    }
+    if any(unsupported_args.values()):
+        xp_unsupported_args(unsupported_args)
+    if mode not in {'full', 'economic'}:
+        raise ValueError("Only 'full' and 'economic' modes are supported "
+                         "for non-numpy arrays.")
+    if hasattr(xp, 'linalg'):
+        if mode == 'full':
+            mode = 'complete'
+        elif mode == 'economic':
+            mode = 'reduced'
+        dtype = xp.result_type(a, xp.float32)
+        a = xp.astype(a, dtype)
+        return xp.linalg.qr(a, mode=mode)
+    a = np.asarray(a)
+    return xp.asarray(_qr(a, mode=mode))
+
+
+def _qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False):
     # 'qr' was the old default, equivalent to 'full'. Neither 'full' nor
     # 'qr' are used below.
     # 'raw' is used internally by qr_multiply
@@ -125,10 +157,7 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False,
         raise ValueError("Mode argument should be one of ['full', 'r', "
                          "'economic', 'raw']")
 
-    if check_finite:
-        a1 = np.asarray_chkfinite(a)
-    else:
-        a1 = np.asarray(a)
+    a1 = np.asarray(a)
     if len(a1.shape) != 2:
         raise ValueError("expected a 2-D array")
 

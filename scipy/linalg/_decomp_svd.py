@@ -7,6 +7,10 @@ from ._misc import LinAlgError, _datacopied
 from .lapack import get_lapack_funcs, _compute_lwork
 from ._decomp import _asarray_validated
 
+from scipy._lib._array_api import (
+    array_namespace, is_numpy, _asarray, xp_unsupported_args
+)
+
 __all__ = ['svd', 'svdvals', 'diagsvd', 'orth', 'subspace_angles', 'null_space']
 
 
@@ -105,7 +109,29 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
     True
 
     """
-    a1 = _asarray_validated(a, check_finite=check_finite)
+    xp = array_namespace(a)
+    if check_finite:
+        a = _asarray(a, check_finite=True, xp=xp)
+    if is_numpy(xp):
+        return _svd(a, full_matrices=full_matrices, compute_uv=compute_uv,
+                    overwrite_a=overwrite_a, lapack_driver=lapack_driver)
+    unsupported_args = {
+        'compute_uv': not compute_uv,
+        'lapack_driver': lapack_driver != 'gesdd'
+    }
+    if any(unsupported_args.values()):
+        xp_unsupported_args(unsupported_args)
+    if hasattr(xp, 'linalg'):
+        dtype = xp.result_type(a, xp.float32)
+        a = xp.astype(a, dtype)
+        return xp.linalg.svd(a, full_matrices=full_matrices)
+    a = np.asarray(a)
+    return xp.asarray(_svd(a, full_matrices=full_matrices))
+
+
+def _svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
+         lapack_driver='gesdd'):
+    a1 = _asarray_validated(a, check_finite=False)
     if len(a1.shape) != 2:
         raise ValueError('expected matrix')
     m, n = a1.shape
@@ -243,8 +269,21 @@ def svdvals(a, overwrite_a=False, check_finite=True):
     array([ 1.,  1.,  1.,  1.])
 
     """
-    return svd(a, compute_uv=0, overwrite_a=overwrite_a,
-               check_finite=check_finite)
+    xp = array_namespace(a)
+    if check_finite:
+        a = _asarray(a, check_finite=True, xp=xp)
+    if is_numpy(xp):
+        return _svdvals(a, overwrite_a=overwrite_a)
+    if hasattr(xp, 'linalg'):
+        dtype = xp.result_type(a, xp.float32)
+        a = xp.astype(a, dtype)
+        return xp.linalg.svdvals(a)
+    a = np.asarray(a)
+    return xp.asarray(_svdvals(a))
+
+
+def _svdvals(a, overwrite_a=False):
+    return _svd(a, compute_uv=0, overwrite_a=overwrite_a)
 
 
 def diagsvd(s, M, N):

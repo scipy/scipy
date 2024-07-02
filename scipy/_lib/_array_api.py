@@ -12,7 +12,7 @@ import os
 import warnings
 
 from types import ModuleType
-from typing import Any, Literal, TYPE_CHECKING
+from typing import Any, Literal, TYPE_CHECKING, NoReturn
 
 import numpy as np
 import numpy.typing as npt
@@ -409,8 +409,30 @@ def cov(x: Array, *, xp: ModuleType | None = None) -> Array:
     return xp.squeeze(c, axis=axes)
 
 
-def xp_unsupported_param_msg(param: Any) -> str:
-    return f'Providing {param!r} is only supported for numpy arrays.'
+def xp_unsupported_param_msg(args: Any) -> str:
+    msg = ""
+    if isinstance(args, (list, tuple)):
+        for arg in args:
+            msg += f'{arg!r}, '
+        msg = msg[:-2]
+    else:
+        msg = f'{args!r}'
+    return f'Providing {msg} is only supported for numpy arrays.'
+
+
+def xp_unsupported_args(arg_or_dict: Any) -> NoReturn:
+    # If arg_or_dict is a single arg, then this is equivalent to 
+    # raise ValueError(xp_unsupported_param_msg(arg_or_dict)).
+    # Otherwise, arg_or_dict should be a dict of the form
+    # {arg1: cond1, arg2: cond2, ...}
+    # where argx is the name of the corresponding arg,
+    # and condx is the condition for argx being unsupported.
+    # E.g. arg_or_dict = {'lower': not lower, 'type': type != 1}
+    if isinstance(arg_or_dict, dict):
+        args = [k for k, v in arg_or_dict.items() if v]
+    else:
+        args = [arg_or_dict]
+    raise ValueError(xp_unsupported_param_msg(args))
 
 
 def is_complex(x: Array, xp: ModuleType) -> bool:
