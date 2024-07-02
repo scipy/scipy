@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.linalg import svd
+from ._decomp_svd import svd
 
 
 __all__ = ['polar']
