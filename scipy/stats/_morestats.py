@@ -942,25 +942,34 @@ def boxcox_llf(lmb, data):
     >>> plt.show()
 
     """
-    data = np.asarray(data)
+    xp = array_namespace(data)
+    data = xp.asarray(data)
     N = data.shape[0]
     if N == 0:
-        return np.nan
+        return xp.nan
 
-    logdata = np.log(data)
+    if xp.isdtype(data.dtype, 'integral'):
+        data = xp.asarray(data, dtype=xp.float64)
+    
+    logdata = xp.log(data)
 
     # Compute the variance of the transformed data.
     if lmb == 0:
-        logvar = np.log(np.var(logdata, axis=0))
+        logvar = xp.log(xp.var(logdata, axis=0))
     else:
         # Transform without the constant offset 1/lmb.  The offset does
         # not affect the variance, and the subtraction of the offset can
         # lead to loss of precision.
         # Division by lmb can be factored out to enhance numerical stability.
         logx = lmb * logdata
+        # convert to `np` for `special.logsumexp`
+        logx = np.asarray(logx)
         logvar = _log_var(logx) - 2 * np.log(abs(lmb))
+        logvar = xp.asarray(logvar)
 
-    return (lmb - 1) * np.sum(logdata, axis=0) - N/2 * logvar
+    res = (lmb - 1) * xp.sum(logdata, axis=0) - N/2 * logvar
+    res = res[()] if res.ndim == 0 else res
+    return res
 
 
 def _boxcox_conf_interval(x, lmax, alpha):

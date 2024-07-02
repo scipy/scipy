@@ -1919,23 +1919,27 @@ class TestPpccMax:
                             -0.71215366521264145, decimal=7)
 
 
+@skip_xp_backends(cpu_only=True)
+@array_api_compatible
 class TestBoxcox_llf:
 
-    def test_basic(self):
+    def test_basic(self, xp):
         x = stats.norm.rvs(size=10000, loc=10, random_state=54321)
         lmbda = 1
-        llf = stats.boxcox_llf(lmbda, x)
+        llf = stats.boxcox_llf(lmbda, xp.asarray(x))
         llf_expected = -x.size / 2. * np.log(np.sum(x.std()**2))
-        assert_allclose(llf, llf_expected)
+        xp_assert_close(llf, xp.asarray(llf_expected))
 
-    def test_array_like(self):
+    @skip_xp_backends(np_only=True,
+                      reasons=['array-likes only accepted for NumPy backend.'])
+    def test_array_like(self, xp):
         x = stats.norm.rvs(size=100, loc=10, random_state=54321)
         lmbda = 1
         llf = stats.boxcox_llf(lmbda, x)
         llf2 = stats.boxcox_llf(lmbda, list(x))
-        assert_allclose(llf, llf2, rtol=1e-12)
+        xp_assert_close(llf, llf2, rtol=1e-12)
 
-    def test_2d_input(self):
+    def test_2d_input(self, xp):
         # Note: boxcox_llf() was already working with 2-D input (sort of), so
         # keep it like that.  boxcox() doesn't work with 2-D input though, due
         # to brent() returning a scalar.
@@ -1943,24 +1947,24 @@ class TestBoxcox_llf:
         lmbda = 1
         llf = stats.boxcox_llf(lmbda, x)
         llf2 = stats.boxcox_llf(lmbda, np.vstack([x, x]).T)
-        assert_allclose([llf, llf], llf2, rtol=1e-12)
+        xp_assert_close(xp.asarray([llf, llf]), xp.asarray(llf2), rtol=1e-12)
 
-    def test_empty(self):
-        assert_(np.isnan(stats.boxcox_llf(1, [])))
+    def test_empty(self, xp):
+        assert xp.isnan(xp.asarray(stats.boxcox_llf(1, xp.asarray([]))))
 
-    def test_gh_6873(self):
+    def test_gh_6873(self, xp):
         # Regression test for gh-6873.
         # This example was taken from gh-7534, a duplicate of gh-6873.
-        data = [198.0, 233.0, 233.0, 392.0]
+        data = xp.asarray([198.0, 233.0, 233.0, 392.0])
         llf = stats.boxcox_llf(-8, data)
         # The expected value was computed with mpmath.
-        assert_allclose(llf, -17.93934208579061)
+        xp_assert_close(llf, xp.asarray(-17.93934208579061, dtype=xp.float64))
 
-    def test_instability_gh20021(self):
-        data = [2003, 1950, 1997, 2000, 2009]
+    def test_instability_gh20021(self, xp):
+        data = xp.asarray([2003, 1950, 1997, 2000, 2009])
         llf = stats.boxcox_llf(1e-8, data)
         # The expected value was computed with mpsci, set mpmath.mp.dps=100
-        assert_allclose(llf, -15.32401272869016598)
+        xp_assert_close(llf, xp.asarray(-15.32401272869016598, dtype=xp.float64))
 
 
 # This is the data from github user Qukaiyi, given as an example
