@@ -25,10 +25,6 @@ header = [
 def generate_requirement_file(name, req_list, *, extra_list=None):
     req_fname = repo_dir / "requirements" / f"{name}.txt"
 
-    # remove once scikit-umfpack issues are resolved
-    comment = "# scikit-umfpack  # circular dependency issues"
-    req_list = [comment if x == "scikit-umfpack" else x for x in req_list]
-
     # remove once gmpy2 supports Python 3.12
     comment = "# gymp2  # does not yet support Python 3.12"
     req_list = [comment if x == "gmpy2" else x for x in req_list]
