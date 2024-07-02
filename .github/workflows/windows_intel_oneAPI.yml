@@ -1,0 +1,102 @@
+name: Windows tests (MSVC + ifx + OpenBLAS)
+# TODO: replace OpenBLAS with MKL. This is harder to get to build, so we merged with OpenBLAS first.
+
+on:
+  push:
+    branches:
+      - maintenance/**
+  pull_request:
+    branches:
+      - main
+      - maintenance/**
+
+permissions:
+   contents: read  # to fetch code (actions/checkout)
+
+# The environment variable WINDOWS_BASEKIT_URL and WINDOWS_HPC_URL
+# store the URL for downloading Intel oneAPI.
+# Reference - https://github.com/oneapi-src/oneapi-ci/blob/b4a96bd1888c130fcb73524d2b77b90f43681cbc/.github/workflows/build_all.yml#L11-L12
+env:
+  WINDOWS_BASEKIT_URL: https://registrationcenter-download.intel.com/akdlm/IRC_NAS/7dff44ba-e3af-4448-841c-0d616c8da6e7/w_BaseKit_p_2024.1.0.595_offline.exe
+  WINDOWS_HPC_URL: https://registrationcenter-download.intel.com/akdlm/IRC_NAS/c95a3b26-fc45-496c-833b-df08b10297b9/w_HPCKit_p_2024.1.0.561_offline.exe
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  get_commit_message:
+    name: Get commit message
+    uses: ./.github/workflows/commit_message.yml
+
+  msvc_ifx_blas:
+    name: py3.11, dev.py
+    needs: get_commit_message
+    # Ensure (a) this doesn't run on forks by default, and
+    #        (b) it does run with Act locally (`github` doesn't exist there)
+    if: >
+      needs.get_commit_message.outputs.message == 1
+      && (github.repository == 'scipy/scipy' || github.repository == '')
+    runs-on: windows-2022
+    defaults:
+      run:
+        shell: powershell
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4.1.1
+        with:
+          submodules: recursive
+
+      - name: Setup conda
+        uses: s-weigand/setup-conda@678f22c807cb6fde6a290be6f3546877c98ec66f # v1.2.2
+        with:
+          update-conda: true
+          python-version: 3.11
+      - run: conda --version
+      - run: which python
+
+      - name: Install packages from conda
+        run: |
+          conda install -c conda-forge pkg-config meson=1.4.0 meson-python=0.16.0 ninja openblas libblas=*=*openblas numpy==2.0 cython pybind11 pytest pytest-xdist pytest-timeout pytest-fail-slow pooch rich-click click doit pydevtool hypothesis
+
+      - name: cache install
+        id: cache-install
+        uses: actions/cache@v3
+        with:
+          path: |
+              C:\Program Files (x86)\Intel\oneAPI\compiler
+              C:\Program Files (x86)\Intel\oneAPI\setvars.bat
+              C:\Program Files (x86)\Intel\oneAPI\setvars-vcvarsall.bat
+          key: install-${{ env.WINDOWS_HPC_URL }}-${{ env.WINDOWS_BASEKIT_URL }}-compiler
+      - name: Install oneAPI Base kit
+        if: steps.cache-install.outputs.cache-hit != 'true'
+        run: |
+          echo %WINDOWS_BASEKIT_URL%
+          tools/install_intel_oneAPI_windows.bat %WINDOWS_BASEKIT_URL%
+      - name: Install oneAPI HPC kit
+        if: steps.cache-install.outputs.cache-hit != 'true'
+        run: |
+          echo %WINDOWS_HPC_URL%
+          tools/install_intel_oneAPI_windows.bat %WINDOWS_HPC_URL%
+
+      # MSVC is unable to compile Pythran code, therefore we need to use
+      # -C-Duse-pythran=false while building SciPy.
+      # Reference - https://github.com/serge-sans-paille/pythran/issues/2215
+      - name: Initialise Intel oneAPI, MSVC and Build SciPy
+        run: |
+          call "C:\Program Files (x86)\Intel\oneAPI\setvars.bat"
+          set FC=ifx
+          call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
+          python dev.py build -C-Duse-pythran=false -C--vsenv
+        shell: cmd
+
+      # "import scipy; scipy.test();" fails because
+      # scipy/sparse/linalg/_eigen/arpack crashes.
+      # Reference - https://github.com/scipy/scipy/issues/20728
+      - name: Test scipy.datasets
+        run: python dev.py test -s datasets
+        shell: cmd
+
+      - name: Test scipy.misc
+        run: python dev.py test -s misc
+        shell: cmd

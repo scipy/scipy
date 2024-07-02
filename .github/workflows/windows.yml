@@ -157,7 +157,7 @@ jobs:
           wheel_name=$(ls dist/*.whl)
           openblas_dir=$(python -c"import scipy_openblas32 as sop; print(sop.get_lib_dir())")
           delvewheel repair --add-path $openblas_dir --no-dll libsf_error_state.dll -w wheelhouse $wheel_name
-          
+
           python -m pip install wheelhouse/*
 
       - name: Test
