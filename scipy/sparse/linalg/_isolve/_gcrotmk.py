@@ -247,6 +247,17 @@ def gcrotmk(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=1000, M=None, callback
         * 0  : successful exit
         * >0 : convergence to tolerance not achieved, number of iterations
 
+    References
+    ----------
+    .. [1] E. de Sturler, ''Truncation strategies for optimal Krylov subspace
+           methods'', SIAM J. Numer. Anal. 36, 864 (1999).
+    .. [2] J.E. Hicken and D.W. Zingg, ''A simplified and flexible variant
+           of GCROT for solving nonsymmetric linear systems'',
+           SIAM J. Sci. Comput. 32, 172 (2010).
+    .. [3] M.L. Parks, E. de Sturler, G. Mackey, D.D. Johnson, S. Maiti,
+           ''Recycling Krylov subspaces for sequences of linear systems'',
+           SIAM J. Sci. Comput. 28, 1651 (2006).
+
     Examples
     --------
     >>> import numpy as np
@@ -260,17 +271,6 @@ def gcrotmk(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=1000, M=None, callback
     0
     >>> np.allclose(A.dot(x), b)
     True
-
-    References
-    ----------
-    .. [1] E. de Sturler, ''Truncation strategies for optimal Krylov subspace
-           methods'', SIAM J. Numer. Anal. 36, 864 (1999).
-    .. [2] J.E. Hicken and D.W. Zingg, ''A simplified and flexible variant
-           of GCROT for solving nonsymmetric linear systems'',
-           SIAM J. Sci. Comput. 32, 172 (2010).
-    .. [3] M.L. Parks, E. de Sturler, G. Mackey, D.D. Johnson, S. Maiti,
-           ''Recycling Krylov subspaces for sequences of linear systems'',
-           SIAM J. Sci. Comput. 28, 1651 (2006).
 
     """
     A,M,x,b,postprocess = make_system(A,M,x0,b)
