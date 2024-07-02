@@ -188,7 +188,7 @@ def gcrotmk(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=1000, M=None, callback
 
     Parameters
     ----------
-    A : {sparse matrix, ndarray, LinearOperator}
+    A : {sparse matrix, ndarray, `LinearOperator`}
         The real or complex N-by-N matrix of the linear system.
         Alternatively, `A` can be a linear operator which can
         produce ``Ax`` using, e.g.,
@@ -204,7 +204,7 @@ def gcrotmk(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=1000, M=None, callback
     maxiter : int, optional
         Maximum number of iterations.  Iteration will stop after maxiter
         steps even if the specified tolerance has not been achieved. The default is ``1000``.
-    M : {sparse matrix, ndarray, LinearOperator}, optional
+    M : {sparse matrix, ndarray, `LinearOperator`}, optional
         Preconditioner for `A`.  The preconditioner should approximate the
         inverse of `A`. gcrotmk is a 'flexible' algorithm and the preconditioner
         can vary from iteration to iteration. Effective preconditioning
