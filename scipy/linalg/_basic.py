@@ -1273,10 +1273,10 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
     if driver is None:
         driver = lstsq.default_lapack_driver
     if driver not in ('gelsd', 'gelsy', 'gelss'):
-        raise ValueError('LAPACK driver "%s" is not found' % driver)
+        raise ValueError(f'LAPACK driver "{driver}" is not found')
 
     lapack_func, lapack_lwork = get_lapack_funcs((driver,
-                                                 '%s_lwork' % driver),
+                                                 f'{driver}_lwork'),
                                                  (a1, b1))
     real_data = True if (lapack_func.dtype.kind == 'f') else False
 

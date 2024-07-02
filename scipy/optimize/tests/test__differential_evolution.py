@@ -376,7 +376,7 @@ class TestDifferentialEvolutionSolver:
         args = (1., 2., 3.)
 
         def quadratic(x, *args):
-            if type(args) != tuple:
+            if not isinstance(args, tuple):
                 raise ValueError('args should be a tuple')
             return args[0] + args[1] * x + args[2] * x**2.
 

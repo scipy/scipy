@@ -9,7 +9,7 @@ import math
 import numpy as np
 from scipy import special
 from ._axis_nan_policy import _axis_nan_policy_factory, _broadcast_arrays
-from scipy._lib._array_api import array_namespace
+from scipy._lib._array_api import array_namespace, xp_moveaxis_to_end
 
 __all__ = ['entropy', 'differential_entropy']
 
@@ -317,9 +317,10 @@ def differential_entropy(
     >>> plt.title('Entropy Estimator Error (Exponential Distribution)')
 
     """
-    values = np.asarray(values)
-    values = np.moveaxis(values, axis, -1)
-    n = values.shape[-1]  # number of observations
+    xp = array_namespace(values)
+    values = xp.asarray(values)
+    values = xp_moveaxis_to_end(values, axis, xp=xp)
+    n = values.shape[-1]  # type: ignore[union-attr]
 
     if window_length is None:
         window_length = math.floor(math.sqrt(n) + 0.5)
@@ -333,7 +334,7 @@ def differential_entropy(
     if base is not None and base <= 0:
         raise ValueError("`base` must be a positive number or `None`.")
 
-    sorted_data = np.sort(values, axis=-1)
+    sorted_data = xp.sort(values, axis=-1)
 
     methods = {"vasicek": _vasicek_entropy,
                "van es": _van_es_entropy,
@@ -353,74 +354,73 @@ def differential_entropy(
         else:
             method = 'vasicek'
 
-    res = methods[method](sorted_data, window_length)
+    res = methods[method](sorted_data, window_length, xp=xp)
 
     if base is not None:
-        res /= np.log(base)
+        res /= math.log(base)
 
     return res
 
 
-def _pad_along_last_axis(X, m):
+def _pad_along_last_axis(X, m, *, xp):
     """Pad the data for computing the rolling window difference."""
     # scales a  bit better than method in _vasicek_like_entropy
-    shape = np.array(X.shape)
-    shape[-1] = m
-    Xl = np.broadcast_to(X[..., [0]], shape)  # [0] vs 0 to maintain shape
-    Xr = np.broadcast_to(X[..., [-1]], shape)
-    return np.concatenate((Xl, X, Xr), axis=-1)
+    shape = X.shape[:-1] + (m,)
+    Xl = xp.broadcast_to(X[..., :1], shape)  # :1 vs 0 to maintain shape
+    Xr = xp.broadcast_to(X[..., -1:], shape)
+    return xp.concat((Xl, X, Xr), axis=-1)
 
 
-def _vasicek_entropy(X, m):
+def _vasicek_entropy(X, m, *, xp):
     """Compute the Vasicek estimator as described in [6] Eq. 1.3."""
     n = X.shape[-1]
-    X = _pad_along_last_axis(X, m)
+    X = _pad_along_last_axis(X, m, xp=xp)
     differences = X[..., 2 * m:] - X[..., : -2 * m:]
-    logs = np.log(n/(2*m) * differences)
-    return np.mean(logs, axis=-1)
+    logs = xp.log(n/(2*m) * differences)
+    return xp.mean(logs, axis=-1)
 
 
-def _van_es_entropy(X, m):
+def _van_es_entropy(X, m, *, xp):
     """Compute the van Es estimator as described in [6]."""
     # No equation number, but referred to as HVE_mn.
     # Typo: there should be a log within the summation.
     n = X.shape[-1]
     difference = X[..., m:] - X[..., :-m]
-    term1 = 1/(n-m) * np.sum(np.log((n+1)/m * difference), axis=-1)
-    k = np.arange(m, n+1)
-    return term1 + np.sum(1/k) + np.log(m) - np.log(n+1)
+    term1 = 1/(n-m) * xp.sum(xp.log((n+1)/m * difference), axis=-1)
+    k = xp.arange(m, n+1, dtype=term1.dtype)
+    return term1 + xp.sum(1/k) + math.log(m) - math.log(n+1)
 
 
-def _ebrahimi_entropy(X, m):
+def _ebrahimi_entropy(X, m, *, xp):
     """Compute the Ebrahimi estimator as described in [6]."""
     # No equation number, but referred to as HE_mn
     n = X.shape[-1]
-    X = _pad_along_last_axis(X, m)
+    X = _pad_along_last_axis(X, m, xp=xp)
 
     differences = X[..., 2 * m:] - X[..., : -2 * m:]
 
-    i = np.arange(1, n+1).astype(float)
-    ci = np.ones_like(i)*2
+    i = xp.arange(1, n+1, dtype=X.dtype)
+    ci = xp.ones_like(i)*2
     ci[i <= m] = 1 + (i[i <= m] - 1)/m
     ci[i >= n - m + 1] = 1 + (n - i[i >= n-m+1])/m
 
-    logs = np.log(n * differences / (ci * m))
-    return np.mean(logs, axis=-1)
+    logs = xp.log(n * differences / (ci * m))
+    return xp.mean(logs, axis=-1)
 
 
-def _correa_entropy(X, m):
+def _correa_entropy(X, m, *, xp):
     """Compute the Correa estimator as described in [6]."""
     # No equation number, but referred to as HC_mn
     n = X.shape[-1]
-    X = _pad_along_last_axis(X, m)
+    X = _pad_along_last_axis(X, m, xp=xp)
 
-    i = np.arange(1, n+1)
-    dj = np.arange(-m, m+1)[:, None]
+    i = xp.arange(1, n+1)
+    dj = xp.arange(-m, m+1)[:, None]
     j = i + dj
     j0 = j + m - 1  # 0-indexed version of j
 
-    Xibar = np.mean(X[..., j0], axis=-2, keepdims=True)
+    Xibar = xp.mean(X[..., j0], axis=-2, keepdims=True)
     difference = X[..., j0] - Xibar
-    num = np.sum(difference*dj, axis=-2)  # dj is d-i
-    den = n*np.sum(difference**2, axis=-2)
-    return -np.mean(np.log(num/den), axis=-1)
+    num = xp.sum(difference*dj, axis=-2)  # dj is d-i
+    den = n*xp.sum(difference**2, axis=-2)
+    return -xp.mean(xp.log(num/den), axis=-1)

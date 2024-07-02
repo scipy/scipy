@@ -73,7 +73,7 @@ master_doc = 'index'
 
 # General substitutions.
 project = 'SciPy'
-copyright = '2008-%s, The SciPy community' % date.today().year
+copyright = f'2008-{date.today().year}, The SciPy community'
 
 # The default replacements for |version| and |release|, also used in various
 # other places throughout the built documents.

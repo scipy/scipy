@@ -650,7 +650,7 @@ def probplot(x, sparams=(), dist='norm', fit=True, plot=None, rvalue=False):
             ymax = amax(x)
             posx = xmin + 0.70 * (xmax - xmin)
             posy = ymin + 0.01 * (ymax - ymin)
-            plot.text(posx, posy, "$R^2=%1.4f$" % r**2)
+            plot.text(posx, posy, f"$R^2={r ** 2:1.4f}$")
 
     if fit:
         return (osm, osr), (slope, intercept, r)

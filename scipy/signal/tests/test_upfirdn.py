@@ -211,7 +211,7 @@ class TestUpfirdn:
             len_h = random_state.randint(longest_h) + 1
             h = np.atleast_1d(random_state.randint(len_h))
             h = h.astype(h_dtype)
-            if h_dtype == complex:
+            if h_dtype is complex:
                 h += 1j * random_state.randint(len_h)
 
             tests.append(UpFIRDnCase(p, q, h, x_dtype))

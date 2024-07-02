@@ -155,7 +155,7 @@ class NumpyDocString(Mapping):
 
     def __setitem__(self, key, val):
         if key not in self._parsed_data:
-            self._error_location("Unknown section %s" % key, error=False)
+            self._error_location(f"Unknown section {key}", error=False)
         else:
             self._parsed_data[key] = val
 
@@ -288,7 +288,7 @@ class NumpyDocString(Mapping):
             """Match ':role:`name`' or 'name'."""
             m = self._func_rgx.match(text)
             if not m:
-                raise ParseError("%s is not a item name" % text)
+                raise ParseError(f"{text} is not a item name")
             role = m.group('role')
             name = m.group('name') if role else m.group('name2')
             return name, role, m.end()
@@ -324,7 +324,7 @@ class NumpyDocString(Mapping):
                 rest = list(filter(None, [description]))
                 items.append((funcs, rest))
             else:
-                raise ParseError("%s is not a item name" % line)
+                raise ParseError(f"{line} is not a item name")
         return items
 
     def _parse_index(self, section, content):
@@ -390,8 +390,7 @@ class NumpyDocString(Mapping):
                 section = (s.capitalize() for s in section.split(' '))
                 section = ' '.join(section)
                 if self.get(section):
-                    self._error_location("The section %s appears twice"
-                                         % section)
+                    self._error_location(f"The section {section} appears twice")
 
             if section in ('Parameters', 'Other Parameters', 'Attributes',
                            'Methods'):
@@ -489,7 +488,7 @@ class NumpyDocString(Mapping):
                 elif func_role:
                     link = f':{func_role}:`{func}`'
                 else:
-                    link = "`%s`_" % func
+                    link = f"`{func}`_"
                 links.append(link)
             link = ', '.join(links)
             out += [link]
@@ -512,7 +511,7 @@ class NumpyDocString(Mapping):
         default_index = idx.get('default', '')
         if default_index:
             output_index = True
-        out += ['.. index:: %s' % default_index]
+        out += [f'.. index:: {default_index}']
         for section, references in idx.items():
             if section == 'default':
                 continue
@@ -587,7 +586,7 @@ class FunctionDoc(NumpyDocString):
 
         if self._role:
             if self._role not in roles:
-                print("Warning: invalid role %s" % self._role)
+                print(f"Warning: invalid role {self._role}")
             out += '.. {}:: {}\n    \n\n'.format(roles.get(self._role, ''),
                                              func_name)
 
@@ -602,7 +601,7 @@ class ClassDoc(NumpyDocString):
     def __init__(self, cls, doc=None, modulename='', func_doc=FunctionDoc,
                  config={}):
         if not inspect.isclass(cls) and cls is not None:
-            raise ValueError("Expected a class or None, but got %r" % cls)
+            raise ValueError(f"Expected a class or None, but got {repr(cls)}")
         self._cls = cls
 
         if 'sphinx' in sys.modules:
