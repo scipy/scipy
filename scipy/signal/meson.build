@@ -22,27 +22,9 @@ if use_pythran
     install: true,
     subdir: 'scipy/signal'
   )
-
-  py3.extension_module('_spectral',
-    pythran_gen.process('_spectral.py'),
-    cpp_args: cpp_args_pythran,
-    dependencies: [pythran_dep, np_dep],
-    link_args: version_link_args,
-    install: true,
-    subdir: 'scipy/signal'
-  )
 else
   py3.extension_module('_max_len_seq_inner',
     [cython_gen.process('_max_len_seq_inner.pyx')],
-    c_args: cython_c_args,
-    dependencies: np_dep,
-    link_args: version_link_args,
-    install: true,
-    subdir: 'scipy/signal'
-  )
-
-  py3.extension_module('_spectral',
-    [cython_gen.process('_spectral.pyx')],
     c_args: cython_c_args,
     dependencies: np_dep,
     link_args: version_link_args,
