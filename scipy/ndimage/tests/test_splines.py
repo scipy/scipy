@@ -1,10 +1,13 @@
 """Tests for spline filtering."""
-import numpy as np
 import pytest
 
-from numpy.testing import assert_almost_equal
+from scipy._lib._array_api import assert_almost_equal
 
 from scipy import ndimage
+
+from scipy.conftest import array_api_compatible
+pytestmark = [array_api_compatible, pytest.mark.usefixtures("skip_xp_backends")]
+skip_xp_backends = pytest.mark.skip_xp_backends
 
 
 def get_spline_knot_values(order):
@@ -19,13 +22,13 @@ def get_spline_knot_values(order):
     return knot_values[order]
 
 
-def make_spline_knot_matrix(n, order, mode='mirror'):
+def make_spline_knot_matrix(xp, n, order, mode='mirror'):
     """Matrix to invert to find the spline coefficients."""
     knot_values = get_spline_knot_values(order)
 
-    matrix = np.zeros((n, n))
+    matrix = xp.zeros((n, n))
     for diag, knot_value in enumerate(knot_values):
-        indices = np.arange(diag, n)
+        indices = xp.arange(diag, n)
         if diag == 0:
             matrix[indices, indices] = knot_value
         else:
@@ -53,13 +56,13 @@ def make_spline_knot_matrix(n, order, mode='mirror'):
 
 @pytest.mark.parametrize('order', [0, 1, 2, 3, 4, 5])
 @pytest.mark.parametrize('mode', ['mirror', 'grid-wrap', 'reflect'])
-def test_spline_filter_vs_matrix_solution(order, mode):
+def test_spline_filter_vs_matrix_solution(order, mode, xp):
     n = 100
-    eye = np.eye(n, dtype=float)
+    eye = xp.eye(n, dtype=float)
     spline_filter_axis_0 = ndimage.spline_filter1d(eye, axis=0, order=order,
                                                    mode=mode)
     spline_filter_axis_1 = ndimage.spline_filter1d(eye, axis=1, order=order,
                                                    mode=mode)
-    matrix = make_spline_knot_matrix(n, order, mode=mode)
-    assert_almost_equal(eye, np.dot(spline_filter_axis_0, matrix))
-    assert_almost_equal(eye, np.dot(spline_filter_axis_1, matrix.T))
+    matrix = make_spline_knot_matrix(xp, n, order, mode=mode)
+    assert_almost_equal(eye, xp.dot(spline_filter_axis_0, matrix))
+    assert_almost_equal(eye, xp.dot(spline_filter_axis_1, matrix.T))
