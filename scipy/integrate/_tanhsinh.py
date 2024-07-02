@@ -411,9 +411,10 @@ def _tanhsinh(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
         # Terminate before first iteration if integration limits are equal
         if work.nit == 0:
             i = (work.a == work.b).ravel()  # ravel singleton dimension
-            zero = -np.inf if log else 0
-            work.Sn[i] = zero
-            work.aerr[i] = zero
+            zero = np.full(work.Sn.shape, -np.inf if log else 0, dtype=Sn.dtype)
+            zero[np.isnan(Sn)] = np.nan
+            work.Sn[i] = zero[i]
+            work.aerr[i] = zero[i]
             work.status[i] = eim._ECONVERGED
             stop[i] = True
         else:
