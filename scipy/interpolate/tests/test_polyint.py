@@ -14,6 +14,7 @@ from scipy.interpolate import (
     approximate_taylor_polynomial, CubicHermiteSpline, pchip,
     PchipInterpolator, pchip_interpolate, Akima1DInterpolator, CubicSpline,
     make_interp_spline)
+from scipy._lib._testutils import _run_concurrent_barrier
 
 
 def check_shape(interpolator_cls, x_shape, y_shape, deriv_shape=None, axis=0,
@@ -315,6 +316,14 @@ class TestKrogh:
         with pytest.warns(UserWarning, match="40 degrees provided,"):
             KroghInterpolator(np.arange(40), np.ones(40))
 
+    def test_concurrency(self):
+        P = KroghInterpolator(self.xs, self.ys)
+
+        def worker_fn(_, interp):
+            interp(self.xs)
+
+        _run_concurrent_barrier(10, worker_fn, P)
+
 
 class TestTaylor:
     def test_exponential(self):
@@ -513,6 +522,14 @@ class TestBarycentric:
         with pytest.raises(ValueError,
                            match="Interpolation points xi must be distinct."):
             BarycentricInterpolator(xis, ys)
+
+    def test_concurrency(self):
+        P = BarycentricInterpolator(self.xs, self.ys)
+
+        def worker_fn(_, interp):
+            interp(self.xs)
+
+        _run_concurrent_barrier(10, worker_fn, P)
 
 
 class TestPCHIP:
