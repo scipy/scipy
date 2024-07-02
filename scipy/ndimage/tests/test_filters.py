@@ -162,9 +162,9 @@ class TestNdimageFilters:
             convolve(array, kernel, output=output_real)
 
     def test_correlate01(self, xp):
-        array = xp.array([1, 2])
-        weights = xp.array([2])
-        expected = xp.array([2, 4])
+        array = xp.asarray([1, 2])
+        weights = xp.asarray([2])
+        expected = xp.asarray([2, 4])
 
         output = ndimage.correlate(array, weights)
         assert_array_almost_equal(output, expected)
@@ -183,15 +183,15 @@ class TestNdimageFilters:
             pytest.xfail("Differs by a factor of two?")
 
         array = xp.arange(256).reshape(16, 16)
-        weights = xp.array([2])
+        weights = xp.asarray([2])
         expected = 2 * array
 
         ndimage.correlate1d(array, weights, output=array)
         assert_array_almost_equal(array, expected)
 
     def test_correlate02(self, xp):
-        array = xp.array([1, 2, 3])
-        kernel = xp.array([1])
+        array = xp.asarray([1, 2, 3])
+        kernel = xp.asarray([1])
 
         output = ndimage.correlate(array, kernel)
         assert_array_almost_equal(array, output)
@@ -206,8 +206,8 @@ class TestNdimageFilters:
         assert_array_almost_equal(array, output)
 
     def test_correlate03(self, xp):
-        array = xp.array([1])
-        weights = xp.array([1, 1])
+        array = xp.asarray([1])
+        weights = xp.asarray([1, 1])
         expected = xp.asarray([2])
 
         output = ndimage.correlate(array, weights)
@@ -305,16 +305,16 @@ class TestNdimageFilters:
 
     def test_correlate10(self, xp):
         array = xp.asarray([[]])
-        kernel = xp.array([[1, 1]])
+        kernel = xp.asarray([[1, 1]])
         output = ndimage.correlate(array, kernel)
         assert_array_almost_equal(array, output)
         output = ndimage.convolve(array, kernel)
         assert_array_almost_equal(array, output)
 
     def test_correlate11(self, xp):
-        array = xp.array([[1, 2, 3],
+        array = xp.asarray([[1, 2, 3],
                           [4, 5, 6]])
-        kernel = xp.array([[1, 1],
+        kernel = xp.asarray([[1, 1],
                            [1, 1]])
         output = ndimage.correlate(array, kernel)
         assert_array_almost_equal(xp.asarray([[4, 6, 10], [10, 12, 16]]), output)
