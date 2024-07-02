@@ -16,6 +16,7 @@ from typing import (
 
 import numpy as np
 from scipy._lib._array_api import array_namespace, is_numpy, size as xp_size
+from scipy._lib._docscrape import FunctionDoc
 
 
 AxisError: type[Exception]
@@ -966,3 +967,45 @@ def _dict_formatter(d, n=0, mplus=1, sorter=None):
                              formatter={'float_kind': _float_formatter_10}):
             s = str(d)
     return s
+
+
+def _deprecate_pos_kwd_only_args(pos_only, kwd_only, dep_version):
+    # Wrapper that emits a DeprecationWarning about arguments becoming
+    # positional/keyword-only: in SciPy version `effective_version`,
+    # arguments specified in list `pos_only` will be positional-only,
+    # arguments specified in set `kwd_only` will become keyword-only,
+    # and the rest will be keyword only.
+    end_version = dep_version.split('.')
+    end_version[1] = str(int(end_version[1]) + 2)
+    end_version = '.'.join(end_version)
+
+    def decorator(f):
+        @functools.wraps(f)
+        def wrapper(*args, **kwargs):
+            n_dep_pos = len(args) - len(pos_only)
+            dep_pos = set(kwd_only[:n_dep_pos]) if n_dep_pos > 0 else set()
+            dep_kwd = set(pos_only).intersection(set(kwargs))
+            if dep_pos:
+                message = (f"Argument(s) {dep_pos} of `{f.__name__}` passed by "
+                           "position but will become keyword-only in SciPy "
+                           f"{end_version}.")
+                warnings.warn(message, DeprecationWarning, stacklevel=2)
+            if dep_kwd:
+                message = (f"Argument(s) {dep_kwd} of `{f.__name__}` passed by "
+                           "keyword but will become positional-only in SciPy "
+                           f"{end_version}.")
+                warnings.warn(message, DeprecationWarning, stacklevel=2)
+            return f(*args, **kwargs)
+
+        doc = FunctionDoc(wrapper)
+        doc['Extended Summary'] += [f"""
+.. deprecated:: {dep_version}
+
+    Use of argument(s) {pos_only} as keywords and use of arguments {kwd_only}
+    by position is deprecated as of SciPy {dep_version}. Beginning in SciPy
+    {end_version}, {pos_only} will be positional-only and {kwd_only} will be
+    keyword-only."""]
+        doc = str(doc).split("\n", 1)[1]  # remove signature
+        wrapper.__doc__ = str(doc)
+        return wrapper
+    return decorator
