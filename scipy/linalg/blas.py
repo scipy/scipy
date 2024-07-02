@@ -409,7 +409,7 @@ def _memoize_get_funcs(func):
 
 
 @_memoize_get_funcs
-def get_blas_funcs(names, arrays=(), dtype=None, ilp64=False):
+def get_blas_funcs(names, arrays=(), dtype=None, ilp64='preferred'):
     """Return available BLAS function objects from names.
 
     Arrays are used to determine the optimal prefix of BLAS routines.
@@ -430,7 +430,7 @@ def get_blas_funcs(names, arrays=(), dtype=None, ilp64=False):
     ilp64 : {True, False, 'preferred'}, optional
         Whether to return ILP64 routine variant.
         Choosing 'preferred' returns ILP64 routine if available,
-        and otherwise the 32-bit routine. Default: False
+        and otherwise the 32-bit routine. Default: `'preferred'`.
 
     Returns
     -------
