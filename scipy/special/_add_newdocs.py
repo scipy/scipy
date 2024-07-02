@@ -2292,10 +2292,10 @@ add_newdoc("ellipj",
 
     Parameters
     ----------
-    m : array_like
-        Parameter.
     u : array_like
         Argument.
+    m : array_like
+        Parameter.
     out : tuple of ndarray, optional
         Optional output arrays for the function values
 
