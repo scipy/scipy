@@ -1024,9 +1024,11 @@ class TestNdimageFilters:
         assert_array_almost_equal(t, output)
 
     @pytest.mark.parametrize('dtype',
-                             [np.int32, np.float32, np.float64,
-                              np.complex64, np.complex128])
+                             ["int32", "float32", "float64",
+                              "complex64", "complex128"])
     def test_laplace01(self, dtype, xp):
+        dtype = getattr(xp, dtype)
+
         array = xp.asarray([[3, 2, 5, 1, 4],
                           [5, 8, 3, 7, 1],
                           [5, 6, 9, 3, 5]], dtype=dtype) * 100
@@ -1036,9 +1038,11 @@ class TestNdimageFilters:
         assert_array_almost_equal(tmp1 + tmp2, output)
 
     @pytest.mark.parametrize('dtype',
-                             [np.int32, np.float32, np.float64,
-                              np.complex64, np.complex128])
+                             ["int32", "float32", "float64",
+                              "complex64", "complex128"])
     def test_laplace02(self, dtype, xp):
+        dtype = getattr(xp, dtype)
+
         array = xp.asarray([[3, 2, 5, 1, 4],
                           [5, 8, 3, 7, 1],
                           [5, 6, 9, 3, 5]], dtype=dtype) * 100
@@ -1049,9 +1053,11 @@ class TestNdimageFilters:
         assert_array_almost_equal(tmp1 + tmp2, output)
 
     @pytest.mark.parametrize('dtype',
-                             [np.int32, np.float32, np.float64,
-                              np.complex64, np.complex128])
+                             ["int32", "float32", "float64",
+                              "complex64", "complex128"])
     def test_gaussian_laplace01(self, dtype, xp):
+        dtype = getattr(xp, dtype)
+
         array = xp.asarray([[3, 2, 5, 1, 4],
                           [5, 8, 3, 7, 1],
                           [5, 6, 9, 3, 5]], dtype=dtype) * 100
@@ -1061,9 +1067,11 @@ class TestNdimageFilters:
         assert_array_almost_equal(tmp1 + tmp2, output)
 
     @pytest.mark.parametrize('dtype',
-                             [np.int32, np.float32, np.float64,
-                              np.complex64, np.complex128])
+                             ["int32", "float32", "float64",
+                              "complex64", "complex128"])
     def test_gaussian_laplace02(self, dtype, xp):
+        dtype = getattr(xp, dtype)
+
         array = xp.asarray([[3, 2, 5, 1, 4],
                           [5, 8, 3, 7, 1],
                           [5, 6, 9, 3, 5]], dtype=dtype) * 100
@@ -1082,6 +1090,9 @@ class TestNdimageFilters:
             order[axis] = 2
             return ndimage.gaussian_filter(input, sigma, order,
                                            output, mode, cval)
+
+        # dtype = getattr(xp, dtype)   # XXX: 'types' list is numpy dtypes
+
         array = xp.asarray([[3, 2, 5, 1, 4],
                           [5, 8, 3, 7, 1],
                           [5, 6, 9, 3, 5]], dtype=dtype)
@@ -1093,9 +1104,11 @@ class TestNdimageFilters:
         assert_array_almost_equal(tmp, output)
 
     @pytest.mark.parametrize('dtype',
-                             [np.int32, np.float32, np.float64,
-                              np.complex64, np.complex128])
+                             ["int32", "float32", "float64",
+                              "complex64", "complex128"])
     def test_gaussian_gradient_magnitude01(self, dtype, xp):
+        dtype = getattr(xp, dtype)
+
         array = xp.asarray([[3, 2, 5, 1, 4],
                           [5, 8, 3, 7, 1],
                           [5, 6, 9, 3, 5]], dtype=dtype) * 100
@@ -1107,9 +1120,11 @@ class TestNdimageFilters:
         assert_array_almost_equal(expected, output)
 
     @pytest.mark.parametrize('dtype',
-                             [np.int32, np.float32, np.float64,
-                              np.complex64, np.complex128])
+                             ["int32", "float32", "float64",
+                              "complex64", "complex128"])
     def test_gaussian_gradient_magnitude02(self, dtype, xp):
+        dtype = getattr(xp, dtype)
+
         array = xp.asarray([[3, 2, 5, 1, 4],
                           [5, 8, 3, 7, 1],
                           [5, 6, 9, 3, 5]], dtype=dtype) * 100

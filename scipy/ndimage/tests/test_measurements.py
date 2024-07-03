@@ -517,7 +517,7 @@ def test_value_indices02(xp):
 def test_value_indices03(xp):
     "Test different input array shapes, from 1-D to 4-D"
     for shape in [(36,), (18, 2), (3, 3, 4), (3, 3, 2, 2)]:
-        a = xp.asarray((12*[1]+12*[2]+12*[3]), dtype=np.int32).reshape(shape)
+        a = xp.asarray((12*[1]+12*[2]+12*[3]), dtype=xp.int32).reshape(shape)
         trueKeys = xp.unique(a)
         vi = ndimage.value_indices(a)
         assert list(vi.keys()) == list(trueKeys)

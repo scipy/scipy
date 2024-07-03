@@ -178,13 +178,13 @@ class TestNdimageMorphology:
         tdt, tft = ndimage.distance_transform_bf(data, return_indices=1)
         dts = []
         fts = []
-        dt = xp.zeros(data.shape, dtype=np.float64)
+        dt = xp.zeros(data.shape, dtype=xp.float64)
         ndimage.distance_transform_bf(data, distances=dt)
         dts.append(dt)
         ft = ndimage.distance_transform_bf(
             data, return_distances=False, return_indices=1)
         fts.append(ft)
-        ft = np.indices(data.shape, dtype=np.int32)
+        ft = np.indices(data.shape, dtype=xp.int32)
         ndimage.distance_transform_bf(
             data, return_distances=False, return_indices=True, indices=ft)
         fts.append(ft)
@@ -192,18 +192,18 @@ class TestNdimageMorphology:
             data, return_indices=1)
         dts.append(dt)
         fts.append(ft)
-        dt = xp.zeros(data.shape, dtype=np.float64)
+        dt = xp.zeros(data.shape, dtype=xp.float64)
         ft = ndimage.distance_transform_bf(
             data, distances=dt, return_indices=True)
         dts.append(dt)
         fts.append(ft)
-        ft = np.indices(data.shape, dtype=np.int32)
+        ft = np.indices(data.shape, dtype=xp.int32)
         dt = ndimage.distance_transform_bf(
             data, return_indices=True, indices=ft)
         dts.append(dt)
         fts.append(ft)
-        dt = xp.zeros(data.shape, dtype=np.float64)
-        ft = np.indices(data.shape, dtype=np.int32)
+        dt = xp.zeros(data.shape, dtype=xp.float64)
+        ft = np.indices(data.shape, dtype=xp.int32)
         ndimage.distance_transform_bf(
             data, distances=dt, return_indices=True, indices=ft)
         dts.append(dt)
@@ -422,13 +422,13 @@ class TestNdimageMorphology:
         tdt, tft = ndimage.distance_transform_cdt(data, return_indices=True)
         dts = []
         fts = []
-        dt = xp.zeros(data.shape, dtype=np.int32)
+        dt = xp.zeros(data.shape, dtype=xp.int32)
         ndimage.distance_transform_cdt(data, distances=dt)
         dts.append(dt)
         ft = ndimage.distance_transform_cdt(
             data, return_distances=False, return_indices=True)
         fts.append(ft)
-        ft = np.indices(data.shape, dtype=np.int32)
+        ft = np.indices(data.shape, dtype=xp.int32)
         ndimage.distance_transform_cdt(
             data, return_distances=False, return_indices=True, indices=ft)
         fts.append(ft)
@@ -436,18 +436,18 @@ class TestNdimageMorphology:
             data, return_indices=True)
         dts.append(dt)
         fts.append(ft)
-        dt = xp.zeros(data.shape, dtype=np.int32)
+        dt = xp.zeros(data.shape, dtype=xp.int32)
         ft = ndimage.distance_transform_cdt(
             data, distances=dt, return_indices=True)
         dts.append(dt)
         fts.append(ft)
-        ft = np.indices(data.shape, dtype=np.int32)
+        ft = np.indices(data.shape, dtype=xp.int32)
         dt = ndimage.distance_transform_cdt(
             data, return_indices=True, indices=ft)
         dts.append(dt)
         fts.append(ft)
-        dt = xp.zeros(data.shape, dtype=np.int32)
-        ft = np.indices(data.shape, dtype=np.int32)
+        dt = xp.zeros(data.shape, dtype=xp.int32)
+        ft = np.indices(data.shape, dtype=xp.int32)
         ndimage.distance_transform_cdt(data, distances=dt,
                                        return_indices=True, indices=ft)
         dts.append(dt)
@@ -471,7 +471,7 @@ class TestNdimageMorphology:
                          [0, 0, 0, 1, 1, 1, 0, 0, 0],
                          [0, 0, 0, 0, 0, 0, 0, 0, 0],
                          [0, 0, 0, 0, 0, 0, 0, 0, 0]])
-        indices_out = xp.zeros((data.ndim,) + data.shape, dtype=np.int32)
+        indices_out = xp.zeros((data.ndim,) + data.shape, dtype=xp.int32)
         with assert_raises(RuntimeError):
             ndimage.distance_transform_bf(
                 data,
@@ -544,7 +544,7 @@ class TestNdimageMorphology:
         dts = []
         fts = []
 
-        dt = xp.zeros(data.shape, dtype=np.float64)
+        dt = xp.zeros(data.shape, dtype=xp.float64)
         ndimage.distance_transform_edt(data, distances=dt)
         dts.append(dt)
 
@@ -552,7 +552,7 @@ class TestNdimageMorphology:
             data, return_distances=0, return_indices=True)
         fts.append(ft)
 
-        ft = np.indices(data.shape, dtype=np.int32)
+        ft = np.indices(data.shape, dtype=xp.int32)
         ft = xp.asarray(ft)
         ndimage.distance_transform_edt(
             data, return_distances=False, return_indices=True, indices=ft)
@@ -563,21 +563,21 @@ class TestNdimageMorphology:
         dts.append(dt)
         fts.append(ft)
 
-        dt = xp.zeros(data.shape, dtype=np.float64)
+        dt = xp.zeros(data.shape, dtype=xp.float64)
         ft = ndimage.distance_transform_edt(
             data, distances=dt, return_indices=True)
         dts.append(dt)
         fts.append(ft)
 
-        ft = np.indices(data.shape, dtype=np.int32)
+        ft = np.indices(data.shape, dtype=xp.int32)
         ft = xp.asarray(ft)
         dt = ndimage.distance_transform_edt(
             data, return_indices=True, indices=ft)
         dts.append(dt)
         fts.append(ft)
 
-        dt = xp.zeros(data.shape, dtype=np.float64)
-        ft = np.indices(data.shape, dtype=np.int32)
+        dt = xp.zeros(data.shape, dtype=xp.float64)
+        ft = np.indices(data.shape, dtype=xp.int32)
         ft = xp.asarray(ft)
         ndimage.distance_transform_edt(
             data, distances=dt, return_indices=True, indices=ft)
@@ -644,7 +644,7 @@ class TestNdimageMorphology:
                          [0, 0, 0, 1, 1, 1, 0, 0, 0],
                          [0, 0, 0, 0, 0, 0, 0, 0, 0],
                          [0, 0, 0, 0, 0, 0, 0, 0, 0]])
-        distances_out = xp.zeros(data.shape, dtype=np.float64)
+        distances_out = xp.zeros(data.shape, dtype=xp.float64)
         with assert_raises(RuntimeError):
             ndimage.distance_transform_bf(
                 data,
@@ -2331,7 +2331,7 @@ class TestNdimageMorphology:
         structure = xp.ones((3, 3), dtype=np.bool_)
 
         # Check that type mismatch is properly handled
-        output = xp.empty_like(array, dtype=np.float64)
+        output = xp.empty_like(array, dtype=xp.float64)
         ndimage.white_tophat(array, structure=structure, output=output)
 
     def test_black_tophat01(self, xp):
@@ -2389,7 +2389,7 @@ class TestNdimageMorphology:
         structure = xp.ones((3, 3), dtype=np.bool_)
 
         # Check that type mismatch is properly handled
-        output = xp.empty_like(array, dtype=np.float64)
+        output = xp.empty_like(array, dtype=xp.float64)
         ndimage.black_tophat(array, structure=structure, output=output)
 
     @pytest.mark.parametrize('dtype', types)
