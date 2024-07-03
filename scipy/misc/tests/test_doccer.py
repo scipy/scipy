@@ -95,7 +95,8 @@ def test_decorator():
 
         # The docstring should be unindented for Python 3.13+
         # because of https://github.com/python/cpython/issues/81283
-        decorator = doccer.filldoc(doc_dict, False if sys.version_info < (3, 13) else True)
+        decorator = doccer.filldoc(doc_dict, False if \
+                                   sys.version_info < (3, 13) else True)
 
         @decorator
         def func():
