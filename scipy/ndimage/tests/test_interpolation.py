@@ -958,7 +958,8 @@ class TestNdimageInterpolation:
                 sup.filter(UserWarning,
                            'The behavior of affine_transform with a 1-D array '
                            '.* has changed')
-                returned = ndimage.affine_transform(data, xp.asarray([1, 1]), output=out)
+                matrix = xp.asarray([1, 1])
+                returned = ndimage.affine_transform(data, matrix, output=out)
             result = out if returned is None else returned
             assert_array_almost_equal(result, xp.asarray([[1, 1], [1, 1]]))
 

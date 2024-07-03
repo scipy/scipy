@@ -49,17 +49,23 @@ def _skip_if_int(arg):
     return None if (arg is None or isinstance(arg, int)) else arg
 
 
-def affine_transform_dispatcher(input, matrix, offset=0.0, output_shape=None, output=None, order=3, mode='constant', cval=0.0, prefilter=True):
+def affine_transform_dispatcher(
+    input, matrix, offset=0.0, output_shape=None, output=None, *args, **kwds
+):
     return array_namespace(input, matrix, _skip_if_dtype(output))
 
 
-def binary_closing_dispatcher(input, structure=None, iterations=1, output=None, origin=0, mask=None, border_value=0, brute_force=False):
+def binary_closing_dispatcher(
+    input, structure=None, iterations=1, output=None, *args, **kwds
+):
     return array_namespace(input, structure, _skip_if_dtype(output))
 
 binary_opening_dispatcher = binary_closing_dispatcher
 
 
-def binary_dilation_dispatcher(input, structure=None, iterations=1, mask=None, output=None, border_value=0, origin=0, brute_force=False):
+def binary_dilation_dispatcher(
+    input, structure=None, iterations=1, mask=None, output=None, *args, **kwds
+):
     return array_namespace(input, structure, _skip_if_dtype(output), mask)
 
 binary_erosion_dispatcher = binary_dilation_dispatcher
@@ -71,35 +77,48 @@ def binary_fill_holes_dispatcher(input, structure=None, output=None, origin=0):
 label_dispatcher = binary_fill_holes_dispatcher
 
 
-def binary_hit_or_miss_dispatcher(input, structure1=None, structure2=None, output=None, origin1=0, origin2=None):
+def binary_hit_or_miss_dispatcher(
+    input, structure1=None, structure2=None, output=None, *args, **kwds
+):
     return array_namespace(input, structure1, structure2, _skip_if_dtype(output))
 
 
-def binary_propagation_dispatcher(input, structure=None, mask=None, output=None, border_value=0, origin=0):
+def binary_propagation_dispatcher(
+    input, structure=None, mask=None, output=None, *args, **kwds
+):
     return array_namespace(input, structure, mask, _skip_if_dtype(output))
 
 
-def convolve_dispatcher(input, weights, output=None, mode='reflect', cval=0.0, origin=0):
+def convolve_dispatcher(input, weights, output=None, *args, **kwds):
     return array_namespace(input, weights, _skip_if_dtype(output))
 
 correlate_dispatcher = convolve_dispatcher
 
 
-def convolve1d_dispatcher(input, weights, axis=-1, output=None, mode='reflect', cval=0.0, origin=0):
+def convolve1d_dispatcher(input, weights, axis=-1, output=None, *args, **kwds):
     return array_namespace(input, weights, _skip_if_dtype(output))
 
 correlate1d_dispatcher = convolve1d_dispatcher
 
 
-def distance_transform_bf_dispatcher(input, metric='euclidean', sampling=None, return_distances=True, return_indices=False, distances=None, indices=None):
+def distance_transform_bf_dispatcher(
+    input, metric='euclidean', sampling=None, return_distances=True,
+    return_indices=False, distances=None, indices=None
+):
     return array_namespace(input, distances, indices)
 
 
-def distance_transform_cdt_dispatcher(input, metric='chessboard', return_distances=True, return_indices=False, distances=None, indices=None):
+def distance_transform_cdt_dispatcher(
+    input, metric='chessboard', return_distances=True, return_indices=False,
+    distances=None, indices=None
+):
     return array_namespace(input, distances, indices)
 
 
-def distance_transform_edt_dispatcher(input, sampling=None, return_distances=True, return_indices=False, distances=None, indices=None):
+def distance_transform_edt_dispatcher(
+    input, sampling=None, return_distances=True, return_indices=False,
+    distances=None, indices=None
+):
     return array_namespace(input, distances, indices)
 
 
@@ -120,15 +139,17 @@ def fourier_shift_dispatcher(input, shift, n=-1, axis=-1, output=None):
     return array_namespace(input, _skip_if_dtype(output))
 
 
-def gaussian_filter_dispatcher(input, sigma, order=0, output=None, mode='reflect', cval=0.0, truncate=4.0, *, radius=None, axes=None):
+def gaussian_filter_dispatcher(input, sigma, order=0, output=None, *args, **kwds):
     return array_namespace(input, _skip_if_dtype(output))
 
 
-def gaussian_filter1d_dispatcher(input, sigma, axis=-1, order=0, output=None, mode='reflect', cval=0.0, truncate=4.0, *, radius=None):
+def gaussian_filter1d_dispatcher(
+    input, sigma, axis=-1, order=0, output=None, *args, **kwds
+):
     return array_namespace(input, _skip_if_dtype(output))
 
 
-def gaussian_gradient_magnitude_dispatcher(input, sigma, output=None, mode='reflect', cval=0.0, **kwargs):
+def gaussian_gradient_magnitude_dispatcher(input, sigma, output=None, *args, **kwds):
     return array_namespace(input, _skip_if_dtype(output))
 
 gaussian_laplace_dispatcher = gaussian_gradient_magnitude_dispatcher
@@ -139,26 +160,34 @@ def generate_binary_structure_dispatcher(rank, connectivity):
     return np
 
 
-def generic_filter_dispatcher(input, function, size=None, footprint=None, output=None, mode='reflect', cval=0.0, origin=0, extra_arguments=(), extra_keywords=None):
+def generic_filter_dispatcher(
+    input, function, size=None, footprint=None, output=None, *args, **kwds
+):
     # XXX: function LowLevelCallable w/backends
     return array_namespace(input, footprint, _skip_if_dtype(output))
 
 
-def generic_filter1d_dispatcher(input, function, filter_size, axis=-1, output=None, mode='reflect', cval=0.0, origin=0, extra_arguments=(), extra_keywords=None):
+def generic_filter1d_dispatcher(
+    input, function, filter_size, axis=-1, output=None, *args, **kwds
+):
     return array_namespace(input, _skip_if_dtype(output))
 
 
-def generic_gradient_magnitude_dispatcher(input, derivative, output=None, mode='reflect', cval=0.0, extra_arguments=(), extra_keywords=None):
+def generic_gradient_magnitude_dispatcher(
+    input, derivative, output=None, *args, **kwds
+):
     # XXX: function LowLevelCallable w/backends
     return array_namespace(input, _skip_if_dtype(output))
 
 
-def generic_laplace_dispatcher(input, derivative2, output=None, mode='reflect', cval=0.0, extra_arguments=(), extra_keywords=None):
+def generic_laplace_dispatcher(input, derivative2, output=None, *args, **kwds):
     # XXX: function LowLevelCallable w/backends
     return array_namespace(input, _skip_if_dtype(output))
 
 
-def geometric_transform_dispatcher(input, mapping, output_shape=None, output=None, order=3, mode='constant', cval=0.0, prefilter=True, extra_arguments=(), extra_keywords={}):
+def geometric_transform_dispatcher(
+    input, mapping, output_shape=None, output=None, *args, **kwds
+):
     return array_namespace(input, _skip_if_dtype(output))
 
 
@@ -170,19 +199,19 @@ def iterate_structure_dispatcher(structure, iterations, origin=None):
     return array_namespace(structure)
 
 
-def labeled_comprehension_dispatcher(input, labels, index, func, out_dtype, default, pass_positions=False):
+def labeled_comprehension_dispatcher(input, labels, *args, **kwds):
     return array_namespace(input, labels)
 
 
-def laplace_dispatcher(input, output=None, mode='reflect', cval=0.0):
+def laplace_dispatcher(input, output=None, *args, **kwds):
     return array_namespace(input, _skip_if_dtype(output))
 
 
-def map_coordinates_dispatcher(input, coordinates, output=None, order=3, mode='constant', cval=0.0, prefilter=True):
+def map_coordinates_dispatcher(input, coordinates, output=None, *args, **kwds):
     return array_namespace(input, coordinates, _skip_if_dtype(output))
 
 
-def maximum_filter1d_dispatcher(input, size, axis=-1, output=None, mode='reflect', cval=0.0, origin=0):
+def maximum_filter1d_dispatcher(input, size, axis=-1, output=None, *args, **kwds):
     return array_namespace(input, _skip_if_dtype(output))
 
 minimum_filter1d_dispatcher = maximum_filter1d_dispatcher
@@ -207,14 +236,18 @@ extrema_dispatcher = maximum_dispatcher
 center_of_mass_dispatcher = extrema_dispatcher
 
 
-def median_filter_dispatcher(input, size=None, footprint=None, output=None, mode='reflect', cval=0.0, origin=0, *, axes=None):
+def median_filter_dispatcher(
+    input, size=None, footprint=None, output=None, *args, **kwds
+):
     return array_namespace(input, footprint, _skip_if_dtype(output))
 
 minimum_filter_dispatcher = median_filter_dispatcher
 maximum_filter_dispatcher = median_filter_dispatcher
 
 
-def morphological_gradient_dispatcher(input, size=None, footprint=None, structure=None, output=None, *args, **kwds):
+def morphological_gradient_dispatcher(
+    input, size=None, footprint=None, structure=None, output=None, *args, **kwds
+):
     return array_namespace(input, footprint, structure, _skip_if_dtype(output))
 
 morphological_laplace_dispatcher = morphological_gradient_dispatcher
@@ -226,41 +259,49 @@ grey_erosion_dispatcher = morphological_gradient_dispatcher
 grey_opening_dispatcher = morphological_gradient_dispatcher
 
 
-def percentile_filter_dispatcher(input, percentile, size=None, footprint=None, output=None, mode='reflect', cval=0.0, origin=0, *, axes=None):
+def percentile_filter_dispatcher(
+    input, percentile, size=None, footprint=None, output=None, *args, **kwds
+):
     return array_namespace(input, footprint, _skip_if_dtype(output))
 
 
-def prewitt_dispatcher(input, axis=-1, output=None, mode='reflect', cval=0.0):
+def prewitt_dispatcher(input, axis=-1, output=None, *args, **kwds):
     return array_namespace(input, _skip_if_dtype(output))
 
 sobel_dispatcher = prewitt_dispatcher
 
 
-def rank_filter_dispatcher(input, rank, size=None, footprint=None, output=None, mode='reflect', cval=0.0, origin=0, *, axes=None):
+def rank_filter_dispatcher(
+    input, rank, size=None, footprint=None, output=None, *args, **kwds
+):
     return array_namespace(input, footprint, _skip_if_dtype(output))
 
 
-def rotate_dispatcher(input, angle, axes=(1, 0), reshape=True, output=None, order=3, mode='constant', cval=0.0, prefilter=True):
+def rotate_dispatcher(
+    input, angle, axes=(1, 0), reshape=True, output=None , *args, **kwds
+):
     return array_namespace(input, _skip_if_dtype(output))
 
 
-def shift_dispatcher(input, shift, output=None, order=3, mode='constant', cval=0.0, prefilter=True):
+def shift_dispatcher(input, shift, output=None, *args, **kwds):
     return array_namespace(input, _skip_if_dtype(output))
 
 
-def spline_filter_dispatcher(input, order=3, output=np.float64, mode='mirror'):
+def spline_filter_dispatcher(input, order=3, output=np.float64, *args, **kwds):
     return array_namespace(input, _skip_if_dtype(output))
 
 
-def spline_filter1d_dispatcher(input, order=3, axis=-1, output=np.float64, mode='mirror'):
+def spline_filter1d_dispatcher(
+    input, order=3, axis=-1, output=np.float64, *args, **kwds
+):
     return array_namespace(input, _skip_if_dtype(output))
 
 
-def uniform_filter_dispatcher(input, size=3, output=None, mode='reflect', cval=0.0, origin=0, *, axes=None):
+def uniform_filter_dispatcher(input, size=3, output=None, *args, **kwds):
     return array_namespace(input, _skip_if_dtype(output))
 
 
-def value_indices_dispatcher(arr, *, ignore_value=None):
+def value_indices_dispatcher(arr, *args, **kwds):
     return array_namespace(arr)
 
 
@@ -268,6 +309,6 @@ def watershed_ift_dispatcher(input, markers, structure=None, output=None):
     return array_namespace(input, markers, structure, _skip_if_dtype(output))
 
 
-def zoom_dispatcher(input, zoom, output=None, order=3, mode='constant', cval=0.0, prefilter=True, *, grid_mode=False):
+def zoom_dispatcher(input, zoom, output=None, *args, **kwds):
     return array_namespace(input, _skip_if_dtype(output))
 
