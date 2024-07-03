@@ -22,7 +22,7 @@ class TestNdimageFourier:
     def test_fourier_gaussian_real01(self, shape, dtype, dec, xp):
         fft = getattr(xp, 'fft')
 
-        a = xp.zeros(shape, dtype)
+        a = xp.zeros(shape, dtype=dtype)
         a[0, 0] = 1.0
         a = fft.rfft(a, shape[0], 0)
         a = fft.fft(a, shape[1], 1)
@@ -36,7 +36,7 @@ class TestNdimageFourier:
     def test_fourier_gaussian_complex01(self, shape, dtype, dec, xp):
         fft = getattr(xp, 'fft')
 
-        a = xp.zeros(shape, dtype)
+        a = xp.zeros(shape, dtype=dtype)
         a[0, 0] = 1.0
         a = fft.fft(a, shape[0], 0)
         a = fft.fft(a, shape[1], 1)
@@ -50,7 +50,7 @@ class TestNdimageFourier:
     def test_fourier_uniform_real01(self, shape, dtype, dec, xp):
         fft = getattr(xp, 'fft')
 
-        a = xp.zeros(shape, dtype)
+        a = xp.zeros(shape, dtype=dtype)
         a[0, 0] = 1.0
         a = fft.rfft(a, shape[0], 0)
         a = fft.fft(a, shape[1], 1)
@@ -64,7 +64,7 @@ class TestNdimageFourier:
     def test_fourier_uniform_complex01(self, shape, dtype, dec, xp):
         fft = getattr(xp, 'fft')
 
-        a = xp.zeros(shape, dtype)
+        a = xp.zeros(shape, dtype=dtype)
         a[0, 0] = 1.0
         a = fft.fft(a, shape[0], 0)
         a = fft.fft(a, shape[1], 1)
@@ -108,7 +108,7 @@ class TestNdimageFourier:
     def test_fourier_ellipsoid_real01(self, shape, dtype, dec, xp):
         fft = getattr(xp, 'fft')
 
-        a = xp.zeros(shape, dtype)
+        a = xp.zeros(shape, dtype=dtype)
         a[0, 0] = 1.0
         a = fft.rfft(a, shape[0], 0)
         a = fft.fft(a, shape[1], 1)
@@ -122,8 +122,7 @@ class TestNdimageFourier:
     @pytest.mark.parametrize('dtype, dec', [(np.complex64, 5), (np.complex128, 14)])
     def test_fourier_ellipsoid_complex01(self, shape, dtype, dec, xp):
         fft = getattr(xp, 'fft')
-
-        a = xp.zeros(shape, dtype)
+        a = xp.zeros(shape, dtype=dtype)
         a[0, 0] = 1.0
         a = fft.fft(a, shape[0], 0)
         a = fft.fft(a, shape[1], 1)
@@ -155,6 +154,6 @@ class TestNdimageFourier:
                               ndimage.fourier_gaussian,
                               ndimage.fourier_uniform])
     def test_fourier_zero_length_dims(self, shape, dtype, test_func, xp):
-        a = np.ones(shape, dtype)
+        a = np.ones(shape, dtype=dtype)
         b = test_func(a, 3)
         xp_assert_equal(a, b)

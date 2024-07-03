@@ -101,35 +101,35 @@ class TestNdimageInterpolation:
     @pytest.mark.parametrize('order', range(2, 6))
     @pytest.mark.parametrize('dtype', types)
     def test_spline01(self, dtype, order, xp):
-        data = xp.ones([], dtype)
+        data = xp.ones([], dtype=dtype)
         out = ndimage.spline_filter(data, order=order)
         assert out == xp.asarray(1)
 
     @pytest.mark.parametrize('order', range(2, 6))
     @pytest.mark.parametrize('dtype', types)
     def test_spline02(self, dtype, order, xp):
-        data = xp.asarray([1], dtype)
+        data = xp.asarray([1], dtype=dtype)
         out = ndimage.spline_filter(data, order=order)
         assert_array_almost_equal(out, xp.asarray([1]))
 
     @pytest.mark.parametrize('order', range(2, 6))
     @pytest.mark.parametrize('dtype', types)
     def test_spline03(self, dtype, order, xp):
-        data = xp.ones([], dtype)
+        data = xp.ones([], dtype=dtype)
         out = ndimage.spline_filter(data, order, output=dtype)
         assert out == xp.asarray(1)
 
     @pytest.mark.parametrize('order', range(2, 6))
     @pytest.mark.parametrize('dtype', types)
     def test_spline04(self, dtype, order, xp):
-        data = xp.ones([4], dtype)
+        data = xp.ones([4], dtype=dtype)
         out = ndimage.spline_filter(data, order)
         assert_array_almost_equal(out, xp.asarray([1, 1, 1, 1]))
 
     @pytest.mark.parametrize('order', range(2, 6))
     @pytest.mark.parametrize('dtype', types)
     def test_spline05(self, dtype, order, xp):
-        data = xp.ones([4, 4], dtype)
+        data = xp.ones([4, 4], dtype=dtype)
         out = ndimage.spline_filter(data, order=order)
         expected = xp.asarray([[1, 1, 1, 1],
                                [1, 1, 1, 1],

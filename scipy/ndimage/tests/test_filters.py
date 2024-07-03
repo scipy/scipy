@@ -644,9 +644,9 @@ class TestNdimageFilters:
     @pytest.mark.parametrize('dtype_output', complex_types)
     def test_correlate_complex_input_and_kernel(self, dtype, dtype_output, xp):
         kernel = xp.asarray([[1, 0],
-                           [0, 1 + 1j]], dtype)
+                           [0, 1 + 1j]], dtype=dtype)
         array = xp.asarray([[1, 2j, 3],
-                          [1 + 4j, 5, 6j]], dtype)
+                          [1 + 4j, 5, 6j]], dtype=dtype)
         self._validate_complex(xp, array, kernel, dtype_output)
 
     @pytest.mark.parametrize('dtype', complex_types)
@@ -657,17 +657,17 @@ class TestNdimageFilters:
             pytest.xfail("https://github.com/cupy/cupy/issues/8405")
 
         kernel = xp.asarray([[1, 0],
-                           [0, 1 + 1j]], dtype)
+                           [0, 1 + 1j]], dtype=dtype)
         array = xp.asarray([[1, 2, 3],
-                          [4, 5, 6]], dtype)
+                          [4, 5, 6]], dtype=dtype)
         self._validate_complex(xp, array, kernel, dtype_output, mode='constant',
                                cval=5.0 + 2.0j)
 
     @pytest.mark.parametrize('dtype', complex_types)
     @pytest.mark.parametrize('dtype_output', complex_types)
     def test_correlate1d_complex_input_and_kernel(self, dtype, dtype_output, xp):
-        kernel = xp.asarray([1, 1 + 1j], dtype)
-        array = xp.asarray([1, 2j, 3, 1 + 4j, 5, 6j], dtype)
+        kernel = xp.asarray([1, 1 + 1j], dtype=dtype)
+        array = xp.asarray([1, 2j, 3, 1 + 4j, 5, 6j], dtype=dtype)
         self._validate_complex(xp, array, kernel, dtype_output)
 
     @pytest.mark.parametrize('dtype', complex_types)
@@ -677,8 +677,8 @@ class TestNdimageFilters:
         if is_cupy(xp):
             pytest.xfail("https://github.com/cupy/cupy/issues/8405")
 
-        kernel = xp.asarray([1, 1 + 1j], dtype)
-        array = xp.asarray([1, 2j, 3, 1 + 4j, 5, 6j], dtype)
+        kernel = xp.asarray([1, 1 + 1j], dtype=dtype)
+        array = xp.asarray([1, 2j, 3, 1 + 4j, 5, 6j], dtype=dtype)
         self._validate_complex(xp, array, kernel, dtype_output, mode='constant',
                                cval=5.0 + 2.0j)
 
@@ -940,7 +940,7 @@ class TestNdimageFilters:
     def test_prewitt01(self, dtype, xp):
         array = xp.asarray([[3, 2, 5, 1, 4],
                           [5, 8, 3, 7, 1],
-                          [5, 6, 9, 3, 5]], dtype)
+                          [5, 6, 9, 3, 5]], dtype=dtype)
         t = ndimage.correlate1d(array, xp.asarray([-1.0, 0.0, 1.0]), 0)
         t = ndimage.correlate1d(t, xp.asarray([1.0, 1.0, 1.0]), 1)
         output = ndimage.prewitt(array, 0)
@@ -950,10 +950,10 @@ class TestNdimageFilters:
     def test_prewitt02(self, dtype, xp):
         array = xp.asarray([[3, 2, 5, 1, 4],
                           [5, 8, 3, 7, 1],
-                          [5, 6, 9, 3, 5]], dtype)
+                          [5, 6, 9, 3, 5]], dtype=dtype)
         t = ndimage.correlate1d(array, xp.asarray([-1.0, 0.0, 1.0]), 0)
         t = ndimage.correlate1d(t, xp.asarray([1.0, 1.0, 1.0]), 1)
-        output = xp.zeros(array.shape, dtype)
+        output = xp.zeros(array.shape, dtype=dtype)
         ndimage.prewitt(array, 0, output)
         assert_array_almost_equal(t, output)
 
@@ -964,7 +964,7 @@ class TestNdimageFilters:
 
         array = xp.asarray([[3, 2, 5, 1, 4],
                           [5, 8, 3, 7, 1],
-                          [5, 6, 9, 3, 5]], dtype)
+                          [5, 6, 9, 3, 5]], dtype=dtype)
         t = ndimage.correlate1d(array, xp.asarray([-1.0, 0.0, 1.0]), 1)
         t = ndimage.correlate1d(t, xp.asarray([1.0, 1.0, 1.0]), 0)
         output = ndimage.prewitt(array, 1)
@@ -974,7 +974,7 @@ class TestNdimageFilters:
     def test_prewitt04(self, dtype, xp):
         array = xp.asarray([[3, 2, 5, 1, 4],
                           [5, 8, 3, 7, 1],
-                          [5, 6, 9, 3, 5]], dtype)
+                          [5, 6, 9, 3, 5]], dtype=dtype)
         t = ndimage.prewitt(array, -1)
         output = ndimage.prewitt(array, 1)
         assert_array_almost_equal(t, output)
@@ -983,7 +983,7 @@ class TestNdimageFilters:
     def test_sobel01(self, dtype, xp):
         array = xp.asarray([[3, 2, 5, 1, 4],
                           [5, 8, 3, 7, 1],
-                          [5, 6, 9, 3, 5]], dtype)
+                          [5, 6, 9, 3, 5]], dtype=dtype)
         t = ndimage.correlate1d(array, xp.asarray([-1.0, 0.0, 1.0]), 0)
         t = ndimage.correlate1d(t, xp.asarray([1.0, 2.0, 1.0]), 1)
         output = ndimage.sobel(array, 0)
@@ -993,10 +993,10 @@ class TestNdimageFilters:
     def test_sobel02(self, dtype, xp):
         array = xp.asarray([[3, 2, 5, 1, 4],
                           [5, 8, 3, 7, 1],
-                          [5, 6, 9, 3, 5]], dtype)
+                          [5, 6, 9, 3, 5]], dtype=dtype)
         t = ndimage.correlate1d(array, xp.asarray([-1.0, 0.0, 1.0]), 0)
         t = ndimage.correlate1d(t, xp.asarray([1.0, 2.0, 1.0]), 1)
-        output = xp.zeros(array.shape, dtype)
+        output = xp.zeros(array.shape, dtype=dtype)
         ndimage.sobel(array, 0, output)
         assert_array_almost_equal(t, output)
 
@@ -1018,7 +1018,7 @@ class TestNdimageFilters:
     def test_sobel04(self, dtype, xp):
         array = xp.asarray([[3, 2, 5, 1, 4],
                           [5, 8, 3, 7, 1],
-                          [5, 6, 9, 3, 5]], dtype)
+                          [5, 6, 9, 3, 5]], dtype=dtype)
         t = ndimage.sobel(array, -1)
         output = ndimage.sobel(array, 1)
         assert_array_almost_equal(t, output)
@@ -1029,7 +1029,7 @@ class TestNdimageFilters:
     def test_laplace01(self, dtype, xp):
         array = xp.asarray([[3, 2, 5, 1, 4],
                           [5, 8, 3, 7, 1],
-                          [5, 6, 9, 3, 5]], dtype) * 100
+                          [5, 6, 9, 3, 5]], dtype=dtype) * 100
         tmp1 = ndimage.correlate1d(array, xp.asarray([1, -2, 1]), 0)
         tmp2 = ndimage.correlate1d(array, xp.asarray([1, -2, 1]), 1)
         output = ndimage.laplace(array)
@@ -1041,10 +1041,10 @@ class TestNdimageFilters:
     def test_laplace02(self, dtype, xp):
         array = xp.asarray([[3, 2, 5, 1, 4],
                           [5, 8, 3, 7, 1],
-                          [5, 6, 9, 3, 5]], dtype) * 100
+                          [5, 6, 9, 3, 5]], dtype=dtype) * 100
         tmp1 = ndimage.correlate1d(array, xp.asarray([1, -2, 1]), 0)
         tmp2 = ndimage.correlate1d(array, xp.asarray([1, -2, 1]), 1)
-        output = xp.zeros(array.shape, dtype)
+        output = xp.zeros(array.shape, dtype=dtype)
         ndimage.laplace(array, output=output)
         assert_array_almost_equal(tmp1 + tmp2, output)
 
@@ -1054,7 +1054,7 @@ class TestNdimageFilters:
     def test_gaussian_laplace01(self, dtype, xp):
         array = xp.asarray([[3, 2, 5, 1, 4],
                           [5, 8, 3, 7, 1],
-                          [5, 6, 9, 3, 5]], dtype) * 100
+                          [5, 6, 9, 3, 5]], dtype=dtype) * 100
         tmp1 = ndimage.gaussian_filter(array, 1.0, [2, 0])
         tmp2 = ndimage.gaussian_filter(array, 1.0, [0, 2])
         output = ndimage.gaussian_laplace(array, 1.0)
@@ -1066,10 +1066,10 @@ class TestNdimageFilters:
     def test_gaussian_laplace02(self, dtype, xp):
         array = xp.asarray([[3, 2, 5, 1, 4],
                           [5, 8, 3, 7, 1],
-                          [5, 6, 9, 3, 5]], dtype) * 100
+                          [5, 6, 9, 3, 5]], dtype=dtype) * 100
         tmp1 = ndimage.gaussian_filter(array, 1.0, [2, 0])
         tmp2 = ndimage.gaussian_filter(array, 1.0, [0, 2])
-        output = xp.zeros(array.shape, dtype)
+        output = xp.zeros(array.shape, dtype=dtype)
         ndimage.gaussian_laplace(array, 1.0, output)
         assert_array_almost_equal(tmp1 + tmp2, output)
 
@@ -1084,8 +1084,8 @@ class TestNdimageFilters:
                                            output, mode, cval)
         array = xp.asarray([[3, 2, 5, 1, 4],
                           [5, 8, 3, 7, 1],
-                          [5, 6, 9, 3, 5]], dtype)
-        output = xp.zeros(array.shape, dtype)
+                          [5, 6, 9, 3, 5]], dtype=dtype)
+        output = xp.zeros(array.shape, dtype=dtype)
         tmp = ndimage.generic_laplace(array, derivative2,
                                       extra_arguments=(1.0,),
                                       extra_keywords={'b': 2.0})
@@ -1098,7 +1098,7 @@ class TestNdimageFilters:
     def test_gaussian_gradient_magnitude01(self, dtype, xp):
         array = xp.asarray([[3, 2, 5, 1, 4],
                           [5, 8, 3, 7, 1],
-                          [5, 6, 9, 3, 5]], dtype) * 100
+                          [5, 6, 9, 3, 5]], dtype=dtype) * 100
         tmp1 = ndimage.gaussian_filter(array, 1.0, [1, 0])
         tmp2 = ndimage.gaussian_filter(array, 1.0, [0, 1])
         output = ndimage.gaussian_gradient_magnitude(array, 1.0)
@@ -1112,10 +1112,10 @@ class TestNdimageFilters:
     def test_gaussian_gradient_magnitude02(self, dtype, xp):
         array = xp.asarray([[3, 2, 5, 1, 4],
                           [5, 8, 3, 7, 1],
-                          [5, 6, 9, 3, 5]], dtype) * 100
+                          [5, 6, 9, 3, 5]], dtype=dtype) * 100
         tmp1 = ndimage.gaussian_filter(array, 1.0, [1, 0])
         tmp2 = ndimage.gaussian_filter(array, 1.0, [0, 1])
-        output = xp.zeros(array.shape, dtype)
+        output = xp.zeros(array.shape, dtype=dtype)
         ndimage.gaussian_gradient_magnitude(array, 1.0, output)
         expected = tmp1 * tmp1 + tmp2 * tmp2
         expected = xp.sqrt(expected).astype(dtype)
@@ -1522,7 +1522,7 @@ class TestNdimageFilters:
         footprint = xp.asarray([[1, 0, 1], [0, 1, 0]])
         array = xp.asarray([[3, 2, 5, 1, 4],
                           [5, 8, 3, 7, 1],
-                          [5, 6, 9, 3, 5]], dtype)
+                          [5, 6, 9, 3, 5]], dtype=dtype)
         output = ndimage.rank_filter(array, 1, footprint=footprint)
         assert_array_almost_equal(expected, output)
         output = ndimage.percentile_filter(array, 35, footprint=footprint)
@@ -1565,7 +1565,7 @@ class TestNdimageFilters:
         footprint = xp.asarray([[1, 0, 1], [0, 1, 0]])
         array = xp.asarray([[3, 2, 5, 1, 4],
                           [5, 8, 3, 7, 1],
-                          [5, 6, 9, 3, 5]], dtype)
+                          [5, 6, 9, 3, 5]], dtype=dtype)
         output = ndimage.rank_filter(array, 1, footprint=footprint)
         assert_array_almost_equal(expected, output)
         output = ndimage.percentile_filter(array, 50.0,
@@ -1583,7 +1583,7 @@ class TestNdimageFilters:
         footprint = xp.asarray([[1, 0, 1], [0, 1, 0]])
         array = xp.asarray([[3, 2, 5, 1, 4],
                           [5, 8, 3, 7, 1],
-                          [5, 6, 9, 3, 5]], dtype)
+                          [5, 6, 9, 3, 5]], dtype=dtype)
         output = ndimage.rank_filter(array, 1, footprint=footprint,
                                      origin=-1)
         assert_array_almost_equal(expected, output)
@@ -1597,7 +1597,7 @@ class TestNdimageFilters:
         footprint = xp.asarray([[1, 0, 1], [0, 1, 0]])
         array = xp.asarray([[3, 2, 5, 1, 4],
                           [5, 8, 3, 7, 1],
-                          [5, 6, 9, 3, 5]], dtype)
+                          [5, 6, 9, 3, 5]], dtype=dtype)
         output = ndimage.rank_filter(array, 1, footprint=footprint,
                                      origin=[-1, 0])
         assert_array_almost_equal(expected, output)
@@ -1611,7 +1611,7 @@ class TestNdimageFilters:
         footprint = xp.asarray([[1, 0, 1], [0, 1, 0]])
         array = xp.asarray([[3, 2, 5, 1, 4],
                           [5, 8, 3, 7, 1],
-                          [5, 6, 9, 3, 5]], dtype)
+                          [5, 6, 9, 3, 5]], dtype=dtype)
         output = ndimage.rank_filter(array, 0, footprint=footprint,
                                      origin=[-1, 0])
         assert_array_almost_equal(expected, output)
