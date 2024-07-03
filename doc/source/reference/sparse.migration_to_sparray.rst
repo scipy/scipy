@@ -26,9 +26,10 @@ Overview and big picture:
 
 -  the constructor names ``*_matrix``, e.g. ``csr_matrix``, are changed
    to ``*_array``.
--  spmatrix ``M`` is always 2D (rows x columns) even
-   e.g. ``M.min(axis=0)``. sparray ``A`` can be 1D or 2D.
+-  spmatrix ``M`` is always 2D (rows x columns) even e.g. ``M.min(axis=0)``.
+   sparray ``A`` can be 1D or 2D.
    Numpy scalars are returned for full (0D) reductions, i.e. ``M.min()``.
+-  Iterating over a sparray gives 1D sparrays. Iterating spmatrix gives 2D row spmatrices
 -  Operators change: ``*, @, *=, @=, **``
 
    -  scalar multiplication i.e. ``5 * A`` uses ``*`` and ``5 @ A`` is not implemented.
@@ -77,6 +78,8 @@ Recommended steps for migration:
    -  Check all functions/methods for which migration causes 1D return
       values. These are mostly indexing and the reduction functions.
       (see below: ``Shape changes and reductions``)
+   -  Check all places where you iterate over spmatrices and change them
+      to account for the sparrays yielding 1D sparrays rather than 2D spmatrices.
    -  Find and change places where your code makes use of ``np.matrix``
       features. Convert those to np.array features.
    -  Rename all ``*_matrix`` constructor calls to ``*_array``.
