@@ -181,7 +181,8 @@ class TestEig:
         assert_equal(w, np.inf)
         assert_allclose(vr, 1)
 
-    def _check_gen_eig(self, A, B, atol_homog=1e-13, rtol_homog=1e-13):
+    def _check_gen_eig(self, A, B, atol_homog=1e-13, rtol_homog=1e-13,
+                                   atol=1e-13, rtol=1e-13):
         if B is not None:
             A, B = asarray(A), asarray(B)
             B0 = B
@@ -230,7 +231,7 @@ class TestEig:
         for i in range(res.shape[1]):
             if np.all(isfinite(res[:, i])):
                 assert_allclose(res[:, i], 0,
-                                rtol=1e-13, atol=1e-13, err_msg=msg)
+                                rtol=rtol, atol=atol, err_msg=msg)
 
         # try to consistently order eigenvalues, including complex conjugate pairs
         w_fin = w[isfinite(w)]
@@ -240,8 +241,8 @@ class TestEig:
         w_fin = -1j * np.real_if_close(1j*w_fin, tol=1e-10)
         wt_fin = -1j * np.real_if_close(1j*wt_fin, tol=1e-10)
 
-        perm = argsort(w_fin)
-        permt = argsort(wt_fin)
+        perm = argsort(abs(w_fin) + w_fin.imag)
+        permt = argsort(abs(wt_fin) + wt_fin.imag)
 
         assert_allclose(w_fin[perm], wt_fin[permt],
                         atol=1e-7, rtol=1e-7, err_msg=msg)
@@ -269,7 +270,7 @@ class TestEig:
                    [24, 35, 18, 21, 22]])
 
         with np.errstate(all='ignore'):
-            self._check_gen_eig(A, B, atol_homog=5e-13)
+            self._check_gen_eig(A, B, atol_homog=5e-13, atol=5e-13)
 
     def test_falker(self):
         # Test matrices giving some Nan generalized eigenvalues.
@@ -844,31 +845,15 @@ class TestEigh:
         # Both value and index subsets requested
         assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([3, 3]),
                       subset_by_value=[1, 2], subset_by_index=[2, 4])
-        with np.testing.suppress_warnings() as sup:
-            sup.filter(DeprecationWarning, "Keyword argument 'eigvals")
-            assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([3, 3]),
-                          subset_by_value=[1, 2], eigvals=[2, 4])
         # Invalid upper index spec
         assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([3, 3]),
                       subset_by_index=[0, 4])
-        with np.testing.suppress_warnings() as sup:
-            sup.filter(DeprecationWarning, "Keyword argument 'eigvals")
-            assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([3, 3]),
-                          eigvals=[0, 4])
         # Invalid lower index
         assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([3, 3]),
                       subset_by_index=[-2, 2])
-        with np.testing.suppress_warnings() as sup:
-            sup.filter(DeprecationWarning, "Keyword argument 'eigvals")
-            assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([3, 3]),
-                          eigvals=[-2, 2])
         # Invalid index spec #2
         assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([3, 3]),
                       subset_by_index=[2, 0])
-        with np.testing.suppress_warnings() as sup:
-            sup.filter(DeprecationWarning, "Keyword argument 'eigvals")
-            assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([3, 3]),
-                          subset_by_index=[2, 0])
         # Invalid value spec
         assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([3, 3]),
                       subset_by_value=[2, 0])
@@ -925,6 +910,17 @@ class TestEigh:
                         atol=1000*np.finfo(dtype_).eps,
                         rtol=0.)
 
+    @pytest.mark.parametrize('driver', ("ev", "evd", "evr", "evx"))
+    def test_1x1_lwork(self, driver):
+        w, v = eigh([[1]], driver=driver)
+        assert_allclose(w, array([1.]), atol=1e-15)
+        assert_allclose(v, array([[1.]]), atol=1e-15)
+
+        # complex case now
+        w, v = eigh([[1j]], driver=driver)
+        assert_allclose(w, array([0]), atol=1e-15)
+        assert_allclose(v, array([[1.]]), atol=1e-15)
+
     @pytest.mark.parametrize('type', (1, 2, 3))
     @pytest.mark.parametrize('driver', ("gv", "gvd", "gvx"))
     def test_various_drivers_generalized(self, driver, type):
@@ -952,38 +948,6 @@ class TestEigh:
         w3 = eigvalsh(b, subset_by_value=[1, 1.4])
         assert_equal(len(w3), 2)
         assert_allclose(w3, np.array([1.2, 1.3]))
-
-    @pytest.mark.parametrize("method", [eigh, eigvalsh])
-    def test_deprecation_warnings(self, method):
-        with pytest.warns(DeprecationWarning,
-                          match="Keyword argument 'turbo'"):
-            method(np.zeros((2, 2)), turbo=True)
-        with pytest.warns(DeprecationWarning,
-                          match="Keyword argument 'eigvals'"):
-            method(np.zeros((2, 2)), eigvals=[0, 1])
-        with pytest.deprecated_call(match="use keyword arguments"):
-            method(np.zeros((2,2)), np.eye(2, 2), True)
-
-    def test_deprecation_results(self):
-        a = _random_hermitian_matrix(3)
-        b = _random_hermitian_matrix(3, posdef=True)
-
-        # check turbo gives same result as driver='gvd'
-        with np.testing.suppress_warnings() as sup:
-            sup.filter(DeprecationWarning, "Keyword argument 'turbo'")
-            w_dep, v_dep = eigh(a, b, turbo=True)
-        w, v = eigh(a, b, driver='gvd')
-        assert_allclose(w_dep, w)
-        assert_allclose(v_dep, v)
-
-        # check eigvals gives the same result as subset_by_index
-        with np.testing.suppress_warnings() as sup:
-            sup.filter(DeprecationWarning, "Keyword argument 'eigvals'")
-            w_dep, v_dep = eigh(a, eigvals=[0, 1])
-        w, v = eigh(a, subset_by_index=[0, 1])
-        assert_allclose(w_dep, w)
-        assert_allclose(v_dep, v)
-
 
     @pytest.mark.parametrize('dt', [int, float, np.float32, complex, np.complex64])
     def test_empty(self, dt):
@@ -1215,6 +1179,7 @@ class TestSVD_GESVD(TestSVD_GESDD):
     lapack_driver = 'gesvd'
 
 
+@pytest.mark.fail_slow(10)
 def test_svd_gesdd_nofegfault():
     # svd(a) with {U,VT}.size > INT_MAX does not segfault
     # cf https://github.com/scipy/scipy/issues/14001
@@ -2637,6 +2602,7 @@ class TestOrdQZ:
 
 
 class TestOrdQZWorkspaceSize:
+    @pytest.mark.fail_slow(5)
     def test_decompose(self):
         rng = np.random.RandomState(12345)
         N = 202

@@ -705,16 +705,16 @@ def group_delay(system, w=512, whole=False, fs=2*pi):
     if np.any(singular):
         gd[singular] = 0
         warnings.warn(
-            "The group delay is singular at frequencies [{}], setting to 0".
-            format(", ".join(f"{ws:.3f}" for ws in w[singular])),
+            "The group delay is singular at frequencies "
+            f"[{', '.join(f'{ws:.3f}' for ws in w[singular])}], setting to 0",
             stacklevel=2
         )
 
     elif np.any(near_singular):
         warnings.warn(
-            "The filter's denominator is extremely small at frequencies [{}], \
-            around which a singularity may be present".
-            format(", ".join(f"{ws:.3f}" for ws in w[near_singular])),
+            "The filter's denominator is extremely small at frequencies "
+            f"[{', '.join(f'{ws:.3f}' for ws in w[near_singular])}], "
+            "around which a singularity may be present",
             stacklevel=2
         )
 
@@ -2379,10 +2379,10 @@ def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba',
     try:
         ordfunc = filter_dict[ftype][1]
     except KeyError as e:
-        raise ValueError("Invalid IIR filter type: %s" % ftype) from e
+        raise ValueError(f"Invalid IIR filter type: {ftype}") from e
     except IndexError as e:
-        raise ValueError(("%s does not have order selection. Use "
-                          "iirfilter function.") % ftype) from e
+        raise ValueError(f"{ftype} does not have order selection. "
+                         "Use iirfilter function.") from e
 
     _validate_gpass_gstop(gpass, gstop)
 
@@ -2392,7 +2392,7 @@ def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba',
     fs = _validate_fs(fs, allow_none=True)
 
     if wp.shape[0] != ws.shape[0] or wp.shape not in [(1,), (2,)]:
-        raise ValueError("wp and ws must have one or two elements each, and"
+        raise ValueError("wp and ws must have one or two elements each, and "
                          f"the same shape, got {wp.shape} and {ws.shape}")
 
     if any(wp <= 0) or any(ws <= 0):
@@ -2403,14 +2403,14 @@ def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba',
             if any(wp >= 1) or any(ws >= 1):
                 raise ValueError("Values for wp, ws must be less than 1")
         elif any(wp >= fs/2) or any(ws >= fs/2):
-            raise ValueError("Values for wp, ws must be less than fs/2"
-                             f" (fs={fs} -> fs/2={fs/2})")
+            raise ValueError("Values for wp, ws must be less than fs/2 "
+                             f"(fs={fs} -> fs/2={fs/2})")
 
     if wp.shape[0] == 2:
         if not ((ws[0] < wp[0] and wp[1] < ws[1]) or
                (wp[0] < ws[0] and ws[1] < wp[1])):
-            raise ValueError("Passband must lie strictly inside stopband"
-                             " or vice versa")
+            raise ValueError("Passband must lie strictly inside stopband "
+                             "or vice versa")
 
     band_type = 2 * (len(wp) - 1)
     band_type += 1
@@ -2565,7 +2565,7 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
     if fs is not None:
         if analog:
             raise ValueError("fs cannot be specified for an analog filter")
-        Wn = 2*Wn/fs
+        Wn = Wn / (fs/2)
 
     if np.any(Wn <= 0):
         raise ValueError("filter critical frequencies must be greater than 0")
@@ -2576,15 +2576,15 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
     try:
         btype = band_dict[btype]
     except KeyError as e:
-        raise ValueError("'%s' is an invalid bandtype for filter." % btype) from e
+        raise ValueError(f"'{btype}' is an invalid bandtype for filter.") from e
 
     try:
         typefunc = filter_dict[ftype][0]
     except KeyError as e:
-        raise ValueError("'%s' is not a valid basic IIR filter." % ftype) from e
+        raise ValueError(f"'{ftype}' is not a valid basic IIR filter.") from e
 
     if output not in ['ba', 'zpk', 'sos']:
-        raise ValueError("'%s' is not a valid output form." % output)
+        raise ValueError(f"'{output}' is not a valid output form.")
 
     if rp is not None and rp < 0:
         raise ValueError("passband ripple (rp) must be positive")
@@ -2613,7 +2613,7 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
                              "elliptic filter.")
         z, p, k = typefunc(N, rp, rs)
     else:
-        raise NotImplementedError("'%s' not implemented in iirfilter." % ftype)
+        raise NotImplementedError(f"'{ftype}' not implemented in iirfilter.")
 
     # Pre-warp frequencies for digital filter design
     if not analog:
@@ -2651,7 +2651,7 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
         elif btype == 'bandstop':
             z, p, k = lp2bs_zpk(z, p, k, wo=wo, bw=bw)
     else:
-        raise NotImplementedError("'%s' not implemented in iirfilter." % btype)
+        raise NotImplementedError(f"'{btype}' not implemented in iirfilter.")
 
     # Find discrete equivalent if necessary
     if not analog:
@@ -3812,7 +3812,7 @@ def band_stop_obj(wp, ind, passb, stopb, gpass, gstop, type):
         d1 = special.ellipk([arg1 ** 2, 1 - arg1 ** 2])
         n = (d0[0] * d1[1] / (d0[1] * d1[0]))
     else:
-        raise ValueError("Incorrect type: %s" % type)
+        raise ValueError(f"Incorrect type: {type}")
     return n
 
 
@@ -4001,7 +4001,7 @@ def buttord(wp, ws, gpass, gstop, analog=False, fs=None):
                    passb[0] * passb[1]))
         WN = np.sort(abs(WN))
     else:
-        raise ValueError("Bad type: %s" % filter_type)
+        raise ValueError(f"Bad type: {filter_type}")
 
     wn = _postprocess_wn(WN, analog, fs)
 
@@ -4562,7 +4562,7 @@ def ellipap(N, rp, rs):
 
     References
     ----------
-    .. [1] Lutova, Tosic, and Evans, "Filter Design for Signal Processing",
+    .. [1] Lutovac, Tosic, and Evans, "Filter Design for Signal Processing",
            Chapters 5 and 12.
 
     .. [2] Orfanidis, "Lecture Notes on Elliptic Filter Design",
@@ -5146,17 +5146,15 @@ def _design_notch_peak_filter(w0, Q, ftype, fs=2.0):
     bw = bw*np.pi
     w0 = w0*np.pi
 
-    # Compute -3dB attenuation
-    gb = 1/np.sqrt(2)
-
-    if ftype == "notch":
-        # Compute beta: formula 11.3.4 (p.575) from reference [1]
-        beta = (np.sqrt(1.0-gb**2.0)/gb)*np.tan(bw/2.0)
-    elif ftype == "peak":
-        # Compute beta: formula 11.3.19 (p.579) from reference [1]
-        beta = (gb/np.sqrt(1.0-gb**2.0))*np.tan(bw/2.0)
-    else:
+    if ftype not in ("notch", "peak"):
         raise ValueError("Unknown ftype.")
+
+    # Compute beta according to Eqs. 11.3.4 (p.575) and 11.3.19 (p.579) from
+    # reference [1]. Due to assuming a -3 dB attenuation value, i.e, assuming
+    # gb = 1 / np.sqrt(2), the following terms simplify to:
+    #   (np.sqrt(1.0 - gb**2.0) / gb) = 1
+    #   (gb / np.sqrt(1.0 - gb**2.0)) = 1
+    beta = np.tan(bw/2.0)
 
     # Compute gain: formula 11.3.6 (p.575) from reference [1]
     gain = 1.0/(1.0+beta)
@@ -5341,11 +5339,12 @@ def iircomb(w0, Q, ftype='notch', fs=2.0, *, pass_zero=False):
         G0, G = 1, 0
     elif ftype == 'peak':
         G0, G = 0, 1
-    GB = 1 / np.sqrt(2)
 
-    # Compute beta
-    # Eq. 11.5.3 (p. 591) from reference [1]
-    beta = np.sqrt((GB**2 - G0**2) / (G**2 - GB**2)) * np.tan(N * w_delta / 4)
+    # Compute beta according to Eq. 11.5.3 (p. 591) from reference [1]. Due to
+    # assuming a -3 dB attenuation value, i.e, assuming GB = 1 / np.sqrt(2),
+    # the following term simplifies to:
+    #   np.sqrt((GB**2 - G0**2) / (G**2 - GB**2)) = 1
+    beta = np.tan(N * w_delta / 4)
 
     # Compute filter coefficients
     # Eq 11.5.1 (p. 590) variables a, b, c from reference [1]

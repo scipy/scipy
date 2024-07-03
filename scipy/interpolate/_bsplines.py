@@ -662,7 +662,7 @@ class BSpline:
                 # Fast path: use FITPACK's routine
                 # (cf _fitpack_impl.splint).
                 integral = _fitpack_impl.splint(a, b, self.tck)
-                return integral * sign
+                return np.asarray(integral * sign)
 
         out = np.empty((2, prod(self.c.shape[1:])), dtype=self.c.dtype)
 
@@ -802,8 +802,8 @@ class BSpline:
         """
         from ._cubic import CubicSpline
         if not isinstance(pp, CubicSpline):
-            raise NotImplementedError("Only CubicSpline objects are accepted"
-                                      "for now. Got %s instead." % type(pp))
+            raise NotImplementedError(f"Only CubicSpline objects are accepted "
+                                      f"for now. Got {type(pp)} instead.")
         x = pp.x
         coef = pp.c
         k = pp.c.shape[0] - 1
@@ -816,7 +816,7 @@ class BSpline:
         elif bc_type == 'periodic':
             t = _periodic_knots(x, k)
         else:
-            raise TypeError('Unknown boundary condition: %s' % bc_type)
+            raise TypeError(f'Unknown boundary condition: {bc_type}')
 
         nod = t.shape[0] - (n + k + 1)  # number of derivatives at the ends
         c = np.zeros(n + nod, dtype=pp.c.dtype)
@@ -929,7 +929,7 @@ def _not_a_knot(x, k):
     cf de Boor, XIII(12)."""
     x = np.asarray(x)
     if k % 2 != 1:
-        raise ValueError("Odd degree for now only. Got %s." % k)
+        raise ValueError(f"Odd degree for now only. Got {k}.")
 
     m = (k - 1) // 2
     t = x[m+1:-m-1]
@@ -949,7 +949,7 @@ def _convert_string_aliases(deriv, target_shape):
         elif deriv == "natural":
             deriv = [(2, np.zeros(target_shape))]
         else:
-            raise ValueError("Unknown boundary condition : %s" % deriv)
+            raise ValueError(f"Unknown boundary condition : {deriv}")
     return deriv
 
 
@@ -1364,7 +1364,7 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
         try:
             deriv_l, deriv_r = bc_type
         except TypeError as e:
-            raise ValueError("Unknown boundary condition: %s" % bc_type) from e
+            raise ValueError(f"Unknown boundary condition: {bc_type}") from e
 
     y = np.asarray(y)
 
@@ -1439,7 +1439,7 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
         raise ValueError('Got %d knots, need at least %d.' %
                          (t.size, x.size + k + 1))
     if (x[0] < t[k]) or (x[-1] > t[-k]):
-        raise ValueError('Out of bounds w/ x = %s.' % x)
+        raise ValueError(f'Out of bounds w/ x = {x}.')
 
     if bc_type == 'periodic':
         return _make_periodic_spline(x, y, t, k, axis)
@@ -1452,6 +1452,12 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
     deriv_r = _convert_string_aliases(deriv_r, y.shape[1:])
     deriv_r_ords, deriv_r_vals = _process_deriv_spec(deriv_r)
     nright = deriv_r_ords.shape[0]
+
+    if not all(0 <= i <= k for i in deriv_l_ords):
+        raise ValueError(f"Bad boundary conditions at {x[0]}.")
+
+    if not all(0 <= i <= k for i in deriv_r_ords):
+        raise ValueError(f"Bad boundary conditions at {x[-1]}.")
 
     # have `n` conditions for `nt` coefficients; need nt-n derivatives
     n = x.size
@@ -1634,7 +1640,7 @@ def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True):
     if x.size != y.shape[0]:
         raise ValueError(f'Shapes of x {x.shape} and y {y.shape} are incompatible')
     if k > 0 and np.any((x < t[k]) | (x > t[-k])):
-        raise ValueError('Out of bounds w/ x = %s.' % x)
+        raise ValueError(f'Out of bounds w/ x = {x}.')
     if x.size != w.size:
         raise ValueError(f'Shapes of x {x.shape} and w {w.shape} are incompatible')
 

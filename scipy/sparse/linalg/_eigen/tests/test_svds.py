@@ -266,7 +266,7 @@ class SVDSCommonTests:
         else:
             res = svds(A, k=k, which=which, solver=self.solver,
                        random_state=0)
-        _check_svds(A, k, *res, which=which, atol=8e-10)
+        _check_svds(A, k, *res, which=which, atol=1e-9, rtol=2e-13)
 
     @pytest.mark.filterwarnings("ignore:Exited",
                                 reason="Ignore LOBPCG early exit.")
@@ -665,7 +665,7 @@ class SVDSCommonTests:
         k = 5
         (m, n) = shape
         S = random(m, n, density=0.1, random_state=rng)
-        if dtype == complex:
+        if dtype is complex:
             S = + 1j * random(m, n, density=0.1, random_state=rng)
         e = np.ones(m)
         e[0:5] *= 1e1 ** np.arange(-5, 0, 1)

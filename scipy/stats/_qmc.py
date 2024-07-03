@@ -668,7 +668,7 @@ def n_primes(n: IntNumber) -> list[int]:
               677, 683, 691, 701, 709, 719, 727, 733, 739, 743, 751, 757, 761,
               769, 773, 787, 797, 809, 811, 821, 823, 827, 829, 839, 853, 857,
               859, 863, 877, 881, 883, 887, 907, 911, 919, 929, 937, 941, 947,
-              953, 967, 971, 977, 983, 991, 997][:n]  # type: ignore[misc]
+              953, 967, 971, 977, 983, 991, 997][:n]
 
     if len(primes) < n:
         big_number = 2000
@@ -704,10 +704,10 @@ def _van_der_corput_permutations(
     Notes
     -----
     In Algorithm 1 of Owen 2017, a permutation of `np.arange(base)` is
-    created for each positive integer `k` such that `1 - base**-k < 1`
+    created for each positive integer `k` such that ``1 - base**-k < 1``
     using floating-point arithmetic. For double precision floats, the
-    condition `1 - base**-k < 1` can also be written as `base**-k >
-    2**-54`, which makes it more apparent how many permutations we need
+    condition ``1 - base**-k < 1`` can also be written as ``base**-k >
+    2**-54``, which makes it more apparent how many permutations we need
     to create.
     """
     rng = check_random_state(random_state)
@@ -1494,7 +1494,8 @@ class LatinHypercube(QMCEngine):
         for j in range(n_col):
             perms = self.rng.permutation(p)
             oa_sample_[:, j] = perms[oa_sample[:, j]]
-
+        
+        oa_sample = oa_sample_
         # following is making a scrambled OA into an OA-LHS
         oa_lhs_sample = np.zeros(shape=(n_row, n_col))
         lhs_engine = LatinHypercube(d=1, scramble=self.scramble, strength=1,
@@ -1505,11 +1506,9 @@ class LatinHypercube(QMCEngine):
                 lhs = lhs_engine.random(p).flatten()
                 oa_lhs_sample[:, j][idx] = lhs + oa_sample[:, j][idx]
 
-                lhs_engine = lhs_engine.reset()
-
         oa_lhs_sample /= p
 
-        return oa_lhs_sample[:, :self.d]  # type: ignore
+        return oa_lhs_sample[:, :self.d]
 
 
 class Sobol(QMCEngine):
@@ -1768,7 +1767,7 @@ class Sobol(QMCEngine):
                 )
                 sample = np.concatenate(
                     [self._first_point, sample]
-                )[:n]  # type: ignore[misc]
+                )[:n]
         else:
             _draw(
                 n=n, num_gen=self.num_generated - 1, dim=self.d,
@@ -1799,12 +1798,13 @@ class Sobol(QMCEngine):
 
         total_n = self.num_generated + n
         if not (total_n & (total_n - 1) == 0):
-            raise ValueError("The balance properties of Sobol' points require "
-                             "n to be a power of 2. {0} points have been "
-                             "previously generated, then: n={0}+2**{1}={2}. "
-                             "If you still want to do this, the function "
-                             "'Sobol.random()' can be used."
-                             .format(self.num_generated, m, total_n))
+            raise ValueError('The balance properties of Sobol\' points require '
+                             f'n to be a power of 2. {self.num_generated} points '
+                             'have been previously generated, then: '
+                             f'n={self.num_generated}+2**{m}={total_n}. '
+                             'If you still want to do this, the function '
+                             '\'Sobol.random()\' can be used.'
+                             )
 
         return self.random(n)
 
@@ -1889,6 +1889,9 @@ class PoissonDisk(QMCEngine):
         If `seed` is already a ``Generator`` instance, then the provided
         instance is used.
 
+    l_bounds, u_bounds : array_like (d,)
+        Lower and upper bounds of target sample data.
+
     Notes
     -----
     Poisson disk sampling is an iterative sampling strategy. Starting from
@@ -1969,7 +1972,9 @@ class PoissonDisk(QMCEngine):
         hypersphere: Literal["volume", "surface"] = "volume",
         ncandidates: IntNumber = 30,
         optimization: Literal["random-cd", "lloyd"] | None = None,
-        seed: SeedType = None
+        seed: SeedType = None,
+        l_bounds: npt.ArrayLike | None = None,
+        u_bounds: npt.ArrayLike | None = None
     ) -> None:
         # Used in `scipy.integrate.qmc_quad`
         self._init_quad = {'d': d, 'radius': radius,
@@ -2001,11 +2006,19 @@ class PoissonDisk(QMCEngine):
 
         # sample to generate per iteration in the hypersphere around center
         self.ncandidates = ncandidates
+        
+        if u_bounds is None:
+            u_bounds = np.ones(d)
+        if l_bounds is None:
+            l_bounds = np.zeros(d)
+        self.l_bounds, self.u_bounds = _validate_bounds(
+            l_bounds=l_bounds, u_bounds=u_bounds, d=int(d)
+        )
 
         with np.errstate(divide='ignore'):
             self.cell_size = self.radius / np.sqrt(self.d)
             self.grid_size = (
-                np.ceil(np.ones(self.d) / self.cell_size)
+                np.ceil((self.u_bounds - self.l_bounds) / self.cell_size)
             ).astype(int)
 
         self._initialize_grid_pool()
@@ -2025,7 +2038,7 @@ class PoissonDisk(QMCEngine):
     def _random(
         self, n: IntNumber = 1, *, workers: IntNumber = 1
     ) -> np.ndarray:
-        """Draw `n` in the interval ``[0, 1]``.
+        """Draw `n` in the interval ``[l_bounds, u_bounds]``.
 
         Note that it can return fewer samples if the space is full.
         See the note section of the class.
@@ -2045,15 +2058,18 @@ class PoissonDisk(QMCEngine):
             return np.empty((n, self.d))
 
         def in_limits(sample: np.ndarray) -> bool:
-            return (sample.max() <= 1.) and (sample.min() >= 0.)
+            for i in range(self.d):
+                if (sample[i] > self.u_bounds[i] or sample[i] < self.l_bounds[i]):
+                    return False
+            return True
 
         def in_neighborhood(candidate: np.ndarray, n: int = 2) -> bool:
             """
             Check if there are samples closer than ``radius_squared`` to the
             `candidate` sample.
             """
-            indices = (candidate / self.cell_size).astype(int)
-            ind_min = np.maximum(indices - n, np.zeros(self.d, dtype=int))
+            indices = ((candidate - self.l_bounds) / self.cell_size).astype(int)
+            ind_min = np.maximum(indices - n, self.l_bounds.astype(int))
             ind_max = np.minimum(indices + n + 1, self.grid_size)
 
             # Check if the center cell is empty
@@ -2077,7 +2093,7 @@ class PoissonDisk(QMCEngine):
 
         def add_sample(candidate: np.ndarray) -> None:
             self.sample_pool.append(candidate)
-            indices = (candidate / self.cell_size).astype(int)
+            indices = ((candidate - self.l_bounds) / self.cell_size).astype(int)
             self.sample_grid[tuple(indices)] = candidate
             curr_sample.append(candidate)
 
@@ -2085,7 +2101,7 @@ class PoissonDisk(QMCEngine):
 
         if len(self.sample_pool) == 0:
             # the pool is being initialized with a single random sample
-            add_sample(self.rng.random(self.d))
+            add_sample(self.rng.uniform(self.l_bounds, self.u_bounds))
             num_drawn = 1
         else:
             num_drawn = 0
@@ -2115,7 +2131,7 @@ class PoissonDisk(QMCEngine):
         return np.array(curr_sample)
 
     def fill_space(self) -> np.ndarray:
-        """Draw ``n`` samples in the interval ``[0, 1]``.
+        """Draw ``n`` samples in the interval ``[l_bounds, u_bounds]``.
 
         Unlike `random`, this method will try to add points until
         the space is full. Depending on ``candidates`` (and to a lesser extent

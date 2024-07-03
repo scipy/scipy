@@ -983,7 +983,10 @@ def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
     >>> loc, scale = np.mean(x), np.std(x, ddof=1)
     >>> cdf = stats.norm(loc, scale).cdf
     >>> stats.ks_1samp(x, cdf)
-    KstestResult(statistic=0.1119257570456813, pvalue=0.2827756409939257)
+    KstestResult(statistic=0.1119257570456813,
+                 pvalue=0.2827756409939257,
+                 statistic_location=0.7751845155861765,
+                 statistic_sign=-1)
 
     An advantage of the KS-test is that the p-value - the probability of
     obtaining a value of the test statistic under the null hypothesis as

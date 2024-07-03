@@ -76,14 +76,14 @@ def shortest_path(csgraph, method='auto',
            'BF'   -- Bellman-Ford algorithm.
                      This algorithm can be used when weights are negative.
                      If a negative cycle is encountered, an error will be raised.
-                     Computational cost is approximately ``O[N(N^2 k)]``, where 
-                     ``k`` is the average number of connected edges per node. 
+                     Computational cost is approximately ``O[N(N^2 k)]``, where
+                     ``k`` is the average number of connected edges per node.
                      The input csgraph will be converted to a csr representation.
 
            'J'    -- Johnson's algorithm.
-                     Like the Bellman-Ford algorithm, Johnson's algorithm is 
-                     designed for use when the weights are negative. It combines 
-                     the Bellman-Ford algorithm with Dijkstra's algorithm for 
+                     Like the Bellman-Ford algorithm, Johnson's algorithm is
+                     designed for use when the weights are negative. It combines
+                     the Bellman-Ford algorithm with Dijkstra's algorithm for
                      faster computation.
 
     directed : bool, optional
@@ -148,11 +148,11 @@ def shortest_path(csgraph, method='auto',
     ... ]
     >>> graph = csr_matrix(graph)
     >>> print(graph)
-      (0, 1)	1
-      (0, 2)	2
-      (1, 3)	1
-      (2, 0)	2
-      (2, 3)	3
+      (np.int32(0), np.int32(1))	1
+      (np.int32(0), np.int32(2))	2
+      (np.int32(1), np.int32(3))	1
+      (np.int32(2), np.int32(0))	2
+      (np.int32(2), np.int32(3))	3
 
     >>> dist_matrix, predecessors = shortest_path(csgraph=graph, directed=False, indices=0, return_predecessors=True)
     >>> dist_matrix
@@ -161,6 +161,8 @@ def shortest_path(csgraph, method='auto',
     array([-9999,     0,     0,     1], dtype=int32)
 
     """
+    csgraph = convert_pydata_sparse_to_scipy(csgraph, accept_fv=[0, np.inf, np.nan])
+
     # validate here to catch errors early but don't store the result;
     # we'll validate again later
     validate_graph(csgraph, directed, DTYPE,
@@ -294,12 +296,11 @@ def floyd_warshall(csgraph, directed=True,
     ... ]
     >>> graph = csr_matrix(graph)
     >>> print(graph)
-      (0, 1)	1
-      (0, 2)	2
-      (1, 3)	1
-      (2, 0)	2
-      (2, 3)	3
-
+      (np.int32(0), np.int32(1))	1
+      (np.int32(0), np.int32(2))	2
+      (np.int32(1), np.int32(3))	1
+      (np.int32(2), np.int32(0))	2
+      (np.int32(2), np.int32(3))	3
 
     >>> dist_matrix, predecessors = floyd_warshall(csgraph=graph, directed=False, return_predecessors=True)
     >>> dist_matrix
@@ -438,6 +439,8 @@ def dijkstra(csgraph, directed=True, indices=None,
         If False, then find the shortest path on an undirected graph: the
         algorithm can progress from point i to j or j to i along either
         csgraph[i, j] or csgraph[j, i].
+
+        .. warning:: Refer the notes below while using with ``directed=False``.
     indices : array_like or int, optional
         if specified, only compute the paths from the points at the given
         indices.
@@ -519,10 +522,10 @@ def dijkstra(csgraph, directed=True, indices=None,
     ... ]
     >>> graph = csr_matrix(graph)
     >>> print(graph)
-      (0, 1)	1
-      (0, 2)	2
-      (1, 3)	1
-      (2, 3)	3
+      (np.int32(0), np.int32(1))	1
+      (np.int32(0), np.int32(2))	2
+      (np.int32(1), np.int32(3))	1
+      (np.int32(2), np.int32(3))	3
 
     >>> dist_matrix, predecessors = dijkstra(csgraph=graph, directed=False, indices=0, return_predecessors=True)
     >>> dist_matrix
@@ -547,7 +550,10 @@ def dijkstra(csgraph, directed=True, indices=None,
     # initialize/validate indices
     if indices is None:
         indices = np.arange(N, dtype=ITYPE)
-        return_shape = indices.shape + (N,)
+        if min_only:
+            return_shape = (N,)
+        else:
+            return_shape = indices.shape + (N,)
     else:
         indices = np.array(indices, order='C', dtype=ITYPE, copy=True)
         if min_only:
@@ -595,16 +601,22 @@ def dijkstra(csgraph, directed=True, indices=None,
     else:
         csr_data = csgraph.data
 
+    csgraph_indices = csgraph.indices
+    csgraph_indptr = csgraph.indptr
+    if csgraph_indices.dtype != ITYPE:
+        csgraph_indices = csgraph_indices.astype(ITYPE)
+    if csgraph_indptr.dtype != ITYPE:
+        csgraph_indptr = csgraph_indptr.astype(ITYPE)
     if directed:
         if min_only:
             _dijkstra_directed_multi(indices,
-                                     csr_data, csgraph.indices,
-                                     csgraph.indptr,
+                                     csr_data, csgraph_indices,
+                                     csgraph_indptr,
                                      dist_matrix, predecessor_matrix,
                                      source_matrix, limitf)
         else:
             _dijkstra_directed(indices,
-                               csr_data, csgraph.indices, csgraph.indptr,
+                               csr_data, csgraph_indices, csgraph_indptr,
                                dist_matrix, predecessor_matrix, limitf)
     else:
         csgraphT = csgraph.T.tocsr()
@@ -614,15 +626,15 @@ def dijkstra(csgraph, directed=True, indices=None,
             csrT_data = csgraphT.data
         if min_only:
             _dijkstra_undirected_multi(indices,
-                                       csr_data, csgraph.indices,
-                                       csgraph.indptr,
+                                       csr_data, csgraph_indices,
+                                       csgraph_indptr,
                                        csrT_data, csgraphT.indices,
                                        csgraphT.indptr,
                                        dist_matrix, predecessor_matrix,
                                        source_matrix, limitf)
         else:
             _dijkstra_undirected(indices,
-                                 csr_data, csgraph.indices, csgraph.indptr,
+                                 csr_data, csgraph_indices, csgraph_indptr,
                                  csrT_data, csgraphT.indices, csgraphT.indptr,
                                  dist_matrix, predecessor_matrix, limitf)
 
@@ -883,13 +895,13 @@ cdef int _dijkstra_undirected(
 
 @cython.boundscheck(False)
 cdef int _dijkstra_undirected_multi(
-            int[:] source_indices,
-            double[:] csr_weights,
-            int[:] csr_indices,
-            int[:] csr_indptr,
-            double[:] csrT_weights,
-            int[:] csrT_indices,
-            int[:] csrT_indptr,
+            const int[:] source_indices,
+            const double[:] csr_weights,
+            const int[:] csr_indices,
+            const int[:] csr_indptr,
+            const double[:] csrT_weights,
+            const int[:] csrT_indices,
+            const int[:] csrT_indptr,
             double[:] dist_matrix,
             int[:] pred,
             int[:] sources,
@@ -1004,11 +1016,11 @@ def bellman_ford(csgraph, directed=True, indices=None,
     ... ]
     >>> graph = csr_matrix(graph)
     >>> print(graph)
-      (0, 1)	1
-      (0, 2)	2
-      (1, 3)	1
-      (2, 0)	2
-      (2, 3)	3
+      (np.int32(0), np.int32(1))	1
+      (np.int32(0), np.int32(2))	2
+      (np.int32(1), np.int32(3))	1
+      (np.int32(2), np.int32(0))	2
+      (np.int32(2), np.int32(3))	3
 
     >>> dist_matrix, predecessors = bellman_ford(csgraph=graph, directed=False, indices=0, return_predecessors=True)
     >>> dist_matrix
@@ -1241,11 +1253,11 @@ def johnson(csgraph, directed=True, indices=None,
     ... ]
     >>> graph = csr_matrix(graph)
     >>> print(graph)
-      (0, 1)	1
-      (0, 2)	2
-      (1, 3)	1
-      (2, 0)	2
-      (2, 3)	3
+      (np.int32(0), np.int32(1))	1
+      (np.int32(0), np.int32(2))	2
+      (np.int32(1), np.int32(3))	1
+      (np.int32(2), np.int32(0))	2
+      (np.int32(2), np.int32(3))	3
 
     >>> dist_matrix, predecessors = johnson(csgraph=graph, directed=False, indices=0, return_predecessors=True)
     >>> dist_matrix
@@ -1345,9 +1357,9 @@ def johnson(csgraph, directed=True, indices=None,
 
 cdef void _johnson_add_weights(
             double[:] csr_weights,
-            int[:] csr_indices,
-            int[:] csr_indptr,
-            double[:] dist_array) noexcept:
+            const int[:] csr_indices,
+            const int[:] csr_indptr,
+            const double[:] dist_array) noexcept:
     # let w(u, v) = w(u, v) + h(u) - h(v)
     cdef unsigned int j, k, N = dist_array.shape[0]
 
@@ -1494,7 +1506,7 @@ cdef void add_sibling(FibonacciNode* node, FibonacciNode* new_sibling) noexcept:
     # Assumptions: - node is a valid pointer
     #              - new_sibling is a valid pointer
     #              - new_sibling is not the child or sibling of another node
-    
+
     # Insert new_sibling between node and node.right_sibling
     if node.right_sibling:
         node.right_sibling.left_sibling = new_sibling
@@ -1546,7 +1558,7 @@ cdef void insert_node(FibonacciHeap* heap,
     #              - node is not the child or sibling of another node
     if heap.min_node:
         if node.val < heap.min_node.val:
-            # Replace heap.min_node with node, which is always 
+            # Replace heap.min_node with node, which is always
             # at the leftmost end of the roots' linked-list.
             node.left_sibling = NULL
             node.right_sibling = heap.min_node
@@ -1571,7 +1583,7 @@ cdef void decrease_val(FibonacciHeap* heap,
         remove(node)
         insert_node(heap, node)
     elif heap.min_node.val > node.val:
-        # Replace heap.min_node with node, which is always 
+        # Replace heap.min_node with node, which is always
         # at the leftmost end of the roots' linked-list.
         remove(node)
         node.right_sibling = heap.min_node
@@ -1625,7 +1637,7 @@ cdef FibonacciNode* remove_min(FibonacciHeap* heap) noexcept:
     temp = heap.min_node.right_sibling
     remove(heap.min_node)
     heap.min_node = temp
-    
+
     if temp == NULL:
         # There is a unique root in the tree, hence a unique node
         # which is the minimum that we return here.
@@ -1641,7 +1653,7 @@ cdef FibonacciNode* remove_min(FibonacciHeap* heap) noexcept:
         temp_right = temp.right_sibling
         link(heap, temp)
         temp = temp_right
-    
+
     # move heap.min_node to the leftmost end of the linked-list of roots
     temp = leftmost_sibling(heap.min_node)
     if heap.min_node != temp:
@@ -1771,11 +1783,11 @@ def yen(
     ... ]
     >>> graph = csr_matrix(graph)
     >>> print(graph)
-    (0, 1)	1
-    (0, 2)	2
-    (1, 3)	1
-    (2, 0)	2
-    (2, 3)	3
+      (np.int32(0), np.int32(1))	1
+      (np.int32(0), np.int32(2))	2
+      (np.int32(1), np.int32(3))	1
+      (np.int32(2), np.int32(0))	2
+      (np.int32(2), np.int32(3))	3
 
     >>> dist_array, predecessors = yen(csgraph=graph, source=0, sink=3, K=2,
     ...                                directed=False, return_predecessors=True)
@@ -2021,7 +2033,7 @@ cdef void _yen(
             if (
                 total_distance != INFINITY
                 and _yen_is_path_in_candidates(candidate_predecessors,
-                                               shortest_paths_predecessors[k-1], 
+                                               shortest_paths_predecessors[k-1],
                                                predecessor_matrix[0],
                                                spur_node, sink) == 0
             ):

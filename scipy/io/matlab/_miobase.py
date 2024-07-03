@@ -12,11 +12,7 @@ from scipy._lib import doccer
 from . import _byteordercodes as boc
 
 __all__ = [
-    'MatFileReader', 'MatReadError', 'MatReadWarning',
-    'MatVarReader', 'MatWriteError', 'arr_dtype_number',
-    'arr_to_chars', 'convert_dtypes', 'doc_dict',
-    'docfiller', 'get_matfile_version',
-    'matdims', 'read_dtype'
+    'MatReadError', 'MatReadWarning', 'MatWriteError',
 ]
 
 class MatReadError(Exception):
@@ -323,8 +319,7 @@ def matdims(arr, oned_as='column'):
         elif oned_as == 'row':
             return (1,) + shape
         else:
-            raise ValueError('1-D option "%s" is strange'
-                             % oned_as)
+            raise ValueError(f'1-D option "{oned_as}" is strange')
     return shape
 
 

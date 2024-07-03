@@ -4,12 +4,14 @@ import warnings
 import numpy as np
 from itertools import combinations, permutations, product
 from collections.abc import Sequence
+from dataclasses import dataclass
 import inspect
 
-from scipy._lib._util import check_random_state, _rename_parameter
+from scipy._lib._util import check_random_state, _rename_parameter, rng_integers
+from scipy._lib._array_api import (array_namespace, is_numpy, xp_minimum,
+                                   xp_clip, xp_moveaxis_to_end)
 from scipy.special import ndtr, ndtri, comb, factorial
-from scipy._lib._util import rng_integers
-from dataclasses import dataclass
+
 from ._common import ConfidenceInterval
 from ._axis_nan_policy import _broadcast_concatenate, _broadcast_arrays
 from ._warnings_errors import DegenerateDataWarning
@@ -183,9 +185,23 @@ def _bootstrap_iv(data, statistic, vectorized, paired, axis, confidence_level,
     if n_samples == 0:
         raise ValueError("`data` must contain at least one sample.")
 
+    message = ("Ignoring the dimension specified by `axis`, arrays in `data` do not "
+               "have the same shape. Beginning in SciPy 1.16.0, `bootstrap` will "
+               "explicitly broadcast elements of `data` to the same shape (ignoring "
+               "`axis`) before performing the calculation. To avoid this warning in "
+               "the meantime, ensure that all samples have the same shape (except "
+               "potentially along `axis`).")
+    data = [np.atleast_1d(sample) for sample in data]
+    reduced_shapes = set()
+    for sample in data:
+        reduced_shape = list(sample.shape)
+        reduced_shape.pop(axis)
+        reduced_shapes.add(tuple(reduced_shape))
+    if len(reduced_shapes) != 1:
+        warnings.warn(message, FutureWarning, stacklevel=3)
+
     data_iv = []
     for sample in data:
-        sample = np.atleast_1d(sample)
         if sample.shape[axis_int] <= 1:
             raise ValueError("each sample in `data` must contain two or more "
                              "observations along `axis`.")
@@ -313,7 +329,18 @@ def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
     Parameters
     ----------
     data : sequence of array-like
-         Each element of data is a sample from an underlying distribution.
+         Each element of `data` is a sample containing scalar observations from an
+         underlying distribution. Elements of `data` must be broadcastable to the
+         same shape (with the possible exception of the dimension specified by `axis`).
+
+         .. versionchanged:: 1.14.0
+             `bootstrap` will now emit a ``FutureWarning`` if the shapes of the
+             elements of `data` are not the same (with the exception of the dimension
+             specified by `axis`).
+             Beginning in SciPy 1.16.0, `bootstrap` will explicitly broadcast the
+             elements to the same shape (except along `axis`) before performing
+             the calculation.
+
     statistic : callable
         Statistic for which the confidence interval is to be calculated.
         `statistic` must be a callable that accepts ``len(data)`` samples
@@ -491,54 +518,55 @@ def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
     >>> print(res.confidence_interval)
     ConfidenceInterval(low=3.57655333533867, high=4.382043696342881)
 
-    If we sample from the original distribution 1000 times and form a bootstrap
+    If we sample from the original distribution 100 times and form a bootstrap
     confidence interval for each sample, the confidence interval
     contains the true value of the statistic approximately 90% of the time.
 
-    >>> n_trials = 1000
+    >>> n_trials = 100
     >>> ci_contains_true_std = 0
     >>> for i in range(n_trials):
     ...    data = (dist.rvs(size=100, random_state=rng),)
-    ...    ci = bootstrap(data, np.std, confidence_level=0.9, n_resamples=1000,
-    ...                   random_state=rng).confidence_interval
+    ...    res = bootstrap(data, np.std, confidence_level=0.9,
+    ...                    n_resamples=999, random_state=rng)
+    ...    ci = res.confidence_interval
     ...    if ci[0] < std_true < ci[1]:
     ...        ci_contains_true_std += 1
     >>> print(ci_contains_true_std)
-    875
+    88
 
     Rather than writing a loop, we can also determine the confidence intervals
-    for all 1000 samples at once.
+    for all 100 samples at once.
 
     >>> data = (dist.rvs(size=(n_trials, 100), random_state=rng),)
     >>> res = bootstrap(data, np.std, axis=-1, confidence_level=0.9,
-    ...                 n_resamples=1000, random_state=rng)
+    ...                 n_resamples=999, random_state=rng)
     >>> ci_l, ci_u = res.confidence_interval
 
     Here, `ci_l` and `ci_u` contain the confidence interval for each of the
-    ``n_trials = 1000`` samples.
+    ``n_trials = 100`` samples.
 
-    >>> print(ci_l[995:])
-    [3.77729695 3.75090233 3.45829131 3.34078217 3.48072829]
-    >>> print(ci_u[995:])
-    [4.88316666 4.86924034 4.32032996 4.2822427  4.59360598]
+    >>> print(ci_l[:5])
+    [3.86401283 3.33304394 3.52474647 3.54160981 3.80569252]
+    >>> print(ci_u[:5])
+    [4.80217409 4.18143252 4.39734707 4.37549713 4.72843584]
 
     And again, approximately 90% contain the true value, ``std_true = 4``.
 
     >>> print(np.sum((ci_l < std_true) & (std_true < ci_u)))
-    900
+    93
 
     `bootstrap` can also be used to estimate confidence intervals of
-    multi-sample statistics, including those calculated by hypothesis
-    tests. `scipy.stats.mood` perform's Mood's test for equal scale parameters,
-    and it returns two outputs: a statistic, and a p-value. To get a
-    confidence interval for the test statistic, we first wrap
-    `scipy.stats.mood` in a function that accepts two sample arguments,
-    accepts an `axis` keyword argument, and returns only the statistic.
+    multi-sample statistics. For example, to get a confidence interval
+    for the difference between means, we write a function that accepts
+    two sample arguments and returns only the statistic. The use of the
+    ``axis`` argument ensures that all mean calculations are perform in
+    a single vectorized call, which is faster than looping over pairs
+    of resamples in Python.
 
-    >>> from scipy.stats import mood
-    >>> def my_statistic(sample1, sample2, axis):
-    ...     statistic, _ = mood(sample1, sample2, axis=-1)
-    ...     return statistic
+    >>> def my_statistic(sample1, sample2, axis=-1):
+    ...     mean1 = np.mean(sample1, axis=axis)
+    ...     mean2 = np.mean(sample2, axis=axis)
+    ...     return mean1 - mean2
 
     Here, we use the 'percentile' method with the default 95% confidence level.
 
@@ -546,15 +574,15 @@ def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
     >>> sample2 = norm.rvs(scale=2, size=100, random_state=rng)
     >>> data = (sample1, sample2)
     >>> res = bootstrap(data, my_statistic, method='basic', random_state=rng)
-    >>> print(mood(sample1, sample2)[0])  # element 0 is the statistic
-    -5.521109549096542
+    >>> print(my_statistic(sample1, sample2))
+    0.16661030792089523
     >>> print(res.confidence_interval)
-    ConfidenceInterval(low=-7.255994487314675, high=-4.016202624747605)
+    ConfidenceInterval(low=-0.29087973240818693, high=0.6371338699912273)
 
     The bootstrap estimate of the standard error is also available.
 
     >>> print(res.standard_error)
-    0.8344963846318795
+    0.238323948262459
 
     Paired-sample statistics work, too. For example, consider the Pearson
     correlation coefficient.
@@ -564,42 +592,40 @@ def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
     >>> x = np.linspace(0, 10, n)
     >>> y = x + rng.uniform(size=n)
     >>> print(pearsonr(x, y)[0])  # element 0 is the statistic
-    0.9962357936065914
+    0.9954306665125647
 
-    We wrap `pearsonr` so that it returns only the statistic.
+    We wrap `pearsonr` so that it returns only the statistic, ensuring
+    that we use the `axis` argument because it is available.
 
-    >>> def my_statistic(x, y):
-    ...     return pearsonr(x, y)[0]
+    >>> def my_statistic(x, y, axis=-1):
+    ...     return pearsonr(x, y, axis=axis)[0]
 
     We call `bootstrap` using ``paired=True``.
-    Also, since ``my_statistic`` isn't vectorized to calculate the statistic
-    along a given axis, we pass in ``vectorized=False``.
 
-    >>> res = bootstrap((x, y), my_statistic, vectorized=False, paired=True,
-    ...                 random_state=rng)
+    >>> res = bootstrap((x, y), my_statistic, paired=True, random_state=rng)
     >>> print(res.confidence_interval)
-    ConfidenceInterval(low=0.9950085825848624, high=0.9971212407917498)
+    ConfidenceInterval(low=0.9941504301315878, high=0.996377412215445)
 
     The result object can be passed back into `bootstrap` to perform additional
     resampling:
 
     >>> len(res.bootstrap_distribution)
     9999
-    >>> res = bootstrap((x, y), my_statistic, vectorized=False, paired=True,
-    ...                 n_resamples=1001, random_state=rng,
+    >>> res = bootstrap((x, y), my_statistic, paired=True,
+    ...                 n_resamples=1000, random_state=rng,
     ...                 bootstrap_result=res)
     >>> len(res.bootstrap_distribution)
-    11000
+    10999
 
     or to change the confidence interval options:
 
-    >>> res2 = bootstrap((x, y), my_statistic, vectorized=False, paired=True,
+    >>> res2 = bootstrap((x, y), my_statistic, paired=True,
     ...                  n_resamples=0, random_state=rng, bootstrap_result=res,
     ...                  method='percentile', confidence_level=0.9)
     >>> np.testing.assert_equal(res2.bootstrap_distribution,
     ...                         res.bootstrap_distribution)
     >>> res.confidence_interval
-    ConfidenceInterval(low=0.9950035351407804, high=0.9971170323404578)
+    ConfidenceInterval(low=0.9941574828235082, high=0.9963781698210212)
 
     without repeating computation of the original bootstrap distribution.
 
@@ -663,7 +689,6 @@ def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
 def _monte_carlo_test_iv(data, rvs, statistic, vectorized, n_resamples,
                          batch, alternative, axis):
     """Input validation for `monte_carlo_test`."""
-
     axis_int = int(axis)
     if axis != axis_int:
         raise ValueError("`axis` must be an integer.")
@@ -678,26 +703,45 @@ def _monte_carlo_test_iv(data, rvs, statistic, vectorized, n_resamples,
         if not callable(rvs_i):
             raise TypeError("`rvs` must be callable or sequence of callables.")
 
+    # At this point, `data` should be a sequence
+    # If it isn't, the user passed a sequence for `rvs` but not `data`
+    message = "If `rvs` is a sequence, `len(rvs)` must equal `len(data)`."
+    try:
+        len(data)
+    except TypeError as e:
+        raise ValueError(message) from e
     if not len(rvs) == len(data):
-        message = "If `rvs` is a sequence, `len(rvs)` must equal `len(data)`."
         raise ValueError(message)
 
     if not callable(statistic):
         raise TypeError("`statistic` must be callable.")
 
     if vectorized is None:
-        vectorized = 'axis' in inspect.signature(statistic).parameters
+        try:
+            signature = inspect.signature(statistic).parameters
+        except ValueError as e:
+            message = (f"Signature inspection of {statistic=} failed; "
+                       "pass `vectorize` explicitly.")
+            raise ValueError(message) from e
+        vectorized = 'axis' in signature
+
+    xp = array_namespace(*data)
 
     if not vectorized:
-        statistic_vectorized = _vectorize_statistic(statistic)
+        if is_numpy(xp):
+            statistic_vectorized = _vectorize_statistic(statistic)
+        else:
+            message = ("`statistic` must be vectorized (i.e. support an `axis` "
+                       f"argument) when `data` contains {xp.__name__} arrays.")
+            raise ValueError(message)
     else:
         statistic_vectorized = statistic
 
-    data = _broadcast_arrays(data, axis)
+    data = _broadcast_arrays(data, axis, xp=xp)
     data_iv = []
     for sample in data:
-        sample = np.atleast_1d(sample)
-        sample = np.moveaxis(sample, axis_int, -1)
+        sample = xp.broadcast_to(sample, (1,)) if sample.ndim == 0 else sample
+        sample = xp_moveaxis_to_end(sample, axis_int, xp=xp)
         data_iv.append(sample)
 
     n_resamples_int = int(n_resamples)
@@ -716,8 +760,12 @@ def _monte_carlo_test_iv(data, rvs, statistic, vectorized, n_resamples,
     if alternative not in alternatives:
         raise ValueError(f"`alternative` must be in {alternatives}")
 
+    # Infer the desired p-value dtype based on the input types
+    min_float = getattr(xp, 'float16', xp.float32)
+    dtype = xp.result_type(*data_iv, min_float)
+
     return (data_iv, rvs, statistic_vectorized, vectorized, n_resamples_int,
-            batch_iv, alternative, axis_int)
+            batch_iv, alternative, axis_int, dtype, xp)
 
 
 @dataclass
@@ -909,11 +957,12 @@ def monte_carlo_test(data, rvs, statistic, *, vectorized=None,
     """
     args = _monte_carlo_test_iv(data, rvs, statistic, vectorized,
                                 n_resamples, batch, alternative, axis)
-    (data, rvs, statistic, vectorized,
-     n_resamples, batch, alternative, axis) = args
+    (data, rvs, statistic, vectorized, n_resamples,
+     batch, alternative, axis, dtype, xp) = args
 
     # Some statistics return plain floats; ensure they're at least a NumPy float
-    observed = np.asarray(statistic(*data, axis=-1))[()]
+    observed = xp.asarray(statistic(*data, axis=-1))
+    observed = observed[()] if observed.ndim == 0 else observed
 
     n_observations = [sample.shape[-1] for sample in data]
     batch_nominal = batch or n_resamples
@@ -923,29 +972,31 @@ def monte_carlo_test(data, rvs, statistic, *, vectorized=None,
         resamples = [rvs_i(size=(batch_actual, n_observations_i))
                      for rvs_i, n_observations_i in zip(rvs, n_observations)]
         null_distribution.append(statistic(*resamples, axis=-1))
-    null_distribution = np.concatenate(null_distribution)
-    null_distribution = null_distribution.reshape([-1] + [1]*observed.ndim)
+    null_distribution = xp.concat(null_distribution)
+    null_distribution = xp.reshape(null_distribution, [-1] + [1]*observed.ndim)
 
     # relative tolerance for detecting numerically distinct but
     # theoretically equal values in the null distribution
-    eps =  (0 if not np.issubdtype(observed.dtype, np.inexact)
-            else np.finfo(observed.dtype).eps*100)
-    gamma = np.abs(eps * observed)
+    eps =  (0 if not xp.isdtype(observed.dtype, ('real floating'))
+            else xp.finfo(observed.dtype).eps*100)
+    gamma = xp.abs(eps * observed)
 
     def less(null_distribution, observed):
         cmps = null_distribution <= observed + gamma
-        pvalues = (cmps.sum(axis=0) + 1) / (n_resamples + 1)  # see [1]
+        cmps = xp.asarray(cmps, dtype=dtype)
+        pvalues = (xp.sum(cmps, axis=0, dtype=dtype) + 1.) / (n_resamples + 1.)
         return pvalues
 
     def greater(null_distribution, observed):
         cmps = null_distribution >= observed - gamma
-        pvalues = (cmps.sum(axis=0) + 1) / (n_resamples + 1)  # see [1]
+        cmps = xp.asarray(cmps, dtype=dtype)
+        pvalues = (xp.sum(cmps, axis=0, dtype=dtype) + 1.) / (n_resamples + 1.)
         return pvalues
 
     def two_sided(null_distribution, observed):
         pvalues_less = less(null_distribution, observed)
         pvalues_greater = greater(null_distribution, observed)
-        pvalues = np.minimum(pvalues_less, pvalues_greater) * 2
+        pvalues = xp_minimum(pvalues_less, pvalues_greater) * 2
         return pvalues
 
     compare = {"less": less,
@@ -953,9 +1004,342 @@ def monte_carlo_test(data, rvs, statistic, *, vectorized=None,
                "two-sided": two_sided}
 
     pvalues = compare[alternative](null_distribution, observed)
-    pvalues = np.clip(pvalues, 0, 1)
+    pvalues = xp_clip(pvalues, 0., 1., xp=xp)
 
     return MonteCarloTestResult(observed, pvalues, null_distribution)
+
+
+@dataclass
+class PowerResult:
+    """Result object returned by `scipy.stats.power`.
+
+    Attributes
+    ----------
+    power : float or ndarray
+        The estimated power.
+    pvalues : float or ndarray
+        The simulated p-values.
+    """
+    power: float | np.ndarray
+    pvalues: float | np.ndarray
+
+
+def _wrap_kwargs(fun):
+    """Wrap callable to accept arbitrary kwargs and ignore unused ones"""
+
+    try:
+        keys = set(inspect.signature(fun).parameters.keys())
+    except ValueError:
+        # NumPy Generator methods can't be inspected
+        keys = {'size'}
+
+    # Set keys=keys/fun=fun to avoid late binding gotcha
+    def wrapped_rvs_i(*args, keys=keys, fun=fun, **all_kwargs):
+        kwargs = {key: val for key, val in all_kwargs.items()
+                  if key in keys}
+        return fun(*args, **kwargs)
+    return wrapped_rvs_i
+
+
+def _power_iv(rvs, test, n_observations, significance, vectorized,
+              n_resamples, batch, kwargs):
+    """Input validation for `monte_carlo_test`."""
+
+    if vectorized not in {True, False, None}:
+        raise ValueError("`vectorized` must be `True`, `False`, or `None`.")
+
+    if not isinstance(rvs, Sequence):
+        rvs = (rvs,)
+        n_observations = (n_observations,)
+    for rvs_i in rvs:
+        if not callable(rvs_i):
+            raise TypeError("`rvs` must be callable or sequence of callables.")
+
+    if not len(rvs) == len(n_observations):
+        message = ("If `rvs` is a sequence, `len(rvs)` "
+                   "must equal `len(n_observations)`.")
+        raise ValueError(message)
+
+    significance = np.asarray(significance)[()]
+    if (not np.issubdtype(significance.dtype, np.floating)
+            or np.min(significance) < 0 or np.max(significance) > 1):
+        raise ValueError("`significance` must contain floats between 0 and 1.")
+
+    kwargs = dict() if kwargs is None else kwargs
+    if not isinstance(kwargs, dict):
+        raise TypeError("`kwargs` must be a dictionary that maps keywords to arrays.")
+
+    vals = kwargs.values()
+    keys = kwargs.keys()
+
+    # Wrap callables to ignore unused keyword arguments
+    wrapped_rvs = [_wrap_kwargs(rvs_i) for rvs_i in rvs]
+
+    # Broadcast, then ravel nobs/kwarg combinations. In the end,
+    # `nobs` and `vals` have shape (# of combinations, number of variables)
+    tmp = np.asarray(np.broadcast_arrays(*n_observations, *vals))
+    shape = tmp.shape
+    if tmp.ndim == 1:
+        tmp = tmp[np.newaxis, :]
+    else:
+        tmp = tmp.reshape((shape[0], -1)).T
+    nobs, vals = tmp[:, :len(rvs)], tmp[:, len(rvs):]
+    nobs = nobs.astype(int)
+
+    if not callable(test):
+        raise TypeError("`test` must be callable.")
+
+    if vectorized is None:
+        vectorized = 'axis' in inspect.signature(test).parameters
+
+    if not vectorized:
+        test_vectorized = _vectorize_statistic(test)
+    else:
+        test_vectorized = test
+    # Wrap `test` function to ignore unused kwargs
+    test_vectorized = _wrap_kwargs(test_vectorized)
+
+    n_resamples_int = int(n_resamples)
+    if n_resamples != n_resamples_int or n_resamples_int <= 0:
+        raise ValueError("`n_resamples` must be a positive integer.")
+
+    if batch is None:
+        batch_iv = batch
+    else:
+        batch_iv = int(batch)
+        if batch != batch_iv or batch_iv <= 0:
+            raise ValueError("`batch` must be a positive integer or None.")
+
+    return (wrapped_rvs, test_vectorized, nobs, significance, vectorized,
+            n_resamples_int, batch_iv, vals, keys, shape[1:])
+
+
+def power(test, rvs, n_observations, *, significance=0.01, vectorized=None,
+          n_resamples=10000, batch=None, kwargs=None):
+    r"""Simulate the power of a hypothesis test under an alternative hypothesis.
+
+    Parameters
+    ----------
+    test : callable
+        Hypothesis test for which the power is to be simulated.
+        `test` must be a callable that accepts a sample (e.g. ``test(sample)``)
+        or ``len(rvs)`` separate samples (e.g. ``test(samples1, sample2)`` if
+        `rvs` contains two callables and `n_observations` contains two values)
+        and returns the p-value of the test.
+        If `vectorized` is set to ``True``, `test` must also accept a keyword
+        argument `axis` and be vectorized to perform the test along the
+        provided `axis` of the samples.
+        Any callable from `scipy.stats` with an `axis` argument that returns an
+        object with a `pvalue` attribute is also acceptable.
+    rvs : callable or tuple of callables
+        A callable or sequence of callables that generate(s) random variates
+        under the alternative hypothesis. Each element of `rvs` must accept
+        keyword argument ``size`` (e.g. ``rvs(size=(m, n))``) and return an
+        N-d array of that shape. If `rvs` is a sequence, the number of callables
+        in `rvs` must match the number of elements of `n_observations`, i.e.
+        ``len(rvs) == len(n_observations)``. If `rvs` is a single callable,
+        `n_observations` is treated as a single element.
+    n_observations : tuple of ints or tuple of integer arrays
+        If a sequence of ints, each is the sizes of a sample to be passed to `test`.
+        If a sequence of integer arrays, the power is simulated for each
+        set of corresponding sample sizes. See Examples.
+    significance : float or array_like of floats, default: 0.01
+        The threshold for significance; i.e., the p-value below which the
+        hypothesis test results will be considered as evidence against the null
+        hypothesis. Equivalently, the acceptable rate of Type I error under
+        the null hypothesis. If an array, the power is simulated for each
+        significance threshold.
+    kwargs : dict, optional
+        Keyword arguments to be passed to `rvs` and/or `test` callables.
+        Introspection is used to determine which keyword arguments may be
+        passed to each callable.
+        The value corresponding with each keyword must be an array.
+        Arrays must be broadcastable with one another and with each array in
+        `n_observations`. The power is simulated for each set of corresponding
+        sample sizes and arguments. See Examples.
+    vectorized : bool, optional
+        If `vectorized` is set to ``False``, `test` will not be passed keyword
+        argument `axis` and is expected to perform the test only for 1D samples.
+        If ``True``, `test` will be passed keyword argument `axis` and is
+        expected to perform the test along `axis` when passed N-D sample arrays.
+        If ``None`` (default), `vectorized` will be set ``True`` if ``axis`` is
+        a parameter of `test`. Use of a vectorized test typically reduces
+        computation time.
+    n_resamples : int, default: 10000
+        Number of samples drawn from each of the callables of `rvs`.
+        Equivalently, the number tests performed under the alternative
+        hypothesis to approximate the power.
+    batch : int, optional
+        The number of samples to process in each call to `test`. Memory usage is
+        proportional to the product of `batch` and the largest sample size. Default
+        is ``None``, in which case `batch` equals `n_resamples`.
+
+    Returns
+    -------
+    res : PowerResult
+        An object with attributes:
+
+        power : float or ndarray
+            The estimated power against the alternative.
+        pvalues : ndarray
+            The p-values observed under the alternative hypothesis.
+
+    Notes
+    -----
+    The power is simulated as follows:
+
+    - Draw many random samples (or sets of samples), each of the size(s)
+      specified by `n_observations`, under the alternative specified by
+      `rvs`.
+    - For each sample (or set of samples), compute the p-value according to
+      `test`. These p-values are recorded in the ``pvalues`` attribute of
+      the result object.
+    - Compute the proportion of p-values that are less than the `significance`
+      level. This is the power recorded in the ``power`` attribute of the
+      result object.
+
+    Suppose that `significance` is an array with shape ``shape1``, the elements
+    of `kwargs` and `n_observations` are mutually broadcastable to shape ``shape2``,
+    and `test` returns an array of p-values of shape ``shape3``. Then the result
+    object ``power`` attribute will be of shape ``shape1 + shape2 + shape3``, and
+    the ``pvalues`` attribute will be of shape ``shape2 + shape3 + (n_resamples,)``.
+
+    Examples
+    --------
+    Suppose we wish to simulate the power of the independent sample t-test
+    under the following conditions:
+
+    - The first sample has 10 observations drawn from a normal distribution
+      with mean 0.
+    - The second sample has 12 observations drawn from a normal distribution
+      with mean 1.0.
+    - The threshold on p-values for significance is 0.05.
+
+    >>> import numpy as np
+    >>> from scipy import stats
+    >>> rng = np.random.default_rng(2549598345528)
+    >>>
+    >>> test = stats.ttest_ind
+    >>> n_observations = (10, 12)
+    >>> rvs1 = rng.normal
+    >>> rvs2 = lambda size: rng.normal(loc=1, size=size)
+    >>> rvs = (rvs1, rvs2)
+    >>> res = stats.power(test, rvs, n_observations, significance=0.05)
+    >>> res.power
+    0.6116
+
+    With samples of size 10 and 12, respectively, the power of the t-test
+    with a significance threshold of 0.05 is approximately 60% under the chosen
+    alternative. We can investigate the effect of sample size on the power
+    by passing sample size arrays.
+
+    >>> import matplotlib.pyplot as plt
+    >>> nobs_x = np.arange(5, 21)
+    >>> nobs_y = nobs_x
+    >>> n_observations = (nobs_x, nobs_y)
+    >>> res = stats.power(test, rvs, n_observations, significance=0.05)
+    >>> ax = plt.subplot()
+    >>> ax.plot(nobs_x, res.power)
+    >>> ax.set_xlabel('Sample Size')
+    >>> ax.set_ylabel('Simulated Power')
+    >>> ax.set_title('Simulated Power of `ttest_ind` with Equal Sample Sizes')
+    >>> plt.show()
+
+    Alternatively, we can investigate the impact that effect size has on the power.
+    In this case, the effect size is the location of the distribution underlying
+    the second sample.
+
+    >>> n_observations = (10, 12)
+    >>> loc = np.linspace(0, 1, 20)
+    >>> rvs2 = lambda size, loc: rng.normal(loc=loc, size=size)
+    >>> rvs = (rvs1, rvs2)
+    >>> res = stats.power(test, rvs, n_observations, significance=0.05,
+    ...                   kwargs={'loc': loc})
+    >>> ax = plt.subplot()
+    >>> ax.plot(loc, res.power)
+    >>> ax.set_xlabel('Effect Size')
+    >>> ax.set_ylabel('Simulated Power')
+    >>> ax.set_title('Simulated Power of `ttest_ind`, Varying Effect Size')
+    >>> plt.show()
+
+    We can also use `power` to estimate the Type I error rate (also referred to by the
+    ambiguous term "size") of a test and assess whether it matches the nominal level.
+    For example, the null hypothesis of `jarque_bera` is that the sample was drawn from
+    a distribution with the same skewness and kurtosis as the normal distribution. To
+    estimate the Type I error rate, we can consider the null hypothesis to be a true
+    *alternative* hypothesis and calculate the power.
+
+    >>> test = stats.jarque_bera
+    >>> n_observations = 10
+    >>> rvs = rng.normal
+    >>> significance = np.linspace(0.0001, 0.1, 1000)
+    >>> res = stats.power(test, rvs, n_observations, significance=significance)
+    >>> size = res.power
+
+    As shown below, the Type I error rate of the test is far below the nominal level
+    for such a small sample, as mentioned in its documentation.
+
+    >>> ax = plt.subplot()
+    >>> ax.plot(significance, size)
+    >>> ax.plot([0, 0.1], [0, 0.1], '--')
+    >>> ax.set_xlabel('nominal significance level')
+    >>> ax.set_ylabel('estimated test size (Type I error rate)')
+    >>> ax.set_title('Estimated test size vs nominal significance level')
+    >>> ax.set_aspect('equal', 'box')
+    >>> ax.legend(('`ttest_1samp`', 'ideal test'))
+    >>> plt.show()
+
+    As one might expect from such a conservative test, the power is quite low with
+    respect to some alternatives. For example, the power of the test under the
+    alternative that the sample was drawn from the Laplace distribution may not
+    be much greater than the Type I error rate.
+
+    >>> rvs = rng.laplace
+    >>> significance = np.linspace(0.0001, 0.1, 1000)
+    >>> res = stats.power(test, rvs, n_observations, significance=0.05)
+    >>> print(res.power)
+    0.0587
+
+    This is not a mistake in SciPy's implementation; it is simply due to the fact
+    that the null distribution of the test statistic is derived under the assumption
+    that the sample size is large (i.e. approaches infinity), and this asymptotic
+    approximation is not accurate for small samples. In such cases, resampling
+    and Monte Carlo methods (e.g. `permutation_test`, `goodness_of_fit`,
+    `monte_carlo_test`) may be more appropriate.
+
+    """
+    tmp = _power_iv(rvs, test, n_observations, significance,
+                    vectorized, n_resamples, batch, kwargs)
+    (rvs, test, nobs, significance,
+     vectorized, n_resamples, batch, args, kwds, shape)= tmp
+
+    batch_nominal = batch or n_resamples
+    pvalues = []  # results of various nobs/kwargs combinations
+    for nobs_i, args_i in zip(nobs, args):
+        kwargs_i = dict(zip(kwds, args_i))
+        pvalues_i = []  # results of batches; fixed nobs/kwargs combination
+        for k in range(0, n_resamples, batch_nominal):
+            batch_actual = min(batch_nominal, n_resamples - k)
+            resamples = [rvs_j(size=(batch_actual, nobs_ij), **kwargs_i)
+                         for rvs_j, nobs_ij in zip(rvs, nobs_i)]
+            res = test(*resamples, **kwargs_i, axis=-1)
+            p = getattr(res, 'pvalue', res)
+            pvalues_i.append(p)
+        # Concatenate results from batches
+        pvalues_i = np.concatenate(pvalues_i, axis=-1)
+        pvalues.append(pvalues_i)
+    # `test` can return result with array of p-values
+    shape += pvalues_i.shape[:-1]
+    # Concatenate results from various nobs/kwargs combinations
+    pvalues = np.concatenate(pvalues, axis=0)
+    # nobs/kwargs arrays were raveled to single axis; unravel
+    pvalues = pvalues.reshape(shape + (-1,))
+    if significance.ndim > 0:
+        newdims = tuple(range(significance.ndim, pvalues.ndim + significance.ndim))
+        significance = np.expand_dims(significance, newdims)
+    powers = np.mean(pvalues < significance, axis=-1)
+
+    return PowerResult(power=powers, pvalues=pvalues)
 
 
 @dataclass
@@ -1592,14 +1976,14 @@ def permutation_test(data, statistic, *, permutation_type='independent',
     permutation test.
 
     >>> x = norm.rvs(size=100, random_state=rng)
-    >>> y = norm.rvs(size=120, loc=0.3, random_state=rng)
-    >>> res = permutation_test((x, y), statistic, n_resamples=100000,
+    >>> y = norm.rvs(size=120, loc=0.2, random_state=rng)
+    >>> res = permutation_test((x, y), statistic, n_resamples=9999,
     ...                        vectorized=True, alternative='less',
     ...                        random_state=rng)
     >>> print(res.statistic)
-    -0.5230459671240913
+    -0.4230459671240913
     >>> print(res.pvalue)
-    0.00016999830001699983
+    0.0015
 
     The approximate probability of obtaining a test statistic less than or
     equal to the observed value under the null hypothesis is 0.0225%. This is
@@ -1612,7 +1996,7 @@ def permutation_test(data, statistic, *, permutation_type='independent',
     >>> from scipy.stats import ttest_ind
     >>> res_asymptotic = ttest_ind(x, y, alternative='less')
     >>> print(res_asymptotic.pvalue)
-    0.00012688101537979522
+    0.0014669545224902675
 
     The permutation distribution of the test statistic is provided for
     further investigation.
@@ -1631,9 +2015,9 @@ def permutation_test(data, statistic, *, permutation_type='independent',
     >>> from scipy.stats import pearsonr
     >>> x = [1, 2, 4, 3]
     >>> y = [2, 4, 6, 8]
-    >>> def statistic(x, y):
-    ...     return pearsonr(x, y).statistic
-    >>> res = permutation_test((x, y), statistic, vectorized=False,
+    >>> def statistic(x, y, axis=-1):
+    ...     return pearsonr(x, y, axis=axis).statistic
+    >>> res = permutation_test((x, y), statistic, vectorized=True,
     ...                        permutation_type='pairings',
     ...                        alternative='greater')
     >>> r, pvalue, null = res.statistic, res.pvalue, res.null_distribution
@@ -1644,22 +2028,23 @@ def permutation_test(data, statistic, *, permutation_type='independent',
     the same as the observed value of the test statistic.
 
     >>> r
-    0.8
+    0.7999999999999999
     >>> unique = np.unique(null)
     >>> unique
-    array([-1. , -0.8, -0.8, -0.6, -0.4, -0.2, -0.2,  0. ,  0.2,  0.2,  0.4,
-            0.6,  0.8,  0.8,  1. ]) # may vary
+    array([-1. , -1. , -0.8, -0.8, -0.8, -0.6, -0.4, -0.4, -0.2, -0.2, -0.2,
+        0. ,  0.2,  0.2,  0.2,  0.4,  0.4,  0.6,  0.8,  0.8,  0.8,  1. ,
+        1. ])  # may vary
     >>> unique[np.isclose(r, unique)].tolist()
-    [0.7999999999999999, 0.8]
+    [0.7999999999999998, 0.7999999999999999, 0.8]  # may vary
 
     If `permutation_test` were to perform the comparison naively, the
-    elements of the null distribution with value ``0.7999999999999999`` would
+    elements of the null distribution with value ``0.7999999999999998`` would
     not be considered as extreme or more extreme as the observed value of the
     statistic, so the calculated p-value would be too small.
 
     >>> incorrect_pvalue = np.count_nonzero(null >= r) / len(null)
     >>> incorrect_pvalue
-    0.1111111111111111  # may vary
+    0.14583333333333334  # may vary
 
     Instead, `permutation_test` treats elements of the null distribution that
     are within ``max(1e-14, abs(r)*1e-14)`` of the observed value of the
