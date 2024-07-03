@@ -17,6 +17,7 @@ class TestNdimageMorphology:
 
     @pytest.mark.parametrize('dtype', types)
     def test_distance_transform_bf01(self, dtype, xp):
+        dtype = getattr(xp, dtype)
         if is_cupy(xp):
             pytest.xfail("CuPy does not have distance_transform_bf.")
 
@@ -65,6 +66,7 @@ class TestNdimageMorphology:
 
     @pytest.mark.parametrize('dtype', types)
     def test_distance_transform_bf02(self, dtype, xp):
+        dtype = getattr(xp, dtype)
         if is_cupy(xp):
             pytest.xfail("CuPy does not have distance_transform_bf.")
 
@@ -115,6 +117,7 @@ class TestNdimageMorphology:
 
     @pytest.mark.parametrize('dtype', types)
     def test_distance_transform_bf03(self, dtype, xp):
+        dtype = getattr(xp, dtype)
         if is_cupy(xp):
             pytest.xfail("CuPy does not have distance_transform_bf.")
 
@@ -163,6 +166,7 @@ class TestNdimageMorphology:
 
     @pytest.mark.parametrize('dtype', types)
     def test_distance_transform_bf04(self, dtype, xp):
+        dtype = getattr(xp, dtype)
         if is_cupy(xp):
             pytest.xfail("CuPy does not have distance_transform_bf.")
 
@@ -215,6 +219,7 @@ class TestNdimageMorphology:
 
     @pytest.mark.parametrize('dtype', types)
     def test_distance_transform_bf05(self, dtype, xp):
+        dtype = getattr(xp, dtype)
         if is_cupy(xp):
             pytest.xfail("CuPy does not have distance_transform_bf.")
 
@@ -262,6 +267,7 @@ class TestNdimageMorphology:
 
     @pytest.mark.parametrize('dtype', types)
     def test_distance_transform_bf06(self, dtype, xp):
+        dtype = getattr(xp, dtype)
         if is_cupy(xp):
             pytest.xfail("CuPy does not have distance_transform_bf.")
 
@@ -328,6 +334,7 @@ class TestNdimageMorphology:
 
     @pytest.mark.parametrize('dtype', types)
     def test_distance_transform_cdt01(self, dtype, xp):
+        dtype = getattr(xp, dtype)
         if is_cupy(xp):
             pytest.xfail("CuPy does not have distance_transform_cdt.")
 
@@ -368,6 +375,7 @@ class TestNdimageMorphology:
 
     @pytest.mark.parametrize('dtype', types)
     def test_distance_transform_cdt02(self, dtype, xp):
+        dtype = getattr(xp, dtype)
         if is_cupy(xp):
             pytest.xfail("CuPy does not have distance_transform_cdt.")
 
@@ -407,6 +415,7 @@ class TestNdimageMorphology:
 
     @pytest.mark.parametrize('dtype', types)
     def test_distance_transform_cdt03(self, dtype, xp):
+        dtype = getattr(xp, dtype)
         if is_cupy(xp):
             pytest.xfail("CuPy does not have distance_transform_cdt.")
 
@@ -482,6 +491,7 @@ class TestNdimageMorphology:
 
     @pytest.mark.parametrize('dtype', types)
     def test_distance_transform_cdt05(self, dtype, xp):
+        dtype = getattr(xp, dtype)
         if is_cupy(xp):
             pytest.xfail("CuPy does not have distance_transform_cdt.")
 
@@ -501,6 +511,7 @@ class TestNdimageMorphology:
 
     @pytest.mark.parametrize('dtype', types)
     def test_distance_transform_edt01(self, dtype, xp):
+        dtype = getattr(xp, dtype)
         if is_cupy(xp):
             pytest.xfail("CuPy does not have distance_transform_bf")
 
@@ -528,6 +539,7 @@ class TestNdimageMorphology:
 
     @pytest.mark.parametrize('dtype', types)
     def test_distance_transform_edt02(self, dtype, xp):
+        dtype = getattr(xp, dtype)
         if is_cupy(xp):
             pytest.xfail("https://github.com/cupy/cupy/issues/8397")
 
@@ -591,6 +603,7 @@ class TestNdimageMorphology:
 
     @pytest.mark.parametrize('dtype', types)
     def test_distance_transform_edt03(self, dtype, xp):
+        dtype = getattr(xp, dtype)
         if is_cupy(xp):
             pytest.xfail("CuPy does not have distance_transform_bf")
 
@@ -609,6 +622,7 @@ class TestNdimageMorphology:
 
     @pytest.mark.parametrize('dtype', types)
     def test_distance_transform_edt4(self, dtype, xp):
+        dtype = getattr(xp, dtype)
         if is_cupy(xp):
             pytest.xfail("CuPy does not have distance_transform_bf")
 
@@ -710,54 +724,63 @@ class TestNdimageMorphology:
 
     @pytest.mark.parametrize('dtype', types)
     def test_binary_erosion01(self, dtype, xp):
+        dtype = getattr(xp, dtype)
         data = xp.ones([], dtype=dtype)
         out = ndimage.binary_erosion(data)
         assert out == 1
 
     @pytest.mark.parametrize('dtype', types)
     def test_binary_erosion02(self, dtype, xp):
+        dtype = getattr(xp, dtype)
         data = xp.ones([], dtype=dtype)
         out = ndimage.binary_erosion(data, border_value=1)
         assert out == 1
 
     @pytest.mark.parametrize('dtype', types)
     def test_binary_erosion03(self, dtype, xp):
+        dtype = getattr(xp, dtype)
         data = xp.ones([1], dtype=dtype)
         out = ndimage.binary_erosion(data)
         assert_array_almost_equal(out, xp.asarray([0]))
 
     @pytest.mark.parametrize('dtype', types)
     def test_binary_erosion04(self, dtype, xp):
+        dtype = getattr(xp, dtype)
         data = xp.ones([1], dtype=dtype)
         out = ndimage.binary_erosion(data, border_value=1)
         assert_array_almost_equal(out, xp.asarray([1]))
 
     @pytest.mark.parametrize('dtype', types)
     def test_binary_erosion05(self, dtype, xp):
+        dtype = getattr(xp, dtype)
         data = xp.ones([3], dtype=dtype)
         out = ndimage.binary_erosion(data)
         assert_array_almost_equal(out, xp.asarray([0, 1, 0]))
 
     @pytest.mark.parametrize('dtype', types)
     def test_binary_erosion06(self, dtype, xp):
+        dtype = getattr(xp, dtype)
         data = xp.ones([3], dtype=dtype)
         out = ndimage.binary_erosion(data, border_value=1)
         assert_array_almost_equal(out, xp.asarray([1, 1, 1]))
 
     @pytest.mark.parametrize('dtype', types)
     def test_binary_erosion07(self, dtype, xp):
+        dtype = getattr(xp, dtype)
         data = xp.ones([5], dtype=dtype)
         out = ndimage.binary_erosion(data)
         assert_array_almost_equal(out, xp.asarray([0, 1, 1, 1, 0]))
 
     @pytest.mark.parametrize('dtype', types)
     def test_binary_erosion08(self, dtype, xp):
+        dtype = getattr(xp, dtype)
         data = xp.ones([5], dtype=dtype)
         out = ndimage.binary_erosion(data, border_value=1)
         assert_array_almost_equal(out, xp.asarray([1, 1, 1, 1, 1]))
 
     @pytest.mark.parametrize('dtype', types)
     def test_binary_erosion09(self, dtype, xp):
+        dtype = getattr(xp, dtype)
         data = xp.ones([5], dtype=dtype)
         data[2] = 0
         out = ndimage.binary_erosion(data)
@@ -765,6 +788,7 @@ class TestNdimageMorphology:
 
     @pytest.mark.parametrize('dtype', types)
     def test_binary_erosion10(self, dtype, xp):
+        dtype = getattr(xp, dtype)
         data = xp.ones([5], dtype=dtype)
         data[2] = 0
         out = ndimage.binary_erosion(data, border_value=1)
@@ -772,6 +796,7 @@ class TestNdimageMorphology:
 
     @pytest.mark.parametrize('dtype', types)
     def test_binary_erosion11(self, dtype, xp):
+        dtype = getattr(xp, dtype)
         data = xp.ones([5], dtype=dtype)
         data[2] = 0
         struct = xp.asarray([1, 0, 1])
@@ -780,6 +805,7 @@ class TestNdimageMorphology:
 
     @pytest.mark.parametrize('dtype', types)
     def test_binary_erosion12(self, dtype, xp):
+        dtype = getattr(xp, dtype)
         data = xp.ones([5], dtype=dtype)
         data[2] = 0
         struct = xp.asarray([1, 0, 1])
@@ -788,6 +814,7 @@ class TestNdimageMorphology:
 
     @pytest.mark.parametrize('dtype', types)
     def test_binary_erosion13(self, dtype, xp):
+        dtype = getattr(xp, dtype)
         data = xp.ones([5], dtype=dtype)
         data[2] = 0
         struct = xp.asarray([1, 0, 1])
@@ -796,6 +823,7 @@ class TestNdimageMorphology:
 
     @pytest.mark.parametrize('dtype', types)
     def test_binary_erosion14(self, dtype, xp):
+        dtype = getattr(xp, dtype)
         data = xp.ones([5], dtype=dtype)
         data[2] = 0
         struct = xp.asarray([1, 1])
@@ -804,6 +832,7 @@ class TestNdimageMorphology:
 
     @pytest.mark.parametrize('dtype', types)
     def test_binary_erosion15(self, dtype, xp):
+        dtype = getattr(xp, dtype)
         data = xp.ones([5], dtype=dtype)
         data[2] = 0
         struct = xp.asarray([1, 1])
@@ -812,30 +841,35 @@ class TestNdimageMorphology:
 
     @pytest.mark.parametrize('dtype', types)
     def test_binary_erosion16(self, dtype, xp):
+        dtype = getattr(xp, dtype)
         data = xp.ones([1, 1], dtype=dtype)
         out = ndimage.binary_erosion(data, border_value=1)
         assert_array_almost_equal(out, xp.asarray([[1]]))
 
     @pytest.mark.parametrize('dtype', types)
     def test_binary_erosion17(self, dtype, xp):
+        dtype = getattr(xp, dtype)
         data = xp.ones([1, 1], dtype=dtype)
         out = ndimage.binary_erosion(data)
         assert_array_almost_equal(out, xp.asarray([[0]]))
 
     @pytest.mark.parametrize('dtype', types)
     def test_binary_erosion18(self, dtype, xp):
+        dtype = getattr(xp, dtype)
         data = xp.ones([1, 3], dtype=dtype)
         out = ndimage.binary_erosion(data)
         assert_array_almost_equal(out, xp.asarray([[0, 0, 0]]))
 
     @pytest.mark.parametrize('dtype', types)
     def test_binary_erosion19(self, dtype, xp):
+        dtype = getattr(xp, dtype)
         data = xp.ones([1, 3], dtype=dtype)
         out = ndimage.binary_erosion(data, border_value=1)
         assert_array_almost_equal(out, xp.asarray([[1, 1, 1]]))
 
     @pytest.mark.parametrize('dtype', types)
     def test_binary_erosion20(self, dtype, xp):
+        dtype = getattr(xp, dtype)
         data = xp.ones([3, 3], dtype=dtype)
         out = ndimage.binary_erosion(data)
         assert_array_almost_equal(out, xp.asarray([[0, 0, 0],
@@ -844,6 +878,7 @@ class TestNdimageMorphology:
 
     @pytest.mark.parametrize('dtype', types)
     def test_binary_erosion21(self, dtype, xp):
+        dtype = getattr(xp, dtype)
         data = xp.ones([3, 3], dtype=dtype)
         out = ndimage.binary_erosion(data, border_value=1)
         assert_array_almost_equal(out, xp.asarray([[1, 1, 1],
@@ -852,6 +887,7 @@ class TestNdimageMorphology:
 
     @pytest.mark.parametrize('dtype', types)
     def test_binary_erosion22(self, dtype, xp):
+        dtype = getattr(xp, dtype)
         expected = [[0, 0, 0, 0, 0, 0, 0, 0],
                     [0, 0, 0, 0, 0, 0, 0, 0],
                     [0, 0, 0, 0, 0, 0, 0, 0],
@@ -874,6 +910,7 @@ class TestNdimageMorphology:
 
     @pytest.mark.parametrize('dtype', types)
     def test_binary_erosion23(self, dtype, xp):
+        dtype = getattr(xp, dtype)
         struct = ndimage.generate_binary_structure(2, 2)
         struct = xp.asarray(struct)
         expected = [[0, 0, 0, 0, 0, 0, 0, 0],
@@ -898,6 +935,7 @@ class TestNdimageMorphology:
 
     @pytest.mark.parametrize('dtype', types)
     def test_binary_erosion24(self, dtype, xp):
+        dtype = getattr(xp, dtype)
         struct = xp.asarray([[0, 1],
                              [1, 1]])
         expected = [[0, 0, 0, 0, 0, 0, 0, 0],
@@ -922,6 +960,7 @@ class TestNdimageMorphology:
 
     @pytest.mark.parametrize('dtype', types)
     def test_binary_erosion25(self, dtype, xp):
+        dtype = getattr(xp, dtype)
         struct = [[0, 1, 0],
                   [1, 0, 1],
                   [0, 1, 0]]
@@ -948,6 +987,7 @@ class TestNdimageMorphology:
 
     @pytest.mark.parametrize('dtype', types)
     def test_binary_erosion26(self, dtype, xp):
+        dtype = getattr(xp, dtype)
         struct = [[0, 1, 0],
                   [1, 0, 1],
                   [0, 1, 0]]
@@ -1368,30 +1408,35 @@ class TestNdimageMorphology:
 
     @pytest.mark.parametrize('dtype', types)
     def test_binary_dilation01(self, dtype, xp):
+        dtype = getattr(xp, dtype)
         data = xp.ones([], dtype=dtype)
         out = ndimage.binary_dilation(data)
         assert out == xp.asarray(1)
 
     @pytest.mark.parametrize('dtype', types)
     def test_binary_dilation02(self, dtype, xp):
+        dtype = getattr(xp, dtype)
         data = xp.zeros([], dtype=dtype)
         out = ndimage.binary_dilation(data)
         assert out == xp.asarray(False)
 
     @pytest.mark.parametrize('dtype', types)
     def test_binary_dilation03(self, dtype, xp):
+        dtype = getattr(xp, dtype)
         data = xp.ones([1], dtype=dtype)
         out = ndimage.binary_dilation(data)
         assert_array_almost_equal(out, xp.asarray([1]))
 
     @pytest.mark.parametrize('dtype', types)
     def test_binary_dilation04(self, dtype, xp):
+        dtype = getattr(xp, dtype)
         data = xp.zeros([1], dtype=dtype)
         out = ndimage.binary_dilation(data)
         assert_array_almost_equal(out, xp.asarray([0]))
 
     @pytest.mark.parametrize('dtype', types)
     def test_binary_dilation05(self, dtype, xp):
+        dtype = getattr(xp, dtype)
         data = xp.ones([3], dtype=dtype)
         out = ndimage.binary_dilation(data)
         assert_array_almost_equal(out, xp.asarray([1, 1, 1]))
@@ -1404,6 +1449,7 @@ class TestNdimageMorphology:
 
     @pytest.mark.parametrize('dtype', types)
     def test_binary_dilation07(self, dtype, xp):
+        dtype = getattr(xp, dtype)
         data = xp.zeros([3], dtype=dtype)
         data[1] = 1
         out = ndimage.binary_dilation(data)
@@ -1411,6 +1457,7 @@ class TestNdimageMorphology:
 
     @pytest.mark.parametrize('dtype', types)
     def test_binary_dilation08(self, dtype, xp):
+        dtype = getattr(xp, dtype)
         data = xp.zeros([5], dtype=dtype)
         data[1] = 1
         data[3] = 1
@@ -1419,6 +1466,7 @@ class TestNdimageMorphology:
 
     @pytest.mark.parametrize('dtype', types)
     def test_binary_dilation09(self, dtype, xp):
+        dtype = getattr(xp, dtype)
         data = xp.zeros([5], dtype=dtype)
         data[1] = 1
         out = ndimage.binary_dilation(data)
@@ -1426,6 +1474,7 @@ class TestNdimageMorphology:
 
     @pytest.mark.parametrize('dtype', types)
     def test_binary_dilation10(self, dtype, xp):
+        dtype = getattr(xp, dtype)
         data = xp.zeros([5], dtype=dtype)
         data[1] = 1
         out = ndimage.binary_dilation(data, origin=-1)
@@ -1433,6 +1482,7 @@ class TestNdimageMorphology:
 
     @pytest.mark.parametrize('dtype', types)
     def test_binary_dilation11(self, dtype, xp):
+        dtype = getattr(xp, dtype)
         data = xp.zeros([5], dtype=dtype)
         data[1] = 1
         out = ndimage.binary_dilation(data, origin=1)
@@ -1440,6 +1490,7 @@ class TestNdimageMorphology:
 
     @pytest.mark.parametrize('dtype', types)
     def test_binary_dilation12(self, dtype, xp):
+        dtype = getattr(xp, dtype)
         data = xp.zeros([5], dtype=dtype)
         data[1] = 1
         struct = xp.asarray([1, 0, 1])
@@ -1448,6 +1499,7 @@ class TestNdimageMorphology:
 
     @pytest.mark.parametrize('dtype', types)
     def test_binary_dilation13(self, dtype, xp):
+        dtype = getattr(xp, dtype)
         data = xp.zeros([5], dtype=dtype)
         data[1] = 1
         struct = xp.asarray([1, 0, 1])
@@ -1456,6 +1508,7 @@ class TestNdimageMorphology:
 
     @pytest.mark.parametrize('dtype', types)
     def test_binary_dilation14(self, dtype, xp):
+        dtype = getattr(xp, dtype)
         data = xp.zeros([5], dtype=dtype)
         data[1] = 1
         struct = xp.asarray([1, 0, 1])
@@ -1473,24 +1526,28 @@ class TestNdimageMorphology:
 
     @pytest.mark.parametrize('dtype', types)
     def test_binary_dilation16(self, dtype, xp):
+        dtype = getattr(xp, dtype)
         data = xp.ones([1, 1], dtype=dtype)
         out = ndimage.binary_dilation(data)
         assert_array_almost_equal(out, xp.asarray([[1]]))
 
     @pytest.mark.parametrize('dtype', types)
     def test_binary_dilation17(self, dtype, xp):
+        dtype = getattr(xp, dtype)
         data = xp.zeros([1, 1], dtype=dtype)
         out = ndimage.binary_dilation(data)
         assert_array_almost_equal(out, xp.asarray([[0]]))
 
     @pytest.mark.parametrize('dtype', types)
     def test_binary_dilation18(self, dtype, xp):
+        dtype = getattr(xp, dtype)
         data = xp.ones([1, 3], dtype=dtype)
         out = ndimage.binary_dilation(data)
         assert_array_almost_equal(out, xp.asarray([[1, 1, 1]]))
 
     @pytest.mark.parametrize('dtype', types)
     def test_binary_dilation19(self, dtype, xp):
+        dtype = getattr(xp, dtype)
         data = xp.ones([3, 3], dtype=dtype)
         out = ndimage.binary_dilation(data)
         assert_array_almost_equal(out, xp.asarray([[1, 1, 1],
@@ -1499,6 +1556,7 @@ class TestNdimageMorphology:
 
     @pytest.mark.parametrize('dtype', types)
     def test_binary_dilation20(self, dtype, xp):
+        dtype = getattr(xp, dtype)
         data = xp.zeros([3, 3], dtype=dtype)
         data[1, 1] = 1
         out = ndimage.binary_dilation(data)
@@ -1508,6 +1566,7 @@ class TestNdimageMorphology:
 
     @pytest.mark.parametrize('dtype', types)
     def test_binary_dilation21(self, dtype, xp):
+        dtype = getattr(xp, dtype)
         struct = ndimage.generate_binary_structure(2, 2)
         struct = xp.asarray(struct)
         data = xp.zeros([3, 3], dtype=dtype)
@@ -1519,6 +1578,7 @@ class TestNdimageMorphology:
 
     @pytest.mark.parametrize('dtype', types)
     def test_binary_dilation22(self, dtype, xp):
+        dtype = getattr(xp, dtype)
         expected = [[0, 1, 0, 0, 0, 0, 0, 0],
                     [1, 1, 1, 0, 0, 0, 0, 0],
                     [0, 1, 0, 0, 0, 1, 0, 0],
@@ -1541,6 +1601,7 @@ class TestNdimageMorphology:
 
     @pytest.mark.parametrize('dtype', types)
     def test_binary_dilation23(self, dtype, xp):
+        dtype = getattr(xp, dtype)
         expected = [[1, 1, 1, 1, 1, 1, 1, 1],
                     [1, 1, 1, 0, 0, 0, 0, 1],
                     [1, 1, 0, 0, 0, 1, 0, 1],
@@ -1563,6 +1624,7 @@ class TestNdimageMorphology:
 
     @pytest.mark.parametrize('dtype', types)
     def test_binary_dilation24(self, dtype, xp):
+        dtype = getattr(xp, dtype)
         expected = [[1, 1, 0, 0, 0, 0, 0, 0],
                     [1, 0, 0, 0, 1, 0, 0, 0],
                     [0, 0, 1, 1, 1, 1, 0, 0],
@@ -1585,6 +1647,7 @@ class TestNdimageMorphology:
 
     @pytest.mark.parametrize('dtype', types)
     def test_binary_dilation25(self, dtype, xp):
+        dtype = getattr(xp, dtype)
         expected = [[1, 1, 0, 0, 0, 0, 1, 1],
                     [1, 0, 0, 0, 1, 0, 1, 1],
                     [0, 0, 1, 1, 1, 1, 1, 1],
@@ -1607,6 +1670,7 @@ class TestNdimageMorphology:
 
     @pytest.mark.parametrize('dtype', types)
     def test_binary_dilation26(self, dtype, xp):
+        dtype = getattr(xp, dtype)
         struct = ndimage.generate_binary_structure(2, 2)
         expected = [[1, 1, 1, 0, 0, 0, 0, 0],
                     [1, 1, 1, 0, 0, 0, 0, 0],
@@ -1631,6 +1695,7 @@ class TestNdimageMorphology:
 
     @pytest.mark.parametrize('dtype', types)
     def test_binary_dilation27(self, dtype, xp):
+        dtype = getattr(xp, dtype)
         struct = [[0, 1],
                   [1, 1]]
         expected = [[0, 1, 0, 0, 0, 0, 0, 0],
@@ -1656,6 +1721,7 @@ class TestNdimageMorphology:
 
     @pytest.mark.parametrize('dtype', types)
     def test_binary_dilation28(self, dtype, xp):
+        dtype = getattr(xp, dtype)
         expected = [[1, 1, 1, 1],
                     [1, 0, 0, 1],
                     [1, 0, 0, 1],
@@ -1821,6 +1887,7 @@ class TestNdimageMorphology:
 
     @pytest.mark.parametrize('dtype', types)
     def test_binary_dilation35(self, dtype, xp):
+        dtype = getattr(xp, dtype)
         tmp = [[1, 1, 0, 0, 0, 0, 1, 1],
                [1, 0, 0, 0, 1, 0, 1, 1],
                [0, 0, 1, 1, 1, 1, 1, 1],
@@ -1938,6 +2005,7 @@ class TestNdimageMorphology:
 
     @pytest.mark.parametrize('dtype', types)
     def test_binary_opening01(self, dtype, xp):
+        dtype = getattr(xp, dtype)
         expected = [[0, 1, 0, 0, 0, 0, 0, 0],
                     [1, 1, 1, 0, 0, 0, 0, 0],
                     [0, 1, 0, 0, 0, 1, 0, 0],
@@ -1960,6 +2028,7 @@ class TestNdimageMorphology:
 
     @pytest.mark.parametrize('dtype', types)
     def test_binary_opening02(self, dtype, xp):
+        dtype = getattr(xp, dtype)
         struct = ndimage.generate_binary_structure(2, 2)
         expected = [[1, 1, 1, 0, 0, 0, 0, 0],
                     [1, 1, 1, 0, 0, 0, 0, 0],
@@ -1984,6 +2053,7 @@ class TestNdimageMorphology:
 
     @pytest.mark.parametrize('dtype', types)
     def test_binary_closing01(self, dtype, xp):
+        dtype = getattr(xp, dtype)
         expected = [[0, 0, 0, 0, 0, 0, 0, 0],
                     [0, 1, 1, 0, 0, 0, 0, 0],
                     [0, 1, 1, 1, 0, 1, 0, 0],
@@ -2006,6 +2076,7 @@ class TestNdimageMorphology:
 
     @pytest.mark.parametrize('dtype', types)
     def test_binary_closing02(self, dtype, xp):
+        dtype = getattr(xp, dtype)
         struct = ndimage.generate_binary_structure(2, 2)
         expected = [[0, 0, 0, 0, 0, 0, 0, 0],
                     [0, 1, 1, 0, 0, 0, 0, 0],
@@ -2394,6 +2465,7 @@ class TestNdimageMorphology:
 
     @pytest.mark.parametrize('dtype', types)
     def test_hit_or_miss01(self, dtype, xp):
+        dtype = getattr(xp, dtype)
         struct = [[0, 1, 0],
                   [1, 1, 1],
                   [0, 1, 0]]
@@ -2421,6 +2493,7 @@ class TestNdimageMorphology:
 
     @pytest.mark.parametrize('dtype', types)
     def test_hit_or_miss02(self, dtype, xp):
+        dtype = getattr(xp, dtype)
         struct = [[0, 1, 0],
                   [1, 1, 1],
                   [0, 1, 0]]
@@ -2439,6 +2512,7 @@ class TestNdimageMorphology:
 
     @pytest.mark.parametrize('dtype', types)
     def test_hit_or_miss03(self, dtype, xp):
+        dtype = getattr(xp, dtype)
         struct1 = [[0, 0, 0],
                    [1, 1, 1],
                    [0, 0, 0]]

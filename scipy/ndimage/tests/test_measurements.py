@@ -246,12 +246,13 @@ def test_label10(xp):
 
 def test_label11(xp):
     for type in types:
+        dtype = getattr(xp, type)
         data = xp.asarray([[1, 0, 0, 0, 0, 0],
                          [0, 0, 1, 1, 0, 0],
                          [0, 0, 1, 1, 1, 0],
                          [1, 1, 0, 0, 0, 0],
                          [1, 1, 0, 0, 0, 0],
-                         [0, 0, 0, 1, 1, 0]], dtype=type)
+                         [0, 0, 0, 1, 1, 0]], dtype=dtype)
         out, n = ndimage.label(data)
         expected = [[1, 0, 0, 0, 0, 0],
                     [0, 0, 2, 2, 0, 0],
@@ -266,12 +267,13 @@ def test_label11(xp):
 
 def test_label11_inplace(xp):
     for type in types:
+        dtype = getattr(xp, type)
         data = xp.asarray([[1, 0, 0, 0, 0, 0],
                          [0, 0, 1, 1, 0, 0],
                          [0, 0, 1, 1, 1, 0],
                          [1, 1, 0, 0, 0, 0],
                          [1, 1, 0, 0, 0, 0],
-                         [0, 0, 0, 1, 1, 0]], dtype=type)
+                         [0, 0, 0, 1, 1, 0]], dtype=dtype)
         n = ndimage.label(data, output=data)
         expected = [[1, 0, 0, 0, 0, 0],
                     [0, 0, 2, 2, 0, 0],
@@ -286,11 +288,12 @@ def test_label11_inplace(xp):
 
 def test_label12(xp):
     for type in types:
+        dtype = getattr(xp, type)
         data = xp.asarray([[0, 0, 0, 0, 1, 1],
                          [0, 0, 0, 0, 0, 1],
                          [0, 0, 1, 0, 1, 1],
                          [0, 0, 1, 1, 1, 1],
-                         [0, 0, 0, 1, 1, 0]], dtype=type)
+                         [0, 0, 0, 1, 1, 0]], dtype=dtype)
         out, n = ndimage.label(data)
         expected = [[0, 0, 0, 0, 1, 1],
                     [0, 0, 0, 0, 0, 1],
@@ -304,11 +307,12 @@ def test_label12(xp):
 
 def test_label13(xp):
     for type in types:
+        dtype = getattr(xp, type)
         data = xp.asarray([[1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1],
                          [1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1],
                          [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
                          [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]],
-                        type)
+                        dtype=dtype)
         out, n = ndimage.label(data)
         expected = [[1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1],
                     [1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1],
@@ -322,7 +326,8 @@ def test_label13(xp):
 def test_label_output_typed(xp):
     data = np.ones([5])
     for t in types:
-        output = np.zeros([5], dtype=t)
+        dtype = getattr(xp, t)
+        output = np.zeros([5], dtype=dtype)
         n = ndimage.label(data, output=output)
         assert_array_almost_equal(output,
                                   np.ones(output.shape, dtype=output.dtype))
@@ -332,16 +337,18 @@ def test_label_output_typed(xp):
 def test_label_output_dtype(xp):
     data = np.ones([5])
     for t in types:
-        output, n = ndimage.label(data, output=t)
+        dtype = getattr(xp, t)
+        output, n = ndimage.label(data, output=dtype)
         assert_array_almost_equal(output,
                                   np.ones(output.shape, dtype=output.dtype))
         assert output.dtype == t
 
 
 def test_label_output_wrong_size(xp):
-    data = np.ones([5])
+    data = xp.ones([5])
     for t in types:
-        output = np.zeros([10], t)
+        dtype = getattr(xp, t)
+        output = xp.zeros([10], dtype=dtype)
         assert_raises((RuntimeError, ValueError),
                       ndimage.label, data, output=output)
 
@@ -530,35 +537,40 @@ def test_value_indices03(xp):
 
 def test_sum01(xp):
     for type in types:
-        input = xp.asarray([], dtype=type)
+        dtype = getattr(xp, type)
+        input = xp.asarray([], dtype=dtype)
         output = ndimage.sum(input)
         assert output == 0.0
 
 
 def test_sum02(xp):
     for type in types:
-        input = np.zeros([0, 4], dtype=type)
+        dtype = getattr(xp, type)
+        input = np.zeros([0, 4], dtype=dtype)
         output = ndimage.sum(input)
         assert output == 0.0
 
 
 def test_sum03(xp):
     for type in types:
-        input = np.ones([], dtype=type)
+        dtype = getattr(xp, type)
+        input = np.ones([], dtype=dtype)
         output = ndimage.sum(input)
         assert_almost_equal(output, 1.0)
 
 
 def test_sum04(xp):
     for type in types:
-        input = xp.asarray([1, 2], dtype=type)
+        dtype = getattr(xp, type)
+        input = xp.asarray([1, 2], dtype=dtype)
         output = ndimage.sum(input)
         assert_almost_equal(output, xp.asarray(3.0))
 
 
 def test_sum05(xp):
     for type in types:
-        input = xp.asarray([[1, 2], [3, 4]], dtype=type)
+        dtype = getattr(xp, type)
+        input = xp.asarray([[1, 2], [3, 4]], dtype=dtype)
         output = ndimage.sum(input)
         assert_almost_equal(output, xp.asarray(10.0))
 
@@ -566,7 +578,8 @@ def test_sum05(xp):
 def test_sum06(xp):
     labels = xp.asarray([], dtype=bool)
     for type in types:
-        input = xp.asarray([], dtype=type)
+        dtype = getattr(xp, type)
+        input = xp.asarray([], dtype=dtype)
         output = ndimage.sum(input, labels=labels)
         assert output == 0.0
 
@@ -574,7 +587,8 @@ def test_sum06(xp):
 def test_sum07(xp):
     labels = np.ones([0, 4], dtype=bool)
     for type in types:
-        input = np.zeros([0, 4], dtype=type)
+        dtype = getattr(xp, type)
+        input = np.zeros([0, 4], dtype=dtype)
         output = ndimage.sum(input, labels=labels)
         assert output == 0.0
 
@@ -582,7 +596,8 @@ def test_sum07(xp):
 def test_sum08(xp):
     labels = xp.asarray([1, 0], dtype=bool)
     for type in types:
-        input = xp.asarray([1, 2], dtype=type)
+        dtype = getattr(xp, type)
+        input = xp.asarray([1, 2], dtype=dtype)
         output = ndimage.sum(input, labels=labels)
         assert output == 1.0
 
@@ -590,7 +605,8 @@ def test_sum08(xp):
 def test_sum09(xp):
     labels = xp.asarray([1, 0], dtype=bool)
     for type in types:
-        input = xp.asarray([[1, 2], [3, 4]], dtype=type)
+        dtype = getattr(xp, type)
+        input = xp.asarray([[1, 2], [3, 4]], dtype=dtype)
         output = ndimage.sum(input, labels=labels)
         assert_almost_equal(output, xp.asarray(4.0))
 
@@ -605,7 +621,8 @@ def test_sum10(xp):
 def test_sum11(xp):
     labels = xp.asarray([1, 2], np.int8)
     for type in types:
-        input = xp.asarray([[1, 2], [3, 4]], dtype=type)
+        dtype = getattr(xp, type)
+        input = xp.asarray([[1, 2], [3, 4]], dtype=dtype)
         output = ndimage.sum(input, labels=labels,
                              index=2)
         assert_almost_equal(output, xp.asarray(6.0))
@@ -614,7 +631,8 @@ def test_sum11(xp):
 def test_sum12(xp):
     labels = xp.asarray([[1, 2], [2, 4]], dtype=xp.int8)
     for type in types:
-        input = xp.asarray([[1, 2], [3, 4]], dtype=type)
+        dtype = getattr(xp, type)
+        input = xp.asarray([[1, 2], [3, 4]], dtype=dtype)
         output = ndimage.sum(input, labels=labels, index=xp.asarray([4, 8, 2]))
         assert_array_almost_equal(output, xp.asarray([4.0, 0.0, 5.0]))
 
@@ -622,7 +640,8 @@ def test_sum12(xp):
 def test_sum_labels(xp):
     labels = xp.asarray([[1, 2], [2, 4]], dtype=xp.int8)
     for type in types:
-        input = xp.asarray([[1, 2], [3, 4]], dtype=type)
+        dtype = getattr(xp, type)
+        input = xp.asarray([[1, 2], [3, 4]], dtype=dtype)
         output_sum = ndimage.sum(input, labels=labels, index=xp.asarray([4, 8, 2]))
         output_labels = ndimage.sum_labels(
             input, labels=labels, index=xp.asarray([4, 8, 2]))
@@ -634,7 +653,8 @@ def test_sum_labels(xp):
 def test_mean01(xp):
     labels = xp.asarray([1, 0], dtype=bool)
     for type in types:
-        input = xp.asarray([[1, 2], [3, 4]], dtype=type)
+        dtype = getattr(xp, type)
+        input = xp.asarray([[1, 2], [3, 4]], dtype=dtype)
         output = ndimage.mean(input, labels=labels)
         assert_almost_equal(output, xp.asarray(2.0))
 
@@ -649,7 +669,8 @@ def test_mean02(xp):
 def test_mean03(xp):
     labels = xp.asarray([1, 2])
     for type in types:
-        input = xp.asarray([[1, 2], [3, 4]], dtype=type)
+        dtype = getattr(xp, type)
+        input = xp.asarray([[1, 2], [3, 4]], dtype=dtype)
         output = ndimage.mean(input, labels=labels,
                               index=2)
         assert_almost_equal(output, xp.asarray(3.0))
@@ -659,7 +680,8 @@ def test_mean04(xp):
     labels = xp.asarray([[1, 2], [2, 4]], dtype=xp.int8)
     with np.errstate(all='ignore'):
         for type in types:
-            input = xp.asarray([[1, 2], [3, 4]], dtype=type)
+            dtype = getattr(xp, type)
+            input = xp.asarray([[1, 2], [3, 4]], dtype=dtype)
             output = ndimage.mean(input, labels=labels,
                                   index=xp.asarray([4, 8, 2]))
             assert_array_almost_equal(output[[0, 2]], xp.asarray([4.0, 2.5]))
@@ -669,7 +691,8 @@ def test_mean04(xp):
 def test_minimum01(xp):
     labels = xp.asarray([1, 0], dtype=bool)
     for type in types:
-        input = xp.asarray([[1, 2], [3, 4]], dtype=type)
+        dtype = getattr(xp, type)
+        input = xp.asarray([[1, 2], [3, 4]], dtype=dtype)
         output = ndimage.minimum(input, labels=labels)
         assert_almost_equal(output, xp.asarray(1.0))
 
@@ -684,7 +707,9 @@ def test_minimum02(xp):
 def test_minimum03(xp):
     labels = xp.asarray([1, 2])
     for type in types:
-        input = xp.asarray([[1, 2], [3, 4]], dtype=type)
+        dtype = getattr(xp, type)
+
+        input = xp.asarray([[1, 2], [3, 4]], dtype=dtype)
         output = ndimage.minimum(input, labels=labels,
                                  index=2)
         assert_almost_equal(output, xp.asarray(2.0))
@@ -693,7 +718,8 @@ def test_minimum03(xp):
 def test_minimum04(xp):
     labels = xp.asarray([[1, 2], [2, 3]])
     for type in types:
-        input = xp.asarray([[1, 2], [3, 4]], dtype=type)
+        dtype = getattr(xp, type)
+        input = xp.asarray([[1, 2], [3, 4]], dtype=dtype)
         output = ndimage.minimum(input, labels=labels,
                                  index=xp.asarray([2, 3, 8]))
         assert_array_almost_equal(output, xp.asarray([2.0, 4.0, 0.0]))
@@ -702,7 +728,8 @@ def test_minimum04(xp):
 def test_maximum01(xp):
     labels = xp.asarray([1, 0], dtype=bool)
     for type in types:
-        input = xp.asarray([[1, 2], [3, 4]], dtype=type)
+        dtype = getattr(xp, type)
+        input = xp.asarray([[1, 2], [3, 4]], dtype=dtype)
         output = ndimage.maximum(input, labels=labels)
         assert_almost_equal(output, xp.asarray(3.0))
 
@@ -717,7 +744,8 @@ def test_maximum02(xp):
 def test_maximum03(xp):
     labels = xp.asarray([1, 2])
     for type in types:
-        input = xp.asarray([[1, 2], [3, 4]], dtype=type)
+        dtype = getattr(xp, type)
+        input = xp.asarray([[1, 2], [3, 4]], dtype=dtype)
         output = ndimage.maximum(input, labels=labels,
                                  index=2)
         assert_almost_equal(output, xp.asarray(4.0))
@@ -726,7 +754,8 @@ def test_maximum03(xp):
 def test_maximum04(xp):
     labels = xp.asarray([[1, 2], [2, 3]])
     for type in types:
-        input = xp.asarray([[1, 2], [3, 4]], dtype=type)
+        dtype = getattr(xp, type)
+        input = xp.asarray([[1, 2], [3, 4]], dtype=dtype)
         output = ndimage.maximum(input, labels=labels,
                                  index=xp.asarray([2, 3, 8]))
         assert_array_almost_equal(output, xp.asarray([3.0, 4.0, 0.0]))
@@ -790,7 +819,8 @@ def test_median_no_int_overflow(xp):
 def test_variance01(xp):
     with np.errstate(all='ignore'):
         for type in types:
-            input = xp.asarray([], dtype=type)
+            dtype = getattr(xp, type)
+            input = xp.asarray([], dtype=dtype)
             with suppress_warnings() as sup:
                 sup.filter(RuntimeWarning, "Mean of empty slice")
                 output = ndimage.variance(input)
@@ -799,14 +829,16 @@ def test_variance01(xp):
 
 def test_variance02(xp):
     for type in types:
-        input = xp.asarray([1], dtype=type)
+        dtype = getattr(xp, type)
+        input = xp.asarray([1], dtype=dtype)
         output = ndimage.variance(input)
         assert_almost_equal(output, xp.asarray(0.0))
 
 
 def test_variance03(xp):
     for type in types:
-        input = xp.asarray([1, 3], dtype=type)
+        dtype = getattr(xp, type)
+        input = xp.asarray([1, 3], dtype=dtype)
         output = ndimage.variance(input)
         assert_almost_equal(output, xp.asarray(1.0))
 
@@ -820,7 +852,9 @@ def test_variance04(xp):
 def test_variance05(xp):
     labels = xp.asarray([2, 2, 3])
     for type in types:
-        input = xp.asarray([1, 3, 8], dtype=type)
+        dtype = getattr(xp, type)
+
+        input = xp.asarray([1, 3, 8], dtype=dtype)
         output = ndimage.variance(input, labels, 2)
         assert_almost_equal(output, xp.asarray(1.0))
 
@@ -829,7 +863,8 @@ def test_variance06(xp):
     labels = xp.asarray([2, 2, 3, 3, 4])
     with np.errstate(all='ignore'):
         for type in types:
-            input = xp.asarray([1, 3, 8, 10, 8], dtype=type)
+            dtype = getattr(xp, type)
+            input = xp.asarray([1, 3, 8, 10, 8], dtype=dtype)
             output = ndimage.variance(input, labels, xp.asarray([2, 3, 4]))
             assert_array_almost_equal(output, xp.asarray([1.0, 1.0, 0.0]))
 
@@ -837,7 +872,8 @@ def test_variance06(xp):
 def test_standard_deviation01(xp):
     with np.errstate(all='ignore'):
         for type in types:
-            input = xp.asarray([], dtype=type)
+            dtype = getattr(xp, type)
+            input = xp.asarray([], dtype=dtype)
             with suppress_warnings() as sup:
                 sup.filter(RuntimeWarning, "Mean of empty slice")
                 output = ndimage.standard_deviation(input)
@@ -846,14 +882,16 @@ def test_standard_deviation01(xp):
 
 def test_standard_deviation02(xp):
     for type in types:
-        input = xp.asarray([1], dtype=type)
+        dtype = getattr(xp, type)
+        input = xp.asarray([1], dtype=dtype)
         output = ndimage.standard_deviation(input)
         assert_almost_equal(output, xp.asarray(0.0))
 
 
 def test_standard_deviation03(xp):
     for type in types:
-        input = xp.asarray([1, 3], dtype=type)
+        dtype = getattr(xp, type)
+        input = xp.asarray([1, 3], dtype=dtype)
         output = ndimage.standard_deviation(input)
         assert_almost_equal(output, xp.sqrt(1.0))
 
@@ -867,7 +905,8 @@ def test_standard_deviation04(xp):
 def test_standard_deviation05(xp):
     labels = xp.asarray([2, 2, 3])
     for type in types:
-        input = xp.asarray([1, 3, 8], dtype=type)
+        dtype = getattr(xp, type)
+        input = xp.asarray([1, 3, 8], dtype=dtype)
         output = ndimage.standard_deviation(input, labels, 2)
         assert_almost_equal(output, xp.asarray(1.0))
 
@@ -876,7 +915,8 @@ def test_standard_deviation06(xp):
     labels = xp.asarray([2, 2, 3, 3, 4])
     with np.errstate(all='ignore'):
         for type in types:
-            input = xp.asarray([1, 3, 8, 10, 8], dtype=type)
+            dtype = getattr(xp, type)
+            input = xp.asarray([1, 3, 8, 10, 8], dtype=dtype)
             output = ndimage.standard_deviation(
                 input, labels, xp.asarray([2, 3, 4])
             )
@@ -887,7 +927,8 @@ def test_standard_deviation07(xp):
     labels = xp.asarray([1])
     with np.errstate(all='ignore'):
         for type in types:
-            input = xp.asarray([-0.00619519], dtype=type)
+            dtype = getattr(xp, type)
+            input = xp.asarray([-0.00619519], dtype=dtype)
             output = ndimage.standard_deviation(input, labels, xp.asarray([1]))
             assert_array_almost_equal(output, xp.asarray([0]))
 
@@ -895,16 +936,18 @@ def test_standard_deviation07(xp):
 def test_minimum_position01(xp):
     labels = xp.asarray([1, 0], bool)
     for type in types:
-        input = xp.asarray([[1, 2], [3, 4]], dtype=type)
+        dtype = getattr(xp, type)
+        input = xp.asarray([[1, 2], [3, 4]], dtype=dtype)
         output = ndimage.minimum_position(input, labels=labels)
         assert output == (0, 0)
 
 
 def test_minimum_position02(xp):
     for type in types:
+        dtype = getattr(xp, type)
         input = xp.asarray([[5, 4, 2, 5],
                           [3, 7, 0, 2],
-                          [1, 5, 1, 1]], dtype=type)
+                          [1, 5, 1, 1]], dtype=dtype)
         output = ndimage.minimum_position(input)
         assert output == (1, 2)
 
@@ -928,9 +971,10 @@ def test_minimum_position04(xp):
 def test_minimum_position05(xp):
     labels = xp.asarray([1, 2, 0, 4])
     for type in types:
+        dtype = getattr(xp, type)
         input = xp.asarray([[5, 4, 2, 5],
                           [3, 7, 0, 2],
-                          [1, 5, 2, 3]], dtype=type)
+                          [1, 5, 2, 3]], dtype=dtype)
         output = ndimage.minimum_position(input, labels)
         assert output == (2, 0)
 
@@ -938,9 +982,10 @@ def test_minimum_position05(xp):
 def test_minimum_position06(xp):
     labels = xp.asarray([1, 2, 3, 4])
     for type in types:
+        dtype = getattr(xp, type)
         input = xp.asarray([[5, 4, 2, 5],
                           [3, 7, 0, 2],
-                          [1, 5, 1, 1]], dtype=type)
+                          [1, 5, 1, 1]], dtype=dtype)
         output = ndimage.minimum_position(input, labels, 2)
         assert output == (0, 1)
 
@@ -948,9 +993,10 @@ def test_minimum_position06(xp):
 def test_minimum_position07(xp):
     labels = xp.asarray([1, 2, 3, 4])
     for type in types:
+        dtype = getattr(xp, type)
         input = xp.asarray([[5, 4, 2, 5],
                           [3, 7, 0, 2],
-                          [1, 5, 1, 1]], dtype=type)
+                          [1, 5, 1, 1]], dtype=dtype)
         output = ndimage.minimum_position(input, labels,
                                           xp.asarray([2, 3]))
         assert output[0] == (0, 1)
@@ -960,7 +1006,8 @@ def test_minimum_position07(xp):
 def test_maximum_position01(xp):
     labels = xp.asarray([1, 0], bool)
     for type in types:
-        input = xp.asarray([[1, 2], [3, 4]], dtype=type)
+        dtype = getattr(xp, type)
+        input = xp.asarray([[1, 2], [3, 4]], dtype=dtype)
         output = ndimage.maximum_position(input,
                                           labels=labels)
         assert output == (1, 0)
@@ -968,9 +1015,10 @@ def test_maximum_position01(xp):
 
 def test_maximum_position02(xp):
     for type in types:
+        dtype = getattr(xp, type)
         input = xp.asarray([[5, 4, 2, 5],
                           [3, 7, 8, 2],
-                          [1, 5, 1, 1]], dtype=type)
+                          [1, 5, 1, 1]], dtype=dtype)
         output = ndimage.maximum_position(input)
         assert output == (1, 2)
 
@@ -986,9 +1034,10 @@ def test_maximum_position03(xp):
 def test_maximum_position04(xp):
     labels = xp.asarray([1, 2, 0, 4])
     for type in types:
+        dtype = getattr(xp, type)
         input = xp.asarray([[5, 4, 2, 5],
                           [3, 7, 8, 2],
-                          [1, 5, 1, 1]], dtype=type)
+                          [1, 5, 1, 1]], dtype=dtype)
         output = ndimage.maximum_position(input, labels)
         assert output == (1, 1)
 
@@ -996,9 +1045,10 @@ def test_maximum_position04(xp):
 def test_maximum_position05(xp):
     labels = xp.asarray([1, 2, 0, 4])
     for type in types:
+        dtype = getattr(xp, type)
         input = xp.asarray([[5, 4, 2, 5],
                           [3, 7, 8, 2],
-                          [1, 5, 1, 1]], dtype=type)
+                          [1, 5, 1, 1]], dtype=dtype)
         output = ndimage.maximum_position(input, labels, 1)
         assert output == (0, 0)
 
@@ -1006,9 +1056,10 @@ def test_maximum_position05(xp):
 def test_maximum_position06(xp):
     labels = xp.asarray([1, 2, 0, 4])
     for type in types:
+        dtype = getattr(xp, type)
         input = xp.asarray([[5, 4, 2, 5],
                           [3, 7, 8, 2],
-                          [1, 5, 1, 1]], dtype=type)
+                          [1, 5, 1, 1]], dtype=dtype)
         output = ndimage.maximum_position(input, labels,
                                           xp.asarray([1, 2]))
         assert output[0] == (0, 0)
@@ -1019,9 +1070,10 @@ def test_maximum_position07(xp):
     # Test float labels
     labels = xp.asarray([1.0, 2.5, 0.0, 4.5])
     for type in types:
+        dtype = getattr(xp, type)
         input = xp.asarray([[5, 4, 2, 5],
                           [3, 7, 8, 2],
-                          [1, 5, 1, 1]], dtype=type)
+                          [1, 5, 1, 1]], dtype=dtype)
         output = ndimage.maximum_position(input, labels,
                                           xp.asarray([1.0, 4.5]))
         assert output[0] == (0, 0)
@@ -1031,7 +1083,8 @@ def test_maximum_position07(xp):
 def test_extrema01(xp):
     labels = xp.asarray([1, 0], bool)
     for type in types:
-        input = xp.asarray([[1, 2], [3, 4]], dtype=type)
+        dtype = getattr(xp, type)
+        input = xp.asarray([[1, 2], [3, 4]], dtype=dtype)
         output1 = ndimage.extrema(input, labels=labels)
         output2 = ndimage.minimum(input, labels=labels)
         output3 = ndimage.maximum(input, labels=labels)
@@ -1045,7 +1098,8 @@ def test_extrema01(xp):
 def test_extrema02(xp):
     labels = xp.asarray([1, 2])
     for type in types:
-        input = xp.asarray([[1, 2], [3, 4]], dtype=type)
+        dtype = getattr(xp, type)
+        input = xp.asarray([[1, 2], [3, 4]], dtype=dtype)
         output1 = ndimage.extrema(input, labels=labels,
                                   index=2)
         output2 = ndimage.minimum(input, labels=labels,
@@ -1062,7 +1116,8 @@ def test_extrema02(xp):
 def test_extrema03(xp):
     labels = xp.asarray([[1, 2], [2, 3]])
     for type in types:
-        input = xp.asarray([[1, 2], [3, 4]], dtype=type)
+        dtype = getattr(xp, type)
+        input = xp.asarray([[1, 2], [3, 4]], dtype=dtype)
         output1 = ndimage.extrema(input,
                                   labels=labels,
                                   index=xp.asarray([2, 3, 8]))
@@ -1086,9 +1141,10 @@ def test_extrema03(xp):
 def test_extrema04(xp):
     labels = xp.asarray([1, 2, 0, 4])
     for type in types:
+        dtype = getattr(xp, type)
         input = xp.asarray([[5, 4, 2, 5],
                           [3, 7, 8, 2],
-                          [1, 5, 1, 1]], dtype=type)
+                          [1, 5, 1, 1]], dtype=dtype)
         output1 = ndimage.extrema(input, labels, xp.asarray([1, 2]))
         output2 = ndimage.minimum(input, labels, xp.asarray([1, 2]))
         output3 = ndimage.maximum(input, labels, xp.asarray([1, 2]))
@@ -1105,7 +1161,8 @@ def test_extrema04(xp):
 def test_center_of_mass01(xp):
     expected = (0.0, 0.0)
     for type in types:
-        input = xp.asarray([[1, 0], [0, 0]], dtype=type)
+        dtype = getattr(xp, type)
+        input = xp.asarray([[1, 0], [0, 0]], dtype=dtype)
         output = ndimage.center_of_mass(input)
         assert output == expected
 
@@ -1113,7 +1170,8 @@ def test_center_of_mass01(xp):
 def test_center_of_mass02(xp):
     expected = (1, 0)
     for type in types:
-        input = xp.asarray([[0, 0], [1, 0]], dtype=type)
+        dtype = getattr(xp, type)
+        input = xp.asarray([[0, 0], [1, 0]], dtype=dtype)
         output = ndimage.center_of_mass(input)
         assert output == expected
 
@@ -1121,7 +1179,8 @@ def test_center_of_mass02(xp):
 def test_center_of_mass03(xp):
     expected = (0, 1)
     for type in types:
-        input = xp.asarray([[0, 1], [0, 0]], dtype=type)
+        dtype = getattr(xp, type)
+        input = xp.asarray([[0, 1], [0, 0]], dtype=dtype)
         output = ndimage.center_of_mass(input)
         assert output == expected
 
@@ -1129,7 +1188,8 @@ def test_center_of_mass03(xp):
 def test_center_of_mass04(xp):
     expected = (1, 1)
     for type in types:
-        input = xp.asarray([[0, 0], [0, 1]], dtype=type)
+        dtype = getattr(xp, type)
+        input = xp.asarray([[0, 0], [0, 1]], dtype=dtype)
         output = ndimage.center_of_mass(input)
         assert output == expected
 
@@ -1137,7 +1197,8 @@ def test_center_of_mass04(xp):
 def test_center_of_mass05(xp):
     expected = (0.5, 0.5)
     for type in types:
-        input = xp.asarray([[1, 1], [1, 1]], dtype=type)
+        dtype = getattr(xp, type)
+        input = xp.asarray([[1, 1], [1, 1]], dtype=dtype)
         output = ndimage.center_of_mass(input)
         assert output == expected
 

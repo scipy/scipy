@@ -334,6 +334,9 @@ class TestNdimageFilters:
     @pytest.mark.parametrize('dtype_array', types)
     @pytest.mark.parametrize('dtype_kernel', types)
     def test_correlate13(self, dtype_array, dtype_kernel, xp):
+        dtype_array = getattr(xp, dtype_array)
+        dtype_kernel = getattr(xp, dtype_kernel)
+
         kernel = xp.asarray([[1, 0],
                               [0, 1]])
         array = xp.asarray([[1, 2, 3],
@@ -350,6 +353,9 @@ class TestNdimageFilters:
     @pytest.mark.parametrize('dtype_array', types)
     @pytest.mark.parametrize('dtype_output', types)
     def test_correlate14(self, dtype_array, dtype_output, xp):
+        dtype_array = getattr(xp, dtype_array)
+        dtype_output = getattr(xp, dtype_output)
+
         kernel = xp.asarray([[1, 0],
                            [0, 1]])
         array = xp.asarray([[1, 2, 3],
@@ -365,6 +371,8 @@ class TestNdimageFilters:
 
     @pytest.mark.parametrize('dtype_array', types)
     def test_correlate15(self, dtype_array, xp):
+        dtype_array = getattr(xp, dtype_array)
+
         kernel = xp.asarray([[1, 0],
                            [0, 1]])
         array = xp.asarray([[1, 2, 3],
@@ -379,6 +387,8 @@ class TestNdimageFilters:
 
     @pytest.mark.parametrize('dtype_array', types)
     def test_correlate16(self, dtype_array, xp):
+        dtype_array = getattr(xp, dtype_array)
+
         kernel = xp.asarray([[0.5, 0],
                            [0, 0.5]])
         array = xp.asarray([[1, 2, 3], [4, 5, 6]], dtype_array)
@@ -406,6 +416,8 @@ class TestNdimageFilters:
 
     @pytest.mark.parametrize('dtype_array', types)
     def test_correlate18(self, dtype_array, xp):
+        dtype_array = getattr(xp, dtype_array)
+
         kernel = xp.asarray([[1, 0],
                            [0, 1]])
         array = xp.asarray([[1, 2, 3],
@@ -432,6 +444,8 @@ class TestNdimageFilters:
 
     @pytest.mark.parametrize('dtype_array', types)
     def test_correlate19(self, dtype_array, xp):
+        dtype_array = getattr(xp, dtype_array)
+
         kernel = xp.asarray([[1, 0],
                            [0, 1]])
         array = xp.asarray([[1, 2, 3],
@@ -451,6 +465,9 @@ class TestNdimageFilters:
     @pytest.mark.parametrize('dtype_array', types)
     @pytest.mark.parametrize('dtype_output', types)
     def test_correlate20(self, dtype_array, dtype_output, xp):
+        dtype_array = getattr(xp, dtype_array)
+        dtype_output = getattr(xp, dtype_output)
+
         weights = xp.asarray([1, 2, 1])
         expected = xp.asarray([[5, 10, 15], [7, 14, 21]])
         array = xp.asarray([[1, 2, 3],
@@ -474,6 +491,9 @@ class TestNdimageFilters:
     @pytest.mark.parametrize('dtype_array', types)
     @pytest.mark.parametrize('dtype_output', types)
     def test_correlate22(self, dtype_array, dtype_output, xp):
+        dtype_array = getattr(xp, dtype_array)
+        dtype_output = getattr(xp, dtype_output)
+
         weights = xp.asarray([1, 2, 1])
         expected = xp.asarray([[6, 12, 18], [6, 12, 18]])
         array = xp.asarray([[1, 2, 3],
@@ -489,6 +509,9 @@ class TestNdimageFilters:
     @pytest.mark.parametrize('dtype_array', types)
     @pytest.mark.parametrize('dtype_output', types)
     def test_correlate23(self, dtype_array, dtype_output, xp):
+        dtype_array = getattr(xp, dtype_array)
+        dtype_output = getattr(xp, dtype_output)
+
         weights = xp.asarray([1, 2, 1])
         expected = xp.asarray([[5, 10, 15], [7, 14, 21]])
         array = xp.asarray([[1, 2, 3],
@@ -504,6 +527,9 @@ class TestNdimageFilters:
     @pytest.mark.parametrize('dtype_array', types)
     @pytest.mark.parametrize('dtype_output', types)
     def test_correlate24(self, dtype_array, dtype_output, xp):
+        dtype_array = getattr(xp, dtype_array)
+        dtype_output = getattr(xp, dtype_output)
+
         weights = xp.asarray([1, 2, 1])
         tcor = xp.asarray([[7, 14, 21], [8, 16, 24]])
         tcov = xp.asarray([[4, 8, 12], [5, 10, 15]])
@@ -520,6 +546,9 @@ class TestNdimageFilters:
     @pytest.mark.parametrize('dtype_array', types)
     @pytest.mark.parametrize('dtype_output', types)
     def test_correlate25(self, dtype_array, dtype_output, xp):
+        dtype_array = getattr(xp, dtype_array)
+        dtype_output = getattr(xp, dtype_output)
+
         weights = xp.asarray([1, 2, 1])
         tcor = xp.asarray([[4, 8, 12], [5, 10, 15]])
         tcov = xp.asarray([[7, 14, 21], [8, 16, 24]])
@@ -546,6 +575,10 @@ class TestNdimageFilters:
     @pytest.mark.parametrize('dtype_output', complex_types)
     def test_correlate_complex_kernel(self, dtype_input, dtype_kernel,
                                       dtype_output, xp):
+        dtype_input = getattr(xp, dtype_input)
+        dtype_kernel = getattr(xp, dtype_kernel)
+        dtype_output = getattr(xp, dtype_output)
+
         kernel = xp.asarray([[1, 0],
                            [0, 1 + 1j]], dtype_kernel)
         array = xp.asarray([[1, 2, 3],
@@ -558,6 +591,10 @@ class TestNdimageFilters:
     @pytest.mark.parametrize('mode', ['grid-constant', 'constant'])
     def test_correlate_complex_kernel_cval(self, dtype_input, dtype_kernel,
                                            dtype_output, mode, xp):
+        dtype_input = getattr(xp, dtype_input)
+        dtype_kernel = getattr(xp, dtype_kernel)
+        dtype_output = getattr(xp, dtype_output)
+
         if is_cupy(xp) and mode == 'grid-constant':
             pytest.xfail('https://github.com/cupy/cupy/issues/8404')
 
@@ -574,6 +611,9 @@ class TestNdimageFilters:
     @pytest.mark.parametrize('dtype_input', types)
     def test_correlate_complex_kernel_invalid_cval(self, dtype_input,
                                                    dtype_kernel, xp):
+        dtype_input = getattr(xp, dtype_input)
+        dtype_kernel = getattr(xp, dtype_kernel)
+
         if is_cupy(xp):
             pytest.xfail("https://github.com/cupy/cupy/issues/8405")
 
@@ -593,6 +633,10 @@ class TestNdimageFilters:
     @pytest.mark.parametrize('dtype_output', complex_types)
     def test_correlate1d_complex_kernel(self, dtype_input, dtype_kernel,
                                         dtype_output, xp):
+        dtype_input = getattr(xp, dtype_input)
+        dtype_kernel = getattr(xp, dtype_kernel)
+        dtype_output = getattr(xp, dtype_output)
+
         kernel = xp.asarray([1, 1 + 1j], dtype_kernel)
         array = xp.asarray([1, 2, 3, 4, 5, 6], dtype_input)
         self._validate_complex(xp, array, kernel, dtype_output)
@@ -602,6 +646,10 @@ class TestNdimageFilters:
     @pytest.mark.parametrize('dtype_output', complex_types)
     def test_correlate1d_complex_kernel_cval(self, dtype_input, dtype_kernel,
                                              dtype_output, xp):
+        dtype_input = getattr(xp, dtype_input)
+        dtype_kernel = getattr(xp, dtype_kernel)
+        dtype_output = getattr(xp, dtype_output)
+
         kernel = xp.asarray([1, 1 + 1j], dtype_kernel)
         array = xp.asarray([1, 2, 3, 4, 5, 6], dtype_input)
         self._validate_complex(xp, array, kernel, dtype_output, mode='constant',
@@ -612,6 +660,10 @@ class TestNdimageFilters:
     @pytest.mark.parametrize('dtype_output', complex_types)
     def test_correlate_complex_input(self, dtype_input, dtype_kernel,
                                      dtype_output, xp):
+        dtype_input = getattr(xp, dtype_input)
+        dtype_kernel = getattr(xp, dtype_kernel)
+        dtype_output = getattr(xp, dtype_output)
+
         kernel = xp.asarray([[1, 0],
                            [0, 1]], dtype_kernel)
         array = xp.asarray([[1, 2j, 3],
@@ -623,6 +675,10 @@ class TestNdimageFilters:
     @pytest.mark.parametrize('dtype_output', complex_types)
     def test_correlate1d_complex_input(self, dtype_input, dtype_kernel,
                                        dtype_output, xp):
+        dtype_input = getattr(xp, dtype_input)
+        dtype_kernel = getattr(xp, dtype_kernel)
+        dtype_output = getattr(xp, dtype_output)
+
         kernel = xp.asarray([1, 0, 1], dtype_kernel)
         array = xp.asarray([1, 2j, 3, 1 + 4j, 5, 6j], dtype_input)
         self._validate_complex(xp, array, kernel, dtype_output)
@@ -632,6 +688,10 @@ class TestNdimageFilters:
     @pytest.mark.parametrize('dtype_output', complex_types)
     def test_correlate1d_complex_input_cval(self, dtype_input, dtype_kernel,
                                             dtype_output, xp):
+        dtype_input = getattr(xp, dtype_input)
+        dtype_kernel = getattr(xp, dtype_kernel)
+        dtype_output = getattr(xp, dtype_output)
+
         if is_cupy(xp):
             pytest.xfail("https://github.com/cupy/cupy/issues/8405")
 
@@ -643,6 +703,9 @@ class TestNdimageFilters:
     @pytest.mark.parametrize('dtype', complex_types)
     @pytest.mark.parametrize('dtype_output', complex_types)
     def test_correlate_complex_input_and_kernel(self, dtype, dtype_output, xp):
+        dtype = getattr(xp, dtype)
+        dtype_output = getattr(xp, dtype_output)
+
         kernel = xp.asarray([[1, 0],
                            [0, 1 + 1j]], dtype=dtype)
         array = xp.asarray([[1, 2j, 3],
@@ -653,6 +716,9 @@ class TestNdimageFilters:
     @pytest.mark.parametrize('dtype_output', complex_types)
     def test_correlate_complex_input_and_kernel_cval(self, dtype,
                                                      dtype_output, xp):
+        dtype = getattr(xp, dtype)
+        dtype_output = getattr(xp, dtype_output)
+
         if is_cupy(xp):
             pytest.xfail("https://github.com/cupy/cupy/issues/8405")
 
@@ -666,6 +732,9 @@ class TestNdimageFilters:
     @pytest.mark.parametrize('dtype', complex_types)
     @pytest.mark.parametrize('dtype_output', complex_types)
     def test_correlate1d_complex_input_and_kernel(self, dtype, dtype_output, xp):
+        dtype = getattr(xp, dtype)
+        dtype_output = getattr(xp, dtype_output)
+
         kernel = xp.asarray([1, 1 + 1j], dtype=dtype)
         array = xp.asarray([1, 2j, 3, 1 + 4j, 5, 6j], dtype=dtype)
         self._validate_complex(xp, array, kernel, dtype_output)
@@ -674,6 +743,9 @@ class TestNdimageFilters:
     @pytest.mark.parametrize('dtype_output', complex_types)
     def test_correlate1d_complex_input_and_kernel_cval(self, dtype,
                                                        dtype_output, xp):
+        dtype = getattr(xp, dtype)
+        dtype_output = getattr(xp, dtype_output)
+
         if is_cupy(xp):
             pytest.xfail("https://github.com/cupy/cupy/issues/8405")
 
@@ -938,6 +1010,7 @@ class TestNdimageFilters:
 
     @pytest.mark.parametrize('dtype', types + complex_types)
     def test_prewitt01(self, dtype, xp):
+        dtype = getattr(xp, dtype)
         array = xp.asarray([[3, 2, 5, 1, 4],
                           [5, 8, 3, 7, 1],
                           [5, 6, 9, 3, 5]], dtype=dtype)
@@ -948,6 +1021,7 @@ class TestNdimageFilters:
 
     @pytest.mark.parametrize('dtype', types + complex_types)
     def test_prewitt02(self, dtype, xp):
+        dtype = getattr(xp, dtype)
         array = xp.asarray([[3, 2, 5, 1, 4],
                           [5, 8, 3, 7, 1],
                           [5, 6, 9, 3, 5]], dtype=dtype)
@@ -959,6 +1033,7 @@ class TestNdimageFilters:
 
     @pytest.mark.parametrize('dtype', types + complex_types)
     def test_prewitt03(self, dtype, xp):
+        dtype = getattr(xp, dtype)
         if is_cupy(xp) and dtype in [xp.uint32, xp.uint64]:
             pytest.xfail("uint UB? XXX")
 
@@ -972,6 +1047,7 @@ class TestNdimageFilters:
 
     @pytest.mark.parametrize('dtype', types + complex_types)
     def test_prewitt04(self, dtype, xp):
+        dtype = getattr(xp, dtype)
         array = xp.asarray([[3, 2, 5, 1, 4],
                           [5, 8, 3, 7, 1],
                           [5, 6, 9, 3, 5]], dtype=dtype)
@@ -981,6 +1057,7 @@ class TestNdimageFilters:
 
     @pytest.mark.parametrize('dtype', types + complex_types)
     def test_sobel01(self, dtype, xp):
+        dtype = getattr(xp, dtype)
         array = xp.asarray([[3, 2, 5, 1, 4],
                           [5, 8, 3, 7, 1],
                           [5, 6, 9, 3, 5]], dtype=dtype)
@@ -991,6 +1068,7 @@ class TestNdimageFilters:
 
     @pytest.mark.parametrize('dtype', types + complex_types)
     def test_sobel02(self, dtype, xp):
+        dtype = getattr(xp, dtype)
         array = xp.asarray([[3, 2, 5, 1, 4],
                           [5, 8, 3, 7, 1],
                           [5, 6, 9, 3, 5]], dtype=dtype)
@@ -1002,6 +1080,7 @@ class TestNdimageFilters:
 
     @pytest.mark.parametrize('dtype', types + complex_types)
     def test_sobel03(self, dtype, xp):
+        dtype = getattr(xp, dtype)
         if is_cupy(xp) and dtype in [xp.uint32, xp.uint64]:
             pytest.xfail("uint UB? XXX")
 
@@ -1016,6 +1095,7 @@ class TestNdimageFilters:
 
     @pytest.mark.parametrize('dtype', types + complex_types)
     def test_sobel04(self, dtype, xp):
+        dtype = getattr(xp, dtype)
         array = xp.asarray([[3, 2, 5, 1, 4],
                           [5, 8, 3, 7, 1],
                           [5, 6, 9, 3, 5]], dtype=dtype)
@@ -1091,7 +1171,7 @@ class TestNdimageFilters:
             return ndimage.gaussian_filter(input, sigma, order,
                                            output, mode, cval)
 
-        # dtype = getattr(xp, dtype)   # XXX: 'types' list is numpy dtypes
+        dtype = getattr(xp, dtype)
 
         array = xp.asarray([[3, 2, 5, 1, 4],
                           [5, 8, 3, 7, 1],
@@ -1194,6 +1274,9 @@ class TestNdimageFilters:
     @pytest.mark.parametrize('dtype_array', types)
     @pytest.mark.parametrize('dtype_output', types)
     def test_uniform06(self, dtype_array, dtype_output, xp):
+        dtype_array = getattr(xp, dtype_array)
+        dtype_output = getattr(xp, dtype_output)
+
         filter_shape = [2, 2]
         array = xp.asarray([[4, 8, 12],
                           [16, 20, 24]], dtype_array)
@@ -1205,6 +1288,9 @@ class TestNdimageFilters:
     @pytest.mark.parametrize('dtype_array', complex_types)
     @pytest.mark.parametrize('dtype_output', complex_types)
     def test_uniform06_complex(self, dtype_array, dtype_output, xp):
+        dtype_array = getattr(xp, dtype_array)
+        dtype_output = getattr(xp, dtype_output)
+
         filter_shape = [2, 2]
         array = xp.asarray([[4, 8 + 5j, 12],
                           [16, 20, 24]], dtype_array)
@@ -1659,6 +1745,9 @@ class TestNdimageFilters:
         if is_cupy(xp):
             pytest.xfail("CuPy does not support extra_arguments")
 
+        dtype_str = dtype
+        dtype = getattr(xp, dtype_str)
+
         filter_ = xp.asarray([[1.0, 2.0], [3.0, 4.0]])
         footprint = xp.asarray([[1, 0], [0, 1]])
         cf = xp.asarray([1., 4.])
@@ -1670,7 +1759,7 @@ class TestNdimageFilters:
         a = xp.arange(12, dtype=dtype)
         a.shape = (3, 4)
         r1 = ndimage.correlate(a, filter_ * footprint)
-        if dtype in float_types:
+        if dtype_str in float_types:
             r1 /= 5
         else:
             r1 //= 5
