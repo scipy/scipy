@@ -9375,7 +9375,10 @@ def combine_pvalues(pvalues, method='fisher', weights=None, *, axis=0):
 
         norm = _SimpleNormal()
         Zi = norm.isf(pvalues)
-        statistic = weights @ Zi / xp.linalg.vector_norm(weights, axis=axis)
+        # could use `einsum` or clever `matmul` for performance,
+        # but this is the most readable
+        statistic = (xp.sum(weights * Zi, axis=axis)
+                     / xp.linalg.vector_norm(weights, axis=axis))
         pval = _get_pvalue(statistic, norm, alternative="greater", xp=xp)
 
     else:
