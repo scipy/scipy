@@ -1,4 +1,4 @@
-This directory contains a bundled version of ARPACK-NG 3.3.0,
+This directory contains a bundled version of ARPACK-NG 3.9.1,
 https://github.com/opencollab/arpack-ng
 
 NOTE FOR VENDORS: it is in general safe to use a system version of ARPACK
@@ -18,5 +18,5 @@ s@\bcdotu\b@wcdotu@g;
 s@\bzdotu\b@wzdotu@g;
 s@\bcladiv\b@wcladiv@g;
 s@\bzladiv\b@wzladiv@g;
-s@\bSLAMCH\b@slamch@g;' \
-SRC/*.f UTIL/*.f LAPACK/*.f
+s@\bslamch\b@slamch@g;' \
+SRC/*.f UTIL/*.f
