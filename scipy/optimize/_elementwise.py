@@ -232,7 +232,7 @@ def find_root(f, init, /, *, args=(), tolerances=None, maxiter=None, callback=No
 
 
 def find_minimum(f, init, /, *, args=(), tolerances=None, maxiter=100, callback=None):
-    """Find the minimizer of an unimodal, real-valued function of a real variable.
+    """Find the minimum of an unimodal, real-valued function of a real variable.
 
     For each element of the output of `f`, `find_minimum` seeks the scalar minimizer
     that minimizes the element. This function currently uses Chandrupatla's
