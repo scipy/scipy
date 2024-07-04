@@ -184,12 +184,6 @@ warnings.filterwarnings(
     message=r'There is no current event loop',
     category=DeprecationWarning,
 )
-# TODO: remove after gh-19228 resolved:
-warnings.filterwarnings(
-    'ignore',
-    message=r'.*path is deprecated.*',
-    category=DeprecationWarning,
-)
 
 # -----------------------------------------------------------------------------
 # HTML output
