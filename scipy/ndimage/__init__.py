@@ -150,6 +150,9 @@ Morphology
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 # bring in the public functionality from private namespaces
+
+# mypy: ignore-errors
+
 from ._support_alternative_backends import *
 
 # adjust __all__ and do not leak implementation details
