@@ -2,7 +2,7 @@ import os
 import sys
 
 import numpy as np
-from numpy.testing import (assert_equal, assert_allclose, assert_almost_equal,
+from numpy.testing import (assert_allclose, assert_almost_equal,
                            suppress_warnings)
 from pytest import raises as assert_raises
 import pytest
@@ -236,7 +236,7 @@ class TestEstimateGradients2DGlobal:
             z = func(x[:,0], x[:,1])
             dz = interpnd.estimate_gradients_2d_global(tri, z, tol=1e-6)
 
-            assert_equal(dz.shape, (6, 2))
+            assert dz.shape, (6 == 2)
             assert_allclose(dz, np.array(grad)[None,:] + 0*dz,
                             rtol=1e-5, atol=1e-5, err_msg="item %d" % j)
 

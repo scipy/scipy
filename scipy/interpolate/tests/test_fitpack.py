@@ -2,8 +2,9 @@ import itertools
 import os
 
 import numpy as np
-from numpy.testing import (assert_equal, assert_allclose, assert_,
+from numpy.testing import (assert_allclose,
                            assert_almost_equal, assert_array_almost_equal)
+from scipy._lib._array_api import xp_assert_equal
 from pytest import raises as assert_raises
 import pytest
 from scipy._lib._testutils import check_free_memory
@@ -191,9 +192,9 @@ class TestSplev:
         y = [4,5,6,7,8]
         tck = splrep(x, y)
         z = splev([1], tck)
-        assert_equal(z.shape, (1,))
+        assert z.shape == (1,)
         z = splev(1, tck)
-        assert_equal(z.shape, ())
+        assert z.shape == ()
 
     def test_2d_shape(self):
         x = [1, 2, 3, 4, 5]
@@ -204,7 +205,7 @@ class TestSplev:
         z = splev(t, tck)
         z0 = splev(t[0], tck)
         z1 = splev(t[1], tck)
-        assert_equal(z, np.vstack((z0, z1)))
+        xp_assert_equal(z, np.vstack((z0, z1)))
 
     def test_extrapolation_modes(self):
         # test extrapolation modes
@@ -231,7 +232,7 @@ class TestSplder:
         self.spl = splrep(x, y)
 
         # double check that knots are non-uniform
-        assert_(np.ptp(np.diff(self.spl[0])) > 0)
+        assert np.ptp(np.diff(self.spl[0])) > 0
 
     def test_inverse(self):
         # Check that antiderivative + derivative is identity.
@@ -240,7 +241,7 @@ class TestSplder:
             spl3 = splder(spl2, n)
             assert_allclose(self.spl[0], spl3[0])
             assert_allclose(self.spl[1], spl3[1])
-            assert_equal(self.spl[2], spl3[2])
+            assert self.spl[2] == spl3[2]
 
     def test_splder_vs_splev(self):
         # Check derivative vs. FITPACK
@@ -304,7 +305,7 @@ class TestSplder:
 
             assert_allclose(t, spl3[0])
             assert_allclose(c2, spl3[1])
-            assert_equal(k, spl3[2])
+            assert k == spl3[2]
 
 
 class TestSplint:

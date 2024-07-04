@@ -1,6 +1,7 @@
-from numpy.testing import (assert_, assert_equal, assert_almost_equal,
+from numpy.testing import (assert_almost_equal,
                            assert_array_almost_equal, assert_array_equal,
                            assert_allclose)
+from scipy._lib._array_api import xp_assert_equal, xp_assert_close
 from pytest import raises as assert_raises
 import pytest
 
@@ -150,13 +151,11 @@ class TestInterp1D:
         assert interp1d(self.x10, self.y10).bounds_error
         assert not interp1d(self.x10, self.y10, bounds_error=False).bounds_error
         assert np.isnan(interp1d(self.x10, self.y10).fill_value)
-        assert_equal(interp1d(self.x10, self.y10, fill_value=3.0).fill_value,
-                     3.0)
-        assert_equal(interp1d(self.x10, self.y10, fill_value=(1.0, 2.0)).fill_value,
-                     (1.0, 2.0))
-        assert_equal(interp1d(self.x10, self.y10).axis, 0)
-        assert_equal(interp1d(self.x10, self.y210).axis, 1)
-        assert_equal(interp1d(self.x10, self.y102, axis=0).axis, 0)
+        assert interp1d(self.x10, self.y10, fill_value=3.0).fill_value == 3.0
+        assert interp1d(self.x10, self.y10, fill_value=(1.0, 2.0)).fill_value == (1.0, 2.0)
+        assert interp1d(self.x10, self.y10).axis == 0
+        assert interp1d(self.x10, self.y210).axis == 1
+        assert interp1d(self.x10, self.y102, axis=0).axis == 0
         assert_array_equal(interp1d(self.x10, self.y10).x, self.x10)
         assert_array_equal(interp1d(self.x10, self.y10).y, self.y10)
         assert_array_equal(interp1d(self.x10, self.y210).y, self.y210)
@@ -221,7 +220,7 @@ class TestInterp1D:
             x = np.arange(8, dtype=dtyp)
             y = x
             yp = interp1d(x, y, kind='linear')(x)
-            assert_equal(yp.dtype, dtyp)
+            assert yp.dtype == dtyp
             assert_allclose(yp, y, atol=1e-15)
 
         # regression test for gh-14531, where 1D linear interpolation has been
@@ -663,9 +662,9 @@ class TestInterp1D:
     def test_fill_value_writeable(self):
         # backwards compat: fill_value is a public writeable attribute
         interp = interp1d(self.x10, self.y10, fill_value=123.0)
-        assert_equal(interp.fill_value, 123.0)
+        assert interp.fill_value == 123.0
         interp.fill_value = 321.0
-        assert_equal(interp.fill_value, 321.0)
+        assert interp.fill_value == 321.0
 
     def _nd_check_interp(self, kind='linear'):
         # Check the behavior when the inputs and outputs are multidimensional.
@@ -677,7 +676,7 @@ class TestInterp1D:
 
         # Scalar input -> 0-dim scalar array output
         assert isinstance(interp10(1.2), np.ndarray)
-        assert_equal(interp10(1.2).shape, ())
+        assert interp10(1.2).shape == ()
 
         # Multidimensional outputs.
         interp210 = interp1d(self.x10, self.y210, kind=kind)
@@ -785,7 +784,7 @@ class TestInterp1D:
                 xnew = np.asarray(xnew)
                 out, outn = ir(x), irn(x)
                 assert np.isnan(outn).all()
-                assert_equal(out.shape, outn.shape)
+                assert out.shape == outn.shape
 
     def test_all_nans(self):
         # regression test for gh-11637: interp1d core dumps with all-nan `x`
@@ -941,8 +940,8 @@ class TestAkima1DInterpolator:
         ak_none = Akima1DInterpolator(x, y, extrapolate=None)
         # None should default to False; extrapolated points are NaN.
         assert_allclose(ak_false(x_ext), ak_none(x_ext), equal_nan=True, atol=1e-15)
-        assert_equal(ak_false(x_ext)[0:4], np.full(4, np.nan))
-        assert_equal(ak_false(x_ext)[-4:-1], np.full(3, np.nan))
+        xp_assert_equal(ak_false(x_ext)[0:4], np.full(4, np.nan))
+        xp_assert_equal(ak_false(x_ext)[-4:-1], np.full(3, np.nan))
         # Extrapolation on call and attribute should be equal.
         assert_allclose(ak_false(x_ext, extrapolate=True), ak_true(x_ext), atol=1e-15)
         # Testing extrapoation to actual function.
@@ -1060,14 +1059,14 @@ class TestPPolyCommon:
         xp = np.random.rand(3, 4)
         for cls in (PPoly, BPoly):
             p = cls(c, x)
-            assert_equal(p(xp).shape, (3, 4, 5, 6, 7))
+            assert p(xp).shape, (3, 4, 5, 6 == 7)
 
         # 'scalars'
         for cls in (PPoly, BPoly):
             p = cls(c[..., 0, 0, 0], x)
 
-            assert_equal(np.shape(p(0.5)), ())
-            assert_equal(np.shape(p(np.array(0.5))), ())
+            assert np.shape(p(0.5)) == ()
+            assert np.shape(p(np.array(0.5))) == ()
 
             assert_raises(ValueError, p, np.array([[0.1, 0.2], [0.4]], dtype=object))
 
@@ -1108,18 +1107,17 @@ class TestPPolyCommon:
             x = np.sort(np.random.rand(m+1))
             for cls in (PPoly, BPoly):
                 p = cls(c, x, axis=axis)
-                assert_equal(p.c.shape,
-                             c_s[axis:axis+2] + c_s[:axis] + c_s[axis+2:])
+                assert p.c.shape == c_s[axis:axis+2] + c_s[:axis] + c_s[axis+2:]
                 res = p(xp)
                 targ_shape = c_s[:axis] + xp.shape + c_s[2+axis:]
-                assert_equal(res.shape, targ_shape)
+                assert res.shape == targ_shape
 
                 # deriv/antideriv does not drop the axis
                 for p1 in [cls(c, x, axis=axis).derivative(),
                            cls(c, x, axis=axis).derivative(2),
                            cls(c, x, axis=axis).antiderivative(),
                            cls(c, x, axis=axis).antiderivative(2)]:
-                    assert_equal(p1.axis, p.axis)
+                    assert p1.axis == p.axis
 
         # c array needs two axes for the coefficients and intervals, so
         # 0 <= axis < c.ndim-1; raise otherwise
@@ -1145,10 +1143,10 @@ class TestPolySubclassing:
         pp, bp = self._make_polynomials()
         for p in (pp, bp):
             pd = p.derivative()
-            assert_equal(p.__class__, pd.__class__)
+            assert p.__class__ == pd.__class__
 
         ppa = pp.antiderivative()
-        assert_equal(pp.__class__, ppa.__class__)
+        assert pp.__class__ == ppa.__class__
 
     def test_from_spline(self):
         np.random.seed(1234)
@@ -1157,22 +1155,22 @@ class TestPolySubclassing:
 
         spl = splrep(x, y, s=0)
         pp = self.P.from_spline(spl)
-        assert_equal(pp.__class__, self.P)
+        assert pp.__class__ == self.P
 
     def test_conversions(self):
         pp, bp = self._make_polynomials()
 
         pp1 = self.P.from_bernstein_basis(bp)
-        assert_equal(pp1.__class__, self.P)
+        assert pp1.__class__ == self.P
 
         bp1 = self.B.from_power_basis(pp)
-        assert_equal(bp1.__class__, self.B)
+        assert bp1.__class__ == self.B
 
     def test_from_derivatives(self):
         x = [0, 1, 2]
         y = [[1], [2], [3]]
         bp = self.B.from_derivatives(x, y)
-        assert_equal(bp.__class__, self.B)
+        assert bp.__class__ == self.B
 
 
 class TestPPoly:
@@ -1260,16 +1258,16 @@ class TestPPoly:
         c = np.random.rand(6, 2, 1, 2, 3)
         x = np.array([0, 0.5, 1])
         p = PPoly(c, x)
-        assert_equal(p.x.shape, x.shape)
-        assert_equal(p.c.shape, c.shape)
-        assert_equal(p(0.3).shape, c.shape[2:])
+        assert p.x.shape == x.shape
+        assert p.c.shape == c.shape
+        assert p(0.3).shape == c.shape[2:]
 
-        assert_equal(p(np.random.rand(5, 6)).shape, (5, 6) + c.shape[2:])
+        assert p(np.random.rand(5, 6)).shape, (5 == 6) + c.shape[2:]
 
         dp = p.derivative()
-        assert_equal(dp.c.shape, (5, 2, 1, 2, 3))
+        assert dp.c.shape, (5, 2, 1, 2 == 3)
         ip = p.antiderivative()
-        assert_equal(ip.c.shape, (7, 2, 1, 2, 3))
+        assert ip.c.shape, (7, 2, 1, 2 == 3)
 
     def test_construct_fast(self):
         np.random.seed(1234)
@@ -1314,7 +1312,7 @@ class TestPPoly:
         for extrap in (None, True, False):
             b = BSpline(t, c, k, extrapolate=extrap)
             p = PPoly.from_spline(b)
-            assert_equal(p.extrapolate, b.extrapolate)
+            assert p.extrapolate == b.extrapolate
 
     def test_derivative_simple(self):
         np.random.seed(1234)
@@ -1358,15 +1356,15 @@ class TestPPoly:
     def test_antiderivative_of_constant(self):
         # https://github.com/scipy/scipy/issues/4216
         p = PPoly([[1.]], [0, 1])
-        assert_equal(p.antiderivative().c, PPoly([[1], [0]], [0, 1]).c)
-        assert_equal(p.antiderivative().x, PPoly([[1], [0]], [0, 1]).x)
+        xp_assert_equal(p.antiderivative().c, PPoly([[1], [0]], [0, 1]).c)
+        xp_assert_equal(p.antiderivative().x, PPoly([[1], [0]], [0, 1]).x)
 
     def test_antiderivative_regression_4355(self):
         # https://github.com/scipy/scipy/issues/4355
         p = PPoly([[1., 0.5]], [0, 1, 2])
         q = p.antiderivative()
-        assert_equal(q.c, [[1, 0.5], [0, 1]])
-        assert_equal(q.x, [0, 1, 2])
+        xp_assert_equal(q.c, [[1, 0.5], [0, 1]])
+        xp_assert_equal(q.x, [0.0, 1, 2])
         assert_allclose(p.integrate(0, 2), 1.5)
         assert_allclose(q(2) - q(0), 1.5)
 
@@ -1653,7 +1651,7 @@ class TestPPoly:
                 assert np.isnan(pp([-0.1, 1.1])).all()
                 assert np.isnan(pp_i([-0.1, 1.1])).all()
                 assert np.isnan(pp_d([-0.1, 1.1])).all()
-                assert_equal(pp.roots(), [1])
+                assert pp.roots() == [1]
             else:
                 assert_allclose(pp([-0.1, 1.1]), [1-0.1**2, 1-1.1**2])
                 assert not np.isnan(pp_i([-0.1, 1.1])).any()
@@ -1750,14 +1748,13 @@ class TestBPoly:
         c = np.random.rand(6, 2, 1, 2, 3)
         x = np.array([0, 0.5, 1])
         p = BPoly(c, x)
-        assert_equal(p.x.shape, x.shape)
-        assert_equal(p.c.shape, c.shape)
-        assert_equal(p(0.3).shape, c.shape[2:])
-        assert_equal(p(np.random.rand(5,6)).shape,
-                     (5,6)+c.shape[2:])
+        assert p.x.shape == x.shape
+        assert p.c.shape == c.shape
+        assert p(0.3).shape == c.shape[2:]
+        assert p(np.random.rand(5, 6)).shape == (5, 6) + c.shape[2:]
 
         dp = p.derivative()
-        assert_equal(dp.c.shape, (5, 2, 1, 2, 3))
+        assert dp.c.shape == (5, 2, 1, 2, 3)
 
     def test_interval_length(self):
         x = [0, 2]
@@ -2138,7 +2135,7 @@ class TestBPolyFromDerivatives:
         xi = np.sort(np.random.random(m+1))
         yi = np.random.random((m+1, k, 6, 7, 8))
         pp = BPoly.from_derivatives(xi, yi)
-        assert_equal(pp.c.shape, (2*k, m, 6, 7, 8))
+        assert pp.c.shape, (2*k, m, 6, 7 == 8)
 
     def test_gh_5430(self):
         # At least one of these raises an error unless gh-5430 is

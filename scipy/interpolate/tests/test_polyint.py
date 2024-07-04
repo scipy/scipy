@@ -4,7 +4,7 @@ import numpy as np
 
 from numpy.testing import (
     assert_almost_equal, assert_array_equal, assert_array_almost_equal,
-    assert_allclose, assert_equal, assert_)
+    assert_allclose )
 from pytest import raises as assert_raises
 import pytest
 
@@ -37,7 +37,7 @@ def check_shape(interpolator_cls, x_shape, y_shape, deriv_shape=None, axis=0,
 
     target_shape = ((deriv_shape or ()) + y.shape[:axis]
                     + x_shape + y.shape[axis:][1:])
-    assert_equal(yi.shape, target_shape)
+    assert yi.shape == target_shape
 
     # check it works also with lists
     if x_shape and y.size > 0:
@@ -630,7 +630,7 @@ class TestPCHIP:
             pch = pchip(x, y)
 
         xx = np.linspace(0, 9, 101)
-        assert_equal(pch(xx), 0.)
+        assert all(pch(xx) == 0.)
 
     def test_two_points(self):
         # regression test for gh-6222: pchip([0, 1], [0, 1]) fails because
@@ -906,8 +906,8 @@ def test_roots_extrapolate_gh_11185():
     # roots(extrapolate=True) for a polynomial with a single interval
     # should return all three real roots
     r = p.roots(extrapolate=True)
-    assert_equal(p.c.shape[1], 1)
-    assert_equal(r.size, 3)
+    assert p.c.shape[1] == 1
+    assert r.size == 3
 
 
 class TestZeroSizeArrays:
