@@ -1,9 +1,10 @@
-import numpy as np
+import math
 from scipy._lib._array_api import (
     xp_assert_equal,
     assert_array_almost_equal,
     assert_almost_equal,
 )
+from scipy._lib._array_api import is_cupy
 
 import pytest
 
@@ -162,6 +163,12 @@ class TestNdimageFourier:
                               ndimage.fourier_gaussian,
                               ndimage.fourier_uniform])
     def test_fourier_zero_length_dims(self, shape, dtype, test_func, xp):
+        if is_cupy(xp):
+           if (test_func.__name__ == "fourier_ellipsoid" and
+               math.prod(shape) == 0):
+               pytest.xfail(
+                   "CuPy's fourier_ellipsoid does not accept size==0 arrays"
+               )
         dtype = getattr(xp, dtype)
         a = xp.ones(shape, dtype=dtype)
         b = test_func(a, 3)

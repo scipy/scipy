@@ -150,21 +150,21 @@ def test_label02(xp):
 def test_label03(xp):
     data = xp.ones([1])
     out, n = ndimage.label(data)
-    assert_array_almost_equal(out, [1])
+    assert_array_almost_equal(out, xp.asarray([1]))
     assert n == 1
 
 
 def test_label04(xp):
     data = xp.zeros([1])
     out, n = ndimage.label(data)
-    assert_array_almost_equal(out, [0])
+    assert_array_almost_equal(out, xp.asarray([0]))
     assert n == 0
 
 
 def test_label05(xp):
     data = xp.ones([5])
     out, n = ndimage.label(data)
-    assert_array_almost_equal(out, [1, 1, 1, 1, 1])
+    assert_array_almost_equal(out, xp.asarray([1, 1, 1, 1, 1]))
     assert n == 1
 
 
@@ -363,6 +363,9 @@ def test_label_structuring_elements(xp):
     data = data.reshape((-1, 7, 7))
     strels = strels.reshape((-1, 3, 3))
     results = results.reshape((-1, 7, 7))
+
+    strels = xp.asarray(strels)
+    results = xp.asarray(results)
     r = 0
     for i in range(data.shape[0]):
         d = data[i, :, :]
@@ -556,7 +559,7 @@ def test_sum03(xp):
         dtype = getattr(xp, type)
         input = xp.ones([], dtype=dtype)
         output = ndimage.sum(input)
-        assert_almost_equal(output, 1.0)
+        assert_almost_equal(output, xp.asarray(1.0))
 
 
 def test_sum04(xp):
@@ -805,15 +808,15 @@ def test_median03(xp):
 def test_median_gh12836_bool(xp):
     # test boolean addition fix on example from gh-12836
     a = xp.asarray([1, 1], dtype=bool)
-    output = ndimage.median(a, labels=xp.ones((2,)), index=[1])
-    assert_array_almost_equal(output, [1.0])
+    output = ndimage.median(a, labels=xp.ones((2,)), index=xp.asarray([1]))
+    assert_array_almost_equal(output, xp.asarray([1.0]))
 
 
 def test_median_no_int_overflow(xp):
     # test integer overflow fix on example from gh-12836
     a = xp.asarray([65, 70], dtype=xp.int8)
-    output = ndimage.median(a, labels=xp.ones((2,)), index=[1])
-    assert_array_almost_equal(output, [67.5])
+    output = ndimage.median(a, labels=xp.ones((2,)), index=xp.asarray([1]))
+    assert_array_almost_equal(output, xp.asarray([67.5]))
 
 
 def test_variance01(xp):
