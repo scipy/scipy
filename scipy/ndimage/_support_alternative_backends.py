@@ -45,5 +45,5 @@ for func_name in _ndimage_api.__all__:
          if SCIPY_ARRAY_API
          else bare_func)
 
-    sys.modules[__name__].__dict__[func_name] = f
-
+    # add the decorated function to the namespace, to be imported in __init__.py
+    vars()[func_name] = f
