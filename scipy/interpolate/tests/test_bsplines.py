@@ -3,11 +3,9 @@ import operator
 import itertools
 
 import numpy as np
-from numpy.testing import assert_allclose
+from scipy._lib._array_api import xp_assert_equal, xp_assert_close
 from pytest import raises as assert_raises
 import pytest
-
-from scipy._lib._array_api import xp_assert_equal, xp_assert_close
 
 from scipy.interpolate import (
         BSpline, BPoly, PPoly, make_interp_spline, make_lsq_spline, _bspl,
@@ -60,20 +58,20 @@ class TestBSpline:
 
         # tck vs self.tck
         n, k = 11, 3
-        t = np.arange(n+k+1)
+        t = np.arange(n+k+1, dtype=np.float64)
         c = np.random.random(n)
         b = BSpline(t, c, k)
 
-        assert_allclose(t, b.t)
-        assert_allclose(c, b.c)
+        xp_assert_close(t, b.t)
+        xp_assert_close(c, b.c)
         assert k == b.k
 
     def test_tck(self):
         b = _make_random_spline()
         tck = b.tck
 
-        assert_allclose(b.t, tck[0], atol=1e-15, rtol=1e-15)
-        assert_allclose(b.c, tck[1], atol=1e-15, rtol=1e-15)
+        xp_assert_close(b.t, tck[0], atol=1e-15, rtol=1e-15)
+        xp_assert_close(b.c, tck[1], atol=1e-15, rtol=1e-15)
         assert b.k == tck[2]
 
         # b.tck is read-only
@@ -84,10 +82,10 @@ class TestBSpline:
         xx = np.linspace(0, 1, 10)
 
         b = BSpline(t=[0, 1], c=[3.], k=0)
-        assert_allclose(b(xx), 3)
+        xp_assert_close(b(xx), np.ones_like(xx) * 3.0)
 
         b = BSpline(t=[0, 0.35, 1], c=[3, 4], k=0)
-        assert_allclose(b(xx), np.where(xx < 0.35, 3, 4))
+        xp_assert_close(b(xx), np.where(xx < 0.35, 3.0, 4.0))
 
     def test_degree_1(self):
         t = [0, 1, 2, 3, 4]
@@ -96,9 +94,9 @@ class TestBSpline:
         b = BSpline(t, c, k)
 
         x = np.linspace(1, 3, 50)
-        assert_allclose(c[0]*B_012(x) + c[1]*B_012(x-1) + c[2]*B_012(x-2),
+        xp_assert_close(c[0]*B_012(x) + c[1]*B_012(x-1) + c[2]*B_012(x-2),
                         b(x), atol=1e-14)
-        assert_allclose(splev(x, (t, c, k)), b(x), atol=1e-14)
+        xp_assert_close(splev(x, (t, c, k)), b(x), atol=1e-14)
 
     def test_bernstein(self):
         # a special knot vector: Bernstein polynomials
@@ -109,9 +107,9 @@ class TestBSpline:
         bspl = BSpline(t, c, k)
 
         xx = np.linspace(-1., 2., 10)
-        assert_allclose(bp(xx, extrapolate=True),
+        xp_assert_close(bp(xx, extrapolate=True),
                         bspl(xx, extrapolate=True), atol=1e-14)
-        assert_allclose(splev(xx, (t, c, k)),
+        xp_assert_close(splev(xx, (t, c, k)),
                         bspl(xx), atol=1e-14)
 
     def test_rndm_naive_eval(self):
@@ -123,16 +121,16 @@ class TestBSpline:
         y_b = b(xx)
 
         y_n = [_naive_eval(x, t, c, k) for x in xx]
-        assert_allclose(y_b, y_n, atol=1e-14)
+        xp_assert_close(y_b, y_n, atol=1e-14)
 
         y_n2 = [_naive_eval_2(x, t, c, k) for x in xx]
-        assert_allclose(y_b, y_n2, atol=1e-14)
+        xp_assert_close(y_b, y_n2, atol=1e-14)
 
     def test_rndm_splev(self):
         b = _make_random_spline()
         t, c, k = b.tck
         xx = np.linspace(t[k], t[-k-1], 50)
-        assert_allclose(b(xx), splev(xx, (t, c, k)), atol=1e-14)
+        xp_assert_close(b(xx), splev(xx, (t, c, k)), atol=1e-14)
 
     def test_rndm_splrep(self):
         np.random.seed(1234)
@@ -144,13 +142,13 @@ class TestBSpline:
 
         t, k = b.t, b.k
         xx = np.linspace(t[k], t[-k-1], 80)
-        assert_allclose(b(xx), splev(xx, tck), atol=1e-14)
+        xp_assert_close(b(xx), splev(xx, tck), atol=1e-14)
 
     def test_rndm_unity(self):
         b = _make_random_spline()
         b.c = np.ones_like(b.c)
         xx = np.linspace(b.t[b.k], b.t[-b.k-1], 100)
-        assert_allclose(b(xx), 1.)
+        xp_assert_close(b(xx), 1., check_shape=False)
 
     def test_vectorization(self):
         n, k = 22, 3
@@ -175,9 +173,9 @@ class TestBSpline:
 
         dt = t[-1] - t[0]
         xx = np.linspace(t[0] - dt, t[-1] + dt, 50)
-        assert_allclose(b(xx), b_pad(xx), atol=1e-14)
-        assert_allclose(b(xx), splev(xx, (t, c, k)), atol=1e-14)
-        assert_allclose(b(xx), splev(xx, (t, c_pad, k)), atol=1e-14)
+        xp_assert_close(b(xx), b_pad(xx), atol=1e-14)
+        xp_assert_close(b(xx), splev(xx, (t, c, k)), atol=1e-14)
+        xp_assert_close(b(xx), splev(xx, (t, c_pad, k)), atol=1e-14)
 
     def test_endpoints(self):
         # base interval is closed
@@ -185,14 +183,14 @@ class TestBSpline:
         t, _, k = b.tck
         tm, tp = t[k], t[-k-1]
         for extrap in (True, False):
-            assert_allclose(b([tm, tp], extrap),
-                            b([tm + 1e-10, tp - 1e-10], extrap), atol=1e-9)
+            xp_assert_close(b([tm, tp], extrap),
+                            b([tm + 1e-10, tp - 1e-10], extrap), atol=1e-9, rtol=1e-7)
 
     def test_continuity(self):
         # assert continuity at internal knots
         b = _make_random_spline()
         t, _, k = b.tck
-        assert_allclose(b(t[k+1:-k-1] - 1e-10), b(t[k+1:-k-1] + 1e-10),
+        xp_assert_close(b(t[k+1:-k-1] - 1e-10), b(t[k+1:-k-1] + 1e-10),
                 atol=1e-9)
 
     def test_extrap(self):
@@ -203,11 +201,11 @@ class TestBSpline:
         mask = (t[k] < xx) & (xx < t[-k-1])
 
         # extrap has no effect within the base interval
-        assert_allclose(b(xx[mask], extrapolate=True),
+        xp_assert_close(b(xx[mask], extrapolate=True),
                         b(xx[mask], extrapolate=False))
 
         # extrapolated values agree with FITPACK
-        assert_allclose(b(xx, extrapolate=True),
+        xp_assert_close(b(xx, extrapolate=True),
                 splev(xx, (t, c, k), ext=0))
 
     def test_default_extrap(self):
@@ -229,7 +227,7 @@ class TestBSpline:
         dt = t[-1] - t[0]
         xx = np.linspace(t[k] - dt, t[n] + dt, 50)
         xy = t[k] + (xx - t[k]) % (t[n] - t[k])
-        assert_allclose(b(xx), splev(xy, (t, c, k)))
+        xp_assert_close(b(xx), splev(xy, (t, c, k)))
 
         # Direct check
         xx = [-1, 0, 0.5, 1]
@@ -242,7 +240,7 @@ class TestBSpline:
         pp = PPoly.from_spline((t, c, k))
 
         xx = np.linspace(t[k], t[-k], 100)
-        assert_allclose(b(xx), pp(xx), atol=1e-14, rtol=1e-14)
+        xp_assert_close(b(xx), pp(xx), atol=1e-14, rtol=1e-14)
 
     def test_derivative_rndm(self):
         b = _make_random_spline()
@@ -252,10 +250,10 @@ class TestBSpline:
 
         for der in range(1, k+1):
             yd = splev(xx, (t, c, k), der=der)
-            assert_allclose(yd, b(xx, nu=der), atol=1e-14)
+            xp_assert_close(yd, b(xx, nu=der), atol=1e-14)
 
         # higher derivatives all vanish
-        assert_allclose(b(xx, nu=k+1), 0, atol=1e-14)
+        xp_assert_close(b(xx, nu=k+1), np.zeros_like(xx), atol=1e-14)
 
     def test_derivative_jumps(self):
         # example from de Boor, Chap IX, example (24)
@@ -269,13 +267,13 @@ class TestBSpline:
 
         # b is continuous at x != 6 (triple knot)
         x = np.asarray([1, 3, 4, 6])
-        assert_allclose(b(x[x != 6] - 1e-10),
+        xp_assert_close(b(x[x != 6] - 1e-10),
                         b(x[x != 6] + 1e-10))
         assert not np.allclose(b(6.-1e-10), b(6+1e-10))
 
         # 1st derivative jumps at double knots, 1 & 6:
         x0 = np.asarray([3, 4])
-        assert_allclose(b(x0 - 1e-10, nu=1),
+        xp_assert_close(b(x0 - 1e-10, nu=1),
                         b(x0 + 1e-10, nu=1))
         x1 = np.asarray([1, 6])
         assert not np.allclose(b(x1 - 1e-10, nu=1), b(x1 + 1e-10, nu=1))
@@ -286,21 +284,21 @@ class TestBSpline:
     def test_basis_element_quadratic(self):
         xx = np.linspace(-1, 4, 20)
         b = BSpline.basis_element(t=[0, 1, 2, 3])
-        assert_allclose(b(xx),
+        xp_assert_close(b(xx),
                         splev(xx, (b.t, b.c, b.k)), atol=1e-14)
-        assert_allclose(b(xx),
+        xp_assert_close(b(xx),
                         B_0123(xx), atol=1e-14)
 
         b = BSpline.basis_element(t=[0, 1, 1, 2])
         xx = np.linspace(0, 2, 10)
-        assert_allclose(b(xx),
+        xp_assert_close(b(xx),
                 np.where(xx < 1, xx*xx, (2.-xx)**2), atol=1e-14)
 
     def test_basis_element_rndm(self):
         b = _make_random_spline()
         t, c, k = b.tck
         xx = np.linspace(t[k], t[-k-1], 20)
-        assert_allclose(b(xx), _sum_basis_elements(xx, t, c, k), atol=1e-14)
+        xp_assert_close(b(xx), _sum_basis_elements(xx, t, c, k), atol=1e-14)
 
     def test_cmplx(self):
         b = _make_random_spline()
@@ -312,8 +310,8 @@ class TestBSpline:
         b_im = BSpline(t, b.c.imag, k)
 
         xx = np.linspace(t[k], t[-k-1], 20)
-        assert_allclose(b(xx).real, b_re(xx), atol=1e-14)
-        assert_allclose(b(xx).imag, b_im(xx), atol=1e-14)
+        xp_assert_close(b(xx).real, b_re(xx), atol=1e-14)
+        xp_assert_close(b(xx).imag, b_im(xx), atol=1e-14)
 
     def test_nan(self):
         # nan in, nan out.
@@ -327,36 +325,36 @@ class TestBSpline:
         xx = np.linspace(t[k], t[-k-1], 20)
         for j in range(1, k):
             b = b.derivative()
-            assert_allclose(b0(xx, j), b(xx), atol=1e-12, rtol=1e-12)
+            xp_assert_close(b0(xx, j), b(xx), atol=1e-12, rtol=1e-12)
 
     def test_antiderivative_method(self):
         b = _make_random_spline()
         t, c, k = b.tck
         xx = np.linspace(t[k], t[-k-1], 20)
-        assert_allclose(b.antiderivative().derivative()(xx),
+        xp_assert_close(b.antiderivative().derivative()(xx),
                         b(xx), atol=1e-14, rtol=1e-14)
 
         # repeat with N-D array for c
         c = np.c_[c, c, c]
         c = np.dstack((c, c))
         b = BSpline(t, c, k)
-        assert_allclose(b.antiderivative().derivative()(xx),
+        xp_assert_close(b.antiderivative().derivative()(xx),
                         b(xx), atol=1e-14, rtol=1e-14)
 
     def test_integral(self):
         b = BSpline.basis_element([0, 1, 2])  # x for x < 1 else 2 - x
-        assert_allclose(b.integrate(0, 1), 0.5)
-        assert_allclose(b.integrate(1, 0), -1 * 0.5)
-        assert_allclose(b.integrate(1, 0), -0.5)
+        xp_assert_close(b.integrate(0, 1), 0.5)
+        xp_assert_close(b.integrate(1, 0), -1 * 0.5)
+        xp_assert_close(b.integrate(1, 0), -0.5)
 
         # extrapolate or zeros outside of [0, 2]; default is yes
-        assert_allclose(b.integrate(-1, 1), 0)
-        assert_allclose(b.integrate(-1, 1, extrapolate=True), 0)
-        assert_allclose(b.integrate(-1, 1, extrapolate=False), 0.5)
-        assert_allclose(b.integrate(1, -1, extrapolate=False), -1 * 0.5)
+        xp_assert_close(b.integrate(-1, 1), 0)
+        xp_assert_close(b.integrate(-1, 1, extrapolate=True), 0)
+        xp_assert_close(b.integrate(-1, 1, extrapolate=False), 0.5)
+        xp_assert_close(b.integrate(1, -1, extrapolate=False), -1 * 0.5)
 
         # Test ``_fitpack._splint()``
-        assert_allclose(b.integrate(1, -1, extrapolate=False),
+        xp_assert_close(b.integrate(1, -1, extrapolate=False),
                         _impl.splint(1, -1, b.tck))
 
         # Test ``extrapolate='periodic'``.
@@ -364,21 +362,21 @@ class TestBSpline:
         i = b.antiderivative()
         period_int = i(2) - i(0)
 
-        assert_allclose(b.integrate(0, 2), period_int)
-        assert_allclose(b.integrate(2, 0), -1 * period_int)
-        assert_allclose(b.integrate(-9, -7), period_int)
-        assert_allclose(b.integrate(-8, -4), 2 * period_int)
+        xp_assert_close(b.integrate(0, 2), period_int)
+        xp_assert_close(b.integrate(2, 0), -1 * period_int)
+        xp_assert_close(b.integrate(-9, -7), period_int)
+        xp_assert_close(b.integrate(-8, -4), 2 * period_int)
 
-        assert_allclose(b.integrate(0.5, 1.5), i(1.5) - i(0.5))
-        assert_allclose(b.integrate(1.5, 3), i(1) - i(0) + i(2) - i(1.5))
-        assert_allclose(b.integrate(1.5 + 12, 3 + 12),
+        xp_assert_close(b.integrate(0.5, 1.5), i(1.5) - i(0.5))
+        xp_assert_close(b.integrate(1.5, 3), i(1) - i(0) + i(2) - i(1.5))
+        xp_assert_close(b.integrate(1.5 + 12, 3 + 12),
                         i(1) - i(0) + i(2) - i(1.5))
-        assert_allclose(b.integrate(1.5, 3 + 12),
+        xp_assert_close(b.integrate(1.5, 3 + 12),
                         i(1) - i(0) + i(2) - i(1.5) + 6 * period_int)
 
-        assert_allclose(b.integrate(0, -1), i(0) - i(1))
-        assert_allclose(b.integrate(-9, -10), i(0) - i(1))
-        assert_allclose(b.integrate(0, -9), i(1) - i(2) - 4 * period_int)
+        xp_assert_close(b.integrate(0, -1), i(0) - i(1))
+        xp_assert_close(b.integrate(-9, -10), i(0) - i(1))
+        xp_assert_close(b.integrate(0, -9), i(1) - i(2) - 4 * period_int)
 
     def test_integrate_ppoly(self):
         # test .integrate method to be consistent with PPoly.integrate
@@ -388,7 +386,7 @@ class TestBSpline:
         p = PPoly.from_spline(b)
 
         for x0, x1 in [(-5, 0.5), (0.5, 5), (-4, 13)]:
-            assert_allclose(b.integrate(x0, x1),
+            xp_assert_close(b.integrate(x0, x1),
                             p.integrate(x0, x1))
 
     def test_integrate_0D_always(self):
@@ -472,8 +470,8 @@ class TestBSpline:
             des_matr_csr = BSpline.design_matrix(x,
                                                  bspl.t,
                                                  k).toarray()
-            assert_allclose(des_matr_csr @ bspl.c, y, atol=1e-14)
-            assert_allclose(des_matr_def, des_matr_csr, atol=1e-14)
+            xp_assert_close(des_matr_csr @ bspl.c, y, atol=1e-14)
+            xp_assert_close(des_matr_def, des_matr_csr, atol=1e-14)
 
         # "clamped" and "natural" work only with `k = 3`
         n = 11
@@ -503,7 +501,7 @@ class TestBSpline:
                   np.linspace(xmax + 1, xmax + 2, degree)]
         c = np.eye(len(t) - k - 1)
         bspline = BSpline(t, c, k, extrapolate)
-        assert_allclose(
+        xp_assert_close(
             bspline(x), BSpline.design_matrix(x, t, k, extrapolate).toarray()
         )
 
@@ -513,7 +511,7 @@ class TestBSpline:
             with pytest.raises(ValueError):
                 BSpline.design_matrix(x, t, k, extrapolate)
         else:
-            assert_allclose(
+            xp_assert_close(
                 bspline(x),
                 BSpline.design_matrix(x, t, k, extrapolate).toarray()
             )
@@ -533,13 +531,13 @@ class TestBSpline:
             des_matr_csr = BSpline.design_matrix(xc,
                                                  bspl.t,
                                                  k).toarray()
-            assert_allclose(des_matr_csr @ bspl.c, yc, atol=1e-14)
+            xp_assert_close(des_matr_csr @ bspl.c, yc, atol=1e-14)
 
     def test_design_matrix_t_shapes(self):
         # test for minimal possible `t` shape
         t = [1., 1., 1., 2., 3., 4., 4., 4.]
         des_matr = BSpline.design_matrix(2., t, 3).toarray()
-        assert_allclose(des_matr,
+        xp_assert_close(des_matr,
                         [[0.25, 0.58333333, 0.16666667, 0.]],
                         atol=1e-14)
 
@@ -572,9 +570,9 @@ class TestBSpline:
         cb = CubicSpline(x, y, bc_type=bc_type)
         bspl = BSpline.from_power_basis(cb, bc_type=bc_type)
         xx = np.linspace(0, 1, 20)
-        assert_allclose(cb(xx), bspl(xx), atol=1e-15)
+        xp_assert_close(cb(xx), bspl(xx), atol=1e-15)
         bspl_new = make_interp_spline(x, y, bc_type=bc_type)
-        assert_allclose(bspl.c, bspl_new.c, atol=1e-15)
+        xp_assert_close(bspl.c, bspl_new.c, atol=1e-15)
 
     @pytest.mark.parametrize('bc_type', ['natural', 'clamped',
                                          'periodic', 'not-a-knot'])
@@ -607,7 +605,7 @@ class TestBSpline:
         y = np.array([1, 1, 1, 1, 1])
         bspl = BSpline.from_power_basis(CubicSpline(x, y, bc_type='natural'),
                                         bc_type='natural')
-        assert_allclose(bspl.c, [1, 1, 1, 1, 1, 1, 1], atol=1e-15)
+        xp_assert_close(bspl.c, [1.0, 1, 1, 1, 1, 1, 1], atol=1e-15)
 
     def test_read_only(self):
         # BSpline must work on read-only knots and coefficients.
@@ -620,7 +618,7 @@ class TestBSpline:
         xx.setflags(write=False)
 
         b = BSpline(t=t, c=c, k=0)
-        assert_allclose(b(xx), 3)
+        xp_assert_close(b(xx), np.ones_like(xx) * 3.0)
 
     def test_concurrency(self):
         # Check that no segfaults appear with concurrent access to BSpline
@@ -646,13 +644,13 @@ class TestInsert:
         spl_1f = insert(xval, spl)     # FITPACK
         spl_1 = spl.insert_knot(xval)
 
-        assert_allclose(spl_1.t, spl_1f.t, atol=1e-15)
-        assert_allclose(spl_1.c, spl_1f.c[:-spl.k-1], atol=1e-15)
+        xp_assert_close(spl_1.t, spl_1f.t, atol=1e-15)
+        xp_assert_close(spl_1.c, spl_1f.c[:-spl.k-1], atol=1e-15)
 
         # knot insertion preserves values, unless multiplicity >= k+1
         xx = x if xval != x[-1] else x[:-1]
         xx = np.r_[xx, 0.5*(x[1:] + x[:-1])]
-        assert_allclose(spl(xx), spl_1(xx), atol=1e-15)
+        xp_assert_close(spl(xx), spl_1(xx), atol=1e-15)
 
         # ... repeat with ndim > 1
         y1 = np.cos(x)**3
@@ -660,13 +658,13 @@ class TestInsert:
         spl_yy = make_interp_spline(x, np.c_[y, y1], k=3)
         spl_yy1 = spl_yy.insert_knot(xval)
 
-        assert_allclose(spl_yy1.t, spl_1.t, atol=1e-15)
-        assert_allclose(spl_yy1.c, np.c_[spl.insert_knot(xval).c,
+        xp_assert_close(spl_yy1.t, spl_1.t, atol=1e-15)
+        xp_assert_close(spl_yy1.c, np.c_[spl.insert_knot(xval).c,
                                          spl_y1.insert_knot(xval).c], atol=1e-15)
 
         xx = x if xval != x[-1] else x[:-1]
         xx = np.r_[xx, 0.5*(x[1:] + x[:-1])]
-        assert_allclose(spl_yy(xx), spl_yy1(xx), atol=1e-15)
+        xp_assert_close(spl_yy(xx), spl_yy1(xx), atol=1e-15)
 
 
     @pytest.mark.parametrize(
@@ -680,12 +678,12 @@ class TestInsert:
         spl_1f = insert(xval, spl, m=m)
         spl_1 = spl.insert_knot(xval, m)
 
-        assert_allclose(spl_1.t, spl_1f.t, atol=1e-15)
-        assert_allclose(spl_1.c, spl_1f.c[:-spl.k-1], atol=1e-15)
+        xp_assert_close(spl_1.t, spl_1f.t, atol=1e-15)
+        xp_assert_close(spl_1.c, spl_1f.c[:-spl.k-1], atol=1e-15)
 
         xx = x if xval != x[-1] else x[:-1]
         xx = np.r_[xx, 0.5*(x[1:] + x[:-1])]
-        assert_allclose(spl(xx), spl_1(xx), atol=1e-15)
+        xp_assert_close(spl(xx), spl_1(xx), atol=1e-15)
 
     def test_insert_random(self):
         rng = np.random.default_rng(12345)
@@ -699,7 +697,7 @@ class TestInsert:
         spl_1 = spl.insert_knot(xv)
 
         xx = rng.uniform(low=t[k+1], high=t[-k-1], size=33)
-        assert_allclose(spl(xx), spl_1(xx), atol=1e-15)
+        xp_assert_close(spl(xx), spl_1(xx), atol=1e-15)
 
     @pytest.mark.parametrize('xv', [0, 0.1, 2.0, 4.0, 4.5,      # l.h. edge
                                     5.5, 6.0, 6.1, 7.0]         # r.h. edge
@@ -713,11 +711,11 @@ class TestInsert:
         spl_1 = spl.insert_knot(xv)
         tf, cf, k = insert(xv, spl.tck, per=True)
 
-        assert_allclose(spl_1.t, tf, atol=1e-15)
-        assert_allclose(spl_1.c[:-k-1], cf[:-k-1], atol=1e-15)
+        xp_assert_close(spl_1.t, tf, atol=1e-15)
+        xp_assert_close(spl_1.c[:-k-1], cf[:-k-1], atol=1e-15)
 
         xx = np.random.default_rng(1234).uniform(low=0, high=7, size=41)
-        assert_allclose(spl_1(xx), splev(xx, (tf, cf, k)), atol=1e-15)
+        xp_assert_close(spl_1(xx), splev(xx, (tf, cf, k)), atol=1e-15)
 
     @pytest.mark.parametrize('extrapolate', [None, 'periodic'])
     def test_complex(self, extrapolate):
@@ -787,7 +785,7 @@ def test_knots_multiplicity():
         t, c, k = b.tck
         x = np.unique(t)
         x = np.r_[t[0]-0.1, 0.5*(x[1:] + x[:1]), t[-1]+0.1]
-        assert_allclose(splev(x, (t, c, k), der), b(x, der),
+        xp_assert_close(splev(x, (t, c, k), der), b(x, der),
                 atol=atol, rtol=rtol, err_msg=f'der = {der}  k = {b.k}')
 
     # test loop itself
@@ -927,11 +925,11 @@ class TestInterop:
 
         # check that splev works with 1-D array of coefficients
         # for array and scalar `x`
-        assert_allclose(splev(xnew, b),
+        xp_assert_close(splev(xnew, b),
                         b(xnew), atol=1e-15, rtol=1e-15)
-        assert_allclose(splev(xnew, b.tck),
+        xp_assert_close(splev(xnew, b.tck),
                         b(xnew), atol=1e-15, rtol=1e-15)
-        assert_allclose([splev(x, b) for x in xnew],
+        xp_assert_close(np.asarray([splev(x, b) for x in xnew]),
                         b(xnew), atol=1e-15, rtol=1e-15)
 
         # With N-D coefficients, there's a quirck:
@@ -946,7 +944,7 @@ class TestInterop:
         sh = tuple(range(1, b2.c.ndim)) + (0,)   # sh = (1, 2, 0)
         cc = b2.c.transpose(sh)
         tck = (b2.t, cc, b2.k)
-        assert_allclose(splev(xnew, tck),
+        xp_assert_close(np.asarray(splev(xnew, tck)),
                         b2(xnew).transpose(sh), atol=1e-15, rtol=1e-15)
 
     def test_splrep(self):
@@ -954,24 +952,24 @@ class TestInterop:
         # test that "new" splrep is equivalent to _impl.splrep
         tck = splrep(x, y)
         t, c, k = _impl.splrep(x, y)
-        assert_allclose(tck[0], t, atol=1e-15)
-        assert_allclose(tck[1], c, atol=1e-15)
+        xp_assert_close(tck[0], t, atol=1e-15)
+        xp_assert_close(tck[1], c, atol=1e-15)
         assert tck[2] == k
 
         # also cover the `full_output=True` branch
         tck_f, _, _, _ = splrep(x, y, full_output=True)
-        assert_allclose(tck_f[0], t, atol=1e-15)
-        assert_allclose(tck_f[1], c, atol=1e-15)
+        xp_assert_close(tck_f[0], t, atol=1e-15)
+        xp_assert_close(tck_f[1], c, atol=1e-15)
         assert tck_f[2] == k
 
         # test that the result of splrep roundtrips with splev:
         # evaluate the spline on the original `x` points
         yy = splev(x, tck)
-        assert_allclose(y, yy, atol=1e-15)
+        xp_assert_close(y, yy, atol=1e-15)
 
         # ... and also it roundtrips if wrapped in a BSpline
         b = BSpline(*tck)
-        assert_allclose(y, b(x), atol=1e-15)
+        xp_assert_close(y, b(x), atol=1e-15)
 
     def test_splrep_errors(self):
         # test that both "old" and "new" splrep raise for an N-D ``y`` array
@@ -990,19 +988,19 @@ class TestInterop:
             _impl.splrep(x[:3], y[:3])
 
     def test_splprep(self):
-        x = np.arange(15).reshape((3, 5))
+        x = np.arange(15, dtype=np.float64).reshape((3, 5))
         b, u = splprep(x)
         tck, u1 = _impl.splprep(x)
 
         # test the roundtrip with splev for both "old" and "new" output
-        assert_allclose(u, u1, atol=1e-15)
-        assert_allclose(splev(u, b), x, atol=1e-15)
-        assert_allclose(splev(u, tck), x, atol=1e-15)
+        xp_assert_close(u, u1, atol=1e-15)
+        xp_assert_close(np.asarray(splev(u, b)), x, atol=1e-15)
+        xp_assert_close(np.asarray(splev(u, tck)), x, atol=1e-15)
 
         # cover the ``full_output=True`` branch
         (b_f, u_f), _, _, _ = splprep(x, s=0, full_output=True)
-        assert_allclose(u, u_f, atol=1e-15)
-        assert_allclose(splev(u_f, b_f), x, atol=1e-15)
+        xp_assert_close(u, u_f, atol=1e-15)
+        xp_assert_close(np.asarray(splev(u_f, b_f)), x, atol=1e-15)
 
     def test_splprep_errors(self):
         # test that both "old" and "new" code paths raise for x.ndim > 2
@@ -1037,8 +1035,8 @@ class TestInterop:
         b, b2 = self.b, self.b2
         roots = np.array([0.5, 1.5, 2.5, 3.5])*np.pi
         # sproot accepts a BSpline obj w/ 1-D coef array
-        assert_allclose(sproot(b), roots, atol=1e-7, rtol=1e-7)
-        assert_allclose(sproot((b.t, b.c, b.k)), roots, atol=1e-7, rtol=1e-7)
+        xp_assert_close(sproot(b), roots, atol=1e-7, rtol=1e-7)
+        xp_assert_close(sproot((b.t, b.c, b.k)), roots, atol=1e-7, rtol=1e-7)
 
         # ... and deals with trailing dimensions if coef array is N-D
         with assert_raises(ValueError, match="Calling sproot.. with BSpline"):
@@ -1048,14 +1046,14 @@ class TestInterop:
         c2r = b2.c.transpose(1, 2, 0)
         rr = np.asarray(sproot((b2.t, c2r, b2.k), mest=50))
         assert rr.shape == (3, 2, 4)
-        assert_allclose(rr - roots, 0, atol=1e-12)
+        xp_assert_close(rr - roots, np.zeros_like(rr), atol=1e-12)
 
     def test_splint(self):
         # test that splint accepts BSpline objects
         b, b2 = self.b, self.b2
-        assert_allclose(splint(0, 1, b),
+        xp_assert_close(splint(0, 1, b),
                         splint(0, 1, b.tck), atol=1e-14)
-        assert_allclose(splint(0, 1, b),
+        xp_assert_close(splint(0, 1, b),
                         b.integrate(0, 1), atol=1e-14)
 
         # ... and deals with N-D arrays of coefficients
@@ -1066,7 +1064,7 @@ class TestInterop:
         c2r = b2.c.transpose(1, 2, 0)
         integr = np.asarray(splint(0, 1, (b2.t, c2r, b2.k)))
         assert integr.shape == (3, 2)
-        assert_allclose(integr,
+        xp_assert_close(integr,
                         splint(0, 1, b), atol=1e-14)
 
     def test_splder(self):
@@ -1079,8 +1077,8 @@ class TestInterop:
             for n in [1, 2, 3]:
                 bd = splder(b)
                 tck_d = _impl.splder((b.t, b.c, b.k))
-                assert_allclose(bd.t, tck_d[0], atol=1e-15)
-                assert_allclose(bd.c, tck_d[1], atol=1e-15)
+                xp_assert_close(bd.t, tck_d[0], atol=1e-15)
+                xp_assert_close(bd.c, tck_d[1], atol=1e-15)
                 assert bd.k == tck_d[2]
                 assert isinstance(bd, BSpline)
                 assert isinstance(tck_d, tuple)  # back-compat: tck in and out
@@ -1095,8 +1093,8 @@ class TestInterop:
             for n in [1, 2, 3]:
                 bd = splantider(b)
                 tck_d = _impl.splantider((b.t, b.c, b.k))
-                assert_allclose(bd.t, tck_d[0], atol=1e-15)
-                assert_allclose(bd.c, tck_d[1], atol=1e-15)
+                xp_assert_close(bd.t, tck_d[0], atol=1e-15)
+                xp_assert_close(bd.c, tck_d[1], atol=1e-15)
                 assert bd.k == tck_d[2]
                 assert isinstance(bd, BSpline)
                 assert isinstance(tck_d, tuple)  # back-compat: tck in and out
@@ -1108,7 +1106,7 @@ class TestInterop:
         tn = 0.5*(b.t[j] + b.t[j+1])
 
         bn, tck_n = insert(tn, b), insert(tn, (b.t, b.c, b.k))
-        assert_allclose(splev(xx, bn),
+        xp_assert_close(splev(xx, bn),
                         splev(xx, tck_n), atol=1e-15)
         assert isinstance(bn, BSpline)
         assert isinstance(tck_n, tuple)   # back-compat: tck in, tck out
@@ -1122,7 +1120,7 @@ class TestInterop:
         bn2 = insert(tn, b2)
 
         # need a transpose for comparing the results, cf test_splev
-        assert_allclose(np.asarray(splev(xx, tck_n2)).transpose(2, 0, 1),
+        xp_assert_close(np.asarray(splev(xx, tck_n2)).transpose(2, 0, 1),
                         bn2(xx), atol=1e-15)
         assert isinstance(bn2, BSpline)
         assert isinstance(tck_n2, tuple)   # back-compat: tck in, tck out
@@ -1141,15 +1139,15 @@ class TestInterp:
 
     def test_order_0(self):
         b = make_interp_spline(self.xx, self.yy, k=0)
-        assert_allclose(b(self.xx), self.yy, atol=1e-14, rtol=1e-14)
+        xp_assert_close(b(self.xx), self.yy, atol=1e-14, rtol=1e-14)
         b = make_interp_spline(self.xx, self.yy, k=0, axis=-1)
-        assert_allclose(b(self.xx), self.yy, atol=1e-14, rtol=1e-14)
+        xp_assert_close(b(self.xx), self.yy, atol=1e-14, rtol=1e-14)
 
     def test_linear(self):
         b = make_interp_spline(self.xx, self.yy, k=1)
-        assert_allclose(b(self.xx), self.yy, atol=1e-14, rtol=1e-14)
+        xp_assert_close(b(self.xx), self.yy, atol=1e-14, rtol=1e-14)
         b = make_interp_spline(self.xx, self.yy, k=1, axis=-1)
-        assert_allclose(b(self.xx), self.yy, atol=1e-14, rtol=1e-14)
+        xp_assert_close(b(self.xx), self.yy, atol=1e-14, rtol=1e-14)
 
     @pytest.mark.parametrize('k', [0, 1, 2, 3])
     def test_incompatible_x_y(self, k):
@@ -1177,21 +1175,21 @@ class TestInterp:
     def test_not_a_knot(self):
         for k in [3, 5]:
             b = make_interp_spline(self.xx, self.yy, k)
-            assert_allclose(b(self.xx), self.yy, atol=1e-14, rtol=1e-14)
+            xp_assert_close(b(self.xx), self.yy, atol=1e-14, rtol=1e-14)
 
     def test_periodic(self):
         # k = 5 here for more derivatives
         b = make_interp_spline(self.xx, self.yy, k=5, bc_type='periodic')
-        assert_allclose(b(self.xx), self.yy, atol=1e-14, rtol=1e-14)
+        xp_assert_close(b(self.xx), self.yy, atol=1e-14, rtol=1e-14)
         # in periodic case it is expected equality of k-1 first
         # derivatives at the boundaries
         for i in range(1, 5):
-            assert_allclose(b(self.xx[0], nu=i), b(self.xx[-1], nu=i), atol=1e-11)
+            xp_assert_close(b(self.xx[0], nu=i), b(self.xx[-1], nu=i), atol=1e-11)
         # tests for axis=-1
         b = make_interp_spline(self.xx, self.yy, k=5, bc_type='periodic', axis=-1)
-        assert_allclose(b(self.xx), self.yy, atol=1e-14, rtol=1e-14)
+        xp_assert_close(b(self.xx), self.yy, atol=1e-14, rtol=1e-14)
         for i in range(1, 5):
-            assert_allclose(b(self.xx[0], nu=i), b(self.xx[-1], nu=i), atol=1e-11)
+            xp_assert_close(b(self.xx[0], nu=i), b(self.xx[-1], nu=i), atol=1e-11)
 
     @pytest.mark.parametrize('k', [2, 3, 4, 5, 6, 7])
     def test_periodic_random(self, k):
@@ -1202,7 +1200,7 @@ class TestInterp:
         y = np.random.random_sample(n) * 100
         y[0] = y[-1]
         b = make_interp_spline(x, y, k=k, bc_type='periodic')
-        assert_allclose(b(x), y, atol=1e-14)
+        xp_assert_close(b(x), y, atol=1e-14)
 
     def test_periodic_axis(self):
         n = self.xx.shape[0]
@@ -1216,8 +1214,8 @@ class TestInterp:
         y[1] = np.cos(x)
         b = make_interp_spline(x, y, k=5, bc_type='periodic', axis=1)
         for i in range(n):
-            assert_allclose(b(x[i]), y[:, i], atol=1e-14)
-        assert_allclose(b(x[0]), b(x[-1]), atol=1e-14)
+            xp_assert_close(b(x[i]), y[:, i], atol=1e-14)
+        xp_assert_close(b(x[0]), b(x[-1]), atol=1e-14)
 
     def test_periodic_points_exception(self):
         # first and last points should match when periodic case expected
@@ -1247,18 +1245,18 @@ class TestInterp:
         b = make_interp_spline(self.xx, self.yy, k=k, bc_type='periodic')
         tck = splrep(self.xx, self.yy, per=True, k=k)
         spl = splev(self.xx, tck)
-        assert_allclose(spl, b(self.xx), atol=1e-14)
+        xp_assert_close(spl, b(self.xx), atol=1e-14)
 
         # comparison derivatives of periodic b-spline with splev
         for i in range(1, k):
             spl = splev(self.xx, tck, der=i)
-            assert_allclose(spl, b(self.xx, nu=i), atol=1e-10)
+            xp_assert_close(spl, b(self.xx, nu=i), atol=1e-10)
 
     def test_periodic_cubic(self):
         # comparison values of cubic periodic b-spline with CubicSpline
         b = make_interp_spline(self.xx, self.yy, k=3, bc_type='periodic')
         cub = CubicSpline(self.xx, self.yy, bc_type='periodic')
-        assert_allclose(b(self.xx), cub(self.xx), atol=1e-14)
+        xp_assert_close(b(self.xx), cub(self.xx), atol=1e-14)
 
         # edge case: Cubic interpolation on 3 points
         n = 3
@@ -1267,7 +1265,7 @@ class TestInterp:
         y[0] = y[-1]
         b = make_interp_spline(x, y, k=3, bc_type='periodic')
         cub = CubicSpline(x, y, bc_type='periodic')
-        assert_allclose(b(x), cub(x), atol=1e-14)
+        xp_assert_close(b(x), cub(x), atol=1e-14)
 
     def test_periodic_full_matrix(self):
         # comparison values of cubic periodic b-spline with
@@ -1277,20 +1275,20 @@ class TestInterp:
         t = _periodic_knots(self.xx, k)
         c = _make_interp_per_full_matr(self.xx, self.yy, t, k)
         b1 = np.vectorize(lambda x: _naive_eval(x, t, c, k))
-        assert_allclose(b(self.xx), b1(self.xx), atol=1e-14)
+        xp_assert_close(b(self.xx), b1(self.xx), atol=1e-14)
 
     def test_quadratic_deriv(self):
         der = [(1, 8.)]  # order, value: f'(x) = 8.
 
         # derivative at right-hand edge
         b = make_interp_spline(self.xx, self.yy, k=2, bc_type=(None, der))
-        assert_allclose(b(self.xx), self.yy, atol=1e-14, rtol=1e-14)
-        assert_allclose(b(self.xx[-1], 1), der[0][1], atol=1e-14, rtol=1e-14)
+        xp_assert_close(b(self.xx), self.yy, atol=1e-14, rtol=1e-14)
+        xp_assert_close(b(self.xx[-1], 1), der[0][1], atol=1e-14, rtol=1e-14)
 
         # derivative at left-hand edge
         b = make_interp_spline(self.xx, self.yy, k=2, bc_type=(der, None))
-        assert_allclose(b(self.xx), self.yy, atol=1e-14, rtol=1e-14)
-        assert_allclose(b(self.xx[0], 1), der[0][1], atol=1e-14, rtol=1e-14)
+        xp_assert_close(b(self.xx), self.yy, atol=1e-14, rtol=1e-14)
+        xp_assert_close(b(self.xx[0], 1), der[0][1], atol=1e-14, rtol=1e-14)
 
     def test_cubic_deriv(self):
         k = 3
@@ -1298,14 +1296,14 @@ class TestInterp:
         # first derivatives at left & right edges:
         der_l, der_r = [(1, 3.)], [(1, 4.)]
         b = make_interp_spline(self.xx, self.yy, k, bc_type=(der_l, der_r))
-        assert_allclose(b(self.xx), self.yy, atol=1e-14, rtol=1e-14)
-        assert_allclose([b(self.xx[0], 1), b(self.xx[-1], 1)],
-                        [der_l[0][1], der_r[0][1]], atol=1e-14, rtol=1e-14)
+        xp_assert_close(b(self.xx), self.yy, atol=1e-14, rtol=1e-14)
+        xp_assert_close(np.asarray([b(self.xx[0], 1), b(self.xx[-1], 1)]),
+                        np.asarray([der_l[0][1], der_r[0][1]]), atol=1e-14, rtol=1e-14)
 
         # 'natural' cubic spline, zero out 2nd derivatives at the boundaries
         der_l, der_r = [(2, 0)], [(2, 0)]
         b = make_interp_spline(self.xx, self.yy, k, bc_type=(der_l, der_r))
-        assert_allclose(b(self.xx), self.yy, atol=1e-14, rtol=1e-14)
+        xp_assert_close(b(self.xx), self.yy, atol=1e-14, rtol=1e-14)
 
     def test_quintic_derivs(self):
         k, n = 5, 7
@@ -1314,11 +1312,11 @@ class TestInterp:
         der_l = [(1, -12.), (2, 1)]
         der_r = [(1, 8.), (2, 3.)]
         b = make_interp_spline(x, y, k=k, bc_type=(der_l, der_r))
-        assert_allclose(b(x), y, atol=1e-14, rtol=1e-14)
-        assert_allclose([b(x[0], 1), b(x[0], 2)],
-                        [val for (nu, val) in der_l])
-        assert_allclose([b(x[-1], 1), b(x[-1], 2)],
-                        [val for (nu, val) in der_r])
+        xp_assert_close(b(x), y, atol=1e-14, rtol=1e-14)
+        xp_assert_close(np.asarray([b(x[0], 1), b(x[0], 2)]),
+                        np.asarray([val for (nu, val) in der_l]))
+        xp_assert_close(np.asarray([b(x[-1], 1), b(x[-1], 2)]),
+                        np.asarray([val for (nu, val) in der_r]))
 
     @pytest.mark.xfail(reason='unstable')
     def test_cubic_deriv_unstable(self):
@@ -1333,7 +1331,7 @@ class TestInterp:
 
         der_l = [(1, 3.), (2, 4.)]
         b = make_interp_spline(self.xx, self.yy, k, t, bc_type=(der_l, None))
-        assert_allclose(b(self.xx), self.yy, atol=1e-14, rtol=1e-14)
+        xp_assert_close(b(self.xx), self.yy, atol=1e-14, rtol=1e-14)
 
     def test_knots_not_data_sites(self):
         # Knots need not coincide with the data sites.
@@ -1346,9 +1344,9 @@ class TestInterp:
         b = make_interp_spline(self.xx, self.yy, k, t,
                                bc_type=([(2, 0)], [(2, 0)]))
 
-        assert_allclose(b(self.xx), self.yy, atol=1e-14, rtol=1e-14)
-        assert_allclose([b(self.xx[0], 2), b(self.xx[-1], 2)], [0., 0.],
-                atol=1e-14)
+        xp_assert_close(b(self.xx), self.yy, atol=1e-14, rtol=1e-14)
+        xp_assert_close(b(self.xx[0], 2), 0.0, atol=1e-14)
+        xp_assert_close(b(self.xx[-1], 2), 0., atol=1e-14)
 
     def test_minimum_points_and_deriv(self):
         # interpolation of f(x) = x**3 between 0 and 1. f'(x) = 3 * xx**2 and
@@ -1360,7 +1358,7 @@ class TestInterp:
 
         xx = np.linspace(0., 1.)
         yy = xx**3
-        assert_allclose(b(xx), yy, atol=1e-14, rtol=1e-14)
+        xp_assert_close(b(xx), yy, atol=1e-14, rtol=1e-14)
 
     def test_deriv_spec(self):
         # If one of the derivatives is omitted, the spline definition is
@@ -1406,14 +1404,14 @@ class TestInterp:
         # first derivatives at left & right edges:
         der_l, der_r = [(1, 3.j)], [(1, 4.+2.j)]
         b = make_interp_spline(xx, yy, k, bc_type=(der_l, der_r))
-        assert_allclose(b(xx), yy, atol=1e-14, rtol=1e-14)
-        assert_allclose([b(xx[0], 1), b(xx[-1], 1)],
-                        [der_l[0][1], der_r[0][1]], atol=1e-14, rtol=1e-14)
+        xp_assert_close(b(xx), yy, atol=1e-14, rtol=1e-14)
+        xp_assert_close(b(xx[0], 1), der_l[0][1], atol=1e-14, rtol=1e-14)
+        xp_assert_close(b(xx[-1], 1), der_r[0][1], atol=1e-14, rtol=1e-14)
 
         # also test zero and first order
         for k in (0, 1):
             b = make_interp_spline(xx, yy, k=k)
-            assert_allclose(b(xx), yy, atol=1e-14, rtol=1e-14)
+            xp_assert_close(b(xx), yy, atol=1e-14, rtol=1e-14)
 
     def test_int_xy(self):
         x = np.arange(10).astype(int)
@@ -1457,9 +1455,9 @@ class TestInterp:
         der_r = [(1, [3., 4.])]
 
         b = make_interp_spline(self.xx, yy, k=3, bc_type=(der_l, der_r))
-        assert_allclose(b(self.xx), yy, atol=1e-14, rtol=1e-14)
-        assert_allclose(b(self.xx[0], 1), der_l[0][1], atol=1e-14, rtol=1e-14)
-        assert_allclose(b(self.xx[-1], 1), der_r[0][1], atol=1e-14, rtol=1e-14)
+        xp_assert_close(b(self.xx), yy, atol=1e-14, rtol=1e-14)
+        xp_assert_close(b(self.xx[0], 1), der_l[0][1], atol=1e-14, rtol=1e-14)
+        xp_assert_close(b(self.xx[-1], 1), der_r[0][1], atol=1e-14, rtol=1e-14)
 
     def test_shapes(self):
         np.random.seed(1234)
@@ -1482,24 +1480,24 @@ class TestInterp:
         # a single string is duplicated
         b1 = make_interp_spline(self.xx, yy, k=3, bc_type='natural')
         b2 = make_interp_spline(self.xx, yy, k=3, bc_type=([(2, 0)], [(2, 0)]))
-        assert_allclose(b1.c, b2.c, atol=1e-15)
+        xp_assert_close(b1.c, b2.c, atol=1e-15)
 
         # two strings are handled
         b1 = make_interp_spline(self.xx, yy, k=3,
                                 bc_type=('natural', 'clamped'))
         b2 = make_interp_spline(self.xx, yy, k=3,
                                 bc_type=([(2, 0)], [(1, 0)]))
-        assert_allclose(b1.c, b2.c, atol=1e-15)
+        xp_assert_close(b1.c, b2.c, atol=1e-15)
 
         # one-sided BCs are OK
         b1 = make_interp_spline(self.xx, yy, k=2, bc_type=(None, 'clamped'))
         b2 = make_interp_spline(self.xx, yy, k=2, bc_type=(None, [(1, 0.0)]))
-        assert_allclose(b1.c, b2.c, atol=1e-15)
+        xp_assert_close(b1.c, b2.c, atol=1e-15)
 
         # 'not-a-knot' is equivalent to None
         b1 = make_interp_spline(self.xx, yy, k=3, bc_type='not-a-knot')
         b2 = make_interp_spline(self.xx, yy, k=3, bc_type=None)
-        assert_allclose(b1.c, b2.c, atol=1e-15)
+        xp_assert_close(b1.c, b2.c, atol=1e-15)
 
         # unknown strings do not pass
         with assert_raises(ValueError):
@@ -1512,7 +1510,7 @@ class TestInterp:
         b2 = make_interp_spline(self.xx, yy, k=3, bc_type=(der_l, der_r))
         b1 = make_interp_spline(self.xx, yy, k=3,
                                 bc_type=('clamped', 'natural'))
-        assert_allclose(b1.c, b2.c, atol=1e-15)
+        xp_assert_close(b1.c, b2.c, atol=1e-15)
 
         # ... and for N-D values:
         np.random.seed(1234)
@@ -1525,7 +1523,7 @@ class TestInterp:
         d_r = [(1, np.zeros((5, 6, 7)))]
         b1 = make_interp_spline(x, y, k, bc_type=(d_l, d_r))
         b2 = make_interp_spline(x, y, k, bc_type='clamped')
-        assert_allclose(b1.c, b2.c, atol=1e-15)
+        xp_assert_close(b1.c, b2.c, atol=1e-15)
 
     def test_full_matrix(self):
         np.random.seed(1234)
@@ -1536,7 +1534,7 @@ class TestInterp:
 
         b = make_interp_spline(x, y, k, t)
         cf = make_interp_full_matr(x, y, t, k)
-        assert_allclose(b.c, cf, atol=1e-14, rtol=1e-14)
+        xp_assert_close(b.c, cf, atol=1e-14, rtol=1e-14)
 
     def test_woodbury(self):
         '''
@@ -1563,7 +1561,7 @@ class TestInterp:
                 else:
                     d[i, j:] = np.diagonal(a, offset=j)
             b = np.random.random(n)
-            assert_allclose(_woodbury_algorithm(d, ur, ll, b, k),
+            xp_assert_close(_woodbury_algorithm(d, ur, ll, b, k),
                             np.linalg.solve(a, b), atol=1e-14)
 
 
@@ -1641,13 +1639,13 @@ class TestLSQ:
 
         b = make_lsq_spline(x, y, t, k)
 
-        assert_allclose(b.c, c0)
+        xp_assert_close(b.c, c0)
         assert b.c.shape == (t.size - k - 1,)
 
         # also check against numpy.lstsq
         aa, yy = AY
         c1, _, _, _ = np.linalg.lstsq(aa, y, rcond=-1)
-        assert_allclose(b.c, c1)
+        xp_assert_close(b.c, c1)
 
     def test_weights(self):
         # weights = 1 is same as None
@@ -1657,8 +1655,8 @@ class TestLSQ:
         b = make_lsq_spline(x, y, t, k)
         b_w = make_lsq_spline(x, y, t, k, w=w)
 
-        assert_allclose(b.t, b_w.t, atol=1e-14)
-        assert_allclose(b.c, b_w.c, atol=1e-14)
+        xp_assert_close(b.t, b_w.t, atol=1e-14)
+        xp_assert_close(b.c, b_w.c, atol=1e-14)
         assert b.k == b_w.k
 
     def test_multiple_rhs(self):
@@ -1688,7 +1686,7 @@ class TestLSQ:
         b_re = make_lsq_spline(x, yc.real, t, k)
         b_im = make_lsq_spline(x, yc.imag, t, k)
 
-        assert_allclose(b(x), b_re(x) + 1.j*b_im(x), atol=1e-15, rtol=1e-15)
+        xp_assert_close(b(x), b_re(x) + 1.j*b_im(x), atol=1e-15, rtol=1e-15)
 
     def test_complex_2(self):
         # test complex-valued y with y.ndim > 1
@@ -1839,7 +1837,7 @@ class TestSmoothingSpline:
         # such tolerance is explained by the fact that the spline is built
         # using an iterative algorithm for minimizing the GCV criteria. These
         # algorithms may vary, so the tolerance should be rather low.
-        assert_allclose(y_compr, y_GCVSPL, atol=1e-4, rtol=1e-4)
+        xp_assert_close(y_compr, y_GCVSPL, atol=1e-4, rtol=1e-4)
 
     def test_non_regularized_case(self):
         """
@@ -1856,7 +1854,7 @@ class TestSmoothingSpline:
         spline_interp = make_interp_spline(x, y, 3, bc_type='natural')
 
         grid = np.linspace(x[0], x[-1], 2 * n)
-        assert_allclose(spline_GCV(grid),
+        xp_assert_close(spline_GCV(grid),
                         spline_interp(grid),
                         atol=1e-15)
 
@@ -1997,7 +1995,7 @@ class TestNdBSpline:
 
         xi = rng.uniform(size=21)
         # NdBSpline expects xi.shape=(npts, ndim)
-        assert_allclose(nb(xi[:, None]),
+        xp_assert_close(nb(xi[:, None]),
                         b(xi), atol=1e-14)
         assert nb(xi[:, None]).shape == (xi.shape[0], c.shape[1])
 
@@ -2036,14 +2034,15 @@ class TestNdBSpline:
         target = [x**3 * (y**3 + 2*y) for (x, y) in xi]
 
         # sanity check: bspline2 gives the product as constructed
-        assert_allclose([bspline2(xy, t2, c2, k) for xy in xi],
-                        target,
+        xp_assert_close(np.asarray([bspline2(xy, t2, c2, k) for xy in xi]),
+                        np.asarray(target),
+                        check_shape=False,
                         atol=1e-14)
 
         # check evaluation on a 2D array: the 1D array of 2D points
         bspl2 = NdBSpline(t2, c2, k=3)
         assert bspl2(xi).shape == (len(xi), )
-        assert_allclose(bspl2(xi),
+        xp_assert_close(bspl2(xi),
                         target, atol=1e-14)
 
         # now check on a multidim xi
@@ -2054,7 +2053,7 @@ class TestNdBSpline:
 
         # also check the values
         x, y = xi.reshape((-1, 2)).T
-        assert_allclose(result.ravel(),
+        xp_assert_close(result.ravel(),
                         x**3 * (y**3 + 2*y), atol=1e-14)
 
     def test_2D_separable_2(self):
@@ -2071,14 +2070,15 @@ class TestNdBSpline:
         result = bspl2_4(xy)
         val_single = NdBSpline(t2, c2, k)(xy)
         assert result.shape == (4,)
-        assert_allclose(result,
+        xp_assert_close(result,
                         [val_single, ]*4, atol=1e-14)
 
         # now try the array xi : the output.shape is (3, 4) where 3
         # is the number of points in xi and 4 is the trailing dimension of c
         assert bspl2_4(xi).shape == np.shape(xi)[:-1] + bspl2_4.c.shape[ndim:]
-        assert_allclose(bspl2_4(xi) - np.asarray(target)[:, None],
-                        0, atol=5e-14)
+        xp_assert_close(bspl2_4(xi),  np.asarray(target)[:, None],
+                        check_shape=False,
+                        atol=5e-14)
 
         # two trailing dimensions
         c2_22 = c2_4.reshape((6, 6, 2, 2))
@@ -2086,7 +2086,7 @@ class TestNdBSpline:
 
         result = bspl2_22(xy)
         assert result.shape == (2, 2)
-        assert_allclose(result,
+        xp_assert_close(result,
                         [[val_single, val_single],
                          [val_single, val_single]], atol=1e-14)
 
@@ -2094,8 +2094,9 @@ class TestNdBSpline:
         # for 3 points in xi and c trailing dimensions being (2, 2)
         assert (bspl2_22(xi).shape ==
                 np.shape(xi)[:-1] + bspl2_22.c.shape[ndim:])
-        assert_allclose(bspl2_22(xi) - np.asarray(target)[:, None, None],
-                        0, atol=5e-14)
+        xp_assert_close(bspl2_22(xi), np.asarray(target)[:, None, None],
+                        check_shape=False,
+                        atol=5e-14)
 
 
     def test_2D_separable_2_complex(self):
@@ -2127,12 +2128,12 @@ class TestNdBSpline:
         spl = NdBSpline((tx, ty), c, k=k)
 
         xi = (1., 1.)
-        assert_allclose(spl(xi),
+        xp_assert_close(spl(xi),
                         bspline2(xi, (tx, ty), c, k), atol=1e-14)
 
         xi = np.c_[[1, 1.5, 2],
                    [1.1, 1.6, 2.1]]
-        assert_allclose(spl(xi),
+        xp_assert_close(spl(xi),
                         [bspline2(xy, (tx, ty), c, k) for xy in xi],
                         atol=1e-14)
 
@@ -2142,7 +2143,7 @@ class TestNdBSpline:
         target = [x**3 * (y**2 + 2*y) for (x, y) in xi]
         bspl2 = NdBSpline(t2, c2, k=(kx, ky))
         assert bspl2(xi).shape == (len(xi), )
-        assert_allclose(bspl2(xi),
+        xp_assert_close(bspl2(xi),
                         target, atol=1e-14)
 
     def test_2D_derivative(self):
@@ -2151,15 +2152,15 @@ class TestNdBSpline:
         bspl2 = NdBSpline(t2, c2, k=(kx, ky))
 
         der = bspl2(xi, nu=(1, 0))
-        assert_allclose(der,
+        xp_assert_close(der,
                         [3*x**2 * (y**2 + 2*y) for x, y in xi], atol=1e-14)
 
         der = bspl2(xi, nu=(1, 1))
-        assert_allclose(der,
+        xp_assert_close(der,
                         [3*x**2 * (2*y + 2) for x, y in xi], atol=1e-14)
 
         der = bspl2(xi, nu=(0, 0))
-        assert_allclose(der,
+        xp_assert_close(der,
                         [x**3 * (y**2 + 2*y) for x, y in xi], atol=1e-14)
 
         with assert_raises(ValueError):
@@ -2183,7 +2184,7 @@ class TestNdBSpline:
         bspl2 = NdBSpline((tx, ty), c, k=(kx, ky))
         bspl2_0 = NdBSpline0((tx, ty), c, k=(kx, ky))
 
-        assert_allclose(bspl2(xi),
+        xp_assert_close(bspl2(xi),
                         [bspl2_0(xp) for xp in xi], atol=1e-14)
 
     def test_tx_neq_ty(self):
@@ -2203,8 +2204,8 @@ class TestNdBSpline:
         bxi = bspl(xi)
 
         assert not np.isnan(bxi).any()
-        assert_allclose(bxi, rgi(xi), atol=1e-14)
-        assert_allclose(bxi.reshape(values.shape), values, atol=1e-14)
+        xp_assert_close(bxi, rgi(xi), atol=1e-14)
+        xp_assert_close(bxi.reshape(values.shape), values, atol=1e-14)
 
     def make_3d_case(self):
         # make a 3D separable spline
@@ -2236,7 +2237,7 @@ class TestNdBSpline:
         xi = [_ for _ in zip(x, y, z)]
         result = bspl3(xi)
         assert result.shape == (11,)
-        assert_allclose(result, target, atol=1e-14)
+        xp_assert_close(result, target, atol=1e-14)
 
     def test_3D_derivative(self):
         t3, c3, k = self.make_3d_case()
@@ -2245,19 +2246,19 @@ class TestNdBSpline:
         x, y, z = rng.uniform(size=(3, 11)) * 5
         xi = [_ for _ in zip(x, y, z)]
 
-        assert_allclose(bspl3(xi, nu=(1, 0, 0)),
+        xp_assert_close(bspl3(xi, nu=(1, 0, 0)),
                         3*x**2 * (y**3 + 2*y) * (z**3 + 3*z + 1), atol=1e-14)
 
-        assert_allclose(bspl3(xi, nu=(2, 0, 0)),
+        xp_assert_close(bspl3(xi, nu=(2, 0, 0)),
                         6*x * (y**3 + 2*y) * (z**3 + 3*z + 1), atol=1e-14)
 
-        assert_allclose(bspl3(xi, nu=(2, 1, 0)),
+        xp_assert_close(bspl3(xi, nu=(2, 1, 0)),
                         6*x * (3*y**2 + 2) * (z**3 + 3*z + 1), atol=1e-14)
 
-        assert_allclose(bspl3(xi, nu=(2, 1, 3)),
+        xp_assert_close(bspl3(xi, nu=(2, 1, 3)),
                         6*x * (3*y**2 + 2) * (6), atol=1e-14)
 
-        assert_allclose(bspl3(xi, nu=(2, 1, 4)),
+        xp_assert_close(bspl3(xi, nu=(2, 1, 4)),
                         np.zeros(len(xi)), atol=1e-14)
 
     def test_3D_random(self):
@@ -2272,12 +2273,12 @@ class TestNdBSpline:
         spl_0 = NdBSpline0((tx, ty, tz), c, k=k)
 
         xi = (1., 1., 1)
-        assert_allclose(spl(xi), spl_0(xi), atol=1e-14)
+        xp_assert_close(spl(xi), spl_0(xi), atol=1e-14)
 
         xi = np.c_[[1, 1.5, 2],
                    [1.1, 1.6, 2.1],
                    [0.9, 1.4, 1.9]]
-        assert_allclose(spl(xi), [spl_0(xp) for xp in xi], atol=1e-14)
+        xp_assert_close(spl(xi), [spl_0(xp) for xp in xi], atol=1e-14)
 
     def test_3D_random_complex(self):
         rng = np.random.default_rng(12345)
@@ -2295,7 +2296,7 @@ class TestNdBSpline:
         xi = np.c_[[1, 1.5, 2],
                    [1.1, 1.6, 2.1],
                    [0.9, 1.4, 1.9]]
-        assert_allclose(spl(xi),
+        xp_assert_close(spl(xi),
                         spl_re(xi) + 1j*spl_im(xi), atol=1e-14)
 
     @pytest.mark.parametrize('cls_extrap', [None, True])
@@ -2312,7 +2313,7 @@ class TestNdBSpline:
         target = x**3 * (y**3 + 2*y) * (z**3 + 3*z + 1)
 
         result = bspl3(xi, extrapolate=call_extrap)
-        assert_allclose(result, target, atol=1e-14)
+        xp_assert_close(result, target, atol=1e-14)
 
     @pytest.mark.parametrize('extrap', [(False, True), (True, None)])
     def test_extrapolate_3D_separable_2(self, extrap):
@@ -2329,7 +2330,7 @@ class TestNdBSpline:
         target = x**3 * (y**3 + 2*y) * (z**3 + 3*z + 1)
 
         result = bspl3(xi, extrapolate=call_extrap)
-        assert_allclose(result, target, atol=1e-14)
+        xp_assert_close(result, target, atol=1e-14)
 
     def test_extrapolate_false_3D_separable(self):
         # test that extrapolate=False produces nans for out-of-bounds values
@@ -2345,7 +2346,7 @@ class TestNdBSpline:
         result = bspl3(xi, extrapolate=False)
         assert np.isnan(result[0])
         assert np.isnan(result[-1])
-        assert_allclose(result[1:-1], target[1:-1], atol=1e-14)
+        xp_assert_close(result[1:-1], target[1:-1], atol=1e-14)
 
     def test_x_nan_3D(self):
         # test that spline(nan) is nan
@@ -2363,7 +2364,7 @@ class TestNdBSpline:
 
         result = bspl3(xi)
         assert np.isnan(result[mask]).all()
-        assert_allclose(result, target, atol=1e-14)
+        xp_assert_close(result, target, atol=1e-14)
 
     def test_non_c_contiguous(self):
         # check that non C-contiguous inputs are OK
@@ -2387,7 +2388,7 @@ class TestNdBSpline:
         bspl2 = NdBSpline((tx[::2], ty[::2]), c, k=(kx, ky))
         bspl2_0 = NdBSpline0((tx[::2], ty[::2]), c, k=(kx, ky))
 
-        assert_allclose(bspl2(xi),
+        xp_assert_close(bspl2(xi),
                         [bspl2_0(xp) for xp in xi], atol=1e-14)
 
     def test_readonly(self):
@@ -2409,7 +2410,7 @@ class TestNdBSpline:
         dm = NdBSpline(t3, c3, k).design_matrix(xi, t3, k)
         dm1 = NdBSpline.design_matrix(xi, t3, [k, k, k])
         assert dm.shape[0] == xi.shape[0]
-        assert_allclose(dm.todense(), dm1.todense(), atol=1e-16)
+        xp_assert_close(dm.todense(), dm1.todense(), atol=1e-16)
 
         with assert_raises(ValueError):
             NdBSpline.design_matrix([1, 2, 3], t3, [k]*3)
@@ -2444,18 +2445,18 @@ class TestMakeND:
         xi = [(a, b) for a, b in itertools.product(x, y)]
 
         bspl = make_ndbspl((x, y), values, k=1)
-        assert_allclose(bspl(xi), values.ravel(), atol=1e-15)
+        xp_assert_close(bspl(xi), values.ravel(), atol=1e-15)
 
         # test the coefficients vs outer product of 1D coefficients
         spl_x = make_interp_spline(x, x**3, k=1)
         spl_y = make_interp_spline(y, y**3 + 2*y, k=1)
         cc = spl_x.c[:, None] * spl_y.c[None, :]
-        assert_allclose(cc, bspl.c, atol=1e-11, rtol=0)
+        xp_assert_close(cc, bspl.c, atol=1e-11, rtol=0)
 
         # test against RGI
         from scipy.interpolate import RegularGridInterpolator as RGI
         rgi = RGI((x, y), values, method='linear')
-        assert_allclose(rgi(xi), bspl(xi), atol=1e-14)
+        xp_assert_close(rgi(xi), bspl(xi), atol=1e-14)
 
     def test_2D_separable_trailing_dims(self):
         # test `c` with trailing dimensions, i.e. c.ndim > ndim
@@ -2469,9 +2470,9 @@ class TestMakeND:
         bspl = make_ndbspl((x, y), values4, k=3, solver=ssl.spsolve)
 
         result = bspl(xi)
-        target = np.dstack((values, values, values, values))
+        target = np.dstack((values, values, values, values)).astype(float)
         assert result.shape == (36, 4)
-        assert_allclose(result.reshape(6, 6, 4),
+        xp_assert_close(result.reshape(6, 6, 4),
                         target, atol=1e-14)
 
         # now two trailing dimensions
@@ -2480,7 +2481,7 @@ class TestMakeND:
 
         result = bspl(xi)
         assert result.shape == (36, 2, 2)
-        assert_allclose(result.reshape(6, 6, 2, 2),
+        xp_assert_close(result.reshape(6, 6, 2, 2),
                         target.reshape((6, 6, 2, 2)), atol=1e-14)
 
     @pytest.mark.parametrize('k', [(3, 3), (1, 1), (3, 1), (1, 3), (3, 5)])
@@ -2492,7 +2493,7 @@ class TestMakeND:
 
         values = (x**3)[:, None] * (y**2 + 2*y)[None, :]
         bspl = make_ndbspl((x, y), values, k=k, solver=ssl.spsolve)
-        assert_allclose(bspl(xi), values.ravel(), atol=1e-15)
+        xp_assert_close(bspl(xi), values.ravel(), atol=1e-15)
 
     def _get_sample_2d_data(self):
         # from test_rgi.py::TestIntepN
@@ -2518,7 +2519,7 @@ class TestMakeND:
         xi = np.array([[1, 2.3, 5.3, 0.5, 3.3, 1.2, 3],
                        [1, 3.3, 1.2, 4.0, 5.0, 1.0, 3]]).T
 
-        assert_allclose(bspl(xi), rgi(xi), atol=1e-14)
+        xp_assert_close(bspl(xi), rgi(xi), atol=1e-14)
 
     def test_2D_vs_RGI_cubic(self):
         x, y, z = self._get_sample_2d_data()
@@ -2528,7 +2529,7 @@ class TestMakeND:
         xi = np.array([[1, 2.3, 5.3, 0.5, 3.3, 1.2, 3],
                        [1, 3.3, 1.2, 4.0, 5.0, 1.0, 3]]).T
 
-        assert_allclose(bspl(xi), rgi(xi), atol=1e-14)
+        xp_assert_close(bspl(xi), rgi(xi), atol=1e-14)
 
     @pytest.mark.parametrize('solver', [ssl.gmres, ssl.gcrotmk])
     def test_2D_vs_RGI_cubic_iterative(self, solver):
@@ -2543,7 +2544,7 @@ class TestMakeND:
         xi = np.array([[1, 2.3, 5.3, 0.5, 3.3, 1.2, 3],
                        [1, 3.3, 1.2, 4.0, 5.0, 1.0, 3]]).T
 
-        assert_allclose(bspl(xi), rgi(xi), atol=1e-14)
+        xp_assert_close(bspl(xi), rgi(xi), atol=1e-14, rtol=1e-7)
 
     def test_2D_vs_RGI_quintic(self):
         x, y, z = self._get_sample_2d_data()
@@ -2553,7 +2554,7 @@ class TestMakeND:
         xi = np.array([[1, 2.3, 5.3, 0.5, 3.3, 1.2, 3],
                        [1, 3.3, 1.2, 4.0, 5.0, 1.0, 3]]).T
 
-        assert_allclose(bspl(xi), rgi(xi), atol=1e-14)
+        xp_assert_close(bspl(xi), rgi(xi), atol=1e-14)
 
     @pytest.mark.parametrize(
         'k, meth', [(1, 'linear'), (3, 'cubic_legacy'), (5, 'quintic_legacy')]
@@ -2569,7 +2570,7 @@ class TestMakeND:
         rgi = RegularGridInterpolator((x, y, z), values, method=meth)
 
         xi = np.random.uniform(low=0.7, high=2.1, size=(11, 3))
-        assert_allclose(bspl(xi), rgi(xi), atol=1e-14)
+        xp_assert_close(bspl(xi), rgi(xi), atol=1e-14)
 
     def test_solver_err_not_converged(self):
         x, y, z = self._get_sample_2d_data()
