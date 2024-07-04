@@ -134,35 +134,35 @@ class Test_measurements_select:
 
 
 def test_label01(xp):
-    data = np.ones([])
+    data = xp.ones([])
     out, n = ndimage.label(data)
     assert out == 1
     assert n == 1
 
 
 def test_label02(xp):
-    data = np.zeros([])
+    data = xp.zeros([])
     out, n = ndimage.label(data)
     assert out == 0
     assert n == 0
 
 
 def test_label03(xp):
-    data = np.ones([1])
+    data = xp.ones([1])
     out, n = ndimage.label(data)
     assert_array_almost_equal(out, [1])
     assert n == 1
 
 
 def test_label04(xp):
-    data = np.zeros([1])
+    data = xp.zeros([1])
     out, n = ndimage.label(data)
     assert_array_almost_equal(out, [0])
     assert n == 0
 
 
 def test_label05(xp):
-    data = np.ones([5])
+    data = xp.ones([5])
     out, n = ndimage.label(data)
     assert_array_almost_equal(out, [1, 1, 1, 1, 1])
     assert n == 1
@@ -324,23 +324,23 @@ def test_label13(xp):
 
 
 def test_label_output_typed(xp):
-    data = np.ones([5])
+    data = xp.ones([5])
     for t in types:
         dtype = getattr(xp, t)
-        output = np.zeros([5], dtype=dtype)
+        output = xp.zeros([5], dtype=dtype)
         n = ndimage.label(data, output=output)
         assert_array_almost_equal(output,
-                                  np.ones(output.shape, dtype=output.dtype))
+                                  xp.ones(output.shape, dtype=output.dtype))
         assert n == 1
 
 
 def test_label_output_dtype(xp):
-    data = np.ones([5])
+    data = xp.ones([5])
     for t in types:
         dtype = getattr(xp, t)
         output, n = ndimage.label(data, output=dtype)
         assert_array_almost_equal(output,
-                                  np.ones(output.shape, dtype=output.dtype))
+                                  xp.ones(output.shape, dtype=output.dtype))
         assert output.dtype == t
 
 
@@ -354,7 +354,7 @@ def test_label_output_wrong_size(xp):
 
 
 def test_label_structuring_elements(xp):
-    data = np.loadtxt(os.path.join(os.path.dirname(
+    data = xp.loadtxt(os.path.join(os.path.dirname(
         __file__), "data", "label_inputs.txt"))
     strels = np.loadtxt(os.path.join(
         os.path.dirname(__file__), "data", "label_strels.txt"))
@@ -393,13 +393,13 @@ def test_ticket_742(xp):
 
 def test_gh_issue_3025(xp):
     """Github issue #3025 - improper merging of labels"""
-    d = np.zeros((60, 320))
+    d = xp.zeros((60, 320))
     d[:, :257] = 1
     d[:, 260:] = 1
     d[36, 257] = 1
     d[35, 258] = 1
     d[35, 259] = 1
-    assert ndimage.label(d, np.ones((3, 3)))[1] == 1
+    assert ndimage.label(d, xp.ones((3, 3)))[1] == 1
 
 
 @skip_xp_backends("cupy")    # cupyx.scipy.ndimage does not have find_objects
@@ -413,31 +413,31 @@ class TestFindObjects:
 
 
     def test_find_objects01(self, xp):
-        data = np.ones([], dtype=int)
+        data = xp.ones([], dtype=int)
         out = ndimage.find_objects(data)
         assert out == [()]
 
 
     def test_find_objects02(self, xp):
-        data = np.zeros([], dtype=int)
+        data = xp.zeros([], dtype=int)
         out = ndimage.find_objects(data)
         assert out == []
 
 
     def test_find_objects03(self, xp):
-        data = np.ones([1], dtype=int)
+        data = xp.ones([1], dtype=int)
         out = ndimage.find_objects(data)
         assert out == [(slice(0, 1, None),)]
 
 
     def test_find_objects04(self, xp):
-        data = np.zeros([1], dtype=int)
+        data = xp.zeros([1], dtype=int)
         out = ndimage.find_objects(data)
         assert out == []
 
 
     def test_find_objects05(self, xp):
-        data = np.ones([5], dtype=int)
+        data = xp.ones([5], dtype=int)
         out = ndimage.find_objects(data)
         assert out == [(slice(0, 5, None),)]
 
@@ -503,7 +503,7 @@ def test_value_indices01(xp):
 
     truevi = {}
     for k in true_keys:
-        truevi[k] = np.where(data == k)
+        truevi[k] = xp.where(data == k)
 
     vi = ndimage.value_indices(data, ignore_value=0)
     assert vi.keys() == truevi.keys()
@@ -515,7 +515,7 @@ def test_value_indices01(xp):
 
 def test_value_indices02(xp):
     "Test input checking"
-    data = np.zeros((5, 4), dtype=np.float32)
+    data = xp.zeros((5, 4), dtype=xp.float32)
     msg = "Parameter 'arr' must be an integer array"
     with assert_raises(ValueError, match=msg):
         ndimage.value_indices(data)
@@ -546,7 +546,7 @@ def test_sum01(xp):
 def test_sum02(xp):
     for type in types:
         dtype = getattr(xp, type)
-        input = np.zeros([0, 4], dtype=dtype)
+        input = xp.zeros([0, 4], dtype=dtype)
         output = ndimage.sum(input)
         assert output == 0.0
 
@@ -554,7 +554,7 @@ def test_sum02(xp):
 def test_sum03(xp):
     for type in types:
         dtype = getattr(xp, type)
-        input = np.ones([], dtype=dtype)
+        input = xp.ones([], dtype=dtype)
         output = ndimage.sum(input)
         assert_almost_equal(output, 1.0)
 
@@ -585,10 +585,10 @@ def test_sum06(xp):
 
 
 def test_sum07(xp):
-    labels = np.ones([0, 4], dtype=bool)
+    labels = xp.ones([0, 4], dtype=bool)
     for type in types:
         dtype = getattr(xp, type)
-        input = np.zeros([0, 4], dtype=dtype)
+        input = xp.zeros([0, 4], dtype=dtype)
         output = ndimage.sum(input, labels=labels)
         assert output == 0.0
 
@@ -619,7 +619,7 @@ def test_sum10(xp):
 
 
 def test_sum11(xp):
-    labels = xp.asarray([1, 2], np.int8)
+    labels = xp.asarray([1, 2], xp.int8)
     for type in types:
         dtype = getattr(xp, type)
         input = xp.asarray([[1, 2], [3, 4]], dtype=dtype)
@@ -685,7 +685,7 @@ def test_mean04(xp):
             output = ndimage.mean(input, labels=labels,
                                   index=xp.asarray([4, 8, 2]))
             assert_array_almost_equal(output[[0, 2]], xp.asarray([4.0, 2.5]))
-            assert np.isnan(output[1])
+            assert xp.isnan(output[1])
 
 
 def test_minimum01(xp):
@@ -804,15 +804,15 @@ def test_median03(xp):
 
 def test_median_gh12836_bool(xp):
     # test boolean addition fix on example from gh-12836
-    a = np.asarray([1, 1], dtype=bool)
-    output = ndimage.median(a, labels=np.ones((2,)), index=[1])
+    a = xp.asarray([1, 1], dtype=bool)
+    output = ndimage.median(a, labels=xp.ones((2,)), index=[1])
     assert_array_almost_equal(output, [1.0])
 
 
 def test_median_no_int_overflow(xp):
     # test integer overflow fix on example from gh-12836
-    a = np.asarray([65, 70], dtype=np.int8)
-    output = ndimage.median(a, labels=np.ones((2,)), index=[1])
+    a = xp.asarray([65, 70], dtype=xp.int8)
+    output = ndimage.median(a, labels=xp.ones((2,)), index=[1])
     assert_array_almost_equal(output, [67.5])
 
 
@@ -824,7 +824,7 @@ def test_variance01(xp):
             with suppress_warnings() as sup:
                 sup.filter(RuntimeWarning, "Mean of empty slice")
                 output = ndimage.variance(input)
-            assert np.isnan(output)
+            assert xp.isnan(output)
 
 
 def test_variance02(xp):
@@ -1468,7 +1468,7 @@ class TestWatershedIft:
                             [0, 0, 0, 0, 0, 0, 0],
                             [0, 0, 0, 0, 0, 0, 0],
                             [0, 0, 0, 0, 0, 0, 0]], dtype=xp.int8)
-        out = np.zeros(shape, dtype=xp.int16)
+        out = xp.zeros(shape, dtype=xp.int16)
         out = out.transpose()
         ndimage.watershed_ift(data, markers,
                               structure=[[1, 1, 1],
@@ -1486,9 +1486,9 @@ class TestWatershedIft:
     def test_watershed_ift08(self, xp):
         # Test cost larger than uint8. See gh-10069.
         data = xp.asarray([[256, 0],
-                         [0, 0]], np.uint16)
+                         [0, 0]], dtype=xp.uint16)
         markers = xp.asarray([[1, 0],
-                            [0, 0]], np.int8)
+                            [0, 0]], dtype=np.int8)
         out = ndimage.watershed_ift(data, markers)
         expected = [[1, 1],
                     [1, 1]]
@@ -1497,9 +1497,9 @@ class TestWatershedIft:
     def test_watershed_ift09(self, xp):
         # Test large cost. See gh-19575
         data = xp.asarray([[np.iinfo(np.uint16).max, 0],
-                         [0, 0]], np.uint16)
+                         [0, 0]], dtype=np.uint16)
         markers = xp.asarray([[1, 0],
-                            [0, 0]], np.int8)
+                            [0, 0]], dtype=np.int8)
         out = ndimage.watershed_ift(data, markers)
         expected = [[1, 1],
                     [1, 1]]
