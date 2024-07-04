@@ -1,5 +1,4 @@
 import numpy as np
-#from numpy import fft
 from scipy._lib._array_api import (
     xp_assert_equal,
     assert_array_almost_equal,
@@ -25,11 +24,11 @@ class TestNdimageFourier:
 
         a = xp.zeros(shape, dtype=dtype)
         a[0, 0] = 1.0
-        a = fft.rfft(a, shape[0], 0)
-        a = fft.fft(a, shape[1], 1)
+        a = fft.rfft(a, n=shape[0], axis=0)
+        a = fft.fft(a, n=shape[1], axis=1)
         a = ndimage.fourier_gaussian(a, [5.0, 2.5], shape[0], 0)
-        a = fft.ifft(a, shape[1], 1)
-        a = fft.irfft(a, shape[0], 0)
+        a = fft.ifft(a, n=shape[1], axis=1)
+        a = fft.irfft(a, n=shape[0], axis=0)
         assert_almost_equal(ndimage.sum(a), xp.asarray(1), decimal=dec)
 
     @pytest.mark.parametrize('shape', [(32, 16), (31, 15)])
@@ -40,11 +39,11 @@ class TestNdimageFourier:
 
         a = xp.zeros(shape, dtype=dtype)
         a[0, 0] = 1.0
-        a = fft.fft(a, shape[0], 0)
-        a = fft.fft(a, shape[1], 1)
+        a = fft.fft(a, n=shape[0], axis=0)
+        a = fft.fft(a, n=shape[1], axis=1)
         a = ndimage.fourier_gaussian(a, [5.0, 2.5], -1, 0)
-        a = fft.ifft(a, shape[1], 1)
-        a = fft.ifft(a, shape[0], 0)
+        a = fft.ifft(a, n=shape[1], axis=1)
+        a = fft.ifft(a, n=shape[0], axis=0)
         assert_almost_equal(ndimage.sum(a.real), xp.asarray(1.0), decimal=dec)
 
     @pytest.mark.parametrize('shape', [(32, 16), (31, 15), (1, 10)])
@@ -55,11 +54,11 @@ class TestNdimageFourier:
 
         a = xp.zeros(shape, dtype=dtype)
         a[0, 0] = 1.0
-        a = fft.rfft(a, shape[0], 0)
-        a = fft.fft(a, shape[1], 1)
+        a = fft.rfft(a, n=shape[0], axis=0)
+        a = fft.fft(a, n=shape[1], axis=1)
         a = ndimage.fourier_uniform(a, [5.0, 2.5], shape[0], 0)
-        a = fft.ifft(a, shape[1], 1)
-        a = fft.irfft(a, shape[0], 0)
+        a = fft.ifft(a, n=shape[1], axis=1)
+        a = fft.irfft(a, n=shape[0], axis=0)
         assert_almost_equal(ndimage.sum(a), xp.asarray(1.0), decimal=dec)
 
     @pytest.mark.parametrize('shape', [(32, 16), (31, 15)])
@@ -70,11 +69,11 @@ class TestNdimageFourier:
 
         a = xp.zeros(shape, dtype=dtype)
         a[0, 0] = 1.0
-        a = fft.fft(a, shape[0], 0)
-        a = fft.fft(a, shape[1], 1)
+        a = fft.fft(a, n=shape[0], axis=0)
+        a = fft.fft(a, n=shape[1], axis=1)
         a = ndimage.fourier_uniform(a, [5.0, 2.5], -1, 0)
-        a = fft.ifft(a, shape[1], 1)
-        a = fft.ifft(a, shape[0], 0)
+        a = fft.ifft(a, n=shape[1], axis=1)
+        a = fft.ifft(a, n=shape[0], axis=0)
         assert_almost_equal(ndimage.sum(a.real), xp.asarray(1.0), decimal=dec)
 
     @pytest.mark.parametrize('shape', [(32, 16), (31, 15)])
@@ -85,11 +84,11 @@ class TestNdimageFourier:
 
         expected = xp.arange(shape[0] * shape[1], dtype=dtype)
         expected.shape = shape
-        a = fft.rfft(expected, shape[0], 0)
-        a = fft.fft(a, shape[1], 1)
+        a = fft.rfft(expected, n=shape[0], axis=0)
+        a = fft.fft(a, n=shape[1], axis=1)
         a = ndimage.fourier_shift(a, [1, 1], shape[0], 0)
-        a = fft.ifft(a, shape[1], 1)
-        a = fft.irfft(a, shape[0], 0)
+        a = fft.ifft(a, n=shape[1], axis=1)
+        a = fft.irfft(a, n=shape[0], axis=0)
         assert_array_almost_equal(a[1:, 1:], expected[:-1, :-1], decimal=dec)
         assert_array_almost_equal(a.imag, xp.zeros(shape), decimal=dec)
 
@@ -101,11 +100,11 @@ class TestNdimageFourier:
 
         expected = xp.arange(shape[0] * shape[1], dtype=dtype)
         expected.shape = shape
-        a = fft.fft(expected, shape[0], 0)
-        a = fft.fft(a, shape[1], 1)
+        a = fft.fft(expected, n=shape[0], axis=0)
+        a = fft.fft(a, n=shape[1], axis=1)
         a = ndimage.fourier_shift(a, [1, 1], -1, 0)
-        a = fft.ifft(a, shape[1], 1)
-        a = fft.ifft(a, shape[0], 0)
+        a = fft.ifft(a, n=shape[1], axis=1)
+        a = fft.ifft(a, n=shape[0], axis=0)
         assert_array_almost_equal(a.real[1:, 1:], expected[:-1, :-1], decimal=dec)
         assert_array_almost_equal(a.imag, xp.zeros(shape), decimal=dec)
 
@@ -117,12 +116,12 @@ class TestNdimageFourier:
 
         a = xp.zeros(shape, dtype=dtype)
         a[0, 0] = 1.0
-        a = fft.rfft(a, shape[0], 0)
-        a = fft.fft(a, shape[1], 1)
+        a = fft.rfft(a, n=shape[0], axis=0)
+        a = fft.fft(a, n=shape[1], axis=1)
         a = ndimage.fourier_ellipsoid(a, [5.0, 2.5],
                                       shape[0], 0)
-        a = fft.ifft(a, shape[1], 1)
-        a = fft.irfft(a, shape[0], 0)
+        a = fft.ifft(a, n=shape[1], axis=1)
+        a = fft.irfft(a, n=shape[0], axis=0)
         assert_almost_equal(ndimage.sum(a), xp.asarray(1.0), decimal=dec)
 
     @pytest.mark.parametrize('shape', [(32, 16), (31, 15)])
@@ -133,11 +132,11 @@ class TestNdimageFourier:
 
         a = xp.zeros(shape, dtype=dtype)
         a[0, 0] = 1.0
-        a = fft.fft(a, shape[0], 0)
-        a = fft.fft(a, shape[1], 1)
+        a = fft.fft(a, n=shape[0], axis=0)
+        a = fft.fft(a, n=shape[1], axis=1)
         a = ndimage.fourier_ellipsoid(a, [5.0, 2.5], -1, 0)
-        a = fft.ifft(a, shape[1], 1)
-        a = fft.ifft(a, shape[0], 0)
+        a = fft.ifft(a, n=shape[1], axis=1)
+        a = fft.ifft(a, n=shape[0], axis=0)
         assert_almost_equal(ndimage.sum(a.real), xp.asarray(1.0), decimal=dec)
 
     def test_fourier_ellipsoid_unimplemented_ndim(self):
