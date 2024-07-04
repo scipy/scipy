@@ -526,12 +526,12 @@ def dual_annealing(func, bounds, args=(), maxiter=1000,
         A callback function with signature ``callback(x, f, context)``,
         which will be called for all minima found.
         ``x`` and ``f`` are the coordinates and function value of the
-        latest minimum found, and ``context`` has value in [0, 1, 2], with the
-        following meaning:
+        latest minimum found, and ``context`` has one of the following
+        values:
 
-            - 0: minimum detected in the annealing process.
-            - 1: detection occurred in the local search process.
-            - 2: detection done in the dual annealing process.
+        - ``0``: minimum detected in the annealing process.
+        - ``1``: detection occurred in the local search process.
+        - ``2``: detection done in the dual annealing process.
 
         If the callback implementation returns True, the algorithm will stop.
     x0 : ndarray, shape(n,), optional

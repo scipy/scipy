@@ -170,7 +170,7 @@ def lgmres(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=1000, M=None, callback=
         if inner_res_0 == 0:
             rnorm = nrm2(r_outer)
             raise RuntimeError("Preconditioner returned a zero vector; "
-                               "|v| ~ %.1g, |M v| = 0" % rnorm)
+                               f"|v| ~ {rnorm:.1g}, |M v| = 0")
 
         v0 = scal(1.0/inner_res_0, v0)
 

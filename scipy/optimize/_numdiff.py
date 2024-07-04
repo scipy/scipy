@@ -437,7 +437,7 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, abs_step=None,
     array([ 2.])
     """
     if method not in ['2-point', '3-point', 'cs']:
-        raise ValueError("Unknown method '%s'. " % method)
+        raise ValueError(f"Unknown method '{method}'. ")
 
     xp = array_namespace(x0)
     _x = atleast_nd(x0, ndim=1, xp=xp)
