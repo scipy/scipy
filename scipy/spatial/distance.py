@@ -591,8 +591,14 @@ def correlation(u, v, w=None, centered=True):
     ----------
     u : (N,) array_like of floats
         Input array.
+
+        .. deprecated:: 1.15.0
+           Complex `u` is deprecated and will raise an error in SciPy 1.17.0
     v : (N,) array_like of floats
         Input array.
+
+        .. deprecated:: 1.15.0
+           Complex `v` is deprecated and will raise an error in SciPy 1.17.0
     w : (N,) array_like of floats, optional
         The weights for each value in `u` and `v`. Default is None,
         which gives each value a weight of 1.0
@@ -672,8 +678,14 @@ def cosine(u, v, w=None):
     ----------
     u : (N,) array_like of floats
         Input array.
+
+        .. deprecated:: 1.15.0
+           Complex `u` is deprecated and will raise an error in SciPy 1.17.0
     v : (N,) array_like of floats
         Input array.
+
+        .. deprecated:: 1.15.0
+           Complex `v` is deprecated and will raise an error in SciPy 1.17.0
     w : (N,) array_like of floats, optional
         The weights for each value in `u` and `v`. Default is None,
         which gives each value a weight of 1.0
