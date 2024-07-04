@@ -1,3 +1,4 @@
+import os
 import os.path
 
 import numpy as np
@@ -24,6 +25,7 @@ pytestmark = [array_api_compatible, pytest.mark.usefixtures("skip_xp_backends"),
               skip_xp_backends("jax.numpy", "torch", "array_api_strict"),
 ]
 
+IS_WINDOWS_AND_NP1 = os.name == 'nt' and np.__version__ < '2'
 
 class Test_measurements_stats:
     """ndimage._measurements._stats() is a utility used by other functions."""
@@ -37,7 +39,9 @@ class Test_measurements_stats:
             labels = xp.asarray(labels).reshape(shp)
             counts, sums = ndimage._measurements._stats(
                 x, labels=labels, index=index)
-            xp_assert_equal(counts, xp.asarray([2, 2]))
+
+            dtype_arg = {'dtype': xp.int64} if IS_WINDOWS_AND_NP1 else {}
+            xp_assert_equal(counts, xp.asarray([2, 2], **dtype_arg))
             xp_assert_equal(sums, xp.asarray([1.0, 8.0]))
 
     def test_b(self, xp):
@@ -51,7 +55,9 @@ class Test_measurements_stats:
             labels = xp.asarray(labels).reshape(shp)
             counts, sums = ndimage._measurements._stats(
                 x, labels=labels, index=index)
-            xp_assert_equal(counts, xp.asarray([2, 2]))
+
+            dtype_arg = {'dtype': xp.int64} if IS_WINDOWS_AND_NP1 else {}
+            xp_assert_equal(counts, xp.asarray([2, 2], **dtype_arg))
             xp_assert_equal(sums, xp.asarray([1.0, 8.0]))
 
     def test_a_centered(self, xp):
@@ -67,7 +73,9 @@ class Test_measurements_stats:
             labels = xp.asarray(labels).reshape(shp)
             counts, sums, centers = ndimage._measurements._stats(
                 x, labels=labels, index=index, centered=True)
-            xp_assert_equal(counts, xp.asarray([2, 2]))
+
+            dtype_arg = {'dtype': xp.int64} if IS_WINDOWS_AND_NP1 else {}
+            xp_assert_equal(counts, xp.asarray([2, 2], **dtype_arg))
             xp_assert_equal(sums, xp.asarray([1.0, 8.0]))
             xp_assert_equal(centers, xp.asarray([0.5, 8.0]))
 
@@ -80,7 +88,9 @@ class Test_measurements_stats:
             labels = xp.asarray(labels).reshape(shp)
             counts, sums, centers = ndimage._measurements._stats(
                 x, labels=labels, index=index, centered=True)
-            xp_assert_equal(counts, xp.asarray([2, 2]))
+
+            dtype_arg = {'dtype': xp.int64} if IS_WINDOWS_AND_NP1 else {}
+            xp_assert_equal(counts, xp.asarray([2, 2], **dtype_arg))
             xp_assert_equal(sums, xp.asarray([1.0, 8.0]))
             xp_assert_equal(centers, xp.asarray([0.5, 8.0]))
 
@@ -93,7 +103,9 @@ class Test_measurements_stats:
             labels = xp.asarray(labels).reshape(shp)
             counts, sums, centers = ndimage._measurements._stats(
                 x, labels=labels, index=index, centered=True)
-            xp_assert_equal(counts, xp.asarray([2, 2]))
+
+            dtype_arg = {'dtype': xp.int64} if IS_WINDOWS_AND_NP1 else {}
+            xp_assert_equal(counts, xp.asarray([2, 2], **dtype_arg))
             xp_assert_equal(sums, xp.asarray([1.0, 8.0]))
             xp_assert_equal(centers, xp.asarray([0.5, 8.0]))
 

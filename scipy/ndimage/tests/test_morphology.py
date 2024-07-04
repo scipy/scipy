@@ -1999,12 +1999,12 @@ class TestNdimageMorphology:
                                          mask=mask, border_value=1)
         assert_array_almost_equal(out, expected)
 
-    def test_binary_propagation03(self):
+    def test_binary_propagation03(self, xp):
         # gh-21009
-        data = np.zeros([], bool)
-        expected = np.zeros([], bool)
+        data = xp.zeros([], bool)
+        expected = xp.zeros([], bool)
         out = ndimage.binary_propagation(data)
-        assert_array_almost_equal(out, expected)
+        assert out == expected
 
     @pytest.mark.parametrize('dtype', types)
     def test_binary_opening01(self, dtype, xp):
