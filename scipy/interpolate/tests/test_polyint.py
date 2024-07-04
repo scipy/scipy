@@ -551,7 +551,7 @@ class TestPCHIP:
                 y1, y2 = y2, y1
             xp = np.linspace(x1, x2, 10)
             yp = p(xp)
-            assert_(((y1 <= yp + 1e-15) & (yp <= y2 + 1e-15)).all())
+            assert ((y1 <= yp + 1e-15) & (yp <= y2 + 1e-15)).all()
 
     def test_monotone(self):
         # PCHIP should preserve monotonicty
@@ -561,7 +561,7 @@ class TestPCHIP:
             y1, y2 = yi[i], yi[i+1]
             xp = np.linspace(x1, x2, 10)
             yp = p(xp)
-            assert_(((y2-y1) * (yp[1:] - yp[:1]) > 0).all())
+            assert ((y2-y1) * (yp[1:] - yp[:1]) > 0).all()
 
     def test_cast(self):
         # regression test for integer input data, see gh-3453
@@ -618,7 +618,7 @@ class TestPCHIP:
         y2 = np.array([279.35, 2.5e3, 1.50e3, 1.0e3])
         for pp in (pchip(x, y1), pchip(x, y2)):
             for t in (x[0], x[-1]):
-                assert_(pp(t, 1) != 0)
+                assert pp(t, 1) != 0
 
     def test_all_zeros(self):
         x = np.arange(10)

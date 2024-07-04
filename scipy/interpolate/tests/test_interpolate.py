@@ -145,11 +145,11 @@ class TestInterp1D:
     def test_init(self):
         # Check that the attributes are initialized appropriately by the
         # constructor.
-        assert_(interp1d(self.x10, self.y10).copy)
-        assert_(not interp1d(self.x10, self.y10, copy=False).copy)
-        assert_(interp1d(self.x10, self.y10).bounds_error)
-        assert_(not interp1d(self.x10, self.y10, bounds_error=False).bounds_error)
-        assert_(np.isnan(interp1d(self.x10, self.y10).fill_value))
+        assert interp1d(self.x10, self.y10).copy
+        assert not interp1d(self.x10, self.y10, copy=False).copy
+        assert interp1d(self.x10, self.y10).bounds_error
+        assert not interp1d(self.x10, self.y10, bounds_error=False).bounds_error
+        assert np.isnan(interp1d(self.x10, self.y10).fill_value)
         assert_equal(interp1d(self.x10, self.y10, fill_value=3.0).fill_value,
                      3.0)
         assert_equal(interp1d(self.x10, self.y10, fill_value=(1.0, 2.0)).fill_value,
@@ -484,7 +484,7 @@ class TestInterp1D:
         y = np.arange(10).astype(int)
         c = interp1d(x, y, kind=kind, fill_value=np.nan, bounds_error=False)
         yi = c(x - 1)
-        assert_(np.isnan(yi[0]))
+        assert np.isnan(yi[0])
         assert_array_almost_equal(yi, np.r_[np.nan, y[:-1]])
 
     def test_bounds(self):
@@ -676,7 +676,7 @@ class TestInterp1D:
                                   np.array([[3., 5.], [2., 7.]]))
 
         # Scalar input -> 0-dim scalar array output
-        assert_(isinstance(interp10(1.2), np.ndarray))
+        assert isinstance(interp10(1.2), np.ndarray)
         assert_equal(interp10(1.2).shape, ())
 
         # Multidimensional outputs.
@@ -767,7 +767,7 @@ class TestInterp1D:
         for kind in ('zero', 'slinear'):
             ir = interp1d(x, y, kind=kind)
             vals = ir([4.9, 7.0])
-            assert_(np.isfinite(vals).all())
+            assert np.isfinite(vals).all()
 
     def test_spline_nans(self):
         # Backwards compat: a single nan makes the whole spline interpolation
@@ -784,7 +784,7 @@ class TestInterp1D:
             for xnew in (6, [1, 6], [[1, 6], [3, 5]]):
                 xnew = np.asarray(xnew)
                 out, outn = ir(x), irn(x)
-                assert_(np.isnan(outn).all())
+                assert np.isnan(outn).all()
                 assert_equal(out.shape, outn.shape)
 
     def test_all_nans(self):
@@ -806,7 +806,7 @@ class TestInterp1D:
                          'cubic'):
                 f = interp1d(x, y, kind=kind)
                 vals = f(xnew)
-                assert_(np.isfinite(vals).all())
+                assert np.isfinite(vals).all()
 
     @pytest.mark.parametrize(
         "kind", ("linear", "nearest", "nearest-up", "previous", "next")
@@ -1205,7 +1205,7 @@ class TestPPoly:
             c.flags.writeable = writeable
             f = PPoly(c, x)
             vals = f(xnew)
-            assert_(np.isfinite(vals).all())
+            assert np.isfinite(vals).all()
 
     def test_descending(self):
         def binom_matrix(power):
@@ -1467,7 +1467,7 @@ class TestPPoly:
         ig = pp.integrate(a, b, extrapolate=True)
         assert_allclose(ig, ipp(b) - ipp(a))
 
-        assert_(np.isnan(pp.integrate(a, b, extrapolate=False)).all())
+        assert np.isnan(pp.integrate(a, b, extrapolate=False)).all()
 
     def test_integrate_readonly(self):
         x = np.array([1, 2, 4])
@@ -1479,7 +1479,7 @@ class TestPPoly:
             P = PPoly(c, x)
             vals = P.integrate(1, 4)
 
-            assert_(np.isfinite(vals).all())
+            assert np.isfinite(vals).all()
 
     def test_integrate_periodic(self):
         x = np.array([1, 2, 4])
@@ -1607,7 +1607,7 @@ class TestPPoly:
                                                 err_msg=msg)
 
         # Check that we checked a number of roots
-        assert_(num > 100, repr(num))
+        assert num > 100, repr(num)
 
     def test_roots_croots(self):
         # Test the complex root finding algorithm
@@ -1625,7 +1625,7 @@ class TestPPoly:
                 _ppoly._croots_poly1(c, w, y)
 
                 if k == 1:
-                    assert_(np.isnan(w).all())
+                    assert np.isnan(w).all()
                     continue
 
                 res = -y
@@ -1650,14 +1650,14 @@ class TestPPoly:
             pp_i = pp.antiderivative()
 
             if extrapolate is False:
-                assert_(np.isnan(pp([-0.1, 1.1])).all())
-                assert_(np.isnan(pp_i([-0.1, 1.1])).all())
-                assert_(np.isnan(pp_d([-0.1, 1.1])).all())
+                assert np.isnan(pp([-0.1, 1.1])).all()
+                assert np.isnan(pp_i([-0.1, 1.1])).all()
+                assert np.isnan(pp_d([-0.1, 1.1])).all()
                 assert_equal(pp.roots(), [1])
             else:
                 assert_allclose(pp([-0.1, 1.1]), [1-0.1**2, 1-1.1**2])
-                assert_(not np.isnan(pp_i([-0.1, 1.1])).any())
-                assert_(not np.isnan(pp_d([-0.1, 1.1])).any())
+                assert not np.isnan(pp_i([-0.1, 1.1])).any()
+                assert not np.isnan(pp_d([-0.1, 1.1])).any()
                 assert_allclose(pp.roots(), [1, -1])
 
 
@@ -1784,11 +1784,11 @@ class TestBPoly:
             bp = BPoly(c, x, extrapolate=extrapolate)
             bp_d = bp.derivative()
             if extrapolate is False:
-                assert_(np.isnan(bp([-0.1, 2.1])).all())
-                assert_(np.isnan(bp_d([-0.1, 2.1])).all())
+                assert np.isnan(bp([-0.1, 2.1])).all()
+                assert np.isnan(bp_d([-0.1, 2.1])).all()
             else:
-                assert_(not np.isnan(bp([-0.1, 2.1])).any())
-                assert_(not np.isnan(bp_d([-0.1, 2.1])).any())
+                assert not np.isnan(bp([-0.1, 2.1])).any()
+                assert not np.isnan(bp_d([-0.1, 2.1])).any()
 
 
 class TestBPolyCalculus:
@@ -1905,7 +1905,7 @@ class TestBPolyCalculus:
 
         # .integrate argument overrides self.extrapolate
         b1 = BPoly(c, x, extrapolate=False)
-        assert_(np.isnan(b1.integrate(0, 2)))
+        assert np.isnan(b1.integrate(0, 2))
         assert_allclose(b1.integrate(0, 2, extrapolate=True), 2., atol=1e-14)
 
     def test_integrate_periodic(self):
@@ -2061,7 +2061,7 @@ class TestBPolyFromDerivatives:
         xi = [0, 1, 2, 3]
         yi = [[0, 0], [0], [0, 0], [0, 0]]  # NB: will have to raise the degree
         pp = BPoly.from_derivatives(xi, yi)
-        assert_(pp.c.shape == (4, 3))
+        assert pp.c.shape == (4, 3)
 
         ppd = pp.derivative()
         for xp in [0., 0.1, 1., 1.1, 1.9, 2., 2.5]:
@@ -2109,7 +2109,7 @@ class TestBPolyFromDerivatives:
         for j in range(order//2+1):
             assert_allclose(pp(xi[1:-1] - 1e-12), pp(xi[1:-1] + 1e-12))
             pp = pp.derivative()
-        assert_(not np.allclose(pp(xi[1:-1] - 1e-12), pp(xi[1:-1] + 1e-12)))
+        assert not np.allclose(pp(xi[1:-1] - 1e-12), pp(xi[1:-1] + 1e-12))
 
         # now repeat with `order` being even: on each interval, it uses
         # order//2 'derivatives' @ the right-hand endpoint and
@@ -2119,7 +2119,7 @@ class TestBPolyFromDerivatives:
         for j in range(order//2):
             assert_allclose(pp(xi[1:-1] - 1e-12), pp(xi[1:-1] + 1e-12))
             pp = pp.derivative()
-        assert_(not np.allclose(pp(xi[1:-1] - 1e-12), pp(xi[1:-1] + 1e-12)))
+        assert not np.allclose(pp(xi[1:-1] - 1e-12), pp(xi[1:-1] + 1e-12))
 
     def test_orders_local(self):
         m, k = 7, 12
@@ -2131,7 +2131,7 @@ class TestBPolyFromDerivatives:
             for j in range(orders[i] // 2 + 1):
                 assert_allclose(pp(x - 1e-12), pp(x + 1e-12))
                 pp = pp.derivative()
-            assert_(not np.allclose(pp(x - 1e-12), pp(x + 1e-12)))
+            assert not np.allclose(pp(x - 1e-12), pp(x + 1e-12))
 
     def test_yi_trailing_dims(self):
         m, k = 7, 5
@@ -2400,7 +2400,7 @@ def _ppoly_eval_1(c, x, xps):
             continue
         j = np.searchsorted(x, xp) - 1
         d = xp - x[j]
-        assert_(x[j] <= xp < x[j+1])
+        assert x[j] <= xp < x[j+1]
         r = sum(c[k,j] * d**(c.shape[0]-k-1)
                 for k in range(c.shape[0]))
         out[i,:] = r

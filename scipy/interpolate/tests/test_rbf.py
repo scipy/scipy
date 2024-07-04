@@ -108,7 +108,7 @@ def check_rbf1d_regularity(function, atol):
     xi = linspace(0, 10, 100)
     yi = rbf(xi)
     msg = f"abs-diff: {abs(yi - sin(xi)).max():f}"
-    assert_(allclose(yi, sin(xi), atol=atol), msg)
+    assert allclose(yi, sin(xi), atol=atol), msg
 
 
 def test_rbf_regularity():
@@ -136,7 +136,7 @@ def check_2drbf1d_regularity(function, atol):
     xi = linspace(0, 10, 100)
     yi = rbf(xi)
     msg = f"abs-diff: {abs(yi - np.vstack([sin(xi), cos(xi)]).T).max():f}"
-    assert_(allclose(yi, np.vstack([sin(xi), cos(xi)]).T, atol=atol), msg)
+    assert allclose(yi, np.vstack([sin(xi), cos(xi)]).T, atol=atol), msg
 
 
 def test_2drbf_regularity():
@@ -167,7 +167,7 @@ def check_rbf1d_stability(function):
     yi = rbf(xi)
 
     # subtract the linear trend and make sure there no spikes
-    assert_(np.abs(yi-xi).max() / np.abs(z-x).max() < 1.1)
+    assert np.abs(yi-xi).max() / np.abs(z-x).max() < 1.1
 
 def test_rbf_stability():
     for function in FUNCTIONS:
@@ -221,7 +221,7 @@ def test_rbf_epsilon_none_collinear():
     y = [4, 4, 4]
     z = [5, 6, 7]
     rbf = Rbf(x, y, z, epsilon=None)
-    assert_(rbf.epsilon > 0)
+    assert rbf.epsilon > 0
 
 
 def test_rbf_concurrency():
@@ -235,3 +235,4 @@ def test_rbf_concurrency():
         interp(xp)
 
     _run_concurrent_barrier(10, worker_fn, rbf, x)
+

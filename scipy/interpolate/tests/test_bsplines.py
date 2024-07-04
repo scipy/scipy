@@ -214,7 +214,7 @@ class TestBSpline:
         t, _, k = b.tck
         xx = [t[0] - 1, t[-1] + 1]
         yy = b(xx)
-        assert_(not np.all(np.isnan(yy)))
+        assert not np.all(np.isnan(yy))
 
     def test_periodic_extrap(self):
         np.random.seed(1234)
@@ -269,19 +269,17 @@ class TestBSpline:
         x = np.asarray([1, 3, 4, 6])
         assert_allclose(b(x[x != 6] - 1e-10),
                         b(x[x != 6] + 1e-10))
-        assert_(not np.allclose(b(6.-1e-10), b(6+1e-10)))
+        assert not np.allclose(b(6.-1e-10), b(6+1e-10))
 
         # 1st derivative jumps at double knots, 1 & 6:
         x0 = np.asarray([3, 4])
         assert_allclose(b(x0 - 1e-10, nu=1),
                         b(x0 + 1e-10, nu=1))
         x1 = np.asarray([1, 6])
-        assert_(not np.all(np.allclose(b(x1 - 1e-10, nu=1),
-                                       b(x1 + 1e-10, nu=1))))
+        assert not np.allclose(b(x1 - 1e-10, nu=1), b(x1 + 1e-10, nu=1))
 
         # 2nd derivative is not guaranteed to be continuous either
-        assert_(not np.all(np.allclose(b(x - 1e-10, nu=2),
-                                       b(x + 1e-10, nu=2))))
+        assert not np.allclose(b(x - 1e-10, nu=2), b(x + 1e-10, nu=2))
 
     def test_basis_element_quadratic(self):
         xx = np.linspace(-1, 4, 20)
@@ -318,7 +316,7 @@ class TestBSpline:
     def test_nan(self):
         # nan in, nan out.
         b = BSpline.basis_element([0, 1, 1, 2])
-        assert_(np.isnan(b(np.nan)))
+        assert np.isnan(b(np.nan))
 
     def test_derivative_method(self):
         b = _make_random_spline(k=5)
@@ -1086,8 +1084,8 @@ class TestInterop:
                 assert_allclose(bd.t, tck_d[0], atol=1e-15)
                 assert_allclose(bd.c, tck_d[1], atol=1e-15)
                 assert_equal(bd.k, tck_d[2])
-                assert_(isinstance(bd, BSpline))
-                assert_(isinstance(tck_d, tuple))  # back-compat: tck in and out
+                assert isinstance(bd, BSpline)
+                assert isinstance(tck_d, tuple)  # back-compat: tck in and out
 
     def test_splantider(self):
         for b in [self.b, self.b2]:
@@ -1102,8 +1100,8 @@ class TestInterop:
                 assert_allclose(bd.t, tck_d[0], atol=1e-15)
                 assert_allclose(bd.c, tck_d[1], atol=1e-15)
                 assert_equal(bd.k, tck_d[2])
-                assert_(isinstance(bd, BSpline))
-                assert_(isinstance(tck_d, tuple))  # back-compat: tck in and out
+                assert isinstance(bd, BSpline)
+                assert isinstance(tck_d, tuple)  # back-compat: tck in and out
 
     def test_insert(self):
         b, b2, xx = self.b, self.b2, self.xx
@@ -1114,8 +1112,8 @@ class TestInterop:
         bn, tck_n = insert(tn, b), insert(tn, (b.t, b.c, b.k))
         assert_allclose(splev(xx, bn),
                         splev(xx, tck_n), atol=1e-15)
-        assert_(isinstance(bn, BSpline))
-        assert_(isinstance(tck_n, tuple))   # back-compat: tck in, tck out
+        assert isinstance(bn, BSpline)
+        assert isinstance(tck_n, tuple)   # back-compat: tck in, tck out
 
         # for N-D array of coefficients, BSpline.c needs to be transposed
         # after that, the results are equivalent.
@@ -1128,8 +1126,8 @@ class TestInterop:
         # need a transpose for comparing the results, cf test_splev
         assert_allclose(np.asarray(splev(xx, tck_n2)).transpose(2, 0, 1),
                         bn2(xx), atol=1e-15)
-        assert_(isinstance(bn2, BSpline))
-        assert_(isinstance(tck_n2, tuple))   # back-compat: tck in, tck out
+        assert isinstance(bn2, BSpline)
+        assert isinstance(tck_n2, tuple)   # back-compat: tck in, tck out
 
 
 class TestInterp:
