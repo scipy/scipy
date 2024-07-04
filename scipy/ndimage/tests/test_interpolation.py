@@ -15,8 +15,12 @@ import scipy.ndimage as ndimage
 from . import types
 
 from scipy.conftest import array_api_compatible
-pytestmark = [array_api_compatible, pytest.mark.usefixtures("skip_xp_backends")]
 skip_xp_backends = pytest.mark.skip_xp_backends
+pytestmark = [array_api_compatible, pytest.mark.usefixtures("skip_xp_backends"),
+              # XXX: only CuPy delegation is implemented
+              skip_xp_backends("jax.numpy", "torch", "array_api_strict"),
+]
+
 
 eps = 1e-12
 

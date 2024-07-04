@@ -18,8 +18,11 @@ import scipy.ndimage as ndimage
 from . import types
 
 from scipy.conftest import array_api_compatible
-pytestmark = [array_api_compatible, pytest.mark.usefixtures("skip_xp_backends")]
 skip_xp_backends = pytest.mark.skip_xp_backends
+pytestmark = [array_api_compatible, pytest.mark.usefixtures("skip_xp_backends"),
+              # XXX: only CuPy delegation is implemented
+              skip_xp_backends("jax.numpy", "torch", "array_api_strict"),
+]
 
 
 class Test_measurements_stats:
@@ -374,8 +377,9 @@ def test_label_structuring_elements(xp):
             xp_assert_equal(ndimage.label(d, s)[0], results[r, :, :], check_dtype=False)
             r += 1
 
-
-@skip_xp_backends("cupy")    # cupyx.scipy.ndimage does not have find_objects
+# 1. cupyx.scipy.ndimage does not have find_objects
+# 2. have to list all skips in a single invocation
+@skip_xp_backends("cupy", "torch", "jax.numpy", "array_api_strict")
 def test_ticket_742(xp):
     def SE(img, thresh=.7, size=4):
         mask = img > thresh
@@ -405,7 +409,9 @@ def test_gh_issue_3025(xp):
     assert ndimage.label(d, xp.ones((3, 3)))[1] == 1
 
 
-@skip_xp_backends("cupy")    # cupyx.scipy.ndimage does not have find_objects
+# 1. cupyx.scipy.ndimage does not have find_object
+# 2. have to list all skips in a single call
+@skip_xp_backends("cupy", "jax.numpy", "torch", "array_api_strict")
 class TestFindObjects:
     def test_label_default_dtype(self, xp):
         test_array = np.random.rand(10, 10)
@@ -1286,7 +1292,8 @@ def test_stat_funcs_2d(xp):
     xp_assert_equal(max, xp.asarray([9, 5]))
 
 
-@skip_xp_backends("cupy")
+# XXX: cannot just @skip_xp_backend("cupy"): multiple skips do not add
+@skip_xp_backends("cupy", "jax.numpy", "torch", "array_api_strict")
 class TestWatershedIft:
 
     def test_watershed_ift01(self, xp):

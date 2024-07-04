@@ -20,8 +20,11 @@ from scipy.ndimage._filters import _gaussian_kernel1d
 from . import types, float_types, complex_types
 
 from scipy.conftest import array_api_compatible
-pytestmark = [array_api_compatible, pytest.mark.usefixtures("skip_xp_backends")]
 skip_xp_backends = pytest.mark.skip_xp_backends
+pytestmark = [array_api_compatible, pytest.mark.usefixtures("skip_xp_backends"),
+              # XXX: only CuPy delegation is implemented
+              skip_xp_backends("jax.numpy", "torch", "array_api_strict"),
+]
 
 
 def sumsq(a, b):

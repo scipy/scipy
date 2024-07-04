@@ -9,8 +9,11 @@ from scipy import ndimage
 from . import types
 
 from scipy.conftest import array_api_compatible
-pytestmark = [array_api_compatible, pytest.mark.usefixtures("skip_xp_backends")]
 skip_xp_backends = pytest.mark.skip_xp_backends
+pytestmark = [array_api_compatible, pytest.mark.usefixtures("skip_xp_backends"),
+              # XXX: only CuPy delegation is implemented
+              skip_xp_backends("jax.numpy", "torch", "array_api_strict"),
+]
 
 
 class TestNdimageMorphology:

@@ -6,8 +6,11 @@ from scipy._lib._array_api import assert_almost_equal
 from scipy import ndimage
 
 from scipy.conftest import array_api_compatible
-pytestmark = [array_api_compatible, pytest.mark.usefixtures("skip_xp_backends")]
 skip_xp_backends = pytest.mark.skip_xp_backends
+pytestmark = [array_api_compatible, pytest.mark.usefixtures("skip_xp_backends"),
+              # XXX: only CuPy delegation is implemented
+              skip_xp_backends("jax.numpy", "torch", "array_api_strict"),
+]
 
 
 def get_spline_knot_values(order):
