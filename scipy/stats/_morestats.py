@@ -967,7 +967,7 @@ def boxcox_llf(lmb, data):
         logvar = _log_var(logx) - 2 * np.log(abs(lmb))
         logvar = xp.asarray(logvar)
 
-    res = (lmb - 1) * xp.sum(logdata, axis=0) - N/2 * logvar
+    res = (lmb - 1) * xp.sum(logdata, axis=0, dtype=logvar.dtype) - N/2 * logvar
     res = res[()] if res.ndim == 0 else res
     return res
 

@@ -1923,10 +1923,12 @@ class TestPpccMax:
 @array_api_compatible
 class TestBoxcox_llf:
 
-    def test_basic(self, xp):
+    @pytest.mark.parametrize("dtype", ["float32", "float64"])
+    def test_basic(self, dtype, xp):
+        dt = getattr(xp, dtype)
         x = stats.norm.rvs(size=10000, loc=10, random_state=54321)
         lmbda = 1
-        llf = stats.boxcox_llf(lmbda, xp.asarray(x))
+        llf = stats.boxcox_llf(lmbda, xp.asarray(x, dtype=dt))
         llf_expected = -x.size / 2. * np.log(np.sum(x.std()**2))
         xp_assert_close(llf, xp.asarray(llf_expected))
 
