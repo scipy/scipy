@@ -3,9 +3,11 @@ import operator
 import itertools
 
 import numpy as np
-from numpy.testing import assert_equal, assert_allclose, assert_
+from numpy.testing import assert_allclose
 from pytest import raises as assert_raises
 import pytest
+
+from scipy._lib._array_api import xp_assert_equal, xp_assert_close
 
 from scipy.interpolate import (
         BSpline, BPoly, PPoly, make_interp_spline, make_lsq_spline, _bspl,
@@ -64,7 +66,7 @@ class TestBSpline:
 
         assert_allclose(t, b.t)
         assert_allclose(c, b.c)
-        assert_equal(k, b.k)
+        assert k == b.k
 
     def test_tck(self):
         b = _make_random_spline()
@@ -72,7 +74,7 @@ class TestBSpline:
 
         assert_allclose(b.t, tck[0], atol=1e-15, rtol=1e-15)
         assert_allclose(b.c, tck[1], atol=1e-15, rtol=1e-15)
-        assert_equal(b.k, tck[2])
+        assert b.k == tck[2]
 
         # b.tck is read-only
         with pytest.raises(AttributeError):
@@ -157,7 +159,7 @@ class TestBSpline:
         b = BSpline(t, c, k)
         tm, tp = t[k], t[-k-1]
         xx = tm + (tp - tm) * np.random.random((3, 4, 5))
-        assert_equal(b(xx).shape, (3, 4, 5, 6, 7))
+        assert b(xx).shape == (3, 4, 5, 6, 7)
 
     def test_len_c(self):
         # for n+k+1 knots, only first n coefs are used.
@@ -232,7 +234,7 @@ class TestBSpline:
         # Direct check
         xx = [-1, 0, 0.5, 1]
         xy = t[k] + (xx - t[k]) % (t[n] - t[k])
-        assert_equal(b(xx, extrapolate='periodic'), b(xy, extrapolate=True))
+        xp_assert_equal(b(xx, extrapolate='periodic'), b(xy, extrapolate=True))
 
     def test_ppoly(self):
         b = _make_random_spline()
@@ -403,9 +405,9 @@ class TestBSpline:
             pass
 
         b = B.basis_element([0, 1, 2, 2])
-        assert_equal(b.__class__, B)
-        assert_equal(b.derivative().__class__, B)
-        assert_equal(b.antiderivative().__class__, B)
+        assert b.__class__ == B
+        assert b.derivative().__class__ == B
+        assert b.antiderivative().__class__ == B
 
     @pytest.mark.parametrize('axis', range(-4, 4))
     def test_axis(self, axis):
@@ -416,14 +418,13 @@ class TestBSpline:
         # in this test.
         pos_axis = axis % 4
         sh.insert(pos_axis, n)   # [22, 6, 7, 8] etc
+        sh = tuple(sh)
         c = np.random.random(size=sh)
         b = BSpline(t, c, k, axis=axis)
-        assert_equal(b.c.shape,
-                     [sh[pos_axis],] + sh[:pos_axis] + sh[pos_axis+1:])
+        assert b.c.shape == (sh[pos_axis],) + sh[:pos_axis] + sh[pos_axis+1:]
 
         xp = np.random.random((3, 4, 5))
-        assert_equal(b(xp).shape,
-                     sh[:pos_axis] + list(xp.shape) + sh[pos_axis+1:])
+        assert b(xp).shape == sh[:pos_axis] + xp.shape + sh[pos_axis+1:]
 
         # -c.ndim <= axis < c.ndim
         for ax in [-c.ndim - 1, c.ndim]:
@@ -435,7 +436,7 @@ class TestBSpline:
                    BSpline(t, c, k, axis=axis).derivative(2),
                    BSpline(t, c, k, axis=axis).antiderivative(),
                    BSpline(t, c, k, axis=axis).antiderivative(2)]:
-            assert_equal(b1.axis, b.axis)
+            assert b1.axis == b.axis
 
     def test_neg_axis(self):
         k = 2
@@ -445,7 +446,7 @@ class TestBSpline:
         spl = BSpline(t, c, k, axis=-1)
         spl0 = BSpline(t, c[0], k)
         spl1 = BSpline(t, c[1], k)
-        assert_equal(spl(2.5), [spl0(2.5), spl1(2.5)])
+        xp_assert_equal(spl(2.5), [spl0(2.5), spl1(2.5)])
 
     def test_design_matrix_bc_types(self):
         '''
@@ -587,10 +588,7 @@ class TestBSpline:
         bspl = BSpline.from_power_basis(cb, bc_type=bc_type)
         bspl_new_real = make_interp_spline(x, y.real, bc_type=bc_type)
         bspl_new_imag = make_interp_spline(x, y.imag, bc_type=bc_type)
-        assert_equal(bspl.c.dtype, (bspl_new_real.c
-                                    + 1j * bspl_new_imag.c).dtype)
-        assert_allclose(bspl.c, bspl_new_real.c
-                        + 1j * bspl_new_imag.c, atol=1e-15)
+        xp_assert_close(bspl.c, bspl_new_real.c + 1j * bspl_new_imag.c, atol=1e-15)
 
     def test_from_power_basis_exmp(self):
         '''
@@ -958,13 +956,13 @@ class TestInterop:
         t, c, k = _impl.splrep(x, y)
         assert_allclose(tck[0], t, atol=1e-15)
         assert_allclose(tck[1], c, atol=1e-15)
-        assert_equal(tck[2], k)
+        assert tck[2] == k
 
         # also cover the `full_output=True` branch
         tck_f, _, _, _ = splrep(x, y, full_output=True)
         assert_allclose(tck_f[0], t, atol=1e-15)
         assert_allclose(tck_f[1], c, atol=1e-15)
-        assert_equal(tck_f[2], k)
+        assert tck_f[2] == k
 
         # test that the result of splrep roundtrips with splev:
         # evaluate the spline on the original `x` points
@@ -1049,7 +1047,7 @@ class TestInterop:
         # and legacy behavior is preserved for a tck tuple w/ N-D coef
         c2r = b2.c.transpose(1, 2, 0)
         rr = np.asarray(sproot((b2.t, c2r, b2.k), mest=50))
-        assert_equal(rr.shape, (3, 2, 4))
+        assert rr.shape == (3, 2, 4)
         assert_allclose(rr - roots, 0, atol=1e-12)
 
     def test_splint(self):
@@ -1067,7 +1065,7 @@ class TestInterop:
         # and the legacy behavior is preserved for a tck tuple w/ N-D coef
         c2r = b2.c.transpose(1, 2, 0)
         integr = np.asarray(splint(0, 1, (b2.t, c2r, b2.k)))
-        assert_equal(integr.shape, (3, 2))
+        assert integr.shape == (3, 2)
         assert_allclose(integr,
                         splint(0, 1, b), atol=1e-14)
 
@@ -1083,7 +1081,7 @@ class TestInterop:
                 tck_d = _impl.splder((b.t, b.c, b.k))
                 assert_allclose(bd.t, tck_d[0], atol=1e-15)
                 assert_allclose(bd.c, tck_d[1], atol=1e-15)
-                assert_equal(bd.k, tck_d[2])
+                assert bd.k == tck_d[2]
                 assert isinstance(bd, BSpline)
                 assert isinstance(tck_d, tuple)  # back-compat: tck in and out
 
@@ -1099,7 +1097,7 @@ class TestInterop:
                 tck_d = _impl.splantider((b.t, b.c, b.k))
                 assert_allclose(bd.t, tck_d[0], atol=1e-15)
                 assert_allclose(bd.c, tck_d[1], atol=1e-15)
-                assert_equal(bd.k, tck_d[2])
+                assert bd.k == tck_d[2]
                 assert isinstance(bd, BSpline)
                 assert isinstance(tck_d, tuple)  # back-compat: tck in and out
 
@@ -1470,13 +1468,13 @@ class TestInterp:
         y = np.random.random(size=(n, 5, 6, 7))
 
         b = make_interp_spline(x, y, k)
-        assert_equal(b.c.shape, (n, 5, 6, 7))
+        assert b.c.shape == (n, 5, 6, 7)
 
         # now throw in some derivatives
         d_l = [(1, np.random.random((5, 6, 7)))]
         d_r = [(1, np.random.random((5, 6, 7)))]
         b = make_interp_spline(x, y, k, bc_type=(d_l, d_r))
-        assert_equal(b.c.shape, (n + k - 1, 5, 6, 7))
+        assert b.c.shape == (n + k - 1, 5, 6, 7)
 
     def test_string_aliases(self):
         yy = np.sin(self.xx)
@@ -1644,7 +1642,7 @@ class TestLSQ:
         b = make_lsq_spline(x, y, t, k)
 
         assert_allclose(b.c, c0)
-        assert_equal(b.c.shape, (t.size - k - 1,))
+        assert b.c.shape == (t.size - k - 1,)
 
         # also check against numpy.lstsq
         aa, yy = AY
@@ -1661,13 +1659,13 @@ class TestLSQ:
 
         assert_allclose(b.t, b_w.t, atol=1e-14)
         assert_allclose(b.c, b_w.c, atol=1e-14)
-        assert_equal(b.k, b_w.k)
+        assert b.k == b_w.k
 
     def test_multiple_rhs(self):
         x, t, k, n = self.x, self.t, self.k, self.n
         y = np.random.random(size=(n, 5, 6, 7))
         b = make_lsq_spline(x, y, t, k)
-        assert_equal(b.c.shape, (t.size-k-1, 5, 6, 7))
+        assert b.c.shape == (t.size-k-1, 5, 6, 7)
 
     def test_multiple_rhs_2(self):
         x, t, k, n = self.x, self.t, self.k, self.n

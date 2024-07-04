@@ -1,7 +1,7 @@
 # Created by Pearu Peterson, June 2003
 import itertools
 import numpy as np
-from numpy.testing import (assert_equal, assert_almost_equal, assert_array_equal,
+from numpy.testing import (assert_almost_equal, assert_array_equal,
         assert_array_almost_equal, assert_allclose, suppress_warnings)
 from pytest import raises as assert_raises
 
@@ -31,11 +31,11 @@ class TestUnivariateSpline:
         y = [0, 2, 4]
         lut = UnivariateSpline(x, y, k=1)
         arg = 2
-        assert_equal(shape(arg), shape(lut(arg)))
-        assert_equal(shape(arg), shape(lut(arg, nu=1)))
+        assert shape(arg) == shape(lut(arg))
+        assert shape(arg) == shape(lut(arg, nu=1))
         arg = [1.5, 2, 2.5]
-        assert_equal(shape(arg), shape(lut(arg)))
-        assert_equal(shape(arg), shape(lut(arg, nu=1)))
+        assert shape(arg) == shape(lut(arg))
+        assert shape(arg) == shape(lut(arg, nu=1))
 
     def test_linear_1d(self):
         x = [1,2,3]
@@ -73,7 +73,7 @@ class TestUnivariateSpline:
         x = np.linspace(0, 50 * np.pi, 1000)
         y = np.cos(x)
         spl = UnivariateSpline(x, y, s=0)
-        assert_equal(len(spl.roots()), 50)
+        assert len(spl.roots()) == 50
 
     def test_derivatives(self):
         x = [1, 3, 5, 7, 9]
@@ -387,7 +387,7 @@ too small.
 There is an approximation returned but the corresponding weighted sum
 of squared residuals does not satisfy the condition abs\(fp-s\)/s < tol.""")
             UnivariateSpline(x, y, k=1)
-            assert_equal(len(r), 1)
+            assert len(r) == 1
 
     def test_concurrency(self):
         # Check that no segfaults appear with concurrent access to
@@ -416,7 +416,7 @@ class TestLSQBivariateSpline:
         with suppress_warnings() as sup:
             r = sup.record(UserWarning, "\nThe coefficients of the spline")
             lut = LSQBivariateSpline(x,y,z,tx,ty,kx=1,ky=1)
-            assert_equal(len(r), 1)
+            assert len(r) == 1
 
         assert_almost_equal(lut(2,2), 3.)
 
@@ -456,7 +456,7 @@ class TestLSQBivariateSpline:
         with suppress_warnings() as sup:
             r = sup.record(UserWarning, "\nThe coefficients of the spline")
             lut = LSQBivariateSpline(x, y, z, tx, ty, kx=1, ky=1)
-            assert_equal(len(r), 1)
+            assert len(r) == 1
         tx, ty = lut.get_knots()
         tz = lut(tx, ty)
         trpz = .25*(diff(tx)[:,None]*diff(ty)[None,:]
@@ -476,7 +476,7 @@ class TestLSQBivariateSpline:
         with suppress_warnings() as sup:
             r = sup.record(UserWarning, "\nThe coefficients of the spline")
             lut = LSQBivariateSpline(x, y, z, tx, ty, kx=1, ky=1)
-            assert_equal(len(r), 1)
+            assert len(r) == 1
 
         assert_array_equal(lut([], []), np.zeros((0,0)))
         assert_array_equal(lut([], [], grid=False), np.zeros((0,)))
@@ -543,7 +543,7 @@ class TestLSQBivariateSpline:
                                       tx.tolist(), ty.tolist(), w=w.tolist(),
                                       bbox=bbox)
             assert_allclose(spl1(2.0, 2.0), spl2(2.0, 2.0))
-            assert_equal(len(r), 2)
+            assert len(r) == 2
 
     def test_unequal_length_of_knots(self):
         """Test for the case when the input knot-location arrays in x and y are
@@ -558,7 +558,7 @@ class TestLSQBivariateSpline:
         with suppress_warnings() as sup:
             r = sup.record(UserWarning, "\nThe coefficients of the spline")
             lut = LSQBivariateSpline(x,y,z,tx,ty)
-            assert_equal(len(r), 1)
+            assert len(r) == 1
 
         assert_almost_equal(lut(x, y, grid=False), z)
 
@@ -1214,7 +1214,7 @@ class TestRectSphereBivariateSpline:
         y = linspace(0.02, 2*pi-0.02, 7)
         x = linspace(0.02, pi-0.02, 7)
 
-        assert_equal(lut(x, y, dtheta=1, grid=False).shape, x.shape)
+        assert lut(x, y, dtheta=1, grid=False).shape == x.shape
         assert_allclose(lut(x, y, dtheta=1, grid=False),
                         _numdiff_2d(lambda x,y: lut(x,y,grid=False), x, y, dx=1),
                         rtol=1e-4, atol=1e-4)
@@ -1344,21 +1344,21 @@ class Test_DerivedBivariateSpline:
             lut_der = self.lut_lsq.partial_derivative(nux, nuy)
             a = lut_der(3.5, 3.5, grid=False)
             b = self.lut_lsq(3.5, 3.5, dx=nux, dy=nuy, grid=False)
-            assert_equal(a, b)
+            assert a == b
 
     def test_creation_from_Smooth(self):
         for nux, nuy in self.orders:
             lut_der = self.lut_smooth.partial_derivative(nux, nuy)
             a = lut_der(5.5, 5.5, grid=False)
             b = self.lut_smooth(5.5, 5.5, dx=nux, dy=nuy, grid=False)
-            assert_equal(a, b)
+            assert a == b
 
     def test_creation_from_Rect(self):
         for nux, nuy in self.orders:
             lut_der = self.lut_rect.partial_derivative(nux, nuy)
             a = lut_der(0.5, 1.5, grid=False)
             b = self.lut_rect(0.5, 1.5, dx=nux, dy=nuy, grid=False)
-            assert_equal(a, b)
+            assert a == b
 
     def test_invalid_attribute_fp(self):
         der = self.lut_rect.partial_derivative(1, 1)

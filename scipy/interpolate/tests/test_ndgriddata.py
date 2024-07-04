@@ -1,5 +1,5 @@
 import numpy as np
-from numpy.testing import assert_equal, assert_array_equal, assert_allclose
+from numpy.testing import assert_array_equal, assert_allclose
 import pytest
 from pytest import raises as assert_raises
 
@@ -62,7 +62,7 @@ class TestGriddata:
                 msg = repr((method, rescale))
                 yi = griddata(x, y, xi, method=method, rescale=rescale)
 
-                assert_equal(yi.shape, (5, 3), err_msg=msg)
+                assert yi.shape == (5, 3)
                 assert_allclose(yi, np.tile(y[:,None], (1, 3)),
                                 atol=1e-14, err_msg=msg)
 
@@ -79,7 +79,7 @@ class TestGriddata:
                 msg = repr((method, rescale))
                 yi = griddata(x, y, xi, method=method, rescale=rescale)
 
-                assert_equal(yi.shape, (5, 3), err_msg=msg)
+                assert yi.shape == (5, 3)
                 assert_allclose(yi, np.tile(y[:,None], (1, 3)),
                                 atol=1e-14, err_msg=msg)
 
@@ -271,11 +271,11 @@ class TestNDInterpolators:
         interp_points3 = interp(X, Y)
         interp_points4 = interp(X, 0.0)
 
-        assert_equal(interp_points0.size ==
-                     interp_points1.size ==
-                     interp_points2.size ==
-                     interp_points3.size ==
-                     interp_points4.size, True)
+        assert (interp_points0.size ==
+                interp_points1.size ==
+                interp_points2.size ==
+                interp_points3.size ==
+                interp_points4.size)
 
     @parametrize_interpolators
     def test_read_only(self, interpolator):

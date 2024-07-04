@@ -5,6 +5,7 @@ import numpy as np
 
 from numpy.testing import (assert_allclose, assert_equal, assert_warns,
                            assert_array_almost_equal, assert_array_equal)
+from scipy._lib._array_api import xp_assert_equal
 from pytest import raises as assert_raises
 
 from scipy.interpolate import (RegularGridInterpolator, interpn,
@@ -419,8 +420,8 @@ class TestRegularGridInterpolator:
             # input) and we simply filter them out.
             res = f(x)
 
-        assert_equal(res[i], np.nan)
-        assert_equal(res[~i], f(x[~i]))
+        assert np.isnan(res[i]).all()
+        xp_assert_equal(res[~i], f(x[~i]))
 
         # also test the length-one axis f(nan)
         x = [1, 2, 3]
@@ -428,8 +429,8 @@ class TestRegularGridInterpolator:
         data = np.ones((3, 1))
         f = RegularGridInterpolator((x, y), data, fill_value=1,
                                     bounds_error=False, method=method)
-        assert np.isnan(f([np.nan, 1]))
-        assert np.isnan(f([1, np.nan]))
+        assert np.all(np.isnan(f([np.nan, 1])))
+        assert np.all(np.isnan(f([1, np.nan])))
 
     @pytest.mark.parametrize("method", ['nearest', 'linear'])
     def test_nan_x_2d(self, method):
@@ -465,8 +466,8 @@ class TestRegularGridInterpolator:
             # input) and we simply filter them out.
             res = interp(z)
 
-        assert_equal(res[i], np.nan)
-        assert_equal(res[~i], interp(z[~i]))
+        assert np.isnan(res[i]).all()
+        xp_assert_equal(res[~i], interp(z[~i]))
 
     @pytest.mark.fail_slow(10)
     @parametrize_rgi_interp_methods
@@ -547,7 +548,7 @@ class TestRegularGridInterpolator:
         interp = RegularGridInterpolator(points, values, method=method,
                                          bounds_error=False)
         v = interp(sample)
-        assert_equal(v.shape, (7, 3, 8), err_msg=method)
+        assert v.shape == (7, 3, 8)
 
         vs = []
         for j in range(8):
@@ -845,7 +846,7 @@ class TestInterpN:
 
         v1 = interpn(points, values, sample, method='nearest',
                      bounds_error=False)
-        assert_equal(v1.shape, (2, 3))
+        assert v1.shape, (2 == 3)
 
         v2 = interpn(points, values, sample.reshape(-1, 4),
                      method='nearest', bounds_error=False)
@@ -862,7 +863,7 @@ class TestInterpN:
 
         sample = (xi[:, None], yi[None, :])
         v1 = interpn(points, values, sample, method=method, bounds_error=False)
-        assert_equal(v1.shape, (2, 3))
+        assert v1.shape, (2 == 3)
 
         xx, yy = np.meshgrid(xi, yi)
         sample = np.c_[xx.T.ravel(), yy.T.ravel()]
@@ -889,7 +890,7 @@ class TestInterpN:
 
         v = interpn(points, values, sample, method=method,
                     bounds_error=False)
-        assert_equal(v.shape, (7, 3, 8), err_msg=method)
+        assert v.shape == (7, 3, 8)
 
         vs = [interpn(points, values[..., j], sample, method=method,
                       bounds_error=False) for j in range(8)]
