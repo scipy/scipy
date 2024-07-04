@@ -579,7 +579,7 @@ class SVDSCommonTests:
                 with pytest.warns(UserWarning, match="The problem size"):
                     U1, s1, VH1 = reorder(svds(A, k, v0=v0, solver=solver,
                                                random_state=0))
-                    U2, s2, VH2 = reorder(svds(L, k, v0=v0, solver=solver, 
+                    U2, s2, VH2 = reorder(svds(L, k, v0=v0, solver=solver,
                                                random_state=0))
             else:
                 U1, s1, VH1 = reorder(svds(A, k, v0=v0, solver=solver,
@@ -714,6 +714,9 @@ class SVDSCommonTests:
         k = 1
         n, m = shape
         A = np.zeros((n, m), dtype=dtype)
+
+        if (self.solver == 'arpack'):
+            pytest.skip('See gh-21110.')
 
         if (self.solver == 'arpack' and dtype is complex
                 and k == min(A.shape) - 1):
