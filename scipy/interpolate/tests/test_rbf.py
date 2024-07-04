@@ -2,8 +2,11 @@
 """ Test functions for rbf module """
 
 import numpy as np
-from numpy.testing import (assert_, assert_array_almost_equal,
-                           assert_almost_equal)
+
+from scipy._lib._array_api import (
+    assert_array_almost_equal, assert_almost_equal, xp_assert_equal,
+)
+
 from numpy import linspace, sin, cos, random, exp, allclose
 from scipy.interpolate._rbf import Rbf
 from scipy._lib._testutils import _run_concurrent_barrier
@@ -20,7 +23,7 @@ def check_rbf1d_interpolation(function):
     rbf = Rbf(x, y, function=function)
     yi = rbf(x)
     assert_array_almost_equal(y, yi)
-    assert_almost_equal(rbf(float(x[0])), y[0])
+    assert_almost_equal(rbf(float(x[0])), y[0], check_shape=False)
 
 
 def check_rbf2d_interpolation(function):
