@@ -145,6 +145,7 @@ py3.install_sources([
     '_odepack_py.py',
     '_quadpack_py.py',
     '_tanhsinh.py',
+    '_cubature.py',
     'dop.py',
     'lsoda.py',
     'odepack.py',
