@@ -664,7 +664,8 @@ class TestRegularGridInterpolator:
         # the values here are just what the call returns; the test checks that
         # that the call succeeds at all, instead of failing with cython not
         # having a float32 kernel
-        xp_assert_close(interp(pts), [134.10469388, 153.40069388], atol=1e-7, rtol=1e-7, check_dtype=False)
+        xp_assert_close(interp(pts), [134.10469388, 153.40069388],
+                        atol=1e-7, rtol=1e-7, check_dtype=False)
 
     def test_bad_solver(self):
         x = np.linspace(0, 3, 7)

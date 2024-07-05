@@ -703,7 +703,9 @@ class TestCubicSpline:
         elif bc_start == 'clamped':
             xp_assert_close(S(x[0], 1), np.asarray(0.0), rtol=tol, atol=tol)
         elif bc_start == 'natural':
-            xp_assert_close(S(x[0], 2), np.asarray(0.0), rtol=tol, atol=tol, check_dtype=False)
+            xp_assert_close(
+                S(x[0], 2), np.asarray(0.0), rtol=tol, atol=tol, check_dtype=False
+            )
         else:
             order, value = bc_start
             xp_assert_close(S(x[0], order), value, rtol=tol, atol=tol)
