@@ -577,9 +577,9 @@ def kronsum(A, B, format=None):
     B = coo_sparse(B)
 
     if A.ndim != 2:
-        raise ValueError("A is not 2D")
+        raise ValueError(f"kronsum requires 2D inputs. `A` is {A.ndim}D.")
     if B.ndim != 2:
-        raise ValueError("B is not 2D")
+        raise ValueError(f"kronsum requires 2D inputs. `B` is {B.ndim}D.")
     if A.shape[0] != A.shape[1]:
         raise ValueError('A is not square')
     if B.shape[0] != B.shape[1]:
