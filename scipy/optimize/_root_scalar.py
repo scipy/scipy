@@ -76,14 +76,14 @@ def root_scalar(f, args=(), method=None, bracket=None,
     method : str, optional
         Type of solver.  Should be one of
 
-            - 'bisect'    :ref:`(see here) <optimize.root_scalar-bisect>`
-            - 'brentq'    :ref:`(see here) <optimize.root_scalar-brentq>`
-            - 'brenth'    :ref:`(see here) <optimize.root_scalar-brenth>`
-            - 'ridder'    :ref:`(see here) <optimize.root_scalar-ridder>`
-            - 'toms748'    :ref:`(see here) <optimize.root_scalar-toms748>`
-            - 'newton'    :ref:`(see here) <optimize.root_scalar-newton>`
-            - 'secant'    :ref:`(see here) <optimize.root_scalar-secant>`
-            - 'halley'    :ref:`(see here) <optimize.root_scalar-halley>`
+        - 'bisect'    :ref:`(see here) <optimize.root_scalar-bisect>`
+        - 'brentq'    :ref:`(see here) <optimize.root_scalar-brentq>`
+        - 'brenth'    :ref:`(see here) <optimize.root_scalar-brenth>`
+        - 'ridder'    :ref:`(see here) <optimize.root_scalar-ridder>`
+        - 'toms748'    :ref:`(see here) <optimize.root_scalar-toms748>`
+        - 'newton'    :ref:`(see here) <optimize.root_scalar-newton>`
+        - 'secant'    :ref:`(see here) <optimize.root_scalar-secant>`
+        - 'halley'    :ref:`(see here) <optimize.root_scalar-halley>`
 
     bracket: A sequence of 2 floats, optional
         An interval bracketing a root.  ``f(x, *args)`` must have different
@@ -268,11 +268,11 @@ def root_scalar(f, args=(), method=None, bracket=None,
     try:
         methodc = getattr(optzeros, map2underlying.get(meth, meth))
     except AttributeError as e:
-        raise ValueError('Unknown solver %s' % meth) from e
+        raise ValueError(f'Unknown solver {meth}') from e
 
     if meth in ['bisect', 'ridder', 'brentq', 'brenth', 'toms748']:
         if not isinstance(bracket, (list, tuple, np.ndarray)):
-            raise ValueError('Bracket needed for %s' % method)
+            raise ValueError(f'Bracket needed for {method}')
 
         a, b = bracket[:2]
         try:
@@ -292,14 +292,14 @@ def root_scalar(f, args=(), method=None, bracket=None,
 
     elif meth in ['secant']:
         if x0 is None:
-            raise ValueError('x0 must not be None for %s' % method)
+            raise ValueError(f'x0 must not be None for {method}')
         if 'xtol' in kwargs:
             kwargs['tol'] = kwargs.pop('xtol')
         r, sol = methodc(f, x0, args=args, fprime=None, fprime2=None,
                          x1=x1, **kwargs)
     elif meth in ['newton']:
         if x0 is None:
-            raise ValueError('x0 must not be None for %s' % method)
+            raise ValueError(f'x0 must not be None for {method}')
         if not fprime:
             # approximate fprime with finite differences
 
@@ -316,16 +316,16 @@ def root_scalar(f, args=(), method=None, bracket=None,
                          **kwargs)
     elif meth in ['halley']:
         if x0 is None:
-            raise ValueError('x0 must not be None for %s' % method)
+            raise ValueError(f'x0 must not be None for {method}')
         if not fprime:
-            raise ValueError('fprime must be specified for %s' % method)
+            raise ValueError(f'fprime must be specified for {method}')
         if not fprime2:
-            raise ValueError('fprime2 must be specified for %s' % method)
+            raise ValueError(f'fprime2 must be specified for {method}')
         if 'xtol' in kwargs:
             kwargs['tol'] = kwargs.pop('xtol')
         r, sol = methodc(f, x0, args=args, fprime=fprime, fprime2=fprime2, **kwargs)
     else:
-        raise ValueError('Unknown solver %s' % method)
+        raise ValueError(f'Unknown solver {method}')
 
     if is_memoized:
         # Replace the function_calls count with the memoized count.

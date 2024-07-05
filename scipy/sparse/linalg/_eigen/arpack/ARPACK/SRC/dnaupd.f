@@ -273,7 +273,7 @@ c          = -7: Length of private work array is not sufficient.
 c          = -8: Error return from LAPACK eigenvalue calculation;
 c          = -9: Starting vector is zero.
 c          = -10: IPARAM(7) must be 1,2,3,4.
-c          = -11: IPARAM(7) = 1 and BMAT = 'G' are incompatable.
+c          = -11: IPARAM(7) = 1 and BMAT = 'G' are incompatible.
 c          = -12: IPARAM(1) must be equal to 0 or 1.
 c          = -9999: Could not build an Arnoldi factorization.
 c                   IPARAM(5) returns the size of the current Arnoldi
@@ -298,7 +298,7 @@ c     eigenvector z of the original problem is recovered by solving
 c     L`z = x  where x is a Ritz vector of OP.
 c
 c  4. At present there is no a-priori analysis to guide the selection
-c     of NCV relative to NEV.  The only formal requrement is that NCV > NEV + 2.
+c     of NCV relative to NEV.  The only formal requirement is that NCV > NEV + 2.
 c     However, it is recommended that NCV .ge. 2*NEV+1.  If many problems of
 c     the same type are to be solved, one should experiment with increasing
 c     NCV while keeping NEV fixed for a given test problem.  This will
@@ -628,9 +628,9 @@ c
       if (info .eq. 2) info = 3
 c
       if (msglvl .gt. 0) then
-         call ivout (logfil, 1, mxiter, ndigit,
+         call ivout (logfil, 1, [mxiter], ndigit,
      &               '_naupd: Number of update iterations taken')
-         call ivout (logfil, 1, np, ndigit,
+         call ivout (logfil, 1, [np], ndigit,
      &               '_naupd: Number of wanted "converged" Ritz values')
          call dvout  (logfil, np, workl(ritzr), ndigit,
      &               '_naupd: Real part of the final Ritz values')

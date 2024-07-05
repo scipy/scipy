@@ -498,7 +498,7 @@ def test_gh_5555():
     for method in methods:
         res = method(f, -1e8, 1e7, xtol=xtol, rtol=rtol)
         assert_allclose(root, res, atol=xtol, rtol=rtol,
-                        err_msg='method %s' % method.__name__)
+                        err_msg=f'method {method.__name__}')
 
 
 def test_gh_5557():

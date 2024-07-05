@@ -184,6 +184,14 @@ def gmean(a, axis=0, dtype=None, weights=None):
     numpy.average : Weighted average
     hmean : Harmonic mean
 
+    Notes
+    -----
+    The sample geometric mean is the exponential of the mean of the natural
+    logarithms of the observations.
+    Negative observations will produce NaNs in the output because the *natural*
+    logarithm (as opposed to the *complex* logarithm) is defined only for
+    non-negative reals.
+
     References
     ----------
     .. [1] "Weighted Geometric Mean", *Wikipedia*,
@@ -266,9 +274,15 @@ def hmean(a, axis=0, dtype=None, *, weights=None):
 
     Notes
     -----
+    The sample harmonic mean is the reciprocal of the mean of the reciprocals
+    of the observations.
+
     The harmonic mean is computed over a single dimension of the input
     array, axis=0 by default, or all values in the array if axis=None.
     float64 intermediate and return values are used for integer inputs.
+
+    The harmonic mean is only defined if all observations are non-negative;
+    otherwise, the result is NaN.
 
     References
     ----------
@@ -288,14 +302,20 @@ def hmean(a, axis=0, dtype=None, *, weights=None):
     1.9029126213592233
 
     """
-    a = np.asarray(a, dtype=dtype)
+    xp = array_namespace(a, weights)
+    a = xp.asarray(a, dtype=dtype)
 
     if weights is not None:
-        weights = np.asarray(weights, dtype=dtype)
+        weights = xp.asarray(weights, dtype=dtype)
 
-    if not np.all(a >= 0):
-        message = ("The harmonic mean is only defined if all elements are greater "
-                   "than or equal to zero; otherwise, the result is NaN.")
+    negative_mask = a < 0
+    if xp.any(negative_mask):
+        # `where` avoids having to be careful about dtypes and will work with
+        # JAX. This is the exceptional case, so it's OK to be a little slower.
+        # Won't work for array_api_strict for now, but see data-apis/array-api#807
+        a = xp.where(negative_mask, xp.nan, a)
+        message = ("The harmonic mean is only defined if all elements are "
+                   "non-negative; otherwise, the result is NaN.")
         warnings.warn(message, RuntimeWarning, stacklevel=2)
 
     with np.errstate(divide='ignore'):
@@ -365,6 +385,9 @@ def pmean(a, p, *, axis=0, dtype=None, weights=None):
     array, ``axis=0`` by default, or all values in the array if ``axis=None``.
     float64 intermediate and return values are used for integer inputs.
 
+    The power mean is only defined if all observations are non-negative;
+    otherwise, the result is NaN.
+
     .. versionadded:: 1.9
 
     References
@@ -407,14 +430,20 @@ def pmean(a, p, *, axis=0, dtype=None, weights=None):
     if p == 0:
         return gmean(a, axis=axis, dtype=dtype, weights=weights)
 
-    a = np.asarray(a, dtype=dtype)
+    xp = array_namespace(a, weights)
+    a = xp.asarray(a, dtype=dtype)
 
     if weights is not None:
-        weights = np.asanyarray(weights, dtype=dtype)
+        weights = xp.asarray(weights, dtype=dtype)
 
-    if not np.all(a >= 0):
-        message = ("The power mean is only defined if all elements are greater "
-                   "than or equal to zero; otherwise, the result is NaN.")
+    negative_mask = a < 0
+    if xp.any(negative_mask):
+        # `where` avoids having to be careful about dtypes and will work with
+        # JAX. This is the exceptional case, so it's OK to be a little slower.
+        # Won't work for array_api_strict for now, but see data-apis/array-api#807
+        a = xp.where(negative_mask, np.nan, a)
+        message = ("The power mean is only defined if all elements are "
+                   "non-negative; otherwise, the result is NaN.")
         warnings.warn(message, RuntimeWarning, stacklevel=2)
 
     with np.errstate(divide='ignore', invalid='ignore'):
@@ -661,9 +690,14 @@ def tvar(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
     20.0
 
     """
-    a, _ = _put_val_to_limits(a, limits, inclusive)
-    return np.nanvar(a, ddof=ddof, axis=axis)
-
+    xp = array_namespace(a)
+    a, _ = _put_val_to_limits(a, limits, inclusive, xp=xp)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", SmallSampleWarning)
+        # Currently, this behaves like nan_policy='omit' for alternative array
+        # backends, but nan_policy='propagate' will be handled for other backends
+        # by the axis_nan_policy decorator shortly.
+        return _xp_var(a, correction=ddof, axis=axis, nan_policy='omit', xp=xp)
 
 @_axis_nan_policy_factory(
     lambda x: x, n_outputs=1, result_to_tuple=lambda x: (x,)
@@ -710,13 +744,22 @@ def tmin(a, lowerlimit=None, axis=0, inclusive=True, nan_policy='propagate'):
     14
 
     """
+    xp = array_namespace(a)
+
+    # remember original dtype; _put_val_to_limits might need to change it
     dtype = a.dtype
-    a, _ = _put_val_to_limits(a, (lowerlimit, None), (inclusive, None))
-    res = np.nanmin(a, axis=axis)
-    if not np.any(np.isnan(res)):
+    a, mask = _put_val_to_limits(a, (lowerlimit, None), (inclusive, None),
+                                 val=xp.inf, xp=xp)
+
+    min = xp.min(a, axis=axis)
+    n = xp.sum(xp.asarray(~mask, dtype=a.dtype), axis=axis)
+    res = xp.where(n != 0, min, xp.nan)
+
+    if not xp.any(xp.isnan(res)):
         # needed if input is of integer dtype
-        return res.astype(dtype, copy=False)
-    return res
+        res = xp.astype(res, dtype, copy=False)
+
+    return res[()] if res.ndim == 0 else res
 
 
 @_axis_nan_policy_factory(
@@ -763,13 +806,22 @@ def tmax(a, upperlimit=None, axis=0, inclusive=True, nan_policy='propagate'):
     12
 
     """
+    xp = array_namespace(a)
+
+    # remember original dtype; _put_val_to_limits might need to change it
     dtype = a.dtype
-    a, _ = _put_val_to_limits(a, (None, upperlimit), (None, inclusive))
-    res = np.nanmax(a, axis=axis)
-    if not np.any(np.isnan(res)):
+    a, mask = _put_val_to_limits(a, (None, upperlimit), (None, inclusive),
+                                 val=-xp.inf, xp=xp)
+
+    max = xp.max(a, axis=axis)
+    n = xp.sum(xp.asarray(~mask, dtype=a.dtype), axis=axis)
+    res = xp.where(n != 0, max, xp.nan)
+
+    if not xp.any(xp.isnan(res)):
         # needed if input is of integer dtype
-        return res.astype(dtype, copy=False)
-    return res
+        res = xp.astype(res, dtype, copy=False)
+
+    return res[()] if res.ndim == 0 else res
 
 
 @_axis_nan_policy_factory(
@@ -821,7 +873,7 @@ def tstd(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
     4.4721359549995796
 
     """
-    return np.sqrt(tvar(a, limits, inclusive, axis, ddof, _no_deco=True))
+    return tvar(a, limits, inclusive, axis, ddof, _no_deco=True)**0.5
 
 
 @_axis_nan_policy_factory(
@@ -873,10 +925,18 @@ def tsem(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
     1.1547005383792515
 
     """
-    a, _ = _put_val_to_limits(a, limits, inclusive)
-    sd = np.sqrt(np.nanvar(a, ddof=ddof, axis=axis))
-    n_obs = (~np.isnan(a)).sum(axis=axis)
-    return sd / np.sqrt(n_obs, dtype=sd.dtype)
+    xp = array_namespace(a)
+    a, _ = _put_val_to_limits(a, limits, inclusive, xp=xp)
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", SmallSampleWarning)
+        # Currently, this behaves like nan_policy='omit' for alternative array
+        # backends, but nan_policy='propagate' will be handled for other backends
+        # by the axis_nan_policy decorator shortly.
+        sd = _xp_var(a, correction=ddof, axis=axis, nan_policy='omit', xp=xp)**0.5
+
+    n_obs = xp.sum(~xp.isnan(a), axis=axis, dtype=sd.dtype)
+    return sd / n_obs**0.5
 
 
 #####################################
@@ -1019,11 +1079,12 @@ def moment(a, order=1, axis=0, nan_policy='propagate', *, center=None):
         calculate_mean = center is None and xp.any(order > 1)
         mean = xp.mean(a, axis=axis, keepdims=True) if calculate_mean else None
         mmnt = []
-        for i in order:
-            if center is None and i > 1:
-                mmnt.append(_moment(a, i, axis, mean=mean)[np.newaxis, ...])
+        for i in range(order.shape[0]):
+            order_i = order[i]
+            if center is None and order_i > 1:
+                mmnt.append(_moment(a, order_i, axis, mean=mean)[np.newaxis, ...])
             else:
-                mmnt.append(_moment(a, i, axis, mean=center)[np.newaxis, ...])
+                mmnt.append(_moment(a, order_i, axis, mean=center)[np.newaxis, ...])
         return xp.concat(mmnt, axis=0)
     else:
         return _moment(a, order, axis, mean=center)
@@ -1080,7 +1141,7 @@ def _moment(a, order, axis, *, mean=None, xp=None):
                           keepdims=True) / xp.abs(mean)
     with np.errstate(invalid='ignore'):
         precision_loss = xp.any(rel_diff < eps)
-    n = a.shape[axis] if axis is not None else a.size
+    n = a.shape[axis] if axis is not None else xp_size(a)
     if precision_loss and n > 1:
         message = ("Precision loss occurred in moment calculation due to "
                    "catastrophic cancellation. This occurs when the data "
@@ -1105,7 +1166,7 @@ def _var(x, axis=0, ddof=0, mean=None, xp=None):
     xp = array_namespace(x) if xp is None else xp
     var = _moment(x, 2, axis, mean=mean, xp=xp)
     if ddof != 0:
-        n = x.shape[axis] if axis is not None else x.size
+        n = x.shape[axis] if axis is not None else xp_size(x)
         var *= np.divide(n, n-ddof)  # to avoid error on division by zero
     return var
 
@@ -3223,7 +3284,7 @@ def gstd(a, axis=0, ddof=1):
     When an observation is infinite, the geometric standard deviation is
     NaN (undefined). Non-positive observations will also produce NaNs in the
     output because the *natural* logarithm (as opposed to the *complex*
-    logarithm) is defined only for positive reals.
+    logarithm) is defined and finite only for positive reals.
     The geometric standard deviation is sometimes confused with the exponential
     of the standard deviation, ``exp(std(a))``. Instead, the geometric standard
     deviation is ``exp(std(log(a)))``.
@@ -3271,8 +3332,14 @@ def gstd(a, axis=0, ddof=1):
         log = np.log
 
     with np.errstate(invalid='ignore', divide='ignore'):
-        return np.exp(np.std(log(a), axis=axis, ddof=ddof))
+        res = np.exp(np.std(log(a), axis=axis, ddof=ddof))
 
+    if (a <= 0).any():
+        message = ("The geometric standard deviation is only defined if all elements "
+                   "are greater than or equal to zero; otherwise, the result is NaN.")
+        warnings.warn(message, RuntimeWarning, stacklevel=2)
+
+    return res
 
 # Private dictionary initialized only once at module level
 # See https://en.wikipedia.org/wiki/Robust_measures_of_scale
@@ -4383,7 +4450,8 @@ def _pearsonr_fisher_ci(r, n, confidence_level, alternative):
         zr = xp.atanh(r)
 
     ones = xp.ones_like(r)
-    n, confidence_level = xp.asarray([n, confidence_level], dtype=r.dtype)
+    n = xp.asarray(n, dtype=r.dtype)
+    confidence_level = xp.asarray(confidence_level, dtype=r.dtype)
     if n > 3:
         se = xp.sqrt(1 / (n - 3))
         if alternative == "two-sided":
@@ -7706,6 +7774,7 @@ def chisquare(f_obs, f_exp=None, ddof=0, axis=0):
     scipy.stats.fisher_exact : Fisher exact test on a 2x2 contingency table.
     scipy.stats.barnard_exact : An unconditional exact test. An alternative
         to chi-squared test for small sample sizes.
+    :ref:`hypothesis_chisquare`
 
     Notes
     -----
@@ -7738,59 +7807,19 @@ def chisquare(f_obs, f_exp=None, ddof=0, axis=0):
            in the case of a correlated system of variables is such that it can be reasonably
            supposed to have arisen from random sampling", Philosophical Magazine. Series 5. 50
            (1900), pp. 157-175.
-    .. [4] Mannan, R. William and E. Charles. Meslow. "Bird populations and
-           vegetation characteristics in managed and old-growth forests,
-           northeastern Oregon." Journal of Wildlife Management
-           48, 1219-1238, :doi:`10.2307/3801783`, 1984.
 
     Examples
     --------
-    In [4]_, bird foraging behavior was investigated in an old-growth forest
-    of Oregon.
-    In the forest, 44% of the canopy volume was Douglas fir,
-    24% was ponderosa pine, 29% was grand fir, and 3% was western larch.
-    The authors observed the behavior of several species of birds, one of
-    which was the red-breasted nuthatch. They made 189 observations of this
-    species foraging, recording 43 ("23%") of observations in Douglas fir,
-    52 ("28%") in ponderosa pine, 54 ("29%") in grand fir, and 40 ("21%") in
-    western larch.
-
-    Using a chi-square test, we can test the null hypothesis that the
-    proportions of foraging events are equal to the proportions of canopy
-    volume. The authors of the paper considered a p-value less than 1% to be
-    significant.
-
-    Using the above proportions of canopy volume and observed events, we can
-    infer expected frequencies.
+    When only the mandatory `f_obs` argument is given, it is assumed that the
+    expected frequencies are uniform and given by the mean of the observed
+    frequencies:
 
     >>> import numpy as np
-    >>> f_exp = np.array([44, 24, 29, 3]) / 100 * 189
-
-    The observed frequencies of foraging were:
-
-    >>> f_obs = np.array([43, 52, 54, 40])
-
-    We can now compare the observed frequencies with the expected frequencies.
-
     >>> from scipy.stats import chisquare
-    >>> chisquare(f_obs=f_obs, f_exp=f_exp)
-    Power_divergenceResult(statistic=228.23515947653874, pvalue=3.3295585338846486e-49)
-
-    The p-value is well below the chosen significance level. Hence, the
-    authors considered the difference to be significant and concluded
-    that the relative proportions of foraging events were not the same
-    as the relative proportions of tree canopy volume.
-
-    Following are other generic examples to demonstrate how the other
-    parameters can be used.
-
-    When just `f_obs` is given, it is assumed that the expected frequencies
-    are uniform and given by the mean of the observed frequencies.
-
     >>> chisquare([16, 18, 16, 14, 12, 12])
     Power_divergenceResult(statistic=2.0, pvalue=0.84914503608460956)
 
-    With `f_exp` the expected frequencies can be given.
+    The optional `f_exp` argument gives the expected frequencies.
 
     >>> chisquare([16, 18, 16, 14, 12, 12], f_exp=[16, 16, 16, 16, 16, 8])
     Power_divergenceResult(statistic=3.5, pvalue=0.62338762774958223)
@@ -7819,7 +7848,7 @@ def chisquare(f_obs, f_exp=None, ddof=0, axis=0):
     The calculation of the p-values is done by broadcasting the
     chi-squared statistic with `ddof`.
 
-    >>> chisquare([16, 18, 16, 14, 12, 12], ddof=[0,1,2])
+    >>> chisquare([16, 18, 16, 14, 12, 12], ddof=[0, 1, 2])
     Power_divergenceResult(statistic=2.0, pvalue=array([0.84914504, 0.73575888, 0.5724067 ]))
 
     `f_obs` and `f_exp` are also broadcast.  In the following, `f_obs` has
@@ -7832,6 +7861,7 @@ def chisquare(f_obs, f_exp=None, ddof=0, axis=0):
     ...           axis=1)
     Power_divergenceResult(statistic=array([3.5 , 9.25]), pvalue=array([0.62338763, 0.09949846]))
 
+    For a more detailed example, see :ref:`hypothesis_chisquare`.
     """  # noqa: E501
     return power_divergence(f_obs, f_exp=f_exp, ddof=ddof, axis=axis,
                             lambda_="pearson")
@@ -9345,7 +9375,10 @@ def combine_pvalues(pvalues, method='fisher', weights=None, *, axis=0):
 
         norm = _SimpleNormal()
         Zi = norm.isf(pvalues)
-        statistic = weights @ Zi / xp.linalg.vector_norm(weights, axis=axis)
+        # could use `einsum` or clever `matmul` for performance,
+        # but this is the most readable
+        statistic = (xp.sum(weights * Zi, axis=axis)
+                     / xp.linalg.vector_norm(weights, axis=axis))
         pval = _get_pvalue(statistic, norm, alternative="greater", xp=xp)
 
     else:
@@ -11101,6 +11134,41 @@ def _xp_mean(x, /, *, axis=None, weights=None, keepdims=False, nan_policy='propa
         res = xp.reshape(res, final_shape)
 
     return res[()] if res.ndim == 0 else res
+
+
+def _xp_var(x, /, *, axis=None, correction=0, keepdims=False, nan_policy='propagate',
+            dtype=None, xp=None):
+    # an array-api compatible function for variance with scipy.stats interface
+    # and features (e.g. `nan_policy`).
+    xp = array_namespace(x) if xp is None else xp
+    x = xp.asarray(x)
+
+    # use `_xp_mean` instead of `xp.var` for desired warning behavior
+    # it would be nice to combine this with `_var`, which uses `_moment`
+    # and therefore warns when precision is lost, but that does not support
+    # `axis` tuples or keepdims. Eventually, `_axis_nan_policy` will simplify
+    # `axis` tuples and implement `keepdims` for non-NumPy arrays; then it will
+    # be easy.
+    kwargs = dict(axis=axis, nan_policy=nan_policy, dtype=dtype, xp=xp)
+    mean = _xp_mean(x, keepdims=True, **kwargs)
+    x = xp.asarray(x, dtype=mean.dtype)
+    var = _xp_mean((x - mean)**2, keepdims=keepdims, **kwargs)
+
+    if correction != 0:
+        n = (xp_size(x) if axis is None
+             # compact way to deal with axis tuples or ints
+             else np.prod(np.asarray(x.shape)[np.asarray(axis)]))
+        n = xp.asarray(n, dtype=var.dtype)
+
+        if nan_policy == 'omit':
+            nan_mask = xp.astype(xp.isnan(x), var.dtype)
+            n = n - xp.sum(nan_mask, axis=axis, keepdims=keepdims)
+
+        # Produce NaNs silently when n - correction <= 0
+        factor = _lazywhere(n-correction > 0, (n, n-correction), xp.divide, xp.nan)
+        var *= factor
+
+    return var[()] if var.ndim == 0 else var
 
 
 class _SimpleNormal:

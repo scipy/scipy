@@ -73,8 +73,11 @@ scipy.signal:
 
 scipy.sparse:
 - changed-files:
-  - any-glob-to-any-file:
+  - all-globs-to-any-file:
     - scipy/sparse/**
+    # don't match the `csgraph` or `linalg` submodules
+    - '!scipy/sparse/csgraph/**'
+    - '!scipy/sparse/linalg/**'
 
 scipy.sparse.csgraph:
 - changed-files:

@@ -844,7 +844,7 @@ def B_0123(x, der=0):
                  lambda x: -2.,
                  lambda x: 1.]
     else:
-        raise ValueError('never be here: der=%s' % der)
+        raise ValueError(f'never be here: der={der}')
     pieces = np.piecewise(x, conds, funcs)
     return pieces
 

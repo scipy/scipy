@@ -87,26 +87,21 @@ def test_indexing(A):
     if A.__class__.__name__[:3] in ('dia', 'coo', 'bsr'):
         return
 
-    with pytest.raises(NotImplementedError):
-        A[1, :]
+    all_res = (
+        A[1, :],
+        A[:, 1],
+        A[1, [1, 2]],
+        A[[1, 2], 1],
+        A[[0]],
+        A[:, [1, 2]],
+        A[[1, 2], :],
+        A[1, [[1, 2]]],
+        A[[[1, 2]], 1],
+    )
 
-    with pytest.raises(NotImplementedError):
-        A[:, 1]
-
-    with pytest.raises(NotImplementedError):
-        A[1, [1, 2]]
-
-    with pytest.raises(NotImplementedError):
-        A[[1, 2], 1]
-
-    assert isinstance(A[[0]], scipy.sparse.sparray), \
-           "Expected sparse array, got sparse matrix"
-    assert isinstance(A[1, [[1, 2]]], scipy.sparse.sparray), \
-           "Expected ndarray, got sparse array"
-    assert isinstance(A[[[1, 2]], 1], scipy.sparse.sparray), \
-           "Expected ndarray, got sparse array"
-    assert isinstance(A[:, [1, 2]], scipy.sparse.sparray), \
-           "Expected sparse array, got something else"
+    for res in all_res:
+        assert isinstance(res, scipy.sparse.sparray), \
+            f"Expected sparse array, got {res._class__.__name__}"
 
 
 @parametrize_sparrays

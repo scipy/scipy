@@ -166,7 +166,7 @@ def solve_continuous_lyapunov(a, q):
             r_or_c = complex
 
         if not np.equal(*_.shape):
-            raise ValueError("Matrix {} should be square.".format("aq"[ind]))
+            raise ValueError(f"Matrix {'aq'[ind]} should be square.")
 
     # Shape consistency check
     if a.shape != q.shape:
@@ -181,7 +181,7 @@ def solve_continuous_lyapunov(a, q):
     # Call the Sylvester equation solver
     trsyl = get_lapack_funcs('trsyl', (r, f))
 
-    dtype_string = 'T' if r_or_c == float else 'C'
+    dtype_string = 'T' if r_or_c is float else 'C'
     y, scale, info = trsyl(r, r, f, tranb=dtype_string)
 
     if info < 0:
@@ -318,7 +318,7 @@ def solve_discrete_lyapunov(a, q, method=None):
     elif meth == 'bilinear':
         x = _solve_discrete_lyapunov_bilinear(a, q)
     else:
-        raise ValueError('Unknown solver %s' % method)
+        raise ValueError(f'Unknown solver {method}')
 
     return x
 
@@ -487,7 +487,7 @@ def solve_continuous_are(a, b, q, r, e=None, s=None, balanced=True):
     J = q[:2*m, n:].conj().T.dot(J[:2*m, :2*m])
 
     # Decide on which output type is needed for QZ
-    out_str = 'real' if r_or_c == float else 'complex'
+    out_str = 'real' if r_or_c is float else 'complex'
 
     _, _, _, _, _, u = ordqz(H, J, sort='lhp', overwrite_a=True,
                              overwrite_b=True, check_finite=False,
@@ -693,7 +693,7 @@ def solve_discrete_are(a, b, q, r, e=None, s=None, balanced=True):
     J = q_of_qr[:, n:].conj().T.dot(J[:, :2*m])
 
     # Decide on which output type is needed for QZ
-    out_str = 'real' if r_or_c == float else 'complex'
+    out_str = 'real' if r_or_c is float else 'complex'
 
     _, _, _, _, _, u = ordqz(H, J, sort='iuc',
                              overwrite_a=True,
@@ -794,7 +794,7 @@ def _are_validate_args(a, b, q, r, e, s, eq_type='care'):
             r_or_c = complex
 
         if not np.equal(*mat.shape):
-            raise ValueError("Matrix {} should be square.".format("aqr"[ind]))
+            raise ValueError(f"Matrix {'aqr'[ind]} should be square.")
 
     # Shape consistency checks
     m, n = b.shape
@@ -808,8 +808,7 @@ def _are_validate_args(a, b, q, r, e, s, eq_type='care'):
     # Check if the data matrices q, r are (sufficiently) hermitian
     for ind, mat in enumerate((q, r)):
         if norm(mat - mat.conj().T, 1) > np.spacing(norm(mat, 1))*100:
-            raise ValueError("Matrix {} should be symmetric/hermitian."
-                             "".format("qr"[ind]))
+            raise ValueError(f"Matrix {'qr'[ind]} should be symmetric/hermitian.")
 
     # Continuous time ARE should have a nonsingular r matrix.
     if eq_type == 'care':
