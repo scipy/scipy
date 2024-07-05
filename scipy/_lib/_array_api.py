@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import os
 import warnings
+import functools
 
 from types import ModuleType
 from typing import Any, Literal, TYPE_CHECKING
@@ -463,6 +464,11 @@ def scipy_namespace_for(xp: ModuleType) -> ModuleType | None:
 
     if is_cupy(xp):
         import cupyx  # type: ignore[import-not-found,import-untyped]
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            # Strange that this is needed. For now, filtering warnings
+            # to pass tests; we'll figure out a better strategy.
+            import cupyx.scipy.signal
         return cupyx.scipy
 
     if is_jax(xp):
@@ -545,3 +551,74 @@ def xp_sign(x: Array, /, *, xp: ModuleType | None = None) -> Array:
     sign = xp.where(x < 0, -one, sign)
     sign = xp.where(x == 0, 0*one, sign)
     return sign
+
+
+_SCIPY_ARRAY_API = os.environ.get("SCIPY_ARRAY_API", False)
+array_api_compat_prefix = "scipy._lib.array_api_compat"
+
+
+def get_array_subpackage_func(func, xp, n_array_args,
+                              subpackage, func_generic):
+    spx = scipy_namespace_for(xp)
+    f = None
+    f_name = func.__name__
+    if is_numpy(xp):
+        f = func
+    elif spx is not None:
+        f = getattr(getattr(spx, subpackage, None), f_name, None)
+        f = f or getattr(getattr(xp, subpackage, None), f_name, None)
+
+    if f is not None:
+        return f
+
+    # if generic array-API implementation is available, use that;
+    # otherwise, fall back to NumPy/SciPy
+    if func_generic is not None:
+        _f = func_generic(xp=xp, spx=spx)
+        if _f is not None:
+            return _f
+
+    _f = func
+    def f(*args, _f=_f, _xp=xp, **kwargs):
+        array_args = args[:n_array_args]
+        other_args = args[n_array_args:]
+        array_args = [np.asarray(arg) for arg in array_args]
+        out = _f(*array_args, *other_args, **kwargs)
+        return _xp.asarray(out)
+
+    return f
+
+
+def support_alternative_backends(func, array_args, subpackage, func_generic):
+
+    @functools.wraps(func)
+    def wrapped(*args, **kwargs):
+        array_args_list = isinstance(array_args, list)
+        n_array_args = len(array_args) if array_args_list else array_args
+        if array_args_list and kwargs:
+            # Given a list of consecutive array arguments that can be specified as
+            # positional or keyword, collect the arrays into a list `arrays`.
+            # Can extend this to cover keyword-only args, non-consecutive positional
+            # array args, etc. Currently, there's an error if no arguments are
+            # positional - see data-apis/array-api-compat#153.
+            i_kwargs = [i for i, name in enumerate(array_args) if name in kwargs]
+            n = min(i_kwargs) if i_kwargs else len(array_args)
+            kwarg_arrays = [kwargs.pop(name) for name in array_args if name in kwargs]
+            arrays = args[:n] + tuple(kwarg_arrays)
+            args = arrays + args[n:]
+        else:
+            arrays = args[:n_array_args]
+        xp = array_namespace(*arrays)
+        f = get_array_subpackage_func(func, xp, n_array_args, subpackage, func_generic)
+        return f(*args, **kwargs)
+
+    return wrapped
+
+
+def _xp_dispatch(array_args, subpackage, func_generic=None):
+    # decorator version of `support_alternative_backends` with a name
+    # I'd prefer for concision
+    def wrapper(func):
+        return support_alternative_backends(func, array_args, subpackage,
+                                            func_generic)
+    return wrapper

@@ -243,6 +243,7 @@ python_sources = [
   '_sketches.py',
   '_solvers.py',
   '_special_matrices.py',
+  '_support_alternative_backends.py',
   '_testutils.py',
   'basic.py',
   'blas.py',
