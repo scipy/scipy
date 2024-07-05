@@ -3060,10 +3060,9 @@ class TestDirectionalStats:
         # test that directional stats calculations yield same results
         # for unnormalized input with normalize=True and normalized
         # input with normalize=False
-        dt = getattr(xp, dtype)
         data = np.array([[0.8660254, 0.5, 0.],
-                         [1.7320508, -1., 0.]])
-        res = stats.directional_stats(xp.asarray(data, dtype=dt), normalize=True)
+                         [1.7320508, -1., 0.]], dtype=dtype)
+        res = stats.directional_stats(xp.asarray(data), normalize=True)
         normalized_data = data / np.linalg.norm(data, axis=-1,
                                                 keepdims=True)
         ref = stats.directional_stats(normalized_data, normalize=False)
