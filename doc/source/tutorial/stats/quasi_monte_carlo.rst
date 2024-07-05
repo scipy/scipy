@@ -255,8 +255,3 @@ Guidelines on using QMC
 * Scrambling is always better.
 * If you use LHS based methods, you cannot add points without losing the LHS
   properties. (There are some methods to do so, but this is not implemented.)
-
-See also
-^^^^^^^^
-
-* :ref:`A Latin Hypercube sampling (LHS) example <qmc_latin_hypercube>`
