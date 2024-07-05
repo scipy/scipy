@@ -3,7 +3,6 @@ import threading
 import time
 
 import numpy as np
-from scipy._lib._array_api import xp_assert_equal
 import pytest
 import scipy.interpolate
 

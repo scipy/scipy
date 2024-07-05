@@ -5,9 +5,7 @@ import numpy as np
 from numpy.testing import suppress_warnings
 from pytest import raises as assert_raises
 import pytest
-from scipy._lib._array_api import (
-    xp_assert_equal, xp_assert_close, assert_almost_equal,
-)
+from scipy._lib._array_api import xp_assert_close, assert_almost_equal
 
 from scipy._lib._testutils import check_free_memory
 import scipy.interpolate.interpnd as interpnd

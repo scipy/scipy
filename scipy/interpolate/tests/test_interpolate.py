@@ -151,7 +151,9 @@ class TestInterp1D:
         assert not interp1d(self.x10, self.y10, bounds_error=False).bounds_error
         assert np.isnan(interp1d(self.x10, self.y10).fill_value)
         assert interp1d(self.x10, self.y10, fill_value=3.0).fill_value == 3.0
-        assert interp1d(self.x10, self.y10, fill_value=(1.0, 2.0)).fill_value == (1.0, 2.0)
+        assert (interp1d(self.x10, self.y10, fill_value=(1.0, 2.0)).fill_value ==
+                (1.0, 2.0)
+        )
         assert interp1d(self.x10, self.y10).axis == 0
         assert interp1d(self.x10, self.y210).axis == 1
         assert interp1d(self.x10, self.y102, axis=0).axis == 0
