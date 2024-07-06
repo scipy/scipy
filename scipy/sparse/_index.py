@@ -220,8 +220,8 @@ class IndexMixin:
                 idx_shape.append(1)
             elif isinstance(idx, slice):
                 index.append(idx)
-                Mslice = self._shape[index_ndim] if ellps_pos is None else self._shape[-1]
-                len_slice = len(range(*idx.indices(Mslice)))
+                Ms = self._shape[index_ndim] if ellps_pos is None else self._shape[-1]
+                len_slice = len(range(*idx.indices(Ms)))
                 idx_shape.append(len_slice)
                 index_ndim += 1
             elif isintlike(idx):
