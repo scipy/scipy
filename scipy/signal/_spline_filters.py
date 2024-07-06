@@ -715,6 +715,7 @@ def symiirorder1(signal, c0, z1, precision=-1.0):
     # Compute the initial state for lfilter.
     zii = out_last * z1
 
+    # Apply the system c0 / (1 - z1 * z) by reversing the output of the previous stage
     out, _ = lfilter(b, a, axis_slice(y1, -2, step=-1), zi=zii)
     out = np.c_[axis_reverse(out), out_last]
 

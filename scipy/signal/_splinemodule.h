@@ -9,6 +9,30 @@
 #define PyArray_MIN(a,b) (((a)<(b))?(a):(b))
 
 
+/**
+* Compute the starting initial conditions for the system
+*
+*    1 / (1 - z1 * z^-1) against signal x.
+*
+* The initial conditions are defined as x[0] + z1 * \sum{k = 0}^{n - 1} x[k] * z1^k
+* this sum will be aggregated until its precision is below a certain threshold.
+*
+* Arguments
+* ----------------
+*  z1: double or complex
+*      Exponential decay parameter in the transfer function
+*  x: float* or double* or complex*
+*     2D strided pointer signal of size (M, N). When M > 1, multiple signals
+*     will be processed independently.
+*  yp0: float* or double* or complex*
+*       Output state condition pointer of size (M, 1)
+*  M: int
+*      Number of signals to compute initial conditions for.
+*  N: int
+*      Length of the signals.
+*  precision: double* or float*
+*      Precision up to which the initial conditions will be computed.
+**/
 template <typename T, typename C>
 int _sym_iir1_initial(C z1, C *x, C *yp0, int M, int N, T precision) {
     // XXX: remove templating on C,T : C === T or std::complex<T>
