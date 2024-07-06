@@ -5287,12 +5287,20 @@ class TestCOONonCanonical_matrix(TestCOONonCanonical, TestCOOMatrix):
     pass
 
 
-def cases_64bit():
-    TEST_CLASSES = [TestBSRMatrix, TestCOOMatrix, TestCSCMatrix,
-                    TestCSRMatrix, TestDIAMatrix,
-                    # lil/dok->other conversion operations have get_index_dtype
-                    TestDOKMatrix, TestLILMatrix
-                    ]
+def cases_64bit(sp_api):
+    if sp_api == "sparray":
+        TEST_CLASSES = [TestBSR, TestCOO, TestCSC, TestCSR, TestDIA,
+                         # lil/dok->other conversion operations have get_index_dtype
+                         TestDOK, TestLIL
+                        ]
+    elif sp_api == "spmatrix":
+        TEST_CLASSES = [TestBSRMatrix, TestCOOMatrix, TestCSCMatrix,
+                         TestCSRMatrix, TestDIAMatrix,
+                         # lil/dok->other conversion operations have get_index_dtype
+                         TestDOKMatrix, TestLILMatrix
+                        ]
+    else:
+        raise ValueError(f"parameter {sp_api=} is not one of 'sparray' or 'spmatrix'")
 
     # The following features are missing, so skip the tests:
     SKIP_TESTS = {
@@ -5326,10 +5334,10 @@ def cases_64bit():
 
 
 class Test64Bit:
-    MAT_CLASSES = [bsr_matrix, coo_matrix, csc_matrix, csr_matrix, dia_matrix]
-
-    def _create_some_matrix(self, mat_cls, m, n):
-        return mat_cls(np.random.rand(m, n))
+    MAT_CLASSES = [
+        bsr_matrix, coo_matrix, csc_matrix, csr_matrix, dia_matrix,
+        bsr_array, coo_array, csc_array, csr_array, dia_array,
+    ]
 
     def _compare_index_dtype(self, m, dtype):
         dtype = np.dtype(dtype)
@@ -5363,7 +5371,7 @@ class Test64Bit:
             seen_32 = False
             seen_64 = False
             for k in range(100):
-                m = self._create_some_matrix(mat_cls, 9, 9)
+                m = mat_cls(np.random.rand(9, 9))
                 seen_32 = seen_32 or self._compare_index_dtype(m, np.int32)
                 seen_64 = seen_64 or self._compare_index_dtype(m, np.int64)
                 if seen_32 and seen_64:
@@ -5374,6 +5382,54 @@ class Test64Bit:
         for mat_cls in self.MAT_CLASSES:
             check(mat_cls)
 
+    def test_downcast_intp(self):
+        # Check that bincount and ufunc.reduceat intp downcasts are
+        # dealt with. The point here is to trigger points in the code
+        # that can fail on 32-bit systems when using 64-bit indices,
+        # due to use of functions that only work with intp-size
+        # indices.
+
+        @with_64bit_maxval_limit(fixed_dtype=np.int64, downcast_maxval=1)
+        def check_limited(csc_object, csr_object, coo_object):
+            # These involve indices larger than `downcast_maxval`
+            a = csc_object([[1, 2], [3, 4], [5, 6]])
+            assert_raises(AssertionError, a.count_nonzero, axis=1)
+            assert_raises(AssertionError, a.sum, axis=0)
+
+            a = csr_object([[1, 2, 3], [3, 4, 6]])
+            assert_raises(AssertionError, a.count_nonzero, axis=0)
+            assert_raises(AssertionError, a.sum, axis=1)
+
+            a = coo_object([[1, 2, 3], [3, 4, 5]])
+            assert_raises(AssertionError, a.count_nonzero, axis=0)
+            a.has_canonical_format = False
+            assert_raises(AssertionError, a.sum_duplicates)
+
+        @with_64bit_maxval_limit(fixed_dtype=np.int64)
+        def check_unlimited(csc_object, csr_object, coo_object):
+            # These involve indices smaller than `downcast_maxval`
+            a = csc_object([[1, 2], [3, 4], [5, 6]])
+            a.count_nonzero(axis=1)
+            a.sum(axis=0)
+
+            a = csr_object([[1, 2, 3], [3, 4, 6]])
+            a.count_nonzero(axis=0)
+            a.sum(axis=1)
+
+            a = coo_object([[1, 2, 3], [3, 4, 5]])
+            a.count_nonzero(axis=0)
+            a.has_canonical_format = False
+            a.sum_duplicates()
+
+        check_limited(csc_array, csr_array, coo_array)
+        check_unlimited(csc_array, csr_array, coo_array)
+        check_limited(csc_matrix, csr_matrix, coo_matrix)
+        check_unlimited(csc_matrix, csr_matrix, coo_matrix)
+
+
+# Testing both spmatrices and sparrays for 64bit index dtype handling is
+# expensive and double-checks the same code (e.g. _coobase)
+class RunAll64Bit:
     def _check_resiliency(self, cls, method_name, **kw):
         # Resiliency test, to check that sparse matrices deal reasonably
         # with varying index data types.
@@ -5391,69 +5447,57 @@ class Test64Bit:
 
         check(cls, method_name)
 
-    @pytest.mark.parametrize('cls,method_name', cases_64bit())
+
+@pytest.mark.slow
+class Test64BitArray(RunAll64Bit):
+    # inheritance of pytest test classes does not separate marks for subclasses.
+    # So we define these functions in both Array and Matrix versions.
+   @pytest.mark.parametrize('cls,method_name', cases_64bit("sparray"))
+   def test_resiliency_limit_10(self, cls, method_name):
+       self._check_resiliency(cls, method_name, maxval_limit=10)
+
+   @pytest.mark.fail_slow(2)
+   @pytest.mark.parametrize('cls,method_name', cases_64bit("sparray"))
+   def test_resiliency_random(self, cls, method_name):
+       # bsr_array.eliminate_zeros relies on csr_array constructor
+       # not making copies of index arrays --- this is not
+       # necessarily true when we pick the index data type randomly
+       self._check_resiliency(cls, method_name, random=True)
+
+   @pytest.mark.parametrize('cls,method_name', cases_64bit("sparray"))
+   def test_resiliency_all_32(self, cls, method_name):
+       self._check_resiliency(cls, method_name, fixed_dtype=np.int32)
+
+   @pytest.mark.parametrize('cls,method_name', cases_64bit("sparray"))
+   def test_resiliency_all_64(self, cls, method_name):
+       self._check_resiliency(cls, method_name, fixed_dtype=np.int64)
+
+
+class Test64BitMatrix(RunAll64Bit):
+    # assert_32bit=True only for spmatrix cuz sparray does not check index content
+    @pytest.mark.fail_slow(5)
+    @pytest.mark.parametrize('cls,method_name', cases_64bit("spmatrix"))
+    def test_no_64(self, cls, method_name):
+        self._check_resiliency(cls, method_name, assert_32bit=True)
+
+    # inheritance of pytest test classes does not separate marks for subclasses.
+    # So we define these functions in both Array and Matrix versions.
+    @pytest.mark.parametrize('cls,method_name', cases_64bit("spmatrix"))
     def test_resiliency_limit_10(self, cls, method_name):
         self._check_resiliency(cls, method_name, maxval_limit=10)
 
     @pytest.mark.fail_slow(2)
-    @pytest.mark.parametrize('cls,method_name', cases_64bit())
+    @pytest.mark.parametrize('cls,method_name', cases_64bit("spmatrix"))
     def test_resiliency_random(self, cls, method_name):
-        # bsr_matrix.eliminate_zeros relies on csr_matrix constructor
+        # bsr_array.eliminate_zeros relies on csr_array constructor
         # not making copies of index arrays --- this is not
         # necessarily true when we pick the index data type randomly
         self._check_resiliency(cls, method_name, random=True)
 
-    @pytest.mark.parametrize('cls,method_name', cases_64bit())
+    @pytest.mark.parametrize('cls,method_name', cases_64bit("spmatrix"))
     def test_resiliency_all_32(self, cls, method_name):
         self._check_resiliency(cls, method_name, fixed_dtype=np.int32)
 
-    @pytest.mark.parametrize('cls,method_name', cases_64bit())
+    @pytest.mark.parametrize('cls,method_name', cases_64bit("spmatrix"))
     def test_resiliency_all_64(self, cls, method_name):
         self._check_resiliency(cls, method_name, fixed_dtype=np.int64)
-
-    @pytest.mark.fail_slow(5)
-    @pytest.mark.parametrize('cls,method_name', cases_64bit())
-    def test_no_64(self, cls, method_name):
-        self._check_resiliency(cls, method_name, assert_32bit=True)
-
-    def test_downcast_intp(self):
-        # Check that bincount and ufunc.reduceat intp downcasts are
-        # dealt with. The point here is to trigger points in the code
-        # that can fail on 32-bit systems when using 64-bit indices,
-        # due to use of functions that only work with intp-size
-        # indices.
-
-        @with_64bit_maxval_limit(fixed_dtype=np.int64, downcast_maxval=1)
-        def check_limited():
-            # These involve indices larger than `downcast_maxval`
-            a = csc_matrix([[1, 2], [3, 4], [5, 6]])
-            assert_raises(AssertionError, a.count_nonzero, axis=1)
-            assert_raises(AssertionError, a.sum, axis=0)
-
-            a = csr_matrix([[1, 2, 3], [3, 4, 6]])
-            assert_raises(AssertionError, a.count_nonzero, axis=0)
-            assert_raises(AssertionError, a.sum, axis=1)
-
-            a = coo_matrix([[1, 2, 3], [3, 4, 5]])
-            assert_raises(AssertionError, a.count_nonzero, axis=0)
-            a.has_canonical_format = False
-            assert_raises(AssertionError, a.sum_duplicates)
-
-        @with_64bit_maxval_limit(fixed_dtype=np.int64)
-        def check_unlimited():
-            # These involve indices smaller than `downcast_maxval`
-            a = csc_matrix([[1, 2], [3, 4], [5, 6]])
-            a.count_nonzero(axis=1)
-            a.sum(axis=0)
-
-            a = csr_matrix([[1, 2, 3], [3, 4, 6]])
-            a.count_nonzero(axis=0)
-            a.sum(axis=1)
-
-            a = coo_matrix([[1, 2, 3], [3, 4, 5]])
-            a.count_nonzero(axis=0)
-            a.has_canonical_format = False
-            a.sum_duplicates()
-
-        check_limited()
-        check_unlimited()
