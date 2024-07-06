@@ -1262,7 +1262,7 @@ def test_Heap(xp):
     assert_equal(pair['value'], 10)
 
 
-@skip_xp_backends(np_only=True, reasons=['scipy specific corner case'])
+@skip_xp_backends(cpu_only=True)
 def test_centroid_neg_distance(xp):
     # gh-21011
     values = xp.asarray([0, 0, -1])
