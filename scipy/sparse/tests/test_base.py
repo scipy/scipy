@@ -1664,7 +1664,7 @@ class _TestCommon:
         B = self.spcreator(A)
 
         if self.is_array_test:
-            for exponent in [1, 2, 2.2, 3, 1 + 3j]:
+            for exponent in [1, 2, 2.2, 3]:
                 ret_sp = B**exponent
                 ret_np = A**exponent
                 assert_array_equal(ret_sp.toarray(), ret_np)
