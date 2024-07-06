@@ -194,7 +194,7 @@ def generate_knots(x, y, *, w=None, xb=None, xe=None, k=3, s=0, nest=None):
     Also note that a step of the generator may add multiple knots:
 
     >>> [len(t) for t in knots]
-    [8, 9, 10, 12, 16, 24, 40, 48, 52]
+    [8, 9, 10, 12, 16, 24, 40, 48, 52, 54]
 
     Notes
     -----
@@ -211,7 +211,7 @@ def generate_knots(x, y, *, w=None, xb=None, xe=None, k=3, s=0, nest=None):
     is ``len(x) + k + 1``. In that case, the last output of the generator
     has internal knots at Greville sites, ``(x[1:] + x[:-1]) / 2``.
 
-    .. versionadded:: 1.14.0
+    .. versionadded:: 1.15.0
 
     """
     if s == 0:
@@ -824,7 +824,7 @@ def make_splrep(x, y, *, w=None, xb=None, xe=None, k=3, s=0, t=None, nest=None):
 
     for a spline function :math:`g(x)` with a _fixed_ knot vector ``t``.
 
-    .. versionadded:: 1.14.0
+    .. versionadded:: 1.15.0
     """
     if s == 0:
         if t is not None or w is not None or nest is not None:
@@ -952,7 +952,7 @@ def make_splprep(x, *, w=None, u=None, ub=None, ue=None, k=3, s=0, t=None, nest=
     those with ``ub < t[i] < ue``). The spline knots are in general a subset
     of data, see `generate_knots` for details.
 
-    .. versionadded:: 1.14.0
+    .. versionadded:: 1.15.0
 
     References
     ----------
