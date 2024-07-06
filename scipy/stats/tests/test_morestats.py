@@ -3026,7 +3026,7 @@ class TestDirectionalStats:
         # test that directional_stats works for higher dimensions
         # here a 4D array is reduced over axis = 2
         data = xp.asarray([[0.8660254, 0.5, 0.],
-                         [0.8660254, -0.5, 0.]])
+                           [0.8660254, -0.5, 0.]])
         full_array = xp.asarray(xp.tile(data, (2, 2, 2, 1)))
         expected = xp.asarray([[[1., 0., 0.],
                                 [1., 0., 0.]],
