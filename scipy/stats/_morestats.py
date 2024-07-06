@@ -11,8 +11,14 @@ from numpy import (isscalar, r_, log, around, unique, asarray, zeros,
 from scipy import optimize, special, interpolate, stats
 from scipy._lib._bunch import _make_tuple_bunch
 from scipy._lib._util import _rename_parameter, _contains_nan, _get_nan
-from scipy._lib._array_api import (array_namespace, xp_minimum, size as xp_size,
-                                   xp_moveaxis_to_end)
+
+from scipy._lib._array_api import (
+    array_namespace,
+    size as xp_size,
+    xp_minimum,
+    xp_moveaxis_to_end,
+    xp_vector_norm,
+)
 
 from ._ansari_swilk_statistics import gscale, swilk
 from . import _stats_py, _wilcoxon
@@ -4785,19 +4791,22 @@ def directional_stats(samples, *, axis=0, normalize=True):
     >>> 1 - dirstats.mean_resultant_length
     0.13397459716167093
     """
-    samples = np.asarray(samples)
+    xp = array_namespace(samples)
+    samples = xp.asarray(samples)
+    
     if samples.ndim < 2:
         raise ValueError("samples must at least be two-dimensional. "
-                         f"Instead samples has shape: {samples.shape!r}")
-    samples = np.moveaxis(samples, axis, 0)
+                         f"Instead samples has shape: {tuple(samples.shape)}")
+    samples = xp.moveaxis(samples, axis, 0)
     if normalize:
-        vectornorms = np.linalg.norm(samples, axis=-1, keepdims=True)
+        vectornorms = xp_vector_norm(samples, axis=-1, keepdims=True, xp=xp)
         samples = samples/vectornorms
-    mean = np.mean(samples, axis=0)
-    mean_resultant_length = np.linalg.norm(mean, axis=-1, keepdims=True)
+    mean = xp.mean(samples, axis=0)
+    mean_resultant_length = xp_vector_norm(mean, axis=-1, keepdims=True, xp=xp)
     mean_direction = mean / mean_resultant_length
-    return DirectionalStats(mean_direction,
-                            mean_resultant_length.squeeze(-1)[()])
+    mrl = xp.squeeze(mean_resultant_length, axis=-1)
+    mean_resultant_length = mrl[()] if mrl.ndim == 0 else mrl
+    return DirectionalStats(mean_direction, mean_resultant_length)
 
 
 def false_discovery_control(ps, *, axis=0, method='bh'):
