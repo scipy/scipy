@@ -1930,7 +1930,7 @@ class TestBoxcox_llf:
         lmbda = 1
         llf = stats.boxcox_llf(lmbda, xp.asarray(x, dtype=dt))
         llf_expected = -x.size / 2. * np.log(np.sum(x.std()**2))
-        xp_assert_close(llf, xp.asarray(llf_expected))
+        xp_assert_close(llf, xp.asarray(llf_expected, dtype=dt))
 
     @skip_xp_backends(np_only=True,
                       reasons=['array-likes only accepted for NumPy backend.'])
@@ -1960,12 +1960,13 @@ class TestBoxcox_llf:
         data = xp.asarray([198.0, 233.0, 233.0, 392.0])
         llf = stats.boxcox_llf(-8, data)
         # The expected value was computed with mpmath.
-        xp_assert_close(llf, xp.asarray(-17.93934208579061, dtype=xp.float64))
+        xp_assert_close(llf, xp.asarray(-17.93934208579061))
 
     def test_instability_gh20021(self, xp):
         data = xp.asarray([2003, 1950, 1997, 2000, 2009])
         llf = stats.boxcox_llf(1e-8, data)
         # The expected value was computed with mpsci, set mpmath.mp.dps=100
+        # expect float64 output for integer input
         xp_assert_close(llf, xp.asarray(-15.32401272869016598, dtype=xp.float64))
 
 
