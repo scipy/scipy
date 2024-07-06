@@ -71,7 +71,7 @@ from scipy.optimize import root_scalar
 from scipy._lib._util import normalize_axis_index
 from scipy._lib._array_api import (array_namespace, is_numpy, atleast_nd,
                                    xp_clip, xp_moveaxis_to_end, xp_sign,
-                                   xp_minimum)
+                                   xp_minimum, xp_vector_norm)
 from scipy._lib.array_api_compat import size as xp_size
 
 
@@ -4957,8 +4957,8 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
     xmax = xp.max(xp.abs(xm), axis=axis, keepdims=True)
     ymax = xp.max(xp.abs(ym), axis=axis, keepdims=True)
     with np.errstate(invalid='ignore'):
-        normxm = xmax * xp.linalg.vector_norm(xm/xmax, axis=axis, keepdims=True)
-        normym = ymax * xp.linalg.vector_norm(ym/ymax, axis=axis, keepdims=True)
+        normxm = xmax * xp_vector_norm(xm/xmax, axis=axis, keepdims=True)
+        normym = ymax * xp_vector_norm(ym/ymax, axis=axis, keepdims=True)
 
     nconst_x = xp.any(normxm < threshold*xp.abs(xmean), axis=axis)
     nconst_y = xp.any(normym < threshold*xp.abs(ymean), axis=axis)
@@ -9378,7 +9378,7 @@ def combine_pvalues(pvalues, method='fisher', weights=None, *, axis=0):
         # could use `einsum` or clever `matmul` for performance,
         # but this is the most readable
         statistic = (xp.sum(weights * Zi, axis=axis)
-                     / xp.linalg.vector_norm(weights, axis=axis))
+                     / xp_vector_norm(weights, axis=axis))
         pval = _get_pvalue(statistic, norm, alternative="greater", xp=xp)
 
     else:
