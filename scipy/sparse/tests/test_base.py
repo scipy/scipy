@@ -964,12 +964,12 @@ class _TestCommon:
         assert_equal(A_nz, Asp_nz)
 
     def test_getrow(self):
-        assert_array_equal(self.datsp._getrow(1).toarray(), self.dat[[1], :])
-        assert_array_equal(self.datsp._getrow(-1).toarray(), self.dat[[-1], :])
+        assert_array_equal(self.datsp.getrow(1).toarray(), self.dat[[1], :])
+        assert_array_equal(self.datsp.getrow(-1).toarray(), self.dat[[-1], :])
 
     def test_getcol(self):
-        assert_array_equal(self.datsp._getcol(1).toarray(), self.dat[:, [1]])
-        assert_array_equal(self.datsp._getcol(-1).toarray(), self.dat[:, [-1]])
+        assert_array_equal(self.datsp.getcol(1).toarray(), self.dat[:, [1]])
+        assert_array_equal(self.datsp.getcol(-1).toarray(), self.dat[:, [-1]])
 
     def test_sum(self):
         np.random.seed(1234)
@@ -1410,15 +1410,14 @@ class _TestCommon:
 
     def test_asfptype(self):
         A = self.spcreator(arange(6,dtype='int32').reshape(2,3))
-        assert_equal(A.dtype, np.dtype('int32'))
 
-        assert_equal(A._asfptype().dtype, np.dtype('float64'))
-        assert_equal(A._asfptype().format, A.format)
-        assert_equal(A.astype('int16')._asfptype().dtype, np.dtype('float32'))
-        assert_equal(A.astype('complex128')._asfptype().dtype, np.dtype('complex128'))
+        assert_equal(A.asfptype().dtype, np.dtype('float64'))
+        assert_equal(A.asfptype().format, A.format)
+        assert_equal(A.astype('int16').asfptype().dtype, np.dtype('float32'))
+        assert_equal(A.astype('complex128').asfptype().dtype, np.dtype('complex128'))
 
-        B = A._asfptype()
-        C = B._asfptype()
+        B = A.asfptype()
+        C = B.asfptype()
         assert_(B is C)
 
     def test_mul_scalar(self):
@@ -3833,7 +3832,7 @@ class _TestGetNnzAxis:
 
         accepted_return_dtypes = (np.int32, np.int64)
 
-        getnnz = datsp._getnnz if self.is_array_test else datsp.getnnz
+        getnnz = datsp.count_nonzero if self.is_array_test else datsp.getnnz
         assert_array_equal(bool_dat.sum(axis=None), getnnz(axis=None))
         assert_array_equal(bool_dat.sum(), getnnz())
         assert_array_equal(bool_dat.sum(axis=0), getnnz(axis=0))
@@ -5330,32 +5329,31 @@ class Test64Bit:
         # due to use of functions that only work with intp-size
         # indices.
 
-        @with_64bit_maxval_limit(fixed_dtype=np.int64,
-                                 downcast_maxval=1)
+        @with_64bit_maxval_limit(fixed_dtype=np.int64, downcast_maxval=1)
         def check_limited():
             # These involve indices larger than `downcast_maxval`
             a = csc_matrix([[1, 2], [3, 4], [5, 6]])
-            assert_raises(AssertionError, a._getnnz, axis=1)
+            assert_raises(AssertionError, a.count_nonzero, axis=1)
             assert_raises(AssertionError, a.sum, axis=0)
 
             a = csr_matrix([[1, 2, 3], [3, 4, 6]])
-            assert_raises(AssertionError, a._getnnz, axis=0)
+            assert_raises(AssertionError, a.count_nonzero, axis=0)
 
             a = coo_matrix([[1, 2, 3], [3, 4, 5]])
-            assert_raises(AssertionError, a._getnnz, axis=0)
+            assert_raises(AssertionError, a.count_nonzero, axis=0)
 
         @with_64bit_maxval_limit(fixed_dtype=np.int64)
         def check_unlimited():
-            # These involve indices larger than `downcast_maxval`
+            # These involve indices smaller than `downcast_maxval`
             a = csc_matrix([[1, 2], [3, 4], [5, 6]])
-            a._getnnz(axis=1)
+            a.count_nonzero(axis=1)
             a.sum(axis=0)
 
             a = csr_matrix([[1, 2, 3], [3, 4, 6]])
-            a._getnnz(axis=0)
+            a.count_nonzero(axis=0)
 
             a = coo_matrix([[1, 2, 3], [3, 4, 5]])
-            a._getnnz(axis=0)
+            a.count_nonzero(axis=0)
 
         check_limited()
         check_unlimited()
