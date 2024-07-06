@@ -847,7 +847,7 @@ class _TestCommon:
         assert_array_equal(x.shape, (3, 4))
 
         if self.is_array_test:
-            with assert_raises(AttributeError, match="object has no setter"):
+            with assert_raises(AttributeError, match="has no setter|n't set attribute"):
                 x.shape = (2, 6)
         else:  # spmatrix test
             # Reshape in place
