@@ -34,6 +34,8 @@ import scipy.linalg
 import scipy.sparse as sparse
 from scipy.sparse import (csc_matrix, csr_matrix, dok_matrix,
         coo_matrix, lil_matrix, dia_matrix, bsr_matrix,
+        csc_array, csr_array, dok_array,
+        coo_array, lil_array, dia_array, bsr_array,
         eye, issparse, SparseEfficiencyWarning, sparray)
 from scipy.sparse._base import _formats
 from scipy.sparse._sputils import (supported_dtypes, isscalarlike,
@@ -5130,11 +5132,29 @@ class TestCOONonCanonical(_NonCanonicalMixin, TestCOO):
         assert_(np.all(np.diff(m.col) >= 0))
 
 
+# Testing both spmatrices and sparrays for 64bit index dtype handling is
+# expensive and double-checks the same code inherited by matrices.
+# These 8 lines select whether to test sparrays or spmatrices.
+test_arrays_64bit = True
+bsr_object = bsr_array if test_arrays_64bit else bsr_matrix
+coo_object = coo_array if test_arrays_64bit else coo_matrix
+csc_object = csc_array if test_arrays_64bit else csc_matrix
+csr_object = csr_array if test_arrays_64bit else csr_matrix
+dia_object = dia_array if test_arrays_64bit else dia_matrix
+
+
 def cases_64bit():
-    TEST_CLASSES = [TestBSR, TestCOO, TestCSC, TestCSR, TestDIA,
-                    # lil/dok->other conversion operations have get_index_dtype
-                    TestDOK, TestLIL
-                    ]
+    if test_arrays_64bit:
+        TEST_CLASSES = [TestBSR, TestCOO, TestCSC, TestCSR, TestDIA,
+                        # lil/dok->other conversion operations have get_index_dtype
+                        TestDOK, TestLIL
+                       ]
+    else:
+        TEST_CLASSES = [TestBSR_matrix, TestCOO_matrix, TestCSC_matrix,
+                         TestCSR_matrix, TestDIA_matrix,
+                         # lil/dok->other conversion operations have get_index_dtype
+                         TestDOK_matrix, TestLIL_matrix
+                        ]
 
     # The following features are missing, so skip the tests:
     SKIP_TESTS = {
@@ -5168,7 +5188,7 @@ def cases_64bit():
 
 
 class Test64Bit:
-    MAT_CLASSES = [bsr_matrix, coo_matrix, csc_matrix, csr_matrix, dia_matrix]
+    MAT_CLASSES = [bsr_object, coo_object, csc_object, csr_object, dia_object]
 
     def _create_some_matrix(self, mat_cls, m, n):
         return mat_cls(np.random.rand(m, n))
@@ -5240,7 +5260,7 @@ class Test64Bit:
     @pytest.mark.fail_slow(2)
     @pytest.mark.parametrize('cls,method_name', cases_64bit())
     def test_resiliency_random(self, cls, method_name):
-        # bsr_matrix.eliminate_zeros relies on csr_matrix constructor
+        # bsr_array.eliminate_zeros relies on csr_array constructor
         # not making copies of index arrays --- this is not
         # necessarily true when we pick the index data type randomly
         self._check_resiliency(cls, method_name, random=True)
@@ -5253,6 +5273,7 @@ class Test64Bit:
     def test_resiliency_all_64(self, cls, method_name):
         self._check_resiliency(cls, method_name, fixed_dtype=np.int64)
 
+    @pytest.mark.skipif(test_arrays_64bit, reason="array idx_dtype has no value check")
     @pytest.mark.fail_slow(5)
     @pytest.mark.parametrize('cls,method_name', cases_64bit())
     def test_no_64(self, cls, method_name):
@@ -5268,27 +5289,27 @@ class Test64Bit:
         @with_64bit_maxval_limit(fixed_dtype=np.int64, downcast_maxval=1)
         def check_limited():
             # These involve indices larger than `downcast_maxval`
-            a = csc_matrix([[1, 2], [3, 4], [5, 6]])
+            a = csc_object([[1, 2], [3, 4], [5, 6]])
             assert_raises(AssertionError, a.count_nonzero, axis=1)
             assert_raises(AssertionError, a.sum, axis=0)
 
-            a = csr_matrix([[1, 2, 3], [3, 4, 6]])
+            a = csr_object([[1, 2, 3], [3, 4, 6]])
             assert_raises(AssertionError, a.count_nonzero, axis=0)
 
-            a = coo_matrix([[1, 2, 3], [3, 4, 5]])
+            a = coo_object([[1, 2, 3], [3, 4, 5]])
             assert_raises(AssertionError, a.count_nonzero, axis=0)
 
         @with_64bit_maxval_limit(fixed_dtype=np.int64)
         def check_unlimited():
             # These involve indices smaller than `downcast_maxval`
-            a = csc_matrix([[1, 2], [3, 4], [5, 6]])
+            a = csc_object([[1, 2], [3, 4], [5, 6]])
             a.count_nonzero(axis=1)
             a.sum(axis=0)
 
-            a = csr_matrix([[1, 2, 3], [3, 4, 6]])
+            a = csr_object([[1, 2, 3], [3, 4, 6]])
             a.count_nonzero(axis=0)
 
-            a = coo_matrix([[1, 2, 3], [3, 4, 5]])
+            a = coo_object([[1, 2, 3], [3, 4, 5]])
             a.count_nonzero(axis=0)
 
         check_limited()
