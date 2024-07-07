@@ -430,9 +430,9 @@ class TestConstructUtils:
         assert_array_equal(result, expected)
 
     def test_kronsum_ndim_exceptions(self):
-        with pytest.raises(ValueError, match='is not 2D'):
+        with pytest.raises(ValueError, match='requires 2D input'):
             construct.kronsum([[0], [1]], csr_array([0, 1]))
-        with pytest.raises(ValueError, match='is not 2D'):
+        with pytest.raises(ValueError, match='requires 2D input'):
             construct.kronsum(csr_array([0, 1]), [[0], [1]])
         # no exception if sparse arrays are not input (spmatrix inferred)
         construct.kronsum([[0, 1], [1, 0]], [2])
