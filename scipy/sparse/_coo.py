@@ -407,8 +407,8 @@ class _coo_base(_data_matrix, _minmax_mixin):
 
         if len(diags) > 100:
             # probably undesired, should todia() have a maxdiags parameter?
-            warn("Constructing a DIA matrix with %d diagonals "
-                 "is inefficient" % len(diags),
+            warn(f"Constructing a DIA matrix with {len(diags)} diagonals "
+                 "is inefficient",
                  SparseEfficiencyWarning, stacklevel=2)
 
         #initialize and fill in data array

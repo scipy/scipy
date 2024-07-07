@@ -71,7 +71,7 @@ from scipy.optimize import root_scalar
 from scipy._lib._util import normalize_axis_index
 from scipy._lib._array_api import (array_namespace, is_numpy, atleast_nd,
                                    xp_clip, xp_moveaxis_to_end, xp_sign,
-                                   xp_minimum)
+                                   xp_minimum, xp_vector_norm)
 from scipy._lib.array_api_compat import size as xp_size
 
 
@@ -1079,11 +1079,12 @@ def moment(a, order=1, axis=0, nan_policy='propagate', *, center=None):
         calculate_mean = center is None and xp.any(order > 1)
         mean = xp.mean(a, axis=axis, keepdims=True) if calculate_mean else None
         mmnt = []
-        for i in order:
-            if center is None and i > 1:
-                mmnt.append(_moment(a, i, axis, mean=mean)[np.newaxis, ...])
+        for i in range(order.shape[0]):
+            order_i = order[i]
+            if center is None and order_i > 1:
+                mmnt.append(_moment(a, order_i, axis, mean=mean)[np.newaxis, ...])
             else:
-                mmnt.append(_moment(a, i, axis, mean=center)[np.newaxis, ...])
+                mmnt.append(_moment(a, order_i, axis, mean=center)[np.newaxis, ...])
         return xp.concat(mmnt, axis=0)
     else:
         return _moment(a, order, axis, mean=center)
@@ -4449,7 +4450,8 @@ def _pearsonr_fisher_ci(r, n, confidence_level, alternative):
         zr = xp.atanh(r)
 
     ones = xp.ones_like(r)
-    n, confidence_level = xp.asarray([n, confidence_level], dtype=r.dtype)
+    n = xp.asarray(n, dtype=r.dtype)
+    confidence_level = xp.asarray(confidence_level, dtype=r.dtype)
     if n > 3:
         se = xp.sqrt(1 / (n - 3))
         if alternative == "two-sided":
@@ -4955,8 +4957,8 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
     xmax = xp.max(xp.abs(xm), axis=axis, keepdims=True)
     ymax = xp.max(xp.abs(ym), axis=axis, keepdims=True)
     with np.errstate(invalid='ignore'):
-        normxm = xmax * xp.linalg.vector_norm(xm/xmax, axis=axis, keepdims=True)
-        normym = ymax * xp.linalg.vector_norm(ym/ymax, axis=axis, keepdims=True)
+        normxm = xmax * xp_vector_norm(xm/xmax, axis=axis, keepdims=True)
+        normym = ymax * xp_vector_norm(ym/ymax, axis=axis, keepdims=True)
 
     nconst_x = xp.any(normxm < threshold*xp.abs(xmean), axis=axis)
     nconst_y = xp.any(normym < threshold*xp.abs(ymean), axis=axis)
@@ -9373,7 +9375,10 @@ def combine_pvalues(pvalues, method='fisher', weights=None, *, axis=0):
 
         norm = _SimpleNormal()
         Zi = norm.isf(pvalues)
-        statistic = weights @ Zi / xp.linalg.vector_norm(weights, axis=axis)
+        # could use `einsum` or clever `matmul` for performance,
+        # but this is the most readable
+        statistic = (xp.sum(weights * Zi, axis=axis)
+                     / xp_vector_norm(weights, axis=axis))
         pval = _get_pvalue(statistic, norm, alternative="greater", xp=xp)
 
     else:

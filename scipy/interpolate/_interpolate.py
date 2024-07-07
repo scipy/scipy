@@ -283,8 +283,8 @@ class interp1d(_Interpolator1D):
             kind = 'spline'
         elif kind not in ('linear', 'nearest', 'nearest-up', 'previous',
                           'next'):
-            raise NotImplementedError("%s is unsupported: Use fitpack "
-                                      "routines for other types." % kind)
+            raise NotImplementedError(f"{kind} is unsupported: Use fitpack "
+                                      "routines for other types.")
         x = array(x, copy=self.copy)
         y = array(y, copy=self.copy)
 
@@ -1232,8 +1232,8 @@ class PPoly(_PPolyBase):
             If 'periodic', periodic extrapolation is used. Default is True.
         """
         if not isinstance(bp, BPoly):
-            raise TypeError(".from_bernstein_basis only accepts BPoly instances. "
-                            "Got %s instead." % type(bp))
+            raise TypeError(f".from_bernstein_basis only accepts BPoly instances. "
+                            f"Got {type(bp)} instead.")
 
         dx = np.diff(bp.x)
         k = bp.c.shape[0] - 1  # polynomial order
@@ -1541,8 +1541,8 @@ class BPoly(_PPolyBase):
             If 'periodic', periodic extrapolation is used. Default is True.
         """
         if not isinstance(pp, PPoly):
-            raise TypeError(".from_power_basis only accepts PPoly instances. "
-                            "Got %s instead." % type(pp))
+            raise TypeError(f".from_power_basis only accepts PPoly instances. "
+                            f"Got {type(pp)} instead.")
 
         dx = np.diff(pp.x)
         k = pp.c.shape[0] - 1   # polynomial order

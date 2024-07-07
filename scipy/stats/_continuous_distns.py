@@ -52,7 +52,7 @@ def _remove_optimizer_parameters(kwds):
     kwds.pop('optimizer', None)
     kwds.pop('method', None)
     if kwds:
-        raise TypeError("Unknown arguments: %s." % kwds)
+        raise TypeError(f"Unknown arguments: {kwds}.")
 
 
 def _call_super_mom(fun):
@@ -3344,7 +3344,7 @@ def _digammainv(y):
     value, info, ier, mesg = optimize.fsolve(func, x0, xtol=1e-11,
                                              full_output=True)
     if ier != 1:
-        raise RuntimeError("_digammainv: fsolve failed, y = %r" % y)
+        raise RuntimeError(f"_digammainv: fsolve failed, y = {y!r}")
 
     return value[0]
 
@@ -3903,10 +3903,7 @@ class genhyperbolic_gen(rv_continuous):
     # np.vectorize isn't currently designed to be used as a decorator,
     # so use a lambda instead.  This allows us to decorate the function
     # with `np.vectorize` and still provide the `otypes` parameter.
-    # The first argument to `vectorize` is `func.__get__(object)` for
-    # compatibility with Python 3.9.  In Python 3.10, this can be
-    # simplified to just `func`.
-    @lambda func: np.vectorize(func.__get__(object), otypes=[np.float64])
+    @lambda func: np.vectorize(func, otypes=[np.float64])
     @staticmethod
     def _integrate_pdf(x0, x1, p, a, b):
         """

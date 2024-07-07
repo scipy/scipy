@@ -267,7 +267,7 @@ class RegularGridInterpolator:
     def __init__(self, points, values, method="linear", bounds_error=True,
                  fill_value=np.nan, *, solver=None, solver_args=None):
         if method not in self._ALL_METHODS:
-            raise ValueError("Method '%s' is not defined" % method)
+            raise ValueError(f"Method '{method}' is not defined")
         elif method in self._SPLINE_METHODS:
             self._validate_grid_dimensions(points, method)
         self.method = method
@@ -390,7 +390,7 @@ class RegularGridInterpolator:
         method = self.method if method is None else method
         is_method_changed = self.method != method
         if method not in self._ALL_METHODS:
-            raise ValueError("Method '%s' is not defined" % method)
+            raise ValueError(f"Method '{method}' is not defined")
         if is_method_changed and method in self._SPLINE_METHODS_ndbspl:
             self._spline = self._construct_spline(method)
 
