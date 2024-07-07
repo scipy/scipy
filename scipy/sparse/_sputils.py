@@ -109,11 +109,13 @@ def to_native(A):
 
 
 def getdtype(dtype, a=None, default=None):
-    """Function used to simplify dtype argument processing.
-    If `dtype` is not specified (is None), returns ``a.dtype``. If `dtype`
-    and `a` are both None, return a numpy data type using `default`.
+    """Form a supported numpy dtype based on input arguments.
 
-    Furthermore, `dtype` must be in `supported_dtypes`:
+    Returns a valid ``numpy.dtype`` from `dtype` if not None,
+    or else ``a.dtype`` if possible, or else the given `default`
+    if not None, or else raise a ``TypeError``.
+
+    The resulting ``dtype`` must be in ``supported_dtypes``:
         bool_, int8, uint8, int16, uint16, int32, uint32,
         int64, uint64, longlong, ulonglong, float32, float64,
         longdouble, complex64, complex128, clongdouble
