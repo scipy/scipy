@@ -161,11 +161,11 @@ def _check_laplacian_dtype(
                 _assert_allclose_sparse(L, mat)
 
 
-INT_DTYPES = {np.intc, np_long, np.longlong}
-REAL_DTYPES = {np.float32, np.float64, np.longdouble}
-COMPLEX_DTYPES = {np.complex64, np.complex128, np.clongdouble}
+INT_DTYPES = (np.intc, np_long, np.longlong)
+REAL_DTYPES = (np.float32, np.float64, np.longdouble)
+COMPLEX_DTYPES = (np.complex64, np.complex128, np.clongdouble)
 # use sorted list to ensure fixed order of tests
-DTYPES = sorted(INT_DTYPES ^ REAL_DTYPES ^ COMPLEX_DTYPES, key=str)
+DTYPES = INT_DTYPES + REAL_DTYPES + COMPLEX_DTYPES
 
 
 @pytest.mark.parametrize("dtype", DTYPES)
