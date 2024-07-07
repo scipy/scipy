@@ -1924,6 +1924,7 @@ class TestPpccMax:
                             -0.71215366521264145, decimal=7)
 
 
+@pytest.mark.usefixtures("skip_xp_backends")
 @skip_xp_backends(cpu_only=True)
 @array_api_compatible
 class TestBoxcox_llf:
