@@ -1042,7 +1042,7 @@ class _TestCommon:
         datsp = self.spcreator(dat)
 
         dat_out = array(0) if self.is_array_test else array([[0]])
-        datsp_out = array(0) if self.is_array_test else self.asdense([[0]])
+        datsp_out = array(0) if self.is_array_test else matrix([[0]])
 
         dat.sum(out=dat_out, keepdims=keep)
         datsp.sum(out=datsp_out)
@@ -1139,7 +1139,7 @@ class _TestCommon:
         datsp = self.spcreator(dat)
 
         dat_out = array(0) if self.is_array_test else array([[0]])
-        datsp_out = array(0) if self.is_array_test else self.asdense([[0]])
+        datsp_out = array(0) if self.is_array_test else matrix([[0]])
 
         dat.mean(out=dat_out, keepdims=keep)
         datsp.mean(out=datsp_out)
