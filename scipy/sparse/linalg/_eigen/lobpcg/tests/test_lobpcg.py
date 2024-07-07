@@ -20,13 +20,12 @@ from scipy._lib._util import np_long, np_ulong
 
 _IS_32BIT = (sys.maxsize < 2**32)
 
-INT_DTYPES = {np.intc, np_long, np.longlong, np.uintc, np_ulong, np.ulonglong}
+INT_DTYPES = (np.intc, np_long, np.longlong, np.uintc, np_ulong, np.ulonglong)
 # np.half is unsupported on many test systems so excluded
-REAL_DTYPES = {np.float32, np.float64, np.longdouble}
-COMPLEX_DTYPES = {np.complex64, np.complex128, np.clongdouble}
-# use sorted list to ensure fixed order of tests
-VDTYPES = sorted(REAL_DTYPES ^ COMPLEX_DTYPES, key=str)
-MDTYPES = sorted(INT_DTYPES ^ REAL_DTYPES ^ COMPLEX_DTYPES, key=str)
+REAL_DTYPES = (np.float32, np.float64, np.longdouble)
+COMPLEX_DTYPES = (np.complex64, np.complex128, np.clongdouble)
+INEXECTDTYPES = REAL_DTYPES + COMPLEX_DTYPES
+ALLDTYPES = INT_DTYPES + INEXECTDTYPES
 
 
 def sign_align(A, B):
@@ -103,9 +102,9 @@ def test_MikotaPair():
 @pytest.mark.parametrize("n", [50])
 @pytest.mark.parametrize("m", [1, 2, 10])
 @pytest.mark.filterwarnings("ignore:Casting complex values to real")
-@pytest.mark.parametrize("Vdtype", VDTYPES)
-@pytest.mark.parametrize("Bdtype", MDTYPES)
-@pytest.mark.parametrize("BVdtype", VDTYPES)
+@pytest.mark.parametrize("Vdtype", INEXECTDTYPES)
+@pytest.mark.parametrize("Bdtype", ALLDTYPES)
+@pytest.mark.parametrize("BVdtype", INEXECTDTYPES)
 def test_b_orthonormalize(n, m, Vdtype, Bdtype, BVdtype):
     """Test B-orthonormalization by Cholesky with callable 'B'.
     The function '_b_orthonormalize' is key in LOBPCG but may
@@ -469,8 +468,8 @@ def test_tolerance_float32():
     assert_allclose(eigvals, -np.arange(1, 1 + m), atol=2e-5, rtol=1e-5)
 
 
-@pytest.mark.parametrize("vdtype", VDTYPES)
-@pytest.mark.parametrize("mdtype", MDTYPES)
+@pytest.mark.parametrize("vdtype", INEXECTDTYPES)
+@pytest.mark.parametrize("mdtype", ALLDTYPES)
 @pytest.mark.parametrize("arr_type", [np.array,
                                       sparse.csr_matrix,
                                       sparse.coo_matrix])
