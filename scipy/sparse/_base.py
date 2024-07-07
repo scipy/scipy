@@ -1166,11 +1166,11 @@ class _spbase:
             )
 
         if out is not None:
-            if isspmatrix(self):
-                if out.shape != ret.shape:
+            if isinstance(self, sparray):
+                if out.shape != ret.squeeze().shape:
                     raise ValueError("dimensions do not match")
             else:
-                if out.shape != ret.squeeze().shape:
+                if out.shape != ret.shape:
                     raise ValueError("dimensions do not match")
 
         return ret.sum(axis=axis, dtype=dtype, out=out)
