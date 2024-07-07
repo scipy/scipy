@@ -3216,8 +3216,8 @@ def _zmap(scores, compare, axis, ddof, nan_policy):
     if like_zscore:
         eps = xp.finfo(z.dtype).eps
         zero = std <= xp.abs(eps * mn)
-        where = ma.where if isinstance(z, ma.MaskedArray) else xp.where
-        z = where(zero, xp.asarray(xp.nan, dtype=z.dtype), z)
+        zero = xp.broadcast_to(zero, z.shape)
+        z[zero] = xp.nan
 
     return z
 
@@ -11147,9 +11147,16 @@ def _xp_var(x, /, *, axis=None, correction=0, keepdims=False, nan_policy='propag
     var = _xp_mean(x_mean**2, keepdims=keepdims, **kwargs)
 
     if correction != 0:
-        n = (xp_size(x) if axis is None
-             # compact way to deal with axis tuples or ints
-             else np.prod(np.asarray(x.shape)[np.asarray(axis)]))
+        if axis is None:
+            n = xp_size(x)
+        elif np.iterable(axis):  # note: using NumPy on `axis` is OK
+            n = math.prod(x.shape[i] for i in axis)
+        else:
+            n = x.shape[axis]
+        # Or two lines with ternaries : )
+        # axis = range(x.ndim) if axis is None else axis
+        # n = math.prod(x.shape[i] for i in axis) if iterable(axis) else x.shape[axis]
+
         n = xp.asarray(n, dtype=var.dtype)
 
         if nan_policy == 'omit':
