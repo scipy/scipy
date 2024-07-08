@@ -57,8 +57,8 @@ class Arithmetic(Benchmark):
     ]
 
     def setup(self, format, XY, op):
-        matrices = dict(A=poisson2d(250, format=format),
-                        B=poisson2d(250, format=format)**2)
+        matrices = dict(A=poisson2d(250, format=format))
+        matrices['B'] = (matrices['A']**2).asformat(format)
 
         x = matrices[XY[0]]
         self.y = matrices[XY[1]]

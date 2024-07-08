@@ -140,7 +140,7 @@ def splprep(x, w=None, u=None, ub=None, ue=None, k=3, task=0, s=None, t=None,
     >>> tck, u = splprep([x, y], s=0)
     >>> new_points = splev(u, tck)
 
-    Notice that (i) we force interpolation by using `s=0`,
+    Notice that (i) we force interpolation by using ``s=0``,
     (ii) the parameterization, ``u``, is generated automatically.
     Now plot the result:
 
@@ -373,8 +373,8 @@ def splev(x, tck, der=0, ext=0):
         try:
             extrapolate = {0: True, }[ext]
         except KeyError as e:
-            raise ValueError("Extrapolation mode %s is not supported "
-                             "by BSpline." % ext) from e
+            raise ValueError(f"Extrapolation mode {ext} is not supported "
+                             "by BSpline.") from e
 
         return tck(x, der, extrapolate=extrapolate)
     else:
@@ -438,8 +438,8 @@ def splint(a, b, tck, full_output=0):
             raise ValueError(mesg)
 
         if full_output != 0:
-            mesg = ("full_output = %s is not supported. Proceeding as if "
-                    "full_output = 0" % full_output)
+            mesg = (f"full_output = {full_output} is not supported. Proceeding as if "
+                    "full_output = 0")
 
         return tck.integrate(a, b, extrapolate=False)
     else:
@@ -508,7 +508,7 @@ def sproot(tck, mest=10):
     >>> sproot(tck)
     array([], dtype=float64)
 
-    Converting to a PPoly object does find the roots at `x=2`:
+    Converting to a PPoly object does find the roots at ``x=2``:
 
     >>> ppoly = PPoly.from_spline(tck)
     >>> ppoly.roots(extrapolate=False)
@@ -587,7 +587,7 @@ def spalde(x, tck):
     ...        (0, 0, 0, 6, 0, 0, 0),  # coefficients
     ...        3)  # degree (cubic)
     >>> # Instance a B-spline object
-    >>> # `BSpline` objects are prefered, except for spalde()
+    >>> # `BSpline` objects are preferred, except for spalde()
     >>> bspl = BSpline(tck[0], tck[1], tck[2])
     >>> # Generate extra points to get a smooth curve
     >>> x = np.linspace(min(tck[0]), max(tck[0]), 100)

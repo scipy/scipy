@@ -181,7 +181,8 @@ class TestEig:
         assert_equal(w, np.inf)
         assert_allclose(vr, 1)
 
-    def _check_gen_eig(self, A, B, atol_homog=1e-13, rtol_homog=1e-13):
+    def _check_gen_eig(self, A, B, atol_homog=1e-13, rtol_homog=1e-13,
+                                   atol=1e-13, rtol=1e-13):
         if B is not None:
             A, B = asarray(A), asarray(B)
             B0 = B
@@ -230,7 +231,7 @@ class TestEig:
         for i in range(res.shape[1]):
             if np.all(isfinite(res[:, i])):
                 assert_allclose(res[:, i], 0,
-                                rtol=1e-13, atol=1e-13, err_msg=msg)
+                                rtol=rtol, atol=atol, err_msg=msg)
 
         # try to consistently order eigenvalues, including complex conjugate pairs
         w_fin = w[isfinite(w)]
@@ -269,7 +270,7 @@ class TestEig:
                    [24, 35, 18, 21, 22]])
 
         with np.errstate(all='ignore'):
-            self._check_gen_eig(A, B, atol_homog=5e-13)
+            self._check_gen_eig(A, B, atol_homog=5e-13, atol=5e-13)
 
     def test_falker(self):
         # Test matrices giving some Nan generalized eigenvalues.
@@ -1178,6 +1179,7 @@ class TestSVD_GESVD(TestSVD_GESDD):
     lapack_driver = 'gesvd'
 
 
+@pytest.mark.fail_slow(10)
 def test_svd_gesdd_nofegfault():
     # svd(a) with {U,VT}.size > INT_MAX does not segfault
     # cf https://github.com/scipy/scipy/issues/14001
@@ -2600,6 +2602,7 @@ class TestOrdQZ:
 
 
 class TestOrdQZWorkspaceSize:
+    @pytest.mark.fail_slow(5)
     def test_decompose(self):
         rng = np.random.RandomState(12345)
         N = 202

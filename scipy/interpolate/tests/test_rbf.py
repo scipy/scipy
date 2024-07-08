@@ -105,7 +105,7 @@ def check_rbf1d_regularity(function, atol):
     rbf = Rbf(x, y, function=function)
     xi = linspace(0, 10, 100)
     yi = rbf(xi)
-    msg = "abs-diff: %f" % abs(yi - sin(xi)).max()
+    msg = f"abs-diff: {abs(yi - sin(xi)).max():f}"
     assert_(allclose(yi, sin(xi), atol=atol), msg)
 
 
@@ -133,7 +133,7 @@ def check_2drbf1d_regularity(function, atol):
     rbf = Rbf(x, y, function=function, mode='N-D')
     xi = linspace(0, 10, 100)
     yi = rbf(xi)
-    msg = "abs-diff: %f" % abs(yi - np.vstack([sin(xi), cos(xi)]).T).max()
+    msg = f"abs-diff: {abs(yi - np.vstack([sin(xi), cos(xi)]).T).max():f}"
     assert_(allclose(yi, np.vstack([sin(xi), cos(xi)]).T, atol=atol), msg)
 
 

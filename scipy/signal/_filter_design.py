@@ -705,16 +705,16 @@ def group_delay(system, w=512, whole=False, fs=2*pi):
     if np.any(singular):
         gd[singular] = 0
         warnings.warn(
-            "The group delay is singular at frequencies [{}], setting to 0".
-            format(", ".join(f"{ws:.3f}" for ws in w[singular])),
+            "The group delay is singular at frequencies "
+            f"[{', '.join(f'{ws:.3f}' for ws in w[singular])}], setting to 0",
             stacklevel=2
         )
 
     elif np.any(near_singular):
         warnings.warn(
-            "The filter's denominator is extremely small at frequencies [{}], \
-            around which a singularity may be present".
-            format(", ".join(f"{ws:.3f}" for ws in w[near_singular])),
+            "The filter's denominator is extremely small at frequencies "
+            f"[{', '.join(f'{ws:.3f}' for ws in w[near_singular])}], "
+            "around which a singularity may be present",
             stacklevel=2
         )
 
@@ -2379,10 +2379,10 @@ def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba',
     try:
         ordfunc = filter_dict[ftype][1]
     except KeyError as e:
-        raise ValueError("Invalid IIR filter type: %s" % ftype) from e
+        raise ValueError(f"Invalid IIR filter type: {ftype}") from e
     except IndexError as e:
-        raise ValueError(("%s does not have order selection. Use "
-                          "iirfilter function.") % ftype) from e
+        raise ValueError(f"{ftype} does not have order selection. "
+                         "Use iirfilter function.") from e
 
     _validate_gpass_gstop(gpass, gstop)
 
@@ -2576,15 +2576,15 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
     try:
         btype = band_dict[btype]
     except KeyError as e:
-        raise ValueError("'%s' is an invalid bandtype for filter." % btype) from e
+        raise ValueError(f"'{btype}' is an invalid bandtype for filter.") from e
 
     try:
         typefunc = filter_dict[ftype][0]
     except KeyError as e:
-        raise ValueError("'%s' is not a valid basic IIR filter." % ftype) from e
+        raise ValueError(f"'{ftype}' is not a valid basic IIR filter.") from e
 
     if output not in ['ba', 'zpk', 'sos']:
-        raise ValueError("'%s' is not a valid output form." % output)
+        raise ValueError(f"'{output}' is not a valid output form.")
 
     if rp is not None and rp < 0:
         raise ValueError("passband ripple (rp) must be positive")
@@ -2613,7 +2613,7 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
                              "elliptic filter.")
         z, p, k = typefunc(N, rp, rs)
     else:
-        raise NotImplementedError("'%s' not implemented in iirfilter." % ftype)
+        raise NotImplementedError(f"'{ftype}' not implemented in iirfilter.")
 
     # Pre-warp frequencies for digital filter design
     if not analog:
@@ -2651,7 +2651,7 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
         elif btype == 'bandstop':
             z, p, k = lp2bs_zpk(z, p, k, wo=wo, bw=bw)
     else:
-        raise NotImplementedError("'%s' not implemented in iirfilter." % btype)
+        raise NotImplementedError(f"'{btype}' not implemented in iirfilter.")
 
     # Find discrete equivalent if necessary
     if not analog:
@@ -3812,7 +3812,7 @@ def band_stop_obj(wp, ind, passb, stopb, gpass, gstop, type):
         d1 = special.ellipk([arg1 ** 2, 1 - arg1 ** 2])
         n = (d0[0] * d1[1] / (d0[1] * d1[0]))
     else:
-        raise ValueError("Incorrect type: %s" % type)
+        raise ValueError(f"Incorrect type: {type}")
     return n
 
 
@@ -4001,7 +4001,7 @@ def buttord(wp, ws, gpass, gstop, analog=False, fs=None):
                    passb[0] * passb[1]))
         WN = np.sort(abs(WN))
     else:
-        raise ValueError("Bad type: %s" % filter_type)
+        raise ValueError(f"Bad type: {filter_type}")
 
     wn = _postprocess_wn(WN, analog, fs)
 

@@ -107,19 +107,11 @@ using namespace std;
 namespace {
 
 complex<double> to_complex(npy_cdouble z) {
-    union {
-        npy_cdouble cvalue;
-        complex<double> value;
-    } z_union{z};
-    return z_union.value;
+    return {npy_creal(z), npy_cimag(z)};
 }
 
 npy_cdouble to_ccomplex(complex<double> z) {
-    union {
-        complex<double> value;
-        npy_cdouble cvalue;
-    } z_union{z};
-    return z_union.cvalue;
+    return {z.real(), z.imag()};
 }
 
 } // namespace

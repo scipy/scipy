@@ -206,6 +206,7 @@ if blas_name == 'openblas' or blas_name == 'auto'
   blas = dependency('scipy-openblas', method: 'pkg-config', required: false)
   if blas.found()
     blas_name = 'scipy-openblas'
+    generate_blas_wrappers = true
   endif
 endif
 
@@ -298,7 +299,8 @@ python_sources = [
   'special.pxd',
 ]
 
-if blas_name == 'scipy-openblas'
+fs = import('fs')
+if fs.exists('_distributor_init_local.py')
   python_sources += ['_distributor_init_local.py']
 endif
 
@@ -309,7 +311,6 @@ py3.install_sources(
 
 # Copy the main __init__.py and pxd files to the build dir.
 # Needed to trick Cython, it won't do a relative import outside a package
-fs = import('fs')
 #_cython_tree = declare_dependency(sources: [
 _cython_tree = [
   fs.copyfile('__init__.py'),
@@ -369,9 +370,11 @@ Wno_unused_result = cc.get_supported_arguments('-Wno-unused-result')
 Wno_unused_variable = cc.get_supported_arguments('-Wno-unused-variable')
 
 # C++ warning flags
+_cpp_Wno_bitwise_instead_of_logical = cpp.get_supported_arguments('-Wno-bitwise-instead-of-logical')
 _cpp_Wno_cpp = cpp.get_supported_arguments('-Wno-cpp')
-_cpp_Wno_deprecated_declarations = cpp.get_supported_arguments('-Wno-deprecated-declarations')
 _cpp_Wno_class_memaccess = cpp.get_supported_arguments('-Wno-class-memaccess')
+_cpp_Wno_deprecated_declarations = cpp.get_supported_arguments('-Wno-deprecated-declarations')
+_cpp_Wno_deprecated_builtins = cpp.get_supported_arguments('-Wno-deprecated-builtins')
 _cpp_Wno_format_truncation = cpp.get_supported_arguments('-Wno-format-truncation')
 _cpp_Wno_non_virtual_dtor = cpp.get_supported_arguments('-Wno-non-virtual-dtor')
 _cpp_Wno_sign_compare = cpp.get_supported_arguments('-Wno-sign-compare')
@@ -419,7 +422,7 @@ fortran_ignore_warnings = ff.get_supported_arguments(
 # Intel Fortran (ifort) does not run the preprocessor by default, if Fortran
 # code uses preprocessor statements, add this compile flag to it.
 _fflag_fpp = []
-if ff.get_id() == 'intel-cl'
+if ff.get_id() in ['intel-cl', 'intel-llvm-cl']
   if is_windows
     _fflag_fpp = ff.get_supported_arguments('/fpp')
   else

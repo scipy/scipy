@@ -4,8 +4,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-import warnings
-
 import numpy as np
 
 from scipy.linalg import solve, solve_banded
@@ -180,12 +178,6 @@ class PchipInterpolator(CubicHermiteSpline):
         A N-D array of real values. ``y``'s length along the interpolation
         axis must be equal to the length of ``x``. Use the ``axis``
         parameter to select the interpolation axis.
-
-        .. deprecated:: 1.13.0
-            Complex data is deprecated and will raise an error in SciPy 1.15.0.
-            If you are trying to use the real components of the passed array,
-            use ``np.real`` on ``y``.
-
     axis : int, optional
         Axis in the ``y`` array corresponding to the x-coordinate values. Defaults
         to ``axis=0``.
@@ -249,11 +241,9 @@ class PchipInterpolator(CubicHermiteSpline):
         x, _, y, axis, _ = prepare_input(x, y, axis)
         if np.iscomplexobj(y):
             msg = ("`PchipInterpolator` only works with real values for `y`. "
-                   "Passing an array with a complex dtype for `y` is deprecated "
-                   "and will raise an error in SciPy 1.15.0. If you are trying to "
-                   "use the real components of the passed array, use `np.real` on "
-                   "the array before passing to `PchipInterpolator`.")
-            warnings.warn(msg, DeprecationWarning, stacklevel=2)
+                   "If you are trying to use the real components of the passed array, "
+                   "use `np.real` on the array before passing to `PchipInterpolator`.")
+            raise ValueError(msg)
         xp = x.reshape((x.shape[0],) + (1,)*(y.ndim-1))
         dk = self._find_derivatives(xp, y)
         super().__init__(x, y, dk, axis=0, extrapolate=extrapolate)
@@ -409,12 +399,6 @@ class Akima1DInterpolator(CubicHermiteSpline):
         N-D array of real values. The length of ``y`` along the interpolation axis
         must be equal to the length of ``x``. Use the ``axis`` parameter to
         select the interpolation axis.
-
-        .. deprecated:: 1.13.0
-            Complex data is deprecated and will raise an error in SciPy 1.15.0.
-            If you are trying to use the real components of the passed array,
-            use ``np.real`` on ``y``.
-
     axis : int, optional
         Axis in the ``y`` array corresponding to the x-coordinate values. Defaults
         to ``axis=0``.
@@ -498,7 +482,7 @@ class Akima1DInterpolator(CubicHermiteSpline):
     >>> ax.legend()
     >>> fig.show()
 
-    The overshoot that occured in ``"akima"`` has been avoided in ``"makima"``.
+    The overshoot that occurred in ``"akima"`` has been avoided in ``"makima"``.
 
     References
     ----------
@@ -520,11 +504,10 @@ class Akima1DInterpolator(CubicHermiteSpline):
 
         if np.iscomplexobj(y):
             msg = ("`Akima1DInterpolator` only works with real values for `y`. "
-                   "Passing an array with a complex dtype for `y` is deprecated "
-                   "and will raise an error in SciPy 1.15.0. If you are trying to "
-                   "use the real components of the passed array, use `np.real` on "
-                   "the array before passing to `Akima1DInterpolator`.")
-            warnings.warn(msg, DeprecationWarning, stacklevel=2)
+                   "If you are trying to use the real components of the passed array, "
+                   "use `np.real` on the array before passing to "
+                   "`Akima1DInterpolator`.")
+            raise ValueError(msg)
 
         # Akima extrapolation historically False; parent class defaults to True.
         extrapolate = False if extrapolate is None else extrapolate
@@ -624,7 +607,7 @@ class CubicSpline(CubicHermiteSpline):
         If `bc_type` is a 2-tuple, the first and the second value will be
         applied at the curve start and end respectively. The tuple values can
         be one of the previously mentioned strings (except 'periodic') or a
-        tuple `(order, deriv_values)` allowing to specify arbitrary
+        tuple ``(order, deriv_values)`` allowing to specify arbitrary
         derivatives at curve ends:
 
         * `order`: the derivative order, 1 or 2.

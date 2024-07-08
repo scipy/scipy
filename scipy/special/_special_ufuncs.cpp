@@ -207,18 +207,26 @@ extern "C" int wrap_PyUFunc_getfperr() { return PyUFunc_getfperr(); }
 
 static PyModuleDef _special_ufuncs_def = {
     PyModuleDef_HEAD_INIT,
-    .m_name = "_special_ufuncs",
-    .m_size = -1,
+    "_special_ufuncs",
+    NULL,
+    -1,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL
 };
 
 PyMODINIT_FUNC PyInit__special_ufuncs() {
-    if (!SpecFun_Initialize()) {
-        return nullptr;
+    import_array();
+    import_umath();
+    if (PyErr_Occurred()) {
+        return NULL;
     }
 
     PyObject *_special_ufuncs = PyModule_Create(&_special_ufuncs_def);
     if (_special_ufuncs == nullptr) {
-        return nullptr;
+        return NULL;
     }
 
     PyObject *_cospi = SpecFun_NewUFunc(

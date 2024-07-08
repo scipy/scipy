@@ -556,7 +556,7 @@ inline std::complex<double> cchg(double a, double b, std::complex<double> z) {
 
     int i, j, k, la, m, n, nl, ns;
     double a0, a1, phi, x0, x, y;
-    std::complex<double> cfac, cg1, cg2, cg3, chg, chg1, chg2, chw, cr, cr1, cr2, cs1,\
+    std::complex<double> cfac, cg1, cg2, cg3, chg, chg1, chg2, chw, cr, cr1, cr2, cs1,
                    cs2, crg, cy0, cy1, z0;
     const double pi = 3.141592653589793;
     const std::complex<double> ci(0.0, 1.0);
@@ -602,6 +602,7 @@ inline std::complex<double> cchg(double a, double b, std::complex<double> z) {
                 crg = 1.0;
                 for (j = 1; j < 501; j++) {
                     crg = crg * (a+j-1.0)/(j*(b+j-1.0))*z;
+                    chg += crg;
                     if (std::abs((chg-chw)/chg) < 1e-15) { break; }
                     chw = chg;
                 }
@@ -4317,7 +4318,7 @@ inline int msta2(double x, int n, int mp) {
         n1 = nn;
         f1 = f;
     }
-    return nn;
+    return nn + 10;
 }
 
 
@@ -4776,7 +4777,7 @@ inline void rmn1(int m, int n, T c, T x, int kd, T *df, T *r1f, T *r1d) {
 
     cx = c * x;
     nm2 = 2 * nm + m;
-    sphj(static_cast<T>(nm2), cx, &nm2, sj, dj);
+    sphj(cx, nm2, &nm2, sj, dj);
 
     a0 = pow(1.0 - kd / (x * x), 0.5 * m) / suc;
     *r1f = 0.0;
@@ -5596,7 +5597,7 @@ void sphj(T x, int n, int *nm, T *sj, T *dj) {
         }
         sj[0] = 1.0;
         if (n > 0) {
-            dj[0] = 1.0 / 3.0;
+            dj[1] = 1.0 / 3.0;
         }
         return;
     }
@@ -5620,7 +5621,7 @@ void sphj(T x, int n, int *nm, T *sj, T *dj) {
         f1 = 1e-100;
         for (k = m; k >= 0; k--) {
             f = (2.0*k + 3.0)*f1/x - f0;
-            if (k <= *nm) { sj[k - 1] = f; }
+            if (k <= *nm) { sj[k] = f; }
             f0 = f1;
             f1 = f;
         }
@@ -5630,7 +5631,7 @@ void sphj(T x, int n, int *nm, T *sj, T *dj) {
         }
     }
     for (k = 1; k <= *nm; k++) {
-        dj[k] = sj[k - 1] - (k + 1.0)*sj[k - 1]/x;
+        dj[k] = sj[k - 1] - (k + 1.0)*sj[k]/x;
     }
     return;
 }

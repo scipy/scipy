@@ -52,7 +52,7 @@ def _remove_optimizer_parameters(kwds):
     kwds.pop('optimizer', None)
     kwds.pop('method', None)
     if kwds:
-        raise TypeError("Unknown arguments: %s." % kwds)
+        raise TypeError(f"Unknown arguments: {kwds}.")
 
 
 def _call_super_mom(fun):
@@ -3344,7 +3344,7 @@ def _digammainv(y):
     value, info, ier, mesg = optimize.fsolve(func, x0, xtol=1e-11,
                                              full_output=True)
     if ier != 1:
-        raise RuntimeError("_digammainv: fsolve failed, y = %r" % y)
+        raise RuntimeError(f"_digammainv: fsolve failed, y = {y!r}")
 
     return value[0]
 
@@ -3903,10 +3903,7 @@ class genhyperbolic_gen(rv_continuous):
     # np.vectorize isn't currently designed to be used as a decorator,
     # so use a lambda instead.  This allows us to decorate the function
     # with `np.vectorize` and still provide the `otypes` parameter.
-    # The first argument to `vectorize` is `func.__get__(object)` for
-    # compatibility with Python 3.9.  In Python 3.10, this can be
-    # simplified to just `func`.
-    @lambda func: np.vectorize(func.__get__(object), otypes=[np.float64])
+    @lambda func: np.vectorize(func, otypes=[np.float64])
     @staticmethod
     def _integrate_pdf(x0, x1, p, a, b):
         """
@@ -4943,14 +4940,14 @@ class geninvgauss_gen(rv_continuous):
 
         f(x, p, b) = x^{p-1} \exp(-b (x + 1/x) / 2) / (2 K_p(b))
 
-    where `x > 0`, `p` is a real number and `b > 0`\([1]_).
+    where ``x > 0``, `p` is a real number and ``b > 0``\([1]_).
     :math:`K_p` is the modified Bessel function of second kind of order `p`
     (`scipy.special.kv`).
 
     %(after_notes)s
 
     The inverse Gaussian distribution `stats.invgauss(mu)` is a special case of
-    `geninvgauss` with `p = -1/2`, `b = 1 / mu` and `scale = mu`.
+    `geninvgauss` with ``p = -1/2``, ``b = 1 / mu`` and ``scale = mu``.
 
     Generating random variates is challenging for this distribution. The
     implementation is based on [2]_.
@@ -5274,8 +5271,8 @@ class norminvgauss_gen(rv_continuous):
 
     A normal inverse Gaussian random variable `Y` with parameters `a` and `b`
     can be expressed as a normal mean-variance mixture:
-    `Y = b * V + sqrt(V) * X` where `X` is `norm(0,1)` and `V` is
-    `invgauss(mu=1/sqrt(a**2 - b**2))`. This representation is used
+    ``Y = b * V + sqrt(V) * X`` where `X` is ``norm(0,1)`` and `V` is
+    ``invgauss(mu=1/sqrt(a**2 - b**2))``. This representation is used
     to generate random variates.
 
     Another common parametrization of the distribution (see Equation 2.1 in
@@ -9218,7 +9215,7 @@ class semicircular_gen(rv_continuous):
 
     for :math:`-1 \le x \le 1`.
 
-    The distribution is a special case of `rdist` with `c = 3`.
+    The distribution is a special case of `rdist` with ``c = 3``.
 
     %(after_notes)s
 
@@ -9661,12 +9658,51 @@ class trapezoid_gen(rv_continuous):
         return 0.5 * (1.0-d+c) / (1.0+d-c) + np.log(0.5 * (1.0+d-c))
 
 
+# deprecation of trapz, see #20486
+deprmsg = ("`trapz` is deprecated in favour of `trapezoid` "
+           "and will be removed in SciPy 1.16.0.")
+
+
+class trapz_gen(trapezoid_gen):
+    # override __call__ protocol from rv_generic to also
+    # deprecate instantiation of frozen distributions
+    """
+
+    .. deprecated:: 1.14.0
+        `trapz` is deprecated and will be removed in SciPy 1.16.
+        Plese use `trapezoid` instead!
+    """
+    def __call__(self, *args, **kwds):
+        warnings.warn(deprmsg, DeprecationWarning, stacklevel=2)
+        return self.freeze(*args, **kwds)
+
+
 trapezoid = trapezoid_gen(a=0.0, b=1.0, name="trapezoid")
-# Note: alias kept for backwards compatibility. Rename was done
-# because trapz is a slur in colloquial English (see gh-12924).
-trapz = trapezoid_gen(a=0.0, b=1.0, name="trapz")
-if trapz.__doc__:
-    trapz.__doc__ = "trapz is an alias for `trapezoid`"
+trapz = trapz_gen(a=0.0, b=1.0, name="trapz")
+
+# since the deprecated class gets intantiated upon import (and we only want to
+# warn upon use), add the deprecation to each class method
+_method_names = [
+    "cdf", "entropy", "expect", "fit", "interval", "isf", "logcdf", "logpdf",
+    "logsf", "mean", "median", "moment", "pdf", "ppf", "rvs", "sf", "stats",
+    "std", "var"
+]
+
+
+class _DeprecationWrapper:
+    def __init__(self, method):
+        self.msg = (f"`trapz.{method}` is deprecated in favour of trapezoid.{method}. "
+                     "Please replace all uses of the distribution class "
+                     "`trapz` with `trapezoid`. `trapz` will be removed in SciPy 1.16.")
+        self.method = getattr(trapezoid, method)
+    
+    def __call__(self, *args, **kwargs):
+        warnings.warn(self.msg, DeprecationWarning, stacklevel=2)
+        return self.method(*args, **kwargs)
+
+
+for m in _method_names:
+    setattr(trapz, m, _DeprecationWrapper(m))
 
 
 class triang_gen(rv_continuous):
@@ -10564,7 +10600,7 @@ class uniform_gen(rv_continuous):
         11.0
 
         If we know the data comes from a uniform distribution where the support
-        starts at 0, we can use `floc=0`:
+        starts at 0, we can use ``floc=0``:
 
         >>> loc, scale = uniform.fit(x, floc=0)
         >>> loc
@@ -10573,7 +10609,7 @@ class uniform_gen(rv_continuous):
         13.0
 
         Alternatively, if we know the length of the support is 12, we can use
-        `fscale=12`:
+        ``fscale=12``:
 
         >>> loc, scale = uniform.fit(x, fscale=12)
         >>> loc

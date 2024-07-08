@@ -38,7 +38,7 @@ def tfqmr(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None,
         error tolerance.  By default, no preconditioner is used.
     callback : function, optional
         User-supplied function to call after each iteration.  It is called
-        as `callback(xk)`, where `xk` is the current solution vector.
+        as ``callback(xk)``, where ``xk`` is the current solution vector.
     show : bool, optional
         Specify ``show = True`` to show the convergence, ``show = False`` is
         to close the output of the convergence.

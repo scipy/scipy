@@ -20,6 +20,8 @@
       REAL               TARRAY( 2 )
 *     ..
 *     .. External Functions ..
+      REAL               ETIME
+      EXTERNAL           ETIME
 *     ..
 *     .. Executable Statements ..
 *

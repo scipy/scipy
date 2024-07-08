@@ -100,9 +100,8 @@ class TestHessianUpdateStrategy(TestCase):
         ndims = 3
         # no complex allowed
         inits_msg_errtype = ((complex(3.14),
-                              re.escape("float() argument must be a "
-                                        "string or a real number, "
-                                        "not 'complex'"),
+                              r"float\(\) argument must be a string or a "
+                              r"(real )?number, not 'complex'",
                               TypeError),
 
                              (np.array([3.2, 2.3, 1.2]).astype(np.complex128),

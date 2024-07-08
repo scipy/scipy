@@ -120,7 +120,7 @@ class FortranFile:
         if hasattr(filename, 'seek'):
             self._fp = filename
         else:
-            self._fp = open(filename, '%sb' % mode)
+            self._fp = open(filename, f'{mode}b')
 
         self._header_dtype = header_dtype
 
