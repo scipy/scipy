@@ -38,8 +38,8 @@ class MultiUFunc:
             seen_input_types = set()
             for ufunc in ufuncs_iter:
                 if not isinstance(ufunc, np.ufunc):
-                    raise ValueError("All ufuncs must have"
-                                     f" type `numpy.ufunc`. Received {ufunc_or_ufuncs}")
+                    raise ValueError("All ufuncs must have type `numpy.ufunc`."
+                                     f" Received {ufunc_or_ufuncs}")
                 seen_input_types.add(frozenset(x.split("->")[0] for x in ufunc.types))
             if len(seen_input_types) > 1:
                 raise ValueError("All ufuncs must take the same input types.")
@@ -92,20 +92,23 @@ class MultiUFunc:
 
         ufunc = self._resolve_ufunc(**kwargs)
 
-        ufunc_args = [np.asarray(arg)
-            for arg in args[-ufunc.nin:]]  # array arguments to be passed to the ufunc
+        # array arguments to be passed to the ufunc
+        ufunc_args = [np.asarray(arg) for arg in args[-ufunc.nin:]]
+
         ufunc_kwargs = self._ufunc_default_kwargs(**kwargs)
 
         if (self._resolve_out_shapes is not None):
             ufunc_arg_shapes = tuple(np.shape(ufunc_arg) for ufunc_arg in ufunc_args)
             ufunc_out_shapes = self._resolve_out_shapes(*args[:-ufunc.nin],
-                *ufunc_arg_shapes, ufunc.nout)
+                                                        *ufunc_arg_shapes, ufunc.nout)
 
-            ufunc_arg_dtypes = tuple((ufunc_arg.dtype if hasattr(ufunc_arg, 'dtype')
-                else np.dtype(type(ufunc_arg))) for ufunc_arg in ufunc_args)
+            ufunc_arg_dtypes = tuple(ufunc_arg.dtype if hasattr(ufunc_arg, 'dtype')
+                                     else np.dtype(type(ufunc_arg))
+                                     for ufunc_arg in ufunc_args)
+
             if hasattr(ufunc, 'resolve_dtypes'):
                 ufunc_dtypes = ufunc_arg_dtypes + ufunc.nout * (None,)
-                ufunc_dtypes = ufunc.resolve_dtypes(ufunc_dtypes) 
+                ufunc_dtypes = ufunc.resolve_dtypes(ufunc_dtypes)
                 ufunc_out_dtypes = ufunc_dtypes[-ufunc.nout:]
             else:
                 ufunc_out_dtype = np.result_type(*ufunc_arg_dtypes)
@@ -116,18 +119,19 @@ class MultiUFunc:
 
             if self.__force_complex_output:
                 ufunc_out_dtypes = tuple(np.result_type(1j, ufunc_out_dtype)
-                    for ufunc_out_dtype in ufunc_out_dtypes)
+                                         for ufunc_out_dtype in ufunc_out_dtypes)
 
             out = tuple(np.empty(ufunc_out_shape, dtype=ufunc_out_dtype)
-                for ufunc_out_shape, ufunc_out_dtype
-                in zip(ufunc_out_shapes, ufunc_out_dtypes))
+                        for ufunc_out_shape, ufunc_out_dtype
+                        in zip(ufunc_out_shapes, ufunc_out_dtypes))
 
             ufunc_kwargs['out'] = out
 
         return ufunc(*ufunc_args, **ufunc_kwargs)
 
 
-sph_legendre_p = MultiUFunc(sph_legendre_p,
+sph_legendre_p = MultiUFunc(
+    sph_legendre_p,
     r"""sph_legendre_p(n, m, theta, *, diff_n=0)
 
     Spherical Legendre polynomial of the first kind.
@@ -175,7 +179,8 @@ def _(diff_n):
     return diff_n
 
 
-sph_legendre_p_all = MultiUFunc(sph_legendre_p_all,
+sph_legendre_p_all = MultiUFunc(
+    sph_legendre_p_all,
     """sph_legendre_p_all(n, m, theta, *, diff_n=0)
 
     All spherical Legendre polynomials of the first kind up to the
@@ -183,7 +188,7 @@ sph_legendre_p_all = MultiUFunc(sph_legendre_p_all,
 
     Output shape is ``(n + 1, 2 * m + 1, ...)``. The entry at ``(j, i)``
     corresponds to degree ``j`` and order ``i`` for all  ``0 <= j <= n``
-    and ``-m <= i <= m``. 
+    and ``-m <= i <= m``.
 
     See Also
     --------
@@ -216,7 +221,8 @@ def _(n, m, theta_shape, nout):
     return nout * ((n + 1, 2 * abs(m) + 1) + theta_shape,)
 
 
-assoc_legendre_p = MultiUFunc(assoc_legendre_p,
+assoc_legendre_p = MultiUFunc(
+    assoc_legendre_p,
     r"""assoc_legendre_p(n, m, z, *, branch_cut=2, norm=False, diff_n=0)
 
     Associated Legendre polynomial of the first kind.
@@ -245,8 +251,8 @@ assoc_legendre_p = MultiUFunc(assoc_legendre_p,
 
     Notes
     -----
-    The normalized counterpart of an (unnormalized) associated Legendre polynomial has
-    the additional factor
+    The normalized counterpart of an (unnormalized) associated Legendre
+    polynomial has the additional factor
 
     .. math::
 
@@ -271,7 +277,8 @@ def _(branch_cut, norm, diff_n):
     return branch_cut,
 
 
-assoc_legendre_p_all = MultiUFunc(assoc_legendre_p_all,
+assoc_legendre_p_all = MultiUFunc(
+    assoc_legendre_p_all,
     """assoc_legendre_p_all(n, m, z, *, branch_cut=2, norm=False, diff_n=0)
 
     All associated Legendre polynomials of the first kind up to the
@@ -279,7 +286,7 @@ assoc_legendre_p_all = MultiUFunc(assoc_legendre_p_all,
 
     Output shape is ``(n + 1, 2 * m + 1, ...)``. The entry at ``(j, i)``
     corresponds to degree ``j`` and order ``i`` for all  ``0 <= j <= n``
-    and ``-m <= i <= m``. 
+    and ``-m <= i <= m``.
 
     See Also
     --------
@@ -321,10 +328,11 @@ def _(n, m, z_shape, branch_cut_shape, nout):
         raise ValueError("m must be a non-negative integer.")
 
     return nout * ((n + 1, 2 * abs(m) + 1)
-        + np.broadcast_shapes(z_shape, branch_cut_shape),)
+                   + np.broadcast_shapes(z_shape, branch_cut_shape),)
 
 
-legendre_p = MultiUFunc(legendre_p,
+legendre_p = MultiUFunc(
+    legendre_p,
     """legendre_p(n, z, *, diff_n=0)
 
     Legendre polynomial of the first kind.
@@ -371,14 +379,15 @@ def _(diff_n):
     return diff_n
 
 
-legendre_p_all = MultiUFunc(legendre_p_all,
+legendre_p_all = MultiUFunc(
+    legendre_p_all,
     """legendre_p_all(n, z, *, diff_n=0)
 
     All Legendre polynomials of the first kind up to the
     specified degree ``n``.
 
     Output shape is ``(n + 1, ...)``. The entry at ``j``
-    corresponds to degree ``j`` for all  ``0 <= j <= n``. 
+    corresponds to degree ``j`` for all  ``0 <= j <= n``.
 
     See Also
     --------
@@ -410,7 +419,8 @@ def _(n, z_shape, nout):
     return nout * ((n + 1,) + z_shape,)
 
 
-sph_harm_y = MultiUFunc(sph_harm_y,
+sph_harm_y = MultiUFunc(
+    sph_harm_y,
     r"""sph_harm_y(n, m, theta, phi, *, diff_n=0)
 
     Spherical harmonics. They are defined as
@@ -495,14 +505,15 @@ def _(diff_n):
     return {}
 
 
-sph_harm_y_all = MultiUFunc(sph_harm_y_all, 
+sph_harm_y_all = MultiUFunc(
+    sph_harm_y_all,
     """sph_harm_y_all(n, m, theta, phi, *, diff_n=0)
 
     All spherical harmonics up to the specified degree ``n`` and order ``m``.
 
     Output shape is ``(n + 1, 2 * m + 1, ...)``. The entry at ``(j, i)``
     corresponds to degree ``j`` and order ``i`` for all  ``0 <= j <= n``
-    and ``-m <= i <= m``. 
+    and ``-m <= i <= m``.
 
     See Also
     --------
@@ -532,5 +543,6 @@ def _(n, m, theta_shape, phi_shape, nout):
     if not isinstance(n, numbers.Integral) or (n < 0):
         raise ValueError("n must be a non-negative integer.")
 
-    return tuple(diff_ndims * (2,) + (n + 1, 2 * abs(m) + 1) +
-        np.broadcast_shapes(theta_shape, phi_shape) for diff_ndims in range(nout))
+    return tuple(diff_ndims * (2,) + (n + 1, 2 * abs(m) + 1)
+                 + np.broadcast_shapes(theta_shape, phi_shape)
+                 for diff_ndims in range(nout))
