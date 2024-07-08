@@ -20,7 +20,6 @@ IMPRECISE = {np.single, np.csingle}
 REAL_DTYPES = (np.intc, np_long, np.longlong,
                np.float32, np.float64, np.longdouble)
 COMPLEX_DTYPES = (np.complex64, np.complex128, np.clongdouble)
-# use sorted list to ensure fixed order of tests
 DTYPES = REAL_DTYPES + COMPLEX_DTYPES
 
 
