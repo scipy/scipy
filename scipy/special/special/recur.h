@@ -85,7 +85,7 @@ void forward_recur_rotate_left(std::tuple<T (&)[K]...> &res) {
  * @param res values, initialised to the leading K values
  * @param f a function to be called as f(it, res)
  */
-template <typename InputIt, typename Recurrence, typename... T, ssize_t K, typename Func>
+template <typename InputIt, typename Recurrence, typename... T, ptrdiff_t K, typename Func>
 void forward_recur(InputIt first, InputIt last, Recurrence r, std::tuple<T (&)[K]...> res, Func f) {
     InputIt it = first;
     while (it - first != K && it != last) {
@@ -112,7 +112,7 @@ void forward_recur(InputIt first, InputIt last, Recurrence r, std::tuple<T (&)[K
     }
 }
 
-template <typename InputIt, typename Recurrence, typename... T, ssize_t K, typename Func>
+template <typename InputIt, typename Recurrence, typename... T, ptrdiff_t K, typename Func>
 void backward_recur(InputIt first, InputIt last, Recurrence r, std::tuple<T (&)[K]...> res, Func f) {
     InputIt it = first;
     while (std::abs(it - first) != K && it != last) {

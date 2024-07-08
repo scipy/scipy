@@ -59,6 +59,7 @@
 #include <cuda/std/algorithm>
 #include <cuda/std/cmath>
 #include <cuda/std/cstdint>
+#include <cuda/std/cstdef>
 #include <cuda/std/limits>
 #include <cuda/std/type_traits>
 
@@ -197,6 +198,8 @@ SPECFUN_HOST_DEVICE complex<T> pow(const complex<T> &x, const T &y) {
 using cuda::std::is_floating_point;
 using cuda::std::pair;
 using cuda::std::uint64_t;
+using cuda::std::size_t;
+using cuda::std::ptrdiff_t;
 
 #define SPECFUN_ASSERT(a)
 
