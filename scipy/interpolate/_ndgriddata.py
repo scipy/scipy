@@ -16,7 +16,6 @@ __all__ = ['griddata', 'NearestNDInterpolator', 'LinearNDInterpolator',
 # Nearest-neighbor interpolation
 #------------------------------------------------------------------------------
 
-
 class NearestNDInterpolator(NDInterpolatorBase):
     """NearestNDInterpolator(x, y).
 
@@ -87,6 +86,17 @@ class NearestNDInterpolator(NDInterpolatorBase):
     >>> plt.axis("equal")
     >>> plt.show()
 
+    If we want to have a smoother interpolation which is still easy to 
+    compute, we can specify a k value in the query along with a weights
+    argument:
+    
+    >>> Z = interp(X, Y, k=4, weights='distance')
+    >>> plt.pcolormesh(X, Y, Z, shading='auto')
+    >>> plt.plot(x, y, "ok", label="input point")
+    >>> plt.legend()
+    >>> plt.colorbar()
+    >>> plt.axis("equal")
+    >>> plt.show()
     """
 
     def __init__(self, x, y, rescale=False, tree_options=None):
@@ -98,7 +108,7 @@ class NearestNDInterpolator(NDInterpolatorBase):
         self.tree = cKDTree(self.points, **tree_options)
         self.values = np.asarray(y)
 
-    def __call__(self, *args, **query_options):
+    def __call__(self, *args, weights='uniform', **query_options):
         """
         Evaluate interpolator at given points.
 
@@ -108,8 +118,13 @@ class NearestNDInterpolator(NDInterpolatorBase):
             Points where to interpolate data at.
             x1, x2, ... xn can be array-like of float with broadcastable shape.
             or x1 can be array-like of float with shape ``(..., ndim)``
+        weights : {'uniform', 'distance'}, optional method of averaging the k nearest 
+            neighbors. uniform means all k returned points are weighted equally, 
+            whereas distance weights points by the inverse of their distance. If 
+            k is set to 1 (as is the default), this parameter will have 
+            no effect.
         **query_options
-            This allows ``eps``, ``p``, ``distance_upper_bound``, and ``workers``
+            This allows ``k``, ``eps``, ``p``, ``distance_upper_bound``, and ``workers``
             being passed to the cKDTree's query function to be explicitly set.
             See `scipy.spatial.cKDTree.query` for an overview of the different options.
 
@@ -142,6 +157,7 @@ class NearestNDInterpolator(NDInterpolatorBase):
         # below to mask the array and return only the points that were deemed
         # to have a close enough neighbor to return something useful.
         dist, i = self.tree.query(xi_flat, **query_options)
+
         valid_mask = np.isfinite(dist)
 
         # create a holder interp_values array and fill with nans.
@@ -155,7 +171,18 @@ class NearestNDInterpolator(NDInterpolatorBase):
         else:
             interp_values = np.full(interp_shape, np.nan)
 
-        interp_values[valid_mask] = self.values[i[valid_mask], ...]
+        if dist.ndim == 1:
+            interp_values[valid_mask] = self.values[i[valid_mask], ...]
+        else:
+            valid_mask = valid_mask.all(axis=1)
+            if weights == 'uniform' and dist.ndim > 1:
+                interp_values = np.average(self.values[i], axis=1)
+            elif weights == 'distance' and dist.ndim > 1:
+                interp_values = np.average(self.values[i], axis=1, weights=(1 - (dist / np.max(dist))))
+            else:
+                raise ValueError("Unknown value %r passed for weights,"
+                                "must be either 'uniform' or 'distance'" % (weights))
+            interp_values[~valid_mask] = np.nan
 
         if self.values.ndim > 1:
             new_shape = original_shape[:-1] + self.values.shape[1:]
