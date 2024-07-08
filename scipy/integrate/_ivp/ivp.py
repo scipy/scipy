@@ -358,6 +358,15 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
     min_step : float, optional
         The minimum allowed step size for 'LSODA' method.
         By default `min_step` is zero.
+    catch_exceptions : bool, optional
+        Whether to catch exceptions raised during calls to `solver.step()`. 
+        Default is False.
+
+        If ``catch_exceptions`` is True, then any exceptions raised during a
+        step of the solver will be caught instead of raised. The output `status`
+        will be set to -2, and the exception will be included in the termination
+        message. By setting ``catch_exceptions=True``, this function will return
+        the solution up until the time when the exception was raised.
 
     Returns
     -------
@@ -383,7 +392,8 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
         Number of LU decompositions.
     status : int
         Reason for algorithm termination:
-
+        
+            * -2: Other exception occured during integration step, and was caught.
             * -1: Integration step failed.
             *  0: The solver successfully reached the end of `tspan`.
             *  1: A termination event occurred.
