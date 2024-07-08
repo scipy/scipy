@@ -1,3 +1,4 @@
+import math
 import heapq
 import itertools
 
@@ -28,7 +29,7 @@ class CubatureRuleLinearError(CubatureRule):
 
     # ranges looks like np.array([[0, 1], [2, 3]]) for
     # \int^0_1 \int_2^3 f(x, y) dydx
-    # f is assumed to be a function from a function from an array of shape
+    # f is assumed to be a function from an array of shape
     # (eval_points, dim_input) where dim_input is the dimension of the input
     # and should return an array of shape (eval_points, dim_output) where dim_output
     # is the dimension of the output, e.g. for f(x, y) = (x + y)^alpha where
@@ -47,7 +48,7 @@ class CubatureRuleLinearError(CubatureRule):
         # to (-1, 1).
         # We also need to multiply the weights by a scale factor equal to the
         # determinant of the Jacobian for this change.
-        weight_scale_factor = np.prod(range_lengths / 2)
+        weight_scale_factor = math.prod(range_lengths / 2)
 
         nodes_scaled = (self.nodes + 1) * (range_lengths / 2) + range_start_points
         error_nodes_scaled = (
@@ -249,7 +250,7 @@ def cub(f, ranges, rule, tol):
 
         # print("split ranges:", split_ranges)
 
-        # this hurts my eyes
+        # TODO: find more elegant way of subdividing
         # sub_ranges is now like
         #     array([[[-1.,  0.],
         #     [-1.,  0.]],

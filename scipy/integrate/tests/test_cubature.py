@@ -1,48 +1,254 @@
 import numpy as np
+import scipy
 
 from scipy.integrate._cubature import cub, ProductRule, GaussKronrod21
-from numpy.testing import assert_allclose
+import scipy.special
 
 
-def test_cub_simple():
-    # Currently assumes that f is a function on arrays of shape
-    #   (eval_points, dim_input) -> (eval_points, dim_output)
-    n = np.arange(10)
+class Problem:
+    """Represents a general problem to be solved by a numerical integrator"""
+    def __init__(self, dim, f, ranges, exact, tol, rule):
+        self.dim = dim
+        self.f = f
+        self.ranges = ranges
+        self.exact = exact
+        self.tol = tol
+        self.rule = rule
 
-    def f(arr):
-        x, y, z = arr[:, 0], arr[:, 1], arr[:, 2]
-        return np.power((x + y + z)[:, np.newaxis], n)
+    def calculate(self):
+        integral_estimate, error_estimate = cub(
+            self.f,
+            self.ranges,
+            self.rule,
+            self.tol,
+        )
 
-    # For example:
-    #   f(np.array([
-    #       [1,1,1],
-    #       [1,2,3],
-    #   ]))
-    # Outputs:
-    #   array([[       1,        3,        9,       27,       81,      243,
-    #            729,     2187,     6561,    19683],
-    #      [       1,        6,       36,      216,     1296,     7776,
-    #          46656,   279936,  1679616, 10077696]])
+        self.integral_estimate = integral_estimate
+        self.error_estimate = error_estimate
 
-    exact = (-3 * 2**(n+3) + 3**(n+3) + 3)/(n**3 + 6*n**2 + 11*n + 6)
-    rule = ProductRule([GaussKronrod21(), GaussKronrod21(), GaussKronrod21()])
+    def assert_within_tol(self):
+        np.testing.assert_allclose(
+            self.integral_estimate,
+            self.exact,
+            rtol=0,
+            atol=self.tol,
+            verbose=True,
+            err_msg=f"""failed to find approx. integral of {self.f.__name__} with \
+rtol=TODO, atol={self.tol} with ranges {self.ranges}"""
+        )
 
-    est, err = cub(
-        f,
-        np.array([[0, 1], [0, 1], [0, 1]]),
-        rule,
-        1e-10
+
+def genz_malik_1980_f_1(r, alphas):
+    def f(x):
+        return np.cos(2*np.pi*r + np.sum(x * alphas, axis=1))[:, np.newaxis]
+
+    return f
+
+
+def test_genz_malik_1980_f_1():
+    def genz_malik_1980_f_1(r, alphas):
+        def f(x):
+            return np.cos(2*np.pi*r + np.sum(x * alphas, axis=1))[:, np.newaxis]
+
+        return f
+
+    problem = Problem(
+        # Three dimensional problem
+        dim=3,
+
+        # Test function in terms of these parameters
+        f=genz_malik_1980_f_1(
+            r=1/2,
+            alphas=np.array([1, 1, 1]),
+        ),
+
+        # Ranges to integrate over
+        ranges=np.array([[0, 1], [0, 1], [0, 1]]),
+
+        # Exact answer to the problem
+        exact=-8 * np.cos(3/2) * np.sin(1/2) ** 3,
+
+        # Tolerance in which we wish to attempt solving the problem
+        tol=1e-8,
+
+        # Rule to use
+        rule=ProductRule([GaussKronrod21(), GaussKronrod21(), GaussKronrod21()]),
     )
+    problem.calculate()
+    problem.assert_within_tol()
 
-    # Outputs:
-    #     [  1.           1.5          2.5          4.5          8.6
-    #   17.25        36.01190476  77.75       172.73333333 393.3       ]
-    #     [7.22078647e-17 1.16982873e-16 1.17539738e-16 1.14560620e-16
-    #  7.53115776e-16 1.83786051e-16 1.04254382e-16 5.00106071e-15
-    #  1.19304710e-14 1.97483751e-14]
 
-    assert_allclose(est, exact, rtol=0, atol=1e-10, verbose=True)
+def test_genz_malik_1980_f_2():
+    def genz_malik_1980_f_2(alphas, betas):
+        def f(x):
+            return (1/np.prod(alphas**2 + (x - betas)**2, axis=1))[:, np.newaxis]
+
+        return f
+
+    problem = Problem(
+        # Three dimensional problem
+        dim=3,
+
+        # Test function in terms of these parameters
+        f=genz_malik_1980_f_2(
+            alphas=np.array([1, 1, 1]),
+            betas=np.array([1, 1, 1]),
+        ),
+
+        # Ranges to integrate over
+        ranges=np.array([[0, 1], [0, 1], [0, 1]]),
+
+        # Exact answer to the problem
+        exact=np.pi ** 3 / 64,
+
+        # Tolerance in which we wish to attempt solving the problem
+        tol=1e-8,
+
+        # Rule to use
+        rule=ProductRule([GaussKronrod21(), GaussKronrod21(), GaussKronrod21()]),
+    )
+    problem.calculate()
+    problem.assert_within_tol()
+
+    problem = Problem(
+        dim=3,
+        f=genz_malik_1980_f_2(
+            alphas=np.array([2, 3, 4]),
+            betas=np.array([2, 3, 4]),
+        ),
+        ranges=np.array([[0, 1], [0, 1], [0, 1]]),
+        exact=(
+            1/1536
+            * (np.pi - 4*np.arctan(1/2))
+            * (np.pi - 4*np.arctan(2/3))
+            * (np.pi - 4*np.arctan(3/4))
+        ),
+        tol=1e-8,
+        rule=ProductRule([GaussKronrod21(), GaussKronrod21(), GaussKronrod21()]),
+    )
+    problem.calculate()
+    problem.assert_within_tol()
+
+    problem = Problem(
+        dim=3,
+        f=genz_malik_1980_f_2(
+            alphas=np.array([1, 1, 1]),
+            betas=np.array([2, 2, 2]),
+        ),
+        ranges=np.array([[-1, 1], [-1, 1], [-1, 1]]),
+        exact=(
+            -1/64 * (np.pi - 4*np.arctan(3))**3
+        ),
+        tol=1e-8,
+        rule=ProductRule([GaussKronrod21(), GaussKronrod21(), GaussKronrod21()]),
+    )
+    problem.calculate()
+    problem.assert_within_tol()
+
+    problem = Problem(
+        dim=4,
+        f=genz_malik_1980_f_2(
+            alphas=np.array([1, 1, 1, 1]),
+            betas=np.array([1, 1, 1, 1]),
+        ),
+        ranges=np.array([[-1, 1], [-1, 1], [-1, 1], [-1, 1]]),
+        exact=(
+            np.arctan(2)**4
+        ),
+        tol=1e-8,
+        rule=ProductRule([
+            GaussKronrod21(),
+            GaussKronrod21(),
+            GaussKronrod21(),
+            GaussKronrod21(),
+        ]),
+    )
+    problem.calculate()
+    problem.assert_within_tol()
+
+
+def test_genz_malik_1980_f_3():
+    def genz_malik_1980_f_3(alphas):
+        def f(x):
+            return np.exp(np.sum(alphas * x, axis=1))[:, np.newaxis]
+
+        return f
+
+    problem = Problem(
+        dim=3,
+        f=genz_malik_1980_f_3(
+            alphas=np.array([1, 1, 1]),
+        ),
+        ranges=np.array([[-1, 1], [-1, 1], [-1, 1]]),
+        exact=(
+            (-1+np.e**2)**3 / np.e**3
+        ),
+        tol=1e-8,
+        rule=ProductRule([
+            GaussKronrod21(),
+            GaussKronrod21(),
+            GaussKronrod21(),
+        ]),
+    )
+    problem.calculate()
+    problem.assert_within_tol()
+
 
 # TODO: more test integrals
 # TODO: test that product rules are calculated properly
 # TODO: test that inconsistent dimensions are reported
+
+
+def test_genz_malik_1980_f_4():
+    def genz_malik_1980_f_4(alphas):
+        def f(x):
+            return ((1 + np.sum(alphas * x, axis=1))**(-x.shape[-1]-1))[:, np.newaxis]
+
+        return f
+
+    problem = Problem(
+        dim=3,
+        f=genz_malik_1980_f_4(
+            alphas=np.array([1, 1, 1]),
+        ),
+        ranges=np.array([[0, 1], [0, 1], [0, 1]]),
+        exact=(
+            1/24
+        ),
+        tol=1e-8,
+        rule=ProductRule([
+            GaussKronrod21(),
+            GaussKronrod21(),
+            GaussKronrod21(),
+        ]),
+    )
+    problem.calculate()
+    problem.assert_within_tol()
+
+
+def test_genz_malik_1980_f_5():
+    def genz_malik_1980_f_5(alphas, betas):
+        def f(x):
+            return np.exp(-np.sum((alphas**2) * (x - betas)**2, axis=1))[:, np.newaxis]
+
+        return f
+
+    problem = Problem(
+        dim=3,
+        f=genz_malik_1980_f_5(
+            alphas=np.array([1, 1, 1]),
+            betas=np.array([1, 1, 1])
+        ),
+        ranges=np.array([[-1, 1], [-1, 1], [-1, 1]]),
+        exact=(
+            1/8 * np.pi**(3/2) * scipy.special.erf(2)**3
+        ),
+        tol=1e-8,
+        rule=ProductRule([
+            GaussKronrod21(),
+            GaussKronrod21(),
+            GaussKronrod21(),
+        ]),
+    )
+    problem.calculate()
+    problem.assert_within_tol()
