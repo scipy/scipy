@@ -2027,7 +2027,7 @@ def euler(n):
         n1 = n
     return _specfun.eulerb(n1)[:(n+1)]
 
-    
+
 def lpn(n, z):
     """Legendre function of the first kind.
 
