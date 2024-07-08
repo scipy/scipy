@@ -1327,10 +1327,10 @@ def riccati_jn(n, x):
     else:
         n1 = n
 
-    jn = np.empty((n1 + 1,), dtype = np.float64)
+    jn = np.empty((n1 + 1,), dtype=np.float64)
     jnp = np.empty_like(jn)
 
-    _rctj(x, out = (jn, jnp))
+    _rctj(x, out=(jn, jnp))
     return jn[:(n+1)], jnp[:(n+1)]
 
 
@@ -1383,9 +1383,9 @@ def riccati_yn(n, x):
     else:
         n1 = n
 
-    yn = np.empty((n1 + 1,), dtype = np.float64)
+    yn = np.empty((n1 + 1,), dtype=np.float64)
     ynp = np.empty_like(yn)
-    _rcty(x, out = (yn, ynp))
+    _rcty(x, out=(yn, ynp))
 
     return yn[:(n+1)], ynp[:(n+1)]
 
@@ -1774,8 +1774,8 @@ def lpmn(m, n, z):
         p = p[:(m + 1)]
         pd = pd[:(m + 1)]
     else:
-        p = np.insert(p[:(m - 1):-1], 0, p[0], axis = 0)
-        pd = np.insert(pd[:(m - 1):-1], 0, pd[0], axis = 0)
+        p = np.insert(p[:(m - 1):-1], 0, p[0], axis=0)
+        pd = np.insert(pd[:(m - 1):-1], 0, pd[0], axis=0)
 
     return p, pd
 
@@ -1859,10 +1859,11 @@ def clpmn(m, n, z, type=3):
         out = out[:(m + 1)]
         out_jac = out_jac[:(m + 1)]
     else:
-        out = np.insert(out[:(m - 1):-1], 0, out[0], axis = 0)
-        out_jac = np.insert(out_jac[:(m - 1):-1], 0, out_jac[0], axis = 0)
+        out = np.insert(out[:(m - 1):-1], 0, out[0], axis=0)
+        out_jac = np.insert(out_jac[:(m - 1):-1], 0, out_jac[0], axis=0)
 
     return out, out_jac
+
 
 def lqmn(m, n, z):
     """Sequence of associated Legendre functions of the second kind.
@@ -1912,15 +1913,17 @@ def lqmn(m, n, z):
         z = z.astype(np.float64)
 
     if np.iscomplexobj(z):
-        q = np.empty((mm + 1, nn + 1) + z.shape, dtype = np.complex128)
+        q = np.empty((mm + 1, nn + 1) + z.shape, dtype=np.complex128)
     else:
-        q = np.empty((mm + 1, nn + 1) + z.shape, dtype = np.float64)
+        q = np.empty((mm + 1, nn + 1) + z.shape, dtype=np.float64)
     qd = np.empty_like(q)
     if (z.ndim == 0):
-        _lqmn(z, out = (q, qd))
+        _lqmn(z, out=(q, qd))
     else:
-        _lqmn(z, out = (np.moveaxis(q, (0, 1), (-2, -1)),
-            np.moveaxis(qd, (0, 1), (-2, -1))))  # new axes must be last for the ufunc
+        # new axes must be last for the ufunc
+        _lqmn(z,
+              out=(np.moveaxis(q, (0, 1), (-2, -1)),
+                   np.moveaxis(qd, (0, 1), (-2, -1))))
 
     return q[:(m+1), :(n+1)], qd[:(m+1), :(n+1)]
 
@@ -2047,7 +2050,8 @@ def lpn(n, z):
            https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
     """
 
-    return legendre_p_all(n, z, diff_n = 1)
+    return legendre_p_all(n, z, diff_n=1)
+
 
 def lqn(n, z):
     """Legendre function of the second kind.
@@ -2078,10 +2082,12 @@ def lqn(n, z):
         qn = np.empty((n1 + 1,) + z.shape, dtype=np.float64)
     qd = np.empty_like(qn)
     if (z.ndim == 0):
-        _lqn(z, out = (qn, qd))
+        _lqn(z, out=(qn, qd))
     else:
-        _lqn(z, out = (np.moveaxis(qn, 0, -1),
-            np.moveaxis(qd, 0, -1))) # new axes must be last for the ufunc
+          # new axes must be last for the ufunc
+        _lqn(z,
+             out=(np.moveaxis(qn, 0, -1),
+                  np.moveaxis(qd, 0, -1)))
 
     return qn[:(n+1)], qd[:(n+1)]
 
