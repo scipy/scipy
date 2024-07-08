@@ -3,6 +3,7 @@
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
 
+#include <array>
 #include <cassert>
 #include <cstring>
 #include <iostream>
@@ -418,14 +419,14 @@ struct ufunc_traits<Func, Res(Args...), std::index_sequence<I...>> {
         initializer_accumulate(ranks, ranks + sizeof...(Args) + 1, 0)};
 
     static void loop(char **args, const npy_intp *dims, const npy_intp *steps, void *data) {
-        npy_intp new_dims[ranks_scan[sizeof...(Args) + 1]];
+        std::array<npy_intp, ranks_scan[sizeof...(Args) + 1]> new_dims;
 
         map_dims_type map_dims = static_cast<ufunc_data<Func> *>(data)->map_dims;
-        map_dims(dims + 1, new_dims);
+        map_dims(dims + 1, new_dims.data());
 
         Func func = static_cast<ufunc_data<Func> *>(data)->func;
         for (npy_intp i = 0; i < dims[0]; ++i) {
-            Res res = func(npy_traits<Args>::get(args[I], new_dims + ranks_scan[I],
+            Res res = func(npy_traits<Args>::get(args[I], new_dims.data() + ranks_scan[I],
                                                  steps + ranks_scan[I] + sizeof...(Args) + 1)...);
             npy_traits<Res>::set(args[sizeof...(Args)], res); // assign to the output pointer
 
@@ -449,14 +450,15 @@ struct ufunc_traits<Func, void(Args...), std::index_sequence<I...>> {
         initializer_accumulate(ranks, ranks + I, 0)..., initializer_accumulate(ranks, ranks + sizeof...(Args), 0)};
 
     static void loop(char **args, const npy_intp *dims, const npy_intp *steps, void *data) {
-        npy_intp new_dims[ranks_scan[sizeof...(Args)]];
+        std::array<npy_intp, ranks_scan[sizeof...(Args)]> new_dims;
 
         map_dims_type map_dims = static_cast<ufunc_data<Func> *>(data)->map_dims;
-        map_dims(dims + 1, new_dims);
+        map_dims(dims + 1, new_dims.data());
 
         Func func = static_cast<ufunc_data<Func> *>(data)->func;
         for (npy_intp i = 0; i < dims[0]; ++i) {
-            func(npy_traits<Args>::get(args[I], new_dims + ranks_scan[I], steps + ranks_scan[I] + sizeof...(Args))...);
+            func(npy_traits<Args>::get(args[I], new_dims.data() + ranks_scan[I],
+                                       steps + ranks_scan[I] + sizeof...(Args))...);
 
             for (npy_uintp j = 0; j < sizeof...(Args); ++j) {
                 args[j] += steps[j];
