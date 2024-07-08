@@ -1664,6 +1664,11 @@ class _TestCommon:
         B = self.spcreator(A)
 
         if self.is_array_test:
+            # Todo: Add test of B**(1+3j) when np1.24 is no longer supported.
+            #    Complex exponents of 0 changed for numpy-1.25
+            #    from `(nan+nanj)` to `0`. Old value makes our result dense
+            #    and is hard to check for without any `isnan` method.
+            # So, while untested here, complex exponents work with np>=1.25.
             for exponent in [1, 2, 2.2, 3]:
                 ret_sp = B**exponent
                 ret_np = A**exponent
