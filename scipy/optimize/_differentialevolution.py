@@ -111,7 +111,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     mutation : float or tuple(float, float), optional
         The mutation constant. In the literature this is also known as
         differential weight, being denoted by :math:`F`.
-        If specified as a float it should be in the range [0, 2].
+        If specified as a float it should be in the range [0, 2).
         If specified as a tuple ``(min, max)`` dithering is employed. Dithering
         randomly changes the mutation constant on a generation by generation
         basis. The mutation constant for that generation is taken from
