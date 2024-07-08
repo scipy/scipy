@@ -117,6 +117,8 @@ DOCTEST_SKIPLIST = set([
     'scipy.linalg.LinAlgError',
     'scipy.optimize.show_options',
     'io.rst',   # XXX: need to figure out how to deal w/ mat files
+    'scipy.special.errstate',
+    'scipy.special.seterr',
 ])
 
 # these names are not required to be present in ALL despite being in
