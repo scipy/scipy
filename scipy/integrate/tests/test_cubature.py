@@ -1,18 +1,18 @@
 import pytest
-
 import numpy as np
 import scipy
 
-from scipy.integrate._cubature import cub, ProductRule, GaussKronrod21
+from scipy.integrate._cubature import cub, ProductRule, GaussKronrod15
 import scipy.special
 
 
 class Problem:
     """Represents a general problem to be solved by quadrature algorithm"""
-    def __init__(self, dim, f, ranges, exact):
+    def __init__(self, dim, f, a, b, exact):
         self.dim = dim
         self.f = f
-        self.ranges = ranges
+        self.a = a
+        self.b = b
         self.exact = exact
 
 
@@ -106,23 +106,76 @@ def genz_malik_1980_f_5(alphas, betas):
 
 
 problems = [
-    # Problems from Genz and Malik 1980:
+    # Problems based on test integrals in Genz and Malik 1980:
 
     Problem(
         # Three dimensional problem
-        dim=3,
+        dim=1,
 
         # Function to integrate
+        f=genz_malik_1980_f_1(
+            r=1/4,
+            alphas=np.array([5]),
+        ),
+
+        # Coordinates of hypercube
+        a=np.array([0]),
+        b=np.array([10]),
+
+        # Exact answer to the problem
+        exact=-2/5 * np.sin(25)**2
+    ),
+    Problem(
+        dim=2,
+        f=genz_malik_1980_f_1(
+            r=1/4,
+            alphas=np.array([2, 4]),
+        ),
+        a=np.array([0, 0]),
+        b=np.array([1, 1]),
+        exact=-np.cos(1)*(1 + 2*np.cos(2))*np.sin(1)**3,
+    ),
+    Problem(
+        dim=2,
+        f=genz_malik_1980_f_1(
+            r=1/2,
+            alphas=np.array([2, 4]),
+        ),
+        a=np.array([0, 0]),
+        b=np.array([100, 100]),
+        exact=1/4 * np.sin(200) * (np.sin(200) - np.sin(400)),
+    ),
+    Problem(
+        dim=3,
         f=genz_malik_1980_f_1(
             r=1/2,
             alphas=np.array([1, 1, 1]),
         ),
-
-        # Ranges to integrate over
-        ranges=np.array([[0, 1], [0, 1], [0, 1]]),
-
-        # Exact answer to the problem
-        exact=-8 * np.cos(3/2) * np.sin(1/2) ** 3,
+        a=np.array([0, 0, 0]),
+        b=np.array([100, 200, 300]),
+        exact=4*np.sin(100)*np.sin(150)*(np.sin(250) - np.sin(350))
+    ),
+    Problem(
+        dim=1,
+        f=genz_malik_1980_f_2(
+            alphas=np.array([5]),
+            betas=np.array([4]),
+        ),
+        a=np.array([-1]),
+        b=np.array([1]),
+        exact=1/20 * (np.pi - 4*np.arctan(3/5)),
+    ),
+    # Currently failing for product rule version of Gauss-Kronrod 15 (and 21)
+    # dblquad also fails
+    Problem(
+        dim=2,
+        f=genz_malik_1980_f_2(
+            alphas=np.array([-3, 3]),
+            betas=np.array([-2, 2])
+        ),
+        a=np.array([-50, 0]),
+        b=np.array([50, 20]),
+        exact=1/9 * (np.arctan(2/3) + np.arctan(6)) * (np.arctan(16) + np.arctan(52/3))
     ),
     Problem(
         dim=3,
@@ -130,7 +183,8 @@ problems = [
             alphas=np.array([1, 1, 1]),
             betas=np.array([1, 1, 1]),
         ),
-        ranges=np.array([[0, 1], [0, 1], [0, 1]]),
+        a=np.array([0, 0, 0]),
+        b=np.array([1, 1, 1]),
         exact=np.pi ** 3 / 64,
     ),
     Problem(
@@ -139,7 +193,8 @@ problems = [
             alphas=np.array([2, 3, 4]),
             betas=np.array([2, 3, 4]),
         ),
-        ranges=np.array([[0, 1], [0, 1], [0, 1]]),
+        a=np.array([0, 0, 0]),
+        b=np.array([1, 1, 1]),
         exact=(
             1/1536
             * (np.pi - 4*np.arctan(1/2))
@@ -153,7 +208,8 @@ problems = [
             alphas=np.array([1, 1, 1]),
             betas=np.array([2, 2, 2]),
         ),
-        ranges=np.array([[-1, 1], [-1, 1], [-1, 1]]),
+        a=np.array([-1, -1, -1]),
+        b=np.array([1, 1, 1]),
         exact=-1/64 * (np.pi - 4*np.arctan(3))**3,
     ),
     Problem(
@@ -162,24 +218,85 @@ problems = [
             alphas=np.array([1, 1, 1, 1]),
             betas=np.array([1, 1, 1, 1]),
         ),
-        ranges=np.array([[-1, 1], [-1, 1], [-1, 1], [-1, 1]]),
+        a=np.array([-1, -1, -1, -1]),
+        b=np.array([1, 1, 1, 1]),
         exact=np.arctan(2)**4,
+    ),
+    Problem(
+        dim=1,
+        f=genz_malik_1980_f_3(
+            alphas=np.array([1/2]),
+        ),
+        a=np.array([-1]),
+        b=np.array([1]),
+        exact=4*np.sinh(1/2),
+    ),
+    Problem(
+        dim=2,
+        f=genz_malik_1980_f_3(
+            alphas=np.array([5, 5]),
+        ),
+        a=np.array([0, -1]),
+        b=np.array([1, 1]),
+        exact=(-1 + np.e**5)**2 * (1 + np.e**5)/(25*np.e**5)
     ),
     Problem(
         dim=3,
         f=genz_malik_1980_f_3(
             alphas=np.array([1, 1, 1]),
         ),
-        ranges=np.array([[-1, 1], [-1, 1], [-1, 1]]),
+        a=np.array([-1, -1, -1]),
+        b=np.array([1, 1, 1]),
         exact=(-1+np.e**2)**3 / np.e**3
+    ),
+    Problem(
+        dim=1,
+        f=genz_malik_1980_f_4(
+            alphas=np.array([1])
+        ),
+        a=np.array([0]),
+        b=np.array([2]),
+        exact=2/3,
+    ),
+    Problem(
+        dim=2,
+        f=genz_malik_1980_f_4(
+            alphas=np.array([1, 1]),
+        ),
+        a=np.array([0, 0]),
+        b=np.array([2, 1]),
+        exact=5/24,
     ),
     Problem(
         dim=3,
         f=genz_malik_1980_f_4(
             alphas=np.array([1, 1, 1]),
         ),
-        ranges=np.array([[0, 1], [0, 1], [0, 1]]),
+        a=np.array([0, 0, 0]),
+        b=np.array([1, 1, 1]),
         exact=1/24,
+    ),
+    Problem(
+        dim=1,
+        f=genz_malik_1980_f_5(
+            alphas=np.array([-2]),
+            betas=np.array([2]),
+        ),
+        a=np.array([-1]),
+        b=np.array([1]),
+        exact=1/4 * np.sqrt(np.pi) * (-scipy.special.erf(2) + scipy.special.erf(6)),
+    ),
+    Problem(
+        dim=2,
+        f=genz_malik_1980_f_5(
+            alphas=np.array([2, 3]),
+            betas=np.array([4, 5]),
+        ),
+        a=np.array([-1, -1]),
+        b=np.array([1, 1]),
+        exact=1/24 * np.pi
+                   * (scipy.special.erf(6) - scipy.special.erf(10))
+                   * (scipy.special.erf(12) - scipy.special.erf(18)),
     ),
     Problem(
         dim=3,
@@ -187,36 +304,45 @@ problems = [
             alphas=np.array([1, 1, 1]),
             betas=np.array([1, 1, 1])
         ),
-        ranges=np.array([[-1, 1], [-1, 1], [-1, 1]]),
+        a=np.array([-1, -1, -1]),
+        b=np.array([1, 1, 1]),
         exact=1/8 * np.pi**(3/2) * scipy.special.erf(2)**3,
     ),
 ]
 
 
 @pytest.mark.parametrize("problem", problems)
-@pytest.mark.parametrize("tol", [1e-3, 1e-5, 1e-7])
-def test_cub(problem, tol):
-    rule = ProductRule([GaussKronrod21()] * problem.dim)
+@pytest.mark.parametrize("quadrature", [GaussKronrod15()])
+@pytest.mark.parametrize("rtol", [1e-5])
+@pytest.mark.parametrize("atol", [1e-8])
+def test_cub_product_rules(problem, quadrature, rtol, atol):
+    rule = ProductRule([quadrature] * problem.dim)
 
-    integral_estimate, _ = cub(
+    integral_estimate, _, info = cub(
         problem.f,
-        problem.ranges,
+        problem.a,
+        problem.b,
         rule,
-        tol,
+        rtol,
+        atol,
+        full_output=True,
     )
 
+    # The estimate should be within the specified tolerance of the solution
     np.testing.assert_allclose(
         integral_estimate,
         problem.exact,
-        rtol=0,
-        atol=tol,
+        rtol=rtol,
+        atol=atol,
         verbose=True,
         err_msg=f"""failed to find approx. integral of {problem.f.__name__} with \
-rtol=TODO, atol={tol} and ranges {np.array_str(problem.ranges, max_line_width=np.inf)} \
-""",
+rtol={rtol}, atol={atol} and points \
+a={problem.a}
+b={problem.b}""",
     )
 
+    assert info.status == "converged"
 
-# TODO: more test integrals
+
 # TODO: test that product rules are calculated properly
 # TODO: test that inconsistent dimensions are reported
