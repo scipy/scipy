@@ -10,7 +10,6 @@
         PyErr_SetString(PyExc_ValueError, message);                                                                    \
         goto fail;                                                                                                     \
     } while (0)
-#define PyArray_MIN(a, b) (((a) < (b)) ? (a) : (b))
 
 
 /**
