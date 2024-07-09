@@ -27,7 +27,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
                            init='latinhypercube', atol=0, updating='immediate',
                            workers=1, constraints=(), x0=None, *,
                            integrality=None, vectorized=False):
-    """Finds the global minimum of a multivariate function.
+    r"""Finds the global minimum of a multivariate function.
 
     The differential evolution method [1]_ is stochastic in nature. It does
     not use gradient methods to find the minimum, and can search large areas
@@ -47,10 +47,10 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     bounds : sequence or `Bounds`
         Bounds for variables. There are two ways to specify the bounds:
 
-            1. Instance of `Bounds` class.
-            2. ``(min, max)`` pairs for each element in ``x``, defining the
-               finite lower and upper bounds for the optimizing argument of
-               `func`.
+        1. Instance of `Bounds` class.
+        2. ``(min, max)`` pairs for each element in ``x``, defining the
+           finite lower and upper bounds for the optimizing argument of
+           `func`.
 
         The total number of bounds is used to determine the number of
         parameters, N. If there are parameters whose bounds are equal the total
@@ -62,18 +62,18 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     strategy : {str, callable}, optional
         The differential evolution strategy to use. Should be one of:
 
-            - 'best1bin'
-            - 'best1exp'
-            - 'rand1bin'
-            - 'rand1exp'
-            - 'rand2bin'
-            - 'rand2exp'
-            - 'randtobest1bin'
-            - 'randtobest1exp'
-            - 'currenttobest1bin'
-            - 'currenttobest1exp'
-            - 'best2exp'
-            - 'best2bin'
+        - 'best1bin'
+        - 'best1exp'
+        - 'rand1bin'
+        - 'rand1exp'
+        - 'rand2bin'
+        - 'rand2exp'
+        - 'randtobest1bin'
+        - 'randtobest1exp'
+        - 'currenttobest1bin'
+        - 'currenttobest1exp'
+        - 'best2exp'
+        - 'best2bin'
 
         The default is 'best1bin'. Strategies that may be implemented are
         outlined in 'Notes'.
@@ -86,7 +86,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         total population size), and ``rng`` is the random number generator
         being used within the solver.
         ``candidate`` will be in the range ``[0, S)``.
-        ``strategy`` must return a trial vector with shape `(N,)`. The
+        ``strategy`` must return a trial vector with shape ``(N,)``. The
         fitness of this trial vector is compared against the fitness of
         ``population[candidate]``.
 
@@ -110,8 +110,8 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         respectively.
     mutation : float or tuple(float, float), optional
         The mutation constant. In the literature this is also known as
-        differential weight, being denoted by F.
-        If specified as a float it should be in the range [0, 2].
+        differential weight, being denoted by :math:`F`.
+        If specified as a float it should be in the range [0, 2).
         If specified as a tuple ``(min, max)`` dithering is employed. Dithering
         randomly changes the mutation constant on a generation by generation
         basis. The mutation constant for that generation is taken from
@@ -135,9 +135,9 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     disp : bool, optional
         Prints the evaluated `func` at every iteration.
     callback : callable, optional
-        A callable called after each iteration. Has the signature:
+        A callable called after each iteration. Has the signature::
 
-            ``callback(intermediate_result: OptimizeResult)``
+            callback(intermediate_result: OptimizeResult)
 
         where ``intermediate_result`` is a keyword parameter containing an
         `OptimizeResult` with attributes ``x`` and ``fun``, the best solution
@@ -145,9 +145,9 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         of the parameter must be ``intermediate_result`` for the callback
         to be passed an `OptimizeResult`.
 
-        The callback also supports a signature like:
+        The callback also supports a signature like::
 
-            ``callback(x, convergence: float=val)``
+            callback(x, convergence: float=val)
 
         ``val`` represents the fractional value of the population convergence.
         When ``val`` is greater than ``1.0``, the function halts.
@@ -171,14 +171,15 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         Specify which type of population initialization is performed. Should be
         one of:
 
-            - 'latinhypercube'
-            - 'sobol'
-            - 'halton'
-            - 'random'
-            - array specifying the initial population. The array should have
-              shape ``(S, N)``, where S is the total population size and N is
-              the number of parameters.
-              `init` is clipped to `bounds` before use.
+        - 'latinhypercube'
+        - 'sobol'
+        - 'halton'
+        - 'random'
+        - array specifying the initial population. The array should have
+          shape ``(S, N)``, where S is the total population size and N is
+          the number of parameters.
+
+        `init` is clipped to `bounds` before use.
 
         The default is 'latinhypercube'. Latin Hypercube sampling tries to
         maximize coverage of the available parameter space.
@@ -302,8 +303,9 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
 
     .. math::
 
-        b' = x_0 + mutation * (x_{r_0} - x_{r_1})
+        b' = x_0 + F \cdot (x_{r_0} - x_{r_1})
 
+    where :math:`F` is the `mutation` parameter.
     A trial vector is then constructed. Starting with a randomly chosen ith
     parameter the trial is sequentially filled (in modulo) with parameters
     from ``b'`` or the original candidate. The choice of whether to use ``b'``
@@ -319,22 +321,13 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     The other strategies available are outlined in Qiang and
     Mitchell (2014) [3]_.
 
-    .. math::
-            rand1* : b' = x_{r_0} + mutation*(x_{r_1} - x_{r_2})
 
-            rand2* : b' = x_{r_0} + mutation*(x_{r_1} + x_{r_2}
-                                                - x_{r_3} - x_{r_4})
-
-            best1* : b' = x_0 + mutation*(x_{r_0} - x_{r_1})
-
-            best2* : b' = x_0 + mutation*(x_{r_0} + x_{r_1}
-                                            - x_{r_2} - x_{r_3})
-
-            currenttobest1* : b' = x_i + mutation*(x_0 - x_i
-                                                     + x_{r_0} - x_{r_1})
-
-            randtobest1* : b' = x_{r_0} + mutation*(x_0 - x_{r_0}
-                                                      + x_{r_1} - x_{r_2})
+    - ``rand1`` : :math:`b' = x_{r_0} + F \cdot (x_{r_1} - x_{r_2})`
+    - ``rand2`` : :math:`b' = x_{r_0} + F \cdot (x_{r_1} + x_{r_2} - x_{r_3} - x_{r_4})`
+    - ``best1`` : :math:`b' = x_0 + F \cdot (x_{r_0} - x_{r_1})`
+    - ``best2`` : :math:`b' = x_0 + F \cdot (x_{r_0} + x_{r_1} - x_{r_2} - x_{r_3})`
+    - ``currenttobest1`` : :math:`b' = x_i + F \cdot (x_0 - x_i + x_{r_0} - x_{r_1})`
+    - ``randtobest1`` : :math:`b' = x_{r_0} + F \cdot (x_0 - x_{r_0} + x_{r_1} - x_{r_2})`
 
     where the integers :math:`r_0, r_1, r_2, r_3, r_4` are chosen randomly
     from the interval [0, NP) with `NP` being the total population size and
@@ -560,7 +553,7 @@ class DifferentialEvolutionSolver:
         total population size), and ``rng`` is the random number generator
         being used within the solver.
         ``candidate`` will be in the range ``[0, S)``.
-        ``strategy`` must return a trial vector with shape `(N,)`. The
+        ``strategy`` must return a trial vector with shape ``(N,)``. The
         fitness of this trial vector is compared against the fitness of
         ``population[candidate]``.
     maxiter : int, optional

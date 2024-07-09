@@ -15,6 +15,15 @@ permissions:
 env:
   CCACHE_DIR: "${{ github.workspace }}/.ccache"
   INSTALLDIR: "build-install"
+  XP_TESTS: >-
+    -t scipy.cluster
+    -t scipy.constants
+    -t scipy.fft
+    -t scipy.special.tests.test_support_alternative_backends
+    -t scipy._lib.tests.test_array_api
+    -t scipy._lib.tests.test__util
+    -t scipy.optimize.tests.test_differentiate
+    -t scipy.stats
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
@@ -93,11 +102,5 @@ jobs:
     - name: Test SciPy
       run: |
         export OMP_NUM_THREADS=2
-        # expand as new modules are added
-        python dev.py --no-build test -b all -s cluster -- --durations 3 --timeout=60
-        python dev.py --no-build test -b all -s constants -- --durations 3 --timeout=60
-        python dev.py --no-build test -b all -s fft -- --durations 3 --timeout=60
-        python dev.py --no-build test -b all -t scipy.special.tests.test_support_alternative_backends -- --durations 3 --timeout=60
-        python dev.py --no-build test -b all -t scipy._lib.tests.test_array_api -- --durations 3 --timeout=60
-        python dev.py --no-build test -b all -t scipy._lib.tests.test__util -- --durations 3 --timeout=60
-        python dev.py --no-build test -b all -s stats -- --durations 3 --timeout=60
+        # expand as more modules are supported by adding to `XP_TESTS` above
+        python dev.py --no-build test -b all $XP_TESTS -- --durations 3 --timeout=60

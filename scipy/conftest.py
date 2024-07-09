@@ -13,6 +13,7 @@ import hypothesis
 from scipy._lib._fpumode import get_fpu_mode
 from scipy._lib._testutils import FPUModeChangeWarning
 from scipy._lib._array_api import SCIPY_ARRAY_API, SCIPY_DEVICE
+from scipy._lib import _pep440
 
 try:
     from scipy_doctest.conftest import dt_config
@@ -117,6 +118,11 @@ if SCIPY_ARRAY_API and isinstance(SCIPY_ARRAY_API, str):
     try:
         import array_api_strict
         xp_available_backends.update({'array_api_strict': array_api_strict})
+        if _pep440.parse(array_api_strict.__version__) < _pep440.Version('2.0'):
+            raise ImportError("array-api-strict must be >= version 2.0")
+        array_api_strict.set_array_api_strict_flags(
+            api_version='2023.12'
+        )
     except ImportError:
         pass
 
@@ -293,7 +299,7 @@ if HAVE_SCPDT:
             known_warnings[name] = dict(category=DeprecationWarning)
 
         from scipy import integrate
-        # the funcions are known to emit IntergrationWarnings
+        # the functions are known to emit IntegrationWarnings
         integration_w = ['scipy.special.ellip_normal',
                          'scipy.special.ellip_harm_2',
         ]
@@ -347,7 +353,6 @@ if HAVE_SCPDT:
                     warnings.simplefilter('error', Warning)
                     yield
 
-
     dt_config.user_context_mgr = warnings_errors_and_rng
     dt_config.skiplist = set([
         'scipy.linalg.LinAlgError',     # comes from numpy
@@ -389,6 +394,15 @@ if HAVE_SCPDT:
         "scipy.optimize.cython_optimize",
         "scipy.test",
         "scipy.show_config",
+        # equivalent to "pytest --ignore=path/to/file"
+        "scipy/special/_precompute",
+        "scipy/interpolate/_interpnd_info.py",
+        "scipy/_lib/array_api_compat",
+        "scipy/_lib/highs",
+        "scipy/_lib/unuran",
+        "scipy/_lib/_gcutils.py",
+        "scipy/_lib/doccer.py",
+        "scipy/_lib/_uarray",
     ]
 
     dt_config.pytest_extra_xfail = {

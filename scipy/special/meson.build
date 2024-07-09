@@ -25,12 +25,25 @@ _ufuncs_pxi_pxd_sources = [
   fs.copyfile('_ufuncs_extra_code_common.pxi'),
 ]
 
+if meson.get_compiler('cpp').get_id() in ['msvc', 'clang-cl', 'intel-cl']
+  scipy_export_dll_args = ['-DSCIPY_DLL_EXPORTS']
+  scipy_import_dll_args = ['-DSCIPY_DLL_IMPORTS']
+else
+  scipy_export_dll_args = []
+  scipy_import_dll_args = []
+endif
+
 sf_error_state_lib = shared_library('sf_error_state',
   ['sf_error_state.c'],
   include_directories: ['../_lib', '../_build_utils/src'],
-  cpp_args: ['-DSP_SPECFUN_ERROR'],
+  c_args: scipy_export_dll_args,
   install: true,
   install_dir: py3.get_install_dir() / 'scipy/special',
+)
+
+sf_error_state_dep = declare_dependency(
+  compile_args: ['-DSP_SPECFUN_ERROR'] + scipy_import_dll_args,
+  link_with: sf_error_state_lib,
 )
 
 ufuncs_sources = [
@@ -58,9 +71,7 @@ cdflib_lib = static_library('cdflib',
 py3.extension_module('_special_ufuncs',
   ['_special_ufuncs.cpp', '_special_ufuncs_docs.cpp', 'sf_error.cc'],
   include_directories: ['../_lib', '../_build_utils/src'],
-  cpp_args: ['-DSP_SPECFUN_ERROR'],
-  dependencies: [np_dep],
-  link_with: [sf_error_state_lib],
+  dependencies: [np_dep, sf_error_state_dep],
   link_args: version_link_args,
   install: true,
   subdir: 'scipy/special',
@@ -70,9 +81,7 @@ py3.extension_module('_special_ufuncs',
 py3.extension_module('_gufuncs',
   ['_gufuncs.cpp', '_gufuncs_docs.cpp', 'sf_error.cc'],
   include_directories: ['../_lib', '../_build_utils/src'],
-  cpp_args: ['-DSP_SPECFUN_ERROR'],
-  dependencies: [np_dep],
-  link_with: [sf_error_state_lib],
+  dependencies: [np_dep, sf_error_state_dep],
   link_args: version_link_args,
   install: true,
   subdir: 'scipy/special',
@@ -126,19 +135,16 @@ py3.extension_module('_ufuncs',
     ufuncs_sources,
     uf_cython_gen.process(cython_special[0]),  # _ufuncs.pyx
   ],
-  c_args: [cython_c_args, Wno_maybe_uninitialized],
-  cpp_args: ['-DSP_SPECFUN_ERROR'],
+  c_args: [cython_c_args, Wno_maybe_uninitialized] + scipy_import_dll_args,
   include_directories: ['../_lib', '../_build_utils/src'],
   dependencies: [
     lapack_dep,
     npymath_lib,
     np_dep,
+    sf_error_state_dep,
   ],
   link_args: version_link_args,
-  link_with: [
-    sf_error_state_lib,
-    cdflib_lib
-  ],
+  link_with: cdflib_lib,
   install: true,
   subdir: 'scipy/special',
   install_rpath: '$ORIGIN',
@@ -165,7 +171,6 @@ ufuncs_cxx_cpp_args = [
   cython_cpp_args,
   '-DBOOST_MATH_STANDALONE=1',
   '-DCYTHON_EXTERN_C=extern "C"',
-  '-DSP_SPECFUN_ERROR', # For error handling in special functions.
 ]
 
 py3.extension_module('_ufuncs_cxx',
@@ -176,8 +181,7 @@ py3.extension_module('_ufuncs_cxx',
   include_directories: ['../_lib/boost_math/include', '../_lib',
                         '../_build_utils/src'],
   link_args: version_link_args,
-    link_with: [sf_error_state_lib],
-  dependencies: [np_dep, ellint_dep],
+  dependencies: [np_dep, ellint_dep, sf_error_state_dep],
   install: true,
   subdir: 'scipy/special',
   install_rpath: '$ORIGIN',
@@ -186,11 +190,9 @@ py3.extension_module('_ufuncs_cxx',
 py3.extension_module('_ellip_harm_2',
   [uf_cython_gen.process('_ellip_harm_2.pyx'), 'sf_error.cc'],
   c_args: cython_c_args,
-  cpp_args: ['-DSP_SPECFUN_ERROR'],
   include_directories: ['../_lib', '../_build_utils/src'],
-  link_with: [sf_error_state_lib],
   link_args: version_link_args,
-  dependencies: [lapack_dep, np_dep],
+  dependencies: [lapack_dep, np_dep, sf_error_state_dep],
   install: true,
   subdir: 'scipy/special',
   install_rpath: '$ORIGIN',
@@ -205,14 +207,10 @@ py3.extension_module('cython_special',
     'dd_real_wrappers.cpp'
   ],
   c_args: [cython_c_args, Wno_maybe_uninitialized],
-  cpp_args: ['-DSP_SPECFUN_ERROR'],
   include_directories: ['../_lib', '../_build_utils/src'],
   link_args: version_link_args,
-  dependencies: [np_dep, npymath_lib],
-  link_with: [
-    sf_error_state_lib,
-    cdflib_lib
-  ],
+  dependencies: [np_dep, npymath_lib, sf_error_state_dep],
+  link_with: cdflib_lib,
   install: true,
   subdir: 'scipy/special',
   install_rpath: '$ORIGIN',
@@ -293,7 +291,8 @@ special_sources = [
   'special/digamma.h',
   'special/wright_bessel.h',
   'special/hyp2f1.h',
-  'special/tools.h'
+  'special/tools.h',
+  'special/iv_ratio.h'
 ]
 
 special_cephes_sources = [

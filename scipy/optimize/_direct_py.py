@@ -106,10 +106,10 @@ def direct(
         of the complete search space. Must lie between 0 and 1.
         Default is 1e-16.
     len_tol : float, optional
-        If `locally_biased=True`, terminate the optimization once half of
+        If ``locally_biased=True``, terminate the optimization once half of
         the normalized maximal side length of the hyperrectangle containing
         the lowest function value is smaller than `len_tol`.
-        If `locally_biased=False`, terminate the optimization once half of
+        If ``locally_biased=False``, terminate the optimization once half of
         the normalized diagonal of the hyperrectangle containing the lowest
         function value is smaller than `len_tol`. Must lie between 0 and 1.
         Default is 1e-6.

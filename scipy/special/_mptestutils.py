@@ -333,7 +333,7 @@ def trace_args(func):
         sys.stderr.flush()
         try:
             r = func(*a, **kw)
-            sys.stderr.write("-> %r" % r)
+            sys.stderr.write(f"-> {r!r}")
         finally:
             sys.stderr.write("\n")
             sys.stderr.flush()

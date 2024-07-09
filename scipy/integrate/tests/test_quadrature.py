@@ -253,12 +253,11 @@ class TestCumulative_trapezoid:
     @pytest.mark.parametrize(
         "initial", [1, 0.5]
     )
-    def test_initial_warning(self, initial):
+    def test_initial_error(self, initial):
         """If initial is not None or 0, a ValueError is raised."""
         y = np.linspace(0, 10, num=10)
-        with pytest.deprecated_call(match="`initial`"):
-            res = cumulative_trapezoid(y, initial=initial)
-        assert_allclose(res, [initial, *np.cumsum(y[1:] + y[:-1])/2])
+        with pytest.raises(ValueError, match="`initial`"):
+            cumulative_trapezoid(y, initial=initial)
 
     def test_zero_len_y(self):
         with pytest.raises(ValueError, match="At least one point is required"):

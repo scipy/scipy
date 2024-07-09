@@ -1,6 +1,6 @@
 build_and_store_wheels: &BUILD_AND_STORE_WHEELS
   install_cibuildwheel_script:
-    - python -m pip install cibuildwheel==2.17.0
+    - python -m pip install cibuildwheel==2.19.1
   cibuildwheel_script:
     - cibuildwheel
   wheels_artifacts:
@@ -64,9 +64,9 @@ cirrus_wheels_upload_task:
     platform: linux
 
   env:
-    # created as SCIPY_STAGING_UPLOAD_TOKEN_CIRRUS and SCIPY_NIGHTLY_UPLOAD_TOKEN_CIRRUS
-    SCIPY_STAGING_UPLOAD_TOKEN: ENCRYPTED[5940af5e589adf1647fb2832be2c912812de22b5b6551d93e177600da69b2103ffdf0ee1cf16671cf5e76f69a966bc30]
-    SCIPY_NIGHTLY_UPLOAD_TOKEN: ENCRYPTED[6e711cf90dfcf0e901f16a0be0bbc22b555ce6591cf60cb96e7edf133a7c7d42df5b9c3d7d4352d686756dc00f5c222a]
+    # created as SCIPY_STAGING_UPLOAD_TOKEN_CIRRUS and SCIPY_NIGHTLY_UPLOAD_TOKEN_CIRRUS (will expire 2028/07/08)
+    SCIPY_STAGING_UPLOAD_TOKEN: ENCRYPTED[!47775a024e7cd7a9bfc2dfcb0ac5ce3e22e5aac44e7a88ddf9008c0aa27b38f92b63014e50395c9d3cd355224be014d0!]
+    SCIPY_NIGHTLY_UPLOAD_TOKEN: ENCRYPTED[!818fdb1d46f9e75ca3a810c8905bfa0f8742090cba34869d4b113ee01cecf4d93cd96102c53274ed5003f79d8f42775b!]
 
   upload_script: |
     export IS_SCHEDULE_DISPATCH="false"

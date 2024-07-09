@@ -1973,10 +1973,10 @@ def trimr(a, limits=None, inclusive=(True, True), axis=None):
     errmsg = "The proportion to cut from the %s should be between 0. and 1."
     if lolim is not None:
         if lolim > 1. or lolim < 0:
-            raise ValueError(errmsg % 'beginning' + "(got %s)" % lolim)
+            raise ValueError(errmsg % 'beginning' + f"(got {lolim})")
     if uplim is not None:
         if uplim > 1. or uplim < 0:
-            raise ValueError(errmsg % 'end' + "(got %s)" % uplim)
+            raise ValueError(errmsg % 'end' + f"(got {uplim})")
 
     (loinc, upinc) = inclusive
 
@@ -2253,10 +2253,10 @@ def trimmed_stde(a, limits=(0.1,0.1), inclusive=(1,1), axis=None):
     errmsg = "The proportion to cut from the %s should be between 0. and 1."
     if lolim is not None:
         if lolim > 1. or lolim < 0:
-            raise ValueError(errmsg % 'beginning' + "(got %s)" % lolim)
+            raise ValueError(errmsg % 'beginning' + f"(got {lolim})")
     if uplim is not None:
         if uplim > 1. or uplim < 0:
-            raise ValueError(errmsg % 'end' + "(got %s)" % uplim)
+            raise ValueError(errmsg % 'end' + f"(got {uplim})")
 
     (loinc, upinc) = inclusive
     if (axis is None):
@@ -2607,8 +2607,8 @@ def winsorize(a, limits=None, inclusive=(True, True), inplace=False,
 
     >>> a = np.array([10, 4, 9, 8, 5, 3, 7, 2, 1, 6])
 
-    The 10% of the lowest value (i.e., `1`) and the 20% of the highest
-    values (i.e., `9` and `10`) are replaced.
+    The 10% of the lowest value (i.e., ``1``) and the 20% of the highest
+    values (i.e., ``9`` and ``10``) are replaced.
 
     >>> winsorize(a, limits=[0.1, 0.2])
     masked_array(data=[8, 4, 8, 8, 5, 3, 7, 2, 2, 6],
@@ -2655,10 +2655,10 @@ def winsorize(a, limits=None, inclusive=(True, True), inplace=False,
     errmsg = "The proportion to cut from the %s should be between 0. and 1."
     if lolim is not None:
         if lolim > 1. or lolim < 0:
-            raise ValueError(errmsg % 'beginning' + "(got %s)" % lolim)
+            raise ValueError(errmsg % 'beginning' + f"(got {lolim})")
     if uplim is not None:
         if uplim > 1. or uplim < 0:
-            raise ValueError(errmsg % 'end' + "(got %s)" % uplim)
+            raise ValueError(errmsg % 'end' + f"(got {uplim})")
 
     (loinc, upinc) = inclusive
 
@@ -3330,8 +3330,7 @@ def scoreatpercentile(data, per, limit=(), alphap=.4, betap=.4):
 
     """
     if (per < 0) or (per > 100.):
-        raise ValueError("The percentile should be between 0. and 100. !"
-                         " (got %s)" % per)
+        raise ValueError(f"The percentile should be between 0. and 100. ! (got {per})")
 
     return mquantiles(data, prob=[per/100.], alphap=alphap, betap=betap,
                       limit=limit, axis=0).squeeze()

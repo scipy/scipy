@@ -23,7 +23,7 @@ from numpy.testing import (assert_, assert_equal,
 import pytest
 from pytest import raises as assert_raises
 import numpy.ma.testutils as mat
-from numpy import array, arange, float32, float64, power
+from numpy import array, arange, float32, power
 import numpy as np
 
 import scipy.stats as stats
@@ -38,12 +38,12 @@ from scipy.stats._axis_nan_policy import (_broadcast_concatenate, SmallSampleWar
                                           too_small_nd_omit, too_small_nd_not_omit,
                                           too_small_1d_omit, too_small_1d_not_omit)
 from scipy.stats._stats_py import (_permutation_distribution_t, _chk_asarray, _moment,
-                                   LinregressResult)
+                                   LinregressResult, _xp_mean, _xp_var)
 from scipy._lib._util import AxisError
 from scipy.conftest import array_api_compatible, skip_xp_invalid_arg
 from scipy._lib._array_api import (xp_assert_close, xp_assert_equal, array_namespace,
                                    copy, is_numpy, is_torch, SCIPY_ARRAY_API,
-                                   size as xp_size)
+                                   size as xp_size, copy as xp_copy)
 
 skip_xp_backends = pytest.mark.skip_xp_backends
 
@@ -73,168 +73,189 @@ TINY = array([1e-12,2e-12,3e-12,4e-12,5e-12,6e-12,7e-12,8e-12,9e-12], float)
 ROUND = array([0.5,1.5,2.5,3.5,4.5,5.5,6.5,7.5,8.5], float)
 
 
+@array_api_compatible
+@skip_xp_backends('array_api_strict', 'jax.numpy',
+                  reasons=["`array_api_strict.where` `fillvalue` doesn't "
+                           "accept Python floats. See data-apis/array-api#807.",
+                           "JAX doesn't allow item assignment."])
+@pytest.mark.usefixtures("skip_xp_backends")
 class TestTrimmedStats:
     # TODO: write these tests to handle missing values properly
     dprec = np.finfo(np.float64).precision
 
-    def test_tmean(self):
-        y = stats.tmean(X, (2, 8), (True, True))
-        assert_approx_equal(y, 5.0, significant=self.dprec)
+    def test_tmean(self, xp):
+        x = xp.asarray(X.tolist())  # use default dtype of xp
 
-        y1 = stats.tmean(X, limits=(2, 8), inclusive=(False, False))
-        y2 = stats.tmean(X, limits=None)
-        assert_approx_equal(y1, y2, significant=self.dprec)
+        y = stats.tmean(x, (2, 8), (True, True))
+        xp_assert_close(y, xp.asarray(5.0))
 
-        x_2d = arange(63, dtype=float64).reshape(9, 7)
+        y1 = stats.tmean(x, limits=(2, 8), inclusive=(False, False))
+        y2 = stats.tmean(x, limits=None)
+        xp_assert_close(y1, y2)
+
+        x_2d = xp.reshape(xp.arange(63.), (9, 7))
         y = stats.tmean(x_2d, axis=None)
-        assert_approx_equal(y, x_2d.mean(), significant=self.dprec)
+        xp_assert_close(y, xp.mean(x_2d))
 
         y = stats.tmean(x_2d, axis=0)
-        assert_array_almost_equal(y, x_2d.mean(axis=0), decimal=8)
+        xp_assert_close(y, xp.mean(x_2d, axis=0))
 
         y = stats.tmean(x_2d, axis=1)
-        assert_array_almost_equal(y, x_2d.mean(axis=1), decimal=8)
+        xp_assert_close(y, xp.mean(x_2d, axis=1))
 
         y = stats.tmean(x_2d, limits=(2, 61), axis=None)
-        assert_approx_equal(y, 31.5, significant=self.dprec)
+        xp_assert_close(y, xp.asarray(31.5))
 
         y = stats.tmean(x_2d, limits=(2, 21), axis=0)
         y_true = [14, 11.5, 9, 10, 11, 12, 13]
-        assert_array_almost_equal(y, y_true, decimal=8)
+        xp_assert_close(y, xp.asarray(y_true))
 
         y = stats.tmean(x_2d, limits=(2, 21), inclusive=(True, False), axis=0)
         y_true = [10.5, 11.5, 9, 10, 11, 12, 13]
-        assert_array_almost_equal(y, y_true, decimal=8)
+        xp_assert_close(y, xp.asarray(y_true))
 
-        x_2d_with_nan = np.array(x_2d)
-        x_2d_with_nan[-1, -3:] = np.nan
+        x_2d_with_nan = xp_copy(x_2d)
+        x_2d_with_nan[-1, -3:] = xp.nan
         y = stats.tmean(x_2d_with_nan, limits=(1, 13), axis=0)
-        y_true = [7, 4.5, 5.5, 6.5, np.nan, np.nan, np.nan]
-        assert_array_almost_equal(y, y_true, decimal=8)
+        y_true = [7, 4.5, 5.5, 6.5, xp.nan, xp.nan, xp.nan]
+        xp_assert_close(y, xp.asarray(y_true))
 
-        with suppress_warnings() as sup:
-            sup.record(RuntimeWarning, "Mean of empty slice")
+        y = stats.tmean(x_2d, limits=(2, 21), axis=1)
+        y_true = [4, 10, 17, 21, xp.nan, xp.nan, xp.nan, xp.nan, xp.nan]
+        xp_assert_close(y, xp.asarray(y_true))
 
-            y = stats.tmean(x_2d, limits=(2, 21), axis=1)
-            y_true = [4, 10, 17, 21, np.nan, np.nan, np.nan, np.nan, np.nan]
-            assert_array_almost_equal(y, y_true, decimal=8)
+        y = stats.tmean(x_2d, limits=(2, 21),
+                        inclusive=(False, True), axis=1)
+        y_true = [4.5, 10, 17, 21, xp.nan, xp.nan, xp.nan, xp.nan, xp.nan]
+        xp_assert_close(y, xp.asarray(y_true))
 
-            y = stats.tmean(x_2d, limits=(2, 21),
-                            inclusive=(False, True), axis=1)
-            y_true = [4.5, 10, 17, 21, np.nan, np.nan, np.nan, np.nan, np.nan]
-            assert_array_almost_equal(y, y_true, decimal=8)
+    def test_tvar(self, xp):
+        x = xp.asarray(X.tolist())  # use default dtype of xp
+        xp_test = array_namespace(x)  # need array-api-compat var for `correction`
 
-    def test_tvar(self):
-        y = stats.tvar(X, limits=(2, 8), inclusive=(True, True))
-        assert_approx_equal(y, 4.6666666666666661, significant=self.dprec)
+        y = stats.tvar(x, limits=(2, 8), inclusive=(True, True))
+        xp_assert_close(y, xp.asarray(4.6666666666666661))
 
-        y = stats.tvar(X, limits=None)
-        assert_approx_equal(y, X.var(ddof=1), significant=self.dprec)
+        y = stats.tvar(x, limits=None)
+        xp_assert_close(y, xp_test.var(x, correction=1))
 
-        x_2d = arange(63, dtype=float64).reshape((9, 7))
+        x_2d = xp.reshape(xp.arange(63.), (9, 7))
         y = stats.tvar(x_2d, axis=None)
-        assert_approx_equal(y, x_2d.var(ddof=1), significant=self.dprec)
+        xp_assert_close(y, xp_test.var(x_2d, correction=1))
 
         y = stats.tvar(x_2d, axis=0)
-        assert_array_almost_equal(y[0], np.full((1, 7), 367.50000000), decimal=8)
+        xp_assert_close(y, xp.full((7,), 367.5))
 
         y = stats.tvar(x_2d, axis=1)
-        assert_array_almost_equal(y[0], np.full((1, 9), 4.66666667), decimal=8)
+        xp_assert_close(y, xp.full((9,), 4.66666667))
 
-        y = stats.tvar(x_2d[3, :])
-        assert_approx_equal(y, 4.666666666666667, significant=self.dprec)
+        # Limiting some values along one axis
+        y = stats.tvar(x_2d, limits=(1, 5), axis=1, inclusive=(True, True))
+        xp_assert_close(y[0], xp.asarray(2.5))
 
-        with suppress_warnings() as sup:
-            sup.record(RuntimeWarning, "Degrees of freedom <= 0 for slice.")
+        # Limiting all values along one axis
+        y = stats.tvar(x_2d, limits=(0, 6), axis=1, inclusive=(True, True))
+        xp_assert_close(y[0], xp.asarray(4.666666666666667))
+        xp_assert_equal(y[1], xp.asarray(xp.nan))
 
-            # Limiting some values along one axis
-            y = stats.tvar(x_2d, limits=(1, 5), axis=1, inclusive=(True, True))
-            assert_approx_equal(y[0], 2.5, significant=self.dprec)
+    def test_tstd(self, xp):
+        x = xp.asarray(X.tolist())  # use default dtype of xp
+        xp_test = array_namespace(x)  # need array-api-compat std for `correction`
 
-            # Limiting all values along one axis
-            y = stats.tvar(x_2d, limits=(0, 6), axis=1, inclusive=(True, True))
-            assert_approx_equal(y[0], 4.666666666666667, significant=self.dprec)
-            assert_equal(y[1], np.nan)
+        y = stats.tstd(x, (2, 8), (True, True))
+        xp_assert_close(y, xp.asarray(2.1602468994692865))
 
-    def test_tstd(self):
-        y = stats.tstd(X, (2, 8), (True, True))
-        assert_approx_equal(y, 2.1602468994692865, significant=self.dprec)
+        y = stats.tstd(x, limits=None)
+        xp_assert_close(y, xp_test.std(x, correction=1))
 
-        y = stats.tstd(X, limits=None)
-        assert_approx_equal(y, X.std(ddof=1), significant=self.dprec)
+    def test_tmin(self, xp):
+        x = xp.arange(10)
+        xp_assert_equal(stats.tmin(x), xp.asarray(0))
+        xp_assert_equal(stats.tmin(x, lowerlimit=0), xp.asarray(0))
+        xp_assert_equal(stats.tmin(x, lowerlimit=0, inclusive=False), xp.asarray(1))
 
-    def test_tmin(self):
+        x = xp.reshape(x, (5, 2))
+        xp_assert_equal(stats.tmin(x, lowerlimit=0, inclusive=False),
+                        xp.asarray([2, 1]))
+        xp_assert_equal(stats.tmin(x, axis=1), xp.asarray([0, 2, 4, 6, 8]))
+        xp_assert_equal(stats.tmin(x, axis=None), xp.asarray(0))
+
+        x = xp.arange(10.)
+        x[9] = xp.nan
+        xp_assert_equal(stats.tmin(x), xp.asarray(xp.nan))
+
+        # check that if a full slice is masked, the output returns a
+        # nan instead of a garbage value.
+        x = xp.arange(16).reshape(4, 4)
+        res = stats.tmin(x, lowerlimit=4, axis=1)
+        xp_assert_equal(res, xp.asarray([np.nan, 4, 8, 12]))
+
+    @skip_xp_backends(np_only=True,
+                      reasons=["Only NumPy arrays support scalar input/`nan_policy`."])
+    def test_tmin_scalar_and_nanpolicy(self, xp):
         assert_equal(stats.tmin(4), 4)
-
-        x = np.arange(10)
-        assert_equal(stats.tmin(x), 0)
-        assert_equal(stats.tmin(x, lowerlimit=0), 0)
-        assert_equal(stats.tmin(x, lowerlimit=0, inclusive=False), 1)
-
-        x = x.reshape((5, 2))
-        assert_equal(stats.tmin(x, lowerlimit=0, inclusive=False), [2, 1])
-        assert_equal(stats.tmin(x, axis=1), [0, 2, 4, 6, 8])
-        assert_equal(stats.tmin(x, axis=None), 0)
 
         x = np.arange(10.)
         x[9] = np.nan
         with suppress_warnings() as sup:
             sup.record(RuntimeWarning, "invalid value*")
-            assert_equal(stats.tmin(x), np.nan)
             assert_equal(stats.tmin(x, nan_policy='omit'), 0.)
-            assert_raises(ValueError, stats.tmin, x, nan_policy='raise')
-            assert_raises(ValueError, stats.tmin, x, nan_policy='foobar')
+            msg = "The input contains nan values"
+            with assert_raises(ValueError, match=msg):
+                stats.tmin(x, nan_policy='raise')
             msg = "nan_policy must be one of..."
             with assert_raises(ValueError, match=msg):
-                stats.tmin(x, nan_policy='foo')
+                stats.tmin(x, nan_policy='foobar')
 
-        # check that that if a full slice is masked, the output returns a
+    def test_tmax(self, xp):
+        x = xp.arange(10)
+        xp_assert_equal(stats.tmax(x), xp.asarray(9))
+        xp_assert_equal(stats.tmax(x, upperlimit=9), xp.asarray(9))
+        xp_assert_equal(stats.tmax(x, upperlimit=9, inclusive=False), xp.asarray(8))
+
+        x = xp.reshape(x, (5, 2))
+        xp_assert_equal(stats.tmax(x, upperlimit=9, inclusive=False),
+                        xp.asarray([8, 7]))
+        xp_assert_equal(stats.tmax(x, axis=1), xp.asarray([1, 3, 5, 7, 9]))
+        xp_assert_equal(stats.tmax(x, axis=None), xp.asarray(9))
+
+        x = xp.arange(10.)
+        x[9] = xp.nan
+        xp_assert_equal(stats.tmax(x), xp.asarray(xp.nan))
+
+        # check that if a full slice is masked, the output returns a
         # nan instead of a garbage value.
         with suppress_warnings() as sup:
             sup.filter(RuntimeWarning, "All-NaN slice encountered")
-            x = np.arange(16).reshape(4, 4)
-            res = stats.tmin(x, lowerlimit=4, axis=1)
-            assert_equal(res, [np.nan, 4, 8, 12])
+            x = xp.reshape(xp.arange(16), (4, 4))
+            res = stats.tmax(x, upperlimit=11, axis=1)
+            xp_assert_equal(res, xp.asarray([3, 7, 11, np.nan]))
 
-    def test_tmax(self):
+    @skip_xp_backends(np_only=True,
+                      reasons=["Only NumPy arrays support scalar input/`nan_policy`."])
+    def test_tax_scalar_and_nanpolicy(self, xp):
         assert_equal(stats.tmax(4), 4)
-
-        x = np.arange(10)
-        assert_equal(stats.tmax(x), 9)
-        assert_equal(stats.tmax(x, upperlimit=9), 9)
-        assert_equal(stats.tmax(x, upperlimit=9, inclusive=False), 8)
-
-        x = x.reshape((5, 2))
-        assert_equal(stats.tmax(x, upperlimit=9, inclusive=False), [8, 7])
-        assert_equal(stats.tmax(x, axis=1), [1, 3, 5, 7, 9])
-        assert_equal(stats.tmax(x, axis=None), 9)
 
         x = np.arange(10.)
         x[6] = np.nan
         with suppress_warnings() as sup:
             sup.record(RuntimeWarning, "invalid value*")
-            assert_equal(stats.tmax(x), np.nan)
             assert_equal(stats.tmax(x, nan_policy='omit'), 9.)
-            assert_raises(ValueError, stats.tmax, x, nan_policy='raise')
-            assert_raises(ValueError, stats.tmax, x, nan_policy='foobar')
+            msg = "The input contains nan values"
+            with assert_raises(ValueError, match=msg):
+                stats.tmax(x, nan_policy='raise')
+            msg = "nan_policy must be one of..."
+            with assert_raises(ValueError, match=msg):
+                stats.tmax(x, nan_policy='foobar')
 
-        # check that that if a full slice is masked, the output returns a
-        # nan instead of a garbage value.
-        with suppress_warnings() as sup:
-            sup.filter(RuntimeWarning, "All-NaN slice encountered")
-            x = np.arange(16).reshape(4, 4)
-            res = stats.tmax(x, upperlimit=11, axis=1)
-            assert_equal(res, [3, 7, 11, np.nan])
+    def test_tsem(self, xp):
+        x = xp.asarray(X.tolist())  # use default dtype of xp
+        xp_test = array_namespace(x)  # need array-api-compat std for `correction`
 
-    def test_tsem(self):
-        y = stats.tsem(X, limits=(3, 8), inclusive=(False, True))
-        y_ref = np.array([4, 5, 6, 7, 8])
-        assert_approx_equal(y, y_ref.std(ddof=1) / np.sqrt(y_ref.size),
-                            significant=self.dprec)
-
-        assert_approx_equal(stats.tsem(X, limits=[-1, 10]),
-                            stats.tsem(X, limits=None),
-                            significant=self.dprec)
+        y = stats.tsem(x, limits=(3, 8), inclusive=(False, True))
+        y_ref = xp.asarray([4., 5., 6., 7., 8.])
+        xp_assert_close(y, xp_test.std(y_ref, correction=1) / xp_size(y_ref)**0.5)
+        xp_assert_close(stats.tsem(x, limits=[-1, 10]), stats.tsem(x, limits=None))
 
 
 class TestPearsonrWilkinson:
@@ -3770,7 +3791,7 @@ class TestStudentTest:
 
         res = stats.ttest_1samp(xp.asarray(self.X1), 0.)
         attributes = ('statistic', 'pvalue')
-        check_named_results(res, attributes)
+        check_named_results(res, attributes, xp=xp)
 
         t, p = stats.ttest_1samp(xp.asarray(self.X2), 0.)
 
@@ -4190,7 +4211,7 @@ class TestPowerDivergence:
         res = stats.power_divergence(f_obs=f_obs, f_exp=f_exp, ddof=ddof,
                                      axis=axis, lambda_="pearson")
         attributes = ('statistic', 'pvalue')
-        check_named_results(res, attributes)
+        check_named_results(res, attributes, xp=xp)
 
     def test_power_divergence_gh_12282(self, xp):
         # The sums of observed and expected frequencies must match
@@ -6290,9 +6311,10 @@ class TestDescribe:
         with pytest.raises(ValueError, match=message):
             stats.describe(x, nan_policy='foobar')
 
-    @array_api_compatible
-    def test_describe_result_attributes(self, xp):
-        actual = stats.describe(xp.arange(5.))
+    def test_describe_result_attributes(self):
+        # some result attributes are tuples, which aren't meant to be compared
+        # with `xp_assert_close`
+        actual = stats.describe(np.arange(5.))
         attributes = ('nobs', 'minmax', 'mean', 'variance', 'skewness', 'kurtosis')
         check_named_results(actual, attributes)
 
@@ -6375,7 +6397,8 @@ class NormalityTests:
         # test_result@test$p.value
         test_name = self.test_name
         test_fun = getattr(stats, test_name)
-        ref_statistic, ref_pvalue = xp.asarray(self.case_ref)
+        ref_statistic= xp.asarray(self.case_ref[0])
+        ref_pvalue = xp.asarray(self.case_ref[1])
 
         kwargs = {}
         if alternative in {'less', 'greater'}:
@@ -6391,7 +6414,7 @@ class NormalityTests:
         res_statistic, res_pvalue = res
         xp_assert_close(res_statistic, ref_statistic)
         xp_assert_close(res_pvalue, ref_pvalue)
-        check_named_results(res, ('statistic', 'pvalue'))
+        check_named_results(res, ('statistic', 'pvalue'), xp=xp)
 
     def test_nan(self, xp):
         # nan in input -> nan output (default nan_policy='propagate')
@@ -6753,239 +6776,257 @@ def test_obrientransform():
     assert_array_almost_equal(result[0], expected, decimal=4)
 
 
-def check_equal_gmean(array_like, desired, axis=None, dtype=None, rtol=1e-7,
-                      weights=None):
-    # Note this doesn't test when axis is not specified
-    x = stats.gmean(array_like, axis=axis, dtype=dtype, weights=weights)
-    assert_allclose(x, desired, rtol=rtol)
-    assert_equal(x.dtype, dtype)
-
-
-def check_equal_hmean(array_like, desired, axis=None, dtype=None, rtol=1e-7,
-                      weights=None):
-    x = stats.hmean(array_like, axis=axis, dtype=dtype, weights=weights)
-    assert_allclose(x, desired, rtol=rtol)
-    assert_equal(x.dtype, dtype)
-
-
-def check_equal_pmean(array_like, exp, desired, axis=None, dtype=None,
+def check_equal_xmean(*args, xp, mean_fun, axis=None, dtype=None,
                       rtol=1e-7, weights=None):
-    x = stats.pmean(array_like, exp, axis=axis, dtype=dtype, weights=weights)
-    assert_allclose(x, desired, rtol=rtol)
-    assert_equal(x.dtype, dtype)
+    # Note this doesn't test when axis is not specified
+    dtype = dtype or xp.float64
+    if len(args) == 2:
+        array_like, desired = args
+    else:
+        array_like, p, desired = args
+    array_like = xp.asarray(array_like, dtype=dtype)
+    desired = xp.asarray(desired, dtype=dtype)
+    weights = xp.asarray(weights, dtype=dtype) if weights is not None else weights
+    args = (array_like,) if len(args) == 2 else (array_like, p)
+    x = mean_fun(*args, axis=axis, dtype=dtype, weights=weights)
+    xp_assert_close(x, desired, rtol=rtol)
 
 
-class TestHarMean:
-    def test_0(self):
+def check_equal_gmean(*args, **kwargs):
+    return check_equal_xmean(*args, mean_fun=stats.gmean, **kwargs)
+
+
+def check_equal_hmean(*args, **kwargs):
+    return check_equal_xmean(*args, mean_fun=stats.hmean, **kwargs)
+
+
+def check_equal_pmean(*args, **kwargs):
+    return check_equal_xmean(*args, mean_fun=stats.pmean, **kwargs)
+
+
+@array_api_compatible
+class TestHMean:
+    def test_0(self, xp):
         a = [1, 0, 2]
         desired = 0
-        check_equal_hmean(a, desired)
+        check_equal_hmean(a, desired, xp=xp)
 
-    def test_1d_list(self):
-        #  Test a 1d list
+    def test_1d(self, xp):
+        #  Test a 1d case
         a = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
         desired = 34.1417152147
-        check_equal_hmean(a, desired)
+        check_equal_hmean(a, desired, xp=xp)
 
         a = [1, 2, 3, 4]
         desired = 4. / (1. / 1 + 1. / 2 + 1. / 3 + 1. / 4)
-        check_equal_hmean(a, desired)
+        check_equal_hmean(a, desired, xp=xp)
 
-    def test_1d_array(self):
-        #  Test a 1d array
-        a = np.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 100])
-        desired = 34.1417152147
-        check_equal_hmean(a, desired)
-
-    def test_1d_array_with_zero(self):
+    def test_1d_with_zero(self, xp):
         a = np.array([1, 0])
         desired = 0.0
-        assert_equal(stats.hmean(a), desired)
+        check_equal_hmean(a, desired, xp=xp, rtol=0.0)
 
-    def test_1d_array_with_negative_value(self):
+    @skip_xp_backends('array_api_strict',
+                      reasons=["`array_api_strict.where` `fillvalue` doesn't "
+                               "accept Python scalars. See data-apis/array-api#807."])
+    @pytest.mark.usefixtures("skip_xp_backends")
+    def test_1d_with_negative_value(self, xp):
+        # Won't work for array_api_strict for now, but see data-apis/array-api#807
         a = np.array([1, 0, -1])
-        assert_raises(ValueError, stats.hmean, a)
+        message = "The harmonic mean is only defined..."
+        with pytest.warns(RuntimeWarning, match=message):
+            check_equal_hmean(a, xp.nan, xp=xp, rtol=0.0)
 
     # Note the next tests use axis=None as default, not axis=0
-    def test_2d_list(self):
-        #  Test a 2d list
+    def test_2d(self, xp):
+        #  Test a 2d case
         a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
         desired = 38.6696271841
-        check_equal_hmean(a, desired)
+        check_equal_hmean(np.array(a), desired, xp=xp)
 
-    def test_2d_array(self):
-        #  Test a 2d array
-        a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
-        desired = 38.6696271841
-        check_equal_hmean(np.array(a), desired)
-
-    def test_2d_axis0(self):
-        #  Test a 2d list with axis=0
+    def test_2d_axis0(self, xp):
+        #  Test a 2d case with axis=0
         a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
         desired = np.array([22.88135593, 39.13043478, 52.90076336, 65.45454545])
-        check_equal_hmean(a, desired, axis=0)
+        check_equal_hmean(a, desired, axis=0, xp=xp)
 
-    def test_2d_axis0_with_zero(self):
+    def test_2d_axis0_with_zero(self, xp):
         a = [[10, 0, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
         desired = np.array([22.88135593, 0.0, 52.90076336, 65.45454545])
-        assert_allclose(stats.hmean(a, axis=0), desired)
+        check_equal_hmean(a, desired, axis=0, xp=xp)
 
-    def test_2d_axis1(self):
-        #  Test a 2d list with axis=1
+    def test_2d_axis1(self, xp):
+        #  Test a 2d case with axis=1
         a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
         desired = np.array([19.2, 63.03939962, 103.80078637])
-        check_equal_hmean(a, desired, axis=1)
+        check_equal_hmean(a, desired, axis=1, xp=xp)
 
-    def test_2d_axis1_with_zero(self):
+    def test_2d_axis1_with_zero(self, xp):
         a = [[10, 0, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
         desired = np.array([0.0, 63.03939962, 103.80078637])
-        assert_allclose(stats.hmean(a, axis=1), desired)
+        check_equal_hmean(a, desired, axis=1, xp=xp)
 
-    def test_weights_1d_list(self):
+    @pytest.mark.skip_xp_backends(
+        np_only=True,
+        reasons=['array-likes only supported for NumPy backend'],
+    )
+    @pytest.mark.usefixtures("skip_xp_backends")
+    def test_weights_1d_list(self, xp):
         # Desired result from:
         # https://www.hackmath.net/en/math-problem/35871
         a = [2, 10, 6]
         weights = [10, 5, 3]
-        desired = 3
-        check_equal_hmean(a, desired, weights=weights, rtol=1e-5)
+        desired = 3.
+        # all the other tests use `check_equal_hmean`, which now converts
+        # the input to an xp-array before calling `hmean`. This time, check
+        # that the function still accepts the lists of ints.
+        res = stats.hmean(a, weights=weights)
+        xp_assert_close(res, np.asarray(desired), rtol=1e-5)
 
-    def test_weights_2d_array_axis0(self):
+    def test_weights_1d(self, xp):
+        # Desired result from:
+        # https://www.hackmath.net/en/math-problem/35871
+        a = np.asarray([2, 10, 6])
+        weights = np.asarray([10, 5, 3])
+        desired = 3
+        check_equal_hmean(a, desired, weights=weights, rtol=1e-5, xp=xp)
+
+    def test_weights_2d_axis0(self, xp):
         # Desired result from:
         # https://www.hackmath.net/en/math-problem/35871
         a = np.array([[2, 5], [10, 5], [6, 5]])
         weights = np.array([[10, 1], [5, 1], [3, 1]])
         desired = np.array([3, 5])
-        check_equal_hmean(a, desired, axis=0, weights=weights, rtol=1e-5)
+        check_equal_hmean(a, desired, axis=0, weights=weights, rtol=1e-5, xp=xp)
 
-    def test_weights_2d_array_axis1(self):
+    def test_weights_2d_axis1(self, xp):
         # Desired result from:
         # https://www.hackmath.net/en/math-problem/35871
         a = np.array([[2, 10, 6], [7, 7, 7]])
         weights = np.array([[10, 5, 3], [1, 1, 1]])
         desired = np.array([3, 7])
-        check_equal_hmean(a, desired, axis=1, weights=weights, rtol=1e-5)
+        check_equal_hmean(a, desired, axis=1, weights=weights, rtol=1e-5, xp=xp)
 
-    def test_weights_masked_1d_array(self):
+    @skip_xp_invalid_arg
+    def test_weights_masked_1d_array(self, xp):
         # Desired result from:
         # https://www.hackmath.net/en/math-problem/35871
         a = np.array([2, 10, 6, 42])
         weights = np.ma.array([10, 5, 3, 42], mask=[0, 0, 0, 1])
         desired = 3
-        check_equal_hmean(a, desired, weights=weights, rtol=1e-5)
+        xp = np.ma  # check_equal_hmean uses xp.asarray; this will preserve the mask
+        check_equal_hmean(a, desired, weights=weights, rtol=1e-5,
+                          dtype=np.float64, xp=xp)
 
 
-class TestGeoMean:
-    def test_0(self):
+@array_api_compatible
+class TestGMean:
+    def test_0(self, xp):
         a = [1, 0, 2]
         desired = 0
-        check_equal_gmean(a, desired)
+        check_equal_gmean(a, desired, xp=xp)
 
-    def test_1d_list(self):
-        #  Test a 1d list
+    def test_1d(self, xp):
+        #  Test a 1d case
         a = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
         desired = 45.2872868812
-        check_equal_gmean(a, desired)
+        check_equal_gmean(a, desired, xp=xp)
 
         a = [1, 2, 3, 4]
         desired = power(1 * 2 * 3 * 4, 1. / 4.)
-        check_equal_gmean(a, desired, rtol=1e-14)
-
-    def test_1d_array(self):
-        #  Test a 1d array
-        a = np.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 100])
-        desired = 45.2872868812
-        check_equal_gmean(a, desired)
+        check_equal_gmean(a, desired, rtol=1e-14, xp=xp)
 
         a = array([1, 2, 3, 4], float32)
         desired = power(1 * 2 * 3 * 4, 1. / 4.)
-        check_equal_gmean(a, desired, dtype=float32)
+        check_equal_gmean(a, desired, dtype=xp.float32, xp=xp)
 
     # Note the next tests use axis=None as default, not axis=0
-    def test_2d_list(self):
-        #  Test a 2d list
+    def test_2d(self, xp):
+        #  Test a 2d case
         a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
         desired = 52.8885199
-        check_equal_gmean(a, desired)
+        check_equal_gmean(a, desired, xp=xp)
 
-    def test_2d_array(self):
-        #  Test a 2d array
-        a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
-        desired = 52.8885199
-        check_equal_gmean(array(a), desired)
-
-    def test_2d_axis0(self):
-        #  Test a 2d list with axis=0
+    def test_2d_axis0(self, xp):
+        #  Test a 2d case with axis=0
         a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
         desired = np.array([35.56893304, 49.32424149, 61.3579244, 72.68482371])
-        check_equal_gmean(a, desired, axis=0)
+        check_equal_gmean(a, desired, axis=0, xp=xp)
 
         a = array([[1, 2, 3, 4], [1, 2, 3, 4], [1, 2, 3, 4]])
         desired = array([1, 2, 3, 4])
-        check_equal_gmean(a, desired, axis=0, rtol=1e-14)
+        check_equal_gmean(a, desired, axis=0, rtol=1e-14, xp=xp)
 
-    def test_2d_axis1(self):
-        #  Test a 2d list with axis=1
+    def test_2d_axis1(self, xp):
+        #  Test a 2d case with axis=1
         a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
         desired = np.array([22.13363839, 64.02171746, 104.40086817])
-        check_equal_gmean(a, desired, axis=1)
+        check_equal_gmean(a, desired, axis=1, xp=xp)
 
         a = array([[1, 2, 3, 4], [1, 2, 3, 4], [1, 2, 3, 4]])
         v = power(1 * 2 * 3 * 4, 1. / 4.)
         desired = array([v, v, v])
-        check_equal_gmean(a, desired, axis=1, rtol=1e-14)
+        check_equal_gmean(a, desired, axis=1, rtol=1e-14, xp=xp)
 
-    def test_large_values(self):
+    def test_large_values(self, xp):
         a = array([1e100, 1e200, 1e300])
         desired = 1e200
-        check_equal_gmean(a, desired, rtol=1e-13)
+        check_equal_gmean(a, desired, rtol=1e-13, xp=xp)
 
-    def test_1d_list0(self):
-        #  Test a 1d list with zero element
+    def test_1d_with_0(self, xp):
+        #  Test a 1d case with zero element
         a = [10, 20, 30, 40, 50, 60, 70, 80, 90, 0]
         desired = 0.0  # due to exp(-inf)=0
         with np.errstate(all='ignore'):
-            check_equal_gmean(a, desired)
+            check_equal_gmean(a, desired, xp=xp)
 
-    def test_1d_array0(self):
-        #  Test a 1d array with zero element
-        a = np.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 0])
-        desired = 0.0  # due to exp(-inf)=0
-        with np.errstate(divide='ignore'):
-            check_equal_gmean(a, desired)
-
-    def test_1d_list_neg(self):
-        #  Test a 1d list with negative element
+    def test_1d_neg(self, xp):
+        #  Test a 1d case with negative element
         a = [10, 20, 30, 40, 50, 60, 70, 80, 90, -1]
         desired = np.nan  # due to log(-1) = nan
         with np.errstate(invalid='ignore'):
-            check_equal_gmean(a, desired)
+            check_equal_gmean(a, desired, xp=xp)
 
-    def test_weights_1d_list(self):
+    @pytest.mark.skip_xp_backends(
+        np_only=True,
+        reasons=['array-likes only supported for NumPy backend'],
+    )
+    @pytest.mark.usefixtures("skip_xp_backends")
+    def test_weights_1d_list(self, xp):
         # Desired result from:
         # https://www.dummies.com/education/math/business-statistics/how-to-find-the-weighted-geometric-mean-of-a-data-set/
         a = [1, 2, 3, 4, 5]
         weights = [2, 5, 6, 4, 3]
         desired = 2.77748
-        check_equal_gmean(a, desired, weights=weights, rtol=1e-5)
 
-    def test_weights_1d_array(self):
+        # all the other tests use `check_equal_gmean`, which now converts
+        # the input to an xp-array before calling `gmean`. This time, check
+        # that the function still accepts the lists of ints.
+        res = stats.gmean(a, weights=weights)
+        xp_assert_close(res, np.asarray(desired), rtol=1e-5)
+
+    def test_weights_1d(self, xp):
         # Desired result from:
         # https://www.dummies.com/education/math/business-statistics/how-to-find-the-weighted-geometric-mean-of-a-data-set/
         a = np.array([1, 2, 3, 4, 5])
         weights = np.array([2, 5, 6, 4, 3])
         desired = 2.77748
-        check_equal_gmean(a, desired, weights=weights, rtol=1e-5)
+        check_equal_gmean(a, desired, weights=weights, rtol=1e-5, xp=xp)
 
-    def test_weights_masked_1d_array(self):
+    @skip_xp_invalid_arg
+    def test_weights_masked_1d_array(self, xp):
         # Desired result from:
         # https://www.dummies.com/education/math/business-statistics/how-to-find-the-weighted-geometric-mean-of-a-data-set/
         a = np.array([1, 2, 3, 4, 5, 6])
         weights = np.ma.array([2, 5, 6, 4, 3, 5], mask=[0, 0, 0, 0, 0, 1])
         desired = 2.77748
-        check_equal_gmean(a, desired, weights=weights, rtol=1e-5)
+        xp = np.ma  # check_equal_gmean uses xp.asarray; this will preserve the mask
+        check_equal_gmean(a, desired, weights=weights, rtol=1e-5,
+                          dtype=np.float64, xp=xp)
 
 
-class TestPowMean:
+@array_api_compatible
+class TestPMean:
 
     def pmean_reference(a, p):
         return (np.sum(a**p) / a.size)**(1/p)
@@ -6993,79 +7034,101 @@ class TestPowMean:
     def wpmean_reference(a, p, weights):
         return (np.sum(weights * a**p) / np.sum(weights))**(1/p)
 
-    def test_bad_exponent(self):
+    def test_bad_exponent(self, xp):
         with pytest.raises(ValueError, match='Power mean only defined for'):
-            stats.pmean([1, 2, 3], [0])
+            stats.pmean(xp.asarray([1, 2, 3]), xp.asarray([0]))
         with pytest.raises(ValueError, match='Power mean only defined for'):
-            stats.pmean([1, 2, 3], np.array([0]))
+            stats.pmean(xp.asarray([1, 2, 3]), xp.asarray([0]))
 
-    def test_1d_list(self):
+    def test_1d(self, xp):
         a, p = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100], 3.5
-        desired = TestPowMean.pmean_reference(np.array(a), p)
-        check_equal_pmean(a, p, desired)
+        desired = TestPMean.pmean_reference(np.array(a), p)
+        check_equal_pmean(a, p, desired, xp=xp)
+
+        a, p = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100], -2.5
+        desired = TestPMean.pmean_reference(np.array(a), p)
+        check_equal_pmean(a, p, desired, xp=xp)
 
         a, p = [1, 2, 3, 4], 2
         desired = np.sqrt((1**2 + 2**2 + 3**2 + 4**2) / 4)
-        check_equal_pmean(a, p, desired)
+        check_equal_pmean(a, p, desired, xp=xp)
 
-    def test_1d_array(self):
-        a, p = np.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 100]), -2.5
-        desired = TestPowMean.pmean_reference(a, p)
-        check_equal_pmean(a, p, desired)
-
-    def test_1d_array_with_zero(self):
+    def test_1d_with_zero(self, xp):
         a, p = np.array([1, 0]), -1
         desired = 0.0
-        assert_equal(stats.pmean(a, p), desired)
+        check_equal_pmean(a, p, desired, rtol=0.0, xp=xp)
 
-    def test_1d_array_with_negative_value(self):
+    @skip_xp_backends('array_api_strict',
+                      reasons=["`array_api_strict.where` `fillvalue` doesn't "
+                               "accept Python scalars. See data-apis/array-api#807."])
+    @pytest.mark.usefixtures("skip_xp_backends")
+    def test_1d_with_negative_value(self, xp):
         a, p = np.array([1, 0, -1]), 1.23
-        with pytest.raises(ValueError, match='Power mean only defined if all'):
-            stats.pmean(a, p)
+        message = "The power mean is only defined..."
+        with pytest.warns(RuntimeWarning, match=message):
+            check_equal_pmean(a, p, xp.nan, xp=xp)
 
     @pytest.mark.parametrize(
         ("a", "p"),
         [([[10, 20], [50, 60], [90, 100]], -0.5),
          (np.array([[10, 20], [50, 60], [90, 100]]), 0.5)]
     )
-    def test_2d_axisnone(self, a, p):
-        desired = TestPowMean.pmean_reference(np.array(a), p)
-        check_equal_pmean(a, p, desired)
+    def test_2d_axisnone(self, a, p, xp):
+        desired = TestPMean.pmean_reference(np.array(a), p)
+        check_equal_pmean(a, p, desired, xp=xp)
 
     @pytest.mark.parametrize(
         ("a", "p"),
         [([[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]], -0.5),
          ([[10, 0, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]], 0.5)]
     )
-    def test_2d_list_axis0(self, a, p):
+    def test_2d_axis0(self, a, p, xp):
         desired = [
-            TestPowMean.pmean_reference(
+            TestPMean.pmean_reference(
                 np.array([a[i][j] for i in range(len(a))]), p
             )
             for j in range(len(a[0]))
         ]
-        check_equal_pmean(a, p, desired, axis=0)
+        check_equal_pmean(a, p, desired, axis=0, xp=xp)
 
     @pytest.mark.parametrize(
         ("a", "p"),
         [([[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]], -0.5),
          ([[10, 0, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]], 0.5)]
     )
-    def test_2d_list_axis1(self, a, p):
-        desired = [TestPowMean.pmean_reference(np.array(a_), p) for a_ in a]
-        check_equal_pmean(a, p, desired, axis=1)
+    def test_2d_axis1(self, a, p, xp):
+        desired = [TestPMean.pmean_reference(np.array(a_), p) for a_ in a]
+        check_equal_pmean(a, p, desired, axis=1, xp=xp)
 
-    def test_weights_1d_list(self):
+    def test_weights_1d(self, xp):
         a, p = [2, 10, 6], -1.23456789
         weights = [10, 5, 3]
-        desired = TestPowMean.wpmean_reference(np.array(a), p, weights)
-        check_equal_pmean(a, p, desired, weights=weights, rtol=1e-5)
+        desired = TestPMean.wpmean_reference(np.array(a), p, weights)
+        check_equal_pmean(a, p, desired, weights=weights, rtol=1e-5, xp=xp)
 
-    def test_weights_masked_1d_array(self):
+    @pytest.mark.skip_xp_backends(
+        np_only=True,
+        reasons=['array-likes only supported for NumPy backend'],
+    )
+    @pytest.mark.usefixtures("skip_xp_backends")
+    def test_weights_1d_list(self, xp):
+        a, p = [2, 10, 6], -1.23456789
+        weights = [10, 5, 3]
+        desired = TestPMean.wpmean_reference(np.array(a), p, weights)
+        # all the other tests use `check_equal_pmean`, which now converts
+        # the input to an xp-array before calling `pmean`. This time, check
+        # that the function still accepts the lists of ints.
+        res = stats.pmean(a, p, weights=weights)
+        xp_assert_close(res, np.asarray(desired), rtol=1e-5)
+
+    @skip_xp_invalid_arg
+    def test_weights_masked_1d_array(self, xp):
         a, p = np.array([2, 10, 6, 42]), 1
         weights = np.ma.array([10, 5, 3, 42], mask=[0, 0, 0, 1])
         desired = np.average(a, weights=weights)
-        check_equal_pmean(a, p, desired, weights=weights, rtol=1e-5)
+        xp = np.ma  # check_equal_pmean uses xp.asarray; this will preserve the mask
+        check_equal_pmean(a, p, desired, weights=weights, rtol=1e-5,
+                          dtype=np.float64, xp=xp)
 
     @pytest.mark.parametrize(
         ("axis", "fun_name", "p"),
@@ -7073,19 +7136,19 @@ class TestPowMean:
          (0, "gmean", 0),
          (1, "hmean", -1)]
     )
-    def test_weights_2d_array(self, axis, fun_name, p):
+    def test_weights_2d(self, axis, fun_name, p, xp):
         if fun_name == 'wpmean_reference':
             def fun(a, axis, weights):
-                return TestPowMean.wpmean_reference(a, p, weights)
+                return TestPMean.wpmean_reference(a, p, weights)
         else:
             fun = getattr(stats, fun_name)
         a = np.array([[2, 5], [10, 5], [6, 5]])
         weights = np.array([[10, 1], [5, 1], [3, 1]])
         desired = fun(a, axis=axis, weights=weights)
-        check_equal_pmean(a, p, desired, axis=axis, weights=weights, rtol=1e-5)
+        check_equal_pmean(a, p, desired, axis=axis, weights=weights, rtol=1e-5, xp=xp)
 
 
-class TestGeometricStandardDeviation:
+class TestGSTD:
     # must add 1 as `gstd` is only defined for positive values
     array_1d = np.arange(2 * 3 * 4) + 1
     gstd_array_1d = 2.294407613602
@@ -7104,10 +7167,16 @@ class TestGeometricStandardDeviation:
         with pytest.raises(TypeError, match="ufunc 'log' not supported"):
             stats.gstd('You cannot take the logarithm of a string.')
 
-    @pytest.mark.parametrize('bad_value', (0, -1, np.inf))
+    @pytest.mark.parametrize('bad_value', (0, -1, np.inf, np.nan))
     def test_returns_nan_invalid_value(self, bad_value):
         x = np.append(self.array_1d, [bad_value])
-        assert_equal(stats.gstd(x), np.nan)
+        if np.isfinite(bad_value):
+            message = "The geometric standard deviation is only defined..."
+            with pytest.warns(RuntimeWarning, match=message):
+                res = stats.gstd(x)
+        else:
+            res = stats.gstd(x)
+        assert_equal(res, np.nan)
 
     def test_propagates_nan_values(self):
         a = array([[1, 1, 1, 16], [np.nan, 1, 2, 3]])
@@ -7949,50 +8018,43 @@ class TestKruskal:
 
 @array_api_compatible
 class TestCombinePvalues:
+    # Reference values computed using the following R code:
+    # options(digits=16)
+    # library(metap)
+    # x = c(0.01, 0.2, 0.3)
+    # sumlog(x)  # fisher
+    # sumz(x)  # stouffer
+    # sumlog(1-x)  # pearson (negative statistic and complement of p-value)
+    # minimump(x)  # tippett
+    @pytest.mark.parametrize(
+        "method, expected_statistic, expected_pvalue",
+        [("fisher", 14.83716180549625 , 0.02156175132483465),
+         ("stouffer", 2.131790594240385, 0.01651203260896294),
+         ("pearson", -1.179737662212887, 1-0.9778736999143087),
+         ("tippett", 0.01, 0.02970100000000002),
+         # mudholkar_george: library(transite); p_combine(x, method="MG")
+         ("mudholkar_george", 6.828712071641684, 0.01654551838539527)])
+    def test_reference_values(self, xp, method, expected_statistic, expected_pvalue):
+        x = [.01, .2, .3]
+        res = stats.combine_pvalues(xp.asarray(x), method=method)
+        xp_assert_close(res.statistic, xp.asarray(expected_statistic))
+        xp_assert_close(res.pvalue, xp.asarray(expected_pvalue))
 
-    def test_fisher(self, xp):
-        # Example taken from https://en.wikipedia.org/wiki/Fisher%27s_exact_test#Example
-        xsq, p = stats.combine_pvalues(xp.asarray([.01, .2, .3]), method='fisher')
-        xp_assert_close(p, xp.asarray(0.02156), rtol=1e-4)
-
-    def test_stouffer(self, xp):
-        Z, p = stats.combine_pvalues(xp.asarray([.01, .2, .3]), method='stouffer')
-        xp_assert_close(p, xp.asarray(0.01651), rtol=1e-3)
-
-    def test_stouffer2(self, xp):
-        Z, p = stats.combine_pvalues(xp.asarray([.5, .5, .5]), method='stouffer')
-        xp_assert_close(p, xp.asarray(0.5), rtol=1e-4)
-
-    def test_weighted_stouffer(self, xp):
-        pvalues = xp.asarray([.01, .2, .3])
-        Z, p = stats.combine_pvalues(pvalues, method='stouffer',
-                                     weights=xp.ones(3, dtype=pvalues.dtype))
-        xp_assert_close(p, xp.asarray(0.01651), rtol=1e-3)
-
-    def test_weighted_stouffer2(self, xp):
-        Z, p = stats.combine_pvalues(xp.asarray([.01, .2, .3]), method='stouffer',
-                                     weights=xp.asarray([1., 4., 9.]))
-        xp_assert_close(p, xp.asarray(0.1464), rtol=1e-3)
-
-    def test_pearson(self, xp):
-        Z, p = stats.combine_pvalues(xp.asarray([.01, .2, .3]), method='pearson')
-        xp_assert_close(p, xp.asarray(0.02213), rtol=1e-3)
-
-    def test_tippett(self, xp):
-        Z, p = stats.combine_pvalues(xp.asarray([.01, .2, .3]), method='tippett')
-        xp_assert_close(p, xp.asarray(0.0297), rtol=1e-4)
-
-    def test_mudholkar_george(self, xp):
-        Z, p = stats.combine_pvalues(xp.asarray([.1, .1, .1]),
-                                     method='mudholkar_george')
-        xp_assert_close(p, xp.asarray(0.019462), rtol=1e-4)
-
-    def test_mudholkar_george_equal_fisher_pearson_average(self, xp):
-        Z, p = stats.combine_pvalues(xp.asarray([.01, .2, .3]),
-                                     method='mudholkar_george')
-        Z_f, p_f = stats.combine_pvalues(xp.asarray([.01, .2, .3]), method='fisher')
-        Z_p, p_p = stats.combine_pvalues(xp.asarray([.01, .2, .3]), method='pearson')
-        xp_assert_close(0.5 * (Z_f+Z_p), Z, rtol=1e-4)
+    @pytest.mark.parametrize(
+        # Reference values computed using R `metap` `sumz`:
+        # options(digits=16)
+        # library(metap)
+        # x = c(0.01, 0.2, 0.3)
+        # sumz(x, weights=c(1., 1., 1.))
+        # sumz(x, weights=c(1., 4., 9.))
+        "weights, expected_statistic, expected_pvalue",
+        [([1., 1., 1.], 2.131790594240385, 0.01651203260896294),
+         ([1., 4., 9.], 1.051815015753598, 0.1464422142261314)])
+    def test_weighted_stouffer(self, xp, weights, expected_statistic, expected_pvalue):
+        x = xp.asarray([.01, .2, .3])
+        res = stats.combine_pvalues(x, method='stouffer', weights=xp.asarray(weights))
+        xp_assert_close(res.statistic, xp.asarray(expected_statistic))
+        xp_assert_close(res.pvalue, xp.asarray(expected_pvalue))
 
     methods = ["fisher", "pearson", "tippett", "stouffer", "mudholkar_george"]
 
@@ -8028,6 +8090,33 @@ class TestCombinePvalues:
         res = stats.combine_pvalues(xp.asarray([.01, .2, .3]), method=method)
         xp_assert_equal(res.statistic, res[0])
         xp_assert_equal(res.pvalue, res[1])
+
+    @pytest.mark.parametrize("method", methods)
+    # axis=None is currently broken for array API; will be handled when
+    # axis_nan_policy decorator is updated
+    @pytest.mark.parametrize("axis", [0, 1])
+    def test_axis(self, method, axis, xp):
+        rng = np.random.default_rng(234892349810482)
+        x = xp.asarray(rng.random(size=(2, 10)))
+        x = x.T if (axis == 0) else x
+        res = stats.combine_pvalues(x, axis=axis, method=method)
+
+        if axis is None:
+            x = xp.reshape(x, (-1,))
+            ref = stats.combine_pvalues(x, method=method)
+            xp_assert_close(res.statistic, ref.statistic)
+            xp_assert_close(res.pvalue, ref.pvalue)
+            return
+
+        x = x.T if (axis == 0) else x
+        x0, x1 = x[0, :], x[1, :]
+        ref0 = stats.combine_pvalues(x0, method=method)
+        ref1 = stats.combine_pvalues(x1, method=method)
+
+        xp_assert_close(res.statistic[0], ref0.statistic)
+        xp_assert_close(res.statistic[1], ref1.statistic)
+        xp_assert_close(res.pvalue[0], ref0.pvalue)
+        xp_assert_close(res.pvalue[1], ref1.pvalue)
 
 
 class TestCdfDistanceValidation:
@@ -9080,6 +9169,230 @@ class TestExpectile:
         for alpha in np.r_[0, alpha_seq, 1 - alpha_seq[:-1:-1], 1]:
             e_list.append(stats.expectile(x, alpha=alpha))
         assert np.all(np.diff(e_list) > 0)
+
+
+@array_api_compatible
+class TestXP_Mean:
+    @pytest.mark.parametrize('axis', [None, 1, -1, (-2, 2)])
+    @pytest.mark.parametrize('weights', [None, True])
+    @pytest.mark.parametrize('keepdims', [False, True])
+    def test_xp_mean_basic(self, xp, axis, weights, keepdims):
+        rng = np.random.default_rng(90359458245906)
+        x = rng.random((3, 4, 5))
+        x_xp = xp.asarray(x)
+        w = w_xp = None
+
+        if weights:
+            w = rng.random((1, 5))
+            w_xp = xp.asarray(w)
+            x, w = np.broadcast_arrays(x, w)
+
+        res = _xp_mean(x_xp, weights=w_xp, axis=axis, keepdims=keepdims)
+        ref = np.average(x, weights=w, axis=axis, keepdims=keepdims)
+
+        xp_assert_close(res, xp.asarray(ref))
+
+    def test_non_broadcastable(self, xp):
+        # non-broadcastable x and weights
+        x, w = xp.arange(10.), xp.zeros(5)
+        message = "Array shapes are incompatible for broadcasting."
+        with pytest.raises(ValueError, match=message):
+            _xp_mean(x, weights=w)
+
+    def test_special_cases(self, xp):
+        # weights sum to zero
+        weights = xp.asarray([-1., 0., 1.])
+
+        res = _xp_mean(xp.asarray([1., 1., 1.]), weights=weights)
+        xp_assert_close(res, xp.asarray(xp.nan))
+
+        res = _xp_mean(xp.asarray([2., 1., 1.]), weights=weights)
+        xp_assert_close(res, xp.asarray(-np.inf))
+
+        res = _xp_mean(xp.asarray([1., 1., 2.]), weights=weights)
+        xp_assert_close(res, xp.asarray(np.inf))
+
+    def test_nan_policy(self, xp):
+        x = xp.arange(10.)
+        mask = (x == 3)
+        x = xp.where(mask, xp.asarray(xp.nan), x)
+
+        # nan_policy='raise' raises an error
+        message = 'The input contains nan values'
+        with pytest.raises(ValueError, match=message):
+            _xp_mean(x, nan_policy='raise')
+
+        # `nan_policy='propagate'` is the default, and the result is NaN
+        res1 = _xp_mean(x)
+        res2 = _xp_mean(x, nan_policy='propagate')
+        ref = xp.asarray(xp.nan)
+        xp_assert_equal(res1, ref)
+        xp_assert_equal(res2, ref)
+
+        # `nan_policy='omit'` omits NaNs in `x`
+        res = _xp_mean(x, nan_policy='omit')
+        ref = xp.mean(x[~mask])
+        xp_assert_close(res, ref)
+
+        # `nan_policy='omit'` omits NaNs in `weights`, too
+        weights = xp.ones(10)
+        weights = xp.where(mask, xp.asarray(xp.nan), weights)
+        res = _xp_mean(xp.arange(10.), weights=weights, nan_policy='omit')
+        ref = xp.mean(x[~mask])
+        xp_assert_close(res, ref)
+
+        # Check for warning if omitting NaNs causes empty slice
+        message = 'After omitting NaNs...'
+        with pytest.warns(RuntimeWarning, match=message):
+            res = _xp_mean(x * np.nan, nan_policy='omit')
+            ref = xp.asarray(xp.nan)
+            xp_assert_equal(res, ref)
+
+    def test_empty(self, xp):
+        message = 'One or more sample arguments is too small...'
+        with pytest.warns(SmallSampleWarning, match=message):
+            res = _xp_mean(xp.asarray([]))
+            ref = xp.asarray(xp.nan)
+            xp_assert_equal(res, ref)
+
+        message = "All axis-slices of one or more sample arguments..."
+        with pytest.warns(SmallSampleWarning, match=message):
+            res = _xp_mean(xp.asarray([[]]), axis=1)
+            ref = xp.asarray([xp.nan])
+            xp_assert_equal(res, ref)
+
+        res = _xp_mean(xp.asarray([[]]), axis=0)
+        ref = xp.asarray([])
+        xp_assert_equal(res, ref)
+
+    def test_dtype(self, xp):
+        max = xp.finfo(xp.float32).max
+        x_np = np.asarray([max, max], dtype=np.float32)
+        x_xp = xp.asarray(x_np)
+
+        # Overflow occurs for float32 input
+        with np.errstate(over='ignore'):
+            res = _xp_mean(x_xp)
+            ref = np.mean(x_np)
+            np.testing.assert_equal(ref, np.inf)
+            xp_assert_close(res, xp.asarray(ref))
+
+        # correct result is returned if `float64` is used
+        res = _xp_mean(x_xp, dtype=xp.float64)
+        ref = xp.asarray(np.mean(np.asarray(x_np, dtype=np.float64)))
+        xp_assert_close(res, ref)
+
+    def test_integer(self, xp):
+        # integer inputs are converted to the appropriate float
+        x = xp.arange(10)
+        y = xp.arange(10.)
+        xp_assert_equal(_xp_mean(x), _xp_mean(y))
+        xp_assert_equal(_xp_mean(y, weights=x), _xp_mean(y, weights=y))
+
+
+@array_api_compatible
+@pytest.mark.usefixtures("skip_xp_backends")
+@skip_xp_backends('jax.numpy', reasons=['JAX arrays do not support item assignment'])
+class TestXP_Var:
+    @pytest.mark.parametrize('axis', [None, 1, -1, (-2, 2)])
+    @pytest.mark.parametrize('keepdims', [False, True])
+    @pytest.mark.parametrize('correction', [0, 1])
+    @pytest.mark.parametrize('nan_policy', ['propagate', 'omit'])
+    def test_xp_var_basic(self, xp, axis, keepdims, correction, nan_policy):
+        rng = np.random.default_rng(90359458245906)
+        x = rng.random((3, 4, 5))
+        var_ref = np.var
+
+        if nan_policy == 'omit':
+            nan_mask = rng.random(size=x.shape) > 0.5
+            x[nan_mask] = np.nan
+            var_ref = np.nanvar
+
+        x_xp = xp.asarray(x)
+
+        res = _xp_var(x_xp, axis=axis, keepdims=keepdims, correction=correction,
+                      nan_policy=nan_policy)
+
+        with suppress_warnings() as sup:
+            sup.filter(RuntimeWarning, "Degrees of freedom <= 0 for slice")
+            ref = var_ref(x, axis=axis, keepdims=keepdims, ddof=correction)
+
+        xp_assert_close(res, xp.asarray(ref))
+
+    def test_special_cases(self, xp):
+        # correction too big
+        res = _xp_var(xp.asarray([1., 2.]), correction=3)
+        xp_assert_close(res, xp.asarray(xp.nan))
+
+    def test_nan_policy(self, xp):
+        x = xp.arange(10.)
+        mask = (x == 3)
+        x = xp.where(mask, xp.asarray(xp.nan), x)
+
+        # nan_policy='raise' raises an error
+        message = 'The input contains nan values'
+        with pytest.raises(ValueError, match=message):
+            _xp_var(x, nan_policy='raise')
+
+        # `nan_policy='propagate'` is the default, and the result is NaN
+        res1 = _xp_var(x)
+        res2 = _xp_var(x, nan_policy='propagate')
+        ref = xp.asarray(xp.nan)
+        xp_assert_equal(res1, ref)
+        xp_assert_equal(res2, ref)
+
+        # `nan_policy='omit'` omits NaNs in `x`
+        res = _xp_var(x, nan_policy='omit')
+        xp_test = array_namespace(x)  # torch has different default correction
+        ref = xp_test.var(x[~mask])
+        xp_assert_close(res, ref)
+
+        # Check for warning if omitting NaNs causes empty slice
+        message = 'After omitting NaNs...'
+        with pytest.warns(RuntimeWarning, match=message):
+            res = _xp_var(x * np.nan, nan_policy='omit')
+            ref = xp.asarray(xp.nan)
+            xp_assert_equal(res, ref)
+
+    def test_empty(self, xp):
+        message = 'One or more sample arguments is too small...'
+        with pytest.warns(SmallSampleWarning, match=message):
+            res = _xp_var(xp.asarray([]))
+            ref = xp.asarray(xp.nan)
+            xp_assert_equal(res, ref)
+
+        message = "All axis-slices of one or more sample arguments..."
+        with pytest.warns(SmallSampleWarning, match=message):
+            res = _xp_var(xp.asarray([[]]), axis=1)
+            ref = xp.asarray([xp.nan])
+            xp_assert_equal(res, ref)
+
+        res = _xp_var(xp.asarray([[]]), axis=0)
+        ref = xp.asarray([])
+        xp_assert_equal(res, ref)
+
+    def test_dtype(self, xp):
+        max = xp.finfo(xp.float32).max
+        x_np = np.asarray([max, max], dtype=np.float32)
+        x_xp = xp.asarray(x_np)
+
+        # Overflow occurs for float32 input
+        with np.errstate(over='ignore'):
+            res = _xp_var(x_xp)
+            ref = np.var(x_np)
+            np.testing.assert_equal(ref, np.inf)
+            xp_assert_close(res, xp.asarray(ref))
+
+        # correct result is returned if `float64` is used
+        res = _xp_var(x_xp, dtype=xp.float64)
+        ref = xp.asarray(np.var(np.asarray(x_np, dtype=np.float64)))
+        xp_assert_close(res, ref)
+
+    def test_integer(self, xp):
+        # integer inputs are converted to the appropriate float
+        x = xp.arange(10)
+        y = xp.arange(10.)
+        xp_assert_equal(_xp_var(x), _xp_var(y))
 
 
 @array_api_compatible

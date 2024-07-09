@@ -2,6 +2,7 @@
 import numpy as np
 import scipy._lib._elementwise_iterative_method as eim
 from scipy._lib._util import _RichResult
+from scipy._lib._array_api import array_namespace
 
 _EERRORINCREASE = -1  # used in _differentiate
 
@@ -12,26 +13,19 @@ def _differentiate_iv(func, x, args, atol, rtol, maxiter, order, initial_step,
     if not callable(func):
         raise ValueError('`func` must be callable.')
 
-    # x has more complex IV that is taken care of during initialization
-    x = np.asarray(x)
-    dtype = x.dtype if np.issubdtype(x.dtype, np.inexact) else np.float64
-
     if not np.iterable(args):
         args = (args,)
 
-    if atol is None:
-        atol = np.finfo(dtype).tiny
-
-    if rtol is None:
-        rtol = np.sqrt(np.finfo(dtype).eps)
-
+    # tolerances are floats, not arrays; OK to use NumPy
     message = 'Tolerances and step parameters must be non-negative scalars.'
-    tols = np.asarray([atol, rtol, initial_step, step_factor])
-    if (not np.issubdtype(tols.dtype, np.number)
-            or np.any(tols < 0)
-            or tols.shape != (4,)):
+    tols = np.asarray([atol if atol is not None else 1,
+                       rtol if rtol is not None else 1,
+                       initial_step, step_factor])
+    if (not np.issubdtype(tols.dtype, np.number) or np.any(tols < 0)
+            or np.any(np.isnan(tols)) or tols.shape != (4,)):
         raise ValueError(message)
-    initial_step, step_factor = tols[2:].astype(dtype)
+    initial_step = float(tols[2])
+    step_factor = float(tols[3])
 
     maxiter_int = int(maxiter)
     if maxiter != maxiter_int or maxiter <= 0:
@@ -41,9 +35,8 @@ def _differentiate_iv(func, x, args, atol, rtol, maxiter, order, initial_step,
     if order_int != order or order <= 0:
         raise ValueError('`order` must be a positive integer.')
 
-    step_direction = np.sign(step_direction).astype(dtype)
-    x, step_direction = np.broadcast_arrays(x, step_direction)
-    x, step_direction = x[()], step_direction[()]
+    xp_temp = array_namespace(x)
+    x, step_direction = xp_temp.broadcast_arrays(x, xp_temp.asarray(step_direction))
 
     message = '`preserve_shape` must be True or False.'
     if preserve_shape not in {True, False}:
@@ -364,15 +357,23 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
     # reduce function calls, so let's keep it simple.
     temp = eim._initialize(func, (x,), args, preserve_shape=preserve_shape)
     func, xs, fs, args, shape, dtype, xp = temp
+
+    finfo = xp.finfo(dtype)
+    atol = finfo.smallest_normal if atol is None else atol
+    rtol = finfo.eps**0.5 if rtol is None else rtol
+
     x, f = xs[0], fs[0]
-    df = np.full_like(f, np.nan)
+    df = xp.full_like(f, xp.nan)
+
     # Ideally we'd broadcast the shape of `hdir` in `_elementwise_algo_init`, but
     # it's simpler to do it here than to generalize `_elementwise_algo_init` further.
     # `hdir` and `x` are already broadcasted in `_differentiate_iv`, so we know
     # that `hdir` can be broadcasted to the final shape.
-    hdir = np.broadcast_to(hdir, shape).flatten()
+    hdir = xp.astype(xp.sign(hdir), dtype)
+    hdir = xp.broadcast_to(hdir, shape)
+    hdir = xp.reshape(hdir, (-1,))
 
-    status = np.full_like(x, eim._EINPROGRESS, dtype=int)  # in progress
+    status = xp.full_like(x, eim._EINPROGRESS, dtype=xp.int32)  # in progress
     nit, nfev = 0, 1  # one function evaluations performed above
     # Boolean indices of left, central, right, and (all) one-sided steps
     il = hdir < 0
@@ -387,8 +388,8 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
     #   `_differentiate_weights`).
     # - `terms` (which could probably use a better name) is half the `order`,
     #   which is always even.
-    work = _RichResult(x=x, df=df, fs=f[:, np.newaxis], error=np.nan, h=h0,
-                       df_last=np.nan, error_last=np.nan, h0=h0, fac=fac,
+    work = _RichResult(x=x, df=df, fs=f[:, xp.newaxis], error=xp.nan, h=h0,
+                       df_last=xp.nan, error_last=xp.nan, h0=h0, fac=fac,
                        atol=atol, rtol=rtol, nit=nit, nfev=nfev,
                        status=status, dtype=dtype, terms=(order+1)//2,
                        hdir=hdir, il=il, ic=ic, ir=ir, io=io)
@@ -412,7 +413,7 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
         in one call to the function.
 
         For improvement:
-        - Consider measuring the step size actually taken, since `(x + h) - x`
+        - Consider measuring the step size actually taken, since ``(x + h) - x``
           is not identically equal to `h` with floating point arithmetic.
         - Adjust the step size automatically if `x` is too big to resolve the
           step.
@@ -426,22 +427,22 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
         # Note - no need to be careful about dtypes until we allocate `x_eval`
 
         if work.nit == 0:
-            hc = h / c**np.arange(n)
-            hc = np.concatenate((-hc[::-1], hc))
+            hc = h / c**xp.arange(n, dtype=work.dtype)
+            hc = xp.concat((-xp.flip(hc), hc))
         else:
-            hc = np.asarray([-h, h]) / c**(n-1)
+            hc = xp.asarray([-h, h]) / c**(n-1)
 
         if work.nit == 0:
-            hr = h / d**np.arange(2*n)
+            hr = h / d**xp.arange(2*n, dtype=work.dtype)
         else:
-            hr = np.asarray([h, h/d]) / c**(n-1)
+            hr = xp.asarray([h, h/d]) / c**(n-1)
 
         n_new = 2*n if work.nit == 0 else 2  # number of new abscissae
-        x_eval = np.zeros((len(work.hdir), n_new), dtype=work.dtype)
+        x_eval = xp.zeros((work.hdir.shape[0], n_new), dtype=work.dtype)
         il, ic, ir = work.il, work.ic, work.ir
-        x_eval[ir] = work.x[ir, np.newaxis] + hr
-        x_eval[ic] = work.x[ic, np.newaxis] + hc
-        x_eval[il] = work.x[il, np.newaxis] - hr
+        x_eval[ir] = work.x[ir][:, xp.newaxis] + hr
+        x_eval[ic] = work.x[ic][:, xp.newaxis] + hc
+        x_eval[il] = work.x[il][:, xp.newaxis] - hr
         return x_eval
 
     def post_func_eval(x, f, work):
@@ -475,27 +476,27 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
         # Central difference
         # `work_fc` is *all* the points at which the function has been evaluated
         # `fc` is the points we're using *this iteration* to produce the estimate
-        work_fc = (f[ic, :n_new], work.fs[ic, :], f[ic, -n_new:])
-        work_fc = np.concatenate(work_fc, axis=-1)
+        work_fc = (f[ic][:, :n_new], work.fs[ic], f[ic][:, -n_new:])
+        work_fc = xp.concat(work_fc, axis=-1)
         if work.nit == 0:
             fc = work_fc
         else:
             fc = (work_fc[:, :n], work_fc[:, n:n+1], work_fc[:, -n:])
-            fc = np.concatenate(fc, axis=-1)
+            fc = xp.concat(fc, axis=-1)
 
         # One-sided difference
-        work_fo = np.concatenate((work.fs[io, :], f[io, :]), axis=-1)
+        work_fo = xp.concat((work.fs[io], f[io]), axis=-1)
         if work.nit == 0:
             fo = work_fo
         else:
-            fo = np.concatenate((work_fo[:, 0:1], work_fo[:, -2*n:]), axis=-1)
+            fo = xp.concat((work_fo[:, 0:1], work_fo[:, -2*n:]), axis=-1)
 
-        work.fs = np.zeros((len(ic), work.fs.shape[-1] + 2*n_new))
+        work.fs = xp.zeros((ic.shape[0], work.fs.shape[-1] + 2*n_new), dtype=work.dtype)
         work.fs[ic] = work_fc
         work.fs[io] = work_fo
 
-        wc, wo = _differentiate_weights(work, n)
-        work.df_last = work.df.copy()
+        wc, wo = _differentiate_weights(work, n, xp)
+        work.df_last = xp.asarray(work.df, copy=True)
         work.df[ic] = fc @ wc / work.h
         work.df[io] = fo @ wo / work.h
         work.df[il] *= -1
@@ -509,19 +510,19 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
         # we could use Richarson extrapolation to produce an error estimate that
         # is one order higher, and take the difference between that and
         # `work.df` (which would just be constant factor that depends on `fac`.)
-        work.error = abs(work.df - work.df_last)
+        work.error = xp.abs(work.df - work.df_last)
 
     def check_termination(work):
         """Terminate due to convergence, non-finite values, or error increase"""
-        stop = np.zeros_like(work.df).astype(bool)
+        stop = xp.astype(xp.zeros_like(work.df), xp.bool)
 
         i = work.error < work.atol + work.rtol*abs(work.df)
         work.status[i] = eim._ECONVERGED
         stop[i] = True
 
         if work.nit > 0:
-            i = ~((np.isfinite(work.x) & np.isfinite(work.df)) | stop)
-            work.df[i], work.status[i] = np.nan, eim._EVALUEERR
+            i = ~((xp.isfinite(work.x) & xp.isfinite(work.df)) | stop)
+            work.df[i], work.status[i] = xp.nan, eim._EVALUEERR
             stop[i] = True
 
         # With infinite precision, there is a step size below which
@@ -549,7 +550,7 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
                      xp, preserve_shape)
 
 
-def _differentiate_weights(work, n):
+def _differentiate_weights(work, n, xp):
     # This produces the weights of the finite difference formula for a given
     # stencil. In experiments, use of a second-order central difference formula
     # with Richardson extrapolation was more accurate numerically, but it was
@@ -613,7 +614,7 @@ def _differentiate_weights(work, n):
     # `x` and `args` in single precision. `fac` gets converted to single
     # precision, but we should always use double precision for the intermediate
     # calculations here to avoid additional error in the weights.
-    fac = work.fac.astype(np.float64)
+    fac = float(work.fac)
 
     # Note that if the user switches back to floating point precision with
     # `x` and `args`, then `fac` will not necessarily equal the (lower
@@ -628,6 +629,7 @@ def _differentiate_weights(work, n):
     if len(_differentiate_weights.central) != 2*n + 1:
         # Central difference weights. Consider refactoring this; it could
         # probably be more compact.
+        # Note: Using NumPy here is OK; we convert to xp-type at the end
         i = np.arange(-n, n + 1)
         p = np.abs(i) - 1.  # center point has power `p` -1, but sign `s` is 0
         s = np.sign(i)
@@ -662,8 +664,8 @@ def _differentiate_weights(work, n):
 
         _differentiate_weights.right = weights
 
-    return (_differentiate_weights.central.astype(work.dtype, copy=False),
-            _differentiate_weights.right.astype(work.dtype, copy=False))
+    return (xp.asarray(_differentiate_weights.central, dtype=work.dtype),
+            xp.asarray(_differentiate_weights.right, dtype=work.dtype))
 _differentiate_weights.central = []
 _differentiate_weights.right = []
 _differentiate_weights.fac = None

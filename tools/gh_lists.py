@@ -46,17 +46,31 @@ def main():
         print("-"*len(title))
         print()
 
+        def backtick_repl(matchobj):
+            if matchobj.group(2) != ' ':
+                post = '\ ' + matchobj.group(2)
+            else:
+                post = matchobj.group(2)
+            return '``' + matchobj.group(1) + '``' + post
+
         for issue in items:
             msg = "* `#{0} <{1}>`__: {2}"
             # sanitize whitespace, `, and *
             title = re.sub("\\s+", " ", issue.title.strip())
-            title = title.replace('`', '\\`').replace('*', '\\*')
+            title = re.sub("([^`]|^)`([^`]|$)", "\g<1>``\g<2>", title)
+            title = re.sub("``(.*?)``(.)", backtick_repl, title)
+            title = title.replace('*', '\\*')
             if len(title) > 60:
                 remainder = re.sub("\\s.*$", "...", title[60:])
                 if len(remainder) > 20:
-                    remainder = title[:80] + "..."
+                    # this was previously bugged,
+                    # assigning to `remainder` rather than `title`
+                    title = title[:80] + "..."
                 else:
                     title = title[:60] + remainder
+                if title.count('`') % 4 != 0:
+                    # ellipses have cut in the middle of a code block
+                    title = title[:-3] + '``...'
             msg = msg.format(issue.id, issue.url, title)
             print(msg)
         print()

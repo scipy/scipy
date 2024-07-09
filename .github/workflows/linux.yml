@@ -26,7 +26,7 @@ jobs:
     uses: ./.github/workflows/commit_message.yml
 
   test_meson:
-    name: mypy (py3.10) & dev deps (py3.12), fast, dev.py
+    name: mypy (py3.10) & dev deps (py3.13), fast, dev.py
     needs: get_commit_message
     # If using act to run CI locally the github object does not exist and
     # the usual skipping should not be enforced
@@ -36,7 +36,7 @@ jobs:
     runs-on: ubuntu-22.04
     strategy:
       matrix:
-        python-version: ['3.10', '3.12'] # this run will use python dev versions when available
+        python-version: ['3.10', '3.13-dev'] # this run will use python dev versions when available
         maintenance-branch:
           - ${{ contains(github.ref, 'maintenance/') || contains(github.base_ref, 'maintenance/') }}
         exclude:
@@ -54,6 +54,7 @@ jobs:
         python-version: ${{ matrix.python-version }}
         cache: 'pip'
         cache-dependency-path: 'environment.yml'
+        allow-prereleases: true
 
     - name: Install Ubuntu dependencies
       run: |
@@ -67,7 +68,7 @@ jobs:
         python -m pip install numpy cython pytest pytest-xdist pytest-timeout pybind11 mpmath gmpy2 pythran ninja meson click rich-click doit pydevtool pooch hypothesis
 
     - name: Install Python packages from repositories
-      if: matrix.python-version == '3.12' # this run will use python dev versions when available
+      if: matrix.python-version == '3.13-dev' # this run will use python dev versions when available
       run: |
         python -m pip install git+https://github.com/numpy/numpy.git
         python -m pip install ninja cython pytest pybind11 pytest-xdist pytest-timeout click rich-click doit pydevtool pooch hypothesis "setuptools<67.3"
@@ -317,10 +318,7 @@ jobs:
     - name: Install Python packages
       run: |
         python -m pip install cython pythran ninja meson-python pybind11 click rich_click pydevtool
-        # Note: matplotlib not installed here to avoid issues around numpy 2.0
-        # (it can be put back after matplotlib has made a 2.0-compatible
-        # release on PyPI.
-        python -m pip install --pre --upgrade pytest pytest-cov pytest-xdist mpmath gmpy2 threadpoolctl pooch hypothesis
+        python -m pip install --pre --upgrade pytest pytest-cov pytest-xdist mpmath gmpy2 threadpoolctl pooch hypothesis matplotlib
         python -m pip install -r requirements/openblas.txt
         # Install numpy last, to ensure we get nightly (avoid possible <2.0 constraints).
         python -m pip install --pre --upgrade --timeout=60 -i https://pypi.anaconda.org/scientific-python-nightly-wheels/simple numpy
@@ -471,13 +469,9 @@ jobs:
     - name: Install pre-release pip
       run: |
         pip install -U --pre pip
-    # TODO: remove cython nightly install when cython does a release
-    - name: Install nightly Cython
+    - name: Install nightly NumPy and Cython
       run: |
-        pip install git+https://github.com/cython/cython
-    - name: Install nightly NumPy
-      run: |
-        pip install -i https://pypi.anaconda.org/scientific-python-nightly-wheels/simple numpy
+        pip install -i https://pypi.anaconda.org/scientific-python-nightly-wheels/simple cython numpy
     - name: Install Python dependencies
       run: |
         pip install git+https://github.com/serge-sans-paille/pythran

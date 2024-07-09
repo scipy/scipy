@@ -289,7 +289,7 @@ class Data:
         if attr in self.meta:
             return self.meta[attr]
         else:
-            raise AttributeError("'%s' not in metadata" % attr)
+            raise AttributeError(f"'{attr}' not in metadata")
 
 
 class RealData(Data):
@@ -417,7 +417,7 @@ class RealData(Data):
             if attr in self.meta:
                 return self.meta[attr]
             else:
-                raise AttributeError("'%s' not in metadata" % attr)
+                raise AttributeError(f"'{attr}' not in metadata")
         else:
             func, arg = lookup_tbl[(attr, self._ga_flags[attr])]
 
@@ -492,14 +492,14 @@ class Model:
         i.e. ``beta = array([B_1, B_2, ..., B_p])``
     `fjacb`
         if the response variable is multi-dimensional, then the
-        return array's shape is `(q, p, n)` such that ``fjacb(x,beta)[l,k,i] =
-        d f_l(X,B)/d B_k`` evaluated at the ith data point.  If `q == 1`, then
-        the return array is only rank-2 and with shape `(p, n)`.
+        return array's shape is ``(q, p, n)`` such that ``fjacb(x,beta)[l,k,i] =
+        d f_l(X,B)/d B_k`` evaluated at the ith data point.  If ``q == 1``, then
+        the return array is only rank-2 and with shape ``(p, n)``.
     `fjacd`
-        as with fjacb, only the return array's shape is `(q, m, n)`
+        as with fjacb, only the return array's shape is ``(q, m, n)``
         such that ``fjacd(x,beta)[l,j,i] = d f_l(X,B)/d X_j`` at the ith data
-        point.  If `q == 1`, then the return array's shape is `(m, n)`. If
-        `m == 1`, the shape is (q, n). If `m == q == 1`, the shape is `(n,)`.
+        point.  If ``q == 1``, then the return array's shape is ``(m, n)``. If
+        ``m == 1``, the shape is (q, n). If `m == q == 1`, the shape is ``(n,)``.
 
     """
 
@@ -536,7 +536,7 @@ class Model:
         if attr in self.meta:
             return self.meta[attr]
         else:
-            raise AttributeError("'%s' not in metadata" % attr)
+            raise AttributeError(f"'{attr}' not in metadata")
 
 
 class Output:
@@ -614,7 +614,7 @@ class Output:
             print('Inverse Condition #:', self.inv_condnum)
             print('Reason(s) for Halting:')
             for r in self.stopreason:
-                print('  %s' % r)
+                print(f'  {r}')
 
 
 class ODR:
@@ -849,24 +849,24 @@ class ODR:
         if res.shape not in fcn_perms:
             print(res.shape)
             print(fcn_perms)
-            raise OdrError("fcn does not output %s-shaped array" % y_s)
+            raise OdrError(f"fcn does not output {y_s}-shaped array")
 
         if self.model.fjacd is not None:
             res = self.model.fjacd(*arglist)
             if res.shape not in fjacd_perms:
                 raise OdrError(
-                    "fjacd does not output %s-shaped array" % repr((q, m, n)))
+                    f"fjacd does not output {repr((q, m, n))}-shaped array")
         if self.model.fjacb is not None:
             res = self.model.fjacb(*arglist)
             if res.shape not in fjacb_perms:
                 raise OdrError(
-                    "fjacb does not output %s-shaped array" % repr((q, p, n)))
+                    f"fjacb does not output {repr((q, p, n))}-shaped array")
 
         # check shape of delta0
 
         if self.delta0 is not None and self.delta0.shape != self.data.x.shape:
             raise OdrError(
-                "delta0 is not a %s-shaped array" % repr(self.data.x.shape))
+                f"delta0 is not a {repr(self.data.x.shape)}-shaped array")
 
         if self.data.x.size == 0:
             warn("Empty data detected for ODR instance. "

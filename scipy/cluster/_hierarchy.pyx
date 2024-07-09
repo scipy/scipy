@@ -84,7 +84,7 @@ def cluster_dist(const double[:, :] Z, int[:] T, double cutoff, int n):
         The linkage matrix.
     T : ndarray
         The array to store the cluster numbers. The i'th observation belongs to
-        cluster `T[i]`.
+        cluster ``T[i]``.
     cutoff : double
         Clusters are formed when distances are less than or equal to `cutoff`.
     n : int
@@ -107,7 +107,7 @@ def cluster_in(const double[:, :] Z, const double[:, :] R, int[:] T, double cuto
         The inconsistent matrix.
     T : ndarray
         The array to store the cluster numbers. The i'th observation belongs to
-        cluster `T[i]`.
+        cluster ``T[i]``.
     cutoff : double
         Clusters are formed when the inconsistent values are less than or
         or equal to `cutoff`.
@@ -129,7 +129,7 @@ def cluster_maxclust_dist(const double[:, :] Z, int[:] T, int n, int mc):
         The linkage matrix.
     T : ndarray
         The array to store the cluster numbers. The i'th observation belongs to
-        cluster `T[i]`.
+        cluster ``T[i]``.
     n : int
         The number of observations.
     mc : int
@@ -154,7 +154,7 @@ cpdef void cluster_maxclust_monocrit(const double[:, :] Z, const double[:] MC, i
         The monotonic criterion array.
     T : ndarray
         The array to store the cluster numbers. The i'th observation belongs to
-        cluster `T[i]`.
+        cluster ``T[i]``.
     n : int
         The number of observations.
     max_nc : int
@@ -240,7 +240,7 @@ cpdef void cluster_monocrit(const double[:, :] Z, const double[:] MC, int[:] T,
         The monotonic criterion array.
     T : ndarray
         The array to store the cluster numbers. The i'th observation belongs to
-        cluster `T[i]`.
+        cluster ``T[i]``.
     cutoff : double
         Clusters are formed when the MC values are less than or equal to
         `cutoff`.
@@ -768,6 +768,12 @@ cdef Pair find_min_dist(int n, double[:] D, int[:] size, int x):
         if dist < current_min:
             current_min = dist
             y = i
+
+    if y == -1:
+        raise ValueError(
+            "find_min_dist cannot find any neighbors closer than inf away. "
+            "Check that distances contain no negative/infinite/NaN entries. "
+        )
 
     return Pair(y, current_min)
 
