@@ -509,7 +509,7 @@ class _minmax_mixin:
 
         By default, implicit zero elements are taken into account. If there are
         several minimum values, the index of the first occurrence is returned.
-        If `explicit` is set, only stored elements will be considered.
+        If `explicit` is set, only explicitly stored elements will be considered.
 
         Parameters
         ----------
@@ -523,9 +523,9 @@ class _minmax_mixin:
             the default value, as this argument is not used.
 
         explicit : {False, True} optional (default: False)
-            When set to True, only the stored elements will be considered.
-            If a row/column is empty, the sparse.coo_array returned
-            has no stored element (i.e. an implicit zero) for that row/column.
+            When set to True, only explicitly stored elements will be considered.
+            If axis is not None and a row/column has no stored elements, argmax
+            is undefined, so the index ``0`` is returned for that row/column.
 
             .. versionadded:: 1.15.0
 
@@ -541,7 +541,7 @@ class _minmax_mixin:
 
         By default, implicit zero elements are taken into account. If there are
         several minimum values, the index of the first occurrence is returned.
-        If `explicit` is set, only stored elements will be considered.
+        If `explicit` is set, only explicitly stored elements will be considered.
 
         Parameters
         ----------
@@ -555,9 +555,9 @@ class _minmax_mixin:
             the default value, as this argument is not used.
 
         explicit : {False, True} optional (default: False)
-            When set to True, only the stored elements will be considered.
-            If a row/column is empty, the sparse.coo_array returned
-            has no stored element (i.e. an implicit zero) for that row/column.
+            When set to True, only explicitly stored elements will be considered.
+            If axis is not None and a row/column has no stored elements, argmin
+            is undefined, so the index ``0`` is returned for that row/column.
 
             .. versionadded:: 1.15.0
 
