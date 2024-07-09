@@ -329,7 +329,12 @@ template <typename NormPolicy, typename T, typename... OutputVals, typename Func
 void assoc_legendre_p_for_each_m_abs_m(
     NormPolicy norm, int m, T z, int branch_cut, std::tuple<OutputVals (&)[2]...> res, Func f
 ) {
-    bool m_signbit = std::signbit(m);
+    bool m_signbit;
+    if (m < 0) {
+        m_signbit = true;
+    } else {
+        m_signbit = false;
+    }
 
     assoc_legendre_p_initializer_m_abs_m<T, NormPolicy> init_m_abs_m{m_signbit, z, branch_cut};
     init_m_abs_m(res);
@@ -785,7 +790,12 @@ struct sph_legendre_p_recurrence_m_abs_m {
 
 template <typename T, typename... OutputVals, typename Func>
 void sph_legendre_p_for_each_m_abs_m(int m, T theta, std::tuple<OutputVals (&)[2]...> res, Func f) {
-    bool m_signbit = std::signbit(m);
+    bool m_signbit;
+    if (m < 0) {
+        m_signbit = true;
+    } else {
+        m_signbit = false;
+    }
 
     sph_legendre_p_initializer_m_abs_m<T> init_m_abs_m{m_signbit, theta};
     init_m_abs_m(res);
