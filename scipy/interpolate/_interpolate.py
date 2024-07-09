@@ -1,7 +1,6 @@
 __all__ = ['interp1d', 'interp2d', 'lagrange', 'PPoly', 'BPoly', 'NdPPoly']
 
 from math import prod
-import threading
 
 import numpy as np
 from numpy import array, asarray, intp, poly1d, searchsorted
@@ -574,12 +573,11 @@ class interp1d(_Interpolator1D):
 
 class _PPolyBase:
     """Base class for piecewise polynomials."""
-    __slots__ = ('c', 'x', 'extrapolate', 'axis', '_c_lock')
+    __slots__ = ('c', 'x', 'extrapolate', 'axis')
 
     def __init__(self, c, x, extrapolate=None, axis=0):
         self.c = np.asarray(c)
         self.x = np.ascontiguousarray(x, dtype=np.float64)
-        self._c_lock = threading.RLock()
 
         if extrapolate is None:
             extrapolate = True
@@ -643,7 +641,6 @@ class _PPolyBase:
         self.c = c
         self.x = x
         self.axis = axis
-        self._c_lock = threading.RLock()
         if extrapolate is None:
             extrapolate = True
         self.extrapolate = extrapolate
@@ -657,8 +654,7 @@ class _PPolyBase:
         if not self.x.flags.c_contiguous:
             self.x = self.x.copy()
         if not self.c.flags.c_contiguous:
-            with self._c_lock:
-                self.c = self.c.copy()
+            self.c = self.c.copy()
 
     def extend(self, c, x):
         """
@@ -674,6 +670,12 @@ class _PPolyBase:
             Additional breakpoints. Must be sorted in the same order as
             ``self.x`` and either to the right or to the left of the current
             breakpoints.
+
+        Notes
+        -----
+        This method is not thread safe and must not be executed concurrently
+        with other methods available in this class. Doing so may cause
+        unexpected errors or numerical output mismatches.
         """
 
         c = np.asarray(c)
@@ -693,52 +695,51 @@ class _PPolyBase:
         if c.size == 0:
             return
 
-        with self._c_lock:
-            dx = np.diff(x)
-            if not (np.all(dx >= 0) or np.all(dx <= 0)):
-                raise ValueError("`x` is not sorted.")
+        dx = np.diff(x)
+        if not (np.all(dx >= 0) or np.all(dx <= 0)):
+            raise ValueError("`x` is not sorted.")
 
-            if self.x[-1] >= self.x[0]:
-                if not x[-1] >= x[0]:
-                    raise ValueError("`x` is in the different order "
-                                    "than `self.x`.")
+        if self.x[-1] >= self.x[0]:
+            if not x[-1] >= x[0]:
+                raise ValueError("`x` is in the different order "
+                                "than `self.x`.")
 
-                if x[0] >= self.x[-1]:
-                    action = 'append'
-                elif x[-1] <= self.x[0]:
-                    action = 'prepend'
-                else:
-                    raise ValueError("`x` is neither on the left or on the right "
-                                    "from `self.x`.")
+            if x[0] >= self.x[-1]:
+                action = 'append'
+            elif x[-1] <= self.x[0]:
+                action = 'prepend'
             else:
-                if not x[-1] <= x[0]:
-                    raise ValueError("`x` is in the different order "
-                                    "than `self.x`.")
+                raise ValueError("`x` is neither on the left or on the right "
+                                "from `self.x`.")
+        else:
+            if not x[-1] <= x[0]:
+                raise ValueError("`x` is in the different order "
+                                "than `self.x`.")
 
-                if x[0] <= self.x[-1]:
-                    action = 'append'
-                elif x[-1] >= self.x[0]:
-                    action = 'prepend'
-                else:
-                    raise ValueError("`x` is neither on the left or on the right "
-                                    "from `self.x`.")
+            if x[0] <= self.x[-1]:
+                action = 'append'
+            elif x[-1] >= self.x[0]:
+                action = 'prepend'
+            else:
+                raise ValueError("`x` is neither on the left or on the right "
+                                "from `self.x`.")
 
-            dtype = self._get_dtype(c.dtype)
+        dtype = self._get_dtype(c.dtype)
 
-            k2 = max(c.shape[0], self.c.shape[0])
-            c2 = np.zeros((k2, self.c.shape[1] + c.shape[1]) + self.c.shape[2:],
-                        dtype=dtype)
+        k2 = max(c.shape[0], self.c.shape[0])
+        c2 = np.zeros((k2, self.c.shape[1] + c.shape[1]) + self.c.shape[2:],
+                    dtype=dtype)
 
-            if action == 'append':
-                c2[k2-self.c.shape[0]:, :self.c.shape[1]] = self.c
-                c2[k2-c.shape[0]:, self.c.shape[1]:] = c
-                self.x = np.r_[self.x, x]
-            elif action == 'prepend':
-                c2[k2-self.c.shape[0]:, :c.shape[1]] = c
-                c2[k2-c.shape[0]:, c.shape[1]:] = self.c
-                self.x = np.r_[x, self.x]
+        if action == 'append':
+            c2[k2-self.c.shape[0]:, :self.c.shape[1]] = self.c
+            c2[k2-c.shape[0]:, self.c.shape[1]:] = c
+            self.x = np.r_[self.x, x]
+        elif action == 'prepend':
+            c2[k2-self.c.shape[0]:, :c.shape[1]] = c
+            c2[k2-c.shape[0]:, c.shape[1]:] = self.c
+            self.x = np.r_[x, self.x]
 
-            self.c = c2
+        self.c = c2
 
     def __call__(self, x, nu=0, extrapolate=None):
         """
@@ -781,9 +782,6 @@ class _PPolyBase:
         if extrapolate == 'periodic':
             x = self.x[0] + (x - self.x[0]) % (self.x[-1] - self.x[0])
             extrapolate = False
-
-        with self._c_lock:
-            pass
 
         out = np.empty((len(x), prod(self.c.shape[2:])), dtype=self.c.dtype)
         self._ensure_c_contiguous()
@@ -888,9 +886,6 @@ class PPoly(_PPolyBase):
         if nu < 0:
             return self.antiderivative(-nu)
 
-        with self._c_lock:
-            pass
-
         # reduce order
         if nu == 0:
             c2 = self.c.copy()
@@ -940,9 +935,6 @@ class PPoly(_PPolyBase):
         """
         if nu <= 0:
             return self.derivative(-nu)
-
-        with self._c_lock:
-            pass
 
         c = np.zeros((self.c.shape[0] + nu, self.c.shape[1]) + self.c.shape[2:],
                      dtype=self.c.dtype)
@@ -997,9 +989,6 @@ class PPoly(_PPolyBase):
 
         range_int = np.empty((prod(self.c.shape[2:]),), dtype=self.c.dtype)
         self._ensure_c_contiguous()
-
-        with self._c_lock:
-            pass
 
         # Compute the integral.
         if extrapolate == 'periodic':
@@ -1103,9 +1092,6 @@ class PPoly(_PPolyBase):
             extrapolate = self.extrapolate
 
         self._ensure_c_contiguous()
-
-        with self._c_lock:
-            pass
 
         if np.issubdtype(self.c.dtype, np.complexfloating):
             raise ValueError("Root finding is only for "
@@ -1361,9 +1347,6 @@ class BPoly(_PPolyBase):
     """  # noqa: E501
 
     def _evaluate(self, x, nu, extrapolate, out):
-        with self._c_lock:
-            pass
-
         _ppoly.evaluate_bernstein(
             self.c.reshape(self.c.shape[0], self.c.shape[1], -1),
             self.x, x, nu, bool(extrapolate), out)
@@ -1393,9 +1376,6 @@ class BPoly(_PPolyBase):
             for k in range(nu):
                 bp = bp.derivative()
             return bp
-
-        with self._c_lock:
-            pass
 
         # reduce order
         if nu == 0:
@@ -1455,9 +1435,6 @@ class BPoly(_PPolyBase):
             for k in range(nu):
                 bp = bp.antiderivative()
             return bp
-
-        with self._c_lock:
-            pass
 
         # Construct the indefinite integrals on individual intervals
         c, x = self.c, self.x
@@ -1549,10 +1526,9 @@ class BPoly(_PPolyBase):
 
     def extend(self, c, x):
         k = max(self.c.shape[0], c.shape[0])
-        with self._c_lock:
-            self.c = self._raise_degree(self.c, k - self.c.shape[0])
-            c = self._raise_degree(c, k - c.shape[0])
-            return _PPolyBase.extend(self, c, x)
+        self.c = self._raise_degree(self.c, k - self.c.shape[0])
+        c = self._raise_degree(c, k - c.shape[0])
+        return _PPolyBase.extend(self, c, x)
     extend.__doc__ = _PPolyBase.extend.__doc__
 
     @classmethod

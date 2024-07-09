@@ -330,6 +330,11 @@ def _run_concurrent_barrier(n_workers, fn, *args, **kwargs):
     """
     Run a given function concurrently across a given number of threads.
 
+    This is equivalent to using a ThreadPoolExecutor, but using the threading
+    primitives instead. This function ensures that the closure passed by
+    parameter gets called concurrently by setting up a barrier before it gets
+    called before any of the threads.
+
     Arguments
     ---------
     n_workers: int
