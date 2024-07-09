@@ -112,6 +112,68 @@ void coo_todense(const I n_row,
 }
 
 
+template <class I, class T>
+void coo_todense3d(const I n_depth,
+                 const I n_row,
+                 const I n_col,
+                 const npy_int64 nnz,
+                 const I Ak[],
+                 const I Ai[],
+                 const I Aj[],
+                 const T Ax[],
+                       T Bx[],
+                 const int fortran)
+{
+    if (!fortran) {
+        for(npy_int64 n = 0; n < nnz; n++){
+            Bx[ (npy_intp)n_row * n_col * Ak[n] + n_col * Ai[n] + Aj[n] ] += Ax[n];
+        }
+    }
+    else {
+        for(npy_int64 n = 0; n < nnz; n++){
+            Bx[ (npy_intp)n_row * n_depth * Aj[n] + n_depth * Ai[n] + Ak[n] ] += Ax[n];
+        }
+    }
+}
+
+
+template <class I, class T>
+void coo_todense_nd(const I D[],        // array of dimension sizes
+                    const npy_int64 nnz,
+                    const npy_int64 num_dims,
+                    const I A[],
+                    const T Ax[],       // array of data
+                          T Bx[],       // dense matrix to be filled
+                    const int fortran)
+{
+
+    if (!fortran) {
+        for(npy_int64 n = 0; n < nnz; n++) {
+            npy_intp index = 0;
+            npy_intp stride = 1;
+            
+            for(npy_int64 d = num_dims - 1; d >= 0; d--) {
+                index += A[d * nnz + n] * stride;
+                stride *= D[d];
+            }
+            Bx[index] += Ax[n];
+        }
+    }
+    else {
+        for(npy_int64 n = 0; n < nnz; n++) {
+            npy_intp index = 0;
+            npy_intp stride = 1;
+            
+            for(npy_int64 d = 0; d < num_dims; d++) {
+                index += A[d * nnz + n] * stride;
+                stride *= D[d];
+            }
+            Bx[index] += Ax[n];
+        }
+    }
+}
+
+
 /*
  * Compute Y += A*X for COO matrix A and dense vectors X,Y
  *
