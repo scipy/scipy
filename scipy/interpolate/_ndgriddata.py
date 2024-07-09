@@ -178,7 +178,8 @@ class NearestNDInterpolator(NDInterpolatorBase):
             if weights == 'uniform' and dist.ndim > 1:
                 interp_values = np.average(self.values[i], axis=1)
             elif weights == 'distance' and dist.ndim > 1:
-                interp_values = np.average(self.values[i], axis=1, weights=(1 - (dist / np.max(dist))))
+                power = 2
+                interp_values = np.average(self.values[i], axis=1, weights=( 1.0 / (dist ** power) ))
             else:
                 raise ValueError("Unknown value %r passed for weights,"
                                 "must be either 'uniform' or 'distance'" % (weights))
