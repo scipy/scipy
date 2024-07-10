@@ -78,7 +78,7 @@ def _compliance_scipy(arrays: list[ArrayLike]) -> list[Array]:
             raise TypeError("Inputs of type `numpy.ma.MaskedArray` are not supported.")
         elif isinstance(array, np.matrix):
             raise TypeError("Inputs of type `numpy.matrix` are not supported.")
-        if isinstance(array, (np.ndarray, np.generic)):
+        if isinstance(array, np.ndarray | np.generic):
             dtype = array.dtype
             if not (np.issubdtype(dtype, np.number) or np.issubdtype(dtype, np.bool_)):
                 raise TypeError(f"An argument has dtype `{dtype!r}`; "
@@ -573,7 +573,7 @@ def xp_take_along_axis(arr: Array,
 
 
 # utility to broadcast arrays and promote to common dtype
-def xp_broadcast_promote(*args, ensure_writeable=False, xp=None):
+def xp_broadcast_promote(*args, ensure_writeable=False, force_floating=False, xp=None):
     xp = array_namespace(*args) if xp is None else xp
 
     args = [(xp.asarray(arg) if arg is not None else arg) for arg in args]
@@ -582,7 +582,8 @@ def xp_broadcast_promote(*args, ensure_writeable=False, xp=None):
     # determine minimum dtype
     dtypes = [arg.dtype for arg in args_not_none
               if not xp.isdtype(arg.dtype, 'integral')]
-    dtypes.append(xp.asarray(1.).dtype)
+    if force_floating:
+        dtypes.append(xp.asarray(1.).dtype)
     dtype = xp.result_type(*dtypes)
 
     # determine result shape

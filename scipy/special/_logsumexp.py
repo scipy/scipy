@@ -2,7 +2,7 @@ import numpy as np
 from scipy._lib._util import _asarray_validated
 from scipy._lib._array_api import (
     array_namespace,
-    size as xp_size,
+    xp_size,
     xp_broadcast_promote,
 )
 
@@ -99,7 +99,7 @@ def logsumexp(a, axis=None, b=None, keepdims=False, return_sign=False):
 
     """
     xp = array_namespace(a, b)
-    a, b = xp_broadcast_promote(a, b, ensure_writeable=True, xp=xp)
+    a, b = xp_broadcast_promote(a, b, ensure_writeable=True, force_floating=True, xp=xp)
     axis = tuple(range(a.ndim)) if axis is None else axis
 
     if b is not None:
