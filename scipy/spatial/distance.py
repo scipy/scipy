@@ -634,7 +634,7 @@ def correlation(u, v, w=None, centered=True):
         message = (
             "Complex `u` and `v` are deprecated and will raise an error in "
             "SciPy 1.17.0.")
-        warnings.warn(message, DeprecationWarning, stacklevel=1)
+        warnings.warn(message, DeprecationWarning, stacklevel=2)
     if w is not None:
         w = _validate_weights(w)
         w = w / w.sum()
