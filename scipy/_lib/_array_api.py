@@ -561,3 +561,40 @@ def xp_take_along_axis(arr: Array,
         raise NotImplementedError("Array API standard does not define take_along_axis")
     else:
         return xp.take_along_axis(arr, indices, axis)
+
+
+# utility to broadcast arrays and promote to common dtype
+def xp_broadcast_promote(*args, ensure_writeable=False, xp=None):
+    xp = array_namespace(*args) if xp is None else xp
+
+    args = [(xp.asarray(arg) if arg is not None else arg) for arg in args]
+    args_not_none = [arg for arg in args if arg is not None]
+
+    # determine minimum dtype
+    dtypes = [arg.dtype for arg in args_not_none
+              if not xp.isdtype(arg.dtype, 'integral')]
+    dtypes.append(xp.asarray(1.).dtype)
+    dtype = xp.result_type(*dtypes)
+
+    # determine result shape
+    shapes = {arg.shape for arg in args_not_none}
+    shape = np.broadcast_shapes(*shapes) if len(shapes) != 1 else args_not_none[0].shape
+
+    out = []
+    for arg in args:
+        if arg is None:
+            out.append(arg)
+            continue
+
+        # broadcast only if needed
+        # Even if two arguments need broadcasting, this is faster than
+        # `broadcast_arrays`, especially since we've already determined `shape`
+        if arg.shape != shape:
+            arg = xp.broadcast_to(arg, shape)
+
+        # convert dtype/copy only if needed
+        if (arg.dtype != dtype) or ensure_writeable:
+            arg = xp.astype(arg, dtype, copy=True)
+        out.append(arg)
+
+    return out
