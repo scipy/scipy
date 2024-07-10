@@ -157,7 +157,8 @@ def find_active_events(g, g_new, direction):
 
 
 def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
-              events=None, vectorized=False, args=None, **options):
+              events=None, vectorized=False, args=None, catch_exceptions=False,
+              **options):
     """Solve an initial value problem for a system of ODEs.
 
     This function numerically integrates a system of ordinary differential
@@ -294,6 +295,15 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
         So if, for example, `fun` has the signature ``fun(t, y, a, b, c)``,
         then `jac` (if given) and any event functions must have the same
         signature, and `args` must be a tuple of length 3.
+    catch_exceptions : bool, optional
+        Whether to catch exceptions raised during calls to ``solver.step()``. 
+        Default is False.
+
+        If `catch_exceptions` is True, then any exceptions raised during a
+        step of the solver will be caught. The output `status` will be set to
+        -2, and the exception will be included in the termination message.
+        By setting ``catch_exceptions=True``, this function will return
+        the solution up until the time when the exception was raised.
     **options
         Options passed to a chosen solver. All options available for already
         implemented solvers are listed below.
@@ -358,15 +368,6 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
     min_step : float, optional
         The minimum allowed step size for 'LSODA' method.
         By default `min_step` is zero.
-    catch_exceptions : bool, optional
-        Whether to catch exceptions raised during calls to `solver.step()`. 
-        Default is False.
-
-        If ``catch_exceptions`` is True, then any exceptions raised during a
-        step of the solver will be caught instead of raised. The output `status`
-        will be set to -2, and the exception will be included in the termination
-        message. By setting ``catch_exceptions=True``, this function will return
-        the solution up until the time when the exception was raised.
 
     Returns
     -------
@@ -393,7 +394,7 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
     status : int
         Reason for algorithm termination:
         
-            * -2: Other exception occured during integration step, and was caught.
+            * -2: Exception occured during integration step, and was caught.
             * -1: Integration step failed.
             *  0: The solver successfully reached the end of `tspan`.
             *  1: A termination event occurred.
@@ -665,8 +666,8 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
         try:
             message = solver.step()
         except Exception as e:
-            if options.get('catch_exceptions', False):
-                solver.status = 'other_exception'
+            if catch_exceptions:
+                solver.status = 'exception_caught'
                 status = -2
                 message = f'Solver stopped with exception: {e}'
             else:
