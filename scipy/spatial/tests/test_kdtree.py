@@ -468,6 +468,35 @@ def test_concurrent_access(kdtree_type):
         worker.join()
 
 
+def test_tree_concurrent_access(kdtree_type):
+    barrier = threading.Barrier(10)
+    rng = np.random.default_rng(0)
+    n = 10000
+    k = 2
+    points = rng.random((n, k))
+    T = kdtree_type(points)
+    tree_ids = []
+
+    def closure():
+        barrier.wait()
+        tree_ids.append(id(T.tree))
+
+    workers = []
+    for _ in range(0, 10):
+        workers.append(threading.Thread(target=closure))
+
+    for worker in workers:
+        worker.start()
+
+    for worker in workers:
+        worker.join()
+
+    prev_id = tree_ids[0]
+    for i in range(1, 10):
+        assert prev_id == tree_ids[i]
+        prev_id = tree_ids[i]
+
+
 class two_trees_consistency:
 
     def distance(self, a, b, p):
