@@ -584,14 +584,18 @@ class _coo_base(_data_matrix, _minmax_mixin):
         return self._container(result, copy=False)
     
 
-    # def _add_sparse(self, other):
-    #     if other.shape != self.shape:
-    #         raise ValueError(f'Incompatible shapes ({self.shape} and {other.shape})')
-    #     other = self.__class__(other)
-    #     new_data = np.concatenate((self.data, other.data))
-    #     new_coords = np.concatenate((self.coords, other.coords), axis=1)
-    #     A = coo_array((new_data, new_coords), shape=self.shape)
-    #     return A
+    def _add_sparse(self, other):
+        if other.shape != self.shape:
+            raise ValueError(f'Incompatible shapes ({self.shape} and {other.shape})')
+        other = self.__class__(other)
+        # maxshape = max(self.shape) + max(other.shape)
+        # idx_dtype = self._get_index_dtype((self.coords),
+        #                                     maxval=maxshape,
+        #                                     check_contents=True)
+        new_data = np.concatenate((self.data, other.data))
+        new_coords = tuple(np.concatenate((self.coords, other.coords), axis=1))
+        A = self.__class__((new_data, new_coords), shape=self.shape)         
+        return A
 
     
     def _sub_sparse(self, other):
