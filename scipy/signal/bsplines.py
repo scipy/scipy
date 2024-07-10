@@ -17,5 +17,5 @@ def __dir__():
 
 def __getattr__(name):
     return _sub_module_deprecation(sub_package="signal", module="bsplines",
-                                   private_modules=["_bsplines"], all=__all__,
+                                   private_modules=["_spline_filters"], all=__all__,
                                    attribute=name)

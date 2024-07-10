@@ -192,6 +192,15 @@ py3.extension_module('_bglu_dense',
   subdir: 'scipy/optimize'
 )
 
+py3.extension_module('_cython_nnls',
+  opt_gen.process('_cython_nnls.pyx'),
+  c_args: cython_c_args,
+  dependencies: np_dep,
+  link_args: version_link_args,
+  install: true,
+  subdir: 'scipy/optimize'
+)
+
 subdir('_lsq')
 subdir('_trlib')
 subdir('_trustregion_constr')
@@ -215,7 +224,6 @@ py3.install_sources([
   '_constraints.py',
   '_differentiable_functions.py',
   '_differentialevolution.py',
-  '_differentiate.py',
   '_direct_py.py',
   '_dcsrch.py',
   '_dual_annealing.py',
