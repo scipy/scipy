@@ -33,6 +33,9 @@ class CubatureRuleLinearError(CubatureRule):
         #
         # To handle arbitrary regions of integration, it's necessary to apply a linear
         # change of coordinates to map each interval [a[i], b[i]] to [-1, 1].
+        a = a[:, np.newaxis]
+        b = b[:, np.newaxis]
+
         lengths = b - a
 
         nodes = (self.nodes + 1) * (lengths / 2) + a
@@ -46,11 +49,16 @@ class CubatureRuleLinearError(CubatureRule):
         error_weights = self.error_weights * weight_scale_factor
 
         # Need to resize the weights so they have the right shape
-        integral_estimate = np.sum(weights[:, np.newaxis] * f(nodes), axis=0)
+        integral_estimate = np.sum(weights * f(nodes), axis=0)
+
+        # print(integral_estimate)
+
         error_estimate = abs(np.sum(
-            error_weights[:, np.newaxis] * f(error_nodes),
+            error_weights * f(error_nodes),
             axis=0
         ))
+
+        # print(error_estimate)
 
         # TODO: not yet worrying about rounding error
 
@@ -61,49 +69,45 @@ class CubatureRuleLinearError(CubatureRule):
 # estimators so that we can combine the error nodes and error weights
 class ProductRule(CubatureRuleLinearError):
     def __init__(self, base_rules):
-        self.nodes = _cartesian_product(
-            [np.meshgrid(rule.nodes)[0] for rule in base_rules]
-        )
-        self.error_nodes = _cartesian_product(
-            [np.meshgrid(rule.error_nodes)[0] for rule in base_rules]
-        )
+        self.nodes = _cartesian_product([rule.nodes for rule in base_rules])
+        self.error_nodes = _cartesian_product([rule.error_nodes for rule in base_rules])
 
         self.weights = np.prod(
             _cartesian_product([rule.weights for rule in base_rules]),
-            axis=1
+            axis=0
         )
         self.error_weights = np.prod(
             _cartesian_product([rule.error_weights for rule in base_rules]),
-            axis=1
+            axis=0
         )
 
 
 class GaussKronrod21(CubatureRuleLinearError):
     def __init__(self):
         # 21-point nodes
-        nodes_21 = np.array([
-            [0.995657163025808080735527280689003],
-            [0.973906528517171720077964012084452],
-            [0.930157491355708226001207180059508],
-            [0.865063366688984510732096688423493],
-            [0.780817726586416897063717578345042],
-            [0.679409568299024406234327365114874],
-            [0.562757134668604683339000099272694],
-            [0.433395394129247190799265943165784],
-            [0.294392862701460198131126603103866],
-            [0.148874338981631210884826001129720],
-            [0],
-            [-0.148874338981631210884826001129720],
-            [-0.294392862701460198131126603103866],
-            [-0.433395394129247190799265943165784],
-            [-0.562757134668604683339000099272694],
-            [-0.679409568299024406234327365114874],
-            [-0.780817726586416897063717578345042],
-            [-0.865063366688984510732096688423493],
-            [-0.930157491355708226001207180059508],
-            [-0.973906528517171720077964012084452],
-            [-0.995657163025808080735527280689003]
-        ])
+        nodes_21 = np.array([[
+            0.995657163025808080735527280689003,
+            0.973906528517171720077964012084452,
+            0.930157491355708226001207180059508,
+            0.865063366688984510732096688423493,
+            0.780817726586416897063717578345042,
+            0.679409568299024406234327365114874,
+            0.562757134668604683339000099272694,
+            0.433395394129247190799265943165784,
+            0.294392862701460198131126603103866,
+            0.148874338981631210884826001129720,
+            0,
+            -0.148874338981631210884826001129720,
+            -0.294392862701460198131126603103866,
+            -0.433395394129247190799265943165784,
+            -0.562757134668604683339000099272694,
+            -0.679409568299024406234327365114874,
+            -0.780817726586416897063717578345042,
+            -0.865063366688984510732096688423493,
+            -0.930157491355708226001207180059508,
+            -0.973906528517171720077964012084452,
+            -0.995657163025808080735527280689003
+        ]])
 
         # 21-point weights
         weights_21 = np.array([
@@ -183,23 +187,23 @@ class GaussKronrod21(CubatureRuleLinearError):
 class GaussKronrod15(CubatureRuleLinearError):
     def __init__(self):
         # 15-point nodes
-        nodes_15 = np.array([
-            [0.991455371120812639206854697526329],
-            [0.949107912342758524526189684047851],
-            [0.864864423359769072789712788640926],
-            [0.741531185599394439863864773280788],
-            [0.586087235467691130294144838258730],
-            [0.405845151377397166906606412076961],
-            [0.207784955007898467600689403773245],
-            [0.000000000000000000000000000000000],
-            [-0.207784955007898467600689403773245],
-            [-0.405845151377397166906606412076961],
-            [-0.586087235467691130294144838258730],
-            [-0.741531185599394439863864773280788],
-            [-0.864864423359769072789712788640926],
-            [-0.949107912342758524526189684047851],
-            [-0.991455371120812639206854697526329]
-        ])
+        nodes_15 = np.array([[
+            0.991455371120812639206854697526329,
+            0.949107912342758524526189684047851,
+            0.864864423359769072789712788640926,
+            0.741531185599394439863864773280788,
+            0.586087235467691130294144838258730,
+            0.405845151377397166906606412076961,
+            0.207784955007898467600689403773245,
+            0.000000000000000000000000000000000,
+            -0.207784955007898467600689403773245,
+            -0.405845151377397166906606412076961,
+            -0.586087235467691130294144838258730,
+            -0.741531185599394439863864773280788,
+            -0.864864423359769072789712788640926,
+            -0.949107912342758524526189684047851,
+            -0.991455371120812639206854697526329
+        ]])
 
         # 15-point weights
         weights_15 = np.array([
@@ -284,7 +288,7 @@ class Trapezoid(CubatureRuleLinearError):
 
 
 # TODO: is this a sensible default for maxiter?
-def cub(f, a, b, rule, rtol=1e-05, atol=1e-08, maxiter=10_000, full_output=False):
+def cub(f, a, b, rule, rtol=1e-05, atol=1e-08, maxiter=10_000):
     est, err = rule.estimate(f, a, b)
 
     regions = [RegionInfo(est, err, a, b)]
@@ -292,6 +296,7 @@ def cub(f, a, b, rule, rtol=1e-05, atol=1e-08, maxiter=10_000, full_output=False
 
     while _max_norm(err) > max(atol, rtol * np.abs(est)) and iterations < maxiter:
         region = heapq.heappop(regions)
+        print(region)
 
         est_k = region.integral_estimate
         err_k = region.error_estimate
@@ -299,10 +304,12 @@ def cub(f, a, b, rule, rtol=1e-05, atol=1e-08, maxiter=10_000, full_output=False
         a_k, b_k = region.a, region.b
         m_k = (a_k + b_k) / 2
 
+        # TODO: find a cleaner way of finding coordinates of subregions
         subregion_coordinates = list(zip(
-            _cartesian_product(np.array([a_k, m_k]).T),
-            _cartesian_product(np.array([m_k, b_k]).T)
+            _cartesian_product(np.array([a_k, m_k]).T).T,
+            _cartesian_product(np.array([m_k, b_k]).T).T
         ))
+        print("subregion coordinates", subregion_coordinates)
 
         est -= est_k
         err -= err_k
@@ -324,17 +331,14 @@ def cub(f, a, b, rule, rtol=1e-05, atol=1e-08, maxiter=10_000, full_output=False
     else:
         status = "converged"
 
-    if full_output:
-        info = CubatureResult(
-            success=err <= max(atol, rtol * np.abs(est)),
-            status=status,
-            iterations=iterations,
-            regions=regions,
-        )
-
-        return est, err, info
-    else:
-        return est, err
+    return CubatureResult(
+        estimate=est,
+        error=err,
+        success=err <= max(atol, rtol * np.abs(est)),
+        status=status,
+        subdivisions=iterations,
+        regions=regions,
+    )
 
 
 class RegionInfo:
@@ -366,16 +370,19 @@ b={self.b}"""
 
 class CubatureResult:
     # TODO: how to handle reporting number of evals for vectorized functions?
-    def __init__(self, success, status, iterations, regions):
+    def __init__(self, estimate, error, success, status, subdivisions,
+                 regions):
+        self.estimate = estimate
+        self.error = error
         self.success = success
         self.status = status
         self.regions = regions
-        self.iterations = iterations
+        self.subdivisions = subdivisions
 
 
 def _cartesian_product(points):
-    out = np.stack(np.meshgrid(*points, indexing='ij'), axis=-1)
-    out = out.reshape(-1, out.shape[-1])
+    out = np.stack(np.meshgrid(*points, indexing='ij'), axis=0)
+    out = out.reshape(len(points), -1)
     return out
 
 
