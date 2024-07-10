@@ -1,4 +1,5 @@
 import scipy
+import math
 
 import pytest
 import numpy as np
@@ -9,13 +10,29 @@ from scipy.integrate._cubature import cub, ProductRule, GaussKronrod15
 
 class Problem:
     """Represents a general problem to be solved by quadrature algorithm"""
-    def __init__(self, dim, f, a, b, exact, failing=False):
+    def __init__(self, dim, f, a, b, exact):
         self.dim = dim
         self.f = f
         self.a = a
         self.b = b
         self.exact = exact
-        self.failing = failing
+
+
+def problem_from_closed_form(dim, parameterized_f, closed_form, a, b, **params):
+    """
+    Creates a new Problem given a function `parameterised_f(**params)` which will return
+    a function `f` to be integrated specified in terms of some parameters, and also
+    given a `closed_form` which returns the exact solution to the problem in terms of
+    the bounds of integration `a` and `b`, and the parameters used to construct `f`.
+    """
+
+    return Problem(
+        dim=dim,
+        f=parameterized_f(**params),
+        a=a,
+        b=b,
+        exact=closed_form(dim, a, b, **params)
+    )
 
 
 def genz_malik_1980_f_1(r, alphas):
@@ -33,6 +50,12 @@ def genz_malik_1980_f_1(r, alphas):
         return np.cos(2*np.pi*r + np.sum(x * alphas_reshaped, axis=0))
 
     return f
+
+
+def genz_malik_1980_f_1_exact(dim, a, b, r, alphas):
+    return (-2)**dim * 1/math.prod(alphas) \
+        * np.cos(2*np.pi*r + np.sum((a * alphas) + (b * alphas)) / 2) \
+        * np.prod(np.sin((a * alphas - b * alphas)/2))
 
 
 def genz_malik_1980_f_2(alphas, betas):
@@ -55,6 +78,12 @@ def genz_malik_1980_f_2(alphas, betas):
     return f
 
 
+def genz_malik_1980_f_2_exact(dim, a, b, alphas, betas):
+    return (-1)**dim * 1/math.prod(alphas) * np.prod(
+        np.arctan((a - betas)/alphas) - np.arctan((b - betas)/alphas)
+    )
+
+
 def genz_malik_1980_f_3(alphas):
     r"""
     `f_3` from Genz and Malik 1980.
@@ -71,6 +100,12 @@ def genz_malik_1980_f_3(alphas):
         return np.exp(np.sum(alphas_reshaped * x, axis=0))
 
     return f
+
+
+# TODO: not 100% sure this is the correct closed form
+def genz_malik_1980_f_3_exact(dim, a, b, alphas):
+    return (-1)**dim * 1/math.prod(alphas) \
+        * np.prod(np.exp(alphas * a) - np.exp(alphas * b))
 
 
 def genz_malik_1980_f_4(alphas):
@@ -114,153 +149,155 @@ def genz_malik_1980_f_5(alphas, betas):
     return f
 
 
+# TODO: not 100% sure this is the correct closed form
+def genz_malik_1980_f_5_exact(dim, a, b, alphas, betas):
+    return (1/2)**dim * 1/math.prod(alphas) * np.power(np.pi, dim/2) * np.prod(
+        scipy.special.erf(alphas * (betas - a))
+        + scipy.special.erf(alphas * (b - betas))
+    )
+
+
 problems = [
     # Problems based on test integrals in Genz and Malik 1980:
+    # -- f1 --
 
-    Problem(
-        # Three dimensional problem
+    problem_from_closed_form(
         dim=1,
+        parameterized_f=genz_malik_1980_f_1,
+        closed_form=genz_malik_1980_f_1_exact,
 
-        # Function to integrate
-        f=genz_malik_1980_f_1(
-            r=1/4,
-            alphas=np.array([5]),
-        ),
-
-        # Coordinates of hypercube
         a=np.array([0]),
         b=np.array([10]),
-
-        # Exact answer to the problem
-        exact=-2/5 * np.sin(25)**2
+        r=1/4,
+        alphas=np.array([5])
     ),
-    Problem(
+    problem_from_closed_form(
         dim=2,
-        f=genz_malik_1980_f_1(
-            r=1/4,
-            alphas=np.array([2, 4]),
-        ),
+        parameterized_f=genz_malik_1980_f_1,
+        closed_form=genz_malik_1980_f_1_exact,
+
         a=np.array([0, 0]),
         b=np.array([1, 1]),
-        exact=-np.cos(1)*(1 + 2*np.cos(2))*np.sin(1)**3,
+        r=1/4,
+        alphas=np.array([2, 4]),
     ),
-    Problem(
+    problem_from_closed_form(
         dim=2,
-        f=genz_malik_1980_f_1(
-            r=1/2,
-            alphas=np.array([2, 4]),
-        ),
+        parameterized_f=genz_malik_1980_f_1,
+        closed_form=genz_malik_1980_f_1_exact,
+
         a=np.array([0, 0]),
         b=np.array([100, 100]),
-        exact=1/4 * np.sin(200) * (np.sin(200) - np.sin(400)),
+        r=1/2,
+        alphas=np.array([2, 4]),
     ),
-    Problem(
+    problem_from_closed_form(
         dim=3,
-        f=genz_malik_1980_f_1(
-            r=1/2,
-            alphas=np.array([1, 1, 1]),
-        ),
+        parameterized_f=genz_malik_1980_f_1,
+        closed_form=genz_malik_1980_f_1_exact,
+
         a=np.array([0, 0, 0]),
         b=np.array([100, 200, 300]),
-        exact=4*np.sin(100)*np.sin(150)*(np.sin(250) - np.sin(350))
+        r=1/2,
+        alphas=np.array([1, 1, 1]),
     ),
-    Problem(
+
+    # -- f2 --
+
+    problem_from_closed_form(
         dim=1,
-        f=genz_malik_1980_f_2(
-            alphas=np.array([5]),
-            betas=np.array([4]),
-        ),
+        parameterized_f=genz_malik_1980_f_2,
+        closed_form=genz_malik_1980_f_2_exact,
+
         a=np.array([-1]),
         b=np.array([1]),
-        exact=1/20 * (np.pi - 4*np.arctan(3/5)),
+        alphas=np.array([5]),
+        betas=np.array([4])
     ),
     # Currently failing for product rule version of Gauss-Kronrod 15 (and 21)
     # dblquad also fails
-    Problem(
-        dim=2,
-        f=genz_malik_1980_f_2(
-            alphas=np.array([-3, 3]),
-            betas=np.array([-2, 2])
-        ),
-        a=np.array([-50, 0]),
-        b=np.array([50, 20]),
-        exact=(
-            1/9 * (np.arctan(2/3) + np.arctan(6)) * (np.arctan(16) + np.arctan(52/3))
-        ),
-        failing=True,
-    ),
-    Problem(
+    # problem_with_analytic_sol(
+    #     dim=2,
+    #     f=genz_malik_1980_f_2,
+    #     exact_func=genz_malik_1980_f_2_exact,
+    #     a=np.array([-50, 0]),
+    #     b=np.array([50, 20]),
+    #     alphas=np.array([-3, 3]),
+    #     betas=np.array([-2, 2])
+    # ),
+    problem_from_closed_form(
         dim=3,
-        f=genz_malik_1980_f_2(
-            alphas=np.array([1, 1, 1]),
-            betas=np.array([1, 1, 1]),
-        ),
+        parameterized_f=genz_malik_1980_f_2,
+        closed_form=genz_malik_1980_f_2_exact,
+
         a=np.array([0, 0, 0]),
         b=np.array([1, 1, 1]),
-        exact=np.pi ** 3 / 64,
+        alphas=np.array([1, 1, 1]),
+        betas=np.array([1, 1, 1]),
     ),
-    Problem(
+    problem_from_closed_form(
         dim=3,
-        f=genz_malik_1980_f_2(
-            alphas=np.array([2, 3, 4]),
-            betas=np.array([2, 3, 4]),
-        ),
+        parameterized_f=genz_malik_1980_f_2,
+        closed_form=genz_malik_1980_f_2_exact,
+
         a=np.array([0, 0, 0]),
         b=np.array([1, 1, 1]),
-        exact=(
-            1/1536
-            * (np.pi - 4*np.arctan(1/2))
-            * (np.pi - 4*np.arctan(2/3))
-            * (np.pi - 4*np.arctan(3/4))
-        ),
+        alphas=np.array([2, 3, 4]),
+        betas=np.array([2, 3, 4]),
     ),
-    Problem(
+    problem_from_closed_form(
         dim=3,
-        f=genz_malik_1980_f_2(
-            alphas=np.array([1, 1, 1]),
-            betas=np.array([2, 2, 2]),
-        ),
+        parameterized_f=genz_malik_1980_f_2,
+        closed_form=genz_malik_1980_f_2_exact,
+
         a=np.array([-1, -1, -1]),
         b=np.array([1, 1, 1]),
-        exact=-1/64 * (np.pi - 4*np.arctan(3))**3,
+        alphas=np.array([1, 1, 1]),
+        betas=np.array([2, 2, 2]),
     ),
-    Problem(
+    problem_from_closed_form(
         dim=4,
-        f=genz_malik_1980_f_2(
-            alphas=np.array([1, 1, 1, 1]),
-            betas=np.array([1, 1, 1, 1]),
-        ),
+        parameterized_f=genz_malik_1980_f_2,
+        closed_form=genz_malik_1980_f_2_exact,
+
         a=np.array([-1, -1, -1, -1]),
         b=np.array([1, 1, 1, 1]),
-        exact=np.arctan(2)**4,
+        alphas=np.array([1, 1, 1, 1]),
+        betas=np.array([1, 1, 1, 1]),
     ),
-    Problem(
+
+    # -- f_3 --
+
+    problem_from_closed_form(
         dim=1,
-        f=genz_malik_1980_f_3(
-            alphas=np.array([1/2]),
-        ),
+        parameterized_f=genz_malik_1980_f_3,
+        closed_form=genz_malik_1980_f_3_exact,
+
         a=np.array([-1]),
         b=np.array([1]),
-        exact=4*np.sinh(1/2),
+        alphas=np.array([1/2]),
     ),
-    Problem(
+    problem_from_closed_form(
         dim=2,
-        f=genz_malik_1980_f_3(
-            alphas=np.array([5, 5]),
-        ),
+        parameterized_f=genz_malik_1980_f_3,
+        closed_form=genz_malik_1980_f_3_exact,
+
         a=np.array([0, -1]),
         b=np.array([1, 1]),
-        exact=(-1 + np.e**5)**2 * (1 + np.e**5)/(25*np.e**5)
+        alphas=np.array([5, 5]),
     ),
-    Problem(
+    problem_from_closed_form(
         dim=3,
-        f=genz_malik_1980_f_3(
-            alphas=np.array([1, 1, 1]),
-        ),
+        parameterized_f=genz_malik_1980_f_3,
+        closed_form=genz_malik_1980_f_3_exact,
+
         a=np.array([-1, -1, -1]),
         b=np.array([1, 1, 1]),
-        exact=(-1+np.e**2)**3 / np.e**3
+        alphas=np.array([1, 1, 1]),
     ),
+
+    # -- f_4 --
+
     Problem(
         dim=1,
         f=genz_malik_1980_f_4(
@@ -288,38 +325,39 @@ problems = [
         b=np.array([1, 1, 1]),
         exact=1/24,
     ),
-    Problem(
+
+    # -- f_5 --
+
+    problem_from_closed_form(
         dim=1,
-        f=genz_malik_1980_f_5(
-            alphas=np.array([-2]),
-            betas=np.array([2]),
-        ),
+        parameterized_f=genz_malik_1980_f_5,
+        closed_form=genz_malik_1980_f_5_exact,
+
         a=np.array([-1]),
         b=np.array([1]),
-        exact=1/4 * np.sqrt(np.pi) * (-scipy.special.erf(2) + scipy.special.erf(6)),
+        alphas=np.array([-2]),
+        betas=np.array([2]),
     ),
-    Problem(
+    problem_from_closed_form(
         dim=2,
-        f=genz_malik_1980_f_5(
-            alphas=np.array([2, 3]),
-            betas=np.array([4, 5]),
-        ),
+        parameterized_f=genz_malik_1980_f_5,
+        closed_form=genz_malik_1980_f_5_exact,
+
         a=np.array([-1, -1]),
         b=np.array([1, 1]),
-        exact=1/24 * np.pi
-                   * (scipy.special.erf(6) - scipy.special.erf(10))
-                   * (scipy.special.erf(12) - scipy.special.erf(18)),
+        alphas=np.array([2, 3]),
+        betas=np.array([4, 5]),
     ),
-    Problem(
+    problem_from_closed_form(
         dim=3,
-        f=genz_malik_1980_f_5(
-            alphas=np.array([1, 1, 1]),
-            betas=np.array([1, 1, 1])
-        ),
+        parameterized_f=genz_malik_1980_f_5,
+        closed_form=genz_malik_1980_f_5_exact,
+
         a=np.array([-1, -1, -1]),
         b=np.array([1, 1, 1]),
-        exact=1/8 * np.pi**(3/2) * scipy.special.erf(2)**3,
-    ),
+        alphas=np.array([1, 1, 1]),
+        betas=np.array([1, 1, 1]),
+    )
 ]
 
 
@@ -330,10 +368,6 @@ problems = [
 def test_cub_product_rules(problem, quadrature, rtol, atol):
     rule = ProductRule([quadrature] * problem.dim)
 
-    if problem.failing:
-        pytest.xfail()
-        return
-
     res = cub(
         problem.f,
         problem.a,
@@ -343,7 +377,6 @@ def test_cub_product_rules(problem, quadrature, rtol, atol):
         atol,
     )
 
-    # The estimate should be within the specified tolerance of the solution
     np.testing.assert_allclose(
         res.estimate,
         problem.exact,
