@@ -65,6 +65,15 @@ def _compliance_scipy(arrays: list[ArrayLike]) -> list[Array]:
     """
     for i in range(len(arrays)):
         array = arrays[i]
+
+        from scipy.sparse import issparse
+        # this comes from `_util._asarray_validated`
+        if issparse(array):
+            msg = ('Sparse arrays/matrices are not supported by this function. '
+                   'Perhaps one of the `scipy.sparse.linalg` functions '
+                   'would work instead.')
+            raise ValueError(msg)
+
         if isinstance(array, np.ma.MaskedArray):
             raise TypeError("Inputs of type `numpy.ma.MaskedArray` are not supported.")
         elif isinstance(array, np.matrix):
