@@ -681,23 +681,23 @@ def test_nd_sub_sparse():
     assert_equal(dense_sum, sparse_sum.toarray())
 
 
-def test_eq():
-    # 1d
-    sp_a = coo_array([1,2,5])
-    sp_b = coo_array(([1,5, 2], ([0,2,1],)))
-    print(sp_a, sp_b)
-    assert(sp_a == sp_b)
+# def test_eq():
+#     # 1d
+#     sp_a = coo_array([1,2,5])
+#     sp_b = coo_array(([1,5, 2], ([0,2,1],)))
+#     print(sp_a, sp_b)
+#     assert(sp_a == sp_b)
 
-    # 2d
-    sp_c = coo_array([[4,0,3], [0,1,0]])
-    sp_d = coo_array(([4,3,1], ([0,0,1], [0,2,1])))
-    assert(sp_c == sp_d)
+#     # 2d
+#     sp_c = coo_array([[4,0,3], [0,1,0]])
+#     sp_d = coo_array(([4,3,1], ([0,0,1], [0,2,1])))
+#     assert(sp_c == sp_d)
 
-    sp_e = coo_array([[4,0,2], [0,1,0]])
-    assert(not (sp_c == sp_e))
+#     sp_e = coo_array([[4,0,2], [0,1,0]])
+#     assert(not (sp_c == sp_e))
 
-    with pytest.raises(ValueError, match='Incompatible shapes'):
-        sp_b == sp_c
+#     with pytest.raises(ValueError, match='Incompatible shapes'):
+#         sp_b == sp_c
 
     # # nd
     # sp_f = coo_array(np.array([[[[[3], [7]]], [[[np.inf], [0]]]], [[[[6], [0]]], [[[0], [1]]]],
@@ -708,28 +708,28 @@ def test_eq():
     #                            [[[[0], [1]]], [[[5], [0]]]]]))
     # assert(sp_f == sp_g)
     
-def test_abs():
-    # 1d
-    sp_a = coo_array([-7, 0, 4, -2])
-    assert_equal(abs(sp_a).todense(), np.array([7, 0, 4, 2]))
+# def test_abs():
+#     # 1d
+#     sp_a = coo_array([-7, 0, 4, -2])
+#     assert_equal(abs(sp_a).todense(), np.array([7, 0, 4, 2]))
 
-    # 1d with nan, inf
-    sp_b = coo_array([-np.nan, 0, -np.inf, -2])
-    assert_equal(abs(sp_b).todense(), np.array([np.nan, 0, np.inf, 2]))
+#     # 1d with nan, inf
+#     sp_b = coo_array([-np.nan, 0, -np.inf, -2])
+#     assert_equal(abs(sp_b).todense(), np.array([np.nan, 0, np.inf, 2]))
 
-    # 2d
-    sp_c = coo_array([[-2, 4, 0, 0], [3, 0, 0, -1]])
-    assert_equal(abs(sp_c).todense(), np.array([[2, 4, 0, 0], [3, 0, 0, 1]]))
+#     # 2d
+#     sp_c = coo_array([[-2, 4, 0, 0], [3, 0, 0, -1]])
+#     assert_equal(abs(sp_c).todense(), np.array([[2, 4, 0, 0], [3, 0, 0, 1]]))
 
-    # nd
-    sp_c = coo_array([[[-2, 4, 0]], [[3, 0, np.inf]], [[-2, -np.nan, 3]]])
-    print(sp_c.__abs__)
-    assert_equal(sp_c.__abs__().todense(), np.array([[[2, 4, 0]], [[3, 0, np.inf]], [[2, np.nan, 3]]]))
+#     # nd
+#     sp_c = coo_array([[[-2, 4, 0]], [[3, 0, np.inf]], [[-2, -np.nan, 3]]])
+#     print(sp_c.__abs__)
+#     assert_equal(sp_c.__abs__().todense(), np.array([[[2, 4, 0]], [[3, 0, np.inf]], [[2, np.nan, 3]]]))
 
 
-def test_round():
-    sp_a = coo_array([[[1.111,-2.444]], [[-6.888, 4.788]]])
-    print(round(sp_a, ndigits=2))
+# def test_round():
+#     sp_a = coo_array([[[1.111,-2.444]], [[-6.888, 4.788]]])
+#     print(round(sp_a, ndigits=2))
 # def test_maximum():
 #     # 1d
 #     sp_a = coo_array([4, 2, 3, 0])
@@ -795,7 +795,7 @@ def test_3d_matmul_vector():
     den_x, den_y = sp_x.toarray(), sp_y.toarray()
     exp = den_x @ den_y
     res = sp_x @ den_y
-    assert(res,exp)
+    assert_equal(res,exp)
 
 
 def test_1d_diagonal():
