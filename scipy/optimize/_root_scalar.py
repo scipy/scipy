@@ -246,7 +246,7 @@ def root_scalar(f, args=(), method=None, bracket=None,
     # Pick a method if not specified.
     # Use the "best" method available for the situation.
     if not method:
-        if bracket:
+        if bracket is not None:
             method = 'brentq'
         elif x0 is not None:
             if fprime:

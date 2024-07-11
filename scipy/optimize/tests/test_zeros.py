@@ -191,6 +191,21 @@ class TestBracketMethods(TestScalarRootFinders):
         assert_allclose(root, 1.0, atol=self.xtol, rtol=self.rtol)
 
     @pytest.mark.parametrize('method', bracket_methods)
+    @pytest.mark.parametrize('function', tstutils_functions)
+    def test_bracket_is_array(self, method, function):
+        # Test bracketing root finders called via `root_scalar` on a small set
+        # of simple problems, each of which has a root at `x=1`. Check that
+        # passing `bracket` as a `ndarray` is accepted and leads to finding the
+        # correct root.
+        a, b = .5, sqrt(3)
+        r = root_scalar(function, method=method.__name__,
+                        bracket=np.array([a, b]), x0=a, xtol=self.xtol,
+                        rtol=self.rtol)
+        assert r.converged
+        assert_allclose(r.root, 1.0, atol=self.xtol, rtol=self.rtol)
+        assert r.method == method.__name__
+
+    @pytest.mark.parametrize('method', bracket_methods)
     def test_aps_collection(self, method):
         self.run_collection('aps', method, method.__name__, smoothness=1)
 
