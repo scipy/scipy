@@ -4,7 +4,8 @@ Additional statistics functions with support for masked arrays.
 """
 
 # Original author (2007): Pierre GF Gerard-Marchant
-
+# Weighted Harrell-Davis quantile referenced on Andrey Akinshin
+# https://doi.org/10.48550/arXiv.2304.07265 
 
 __all__ = ['compare_medians_ms',
            'hdquantiles', 'hdmedian', 'hdquantiles_sd',
@@ -25,7 +26,7 @@ from . import _mstats_basic as mstats
 from scipy.stats.distributions import norm, beta, t, binom
 
 
-def hdquantiles(data, prob=list([.25,.5,.75]), axis=None, var=False,):
+def hdquantiles(data, prob=list([.25,.5,.75]), axis=None, var=False, weights=None,):
     """
     Computes quantile estimates with the Harrell-Davis method.
 
@@ -43,6 +44,9 @@ def hdquantiles(data, prob=list([.25,.5,.75]), axis=None, var=False,):
         array.
     var : bool, optional
         Whether to return the variance of the estimate.
+    weights : array_like, optional
+        Weights to apply to the data. If None, all data points are equally
+        weighted.
 
     Returns
     -------
@@ -75,9 +79,23 @@ def hdquantiles(data, prob=list([.25,.5,.75]), axis=None, var=False,):
     25th percentile: 3.1505820231763066 # may vary
     50th percentile: 5.194344084883956
     75th percentile: 7.430626414674935
+    >>>
+    >>> # Compute Harrell-Davis quantile estimates with weights
+    >>> data = np.array([0, 1, 1, 100])
+    >>> weights = np.array([1, 0.0001, 0.0001, 1])
+    >>> quantile_estimates = hdquantiles(data, prob=probabilities, weights=weights)
+    >>> for i, quantile in enumerate(probabilities):
+    ...     print(f"{int(quantile * 100)}th percentile: {quantile_estimates[i]}")
+    25th percentile: 15.02819625052742
+    50th percentile: 49.993761268123606
+    75th percentile: 84.96474577296154
 
     """
-    def _hd_1D(data,prob,var):
+    def _kish_ess(weights):
+        """Kish effective sample size"""
+        return np.sum(weights)**2/np.sum(weights**2)
+
+    def _hd_1D(data,prob,var,weights):
         "Computes the HD quantiles for a 1D array. Returns nan for invalid data."
         xsorted = np.squeeze(np.sort(data.compressed().view(ndarray)))
         # Don't use length here, in case we have a numpy scalar
@@ -90,10 +108,21 @@ def hdquantiles(data, prob=list([.25,.5,.75]), axis=None, var=False,):
                 return hd
             return hd[0]
 
-        v = np.arange(n+1) / float(n)
+        if weights is None:
+            weights = np.full(n, 1/n)
+        else:
+            weights = np.squeeze(np.asarray(weights))
+            if weights.size != n:
+                raise ValueError("Array 'weights' must have the same size as "
+                                 "'data'. Got weights.size = %d " % weights.size)
+        weights = weights/np.sum(weights)
+
+        nw = _kish_ess(weights)
         betacdf = beta.cdf
+        v = np.cumsum(np.concatenate(([0], weights)))
+
         for (i,p) in enumerate(prob):
-            _w = betacdf(v, (n+1)*p, (n+1)*(1-p))
+            _w = betacdf(v, (nw+1)*p, (nw+1)*(1-p))
             w = _w[1:] - _w[:-1]
             hd_mean = np.dot(w, xsorted)
             hd[0,i] = hd_mean
@@ -111,12 +140,12 @@ def hdquantiles(data, prob=list([.25,.5,.75]), axis=None, var=False,):
     p = np.atleast_1d(np.asarray(prob))
     # Computes quantiles along axis (or globally)
     if (axis is None) or (data.ndim == 1):
-        result = _hd_1D(data, p, var)
+        result = _hd_1D(data, p, var, weights)
     else:
         if data.ndim > 2:
             raise ValueError("Array 'data' must be at most two dimensional, "
                              "but got data.ndim = %d" % data.ndim)
-        result = ma.apply_along_axis(_hd_1D, axis, data, p, var)
+        result = ma.apply_along_axis(_hd_1D, axis, data, p, var, weights)
 
     return ma.fix_invalid(result, copy=False)
 
