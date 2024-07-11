@@ -15,6 +15,7 @@ Using any of these subpackages requires an explicit import. For example,
  cluster                      --- Vector Quantization / Kmeans
  constants                    --- Physical and mathematical constants and units
  datasets                     --- Dataset methods
+ differentiate                --- Finite difference differentiation tools
  fft                          --- Discrete Fourier transforms
  fftpack                      --- Legacy discrete Fourier transforms
  integrate                    --- Integration routines
@@ -100,6 +101,7 @@ submodules = [
     'cluster',
     'constants',
     'datasets',
+    'differentiate',
     'fft',
     'fftpack',
     'integrate',

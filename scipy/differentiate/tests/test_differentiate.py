@@ -9,8 +9,8 @@ from scipy._lib._array_api import (xp_assert_close, xp_assert_equal, xp_assert_l
                                    is_numpy, is_torch, array_namespace)
 
 from scipy import stats, optimize, special
-from scipy.optimize._differentiate import (_differentiate as differentiate,
-                                           _jacobian as jacobian, _EERRORINCREASE)
+from scipy.differentiate import differentiate, jacobian
+from scipy.differentiate._differentiate import _EERRORINCREASE
 
 
 @array_api_compatible
@@ -108,7 +108,8 @@ class TestDifferentiate:
         f.nit = 0
 
         args = (xp.arange(4, dtype=xp.int64),)
-        res = differentiate(f, xp.ones(4, dtype=xp.float64), rtol=1e-14,
+        res = differentiate(f, xp.ones(4, dtype=xp.float64),
+                            tolerances=dict(rtol=1e-14),
                             order=2, args=args)
 
         ref_flags = xp.asarray([eim._ECONVERGED,
@@ -127,7 +128,8 @@ class TestDifferentiate:
                    xp.full_like(x, xp.nan)[()]]  # stops due to NaN
             return xp.stack(out)
 
-        res = differentiate(f, xp.asarray(1, dtype=xp.float64), rtol=1e-14,
+        res = differentiate(f, xp.asarray(1, dtype=xp.float64),
+                            tolerances=dict(rtol=1e-14),
                             order=2, preserve_shape=True)
 
         ref_flags = xp.asarray([eim._ECONVERGED,
@@ -153,23 +155,23 @@ class TestDifferentiate:
         x = xp.asarray(1., dtype=xp.float64)
         f = special.ndtr
         ref = float(stats.norm.pdf(1.))
-        kwargs0 = dict(atol=0, rtol=0, order=4)
+        tolerances0 = dict(atol=0, rtol=0)
 
-        kwargs = kwargs0.copy()
-        kwargs['atol'] = 1e-3
-        res1 = differentiate(f, x, **kwargs)
+        tolerances = tolerances0.copy()
+        tolerances['atol'] = 1e-3
+        res1 = differentiate(f, x, tolerances=tolerances, order=4)
         assert abs(res1.df - ref) < 1e-3
-        kwargs['atol'] = 1e-6
-        res2 = differentiate(f, x, **kwargs)
+        tolerances['atol'] = 1e-6
+        res2 = differentiate(f, x, tolerances=tolerances, order=4)
         assert abs(res2.df - ref) < 1e-6
         assert abs(res2.df - ref) < abs(res1.df - ref)
 
-        kwargs = kwargs0.copy()
-        kwargs['rtol'] = 1e-3
-        res1 = differentiate(f, x, **kwargs)
+        tolerances = tolerances0.copy()
+        tolerances['rtol'] = 1e-3
+        res1 = differentiate(f, x, tolerances=tolerances, order=4)
         assert abs(res1.df - ref) < 1e-3 * ref
-        kwargs['rtol'] = 1e-6
-        res2 = differentiate(f, x, **kwargs)
+        tolerances['rtol'] = 1e-6
+        res2 = differentiate(f, x, tolerances=tolerances, order=4)
         assert abs(res2.df - ref) < 1e-6 * ref
         assert abs(res2.df - ref) < abs(res1.df - ref)
 
@@ -246,7 +248,7 @@ class TestDifferentiate:
             return res
 
         default_order = 8
-        res = differentiate(f, x, maxiter=maxiter, rtol=1e-15)
+        res = differentiate(f, x, maxiter=maxiter, tolerances=dict(rtol=1e-15))
         assert not xp.any(res.success)
         assert xp.all(res.nfev == default_order + 1 + (maxiter - 1)*2)
         assert xp.all(res.nit == maxiter)
@@ -264,7 +266,7 @@ class TestDifferentiate:
         callback.res = None
         callback.dfs = set()
 
-        res2 = differentiate(f, x, callback=callback, rtol=1e-15)
+        res2 = differentiate(f, x, callback=callback, tolerances=dict(rtol=1e-15))
         # terminating with callback is identical to terminating due to maxiter
         # (except for `status`)
         for key in res.keys():
@@ -322,9 +324,9 @@ class TestDifferentiate:
 
         message = 'Tolerances and step parameters must be non-negative...'
         with pytest.raises(ValueError, match=message):
-            differentiate(lambda x: x, one, atol=-1)
+            differentiate(lambda x: x, one, tolerances=dict(atol=-1))
         with pytest.raises(ValueError, match=message):
-            differentiate(lambda x: x, one, rtol='ekki')
+            differentiate(lambda x: x, one, tolerances=dict(rtol='ekki'))
         with pytest.raises(ValueError, match=message):
             differentiate(lambda x: x, one, initial_step=None)
         with pytest.raises(ValueError, match=message):
@@ -361,7 +363,7 @@ class TestDifferentiate:
             return x ** 99 - 1
 
         if not is_torch(xp):  # torch defaults to float32
-            res = differentiate(f, xp.asarray(7), rtol=1e-10)
+            res = differentiate(f, xp.asarray(7), tolerances=dict(rtol=1e-10))
             assert res.success
             xp_assert_close(res.df, xp.asarray(99*7.**98))
 
@@ -503,7 +505,7 @@ class TestJacobian:
         # Test input validation
         message = "Argument `x` must be at least 1-D."
         with pytest.raises(ValueError, match=message):
-            jacobian(np.sin, 1, atol=-1)
+            jacobian(np.sin, 1, tolerances=dict(atol=-1))
 
         # Confirm that other parameters are being passed to `_derivative`,
         # which raises an appropriate error message.
@@ -511,9 +513,9 @@ class TestJacobian:
         func = optimize.rosen
         message = 'Tolerances and step parameters must be non-negative scalars.'
         with pytest.raises(ValueError, match=message):
-            jacobian(func, x, atol=-1)
+            jacobian(func, x, tolerances=dict(atol=-1))
         with pytest.raises(ValueError, match=message):
-            jacobian(func, x, rtol=-1)
+            jacobian(func, x, tolerances=dict(rtol=-1))
         with pytest.raises(ValueError, match=message):
             jacobian(func, x, initial_step=-1)
         with pytest.raises(ValueError, match=message):

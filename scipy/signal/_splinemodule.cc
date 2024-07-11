@@ -2,6 +2,7 @@
 #include "numpy/arrayobject.h"
 #include <complex>
 #include <cmath>
+#include <algorithm>
 #include "_splinemodule.h"
 
 
@@ -61,7 +62,7 @@ static PyObject *FIRsepsym2d(PyObject *NPY_UNUSED(dummy), PyObject *args) {
       return NULL;
 
   thetype = PyArray_ObjectType(image, NPY_FLOAT);
-  thetype = PyArray_MIN(thetype, NPY_CDOUBLE);
+  thetype = std::min(thetype, static_cast<int>(NPY_CDOUBLE));
   a_image = (PyArrayObject *)PyArray_FromObject(image, thetype, 2, 2);
   if (a_image == NULL)
       goto fail;
@@ -180,7 +181,7 @@ static PyObject *IIRsymorder1_ic(PyObject *NPY_UNUSED(dummy), PyObject *args) {
     return NULL;
 
   thetype = PyArray_ObjectType(sig, NPY_FLOAT);
-  thetype = PyArray_MIN(thetype, NPY_CDOUBLE);
+  thetype = std::min(thetype, static_cast<int>(NPY_CDOUBLE));
   a_sig = (PyArrayObject *)PyArray_FromObject(sig, thetype, 1, 2);
 
   if (a_sig == NULL) {
@@ -316,7 +317,7 @@ static PyObject *IIRsymorder2_ic_fwd(PyObject *NPY_UNUSED(dummy), PyObject *args
     return NULL;
 
   thetype = PyArray_ObjectType(sig, NPY_FLOAT);
-  thetype = PyArray_MIN(thetype, NPY_DOUBLE);
+  thetype = std::min(thetype, static_cast<int>(NPY_DOUBLE));
   a_sig = (PyArrayObject *)PyArray_FromObject(sig, thetype, 1, 2);
 
   if (a_sig == NULL) {
@@ -432,7 +433,7 @@ static PyObject *IIRsymorder2_ic_bwd(PyObject *NPY_UNUSED(dummy), PyObject *args
     return NULL;
 
   thetype = PyArray_ObjectType(sig, NPY_FLOAT);
-  thetype = PyArray_MIN(thetype, NPY_DOUBLE);
+  thetype = std::min(thetype, static_cast<int>(NPY_DOUBLE));
   a_sig = (PyArrayObject *)PyArray_FromObject(sig, thetype, 1, 2);
 
   if (a_sig == NULL) {
