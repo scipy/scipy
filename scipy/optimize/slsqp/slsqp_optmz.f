@@ -1086,7 +1086,7 @@ C  SOLVE DUAL PROBLEM
 
       IF(mode.NE.1)                 GOTO 50
       mode=4
-      IF(rnorm.LE.ZERO)             GOTO 50
+      IF(rnorm.LT.ZERO)             GOTO 50
 
 C  COMPUTE SOLUTION OF PRIMAL PROBLEM
 
@@ -1202,7 +1202,7 @@ C STEP THREE (TEST DUAL VARIABLES)
 
 C .....EXIT LOOP A
 
-      IF(wmax.LE.ZERO)                GOTO 280
+      IF(ABS(wmax).LE.1e-20)                GOTO 280
       iz=izmax
       j=INDEX(iz)
 
