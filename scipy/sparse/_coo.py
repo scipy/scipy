@@ -14,7 +14,7 @@ from ._matrix import spmatrix
 from ._sparsetools import coo_tocsr, coo_todense, coo_todense_nd, coo_matvec
 from ._base import issparse, SparseEfficiencyWarning, _spbase, sparray
 from ._data import _data_matrix, _minmax_mixin
-from ._sputils import (upcast_char, to_native, isshape, getdtype,
+from ._sputils import (upcast_char, to_native, isshape, isdense, getdtype,
                        getdata, downcast_intp_index, get_index_dtype,
                        check_shape, check_reshape_kwargs)
 
@@ -585,6 +585,9 @@ class _coo_base(_data_matrix, _minmax_mixin):
     
 
     def _add_sparse(self, other):
+        if self.ndim < 3:
+            return _data_matrix._add_sparse(self, other)
+
         if other.shape != self.shape:
             raise ValueError(f'Incompatible shapes ({self.shape} and {other.shape})')
         other = self.__class__(other)
@@ -599,11 +602,14 @@ class _coo_base(_data_matrix, _minmax_mixin):
 
     
     def _sub_sparse(self, other):
+        if self.ndim < 3:
+            return _data_matrix._sub_sparse(self, other)
+
         if other.shape != self.shape:
             raise ValueError(f'Incompatible shapes ({self.shape} and {other.shape})')
         other = self.__class__(other)
         new_data = np.concatenate((self.data, -(other.data)))
-        new_coords = np.concatenate((self.coords, other.coords), axis=1)
+        new_coords = tuple(np.concatenate((self.coords, other.coords), axis=1))
         A = coo_array((new_data, new_coords), shape=self.shape)
         return A
     
@@ -647,6 +653,84 @@ class _coo_base(_data_matrix, _minmax_mixin):
         for i, other_col in enumerate(other.T):
             coo_matvec(self.nnz, row, col, self.data, other_col, result[i:i + 1])
         return result.T.view(type=type(other))
+    
+
+    # #### ARITHMETIC AND BOOLEAN OPERATIONS ####
+    # def multiply(self, other):
+    #     """Point-wise multiplication by another array/matrix."""
+    #     if isscalarlike(other):
+    #         return self._mul_scalar(other)
+    #     return self.tocsr().multiply(other)
+
+    # # def maximum(self, other):
+    # #     """Element-wise maximum between this and another array/matrix."""
+    # #     if isdense(other):
+    # #         return np.maximum(self.todense(), other)
+    # #     elif issparse(other):
+    # #         #
+    # #     else:
+    # #         raise ValueError("Operands not compatible.")
+
+    # def minimum(self, other):
+    #     """Element-wise minimum between this and another array/matrix."""
+    #     return self.tocsr().minimum(other)
+
+    # def dot(self, other):
+    #     """Ordinary dot product
+
+    #     Examples
+    #     --------
+    #     >>> import numpy as np
+    #     >>> from scipy.sparse import csr_array
+    #     >>> A = csr_array([[1, 2, 0], [0, 0, 3], [4, 0, 5]])
+    #     >>> v = np.array([1, 0, -1])
+    #     >>> A.dot(v)
+    #     array([ 1, -3, -1], dtype=int64)
+
+    #     """
+    #     if np.isscalar(other):
+    #         return self * other
+    #     else:
+    #         return self @ other
+
+    # def power(self, n, dtype=None):
+    #     """Element-wise power."""
+    #     return self.tocsr().power(n, dtype=dtype)
+
+    # def __eq__(self, other):
+    #     if self.shape != other.shape:
+    #         raise ValueError("Incompatible shapes")
+    #     if isdense(other):
+    #         return (np.array_equal(self.todense() - other, np.zeros(self.shape)))
+    #     elif issparse(other):
+    #         diff = self._sub_sparse(other)
+    #         diff.sum_duplicates()
+    #         return (np.array_equal(diff.todense(), np.zeros(self.shape)))
+    #     else: 
+    #         return NotImplemented
+        
+    # def __ne__(self, other):
+    #     return self.tocsr().__ne__(other)
+
+    # def __lt__(self, other):
+    #     return self.tocsr().__lt__(other)
+
+    # def __gt__(self, other):
+    #     return self.tocsr().__gt__(other)
+
+    # def __le__(self, other):
+    #     return self.tocsr().__le__(other)
+
+    # def __ge__(self, other):
+    #     return self.tocsr().__ge__(other)
+
+    # def __abs__(self):
+    #     data = np.abs(self.data, dtype=self.data.dtype)
+    #     abs_arr = self.__class__((data, self.coords), dtype=self.dtype)
+    #     return abs_arr
+
+    # def __round__(self, ndigits=0):
+    #     return round(self.tocsr(), ndigits=ndigits)
 
 
 def _ravel_coords(coords, shape, order='C'):

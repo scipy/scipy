@@ -524,19 +524,13 @@ class _spbase:
         return round(self.tocsr(), ndigits=ndigits)
 
     def _add_sparse(self, other):
-        if self.ndim<3:
-            return self.tocsr()._add_sparse(other)
-        else:
-            return self._add_sparse(other)
+        return self.tocsr()._add_sparse(other)
 
     def _add_dense(self, other):
         return self.tocoo()._add_dense(other)
 
     def _sub_sparse(self, other):
-        if self.ndim<3:
-            return self.tocsr()._sub_sparse(other)
-        else:
-            return self.tocoo()._sub_sparse(other)
+        return self.tocsr()._sub_sparse(other)
 
     def _sub_dense(self, other):
         return self.todense() - other
@@ -555,10 +549,7 @@ class _spbase:
         elif issparse(other):
             if other.shape != self.shape:
                 raise ValueError("inconsistent shapes")
-            if self.ndim<3:
-                return self.tocsr()._add_sparse(other)
-            else:
-                return self._add_sparse(other)
+            return self._add_sparse(other)
         
         elif isdense(other):
             other = np.broadcast_to(other, self.shape)
@@ -578,10 +569,7 @@ class _spbase:
         elif issparse(other):
             if other.shape != self.shape:
                 raise ValueError("inconsistent shapes")
-            if self.ndim<3:
-                return self.tocsr()._sub_sparse(other)
-            else:
-                return self._sub_sparse(other)
+            return self._sub_sparse(other)
 
         elif isdense(other):
             other = np.broadcast_to(other, self.shape)
