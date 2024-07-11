@@ -86,9 +86,9 @@ def hdquantiles(data, prob=list([.25,.5,.75]), axis=None, var=False, weights=Non
     >>> quantile_estimates = hdquantiles(data, prob=probabilities, weights=weights)
     >>> for i, quantile in enumerate(probabilities):
     ...     print(f"{int(quantile * 100)}th percentile: {quantile_estimates[i]}")
-    25th percentile: 15.02819625052742
-    50th percentile: 49.993761268123606
-    75th percentile: 84.96474577296154
+    25th percentile: 15.02819625052742 # may vary
+    50th percentile: 49.993761268123606 # may vary
+    75th percentile: 84.96474577296154 # may vary
 
     """
     def _kish_ess(weights):
