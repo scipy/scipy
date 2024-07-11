@@ -2117,7 +2117,7 @@ def lfilter(b, a, x, axis=-1, zi=None):
         dtype = np.result_type(*inputs)
 
         if dtype.char not in 'fdgFDGO':
-            raise NotImplementedError("input type '%s' not supported" % dtype)
+            raise NotImplementedError(f"input type '{dtype}' not supported")
 
         b = np.array(b, dtype=dtype)
         a = np.asarray(a, dtype=dtype)
@@ -4218,9 +4218,8 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None, method='pad',
 def _validate_pad(padtype, padlen, x, axis, ntaps):
     """Helper to validate padding for filtfilt"""
     if padtype not in ['even', 'odd', 'constant', None]:
-        raise ValueError(("Unknown value '%s' given to padtype.  padtype "
-                          "must be 'even', 'odd', 'constant', or None.") %
-                         padtype)
+        raise ValueError(f"Unknown value '{padtype}' given to padtype. "
+                         "padtype must be 'even', 'odd', 'constant', or None.")
 
     if padtype is None:
         padlen = 0
@@ -4337,7 +4336,7 @@ def sosfilt(sos, x, axis=-1, zi=None):
         inputs.append(np.asarray(zi))
     dtype = np.result_type(*inputs)
     if dtype.char not in 'fdgFDGO':
-        raise NotImplementedError("input type '%s' not supported" % dtype)
+        raise NotImplementedError(f"input type '{dtype}' not supported")
     if zi is not None:
         zi = np.array(zi, dtype)  # make a copy so that we can operate in place
         if zi.shape != x_zi_shape:

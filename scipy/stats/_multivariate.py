@@ -478,7 +478,7 @@ class multivariate_normal_gen(multi_rv_generic):
             rows, cols = cov.shape
             if rows != cols:
                 msg = ("Array 'cov' must be square if it is two dimensional,"
-                       " but cov.shape = %s." % str(cov.shape))
+                       f" but cov.shape = {str(cov.shape)}.")
             else:
                 msg = ("Dimension mismatch: array 'cov' is of shape %s,"
                        " but 'mean' is a vector of length %d.")
@@ -1497,7 +1497,7 @@ def _dirichlet_check_input(alpha, x):
 
     if (np.abs(np.sum(x, 0) - 1.0) > 10e-10).any():
         raise ValueError("The input vector 'x' must lie within the normal "
-                         "simplex. but np.sum(x, 0) = %s." % np.sum(x, 0))
+                         f"simplex. but np.sum(x, 0) = {np.sum(x, 0)}.")
 
     return x
 
@@ -2006,9 +2006,8 @@ class wishart_gen(multi_rv_generic):
         elif scale.ndim == 1:
             scale = np.diag(scale)
         elif scale.ndim == 2 and not scale.shape[0] == scale.shape[1]:
-            raise ValueError("Array 'scale' must be square if it is two"
-                             " dimensional, but scale.scale = %s."
-                             % str(scale.shape))
+            raise ValueError("Array 'scale' must be square if it is two dimensional,"
+                             f" but scale.scale = {str(scale.shape)}.")
         elif scale.ndim > 2:
             raise ValueError("Array 'scale' must be at most two-dimensional,"
                              " but scale.ndim = %d" % scale.ndim)
@@ -2041,15 +2040,15 @@ class wishart_gen(multi_rv_generic):
                 x = np.diag(x)[:, :, np.newaxis]
         elif x.ndim == 2:
             if not x.shape[0] == x.shape[1]:
-                raise ValueError("Quantiles must be square if they are two"
-                                 " dimensional, but x.shape = %s."
-                                 % str(x.shape))
+                raise ValueError(
+                    "Quantiles must be square if they are two dimensional,"
+                    f" but x.shape = {str(x.shape)}.")
             x = x[:, :, np.newaxis]
         elif x.ndim == 3:
             if not x.shape[0] == x.shape[1]:
-                raise ValueError("Quantiles must be square in the first two"
-                                 " dimensions if they are three dimensional"
-                                 ", but x.shape = %s." % str(x.shape))
+                raise ValueError(
+                    "Quantiles must be square in the first two dimensions "
+                    f"if they are three dimensional, but x.shape = {str(x.shape)}.")
         elif x.ndim > 3:
             raise ValueError("Quantiles must be at most two-dimensional with"
                              " an additional dimension for multiple"
@@ -2069,8 +2068,8 @@ class wishart_gen(multi_rv_generic):
             size = size[np.newaxis]
         elif size.ndim > 1:
             raise ValueError('Size must be an integer or tuple of integers;'
-                             ' thus must have dimension <= 1.'
-                             ' Got size.ndim = %s' % str(tuple(size)))
+                 ' thus must have dimension <= 1.'
+                 f' Got size.ndim = {str(tuple(size))}')
         n = size.prod()
         shape = tuple(size)
 
@@ -4772,7 +4771,7 @@ class multivariate_t_gen(multi_rv_generic):
             rows, cols = shape.shape
             if rows != cols:
                 msg = ("Array 'cov' must be square if it is two dimensional,"
-                       " but cov.shape = %s." % str(shape.shape))
+                       f" but cov.shape = {str(shape.shape)}.")
             else:
                 msg = ("Dimension mismatch: array 'cov' is of shape %s,"
                        " but 'loc' is a vector of length %d.")

@@ -453,14 +453,13 @@ def get_xp_devices(xp: ModuleType) -> list[str] | list[None]:
     return [None]
 
 
-def scipy_namespace_for(xp: ModuleType) -> ModuleType:
-    """
-    Return the `scipy` namespace for alternative backends, where it exists,
-    such as `cupyx.scipy` and `jax.scipy`. Useful for ad hoc dispatching.
+def scipy_namespace_for(xp: ModuleType) -> ModuleType | None:
+    """Return the `scipy`-like namespace of a non-NumPy backend
 
-    Default: return `scipy` (this package).
+    That is, return the namespace corresponding with backend `xp` that contains
+    `scipy` sub-namespaces like `linalg` and `special`. If no such namespace
+    exists, return ``None``. Useful for dispatching.
     """
-
 
     if is_cupy(xp):
         import cupyx  # type: ignore[import-not-found,import-untyped]
@@ -470,8 +469,10 @@ def scipy_namespace_for(xp: ModuleType) -> ModuleType:
         import jax  # type: ignore[import-not-found]
         return jax.scipy
 
-    import scipy
-    return scipy
+    if is_torch(xp):
+        return xp
+
+    return None
 
 
 # temporary substitute for xp.minimum, which is not yet in all backends
@@ -544,3 +545,29 @@ def xp_sign(x: Array, /, *, xp: ModuleType | None = None) -> Array:
     sign = xp.where(x < 0, -one, sign)
     sign = xp.where(x == 0, 0*one, sign)
     return sign
+
+# maybe use `scipy.linalg` if/when array API support is added
+def xp_vector_norm(x: Array, /, *, 
+                   axis: int | tuple[int] | None = None,
+                   keepdims: bool = False,
+                   ord: int | float = 2,
+                   xp: ModuleType | None = None) -> Array:
+    xp = array_namespace(x) if xp is None else xp
+
+    if SCIPY_ARRAY_API:
+        # check for optional `linalg` extension
+        if hasattr(xp, 'linalg'):
+            return xp.linalg.vector_norm(x, axis=axis, keepdims=keepdims, ord=ord)
+        else:
+            if ord != 2:
+                raise ValueError(
+                    "only the Euclidean norm (`ord=2`) is currently supported in "
+                    "`xp_vector_norm` for backends not implementing the `linalg` "
+                    "extension."
+                )
+            # return (x @ x)**0.5
+            # or to get the right behavior with nd, complex arrays
+            return xp.sum(xp.conj(x) * x, axis=axis, keepdims=keepdims)**0.5
+    else:
+        # to maintain backwards compatibility
+        return np.linalg.norm(x, ord=ord, axis=axis, keepdims=keepdims)

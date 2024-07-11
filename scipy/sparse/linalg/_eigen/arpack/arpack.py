@@ -507,8 +507,7 @@ class _SymmetricArpackParams(_ArpackParams):
             raise ValueError("mode=%i not implemented" % mode)
 
         if which not in _SEUPD_WHICH:
-            raise ValueError("which must be one of %s"
-                             % ' '.join(_SEUPD_WHICH))
+            raise ValueError(f"which must be one of {' '.join(_SEUPD_WHICH)}")
         if k >= n:
             raise ValueError("k must be less than ndim(A), k=%d" % k)
 
@@ -516,7 +515,7 @@ class _SymmetricArpackParams(_ArpackParams):
                                ncv, v0, maxiter, which, tol)
 
         if self.ncv > n or self.ncv <= k:
-            raise ValueError("ncv must be k<ncv<=n, ncv=%s" % self.ncv)
+            raise ValueError(f"ncv must be k<ncv<=n, ncv={self.ncv}")
 
         # Use _aligned_zeros to work around a f2py bug in Numpy 1.9.1
         self.workd = _aligned_zeros(3 * n, self.tp)
@@ -690,8 +689,7 @@ class _UnsymmetricArpackParams(_ArpackParams):
             raise ValueError("mode=%i not implemented" % mode)
 
         if which not in _NEUPD_WHICH:
-            raise ValueError("Parameter which must be one of %s"
-                             % ' '.join(_NEUPD_WHICH))
+            raise ValueError(f"Parameter which must be one of {' '.join(_NEUPD_WHICH)}")
         if k >= n - 1:
             raise ValueError("k must be less than ndim(A)-1, k=%d" % k)
 
@@ -699,7 +697,7 @@ class _UnsymmetricArpackParams(_ArpackParams):
                                ncv, v0, maxiter, which, tol)
 
         if self.ncv > n or self.ncv <= k + 1:
-            raise ValueError("ncv must be k+1<ncv<=n, ncv=%s" % self.ncv)
+            raise ValueError(f"ncv must be k+1<ncv<=n, ncv={self.ncv}")
 
         # Use _aligned_zeros to work around a f2py bug in Numpy 1.9.1
         self.workd = _aligned_zeros(3 * n, self.tp)
@@ -1570,8 +1568,7 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
     # complex Hermitian matrices should be solved with eigs
     if np.issubdtype(A.dtype, np.complexfloating):
         if mode != 'normal':
-            raise ValueError("mode=%s cannot be used with "
-                             "complex matrix A" % mode)
+            raise ValueError(f"mode={mode} cannot be used with complex matrix A")
         if which == 'BE':
             raise ValueError("which='BE' cannot be used with complex matrix A")
         elif which == 'LA':
@@ -1693,7 +1690,7 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
 
         # unrecognized mode
         else:
-            raise ValueError("unrecognized mode '%s'" % mode)
+            raise ValueError(f"unrecognized mode '{mode}'")
 
     params = _SymmetricArpackParams(n, k, A.dtype.char, matvec, mode,
                                     M_matvec, Minv_matvec, sigma,

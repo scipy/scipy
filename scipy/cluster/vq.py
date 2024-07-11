@@ -469,13 +469,12 @@ def kmeans(obs, k_or_guess, iter=20, thresh=1e-5, check_finite=True,
     obs = _asarray(obs, xp=xp, check_finite=check_finite)
     guess = _asarray(k_or_guess, xp=xp, check_finite=check_finite)
     if iter < 1:
-        raise ValueError("iter must be at least 1, got %s" % iter)
+        raise ValueError(f"iter must be at least 1, got {iter}")
 
     # Determine whether a count (scalar) or an initial guess (array) was passed.
     if size(guess) != 1:
         if size(guess) < 1:
-            raise ValueError("Asked for 0 clusters. Initial book was %s" %
-                             guess)
+            raise ValueError(f"Asked for 0 clusters. Initial book was {guess}")
         return _kmeans(obs, guess, thresh=thresh, xp=xp)
 
     # k_or_guess is a scalar, now verify that it's an integer
@@ -772,8 +771,7 @@ def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
 
     """
     if int(iter) < 1:
-        raise ValueError("Invalid iter (%s), "
-                         "must be a positive integer." % iter)
+        raise ValueError(f"Invalid iter ({iter}), must be a positive integer.")
     try:
         miss_meth = _valid_miss_meth[missing]
     except KeyError as e:

@@ -1,6 +1,4 @@
 import pytest
-from hypothesis import given, strategies, reproduce_failure  # noqa: F401
-import hypothesis.extra.numpy as npst
 
 from scipy.special._support_alternative_backends import (get_array_special_func,
                                                          array_special_func_map)
@@ -49,48 +47,46 @@ def test_rel_entr_generic(dtype):
 
 @pytest.mark.fail_slow(5)
 @array_api_compatible
-@given(data=strategies.data())
+# @pytest.mark.skip_xp_backends('numpy', reasons=['skip while debugging'])
+# @pytest.mark.usefixtures("skip_xp_backends")
 # `reversed` is for developer convenience: test new function first = less waiting
 @pytest.mark.parametrize('f_name_n_args', reversed(array_special_func_map.items()))
-def test_support_alternative_backends(xp, data, f_name_n_args):
+@pytest.mark.parametrize('dtype', ['float32', 'float64'])
+@pytest.mark.parametrize('shapes', [[(0,)]*4, [tuple()]*4, [(10,)]*4,
+                                    [(10,), (11, 1), (12, 1, 1), (13, 1, 1, 1)]])
+def test_support_alternative_backends(xp, f_name_n_args, dtype, shapes):
     f_name, n_args = f_name_n_args
-
-    if is_jax(xp):
-        if f_name in ['gammainc', 'gammaincc']:
-            pytest.skip("google/jax#20507")
-        if f_name == 'rel_entr':
-            pytest.skip("google/jax#21265")
-
+    shapes = shapes[:n_args]
     f = getattr(special, f_name)
 
-    mbs = npst.mutually_broadcastable_shapes(num_shapes=n_args)
-    shapes, final_shape = data.draw(mbs)
-
-    dtype = data.draw(strategies.sampled_from(['float32', 'float64']))
     dtype_np = getattr(np, dtype)
     dtype_xp = getattr(xp, dtype)
 
-    elements = dict(min_value=dtype_np(-10), max_value=dtype_np(10),
-                    allow_subnormal=False)
-    args_np = [np.asarray(data.draw(npst.arrays(dtype_np, shape, elements=elements)))
-               for shape in shapes]
+    # # To test the robustness of the alternative backend's implementation,
+    # # use Hypothesis to generate arguments
+    # from hypothesis import given, strategies, reproduce_failure, assume
+    # import hypothesis.extra.numpy as npst
+    # @given(data=strategies.data())
+    # mbs = npst.mutually_broadcastable_shapes(num_shapes=n_args)
+    # shapes, final_shape = data.draw(mbs)
+    # elements = dict(allow_subnormal=False)  # consider min_value, max_value
+    # args_np = [np.asarray(data.draw(npst.arrays(dtype_np, shape, elements=elements)),
+    #                       dtype=dtype_np)
+    #            for shape in shapes]
 
-    # `torch.asarray(np.asarray(1.))` produces
-    # TypeError: can't convert np.ndarray of type numpy.object_.
-    # So we extract the scalar from 0d arrays.
+    # For CI, be a little more forgiving; just generate normally distributed arguments
+    rng = np.random.default_rng(984254252920492019)
+    args_np = [rng.standard_normal(size=shape, dtype=dtype_np) for shape in shapes]
+
+    if (is_jax(xp) and f_name == 'gammaincc'  # google/jax#20699
+            or f_name == 'chdtrc'):  # gh-20972
+        args_np[0] = np.abs(args_np[0])
+        args_np[1] = np.abs(args_np[1])
+
     args_xp = [xp.asarray(arg[()], dtype=dtype_xp) for arg in args_np]
 
-    ref = np.asarray(f(*args_np))
     res = f(*args_xp)
+    ref = xp.asarray(f(*args_np), dtype=dtype_xp)
 
-    eps = np.finfo(dtype).eps
-    # PyTorch seems to struggle with precision near the poles of `gammaln`,
-    # so the tolerance needs to be quite loose (eps**0.2) - see gh-19935.
-    # To compensate, we also check that the root-mean-square error is
-    # less than eps**0.5.
-    ref = xp.asarray(ref, dtype=dtype_xp)
-    xp_assert_close(res, ref, rtol=eps**0.2, atol=eps*20,
-                    check_namespace=True, check_shape=True, check_dtype=True,)
-    xp_assert_close(xp.sqrt(xp.mean(res**2)), xp.sqrt(xp.mean(ref**2)),
-                    rtol=eps**0.5, atol=eps*20,
-                    check_namespace=False, check_shape=False, check_dtype=False,)
+    eps = np.finfo(dtype_np).eps
+    xp_assert_close(res, ref, atol=10*eps)

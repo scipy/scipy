@@ -30,7 +30,7 @@ def _check_func(checker, argname, thefunc, x0, args, numinputs,
                   f"shape of the '{argname}' argument"
             func_name = getattr(thefunc, '__name__', None)
             if func_name:
-                msg += " '%s'." % func_name
+                msg += f" '{func_name}'."
             else:
                 msg += "."
             msg += f'Shape should be {output_shape} but it is {shape(res)}.'
@@ -261,14 +261,13 @@ def _root_hybr(func, x0, args=(), jac=None,
               1: "The solution converged.",
               2: "The number of calls to function has "
                   "reached maxfev = %d." % maxfev,
-              3: "xtol=%f is too small, no further improvement "
-                  "in the approximate\n  solution "
-                  "is possible." % xtol,
+              3: f"xtol={xtol:f} is too small, no further improvement "
+                  "in the approximate\n solution is possible.",
               4: "The iteration is not making good progress, as measured "
-                  "by the \n  improvement from the last five "
+                  "by the \n improvement from the last five "
                   "Jacobian evaluations.",
               5: "The iteration is not making good progress, "
-                  "as measured by the \n  improvement from the last "
+                  "as measured by the \n improvement from the last "
                   "ten iterations.",
               'unknown': "An error occurred."}
 
@@ -451,27 +450,26 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=False,
 
     errors = {0: ["Improper input parameters.", TypeError],
               1: ["Both actual and predicted relative reductions "
-                  "in the sum of squares\n  are at most %f" % ftol, None],
+                  f"in the sum of squares\n  are at most {ftol:f}", None],
               2: ["The relative error between two consecutive "
-                  "iterates is at most %f" % xtol, None],
+                  f"iterates is at most {xtol:f}", None],
               3: ["Both actual and predicted relative reductions in "
                   f"the sum of squares\n  are at most {ftol:f} and the "
                   "relative error between two consecutive "
                   f"iterates is at \n  most {xtol:f}", None],
               4: ["The cosine of the angle between func(x) and any "
-                  "column of the\n  Jacobian is at most %f in "
-                  "absolute value" % gtol, None],
+                  f"column of the\n  Jacobian is at most {gtol:f} in "
+                  "absolute value", None],
               5: ["Number of calls to function has reached "
                   "maxfev = %d." % maxfev, ValueError],
-              6: ["ftol=%f is too small, no further reduction "
-                  "in the sum of squares\n  is possible." % ftol,
+              6: [f"ftol={ftol:f} is too small, no further reduction "
+                  "in the sum of squares\n  is possible.",
                   ValueError],
-              7: ["xtol=%f is too small, no further improvement in "
-                  "the approximate\n  solution is possible." % xtol,
+              7: [f"xtol={xtol:f} is too small, no further improvement in "
+                  "the approximate\n  solution is possible.",
                   ValueError],
-              8: ["gtol=%f is too small, func(x) is orthogonal to the "
-                  "columns of\n  the Jacobian to machine "
-                  "precision." % gtol, ValueError]}
+              8: [f"gtol={gtol:f} is too small, func(x) is orthogonal to the "
+                  "columns of\n  the Jacobian to machine precision.", ValueError]}
 
     # The FORTRAN return value (possible return values are >= 0 and <= 8)
     info = retval[-1]
@@ -620,15 +618,15 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         ``r = ydata - f(xdata, *popt)``, then the interpretation of `sigma`
         depends on its number of dimensions:
 
-            - A scalar or 1-D `sigma` should contain values of standard deviations of
-              errors in `ydata`. In this case, the optimized function is
-              ``chisq = sum((r / sigma) ** 2)``.
+        - A scalar or 1-D `sigma` should contain values of standard deviations of
+          errors in `ydata`. In this case, the optimized function is
+          ``chisq = sum((r / sigma) ** 2)``.
 
-            - A 2-D `sigma` should contain the covariance matrix of
-              errors in `ydata`. In this case, the optimized function is
-              ``chisq = r.T @ inv(sigma) @ r``.
+        - A 2-D `sigma` should contain the covariance matrix of
+          errors in `ydata`. In this case, the optimized function is
+          ``chisq = r.T @ inv(sigma) @ r``.
 
-              .. versionadded:: 0.19
+          .. versionadded:: 0.19
 
         None (default) is equivalent of 1-D `sigma` filled with ones.
     absolute_sigma : bool, optional
@@ -653,13 +651,13 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         Lower and upper bounds on parameters. Defaults to no bounds.
         There are two ways to specify the bounds:
 
-            - Instance of `Bounds` class.
+        - Instance of `Bounds` class.
 
-            - 2-tuple of array_like: Each element of the tuple must be either
-              an array with the length equal to the number of parameters, or a
-              scalar (in which case the bound is taken to be the same for all
-              parameters). Use ``np.inf`` with an appropriate sign to disable
-              bounds on all or some parameters.
+        - 2-tuple of array_like: Each element of the tuple must be either
+          an array with the length equal to the number of parameters, or a
+          scalar (in which case the bound is taken to be the same for all
+          parameters). Use ``np.inf`` with an appropriate sign to disable
+          bounds on all or some parameters.
 
     method : {'lm', 'trf', 'dogbox'}, optional
         Method to use for optimization. See `least_squares` for more details.
@@ -687,11 +685,11 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         Defines how to handle when input contains nan.
         The following options are available (default is None):
 
-          * 'raise': throws an error
-          * 'omit': performs the calculations ignoring nan values
-          * None: no special handling of NaNs is performed
-            (except what is done by check_finite); the behavior when NaNs
-            are present is implementation-dependent and may change.
+        * 'raise': throws an error
+        * 'omit': performs the calculations ignoring nan values
+        * None: no special handling of NaNs is performed
+          (except what is done by check_finite); the behavior when NaNs
+          are present is implementation-dependent and may change.
 
         Note that if this value is specified explicitly (not None),
         `check_finite` will be set as False.
@@ -712,7 +710,7 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         deviation errors on the parameters, use
         ``perr = np.sqrt(np.diag(pcov))``. Note that the relationship between
         `cov` and parameter error estimates is derived based on a linear
-        approximation to the model function around the optimum [1].
+        approximation to the model function around the optimum [1]_.
         When this approximation becomes inaccurate, `cov` may not provide an
         accurate measure of uncertainty.
 
@@ -803,9 +801,9 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
 
     References
     ----------
-    [1] K. Vugrin et al. Confidence region estimation techniques for nonlinear
-        regression in groundwater flow: Three case studies. Water Resources
-        Research, Vol. 43, W03423, :doi:`10.1029/2005WR004804`
+    .. [1] K. Vugrin et al. Confidence region estimation techniques for nonlinear
+           regression in groundwater flow: Three case studies. Water Resources
+           Research, Vol. 43, W03423, :doi:`10.1029/2005WR004804`
 
     Examples
     --------

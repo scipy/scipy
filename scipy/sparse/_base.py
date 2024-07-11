@@ -252,8 +252,9 @@ class _spbase:
                 if self.dtype <= np.dtype(fp_type):
                     return self.astype(fp_type)
 
-            raise TypeError('cannot upcast [%s] to a floating '
-                            'point format' % self.dtype.name)
+            raise TypeError(
+                f'cannot upcast [{self.dtype.name}] to a floating point format'
+            )
 
     def __iter__(self):
         for r in range(self.shape[0]):
@@ -333,8 +334,8 @@ class _spbase:
         --------
         count_nonzero : Number of non-zero entries
         """
-        raise NotImplementedError("getnnz not implemented for %s." %
-                                  self.__class__.__name__)
+        clsname = self.__class__.__name__
+        raise NotImplementedError(f"getnnz not implemented for {clsname}.")
 
     @property
     def nnz(self) -> int:
@@ -619,9 +620,12 @@ class _spbase:
             # scalar value
             return self._mul_scalar(other)
 
+        err_prefix = "matmul: dimension mismatch with signature"
         if issparse(other):
-            if self.shape[-1] != other.shape[0]:
-                raise ValueError('dimension mismatch')
+            if N != other.shape[0]:
+                raise ValueError(
+                    f"{err_prefix} (n,k={N}),(k={other.shape[0]},m)->(n,m)"
+                )
             return self._matmul_sparse(other)
 
         # If it's a list or whatever, treat it like an array
@@ -639,8 +643,10 @@ class _spbase:
 
         if other.ndim == 1 or other.ndim == 2 and other.shape[1] == 1:
             # dense row or column vector
-            if other.shape != (N,) and other.shape != (N, 1):
-                raise ValueError('dimension mismatch')
+            if other.shape[0] != N:
+                raise ValueError(
+                    f"{err_prefix} (n,k={N}),(k={other.shape[0]},1?)->(n,1?)"
+                )
 
             result = self._matmul_vector(np.ravel(other))
 
@@ -658,7 +664,9 @@ class _spbase:
             # dense 2D array or matrix ("multivector")
 
             if other.shape[0] != N:
-                raise ValueError('dimension mismatch')
+                raise ValueError(
+                    f"{err_prefix} (n,k={N}),(k={other.shape[0]},m)->(n,m)"
+                )
 
             result = self._matmul_multivector(np.asarray(other))
 
@@ -886,7 +894,7 @@ class _spbase:
         # convert to COOrdinate format
         A = self.tocoo()
         nz_mask = A.data != 0
-        return (A.row[nz_mask], A.col[nz_mask])
+        return tuple(idx[nz_mask] for idx in A.coords)
 
     def _getcol(self, j):
         """Returns a copy of column j of the array, as an (m x 1) sparse

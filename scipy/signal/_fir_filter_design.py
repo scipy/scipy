@@ -237,8 +237,8 @@ def kaiserord(ripple, width):
     A = abs(ripple)  # in case somebody is confused as to what's meant
     if A < 8:
         # Formula for N is not valid in this range.
-        raise ValueError("Requested maximum ripple attenuation %f is too "
-                         "small for the Kaiser formula." % A)
+        raise ValueError("Requested maximum ripple attenuation "
+                         f"{A:f} is too small for the Kaiser formula.")
     beta = kaiser_beta(A)
 
     # Kaiser's formula (as given in Oppenheim and Schafer) is for the filter
@@ -956,7 +956,7 @@ def firls(numtaps, bands, desired, *, weight=None, fs=None):
     # normalize bands 0->1 and make it 2 columns
     nyq = float(nyq)
     if nyq <= 0:
-        raise ValueError('nyq must be positive, got %s <= 0.' % nyq)
+        raise ValueError(f'nyq must be positive, got {nyq} <= 0.')
     bands = np.asarray(bands).flatten() / nyq
     if len(bands) % 2 != 0:
         raise ValueError("bands must contain frequency pairs.")
@@ -1243,7 +1243,7 @@ def minimum_phase(h: np.ndarray,
         n_fft = 2 ** int(np.ceil(np.log2(2 * (len(h) - 1) / 0.01)))
     n_fft = int(n_fft)
     if n_fft < len(h):
-        raise ValueError('n_fft must be at least len(h)==%s' % len(h))
+        raise ValueError(f'n_fft must be at least len(h)=={len(h)}')
     if method == 'hilbert':
         w = np.arange(n_fft) * (2 * np.pi / n_fft * n_half)
         H = np.real(fft(h, n_fft) * np.exp(1j * w))

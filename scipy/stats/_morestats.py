@@ -11,8 +11,14 @@ from numpy import (isscalar, r_, log, around, unique, asarray, zeros,
 from scipy import optimize, special, interpolate, stats
 from scipy._lib._bunch import _make_tuple_bunch
 from scipy._lib._util import _rename_parameter, _contains_nan, _get_nan
-from scipy._lib._array_api import (array_namespace, xp_minimum, size as xp_size,
-                                   xp_moveaxis_to_end)
+
+from scipy._lib._array_api import (
+    array_namespace,
+    size as xp_size,
+    xp_minimum,
+    xp_moveaxis_to_end,
+    xp_vector_norm,
+)
 
 from ._ansari_swilk_statistics import gscale, swilk
 from . import _stats_py, _wilcoxon
@@ -650,7 +656,7 @@ def probplot(x, sparams=(), dist='norm', fit=True, plot=None, rvalue=False):
             ymax = amax(x)
             posx = xmin + 0.70 * (xmax - xmin)
             posy = ymin + 0.01 * (ymax - ymin)
-            plot.text(posx, posy, "$R^2=%1.4f$" % r**2)
+            plot.text(posx, posy, f"$R^2={r ** 2:1.4f}$")
 
     if fit:
         return (osm, osr), (slope, intercept, r)
@@ -942,25 +948,37 @@ def boxcox_llf(lmb, data):
     >>> plt.show()
 
     """
-    data = np.asarray(data)
+    xp = array_namespace(data)
+    data = xp.asarray(data)
     N = data.shape[0]
     if N == 0:
-        return np.nan
+        return xp.nan
 
-    logdata = np.log(data)
+    dt = data.dtype
+    if xp.isdtype(dt, 'integral'):
+        data = xp.asarray(data, dtype=xp.float64)
+        dt = xp.float64
+    
+    logdata = xp.log(data)
 
     # Compute the variance of the transformed data.
     if lmb == 0:
-        logvar = np.log(np.var(logdata, axis=0))
+        logvar = xp.log(xp.var(logdata, axis=0))
     else:
         # Transform without the constant offset 1/lmb.  The offset does
         # not affect the variance, and the subtraction of the offset can
         # lead to loss of precision.
         # Division by lmb can be factored out to enhance numerical stability.
         logx = lmb * logdata
+        # convert to `np` for `special.logsumexp`
+        logx = np.asarray(logx)
         logvar = _log_var(logx) - 2 * np.log(abs(lmb))
+        logvar = xp.asarray(logvar)
 
-    return (lmb - 1) * np.sum(logdata, axis=0) - N/2 * logvar
+    res = (lmb - 1) * xp.sum(logdata, axis=0) - N/2 * logvar
+    res = xp.astype(res, dt)
+    res = res[()] if res.ndim == 0 else res
+    return res
 
 
 def _boxcox_conf_interval(x, lmax, alpha):
@@ -1892,6 +1910,7 @@ def shapiro(x):
     --------
     anderson : The Anderson-Darling test for normality
     kstest : The Kolmogorov-Smirnov test for goodness of fit.
+    :ref:`hypothesis_shapiro` : Extended example
 
     Notes
     -----
@@ -1912,91 +1931,23 @@ def shapiro(x):
     .. [4] Royston P., "Remark AS R94: A Remark on Algorithm AS 181: The
            W-test for Normality", 1995, Applied Statistics, Vol. 44,
            :doi:`10.2307/2986146`
-    .. [5] Phipson B., and Smyth, G. K., "Permutation P-values Should Never Be
-           Zero: Calculating Exact P-values When Permutations Are Randomly
-           Drawn", Statistical Applications in Genetics and Molecular Biology,
-           2010, Vol.9, :doi:`10.2202/1544-6115.1585`
-    .. [6] Panagiotakos, D. B., "The value of p-value in biomedical
-           research", The Open Cardiovascular Medicine Journal, 2008, Vol.2,
-           pp. 97-99, :doi:`10.2174/1874192400802010097`
 
     Examples
     --------
-    Suppose we wish to infer from measurements whether the weights of adult
-    human males in a medical study are not normally distributed [2]_.
-    The weights (lbs) are recorded in the array ``x`` below.
 
     >>> import numpy as np
-    >>> x = np.array([148, 154, 158, 160, 161, 162, 166, 170, 182, 195, 236])
-
-    The normality test of [1]_ and [2]_ begins by computing a statistic based
-    on the relationship between the observations and the expected order
-    statistics of a normal distribution.
-
     >>> from scipy import stats
-    >>> res = stats.shapiro(x)
-    >>> res.statistic
-    0.7888147830963135
+    >>> rng = np.random.default_rng()
+    >>> x = stats.norm.rvs(loc=5, scale=3, size=100, random_state=rng)
+    >>> shapiro_test = stats.shapiro(x)
+    >>> shapiro_test
+    ShapiroResult(statistic=0.9813305735588074, pvalue=0.16855233907699585)
+    >>> shapiro_test.statistic
+    0.9813305735588074
+    >>> shapiro_test.pvalue
+    0.16855233907699585
 
-    The value of this statistic tends to be high (close to 1) for samples drawn
-    from a normal distribution.
-
-    The test is performed by comparing the observed value of the statistic
-    against the null distribution: the distribution of statistic values formed
-    under the null hypothesis that the weights were drawn from a normal
-    distribution. For this normality test, the null distribution is not easy to
-    calculate exactly, so it is usually approximated by Monte Carlo methods,
-    that is, drawing many samples of the same size as ``x`` from a normal
-    distribution and computing the values of the statistic for each.
-
-    >>> def statistic(x):
-    ...     # Get only the `shapiro` statistic; ignore its p-value
-    ...     return stats.shapiro(x).statistic
-    >>> ref = stats.monte_carlo_test(x, stats.norm.rvs, statistic,
-    ...                              alternative='less')
-    >>> import matplotlib.pyplot as plt
-    >>> fig, ax = plt.subplots(figsize=(8, 5))
-    >>> bins = np.linspace(0.65, 1, 50)
-    >>> def plot(ax):  # we'll reuse this
-    ...     ax.hist(ref.null_distribution, density=True, bins=bins)
-    ...     ax.set_title("Shapiro-Wilk Test Null Distribution \n"
-    ...                  "(Monte Carlo Approximation, 11 Observations)")
-    ...     ax.set_xlabel("statistic")
-    ...     ax.set_ylabel("probability density")
-    >>> plot(ax)
-    >>> plt.show()
-
-    The comparison is quantified by the p-value: the proportion of values in
-    the null distribution less than or equal to the observed value of the
-    statistic.
-
-    >>> fig, ax = plt.subplots(figsize=(8, 5))
-    >>> plot(ax)
-    >>> annotation = (f'p-value={res.pvalue:.6f}\n(highlighted area)')
-    >>> props = dict(facecolor='black', width=1, headwidth=5, headlength=8)
-    >>> _ = ax.annotate(annotation, (0.75, 0.1), (0.68, 0.7), arrowprops=props)
-    >>> i_extreme = np.where(bins <= res.statistic)[0]
-    >>> for i in i_extreme:
-    ...     ax.patches[i].set_color('C1')
-    >>> plt.xlim(0.65, 0.9)
-    >>> plt.ylim(0, 4)
-    >>> plt.show
-    >>> res.pvalue
-    0.006703833118081093
-
-    If the p-value is "small" - that is, if there is a low probability of
-    sampling data from a normally distributed population that produces such an
-    extreme value of the statistic - this may be taken as evidence against
-    the null hypothesis in favor of the alternative: the weights were not
-    drawn from a normal distribution. Note that:
-
-    - The inverse is not true; that is, the test is not used to provide
-      evidence *for* the null hypothesis.
-    - The threshold for values that will be considered "small" is a choice that
-      should be made before the data is analyzed [5]_ with consideration of the
-      risks of both false positives (incorrectly rejecting the null hypothesis)
-      and false negatives (failure to reject a false null hypothesis).
-
+    For a more detailed example, see :ref:`hypothesis_shapiro`.
     """
     x = np.ravel(x).astype(np.float64)
 
@@ -2866,6 +2817,7 @@ def bartlett(*samples, axis=0):
     --------
     fligner : A non-parametric test for the equality of k variances
     levene : A robust parametric test for equality of k variances
+    :ref:`hypothesis_bartlett` : Extended example
 
     Notes
     -----
@@ -2887,153 +2839,15 @@ def bartlett(*samples, axis=0):
     .. [4] Bartlett, M. S. (1937). Properties of Sufficiency and Statistical
            Tests. Proceedings of the Royal Society of London. Series A,
            Mathematical and Physical Sciences, Vol. 160, No.901, pp. 268-282.
-    .. [5] C.I. BLISS (1952), The Statistics of Bioassay: With Special
-           Reference to the Vitamins, pp 499-503,
-           :doi:`10.1016/C2013-0-12584-6`.
-    .. [6] B. Phipson and G. K. Smyth. "Permutation P-values Should Never Be
-           Zero: Calculating Exact P-values When Permutations Are Randomly
-           Drawn." Statistical Applications in Genetics and Molecular Biology
-           9.1 (2010).
-    .. [7] Ludbrook, J., & Dudley, H. (1998). Why permutation tests are
-           superior to t and F tests in biomedical research. The American
-           Statistician, 52(2), 127-132.
 
     Examples
     --------
-    In [5]_, the influence of vitamin C on the tooth growth of guinea pigs
-    was investigated. In a control study, 60 subjects were divided into
-    small dose, medium dose, and large dose groups that received
-    daily doses of 0.5, 1.0 and 2.0 mg of vitamin C, respectively.
-    After 42 days, the tooth growth was measured.
-
-    The ``small_dose``, ``medium_dose``, and ``large_dose`` arrays below record
-    tooth growth measurements of the three groups in microns.
-
-    >>> import numpy as np
-    >>> small_dose = np.array([
-    ...     4.2, 11.5, 7.3, 5.8, 6.4, 10, 11.2, 11.2, 5.2, 7,
-    ...     15.2, 21.5, 17.6, 9.7, 14.5, 10, 8.2, 9.4, 16.5, 9.7
-    ... ])
-    >>> medium_dose = np.array([
-    ...     16.5, 16.5, 15.2, 17.3, 22.5, 17.3, 13.6, 14.5, 18.8, 15.5,
-    ...     19.7, 23.3, 23.6, 26.4, 20, 25.2, 25.8, 21.2, 14.5, 27.3
-    ... ])
-    >>> large_dose = np.array([
-    ...     23.6, 18.5, 33.9, 25.5, 26.4, 32.5, 26.7, 21.5, 23.3, 29.5,
-    ...     25.5, 26.4, 22.4, 24.5, 24.8, 30.9, 26.4, 27.3, 29.4, 23
-    ... ])
-
-    The `bartlett` statistic is sensitive to differences in variances
-    between the samples.
-
-    >>> from scipy import stats
-    >>> res = stats.bartlett(small_dose, medium_dose, large_dose)
-    >>> res.statistic
-    0.6654670663030519
-
-    The value of the statistic tends to be high when there is a large
-    difference in variances.
-
-    We can test for inequality of variance among the groups by comparing the
-    observed value of the statistic against the null distribution: the
-    distribution of statistic values derived under the null hypothesis that
-    the population variances of the three groups are equal.
-
-    For this test, the null distribution follows the chi-square distribution
-    as shown below.
-
-    >>> import matplotlib.pyplot as plt
-    >>> k = 3  # number of samples
-    >>> dist = stats.chi2(df=k-1)
-    >>> val = np.linspace(0, 5, 100)
-    >>> pdf = dist.pdf(val)
-    >>> fig, ax = plt.subplots(figsize=(8, 5))
-    >>> def plot(ax):  # we'll reuse this
-    ...     ax.plot(val, pdf, color='C0')
-    ...     ax.set_title("Bartlett Test Null Distribution")
-    ...     ax.set_xlabel("statistic")
-    ...     ax.set_ylabel("probability density")
-    ...     ax.set_xlim(0, 5)
-    ...     ax.set_ylim(0, 1)
-    >>> plot(ax)
-    >>> plt.show()
-
-    The comparison is quantified by the p-value: the proportion of values in
-    the null distribution greater than or equal to the observed value of the
-    statistic.
-
-    >>> fig, ax = plt.subplots(figsize=(8, 5))
-    >>> plot(ax)
-    >>> pvalue = dist.sf(res.statistic)
-    >>> annotation = (f'p-value={pvalue:.3f}\n(shaded area)')
-    >>> props = dict(facecolor='black', width=1, headwidth=5, headlength=8)
-    >>> _ = ax.annotate(annotation, (1.5, 0.22), (2.25, 0.3), arrowprops=props)
-    >>> i = val >= res.statistic
-    >>> ax.fill_between(val[i], y1=0, y2=pdf[i], color='C0')
-    >>> plt.show()
-
-    >>> res.pvalue
-    0.71696121509966
-
-    If the p-value is "small" - that is, if there is a low probability of
-    sampling data from distributions with identical variances that produces
-    such an extreme value of the statistic - this may be taken as evidence
-    against the null hypothesis in favor of the alternative: the variances of
-    the groups are not equal. Note that:
-
-    - The inverse is not true; that is, the test is not used to provide
-      evidence for the null hypothesis.
-    - The threshold for values that will be considered "small" is a choice that
-      should be made before the data is analyzed [6]_ with consideration of the
-      risks of both false positives (incorrectly rejecting the null hypothesis)
-      and false negatives (failure to reject a false null hypothesis).
-    - Small p-values are not evidence for a *large* effect; rather, they can
-      only provide evidence for a "significant" effect, meaning that they are
-      unlikely to have occurred under the null hypothesis.
-
-    Note that the chi-square distribution provides the null distribution
-    when the observations are normally distributed. For small samples
-    drawn from non-normal populations, it may be more appropriate to
-    perform a
-    permutation test: Under the null hypothesis that all three samples were
-    drawn from the same population, each of the measurements is equally likely
-    to have been observed in any of the three samples. Therefore, we can form
-    a randomized null distribution by calculating the statistic under many
-    randomly-generated partitionings of the observations into the three
-    samples.
-
-    >>> def statistic(*samples):
-    ...     return stats.bartlett(*samples).statistic
-    >>> ref = stats.permutation_test(
-    ...     (small_dose, medium_dose, large_dose), statistic,
-    ...     permutation_type='independent', alternative='greater'
-    ... )
-    >>> fig, ax = plt.subplots(figsize=(8, 5))
-    >>> plot(ax)
-    >>> bins = np.linspace(0, 5, 25)
-    >>> ax.hist(
-    ...     ref.null_distribution, bins=bins, density=True, facecolor="C1"
-    ... )
-    >>> ax.legend(['aymptotic approximation\n(many observations)',
-    ...            'randomized null distribution'])
-    >>> plot(ax)
-    >>> plt.show()
-
-    >>> ref.pvalue  # randomized test p-value
-    0.5387  # may vary
-
-    Note that there is significant disagreement between the p-value calculated
-    here and the asymptotic approximation returned by `bartlett` above.
-    The statistical inferences that can be drawn rigorously from a permutation
-    test are limited; nonetheless, they may be the preferred approach in many
-    circumstances [7]_.
-
-    Following is another generic example where the null hypothesis would be
-    rejected.
 
     Test whether the lists `a`, `b` and `c` come from populations
     with equal variances.
 
+    >>> import numpy as np
+    >>> from scipy import stats
     >>> a = [8.88, 9.12, 9.04, 8.98, 9.00, 9.08, 9.01, 8.85, 9.06, 8.99]
     >>> b = [8.88, 8.95, 9.29, 9.44, 9.15, 9.58, 8.36, 9.18, 8.67, 9.05]
     >>> c = [8.95, 9.12, 8.95, 8.85, 9.03, 8.84, 9.07, 8.98, 8.86, 8.98]
@@ -3050,6 +2864,7 @@ def bartlett(*samples, axis=0):
     >>> [np.var(x, ddof=1) for x in [a, b, c]]
     [0.007054444444444413, 0.13073888888888888, 0.008890000000000002]
 
+    For a more detailed example, see :ref:`hypothesis_bartlett`.
     """
     xp = array_namespace(*samples)
 
@@ -3118,15 +2933,16 @@ def levene(*samples, center='median', proportiontocut=0.05):
     --------
     fligner : A non-parametric test for the equality of k variances
     bartlett : A parametric test for equality of k variances in normal samples
+    :ref:`hypothesis_levene` : Extended example
 
     Notes
     -----
     Three variations of Levene's test are possible.  The possibilities
     and their recommended usages are:
 
-      * 'median' : Recommended for skewed (non-normal) distributions>
-      * 'mean' : Recommended for symmetric, moderate-tailed distributions.
-      * 'trimmed' : Recommended for heavy-tailed distributions.
+    * 'median' : Recommended for skewed (non-normal) distributions>
+    * 'mean' : Recommended for symmetric, moderate-tailed distributions.
+    * 'trimmed' : Recommended for heavy-tailed distributions.
 
     The test version using the mean was proposed in the original article
     of Levene ([2]_) while the median and trimmed mean have been studied by
@@ -3141,152 +2957,15 @@ def levene(*samples, center='median', proportiontocut=0.05):
            Stanford University Press, pp. 278-292.
     .. [3] Brown, M. B. and Forsythe, A. B. (1974), Journal of the American
            Statistical Association, 69, 364-367
-    .. [4] C.I. BLISS (1952), The Statistics of Bioassay: With Special
-           Reference to the Vitamins, pp 499-503,
-           :doi:`10.1016/C2013-0-12584-6`.
-    .. [5] B. Phipson and G. K. Smyth. "Permutation P-values Should Never Be
-           Zero: Calculating Exact P-values When Permutations Are Randomly
-           Drawn." Statistical Applications in Genetics and Molecular Biology
-           9.1 (2010).
-    .. [6] Ludbrook, J., & Dudley, H. (1998). Why permutation tests are
-           superior to t and F tests in biomedical research. The American
-           Statistician, 52(2), 127-132.
 
     Examples
     --------
-    In [4]_, the influence of vitamin C on the tooth growth of guinea pigs
-    was investigated. In a control study, 60 subjects were divided into
-    small dose, medium dose, and large dose groups that received
-    daily doses of 0.5, 1.0 and 2.0 mg of vitamin C, respectively.
-    After 42 days, the tooth growth was measured.
-
-    The ``small_dose``, ``medium_dose``, and ``large_dose`` arrays below record
-    tooth growth measurements of the three groups in microns.
-
-    >>> import numpy as np
-    >>> small_dose = np.array([
-    ...     4.2, 11.5, 7.3, 5.8, 6.4, 10, 11.2, 11.2, 5.2, 7,
-    ...     15.2, 21.5, 17.6, 9.7, 14.5, 10, 8.2, 9.4, 16.5, 9.7
-    ... ])
-    >>> medium_dose = np.array([
-    ...     16.5, 16.5, 15.2, 17.3, 22.5, 17.3, 13.6, 14.5, 18.8, 15.5,
-    ...     19.7, 23.3, 23.6, 26.4, 20, 25.2, 25.8, 21.2, 14.5, 27.3
-    ... ])
-    >>> large_dose = np.array([
-    ...     23.6, 18.5, 33.9, 25.5, 26.4, 32.5, 26.7, 21.5, 23.3, 29.5,
-    ...     25.5, 26.4, 22.4, 24.5, 24.8, 30.9, 26.4, 27.3, 29.4, 23
-    ... ])
-
-    The `levene` statistic is sensitive to differences in variances
-    between the samples.
-
-    >>> from scipy import stats
-    >>> res = stats.levene(small_dose, medium_dose, large_dose)
-    >>> res.statistic
-    0.6457341109631506
-
-    The value of the statistic tends to be high when there is a large
-    difference in variances.
-
-    We can test for inequality of variance among the groups by comparing the
-    observed value of the statistic against the null distribution: the
-    distribution of statistic values derived under the null hypothesis that
-    the population variances of the three groups are equal.
-
-    For this test, the null distribution follows the F distribution as shown
-    below.
-
-    >>> import matplotlib.pyplot as plt
-    >>> k, n = 3, 60   # number of samples, total number of observations
-    >>> dist = stats.f(dfn=k-1, dfd=n-k)
-    >>> val = np.linspace(0, 5, 100)
-    >>> pdf = dist.pdf(val)
-    >>> fig, ax = plt.subplots(figsize=(8, 5))
-    >>> def plot(ax):  # we'll reuse this
-    ...     ax.plot(val, pdf, color='C0')
-    ...     ax.set_title("Levene Test Null Distribution")
-    ...     ax.set_xlabel("statistic")
-    ...     ax.set_ylabel("probability density")
-    ...     ax.set_xlim(0, 5)
-    ...     ax.set_ylim(0, 1)
-    >>> plot(ax)
-    >>> plt.show()
-
-    The comparison is quantified by the p-value: the proportion of values in
-    the null distribution greater than or equal to the observed value of the
-    statistic.
-
-    >>> fig, ax = plt.subplots(figsize=(8, 5))
-    >>> plot(ax)
-    >>> pvalue = dist.sf(res.statistic)
-    >>> annotation = (f'p-value={pvalue:.3f}\n(shaded area)')
-    >>> props = dict(facecolor='black', width=1, headwidth=5, headlength=8)
-    >>> _ = ax.annotate(annotation, (1.5, 0.22), (2.25, 0.3), arrowprops=props)
-    >>> i = val >= res.statistic
-    >>> ax.fill_between(val[i], y1=0, y2=pdf[i], color='C0')
-    >>> plt.show()
-
-    >>> res.pvalue
-    0.5280694573759905
-
-    If the p-value is "small" - that is, if there is a low probability of
-    sampling data from distributions with identical variances that produces
-    such an extreme value of the statistic - this may be taken as evidence
-    against the null hypothesis in favor of the alternative: the variances of
-    the groups are not equal. Note that:
-
-    - The inverse is not true; that is, the test is not used to provide
-      evidence for the null hypothesis.
-    - The threshold for values that will be considered "small" is a choice that
-      should be made before the data is analyzed [5]_ with consideration of the
-      risks of both false positives (incorrectly rejecting the null hypothesis)
-      and false negatives (failure to reject a false null hypothesis).
-    - Small p-values are not evidence for a *large* effect; rather, they can
-      only provide evidence for a "significant" effect, meaning that they are
-      unlikely to have occurred under the null hypothesis.
-
-    Note that the F distribution provides an asymptotic approximation of the
-    null distribution.
-    For small samples, it may be more appropriate to perform a permutation
-    test: Under the null hypothesis that all three samples were drawn from
-    the same population, each of the measurements is equally likely to have
-    been observed in any of the three samples. Therefore, we can form a
-    randomized null distribution by calculating the statistic under many
-    randomly-generated partitionings of the observations into the three
-    samples.
-
-    >>> def statistic(*samples):
-    ...     return stats.levene(*samples).statistic
-    >>> ref = stats.permutation_test(
-    ...     (small_dose, medium_dose, large_dose), statistic,
-    ...     permutation_type='independent', alternative='greater'
-    ... )
-    >>> fig, ax = plt.subplots(figsize=(8, 5))
-    >>> plot(ax)
-    >>> bins = np.linspace(0, 5, 25)
-    >>> ax.hist(
-    ...     ref.null_distribution, bins=bins, density=True, facecolor="C1"
-    ... )
-    >>> ax.legend(['aymptotic approximation\n(many observations)',
-    ...            'randomized null distribution'])
-    >>> plot(ax)
-    >>> plt.show()
-
-    >>> ref.pvalue  # randomized test p-value
-    0.4559  # may vary
-
-    Note that there is significant disagreement between the p-value calculated
-    here and the asymptotic approximation returned by `levene` above.
-    The statistical inferences that can be drawn rigorously from a permutation
-    test are limited; nonetheless, they may be the preferred approach in many
-    circumstances [6]_.
-
-    Following is another generic example where the null hypothesis would be
-    rejected.
 
     Test whether the lists `a`, `b` and `c` come from populations
     with equal variances.
 
+    >>> import numpy as np
+    >>> from scipy import stats
     >>> a = [8.88, 9.12, 9.04, 8.98, 9.00, 9.08, 9.01, 8.85, 9.06, 8.99]
     >>> b = [8.88, 8.95, 9.29, 9.44, 9.15, 9.58, 8.36, 9.18, 8.67, 9.05]
     >>> c = [8.95, 9.12, 8.95, 8.85, 9.03, 8.84, 9.07, 8.98, 8.86, 8.98]
@@ -3303,6 +2982,7 @@ def levene(*samples, center='median', proportiontocut=0.05):
     >>> [np.var(x, ddof=1) for x in [a, b, c]]
     [0.007054444444444413, 0.13073888888888888, 0.008890000000000002]
 
+    For a more detailed example, see :ref:`hypothesis_levene`.
     """
     if center not in ['mean', 'median', 'trimmed']:
         raise ValueError("center must be 'mean', 'median' or 'trimmed'.")
@@ -3407,6 +3087,7 @@ def fligner(*samples, center='median', proportiontocut=0.05):
     --------
     bartlett : A parametric test for equality of k variances in normal samples
     levene : A robust parametric test for equality of k variances
+    :ref:`hypothesis_fligner` : Extended example
 
     Notes
     -----
@@ -3428,7 +3109,7 @@ def fligner(*samples, center='median', proportiontocut=0.05):
            University.
            https://cecas.clemson.edu/~cspark/cv/paper/qif/draftqif2.pdf
     .. [2] Fligner, M.A. and Killeen, T.J. (1976). Distribution-free two-sample
-           tests for scale. 'Journal of the American Statistical Association.'
+           tests for scale. Journal of the American Statistical Association.
            71(353), 210-213.
     .. [3] Park, C. and Lindsay, B. G. (1999). Robust Scale Estimation and
            Hypothesis Testing based on Quadratic Inference Function. Technical
@@ -3438,148 +3119,12 @@ def fligner(*samples, center='median', proportiontocut=0.05):
            comparative study of tests for homogeneity of variances, with
            applications to the outer continental shelf bidding data.
            Technometrics, 23(4), 351-361.
-    .. [5] C.I. BLISS (1952), The Statistics of Bioassay: With Special
-           Reference to the Vitamins, pp 499-503,
-           :doi:`10.1016/C2013-0-12584-6`.
-    .. [6] B. Phipson and G. K. Smyth. "Permutation P-values Should Never Be
-           Zero: Calculating Exact P-values When Permutations Are Randomly
-           Drawn." Statistical Applications in Genetics and Molecular Biology
-           9.1 (2010).
-    .. [7] Ludbrook, J., & Dudley, H. (1998). Why permutation tests are
-           superior to t and F tests in biomedical research. The American
-           Statistician, 52(2), 127-132.
 
     Examples
     --------
-    In [5]_, the influence of vitamin C on the tooth growth of guinea pigs
-    was investigated. In a control study, 60 subjects were divided into
-    small dose, medium dose, and large dose groups that received
-    daily doses of 0.5, 1.0 and 2.0 mg of vitamin C, respectively.
-    After 42 days, the tooth growth was measured.
-
-    The ``small_dose``, ``medium_dose``, and ``large_dose`` arrays below record
-    tooth growth measurements of the three groups in microns.
 
     >>> import numpy as np
-    >>> small_dose = np.array([
-    ...     4.2, 11.5, 7.3, 5.8, 6.4, 10, 11.2, 11.2, 5.2, 7,
-    ...     15.2, 21.5, 17.6, 9.7, 14.5, 10, 8.2, 9.4, 16.5, 9.7
-    ... ])
-    >>> medium_dose = np.array([
-    ...     16.5, 16.5, 15.2, 17.3, 22.5, 17.3, 13.6, 14.5, 18.8, 15.5,
-    ...     19.7, 23.3, 23.6, 26.4, 20, 25.2, 25.8, 21.2, 14.5, 27.3
-    ... ])
-    >>> large_dose = np.array([
-    ...     23.6, 18.5, 33.9, 25.5, 26.4, 32.5, 26.7, 21.5, 23.3, 29.5,
-    ...     25.5, 26.4, 22.4, 24.5, 24.8, 30.9, 26.4, 27.3, 29.4, 23
-    ... ])
-
-    The `fligner` statistic is sensitive to differences in variances
-    between the samples.
-
     >>> from scipy import stats
-    >>> res = stats.fligner(small_dose, medium_dose, large_dose)
-    >>> res.statistic
-    1.3878943408857916
-
-    The value of the statistic tends to be high when there is a large
-    difference in variances.
-
-    We can test for inequality of variance among the groups by comparing the
-    observed value of the statistic against the null distribution: the
-    distribution of statistic values derived under the null hypothesis that
-    the population variances of the three groups are equal.
-
-    For this test, the null distribution follows the chi-square distribution
-    as shown below.
-
-    >>> import matplotlib.pyplot as plt
-    >>> k = 3  # number of samples
-    >>> dist = stats.chi2(df=k-1)
-    >>> val = np.linspace(0, 8, 100)
-    >>> pdf = dist.pdf(val)
-    >>> fig, ax = plt.subplots(figsize=(8, 5))
-    >>> def plot(ax):  # we'll reuse this
-    ...     ax.plot(val, pdf, color='C0')
-    ...     ax.set_title("Fligner Test Null Distribution")
-    ...     ax.set_xlabel("statistic")
-    ...     ax.set_ylabel("probability density")
-    ...     ax.set_xlim(0, 8)
-    ...     ax.set_ylim(0, 0.5)
-    >>> plot(ax)
-    >>> plt.show()
-
-    The comparison is quantified by the p-value: the proportion of values in
-    the null distribution greater than or equal to the observed value of the
-    statistic.
-
-    >>> fig, ax = plt.subplots(figsize=(8, 5))
-    >>> plot(ax)
-    >>> pvalue = dist.sf(res.statistic)
-    >>> annotation = (f'p-value={pvalue:.4f}\n(shaded area)')
-    >>> props = dict(facecolor='black', width=1, headwidth=5, headlength=8)
-    >>> _ = ax.annotate(annotation, (1.5, 0.22), (2.25, 0.3), arrowprops=props)
-    >>> i = val >= res.statistic
-    >>> ax.fill_between(val[i], y1=0, y2=pdf[i], color='C0')
-    >>> plt.show()
-
-    >>> res.pvalue
-    0.49960016501182125
-
-    If the p-value is "small" - that is, if there is a low probability of
-    sampling data from distributions with identical variances that produces
-    such an extreme value of the statistic - this may be taken as evidence
-    against the null hypothesis in favor of the alternative: the variances of
-    the groups are not equal. Note that:
-
-    - The inverse is not true; that is, the test is not used to provide
-      evidence for the null hypothesis.
-    - The threshold for values that will be considered "small" is a choice that
-      should be made before the data is analyzed [6]_ with consideration of the
-      risks of both false positives (incorrectly rejecting the null hypothesis)
-      and false negatives (failure to reject a false null hypothesis).
-    - Small p-values are not evidence for a *large* effect; rather, they can
-      only provide evidence for a "significant" effect, meaning that they are
-      unlikely to have occurred under the null hypothesis.
-
-    Note that the chi-square distribution provides an asymptotic approximation
-    of the null distribution.
-    For small samples, it may be more appropriate to perform a
-    permutation test: Under the null hypothesis that all three samples were
-    drawn from the same population, each of the measurements is equally likely
-    to have been observed in any of the three samples. Therefore, we can form
-    a randomized null distribution by calculating the statistic under many
-    randomly-generated partitionings of the observations into the three
-    samples.
-
-    >>> def statistic(*samples):
-    ...     return stats.fligner(*samples).statistic
-    >>> ref = stats.permutation_test(
-    ...     (small_dose, medium_dose, large_dose), statistic,
-    ...     permutation_type='independent', alternative='greater'
-    ... )
-    >>> fig, ax = plt.subplots(figsize=(8, 5))
-    >>> plot(ax)
-    >>> bins = np.linspace(0, 8, 25)
-    >>> ax.hist(
-    ...     ref.null_distribution, bins=bins, density=True, facecolor="C1"
-    ... )
-    >>> ax.legend(['aymptotic approximation\n(many observations)',
-    ...            'randomized null distribution'])
-    >>> plot(ax)
-    >>> plt.show()
-
-    >>> ref.pvalue  # randomized test p-value
-    0.4332  # may vary
-
-    Note that there is significant disagreement between the p-value calculated
-    here and the asymptotic approximation returned by `fligner` above.
-    The statistical inferences that can be drawn rigorously from a permutation
-    test are limited; nonetheless, they may be the preferred approach in many
-    circumstances [7]_.
-
-    Following is another generic example where the null hypothesis would be
-    rejected.
 
     Test whether the lists `a`, `b` and `c` come from populations
     with equal variances.
@@ -3600,6 +3145,7 @@ def fligner(*samples, center='median', proportiontocut=0.05):
     >>> [np.var(x, ddof=1) for x in [a, b, c]]
     [0.007054444444444413, 0.13073888888888888, 0.008890000000000002]
 
+    For a more detailed example, see :ref:`hypothesis_fligner`.
     """
     if center not in ['mean', 'median', 'trimmed']:
         raise ValueError("center must be 'mean', 'median' or 'trimmed'.")
@@ -4785,19 +4331,22 @@ def directional_stats(samples, *, axis=0, normalize=True):
     >>> 1 - dirstats.mean_resultant_length
     0.13397459716167093
     """
-    samples = np.asarray(samples)
+    xp = array_namespace(samples)
+    samples = xp.asarray(samples)
+    
     if samples.ndim < 2:
         raise ValueError("samples must at least be two-dimensional. "
-                         f"Instead samples has shape: {samples.shape!r}")
-    samples = np.moveaxis(samples, axis, 0)
+                         f"Instead samples has shape: {tuple(samples.shape)}")
+    samples = xp.moveaxis(samples, axis, 0)
     if normalize:
-        vectornorms = np.linalg.norm(samples, axis=-1, keepdims=True)
+        vectornorms = xp_vector_norm(samples, axis=-1, keepdims=True, xp=xp)
         samples = samples/vectornorms
-    mean = np.mean(samples, axis=0)
-    mean_resultant_length = np.linalg.norm(mean, axis=-1, keepdims=True)
+    mean = xp.mean(samples, axis=0)
+    mean_resultant_length = xp_vector_norm(mean, axis=-1, keepdims=True, xp=xp)
     mean_direction = mean / mean_resultant_length
-    return DirectionalStats(mean_direction,
-                            mean_resultant_length.squeeze(-1)[()])
+    mrl = xp.squeeze(mean_resultant_length, axis=-1)
+    mean_resultant_length = mrl[()] if mrl.ndim == 0 else mrl
+    return DirectionalStats(mean_direction, mean_resultant_length)
 
 
 def false_discovery_control(ps, *, axis=0, method='bh'):

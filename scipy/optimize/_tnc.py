@@ -90,7 +90,7 @@ def fmin_tnc(func, x0, fprime=None, args=(), approx_grad=0,
              messages=MSG_ALL, maxCGit=-1, maxfun=None, eta=-1,
              stepmx=0, accuracy=0, fmin=0, ftol=-1, xtol=-1, pgtol=-1,
              rescale=-1, disp=None, callback=None):
-    """
+    r"""
     Minimize a function with variables subject to bounds, using
     gradient information in a truncated Newton algorithm. This
     method wraps a C implementation of the algorithm.
@@ -223,17 +223,17 @@ def fmin_tnc(func, x0, fprime=None, args=(), approx_grad=0,
     associated with the variable of largest index whose
     constraint is no longer active.
 
-    Return codes are defined as follows::
+    Return codes are defined as follows:
 
-        -1 : Infeasible (lower bound > upper bound)
-         0 : Local minimum reached (|pg| ~= 0)
-         1 : Converged (|f_n-f_(n-1)| ~= 0)
-         2 : Converged (|x_n-x_(n-1)| ~= 0)
-         3 : Max. number of function evaluations reached
-         4 : Linear search failed
-         5 : All lower bounds are equal to the upper bounds
-         6 : Unable to progress
-         7 : User requested end of minimization
+    - ``-1`` : Infeasible (lower bound > upper bound)
+    - ``0`` : Local minimum reached (:math:`|pg| \approx 0`)
+    - ``1`` : Converged (:math:`|f_n-f_(n-1)| \approx 0`)
+    - ``2`` : Converged (:math:`|x_n-x_(n-1)| \approx 0`)
+    - ``3`` : Max. number of function evaluations reached
+    - ``4`` : Linear search failed
+    - ``5`` : All lower bounds are equal to the upper bounds
+    - ``6`` : Unable to progress
+    - ``7`` : User requested end of minimization
 
     References
     ----------
