@@ -6572,6 +6572,37 @@ class TestNct:
         # gh-17916 reported a crash with large `nc` values
         assert_allclose(stats.nct.cdf(2, 2, float(2**16)), 0)
 
+    # PDF reference values were computed with mpmath
+    # with 100 digits of precision
+
+    # def nct_pdf(x, df, nc):
+    #     x = mp.mpf(x)
+    #     n = mp.mpf(df)
+    #     nc = mp.mpf(nc)
+
+    #     x2 = x*x
+    #     ncx2 = nc*nc*x2
+    #     fac1 = n + x2
+    #     trm1 = (n/2.*mp.log(n) + mp.loggamma(n + mp.one)
+    #             - (n * mp.log(2.) + nc*nc/2 + (n/2)*mp.log(fac1)
+    #                 + mp.loggamma(n/2)))
+    #     Px = mp.exp(trm1)
+    #     valF = ncx2 / (2*fac1)
+    #     trm1 = (mp.sqrt(2)*nc*x*mp.hyp1f1(n/2+1, 1.5, valF)
+    #             / (fac1*mp.gamma((n+1)/2)))
+    #     trm2 = (mp.hyp1f1((n+1)/2, 0.5, valF)
+    #             / (mp.sqrt(fac1)*mp.gamma(n/2 + mp.one)))
+    #     Px *= trm1+trm2
+    #     return float(Px)
+
+    @pytest.mark.parametrize("x, df, nc, expected", [
+        (10000, 10, 16, 3.394646922945872e-30),
+        (-10, 8, 16, 4.282769500264159e-70)
+        ])
+    def test_pdf_large_nc(self, x, df, nc, expected):
+        # gh-#20693 reported zero values for large `nc` values
+        assert_allclose(stats.nct.pdf(x, df, nc), expected, rtol=1e-12)
+
 
 class TestRecipInvGauss:
 

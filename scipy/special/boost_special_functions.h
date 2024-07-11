@@ -893,6 +893,29 @@ nct_cdf_double(double x, double v, double l)
 
 template<typename Real>
 Real
+nct_pdf_wrap(const Real x, const Real v, const Real l)
+{
+    if (std::isfinite(x)) {
+        return boost::math::pdf(
+            boost::math::non_central_t_distribution<Real, StatsPolicy>(v, l), x);
+    }
+    return NAN;
+}
+
+float
+nct_pdf_float(float x, float v, float l)
+{
+    return nct_pdf_wrap(x, v, l);
+}
+
+double
+nct_pdf_double(double x, double v, double l)
+{
+    return nct_pdf_wrap(x, v, l);
+}
+
+template<typename Real>
+Real
 nct_ppf_wrap(const Real x, const Real v, const Real l)
 {
     return boost::math::quantile(
