@@ -88,7 +88,7 @@ def make_system(A, M, x0, b):
     xtype = coerce(xtype, b.dtype.char)
 
     b = asarray(b,dtype=xtype)  # make b the same type as x
-    b = b.ravel()
+    # b = b.ravel()
 
     # process preconditioner
     if M is None:
