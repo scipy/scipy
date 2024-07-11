@@ -207,4 +207,39 @@ void coo_matvec(const npy_int64 nnz,
     }
 }
 
+
+/*
+ * Input Arguments:
+ *   npy_int64  nnz   - number of nonzeros in A
+ *   npy_int64 n_col  - number of columns in matrix
+ *   I  Ai[nnz]       - depth indices
+ *   I  Aj[nnz]       - row indices
+ *   I  Ak[nnz]       - column indices
+ *   T  Ax[nnz]       - nonzero values
+ *   T  Xx[n_col]     - input vector
+ *
+ * Output Arguments:
+ *   T  Yx[n_row]     - output vector
+ *
+ * Notes:
+ *   Output array Yx must be preallocated
+ *
+ *   Complexity: Linear.  Specifically O(nnz(A))
+ * 
+ */
+template <class I, class T>
+void coo_matvec_3d(const npy_int64 nnz,
+                const npy_int64 n_row,
+                const I Ai[],
+                const I Aj[],
+                const I Ak[],
+                const T Ax[],
+                const T Xx[],
+                      T Yx[])
+{
+    for(npy_int64 n = 0; n < nnz; n++){
+        Yx[Ai[n] * n_row + Aj[n]] += Ax[n] * Xx[Ak[n]];
+    }
+}
+
 #endif

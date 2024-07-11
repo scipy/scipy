@@ -11,7 +11,7 @@ import numpy as np
 
 from .._lib._util import copy_if_needed
 from ._matrix import spmatrix
-from ._sparsetools import coo_tocsr, coo_todense, coo_todense_nd, coo_matvec
+from ._sparsetools import coo_tocsr, coo_todense, coo_todense_nd, coo_matvec, coo_matvec_3d
 from ._base import issparse, SparseEfficiencyWarning, _spbase, sparray
 from ._data import _data_matrix, _minmax_mixin
 from ._sputils import (upcast_char, to_native, isshape, isdense, getdtype,
@@ -615,25 +615,53 @@ class _coo_base(_data_matrix, _minmax_mixin):
     
 
     def _matmul_vector(self, other):
-        result_shape = self.shape[0] if self.ndim > 1 else 1
-        result = np.zeros(result_shape,
-                          dtype=upcast_char(self.dtype.char, other.dtype.char))
+        if self.ndim<3:
+            result_shape = self.shape[0] if self.ndim > 1 else 1
+            result = np.zeros(result_shape,
+                            dtype=upcast_char(self.dtype.char, other.dtype.char))
 
-        if self.ndim == 2:
-            col = self.col
-            row = self.row
-        elif self.ndim == 1:
-            col = self.coords[0]
-            row = np.zeros_like(col)
+            if self.ndim == 2:
+                col = self.col
+                row = self.row
+            elif self.ndim == 1:
+                col = self.coords[0]
+                row = np.zeros_like(col)
+            else:
+                raise NotImplementedError(
+                    f"coo_matvec not implemented for ndim={self.ndim}")
+
+            coo_matvec(self.nnz, row, col, self.data, other, result)
+            # Array semantics return a scalar here, not a single-element array.
+            if isinstance(self, sparray) and result_shape == 1:
+                return result[0]
+            return result
         else:
-            raise NotImplementedError(
-                f"coo_matvec not implemented for ndim={self.ndim}")
+            result = np.zeros(self.shape[-3] * self.shape[-2],
+                            dtype=upcast_char(self.dtype.char, other.dtype.char))
 
-        coo_matvec(self.nnz, row, col, self.data, other, result)
-        # Array semantics return a scalar here, not a single-element array.
-        if isinstance(self, sparray) and result_shape == 1:
-            return result[0]
-        return result
+            col = self.coords[-1]
+            row = self.coords[-2]
+            depth = self.coords[-3]
+            
+            coo_matvec_3d(self.nnz, self.shape[-2], depth, row, col, self.data, other, result)
+            
+            result = result.reshape((self.shape[-3],self.shape[-2]))
+            return result
+
+
+    def _matmul_dispatch(self, other):
+        if self.ndim < 3:
+            return _data_matrix._matmul_dispatch(self, other)
+        else:
+            return self._matmul_vector(other)
+            # elif other.shape == (N, 1):
+            #     result = self._matmul_vector(other.ravel())
+            #     if self.ndim == 1:
+            #         return result
+            #     return result.reshape(M, 1)
+            # elif other.ndim == 2 and other.shape[0] == N:
+            #     return self._matmul_multivector(other)
+
 
     def _matmul_multivector(self, other):
         result_dtype = upcast_char(self.dtype.char, other.dtype.char)
@@ -655,7 +683,8 @@ class _coo_base(_data_matrix, _minmax_mixin):
         return result.T.view(type=type(other))
     
 
-    # #### ARITHMETIC AND BOOLEAN OPERATIONS ####
+    #### ARITHMETIC AND BOOLEAN OPERATIONS ####
+
     # def multiply(self, other):
     #     """Point-wise multiplication by another array/matrix."""
     #     if isscalarlike(other):
@@ -700,6 +729,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
     # def __eq__(self, other):
     #     if self.shape != other.shape:
     #         raise ValueError("Incompatible shapes")
+    #     ########### if isscalarlike - create bool sparray with True if equal
     #     if isdense(other):
     #         return (np.array_equal(self.todense() - other, np.zeros(self.shape)))
     #     elif issparse(other):
