@@ -70,6 +70,7 @@ def make_system(A, M, x0, b):
     N = A.shape[0]
 
     b = asanyarray(b)
+    bshape = b.shape
 
     if not (b.shape == (N,1) or b.shape == (N,)):
         raise ValueError(f'shapes of A {A.shape} and b {b.shape} are '
@@ -79,6 +80,10 @@ def make_system(A, M, x0, b):
         b = b.astype('d')  # upcast non-FP types to double
 
     def postprocess(x):
+        if x0shape is None:
+            x = x.reshape(bshape)
+        else:
+            x = x.reshape(x0shape)
         return x
 
     if hasattr(A,'dtype'):
@@ -88,7 +93,7 @@ def make_system(A, M, x0, b):
     xtype = coerce(xtype, b.dtype.char)
 
     b = asarray(b,dtype=xtype)  # make b the same type as x
-    # b = b.ravel()
+    b = b.ravel()
 
     # process preconditioner
     if M is None:
@@ -111,6 +116,7 @@ def make_system(A, M, x0, b):
             raise ValueError('matrix and preconditioner have different shapes')
 
     # set initial guess
+    x0shape = None
     if x0 is None:
         x = zeros(N, dtype=xtype)
     elif isinstance(x0, str):
@@ -119,6 +125,7 @@ def make_system(A, M, x0, b):
             x = M.matvec(bCopy)
     else:
         x = array(x0, dtype=xtype)
+        x0shape = x.shape
         if not (x.shape == (N, 1) or x.shape == (N,)):
             raise ValueError(f'shapes of A {A.shape} and '
                              f'x0 {x.shape} are incompatible')
