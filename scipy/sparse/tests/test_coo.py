@@ -779,7 +779,7 @@ def test_2d_matmul_multivector():
     assert_equal(res.toarray(), exp)
 
 
-def test_3d_matmul_vector():
+def test_nd_matmul_vector():
     den_a = np.array([[[4,4,0],[5,0,3],[0,1,0]],
                       [[1,2,0],[0,0,2],[1,1,0]],
                       [[0,0,0],[4,0,0],[0,0,3]]])
@@ -788,10 +788,10 @@ def test_3d_matmul_vector():
     res = coo_array(den_a) @ den_b
     assert_equal(res, exp)
 
-    # random 3d array
+    # random 4d array
     rng = np.random.RandomState(23409823)
-    sp_x = random_array((2,3,4), density=0.6, random_state=rng, dtype=int)
-    sp_y = random_array((4,), density=0.6, random_state=rng, dtype=int)
+    sp_x = random_array((2,3,4,5), density=0.6, random_state=rng, dtype=int)
+    sp_y = random_array((5,), density=0.6, random_state=rng, dtype=int)
     den_x, den_y = sp_x.toarray(), sp_y.toarray()
     exp = den_x @ den_y
     res = sp_x @ den_y

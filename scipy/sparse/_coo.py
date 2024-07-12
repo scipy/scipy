@@ -11,7 +11,7 @@ import numpy as np
 
 from .._lib._util import copy_if_needed
 from ._matrix import spmatrix
-from ._sparsetools import coo_tocsr, coo_todense, coo_todense_nd, coo_matvec, coo_matvec_3d
+from ._sparsetools import coo_tocsr, coo_todense, coo_todense_nd, coo_matvec, coo_matvec_nd
 from ._base import issparse, SparseEfficiencyWarning, _spbase, sparray
 from ._data import _data_matrix, _minmax_mixin
 from ._sputils import (upcast_char, to_native, isshape, isdense, getdtype,
@@ -305,7 +305,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
             
         else:
             coord = np.concatenate(self.coords)
-            coo_todense_nd(self._shape, self.nnz, self.ndim, coord, self.data, B.ravel('A'), fortran)
+            coo_todense_nd(self.shape, self.nnz, self.ndim, coord, self.data, B.ravel('A'), fortran)
         # Note: reshape() doesn't copy here, but does return a new array (view).
         return B.reshape(self.shape)
 
@@ -580,7 +580,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
                         result.ravel('A'), fortran)
         else:
             coord = np.concatenate(self.coords)
-            coo_todense_nd(self._shape, self.nnz, self.ndim, coord, self.data, result.ravel('A'), fortran)
+            coo_todense_nd(self.shape, self.nnz, self.ndim, coord, self.data, result.ravel('A'), fortran)
         return self._container(result, copy=False)
     
 
@@ -619,7 +619,6 @@ class _coo_base(_data_matrix, _minmax_mixin):
             result_shape = self.shape[0] if self.ndim > 1 else 1
             result = np.zeros(result_shape,
                             dtype=upcast_char(self.dtype.char, other.dtype.char))
-
             if self.ndim == 2:
                 col = self.col
                 row = self.row
@@ -635,17 +634,15 @@ class _coo_base(_data_matrix, _minmax_mixin):
             if isinstance(self, sparray) and result_shape == 1:
                 return result[0]
             return result
+        # if dim >= 3
         else:
-            result = np.zeros(self.shape[-3] * self.shape[-2],
+            result = np.zeros(np.prod(self.shape[:-1]),
                             dtype=upcast_char(self.dtype.char, other.dtype.char))
-
-            col = self.coords[-1]
-            row = self.coords[-2]
-            depth = self.coords[-3]
+            shape = np.array(self.shape)
+            coord = np.concatenate(self.coords)
+            coo_matvec_nd(self.nnz, len(self.shape), shape, coord, self.data, other, result)
             
-            coo_matvec_3d(self.nnz, self.shape[-2], depth, row, col, self.data, other, result)
-            
-            result = result.reshape((self.shape[-3],self.shape[-2]))
+            result = result.reshape(self.shape[:-1])
             return result
 
 
@@ -653,15 +650,15 @@ class _coo_base(_data_matrix, _minmax_mixin):
         if self.ndim < 3:
             return _data_matrix._matmul_dispatch(self, other)
         else:
+            # M, N = self.coords[-2], self.coords[-1]
+            # if other.shape == (N,):
             return self._matmul_vector(other)
             # elif other.shape == (N, 1):
             #     result = self._matmul_vector(other.ravel())
-            #     if self.ndim == 1:
-            #         return result
-            #     return result.reshape(M, 1)
-            # elif other.ndim == 2 and other.shape[0] == N:
+            #     # return result.reshape(M, 1)
+            #     return result
+            # elif other.ndim >= 2:
             #     return self._matmul_multivector(other)
-
 
     def _matmul_multivector(self, other):
         result_dtype = upcast_char(self.dtype.char, other.dtype.char)

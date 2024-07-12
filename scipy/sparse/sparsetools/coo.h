@@ -242,4 +242,44 @@ void coo_matvec_3d(const npy_int64 nnz,
     }
 }
 
+
+
+/*
+ * Input Arguments:
+ *   npy_int64  nnz   - number of nonzeros in A
+ *   npy_int64 num_dims  - number of dimensions
+ *   I  D[d]          - array of dimensions / shape of matrix
+ *   I  A[nnz * num_dims] - array of coordinates flattened
+ *   T  Ax[nnz]       - nonzero values
+ *   T  Xx[n_col]     - input vector
+ *
+ * Output Arguments:
+ *   T  Yx[n_row]     - output vector
+ *
+ * Notes:
+ *   Output array Yx must be preallocated
+ *
+ *   Complexity: Linear.  Specifically O(nnz(A))
+ * 
+ */
+template <class I, class T>
+void coo_matvec_nd(const npy_int64 nnz,
+                const npy_int64 num_dims,
+                const I D[],
+                const I A[],
+                const T Ax[],
+                const T Xx[],
+                      T Yx[])
+{
+    for(npy_int64 n = 0; n < nnz; n++){
+        npy_intp index = 0;
+        npy_intp stride = 1;
+        for(npy_int64 d = num_dims - 2; d >= 0; d--) {
+            index += A[d * nnz + n] * stride;
+            stride *= D[d];
+        }
+        Yx[index] += Ax[n] * Xx[A[nnz * (num_dims - 1) + n]];
+    }
+}
+
 #endif
