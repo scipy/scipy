@@ -90,7 +90,7 @@ class AAA:
     
     where :math:`z_1,\dots,z_m` are real or complex support points selected from `z`,
     :math:`f_1,\dots,f_m` are a set of real or complex data values, and
-    :math:`w_1,\dots,` are real or complex weights. The algorithm then proceeds to
+    :math:`w_1,\dots,w_m` are real or complex weights. The algorithm then proceeds to
     select the next support point :math:`z_{m+1}` is selected from the remaining
     unselected points in `z` such that the nonlinear residual :math:`|f(z) - n(z)/d(z)|`
     is maximised. The weights are selected to solve the least-squares problem
