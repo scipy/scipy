@@ -39,7 +39,7 @@ class AAA:
     As described in [1]_, the AAA algorithm is a greedy algorithm for approximation by
     rational functions on a real or complex set of points. The rational approximation is
     represented in a barycentric form from which the roots (zeros), poles, and residues
-    can be computed. 
+    can be computed.
 
     Parameters
     ----------
@@ -82,24 +82,24 @@ class AAA:
     -----
     At the :math:`m` th iteration, the rational approximation in the AAA algorithm takes
     the barycentric form
-    
+
     .. math::
 
         r(z) = \frac{n(z)}{d(z)} =
         \frac{\sum_{j=1}^m\frac{w_jf_j}{z-z_j}}{\sum_{j=1}^m\frac{w_j}{z-z_j}},
-    
+
     where :math:`z_1,\dots,z_m` are real or complex support points selected from `z`,
     :math:`f_1,\dots,f_m` are a set of real or complex data values, and
     :math:`w_1,\dots,w_m` are real or complex weights. The algorithm then proceeds to
     select the next support point :math:`z_{m+1}` is selected from the remaining
     unselected points in `z` such that the nonlinear residual :math:`|f(z) - n(z)/d(z)|`
     is maximised. The weights are selected to solve the least-squares problem
-    
+
     .. math::
 
         \text{minimise}\lVert fd - n \rVert \quad \text{subject to} \quad
         \sum_{i=1}^{m+1}w_i = 1,
-    
+
     over the unselected points in `z`.
 
     References
@@ -109,17 +109,17 @@ class AAA:
 
     Examples
     --------
-    
+
     Here we reproduce a number of the numerical examples from [1]_ as demonstration
     of the functionality offered by this method.
-    
+
     >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> from scipy.interpolate import AAA
-    
+
     For the first example we approximate the gamma function on ``[-3.5, 4.5]`` by
     extrapolating from 100 samples in ``[-1.5, 1.5]``.
-    
+
     >>> from scipy.special import gamma
     >>> r = AAA(gamma, np.linspace(-1.5, 1.5, num=100))
     >>> z = np.linspace(-3.5, 4.5, num=100)
@@ -127,9 +127,9 @@ class AAA:
     >>> ax.plot(z, r(z).real)
     >>> ax.set(xlabel="z", ylabel="r(z)", ylim=[-8, 8], xlim=[-3.5, 4.5])
     >>> plt.show()
-    
+
     We can also view the poles of the rational approximation and their residue:
-    
+
     >>> for i in np.argsort(r.poles):
     ...     print(f"{r.poles[i]=:.3e}, {r.residues[i]=:.3e}")
     r.poles[i]=-3.816e+00+0.000e+00j, r.residues[i]=3.658e-02+0.000e+00j
@@ -141,15 +141,15 @@ class AAA:
     r.poles[i]=4.775e+00+3.069e+00j, r.residues[i]=-8.113e-01+2.302e+00j
     r.poles[i]=5.291e+00-9.737e-01j, r.residues[i]=8.733e-01+1.070e+01j
     r.poles[i]=5.291e+00+9.737e-01j, r.residues[i]=8.733e-01-1.070e+01j
-    
+
     For the second example, we call `AAA` with a spiral of 1000 points wind 7.5 times
     around the origin in the complex plane.
-    
+
     >>> z = np.exp(np.linspace(-0.5, 0.5 + 15j*np.pi, 1000))
     >>> r = AAA(lambda z: np.tan(np.pi*z/2), z)
 
     We see that AAA takes 12 steps to converge with the following errors:
-    
+
     >>> r.errors.size
     12
     >>> r.errors
@@ -159,7 +159,7 @@ class AAA:
         6.37019486e-10+0.j, 1.67119305e-11+0.j, 1.17128023e-13+0.j])
 
     We can also plot the computed poles:
-    
+
     >>> fig, ax = plt.subplots()
     >>> ax.plot(z.real, z.imag, '.', markersize=2, label="Sample points")
     >>> ax.plot(r.poles.real, r.poles.imag, '.', markersize=5, label="Computed poles")
