@@ -11,9 +11,6 @@ with safe_import():
 with safe_import():
     from scipy.sparse import csr_matrix
 
-with safe_import():
-    from scipy.interpolate import AAA
-
 
 class Leaks(Benchmark):
     unit = "relative increase with repeats"
@@ -503,7 +500,7 @@ class AAA(Benchmark):
         self.pts = np.linspace(-1, 1, num=1000)
 
     def time_AAA(self):
-        r = AAA(np.tan(np.pi*self.z/2), self.z)
+        r = interpolate.AAA(np.tan(np.pi*self.z/2), self.z)
         r(self.pts)
         r.poles
         r.residues
