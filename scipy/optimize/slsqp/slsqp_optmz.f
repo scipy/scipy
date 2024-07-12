@@ -1202,7 +1202,7 @@ C STEP THREE (TEST DUAL VARIABLES)
 
 C .....EXIT LOOP A
 
-      IF(ABS(wmax).LE.1e-20)                GOTO 280
+      IF(ABS(wmax).LE.1e-19)                GOTO 280
       iz=izmax
       j=INDEX(iz)
 
