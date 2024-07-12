@@ -268,13 +268,9 @@ class AAA:
 
         # Remove support points with zero weight
         i_non_zero = wj != 0
-        zj = zj[i_non_zero]
-        wj = wj[i_non_zero]
-        fj = fj[i_non_zero]
-
-        self.support_points = zj
-        self.values = fj
-        self.weights = wj
+        self.support_points = zj[i_non_zero]
+        self.values = fj[i_non_zero]
+        self.weights = wj[i_non_zero]
         self.errors = errors
 
     def __call__(self, z):
