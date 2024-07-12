@@ -144,13 +144,11 @@ ilu_dpivotL(
 
     /* Test for singularity */
     if (pivmax < 0.0) {
-#if SCIPY_FIX
-	ABORT("[0]: matrix is singular");
-#else
-	fprintf(stderr, "[0]: jcol=%d, SINGULAR!!!\n", jcol);
+    	/*fprintf(stderr, "[0]: jcol=%d, SINGULAR!!!\n", jcol);
 	fflush(stderr);
-	exit(1);
-#endif
+	exit(1); */
+	*usepr = 0;
+	return (jcol+1);
     }
     if ( pivmax == 0.0 ) {
 	if (diag != EMPTY)
@@ -163,13 +161,11 @@ ilu_dpivotL(
 	    for (icol = jcol; icol < n; icol++)
 		if (marker[swap[icol]] <= jcol) break;
 	    if (icol >= n) {
-#if SCIPY_FIX
-		ABORT("[1]: matrix is singular");
-#else
-		fprintf(stderr, "[1]: jcol=%d, SINGULAR!!!\n", jcol);
+		/* fprintf(stderr, "[1]: jcol=%d, SINGULAR!!!\n", jcol);
 		fflush(stderr);
-		exit(1);
-#endif
+		exit(1); */
+   	        *usepr = 0;
+	        return (jcol+1);
 	    }
 
 	    *pivrow = swap[icol];
@@ -185,8 +181,8 @@ ilu_dpivotL(
 	printf("[0] ZERO PIVOT: FILL (%d, %d).\n", *pivrow, jcol);
 	fflush(stdout);
 #endif
-	info =jcol + 1;
-    } /* if (*pivrow == 0.0) */
+	info = jcol + 1;
+    } /* end if (*pivrow == 0.0) */
     else {
 	thresh = u * pivmax;
 
@@ -244,7 +240,7 @@ ilu_dpivotL(
 		break;
 	}
 
-    } /* else */
+    } /* end else */
 
     /* Record pivot row */
     perm_r[*pivrow] = jcol;

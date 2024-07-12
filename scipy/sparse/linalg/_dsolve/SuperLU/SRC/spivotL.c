@@ -133,20 +133,12 @@ if ( jcol == MIN_COL ) {
 
     /* Test for singularity */
     if ( pivmax == 0.0 ) {
-#if 1
-#if SCIPY_FIX
-	if (pivptr < nsupr) {
-	    *pivrow = lsub_ptr[pivptr];
-	}
-	else {
-	    *pivrow = diagind;
-	}
-#else
+#if 0
+        // There is no valid pivot.
+        // jcol represents the rank of U, 
+        // report the rank, let dgstrf handle the pivot
 	*pivrow = lsub_ptr[pivptr];
-#endif
 	perm_r[*pivrow] = jcol;
-#else
-	perm_r[diagind] = jcol;
 #endif
 	*usepr = 0;
 	return (jcol+1);
