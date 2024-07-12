@@ -103,8 +103,8 @@ class TestAAA:
         z = np.linspace(0.3, 1.5)
         f = np.exp(z) / (1 + 1j)
         r1 = AAA(f, z)
-        r2 = AAA(2**311 * f, z)
-        r3 = AAA(2**-311 * f, z)
+        r2 = AAA((2**311 * f).astype(np.complex128), z)
+        r3 = AAA((2**-311 * f).astype(np.complex128), z)
         assert_equal(r1(0.2j), 2**-311 * r2(0.2j))
         assert_equal(r1(1.4), 2**311 * r3(1.4))
 
