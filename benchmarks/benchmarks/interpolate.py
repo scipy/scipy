@@ -492,3 +492,15 @@ class CloughTocherInterpolatorSubclass(Benchmark):
     def time_clough_tocher(self, n_samples):
             self.interp(self.z)
 
+
+class AAA(Benchmark):
+    def setup(self):
+        self.z = np.exp(np.linspace(-0.5, 0.5 + 15j*np.pi, num=1000))
+        self.pts = np.linspace(-1, 1, num=1000)
+
+    def time_AAA(self):
+        r = AAA(np.tan(np.pi*self.z/2), self.z)
+        r(self.pts)
+        r.poles
+        r.residues
+        r.roots
