@@ -11,6 +11,10 @@ with safe_import():
 with safe_import():
     from scipy.sparse import csr_matrix
 
+with safe_import():
+    from scipy.interpolate import AAA
+
+
 class Leaks(Benchmark):
     unit = "relative increase with repeats"
 
