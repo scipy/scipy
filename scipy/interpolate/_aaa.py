@@ -262,16 +262,13 @@ class AAA:
         # Trim off unused array allocation
         zj = zj[: m + 1]
         fj = fj[: m + 1]
-        C = C[:, : m + 1]
-        A = A[:, : m + 1]
-        errors = errors[: m + 1]
 
         # Remove support points with zero weight
         i_non_zero = wj != 0
         self.support_points = zj[i_non_zero]
         self.values = fj[i_non_zero]
         self.weights = wj[i_non_zero]
-        self.errors = errors
+        self.errors = errors[: m + 1]
 
     def __call__(self, z):
         """Evaluate the rational approximation at given values.
