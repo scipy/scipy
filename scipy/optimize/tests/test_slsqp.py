@@ -489,6 +489,7 @@ class TestSLSQP:
         assert_(sol.success)
         assert_allclose(sol.x, 0, atol=1e-10)
 
+    @pytest.mark.filterwarnings("ignore::RuntimeWarning")
     def test_inconsistent_inequalities(self):
         # gh-7618
 
