@@ -36,7 +36,7 @@ class AAA:
     r"""
     AAA real or complex rational approximation.
 
-    As described in [1]_, the AAA algorithm is greedy algorithm for approximation by
+    As described in [1]_, the AAA algorithm is a greedy algorithm for approximation by
     rational functions on a real or complex set of points. The rational approximation is
     represented in a barycentric form from which the roots (zeros), poles, and residues
     can be computed. 
@@ -44,13 +44,13 @@ class AAA:
     Parameters
     ----------
     f : array_like or callable
-        Function values at `z` or a function that will be called `f(z)`.
+        Function values at `z` or a function that will be called ``f(z)``.
     z : array_like
         Values at which `f` is provided.
     rtol : float, optional
         Relative tolerance, defaults to 1e-13.
     max_terms : int, optional
-        maximal number of terms in the barycentric representation, defaults to 100.
+        Maximum number of terms in the barycentric representation, defaults to 100.
 
     Attributes
     ----------
@@ -88,7 +88,7 @@ class AAA:
         r(z) = \frac{n(z)}{d(z)} =
         \frac{\sum_{j=1}^m\frac{w_jf_j}{z-z_j}}{\sum_{j=1}^m\frac{w_j}{z-z_j}},
     
-    where :math:`z_1,\dots,z_m` are a real or complex support points select from `z`,
+    where :math:`z_1,\dots,z_m` are real or complex support points selected from `z`,
     :math:`f_1,\dots,f_m` are a set of real or complex data values, and
     :math:`w_1,\dots,` are real or complex weights. The algorithm then proceeds to
     select the next support point :math:`z_{m+1}` is selected from the remaining
