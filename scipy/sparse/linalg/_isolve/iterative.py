@@ -27,39 +27,45 @@ def bicg(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=No
     Parameters
     ----------
     A : {sparse matrix, ndarray, LinearOperator}
-        The real or complex N-by-N matrix of the linear system.
+        Real or complex N-by-N matrix of the linear system.
         Alternatively, ``A`` can be a linear operator which can
         produce ``Ax`` and ``A^T x`` using, e.g.,
         ``scipy.sparse.linalg.LinearOperator``.
     b : ndarray
-        Right hand side of the linear system. Has shape (N,) or (N,1).
-    x0 : ndarray
-        Starting guess for the solution.
+        Right hand side of the linear system with shape (N,) or (N,1).
+    x0 : ndarray, optional, default: None
+        Starting guess for the solution with shape (N,) or (N,1).
     rtol, atol : float, optional
         Parameters for the convergence test. For convergence,
         ``norm(b - A @ x) <= max(rtol*norm(b), atol)`` should be satisfied.
         The default is ``atol=0.`` and ``rtol=1e-5``.
-    maxiter : integer
+    maxiter : integer, optional, default: None
         Maximum number of iterations.  Iteration will stop after maxiter
         steps even if the specified tolerance has not been achieved.
-    M : {sparse matrix, ndarray, LinearOperator}
+    M : {sparse matrix, ndarray, LinearOperator}, optional, default: None
         Preconditioner for A.  The preconditioner should approximate the
         inverse of A.  Effective preconditioning dramatically improves the
         rate of convergence, which implies that fewer iterations are needed
         to reach a given error tolerance.
-    callback : function
+    callback : function, optional, default: None
         User-supplied function to call after each iteration.  It is called
         as callback(xk), where xk is the current solution vector.
 
     Returns
     -------
     x : ndarray
-        The converged solution.
+        The converged solution with shape (N,) or (N,1) consistent with
+        the shape of initial approximation ``x0`` if present or ``b``
     info : integer
         Provides convergence information:
             0  : successful exit
             >0 : convergence to tolerance not achieved, number of iterations
             <0 : parameter breakdown
+
+    Notes
+    -----
+    If the right hand side ``b`` is the zero vector, the code returns
+    the solution ``x`` also zero without iterating.
 
     Examples
     --------
