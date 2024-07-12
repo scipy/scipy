@@ -15,6 +15,12 @@ class CubatureRule:
 
     # returns integral_estimate, error_estimate
     def estimate(self, f, a, b):
+        """
+        Calculate estimate of integral of f in region described by corners a and b.
+
+        f should accept arrays of shape (input_dim, num_eval_points) and return arrays
+        of shape (output_dim_1, ..., output_dim_n, num_eval_points).
+        """
         raise NotImplementedError
 
 
@@ -38,6 +44,7 @@ class CubatureRuleLinearError(CubatureRule):
 
         lengths = b - a
 
+        # nodes have shape (input_dim, eval_points)
         nodes = (self.nodes + 1) * (lengths / 2) + a
         error_nodes = (self.error_nodes + 1) * (lengths / 2) + a
 
@@ -45,17 +52,19 @@ class CubatureRuleLinearError(CubatureRule):
         # of the Jacobian for this coordinate change.
         weight_scale_factor = math.prod(lengths / 2)
 
+        # weights have shape (eval_points,)
         weights = self.weights * weight_scale_factor
         error_weights = self.error_weights * weight_scale_factor
 
-        # Need to resize the weights so they have the right shape
-        integral_estimate = np.sum(weights * f(nodes), axis=0)
+        # f(nodes) will have shape (eval_points, output_dim)
+        # integral_estimate should have shape (output_dim)
+        integral_estimate = np.sum(weights * f(nodes), axis=-1)
 
         # print(integral_estimate)
 
         error_estimate = abs(np.sum(
             error_weights * f(error_nodes),
-            axis=0
+            axis=-1
         ))
 
         # print(error_estimate)
@@ -288,15 +297,18 @@ class Trapezoid(CubatureRuleLinearError):
 
 
 # TODO: is this a sensible default for maxiter?
-def cub(f, a, b, rule, rtol=1e-05, atol=1e-08, maxiter=10_000):
-    est, err = rule.estimate(f, a, b)
+def cub(f, a, b, rule, rtol=1e-05, atol=1e-08, maxiter=10_000, args=()):
+    # TODO: This is how
+    def wrapped_f(x):
+        return f(x, *args)
+
+    est, err = rule.estimate(wrapped_f, a, b)
 
     regions = [RegionInfo(est, err, a, b)]
-    iterations = 1
+    subdivisions = 0
 
-    while _max_norm(err) > max(atol, rtol * np.abs(est)) and iterations < maxiter:
+    while _max_norm(err) > max(atol, rtol * _max_norm(est)) and subdivisions < maxiter:
         region = heapq.heappop(regions)
-        print(region)
 
         est_k = region.integral_estimate
         err_k = region.error_estimate
@@ -309,13 +321,12 @@ def cub(f, a, b, rule, rtol=1e-05, atol=1e-08, maxiter=10_000):
             _cartesian_product(np.array([a_k, m_k]).T).T,
             _cartesian_product(np.array([m_k, b_k]).T).T
         ))
-        print("subregion coordinates", subregion_coordinates)
 
         est -= est_k
         err -= err_k
 
         for a_k_sub, b_k_sub in subregion_coordinates:
-            est_sub, err_sub = rule.estimate(f, a_k_sub, b_k_sub)
+            est_sub, err_sub = rule.estimate(wrapped_f, a_k_sub, b_k_sub)
 
             est += est_sub
             err += err_sub
@@ -324,20 +335,20 @@ def cub(f, a, b, rule, rtol=1e-05, atol=1e-08, maxiter=10_000):
 
             heapq.heappush(regions, new_region)
 
-        iterations += 1
+        subdivisions += 1
 
-    if err > max(atol, rtol * np.abs(est)):
-        status = "not_converged"
-    else:
-        status = "converged"
+    success = _max_norm(err) < max(atol, rtol * _max_norm(est))
+    status = "converged" if success else "not_converged"
 
     return CubatureResult(
         estimate=est,
         error=err,
-        success=err <= max(atol, rtol * np.abs(est)),
+        success=success,
         status=status,
-        subdivisions=iterations,
+        subdivisions=subdivisions,
         regions=regions,
+        atol=atol,
+        rtol=rtol,
     )
 
 
@@ -371,13 +382,28 @@ b={self.b}"""
 class CubatureResult:
     # TODO: how to handle reporting number of evals for vectorized functions?
     def __init__(self, estimate, error, success, status, subdivisions,
-                 regions):
+                 regions, atol, rtol):
         self.estimate = estimate
         self.error = error
         self.success = success
         self.status = status
         self.regions = regions
         self.subdivisions = subdivisions
+        self.atol = atol
+        self.rtol = rtol
+
+    def __str__(self):
+        return f"CubatureResult(estimate={self.estimate} \
+error={self.error} \
+max_error={_max_norm(self.error)} \
+success={self.success} \
+status={self.status} \
+subdivisions={self.subdivisions} \
+atol={self.atol} \
+rtol={self.rtol})"
+
+    def __repr__(self):
+        return self.__str__()
 
 
 def _cartesian_product(points):
