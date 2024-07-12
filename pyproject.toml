@@ -135,6 +135,7 @@ test-requires = [
     "threadpoolctl",
     "pooch",
     "hypothesis",
+    "gmpy2",
 ]
 before-test = "bash {project}/tools/wheels/cibw_before_test.sh {project}"
 test-command = "bash {project}/tools/wheels/cibw_test_command.sh {project}"
