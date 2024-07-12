@@ -136,7 +136,7 @@ class AAA:
     r.poles[i]=-3.003e+00+0.000e+00j, r.residues[i]=-1.692e-01-0.000e+00j
     r.poles[i]=-2.000e+00+0.000e+00j, r.residues[i]=5.000e-01+0.000e+00j
     r.poles[i]=-1.000e+00+0.000e+00j, r.residues[i]=-1.000e+00+0.000e+00j
-    r.poles[i]=5.858e-17+0.000e+00j, r.residues[i]=1.000e+00+0.000e+00j
+    r.poles[i]=5.858e-17+0.000e+00j, r.residues[i]=1.000e+00+0.000e+00j  # may vary
     r.poles[i]=4.775e+00-3.069e+00j, r.residues[i]=-8.113e-01-2.302e+00j
     r.poles[i]=4.775e+00+3.069e+00j, r.residues[i]=-8.113e-01+2.302e+00j
     r.poles[i]=5.291e+00-9.737e-01j, r.residues[i]=8.733e-01+1.070e+01j
