@@ -86,8 +86,8 @@ class AAA:
 
     .. math::
 
-        r(z) = \frac{n(z)}{d(z)} =
-        \frac{\sum_{j=1}^m\frac{w_jf_j}{z-z_j}}{\sum_{j=1}^m\frac{w_j}{z-z_j}},
+        r(z) = n(z)/d(z) =
+        \frac{\sum_{j=1}^m\ w_j f_j / (z - z_j)}{\sum_{j=1}^m w_j / (z - z_j)},
 
     where :math:`z_1,\dots,z_m` are real or complex support points selected from `z`,
     :math:`f_1,\dots,f_m` are a set of real or complex data values, and
@@ -98,8 +98,8 @@ class AAA:
 
     .. math::
 
-        \text{minimise}\lVert fd - n \rVert \quad \text{subject to} \quad
-        \sum_{i=1}^{m+1}w_i = 1,
+        \text{minimise}|fd - n| \quad \text{subject to} \quad
+        \sum_{i=1}^{m+1} w_i = 1,
 
     over the unselected points in `z`.
 
