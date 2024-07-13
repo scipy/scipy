@@ -24,6 +24,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from functools import cached_property
+import warnings
 
 import numpy as np
 import scipy
@@ -69,9 +70,9 @@ class AAA:
     roots : array
         Roots (zeros) of the AAA approximation.
 
-    Raises
-    ------
-    RuntimeError
+    Warns
+    -----
+    RuntimeWarning
         If `rtol` is not achieved in `max_terms` iterations.
 
     See Also
@@ -261,7 +262,8 @@ class AAA:
                 break
 
         if m == max_terms - 1:
-            raise RuntimeError(f"AAA failed to converge within {max_terms} iterations.")
+            warnings.warn(f"AAA failed to converge within {max_terms} iterations.",
+                          RuntimeWarning, stacklevel=2)
 
         # Trim off unused array allocation
         zj = zj[: m + 1]

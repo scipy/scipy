@@ -41,7 +41,7 @@ class TestAAA:
             AAA([0], [1, 1])
     
     def test_convergence_error(self):
-        with pytest.raises(RuntimeError, match="AAA failed"):
+        with pytest.warns(RuntimeWarning, match="AAA failed"):
             AAA(np.exp(UNIT_INTERVAL), UNIT_INTERVAL, max_terms=1)
     
     # The following tests are based on:
