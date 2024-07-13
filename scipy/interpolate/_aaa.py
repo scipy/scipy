@@ -44,8 +44,8 @@ class AAA:
 
     Parameters
     ----------
-    f : array_like or callable
-        Function values at `z` or a function that will be called ``f(z)``.
+    f : array_like
+        Function values ``f(z)`` at `z`.
     z : array_like
         Values at which `f` is provided.
     rtol : float, optional
@@ -123,7 +123,7 @@ class AAA:
 
     >>> from scipy.special import gamma
     >>> sample_points = np.linspace(-1.5, 1.5, num=100)
-    >>> r = AAA(gamma, sample_points)
+    >>> r = AAA(gamma(sample_points), sample_points)
     >>> z = np.linspace(-3.5, 4.5, num=1000)
     >>> fig, ax = plt.subplots()
     >>> ax.plot(z, gamma(z), label="Gamma")
@@ -151,7 +151,7 @@ class AAA:
     around the origin in the complex plane.
 
     >>> z = np.exp(np.linspace(-0.5, 0.5 + 15j*np.pi, 1000))
-    >>> r = AAA(lambda z: np.tan(np.pi*z/2), z)
+    >>> r = AAA(np.tan(np.pi*z/2), z)
 
     We see that AAA takes 12 steps to converge with the following errors:
 
@@ -175,13 +175,10 @@ class AAA:
     def __init__(self, f, z, *, rtol=1e-13, max_terms=100):
         # input validation
         z = np.asarray(z).ravel()
-        if callable(f):
-            f = f(z)
-        else:
-            f = np.asarray(f).ravel()
+        f = np.asarray(f).ravel()
 
-            if f.size != z.size:
-                raise ValueError("`f` and `z` must be the same size.")
+        if f.size != z.size:
+            raise ValueError("`f` and `z` must be the same size.")
 
         # Remove infinite or NaN function values and repeated entries
         to_keep = (np.isfinite(f)) & (~np.isnan(f))
