@@ -818,7 +818,7 @@ def least_squares(
                          "upper bound.")
 
     if not in_bounds(x0, lb, ub):
-        raise ValueError("`x0` is infeasible.")
+        raise ValueError("Initial guess is outside of provided bounds")
 
     x_scale = check_x_scale(x_scale, x0)
 

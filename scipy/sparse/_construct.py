@@ -487,10 +487,14 @@ def kron(A, B, format=None):
         coo_sparse = coo_matrix
 
     B = coo_sparse(B)
+    if B.ndim != 2:
+        raise ValueError(f"kron requires 2D input arrays. `B` is {B.ndim}D.")
 
     # B is fairly dense, use BSR
     if (format is None or format == "bsr") and 2*B.nnz >= B.shape[0] * B.shape[1]:
         A = csr_sparse(A,copy=True)
+        if A.ndim != 2:
+            raise ValueError(f"kron requires 2D input arrays. `A` is {A.ndim}D.")
         output_shape = (A.shape[0]*B.shape[0], A.shape[1]*B.shape[1])
 
         if A.nnz == 0 or B.nnz == 0:
@@ -505,6 +509,8 @@ def kron(A, B, format=None):
     else:
         # use COO
         A = coo_sparse(A)
+        if A.ndim != 2:
+            raise ValueError(f"kron requires 2D input arrays. `A` is {A.ndim}D.")
         output_shape = (A.shape[0]*B.shape[0], A.shape[1]*B.shape[1])
 
         if A.nnz == 0 or B.nnz == 0:
@@ -570,9 +576,12 @@ def kronsum(A, B, format=None):
     A = coo_sparse(A)
     B = coo_sparse(B)
 
+    if A.ndim != 2:
+        raise ValueError(f"kronsum requires 2D inputs. `A` is {A.ndim}D.")
+    if B.ndim != 2:
+        raise ValueError(f"kronsum requires 2D inputs. `B` is {B.ndim}D.")
     if A.shape[0] != A.shape[1]:
         raise ValueError('A is not square')
-
     if B.shape[0] != B.shape[1]:
         raise ValueError('B is not square')
 
@@ -940,19 +949,19 @@ def _block(blocks, format, dtype, return_spmatrix=False):
                 block_mask[i,j] = True
 
                 if brow_lengths[i] == 0:
-                    brow_lengths[i] = A.shape[0]
-                elif brow_lengths[i] != A.shape[0]:
+                    brow_lengths[i] = A._shape_as_2d[0]
+                elif brow_lengths[i] != A._shape_as_2d[0]:
                     msg = (f'blocks[{i},:] has incompatible row dimensions. '
-                           f'Got blocks[{i},{j}].shape[0] == {A.shape[0]}, '
+                           f'Got blocks[{i},{j}].shape[0] == {A._shape_as_2d[0]}, '
                            f'expected {brow_lengths[i]}.')
                     raise ValueError(msg)
 
                 if bcol_lengths[j] == 0:
-                    bcol_lengths[j] = A.shape[1]
-                elif bcol_lengths[j] != A.shape[1]:
+                    bcol_lengths[j] = A._shape_as_2d[1]
+                elif bcol_lengths[j] != A._shape_as_2d[1]:
                     msg = (f'blocks[:,{j}] has incompatible column '
                            f'dimensions. '
-                           f'Got blocks[{i},{j}].shape[1] == {A.shape[1]}, '
+                           f'Got blocks[{i},{j}].shape[1] == {A._shape_as_2d[1]}, '
                            f'expected {bcol_lengths[j]}.')
                     raise ValueError(msg)
 

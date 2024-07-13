@@ -211,7 +211,7 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
         Relative step size for the finite difference approximation.
     maxiter : int, optional
         Maximum number of algorithm iterations. Default is 1000.
-    verbose : {0, 1, 2}, optional
+    verbose : {0, 1, 2, 3}, optional
         Level of algorithm's verbosity:
 
         * 0 (default) : work silently.

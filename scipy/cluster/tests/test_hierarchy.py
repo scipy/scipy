@@ -1260,3 +1260,12 @@ def test_Heap(xp):
     pair = heap.get_min()
     assert_equal(pair['key'], 1)
     assert_equal(pair['value'], 10)
+
+
+@skip_xp_backends(cpu_only=True)
+def test_centroid_neg_distance(xp):
+    # gh-21011
+    values = xp.asarray([0, 0, -1])
+    with pytest.raises(ValueError):
+        # This is just checking that this doesn't crash
+        linkage(values, method='centroid')

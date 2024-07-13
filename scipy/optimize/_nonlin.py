@@ -451,6 +451,26 @@ class Jacobian:
 
 
 class InverseJacobian:
+    """
+    A simple wrapper that inverts the Jacobian using the `solve` method.
+
+    .. legacy:: class
+
+        See the newer, more consistent interfaces in :mod:`scipy.optimize`.
+
+    Parameters
+    ----------
+    jacobian : Jacobian
+        The Jacobian to invert.
+    
+    Attributes
+    ----------
+    shape
+        Matrix dimensions (M, N)
+    dtype
+        Data type of the matrix.
+
+    """
     def __init__(self, jacobian):
         self.jacobian = jacobian
         self.matvec = jacobian.solve

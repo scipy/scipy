@@ -146,7 +146,11 @@ int NI_BinaryErosion(PyArrayObject* input, PyArrayObject* strct,
         _false = 0;
     }
     if (coordinate_list) {
-        block_size = LIST_SIZE / PyArray_NDIM(input) / sizeof(int);
+	if(PyArray_NDIM(input) != 0) {
+            block_size = LIST_SIZE / PyArray_NDIM(input) / sizeof(int);
+	} else {
+	    block_size = size;
+	}
         if (block_size < 1)
             block_size = 1;
         if (block_size > size)

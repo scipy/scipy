@@ -25,6 +25,7 @@ Subpackage          Description
 ==================  ======================================================
 `cluster`           Clustering algorithms
 `constants`         Physical and mathematical constants
+`differentiate`     Finite difference differentiation tools
 `fft`               Discrete Fourier transforms
 `fftpack`           Fast Fourier Transform routines (legacy)
 `integrate`         Integration and ordinary differential equation solvers

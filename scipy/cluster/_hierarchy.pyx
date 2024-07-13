@@ -769,6 +769,12 @@ cdef Pair find_min_dist(int n, double[:] D, int[:] size, int x):
             current_min = dist
             y = i
 
+    if y == -1:
+        raise ValueError(
+            "find_min_dist cannot find any neighbors closer than inf away. "
+            "Check that distances contain no negative/infinite/NaN entries. "
+        )
+
     return Pair(y, current_min)
 
 

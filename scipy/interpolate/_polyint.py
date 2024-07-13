@@ -565,7 +565,7 @@ class BarycentricInterpolator(_Interpolator1DWithDerivatives):
         This allows for the reuse of the weights `wi` if several interpolants
         are being calculated using the same nodes `xi`, without re-computation.
     random_state : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
-        If `seed` is None (or `np.random`), the `numpy.random.RandomState`
+        If `seed` is None (or `numpy.random`), the `numpy.random.RandomState`
         singleton is used.
         If `seed` is an int, a new ``RandomState`` instance is used,
         seeded with `seed`.

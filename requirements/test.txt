@@ -6,7 +6,7 @@ pytest-timeout
 pytest-xdist
 asv
 mpmath
-# gymp2  # does not yet support Python 3.12
+gmpy2
 threadpoolctl
 # scikit-umfpack  # circular dependency issues
 pooch

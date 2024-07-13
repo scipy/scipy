@@ -12217,6 +12217,29 @@ add_newdoc(
     """)
 
 add_newdoc(
+    "_nct_pdf",
+    """
+    _nct_pdf(x, v, l)
+
+    Probability density function of noncentral t-distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Real-valued
+    v : array_like
+        Positive, real-valued parameters
+    l : array_like
+        Real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    """)
+
+
+add_newdoc(
     "_nct_ppf",
     """
     _nct_ppf(x, v, l)
