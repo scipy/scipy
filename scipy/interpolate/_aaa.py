@@ -81,8 +81,8 @@ class AAA:
 
     Notes
     -----
-    At the :math:`m` th iteration, the rational approximation in the AAA algorithm takes
-    the barycentric form
+    At the :math:`m` th iteration (at which point there are :math:`m` terms), the
+    rational approximation in the AAA algorithm takes the barycentric form
 
     .. math::
 
