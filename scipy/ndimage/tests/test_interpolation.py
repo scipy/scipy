@@ -55,9 +55,10 @@ class TestNdimageInterpolation:
 
         data = xp.asarray([1, 2, 3, 4.])
         xp_assert_equal(
-            xp.asarray(expected_value),
             ndimage.geometric_transform(data, shift, cval=-1, mode=mode,
-                                        output_shape=(7,), order=1))
+                                        output_shape=(7,), order=1),
+            xp.asarray(expected_value)
+        )
 
     @pytest.mark.parametrize(
         'mode, expected_value',
@@ -78,9 +79,9 @@ class TestNdimageInterpolation:
 
         data = xp.asarray([1, 2, 3, 4])
         xp_assert_equal(
-            xp.asarray(expected_value),
             ndimage.geometric_transform(data, shift, cval=-1, mode=mode,
-                                        output_shape=(4,)))
+                                        output_shape=(4,)),
+            xp.asarray(expected_value))
 
     @pytest.mark.parametrize('mode', ['mirror', 'reflect', 'grid-mirror',
                                       'grid-wrap', 'grid-constant',
@@ -210,11 +211,11 @@ class TestNdimageInterpolation:
 
         dtype = getattr(xp, dtype)
         data = xp.asarray([[1, 1, 1, 1],
-                         [1, 1, 1, 1],
-                         [1, 1, 1, 1]], dtype=dtype)
+                           [1, 1, 1, 1],
+                           [1, 1, 1, 1]], dtype=dtype)
         expected = xp.asarray([[0, 1, 1, 1],
-                             [0, 1, 1, 1],
-                             [0, 1, 1, 1]], dtype=dtype)
+                               [0, 1, 1, 1],
+                               [0, 1, 1, 1]], dtype=dtype)
         if data.dtype.kind == 'c':
             data -= 1j * data
             expected -= 1j * expected
@@ -232,8 +233,8 @@ class TestNdimageInterpolation:
             pytest.xfail("CuPy does not have geometric_transform")
 
         data = xp.asarray([[4, 1, 3, 2],
-                         [7, 6, 8, 5],
-                         [3, 5, 3, 6]])
+                           [7, 6, 8, 5],
+                           [3, 5, 3, 6]])
 
         def mapping(x):
             return (x[0], x[1] - 1)
@@ -250,8 +251,8 @@ class TestNdimageInterpolation:
             pytest.xfail("CuPy does not have geometric_transform")
 
         data = xp.asarray([[4, 1, 3, 2],
-                         [7, 6, 8, 5],
-                         [3, 5, 3, 6]])
+                           [7, 6, 8, 5],
+                           [3, 5, 3, 6]])
 
         def mapping(x):
             return (x[0] - 1, x[1])
@@ -268,8 +269,8 @@ class TestNdimageInterpolation:
             pytest.xfail("CuPy does not have geometric_transform")
 
         data = xp.asarray([[4, 1, 3, 2],
-                         [7, 6, 8, 5],
-                         [3, 5, 3, 6]])
+                           [7, 6, 8, 5],
+                           [3, 5, 3, 6]])
 
         def mapping(x):
             return (x[0] - 1, x[1] - 1)
@@ -286,8 +287,8 @@ class TestNdimageInterpolation:
             pytest.xfail("CuPy does not have geometric_transform")
 
         data = xp.asarray([[4, 1, 3, 2],
-                         [7, 6, 8, 5],
-                         [3, 5, 3, 6]])
+                           [7, 6, 8, 5],
+                           [3, 5, 3, 6]])
 
         def mapping(x):
             return (x[0] - 1, x[1] - 1)
@@ -443,8 +444,8 @@ class TestNdimageInterpolation:
             pytest.xfail("CuPy does not have geometric_transform")
 
         data = xp.asarray([[1, 2, 3, 4],
-                         [5, 6, 7, 8],
-                         [9, 10, 11, 12]], dtype=xp.float64)
+                           [5, 6, 7, 8],
+                           [9, 10, 11, 12]], dtype=xp.float64)
 
         def mapping1(x):
             return (x[0] / 2, x[1] / 2)
@@ -497,13 +498,13 @@ class TestNdimageInterpolation:
 
         # verify interpolation outside the original bounds
         x = xp.asarray([[1, 2, 3],
-                      [4, 5, 6]], dtype=float)
+                        [4, 5, 6]], dtype=float)
 
         def mapping(x):
             return (x[0] - 0.5), (x[1] - 0.5)
 
         expected_result = xp.asarray([[0.25, 0.75, 1.25],
-                                    [1.25, 3.00, 4.00]])
+                                      [1.25, 3.00, 4.00]])
         assert_array_almost_equal(
             ndimage.geometric_transform(x, mapping, mode='grid-constant',
                                         order=1),
@@ -574,11 +575,11 @@ class TestNdimageInterpolation:
     @pytest.mark.parametrize('dtype', [np.float64, np.complex128])
     def test_map_coordinates01(self, order, dtype, xp):
         data = xp.asarray([[4, 1, 3, 2],
-                         [7, 6, 8, 5],
-                         [3, 5, 3, 6]])
+                           [7, 6, 8, 5],
+                           [3, 5, 3, 6]])
         expected = xp.asarray([[0, 0, 0, 0],
-                             [0, 4, 1, 3],
-                             [0, 7, 6, 8]])
+                               [0, 4, 1, 3],
+                               [0, 7, 6, 8]])
         if data.dtype.kind == 'c':
             data = data - 1j * data
             expected = expected - 1j * expected
@@ -593,8 +594,8 @@ class TestNdimageInterpolation:
     @pytest.mark.parametrize('order', range(0, 6))
     def test_map_coordinates02(self, order, xp):
         data = xp.asarray([[4, 1, 3, 2],
-                         [7, 6, 8, 5],
-                         [3, 5, 3, 6]])
+                           [7, 6, 8, 5],
+                           [3, 5, 3, 6]])
         idx = np.indices(data.shape, np.float64)
         idx -= 0.5
         idx = xp.asarray(idx)
@@ -605,8 +606,8 @@ class TestNdimageInterpolation:
 
     def test_map_coordinates03(self, xp):
         data = xp.asarray([[4, 1, 3, 2],
-                         [7, 6, 8, 5],
-                         [3, 5, 3, 6]], order='F')
+                           [7, 6, 8, 5],
+                           [3, 5, 3, 6]], order='F')
         idx = np.indices(data.shape) - 1
         idx = xp.asarray(idx)
         out = ndimage.map_coordinates(data, idx)
@@ -700,8 +701,8 @@ class TestNdimageInterpolation:
     @pytest.mark.parametrize('dtype', [np.float64, np.complex128])
     def test_affine_transform05(self, order, dtype, xp):
         data = xp.asarray([[1, 1, 1, 1],
-                         [1, 1, 1, 1],
-                         [1, 1, 1, 1]], dtype=dtype)
+                           [1, 1, 1, 1],
+                           [1, 1, 1, 1]], dtype=dtype)
         expected = xp.asarray([[0, 1, 1, 1],
                              [0, 1, 1, 1],
                              [0, 1, 1, 1]], dtype=dtype)
@@ -715,8 +716,8 @@ class TestNdimageInterpolation:
     @pytest.mark.parametrize('order', range(0, 6))
     def test_affine_transform06(self, order, xp):
         data = xp.asarray([[4, 1, 3, 2],
-                         [7, 6, 8, 5],
-                         [3, 5, 3, 6]])
+                           [7, 6, 8, 5],
+                           [3, 5, 3, 6]])
         out = ndimage.affine_transform(data, xp.asarray([[1, 0], [0, 1]]),
                                        [0, -1], order=order)
         assert_array_almost_equal(out, xp.asarray([[0, 4, 1, 3],
@@ -726,8 +727,8 @@ class TestNdimageInterpolation:
     @pytest.mark.parametrize('order', range(0, 6))
     def test_affine_transform07(self, order, xp):
         data = xp.asarray([[4, 1, 3, 2],
-                         [7, 6, 8, 5],
-                         [3, 5, 3, 6]])
+                           [7, 6, 8, 5],
+                           [3, 5, 3, 6]])
         out = ndimage.affine_transform(data, xp.asarray([[1, 0], [0, 1]]),
                                        [-1, 0], order=order)
         assert_array_almost_equal(out, xp.asarray([[0, 0, 0, 0],
@@ -737,8 +738,8 @@ class TestNdimageInterpolation:
     @pytest.mark.parametrize('order', range(0, 6))
     def test_affine_transform08(self, order, xp):
         data = xp.asarray([[4, 1, 3, 2],
-                         [7, 6, 8, 5],
-                         [3, 5, 3, 6]])
+                           [7, 6, 8, 5],
+                           [3, 5, 3, 6]])
         out = ndimage.affine_transform(data, xp.asarray([[1, 0], [0, 1]]),
                                        [-1, -1], order=order)
         assert_array_almost_equal(out, xp.asarray([[0, 0, 0, 0],
@@ -748,8 +749,8 @@ class TestNdimageInterpolation:
     @pytest.mark.parametrize('order', range(0, 6))
     def test_affine_transform09(self, order, xp):
         data = xp.asarray([[4, 1, 3, 2],
-                         [7, 6, 8, 5],
-                         [3, 5, 3, 6]])
+                           [7, 6, 8, 5],
+                           [3, 5, 3, 6]])
         if (order > 1):
             filtered = ndimage.spline_filter(data, order=order)
         else:
@@ -842,8 +843,8 @@ class TestNdimageInterpolation:
     @pytest.mark.parametrize('order', range(0, 6))
     def test_affine_transform19(self, order, xp):
         data = xp.asarray([[1, 2, 3, 4],
-                         [5, 6, 7, 8],
-                         [9, 10, 11, 12]], dtype=xp.float64)
+                           [5, 6, 7, 8],
+                           [9, 10, 11, 12]], dtype=xp.float64)
         out = ndimage.affine_transform(data, xp.asarray([[0.5, 0], [0, 0.5]]), 0,
                                        (6, 8), order=order)
         out = ndimage.affine_transform(out, xp.asarray([[2.0, 0], [0, 2.0]]), 0,
@@ -920,8 +921,8 @@ class TestNdimageInterpolation:
     def test_affine_transform26(self, order, xp):
         # test homogeneous coordinates
         data = xp.asarray([[4, 1, 3, 2],
-                            [7, 6, 8, 5],
-                            [3, 5, 3, 6]])
+                           [7, 6, 8, 5],
+                           [3, 5, 3, 6]])
         if (order > 1):
             filtered = ndimage.spline_filter(data, order=order)
         else:
@@ -948,8 +949,8 @@ class TestNdimageInterpolation:
 
         # test valid homogeneous transformation matrix
         data = xp.asarray([[4, 1, 3, 2],
-                         [7, 6, 8, 5],
-                         [3, 5, 3, 6]])
+                           [7, 6, 8, 5],
+                           [3, 5, 3, 6]])
         tform_h1 = xp.hstack((xp.eye(2), -xp.ones((2, 1))))
         tform_h2 = xp.vstack((tform_h1, [[5, 2, 1]]))
         assert_raises(ValueError, ndimage.affine_transform, data, tform_h2)
@@ -1015,16 +1016,16 @@ class TestNdimageInterpolation:
     def test_affine_transform_shift_via_grid_wrap(self, shift, order, xp):
         # For mode 'grid-wrap', integer shifts should match np.roll
         x = xp.asarray([[0, 1],
-                      [2, 3]])
+                        [2, 3]])
         affine = xp.zeros((2, 3))
         affine[:2, :2] = xp.eye(2)
         affine[:, 2] = xp.asarray(shift)
 
         if is_cupy(xp):
             expected = np.roll(x.get(), shift, axis=(0, 1))
-            expected = xp.asarray(expected)
         else:
             expected = np.roll(x, shift, axis=(0, 1))
+        expected = xp.asarray(expected)
 
         assert_array_almost_equal(
             ndimage.affine_transform(x, affine, mode='grid-wrap', order=order),
@@ -1035,7 +1036,7 @@ class TestNdimageInterpolation:
     def test_affine_transform_shift_reflect(self, order, xp):
         # shift by x.shape results in reflection
         x = xp.asarray([[0, 1, 2],
-                      [3, 4, 5]])
+                        [3, 4, 5]])
         affine = xp.zeros([2, 3])
         affine[:2, :2] = xp.eye(2)
         affine[:, 2] = xp.asarray(x.shape)
@@ -1072,11 +1073,11 @@ class TestNdimageInterpolation:
     @pytest.mark.parametrize('dtype', [np.float64, np.complex128])
     def test_shift05(self, order, dtype, xp):
         data = xp.asarray([[1, 1, 1, 1],
-                         [1, 1, 1, 1],
-                         [1, 1, 1, 1]], dtype=dtype)
+                           [1, 1, 1, 1],
+                           [1, 1, 1, 1]], dtype=dtype)
         expected = xp.asarray([[0, 1, 1, 1],
-                             [0, 1, 1, 1],
-                             [0, 1, 1, 1]], dtype=dtype)
+                               [0, 1, 1, 1],
+                               [0, 1, 1, 1]], dtype=dtype)
         if data.dtype.kind == 'c':
             data -= 1j * data
             expected -= 1j * expected
@@ -1088,12 +1089,12 @@ class TestNdimageInterpolation:
     @pytest.mark.parametrize('dtype', [np.float64, np.complex128])
     def test_shift_with_nonzero_cval(self, order, mode, dtype, xp):
         data = xp.asarray([[1, 1, 1, 1],
-                         [1, 1, 1, 1],
-                         [1, 1, 1, 1]], dtype=dtype)
+                           [1, 1, 1, 1],
+                           [1, 1, 1, 1]], dtype=dtype)
 
         expected = xp.asarray([[0, 1, 1, 1],
-                             [0, 1, 1, 1],
-                             [0, 1, 1, 1]], dtype=dtype)
+                               [0, 1, 1, 1],
+                               [0, 1, 1, 1]], dtype=dtype)
 
         if data.dtype.kind == 'c':
             data -= 1j * data
@@ -1106,8 +1107,8 @@ class TestNdimageInterpolation:
     @pytest.mark.parametrize('order', range(0, 6))
     def test_shift06(self, order, xp):
         data = xp.asarray([[4, 1, 3, 2],
-                         [7, 6, 8, 5],
-                         [3, 5, 3, 6]])
+                           [7, 6, 8, 5],
+                           [3, 5, 3, 6]])
         out = ndimage.shift(data, [0, 1], order=order)
         assert_array_almost_equal(out, xp.asarray([[0, 4, 1, 3],
                                                    [0, 7, 6, 8],
@@ -1116,8 +1117,8 @@ class TestNdimageInterpolation:
     @pytest.mark.parametrize('order', range(0, 6))
     def test_shift07(self, order, xp):
         data = xp.asarray([[4, 1, 3, 2],
-                            [7, 6, 8, 5],
-                            [3, 5, 3, 6]])
+                           [7, 6, 8, 5],
+                           [3, 5, 3, 6]])
         out = ndimage.shift(data, [1, 0], order=order)
         assert_array_almost_equal(out, xp.asarray([[0, 0, 0, 0],
                                                    [4, 1, 3, 2],
@@ -1126,8 +1127,8 @@ class TestNdimageInterpolation:
     @pytest.mark.parametrize('order', range(0, 6))
     def test_shift08(self, order, xp):
         data = xp.asarray([[4, 1, 3, 2],
-                         [7, 6, 8, 5],
-                         [3, 5, 3, 6]])
+                           [7, 6, 8, 5],
+                           [3, 5, 3, 6]])
         out = ndimage.shift(data, [1, 1], order=order)
         assert_array_almost_equal(out, xp.asarray([[0, 0, 0, 0],
                                                    [0, 4, 1, 3],
@@ -1136,8 +1137,8 @@ class TestNdimageInterpolation:
     @pytest.mark.parametrize('order', range(0, 6))
     def test_shift09(self, order, xp):
         data = xp.asarray([[4, 1, 3, 2],
-                         [7, 6, 8, 5],
-                         [3, 5, 3, 6]])
+                           [7, 6, 8, 5],
+                           [3, 5, 3, 6]])
         if (order > 1):
             filtered = ndimage.spline_filter(data, order=order)
         else:
@@ -1153,7 +1154,7 @@ class TestNdimageInterpolation:
     def test_shift_grid_wrap(self, shift, order, xp):
         # For mode 'grid-wrap', integer shifts should match np.roll
         x = xp.asarray([[0, 1],
-                      [2, 3]])
+                        [2, 3]])
         assert_array_almost_equal(
             ndimage.shift(x, shift, mode='grid-wrap', order=order),
             np.roll(x, shift, axis=(0, 1)),
@@ -1172,9 +1173,9 @@ class TestNdimageInterpolation:
 
     def test_shift_grid_constant_order1(self, xp):
         x = xp.asarray([[1, 2, 3],
-                      [4, 5, 6]], dtype=float)
+                        [4, 5, 6]], dtype=float)
         expected_result = xp.asarray([[0.25, 0.75, 1.25],
-                                    [1.25, 3.00, 4.00]])
+                                      [1.25, 3.00, 4.00]])
         assert_array_almost_equal(
             ndimage.shift(x, (0.5, 0.5), mode='grid-constant', order=1),
             expected_result,
@@ -1184,7 +1185,7 @@ class TestNdimageInterpolation:
     def test_shift_reflect(self, order, xp):
         # shift by x.shape results in reflection
         x = xp.asarray([[0, 1, 2],
-                      [3, 4, 5]])
+                        [3, 4, 5]])
         assert_array_almost_equal(
             ndimage.shift(x, x.shape, mode='reflect', order=order),
             x[::-1, ::-1],
@@ -1297,17 +1298,15 @@ class TestNdimageInterpolation:
         #       always be an integer when x.shape = (2, 2).
         x = xp.asarray([[0, 1],
                         [2, 3]], dtype=float)
-        # x = xp.arange(16, dtype=float).reshape(4, 4)
         if is_cupy(xp):
             expected = np.kron(x.get(), np.ones(zoom))
-            expected = xp.asarray(expected)
         else:
             expected = np.kron(x, np.ones(zoom))
+            expected = xp.asarray(expected)
 
         assert_array_almost_equal(
             ndimage.zoom(x, zoom, order=0, mode=mode),
             expected
-#            np.kron(x, np.ones(zoom))
         )
 
     @pytest.mark.parametrize('shape', [(2, 3), (4, 4)])
@@ -1335,20 +1334,20 @@ class TestNdimageInterpolation:
     @pytest.mark.parametrize('order', range(0, 6))
     def test_rotate01(self, order, xp):
         data = xp.asarray([[0, 0, 0, 0],
-                         [0, 1, 1, 0],
-                         [0, 0, 0, 0]], dtype=xp.float64)
+                           [0, 1, 1, 0],
+                           [0, 0, 0, 0]], dtype=xp.float64)
         out = ndimage.rotate(data, 0, order=order)
         assert_array_almost_equal(out, data)
 
     @pytest.mark.parametrize('order', range(0, 6))
     def test_rotate02(self, order, xp):
         data = xp.asarray([[0, 0, 0, 0],
-                         [0, 1, 0, 0],
-                         [0, 0, 0, 0]], dtype=xp.float64)
+                           [0, 1, 0, 0],
+                           [0, 0, 0, 0]], dtype=xp.float64)
         expected = xp.asarray([[0, 0, 0],
-                            [0, 0, 0],
-                            [0, 1, 0],
-                            [0, 0, 0]], dtype=xp.float64)
+                               [0, 0, 0],
+                               [0, 1, 0],
+                               [0, 0, 0]], dtype=xp.float64)
         out = ndimage.rotate(data, 90, order=order)
         assert_array_almost_equal(out, expected)
 
@@ -1356,13 +1355,13 @@ class TestNdimageInterpolation:
     @pytest.mark.parametrize('dtype', [np.float64, np.complex128])
     def test_rotate03(self, order, dtype, xp):
         data = xp.asarray([[0, 0, 0, 0, 0],
-                         [0, 1, 1, 0, 0],
-                         [0, 0, 0, 0, 0]], dtype=dtype)
+                           [0, 1, 1, 0, 0],
+                           [0, 0, 0, 0, 0]], dtype=dtype)
         expected = xp.asarray([[0, 0, 0],
-                            [0, 0, 0],
-                            [0, 1, 0],
-                            [0, 1, 0],
-                            [0, 0, 0]], dtype=dtype)
+                              [0, 0, 0],
+                              [0, 1, 0],
+                              [0, 1, 0],
+                              [0, 0, 0]], dtype=dtype)
         if data.dtype.kind == 'c':
             data -= 1j * data
             expected -= 1j * expected
@@ -1372,11 +1371,11 @@ class TestNdimageInterpolation:
     @pytest.mark.parametrize('order', range(0, 6))
     def test_rotate04(self, order, xp):
         data = xp.asarray([[0, 0, 0, 0, 0],
-                         [0, 1, 1, 0, 0],
-                         [0, 0, 0, 0, 0]], dtype=xp.float64)
+                           [0, 1, 1, 0, 0],
+                           [0, 0, 0, 0, 0]], dtype=xp.float64)
         expected = xp.asarray([[0, 0, 0, 0, 0],
-                             [0, 0, 1, 0, 0],
-                             [0, 0, 1, 0, 0]], dtype=xp.float64)
+                               [0, 0, 1, 0, 0],
+                               [0, 0, 1, 0, 0]], dtype=xp.float64)
         out = ndimage.rotate(data, 90, reshape=False, order=order)
         assert_array_almost_equal(out, expected)
 
@@ -1385,12 +1384,12 @@ class TestNdimageInterpolation:
         data = xp.empty((4, 3, 3))
         for i in range(3):
             data[:, :, i] = xp.asarray([[0, 0, 0],
-                                      [0, 1, 0],
-                                      [0, 1, 0],
-                                      [0, 0, 0]], dtype=xp.float64)
+                                        [0, 1, 0],
+                                        [0, 1, 0],
+                                        [0, 0, 0]], dtype=xp.float64)
         expected = xp.asarray([[0, 0, 0, 0],
-                             [0, 1, 1, 0],
-                             [0, 0, 0, 0]], dtype=xp.float64)
+                               [0, 1, 1, 0],
+                               [0, 0, 0, 0]], dtype=xp.float64)
         out = ndimage.rotate(data, 90, order=order)
         for i in range(3):
             assert_array_almost_equal(out[:, :, i], expected)
@@ -1400,12 +1399,12 @@ class TestNdimageInterpolation:
         data = xp.empty((3, 4, 3))
         for i in range(3):
             data[:, :, i] = xp.asarray([[0, 0, 0, 0],
-                                      [0, 1, 1, 0],
-                                      [0, 0, 0, 0]], dtype=xp.float64)
+                                        [0, 1, 1, 0],
+                                        [0, 0, 0, 0]], dtype=xp.float64)
         expected = xp.asarray([[0, 0, 0],
-                             [0, 1, 0],
-                             [0, 1, 0],
-                             [0, 0, 0]], dtype=xp.float64)
+                               [0, 1, 0],
+                               [0, 1, 0],
+                               [0, 0, 0]], dtype=xp.float64)
         out = ndimage.rotate(data, 90, order=order)
         for i in range(3):
             assert_array_almost_equal(out[:, :, i], expected)
@@ -1413,14 +1412,14 @@ class TestNdimageInterpolation:
     @pytest.mark.parametrize('order', range(0, 6))
     def test_rotate07(self, order, xp):
         data = xp.asarray([[[0, 0, 0, 0, 0],
-                          [0, 1, 1, 0, 0],
-                          [0, 0, 0, 0, 0]]] * 2, dtype=xp.float64)
+                            [0, 1, 1, 0, 0],
+                            [0, 0, 0, 0, 0]]] * 2, dtype=xp.float64)
         data = data.transpose()
         expected = xp.asarray([[[0, 0, 0],
-                              [0, 1, 0],
-                              [0, 1, 0],
-                              [0, 0, 0],
-                              [0, 0, 0]]] * 2, dtype=xp.float64)
+                                [0, 1, 0],
+                                [0, 1, 0],
+                                [0, 0, 0],
+                                [0, 0, 0]]] * 2, dtype=xp.float64)
         expected = expected.transpose([2, 1, 0])
         out = ndimage.rotate(data, 90, axes=(0, 1), order=order)
         assert_array_almost_equal(out, expected)
@@ -1428,20 +1427,20 @@ class TestNdimageInterpolation:
     @pytest.mark.parametrize('order', range(0, 6))
     def test_rotate08(self, order, xp):
         data = xp.asarray([[[0, 0, 0, 0, 0],
-                          [0, 1, 1, 0, 0],
-                          [0, 0, 0, 0, 0]]] * 2, dtype=xp.float64)
+                            [0, 1, 1, 0, 0],
+                            [0, 0, 0, 0, 0]]] * 2, dtype=xp.float64)
         data = data.transpose()
         expected = xp.asarray([[[0, 0, 1, 0, 0],
-                              [0, 0, 1, 0, 0],
-                              [0, 0, 0, 0, 0]]] * 2, dtype=xp.float64)
+                                [0, 0, 1, 0, 0],
+                                [0, 0, 0, 0, 0]]] * 2, dtype=xp.float64)
         expected = expected.transpose()
         out = ndimage.rotate(data, 90, axes=(0, 1), reshape=False, order=order)
         assert_array_almost_equal(out, expected)
 
     def test_rotate09(self, xp):
         data = xp.asarray([[0, 0, 0, 0, 0],
-                         [0, 1, 1, 0, 0],
-                         [0, 0, 0, 0, 0]] * 2, dtype=xp.float64)
+                           [0, 1, 1, 0, 0],
+                           [0, 0, 0, 0, 0]] * 2, dtype=xp.float64)
         with assert_raises(ValueError):
             ndimage.rotate(data, 90, axes=(0, data.ndim))
 
@@ -1450,20 +1449,20 @@ class TestNdimageInterpolation:
 
         # The output of ndimage.rotate before refactoring
         expected = xp.asarray([[[0.0, 0.0, 0.0],
-                              [0.0, 0.0, 0.0],
-                              [6.54914793, 7.54914793, 8.54914793],
-                              [10.84520162, 11.84520162, 12.84520162],
-                              [0.0, 0.0, 0.0]],
-                             [[6.19286575, 7.19286575, 8.19286575],
-                              [13.4730712, 14.4730712, 15.4730712],
-                              [21.0, 22.0, 23.0],
-                              [28.5269288, 29.5269288, 30.5269288],
-                              [35.80713425, 36.80713425, 37.80713425]],
-                             [[0.0, 0.0, 0.0],
-                              [31.15479838, 32.15479838, 33.15479838],
-                              [35.45085207, 36.45085207, 37.45085207],
-                              [0.0, 0.0, 0.0],
-                              [0.0, 0.0, 0.0]]])
+                                [0.0, 0.0, 0.0],
+                                [6.54914793, 7.54914793, 8.54914793],
+                                [10.84520162, 11.84520162, 12.84520162],
+                                [0.0, 0.0, 0.0]],
+                               [[6.19286575, 7.19286575, 8.19286575],
+                                [13.4730712, 14.4730712, 15.4730712],
+                                [21.0, 22.0, 23.0],
+                                [28.5269288, 29.5269288, 30.5269288],
+                                [35.80713425, 36.80713425, 37.80713425]],
+                               [[0.0, 0.0, 0.0],
+                                [31.15479838, 32.15479838, 33.15479838],
+                                [35.45085207, 36.45085207, 37.45085207],
+                                [0.0, 0.0, 0.0],
+                                [0.0, 0.0, 0.0]]])
 
         out = ndimage.rotate(data, angle=12, reshape=False)
         assert_array_almost_equal(out, expected)
