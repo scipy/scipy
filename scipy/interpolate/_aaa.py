@@ -121,11 +121,15 @@ class AAA:
     extrapolating from 100 samples in ``[-1.5, 1.5]``.
 
     >>> from scipy.special import gamma
-    >>> r = AAA(gamma, np.linspace(-1.5, 1.5, num=100))
-    >>> z = np.linspace(-3.5, 4.5, num=100)
+    >>> sample_points = np.linspace(-1.5, 1.5, num=100)
+    >>> r = AAA(gamma, sample_points)
+    >>> z = np.linspace(-3.5, 4.5, num=1000)
     >>> fig, ax = plt.subplots()
-    >>> ax.plot(z, r(z).real)
+    >>> ax.plot(z, gamma(z), label="Gamma")
+    >>> ax.plot(sample_points, gamma(sample_points), label="Sample points")
+    >>> ax.plot(z, r(z).real, '--', label="AAA approximation")
     >>> ax.set(xlabel="z", ylabel="r(z)", ylim=[-8, 8], xlim=[-3.5, 4.5])
+    >>> ax.legend()
     >>> plt.show()
 
     We can also view the poles of the rational approximation and their residue:
