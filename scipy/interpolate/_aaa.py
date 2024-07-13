@@ -294,7 +294,8 @@ class AAA:
             r = CC @ (self.weights * self.values) / (CC @ self.weights)
 
         # Deal with input inf: `r(inf) = lim r(z) = sum(w*f) / sum(w)`
-        r[np.isinf(zv)] = np.sum(self.weights * self.values) / np.sum(self.weights)
+        with np.errstate(divide="ignore"):
+            r[np.isinf(zv)] = np.sum(self.weights * self.values) / np.sum(self.weights)
 
         # Deal with NaN
         ii = np.flatnonzero(np.isnan(r))
