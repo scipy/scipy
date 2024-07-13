@@ -136,17 +136,19 @@ class AAA:
 
     We can also view the poles of the rational approximation and their residue:
 
-    >>> for i in np.argsort(r.poles):
-    ...     print(f"{r.poles[i]=:.3e}, {r.residues[i]=:.3e}")
-    r.poles[i]=-3.816e+00+0.000e+00j, r.residues[i]=3.658e-02+0.000e+00j
-    r.poles[i]=-3.003e+00+0.000e+00j, r.residues[i]=-1.692e-01-0.000e+00j
-    r.poles[i]=-2.000e+00+0.000e+00j, r.residues[i]=5.000e-01+0.000e+00j
-    r.poles[i]=-1.000e+00+0.000e+00j, r.residues[i]=-1.000e+00+0.000e+00j
-    r.poles[i]=5.858e-17+0.000e+00j, r.residues[i]=1.000e+00+0.000e+00j  # may vary
-    r.poles[i]=4.775e+00-3.069e+00j, r.residues[i]=-8.113e-01-2.302e+00j
-    r.poles[i]=4.775e+00+3.069e+00j, r.residues[i]=-8.113e-01+2.302e+00j
-    r.poles[i]=5.291e+00-9.737e-01j, r.residues[i]=8.733e-01+1.070e+01j
-    r.poles[i]=5.291e+00+9.737e-01j, r.residues[i]=8.733e-01-1.070e+01j
+    >>> order = np.argsort(r.poles)
+    >>> r.poles[order]
+    array([-3.81591039e+00+0.j        , -3.00269049e+00+0.j        ,
+           -1.99999988e+00+0.j        , -1.00000000e+00+0.j        ,
+            5.85842812e-17+0.j        ,  4.77485458e+00-3.06919376j,
+            4.77485458e+00+3.06919376j,  5.29095868e+00-0.97373072j,
+            5.29095868e+00+0.97373072j])
+    >>> r.residues[order]
+    array([ 0.03658074 +0.j        , -0.16915426 -0.j        ,
+            0.49999915 +0.j        , -1.         +0.j        ,
+            1.         +0.j        , -0.81132013 -2.30193429j,
+           -0.81132013 +2.30193429j,  0.87326839+10.70148546j,
+            0.87326839-10.70148546j])
 
     For the second example, we call `AAA` with a spiral of 1000 points wind 7.5 times
     around the origin in the complex plane.
