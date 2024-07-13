@@ -193,6 +193,9 @@ class AAA:
         z, uni = np.unique(z, return_index=True)
         f = f[uni]
 
+        self._compute_AAA(f, z, rtol, max_terms)
+
+    def _compute_AAA(self, f, z, rtol, max_terms):
         # Initialization for AAA iteration
         M = np.size(z)
         atol = rtol * np.linalg.norm(f, ord=np.inf)
