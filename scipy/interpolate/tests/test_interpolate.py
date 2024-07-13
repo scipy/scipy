@@ -929,7 +929,7 @@ class TestAkima1DInterpolator:
             Akima1DInterpolator(x, y, method="invalid")  # type: ignore
 
     def test_extrapolate_attr(self):
-        #
+        # 
         x = np.linspace(-5, 5, 11)
         y = x**2
         x_ext = np.linspace(-10, 10, 17)
