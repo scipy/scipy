@@ -44,9 +44,9 @@ class AAA:
 
     Parameters
     ----------
-    f : array_like
+    f : 1D array_like
         Function values ``f(z)`` at `z`.
-    z : array_like
+    z : 1D array_like
         Values at which `f` is provided.
     rtol : float, optional
         Relative tolerance, defaults to 1e-13.
@@ -177,8 +177,11 @@ class AAA:
     """
     def __init__(self, f, z, *, rtol=1e-13, max_terms=100):
         # input validation
-        z = np.asarray(z).ravel()
-        f = np.asarray(f).ravel()
+        z = np.asarray(z)
+        f = np.asarray(f)
+
+        if z.ndim != 1 or f.ndim != 1:
+            raise ValueError("`f` and `z` must be 1-D.")
 
         if f.size != z.size:
             raise ValueError("`f` and `z` must be the same size.")

@@ -37,8 +37,10 @@ PTS = np.concatenate([-PTS[::-1], [0], PTS])
 
 class TestAAA:
     def test_input_validation(self):
-        with pytest.raises(ValueError, match="`f` and `z`"):
+        with pytest.raises(ValueError, match="same size"):
             AAA([0], [1, 1])
+        with pytest.raises(ValueError, match="1-D"):
+            AAA([[0], [0]], [[1], [1]])
     
     def test_convergence_error(self):
         with pytest.warns(RuntimeWarning, match="AAA failed"):
