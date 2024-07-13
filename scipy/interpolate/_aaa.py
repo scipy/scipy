@@ -107,6 +107,7 @@ class AAA:
     ----------
     .. [1] Y. Nakatsukasa, O. Sete, and L. N. Trefethen, "The AAA algorithm for
             rational approximation", SIAM J. Sci. Comp. 40 (2018), A1494-A1522.
+            :doi:`10.1137/16M110612`
 
     Examples
     --------
