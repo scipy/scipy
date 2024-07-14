@@ -420,8 +420,9 @@ def _root_scalar_secant_doc():
         Maximum number of iterations.
     x0 : float, required
         Initial guess.
-    x1 : float, required
-        A second guess.
+    x1 : float, optional
+        A second guess. Must be different from `x0`. If not specified,
+        a value near `x0` will be chosen.
     options: dict, optional
         Specifies any method-specific options not covered above.
 
