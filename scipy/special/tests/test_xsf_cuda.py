@@ -11,7 +11,7 @@ from scipy.special._testutils import MissingModule
 
 try:
     import cupy  # type: ignore
-except ImportError:
+except (ImportError, AttributeError):
     cupy = MissingModule('cupy')
 
 
