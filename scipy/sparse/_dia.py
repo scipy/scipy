@@ -13,7 +13,7 @@ from ._data import _data_matrix
 from ._sputils import (
     isshape, upcast_char, getdtype, get_sum_dtype, validateaxis, check_shape
 )
-from ._sparsetools import dia_matvec
+from ._sparsetools import dia_matmat, dia_matvec
 
 
 class _dia_base(_data_matrix):
@@ -246,6 +246,22 @@ class _dia_base(_data_matrix):
                    x.ravel(), y.ravel())
 
         return y
+
+    def _matmul_sparse(self, other):
+        # If other is not DIA format, use default handler.
+        if not isinstance(other, _dia_base):
+            return super()._matmul_sparse(other)
+
+        # If any dimension is zero, return empty array immediately.
+        if 0 in self.shape or 0 in other.shape:
+            return self._dia_container((self.shape[0], other.shape[1]))
+
+        offsets, data = dia_matmat(*self.shape, *self.data.shape,
+                                   self.offsets, self.data,
+                                   other.shape[1], *other.data.shape,
+                                   other.offsets, other.data)
+        return self._dia_container((data.reshape(len(offsets), -1), offsets),
+                                   (self.shape[0], other.shape[1]))
 
     def _setdiag(self, values, k=0):
         M, N = self.shape
