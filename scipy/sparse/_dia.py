@@ -11,7 +11,8 @@ from ._matrix import spmatrix
 from ._base import issparse, _formats, _spbase, sparray
 from ._data import _data_matrix
 from ._sputils import (
-    isshape, upcast_char, getdtype, get_sum_dtype, validateaxis, check_shape
+    isdense, isscalarlike, isshape, upcast_char, getdtype, get_sum_dtype,
+    validateaxis, check_shape
 )
 from ._sparsetools import dia_matmat, dia_matvec
 
@@ -231,6 +232,55 @@ class _dia_base(_data_matrix):
 
     def _mul_scalar(self, other):
         return self._with_data(self.data * other)
+
+    def multiply(self, other):
+        if isscalarlike(other):
+            return self._mul_scalar(other)
+
+        if isdense(other):
+            if other.ndim > 2:
+                return self.toarray() * other
+
+            # Use default handler for pathological cases.
+            if 0 in self.shape or 1 in self.shape or 0 in other.shape:
+                return super().multiply(other)
+
+            other = np.atleast_2d(other)
+            other_rows, other_cols = other.shape
+            rows, cols = self.shape
+            L = min(self.data.shape[1], cols)
+            data = self.data[:, :L].astype(np.result_type(self.data, other))
+            if other_rows == 1:
+                data *= other[0, :L]
+            elif other_rows != rows:
+                raise ValueError('inconsistent shapes')
+            else:
+                j = np.arange(L)
+                if L > rows:
+                    i = (j - self.offsets[:, None]) % rows
+                else:  # can use faster method
+                    i = j - self.offsets[:, None] % rows
+                if other_cols == 1:
+                    j = 0
+                elif other_cols != cols:
+                    raise ValueError('inconsistent shapes')
+                data *= other[i, j]
+            return self._with_data(data)
+
+        # If other is not DIA format or needs broadcasting (unreasonable
+        # use case for DIA anyway), use default handler.
+        if not isinstance(other, _dia_base) or other.shape != self.shape:
+            return super().multiply(other)
+
+        # Find common offsets (unique diagonals don't contribute)
+        # and indices corresponding to them in multiplicand and multiplier.
+        offsets, self_idx, other_idx = \
+            np.intersect1d(self.offsets, other.offsets,
+                           assume_unique=True, return_indices=True)
+        # Only overlapping length of diagonals can have non-zero products.
+        L = min(self.data.shape[1], other.data.shape[1])
+        data = self.data[self_idx, :L] * other.data[other_idx, :L]
+        return self._dia_container((data, offsets), shape=self.shape)
 
     def _matmul_vector(self, other):
         x = other
