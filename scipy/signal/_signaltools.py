@@ -3084,9 +3084,12 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
     If `t` is not None, then it is used solely to calculate the resampled
     positions `resampled_t`
 
-    As noted, `resample` uses FFT transformations, which can be very
-    slow if the number of input or output samples is large and prime;
-    see `scipy.fft.fft`.
+    As noted, `resample` uses FFT transformations, which can be very 
+    slow if the number of input or output samples is large and prime; 
+    see :func:`~scipy.fft.fft`. In such cases, it can be faster to first downsample 
+    a signal of length ``n`` with :func:`~scipy.signal.resample_poly` by a factor of 
+    ``n//num`` before using `resample`. Note that this approach changes the 
+    characteristics of the antialiasing filter.
 
     Examples
     --------
@@ -3105,6 +3108,22 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
     >>> plt.plot(x, y, 'go-', xnew, f, '.-', 10, y[0], 'ro')
     >>> plt.legend(['data', 'resampled'], loc='best')
     >>> plt.show()
+
+    Consider the following signal  ``y`` where ``len(y)`` is a large  prime number:
+
+    >>> N = 55949
+    >>> freq = 100
+    >>> x = np.linspace(0, 1, N)
+    >>> y = np.cos(2 * np.pi * freq * x)
+
+    Due to ``N`` being prime, 
+
+    >>> num = 5000  
+    >>> f = signal.resample(signal.resample_poly(y, 1, N // num), num)
+
+    runs significantly faster than
+
+    >>> f = signal.resample(y, num)
     """
 
     if domain not in ('time', 'freq'):
