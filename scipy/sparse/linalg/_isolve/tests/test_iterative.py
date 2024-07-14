@@ -18,7 +18,7 @@ from scipy.sparse.linalg._isolve import (bicg, bicgstab, cg, cgs,
                                          gcrotmk, gmres, lgmres,
                                          minres, qmr, tfqmr)
 
-# TODO check that method preserve shape and type
+# TODO check that method preserve type
 # TODO test both preconditioner methods
 
 
@@ -536,6 +536,23 @@ def test_x0_solves_problem_exactly(solver):
     sol, info = solver(mat, rhs, x0=rhs)
     assert_allclose(sol, rhs)
     assert info == 0
+
+
+@pytest.mark.parametrize("solver", _SOLVERS)
+@pytest.mark.parametrize("n", [1, 3, 11])
+def test_shape_consistency(solver, n):
+    # See gh-21164
+    # 1D array
+    vals = np.arange(1, n + 1, dtype=float)
+    mat = np.diag(vals)
+    # 2D array
+    vals2 = vals[:, np.newaxis]
+    for rhs in [vals, 0. * vals, vals2, 0. * vals2]:
+        for x0 in [vals, vals2]:
+            sol = solver(mat, rhs)
+            assert_array_equal(sol.shape, rhs.shape)
+            sol = solver(mat, rhs, x0)
+            assert_array_equal(sol.shape, x0.shape)
 
 
 # Specific tfqmr test
