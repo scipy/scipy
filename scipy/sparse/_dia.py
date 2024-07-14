@@ -175,14 +175,15 @@ class _dia_base(_data_matrix):
 
     sum.__doc__ = _spbase.sum.__doc__
 
-    def _add_sparse(self, other):
+    def _add_sparse(self, other, sub=False):
         # If other is not DIA format, let them handle us instead.
         if not isinstance(other, _dia_base):
             return other._add_sparse(self)
 
         # Fast path for exact equality of the sparsity structure.
         if np.array_equal(self.offsets, other.offsets):
-            return self._with_data(self.data + other.data)
+            return self._with_data(self.data - other.data if sub else
+                                   self.data + other.data)
 
         # Find the union of the offsets (which will be sorted and unique).
         new_offsets = np.union1d(self.offsets, other.offsets)
@@ -195,22 +196,38 @@ class _dia_base(_data_matrix):
         # permutation of the existing offsets and the diagonal lengths match.
         if self_d == other_d and len(new_offsets) == len(self.offsets):
             new_data = self.data[_invert_index(self_idx)]
-            new_data[other_idx, :] += other.data
+            if sub:
+                new_data[other_idx, :] -= other.data
+            else:
+                new_data[other_idx, :] += other.data
         elif self_d == other_d and len(new_offsets) == len(other.offsets):
-            new_data = other.data[_invert_index(other_idx)]
+            if sub:
+                new_data = -other.data[_invert_index(other_idx)]
+            else:
+                new_data = other.data[_invert_index(other_idx)]
             new_data[self_idx, :] += self.data
         else:
             # Maximum diagonal length of the result.
             d = min(self.shape[0] + new_offsets[-1], self.shape[1])
 
-            # Add all diagonals to a freshly-allocated data array.
+            # Add all diagonals to a freshly allocated data array.
             new_data = np.zeros(
                 (len(new_offsets), d),
                 dtype=np.result_type(self.data, other.data),
             )
             new_data[self_idx, :self_d] += self.data[:, :d]
-            new_data[other_idx, :other_d] += other.data[:, :d]
+            if sub:
+                new_data[other_idx, :other_d] -= other.data[:, :d]
+            else:
+                new_data[other_idx, :other_d] += other.data[:, :d]
         return self._dia_container((new_data, new_offsets), shape=self.shape)
+
+    def _sub_sparse(self, other):
+        # If other is not DIA format, use default handler.
+        if not isinstance(other, _dia_base):
+            return super()._sub_sparse(other)
+
+        return self._add_sparse(other, sub=True)
 
     def _mul_scalar(self, other):
         return self._with_data(self.data * other)
