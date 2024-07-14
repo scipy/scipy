@@ -4985,6 +4985,21 @@ class TestDIA(sparse_test_class(getset=False, slicing=False, slicing_assign=Fals
         csc = dia.tocsc()
         assert csc.indices.dtype == np.int32
 
+    def test_add_sparse(self):
+        # test format and cases not covered by common add tests
+        A = diag([1, 2])
+        B = A + diag([3], 1)
+        Asp = dia_matrix(A)
+        Bsp = dia_matrix(B)
+
+        Csp = Asp + Bsp
+        assert isinstance(Csp, dia_matrix)
+        assert_array_equal(Csp.toarray(), A + B)
+
+        Csp = Bsp + Asp
+        assert isinstance(Csp, dia_matrix)
+        assert_array_equal(Csp.toarray(), B + A)
+
     def test_mul_scalar(self):
         # repro for gh-20434
         m = self.dia_container([[1, 2], [0, 4]])
