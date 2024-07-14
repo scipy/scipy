@@ -3087,7 +3087,7 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
     As noted, `resample` uses FFT transformations, which can be very 
     slow if the number of input or output samples is large and prime; 
     see :func:`~scipy.fft.fft`. In such cases, it can be faster to first downsample 
-    a signal of length `n` with :func:`~scipy.signal.resample_poly` by a factor of 
+    a signal of length ``n`` with :func:`~scipy.signal.resample_poly` by a factor of 
     ``n//num`` before using `resample`. Note that this approach changes the 
     characteristics of the antialiasing filter.
 
@@ -3109,14 +3109,14 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
     >>> plt.legend(['data', 'resampled'], loc='best')
     >>> plt.show()
 
-    Consider the following signal  `y` where ``len(y)`` is a large  prime number:
+    Consider the following signal  ``y`` where ``len(y)`` is a large  prime number:
 
     >>> N = 55949
     >>> freq = 100
     >>> x = np.linspace(0, 1, N)
     >>> y = np.cos(2 * np.pi * freq * x)
 
-    Due to `N` being prime, 
+    Due to ``N`` being prime, 
 
     >>> num = 5000  
     >>> f = signal.resample(signal.resample_poly(y, 1, N // num), num)
