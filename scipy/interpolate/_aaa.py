@@ -64,11 +64,13 @@ class AAA:
     errors : array
         Error in the successive iterations of AAA.
     poles : array
-        Poles of the AAA approximation.
+        Poles of the AAA approximation, repeated according to their multiplicity but not
+        in any specific order.
     residues : array
-        Residues associated with the poles of the approximation.
+        Residues associated with the `poles` of the approximation.
     roots : array
-        Roots (zeros) of the AAA approximation.
+        Roots (zeros) of the AAA approximation, repeated according to their multiplicity
+        but not in any specific order.
 
     Warns
     -----
