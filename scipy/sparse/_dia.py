@@ -14,7 +14,7 @@ from ._sputils import (
     isdense, isscalarlike, isshape, upcast_char, getdtype, get_sum_dtype,
     validateaxis, check_shape
 )
-from ._sparsetools import dia_matmat, dia_matvec
+from ._sparsetools import dia_matmat, dia_matvec, dia_matvecs
 
 
 class _dia_base(_data_matrix):
@@ -296,6 +296,13 @@ class _dia_base(_data_matrix):
                    x.ravel(), y.ravel())
 
         return y
+
+    def _matmul_multivector(self, other):
+        res = np.zeros((self.shape[0], other.shape[1]),
+                       dtype=np.result_type(self.data, other))
+        dia_matvecs(*self.shape, *self.data.shape, self.offsets, self.data,
+                    other.shape[1], other, res)
+        return res
 
     def _matmul_sparse(self, other):
         # If other is not DIA format, use default handler.

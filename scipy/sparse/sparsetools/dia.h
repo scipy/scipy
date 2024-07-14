@@ -170,4 +170,61 @@ void dia_matvec(const I n_row,
 }
 
 
+/*
+ * Compute output += A * B for DIA matrix A and dense matrices B, output
+ *
+ *
+ * Input Arguments:
+ *   I  A_rows                - number of rows in A
+ *   I  A_cols                - number of columns in A
+ *   I  A_diags               - number of diagonals in A
+ *   I  A_L                   - length of each diagonal in A
+ *   I  offsets[A_diags]      - diagonal offsets in A
+ *   T  A_data[A_diags,A_L]   - diagonals data of A
+ *   I  B_cols                - number of columns in B
+ *   T  B_data[A_rows,B_cols] - data of B (in C order)
+ *
+ * Output Arguments:
+ *   T  data[A_rows,B_cols]   - output data (in C order)
+ *
+ * Note:
+ *   Output array data must be preallocated
+ *   Number of rows in B must be equal A_cols
+ *   Negative offsets correspond to lower diagonals
+ *   Positive offsets correspond to upper diagonals
+ *
+ */
+template <class I, class T>
+void dia_matvecs(const I A_rows,
+                 const I A_cols,
+                 const I A_diags,
+                 const I A_L,
+                 const I A_offsets[],
+                 const T A_data[],
+                 const I B_cols,
+                 const T B_data[],
+                       T data[])
+{
+    const I rows = A_rows, cols = B_cols,
+            k_end = min(A_cols, A_L); // for index along A columns and B rows
+    // loop over output rows
+    for (I i = 0; i < rows; ++i) {
+        T* row = data + npy_intp(cols) * i;
+        // loop over diagonals in A
+        for (I n = 0; n < A_diags; ++n) {
+            const I k = i + A_offsets[n];
+            if (k < 0 or k >= k_end)
+                continue;
+            // element at i-th row, k-th column in A
+            const T a = (A_data + npy_intp(A_L) * n)[k];
+            // k-th row in B
+            const T* B_row = B_data + npy_intp(B_cols) * k;
+            // loop over columns in current output row
+            for (I j = 0; j < cols; ++j)
+                row[j] += a * B_row[j];
+        }
+    }
+}
+
+
 #endif
