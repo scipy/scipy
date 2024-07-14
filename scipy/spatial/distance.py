@@ -1109,10 +1109,7 @@ def chebyshev(u, v, w=None):
     v = _validate_vector(v)
     if w is not None:
         w = _validate_weights(w)
-        has_weight = w > 0
-        if has_weight.sum() < w.size:
-            u = u[has_weight]
-            v = v[has_weight]
+        return max((w > 0) * abs(u - v))
     return max(abs(u - v))
 
 
