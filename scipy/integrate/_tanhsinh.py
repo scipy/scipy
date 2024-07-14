@@ -53,10 +53,10 @@ def _tanhsinh(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
         If ``func`` returns a value with complex dtype when evaluated at
         either endpoint, subsequent arguments ``x`` will have complex dtype
         (but zero imaginary part).
-    a, b : float array_like
+    a, b : array_like
         Real lower and upper limits of integration. Must be broadcastable.
         Elements may be infinite.
-    args : tuple of array_like, optional
+    args : tuple, optional
         Additional positional arguments to be passed to `func`. Must be arrays
         broadcastable with `a` and `b`. If the callable to be integrated
         requires arguments that are not broadcastable with `a` and `b`, wrap
@@ -957,16 +957,16 @@ def nsum(f, a, b, *, step=1, args=(), log=False, maxterms=int(2**20), tolerances
         function of `x` defined at *all reals* between `a` and `b`.          
         `nsum` performs no checks to verify that these conditions
         are met and may return erroneous results if they are violated.
-    a, b : float array_like
+    a, b : real number array
         Real lower and upper limits of summed terms. Must be broadcastable.
         Each element of `a` must be finite and less than the corresponding
         element in `b`, but elements of `b` may be infinite.
-    step : float array_like
+    step : real number array
         Finite, positive, real step between summed terms. Must be broadcastable
         with `a` and `b`. Note that the number of terms included in the sum will
         be ``floor((b - a) / step)`` + 1; adjust `b` accordingly to ensure
         that ``f(b)`` is included if intended.
-    args : tuple of array_like, optional
+    args : tuple of real number arrays, optional
         Additional positional arguments to be passed to `f`. Must be arrays
         broadcastable with `a`, `b`, and `step`. If the callable to be summed
         requires arguments that are not broadcastable with `a`, `b`, and `step`,
