@@ -121,6 +121,7 @@ OTHER_ROUTINES = """
 coo_tocsr           v iiiIIT*I*I*T
 coo_todense         v iilIIT*Ti
 coo_matvec          v lIITT*T
+dia_matmat          v iiiiITiiiIT*V*W
 dia_matvec          v iiiiITT*T
 cs_graph_components i iII*I
 """
