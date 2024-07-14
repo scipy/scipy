@@ -119,7 +119,7 @@ void dia_matmat(const I A_rows,
 
 
 /*
- * Compute Y += A*X for DIA matrix A and dense vectors X,Y
+ * Compute Y += A * X for DIA matrix A and dense vectors X, Y
  *
  *
  * Input Arguments:
@@ -145,25 +145,25 @@ void dia_matvec(const I n_row,
                 const I n_col,
                 const I n_diags,
                 const I L,
-	            const I offsets[], 
-	            const T diags[], 
-	            const T Xx[],
-	                  T Yx[])
+                const I offsets[],
+                const T diags[],
+                const T Xx[],
+                      T Yx[])
 {
-    for(I i = 0; i < n_diags; i++){
+    for (I i = 0; i < n_diags; i++){
         const I k = offsets[i];  //diagonal offset
 
-        const I i_start = std::max<I>(0,-k);
-        const I j_start = std::max<I>(0, k);
-        const I j_end   = std::min<I>(std::min<I>(n_row + k, n_col),L);
+        const I i_start = max<I>(0, -k);
+        const I j_start = max<I>(0, k);
+        const I j_end   = min<I>(min<I>(n_row + k, n_col), L);
 
         const I N = j_end - j_start;  //number of elements to process
 
-        const T * diag = diags + (npy_intp)i*L + j_start;
+        const T * diag = diags + (npy_intp)i * L + j_start;
         const T * x = Xx + j_start;
               T * y = Yx + i_start;
 
-        for(I n = 0; n < N; n++){
+        for (I n = 0; n < N; n++) {
             y[n] += diag[n] * x[n]; 
         }
     }
