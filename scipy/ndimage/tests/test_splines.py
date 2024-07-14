@@ -1,6 +1,7 @@
 """Tests for spline filtering."""
 import pytest
 
+import numpy as np
 from scipy._lib._array_api import assert_almost_equal
 
 from scipy import ndimage
@@ -29,9 +30,11 @@ def make_spline_knot_matrix(xp, n, order, mode='mirror'):
     """Matrix to invert to find the spline coefficients."""
     knot_values = get_spline_knot_values(order)
 
-    matrix = xp.zeros((n, n))
+    # NB: do computations with numpy, convert to xp as the last step only
+
+    matrix = np.zeros((n, n))
     for diag, knot_value in enumerate(knot_values):
-        indices = xp.arange(diag, n)
+        indices = np.arange(diag, n)
         if diag == 0:
             matrix[indices, indices] = knot_value
         else:
@@ -54,7 +57,7 @@ def make_spline_knot_matrix(xp, n, order, mode='mirror'):
             matrix[row, start + step*idx] += knot_value
             matrix[-row - 1, -start - 1 - step*idx] += knot_value
 
-    return matrix / knot_values_sum
+    return xp.asarray(matrix / knot_values_sum)
 
 
 @pytest.mark.parametrize('order', [0, 1, 2, 3, 4, 5])
@@ -67,5 +70,5 @@ def test_spline_filter_vs_matrix_solution(order, mode, xp):
     spline_filter_axis_1 = ndimage.spline_filter1d(eye, axis=1, order=order,
                                                    mode=mode)
     matrix = make_spline_knot_matrix(xp, n, order, mode=mode)
-    assert_almost_equal(eye, xp.dot(spline_filter_axis_0, matrix))
-    assert_almost_equal(eye, xp.dot(spline_filter_axis_1, matrix.T))
+    assert_almost_equal(eye, spline_filter_axis_0 @ matrix)
+    assert_almost_equal(eye, spline_filter_axis_1 @ matrix.T)

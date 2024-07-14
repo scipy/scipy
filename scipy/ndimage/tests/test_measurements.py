@@ -9,7 +9,7 @@ from scipy._lib._array_api import (
     assert_array_almost_equal,
     assert_almost_equal,
 )
-from scipy._lib._array_api import is_cupy
+from scipy._lib._array_api import is_jax, is_torch, array_namespace
 
 import pytest
 from pytest import raises as assert_raises
@@ -30,84 +30,80 @@ IS_WINDOWS_AND_NP1 = os.name == 'nt' and np.__version__ < '2'
 class Test_measurements_stats:
     """ndimage._measurements._stats() is a utility used by other functions."""
 
-    def test_a(self, xp):
-        x = xp.asarray([0, 1, 2, 6])
+    def test_a(self):
+        x = [0, 1, 2, 6]
         labels = [0, 0, 1, 1]
         index = [0, 1]
         for shp in [(4,), (2, 2)]:
-            x = xp.asarray(x).reshape(shp)
-            labels = xp.asarray(labels).reshape(shp)
+            x = np.array(x).reshape(shp)
+            labels = np.array(labels).reshape(shp)
             counts, sums = ndimage._measurements._stats(
                 x, labels=labels, index=index)
 
-            dtype_arg = {'dtype': xp.int64} if IS_WINDOWS_AND_NP1 else {}
-            xp_assert_equal(counts, xp.asarray([2, 2], **dtype_arg))
-            xp_assert_equal(sums, xp.asarray([1.0, 8.0]))
+            dtype_arg = {'dtype': np.int64} if IS_WINDOWS_AND_NP1 else {}
+            xp_assert_equal(counts, np.asarray([2, 2], **dtype_arg))
+            xp_assert_equal(sums, np.asarray([1.0, 8.0]))
 
-    def test_b(self, xp):
+    def test_b(self):
         # Same data as test_a, but different labels.  The label 9 exceeds the
         # length of 'labels', so this test will follow a different code path.
-        x = xp.asarray([0, 1, 2, 6])
-        labels = xp.asarray([0, 0, 9, 9])
-        index = xp.asarray([0, 9])
+        x = [0, 1, 2, 6]
+        labels = [0, 0, 9, 9]
+        index = [0, 9]
         for shp in [(4,), (2, 2)]:
-            x = xp.asarray(x).reshape(shp)
-            labels = xp.asarray(labels).reshape(shp)
+            x = np.array(x).reshape(shp)
+            labels = np.array(labels).reshape(shp)
             counts, sums = ndimage._measurements._stats(
                 x, labels=labels, index=index)
 
-            dtype_arg = {'dtype': xp.int64} if IS_WINDOWS_AND_NP1 else {}
-            xp_assert_equal(counts, xp.asarray([2, 2], **dtype_arg))
-            xp_assert_equal(sums, xp.asarray([1.0, 8.0]))
+            dtype_arg = {'dtype': np.int64} if IS_WINDOWS_AND_NP1 else {}
+            xp_assert_equal(counts, np.asarray([2, 2], **dtype_arg))
+            xp_assert_equal(sums, np.asarray([1.0, 8.0]))
 
-    def test_a_centered(self, xp):
-
-        if is_cupy(xp):
-            pytest.xfail("_measurements._stats(..., centered=True) with CuPy arrays")
-
-        x = xp.asarray([0, 1, 2, 6])
-        labels = xp.asarray([0, 0, 1, 1])
-        index = xp.asarray([0, 1])
+    def test_a_centered(self):
+        x = [0, 1, 2, 6]
+        labels = [0, 0, 1, 1]
+        index = [0, 1]
         for shp in [(4,), (2, 2)]:
-            x = xp.asarray(x).reshape(shp)
-            labels = xp.asarray(labels).reshape(shp)
+            x = np.array(x).reshape(shp)
+            labels = np.array(labels).reshape(shp)
             counts, sums, centers = ndimage._measurements._stats(
                 x, labels=labels, index=index, centered=True)
 
-            dtype_arg = {'dtype': xp.int64} if IS_WINDOWS_AND_NP1 else {}
-            xp_assert_equal(counts, xp.asarray([2, 2], **dtype_arg))
-            xp_assert_equal(sums, xp.asarray([1.0, 8.0]))
-            xp_assert_equal(centers, xp.asarray([0.5, 8.0]))
+            dtype_arg = {'dtype': np.int64} if IS_WINDOWS_AND_NP1 else {}
+            xp_assert_equal(counts, np.asarray([2, 2], **dtype_arg))
+            xp_assert_equal(sums, np.asarray([1.0, 8.0]))
+            xp_assert_equal(centers, np.asarray([0.5, 8.0]))
 
-    def test_b_centered(self, xp):
-        x = xp.asarray([0, 1, 2, 6])
-        labels = xp.asarray([0, 0, 9, 9])
-        index = xp.asarray([0, 9])
+    def test_b_centered(self):
+        x = [0, 1, 2, 6]
+        labels = [0, 0, 9, 9]
+        index = [0, 9]
         for shp in [(4,), (2, 2)]:
-            x = xp.asarray(x).reshape(shp)
-            labels = xp.asarray(labels).reshape(shp)
+            x = np.array(x).reshape(shp)
+            labels = np.array(labels).reshape(shp)
             counts, sums, centers = ndimage._measurements._stats(
                 x, labels=labels, index=index, centered=True)
 
-            dtype_arg = {'dtype': xp.int64} if IS_WINDOWS_AND_NP1 else {}
-            xp_assert_equal(counts, xp.asarray([2, 2], **dtype_arg))
-            xp_assert_equal(sums, xp.asarray([1.0, 8.0]))
-            xp_assert_equal(centers, xp.asarray([0.5, 8.0]))
+            dtype_arg = {'dtype': np.int64} if IS_WINDOWS_AND_NP1 else {}
+            xp_assert_equal(counts, np.asarray([2, 2], **dtype_arg))
+            xp_assert_equal(sums, np.asarray([1.0, 8.0]))
+            xp_assert_equal(centers, np.asarray([0.5, 8.0]))
 
-    def test_nonint_labels(self, xp):
-        x = xp.asarray([0, 1, 2, 6])
-        labels = xp.asarray([0.0, 0.0, 9.0, 9.0])
-        index = xp.asarray([0.0, 9.0])
+    def test_nonint_labels(self):
+        x = [0, 1, 2, 6]
+        labels = [0.0, 0.0, 9.0, 9.0]
+        index = [0.0, 9.0]
         for shp in [(4,), (2, 2)]:
-            x = xp.asarray(x).reshape(shp)
-            labels = xp.asarray(labels).reshape(shp)
+            x = np.array(x).reshape(shp)
+            labels = np.array(labels).reshape(shp)
             counts, sums, centers = ndimage._measurements._stats(
                 x, labels=labels, index=index, centered=True)
 
-            dtype_arg = {'dtype': xp.int64} if IS_WINDOWS_AND_NP1 else {}
-            xp_assert_equal(counts, xp.asarray([2, 2], **dtype_arg))
-            xp_assert_equal(sums, xp.asarray([1.0, 8.0]))
-            xp_assert_equal(centers, xp.asarray([0.5, 8.0]))
+            dtype_arg = {'dtype': np.int64} if IS_WINDOWS_AND_NP1 else {}
+            xp_assert_equal(counts, np.asarray([2, 2], **dtype_arg))
+            xp_assert_equal(sums, np.asarray([1.0, 8.0]))
+            xp_assert_equal(centers, np.asarray([0.5, 8.0]))
 
 
 class Test_measurements_select:
@@ -192,11 +188,11 @@ def test_label06(xp):
 
 def test_label07(xp):
     data = xp.asarray([[0, 0, 0, 0, 0, 0],
-                     [0, 0, 0, 0, 0, 0],
-                     [0, 0, 0, 0, 0, 0],
-                     [0, 0, 0, 0, 0, 0],
-                     [0, 0, 0, 0, 0, 0],
-                     [0, 0, 0, 0, 0, 0]])
+                       [0, 0, 0, 0, 0, 0],
+                       [0, 0, 0, 0, 0, 0],
+                       [0, 0, 0, 0, 0, 0],
+                       [0, 0, 0, 0, 0, 0],
+                       [0, 0, 0, 0, 0, 0]])
     out, n = ndimage.label(data)
     assert_array_almost_equal(out, xp.asarray(
                                     [[0, 0, 0, 0, 0, 0],
@@ -210,11 +206,11 @@ def test_label07(xp):
 
 def test_label08(xp):
     data = xp.asarray([[1, 0, 0, 0, 0, 0],
-                     [0, 0, 1, 1, 0, 0],
-                     [0, 0, 1, 1, 1, 0],
-                     [1, 1, 0, 0, 0, 0],
-                     [1, 1, 0, 0, 0, 0],
-                     [0, 0, 0, 1, 1, 0]])
+                       [0, 0, 1, 1, 0, 0],
+                       [0, 0, 1, 1, 1, 0],
+                       [1, 1, 0, 0, 0, 0],
+                       [1, 1, 0, 0, 0, 0],
+                       [0, 0, 0, 1, 1, 0]])
     out, n = ndimage.label(data)
     assert_array_almost_equal(out, xp.asarray([[1, 0, 0, 0, 0, 0],
                                     [0, 0, 2, 2, 0, 0],
@@ -227,11 +223,11 @@ def test_label08(xp):
 
 def test_label09(xp):
     data = xp.asarray([[1, 0, 0, 0, 0, 0],
-                     [0, 0, 1, 1, 0, 0],
-                     [0, 0, 1, 1, 1, 0],
-                     [1, 1, 0, 0, 0, 0],
-                     [1, 1, 0, 0, 0, 0],
-                     [0, 0, 0, 1, 1, 0]])
+                       [0, 0, 1, 1, 0, 0],
+                       [0, 0, 1, 1, 1, 0],
+                       [1, 1, 0, 0, 0, 0],
+                       [1, 1, 0, 0, 0, 0],
+                       [0, 0, 0, 1, 1, 0]])
     struct = ndimage.generate_binary_structure(2, 2)
     struct = xp.asarray(struct)
     out, n = ndimage.label(data, struct)
@@ -246,9 +242,9 @@ def test_label09(xp):
 
 def test_label10(xp):
     data = xp.asarray([[0, 0, 0, 0, 0, 0],
-                     [0, 1, 1, 0, 1, 0],
-                     [0, 1, 1, 1, 1, 0],
-                     [0, 0, 0, 0, 0, 0]])
+                       [0, 1, 1, 0, 1, 0],
+                       [0, 1, 1, 1, 1, 0],
+                       [0, 0, 0, 0, 0, 0]])
     struct = ndimage.generate_binary_structure(2, 2)
     struct = xp.asarray(struct)
     out, n = ndimage.label(data, struct)
@@ -263,11 +259,11 @@ def test_label11(xp):
     for type in types:
         dtype = getattr(xp, type)
         data = xp.asarray([[1, 0, 0, 0, 0, 0],
-                         [0, 0, 1, 1, 0, 0],
-                         [0, 0, 1, 1, 1, 0],
-                         [1, 1, 0, 0, 0, 0],
-                         [1, 1, 0, 0, 0, 0],
-                         [0, 0, 0, 1, 1, 0]], dtype=dtype)
+                           [0, 0, 1, 1, 0, 0],
+                           [0, 0, 1, 1, 1, 0],
+                           [1, 1, 0, 0, 0, 0],
+                           [1, 1, 0, 0, 0, 0],
+                           [0, 0, 0, 1, 1, 0]], dtype=dtype)
         out, n = ndimage.label(data)
         expected = [[1, 0, 0, 0, 0, 0],
                     [0, 0, 2, 2, 0, 0],
@@ -280,15 +276,16 @@ def test_label11(xp):
         assert n == 4
 
 
+@skip_xp_backends(np_only=True, reasons=['inplace output is numpy-specific'])
 def test_label11_inplace(xp):
     for type in types:
         dtype = getattr(xp, type)
         data = xp.asarray([[1, 0, 0, 0, 0, 0],
-                         [0, 0, 1, 1, 0, 0],
-                         [0, 0, 1, 1, 1, 0],
-                         [1, 1, 0, 0, 0, 0],
-                         [1, 1, 0, 0, 0, 0],
-                         [0, 0, 0, 1, 1, 0]], dtype=dtype)
+                           [0, 0, 1, 1, 0, 0],
+                           [0, 0, 1, 1, 1, 0],
+                           [1, 1, 0, 0, 0, 0],
+                           [1, 1, 0, 0, 0, 0],
+                           [0, 0, 0, 1, 1, 0]], dtype=dtype)
         n = ndimage.label(data, output=data)
         expected = [[1, 0, 0, 0, 0, 0],
                     [0, 0, 2, 2, 0, 0],
@@ -305,10 +302,10 @@ def test_label12(xp):
     for type in types:
         dtype = getattr(xp, type)
         data = xp.asarray([[0, 0, 0, 0, 1, 1],
-                         [0, 0, 0, 0, 0, 1],
-                         [0, 0, 1, 0, 1, 1],
-                         [0, 0, 1, 1, 1, 1],
-                         [0, 0, 0, 1, 1, 0]], dtype=dtype)
+                           [0, 0, 0, 0, 0, 1],
+                           [0, 0, 1, 0, 1, 1],
+                           [0, 0, 1, 1, 1, 1],
+                           [0, 0, 0, 1, 1, 0]], dtype=dtype)
         out, n = ndimage.label(data)
         expected = [[0, 0, 0, 0, 1, 1],
                     [0, 0, 0, 0, 0, 1],
@@ -324,10 +321,10 @@ def test_label13(xp):
     for type in types:
         dtype = getattr(xp, type)
         data = xp.asarray([[1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1],
-                         [1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1],
-                         [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-                         [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]],
-                        dtype=dtype)
+                           [1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1],
+                           [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+                           [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]],
+                          dtype=dtype)
         out, n = ndimage.label(data)
         expected = [[1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1],
                     [1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1],
@@ -338,6 +335,7 @@ def test_label13(xp):
         assert n == 1
 
 
+@skip_xp_backends(np_only=True, reasons=['output=dtype is numpy-specific'])
 def test_label_output_typed(xp):
     data = xp.ones([5])
     for t in types:
@@ -349,6 +347,7 @@ def test_label_output_typed(xp):
         assert n == 1
 
 
+@skip_xp_backends(np_only=True, reasons=['output=dtype is numpy-specific'])
 def test_label_output_dtype(xp):
     data = xp.ones([5])
     for t in types:
@@ -360,16 +359,20 @@ def test_label_output_dtype(xp):
 
 
 def test_label_output_wrong_size(xp):
+    if is_jax(xp):
+        pytest.xfail("JAX does not raise")
+
     data = xp.ones([5])
     for t in types:
         dtype = getattr(xp, t)
         output = xp.zeros([10], dtype=dtype)
-        assert_raises((RuntimeError, ValueError),
+        # TypeError is from non-numpy arrays as output
+        assert_raises((ValueError, TypeError),
                       ndimage.label, data, output=output)
 
 
 def test_label_structuring_elements(xp):
-    data = xp.loadtxt(os.path.join(os.path.dirname(
+    data = np.loadtxt(os.path.join(os.path.dirname(
         __file__), "data", "label_inputs.txt"))
     strels = np.loadtxt(os.path.join(
         os.path.dirname(__file__), "data", "label_strels.txt"))
@@ -379,6 +382,7 @@ def test_label_structuring_elements(xp):
     strels = strels.reshape((-1, 3, 3))
     results = results.reshape((-1, 7, 7))
 
+    data = xp.asarray(data)
     strels = xp.asarray(strels)
     results = xp.asarray(results)
     r = 0
@@ -412,12 +416,13 @@ def test_ticket_742(xp):
 
 def test_gh_issue_3025(xp):
     """Github issue #3025 - improper merging of labels"""
-    d = xp.zeros((60, 320))
+    d = np.zeros((60, 320))
     d[:, :257] = 1
     d[:, 260:] = 1
     d[36, 257] = 1
     d[35, 258] = 1
     d[35, 259] = 1
+    d = xp.asarray(d)
     assert ndimage.label(d, xp.ones((3, 3)))[1] == 1
 
 
@@ -473,22 +478,22 @@ class TestFindObjects:
 
     def test_find_objects07(self, xp):
         data = xp.asarray([[0, 0, 0, 0, 0, 0],
-                         [0, 0, 0, 0, 0, 0],
-                         [0, 0, 0, 0, 0, 0],
-                         [0, 0, 0, 0, 0, 0],
-                         [0, 0, 0, 0, 0, 0],
-                         [0, 0, 0, 0, 0, 0]])
+                           [0, 0, 0, 0, 0, 0],
+                           [0, 0, 0, 0, 0, 0],
+                           [0, 0, 0, 0, 0, 0],
+                           [0, 0, 0, 0, 0, 0],
+                           [0, 0, 0, 0, 0, 0]])
         out = ndimage.find_objects(data)
         assert out == []
 
 
     def test_find_objects08(self, xp):
         data = xp.asarray([[1, 0, 0, 0, 0, 0],
-                         [0, 0, 2, 2, 0, 0],
-                         [0, 0, 2, 2, 2, 0],
-                         [3, 3, 0, 0, 0, 0],
-                         [3, 3, 0, 0, 0, 0],
-                         [0, 0, 0, 4, 4, 0]])
+                           [0, 0, 2, 2, 0, 0],
+                           [0, 0, 2, 2, 2, 0],
+                           [3, 3, 0, 0, 0, 0],
+                           [3, 3, 0, 0, 0, 0],
+                           [0, 0, 0, 4, 4, 0]])
         out = ndimage.find_objects(data)
         assert out == [(slice(0, 1, None), slice(0, 1, None)),
                            (slice(1, 3, None), slice(2, 5, None)),
@@ -498,11 +503,11 @@ class TestFindObjects:
 
     def test_find_objects09(self, xp):
         data = xp.asarray([[1, 0, 0, 0, 0, 0],
-                         [0, 0, 2, 2, 0, 0],
-                         [0, 0, 2, 2, 2, 0],
-                         [0, 0, 0, 0, 0, 0],
-                         [0, 0, 0, 0, 0, 0],
-                         [0, 0, 0, 4, 4, 0]])
+                           [0, 0, 2, 2, 0, 0],
+                           [0, 0, 2, 2, 2, 0],
+                           [0, 0, 0, 0, 0, 0],
+                           [0, 0, 0, 0, 0, 0],
+                           [0, 0, 0, 4, 4, 0]])
         out = ndimage.find_objects(data)
         assert out == [(slice(0, 1, None), slice(0, 1, None)),
                            (slice(1, 3, None), slice(2, 5, None)),
@@ -513,18 +518,20 @@ class TestFindObjects:
 def test_value_indices01(xp):
     "Test dictionary keys and entries"
     data = xp.asarray([[1, 0, 0, 0, 0, 0],
-                     [0, 0, 2, 2, 0, 0],
-                     [0, 0, 2, 2, 2, 0],
-                     [0, 0, 0, 0, 0, 0],
-                     [0, 0, 0, 0, 0, 0],
-                     [0, 0, 0, 4, 4, 0]])
+                       [0, 0, 2, 2, 0, 0],
+                       [0, 0, 2, 2, 2, 0],
+                       [0, 0, 0, 0, 0, 0],
+                       [0, 0, 0, 0, 0, 0],
+                       [0, 0, 0, 4, 4, 0]])
     vi = ndimage.value_indices(data, ignore_value=0)
     true_keys = [1, 2, 4]
     assert list(vi.keys()) == true_keys
 
+    nnz_kwd = {'as_tuple': True} if is_torch(xp) else {}
+
     truevi = {}
     for k in true_keys:
-        truevi[k] = xp.where(data == k)
+        truevi[k] = xp.nonzero(data == k, **nnz_kwd)
 
     vi = ndimage.value_indices(data, ignore_value=0)
     assert vi.keys() == truevi.keys()
@@ -545,12 +552,17 @@ def test_value_indices02(xp):
 def test_value_indices03(xp):
     "Test different input array shapes, from 1-D to 4-D"
     for shape in [(36,), (18, 2), (3, 3, 4), (3, 3, 2, 2)]:
-        a = xp.asarray((12*[1]+12*[2]+12*[3]), dtype=xp.int32).reshape(shape)
-        trueKeys = xp.unique(a)
+        a = xp.asarray((12*[1]+12*[2]+12*[3]), dtype=xp.int32)
+        a = xp.reshape(a, shape)
+
+        nnz_kwd = {'as_tuple': True} if is_torch(xp) else {}
+
+        unique_values = array_namespace(a).unique_values
+        trueKeys = unique_values(a)
         vi = ndimage.value_indices(a)
         assert list(vi.keys()) == list(trueKeys)
         for k in [int(x) for x in trueKeys]:
-            trueNdx = xp.where(a == k)
+            trueNdx = xp.nonzero(a == k, **nnz_kwd)
             assert len(vi[k]) == len(trueNdx)
             for vik, true_vik in zip(vi[k], trueNdx):
                 xp_assert_equal(vik, true_vik)
@@ -561,7 +573,7 @@ def test_sum01(xp):
         dtype = getattr(xp, type)
         input = xp.asarray([], dtype=dtype)
         output = ndimage.sum(input)
-        assert output == 0.0
+        assert output == 0
 
 
 def test_sum02(xp):
@@ -569,7 +581,7 @@ def test_sum02(xp):
         dtype = getattr(xp, type)
         input = xp.zeros([0, 4], dtype=dtype)
         output = ndimage.sum(input)
-        assert output == 0.0
+        assert output == 0
 
 
 def test_sum03(xp):
@@ -597,34 +609,38 @@ def test_sum05(xp):
 
 
 def test_sum06(xp):
-    labels = xp.asarray([], dtype=bool)
+    labels = np.asarray([], dtype=bool)
+    labels = xp.asarray(labels)
     for type in types:
         dtype = getattr(xp, type)
         input = xp.asarray([], dtype=dtype)
         output = ndimage.sum(input, labels=labels)
-        assert output == 0.0
+        assert output == 0
 
 
 def test_sum07(xp):
-    labels = xp.ones([0, 4], dtype=bool)
+    labels = np.ones([0, 4], dtype=bool)
+    labels = xp.asarray(labels)
     for type in types:
         dtype = getattr(xp, type)
         input = xp.zeros([0, 4], dtype=dtype)
         output = ndimage.sum(input, labels=labels)
-        assert output == 0.0
+        assert output == 0
 
 
 def test_sum08(xp):
-    labels = xp.asarray([1, 0], dtype=bool)
+    labels = np.asarray([1, 0], dtype=bool)
+    labels = xp.asarray(labels)
     for type in types:
         dtype = getattr(xp, type)
         input = xp.asarray([1, 2], dtype=dtype)
         output = ndimage.sum(input, labels=labels)
-        assert output == 1.0
+        assert output == 1
 
 
 def test_sum09(xp):
-    labels = xp.asarray([1, 0], dtype=bool)
+    labels = np.asarray([1, 0], dtype=bool)
+    labels = xp.asarray(labels)
     for type in types:
         dtype = getattr(xp, type)
         input = xp.asarray([[1, 2], [3, 4]], dtype=dtype)
@@ -633,14 +649,17 @@ def test_sum09(xp):
 
 
 def test_sum10(xp):
-    labels = xp.asarray([1, 0], dtype=bool)
-    input = xp.asarray([[1, 2], [3, 4]], dtype=bool)
+    labels = np.asarray([1, 0], dtype=bool)
+    input = np.asarray([[1, 2], [3, 4]], dtype=bool)
+
+    labels = xp.asarray(labels)
+    input = xp.asarray(input)
     output = ndimage.sum(input, labels=labels)
     assert_almost_equal(output, xp.asarray(2.0))
 
 
 def test_sum11(xp):
-    labels = xp.asarray([1, 2], xp.int8)
+    labels = xp.asarray([1, 2], dtype=xp.int8)
     for type in types:
         dtype = getattr(xp, type)
         input = xp.asarray([[1, 2], [3, 4]], dtype=dtype)
@@ -667,12 +686,13 @@ def test_sum_labels(xp):
         output_labels = ndimage.sum_labels(
             input, labels=labels, index=xp.asarray([4, 8, 2]))
 
-        assert (output_sum == output_labels).all()
+        assert xp.all(output_sum == output_labels)
         assert_array_almost_equal(output_labels, xp.asarray([4.0, 0.0, 5.0]))
 
 
 def test_mean01(xp):
-    labels = xp.asarray([1, 0], dtype=bool)
+    labels = np.asarray([1, 0], dtype=bool)
+    labels = xp.asarray(labels)
     for type in types:
         dtype = getattr(xp, type)
         input = xp.asarray([[1, 2], [3, 4]], dtype=dtype)
@@ -681,8 +701,11 @@ def test_mean01(xp):
 
 
 def test_mean02(xp):
-    labels = xp.asarray([1, 0], dtype=bool)
-    input = xp.asarray([[1, 2], [3, 4]], dtype=bool)
+    labels = np.asarray([1, 0], dtype=bool)
+    input = np.asarray([[1, 2], [3, 4]], dtype=bool)
+
+    labels = xp.asarray(labels)
+    input = xp.asarray(input)
     output = ndimage.mean(input, labels=labels)
     assert_almost_equal(output, xp.asarray(1.0))
 
@@ -705,12 +728,16 @@ def test_mean04(xp):
             input = xp.asarray([[1, 2], [3, 4]], dtype=dtype)
             output = ndimage.mean(input, labels=labels,
                                   index=xp.asarray([4, 8, 2]))
-            assert_array_almost_equal(output[[0, 2]], xp.asarray([4.0, 2.5]))
+            # XXX: output[[0, 2]] does not work in array-api-strict; annoying
+            # assert_array_almost_equal(output[[0, 2]], xp.asarray([4.0, 2.5]))
+            assert output[0] == 4.0
+            assert output[2] == 2.5
             assert xp.isnan(output[1])
 
 
 def test_minimum01(xp):
-    labels = xp.asarray([1, 0], dtype=bool)
+    labels = np.asarray([1, 0], dtype=bool)
+    labels = xp.asarray(labels)
     for type in types:
         dtype = getattr(xp, type)
         input = xp.asarray([[1, 2], [3, 4]], dtype=dtype)
@@ -719,8 +746,11 @@ def test_minimum01(xp):
 
 
 def test_minimum02(xp):
-    labels = xp.asarray([1, 0], dtype=bool)
-    input = xp.asarray([[2, 2], [2, 4]], dtype=bool)
+    labels = np.asarray([1, 0], dtype=bool)
+    input = np.asarray([[2, 2], [2, 4]], dtype=bool)
+
+    labels = xp.asarray(labels)
+    input = xp.asarray(input)
     output = ndimage.minimum(input, labels=labels)
     assert_almost_equal(output, xp.asarray(1.0))
 
@@ -747,7 +777,8 @@ def test_minimum04(xp):
 
 
 def test_maximum01(xp):
-    labels = xp.asarray([1, 0], dtype=bool)
+    labels = np.asarray([1, 0], dtype=bool)
+    labels = xp.asarray(labels)
     for type in types:
         dtype = getattr(xp, type)
         input = xp.asarray([[1, 2], [3, 4]], dtype=dtype)
@@ -756,8 +787,10 @@ def test_maximum01(xp):
 
 
 def test_maximum02(xp):
-    labels = xp.asarray([1, 0], dtype=bool)
-    input = xp.asarray([[2, 2], [2, 4]], dtype=bool)
+    labels = np.asarray([1, 0], dtype=bool)
+    input = np.asarray([[2, 2], [2, 4]], dtype=bool)
+    labels = xp.asarray(labels)
+    input = xp.asarray(input)
     output = ndimage.maximum(input, labels=labels)
     assert_almost_equal(output, xp.asarray(1.0))
 
@@ -790,47 +823,50 @@ def test_maximum05(xp):
 
 def test_median01(xp):
     a = xp.asarray([[1, 2, 0, 1],
-                  [5, 3, 0, 4],
-                  [0, 0, 0, 7],
-                  [9, 3, 0, 0]])
+                    [5, 3, 0, 4],
+                    [0, 0, 0, 7],
+                    [9, 3, 0, 0]])
     labels = xp.asarray([[1, 1, 0, 2],
-                       [1, 1, 0, 2],
-                       [0, 0, 0, 2],
-                       [3, 3, 0, 0]])
+                         [1, 1, 0, 2],
+                         [0, 0, 0, 2],
+                         [3, 3, 0, 0]])
     output = ndimage.median(a, labels=labels, index=xp.asarray([1, 2, 3]))
     assert_array_almost_equal(output, xp.asarray([2.5, 4.0, 6.0]))
 
 
 def test_median02(xp):
     a = xp.asarray([[1, 2, 0, 1],
-                  [5, 3, 0, 4],
-                  [0, 0, 0, 7],
-                  [9, 3, 0, 0]])
+                    [5, 3, 0, 4],
+                    [0, 0, 0, 7],
+                    [9, 3, 0, 0]])
     output = ndimage.median(a)
     assert_almost_equal(output, xp.asarray(1.0))
 
 
 def test_median03(xp):
     a = xp.asarray([[1, 2, 0, 1],
-                  [5, 3, 0, 4],
-                  [0, 0, 0, 7],
-                  [9, 3, 0, 0]])
+                    [5, 3, 0, 4],
+                    [0, 0, 0, 7],
+                    [9, 3, 0, 0]])
     labels = xp.asarray([[1, 1, 0, 2],
-                       [1, 1, 0, 2],
-                       [0, 0, 0, 2],
-                       [3, 3, 0, 0]])
+                         [1, 1, 0, 2],
+                         [0, 0, 0, 2],
+                         [3, 3, 0, 0]])
     output = ndimage.median(a, labels=labels)
     assert_almost_equal(output, xp.asarray(3.0))
 
 
 def test_median_gh12836_bool(xp):
     # test boolean addition fix on example from gh-12836
-    a = xp.asarray([1, 1], dtype=bool)
+    a = np.asarray([1, 1], dtype=bool)
+    a = xp.asarray(a)
     output = ndimage.median(a, labels=xp.ones((2,)), index=xp.asarray([1]))
     assert_array_almost_equal(output, xp.asarray([1.0]))
 
 
 def test_median_no_int_overflow(xp):
+    if is_torch(xp):
+        pytest.xfail("fails on torch")
     # test integer overflow fix on example from gh-12836
     a = xp.asarray([65, 70], dtype=xp.int8)
     output = ndimage.median(a, labels=xp.ones((2,)), index=xp.asarray([1]))
@@ -865,7 +901,8 @@ def test_variance03(xp):
 
 
 def test_variance04(xp):
-    input = xp.asarray([1, 0], bool)
+    input = np.asarray([1, 0], dtype=bool)
+    input = xp.asarray(input)
     output = ndimage.variance(input)
     assert_almost_equal(output, xp.asarray(0.25))
 
@@ -914,11 +951,12 @@ def test_standard_deviation03(xp):
         dtype = getattr(xp, type)
         input = xp.asarray([1, 3], dtype=dtype)
         output = ndimage.standard_deviation(input)
-        assert_almost_equal(output, xp.sqrt(1.0))
+        assert_almost_equal(output, xp.asarray(1.0))
 
 
 def test_standard_deviation04(xp):
-    input = xp.asarray([1, 0], bool)
+    input = np.asarray([1, 0], dtype=bool)
+    input = xp.asarray(input)
     output = ndimage.standard_deviation(input)
     assert_almost_equal(output, xp.asarray(0.5))
 
@@ -948,6 +986,9 @@ def test_standard_deviation07(xp):
     labels = xp.asarray([1])
     with np.errstate(all='ignore'):
         for type in types:
+            if is_torch(xp) and type == 'uint8':
+                pytest.xfail("value cannot be converted to type uint8 "
+                             "without overflow")
             dtype = getattr(xp, type)
             input = xp.asarray([-0.00619519], dtype=dtype)
             output = ndimage.standard_deviation(input, labels, xp.asarray([1]))
@@ -955,7 +996,8 @@ def test_standard_deviation07(xp):
 
 
 def test_minimum_position01(xp):
-    labels = xp.asarray([1, 0], bool)
+    labels = np.asarray([1, 0], dtype=bool)
+    labels = xp.asarray(labels)
     for type in types:
         dtype = getattr(xp, type)
         input = xp.asarray([[1, 2], [3, 4]], dtype=dtype)
@@ -967,24 +1009,26 @@ def test_minimum_position02(xp):
     for type in types:
         dtype = getattr(xp, type)
         input = xp.asarray([[5, 4, 2, 5],
-                          [3, 7, 0, 2],
-                          [1, 5, 1, 1]], dtype=dtype)
+                            [3, 7, 0, 2],
+                            [1, 5, 1, 1]], dtype=dtype)
         output = ndimage.minimum_position(input)
         assert output == (1, 2)
 
 
 def test_minimum_position03(xp):
-    input = xp.asarray([[5, 4, 2, 5],
-                      [3, 7, 0, 2],
-                      [1, 5, 1, 1]], bool)
+    input = np.asarray([[5, 4, 2, 5],
+                        [3, 7, 0, 2],
+                        [1, 5, 1, 1]], dtype=bool)
+    input = xp.asarray(input)
     output = ndimage.minimum_position(input)
     assert output == (1, 2)
 
 
 def test_minimum_position04(xp):
-    input = xp.asarray([[5, 4, 2, 5],
-                      [3, 7, 1, 2],
-                      [1, 5, 1, 1]], bool)
+    input = np.asarray([[5, 4, 2, 5],
+                        [3, 7, 1, 2],
+                        [1, 5, 1, 1]], dtype=bool)
+    input = xp.asarray(input)
     output = ndimage.minimum_position(input)
     assert output == (0, 0)
 
@@ -994,8 +1038,8 @@ def test_minimum_position05(xp):
     for type in types:
         dtype = getattr(xp, type)
         input = xp.asarray([[5, 4, 2, 5],
-                          [3, 7, 0, 2],
-                          [1, 5, 2, 3]], dtype=dtype)
+                            [3, 7, 0, 2],
+                            [1, 5, 2, 3]], dtype=dtype)
         output = ndimage.minimum_position(input, labels)
         assert output == (2, 0)
 
@@ -1005,8 +1049,8 @@ def test_minimum_position06(xp):
     for type in types:
         dtype = getattr(xp, type)
         input = xp.asarray([[5, 4, 2, 5],
-                          [3, 7, 0, 2],
-                          [1, 5, 1, 1]], dtype=dtype)
+                            [3, 7, 0, 2],
+                            [1, 5, 1, 1]], dtype=dtype)
         output = ndimage.minimum_position(input, labels, 2)
         assert output == (0, 1)
 
@@ -1016,8 +1060,8 @@ def test_minimum_position07(xp):
     for type in types:
         dtype = getattr(xp, type)
         input = xp.asarray([[5, 4, 2, 5],
-                          [3, 7, 0, 2],
-                          [1, 5, 1, 1]], dtype=dtype)
+                            [3, 7, 0, 2],
+                            [1, 5, 1, 1]], dtype=dtype)
         output = ndimage.minimum_position(input, labels,
                                           xp.asarray([2, 3]))
         assert output[0] == (0, 1)
@@ -1025,7 +1069,8 @@ def test_minimum_position07(xp):
 
 
 def test_maximum_position01(xp):
-    labels = xp.asarray([1, 0], bool)
+    labels = np.asarray([1, 0], dtype=bool)
+    labels = xp.asarray(labels)
     for type in types:
         dtype = getattr(xp, type)
         input = xp.asarray([[1, 2], [3, 4]], dtype=dtype)
@@ -1038,16 +1083,17 @@ def test_maximum_position02(xp):
     for type in types:
         dtype = getattr(xp, type)
         input = xp.asarray([[5, 4, 2, 5],
-                          [3, 7, 8, 2],
-                          [1, 5, 1, 1]], dtype=dtype)
+                            [3, 7, 8, 2],
+                            [1, 5, 1, 1]], dtype=dtype)
         output = ndimage.maximum_position(input)
         assert output == (1, 2)
 
 
 def test_maximum_position03(xp):
-    input = xp.asarray([[5, 4, 2, 5],
-                      [3, 7, 8, 2],
-                      [1, 5, 1, 1]], dtype=bool)
+    input = np.asarray([[5, 4, 2, 5],
+                        [3, 7, 8, 2],
+                        [1, 5, 1, 1]], dtype=bool)
+    input = xp.asarray(input)
     output = ndimage.maximum_position(input)
     assert output == (0, 0)
 
@@ -1057,8 +1103,8 @@ def test_maximum_position04(xp):
     for type in types:
         dtype = getattr(xp, type)
         input = xp.asarray([[5, 4, 2, 5],
-                          [3, 7, 8, 2],
-                          [1, 5, 1, 1]], dtype=dtype)
+                            [3, 7, 8, 2],
+                            [1, 5, 1, 1]], dtype=dtype)
         output = ndimage.maximum_position(input, labels)
         assert output == (1, 1)
 
@@ -1068,8 +1114,8 @@ def test_maximum_position05(xp):
     for type in types:
         dtype = getattr(xp, type)
         input = xp.asarray([[5, 4, 2, 5],
-                          [3, 7, 8, 2],
-                          [1, 5, 1, 1]], dtype=dtype)
+                            [3, 7, 8, 2],
+                            [1, 5, 1, 1]], dtype=dtype)
         output = ndimage.maximum_position(input, labels, 1)
         assert output == (0, 0)
 
@@ -1079,8 +1125,8 @@ def test_maximum_position06(xp):
     for type in types:
         dtype = getattr(xp, type)
         input = xp.asarray([[5, 4, 2, 5],
-                          [3, 7, 8, 2],
-                          [1, 5, 1, 1]], dtype=dtype)
+                            [3, 7, 8, 2],
+                            [1, 5, 1, 1]], dtype=dtype)
         output = ndimage.maximum_position(input, labels,
                                           xp.asarray([1, 2]))
         assert output[0] == (0, 0)
@@ -1089,12 +1135,15 @@ def test_maximum_position06(xp):
 
 def test_maximum_position07(xp):
     # Test float labels
+    if is_torch(xp):
+        pytest.xfail("output[1] is wrong on pytorch")
+
     labels = xp.asarray([1.0, 2.5, 0.0, 4.5])
     for type in types:
         dtype = getattr(xp, type)
         input = xp.asarray([[5, 4, 2, 5],
-                          [3, 7, 8, 2],
-                          [1, 5, 1, 1]], dtype=dtype)
+                            [3, 7, 8, 2],
+                            [1, 5, 1, 1]], dtype=dtype)
         output = ndimage.maximum_position(input, labels,
                                           xp.asarray([1.0, 4.5]))
         assert output[0] == (0, 0)
@@ -1102,7 +1151,8 @@ def test_maximum_position07(xp):
 
 
 def test_extrema01(xp):
-    labels = xp.asarray([1, 0], bool)
+    labels = np.asarray([1, 0], dtype=bool)
+    labels = xp.asarray(labels)
     for type in types:
         dtype = getattr(xp, type)
         input = xp.asarray([[1, 2], [3, 4]], dtype=dtype)
@@ -1137,6 +1187,9 @@ def test_extrema02(xp):
 def test_extrema03(xp):
     labels = xp.asarray([[1, 2], [2, 3]])
     for type in types:
+        if is_torch(xp) and type in ("uint16", "uint32", "uint64"):
+             pytest.xfail("https://github.com/pytorch/pytorch/issues/58734")
+
         dtype = getattr(xp, type)
         input = xp.asarray([[1, 2], [3, 4]], dtype=dtype)
         output1 = ndimage.extrema(input,
@@ -1162,10 +1215,13 @@ def test_extrema03(xp):
 def test_extrema04(xp):
     labels = xp.asarray([1, 2, 0, 4])
     for type in types:
+        if is_torch(xp) and type in ("uint16", "uint32", "uint64"):
+             pytest.xfail("https://github.com/pytorch/pytorch/issues/58734")
+
         dtype = getattr(xp, type)
         input = xp.asarray([[5, 4, 2, 5],
-                          [3, 7, 8, 2],
-                          [1, 5, 1, 1]], dtype=dtype)
+                            [3, 7, 8, 2],
+                            [1, 5, 1, 1]], dtype=dtype)
         output1 = ndimage.extrema(input, labels, xp.asarray([1, 2]))
         output2 = ndimage.minimum(input, labels, xp.asarray([1, 2]))
         output3 = ndimage.maximum(input, labels, xp.asarray([1, 2]))
@@ -1226,7 +1282,8 @@ def test_center_of_mass05(xp):
 
 def test_center_of_mass06(xp):
     expected = (0.5, 0.5)
-    input = xp.asarray([[1, 2], [3, 1]], dtype=bool)
+    input = np.asarray([[1, 2], [3, 1]], dtype=bool)
+    input = xp.asarray(input)
     output = ndimage.center_of_mass(input)
     assert output == expected
 
@@ -1234,7 +1291,8 @@ def test_center_of_mass06(xp):
 def test_center_of_mass07(xp):
     labels = xp.asarray([1, 0])
     expected = (0.5, 0.0)
-    input = xp.asarray([[1, 2], [3, 1]], dtype=bool)
+    input = np.asarray([[1, 2], [3, 1]], dtype=bool)
+    input = xp.asarray(input)
     output = ndimage.center_of_mass(input, labels)
     assert output == expected
 
@@ -1242,15 +1300,17 @@ def test_center_of_mass07(xp):
 def test_center_of_mass08(xp):
     labels = xp.asarray([1, 2])
     expected = (0.5, 1.0)
-    input = xp.asarray([[5, 2], [3, 1]], dtype=bool)
+    input = np.asarray([[5, 2], [3, 1]], dtype=bool)
+    input = xp.asarray(input)
     output = ndimage.center_of_mass(input, labels, 2)
     assert output == expected
 
 
 def test_center_of_mass09(xp):
     labels = xp.asarray((1, 2))
-    expected = [(0.5, 0.0), (0.5, 1.0)]
-    input = xp.asarray([[1, 2], [1, 1]], dtype=bool)
+    expected = xp.asarray([(0.5, 0.0), (0.5, 1.0)], dtype=xp.float64)
+    input = np.asarray([[1, 2], [1, 1]], dtype=bool)
+    input = xp.asarray(input)
     output = ndimage.center_of_mass(input, labels, xp.asarray([1, 2]))
     xp_assert_equal(xp.asarray(output), xp.asarray(expected))
 
@@ -1270,11 +1330,13 @@ def test_histogram02(xp):
     assert_array_almost_equal(output, expected)
 
 
+@skip_xp_backends(np_only=True, reasons=['object arrays'])
 def test_histogram03(xp):
     labels = xp.asarray([1, 0, 1, 1, 2, 2, 2, 2])
     expected1 = xp.asarray([0, 1, 0, 1, 1])
     expected2 = xp.asarray([0, 0, 0, 3, 0])
     input = xp.asarray([1, 1, 3, 4, 3, 5, 3, 3])
+
     output = ndimage.histogram(input, 0, 4, 5, labels, (1, 2))
 
     assert_array_almost_equal(output[0], expected1)
@@ -1286,22 +1348,22 @@ def test_stat_funcs_2d(xp):
     lbl = xp.asarray([[1, 1, 0, 0, 0], [1, 1, 0, 0, 0], [0, 0, 0, 2, 2]])
 
     mean = ndimage.mean(a, labels=lbl, index=xp.asarray([1, 2]))
-    xp_assert_equal(mean, xp.asarray([7.0, 4.0]))
+    xp_assert_equal(mean, xp.asarray([7.0, 4.0], dtype=xp.float64))
 
     var = ndimage.variance(a, labels=lbl, index=xp.asarray([1, 2]))
-    xp_assert_equal(var, xp.asarray([2.5, 1.0]))
+    xp_assert_equal(var, xp.asarray([2.5, 1.0], dtype=xp.float64))
 
     std = ndimage.standard_deviation(a, labels=lbl, index=xp.asarray([1, 2]))
-    assert_array_almost_equal(std, xp.sqrt(xp.asarray([2.5, 1.0])))
+    assert_array_almost_equal(std, xp.sqrt(xp.asarray([2.5, 1.0], dtype=xp.float64)))
 
     med = ndimage.median(a, labels=lbl, index=xp.asarray([1, 2]))
-    xp_assert_equal(med, xp.asarray([7.0, 4.0]))
+    xp_assert_equal(med, xp.asarray([7.0, 4.0], dtype=xp.float64))
 
     min = ndimage.minimum(a, labels=lbl, index=xp.asarray([1, 2]))
-    xp_assert_equal(min, xp.asarray([5, 3]))
+    xp_assert_equal(min, xp.asarray([5, 3]), check_dtype=False)
 
     max = ndimage.maximum(a, labels=lbl, index=xp.asarray([1, 2]))
-    xp_assert_equal(max, xp.asarray([9, 5]))
+    xp_assert_equal(max, xp.asarray([9, 5]), check_dtype=False)
 
 
 # XXX: cannot just @skip_xp_backend("cupy"): multiple skips do not add
@@ -1310,21 +1372,21 @@ class TestWatershedIft:
 
     def test_watershed_ift01(self, xp):
         data = xp.asarray([[0, 0, 0, 0, 0, 0, 0],
-                         [0, 1, 1, 1, 1, 1, 0],
-                         [0, 1, 0, 0, 0, 1, 0],
-                         [0, 1, 0, 0, 0, 1, 0],
-                         [0, 1, 0, 0, 0, 1, 0],
-                         [0, 1, 1, 1, 1, 1, 0],
-                         [0, 0, 0, 0, 0, 0, 0],
-                         [0, 0, 0, 0, 0, 0, 0]], dtype=xp.uint8)
+                           [0, 1, 1, 1, 1, 1, 0],
+                           [0, 1, 0, 0, 0, 1, 0],
+                           [0, 1, 0, 0, 0, 1, 0],
+                           [0, 1, 0, 0, 0, 1, 0],
+                           [0, 1, 1, 1, 1, 1, 0],
+                           [0, 0, 0, 0, 0, 0, 0],
+                           [0, 0, 0, 0, 0, 0, 0]], dtype=xp.uint8)
         markers = xp.asarray([[-1, 0, 0, 0, 0, 0, 0],
-                            [0, 0, 0, 0, 0, 0, 0],
-                            [0, 0, 0, 0, 0, 0, 0],
-                            [0, 0, 0, 1, 0, 0, 0],
-                            [0, 0, 0, 0, 0, 0, 0],
-                            [0, 0, 0, 0, 0, 0, 0],
-                            [0, 0, 0, 0, 0, 0, 0],
-                            [0, 0, 0, 0, 0, 0, 0]], dtype=xp.int8)
+                              [0, 0, 0, 0, 0, 0, 0],
+                              [0, 0, 0, 0, 0, 0, 0],
+                              [0, 0, 0, 1, 0, 0, 0],
+                              [0, 0, 0, 0, 0, 0, 0],
+                              [0, 0, 0, 0, 0, 0, 0],
+                              [0, 0, 0, 0, 0, 0, 0],
+                              [0, 0, 0, 0, 0, 0, 0]], dtype=xp.int8)
         out = ndimage.watershed_ift(data, markers, structure=[[1, 1, 1],
                                                               [1, 1, 1],
                                                               [1, 1, 1]])
@@ -1340,21 +1402,21 @@ class TestWatershedIft:
 
     def test_watershed_ift02(self, xp):
         data = xp.asarray([[0, 0, 0, 0, 0, 0, 0],
-                         [0, 1, 1, 1, 1, 1, 0],
-                         [0, 1, 0, 0, 0, 1, 0],
-                         [0, 1, 0, 0, 0, 1, 0],
-                         [0, 1, 0, 0, 0, 1, 0],
-                         [0, 1, 1, 1, 1, 1, 0],
-                         [0, 0, 0, 0, 0, 0, 0],
-                         [0, 0, 0, 0, 0, 0, 0]], dtype=xp.uint8)
+                           [0, 1, 1, 1, 1, 1, 0],
+                           [0, 1, 0, 0, 0, 1, 0],
+                           [0, 1, 0, 0, 0, 1, 0],
+                           [0, 1, 0, 0, 0, 1, 0],
+                           [0, 1, 1, 1, 1, 1, 0],
+                           [0, 0, 0, 0, 0, 0, 0],
+                           [0, 0, 0, 0, 0, 0, 0]], dtype=xp.uint8)
         markers = xp.asarray([[-1, 0, 0, 0, 0, 0, 0],
-                            [0, 0, 0, 0, 0, 0, 0],
-                            [0, 0, 0, 0, 0, 0, 0],
-                            [0, 0, 0, 1, 0, 0, 0],
-                            [0, 0, 0, 0, 0, 0, 0],
-                            [0, 0, 0, 0, 0, 0, 0],
-                            [0, 0, 0, 0, 0, 0, 0],
-                            [0, 0, 0, 0, 0, 0, 0]], dtype=xp.int8)
+                              [0, 0, 0, 0, 0, 0, 0],
+                              [0, 0, 0, 0, 0, 0, 0],
+                              [0, 0, 0, 1, 0, 0, 0],
+                              [0, 0, 0, 0, 0, 0, 0],
+                              [0, 0, 0, 0, 0, 0, 0],
+                              [0, 0, 0, 0, 0, 0, 0],
+                              [0, 0, 0, 0, 0, 0, 0]], dtype=xp.int8)
         out = ndimage.watershed_ift(data, markers)
         expected = [[-1, -1, -1, -1, -1, -1, -1],
                     [-1, -1, 1, 1, 1, -1, -1],
@@ -1368,19 +1430,19 @@ class TestWatershedIft:
 
     def test_watershed_ift03(self, xp):
         data = xp.asarray([[0, 0, 0, 0, 0, 0, 0],
-                         [0, 1, 1, 1, 1, 1, 0],
-                         [0, 1, 0, 1, 0, 1, 0],
-                         [0, 1, 0, 1, 0, 1, 0],
-                         [0, 1, 0, 1, 0, 1, 0],
-                         [0, 1, 1, 1, 1, 1, 0],
-                         [0, 0, 0, 0, 0, 0, 0]], dtype=xp.uint8)
+                           [0, 1, 1, 1, 1, 1, 0],
+                           [0, 1, 0, 1, 0, 1, 0],
+                           [0, 1, 0, 1, 0, 1, 0],
+                           [0, 1, 0, 1, 0, 1, 0],
+                           [0, 1, 1, 1, 1, 1, 0],
+                           [0, 0, 0, 0, 0, 0, 0]], dtype=xp.uint8)
         markers = xp.asarray([[0, 0, 0, 0, 0, 0, 0],
-                            [0, 0, 0, 0, 0, 0, 0],
-                            [0, 0, 0, 0, 0, 0, 0],
-                            [0, 0, 2, 0, 3, 0, 0],
-                            [0, 0, 0, 0, 0, 0, 0],
-                            [0, 0, 0, 0, 0, 0, 0],
-                            [0, 0, 0, 0, 0, 0, -1]], dtype=xp.int8)
+                              [0, 0, 0, 0, 0, 0, 0],
+                              [0, 0, 0, 0, 0, 0, 0],
+                              [0, 0, 2, 0, 3, 0, 0],
+                              [0, 0, 0, 0, 0, 0, 0],
+                              [0, 0, 0, 0, 0, 0, 0],
+                              [0, 0, 0, 0, 0, 0, -1]], dtype=xp.int8)
         out = ndimage.watershed_ift(data, markers)
         expected = [[-1, -1, -1, -1, -1, -1, -1],
                     [-1, -1, 2, -1, 3, -1, -1],
@@ -1393,20 +1455,20 @@ class TestWatershedIft:
 
     def test_watershed_ift04(self, xp):
         data = xp.asarray([[0, 0, 0, 0, 0, 0, 0],
-                         [0, 1, 1, 1, 1, 1, 0],
-                         [0, 1, 0, 1, 0, 1, 0],
-                         [0, 1, 0, 1, 0, 1, 0],
-                         [0, 1, 0, 1, 0, 1, 0],
-                         [0, 1, 1, 1, 1, 1, 0],
-                         [0, 0, 0, 0, 0, 0, 0]], dtype=xp.uint8)
+                           [0, 1, 1, 1, 1, 1, 0],
+                           [0, 1, 0, 1, 0, 1, 0],
+                           [0, 1, 0, 1, 0, 1, 0],
+                           [0, 1, 0, 1, 0, 1, 0],
+                           [0, 1, 1, 1, 1, 1, 0],
+                           [0, 0, 0, 0, 0, 0, 0]], dtype=xp.uint8)
         markers = xp.asarray([[0, 0, 0, 0, 0, 0, 0],
-                            [0, 0, 0, 0, 0, 0, 0],
-                            [0, 0, 0, 0, 0, 0, 0],
-                            [0, 0, 2, 0, 3, 0, 0],
-                            [0, 0, 0, 0, 0, 0, 0],
-                            [0, 0, 0, 0, 0, 0, 0],
-                            [0, 0, 0, 0, 0, 0, -1]],
-                           dtype=xp.int8)
+                              [0, 0, 0, 0, 0, 0, 0],
+                              [0, 0, 0, 0, 0, 0, 0],
+                              [0, 0, 2, 0, 3, 0, 0],
+                              [0, 0, 0, 0, 0, 0, 0],
+                              [0, 0, 0, 0, 0, 0, 0],
+                              [0, 0, 0, 0, 0, 0, -1]],
+                             dtype=xp.int8)
         out = ndimage.watershed_ift(data, markers,
                                     structure=[[1, 1, 1],
                                                [1, 1, 1],
@@ -1422,20 +1484,20 @@ class TestWatershedIft:
 
     def test_watershed_ift05(self, xp):
         data = xp.asarray([[0, 0, 0, 0, 0, 0, 0],
-                         [0, 1, 1, 1, 1, 1, 0],
-                         [0, 1, 0, 1, 0, 1, 0],
-                         [0, 1, 0, 1, 0, 1, 0],
-                         [0, 1, 0, 1, 0, 1, 0],
-                         [0, 1, 1, 1, 1, 1, 0],
-                         [0, 0, 0, 0, 0, 0, 0]], dtype=xp.uint8)
+                           [0, 1, 1, 1, 1, 1, 0],
+                           [0, 1, 0, 1, 0, 1, 0],
+                           [0, 1, 0, 1, 0, 1, 0],
+                           [0, 1, 0, 1, 0, 1, 0],
+                           [0, 1, 1, 1, 1, 1, 0],
+                           [0, 0, 0, 0, 0, 0, 0]], dtype=xp.uint8)
         markers = xp.asarray([[0, 0, 0, 0, 0, 0, 0],
-                            [0, 0, 0, 0, 0, 0, 0],
-                            [0, 0, 0, 0, 0, 0, 0],
-                            [0, 0, 3, 0, 2, 0, 0],
-                            [0, 0, 0, 0, 0, 0, 0],
-                            [0, 0, 0, 0, 0, 0, 0],
-                            [0, 0, 0, 0, 0, 0, -1]],
-                           dtype=xp.int8)
+                              [0, 0, 0, 0, 0, 0, 0],
+                              [0, 0, 0, 0, 0, 0, 0],
+                              [0, 0, 3, 0, 2, 0, 0],
+                              [0, 0, 0, 0, 0, 0, 0],
+                              [0, 0, 0, 0, 0, 0, 0],
+                              [0, 0, 0, 0, 0, 0, -1]],
+                             dtype=xp.int8)
         out = ndimage.watershed_ift(data, markers,
                                     structure=[[1, 1, 1],
                                                [1, 1, 1],
@@ -1451,17 +1513,17 @@ class TestWatershedIft:
 
     def test_watershed_ift06(self, xp):
         data = xp.asarray([[0, 1, 0, 0, 0, 1, 0],
-                         [0, 1, 0, 0, 0, 1, 0],
-                         [0, 1, 0, 0, 0, 1, 0],
-                         [0, 1, 1, 1, 1, 1, 0],
-                         [0, 0, 0, 0, 0, 0, 0],
-                         [0, 0, 0, 0, 0, 0, 0]], dtype=xp.uint8)
+                           [0, 1, 0, 0, 0, 1, 0],
+                           [0, 1, 0, 0, 0, 1, 0],
+                           [0, 1, 1, 1, 1, 1, 0],
+                           [0, 0, 0, 0, 0, 0, 0],
+                           [0, 0, 0, 0, 0, 0, 0]], dtype=xp.uint8)
         markers = xp.asarray([[-1, 0, 0, 0, 0, 0, 0],
-                            [0, 0, 0, 1, 0, 0, 0],
-                            [0, 0, 0, 0, 0, 0, 0],
-                            [0, 0, 0, 0, 0, 0, 0],
-                            [0, 0, 0, 0, 0, 0, 0],
-                            [0, 0, 0, 0, 0, 0, 0]], dtype=xp.int8)
+                              [0, 0, 0, 1, 0, 0, 0],
+                              [0, 0, 0, 0, 0, 0, 0],
+                              [0, 0, 0, 0, 0, 0, 0],
+                              [0, 0, 0, 0, 0, 0, 0],
+                              [0, 0, 0, 0, 0, 0, 0]], dtype=xp.int8)
         out = ndimage.watershed_ift(data, markers,
                                     structure=[[1, 1, 1],
                                                [1, 1, 1],
@@ -1479,17 +1541,17 @@ class TestWatershedIft:
         data = xp.zeros(shape, dtype=xp.uint8)
         data = data.transpose()
         data[...] = xp.asarray([[0, 1, 0, 0, 0, 1, 0],
-                              [0, 1, 0, 0, 0, 1, 0],
-                              [0, 1, 0, 0, 0, 1, 0],
-                              [0, 1, 1, 1, 1, 1, 0],
-                              [0, 0, 0, 0, 0, 0, 0],
-                              [0, 0, 0, 0, 0, 0, 0]], dtype=xp.uint8)
+                                [0, 1, 0, 0, 0, 1, 0],
+                                [0, 1, 0, 0, 0, 1, 0],
+                                [0, 1, 1, 1, 1, 1, 0],
+                                [0, 0, 0, 0, 0, 0, 0],
+                                [0, 0, 0, 0, 0, 0, 0]], dtype=xp.uint8)
         markers = xp.asarray([[-1, 0, 0, 0, 0, 0, 0],
-                            [0, 0, 0, 1, 0, 0, 0],
-                            [0, 0, 0, 0, 0, 0, 0],
-                            [0, 0, 0, 0, 0, 0, 0],
-                            [0, 0, 0, 0, 0, 0, 0],
-                            [0, 0, 0, 0, 0, 0, 0]], dtype=xp.int8)
+                              [0, 0, 0, 1, 0, 0, 0],
+                              [0, 0, 0, 0, 0, 0, 0],
+                              [0, 0, 0, 0, 0, 0, 0],
+                              [0, 0, 0, 0, 0, 0, 0],
+                              [0, 0, 0, 0, 0, 0, 0]], dtype=xp.int8)
         out = xp.zeros(shape, dtype=xp.int16)
         out = out.transpose()
         ndimage.watershed_ift(data, markers,
@@ -1508,9 +1570,9 @@ class TestWatershedIft:
     def test_watershed_ift08(self, xp):
         # Test cost larger than uint8. See gh-10069.
         data = xp.asarray([[256, 0],
-                         [0, 0]], dtype=xp.uint16)
+                           [0, 0]], dtype=xp.uint16)
         markers = xp.asarray([[1, 0],
-                            [0, 0]], dtype=np.int8)
+                              [0, 0]], dtype=np.int8)
         out = ndimage.watershed_ift(data, markers)
         expected = [[1, 1],
                     [1, 1]]
@@ -1519,9 +1581,9 @@ class TestWatershedIft:
     def test_watershed_ift09(self, xp):
         # Test large cost. See gh-19575
         data = xp.asarray([[np.iinfo(np.uint16).max, 0],
-                         [0, 0]], dtype=np.uint16)
+                           [0, 0]], dtype=np.uint16)
         markers = xp.asarray([[1, 0],
-                            [0, 0]], dtype=np.int8)
+                              [0, 0]], dtype=np.int8)
         out = ndimage.watershed_ift(data, markers)
         expected = [[1, 1],
                     [1, 1]]

@@ -1,6 +1,8 @@
 import numpy as np
-from scipy._lib._array_api import is_cupy
-from scipy._lib._array_api import (xp_assert_equal, assert_array_almost_equal)
+from scipy._lib._array_api import (
+    is_cupy, is_numpy, is_torch, array_namespace,
+    xp_assert_equal, assert_array_almost_equal
+)
 import pytest
 from pytest import raises as assert_raises
 
@@ -25,16 +27,15 @@ class TestNdimageMorphology:
             pytest.xfail("CuPy does not have distance_transform_bf.")
 
         # brute force (bf) distance transform
-        data = [[0, 0, 0, 0, 0, 0, 0, 0, 0],
-                [0, 0, 0, 0, 0, 0, 0, 0, 0],
-                [0, 0, 0, 1, 1, 1, 0, 0, 0],
-                [0, 0, 1, 1, 1, 1, 1, 0, 0],
-                [0, 0, 1, 1, 1, 1, 1, 0, 0],
-                [0, 0, 1, 1, 1, 1, 1, 0, 0],
-                [0, 0, 0, 1, 1, 1, 0, 0, 0],
-                [0, 0, 0, 0, 0, 0, 0, 0, 0],
-                [0, 0, 0, 0, 0, 0, 0, 0, 0]]
-        data = xp.asarray(data, dtype=dtype)
+        data = xp.asarray([[0, 0, 0, 0, 0, 0, 0, 0, 0],
+                           [0, 0, 0, 0, 0, 0, 0, 0, 0],
+                           [0, 0, 0, 1, 1, 1, 0, 0, 0],
+                           [0, 0, 1, 1, 1, 1, 1, 0, 0],
+                           [0, 0, 1, 1, 1, 1, 1, 0, 0],
+                           [0, 0, 1, 1, 1, 1, 1, 0, 0],
+                           [0, 0, 0, 1, 1, 1, 0, 0, 0],
+                           [0, 0, 0, 0, 0, 0, 0, 0, 0],
+                           [0, 0, 0, 0, 0, 0, 0, 0, 0]], dtype=dtype)
         out, ft = ndimage.distance_transform_bf(data, 'euclidean',
                                                 return_indices=True)
         expected = [[0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -46,6 +47,7 @@ class TestNdimageMorphology:
                     [0, 0, 0, 1, 1, 1, 0, 0, 0],
                     [0, 0, 0, 0, 0, 0, 0, 0, 0],
                     [0, 0, 0, 0, 0, 0, 0, 0, 0]]
+        expected = xp.asarray(expected)
         assert_array_almost_equal(out * out, expected)
 
         expected = [[[0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -66,6 +68,7 @@ class TestNdimageMorphology:
                      [0, 1, 2, 3, 4, 5, 6, 7, 8],
                      [0, 1, 2, 3, 4, 5, 6, 7, 8],
                      [0, 1, 2, 3, 4, 5, 6, 7, 8]]]
+        expected = xp.asarray(expected)
         assert_array_almost_equal(ft, expected)
 
     @pytest.mark.parametrize('dtype', types)
@@ -146,6 +149,7 @@ class TestNdimageMorphology:
                     [0, 0, 0, 1, 1, 1, 0, 0, 0],
                     [0, 0, 0, 0, 0, 0, 0, 0, 0],
                     [0, 0, 0, 0, 0, 0, 0, 0, 0]]
+        expected = xp.asarray(expected)
         assert_array_almost_equal(out, expected)
 
         expected = [[[0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -166,13 +170,15 @@ class TestNdimageMorphology:
                      [0, 1, 2, 4, 5, 6, 6, 7, 8],
                      [0, 1, 2, 3, 4, 5, 6, 7, 8],
                      [0, 1, 2, 3, 4, 5, 6, 7, 8]]]
+        expected = xp.asarray(expected)
         assert_array_almost_equal(ft, expected)
 
+    @skip_xp_backends(np_only=True,
+        reasons=['inplace distances= arrays are numpy-specific']
+    )
     @pytest.mark.parametrize('dtype', types)
     def test_distance_transform_bf04(self, dtype, xp):
         dtype = getattr(xp, dtype)
-        if is_cupy(xp):
-            pytest.xfail("CuPy does not have distance_transform_bf.")
 
         data = xp.asarray([[0, 0, 0, 0, 0, 0, 0, 0, 0],
                            [0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -247,6 +253,7 @@ class TestNdimageMorphology:
                     [0, 0, 0, 4, 4, 4, 0, 0, 0],
                     [0, 0, 0, 0, 0, 0, 0, 0, 0],
                     [0, 0, 0, 0, 0, 0, 0, 0, 0]]
+        expected = xp.asarray(expected)
         assert_array_almost_equal(out * out, expected)
 
         expected = [[[0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -267,6 +274,7 @@ class TestNdimageMorphology:
                      [0, 1, 2, 3, 4, 5, 6, 7, 8],
                      [0, 1, 2, 3, 4, 5, 6, 7, 8],
                      [0, 1, 2, 3, 4, 5, 6, 7, 8]]]
+        expected = xp.asarray(expected)
         assert_array_almost_equal(ft, expected)
 
     @pytest.mark.parametrize('dtype', types)
@@ -295,6 +303,7 @@ class TestNdimageMorphology:
                     [0, 0, 0, 1, 4, 1, 0, 0, 0],
                     [0, 0, 0, 0, 0, 0, 0, 0, 0],
                     [0, 0, 0, 0, 0, 0, 0, 0, 0]]
+        expected = xp.asarray(expected)
         assert_array_almost_equal(out * out, expected)
 
         expected = [[[0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -315,6 +324,7 @@ class TestNdimageMorphology:
                      [0, 1, 2, 2, 4, 6, 6, 7, 8],
                      [0, 1, 2, 3, 4, 5, 6, 7, 8],
                      [0, 1, 2, 3, 4, 5, 6, 7, 8]]]
+        expected = xp.asarray(expected)
         assert_array_almost_equal(ft, expected)
 
     def test_distance_transform_bf07(self, xp):
@@ -375,6 +385,7 @@ class TestNdimageMorphology:
                      [0, 1, 2, 2, 4, 5, 6, 7, 8],
                      [0, 1, 2, 3, 4, 5, 6, 7, 8],
                      [0, 1, 2, 3, 4, 5, 6, 7, 8]]]
+        expected = xp.asarray(expected)
         assert_array_almost_equal(ft, expected)
 
     @pytest.mark.parametrize('dtype', types)
@@ -415,14 +426,14 @@ class TestNdimageMorphology:
                      [0, 1, 2, 2, 5, 6, 6, 7, 8],
                      [0, 1, 2, 3, 4, 5, 6, 7, 8],
                      [0, 1, 2, 3, 4, 5, 6, 7, 8]]]
+        expected = xp.asarray(expected)
         assert_array_almost_equal(ft, expected)
 
+    @skip_xp_backends(np_only=True,
+                      reasons=['inplace indices= arrays are numpy-specific'])
     @pytest.mark.parametrize('dtype', types)
     def test_distance_transform_cdt03(self, dtype, xp):
         dtype = getattr(xp, dtype)
-        if is_cupy(xp):
-            pytest.xfail("CuPy does not have distance_transform_cdt.")
-
         data = xp.asarray([[0, 0, 0, 0, 0, 0, 0, 0, 0],
                            [0, 0, 0, 0, 0, 0, 0, 0, 0],
                            [0, 0, 0, 1, 1, 1, 0, 0, 0],
@@ -441,7 +452,7 @@ class TestNdimageMorphology:
         ft = ndimage.distance_transform_cdt(
             data, return_distances=False, return_indices=True)
         fts.append(ft)
-        ft = np.indices(data.shape, dtype=xp.int32)
+        ft = xp.asarray(np.indices(data.shape, dtype=np.int32))
         ndimage.distance_transform_cdt(
             data, return_distances=False, return_indices=True, indices=ft)
         fts.append(ft)
@@ -454,13 +465,13 @@ class TestNdimageMorphology:
             data, distances=dt, return_indices=True)
         dts.append(dt)
         fts.append(ft)
-        ft = np.indices(data.shape, dtype=xp.int32)
+        ft = xp.asarray(np.indices(data.shape, dtype=np.int32))
         dt = ndimage.distance_transform_cdt(
             data, return_indices=True, indices=ft)
         dts.append(dt)
         fts.append(ft)
         dt = xp.zeros(data.shape, dtype=xp.int32)
-        ft = np.indices(data.shape, dtype=xp.int32)
+        ft = xp.asarray(np.indices(data.shape, dtype=np.int32))
         ndimage.distance_transform_cdt(data, distances=dt,
                                        return_indices=True, indices=ft)
         dts.append(dt)
@@ -470,10 +481,10 @@ class TestNdimageMorphology:
         for ft in fts:
             assert_array_almost_equal(tft, ft)
 
+    @skip_xp_backends(
+        np_only=True, reasons=['XXX: does not raise unless indices is a numpy array']
+    )
     def test_distance_transform_cdt04(self, xp):
-        if is_cupy(xp):
-            pytest.xfail("CuPy does not have distance_transform_cdt.")
-
         # test input validation per discussion on PR #13302
         data = xp.asarray([[0, 0, 0, 0, 0, 0, 0, 0, 0],
                            [0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -498,6 +509,8 @@ class TestNdimageMorphology:
         dtype = getattr(xp, dtype)
         if is_cupy(xp):
             pytest.xfail("CuPy does not have distance_transform_cdt.")
+        elif is_torch(xp):
+            pytest.xfail("int overflow")
 
         # test custom metric type per discussion on issue #17381
         data = xp.asarray([[0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -511,7 +524,7 @@ class TestNdimageMorphology:
                            [0, 0, 0, 0, 0, 0, 0, 0, 0]], dtype=dtype)
         metric_arg = xp.ones((3, 3))
         actual = ndimage.distance_transform_cdt(data, metric=metric_arg)
-        assert actual.sum() == -21
+        assert xp.sum(actual) == -21
 
     @pytest.mark.parametrize('dtype', types)
     def test_distance_transform_edt01(self, dtype, xp):
@@ -533,20 +546,23 @@ class TestNdimageMorphology:
         bf = ndimage.distance_transform_bf(data, 'euclidean')
         assert_array_almost_equal(bf, out)
 
-        dt = ft - np.indices(ft.shape[1:], dtype=ft.dtype)
+        # np-specific check
+        np_ft = np.asarray(ft)
+        dt = np_ft - np.indices(np_ft.shape[1:], dtype=np_ft.dtype)
         dt = dt.astype(np.float64)
         np.multiply(dt, dt, dt)
         dt = np.add.reduce(dt, axis=0)
         np.sqrt(dt, dt)
 
+        dt = xp.asarray(dt)
         assert_array_almost_equal(bf, dt)
 
+    @skip_xp_backends(
+        np_only=True, reasons=['inplace distances= are numpy-specific']
+    )
     @pytest.mark.parametrize('dtype', types)
     def test_distance_transform_edt02(self, dtype, xp):
         dtype = getattr(xp, dtype)
-        if is_cupy(xp):
-            pytest.xfail("https://github.com/cupy/cupy/issues/8397")
-
         data = xp.asarray([[0, 0, 0, 0, 0, 0, 0, 0, 0],
                            [0, 0, 0, 0, 0, 0, 0, 0, 0],
                            [0, 0, 0, 1, 1, 1, 0, 0, 0],
@@ -648,10 +664,10 @@ class TestNdimageMorphology:
         out = ndimage.distance_transform_edt(False)
         assert_array_almost_equal(out, [0.])
 
+    @skip_xp_backends(
+        np_only=True, reasons=['XXX: does not raise unless indices is a numpy array']
+    )
     def test_distance_transform_edt6(self, xp):
-        if is_cupy(xp):
-            pytest.xfail("CuPy does not have distance_transform_bf.")
-
         # test input validation per discussion on PR #13302
         data = xp.asarray([[0, 0, 0, 0, 0, 0, 0, 0, 0],
                            [0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -731,14 +747,14 @@ class TestNdimageMorphology:
         dtype = getattr(xp, dtype)
         data = xp.ones([], dtype=dtype)
         out = ndimage.binary_erosion(data)
-        assert out == 1
+        assert out == xp.asarray(1, dtype=out.dtype)
 
     @pytest.mark.parametrize('dtype', types)
     def test_binary_erosion02(self, dtype, xp):
         dtype = getattr(xp, dtype)
         data = xp.ones([], dtype=dtype)
         out = ndimage.binary_erosion(data, border_value=1)
-        assert out == 1
+        assert out == xp.asarray(1, dtype=out.dtype)
 
     @pytest.mark.parametrize('dtype', types)
     def test_binary_erosion03(self, dtype, xp):
@@ -784,61 +800,61 @@ class TestNdimageMorphology:
 
     @pytest.mark.parametrize('dtype', types)
     def test_binary_erosion09(self, dtype, xp):
-        dtype = getattr(xp, dtype)
-        data = xp.ones([5], dtype=dtype)
+        data = np.ones([5], dtype=dtype)
         data[2] = 0
+        data = xp.asarray(data)
         out = ndimage.binary_erosion(data)
         assert_array_almost_equal(out, xp.asarray([0, 0, 0, 0, 0]))
 
     @pytest.mark.parametrize('dtype', types)
     def test_binary_erosion10(self, dtype, xp):
-        dtype = getattr(xp, dtype)
-        data = xp.ones([5], dtype=dtype)
+        data = np.ones([5], dtype=dtype)
         data[2] = 0
+        data = xp.asarray(data)
         out = ndimage.binary_erosion(data, border_value=1)
         assert_array_almost_equal(out, xp.asarray([1, 0, 0, 0, 1]))
 
     @pytest.mark.parametrize('dtype', types)
     def test_binary_erosion11(self, dtype, xp):
-        dtype = getattr(xp, dtype)
-        data = xp.ones([5], dtype=dtype)
+        data = np.ones([5], dtype=dtype)
         data[2] = 0
+        data = xp.asarray(data)
         struct = xp.asarray([1, 0, 1])
         out = ndimage.binary_erosion(data, struct, border_value=1)
         assert_array_almost_equal(out, xp.asarray([1, 0, 1, 0, 1]))
 
     @pytest.mark.parametrize('dtype', types)
     def test_binary_erosion12(self, dtype, xp):
-        dtype = getattr(xp, dtype)
-        data = xp.ones([5], dtype=dtype)
+        data = np.ones([5], dtype=dtype)
         data[2] = 0
+        data = xp.asarray(data)
         struct = xp.asarray([1, 0, 1])
         out = ndimage.binary_erosion(data, struct, border_value=1, origin=-1)
         assert_array_almost_equal(out, xp.asarray([0, 1, 0, 1, 1]))
 
     @pytest.mark.parametrize('dtype', types)
     def test_binary_erosion13(self, dtype, xp):
-        dtype = getattr(xp, dtype)
-        data = xp.ones([5], dtype=dtype)
+        data = np.ones([5], dtype=dtype)
         data[2] = 0
+        data = xp.asarray(data)
         struct = xp.asarray([1, 0, 1])
         out = ndimage.binary_erosion(data, struct, border_value=1, origin=1)
         assert_array_almost_equal(out, xp.asarray([1, 1, 0, 1, 0]))
 
     @pytest.mark.parametrize('dtype', types)
     def test_binary_erosion14(self, dtype, xp):
-        dtype = getattr(xp, dtype)
-        data = xp.ones([5], dtype=dtype)
+        data = np.ones([5], dtype=dtype)
         data[2] = 0
+        data = xp.asarray(data)
         struct = xp.asarray([1, 1])
         out = ndimage.binary_erosion(data, struct, border_value=1)
         assert_array_almost_equal(out, xp.asarray([1, 1, 0, 0, 1]))
 
     @pytest.mark.parametrize('dtype', types)
     def test_binary_erosion15(self, dtype, xp):
-        dtype = getattr(xp, dtype)
-        data = xp.ones([5], dtype=dtype)
+        data = np.ones([5], dtype=dtype)
         data[2] = 0
+        data = xp.asarray(data)
         struct = xp.asarray([1, 1])
         out = ndimage.binary_erosion(data, struct, border_value=1, origin=-1)
         assert_array_almost_equal(out, xp.asarray([1, 0, 0, 1, 1]))
@@ -1033,21 +1049,22 @@ class TestNdimageMorphology:
                     [0, 0, 0, 0, 0, 0, 0],
                     [0, 0, 0, 0, 0, 0, 0]]
         expected = xp.asarray(expected)
-        data = xp.asarray([[0, 0, 0, 0, 0, 0, 0],
+        data = np.asarray([[0, 0, 0, 0, 0, 0, 0],
                            [0, 0, 0, 1, 0, 0, 0],
                            [0, 0, 1, 1, 1, 0, 0],
                            [0, 1, 1, 1, 1, 1, 0],
                            [0, 0, 1, 1, 1, 0, 0],
                            [0, 0, 0, 1, 0, 0, 0],
-                           [0, 0, 0, 0, 0, 0, 0]], bool)
+                           [0, 0, 0, 0, 0, 0, 0]], dtype=bool)
+        data = xp.asarray(data)
         out = ndimage.binary_erosion(data, struct, border_value=1,
                                      iterations=2)
         assert_array_almost_equal(out, expected)
 
+    @skip_xp_backends(
+        np_only=True, reasons=['inplace out= arguments are numpy-specific']
+    )
     def test_binary_erosion28(self, xp):
-        if is_cupy(xp):
-            pytest.xfail("CuPy: NotImplementedError: only brute_force iteration")
-
         struct = [[0, 1, 0],
                   [1, 1, 1],
                   [0, 1, 0]]
@@ -1059,15 +1076,18 @@ class TestNdimageMorphology:
                     [0, 0, 0, 0, 0, 0, 0],
                     [0, 0, 0, 0, 0, 0, 0],
                     [0, 0, 0, 0, 0, 0, 0]]
+        expected = np.asarray(expected, dtype=bool)
         expected = xp.asarray(expected)
-        data = xp.asarray([[0, 0, 0, 0, 0, 0, 0],
+        data = np.asarray([[0, 0, 0, 0, 0, 0, 0],
                            [0, 0, 0, 1, 0, 0, 0],
                            [0, 0, 1, 1, 1, 0, 0],
                            [0, 1, 1, 1, 1, 1, 0],
                            [0, 0, 1, 1, 1, 0, 0],
                            [0, 0, 0, 1, 0, 0, 0],
-                           [0, 0, 0, 0, 0, 0, 0]], bool)
-        out = xp.zeros(data.shape, bool)
+                           [0, 0, 0, 0, 0, 0, 0]], dtype=bool)
+        data = xp.asarray(data)
+        out = np.zeros(data.shape, dtype=bool)
+        out = xp.asarray(out)
         ndimage.binary_erosion(data, struct, border_value=1,
                                iterations=2, output=out)
         assert_array_almost_equal(out, expected)
@@ -1088,17 +1108,21 @@ class TestNdimageMorphology:
                     [0, 0, 0, 0, 0, 0, 0],
                     [0, 0, 0, 0, 0, 0, 0]]
         expected = xp.asarray(expected)
-        data = xp.asarray([[0, 0, 0, 1, 0, 0, 0],
+        data = np.asarray([[0, 0, 0, 1, 0, 0, 0],
                            [0, 0, 1, 1, 1, 0, 0],
                            [0, 1, 1, 1, 1, 1, 0],
                            [1, 1, 1, 1, 1, 1, 1],
                            [0, 1, 1, 1, 1, 1, 0],
                            [0, 0, 1, 1, 1, 0, 0],
-                           [0, 0, 0, 1, 0, 0, 0]], bool)
+                           [0, 0, 0, 1, 0, 0, 0]], dtype=bool)
+        data = xp.asarray(data)
         out = ndimage.binary_erosion(data, struct,
                                      border_value=1, iterations=3)
         assert_array_almost_equal(out, expected)
 
+    @skip_xp_backends(
+        np_only=True, reasons=['inplace out= arguments are numpy-specific']
+    )
     def test_binary_erosion30(self, xp):
         if is_cupy(xp):
             pytest.xfail("CuPy: NotImplementedError: only brute_force iteration")
@@ -1114,15 +1138,18 @@ class TestNdimageMorphology:
                     [0, 0, 0, 0, 0, 0, 0],
                     [0, 0, 0, 0, 0, 0, 0],
                     [0, 0, 0, 0, 0, 0, 0]]
+        expected = np.asarray(expected, dtype=bool)
         expected = xp.asarray(expected)
-        data = xp.asarray([[0, 0, 0, 1, 0, 0, 0],
+        data = np.asarray([[0, 0, 0, 1, 0, 0, 0],
                            [0, 0, 1, 1, 1, 0, 0],
                            [0, 1, 1, 1, 1, 1, 0],
                            [1, 1, 1, 1, 1, 1, 1],
                            [0, 1, 1, 1, 1, 1, 0],
                            [0, 0, 1, 1, 1, 0, 0],
-                           [0, 0, 0, 1, 0, 0, 0]], bool)
-        out = xp.zeros(data.shape, bool)
+                           [0, 0, 0, 1, 0, 0, 0]], dtype=bool)
+        data = xp.asarray(data)
+        out = np.zeros(data.shape, dtype=bool)
+        out = xp.asarray(out)
         ndimage.binary_erosion(data, struct, border_value=1,
                                iterations=3, output=out)
         assert_array_almost_equal(out, expected)
@@ -1132,6 +1159,9 @@ class TestNdimageMorphology:
                                iterations=3, output=data)
         assert_array_almost_equal(data, expected)
 
+    @skip_xp_backends(
+        np_only=True, reasons=['inplace out= arguments are numpy-specific']
+    )
     def test_binary_erosion31(self, xp):
         struct = [[0, 1, 0],
                   [1, 1, 1],
@@ -1144,15 +1174,18 @@ class TestNdimageMorphology:
                     [0, 0, 1, 0, 0, 0, 0],
                     [0, 0, 0, 0, 0, 0, 0],
                     [0, 0, 1, 0, 0, 0, 1]]
+        expected = np.asarray(expected, dtype=bool)
         expected = xp.asarray(expected)
-        data = xp.asarray([[0, 0, 0, 1, 0, 0, 0],
+        data = np.asarray([[0, 0, 0, 1, 0, 0, 0],
                            [0, 0, 1, 1, 1, 0, 0],
                            [0, 1, 1, 1, 1, 1, 0],
                            [1, 1, 1, 1, 1, 1, 1],
                            [0, 1, 1, 1, 1, 1, 0],
                            [0, 0, 1, 1, 1, 0, 0],
-                           [0, 0, 0, 1, 0, 0, 0]], bool)
-        out = xp.zeros(data.shape, bool)
+                           [0, 0, 0, 1, 0, 0, 0]], dtype=bool)
+        data = xp.asarray(data)
+        out = np.zeros(data.shape, dtype=bool)
+        out = xp.asarray(out)
         ndimage.binary_erosion(data, struct, border_value=1,
                                iterations=1, output=out, origin=(-1, -1))
         assert_array_almost_equal(out, expected)
@@ -1173,13 +1206,14 @@ class TestNdimageMorphology:
                     [0, 0, 0, 0, 0, 0, 0],
                     [0, 0, 0, 0, 0, 0, 0]]
         expected = xp.asarray(expected)
-        data = xp.asarray([[0, 0, 0, 0, 0, 0, 0],
+        data = np.asarray([[0, 0, 0, 0, 0, 0, 0],
                            [0, 0, 0, 1, 0, 0, 0],
                            [0, 0, 1, 1, 1, 0, 0],
                            [0, 1, 1, 1, 1, 1, 0],
                            [0, 0, 1, 1, 1, 0, 0],
                            [0, 0, 0, 1, 0, 0, 0],
-                           [0, 0, 0, 0, 0, 0, 0]], bool)
+                           [0, 0, 0, 0, 0, 0, 0]], dtype=bool)
+        data = xp.asarray(data)
         out = ndimage.binary_erosion(data, struct,
                                      border_value=1, iterations=2)
         assert_array_almost_equal(out, expected)
@@ -1208,13 +1242,14 @@ class TestNdimageMorphology:
                 [1, 1, 1, 1, 1, 1, 1],
                 [1, 1, 1, 1, 1, 1, 1]]
         mask = xp.asarray(mask)
-        data = xp.asarray([[0, 0, 0, 0, 0, 1, 1],
+        data = np.asarray([[0, 0, 0, 0, 0, 1, 1],
                            [0, 0, 0, 1, 0, 0, 1],
                            [0, 0, 1, 1, 1, 0, 0],
                            [0, 0, 1, 1, 1, 0, 0],
                            [0, 0, 1, 1, 1, 0, 0],
                            [0, 0, 0, 1, 0, 0, 0],
-                           [0, 0, 0, 0, 0, 0, 0]], bool)
+                           [0, 0, 0, 0, 0, 0, 0]], dtype=bool)
+        data = xp.asarray(data)
         out = ndimage.binary_erosion(data, struct,
                                      border_value=1, mask=mask, iterations=-1)
         assert_array_almost_equal(out, expected)
@@ -1240,21 +1275,22 @@ class TestNdimageMorphology:
                 [0, 0, 0, 0, 0, 0, 0],
                 [0, 0, 0, 0, 0, 0, 0]]
         mask = xp.asarray(mask)
-        data = xp.asarray([[0, 0, 0, 0, 0, 0, 0],
+        data = np.asarray([[0, 0, 0, 0, 0, 0, 0],
                            [0, 0, 0, 1, 0, 0, 0],
                            [0, 0, 1, 1, 1, 0, 0],
                            [0, 1, 1, 1, 1, 1, 0],
                            [0, 0, 1, 1, 1, 0, 0],
                            [0, 0, 0, 1, 0, 0, 0],
-                           [0, 0, 0, 0, 0, 0, 0]], bool)
+                           [0, 0, 0, 0, 0, 0, 0]], dtype=bool)
+        data = xp.asarray(data)
         out = ndimage.binary_erosion(data, struct,
                                      border_value=1, mask=mask)
         assert_array_almost_equal(out, expected)
 
+    @skip_xp_backends(
+        np_only=True, reasons=['inplace out= arguments are numpy-specific']
+    )
     def test_binary_erosion35(self, xp):
-        if is_cupy(xp):
-            pytest.xfail("CuPy: NotImplementedError: only brute_force iteration")
-
         struct = [[0, 1, 0],
                   [1, 1, 1],
                   [0, 1, 0]]
@@ -1266,14 +1302,16 @@ class TestNdimageMorphology:
                 [0, 0, 1, 1, 1, 0, 0],
                 [0, 0, 0, 0, 0, 0, 0],
                 [0, 0, 0, 0, 0, 0, 0]]
+        mask = np.asarray(mask, dtype=bool)
         mask = xp.asarray(mask)
-        data = xp.asarray([[0, 0, 0, 1, 0, 0, 0],
+        data = np.asarray([[0, 0, 0, 1, 0, 0, 0],
                            [0, 0, 1, 1, 1, 0, 0],
                            [0, 1, 1, 1, 1, 1, 0],
                            [1, 1, 1, 1, 1, 1, 1],
                            [0, 1, 1, 1, 1, 1, 0],
                            [0, 0, 1, 1, 1, 0, 0],
-                           [0, 0, 0, 1, 0, 0, 0]], bool)
+                           [0, 0, 0, 1, 0, 0, 0]], dtype=bool)
+        data = xp.asarray(data)
         tmp = [[0, 0, 1, 0, 0, 0, 0],
                [0, 1, 1, 1, 0, 0, 0],
                [1, 1, 1, 1, 1, 0, 1],
@@ -1281,10 +1319,13 @@ class TestNdimageMorphology:
                [0, 0, 1, 0, 0, 0, 0],
                [0, 0, 0, 0, 0, 0, 0],
                [0, 0, 1, 0, 0, 0, 1]]
+        tmp = np.asarray(tmp, dtype=bool)
+        tmp = xp.asarray(tmp)
         expected = xp.logical_and(tmp, mask)
         tmp = xp.logical_and(data, xp.logical_not(mask))
         expected = xp.logical_or(expected, tmp)
-        out = xp.zeros(data.shape, bool)
+        out = np.zeros(data.shape, dtype=bool)
+        out = xp.asarray(out)
         ndimage.binary_erosion(data, struct, border_value=1,
                                iterations=1, output=out,
                                origin=(-1, -1), mask=mask)
@@ -1297,6 +1338,7 @@ class TestNdimageMorphology:
         struct = [[0, 1, 0],
                   [1, 0, 1],
                   [0, 1, 0]]
+        struct = xp.asarray(struct)
         mask = [[0, 0, 0, 0, 0, 0, 0, 0],
                 [0, 0, 0, 0, 0, 0, 0, 0],
                 [0, 0, 1, 1, 1, 0, 0, 0],
@@ -1305,6 +1347,8 @@ class TestNdimageMorphology:
                 [0, 0, 1, 1, 1, 0, 0, 0],
                 [0, 0, 1, 1, 1, 0, 0, 0],
                 [0, 0, 0, 0, 0, 0, 0, 0]]
+        mask = np.asarray(mask, dtype=bool)
+        mask = xp.asarray(mask)
         tmp = [[0, 0, 0, 0, 0, 0, 0, 0],
                [0, 0, 0, 0, 0, 0, 0, 1],
                [0, 0, 0, 0, 1, 0, 0, 1],
@@ -1313,14 +1357,17 @@ class TestNdimageMorphology:
                [0, 0, 0, 0, 0, 0, 0, 0],
                [0, 0, 0, 0, 0, 0, 0, 0],
                [0, 0, 0, 0, 0, 0, 0, 1]]
-        data = xp.asarray([[0, 0, 0, 0, 0, 0, 0, 0],
-                           [0, 1, 0, 0, 0, 0, 0, 0],
-                           [0, 0, 0, 0, 0, 1, 1, 1],
-                           [0, 0, 1, 1, 1, 0, 1, 1],
-                           [0, 0, 1, 0, 1, 1, 0, 0],
-                           [0, 1, 0, 1, 1, 1, 1, 0],
-                           [0, 1, 1, 0, 0, 1, 1, 0],
-                           [0, 0, 0, 0, 0, 0, 0, 0]])
+        tmp = np.asarray(tmp, dtype=bool)
+        tmp = xp.asarray(tmp)
+        data = np.asarray([[0, 0, 0, 0, 0, 0, 0, 0],
+                            [0, 1, 0, 0, 0, 0, 0, 0],
+                            [0, 0, 0, 0, 0, 1, 1, 1],
+                            [0, 0, 1, 1, 1, 0, 1, 1],
+                            [0, 0, 1, 0, 1, 1, 0, 0],
+                            [0, 1, 0, 1, 1, 1, 1, 0],
+                            [0, 1, 1, 0, 0, 1, 1, 0],
+                            [0, 0, 0, 0, 0, 0, 0, 0]], dtype=bool)
+        data = xp.asarray(data)
         expected = xp.logical_and(tmp, mask)
         tmp = xp.logical_and(data, xp.logical_not(mask))
         expected = xp.logical_or(expected, tmp)
@@ -1328,34 +1375,38 @@ class TestNdimageMorphology:
                                      border_value=1, origin=(-1, -1))
         assert_array_almost_equal(out, expected)
 
+    @skip_xp_backends(
+        np_only=True, reasons=['inplace out= arguments are numpy-specific']
+    )
     def test_binary_erosion37(self, xp):
-        if is_cupy(xp):
-            pytest.xfail("CuPy: NotImplementedError: only brute_force iteration")
-
-        a = xp.asarray([[1, 0, 1],
-                      [0, 1, 0],
-                      [1, 0, 1]], dtype=bool)
+        a = np.asarray([[1, 0, 1],
+                        [0, 1, 0],
+                        [1, 0, 1]], dtype=bool)
+        a = xp.asarray(a)
         b = xp.zeros_like(a)
         out = ndimage.binary_erosion(a, structure=a, output=b, iterations=0,
                                      border_value=True, brute_force=True)
-        assert out is b
+        if is_numpy(xp):
+            # XXX: only guarantee on numpy
+            assert out is b
         xp_assert_equal(
             ndimage.binary_erosion(a, structure=a, iterations=0,
                                    border_value=True),
             b)
 
     def test_binary_erosion38(self, xp):
-        data = xp.asarray([[1, 0, 1],
-                        [0, 1, 0],
-                        [1, 0, 1]], dtype=bool)
+        data = np.asarray([[1, 0, 1],
+                           [0, 1, 0],
+                           [1, 0, 1]], dtype=bool)
+        data = xp.asarray(data)
         iterations = 2.0
         with assert_raises(TypeError):
             _ = ndimage.binary_erosion(data, iterations=iterations)
 
+    @skip_xp_backends(
+        np_only=True, reasons=['inplace out= arguments are numpy-specific']
+    )
     def test_binary_erosion39(self, xp):
-        if is_cupy(xp):
-            pytest.xfail("CuPy: NotImplementedError: only brute_force iteration")
-
         iterations = np.int32(3)
         struct = [[0, 1, 0],
                   [1, 1, 1],
@@ -1368,23 +1419,26 @@ class TestNdimageMorphology:
                     [0, 0, 0, 0, 0, 0, 0],
                     [0, 0, 0, 0, 0, 0, 0],
                     [0, 0, 0, 0, 0, 0, 0]]
+        expected = xp.asarray(expected, dtype=bool)
         expected = xp.asarray(expected)
-        data = xp.asarray([[0, 0, 0, 1, 0, 0, 0],
+        data = np.asarray([[0, 0, 0, 1, 0, 0, 0],
                            [0, 0, 1, 1, 1, 0, 0],
                            [0, 1, 1, 1, 1, 1, 0],
                            [1, 1, 1, 1, 1, 1, 1],
                            [0, 1, 1, 1, 1, 1, 0],
                            [0, 0, 1, 1, 1, 0, 0],
-                           [0, 0, 0, 1, 0, 0, 0]], bool)
-        out = xp.zeros(data.shape, bool)
+                           [0, 0, 0, 1, 0, 0, 0]], dtype=bool)
+        data = xp.asarray(data)
+        out = np.zeros(data.shape, dtype=bool)
+        out = xp.asarray(out)
         ndimage.binary_erosion(data, struct, border_value=1,
                                iterations=iterations, output=out)
         assert_array_almost_equal(out, expected)
 
+    @skip_xp_backends(
+        np_only=True, reasons=['inplace out= arguments are numpy-specific']
+    )
     def test_binary_erosion40(self, xp):
-        if is_cupy(xp):
-            pytest.xfail("CuPy: NotImplementedError: only brute_force iteration")
-
         iterations = np.int64(3)
         struct = [[0, 1, 0],
                   [1, 1, 1],
@@ -1397,15 +1451,18 @@ class TestNdimageMorphology:
                     [0, 0, 0, 0, 0, 0, 0],
                     [0, 0, 0, 0, 0, 0, 0],
                     [0, 0, 0, 0, 0, 0, 0]]
+        expected = np.asarray(expected, dtype=bool)
         expected = xp.asarray(expected)
-        data = xp.asarray([[0, 0, 0, 1, 0, 0, 0],
+        data = np.asarray([[0, 0, 0, 1, 0, 0, 0],
                            [0, 0, 1, 1, 1, 0, 0],
                            [0, 1, 1, 1, 1, 1, 0],
                            [1, 1, 1, 1, 1, 1, 1],
                            [0, 1, 1, 1, 1, 1, 0],
                            [0, 0, 1, 1, 1, 0, 0],
-                           [0, 0, 0, 1, 0, 0, 0]], bool)
-        out = xp.zeros(data.shape, bool)
+                           [0, 0, 0, 1, 0, 0, 0]], dtype=bool)
+        data = xp.asarray(data)
+        out = np.zeros(data.shape, dtype=bool)
+        out = xp.asarray(out)
         ndimage.binary_erosion(data, struct, border_value=1,
                                iterations=iterations, output=out)
         assert_array_almost_equal(out, expected)
@@ -1415,7 +1472,7 @@ class TestNdimageMorphology:
         dtype = getattr(xp, dtype)
         data = xp.ones([], dtype=dtype)
         out = ndimage.binary_dilation(data)
-        assert out == xp.asarray(1)
+        assert out == xp.asarray(1, dtype=out.dtype)
 
     @pytest.mark.parametrize('dtype', types)
     def test_binary_dilation02(self, dtype, xp):
@@ -1429,7 +1486,7 @@ class TestNdimageMorphology:
         dtype = getattr(xp, dtype)
         data = xp.ones([1], dtype=dtype)
         out = ndimage.binary_dilation(data)
-        assert_array_almost_equal(out, xp.asarray([1]))
+        assert_array_almost_equal(out, xp.asarray([1], dtype=out.dtype))
 
     @pytest.mark.parametrize('dtype', types)
     def test_binary_dilation04(self, dtype, xp):
@@ -1447,82 +1504,84 @@ class TestNdimageMorphology:
 
     @pytest.mark.parametrize('dtype', types)
     def test_binary_dilation06(self, dtype, xp):
+        dtype = getattr(xp, dtype)
         data = xp.zeros([3], dtype=dtype)
         out = ndimage.binary_dilation(data)
         assert_array_almost_equal(out, xp.asarray([0, 0, 0]))
 
     @pytest.mark.parametrize('dtype', types)
     def test_binary_dilation07(self, dtype, xp):
-        dtype = getattr(xp, dtype)
-        data = xp.zeros([3], dtype=dtype)
+        data = np.zeros([3], dtype=dtype)
         data[1] = 1
+        data = xp.asarray(data)
         out = ndimage.binary_dilation(data)
         assert_array_almost_equal(out, xp.asarray([1, 1, 1]))
 
     @pytest.mark.parametrize('dtype', types)
     def test_binary_dilation08(self, dtype, xp):
-        dtype = getattr(xp, dtype)
-        data = xp.zeros([5], dtype=dtype)
+        data = np.zeros([5], dtype=dtype)
         data[1] = 1
         data[3] = 1
+        data = xp.asarray(data)
         out = ndimage.binary_dilation(data)
         assert_array_almost_equal(out, xp.asarray([1, 1, 1, 1, 1]))
 
     @pytest.mark.parametrize('dtype', types)
     def test_binary_dilation09(self, dtype, xp):
-        dtype = getattr(xp, dtype)
-        data = xp.zeros([5], dtype=dtype)
+        data = np.zeros([5], dtype=dtype)
         data[1] = 1
+        data = xp.asarray(data)
         out = ndimage.binary_dilation(data)
         assert_array_almost_equal(out, xp.asarray([1, 1, 1, 0, 0]))
 
     @pytest.mark.parametrize('dtype', types)
     def test_binary_dilation10(self, dtype, xp):
-        dtype = getattr(xp, dtype)
-        data = xp.zeros([5], dtype=dtype)
+        data = np.zeros([5], dtype=dtype)
         data[1] = 1
+        data = xp.asarray(data)
         out = ndimage.binary_dilation(data, origin=-1)
         assert_array_almost_equal(out, xp.asarray([0, 1, 1, 1, 0]))
 
     @pytest.mark.parametrize('dtype', types)
     def test_binary_dilation11(self, dtype, xp):
-        dtype = getattr(xp, dtype)
-        data = xp.zeros([5], dtype=dtype)
+        data = np.zeros([5], dtype=dtype)
         data[1] = 1
+        data = xp.asarray(data)
         out = ndimage.binary_dilation(data, origin=1)
         assert_array_almost_equal(out, xp.asarray([1, 1, 0, 0, 0]))
 
     @pytest.mark.parametrize('dtype', types)
     def test_binary_dilation12(self, dtype, xp):
-        dtype = getattr(xp, dtype)
-        data = xp.zeros([5], dtype=dtype)
+        data = np.zeros([5], dtype=dtype)
         data[1] = 1
+        data = xp.asarray(data)
         struct = xp.asarray([1, 0, 1])
         out = ndimage.binary_dilation(data, struct)
         assert_array_almost_equal(out, xp.asarray([1, 0, 1, 0, 0]))
 
     @pytest.mark.parametrize('dtype', types)
     def test_binary_dilation13(self, dtype, xp):
-        dtype = getattr(xp, dtype)
-        data = xp.zeros([5], dtype=dtype)
+        data = np.zeros([5], dtype=dtype)
         data[1] = 1
+        data = xp.asarray(data)
         struct = xp.asarray([1, 0, 1])
         out = ndimage.binary_dilation(data, struct, border_value=1)
         assert_array_almost_equal(out, xp.asarray([1, 0, 1, 0, 1]))
 
     @pytest.mark.parametrize('dtype', types)
     def test_binary_dilation14(self, dtype, xp):
-        dtype = getattr(xp, dtype)
-        data = xp.zeros([5], dtype=dtype)
+        data = np.zeros([5], dtype=dtype)
         data[1] = 1
+        data = xp.asarray(data)
         struct = xp.asarray([1, 0, 1])
         out = ndimage.binary_dilation(data, struct, origin=-1)
         assert_array_almost_equal(out, xp.asarray([0, 1, 0, 1, 0]))
 
     @pytest.mark.parametrize('dtype', types)
     def test_binary_dilation15(self, dtype, xp):
-        data = xp.zeros([5], dtype=dtype)
+        data = np.zeros([5], dtype=dtype)
         data[1] = 1
+        data = xp.asarray(data)
         struct = xp.asarray([1, 0, 1])
         out = ndimage.binary_dilation(data, struct,
                                       origin=-1, border_value=1)
@@ -1560,9 +1619,9 @@ class TestNdimageMorphology:
 
     @pytest.mark.parametrize('dtype', types)
     def test_binary_dilation20(self, dtype, xp):
-        dtype = getattr(xp, dtype)
-        data = xp.zeros([3, 3], dtype=dtype)
+        data = np.zeros([3, 3], dtype=dtype)
         data[1, 1] = 1
+        data = xp.asarray(data)
         out = ndimage.binary_dilation(data)
         assert_array_almost_equal(out, xp.asarray([[0, 1, 0],
                                                    [1, 1, 1],
@@ -1570,11 +1629,11 @@ class TestNdimageMorphology:
 
     @pytest.mark.parametrize('dtype', types)
     def test_binary_dilation21(self, dtype, xp):
-        dtype = getattr(xp, dtype)
         struct = ndimage.generate_binary_structure(2, 2)
         struct = xp.asarray(struct)
-        data = xp.zeros([3, 3], dtype=dtype)
+        data = np.zeros([3, 3], dtype=dtype)
         data[1, 1] = 1
+        data = xp.asarray(data)
         out = ndimage.binary_dilation(data, struct)
         assert_array_almost_equal(out, xp.asarray([[1, 1, 1],
                                                    [1, 1, 1],
@@ -1751,18 +1810,19 @@ class TestNdimageMorphology:
                     [0, 0, 0, 0, 0]]
         struct = xp.asarray(struct)
         expected = xp.asarray(expected)
-        data = xp.asarray([[0, 0, 0, 0, 0],
+        data = np.asarray([[0, 0, 0, 0, 0],
                            [0, 0, 0, 0, 0],
                            [0, 0, 0, 0, 0],
                            [0, 0, 0, 1, 0],
-                           [0, 0, 0, 0, 0]], bool)
+                           [0, 0, 0, 0, 0]], dtype=bool)
+        data = xp.asarray(data)
         out = ndimage.binary_dilation(data, struct, iterations=2)
         assert_array_almost_equal(out, expected)
 
+    @skip_xp_backends(np_only=True, reasons=['output= arrays are numpy-specific'])
     def test_binary_dilation30(self, xp):
         if is_cupy(xp):
             pytest.xfail("CuPy: NotImplementedError: only brute_force iteration")
-
         struct = [[0, 1],
                   [1, 1]]
         expected = [[0, 0, 0, 0, 0],
@@ -1776,8 +1836,10 @@ class TestNdimageMorphology:
                            [0, 0, 0, 0, 0],
                            [0, 0, 0, 0, 0],
                            [0, 0, 0, 1, 0],
-                           [0, 0, 0, 0, 0]], bool)
-        out = xp.zeros(data.shape, bool)
+                           [0, 0, 0, 0, 0]], dtype=bool)
+        data = xp.asarray(data)
+        out = np.zeros(data.shape, dtype=bool)
+        out = xp.asarray(out)
         ndimage.binary_dilation(data, struct, iterations=2, output=out)
         assert_array_almost_equal(out, expected)
 
@@ -1794,14 +1856,16 @@ class TestNdimageMorphology:
                     [0, 0, 0, 0, 0]]
         struct = xp.asarray(struct)
         expected = xp.asarray(expected)
-        data = xp.asarray([[0, 0, 0, 0, 0],
+        data = np.asarray([[0, 0, 0, 0, 0],
                            [0, 0, 0, 0, 0],
                            [0, 0, 0, 0, 0],
                            [0, 0, 0, 1, 0],
-                           [0, 0, 0, 0, 0]], bool)
+                           [0, 0, 0, 0, 0]], dtype=bool)
+        data = xp.asarray(data)
         out = ndimage.binary_dilation(data, struct, iterations=3)
         assert_array_almost_equal(out, expected)
 
+    @skip_xp_backends(np_only=True, reasons=['output= arrays are numpy-specific'])
     def test_binary_dilation32(self, xp):
         if is_cupy(xp):
             pytest.xfail("CuPy: NotImplementedError: only brute_force iteration")
@@ -1815,12 +1879,14 @@ class TestNdimageMorphology:
                     [0, 0, 0, 0, 0]]
         struct = xp.asarray(struct)
         expected = xp.asarray(expected)
-        data = xp.asarray([[0, 0, 0, 0, 0],
+        data = np.asarray([[0, 0, 0, 0, 0],
                            [0, 0, 0, 0, 0],
                            [0, 0, 0, 0, 0],
                            [0, 0, 0, 1, 0],
-                           [0, 0, 0, 0, 0]], bool)
-        out = xp.zeros(data.shape, bool)
+                           [0, 0, 0, 0, 0]], dtype=bool)
+        data = xp.asarray(data)
+        out = np.zeros(data.shape, dtype=bool)
+        out = xp.asarray(out)
         ndimage.binary_dilation(data, struct, iterations=3, output=out)
         assert_array_almost_equal(out, expected)
 
@@ -1831,35 +1897,41 @@ class TestNdimageMorphology:
                   [1, 1, 1],
                   [0, 1, 0]]
         struct = xp.asarray(struct)
-        expected = xp.asarray([[0, 1, 0, 0, 0, 0, 0, 0],
+        expected = np.asarray([[0, 1, 0, 0, 0, 0, 0, 0],
                                [0, 0, 0, 0, 0, 0, 0, 0],
                                [0, 0, 0, 0, 0, 0, 0, 0],
                                [0, 0, 0, 0, 1, 1, 0, 0],
                                [0, 0, 1, 1, 1, 0, 0, 0],
                                [0, 1, 1, 0, 1, 1, 0, 0],
                                [0, 0, 0, 0, 0, 0, 0, 0],
-                               [0, 0, 0, 0, 0, 0, 0, 0]], bool)
-        mask = xp.asarray([[0, 1, 0, 0, 0, 0, 0, 0],
+                               [0, 0, 0, 0, 0, 0, 0, 0]], dtype=bool)
+        expected = xp.asarray(expected)
+        mask = np.asarray([[0, 1, 0, 0, 0, 0, 0, 0],
                            [0, 0, 0, 0, 0, 0, 0, 0],
                            [0, 0, 0, 0, 0, 0, 1, 0],
                            [0, 0, 0, 0, 1, 1, 0, 0],
                            [0, 0, 1, 1, 1, 0, 0, 0],
                            [0, 1, 1, 0, 1, 1, 0, 0],
                            [0, 0, 0, 0, 0, 0, 0, 0],
-                           [0, 0, 0, 0, 0, 0, 0, 0]], bool)
-        data = xp.asarray([[0, 1, 0, 0, 0, 0, 0, 0],
+                           [0, 0, 0, 0, 0, 0, 0, 0]], dtype=bool)
+        mask = xp.asarray(mask)
+        data = np.asarray([[0, 1, 0, 0, 0, 0, 0, 0],
                            [0, 0, 0, 0, 0, 0, 0, 0],
                            [0, 0, 0, 0, 0, 0, 0, 0],
                            [0, 0, 0, 0, 0, 0, 0, 0],
                            [0, 0, 0, 0, 0, 0, 0, 0],
                            [0, 1, 0, 0, 0, 0, 0, 0],
                            [0, 0, 0, 0, 0, 0, 0, 0],
-                           [0, 0, 0, 0, 0, 0, 0, 0]], bool)
+                           [0, 0, 0, 0, 0, 0, 0, 0]], dtype=bool)
+        data = xp.asarray(data)
 
         out = ndimage.binary_dilation(data, struct, iterations=-1,
                                       mask=mask, border_value=0)
         assert_array_almost_equal(out, expected)
 
+    @skip_xp_backends(
+	np_only=True, reasons=['inplace output= arrays are numpy-specific']
+    )
     def test_binary_dilation34(self, xp):
         if is_cupy(xp):
             pytest.xfail("CuPy: NotImplementedError: only brute_force iteration")
@@ -1876,15 +1948,17 @@ class TestNdimageMorphology:
                     [0, 0, 0, 0, 0, 0, 0, 0],
                     [0, 0, 0, 0, 0, 0, 0, 0],
                     [0, 0, 0, 0, 0, 0, 0, 0]]
-        mask = xp.asarray([[0, 1, 0, 0, 0, 0, 0, 0],
+        mask = np.asarray([[0, 1, 0, 0, 0, 0, 0, 0],
                            [0, 1, 1, 0, 0, 0, 0, 0],
                            [0, 0, 1, 0, 0, 0, 0, 0],
                            [0, 0, 0, 0, 0, 1, 0, 0],
                            [0, 0, 0, 1, 1, 0, 0, 0],
                            [0, 0, 1, 0, 0, 1, 0, 0],
                            [0, 0, 0, 0, 0, 0, 0, 0],
-                           [0, 0, 0, 0, 0, 0, 0, 0]], bool)
-        data = xp.zeros(mask.shape, bool)
+                           [0, 0, 0, 0, 0, 0, 0, 0]], dtype=bool)
+        mask = xp.asarray(mask)
+        data = np.zeros(mask.shape, dtype=bool)
+        data = xp.asarray(data)
         out = ndimage.binary_dilation(data, struct, iterations=-1,
                                       mask=mask, border_value=1)
         assert_array_almost_equal(out, expected)
@@ -1900,8 +1974,8 @@ class TestNdimageMorphology:
                [0, 1, 0, 0, 1, 0, 1, 1],
                [1, 1, 1, 1, 1, 1, 1, 1],
                [1, 1, 1, 1, 1, 1, 1, 1]]
-        tmp = xp.asarray(tmp)
-        data = xp.asarray([[0, 0, 0, 0, 0, 0, 0, 0],
+
+        data = np.asarray([[0, 0, 0, 0, 0, 0, 0, 0],
                            [0, 1, 0, 0, 0, 0, 0, 0],
                            [0, 0, 0, 0, 0, 0, 0, 0],
                            [0, 0, 0, 0, 0, 1, 0, 0],
@@ -1917,10 +1991,15 @@ class TestNdimageMorphology:
                 [0, 0, 1, 1, 1, 1, 0, 0],
                 [0, 0, 0, 0, 0, 0, 0, 0],
                 [0, 0, 0, 0, 0, 0, 0, 0]]
+        mask = np.asarray(mask, dtype=bool)
+
+        expected = np.logical_and(tmp, mask)
+        tmp = np.logical_and(data, np.logical_not(mask))
+        expected = np.logical_or(expected, tmp)
+
         mask = xp.asarray(mask)
-        expected = xp.logical_and(tmp, mask)
-        tmp = xp.logical_and(data, xp.logical_not(mask))
-        expected = xp.logical_or(expected, tmp)
+        expected = xp.asarray(expected)
+
         data = xp.asarray([[0, 0, 0, 0, 0, 0, 0, 0],
                            [0, 1, 0, 0, 0, 0, 0, 0],
                            [0, 0, 0, 0, 0, 0, 0, 0],
@@ -1935,40 +2014,43 @@ class TestNdimageMorphology:
 
     def test_binary_dilation36(self, xp):
         # gh-21009
-        data = xp.zeros([], bool)
+        data = np.zeros([], dtype=bool)
+        data = xp.asarray(data)
         out = ndimage.binary_dilation(data, iterations=-1)
-        assert out == np.array(False)
+        assert out == xp.asarray(False)
 
     def test_binary_propagation01(self, xp):
         struct = [[0, 1, 0],
                   [1, 1, 1],
                   [0, 1, 0]]
         struct = xp.asarray(struct)
-        expected = xp.asarray([[0, 1, 0, 0, 0, 0, 0, 0],
+        expected = np.asarray([[0, 1, 0, 0, 0, 0, 0, 0],
                                [0, 0, 0, 0, 0, 0, 0, 0],
                                [0, 0, 0, 0, 0, 0, 0, 0],
                                [0, 0, 0, 0, 1, 1, 0, 0],
                                [0, 0, 1, 1, 1, 0, 0, 0],
                                [0, 1, 1, 0, 1, 1, 0, 0],
                                [0, 0, 0, 0, 0, 0, 0, 0],
-                               [0, 0, 0, 0, 0, 0, 0, 0]], bool)
-        mask = xp.asarray([[0, 1, 0, 0, 0, 0, 0, 0],
+                               [0, 0, 0, 0, 0, 0, 0, 0]], dtype=bool)
+        expected = xp.asarray(expected)
+        mask = np.asarray([[0, 1, 0, 0, 0, 0, 0, 0],
                            [0, 0, 0, 0, 0, 0, 0, 0],
                            [0, 0, 0, 0, 0, 0, 1, 0],
                            [0, 0, 0, 0, 1, 1, 0, 0],
                            [0, 0, 1, 1, 1, 0, 0, 0],
                            [0, 1, 1, 0, 1, 1, 0, 0],
                            [0, 0, 0, 0, 0, 0, 0, 0],
-                           [0, 0, 0, 0, 0, 0, 0, 0]], bool)
-        data = xp.asarray([[0, 1, 0, 0, 0, 0, 0, 0],
+                           [0, 0, 0, 0, 0, 0, 0, 0]], dtype=bool)
+        mask = xp.asarray(mask)
+        data = np.asarray([[0, 1, 0, 0, 0, 0, 0, 0],
                            [0, 0, 0, 0, 0, 0, 0, 0],
                            [0, 0, 0, 0, 0, 0, 0, 0],
                            [0, 0, 0, 0, 0, 0, 0, 0],
                            [0, 0, 0, 0, 0, 0, 0, 0],
                            [0, 1, 0, 0, 0, 0, 0, 0],
                            [0, 0, 0, 0, 0, 0, 0, 0],
-                           [0, 0, 0, 0, 0, 0, 0, 0]], bool)
-
+                           [0, 0, 0, 0, 0, 0, 0, 0]], dtype=bool)
+        data = xp.asarray(data)
         out = ndimage.binary_propagation(data, struct,
                                          mask=mask, border_value=0)
         assert_array_almost_equal(out, expected)
@@ -1987,23 +2069,25 @@ class TestNdimageMorphology:
                     [0, 0, 0, 0, 0, 0, 0, 0]]
         expected = xp.asarray(expected)
         struct = xp.asarray(struct)
-        mask = xp.asarray([[0, 1, 0, 0, 0, 0, 0, 0],
+        mask = np.asarray([[0, 1, 0, 0, 0, 0, 0, 0],
                            [0, 1, 1, 0, 0, 0, 0, 0],
                            [0, 0, 1, 0, 0, 0, 0, 0],
                            [0, 0, 0, 0, 0, 1, 0, 0],
                            [0, 0, 0, 1, 1, 0, 0, 0],
                            [0, 0, 1, 0, 0, 1, 0, 0],
                            [0, 0, 0, 0, 0, 0, 0, 0],
-                           [0, 0, 0, 0, 0, 0, 0, 0]], bool)
-        data = xp.zeros(mask.shape, bool)
+                           [0, 0, 0, 0, 0, 0, 0, 0]], dtype=bool)
+        mask = xp.asarray(mask)
+        data = np.zeros(mask.shape, dtype=bool)
+        data = xp.asarray(data)
         out = ndimage.binary_propagation(data, struct,
                                          mask=mask, border_value=1)
         assert_array_almost_equal(out, expected)
 
     def test_binary_propagation03(self, xp):
         # gh-21009
-        data = xp.zeros([], bool)
-        expected = xp.zeros([], bool)
+        data = xp.asarray(np.zeros([], dtype=bool))
+        expected = xp.asarray(np.zeros([], dtype=bool))
         out = ndimage.binary_propagation(data)
         assert out == expected
 
@@ -2104,56 +2188,64 @@ class TestNdimageMorphology:
         assert_array_almost_equal(out, expected)
 
     def test_binary_fill_holes01(self, xp):
-        expected = xp.asarray([[0, 0, 0, 0, 0, 0, 0, 0],
-                             [0, 0, 1, 1, 1, 1, 0, 0],
-                             [0, 0, 1, 1, 1, 1, 0, 0],
-                             [0, 0, 1, 1, 1, 1, 0, 0],
-                             [0, 0, 1, 1, 1, 1, 0, 0],
-                             [0, 0, 1, 1, 1, 1, 0, 0],
-                             [0, 0, 0, 0, 0, 0, 0, 0]], bool)
-        data = xp.asarray([[0, 0, 0, 0, 0, 0, 0, 0],
+        expected = np.asarray([[0, 0, 0, 0, 0, 0, 0, 0],
+                               [0, 0, 1, 1, 1, 1, 0, 0],
+                               [0, 0, 1, 1, 1, 1, 0, 0],
+                               [0, 0, 1, 1, 1, 1, 0, 0],
+                               [0, 0, 1, 1, 1, 1, 0, 0],
+                               [0, 0, 1, 1, 1, 1, 0, 0],
+                               [0, 0, 0, 0, 0, 0, 0, 0]], dtype=bool)
+        expected = xp.asarray(expected)
+
+        data = np.asarray([[0, 0, 0, 0, 0, 0, 0, 0],
                            [0, 0, 1, 1, 1, 1, 0, 0],
                            [0, 0, 1, 0, 0, 1, 0, 0],
                            [0, 0, 1, 0, 0, 1, 0, 0],
                            [0, 0, 1, 0, 0, 1, 0, 0],
                            [0, 0, 1, 1, 1, 1, 0, 0],
-                           [0, 0, 0, 0, 0, 0, 0, 0]], bool)
+                           [0, 0, 0, 0, 0, 0, 0, 0]], dtype=bool)
+        data = xp.asarray(data)
+
         out = ndimage.binary_fill_holes(data)
         assert_array_almost_equal(out, expected)
 
     def test_binary_fill_holes02(self, xp):
-        expected = xp.asarray([[0, 0, 0, 0, 0, 0, 0, 0],
+        expected = np.asarray([[0, 0, 0, 0, 0, 0, 0, 0],
                                [0, 0, 0, 1, 1, 0, 0, 0],
                                [0, 0, 1, 1, 1, 1, 0, 0],
                                [0, 0, 1, 1, 1, 1, 0, 0],
                                [0, 0, 1, 1, 1, 1, 0, 0],
                                [0, 0, 0, 1, 1, 0, 0, 0],
-                               [0, 0, 0, 0, 0, 0, 0, 0]], bool)
-        data = xp.asarray([[0, 0, 0, 0, 0, 0, 0, 0],
+                               [0, 0, 0, 0, 0, 0, 0, 0]], dtype=bool)
+        expected = xp.asarray(expected)
+        data = np.asarray([[0, 0, 0, 0, 0, 0, 0, 0],
                            [0, 0, 0, 1, 1, 0, 0, 0],
                            [0, 0, 1, 0, 0, 1, 0, 0],
                            [0, 0, 1, 0, 0, 1, 0, 0],
                            [0, 0, 1, 0, 0, 1, 0, 0],
                            [0, 0, 0, 1, 1, 0, 0, 0],
-                           [0, 0, 0, 0, 0, 0, 0, 0]], bool)
+                           [0, 0, 0, 0, 0, 0, 0, 0]], dtype=bool)
+        data = xp.asarray(data)
         out = ndimage.binary_fill_holes(data)
         assert_array_almost_equal(out, expected)
 
     def test_binary_fill_holes03(self, xp):
-        expected = xp.asarray([[0, 0, 0, 0, 0, 0, 0, 0],
+        expected = np.asarray([[0, 0, 0, 0, 0, 0, 0, 0],
                                [0, 0, 1, 0, 0, 0, 0, 0],
                                [0, 1, 1, 1, 0, 1, 1, 1],
                                [0, 1, 1, 1, 0, 1, 1, 1],
                                [0, 1, 1, 1, 0, 1, 1, 1],
                                [0, 0, 1, 0, 0, 1, 1, 1],
-                               [0, 0, 0, 0, 0, 0, 0, 0]], bool)
-        data = xp.asarray([[0, 0, 0, 0, 0, 0, 0, 0],
+                               [0, 0, 0, 0, 0, 0, 0, 0]], dtype=bool)
+        expected = xp.asarray(expected)
+        data = np.asarray([[0, 0, 0, 0, 0, 0, 0, 0],
                            [0, 0, 1, 0, 0, 0, 0, 0],
                            [0, 1, 0, 1, 0, 1, 1, 1],
                            [0, 1, 0, 1, 0, 1, 0, 1],
                            [0, 1, 0, 1, 0, 1, 0, 1],
                            [0, 0, 1, 0, 0, 1, 1, 1],
-                           [0, 0, 0, 0, 0, 0, 0, 0]], bool)
+                           [0, 0, 0, 0, 0, 0, 0, 0]], dtype=bool)
+        data = xp.asarray(data)
         out = ndimage.binary_fill_holes(data)
         assert_array_almost_equal(out, expected)
 
@@ -2163,10 +2255,12 @@ class TestNdimageMorphology:
                             [5, 8, 3, 7, 1]])
         footprint = xp.asarray([[1, 0, 1], [1, 1, 0]])
         output = ndimage.grey_erosion(array, footprint=footprint)
-        assert_array_almost_equal(xp.asarray([[2, 2, 1, 1, 1],
+        assert_array_almost_equal(output,
+                                  xp.asarray([[2, 2, 1, 1, 1],
                                               [2, 3, 1, 3, 1],
-                                              [5, 5, 3, 3, 1]]), output)
+                                              [5, 5, 3, 3, 1]]))
 
+    @skip_xp_backends("jax.numpy", reason="output array is read-only.")
     def test_grey_erosion01_overlap(self, xp):
         if is_cupy(xp):
             pytest.xfail("https://github.com/cupy/cupy/issues/8398")
@@ -2176,9 +2270,11 @@ class TestNdimageMorphology:
                             [5, 8, 3, 7, 1]])
         footprint = xp.asarray([[1, 0, 1], [1, 1, 0]])
         ndimage.grey_erosion(array, footprint=footprint, output=array)
-        assert_array_almost_equal(xp.asarray([[2, 2, 1, 1, 1],
+        assert_array_almost_equal(array,
+                                  xp.asarray([[2, 2, 1, 1, 1],
                                               [2, 3, 1, 3, 1],
-                                              [5, 5, 3, 3, 1]]), array)
+                                              [5, 5, 3, 3, 1]])
+        )
 
     def test_grey_erosion02(self, xp):
         array = xp.asarray([[3, 2, 5, 1, 4],
@@ -2188,9 +2284,11 @@ class TestNdimageMorphology:
         structure = xp.asarray([[0, 0, 0], [0, 0, 0]])
         output = ndimage.grey_erosion(array, footprint=footprint,
                                       structure=structure)
-        assert_array_almost_equal(xp.asarray([[2, 2, 1, 1, 1],
+        assert_array_almost_equal(output,
+                                  xp.asarray([[2, 2, 1, 1, 1],
                                               [2, 3, 1, 3, 1],
-                                              [5, 5, 3, 3, 1]]), output)
+                                              [5, 5, 3, 3, 1]])
+        )
 
     def test_grey_erosion03(self, xp):
         array = xp.asarray([[3, 2, 5, 1, 4],
@@ -2200,9 +2298,11 @@ class TestNdimageMorphology:
         structure = xp.asarray([[1, 1, 1], [1, 1, 1]])
         output = ndimage.grey_erosion(array, footprint=footprint,
                                       structure=structure)
-        assert_array_almost_equal(xp.asarray([[1, 1, 0, 0, 0],
+        assert_array_almost_equal(output,
+                                  xp.asarray([[1, 1, 0, 0, 0],
                                               [1, 2, 0, 2, 0],
-                                              [4, 4, 2, 2, 0]]), output)
+                                              [4, 4, 2, 2, 0]])
+        )
 
     def test_grey_dilation01(self, xp):
         array = xp.asarray([[3, 2, 5, 1, 4],
@@ -2210,10 +2310,11 @@ class TestNdimageMorphology:
                             [5, 8, 3, 7, 1]])
         footprint = xp.asarray([[0, 1, 1], [1, 0, 1]])
         output = ndimage.grey_dilation(array, footprint=footprint)
-        assert_array_almost_equal(xp.asarray([[7, 7, 9, 9, 5],
+        assert_array_almost_equal(output,
+                                  xp.asarray([[7, 7, 9, 9, 5],
                                               [7, 9, 8, 9, 7],
                                               [8, 8, 8, 7, 7]]),
-                                  output)
+        )
 
     def test_grey_dilation02(self, xp):
         array = xp.asarray([[3, 2, 5, 1, 4],
@@ -2223,10 +2324,11 @@ class TestNdimageMorphology:
         structure = xp.asarray([[0, 0, 0], [0, 0, 0]])
         output = ndimage.grey_dilation(array, footprint=footprint,
                                        structure=structure)
-        assert_array_almost_equal(xp.asarray([[7, 7, 9, 9, 5],
+        assert_array_almost_equal(output,
+                                  xp.asarray([[7, 7, 9, 9, 5],
                                               [7, 9, 8, 9, 7],
                                               [8, 8, 8, 7, 7]]),
-                                  output)
+        )
 
     def test_grey_dilation03(self, xp):
         array = xp.asarray([[3, 2, 5, 1, 4],
@@ -2236,10 +2338,11 @@ class TestNdimageMorphology:
         structure = xp.asarray([[1, 1, 1], [1, 1, 1]])
         output = ndimage.grey_dilation(array, footprint=footprint,
                                        structure=structure)
-        assert_array_almost_equal(xp.asarray([[8, 8, 10, 10, 6],
+        assert_array_almost_equal(output,
+                                  xp.asarray([[8, 8, 10, 10, 6],
                                               [8, 10, 9, 10, 8],
                                               [9, 9, 9, 8, 8]]),
-                                  output)
+        )
 
     def test_grey_opening01(self, xp):
         array = xp.asarray([[3, 2, 5, 1, 4],
@@ -2249,7 +2352,7 @@ class TestNdimageMorphology:
         tmp = ndimage.grey_erosion(array, footprint=footprint)
         expected = ndimage.grey_dilation(tmp, footprint=footprint)
         output = ndimage.grey_opening(array, footprint=footprint)
-        assert_array_almost_equal(expected, output)
+        assert_array_almost_equal(output, expected)
 
     def test_grey_opening02(self, xp):
         array = xp.asarray([[3, 2, 5, 1, 4],
@@ -2263,7 +2366,7 @@ class TestNdimageMorphology:
                                          structure=structure)
         output = ndimage.grey_opening(array, footprint=footprint,
                                       structure=structure)
-        assert_array_almost_equal(expected, output)
+        assert_array_almost_equal(output, expected)
 
     def test_grey_closing01(self, xp):
         array = xp.asarray([[3, 2, 5, 1, 4],
@@ -2289,6 +2392,7 @@ class TestNdimageMorphology:
                                       structure=structure)
         assert_array_almost_equal(expected, output)
 
+    @skip_xp_backends(np_only=True, reasons=['output= arrays are numpy-specific'])
     def test_morphological_gradient01(self, xp):
         array = xp.asarray([[3, 2, 5, 1, 4],
                             [7, 6, 9, 3, 5],
@@ -2300,7 +2404,7 @@ class TestNdimageMorphology:
         tmp2 = ndimage.grey_erosion(array, footprint=footprint,
                                     structure=structure)
         expected = tmp1 - tmp2
-        output = xp.zeros(array.shape, array.dtype)
+        output = xp.zeros(array.shape, dtype=array.dtype)
         ndimage.morphological_gradient(array, footprint=footprint,
                                        structure=structure, output=output)
         assert_array_almost_equal(expected, output)
@@ -2320,6 +2424,7 @@ class TestNdimageMorphology:
                                                 structure=structure)
         assert_array_almost_equal(expected, output)
 
+    @skip_xp_backends(np_only=True, reasons=['output= arrays are numpy-specific'])
     def test_morphological_laplace01(self, xp):
         array = xp.asarray([[3, 2, 5, 1, 4],
                             [7, 6, 9, 3, 5],
@@ -2331,7 +2436,7 @@ class TestNdimageMorphology:
         tmp2 = ndimage.grey_erosion(array, footprint=footprint,
                                     structure=structure)
         expected = tmp1 + tmp2 - 2 * array
-        output = xp.zeros(array.shape, array.dtype)
+        output = xp.zeros(array.shape, dtype=array.dtype)
         ndimage.morphological_laplace(array, footprint=footprint,
                                       structure=structure, output=output)
         assert_array_almost_equal(expected, output)
@@ -2351,6 +2456,7 @@ class TestNdimageMorphology:
                                                structure=structure)
         assert_array_almost_equal(expected, output)
 
+    @skip_xp_backends("jax.numpy", reason="output array is read-only.")
     def test_white_tophat01(self, xp):
         array = xp.asarray([[3, 2, 5, 1, 4],
                             [7, 6, 9, 3, 5],
@@ -2360,7 +2466,7 @@ class TestNdimageMorphology:
         tmp = ndimage.grey_opening(array, footprint=footprint,
                                    structure=structure)
         expected = array - tmp
-        output = xp.zeros(array.shape, array.dtype)
+        output = xp.zeros(array.shape, dtype=array.dtype)
         ndimage.white_tophat(array, footprint=footprint,
                              structure=structure, output=output)
         assert_array_almost_equal(expected, output)
@@ -2382,33 +2488,41 @@ class TestNdimageMorphology:
         if is_cupy(xp):
             pytest.xfail("https://github.com/cupy/cupy/issues/8399")
 
-        array = xp.asarray([[1, 0, 0, 0, 0, 0, 0],
+        array = np.asarray([[1, 0, 0, 0, 0, 0, 0],
                             [0, 1, 1, 1, 1, 1, 0],
                             [0, 1, 1, 1, 1, 1, 0],
                             [0, 1, 1, 1, 1, 1, 0],
                             [0, 1, 1, 1, 0, 1, 0],
                             [0, 1, 1, 1, 1, 1, 0],
-                            [0, 0, 0, 0, 0, 0, 1]], dtype=np.bool_)
-        structure = xp.ones((3, 3), dtype=np.bool_)
-        expected = xp.asarray([[0, 1, 1, 0, 0, 0, 0],
+                            [0, 0, 0, 0, 0, 0, 1]], dtype=bool)
+        array = xp.asarray(array)
+        structure = np.ones((3, 3), dtype=bool)
+        structure = xp.asarray(structure)
+        expected = np.asarray([[0, 1, 1, 0, 0, 0, 0],
                                [1, 0, 0, 1, 1, 1, 0],
                                [1, 0, 0, 1, 1, 1, 0],
                                [0, 1, 1, 0, 0, 0, 1],
                                [0, 1, 1, 0, 1, 0, 1],
                                [0, 1, 1, 0, 0, 0, 1],
-                               [0, 0, 0, 1, 1, 1, 1]], dtype=np.bool_)
+                               [0, 0, 0, 1, 1, 1, 1]], dtype=bool)
+        expected = xp.asarray(expected)
 
         output = ndimage.white_tophat(array, structure=structure)
         xp_assert_equal(expected, output)
 
+    @skip_xp_backends("jax.numpy", reason="output array is read-only.")
     def test_white_tophat04(self, xp):
-        array = xp.eye(5, dtype=np.bool_)
-        structure = xp.ones((3, 3), dtype=np.bool_)
+        array = np.eye(5, dtype=bool)
+        structure = np.ones((3, 3), dtype=bool)
+
+        array = xp.asarray(array)
+        structure = xp.asarray(structure)
 
         # Check that type mismatch is properly handled
         output = xp.empty_like(array, dtype=xp.float64)
         ndimage.white_tophat(array, structure=structure, output=output)
 
+    @skip_xp_backends("jax.numpy", reason="output array is read-only.")
     def test_black_tophat01(self, xp):
         array = xp.asarray([[3, 2, 5, 1, 4],
                             [7, 6, 9, 3, 5],
@@ -2418,7 +2532,7 @@ class TestNdimageMorphology:
         tmp = ndimage.grey_closing(array, footprint=footprint,
                                    structure=structure)
         expected = tmp - array
-        output = xp.zeros(array.shape, array.dtype)
+        output = xp.zeros(array.shape, dtype=array.dtype)
         ndimage.black_tophat(array, footprint=footprint,
                              structure=structure, output=output)
         assert_array_almost_equal(expected, output)
@@ -2440,28 +2554,32 @@ class TestNdimageMorphology:
         if is_cupy(xp):
             pytest.xfail("https://github.com/cupy/cupy/issues/8399")
 
-        array = xp.asarray([[1, 0, 0, 0, 0, 0, 0],
+        array = np.asarray([[1, 0, 0, 0, 0, 0, 0],
                             [0, 1, 1, 1, 1, 1, 0],
                             [0, 1, 1, 1, 1, 1, 0],
                             [0, 1, 1, 1, 1, 1, 0],
                             [0, 1, 1, 1, 0, 1, 0],
                             [0, 1, 1, 1, 1, 1, 0],
-                            [0, 0, 0, 0, 0, 0, 1]], dtype=np.bool_)
-        structure = xp.ones((3, 3), dtype=np.bool_)
-        expected = xp.asarray([[0, 1, 1, 1, 1, 1, 1],
+                            [0, 0, 0, 0, 0, 0, 1]], dtype=bool)
+        array = xp.asarray(array)
+        structure = np.ones((3, 3), dtype=bool)
+        structure = xp.asarray(structure)
+        expected = np.asarray([[0, 1, 1, 1, 1, 1, 1],
                                [1, 0, 0, 0, 0, 0, 1],
                                [1, 0, 0, 0, 0, 0, 1],
                                [1, 0, 0, 0, 0, 0, 1],
                                [1, 0, 0, 0, 1, 0, 1],
                                [1, 0, 0, 0, 0, 0, 1],
-                               [1, 1, 1, 1, 1, 1, 0]], dtype=np.bool_)
+                               [1, 1, 1, 1, 1, 1, 0]], dtype=bool)
+        expected = xp.asarray(expected)
 
         output = ndimage.black_tophat(array, structure=structure)
         xp_assert_equal(expected, output)
 
+    @skip_xp_backends("jax.numpy", reason="output array is read-only.")
     def test_black_tophat04(self, xp):
-        array = xp.eye(5, dtype=np.bool_)
-        structure = xp.ones((3, 3), dtype=np.bool_)
+        array = xp.asarray(np.eye(5, dtype=bool))
+        structure = xp.asarray(np.ones((3, 3), dtype=bool))
 
         # Check that type mismatch is properly handled
         output = xp.empty_like(array, dtype=xp.float64)
@@ -2469,6 +2587,9 @@ class TestNdimageMorphology:
 
     @pytest.mark.parametrize('dtype', types)
     def test_hit_or_miss01(self, dtype, xp):
+        if not (is_numpy(xp) or is_cupy(xp)):
+            pytest.xfail("inplace output= is numpy-specific")
+
         dtype = getattr(xp, dtype)
         struct = [[0, 1, 0],
                   [1, 1, 1],
@@ -2491,7 +2612,7 @@ class TestNdimageMorphology:
                            [0, 1, 1, 1, 1],
                            [0, 1, 1, 1, 1],
                            [0, 0, 0, 0, 0]], dtype=dtype)
-        out = xp.zeros(data.shape, bool)
+        out = xp.asarray(np.zeros(data.shape, dtype=bool))
         ndimage.binary_hit_or_miss(data, struct, output=out)
         assert_array_almost_equal(expected, out)
 
@@ -2556,11 +2677,17 @@ class TestDilateFix:
                                  [0, 0, 0, 0, 0],
                                  [0, 0, 0, 1, 0],
                                  [0, 0, 1, 1, 0],
-                                 [0, 0, 0, 0, 0]], dtype=np.uint8)
+                                 [0, 0, 0, 0, 0]], dtype=xp.uint8)
 
         self.sq3x3 = xp.ones((3, 3))
         dilated3x3 = ndimage.binary_dilation(self.array, structure=self.sq3x3)
-        self.dilated3x3 = dilated3x3.view(np.uint8)
+
+        if is_numpy(xp):
+            self.dilated3x3 = dilated3x3.view(xp.uint8)
+        else:
+            astype = array_namespace(dilated3x3).astype
+            self.dilated3x3 = astype(dilated3x3, xp.uint8)
+
 
     def test_dilation_square_structure(self, xp):
         self._setup(xp)
@@ -2577,10 +2704,10 @@ class TestDilateFix:
 class TestBinaryOpeningClosing:
 
     def _setup(self, xp):
-        a = xp.zeros((5, 5), dtype=bool)
+        a = np.zeros((5, 5), dtype=bool)
         a[1:4, 1:4] = True
         a[4, 4] = True
-        self.array = a
+        self.array = xp.asarray(a)
         self.sq3x3 = xp.ones((3, 3))
         self.opened_old = ndimage.binary_opening(self.array, self.sq3x3,
                                                  1, None, 0)
@@ -2640,12 +2767,12 @@ def test_binary_closing_noninteger_brute_force_passes_when_true(xp):
 
     data = xp.ones([1])
 
-    assert ndimage.binary_erosion(
-        data, iterations=2, brute_force=1.5
-    ) == ndimage.binary_erosion(data, iterations=2, brute_force=bool(1.5))
-    assert ndimage.binary_erosion(
-        data, iterations=2, brute_force=0.0
-    ) == ndimage.binary_erosion(data, iterations=2, brute_force=bool(0.0))
+    xp_assert_equal(ndimage.binary_erosion(data, iterations=2, brute_force=1.5),
+                    ndimage.binary_erosion(data, iterations=2, brute_force=bool(1.5))
+    )
+    xp_assert_equal(ndimage.binary_erosion(data, iterations=2, brute_force=0.0),
+                    ndimage.binary_erosion(data, iterations=2, brute_force=bool(0.0))
+    )
 
 
 @pytest.mark.parametrize(
@@ -2670,6 +2797,9 @@ def test_binary_input_as_output(function, iterations, brute_force, xp):
 
 
 def test_binary_hit_or_miss_input_as_output(xp):
+    if not (is_numpy(xp) or is_cupy(xp)):
+        pytest.xfail("inplace output= is numpy-specific")
+
     rstate = np.random.RandomState(123)
     data = rstate.randint(low=0, high=2, size=100).astype(bool)
 

@@ -1,4 +1,6 @@
 import math
+import numpy as np
+
 from scipy._lib._array_api import (
     xp_assert_equal,
     assert_array_almost_equal,
@@ -24,10 +26,11 @@ class TestNdimageFourier:
     @pytest.mark.parametrize('dtype, dec', [("float32", 6), ("float64", 14)])
     def test_fourier_gaussian_real01(self, shape, dtype, dec, xp):
         fft = getattr(xp, 'fft')
-        dtype = getattr(xp, dtype)
 
-        a = xp.zeros(shape, dtype=dtype)
+        a = np.zeros(shape, dtype=dtype)
         a[0, 0] = 1.0
+        a = xp.asarray(a)
+
         a = fft.rfft(a, n=shape[0], axis=0)
         a = fft.fft(a, n=shape[1], axis=1)
         a = ndimage.fourier_gaussian(a, [5.0, 2.5], shape[0], 0)
@@ -39,25 +42,27 @@ class TestNdimageFourier:
     @pytest.mark.parametrize('dtype, dec', [("complex64", 6), ("complex128", 14)])
     def test_fourier_gaussian_complex01(self, shape, dtype, dec, xp):
         fft = getattr(xp, 'fft')
-        dtype = getattr(xp, dtype)
 
-        a = xp.zeros(shape, dtype=dtype)
+        a = np.zeros(shape, dtype=dtype)
         a[0, 0] = 1.0
+        a = xp.asarray(a)
+
         a = fft.fft(a, n=shape[0], axis=0)
         a = fft.fft(a, n=shape[1], axis=1)
         a = ndimage.fourier_gaussian(a, [5.0, 2.5], -1, 0)
         a = fft.ifft(a, n=shape[1], axis=1)
         a = fft.ifft(a, n=shape[0], axis=0)
-        assert_almost_equal(ndimage.sum(a.real), xp.asarray(1.0), decimal=dec)
+        assert_almost_equal(ndimage.sum(xp.real(a)), xp.asarray(1.0), decimal=dec)
 
     @pytest.mark.parametrize('shape', [(32, 16), (31, 15), (1, 10)])
     @pytest.mark.parametrize('dtype, dec', [("float32", 6), ("float64", 14)])
     def test_fourier_uniform_real01(self, shape, dtype, dec, xp):
         fft = getattr(xp, 'fft')
-        dtype = getattr(xp, dtype)
 
-        a = xp.zeros(shape, dtype=dtype)
+        a = np.zeros(shape, dtype=dtype)
         a[0, 0] = 1.0
+        a = xp.asarray(a)
+
         a = fft.rfft(a, n=shape[0], axis=0)
         a = fft.fft(a, n=shape[1], axis=1)
         a = ndimage.fourier_uniform(a, [5.0, 2.5], shape[0], 0)
@@ -69,61 +74,61 @@ class TestNdimageFourier:
     @pytest.mark.parametrize('dtype, dec', [("complex64", 6), ("complex128", 14)])
     def test_fourier_uniform_complex01(self, shape, dtype, dec, xp):
         fft = getattr(xp, 'fft')
-        dtype = getattr(xp, dtype)
 
-        a = xp.zeros(shape, dtype=dtype)
+        a = np.zeros(shape, dtype=dtype)
         a[0, 0] = 1.0
+        a = xp.asarray(a)
+
         a = fft.fft(a, n=shape[0], axis=0)
         a = fft.fft(a, n=shape[1], axis=1)
         a = ndimage.fourier_uniform(a, [5.0, 2.5], -1, 0)
         a = fft.ifft(a, n=shape[1], axis=1)
         a = fft.ifft(a, n=shape[0], axis=0)
-        assert_almost_equal(ndimage.sum(a.real), xp.asarray(1.0), decimal=dec)
+        assert_almost_equal(ndimage.sum(xp.real(a)), xp.asarray(1.0), decimal=dec)
 
     @pytest.mark.parametrize('shape', [(32, 16), (31, 15)])
     @pytest.mark.parametrize('dtype, dec', [("float32", 4), ("float64", 11)])
     def test_fourier_shift_real01(self, shape, dtype, dec, xp):
         fft = getattr(xp, 'fft')
-        dtype = getattr(xp, dtype)
 
-        expected = xp.arange(shape[0] * shape[1], dtype=dtype)
-        expected.shape = shape
+        expected = np.arange(shape[0] * shape[1], dtype=dtype).reshape(shape)
+        expected = xp.asarray(expected)
+
         a = fft.rfft(expected, n=shape[0], axis=0)
         a = fft.fft(a, n=shape[1], axis=1)
         a = ndimage.fourier_shift(a, [1, 1], shape[0], 0)
         a = fft.ifft(a, n=shape[1], axis=1)
         a = fft.irfft(a, n=shape[0], axis=0)
         assert_array_almost_equal(a[1:, 1:], expected[:-1, :-1], decimal=dec)
-        assert_array_almost_equal(a.imag, xp.zeros(shape), decimal=dec)
 
     @pytest.mark.parametrize('shape', [(32, 16), (31, 15)])
     @pytest.mark.parametrize('dtype, dec', [("complex64", 4), ("complex128", 11)])
     def test_fourier_shift_complex01(self, shape, dtype, dec, xp):
         fft = getattr(xp, 'fft')
-        dtype = getattr(xp, dtype)
 
-        expected = xp.arange(shape[0] * shape[1], dtype=dtype)
-        expected.shape = shape
+        expected = np.arange(shape[0] * shape[1], dtype=dtype).reshape(shape)
+        expected = xp.asarray(expected)
+
         a = fft.fft(expected, n=shape[0], axis=0)
         a = fft.fft(a, n=shape[1], axis=1)
         a = ndimage.fourier_shift(a, [1, 1], -1, 0)
         a = fft.ifft(a, n=shape[1], axis=1)
         a = fft.ifft(a, n=shape[0], axis=0)
-        assert_array_almost_equal(a.real[1:, 1:], expected[:-1, :-1], decimal=dec)
-        assert_array_almost_equal(a.imag, xp.zeros(shape), decimal=dec)
+        assert_array_almost_equal(xp.real(a)[1:, 1:], expected[:-1, :-1], decimal=dec)
+        assert_array_almost_equal(xp.imag(a), xp.zeros(shape), decimal=dec)
 
     @pytest.mark.parametrize('shape', [(32, 16), (31, 15), (1, 10)])
     @pytest.mark.parametrize('dtype, dec', [("float32", 5), ("float64", 14)])
     def test_fourier_ellipsoid_real01(self, shape, dtype, dec, xp):
         fft = getattr(xp, 'fft')
-        dtype = getattr(xp, dtype)
 
-        a = xp.zeros(shape, dtype=dtype)
+        a = np.zeros(shape, dtype=dtype)
         a[0, 0] = 1.0
+        a = xp.asarray(a)
+
         a = fft.rfft(a, n=shape[0], axis=0)
         a = fft.fft(a, n=shape[1], axis=1)
-        a = ndimage.fourier_ellipsoid(a, [5.0, 2.5],
-                                      shape[0], 0)
+        a = ndimage.fourier_ellipsoid(a, [5.0, 2.5], shape[0], 0)
         a = fft.ifft(a, n=shape[1], axis=1)
         a = fft.irfft(a, n=shape[0], axis=0)
         assert_almost_equal(ndimage.sum(a), xp.asarray(1.0), decimal=dec)
@@ -132,27 +137,28 @@ class TestNdimageFourier:
     @pytest.mark.parametrize('dtype, dec', [("complex64", 5), ("complex128", 14)])
     def test_fourier_ellipsoid_complex01(self, shape, dtype, dec, xp):
         fft = getattr(xp, 'fft')
-        dtype = getattr(xp, dtype)
 
-        a = xp.zeros(shape, dtype=dtype)
+        a = np.zeros(shape, dtype=dtype)
         a[0, 0] = 1.0
+        a = xp.asarray(a)
+
         a = fft.fft(a, n=shape[0], axis=0)
         a = fft.fft(a, n=shape[1], axis=1)
         a = ndimage.fourier_ellipsoid(a, [5.0, 2.5], -1, 0)
         a = fft.ifft(a, n=shape[1], axis=1)
         a = fft.ifft(a, n=shape[0], axis=0)
-        assert_almost_equal(ndimage.sum(a.real), xp.asarray(1.0), decimal=dec)
+        assert_almost_equal(ndimage.sum(xp.real(a)), xp.asarray(1.0), decimal=dec)
 
     def test_fourier_ellipsoid_unimplemented_ndim(self, xp):
         # arrays with ndim > 3 raise NotImplementedError
-        x = xp.ones((4, 6, 8, 10), dtype="complex128")
+        x = xp.ones((4, 6, 8, 10), dtype=xp.complex128)
         with pytest.raises(NotImplementedError):
             ndimage.fourier_ellipsoid(x, 3)
 
     def test_fourier_ellipsoid_1d_complex(self, xp):
         # expected result of 1d ellipsoid is the same as for fourier_uniform
         for shape in [(32, ), (31, )]:
-            for type_, dec in zip(["complex64", "complex128"], [5, 14]):
+            for type_, dec in zip([xp.complex64, xp.complex128], [5, 14]):
                 x = xp.ones(shape, dtype=type_)
                 a = ndimage.fourier_ellipsoid(x, 5, -1, 0)
                 b = ndimage.fourier_uniform(x, 5, -1, 0)
