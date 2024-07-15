@@ -319,6 +319,8 @@ def differential_entropy(
     """
     xp = array_namespace(values)
     values = xp.asarray(values)
+    if xp.isdtype(values.dtype, "integral"):
+        values = xp.astype(values, xp.asarray(1.).dtype)
     values = xp_moveaxis_to_end(values, axis, xp=xp)
     n = values.shape[-1]  # type: ignore[union-attr]
 
