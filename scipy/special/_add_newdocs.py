@@ -12868,3 +12868,8 @@ add_newdoc(
     scalar or ndarray
 
     """)
+
+add_newdoc("_stirling1_inexact",
+    r"""
+    Internal function, do not use.
+    """)
