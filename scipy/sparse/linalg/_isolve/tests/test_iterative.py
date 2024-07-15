@@ -552,7 +552,7 @@ def test_shape_consistency(solver, n):
             sol, _ = solver(mat, rhs)
             assert_array_equal(np.shape(sol), np.shape(rhs))
             sol, _ = solver(mat, rhs, x0)
-            assert_array_equal(np.shape(sol), np.shape(x0))
+            assert_array_equal(np.shape(sol), np.shape(rhs))
 
 
 # Specific tfqmr test
