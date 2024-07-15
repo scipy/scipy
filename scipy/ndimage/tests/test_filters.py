@@ -2,8 +2,9 @@
 import functools
 import itertools
 import math
-import numpy as np
+import re
 
+import numpy as np
 from numpy.testing import (assert_equal, assert_allclose,
                            assert_array_almost_equal,
                            assert_array_equal, assert_almost_equal,
@@ -79,6 +80,13 @@ def _cases_axes_tuple_length_mismatch():
     filter_funcs = [ndimage.uniform_filter, ndimage.minimum_filter,
                     ndimage.maximum_filter]
     kwargs = dict(size=3, mode='constant', origin=0)
+    for filter_func in filter_funcs:
+        for key, val in kwargs.items():
+            yield filter_func, kwargs, key, val
+
+    filter_funcs = [ndimage.correlate, ndimage.convolve]
+    # sequence of mode not supported for correlate or convolve
+    kwargs = dict(origin=0)
     for filter_func in filter_funcs:
         for key, val in kwargs.items():
             yield filter_func, kwargs, key, val
@@ -735,9 +743,87 @@ class TestNdimageFilters:
         output = filter_func(array, *extra_args, size, axes=axes)
 
         # result should be equivalent to sigma=0.0/size=1 on unfiltered axes
-        all_sizes = (size if ax in (axes % array.ndim) else size0
-                     for ax in range(array.ndim))
+        all_sizes = tuple(size if ax in (axes % array.ndim) else size0
+                          for ax in range(array.ndim))
         expected = filter_func(array, *extra_args, all_sizes)
+        assert_allclose(output, expected)
+
+    @pytest.mark.parametrize(('filter_func', 'kwargs'),
+                             [(ndimage.laplace, {}),
+                              (ndimage.gaussian_gradient_magnitude,
+                               {"sigma": 1.0}),
+                              (ndimage.gaussian_laplace, {"sigma": 0.5})])
+    def test_derivative_filter_axes(self, filter_func, kwargs):
+        array = np.arange(6 * 8 * 12, dtype=np.float64).reshape(6, 8, 12)
+
+        # duplicate axes raises an error
+        with pytest.raises(ValueError, match="axes must be unique"):
+            filter_func(array, axes=(1, 1), **kwargs)
+
+        # compare results to manually looping over the non-filtered axes
+        output = filter_func(array, axes=(1, 2), **kwargs)
+        expected = np.empty_like(output)
+        for i in range(array.shape[0]):
+            expected[i, ...] = filter_func(array[i, ...], **kwargs)
+        assert_allclose(output, expected)
+
+        output = filter_func(array, axes=(0, -1), **kwargs)
+        expected = np.empty_like(output)
+        for i in range(array.shape[1]):
+            expected[:, i, :] = filter_func(array[:, i, :], **kwargs)
+        assert_allclose(output, expected)
+
+        output = filter_func(array, axes=(1), **kwargs)
+        expected = np.empty_like(output)
+        for i in range(array.shape[0]):
+            for j in range(array.shape[2]):
+                expected[i, :, j] = filter_func(array[i, :, j], **kwargs)
+        assert_allclose(output, expected)
+
+    @pytest.mark.parametrize(
+        'axes',
+        tuple(itertools.combinations(range(-3, 3), 1))
+        + tuple(itertools.combinations(range(-3, 3), 2))
+        + ((0, 1, 2),))
+    def test_generic_filter_axes(self, axes):
+        array = np.arange(6 * 8 * 12, dtype=np.float64).reshape(6, 8, 12)
+        axes = np.asarray(axes)
+        size = 3
+
+        if len(set(axes % array.ndim)) != len(axes):
+            # parametrized cases with duplicate axes raise an error
+            with pytest.raises(ValueError, match="axes must be unique"):
+                ndimage.generic_filter(array, np.amax, size=size, axes=axes)
+            return
+
+        # choose np.amax as the function so we can compare to maximum_filter
+        output = ndimage.generic_filter(array, np.amax, size=size, axes=axes)
+        expected = ndimage.maximum_filter(array, size=size, axes=axes)
+        assert_allclose(output, expected)
+
+    @pytest.mark.parametrize('func', [ndimage.correlate, ndimage.convolve])
+    @pytest.mark.parametrize('dtype', [np.float32, np.complex64])
+    @pytest.mark.parametrize(
+        'axes', tuple(itertools.combinations(range(-3, 3), 2))
+    )
+    @pytest.mark.parametrize('origin', [(0, 0), (-1, 1)])
+    def test_correlate_convolve_axes(self, func, dtype, axes, origin):
+        array = np.arange(6 * 8 * 12, dtype=dtype).reshape(6, 8, 12)
+        weights = np.arange(3 * 5).reshape(3, 5)
+        axes = tuple(ax % array.ndim for ax in axes)
+        if len(tuple(set(axes))) != len(axes):
+            # parametrized cases with duplicate axes raise an error
+            with pytest.raises(ValueError):
+                func(array, weights=weights, axes=axes, origin=origin)
+            return
+        output = func(array, weights=weights, axes=axes, origin=origin)
+
+        missing_axis = tuple(set(range(3)) - set(axes))[0]
+        weights_3d = np.expand_dims(weights, missing_axis)
+        origin_3d = [0, 0, 0]
+        for i, ax in enumerate(axes):
+            origin_3d[ax] = origin[i]
+        expected = func(array, weights=weights_3d, origin=origin_3d)
         assert_allclose(output, expected)
 
     kwargs_gauss = dict(radius=[4, 2, 3], order=[0, 1, 2],
@@ -792,8 +878,11 @@ class TestNdimageFilters:
         expected = filter_func(array, *args, size_3d, **kwargs)
         assert_allclose(output, expected)
 
+
     @pytest.mark.parametrize("filter_func, kwargs",
-                             [(ndimage.minimum_filter, {}),
+                             [(ndimage.convolve, {}),
+                              (ndimage.correlate, {}),
+                              (ndimage.minimum_filter, {}),
                               (ndimage.maximum_filter, {}),
                               (ndimage.median_filter, {}),
                               (ndimage.rank_filter, {"rank": 1}),
@@ -808,19 +897,33 @@ class TestNdimageFilters:
         footprint = np.ones((3, 5), dtype=bool)
         footprint[0, 1] = 0  # make non-separable
 
-        output = filter_func(
-            array, footprint=footprint, axes=axes, origin=origins, **kwargs)
+        if filter_func in (ndimage.convolve, ndimage.correlate):
+            kwargs["weights"] = footprint
+        else:
+            kwargs["footprint"] = footprint
+        kwargs["axes"] = axes
 
-        output0 = filter_func(
-            array, footprint=footprint, axes=axes, origin=0, **kwargs)
+        output = filter_func(array, origin=origins, **kwargs)
+
+        output0 = filter_func(array, origin=0, **kwargs)
 
         # output has origin shift on last axis relative to output0, so
         # expect shifted arrays to be equal.
-        np.testing.assert_array_equal(output[:, :, 1:], output0[:, :, :-1])
+        if filter_func == ndimage.convolve:
+            # shift is in the opposite direction for convolve because it
+            # flips the weights array and negates the origin values.
+            np.testing.assert_array_equal(
+                output[:, :, :-origins[1]], output0[:, :, origins[1]:])
+        else:
+            np.testing.assert_array_equal(
+                output[:, :, origins[1]:], output0[:, :, :-origins[1]])
+
 
     @pytest.mark.parametrize(
         'filter_func, args',
-        [(ndimage.gaussian_filter, (1.0,)),      # args = (sigma,)
+        [(ndimage.convolve, (np.ones((3, 3, 3)),)),  # args = (weights,)
+         (ndimage.correlate,(np.ones((3, 3, 3)),)),  # args = (weights,)
+         (ndimage.gaussian_filter, (1.0,)),      # args = (sigma,)
          (ndimage.uniform_filter, (3,)),         # args = (size,)
          (ndimage.minimum_filter, (3,)),         # args = (size,)
          (ndimage.maximum_filter, (3,)),         # args = (size,)
@@ -843,7 +946,9 @@ class TestNdimageFilters:
 
     @pytest.mark.parametrize(
         'filter_func, kwargs',
-        [(ndimage.minimum_filter, {}),
+        [(ndimage.convolve, {}),
+         (ndimage.correlate, {}),
+         (ndimage.minimum_filter, {}),
          (ndimage.maximum_filter, {}),
          (ndimage.median_filter, {}),
          (ndimage.rank_filter, dict(rank=3)),
@@ -862,10 +967,18 @@ class TestNdimageFilters:
         if (filter_func in [ndimage.minimum_filter, ndimage.maximum_filter]
             and separable_footprint):
             match = "sequence argument must have length equal to input rank"
+        elif filter_func in [ndimage.convolve, ndimage.correlate]:
+            match = re.escape(f"weights.ndim ({footprint.ndim}) must match "
+                              f"len(axes) ({len(axes)})")
         else:
-            match = "footprint array has incorrect shape"
+            match = re.escape(f"footprint.ndim ({footprint.ndim}) must match "
+                              f"len(axes) ({len(axes)})")
+        if filter_func in [ndimage.convolve, ndimage.correlate]:
+            kwargs["weights"] = footprint
+        else:
+            kwargs["footprint"] = footprint
         with pytest.raises(RuntimeError, match=match):
-            filter_func(array, **kwargs, footprint=footprint, axes=axes)
+            filter_func(array, axes=axes, **kwargs)
 
     @pytest.mark.parametrize('n_mismatch', [1, 3])
     @pytest.mark.parametrize('filter_func, kwargs, key, val',
@@ -874,8 +987,11 @@ class TestNdimageFilters:
                                           kwargs, key, val):
         # Test for the intended RuntimeError when a kwargs has an invalid size
         array = np.arange(6 * 8 * 12, dtype=np.float64).reshape(6, 8, 12)
-        kwargs = dict(**kwargs, axes=(0, 1))
+        axes = (0, 1)
+        kwargs = dict(**kwargs, axes=axes)
         kwargs[key] = (val,) * n_mismatch
+        if filter_func in [ndimage.convolve, ndimage.correlate]:
+            kwargs["weights"] = np.ones((5,) * len(axes))
         err_msg = "sequence argument must have length equal to input rank"
         with pytest.raises(RuntimeError, match=err_msg):
             filter_func(array, **kwargs)
