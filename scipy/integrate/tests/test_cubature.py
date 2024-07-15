@@ -22,20 +22,6 @@ class Problem:
         self.exact = exact
 
 
-def assert_integral_estimate_close(problem, res, rtol, atol):
-    np.testing.assert_allclose(
-        res.estimate,
-        problem.exact,
-        rtol=rtol,
-        atol=atol,
-        verbose=True,
-        err_msg=f"""failed to find approx. integral of {problem.f.__name__} with \
-rtol={rtol}, atol={atol} and points \
-a={problem.a}
-b={problem.b}""",
-    )
-
-
 def problem_from_closed_form(dim, f, closed_form, a, b, args):
     """
     Creates a new Problem given a function `f` and the corresponding `closed_form`.
@@ -148,25 +134,32 @@ def genz_malik_1980_f_4(x, alphas):
     return ((1 + np.sum(alphas_reshaped * x_reshaped, axis=0))**(-x.shape[0]-1))
 
 
-def genz_malik_1980_f_4_exact(dim, a, b, alphas):
-    alphas_reshaped = np.expand_dims(alphas, -1)
-
-    def F(x):
-        x_reshaped = x.reshape(dim, *([1]*(len(alphas.shape) - 1)), 1)
-
-        return 1/np.prod(alphas_reshaped, axis=0) / (
-            math.factorial(dim) * (1 + np.sum(alphas_reshaped * x_reshaped, axis=0))
-        )
-
+def eval_indefinite_integral(F, a, b):
+    # TODO: find a more elegant way than transposing twice
     points = _cartesian_product(np.array([a, b]).T).T
     res = 0
 
     for i, point in enumerate(points):
+        # Add up evaluations of F with correct sign at corners of hyperrectangle
         zeroes = bin(i).count('1')
         sign = (-1)**zeroes
         res += sign * F(point.reshape(-1, 1))
 
     return res
+
+
+def genz_malik_1980_f_4_exact(dim, a, b, alphas):
+    def F(x):
+        x_reshaped = x.reshape(dim, *([1]*(len(alphas.shape) - 1)))
+
+        # Don't need to reshape alphas since we are evaluating at just one point each
+        # time.
+
+        return 1/np.prod(alphas, axis=0) / (
+            math.factorial(dim) * (1 + np.sum(alphas * x_reshaped, axis=0))
+        )
+
+    return eval_indefinite_integral(F, a, b)
 
 
 def genz_malik_1980_f_5(x, alphas, betas):
@@ -188,7 +181,7 @@ def genz_malik_1980_f_5(x, alphas, betas):
 
     # Add extra dimension to parameters for eval_points
     alphas_reshaped = np.expand_dims(alphas, -1)
-    betas_reshaped = np.expand_dims(alphas, -1)
+    betas_reshaped = np.expand_dims(betas, -1)
 
     x_reshaped = x.reshape(dim, *([1]*(len(alphas.shape) - 1)), num_eval_points)
 
@@ -486,7 +479,6 @@ def test_cub_scalar_output(problem, quadrature, rtol, atol):
 @pytest.mark.parametrize("args_shape", [(2,), (2, 3), (2, 3, 5), (2, 3, 5, 7)])
 def test_genz_malik_1980_f_1_arbitrary_shape(quadrature, rtol, atol, dim, args_shape):
     np.random.seed(1)
-    difficulty = 9
     rule = ProductRule([quadrature] * dim)
 
     a = np.array([0]*dim)
@@ -495,6 +487,7 @@ def test_genz_malik_1980_f_1_arbitrary_shape(quadrature, rtol, atol, dim, args_s
     r = np.random.rand(*args_shape)
 
     # Adjust the parameters as in the paper
+    difficulty = 9
     alphas = difficulty * alphas / np.sum(alphas, axis=0)
 
     assert np.allclose(np.sum(alphas, axis=0), difficulty)
@@ -532,7 +525,6 @@ def test_genz_malik_1980_f_1_arbitrary_shape(quadrature, rtol, atol, dim, args_s
 @pytest.mark.parametrize("args_shape", [(2,), (2, 3), (2, 3, 5), (2, 3, 5, 7)])
 def test_genz_malik_1980_f_2_arbitrary_shape(quadrature, rtol, atol, dim, args_shape):
     np.random.seed(1)
-    difficulty = 25
     rule = ProductRule([quadrature] * dim)
 
     a = np.array([0]*dim)
@@ -542,6 +534,7 @@ def test_genz_malik_1980_f_2_arbitrary_shape(quadrature, rtol, atol, dim, args_s
 
     # Adjust the parameters as in the paper
 
+    difficulty = 25
     products = np.prod(np.power(alphas, -2), axis=0)
     alphas = alphas \
         * np.power(products, 1 / (2*dim)) \
@@ -618,6 +611,49 @@ def test_genz_malik_1980_f_3_arbitrary_shape(quadrature, rtol, atol, dim, args_s
     assert_integral_estimate_close(problem, res, rtol, atol)
 
 
+@pytest.mark.parametrize("quadrature", [GaussKronrod21()])
+@pytest.mark.parametrize("rtol", [1e-5])
+@pytest.mark.parametrize("atol", [1e-8])
+@pytest.mark.parametrize("dim", [1, 2, 3])
+@pytest.mark.parametrize("args_shape", [(2,), (2, 3), (2, 3, 5), (2, 3, 5, 7)])
+def test_genz_malik_1980_f_4_arbitrary_shape(quadrature, rtol, atol, dim, args_shape):
+    np.random.seed(1)
+    rule = ProductRule([quadrature] * dim)
+
+    a = np.array([0]*dim)
+    b = np.array([1]*dim)
+    alphas = np.random.rand(dim, *args_shape)
+
+    # Adjust the parameters as in the paper
+    difficulty = 14
+    alphas = (difficulty/dim) * alphas / np.sum(alphas, axis=0)
+
+    assert np.allclose(dim * np.sum(alphas, axis=0), difficulty)
+
+    problem = problem_from_closed_form(
+        dim=dim,
+        f=genz_malik_1980_f_4,
+        closed_form=genz_malik_1980_f_4_exact,
+        a=a,
+        b=b,
+        args=(
+            alphas,
+        ),
+    )
+
+    res = cub(
+        problem.f,
+        problem.a,
+        problem.b,
+        rule,
+        rtol,
+        atol,
+        args=problem.args,
+    )
+
+    assert_integral_estimate_close(problem, res, rtol, atol)
+
+
 @pytest.mark.skip()
 @pytest.mark.parametrize("quadrature", [GaussKronrod21()])
 @pytest.mark.parametrize("rtol", [1e-5])
@@ -626,7 +662,6 @@ def test_genz_malik_1980_f_3_arbitrary_shape(quadrature, rtol, atol, dim, args_s
 @pytest.mark.parametrize("args_shape", [(2,), (2, 3), (2, 3, 5), (2, 3, 5, 7)])
 def test_genz_malik_1980_f_5_arbitrary_shape(quadrature, rtol, atol, dim, args_shape):
     np.random.seed(1)
-    difficulty = 21
     rule = ProductRule([quadrature] * dim)
 
     a = np.array([0]*dim)
@@ -635,6 +670,7 @@ def test_genz_malik_1980_f_5_arbitrary_shape(quadrature, rtol, atol, dim, args_s
     betas = np.random.rand(dim, *args_shape)
 
     # Adjust the parameters as in the paper
+    difficulty = 21
     l2_norm = np.sum(np.power(alphas, 2), axis=0)
     alphas = alphas / np.sqrt(l2_norm) * np.sqrt(difficulty)
 
@@ -663,6 +699,20 @@ def test_genz_malik_1980_f_5_arbitrary_shape(quadrature, rtol, atol, dim, args_s
     )
 
     assert_integral_estimate_close(problem, res, rtol, atol)
+
+
+def assert_integral_estimate_close(problem, res, rtol, atol):
+    np.testing.assert_allclose(
+        res.estimate,
+        problem.exact,
+        rtol=rtol,
+        atol=atol,
+        verbose=True,
+        err_msg=f"""failed to find approx. integral of {problem.f.__name__} with \
+rtol={rtol}, atol={atol} and points \
+a={problem.a}
+b={problem.b}""",
+    )
 
 
 # TODO: test that product rules are calculated properly
