@@ -396,7 +396,7 @@ class TestBSpline:
         b = BSpline.basis_element([0, 1, 2])
         for extrapolate in (True, False):
             res = b.integrate(0, 1, extrapolate=extrapolate)
-            assert type(res) == np.ndarray
+            assert isinstance(res, np.ndarray)
             assert res.ndim == 0
 
     def test_subclassing(self):
