@@ -892,6 +892,7 @@ static int colperm_cvt(PyObject * input, colperm_t * value)
     ENUM_CHECK(COLAMD);
     ENUM_CHECK(MY_PERMC);
     ENUM_CHECK(METIS_ATA);
+    ENUM_CHECK(METIS_AT_PLUS_A);
     ENUM_CHECK_FINISH("invalid value for 'ColPerm' parameter");
 }
 

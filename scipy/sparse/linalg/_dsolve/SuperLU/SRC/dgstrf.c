@@ -427,6 +427,10 @@ dgstrf (superlu_options_t *options, SuperMatrix *A,
     }
     
     countnz(min_mn, xprune, &nnzL, &nnzU, Glu);
+#if ( PRNTlevel>=1 )
+	printf("nnz(L+U): %lld\n", (long long int)(nnzL+nnzU));
+#endif
+
     fixupL(min_mn, perm_r, Glu);
 
     dLUWorkFree(iwork, dwork, Glu); /* Free work space and compress storage */

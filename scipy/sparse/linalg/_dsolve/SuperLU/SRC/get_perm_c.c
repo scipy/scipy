@@ -497,6 +497,23 @@ get_perm_c(int ispec, SuperMatrix *A, int *perm_c)
 	    printf(".. Use METIS ordering on A'*A\n");
 #endif
 	    return;
+    case METIS_AT_PLUS_A: /* METIS ordering on A'*A */
+	if ( m != n ) ABORT("Matrix is not square");
+	at_plus_a(n, Astore->nnz, Astore->colptr, Astore->rowind,
+		  &bnz, &b_colptr, &b_rowind);
+
+        if ( bnz ) { /* non-empty adjacency structure */
+	    get_metis(n, bnz, b_colptr, b_rowind, perm_c);
+        } else { /* e.g., diagonal matrix */
+	    for (i = 0; i < n; ++i) perm_c[i] = i;
+		SUPERLU_FREE(b_colptr);
+	    /* b_rowind is not allocated in this case */
+	}
+
+#if ( PRNTlevel>=1 )
+	printf(".. Use METIS ordering on A'+A\n");
+#endif
+	    return;
 #endif
 	
     default:
