@@ -120,10 +120,8 @@ csr_has_canonical_format  i iII
 OTHER_ROUTINES = """
 coo_tocsr           v iiiIIT*I*I*T
 coo_todense         v iilIIT*Ti
-coo_todense3d       v iiilIIIT*Ti
 coo_todense_nd      v IllIT*Ti
 coo_matvec          v lIITT*T
-coo_matvec_3d       v llIIITT*T
 coo_matvec_nd       v llIITT*T
 dia_matvec          v iiiiITT*T
 cs_graph_components i iII*I

@@ -113,31 +113,6 @@ void coo_todense(const I n_row,
 
 
 template <class I, class T>
-void coo_todense3d(const I n_depth,
-                 const I n_row,
-                 const I n_col,
-                 const npy_int64 nnz,
-                 const I Ak[],
-                 const I Ai[],
-                 const I Aj[],
-                 const T Ax[],
-                       T Bx[],
-                 const int fortran)
-{
-    if (!fortran) {
-        for(npy_int64 n = 0; n < nnz; n++){
-            Bx[ (npy_intp)n_row * n_col * Ak[n] + n_col * Ai[n] + Aj[n] ] += Ax[n];
-        }
-    }
-    else {
-        for(npy_int64 n = 0; n < nnz; n++){
-            Bx[ (npy_intp)n_row * n_depth * Aj[n] + n_depth * Ai[n] + Ak[n] ] += Ax[n];
-        }
-    }
-}
-
-
-template <class I, class T>
 void coo_todense_nd(const I D[],        // array of dimension sizes
                     const npy_int64 nnz,
                     const npy_int64 num_dims,
@@ -210,57 +185,15 @@ void coo_matvec(const npy_int64 nnz,
 
 /*
  * Input Arguments:
- *   npy_int64  nnz   - number of nonzeros in A
- *   npy_int64 n_col  - number of columns in matrix
- *   I  Ai[nnz]       - depth indices
- *   I  Aj[nnz]       - row indices
- *   I  Ak[nnz]       - column indices
- *   T  Ax[nnz]       - nonzero values
- *   T  Xx[n_col]     - input vector
- *
- * Output Arguments:
- *   T  Yx[n_row]     - output vector
- *
- * Notes:
- *   Output array Yx must be preallocated
- *
- *   Complexity: Linear.  Specifically O(nnz(A))
- * 
- */
-template <class I, class T>
-void coo_matvec_3d(const npy_int64 nnz,
-                const npy_int64 n_row,
-                const I Ai[],
-                const I Aj[],
-                const I Ak[],
-                const T Ax[],
-                const T Xx[],
-                      T Yx[])
-{
-    for(npy_int64 n = 0; n < nnz; n++){
-        Yx[Ai[n] * n_row + Aj[n]] += Ax[n] * Xx[Ak[n]];
-    }
-}
-
-
-
-/*
- * Input Arguments:
- *   npy_int64  nnz   - number of nonzeros in A
- *   npy_int64 num_dims  - number of dimensions
- *   I  D[d]          - array of dimensions / shape of matrix
+ *   npy_int64  nnz       - number of nonzeros in A
+ *   npy_int64 num_dims   - number of dimensions
+ *   I  D[d]              - array of dimensions / shape of matrix
  *   I  A[nnz * num_dims] - array of coordinates flattened
- *   T  Ax[nnz]       - nonzero values
- *   T  Xx[n_col]     - input vector
+ *   T  Ax[nnz]           - nonzero values
+ *   T  Xx[n_col]         - input vector
  *
  * Output Arguments:
  *   T  Yx[n_row]     - output vector
- *
- * Notes:
- *   Output array Yx must be preallocated
- *
- *   Complexity: Linear.  Specifically O(nnz(A))
- * 
  */
 template <class I, class T>
 void coo_matvec_nd(const npy_int64 nnz,
