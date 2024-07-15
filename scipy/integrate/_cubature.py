@@ -1,27 +1,36 @@
 import math
 import heapq
+import functools
+
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
 
 import numpy as np
 
 
-class CubatureRule:
+class CubatureRule(ABC):
     def __init__(self, nodes, weights):
         self.nodes = nodes
         self.weights = weights
 
-    # returns the input dimension that the cubature rule is expecting `f` to have
     def dimension(self):
+        """
+        Return the input dimension that the cubature rule is expecting `f` to have, e.g.
+        for a cubature rule for triple integrals, this would be three.
+        """
         return self.nodes.shape[-1]
 
-    # returns integral_estimate, error_estimate
-    def estimate(self, f, a, b):
+    @abstractmethod
+    def estimate(self, f, a, b, args):
         """
         Calculate estimate of integral of f in region described by corners a and b.
 
         f should accept arrays of shape (input_dim, num_eval_points) and return arrays
         of shape (output_dim_1, ..., output_dim_n, num_eval_points).
+
+        Should return (integral_estimate, error_estimate).
         """
-        raise NotImplementedError
+        pass
 
 
 class CubatureRuleLinearError(CubatureRule):
@@ -31,10 +40,7 @@ class CubatureRuleLinearError(CubatureRule):
         self.error_nodes = error_nodes
         self.error_weights = error_weights
 
-    def estimate(self, f, a, b):
-        # TODO: need to output some sort of error when the rule and f have inconsistent
-        # dimensions
-
+    def estimate(self, f, a, b, args):
         # The underlying cubature rule is presumed to be for the hypercube [0, 1]^n.
         #
         # To handle arbitrary regions of integration, it's necessary to apply a linear
@@ -58,18 +64,12 @@ class CubatureRuleLinearError(CubatureRule):
 
         # f(nodes) will have shape (eval_points, output_dim)
         # integral_estimate should have shape (output_dim)
-        integral_estimate = np.sum(weights * f(nodes), axis=-1)
-
-        # print(integral_estimate)
+        integral_estimate = np.sum(weights * f(nodes, *args), axis=-1)
 
         error_estimate = abs(np.sum(
-            error_weights * f(error_nodes),
+            error_weights * f(error_nodes, *args),
             axis=-1
         ))
-
-        # print(error_estimate)
-
-        # TODO: not yet worrying about rounding error
 
         return integral_estimate, error_estimate
 
@@ -78,23 +78,116 @@ class CubatureRuleLinearError(CubatureRule):
 # estimators so that we can combine the error nodes and error weights
 class ProductRule(CubatureRuleLinearError):
     def __init__(self, base_rules):
-        self.nodes = _cartesian_product([rule.nodes for rule in base_rules])
-        self.error_nodes = _cartesian_product([rule.error_nodes for rule in base_rules])
+        self.base_rules = base_rules
 
-        self.weights = np.prod(
-            _cartesian_product([rule.weights for rule in base_rules]),
+    @functools.cached_property
+    def nodes(self):
+        return _cartesian_product([rule.nodes for rule in self.base_rules])
+
+    @functools.cached_property
+    def error_nodes(self):
+        return _cartesian_product([rule.error_nodes for rule in self.base_rules])
+
+    @functools.cached_property
+    def weights(self):
+        return np.prod(
+            _cartesian_product([rule.weights for rule in self.base_rules]),
             axis=0
         )
-        self.error_weights = np.prod(
-            _cartesian_product([rule.error_weights for rule in base_rules]),
+
+    @functools.cached_property
+    def error_weights(self):
+        return np.prod(
+            _cartesian_product([rule.error_weights for rule in self.base_rules]),
             axis=0
         )
+
+
+def cub(f, a, b, rule, rtol=1e-05, atol=1e-08, limit=10000, args=()):
+    if limit is None:
+        limit = np.inf
+
+    est, err = rule.estimate(f, a, b, args)
+    regions = [CubatureRegion(est, err, a, b)]
+    subdivisions = 0
+
+    while _max_norm(err) > max(atol, rtol * _max_norm(est)) and subdivisions < limit:
+        region = heapq.heappop(regions)
+
+        est_k = region.estimate
+        err_k = region.error
+
+        a_k, b_k = region.a, region.b
+        m_k = (a_k + b_k) / 2
+
+        subregion_coordinates = zip(
+            _cartesian_product(np.array([a_k, m_k]).T).T,
+            _cartesian_product(np.array([m_k, b_k]).T).T
+        )
+
+        est -= est_k
+        err -= err_k
+
+        for a_k_sub, b_k_sub in subregion_coordinates:
+            est_sub, err_sub = rule.estimate(f, a_k_sub, b_k_sub, args)
+
+            est += est_sub
+            err += err_sub
+
+            new_region = CubatureRegion(est_sub, err_sub, a_k_sub, b_k_sub)
+
+            heapq.heappush(regions, new_region)
+
+        subdivisions += 1
+
+    success = _max_norm(err) < max(atol, rtol * _max_norm(est))
+    status = "converged" if success else "not_converged"
+
+    return CubatureResult(
+        estimate=est,
+        error=err,
+        success=success,
+        status=status,
+        subdivisions=subdivisions,
+        regions=regions,
+        atol=atol,
+        rtol=rtol,
+    )
+
+
+@dataclass
+class CubatureRegion:
+    estimate: np.ndarray
+    error: np.ndarray
+    a: np.ndarray
+    b: np.ndarray
+
+    def __lt__(self, other):
+        # Compare negative error so that regions with higher error are placed closer to
+        # top of the heap.
+        return -_max_norm(self.error) < -_max_norm(other.error)
+
+
+@dataclass
+class CubatureResult:
+    estimate: np.ndarray
+    error: np.ndarray
+    success: bool
+    status: str
+    regions: list[CubatureRegion]
+    subdivisions: int
+    atol: float
+    rtol: float
 
 
 class GaussKronrod21(CubatureRuleLinearError):
     def __init__(self):
+        pass
+
+    @functools.cached_property
+    def nodes(self):
         # 21-point nodes
-        nodes_21 = np.array([[
+        return np.array([[
             0.995657163025808080735527280689003,
             0.973906528517171720077964012084452,
             0.930157491355708226001207180059508,
@@ -118,8 +211,10 @@ class GaussKronrod21(CubatureRuleLinearError):
             -0.995657163025808080735527280689003
         ]])
 
+    @functools.cached_property
+    def weights(self):
         # 21-point weights
-        weights_21 = np.array([
+        return np.array([
             0.011694638867371874278064396062192,
             0.032558162307964727478818972459390,
             0.054755896574351996031381300244580,
@@ -143,6 +238,12 @@ class GaussKronrod21(CubatureRuleLinearError):
             0.011694638867371874278064396062192,
         ])
 
+    @functools.cached_property
+    def error_nodes(self):
+        return self.nodes
+
+    @functools.cached_property
+    def error_weights(self):
         # 10-point nodes come from taking the 21-point nodes at the positions:
         #   1, 3, 5, 7, 9, 11, 13, 15, 17, 19
         # (indexed from 0). The 10-point weights are
@@ -159,44 +260,39 @@ class GaussKronrod21(CubatureRuleLinearError):
             0.066671344308688137593568809893332,
         ])
 
-        # In a Gauss-Kronrod rule, the full set of weights is used for the estimate of
-        # the integral, and then the difference between the estimate using the higher
-        # and lower order rule is used as the estimation of the error.
-
-        self.nodes = nodes_21
-        self.weights = weights_21
-
-        # Error nodes
-        self.error_nodes = nodes_21
-        self.error_weights = np.array([
-            weights_21[0],
-            weights_21[1] - weights_10[0],
-            weights_21[2],
-            weights_21[3] - weights_10[1],
-            weights_21[4],
-            weights_21[5] - weights_10[2],
-            weights_21[6],
-            weights_21[7] - weights_10[3],
-            weights_21[8],
-            weights_21[9] - weights_10[4],
-            weights_21[10],
-            weights_21[11] - weights_10[5],
-            weights_21[12],
-            weights_21[13] - weights_10[6],
-            weights_21[14],
-            weights_21[15] - weights_10[7],
-            weights_21[16],
-            weights_21[17] - weights_10[8],
-            weights_21[18],
-            weights_21[19] - weights_10[9],
-            weights_21[20],
+        return np.array([
+            self.weights[0],
+            self.weights[1] - weights_10[0],
+            self.weights[2],
+            self.weights[3] - weights_10[1],
+            self.weights[4],
+            self.weights[5] - weights_10[2],
+            self.weights[6],
+            self.weights[7] - weights_10[3],
+            self.weights[8],
+            self.weights[9] - weights_10[4],
+            self.weights[10],
+            self.weights[11] - weights_10[5],
+            self.weights[12],
+            self.weights[13] - weights_10[6],
+            self.weights[14],
+            self.weights[15] - weights_10[7],
+            self.weights[16],
+            self.weights[17] - weights_10[8],
+            self.weights[18],
+            self.weights[19] - weights_10[9],
+            self.weights[20],
         ])
 
 
 class GaussKronrod15(CubatureRuleLinearError):
     def __init__(self):
+        pass
+
+    @functools.cached_property
+    def nodes(self):
         # 15-point nodes
-        nodes_15 = np.array([[
+        return np.array([[
             0.991455371120812639206854697526329,
             0.949107912342758524526189684047851,
             0.864864423359769072789712788640926,
@@ -214,8 +310,9 @@ class GaussKronrod15(CubatureRuleLinearError):
             -0.991455371120812639206854697526329
         ]])
 
-        # 15-point weights
-        weights_15 = np.array([
+    @functools.cached_property
+    def weights(self):
+        return np.array([
             0.022935322010529224963732008058970,
             0.063092092629978553290700663189204,
             0.104790010322250183839876322541518,
@@ -233,9 +330,12 @@ class GaussKronrod15(CubatureRuleLinearError):
             0.022935322010529224963732008058970
         ])
 
-        # 7-point nodes come from taking the 15-point nodes at the positions:
-        #   1, 3, 5, 7, 9, 11, 13
-        # (indexed from 0). The 7-point weights are
+    @functools.cached_property
+    def error_nodes(self):
+        return self.nodes
+
+    @functools.cached_property
+    def error_weights(self):
         weights_7 = np.array([
             0.129484966168869693270611432679082,
             0.279705391489276667901467771423780,
@@ -246,171 +346,71 @@ class GaussKronrod15(CubatureRuleLinearError):
             0.129484966168869693270611432679082
         ])
 
-        self.nodes = nodes_15
-        self.weights = weights_15
-
-        self.error_nodes = nodes_15
-        self.error_weights = np.array([
-            weights_15[0],
-            weights_15[1] - weights_7[0],
-            weights_15[2],
-            weights_15[3] - weights_7[1],
-            weights_15[4],
-            weights_15[5] - weights_7[2],
-            weights_15[6],
-            weights_15[7] - weights_7[3],
-            weights_15[8],
-            weights_15[9] - weights_7[4],
-            weights_15[10],
-            weights_15[11] - weights_7[5],
-            weights_15[12],
-            weights_15[13] - weights_7[6],
-            weights_15[14],
+        return np.array([
+            self.weights[0],
+            self.weights[1] - weights_7[0],
+            self.weights[2],
+            self.weights[3] - weights_7[1],
+            self.weights[4],
+            self.weights[5] - weights_7[2],
+            self.weights[6],
+            self.weights[7] - weights_7[3],
+            self.weights[8],
+            self.weights[9] - weights_7[4],
+            self.weights[10],
+            self.weights[11] - weights_7[5],
+            self.weights[12],
+            self.weights[13] - weights_7[6],
+            self.weights[14],
         ])
 
 
 class Trapezoid(CubatureRuleLinearError):
     def __init__(self):
-        self.nodes = np.array([
+        pass
+
+    def nodes(self):
+        return np.array([
             [-1],
             [0],
             [1]
         ])
-        self.weights = np.array([
+
+    def weights(self):
+        return np.array([
             0.5,
             1,
             0.5
         ])
 
-        # These come from the difference using 2 trapezoidal subregions versus three
-        # 1 trapezoidal subregions as an estimate for the error.
-        self.error_nodes = np.array([
+    def error_nodes(self):
+        return np.array([
             [-1],
             [0],
             [1]
         ])
-        self.error_weights = 1/3 * np.array([
+
+    def error_weights(self):
+        return 1/3 * np.array([
             -0.5,
             1,
             -0.5,
         ])
 
 
-# TODO: is this a sensible default for maxiter?
-def cub(f, a, b, rule, rtol=1e-05, atol=1e-08, maxiter=10_000, args=()):
-    # TODO: This is how
-    def wrapped_f(x):
-        return f(x, *args)
-
-    est, err = rule.estimate(wrapped_f, a, b)
-
-    regions = [RegionInfo(est, err, a, b)]
-    subdivisions = 0
-
-    while _max_norm(err) > max(atol, rtol * _max_norm(est)) and subdivisions < maxiter:
-        region = heapq.heappop(regions)
-
-        est_k = region.integral_estimate
-        err_k = region.error_estimate
-
-        a_k, b_k = region.a, region.b
-        m_k = (a_k + b_k) / 2
-
-        # TODO: find a cleaner way of finding coordinates of subregions
-        subregion_coordinates = list(zip(
-            _cartesian_product(np.array([a_k, m_k]).T).T,
-            _cartesian_product(np.array([m_k, b_k]).T).T
-        ))
-
-        est -= est_k
-        err -= err_k
-
-        for a_k_sub, b_k_sub in subregion_coordinates:
-            est_sub, err_sub = rule.estimate(wrapped_f, a_k_sub, b_k_sub)
-
-            est += est_sub
-            err += err_sub
-
-            new_region = RegionInfo(est_sub, err_sub, a_k_sub, b_k_sub)
-
-            heapq.heappush(regions, new_region)
-
-        subdivisions += 1
-
-    success = _max_norm(err) < max(atol, rtol * _max_norm(est))
-    status = "converged" if success else "not_converged"
-
-    return CubatureResult(
-        estimate=est,
-        error=err,
-        success=success,
-        status=status,
-        subdivisions=subdivisions,
-        regions=regions,
-        atol=atol,
-        rtol=rtol,
-    )
-
-
-class RegionInfo:
-    def __init__(self, integral_estimate, error_estimate, a, b):
-        self.integral_estimate = integral_estimate
-        self.error_estimate = error_estimate
-        self.a = a
-        self.b = b
-
-    def neg_err(self):
-        return -np.linalg.norm(abs(self.error_estimate))
-
-    def __le__(self, other):
-        return self.neg_err() < other.neg_err()
-
-    def __lt__(self, other):
-        return self.__le__(other)
-
-    def __repr__(self):
-        return f"""RegionInfo(est=({self.integral_estimate}) \
-err={self.error_estimate}, \
-max_err={-self.neg_err()}, \
-a={self.a}
-b={self.b}"""
-
-    def __str__(self):
-        return self.__repr__()
-
-
-class CubatureResult:
-    # TODO: how to handle reporting number of evals for vectorized functions?
-    def __init__(self, estimate, error, success, status, subdivisions,
-                 regions, atol, rtol):
-        self.estimate = estimate
-        self.error = error
-        self.success = success
-        self.status = status
-        self.regions = regions
-        self.subdivisions = subdivisions
-        self.atol = atol
-        self.rtol = rtol
-
-    def __str__(self):
-        return f"CubatureResult(estimate={self.estimate} \
-error={self.error} \
-max_error={_max_norm(self.error)} \
-success={self.success} \
-status={self.status} \
-subdivisions={self.subdivisions} \
-atol={self.atol} \
-rtol={self.rtol})"
-
-    def __repr__(self):
-        return self.__str__()
-
-
 def _cartesian_product(points):
+    """
+    Takes a list of arrays such as `[ [[x_1, x_2]], [[y_1, y_2]] ]` and
+    returns all combinations of these points, such as
+    `[[x_1, x_1, x_2, x_2], [y_1, y_2, y_1, y_2]]`
+
+    Note that this is assuming that the spatial dimension is the first axis, as opposed
+    to the last axis.
+    """
     out = np.stack(np.meshgrid(*points, indexing='ij'), axis=0)
     out = out.reshape(len(points), -1)
     return out
 
 
 def _max_norm(x):
-    return np.amax(abs(x))
+    return np.max(np.abs(x))

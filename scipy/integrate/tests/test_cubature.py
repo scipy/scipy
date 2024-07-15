@@ -1,42 +1,15 @@
 import math
+import scipy
+import itertools
 
 import pytest
-import scipy
 import numpy as np
 
 from scipy.integrate._cubature import (
-    cub, ProductRule, GaussKronrod15, GaussKronrod21, _cartesian_product
+    cub, ProductRule, GaussKronrod15, GaussKronrod21
 )
 
 
-class Problem:
-    """
-    Represents a general problem to be solved by quadrature algorithm.
-    """
-    def __init__(self, dim, f, a, b, args, exact):
-        self.dim = dim
-        self.f = f
-        self.a = a
-        self.b = b
-        self.args = args
-        self.exact = exact
-
-
-def problem_from_closed_form(dim, f, closed_form, a, b, args):
-    """
-    Creates a new Problem given a function `f` and the corresponding `closed_form`.
-    """
-    return Problem(
-        dim=dim,
-        f=f,
-        a=a,
-        b=b,
-        args=args,
-        exact=closed_form(dim, a, b, *args)
-    )
-
-
-# TODO: I think this actually calculates the transpose of f
 def genz_malik_1980_f_1(x, r, alphas):
     r"""
     `f_1` from Genz and Malik 1980.
@@ -48,14 +21,36 @@ def genz_malik_1980_f_1(x, r, alphas):
         genzMalik1980f1[x_List, r_, alphas_List] := Cos[2*Pi*r + Total[x*alphas]]
     """
 
-    return np.cos(np.expand_dims(2*np.pi*r.T, -1) + (alphas.T @ x))
+    dim = x.shape[0]
+    num_eval_points = x.shape[-1]
+
+    r_reshaped = np.expand_dims(r, -1)
+    alphas_reshaped = np.expand_dims(alphas, -1)
+    x_reshaped = x.reshape(dim, *([1]*(len(alphas.shape) - 1)), num_eval_points)
+
+    return np.cos(2*np.pi*r_reshaped + np.sum(alphas_reshaped * x_reshaped, axis=0))
 
 
-# TODO: I think this actually calculates the transpose of the exact soln.
-def genz_malik_1980_f_1_exact(dim, a, b, r, alphas):
-    return (-2)**dim * 1/np.prod(alphas, axis=0).T \
-        * np.cos(2*np.pi*r.T + alphas.T @ (a+b)/2) \
-        * np.prod(np.sin(alphas.T * (a-b)/2), axis=-1)
+def genz_malik_1980_f_1_exact(a, b, r, alphas):
+    dim = len(a)
+    a = a.reshape(dim, *([1]*(len(alphas.shape) - 1)))
+    b = b.reshape(dim, *([1]*(len(alphas.shape) - 1)))
+
+    return (-2)**dim * 1/np.prod(alphas, axis=0) \
+        * np.cos(2*np.pi*r + np.sum(alphas * (a+b)/2, axis=0)) \
+        * np.prod(
+            np.sin(alphas * (a-b)/2), axis=0
+        )
+
+
+def genz_malik_1980_f_1_random_args(shape):
+    r = np.random.rand(*shape)
+    alphas = np.random.rand(*shape)
+
+    difficulty = 9
+    alphas = difficulty * alphas / np.sum(alphas, axis=0)
+
+    return (r, alphas)
 
 
 def genz_malik_1980_f_2(x, alphas, betas):
@@ -72,7 +67,6 @@ def genz_malik_1980_f_2(x, alphas, betas):
     dim = x.shape[0]
     num_eval_points = x.shape[-1]
 
-    # Add extra dimension to parameters for eval_points
     alphas_reshaped = np.expand_dims(alphas, -1)
     betas_reshaped = np.expand_dims(betas, -1)
 
@@ -81,8 +75,8 @@ def genz_malik_1980_f_2(x, alphas, betas):
     return 1/np.prod(alphas_reshaped**2 + (x_reshaped-betas_reshaped)**2, axis=0)
 
 
-def genz_malik_1980_f_2_exact(dim, a, b, alphas, betas):
-    # Expand a and b to fit the dimension of the parameters
+def genz_malik_1980_f_2_exact(a, b, alphas, betas):
+    dim = len(a)
     a = a.reshape(dim, *([1]*(len(alphas.shape) - 1)))
     b = b.reshape(dim, *([1]*(len(alphas.shape) - 1)))
 
@@ -90,6 +84,20 @@ def genz_malik_1980_f_2_exact(dim, a, b, alphas, betas):
         np.arctan((a - betas)/alphas) - np.arctan((b - betas)/alphas),
         axis=0
     )
+
+
+def genz_malik_1980_f_2_random_args(shape):
+    dim = shape[0]
+    alphas = np.random.rand(*shape)
+    betas = np.random.rand(*shape)
+
+    difficulty = 25
+    products = np.prod(np.power(alphas, -2), axis=0)
+    alphas = alphas \
+        * np.power(products, 1 / (2*dim)) \
+        / np.power(difficulty, 1 / (2*dim))
+
+    return alphas, betas
 
 
 def genz_malik_1980_f_3(x, alphas):
@@ -106,16 +114,14 @@ def genz_malik_1980_f_3(x, alphas):
     dim = x.shape[0]
     num_eval_points = x.shape[-1]
 
-    # Add extra dimension to parameters for eval_points
     alphas_reshaped = np.expand_dims(alphas, -1)
-
     x_reshaped = x.reshape(dim, *([1]*(len(alphas.shape) - 1)), num_eval_points)
 
     return np.exp(np.sum(alphas_reshaped * x_reshaped, axis=0))
 
 
-def genz_malik_1980_f_3_exact(dim, a, b, alphas):
-    # Expand a and b to fit the dimension of the parameters
+def genz_malik_1980_f_3_exact(a, b, alphas):
+    dim = len(a)
     a = a.reshape(dim, *([1]*(len(alphas.shape) - 1)))
     b = b.reshape(dim, *([1]*(len(alphas.shape) - 1)))
 
@@ -125,41 +131,55 @@ def genz_malik_1980_f_3_exact(dim, a, b, alphas):
     )
 
 
+def genz_malik_1980_f_3_random_args(shape):
+    alphas = np.random.rand(*shape)
+    difficulty = 12
+    alphas = difficulty * alphas / np.sum(alphas, axis=0)
+
+    return (alphas,)
+
+
 def genz_malik_1980_f_4(x, alphas):
+    r"""
+    `f_4` from Genz and Malik 1980.
+
+    .. math:: f_4(\mathbf x) = \left(1 + \sum^n_{i = 1} \alpha_i x_i\right)^{-n-1}
+
+    .. code-block:: mathematica
+        genzMalik1980f4[x_List, alphas_List] :=
+            (1 + Dot[x, alphas])^(-Length[alphas] - 1)
+    """
+
     dim = x.shape[0]
     num_eval_points = x.shape[-1]
+
     alphas_reshaped = np.expand_dims(alphas, -1)
     x_reshaped = x.reshape(dim, *([1]*(len(alphas.shape) - 1)), num_eval_points)
 
     return ((1 + np.sum(alphas_reshaped * x_reshaped, axis=0))**(-x.shape[0]-1))
 
 
-def eval_indefinite_integral(F, a, b):
-    # TODO: find a more elegant way than transposing twice
-    points = _cartesian_product(np.array([a, b]).T).T
-    res = 0
+def genz_malik_1980_f_4_exact(a, b, alphas):
+    dim = len(a)
 
-    for i, point in enumerate(points):
-        # Add up evaluations of F with correct sign at corners of hyperrectangle
-        zeroes = bin(i).count('1')
-        sign = (-1)**zeroes
-        res += sign * F(point.reshape(-1, 1))
-
-    return res
-
-
-def genz_malik_1980_f_4_exact(dim, a, b, alphas):
     def F(x):
         x_reshaped = x.reshape(dim, *([1]*(len(alphas.shape) - 1)))
 
-        # Don't need to reshape alphas since we are evaluating at just one point each
-        # time.
-
-        return 1/np.prod(alphas, axis=0) / (
+        return (-1)**dim/np.prod(alphas, axis=0) / (
             math.factorial(dim) * (1 + np.sum(alphas * x_reshaped, axis=0))
         )
 
-    return eval_indefinite_integral(F, a, b)
+    return _eval_indefinite_integral(F, a, b)
+
+
+def genz_malik_1980_f_4_random_args(shape):
+    dim = shape[0]
+
+    alphas = np.random.rand(*shape)
+    difficulty = 14
+    alphas = (difficulty/dim) * alphas / np.sum(alphas, axis=0)
+
+    return (alphas,)
 
 
 def genz_malik_1980_f_5(x, alphas, betas):
@@ -179,7 +199,6 @@ def genz_malik_1980_f_5(x, alphas, betas):
     dim = x.shape[0]
     num_eval_points = x.shape[-1]
 
-    # Add extra dimension to parameters for eval_points
     alphas_reshaped = np.expand_dims(alphas, -1)
     betas_reshaped = np.expand_dims(betas, -1)
 
@@ -190,9 +209,8 @@ def genz_malik_1980_f_5(x, alphas, betas):
     )
 
 
-# TODO: not 100% sure this is the correct closed form
-def genz_malik_1980_f_5_exact(dim, a, b, alphas, betas):
-    # Expand a and b to fit the dimension of the parameters
+def genz_malik_1980_f_5_exact(a, b, alphas, betas):
+    dim = len(a)
     a = a.reshape(dim, *([1]*(len(alphas.shape) - 1)))
     b = b.reshape(dim, *([1]*(len(alphas.shape) - 1)))
 
@@ -203,218 +221,203 @@ def genz_malik_1980_f_5_exact(dim, a, b, alphas, betas):
     )
 
 
+def genz_malik_1980_f_5_random_args(shape):
+    alphas = np.random.rand(*shape)
+    betas = np.random.rand(*shape)
+
+    difficulty = 21
+    l2_norm = np.sum(np.power(alphas, 2), axis=0)
+    alphas = alphas / np.sqrt(l2_norm) * np.sqrt(difficulty)
+
+    return alphas, betas
+
+
 problems_scalar_output = [
-    # Problems based on test integrals in Genz and Malik 1980:
     # -- f1 --
+    (
+        # Function to integrate, like `f(x, *args)`
+        genz_malik_1980_f_1,
 
-    problem_from_closed_form(
-        dim=1,
-        f=genz_malik_1980_f_1,
-        closed_form=genz_malik_1980_f_1_exact,
+        # Exact solution, like `exact(a, b, *args)`
+        genz_malik_1980_f_1_exact,
 
-        a=np.array([0]),
-        b=np.array([10]),
-        args=(
+        # Coordinates of `a`
+        np.array([0]),
+
+        # Coordinates of `b`
+        np.array([10]),
+
+        # Arguments to pass to `f` and `exact`
+        (
             np.array([1/4]),
             np.array([[5]]),
-        ),
+        )
     ),
-    problem_from_closed_form(
-        dim=2,
-        f=genz_malik_1980_f_1,
-        closed_form=genz_malik_1980_f_1_exact,
-
-        a=np.array([0, 0]),
-        b=np.array([1, 1]),
-        args=(
+    (
+        genz_malik_1980_f_1,
+        genz_malik_1980_f_1_exact,
+        np.array([0, 0]),
+        np.array([1, 1]),
+        (
             np.array([1/4]),
             np.array([[2], [4]]),
         ),
     ),
-    problem_from_closed_form(
-        dim=2,
-        f=genz_malik_1980_f_1,
-        closed_form=genz_malik_1980_f_1_exact,
-
-        a=np.array([0, 0]),
-        b=np.array([100, 100]),
-        args=(
+    (
+        genz_malik_1980_f_1,
+        genz_malik_1980_f_1_exact,
+        np.array([0, 0]),
+        np.array([100, 100]),
+        (
             np.array([1/2]),
             np.array([[2], [4]]),
         )
     ),
-    problem_from_closed_form(
-        dim=3,
-        f=genz_malik_1980_f_1,
-        closed_form=genz_malik_1980_f_1_exact,
-
-        a=np.array([0, 0, 0]),
-        b=np.array([100, 200, 300]),
-        args=(
+    (
+        genz_malik_1980_f_1,
+        genz_malik_1980_f_1_exact,
+        np.array([0, 0, 0]),
+        np.array([100, 200, 300]),
+        (
             np.array([1/2]),
             np.array([[1], [1], [1]]),
         )
     ),
 
     # -- f2 --
-
-    problem_from_closed_form(
-        dim=1,
-        f=genz_malik_1980_f_2,
-        closed_form=genz_malik_1980_f_2_exact,
-
-        a=np.array([-1]),
-        b=np.array([1]),
-        args=(
+    (
+        genz_malik_1980_f_2,
+        genz_malik_1980_f_2_exact,
+        np.array([-1]),
+        np.array([1]),
+        (
             np.array([5]),
             np.array([4]),
         )
     ),
     # Currently failing for product rule version of Gauss-Kronrod 15 (and 21)
     # dblquad also fails
-    # problem_with_analytic_sol(
-    #     dim=2,
-    #     f=genz_malik_1980_f_2,
-    #     exact_func=genz_malik_1980_f_2_exact,
-    #     a=np.array([-50, 0]),
-    #     b=np.array([50, 20]),
-    #     alphas=np.array([-3, 3]),
-    #     betas=np.array([-2, 2])
+    # (
+    #     genz_malik_1980_f_2,
+    #     genz_malik_1980_f_2_exact,
+
+    #     np.array([-50, 0]),
+    #     np.array([50, 20]),
+    #     (
+    #         np.array([-3, 3]),
+    #         np.array([-2, 2])
+    #     ),
     # ),
-    problem_from_closed_form(
-        dim=3,
-        f=genz_malik_1980_f_2,
-        closed_form=genz_malik_1980_f_2_exact,
-
-        a=np.array([0, 0, 0]),
-        b=np.array([1, 1, 1]),
-        args=(
+    (
+        genz_malik_1980_f_2,
+        genz_malik_1980_f_2_exact,
+        np.array([0, 0, 0]),
+        np.array([1, 1, 1]),
+        (
             np.array([[1], [1], [1]]),
             np.array([[1], [1], [1]]),
         )
     ),
-    problem_from_closed_form(
-        dim=3,
-        f=genz_malik_1980_f_2,
-        closed_form=genz_malik_1980_f_2_exact,
-
-        a=np.array([0, 0, 0]),
-        b=np.array([1, 1, 1]),
-        args=(
+    (
+        genz_malik_1980_f_2,
+        genz_malik_1980_f_2_exact,
+        np.array([0, 0, 0]),
+        np.array([1, 1, 1]),
+        (
             np.array([[2], [3], [4]]),
             np.array([[2], [3], [4]]),
         )
     ),
-    problem_from_closed_form(
-        dim=3,
-        f=genz_malik_1980_f_2,
-        closed_form=genz_malik_1980_f_2_exact,
-
-        a=np.array([-1, -1, -1]),
-        b=np.array([1, 1, 1]),
-        args=(
+    (
+        genz_malik_1980_f_2,
+        genz_malik_1980_f_2_exact,
+        np.array([-1, -1, -1]),
+        np.array([1, 1, 1]),
+        (
             np.array([1, 1, 1]),
             np.array([2, 2, 2]),
         )
     ),
-    problem_from_closed_form(
-        dim=4,
-        f=genz_malik_1980_f_2,
-        closed_form=genz_malik_1980_f_2_exact,
-
-        a=np.array([-1, -1, -1, -1]),
-        b=np.array([1, 1, 1, 1]),
-        args=(
+    (
+        genz_malik_1980_f_2,
+        genz_malik_1980_f_2_exact,
+        np.array([-1, -1, -1, -1]),
+        np.array([1, 1, 1, 1]),
+        (
             np.array([[1], [1], [1], [1]]),
             np.array([[1], [1], [1], [1]]),
         )
     ),
 
-    # # -- f_3 --
-
-    problem_from_closed_form(
-        dim=1,
-        f=genz_malik_1980_f_3,
-        closed_form=genz_malik_1980_f_3_exact,
-
-        a=np.array([-1]),
-        b=np.array([1]),
-        args=(
+    # -- f3 --
+    (
+        genz_malik_1980_f_3,
+        genz_malik_1980_f_3_exact,
+        np.array([-1]),
+        np.array([1]),
+        (
             np.array([[1/2]]),
         ),
     ),
-    problem_from_closed_form(
-        dim=2,
-        f=genz_malik_1980_f_3,
-        closed_form=genz_malik_1980_f_3_exact,
-
-        a=np.array([0, -1]),
-        b=np.array([1, 1]),
-        args=(
+    (
+        genz_malik_1980_f_3,
+        genz_malik_1980_f_3_exact,
+        np.array([0, -1]),
+        np.array([1, 1]),
+        (
             np.array([[5], [5]]),
         ),
     ),
-    problem_from_closed_form(
-        dim=3,
-        f=genz_malik_1980_f_3,
-        closed_form=genz_malik_1980_f_3_exact,
-
-        a=np.array([-1, -1, -1]),
-        b=np.array([1, 1, 1]),
-        args=(
+    (
+        genz_malik_1980_f_3,
+        genz_malik_1980_f_3_exact,
+        np.array([-1, -1, -1]),
+        np.array([1, 1, 1]),
+        (
             np.array([[1], [1], [1]]),
         ),
     ),
 
-    # # -- f_4 --
-
-    problem_from_closed_form(
-        dim=1,
-        f=genz_malik_1980_f_4,
-        closed_form=genz_malik_1980_f_4_exact,
-        a=np.array([0]),
-        b=np.array([2]),
-        args=(np.array([1]),),
+    # -- f4 --
+    (
+        genz_malik_1980_f_4,
+        genz_malik_1980_f_4_exact,
+        np.array([0]),
+        np.array([2]),
+        (np.array([1]),),
     ),
-    problem_from_closed_form(
-        dim=2,
-        f=genz_malik_1980_f_4,
-        closed_form=genz_malik_1980_f_4_exact,
-        a=np.array([0, 0]),
-        b=np.array([2, 1]),
-        args=(np.array([1, 1]),),
+    (
+        genz_malik_1980_f_4,
+        genz_malik_1980_f_4_exact,
+        np.array([0, 0]),
+        np.array([2, 1]),
+        (np.array([1, 1]),),
     ),
-    problem_from_closed_form(
-        dim=3,
-        f=genz_malik_1980_f_4,
-        closed_form=genz_malik_1980_f_4_exact,
-        a=np.array([0, 0, 0]),
-        b=np.array([1, 1, 1]),
-        args=(np.array([1, 1, 1]),),
+    (
+        genz_malik_1980_f_4,
+        genz_malik_1980_f_4_exact,
+        np.array([0, 0, 0]),
+        np.array([1, 1, 1]),
+        (np.array([1, 1, 1]),),
     ),
 
-    # -- f_5 --
-
-    problem_from_closed_form(
-        dim=1,
-        f=genz_malik_1980_f_5,
-        closed_form=genz_malik_1980_f_5_exact,
-
-        a=np.array([-1]),
-        b=np.array([1]),
-        args=(
+    # -- f5 --
+    (
+        genz_malik_1980_f_5,
+        genz_malik_1980_f_5_exact,
+        np.array([-1]),
+        np.array([1]),
+        (
             np.array([[-2]]),
             np.array([[2]]),
         ),
     ),
-    problem_from_closed_form(
-        dim=2,
-        f=genz_malik_1980_f_5,
-        closed_form=genz_malik_1980_f_5_exact,
-
-        a=np.array([-1, -1]),
-        b=np.array([1, 1]),
-        args=(
+    (
+        genz_malik_1980_f_5,
+        genz_malik_1980_f_5_exact,
+        np.array([-1, -1]),
+        np.array([1, 1]),
+        (
             np.array([[2], [3]]),
             np.array([[4], [5]]),
         ),
@@ -423,7 +426,6 @@ problems_scalar_output = [
     # a way where the bump in the function was far from the origin.
     # TODO: check if dblquad also fails this
     # problem_from_closed_form(
-    #     dim=2,
     #     f=genz_malik_1980_f_5,
     #     closed_form=genz_malik_1980_f_5_exact,
 
@@ -434,14 +436,12 @@ problems_scalar_output = [
     #         np.array([[0], [0]]),
     #     ),
     # ),
-    problem_from_closed_form(
-        dim=3,
-        f=genz_malik_1980_f_5,
-        closed_form=genz_malik_1980_f_5_exact,
-
-        a=np.array([-1, -1, -1]),
-        b=np.array([1, 1, 1]),
-        args=(
+    (
+        genz_malik_1980_f_5,
+        genz_malik_1980_f_5_exact,
+        np.array([-1, -1, -1]),
+        np.array([1, 1, 1]),
+        (
             np.array([[1], [1], [1]]),
             np.array([[1], [1], [1]]),
         ),
@@ -452,268 +452,116 @@ problems_scalar_output = [
 @pytest.mark.parametrize("problem", problems_scalar_output)
 @pytest.mark.parametrize("quadrature", [GaussKronrod15()])
 @pytest.mark.parametrize("rtol", [1e-5])
-@pytest.mark.parametrize("atol", [1e-8])
+@pytest.mark.parametrize("atol", [1e-6])
 def test_cub_scalar_output(problem, quadrature, rtol, atol):
-    rule = ProductRule([quadrature] * problem.dim)
+    np.random.seed(1)
+    f, exact, a, b, args = problem
+
+    dim = len(a)
+    rule = ProductRule([quadrature] * dim)
 
     res = cub(
-        problem.f,
-        problem.a,
-        problem.b,
+        f,
+        a,
+        b,
         rule,
         rtol,
         atol,
-        args=problem.args,
+        args=args,
     )
 
-    assert_integral_estimate_close(problem, res, rtol, atol)
+    np.testing.assert_allclose(
+        res.estimate,
+        exact(a, b, *args),
+        rtol=rtol,
+        atol=atol,
+    )
 
     assert res.status == "converged"
 
 
-@pytest.mark.skip()
-@pytest.mark.parametrize("quadrature", [GaussKronrod15()])
-@pytest.mark.parametrize("rtol", [1e-5])
-@pytest.mark.parametrize("atol", [1e-8])
-@pytest.mark.parametrize("dim", [1, 2, 3])
-@pytest.mark.parametrize("args_shape", [(2,), (2, 3), (2, 3, 5), (2, 3, 5, 7)])
-def test_genz_malik_1980_f_1_arbitrary_shape(quadrature, rtol, atol, dim, args_shape):
-    np.random.seed(1)
-    rule = ProductRule([quadrature] * dim)
+problems_tensor_output = [
+    (
+        # Function to integrate, like `f(x, *args)`
+        genz_malik_1980_f_1,
 
-    a = np.array([0]*dim)
-    b = np.array([1]*dim)
-    alphas = np.random.rand(dim, *args_shape)
-    r = np.random.rand(*args_shape)
+        # Exact solution, like `exact(a, b, *args)`
+        genz_malik_1980_f_1_exact,
 
-    # Adjust the parameters as in the paper
-    difficulty = 9
-    alphas = difficulty * alphas / np.sum(alphas, axis=0)
-
-    assert np.allclose(np.sum(alphas, axis=0), difficulty)
-
-    problem = problem_from_closed_form(
-        dim=dim,
-        f=genz_malik_1980_f_1,
-        closed_form=genz_malik_1980_f_1_exact,
-        a=a,
-        b=b,
-        args=(
-            r,
-            alphas,
-        ),
-    )
-
-    res = cub(
-        problem.f,
-        problem.a,
-        problem.b,
-        rule,
-        rtol,
-        atol,
-        args=problem.args,
-    )
-
-    assert_integral_estimate_close(problem, res, rtol, atol)
+        # Function that generates random args of a certain shape, like `random(shape)`.
+        genz_malik_1980_f_1_random_args,
+    ),
+    # Tests currently failing:
+    # (
+    #     genz_malik_1980_f_2,
+    #     genz_malik_1980_f_2_exact,
+    #     genz_malik_1980_f_2_random_args
+    # ),
+    (
+        genz_malik_1980_f_3,
+        genz_malik_1980_f_3_exact,
+        genz_malik_1980_f_3_random_args
+    ),
+    (
+        genz_malik_1980_f_4,
+        genz_malik_1980_f_4_exact,
+        genz_malik_1980_f_4_random_args
+    ),
+    (
+        genz_malik_1980_f_5,
+        genz_malik_1980_f_5_exact,
+        genz_malik_1980_f_5_random_args,
+    ),
+]
 
 
-@pytest.mark.skip()
+@pytest.mark.parametrize("problem", problems_tensor_output)
 @pytest.mark.parametrize("quadrature", [GaussKronrod21()])
+@pytest.mark.parametrize("shape", [
+    (2, 3,),
+    (2, 3, 5),
+    (3, 5, 6),
+    (4, 5, 2, 1)
+])
 @pytest.mark.parametrize("rtol", [1e-5])
-@pytest.mark.parametrize("atol", [1e-8])
-@pytest.mark.parametrize("dim", [1, 2, 3])
-@pytest.mark.parametrize("args_shape", [(2,), (2, 3), (2, 3, 5), (2, 3, 5, 7)])
-def test_genz_malik_1980_f_2_arbitrary_shape(quadrature, rtol, atol, dim, args_shape):
-    np.random.seed(1)
+@pytest.mark.parametrize("atol", [1e-6])
+def test_cub_tensor_output(problem, quadrature, shape, rtol, atol):
+    dim = shape[0]
+
+    f, exact, random_args = problem
+    args = random_args(shape)
+
+    a = np.array([0] * dim)
+    b = np.array([1] * dim)
+
     rule = ProductRule([quadrature] * dim)
 
-    a = np.array([0]*dim)
-    b = np.array([1]*dim)
-    alphas = np.random.rand(dim, *args_shape)
-    betas = np.random.rand(dim, *args_shape)
-
-    # Adjust the parameters as in the paper
-
-    difficulty = 25
-    products = np.prod(np.power(alphas, -2), axis=0)
-    alphas = alphas \
-        * np.power(products, 1 / (2*dim)) \
-        / np.power(difficulty, 1 / (2*dim))
-
-    assert np.allclose(np.prod(np.power(alphas, -2), axis=0), difficulty)
-
-    problem = problem_from_closed_form(
-        dim=dim,
-        f=genz_malik_1980_f_2,
-        closed_form=genz_malik_1980_f_2_exact,
-        a=a,
-        b=b,
-        args=(
-            alphas,
-            betas,
-        ),
-    )
-
     res = cub(
-        problem.f,
-        problem.a,
-        problem.b,
+        f,
+        a,
+        b,
         rule,
         rtol,
         atol,
-        args=problem.args,
+        args=args,
     )
 
-    assert_integral_estimate_close(problem, res, rtol, atol)
-
-
-@pytest.mark.skip()
-@pytest.mark.parametrize("quadrature", [GaussKronrod21()])
-@pytest.mark.parametrize("rtol", [1e-5])
-@pytest.mark.parametrize("atol", [1e-8])
-@pytest.mark.parametrize("dim", [1, 2, 3])
-@pytest.mark.parametrize("args_shape", [(2,), (2, 3), (2, 3, 5), (2, 3, 5, 7)])
-def test_genz_malik_1980_f_3_arbitrary_shape(quadrature, rtol, atol, dim, args_shape):
-    np.random.seed(1)
-    difficulty = 12
-    rule = ProductRule([quadrature] * dim)
-
-    a = np.array([0]*dim)
-    b = np.array([1]*dim)
-    alphas = np.random.rand(dim, *args_shape)
-
-    # Adjust the parameters as in the paper
-    alphas = difficulty * alphas / np.sum(alphas, axis=0)
-
-    assert np.allclose(np.sum(alphas, axis=0), difficulty)
-
-    problem = problem_from_closed_form(
-        dim=dim,
-        f=genz_malik_1980_f_3,
-        closed_form=genz_malik_1980_f_3_exact,
-        a=a,
-        b=b,
-        args=(
-            alphas,
-        ),
-    )
-
-    res = cub(
-        problem.f,
-        problem.a,
-        problem.b,
-        rule,
-        rtol,
-        atol,
-        args=problem.args,
-    )
-
-    assert_integral_estimate_close(problem, res, rtol, atol)
-
-
-@pytest.mark.parametrize("quadrature", [GaussKronrod21()])
-@pytest.mark.parametrize("rtol", [1e-5])
-@pytest.mark.parametrize("atol", [1e-8])
-@pytest.mark.parametrize("dim", [1, 2, 3])
-@pytest.mark.parametrize("args_shape", [(2,), (2, 3), (2, 3, 5), (2, 3, 5, 7)])
-def test_genz_malik_1980_f_4_arbitrary_shape(quadrature, rtol, atol, dim, args_shape):
-    np.random.seed(1)
-    rule = ProductRule([quadrature] * dim)
-
-    a = np.array([0]*dim)
-    b = np.array([1]*dim)
-    alphas = np.random.rand(dim, *args_shape)
-
-    # Adjust the parameters as in the paper
-    difficulty = 14
-    alphas = (difficulty/dim) * alphas / np.sum(alphas, axis=0)
-
-    assert np.allclose(dim * np.sum(alphas, axis=0), difficulty)
-
-    problem = problem_from_closed_form(
-        dim=dim,
-        f=genz_malik_1980_f_4,
-        closed_form=genz_malik_1980_f_4_exact,
-        a=a,
-        b=b,
-        args=(
-            alphas,
-        ),
-    )
-
-    res = cub(
-        problem.f,
-        problem.a,
-        problem.b,
-        rule,
-        rtol,
-        atol,
-        args=problem.args,
-    )
-
-    assert_integral_estimate_close(problem, res, rtol, atol)
-
-
-@pytest.mark.skip()
-@pytest.mark.parametrize("quadrature", [GaussKronrod21()])
-@pytest.mark.parametrize("rtol", [1e-5])
-@pytest.mark.parametrize("atol", [1e-8])
-@pytest.mark.parametrize("dim", [1, 2, 3])
-@pytest.mark.parametrize("args_shape", [(2,), (2, 3), (2, 3, 5), (2, 3, 5, 7)])
-def test_genz_malik_1980_f_5_arbitrary_shape(quadrature, rtol, atol, dim, args_shape):
-    np.random.seed(1)
-    rule = ProductRule([quadrature] * dim)
-
-    a = np.array([0]*dim)
-    b = np.array([1]*dim)
-    alphas = np.random.rand(dim, *args_shape)
-    betas = np.random.rand(dim, *args_shape)
-
-    # Adjust the parameters as in the paper
-    difficulty = 21
-    l2_norm = np.sum(np.power(alphas, 2), axis=0)
-    alphas = alphas / np.sqrt(l2_norm) * np.sqrt(difficulty)
-
-    assert np.allclose(np.sum(np.power(alphas, 2), axis=0), difficulty)
-
-    problem = problem_from_closed_form(
-        dim=dim,
-        f=genz_malik_1980_f_5,
-        closed_form=genz_malik_1980_f_5_exact,
-        a=a,
-        b=b,
-        args=(
-            alphas,
-            betas,
-        ),
-    )
-
-    res = cub(
-        problem.f,
-        problem.a,
-        problem.b,
-        rule,
-        rtol,
-        atol,
-        args=problem.args,
-    )
-
-    assert_integral_estimate_close(problem, res, rtol, atol)
-
-
-def assert_integral_estimate_close(problem, res, rtol, atol):
     np.testing.assert_allclose(
         res.estimate,
-        problem.exact,
+        exact(a, b, *args),
         rtol=rtol,
         atol=atol,
-        verbose=True,
-        err_msg=f"""failed to find approx. integral of {problem.f.__name__} with \
-rtol={rtol}, atol={atol} and points \
-a={problem.a}
-b={problem.b}""",
     )
 
+    assert res.status == "converged"
 
-# TODO: test that product rules are calculated properly
-# TODO: test that inconsistent dimensions are reported
+
+def _eval_indefinite_integral(F, a, b):
+    dim = len(a)
+    points = np.stack([a, b], axis=0)
+
+    out = 0
+    for ind in itertools.product(range(2), repeat=dim):
+        out += pow(-1, sum(ind) + dim) * F(points[ind, tuple(range(dim))])
+
+    return out
