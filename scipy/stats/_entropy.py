@@ -361,7 +361,9 @@ def differential_entropy(
     if base is not None:
         res /= math.log(base)
 
-    return res
+    # avoid dtype changes due to data-apis/array-api-compat#152
+    # can be removed when data-apis/array-api-compat#152 is resolved
+    return xp.astype(res, values.dtype)
 
 
 def _pad_along_last_axis(X, m, *, xp):
