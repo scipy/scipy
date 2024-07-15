@@ -549,10 +549,10 @@ def test_shape_consistency(solver, n):
     vals2 = vals[:, np.newaxis]
     for rhs in [vals, 0. * vals, vals2, 0. * vals2]:
         for x0 in [vals, vals2]:
-            sol = solver(mat, rhs)
-            assert_array_equal(sol.shape, rhs.shape)
-            sol = solver(mat, rhs, x0)
-            assert_array_equal(sol.shape, x0.shape)
+            sol, _ = solver(mat, rhs)
+            assert_array_equal(np.shape(sol), np.shape(rhs))
+            sol, _ = solver(mat, rhs, x0)
+            assert_array_equal(np.shape(sol), np.shape(x0))
 
 
 # Specific tfqmr test
