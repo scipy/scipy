@@ -107,9 +107,9 @@ class _Interpolator1D:
     def _reshape_yi(self, yi, check=False):
         yi = np.moveaxis(np.asarray(yi), self._y_axis, 0)
         if check and yi.shape[1:] != self._y_extra_shape:
-            ok_shape = "{!r} + (N,) + {!r}".format(self._y_extra_shape[-self._y_axis:],
-                                                   self._y_extra_shape[:-self._y_axis])
-            raise ValueError("Data must be of shape %s" % ok_shape)
+            ok_shape = (f"{self._y_extra_shape[-self._y_axis:]!r} + (N,) + "
+                        f"{self._y_extra_shape[:-self._y_axis]!r}")
+            raise ValueError(f"Data must be of shape {ok_shape}")
         return yi.reshape((yi.shape[0], -1))
 
     def _set_yi(self, yi, xi=None, axis=None):
@@ -565,7 +565,7 @@ class BarycentricInterpolator(_Interpolator1DWithDerivatives):
         This allows for the reuse of the weights `wi` if several interpolants
         are being calculated using the same nodes `xi`, without re-computation.
     random_state : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
-        If `seed` is None (or `np.random`), the `numpy.random.RandomState`
+        If `seed` is None (or `numpy.random`), the `numpy.random.RandomState`
         singleton is used.
         If `seed` is an int, a new ``RandomState`` instance is used,
         seeded with `seed`.
@@ -617,7 +617,7 @@ class BarycentricInterpolator(_Interpolator1DWithDerivatives):
     >>> axs[0].legend(axs[0].get_lines()[::-1], labels, bbox_to_anchor=(0., 1.02, 1., .102),
     ...               loc='lower left', ncols=3, mode="expand", borderaxespad=0., frameon=False)
     >>> plt.show()
-    """
+    """ # numpy/numpydoc#87  # noqa: E501
 
     def __init__(self, xi, yi=None, axis=0, *, wi=None, random_state=None):
         super().__init__(xi, yi, axis)
@@ -701,6 +701,13 @@ class BarycentricInterpolator(_Interpolator1DWithDerivatives):
             If `yi` is not given, the y values will be supplied later. `yi`
             should be given if and only if the interpolator has y values
             specified.
+
+        Notes
+        -----
+        The new points added by `add_xi` are not randomly permuted
+        so there is potential for numerical instability,
+        especially for a large number of points. If this
+        happens, please reconstruct interpolation from scratch instead.
         """
         if yi is not None:
             if self.yi is None:

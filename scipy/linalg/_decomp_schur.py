@@ -1,5 +1,5 @@
 """Schur decomposition functions."""
-import numpy
+import numpy as np
 from numpy import asarray_chkfinite, single, asarray, array
 from numpy.linalg import norm
 
@@ -42,6 +42,9 @@ def schur(a, output='real', lwork=None, overwrite_a=False, sort=None,
         Specifies whether the upper eigenvalues should be sorted. A callable
         may be passed that, given a eigenvalue, returns a boolean denoting
         whether the eigenvalue should be sorted to the top-left (True).
+        If output='real', the callable should have two arguments, the first
+        one being the real part of the eigenvalue, the second one being
+        the imaginary part.
         Alternatively, string parameters may be used::
 
             'lhp'   Left-hand plane (x.real < 0.0)
@@ -100,11 +103,11 @@ def schur(a, output='real', lwork=None, overwrite_a=False, sort=None,
 
     >>> T2, Z2 = schur(A, output='complex')
     >>> T2
-    array([[ 2.65896708, -1.22839825+1.32378589j,  0.42590089+1.51937378j],
+    array([[ 2.65896708, -1.22839825+1.32378589j,  0.42590089+1.51937378j], # may vary
            [ 0.        , -0.32948354+0.80225456j, -0.59877807+0.56192146j],
            [ 0.        ,  0.                    , -0.32948354-0.80225456j]])
     >>> eigvals(T2)
-    array([2.65896708, -0.32948354+0.80225456j, -0.32948354-0.80225456j])
+    array([2.65896708, -0.32948354+0.80225456j, -0.32948354-0.80225456j])   # may vary
 
     An arbitrary custom eig-sorting condition, having positive imaginary part,
     which is satisfied by only one eigenvalue
@@ -120,22 +123,34 @@ def schur(a, output='real', lwork=None, overwrite_a=False, sort=None,
         a1 = asarray_chkfinite(a)
     else:
         a1 = asarray(a)
+    if np.issubdtype(a1.dtype, np.integer):
+        a1 = asarray(a, dtype=np.dtype("long"))
     if len(a1.shape) != 2 or (a1.shape[0] != a1.shape[1]):
         raise ValueError('expected square matrix')
+
     typ = a1.dtype.char
     if output in ['complex', 'c'] and typ not in ['F', 'D']:
         if typ in _double_precision:
             a1 = a1.astype('D')
-            typ = 'D'
         else:
             a1 = a1.astype('F')
-            typ = 'F'
+
+    # accommodate empty matrix
+    if a1.size == 0:
+        t0, z0 = schur(np.eye(2, dtype=a1.dtype))
+        if sort is None:
+            return (np.empty_like(a1, dtype=t0.dtype),
+                    np.empty_like(a1, dtype=z0.dtype))
+        else:
+            return (np.empty_like(a1, dtype=t0.dtype),
+                    np.empty_like(a1, dtype=z0.dtype), 0)
+
     overwrite_a = overwrite_a or (_datacopied(a1, a))
     gees, = get_lapack_funcs(('gees',), (a1,))
     if lwork is None or lwork == -1:
         # get optimal work array
         result = gees(lambda x: None, a1, lwork=-1)
-        lwork = result[-2][0].real.astype(numpy.int_)
+        lwork = result[-2][0].real.astype(np.int_)
 
     if sort is None:
         sort_t = 0
@@ -166,8 +181,7 @@ def schur(a, output='real', lwork=None, overwrite_a=False, sort=None,
 
     info = result[-1]
     if info < 0:
-        raise ValueError('illegal value in {}-th argument of internal gees'
-                         ''.format(-info))
+        raise ValueError(f'illegal value in {-info}-th argument of internal gees')
     elif info == a1.shape[0] + 1:
         raise LinAlgError('Eigenvalues could not be separated for reordering.')
     elif info == a1.shape[0] + 2:
@@ -175,14 +189,14 @@ def schur(a, output='real', lwork=None, overwrite_a=False, sort=None,
     elif info > 0:
         raise LinAlgError("Schur form not found. Possibly ill-conditioned.")
 
-    if sort_t == 0:
+    if sort is None:
         return result[0], result[-3]
     else:
         return result[0], result[-3], result[1]
 
 
-eps = numpy.finfo(float).eps
-feps = numpy.finfo(single).eps
+eps = np.finfo(float).eps
+feps = np.finfo(single).eps
 
 _array_kind = {'b': 0, 'h': 0, 'B': 0, 'i': 0, 'l': 0,
                'f': 0, 'd': 0, 'F': 1, 'D': 1}
@@ -274,11 +288,11 @@ def rsf2csf(T, Z, check_finite=True):
 
     for ind, X in enumerate([Z, T]):
         if X.ndim != 2 or X.shape[0] != X.shape[1]:
-            raise ValueError("Input '{}' must be square.".format('ZT'[ind]))
+            raise ValueError(f"Input '{'ZT'[ind]}' must be square.")
 
     if T.shape[0] != Z.shape[0]:
-        raise ValueError("Input array shapes must match: Z: {} vs. T: {}"
-                         "".format(Z.shape, T.shape))
+        message = f"Input array shapes must match: Z: {Z.shape} vs. T: {T.shape}"
+        raise ValueError(message)
     N = T.shape[0]
     t = _commonType(Z, T, array([3.0], 'F'))
     Z, T = _castCopy(t, Z, T)

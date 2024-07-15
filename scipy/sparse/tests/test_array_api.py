@@ -3,7 +3,6 @@ import numpy as np
 import numpy.testing as npt
 import scipy.sparse
 import scipy.sparse.linalg as spla
-from scipy._lib._util import VisibleDeprecationWarning
 
 
 sparray_types = ('bsr', 'coo', 'csc', 'csr', 'dia', 'dok', 'lil')
@@ -88,22 +87,21 @@ def test_indexing(A):
     if A.__class__.__name__[:3] in ('dia', 'coo', 'bsr'):
         return
 
-    with pytest.raises(NotImplementedError):
-        A[1, :]
+    all_res = (
+        A[1, :],
+        A[:, 1],
+        A[1, [1, 2]],
+        A[[1, 2], 1],
+        A[[0]],
+        A[:, [1, 2]],
+        A[[1, 2], :],
+        A[1, [[1, 2]]],
+        A[[[1, 2]], 1],
+    )
 
-    with pytest.raises(NotImplementedError):
-        A[:, 1]
-
-    with pytest.raises(NotImplementedError):
-        A[1, [1, 2]]
-
-    with pytest.raises(NotImplementedError):
-        A[[1, 2], 1]
-
-    assert isinstance(A[[0]], scipy.sparse.sparray), "Expected sparse array, got sparse matrix"
-    assert isinstance(A[1, [[1, 2]]], scipy.sparse.sparray), "Expected ndarray, got sparse array"
-    assert isinstance(A[[[1, 2]], 1], scipy.sparse.sparray), "Expected ndarray, got sparse array"
-    assert isinstance(A[:, [1, 2]], scipy.sparse.sparray), "Expected sparse array, got something else"
+    for res in all_res:
+        assert isinstance(res, scipy.sparse.sparray), \
+            f"Expected sparse array, got {res._class__.__name__}"
 
 
 @parametrize_sparrays
@@ -140,10 +138,16 @@ def test_matmul(A):
     assert np.all((A @ A.T).todense() == A.dot(A.T).todense())
 
 
-@parametrize_square_sparrays
-def test_pow(B):
-    assert isinstance((B**0), scipy.sparse.sparray), "Expected array, got matrix"
-    assert isinstance((B**2), scipy.sparse.sparray), "Expected array, got matrix"
+@parametrize_sparrays
+def test_power_operator(A):
+    assert isinstance((A**2), scipy.sparse.sparray), "Expected array, got matrix"
+
+    # https://github.com/scipy/scipy/issues/15948
+    npt.assert_equal((A**2).todense(), (A.todense())**2)
+
+    # power of zero is all ones (dense) so helpful msg exception
+    with pytest.raises(NotImplementedError, match="zero power"):
+        A**0
 
 
 @parametrize_sparrays
@@ -162,13 +166,13 @@ def test_dense_divide(A):
 
 @parametrize_sparrays
 def test_no_A_attr(A):
-    with pytest.warns(VisibleDeprecationWarning):
+    with pytest.raises(AttributeError):
         A.A
 
 
 @parametrize_sparrays
 def test_no_H_attr(A):
-    with pytest.warns(VisibleDeprecationWarning):
+    with pytest.raises(AttributeError):
         A.H
 
 
@@ -247,13 +251,18 @@ def test_spsolve(B):
     )
 
 
-def test_spsolve_triangular():
-    X = scipy.sparse.csr_array([
+@pytest.mark.parametrize("fmt",["csr","csc"])
+def test_spsolve_triangular(fmt):
+    arr = [
         [1, 0, 0, 0],
         [2, 1, 0, 0],
         [3, 2, 1, 0],
         [4, 3, 2, 1],
-    ])
+    ]
+    if fmt == "csr":
+      X = scipy.sparse.csr_array(arr)
+    else:
+      X = scipy.sparse.csc_array(arr)
     spla.spsolve_triangular(X, [1, 2, 3, 4])
 
 
@@ -352,12 +361,6 @@ def test_spilu():
         np.asarray([1, 0, 0, 0], dtype=np.float64),
         rtol=1e-14, atol=3e-16
     )
-
-
-@parametrize_sparrays
-def test_power_operator(A):
-    # https://github.com/scipy/scipy/issues/15948
-    npt.assert_equal((A**2).todense(), (A.todense())**2)
 
 
 @pytest.mark.parametrize(

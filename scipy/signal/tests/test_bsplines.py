@@ -2,11 +2,11 @@
 import numpy as np
 from numpy import array
 from numpy.testing import (assert_allclose, assert_array_equal,
-                           assert_almost_equal, suppress_warnings)
+                           assert_almost_equal)
 import pytest
 from pytest import raises
 
-import scipy.signal._bsplines as bsp
+import scipy.signal._spline_filters as bsp
 from scipy import signal
 
 
@@ -65,26 +65,45 @@ class TestBSplines:
         assert_allclose(bsp.spline_filter(data_array_real, 0),
                         result_array_real)
 
-    def test_bspline(self):
-        # Verify with theoretical results at integer points up to order 5
-        with suppress_warnings() as sup:
-            sup.filter(DeprecationWarning)
-            assert_allclose(bsp.bspline([-1, 0, 1], 0),
-                            array([0, 1, 0]))
-            assert_allclose(bsp.bspline([-1, 0, 1], 1),
-                            array([0, 1, 0]))
-            assert_allclose(bsp.bspline([-2, -1, 0, 1, 2], 2),
-                            array([0, 1, 6, 1, 0])/8.)
-            assert_allclose(bsp.bspline([-2, -1, 0, 1, 2], 3),
-                            array([0, 1, 4, 1, 0])/6.)
-            assert_allclose(bsp.bspline([-3, -2, -1, 0, 1, 2, 3], 4),
-                            array([0, 1, 76, 230, 76, 1, 0])/384.)
-            assert_allclose(bsp.bspline([-3, -2, -1, 0, 1, 2, 3], 5),
-                            array([0, 1, 26, 66, 26, 1, 0]) / 120.)
-            # Compare with SciPy 1.1.0
-            np.random.seed(12458)
-            assert_allclose(bsp.bspline(np.random.rand(1, 1), 2),
-                            array([[0.73694695]]))
+    def test_spline_filter_complex(self):
+        np.random.seed(12457)
+        data_array_complex = np.random.rand(7, 7) + np.random.rand(7, 7)*1j
+        # make the magnitude exceed 1, and make some negative
+        data_array_complex = 10*(1+1j-2*data_array_complex)
+        result_array_complex = array(
+            [[-4.61489230e-01-1.92994022j, 8.33332443+6.25519943j,
+              6.96300745e-01-9.05576038j, 5.28294849+3.97541356j,
+              5.92165565+7.68240595j, 6.59493160-1.04542804j,
+              9.84503460-5.85946894j],
+             [-8.78262329-8.4295969j, 7.20675516+5.47528982j,
+              -8.17223072+2.06330729j, -4.38633347-8.65968037j,
+              9.89916801-8.91720295j, 2.67755103+8.8706522j,
+              6.24192142+3.76879835j],
+             [-3.15627527+2.56303072j, 9.87658501-0.82838702j,
+              -9.96930313+8.72288895j, 3.17193985+6.42474651j,
+              -4.50919819-6.84576082j, 5.75423431+9.94723988j,
+              9.65979767+6.90665293j],
+             [-8.28993416-6.61064005j, 9.71416473e-01-9.44907284j,
+              -2.38331890+9.25196648j, -7.08868170-0.77403212j,
+              4.89887714+7.05371094j, -1.37062311-2.73505688j,
+              7.70705748+2.5395329j],
+             [2.51528406-1.82964492j, 3.65885472+2.95454836j,
+              5.16786575-1.66362023j, -8.77737999e-03+5.72478867j,
+              4.10533333-3.10287571j, 9.04761887+1.54017115j,
+              -5.77960968e-01-7.87758923j],
+             [9.86398506-3.98528528j, -4.71444130-2.44316983j,
+              -1.68038976-1.12708664j, 2.84695053+1.01725709j,
+              1.14315915-8.89294529j, -3.17127085-5.42145538j,
+              1.91830420-6.16370344j],
+             [7.13875294+2.91851187j, -5.35737514+9.64132309j,
+              -9.66586399+0.70250005j, -9.87717438-2.0262239j,
+              9.93160629+1.5630846j, 4.71948051-2.22050714j,
+              9.49550819+7.8995142j]])
+        # FIXME: for complex types, the computations are done in
+        # single precision (reason unclear). When this is changed,
+        # this test needs updating.
+        assert_allclose(bsp.spline_filter(data_array_complex, 0),
+                        result_array_complex, rtol=1e-6)
 
     def test_gauss_spline(self):
         np.random.seed(12459)
@@ -96,22 +115,6 @@ class TestBSplines:
         knots = [-1.0, 0.0, -1.0]
         assert_almost_equal(bsp.gauss_spline(knots, 3),
                             array([0.15418033, 0.6909883, 0.15418033]))
-
-    def test_cubic(self):
-        with suppress_warnings() as sup:
-            sup.filter(DeprecationWarning)
-            np.random.seed(12460)
-            # Verify with theoretical results at integer points (see docstring)
-            assert_allclose(bsp.cubic([-2, -1, 0, 1, 2]),
-                            array([0, 1, 4, 1, 0])/6.)
-
-    def test_quadratic(self):
-        np.random.seed(12461)
-        with suppress_warnings() as sup:
-            sup.filter(DeprecationWarning)
-            # Verify correct results at integer points
-            assert_allclose(bsp.quadratic([-2, -1, 0, 1, 2]),
-                            array([0, 1, 6, 1, 0])/8.)
 
     def test_cspline1d(self):
         np.random.seed(12462)
@@ -181,34 +184,129 @@ class TestBSplines:
         assert_allclose(bsp.qspline1d_eval(cj, newx, dx=dx, x0=x[0]), newy)
 
 
-def test_sepfir2d_invalid_filter():
-    filt = np.array([1.0, 2.0, 4.0, 2.0, 1.0])
-    image = np.random.rand(7, 9)
-    # No error for odd lengths
-    signal.sepfir2d(image, filt, filt[2:])
+# i/o dtypes with scipy 1.9.1, likely fixed by backwards compat
+sepfir_dtype_map = {np.uint8: np.float32, int: np.float64,
+                    np.float32: np.float32, float: float,
+                    np.complex64: np.complex64, complex: complex}
 
-    # Row or column filter must be odd
-    with pytest.raises(ValueError, match="odd length"):
-        signal.sepfir2d(image, filt, filt[1:])
-    with pytest.raises(ValueError, match="odd length"):
-        signal.sepfir2d(image, filt[1:], filt)
+class TestSepfir2d:
+    def test_sepfir2d_invalid_filter(self):
+        filt = np.array([1.0, 2.0, 4.0, 2.0, 1.0])
+        image = np.random.rand(7, 9)
+        # No error for odd lengths
+        signal.sepfir2d(image, filt, filt[2:])
 
-    # Filters must be 1-dimensional
-    with pytest.raises(ValueError, match="object too deep"):
-        signal.sepfir2d(image, filt.reshape(1, -1), filt)
-    with pytest.raises(ValueError, match="object too deep"):
-        signal.sepfir2d(image, filt, filt.reshape(1, -1))
+        # Row or column filter must be odd
+        with pytest.raises(ValueError, match="odd length"):
+            signal.sepfir2d(image, filt, filt[1:])
+        with pytest.raises(ValueError, match="odd length"):
+            signal.sepfir2d(image, filt[1:], filt)
 
-def test_sepfir2d_invalid_image():
-    filt = np.array([1.0, 2.0, 4.0, 2.0, 1.0])
-    image = np.random.rand(8, 8)
+        # Filters must be 1-dimensional
+        with pytest.raises(ValueError, match="object too deep"):
+            signal.sepfir2d(image, filt.reshape(1, -1), filt)
+        with pytest.raises(ValueError, match="object too deep"):
+            signal.sepfir2d(image, filt, filt.reshape(1, -1))
 
-    # Image must be 2 dimensional
-    with pytest.raises(ValueError, match="object too deep"):
-        signal.sepfir2d(image.reshape(4, 4, 4), filt, filt)
+    def test_sepfir2d_invalid_image(self):
+        filt = np.array([1.0, 2.0, 4.0, 2.0, 1.0])
+        image = np.random.rand(8, 8)
 
-    with pytest.raises(ValueError, match="object of too small depth"):
-        signal.sepfir2d(image[0], filt, filt)
+        # Image must be 2 dimensional
+        with pytest.raises(ValueError, match="object too deep"):
+            signal.sepfir2d(image.reshape(4, 4, 4), filt, filt)
+
+        with pytest.raises(ValueError, match="object of too small depth"):
+            signal.sepfir2d(image[0], filt, filt)
+
+    @pytest.mark.parametrize('dtyp',
+        [np.uint8, int, np.float32, float, np.complex64, complex]
+    )
+    def test_simple(self, dtyp):
+        # test values on a paper-and-pencil example
+        a = np.array([[1, 2, 3, 3, 2, 1],
+                      [1, 2, 3, 3, 2, 1],
+                      [1, 2, 3, 3, 2, 1],
+                      [1, 2, 3, 3, 2, 1]], dtype=dtyp)
+        h1 = [0.5, 1, 0.5]
+        h2 = [1]
+        result = signal.sepfir2d(a, h1, h2)
+        expected = array([[2.5, 4. , 5.5, 5.5, 4. , 2.5],
+                          [2.5, 4. , 5.5, 5.5, 4. , 2.5],
+                          [2.5, 4. , 5.5, 5.5, 4. , 2.5],
+                          [2.5, 4. , 5.5, 5.5, 4. , 2.5]])
+
+        assert_allclose(result, expected, atol=1e-16)
+        assert result.dtype == sepfir_dtype_map[dtyp]
+
+        result = signal.sepfir2d(a, h2, h1)
+        expected = array([[2., 4., 6., 6., 4., 2.],
+                          [2., 4., 6., 6., 4., 2.],
+                          [2., 4., 6., 6., 4., 2.],
+                          [2., 4., 6., 6., 4., 2.]])
+        assert_allclose(result, expected, atol=1e-16)
+        assert result.dtype == sepfir_dtype_map[dtyp]
+
+    @pytest.mark.parametrize('dtyp',
+        [np.uint8, int, np.float32, float, np.complex64, complex]
+    )
+    def test_strided(self, dtyp):
+        a = np.array([[1, 2, 3, 3, 2, 1, 1, 2, 3],
+                     [1, 2, 3, 3, 2, 1, 1, 2, 3],
+                     [1, 2, 3, 3, 2, 1, 1, 2, 3],
+                     [1, 2, 3, 3, 2, 1, 1, 2, 3]])
+        h1, h2 = [0.5, 1, 0.5], [1]
+        result_strided = signal.sepfir2d(a[:, ::2], h1, h2)
+        result_contig = signal.sepfir2d(a[:, ::2].copy(), h1, h2)
+        assert_allclose(result_strided, result_contig, atol=1e-15)
+        assert result_strided.dtype == result_contig.dtype
+
+    @pytest.mark.xfail(reason="XXX: filt.size > image.shape: flaky")
+    def test_sepfir2d_strided_2(self):
+        # XXX: this test is flaky: fails on some reruns, with
+        # result[0, 1] and result[1, 1] being ~1e+224.
+        np.random.seed(1234)
+        filt = np.array([1.0, 2.0, 4.0, 2.0, 1.0, 3.0, 2.0])
+        image = np.random.rand(4, 4)
+
+        expected = np.array([[36.018162, 30.239061, 38.71187 , 43.878183],
+                             [38.180999, 35.824583, 43.525247, 43.874945],
+                             [43.269533, 40.834018, 46.757772, 44.276423],
+                             [49.120928, 39.681844, 43.596067, 45.085854]])
+        assert_allclose(signal.sepfir2d(image, filt, filt[::3]), expected)
+
+    @pytest.mark.xfail(reason="XXX: flaky. pointers OOB on some platforms")
+    @pytest.mark.parametrize('dtyp',
+        [np.uint8, int, np.float32, float, np.complex64, complex]
+    )
+    def test_sepfir2d_strided_3(self, dtyp):
+        # NB: 'image' and 'filt' dtypes match here. Otherwise we can run into
+        # unsafe casting errors for many combinations. Historically, dtype handling
+        # in `sepfir2d` is a tad baroque; fixing it is an enhancement.
+        filt = np.array([1, 2, 4, 2, 1, 3, 2], dtype=dtyp)
+        image = np.array([[0, 3, 0, 1, 2],
+                          [2, 2, 3, 3, 3],
+                          [0, 1, 3, 0, 3],
+                          [2, 3, 0, 1, 3],
+                          [3, 3, 2, 1, 2]], dtype=dtyp)
+
+        expected = array([[123., 101.,  91., 136., 127.],
+             [133., 125., 126., 152., 160.],
+             [136., 137., 150., 162., 177.],
+             [133., 124., 132., 148., 147.],
+             [173., 158., 152., 164., 141.]])
+        result = signal.sepfir2d(image, filt, filt[::3])
+        assert_allclose(result, expected, atol=1e-15)
+        assert result.dtype == sepfir_dtype_map[dtyp]
+
+        expected = array([[22., 35., 41., 31., 47.],
+             [27., 39., 48., 47., 55.],
+             [33., 42., 49., 53., 59.],
+             [39., 44., 41., 36., 48.],
+             [67., 62., 47., 34., 46.]])
+        result = signal.sepfir2d(image, filt[::3], filt[::3])
+        assert_allclose(result, expected, atol=1e-15)
+        assert result.dtype == sepfir_dtype_map[dtyp]
 
 
 def test_cspline2d():

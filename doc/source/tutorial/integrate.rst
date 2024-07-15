@@ -48,8 +48,8 @@ function, method, or class instance). Notice the use of a lambda-
 function in this case as the argument. The next two arguments are the
 limits of integration. The return value is a tuple, with the first
 element holding the estimated value of the integral and the second
-element holding an upper bound on the error. Notice, that in this
-case, the true value of this integral is
+element holding an estimate of the absolute integration error. 
+Notice, that in this case, the true value of this integral is
 
 .. math::
 
@@ -63,7 +63,7 @@ where
 
 is the Fresnel sine integral. Note that the numerically-computed integral is
 within :math:`1.04\times10^{-11}` of the exact result --- well below the
-reported error bound.
+reported error estimate.
 
 
 If the function to integrate takes additional parameters, they can be provided
@@ -265,23 +265,12 @@ which is the same result as before.
 Gaussian quadrature
 -------------------
 
-A few functions are also provided in order to perform simple Gaussian
-quadrature over a fixed interval. The first is :obj:`fixed_quad`, which
-performs fixed-order Gaussian quadrature. The second function is
-:obj:`quadrature`, which performs Gaussian quadrature of multiple
-orders until the difference in the integral estimate is beneath some
-tolerance supplied by the user. These functions both use the module
-``scipy.special.orthogonal``, which can calculate the roots and quadrature
-weights of a large variety of orthogonal polynomials (the polynomials
-themselves are available as special functions returning instances of
-the polynomial class --- e.g., :obj:`special.legendre <scipy.special.legendre>`).
-
-
-Romberg Integration
--------------------
-
-Romberg's method [WPR]_ is another method for numerically evaluating an
-integral. See the help function for :func:`romberg` for further details.
+:obj:`fixed_quad` performs fixed-order Gaussian quadrature over a fixed interval. This
+function uses the collection of orthogonal polynomials provided by ``scipy.special``,
+which can calculate the roots and quadrature weights of a large variety of orthogonal
+polynomials (the polynomials themselves are available as special functions returning
+instances of the polynomial class --- e.g.,
+:obj:`special.legendre <scipy.special.legendre>`).
 
 
 Integrating using Samples
@@ -317,7 +306,7 @@ of order 2 or less.
 >>> x = np.array([1,3,4])
 >>> y1 = f1(x)
 >>> from scipy import integrate
->>> I1 = integrate.simpson(y1, x)
+>>> I1 = integrate.simpson(y1, x=x)
 >>> print(I1)
 21.0
 
@@ -331,7 +320,7 @@ This corresponds exactly to
 whereas integrating the second function
 
 >>> y2 = f2(x)
->>> I2 = integrate.simpson(y2, x)
+>>> I2 = integrate.simpson(y2, x=x)
 >>> print(I2)
 61.5
 
@@ -477,7 +466,7 @@ has an exact solution using the matrix exponential:
 However, in this case, :math:`\mathbf{A}\left(t\right)` and its integral do not commute.
 
 This differential equation can be solved using the function :obj:`solve_ivp`.
-It requires the derivative, *fprime*, the time span `[t_start, t_end]`
+It requires the derivative, *fprime*, the time span ``[t_start, t_end]``
 and the initial conditions vector, *y0*, as input arguments and returns
 an object whose *y* field is an array with consecutive solution values as
 columns. The initial conditions are therefore given in the first output column.
@@ -786,7 +775,5 @@ Let's ensure that they have computed the same result::
 
 References
 ~~~~~~~~~~
-
-.. [WPR] https://en.wikipedia.org/wiki/Romberg's_method
 
 .. [MOL] https://en.wikipedia.org/wiki/Method_of_lines

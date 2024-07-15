@@ -88,14 +88,16 @@ class _BenchOptimizers(Benchmark):
             return
         print("")
         print("=========================================================")
-        print("Optimizer benchmark: %s" % (self.function_name))
-        print("dimensions: %d, extra kwargs: %s" % (results[0].ndim, str(self.minimizer_kwargs)))
+        print(f"Optimizer benchmark: {self.function_name}")
+        print("dimensions: %d, extra kwargs: %s" %
+              (results[0].ndim, str(self.minimizer_kwargs)))
         print("averaged over %d starting configurations" % (results[0].ntrials))
         print("  Optimizer    nfail   nfev    njev    nhev    time")
         print("---------------------------------------------------------")
         for res in results:
             print("%11s  | %4d  | %4d  | %4d  | %4d  | %.6g" %
-                  (res.name, res.nfail, res.mean_nfev, res.mean_njev, res.mean_nhev, res.mean_time))
+                  (res.name, res.nfail, res.mean_nfev,
+                   res.mean_njev, res.mean_nhev, res.mean_time))
 
     def average_results(self):
         """group the results by minimizer and average over the runs"""
@@ -271,8 +273,8 @@ class _BenchOptimizers(Benchmark):
 
         # L-BFGS-B, BFGS, trust-constr, SLSQP can use gradients, but examine
         # performance when numerical differentiation is used.
-        fonly_methods = ["COBYLA", 'Powell', 'nelder-mead', 'L-BFGS-B', 'BFGS',
-                         'trust-constr', 'SLSQP']
+        fonly_methods = ["COBYLA", 'COBYQA', 'Powell', 'nelder-mead',
+                         'L-BFGS-B', 'BFGS', 'trust-constr', 'SLSQP']
         for method in fonly_methods:
             if method not in methods:
                 continue
@@ -314,7 +316,7 @@ class BenchSmoothUnbounded(Benchmark):
         ['rosenbrock_slow', 'rosenbrock_nograd', 'rosenbrock', 'rosenbrock_tight',
          'simple_quadratic', 'asymmetric_quadratic',
          'sin_1d', 'booth', 'beale', 'LJ'],
-        ["COBYLA", 'Powell', 'nelder-mead',
+        ["COBYLA", 'COBYQA', 'Powell', 'nelder-mead',
          'L-BFGS-B', 'BFGS', 'CG', 'TNC', 'SLSQP',
          "Newton-CG", 'dogleg', 'trust-ncg', 'trust-exact',
          'trust-krylov', 'trust-constr'],
@@ -370,7 +372,8 @@ class BenchSmoothUnbounded(Benchmark):
 
     def run_simple_quadratic(self, methods=None):
         s = funcs.SimpleQuadratic()
-        #    print "checking gradient", scipy.optimize.check_grad(s.fun, s.der, np.array([1.1, -2.3]))
+        #    print "checking gradient",
+        #    scipy.optimize.check_grad(s.fun, s.der, np.array([1.1, -2.3]))
         b = _BenchOptimizers("simple quadratic function",
                              fun=s.fun, der=s.der, hess=s.hess)
         for i in range(10):
@@ -379,7 +382,8 @@ class BenchSmoothUnbounded(Benchmark):
 
     def run_asymmetric_quadratic(self, methods=None):
         s = funcs.AsymmetricQuadratic()
-        #    print "checking gradient", scipy.optimize.check_grad(s.fun, s.der, np.array([1.1, -2.3]))
+        #    print "checking gradient",
+        #    scipy.optimize.check_grad(s.fun, s.der, np.array([1.1, -2.3]))
         b = _BenchOptimizers("function sum(x**2) + x[0]",
                              fun=s.fun, der=s.der, hess=s.hess)
         for i in range(10):
@@ -387,8 +391,12 @@ class BenchSmoothUnbounded(Benchmark):
         return b
 
     def run_sin_1d(self, methods=None):
-        fun = lambda x: np.sin(x[0])
-        der = lambda x: np.array([np.cos(x[0])])
+        def fun(x):
+            return np.sin(x[0])
+
+        def der(x):
+            return np.array([np.cos(x[0])])
+
         b = _BenchOptimizers("1d sin function",
                              fun=fun, der=der, hess=None)
         for i in range(10):
@@ -397,7 +405,8 @@ class BenchSmoothUnbounded(Benchmark):
 
     def run_booth(self, methods=None):
         s = funcs.Booth()
-        #    print "checking gradient", scipy.optimize.check_grad(s.fun, s.der, np.array([1.1, -2.3]))
+        #    print "checking gradient",
+        #    scipy.optimize.check_grad(s.fun, s.der, np.array([1.1, -2.3]))
         b = _BenchOptimizers("Booth's function",
                              fun=s.fun, der=s.der, hess=None)
         for i in range(10):
@@ -406,7 +415,8 @@ class BenchSmoothUnbounded(Benchmark):
 
     def run_beale(self, methods=None):
         s = funcs.Beale()
-        #    print "checking gradient", scipy.optimize.check_grad(s.fun, s.der, np.array([1.1, -2.3]))
+        #    print "checking gradient",
+        #    scipy.optimize.check_grad(s.fun, s.der, np.array([1.1, -2.3]))
         b = _BenchOptimizers("Beale's function",
                              fun=s.fun, der=s.der, hess=None)
         for i in range(10):
@@ -415,8 +425,9 @@ class BenchSmoothUnbounded(Benchmark):
 
     def run_LJ(self, methods=None):
         s = funcs.LJ()
-        # print "checking gradient", scipy.optimize.check_grad(s.get_energy, s.get_gradient,
-        # np.random.uniform(-2,2,3*4))
+        # print "checking gradient",
+        # scipy.optimize.check_grad(s.get_energy, s.get_gradient,
+        #                           np.random.uniform(-2,2,3*4))
         natoms = 4
         b = _BenchOptimizers("%d atom Lennard Jones potential" % (natoms),
                              fun=s.fun, der=s.der, hess=None)
@@ -496,7 +507,7 @@ class BenchGlobal(Benchmark):
 
     params = [
         list(_functions.keys()),
-        ["success%", "<nfev>"],
+        ["success%", "<nfev>", "average time"],
         ['DE', 'basinh.', 'DA', 'DIRECT', 'SHGO'],
     ]
     param_names = ["test function", "result type", "solver"]
@@ -508,7 +519,9 @@ class BenchGlobal(Benchmark):
         except (KeyError, ValueError):
             self.numtrials = 100
 
-        self.dump_fn = os.path.join(os.path.dirname(__file__), '..', 'global-bench-results.json')
+        self.dump_fn = os.path.join(os.path.dirname(__file__),
+                                    '..',
+                                    'global-bench-results.json',)
         self.results = {}
 
     def setup(self, name, ret_value, solver):
@@ -516,7 +529,7 @@ class BenchGlobal(Benchmark):
             raise NotImplementedError("skipped")
 
         # load json backing file
-        with open(self.dump_fn, 'r') as f:
+        with open(self.dump_fn) as f:
             self.results = json.load(f)
 
     def teardown(self, name, ret_value, solver):
@@ -532,9 +545,12 @@ class BenchGlobal(Benchmark):
             # if so, then just return the ret_value
             av_results = self.results[name]
             if ret_value == 'success%':
-                return 100 * av_results[solver]['nsuccess'] / av_results[solver]['ntrials']
+                return (100 * av_results[solver]['nsuccess']
+                        / av_results[solver]['ntrials'])
             elif ret_value == '<nfev>':
                 return av_results[solver]['mean_nfev']
+            elif ret_value == 'average time':
+                return av_results[solver]['mean_time']
             else:
                 raise ValueError()
 
@@ -553,9 +569,12 @@ class BenchGlobal(Benchmark):
             self.results[name][solver] = av_results[solver]
 
             if ret_value == 'success%':
-                return 100 * av_results[solver]['nsuccess'] / av_results[solver]['ntrials']
+                return (100 * av_results[solver]['nsuccess']
+                        / av_results[solver]['ntrials'])
             elif ret_value == '<nfev>':
                 return av_results[solver]['mean_nfev']
+            elif ret_value == 'average time':
+                return av_results[solver]['mean_time']
             else:
                 raise ValueError()
         except Exception:
@@ -580,7 +599,8 @@ class BenchDFO(Benchmark):
 
     params = [
         list(range(53)),  # adjust which problems to solve
-        ["COBYLA", "SLSQP", "Powell", "nelder-mead", "L-BFGS-B", "BFGS",
+        ["COBYLA", "COBYQA", "SLSQP", "Powell", "nelder-mead", "L-BFGS-B",
+         "BFGS",
          "trust-constr"],  # note: methods must also be listed in bench_run
         ["mean_nfev", "min_obj"],  # defined in average_results
     ]

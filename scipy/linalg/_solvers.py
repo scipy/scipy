@@ -166,7 +166,7 @@ def solve_continuous_lyapunov(a, q):
             r_or_c = complex
 
         if not np.equal(*_.shape):
-            raise ValueError("Matrix {} should be square.".format("aq"[ind]))
+            raise ValueError(f"Matrix {'aq'[ind]} should be square.")
 
     # Shape consistency check
     if a.shape != q.shape:
@@ -181,19 +181,18 @@ def solve_continuous_lyapunov(a, q):
     # Call the Sylvester equation solver
     trsyl = get_lapack_funcs('trsyl', (r, f))
 
-    dtype_string = 'T' if r_or_c == float else 'C'
+    dtype_string = 'T' if r_or_c is float else 'C'
     y, scale, info = trsyl(r, r, f, tranb=dtype_string)
 
     if info < 0:
         raise ValueError('?TRSYL exited with the internal error '
-                         '"illegal value in argument number {}.". See '
-                         'LAPACK documentation for the ?TRSYL error codes.'
-                         ''.format(-info))
+                         f'"illegal value in argument number {-info}.". See '
+                         'LAPACK documentation for the ?TRSYL error codes.')
     elif info == 1:
         warnings.warn('Input "a" has an eigenvalue pair whose sum is '
                       'very close to or exactly zero. The solution is '
                       'obtained via perturbing the coefficients.',
-                      RuntimeWarning)
+                      RuntimeWarning, stacklevel=2)
     y *= scale
 
     return u.dot(y).dot(u.conj().T)
@@ -281,9 +280,8 @@ def solve_discrete_lyapunov(a, q, method=None):
 
     References
     ----------
-    .. [1] Hamilton, James D. Time Series Analysis, Princeton: Princeton
-       University Press, 1994.  265.  Print.
-       http://doc1.lbfl.li/aca/FLMF037168.pdf
+    .. [1] "Lyapunov equation", Wikipedia,
+       https://en.wikipedia.org/wiki/Lyapunov_equation#Discrete_time
     .. [2] Gajic, Z., and M.T.J. Qureshi. 2008.
        Lyapunov Matrix Equation in System Stability and Control.
        Dover Books on Engineering Series. Dover Publications.
@@ -320,7 +318,7 @@ def solve_discrete_lyapunov(a, q, method=None):
     elif meth == 'bilinear':
         x = _solve_discrete_lyapunov_bilinear(a, q)
     else:
-        raise ValueError('Unknown solver %s' % method)
+        raise ValueError(f'Unknown solver {method}')
 
     return x
 
@@ -468,7 +466,7 @@ def solve_continuous_are(a, b, q, r, e=None, s=None, balanced=True):
         # xGEBAL does not remove the diagonals before scaling. Also
         # to avoid destroying the Symplectic structure, we follow Ref.3
         M = np.abs(H) + np.abs(J)
-        M[np.diag_indices_from(M)] = 0.
+        np.fill_diagonal(M, 0.)
         _, (sca, _) = matrix_balance(M, separate=1, permute=0)
         # do we need to bother?
         if not np.allclose(sca, np.ones_like(sca)):
@@ -489,7 +487,7 @@ def solve_continuous_are(a, b, q, r, e=None, s=None, balanced=True):
     J = q[:2*m, n:].conj().T.dot(J[:2*m, :2*m])
 
     # Decide on which output type is needed for QZ
-    out_str = 'real' if r_or_c == float else 'complex'
+    out_str = 'real' if r_or_c is float else 'complex'
 
     _, _, _, _, _, u = ordqz(H, J, sort='lhp', overwrite_a=True,
                              overwrite_b=True, check_finite=False,
@@ -674,7 +672,7 @@ def solve_discrete_are(a, b, q, r, e=None, s=None, balanced=True):
         # xGEBAL does not remove the diagonals before scaling. Also
         # to avoid destroying the Symplectic structure, we follow Ref.3
         M = np.abs(H) + np.abs(J)
-        M[np.diag_indices_from(M)] = 0.
+        np.fill_diagonal(M, 0.)
         _, (sca, _) = matrix_balance(M, separate=1, permute=0)
         # do we need to bother?
         if not np.allclose(sca, np.ones_like(sca)):
@@ -695,7 +693,7 @@ def solve_discrete_are(a, b, q, r, e=None, s=None, balanced=True):
     J = q_of_qr[:, n:].conj().T.dot(J[:, :2*m])
 
     # Decide on which output type is needed for QZ
-    out_str = 'real' if r_or_c == float else 'complex'
+    out_str = 'real' if r_or_c is float else 'complex'
 
     _, _, _, _, _, u = ordqz(H, J, sort='iuc',
                              overwrite_a=True,
@@ -796,7 +794,7 @@ def _are_validate_args(a, b, q, r, e, s, eq_type='care'):
             r_or_c = complex
 
         if not np.equal(*mat.shape):
-            raise ValueError("Matrix {} should be square.".format("aqr"[ind]))
+            raise ValueError(f"Matrix {'aqr'[ind]} should be square.")
 
     # Shape consistency checks
     m, n = b.shape
@@ -810,8 +808,7 @@ def _are_validate_args(a, b, q, r, e, s, eq_type='care'):
     # Check if the data matrices q, r are (sufficiently) hermitian
     for ind, mat in enumerate((q, r)):
         if norm(mat - mat.conj().T, 1) > np.spacing(norm(mat, 1))*100:
-            raise ValueError("Matrix {} should be symmetric/hermitian."
-                             "".format("qr"[ind]))
+            raise ValueError(f"Matrix {'qr'[ind]} should be symmetric/hermitian.")
 
     # Continuous time ARE should have a nonsingular r matrix.
     if eq_type == 'care':

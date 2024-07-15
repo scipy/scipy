@@ -116,6 +116,7 @@ class BSpline:
     derivative
     antiderivative
     integrate
+    insert_knot
     construct_fast
     design_matrix
     from_power_basis
@@ -661,7 +662,7 @@ class BSpline:
                 # Fast path: use FITPACK's routine
                 # (cf _fitpack_impl.splint).
                 integral = _fitpack_impl.splint(a, b, self.tck)
-                return integral * sign
+                return np.asarray(integral * sign)
 
         out = np.empty((2, prod(self.c.shape[1:])), dtype=self.c.dtype)
 
@@ -801,8 +802,8 @@ class BSpline:
         """
         from ._cubic import CubicSpline
         if not isinstance(pp, CubicSpline):
-            raise NotImplementedError("Only CubicSpline objects are accepted"
-                                      "for now. Got %s instead." % type(pp))
+            raise NotImplementedError(f"Only CubicSpline objects are accepted "
+                                      f"for now. Got {type(pp)} instead.")
         x = pp.x
         coef = pp.c
         k = pp.c.shape[0] - 1
@@ -815,7 +816,7 @@ class BSpline:
         elif bc_type == 'periodic':
             t = _periodic_knots(x, k)
         else:
-            raise TypeError('Unknown boundary condition: %s' % bc_type)
+            raise TypeError(f'Unknown boundary condition: {bc_type}')
 
         nod = t.shape[0] - (n + k + 1)  # number of derivatives at the ends
         c = np.zeros(n + nod, dtype=pp.c.dtype)
@@ -830,6 +831,94 @@ class BSpline:
                         * _diff_dual_poly(j, k, x[n - 2], m, t)
         return cls.construct_fast(t, c, k, pp.extrapolate, pp.axis)
 
+    def insert_knot(self, x, m=1):
+        """Insert a new knot at `x` of multiplicity `m`.
+
+        Given the knots and coefficients of a B-spline representation, create a
+        new B-spline with a knot inserted `m` times at point `x`.
+
+        Parameters
+        ----------
+        x : float
+            The position of the new knot
+        m : int, optional
+            The number of times to insert the given knot (its multiplicity).
+            Default is 1.
+
+        Returns
+        -------
+        spl : BSpline object
+            A new BSpline object with the new knot inserted.
+
+        Notes
+        -----
+        Based on algorithms from [1]_ and [2]_.
+
+        In case of a periodic spline (``self.extrapolate == "periodic"``)
+        there must be either at least k interior knots t(j) satisfying
+        ``t(k+1)<t(j)<=x`` or at least k interior knots t(j) satisfying
+        ``x<=t(j)<t(n-k)``.
+
+        This routine is functionally equivalent to `scipy.interpolate.insert`.
+
+        .. versionadded:: 1.13
+
+        References
+        ----------
+        .. [1] W. Boehm, "Inserting new knots into b-spline curves.",
+            Computer Aided Design, 12, p.199-201, 1980.
+            :doi:`10.1016/0010-4485(80)90154-2`.
+        .. [2] P. Dierckx, "Curve and surface fitting with splines, Monographs on
+            Numerical Analysis", Oxford University Press, 1993.
+
+        See Also
+        --------
+        scipy.interpolate.insert
+
+        Examples
+        --------
+        You can insert knots into a B-spline:
+
+        >>> import numpy as np
+        >>> from scipy.interpolate import BSpline, make_interp_spline
+        >>> x = np.linspace(0, 10, 5)
+        >>> y = np.sin(x)
+        >>> spl = make_interp_spline(x, y, k=3)
+        >>> spl.t
+        array([ 0.,  0.,  0.,  0.,  5., 10., 10., 10., 10.])
+
+        Insert a single knot
+
+        >>> spl_1 = spl.insert_knot(3)
+        >>> spl_1.t
+        array([ 0.,  0.,  0.,  0.,  3.,  5., 10., 10., 10., 10.])
+
+        Insert a multiple knot
+
+        >>> spl_2 = spl.insert_knot(8, m=3)
+        >>> spl_2.t
+        array([ 0.,  0.,  0.,  0.,  5.,  8.,  8.,  8., 10., 10., 10., 10.])
+
+        """
+        if x < self.t[self.k] or x > self.t[-self.k-1]:
+            raise ValueError(f"Cannot insert a knot at {x}.")
+        if m <= 0:
+            raise ValueError(f"`m` must be positive, got {m = }.")
+
+        extradim = self.c.shape[1:]
+        num_extra = prod(extradim)
+
+        tt = self.t.copy()
+        cc = self.c.copy()
+        cc = cc.reshape(-1, num_extra)
+
+        for _ in range(m):
+            tt, cc = _bspl.insert(x, tt, cc, self.k, self.extrapolate == "periodic")
+
+        return self.construct_fast(
+            tt, cc.reshape((-1,) + extradim), self.k, self.extrapolate, self.axis
+        )
+
 
 #################################
 #  Interpolating spline helpers #
@@ -840,7 +929,7 @@ def _not_a_knot(x, k):
     cf de Boor, XIII(12)."""
     x = np.asarray(x)
     if k % 2 != 1:
-        raise ValueError("Odd degree for now only. Got %s." % k)
+        raise ValueError(f"Odd degree for now only. Got {k}.")
 
     m = (k - 1) // 2
     t = x[m+1:-m-1]
@@ -860,7 +949,7 @@ def _convert_string_aliases(deriv, target_shape):
         elif deriv == "natural":
             deriv = [(2, np.zeros(target_shape))]
         else:
-            raise ValueError("Unknown boundary condition : %s" % deriv)
+            raise ValueError(f"Unknown boundary condition : {deriv}")
     return deriv
 
 
@@ -1275,7 +1364,7 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
         try:
             deriv_l, deriv_r = bc_type
         except TypeError as e:
-            raise ValueError("Unknown boundary condition: %s" % bc_type) from e
+            raise ValueError(f"Unknown boundary condition: {bc_type}") from e
 
     y = np.asarray(y)
 
@@ -1291,8 +1380,7 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
         raise ValueError("First and last points does not match while "
                          "periodic case expected")
     if x.size != y.shape[0]:
-        raise ValueError('Shapes of x {} and y {} are incompatible'
-                         .format(x.shape, y.shape))
+        raise ValueError(f'Shapes of x {x.shape} and y {y.shape} are incompatible')
     if np.any(x[1:] == x[:-1]):
         raise ValueError("Expect x to not have duplicates")
     if x.ndim != 1 or np.any(x[1:] < x[:-1]):
@@ -1351,7 +1439,7 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
         raise ValueError('Got %d knots, need at least %d.' %
                          (t.size, x.size + k + 1))
     if (x[0] < t[k]) or (x[-1] > t[-k]):
-        raise ValueError('Out of bounds w/ x = %s.' % x)
+        raise ValueError(f'Out of bounds w/ x = {x}.')
 
     if bc_type == 'periodic':
         return _make_periodic_spline(x, y, t, k, axis)
@@ -1365,13 +1453,19 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
     deriv_r_ords, deriv_r_vals = _process_deriv_spec(deriv_r)
     nright = deriv_r_ords.shape[0]
 
+    if not all(0 <= i <= k for i in deriv_l_ords):
+        raise ValueError(f"Bad boundary conditions at {x[0]}.")
+
+    if not all(0 <= i <= k for i in deriv_r_ords):
+        raise ValueError(f"Bad boundary conditions at {x[-1]}.")
+
     # have `n` conditions for `nt` coefficients; need nt-n derivatives
     n = x.size
     nt = t.size - k - 1
 
     if nt - n != nleft + nright:
         raise ValueError("The number of derivatives at boundaries does not "
-                         "match: expected {}, got {}+{}".format(nt-n, nleft, nright))
+                         f"match: expected {nt-n}, got {nleft}+{nright}")
 
     # bail out if the `y` array is zero-sized
     if y.size == 0:
@@ -1383,9 +1477,11 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
     ab = np.zeros((2*kl + ku + 1, nt), dtype=np.float64, order='F')
     _bspl._colloc(x, t, k, ab, offset=nleft)
     if nleft > 0:
-        _bspl._handle_lhs_derivatives(t, k, x[0], ab, kl, ku, deriv_l_ords)
+        _bspl._handle_lhs_derivatives(t, k, x[0], ab, kl, ku,
+                                      deriv_l_ords.astype(np.dtype("long")))
     if nright > 0:
-        _bspl._handle_lhs_derivatives(t, k, x[-1], ab, kl, ku, deriv_r_ords,
+        _bspl._handle_lhs_derivatives(t, k, x[-1], ab, kl, ku,
+                                      deriv_r_ords.astype(np.dtype("long")),
                                       offset=nt-nright)
 
     # set up the RHS: values to interpolate (+ derivative values, if any)
@@ -1542,13 +1638,11 @@ def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True):
     if t.ndim != 1 or np.any(t[1:] - t[:-1] < 0):
         raise ValueError("Expect t to be a 1-D sorted array_like.")
     if x.size != y.shape[0]:
-        raise ValueError('Shapes of x {} and y {} are incompatible'
-                         .format(x.shape, y.shape))
+        raise ValueError(f'Shapes of x {x.shape} and y {y.shape} are incompatible')
     if k > 0 and np.any((x < t[k]) | (x > t[-k])):
-        raise ValueError('Out of bounds w/ x = %s.' % x)
+        raise ValueError(f'Out of bounds w/ x = {x}.')
     if x.size != w.size:
-        raise ValueError('Shapes of x {} and w {} are incompatible'
-                         .format(x.shape, w.shape))
+        raise ValueError(f'Shapes of x {x.shape} and w {w.shape} are incompatible')
 
     # number of coefficients
     n = t.size - k - 1
@@ -1877,9 +1971,9 @@ def make_smoothing_spline(x, y, w=None, lam=None):
     Parameters
     ----------
     x : array_like, shape (n,)
-        Abscissas. `n` must be larger than 5.
+        Abscissas. `n` must be at least 5.
     y : array_like, shape (n,)
-        Ordinates. `n` must be larger than 5.
+        Ordinates. `n` must be at least 5.
     w : array_like, shape (n,), optional
         Vector of weights. Default is ``np.ones_like(x)``.
     lam : float, (:math:`\lambda \geq 0`), optional
@@ -1981,7 +2075,7 @@ def make_smoothing_spline(x, y, w=None, lam=None):
     n = x.shape[0]
 
     if n <= 4:
-        raise ValueError('``x`` and ``y`` length must be larger than 5')
+        raise ValueError('``x`` and ``y`` length must be at least 5')
 
     # It is known that the solution to the stated minimization problem exists
     # and is a natural cubic spline with vector of knots equal to the unique
@@ -2036,3 +2130,92 @@ def make_smoothing_spline(x, y, w=None, lam=None):
                c[-1] * (2 * t[-4] - t[-5] - t[-6]) + c[-2]]
 
     return BSpline.construct_fast(t, c_, 3)
+
+
+########################
+#  FITPACK look-alikes #
+########################
+
+def fpcheck(x, t, k):
+    """ Check consistency of the data vector `x` and the knot vector `t`.
+
+    Return None if inputs are consistent, raises a ValueError otherwise.
+    """
+    # This routine is a clone of the `fpchec` Fortran routine, 
+    # https://github.com/scipy/scipy/blob/main/scipy/interpolate/fitpack/fpchec.f
+    # which carries the following comment:
+    #
+    # subroutine fpchec verifies the number and the position of the knots
+    #  t(j),j=1,2,...,n of a spline of degree k, in relation to the number
+    #  and the position of the data points x(i),i=1,2,...,m. if all of the
+    #  following conditions are fulfilled, the error parameter ier is set
+    #  to zero. if one of the conditions is violated ier is set to ten.
+    #      1) k+1 <= n-k-1 <= m
+    #      2) t(1) <= t(2) <= ... <= t(k+1)
+    #         t(n-k) <= t(n-k+1) <= ... <= t(n)
+    #      3) t(k+1) < t(k+2) < ... < t(n-k)
+    #      4) t(k+1) <= x(i) <= t(n-k)
+    #      5) the conditions specified by schoenberg and whitney must hold
+    #         for at least one subset of data points, i.e. there must be a
+    #         subset of data points y(j) such that
+    #             t(j) < y(j) < t(j+k+1), j=1,2,...,n-k-1
+    x = np.asarray(x)
+    t = np.asarray(t)
+
+    if x.ndim != 1 or t.ndim != 1:
+        raise ValueError(f"Expect `x` and `t` be 1D sequences. Got {x = } and {t = }")
+
+    m = x.shape[0]
+    n = t.shape[0]
+    nk1 = n - k - 1
+
+    # check condition no 1
+    # c      1) k+1 <= n-k-1 <= m
+    if not (k + 1 <= nk1 <= m):
+        raise ValueError(f"Need k+1 <= n-k-1 <= m. Got {m = }, {n = } and {k = }.")
+
+    # check condition no 2
+    # c      2) t(1) <= t(2) <= ... <= t(k+1)
+    # c         t(n-k) <= t(n-k+1) <= ... <= t(n)
+    if (t[:k+1] > t[1:k+2]).any():
+        raise ValueError(f"First k knots must be ordered; got {t = }.")
+
+    if (t[nk1:] < t[nk1-1:-1]).any():
+        raise ValueError(f"Last k knots must be ordered; got {t = }.")
+
+    # c  check condition no 3
+    # c      3) t(k+1) < t(k+2) < ... < t(n-k)
+    if (t[k+1:n-k] <= t[k:n-k-1]).any():
+        raise ValueError(f"Internal knots must be distinct. Got {t = }.")
+
+    # c  check condition no 4
+    # c      4) t(k+1) <= x(i) <= t(n-k)
+    # NB: FITPACK's fpchec only checks x[0] & x[-1], so we follow.
+    if (x[0] < t[k]) or (x[-1] > t[n-k-1]):
+        raise ValueError(f"Out of bounds: {x = } and {t = }.")
+
+    # c  check condition no 5
+    # c      5) the conditions specified by schoenberg and whitney must hold
+    # c         for at least one subset of data points, i.e. there must be a
+    # c         subset of data points y(j) such that
+    # c             t(j) < y(j) < t(j+k+1), j=1,2,...,n-k-1
+    mesg = f"Schoenberg-Whitney condition is violated with {t = } and {x =}."
+
+    if (x[0] >= t[k+1]) or (x[-1] <= t[n-k-2]):
+        raise ValueError(mesg)
+
+    m = x.shape[0]
+    l = k+1
+    nk3 = n - k - 3
+    if nk3 < 2:
+        return
+    for j in range(1, nk3+1):
+        tj = t[j]
+        l += 1
+        tl = t[l]
+        i = np.argmax(x > tj)
+        if i >= m-1:
+            raise ValueError(mesg)
+        if x[i] >= tl:
+            raise ValueError(mesg)
+    return

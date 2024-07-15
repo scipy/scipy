@@ -26,19 +26,8 @@ __all__ = [  # noqa: F822
     'tiecorrect', 'ranksums', 'kruskal', 'friedmanchisquare',
     'rankdata',
     'combine_pvalues', 'wasserstein_distance', 'energy_distance',
-    'brunnermunzel', 'alexandergovern', 'gcd', 'namedtuple', 'array',
-    'ma', 'cdist', 'check_random_state', 'MapWrapper',
-    'rng_integers', 'float_factorial', 'linalg', 'distributions',
-    'mstats_basic', 'ModeResult', 'DescribeResult',
-    'SkewtestResult', 'KurtosistestResult', 'NormaltestResult',
-    'HistogramResult', 'CumfreqResult',
-    'RelfreqResult', 'SigmaclipResult', 'F_onewayResult',
-    'AlexanderGovernResult',
-    'PointbiserialrResult',
-    'MGCResult', 'Ttest_1sampResult', 'Ttest_indResult',
-    'Ttest_relResult', 'Power_divergenceResult', 'KstestResult',
-    'Ks_2sampResult', 'RanksumsResult', 'KruskalResult',
-    'FriedmanchisquareResult', 'BrunnerMunzelResult', 'RepeatedResults'
+    'brunnermunzel', 'alexandergovern', 'distributions',
+    'mstats_basic',
 ]
 
 
@@ -48,5 +37,5 @@ def __dir__():
 
 def __getattr__(name):
     return _sub_module_deprecation(sub_package="stats", module="stats",
-                                   private_modules=["_stats_py"], all=__all__,
+                                   private_modules=["_stats_py", "_mgc"], all=__all__,
                                    attribute=name)

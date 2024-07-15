@@ -105,6 +105,7 @@ __all__ = [
 ]
 
 
+import math
 import warnings
 import numpy as np
 import dataclasses
@@ -221,7 +222,9 @@ def _validate_hamming_kwargs(X, m, n, **kwargs):
     w = kwargs.get('w', np.ones((n,), dtype='double'))
 
     if w.ndim != 1 or w.shape[0] != n:
-        raise ValueError("Weights must have same size as input vector. %d vs. %d" % (w.shape[0], n))
+        raise ValueError(
+            "Weights must have same size as input vector. %d vs. %d" % (w.shape[0], n)
+        )
 
     kwargs['w'] = _validate_weights(w)
     return kwargs
@@ -318,7 +321,7 @@ def directed_hausdorff(u, v, seed=0):
         Input array with M points in N dimensions.
     v : (O,N) array_like
         Input array with O points in N dimensions.
-    seed : int or None
+    seed : int or None, optional
         Local `numpy.random.RandomState` seed. Default is 0, a random
         shuffling of u and v that guarantees reproducibility.
 
@@ -586,11 +589,17 @@ def correlation(u, v, w=None, centered=True):
 
     Parameters
     ----------
-    u : (N,) array_like
+    u : (N,) array_like of floats
         Input array.
-    v : (N,) array_like
+
+        .. deprecated:: 1.15.0
+           Complex `u` is deprecated and will raise an error in SciPy 1.17.0
+    v : (N,) array_like of floats
         Input array.
-    w : (N,) array_like, optional
+
+        .. deprecated:: 1.15.0
+           Complex `v` is deprecated and will raise an error in SciPy 1.17.0
+    w : (N,) array_like of floats, optional
         The weights for each value in `u` and `v`. Default is None,
         which gives each value a weight of 1.0
     centered : bool, optional
@@ -621,19 +630,34 @@ def correlation(u, v, w=None, centered=True):
     """
     u = _validate_vector(u)
     v = _validate_vector(v)
+    if np.iscomplexobj(u) or np.iscomplexobj(v):
+        message = (
+            "Complex `u` and `v` are deprecated and will raise an error in "
+            "SciPy 1.17.0.")
+        warnings.warn(message, DeprecationWarning, stacklevel=2)
     if w is not None:
         w = _validate_weights(w)
+        w = w / w.sum()
     if centered:
-        umu = np.average(u, weights=w)
-        vmu = np.average(v, weights=w)
+        if w is not None:
+            umu = np.dot(u, w)
+            vmu = np.dot(v, w)
+        else:
+            umu = np.mean(u)
+            vmu = np.mean(v)
         u = u - umu
         v = v - vmu
-    uv = np.average(u * v, weights=w)
-    uu = np.average(np.square(u), weights=w)
-    vv = np.average(np.square(v), weights=w)
-    dist = 1.0 - uv / np.sqrt(uu * vv)
-    # Return absolute value to avoid small negative value due to rounding
-    return np.abs(dist)
+    if w is not None:
+        vw = v * w
+        uw = u * w
+    else:
+        vw, uw = v, u
+    uv = np.dot(u, vw)
+    uu = np.dot(u, uw)
+    vv = np.dot(v, vw)
+    dist = 1.0 - uv / math.sqrt(uu * vv)
+    # Clip the result to avoid rounding error
+    return np.clip(dist, 0.0, 2.0)
 
 
 def cosine(u, v, w=None):
@@ -652,11 +676,17 @@ def cosine(u, v, w=None):
 
     Parameters
     ----------
-    u : (N,) array_like
+    u : (N,) array_like of floats
         Input array.
-    v : (N,) array_like
+
+        .. deprecated:: 1.15.0
+           Complex `u` is deprecated and will raise an error in SciPy 1.17.0
+    v : (N,) array_like of floats
         Input array.
-    w : (N,) array_like, optional
+
+        .. deprecated:: 1.15.0
+           Complex `v` is deprecated and will raise an error in SciPy 1.17.0
+    w : (N,) array_like of floats, optional
         The weights for each value in `u` and `v`. Default is None,
         which gives each value a weight of 1.0
 
@@ -678,8 +708,7 @@ def cosine(u, v, w=None):
     """
     # cosine distance is also referred to as 'uncentered correlation',
     #   or 'reflective correlation'
-    # clamp the result to 0-2
-    return max(0, min(correlation(u, v, w=w, centered=False), 2.0))
+    return correlation(u, v, w=w, centered=False)
 
 
 def hamming(u, v, w=None):
@@ -735,7 +764,9 @@ def hamming(u, v, w=None):
         w = _validate_weights(w)
         if w.shape != u.shape:
             raise ValueError("'w' should have the same length as 'u' and 'v'.")
-    return np.average(u_ne_v, weights=w)
+        w = w / w.sum()
+        return np.dot(u_ne_v, w)
+    return np.mean(u_ne_v)
 
 
 def jaccard(u, v, w=None):
@@ -771,12 +802,12 @@ def jaccard(u, v, w=None):
 
     Notes
     -----
-    When both `u` and `v` lead to a `0/0` division i.e. there is no overlap
+    When both `u` and `v` lead to a ``0/0`` division i.e. there is no overlap
     between the items in the vectors the returned distance is 0. See the
     Wikipedia page on the Jaccard index [1]_, and this paper [2]_.
 
     .. versionchanged:: 1.2.0
-        Previously, when `u` and `v` lead to a `0/0` division, the function
+        Previously, when `u` and `v` lead to a ``0/0`` division, the function
         would return NaN. This was changed to return 0 instead.
 
     References
@@ -901,7 +932,7 @@ def seuclidean(u, v, V):
         Input array.
     V : (N,) array_like
         `V` is an 1-D array of component variances. It is usually computed
-        among a larger collection vectors.
+        among a larger collection of vectors.
 
     Returns
     -------
@@ -1142,7 +1173,7 @@ def canberra(u, v, w=None):
 
     Notes
     -----
-    When `u[i]` and `v[i]` are 0 for given i, then the fraction 0/0 = 0 is
+    When ``u[i]`` and ``v[i]`` are 0 for given i, then the fraction 0/0 = 0 is
     used in the calculation.
 
     Examples
@@ -1626,32 +1657,6 @@ class CDistMetricWrapper:
 
 
 @dataclasses.dataclass(frozen=True)
-class CDistWeightedMetricWrapper:
-    metric_name: str
-    weighted_metric: str
-
-    def __call__(self, XA, XB, *, out=None, **kwargs):
-        XA = np.ascontiguousarray(XA)
-        XB = np.ascontiguousarray(XB)
-        mA, n = XA.shape
-        mB, _ = XB.shape
-        metric_name = self.metric_name
-        XA, XB, typ, kwargs = _validate_cdist_input(
-            XA, XB, mA, mB, n, _METRICS[metric_name], **kwargs)
-        dm = _prepare_out_argument(out, np.float64, (mA, mB))
-
-        w = kwargs.pop('w', None)
-        if w is not None:
-            metric_name = self.weighted_metric
-            kwargs['w'] = w
-
-        # get cdist wrapper
-        cdist_fn = getattr(_distance_wrap, f'cdist_{metric_name}_{typ}_wrap')
-        cdist_fn(XA, XB, dm, **kwargs)
-        return dm
-
-
-@dataclasses.dataclass(frozen=True)
 class PDistMetricWrapper:
     metric_name: str
 
@@ -1670,31 +1675,6 @@ class PDistMetricWrapper:
                 X, metric=metric, out=out, w=w, **kwargs)
 
         dm = _prepare_out_argument(out, np.float64, (out_size,))
-        # get pdist wrapper
-        pdist_fn = getattr(_distance_wrap, f'pdist_{metric_name}_{typ}_wrap')
-        pdist_fn(X, dm, **kwargs)
-        return dm
-
-
-@dataclasses.dataclass(frozen=True)
-class PDistWeightedMetricWrapper:
-    metric_name: str
-    weighted_metric: str
-
-    def __call__(self, X, *, out=None, **kwargs):
-        X = np.ascontiguousarray(X)
-        m, n = X.shape
-        metric_name = self.metric_name
-        X, typ, kwargs = _validate_pdist_input(
-            X, m, n, _METRICS[metric_name], **kwargs)
-        out_size = (m * (m - 1)) // 2
-        dm = _prepare_out_argument(out, np.float64, (out_size,))
-
-        w = kwargs.pop('w', None)
-        if w is not None:
-            metric_name = self.weighted_metric
-            kwargs['w'] = w
-
         # get pdist wrapper
         pdist_fn = getattr(_distance_wrap, f'pdist_{metric_name}_{typ}_wrap')
         pdist_fn(X, dm, **kwargs)
@@ -1917,7 +1897,7 @@ def pdist(X, metric='euclidean', *, out=None, **kwargs):
         'mahalanobis', 'matching', 'minkowski', 'rogerstanimoto',
         'russellrao', 'seuclidean', 'sokalmichener', 'sokalsneath',
         'sqeuclidean', 'yule'.
-    out : ndarray
+    out : ndarray, optional
         The output array.
         If not None, condensed distance matrix Y is stored in this array.
     **kwargs : dict, optional
@@ -2224,7 +2204,7 @@ def pdist(X, metric='euclidean', *, out=None, **kwargs):
             return _pdist_callable(
                 X, metric=metric_info.dist_func, out=out, **kwargs)
         else:
-            raise ValueError('Unknown Distance Metric: %s' % mstr)
+            raise ValueError(f'Unknown Distance Metric: {mstr}')
     else:
         raise TypeError('2nd argument metric must be a string identifier '
                         'or a function.')
@@ -2379,9 +2359,8 @@ def squareform(X, force="no", checks=True):
         _distance_wrap.to_vector_from_squareform_wrap(X, v)
         return v
     else:
-        raise ValueError(('The first argument must be one or two dimensional '
-                          'array. A %d-dimensional array is not '
-                          'permitted') % len(s))
+        raise ValueError("The first argument must be one or two dimensional "
+                         f"array. A {len(s)}-dimensional array is not permitted")
 
 
 def is_valid_dm(D, tol=0.0, throw=False, name="D", warning=False):
@@ -2458,47 +2437,42 @@ def is_valid_dm(D, tol=0.0, throw=False, name="D", warning=False):
         s = D.shape
         if len(D.shape) != 2:
             if name:
-                raise ValueError(('Distance matrix \'%s\' must have shape=2 '
-                                  '(i.e. be two-dimensional).') % name)
+                raise ValueError(f"Distance matrix '{name}' must have shape=2 "
+                                 "(i.e. be two-dimensional).")
             else:
                 raise ValueError('Distance matrix must have shape=2 (i.e. '
                                  'be two-dimensional).')
         if tol == 0.0:
             if not (D == D.T).all():
                 if name:
-                    raise ValueError(('Distance matrix \'%s\' must be '
-                                     'symmetric.') % name)
+                    raise ValueError(f"Distance matrix '{name}' must be symmetric.")
                 else:
                     raise ValueError('Distance matrix must be symmetric.')
             if not (D[range(0, s[0]), range(0, s[0])] == 0).all():
                 if name:
-                    raise ValueError(('Distance matrix \'%s\' diagonal must '
-                                      'be zero.') % name)
+                    raise ValueError(f"Distance matrix '{name}' diagonal must be zero.")
                 else:
                     raise ValueError('Distance matrix diagonal must be zero.')
         else:
             if not (D - D.T <= tol).all():
                 if name:
-                    raise ValueError(('Distance matrix \'%s\' must be '
-                                      'symmetric within tolerance %5.5f.')
-                                     % (name, tol))
+                    raise ValueError(f'Distance matrix \'{name}\' must be '
+                                     f'symmetric within tolerance {tol:5.5f}.')
                 else:
-                    raise ValueError('Distance matrix must be symmetric within'
-                                     ' tolerance %5.5f.' % tol)
+                    raise ValueError('Distance matrix must be symmetric within '
+                                     f'tolerance {tol:5.5f}.')
             if not (D[range(0, s[0]), range(0, s[0])] <= tol).all():
                 if name:
-                    raise ValueError(('Distance matrix \'%s\' diagonal must be'
-                                      ' close to zero within tolerance %5.5f.')
-                                     % (name, tol))
+                    raise ValueError(f'Distance matrix \'{name}\' diagonal must be '
+                                     f'close to zero within tolerance {tol:5.5f}.')
                 else:
-                    raise ValueError(('Distance matrix \'%s\' diagonal must be'
-                                      ' close to zero within tolerance %5.5f.')
-                                     % tol)
+                    raise ValueError(('Distance matrix \'{}\' diagonal must be close '
+                                      'to zero within tolerance {:5.5f}.').format(*tol))
     except Exception as e:
         if throw:
             raise
         if warning:
-            warnings.warn(str(e))
+            warnings.warn(str(e), stacklevel=2)
         valid = False
     return valid
 
@@ -2556,9 +2530,8 @@ def is_valid_y(y, warning=False, throw=False, name=None):
     try:
         if len(y.shape) != 1:
             if name:
-                raise ValueError(('Condensed distance matrix \'%s\' must '
-                                  'have shape=1 (i.e. be one-dimensional).')
-                                 % name)
+                raise ValueError(f"Condensed distance matrix '{name}' must "
+                                 "have shape=1 (i.e. be one-dimensional).")
             else:
                 raise ValueError('Condensed distance matrix must have shape=1 '
                                  '(i.e. be one-dimensional).')
@@ -2566,10 +2539,9 @@ def is_valid_y(y, warning=False, throw=False, name=None):
         d = int(np.ceil(np.sqrt(n * 2)))
         if (d * (d - 1) / 2) != n:
             if name:
-                raise ValueError(('Length n of condensed distance matrix '
-                                  '\'%s\' must be a binomial coefficient, i.e.'
-                                  'there must be a k such that '
-                                  '(k \\choose 2)=n)!') % name)
+                raise ValueError(f"Length n of condensed distance matrix '{name}' "
+                                 "must be a binomial coefficient, i.e."
+                                 "there must be a k such that (k \\choose 2)=n)!")
             else:
                 raise ValueError('Length n of condensed distance matrix must '
                                  'be a binomial coefficient, i.e. there must '
@@ -2578,7 +2550,7 @@ def is_valid_y(y, warning=False, throw=False, name=None):
         if throw:
             raise
         if warning:
-            warnings.warn(str(e))
+            warnings.warn(str(e), stacklevel=2)
         valid = False
     return valid
 
@@ -3027,7 +2999,7 @@ def cdist(XA, XB, metric='euclidean', *, out=None, **kwargs):
             return _cdist_callable(
                 XA, XB, metric=metric_info.dist_func, out=out, **kwargs)
         else:
-            raise ValueError('Unknown Distance Metric: %s' % mstr)
+            raise ValueError(f'Unknown Distance Metric: {mstr}')
     else:
         raise TypeError('2nd argument metric must be a string identifier '
                         'or a function.')

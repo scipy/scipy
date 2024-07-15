@@ -122,6 +122,7 @@ from doit.cmd_base import ModuleTaskLoader
 from doit.reporter import ZeroReporter
 from doit.exceptions import TaskError
 from doit.api import run_tasks
+from doit import task_params
 from pydevtool.cli import UnifiedContext, CliGroup, Task
 from rich.console import Console
 from rich.panel import Panel
@@ -188,7 +189,7 @@ rich_click.COMMAND_GROUPS = {
         },
         {
             "name": "documentation",
-            "commands": ["doc", "refguide-check"],
+            "commands": ["doc", "refguide-check", "smoke-docs", "smoke-tutorial"],
         },
         {
             "name": "release",
@@ -266,7 +267,7 @@ def cli(ctx, **kwargs):
 
     \b**python dev.py --build-dir my-build test -s stats**
 
-    """  # noqa: E501
+    """
     CLI.update_context(ctx, kwargs)
 
 
@@ -426,10 +427,19 @@ class Build(Task):
     show_build_log = Option(
         ['--show-build-log'], default=False, is_flag=True,
         help="Show build output rather than using a log file")
-    use_scipy_openblas = Option(
-        ['--use-scipy-openblas'], default=False, is_flag=True,
+    with_scipy_openblas = Option(
+        ['--with-scipy-openblas'], default=False, is_flag=True,
         help=("If set, use the `scipy-openblas32` wheel installed into the "
               "current environment as the BLAS/LAPACK to build against."))
+    with_accelerate = Option(
+        ['--with-accelerate'], default=False, is_flag=True,
+        help=("If set, use `Accelerate` as the BLAS/LAPACK to build against."
+              " Takes precedence over -with-scipy-openblas (macOS only)")
+    )
+    tags = Option(
+        ['--tags'], default="runtime,python-runtime,tests,devel",
+        show_default=True, help="Install tags to be used by meson."
+    )
 
     @classmethod
     def setup_build(cls, dirs, args):
@@ -482,10 +492,13 @@ class Build(Task):
             cmd += ['-Db_sanitize=address,undefined']
         if args.setup_args:
             cmd += [str(arg) for arg in args.setup_args]
-        if args.use_scipy_openblas:
+        if args.with_accelerate:
+            # on a mac you probably want to use accelerate over scipy_openblas
+            cmd += ["-Dblas=accelerate"]
+        elif args.with_scipy_openblas:
             cls.configure_scipy_openblas()
             env['PKG_CONFIG_PATH'] = os.pathsep.join([
-                    os.path.join(os.getcwd(), '.openblas'),
+                    os.getcwd(),
                     env.get('PKG_CONFIG_PATH', '')
                     ])
 
@@ -535,7 +548,8 @@ class Build(Task):
             if non_empty and not dirs.site.exists():
                 raise RuntimeError("Can't install in non-empty directory: "
                                    f"'{dirs.installed}'")
-        cmd = ["meson", "install", "-C", args.build_dir, "--only-changed"]
+        cmd = ["meson", "install", "-C", args.build_dir,
+               "--only-changed", "--tags", args.tags]
         log_filename = dirs.root / 'meson-install.log'
         start_time = datetime.datetime.now()
         cmd_str = ' '.join([str(p) for p in cmd])
@@ -561,8 +575,8 @@ class Build(Task):
                         log_size = os.stat(log_filename).st_size
                         if log_size > last_log_size:
                             elapsed = datetime.datetime.now() - start_time
-                            print("    ... installation in progress ({} "
-                                  "elapsed)".format(elapsed))
+                            print(f"    ... installation in progress ({elapsed} "
+                                  "elapsed)")
                             last_blip = time.time()
                             last_log_size = log_size
 
@@ -593,13 +607,12 @@ class Build(Task):
 
     @classmethod
     def configure_scipy_openblas(self, blas_variant='32'):
-        """Create .openblas/scipy-openblas.pc and scipy/_distributor_init_local.py
+        """Create scipy-openblas.pc and scipy/_distributor_init_local.py
 
         Requires a pre-installed scipy-openblas32 wheel from PyPI.
         """
         basedir = os.getcwd()
-        openblas_dir = os.path.join(basedir, ".openblas")
-        pkg_config_fname = os.path.join(openblas_dir, "scipy-openblas.pc")
+        pkg_config_fname = os.path.join(basedir, "scipy-openblas.pc")
 
         if os.path.exists(pkg_config_fname):
             return None
@@ -608,15 +621,17 @@ class Build(Task):
         try:
             openblas = importlib.import_module(module_name)
         except ModuleNotFoundError:
-            raise RuntimeError(f"'pip install {module_name} first")
+            raise RuntimeError(f"Importing '{module_name}' failed. "
+                               "Make sure it is installed and reachable "
+                               "by the current Python executable. You can "
+                               f"install it via 'pip install {module_name}'.")
 
         local = os.path.join(basedir, "scipy", "_distributor_init_local.py")
-        with open(local, "wt", encoding="utf8") as fid:
+        with open(local, "w", encoding="utf8") as fid:
             fid.write(f"import {module_name}\n")
 
-        os.makedirs(openblas_dir, exist_ok=True)
-        with open(pkg_config_fname, "wt", encoding="utf8") as fid:
-            fid.write(openblas.get_pkg_config().replace("\\", "/"))
+        with open(pkg_config_fname, "w", encoding="utf8") as fid:
+            fid.write(openblas.get_pkg_config())
 
     @classmethod
     def run(cls, add_path=False, **kwargs):
@@ -652,7 +667,7 @@ class Test(Task):
     $ python dev.py test -s stats -- --tb=line  # `--` passes next args to pytest
     $ python dev.py test -b numpy -b pytorch -s cluster
     ```
-    """  # noqa: E501
+    """
     ctx = CONTEXT
 
     verbose = Option(
@@ -686,7 +701,8 @@ class Test(Task):
         ['--array-api-backend', '-b'], default=None, metavar='ARRAY_BACKEND',
         multiple=True,
         help=(
-            "Array API backend ('all', 'numpy', 'pytorch', 'cupy', 'numpy.array_api')."
+            "Array API backend "
+            "('all', 'numpy', 'pytorch', 'cupy', 'array_api_strict', 'jax.numpy')."
         )
     )
     # Argument can't have `help=`; used to consume all of `-- arg1 arg2 arg3`
@@ -705,7 +721,7 @@ class Test(Task):
         print(f"SciPy from development installed path at: {dirs.site}")
 
         # FIXME: support pos-args with doit
-        extra_argv = pytest_args[:] if pytest_args else []
+        extra_argv = list(pytest_args[:]) if pytest_args else []
         if extra_argv and extra_argv[0] == '--':
             extra_argv = extra_argv[1:]
 
@@ -735,8 +751,8 @@ class Test(Task):
         runner, version, mod_path = get_test_runner(PROJECT_MODULE)
         # FIXME: changing CWD is not a good practice
         with working_dir(dirs.site):
-            print("Running tests for {} version:{}, installed at:{}".format(
-                        PROJECT_MODULE, version, mod_path))
+            print(f"Running tests for {PROJECT_MODULE} version:{version}, "
+                  f"installed at:{mod_path}")
             # runner verbosity - convert bool to int
             verbose = int(args.verbose) + 1
             result = runner(  # scipy._lib._testutils:PytestTester
@@ -756,6 +772,139 @@ class Test(Task):
         Args = namedtuple('Args', [k for k in kwargs.keys()])
         args = Args(**kwargs)
         return cls.scipy_tests(args, pytest_args)
+
+
+@cli.cls_cmd('smoke-docs')
+class SmokeDocs(Task):
+    # XXX This essntially is a copy-paste of the Task class. Consider de-duplicating.
+    ctx = CONTEXT
+
+    verbose = Option(
+        ['--verbose', '-v'], default=False, is_flag=True,
+        help="more verbosity")
+    durations = Option(
+        ['--durations', '-d'], default=None, metavar="NUM_TESTS",
+        help="Show timing for the given number of slowest tests"
+    )
+    submodule = Option(
+        ['--submodule', '-s'], default=None, metavar='MODULE_NAME',
+        help="Submodule whose tests to run (cluster, constants, ...)")
+    tests = Option(
+        ['--tests', '-t'], default=None, multiple=True, metavar='TESTS',
+        help='Specify tests to run')
+    parallel = Option(
+        ['--parallel', '-j'], default=1, metavar='N_JOBS',
+        help="Number of parallel jobs for testing"
+    )
+    # Argument can't have `help=`; used to consume all of `-- arg1 arg2 arg3`
+    pytest_args = Argument(
+        ['pytest_args'], nargs=-1, metavar='PYTEST-ARGS', required=False
+    )
+
+    TASK_META = {
+        'task_dep': ['build'],
+    }
+
+    @classmethod
+    def scipy_tests(cls, args, pytest_args):
+        dirs = Dirs(args)
+        dirs.add_sys_path()
+        print(f"SciPy from development installed path at: {dirs.site}")
+
+        # prevent obscure error later; cf https://github.com/numpy/numpy/pull/26691/
+        if not importlib.util.find_spec("scipy_doctest"):
+            raise ModuleNotFoundError("Please install scipy-doctest")
+
+        # FIXME: support pos-args with doit
+        extra_argv = list(pytest_args[:]) if pytest_args else []
+        if extra_argv and extra_argv[0] == '--':
+            extra_argv = extra_argv[1:]
+
+        if args.durations:
+            extra_argv += ['--durations', args.durations]
+
+        # convert options to test selection
+        if args.submodule:
+            tests = [PROJECT_MODULE + "." + args.submodule]
+        elif args.tests:
+            tests = args.tests
+        else:
+            tests = None
+
+        # Request doctesting; use strategy=api unless -t path/to/specific/file
+        # also switch off assertion rewriting: not useful for doctests
+        extra_argv += ["--doctest-modules", "--assert=plain"]
+        if not args.tests:
+            extra_argv += ['--doctest-collect=api']
+
+        runner, version, mod_path = get_test_runner(PROJECT_MODULE)
+        # FIXME: changing CWD is not a good practice
+        with working_dir(dirs.site):
+            print(f"Running tests for {PROJECT_MODULE} version:{version}, "
+                  f"installed at:{mod_path}")
+            # runner verbosity - convert bool to int
+            verbose = int(args.verbose) + 1
+            result = runner(  # scipy._lib._testutils:PytestTester
+                "fast",
+                verbose=verbose,
+                extra_argv=extra_argv,
+                doctests=True,
+                coverage=False,
+                tests=tests,
+                parallel=args.parallel)
+        return result
+
+    @classmethod
+    def run(cls, pytest_args, **kwargs):
+        """run unit-tests"""
+        kwargs.update(cls.ctx.get())
+        Args = namedtuple('Args', [k for k in kwargs.keys()])
+        args = Args(**kwargs)
+        return cls.scipy_tests(args, pytest_args)
+
+
+@cli.cls_cmd('smoke-tutorials')
+class SmokeTutorials(Task):
+    """:wrench: Run smoke-tests on tutorial files."""
+    ctx = CONTEXT
+
+    tests = Option(
+        ['--tests', '-t'], default=None, multiple=True, metavar='TESTS',
+        help='Specify *rst files to smoke test')
+    verbose = Option(
+        ['--verbose', '-v'], default=False, is_flag=True, help="verbosity")
+
+    pytest_args = Argument(
+        ['pytest_args'], nargs=-1, metavar='PYTEST-ARGS', required=False
+    )
+
+    @classmethod
+    def task_meta(cls, **kwargs):
+        kwargs.update(cls.ctx.get())
+        Args = namedtuple('Args', [k for k in kwargs.keys()])
+        args = Args(**kwargs)
+        dirs = Dirs(args)
+
+        cmd = ['pytest']
+        if args.tests:
+            cmd += list(args.tests)
+        else:
+            cmd += ['doc/source/tutorial', '--doctest-glob=*rst']
+        if args.verbose:
+            cmd += ['-v']
+
+        pytest_args = kwargs.pop('pytest_args', None)
+        extra_argv = list(pytest_args[:]) if pytest_args else []
+        if extra_argv and extra_argv[0] == '--':
+            extra_argv = extra_argv[1:]
+        cmd += extra_argv
+
+        cmd_str = ' '.join(cmd)
+        return {
+            'actions': [f'env PYTHONPATH={dirs.site} {cmd_str}'],
+            'task_dep': ['build'],
+            'io': {'capture': False},
+        }
 
 
 @cli.cls_cmd('bench')
@@ -837,8 +986,7 @@ class Bench(Task):
             for a in extra_argv:
                 bench_args.extend(['--bench', ' '.join(str(x) for x in a)])
             if not args.compare:
-                print("Running benchmarks for Scipy version %s at %s"
-                      % (version, mod_path))
+                print(f"Running benchmarks for Scipy version {version} at {mod_path}")
                 cmd = ['asv', 'run', '--dry-run', '--show-stderr',
                        '--python=same', '--quick'] + bench_args
                 retval = cls.run_asv(dirs, cmd)
@@ -904,15 +1052,35 @@ def emit_cmdstr(cmd):
     console.print(f"{EMOJI.cmd} [cmd] {cmd}")
 
 
-def task_lint():
+@task_params([{"name": "fix", "default": False}])
+def task_lint(fix):
     # Lint just the diff since branching off of main using a
     # stricter configuration.
     # emit_cmdstr(os.path.join('tools', 'lint.py') + ' --diff-against main')
+    cmd = str(Dirs().root / 'tools' / 'lint.py') + ' --diff-against=main'
+    if fix:
+        cmd += ' --fix'
     return {
         'basename': 'lint',
-        'actions': [str(Dirs().root / 'tools' / 'lint.py') +
-                    ' --diff-against=main'],
+        'actions': [cmd],
         'doc': 'Lint only files modified since last commit (stricter rules)',
+    }
+
+@task_params([])
+def task_check_python_h_first():
+    # Lint just the diff since branching off of main using a
+    # stricter configuration.
+    # emit_cmdstr(os.path.join('tools', 'lint.py') + ' --diff-against main')
+    cmd = "{!s} --diff-against=main".format(
+        Dirs().root / 'tools' / 'check_python_h_first.py'
+    )
+    return {
+        'basename': 'check_python_h_first',
+        'actions': [cmd],
+        'doc': (
+            'Check Python.h order only files modified since last commit '
+            '(stricter rules)'
+        ),
     }
 
 
@@ -936,14 +1104,20 @@ def task_check_test_name():
 
 
 @cli.cls_cmd('lint')
-class Lint():
+class Lint:
     """:dash: Run linter on modified files and check for
     disallowed Unicode characters and possibly-invalid test names."""
-    def run():
+    fix = Option(
+        ['--fix'], default=False, is_flag=True, help='Attempt to auto-fix errors'
+    )
+
+    @classmethod
+    def run(cls, fix):
         run_doit_task({
-            'lint': {},
+            'lint': {'fix': fix},
             'unicode-check': {},
             'check-testname': {},
+            'check_python_h_first': {},
         })
 
 
@@ -1079,8 +1253,7 @@ class RefguideCheck(Task):
         dirs = Dirs(args)
 
         cmd = [f'{sys.executable}',
-               str(dirs.root / 'tools' / 'refguide_check.py'),
-               '--doctests']
+               str(dirs.root / 'tools' / 'refguide_check.py')]
         if args.verbose:
             cmd += ['-vvv']
         if args.submodule:
@@ -1325,7 +1498,8 @@ def cpu_count(only_physical_cores=False):
             f"following reason:\n{exception}\n"
             "Returning the number of logical cores instead. You can "
             "silence this warning by setting LOKY_MAX_CPU_COUNT to "
-            "the number of cores you want to use."
+            "the number of cores you want to use.",
+            stacklevel=2
         )
         traceback.print_tb(exception.__traceback__)
 
@@ -1396,7 +1570,8 @@ def _cpu_count_affinity(os_cpu_count):
             # havoc, typically on CI workers.
             warnings.warn(
                 "Failed to inspect CPU affinity constraints on this system. "
-                "Please install psutil or explicitly set LOKY_MAX_CPU_COUNT."
+                "Please install psutil or explicitly set LOKY_MAX_CPU_COUNT.",
+                stacklevel=4
             )
 
     # This can happen for platforms that do not implement any kind of CPU

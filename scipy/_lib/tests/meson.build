@@ -10,6 +10,7 @@ python_sources = [
   'test_deprecation.py',
   'test_import_cycles.py',
   'test_public_api.py',
+  'test_scipy_version.py',
   'test_tmpdirs.py',
   'test_warnings.py',
   'test_array_api.py',
@@ -17,5 +18,6 @@ python_sources = [
 
 py3.install_sources(
   python_sources,
-  subdir: 'scipy/_lib/tests'
+  subdir: 'scipy/_lib/tests',
+  install_tag: 'tests'
 )

@@ -13,10 +13,12 @@ import math as _math
 from typing import TYPE_CHECKING, Any
 
 from ._codata import value as _cd
-import numpy as _np
 
 if TYPE_CHECKING:
     import numpy.typing as npt
+
+from scipy._lib._array_api import array_namespace, _asarray
+
 
 """
 BasSw 2006
@@ -196,7 +198,8 @@ fluid_ounce_imp = gallon_imp / 160
 # speed in meter per second
 kmh = 1e3 / hour
 mph = mile / hour
-mach = speed_of_sound = 340.5  # approx value at 15 degrees in 1 atm. Is this a common value?
+# approx value of mach at 15 degrees in 1 atm. Is this a common value?
+mach = speed_of_sound = 340.5
 knot = nautical_mile / hour
 
 # temperature in kelvin
@@ -268,19 +271,21 @@ def convert_temperature(
     array([ 233.15,  313.15])
 
     """
+    xp = array_namespace(val)
+    _val = _asarray(val, xp=xp, subok=True)
     # Convert from `old_scale` to Kelvin
     if old_scale.lower() in ['celsius', 'c']:
-        tempo = _np.asanyarray(val) + zero_Celsius
+        tempo = _val + zero_Celsius
     elif old_scale.lower() in ['kelvin', 'k']:
-        tempo = _np.asanyarray(val)
+        tempo = _val
     elif old_scale.lower() in ['fahrenheit', 'f']:
-        tempo = (_np.asanyarray(val) - 32) * 5 / 9 + zero_Celsius
+        tempo = (_val - 32) * 5 / 9 + zero_Celsius
     elif old_scale.lower() in ['rankine', 'r']:
-        tempo = _np.asanyarray(val) * 5 / 9
+        tempo = _val * 5 / 9
     else:
-        raise NotImplementedError("%s scale is unsupported: supported scales "
-                                  "are Celsius, Kelvin, Fahrenheit, and "
-                                  "Rankine" % old_scale)
+        raise NotImplementedError(f"{old_scale=} is unsupported: supported scales "
+                                   "are Celsius, Kelvin, Fahrenheit, and "
+                                   "Rankine")
     # and from Kelvin to `new_scale`.
     if new_scale.lower() in ['celsius', 'c']:
         res = tempo - zero_Celsius
@@ -291,9 +296,9 @@ def convert_temperature(
     elif new_scale.lower() in ['rankine', 'r']:
         res = tempo * 9 / 5
     else:
-        raise NotImplementedError("'%s' scale is unsupported: supported "
-                                  "scales are 'Celsius', 'Kelvin', "
-                                  "'Fahrenheit', and 'Rankine'" % new_scale)
+        raise NotImplementedError(f"{new_scale=} is unsupported: supported "
+                                   "scales are 'Celsius', 'Kelvin', "
+                                   "'Fahrenheit', and 'Rankine'")
 
     return res
 
@@ -328,7 +333,8 @@ def lambda2nu(lambda_: npt.ArrayLike) -> Any:
     array([  2.99792458e+08,   1.00000000e+00])
 
     """
-    return c / _np.asanyarray(lambda_)
+    xp = array_namespace(lambda_)
+    return c / _asarray(lambda_, xp=xp, subok=True)
 
 
 def nu2lambda(nu: npt.ArrayLike) -> Any:
@@ -358,4 +364,5 @@ def nu2lambda(nu: npt.ArrayLike) -> Any:
     array([  2.99792458e+08,   1.00000000e+00])
 
     """
-    return c / _np.asanyarray(nu)
+    xp = array_namespace(nu)
+    return c / _asarray(nu, xp=xp, subok=True)

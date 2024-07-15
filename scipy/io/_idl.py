@@ -276,7 +276,8 @@ def _read_array(f, typecode, array_desc):
         if typecode == 1:
             nbytes = _read_int32(f)
             if nbytes != array_desc['nbytes']:
-                warnings.warn("Not able to verify number of bytes from header")
+                warnings.warn("Not able to verify number of bytes from header",
+                              stacklevel=3)
 
         # Read bytes as numpy array
         array = np.frombuffer(f.read(array_desc['nbytes']),
@@ -405,16 +406,15 @@ def _read_record(f):
 
     elif record['rectype'] == "UNKNOWN":
 
-        warnings.warn("Skipping UNKNOWN record")
+        warnings.warn("Skipping UNKNOWN record", stacklevel=3)
 
     elif record['rectype'] == "SYSTEM_VARIABLE":
 
-        warnings.warn("Skipping SYSTEM_VARIABLE record")
+        warnings.warn("Skipping SYSTEM_VARIABLE record", stacklevel=3)
 
     else:
 
-        raise Exception("record['rectype']=%s not implemented" %
-                                                            record['rectype'])
+        raise Exception(f"record['rectype']={record['rectype']} not implemented")
 
     f.seek(nextrec)
 
@@ -462,7 +462,7 @@ def _read_arraydesc(f):
 
     elif arraydesc['arrstart'] == 18:
 
-        warnings.warn("Using experimental 64-bit array read")
+        warnings.warn("Using experimental 64-bit array read", stacklevel=3)
 
         _skip_bytes(f, 8)
 
@@ -574,7 +574,8 @@ def _replace_heap(variable, heap):
                     variable = heap[variable.index]
                 else:
                     warnings.warn("Variable referenced by pointer not found "
-                                  "in heap: variable will be set to None")
+                                  "in heap: variable will be set to None",
+                                  stacklevel=3)
                     variable = None
 
         replace, new = _replace_heap(variable, heap)
@@ -755,7 +756,7 @@ def readsav(file_name, idict=None, python_dict=False,
     # Read the signature, which should be 'SR'
     signature = _read_bytes(f, 2)
     if signature != b'SR':
-        raise Exception("Invalid SIGNATURE: %s" % signature)
+        raise Exception(f"Invalid SIGNATURE: {signature}")
 
     # Next, the record format, which is '\x00\x04' for normal .sav
     # files, and '\x00\x06' for compressed .sav files.
@@ -775,7 +776,7 @@ def readsav(file_name, idict=None, python_dict=False,
             fout = tempfile.NamedTemporaryFile(suffix='.sav')
 
         if verbose:
-            print(" -> expanding to %s" % fout.name)
+            print(f" -> expanding to {fout.name}")
 
         # Write header
         fout.write(b'SR\x00\x04')
@@ -798,7 +799,9 @@ def readsav(file_name, idict=None, python_dict=False,
             if RECTYPE_DICT[rectype] == 'END_MARKER':
                 modval = np.int64(2**32)
                 fout.write(struct.pack('>I', int(nextrec) % modval))
-                fout.write(struct.pack('>I', int((nextrec - (nextrec % modval)) / modval)))
+                fout.write(
+                    struct.pack('>I', int((nextrec - (nextrec % modval)) / modval))
+                )
                 fout.write(unknown)
                 break
 
@@ -825,7 +828,7 @@ def readsav(file_name, idict=None, python_dict=False,
         f.seek(4)
 
     else:
-        raise Exception("Invalid RECFMT: %s" % recfmt)
+        raise Exception(f"Invalid RECFMT: {recfmt}")
 
     # Loop through records, and add them to the list
     while True:
@@ -858,40 +861,39 @@ def readsav(file_name, idict=None, python_dict=False,
         for record in records:
             if record['rectype'] == "TIMESTAMP":
                 print("-"*50)
-                print("Date: %s" % record['date'])
-                print("User: %s" % record['user'])
-                print("Host: %s" % record['host'])
+                print(f"Date: {record['date']}")
+                print(f"User: {record['user']}")
+                print(f"Host: {record['host']}")
                 break
 
         # Print out version info about the file
         for record in records:
             if record['rectype'] == "VERSION":
                 print("-"*50)
-                print("Format: %s" % record['format'])
-                print("Architecture: %s" % record['arch'])
-                print("Operating System: %s" % record['os'])
-                print("IDL Version: %s" % record['release'])
+                print(f"Format: {record['format']}")
+                print(f"Architecture: {record['arch']}")
+                print(f"Operating System: {record['os']}")
+                print(f"IDL Version: {record['release']}")
                 break
 
         # Print out identification info about the file
         for record in records:
             if record['rectype'] == "IDENTIFICATON":
                 print("-"*50)
-                print("Author: %s" % record['author'])
-                print("Title: %s" % record['title'])
-                print("ID Code: %s" % record['idcode'])
+                print(f"Author: {record['author']}")
+                print(f"Title: {record['title']}")
+                print(f"ID Code: {record['idcode']}")
                 break
 
         # Print out descriptions saved with the file
         for record in records:
             if record['rectype'] == "DESCRIPTION":
                 print("-"*50)
-                print("Description: %s" % record['description'])
+                print(f"Description: {record['description']}")
                 break
 
         print("-"*50)
-        print("Successfully read %i records of which:" %
-                                            (len(records)))
+        print(f"Successfully read {len(records)} records of which:")
 
         # Create convenience list of record types
         rectypes = [r['rectype'] for r in records]

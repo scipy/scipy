@@ -1,10 +1,11 @@
+#!/usr/bin/env python3
 import os
 import subprocess
 import argparse
 
 
 MAJOR = 1
-MINOR = 12
+MINOR = 15
 MICRO = 0
 ISRELEASED = False
 IS_RELEASE_BRANCH = False
@@ -97,7 +98,7 @@ def git_version(cwd):
         # commit history. This gives the commit count since the previous branch
         # point from the current branch (assuming a full `git clone`, it may be
         # less if `--depth` was used - commonly the default in CI):
-        prev_version_tag = '^v{}.{}.0'.format(MAJOR, MINOR - 2)
+        prev_version_tag = f'^v{MAJOR}.{MINOR - 2}.0'
         out = _minimal_ext_cmd(['git', '--git-dir', git_dir,
                                 'rev-list', 'HEAD', prev_version_tag,
                                 '--count'])

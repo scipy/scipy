@@ -6,6 +6,7 @@
 #define PY_ARRAY_UNIQUE_SYMBOL _scipy_signal_ARRAY_API
 #define NO_IMPORT_ARRAY
 #include "numpy/ndarrayobject.h"
+#include "npy_2_compat.h"
 #include "_sigtools.h"
 
 enum {
@@ -203,7 +204,7 @@ static int _imp_correlate_nd_object(PyArrayNeighborhoodIterObject *curx,
     npy_intp i, j;
     PyObject *tmp, *tmp2;
     char *zero;
-    PyArray_CopySwapFunc *copyswap = PyArray_DESCR(curx->ao)->f->copyswap;
+    PyArray_CopySwapFunc *copyswap = PyDataType_GetArrFuncs(PyArray_DESCR(curx->ao))->copyswap;
 
     zero = PyArray_Zero(curx->ao);
 

@@ -161,7 +161,9 @@ class Test_Qhull:
         assert_raises(RuntimeError, y.get_voronoi_diagram)
 
     def test_issue_8051(self):
-        points = np.array([[0, 0], [0, 1], [0, 2], [1, 0], [1, 1], [1, 2],[2, 0], [2, 1], [2, 2]])
+        points = np.array(
+            [[0, 0], [0, 1], [0, 2], [1, 0], [1, 1], [1, 2],[2, 0], [2, 1], [2, 2]]
+        )
         Voronoi(points)
 
 
@@ -325,6 +327,7 @@ class TestUtilities:
             ok = (j != -1) | at_boundary
             assert_(ok.all(), f"{err_msg} {np.nonzero(~ok)}")
 
+    @pytest.mark.fail_slow(10)
     def test_degenerate_barycentric_transforms(self):
         # The triangulation should not produce invalid barycentric
         # transforms that stump the simplex finding
@@ -343,6 +346,8 @@ class TestUtilities:
         self._check_barycentric_transforms(tri)
 
     @pytest.mark.slow
+    @pytest.mark.fail_slow(20)
+    # OK per https://github.com/scipy/scipy/pull/20487#discussion_r1572684869
     def test_more_barycentric_transforms(self):
         # Triangulate some "nasty" grids
 
@@ -353,7 +358,9 @@ class TestUtilities:
         for ndim in range(2, 6):
             # Generate an uniform grid in n-d unit cube
             x = np.linspace(0, 1, npoints[ndim])
-            grid = np.c_[list(map(np.ravel, np.broadcast_arrays(*np.ix_(*([x]*ndim)))))].T
+            grid = np.c_[
+                list(map(np.ravel, np.broadcast_arrays(*np.ix_(*([x]*ndim)))))
+            ].T
 
             err_msg = "ndim=%d" % ndim
 
@@ -889,9 +896,10 @@ class TestVoronoi:
         assert_equal(set(map(tuple, vor.regions)),
                      set(map(tuple, regions)))
 
-        p1 = list(zip(list(map(sorttuple, ridge_points)), list(map(sorttuple, ridge_vertices))))
+        p1 = list(zip(list(map(sorttuple, ridge_points)),
+                      list(map(sorttuple, ridge_vertices))))
         p2 = list(zip(list(map(sorttuple, vor.ridge_points.tolist())),
-                 list(map(sorttuple, vor.ridge_vertices))))
+                      list(map(sorttuple, vor.ridge_vertices))))
         p1.sort()
         p2.sort()
 
@@ -954,6 +962,7 @@ class TestVoronoi:
         vor = Voronoi(points,furthest_site=True)
         assert_equal(vor.furthest_site,True)
 
+    @pytest.mark.fail_slow(10)
     @pytest.mark.parametrize("name", sorted(INCREMENTAL_DATASETS))
     def test_incremental(self, name):
         # Test incremental construction of the triangulation
@@ -997,8 +1006,9 @@ class TestVoronoi:
                 try:
                     return vertex_map[x]
                 except KeyError as e:
-                    raise AssertionError("incremental result has spurious vertex at %r"
-                                         % (objx.vertices[x],)) from e
+                    message = (f"incremental result has spurious vertex "
+                               f"at {objx.vertices[x]!r}")
+                    raise AssertionError(message) from e
 
             def simplified(x):
                 items = set(map(sorted_tuple, x))
@@ -1076,17 +1086,21 @@ class Test_HalfspaceIntersection:
                                [0.0, 1.0, -1.0]])
         feasible_point = np.array([0.5, 0.5, 0.5])
         #Feasible point is (ndim,) instead of (ndim-1,)
-        assert_raises(ValueError, qhull.HalfspaceIntersection, halfspaces, feasible_point)
+        assert_raises(ValueError,
+                      qhull.HalfspaceIntersection, halfspaces, feasible_point)
         feasible_point = np.array([[0.5], [0.5]])
         #Feasible point is (ndim-1, 1) instead of (ndim-1,)
-        assert_raises(ValueError, qhull.HalfspaceIntersection, halfspaces, feasible_point)
+        assert_raises(ValueError,
+                      qhull.HalfspaceIntersection, halfspaces, feasible_point)
         feasible_point = np.array([[0.5, 0.5]])
         #Feasible point is (1, ndim-1) instead of (ndim-1,)
-        assert_raises(ValueError, qhull.HalfspaceIntersection, halfspaces, feasible_point)
+        assert_raises(ValueError,
+                      qhull.HalfspaceIntersection, halfspaces, feasible_point)
 
         feasible_point = np.array([-0.5, -0.5])
         #Feasible point is outside feasible region
-        assert_raises(qhull.QhullError, qhull.HalfspaceIntersection, halfspaces, feasible_point)
+        assert_raises(qhull.QhullError,
+                      qhull.HalfspaceIntersection, halfspaces, feasible_point)
 
     def test_incremental(self):
         #Cube
@@ -1109,7 +1123,8 @@ class Test_HalfspaceIntersection:
 
         inc_hs = qhull.HalfspaceIntersection(halfspaces, feas_point, incremental=True)
 
-        inc_res_hs = qhull.HalfspaceIntersection(halfspaces, feas_point, incremental=True)
+        inc_res_hs = qhull.HalfspaceIntersection(halfspaces, feas_point,
+                                                 incremental=True)
 
         for i, ehs in enumerate(extra_halfspaces):
             inc_hs.add_halfspaces(ehs[np.newaxis, :])
@@ -1165,3 +1180,11 @@ class Test_HalfspaceIntersection:
             assert set(a) == set(b)  # facet orientation can differ
 
         assert_allclose(hs.dual_points, qhalf_points)
+
+
+@pytest.mark.parametrize("diagram_type", [Voronoi, qhull.Delaunay])
+def test_gh_20623(diagram_type):
+    rng = np.random.default_rng(123)
+    invalid_data = rng.random((4, 10, 3))
+    with pytest.raises(ValueError, match="dimensions"):
+        diagram_type(invalid_data)

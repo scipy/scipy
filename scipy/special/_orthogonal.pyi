@@ -1,29 +1,20 @@
+from __future__ import annotations
 from typing import (
     Any,
     Callable,
     Literal,
     Optional,
     overload,
-    Tuple,
-    Union,
 )
 
-import numpy
+import numpy as np
 
-_IntegerType = Union[int, numpy.integer]
-_FloatingType = Union[float, numpy.floating]
-_PointsAndWeights = Tuple[numpy.ndarray, numpy.ndarray]
-_PointsAndWeightsAndMu = Tuple[numpy.ndarray, numpy.ndarray, float]
+_IntegerType = int | np.integer
+_FloatingType = float | np.floating
+_PointsAndWeights = tuple[np.ndarray, np.ndarray]
+_PointsAndWeightsAndMu = tuple[np.ndarray, np.ndarray, float]
 
-_ArrayLike0D = Union[
-    bool,
-    int,
-    float,
-    complex,
-    str,
-    bytes,
-    numpy.generic,
-]
+_ArrayLike0D = bool | int | float | complex | str | bytes | np.generic
 
 __all__ = [
     'legendre',
@@ -279,17 +270,17 @@ def roots_sh_legendre(
         mu: Literal[True],
 ) -> _PointsAndWeightsAndMu: ...
 
-class orthopoly1d(numpy.poly1d):
+class orthopoly1d(np.poly1d):
     def __init__(
             self,
-            roots: numpy.typing.ArrayLike,
-            weights: numpy.typing.ArrayLike | None,
+            roots: np.typing.ArrayLike,
+            weights: np.typing.ArrayLike | None,
             hn: float = ...,
             kn: float = ...,
-            wfunc = Optional[Callable[[float], float]],
-            limits = Optional[Tuple[float, float]],
+            wfunc = Optional[Callable[[float], float]],  # noqa: UP007
+            limits = tuple[float, float] | None,
             monic: bool = ...,
-            eval_func: numpy.ufunc = ...,
+            eval_func: np.ufunc = ...,
     ) -> None: ...
     @property
     def limits(self) -> tuple[float, float]: ...
@@ -297,9 +288,9 @@ class orthopoly1d(numpy.poly1d):
     @overload
     def __call__(self, x: _ArrayLike0D) -> Any: ...
     @overload
-    def __call__(self, x: numpy.poly1d) -> numpy.poly1d: ...  # type: ignore[misc]
+    def __call__(self, x: np.poly1d) -> np.poly1d: ...  # type: ignore[overload-overlap]
     @overload
-    def __call__(self, x: numpy.typing.ArrayLike) -> numpy.ndarray: ...
+    def __call__(self, x: np.typing.ArrayLike) -> np.ndarray: ...
 
 def legendre(n: _IntegerType, monic: bool = ...) -> orthopoly1d: ...
 def chebyt(n: _IntegerType, monic: bool = ...) -> orthopoly1d: ...

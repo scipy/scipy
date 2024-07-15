@@ -8,10 +8,11 @@ import pytest
 from pytest import raises as assert_raises
 
 from scipy import signal
-from scipy.fft import fftfreq
+from scipy.fft import fftfreq, rfftfreq, fft, irfft
 from scipy.integrate import trapezoid
 from scipy.signal import (periodogram, welch, lombscargle, coherence,
                           spectrogram, check_COLA, check_NOLA)
+from scipy.signal.windows import hann
 from scipy.signal._spectral_py import _spectral_helper
 
 # Compare ShortTimeFFT.stft() / ShortTimeFFT.istft() with stft() / istft():
@@ -415,7 +416,8 @@ class TestWelch:
         #for string-like window, input signal length < nperseg value gives
         #UserWarning, sets nperseg to x.shape[-1]
         with suppress_warnings() as sup:
-            sup.filter(UserWarning, "nperseg = 256 is greater than input length  = 8, using nperseg = 8")
+            msg = "nperseg = 256 is greater than input length  = 8, using nperseg = 8"
+            sup.filter(UserWarning, msg)
             f, p = welch(x,window='hann')  # default nperseg
             f1, p1 = welch(x,window='hann', nperseg=256)  # user-specified nperseg
         f2, p2 = welch(x, nperseg=8)  # valid nperseg, doesn't give warning
@@ -777,7 +779,8 @@ class TestCSD:
         #for string-like window, input signal length < nperseg value gives
         #UserWarning, sets nperseg to x.shape[-1]
         with suppress_warnings() as sup:
-            sup.filter(UserWarning, "nperseg = 256 is greater than input length  = 8, using nperseg = 8")
+            msg = "nperseg = 256 is greater than input length  = 8, using nperseg = 8"
+            sup.filter(UserWarning, msg)
             f, p = csd(x, x, window='hann')  # default nperseg
             f1, p1 = csd(x, x, window='hann', nperseg=256)  # user-specified nperseg
         f2, p2 = csd(x, x, nperseg=8)  # valid nperseg, doesn't give warning
@@ -956,7 +959,8 @@ class TestSpectrogram:
         f, _, p = spectrogram(x, fs, window=('tukey',0.25))  # default nperseg
         with suppress_warnings() as sup:
             sup.filter(UserWarning,
-                       "nperseg = 1025 is greater than input length  = 1024, using nperseg = 1024")
+                       "nperseg = 1025 is greater than input length  = 1024, "
+                       "using nperseg = 1024",)
             f1, _, p1 = spectrogram(x, fs, window=('tukey',0.25),
                                     nperseg=1025)  # user-specified nperseg
         f2, _, p2 = spectrogram(x, fs, nperseg=256)  # to compare w/default
@@ -1616,3 +1620,94 @@ class TestSTFT:
         # Test round trip:
         x1 = istft(Zp0, input_onesided=True, boundary=True, scaling='psd')[1]
         assert_allclose(x1, x)
+
+
+class TestSampledSpectralRepresentations:
+    """Check energy/power relations from `Spectral Analysis` section in the user guide.
+
+    A 32 sample cosine signal is used to compare the numerical to the expected results
+    stated in :ref:`tutorial_SpectralAnalysis` in
+    file ``doc/source/tutorial/signal.rst``
+    """
+    n: int = 32  #: number of samples
+    T: float = 1/16  #: sampling interval
+    a_ref: float = 3  #: amplitude of reference
+    l_a: int = 3  #: index in fft for defining frequency of test signal
+
+    x_ref: np.ndarray  #: reference signal
+    X_ref: np.ndarray  #: two-sided FFT of x_ref
+    E_ref: float  #: energy of signal
+    P_ref: float  #: power of signal
+
+    def setup_method(self):
+        """Create Cosine signal with amplitude a from spectrum. """
+        f = rfftfreq(self.n, self.T)
+        X_ref = np.zeros_like(f)
+        self.l_a = 3
+        X_ref[self.l_a] = self.a_ref/2 * self.n  # set amplitude
+        self.x_ref = irfft(X_ref)
+        self.X_ref = fft(self.x_ref)
+
+        # Closed form expression for continuous-time signal:
+        self.E_ref = self.tau * self.a_ref**2 / 2  # energy of signal
+        self.P_ref = self.a_ref**2 / 2  # power of signal
+
+    @property
+    def tau(self) -> float:
+        """Duration of signal. """
+        return self.n * self.T
+
+    @property
+    def delta_f(self) -> float:
+        """Bin width """
+        return 1 / (self.n * self.T)
+
+    def test_reference_signal(self):
+        """Test energy and power formulas. """
+        # Verify that amplitude is a:
+        assert_allclose(2*self.a_ref, np.ptp(self.x_ref), rtol=0.1)
+        # Verify that energy expression for sampled signal:
+        assert_allclose(self.T * sum(self.x_ref ** 2), self.E_ref)
+
+        # Verify that spectral energy and power formulas are correct:
+        sum_X_ref_squared = sum(self.X_ref.real**2 + self.X_ref.imag**2)
+        assert_allclose(self.T/self.n * sum_X_ref_squared, self.E_ref)
+        assert_allclose(1/self.n**2 * sum_X_ref_squared, self.P_ref)
+
+    def test_windowed_DFT(self):
+        """Verify spectral representations of windowed DFT.
+
+        Furthermore, the scalings of `periodogram` and `welch` are verified.
+        """
+        w = hann(self.n, sym=False)
+        c_amp, c_rms = abs(sum(w)), np.sqrt(sum(w.real**2 + w.imag**2))
+        Xw = fft(self.x_ref*w)  # unnormalized windowed DFT
+
+        # Verify that the *spectrum* peak is consistent:
+        assert_allclose(self.tau * Xw[self.l_a] / c_amp, self.a_ref * self.tau / 2)
+        # Verify that the *amplitude spectrum* peak is consistent:
+        assert_allclose(Xw[self.l_a] / c_amp, self.a_ref/2)
+
+        # Verify spectral power/energy equals signal's power/energy:
+        X_ESD = self.tau * self.T * abs(Xw / c_rms)**2  # Energy Spectral Density
+        X_PSD = self.T * abs(Xw / c_rms)**2  # Power Spectral Density
+        assert_allclose(self.delta_f * sum(X_ESD), self.E_ref)
+        assert_allclose(self.delta_f * sum(X_PSD), self.P_ref)
+
+        # Verify scalings of periodogram:
+        kw = dict(fs=1/self.T, window=w, detrend=False, return_onesided=False)
+        _, P_mag = periodogram(self.x_ref, scaling='spectrum', **kw)
+        _, P_psd = periodogram(self.x_ref, scaling='density', **kw)
+
+        # Verify that periodogram calculates a squared magnitude spectrum:
+        float_res = np.finfo(P_mag.dtype).resolution
+        assert_allclose(P_mag, abs(Xw/c_amp)**2, atol=float_res*max(P_mag))
+        # Verify that periodogram calculates a PSD:
+        assert_allclose(P_psd, X_PSD, atol=float_res*max(P_psd))
+
+        # Ensure that scaling of welch is the same as of periodogram:
+        kw = dict(nperseg=len(self.x_ref), noverlap=0, **kw)
+        assert_allclose(welch(self.x_ref, scaling='spectrum', **kw)[1], P_mag,
+                        atol=float_res*max(P_mag))
+        assert_allclose(welch(self.x_ref, scaling='density', **kw)[1], P_psd,
+                        atol=float_res*max(P_psd))

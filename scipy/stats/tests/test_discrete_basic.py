@@ -22,6 +22,8 @@ distdiscrete += [[stats.rv_discrete(values=vals), ()]]
 # For these distributions, test_discrete_basic only runs with test mode full
 distslow = {'zipfian', 'nhypergeom'}
 
+# Override number of ULPs adjustment for `check_cdf_ppf`
+roundtrip_cdf_ppf_exceptions = {'nbinom': 30}
 
 def cases_test_discrete_basic():
     seen = set()
@@ -91,7 +93,9 @@ def test_moments(distname, arg):
     check_mean_expect(distfn, arg, m, distname)
     check_var_expect(distfn, arg, m, v, distname)
     check_skew_expect(distfn, arg, m, v, s, distname)
-    if distname not in ['zipf', 'yulesimon']:
+    with np.testing.suppress_warnings() as sup:
+        if distname in ['zipf', 'betanbinom']:
+            sup.filter(RuntimeWarning)
         check_kurt_expect(distfn, arg, m, v, k, distname)
 
     # frozen distr moments
@@ -111,8 +115,9 @@ def test_rvs_broadcast(dist, shape_args):
     # implementation detail of the distribution, not a requirement.  If
     # the implementation the rvs() method of a distribution changes, this
     # test might also have to be changed.
-    shape_only = dist in ['betabinom', 'skellam', 'yulesimon', 'dlaplace',
-                          'nchypergeom_fisher', 'nchypergeom_wallenius']
+    shape_only = dist in ['betabinom', 'betanbinom', 'skellam', 'yulesimon',
+                          'dlaplace', 'nchypergeom_fisher',
+                          'nchypergeom_wallenius']
 
     try:
         distfunc = getattr(stats, dist)
@@ -190,8 +195,9 @@ def check_cdf_ppf(distfn, arg, supp, msg):
     cdf_supp = distfn.cdf(supp, *arg)
     # In very rare cases, the finite precision calculation of ppf(cdf(supp))
     # can produce an array in which an element is off by one.  We nudge the
-    # CDF values down by 15 ULPs help to avoid this.
-    cdf_supp0 = cdf_supp - 15*np.spacing(cdf_supp)
+    # CDF values down by a few ULPs help to avoid this.
+    n_ulps = roundtrip_cdf_ppf_exceptions.get(distfn.name, 15)
+    cdf_supp0 = cdf_supp - n_ulps*np.spacing(cdf_supp)
     npt.assert_array_equal(distfn.ppf(cdf_supp0, *arg),
                            supp, msg + '-roundtrip')
     # Repeat the same calculation, but with the CDF values decreased by 1e-8.
@@ -302,9 +308,10 @@ def check_discrete_chisquare(distfn, arg, rvs, alpha, msg):
     freq, hsupp = np.histogram(rvs, histsupp)
     chis, pval = stats.chisquare(np.array(freq), len(rvs)*distmass)
 
-    npt.assert_(pval > alpha,
-                'chisquare - test for %s at arg = %s with pval = %s' %
-                (msg, str(arg), str(pval)))
+    npt.assert_(
+        pval > alpha,
+        f'chisquare - test for {msg} at arg = {str(arg)} with pval = {str(pval)}'
+    )
 
 
 def check_scale_docstring(distfn):
@@ -348,7 +355,7 @@ def test_cdf_gh13280_regression(distname, args):
 def cases_test_discrete_integer_shapes():
     # distributions parameters that are only allowed to be integral when
     # fitting, but are allowed to be real as input to PDF, etc.
-    integrality_exceptions = {'nbinom': {'n'}}
+    integrality_exceptions = {'nbinom': {'n'}, 'betanbinom': {'n'}}
 
     seen = set()
     for distname, shapes in distdiscrete:
