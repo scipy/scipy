@@ -21,8 +21,8 @@ def dctn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False,
         The shape of the result. If both `s` and `axes` (see below) are None,
         `s` is ``x.shape``; if `s` is None but `axes` is not None, then `s` is
         ``numpy.take(x.shape, axes, axis=0)``.
-        If ``s[i] > x.shape[i]``, the ith dimension is padded with zeros.
-        If ``s[i] < x.shape[i]``, the ith dimension is truncated to length
+        If ``s[i] > x.shape[i]``, the ith dimension of the input is padded with zeros.
+        If ``s[i] < x.shape[i]``, the ith dimension of the input is truncated to length
         ``s[i]``.
         If any element of `s` is -1, the size of the corresponding dimension of
         `x` is used.
@@ -86,8 +86,8 @@ def idctn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False,
         The shape of the result.  If both `s` and `axes` (see below) are
         None, `s` is ``x.shape``; if `s` is None but `axes` is
         not None, then `s` is ``numpy.take(x.shape, axes, axis=0)``.
-        If ``s[i] > x.shape[i]``, the ith dimension is padded with zeros.
-        If ``s[i] < x.shape[i]``, the ith dimension is truncated to length
+        If ``s[i] > x.shape[i]``, the ith dimension of the input is padded with zeros.
+        If ``s[i] < x.shape[i]``, the ith dimension of the input is truncated to length
         ``s[i]``.
         If any element of `s` is -1, the size of the corresponding dimension of
         `x` is used.
@@ -151,8 +151,8 @@ def dstn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False,
         The shape of the result.  If both `s` and `axes` (see below) are None,
         `s` is ``x.shape``; if `s` is None but `axes` is not None, then `s` is
         ``numpy.take(x.shape, axes, axis=0)``.
-        If ``s[i] > x.shape[i]``, the ith dimension is padded with zeros.
-        If ``s[i] < x.shape[i]``, the ith dimension is truncated to length
+        If ``s[i] > x.shape[i]``, the ith dimension of the input is padded with zeros.
+        If ``s[i] < x.shape[i]``, the ith dimension of the input is truncated to length
         ``s[i]``.
         If any element of `shape` is -1, the size of the corresponding dimension
         of `x` is used.
@@ -216,8 +216,8 @@ def idstn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False,
         The shape of the result.  If both `s` and `axes` (see below) are None,
         `s` is ``x.shape``; if `s` is None but `axes` is not None, then `s` is
         ``numpy.take(x.shape, axes, axis=0)``.
-        If ``s[i] > x.shape[i]``, the ith dimension is padded with zeros.
-        If ``s[i] < x.shape[i]``, the ith dimension is truncated to length
+        If ``s[i] > x.shape[i]``, the ith dimension of the input is padded with zeros.
+        If ``s[i] < x.shape[i]``, the ith dimension of the input is truncated to length
         ``s[i]``.
         If any element of `s` is -1, the size of the corresponding dimension of
         `x` is used.

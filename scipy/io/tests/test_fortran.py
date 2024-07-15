@@ -23,7 +23,7 @@ def test_fortranfiles_read():
     for filename in iglob(path.join(DATA_PATH, "fortran-*-*x*x*.dat")):
         m = re.search(r'fortran-([^-]+)-(\d+)x(\d+)x(\d+).dat', filename, re.I)
         if not m:
-            raise RuntimeError("Couldn't match %s filename to regex" % filename)
+            raise RuntimeError(f"Couldn't match {filename} filename to regex")
 
         dims = (int(m.group(2)), int(m.group(3)), int(m.group(4)))
 
@@ -40,7 +40,7 @@ def test_fortranfiles_read():
 def test_fortranfiles_mixed_record():
     filename = path.join(DATA_PATH, "fortran-mixed.dat")
     with FortranFile(filename, 'r', '<u4') as f:
-        record = f.read_record('<i4,<f4,<i8,(2)<f8')
+        record = f.read_record('<i4,<f4,<i8,2<f8')
 
     assert_equal(record['f0'][0], 1)
     assert_allclose(record['f1'][0], 2.3)
@@ -52,7 +52,7 @@ def test_fortranfiles_write():
     for filename in iglob(path.join(DATA_PATH, "fortran-*-*x*x*.dat")):
         m = re.search(r'fortran-([^-]+)-(\d+)x(\d+)x(\d+).dat', filename, re.I)
         if not m:
-            raise RuntimeError("Couldn't match %s filename to regex" % filename)
+            raise RuntimeError(f"Couldn't match {filename} filename to regex")
         dims = (int(m.group(2)), int(m.group(3)), int(m.group(4)))
 
         dtype = m.group(1).replace('s', '<')

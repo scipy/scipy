@@ -299,7 +299,7 @@ def _load_check_case(name, files, case):
         label = f"test {name}; file {file_name}"
         for k, expected in case.items():
             k_label = f"{label}, variable {k}"
-            assert_(k in matdict, "Missing key at %s" % k_label)
+            assert_(k in matdict, f"Missing key at {k_label}")
             _check_level(k_label, expected, matdict[k])
 
 
@@ -1239,7 +1239,7 @@ def test_save_unicode_field(tmpdir):
 
 def test_save_custom_array_type(tmpdir):
     class CustomArray:
-        def __array__(self):
+        def __array__(self, dtype=None, copy=None):
             return np.arange(6.0).reshape(2, 3)
     a = CustomArray()
     filename = os.path.join(str(tmpdir), 'test.mat')
@@ -1273,7 +1273,7 @@ def test_simplify_cells():
     (1, '8*_*', None),
 ])
 def test_matfile_version(version, filt, regex):
-    use_filt = pjoin(test_data_path, 'test*%s.mat' % filt)
+    use_filt = pjoin(test_data_path, f'test*{filt}.mat')
     files = glob(use_filt)
     if regex is not None:
         files = [file for file in files if re.match(regex, file) is not None]
@@ -1327,3 +1327,13 @@ def test_gh_17992(tmp_path):
             new_dict)
     assert_allclose(new_dict["data"][0][0], array_one)
     assert_allclose(new_dict["data"][0][1], array_two)
+
+
+def test_gh_19659(tmp_path):
+    d = {
+        "char_array": np.array([list("char"), list("char")], dtype="U1"),
+        "string_array": np.array(["string", "string"]),
+        }
+    outfile = tmp_path / "tmp.mat"
+    # should not error:
+    savemat(outfile, d, format="4")

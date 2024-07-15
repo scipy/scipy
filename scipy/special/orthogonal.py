@@ -29,9 +29,7 @@ _rootfuns_map = {'roots_legendre': 'p_roots',
 
 
 __all__ = _polyfuns + list(_rootfuns_map.keys()) + [  # noqa: F822
-    'exp', 'inf', 'floor', 'around', 'hstack', 'arange',
-    'linalg', 'airy', 'orthopoly1d', 'newfun',
-    'oldfun', 'p_roots', 't_roots', 'u_roots', 'c_roots', 's_roots',
+    'airy', 'p_roots', 't_roots', 'u_roots', 'c_roots', 's_roots',
     'j_roots', 'l_roots', 'la_roots', 'h_roots', 'he_roots', 'cg_roots',
     'ps_roots', 'ts_roots', 'us_roots', 'js_roots'
 ]

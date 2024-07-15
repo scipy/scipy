@@ -25,9 +25,6 @@ B-splines
 .. autosummary::
    :toctree: generated/
 
-   bspline        -- B-spline basis function of order n.
-   cubic          -- B-spline basis function of order 3.
-   quadratic      -- B-spline basis function of order 2.
    gauss_spline   -- Gaussian approximation to the B-spline basis function.
    cspline1d      -- Coefficients for 1-D cubic (3rd order) B-spline.
    qspline1d      -- Coefficients for 1-D quadratic (2nd order) B-spline.
@@ -128,7 +125,6 @@ Lower-level filter design functions:
    buttap         -- Return (z,p,k) for analog prototype of Butterworth filter.
    cheb1ap        -- Return (z,p,k) for type I Chebyshev filter.
    cheb2ap        -- Return (z,p,k) for type II Chebyshev filter.
-   cmplx_sort     -- Sort roots based on magnitude.
    ellipap        -- Return (z,p,k) for analog prototype of elliptic filter.
    lp2bp          -- Transform a lowpass filter prototype to a bandpass filter.
    lp2bp_zpk      -- Transform a lowpass filter prototype to a bandpass filter.
@@ -239,20 +235,6 @@ obtain these windows by name:
 
    get_window -- Return a window of a given length and type.
 
-Wavelets
-========
-
-.. autosummary::
-   :toctree: generated/
-
-   cascade      -- Compute scaling function and wavelet from coefficients.
-   daub         -- Return low-pass.
-   morlet       -- Complex Morlet wavelet.
-   qmf          -- Return quadrature mirror filter from low-pass.
-   ricker       -- Return ricker wavelet.
-   morlet2      -- Return Morlet wavelet, compatible with cwt.
-   cwt          -- Perform continuous wavelet transform.
-
 Peak finding
 ============
 
@@ -277,7 +259,7 @@ Spectral analysis
    welch          -- Compute a periodogram using Welch's method.
    csd            -- Compute the cross spectral density, using Welch's method.
    coherence      -- Compute the magnitude squared coherence, using Welch's method.
-   spectrogram    -- Compute the spectrogram.
+   spectrogram    -- Compute the spectrogram (legacy).
    lombscargle    -- Computes the Lomb-Scargle periodogram.
    vectorstrength -- Computes the vector strength.
    ShortTimeFFT   -- Interface for calculating the \
@@ -313,14 +295,10 @@ from ._max_len_seq import max_len_seq
 from ._upfirdn import upfirdn
 
 from ._spline import (
-    cspline2d,
-    qspline2d,
-    sepfir2d,
-    symiirorder1,
-    symiirorder2,
+    sepfir2d
 )
 
-from ._bsplines import *
+from ._spline_filters import *
 from ._filter_design import *
 from ._fir_filter_design import *
 from ._ltisys import *
@@ -329,7 +307,6 @@ from ._signaltools import *
 from ._savitzky_golay import savgol_coeffs, savgol_filter
 from ._spectral_py import *
 from ._short_time_fft import *
-from ._wavelets import *
 from ._peak_finding import *
 from ._czt import *
 from .windows import get_window  # keep this one in signal namespace

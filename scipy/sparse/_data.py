@@ -6,9 +6,10 @@
 
 """
 
+import math
 import numpy as np
 
-from ._base import _spbase, _ufuncs_with_fixed_point_at_zero
+from ._base import _spbase, sparray, _ufuncs_with_fixed_point_at_zero
 from ._sputils import isscalarlike, validateaxis
 
 __all__ = []
@@ -17,8 +18,8 @@ __all__ = []
 # TODO implement all relevant operations
 # use .data.__methods__() instead of /=, *=, etc.
 class _data_matrix(_spbase):
-    def __init__(self):
-        _spbase.__init__(self)
+    def __init__(self, arg1, *, maxprint=None):
+        _spbase.__init__(self, arg1, maxprint=maxprint)
 
     @property
     def dtype(self):
@@ -55,8 +56,7 @@ class _data_matrix(_spbase):
         if isscalarlike(other):
             self.data *= other
             return self
-        else:
-            return NotImplemented
+        return NotImplemented
 
     def __itruediv__(self, other):  # self /= other
         if isscalarlike(other):
@@ -96,11 +96,6 @@ class _data_matrix(_spbase):
 
     copy.__doc__ = _spbase.copy.__doc__
 
-    def count_nonzero(self):
-        return np.count_nonzero(self._deduped_data())
-
-    count_nonzero.__doc__ = _spbase.count_nonzero.__doc__
-
     def power(self, n, dtype=None):
         """
         This function performs element-wise power.
@@ -117,7 +112,7 @@ class _data_matrix(_spbase):
         ------
         NotImplementedError : if n is a zero scalar
             If zero power is desired, special case it to use
-            `np.ones(A.shape, dtype=A.dtype)`
+            ``np.ones(A.shape, dtype=A.dtype)``
         """
         if not isscalarlike(n):
             raise NotImplementedError("input is not scalar")
@@ -194,6 +189,11 @@ class _minmax_mixin:
         major_index = np.compress(mask, major_index)
         value = np.compress(mask, value)
 
+        if isinstance(self, sparray):
+            coords = (major_index,)
+            shape = (M,)
+            return self._coo_container((value, coords), shape=shape, dtype=self.dtype)
+
         if axis == 0:
             return self._coo_container(
                 (value, (np.zeros(len(value), dtype=idx_dtype), major_index)),
@@ -207,10 +207,13 @@ class _minmax_mixin:
 
     def _min_or_max(self, axis, out, min_or_max):
         if out is not None:
-            raise ValueError("Sparse matrices do not support "
-                              "an 'out' parameter.")
+            raise ValueError("Sparse arrays do not support an 'out' parameter.")
 
         validateaxis(axis)
+        if self.ndim == 1:
+            if axis not in (None, 0, -1):
+                raise ValueError("axis out of range")
+            axis = None  # avoid calling special axis case. no impact on 1d
 
         if axis is None:
             if 0 in self.shape:
@@ -220,7 +223,7 @@ class _minmax_mixin:
             if self.nnz == 0:
                 return zero
             m = min_or_max.reduce(self._deduped_data().ravel())
-            if self.nnz != np.prod(self.shape):
+            if self.nnz != math.prod(self.shape):
                 m = min_or_max(zero, m)
             return m
 
@@ -234,8 +237,7 @@ class _minmax_mixin:
 
     def _arg_min_or_max_axis(self, axis, argmin_or_argmax, compare):
         if self.shape[axis] == 0:
-            raise ValueError("Can't apply the operation along a zero-sized "
-                             "dimension.")
+            raise ValueError("Cannot apply the operation along a zero-sized dimension.")
 
         if axis < 0:
             axis += 2
@@ -264,6 +266,9 @@ class _minmax_mixin:
                 else:
                     ret[i] = zero_ind
 
+        if isinstance(self, sparray):
+            return ret
+
         if axis == 1:
             ret = ret.reshape(-1, 1)
 
@@ -275,11 +280,16 @@ class _minmax_mixin:
 
         validateaxis(axis)
 
+        if self.ndim == 1:
+            if axis not in (None, 0, -1):
+                raise ValueError("axis out of range")
+            axis = None  # avoid calling special axis case. no impact on 1d
+
         if axis is not None:
             return self._arg_min_or_max_axis(axis, argmin_or_argmax, compare)
 
         if 0 in self.shape:
-            raise ValueError("Can't apply the operation to an empty matrix.")
+            raise ValueError("Cannot apply the operation to an empty matrix.")
 
         if self.nnz == 0:
             return 0
@@ -290,20 +300,18 @@ class _minmax_mixin:
         mat.sum_duplicates()
         extreme_index = argmin_or_argmax(mat.data)
         extreme_value = mat.data[extreme_index]
-        num_row, num_col = mat.shape
+        num_col = mat.shape[-1]
 
         # If the min value is less than zero, or max is greater than zero,
-        # then we don't need to worry about implicit zeros.
+        # then we do not need to worry about implicit zeros.
         if compare(extreme_value, zero):
             # cast to Python int to avoid overflow and RuntimeError
-            return (int(mat.row[extreme_index]) * num_col +
-                    int(mat.col[extreme_index]))
+            return int(mat.row[extreme_index]) * num_col + int(mat.col[extreme_index])
 
         # Cheap test for the rare case where we have no implicit zeros.
-        size = num_row * num_col
+        size = math.prod(self.shape)
         if size == mat.nnz:
-            return (int(mat.row[extreme_index]) * num_col +
-                    int(mat.col[extreme_index]))
+            return int(mat.row[extreme_index]) * num_col + int(mat.col[extreme_index])
 
         # At this stage, any implicit zero could be the min or max value.
         # After sum_duplicates(), the `row` and `col` arrays are guaranteed to

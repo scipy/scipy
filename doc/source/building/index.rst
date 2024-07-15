@@ -125,13 +125,18 @@ your system.
 
         brew install gfortran openblas pkg-config
 
+    To allow the build tools to find OpenBLAS, you must run::
+
+        brew info openblas | grep PKG_CONFIG_PATH
+
+    This will give you a command starting with ``export PKG_CONFIG_PATH=``, which
+    you must run.
+
     .. note::
 
-        As of SciPy >=1.2.0, we do not support compiling against the system
-        Accelerate library for BLAS and LAPACK. It does not support a sufficiently
-        recent LAPACK interface. This is planned to change in 2023, because macOS
-        13.3 introduced a major upgrade to Accelerate which resolved all known
-        issues.
+        As of SciPy 1.14.0, we have added support for the Accelerate library
+        for BLAS and LAPACK. It requires macOS 13.3 or greater. To build with
+        Accelerate instead of OpenBLAS, see :ref:`blas-lapack-selection`.
 
   .. tab-item:: Windows
     :sync: windows
@@ -352,17 +357,20 @@ virtual environments:
     Then install the Python-level dependencies (see ``pyproject.toml``) from
     PyPI with::
 
-       # Build dependencies
-       python -m pip install numpy cython pythran pybind11 meson-python ninja pydevtool rich-click
+       # All dependencies
+       python -m pip install -r requirements/all.txt
 
-       # Test and optional runtime dependencies
-       python -m pip install pytest pytest-xdist pytest-timeout pooch threadpoolctl asv gmpy2 mpmath hypothesis
+       # Alternatively, you can install just the dependencies for certain
+       # development tasks:
 
-       # Doc build dependencies
-       python -m pip install sphinx "pydata-sphinx-theme==0.9.0" sphinx-design matplotlib numpydoc jupytext myst-nb
+       # Build and dev dependencies (for `python dev.py {build, lint, mypy}`)
+       python -m pip install -r requirements/build.txt -r requirements/dev.txt
 
-       # Dev dependencies (static typing and linting)
-       python -m pip install mypy typing_extensions types-psutil pycodestyle ruff cython-lint
+       # Doc dependencies (for `python dev.py {doc, refguide-check}`)
+       python -m pip install -r requirements/doc.txt
+
+       # Test dependencies (for `python dev.py {test, bench, refguide-check}`)
+       python -m pip install -r requirements/test.txt
 
 To build SciPy in an activated development environment, run::
 

@@ -148,8 +148,8 @@ def cossin(X, p=None, q=None, separate=False,
         if p + mmp != q + mmq:
             raise ValueError("The subblocks have compatible sizes but "
                              "don't form a square array (instead they form a"
-                             " {}x{} array). This might be due to missing "
-                             "p, q arguments.".format(p + mmp, q + mmq))
+                              f" {p + mmp}x{q + mmq} array). This might be "
+                              "due to missing p, q arguments.")
 
         m = p + mmp
 
@@ -170,7 +170,8 @@ def cossin(X, p=None, q=None, separate=False,
 
     method_name = csd.typecode + driver
     if info < 0:
-        raise ValueError(f'illegal value in argument {-info} of internal {method_name}')
+        raise ValueError(f'illegal value in argument {-info} '
+                         f'of internal {method_name}')
     if info > 0:
         raise LinAlgError(f"{method_name} did not converge: {info}")
 

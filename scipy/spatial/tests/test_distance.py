@@ -209,7 +209,7 @@ def _freq_weights(weights):
         return weights
     int_weights = weights.astype(int)
     if (weights != int_weights).any():
-        raise ValueError("frequency (integer count-type) weights required %s" % weights)
+        raise ValueError(f"frequency (integer count-type) weights required {weights}")
     return int_weights
 
 
@@ -1627,6 +1627,11 @@ class TestSomeDistanceFunctions:
             dist = wcosine(x, y)
             assert_almost_equal(dist, 1.0 - 18.0 / (np.sqrt(14) * np.sqrt(27)))
 
+    def test_cosine_output_dtype(self):
+        # Regression test for gh-19541
+        assert isinstance(wcorrelation([1, 1], [1, 1], centered=False), float)
+        assert isinstance(wcosine([1, 1], [1, 1]), float)
+
     def test_correlation(self):
         xm = np.array([-1.0, 0, 1.0])
         ym = np.array([-4.0 / 3, -4.0 / 3, 5.0 - 7.0 / 3])
@@ -1644,6 +1649,14 @@ class TestSomeDistanceFunctions:
                       1., 1., -1., 1., -1., -1., -1., -1., -1., -1., 1.])
         dist = correlation(x, y)
         assert 0 <= dist <= 10 * np.finfo(np.float64).eps
+
+    @pytest.mark.filterwarnings('ignore:Casting complex')
+    @pytest.mark.parametrize("func", [correlation, cosine])
+    def test_corr_dep_complex(self, func):
+        x = [1+0j, 2+0j]
+        y = [3+0j, 4+0j]
+        with pytest.deprecated_call(match="Complex `u` and `v` are deprecated"):
+            func(x, y)
 
     def test_mahalanobis(self):
         x = np.array([1.0, 2.0, 3.0])

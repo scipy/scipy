@@ -4,6 +4,7 @@ py3.install_sources([
     'mpsig.py',
     'test_array_tools.py',
     'test_bsplines.py',
+    'test_splines.py',
     'test_cont2discrete.py',
     'test_czt.py',
     'test_dltisys.py',
@@ -22,5 +23,6 @@ py3.install_sources([
     'test_wavelets.py',
     'test_windows.py'
   ],
-  subdir: 'scipy/signal/tests'
+  subdir: 'scipy/signal/tests',
+  install_tag: 'tests'
 )

@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.linalg import solve
+from ._cython_nnls import _nnls
 
 
 __all__ = ['nnls']
@@ -71,8 +71,8 @@ def nnls(A, b, maxiter=None, *, atol=None):
 
     """
 
-    A = np.asarray_chkfinite(A)
-    b = np.asarray_chkfinite(b)
+    A = np.asarray_chkfinite(A, dtype=np.float64, order='C')
+    b = np.asarray_chkfinite(b, dtype=np.float64)
 
     if len(A.shape) != 2:
         raise ValueError("Expected a two-dimensional array (matrix)" +
@@ -88,73 +88,10 @@ def nnls(A, b, maxiter=None, *, atol=None):
                 "Incompatible dimensions. The first dimension of " +
                 f"A is {m}, while the shape of b is {(b.shape[0], )}")
 
-    x, rnorm, mode = _nnls(A, b, maxiter, tol=atol)
-    if mode != 1:
+    if not maxiter:
+        maxiter = 3*n
+    x, rnorm, info = _nnls(A, b, maxiter)
+    if info == -1:
         raise RuntimeError("Maximum number of iterations reached.")
 
     return x, rnorm
-
-
-def _nnls(A, b, maxiter=None, tol=None):
-    """
-    This is a single RHS algorithm from ref [2] above. For multiple RHS
-    support, the algorithm is given in  :doi:`10.1002/cem.889`
-    """
-    m, n = A.shape
-
-    AtA = A.T @ A
-    Atb = b @ A  # Result is 1D - let NumPy figure it out
-
-    if not maxiter:
-        maxiter = 3*n
-    if tol is None:
-        tol = 10 * max(m, n) * np.spacing(1.)
-
-    # Initialize vars
-    x = np.zeros(n, dtype=np.float64)
-
-    # Inactive constraint switches
-    P = np.zeros(n, dtype=bool)
-
-    # Projected residual
-    resid = Atb.copy().astype(np.float64)  # x=0. Skip (-AtA @ x) term
-
-    # Overall iteration counter
-    # Outer loop is not counted, inner iter is counted across outer spins
-    iter = 0
-
-    while (not P.all()) and (resid[~P] > tol).any():  # B
-        # Get the "most" active coeff index and move to inactive set
-        resid[P] = -np.inf
-        k = np.argmax(resid)  # B.2
-        P[k] = True  # B.3
-
-        # Iteration solution
-        s = np.zeros(n, dtype=np.float64)
-        P_ind = P.nonzero()[0]
-        s[P] = solve(AtA[P_ind[:, None], P_ind[None, :]], Atb[P],
-                     assume_a='sym', check_finite=False)  # B.4
-
-        # Inner loop
-        while (iter < maxiter) and (s[P].min() <= tol):  # C.1
-            alpha_ind = ((s < tol) & P).nonzero()
-            alpha = (x[alpha_ind] / (x[alpha_ind] - s[alpha_ind])).min()  # C.2
-            x *= (1 - alpha)
-            x += alpha*s
-            P[x < tol] = False
-            s[P] = solve(AtA[np.ix_(P, P)], Atb[P], assume_a='sym',
-                         check_finite=False)
-            s[~P] = 0  # C.6
-            iter += 1
-
-        x[:] = s[:]
-        resid = Atb - AtA @ x
-
-        if iter == maxiter:
-            # Typically following line should return
-            # return x, np.linalg.norm(A@x - b), -1
-            # however at the top level, -1 raises an exception wasting norm
-            # Instead return dummy number 0.
-            return x, 0., -1
-
-    return x, np.linalg.norm(A@x - b), 1

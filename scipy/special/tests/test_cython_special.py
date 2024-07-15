@@ -195,6 +195,7 @@ PARAMS: list[tuple[Callable, Callable, tuple[str, ...], str | None]] = [
     (special.log1p, cython_special.log1p, ('d', 'D'), None),
     (special.log_expit, cython_special.log_expit, ('f', 'd', 'g'), None),
     (special.log_ndtr, cython_special.log_ndtr, ('d', 'D'), None),
+    (special.log_wright_bessel, cython_special.log_wright_bessel, ('ddd',), None),
     (special.ndtri_exp, cython_special.ndtri_exp, ('d',), None),
     (special.loggamma, cython_special.loggamma, ('D',), None),
     (special.logit, cython_special.logit, ('f', 'd', 'g'), None),
@@ -319,6 +320,7 @@ def test_cython_api_completeness():
                 raise RuntimeError(f"{name} missing from tests!")
 
 
+@pytest.mark.fail_slow(20)
 @pytest.mark.parametrize("param", PARAMS, ids=IDS)
 def test_cython_api(param):
     pyfunc, cyfunc, specializations, knownfailure = param

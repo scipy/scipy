@@ -75,8 +75,7 @@ jobs:
           name: setup Python venv
           command: |
             pip install numpy cython pybind11 pythran ninja meson
-            pip install -r doc_requirements.txt
-            pip install "myst-nb<1.0.0"
+            pip install -r requirements/doc.txt
             pip install mpmath gmpy2 "asv>=0.6.0" click rich-click doit pydevtool pooch threadpoolctl
             # extra benchmark deps
             pip install pyfftw cffi pytest
@@ -117,7 +116,13 @@ jobs:
           no_output_timeout: 25m
           command: |
             export PYTHONPATH=$PWD/build-install/lib/python3.11/site-packages
-            python dev.py --no-build doc -j2
+            python dev.py --no-build doc 2>&1 | tee sphinx_log.txt
+
+      - run:
+          name: Check sphinx log for warnings (which are treated as errors)
+          when: always
+          command: |
+            ! grep "^.* WARNING: .*$" sphinx_log.txt
 
       - store_artifacts:
           path: doc/build/html
@@ -173,6 +178,20 @@ jobs:
             sudo apt-get install -y wamerican-small
             export PYTHONPATH=$PWD/build-install/lib/python3.11/site-packages
             python dev.py --no-build refguide-check
+
+      - run:
+          name: smoke-docs
+          no_output_timeout: 35m
+          command: |
+            pip install matplotlib hypothesis
+            pip install scipy-doctest
+            python dev.py smoke-docs
+
+      - run:
+          name: smoke-tutorials
+          no_output_timeout: 10m
+          command: |
+            python dev.py smoke-tutorials
 
 # Upload build output to scipy/devdocs repository, using SSH deploy keys.
 # The keys are only available for builds on main branch.

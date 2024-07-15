@@ -23,9 +23,15 @@ class TestSparseUtils:
 
         with assert_raises(
             ValueError,
-            match="object dtype is not supported by sparse matrices",
+            match="scipy.sparse does not support dtype object. .*",
         ):
             sputils.getdtype("O")
+
+        with assert_raises(
+            ValueError,
+            match="scipy.sparse does not support dtype float16. .*",
+        ):
+            sputils.getdtype(None, default=np.float16)
 
     def test_isscalarlike(self):
         assert_equal(sputils.isscalarlike(3.0), True)
@@ -67,13 +73,13 @@ class TestSparseUtils:
         assert_equal(sputils.isshape((-1, 2), nonneg=True),False)
         assert_equal(sputils.isshape((2, -1), nonneg=True),False)
 
-        assert_equal(sputils.isshape((1.5, 2), allow_ndim=True), False)
-        assert_equal(sputils.isshape(([2], 2), allow_ndim=True), False)
-        assert_equal(sputils.isshape((2, 2, -2), nonneg=True, allow_ndim=True),
+        assert_equal(sputils.isshape((1.5, 2), allow_1d=True), False)
+        assert_equal(sputils.isshape(([2], 2), allow_1d=True), False)
+        assert_equal(sputils.isshape((2, 2, -2), nonneg=True, allow_1d=True),
                      False)
-        assert_equal(sputils.isshape((2,), allow_ndim=True), True)
-        assert_equal(sputils.isshape((2, 2,), allow_ndim=True), True)
-        assert_equal(sputils.isshape((2, 2, 2), allow_ndim=True), True)
+        assert_equal(sputils.isshape((2,), allow_1d=True), True)
+        assert_equal(sputils.isshape((2, 2,), allow_1d=True), True)
+        assert_equal(sputils.isshape((2, 2, 2), allow_1d=True), False)
 
     def test_issequence(self):
         assert_equal(sputils.issequence((1,)), True)

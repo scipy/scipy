@@ -500,15 +500,14 @@ def solve_newton(n, m, h, col_fun, bc, jac, y, p, B, bvp_tol, bc_tol):
 
 
 def print_iteration_header():
-    print("{:^15}{:^15}{:^15}{:^15}{:^15}".format(
-        "Iteration", "Max residual", "Max BC residual", "Total nodes",
-        "Nodes added"))
+    print(f"{'Iteration':^15}{'Max residual':^15}{'Max BC residual':^15}"
+          f"{'Total nodes':^15}{'Nodes added':^15}")
 
 
 def print_iteration_progress(iteration, residual, bc_residual, total_nodes,
                              nodes_added):
-    print("{:^15}{:^15.2e}{:^15.2e}{:^15}{:^15}".format(
-        iteration, residual, bc_residual, total_nodes, nodes_added))
+    print(f"{iteration:^15}{residual:^15.2e}{bc_residual:^15.2e}"
+          f"{total_nodes:^15}{nodes_added:^15}")
 
 
 class BVPResult(OptimizeResult):
