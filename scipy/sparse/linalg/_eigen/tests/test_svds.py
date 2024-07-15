@@ -142,9 +142,6 @@ class SVDSCommonTests:
 
     @pytest.mark.parametrize("args", _A_validation_inputs)
     def test_svds_input_validation_A(self, args):
-        if self.solver == 'propack':
-            if not has_propack:
-                pytest.skip("PROPACK not available")
         A, error_type, message = args
         with pytest.raises(error_type, match=message):
             svds(A, k=1, solver=self.solver)
@@ -152,9 +149,6 @@ class SVDSCommonTests:
     @pytest.mark.parametrize("which", ["LM", "SM"])
     def test_svds_int_A(self, which):
         A = np.asarray([[1, 2], [3, 4]])
-        if self.solver == 'propack':
-            if not has_propack:
-                pytest.skip("PROPACK not available")
         if self.solver == 'lobpcg':
             with pytest.warns(UserWarning, match="The problem size"):
                 res = svds(A, k=1, which=which, solver=self.solver,
