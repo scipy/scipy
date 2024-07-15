@@ -45,7 +45,8 @@ class AAA:
     Parameters
     ----------
     f : 1D array_like
-        Function values ``f(z)`` at `z`.
+        Function values ``f(z)`` at `z`. Infinite and NaN value of `f` and corresponding
+        values of `z` will be discarded.
     z : 1D array_like
         Values at which `f` is provided.
     rtol : float, optional
