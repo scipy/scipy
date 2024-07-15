@@ -246,6 +246,7 @@ def isshape(x, nonneg=False, *, allow_1d=False, allow_nd=False) -> bool:
 
     If nonneg, also checks that the dimensions are non-negative.
     If allow_1d, shapes of length 1 or 2 are allowed.
+    If allow_nd, shapes of all lengths >= 1 are allowed.
     """
     ndim = len(x)
     if ndim<3:
@@ -322,6 +323,11 @@ def check_shape(args, current_shape=None, *, allow_1d=False, allow_nd=False) -> 
         If True, then 1-D or 2-D arrays are accepted.
         If False (default), then only 2-D arrays are accepted and an error is
         raised otherwise.
+    allow_nd : bool, optional
+        If True, then all n-D arrays are accepted.
+        If False (default), then only 2-D arrays (and 1-D arrays, depending
+        on the value of allow_1d) are accepted and an error is
+        raised otherwise.
 
     Returns
     -------
@@ -390,6 +396,8 @@ def check_shape(args, current_shape=None, *, allow_1d=False, allow_nd=False) -> 
     elif len(new_shape)>=3:
         if not allow_nd and not allow_1d:
             raise ValueError('matrix shape must be two-dimensional')
+        if not allow_nd and allow_1d:
+            raise ValueError('matrix shape must be one or two-dimensional')
 
     return new_shape
 
