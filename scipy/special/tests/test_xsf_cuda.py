@@ -24,6 +24,8 @@ def get_test_cases():
         (sc.hyp2f1, "hyp2f1.h", "out0 = special::hyp2f1(in0, in1, in2, in3)"),
         (sc._ufuncs._lambertw, "lambertw.h", "out0 = special::lambertw(in0, in1, in2)"),
         (sc._ufuncs._iv_ratio, "iv_ratio.h", "out0 = special::iv_ratio(in0, in1)"),
+        (sc.ellipkinc, "cephes/ellik.h", "out0 = special::cephes::ellik(in0, in1)"),
+        (sc.ellipeinc, "cephes/ellie.h", "out0 = special::cephes::ellie(in0, in1)"),
     ]
 
     cases = []

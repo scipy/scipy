@@ -326,7 +326,11 @@ special_cephes_sources = [
   'special/cephes/chdtr.h',
   'special/cephes/igami.h',
   'special/cephes/hyperg.h',
-  'special/cephes/expn.h'
+  'special/cephes/expn.h',
+  'special/cephes/ellie.h',
+  'special/cephes/ellik.h',
+  'special/cephes/ellpe.h',
+  'special/cephes/ellpk.h'
 ]
 
 py3.install_sources(special_sources, subdir: 'scipy/special/special')
