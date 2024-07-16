@@ -6397,7 +6397,8 @@ class NormalityTests:
         # test_result@test$p.value
         test_name = self.test_name
         test_fun = getattr(stats, test_name)
-        ref_statistic, ref_pvalue = xp.asarray(self.case_ref)
+        ref_statistic= xp.asarray(self.case_ref[0])
+        ref_pvalue = xp.asarray(self.case_ref[1])
 
         kwargs = {}
         if alternative in {'less', 'greater'}:
@@ -8098,19 +8099,19 @@ class TestCombinePvalues:
         rng = np.random.default_rng(234892349810482)
         x = xp.asarray(rng.random(size=(2, 10)))
         x = x.T if (axis == 0) else x
-        res = stats.combine_pvalues(x, axis=axis)
+        res = stats.combine_pvalues(x, axis=axis, method=method)
 
         if axis is None:
             x = xp.reshape(x, (-1,))
-            ref = stats.combine_pvalues(x)
+            ref = stats.combine_pvalues(x, method=method)
             xp_assert_close(res.statistic, ref.statistic)
             xp_assert_close(res.pvalue, ref.pvalue)
             return
 
         x = x.T if (axis == 0) else x
         x0, x1 = x[0, :], x[1, :]
-        ref0 = stats.combine_pvalues(x0)
-        ref1 = stats.combine_pvalues(x1)
+        ref0 = stats.combine_pvalues(x0, method=method)
+        ref1 = stats.combine_pvalues(x1, method=method)
 
         xp_assert_close(res.statistic[0], ref0.statistic)
         xp_assert_close(res.statistic[1], ref1.statistic)

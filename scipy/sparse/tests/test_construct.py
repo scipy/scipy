@@ -389,6 +389,14 @@ class TestConstructUtils:
         assert_array_equal(result.toarray(), expected)
         assert isinstance(result, spmatrix)
 
+    def test_kron_ndim_exceptions(self):
+        with pytest.raises(ValueError, match='requires 2D input'):
+            construct.kron([[0], [1]], csr_array([0, 1]))
+        with pytest.raises(ValueError, match='requires 2D input'):
+            construct.kron(csr_array([0, 1]), [[0], [1]])
+        # no exception if sparse arrays are not input (spmatrix inferred)
+        construct.kron([[0], [1]], [0, 1])
+
     def test_kron_large(self):
         n = 2**16
         a = construct.diags_array([1], shape=(1, n), offsets=n-1)
@@ -420,6 +428,14 @@ class TestConstructUtils:
         # check that spmatrix returned when both inputs are spmatrix
         result = construct.kronsum(csr_matrix(a), csr_matrix(b)).toarray()
         assert_array_equal(result, expected)
+
+    def test_kronsum_ndim_exceptions(self):
+        with pytest.raises(ValueError, match='requires 2D input'):
+            construct.kronsum([[0], [1]], csr_array([0, 1]))
+        with pytest.raises(ValueError, match='requires 2D input'):
+            construct.kronsum(csr_array([0, 1]), [[0], [1]])
+        # no exception if sparse arrays are not input (spmatrix inferred)
+        construct.kronsum([[0, 1], [1, 0]], [2])
 
     @pytest.mark.parametrize("coo_cls", [coo_matrix, coo_array])
     def test_vstack(self, coo_cls):
@@ -458,6 +474,19 @@ class TestConstructUtils:
         assert isinstance(construct.vstack([coo_array(A), coo_matrix(B)]), sparray)
         assert isinstance(construct.vstack([coo_matrix(A), coo_array(B)]), sparray)
         assert isinstance(construct.vstack([coo_matrix(A), coo_matrix(B)]), spmatrix)
+
+    def test_vstack_1d_with_2d(self):
+        # fixes gh-21064
+        arr = csr_array([[1, 0, 0], [0, 1, 0]])
+        arr1d = arr[0]
+        assert construct.vstack([arr, np.array([0, 0, 0])]).shape == (3, 3)
+        assert construct.hstack([arr1d, np.array([[0]])]).shape == (1, 4)
+        assert construct.vstack([arr1d, arr1d]).shape == (2, 3)
+
+        with pytest.raises(ValueError, match="incompatible row dimensions"):
+            construct.hstack([arr, np.array([0, 0])])
+        with pytest.raises(ValueError, match="incompatible column dimensions"):
+            construct.vstack([arr, np.array([0, 0])])
 
     @pytest.mark.parametrize("coo_cls", [coo_matrix, coo_array])
     def test_hstack(self, coo_cls):

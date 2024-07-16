@@ -23,7 +23,7 @@ def test_fortranfiles_read():
     for filename in iglob(path.join(DATA_PATH, "fortran-*-*x*x*.dat")):
         m = re.search(r'fortran-([^-]+)-(\d+)x(\d+)x(\d+).dat', filename, re.I)
         if not m:
-            raise RuntimeError("Couldn't match %s filename to regex" % filename)
+            raise RuntimeError(f"Couldn't match {filename} filename to regex")
 
         dims = (int(m.group(2)), int(m.group(3)), int(m.group(4)))
 
@@ -52,7 +52,7 @@ def test_fortranfiles_write():
     for filename in iglob(path.join(DATA_PATH, "fortran-*-*x*x*.dat")):
         m = re.search(r'fortran-([^-]+)-(\d+)x(\d+)x(\d+).dat', filename, re.I)
         if not m:
-            raise RuntimeError("Couldn't match %s filename to regex" % filename)
+            raise RuntimeError(f"Couldn't match {filename} filename to regex")
         dims = (int(m.group(2)), int(m.group(3)), int(m.group(4)))
 
         dtype = m.group(1).replace('s', '<')

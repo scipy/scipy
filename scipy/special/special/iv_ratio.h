@@ -33,7 +33,7 @@ namespace special {
 struct IvRatioCFTailGenerator {
 
     // It is assumed that v >= 1, x >= 0, c > 0, and all are finite.
-    IvRatioCFTailGenerator(double vc, double xc, double c) noexcept {
+    SPECFUN_HOST_DEVICE IvRatioCFTailGenerator(double vc, double xc, double c) noexcept {
         a0_ = -(2*vc-c)*xc;
         as_ = -2*c*xc;
         b0_ = 2*(vc+xc);
@@ -41,7 +41,7 @@ struct IvRatioCFTailGenerator {
         k_ = 0;
     }
 
-    std::pair<double, double> operator()() {
+    SPECFUN_HOST_DEVICE std::pair<double, double> operator()() {
         ++k_;
         return {std::fma(k_, as_, a0_), std::fma(k_, bs_, b0_)};
     }

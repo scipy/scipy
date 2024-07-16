@@ -52,7 +52,7 @@ def _remove_optimizer_parameters(kwds):
     kwds.pop('optimizer', None)
     kwds.pop('method', None)
     if kwds:
-        raise TypeError("Unknown arguments: %s." % kwds)
+        raise TypeError(f"Unknown arguments: {kwds}.")
 
 
 def _call_super_mom(fun):
@@ -3344,7 +3344,7 @@ def _digammainv(y):
     value, info, ier, mesg = optimize.fsolve(func, x0, xtol=1e-11,
                                              full_output=True)
     if ier != 1:
-        raise RuntimeError("_digammainv: fsolve failed, y = %r" % y)
+        raise RuntimeError(f"_digammainv: fsolve failed, y = {y!r}")
 
     return value[0]
 
@@ -3903,10 +3903,7 @@ class genhyperbolic_gen(rv_continuous):
     # np.vectorize isn't currently designed to be used as a decorator,
     # so use a lambda instead.  This allows us to decorate the function
     # with `np.vectorize` and still provide the `otypes` parameter.
-    # The first argument to `vectorize` is `func.__get__(object)` for
-    # compatibility with Python 3.9.  In Python 3.10, this can be
-    # simplified to just `func`.
-    @lambda func: np.vectorize(func.__get__(object), otypes=[np.float64])
+    @lambda func: np.vectorize(func, otypes=[np.float64])
     @staticmethod
     def _integrate_pdf(x0, x1, p, a, b):
         """
@@ -7610,12 +7607,6 @@ class ncf_gen(rv_continuous):
         return random_state.noncentral_f(dfn, dfd, nc, size)
 
     def _pdf(self, x, dfn, dfd, nc):
-        # ncf.pdf(x, df1, df2, nc) = exp(nc/2 + nc*df1*x/(2*(df1*x+df2))) *
-        #             df1**(df1/2) * df2**(df2/2) * x**(df1/2-1) *
-        #             (df2+df1*x)**(-(df1+df2)/2) *
-        #             gamma(df1/2)*gamma(1+df2/2) *
-        #             L^{v1/2-1}^{v2/2}(-nc*v1*x/(2*(v1*x+v2))) /
-        #             (B(v1/2, v2/2) * gamma((v1+v2)/2))
         return scu._ncf_pdf(x, dfn, dfd, nc)
 
     def _cdf(self, x, dfn, dfd, nc):
@@ -7811,23 +7802,7 @@ class nct_gen(rv_continuous):
         return n * np.sqrt(df) / np.sqrt(c2)
 
     def _pdf(self, x, df, nc):
-        # Boost version has accuracy issues in left tail; see gh-16591
-        n = df*1.0
-        nc = nc*1.0
-        x2 = x*x
-        ncx2 = nc*nc*x2
-        fac1 = n + x2
-        trm1 = (n/2.*np.log(n) + sc.gammaln(n+1)
-                - (n*np.log(2) + nc*nc/2 + (n/2)*np.log(fac1)
-                   + sc.gammaln(n/2)))
-        Px = np.exp(trm1)
-        valF = ncx2 / (2*fac1)
-        trm1 = (np.sqrt(2)*nc*x*sc.hyp1f1(n/2+1, 1.5, valF)
-                / np.asarray(fac1*sc.gamma((n+1)/2)))
-        trm2 = (sc.hyp1f1((n+1)/2, 0.5, valF)
-                / np.asarray(np.sqrt(fac1)*sc.gamma(n/2+1)))
-        Px *= trm1+trm2
-        return np.clip(Px, 0, None)
+        return scu._nct_pdf(x, df, nc)
 
     def _cdf(self, x, df, nc):
         with np.errstate(over='ignore'):  # see gh-17432

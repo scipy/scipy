@@ -589,11 +589,17 @@ def correlation(u, v, w=None, centered=True):
 
     Parameters
     ----------
-    u : (N,) array_like
+    u : (N,) array_like of floats
         Input array.
-    v : (N,) array_like
+
+        .. deprecated:: 1.15.0
+           Complex `u` is deprecated and will raise an error in SciPy 1.17.0
+    v : (N,) array_like of floats
         Input array.
-    w : (N,) array_like, optional
+
+        .. deprecated:: 1.15.0
+           Complex `v` is deprecated and will raise an error in SciPy 1.17.0
+    w : (N,) array_like of floats, optional
         The weights for each value in `u` and `v`. Default is None,
         which gives each value a weight of 1.0
     centered : bool, optional
@@ -624,6 +630,11 @@ def correlation(u, v, w=None, centered=True):
     """
     u = _validate_vector(u)
     v = _validate_vector(v)
+    if np.iscomplexobj(u) or np.iscomplexobj(v):
+        message = (
+            "Complex `u` and `v` are deprecated and will raise an error in "
+            "SciPy 1.17.0.")
+        warnings.warn(message, DeprecationWarning, stacklevel=2)
     if w is not None:
         w = _validate_weights(w)
         w = w / w.sum()
@@ -665,11 +676,17 @@ def cosine(u, v, w=None):
 
     Parameters
     ----------
-    u : (N,) array_like
+    u : (N,) array_like of floats
         Input array.
-    v : (N,) array_like
+
+        .. deprecated:: 1.15.0
+           Complex `u` is deprecated and will raise an error in SciPy 1.17.0
+    v : (N,) array_like of floats
         Input array.
-    w : (N,) array_like, optional
+
+        .. deprecated:: 1.15.0
+           Complex `v` is deprecated and will raise an error in SciPy 1.17.0
+    w : (N,) array_like of floats, optional
         The weights for each value in `u` and `v`. Default is None,
         which gives each value a weight of 1.0
 
@@ -915,7 +932,7 @@ def seuclidean(u, v, V):
         Input array.
     V : (N,) array_like
         `V` is an 1-D array of component variances. It is usually computed
-        among a larger collection vectors.
+        among a larger collection of vectors.
 
     Returns
     -------
@@ -2187,7 +2204,7 @@ def pdist(X, metric='euclidean', *, out=None, **kwargs):
             return _pdist_callable(
                 X, metric=metric_info.dist_func, out=out, **kwargs)
         else:
-            raise ValueError('Unknown Distance Metric: %s' % mstr)
+            raise ValueError(f'Unknown Distance Metric: {mstr}')
     else:
         raise TypeError('2nd argument metric must be a string identifier '
                         'or a function.')
@@ -2342,9 +2359,8 @@ def squareform(X, force="no", checks=True):
         _distance_wrap.to_vector_from_squareform_wrap(X, v)
         return v
     else:
-        raise ValueError(('The first argument must be one or two dimensional '
-                          'array. A %d-dimensional array is not '
-                          'permitted') % len(s))
+        raise ValueError("The first argument must be one or two dimensional "
+                         f"array. A {len(s)}-dimensional array is not permitted")
 
 
 def is_valid_dm(D, tol=0.0, throw=False, name="D", warning=False):
@@ -2421,22 +2437,20 @@ def is_valid_dm(D, tol=0.0, throw=False, name="D", warning=False):
         s = D.shape
         if len(D.shape) != 2:
             if name:
-                raise ValueError(('Distance matrix \'%s\' must have shape=2 '
-                                  '(i.e. be two-dimensional).') % name)
+                raise ValueError(f"Distance matrix '{name}' must have shape=2 "
+                                 "(i.e. be two-dimensional).")
             else:
                 raise ValueError('Distance matrix must have shape=2 (i.e. '
                                  'be two-dimensional).')
         if tol == 0.0:
             if not (D == D.T).all():
                 if name:
-                    raise ValueError(('Distance matrix \'%s\' must be '
-                                     'symmetric.') % name)
+                    raise ValueError(f"Distance matrix '{name}' must be symmetric.")
                 else:
                     raise ValueError('Distance matrix must be symmetric.')
             if not (D[range(0, s[0]), range(0, s[0])] == 0).all():
                 if name:
-                    raise ValueError(('Distance matrix \'%s\' diagonal must '
-                                      'be zero.') % name)
+                    raise ValueError(f"Distance matrix '{name}' diagonal must be zero.")
                 else:
                     raise ValueError('Distance matrix diagonal must be zero.')
         else:
@@ -2446,7 +2460,7 @@ def is_valid_dm(D, tol=0.0, throw=False, name="D", warning=False):
                                      f'symmetric within tolerance {tol:5.5f}.')
                 else:
                     raise ValueError('Distance matrix must be symmetric within '
-                                     'tolerance %5.5f.' % tol)
+                                     f'tolerance {tol:5.5f}.')
             if not (D[range(0, s[0]), range(0, s[0])] <= tol).all():
                 if name:
                     raise ValueError(f'Distance matrix \'{name}\' diagonal must be '
@@ -2516,9 +2530,8 @@ def is_valid_y(y, warning=False, throw=False, name=None):
     try:
         if len(y.shape) != 1:
             if name:
-                raise ValueError(('Condensed distance matrix \'%s\' must '
-                                  'have shape=1 (i.e. be one-dimensional).')
-                                 % name)
+                raise ValueError(f"Condensed distance matrix '{name}' must "
+                                 "have shape=1 (i.e. be one-dimensional).")
             else:
                 raise ValueError('Condensed distance matrix must have shape=1 '
                                  '(i.e. be one-dimensional).')
@@ -2526,10 +2539,9 @@ def is_valid_y(y, warning=False, throw=False, name=None):
         d = int(np.ceil(np.sqrt(n * 2)))
         if (d * (d - 1) / 2) != n:
             if name:
-                raise ValueError(('Length n of condensed distance matrix '
-                                  '\'%s\' must be a binomial coefficient, i.e.'
-                                  'there must be a k such that '
-                                  '(k \\choose 2)=n)!') % name)
+                raise ValueError(f"Length n of condensed distance matrix '{name}' "
+                                 "must be a binomial coefficient, i.e."
+                                 "there must be a k such that (k \\choose 2)=n)!")
             else:
                 raise ValueError('Length n of condensed distance matrix must '
                                  'be a binomial coefficient, i.e. there must '
@@ -2987,7 +2999,7 @@ def cdist(XA, XB, metric='euclidean', *, out=None, **kwargs):
             return _cdist_callable(
                 XA, XB, metric=metric_info.dist_func, out=out, **kwargs)
         else:
-            raise ValueError('Unknown Distance Metric: %s' % mstr)
+            raise ValueError(f'Unknown Distance Metric: {mstr}')
     else:
         raise TypeError('2nd argument metric must be a string identifier '
                         'or a function.')

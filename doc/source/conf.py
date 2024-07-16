@@ -73,7 +73,7 @@ master_doc = 'index'
 
 # General substitutions.
 project = 'SciPy'
-copyright = '2008-%s, The SciPy community' % date.today().year
+copyright = f'2008-{date.today().year}, The SciPy community'
 
 # The default replacements for |version| and |release|, also used in various
 # other places throughout the built documents.
@@ -184,12 +184,10 @@ warnings.filterwarnings(
     message=r'There is no current event loop',
     category=DeprecationWarning,
 )
-# TODO: remove after gh-19228 resolved:
-warnings.filterwarnings(
-    'ignore',
-    message=r'.*path is deprecated.*',
-    category=DeprecationWarning,
-)
+# See https://github.com/sphinx-doc/sphinx/issues/12589
+suppress_warnings = [
+    'autosummary.import_cycle',
+]
 
 # -----------------------------------------------------------------------------
 # HTML output
@@ -201,7 +199,7 @@ html_logo = '_static/logo.svg'
 html_favicon = '_static/favicon.ico'
 
 html_sidebars = {
-    "index": "search-button-field",
+    "index": ["search-button-field"],
     "**": ["search-button-field", "sidebar-nav-bs"]
 }
 

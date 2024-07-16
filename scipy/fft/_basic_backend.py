@@ -142,8 +142,8 @@ def _swap_direction(norm):
     elif norm == 'forward':
         norm = 'backward'
     elif norm != 'ortho':
-        raise ValueError('Invalid norm value %s; should be "backward", '
-                         '"ortho", or "forward".' % norm)
+        raise ValueError(f'Invalid norm value {norm}; should be "backward", '
+                         '"ortho", or "forward".')
     return norm
 
 

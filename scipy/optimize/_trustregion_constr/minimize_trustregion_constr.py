@@ -186,10 +186,10 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
         Method to factorize the Jacobian of the constraints. Use None (default)
         for the auto selection or one of:
 
-            - 'NormalEquation' (requires scikit-sparse)
-            - 'AugmentedSystem'
-            - 'QRFactorization'
-            - 'SVDFactorization'
+        - 'NormalEquation' (requires scikit-sparse)
+        - 'AugmentedSystem'
+        - 'QRFactorization'
+        - 'SVDFactorization'
 
         The methods 'NormalEquation' and 'AugmentedSystem' can be used only
         with sparse constraints. The projections required by the algorithm
@@ -211,13 +211,13 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
         Relative step size for the finite difference approximation.
     maxiter : int, optional
         Maximum number of algorithm iterations. Default is 1000.
-    verbose : {0, 1, 2}, optional
+    verbose : {0, 1, 2, 3}, optional
         Level of algorithm's verbosity:
 
-            * 0 (default) : work silently.
-            * 1 : display a termination report.
-            * 2 : display progress during iterations.
-            * 3 : display progress during iterations (more complete report).
+        * 0 (default) : work silently.
+        * 1 : display a termination report.
+        * 2 : display progress during iterations.
+        * 3 : display progress during iterations (more complete report).
 
     disp : bool, optional
         If True (default), then `verbose` will be set to 1 if it was 0.
@@ -293,19 +293,19 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
     status : {0, 1, 2, 3}
         Termination status:
 
-            * 0 : The maximum number of function evaluations is exceeded.
-            * 1 : `gtol` termination condition is satisfied.
-            * 2 : `xtol` termination condition is satisfied.
-            * 3 : `callback` function requested termination.
+        * 0 : The maximum number of function evaluations is exceeded.
+        * 1 : `gtol` termination condition is satisfied.
+        * 2 : `xtol` termination condition is satisfied.
+        * 3 : `callback` function requested termination.
 
     cg_stop_cond : int
         Reason for CG subproblem termination at the last iteration:
 
-            * 0 : CG subproblem not evaluated.
-            * 1 : Iteration limit was reached.
-            * 2 : Reached the trust-region boundary.
-            * 3 : Negative curvature detected.
-            * 4 : Tolerance was satisfied.
+        * 0 : CG subproblem not evaluated.
+        * 1 : Iteration limit was reached.
+        * 2 : Reached the trust-region boundary.
+        * 3 : Negative curvature detected.
+        * 4 : Tolerance was satisfied.
 
     References
     ----------
@@ -555,10 +555,10 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
             IPReport.print_footer()
     if verbose >= 1:
         print(result.message)
-        print("Number of iterations: {}, function evaluations: {}, "
-              "CG iterations: {}, optimality: {:.2e}, "
-              "constraint violation: {:.2e}, execution time: {:4.2} s."
-              .format(result.nit, result.nfev, result.cg_niter,
-                      result.optimality, result.constr_violation,
-                      result.execution_time))
+        print(f"Number of iterations: {result.nit}, "
+              f"function evaluations: {result.nfev}, "
+              f"CG iterations: {result.cg_niter}, "
+              f"optimality: {result.optimality:.2e}, "
+              f"constraint violation: {result.constr_violation:.2e}, "
+              f"execution time: {result.execution_time:4.2} s.")
     return result

@@ -131,7 +131,7 @@ namespace cephes {
             z1 = z;
             /* Carlson gives 1/pow(3*r, 1.0/6.0) for this constant. if r == eps,
              * it is ~338.38. */
-            Q = 400.0 * std::max(std::abs(A0 - x), std::max(std::abs(A0 - y), std::abs(A0 - z)));
+            Q = 400.0 * std::fmax(std::abs(A0 - x), std::fmax(std::abs(A0 - y), std::abs(A0 - z)));
 
             while (Q > std::abs(A) && n <= 100) {
                 double sx = std::sqrt(x1);
