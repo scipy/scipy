@@ -82,7 +82,7 @@ class TestAAA:
         # >> [r, pol, res, zer, zj, fj, wj, errvec] = aaa([1 2], [0 1])
         z = np.array([0, 1])
         f = np.array([1, 2])
-        r = AAA(z, f)
+        r = AAA(z, f, rtol=1e-13)
         assert_allclose(r(z), f, atol=TOL)
         assert_allclose(r.poles(), 0.5)
         assert_allclose(r.residues(), 0.25)
@@ -96,7 +96,7 @@ class TestAAA:
         # >> [r, pol, res, zer, zj, fj, wj, errvec] = aaa([1 0 0], [0 1 2])
         z = np.array([0, 1, 2])
         f = np.array([1, 0, 0])
-        r = AAA(z, f)
+        r = AAA(z, f, rtol=1e-13)
         assert_allclose(r(z), f, atol=TOL)
         assert_allclose(np.sort(r.poles()),
                         np.sort([1.577350269189626, 0.422649730810374]))
