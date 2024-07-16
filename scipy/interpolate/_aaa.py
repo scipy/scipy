@@ -177,7 +177,8 @@ class AAA:
 
     >>> fig, ax = plt.subplots()
     >>> ax.plot(z.real, z.imag, '.', markersize=2, label="Sample points")
-    >>> ax.plot(r.poles().real, r.poles().imag, '.', markersize=5, label="Computed poles")
+    >>> ax.plot(r.poles().real, r.poles().imag, '.', markersize=5,
+                label="Computed poles")
     >>> ax.set(xlim=[-3.5, 3.5], ylim=[-3.5, 3.5], aspect="equal")
     >>> ax.legend()
     >>> plt.show()
@@ -348,7 +349,8 @@ class AAA:
             B = np.eye(m + 1)
             B[0, 0] = 0
 
-            E = np.zeros_like(B, dtype=np.result_type(self.weights, self.support_points))
+            E = np.zeros_like(B, dtype=np.result_type(self.weights,
+                                                      self.support_points))
             E[0, 1:] = self.weights
             E[1:, 0] = 1
             np.fill_diagonal(E[1:, 1:], self.support_points)
