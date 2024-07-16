@@ -203,6 +203,11 @@ class AAA:
 
         self._compute_AAA(f, z, rtol, max_terms)
 
+        # only compute once
+        self._poles = None
+        self._residues = None
+        self._roots = None
+
     def _compute_AAA(self, f, z, rtol, max_terms):
         # Initialization for AAA iteration
         M = np.size(z)
@@ -336,18 +341,20 @@ class AAA:
             Poles of the AAA approximation, repeated according to their multiplicity
             but not in any specific order.
         """
-        # Compute poles via generalized eigenvalue problem
-        m = self.weights.size
-        B = np.eye(m + 1)
-        B[0, 0] = 0
+        if self._poles is None:
+            # Compute poles via generalized eigenvalue problem
+            m = self.weights.size
+            B = np.eye(m + 1)
+            B[0, 0] = 0
 
-        E = np.zeros_like(B, dtype=np.complex128)
-        E[0, 1:] = self.weights
-        E[1:, 0] = 1
-        np.fill_diagonal(E[1:, 1:], self.support_points)
+            E = np.zeros_like(B, dtype=np.complex128)
+            E[0, 1:] = self.weights
+            E[1:, 0] = 1
+            np.fill_diagonal(E[1:, 1:], self.support_points)
 
-        pol = scipy.linalg.eigvals(E, B)
-        return pol[np.isfinite(pol)]
+            pol = scipy.linalg.eigvals(E, B)
+            self._poles = pol[np.isfinite(pol)]
+        return self._poles
 
     def residues(self):
         """Compute the residues of the poles of the approximation.
@@ -357,16 +364,18 @@ class AAA:
         residues : array
             Residues associated with the `poles` of the approximation
         """
-        # Compute residues via formula for res of quotient of analytic functions
-        with np.errstate(invalid="ignore", divide="ignore"):
-            N = (1 / (self.poles()[:, np.newaxis] - self.support_points)) @ (
-                self.values * self.weights
-            )
-            Ddiff = (
-                -((1 / np.subtract.outer(self.poles(), self.support_points)) ** 2)
-                @ self.weights
-            )
-            return N / Ddiff
+        if self._residues is None:
+            # Compute residues via formula for res of quotient of analytic functions
+            with np.errstate(invalid="ignore", divide="ignore"):
+                N = (1 / (self.poles()[:, np.newaxis] - self.support_points)) @ (
+                    self.values * self.weights
+                )
+                Ddiff = (
+                    -((1 / np.subtract.outer(self.poles(), self.support_points)) ** 2)
+                    @ self.weights
+                )
+                self._residues = N / Ddiff
+        return self._residues
 
     def roots(self):
         """Compute the zeros of the rational approximation.
@@ -377,14 +386,16 @@ class AAA:
             Zeros of the AAA approximation, repeated according to their multiplicity
             but not in any specific order.
         """
-        # Compute zeros via generalized eigenvalue problem
-        m = self.weights.size
-        B = np.eye(m + 1)
-        B[0, 0] = 0
-        E = np.zeros_like(B, dtype=np.complex128)
-        E[0, 1:] = self.weights * self.values
-        E[1:, 0] = 1
-        np.fill_diagonal(E[1:, 1:], self.support_points)
+        if self._roots is None:
+            # Compute zeros via generalized eigenvalue problem
+            m = self.weights.size
+            B = np.eye(m + 1)
+            B[0, 0] = 0
+            E = np.zeros_like(B, dtype=np.complex128)
+            E[0, 1:] = self.weights * self.values
+            E[1:, 0] = 1
+            np.fill_diagonal(E[1:, 1:], self.support_points)
 
-        zer = scipy.linalg.eigvals(E, B)
-        return zer[np.isfinite(zer)]
+            zer = scipy.linalg.eigvals(E, B)
+            self._roots = zer[np.isfinite(zer)]
+        return self._roots
