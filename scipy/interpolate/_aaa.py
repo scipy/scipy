@@ -157,11 +157,11 @@ class AAA:
            -0.81132013 +2.30193429j,  0.87326839+10.70148546j,
             0.87326839-10.70148546j])
 
-    For the second example, we call `AAA` with a spiral of 1000 points wind 7.5 times
-    around the origin in the complex plane.
+    For the second example, we call `AAA` with a spiral of 1000 points that wind 7.5
+    times around the origin in the complex plane.
 
     >>> z = np.exp(np.linspace(-0.5, 0.5 + 15j*np.pi, 1000))
-    >>> r = AAA(z, np.tan(np.pi*z/2))
+    >>> r = AAA(z, np.tan(np.pi*z/2), rtol=1e-13)
 
     We see that AAA takes 12 steps to converge with the following errors:
 
