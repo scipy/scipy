@@ -5,6 +5,7 @@ from numpy.testing import assert_allclose
 import scipy.special as sc
 
 class TestSphHarm:
+    @pytest.mark.slow
     def test_p(self):
         m_max = 20
         n_max = 10
