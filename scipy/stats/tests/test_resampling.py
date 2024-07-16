@@ -732,6 +732,27 @@ def test_vector_valued_statistic_gh17715():
                     ref.confidence_interval.high, atol=1e-15)
 
 
+def test_gh_20850():
+    rng = np.random.default_rng(2085020850)
+    x = rng.random((10, 2))
+    y = rng.random((11, 2))
+    def statistic(x, y, axis):
+        return stats.ttest_ind(x, y, axis=axis).statistic
+
+    # The shapes do *not* need to be the same along axis
+    stats.bootstrap((x, y), statistic)
+    stats.bootstrap((x.T, y.T), statistic, axis=1)
+    # But even when the shapes *are* the same along axis, the lengths
+    # along other dimensions have to be the same (or `bootstrap` warns).
+    message = "Ignoring the dimension specified by `axis`..."
+    with pytest.warns(FutureWarning, match=message):
+        stats.bootstrap((x, y[:10, 0]), statistic)  # this won't work after 1.16
+    with pytest.warns(FutureWarning, match=message):
+        stats.bootstrap((x, y[:10, 0:1]), statistic)  # this will
+    with pytest.warns(FutureWarning, match=message):
+        stats.bootstrap((x.T, y.T[0:1, :10]), statistic, axis=1)  # this will
+
+
 # --- Test Monte Carlo Hypothesis Test --- #
 
 class TestMonteCarloHypothesisTest:
@@ -1097,6 +1118,7 @@ class TestMonteCarloHypothesisTest:
         assert_allclose(res.statistic, ref.statistic)
         assert_allclose(res.pvalue, ref.pvalue, atol=1e-2)
 
+    @pytest.mark.fail_slow(2)
     @pytest.mark.xfail_on_32bit("Statistic may not depend on sample order on 32-bit")
     def test_finite_precision_statistic(self):
         # Some statistics return numerically distinct values when the values
@@ -1924,6 +1946,7 @@ class TestPermutationTest:
         got = list(_resampling._batch_generator(iterable, batch))
         assert got == expected
 
+    @pytest.mark.fail_slow(2)
     def test_finite_precision_statistic(self):
         # Some statistics return numerically distinct values when the values
         # should be equal in theory. Test that `permutation_test` accounts

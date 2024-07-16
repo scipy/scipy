@@ -8,12 +8,64 @@ from scipy.conftest import array_api_compatible
 from scipy._lib._array_api import (array_namespace, xp_assert_close, xp_assert_equal,
                                    xp_assert_less, xp_minimum, is_numpy, is_cupy)
 
-from scipy.optimize._chandrupatla import (_chandrupatla_minimize,
-                                          _chandrupatla as _chandrupatla_root)
+from scipy.optimize.elementwise import find_minimum, find_root
 from scipy.optimize._tstutils import _CHANDRUPATLA_TESTS
 
 from itertools import permutations
 from .test_zeros import TestScalarRootFinders
+
+
+# These tests were originally written for the private `optimize._chandrupatla`
+# interfaces, but now we want the tests to check the behavior of the public
+# `optimize.elementwise` interfaces. Therefore, rather than importing
+# `_chandrupatla`/`_chandrupatla_minimize` from `_chandrupatla.py`, we import
+# `find_root`/`find_minimum` from `optimize.elementwise` and wrap those
+# functions to conform to the private interface. This may look a little strange,
+# since it effectly just inverts the interface transformation done within the
+# `find_root`/`find_minimum` functions, but it allows us to run the original,
+# unmodified tests on the public interfaces, simplifying the PR that adds
+# the public interfaces. We'll refactor this when we want to @parametrize the
+# tests over multiple `method`s.
+def _wrap_chandrupatla(func):
+    def _chandrupatla_wrapper(f, *bracket, **kwargs):
+        # avoid passing arguments to `find_minimum` to this function
+        tol_keys = {'xatol', 'xrtol', 'fatol', 'frtol'}
+        tolerances = {key: kwargs.pop(key) for key in tol_keys if key in kwargs}
+        _callback = kwargs.pop('callback', None)
+        if callable(_callback):
+            def callback(res):
+                if func == find_root:
+                    res.xl, res.xr = res.bracket
+                    res.fl, res.fr = res.f_bracket
+                else:
+                    res.xl, res.xm, res.xr = res.bracket
+                    res.fl, res.fm, res.fr = res.f_bracket
+                res.fun = res.f_x
+                del res.bracket
+                del res.f_bracket
+                del res.f_x
+                return _callback(res)
+        else:
+            callback = _callback
+
+        res = func(f, bracket, tolerances=tolerances, callback=callback, **kwargs)
+        if func == find_root:
+            res.xl, res.xr = res.bracket
+            res.fl, res.fr = res.f_bracket
+        else:
+            res.xl, res.xm, res.xr = res.bracket
+            res.fl, res.fm, res.fr = res.f_bracket
+        res.fun = res.f_x
+        del res.bracket
+        del res.f_bracket
+        del res.f_x
+        return res
+    return _chandrupatla_wrapper
+
+
+_chandrupatla_root = _wrap_chandrupatla(find_root)
+_chandrupatla_minimize = _wrap_chandrupatla(find_minimum)
+
 
 def f1(x):
     return 100*(1 - x**3.)**2 + (1-x**2.) + 2*(1-x)**2.

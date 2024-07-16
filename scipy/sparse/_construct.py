@@ -487,10 +487,14 @@ def kron(A, B, format=None):
         coo_sparse = coo_matrix
 
     B = coo_sparse(B)
+    if B.ndim != 2:
+        raise ValueError(f"kron requires 2D input arrays. `B` is {B.ndim}D.")
 
     # B is fairly dense, use BSR
     if (format is None or format == "bsr") and 2*B.nnz >= B.shape[0] * B.shape[1]:
         A = csr_sparse(A,copy=True)
+        if A.ndim != 2:
+            raise ValueError(f"kron requires 2D input arrays. `A` is {A.ndim}D.")
         output_shape = (A.shape[0]*B.shape[0], A.shape[1]*B.shape[1])
 
         if A.nnz == 0 or B.nnz == 0:
@@ -505,6 +509,8 @@ def kron(A, B, format=None):
     else:
         # use COO
         A = coo_sparse(A)
+        if A.ndim != 2:
+            raise ValueError(f"kron requires 2D input arrays. `A` is {A.ndim}D.")
         output_shape = (A.shape[0]*B.shape[0], A.shape[1]*B.shape[1])
 
         if A.nnz == 0 or B.nnz == 0:
@@ -570,9 +576,12 @@ def kronsum(A, B, format=None):
     A = coo_sparse(A)
     B = coo_sparse(B)
 
+    if A.ndim != 2:
+        raise ValueError(f"kronsum requires 2D inputs. `A` is {A.ndim}D.")
+    if B.ndim != 2:
+        raise ValueError(f"kronsum requires 2D inputs. `B` is {B.ndim}D.")
     if A.shape[0] != A.shape[1]:
         raise ValueError('A is not square')
-
     if B.shape[0] != B.shape[1]:
         raise ValueError('B is not square')
 
@@ -709,8 +718,8 @@ def hstack(blocks, format=None, dtype=None):
         Otherwise return a sparse matrix.
 
         If you want a sparse array built from blocks that are not sparse
-        arrays, use `block(hstack(blocks))` or convert one block
-        e.g. `blocks[0] = csr_array(blocks[0])`.
+        arrays, use ``block(hstack(blocks))`` or convert one block
+        e.g. ``blocks[0] = csr_array(blocks[0])``.
 
     See Also
     --------
@@ -756,7 +765,7 @@ def vstack(blocks, format=None, dtype=None):
         Otherwise return a sparse matrix.
 
         If you want a sparse array built from blocks that are not sparse
-        arrays, use `block(vstack(blocks))` or convert one block
+        arrays, use ``block(vstack(blocks))`` or convert one block
         e.g. `blocks[0] = csr_array(blocks[0])`.
 
     See Also
@@ -815,7 +824,7 @@ def bmat(blocks, format=None, dtype=None):
         Otherwise return a sparse matrix.
 
         If you want a sparse array built from blocks that are not sparse
-        arrays, use `block_array()`.
+        arrays, use ``block_array()``.
 
     See Also
     --------
@@ -940,19 +949,19 @@ def _block(blocks, format, dtype, return_spmatrix=False):
                 block_mask[i,j] = True
 
                 if brow_lengths[i] == 0:
-                    brow_lengths[i] = A.shape[0]
-                elif brow_lengths[i] != A.shape[0]:
+                    brow_lengths[i] = A._shape_as_2d[0]
+                elif brow_lengths[i] != A._shape_as_2d[0]:
                     msg = (f'blocks[{i},:] has incompatible row dimensions. '
-                           f'Got blocks[{i},{j}].shape[0] == {A.shape[0]}, '
+                           f'Got blocks[{i},{j}].shape[0] == {A._shape_as_2d[0]}, '
                            f'expected {brow_lengths[i]}.')
                     raise ValueError(msg)
 
                 if bcol_lengths[j] == 0:
-                    bcol_lengths[j] = A.shape[1]
-                elif bcol_lengths[j] != A.shape[1]:
+                    bcol_lengths[j] = A._shape_as_2d[1]
+                elif bcol_lengths[j] != A._shape_as_2d[1]:
                     msg = (f'blocks[:,{j}] has incompatible column '
                            f'dimensions. '
-                           f'Got blocks[{i},{j}].shape[1] == {A.shape[1]}, '
+                           f'Got blocks[{i},{j}].shape[1] == {A._shape_as_2d[1]}, '
                            f'expected {bcol_lengths[j]}.')
                     raise ValueError(msg)
 
@@ -1116,7 +1125,7 @@ def random_array(shape, *, density=0.01, format='coo', dtype=None,
         By default, uniform [0, 1) random values are used unless `dtype` is
         an integer (default uniform integers from that dtype) or
         complex (default uniform over the unit square in the complex plane).
-        For these, the `random_state` rng is used e.g. `rng.uniform(size=size)`.
+        For these, the `random_state` rng is used e.g. ``rng.uniform(size=size)``.
 
     Returns
     -------
@@ -1161,7 +1170,7 @@ def random_array(shape, *, density=0.01, format='coo', dtype=None,
     >>> S = sp.sparse.random_array((3, 4), density=0.25, random_state=rng,
     ...                      data_sampler=sp_stats_normal_squared)
 
-    Or we can subclass sp.stats rv_continous or rv_discrete:
+    Or we can subclass sp.stats rv_continuous or rv_discrete:
 
     >>> class NormalSquared(sp.stats.rv_continuous):
     ...     def _rvs(self,  size=None, random_state=rng):
@@ -1319,7 +1328,7 @@ def random(m, n, density=0.01, format='coo', dtype=None,
     >>> S = sp.sparse.random(3, 4, density=0.25, random_state=rng,
     ...                      data_rvs=sp_stats_normal_squared)
 
-    Or we can subclass sp.stats rv_continous or rv_discrete:
+    Or we can subclass sp.stats rv_continuous or rv_discrete:
 
     >>> class NormalSquared(sp.stats.rv_continuous):
     ...     def _rvs(self,  size=None, random_state=rng):

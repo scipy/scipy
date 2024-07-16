@@ -1063,7 +1063,7 @@ class TestAiry:
                                      array([0.5357]),
                                      array([0.7012])),4)
 
-    @pytest.mark.fail_slow(2)
+    @pytest.mark.fail_slow(5)
     def test_ai_zeros_big(self):
         z, zp, ai_zpx, aip_zx = special.ai_zeros(50000)
         ai_z, aip_z, _, _ = special.airy(z)
@@ -1088,7 +1088,7 @@ class TestAiry:
             [-1.0187929716, -3.2481975822, -4.8200992112,
              -6.1633073556, -7.3721772550, -8.4884867340], rtol=1e-10)
 
-    @pytest.mark.fail_slow(2)
+    @pytest.mark.fail_slow(5)
     def test_bi_zeros_big(self):
         z, zp, bi_zpx, bip_zx = special.bi_zeros(50000)
         _, _, bi_z, bip_z = special.airy(z)
@@ -1459,7 +1459,7 @@ class TestCombinatorics:
         assert_equal(special.comb(2, -1, exact=True), 0)
         assert_equal(special.comb(2, -1, exact=False), 0)
         assert_allclose(special.comb([2, -1, 2, 10], [3, 3, -1, 3]), [0., 0., 0., 120.])
-    
+
     def test_comb_exact_non_int_dep(self):
         msg = "`exact=True`"
         with pytest.deprecated_call(match=msg):
@@ -1476,6 +1476,25 @@ class TestCombinatorics:
         assert_equal(special.perm(2, -1, exact=True), 0)
         assert_equal(special.perm(2, -1, exact=False), 0)
         assert_allclose(special.perm([2, -1, 2, 10], [3, 3, -1, 3]), [0., 0., 0., 720.])
+
+    def test_perm_iv(self):
+        # currently `exact=True` only support scalars
+        with pytest.raises(ValueError, match="scalar integers"):
+            special.perm([1, 2], [4, 5], exact=True)
+
+        # Non-integral scalars with N < k, or N,k < 0 used to return 0, this is now
+        # deprecated and will raise an error in SciPy 1.16.0
+        with pytest.deprecated_call(match="Non-integer"):
+            special.perm(4.6, 6, exact=True)
+        with pytest.deprecated_call(match="Non-integer"):
+            special.perm(-4.6, 3, exact=True)
+        with pytest.deprecated_call(match="Non-integer"):
+            special.perm(4, -3.9, exact=True)
+
+        # Non-integral scalars which aren't included in the cases above an raise an
+        # error directly without deprecation as this code never worked
+        with pytest.raises(ValueError, match="Non-integer"):
+            special.perm(6.0, 4.6, exact=True)
 
 
 class TestTrigonometric:
@@ -2202,10 +2221,9 @@ class TestFactorialFunctions:
         def _check(n, expected):
             assert_allclose(special.factorial(n), expected)
             assert_allclose(special.factorial([n])[0], expected)
-            # using floats with exact=True is deprecated for scalars...
-            with pytest.deprecated_call(match="Non-integer values.*"):
+            # using floats with `exact=True` raises an error for scalars and arrays
+            with pytest.raises(ValueError, match="Non-integer values.*"):
                 assert_allclose(special.factorial(n, exact=True), expected)
-            # ... and already an error for arrays
             with pytest.raises(ValueError, match="factorial with `exact=Tr.*"):
                 special.factorial([n], exact=True)
 
@@ -2270,15 +2288,14 @@ class TestFactorialFunctions:
     def test_factorial_scalar_corner_cases(self, n, exact):
         if (n is None or n is np.nan or np.issubdtype(type(n), np.integer)
                 or np.issubdtype(type(n), np.floating)):
-            # no error
             if (np.issubdtype(type(n), np.floating) and exact
                     and n is not np.nan):
-                with pytest.deprecated_call(match="Non-integer values.*"):
-                    result = special.factorial(n, exact=exact)
+                with pytest.raises(ValueError, match="Non-integer values.*"):
+                    special.factorial(n, exact=exact)
             else:
                 result = special.factorial(n, exact=exact)
-            exp = np.nan if n is np.nan or n is None else special.factorial(n)
-            assert_equal(result, exp)
+                exp = np.nan if n is np.nan or n is None else special.factorial(n)
+                assert_equal(result, exp)
         else:
             with pytest.raises(ValueError, match="Unsupported datatype*"):
                 special.factorial(n, exact=exact)

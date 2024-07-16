@@ -10,23 +10,9 @@ is granted under the SciPy License.
 #include "npy_2_compat.h"
 
 #include "_sigtools.h"
-#include <setjmp.h>
 #include <stdlib.h>
 
 #define PYERR(message) {PyErr_SetString(PyExc_ValueError, message); goto fail;}
-
-
-jmp_buf MALLOC_FAIL;
-
-char *check_malloc(size_t size)
-{
-    char *the_block = malloc(size);
-    if (the_block == NULL) {
-        printf("\nERROR: unable to allocate %zu bytes!\n", size);
-        longjmp(MALLOC_FAIL,-1);
-    }
-    return the_block;
-}
 
 
 /********************************************************
@@ -947,14 +933,14 @@ fail:
 
 static char doc_median2d[] = "filt = _median2d(data, size)";
 
-extern void f_medfilt2(float*,float*,npy_intp*,npy_intp*);
-extern void d_medfilt2(double*,double*,npy_intp*,npy_intp*);
-extern void b_medfilt2(unsigned char*,unsigned char*,npy_intp*,npy_intp*);
+extern void f_medfilt2(float*,float*,npy_intp*,npy_intp*,int*);
+extern void d_medfilt2(double*,double*,npy_intp*,npy_intp*,int*);
+extern void b_medfilt2(unsigned char*,unsigned char*,npy_intp*,npy_intp*,int*);
 
 static PyObject *_sigtools_median2d(PyObject *NPY_UNUSED(dummy), PyObject *args)
 {
     PyObject *image=NULL, *size=NULL;
-    int typenum;
+    int typenum, errnum=-2;
     PyArrayObject *a_image=NULL, *a_size=NULL;
     PyArrayObject *a_out=NULL;
     npy_intp Nwin[2] = {3,3};
@@ -977,29 +963,30 @@ static PyObject *_sigtools_median2d(PyObject *NPY_UNUSED(dummy), PyObject *args)
     a_out = (PyArrayObject *)PyArray_SimpleNew(2, PyArray_DIMS(a_image), typenum);
     if (a_out == NULL) goto fail;
 
-    if (setjmp(MALLOC_FAIL)) {
-	PYERR("Memory allocation error.");
-    }
-    else {
-	switch (typenum) {
-	case NPY_UBYTE:
-	    b_medfilt2((unsigned char *)PyArray_DATA(a_image),
+    switch (typenum) {
+        case NPY_UBYTE:
+            b_medfilt2((unsigned char *)PyArray_DATA(a_image),
                        (unsigned char *)PyArray_DATA(a_out),
-                       Nwin, PyArray_DIMS(a_image));
-	    break;
-	case NPY_FLOAT:
-	    f_medfilt2((float *)PyArray_DATA(a_image),
+                       Nwin, PyArray_DIMS(a_image),
+                       &errnum);
+            break;
+        case NPY_FLOAT:
+            f_medfilt2((float *)PyArray_DATA(a_image),
                        (float *)PyArray_DATA(a_out), Nwin,
-                       PyArray_DIMS(a_image));
-	    break;
-	case NPY_DOUBLE:
-	    d_medfilt2((double *)PyArray_DATA(a_image),
+                       PyArray_DIMS(a_image),
+                       &errnum);
+            break;
+        case NPY_DOUBLE:
+            d_medfilt2((double *)PyArray_DATA(a_image),
                        (double *)PyArray_DATA(a_out), Nwin,
-                       PyArray_DIMS(a_image));
-	    break;
-	default:
-	  PYERR("2D median filter only supports uint8, float32, and float64.");
-	}
+                       PyArray_DIMS(a_image),
+                       &errnum);
+            break;
+        default:
+            PYERR("2D median filter only supports uint8, float32, and float64.");
+    }
+    if (errnum != 0) {
+        PYERR("ERROR: unable to allocate enough memory in _medfilt2d!\n");
     }
 
     Py_DECREF(a_image);

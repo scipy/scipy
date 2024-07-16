@@ -25,6 +25,7 @@ Subpackage          Description
 ==================  ======================================================
 `cluster`           Clustering algorithms
 `constants`         Physical and mathematical constants
+`differentiate`     Finite difference differentiation tools
 `fft`               Discrete Fourier transforms
 `fftpack`           Fast Fourier Transform routines (legacy)
 `integrate`         Integration and ordinary differential equation solvers
@@ -67,21 +68,6 @@ Below, you can find the complete user guide organized by subpackages.
    stats
    ndimage
    io
-
-
-.. _executable-tutorials:
-
-Executable tutorials
---------------------
-
-Below you can also find tutorials in
-`MyST Markdown <https://jupyterbook.org/en/stable/content/myst.html>`_ format.
-These can be opened as Jupyter Notebooks with the help of the
-`Jupytext <https://jupytext.readthedocs.io/en/latest/index.html>`_ extension.
-
-.. toctree::
-   :caption: Executable tutorials
-   :maxdepth: 1
 
 .. raw:: latex
 

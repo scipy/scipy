@@ -422,7 +422,7 @@ fortran_ignore_warnings = ff.get_supported_arguments(
 # Intel Fortran (ifort) does not run the preprocessor by default, if Fortran
 # code uses preprocessor statements, add this compile flag to it.
 _fflag_fpp = []
-if ff.get_id() == 'intel-cl'
+if ff.get_id() in ['intel-cl', 'intel-llvm-cl']
   if is_windows
     _fflag_fpp = ff.get_supported_arguments('/fpp')
   else
@@ -579,6 +579,7 @@ subdir('cluster')
 subdir('constants')
 subdir('fftpack')
 subdir('integrate')
+subdir('differentiate')
 subdir('signal')
 subdir('interpolate')
 subdir('ndimage')

@@ -19,8 +19,8 @@ from ._sparsetools import dia_matvec
 class _dia_base(_data_matrix):
     _format = 'dia'
 
-    def __init__(self, arg1, shape=None, dtype=None, copy=False):
-        _data_matrix.__init__(self, arg1)
+    def __init__(self, arg1, shape=None, dtype=None, copy=False, *, maxprint=None):
+        _data_matrix.__init__(self, arg1, maxprint=maxprint)
 
         if issparse(arg1):
             if arg1.format == "dia":
@@ -68,8 +68,8 @@ class _dia_base(_data_matrix):
             try:
                 arg1 = np.asarray(arg1)
             except Exception as e:
-                raise ValueError("unrecognized form for"
-                        " %s_matrix constructor" % self.format) from e
+                raise ValueError("unrecognized form for "
+                                 f"{self.format}_matrix constructor") from e
             if isinstance(self, sparray) and arg1.ndim != 2:
                 raise ValueError(f"DIA arrays don't support {arg1.ndim}D input. Use 2D")
             A = self._coo_container(arg1, dtype=dtype, shape=shape).todia()
@@ -78,7 +78,8 @@ class _dia_base(_data_matrix):
             self._shape = check_shape(A.shape)
 
         if dtype is not None:
-            self.data = self.data.astype(dtype)
+            newdtype = getdtype(dtype)
+            self.data = self.data.astype(newdtype)
 
         # check format
         if self.offsets.ndim != 1:
@@ -115,9 +116,15 @@ class _dia_base(_data_matrix):
         mask &= (offset_inds < num_cols)
         return mask
 
-    def count_nonzero(self):
+    def count_nonzero(self, axis=None):
+        if axis is not None:
+            raise NotImplementedError(
+                "count_nonzero over an axis is not implemented for DIA format"
+            )
         mask = self._data_mask()
         return np.count_nonzero(self.data[mask])
+
+    count_nonzero.__doc__ = _spbase.count_nonzero.__doc__
 
     def _getnnz(self, axis=None):
         if axis is not None:
@@ -133,7 +140,6 @@ class _dia_base(_data_matrix):
         return int(nnz)
 
     _getnnz.__doc__ = _spbase._getnnz.__doc__
-    count_nonzero.__doc__ = _spbase.count_nonzero.__doc__
 
     def sum(self, axis=None, dtype=None, out=None):
         validateaxis(axis)
@@ -475,6 +481,7 @@ class dia_array(_dia_base, sparray):
 
     Sparse arrays can be used in arithmetic operations: they support
     addition, subtraction, multiplication, division, and matrix power.
+    Sparse arrays with DIAgonal storage do not support slicing.
 
     Examples
     --------
@@ -550,6 +557,7 @@ class dia_matrix(spmatrix, _dia_base):
 
     Sparse matrices can be used in arithmetic operations: they support
     addition, subtraction, multiplication, division, and matrix power.
+    Sparse matrices with DIAgonal storage do not support slicing.
 
     Examples
     --------

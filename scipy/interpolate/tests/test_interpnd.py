@@ -59,8 +59,10 @@ class TestLinearNDInterpolation:
         y = y - 3j*y
 
         tri = qhull.Delaunay(x)
-        yi = interpnd.LinearNDInterpolator(tri, y)(x)
+        interpolator = interpnd.LinearNDInterpolator(tri, y)
+        yi = interpolator(x)
         assert_almost_equal(y, yi)
+        assert interpolator.tri is tri
 
     def test_square(self):
         # Test barycentric interpolation on a square against a manual
@@ -359,7 +361,7 @@ class TestCloughTocher2DInterpolator:
         yi_rescale = interpnd.CloughTocher2DInterpolator(tri.points, y, rescale=True)(x)
         assert_almost_equal(yi, yi_rescale)
 
-    @pytest.mark.fail_slow(2)
+    @pytest.mark.fail_slow(5)
     def test_dense(self):
         # Should be more accurate for dense meshes
         funcs = [

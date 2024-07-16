@@ -844,7 +844,7 @@ def B_0123(x, der=0):
                  lambda x: -2.,
                  lambda x: 1.]
     else:
-        raise ValueError('never be here: der=%s' % der)
+        raise ValueError(f'never be here: der={der}')
     pieces = np.piecewise(x, conds, funcs)
     return pieces
 
@@ -1795,6 +1795,7 @@ class TestSmoothingSpline:
                         spline_interp(grid),
                         atol=1e-15)
 
+    @pytest.mark.fail_slow(2)
     def test_weighted_smoothing_spline(self):
         # create data sample
         np.random.seed(1234)

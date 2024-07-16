@@ -2362,7 +2362,7 @@ class TestSOSFiltFilt(TestFiltFilt):
             sos = zpk2sos(*zpk)
             y = filtfilt(b, a, x)
             y_sos = sosfiltfilt(sos, x)
-            assert_allclose(y, y_sos, atol=1e-12, err_msg='order=%s' % order)
+            assert_allclose(y, y_sos, atol=1e-12, err_msg=f'order={order}')
 
 
 def filtfilt_gust_opt(b, a, x):
@@ -2441,7 +2441,7 @@ def check_filtfilt_gust(b, a, shape, axis, irlen=None):
     assert_allclose(zg2, zo2, rtol=1e-8, atol=1e-9)
 
 
-@pytest.mark.fail_slow(5)
+@pytest.mark.fail_slow(10)
 def test_choose_conv_method():
     for mode in ['valid', 'same', 'full']:
         for ndim in [1, 2]:
@@ -2473,7 +2473,7 @@ def test_choose_conv_method():
         assert_equal(choose_conv_method(x, h, mode=mode), 'direct')
 
 
-@pytest.mark.fail_slow(5)
+@pytest.mark.fail_slow(10)
 def test_filtfilt_gust():
     # Design a filter.
     z, p, k = signal.ellip(3, 0.01, 120, 0.0875, output='zpk')

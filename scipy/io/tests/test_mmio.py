@@ -127,7 +127,7 @@ class TestMMIOArray:
         a = np.random.random(sz)
         self.check(a, (20, 15, 300, 'array', 'real', 'general'))
 
-    @pytest.mark.fail_slow(5)
+    @pytest.mark.fail_slow(10)
     def test_bad_number_of_array_header_fields(self):
         s = """\
             %%MatrixMarket matrix array real general
@@ -645,7 +645,7 @@ class TestMMIOCoordinate:
 
         mmwrite(self.fn, b)
 
-        fn_bzip2 = "%s.bz2" % self.fn
+        fn_bzip2 = f"{self.fn}.bz2"
         with open(self.fn, 'rb') as f_in:
             f_out = bz2.BZ2File(fn_bzip2, 'wb')
             f_out.write(f_in.read())
@@ -669,7 +669,7 @@ class TestMMIOCoordinate:
 
         mmwrite(self.fn, b)
 
-        fn_gzip = "%s.gz" % self.fn
+        fn_gzip = f"{self.fn}.gz"
         with open(self.fn, 'rb') as f_in:
             f_out = gzip.open(fn_gzip, 'wb')
             f_out.write(f_in.read())

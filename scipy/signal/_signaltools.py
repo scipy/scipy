@@ -31,7 +31,7 @@ __all__ = ['correlate', 'correlation_lags', 'correlate2d',
            'convolve', 'convolve2d', 'fftconvolve', 'oaconvolve',
            'order_filter', 'medfilt', 'medfilt2d', 'wiener', 'lfilter',
            'lfiltic', 'sosfilt', 'deconvolve', 'hilbert', 'hilbert2',
-           'cmplx_sort', 'unique_roots', 'invres', 'invresz', 'residue',
+           'unique_roots', 'invres', 'invresz', 'residue',
            'residuez', 'resample', 'resample_poly', 'detrend',
            'lfilter_zi', 'sosfilt_zi', 'sosfiltfilt', 'choose_conv_method',
            'filtfilt', 'decimate', 'vectorstrength']
@@ -1371,7 +1371,7 @@ def convolve(in1, in2, mode='full', method='auto'):
     `choose_conv_method` to choose the fastest method using pre-computed
     values (`choose_conv_method` can also measure real-world timing with a
     keyword argument). Because `fftconvolve` relies on floating point numbers,
-    there are certain constraints that may force `method=direct` (more detail
+    there are certain constraints that may force ``method='direct'`` (more detail
     in `choose_conv_method` docstring).
 
     Examples
@@ -2117,7 +2117,7 @@ def lfilter(b, a, x, axis=-1, zi=None):
         dtype = np.result_type(*inputs)
 
         if dtype.char not in 'fdgFDGO':
-            raise NotImplementedError("input type '%s' not supported" % dtype)
+            raise NotImplementedError(f"input type '{dtype}' not supported")
 
         b = np.array(b, dtype=dtype)
         a = np.asarray(a, dtype=dtype)
@@ -2450,18 +2450,6 @@ def hilbert2(x, N=None):
         k -= 1
     x = sp_fft.ifft2(Xf * h, axes=(0, 1))
     return x
-
-
-_msg_cplx_sort="""cmplx_sort was deprecated in SciPy 1.12 and will be removed
-in SciPy 1.15. The exact equivalent for a numpy array argument is
->>> def cmplx_sort(p):
-...    idx = np.argsort(abs(p))
-...    return np.take(p, idx, 0), idx
-"""
-
-def cmplx_sort(p):
-    warnings.warn(_msg_cplx_sort, DeprecationWarning, stacklevel=2)
-    return _cmplx_sort(p)
 
 
 def _cmplx_sort(p):
@@ -3096,9 +3084,12 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
     If `t` is not None, then it is used solely to calculate the resampled
     positions `resampled_t`
 
-    As noted, `resample` uses FFT transformations, which can be very
-    slow if the number of input or output samples is large and prime;
-    see `scipy.fft.fft`.
+    As noted, `resample` uses FFT transformations, which can be very 
+    slow if the number of input or output samples is large and prime; 
+    see :func:`~scipy.fft.fft`. In such cases, it can be faster to first downsample 
+    a signal of length ``n`` with :func:`~scipy.signal.resample_poly` by a factor of 
+    ``n//num`` before using `resample`. Note that this approach changes the 
+    characteristics of the antialiasing filter.
 
     Examples
     --------
@@ -3117,6 +3108,22 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
     >>> plt.plot(x, y, 'go-', xnew, f, '.-', 10, y[0], 'ro')
     >>> plt.legend(['data', 'resampled'], loc='best')
     >>> plt.show()
+
+    Consider the following signal  ``y`` where ``len(y)`` is a large  prime number:
+
+    >>> N = 55949
+    >>> freq = 100
+    >>> x = np.linspace(0, 1, N)
+    >>> y = np.cos(2 * np.pi * freq * x)
+
+    Due to ``N`` being prime, 
+
+    >>> num = 5000  
+    >>> f = signal.resample(signal.resample_poly(y, 1, N // num), num)
+
+    runs significantly faster than
+
+    >>> f = signal.resample(y, num)
     """
 
     if domain not in ('time', 'freq'):
@@ -3539,7 +3546,7 @@ def detrend(data: np.ndarray, axis: int = -1,
 
     Notes
     -----
-    Detrending can be interpreted as substracting a least squares fit polyonimial:
+    Detrending can be interpreted as subtracting a least squares fit polyonimial:
     Setting the parameter `type` to 'constant' corresponds to fitting a zeroth degree
     polynomial, 'linear' to a first degree polynomial. Consult the example below.
 
@@ -3684,7 +3691,7 @@ def lfilter_zi(b, a):
         A = scipy.linalg.companion(a).T
         B = b[1:] - a[1:]*b[0]
 
-    assuming `a[0]` is 1.0; if `a[0]` is not 1, `a` and `b` are first
+    assuming ``a[0]`` is 1.0; if ``a[0]`` is not 1, `a` and `b` are first
     divided by a[0].
 
     Examples
@@ -3712,7 +3719,7 @@ def lfilter_zi(b, a):
         0.44399389,  0.35505241])
 
     Note that the `zi` argument to `lfilter` was computed using
-    `lfilter_zi` and scaled by `x[0]`.  Then the output `y` has no
+    `lfilter_zi` and scaled by ``x[0]``.  Then the output `y` has no
     transient until the input drops from 0.5 to 0.0.
 
     """
@@ -3849,7 +3856,7 @@ def sosfilt_zi(sos):
 def _filtfilt_gust(b, a, x, axis=-1, irlen=None):
     """Forward-backward IIR filter that uses Gustafsson's method.
 
-    Apply the IIR filter defined by `(b,a)` to `x` twice, first forward
+    Apply the IIR filter defined by ``(b,a)`` to `x` twice, first forward
     then backward, using Gustafsson's initial conditions [1]_.
 
     Let ``y_fb`` be the result of filtering first forward and then backward,
@@ -4230,9 +4237,8 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None, method='pad',
 def _validate_pad(padtype, padlen, x, axis, ntaps):
     """Helper to validate padding for filtfilt"""
     if padtype not in ['even', 'odd', 'constant', None]:
-        raise ValueError(("Unknown value '%s' given to padtype.  padtype "
-                          "must be 'even', 'odd', 'constant', or None.") %
-                         padtype)
+        raise ValueError(f"Unknown value '{padtype}' given to padtype. "
+                         "padtype must be 'even', 'odd', 'constant', or None.")
 
     if padtype is None:
         padlen = 0
@@ -4349,7 +4355,7 @@ def sosfilt(sos, x, axis=-1, zi=None):
         inputs.append(np.asarray(zi))
     dtype = np.result_type(*inputs)
     if dtype.char not in 'fdgFDGO':
-        raise NotImplementedError("input type '%s' not supported" % dtype)
+        raise NotImplementedError(f"input type '{dtype}' not supported")
     if zi is not None:
         zi = np.array(zi, dtype)  # make a copy so that we can operate in place
         if zi.shape != x_zi_shape:

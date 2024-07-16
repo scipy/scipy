@@ -1,7 +1,6 @@
 __all__ = ['RegularGridInterpolator', 'interpn']
 
 import itertools
-import warnings
 
 import numpy as np
 
@@ -69,12 +68,6 @@ class RegularGridInterpolator:
     values : array_like, shape (m1, ..., mn, ...)
         The data on the regular grid in n dimensions. Complex data is
         accepted.
-
-        .. deprecated:: 1.13.0
-            Complex data is deprecated with ``method="pchip"`` and will raise an
-            error in SciPy 1.15.0. This is because ``PchipInterpolator`` only
-            works with real values. If you are trying to use the real components of
-            the passed array, use ``np.real`` on ``values``.
 
     method : str, optional
         The method of interpolation to perform. Supported are "linear",
@@ -274,7 +267,7 @@ class RegularGridInterpolator:
     def __init__(self, points, values, method="linear", bounds_error=True,
                  fill_value=np.nan, *, solver=None, solver_args=None):
         if method not in self._ALL_METHODS:
-            raise ValueError("Method '%s' is not defined" % method)
+            raise ValueError(f"Method '{method}' is not defined")
         elif method in self._SPLINE_METHODS:
             self._validate_grid_dimensions(points, method)
         self.method = method
@@ -286,12 +279,10 @@ class RegularGridInterpolator:
         if self._descending_dimensions:
             self.values = np.flip(values, axis=self._descending_dimensions)
         if self.method == "pchip" and np.iscomplexobj(self.values):
-            msg = ("`PchipInterpolator` only works with real values. Passing "
-                   "complex-dtyped `values` with `method='pchip'` is deprecated "
-                   "and will raise an error in SciPy 1.15.0. If you are trying to "
-                   "use the real components of the passed array, use `np.real` on "
+            msg = ("`PchipInterpolator` only works with real values. If you are trying "
+                   "to use the real components of the passed array, use `np.real` on "
                    "the array before passing to `RegularGridInterpolator`.")
-            warnings.warn(msg, DeprecationWarning, stacklevel=2)
+            raise ValueError(msg)
         if method in self._SPLINE_METHODS_ndbspl:
             if solver_args is None:
                 solver_args = {}
@@ -399,7 +390,7 @@ class RegularGridInterpolator:
         method = self.method if method is None else method
         is_method_changed = self.method != method
         if method not in self._ALL_METHODS:
-            raise ValueError("Method '%s' is not defined" % method)
+            raise ValueError(f"Method '{method}' is not defined")
         if is_method_changed and method in self._SPLINE_METHODS_ndbspl:
             self._spline = self._construct_spline(method)
 

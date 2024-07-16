@@ -283,8 +283,8 @@ class interp1d(_Interpolator1D):
             kind = 'spline'
         elif kind not in ('linear', 'nearest', 'nearest-up', 'previous',
                           'next'):
-            raise NotImplementedError("%s is unsupported: Use fitpack "
-                                      "routines for other types." % kind)
+            raise NotImplementedError(f"{kind} is unsupported: Use fitpack "
+                                      "routines for other types.")
         x = array(x, copy=self.copy)
         y = array(y, copy=self.copy)
 
@@ -1232,8 +1232,8 @@ class PPoly(_PPolyBase):
             If 'periodic', periodic extrapolation is used. Default is True.
         """
         if not isinstance(bp, BPoly):
-            raise TypeError(".from_bernstein_basis only accepts BPoly instances. "
-                            "Got %s instead." % type(bp))
+            raise TypeError(f".from_bernstein_basis only accepts BPoly instances. "
+                            f"Got {type(bp)} instead.")
 
         dx = np.diff(bp.x)
         k = bp.c.shape[0] - 1  # polynomial order
@@ -1541,8 +1541,8 @@ class BPoly(_PPolyBase):
             If 'periodic', periodic extrapolation is used. Default is True.
         """
         if not isinstance(pp, PPoly):
-            raise TypeError(".from_power_basis only accepts PPoly instances. "
-                            "Got %s instead." % type(pp))
+            raise TypeError(f".from_power_basis only accepts PPoly instances. "
+                            f"Got {type(pp)} instead.")
 
         dx = np.diff(pp.x)
         k = pp.c.shape[0] - 1   # polynomial order
@@ -1604,7 +1604,7 @@ class BPoly(_PPolyBase):
         >>> from scipy.interpolate import BPoly
         >>> BPoly.from_derivatives([0, 1], [[1, 2], [3, 4]])
 
-        Creates a polynomial `f(x)` of degree 3, defined on `[0, 1]`
+        Creates a polynomial `f(x)` of degree 3, defined on ``[0, 1]``
         such that `f(0) = 1, df/dx(0) = 2, f(1) = 3, df/dx(1) = 4`
 
         >>> BPoly.from_derivatives([0, 1, 2], [[0, 1], [0], [2]])
@@ -1612,7 +1612,7 @@ class BPoly(_PPolyBase):
         Creates a piecewise polynomial `f(x)`, such that
         `f(0) = f(1) = 0`, `f(2) = 2`, and `df/dx(0) = 1`.
         Based on the number of derivatives provided, the order of the
-        local polynomials is 2 on `[0, 1]` and 1 on `[1, 2]`.
+        local polynomials is 2 on ``[0, 1]`` and 1 on ``[1, 2]``.
         Notice that no restriction is imposed on the derivatives at
         ``x = 1`` and ``x = 2``.
 
