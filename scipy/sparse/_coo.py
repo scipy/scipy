@@ -614,7 +614,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
     
 
     def _matmul_vector(self, other):
-        if self.ndim<3:
+        if self.ndim < 3:
             result_shape = self.shape[0] if self.ndim > 1 else 1
             result = np.zeros(result_shape,
                             dtype=upcast_char(self.dtype.char, other.dtype.char))
