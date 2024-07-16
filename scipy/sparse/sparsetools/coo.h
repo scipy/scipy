@@ -145,4 +145,43 @@ void coo_matvec(const npy_int64 nnz,
     }
 }
 
+
+
+/*
+ * Compute Y += A*X for COO matrix A and dense vectors X,Y
+ *
+ *
+ * Input Arguments:
+ *   npy_int64  nnz     - number of nonzeros in A
+ *   npy_int64  n_col_B - number of columns in B
+ *   I  Ai[nnz]         - row indices
+ *   I  Aj[nnz]         - column indices
+ *   T  Ax[nnz]         - nonzero values
+ *   T  Bx[n_col]       - input matrix flattened
+ *
+ * Output Arguments:
+ *   T  Yx[n_row]     - output matric flattened
+ *
+ * Notes:
+ *   Output array Yx must be preallocated
+ *
+ *   Complexity: Linear.  Specifically O(nnz(A))
+ * 
+ */
+template <class I, class T>
+void coo_matmat_dense(const npy_int64 nnz,
+                const npy_int64 n_col_B,
+                const I Ai[],
+                const I Aj[],
+                const T Ax[],
+                const T Bx[],
+                      T Yx[])
+{
+    for(npy_int64 n = 0; n < nnz; n++){
+        for(npy_int64 i = 0; i < n_col_B; i++){
+            Yx[Ai[n] * n_col_B + i] += Ax[n] * Bx[Aj[n] * n_col_B + i];
+        }
+    }
+}
+
 #endif
