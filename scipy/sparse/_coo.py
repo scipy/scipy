@@ -292,7 +292,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
             raise ValueError("Output array must be C or F contiguous")
         # This handles both 0D and 1D cases correctly regardless of the
         # original shape.
-        if self.ndim<3:
+        if self.ndim < 3:
             M, N = self._shape_as_2d
             coo_todense(M, N, self.nnz, self.row, self.col, self.data,
                         B.ravel('A'), fortran)
