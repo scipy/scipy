@@ -217,7 +217,7 @@ class AAA:
         # Cauchy matrix
         C = np.empty((M, max_terms), dtype=np.result_type(z, 1.0))
         # Loewner matrix
-        A = np.empty((M, max_terms), dtype=np.complex128)
+        A = np.empty((M, max_terms), dtype=np.result_type(f, C))
         errors = np.empty(max_terms)
         R = np.repeat(np.mean(f), M)
 
