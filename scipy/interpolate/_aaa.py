@@ -213,8 +213,8 @@ class AAA:
         M = np.size(z)
         atol = rtol * np.linalg.norm(f, ord=np.inf)
         mask = np.ones(M, dtype=np.bool_)
-        zj = np.empty(max_terms, dtype=np.complex128)
-        fj = np.empty(max_terms, dtype=np.complex128)
+        zj = np.empty(max_terms, dtype=z.dtype)
+        fj = np.empty(max_terms, dtype=f.dtype)
         # Cauchy matrix
         C = np.empty((M, max_terms), dtype=np.complex128)
         # Loewner matrix
