@@ -44,11 +44,11 @@ class AAA:
 
     Parameters
     ----------
+    z : 1D array_like
+        Values at which `f` is provided.
     f : 1D array_like
         Function values ``f(z)`` at `z`. Infinite and NaN value of `f` and corresponding
         values of `z` will be discarded.
-    z : 1D array_like
-        Values at which `f` is provided.
     rtol : float, optional
         Relative tolerance, defaults to 1e-13.
     max_terms : int, optional
@@ -127,7 +127,7 @@ class AAA:
 
     >>> from scipy.special import gamma
     >>> sample_points = np.linspace(-1.5, 1.5, num=100)
-    >>> r = AAA(gamma(sample_points), sample_points)
+    >>> r = AAA(sample_points, gamma(sample_points))
     >>> z = np.linspace(-3.5, 4.5, num=1000)
     >>> fig, ax = plt.subplots()
     >>> ax.plot(z, gamma(z), label="Gamma")
@@ -157,7 +157,7 @@ class AAA:
     around the origin in the complex plane.
 
     >>> z = np.exp(np.linspace(-0.5, 0.5 + 15j*np.pi, 1000))
-    >>> r = AAA(np.tan(np.pi*z/2), z)
+    >>> r = AAA(z, np.tan(np.pi*z/2))
 
     We see that AAA takes 12 steps to converge with the following errors:
 
@@ -178,7 +178,7 @@ class AAA:
     >>> ax.legend()
     >>> plt.show()
     """
-    def __init__(self, f, z, *, rtol=1e-13, max_terms=100):
+    def __init__(self, z, f, *, rtol=1e-13, max_terms=100):
         # input validation
         z = np.asarray(z)
         f = np.asarray(f)

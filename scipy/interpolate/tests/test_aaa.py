@@ -44,25 +44,25 @@ class TestAAA:
     
     def test_convergence_error(self):
         with pytest.warns(RuntimeWarning, match="AAA failed"):
-            AAA(np.exp(UNIT_INTERVAL), UNIT_INTERVAL, max_terms=1)
+            AAA(UNIT_INTERVAL, np.exp(UNIT_INTERVAL),  max_terms=1)
     
     # The following tests are based on:
     # https://github.com/chebfun/chebfun/blob/master/tests/chebfun/test_aaa.m
     def test_exp(self):
         f = np.exp(UNIT_INTERVAL)
-        r = AAA(f, UNIT_INTERVAL)
+        r = AAA(UNIT_INTERVAL, f)
 
         assert_allclose(r(UNIT_INTERVAL), f, atol=TOL)
         assert_equal(r(np.nan), np.nan)
         assert np.isfinite(r(np.inf))
 
         m1 = r.support_points.size
-        r = AAA(f, UNIT_INTERVAL, rtol=1e-3)
+        r = AAA(UNIT_INTERVAL, f, rtol=1e-3)
         assert r.support_points.size < m1
 
     def test_tan(self):
         f = np.tan(np.pi * UNIT_INTERVAL)
-        r = AAA(f, UNIT_INTERVAL)
+        r = AAA(UNIT_INTERVAL, f)
 
         assert_allclose(r(UNIT_INTERVAL), f, atol=10 * TOL)
         assert_array_less(np.min(np.abs(r.roots)), TOL)
@@ -76,7 +76,7 @@ class TestAAA:
         # >> [r, pol, res, zer, zj, fj, wj, errvec] = aaa([1 2], [0 1])
         z = np.array([0, 1])
         f = np.array([1, 2])
-        r = AAA(f, z)
+        r = AAA(z, f)
         assert_allclose(r(z), f, atol=TOL)
         assert_allclose(r.poles, 0.5)
         assert_allclose(r.residues, 0.25)
@@ -90,7 +90,7 @@ class TestAAA:
         # >> [r, pol, res, zer, zj, fj, wj, errvec] = aaa([1 0 0], [0 1 2])
         z = np.array([0, 1, 2])
         f = np.array([1, 0, 0])
-        r = AAA(f, z)
+        r = AAA(z, f)
         assert_allclose(r(z), f, atol=TOL)
         assert_allclose(r.poles, [1.577350269189626, 0.422649730810374])
         assert_allclose(r.residues, [-0.070441621801729, -0.262891711531604])
@@ -104,9 +104,9 @@ class TestAAA:
     def test_scale_invariance(self):
         z = np.linspace(0.3, 1.5)
         f = np.exp(z) / (1 + 1j)
-        r1 = AAA(f, z)
-        r2 = AAA((2**311 * f).astype(np.complex128), z)
-        r3 = AAA((2**-311 * f).astype(np.complex128), z)
+        r1 = AAA(z, f)
+        r2 = AAA(z, (2**311 * f).astype(np.complex128))
+        r3 = AAA(z, (2**-311 * f).astype(np.complex128))
         assert_equal(r1(0.2j), 2**-311 * r2(0.2j))
         assert_equal(r1(1.4), 2**311 * r3(1.4))
 
@@ -117,28 +117,28 @@ class TestAAA:
         def f(z):
             return np.log(5 - z) / (1 + z**2)
 
-        r = AAA(f(z), z)
+        r = AAA(z, f(z))
         assert_allclose(r(0), f(0), atol=TOL)
 
     def test_infinite_data(self):
         z = np.linspace(-1, 1)
-        r = AAA(scipy.special.gamma(z), z)
+        r = AAA(z, scipy.special.gamma(z))
         assert_allclose(r(0.63), scipy.special.gamma(0.63), atol=1e-15)
 
     def test_nan(self):
         x = np.linspace(0, 20)
         with np.errstate(invalid="ignore"):
             f = np.sin(x) / x
-        r = AAA(f, x)
+        r = AAA(x, f)
         assert_allclose(r(2), np.sin(2) / 2, atol=1e-15)
 
     def test_residues(self):
         x = np.linspace(-1.337, 2, num=537)
-        r = AAA(np.exp(x) / x, x)
+        r = AAA(x, np.exp(x) / x)
         ii = np.nonzero(np.abs(r.poles) < 1e-8)[0]
         assert_allclose(r.residues[ii], 1, atol=1e-15)
 
-        r = AAA((1 + 1j) * scipy.special.gamma(x), x)
+        r = AAA(x, (1 + 1j) * scipy.special.gamma(x))
         ii = np.nonzero(abs(r.poles - (-1)) < 1e-8)
         assert_allclose(r.residues[ii], -1 - 1j, atol=1e-15)
     
@@ -155,26 +155,26 @@ class TestAAA:
     def test_basic_functions(self, func, atol, rtol):
         with np.errstate(divide="ignore"):
             f = func(PTS)
-        assert_allclose(AAA(func(UNIT_INTERVAL), UNIT_INTERVAL)(PTS),
+        assert_allclose(AAA(UNIT_INTERVAL, func(UNIT_INTERVAL))(PTS),
                         f, atol=atol, rtol=rtol)
     
     def test_poles_zeros_residues(self):
         def f(z):
             return (z+1) * (z+2) / ((z+3) * (z+4))
-        r = AAA(f(UNIT_INTERVAL), UNIT_INTERVAL)
+        r = AAA(UNIT_INTERVAL, f(UNIT_INTERVAL))
         assert_allclose(np.sum(r.poles + r.roots), -10, atol=1e-12)
         
         def f(z):
             return 2/(3 + z) + 5/(z - 2j)
-        r = AAA(f(UNIT_INTERVAL), UNIT_INTERVAL)
+        r = AAA(UNIT_INTERVAL, f(UNIT_INTERVAL))
         assert_allclose(r.residues.prod(), 10, atol=1e-8)
         
-        r = AAA(np.sin(10*np.pi*UNIT_INTERVAL), UNIT_INTERVAL)
+        r = AAA(UNIT_INTERVAL, np.sin(10*np.pi*UNIT_INTERVAL))
         assert_allclose(np.sort(np.abs(r.roots))[18], 0.9, atol=1e-12)
         
         def f(z):
             return (z - (3 + 3j))/(z + 2)
-        r = AAA(f(UNIT_INTERVAL), UNIT_INTERVAL)
+        r = AAA(UNIT_INTERVAL, f(UNIT_INTERVAL))
         assert_allclose(r.poles[0]*r.roots[0],  -6-6j, atol=1e-12)
     
     @pytest.mark.parametrize("func",
@@ -183,12 +183,12 @@ class TestAAA:
                               lambda z: 1/(1.1 + z), lambda z: 1/(1 + 1j*z),
                               lambda z: 1/(3 + z + z**2), lambda z: 1/(1.01 + z**3)])
     def test_polynomials_and_reciprocals(self, func):
-        assert_allclose(AAA(func(UNIT_INTERVAL), UNIT_INTERVAL)(PTS),
+        assert_allclose(AAA(UNIT_INTERVAL, func(UNIT_INTERVAL))(PTS),
                         func(PTS), atol=2e-13)
 
     # The following tests are taken from:
     # https://github.com/macd/BaryRational.jl/blob/main/test/test_aaa.jl
     def test_spiral(self):
         z = np.exp(np.linspace(-0.5, 0.5 + 15j*np.pi, num=1000))
-        r = AAA(np.tan(np.pi*z/2), z)
+        r = AAA(z, np.tan(np.pi*z/2))
         assert_allclose(np.sort(np.abs(r.poles))[:4], [1, 1, 3, 3])

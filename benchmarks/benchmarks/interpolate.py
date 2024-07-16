@@ -500,7 +500,7 @@ class AAA(Benchmark):
         self.pts = np.linspace(-1, 1, num=1000)
 
     def time_AAA(self):
-        r = interpolate.AAA(np.tan(np.pi*self.z/2), self.z)
+        r = interpolate.AAA(self.z, np.tan(np.pi*self.z/2))
         r(self.pts)
         r.poles
         r.residues
