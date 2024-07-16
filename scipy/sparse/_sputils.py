@@ -309,7 +309,8 @@ def validateaxis(axis) -> None:
         raise ValueError("axis out of range")
 
 
-def check_shape(args, current_shape=None, *, allow_1d=False, allow_nd=False) -> tuple[int, ...]:
+def check_shape(args, current_shape=None, *, allow_1d=False,
+                allow_nd=False) -> tuple[int, ...]:
     """Imitate numpy.matrix handling of shape arguments
 
     Parameters

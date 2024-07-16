@@ -11,10 +11,11 @@ import numpy as np
 
 from .._lib._util import copy_if_needed
 from ._matrix import spmatrix
-from ._sparsetools import coo_tocsr, coo_todense, coo_todense_nd, coo_matvec, coo_matvec_nd
+from ._sparsetools import (coo_tocsr, coo_todense, coo_todense_nd,
+                           coo_matvec, coo_matvec_nd)
 from ._base import issparse, SparseEfficiencyWarning, _spbase, sparray
 from ._data import _data_matrix, _minmax_mixin
-from ._sputils import (upcast_char, to_native, isshape, isdense, getdtype,
+from ._sputils import (upcast_char, to_native, isshape, getdtype,
                        getdata, downcast_intp_index, get_index_dtype,
                        check_shape, check_reshape_kwargs)
 
@@ -51,7 +52,8 @@ class _coo_base(_data_matrix, _minmax_mixin):
                                          'sized index arrays')
                     shape = tuple(operator.index(np.max(idx)) + 1
                                   for idx in coords)
-                self._shape = check_shape(shape, allow_1d=is_array, allow_nd=(is_array and len(shape)>=3))
+                self._shape = check_shape(shape, allow_1d=is_array,
+                                          allow_nd=(is_array and len(shape)>=3))
                 idx_dtype = self._get_index_dtype(coords,
                                                   maxval=max(self.shape),
                                                   check_contents=True)
@@ -64,13 +66,15 @@ class _coo_base(_data_matrix, _minmax_mixin):
                 if arg1.format == self.format and copy:
                     self.coords = tuple(idx.copy() for idx in arg1.coords)
                     self.data = arg1.data.copy()
-                    self._shape = check_shape(arg1.shape, allow_1d=is_array, allow_nd=is_array)
+                    self._shape = check_shape(arg1.shape, allow_1d=is_array,
+                                              allow_nd=is_array)
                     self.has_canonical_format = arg1.has_canonical_format
                 else:
                     coo = arg1.tocoo()
                     self.coords = tuple(coo.coords)
                     self.data = coo.data
-                    self._shape = check_shape(coo.shape, allow_1d=is_array, allow_nd=is_array)
+                    self._shape = check_shape(coo.shape, allow_1d=is_array,
+                                              allow_nd=is_array)
                     self.has_canonical_format = False
             else:
                 # dense argument
@@ -82,7 +86,8 @@ class _coo_base(_data_matrix, _minmax_mixin):
 
                 self._shape = check_shape(M.shape, allow_1d=is_array, allow_nd=is_array)
                 if shape is not None:
-                    if check_shape(shape, allow_1d=is_array, allow_nd=(is_array and len(self._shape)>=3)) != self._shape:
+                    if check_shape(shape, allow_1d=is_array,
+                        allow_nd=(is_array and len(self._shape)>=3)) != self._shape:
                         message = f'inconsistent shapes: {shape} != {self._shape}'
                         raise ValueError(message)
 
@@ -243,7 +248,8 @@ class _coo_base(_data_matrix, _minmax_mixin):
 
     def resize(self, *shape) -> None:
         is_array = isinstance(self, sparray)
-        shape = check_shape(shape, allow_1d=is_array) # allow_nd defaults to False as resize not implemented for ndim>2
+        shape = check_shape(shape, allow_1d=is_array)
+        # allow_nd defaults to False as resize not implemented for ndim>2
 
         # Check for added dimensions.
         if len(shape) > self.ndim:
@@ -293,7 +299,8 @@ class _coo_base(_data_matrix, _minmax_mixin):
             
         else:
             coord = np.concatenate(self.coords)
-            coo_todense_nd(self.shape, self.nnz, self.ndim, coord, self.data, B.ravel('A'), fortran)
+            coo_todense_nd(self.shape, self.nnz, self.ndim,
+                           coord, self.data, B.ravel('A'), fortran)
         # Note: reshape() doesn't copy here, but does return a new array (view).
         return B.reshape(self.shape)
 
@@ -320,7 +327,8 @@ class _coo_base(_data_matrix, _minmax_mixin):
 
         """
         if self.ndim > 2:
-            raise ValueError("Cannot convert a higher dimension sparse array to csc format")
+            raise ValueError('Cannot convert a higher dimension sparse array to '
+                             'csc format')
         if self.ndim != 2:
             raise ValueError("Cannot convert a 1d sparse array to csc format")
         if self.nnz == 0:
@@ -355,7 +363,8 @@ class _coo_base(_data_matrix, _minmax_mixin):
 
         """
         if self.ndim > 2:
-            raise ValueError("Cannot convert a higher dimension sparse array to csr format")
+            raise ValueError('Cannot convert a higher dimension sparse array to '
+                             'csr format')
         if self.nnz == 0:
             return self._csr_container(self.shape, dtype=self.dtype)
         else:
@@ -405,7 +414,8 @@ class _coo_base(_data_matrix, _minmax_mixin):
 
     def todia(self, copy=False):
         if self.ndim > 2:
-            raise ValueError("Cannot convert a higher dimension sparse array to dia format")
+            raise ValueError('Cannot convert a higher dimension sparse array to '
+                             'dia format')
         if self.ndim != 2:
             raise ValueError("Cannot convert a 1d sparse array to dia format")
         self.sum_duplicates()
@@ -431,7 +441,8 @@ class _coo_base(_data_matrix, _minmax_mixin):
 
     def todok(self, copy=False):
         if self.ndim > 2:
-            raise ValueError("Cannot convert a higher dimension sparse array to dok format")
+            raise ValueError('Cannot convert a higher dimension sparse array to '
+                             'dok format')
         self.sum_duplicates()
         dok = self._dok_container(self.shape, dtype=self.dtype)
         # ensure that 1d coordinates are not tuples
@@ -571,7 +582,8 @@ class _coo_base(_data_matrix, _minmax_mixin):
                         result.ravel('A'), fortran)
         else:
             coord = np.concatenate(self.coords)
-            coo_todense_nd(self.shape, self.nnz, self.ndim, coord, self.data, result.ravel('A'), fortran)
+            coo_todense_nd(self.shape, self.nnz, self.ndim, coord,
+                           self.data, result.ravel('A'), fortran)
         return self._container(result, copy=False)
     
 
@@ -627,7 +639,8 @@ class _coo_base(_data_matrix, _minmax_mixin):
                             dtype=upcast_char(self.dtype.char, other.dtype.char))
             shape = np.array(self.shape)
             coord = np.concatenate(self.coords)
-            coo_matvec_nd(self.nnz, len(self.shape), shape, coord, self.data, other, result)
+            coo_matvec_nd(self.nnz, len(self.shape), shape, coord, self.data,
+                          other, result)
             
             result = result.reshape(self.shape[:-1])
             return result
@@ -644,7 +657,8 @@ class _coo_base(_data_matrix, _minmax_mixin):
             result = self._matmul_vector(other.ravel())
             return result.reshape(M, 1)
         
-        raise NotImplementedError("n-D matrix-matrix multiplication not implemented for ndim>2")
+        raise NotImplementedError
+        ("n-D matrix-matrix multiplication not implemented for ndim>2")
 
 
     def _matmul_multivector(self, other):
