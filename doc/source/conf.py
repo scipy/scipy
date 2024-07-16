@@ -184,6 +184,10 @@ warnings.filterwarnings(
     message=r'There is no current event loop',
     category=DeprecationWarning,
 )
+# See https://github.com/sphinx-doc/sphinx/issues/12589
+suppress_warnings = [
+    'autosummary.import_cycle',
+]
 
 # -----------------------------------------------------------------------------
 # HTML output
@@ -195,7 +199,7 @@ html_logo = '_static/logo.svg'
 html_favicon = '_static/favicon.ico'
 
 html_sidebars = {
-    "index": "search-button-field",
+    "index": ["search-button-field"],
     "**": ["search-button-field", "sidebar-nav-bs"]
 }
 
