@@ -313,7 +313,8 @@ def dct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False, workers=None,
 
     .. warning:: For ``type in {1, 2, 3}``, ``norm="ortho"`` breaks the direct
                  correspondence with the direct Fourier transform. To recover
-                 it you must specify ``orthogonalize=False``.
+                 it you must specify ``orthogonalize=False``. The examples
+                 section illustrates how this can affect a harmonic fit.
 
     For ``norm="ortho"`` both the `dct` and `idct` are scaled by the same
     overall factor in both directions. By default, the transform is also
@@ -411,6 +412,45 @@ def dct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False, workers=None,
     >>> dct(np.array([4., 3., 5., 10.]), 1)
     array([ 30.,  -8.,   6.,  -2.])
 
+    The below exapmle illustrates the need to specify ``orthogonalize=False``
+    when computing the spectral coefficients of a Chebyshev approximation.
+
+    .. code-block:: python
+
+       import matplotlib.pyplot as plt
+       import numpy as np
+       from numpy.polynomial.chebyshev import chebpts2
+       from scipy.fft import dct, idct
+
+       m = chebpts2(5)
+       n = chebpts2(m.size * 10)
+       normalize = np.sqrt((n.size - 1) / (m.size - 1))
+
+       f = m
+       sf_orthogonalize = (
+           idct(dct(f, type=1, norm="ortho"), type=1, n=n.size, norm="ortho") * normalize
+       )
+       sf_fourier = (
+           idct(
+               dct(f, type=1, norm="ortho", orthogonalize=False),
+               type=1,
+               n=n.size,
+               norm="ortho",
+               orthogonalize=False,
+           )
+           * normalize
+       )
+
+       plt.plot(m, f, label="truth", linestyle="--", linewidth=3, color="black", marker="o")
+       plt.plot(n, sf_orthogonalize, label="Type 1 DCT. orthogonalize=True.")
+       plt.plot(n, sf_fourier, label="Type 1 DCT. orthogonalize=False.")
+       plt.legend()
+       plt.show()
+
+    .. image:: doc/source/tutorial/examples/dct_type1_chebyshev.png
+     :witdth: 400
+     :alt: Chebyshev approximation with type 1 DCT.
+
     """
     return (Dispatchable(x, np.ndarray),)
 
@@ -464,7 +504,9 @@ def idct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False,
 
     .. warning:: For ``type in {1, 2, 3}``, ``norm="ortho"`` breaks the direct
                  correspondence with the inverse direct Fourier transform. To
-                 recover it you must specify ``orthogonalize=False``.
+                 recover it you must specify ``orthogonalize=False``. The
+                 examples section illustrates how this can affect a harmonic
+                 fit.
 
     For ``norm="ortho"`` both the `dct` and `idct` are scaled by the same
     overall factor in both directions. By default, the transform is also
@@ -490,6 +532,45 @@ def idct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False,
     array([  4.,   3.,   5.,  10.,   5.,   3.])
     >>> idct(np.array([ 30.,  -8.,   6.,  -2.]), 1)
     array([  4.,   3.,   5.,  10.])
+
+    The below exapmle illustrates the need to specify ``orthogonalize=False``
+    when computing the spectral coefficients of a Chebyshev approximation.
+
+    .. code-block:: python
+
+       import matplotlib.pyplot as plt
+       import numpy as np
+       from numpy.polynomial.chebyshev import chebpts2
+       from scipy.fft import dct, idct
+
+       m = chebpts2(5)
+       n = chebpts2(m.size * 10)
+       normalize = np.sqrt((n.size - 1) / (m.size - 1))
+
+       f = m
+       sf_orthogonalize = (
+           idct(dct(f, type=1, norm="ortho"), type=1, n=n.size, norm="ortho") * normalize
+       )
+       sf_fourier = (
+           idct(
+               dct(f, type=1, norm="ortho", orthogonalize=False),
+               type=1,
+               n=n.size,
+               norm="ortho",
+               orthogonalize=False,
+           )
+           * normalize
+       )
+
+       plt.plot(m, f, label="truth", linestyle="--", linewidth=3, color="black", marker="o")
+       plt.plot(n, sf_orthogonalize, label="Type 1 DCT. orthogonalize=True.")
+       plt.plot(n, sf_fourier, label="Type 1 DCT. orthogonalize=False.")
+       plt.legend()
+       plt.show()
+
+    .. image:: doc/source/tutorial/examples/dct_type1_chebyshev.png
+     :witdth: 400
+     :alt: Chebyshev approximation with type 1 DCT.
 
     """
     return (Dispatchable(x, np.ndarray),)
