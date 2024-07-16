@@ -63,6 +63,6 @@ class BenchSVDS(Benchmark):
                                maxiter = 50, tol=1e-6)
             accuracy = np.sum(np.abs(1 - s[int(k/2):] / self.top_singular_values))
             if accuracy < self.tol:
-				# failed to converge sufficently for timing to be useful
-				# ensure we "destroy" performance so that benchmark suite picks up
-				time.sleep(100)
+                # failed to converge sufficently for timing to be useful
+                # ensure we "destroy" performance so that benchmark suite picks up
+                time.sleep(100)
