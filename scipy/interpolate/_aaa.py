@@ -253,7 +253,7 @@ class AAA:
                 # Treat case of multiple min singular values
                 mm = s == np.min(s)
                 # Aim for non-sparse weight vector
-                wj = V.conj()[mm, :].sum(axis=0) / np.sqrt(mm.sum())
+                wj = (V.conj()[mm, :].sum(axis=0) / np.sqrt(mm.sum())).astype(dtype)
             else:
                 # Fewer rows than columns
                 V = scipy.linalg.null_space(A[mask, : m + 1])

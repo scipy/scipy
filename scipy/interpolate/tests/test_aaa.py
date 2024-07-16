@@ -46,10 +46,11 @@ class TestAAA:
         with pytest.warns(RuntimeWarning, match="AAA failed"):
             AAA(UNIT_INTERVAL, np.exp(UNIT_INTERVAL),  max_terms=1)
 
-    @pytest.mark.parametrize("dtype", [np.float64, np.complex128])
+    @pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, 
+                                       np.complex128])
     def test_dtype_preservation(self, dtype):
         z = np.linspace(-1, 1, dtype=dtype)
-        assert AAA(z, np.sin(z))(0).dtype == dtype
+        assert AAA(z, np.sin(z))(z).dtype == dtype
     
     # The following tests are based on:
     # https://github.com/chebfun/chebfun/blob/master/tests/chebfun/test_aaa.m
