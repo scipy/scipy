@@ -237,7 +237,8 @@ assoc_legendre_p = MultiUFunc(
         Input value.
     branch_cut : Optional[ArrayLike[int]]
         Selects branch cut. Must be 2 (default) or 3.
-        2: cut on the real axis |z| > 1 3: cut on the real axis -1 < z < 1
+        2: cut on the real axis ``|z| > 1``
+        3: cut on the real axis ``-1 < z < 1``
     norm : Optional[bool]
         If ``True``, compute the normalized associated Legendre polynomial.
         Default is ``False``.
