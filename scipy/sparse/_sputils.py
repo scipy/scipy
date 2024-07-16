@@ -353,7 +353,7 @@ def check_shape(args, current_shape=None, *, allow_1d=False,
             if allow_1d:
                 if len(new_shape) not in (1, 2):
                     raise ValueError('shape must be a 1- or 2-tuple of positive '
-                                    'integers')
+                                     'integers')
             elif len(new_shape) != 2:
                 raise ValueError('shape must be a 2-tuple of positive integers')
             if any(d < 0 for d in new_shape):
