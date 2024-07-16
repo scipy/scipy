@@ -7536,6 +7536,7 @@ class TestAlexanderGovern:
             assert_equal(res.pvalue, np.nan)
 
     def test_bad_inputs(self):
+        # inputs are not finite (infinity)
         with np.errstate(invalid='ignore'):
             res = stats.alexandergovern([1, 2], [np.inf, np.inf])
         assert_equal(res.statistic, np.nan)
@@ -7603,7 +7604,7 @@ class TestAlexanderGovern:
                  23.56173993146409, -30.47133600859524, 11.878923752568431,
                  6.659007424270365, 21.261996745527256, -6.083678472686013,
                  7.400376198325763, 5.341975815444621]
-        
+
         one, two, eight = np.asarray(one), np.asarray(two), np.asarray(eight)
         soln = stats.alexandergovern(one, two, eight)
         assert_allclose(soln.statistic, 1.3599405447999450836)

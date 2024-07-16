@@ -4022,7 +4022,6 @@ def alexandergovern(*samples, nan_policy='propagate', axis=0):
 
     """
     samples = _alexandergovern_input_validation(samples, nan_policy, axis)
-    samples = [np.moveaxis(sample, axis, -1) for sample in samples]
 
     # The following formula numbers reference the equation described on
     # page 92 by Alexander, Govern. Formulas 5, 6, and 7 describe other
@@ -4087,6 +4086,8 @@ def _alexandergovern_input_validation(samples, nan_policy, axis):
     for sample in samples:
         if sample.shape[axis] <= 1:
             raise ValueError("Input sample size must be greater than one.")
+
+    samples = [np.moveaxis(sample, axis, -1) for sample in samples]
 
     return samples
 
