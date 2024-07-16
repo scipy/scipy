@@ -4,6 +4,10 @@ from scipy import special
 import scipy._lib._elementwise_iterative_method as eim
 from scipy._lib._util import _RichResult
 
+
+__all__ = ['nsum']
+
+
 # todo:
 #  figure out warning situation
 #  address https://github.com/scipy/scipy/pull/18650#discussion_r1233032521
@@ -39,18 +43,20 @@ def _tanhsinh(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
     ----------
     f : callable
         The function to be integrated. The signature must be::
+
             func(x: ndarray, *fargs) -> ndarray
-         where each element of ``x`` is a finite real and ``fargs`` is a tuple,
-         which may contain an arbitrary number of arrays that are broadcastable
-         with `x`. ``func`` must be an elementwise-scalar function; see
-         documentation of parameter `preserve_shape` for details.
-         If ``func`` returns a value with complex dtype when evaluated at
-         either endpoint, subsequent arguments ``x`` will have complex dtype
-         (but zero imaginary part).
-    a, b : array_like
+
+        where each element of ``x`` is a finite real and ``fargs`` is a tuple,
+        which may contain an arbitrary number of arrays that are broadcastable
+        with `x`. ``func`` must be an elementwise-scalar function; see
+        documentation of parameter `preserve_shape` for details.
+        If ``func`` returns a value with complex dtype when evaluated at
+        either endpoint, subsequent arguments ``x`` will have complex dtype
+        (but zero imaginary part).
+    a, b : float array_like
         Real lower and upper limits of integration. Must be broadcastable.
         Elements may be infinite.
-    args : tuple, optional
+    args : tuple of array_like, optional
         Additional positional arguments to be passed to `func`. Must be arrays
         broadcastable with `a` and `b`. If the callable to be integrated
         requires arguments that are not broadcastable with `a` and `b`, wrap
@@ -861,7 +867,7 @@ def _logsumexp(x, axis=0):
         return special.logsumexp(x, axis=axis)
 
 
-def _nsum_iv(f, a, b, step, args, log, maxterms, atol, rtol):
+def _nsum_iv(f, a, b, step, args, log, maxterms, tolerances):
     # Input validation and standardization
 
     message = '`f` must be callable.'
@@ -883,9 +889,13 @@ def _nsum_iv(f, a, b, step, args, log, maxterms, atol, rtol):
     if log not in {True, False}:
         raise ValueError(message)
 
+    tolerances = {} if tolerances is None else tolerances
+
+    atol = tolerances.get('atol', None)
     if atol is None:
         atol = -np.inf if log else 0
 
+    rtol = tolerances.get('rtol', None)
     rtol_temp = rtol if rtol is not None else 0.
 
     params = np.asarray([atol, rtol_temp, 0.])
@@ -915,17 +925,17 @@ def _nsum_iv(f, a, b, step, args, log, maxterms, atol, rtol):
     return f, a, b, step, valid_abstep, args, log, maxterms_int, atol, rtol
 
 
-def _nsum(f, a, b, step=1, args=(), log=False, maxterms=int(2**20), atol=None,
-          rtol=None):
-    r"""Evaluate a convergent sum.
+def nsum(f, a, b, *, step=1, args=(), log=False, maxterms=int(2**20), tolerances=None):
+    r"""Evaluate a convergent, monotonically decreasing finite or infinite series.
 
     For finite `b`, this evaluates::
 
         f(a + np.arange(n)*step).sum()
 
-    where ``n = int((b - a) / step) + 1``. If `f` is smooth, positive, and
-    monotone decreasing, `b` may be infinite, in which case the infinite sum
-    is approximated using integration.
+    where ``n = int((b - a) / step) + 1``, where `f` is smooth, positive, and
+    monotone decreasing. `b` may be very large or infinite, in which case
+    a partial sum is evaluated directly and the remainder is approximated using
+    integration.
 
     Parameters
     ----------
@@ -934,31 +944,42 @@ def _nsum(f, a, b, step=1, args=(), log=False, maxterms=int(2**20), atol=None,
 
             f(x: ndarray, *args) -> ndarray
 
-         where each element of ``x`` is a finite real and ``args`` is a tuple,
-         which may contain an arbitrary number of arrays that are broadcastable
-         with `x`. `f` must represent a smooth, positive, and monotone decreasing
-         function of `x`; `_nsum` performs no checks to verify that these conditions
-         are met and may return erroneous results if they are violated.
-    a, b : array_like
+        where each element of ``x`` is a finite real and ``args`` is a tuple,
+        which may contain an arbitrary number of arrays that are broadcastable
+        with ``x``.
+         
+        `f` must be an elementwise function: each element ``f(x)[i]``
+        must equal ``f(x[i])`` for all indices ``i``. It must not mutate the
+        array ``x`` or the arrays in ``args``, and it must return NaN where
+        the argument is NaN.
+        
+        `f` must represent a smooth, positive, and monotone decreasing
+        function of `x` defined at *all reals* between `a` and `b`.          
+        `nsum` performs no checks to verify that these conditions
+        are met and may return erroneous results if they are violated.
+    a, b : float array_like
         Real lower and upper limits of summed terms. Must be broadcastable.
         Each element of `a` must be finite and less than the corresponding
         element in `b`, but elements of `b` may be infinite.
-    step : array_like
+    step : float array_like
         Finite, positive, real step between summed terms. Must be broadcastable
-        with `a` and `b`.
-    args : tuple, optional
+        with `a` and `b`. Note that the number of terms included in the sum will
+        be ``floor((b - a) / step)`` + 1; adjust `b` accordingly to ensure
+        that ``f(b)`` is included if intended.
+    args : tuple of array_like, optional
         Additional positional arguments to be passed to `f`. Must be arrays
         broadcastable with `a`, `b`, and `step`. If the callable to be summed
         requires arguments that are not broadcastable with `a`, `b`, and `step`,
-        wrap that callable with `f`. See Examples.
+        wrap that callable with `f` such that `f` accepts only `x` and
+        broadcastable ``*args``. See Examples.
     log : bool, default: False
         Setting to True indicates that `f` returns the log of the terms
         and that `atol` and `rtol` are expressed as the logs of the absolute
         and relative errors. In this case, the result object will contain the
         log of the sum and error. This is useful for summands for which
         numerical underflow or overflow would lead to inaccuracies.
-    maxterms : int, default: 2**32
-        The maximum number of terms to evaluate when summing directly. 
+    maxterms : int, default: 2**20
+        The maximum number of terms to evaluate for direct summation. 
         Additional function evaluations may be performed for input
         validation and integral evaluation. 
     atol, rtol : float, optional
@@ -971,29 +992,38 @@ def _nsum(f, a, b, step=1, args=(), log=False, maxterms=int(2**20), atol=None,
     Returns
     -------
     res : _RichResult
-        An instance of `scipy._lib._util._RichResult` with the following
+        An object similar to an instance of `scipy.optimize.OptimizeResult` with the
         attributes. (The descriptions are written as though the values will be
         scalars; however, if `func` returns an array, the outputs will be
-
         arrays of the same shape.)
+
         success : bool
-            ``True`` when the algorithm terminated successfully (status ``0``).
-        status : int
+            ``True`` when the algorithm terminated successfully (status ``0``);
+            ``False`` otherwise.
+        status : int array
             An integer representing the exit status of the algorithm.
-            ``0`` : The algorithm converged to the specified tolerances.
-            ``-1`` : Element(s) of `a`, `b`, or `step` are invalid
-            ``-2`` : Numerical integration reached its iteration limit; the sum may be divergent.
-            ``-3`` : A non-finite value was encountered.
-        sum : float
+
+            - ``0`` : The algorithm converged to the specified tolerances.
+            - ``-1`` : Element(s) of `a`, `b`, or `step` are invalid
+            - ``-2`` : Numerical integration reached its iteration limit; 
+              the sum may be divergent.
+            - ``-3`` : A non-finite value was encountered.
+            - ``-4`` : The magnitude of the last term of the partial sum exceeds
+              the tolerances, so the error estimate exceeds the tolerances.
+              Consider increasing `maxterms` or loosening `tolerances`.
+
+        sum : float array
             An estimate of the sum.
-        error : float
-            An estimate of the absolute error, assuming all terms are non-negative.
-        nfev : int
+        error : float array
+            An estimate of the absolute error, assuming all terms are non-negative,
+            the function is computed exactly, and direct summation is accurate to
+            the precision of the result dtype.
+        nfev : int array
             The number of points at which `func` was evaluated.
 
     See Also
     --------
-    tanhsinh
+    mpmath.nsum
 
     Notes
     -----
@@ -1017,9 +1047,23 @@ def _nsum(f, a, b, step=1, args=(), log=False, maxterms=int(2**20), atol=None,
         \sum_{k=a}^{c-1} f(k) + \int_c^\infty f(x) dx + f(c)/2
 
     and the reported error is :math:`f(c)/2` plus the error estimate of
-    numerical integration. The approach described above is generalized for non-unit
+    numerical integration. Note that the integral approximations may require
+    evaluation of the function at points besides those that appear in the sum,
+    so `f` must be a continuous and monotonically decreasing function defined
+    for all reals within the integration interval. However, due to the nature
+    of the integral approximation, the shape of the function between points
+    that appear in the sum has little effect. If there is not a natural
+    extension of the function to all reals, consider using linear interpolation,
+    which is easy to evaluate and preserves monotonicity.
+    
+    The approach described above is generalized for non-unit
     `step` and finite `b` that is too large for direct evaluation of the sum,
     i.e. ``b - a + 1 > maxterms``.
+
+    Although the callable `f` must be non-negative and monotonically decreasing,
+    `nsum` can be used to evaluate more general forms of series. For instance, to
+    evaluate an alternating series, pass a callable that returns the difference
+    between pairs of adjacent terms, and adjust `step` accordingly. See Examples.
 
     References
     ----------
@@ -1031,29 +1075,34 @@ def _nsum(f, a, b, step=1, args=(), log=False, maxterms=int(2**20), atol=None,
     Compute the infinite sum of the reciprocals of squared integers.
     
     >>> import numpy as np
-    >>> from scipy.integrate._tanhsinh import _nsum
-    >>> res = _nsum(lambda k: 1/k**2, 1, np.inf, maxterms=1e3)
+    >>> from scipy.integrate import nsum
+    >>> res = nsum(lambda k: 1/k**2, 1, np.inf, maxterms=1e3)
     >>> ref = np.pi**2/6  # true value
     >>> res.error  # estimated error
-    4.990014980029223e-07
+    4.990061275730517e-07
     >>> (res.sum - ref)/ref  # true error
-    -1.0101760641302586e-10
+    -1.0104163408712734e-10
     >>> res.nfev  # number of points at which callable was evaluated
-    1142
+    1209
     
-    Compute the infinite sums of the reciprocals of integers raised to powers ``p``.
+    Compute the infinite sums of the reciprocals of integers raised to powers ``p``,
+    where ``p`` is an array.
     
     >>> from scipy import special
     >>> p = np.arange(2, 10)
-    >>> res = _nsum(lambda k, p: 1/k**p, 1, np.inf, maxterms=1e3, args=(p,))
+    >>> res = nsum(lambda k, p: 1/k**p, 1, np.inf, maxterms=1e3, args=(p,))
     >>> ref = special.zeta(p, 1)
     >>> np.allclose(res.sum, ref)
     True
+
+    Evaluate the alternating harmonic series.
+
+    >>> res = nsum(lambda x: 1/x - 1/(x+1), 1, np.inf, step=2)
+    >>> res.sum, res.sum - np.log(2)  # result, difference vs analytical sum
+    (0.6931471805598692, -7.605027718682322e-14)
     
     """ # noqa: E501
     # Potential future work:
-    # - more careful testing of when `b` is slightly less than `a` plus an
-    #   integer multiple of step (needed before this is public)
     # - improve error estimate of `_direct` sum
     # - add other methods for convergence acceleration (Richardson, epsilon)
     # - support infinite lower limit?
@@ -1063,7 +1112,7 @@ def _nsum(f, a, b, step=1, args=(), log=False, maxterms=int(2**20), atol=None,
     # - check for violations of monotonicity?
 
     # Function-specific input validation / standardization
-    tmp = _nsum_iv(f, a, b, step, args, log, maxterms, atol, rtol)
+    tmp = _nsum_iv(f, a, b, step, args, log, maxterms, tolerances)
     f, a, b, step, valid_abstep, args, log, maxterms, atol, rtol = tmp
 
     # Additional elementwise algorithm input validation / standardization
@@ -1194,8 +1243,14 @@ def _integral_bound(f, a, b, step, args, constants):
     nfev = len(n_steps)
     ks = a2 + n_steps * step2
     fks = f(ks, *args2)
-    nt = np.minimum(np.sum(fks > tol[:, np.newaxis], axis=-1),  n_steps.shape[-1]-1)
+    n_fk_insufficient = np.sum(fks > tol[:, np.newaxis], axis=-1)
+    nt = np.minimum(n_fk_insufficient, n_steps.shape[-1]-1)
     n_steps = n_steps[nt]
+
+    # If `maxterms` is insufficient (i.e. the magnitude of the last term of the
+    # partial sum exceeds the tolerance), we can finish the calculation and report
+    # valid sum and error estimates, but we'll have nonzero status.
+    i_fk_insufficient = (n_fk_insufficient == nfev)
 
     # Directly evaluate the sum up to this term
     k = a + n_steps * step
@@ -1216,8 +1271,15 @@ def _integral_bound(f, a, b, step, args, constants):
 
     # Calculate the full estimate and error from the pieces
     fk = fks[np.arange(len(fks)), nt]
-    fb = f(b, *args)
-    nfev += 1
+
+    # fb = f(b, *args), but some functions return NaN at infinity.
+    # instead of 0 like they must (for the sum to be convergent).
+    fb = np.full_like(fk, -np.inf) if log else np.zeros_like(fk)
+    i = np.isfinite(b)
+    if np.any(i):  # better not call `f` with empty arrays
+        fb[i] = f(b[i], *[arg[i] for arg in args])
+    nfev = nfev + np.asarray(i, dtype=left_nfev.dtype)
+
     if log:
         log_step = np.log(step)
         S_terms = (left, right.integral - log_step, fk - log2, fb - log2)
@@ -1228,4 +1290,6 @@ def _integral_bound(f, a, b, step, args, constants):
         S = left + right.integral/step + fk/2 + fb/2
         E = left_error + right.error/step + fk/2 - fb/2
     status[~i_skip] = right.status[~i_skip]
+
+    status[(status == 0) & i_fk_insufficient] = -4
     return S, E, status, left_nfev + right.nfev + nfev + lb.nfev

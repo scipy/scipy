@@ -484,7 +484,7 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=False,
             # cov_x = inv(dot(transpose(R), R))
             # but the explicit dot product was not necessary and sometimes
             # the result was not symmetric positive definite. See gh-4555.
-            perm = retval[1]['ipvt'] - 1
+            perm = retval[1]['ipvt']
             n = len(perm)
             r = triu(transpose(retval[1]['fjac'])[:n, :])
             inv_triu = linalg.get_lapack_funcs('trtri', (r,))
