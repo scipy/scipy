@@ -98,7 +98,8 @@ class TestAAA:
         f = np.array([1, 0, 0])
         r = AAA(z, f)
         assert_allclose(r(z), f, atol=TOL)
-        assert_allclose(r.poles(), [1.577350269189626, 0.422649730810374])
+        assert_allclose(np.sort(r.poles()),
+                        np.sort([1.577350269189626, 0.422649730810374]))
         assert_allclose(r.residues(), [-0.070441621801729, -0.262891711531604])
         assert_allclose(r.roots(), [2, 1])
         assert_equal(r.support_points, z)
