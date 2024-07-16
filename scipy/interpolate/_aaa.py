@@ -49,7 +49,7 @@ class AAA:
         Function values ``f(z)`` at `z`. Infinite and NaN value of `f` and corresponding
         values of `z` will be discarded.
     rtol : float, optional
-        Relative tolerance, defaults to 1e-13.
+        Relative tolerance, defaults to ``eps**0.75``.
     max_terms : int, optional
         Maximum number of terms in the barycentric representation, defaults to 100.
 
@@ -182,7 +182,7 @@ class AAA:
     >>> ax.legend()
     >>> plt.show()
     """
-    def __init__(self, z, f, *, rtol=1e-13, max_terms=100):
+    def __init__(self, z, f, *, rtol=None, max_terms=100):
         # input validation
         z = np.asarray(z)
         f = np.asarray(f)
@@ -210,9 +210,10 @@ class AAA:
     def _compute_AAA(self, f, z, rtol, max_terms):
         # Initialization for AAA iteration
         M = np.size(z)
-        atol = rtol * np.linalg.norm(f, ord=np.inf)
         mask = np.ones(M, dtype=np.bool_)
         dtype = np.result_type(z, f, 1.0)
+        rtol = np.finfo(dtype).eps**0.75 if rtol is None else rtol
+        atol = rtol * np.linalg.norm(f, ord=np.inf)
         zj = np.empty(max_terms, dtype=dtype)
         fj = np.empty(max_terms, dtype=dtype)
         # Cauchy matrix

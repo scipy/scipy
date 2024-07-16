@@ -25,7 +25,7 @@
 
 
 import numpy as np
-from numpy.testing import assert_allclose, assert_equal, assert_array_less
+from numpy.testing import assert_allclose, assert_equal
 import pytest
 import scipy
 from scipy.interpolate import AAA
@@ -45,6 +45,11 @@ class TestAAA:
     def test_convergence_error(self):
         with pytest.warns(RuntimeWarning, match="AAA failed"):
             AAA(UNIT_INTERVAL, np.exp(UNIT_INTERVAL),  max_terms=1)
+
+    @pytest.mark.parametrize("dtype", [np.float64, np.complex128])
+    def test_dtype_preservation(self, dtype):
+        z = np.linspace(-1, 1, dtype=dtype)
+        assert AAA(z, np.sin(z))(0).dtype == dtype
     
     # The following tests are based on:
     # https://github.com/chebfun/chebfun/blob/master/tests/chebfun/test_aaa.m
@@ -64,9 +69,9 @@ class TestAAA:
         f = np.tan(np.pi * UNIT_INTERVAL)
         r = AAA(UNIT_INTERVAL, f)
 
-        assert_allclose(r(UNIT_INTERVAL), f, atol=10 * TOL)
-        assert_array_less(np.min(np.abs(r.roots())), TOL)
-        assert_array_less(np.min(np.abs(r.poles() - 0.5)), TOL)
+        assert_allclose(r(UNIT_INTERVAL), f, atol=10 * TOL, rtol=1.4e-7)
+        assert_allclose(np.min(np.abs(r.roots())), 0, atol=3e-10)
+        assert_allclose(np.min(np.abs(r.poles() - 0.5)), 0, atol=TOL)
         # Test for spurious poles
         assert np.min(np.abs(r.residues())) > 1e-13
 
@@ -147,9 +152,9 @@ class TestAAA:
     @pytest.mark.parametrize("func,atol,rtol",
                              [(lambda x: np.abs(x + 0.5 + 0.01j), 5e-13, 1e-7),
                               (lambda x: np.sin(1/(1.05 - x)), 2e-13, 1e-7),
-                              (lambda x: np.exp(-1/(x**2)), 1.5e-14, 0),
-                              (lambda x: np.exp(-100*x**2), 6e-14, 0),
-                              (lambda x: np.exp(-10/(1.2 - x)), 1e-15, 0),
+                              (lambda x: np.exp(-1/(x**2)), 3.5e-13, 0),
+                              (lambda x: np.exp(-100*x**2), 3e-13, 0),
+                              (lambda x: np.exp(-10/(1.2 - x)), 1e-14, 0),
                               (lambda x: 1/(1+np.exp(100*(x + 0.5))), 2e-13, 1e-7),
                               (lambda x: np.abs(x - 0.95), 1e-6, 1e-7)])
     def test_basic_functions(self, func, atol, rtol):
@@ -191,4 +196,4 @@ class TestAAA:
     def test_spiral(self):
         z = np.exp(np.linspace(-0.5, 0.5 + 15j*np.pi, num=1000))
         r = AAA(z, np.tan(np.pi*z/2))
-        assert_allclose(np.sort(np.abs(r.poles()))[:4], [1, 1, 3, 3])
+        assert_allclose(np.sort(np.abs(r.poles()))[:4], [1, 1, 3, 3], rtol=9e-7)
