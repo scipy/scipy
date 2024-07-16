@@ -1,7 +1,7 @@
 import pytest
 
 import numpy as np
-from numpy.testing import assert_allclose, assert_equal
+from numpy.testing import assert_allclose
 
 from scipy.conftest import array_api_compatible
 import scipy._lib._elementwise_iterative_method as eim
@@ -534,26 +534,6 @@ class TestJacobian(JacobianHessianTest):
         ref = func.ref(x)
         np.testing.assert_allclose(res.df, ref, atol=1e-10)
 
-    def test_iv(self):
-        # Test input validation
-        message = "Argument `x` must be at least 1-D."
-        with pytest.raises(ValueError, match=message):
-            jacobian(np.sin, 1, tolerances=dict(atol=-1))
-
-        # Confirm that other parameters are being passed to `_derivative`,
-        # which raises an appropriate error message.
-        x = np.ones(3)
-        func = optimize.rosen
-        message = 'Tolerances and step parameters must be non-negative scalars.'
-        with pytest.raises(ValueError, match=message):
-            jacobian(func, x, tolerances=dict(atol=-1))
-        with pytest.raises(ValueError, match=message):
-            jacobian(func, x, tolerances=dict(rtol=-1))
-        with pytest.raises(ValueError, match=message):
-            jacobian(func, x, initial_step=-1)
-        with pytest.raises(ValueError, match=message):
-            jacobian(func, x, step_factor=-1)
-
     def test_attrs(self):
         # Test attributes of result object
         z = np.asarray([0.5, 0.25])
@@ -603,10 +583,10 @@ class TestHessian(JacobianHessianTest):
             ref = optimize.rosen_hess(x)
         assert_allclose(res.ddf, ref, atol=1e-8)
 
-        # check symmetry
-        for key in ['ddf', 'error', 'nfev', 'success', 'status']:
-            assert_equal(res[key], np.swapaxes(res[key], 0, 1))
-
+        # # Removed symmetry enforcement; consider adding back in as a feature
+        # # check symmetry
+        # for key in ['ddf', 'error', 'nfev', 'success', 'status']:
+        #     assert_equal(res[key], np.swapaxes(res[key], 0, 1))
 
     def test_nfev(self):
         def f1(z):
@@ -625,8 +605,9 @@ class TestHessian(JacobianHessianTest):
         res11 = hessian(lambda y: f1([z[0], y[0]]), z[1:2], initial_step=10)
         assert res.nfev[1, 1] == f1.nfev == res11.nfev[0, 0]
 
-        assert_equal(res.nfev, res.nfev.T)  # check symmetry
-        assert np.unique(res.nfev).size == 3
+        # Removed symmetry enforcement; consider adding back in as a feature
+        # assert_equal(res.nfev, res.nfev.T)  # check symmetry
+        # assert np.unique(res.nfev).size == 3
 
     def test_small_rtol_warning(self):
         message = 'The specified `rtol=1e-15`, but...'

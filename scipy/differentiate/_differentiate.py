@@ -768,7 +768,8 @@ def jacobian(f, x, *, tolerances=None, maxiter=10,
             successfully.
         error : float array
             An estimate of the error: the magnitude of the difference between
-            the current estimate and the estimate in the previous iteration.
+            the current estimate of the Jacobian and the estimate in the
+            previous iteration.
         nit : int array
             The number of iterations of the algorithm that were performed.
         nfev : int array
@@ -938,17 +939,20 @@ def hessian(f, x, *, tolerances=None, maxiter=10,
         step; this may be useful if steps smaller than some threshold are
         undesirable (e.g. due to subtractive cancellation error).
     maxiter : int, default: 10
-        The maximum number of iterations of the algorithm to perform.
+        The maximum number of iterations of the algorithm to perform. See
+        Notes.
 
     Returns
     -------
     res : _RichResult
-        An instance of `scipy._lib._util._RichResult` with the following
-        attributes. All elements are arrays with the same shape as the
-        Hessian `ddf`.
+        An object similar to an instance of `scipy.optimize.OptimizeResult` with the
+        following attributes. The descriptions are written as though the values will
+        be scalars; however, if `f` returns an array, the outputs will be
+        arrays of the same shape.
 
         success : bool array
-            ``True`` where the algorithm terminated successfully (status ``0``).
+            ``True`` where the algorithm terminated successfully (status ``0``);
+            ``False`` otherwise.
         status : int array
             An integer representing the exit status of the algorithm.
 
@@ -962,7 +966,8 @@ def hessian(f, x, *, tolerances=None, maxiter=10,
             successfully.
         error : float array
             An estimate of the error: the magnitude of the difference between
-            the current estimate and the estimate in the previous iteration.
+            the current estimate of the Hessian and the estimate in the
+            previous iteration.
         nfev : int array
             The number of points at which `f` was evaluated.
 
@@ -1079,10 +1084,4 @@ def hessian(f, x, *, tolerances=None, maxiter=10,
     del res.df  # this is renamed to ddf
     del res.nit  # this is only the outer-jacobian nit
 
-    i = res.error <= np.swapaxes(res.error, 0, 1)
-    for key in res.keys():
-        if key.startswith('_'):
-            continue
-
-        res[key] = np.where(i, res[key], np.swapaxes(res[key], 0, 1))
     return res
