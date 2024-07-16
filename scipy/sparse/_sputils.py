@@ -249,7 +249,7 @@ def isshape(x, nonneg=False, *, allow_1d=False, allow_nd=False) -> bool:
     If allow_nd, shapes of all lengths >= 1 are allowed.
     """
     ndim = len(x)
-    if ndim<3:
+    if ndim < 3:
         if ndim != 2 and not (allow_1d and ndim == 1):
             return False
         for d in x:
