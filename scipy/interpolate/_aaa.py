@@ -97,7 +97,10 @@ class AAA:
     :math:`w_1,\dots,w_m` are real or complex weights. The algorithm then proceeds to
     select the next support point :math:`z_{m+1}` is selected from the remaining
     unselected points in `z` such that the nonlinear residual :math:`|f(z) - n(z)/d(z)|`
-    is maximised. The weights are selected to solve the least-squares problem
+    is maximised. The algorithm terminates when this maximum is less than
+    ``rtol * np.linalg.norm(f, ord=np.inf)``. This means the interpolation property is
+    only satisfied up to a tolerance. The weights are selected to solve the
+    least-squares problem
 
     .. math::
 
