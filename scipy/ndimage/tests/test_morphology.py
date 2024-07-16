@@ -1694,6 +1694,12 @@ class TestNdimageMorphology:
                                       origin=(1, 1), border_value=1)
         assert_array_almost_equal(out, expected)
 
+    def test_binary_dilation36(self):
+        # gh-21009
+        data = np.zeros([], bool)
+        out = ndimage.binary_dilation(data, iterations=-1)
+        assert_array_almost_equal(out, 0)
+
     def test_binary_propagation01(self):
         struct = [[0, 1, 0],
                   [1, 1, 1],
@@ -1750,6 +1756,13 @@ class TestNdimageMorphology:
         data = np.zeros(mask.shape, bool)
         out = ndimage.binary_propagation(data, struct,
                                          mask=mask, border_value=1)
+        assert_array_almost_equal(out, expected)
+
+    def test_binary_propagation03(self):
+        # gh-21009
+        data = np.zeros([], bool)
+        expected = np.zeros([], bool)
+        out = ndimage.binary_propagation(data)
         assert_array_almost_equal(out, expected)
 
     @pytest.mark.parametrize('dtype', types)

@@ -6,7 +6,7 @@ import pytest
 
 from scipy.signal._spline import (
     symiirorder1_ic, symiirorder2_ic_fwd, symiirorder2_ic_bwd)
-from scipy.signal._splines import symiirorder1, symiirorder2
+from scipy.signal import symiirorder1, symiirorder2
 
 
 def _compute_symiirorder2_bwd_hs(k, cs, rsq, omega):
@@ -150,6 +150,26 @@ class TestSymIIR:
 
         out = symiirorder1(signal, c0, z1, precision)
         assert_allclose(out, exp_out, atol=4e-6, rtol=6e-7)
+
+    @pytest.mark.parametrize('dtyp', [np.float32, np.float64])
+    def test_symiir1_values(self, dtyp):
+        rng = np.random.RandomState(1234)
+        s = rng.uniform(size=16).astype(dtyp)
+        res = symiirorder1(s, 0.5, 0.1)
+
+        # values from scipy 1.9.1
+        exp_res = np.array([0.14387447, 0.35166047, 0.29735238, 0.46295986, 0.45174927,
+                            0.19982875, 0.20355805, 0.47378628, 0.57232247, 0.51597393,
+                           0.25935107, 0.31438554, 0.41096728, 0.4190693 , 0.25812255,
+                           0.33671467])
+        assert res.dtype == dtyp
+        atol = {np.float64: 1e-15, np.float32: 1e-7}[dtyp]
+        assert_allclose(res, exp_res, atol=atol)
+
+        s = s + 1j*s
+        res = symiirorder1(s, 0.5, 0.1)
+        assert res.dtype == np.complex64 if dtyp == np.float32 else np.complex128
+        assert_allclose(res, exp_res + 1j*exp_res, atol=atol)
 
     @pytest.mark.parametrize(
         'dtype', [np.float32, np.float64])
@@ -298,6 +318,33 @@ class TestSymIIR:
 
         out = symiirorder2(signal, r, omega, precision)
         assert_allclose(out, exp, atol=4e-6, rtol=6e-7)
+
+    @pytest.mark.parametrize('dtyp', [np.float32, np.float64])
+    def test_symiir2_values(self, dtyp):
+        rng = np.random.RandomState(1234)
+        s = rng.uniform(size=16).astype(dtyp)
+        res = symiirorder2(s, 0.1, 0.1, precision=1e-10)
+
+        # values from scipy 1.9.1
+        exp_res = np.array([0.26572609, 0.53408018, 0.51032696, 0.72115829, 0.69486885,
+           0.3649055 , 0.37349478, 0.74165032, 0.89718521, 0.80582483,
+           0.46758053, 0.51898709, 0.65025605, 0.65394321, 0.45273595,
+           0.53539183])
+
+        assert res.dtype == dtyp
+        # The values in SciPy 1.14 agree with those in SciPy 1.9.1 to this
+        # accuracy only. Implementation differences are twofold:
+        # 1. boundary conditions are computed differently
+        # 2. the filter itself uses sosfilt instead of a hardcoded iteration
+        # The boundary conditions seem are tested separately (see
+        # test_symiir2_initial_{fwd,bwd} above, so the difference is likely
+        # due to a different way roundoff errors accumulate in the filter.
+        # In that respect, sosfilt is likely doing a better job.
+        assert_allclose(res, exp_res, atol=2e-6)
+
+        s = s + 1j*s
+        with assert_raises(TypeError):
+            res = symiirorder2(s, 0.5, 0.1)
 
     def test_symiir1_integer_input(self):
         s = np.where(np.arange(100) % 2, -1, 1)

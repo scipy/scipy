@@ -20,13 +20,12 @@ from scipy._lib._util import np_long, np_ulong
 
 _IS_32BIT = (sys.maxsize < 2**32)
 
-INT_DTYPES = {np.intc, np_long, np.longlong, np.uintc, np_ulong, np.ulonglong}
+INT_DTYPES = (np.intc, np_long, np.longlong, np.uintc, np_ulong, np.ulonglong)
 # np.half is unsupported on many test systems so excluded
-REAL_DTYPES = {np.float32, np.float64, np.longdouble}
-COMPLEX_DTYPES = {np.complex64, np.complex128, np.clongdouble}
-# use sorted list to ensure fixed order of tests
-VDTYPES = sorted(REAL_DTYPES ^ COMPLEX_DTYPES, key=str)
-MDTYPES = sorted(INT_DTYPES ^ REAL_DTYPES ^ COMPLEX_DTYPES, key=str)
+REAL_DTYPES = (np.float32, np.float64, np.longdouble)
+COMPLEX_DTYPES = (np.complex64, np.complex128, np.clongdouble)
+INEXECTDTYPES = REAL_DTYPES + COMPLEX_DTYPES
+ALLDTYPES = INT_DTYPES + INEXECTDTYPES
 
 
 def sign_align(A, B):
@@ -102,9 +101,10 @@ def test_MikotaPair():
 
 @pytest.mark.parametrize("n", [50])
 @pytest.mark.parametrize("m", [1, 2, 10])
-@pytest.mark.parametrize("Vdtype", sorted(REAL_DTYPES, key=str))
-@pytest.mark.parametrize("Bdtype", sorted(REAL_DTYPES, key=str))
-@pytest.mark.parametrize("BVdtype", sorted(REAL_DTYPES, key=str))
+@pytest.mark.filterwarnings("ignore:Casting complex values to real")
+@pytest.mark.parametrize("Vdtype", INEXECTDTYPES)
+@pytest.mark.parametrize("Bdtype", ALLDTYPES)
+@pytest.mark.parametrize("BVdtype", INEXECTDTYPES)
 def test_b_orthonormalize(n, m, Vdtype, Bdtype, BVdtype):
     """Test B-orthonormalization by Cholesky with callable 'B'.
     The function '_b_orthonormalize' is key in LOBPCG but may
@@ -119,17 +119,27 @@ def test_b_orthonormalize(n, m, Vdtype, Bdtype, BVdtype):
     B = diags([vals], [0], (n, n)).astype(Bdtype)
     BX = B @ X
     BX = BX.astype(BVdtype)
-    dtype = min(X.dtype, B.dtype, BX.dtype)
+    is_all_complex = (np.issubdtype(Vdtype, np.complexfloating) and
+                     np.issubdtype(BVdtype, np.complexfloating))
+    is_all_notcomplex = (not np.issubdtype(Vdtype, np.complexfloating) and
+                        not np.issubdtype(Bdtype, np.complexfloating) and
+                        not np.issubdtype(BVdtype, np.complexfloating))
+
+    # All complex or all not complex can calculate in-place
+    check_inplace = is_all_complex or is_all_notcomplex
     # np.longdouble tol cannot be achieved on most systems
-    atol = m * n * max(np.finfo(dtype).eps, np.finfo(np.float64).eps)
+    atol = m * n * max(np.finfo(Vdtype).eps,
+                       np.finfo(BVdtype).eps,
+                       np.finfo(np.float64).eps)
 
     Xo, BXo, _ = _b_orthonormalize(lambda v: B @ v, X, BX)
-    # Check in-place.
-    assert_equal(X, Xo)
-    assert_equal(id(X), id(Xo))
-    assert_equal(BX, BXo)
-    assert_equal(id(BX), id(BXo))
-    # Check BXo.
+    if check_inplace:
+        # Check in-place
+        assert_equal(X, Xo)
+        assert_equal(id(X), id(Xo))
+        assert_equal(BX, BXo)
+        assert_equal(id(BX), id(BXo))
+    # Check BXo
     assert_allclose(B @ Xo, BXo, atol=atol, rtol=atol)
     # Check B-orthonormality
     assert_allclose(Xo.T.conj() @ B @ Xo, np.identity(m),
@@ -139,13 +149,14 @@ def test_b_orthonormalize(n, m, Vdtype, Bdtype, BVdtype):
     Xo1, BXo1, _ = _b_orthonormalize(lambda v: B @ v, X)
     assert_allclose(Xo, Xo1, atol=atol, rtol=atol)
     assert_allclose(BXo, BXo1, atol=atol, rtol=atol)
-    # Check in-place.
-    assert_equal(X, Xo1)
-    assert_equal(id(X), id(Xo1))
-    # Check BXo1.
+    if check_inplace:
+        # Check in-place.
+        assert_equal(X, Xo1)
+        assert_equal(id(X), id(Xo1))
+    # Check BXo1
     assert_allclose(B @ Xo1, BXo1, atol=atol, rtol=atol)
 
-    # Introduce column-scaling in X.
+    # Introduce column-scaling in X
     scaling = 1.0 / np.geomspace(10, 1e10, num=m)
     X = Xcopy * scaling
     X = X.astype(Vdtype)
@@ -153,7 +164,7 @@ def test_b_orthonormalize(n, m, Vdtype, Bdtype, BVdtype):
     BX = BX.astype(BVdtype)
     # Check scaling-invariance of Cholesky-based orthonormalization
     Xo1, BXo1, _ = _b_orthonormalize(lambda v: B @ v, X, BX)
-    # The output should be the same, up the signs of the columns.
+    # The output should be the same, up the signs of the columns
     Xo1 =  sign_align(Xo1, Xo)
     assert_allclose(Xo, Xo1, atol=atol, rtol=atol)
     BXo1 =  sign_align(BXo1, BXo)
@@ -457,8 +468,8 @@ def test_tolerance_float32():
     assert_allclose(eigvals, -np.arange(1, 1 + m), atol=2e-5, rtol=1e-5)
 
 
-@pytest.mark.parametrize("vdtype", VDTYPES)
-@pytest.mark.parametrize("mdtype", MDTYPES)
+@pytest.mark.parametrize("vdtype", INEXECTDTYPES)
+@pytest.mark.parametrize("mdtype", ALLDTYPES)
 @pytest.mark.parametrize("arr_type", [np.array,
                                       sparse.csr_matrix,
                                       sparse.coo_matrix])

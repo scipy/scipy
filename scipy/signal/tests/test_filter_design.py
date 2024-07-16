@@ -3636,15 +3636,15 @@ def test_sos_consistency():
 
         b, a = func(2, *args, output='ba')
         sos = func(2, *args, output='sos')
-        assert_allclose(sos, [np.hstack((b, a))], err_msg="%s(2,...)" % name)
+        assert_allclose(sos, [np.hstack((b, a))], err_msg=f"{name}(2,...)")
 
         zpk = func(3, *args, output='zpk')
         sos = func(3, *args, output='sos')
-        assert_allclose(sos, zpk2sos(*zpk), err_msg="%s(3,...)" % name)
+        assert_allclose(sos, zpk2sos(*zpk), err_msg=f"{name}(3,...)")
 
         zpk = func(4, *args, output='zpk')
         sos = func(4, *args, output='sos')
-        assert_allclose(sos, zpk2sos(*zpk), err_msg="%s(4,...)" % name)
+        assert_allclose(sos, zpk2sos(*zpk), err_msg=f"{name}(4,...)")
 
 
 class TestIIRNotch:

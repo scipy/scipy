@@ -288,7 +288,7 @@ def rsf2csf(T, Z, check_finite=True):
 
     for ind, X in enumerate([Z, T]):
         if X.ndim != 2 or X.shape[0] != X.shape[1]:
-            raise ValueError("Input '{}' must be square.".format('ZT'[ind]))
+            raise ValueError(f"Input '{'ZT'[ind]}' must be square.")
 
     if T.shape[0] != Z.shape[0]:
         message = f"Input array shapes must match: Z: {Z.shape} vs. T: {T.shape}"

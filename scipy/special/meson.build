@@ -291,7 +291,8 @@ special_sources = [
   'special/digamma.h',
   'special/wright_bessel.h',
   'special/hyp2f1.h',
-  'special/tools.h'
+  'special/tools.h',
+  'special/iv_ratio.h'
 ]
 
 special_cephes_sources = [
@@ -325,7 +326,11 @@ special_cephes_sources = [
   'special/cephes/chdtr.h',
   'special/cephes/igami.h',
   'special/cephes/hyperg.h',
-  'special/cephes/expn.h'
+  'special/cephes/expn.h',
+  'special/cephes/ellie.h',
+  'special/cephes/ellik.h',
+  'special/cephes/ellpe.h',
+  'special/cephes/ellpk.h'
 ]
 
 py3.install_sources(special_sources, subdir: 'scipy/special/special')

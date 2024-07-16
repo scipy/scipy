@@ -88,7 +88,7 @@ class _BenchOptimizers(Benchmark):
             return
         print("")
         print("=========================================================")
-        print("Optimizer benchmark: %s" % (self.function_name))
+        print(f"Optimizer benchmark: {self.function_name}")
         print("dimensions: %d, extra kwargs: %s" %
               (results[0].ndim, str(self.minimizer_kwargs)))
         print("averaged over %d starting configurations" % (results[0].ntrials))

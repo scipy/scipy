@@ -118,8 +118,8 @@ class VarReader4:
             raise ValueError('Mat 4 mopt wrong format, byteswapping problem?')
         M, rest = divmod(data['mopt'], 1000)  # order code
         if M not in (0, 1):
-            warnings.warn("We do not support byte ordering '%s'; returned "
-                          "data may be corrupt" % order_codes[M],
+            warnings.warn(f"We do not support byte ordering '{order_codes[M]}';"
+                          " returned data may be corrupt",
                           UserWarning, stacklevel=3)
         O, rest = divmod(rest, 100)  # unused, should be 0
         if O != 0:
@@ -148,7 +148,7 @@ class VarReader4:
             # no current processing (below) makes sense for sparse
             return self.read_sparse_array(hdr)
         else:
-            raise TypeError('No reader for class code %s' % mclass)
+            raise TypeError(f'No reader for class code {mclass}')
         if process and self.squeeze_me:
             return squeeze_element(arr)
         return arr
@@ -177,10 +177,11 @@ class VarReader4:
             num_bytes *= d
         buffer = self.mat_stream.read(int(num_bytes))
         if len(buffer) != num_bytes:
-            raise ValueError("Not enough bytes to read matrix '%s'; is this "
-                             "a badly-formed file? Consider listing matrices "
-                             "with `whosmat` and loading named matrices with "
-                             "`variable_names` kwarg to `loadmat`" % hdr.name)
+            raise ValueError(f"Not enough bytes to read matrix '{hdr.name}';"
+                             "is this a badly-formed file? "
+                             "Consider listing matrices with `whosmat` "
+                             "and loading named matrices with "
+                             "`variable_names` kwarg to `loadmat`")
         arr = np.ndarray(shape=dims,
                          dtype=dt,
                          buffer=buffer,
@@ -299,7 +300,7 @@ class VarReader4:
 
             shape = (int(rows), int(cols))
         else:
-            raise TypeError('No reader for class code %s' % mclass)
+            raise TypeError(f'No reader for class code {mclass}')
 
         if self.squeeze_me:
             shape = tuple([x for x in shape if x != 1])
