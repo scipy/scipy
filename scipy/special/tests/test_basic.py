@@ -2270,7 +2270,7 @@ class TestFactorialFunctions:
         # assert_equal does not distinguish scalars and 0-dim arrays of the same value,
         # see https://github.com/numpy/numpy/issues/24050
         def assert_really_equal(x, y):
-            assert type(x) == type(y), f"types not equal: {type(x)}, {type(y)}"
+            assert type(x) == type(y), f"types not equal: {type(x)}, {type(y)}"  # noqa: E721
             assert_equal(x, y)
 
         if result is not None:
