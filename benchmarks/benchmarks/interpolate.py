@@ -502,6 +502,6 @@ class AAA(Benchmark):
     def time_AAA(self):
         r = interpolate.AAA(self.z, np.tan(np.pi*self.z/2))
         r(self.pts)
-        r.poles
-        r.residues
-        r.roots
+        r.poles()
+        r.residues()
+        r.roots()
