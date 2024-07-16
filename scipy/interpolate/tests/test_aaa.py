@@ -100,8 +100,8 @@ class TestAAA:
         assert_allclose(r(z), f, atol=TOL)
         assert_allclose(np.sort(r.poles()),
                         np.sort([1.577350269189626, 0.422649730810374]))
-        assert_allclose(r.residues(), [-0.070441621801729, -0.262891711531604])
-        assert_allclose(r.roots(), [2, 1])
+        assert_allclose(np.sort(r.residues()), np.sort([-0.070441621801729, -0.262891711531604]))
+        assert_allclose(np.sort(r.roots()), np.sort([2, 1]))
         assert_equal(r.support_points, z)
         assert_equal(r.values, f)
         assert_allclose(r.weights, [0.577350269189626, 0.577350269189626,
