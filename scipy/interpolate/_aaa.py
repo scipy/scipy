@@ -212,12 +212,13 @@ class AAA:
         M = np.size(z)
         atol = rtol * np.linalg.norm(f, ord=np.inf)
         mask = np.ones(M, dtype=np.bool_)
-        zj = np.empty(max_terms, dtype=z.dtype)
-        fj = np.empty(max_terms, dtype=f.dtype)
+        dtype = np.result_type(z, f, 1.0)
+        zj = np.empty(max_terms, dtype=dtype)
+        fj = np.empty(max_terms, dtype=dtype)
         # Cauchy matrix
-        C = np.empty((M, max_terms), dtype=np.result_type(z, 1.0))
+        C = np.empty((M, max_terms), dtype=dtype)
         # Loewner matrix
-        A = np.empty((M, max_terms), dtype=np.result_type(f, C))
+        A = np.empty((M, max_terms), dtype=dtype)
         errors = np.empty(max_terms)
         R = np.repeat(np.mean(f), M)
 
