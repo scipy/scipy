@@ -219,7 +219,7 @@ class AAA:
         C = np.empty((M, max_terms), dtype=np.complex128)
         # Loewner matrix
         A = np.empty((M, max_terms), dtype=np.complex128)
-        errors = np.empty(max_terms, dtype=np.complex128)
+        errors = np.empty(max_terms)
         R = np.repeat(np.mean(f), M)
 
         # AAA iteration
