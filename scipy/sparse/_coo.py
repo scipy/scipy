@@ -636,7 +636,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
         
         else: # if dim >= 3
             result = np.zeros(np.prod(self.shape[:-1]),
-                            dtype=upcast_char(self.dtype.char, other.dtype.char))
+                              dtype=upcast_char(self.dtype.char, other.dtype.char))
             shape = np.array(self.shape)
             coord = np.concatenate(self.coords)
             coo_matvec_nd(self.nnz, len(self.shape), shape, coord, self.data,
