@@ -391,7 +391,8 @@ class AAA:
             m = self.weights.size
             B = np.eye(m + 1)
             B[0, 0] = 0
-            E = np.zeros_like(B, dtype=np.complex128)
+            E = np.zeros_like(B, dtype=np.result_type(self.weights, self.values,
+                                                      self.support_points))
             E[0, 1:] = self.weights * self.values
             E[1:, 0] = 1
             np.fill_diagonal(E[1:, 1:], self.support_points)
