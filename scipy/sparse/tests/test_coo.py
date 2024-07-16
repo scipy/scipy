@@ -198,9 +198,10 @@ def test_reshape_2d():
         arr2d.reshape((1,3))
 
 
-@pytest.mark.parametrize(('shape', 'new_shape'), [((4,9,6,5), (3,6,15,4)), ((4,9,6,5),
-                                            (36,30)), ((4,9,6,5), (1080,)), ((4,9,6,5),
-                                                                    (2,3,2,2,3,5,3))])
+@pytest.mark.parametrize(('shape', 'new_shape'), [((4,9,6,5), (3,6,15,4)),
+                                                  ((4,9,6,5), (36,30)),
+                                                  ((4,9,6,5), (1080,)),
+                                                  ((4,9,6,5), (2,3,2,2,3,5,3)),])
 def test_reshape_nd(shape, new_shape):
     # reshaping a 4d sparse array
     rng = np.random.RandomState(23409823)
