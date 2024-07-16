@@ -394,7 +394,7 @@ def check_shape(args, current_shape=None, *, allow_1d=False,
     if len(new_shape) < 3:
             if len(new_shape) != 2 and not (allow_1d and len(new_shape) == 1):
                 raise ValueError('matrix shape must be two-dimensional')
-    elif len(new_shape)>=3:
+    elif len(new_shape) >= 3:
         if not allow_nd and not allow_1d:
             raise ValueError('matrix shape must be two-dimensional')
         if not allow_nd and allow_1d:
