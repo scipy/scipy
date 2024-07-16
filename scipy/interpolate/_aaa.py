@@ -215,7 +215,7 @@ class AAA:
         zj = np.empty(max_terms, dtype=z.dtype)
         fj = np.empty(max_terms, dtype=f.dtype)
         # Cauchy matrix
-        C = np.empty((M, max_terms), dtype=np.complex128)
+        C = np.empty((M, max_terms), dtype=np.result_type(z, 1.0))
         # Loewner matrix
         A = np.empty((M, max_terms), dtype=np.complex128)
         errors = np.empty(max_terms)
