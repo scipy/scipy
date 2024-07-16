@@ -168,17 +168,16 @@ class AAA:
     >>> r.errors.size
     12
     >>> r.errors
-    array([2.49261500e+01+0.j, 4.28045609e+01+0.j, 1.71346935e+01+0.j,
-        8.65055336e-02+0.j, 1.27106444e-02+0.j, 9.90889874e-04+0.j,
-        5.86910543e-05+0.j, 1.28735561e-06+0.j, 3.57007532e-08+0.j,
-        6.37019486e-10+0.j, 1.67119305e-11+0.j, 1.17128023e-13+0.j])
+    array([2.49261500e+01, 4.28045609e+01, 1.71346935e+01, 8.65055336e-02,
+           1.27106444e-02, 9.90889874e-04, 5.86910543e-05, 1.28735561e-06,
+           3.57007437e-08, 6.37020283e-10, 1.67088713e-11])
 
     We can also plot the computed poles:
 
     >>> fig, ax = plt.subplots()
     >>> ax.plot(z.real, z.imag, '.', markersize=2, label="Sample points")
     >>> ax.plot(r.poles().real, r.poles().imag, '.', markersize=5,
-                label="Computed poles")
+    ...         label="Computed poles")
     >>> ax.set(xlim=[-3.5, 3.5], ylim=[-3.5, 3.5], aspect="equal")
     >>> ax.legend()
     >>> plt.show()
