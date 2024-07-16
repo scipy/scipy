@@ -550,7 +550,6 @@ class _spbase:
             if other.shape != self.shape:
                 raise ValueError("inconsistent shapes")
             return self._add_sparse(other)
-        
         elif isdense(other):
             other = np.broadcast_to(other, self.shape)
             return self._add_dense(other)
@@ -570,7 +569,6 @@ class _spbase:
             if other.shape != self.shape:
                 raise ValueError("inconsistent shapes")
             return self._sub_sparse(other)
-
         elif isdense(other):
             other = np.broadcast_to(other, self.shape)
             return self._sub_dense(other)
