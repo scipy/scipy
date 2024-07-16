@@ -320,6 +320,9 @@ _cython_tree = [
 ]
 
 cython_args = ['-3', '--fast-fail', '--output-file', '@OUTPUT@', '--include-dir', '@BUILD_ROOT@', '@INPUT@']
+if cy.version().version_compare('>=3.1.0')
+  cython_args += ['-Xfreethreading_compatible=True']
+endif
 cython_cplus_args = ['--cplus'] + cython_args
 
 cython_gen = generator(cython,
