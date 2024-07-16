@@ -162,6 +162,8 @@ endif
 # 1. `.pyf.src` files, because `@BASENAME@` will still include .pyf
 # 2. targets with #include's (due to no `depend_files` - see feature request
 #    at meson#8295)
+# TODO: add argument to mark extension modules as safe to run without the GIL,
+#       once f2py supports that (see numpy#26157).
 f2py_gen = generator(generate_f2pymod,
   arguments : ['@INPUT@', '-o', '@BUILD_DIR@'],
   output : ['_@BASENAME@module.c', '_@BASENAME@-f2pywrappers.f'],
@@ -336,6 +338,8 @@ cython_gen_cpp = generator(cython,
   depends : [_cython_tree])
 
 if use_pythran
+  # TODO: add argument to mark extension modules as safe to run without the GIL,
+  #       once pythran supports that.
   pythran_gen = generator(pythran,
     arguments : ['-E', '@INPUT@', '-o', '@OUTPUT@'],
     output : '@BASENAME@.cpp',
