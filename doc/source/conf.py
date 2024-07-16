@@ -195,7 +195,7 @@ html_logo = '_static/logo.svg'
 html_favicon = '_static/favicon.ico'
 
 html_sidebars = {
-    "index": "search-button-field",
+    "index": ["search-button-field"],
     "**": ["search-button-field", "sidebar-nav-bs"]
 }
 
