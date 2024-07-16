@@ -147,6 +147,11 @@ PyMODINIT_FUNC PyInit__gufuncs() {
         return NULL;
     }
 
+#if Py_GIL_DISABLED
+    PyUnstable_Module_SetGIL(_gufuncs, Py_MOD_GIL_NOT_USED);
+#endif
+
+
     PyObject *legendre_p_all = Py_BuildValue(
         "(N, N, N)",
         SpecFun_NewGUFunc({static_cast<func_d_d1_t>(::legendre_p_all), static_cast<func_f_f1_t>(::legendre_p_all),

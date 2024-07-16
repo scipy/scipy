@@ -276,9 +276,14 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
         return NULL;
     }
 
+#if Py_GIL_DISABLED
+    PyUnstable_Module_SetGIL(_special_ufuncs, Py_MOD_GIL_NOT_USED);
+#endif
+
     PyObject *_cospi = SpecFun_NewUFunc({static_cast<func_f_f_t>(xsf::cospi), static_cast<func_d_d_t>(xsf::cospi),
                                          static_cast<func_F_F_t>(xsf::cospi), static_cast<func_D_D_t>(xsf::cospi)},
                                         "_cospi", _cospi_doc);
+
     PyModule_AddObjectRef(_special_ufuncs, "_cospi", _cospi);
 
     PyObject *_lambertw =
