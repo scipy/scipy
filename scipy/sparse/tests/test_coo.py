@@ -432,7 +432,7 @@ def test_add_dense(shape):
     den_x, den_y = sp_x.toarray(), sp_y.toarray()
     exp = den_x + den_y
     res = sp_x + den_y
-    assert type(res) == type(exp)
+    assert type(res) is type(exp)
     assert_equal(res, exp)
 
 
@@ -478,7 +478,7 @@ def test_sub_dense(shape):
     den_x, den_y = sp_x.toarray(), sp_y.toarray()
     exp = den_x - den_y
     res = sp_x - den_y
-    assert type(res) == type(exp)
+    assert type(res) is type(exp)
     assert_equal(res, exp)
 
 
@@ -531,7 +531,7 @@ def test_1d_matmul_multivector():
     other = np.array([[0, 1, 2, 3], [3, 2, 1, 0]]).T
     exp = den @ other
     res = coo_array(den) @ other
-    assert type(res) == type(exp)
+    assert type(res) is type(exp)
     assert_equal(res, exp)
 
 
