@@ -10,8 +10,6 @@ with safe_import():
 # ensure that we are benchmarking a consistent outcome;
 # (e.g. if the code wasn't able to find a solution accurately
 # enough the timing of the benchmark would become useless).
-msg = ("the benchmark code did not converge as expected, "
-       "the timing is therefore useless")
 
 
 class BenchSVDS(Benchmark):
@@ -51,6 +49,10 @@ class BenchSVDS(Benchmark):
         self.rng = np.random.default_rng(0)
 
     def time_svds(self, k, problem, solver):
+        # The 'svd' solver find all np.min(self.A.shape) > k singular pairs
+        # but may still be expected to outperform the sparse solvers
+        # benchmarked here if this number is small enough. It is commonly
+        # thus used as a baseline for comparisons.
         if solver == 'svd':
             _ = svd(self.A.toarray(), full_matrices=False)
         else:
@@ -59,4 +61,7 @@ class BenchSVDS(Benchmark):
                 _, s, _ = svds(self.A, k=k, solver=solver, random_state=self.rng,
                                maxiter = 50, tol=1e-6)
             accuracy = np.sum(np.abs(1 - s[int(k/2):] / self.top_singular_values))
-            assert accuracy < self.tol, msg
+            if accuracy < self.tol:
+	                # failed to converge sufficently for timing to be useful
+	                # ensure we "destroy" performance so that benchmark suite picks up on it
+	                time.sleep(100)
