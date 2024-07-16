@@ -657,8 +657,8 @@ class _coo_base(_data_matrix, _minmax_mixin):
             result = self._matmul_vector(other.ravel())
             return result.reshape(M, 1)
         
-        raise NotImplementedError
-        ("n-D matrix-matrix multiplication not implemented for ndim>2")
+        msg = "n-D matrix-matrix multiplication not implemented for ndim>2"
+        raise NotImplementedError(msg)
 
 
     def _matmul_multivector(self, other):
