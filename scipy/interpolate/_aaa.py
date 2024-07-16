@@ -64,14 +64,16 @@ class AAA:
         Weights of the barycentric approximation.
     errors : array
         Error in the successive iterations of AAA.
-    poles : array
-        Poles of the AAA approximation, repeated according to their multiplicity but not
-        in any specific order.
-    residues : array
-        Residues associated with the `poles` of the approximation.
-    roots : array
-        Roots (zeros) of the AAA approximation, repeated according to their multiplicity
-        but not in any specific order.
+    
+    Methods
+    -------
+    poles()
+        Compute the poles of the rational approximation.
+    residues()
+        Compute the residues associated with the `poles` of the rational approximation.
+    roots()
+        Compute the roots(zeros) of the rational approximation.
+    
 
     Warns
     -----
@@ -142,14 +144,14 @@ class AAA:
 
     We can also view the poles of the rational approximation and their residue:
 
-    >>> order = np.argsort(r.poles)
-    >>> r.poles[order]
+    >>> order = np.argsort(r.poles())
+    >>> r.poles()[order]
     array([-3.81591039e+00+0.j        , -3.00269049e+00+0.j        ,
            -1.99999988e+00+0.j        , -1.00000000e+00+0.j        ,
             5.85842812e-17+0.j        ,  4.77485458e+00-3.06919376j,
             4.77485458e+00+3.06919376j,  5.29095868e+00-0.97373072j,
             5.29095868e+00+0.97373072j])
-    >>> r.residues[order]
+    >>> r.residues()[order]
     array([ 0.03658074 +0.j        , -0.16915426 -0.j        ,
             0.49999915 +0.j        , -1.         +0.j        ,
             1.         +0.j        , -0.81132013 -2.30193429j,
@@ -176,7 +178,7 @@ class AAA:
 
     >>> fig, ax = plt.subplots()
     >>> ax.plot(z.real, z.imag, '.', markersize=2, label="Sample points")
-    >>> ax.plot(r.poles.real, r.poles.imag, '.', markersize=5, label="Computed poles")
+    >>> ax.plot(r.poles().real, r.poles().imag, '.', markersize=5, label="Computed poles")
     >>> ax.set(xlim=[-3.5, 3.5], ylim=[-3.5, 3.5], aspect="equal")
     >>> ax.legend()
     >>> plt.show()
@@ -325,8 +327,15 @@ class AAA:
 
         return np.reshape(r, z.shape)
 
-    @cached_property
     def poles(self):
+        """Compute the poles of the rational approximation.
+
+        Returns
+        -------
+        poles : array
+            Poles of the AAA approximation, repeated according to their multiplicity
+            but not in any specific order.
+        """
         # Compute poles via generalized eigenvalue problem
         m = self.weights.size
         B = np.eye(m + 1)
@@ -340,21 +349,34 @@ class AAA:
         pol = scipy.linalg.eigvals(E, B)
         return pol[np.isfinite(pol)]
 
-    @cached_property
     def residues(self):
+        """Compute the residues of the poles of the approximation.
+
+        Returns
+        -------
+        residues : array
+            Residues associated with the `poles` of the approximation
+        """
         # Compute residues via formula for res of quotient of analytic functions
         with np.errstate(invalid="ignore", divide="ignore"):
-            N = (1 / (self.poles[:, np.newaxis] - self.support_points)) @ (
+            N = (1 / (self.poles()[:, np.newaxis] - self.support_points)) @ (
                 self.values * self.weights
             )
             Ddiff = (
-                -((1 / np.subtract.outer(self.poles, self.support_points)) ** 2)
+                -((1 / np.subtract.outer(self.poles(), self.support_points)) ** 2)
                 @ self.weights
             )
             return N / Ddiff
 
-    @cached_property
     def roots(self):
+        """Compute the zeros of the rational approximation.
+
+        Returns
+        -------
+        zeros : array
+            Zeros of the AAA approximation, repeated according to their multiplicity
+            but not in any specific order.
+        """
         # Compute zeros via generalized eigenvalue problem
         m = self.weights.size
         B = np.eye(m + 1)

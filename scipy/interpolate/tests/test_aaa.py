@@ -65,10 +65,10 @@ class TestAAA:
         r = AAA(UNIT_INTERVAL, f)
 
         assert_allclose(r(UNIT_INTERVAL), f, atol=10 * TOL)
-        assert_array_less(np.min(np.abs(r.roots)), TOL)
-        assert_array_less(np.min(np.abs(r.poles - 0.5)), TOL)
+        assert_array_less(np.min(np.abs(r.roots())), TOL)
+        assert_array_less(np.min(np.abs(r.poles() - 0.5)), TOL)
         # Test for spurious poles
-        assert np.min(np.abs(r.residues)) > 1e-13
+        assert np.min(np.abs(r.residues())) > 1e-13
 
     def test_short_cases(self):
         # Computed using Chebfun:
@@ -78,9 +78,9 @@ class TestAAA:
         f = np.array([1, 2])
         r = AAA(z, f)
         assert_allclose(r(z), f, atol=TOL)
-        assert_allclose(r.poles, 0.5)
-        assert_allclose(r.residues, 0.25)
-        assert_allclose(r.roots, 1/3)
+        assert_allclose(r.poles(), 0.5)
+        assert_allclose(r.residues(), 0.25)
+        assert_allclose(r.roots(), 1/3)
         assert_equal(r.support_points, z)
         assert_equal(r.values, f)
         assert_allclose(r.weights, [0.707106781186547, 0.707106781186547])
@@ -92,9 +92,9 @@ class TestAAA:
         f = np.array([1, 0, 0])
         r = AAA(z, f)
         assert_allclose(r(z), f, atol=TOL)
-        assert_allclose(r.poles, [1.577350269189626, 0.422649730810374])
-        assert_allclose(r.residues, [-0.070441621801729, -0.262891711531604])
-        assert_allclose(r.roots, [2, 1])
+        assert_allclose(r.poles(), [1.577350269189626, 0.422649730810374])
+        assert_allclose(r.residues(), [-0.070441621801729, -0.262891711531604])
+        assert_allclose(r.roots(), [2, 1])
         assert_equal(r.support_points, z)
         assert_equal(r.values, f)
         assert_allclose(r.weights, [0.577350269189626, 0.577350269189626,
@@ -135,12 +135,12 @@ class TestAAA:
     def test_residues(self):
         x = np.linspace(-1.337, 2, num=537)
         r = AAA(x, np.exp(x) / x)
-        ii = np.nonzero(np.abs(r.poles) < 1e-8)[0]
-        assert_allclose(r.residues[ii], 1, atol=1e-15)
+        ii = np.flatnonzero(np.abs(r.poles()) < 1e-8)
+        assert_allclose(r.residues()[ii], 1, atol=1e-15)
 
         r = AAA(x, (1 + 1j) * scipy.special.gamma(x))
-        ii = np.nonzero(abs(r.poles - (-1)) < 1e-8)
-        assert_allclose(r.residues[ii], -1 - 1j, atol=1e-15)
+        ii = np.flatnonzero(abs(r.poles() - (-1)) < 1e-8)
+        assert_allclose(r.residues()[ii], -1 - 1j, atol=1e-15)
     
     # The following tests are based on:
     # https://github.com/complexvariables/RationalFunctionApproximation.jl/blob/main/test/interval.jl
@@ -162,20 +162,20 @@ class TestAAA:
         def f(z):
             return (z+1) * (z+2) / ((z+3) * (z+4))
         r = AAA(UNIT_INTERVAL, f(UNIT_INTERVAL))
-        assert_allclose(np.sum(r.poles + r.roots), -10, atol=1e-12)
+        assert_allclose(np.sum(r.poles() + r.roots()), -10, atol=1e-12)
         
         def f(z):
             return 2/(3 + z) + 5/(z - 2j)
         r = AAA(UNIT_INTERVAL, f(UNIT_INTERVAL))
-        assert_allclose(r.residues.prod(), 10, atol=1e-8)
+        assert_allclose(r.residues().prod(), 10, atol=1e-8)
         
         r = AAA(UNIT_INTERVAL, np.sin(10*np.pi*UNIT_INTERVAL))
-        assert_allclose(np.sort(np.abs(r.roots))[18], 0.9, atol=1e-12)
+        assert_allclose(np.sort(np.abs(r.roots()))[18], 0.9, atol=1e-12)
         
         def f(z):
             return (z - (3 + 3j))/(z + 2)
         r = AAA(UNIT_INTERVAL, f(UNIT_INTERVAL))
-        assert_allclose(r.poles[0]*r.roots[0],  -6-6j, atol=1e-12)
+        assert_allclose(r.poles()[0]*r.roots()[0],  -6-6j, atol=1e-12)
     
     @pytest.mark.parametrize("func",
                              [lambda z: np.zeros_like(z), lambda z: z, lambda z: 1j*z,
@@ -191,4 +191,4 @@ class TestAAA:
     def test_spiral(self):
         z = np.exp(np.linspace(-0.5, 0.5 + 15j*np.pi, num=1000))
         r = AAA(z, np.tan(np.pi*z/2))
-        assert_allclose(np.sort(np.abs(r.poles))[:4], [1, 1, 3, 3])
+        assert_allclose(np.sort(np.abs(r.poles()))[:4], [1, 1, 3, 3])
