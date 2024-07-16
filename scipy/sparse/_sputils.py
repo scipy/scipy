@@ -391,7 +391,7 @@ def check_shape(args, current_shape=None, *, allow_1d=False,
         else:
             raise ValueError('can only specify one unknown dimension')
 
-    if len(new_shape)<3:
+    if len(new_shape) < 3:
             if len(new_shape) != 2 and not (allow_1d and len(new_shape) == 1):
                 raise ValueError('matrix shape must be two-dimensional')
     elif len(new_shape)>=3:
