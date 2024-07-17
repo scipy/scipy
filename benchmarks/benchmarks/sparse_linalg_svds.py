@@ -8,10 +8,6 @@ with safe_import():
     from scipy.linalg import svd
     from scipy.sparse.linalg import svds
 
-# ensure that we are benchmarking a consistent outcome;
-# (e.g. if the code wasn't able to find a solution accurately
-# enough the timing of the benchmark would become useless).
-
 
 class BenchSVDS(Benchmark):
     # Benchmark SVDS using the MatrixMarket test matrices recommended by the
@@ -22,7 +18,7 @@ class BenchSVDS(Benchmark):
     # The assert uses the relative error since for some tested matrices
     # the maximal singular values are very large due to poor matrix scaling.
     # The `maxiter` and `tol` paremeters of `svds` are tuned for fair comaprison.
-    # The dense SVD solve is benchmarked as the base. 
+    # The dense SVD solve is benchmarked as the base.
     params = [
         [20],
         ["abb313", "illc1033", "illc1850", "qh1484", "rbs480a", "tols4000",
@@ -50,10 +46,10 @@ class BenchSVDS(Benchmark):
         self.rng = np.random.default_rng(0)
 
     def time_svds(self, k, problem, solver):
-        # The 'svd' solver find all np.min(self.A.shape) > k singular pairs
-        # but may still be expected to outperform the sparse solvers
-        # benchmarked here if this number is small enough. It is commonly
-        # thus used as a baseline for comparisons.
+        # The 'svd' solver find all ``m = np.min(self.A.shape) >> k``
+        # singular pairs but may still be expected to outperform
+        # the sparse solvers benchmarked here if m is small enough.
+        # It is commonly thus used as a baseline for comparisons.
         if solver == 'svd':
             _ = svd(self.A.toarray(), full_matrices=False)
         else:
@@ -62,6 +58,9 @@ class BenchSVDS(Benchmark):
                 _, s, _ = svds(self.A, k=k, solver=solver, random_state=self.rng,
                                maxiter = 50, tol=1e-6)
             accuracy = np.sum(np.abs(1 - s[int(k/2):] / self.top_singular_values))
+            # ensure that we are benchmarking a consistent outcome;
+            # (e.g. if the code wasn't able to find a solution accurately
+            # enough the timing of the benchmark would become useless).
             if accuracy < self.tol:
                 # failed to converge sufficently for timing to be useful
                 # ensure we "destroy" performance so that benchmark suite picks up
