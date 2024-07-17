@@ -5,7 +5,9 @@ from scipy.optimize import minimize, NonlinearConstraint, rosen, rosen_der
 
 # Ignore this warning about inefficient use of Hessians
 # The bug only shows up with the default HUS
-@pytest.mark.filterwarnings("ignore:Check if the approximated function is linear")
+@pytest.mark.filterwarnings(
+    "ignore:delta_grad == 0.0. Check if the approximated function is linear."
+)
 def test_gh21193():
     # Test that nested minimization does not share Hessian objects
     def identity(x):
