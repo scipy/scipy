@@ -113,7 +113,7 @@ SPECFUN_HOST_DEVICE inline std::complex<double> exp1(std::complex<double> z) {
 }
 
 SPECFUN_HOST_DEVICE inline std::complex<float> exp1(std::complex<float> z) {
-    return exp1(static_cast<std::complex<double>>(z));
+    return static_cast<std::complex<float>>(exp1(static_cast<std::complex<double>>(z)));
 }
 
 SPECFUN_HOST_DEVICE inline double expi(double x) {
@@ -179,7 +179,7 @@ std::complex<double> expi(std::complex<double> z) {
 
 
 SPECFUN_HOST_DEVICE inline std::complex<float> expi(std::complex<float> z) {
-    return expi(static_cast<std::complex<double>>(z));
+    return static_cast<std::complex<float>>(expi(static_cast<std::complex<double>>(z)));
 }
 
 namespace detail {
