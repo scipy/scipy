@@ -33,13 +33,13 @@ def bicg(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=No
         ``scipy.sparse.linalg.LinearOperator``.
     b : ndarray
         Right hand side of the linear system with shape (N,) or (N,1).
-    x0 : ndarray, optional, default: None
+    x0 : ndarray
         Starting guess for the solution with shape (N,) or (N,1).
     rtol, atol : float, optional
         Parameters for the convergence test. For convergence,
         ``norm(b - A @ x) <= max(rtol*norm(b), atol)`` should be satisfied.
         The default is ``atol=0.`` and ``rtol=1e-5``.
-    maxiter : integer, optional, default: None
+    maxiter : integer
         Maximum number of iterations.  Iteration will stop after maxiter
         steps even if the specified tolerance has not been achieved.
     M : {sparse matrix, ndarray, LinearOperator}, optional, default: None
@@ -47,7 +47,7 @@ def bicg(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=No
         inverse of A.  Effective preconditioning dramatically improves the
         rate of convergence, which implies that fewer iterations are needed
         to reach a given error tolerance.
-    callback : function, optional, default: None
+    callback : function
         User-supplied function to call after each iteration.  It is called
         as callback(xk), where xk is the current solution vector.
 
