@@ -1,5 +1,6 @@
 import math
 import heapq
+import itertools
 import functools
 
 from abc import ABC, abstractmethod
@@ -97,10 +98,6 @@ class CubatureRule(ABC):
     def __init__(self, nodes, weights):
         self.nodes = nodes
         self.weights = weights
-
-    @property
-    def ndim(self):
-        return self.nodes.shape[0]
 
     @abstractmethod
     def estimate(self, f, a, b, args):
@@ -421,6 +418,70 @@ class ProductRule(NestedCubatureRule):
         )
 
 
+class GenzMalik(NestedCubatureRule):
+    l_1 = 0
+    l_2 = np.sqrt(9/70)
+    l_3 = np.sqrt(9/10)
+    l_4 = np.sqrt(9/10)
+    l_5 = np.sqrt(9/19)
+
+    def __init__(self, ndim):
+        if ndim < 2:
+            raise "Genz-Malik cubature works only for ndim >= 2"
+
+        self.ndim = ndim
+
+    @functools.cached_property
+    def higher_nodes(self):
+        return np.array(
+            _signed_coordinate_permutations(self.l_1, 0, self.ndim)
+            + _signed_coordinate_permutations(self.l_2, 1, self.ndim)
+            + _signed_coordinate_permutations(self.l_3, 1, self.ndim)
+            + _signed_coordinate_permutations(self.l_4, 2, self.ndim)
+            + _signed_coordinate_permutations(self.l_5, self.ndim, self.ndim)
+        ).T  # Transpose since this has spacial dimension as last axis
+
+    @functools.cached_property
+    def higher_weights(self):
+        w_1 = (2**self.ndim) * (12824 - 9120 * self.ndim + 400 * self.ndim**2) / 19683
+        w_2 = (2**self.ndim) * 980/6561
+        w_3 = (2**self.ndim) * (1820 - 400 * self.ndim) / 19683
+        w_4 = (2**self.ndim) * (200 / 19683)
+        w_5 = 6859 / 19683
+
+        return np.hstack([
+            [w_1] * len(_signed_coordinate_permutations(self.l_1, 0, self.ndim)),
+            [w_2] * len(_signed_coordinate_permutations(self.l_2, 1, self.ndim)),
+            [w_3] * len(_signed_coordinate_permutations(self.l_3, 1, self.ndim)),
+            [w_4] * len(_signed_coordinate_permutations(self.l_4, 2, self.ndim)),
+            [w_5] * len(_signed_coordinate_permutations(self.l_5, self.ndim, self.ndim))
+        ])
+
+    @functools.cached_property
+    def lower_nodes(self):
+        # Almost the same as upper_nodes but missing last set of coordinates
+        return np.array(
+            _signed_coordinate_permutations(self.l_1, 0, self.ndim)
+            + _signed_coordinate_permutations(self.l_2, 1, self.ndim)
+            + _signed_coordinate_permutations(self.l_3, 1, self.ndim)
+            + _signed_coordinate_permutations(self.l_4, 2, self.ndim)
+        ).T
+
+    @functools.cached_property
+    def lower_weights(self):
+        w_1_prime = (2**self.ndim) * (729 - 950*self.ndim + 50*self.ndim**2) / 729
+        w_2_prime = (2**self.ndim) * (245 / 486)
+        w_3_prime = (2**self.ndim) * (265 - 100*self.ndim) / 1458
+        w_4_prime = (2**self.ndim) * (25 / 729)
+
+        return np.hstack([
+            [w_1_prime] * len(_signed_coordinate_permutations(self.l_1, 0, self.ndim)),
+            [w_2_prime] * len(_signed_coordinate_permutations(self.l_2, 1, self.ndim)),
+            [w_3_prime] * len(_signed_coordinate_permutations(self.l_3, 1, self.ndim)),
+            [w_4_prime] * len(_signed_coordinate_permutations(self.l_4, 2, self.ndim)),
+        ])
+
+
 def _cartesian_product(points):
     """
     Takes a list of arrays such as `[ [[x_1, x_2]], [[y_1, y_2]] ]` and
@@ -437,3 +498,19 @@ def _cartesian_product(points):
 
 def _max_norm(x):
     return np.max(np.abs(x))
+
+
+def _signed_coordinate_permutations(p, num, ndim):
+    """
+    Finds unique permutations of (p, p, ..., p, 0) where `p` is repeated
+    `num` times.
+    """
+
+    signs = itertools.product([-1, 1], repeat=num)
+    coordinates = []
+
+    for sub in p * np.array(list(signs)):
+        base = list(sub) + [0] * (ndim - num)
+        coordinates.extend(list(itertools.permutations(base)))
+
+    return list(set(coordinates))
