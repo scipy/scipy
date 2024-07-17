@@ -61,7 +61,10 @@ class BenchSVDS(Benchmark):
             # ensure that we are benchmarking a consistent outcome;
             # (e.g. if the code wasn't able to find a solution accurately
             # enough the timing of the benchmark would become useless).
-            if accuracy < self.tol:
-                # failed to converge sufficently for timing to be useful
-                # ensure we "destroy" performance so that benchmark suite picks up
-                time.sleep(100)
+            msg = ("the benchmark code did not converge as expected, "
+                   "the timing is therefore useless")
+            assert accuracy < self.tol, msg
+            # if accuracy < self.tol:
+            #     # failed to converge sufficently for timing to be useful
+            #     # ensure we "destroy" performance so that benchmark suite picks up
+            #     time.sleep(100)
