@@ -326,11 +326,9 @@ class _coo_base(_data_matrix, _minmax_mixin):
                [0, 0, 0, 1]])
 
         """
-        if self.ndim > 2:
-            raise ValueError('Cannot convert a higher dimension sparse array to '
-                             'csc format')
         if self.ndim != 2:
-            raise ValueError("Cannot convert a 1d sparse array to csc format")
+            raise ValueError('Cannot convert.'
+                             f"csc format sparse arrays must be 2D. Got {self.ndim}D")
         if self.nnz == 0:
             return self._csc_container(self.shape, dtype=self.dtype)
         else:
@@ -363,8 +361,8 @@ class _coo_base(_data_matrix, _minmax_mixin):
 
         """
         if self.ndim > 2:
-            raise ValueError('Cannot convert a higher dimension sparse array to '
-                             'csr format')
+            raise ValueError('Cannot convert.'
+                             f"csr format sparse arrays must be 2D. Got {self.ndim}D")
         if self.nnz == 0:
             return self._csr_container(self.shape, dtype=self.dtype)
         else:
@@ -413,11 +411,9 @@ class _coo_base(_data_matrix, _minmax_mixin):
     tocoo.__doc__ = _spbase.tocoo.__doc__
 
     def todia(self, copy=False):
-        if self.ndim > 2:
-            raise ValueError('Cannot convert a higher dimension sparse array to '
-                             'dia format')
         if self.ndim != 2:
-            raise ValueError("Cannot convert a 1d sparse array to dia format")
+            raise ValueError('Cannot convert.'
+                             f"dia format sparse arrays must be 2D. Got {self.ndim}D")
         self.sum_duplicates()
         ks = self.col - self.row  # the diagonal for each nonzero
         diags, diag_idx = np.unique(ks, return_inverse=True)
@@ -441,8 +437,8 @@ class _coo_base(_data_matrix, _minmax_mixin):
 
     def todok(self, copy=False):
         if self.ndim > 2:
-            raise ValueError('Cannot convert a higher dimension sparse array to '
-                             'dok format')
+            raise ValueError('Cannot convert. dok format sparse arrays must be'
+                             f" 2D or 1D. Got {self.ndim}D")
         self.sum_duplicates()
         dok = self._dok_container(self.shape, dtype=self.dtype)
         # ensure that 1d coordinates are not tuples
@@ -635,7 +631,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
             return result
         
         else: # if dim >= 3
-            result = np.zeros(np.prod(self.shape[:-1]),
+            result = np.zeros(math.prod(self.shape[:-1]),
                               dtype=upcast_char(self.dtype.char, other.dtype.char))
             shape = np.array(self.shape)
             coord = np.concatenate(self.coords)
