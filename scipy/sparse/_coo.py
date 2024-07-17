@@ -635,7 +635,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
             return result
         
         else: # if dim >= 3
-            result = np.zeros(math.prod(self.shape[:-1]),
+            result = np.zeros(np.prod(self.shape[:-1]),
                               dtype=upcast_char(self.dtype.char, other.dtype.char))
             shape = np.array(self.shape)
             coord = np.concatenate(self.coords)
