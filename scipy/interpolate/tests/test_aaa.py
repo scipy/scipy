@@ -50,7 +50,13 @@ class TestAAA:
                                        np.complex128])
     def test_dtype_preservation(self, dtype):
         z = np.linspace(-1, 1, dtype=dtype)
-        assert AAA(z, np.sin(z))(z).dtype == dtype
+        r = AAA(z, np.sin(z))
+        
+        assert r(z).dtype == dtype
+        assert r.support_points.dtype == dtype
+        assert r.values.dtype == dtype
+        assert r.weights.dtype == dtype
+        assert r.errors.dtype == z.real.dtype
     
     # The following tests are based on:
     # https://github.com/chebfun/chebfun/blob/master/tests/chebfun/test_aaa.m
