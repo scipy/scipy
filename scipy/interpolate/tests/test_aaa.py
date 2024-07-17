@@ -49,10 +49,16 @@ class TestAAA:
     @pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, 
                                        np.complex128])
     def test_dtype_preservation(self, dtype):
+        rtol = np.finfo(dtype).eps ** 0.75 * 100
+        rng = np.random.default_rng(59846294526092468)
+
         z = np.linspace(-1, 1, dtype=dtype)
         r = AAA(z, np.sin(z))
         
-        assert r(z).dtype == dtype
+        z2 = rng.uniform(-1, 1, size=100).astype(dtype)
+        assert_allclose(r(z2), np.sin(z2), rtol=rtol)
+        assert r(z2).dtype == dtype
+        
         assert r.support_points.dtype == dtype
         assert r.values.dtype == dtype
         assert r.weights.dtype == dtype
