@@ -1,3 +1,13 @@
+/* The functions exp1, expi below are based on translations of the Fortran code
+ * by Shanjie Zhang and Jianming Jin from the book
+ *
+ *  Shanjie Zhang, Jianming Jin,
+ *  Computation of Special Functions,
+ *  Wiley, 1996,
+ *  ISBN: 0-471-11963-6,
+ *  LC: QA351.C45.
+ */
+
 #pragma once
 
 #include "config.h"
