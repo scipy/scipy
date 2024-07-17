@@ -651,7 +651,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
             return self._matmul_vector(other)
         if other.shape == (N, 1):
             result = self._matmul_vector(other.ravel())
-            return result.reshape(M, 1)
+            return result.reshape(*self.shape[:-1], 1)
         
         msg = "n-D matrix-matrix multiplication not implemented for ndim>2"
         raise NotImplementedError(msg)
