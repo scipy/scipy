@@ -109,7 +109,7 @@ class AAA:
     Examples
     --------
 
-    Here we reproduce a number of the numerical examples from [1]_ as demonstration
+    Here we reproduce a number of the numerical examples from [1]_ as a demonstration
     of the functionality offered by this method.
 
     >>> import numpy as np
