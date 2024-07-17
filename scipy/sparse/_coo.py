@@ -298,9 +298,9 @@ class _coo_base(_data_matrix, _minmax_mixin):
                         B.ravel('A'), fortran)
             
         else:
-            coord = np.concatenate(self.coords)
+            coords = np.concatenate(self.coords)
             coo_todense_nd(self.shape, self.nnz, self.ndim,
-                           coord, self.data, B.ravel('A'), fortran)
+                           coords, self.data, B.ravel('A'), fortran)
         # Note: reshape() doesn't copy here, but does return a new array (view).
         return B.reshape(self.shape)
 
@@ -577,8 +577,8 @@ class _coo_base(_data_matrix, _minmax_mixin):
             coo_todense(M, N, self.nnz, self.row, self.col, self.data,
                         result.ravel('A'), fortran)
         else:
-            coord = np.concatenate(self.coords)
-            coo_todense_nd(self.shape, self.nnz, self.ndim, coord,
+            coords = np.concatenate(self.coords)
+            coo_todense_nd(self.shape, self.nnz, self.ndim, coords,
                            self.data, result.ravel('A'), fortran)
         return self._container(result, copy=False)
     
@@ -634,8 +634,8 @@ class _coo_base(_data_matrix, _minmax_mixin):
             result = np.zeros(math.prod(self.shape[:-1]),
                               dtype=upcast_char(self.dtype.char, other.dtype.char))
             shape = np.array(self.shape)
-            coord = np.concatenate(self.coords)
-            coo_matvec_nd(self.nnz, len(self.shape), shape, coord, self.data,
+            coords = np.concatenate(self.coords)
+            coo_matvec_nd(self.nnz, len(self.shape), shape, coords, self.data,
                           other, result)
             
             result = result.reshape(self.shape[:-1])
