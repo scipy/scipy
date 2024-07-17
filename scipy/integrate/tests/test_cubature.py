@@ -44,7 +44,7 @@ def genz_malik_1980_f_1_exact(a, b, r, alphas):
 
 
 def genz_malik_1980_f_1_random_args(shape):
-    r = np.random.rand(*shape)
+    r = np.random.rand(*shape[1:])
     alphas = np.random.rand(*shape)
 
     difficulty = 9
@@ -295,19 +295,17 @@ problems_scalar_output = [
             np.array([4]),
         )
     ),
-    # Currently failing for product rule version of Gauss-Kronrod 15 (and 21)
-    # dblquad also fails
-    # (
-    #     genz_malik_1980_f_2,
-    #     genz_malik_1980_f_2_exact,
+    (
+        genz_malik_1980_f_2,
+        genz_malik_1980_f_2_exact,
 
-    #     np.array([-50, 0]),
-    #     np.array([50, 20]),
-    #     (
-    #         np.array([-3, 3]),
-    #         np.array([-2, 2])
-    #     ),
-    # ),
+        np.array([10, 50]),
+        np.array([10, 50]),
+        (
+            np.array([-3, 3]),
+            np.array([-2, 2])
+        ),
+    ),
     (
         genz_malik_1980_f_2,
         genz_malik_1980_f_2_exact,
@@ -422,20 +420,16 @@ problems_scalar_output = [
             np.array([[4], [5]]),
         ),
     ),
-    # Also failing, I think the problem previously was that the parameters were set in
-    # a way where the bump in the function was far from the origin.
-    # TODO: check if dblquad also fails this
-    # problem_from_closed_form(
-    #     f=genz_malik_1980_f_5,
-    #     closed_form=genz_malik_1980_f_5_exact,
-
-    #     a=np.array([-1, -1]),
-    #     b=np.array([1, 1]),
-    #     args=(
-    #         np.array([[-1], [1]]),
-    #         np.array([[0], [0]]),
-    #     ),
-    # ),
+    (
+        genz_malik_1980_f_5,
+        genz_malik_1980_f_5_exact,
+        np.array([-1, -1]),
+        np.array([1, 1]),
+        (
+            np.array([[-1], [1]]),
+            np.array([[0], [0]]),
+        ),
+    ),
     (
         genz_malik_1980_f_5,
         genz_malik_1980_f_5_exact,
@@ -450,11 +444,10 @@ problems_scalar_output = [
 
 
 @pytest.mark.parametrize("problem", problems_scalar_output)
-@pytest.mark.parametrize("quadrature", [GaussKronrod15()])
+@pytest.mark.parametrize("quadrature", [GaussKronrod15(), GaussKronrod21()])
 @pytest.mark.parametrize("rtol", [1e-5])
-@pytest.mark.parametrize("atol", [1e-6])
+@pytest.mark.parametrize("atol", [1e-8])
 def test_cub_scalar_output(problem, quadrature, rtol, atol):
-    np.random.seed(1)
     f, exact, a, b, args = problem
 
     dim = len(a)
@@ -475,6 +468,7 @@ def test_cub_scalar_output(problem, quadrature, rtol, atol):
         exact(a, b, *args),
         rtol=rtol,
         atol=atol,
+        err_msg=f"error_estimate={res.error}, subdivisions={res.subdivisions}"
     )
 
     assert res.status == "converged"
@@ -524,7 +518,7 @@ problems_tensor_output = [
     (4, 5, 2, 1)
 ])
 @pytest.mark.parametrize("rtol", [1e-5])
-@pytest.mark.parametrize("atol", [1e-6])
+@pytest.mark.parametrize("atol", [1e-7])
 def test_cub_tensor_output(problem, quadrature, shape, rtol, atol):
     dim = shape[0]
 
@@ -532,7 +526,7 @@ def test_cub_tensor_output(problem, quadrature, shape, rtol, atol):
     args = random_args(shape)
 
     a = np.array([0] * dim)
-    b = np.array([1] * dim)
+    b = np.array([5] * dim)
 
     rule = ProductRule([quadrature] * dim)
 
@@ -551,6 +545,7 @@ def test_cub_tensor_output(problem, quadrature, shape, rtol, atol):
         exact(a, b, *args),
         rtol=rtol,
         atol=atol,
+        err_msg=f"error_estimate={res.error}, subdivisions={res.subdivisions}"
     )
 
     assert res.status == "converged"

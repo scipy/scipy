@@ -63,7 +63,7 @@ class CubatureRuleLinearError(CubatureRule):
         error_weights = self.error_weights * weight_scale_factor
 
         # f(nodes) will have shape (eval_points, output_dim)
-        # integral_estimate should have shape (output_dim)
+        # integral_estimate should have shape (output_dim,)
         integral_estimate = np.sum(weights * f(nodes, *args), axis=-1)
 
         error_estimate = abs(np.sum(
@@ -74,35 +74,6 @@ class CubatureRuleLinearError(CubatureRule):
         return integral_estimate, error_estimate
 
 
-# For now, assuming that the underlying quadrature rules all have linear error
-# estimators so that we can combine the error nodes and error weights
-class ProductRule(CubatureRuleLinearError):
-    def __init__(self, base_rules):
-        self.base_rules = base_rules
-
-    @functools.cached_property
-    def nodes(self):
-        return _cartesian_product([rule.nodes for rule in self.base_rules])
-
-    @functools.cached_property
-    def error_nodes(self):
-        return _cartesian_product([rule.error_nodes for rule in self.base_rules])
-
-    @functools.cached_property
-    def weights(self):
-        return np.prod(
-            _cartesian_product([rule.weights for rule in self.base_rules]),
-            axis=0
-        )
-
-    @functools.cached_property
-    def error_weights(self):
-        return np.prod(
-            _cartesian_product([rule.error_weights for rule in self.base_rules]),
-            axis=0
-        )
-
-
 def cub(f, a, b, rule, rtol=1e-05, atol=1e-08, limit=10000, args=()):
     if limit is None:
         limit = np.inf
@@ -111,7 +82,7 @@ def cub(f, a, b, rule, rtol=1e-05, atol=1e-08, limit=10000, args=()):
     regions = [CubatureRegion(est, err, a, b)]
     subdivisions = 0
 
-    while _max_norm(err) > max(atol, rtol * _max_norm(est)) and subdivisions < limit:
+    while np.any(err > atol + rtol * np.abs(est)) and subdivisions < limit:
         region = heapq.heappop(regions)
 
         est_k = region.estimate
@@ -140,7 +111,7 @@ def cub(f, a, b, rule, rtol=1e-05, atol=1e-08, limit=10000, args=()):
 
         subdivisions += 1
 
-    success = _max_norm(err) < max(atol, rtol * _max_norm(est))
+    success = not np.any(err > atol + rtol * np.abs(est))
     status = "converged" if success else "not_converged"
 
     return CubatureResult(
@@ -369,13 +340,15 @@ class Trapezoid(CubatureRuleLinearError):
     def __init__(self):
         pass
 
+    @functools.cached_property
     def nodes(self):
-        return np.array([
-            [-1],
-            [0],
-            [1]
-        ])
+        return np.array([[
+            -1,
+            0,
+            1,
+        ]])
 
+    @functools.cached_property
     def weights(self):
         return np.array([
             0.5,
@@ -383,19 +356,48 @@ class Trapezoid(CubatureRuleLinearError):
             0.5
         ])
 
+    @functools.cached_property
     def error_nodes(self):
-        return np.array([
-            [-1],
-            [0],
-            [1]
-        ])
+        return np.array([[
+            -1,
+            0,
+            1
+        ]])
 
+    @functools.cached_property
     def error_weights(self):
         return 1/3 * np.array([
             -0.5,
             1,
             -0.5,
         ])
+
+
+class ProductRule(CubatureRuleLinearError):
+    def __init__(self, base_rules):
+        self.base_rules = base_rules
+
+    @functools.cached_property
+    def nodes(self):
+        return _cartesian_product([rule.nodes for rule in self.base_rules])
+
+    @functools.cached_property
+    def error_nodes(self):
+        return _cartesian_product([rule.error_nodes for rule in self.base_rules])
+
+    @functools.cached_property
+    def weights(self):
+        return np.prod(
+            _cartesian_product([rule.weights for rule in self.base_rules]),
+            axis=0
+        )
+
+    @functools.cached_property
+    def error_weights(self):
+        return np.prod(
+            _cartesian_product([rule.error_weights for rule in self.base_rules]),
+            axis=0
+        )
 
 
 def _cartesian_product(points):
