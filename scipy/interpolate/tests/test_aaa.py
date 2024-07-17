@@ -57,6 +57,9 @@ class TestAAA:
         assert r.values.dtype == dtype
         assert r.weights.dtype == dtype
         assert r.errors.dtype == z.real.dtype
+        assert r.poles().dtype == np.result_type(dtype, 1j)
+        assert r.residues().dtype == np.result_type(dtype, 1j)
+        assert r.roots().dtype == np.result_type(dtype, 1j)
     
     # The following tests are based on:
     # https://github.com/chebfun/chebfun/blob/master/tests/chebfun/test_aaa.m

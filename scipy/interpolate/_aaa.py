@@ -335,7 +335,7 @@ class AAA:
         if self._poles is None:
             # Compute poles via generalized eigenvalue problem
             m = self.weights.size
-            B = np.eye(m + 1)
+            B = np.eye(m + 1, dtype=self.weights.dtype)
             B[0, 0] = 0
 
             E = np.zeros_like(B, dtype=np.result_type(self.weights,
@@ -381,7 +381,7 @@ class AAA:
         if self._roots is None:
             # Compute zeros via generalized eigenvalue problem
             m = self.weights.size
-            B = np.eye(m + 1)
+            B = np.eye(m + 1, dtype=self.weights.dtype)
             B[0, 0] = 0
             E = np.zeros_like(B, dtype=np.result_type(self.weights, self.values,
                                                       self.support_points))
