@@ -112,13 +112,23 @@ void coo_todense(const I n_row,
 }
 
 
+/*
+ * Input Arguments:
+ *   I  shape[num_dims]  - shape of A
+ *   npy_int64  nnz      - number of nonzeros in A
+ *   npy_int64  num_dims - number of dimensions of A
+ *   I  Ac[nnz(A)]       - coords for nonzeros in A
+ *   T  Ax[nnz(A)]       - nonzeros in A
+ *   T  Bx[]             - dense array
+ *
+ */
 template <class I, class T>
-void coo_todense_nd(const I D[],        // array of dimension sizes
+void coo_todense_nd(const I shape[],
                     const npy_int64 nnz,
                     const npy_int64 num_dims,
-                    const I A[],
-                    const T Ax[],       // array of data
-                          T Bx[],       // dense matrix to be filled
+                    const I Ac[],
+                    const T Ax[],
+                          T Bx[],
                     const int fortran)
 {
 
@@ -128,8 +138,8 @@ void coo_todense_nd(const I D[],        // array of dimension sizes
             npy_intp stride = 1;
             
             for(npy_int64 d = num_dims - 1; d >= 0; d--) {
-                index += A[d * nnz + n] * stride;
-                stride *= D[d];
+                index += Ac[d * nnz + n] * stride;
+                stride *= shape[d];
             }
             Bx[index] += Ax[n];
         }
@@ -140,8 +150,8 @@ void coo_todense_nd(const I D[],        // array of dimension sizes
             npy_intp stride = 1;
             
             for(npy_int64 d = 0; d < num_dims; d++) {
-                index += A[d * nnz + n] * stride;
-                stride *= D[d];
+                index += Ac[d * nnz + n] * stride;
+                stride *= shape[d];
             }
             Bx[index] += Ax[n];
         }
@@ -187,19 +197,20 @@ void coo_matvec(const npy_int64 nnz,
  * Input Arguments:
  *   npy_int64  nnz       - number of nonzeros in A
  *   npy_int64 num_dims   - number of dimensions
- *   I  D[d]              - array of dimensions / shape of matrix
- *   I  A[nnz * num_dims] - array of coordinates flattened
- *   T  Ax[nnz]           - nonzero values
+ *   I  shape[num_dims]   - shape of A
+ *   I  Ac[nnz * num_dims]- coords for nonzeros in A
+ *   T  Ax[nnz]           - nonzero values in A
  *   T  Xx[n_col]         - input vector
  *
  * Output Arguments:
  *   T  Yx[n_row]     - output vector
+ * 
  */
 template <class I, class T>
 void coo_matvec_nd(const npy_int64 nnz,
                 const npy_int64 num_dims,
-                const I D[],
-                const I A[],
+                const I shape[],
+                const I Ac[],
                 const T Ax[],
                 const T Xx[],
                       T Yx[])
@@ -208,10 +219,10 @@ void coo_matvec_nd(const npy_int64 nnz,
         npy_intp index = 0;
         npy_intp stride = 1;
         for(npy_int64 d = num_dims - 2; d >= 0; d--) {
-            index += A[d * nnz + n] * stride;
-            stride *= D[d];
+            index += Ac[d * nnz + n] * stride;
+            stride *= shape[d];
         }
-        Yx[index] += Ax[n] * Xx[A[nnz * (num_dims - 1) + n]];
+        Yx[index] += Ax[n] * Xx[Ac[nnz * (num_dims - 1) + n]];
     }
 }
 
