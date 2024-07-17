@@ -445,18 +445,18 @@ npy_cdouble special_sph_harm_unsafe(double m, double n, double theta, double phi
     return to_ccomplex(::sph_harm(static_cast<long>(m), static_cast<long>(n), theta, phi));
 }
 
-int special_sici(double x, double *si, double *ci) { return special::sici(x, *si, *ci); }
+int special_sici(double x, double *si, double *ci) { return special::sici(x, si, ci); }
 
-int special_shichi(double x, double *shi, double *chi) { return special::shichi(x, *shi, *chi); }
+int special_shichi(double x, double *shi, double *chi) { return special::shichi(x, shi, chi); }
 
 int special_csici(npy_cdouble z, npy_cdouble *si, npy_cdouble *ci) {
-    return special::sici(to_complex(z), *reinterpret_cast<complex<double> *>(si),
-			 *reinterpret_cast<complex<double> *>(ci));
+    return special::sici(to_complex(z), reinterpret_cast<complex<double> *>(si),
+			 reinterpret_cast<complex<double> *>(ci));
 }
 
 int special_cshichi(npy_cdouble z, npy_cdouble *shi, npy_cdouble *chi) {
-    return special::shichi(to_complex(z), *reinterpret_cast<complex<double> *>(shi),
-			   *reinterpret_cast<complex<double> *>(chi));
+    return special::shichi(to_complex(z), reinterpret_cast<complex<double> *>(shi),
+			   reinterpret_cast<complex<double> *>(chi));
 }
 
 double cephes_hyp2f1_wrap(double a, double b, double c, double x) { return special::cephes::hyp2f1(a, b, c, x); }
