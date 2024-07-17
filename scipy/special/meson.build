@@ -68,11 +68,20 @@ cdflib_lib = static_library('cdflib',
   gnu_symbol_visibility: 'hidden',
 )
 
+# The -Wno-psabi arg is used to silence a warning that the ABI of
+# passing structure with complex float member changed in GCC 4.4,
+# which is not relevant for scipy.special.
+ufuncs_cpp_args = []
+if meson.get_compiler('cpp').get_id() == 'gcc'
+  ufuncs_cpp_args += ['-Wno-psabi']
+endif
+
 py3.extension_module('_special_ufuncs',
   ['_special_ufuncs.cpp', '_special_ufuncs_docs.cpp', 'sf_error.cc'],
   include_directories: ['../_lib', '../_build_utils/src'],
   dependencies: [np_dep, sf_error_state_dep],
   link_args: version_link_args,
+  cpp_args: ufuncs_cpp_args,
   install: true,
   subdir: 'scipy/special',
   install_rpath: '$ORIGIN'
@@ -83,6 +92,7 @@ py3.extension_module('_gufuncs',
   include_directories: ['../_lib', '../_build_utils/src'],
   dependencies: [np_dep, sf_error_state_dep],
   link_args: version_link_args,
+  cpp_args: ufuncs_cpp_args,
   install: true,
   subdir: 'scipy/special',
   install_rpath: '$ORIGIN'
@@ -326,7 +336,11 @@ special_cephes_sources = [
   'special/cephes/chdtr.h',
   'special/cephes/igami.h',
   'special/cephes/hyperg.h',
-  'special/cephes/expn.h'
+  'special/cephes/expn.h',
+  'special/cephes/ellie.h',
+  'special/cephes/ellik.h',
+  'special/cephes/ellpe.h',
+  'special/cephes/ellpk.h'
 ]
 
 py3.install_sources(special_sources, subdir: 'scipy/special/special')
@@ -337,9 +351,11 @@ python_sources = [
   '_add_newdocs.py',
   '_basic.py',
   '_ellip_harm.py',
+  '_input_validation.py',
   '_lambertw.py',
   '_logsumexp.py',
   '_mptestutils.py',
+  '_multiufuncs.py',
   '_orthogonal.py',
   '_orthogonal.pyi',
   '_sf_error.py',

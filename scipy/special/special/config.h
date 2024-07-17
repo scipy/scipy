@@ -59,6 +59,7 @@
 
 #include <cuda/std/cmath>
 #include <cuda/std/cstdint>
+#include <cuda/std/cstdef>
 #include <cuda/std/limits>
 #include <cuda/std/type_traits>
 #include <cuda/std/utility>
@@ -212,6 +213,8 @@ template <typename T1, typename T2>
 using pair = cuda::std::pair<T1, T2>;
 
 using cuda::std::uint64_t;
+using cuda::std::size_t;
+using cuda::std::ptrdiff_t;
 
 #define SPECFUN_ASSERT(a)
 
@@ -224,8 +227,8 @@ using cuda::std::uint64_t;
 #include <cassert>
 #include <cmath>
 #include <complex>
-#include <cstdint>
 #include <cstddef>
+#include <cstdint>
 #include <iterator>
 #include <limits>
 #include <math.h>
@@ -239,3 +242,20 @@ using cuda::std::uint64_t;
 #endif
 
 #endif
+
+namespace special {
+
+template <typename T>
+struct remove_complex {
+    using type = T;
+};
+
+template <typename T>
+struct remove_complex<std::complex<T>> {
+    using type = T;
+};
+
+template <typename T>
+using remove_complex_t = typename remove_complex<T>::type;
+
+} // namespace special
