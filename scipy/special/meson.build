@@ -292,7 +292,8 @@ special_sources = [
   'special/wright_bessel.h',
   'special/hyp2f1.h',
   'special/tools.h',
-  'special/iv_ratio.h'
+  'special/iv_ratio.h',
+  'special/sici.h'
 ]
 
 special_cephes_sources = [

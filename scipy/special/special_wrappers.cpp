@@ -31,6 +31,7 @@
 #include "special/loggamma.h"
 #include "special/trig.h"
 #include "special/wright_bessel.h"
+#include "special/sici.h"
 
 #include "special/cephes/bdtr.h"
 #include "special/cephes/besselpoly.h"
@@ -444,6 +445,16 @@ npy_cdouble special_sph_harm(long m, long n, double theta, double phi) {
 
 npy_cdouble special_sph_harm_unsafe(double m, double n, double theta, double phi) {
     return to_ccomplex(::sph_harm(static_cast<long>(m), static_cast<long>(n), theta, phi));
+}
+
+int special_csici(npy_cdouble z, npy_cdouble *si, npy_cdouble *ci) {
+    return special::sici(to_complex(z), *reinterpret_cast<complex<double> *>(si),
+			 *reinterpret_cast<complex<double> *>(ci));
+}
+
+int special_cshichi(npy_cdouble z, npy_cdouble *shi, npy_cdouble *chi) {
+    return special::shichi(to_complex(z), *reinterpret_cast<complex<double> *>(shi),
+			   *reinterpret_cast<complex<double> *>(chi));
 }
 
 double cephes_hyp2f1_wrap(double a, double b, double c, double x) { return special::cephes::hyp2f1(a, b, c, x); }

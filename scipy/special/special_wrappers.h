@@ -174,6 +174,9 @@ npy_cdouble special_sph_harm_unsafe(double m, double n, double theta, double phi
 
 double special_ellipk(double m);
 
+int special_csici(npy_cdouble z, npy_cdouble *si, npy_cdouble *ci);
+int special_cshichi(npy_cdouble z, npy_cdouble *shi, npy_cdouble *chi);
+
 double binom_wrap(double n, double k);
 npy_cdouble hyp2f1_complex_wrap(double a, double b, double c, npy_cdouble zp);
 double cephes_hyp2f1_wrap(double a, double b, double c, double x);

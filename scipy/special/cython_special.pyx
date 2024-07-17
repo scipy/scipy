@@ -1268,6 +1268,9 @@ cdef extern from r"special_wrappers.h":
     npy_double special_log_wright_bessel(npy_double, npy_double, npy_double) nogil
     double special_ellipk(double m) nogil
 
+    npy_int special_csici(npy_cdouble, npy_cdouble *, npy_cdouble *)nogil
+    npy_int special_cshichi(npy_cdouble, npy_cdouble *, npy_cdouble *)nogil
+
     double cephes_besselpoly(double a, double lmbda, double nu) nogil
     double cephes_beta(double a, double b) nogil
     double cephes_chdtr(double df, double x) nogil
@@ -1360,6 +1363,9 @@ cdef extern from r"special_wrappers.h":
     double cephes_tukeylambdacdf(double x, double lmbda) nogil
     double cephes_struve_h(double v, double z) nogil
     double cephes_struve_l(double v, double z) nogil
+
+    npy_int cephes_sici_wrap(npy_double, npy_double *, npy_double *)nogil
+    npy_int cephes_shichi_wrap(npy_double, npy_double *, npy_double *)nogil
 
 from ._agm cimport agm as _func_agm
 ctypedef double _proto_agm_t(double, double) noexcept nogil
@@ -1669,17 +1675,7 @@ ctypedef double _proto_pseudo_huber_t(double, double) noexcept nogil
 cdef _proto_pseudo_huber_t *_proto_pseudo_huber_t_var = &_func_pseudo_huber
 from ._convex_analysis cimport rel_entr as _func_rel_entr
 ctypedef double _proto_rel_entr_t(double, double) noexcept nogil
-cdef _proto_rel_entr_t *_proto_rel_entr_t_var = &_func_rel_entr
-from ._sici cimport cshichi as _func_cshichi
-ctypedef int _proto_cshichi_t(double complex, double complex *, double complex *) noexcept nogil
-cdef _proto_cshichi_t *_proto_cshichi_t_var = &_func_cshichi
-cdef extern from r"_ufuncs_defs.h":
-    cdef npy_int _func_cephes_shichi_wrap "cephes_shichi_wrap"(npy_double, npy_double *, npy_double *)nogil
-from ._sici cimport csici as _func_csici
-ctypedef int _proto_csici_t(double complex, double complex *, double complex *) noexcept nogil
-cdef _proto_csici_t *_proto_csici_t_var = &_func_csici
-cdef extern from r"_ufuncs_defs.h":
-    cdef npy_int _func_cephes_sici_wrap "cephes_sici_wrap"(npy_double, npy_double *, npy_double *)nogil
+cdef _proto_rel_entr_t *_proto_rel_entr_t_var = &_func_rel_entr    
 from ._legacy cimport smirnov_unsafe as _func_smirnov_unsafe
 ctypedef double _proto_smirnov_unsafe_t(double, double) noexcept nogil
 cdef _proto_smirnov_unsafe_t *_proto_smirnov_unsafe_t_var = &_func_smirnov_unsafe
@@ -3319,10 +3315,14 @@ cpdef double round(double x0) noexcept nogil:
 
 cdef void shichi(Dd_number_t x0, Dd_number_t *y0, Dd_number_t *y1) noexcept nogil:
     """See the documentation for scipy.special.shichi"""
+    cdef npy_cdouble tmp0
+    cdef npy_cdouble tmp1
     if Dd_number_t is double_complex:
-        _func_cshichi(x0, y0, y1)
+        special_cshichi(_complexstuff.npy_cdouble_from_double_complex(x0), &tmp0, &tmp1)
+        y0[0] = _complexstuff.double_complex_from_npy_cdouble(tmp0)
+        y1[0] = _complexstuff.double_complex_from_npy_cdouble(tmp1)
     elif Dd_number_t is double:
-        _func_cephes_shichi_wrap(x0, y0, y1)
+        cephes_shichi_wrap(x0, y0, y1)
     else:
         if Dd_number_t is double_complex:
             y0[0] = NAN
@@ -3339,10 +3339,14 @@ def _shichi_pywrap(Dd_number_t x0):
 
 cdef void sici(Dd_number_t x0, Dd_number_t *y0, Dd_number_t *y1) noexcept nogil:
     """See the documentation for scipy.special.sici"""
+    cdef npy_cdouble tmp0
+    cdef npy_cdouble tmp1
     if Dd_number_t is double_complex:
-        _func_csici(x0, y0, y1)
+        special_csici(_complexstuff.npy_cdouble_from_double_complex(x0), &tmp0, &tmp1)
+        y0[0] = _complexstuff.double_complex_from_npy_cdouble(tmp0)
+        y1[0] = _complexstuff.double_complex_from_npy_cdouble(tmp1)
     elif Dd_number_t is double:
-        _func_cephes_sici_wrap(x0, y0, y1)
+        cephes_sici_wrap(x0, y0, y1)
     else:
         if Dd_number_t is double_complex:
             y0[0] = NAN
