@@ -32,7 +32,7 @@ d_src = [
 ]
 
 c_src = [
-  'PROPACK/complex8/zzdotc.F',
+  'PROPACK/complex8/ccdotc.F',
   'PROPACK/complex8/cblasext.F',
   'PROPACK/complex8/cgemm_ovwr.F',
   'PROPACK/complex8/cgetu0.F',
