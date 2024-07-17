@@ -30,13 +30,12 @@ def test_dense_constructor():
     assert_equal(res2d.toarray(), np.array([[1, 2, 3], [4, 5, 6]]))
 
     # 4d
-    res4d = coo_array([[[[3, 7], [1, 0]], [[6, 5], [9, 2]]],
-                       [[[4, 3], [2, 8]], [[7, 5], [1, 6]]],
-                       [[[0, 9], [4, 3]], [[2, 1], [7, 8]]]])
+    arr4d = np.array([[[[3, 7], [1, 0]], [[6, 5], [9, 2]]],
+                      [[[4, 3], [2, 8]], [[7, 5], [1, 6]]],
+                      [[[0, 9], [4, 3]], [[2, 1], [7, 8]]]])
+    res4d = coo_array(arr4d)
     assert res4d.shape == (3, 2, 2, 2)
-    assert_equal(res4d.toarray(), np.array([[[[3, 7], [1, 0]], [[6, 5], [9, 2]]],
-                                            [[[4, 3], [2, 8]], [[7, 5], [1, 6]]],
-                                            [[[0, 9], [4, 3]], [[2, 1], [7, 8]]]]))
+    assert_equal(res4d.toarray(), arr4d)
 
     # 9d
     arr9d = np.random.randn(2,3,4,7,6,5,3,2,4)
@@ -100,7 +99,7 @@ def test_dense_constructor_with_inconsistent_shape():
 @pytest.mark.parametrize('shape', [(0,), (1,), (2,), (4,), (7,), (12,),
                                    (0,0), (2,0), (3,3), (4,7), (8,6),
                                    (0,0,0), (3,6,2), (3,9,4,5,2,1,6),
-                                   (4,4,4,4,4), (5,10,3,13), (1,0,0,3)])
+                                   (4,4,4,4,4), (5,10,3,13), (1,0,0,3),])
 def test_sparse_constructor(shape):
     empty_arr = coo_array(shape)
     res = coo_array(empty_arr)
@@ -111,7 +110,7 @@ def test_sparse_constructor(shape):
 @pytest.mark.parametrize('shape', [(0,), (1,), (2,), (4,), (7,), (12,),
                                    (0,0), (2,0), (3,3), (4,7), (8,6),
                                    (0,0,0), (3,6,2), (3,9,4,5,2,1,6),
-                                   (4,4,4,4,4), (5,10,3,13), (1,0,0,3)])
+                                   (4,4,4,4,4), (5,10,3,13), (1,0,0,3),])
 def test_tuple_constructor(shape):
     arr = np.random.randn(*shape)
     res = coo_array(arr)
@@ -122,7 +121,7 @@ def test_tuple_constructor(shape):
 @pytest.mark.parametrize('shape', [(0,), (1,), (2,), (4,), (7,), (12,),
                                    (0,0), (2,0), (3,3), (4,7), (8,6),
                                    (0,0,0), (3,6,2), (3,9,4,5,2,1,6),
-                                   (4,4,4,4,4), (5,10,3,13), (1,0,0,3)])
+                                   (4,4,4,4,4), (5,10,3,13), (1,0,0,3),])
 def test_tuple_constructor_with_shape(shape):
     arr = np.random.randn(*shape)
     res = coo_array(arr, shape=shape)
@@ -224,7 +223,7 @@ def test_reshape_invalid():
 
 
 @pytest.mark.parametrize('shape', [(0,), (1,), (3,), (7,), (0,0), (5,12),
-                                   (8,7,3), (7,9,3,2,4,5)])
+                                   (8,7,3), (7,9,3,2,4,5),])
 def test_nnz(shape):
     rng = np.random.RandomState(23409823)
 
@@ -234,7 +233,7 @@ def test_nnz(shape):
 
 
 @pytest.mark.parametrize('shape', [(0,), (1,), (3,), (7,), (0,0), (5,12),
-                                   (8,7,3), (7,9,3,2,4,5)])
+                                   (8,7,3), (7,9,3,2,4,5),])
 def test_transpose(shape):
     rng = np.random.RandomState(23409823)
 
@@ -247,7 +246,7 @@ def test_transpose(shape):
 
 
 @pytest.mark.parametrize(('shape', 'axis_perm'), [((3,), (0,)), ((2,3), (0,1)),
-                                                  ((2,4,3,6,5,3), (1,2,0,5,3,4))])
+                                                  ((2,4,3,6,5,3), (1,2,0,5,3,4)),])
 def test_transpose_with_axis(shape, axis_perm):
     rng = np.random.RandomState(23409823)
 
@@ -289,7 +288,7 @@ def test_1d_toformats():
         assert_equal(f().toarray(), res.toarray())
 
 
-@pytest.mark.parametrize('arg', [1, 2, 4, 5, 8])
+@pytest.mark.parametrize('arg', [1, 2, 4, 5, 8,])
 def test_1d_resize(arg: int):
     den = np.array([1, -2, -3])
     res = coo_array(den)
@@ -310,7 +309,7 @@ def test_1d_to_2d_resize(arg: tuple[int, int]):
     assert_equal(res.toarray(), den)
 
 
-@pytest.mark.parametrize('arg', [1, 4, 6, 8])
+@pytest.mark.parametrize('arg', [1, 4, 6, 8,])
 def test_2d_to_1d_resize(arg: int):
     den = np.array([[1, 0, 3], [4, 0, 0]])
     res = coo_array(den)
@@ -347,10 +346,7 @@ def test_sum_duplicates():
     assert_equal(arr4d.toarray(), expected)
     arr4d.sum_duplicates()
     assert arr4d.nnz == 2
-    assert_equal(arr4d.toarray(), 
-                 np.array([[[[0, 0], [0, 0], [0, 0]], [[0, 0], [0, 0], [0, 0]],
-                          [[0, 0], [0, 0], [3, 0]]], [[[0, 0], [0, 9], [0, 0]],
-                          [[0, 0], [0, 0], [0, 0]], [[0, 0], [0, 0], [0, 0]]]]))
+    assert_equal(arr4d.toarray(), expected)
     
     # when there are no duplicates
     arr_nodups = coo_array(([1, 2, 3, 4], ([0, 0, 1, 1], [0, 1, 0, 1])))
@@ -426,7 +422,7 @@ def test_eliminate_zeros_nd():
 
 
 @pytest.mark.parametrize('shape', [(0,), (1,), (3,), (7,), (0,0), (5,12),
-                                   (8,7,3), (7,9,3,2,4)])
+                                   (8,7,3), (7,9,3,2,4),])
 def test_add_dense(shape):
     rng = np.random.RandomState(23409823)
     sp_x = random_array(shape, density=0.6, random_state=rng, dtype=int)
@@ -439,7 +435,7 @@ def test_add_dense(shape):
 
 
 @pytest.mark.parametrize('shape', [(0,), (1,), (3,), (7,), (0,0), (5,12),
-                                   (8,7,3), (7,9,3,2,4)])
+                                   (8,7,3), (7,9,3,2,4),])
 def test_add_sparse(shape):
     rng = np.random.RandomState(23409823)
     sp_x = random_array((shape), density=0.6, random_state=rng, dtype=int)
@@ -461,7 +457,7 @@ def test_add_sparse_with_inf():
 
 
 @pytest.mark.parametrize(('a_shape', 'b_shape'), [((7,), (12,)), ((6,4), (6,5)),
-                                                  ((5,9,3,2), (9,5,2,3))])
+                                                  ((5,9,3,2), (9,5,2,3)),])
 def test_add_sparse_with_inconsistent_shapes(a_shape, b_shape): 
     rng = np.random.RandomState(23409823)
     
@@ -472,7 +468,7 @@ def test_add_sparse_with_inconsistent_shapes(a_shape, b_shape):
 
 
 @pytest.mark.parametrize('shape', [(0,), (1,), (3,), (7,), (0,0), (5,12),
-                                   (8,7,3), (7,9,3,2,4)])
+                                   (8,7,3), (7,9,3,2,4),])
 def test_sub_dense(shape):
     rng = np.random.RandomState(23409823)
     sp_x = random_array(shape, density=0.6, random_state=rng, dtype=int)
@@ -485,7 +481,7 @@ def test_sub_dense(shape):
 
 
 @pytest.mark.parametrize('shape', [(0,), (1,), (3,), (7,), (0,0), (5,12),
-                                   (8,7,3), (7,9,3,2,4)])
+                                   (8,7,3), (7,9,3,2,4),])
 def test_sub_sparse(shape):
     rng = np.random.RandomState(23409823)
 
@@ -508,7 +504,7 @@ def test_sub_sparse_with_nan():
 
 
 @pytest.mark.parametrize(('a_shape', 'b_shape'), [((7,), (12,)), ((6,4), (6,5)),
-                                                  ((5,9,3,2), (9,5,2,3))])
+                                                  ((5,9,3,2), (9,5,2,3)),])
 def test_sub_sparse_with_inconsistent_shapes(a_shape, b_shape): 
     rng = np.random.RandomState(23409823)
     
@@ -546,7 +542,7 @@ def test_2d_matmul_multivector():
 
 
 @pytest.mark.parametrize(('mat_shape', 'vec_shape'), [((2,3,4,5), (5,)), ((0,0), (0,)),
-                                            ((2,3,4,7,8), (8,)), ((4,4,2,0), (0,))])
+                                            ((2,3,4,7,8), (8,)), ((4,4,2,0), (0,)),])
 def test_nd_matmul_vector(mat_shape, vec_shape):
     rng = np.random.RandomState(23409823)
 
