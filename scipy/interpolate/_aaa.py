@@ -64,16 +64,6 @@ class AAA:
     errors : array
         Error in the successive iterations of AAA.
     
-    Methods
-    -------
-    poles()
-        Compute the poles of the rational approximation.
-    residues()
-        Compute the residues associated with the `poles` of the rational approximation.
-    roots()
-        Compute the roots(zeros) of the rational approximation.
-    
-
     Warns
     -----
     RuntimeWarning
