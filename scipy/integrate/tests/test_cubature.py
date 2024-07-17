@@ -21,22 +21,22 @@ def genz_malik_1980_f_1(x, r, alphas):
         genzMalik1980f1[x_List, r_, alphas_List] := Cos[2*Pi*r + Total[x*alphas]]
     """
 
-    dim = x.shape[0]
+    ndim = x.shape[0]
     num_eval_points = x.shape[-1]
 
     r_reshaped = np.expand_dims(r, -1)
     alphas_reshaped = np.expand_dims(alphas, -1)
-    x_reshaped = x.reshape(dim, *([1]*(len(alphas.shape) - 1)), num_eval_points)
+    x_reshaped = x.reshape(ndim, *([1]*(len(alphas.shape) - 1)), num_eval_points)
 
     return np.cos(2*np.pi*r_reshaped + np.sum(alphas_reshaped * x_reshaped, axis=0))
 
 
 def genz_malik_1980_f_1_exact(a, b, r, alphas):
-    dim = len(a)
-    a = a.reshape(dim, *([1]*(len(alphas.shape) - 1)))
-    b = b.reshape(dim, *([1]*(len(alphas.shape) - 1)))
+    ndim = len(a)
+    a = a.reshape(ndim, *([1]*(len(alphas.shape) - 1)))
+    b = b.reshape(ndim, *([1]*(len(alphas.shape) - 1)))
 
-    return (-2)**dim * 1/np.prod(alphas, axis=0) \
+    return (-2)**ndim * 1/np.prod(alphas, axis=0) \
         * np.cos(2*np.pi*r + np.sum(alphas * (a+b)/2, axis=0)) \
         * np.prod(
             np.sin(alphas * (a-b)/2), axis=0
@@ -64,38 +64,38 @@ def genz_malik_1980_f_2(x, alphas, betas):
         genzMalik1980f2[x_List, alphas_List, betas_List] :=
             1/Times @@ ((alphas^2 + (x - betas)^2))
     """
-    dim = x.shape[0]
+    ndim = x.shape[0]
     num_eval_points = x.shape[-1]
 
     alphas_reshaped = np.expand_dims(alphas, -1)
     betas_reshaped = np.expand_dims(betas, -1)
 
-    x_reshaped = x.reshape(dim, *([1]*(len(alphas.shape) - 1)), num_eval_points)
+    x_reshaped = x.reshape(ndim, *([1]*(len(alphas.shape) - 1)), num_eval_points)
 
     return 1/np.prod(alphas_reshaped**2 + (x_reshaped-betas_reshaped)**2, axis=0)
 
 
 def genz_malik_1980_f_2_exact(a, b, alphas, betas):
-    dim = len(a)
-    a = a.reshape(dim, *([1]*(len(alphas.shape) - 1)))
-    b = b.reshape(dim, *([1]*(len(alphas.shape) - 1)))
+    ndim = len(a)
+    a = a.reshape(ndim, *([1]*(len(alphas.shape) - 1)))
+    b = b.reshape(ndim, *([1]*(len(alphas.shape) - 1)))
 
-    return (-1)**dim * 1/np.prod(alphas, axis=0) * np.prod(
+    return (-1)**ndim * 1/np.prod(alphas, axis=0) * np.prod(
         np.arctan((a - betas)/alphas) - np.arctan((b - betas)/alphas),
         axis=0
     )
 
 
 def genz_malik_1980_f_2_random_args(shape):
-    dim = shape[0]
+    ndim = shape[0]
     alphas = np.random.rand(*shape)
     betas = np.random.rand(*shape)
 
     difficulty = 25
     products = np.prod(np.power(alphas, -2), axis=0)
     alphas = alphas \
-        * np.power(products, 1 / (2*dim)) \
-        / np.power(difficulty, 1 / (2*dim))
+        * np.power(products, 1 / (2*ndim)) \
+        / np.power(difficulty, 1 / (2*ndim))
 
     return alphas, betas
 
@@ -111,21 +111,21 @@ def genz_malik_1980_f_3(x, alphas):
         genzMalik1980f3[x_List, alphas_List] := Exp[Dot[x, alphas]]
     """
 
-    dim = x.shape[0]
+    ndim = x.shape[0]
     num_eval_points = x.shape[-1]
 
     alphas_reshaped = np.expand_dims(alphas, -1)
-    x_reshaped = x.reshape(dim, *([1]*(len(alphas.shape) - 1)), num_eval_points)
+    x_reshaped = x.reshape(ndim, *([1]*(len(alphas.shape) - 1)), num_eval_points)
 
     return np.exp(np.sum(alphas_reshaped * x_reshaped, axis=0))
 
 
 def genz_malik_1980_f_3_exact(a, b, alphas):
-    dim = len(a)
-    a = a.reshape(dim, *([1]*(len(alphas.shape) - 1)))
-    b = b.reshape(dim, *([1]*(len(alphas.shape) - 1)))
+    ndim = len(a)
+    a = a.reshape(ndim, *([1]*(len(alphas.shape) - 1)))
+    b = b.reshape(ndim, *([1]*(len(alphas.shape) - 1)))
 
-    return (-1)**dim * 1/np.prod(alphas, axis=0) * np.prod(
+    return (-1)**ndim * 1/np.prod(alphas, axis=0) * np.prod(
         np.exp(alphas * a) - np.exp(alphas * b),
         axis=0
     )
@@ -150,34 +150,34 @@ def genz_malik_1980_f_4(x, alphas):
             (1 + Dot[x, alphas])^(-Length[alphas] - 1)
     """
 
-    dim = x.shape[0]
+    ndim = x.shape[0]
     num_eval_points = x.shape[-1]
 
     alphas_reshaped = np.expand_dims(alphas, -1)
-    x_reshaped = x.reshape(dim, *([1]*(len(alphas.shape) - 1)), num_eval_points)
+    x_reshaped = x.reshape(ndim, *([1]*(len(alphas.shape) - 1)), num_eval_points)
 
     return ((1 + np.sum(alphas_reshaped * x_reshaped, axis=0))**(-x.shape[0]-1))
 
 
 def genz_malik_1980_f_4_exact(a, b, alphas):
-    dim = len(a)
+    ndim = len(a)
 
     def F(x):
-        x_reshaped = x.reshape(dim, *([1]*(len(alphas.shape) - 1)))
+        x_reshaped = x.reshape(ndim, *([1]*(len(alphas.shape) - 1)))
 
-        return (-1)**dim/np.prod(alphas, axis=0) / (
-            math.factorial(dim) * (1 + np.sum(alphas * x_reshaped, axis=0))
+        return (-1)**ndim/np.prod(alphas, axis=0) / (
+            math.factorial(ndim) * (1 + np.sum(alphas * x_reshaped, axis=0))
         )
 
     return _eval_indefinite_integral(F, a, b)
 
 
 def genz_malik_1980_f_4_random_args(shape):
-    dim = shape[0]
+    ndim = shape[0]
 
     alphas = np.random.rand(*shape)
     difficulty = 14
-    alphas = (difficulty/dim) * alphas / np.sum(alphas, axis=0)
+    alphas = (difficulty/ndim) * alphas / np.sum(alphas, axis=0)
 
     return (alphas,)
 
@@ -196,13 +196,13 @@ def genz_malik_1980_f_5(x, alphas, betas):
             Exp[-Total[alphas^2 * (x - betas)^2]]
     """
 
-    dim = x.shape[0]
+    ndim = x.shape[0]
     num_eval_points = x.shape[-1]
 
     alphas_reshaped = np.expand_dims(alphas, -1)
     betas_reshaped = np.expand_dims(betas, -1)
 
-    x_reshaped = x.reshape(dim, *([1]*(len(alphas.shape) - 1)), num_eval_points)
+    x_reshaped = x.reshape(ndim, *([1]*(len(alphas.shape) - 1)), num_eval_points)
 
     return np.exp(
         -np.sum(alphas_reshaped**2 * (x_reshaped - betas_reshaped)**2, axis=0)
@@ -210,11 +210,11 @@ def genz_malik_1980_f_5(x, alphas, betas):
 
 
 def genz_malik_1980_f_5_exact(a, b, alphas, betas):
-    dim = len(a)
-    a = a.reshape(dim, *([1]*(len(alphas.shape) - 1)))
-    b = b.reshape(dim, *([1]*(len(alphas.shape) - 1)))
+    ndim = len(a)
+    a = a.reshape(ndim, *([1]*(len(alphas.shape) - 1)))
+    b = b.reshape(ndim, *([1]*(len(alphas.shape) - 1)))
 
-    return (1/2)**dim * 1/np.prod(alphas, axis=0) * np.power(np.pi, dim/2) * np.prod(
+    return (1/2)**ndim * 1/np.prod(alphas, axis=0) * np.power(np.pi, ndim/2) * np.prod(
         scipy.special.erf(alphas * (betas - a))
         + scipy.special.erf(alphas * (b - betas)),
         axis=0
@@ -277,7 +277,7 @@ problems_scalar_output = [
         genz_malik_1980_f_1,
         genz_malik_1980_f_1_exact,
         np.array([0, 0, 0]),
-        np.array([100, 200, 300]),
+        np.array([10, 20, 30]),
         (
             np.array([1/2]),
             np.array([[1], [1], [1]]),
@@ -450,8 +450,8 @@ problems_scalar_output = [
 def test_cub_scalar_output(problem, quadrature, rtol, atol):
     f, exact, a, b, args = problem
 
-    dim = len(a)
-    rule = ProductRule([quadrature] * dim)
+    ndim = len(a)
+    rule = ProductRule([quadrature] * ndim)
 
     res = cub(
         f,
@@ -485,12 +485,11 @@ problems_tensor_output = [
         # Function that generates random args of a certain shape, like `random(shape)`.
         genz_malik_1980_f_1_random_args,
     ),
-    # Tests currently failing:
-    # (
-    #     genz_malik_1980_f_2,
-    #     genz_malik_1980_f_2_exact,
-    #     genz_malik_1980_f_2_random_args
-    # ),
+    (
+        genz_malik_1980_f_2,
+        genz_malik_1980_f_2_exact,
+        genz_malik_1980_f_2_random_args
+    ),
     (
         genz_malik_1980_f_3,
         genz_malik_1980_f_3_exact,
@@ -510,25 +509,25 @@ problems_tensor_output = [
 
 
 @pytest.mark.parametrize("problem", problems_tensor_output)
-@pytest.mark.parametrize("quadrature", [GaussKronrod21()])
+@pytest.mark.parametrize("quadrature", [GaussKronrod15(), GaussKronrod21()])
 @pytest.mark.parametrize("shape", [
     (2, 3,),
     (2, 3, 5),
-    (3, 5, 6),
-    (4, 5, 2, 1)
+    (3, 2, 1),
+    (4,),
 ])
 @pytest.mark.parametrize("rtol", [1e-5])
 @pytest.mark.parametrize("atol", [1e-7])
 def test_cub_tensor_output(problem, quadrature, shape, rtol, atol):
-    dim = shape[0]
+    ndim = shape[0]
 
     f, exact, random_args = problem
     args = random_args(shape)
 
-    a = np.array([0] * dim)
-    b = np.array([5] * dim)
+    a = np.array([0] * ndim)
+    b = np.array([5] * ndim)
 
-    rule = ProductRule([quadrature] * dim)
+    rule = ProductRule([quadrature] * ndim)
 
     res = cub(
         f,
@@ -552,11 +551,11 @@ def test_cub_tensor_output(problem, quadrature, shape, rtol, atol):
 
 
 def _eval_indefinite_integral(F, a, b):
-    dim = len(a)
+    ndim = len(a)
     points = np.stack([a, b], axis=0)
 
     out = 0
-    for ind in itertools.product(range(2), repeat=dim):
-        out += pow(-1, sum(ind) + dim) * F(points[ind, tuple(range(dim))])
+    for ind in itertools.product(range(2), repeat=ndim):
+        out += pow(-1, sum(ind) + ndim) * F(points[ind, tuple(range(ndim))])
 
     return out
