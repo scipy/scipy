@@ -32,6 +32,7 @@ d_src = [
 ]
 
 c_src = [
+  'PROPACK/complex8/zzdotc.F',
   'PROPACK/complex8/cblasext.F',
   'PROPACK/complex8/cgemm_ovwr.F',
   'PROPACK/complex8/cgetu0.F',
@@ -52,7 +53,7 @@ z_src = [
   'PROPACK/complex16/dbsvd.F',
   'PROPACK/complex16/dgemm_ovwr.F',
   'PROPACK/complex16/printstat.F',
-  '../_eigen/arpack/ARPACK/SRC/zzdotc.f',
+  'PROPACK/complex8/zzdotc.F',
   'PROPACK/complex16/zblasext.F',
   'PROPACK/complex16/zgemm_ovwr.F',
   'PROPACK/complex16/zgetu0.F',
