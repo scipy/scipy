@@ -26,6 +26,8 @@ def get_test_cases():
         (sc._ufuncs._iv_ratio, "iv_ratio.h", "out0 = special::iv_ratio(in0, in1)"),
         (sc.ellipkinc, "cephes/ellik.h", "out0 = special::cephes::ellik(in0, in1)"),
         (sc.ellipeinc, "cephes/ellie.h", "out0 = special::cephes::ellie(in0, in1)"),
+        (sc.sici, "sici.h", "special::sici(in0, &out0, &out1)"),
+        (sc.shichi, "sici.h", "special::shichi(in0, &out0, &out1)"),
     ]
 
     cases = []
@@ -48,12 +50,14 @@ dtype_map = {
 
 def get_params(signature):
     in_, out = signature.split("->")
-    assert len(out) == 1
     in_params = []
+    out_params = []
     for i, typecode in enumerate(in_):
         in_params.append(f"{dtype_map[typecode]} in{i}")
+    for i, typecode in enumerate(out):
+        out_params.append(f"{dtype_map[typecode]} out{i}")
     in_params = ", ".join(in_params)
-    out_params = f"{dtype_map[out]} out0"
+    out_params = ", ".join(out_params)
     return in_params, out_params
 
 
