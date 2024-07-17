@@ -174,6 +174,8 @@ npy_cdouble special_sph_harm_unsafe(double m, double n, double theta, double phi
 
 double special_ellipk(double m);
 
+int special_sici(double x, double *si, double *ci);
+int special_shichi(double x, double *shi, double *chi);
 int special_csici(npy_cdouble z, npy_cdouble *si, npy_cdouble *ci);
 int special_cshichi(npy_cdouble z, npy_cdouble *shi, npy_cdouble *chi);
 
@@ -205,8 +207,6 @@ double cephes_ndtr_wrap(double x);
 double cephes_ndtri_wrap(double x);
 double cephes_pdtri_wrap(int k, double y);
 double cephes_poch_wrap(double x, double m);
-int cephes_sici_wrap(double x, double *si, double *ci);
-int cephes_shichi_wrap(double x, double *si, double *ci);
 double cephes__struve_asymp_large_z(double v, double z, int is_h, double *err);
 double cephes__struve_bessel_series(double v, double z, int is_h, double *err);
 double cephes__struve_power_series(double v, double z, int is_h, double *err);

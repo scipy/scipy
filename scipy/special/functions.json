@@ -853,13 +853,13 @@
     "shichi": {
         "special_wrappers.h": {
             "special_cshichi": "D*DD->*i",
-            "cephes_shichi_wrap": "d*dd->*i"
+            "special_shichi": "d*dd->*i"
         }
     },
     "sici": {
         "special_wrappers.h": {
             "special_csici": "D*DD->*i",
-            "cephes_sici_wrap": "d*dd->*i"
+            "special_sici": "d*dd->*i"
         }
     },
     "sindg": {

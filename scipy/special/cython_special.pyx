@@ -1364,8 +1364,8 @@ cdef extern from r"special_wrappers.h":
     double cephes_struve_h(double v, double z) nogil
     double cephes_struve_l(double v, double z) nogil
 
-    npy_int cephes_sici_wrap(npy_double, npy_double *, npy_double *)nogil
-    npy_int cephes_shichi_wrap(npy_double, npy_double *, npy_double *)nogil
+    npy_int special_sici(npy_double, npy_double *, npy_double *)nogil
+    npy_int special_shichi(npy_double, npy_double *, npy_double *)nogil
 
 from ._agm cimport agm as _func_agm
 ctypedef double _proto_agm_t(double, double) noexcept nogil
@@ -3322,7 +3322,7 @@ cdef void shichi(Dd_number_t x0, Dd_number_t *y0, Dd_number_t *y1) noexcept nogi
         y0[0] = _complexstuff.double_complex_from_npy_cdouble(tmp0)
         y1[0] = _complexstuff.double_complex_from_npy_cdouble(tmp1)
     elif Dd_number_t is double:
-        cephes_shichi_wrap(x0, y0, y1)
+        special_shichi(x0, y0, y1)
     else:
         if Dd_number_t is double_complex:
             y0[0] = NAN
@@ -3346,7 +3346,7 @@ cdef void sici(Dd_number_t x0, Dd_number_t *y0, Dd_number_t *y1) noexcept nogil:
         y0[0] = _complexstuff.double_complex_from_npy_cdouble(tmp0)
         y1[0] = _complexstuff.double_complex_from_npy_cdouble(tmp1)
     elif Dd_number_t is double:
-        cephes_sici_wrap(x0, y0, y1)
+        special_sici(x0, y0, y1)
     else:
         if Dd_number_t is double_complex:
             y0[0] = NAN

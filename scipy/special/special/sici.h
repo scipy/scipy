@@ -19,6 +19,8 @@
 
 #include "expint.h"
 #include "cephes/const.h"
+#include "cephes/sici.h"
+#include "cephes/shichi.h"
 
 namespace special {
 namespace detail {
@@ -151,4 +153,29 @@ SPECFUN_HOST_DEVICE inline int shichi(std::complex<double> z,
     return 0;
 }
 
+SPECFUN_HOST_DEVICE inline int sici(double x, double &si, double &ci) {
+    return cephes::sici(x, &si, &ci);
+}
+
+SPECFUN_HOST_DEVICE inline int shichi(double x, double &shi, double &chi) {
+    return cephes::shichi(x, &shi, &chi);
+}
+
+SPECFUN_HOST_DEVICE inline int sici(float x, float &si_f, float &ci_f) {
+    double si;
+    double ci;
+    int res = cephes::sici(x, &si, &ci);
+    si_f = si;
+    ci_f = ci;
+    return res;
+}
+
+SPECFUN_HOST_DEVICE inline int shichi(float x, float &shi_f, float &chi_f) {
+    double shi;
+    double chi;
+    int res = cephes::shichi(x, &shi, &chi);
+    shi_f = shi;
+    chi_f = chi;
+    return res;
+}
 }
