@@ -293,7 +293,8 @@ special_sources = [
   'special/hyp2f1.h',
   'special/tools.h',
   'special/iv_ratio.h',
-  'special/sici.h'
+  'special/sici.h',
+  'special/expint.h'
 ]
 
 special_cephes_sources = [
@@ -331,7 +332,9 @@ special_cephes_sources = [
   'special/cephes/ellie.h',
   'special/cephes/ellik.h',
   'special/cephes/ellpe.h',
-  'special/cephes/ellpk.h'
+  'special/cephes/ellpk.h',
+  'special/cephes/sici.h',
+  'special/cephes/shichi.h'
 ]
 
 py3.install_sources(special_sources, subdir: 'scipy/special/special')
