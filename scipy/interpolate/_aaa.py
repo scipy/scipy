@@ -359,11 +359,11 @@ class AAA:
         if self._residues is None:
             # Compute residues via formula for res of quotient of analytic functions
             with np.errstate(invalid="ignore", divide="ignore"):
-                N = (1 / (self.poles()[:, np.newaxis] - self.support_points)) @ (
+                N = (1/(np.subtract.outer(self.poles(), self.support_points))) @ (
                     self.values * self.weights
                 )
                 Ddiff = (
-                    -((1 / np.subtract.outer(self.poles(), self.support_points)) ** 2)
+                    -((1/np.subtract.outer(self.poles(), self.support_points))**2)
                     @ self.weights
                 )
                 self._residues = N / Ddiff
