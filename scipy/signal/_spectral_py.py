@@ -2057,7 +2057,7 @@ def _triage_segments(window, nperseg, input_length):
                           f' = {input_length:d}, using nperseg = {input_length:d}',
                           stacklevel=3)
             nperseg = input_length
-        win = get_window(window, nperseg)
+        win = get_window(window, nperseg, fftbins=False)
     else:
         win = np.asarray(window)
         if len(win.shape) != 1:
