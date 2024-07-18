@@ -73,6 +73,7 @@ from scipy._lib._array_api import (array_namespace, is_numpy, atleast_nd,
                                    xp_clip, xp_moveaxis_to_end, xp_sign,
                                    xp_minimum, xp_vector_norm)
 from scipy._lib.array_api_compat import size as xp_size
+from scipy._lib.deprecation import _deprecated
 
 
 # Functions/classes in other files should be added in `__init__.py`, not here
@@ -8453,7 +8454,7 @@ def friedmanchisquare(*samples):
     # Handle ties
     ties = 0
     for d in data:
-        replist, repnum = find_repeats(array(d))
+        _, repnum = _find_repeats(np.array(d, dtype=np.float64))
         for t in repnum:
             ties += t * (t*t - 1)
     c = 1 - ties / (k*(k*k - 1)*n)
@@ -9757,8 +9758,16 @@ def _validate_distribution(values, weights):
 RepeatedResults = namedtuple('RepeatedResults', ('values', 'counts'))
 
 
+@_deprecated("`scipy.stats.find_repeats` is deprecated as of SciPy 1.15.0 "
+             "and will be removed in SciPy 1.17.0. Please use "
+             "`numpy.unique`/`numpy.unique_counts` instead.")
 def find_repeats(arr):
     """Find repeats and repeat counts.
+
+    .. deprecated:: 1.15.0
+
+        This function is deprecated as of SciPy 1.15.0 and will be removed
+        in SciPy 1.17.0. Please use `numpy.unique` / `numpy.unique_counts` instead.
 
     Parameters
     ----------
