@@ -44,7 +44,8 @@ class AAA:
     Parameters
     ----------
     z : 1D array_like, shape (n,)
-        1-D array containing values of the independent variable.
+        1-D array containing values of the independent variable. Values may be real or
+        complex but must be finite.
     f : 1D array_like, shape (n,)
         Function values ``f(z)`` at `z`. Infinite and NaN value of `f` and corresponding
         values of `z` will be discarded.
@@ -182,6 +183,9 @@ class AAA:
 
         if f.size != z.size:
             raise ValueError("`f` and `z` must be the same size.")
+        
+        if not np.all(np.isfinite(z)):
+            raise ValueError("`z` must be finite.")
 
         # Remove infinite or NaN function values and repeated entries
         to_keep = (np.isfinite(f)) & (~np.isnan(f))
