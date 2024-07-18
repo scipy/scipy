@@ -64,7 +64,7 @@ class AAA:
     weights : array
         Weights of the barycentric approximation.
     errors : array
-        Error in the successive iterations of AAA.
+        Error :math:`|f(z) - r(z)|_\infty` over `z` in the successive iterations of AAA.
     
     Warns
     -----
