@@ -311,7 +311,8 @@ class AAA:
 
         # Deal with input inf: `r(inf) = lim r(z) = sum(w*f) / sum(w)`
         with np.errstate(divide="ignore"):
-            r[np.isinf(zv)] = np.sum(self.weights * self.support_values) / np.sum(self.weights)
+            r[np.isinf(zv)] = (np.sum(self.weights * self.support_values)
+                               / np.sum(self.weights))
 
         # Deal with NaN
         ii = np.flatnonzero(np.isnan(r))
