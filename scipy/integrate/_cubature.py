@@ -419,27 +419,41 @@ class ProductRule(NestedCubatureRule):
 
 
 class GenzMalik(NestedCubatureRule):
-    l_1 = 0
-    l_2 = np.sqrt(9/70)
-    l_3 = np.sqrt(9/10)
-    l_4 = np.sqrt(9/10)
-    l_5 = np.sqrt(9/19)
-
     def __init__(self, ndim):
         if ndim < 2:
-            raise "Genz-Malik cubature works only for ndim >= 2"
+            raise "Genz-Malik cubature is only defined for ndim >= 2"
 
         self.ndim = ndim
 
     @functools.cached_property
     def higher_nodes(self):
-        return np.array(
-            _signed_coordinate_permutations(self.l_1, 0, self.ndim)
-            + _signed_coordinate_permutations(self.l_2, 1, self.ndim)
-            + _signed_coordinate_permutations(self.l_3, 1, self.ndim)
-            + _signed_coordinate_permutations(self.l_4, 2, self.ndim)
-            + _signed_coordinate_permutations(self.l_5, self.ndim, self.ndim)
-        ).T  # Transpose since this has spacial dimension as last axis
+        l_2 = np.sqrt(9/70)
+        l_3 = np.sqrt(9/10)
+        l_4 = np.sqrt(9/10)
+        l_5 = np.sqrt(9/19)
+
+        its = itertools.chain(
+            [(0,) * self.ndim],
+            _distinct_permutations((l_2,) + (0,) * (self.ndim - 1)),
+            _distinct_permutations((-l_2,) + (0,) * (self.ndim - 1)),
+            _distinct_permutations((l_3,) + (0,) * (self.ndim - 1)),
+            _distinct_permutations((-l_3,) + (0,) * (self.ndim - 1)),
+            _distinct_permutations((l_4, l_4) + (0,) * (self.ndim - 2)),
+            _distinct_permutations((l_4, -l_4) + (0,) * (self.ndim - 2)),
+            _distinct_permutations((-l_4, -l_4) + (0,) * (self.ndim - 2)),
+            itertools.product((l_5, -l_5), repeat=self.ndim)
+        )
+
+        out_size = 1 + 2 * (self.ndim + 1) * self.ndim + 2**self.ndim
+
+        out = np.fromiter(
+            itertools.chain.from_iterable(zip(*its)),
+            dtype=float,
+            count=self.ndim * out_size
+        )
+
+        out.shape = (self.ndim, out_size)
+        return out
 
     @functools.cached_property
     def higher_weights(self):
@@ -449,37 +463,29 @@ class GenzMalik(NestedCubatureRule):
         w_4 = (2**self.ndim) * (200 / 19683)
         w_5 = 6859 / 19683
 
-        return np.hstack([
-            [w_1] * len(_signed_coordinate_permutations(self.l_1, 0, self.ndim)),
-            [w_2] * len(_signed_coordinate_permutations(self.l_2, 1, self.ndim)),
-            [w_3] * len(_signed_coordinate_permutations(self.l_3, 1, self.ndim)),
-            [w_4] * len(_signed_coordinate_permutations(self.l_4, 2, self.ndim)),
-            [w_5] * len(_signed_coordinate_permutations(self.l_5, self.ndim, self.ndim))
-        ])
+        return np.repeat(
+            [w_1, w_2, w_3, w_4, w_5],
+            [1, 2 * self.ndim, 2*self.ndim, 2*(self.ndim - 1)*self.ndim, 2**self.ndim]
+        )
 
     @functools.cached_property
     def lower_nodes(self):
-        # Almost the same as upper_nodes but missing last set of coordinates
-        return np.array(
-            _signed_coordinate_permutations(self.l_1, 0, self.ndim)
-            + _signed_coordinate_permutations(self.l_2, 1, self.ndim)
-            + _signed_coordinate_permutations(self.l_3, 1, self.ndim)
-            + _signed_coordinate_permutations(self.l_4, 2, self.ndim)
-        ).T
+        out_size = 1 + 2 * (self.ndim + 1) * self.ndim
+        out = self.higher_nodes[:, :out_size]
+
+        return out
 
     @functools.cached_property
     def lower_weights(self):
-        w_1_prime = (2**self.ndim) * (729 - 950*self.ndim + 50*self.ndim**2) / 729
-        w_2_prime = (2**self.ndim) * (245 / 486)
-        w_3_prime = (2**self.ndim) * (265 - 100*self.ndim) / 1458
-        w_4_prime = (2**self.ndim) * (25 / 729)
+        w_1 = (2**self.ndim) * (729 - 950*self.ndim + 50*self.ndim**2) / 729
+        w_2 = (2**self.ndim) * (245 / 486)
+        w_3 = (2**self.ndim) * (265 - 100*self.ndim) / 1458
+        w_4 = (2**self.ndim) * (25 / 729)
 
-        return np.hstack([
-            [w_1_prime] * len(_signed_coordinate_permutations(self.l_1, 0, self.ndim)),
-            [w_2_prime] * len(_signed_coordinate_permutations(self.l_2, 1, self.ndim)),
-            [w_3_prime] * len(_signed_coordinate_permutations(self.l_3, 1, self.ndim)),
-            [w_4_prime] * len(_signed_coordinate_permutations(self.l_4, 2, self.ndim)),
-        ])
+        return np.repeat(
+            [w_1, w_2, w_3, w_4],
+            [1, 2 * self.ndim, 2*self.ndim, 2*(self.ndim - 1)*self.ndim]
+        )
 
 
 def _cartesian_product(points):
@@ -500,17 +506,88 @@ def _max_norm(x):
     return np.max(np.abs(x))
 
 
-def _signed_coordinate_permutations(p, num, ndim):
+def _distinct_permutations(iterable, r=None):
     """
-    Finds unique permutations of (p, p, ..., p, 0) where `p` is repeated
-    `num` times.
+    Find the number of distinct permutations of `r` elements of the iterable.
     """
 
-    signs = itertools.product([-1, 1], repeat=num)
-    coordinates = []
+    # Algorithm: https://w.wiki/Qai
+    def _full(A):
+        while True:
+            # Yield the permutation we have
+            yield tuple(A)
 
-    for sub in p * np.array(list(signs)):
-        base = list(sub) + [0] * (ndim - num)
-        coordinates.extend(list(itertools.permutations(base)))
+            # Find the largest index i such that A[i] < A[i + 1]
+            for i in range(size - 2, -1, -1):
+                if A[i] < A[i + 1]:
+                    break
 
-    return list(set(coordinates))
+            #  If no such index exists, this permutation is the last one
+            else:
+                return
+
+            # Find the largest index j greater than j such that A[i] < A[j]
+            for j in range(size - 1, i, -1):
+                if A[i] < A[j]:
+                    break
+
+            # Swap the value of A[i] with that of A[j], then reverse the
+            # sequence from A[i + 1] to form the new permutation
+            A[i], A[j] = A[j], A[i]
+            A[i+1:] = A[:i-size:-1]  # A[i + 1:][::-1]
+
+    # Algorithm: modified from the above
+    def _partial(A, r):
+        # Split A into the first r items and the last r items
+        head, tail = A[:r], A[r:]
+        right_head_indexes = range(r - 1, -1, -1)
+        left_tail_indexes = range(len(tail))
+
+        while True:
+            # Yield the permutation we have
+            yield tuple(head)
+
+            # Starting from the right, find the first index of the head with
+            # value smaller than the maximum value of the tail - call it i.
+            pivot = tail[-1]
+
+            for i in right_head_indexes:
+                if head[i] < pivot:
+                    break
+
+                pivot = head[i]
+
+            else:
+                return
+
+            # Starting from the left, find the first value of the tail
+            # with a value greater than head[i] and swap.
+            for j in left_tail_indexes:
+                if tail[j] > head[i]:
+                    head[i], tail[j] = tail[j], head[i]
+                    break
+
+            # If we didn't find one, start from the right and find the first
+            # index of the head with a value greater than head[i] and swap.
+            else:
+                for j in right_head_indexes:
+                    if head[j] > head[i]:
+                        head[i], head[j] = head[j], head[i]
+                        break
+
+            # Reverse head[i + 1:] and swap it with tail[:r - (i + 1)]
+            tail += head[:i-r:-1]  # head[i + 1:][::-1]
+            i += 1
+
+            head[i:], tail[:] = tail[:r-i], tail[r-i:]
+
+    items = sorted(iterable)
+    size = len(items)
+
+    if r is None:
+        r = size
+
+    if 0 < r <= size:
+        return _full(items) if (r == size) else _partial(items, r)
+
+    return iter(() if r else ((),))
