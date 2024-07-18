@@ -419,8 +419,8 @@ def block_diag(*arrs):
 
     bad_args = [k for k in range(len(arrs)) if arrs[k].ndim > 2]
     if bad_args:
-        raise ValueError("arguments in the following positions have dimension "
-                         "greater than 2: %s" % bad_args)
+        raise ValueError("arguments in the following positions "
+                         f"have dimension greater than 2: {bad_args}")
 
     shapes = np.array([a.shape for a in arrs])
     out_dtype = np.result_type(*[arr.dtype for arr in arrs])

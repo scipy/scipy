@@ -56,6 +56,11 @@ def xp_var(*args, **kwargs):
     return stats._stats_py._xp_var(*args, **kwargs)
 
 
+def combine_pvalues_weighted(*args, **kwargs):
+    return stats.combine_pvalues(args[0], *args[2:], weights=args[1],
+                                 method='stouffer', **kwargs)
+
+
 axis_nan_policy_cases = [
     # function, args, kwds, number of samples, number of outputs,
     # ... paired, unpacker function
@@ -131,6 +136,7 @@ axis_nan_policy_cases = [
     (stats.alexandergovern, tuple(), {}, 2, 2, False,
      lambda res: (res.statistic, res.pvalue)),
     (stats.combine_pvalues, tuple(), {}, 1, 2, False, None),
+    (combine_pvalues_weighted, tuple(), {}, 2, 2, True, None),
     (xp_mean_1samp, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (xp_mean_2samp, tuple(), dict(), 2, 1, True, lambda x: (x,)),
     (xp_var, tuple(), dict(), 1, 1, False, lambda x: (x,)),

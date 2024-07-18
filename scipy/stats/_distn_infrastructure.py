@@ -464,7 +464,7 @@ def _fit_determine_optimizer(optimizer):
         try:
             optimizer = getattr(optimize, optimizer)
         except AttributeError as e:
-            raise ValueError("%s is not a valid optimizer" % optimizer) from e
+            raise ValueError(f"{optimizer} is not a valid optimizer") from e
     return optimizer
 
 def _isintegral(x):
@@ -826,7 +826,7 @@ class rv_generic:
 
         if shapes_vals is None:
             shapes_vals = ()
-        vals = ', '.join('%.3g' % val for val in shapes_vals)
+        vals = ', '.join(f'{val:.3g}' for val in shapes_vals)
         tempdict['vals'] = vals
 
         tempdict['shapes_'] = self.shapes or ''
@@ -2712,7 +2712,7 @@ class rv_continuous(rv_generic):
         optimizer = _fit_determine_optimizer(optimizer)
         # by now kwds must be empty, since everybody took what they needed
         if kwds:
-            raise TypeError("Unknown arguments: %s." % kwds)
+            raise TypeError(f"Unknown arguments: {kwds}.")
 
         # In some cases, method of moments can be done with fsolve/root
         # instead of an optimizer, but sometimes no solution exists,
@@ -3925,7 +3925,7 @@ def _iter_chunked(x0, x1, chunksize=4, inc=1):
     if inc == 0:
         raise ValueError('Cannot increment by zero.')
     if chunksize <= 0:
-        raise ValueError('Chunk size must be positive; got %s.' % chunksize)
+        raise ValueError(f'Chunk size must be positive; got {chunksize}.')
 
     s = 1 if inc > 0 else -1
     stepsize = abs(chunksize * inc)

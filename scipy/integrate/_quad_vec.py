@@ -98,8 +98,10 @@ class _Bunch:
         self.__dict__.update(**kwargs)
 
     def __repr__(self):
-        return "_Bunch({})".format(", ".join(f"{k}={repr(self.__dict__[k])}"
-                                             for k in self.__keys))
+        key_value_pairs = ', '.join(
+            f'{k}={repr(self.__dict__[k])}' for k in self.__keys
+        )
+        return f"_Bunch({key_value_pairs})"
 
 
 def quad_vec(f, a, b, epsabs=1e-200, epsrel=1e-8, norm='2', cache_size=100e6,

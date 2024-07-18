@@ -765,10 +765,9 @@ class IntegratorConcurrencyError(RuntimeError):
     """
 
     def __init__(self, name):
-        msg = ("Integrator `%s` can be used to solve only a single problem "
-               "at a time. If you want to integrate multiple problems, "
-               "consider using a different integrator "
-               "(see `ode.set_integrator`)") % name
+        msg = (f"Integrator `{name}` can be used to solve only a single problem "
+                "at a time. If you want to integrate multiple problems, "
+                "consider using a different integrator (see `ode.set_integrator`)")
         RuntimeError.__init__(self, msg)
 
 
@@ -809,13 +808,13 @@ class IntegratorBase:
 
     def step(self, f, jac, y0, t0, t1, f_params, jac_params):
         """Make one integration step and return (y1,t1)."""
-        raise NotImplementedError('%s does not support step() method' %
-                                  self.__class__.__name__)
+        raise NotImplementedError(f'{self.__class__.__name__} '
+                                  'does not support step() method')
 
     def run_relax(self, f, jac, y0, t0, t1, f_params, jac_params):
         """Integrate from t=t0 to t>=t1 and return (y1,t)."""
-        raise NotImplementedError('%s does not support run_relax() method' %
-                                  self.__class__.__name__)
+        raise NotImplementedError(f'{self.__class__.__name__} '
+                                  'does not support run_relax() method')
 
     # XXX: __str__ method for getting visual state of the integrator
 
@@ -867,7 +866,7 @@ class vode(IntegratorBase):
         elif re.match(method, r'bdf', re.I):
             self.meth = 2
         else:
-            raise ValueError('Unknown integration method %s' % method)
+            raise ValueError(f'Unknown integration method {method}')
         self.with_jacobian = with_jacobian
         self.rtol = rtol
         self.atol = atol
@@ -962,7 +961,7 @@ class vode(IntegratorBase):
         elif mf in [24, 25]:
             lrw = 22 + 11 * n + (3 * self.ml + 2 * self.mu) * n
         else:
-            raise ValueError('Unexpected mf=%s' % mf)
+            raise ValueError(f'Unexpected mf={mf}')
 
         if mf % 10 in [0, 3]:
             liw = 30
@@ -1009,8 +1008,8 @@ class vode(IntegratorBase):
         self.istate = istate
         if istate < 0:
             unexpected_istate_msg = f'Unexpected istate={istate:d}'
-            warnings.warn('{:s}: {:s}'.format(self.__class__.__name__,
-                          self.messages.get(istate, unexpected_istate_msg)),
+            warnings.warn(f'{self.__class__.__name__:s}: '
+                          f'{self.messages.get(istate, unexpected_istate_msg):s}',
                           stacklevel=2)
             self.success = 0
         else:
@@ -1178,8 +1177,8 @@ class dopri5(IntegratorBase):
         self.istate = istate
         if istate < 0:
             unexpected_istate_msg = f'Unexpected istate={istate:d}'
-            warnings.warn('{:s}: {:s}'.format(self.__class__.__name__,
-                          self.messages.get(istate, unexpected_istate_msg)),
+            warnings.warn(f'{self.__class__.__name__:s}: '
+                          f'{self.messages.get(istate, unexpected_istate_msg):s}',
                           stacklevel=2)
             self.success = 0
         return y, x
@@ -1312,7 +1311,7 @@ class lsoda(IntegratorBase):
         elif jt in [4, 5]:
             lrs = 22 + (self.max_order_s + 5 + 2 * self.ml + self.mu) * n
         else:
-            raise ValueError('Unexpected jt=%s' % jt)
+            raise ValueError(f'Unexpected jt={jt}')
         lrw = max(lrn, lrs)
         liw = 20 + n
         rwork = zeros((lrw,), float)
@@ -1348,8 +1347,8 @@ class lsoda(IntegratorBase):
         self.istate = istate
         if istate < 0:
             unexpected_istate_msg = f'Unexpected istate={istate:d}'
-            warnings.warn('{:s}: {:s}'.format(self.__class__.__name__,
-                          self.messages.get(istate, unexpected_istate_msg)),
+            warnings.warn(f'{self.__class__.__name__:s}: '
+                          f'{self.messages.get(istate, unexpected_istate_msg):s}',
                           stacklevel=2)
             self.success = 0
         else:

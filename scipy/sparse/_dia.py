@@ -68,8 +68,8 @@ class _dia_base(_data_matrix):
             try:
                 arg1 = np.asarray(arg1)
             except Exception as e:
-                raise ValueError("unrecognized form for"
-                        " %s_matrix constructor" % self.format) from e
+                raise ValueError("unrecognized form for "
+                                 f"{self.format}_matrix constructor") from e
             if isinstance(self, sparray) and arg1.ndim != 2:
                 raise ValueError(f"DIA arrays don't support {arg1.ndim}D input. Use 2D")
             A = self._coo_container(arg1, dtype=dtype, shape=shape).todia()
