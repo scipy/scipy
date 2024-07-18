@@ -2,12 +2,15 @@
 #include <iostream>
 #include <tuple>
 #include <vector>
+#include <string>
 
 #include "../_build_utils/src/npy_cblas.h"
 #include "../_build_utils/src/fortran_defs.h"
 
 #define DLARTG BLAS_FUNC(dlartg)
 
+/* MSVC */
+#define ssize_t ptrdiff_t
 
 namespace fitpack {
 
