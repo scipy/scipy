@@ -25,9 +25,6 @@ B-splines
 .. autosummary::
    :toctree: generated/
 
-   bspline        -- B-spline basis function of order n.
-   cubic          -- B-spline basis function of order 3.
-   quadratic      -- B-spline basis function of order 2.
    gauss_spline   -- Gaussian approximation to the B-spline basis function.
    cspline1d      -- Coefficients for 1-D cubic (3rd order) B-spline.
    qspline1d      -- Coefficients for 1-D quadratic (2nd order) B-spline.
@@ -128,7 +125,6 @@ Lower-level filter design functions:
    buttap         -- Return (z,p,k) for analog prototype of Butterworth filter.
    cheb1ap        -- Return (z,p,k) for type I Chebyshev filter.
    cheb2ap        -- Return (z,p,k) for type II Chebyshev filter.
-   cmplx_sort     -- Sort roots based on magnitude.
    ellipap        -- Return (z,p,k) for analog prototype of elliptic filter.
    lp2bp          -- Transform a lowpass filter prototype to a bandpass filter.
    lp2bp_zpk      -- Transform a lowpass filter prototype to a bandpass filter.
@@ -172,11 +168,8 @@ Continuous-time linear systems
    TransferFunction -- Linear time invariant system in transfer function form.
    ZerosPolesGain   -- Linear time invariant system in zeros, poles, gain form.
    lsim             -- Continuous-time simulation of output to linear system.
-   lsim2            -- Like lsim, but `scipy.integrate.odeint` is used.
    impulse          -- Impulse response of linear, time-invariant (LTI) system.
-   impulse2         -- Like impulse, but `scipy.integrate.odeint` is used.
    step             -- Step response of continuous-time LTI system.
-   step2            -- Like step, but `scipy.integrate.odeint` is used.
    freqresp         -- Frequency response of a continuous-time LTI system.
    bode             -- Bode magnitude and phase data (continuous-time LTI).
 
@@ -242,20 +235,6 @@ obtain these windows by name:
 
    get_window -- Return a window of a given length and type.
 
-Wavelets
-========
-
-.. autosummary::
-   :toctree: generated/
-
-   cascade      -- Compute scaling function and wavelet from coefficients.
-   daub         -- Return low-pass.
-   morlet       -- Complex Morlet wavelet.
-   qmf          -- Return quadrature mirror filter from low-pass.
-   ricker       -- Return ricker wavelet.
-   morlet2      -- Return Morlet wavelet, compatible with cwt.
-   cwt          -- Perform continuous wavelet transform.
-
 Peak finding
 ============
 
@@ -280,11 +259,14 @@ Spectral analysis
    welch          -- Compute a periodogram using Welch's method.
    csd            -- Compute the cross spectral density, using Welch's method.
    coherence      -- Compute the magnitude squared coherence, using Welch's method.
-   spectrogram    -- Compute the spectrogram.
+   spectrogram    -- Compute the spectrogram (legacy).
    lombscargle    -- Computes the Lomb-Scargle periodogram.
    vectorstrength -- Computes the vector strength.
-   stft           -- Compute the Short Time Fourier Transform.
-   istft          -- Compute the Inverse Short Time Fourier Transform.
+   ShortTimeFFT   -- Interface for calculating the \
+                     :ref:`Short Time Fourier Transform <tutorial_stft>` and \
+                     its inverse.
+   stft           -- Compute the Short Time Fourier Transform (legacy).
+   istft          -- Compute the Inverse Short Time Fourier Transform (legacy).
    check_COLA     -- Check the COLA constraint for iSTFT reconstruction.
    check_NOLA     -- Check the NOLA constraint for iSTFT reconstruction.
 
@@ -306,20 +288,17 @@ repeatedly generate the same chirp signal with every call.  In these cases,
 use the classes to create a reusable function instead.
 
 """
+
 from . import _sigtools, windows
 from ._waveforms import *
 from ._max_len_seq import max_len_seq
 from ._upfirdn import upfirdn
 
-from ._spline import (  # noqa: F401
-    cspline2d,
-    qspline2d,
-    sepfir2d,
-    symiirorder1,
-    symiirorder2,
+from ._spline import (
+    sepfir2d
 )
 
-from ._bsplines import *
+from ._spline_filters import *
 from ._filter_design import *
 from ._fir_filter_design import *
 from ._ltisys import *
@@ -327,7 +306,7 @@ from ._lti_conversion import *
 from ._signaltools import *
 from ._savitzky_golay import savgol_coeffs, savgol_filter
 from ._spectral_py import *
-from ._wavelets import *
+from ._short_time_fft import *
 from ._peak_finding import *
 from ._czt import *
 from .windows import get_window  # keep this one in signal namespace
@@ -338,48 +317,9 @@ from . import (
     spectral, signaltools, waveforms, wavelets, spline
 )
 
-# deal with * -> windows.* doc-only soft-deprecation
-deprecated_windows = ('boxcar', 'triang', 'parzen', 'bohman', 'blackman',
-                      'nuttall', 'blackmanharris', 'flattop', 'bartlett',
-                      'barthann', 'hamming', 'kaiser', 'gaussian',
-                      'general_gaussian', 'chebwin', 'cosine',
-                      'hann', 'exponential', 'tukey')
-
-
-def deco(name):
-    f = getattr(windows, name)
-    # Add deprecation to docstring
-
-    def wrapped(*args, **kwargs):
-        return f(*args, **kwargs)
-
-    wrapped.__name__ = name
-    wrapped.__module__ = 'scipy.signal'
-    if hasattr(f, '__qualname__'):
-        wrapped.__qualname__ = f.__qualname__
-
-    if f.__doc__:
-        lines = f.__doc__.splitlines()
-        for li, line in enumerate(lines):
-            if line.strip() == 'Parameters':
-                break
-        else:
-            raise RuntimeError('dev error: badly formatted doc')
-        spacing = ' ' * line.find('P')
-        lines.insert(li, ('{0}.. warning:: scipy.signal.{1} is deprecated,\n'
-                          '{0}             use scipy.signal.windows.{1} '
-                          'instead.\n'.format(spacing, name)))
-        wrapped.__doc__ = '\n'.join(lines)
-
-    return wrapped
-
-
-for name in deprecated_windows:
-    locals()[name] = deco(name)
-
-del deprecated_windows, name, deco
-
-__all__ = [s for s in dir() if not s.startswith('_')]
+__all__ = [
+    s for s in dir() if not s.startswith("_")
+]
 
 from scipy._lib._testutils import PytestTester
 test = PytestTester(__name__)

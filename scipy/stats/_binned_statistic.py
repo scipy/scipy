@@ -1,6 +1,6 @@
 import builtins
+from warnings import catch_warnings, simplefilter
 import numpy as np
-from numpy.testing import suppress_warnings
 from operator import index
 from collections import namedtuple
 
@@ -535,7 +535,7 @@ def binned_statistic_dd(sample, values, statistic='mean',
     """
     known_stats = ['mean', 'median', 'count', 'sum', 'std', 'min', 'max']
     if not callable(statistic) and statistic not in known_stats:
-        raise ValueError('invalid statistic %r' % (statistic,))
+        raise ValueError(f'invalid statistic {statistic!r}')
 
     try:
         bins = index(bins)
@@ -546,7 +546,7 @@ def binned_statistic_dd(sample, values, statistic='mean',
 
     # NOTE: for _bin_edges(), see e.g. gh-11365
     if isinstance(bins, int) and not np.isfinite(sample).all():
-        raise ValueError('%r contains non-finite values.' % (sample,))
+        raise ValueError(f'{sample!r} contains non-finite values.')
 
     # `Ndim` is the number of dimensions (e.g. `2` for `binned_statistic_2d`)
     # `Dlen` is the length of elements along each dimension.
@@ -646,8 +646,8 @@ def binned_statistic_dd(sample, values, statistic='mean',
             i = np.argsort(values[vv])
             result[vv, binnumbers[i]] = values[vv, i]
     elif callable(statistic):
-        with np.errstate(invalid='ignore'), suppress_warnings() as sup:
-            sup.filter(RuntimeWarning)
+        with np.errstate(invalid='ignore'), catch_warnings():
+            simplefilter("ignore", RuntimeWarning)
             try:
                 null = statistic([])
             except Exception:
@@ -733,8 +733,8 @@ def _bin_edges(sample, bins=None, range=None):
         for i in builtins.range(Ndim):
             if range[i][1] < range[i][0]:
                 raise ValueError(
-                    "In {}range, start must be <= stop".format(
-                        f"dimension {i + 1} of " if Ndim > 1 else ""))
+                    f"In {f'dimension {i + 1} of ' if Ndim > 1 else ''}range,"
+                    " start must be <= stop")
             smin[i], smax[i] = range[i]
 
     # Make sure the bins have a finite width.

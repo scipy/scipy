@@ -1,3 +1,4 @@
+#include <Python.h>
 #include "wright.hh"
 
 /**********************************************************************/
@@ -72,15 +73,15 @@
 /* Output: returns 0 on successful exit.                               */
 /**********************************************************************/
 
-#include <Python.h>
 extern "C" {
 #include <math.h>
-#include "sf_error.h"
 #include "_round.h"
 }
 
 #include <cmath>
 #include <cfloat>
+
+#include "sf_error.h"
 
 using std::complex;
 

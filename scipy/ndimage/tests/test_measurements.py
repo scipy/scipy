@@ -1,9 +1,16 @@
 import os.path
 
 import numpy as np
-from numpy.testing import (assert_, assert_array_almost_equal, assert_equal,
-                           assert_almost_equal, assert_array_equal,
-                           suppress_warnings)
+from numpy.testing import (
+    assert_,
+    assert_allclose,
+    assert_almost_equal,
+    assert_array_almost_equal,
+    assert_array_equal,
+    assert_equal,
+    suppress_warnings,
+)
+import pytest
 from pytest import raises as assert_raises
 
 import scipy.ndimage as ndimage
@@ -1382,7 +1389,6 @@ class TestWatershedIft:
 
     def test_watershed_ift08(self):
         # Test cost larger than uint8. See gh-10069.
-        shape = (2, 2)
         data = np.array([[256, 0],
                          [0, 0]], np.uint16)
         markers = np.array([[1, 0],
@@ -1391,3 +1397,23 @@ class TestWatershedIft:
         expected = [[1, 1],
                     [1, 1]]
         assert_array_almost_equal(out, expected)
+
+    def test_watershed_ift09(self):
+        # Test large cost. See gh-19575
+        data = np.array([[np.iinfo(np.uint16).max, 0],
+                         [0, 0]], np.uint16)
+        markers = np.array([[1, 0],
+                            [0, 0]], np.int8)
+        out = ndimage.watershed_ift(data, markers)
+        expected = [[1, 1],
+                    [1, 1]]
+        assert_allclose(out, expected)
+
+
+@pytest.mark.parametrize("dt", [np.intc, np.uintc])
+def test_gh_19423(dt):
+    rng = np.random.default_rng(123)
+    max_val = 8
+    image = rng.integers(low=0, high=max_val, size=(10, 12)).astype(dtype=dt)
+    val_idx = ndimage.value_indices(image)
+    assert len(val_idx.keys()) == max_val

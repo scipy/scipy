@@ -3,10 +3,16 @@ basinhopping: The basinhopping global optimization algorithm
 """
 import numpy as np
 import math
+import inspect
 import scipy.optimize
 from scipy._lib._util import check_random_state
 
 __all__ = ['basinhopping']
+
+
+_params = (inspect.Parameter('res_new', kind=inspect.Parameter.KEYWORD_ONLY),
+           inspect.Parameter('res_old', kind=inspect.Parameter.KEYWORD_ONLY))
+_new_accept_test_signature = inspect.Signature(parameters=_params)
 
 
 class Storage:
@@ -21,7 +27,8 @@ class Storage:
         self.minres.x = np.copy(minres.x)
 
     def update(self, minres):
-        if minres.fun < self.minres.fun:
+        if minres.success and (minres.fun < self.minres.fun
+                               or not self.minres.success):
             self._add(minres)
             return True
         else:
@@ -75,6 +82,7 @@ class BasinHoppingRunner:
                 print("warning: basinhopping: local minimization failure")
         self.x = np.copy(minres.x)
         self.energy = minres.fun
+        self.incumbent_minres = minres  # best minimize result found so far
         if self.disp:
             print("basinhopping step %d: f %g" % (self.nstep, self.energy))
 
@@ -107,7 +115,6 @@ class BasinHoppingRunner:
             self.res.minimization_failures += 1
             if self.disp:
                 print("warning: basinhopping: local minimization failure")
-
         if hasattr(minres, "nfev"):
             self.res.nfev += minres.nfev
         if hasattr(minres, "njev"):
@@ -122,8 +129,12 @@ class BasinHoppingRunner:
         # steps are not sufficient.
         accept = True
         for test in self.accept_tests:
-            testres = test(f_new=energy_after_quench, x_new=x_after_quench,
-                           f_old=self.energy, x_old=self.x)
+            if inspect.signature(test) == _new_accept_test_signature:
+                testres = test(res_new=minres, res_old=self.incumbent_minres)
+            else:
+                testres = test(f_new=energy_after_quench, x_new=x_after_quench,
+                               f_old=self.energy, x_old=self.x)
+
             if testres == 'force accept':
                 accept = True
                 break
@@ -153,6 +164,7 @@ class BasinHoppingRunner:
         if accept:
             self.energy = minres.fun
             self.x = np.copy(minres.x)
+            self.incumbent_minres = minres  # best minimize result found so far
             new_global_min = self.storage.update(minres)
 
         # print some information
@@ -226,10 +238,9 @@ class AdaptiveStepsize:
             # We're not accepting enough steps. Take smaller steps.
             self.takestep.stepsize *= self.factor
         if self.verbose:
-            print("adaptive stepsize: acceptance rate %f target %f new "
-                  "stepsize %g old stepsize %g" % (accept_rate,
-                  self.target_accept_rate, self.takestep.stepsize,
-                  old_stepsize))
+            print(f"adaptive stepsize: acceptance rate {accept_rate:f} target "
+                  f"{self.target_accept_rate:f} new stepsize "
+                  f"{self.takestep.stepsize:g} old stepsize {old_stepsize:g}")
 
     def take_step(self, x):
         self.nstep += 1
@@ -318,8 +329,9 @@ class Metropolis:
         self.beta = 1.0 / T if T != 0 else float('inf')
         self.random_gen = check_random_state(random_gen)
 
-    def accept_reject(self, energy_new, energy_old):
+    def accept_reject(self, res_new, res_old):
         """
+        Assuming the local search underlying res_new was successful:
         If new energy is lower than old, it will always be accepted.
         If new is higher than old, there is a chance it will be accepted,
         less likely for larger differences.
@@ -333,18 +345,17 @@ class Metropolis:
             #
             # Ignore this warning so when the algorithm is on a flat plane, it always
             # accepts the step, to try to move off the plane.
-            prod = -(energy_new - energy_old) * self.beta
+            prod = -(res_new.fun - res_old.fun) * self.beta
             w = math.exp(min(0, prod))
 
         rand = self.random_gen.uniform()
-        return w >= rand
+        return w >= rand and (res_new.success or not res_old.success)
 
-    def __call__(self, **kwargs):
+    def __call__(self, *, res_new, res_old):
         """
         f_new and f_old are mandatory in kwargs
         """
-        return bool(self.accept_reject(kwargs["f_new"],
-                    kwargs["f_old"]))
+        return bool(self.accept_reject(res_new, res_old))
 
 
 def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
@@ -384,11 +395,11 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
         Extra keyword arguments to be passed to the local minimizer
         `scipy.optimize.minimize` Some important options could be:
 
-            method : str
-                The minimization method (e.g. ``"L-BFGS-B"``)
-            args : tuple
-                Extra arguments passed to the objective function (`func`) and
-                its derivatives (Jacobian, Hessian).
+        method : str
+            The minimization method (e.g. ``"L-BFGS-B"``)
+        args : tuple
+            Extra arguments passed to the objective function (`func`) and
+            its derivatives (Jacobian, Hessian).
 
     take_step : callable ``take_step(x)``, optional
         Replace the default step-taking routine with this routine. The default
@@ -422,7 +433,6 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
         Stop the run if the global minimum candidate remains the same for this
         number of iterations.
     seed : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
-
         If `seed` is None (or `np.random`), the `numpy.random.RandomState`
         singleton is used.
         If `seed` is an int, a new ``RandomState`` instance is used,
@@ -568,8 +578,9 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
     >>> minimizer_kwargs = {"method": "BFGS"}
     >>> ret = basinhopping(func, x0, minimizer_kwargs=minimizer_kwargs,
     ...                    niter=200)
-    >>> print("global minimum: x = %.4f, f(x) = %.4f" % (ret.x, ret.fun))
-    global minimum: x = -0.1951, f(x) = -1.0009
+    >>> # the global minimum is:
+    >>> ret.x, ret.fun
+    -0.1951, -1.0009
 
     Next consider a 2-D minimization problem. Also, this time, we
     will use gradient information to significantly speed up the search.
@@ -646,7 +657,7 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
     The minimum at -1.0109 is actually the global minimum, found already on the
     8th iteration.
 
-    """
+    """ # numpy/numpydoc#87  # noqa: E501
     if target_accept_rate <= 0. or target_accept_rate >= 1.:
         raise ValueError('target_accept_rate has to be in range (0, 1)')
     if stepwise_factor <= 0. or stepwise_factor >= 1.:

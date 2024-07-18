@@ -13,6 +13,8 @@ from scipy.interpolate._fitpack2 import (UnivariateSpline,
         LSQSphereBivariateSpline, SmoothSphereBivariateSpline,
         RectSphereBivariateSpline)
 
+from scipy._lib._testutils import _run_concurrent_barrier
+
 
 class TestUnivariateSpline:
     def test_linear_constant(self):
@@ -66,6 +68,12 @@ class TestUnivariateSpline:
         y = [0, 4, 9, 12, 21]
         spl = UnivariateSpline(x, y, k=3)
         assert_almost_equal(spl.roots()[0], 1.050290639101332)
+
+    def test_roots_length(self): # for gh18335
+        x = np.linspace(0, 50 * np.pi, 1000)
+        y = np.cos(x)
+        spl = UnivariateSpline(x, y, s=0)
+        assert_equal(len(spl.roots()), 50)
 
     def test_derivatives(self):
         x = [1, 3, 5, 7, 9]
@@ -325,10 +333,10 @@ class TestUnivariateSpline:
             LSQUnivariateSpline(x_values, y_values, t_values, w=w_values)
         assert "x, y, and w should have a same length" in str(info.value)
 
-        with assert_raises(ValueError) as info:
+        message = "Interior knots t must satisfy Schoenberg-Whitney conditions"
+        with assert_raises(ValueError, match=message) as info:
             bbox = (100, -100)
             LSQUnivariateSpline(x_values, y_values, t_values, bbox=bbox)
-        assert "Interior knots t must satisfy Schoenberg-Whitney conditions" in str(info.value)
 
         with assert_raises(ValueError) as info:
             bbox = (-1)
@@ -380,6 +388,20 @@ There is an approximation returned but the corresponding weighted sum
 of squared residuals does not satisfy the condition abs\(fp-s\)/s < tol.""")
             UnivariateSpline(x, y, k=1)
             assert_equal(len(r), 1)
+
+    def test_concurrency(self):
+        # Check that no segfaults appear with concurrent access to
+        # UnivariateSpline
+        xx = np.arange(100, dtype=float)
+        yy = xx**3
+        x = np.arange(100, dtype=float)
+        x[1] = x[0]
+        spl = UnivariateSpline(xx, yy, check_finite=True)
+
+        def worker_fn(_, interp, x):
+            interp(x)
+
+        _run_concurrent_barrier(10, worker_fn, spl, x)
 
 
 class TestLSQBivariateSpline:
@@ -786,7 +808,7 @@ class TestLSQSphereBivariateSpline:
         # define knots and extract data values at the knots
         knotst = theta[::5]
         knotsp = phi[::5]
-        w = ones((lats.ravel().shape[0]))
+        w = ones(lats.ravel().shape[0])
 
         # np.array input
         spl1 = LSQSphereBivariateSpline(lats.ravel(), lons.ravel(),
@@ -1162,7 +1184,8 @@ class TestRectSphereBivariateSpline:
                         rtol=1e-4, atol=1e-4)
         assert_allclose(lut(x, y, dphi=1), _numdiff_2d(lut, x, y, dy=1),
                         rtol=1e-4, atol=1e-4)
-        assert_allclose(lut(x, y, dtheta=1, dphi=1), _numdiff_2d(lut, x, y, dx=1, dy=1, eps=1e-6),
+        assert_allclose(lut(x, y, dtheta=1, dphi=1),
+                        _numdiff_2d(lut, x, y, dx=1, dy=1, eps=1e-6),
                         rtol=1e-3, atol=1e-3)
 
         assert_array_equal(lut(x, y, dtheta=1),
@@ -1199,7 +1222,8 @@ class TestRectSphereBivariateSpline:
                         _numdiff_2d(lambda x,y: lut(x,y,grid=False), x, y, dy=1),
                         rtol=1e-4, atol=1e-4)
         assert_allclose(lut(x, y, dtheta=1, dphi=1, grid=False),
-                        _numdiff_2d(lambda x,y: lut(x,y,grid=False), x, y, dx=1, dy=1, eps=1e-6),
+                        _numdiff_2d(lambda x,y: lut(x,y,grid=False),
+                                    x, y, dx=1, dy=1, eps=1e-6),
                         rtol=1e-3, atol=1e-3)
 
     def test_invalid_input_2(self):
@@ -1294,7 +1318,7 @@ def _numdiff_2d(func, x, y, dx=0, dy=0, eps=1e-8):
         raise ValueError("invalid derivative order")
 
 
-class Test_DerivedBivariateSpline(object):
+class Test_DerivedBivariateSpline:
     """Test the creation, usage, and attribute access of the (private)
     _DerivedBivariateSpline class.
     """

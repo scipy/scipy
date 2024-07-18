@@ -23,8 +23,8 @@ def main():
     with mpmath.workdps(50):
         p, q = lambertw_pade()
         p, q = p[::-1], q[::-1]
-        print("p = {}".format(p))
-        print("q = {}".format(q))
+        print(f"p = {p}")
+        print(f"q = {q}")
 
     x, y = np.linspace(-1.5, 1.5, 75), np.linspace(-1.5, 1.5, 75)
     x, y = np.meshgrid(x, y)

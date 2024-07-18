@@ -41,7 +41,7 @@ def make_spline_knot_matrix(n, order, mode='mirror'):
     elif mode == 'grid-wrap':
         start, step = -1, -1
     else:
-        raise ValueError('unsupported mode {}'.format(mode))
+        raise ValueError(f'unsupported mode {mode}')
 
     for row in range(len(knot_values) - 1):
         for idx, knot_value in enumerate(knot_values[row + 1:]):

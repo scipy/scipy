@@ -4,7 +4,6 @@
 import sys
 
 from io import BytesIO
-cStringIO = BytesIO
 
 import numpy as np
 
@@ -91,7 +90,7 @@ def test_read_tag():
     str_io = BytesIO()
     r = _make_readerlike(str_io)
     c_reader = m5u.VarReader5(r)
-    # This works for StringIO but _not_ cStringIO
+    # This works for StringIO but _not_ BytesIO
     assert_raises(OSError, c_reader.read_tag)
     # bad SDE
     tag = _make_tag('i4', 1, mio5p.miINT32, sde=True)
@@ -103,7 +102,7 @@ def test_read_tag():
 def test_read_stream():
     tag = _make_tag('i4', 1, mio5p.miINT32, sde=True)
     tag_str = tag.tobytes()
-    str_io = cStringIO(tag_str)
+    str_io = BytesIO(tag_str)
     st = streams.make_stream(str_io)
     s = streams._read_into(st, tag.itemsize)
     assert_equal(s, tag.tobytes())
@@ -111,7 +110,7 @@ def test_read_stream():
 
 def test_read_numeric():
     # make reader-like thing
-    str_io = cStringIO()
+    str_io = BytesIO()
     r = _make_readerlike(str_io)
     # check simplest of tags
     for base_dt, val, mdtype in (('u2', 30, mio5p.miUINT16),
@@ -139,7 +138,7 @@ def test_read_numeric():
 
 def test_read_numeric_writeable():
     # make reader-like thing
-    str_io = cStringIO()
+    str_io = BytesIO()
     r = _make_readerlike(str_io, '<')
     c_reader = m5u.VarReader5(r)
     dt = np.dtype('<u2')
@@ -153,7 +152,7 @@ def test_read_numeric_writeable():
 def test_zero_byte_string():
     # Tests hack to allow chars of non-zero length, but 0 bytes
     # make reader-like thing
-    str_io = cStringIO()
+    str_io = BytesIO()
     r = _make_readerlike(str_io, boc.native_code)
     c_reader = m5u.VarReader5(r)
     tag_dt = np.dtype([('mdtype', 'u4'), ('byte_count', 'u4')])

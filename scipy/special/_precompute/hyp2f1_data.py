@@ -58,7 +58,7 @@ parameter groups to which computation will be restricted.
 The argument z is taken from a grid in the box
     -box_size <= real(z) <= box_size, -box_size <= imag(z) <= box_size.
 with grid size specified using the optional command line argument --grid_size,
-and box_size specificed with the command line argument --box_size.
+and box_size specified with the command line argument --box_size.
 The default value of grid_size is 20 and the default value of box_size is 2.0,
 yielding a 20 * 20 grid in the box with corners -2-2j, -2+2j, 2-2j, 2+2j.
 
@@ -160,7 +160,7 @@ def get_results(params, Z, n_jobs=1, compute_mp=True):
     Parameters
     ----------
     params : iterable
-        iterable of tuples of floats (a, b, c) specificying parameter values
+        iterable of tuples of floats (a, b, c) specifying parameter values
         a, b, c for hyp2f1
     Z : iterable of complex
         Arguments at which to evaluate hyp2f1

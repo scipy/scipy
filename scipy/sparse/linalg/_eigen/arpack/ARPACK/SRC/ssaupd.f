@@ -3,31 +3,31 @@ c\BeginDoc
 c
 c\Name: ssaupd
 c
-c\Description: 
+c\Description:
 c
-c  Reverse communication interface for the Implicitly Restarted Arnoldi 
-c  Iteration.  For symmetric problems this reduces to a variant of the Lanczos 
-c  method.  This method has been designed to compute approximations to a 
-c  few eigenpairs of a linear operator OP that is real and symmetric 
-c  with respect to a real positive semi-definite symmetric matrix B, 
+c  Reverse communication interface for the Implicitly Restarted Arnoldi
+c  Iteration.  For symmetric problems this reduces to a variant of the Lanczos
+c  method.  This method has been designed to compute approximations to a
+c  few eigenpairs of a linear operator OP that is real and symmetric
+c  with respect to a real positive semi-definite symmetric matrix B,
 c  i.e.
-c                   
-c       B*OP = (OP`)*B.  
 c
-c  Another way to express this condition is 
+c       B*OP = (OP`)*B.
+c
+c  Another way to express this condition is
 c
 c       < x,OPy > = < OPx,y >  where < z,w > = z`Bw  .
-c  
-c  In the standard eigenproblem B is the identity matrix.  
+c
+c  In the standard eigenproblem B is the identity matrix.
 c  ( A` denotes transpose of A)
 c
 c  The computed approximate eigenvalues are called Ritz values and
 c  the corresponding approximate eigenvectors are called Ritz vectors.
 c
-c  ssaupd is usually called iteratively to solve one of the 
+c  ssaupd is usually called iteratively to solve one of the
 c  following problems:
 c
-c  Mode 1:  A*x = lambda*x, A symmetric 
+c  Mode 1:  A*x = lambda*x, A symmetric
 c           ===> OP = A  and  B = I.
 c
 c  Mode 2:  A*x = lambda*M*x, A symmetric, M symmetric positive definite
@@ -35,10 +35,10 @@ c           ===> OP = inv[M]*A  and  B = M.
 c           ===> (If M can be factored see remark 3 below)
 c
 c  Mode 3:  K*x = lambda*M*x, K symmetric, M symmetric positive semi-definite
-c           ===> OP = (inv[K - sigma*M])*M  and  B = M. 
+c           ===> OP = (inv[K - sigma*M])*M  and  B = M.
 c           ===> Shift-and-Invert mode
 c
-c  Mode 4:  K*x = lambda*KG*x, K symmetric positive semi-definite, 
+c  Mode 4:  K*x = lambda*KG*x, K symmetric positive semi-definite,
 c           KG symmetric indefinite
 c           ===> OP = (inv[K - sigma*KG])*K  and  B = K.
 c           ===> Buckling mode
@@ -60,13 +60,13 @@ c        the accuracy requirements for the eigenvalue
 c        approximations.
 c
 c\Usage:
-c  call ssaupd 
+c  call ssaupd
 c     ( IDO, BMAT, N, WHICH, NEV, TOL, RESID, NCV, V, LDV, IPARAM,
 c       IPNTR, WORKD, WORKL, LWORKL, INFO )
 c
 c\Arguments
 c  IDO     Integer.  (INPUT/OUTPUT)
-c          Reverse communication flag.  IDO must be zero on the first 
+c          Reverse communication flag.  IDO must be zero on the first
 c          call to ssaupd.  IDO will be set internally to
 c          indicate the type of operation to be performed.  Control is
 c          then given back to the calling routine which has the
@@ -95,7 +95,7 @@ c                    IPNTR(11) is the pointer into WORKL for
 c                    placing the shifts. See remark 6 below.
 c          IDO = 99: done
 c          -------------------------------------------------------------
-c             
+c
 c  BMAT    Character*1.  (INPUT)
 c          BMAT specifies the type of the matrix B that defines the
 c          semi-inner product for the operator OP.
@@ -111,7 +111,7 @@ c
 c          'LA' - compute the NEV largest (algebraic) eigenvalues.
 c          'SA' - compute the NEV smallest (algebraic) eigenvalues.
 c          'LM' - compute the NEV largest (in magnitude) eigenvalues.
-c          'SM' - compute the NEV smallest (in magnitude) eigenvalues. 
+c          'SM' - compute the NEV smallest (in magnitude) eigenvalues.
 c          'BE' - compute NEV eigenvalues, half from each end of the
 c                 spectrum.  When NEV is odd, compute one more from the
 c                 high end than from the low end.
@@ -121,27 +121,27 @@ c  NEV     Integer.  (INPUT)
 c          Number of eigenvalues of OP to be computed. 0 < NEV < N.
 c
 c  TOL     Real  scalar.  (INPUT)
-c          Stopping criterion: the relative accuracy of the Ritz value 
+c          Stopping criterion: the relative accuracy of the Ritz value
 c          is considered acceptable if BOUNDS(I) .LE. TOL*ABS(RITZ(I)).
 c          If TOL .LE. 0. is passed a default is set:
-c          DEFAULT = slamch('EPS')  (machine precision as computed
-c                    by the LAPACK auxiliary subroutine slamch).
+c          DEFAULT = SLAMCH('EPS')  (machine precision as computed
+c                    by the LAPACK auxiliary subroutine SLAMCH).
 c
 c  RESID   Real  array of length N.  (INPUT/OUTPUT)
-c          On INPUT: 
+c          On INPUT:
 c          If INFO .EQ. 0, a random initial residual vector is used.
 c          If INFO .NE. 0, RESID contains the initial residual vector,
 c                          possibly from a previous run.
 c          On OUTPUT:
-c          RESID contains the final residual vector. 
+c          RESID contains the final residual vector.
 c
 c  NCV     Integer.  (INPUT)
 c          Number of columns of the matrix V (less than or equal to N).
-c          This will indicate how many Lanczos vectors are generated 
-c          at each iteration.  After the startup phase in which NEV 
-c          Lanczos vectors are generated, the algorithm generates 
+c          This will indicate how many Lanczos vectors are generated
+c          at each iteration.  After the startup phase in which NEV
+c          Lanczos vectors are generated, the algorithm generates
 c          NCV-NEV Lanczos vectors at each subsequent update iteration.
-c          Most of the cost in generating each Lanczos vector is in the 
+c          Most of the cost in generating each Lanczos vector is in the
 c          matrix-vector product OP*x. (See remark 4 below).
 c
 c  V       Real  N by NCV array.  (OUTPUT)
@@ -161,10 +161,10 @@ c                      reverse communication.  The NCV eigenvalues of
 c                      the current tridiagonal matrix T are returned in
 c                      the part of WORKL array corresponding to RITZ.
 c                      See remark 6 below.
-c          ISHIFT = 1: exact shifts with respect to the reduced 
-c                      tridiagonal matrix T.  This is equivalent to 
-c                      restarting the iteration with a starting vector 
-c                      that is a linear combination of Ritz vectors 
+c          ISHIFT = 1: exact shifts with respect to the reduced
+c                      tridiagonal matrix T.  This is equivalent to
+c                      restarting the iteration with a starting vector
+c                      that is a linear combination of Ritz vectors
 c                      associated with the "wanted" Ritz values.
 c          -------------------------------------------------------------
 c
@@ -172,8 +172,8 @@ c          IPARAM(2) = LEVEC
 c          No longer referenced. See remark 2 below.
 c
 c          IPARAM(3) = MXITER
-c          On INPUT:  maximum number of Arnoldi update iterations allowed. 
-c          On OUTPUT: actual number of Arnoldi update iterations taken. 
+c          On INPUT:  maximum number of Arnoldi update iterations allowed.
+c          On OUTPUT: actual number of Arnoldi update iterations taken.
 c
 c          IPARAM(4) = NB: blocksize to be used in the recurrence.
 c          The code currently works only for NB = 1.
@@ -183,11 +183,11 @@ c          This represents the number of Ritz values that satisfy
 c          the convergence criterion.
 c
 c          IPARAM(6) = IUPD
-c          No longer referenced. Implicit restarting is ALWAYS used. 
+c          No longer referenced. Implicit restarting is ALWAYS used.
 c
 c          IPARAM(7) = MODE
 c          On INPUT determines what type of eigenproblem is being solved.
-c          Must be 1,2,3,4,5; See under \Description of ssaupd for the 
+c          Must be 1,2,3,4,5; See under \Description of ssaupd for the
 c          five modes available.
 c
 c          IPARAM(8) = NP
@@ -199,7 +199,7 @@ c
 c          IPARAM(9) = NUMOP, IPARAM(10) = NUMOPB, IPARAM(11) = NUMREO,
 c          OUTPUT: NUMOP  = total number of OP*x operations,
 c                  NUMOPB = total number of B*x operations if BMAT='G',
-c                  NUMREO = total number of steps of re-orthogonalization.        
+c                  NUMREO = total number of steps of re-orthogonalization.
 c
 c  IPNTR   Integer array of length 11.  (OUTPUT)
 c          Pointer to mark the starting locations in the WORKD and WORKL
@@ -207,7 +207,7 @@ c          arrays for matrices/vectors used by the Lanczos iteration.
 c          -------------------------------------------------------------
 c          IPNTR(1): pointer to the current operand vector X in WORKD.
 c          IPNTR(2): pointer to the current result vector Y in WORKD.
-c          IPNTR(3): pointer to the vector B * X in WORKD when used in 
+c          IPNTR(3): pointer to the vector B * X in WORKD when used in
 c                    the shift-and-invert mode.
 c          IPNTR(4): pointer to the next available location in WORKL
 c                    that is untouched by the program.
@@ -224,14 +224,14 @@ c          IPNTR(10): pointer to the NCV by NCV matrix of eigenvectors
 c                     of the tridiagonal matrix T. Only referenced by
 c                     sseupd if RVEC = .TRUE. See Remarks.
 c          -------------------------------------------------------------
-c          
+c
 c  WORKD   Real  work array of length 3*N.  (REVERSE COMMUNICATION)
 c          Distributed array to be used in the basic Arnoldi iteration
-c          for reverse communication.  The user should not use WORKD 
+c          for reverse communication.  The user should not use WORKD
 c          as temporary workspace during the iteration. Upon termination
 c          WORKD(1:N) contains B*RESID(1:N). If the Ritz vectors are desired
 c          subroutine sseupd uses this output.
-c          See Data Distribution Note below.  
+c          See Data Distribution Note below.
 c
 c  WORKL   Real  work array of length LWORKL.  (OUTPUT/WORKSPACE)
 c          Private (replicated) array on each PE or array allocated on
@@ -247,13 +247,13 @@ c                          possibly from a previous run.
 c          Error flag on output.
 c          =  0: Normal exit.
 c          =  1: Maximum number of iterations taken.
-c                All possible eigenvalues of OP has been found. IPARAM(5)  
+c                All possible eigenvalues of OP has been found. IPARAM(5)
 c                returns the number of wanted converged Ritz values.
 c          =  2: No longer an informational error. Deprecated starting
 c                with release 2 of ARPACK.
-c          =  3: No shifts could be applied during a cycle of the 
-c                Implicitly restarted Arnoldi iteration. One possibility 
-c                is to increase the size of NCV relative to NEV. 
+c          =  3: No shifts could be applied during a cycle of the
+c                Implicitly restarted Arnoldi iteration. One possibility
+c                is to increase the size of NCV relative to NEV.
 c                See remark 4 below.
 c          = -1: N must be positive.
 c          = -2: NEV must be positive.
@@ -267,9 +267,9 @@ c          = -8: Error return from trid. eigenvalue calculation;
 c                Informatinal error from LAPACK routine ssteqr.
 c          = -9: Starting vector is zero.
 c          = -10: IPARAM(7) must be 1,2,3,4,5.
-c          = -11: IPARAM(7) = 1 and BMAT = 'G' are incompatable.
+c          = -11: IPARAM(7) = 1 and BMAT = 'G' are incompatible.
 c          = -12: IPARAM(1) must be equal to 0 or 1.
-c          = -13: NEV and WHICH = 'BE' are incompatable.
+c          = -13: NEV and WHICH = 'BE' are incompatible.
 c          = -9999: Could not build an Arnoldi factorization.
 c                   IPARAM(5) returns the size of the current Arnoldi
 c                   factorization. The user is advised to check that
@@ -277,12 +277,12 @@ c                   enough workspace and array storage has been allocated.
 c
 c
 c\Remarks
-c  1. The converged Ritz values are always returned in ascending 
+c  1. The converged Ritz values are always returned in ascending
 c     algebraic order.  The computed Ritz values are approximate
 c     eigenvalues of OP.  The selection of WHICH should be made
-c     with this in mind when Mode = 3,4,5.  After convergence, 
-c     approximate eigenvalues of the original problem may be obtained 
-c     with the ARPACK subroutine sseupd. 
+c     with this in mind when Mode = 3,4,5.  After convergence,
+c     approximate eigenvalues of the original problem may be obtained
+c     with the ARPACK subroutine sseupd.
 c
 c  2. If the Ritz vectors corresponding to the converged Ritz values
 c     are needed, the user must call sseupd immediately following completion
@@ -290,38 +290,38 @@ c     of ssaupd. This is new starting with version 2.1 of ARPACK.
 c
 c  3. If M can be factored into a Cholesky factorization M = LL`
 c     then Mode = 2 should not be selected.  Instead one should use
-c     Mode = 1 with  OP = inv(L)*A*inv(L`).  Appropriate triangular 
+c     Mode = 1 with  OP = inv(L)*A*inv(L`).  Appropriate triangular
 c     linear systems should be solved with L and L` rather
 c     than computing inverses.  After convergence, an approximate
 c     eigenvector z of the original problem is recovered by solving
 c     L`z = x  where x is a Ritz vector of OP.
 c
 c  4. At present there is no a-priori analysis to guide the selection
-c     of NCV relative to NEV.  The only formal requrement is that NCV > NEV.
+c     of NCV relative to NEV.  The only formal requirement is that NCV > NEV.
 c     However, it is recommended that NCV .ge. 2*NEV.  If many problems of
 c     the same type are to be solved, one should experiment with increasing
-c     NCV while keeping NEV fixed for a given test problem.  This will 
+c     NCV while keeping NEV fixed for a given test problem.  This will
 c     usually decrease the required number of OP*x operations but it
 c     also increases the work and storage required to maintain the orthogonal
 c     basis vectors.   The optimal "cross-over" with respect to CPU time
 c     is problem dependent and must be determined empirically.
 c
-c  5. If IPARAM(7) = 2 then in the Reverse commuication interface the user
+c  5. If IPARAM(7) = 2 then in the Reverse communication interface the user
 c     must do the following. When IDO = 1, Y = OP * X is to be computed.
 c     When IPARAM(7) = 2 OP = inv(B)*A. After computing A*X the user
 c     must overwrite X with A*X. Y is then the solution to the linear set
 c     of equations B*Y = A*X.
 c
-c  6. When IPARAM(1) = 0, and IDO = 3, the user needs to provide the 
-c     NP = IPARAM(8) shifts in locations: 
-c     1   WORKL(IPNTR(11))           
-c     2   WORKL(IPNTR(11)+1)         
-c                        .           
-c                        .           
-c                        .      
-c     NP  WORKL(IPNTR(11)+NP-1). 
+c  6. When IPARAM(1) = 0, and IDO = 3, the user needs to provide the
+c     NP = IPARAM(8) shifts in locations:
+c     1   WORKL(IPNTR(11))
+c     2   WORKL(IPNTR(11)+1)
+c                        .
+c                        .
+c                        .
+c     NP  WORKL(IPNTR(11)+NP-1).
 c
-c     The eigenvalues of the current tridiagonal matrix are located in 
+c     The eigenvalues of the current tridiagonal matrix are located in
 c     WORKL(IPNTR(6)) through WORKL(IPNTR(6)+NCV-1). They are in the
 c     order defined by WHICH. The associated Ritz estimates are located in
 c     WORKL(IPNTR(8)), WORKL(IPNTR(8)+1), ... , WORKL(IPNTR(8)+NCV-1).
@@ -347,7 +347,7 @@ c  ===============
 c  REAL       RESID(N), V(LDV,NCV), WORKD(N,3), WORKL(LWORKL)
 c  SHARED     RESID(BLOCK), V(BLOCK,:), WORKD(BLOCK,:)
 c  REPLICATED WORKL(LWORKL)
-c  
+c
 c
 c\BeginLib
 c
@@ -355,7 +355,7 @@ c\References:
 c  1. D.C. Sorensen, "Implicit Application of Polynomial Filters in
 c     a k-Step Arnoldi Method", SIAM J. Matr. Anal. Apps., 13 (1992),
 c     pp 357-385.
-c  2. R.B. Lehoucq, "Analysis and Implementation of an Implicitly 
+c  2. R.B. Lehoucq, "Analysis and Implementation of an Implicitly
 c     Restarted Arnoldi Iteration", Rice University Technical Report
 c     TR95-13, Department of Computational and Applied Mathematics.
 c  3. B.N. Parlett, "The Symmetric Eigenvalue Problem". Prentice-Hall,
@@ -365,8 +365,8 @@ c     Computer Physics Communications, 53 (1989), pp 169-179.
 c  5. B. Nour-Omid, B.N. Parlett, T. Ericson, P.S. Jensen, "How to
 c     Implement the Spectral Transformation", Math. Comp., 48 (1987),
 c     pp 663-673.
-c  6. R.G. Grimes, J.G. Lewis and H.D. Simon, "A Shifted Block Lanczos 
-c     Algorithm for Solving Sparse Symmetric Generalized Eigenproblems", 
+c  6. R.G. Grimes, J.G. Lewis and H.D. Simon, "A Shifted Block Lanczos
+c     Algorithm for Solving Sparse Symmetric Generalized Eigenproblems",
 c     SIAM J. Matr. Anal. Apps.,  January (1993).
 c  7. L. Reichel, W.B. Gragg, "Algorithm 686: FORTRAN Subroutines
 c     for Updating the QR decomposition", ACM TOMS, December 1990,
@@ -389,14 +389,14 @@ c     Danny Sorensen               Phuong Vu
 c     Richard Lehoucq              CRPC / Rice University
 c     Dept. of Computational &     Houston, Texas
 c     Applied Mathematics
-c     Rice University           
-c     Houston, Texas            
-c 
-c\Revision history:
-c     12/15/93: Version ' 2.4' 
+c     Rice University
+c     Houston, Texas
 c
-c\SCCS Information: @(#) 
-c FILE: saupd.F   SID: 2.8   DATE OF SID: 04/10/01   RELEASE: 2 
+c\Revision history:
+c     12/15/93: Version ' 2.4'
+c
+c\SCCS Information: @(#)
+c FILE: saupd.F   SID: 2.8   DATE OF SID: 04/10/01   RELEASE: 2
 c
 c\Remarks
 c     1. None
@@ -406,7 +406,7 @@ c
 c-----------------------------------------------------------------------
 c
       subroutine ssaupd
-     &   ( ido, bmat, n, which, nev, tol, resid, ncv, v, ldv, iparam, 
+     &   ( ido, bmat, n, which, nev, tol, resid, ncv, v, ldv, iparam,
      &     ipntr, workd, workl, lworkl, info )
 c
 c     %----------------------------------------------------%
@@ -422,7 +422,7 @@ c     %------------------%
 c
       character  bmat*1, which*2
       integer    ido, info, ldv, lworkl, n, ncv, nev
-      Real 
+      Real
      &           tol
 c
 c     %-----------------%
@@ -430,14 +430,14 @@ c     | Array Arguments |
 c     %-----------------%
 c
       integer    iparam(11), ipntr(11)
-      Real 
+      Real
      &           resid(n), v(ldv,ncv), workd(3*n), workl(lworkl)
 c
 c     %------------%
 c     | Parameters |
 c     %------------%
 c
-      Real 
+      Real
      &           one, zero
       parameter (one = 1.0E+0 , zero = 0.0E+0 )
 c
@@ -445,7 +445,7 @@ c     %---------------%
 c     | Local Scalars |
 c     %---------------%
 c
-      integer    bounds, ierr, ih, iq, ishift, iupd, iw, 
+      integer    bounds, ierr, ih, iq, ishift, iupd, iw,
      &           ldh, ldq, msglvl, mxiter, mode, nb,
      &           nev0, next, np, ritz, j
       save       bounds, ierr, ih, iq, ishift, iupd, iw,
@@ -462,14 +462,14 @@ c     %--------------------%
 c     | External Functions |
 c     %--------------------%
 c
-      Real 
+      Real
      &           slamch
       external   slamch
 c
 c     %-----------------------%
 c     | Executable Statements |
 c     %-----------------------%
-c 
+c
       if (ido .eq. 0) then
 c
 c        %-------------------------------%
@@ -512,7 +512,7 @@ c        | extend the length NEV Lanczos factorization. |
 c        %----------------------------------------------%
 c
          np     = ncv - nev
-c 
+c
          if (mxiter .le. 0)                     ierr = -4
          if (which .ne. 'LM' .and.
      &       which .ne. 'SM' .and.
@@ -531,7 +531,7 @@ c
          else if (nev .eq. 1 .and. which .eq. 'BE') then
                                                 ierr = -13
          end if
-c 
+c
 c        %------------%
 c        | Error Exit |
 c        %------------%
@@ -541,7 +541,7 @@ c
             ido  = 99
             go to 9000
          end if
-c 
+c
 c        %------------------------%
 c        | Set default parameters |
 c        %------------------------%
@@ -557,8 +557,8 @@ c        | size of the invariant subspace desired.      |
 c        %----------------------------------------------%
 c
          np     = ncv - nev
-         nev0   = nev 
-c 
+         nev0   = nev
+c
 c        %-----------------------------%
 c        | Zero out internal workspace |
 c        %-----------------------------%
@@ -566,7 +566,7 @@ c
          do 10 j = 1, ncv**2 + 8*ncv
             workl(j) = zero
  10      continue
-c 
+c
 c        %-------------------------------------------------------%
 c        | Pointer into WORKL for address of H, RITZ, BOUNDS, Q  |
 c        | etc... and the remaining workspace.                   |
@@ -599,7 +599,7 @@ c     %-------------------------------------------------------%
 c     | Carry out the Implicitly restarted Lanczos Iteration. |
 c     %-------------------------------------------------------%
 c
-      call ssaup2 
+      call ssaup2
      &   ( ido, bmat, n, which, nev0, np, tol, resid, mode, iupd,
      &     ishift, mxiter, v, ldv, workl(ih), ldh, workl(ritz),
      &     workl(bounds), workl(iq), ldq, workl(iw), ipntr, workd,
@@ -612,7 +612,7 @@ c     %--------------------------------------------------%
 c
       if (ido .eq. 3) iparam(8) = np
       if (ido .ne. 99) go to 9000
-c 
+c
       iparam(3) = mxiter
       iparam(5) = np
       iparam(9) = nopx
@@ -628,19 +628,19 @@ c
       if (info .eq. 2) info = 3
 c
       if (msglvl .gt. 0) then
-         call ivout (logfil, 1, mxiter, ndigit,
+         call ivout (logfil, 1, [mxiter], ndigit,
      &               '_saupd: number of update iterations taken')
-         call ivout (logfil, 1, np, ndigit,
+         call ivout (logfil, 1, [np], ndigit,
      &               '_saupd: number of "converged" Ritz values')
-         call svout (logfil, np, workl(Ritz), ndigit, 
+         call svout (logfil, np, workl(Ritz), ndigit,
      &               '_saupd: final Ritz values')
-         call svout (logfil, np, workl(Bounds), ndigit, 
+         call svout (logfil, np, workl(Bounds), ndigit,
      &               '_saupd: corresponding error bounds')
-      end if 
+      end if
 c
       call arscnd (t1)
       tsaupd = t1 - t0
-c 
+c
       if (msglvl .gt. 0) then
 c
 c        %--------------------------------------------------------%
@@ -678,9 +678,9 @@ c
      &      5x, 'Total time in applying the shifts          = ', f12.6,/
      &      5x, 'Total time in convergence testing          = ', f12.6)
       end if
-c 
+c
  9000 continue
-c 
+c
       return
 c
 c     %---------------%

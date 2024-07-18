@@ -76,7 +76,8 @@ sp_preorder(superlu_options_t *options,  SuperMatrix *A, int *perm_c,
     NCPformat *ACstore;
     int       *iwork, *post;
     register  int n, i;
-
+    extern int check_perm(char *what, int n, int *perm);
+	
     n = A->ncol;
     
     /* Apply column permutation perm_c to A's column pointers so to
@@ -92,14 +93,16 @@ sp_preorder(superlu_options_t *options,  SuperMatrix *A, int *perm_c,
     ACstore->nnz    = Astore->nnz;
     ACstore->nzval  = Astore->nzval;
     ACstore->rowind = Astore->rowind;
-    ACstore->colbeg = (int*) SUPERLU_MALLOC(n*sizeof(int));
+    ACstore->colbeg = intMalloc(n);
     if ( !(ACstore->colbeg) ) ABORT("SUPERLU_MALLOC fails for ACstore->colbeg");
-    ACstore->colend = (int*) SUPERLU_MALLOC(n*sizeof(int));
+    ACstore->colend = intMalloc(n);
     if ( !(ACstore->colend) ) ABORT("SUPERLU_MALLOC fails for ACstore->colend");
 
-#ifdef DEBUG
-    print_int_vec("pre_order:", n, perm_c);
+#if ( DEBUGlevel>=1 )
     check_perm("Initial perm_c", n, perm_c);
+#endif      
+#if ( DEBUGlevel>=2 )
+    print_int_vec("pre_order:", n, perm_c);
 #endif      
 
     for (i = 0; i < n; i++) {
@@ -150,7 +153,7 @@ sp_preorder(superlu_options_t *options,  SuperMatrix *A, int *perm_c,
 	sp_coletree(ACstore->colbeg, ACstore->colend, ACstore->rowind,
 		    A->nrow, A->ncol, etree);
 #endif
-#ifdef DEBUG	
+#if ( DEBUGlevel>=2 )
 	print_int_vec("etree:", n, etree);
 #endif	
 	
@@ -161,9 +164,11 @@ sp_preorder(superlu_options_t *options,  SuperMatrix *A, int *perm_c,
 	    /* for (i = 0; i < n+1; ++i) inv_post[post[i]] = i;
 	       iwork = post; */
 
-#ifdef DEBUG
-	    print_int_vec("post:", n+1, post);
+#if ( DEBUGlevel>=1 )
 	    check_perm("post", n, post);	
+#endif	
+#if ( DEBUGlevel>=2 )
+	    print_int_vec("post:", n+1, post);
 #endif	
 	    iwork = (int*) SUPERLU_MALLOC((n+1)*sizeof(int)); 
 	    if ( !iwork ) ABORT("SUPERLU_MALLOC fails for iwork[]");
@@ -172,7 +177,7 @@ sp_preorder(superlu_options_t *options,  SuperMatrix *A, int *perm_c,
 	    for (i = 0; i < n; ++i) iwork[post[i]] = post[etree[i]];
 	    for (i = 0; i < n; ++i) etree[i] = iwork[i];
 
-#ifdef DEBUG	
+#if ( DEBUGlevel>=2 )
 	    print_int_vec("postorder etree:", n, etree);
 #endif
 	
@@ -186,9 +191,11 @@ sp_preorder(superlu_options_t *options,  SuperMatrix *A, int *perm_c,
 	        iwork[i] = post[perm_c[i]];  /* product of perm_c and post */
 	    for (i = 0; i < n; ++i) perm_c[i] = iwork[i];
 
-#ifdef DEBUG
-	    print_int_vec("Pc*post:", n, perm_c);
+#if ( DEBUGlevel>=1 )
 	    check_perm("final perm_c", n, perm_c);	
+#endif
+#if ( DEBUGlevel>=2 )
+	    print_int_vec("Pc*post:", n, perm_c);
 #endif
 	    SUPERLU_FREE (post);
 	    SUPERLU_FREE (iwork);
@@ -196,25 +203,4 @@ sp_preorder(superlu_options_t *options,  SuperMatrix *A, int *perm_c,
 
     } /* if options->Fact == DOFACT ... */
 
-}
-
-int check_perm(char *what, int n, int *perm)
-{
-    register int i;
-    int          *marker;
-    /*marker = (int *) calloc(n, sizeof(int));*/
-    marker = (int *) malloc(n * sizeof(int));
-    for (i = 0; i < n; ++i) marker[i] = 0;
-
-    for (i = 0; i < n; ++i) {
-	if ( marker[perm[i]] == 1 || perm[i] >= n ) {
-	    printf("%s: Not a valid PERM[%d] = %d\n", what, i, perm[i]);
-	    ABORT("check_perm");
-	} else {
-	    marker[perm[i]] = 1;
-	}
-    }
-
-    SUPERLU_FREE(marker);
-    return 0;
 }

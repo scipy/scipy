@@ -1,26 +1,34 @@
-from libc.math cimport pow, sqrt, floor, log, log1p, exp, M_PI, fabs
-from numpy.math cimport NAN, isinf
+from libc.math cimport pow, sqrt, floor, log, log1p, exp, M_PI, NAN, fabs, isinf
 cimport numpy as np
 
-from ._cephes cimport iv, jv, Gamma, lgam, gammasgn
 from ._xlogy cimport xlogy
 from ._complexstuff cimport (
     zsqrt, zpow, zabs, npy_cdouble_from_double_complex,
     double_complex_from_npy_cdouble)
 
+cdef extern from "special_wrappers.h" nogil:
+    double cephes_iv_wrap(double v, double x)
+    double cephes_jv_wrap(double v, double x)
+    double cephes_gamma_wrap(double x)
+    double cephes_lgam_wrap(double x)
+    double cephes_gammasgn_wrap(double x)
+
 cdef extern from "float.h":
     double DBL_MAX, DBL_MIN
 
 
-cdef extern from "amos_wrappers.h":
-    np.npy_cdouble cbesi_wrap(double v, np.npy_cdouble z) nogil
-    np.npy_cdouble cbesj_wrap(double v, np.npy_cdouble z) nogil
-    double sin_pi(double x) nogil
+cdef extern from "special_wrappers.h":
+    np.npy_cdouble special_ccyl_bessel_i(double v, np.npy_cdouble z) nogil
+    np.npy_cdouble special_ccyl_bessel_j(double v, np.npy_cdouble z) nogil
+    double special_sinpi(double x) nogil
+
+cdef extern from "numpy/npy_math.h":
+    double npy_creal(np.npy_cdouble z) nogil
 
 #
 # Real-valued kernel
 #
-cdef inline double _hyp0f1_real(double v, double z) nogil:
+cdef inline double _hyp0f1_real(double v, double z) noexcept nogil:
     cdef double arg, v1, arg_exp, bess_val
 
     # handle poles, zeros
@@ -35,20 +43,20 @@ cdef inline double _hyp0f1_real(double v, double z) nogil:
 
     if z > 0:
         arg = sqrt(z)
-        arg_exp = xlogy(1.0-v, arg) + lgam(v)
-        bess_val = iv(v-1, 2.0*arg)
+        arg_exp = xlogy(1.0-v, arg) + cephes_lgam_wrap(v)
+        bess_val = cephes_iv_wrap(v-1, 2.0*arg)
 
         if (arg_exp > log(DBL_MAX) or bess_val == 0 or   # overflow
             arg_exp < log(DBL_MIN) or isinf(bess_val)):  # underflow
             return _hyp0f1_asy(v, z)
         else:
-            return exp(arg_exp) * gammasgn(v) * bess_val
+            return exp(arg_exp) * cephes_gammasgn_wrap(v) * bess_val
     else:
         arg = sqrt(-z)
-        return pow(arg, 1.0 - v) * Gamma(v) * jv(v - 1, 2*arg)
+        return pow(arg, 1.0 - v) * cephes_gamma_wrap(v) * cephes_jv_wrap(v - 1, 2*arg)
 
 
-cdef inline double _hyp0f1_asy(double v, double z) nogil:
+cdef inline double _hyp0f1_asy(double v, double z) noexcept nogil:
     r"""Asymptotic expansion for I_{v-1}(2*sqrt(z)) * Gamma(v)
     for real $z > 0$ and $v\to +\infty$.
 
@@ -66,8 +74,8 @@ cdef inline double _hyp0f1_asy(double v, double z) nogil:
 
     arg_exp_i = -0.5*log(p1)
     arg_exp_i -= 0.5*log(2.0*M_PI*v1)
-    arg_exp_i += lgam(v)
-    gs = gammasgn(v)
+    arg_exp_i += cephes_lgam_wrap(v)
+    gs = cephes_gammasgn_wrap(v)
 
     arg_exp_k = arg_exp_i
     arg_exp_i += v1 * eta
@@ -87,7 +95,7 @@ cdef inline double _hyp0f1_asy(double v, double z) nogil:
     if v - 1 < 0:
         # DLMF 10.27.2: I_{-v} = I_{v} + (2/pi) sin(pi*v) K_v
         u_corr_k = 1.0 - u1/v1 + u2/(v1*v1) - u3/(v1*v1*v1)
-        result += exp(arg_exp_k + xlogy(v1, arg)) * gs * 2.0 * sin_pi(v1) * u_corr_k
+        result += exp(arg_exp_k + xlogy(v1, arg)) * gs * 2.0 * special_sinpi(v1) * u_corr_k
 
     return result
 
@@ -95,7 +103,7 @@ cdef inline double _hyp0f1_asy(double v, double z) nogil:
 #
 # Complex valued kernel
 #
-cdef inline double complex _hyp0f1_cmplx(double v, double complex z) nogil:
+cdef inline double complex _hyp0f1_cmplx(double v, double complex z) noexcept nogil:
     cdef:
         np.npy_cdouble zz = npy_cdouble_from_double_complex(z)
         np.npy_cdouble r
@@ -116,13 +124,13 @@ cdef inline double complex _hyp0f1_cmplx(double v, double complex z) nogil:
         t2 = z*z / (2.0*v*(v+1.0))
         return t1 + t2
 
-    if zz.real > 0:
+    if npy_creal(zz) > 0:
         arg = zsqrt(z)
         s = 2.0 * arg
-        r = cbesi_wrap(v-1.0, npy_cdouble_from_double_complex(s))
+        r = special_ccyl_bessel_i(v-1.0, npy_cdouble_from_double_complex(s))
     else:
         arg = zsqrt(-z)
         s = 2.0 * arg
-        r = cbesj_wrap(v-1.0, npy_cdouble_from_double_complex(s))
+        r = special_ccyl_bessel_j(v-1.0, npy_cdouble_from_double_complex(s))
 
-    return double_complex_from_npy_cdouble(r) * Gamma(v) * zpow(arg, 1.0 - v)
+    return double_complex_from_npy_cdouble(r) * cephes_gamma_wrap(v) * zpow(arg, 1.0 - v)

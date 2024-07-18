@@ -10,15 +10,18 @@ py3.install_sources([
     'test_pade.py',
     'test_polyint.py',
     'test_rbf.py',
-    'test_rbfinterp.py', 
+    'test_rbfinterp.py',
     'test_rgi.py'
   ],
-  subdir: 'scipy/interpolate/tests'
+  subdir: 'scipy/interpolate/tests',
+  install_tag: 'tests'
 )
 
 py3.install_sources([
     'data/bug-1310.npz',
-    'data/estimate_gradients_hang.npy'
+    'data/estimate_gradients_hang.npy',
+    'data/gcvspl.npz'
   ],
-  subdir: 'scipy/interpolate/tests/data'
+  subdir: 'scipy/interpolate/tests/data',
+  install_tag: 'tests'
 )

@@ -62,16 +62,16 @@ ilu_scopy_to_ucol(
 /*
  * Gather from SPA dense[*] to global ucol[*].
  */
-    int       ksub, krep, ksupno;
-    int       i, k, kfnz, segsze;
+    int       ksub, krep, ksupno, kfnz, segsze;
+    int       i, k; 
     int       fsupc, isub, irow;
-    int       jsupno, nextu;
-    int       new_next, mem_error;
+    int       jsupno;
+    int_t     new_next, nextu, mem_error;
     int       *xsup, *supno;
-    int       *lsub, *xlsub;
+    int_t     *lsub, *xlsub;
     float    *ucol;
-    int       *usub, *xusub;
-    int       nzumax;
+    int_t     *usub, *xusub;
+    int_t     nzumax;
     int       m; /* number of entries in the nonzero U-segments */
     register float d_max = 0.0, d_min = 1.0 / smach("Safe minimum");
     register double tmp;

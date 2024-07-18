@@ -26,7 +26,7 @@ def _held_figure(func, obj, ax=None, **kw):
 
 
 def _adjust_bounds(ax, points):
-    margin = 0.1 * points.ptp(axis=0)
+    margin = 0.1 * np.ptp(points, axis=0)
     xy_min = points.min(axis=0) - margin
     xy_max = points.max(axis=0) + margin
     ax.set_xlim(xy_min[0], xy_max[0])
@@ -230,7 +230,7 @@ def voronoi_plot_2d(vor, ax=None, **kw):
     line_alpha = kw.get('line_alpha', 1.0)
 
     center = vor.points.mean(axis=0)
-    ptp_bound = vor.points.ptp(axis=0)
+    ptp_bound = np.ptp(vor.points, axis=0)
 
     finite_segments = []
     infinite_segments = []
@@ -249,7 +249,8 @@ def voronoi_plot_2d(vor, ax=None, **kw):
             direction = np.sign(np.dot(midpoint - center, n)) * n
             if (vor.furthest_site):
                 direction = -direction
-            far_point = vor.vertices[i] + direction * ptp_bound.max()
+            aspect_factor = abs(ptp_bound.max() / ptp_bound.min())
+            far_point = vor.vertices[i] + direction * ptp_bound.max() * aspect_factor
 
             infinite_segments.append([vor.vertices[i], far_point])
 

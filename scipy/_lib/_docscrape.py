@@ -13,7 +13,7 @@ import copy
 import sys
 
 
-def strip_blank_lines(l):  # noqa
+def strip_blank_lines(l):
     "Remove leading and trailing blank lines from a list of lines"
     while l and not l[0].strip():
         del l[0]
@@ -22,7 +22,7 @@ def strip_blank_lines(l):  # noqa
     return l
 
 
-class Reader(object):
+class Reader:
     """A line-based string reader.
 
     """
@@ -56,7 +56,7 @@ class Reader(object):
             return ''
 
     def seek_next_non_empty_line(self):
-        for l in self[self._l:]:  # noqa
+        for l in self[self._l:]:
             if l.strip():
                 break
             else:
@@ -102,7 +102,7 @@ class ParseError(Exception):
     def __str__(self):
         message = self.args[0]
         if hasattr(self, 'docstring'):
-            message = "%s in %r" % (message, self.docstring)
+            message = f"{message} in {self.docstring!r}"
         return message
 
 
@@ -155,7 +155,7 @@ class NumpyDocString(Mapping):
 
     def __setitem__(self, key, val):
         if key not in self._parsed_data:
-            self._error_location("Unknown section %s" % key, error=False)
+            self._error_location(f"Unknown section {key}", error=False)
         else:
             self._parsed_data[key] = val
 
@@ -288,7 +288,7 @@ class NumpyDocString(Mapping):
             """Match ':role:`name`' or 'name'."""
             m = self._func_rgx.match(text)
             if not m:
-                raise ParseError("%s is not a item name" % text)
+                raise ParseError(f"{text} is not a item name")
             role = m.group('role')
             name = m.group('name') if role else m.group('name2')
             return name, role, m.end()
@@ -324,12 +324,12 @@ class NumpyDocString(Mapping):
                 rest = list(filter(None, [description]))
                 items.append((funcs, rest))
             else:
-                raise ParseError("%s is not a item name" % line)
+                raise ParseError(f"{line} is not a item name")
         return items
 
     def _parse_index(self, section, content):
         """
-        .. index: default
+        .. index:: default
            :refguide: something, else, and more
 
         """
@@ -373,7 +373,7 @@ class NumpyDocString(Mapping):
         self._parse_summary()
 
         sections = list(self._read_sections())
-        section_names = set([section for section, content in sections])
+        section_names = {section for section, content in sections}
 
         has_returns = 'Returns' in section_names
         has_yields = 'Yields' in section_names
@@ -390,8 +390,7 @@ class NumpyDocString(Mapping):
                 section = (s.capitalize() for s in section.split(' '))
                 section = ' '.join(section)
                 if self.get(section):
-                    self._error_location("The section %s appears twice"
-                                         % section)
+                    self._error_location(f"The section {section} appears twice")
 
             if section in ('Parameters', 'Other Parameters', 'Attributes',
                            'Methods'):
@@ -414,12 +413,11 @@ class NumpyDocString(Mapping):
                 filename = inspect.getsourcefile(self._obj)
             except TypeError:
                 filename = None
-            msg = msg + (" in the docstring of %s in %s."
-                         % (self._obj, filename))
+            msg = msg + (f" in the docstring of {self._obj} in {filename}.")
         if error:
             raise ValueError(msg)
         else:
-            warn(msg)
+            warn(msg, stacklevel=3)
 
     # string conversion routines
 
@@ -486,11 +484,11 @@ class NumpyDocString(Mapping):
             links = []
             for func, role in funcs:
                 if role:
-                    link = ':%s:`%s`' % (role, func)
+                    link = f':{role}:`{func}`'
                 elif func_role:
-                    link = ':%s:`%s`' % (func_role, func)
+                    link = f':{func_role}:`{func}`'
                 else:
-                    link = "`%s`_" % func
+                    link = f"`{func}`_"
                 links.append(link)
             link = ', '.join(links)
             out += [link]
@@ -513,12 +511,12 @@ class NumpyDocString(Mapping):
         default_index = idx.get('default', '')
         if default_index:
             output_index = True
-        out += ['.. index:: %s' % default_index]
+        out += [f'.. index:: {default_index}']
         for section, references in idx.items():
             if section == 'default':
                 continue
             output_index = True
-            out += ['   :%s: %s' % (section, ', '.join(references))]
+            out += ['   :{}: {}'.format(section, ', '.join(references))]
         if output_index:
             return out
         else:
@@ -542,12 +540,12 @@ class NumpyDocString(Mapping):
         return '\n'.join(out)
 
 
-def indent(str, indent=4):  # noqa
+def indent(str, indent=4):
     indent_str = ' '*indent
     if str is None:
         return indent_str
     lines = str.split('\n')
-    return '\n'.join(indent_str + l for l in lines)  # noqa
+    return '\n'.join(indent_str + l for l in lines)
 
 
 def dedent_lines(lines):
@@ -588,11 +586,11 @@ class FunctionDoc(NumpyDocString):
 
         if self._role:
             if self._role not in roles:
-                print("Warning: invalid role %s" % self._role)
-            out += '.. %s:: %s\n    \n\n' % (roles.get(self._role, ''),
+                print(f"Warning: invalid role {self._role}")
+            out += '.. {}:: {}\n    \n\n'.format(roles.get(self._role, ''),
                                              func_name)
 
-        out += super(FunctionDoc, self).__str__(func_role=self._role)
+        out += super().__str__(func_role=self._role)
         return out
 
 
@@ -603,7 +601,7 @@ class ClassDoc(NumpyDocString):
     def __init__(self, cls, doc=None, modulename='', func_doc=FunctionDoc,
                  config={}):
         if not inspect.isclass(cls) and cls is not None:
-            raise ValueError("Expected a class or None, but got %r" % cls)
+            raise ValueError(f"Expected a class or None, but got {repr(cls)}")
         self._cls = cls
 
         if 'sphinx' in sys.modules:

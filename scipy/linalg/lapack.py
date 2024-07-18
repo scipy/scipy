@@ -695,6 +695,9 @@ All functions
    ctgsen_lwork
    ztgsen_lwork
 
+   stgsyl
+   dtgsyl
+
    stpttf
    dtpttf
    ctpttf
@@ -819,7 +822,7 @@ All functions
 # Author: Pearu Peterson, March 2002
 #
 
-import numpy as _np
+import numpy as np
 from .blas import _get_funcs, _memoize_get_funcs
 from scipy.linalg import _flapack
 from re import compile as regex_compile
@@ -838,7 +841,7 @@ except ImportError:
 
 # Expose all functions (only flapack --- clapack is an implementation detail)
 empty_module = None
-from scipy.linalg._flapack import *
+from scipy.linalg._flapack import *  # noqa: E402, F403
 del empty_module
 
 __all__ = ['get_lapack_funcs']
@@ -860,10 +863,9 @@ p2 = regex_compile(r'Default: (?P<d>.*?)\n')
 
 def backtickrepl(m):
     if m.group('s'):
-        return ('with bounds ``{}`` with ``{}`` storage\n'
-                ''.format(m.group('b'), m.group('s')))
+        return (f"with bounds ``{m.group('b')}`` with ``{m.group('s')}`` storage\n")
     else:
-        return 'with bounds ``{}``\n'.format(m.group('b'))
+        return f"with bounds ``{m.group('b')}``\n"
 
 
 for routine in [ssyevr, dsyevr, cheevr, zheevr,
@@ -972,8 +974,8 @@ def get_lapack_funcs(names, arrays=(), dtype=None, ilp64=False):
                           ilp64=True)
 
 
-_int32_max = _np.iinfo(_np.int32).max
-_int64_max = _np.iinfo(_np.int64).max
+_int32_max = np.iinfo(np.int32).max
+_int64_max = np.iinfo(np.int64).max
 
 
 def _compute_lwork(routine, *args, **kwargs):
@@ -1017,10 +1019,10 @@ def _check_work_float(value, dtype, int_dtype):
     carefully for single-precision types.
     """
 
-    if dtype == _np.float32 or dtype == _np.complex64:
+    if dtype == np.float32 or dtype == np.complex64:
         # Single-precision routine -- take next fp value to work
         # around possible truncation in LAPACK code
-        value = _np.nextafter(value, _np.inf, dtype=_np.float32)
+        value = np.nextafter(value, np.inf, dtype=np.float32)
 
     value = int(value)
     if int_dtype.itemsize == 4:
