@@ -93,6 +93,18 @@ def _inputs_swap_needed(mode, shape1, shape2, axes=None):
     return not ok1
 
 
+def _reject_objects(arr, name):
+    """Warn if arr.dtype is object or longdouble or float16.
+    """
+    dt = np.asarray(arr).dtype
+    if not (np.issubdtype(dt, np.integer)
+            or dt in [np.bool_, np.float32, np.float64, np.complex64, np.complex128]
+    ):
+        warnings.warn(f"dtype={dt} is not supported by {name}",
+                      category=DeprecationWarning, stacklevel=2
+        )
+
+
 def correlate(in1, in2, mode='full', method='auto'):
     r"""
     Cross-correlate two N-dimensional arrays.
@@ -229,6 +241,8 @@ def correlate(in1, in2, mode='full', method='auto'):
     """
     in1 = np.asarray(in1)
     in2 = np.asarray(in2)
+    _reject_objects(in1, 'correlate')
+    _reject_objects(in1, 'correlate')
 
     if in1.ndim == in2.ndim == 0:
         return in1 * in2.conj()
@@ -1273,6 +1287,9 @@ def choose_conv_method(in1, in2, mode='full', measure=False):
     volume = np.asarray(in1)
     kernel = np.asarray(in2)
 
+    _reject_objects(in1, 'choose_conv_method')
+    _reject_objects(in1, 'choose_conv_method')
+
     if measure:
         times = {}
         for method in ['fft', 'direct']:
@@ -1401,6 +1418,9 @@ def convolve(in1, in2, mode='full', method='auto'):
     """
     volume = np.asarray(in1)
     kernel = np.asarray(in2)
+
+    _reject_objects(volume, 'correlate')
+    _reject_objects(kernel, 'correlate')
 
     if volume.ndim == kernel.ndim == 0:
         return volume * kernel
@@ -2077,6 +2097,11 @@ def lfilter(b, a, x, axis=-1, zi=None):
     """
     b = np.atleast_1d(b)
     a = np.atleast_1d(a)
+
+    _reject_objects(x, 'lfilter')
+    _reject_objects(a, 'lfilter')
+    _reject_objects(b, 'lfilter')
+
     if len(a) == 1:
         # This path only supports types fdgFDGO to mirror _linear_filter below.
         # Any of b, a, x, or zi can set the dtype, but there is no default
