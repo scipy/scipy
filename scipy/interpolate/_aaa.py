@@ -57,7 +57,8 @@ class AAA:
     Attributes
     ----------
     support_points : array
-        Support points of the approximation.
+        Support points of the approximation. At these points the approximation strictly
+        interpolates the provided `f`. See notes for more details.
     values : array
         Value of the approximation at the `support_points`.
     weights : array
