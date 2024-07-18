@@ -2,9 +2,11 @@
 #include <iostream>
 #include <tuple>
 #include <vector>
+
+#include "../_build_utils/src/npy_cblas.h"
 #include "../_build_utils/src/fortran_defs.h"
 
-#define DLARTG F_FUNC(dlartg, DLARTG)
+#define DLARTG BLAS_FUNC(dlartg)
 
 
 namespace fitpack {
