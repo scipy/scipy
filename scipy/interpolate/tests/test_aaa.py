@@ -90,7 +90,7 @@ class TestAAA:
         assert_allclose(r(UNIT_INTERVAL), f, atol=10 * TOL, rtol=1.4e-7)
         assert_allclose(np.min(np.abs(r.roots())), 0, atol=3e-10)
         assert_allclose(np.min(np.abs(r.poles() - 0.5)), 0, atol=TOL)
-        # Test for spurious poles
+        # Test for spurious poles (poles with tiny residue are likely spurious)
         assert np.min(np.abs(r.residues())) > 1e-13
 
     def test_short_cases(self):
