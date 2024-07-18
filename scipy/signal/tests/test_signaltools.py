@@ -200,6 +200,9 @@ class TestConvolve(_TestConvolve):
         array_types['c'] = array_types['f'] + 0.5j*array_types['f']
 
         for t1, t2, mode in args:
+            if t1 == 'float16' or t2 == 'float16':
+                pytest.skip("float16 is deprecated in correlate")
+
             x1 = array_types[np.dtype(t1).kind].astype(t1)
             x2 = array_types[np.dtype(t2).kind].astype(t2)
 
@@ -1039,6 +1042,7 @@ class TestAllFreqConvolves:
                            match="all axes must be unique"):
             convapproach([1], [2], axes=[0, 0])
 
+    @pytest.mark.filterwarnings('ignore::DeprecationWarning')
     @pytest.mark.parametrize('dtype', [np.longdouble, np.clongdouble])
     def test_longdtype_input(self, dtype):
         x = np.random.random((27, 27)).astype(dtype)
@@ -1853,6 +1857,7 @@ class TestLinearFilterFloat64(_TestLinearFilter):
     dtype = np.dtype('d')
 
 
+@pytest.mark.filterwarnings('ignore::DeprecationWarning')
 class TestLinearFilterFloatExtended(_TestLinearFilter):
     dtype = np.dtype('g')
 
@@ -1865,9 +1870,12 @@ class TestLinearFilterComplex128(_TestLinearFilter):
     dtype = np.dtype('D')
 
 
+@pytest.mark.filterwarnings('ignore::DeprecationWarning')
 class TestLinearFilterComplexExtended(_TestLinearFilter):
     dtype = np.dtype('G')
 
+
+@pytest.mark.filterwarnings('ignore::DeprecationWarning')
 class TestLinearFilterDecimal(_TestLinearFilter):
     dtype = np.dtype('O')
 
@@ -1875,11 +1883,13 @@ class TestLinearFilterDecimal(_TestLinearFilter):
         return Decimal(str(x))
 
 
+@pytest.mark.filterwarnings('ignore::DeprecationWarning')
 class TestLinearFilterObject(_TestLinearFilter):
     dtype = np.dtype('O')
     type = float
 
 
+@pytest.mark.filterwarnings('ignore::DeprecationWarning')
 def test_lfilter_bad_object():
     # lfilter: object arrays with non-numeric objects raise TypeError.
     # Regression test for ticket #1452.
@@ -1890,6 +1900,8 @@ def test_lfilter_bad_object():
     assert_raises(TypeError, lfilter, [None], [1.0], [1.0, 2.0, 3.0])
 
 
+_pmf = pytest.mark.filterwarnings('ignore::DeprecationWarning')
+
 def test_lfilter_notimplemented_input():
     # Should not crash, gh-7991
     assert_raises(NotImplementedError, lfilter, [2,3], [4,5], [1,2,3,4,5])
@@ -1897,8 +1909,10 @@ def test_lfilter_notimplemented_input():
 
 @pytest.mark.parametrize('dt', [np.ubyte, np.byte, np.ushort, np.short,
                                 np_ulong, np_long, np.ulonglong, np.ulonglong,
-                                np.float32, np.float64, np.longdouble,
-                                Decimal])
+                                np.float32, np.float64,
+                                pytest.param(np.longdouble, marks=_pmf),
+                                pytest.param(Decimal, marks=_pmf)]
+)
 class TestCorrelateReal:
     def _setup_rank1(self, dt):
         a = np.linspace(0, 3, 4).astype(dt)
@@ -2094,7 +2108,8 @@ def test_correlation_lags(mode, behind, input_size):
     assert_equal(lags.shape, correlation.shape)
 
 
-@pytest.mark.parametrize('dt', [np.csingle, np.cdouble, np.clongdouble])
+@pytest.mark.parametrize('dt', [np.csingle, np.cdouble,
+                                pytest.param(np.clongdouble, marks=_pmf)])
 class TestCorrelateComplex:
     # The decimal precision to be used for comparing results.
     # This value will be passed as the 'decimal' keyword argument of
@@ -2457,20 +2472,24 @@ def test_choose_conv_method():
             assert_(isinstance(times, dict))
             assert_('fft' in times.keys() and 'direct' in times.keys())
 
+        x = np.array([2**51], dtype=np.int64)
+        h = x.copy()
+        assert_equal(choose_conv_method(x, h, mode=mode), 'direct')
+
+
+@pytest.mark.filterwarnings('ignore::DeprecationWarning')
+def test_choose_conv_method_2():
+    for mode in ['valid', 'same', 'full']:
+        x = [Decimal(3), Decimal(2)]
+        h = [Decimal(1), Decimal(4)]
+        assert_equal(choose_conv_method(x, h, mode=mode), 'direct')
+
         n = 10
         for not_fft_conv_supp in ["complex256", "complex192"]:
             if hasattr(np, not_fft_conv_supp):
                 x = np.ones(n, dtype=not_fft_conv_supp)
                 h = x.copy()
                 assert_equal(choose_conv_method(x, h, mode=mode), 'direct')
-
-        x = np.array([2**51], dtype=np.int64)
-        h = x.copy()
-        assert_equal(choose_conv_method(x, h, mode=mode), 'direct')
-
-        x = [Decimal(3), Decimal(2)]
-        h = [Decimal(1), Decimal(4)]
-        assert_equal(choose_conv_method(x, h, mode=mode), 'direct')
 
 
 @pytest.mark.fail_slow(10)
@@ -3323,6 +3342,7 @@ def assert_allclose_cast(actual, desired, rtol=1e-7, atol=0):
     assert_allclose(actual, desired, rtol, atol)
 
 
+@pytest.mark.filterwarnings('ignore::DeprecationWarning')
 @pytest.mark.parametrize('func', (sosfilt, lfilter))
 def test_nonnumeric_dtypes(func):
     x = [Decimal(1), Decimal(2), Decimal(3)]
