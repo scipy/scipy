@@ -545,9 +545,16 @@ def test_2d_matmul_multivector():
     assert_equal(res.toarray(), exp)
 
 
-@pytest.mark.parametrize(('mat_shape', 'vec_shape'), [((2,3,4,5), (5,)), ((0,0), (0,)),
-                                            ((2,3,4,7,8), (8,)), ((4,4,2,0), (0,)),
-                                            ((6,5,3,2,4), (4,1)), ((2,5), (5,1)), ((3,), (3,1)),])
+mat_vec_shapes = [
+    ((2, 3, 4, 5), (5,)), 
+    ((0, 0), (0,)), 
+    ((2, 3, 4, 7, 8), (8,)),
+    ((4, 4, 2, 0), (0,)),
+    ((6, 5, 3, 2, 4), (4, 1)), 
+    ((2, 5), (5, 1)),
+    ((3,), (3, 1)),
+]
+@pytest.mark.parametrize(('mat_shape', 'vec_shape'), mat_vec_shapes)
 def test_nd_matmul_vector(mat_shape, vec_shape):
     rng = np.random.default_rng(23409823)
 
