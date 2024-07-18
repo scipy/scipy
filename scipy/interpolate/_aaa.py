@@ -59,7 +59,7 @@ class AAA:
     support_points : array
         Support points of the approximation. At these points the approximation strictly
         interpolates the provided `f`. See notes for more details.
-    values : array
+    support_values : array
         Value of the approximation at the `support_points`.
     weights : array
         Weights of the barycentric approximation.
@@ -286,7 +286,7 @@ class AAA:
         # Remove support points with zero weight
         i_non_zero = wj != 0
         self.support_points = zj[i_non_zero]
-        self.values = fj[i_non_zero]
+        self.support_values = fj[i_non_zero]
         self.weights = wj[i_non_zero]
         self.errors = errors[: m + 1]
 
@@ -307,11 +307,11 @@ class AAA:
             CC = 1 / np.subtract.outer(zv, self.support_points)
         # Vector of values
         with np.errstate(invalid="ignore"):
-            r = CC @ (self.weights * self.values) / (CC @ self.weights)
+            r = CC @ (self.weights * self.support_values) / (CC @ self.weights)
 
         # Deal with input inf: `r(inf) = lim r(z) = sum(w*f) / sum(w)`
         with np.errstate(divide="ignore"):
-            r[np.isinf(zv)] = np.sum(self.weights * self.values) / np.sum(self.weights)
+            r[np.isinf(zv)] = np.sum(self.weights * self.support_values) / np.sum(self.weights)
 
         # Deal with NaN
         ii = np.flatnonzero(np.isnan(r))
@@ -323,7 +323,7 @@ class AAA:
             else:
                 # Clean up values `NaN = inf/inf` at support points.
                 # Find the corresponding node and set entry to correct value:
-                r[jj] = self.values[zv[jj] == self.support_points].squeeze()
+                r[jj] = self.support_values[zv[jj] == self.support_points].squeeze()
 
         return np.reshape(r, z.shape)
 
@@ -364,7 +364,7 @@ class AAA:
             # Compute residues via formula for res of quotient of analytic functions
             with np.errstate(invalid="ignore", divide="ignore"):
                 N = (1/(np.subtract.outer(self.poles(), self.support_points))) @ (
-                    self.values * self.weights
+                    self.support_values * self.weights
                 )
                 Ddiff = (
                     -((1/np.subtract.outer(self.poles(), self.support_points))**2)
@@ -387,9 +387,9 @@ class AAA:
             m = self.weights.size
             B = np.eye(m + 1, dtype=self.weights.dtype)
             B[0, 0] = 0
-            E = np.zeros_like(B, dtype=np.result_type(self.weights, self.values,
+            E = np.zeros_like(B, dtype=np.result_type(self.weights, self.support_values,
                                                       self.support_points))
-            E[0, 1:] = self.weights * self.values
+            E[0, 1:] = self.weights * self.support_values
             E[1:, 0] = 1
             np.fill_diagonal(E[1:, 1:], self.support_points)
 

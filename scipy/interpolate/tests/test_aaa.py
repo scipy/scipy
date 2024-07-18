@@ -62,7 +62,7 @@ class TestAAA:
         assert r(z2).dtype == dtype
         
         assert r.support_points.dtype == dtype
-        assert r.values.dtype == dtype
+        assert r.support_values.dtype == dtype
         assert r.weights.dtype == dtype
         assert r.errors.dtype == z.real.dtype
         assert r.poles().dtype == np.result_type(dtype, 1j)
@@ -105,7 +105,7 @@ class TestAAA:
         assert_allclose(r.residues(), 0.25)
         assert_allclose(r.roots(), 1/3)
         assert_equal(r.support_points, z)
-        assert_equal(r.values, f)
+        assert_equal(r.support_values, f)
         assert_allclose(r.weights, [0.707106781186547, 0.707106781186547])
         assert_equal(r.errors, [1, 0])
         
@@ -121,7 +121,7 @@ class TestAAA:
                         np.sort([-0.070441621801729, -0.262891711531604]))
         assert_allclose(np.sort(r.roots()), np.sort([2, 1]))
         assert_equal(r.support_points, z)
-        assert_equal(r.values, f)
+        assert_equal(r.support_values, f)
         assert_allclose(r.weights, [0.577350269189626, 0.577350269189626,
                                     0.577350269189626])
         assert_equal(r.errors, [1, 1, 0])
