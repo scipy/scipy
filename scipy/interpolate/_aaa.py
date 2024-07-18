@@ -77,7 +77,8 @@ class AAA:
 
     Notes
     -----
-    At the :math:`m` th iteration (at which point there are :math:`m` terms), the
+    At iteration :math:`m` (at which point there are :math:`m` terms in the both the
+    numerator and denominator of the approximation), the
     rational approximation in the AAA algorithm takes the barycentric form
 
     .. math::
