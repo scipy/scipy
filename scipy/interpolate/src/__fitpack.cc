@@ -205,6 +205,7 @@ data_matrix( /* inputs */
     the `s-1` corresponding rows form an `(s-1, k+1)`-sized "block".
     Then a blocked QR implementation could look like
     https://people.sc.fsu.edu/~jburkardt/f77_src/band_qr/band_qr.f
+
     The `startrow` optional argument accounts for the scenatio with a two-step
     factorization. Namely, the preceding rows are assumend to be already
     processed and are skipped.
@@ -339,7 +340,7 @@ _split(ConstRealArray1D x, ConstRealArray1D t, int k, ConstRealArray1D residuals
     ssize_t nc = t.nelem - k - 1;
 
     std::vector<ssize_t> ix;
-    ix.push_back(0.0);
+    ix.push_back(0);
 
     std::vector<double> fparts;
     double fpart = 0.0;
