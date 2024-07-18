@@ -110,9 +110,10 @@
  *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
+#include "__minpack.h"
 #include <stdlib.h>
 #include <math.h>
-#include "__minpack.h"
+
 
 // Internal routines
 static void dogleg(const int,const double*,const double*,const double*,const double*,double*,double*,double*);
