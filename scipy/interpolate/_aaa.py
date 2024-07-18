@@ -43,9 +43,9 @@ class AAA:
 
     Parameters
     ----------
-    z : 1D array_like
-        Values at which `f` is provided.
-    f : 1D array_like
+    z : 1D array_like, shape (n,)
+        1-D array containing values of the independent variable.
+    f : 1D array_like, shape (n,)
         Function values ``f(z)`` at `z`. Infinite and NaN value of `f` and corresponding
         values of `z` will be discarded.
     rtol : float, optional
