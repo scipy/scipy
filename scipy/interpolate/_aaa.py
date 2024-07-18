@@ -235,10 +235,8 @@ class AAA:
             rows = mask.sum()
             if rows >= m + 1:
                 # The usual tall-skinny case
-                # Reduced SVD, use ?gesvd rather than ?gesdd to avoid convergence issues
                 _, s, V = scipy.linalg.svd(
                     A[mask, : m + 1], full_matrices=False, check_finite=False,
-                    lapack_driver="gesvd"
                 )
                 # Treat case of multiple min singular values
                 mm = s == np.min(s)
