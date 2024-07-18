@@ -41,65 +41,121 @@
 using namespace std;
 
 // The following are based off NumPy's dtype type codes and functions like PyUFunc_dd_d
-// And also the following modifiers
-// p for pointer
-// r for reference
-// c for const
-// v for volative
 
+using cfloat = complex<float>;
+using cdouble = complex<double>;
+
+// 1 input, 1 output
 using func_f_f_t = float (*)(float);
 using func_d_d_t = double (*)(double);
-using func_F_F_t = complex<float> (*)(complex<float>);
-using func_D_D_t = complex<double> (*)(complex<double>);
+using func_F_F_t = cfloat (*)(cfloat);
+using func_D_D_t = cdouble (*)(cdouble);
 
+// 1 input, 2 outputs
 using func_f_ff_t = void (*)(float, float &, float &);
 using func_d_dd_t = void (*)(double, double &, double &);
-using func_f_FF_t = void (*)(float, complex<float> &, complex<float> &);
-using func_d_DD_t = void (*)(double, complex<double> &, complex<double> &);
+using func_f_FF_t = void (*)(float, cfloat &, cfloat &);
+using func_d_DD_t = void (*)(double, cdouble &, cdouble &);
 
+// 1 input, 4 outputs
 using func_f_ffff_t = void (*)(float, float &, float &, float &, float &);
 using func_d_dddd_t = void (*)(double, double &, double &, double &, double &);
+using func_f_FFFF_t = void (*)(float, cfloat &, cfloat &, cfloat &, cfloat &);
+using func_d_DDDD_t = void (*)(double, cdouble &, cdouble &, cdouble &, cdouble &);
+using func_F_FFFF_t = void (*)(cfloat, cfloat &, cfloat &, cfloat &, cfloat &);
+using func_D_DDDD_t = void (*)(cdouble, cdouble &, cdouble &, cdouble &, cdouble &);
 
-using func_f_FFFF_t = void (*)(float, complex<float> &, complex<float> &, complex<float> &, complex<float> &);
-using func_d_DDDD_t = void (*)(double, complex<double> &, complex<double> &, complex<double> &, complex<double> &);
-using func_F_FFFF_t = void (*)(complex<float>, complex<float> &, complex<float> &, complex<float> &, complex<float> &);
-using func_D_DDDD_t =
-    void (*)(complex<double>, complex<double> &, complex<double> &, complex<double> &, complex<double> &);
-
+// 2 inputs, 1 output
+using func_qf_f_t = float (*)(long long int, float);
+using func_qd_d_t = double (*)(long long int, double);
 using func_ff_f_t = float (*)(float, float);
 using func_dd_d_t = double (*)(double, double);
-using func_FF_F_t = complex<float> (*)(complex<float>, complex<float>);
-using func_DD_D_t = complex<double> (*)(complex<double>, complex<double>);
-using func_fF_F_t = complex<float> (*)(float, complex<float>);
-using func_dD_D_t = complex<double> (*)(double, complex<double>);
-using func_lf_f_t = float (*)(long, float);
-using func_ld_d_t = double (*)(long, double);
-using func_lF_F_t = complex<float> (*)(long, complex<float>);
-using func_lD_D_t = complex<double> (*)(long, complex<double>);
+using func_FF_F_t = cfloat (*)(cfloat, cfloat);
+using func_DD_D_t = cdouble (*)(cdouble, cdouble);
+using func_fF_F_t = cfloat (*)(float, cfloat);
+using func_dD_D_t = cdouble (*)(double, cdouble);
+using func_lf_f_t = float (*)(long int, float);
+using func_ld_d_t = double (*)(long int, double);
+using func_lF_F_t = cfloat (*)(long int, cfloat);
+using func_lD_D_t = cdouble (*)(long int, cdouble);
 
+// 2 inputs, 2 outputs
+using func_qf_ff_t = void (*)(long long int, float, float &, float &);
+using func_qd_dd_t = void (*)(long long int, double, double &, double &);
+
+// 2 inputs, 3 outputs
+using func_qf_fff_t = void (*)(long long int, float, float &, float &, float &);
+using func_qd_ddd_t = void (*)(long long int, double, double &, double &, double &);
+
+// 2 inputs, 2 outputs
 using func_ff_ff_t = void (*)(float, float, float &, float &);
 using func_dd_dd_t = void (*)(double, double, double &, double &);
+using func_lf_ff_t = void (*)(long int, float, float &, float &);
+using func_ld_dd_t = void (*)(long int, double, double &, double &);
 
+// 2 inputs, 3 outputs
+using func_lf_fff_t = void (*)(long int, float, float &, float &, float &);
+using func_ld_ddd_t = void (*)(long int, double, double &, double &, double &);
+
+// 3 inputs, 1 output
 using func_fff_f_t = float (*)(float, float, float);
 using func_ddd_d_t = double (*)(double, double, double);
-using func_Flf_F_t = complex<float> (*)(complex<float>, long, float);
-using func_Dld_D_t = complex<double> (*)(complex<double>, long, double);
+using func_Flf_F_t = cfloat (*)(cfloat, long int, float);
+using func_Dld_D_t = cdouble (*)(cdouble, long int, double);
 
+// 3 inputs, 2 outputs
 using func_fff_ff_t = void (*)(float, float, float, float &, float &);
 using func_ddd_dd_t = void (*)(double, double, double, double &, double &);
 
-using func_llff_F_t = complex<float> (*)(long, long, float, float);
-using func_lldd_D_t = complex<double> (*)(long, long, double, double);
+// 3 inputs, 1 output
+using func_qqf_f_t = float (*)(long long int, long long int, float);
+using func_qqd_d_t = double (*)(long long int, long long int, double);
+
+// 3 inputs, 2 outputs
+using func_qqf_ff_t = void (*)(long long int, long long int, float, float &, float &);
+using func_qqd_dd_t = void (*)(long long int, long long int, double, double &, double &);
+
+// 3 inputs, 3 outputs
+using func_qqf_fff_t = void (*)(long long int, long long int, float, float &, float &, float &);
+using func_qqd_ddd_t = void (*)(long long int, long long int, double, double &, double &, double &);
+
+// 4 inputs, 1 outputs
+using func_qqqF_F_t = cfloat (*)(long long int, long long int, long long int, cfloat);
+using func_qqqD_D_t = cdouble (*)(long long int, long long int, long long int, cdouble);
+using func_qqff_F_t = cfloat (*)(long long int, long long int, float, float);
+using func_qqdd_D_t = cdouble (*)(long long int, long long int, double, double);
 using func_ffff_f_t = float (*)(float, float, float, float);
 using func_dddd_d_t = double (*)(double, double, double, double);
-using func_fffF_F_t = complex<float> (*)(float, float, float, complex<float>);
-using func_dddD_D_t = complex<double> (*)(double, double, double, complex<double>);
-using func_ffff_F_t = complex<float> (*)(float, float, float, float);
-using func_dddd_D_t = complex<double> (*)(double, double, double, double);
+using func_fffF_F_t = cfloat (*)(float, float, float, cfloat);
+using func_dddD_D_t = cdouble (*)(double, double, double, cdouble);
+using func_ffff_F_t = cfloat (*)(float, float, float, float);
+using func_dddd_D_t = cdouble (*)(double, double, double, double);
 
+// 4 inputs, 2 outputs
+using func_qqqf_ff_t = void (*)(long long int, long long int, long long int, float, float &, float &);
 using func_ffff_ff_t = void (*)(float, float, float, float, float &, float &);
+using func_qqqd_dd_t = void (*)(long long int, long long int, long long int, double, double &, double &);
 using func_dddd_dd_t = void (*)(double, double, double, double, double &, double &);
+using func_qqqF_FF_t = void (*)(long long int, long long int, long long int, cfloat, cfloat &, cfloat &);
+using func_qqqD_DD_t = void (*)(long long int, long long int, long long int, cdouble, cdouble &, cdouble &);
+using func_qqff_FF_t = void (*)(long long int, long long int, float, float, cfloat &, cfloat &);
+using func_qqdd_DD_t = void (*)(long long int, long long int, double, double, cdouble &, cdouble &);
+using func_qqff_FF2_t = void (*)(long long int, long long int, float, float, cfloat &, cfloat (&)[2]);
+using func_qqdd_DD2_t = void (*)(long long int, long long int, double, double, cdouble &, cdouble (&)[2]);
 
+// 4 inputs, 3 outputs
+using func_qqqf_fff_t = void (*)(long long int, long long int, long long int, float, float &, float &, float &);
+using func_qqqd_ddd_t = void (*)(long long int, long long int, long long int, double, double &, double &, double &);
+using func_qqqF_FFF_t = void (*)(long long int, long long int, long long int, cfloat, cfloat &, cfloat &, cfloat &);
+using func_qqqD_DDD_t = void (*)(long long int, long long int, long long int, cdouble, cdouble &, cdouble &, cdouble &);
+using func_qqff_FFF_t = void (*)(long long int, long long int, float, float, cfloat &, cfloat &, cfloat &);
+using func_qqdd_DDD_t = void (*)(long long int, long long int, double, double, cdouble &, cdouble &, cdouble &);
+using func_qqff_FF2F22_t = void (*)(long long int, long long int, float, float, cfloat &, cfloat (&)[2],
+                                    cfloat (&)[2][2]);
+using func_qqdd_DD2D22_t = void (*)(long long int, long long int, double, double, cdouble &, cdouble (&)[2],
+                                    cdouble (&)[2][2]);
+
+// 5 inputs, 2 outputs
 using func_fffff_ff_t = void (*)(float, float, float, float, float, float &, float &);
 using func_ddddd_dd_t = void (*)(double, double, double, double, double, double &, double &);
 
@@ -206,16 +262,7 @@ extern const char *yve_doc;
 extern "C" int wrap_PyUFunc_getfperr() { return PyUFunc_getfperr(); }
 
 static PyModuleDef _special_ufuncs_def = {
-    PyModuleDef_HEAD_INIT,
-    "_special_ufuncs",
-    NULL,
-    -1,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL
-};
+    PyModuleDef_HEAD_INIT, "_special_ufuncs", NULL, -1, NULL, NULL, NULL, NULL, NULL};
 
 PyMODINIT_FUNC PyInit__special_ufuncs() {
     import_array();
@@ -229,558 +276,592 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
         return NULL;
     }
 
-    PyObject *_cospi = SpecFun_NewUFunc(
-        {static_cast<func_f_f_t>(special::cospi), static_cast<func_d_d_t>(special::cospi),
-         static_cast<func_F_F_t>(special::cospi), static_cast<func_D_D_t>(special::cospi)},
-        "_cospi", _cospi_doc
-    );
+    PyObject *_cospi =
+        SpecFun_NewUFunc({static_cast<func_f_f_t>(special::cospi), static_cast<func_d_d_t>(special::cospi),
+                          static_cast<func_F_F_t>(special::cospi), static_cast<func_D_D_t>(special::cospi)},
+                         "_cospi", _cospi_doc);
     PyModule_AddObjectRef(_special_ufuncs, "_cospi", _cospi);
 
-    PyObject *_lambertw = SpecFun_NewUFunc(
-        {static_cast<func_Dld_D_t>(special::lambertw), static_cast<func_Flf_F_t>(special::lambertw)}, "_lambertw",
-        lambertw_doc
-    );
+    PyObject *_lambertw =
+        SpecFun_NewUFunc({static_cast<func_Dld_D_t>(special::lambertw), static_cast<func_Flf_F_t>(special::lambertw)},
+                         "_lambertw", lambertw_doc);
     PyModule_AddObjectRef(_special_ufuncs, "_lambertw", _lambertw);
 
-    PyObject *_scaled_exp1 = SpecFun_NewUFunc(
-        {static_cast<func_d_d_t>(special::scaled_exp1), static_cast<func_f_f_t>(special::scaled_exp1)}, "_scaled_exp1",
-        scaled_exp1_doc
-    );
+    PyObject *_scaled_exp1 =
+        SpecFun_NewUFunc({static_cast<func_d_d_t>(special::scaled_exp1), static_cast<func_f_f_t>(special::scaled_exp1)},
+                         "_scaled_exp1", scaled_exp1_doc);
     PyModule_AddObjectRef(_special_ufuncs, "_scaled_exp1", _scaled_exp1);
 
-    PyObject *_sinpi = SpecFun_NewUFunc(
-        {static_cast<func_f_f_t>(special::sinpi), static_cast<func_d_d_t>(special::sinpi),
-         static_cast<func_F_F_t>(special::sinpi), static_cast<func_D_D_t>(special::sinpi)},
-        "_sinpi", _sinpi_doc
-    );
+    PyObject *_sinpi =
+        SpecFun_NewUFunc({static_cast<func_f_f_t>(special::sinpi), static_cast<func_d_d_t>(special::sinpi),
+                          static_cast<func_F_F_t>(special::sinpi), static_cast<func_D_D_t>(special::sinpi)},
+                         "_sinpi", _sinpi_doc);
     PyModule_AddObjectRef(_special_ufuncs, "_sinpi", _sinpi);
 
     PyObject *_zeta = SpecFun_NewUFunc(
-        {static_cast<func_ff_f_t>(special::zeta), static_cast<func_dd_d_t>(special::zeta)}, "_zeta", _zeta_doc
-    );
+        {static_cast<func_ff_f_t>(special::zeta), static_cast<func_dd_d_t>(special::zeta)}, "_zeta", _zeta_doc);
     PyModule_AddObjectRef(_special_ufuncs, "_zeta", _zeta);
 
-    PyObject *airy = SpecFun_NewUFunc(
-        {static_cast<func_f_ffff_t>(special::airy), static_cast<func_d_dddd_t>(special::airy),
-         static_cast<func_F_FFFF_t>(special::airy), static_cast<func_D_DDDD_t>(special::airy)},
-        4, "airy", airy_doc
-    );
+    PyObject *airy =
+        SpecFun_NewUFunc({static_cast<func_f_ffff_t>(special::airy), static_cast<func_d_dddd_t>(special::airy),
+                          static_cast<func_F_FFFF_t>(special::airy), static_cast<func_D_DDDD_t>(special::airy)},
+                         4, "airy", airy_doc);
     PyModule_AddObjectRef(_special_ufuncs, "airy", airy);
 
-    PyObject *airye = SpecFun_NewUFunc(
-        {static_cast<func_f_ffff_t>(special::airye), static_cast<func_d_dddd_t>(special::airye),
-         static_cast<func_F_FFFF_t>(special::airye), static_cast<func_D_DDDD_t>(special::airye)},
-        4, "airye", airye_doc
-    );
+    PyObject *airye =
+        SpecFun_NewUFunc({static_cast<func_f_ffff_t>(special::airye), static_cast<func_d_dddd_t>(special::airye),
+                          static_cast<func_F_FFFF_t>(special::airye), static_cast<func_D_DDDD_t>(special::airye)},
+                         4, "airye", airye_doc);
     PyModule_AddObjectRef(_special_ufuncs, "airye", airye);
 
-    PyObject *bei = SpecFun_NewUFunc(
-        {static_cast<func_f_f_t>(special::bei), static_cast<func_d_d_t>(special::bei)}, "bei", bei_doc
-    );
+    PyObject *bei = SpecFun_NewUFunc({static_cast<func_f_f_t>(special::bei), static_cast<func_d_d_t>(special::bei)},
+                                     "bei", bei_doc);
     PyModule_AddObjectRef(_special_ufuncs, "bei", bei);
 
-    PyObject *beip = SpecFun_NewUFunc(
-        {static_cast<func_f_f_t>(special::beip), static_cast<func_d_d_t>(special::beip)}, "beip", beip_doc
-    );
+    PyObject *beip = SpecFun_NewUFunc({static_cast<func_f_f_t>(special::beip), static_cast<func_d_d_t>(special::beip)},
+                                      "beip", beip_doc);
     PyModule_AddObjectRef(_special_ufuncs, "beip", beip);
 
-    PyObject *ber = SpecFun_NewUFunc(
-        {static_cast<func_f_f_t>(special::ber), static_cast<func_d_d_t>(special::ber)}, "ber", ber_doc
-    );
+    PyObject *ber = SpecFun_NewUFunc({static_cast<func_f_f_t>(special::ber), static_cast<func_d_d_t>(special::ber)},
+                                     "ber", ber_doc);
     PyModule_AddObjectRef(_special_ufuncs, "ber", ber);
 
-    PyObject *berp = SpecFun_NewUFunc(
-        {static_cast<func_f_f_t>(special::berp), static_cast<func_d_d_t>(special::berp)}, "berp", berp_doc
-    );
+    PyObject *berp = SpecFun_NewUFunc({static_cast<func_f_f_t>(special::berp), static_cast<func_d_d_t>(special::berp)},
+                                      "berp", berp_doc);
     PyModule_AddObjectRef(_special_ufuncs, "berp", berp);
 
     PyObject *binom = SpecFun_NewUFunc(
-        {static_cast<func_ff_f_t>(special::binom), static_cast<func_dd_d_t>(special::binom)}, "binom", binom_doc
-    );
+        {static_cast<func_ff_f_t>(special::binom), static_cast<func_dd_d_t>(special::binom)}, "binom", binom_doc);
     PyModule_AddObjectRef(_special_ufuncs, "binom", binom);
 
-    PyObject *exp1 = SpecFun_NewUFunc(
-        {static_cast<func_f_f_t>(special::exp1), static_cast<func_d_d_t>(special::exp1),
-         static_cast<func_F_F_t>(special::exp1), static_cast<func_D_D_t>(special::exp1)},
-        "exp1", exp1_doc
-    );
+    PyObject *exp1 = SpecFun_NewUFunc({static_cast<func_f_f_t>(special::exp1), static_cast<func_d_d_t>(special::exp1),
+                                       static_cast<func_F_F_t>(special::exp1), static_cast<func_D_D_t>(special::exp1)},
+                                      "exp1", exp1_doc);
     PyModule_AddObjectRef(_special_ufuncs, "exp1", exp1);
 
-    PyObject *expi = SpecFun_NewUFunc(
-        {static_cast<func_f_f_t>(special::expi), static_cast<func_d_d_t>(special::expi),
-         static_cast<func_F_F_t>(special::expi), static_cast<func_D_D_t>(special::expi)},
-        "expi", expi_doc
-    );
+    PyObject *expi = SpecFun_NewUFunc({static_cast<func_f_f_t>(special::expi), static_cast<func_d_d_t>(special::expi),
+                                       static_cast<func_F_F_t>(special::expi), static_cast<func_D_D_t>(special::expi)},
+                                      "expi", expi_doc);
     PyModule_AddObjectRef(_special_ufuncs, "expi", expi);
 
-    PyObject *expit = SpecFun_NewUFunc(
-        {static_cast<func_d_d_t>(special::expit), static_cast<func_f_f_t>(special::expit),
-         static_cast<func_g_g_t>(special::expit)},
-        "expit", expit_doc
-    );
+    PyObject *expit =
+        SpecFun_NewUFunc({static_cast<func_d_d_t>(special::expit), static_cast<func_f_f_t>(special::expit),
+                          static_cast<func_g_g_t>(special::expit)},
+                         "expit", expit_doc);
     PyModule_AddObjectRef(_special_ufuncs, "expit", expit);
 
     PyObject *exprel = SpecFun_NewUFunc(
-        {static_cast<func_d_d_t>(special::exprel), static_cast<func_f_f_t>(special::exprel)}, "exprel", exprel_doc
-    );
+        {static_cast<func_d_d_t>(special::exprel), static_cast<func_f_f_t>(special::exprel)}, "exprel", exprel_doc);
     PyModule_AddObjectRef(_special_ufuncs, "exprel", exprel);
 
-    PyObject *gamma = SpecFun_NewUFunc(
-        {static_cast<func_d_d_t>(special::gamma), static_cast<func_D_D_t>(special::gamma),
-         static_cast<func_f_f_t>(special::gamma), static_cast<func_F_F_t>(special::gamma)},
-        "gamma", gamma_doc
-    );
+    PyObject *gamma =
+        SpecFun_NewUFunc({static_cast<func_d_d_t>(special::gamma), static_cast<func_D_D_t>(special::gamma),
+                          static_cast<func_f_f_t>(special::gamma), static_cast<func_F_F_t>(special::gamma)},
+                         "gamma", gamma_doc);
     PyModule_AddObjectRef(_special_ufuncs, "gamma", gamma);
 
     PyObject *gammaln = SpecFun_NewUFunc(
-        {static_cast<func_f_f_t>(special::gammaln), static_cast<func_d_d_t>(special::gammaln)}, "gammaln", gammaln_doc
-    );
+        {static_cast<func_f_f_t>(special::gammaln), static_cast<func_d_d_t>(special::gammaln)}, "gammaln", gammaln_doc);
     PyModule_AddObjectRef(_special_ufuncs, "gammaln", gammaln);
 
-    PyObject *hyp2f1 = SpecFun_NewUFunc(
-        {static_cast<func_dddd_d_t>(special::hyp2f1), static_cast<func_dddD_D_t>(special::hyp2f1),
-         static_cast<func_ffff_f_t>(special::hyp2f1), static_cast<func_fffF_F_t>(special::hyp2f1)},
-        "hyp2f1", hyp2f1_doc
-    );
+    PyObject *hyp2f1 =
+        SpecFun_NewUFunc({static_cast<func_dddd_d_t>(special::hyp2f1), static_cast<func_dddD_D_t>(special::hyp2f1),
+                          static_cast<func_ffff_f_t>(special::hyp2f1), static_cast<func_fffF_F_t>(special::hyp2f1)},
+                         "hyp2f1", hyp2f1_doc);
     PyModule_AddObjectRef(_special_ufuncs, "hyp2f1", hyp2f1);
 
     PyObject *hankel1 = SpecFun_NewUFunc(
         {static_cast<func_fF_F_t>(special::cyl_hankel_1), static_cast<func_dD_D_t>(special::cyl_hankel_1)}, "hankel1",
-        hankel1_doc
-    );
+        hankel1_doc);
     PyModule_AddObjectRef(_special_ufuncs, "hankel1", hankel1);
 
     PyObject *hankel1e = SpecFun_NewUFunc(
         {static_cast<func_fF_F_t>(special::cyl_hankel_1e), static_cast<func_dD_D_t>(special::cyl_hankel_1e)},
-        "hankel1e", hankel1e_doc
-    );
+        "hankel1e", hankel1e_doc);
     PyModule_AddObjectRef(_special_ufuncs, "hankel1e", hankel1e);
 
     PyObject *hankel2 = SpecFun_NewUFunc(
         {static_cast<func_fF_F_t>(special::cyl_hankel_2), static_cast<func_dD_D_t>(special::cyl_hankel_2)}, "hankel2",
-        hankel2_doc
-    );
+        hankel2_doc);
     PyModule_AddObjectRef(_special_ufuncs, "hankel2", hankel2);
 
     PyObject *hankel2e = SpecFun_NewUFunc(
         {static_cast<func_fF_F_t>(special::cyl_hankel_2e), static_cast<func_dD_D_t>(special::cyl_hankel_2e)},
-        "hankel2e", hankel2e_doc
-    );
+        "hankel2e", hankel2e_doc);
     PyModule_AddObjectRef(_special_ufuncs, "hankel2e", hankel2e);
 
-    PyObject *it2i0k0 = SpecFun_NewUFunc(
-        {static_cast<func_f_ff_t>(special::it2i0k0), static_cast<func_d_dd_t>(special::it2i0k0)}, 2, "it2i0k0",
-        it2i0k0_doc
-    );
+    PyObject *it2i0k0 =
+        SpecFun_NewUFunc({static_cast<func_f_ff_t>(special::it2i0k0), static_cast<func_d_dd_t>(special::it2i0k0)}, 2,
+                         "it2i0k0", it2i0k0_doc);
     PyModule_AddObjectRef(_special_ufuncs, "it2i0k0", it2i0k0);
 
-    PyObject *it2j0y0 = SpecFun_NewUFunc(
-        {static_cast<func_f_ff_t>(special::it2j0y0), static_cast<func_d_dd_t>(special::it2j0y0)}, 2, "it2j0y0",
-        it2j0y0_doc
-    );
+    PyObject *it2j0y0 =
+        SpecFun_NewUFunc({static_cast<func_f_ff_t>(special::it2j0y0), static_cast<func_d_dd_t>(special::it2j0y0)}, 2,
+                         "it2j0y0", it2j0y0_doc);
     PyModule_AddObjectRef(_special_ufuncs, "it2j0y0", it2j0y0);
 
-    PyObject *it2struve0 = SpecFun_NewUFunc(
-        {static_cast<func_f_f_t>(special::it2struve0), static_cast<func_d_d_t>(special::it2struve0)}, "it2struve0",
-        it2struve0_doc
-    );
+    PyObject *it2struve0 =
+        SpecFun_NewUFunc({static_cast<func_f_f_t>(special::it2struve0), static_cast<func_d_d_t>(special::it2struve0)},
+                         "it2struve0", it2struve0_doc);
     PyModule_AddObjectRef(_special_ufuncs, "it2struve0", it2struve0);
 
-    PyObject *itairy = SpecFun_NewUFunc(
-        {static_cast<func_f_ffff_t>(special::itairy), static_cast<func_d_dddd_t>(special::itairy)}, 4, "itairy",
-        itairy_doc
-    );
+    PyObject *itairy =
+        SpecFun_NewUFunc({static_cast<func_f_ffff_t>(special::itairy), static_cast<func_d_dddd_t>(special::itairy)}, 4,
+                         "itairy", itairy_doc);
     PyModule_AddObjectRef(_special_ufuncs, "itairy", itairy);
 
-    PyObject *iti0k0 = SpecFun_NewUFunc(
-        {static_cast<func_f_ff_t>(special::it1i0k0), static_cast<func_d_dd_t>(special::it1i0k0)}, 2, "iti0k0",
-        iti0k0_doc
-    );
+    PyObject *iti0k0 =
+        SpecFun_NewUFunc({static_cast<func_f_ff_t>(special::it1i0k0), static_cast<func_d_dd_t>(special::it1i0k0)}, 2,
+                         "iti0k0", iti0k0_doc);
     PyModule_AddObjectRef(_special_ufuncs, "iti0k0", iti0k0);
 
-    PyObject *itj0y0 = SpecFun_NewUFunc(
-        {static_cast<func_f_ff_t>(special::it1j0y0), static_cast<func_d_dd_t>(special::it1j0y0)}, 2, "itj0y0",
-        itj0y0_doc
-    );
+    PyObject *itj0y0 =
+        SpecFun_NewUFunc({static_cast<func_f_ff_t>(special::it1j0y0), static_cast<func_d_dd_t>(special::it1j0y0)}, 2,
+                         "itj0y0", itj0y0_doc);
     PyModule_AddObjectRef(_special_ufuncs, "itj0y0", itj0y0);
 
     PyObject *itmodstruve0 = SpecFun_NewUFunc(
         {static_cast<func_f_f_t>(special::itmodstruve0), static_cast<func_d_d_t>(special::itmodstruve0)},
-        "itmodstruve0", itmodstruve0_doc
-    );
+        "itmodstruve0", itmodstruve0_doc);
     PyModule_AddObjectRef(_special_ufuncs, "itmodstruve0", itmodstruve0);
 
-    PyObject *itstruve0 = SpecFun_NewUFunc(
-        {static_cast<func_f_f_t>(special::itstruve0), static_cast<func_d_d_t>(special::itstruve0)}, "itstruve0",
-        itstruve0_doc
-    );
+    PyObject *itstruve0 =
+        SpecFun_NewUFunc({static_cast<func_f_f_t>(special::itstruve0), static_cast<func_d_d_t>(special::itstruve0)},
+                         "itstruve0", itstruve0_doc);
     PyModule_AddObjectRef(_special_ufuncs, "itstruve0", itstruve0);
 
     PyObject *iv = SpecFun_NewUFunc(
         {static_cast<func_ff_f_t>(special::cyl_bessel_i), static_cast<func_dd_d_t>(special::cyl_bessel_i),
          static_cast<func_fF_F_t>(special::cyl_bessel_i), static_cast<func_dD_D_t>(special::cyl_bessel_i)},
-        "iv", iv_doc
-    );
+        "iv", iv_doc);
     PyModule_AddObjectRef(_special_ufuncs, "iv", iv);
 
-    PyObject *iv_ratio = SpecFun_NewUFunc(
-        {static_cast<func_dd_d_t>(special::iv_ratio), static_cast<func_ff_f_t>(special::iv_ratio)},
-        "_iv_ratio", iv_ratio_doc
-    );
+    PyObject *iv_ratio =
+        SpecFun_NewUFunc({static_cast<func_dd_d_t>(special::iv_ratio), static_cast<func_ff_f_t>(special::iv_ratio)},
+                         "_iv_ratio", iv_ratio_doc);
     PyModule_AddObjectRef(_special_ufuncs, "_iv_ratio", iv_ratio);
 
     PyObject *ive = SpecFun_NewUFunc(
         {static_cast<func_ff_f_t>(special::cyl_bessel_ie), static_cast<func_dd_d_t>(special::cyl_bessel_ie),
          static_cast<func_fF_F_t>(special::cyl_bessel_ie), static_cast<func_dD_D_t>(special::cyl_bessel_ie)},
-        "ive", ive_doc
-    );
+        "ive", ive_doc);
     PyModule_AddObjectRef(_special_ufuncs, "ive", ive);
 
     PyObject *jv = SpecFun_NewUFunc(
         {static_cast<func_ff_f_t>(special::cyl_bessel_j), static_cast<func_dd_d_t>(special::cyl_bessel_j),
          static_cast<func_fF_F_t>(special::cyl_bessel_j), static_cast<func_dD_D_t>(special::cyl_bessel_j)},
-        "jv", jv_doc
-    );
+        "jv", jv_doc);
     PyModule_AddObjectRef(_special_ufuncs, "jv", jv);
 
     PyObject *jve = SpecFun_NewUFunc(
         {static_cast<func_ff_f_t>(special::cyl_bessel_je), static_cast<func_dd_d_t>(special::cyl_bessel_je),
          static_cast<func_fF_F_t>(special::cyl_bessel_je), static_cast<func_dD_D_t>(special::cyl_bessel_je)},
-        "jve", jve_doc
-    );
+        "jve", jve_doc);
     PyModule_AddObjectRef(_special_ufuncs, "jve", jve);
 
-    PyObject *kei = SpecFun_NewUFunc(
-        {static_cast<func_f_f_t>(special::kei), static_cast<func_d_d_t>(special::kei)}, "kei", kei_doc
-    );
+    PyObject *kei = SpecFun_NewUFunc({static_cast<func_f_f_t>(special::kei), static_cast<func_d_d_t>(special::kei)},
+                                     "kei", kei_doc);
     PyModule_AddObjectRef(_special_ufuncs, "kei", kei);
 
-    PyObject *keip = SpecFun_NewUFunc(
-        {static_cast<func_f_f_t>(special::keip), static_cast<func_d_d_t>(special::keip)}, "keip", keip_doc
-    );
+    PyObject *keip = SpecFun_NewUFunc({static_cast<func_f_f_t>(special::keip), static_cast<func_d_d_t>(special::keip)},
+                                      "keip", keip_doc);
     PyModule_AddObjectRef(_special_ufuncs, "keip", keip);
 
-    PyObject *kelvin = SpecFun_NewUFunc(
-        {static_cast<func_f_FFFF_t>(special::kelvin), static_cast<func_d_DDDD_t>(special::kelvin)}, 4, "kelvin",
-        kelvin_doc
-    );
+    PyObject *kelvin =
+        SpecFun_NewUFunc({static_cast<func_f_FFFF_t>(special::kelvin), static_cast<func_d_DDDD_t>(special::kelvin)}, 4,
+                         "kelvin", kelvin_doc);
     PyModule_AddObjectRef(_special_ufuncs, "kelvin", kelvin);
 
-    PyObject *ker = SpecFun_NewUFunc(
-        {static_cast<func_f_f_t>(special::ker), static_cast<func_d_d_t>(special::ker)}, "ker", ker_doc
-    );
+    PyObject *ker = SpecFun_NewUFunc({static_cast<func_f_f_t>(special::ker), static_cast<func_d_d_t>(special::ker)},
+                                     "ker", ker_doc);
     PyModule_AddObjectRef(_special_ufuncs, "ker", ker);
 
-    PyObject *kerp = SpecFun_NewUFunc(
-        {static_cast<func_f_f_t>(special::kerp), static_cast<func_d_d_t>(special::kerp)}, "kerp", kerp_doc
-    );
+    PyObject *kerp = SpecFun_NewUFunc({static_cast<func_f_f_t>(special::kerp), static_cast<func_d_d_t>(special::kerp)},
+                                      "kerp", kerp_doc);
     PyModule_AddObjectRef(_special_ufuncs, "kerp", kerp);
 
     PyObject *kv = SpecFun_NewUFunc(
         {static_cast<func_ff_f_t>(special::cyl_bessel_k), static_cast<func_dd_d_t>(special::cyl_bessel_k),
          static_cast<func_fF_F_t>(special::cyl_bessel_k), static_cast<func_dD_D_t>(special::cyl_bessel_k)},
-        "kv", kv_doc
-    );
+        "kv", kv_doc);
     PyModule_AddObjectRef(_special_ufuncs, "kv", kv);
 
     PyObject *kve = SpecFun_NewUFunc(
         {static_cast<func_ff_f_t>(special::cyl_bessel_ke), static_cast<func_dd_d_t>(special::cyl_bessel_ke),
          static_cast<func_fF_F_t>(special::cyl_bessel_ke), static_cast<func_dD_D_t>(special::cyl_bessel_ke)},
-        "kve", kve_doc
-    );
+        "kve", kve_doc);
     PyModule_AddObjectRef(_special_ufuncs, "kve", kve);
 
-    PyObject *log_expit = SpecFun_NewUFunc(
-        {static_cast<func_d_d_t>(special::log_expit), static_cast<func_f_f_t>(special::log_expit),
-         static_cast<func_g_g_t>(special::log_expit)},
-        "log_expit", log_expit_doc
-    );
+    PyObject *log_expit =
+        SpecFun_NewUFunc({static_cast<func_d_d_t>(special::log_expit), static_cast<func_f_f_t>(special::log_expit),
+                          static_cast<func_g_g_t>(special::log_expit)},
+                         "log_expit", log_expit_doc);
     PyModule_AddObjectRef(_special_ufuncs, "log_expit", log_expit);
 
     PyObject *log_wright_bessel = SpecFun_NewUFunc(
         {static_cast<func_ddd_d_t>(special::log_wright_bessel), static_cast<func_fff_f_t>(special::log_wright_bessel)},
-        "log_wright_bessel", log_wright_bessel_doc
-    );
+        "log_wright_bessel", log_wright_bessel_doc);
     PyModule_AddObjectRef(_special_ufuncs, "log_wright_bessel", log_wright_bessel);
 
-    PyObject *logit = SpecFun_NewUFunc(
-        {static_cast<func_d_d_t>(special::logit), static_cast<func_f_f_t>(special::logit),
-         static_cast<func_g_g_t>(special::logit)},
-        "logit", logit_doc
-    );
+    PyObject *logit =
+        SpecFun_NewUFunc({static_cast<func_d_d_t>(special::logit), static_cast<func_f_f_t>(special::logit),
+                          static_cast<func_g_g_t>(special::logit)},
+                         "logit", logit_doc);
     PyModule_AddObjectRef(_special_ufuncs, "logit", logit);
 
-    PyObject *loggamma = SpecFun_NewUFunc(
-        {static_cast<func_d_d_t>(special::loggamma), static_cast<func_D_D_t>(special::loggamma),
-         static_cast<func_f_f_t>(special::loggamma), static_cast<func_F_F_t>(special::loggamma)},
-        "loggamma", loggamma_doc
-    );
+    PyObject *loggamma =
+        SpecFun_NewUFunc({static_cast<func_d_d_t>(special::loggamma), static_cast<func_D_D_t>(special::loggamma),
+                          static_cast<func_f_f_t>(special::loggamma), static_cast<func_F_F_t>(special::loggamma)},
+                         "loggamma", loggamma_doc);
     PyModule_AddObjectRef(_special_ufuncs, "loggamma", loggamma);
 
-    PyObject *mathieu_a = SpecFun_NewUFunc(
-        {static_cast<func_ff_f_t>(special::cem_cva), static_cast<func_dd_d_t>(special::cem_cva)}, "mathieu_a",
-        mathieu_a_doc
-    );
+    PyObject *legendre_p = Py_BuildValue(
+        "(N,N,N)",
+        SpecFun_NewUFunc({static_cast<func_qd_d_t>(::legendre_p), static_cast<func_qf_f_t>(::legendre_p)}, "legendre_p",
+                         nullptr),
+        SpecFun_NewUFunc({static_cast<func_qd_dd_t>(::legendre_p), static_cast<func_qf_ff_t>(::legendre_p)}, 2,
+                         "legendre_p", nullptr),
+        SpecFun_NewUFunc({static_cast<func_qd_ddd_t>(::legendre_p), static_cast<func_qf_fff_t>(::legendre_p)}, 3,
+                         "legendre_p", nullptr));
+    PyModule_AddObjectRef(_special_ufuncs, "legendre_p", legendre_p);
+
+    PyObject *assoc_legendre_p = Py_BuildValue(
+        "{(O, i): N, (O, i): N, (O, i): N, (O, i): N, (O, i): N,(O, i): N}", Py_True, 0,
+        SpecFun_NewUFunc({[](long long int n, long long int m, double z, long long int branch_cut) {
+                              return ::assoc_legendre_p(assoc_legendre_norm, n, m, z, branch_cut);
+                          },
+                          [](long long int n, long long int m, float z, long long int branch_cut) {
+                              return ::assoc_legendre_p(assoc_legendre_norm, n, m, z, branch_cut);
+                          },
+                          [](long long int n, long long int m, cdouble z, long long int branch_cut) {
+                              return ::assoc_legendre_p(assoc_legendre_norm, n, m, z, branch_cut);
+                          },
+                          [](long long int n, long long int m, cfloat z, long long int branch_cut) {
+                              return ::assoc_legendre_p(assoc_legendre_norm, n, m, z, branch_cut);
+                          }},
+                         "assoc_legendre_p", nullptr),
+        Py_True, 1,
+        SpecFun_NewUFunc(
+            {[](long long int n, long long int m, double z, long long int branch_cut, double &res, double &res_jac) {
+                 ::assoc_legendre_p(assoc_legendre_norm, n, m, z, branch_cut, res, res_jac);
+             },
+             [](long long int n, long long int m, float z, long long int branch_cut, float &res, float &res_jac) {
+                 ::assoc_legendre_p(assoc_legendre_norm, n, m, z, branch_cut, res, res_jac);
+             },
+             [](long long int n, long long int m, cdouble z, long long int branch_cut, cdouble &res, cdouble &res_jac) {
+                 ::assoc_legendre_p(assoc_legendre_norm, n, m, z, branch_cut, res, res_jac);
+             },
+             [](long long int n, long long int m, cfloat z, long long int branch_cut, cfloat &res, cfloat &res_jac) {
+                 ::assoc_legendre_p(assoc_legendre_norm, n, m, z, branch_cut, res, res_jac);
+             }},
+            2, "assoc_legendre_p", nullptr),
+        Py_True, 2,
+        SpecFun_NewUFunc({[](long long int n, long long int m, double z, long long int branch_cut, double &res,
+                             double &res_jac, double &res_hess) {
+                              ::assoc_legendre_p(assoc_legendre_norm, n, m, z, branch_cut, res, res_jac, res_hess);
+                          },
+                          [](long long int n, long long int m, float z, long long int branch_cut, float &res,
+                             float &res_jac, float &res_hess) {
+                              ::assoc_legendre_p(assoc_legendre_norm, n, m, z, branch_cut, res, res_jac, res_hess);
+                          },
+                          [](long long int n, long long int m, cdouble z, long long int branch_cut, cdouble &res,
+                             cdouble &res_jac, cdouble &res_hess) {
+                              ::assoc_legendre_p(assoc_legendre_norm, n, m, z, branch_cut, res, res_jac, res_hess);
+                          },
+                          [](long long int n, long long int m, cfloat z, long long int branch_cut, cfloat &res,
+                             cfloat &res_jac, cfloat &res_hess) {
+                              ::assoc_legendre_p(assoc_legendre_norm, n, m, z, branch_cut, res, res_jac, res_hess);
+                          }},
+                         3, "assoc_legendre_p", nullptr),
+        Py_False, 0,
+        SpecFun_NewUFunc({[](long long int n, long long int m, double z, long long int branch_cut) {
+                              return ::assoc_legendre_p(assoc_legendre_unnorm, n, m, z, branch_cut);
+                          },
+                          [](long long int n, long long int m, float z, long long int branch_cut) {
+                              return ::assoc_legendre_p(assoc_legendre_unnorm, n, m, z, branch_cut);
+                          },
+                          [](long long int n, long long int m, cdouble z, long long int branch_cut) {
+                              return ::assoc_legendre_p(assoc_legendre_unnorm, n, m, z, branch_cut);
+                          },
+                          [](long long int n, long long int m, cfloat z, long long int branch_cut) {
+                              return ::assoc_legendre_p(assoc_legendre_unnorm, n, m, z, branch_cut);
+                          }},
+                         "assoc_legendre_p", nullptr),
+        Py_False, 1,
+        SpecFun_NewUFunc(
+            {[](long long int n, long long int m, double z, long long int branch_cut, double &res, double &res_jac) {
+                 ::assoc_legendre_p(assoc_legendre_unnorm, n, m, z, branch_cut, res, res_jac);
+             },
+             [](long long int n, long long int m, float z, long long int branch_cut, float &res, float &res_jac) {
+                 ::assoc_legendre_p(assoc_legendre_unnorm, n, m, z, branch_cut, res, res_jac);
+             },
+             [](long long int n, long long int m, cdouble z, long long int branch_cut, cdouble &res, cdouble &res_jac) {
+                 ::assoc_legendre_p(assoc_legendre_unnorm, n, m, z, branch_cut, res, res_jac);
+             },
+             [](long long int n, long long int m, cfloat z, long long int branch_cut, cfloat &res, cfloat &res_jac) {
+                 ::assoc_legendre_p(assoc_legendre_unnorm, n, m, z, branch_cut, res, res_jac);
+             }},
+            2, "assoc_legendre_p", nullptr),
+        Py_False, 2,
+        SpecFun_NewUFunc({[](long long int n, long long int m, double z, long long int branch_cut, double &res,
+                             double &res_jac, double &res_hess) {
+                              ::assoc_legendre_p(assoc_legendre_unnorm, n, m, z, branch_cut, res, res_jac, res_hess);
+                          },
+                          [](long long int n, long long int m, float z, long long int branch_cut, float &res,
+                             float &res_jac, float &res_hess) {
+                              ::assoc_legendre_p(assoc_legendre_unnorm, n, m, z, branch_cut, res, res_jac, res_hess);
+                          },
+                          [](long long int n, long long int m, cdouble z, long long int branch_cut, cdouble &res,
+                             cdouble &res_jac, cdouble &res_hess) {
+                              ::assoc_legendre_p(assoc_legendre_unnorm, n, m, z, branch_cut, res, res_jac, res_hess);
+                          },
+                          [](long long int n, long long int m, cfloat z, long long int branch_cut, cfloat &res,
+                             cfloat &res_jac, cfloat &res_hess) {
+                              ::assoc_legendre_p(assoc_legendre_unnorm, n, m, z, branch_cut, res, res_jac, res_hess);
+                          }},
+                         3, "assoc_legendre_p", nullptr));
+    PyModule_AddObjectRef(_special_ufuncs, "assoc_legendre_p", assoc_legendre_p);
+
+    PyObject *mathieu_a =
+        SpecFun_NewUFunc({static_cast<func_ff_f_t>(special::cem_cva), static_cast<func_dd_d_t>(special::cem_cva)},
+                         "mathieu_a", mathieu_a_doc);
     PyModule_AddObjectRef(_special_ufuncs, "mathieu_a", mathieu_a);
 
-    PyObject *mathieu_b = SpecFun_NewUFunc(
-        {static_cast<func_ff_f_t>(special::sem_cva), static_cast<func_dd_d_t>(special::sem_cva)}, "mathieu_b",
-        mathieu_b_doc
-    );
+    PyObject *mathieu_b =
+        SpecFun_NewUFunc({static_cast<func_ff_f_t>(special::sem_cva), static_cast<func_dd_d_t>(special::sem_cva)},
+                         "mathieu_b", mathieu_b_doc);
     PyModule_AddObjectRef(_special_ufuncs, "mathieu_b", mathieu_b);
 
-    PyObject *mathieu_cem = SpecFun_NewUFunc(
-        {static_cast<func_fff_ff_t>(special::cem), static_cast<func_ddd_dd_t>(special::cem)}, 2, "mathieu_cem",
-        mathieu_cem_doc
-    );
+    PyObject *mathieu_cem =
+        SpecFun_NewUFunc({static_cast<func_fff_ff_t>(special::cem), static_cast<func_ddd_dd_t>(special::cem)}, 2,
+                         "mathieu_cem", mathieu_cem_doc);
     PyModule_AddObjectRef(_special_ufuncs, "mathieu_cem", mathieu_cem);
 
-    PyObject *mathieu_modcem1 = SpecFun_NewUFunc(
-        {static_cast<func_fff_ff_t>(special::mcm1), static_cast<func_ddd_dd_t>(special::mcm1)}, 2, "mathieu_modcem1",
-        mathieu_modcem1_doc
-    );
+    PyObject *mathieu_modcem1 =
+        SpecFun_NewUFunc({static_cast<func_fff_ff_t>(special::mcm1), static_cast<func_ddd_dd_t>(special::mcm1)}, 2,
+                         "mathieu_modcem1", mathieu_modcem1_doc);
     PyModule_AddObjectRef(_special_ufuncs, "mathieu_modcem1", mathieu_modcem1);
 
-    PyObject *mathieu_modcem2 = SpecFun_NewUFunc(
-        {static_cast<func_fff_ff_t>(special::mcm2), static_cast<func_ddd_dd_t>(special::mcm2)}, 2, "mathieu_modcem2",
-        mathieu_modcem2_doc
-    );
+    PyObject *mathieu_modcem2 =
+        SpecFun_NewUFunc({static_cast<func_fff_ff_t>(special::mcm2), static_cast<func_ddd_dd_t>(special::mcm2)}, 2,
+                         "mathieu_modcem2", mathieu_modcem2_doc);
     PyModule_AddObjectRef(_special_ufuncs, "mathieu_modcem2", mathieu_modcem2);
 
-    PyObject *mathieu_modsem1 = SpecFun_NewUFunc(
-        {static_cast<func_fff_ff_t>(special::msm1), static_cast<func_ddd_dd_t>(special::msm1)}, 2, "mathieu_modsem1",
-        mathieu_modsem1_doc
-    );
+    PyObject *mathieu_modsem1 =
+        SpecFun_NewUFunc({static_cast<func_fff_ff_t>(special::msm1), static_cast<func_ddd_dd_t>(special::msm1)}, 2,
+                         "mathieu_modsem1", mathieu_modsem1_doc);
     PyModule_AddObjectRef(_special_ufuncs, "mathieu_modsem1", mathieu_modsem1);
 
-    PyObject *mathieu_modsem2 = SpecFun_NewUFunc(
-        {static_cast<func_fff_ff_t>(special::msm2), static_cast<func_ddd_dd_t>(special::msm2)}, 2, "mathieu_modsem2",
-        mathieu_modsem2_doc
-    );
+    PyObject *mathieu_modsem2 =
+        SpecFun_NewUFunc({static_cast<func_fff_ff_t>(special::msm2), static_cast<func_ddd_dd_t>(special::msm2)}, 2,
+                         "mathieu_modsem2", mathieu_modsem2_doc);
     PyModule_AddObjectRef(_special_ufuncs, "mathieu_modsem2", mathieu_modsem2);
 
-    PyObject *mathieu_sem = SpecFun_NewUFunc(
-        {static_cast<func_fff_ff_t>(special::sem), static_cast<func_ddd_dd_t>(special::sem)}, 2, "mathieu_sem",
-        mathieu_sem_doc
-    );
+    PyObject *mathieu_sem =
+        SpecFun_NewUFunc({static_cast<func_fff_ff_t>(special::sem), static_cast<func_ddd_dd_t>(special::sem)}, 2,
+                         "mathieu_sem", mathieu_sem_doc);
     PyModule_AddObjectRef(_special_ufuncs, "mathieu_sem", mathieu_sem);
 
-    PyObject *modfresnelm = SpecFun_NewUFunc(
-        {static_cast<func_f_FF_t>(special::modified_fresnel_minus),
-         static_cast<func_d_DD_t>(special::modified_fresnel_minus)},
-        2, "modfresnelm", modfresnelm_doc
-    );
+    PyObject *modfresnelm = SpecFun_NewUFunc({static_cast<func_f_FF_t>(special::modified_fresnel_minus),
+                                              static_cast<func_d_DD_t>(special::modified_fresnel_minus)},
+                                             2, "modfresnelm", modfresnelm_doc);
     PyModule_AddObjectRef(_special_ufuncs, "modfresnelm", modfresnelm);
 
-    PyObject *modfresnelp = SpecFun_NewUFunc(
-        {static_cast<func_f_FF_t>(special::modified_fresnel_plus),
-         static_cast<func_d_DD_t>(special::modified_fresnel_plus)},
-        2, "modfresnelp", modfresnelp_doc
-    );
+    PyObject *modfresnelp = SpecFun_NewUFunc({static_cast<func_f_FF_t>(special::modified_fresnel_plus),
+                                              static_cast<func_d_DD_t>(special::modified_fresnel_plus)},
+                                             2, "modfresnelp", modfresnelp_doc);
     PyModule_AddObjectRef(_special_ufuncs, "modfresnelp", modfresnelp);
 
-    PyObject *obl_ang1 = SpecFun_NewUFunc(
-        {static_cast<func_ffff_ff_t>(special::oblate_aswfa_nocv),
-         static_cast<func_dddd_dd_t>(special::oblate_aswfa_nocv)},
-        2, "obl_ang1", obl_ang1_doc
-    );
+    PyObject *obl_ang1 = SpecFun_NewUFunc({static_cast<func_ffff_ff_t>(special::oblate_aswfa_nocv),
+                                           static_cast<func_dddd_dd_t>(special::oblate_aswfa_nocv)},
+                                          2, "obl_ang1", obl_ang1_doc);
     PyModule_AddObjectRef(_special_ufuncs, "obl_ang1", obl_ang1);
 
     PyObject *obl_ang1_cv = SpecFun_NewUFunc(
         {static_cast<func_fffff_ff_t>(special::oblate_aswfa), static_cast<func_ddddd_dd_t>(special::oblate_aswfa)}, 2,
-        "obl_ang1_cv", obl_ang1_cv_doc
-    );
+        "obl_ang1_cv", obl_ang1_cv_doc);
     PyModule_AddObjectRef(_special_ufuncs, "obl_ang1_cv", obl_ang1_cv);
 
     PyObject *obl_cv = SpecFun_NewUFunc(
         {static_cast<func_fff_f_t>(special::oblate_segv), static_cast<func_ddd_d_t>(special::oblate_segv)}, "obl_cv",
-        obl_cv_doc
-    );
+        obl_cv_doc);
     PyModule_AddObjectRef(_special_ufuncs, "obl_cv", obl_cv);
 
-    PyObject *obl_rad1 = SpecFun_NewUFunc(
-        {static_cast<func_ffff_ff_t>(special::oblate_radial1_nocv),
-         static_cast<func_dddd_dd_t>(special::oblate_radial1_nocv)},
-        2, "obl_rad1", obl_rad1_doc
-    );
+    PyObject *obl_rad1 = SpecFun_NewUFunc({static_cast<func_ffff_ff_t>(special::oblate_radial1_nocv),
+                                           static_cast<func_dddd_dd_t>(special::oblate_radial1_nocv)},
+                                          2, "obl_rad1", obl_rad1_doc);
     PyModule_AddObjectRef(_special_ufuncs, "obl_rad1", obl_rad1);
 
     PyObject *obl_rad1_cv = SpecFun_NewUFunc(
         {static_cast<func_fffff_ff_t>(special::oblate_radial1), static_cast<func_ddddd_dd_t>(special::oblate_radial1)},
-        2, "obl_rad1_cv", obl_rad1_cv_doc
-    );
+        2, "obl_rad1_cv", obl_rad1_cv_doc);
     PyModule_AddObjectRef(_special_ufuncs, "obl_rad1_cv", obl_rad1_cv);
 
-    PyObject *obl_rad2 = SpecFun_NewUFunc(
-        {static_cast<func_ffff_ff_t>(special::oblate_radial2_nocv),
-         static_cast<func_dddd_dd_t>(special::oblate_radial2_nocv)},
-        2, "obl_rad2", obl_rad2_doc
-    );
+    PyObject *obl_rad2 = SpecFun_NewUFunc({static_cast<func_ffff_ff_t>(special::oblate_radial2_nocv),
+                                           static_cast<func_dddd_dd_t>(special::oblate_radial2_nocv)},
+                                          2, "obl_rad2", obl_rad2_doc);
     PyModule_AddObjectRef(_special_ufuncs, "obl_rad2", obl_rad2);
 
     PyObject *obl_rad2_cv = SpecFun_NewUFunc(
         {static_cast<func_fffff_ff_t>(special::oblate_radial2), static_cast<func_ddddd_dd_t>(special::oblate_radial2)},
-        2, "obl_rad2_cv", obl_rad2_cv_doc
-    );
+        2, "obl_rad2_cv", obl_rad2_cv_doc);
     PyModule_AddObjectRef(_special_ufuncs, "obl_rad2_cv", obl_rad2_cv);
 
     PyObject *pbdv = SpecFun_NewUFunc(
-        {static_cast<func_ff_ff_t>(special::pbdv), static_cast<func_dd_dd_t>(special::pbdv)}, 2, "pbdv", pbdv_doc
-    );
+        {static_cast<func_ff_ff_t>(special::pbdv), static_cast<func_dd_dd_t>(special::pbdv)}, 2, "pbdv", pbdv_doc);
     PyModule_AddObjectRef(_special_ufuncs, "pbdv", pbdv);
 
     PyObject *pbvv = SpecFun_NewUFunc(
-        {static_cast<func_ff_ff_t>(special::pbvv), static_cast<func_dd_dd_t>(special::pbvv)}, 2, "pbvv", pbvv_doc
-    );
+        {static_cast<func_ff_ff_t>(special::pbvv), static_cast<func_dd_dd_t>(special::pbvv)}, 2, "pbvv", pbvv_doc);
     PyModule_AddObjectRef(_special_ufuncs, "pbvv", pbvv);
 
     PyObject *pbwa = SpecFun_NewUFunc(
-        {static_cast<func_ff_ff_t>(special::pbwa), static_cast<func_dd_dd_t>(special::pbwa)}, 2, "pbwa", pbwa_doc
-    );
+        {static_cast<func_ff_ff_t>(special::pbwa), static_cast<func_dd_dd_t>(special::pbwa)}, 2, "pbwa", pbwa_doc);
     PyModule_AddObjectRef(_special_ufuncs, "pbwa", pbwa);
 
-    PyObject *pro_ang1 = SpecFun_NewUFunc(
-        {static_cast<func_ffff_ff_t>(special::prolate_aswfa_nocv),
-         static_cast<func_dddd_dd_t>(special::prolate_aswfa_nocv)},
-        2, "pro_ang1", pro_ang1_doc
-    );
+    PyObject *pro_ang1 = SpecFun_NewUFunc({static_cast<func_ffff_ff_t>(special::prolate_aswfa_nocv),
+                                           static_cast<func_dddd_dd_t>(special::prolate_aswfa_nocv)},
+                                          2, "pro_ang1", pro_ang1_doc);
     PyModule_AddObjectRef(_special_ufuncs, "pro_ang1", pro_ang1);
 
     PyObject *pro_ang1_cv = SpecFun_NewUFunc(
         {static_cast<func_fffff_ff_t>(special::prolate_aswfa), static_cast<func_ddddd_dd_t>(special::prolate_aswfa)}, 2,
-        "pro_ang1_cv", pro_ang1_cv_doc
-    );
+        "pro_ang1_cv", pro_ang1_cv_doc);
     PyModule_AddObjectRef(_special_ufuncs, "pro_ang1_cv", pro_ang1_cv);
 
     PyObject *pro_cv = SpecFun_NewUFunc(
         {static_cast<func_fff_f_t>(special::prolate_segv), static_cast<func_ddd_d_t>(special::prolate_segv)}, "obl_cv",
-        pro_cv_doc
-    );
+        pro_cv_doc);
     PyModule_AddObjectRef(_special_ufuncs, "pro_cv", pro_cv);
 
-    PyObject *pro_rad1 = SpecFun_NewUFunc(
-        {static_cast<func_ffff_ff_t>(special::prolate_radial1_nocv),
-         static_cast<func_dddd_dd_t>(special::prolate_radial1_nocv)},
-        2, "pro_rad1", pro_rad1_doc
-    );
+    PyObject *pro_rad1 = SpecFun_NewUFunc({static_cast<func_ffff_ff_t>(special::prolate_radial1_nocv),
+                                           static_cast<func_dddd_dd_t>(special::prolate_radial1_nocv)},
+                                          2, "pro_rad1", pro_rad1_doc);
     PyModule_AddObjectRef(_special_ufuncs, "pro_rad1", pro_rad1);
 
-    PyObject *pro_rad1_cv = SpecFun_NewUFunc(
-        {static_cast<func_fffff_ff_t>(special::prolate_radial1), static_cast<func_ddddd_dd_t>(special::prolate_radial1)
-        },
-        2, "pro_rad1_cv", pro_rad1_cv_doc
-    );
+    PyObject *pro_rad1_cv = SpecFun_NewUFunc({static_cast<func_fffff_ff_t>(special::prolate_radial1),
+                                              static_cast<func_ddddd_dd_t>(special::prolate_radial1)},
+                                             2, "pro_rad1_cv", pro_rad1_cv_doc);
     PyModule_AddObjectRef(_special_ufuncs, "pro_rad1_cv", pro_rad1_cv);
 
-    PyObject *pro_rad2 = SpecFun_NewUFunc(
-        {static_cast<func_ffff_ff_t>(special::prolate_radial2_nocv),
-         static_cast<func_dddd_dd_t>(special::prolate_radial2_nocv)},
-        2, "pro_rad2", pro_rad2_doc
-    );
+    PyObject *pro_rad2 = SpecFun_NewUFunc({static_cast<func_ffff_ff_t>(special::prolate_radial2_nocv),
+                                           static_cast<func_dddd_dd_t>(special::prolate_radial2_nocv)},
+                                          2, "pro_rad2", pro_rad2_doc);
     PyModule_AddObjectRef(_special_ufuncs, "pro_rad2", pro_rad2);
 
-    PyObject *pro_rad2_cv = SpecFun_NewUFunc(
-        {static_cast<func_fffff_ff_t>(special::prolate_radial2), static_cast<func_ddddd_dd_t>(special::prolate_radial2)
-        },
-        2, "pro_rad2_cv", pro_rad2_cv_doc
-    );
+    PyObject *pro_rad2_cv = SpecFun_NewUFunc({static_cast<func_fffff_ff_t>(special::prolate_radial2),
+                                              static_cast<func_ddddd_dd_t>(special::prolate_radial2)},
+                                             2, "pro_rad2_cv", pro_rad2_cv_doc);
     PyModule_AddObjectRef(_special_ufuncs, "pro_rad2_cv", pro_rad2_cv);
 
-    PyObject *psi = SpecFun_NewUFunc(
-        {static_cast<func_d_d_t>(special::digamma), static_cast<func_D_D_t>(special::digamma),
-         static_cast<func_f_f_t>(special::digamma), static_cast<func_F_F_t>(special::digamma)},
-        "psi", psi_doc
-    );
+    PyObject *psi =
+        SpecFun_NewUFunc({static_cast<func_d_d_t>(special::digamma), static_cast<func_D_D_t>(special::digamma),
+                          static_cast<func_f_f_t>(special::digamma), static_cast<func_F_F_t>(special::digamma)},
+                         "psi", psi_doc);
     PyModule_AddObjectRef(_special_ufuncs, "psi", psi);
 
-    PyObject *rgamma = SpecFun_NewUFunc(
-        {static_cast<func_d_d_t>(special::rgamma), static_cast<func_D_D_t>(special::rgamma),
-         static_cast<func_f_f_t>(special::rgamma), static_cast<func_F_F_t>(special::rgamma)},
-        "rgamma", rgamma_doc
-    );
+    PyObject *rgamma =
+        SpecFun_NewUFunc({static_cast<func_d_d_t>(special::rgamma), static_cast<func_D_D_t>(special::rgamma),
+                          static_cast<func_f_f_t>(special::rgamma), static_cast<func_F_F_t>(special::rgamma)},
+                         "rgamma", rgamma_doc);
     PyModule_AddObjectRef(_special_ufuncs, "rgamma", rgamma);
 
     PyObject *_spherical_jn = SpecFun_NewUFunc(
         {static_cast<func_ld_d_t>(special::sph_bessel_j), static_cast<func_lD_D_t>(special::sph_bessel_j),
          static_cast<func_lf_f_t>(special::sph_bessel_j), static_cast<func_lF_F_t>(special::sph_bessel_j)},
-        "_spherical_jn", spherical_jn_doc
-    );
+        "_spherical_jn", spherical_jn_doc);
     PyModule_AddObjectRef(_special_ufuncs, "_spherical_jn", _spherical_jn);
 
     PyObject *_spherical_jn_d = SpecFun_NewUFunc(
         {static_cast<func_ld_d_t>(special::sph_bessel_j_jac), static_cast<func_lD_D_t>(special::sph_bessel_j_jac),
          static_cast<func_lf_f_t>(special::sph_bessel_j_jac), static_cast<func_lF_F_t>(special::sph_bessel_j_jac)},
-        "_spherical_jn_d", spherical_jn_d_doc
-    );
+        "_spherical_jn_d", spherical_jn_d_doc);
     PyModule_AddObjectRef(_special_ufuncs, "_spherical_jn_d", _spherical_jn_d);
 
     PyObject *_spherical_yn = SpecFun_NewUFunc(
         {static_cast<func_ld_d_t>(special::sph_bessel_y), static_cast<func_lD_D_t>(special::sph_bessel_y),
          static_cast<func_lf_f_t>(special::sph_bessel_y), static_cast<func_lF_F_t>(special::sph_bessel_y)},
-        "_spherical_yn", spherical_yn_doc
-    );
+        "_spherical_yn", spherical_yn_doc);
     PyModule_AddObjectRef(_special_ufuncs, "_spherical_yn", _spherical_yn);
 
     PyObject *_spherical_yn_d = SpecFun_NewUFunc(
         {static_cast<func_ld_d_t>(special::sph_bessel_y_jac), static_cast<func_lD_D_t>(special::sph_bessel_y_jac),
          static_cast<func_lf_f_t>(special::sph_bessel_y_jac), static_cast<func_lF_F_t>(special::sph_bessel_y_jac)},
-        "_spherical_yn_d", spherical_yn_d_doc
-    );
+        "_spherical_yn_d", spherical_yn_d_doc);
     PyModule_AddObjectRef(_special_ufuncs, "_spherical_yn_d", _spherical_yn_d);
 
     PyObject *_spherical_in = SpecFun_NewUFunc(
         {static_cast<func_ld_d_t>(special::sph_bessel_i), static_cast<func_lD_D_t>(special::sph_bessel_i),
          static_cast<func_lf_f_t>(special::sph_bessel_i), static_cast<func_lF_F_t>(special::sph_bessel_i)},
-        "_spherical_in", spherical_in_doc
-    );
+        "_spherical_in", spherical_in_doc);
     PyModule_AddObjectRef(_special_ufuncs, "_spherical_in", _spherical_in);
 
     PyObject *_spherical_in_d = SpecFun_NewUFunc(
         {static_cast<func_ld_d_t>(special::sph_bessel_i_jac), static_cast<func_lD_D_t>(special::sph_bessel_i_jac),
          static_cast<func_lf_f_t>(special::sph_bessel_i_jac), static_cast<func_lF_F_t>(special::sph_bessel_i_jac)},
-        "_spherical_in_d", spherical_in_d_doc
-    );
+        "_spherical_in_d", spherical_in_d_doc);
     PyModule_AddObjectRef(_special_ufuncs, "_spherical_in_d", _spherical_in_d);
 
     PyObject *_spherical_kn = SpecFun_NewUFunc(
         {static_cast<func_ld_d_t>(special::sph_bessel_k), static_cast<func_lD_D_t>(special::sph_bessel_k),
          static_cast<func_lf_f_t>(special::sph_bessel_k), static_cast<func_lF_F_t>(special::sph_bessel_k)},
-        "_spherical_kn", spherical_kn_doc
-    );
+        "_spherical_kn", spherical_kn_doc);
     PyModule_AddObjectRef(_special_ufuncs, "_spherical_kn", _spherical_kn);
 
     PyObject *_spherical_kn_d = SpecFun_NewUFunc(
         {static_cast<func_ld_d_t>(special::sph_bessel_k_jac), static_cast<func_lD_D_t>(special::sph_bessel_k_jac),
          static_cast<func_lf_f_t>(special::sph_bessel_k_jac), static_cast<func_lF_F_t>(special::sph_bessel_k_jac)},
-        "_spherical_kn_d", spherical_kn_d_doc
-    );
+        "_spherical_kn_d", spherical_kn_d_doc);
     PyModule_AddObjectRef(_special_ufuncs, "_spherical_kn_d", _spherical_kn_d);
 
-    PyObject *sph_harm = SpecFun_NewUFunc(
-        {static_cast<func_lldd_D_t>(::sph_harm), static_cast<func_dddd_D_t>(::sph_harm),
-         static_cast<func_llff_F_t>(::sph_harm), static_cast<func_ffff_F_t>(::sph_harm)},
-        "sph_harm", sph_harm_doc
-    );
+    PyObject *sph_legendre_p = Py_BuildValue(
+        "(N,N,N)",
+        SpecFun_NewUFunc({static_cast<func_qqd_d_t>(::sph_legendre_p), static_cast<func_qqf_f_t>(::sph_legendre_p)},
+                         "sph_legendre_p", nullptr),
+        SpecFun_NewUFunc({static_cast<func_qqd_dd_t>(::sph_legendre_p), static_cast<func_qqf_ff_t>(::sph_legendre_p)},
+                         2, "sph_legendre_p", nullptr),
+        SpecFun_NewUFunc({static_cast<func_qqd_ddd_t>(::sph_legendre_p), static_cast<func_qqf_fff_t>(::sph_legendre_p)},
+                         3, "sph_legendre_p", nullptr));
+    PyModule_AddObjectRef(_special_ufuncs, "sph_legendre_p", sph_legendre_p);
+
+    PyObject *sph_harm =
+        SpecFun_NewUFunc({static_cast<func_qqdd_D_t>(::sph_harm), static_cast<func_dddd_D_t>(::sph_harm),
+                          static_cast<func_qqff_F_t>(::sph_harm), static_cast<func_ffff_F_t>(::sph_harm)},
+                         "sph_harm", sph_harm_doc);
     PyModule_AddObjectRef(_special_ufuncs, "sph_harm", sph_harm);
+
+    PyObject *sph_harm_y = Py_BuildValue(
+        "(N,N,N)",
+        SpecFun_NewUFunc({static_cast<func_qqdd_D_t>(::sph_harm_y), static_cast<func_qqff_F_t>(::sph_harm_y)},
+                         "sph_harm_y", nullptr),
+        SpecFun_NewGUFunc({static_cast<func_qqdd_DD2_t>(::sph_harm_y), static_cast<func_qqff_FF2_t>(::sph_harm_y)}, 2,
+                          "sph_harm_y", nullptr, "(),(),(),()->(),(2)",
+                          [](const npy_intp *dims, npy_intp *new_dims) { new_dims[0] = 2; }),
+        SpecFun_NewGUFunc(
+            {static_cast<func_qqdd_DD2D22_t>(::sph_harm_y), static_cast<func_qqff_FF2F22_t>(::sph_harm_y)}, 3,
+            "sph_harm_y", nullptr, "(),(),(),()->(),(2),(2,2)", [](const npy_intp *dims, npy_intp *new_dims) {
+                new_dims[0] = 2;
+
+                new_dims[1] = 2;
+                new_dims[2] = 2;
+            }));
+    PyModule_AddObjectRef(_special_ufuncs, "sph_harm_y", sph_harm_y);
 
     PyObject *wright_bessel = SpecFun_NewUFunc(
         {static_cast<func_ddd_d_t>(special::wright_bessel), static_cast<func_fff_f_t>(special::wright_bessel)},
-        "wright_bessel", wright_bessel_doc
-    );
+        "wright_bessel", wright_bessel_doc);
     PyModule_AddObjectRef(_special_ufuncs, "wright_bessel", wright_bessel);
 
     PyObject *yv = SpecFun_NewUFunc(
         {static_cast<func_ff_f_t>(special::cyl_bessel_y), static_cast<func_dd_d_t>(special::cyl_bessel_y),
          static_cast<func_fF_F_t>(special::cyl_bessel_y), static_cast<func_dD_D_t>(special::cyl_bessel_y)},
-        "yv", yv_doc
-    );
+        "yv", yv_doc);
     PyModule_AddObjectRef(_special_ufuncs, "yv", yv);
 
     PyObject *yve = SpecFun_NewUFunc(
         {static_cast<func_ff_f_t>(special::cyl_bessel_ye), static_cast<func_dd_d_t>(special::cyl_bessel_ye),
          static_cast<func_fF_F_t>(special::cyl_bessel_ye), static_cast<func_dD_D_t>(special::cyl_bessel_ye)},
-        "yve", yve_doc
-    );
+        "yve", yve_doc);
     PyModule_AddObjectRef(_special_ufuncs, "yve", yve);
 
     return _special_ufuncs;
