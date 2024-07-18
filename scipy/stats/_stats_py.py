@@ -136,6 +136,16 @@ def _chk2_asarray(a, b, axis):
     return a, b, outaxis
 
 
+def _convert_common_float(*arrays, xp=None):
+    xp = array_namespace(*arrays) if xp is None else xp
+    arrays = [xp_asarray(array, subok=True) for array in arrays]
+    dtypes = [(xp.asarray(1.).dtype if xp.isdtype(array.dtype, 'integral')
+               else array.dtype) for array in arrays]
+    dtype = xp.result_type(*dtypes)
+    arrays = [xp.astype(array, dtype, copy=False) for array in arrays]
+    return arrays[0] if len(arrays)==1 else tuple(arrays)
+
+
 SignificanceResult = _make_tuple_bunch('SignificanceResult',
                                        ['statistic', 'pvalue'], [])
 
@@ -2834,30 +2844,17 @@ def zmap(scores, compare, axis=0, ddof=0, nan_policy='propagate'):
     # Let's table deprecating that and just get the array API version
     # working.
 
-    with warnings.catch_warnings():
-        if scores is compare:  # zscore should not emit SmallSampleWarning
-            warnings.simplefilter('ignore', SmallSampleWarning)
-        return _zmap(scores, compare, axis, ddof, nan_policy)
-
-
-def _convert_common_float(*arrays, xp=None):
-    xp = array_namespace(*arrays) if xp is None else xp
-    arrays = [xp_asarray(array, subok=True) for array in arrays]
-    dtypes = [(xp.asarray(1.).dtype if xp.isdtype(array.dtype, 'integral')
-               else array.dtype) for array in arrays]
-    dtype = xp.result_type(*dtypes)
-    arrays = [xp.astype(array, dtype, copy=False) for array in arrays]
-    return arrays[0] if len(arrays)==1 else tuple(arrays)
-
-
-def _zmap(scores, compare, axis, ddof, nan_policy):
     like_zscore = (scores is compare)
     xp = array_namespace(scores, compare)
     scores, compare = _convert_common_float(scores, compare, xp=xp)
 
-    mn = _xp_mean(compare, axis=axis, keepdims=True, nan_policy=nan_policy)
-    std = _xp_var(compare, axis=axis, correction=ddof,
-                  keepdims=True, nan_policy=nan_policy)**0.5
+    with warnings.catch_warnings():
+        if like_zscore:  # zscore should not emit SmallSampleWarning
+            warnings.simplefilter('ignore', SmallSampleWarning)
+
+        mn = _xp_mean(compare, axis=axis, keepdims=True, nan_policy=nan_policy)
+        std = _xp_var(compare, axis=axis, correction=ddof,
+                      keepdims=True, nan_policy=nan_policy)**0.5
 
     with np.errstate(invalid='ignore', divide='ignore'):
         z = _demean(scores, mn, axis, xp=xp, precision_warning=False) / std
