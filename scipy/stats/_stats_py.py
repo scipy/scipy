@@ -9767,7 +9767,7 @@ def find_repeats(arr):
     .. deprecated:: 1.15.0
 
         This function is deprecated as of SciPy 1.15.0 and will be removed
-        in SciPy 1.17.0. Please use `numpy.unique`/`numpy.unique_counts` instead.
+        in SciPy 1.17.0. Please use `numpy.unique` / `numpy.unique_counts` instead.
 
     Parameters
     ----------
