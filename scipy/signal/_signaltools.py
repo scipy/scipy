@@ -2329,7 +2329,7 @@ def hilbert(x, N=None, axis=-1):
 
     See Also
     --------
-    envelope: Compute envelope of a signal after applying an optional bandpass filter.
+    envelope: Compute envelope of a signal of a real- or complex-valued signal.
 
     Examples
     --------
@@ -2460,11 +2460,10 @@ def envelope(z: np.ndarray, bp_in: tuple[int | None, int | None] = (1, None), *,
              n_out: int | None = None, squared: bool = False,
              residual: Literal['lowpass', 'all', None] = 'lowpass',
              axis: int = -1) -> tuple[np.ndarray, np.ndarray] | np.ndarray:
-    r"""Compute the envelope of a real- or complex-valued signal after applying an
-    optional bandpass filter.
+    r"""Compute the envelope of a real- or complex-valued signal.
 
-    Any complex-valued signal `z(t)` can be split into a real-valued (instantaneous)
-    amplitude `a(t)` and a real-valued (instantaneous) phase `phi(t)`, i.e.,
+    Any complex-valued signal `z(t)` can be described by a real-valued instantaneous
+    amplitude `a(t)` and a real-valued instantaneous phase `phi(t)`, i.e.,
     `z(t) = a(t) * exp(1j*phi(t))`. The envelope is defined as the absolute value of
     the amplitude `|a(t)| = |z(t)|`, which is at the same time the absolute value of
     the signal. Hence, `|a(t)|` "envelopes" the class of all signals with amplitude
@@ -2489,7 +2488,8 @@ def envelope(z: np.ndarray, bp_in: tuple[int | None, int | None] = (1, None), *,
         default of ``(1, None)`` removes the mean value as well as the negative
         frequency components.
     n_out :
-        If not ``None`` the output will be resampled to `n_out` samples.
+        If not ``None`` the output will be resampled to `n_out` samples. The default
+        of ``None`` sets the output to the same length as the input `z`.
     squared :
         If set, the square of the envelope is returned. This is useful, if filters need
         to be applied to the result, since the squared envelope possesses fewer
@@ -2501,7 +2501,7 @@ def envelope(z: np.ndarray, bp_in: tuple[int | None, int | None] = (1, None), *,
         returns the contents of the frequency band ``< bp_in[0]``. If ``None`` then
         nothing is returned.
     axis :
-       Axis of `z` over which to compute the envelope (default is last axis).
+       Axis of `z` over which to compute the envelope. Default is last the axis.
 
     Returns
     -------
