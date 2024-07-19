@@ -55,7 +55,7 @@ def bicg(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=No
     -------
     x : ndarray
         The converged solution with shape (N,) or (N,1) consistent with
-        the shape of the right hand side ``b``.
+        the shape of the right hand side `b`.
     info : integer
         Provides convergence information:
             0  : successful exit
@@ -64,7 +64,7 @@ def bicg(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=No
 
     Notes
     -----
-    If the right hand side ``b`` is the zero vector, the code returns
+    If the right hand side `b` is the zero vector, the code returns
     the solution ``x`` also zero without iterating.
 
     Examples
