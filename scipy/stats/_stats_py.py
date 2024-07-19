@@ -42,6 +42,7 @@ from scipy.optimize import milp, LinearConstraint
 from scipy._lib._util import (check_random_state, _get_nan,
                               _rename_parameter, _contains_nan,
                               AxisError, _lazywhere)
+from scipy._lib._array_api import _asarray as xp_asarray
 
 import scipy.special as special
 # Import unused here but needs to stay until end of deprecation periode
@@ -133,6 +134,16 @@ def _chk2_asarray(a, b, axis):
         b = np.atleast_1d(b)
 
     return a, b, outaxis
+
+
+def _convert_common_float(*arrays, xp=None):
+    xp = array_namespace(*arrays) if xp is None else xp
+    arrays = [xp_asarray(array, subok=True) for array in arrays]
+    dtypes = [(xp.asarray(1.).dtype if xp.isdtype(array.dtype, 'integral')
+               else array.dtype) for array in arrays]
+    dtype = xp.result_type(*dtypes)
+    arrays = [xp.astype(array, dtype, copy=False) for array in arrays]
+    return arrays[0] if len(arrays)==1 else tuple(arrays)
 
 
 SignificanceResult = _make_tuple_bunch('SignificanceResult',
@@ -1091,6 +1102,35 @@ def moment(a, order=1, axis=0, nan_policy='propagate', *, center=None):
         return _moment(a, order, axis, mean=center)
 
 
+def _demean(a, mean, axis, *, xp, precision_warning=True):
+    # subtracts `mean` from `a` and returns the result,
+    # warning if there is catastrophic cancellation. `mean`
+    # must be the mean of `a` along axis with `keepdims=True`.
+    # Used in e.g. `_moment`, `_zscore`, `_xp_var`. See gh-15905.
+    a_zero_mean = a - mean
+
+    if xp_size(a_zero_mean) == 0:
+        return a_zero_mean
+
+    eps = xp.finfo(mean.dtype).eps * 10
+
+    with np.errstate(divide='ignore', invalid='ignore'):
+        rel_diff = xp.max(xp.abs(a_zero_mean), axis=axis,
+                          keepdims=True) / xp.abs(mean)
+    with np.errstate(invalid='ignore'):
+        precision_loss = xp.any(rel_diff < eps)
+    n = (xp_size(a) if axis is None
+         # compact way to deal with axis tuples or ints
+         else np.prod(np.asarray(a.shape)[np.asarray(axis)]))
+
+    if precision_loss and n > 1 and precision_warning:
+        message = ("Precision loss occurred in moment calculation due to "
+                   "catastrophic cancellation. This occurs when the data "
+                   "are nearly identical. Results may be unreliable.")
+        warnings.warn(message, RuntimeWarning, stacklevel=5)
+    return a_zero_mean
+
+
 def _moment(a, order, axis, *, mean=None, xp=None):
     """Vectorized calculation of raw moment about specified center
 
@@ -1133,21 +1173,7 @@ def _moment(a, order, axis, *, mean=None, xp=None):
     mean = (xp.mean(a, axis=axis, keepdims=True) if mean is None
             else xp.asarray(mean, dtype=dtype))
     mean = mean[()] if mean.ndim == 0 else mean
-    a_zero_mean = a - mean
-
-    eps = xp.finfo(dtype).eps * 10
-
-    with np.errstate(divide='ignore', invalid='ignore'):
-        rel_diff = xp.max(xp.abs(a_zero_mean), axis=axis,
-                          keepdims=True) / xp.abs(mean)
-    with np.errstate(invalid='ignore'):
-        precision_loss = xp.any(rel_diff < eps)
-    n = a.shape[axis] if axis is not None else xp_size(a)
-    if precision_loss and n > 1:
-        message = ("Precision loss occurred in moment calculation due to "
-                   "catastrophic cancellation. This occurs when the data "
-                   "are nearly identical. Results may be unreliable.")
-        warnings.warn(message, RuntimeWarning, stacklevel=4)
+    a_zero_mean = _demean(a, mean, axis, xp=xp)
 
     if n_list[-1] == 1:
         s = xp.asarray(a_zero_mean, copy=True)
@@ -2585,34 +2611,6 @@ def _isconst(x):
         return (y[0] == y).all(keepdims=True)
 
 
-def _quiet_nanmean(x):
-    """
-    Compute nanmean for the 1d array x, but quietly return nan if x is all nan.
-
-    The return value is a 1d array with length 1, so it can be used
-    in np.apply_along_axis.
-    """
-    y = x[~np.isnan(x)]
-    if y.size == 0:
-        return np.array([np.nan])
-    else:
-        return np.mean(y, keepdims=True)
-
-
-def _quiet_nanstd(x, ddof=0):
-    """
-    Compute nanstd for the 1d array x, but quietly return nan if x is all nan.
-
-    The return value is a 1d array with length 1, so it can be used
-    in np.apply_along_axis.
-    """
-    y = x[~np.isnan(x)]
-    if y.size == 0:
-        return np.array([np.nan])
-    else:
-        return np.std(y, keepdims=True, ddof=ddof)
-
-
 def zscore(a, axis=0, ddof=0, nan_policy='propagate'):
     """
     Compute the z score.
@@ -2786,9 +2784,9 @@ def gzscore(a, *, axis=0, ddof=0, nan_policy='propagate'):
     >>> plt.show()
 
     """
-    a = np.asanyarray(a)
-    log = ma.log if isinstance(a, ma.MaskedArray) else np.log
-
+    xp = array_namespace(a)
+    a = _convert_common_float(a, xp=xp)
+    log = ma.log if isinstance(a, ma.MaskedArray) else xp.log
     return zscore(log(a), axis=axis, ddof=ddof, nan_policy=nan_policy)
 
 
@@ -2842,38 +2840,33 @@ def zmap(scores, compare, axis=0, ddof=0, nan_policy='propagate'):
     array([-1.06066017,  0.        ,  0.35355339,  0.70710678])
 
     """
-    a = np.asanyarray(compare)
+    # The docstring explicitly states that it preserves subclasses.
+    # Let's table deprecating that and just get the array API version
+    # working.
 
-    if a.size == 0:
-        return np.empty(a.shape)
+    like_zscore = (scores is compare)
+    xp = array_namespace(scores, compare)
+    scores, compare = _convert_common_float(scores, compare, xp=xp)
 
-    contains_nan, nan_policy = _contains_nan(a, nan_policy)
+    with warnings.catch_warnings():
+        if like_zscore:  # zscore should not emit SmallSampleWarning
+            warnings.simplefilter('ignore', SmallSampleWarning)
 
-    if contains_nan and nan_policy == 'omit':
-        if axis is None:
-            mn = _quiet_nanmean(a.ravel())
-            std = _quiet_nanstd(a.ravel(), ddof=ddof)
-            isconst = _isconst(a.ravel())
-        else:
-            mn = np.apply_along_axis(_quiet_nanmean, axis, a)
-            std = np.apply_along_axis(_quiet_nanstd, axis, a, ddof=ddof)
-            isconst = np.apply_along_axis(_isconst, axis, a)
-    else:
-        mn = a.mean(axis=axis, keepdims=True)
-        std = a.std(axis=axis, ddof=ddof, keepdims=True)
-        # The intent is to check whether all elements of `a` along `axis` are
-        # identical. Due to finite precision arithmetic, comparing elements
-        # against `mn` doesn't work. Previously, this compared elements to
-        # `_first`, but that extracts the element at index 0 regardless of
-        # whether it is masked. As a simple fix, compare against `min`.
-        a0 = a.min(axis=axis, keepdims=True)
-        isconst = (a == a0).all(axis=axis, keepdims=True)
+        mn = _xp_mean(compare, axis=axis, keepdims=True, nan_policy=nan_policy)
+        std = _xp_var(compare, axis=axis, correction=ddof,
+                      keepdims=True, nan_policy=nan_policy)**0.5
 
-    # Set std deviations that are 0 to 1 to avoid division by 0.
-    std[isconst] = 1.0
-    z = (scores - mn) / std
-    # Set the outputs associated with a constant input to nan.
-    z[np.broadcast_to(isconst, z.shape)] = np.nan
+    with np.errstate(invalid='ignore', divide='ignore'):
+        z = _demean(scores, mn, axis, xp=xp, precision_warning=False) / std
+
+    # If we know that scores and compare are identical, we can infer that
+    # some slices should have NaNs.
+    if like_zscore:
+        eps = xp.finfo(z.dtype).eps
+        zero = std <= xp.abs(eps * mn)
+        zero = xp.broadcast_to(zero, z.shape)
+        z[zero] = xp.nan
+
     return z
 
 
@@ -10543,12 +10536,20 @@ def _xp_var(x, /, *, axis=None, correction=0, keepdims=False, nan_policy='propag
     kwargs = dict(axis=axis, nan_policy=nan_policy, dtype=dtype, xp=xp)
     mean = _xp_mean(x, keepdims=True, **kwargs)
     x = xp.asarray(x, dtype=mean.dtype)
-    var = _xp_mean((x - mean)**2, keepdims=keepdims, **kwargs)
+    x_mean = _demean(x, mean, axis, xp=xp)
+    var = _xp_mean(x_mean**2, keepdims=keepdims, **kwargs)
 
     if correction != 0:
-        n = (xp_size(x) if axis is None
-             # compact way to deal with axis tuples or ints
-             else np.prod(np.asarray(x.shape)[np.asarray(axis)]))
+        if axis is None:
+            n = xp_size(x)
+        elif np.iterable(axis):  # note: using NumPy on `axis` is OK
+            n = math.prod(x.shape[i] for i in axis)
+        else:
+            n = x.shape[axis]
+        # Or two lines with ternaries : )
+        # axis = range(x.ndim) if axis is None else axis
+        # n = math.prod(x.shape[i] for i in axis) if iterable(axis) else x.shape[axis]
+
         n = xp.asarray(n, dtype=var.dtype)
 
         if nan_policy == 'omit':
