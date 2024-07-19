@@ -1,4 +1,4 @@
-name: Linux tests (ifx + MKL)
+name: Intel Fortran tests
 
 on:
   push:
