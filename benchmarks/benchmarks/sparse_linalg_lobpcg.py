@@ -1,5 +1,6 @@
 import numpy as np
 import warnings
+import time
 from .common import Benchmark, safe_import
 
 with safe_import():
