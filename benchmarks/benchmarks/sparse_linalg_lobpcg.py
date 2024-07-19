@@ -9,14 +9,21 @@ with safe_import():
     from scipy.sparse.linalg._special_sparse_arrays import (Sakurai,
                                                             MikotaPair)
 
-# ensure that we are benchmarking a consistent outcome;
-# (e.g. if the code wasn't able to find a solution at all,
-# the timing of the benchmark would become useless).
-msg = ("the benchmark code did not converge as expected, "
-       "the timing is therefore useless")
-
 
 class Bench(Benchmark):
+    # ensure that we are benchmarking a consistent outcome;
+    # (e.g. if the code wasn't able to find a solution accurately
+    # enough the timing of the benchmark would become useless).
+    # if no convergence sufficently for timing to be relevant;
+    # ensure that the unconverged benchmark fails by sleeping
+    # over the timeout limit.
+    # all the benchmark tests are repeated in the unit test suite
+    # `scipy/sparse/linalg/_eigen/lobpcg/tests/test_lobpcg.py`
+
+    # use a custom timiout for the benchmark coordinate with the sleep
+    # value in the last line.
+    timeout =  20
+
     params = [
         [],
         ['lobpcg', 'eigsh', 'lapack']
@@ -86,7 +93,11 @@ class Bench(Benchmark):
                 el, _ = lobpcg(self.Ac, X, self.Bc, M=a, tol=1e-4,
                                maxiter=40, largest=False)
             accuracy = max(abs(ee - el) / ee)
-            assert accuracy < tol, msg
+            if accuracy > tol:
+                # no convergence sufficently for timing to be relevant;
+                # ensure that the unconverged benchmark fails by sleeping
+                # over the timeout limit.
+                time.sleep(20)
         elif solver == 'eigsh':
             # `eigsh` ARPACK here is called on ``Bx = 1/lambda Ax``
             # to get fast convergence speed similar to that of `lobpcg` above
@@ -101,14 +112,16 @@ class Bench(Benchmark):
             ea, _ = eigsh(B, k=m, M=A, Minv=a_l, which='LA', tol=1e-4, maxiter=50,
                           v0 = rng.normal(size=(n, 1)))
             accuracy = max(abs(ee - np.sort(1./ea)) / ee)
-            assert accuracy < tol, msg
+            if accuracy > tol:
+                time.sleep(20)
         else:
             # `eigh` is the only dense eigensolver for generalized eigenproblems
             # ``Ax = lambda Bx`` and needs both matrices as dense arrays
             # making it very slow for large matrix sizes
             ed, _ = eigh(self.Aa, self.Ba, subset_by_index=(0, m - 1))
             accuracy = max(abs(ee - ed) / ee)
-            assert accuracy < tol, msg
+            if accuracy > tol:
+                time.sleep(20)
 
     def time_sakurai(self, n, solver):
         # the Sakurai matrix ``A`` is ill-conditioned so convergence of both
@@ -125,17 +138,20 @@ class Bench(Benchmark):
                 warnings.simplefilter("ignore")
                 el, _ = lobpcg(self.A, X, tol=1e-9, maxiter=5000, largest=False)
             accuracy = max(abs(ee - el) / ee)
-            assert accuracy < tol, msg
+            if accuracy > tol:
+                time.sleep(20)
         elif solver == 'eigsh':
             a_l = LinearOperator((n, n), matvec=self.A, matmat=self.A, dtype='float64')
             ea, _ = eigsh(a_l, k=m, which='SA', tol=1e-9, maxiter=15000,
                           v0 = rng.normal(size=(n, 1)))
             accuracy = max(abs(ee - ea) / ee)
-            assert accuracy < tol, msg
+            if accuracy > tol:
+                time.sleep(20)
         else:
             ed, _ = eigh(self.Aa, subset_by_index=(0, m - 1))
             accuracy = max(abs(ee - ed) / ee)
-            assert accuracy < tol, msg
+            if accuracy > tol:
+                time.sleep(20)
 
     def time_sakurai_inverse(self, n, solver):
         # apply inverse iterations in  `lobpcg` and `eigsh` ARPACK
@@ -154,15 +170,18 @@ class Bench(Benchmark):
                 warnings.simplefilter("ignore")
                 el, _ = lobpcg(a, X, tol=1e-9, maxiter=8)
             accuracy = max(abs(ee - 1. / el) / ee)
-            assert accuracy < tol, msg
+            if accuracy > tol:
+                time.sleep(20)
         elif solver == 'eigsh':
             c = cholesky_banded(self.A)
             a_l = LinearOperator((n, n), matvec=a, matmat=a, dtype='float64')
             ea, _ = eigsh(a_l, k=m, which='LA', tol=1e-9, maxiter=8,
                           v0 = rng.normal(size=(n, 1)))
             accuracy = max(abs(ee - np.sort(1. / ea)) / ee)
-            assert accuracy < tol, msg
+            if accuracy > tol:
+                time.sleep(20)
         else:
             ed, _ = eig_banded(self.A, select='i', select_range=[0, m-1])
             accuracy = max(abs(ee - ed) / ee)
-            assert accuracy < tol, msg
+            if accuracy > tol:
+                time.sleep(20)
