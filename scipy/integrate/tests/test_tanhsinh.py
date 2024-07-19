@@ -220,7 +220,8 @@ class TestTanhSinh:
         # Check that the integral transforms are behaving for both normal and
         # log integration
         limits = [xp.asarray(limit) for limit in limits]
-        ref = xp.asarray(ref)
+        dtype = xp.asarray(float(limits[0])).dtype
+        ref = xp.asarray(ref, dtype=dtype)
 
         res = _tanhsinh(norm_pdf, *limits)
         xp_assert_close(res.integral, ref)
@@ -323,34 +324,35 @@ class TestTanhSinh:
                 x = xs[i, ...]
                 j = int(xp_ravel(js)[i])
                 res.append(funcs[j](x))
-            return xp.asarray(res)
+            return xp.stack(res)
         f.nit = 0
 
         args = (xp.arange(3, dtype=xp.int64),)
         a = xp.asarray([xp.inf]*3)
         b = xp.asarray([-xp.inf] * 3)
         res = _tanhsinh(f, a, b, maxlevel=5, args=args)
-        ref_flags = xp.asarray([0, -2, -3])
+        ref_flags = xp.asarray([0, -2, -3], dtype=xp.int32)
         xp_assert_equal(res.status, ref_flags)
 
     def test_flags_preserve_shape(self, xp):
         # Same test as above but using `preserve_shape` option to simplify.
         def f(x):
-            return [xp.exp(-x[0]**2),  # converges
-                    xp.exp(x[1]),  # reaches maxiter due to order=2
-                    xp.full_like(x[2], xp.nan)[()]]  # stops due to NaN
+            res = [xp.exp(-x[0]**2),  # converges
+                   xp.exp(x[1]),  # reaches maxiter due to order=2
+                   xp.full_like(x[2], xp.nan)[()]]  # stops due to NaN
+            return xp.stack(res)
 
         a = xp.asarray([xp.inf] * 3)
         b = xp.asarray([-xp.inf] * 3)
         res = _tanhsinh(f, a, b, maxlevel=5, preserve_shape=True)
-        ref_flags = xp.asarray([0, -2, -3])
+        ref_flags = xp.asarray([0, -2, -3], dtype=xp.int32)
         xp_assert_equal(res.status, ref_flags)
 
     def test_preserve_shape(self, xp):
         # Test `preserve_shape` option
         def f(x, xp):
-            return xp.asarray([[x, xp.sin(10 * x)],
-                               [xp.cos(30 * x), x * xp.sin(100 * x)]])
+            return xp.stack([xp.stack([x, xp.sin(10 * x)]),
+                             xp.stack([xp.cos(30 * x), x * xp.sin(100 * x)])])
 
         ref = quad_vec(lambda x: f(x, np), 0, 1)
         res = _tanhsinh(lambda x: f(x, xp), xp.asarray(0), xp.asarray(1),

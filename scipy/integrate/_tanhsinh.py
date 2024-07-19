@@ -1,10 +1,12 @@
 # mypy: disable-error-code="attr-defined"
+import math
 import numpy as np
 from scipy import special
 import scipy._lib._elementwise_iterative_method as eim
 from scipy._lib._util import _RichResult
 from scipy._lib._array_api import (array_namespace, copy as xp_copy, xp_ravel,
-                                   xp_real, is_numpy, is_cupy, is_torch)
+                                   xp_real, is_numpy, is_cupy, is_torch,
+                                   xp_take_along_axis)
 
 
 __all__ = ['nsum']
@@ -325,9 +327,9 @@ def _tanhsinh(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
     with np.errstate(over='ignore', invalid='ignore', divide='ignore'):
         c = xp.reshape((xp_ravel(a) + xp_ravel(b))/2, a.shape)
         inf_a, inf_b = xp.isinf(a), xp.isinf(b)
-        c[inf_a] = b[inf_a] - 1  # takes care of infinite a
-        c[inf_b] = a[inf_b] + 1  # takes care of infinite b
-        c[inf_a & inf_b] = 0  # takes care of infinite a and b
+        c[inf_a] = b[inf_a] - 1.  # takes care of infinite a
+        c[inf_b] = a[inf_b] + 1.  # takes care of infinite b
+        c[inf_a & inf_b] = 0.  # takes care of infinite a and b
         temp = eim._initialize(f, (c,), args, complex_ok=True,
                                preserve_shape=preserve_shape, xp=xp)
     f, xs, fs, args, shape, dtype, xp = temp
@@ -344,13 +346,13 @@ def _tanhsinh(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
     maxiter = maxlevel - minlevel + 1
     eps = xp.finfo(dtype).eps
     if rtol is None:
-        rtol = 0.75*xp.log(eps) if log else eps**0.75
+        rtol = 0.75*math.log(eps) if log else eps**0.75
 
     Sn = xp_ravel(xp.full(shape, zero, dtype=dtype))  # latest integral estimate
     Sn[xp.isnan(a) | xp.isnan(b) | xp.isnan(fs[0])] = xp.nan
     Sk = xp.reshape(xp.empty_like(Sn), (-1, 1))[:, 0:0]  # all integral estimates
     aerr = xp_ravel(xp.full(shape, xp.nan, dtype=dtype))  # absolute error
-    status = xp_ravel(xp.full(shape, eim._EINPROGRESS, dtype=int))
+    status = xp_ravel(xp.full(shape, eim._EINPROGRESS, dtype=xp.int32))
     h0 = _get_base_step(dtype, xp)
     h0 = xp_real(h0) # base step
 
@@ -456,7 +458,7 @@ def _tanhsinh(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
         if log and xp.any(negative):
             dtype = res['integral'].dtype
             pi = xp.asarray(xp.pi, dtype=dtype)[()]
-            j = xp.complex64(1j)  # minimum complex type
+            j = xp.asarray(1j, dtype=xp.complex64)[()]  # minimum complex type
             res['integral'] = res['integral'] + negative*pi*j
         else:
             res['integral'][negative] *= -1
@@ -486,7 +488,7 @@ def _get_base_step(dtype, xp):
     # in `_compute_pair` underflows. We can solve for the argument `tmax` at
     # which it will underflow using [2] Eq. 13.
     fmin = 4*xp.finfo(dtype).smallest_normal  # stay a little away from the limit
-    tmax = xp.asinh(xp.log(2/fmin - 1) / xp.pi)
+    tmax = math.asinh(math.log(2/fmin - 1) / xp.pi)
 
     # Based on this, we can choose a base step size `h` for level 0.
     # The number of function evaluations will be `2 + m*2^(k+1)`, where `k` is
@@ -633,9 +635,9 @@ def _euler_maclaurin_sum(fj, work, xp):
     ir = xp.argmax(xr, axis=0, keepdims=True)
     # abscissa, function value, and weight at this index
     ### Not Array API Compatible... yet ###
-    xr_max = xp.take_along_axis(xr, ir, axis=0)[0]
-    fr_max = xp.take_along_axis(fr, ir, axis=0)[0]
-    wr_max = xp.take_along_axis(wr, ir, axis=0)[0]
+    xr_max = xp_take_along_axis(xr, ir, axis=0)[0]
+    fr_max = xp_take_along_axis(fr, ir, axis=0)[0]
+    wr_max = xp_take_along_axis(wr, ir, axis=0)[0]
     # boolean indices at which maximum abscissa at this level exceeds
     # the incumbent maximum abscissa (from all previous levels)
     j = xr_max > xr0
@@ -648,9 +650,9 @@ def _euler_maclaurin_sum(fj, work, xp):
     xl[invalid_l] = xp.inf
     il = xp.argmin(xl, axis=0, keepdims=True)
     # abscissa, function value, and weight at this index
-    xl_min = xp.take_along_axis(xl, il, axis=0)[0]
-    fl_min = xp.take_along_axis(fl, il, axis=0)[0]
-    wl_min = xp.take_along_axis(wl, il, axis=0)[0]
+    xl_min = xp_take_along_axis(xl, il, axis=0)[0]
+    fl_min = xp_take_along_axis(fl, il, axis=0)[0]
+    wl_min = xp_take_along_axis(wl, il, axis=0)[0]
     # boolean indices at which minimum abscissa at this level is less than
     # the incumbent minimum abscissa (from all previous levels)
     j = xl_min < xl0
@@ -743,7 +745,7 @@ def _estimate_error(work, xp):
     Snm2 = work.Sk[..., -2]
     Snm1 = work.Sk[..., -1]
 
-    e1 = work.eps
+    e1 = xp.asarray(work.eps)[()]
 
     if work.log:
         log_e1 = xp.log(e1)
@@ -751,8 +753,8 @@ def _estimate_error(work, xp):
         # complex values have imaginary part in increments of pi*j, which just
         # carries sign information of the original integral, so use of
         # `xp.real` here is equivalent to absolute value in real scale.
-        d1 = xp_real(_logsumexp([work.Sn, Snm1 + work.pi*1j], axis=0, xp=xp))
-        d2 = xp_real(_logsumexp([work.Sn, Snm2 + work.pi*1j], axis=0, xp=xp))
+        d1 = xp_real(_logsumexp(xp.stack([work.Sn, Snm1 + work.pi*1j]), axis=0, xp=xp))
+        d2 = xp_real(_logsumexp(xp.stack([work.Sn, Snm2 + work.pi*1j]), axis=0, xp=xp))
         d3 = log_e1 + xp.max(xp_real(work.fjwj), axis=-1)
         d4 = work.d4
         ds = xp.stack([d1 ** 2 / d2, 2 * d1, d3, d4])
@@ -888,7 +890,10 @@ def _logsumexp(x, /, *, axis=0, keepdims=False, xp=None):
         from cupyx.scipy.special import logsumexp
         return logsumexp(x, axis=axis, keepdims=keepdims)
     elif is_torch(xp):
-        return xp.logsumexp(x, dim=axis, keepdim=keepdims)
+        # Torch doesn't support complex
+        x = np.asarray(x)
+        y = special.logsumexp(x, axis=axis, keepdims=keepdims)[()]
+        return xp.asarray(y)
 
 
 def _nsum_iv(f, a, b, step, args, log, maxterms, tolerances):
