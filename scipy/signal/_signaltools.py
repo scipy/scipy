@@ -100,7 +100,8 @@ def _reject_objects(arr, name):
     if not (np.issubdtype(dt, np.integer)
             or dt in [np.bool_, np.float32, np.float64, np.complex64, np.complex128]
     ):
-        warnings.warn(f"dtype={dt} is not supported by {name}",
+        warnings.warn(f"dtype={dt} is not supported by {name} and will raise "
+                      f"an error in SciPy 1.17.0",
                       category=DeprecationWarning, stacklevel=2
         )
 
