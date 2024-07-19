@@ -93,12 +93,12 @@ cdef inline int find_interval(const double[::1] t,
 @cython.boundscheck(False)
 @cython.cdivision(True)
 def evaluate_spline(const double[::1] t,
-             const double_or_complex[:, ::1] c,
+             const double[:, ::1] c,
              int k,
              const double[::1] xp,
              int nu,
              bint extrapolate,
-             double_or_complex[:, ::1] out):
+             double[:, ::1] out):
     """
     Evaluate a spline in the B-spline basis.
 

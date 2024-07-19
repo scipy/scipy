@@ -500,7 +500,20 @@ class BSpline:
 
         out = np.empty((len(x), prod(self.c.shape[1:])), dtype=self.c.dtype)
         self._ensure_c_contiguous()
-        self._evaluate(x, nu, extrapolate, out)
+
+        # if self.c is complex, so is `out`; cython code in _bspl.pyx expectes
+        # floats though, so make a view---this expands the last axis, and
+        # the view is C contiguous if the original is.
+        # if c.dtype is complex of shape (n,), c.view(float).shape == (2*n,)
+        # if c.dtype is complex of shape (n, m), c.view(float).shape == (n, 2*m)
+
+        cc = self.c.view(float)
+        if self.c.ndim == 1 and self.c.dtype.kind == 'c':
+            cc = cc.reshape(self.c.shape[0], 2)
+
+        _bspl.evaluate_spline(self.t, cc.reshape(cc.shape[0], -1),
+                              self.k, x, nu, extrapolate, out.view(float))
+
         out = out.reshape(x_shape + self.c.shape[1:])
         if self.axis != 0:
             # transpose to move the calculated values to the interpolation axis
@@ -508,10 +521,6 @@ class BSpline:
             l = l[x_ndim:x_ndim+self.axis] + l[:x_ndim] + l[x_ndim+self.axis:]
             out = out.transpose(l)
         return out
-
-    def _evaluate(self, xp, nu, extrapolate, out):
-        _bspl.evaluate_spline(self.t, self.c.reshape(self.c.shape[0], -1),
-                              self.k, xp, nu, extrapolate, out)
 
     def _ensure_c_contiguous(self):
         """
