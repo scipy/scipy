@@ -9,7 +9,7 @@ from numpy.testing import assert_allclose, assert_equal
 from scipy.conftest import array_api_compatible
 import scipy._lib._elementwise_iterative_method as eim
 from scipy._lib._array_api import (array_namespace, xp_assert_close, xp_assert_equal,
-                                   size as xp_size, xp_ravel, is_torch)
+                                   size as xp_size, xp_ravel, copy as xp_copy)
 from scipy import special, stats
 from scipy.integrate import quad_vec, nsum
 from scipy.integrate._tanhsinh import _tanhsinh, _pair_cache
@@ -655,8 +655,8 @@ class TestTanhSinh:
             return xp.exp(-x*x)
 
         def callback(res):
-            callback.integrals.append(res.integral)
-            callback.errors.append(res.error)
+            callback.integrals.append(xp_copy(res.integral)[()])
+            callback.errors.append(xp_copy(res.error)[()])
         callback.integrals = []
         callback.errors = []
 
@@ -713,21 +713,20 @@ class TestTanhSinh:
         xp_assert_equal(res.success, xp.asarray([False, False, False, True]))
         xp_assert_equal(res.nfev[:3], xp.full((3,), 1, dtype=xp.int32))
 
-        if not is_torch(xp):
-            # Test complex integral followed by real integral
-            # Previously, h0 was of the result dtype. If the `dtype` were complex,
-            # this could lead to complex cached abscissae/weights. If these get
-            # cast to real dtype for a subsequent real integral, we would get a
-            # ComplexWarning. Check that this is avoided.
-            _pair_cache.xjc = xp.empty(0)
-            _pair_cache.wj = xp.empty(0)
-            _pair_cache.indices = [0]
-            _pair_cache.h0 = None
-            a, b = xp.asarray(0), xp.asarray(1)
-            res = _tanhsinh(lambda x: x*1j, a, b)
-            xp_assert_close(res.integral, 0.5*1j)
-            res = _tanhsinh(lambda x: x, a, b)
-            xp_assert_close(res.integral, 0.5)
+        # Test complex integral followed by real integral
+        # Previously, h0 was of the result dtype. If the `dtype` were complex,
+        # this could lead to complex cached abscissae/weights. If these get
+        # cast to real dtype for a subsequent real integral, we would get a
+        # ComplexWarning. Check that this is avoided.
+        _pair_cache.xjc = xp.empty(0)
+        _pair_cache.wj = xp.empty(0)
+        _pair_cache.indices = [0]
+        _pair_cache.h0 = None
+        a, b = xp.asarray(0), xp.asarray(1)
+        res = _tanhsinh(lambda x: xp.asarray(x*1j), a, b)
+        xp_assert_close(res.integral, xp.asarray(0.5*1j))
+        res = _tanhsinh(lambda x: x, a, b)
+        xp_assert_close(res.integral, xp.asarray(0.5))
 
         # Test zero-size
         shape = (0, 3)
