@@ -102,7 +102,7 @@ def _reject_objects(arr, name):
     ):
         warnings.warn(f"dtype={dt} is not supported by {name} and will raise "
                       f"an error in SciPy 1.17.0",
-                      category=DeprecationWarning, stacklevel=2
+                      category=DeprecationWarning, stacklevel=3
         )
 
 
