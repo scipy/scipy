@@ -391,7 +391,8 @@ def _tanhsinh(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
 
         # Perform abscissae substitutions for infinite limits of integration
         xj = xp_copy(work.xj)
-        xj[work.abinf] = xj[work.abinf] / (1 - xj[work.abinf]**2)
+        # use xp_real here to avoid cupy/cupy#8434
+        xj[work.abinf] = xj[work.abinf] / (1 - xp_real(xj[work.abinf])**2)
         xj[work.binf] = 1/xj[work.binf] - 1 + work.a0[work.binf]
         xj[work.ainf] *= -1
         return xj

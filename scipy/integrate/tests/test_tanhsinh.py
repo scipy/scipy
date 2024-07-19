@@ -407,7 +407,7 @@ class TestTanhSinh:
         # Test `maxlevel` equal to required max level
         # We should get all the same results
         f.feval, f.calls = 0, 0
-        maxlevel = ref.maxlevel
+        maxlevel = int(ref.maxlevel)
         res = _tanhsinh(f, a, b, maxlevel=maxlevel)
         res.calls = f.calls
         assert res == ref
