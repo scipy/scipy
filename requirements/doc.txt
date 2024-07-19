@@ -9,5 +9,5 @@ numpydoc
 jupytext
 myst-nb
 pooch
-jupyterlite-sphinx>=0.13.1
+jupyterlite-sphinx>=0.16.2
 jupyterlite-pyodide-kernel
