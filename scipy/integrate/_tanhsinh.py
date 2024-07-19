@@ -810,7 +810,8 @@ def _tanhsinh_iv(f, a, b, log, maxfun, maxlevel, minlevel,
     message = 'All elements of `a` and `b` must be real numbers.'
     a, b = xp.asarray(a), xp.asarray(b)
     a, b = xp.broadcast_arrays(a, b)
-    if xp.isdtype(a.dtype, 'complex floating') or xp.isdtype(b.dtype, 'complex floating'):
+    if (xp.isdtype(a.dtype, 'complex floating')
+            or xp.isdtype(b.dtype, 'complex floating')):
         raise ValueError(message)
 
     message = '`log` must be True or False.'

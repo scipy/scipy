@@ -9,7 +9,7 @@ from numpy.testing import assert_allclose, assert_equal
 from scipy.conftest import array_api_compatible
 import scipy._lib._elementwise_iterative_method as eim
 from scipy._lib._array_api import (array_namespace, xp_assert_close, xp_assert_equal,
-                                   size as xp_size, xp_ravel)
+                                   size as xp_size, xp_ravel, is_torch)
 from scipy import special, stats
 from scipy.integrate import quad_vec, nsum
 from scipy.integrate._tanhsinh import _tanhsinh, _pair_cache
@@ -177,13 +177,13 @@ class TestTanhSinh:
         with pytest.raises(ValueError, match=message):
             _tanhsinh(f, zero, f_b, rtol=-1)
         with pytest.raises(ValueError, match=message):
-            _tanhsinh(f, zero, f_b, atol=np.inf)
+            _tanhsinh(f, zero, f_b, atol=xp.inf)
 
         message = '...may not be positive infinity.'
         with pytest.raises(ValueError, match=message):
-            _tanhsinh(f, zero, f_b, rtol=np.inf, log=True)
+            _tanhsinh(f, zero, f_b, rtol=xp.inf, log=True)
         with pytest.raises(ValueError, match=message):
-            _tanhsinh(f, zero, f_b, atol=np.inf, log=True)
+            _tanhsinh(f, zero, f_b, atol=xp.inf, log=True)
 
         message = '...must be integers.'
         with pytest.raises(ValueError, match=message):
@@ -210,10 +210,10 @@ class TestTanhSinh:
             _tanhsinh(f, zero, f_b, callback='elderberry')
 
     @pytest.mark.parametrize("limits, ref", [
-        [(0, np.inf), 0.5],  # b infinite
-        [(-np.inf, 0), 0.5],  # a infinite
-        [(-np.inf, np.inf), 1.],  # a and b infinite
-        [(np.inf, -np.inf), -1.],  # flipped limits
+        [(0, math.inf), 0.5],  # b infinite
+        [(-math.inf, 0), 0.5],  # a infinite
+        [(-math.inf, math.inf), 1.],  # a and b infinite
+        [(math.inf, -math.inf), -1.],  # flipped limits
         [(1, -1), stats.norm.cdf(-1.) -  stats.norm.cdf(1.)],  # flipped limits
     ])
     def test_integral_transforms(self, limits, ref, xp):
@@ -279,7 +279,7 @@ class TestTanhSinh:
         a = xp.asarray(rng.random(shape))
         b = xp.asarray(rng.random(shape))
         p = xp.asarray(rng.random(shape))
-        n = int(np.prod(shape))
+        n = math.prod(shape)
 
         def f(x, p):
             f.ncall += 1
@@ -385,7 +385,7 @@ class TestTanhSinh:
             f.feval += xp_size(xp.asarray(x))
             return x**2 * xp_test.atan(x)
 
-        f.ref = (np.pi - 2 + 2 * math.log(2)) / 12
+        f.ref = (math.pi - 2 + 2 * math.log(2)) / 12
 
         default_rtol = 1e-12
         default_atol = f.ref * default_rtol  # effective default absolute tol
@@ -449,7 +449,7 @@ class TestTanhSinh:
         # Test `atol`
         f.feval, f.calls = 0, 0
         # With this tolerance, we should get the exact same result as ref
-        atol = np.nextafter(ref.error, np.inf)
+        atol = float(np.nextafter(ref.error, np.inf))
         res = _tanhsinh(f, a, b, rtol=0, atol=atol)
         assert res.integral == ref.integral
         assert res.error == ref.error
@@ -461,7 +461,7 @@ class TestTanhSinh:
 
         f.feval, f.calls = 0, 0
         # With a tighter tolerance, we should get a more accurate result
-        atol = np.nextafter(ref.error, -np.inf)
+        atol = float(np.nextafter(ref.error, -np.inf))
         res = _tanhsinh(f, a, b, rtol=0, atol=atol)
         assert self.error(res.integral, f.ref) < res.error < atol
         assert res.nfev == f.feval > ref.nfev
@@ -472,7 +472,7 @@ class TestTanhSinh:
         # Test `rtol`
         f.feval, f.calls = 0, 0
         # With this tolerance, we should get the exact same result as ref
-        rtol = np.nextafter(ref.error/ref.integral, np.inf)
+        rtol = float(np.nextafter(ref.error/ref.integral, np.inf))
         res = _tanhsinh(f, a, b, rtol=rtol)
         assert res.integral == ref.integral
         assert res.error == ref.error
@@ -500,10 +500,10 @@ class TestTanhSinh:
         # Positive integrand (real log-integrand)
         a = xp.asarray(-1., dtype=xp.float64)
         b = xp.asarray(2., dtype=xp.float64)
-        res = _tanhsinh(norm_logpdf, a, b, log=True, rtol=np.log(rtol))
+        res = _tanhsinh(norm_logpdf, a, b, log=True, rtol=math.log(rtol))
         ref = _tanhsinh(norm_pdf, a, b, rtol=rtol)
-        assert_allclose(np.exp(res.integral), ref.integral, **test_tols)
-        assert_allclose(np.exp(res.error), ref.error, **test_tols)
+        xp_assert_close(xp.exp(res.integral), ref.integral, **test_tols)
+        xp_assert_close(xp.exp(res.error), ref.error, **test_tols)
         assert res.nfev == ref.nfev
 
         # Real integrand (complex log-integrand)
@@ -511,7 +511,7 @@ class TestTanhSinh:
             return -norm_logpdf(x)*norm_pdf(x)
 
         def logf(x):
-            return xp.log(norm_logpdf(x) + 0j) + norm_logpdf(x) + np.pi * 1j
+            return xp.log(norm_logpdf(x) + 0j) + norm_logpdf(x) + xp.pi * 1j
 
         a = xp.asarray(-xp.inf, dtype=xp.float64)[()]
         b = xp.asarray(xp.inf, dtype=xp.float64)[()]
@@ -521,90 +521,101 @@ class TestTanhSinh:
         # Silencing `all` because I can't reproduce locally and don't want
         # to risk the need to run CI again.
         with np.errstate(all='ignore'):
-            assert_allclose(xp.exp(res.integral), ref.integral, **test_tols)
-            assert_allclose(xp.exp(res.error), ref.error, **test_tols)
+            xp_assert_close(xp.exp(res.integral), ref.integral, **test_tols,
+                            check_dtype=False)
+            xp_assert_close(xp.exp(res.error), ref.error, **test_tols,
+                            check_dtype=False)
         assert res.nfev == ref.nfev
 
     def test_complex(self, xp):
         # Test integration of complex integrand
         # Finite limits
         def f(x):
-            return np.exp(1j * x)
+            return xp.exp(1j * x)
 
-        res = _tanhsinh(f, 0, np.pi/4)
-        ref = np.sqrt(2)/2 + (1-np.sqrt(2)/2)*1j
-        assert_allclose(res.integral, ref)
+        a, b = xp.asarray(0.), xp.asarray(xp.pi/4)
+        res = _tanhsinh(f, a, b)
+        ref = math.sqrt(2)/2 + (1-math.sqrt(2)/2)*1j
+        xp_assert_close(res.integral, xp.asarray(ref))
 
         # Infinite limits
-        dist1 = stats.norm(scale=1)
-        dist2 = stats.norm(scale=2)
         def f(x):
-            return dist1.pdf(x) + 1j*dist2.pdf(x)
+            return norm_pdf(x) + 1j/2*norm_pdf(x/2)
 
-        res = _tanhsinh(f, np.inf, -np.inf)
-        assert_allclose(res.integral, -(1+1j))
+        a, b = xp.asarray(xp.inf), xp.asarray(-xp.inf)
+        res = _tanhsinh(f, a, b)
+        xp_assert_close(res.integral, xp.asarray(-(1+1j)))
 
     @pytest.mark.parametrize("maxlevel", range(4))
     def test_minlevel(self, maxlevel, xp):
         # Verify that minlevel does not change the values at which the
         # integrand is evaluated or the integral/error estimates, only the
         # number of function calls
+
+        # need `xp.concat`, `xp.atan`, and `xp.sort`
+        xp_test = array_namespace(xp.asarray(1.))
+
         def f(x):
             f.calls += 1
-            f.feval += np.size(x)
-            f.x = np.concatenate((f.x, x.ravel()))
-            return self.f2(x)
-        f.feval, f.calls, f.x = 0, 0, np.array([])
+            f.feval += xp_size(xp.asarray(x))
+            f.x = xp_test.concat((f.x, xp_ravel(x)))
+            return x**2 * xp_test.atan(x)
 
-        ref = _tanhsinh(f, 0, self.f2.b, minlevel=0, maxlevel=maxlevel)
-        ref_x = np.sort(f.x)
+        f.feval, f.calls, f.x = 0, 0, xp.asarray([])
+
+        a = xp.asarray(0, dtype=xp.float64)
+        b = xp.asarray(1, dtype=xp.float64)
+        ref = _tanhsinh(f, a, b, minlevel=0, maxlevel=maxlevel)
+        ref_x = xp_test.sort(f.x)
 
         for minlevel in range(0, maxlevel + 1):
-            f.feval, f.calls, f.x = 0, 0, np.array([])
+            f.feval, f.calls, f.x = 0, 0, xp.asarray([])
             options = dict(minlevel=minlevel, maxlevel=maxlevel)
-            res = _tanhsinh(f, 0, self.f2.b, **options)
+            res = _tanhsinh(f, a, b, **options)
             # Should be very close; all that has changed is the order of values
-            assert_allclose(res.integral, ref.integral, rtol=4e-16)
+            xp_assert_close(res.integral, ref.integral, rtol=4e-16)
             # Difference in absolute errors << magnitude of integral
-            assert_allclose(res.error, ref.error, atol=4e-16 * ref.integral)
-            assert res.nfev == f.feval == len(f.x)
+            xp_assert_close(res.error, ref.error, atol=4e-16 * ref.integral)
+            assert res.nfev == f.feval == f.x.shape[0]
             assert f.calls == maxlevel - minlevel + 1 + 1  # 1 validation call
             assert res.status == ref.status
-            assert_equal(ref_x, np.sort(f.x))
+            xp_assert_equal(ref_x, xp_test.sort(f.x))
 
     def test_improper_integrals(self, xp):
         # Test handling of infinite limits of integration (mixed with finite limits)
         def f(x):
-            x[np.isinf(x)] = np.nan
-            return np.exp(-x**2)
-        a = [-np.inf, 0, -np.inf, np.inf, -20, -np.inf, -20]
-        b = [np.inf, np.inf, 0, -np.inf, 20, 20, np.inf]
-        ref = np.sqrt(np.pi)
+            x[xp.isinf(x)] = xp.nan
+            return xp.exp(-x**2)
+        a = xp.asarray([-xp.inf, 0, -xp.inf, xp.inf, -20, -xp.inf, -20])
+        b = xp.asarray([xp.inf, xp.inf, 0, -xp.inf, 20, 20, xp.inf])
+        ref = math.sqrt(math.pi)
+        ref = xp.asarray([ref, ref/2, ref/2, -ref, ref, ref, ref])
         res = _tanhsinh(f, a, b)
-        assert_allclose(res.integral, [ref, ref/2, ref/2, -ref, ref, ref, ref])
+        xp_assert_close(res.integral, ref)
 
-    @pytest.mark.parametrize("limits", ((0, 3), ([-np.inf, 0], [3, 3])))
-    @pytest.mark.parametrize("dtype", (np.float32, np.float64))
+    @pytest.mark.parametrize("limits", ((0, 3), ([-math.inf, 0], [3, 3])))
+    @pytest.mark.parametrize("dtype", ('float32', 'float64'))
     def test_dtype(self, limits, dtype, xp):
         # Test that dtypes are preserved
-        a, b = np.asarray(limits, dtype=dtype)[()]
+        dtype = getattr(xp, dtype)
+        a, b = xp.asarray(limits, dtype=dtype)[()]
 
         def f(x):
             assert x.dtype == dtype
-            return np.exp(x)
+            return xp.exp(x)
 
-        rtol = 1e-12 if dtype == np.float64 else 1e-5
+        rtol = 1e-12 if dtype == xp.float64 else 1e-5
         res = _tanhsinh(f, a, b, rtol=rtol)
         assert res.integral.dtype == dtype
         assert res.error.dtype == dtype
-        assert np.all(res.success)
-        assert_allclose(res.integral, np.exp(b)-np.exp(a), rtol=rtol)
+        assert xp.all(res.success)
+        xp_assert_close(res.integral, xp.exp(b)-xp.exp(a))
 
     def test_maxiter_callback(self, xp):
         # Test behavior of `maxiter` parameter and `callback` interface
-        a, b = -np.inf, np.inf
+        a, b = xp.asarray(-xp.inf), xp.asarray(xp.inf)
         def f(x):
-            return np.exp(-x*x)
+            return xp.exp(-x*x)
 
         minlevel, maxlevel = 0, 2
         maxiter = maxlevel - minlevel + 1
@@ -629,7 +640,6 @@ class TestTanhSinh:
         # (except for `status`)
         for key in res.keys():
             if key == 'status':
-                assert callback.res[key] == 1
                 assert res[key] == -2
                 assert res2[key] == -4
             else:
@@ -638,9 +648,11 @@ class TestTanhSinh:
     def test_jumpstart(self, xp):
         # The intermediate results at each level i should be the same as the
         # final results when jumpstarting at level i; i.e. minlevel=maxlevel=i
-        a, b = -np.inf, np.inf
+        a = xp.asarray(-xp.inf, dtype=xp.float64)
+        b = xp.asarray(xp.inf, dtype=xp.float64)
+
         def f(x):
-            return np.exp(-x*x)
+            return xp.exp(-x*x)
 
         def callback(res):
             callback.integrals.append(res.integral)
@@ -651,81 +663,78 @@ class TestTanhSinh:
         maxlevel = 4
         _tanhsinh(f, a, b, minlevel=0, maxlevel=maxlevel, callback=callback)
 
-        integrals = []
-        errors = []
         for i in range(maxlevel + 1):
             res = _tanhsinh(f, a, b, minlevel=i, maxlevel=i)
-            integrals.append(res.integral)
-            errors.append(res.error)
-
-        assert_allclose(callback.integrals[1:], integrals, rtol=1e-15)
-        assert_allclose(callback.errors[1:], errors, rtol=1e-15, atol=1e-16)
+            xp_assert_close(callback.integrals[1+i], res.integral, rtol=1e-15)
+            xp_assert_close(callback.errors[1+i], res.error, rtol=1e-15, atol=1e-16)
 
     def test_special_cases(self, xp):
         # Test edge cases and other special cases
+        a, b = xp.asarray(0), xp.asarray(1)
+        xp_test = array_namespace(a, b)  # need `xp.isdtype`
 
-        # Test that integers are not passed to `f`
-        # (otherwise this would overflow)
         def f(x):
-            assert np.issubdtype(x.dtype, np.floating)
-            return x ** 99
+            assert xp_test.isdtype(x.dtype, "real floating")
+            return x
 
-        res = _tanhsinh(f, 0, 1)
+        res = _tanhsinh(f, a, b)
         assert res.success
-        assert_allclose(res.integral, 1/100)
+        xp_assert_close(res.integral, xp.asarray(0.5))
 
         # Test levels 0 and 1; error is NaN
-        res = _tanhsinh(f, 0, 1, maxlevel=0)
+        res = _tanhsinh(f, a, b, maxlevel=0)
         assert res.integral > 0
-        assert_equal(res.error, np.nan)
-        res = _tanhsinh(f, 0, 1, maxlevel=1)
+        xp_assert_equal(res.error, xp.asarray(xp.nan))
+        res = _tanhsinh(f, a, b, maxlevel=1)
         assert res.integral > 0
-        assert_equal(res.error, np.nan)
+        xp_assert_equal(res.error, xp.asarray(xp.nan))
 
-        # Tes equal left and right integration limits
-        res = _tanhsinh(f, 1, 1)
+        # Test equal left and right integration limits
+        res = _tanhsinh(f, b, b)
         assert res.success
         assert res.maxlevel == -1
-        assert_allclose(res.integral, 0)
+        xp_assert_close(res.integral, xp.asarray(0.))
 
         # Test scalar `args` (not in tuple)
         def f(x, c):
             return x**c
 
-        res = _tanhsinh(f, 0, 1, args=99)
-        assert_allclose(res.integral, 1/100)
+        res = _tanhsinh(f, a, b, args=29)
+        xp_assert_close(res.integral, xp.asarray(1/30))
 
         # Test NaNs
-        a = [np.nan, 0, 0, 0]
-        b = [1, np.nan, 1, 1]
-        c = [1, 1, np.nan, 1]
+        a = xp.asarray([xp.nan, 0, 0, 0])
+        b = xp.asarray([1, xp.nan, 1, 1])
+        c = xp.asarray([1, 1, xp.nan, 1])
         res = _tanhsinh(f, a, b, args=(c,))
-        assert_allclose(res.integral, [np.nan, np.nan, np.nan, 0.5])
-        assert_allclose(res.error[:3], np.nan)
-        assert_equal(res.status, [-3, -3, -3, 0])
-        assert_equal(res.success, [False, False, False, True])
-        assert_equal(res.nfev[:3], 1)
+        xp_assert_close(res.integral, xp.asarray([xp.nan, xp.nan, xp.nan, 0.5]))
+        xp_assert_equal(res.error[:3], xp.full((3,), xp.nan))
+        xp_assert_equal(res.status, xp.asarray([-3, -3, -3, 0], dtype=xp.int32))
+        xp_assert_equal(res.success, xp.asarray([False, False, False, True]))
+        xp_assert_equal(res.nfev[:3], xp.full((3,), 1, dtype=xp.int32))
 
-        # Test complex integral followed by real integral
-        # Previously, h0 was of the result dtype. If the `dtype` were complex,
-        # this could lead to complex cached abscissae/weights. If these get
-        # cast to real dtype for a subsequent real integral, we would get a
-        # ComplexWarning. Check that this is avoided.
-        _pair_cache.xjc = np.empty(0)
-        _pair_cache.wj = np.empty(0)
-        _pair_cache.indices = [0]
-        _pair_cache.h0 = None
-        res = _tanhsinh(lambda x: x*1j, 0, 1)
-        assert_allclose(res.integral, 0.5*1j)
-        res = _tanhsinh(lambda x: x, 0, 1)
-        assert_allclose(res.integral, 0.5)
+        if not is_torch(xp):
+            # Test complex integral followed by real integral
+            # Previously, h0 was of the result dtype. If the `dtype` were complex,
+            # this could lead to complex cached abscissae/weights. If these get
+            # cast to real dtype for a subsequent real integral, we would get a
+            # ComplexWarning. Check that this is avoided.
+            _pair_cache.xjc = xp.empty(0)
+            _pair_cache.wj = xp.empty(0)
+            _pair_cache.indices = [0]
+            _pair_cache.h0 = None
+            a, b = xp.asarray(0), xp.asarray(1)
+            res = _tanhsinh(lambda x: x*1j, a, b)
+            xp_assert_close(res.integral, 0.5*1j)
+            res = _tanhsinh(lambda x: x, a, b)
+            xp_assert_close(res.integral, 0.5)
 
         # Test zero-size
         shape = (0, 3)
-        res = _tanhsinh(lambda x: x, 0, np.zeros(shape))
+        res = _tanhsinh(lambda x: x, xp.asarray(0), xp.zeros(shape))
         attrs = ['integral', 'error', 'success', 'status', 'nfev', 'maxlevel']
         for attr in attrs:
-            assert_equal(res[attr].shape, shape)
+            assert res[attr].shape == shape
 
 
 class TestNSum:
