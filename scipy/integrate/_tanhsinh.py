@@ -197,7 +197,7 @@ def _tanhsinh(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
     ...     return np.exp(-x**2)
     >>> res = _tanhsinh(f, -np.inf, np.inf)
     >>> res.integral  # true value is np.sqrt(np.pi), 1.7724538509055159
-     1.7724538509055159
+    1.7724538509055159
     >>> res.error  # actual error is 0
     4.0007963937534104e-16
 
@@ -212,7 +212,7 @@ def _tanhsinh(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
     may not be able to find the important region.
 
     >>> _tanhsinh(f, -np.inf, 1000).integral
-    4.500490856620352
+    4.500490856616431
 
     In such cases, or when there are singularities within the interval,
     break the integral into parts with endpoints at the important points.
@@ -228,11 +228,12 @@ def _tanhsinh(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
 
     >>> res = _tanhsinh(f, 20, 30, rtol=1e-10)
     >>> res.integral, res.error
-    4.7819613911309014e-176, 4.670364401645202e-187
+    (4.7819613911309014e-176, 4.670364401645202e-187)
     >>> def log_f(x):
     ...     return -x**2
+    >>> res = _tanhsinh(log_f, 20, 30, log=True, rtol=np.log(1e-10))
     >>> np.exp(res.integral), np.exp(res.error)
-    4.7819613911306924e-176, 4.670364401645093e-187
+    (4.7819613911306924e-176, 4.670364401645093e-187)
 
     The limits of integration and elements of `args` may be broadcastable
     arrays, and integration is performed elementwise.
@@ -244,6 +245,7 @@ def _tanhsinh(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
     >>> res = _tanhsinh(dist.pdf, a, x)
     >>> ref = dist.cdf(x)
     >>> np.allclose(res.integral, ref)
+    True
 
     By default, `preserve_shape` is False, and therefore the callable
     `f` may be called with arrays of any broadcastable shapes.
@@ -258,7 +260,7 @@ def _tanhsinh(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
     >>> c = [1, 10, 30, 100]
     >>> res = _tanhsinh(f, 0, 1, args=(c,), minlevel=1)
     >>> shapes
-    [(4,), (4, 66), (3, 64), (2, 128), (1, 256)]
+    [(4,), (4, 34), (4, 32), (3, 64), (2, 128), (1, 256)]
 
     To understand where these shapes are coming from - and to better
     understand how `_tanhsinh` computes accurate results - note that
@@ -268,7 +270,7 @@ def _tanhsinh(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
     accuracy:
 
     >>> res.nfev
-    array([ 67, 131, 259, 515])
+    array([ 67, 131, 259, 515], dtype=int32)
 
     The initial ``shape``, ``(4,)``, corresponds with evaluating the
     integrand at a single abscissa and all four frequencies; this is used
@@ -1136,7 +1138,7 @@ def nsum(f, a, b, *, step=1, args=(), log=False, maxterms=int(2**20), tolerances
 
     >>> res = nsum(lambda x: 1/x - 1/(x+1), 1, np.inf, step=2)
     >>> res.sum, res.sum - np.log(2)  # result, difference vs analytical sum
-    (0.6931471805598692, -7.605027718682322e-14)
+    (0.6931471805598691, -7.616129948928574e-14)
     
     """ # noqa: E501
     # Potential future work:
