@@ -409,7 +409,7 @@ def _tanhsinh(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
         fjwj, Sn = _euler_maclaurin_sum(fj, work, xp)
         if work.Sk.shape[-1]:
             Snm1 = work.Sk[:, -1]
-            Sn = (_logsumexp([Snm1 - xp.log(2), Sn], axis=0, xp=xp) if log
+            Sn = (_logsumexp(xp.stack([Snm1 - math.log(2), Sn]), axis=0, xp=xp) if log
                   else Snm1 / 2 + Sn)
 
         work.fjwj = fjwj
@@ -602,7 +602,9 @@ def _transform_to_limits(xjc, wj, a, b, xp):
     # the Euler-Maclaurin sum. Ideally we wouldn't evaluate the function at
     # these points; however, we can't easily filter out points since this
     # function is vectorized. Instead, zero the weights.
-    invalid = (xj <= a) | (xj >= b)
+    # Note: values may have complex dtype, but have zero imaginary part
+    xj_real, a_real, b_real = xp_real(xj), xp_real(a), xp_real(b)
+    invalid = (xj_real <= a_real) | (xj_real >= b_real)
     wj[invalid] = 0
     return xj, wj
 
@@ -632,7 +634,7 @@ def _euler_maclaurin_sum(fj, work, xp):
 
     # integer index of the maximum abscissa at this level
     xr[invalid_r] = -xp.inf
-    ir = xp.argmax(xr, axis=0, keepdims=True)
+    ir = xp.argmax(xp_real(xr), axis=0, keepdims=True)
     # abscissa, function value, and weight at this index
     ### Not Array API Compatible... yet ###
     xr_max = xp_take_along_axis(xr, ir, axis=0)[0]
@@ -640,7 +642,8 @@ def _euler_maclaurin_sum(fj, work, xp):
     wr_max = xp_take_along_axis(wr, ir, axis=0)[0]
     # boolean indices at which maximum abscissa at this level exceeds
     # the incumbent maximum abscissa (from all previous levels)
-    j = xr_max > xr0
+    # note: abscissa may have complex dtype, but will have zero imaginary part
+    j = xp_real(xr_max) > xp_real(xr0)
     # Update record of the incumbent abscissa, function value, and weight
     xr0[j] = xr_max[j]
     fr0[j] = fr_max[j]
@@ -648,14 +651,15 @@ def _euler_maclaurin_sum(fj, work, xp):
 
     # integer index of the minimum abscissa at this level
     xl[invalid_l] = xp.inf
-    il = xp.argmin(xl, axis=0, keepdims=True)
+    il = xp.argmin(xp_real(xl), axis=0, keepdims=True)
     # abscissa, function value, and weight at this index
     xl_min = xp_take_along_axis(xl, il, axis=0)[0]
     fl_min = xp_take_along_axis(fl, il, axis=0)[0]
     wl_min = xp_take_along_axis(wl, il, axis=0)[0]
     # boolean indices at which minimum abscissa at this level is less than
     # the incumbent minimum abscissa (from all previous levels)
-    j = xl_min < xl0
+    # note: abscissa may have complex dtype, but will have zero imaginary part
+    j = xp_real(xl_min) < xp_real(xl0)
     # Update record of the incumbent abscissa, function value, and weight
     xl0[j] = xl_min[j]
     fl0[j] = fl_min[j]
@@ -771,7 +775,9 @@ def _estimate_error(work, xp):
         ds = xp.stack([d1**(xp.log(d1)/xp.log(d2)), d1**2, d3, d4])
         aerr = xp.max(ds, axis=0)
         rerr = xp.maximum(e1, aerr/xp.abs(work.Sn))
-    return rerr, aerr.reshape(work.Sn.shape)
+
+    aerr = xp.reshape(xp.astype(aerr, work.dtype), work.Sn.shape)
+    return rerr, aerr
 
 
 def _transform_integrals(a, b, xp):
@@ -781,7 +787,8 @@ def _transform_integrals(a, b, xp):
     # For infinite limit on the left, we substitute x = -x and treat as above
     # For infinite limits, we substitute x = t / (1-t**2)
 
-    negative = b < a
+    # `a, b` may have complex dtype but have zero imaginary part
+    negative = xp_real(b) < xp_real(a)
     a[negative], b[negative] = b[negative], a[negative]
 
     abinf = xp.isinf(a) & xp.isinf(b)
