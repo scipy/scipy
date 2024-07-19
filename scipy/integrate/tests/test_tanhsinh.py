@@ -357,18 +357,20 @@ class TestTanhSinh:
         ref = quad_vec(lambda x: f(x, np), 0, 1)
         res = _tanhsinh(lambda x: f(x, xp), xp.asarray(0), xp.asarray(1),
                         preserve_shape=True)
-        xp_assert_close(res.integral, xp.asarray(ref[0]))
+        dtype = xp.asarray(0.).dtype
+        xp_assert_close(res.integral, xp.asarray(ref[0], dtype=dtype))
 
     def test_convergence(self, xp):
         # demonstrate that number of accurate digits doubles each iteration
+        dtype = xp.float64  # this only works with good precision
         def f(t):
             return t * xp.log(1 + t)
-        ref = xp.asarray(0.25)
+        ref = xp.asarray(0.25, dtype=dtype)
+        a, b = xp.asarray(0., dtype=dtype), xp.asarray(1., dtype=dtype)
 
         last_logerr = 0
         for i in range(4):
-            res = _tanhsinh(f, xp.asarray(0), xp.asarray(1),
-                            minlevel=0, maxlevel=i)
+            res = _tanhsinh(f, a, b, minlevel=0, maxlevel=i)
             logerr = self.error(res.integral, ref, log=True)
             assert (logerr < last_logerr * 2 or logerr < -15.5)
             last_logerr = logerr
@@ -376,18 +378,26 @@ class TestTanhSinh:
     def test_options_and_result_attributes(self, xp):
         # demonstrate that options are behaving as advertised and status
         # messages are as intended
+        xp_test = array_namespace(xp.asarray(1.))  # need xp.atan
+
         def f(x):
             f.calls += 1
-            f.feval += np.size(x)
-            return self.f2(x)
-        f.ref = self.f2.ref
-        f.b = self.f2.b
+            f.feval += xp_size(xp.asarray(x))
+            return x**2 * xp_test.atan(x)
+
+        f.ref = (np.pi - 2 + 2 * math.log(2)) / 12
+
         default_rtol = 1e-12
         default_atol = f.ref * default_rtol  # effective default absolute tol
 
+        # Keep things simpler by leaving tolerances fixed rather than
+        # having to make them dtype-dependent
+        a = xp.asarray(0., dtype=xp.float64)[()]
+        b = xp.asarray(1., dtype=xp.float64)[()]
+
         # Test default options
         f.feval, f.calls = 0, 0
-        ref = _tanhsinh(f, 0, f.b)
+        ref = _tanhsinh(f, a, b)
         assert self.error(ref.integral, f.ref) < ref.error < default_atol
         assert ref.nfev == f.feval
         ref.calls = f.calls  # reference number of function calls
@@ -398,7 +408,7 @@ class TestTanhSinh:
         # We should get all the same results
         f.feval, f.calls = 0, 0
         maxlevel = ref.maxlevel
-        res = _tanhsinh(f, 0, f.b, maxlevel=maxlevel)
+        res = _tanhsinh(f, a, b, maxlevel=maxlevel)
         res.calls = f.calls
         assert res == ref
 
@@ -406,7 +416,7 @@ class TestTanhSinh:
         f.feval, f.calls = 0, 0
         maxlevel -= 1
         assert maxlevel >= 2  # can't compare errors otherwise
-        res = _tanhsinh(f, 0, f.b, maxlevel=maxlevel)
+        res = _tanhsinh(f, a, b, maxlevel=maxlevel)
         assert self.error(res.integral, f.ref) < res.error > default_atol
         assert res.nfev == f.feval < ref.nfev
         assert f.calls == ref.calls - 1
@@ -440,7 +450,7 @@ class TestTanhSinh:
         f.feval, f.calls = 0, 0
         # With this tolerance, we should get the exact same result as ref
         atol = np.nextafter(ref.error, np.inf)
-        res = _tanhsinh(f, 0, f.b, rtol=0, atol=atol)
+        res = _tanhsinh(f, a, b, rtol=0, atol=atol)
         assert res.integral == ref.integral
         assert res.error == ref.error
         assert res.nfev == f.feval == ref.nfev
@@ -452,7 +462,7 @@ class TestTanhSinh:
         f.feval, f.calls = 0, 0
         # With a tighter tolerance, we should get a more accurate result
         atol = np.nextafter(ref.error, -np.inf)
-        res = _tanhsinh(f, 0, f.b, rtol=0, atol=atol)
+        res = _tanhsinh(f, a, b, rtol=0, atol=atol)
         assert self.error(res.integral, f.ref) < res.error < atol
         assert res.nfev == f.feval > ref.nfev
         assert f.calls > ref.calls
@@ -463,7 +473,7 @@ class TestTanhSinh:
         f.feval, f.calls = 0, 0
         # With this tolerance, we should get the exact same result as ref
         rtol = np.nextafter(ref.error/ref.integral, np.inf)
-        res = _tanhsinh(f, 0, f.b, rtol=rtol)
+        res = _tanhsinh(f, a, b, rtol=rtol)
         assert res.integral == ref.integral
         assert res.error == ref.error
         assert res.nfev == f.feval == ref.nfev
@@ -474,8 +484,8 @@ class TestTanhSinh:
 
         f.feval, f.calls = 0, 0
         # With a tighter tolerance, we should get a more accurate result
-        rtol = np.nextafter(ref.error/ref.integral, -np.inf)
-        res = _tanhsinh(f, 0, f.b, rtol=rtol)
+        rtol = float(np.nextafter(ref.error/ref.integral, -np.inf))
+        res = _tanhsinh(f, a, b, rtol=rtol)
         assert self.error(res.integral, f.ref)/f.ref < res.error/res.integral < rtol
         assert res.nfev == f.feval > ref.nfev
         assert f.calls > ref.calls
@@ -485,32 +495,34 @@ class TestTanhSinh:
     @pytest.mark.parametrize('rtol', [1e-4, 1e-14])
     def test_log(self, rtol, xp):
         # Test equivalence of log-integration and regular integration
-        dist = stats.norm()
-
         test_tols = dict(atol=1e-18, rtol=1e-15)
 
         # Positive integrand (real log-integrand)
-        res = _tanhsinh(dist.logpdf, -1, 2, log=True, rtol=np.log(rtol))
-        ref = _tanhsinh(dist.pdf, -1, 2, rtol=rtol)
+        a = xp.asarray(-1., dtype=xp.float64)
+        b = xp.asarray(2., dtype=xp.float64)
+        res = _tanhsinh(norm_logpdf, a, b, log=True, rtol=np.log(rtol))
+        ref = _tanhsinh(norm_pdf, a, b, rtol=rtol)
         assert_allclose(np.exp(res.integral), ref.integral, **test_tols)
         assert_allclose(np.exp(res.error), ref.error, **test_tols)
         assert res.nfev == ref.nfev
 
         # Real integrand (complex log-integrand)
         def f(x):
-            return -dist.logpdf(x)*dist.pdf(x)
+            return -norm_logpdf(x)*norm_pdf(x)
 
         def logf(x):
-            return np.log(dist.logpdf(x) + 0j) + dist.logpdf(x) + np.pi * 1j
+            return xp.log(norm_logpdf(x) + 0j) + norm_logpdf(x) + np.pi * 1j
 
-        res = _tanhsinh(logf, -np.inf, np.inf, log=True)
-        ref = _tanhsinh(f, -np.inf, np.inf)
+        a = xp.asarray(-xp.inf, dtype=xp.float64)[()]
+        b = xp.asarray(xp.inf, dtype=xp.float64)[()]
+        res = _tanhsinh(logf, a, b, log=True)
+        ref = _tanhsinh(f, a, b)
         # In gh-19173, we saw `invalid` warnings on one CI platform.
         # Silencing `all` because I can't reproduce locally and don't want
         # to risk the need to run CI again.
         with np.errstate(all='ignore'):
-            assert_allclose(np.exp(res.integral), ref.integral, **test_tols)
-            assert_allclose(np.exp(res.error), ref.error, **test_tols)
+            assert_allclose(xp.exp(res.integral), ref.integral, **test_tols)
+            assert_allclose(xp.exp(res.error), ref.error, **test_tols)
         assert res.nfev == ref.nfev
 
     def test_complex(self, xp):
