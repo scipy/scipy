@@ -20,6 +20,7 @@ from scipy.interpolate._bsplines import (_not_a_knot, _augknt,
                                          _make_interp_per_full_matr)
 import scipy.interpolate._fitpack_impl as _impl
 from scipy._lib._util import AxisError
+from scipy._lib._testutils import _run_concurrent_barrier
 
 # XXX: move to the interpolate namespace
 from scipy.interpolate._ndbspline import make_ndbspl
@@ -395,7 +396,7 @@ class TestBSpline:
         b = BSpline.basis_element([0, 1, 2])
         for extrapolate in (True, False):
             res = b.integrate(0, 1, extrapolate=extrapolate)
-            assert type(res) == np.ndarray
+            assert isinstance(res, np.ndarray)
             assert res.ndim == 0
 
     def test_subclassing(self):
@@ -625,6 +626,17 @@ class TestBSpline:
         b = BSpline(t=t, c=c, k=0)
         assert_allclose(b(xx), 3)
 
+    def test_concurrency(self):
+        # Check that no segfaults appear with concurrent access to BSpline
+        b = _make_random_spline()
+
+        def worker_fn(_, b):
+            t, _, k = b.tck
+            xx = np.linspace(t[k], t[-k-1], 10000)
+            b(xx)
+
+        _run_concurrent_barrier(10, worker_fn, b)
+
 
 class TestInsert:
 
@@ -714,7 +726,7 @@ class TestInsert:
     def test_insert_periodic_too_few_internal_knots(self):
         # both FITPACK and spl.insert_knot raise when there's not enough
         # internal knots to make a periodic extension.
-        # Below the internal knots are 2, 3,    , 4, 5 
+        # Below the internal knots are 2, 3,    , 4, 5
         #                                     ^
         #                              2, 3, 3.5, 4, 5
         #   so two knots from each side from the new one, while need at least
@@ -2331,6 +2343,24 @@ class TestNdBSpline:
 
         with assert_raises(ValueError, match="Data and knots*"):
             NdBSpline.design_matrix([[1, 2]], t3, [k]*3)
+
+    def test_concurrency(self):
+        rng = np.random.default_rng(12345)
+        k = 3
+        tx = np.r_[0, 0, 0, 0, np.sort(rng.uniform(size=7)) * 3, 3, 3, 3, 3]
+        ty = np.r_[0, 0, 0, 0, np.sort(rng.uniform(size=8)) * 4, 4, 4, 4, 4]
+        tz = np.r_[0, 0, 0, 0, np.sort(rng.uniform(size=8)) * 4, 4, 4, 4, 4]
+        c = rng.uniform(size=(tx.size-k-1, ty.size-k-1, tz.size-k-1))
+
+        spl = NdBSpline((tx, ty, tz), c, k=k)
+
+        def worker_fn(_, spl):
+            xi = np.c_[[1, 1.5, 2],
+                       [1.1, 1.6, 2.1],
+                       [0.9, 1.4, 1.9]]
+            spl(xi)
+
+        _run_concurrent_barrier(10, worker_fn, spl)
 
 
 class TestMakeND:

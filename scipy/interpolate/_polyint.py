@@ -621,7 +621,7 @@ class BarycentricInterpolator(_Interpolator1DWithDerivatives):
 
     def __init__(self, xi, yi=None, axis=0, *, wi=None, random_state=None):
         super().__init__(xi, yi, axis)
-        
+
         random_state = check_random_state(random_state)
 
         self.xi = np.asarray(xi, dtype=np.float64)
