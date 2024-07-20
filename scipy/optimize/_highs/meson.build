@@ -5,10 +5,12 @@ if not fs.exists('../../../subprojects/highs/README.md')
 endif
 highs_proj = subproject('highs',
                       default_options : ['default_library=static',
-                                        'use_zlib=disabled'])
+                                         'use_zlib=disabled',
+                                         'with_pybind11=true'])
 highs_dep = highs_proj.get_variable('highs_dep')
 highspy_cpp = highs_proj.get_variable('highspy_cpp')
 highsoptions_cpp = highs_proj.get_variable('highsoptions_cpp')
+highs_py_srcs = highs_proj.get_variable('highs_py_srcs')
 
 scipy_highspy_dep = [
   py3_dep,
@@ -19,7 +21,7 @@ scipy_highspy_dep = [
 ]
 
 py3.extension_module(
-  '_highs',
+  '_core',
   sources : highspy_cpp,
   dependencies: scipy_highspy_dep,
   c_args: [Wno_unused_variable, Wno_unused_but_set_variable],
@@ -39,6 +41,10 @@ py3.extension_module(
   link_args: version_link_args,
   subdir: 'scipy/optimize/_highs/highspy',
   install: true,
+)
+
+py3.install_sources(highs_py_srcs,
+  subdir: 'scipy/optimize/_highs/highspy'
 )
 
 py3.install_sources([
