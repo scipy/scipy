@@ -79,11 +79,15 @@ def generate_file_wrapper(sigs, accelerate):
     return ''.join(file_text)
 
 def make_all(outdir,
-             blas_signature_file=os.path.join(
-                 LINALG_DIR, "cython_blas_signatures.txt"),
-             lapack_signature_file=os.path.join(
-                 LINALG_DIR, "cython_lapack_signatures.txt"),
+             blas_signature_file=None,
+             lapack_signature_file=None,
              accelerate=False):
+    blas_signature_file = os.path.join(
+                 LINALG_DIR, "cython_blas_signatures.txt"
+    ) if blas_signature_file is None else blas_signature_file
+    lapack_signature_file = os.path.join(
+                 LINALG_DIR, "cython_lapack_signatures.txt"
+    ) if lapack_signature_file is None else lapack_signature_file
     with open(blas_signature_file) as f:
         blas_sigs = f.readlines()
     with open(lapack_signature_file) as f:

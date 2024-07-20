@@ -275,7 +275,7 @@ def group_columns(A, order=0):
 
 def approx_derivative(fun, x0, method='3-point', rel_step=None, abs_step=None,
                       f0=None, bounds=(-np.inf, np.inf), sparsity=None,
-                      as_linear_operator=False, args=(), kwargs={}):
+                      as_linear_operator=False, args=(), kwargs=None):
     """Compute finite difference approximation of the derivatives of a
     vector-valued function.
 
@@ -460,6 +460,8 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, abs_step=None,
                                    and np.all(np.isinf(ub))):
         raise ValueError("Bounds not supported when "
                          "`as_linear_operator` is True.")
+
+    kwargs = {} if kwargs is None else kwargs
 
     def fun_wrapped(x):
         # send user function same fp type as x0. (but only if cs is not being
@@ -702,7 +704,7 @@ def _sparse_difference(fun, x0, f0, h, use_one_sided,
 
 
 def check_derivative(fun, jac, x0, bounds=(-np.inf, np.inf), args=(),
-                     kwargs={}):
+                     kwargs=None):
     """Check correctness of a function computing derivatives (Jacobian or
     gradient) by comparison with a finite difference approximation.
 
@@ -762,6 +764,7 @@ def check_derivative(fun, jac, x0, bounds=(-np.inf, np.inf), args=(),
     >>> check_derivative(f, jac, x0, args=(1, 2))
     2.4492935982947064e-16
     """
+    kwargs = {} if kwargs is None else kwargs
     J_to_test = jac(x0, *args, **kwargs)
     if issparse(J_to_test):
         J_diff = approx_derivative(fun, x0, bounds=bounds, sparsity=J_to_test,

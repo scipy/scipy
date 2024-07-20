@@ -3671,7 +3671,7 @@ def _first(arr, axis):
     return np.take_along_axis(arr, np.array(0, ndmin=arr.ndim), axis)
 
 
-def _f_oneway_is_too_small(samples, kwargs={}, axis=-1):
+def _f_oneway_is_too_small(samples, kwargs=None, axis=-1):
     message = f"At least two samples are required; got {len(samples)}."
     if len(samples) < 2:
         raise TypeError(message)

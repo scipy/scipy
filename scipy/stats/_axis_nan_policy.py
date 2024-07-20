@@ -335,7 +335,7 @@ masked array with ``mask=False``.""").split('\n')
 def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
                              n_samples=1, paired=False,
                              result_to_tuple=None, too_small=0,
-                             n_outputs=2, kwd_samples=[], override=None):
+                             n_outputs=2, kwd_samples=(), override=None):
     """Factory for a wrapper that adds axis/nan_policy params to a function.
 
     Parameters

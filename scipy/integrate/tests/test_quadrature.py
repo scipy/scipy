@@ -362,8 +362,8 @@ class TestQMCQuad:
         with pytest.raises(TypeError, match=message):
             qmc_quad(lambda x: 1, [0, 0], [1, 1], log=10)
 
-    def basic_test(self, n_points=2**8, n_estimates=8, signs=np.ones(2)):
-
+    def basic_test(self, n_points=2**8, n_estimates=8, signs=None):
+        signs = np.ones(2) if signs is None else signs
         ndim = 2
         mean = np.zeros(ndim)
         cov = np.eye(ndim)

@@ -18,7 +18,8 @@ from scipy._lib._testutils import _run_concurrent_barrier
 
 
 def check_shape(interpolator_cls, x_shape, y_shape, deriv_shape=None, axis=0,
-                extra_args={}):
+                extra_args=None):
+    extra_args = {} if extra_args is None else extra_args
     np.random.seed(1234)
 
     x = [-1, 0, 1, 2, 3, 4]
