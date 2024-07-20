@@ -1719,16 +1719,30 @@ def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True):
     # number of coefficients
     n = t.size - k - 1
 
+    # complex y: view as float, preserve the length
+    was_complex =  y.dtype.kind == 'c'
+    yy = y.view(float)
+    if was_complex and y.ndim == 1:
+        yy = yy.reshape(y.shape[0], 2)
+
+    # multiple r.h.s
+    extradim = prod(yy.shape[1:])
+    yy = yy.reshape(-1, extradim)
+
     # construct A.T @ A and rhs with A the collocation matrix, and
     # rhs = A.T @ y for solving the LSQ problem  ``A.T @ A @ c = A.T @ y``
     lower = True
-    extradim = prod(y.shape[1:])
     ab = np.zeros((k+1, n), dtype=np.float64, order='F')
-    rhs = np.zeros((n, extradim), dtype=y.dtype, order='F')
+    rhs = np.zeros((n, extradim), dtype=np.float64)
     _bspl._norm_eq_lsq(x, t, k,
-                       y.reshape(-1, extradim),
+                       yy,
                        w,
                        ab, rhs)
+
+    # undo complex -> float and flattening the trailing dims
+    if was_complex:
+        rhs = rhs.view(complex)
+
     rhs = rhs.reshape((n,) + y.shape[1:])
 
     # have observation matrix & rhs, can solve the LSQ problem

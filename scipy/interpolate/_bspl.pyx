@@ -16,11 +16,6 @@ cnp.import_array()
 cdef extern from "src/__fitpack.h":
     void _deBoor_D(const double *t, double x, int k, int ell, int m, double *result) nogil
 
-ctypedef double complex double_complex
-
-ctypedef fused double_or_complex:
-    double
-    double complex
 
 ctypedef fused int32_or_int64:
     cnp.npy_int32
@@ -352,10 +347,10 @@ def _handle_lhs_derivatives(const double[::1]t, int k, double xval,
 def _norm_eq_lsq(const double[::1] x,
                  const double[::1] t,
                  int k,
-                 const double_or_complex[:, ::1] y,
+                 const double[:, ::1] y,
                  const double[::1] w,
                  double[::1, :] ab,
-                 double_or_complex[::1, :] rhs):
+                 double[:, ::1] rhs):
     """Construct the normal equations for the B-spline LSQ problem.
 
     The observation equations are ``A @ c = y``, and the normal equations are
@@ -390,7 +385,7 @@ def _norm_eq_lsq(const double[::1] x,
         This parameter is modified in-place.
         On entry: should be zeroed out.
         On exit: LHS of the normal equations.
-    rhs : ndarray, shape (n, s), in Fortran order.
+    rhs : ndarray, shape (n, s), in C order.
         This parameter is modified in-place.
         On entry: should be zeroed out.
         On exit: RHS of the normal equations.

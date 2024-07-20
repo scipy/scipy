@@ -1642,6 +1642,7 @@ class TestLSQ:
         x, y, t, k = self.x, self.y, self.t, self.k
 
         c0, AY = make_lsq_full_matrix(x, y, t, k)
+
         b = make_lsq_spline(x, y, t, k)
 
         assert_allclose(b.c, c0)
@@ -1667,14 +1668,47 @@ class TestLSQ:
     def test_multiple_rhs(self):
         x, t, k, n = self.x, self.t, self.k, self.n
         y = np.random.random(size=(n, 5, 6, 7))
-
         b = make_lsq_spline(x, y, t, k)
         assert_equal(b.c.shape, (t.size-k-1, 5, 6, 7))
+
+    def test_multiple_rhs_2(self):
+        x, t, k, n = self.x, self.t, self.k, self.n
+        nrhs = 3
+        y = np.random.random(size=(n, nrhs))
+        b = make_lsq_spline(x, y, t, k)
+
+        bb = [make_lsq_spline(x, y[:, i], t, k)
+              for i in range(nrhs)]
+        coefs = np.vstack([bb[i].c for i in range(nrhs)]).T
+
+        assert_allclose(coefs, b.c, atol=1e-15)
 
     def test_complex(self):
         # cmplx-valued `y`
         x, t, k = self.x, self.t, self.k
         yc = self.y * (1. + 2.j)
+
+        b = make_lsq_spline(x, yc, t, k)
+        b_re = make_lsq_spline(x, yc.real, t, k)
+        b_im = make_lsq_spline(x, yc.imag, t, k)
+
+        assert_allclose(b(x), b_re(x) + 1.j*b_im(x), atol=1e-15, rtol=1e-15)
+
+    def test_complex_2(self):
+        # test complex-valued y with y.ndim > 1
+
+        x, t, k = self.x, self.t, self.k
+        yc = self.y * (1. + 2.j)
+        yc = np.stack((yc, yc), axis=1)
+
+        b = make_lsq_spline(x, yc, t, k)
+        b_re = make_lsq_spline(x, yc.real, t, k)
+        b_im = make_lsq_spline(x, yc.imag, t, k)
+
+        assert_allclose(b(x), b_re(x) + 1.j*b_im(x), atol=1e-15, rtol=1e-15)
+
+        # repeat with num_trailing_dims > 1 : yc.shape[1:] = (2, 2)
+        yc = np.stack((yc, yc), axis=1)
 
         b = make_lsq_spline(x, yc, t, k)
         b_re = make_lsq_spline(x, yc.real, t, k)
