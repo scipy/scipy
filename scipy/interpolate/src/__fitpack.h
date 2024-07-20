@@ -3,6 +3,7 @@
 #include <tuple>
 #include <vector>
 #include <string>
+#include <limits>
 
 #include "../_build_utils/src/npy_cblas.h"
 #include "../_build_utils/src/fortran_defs.h"
@@ -180,6 +181,23 @@ fpknot(const double *x_ptr, ssize_t m,
        const double *t_ptr, ssize_t len_t,
        int k,
        const double *residuals_ptr);
+
+
+/*
+ * Evaluate the spline function
+ */
+
+void
+_evaluate_spline(
+    const double *tptr, ssize_t len_t,         // t, shape (len_t,)
+    const double *cptr, ssize_t n, ssize_t m,  // c, shape (n, m)
+    ssize_t k,
+    const double *xp_ptr, ssize_t s,           // xp, shape (s,)
+    ssize_t nu,
+    int extrapolate,
+    double *out_ptr,                           // out, shape (s, m) NOT CHECKED
+    double *wrk                                // scratch, shape (2k+2,)
+);
 
 
 } // namespace fitpack

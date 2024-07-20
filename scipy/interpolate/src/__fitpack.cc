@@ -423,4 +423,55 @@ fpknot(const double *x_ptr, ssize_t m,
     return x(idx_newknot);
 }
 
+
+
+/*
+ * Evaluate the spline function
+*/
+void
+_evaluate_spline(
+    const double *tptr, ssize_t len_t,         // t, shape (len_t,)
+    const double *cptr, ssize_t n, ssize_t m,  // c, shape (n, m)
+    ssize_t k,
+    const double *xp_ptr, ssize_t s,           // xp, shape (s,)
+    ssize_t nu,
+    int extrapolate,
+    double *out_ptr,                           // out, shape (s, m) NOT CHECKED
+    double *wrk                                // scratch, shape (2k+2,)
+)
+{
+    auto t = ConstRealArray1D(tptr, len_t);
+    auto c = ConstRealArray2D(cptr, n, m);
+    auto xp = ConstRealArray1D(xp_ptr, s);
+    auto out = RealArray2D(out_ptr, s, m);
+
+    ssize_t interval = k;
+    for(ssize_t ip=0; ip < s; ip++) {
+
+        double xval = xp(ip);
+        interval = _find_interval(t.data, len_t, k, xval, interval, extrapolate);
+        if (interval < 0) {
+            // xval was nan etc
+            for (ssize_t jp=0; jp < m; jp++) {
+                out(ip, jp) = std::numeric_limits<double>::quiet_NaN();
+            }
+        }
+        else {
+            // Evaluate (k+1) b-splines which are non-zero on the interval.
+            // on return, first k+1 elements of work are B_{m-k},..., B_{m}
+            _deBoor_D(t.data, xval, k, interval, nu, wrk);
+
+            // Form linear combinations
+            for (ssize_t jp=0; jp < m; jp++) {
+                out(ip, jp) = 0.0;
+                for (ssize_t a=0; a < k+1 ; a++){
+                    out(ip, jp) += c(interval + a -k, jp) * wrk[a];
+                }
+            }
+
+        }
+    }
+}
+
+
 } // namespace fitpack

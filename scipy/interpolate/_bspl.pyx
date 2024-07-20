@@ -48,6 +48,17 @@ cdef extern from "src/__fitpack.h" namespace "fitpack":
                   const double *residuals_ptr
     ) except+ nogil
 
+    void _evaluate_spline(const double *tptr, ssize_t len_t,
+                          const double *cptr, ssize_t n, ssize_t m,
+                          ssize_t k,
+                          const double *xp_ptr, ssize_t s,
+                          ssize_t nu,
+                          int extrapolate,
+                          double *out_ptr,
+                          double *wrk
+    ) noexcept nogil
+
+
 
 ctypedef fused int32_or_int64:
     cnp.npy_int32
@@ -154,28 +165,15 @@ def evaluate_spline(const double[::1] t,
 
     # evaluate
     with nogil:
-        interval = k
-        for ip in range(xp.shape[0]):
-            xval = xp[ip]
-
-            # Find correct interval
-            interval = find_interval(t, k, xval, interval, extrapolate)
-
-            if interval < 0:
-                # xval was nan etc
-                for jp in range(c.shape[1]):
-                    out[ip, jp] = NAN
-                continue
-
-            # Evaluate (k+1) b-splines which are non-zero on the interval.
-            # on return, first k+1 elements of work are B_{m-k},..., B_{m}
-            _deBoor_D(&t[0], xval, k, interval, nu, &work[0])
-
-            # Form linear combinations
-            for jp in range(c.shape[1]):
-                out[ip, jp] = 0.
-                for a in range(k+1):
-                    out[ip, jp] = out[ip, jp] + c[interval + a - k, jp] * work[a]
+        _evaluate_spline(&t[0], t.shape[0],
+                         &c[0, 0], c.shape[0], c.shape[1],
+                         k,
+                         &xp[0], xp.shape[0],
+                         nu,
+                         extrapolate,
+                         &out[0, 0],
+                         &work[0]
+        )
 
 
 def evaluate_all_bspl(const double[::1] t, int k, double xval, int m, int nu=0):
