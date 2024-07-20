@@ -2228,20 +2228,21 @@ def test_yule_all_same():
 
 
 def test_jensenshannon():
-    assert_almost_equal(jensenshannon([1.0, 0.0, 0.0], [0.0, 1.0, 0.0], 2.0),
-                        1.0)
-    assert_almost_equal(jensenshannon([1.0, 0.0], [0.5, 0.5]),
-                        0.46450140402245893)
-    assert_almost_equal(jensenshannon([1.0, 0.0, 0.0], [1.0, 0.0, 0.0]), 0.0)
+    assert_allclose(jensenshannon([1.0, 0.0, 0.0], [0.0, 1.0, 0.0], 2.0),
+                    1.0, rtol=1.5e-6)
+    assert_allclose(jensenshannon([1.0, 0.0], [0.5, 0.5]),
+                    0.46450140402245893, rtol=1.5e-6)
+    assert_allclose(jensenshannon([1.0, 0.0, 0.0], [1.0, 0.0, 0.0]), 0.0,
+                    rtol=1.5e-6)
 
-    assert_almost_equal(jensenshannon([[1.0, 2.0]], [[0.5, 1.5]], axis=0),
-                        [0.0, 0.0])
-    assert_almost_equal(jensenshannon([[1.0, 2.0]], [[0.5, 1.5]], axis=1),
-                        [0.0649045])
-    assert_almost_equal(jensenshannon([[1.0, 2.0]], [[0.5, 1.5]], axis=0,
-                                      keepdims=True), [[0.0, 0.0]])
-    assert_almost_equal(jensenshannon([[1.0, 2.0]], [[0.5, 1.5]], axis=1,
-                                      keepdims=True), [[0.0649045]])
+    assert_allclose(jensenshannon([[1.0, 2.0]], [[0.5, 1.5]], axis=0),
+                    [0.0, 0.0], rtol=1.5e-6)
+    assert_allclose(jensenshannon([[1.0, 2.0]], [[0.5, 1.5]], axis=1),
+                    [0.0649045], rtol=1.5e-6)
+    assert_allclose(jensenshannon([[1.0, 2.0]], [[0.5, 1.5]], axis=0,
+                                  keepdims=True), [[0.0, 0.0]], rtol=1.5e-6)
+    assert_allclose(jensenshannon([[1.0, 2.0]], [[0.5, 1.5]], axis=1,
+                                  keepdims=True), [[0.0649045]], rtol=1.5e-6)
 
     a = np.array([[1, 2, 3, 4],
                   [5, 6, 7, 8],
@@ -2250,10 +2251,15 @@ def test_jensenshannon():
                   [17, 18, 19, 20],
                   [21, 22, 23, 24]])
 
-    assert_almost_equal(jensenshannon(a, b, axis=0),
-                        [0.1954288, 0.1447697, 0.1138377, 0.0927636])
-    assert_almost_equal(jensenshannon(a, b, axis=1),
-                        [0.1402339, 0.0399106, 0.0201815])
+    assert_allclose(jensenshannon(a, b, axis=0),
+                    [0.1954288, 0.1447697, 0.1138377, 0.0927636], rtol=1.5e-6)
+    assert_allclose(jensenshannon(a, b, axis=1),
+                    [0.1402339, 0.0399106, 0.0201815], rtol=1.5e-6)
+    assert_allclose(jensenshannon(np.array([0.027501475, 0.055202297],
+                                           dtype='float32'),
+                                  np.array([0.027537677, 0.055334348],
+                                           dtype='float32')),
+                    0.0001788188615755877, rtol=1.5e-6)
 
 
 def test_gh_17703():
