@@ -2067,6 +2067,26 @@ class TestNdBSpline:
         assert_allclose(bspl2_22(xi) - np.asarray(target)[:, None, None],
                         0, atol=5e-14)
 
+
+    def test_2D_separable_2_complex(self):
+        # test `c` with c.dtype == complex, with and w/o trailing dims
+        xi = [(1.5, 2.5), (2.5, 1), (0.5, 1.5)]
+        target = [x**3 * (y**3 + 2*y) for (x, y) in xi]
+
+        target = [t + 2j*t for t in target]
+
+        t2, c2, k = self.make_2d_case()
+        c2 = c2 * (1 + 2j)
+        c2_4 = np.dstack((c2, c2, c2, c2))   # c2_4.shape = (6, 6, 4)
+
+        xy = (1.5, 2.5)
+        bspl2_4 = NdBSpline(t2, c2_4, k=3)
+        result = bspl2_4(xy)
+        val_single = NdBSpline(t2, c2, k)(xy)
+        assert result.shape == (4,)
+        assert_allclose(result,
+                        [val_single, ]*4, atol=1e-14)
+
     def test_2D_random(self):
         rng = np.random.default_rng(12345)
         k = 3
