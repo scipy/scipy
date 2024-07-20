@@ -1,7 +1,7 @@
 from warnings import warn
 
 import numpy as np
-import scipy.optimize._highs.highspy._highs as _h
+import scipy.optimize._highs.highspy as _h
 from scipy.optimize._highs.highspy import _highs_options as hopt  # type: ignore[attr-defined]
 from scipy.optimize import OptimizeWarning
 

@@ -20,9 +20,8 @@ from warnings import warn
 from ._highs._highs_wrapper import _highs_wrapper
 from scipy.sparse import csc_matrix, vstack, issparse
 
-import scipy.optimize._highs.highspy._highs as _h
-import scipy.optimize._highs.highspy._highs.simplex_constants as simpc
-
+import scipy.optimize._highs.highspy as _h
+from scipy.optimize._highs.highspy._core import simplex_constants as simpc
 
 class HighsStatusMapping:
     """Class to map HiGHS statuses to SciPy-like Return Codes and Messages"""
@@ -163,11 +162,12 @@ class SimplexStrategy(Enum):
     STEEPEST = "steepest"  # highs max
 
     def to_highs_enum(self):
+        ews = simpc.SimplexEdgeWeightStrategy
         mapping = {
-            SimplexStrategy.DANTZIG: simpc.SimplexEdgeWeightStrategy.kSimplexEdgeWeightStrategyDantzig.value,
-            SimplexStrategy.DEVEX: simpc.SimplexEdgeWeightStrategy.kSimplexEdgeWeightStrategyDevex.value,
-            SimplexStrategy.STEEPEST_DEVEX: simpc.SimplexEdgeWeightStrategy.kSimplexEdgeWeightStrategyChoose.value,
-            SimplexStrategy.STEEPEST: simpc.SimplexEdgeWeightStrategy.kSimplexEdgeWeightStrategySteepestEdge.value,
+            SimplexStrategy.DANTZIG: ews.kSimplexEdgeWeightStrategyDantzig.value,
+            SimplexStrategy.DEVEX: ews.kSimplexEdgeWeightStrategyDevex.value,
+            SimplexStrategy.STEEPEST_DEVEX: ews.kSimplexEdgeWeightStrategyChoose.value,
+            SimplexStrategy.STEEPEST: ews.kSimplexEdgeWeightStrategySteepestEdge.value,
         }
         return mapping.get(self)
 
