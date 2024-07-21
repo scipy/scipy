@@ -8,6 +8,7 @@ from scipy.linalg import (get_lapack_funcs, LinAlgError,
                           solve, solve_banded)
 from scipy.optimize import minimize_scalar
 from . import _bspl
+from . import _dierckx
 from . import _fitpack_impl
 from scipy.sparse import csr_array
 from scipy.special import poch
@@ -1847,7 +1848,7 @@ def _lsq_solve_qr(x, y, t, k, w):
     y_w = y * w[:, None]
     A, offset, nc = _bspl._data_matrix(x, t, k, w)
     _bspl._qr_reduce(A, offset, nc, y_w)         # modifies arguments in-place
-    c = _bspl._fpback(A, nc, y_w)
+    c = _dierckx.fpback(A, nc, y_w)
 
     return A, y_w, c
 

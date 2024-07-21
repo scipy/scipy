@@ -37,11 +37,6 @@ cdef extern from "src/__fitpack.h" namespace "fitpack":
                        Py_ssize_t *nc,
                        double *wrk
     ) except+ nogil
-    void fpback(const double *Rptr, ssize_t m, ssize_t nz,
-                ssize_t nc,
-                const double *yptr, ssize_t ydim2,
-                double *cptr
-    ) except+ nogil
 
     void _evaluate_spline(const double *tptr, ssize_t len_t,
                           const double *cptr, ssize_t n, ssize_t m,
@@ -811,25 +806,3 @@ def _data_matrix(const double[::1] x,
                 &wrk[0],     # work array
     )
     return np.asarray(A), np.asarray(offset), int(nc)
-
-
-def _fpback(const double[:, ::1] R, ssize_t nc,  # (R, offset, nc) triangular => offset is range(nc)
-            const double[:, ::1] y
-):
-    cdef:
-        ssize_t m = R.shape[0]
-        ssize_t nz = R.shape[1]
-
-    if y.shape[0] != m:
-        raise ValueError(f"{y.shape = } != {m =}.")
-    if nc > m:
-        raise ValueError(f"{nc = } > {m = }.")
-
-    cdef double[:, ::1] c = np.empty_like(y[:nc, :])
-
-    fpback(&R[0, 0], m, nz,
-           nc,
-           &y[0, 0], y.shape[1],
-           &c[0, 0])
-
-    return np.asarray(c)

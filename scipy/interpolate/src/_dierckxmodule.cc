@@ -68,12 +68,82 @@ py_fpknot(PyObject* self, PyObject *args)
 
 
 
+
+static PyObject*
+py_fpback(PyObject* self, PyObject *args)
+{
+    PyObject *py_R=NULL, *py_y=NULL;
+    PyArrayObject *a_R=NULL, *a_y=NULL;
+    Py_ssize_t nc;
+   // XXX: ssize_t in C++, is "n" a correct format? interchangeable with Py_ssize_t?
+
+    if(!PyArg_ParseTuple(args, "OnO", &py_R, &nc, &py_y)) {
+        return NULL;
+    }
+
+    // XXX: double[:, ::1] R, double[:, ::1] y
+    a_R = (PyArrayObject *)PyArray_ContiguousFromObject(py_R, NPY_DOUBLE, 2, 2);
+    a_y = (PyArrayObject *)PyArray_ContiguousFromObject(py_y, NPY_DOUBLE, 2, 2);
+
+    if (a_R == NULL || a_y == NULL) {
+        Py_XDECREF(a_R);
+        Py_XDECREF(a_y);
+        return NULL;
+    }
+
+    // check consistency of array sizes
+    Py_ssize_t m = PyArray_DIM(a_R, 0);
+    Py_ssize_t nz = PyArray_DIM(a_R, 1);
+
+    if (PyArray_DIM(a_y, 0) != m) {
+        std::string msg = ("len(y) = " + std::to_string(PyArray_DIM(a_y, 0)) + " != " +
+                  std::to_string(m) + " = m");
+        PyErr_SetString(PyExc_ValueError, msg.c_str());
+        Py_XDECREF(a_R);
+        Py_XDECREF(a_y);
+        return NULL;
+    }
+    if (nc > m) {
+        std::string msg = "nc = " + std::to_string(nc) + " > m = " + std::to_string(m);
+        PyErr_SetString(PyExc_ValueError, msg.c_str());
+        Py_XDECREF(a_R);
+        Py_XDECREF(a_y);
+        return NULL;        
+    }
+
+    // allocate the output buffer
+    npy_intp dims[2] = {nc, PyArray_DIM(a_y, 1)};
+    PyArrayObject *a_c = (PyArrayObject *)PyArray_SimpleNew(2, dims, NPY_DOUBLE);
+    if (a_c == NULL) {
+        // XXX: 1) need to guard PyArray_SimpleNew?   2) is the C contiguity guaranteed?
+        PyErr_NoMemory();
+        Py_XDECREF(a_R);
+        Py_XDECREF(a_y);
+        return NULL;     
+    }
+
+    // heavy lifting happens here
+    fitpack::fpback(static_cast<const double *>(PyArray_DATA(a_R)), m, nz,
+                    nc,
+                    static_cast<const double *>(PyArray_DATA(a_y)), PyArray_DIM(a_y, 1),
+                    static_cast<double *>(PyArray_DATA(a_c))
+    );
+
+    Py_DECREF(a_R);
+    Py_DECREF(a_y);
+    return (PyObject *)a_c;  // XXX like this? incref?
+}
+
+
+
 /////////////////////////////////////
 
 static PyMethodDef DierckxMethods[] = {
     //...
-    {"fpknot", py_fpknot, METH_VARARGS,
+    {"fpknot", py_fpknot, METH_VARARGS, 
      "fpknot replacement"},
+    {"fpback", py_fpback, METH_VARARGS,
+     "backsubstitution, triangular matrix"},
     //...
     {NULL, NULL, 0, NULL}        /* Sentinel */
 };
