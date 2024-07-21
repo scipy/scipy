@@ -134,7 +134,7 @@ def _chandrupatla(func, a, b, *, args=(), xatol=None, xrtol=None,
     func, xs, fs, args, shape, dtype, xp = temp
     x1, x2 = xs
     f1, f2 = fs
-    status = xp.full_like(x1, eim._EINPROGRESS, dtype=xp.int32)  # in progress
+    status = xp.full_like(x1, xp.asarray(eim._EINPROGRESS), dtype=xp.int32)  # in progress
     nit, nfev = 0, 2  # two function evaluations performed above
     finfo = xp.finfo(dtype)
     xatol = 4*finfo.smallest_normal if xatol is None else xatol
@@ -217,7 +217,7 @@ def _chandrupatla(func, a, b, *, args=(), xatol=None, xrtol=None,
         j = ((1 - xp.sqrt(1 - xi1)) < phi1) & (phi1 < xp.sqrt(xi1))
 
         f1j, f2j, f3j, alphaj = work.f1[j], work.f2[j], work.f3[j], alpha[j]
-        t = xp.full_like(alpha, 0.5)
+        t = xp.full_like(alpha, xp.asarray(0.5))
         t[j] = (f1j / (f1j - f2j) * f3j / (f3j - f2j)
                 - alphaj * f1j / (f3j - f1j) * f2j / (f2j - f3j))
 

@@ -647,7 +647,7 @@ class TestChandrupatla(TestScalarRootFinders):
                 funcs = [lambda x: x - 2.5,
                          lambda x: x - 10,
                          lambda x: (x - 0.1)**3,
-                         lambda x: xp.full_like(x, xp.nan)]
+                         lambda x: xp.full_like(x, xp.asarray(xp.nan))]
                 return [funcs[int(j)](x) for x, j in zip(xs, js)]
 
             funcs = [lambda x: x - 2.5,
@@ -677,10 +677,10 @@ class TestChandrupatla(TestScalarRootFinders):
         kwargs = kwargs0.copy()
         kwargs['xatol'] = 1e-3
         res1 = _chandrupatla_root(self.f, *bracket, **kwargs)
-        xp_assert_less(res1.xr - res1.xl, xp.full_like(p, 1e-3))
+        xp_assert_less(res1.xr - res1.xl, xp.full_like(p, xp.asarray(1e-3)))
         kwargs['xatol'] = 1e-6
         res2 = _chandrupatla_root(self.f, *bracket, **kwargs)
-        xp_assert_less(res2.xr - res2.xl, xp.full_like(p, 1e-6))
+        xp_assert_less(res2.xr - res2.xl, xp.full_like(p, xp.asarray(1e-6)))
         xp_assert_less(res2.xr - res2.xl, res1.xr - res1.xl)
 
         kwargs = kwargs0.copy()
@@ -695,10 +695,10 @@ class TestChandrupatla(TestScalarRootFinders):
         kwargs = kwargs0.copy()
         kwargs['fatol'] = 1e-3
         res1 = _chandrupatla_root(self.f, *bracket, **kwargs)
-        xp_assert_less(xp.abs(res1.fun), xp.full_like(p, 1e-3))
+        xp_assert_less(xp.abs(res1.fun), xp.full_like(p, xp.asarray(1e-3)))
         kwargs['fatol'] = 1e-6
         res2 = _chandrupatla_root(self.f, *bracket, **kwargs)
-        xp_assert_less(xp.abs(res2.fun), xp.full_like(p, 1e-6))
+        xp_assert_less(xp.abs(res2.fun), xp.full_like(p, xp.asarray(1e-6)))
         xp_assert_less(xp.abs(res2.fun), xp.abs(res1.fun))
 
         kwargs = kwargs0.copy()
