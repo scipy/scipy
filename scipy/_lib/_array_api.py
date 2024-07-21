@@ -571,3 +571,18 @@ def xp_vector_norm(x: Array, /, *,
     else:
         # to maintain backwards compatibility
         return np.linalg.norm(x, ord=ord, axis=axis, keepdims=keepdims)
+
+
+def xp_take_along_axis(arr: Array,
+                       indices: Array, /, *,
+                       axis: int = -1,
+                       xp: ModuleType | None = None) -> Array:
+    # Dispatcher for np.take_along_axis for backends that support it;
+    # see data-apis/array-api/pull#816
+    xp = array_namespace(arr) if xp is None else xp
+    if is_torch(xp):
+        return xp.take_along_dim(arr, indices, dim=axis)
+    elif is_array_api_strict(xp):
+        raise NotImplementedError("Array API standard does not define take_along_axis")
+    else:
+        return xp.take_along_axis(arr, indices, axis)
