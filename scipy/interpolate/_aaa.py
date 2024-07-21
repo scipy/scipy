@@ -87,14 +87,14 @@ class AAA:
         \frac{\sum_{j=1}^m\ w_j f_j / (z - z_j)}{\sum_{j=1}^m w_j / (z - z_j)},
 
     where :math:`z_1,\dots,z_m` are real or complex support points selected from `z`,
-    :math:`f_1,\dots,f_m` are the corresponding real or complex data values from `f`, and
-    :math:`w_1,\dots,w_m` are real or complex weights. The algorithm then proceeds to
-    select the next support point :math:`z_{m+1}` from the remaining
-    unselected points in `z` such that the nonlinear residual :math:`|f(z_{m+1}) - n(z_{m+1})/d(z_{m+1})|`
-    is maximised. The algorithm terminates when this maximum is less than
-    ``rtol * np.linalg.norm(f, ord=np.inf)``. This means the interpolation property is
-    only satisfied up to a tolerance. The weights are selected to solve the
-    least-squares problem
+    :math:`f_1,\dots,f_m` are the corresponding real or complex data values from `f`,
+    and :math:`w_1,\dots,w_m` are real or complex weights. The algorithm then proceeds
+    to select the next support point :math:`z_{m+1}` from the remaining unselected
+    points in `z` such that the nonlinear residual
+    :math:`|f(z_{m+1}) - n(z_{m+1})/d(z_{m+1})|` is maximised. The algorithm terminates
+    when this maximum is less than ``rtol * np.linalg.norm(f, ord=np.inf)``. This means
+    the interpolation property is only satisfied up to a tolerance. The weights are
+    selected to solve the least-squares problem
 
     .. math::
 
