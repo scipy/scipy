@@ -238,6 +238,28 @@ class TestDifferentiate:
         ref = xp.asarray(ref, dtype=xp.asarray(1.).dtype)
         xp_assert_close(res.df, ref)
 
+    def test_initial_step(self, xp):
+        # Test that `initial_step` works as expected and is vectorized
+        def f(x):
+            return xp.exp(x)
+
+        x = xp.asarray(0., dtype=xp.float64)
+        step_direction = xp.asarray([-1, 0, 1])
+        h0 = xp.reshape(xp.logspace(-3, 0, 10), (-1, 1))
+        res = differentiate(f, x, initial_step=h0, order=2, maxiter=1,
+                            step_direction=step_direction)
+        err = xp.abs(res.df - f(x))
+
+        # error should be smaller for smaller step sizes
+        assert xp.all(err[:-1, ...] < err[1:, ...])
+
+        # results of vectorized call should match results with
+        # initial_step taken one at a time
+        for i in range(h0.shape[0]):
+            ref = differentiate(f, x, initial_step=h0[i, 0], order=2, maxiter=1,
+                                step_direction=step_direction)
+            xp_assert_close(res.df[i, :], ref.df, rtol=1e-14)
+
     def test_maxiter_callback(self, xp):
         # Test behavior of `maxiter` parameter and `callback` interface
         x = xp.asarray(0.612814, dtype=xp.float64)
@@ -328,7 +350,7 @@ class TestDifferentiate:
         with pytest.raises(ValueError, match=message):
             differentiate(lambda x: x, one, tolerances=dict(rtol='ekki'))
         with pytest.raises(ValueError, match=message):
-            differentiate(lambda x: x, one, initial_step=None)
+            differentiate(lambda x: x, one, initial_step=xp.nan)
         with pytest.raises(ValueError, match=message):
             differentiate(lambda x: x, one, step_factor=object())
 
