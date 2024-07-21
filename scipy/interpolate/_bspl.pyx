@@ -22,12 +22,6 @@ cdef extern from "src/__fitpack.h" namespace "fitpack":
                            ssize_t prev_l,
                            int extrapolate
     ) noexcept nogil
-    void qr_reduce(double *aptr, const ssize_t m, const ssize_t nz,    # a
-                   ssize_t *offset,
-                   const ssize_t nc,
-                   double *yptr, const ssize_t ydim1,                  # y
-                   const ssize_t startrow
-    ) except+ nogil
     void data_matrix(const double *xptr, ssize_t m,
                        const double *tptr, ssize_t len_t,
                        int k,
@@ -770,18 +764,6 @@ def _colloc_nd(const double[:, ::1] xvals,
 # ---------------------------
 # wrappers for fitpack repro
 # ---------------------------
-def _qr_reduce(double[:, ::1] a, ssize_t[::1] offset, ssize_t nc,   # A packed
-               double[:, ::1] y,
-               ssize_t startrow=1
-):
-    # (A, offset, nc) is a PackedMatrix instance, unpacked
-    qr_reduce(&a[0, 0], a.shape[0], a.shape[1],
-              &offset[0],
-              nc,
-              &y[0, 0], y.shape[1],
-              startrow)
-
-
 def _data_matrix(const double[::1] x,
                  const double[::1] t,
                  int k,

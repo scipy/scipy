@@ -1847,7 +1847,7 @@ def _lsq_solve_qr(x, y, t, k, w):
 
     y_w = y * w[:, None]
     A, offset, nc = _bspl._data_matrix(x, t, k, w)
-    _bspl._qr_reduce(A, offset, nc, y_w)         # modifies arguments in-place
+    _dierckx.qr_reduce(A, offset, nc, y_w)         # modifies arguments in-place
     c = _dierckx.fpback(A, nc, y_w)
 
     return A, y_w, c

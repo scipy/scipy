@@ -136,6 +136,48 @@ py_fpback(PyObject* self, PyObject *args)
 
 
 
+static PyObject*
+py_qr_reduce(PyObject* self, PyObject *args, PyObject *kwargs)
+{
+    PyObject *py_a=NULL, *py_offs=NULL, *py_y=NULL;
+    PyArrayObject *a_a=NULL, *a_offs=NULL, *a_y=NULL;
+    Py_ssize_t nc;
+    Py_ssize_t startrow=1;  // XXX: optional, keeps the value intact if not given?
+
+    const char *kwlist[] = {"a", "offset", "nc", "y", "startrow", NULL};
+
+    if(!PyArg_ParseTupleAndKeywords(args, kwargs, "OOnO|n", const_cast<char **>(kwlist),
+                                    &py_a, &py_offs, &nc, &py_y, &startrow)) {
+        return NULL;
+    }
+
+    // XXX: double[:, ::1] a, double[:, ::1] y; a&y are modified in in-place
+    a_a = (PyArrayObject *)PyArray_ContiguousFromObject(py_a, NPY_DOUBLE, 2, 2);
+    a_offs = (PyArrayObject *)PyArray_ContiguousFromObject(py_offs, NPY_LONG, 1, 1); // XXX: ssize_t typecode?
+    a_y = (PyArrayObject *)PyArray_ContiguousFromObject(py_y, NPY_DOUBLE, 2, 2);
+
+    if (a_a == NULL || a_offs == NULL || a_y == NULL) {
+        Py_XDECREF(a_a);
+        Py_XDECREF(a_offs);
+        Py_XDECREF(a_y);
+        return NULL;
+    }
+
+    // heavy lifting happens here, *in-place*
+    fitpack::qr_reduce(
+        static_cast<double *>(PyArray_DATA(a_a)), PyArray_DIM(a_a, 0), PyArray_DIM(a_a, 1), // a(m, nz), packed
+        static_cast<ssize_t *>(PyArray_DATA(a_offs)),                                       // offset(m)
+        nc,                                                                                 // dense would be a(m, nc)
+        static_cast<double *>(PyArray_DATA(a_y)), PyArray_DIM(a_y, 1),                      // y(m, ydim2)
+        startrow
+    );
+
+    Py_DECREF(a_offs);
+    // XXX: a & y modified in-place: need to incref?
+    Py_RETURN_NONE;
+}
+
+
 /////////////////////////////////////
 
 static PyMethodDef DierckxMethods[] = {
@@ -144,6 +186,8 @@ static PyMethodDef DierckxMethods[] = {
      "fpknot replacement"},
     {"fpback", py_fpback, METH_VARARGS,
      "backsubstitution, triangular matrix"},
+    {"qr_reduce", (PyCFunction)py_qr_reduce, METH_VARARGS | METH_KEYWORDS,
+     "row-by-row QR triangularization"},
     //...
     {NULL, NULL, 0, NULL}        /* Sentinel */
 };
