@@ -8,6 +8,8 @@ from dataclasses import dataclass
 
 import numpy as np
 
+from numpy.polynomial.polynomial import Polynomial
+
 
 def cub(f, a, b, rule, rtol=1e-05, atol=1e-08, limit=10000, args=()):
     if limit is None:
@@ -77,9 +79,9 @@ class CubatureRegion:
     b: np.ndarray
 
     def __lt__(self, other):
-        # Compare negative error so that regions with higher error are placed closer to
-        # top of the heap.
-        return -_max_norm(self.error) < -_max_norm(other.error)
+        # Consider regions with higher error as smaller so that they are placed at the
+        # top of the min-heap.
+        return _max_norm(self.error) > _max_norm(other.error)
 
 
 @dataclass
@@ -95,10 +97,6 @@ class CubatureResult:
 
 
 class CubatureRule(ABC):
-    def __init__(self, nodes, weights):
-        self.nodes = nodes
-        self.weights = weights
-
     @abstractmethod
     def estimate(self, f, a, b, args):
         """
@@ -126,17 +124,7 @@ class NestedCubatureRule(CubatureRule):
     A cubature rule with a higher-order and lower-order estimate, and where the
     difference between the two is used to estimate the error.
     """
-    def __init__(self, higher_nodes, higher_weights, lower_nodes, lower_weights):
-        super().__init__(higher_nodes, higher_weights)
-
-        # TODO: not sure this is 100% right, since in e.g. GaussKronrod21 we never call
-        # init, and just define the higher_nodes etc as properties.
-        self.higher_nodes = higher_nodes
-        self.higher_weights = higher_weights
-        self.lower_nodes = lower_nodes
-        self.lower_weights = lower_weights
-
-    def higher_estimate(self, f, a, b, args):
+    def _estimate_from_nodes(self, nodes, weights, f, a, b, args=()):
         # The underlying cubature rule is presumed to be for the hypercube [0, 1]^n.
         #
         # To handle arbitrary regions of integration, it's necessary to apply a linear
@@ -147,49 +135,58 @@ class NestedCubatureRule(CubatureRule):
         lengths = b - a
 
         # nodes have shape (input_dim, eval_points)
-        higher_nodes = (self.higher_nodes + 1) * (lengths / 2) + a
+        nodes = (nodes + 1) * (lengths / 2) + a
 
         # Also need to multiply the weights by a scale factor equal to the determinant
         # of the Jacobian for this coordinate change.
         weight_scale_factor = math.prod(lengths / 2)
 
         # weights have shape (eval_points,)
-        higher_weights = self.higher_weights * weight_scale_factor
+        weights = weights * weight_scale_factor
 
         # f(nodes) will have shape (eval_points, output_dim)
         # integral_estimate should have shape (output_dim,)
-        higher_integral_estimate = np.sum(
-            higher_weights * f(higher_nodes, *args),
+        estimate = np.sum(
+            weights * f(nodes, *args),
             axis=-1
         )
 
-        return higher_integral_estimate
+        return estimate
 
-    def lower_estimate(self, f, a, b, args):
-        a = a[:, np.newaxis]
-        b = b[:, np.newaxis]
-
-        lengths = b - a
-
-        lower_nodes = (self.lower_nodes + 1) * (lengths / 2) + a
-
-        weight_scale_factor = math.prod(lengths / 2)
-        lower_weights = self.lower_weights * weight_scale_factor
-
-        lower_integral_estimate = np.sum(
-            lower_weights * f(lower_nodes, *args),
-            axis=-1
+    def higher_estimate(self, f, a, b, args=()):
+        return self._estimate_from_nodes(
+            self.higher_nodes,
+            self.higher_weights,
+            f,
+            a,
+            b,
+            args,
         )
 
-        return lower_integral_estimate
+    def lower_estimate(self, f, a, b, args=()):
+        return self._estimate_from_nodes(
+            self.lower_nodes,
+            self.lower_weights,
+            f,
+            a,
+            b,
+            args,
+        )
 
-    def estimate(self, f, a, b, args):
+    def estimate(self, f, a, b, args=()):
         return self.higher_estimate(f, a, b, args)
 
     def error_estimate(self, f, a, b, args):
-        return np.abs(
-            self.higher_estimate(f, a, b, args) - self.lower_estimate(f, a, b, args),
-        )
+        # Take the difference between the higher and lower estimate to obtain estimate
+        # for the error.
+        return np.abs(self._estimate_from_nodes(
+            np.concat((self.higher_nodes, self.lower_nodes), axis=-1),
+            np.concat((self.higher_weights, -self.lower_weights), axis=-1),
+            f,
+            a,
+            b,
+            args
+        ))
 
 
 class GaussKronrod21(NestedCubatureRule):
@@ -356,39 +353,54 @@ class GaussKronrod15(NestedCubatureRule):
         ])
 
 
-class Trapezoid(NestedCubatureRule):
-    def __init__(self):
-        pass
+class NewtonCotes(NestedCubatureRule):
+    def __init__(self, npoints, open=False):
+        if npoints <= 2:
+            raise Exception(
+                "At least 3 points required for trapezoid rule with error estimate"
+            )
+
+        self.npoints = npoints
+        self.open = open
 
     @functools.cached_property
     def higher_nodes(self):
-        return np.array([[
-            -1,
-            0,
-            1,
-        ]])
+        if self.open:
+            h = 2/self.npoints
+            return np.linspace(-1 + h, 1 - h, num=self.npoints).reshape(1, -1)
+        else:
+            return np.linspace(-1, 1, num=self.npoints).reshape(1, -1)
 
     @functools.cached_property
     def higher_weights(self):
-        return np.array([
-            0.5,
-            1,
-            0.5
-        ])
+        return self._weights_from_nodes(self.higher_nodes.reshape(-1))
 
     @functools.cached_property
     def lower_nodes(self):
-        return np.array([[
-            -1,
-            1
-        ]])
+        if self.open:
+            h = 2/(self.npoints-1)
+            return np.linspace(-1 + h, 1 - h, num=self.npoints-1).reshape(1, -1)
+        else:
+            return np.linspace(-1, 1, num=self.npoints-1).reshape(1, -1)
 
     @functools.cached_property
-    def error_weights(self):
-        return np.array([
-            1/2,
-            1/2,
-        ])
+    def lower_weights(self):
+        return self._weights_from_nodes(self.lower_weights.reshape(-1))
+
+    def _weights_from_nodes(self, nodes):
+        """
+        Calculates the weight array from a list of nodes by forming the Lagrange basis
+        polynomial for each node x_i and then integrating over the interval [-1, 1].
+        """
+
+        weights = []
+
+        for node in nodes:
+            poly = _lagrange_basis_polynomial(node, nodes)
+            indef = poly.integ()
+            weights.append(indef(1) - indef(-1))
+
+        return np.array(weights)
 
 
 class ProductRule(NestedCubatureRule):
@@ -421,7 +433,7 @@ class ProductRule(NestedCubatureRule):
 class GenzMalik(NestedCubatureRule):
     def __init__(self, ndim):
         if ndim < 2:
-            raise "Genz-Malik cubature is only defined for ndim >= 2"
+            raise Exception("Genz-Malik cubature is only defined for ndim >= 2")
 
         self.ndim = ndim
 
@@ -591,3 +603,15 @@ def _distinct_permutations(iterable, r=None):
         return _full(items) if (r == size) else _partial(items, r)
 
     return iter(() if r else ((),))
+
+
+def _lagrange_basis_polynomial(x_i, xs):
+    poly = Polynomial(1)
+
+    for x_j in xs:
+        if x_i == x_j:
+            continue
+
+        poly *= Polynomial([-x_j, 1])/(x_i - x_j)
+
+    return poly

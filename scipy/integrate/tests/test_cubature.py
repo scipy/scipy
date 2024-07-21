@@ -6,7 +6,7 @@ import pytest
 import numpy as np
 
 from scipy.integrate._cubature import (
-    cub, ProductRule, GaussKronrod15, GaussKronrod21, GenzMalik
+    cub, ProductRule, GaussKronrod15, GaussKronrod21, GenzMalik, NewtonCotes
 )
 
 
@@ -498,14 +498,16 @@ problems_tensor_output = [
         # Function that generates random args of a certain shape, like `random(shape)`.
         genz_malik_1980_f_1_random_args,
     ),
-    # TODO: genz_malik_1980_f_2 has a singularity in [0, 1]^n for some values of alphas
-    # and betas, which causes cubature to fail. This didn't seem to be a problem in the
-    # paper however.
-    # (
-    #     genz_malik_1980_f_2,
-    #     genz_malik_1980_f_2_exact,
-    #     genz_malik_1980_f_2_random_args
-    # ),
+    pytest.param(
+        (
+            genz_malik_1980_f_2,
+            genz_malik_1980_f_2_exact,
+            genz_malik_1980_f_2_random_args,
+        ),
+        marks=pytest.mark.skip(
+            reason="f_2 has a singularity in [0, 1]^n for some parameter values"
+        ),
+    ),
     (
         genz_malik_1980_f_3,
         genz_malik_1980_f_3_exact,
@@ -596,6 +598,40 @@ def test_genz_malik_func_evaluations(ndim):
     rule = GenzMalik(ndim)
 
     assert rule.higher_nodes.shape[-1] == (2**ndim) + 2*ndim**2 + 2*ndim + 1
+
+
+@pytest.mark.parametrize("quadrature", [
+    NewtonCotes(3),
+    NewtonCotes(5),
+    NewtonCotes(10),
+    NewtonCotes(3, open=True),
+    NewtonCotes(5, open=True),
+    NewtonCotes(10, open=True),
+    GaussKronrod15(),
+    GaussKronrod21(),
+])
+@pytest.mark.parametrize("rtol", [1e-1])
+def test_base_1d_quadratures_simple(quadrature, rtol):
+    n = np.arange(5)
+
+    def f(x):
+        x_reshaped = x.reshape(1, 1, -1)
+        n_reshaped = n.reshape(1, -1, 1)
+
+        return np.power(x_reshaped, n_reshaped)
+
+    a = np.array([0])
+    b = np.array([2])
+
+    exact = (2**(n+1)/(n+1)).reshape(1, -1)
+    estimate = quadrature.estimate(f, a, b)
+
+    np.testing.assert_allclose(
+        estimate,
+        exact,
+        rtol=rtol,
+        atol=0,
+    )
 
 
 def _eval_indefinite_integral(F, a, b):
