@@ -140,6 +140,15 @@ py3.extension_module('_bspl',
   subdir: 'scipy/interpolate'
 )
 
+
+py3.extension_module('_dierckx',
+    ['src/_dierckxmodule.cc'],
+    include_directories: 'src/',
+    dependencies: [py3_dep, np_dep, __fitpack_dep],
+    install: true,
+    subdir: 'scipy/interpolate'
+)
+
 # TODO: Add flags for 64 bit ints
 py3.extension_module('_fitpack',
   ['src/_fitpackmodule.c'],
