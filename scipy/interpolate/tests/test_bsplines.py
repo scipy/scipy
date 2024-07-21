@@ -33,6 +33,7 @@ from scipy.interpolate._ndbspline import make_ndbspl
 from scipy.interpolate import _dfitpack as dfitpack
 from scipy.interpolate import _bsplines as _b
 from scipy.interpolate import _bspl
+from scipy.interpolate import _dierckx
 
 
 class TestBSpline:
@@ -1976,7 +1977,7 @@ class TestGivensQR:
 
         # sign changes are consistent between Q and R:
         c_full = sl.solve(r, qTy)
-        c_banded = _bspl._fpback(R.a, R.nc, y_)
+        c_banded = _dierckx.fpback(R.a, R.nc, y_)
         xp_assert_close(c_full, c_banded[:, 0], atol=5e-13)
 
     def test_py_vs_compiled(self):
@@ -2031,7 +2032,7 @@ class TestGivensQR:
         _bspl._qr_reduce(A, offset, nc, y)
 
         c = fpback(R, y)
-        cc = _bspl._fpback(A, nc, y)
+        cc = _dierckx.fpback(A, nc, y)
 
         xp_assert_close(cc, c, atol=1e-14)
 
