@@ -42,11 +42,6 @@ cdef extern from "src/__fitpack.h" namespace "fitpack":
                 const double *yptr, ssize_t ydim2,
                 double *cptr
     ) except+ nogil
-    double fpknot(const double *x_ptr, ssize_t m,
-                  const double *t_ptr, ssize_t len_t,
-                  int k,
-                  const double *residuals_ptr
-    ) except+ nogil
 
     void _evaluate_spline(const double *tptr, ssize_t len_t,
                           const double *cptr, ssize_t n, ssize_t m,
@@ -838,16 +833,3 @@ def _fpback(const double[:, ::1] R, ssize_t nc,  # (R, offset, nc) triangular =>
            &c[0, 0])
 
     return np.asarray(c)
-
-
-def _fpknot(const double[::1] x,
-            const double[::1] t,
-            int k,
-            const double[::1] residuals):
-    if x.shape[0] != residuals.shape[0]:
-        raise ValueError(f"{len(x) = } != {len(residuals) =}")
-
-    return fpknot(&x[0], x.shape[0],
-                  &t[0], t.shape[0],
-                  k,
-                  &residuals[0])

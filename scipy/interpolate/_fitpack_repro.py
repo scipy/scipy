@@ -24,7 +24,9 @@ import numpy as np
 from scipy.interpolate._bsplines import (
     _not_a_knot, make_interp_spline, BSpline, fpcheck, _lsq_solve_qr
 )
-from scipy.interpolate._bspl import _qr_reduce, _fpback, _fpknot
+from scipy.interpolate._bspl import _qr_reduce, _fpback
+from scipy.interpolate._dierckx import fpknot as _fpknot
+
 
 #    cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 #    c  part 1: determination of the number of knots and their position     c
