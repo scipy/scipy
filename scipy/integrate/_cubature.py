@@ -1,44 +1,56 @@
 import math
 import heapq
 import itertools
-import functools
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
+from functools import cached_property
 
 import numpy as np
 
-from numpy.polynomial.polynomial import Polynomial
 
-
-def cub(f, a, b, rule, rtol=1e-05, atol=1e-08, limit=10000, args=()):
-    if limit is None:
-        limit = np.inf
+def cub(f, a, b, rule, rtol=1e-05, atol=1e-08, max_subdivisions=10000, args=()):
+    if max_subdivisions is None:
+        max_subdivisions = np.inf
 
     est = rule.estimate(f, a, b, args)
     err = rule.error_estimate(f, a, b, args)
+
+    if err is None:
+        # TODO: more descriptive error
+        raise Exception("Attempting cubature with a rule that doesn't implement error \
+estimation.")
 
     regions = [CubatureRegion(est, err, a, b)]
     subdivisions = 0
     success = False
 
     while np.any(err > atol + rtol * np.abs(est)):
-        region = heapq.heappop(regions)
+        # region_k is the region with highest estimated error
+        region_k = heapq.heappop(regions)
 
-        est_k = region.estimate
-        err_k = region.error
+        est_k = region_k.estimate
+        err_k = region_k.error
 
-        a_k, b_k = region.a, region.b
+        a_k, b_k = region_k.a, region_k.b
         m_k = (a_k + b_k) / 2
 
+        # Find all 2**ndim subregions formed by splitting region_k along each axis
+        # e.g. for 1D quadrature this splits an interval in two, for 3D cubature this
+        # splits the current cube under consideration into 8 subcubes.
         subregion_coordinates = zip(
             _cartesian_product(np.array([a_k, m_k]).T).T,
             _cartesian_product(np.array([m_k, b_k]).T).T
         )
 
+        # Subtract the estimate of the integral and its error from the current global
+        # estimates, since these will be refined in the loop over all subregions.
         est -= est_k
         err -= err_k
 
+        # For each of the new subregions, calculate an estimate for the integral and
+        # the error there, and push these regions onto the heap for potential further
+        # subdividing.
         for a_k_sub, b_k_sub in subregion_coordinates:
             est_sub = rule.estimate(f, a_k_sub, b_k_sub, args)
             err_sub = rule.error_estimate(f, a_k_sub, b_k_sub, args)
@@ -52,7 +64,7 @@ def cub(f, a, b, rule, rtol=1e-05, atol=1e-08, limit=10000, args=()):
 
         subdivisions += 1
 
-        if subdivisions >= limit:
+        if subdivisions >= max_subdivisions:
             break
     else:
         success = True
@@ -79,8 +91,9 @@ class CubatureRegion:
     b: np.ndarray
 
     def __lt__(self, other):
-        # Consider regions with higher error as smaller so that they are placed at the
-        # top of the min-heap.
+        # Consider regions with higher error estimates as being "less than" regions with
+        # lower order estimates, so that regions with high error estimates are placed at
+        # the top of the heap.
         return _max_norm(self.error) > _max_norm(other.error)
 
 
@@ -96,9 +109,9 @@ class CubatureResult:
     rtol: float
 
 
-class CubatureRule(ABC):
+class Cubature(ABC):
     @abstractmethod
-    def estimate(self, f, a, b, args):
+    def estimate(self, f, a, b, args=()):
         """
         Calculate estimate of integral of f in region described by corners a and b.
 
@@ -108,7 +121,7 @@ class CubatureRule(ABC):
         pass
 
     @abstractmethod
-    def error_estimate(self, f, a, b, args):
+    def error_estimate(self, f, a, b, args=()):
         """
         Calculate error estimate for the integral of f in region described by corners a
         and b.
@@ -119,12 +132,16 @@ class CubatureRule(ABC):
         pass
 
 
-class NestedCubatureRule(CubatureRule):
-    """
-    A cubature rule with a higher-order and lower-order estimate, and where the
-    difference between the two is used to estimate the error.
-    """
-    def _estimate_from_nodes(self, nodes, weights, f, a, b, args=()):
+class FixedCubature(Cubature):
+    @property
+    def nodes(self):
+        raise NotImplementedError
+
+    @property
+    def weights(self):
+        raise NotImplementedError
+
+    def estimate(self, f, a, b, args=()):
         # The underlying cubature rule is presumed to be for the hypercube [0, 1]^n.
         #
         # To handle arbitrary regions of integration, it's necessary to apply a linear
@@ -135,14 +152,14 @@ class NestedCubatureRule(CubatureRule):
         lengths = b - a
 
         # nodes have shape (input_dim, eval_points)
-        nodes = (nodes + 1) * (lengths / 2) + a
+        nodes = (self.nodes + 1) * (lengths / 2) + a
 
         # Also need to multiply the weights by a scale factor equal to the determinant
         # of the Jacobian for this coordinate change.
         weight_scale_factor = math.prod(lengths / 2)
 
         # weights have shape (eval_points,)
-        weights = weights * weight_scale_factor
+        weights = self.weights * weight_scale_factor
 
         # f(nodes) will have shape (eval_points, output_dim)
         # integral_estimate should have shape (output_dim,)
@@ -153,351 +170,362 @@ class NestedCubatureRule(CubatureRule):
 
         return estimate
 
-    def higher_estimate(self, f, a, b, args=()):
-        return self._estimate_from_nodes(
-            self.higher_nodes,
-            self.higher_weights,
-            f,
-            a,
-            b,
-            args,
-        )
+    # TODO: evaluate whether this is correct
+    def error_estimate(self, f, a, b, args=()):
+        return None
 
-    def lower_estimate(self, f, a, b, args=()):
-        return self._estimate_from_nodes(
-            self.lower_nodes,
-            self.lower_weights,
-            f,
-            a,
-            b,
-            args,
-        )
+
+class DualEstimateCubature(Cubature):
+    """
+    A cubature rule with a higher-order and lower-order estimate, and where the
+    difference between the two is used to estimate the error.
+    """
+
+    def __init__(self, higher, lower):
+        self.higher = higher
+        self.lower = lower
 
     def estimate(self, f, a, b, args=()):
-        return self.higher_estimate(f, a, b, args)
+        return self.higher.estimate(f, a, b, args)
 
-    def error_estimate(self, f, a, b, args):
+    def error_estimate(self, f, a, b, args=()):
         # Take the difference between the higher and lower estimate to obtain estimate
         # for the error.
-        return np.abs(self._estimate_from_nodes(
-            np.concat((self.higher_nodes, self.lower_nodes), axis=-1),
-            np.concat((self.higher_weights, -self.lower_weights), axis=-1),
-            f,
-            a,
-            b,
-            args
-        ))
+        return np.abs(
+            self.higher.estimate(f, a, b, args) - self.lower.estimate(f, a, b, args)
+        )
 
 
-class GaussKronrod21(NestedCubatureRule):
-    def __init__(self):
-        pass
+class GaussKronrod(DualEstimateCubature):
+    def __init__(self, npoints):
+        if npoints != 15 and npoints != 21:
+            raise Exception("Gauss-Kronrod quadrature is currently only supported for \
+                            15 or 21 nodes")
 
-    @functools.cached_property
-    def higher_nodes(self):
-        # 21-point nodes
-        return np.array([[
-            0.995657163025808080735527280689003,
-            0.973906528517171720077964012084452,
-            0.930157491355708226001207180059508,
-            0.865063366688984510732096688423493,
-            0.780817726586416897063717578345042,
-            0.679409568299024406234327365114874,
-            0.562757134668604683339000099272694,
-            0.433395394129247190799265943165784,
-            0.294392862701460198131126603103866,
-            0.148874338981631210884826001129720,
-            0,
-            -0.148874338981631210884826001129720,
-            -0.294392862701460198131126603103866,
-            -0.433395394129247190799265943165784,
-            -0.562757134668604683339000099272694,
-            -0.679409568299024406234327365114874,
-            -0.780817726586416897063717578345042,
-            -0.865063366688984510732096688423493,
-            -0.930157491355708226001207180059508,
-            -0.973906528517171720077964012084452,
-            -0.995657163025808080735527280689003
-        ]])
+        self.higher = self._Higher(npoints)
+        self.lower = self._Lower(npoints)
 
-    @functools.cached_property
-    def higher_weights(self):
-        # 21-point weights
-        return np.array([
-            0.011694638867371874278064396062192,
-            0.032558162307964727478818972459390,
-            0.054755896574351996031381300244580,
-            0.075039674810919952767043140916190,
-            0.093125454583697605535065465083366,
-            0.109387158802297641899210590325805,
-            0.123491976262065851077958109831074,
-            0.134709217311473325928054001771707,
-            0.142775938577060080797094273138717,
-            0.147739104901338491374841515972068,
-            0.149445554002916905664936468389821,
-            0.147739104901338491374841515972068,
-            0.142775938577060080797094273138717,
-            0.134709217311473325928054001771707,
-            0.123491976262065851077958109831074,
-            0.109387158802297641899210590325805,
-            0.093125454583697605535065465083366,
-            0.075039674810919952767043140916190,
-            0.054755896574351996031381300244580,
-            0.032558162307964727478818972459390,
-            0.011694638867371874278064396062192,
-        ])
+    class _Higher(FixedCubature):
+        def __init__(self, npoints):
+            self.npoints = npoints
 
-    @functools.cached_property
-    def lower_nodes(self):
-        # 10-point nodes
-        return np.array([[
-            0.973906528517171720077964012084452,
-            0.865063366688984510732096688423493,
-            0.679409568299024406234327365114874,
-            0.433395394129247190799265943165784,
-            0.148874338981631210884826001129720,
-            -0.148874338981631210884826001129720,
-            -0.433395394129247190799265943165784,
-            -0.679409568299024406234327365114874,
-            -0.865063366688984510732096688423493,
-            -0.973906528517171720077964012084452,
-        ]])
+        @cached_property
+        def nodes(self):
+            if self.npoints == 21:
+                return np.array([[
+                    0.995657163025808080735527280689003,
+                    0.973906528517171720077964012084452,
+                    0.930157491355708226001207180059508,
+                    0.865063366688984510732096688423493,
+                    0.780817726586416897063717578345042,
+                    0.679409568299024406234327365114874,
+                    0.562757134668604683339000099272694,
+                    0.433395394129247190799265943165784,
+                    0.294392862701460198131126603103866,
+                    0.148874338981631210884826001129720,
+                    0,
+                    -0.148874338981631210884826001129720,
+                    -0.294392862701460198131126603103866,
+                    -0.433395394129247190799265943165784,
+                    -0.562757134668604683339000099272694,
+                    -0.679409568299024406234327365114874,
+                    -0.780817726586416897063717578345042,
+                    -0.865063366688984510732096688423493,
+                    -0.930157491355708226001207180059508,
+                    -0.973906528517171720077964012084452,
+                    -0.995657163025808080735527280689003
+                ]])
+            elif self.npoints == 15:
+                return np.array([[
+                    0.991455371120812639206854697526329,
+                    0.949107912342758524526189684047851,
+                    0.864864423359769072789712788640926,
+                    0.741531185599394439863864773280788,
+                    0.586087235467691130294144838258730,
+                    0.405845151377397166906606412076961,
+                    0.207784955007898467600689403773245,
+                    0.000000000000000000000000000000000,
+                    -0.207784955007898467600689403773245,
+                    -0.405845151377397166906606412076961,
+                    -0.586087235467691130294144838258730,
+                    -0.741531185599394439863864773280788,
+                    -0.864864423359769072789712788640926,
+                    -0.949107912342758524526189684047851,
+                    -0.991455371120812639206854697526329
+                ]])
 
-    @functools.cached_property
-    def lower_weights(self):
-        # 10-point weights
-        return np.array([
-            0.066671344308688137593568809893332,
-            0.149451349150580593145776339657697,
-            0.219086362515982043995534934228163,
-            0.269266719309996355091226921569469,
-            0.295524224714752870173892994651338,
-            0.295524224714752870173892994651338,
-            0.269266719309996355091226921569469,
-            0.219086362515982043995534934228163,
-            0.149451349150580593145776339657697,
-            0.066671344308688137593568809893332,
-        ])
+        @cached_property
+        def weights(self):
+            if self.npoints == 21:
+                return np.array([
+                    0.011694638867371874278064396062192,
+                    0.032558162307964727478818972459390,
+                    0.054755896574351996031381300244580,
+                    0.075039674810919952767043140916190,
+                    0.093125454583697605535065465083366,
+                    0.109387158802297641899210590325805,
+                    0.123491976262065851077958109831074,
+                    0.134709217311473325928054001771707,
+                    0.142775938577060080797094273138717,
+                    0.147739104901338491374841515972068,
+                    0.149445554002916905664936468389821,
+                    0.147739104901338491374841515972068,
+                    0.142775938577060080797094273138717,
+                    0.134709217311473325928054001771707,
+                    0.123491976262065851077958109831074,
+                    0.109387158802297641899210590325805,
+                    0.093125454583697605535065465083366,
+                    0.075039674810919952767043140916190,
+                    0.054755896574351996031381300244580,
+                    0.032558162307964727478818972459390,
+                    0.011694638867371874278064396062192,
+                ])
+            elif self.npoints == 15:
+                return np.array([
+                    0.022935322010529224963732008058970,
+                    0.063092092629978553290700663189204,
+                    0.104790010322250183839876322541518,
+                    0.140653259715525918745189590510238,
+                    0.169004726639267902826583426598550,
+                    0.190350578064785409913256402421014,
+                    0.204432940075298892414161999234649,
+                    0.209482141084727828012999174891714,
+                    0.204432940075298892414161999234649,
+                    0.190350578064785409913256402421014,
+                    0.169004726639267902826583426598550,
+                    0.140653259715525918745189590510238,
+                    0.104790010322250183839876322541518,
+                    0.063092092629978553290700663189204,
+                    0.022935322010529224963732008058970
+                ])
 
+    class _Lower(FixedCubature):
+        def __init__(self, npoints):
+            self.npoints = npoints
 
-class GaussKronrod15(NestedCubatureRule):
-    def __init__(self):
-        pass
+        @cached_property
+        def nodes(self):
+            if self.npoints == 21:
+                # 21//2 = 10-point nodes
+                return np.array([[
+                    0.973906528517171720077964012084452,
+                    0.865063366688984510732096688423493,
+                    0.679409568299024406234327365114874,
+                    0.433395394129247190799265943165784,
+                    0.148874338981631210884826001129720,
+                    -0.148874338981631210884826001129720,
+                    -0.433395394129247190799265943165784,
+                    -0.679409568299024406234327365114874,
+                    -0.865063366688984510732096688423493,
+                    -0.973906528517171720077964012084452,
+                ]])
+            elif self.npoints == 15:
+                # 15//2 = 7-point nodes
+                return np.array([[
+                    0.949107912342758524526189684047851,
+                    0.741531185599394439863864773280788,
+                    0.405845151377397166906606412076961,
+                    0.000000000000000000000000000000000,
+                    -0.405845151377397166906606412076961,
+                    -0.741531185599394439863864773280788,
+                    -0.949107912342758524526189684047851,
+                ]])
 
-    @functools.cached_property
-    def higher_nodes(self):
-        # 15-point nodes
-        return np.array([[
-            0.991455371120812639206854697526329,
-            0.949107912342758524526189684047851,
-            0.864864423359769072789712788640926,
-            0.741531185599394439863864773280788,
-            0.586087235467691130294144838258730,
-            0.405845151377397166906606412076961,
-            0.207784955007898467600689403773245,
-            0.000000000000000000000000000000000,
-            -0.207784955007898467600689403773245,
-            -0.405845151377397166906606412076961,
-            -0.586087235467691130294144838258730,
-            -0.741531185599394439863864773280788,
-            -0.864864423359769072789712788640926,
-            -0.949107912342758524526189684047851,
-            -0.991455371120812639206854697526329
-        ]])
-
-    @functools.cached_property
-    def higher_weights(self):
-        # 15-point weights
-        return np.array([
-            0.022935322010529224963732008058970,
-            0.063092092629978553290700663189204,
-            0.104790010322250183839876322541518,
-            0.140653259715525918745189590510238,
-            0.169004726639267902826583426598550,
-            0.190350578064785409913256402421014,
-            0.204432940075298892414161999234649,
-            0.209482141084727828012999174891714,
-            0.204432940075298892414161999234649,
-            0.190350578064785409913256402421014,
-            0.169004726639267902826583426598550,
-            0.140653259715525918745189590510238,
-            0.104790010322250183839876322541518,
-            0.063092092629978553290700663189204,
-            0.022935322010529224963732008058970
-        ])
-
-    @functools.cached_property
-    def lower_nodes(self):
-        # 7-point nodes
-        return np.array([[
-            0.949107912342758524526189684047851,
-            0.741531185599394439863864773280788,
-            0.405845151377397166906606412076961,
-            0.000000000000000000000000000000000,
-            -0.405845151377397166906606412076961,
-            -0.741531185599394439863864773280788,
-            -0.949107912342758524526189684047851,
-        ]])
-
-    @functools.cached_property
-    def lower_weights(self):
-        # 7-point weights
-        return np.array([
-            0.129484966168869693270611432679082,
-            0.279705391489276667901467771423780,
-            0.381830050505118944950369775488975,
-            0.417959183673469387755102040816327,
-            0.381830050505118944950369775488975,
-            0.279705391489276667901467771423780,
-            0.129484966168869693270611432679082
-        ])
+        @cached_property
+        def weights(self):
+            if self.npoints == 21:
+                # 10-point weights
+                return np.array([
+                    0.066671344308688137593568809893332,
+                    0.149451349150580593145776339657697,
+                    0.219086362515982043995534934228163,
+                    0.269266719309996355091226921569469,
+                    0.295524224714752870173892994651338,
+                    0.295524224714752870173892994651338,
+                    0.269266719309996355091226921569469,
+                    0.219086362515982043995534934228163,
+                    0.149451349150580593145776339657697,
+                    0.066671344308688137593568809893332,
+                ])
+            else:
+                # 7-point weights
+                return np.array([
+                    0.129484966168869693270611432679082,
+                    0.279705391489276667901467771423780,
+                    0.381830050505118944950369775488975,
+                    0.417959183673469387755102040816327,
+                    0.381830050505118944950369775488975,
+                    0.279705391489276667901467771423780,
+                    0.129484966168869693270611432679082
+                ])
 
 
-class NewtonCotes(NestedCubatureRule):
+class NewtonCotes(FixedCubature):
     def __init__(self, npoints, open=False):
-        if npoints <= 2:
+        if npoints < 2:
+            # TODO: check if there really is a 1-point Newton-Cotes rule?
             raise Exception(
-                "At least 3 points required for trapezoid rule with error estimate"
+                "At least 2 points required for Newton Cotes"
             )
 
         self.npoints = npoints
         self.open = open
 
-    @functools.cached_property
-    def higher_nodes(self):
+    @cached_property
+    def nodes(self):
         if self.open:
             h = 2/self.npoints
             return np.linspace(-1 + h, 1 - h, num=self.npoints).reshape(1, -1)
         else:
             return np.linspace(-1, 1, num=self.npoints).reshape(1, -1)
 
-    @functools.cached_property
-    def higher_weights(self):
-        return self._weights_from_nodes(self.higher_nodes.reshape(-1))
-
-    @functools.cached_property
-    def lower_nodes(self):
-        if self.open:
-            h = 2/(self.npoints-1)
-            return np.linspace(-1 + h, 1 - h, num=self.npoints-1).reshape(1, -1)
-        else:
-            return np.linspace(-1, 1, num=self.npoints-1).reshape(1, -1)
-
-    @functools.cached_property
-    def lower_weights(self):
-        return self._weights_from_nodes(self.lower_weights.reshape(-1))
-
-    def _weights_from_nodes(self, nodes):
-        """
-        Calculates the weight array from a list of nodes by forming the Lagrange basis
-        polynomial for each node x_i and then integrating over the interval [-1, 1].
-        """
-
-        weights = []
-
-        for node in nodes:
-            poly = _lagrange_basis_polynomial(node, nodes)
-            indef = poly.integ()
-            weights.append(indef(1) - indef(-1))
-
-        return np.array(weights)
+    @cached_property
+    def weights(self):
+        return _newton_cotes_weights(self.nodes.reshape(-1))
 
 
-class ProductRule(NestedCubatureRule):
+class Product(DualEstimateCubature):
     def __init__(self, base_rules):
         self.base_rules = base_rules
+        self.higher = self._Higher(base_rules)
+        self.lower = self._Lower(base_rules)
 
-    @functools.cached_property
-    def higher_nodes(self):
-        return _cartesian_product([rule.higher_nodes for rule in self.base_rules])
+    class _Higher(FixedCubature):
+        def __init__(self, base_rules):
+            self.base_rules = base_rules
 
-    @functools.cached_property
-    def higher_weights(self):
-        return np.prod(
-            _cartesian_product([rule.higher_weights for rule in self.base_rules]),
-            axis=0
-        )
+        @cached_property
+        def nodes(self):
+            return _cartesian_product([rule.higher.nodes for rule in self.base_rules])
 
-    @functools.cached_property
-    def lower_nodes(self):
-        return _cartesian_product([rule.lower_nodes for rule in self.base_rules])
+        @cached_property
+        def weights(self):
+            return np.prod(
+                _cartesian_product([rule.higher.weights for rule in self.base_rules]),
+                axis=0
+            )
 
-    @functools.cached_property
-    def lower_weights(self):
-        return np.prod(
-            _cartesian_product([rule.lower_weights for rule in self.base_rules]),
-            axis=0
-        )
+    class _Lower(FixedCubature):
+        def __init__(self, base_rules):
+            self.base_rules = base_rules
+
+        @cached_property
+        def nodes(self):
+            return _cartesian_product([rule.lower.nodes for rule in self.base_rules])
+
+        @cached_property
+        def weights(self):
+            return np.prod(
+                _cartesian_product([rule.lower.weights for rule in self.base_rules]),
+                axis=0
+            )
 
 
-class GenzMalik(NestedCubatureRule):
+class GenzMalik(DualEstimateCubature):
     def __init__(self, ndim):
         if ndim < 2:
             raise Exception("Genz-Malik cubature is only defined for ndim >= 2")
 
-        self.ndim = ndim
+        self.higher = self._Higher(ndim)
+        self.lower = self._Lower(ndim)
 
-    @functools.cached_property
-    def higher_nodes(self):
-        l_2 = np.sqrt(9/70)
-        l_3 = np.sqrt(9/10)
-        l_4 = np.sqrt(9/10)
-        l_5 = np.sqrt(9/19)
+    class _Higher(FixedCubature):
+        def __init__(self, ndim):
+            self.ndim = ndim
 
-        its = itertools.chain(
-            [(0,) * self.ndim],
-            _distinct_permutations((l_2,) + (0,) * (self.ndim - 1)),
-            _distinct_permutations((-l_2,) + (0,) * (self.ndim - 1)),
-            _distinct_permutations((l_3,) + (0,) * (self.ndim - 1)),
-            _distinct_permutations((-l_3,) + (0,) * (self.ndim - 1)),
-            _distinct_permutations((l_4, l_4) + (0,) * (self.ndim - 2)),
-            _distinct_permutations((l_4, -l_4) + (0,) * (self.ndim - 2)),
-            _distinct_permutations((-l_4, -l_4) + (0,) * (self.ndim - 2)),
-            itertools.product((l_5, -l_5), repeat=self.ndim)
-        )
+        @cached_property
+        def nodes(self):
+            l_2 = math.sqrt(9/70)
+            l_3 = math.sqrt(9/10)
+            l_4 = math.sqrt(9/10)
+            l_5 = math.sqrt(9/19)
 
-        out_size = 1 + 2 * (self.ndim + 1) * self.ndim + 2**self.ndim
+            its = itertools.chain(
+                [(0,) * self.ndim],
+                _distinct_permutations((l_2,) + (0,) * (self.ndim - 1)),
+                _distinct_permutations((-l_2,) + (0,) * (self.ndim - 1)),
+                _distinct_permutations((l_3,) + (0,) * (self.ndim - 1)),
+                _distinct_permutations((-l_3,) + (0,) * (self.ndim - 1)),
+                _distinct_permutations((l_4, l_4) + (0,) * (self.ndim - 2)),
+                _distinct_permutations((l_4, -l_4) + (0,) * (self.ndim - 2)),
+                _distinct_permutations((-l_4, -l_4) + (0,) * (self.ndim - 2)),
+                itertools.product((l_5, -l_5), repeat=self.ndim)
+            )
 
-        out = np.fromiter(
-            itertools.chain.from_iterable(zip(*its)),
-            dtype=float,
-            count=self.ndim * out_size
-        )
+            out_size = 1 + 2 * (self.ndim + 1) * self.ndim + 2**self.ndim
 
-        out.shape = (self.ndim, out_size)
-        return out
+            out = np.fromiter(
+                itertools.chain.from_iterable(zip(*its)),
+                dtype=float,
+                count=self.ndim * out_size
+            )
 
-    @functools.cached_property
-    def higher_weights(self):
-        w_1 = (2**self.ndim) * (12824 - 9120 * self.ndim + 400 * self.ndim**2) / 19683
-        w_2 = (2**self.ndim) * 980/6561
-        w_3 = (2**self.ndim) * (1820 - 400 * self.ndim) / 19683
-        w_4 = (2**self.ndim) * (200 / 19683)
-        w_5 = 6859 / 19683
+            out.shape = (self.ndim, out_size)
+            return out
 
-        return np.repeat(
-            [w_1, w_2, w_3, w_4, w_5],
-            [1, 2 * self.ndim, 2*self.ndim, 2*(self.ndim - 1)*self.ndim, 2**self.ndim]
-        )
+        @cached_property
+        def weights(self):
+            w_1 = (2**self.ndim) * (12824 - 9120 * self.ndim + 400 * self.ndim**2) \
+                / 19683
+            w_2 = (2**self.ndim) * 980/6561
+            w_3 = (2**self.ndim) * (1820 - 400 * self.ndim) / 19683
+            w_4 = (2**self.ndim) * (200 / 19683)
+            w_5 = 6859 / 19683
 
-    @functools.cached_property
-    def lower_nodes(self):
-        out_size = 1 + 2 * (self.ndim + 1) * self.ndim
-        out = self.higher_nodes[:, :out_size]
+            return np.repeat(
+                [w_1, w_2, w_3, w_4, w_5],
+                [
+                    1,
+                    2 * self.ndim,
+                    2*self.ndim,
+                    2*(self.ndim - 1)*self.ndim,
+                    2**self.ndim,
+                ]
+            )
 
-        return out
+    class _Lower(FixedCubature):
+        def __init__(self, ndim):
+            self.ndim = ndim
 
-    @functools.cached_property
-    def lower_weights(self):
-        w_1 = (2**self.ndim) * (729 - 950*self.ndim + 50*self.ndim**2) / 729
-        w_2 = (2**self.ndim) * (245 / 486)
-        w_3 = (2**self.ndim) * (265 - 100*self.ndim) / 1458
-        w_4 = (2**self.ndim) * (25 / 729)
+        @cached_property
+        def nodes(self):
+            l_2 = math.sqrt(9/70)
+            l_3 = math.sqrt(9/10)
+            l_4 = math.sqrt(9/10)
 
-        return np.repeat(
-            [w_1, w_2, w_3, w_4],
-            [1, 2 * self.ndim, 2*self.ndim, 2*(self.ndim - 1)*self.ndim]
-        )
+            its = itertools.chain(
+                [(0,) * self.ndim],
+                _distinct_permutations((l_2,) + (0,) * (self.ndim - 1)),
+                _distinct_permutations((-l_2,) + (0,) * (self.ndim - 1)),
+                _distinct_permutations((l_3,) + (0,) * (self.ndim - 1)),
+                _distinct_permutations((-l_3,) + (0,) * (self.ndim - 1)),
+                _distinct_permutations((l_4, l_4) + (0,) * (self.ndim - 2)),
+                _distinct_permutations((l_4, -l_4) + (0,) * (self.ndim - 2)),
+                _distinct_permutations((-l_4, -l_4) + (0,) * (self.ndim - 2)),
+            )
+
+            out_size = 1 + 2 * (self.ndim + 1) * self.ndim
+
+            out = np.fromiter(
+                itertools.chain.from_iterable(zip(*its)),
+                dtype=float,
+                count=self.ndim * out_size
+            )
+
+            out.shape = (self.ndim, out_size)
+            return out
+
+        @cached_property
+        def weights(self):
+            w_1 = (2**self.ndim) * (729 - 950*self.ndim + 50*self.ndim**2) / 729
+            w_2 = (2**self.ndim) * (245 / 486)
+            w_3 = (2**self.ndim) * (265 - 100*self.ndim) / 1458
+            w_4 = (2**self.ndim) * (25 / 729)
+
+            return np.repeat(
+                [w_1, w_2, w_3, w_4],
+                [1, 2 * self.ndim, 2*self.ndim, 2*(self.ndim - 1)*self.ndim]
+            )
 
 
 def _cartesian_product(points):
@@ -520,7 +548,7 @@ def _max_norm(x):
 
 def _distinct_permutations(iterable, r=None):
     """
-    Find the number of distinct permutations of `r` elements of the iterable.
+    Find the number of distinct permutations of `r` elements of `iterable`.
     """
 
     # Algorithm: https://w.wiki/Qai
@@ -605,13 +633,14 @@ def _distinct_permutations(iterable, r=None):
     return iter(() if r else ((),))
 
 
-def _lagrange_basis_polynomial(x_i, xs):
-    poly = Polynomial(1)
+def _newton_cotes_weights(points):
+    order = len(points) - 1
 
-    for x_j in xs:
-        if x_i == x_j:
-            continue
+    a = np.vander(points, increasing=True)
+    a = np.transpose(a)
 
-        poly *= Polynomial([-x_j, 1])/(x_i - x_j)
+    i = np.arange(order + 1)
+    b = (1 - np.power(-1, i + 1)) / (2 * (i + 1))
 
-    return poly
+    # TODO: figure out why this 2x is necessary
+    return 2*np.linalg.solve(a, b)

@@ -6,7 +6,7 @@ import pytest
 import numpy as np
 
 from scipy.integrate._cubature import (
-    cub, ProductRule, GaussKronrod15, GaussKronrod21, GenzMalik, NewtonCotes
+    cub, Product, GaussKronrod, GenzMalik, NewtonCotes
 )
 
 
@@ -445,8 +445,8 @@ problems_scalar_output = [
 
 @pytest.mark.parametrize("problem", problems_scalar_output)
 @pytest.mark.parametrize("quadrature", [
-    GaussKronrod15,
-    GaussKronrod21,
+    GaussKronrod(15),
+    GaussKronrod(21),
     GenzMalik
 ])
 @pytest.mark.parametrize("rtol", [1e-4])
@@ -459,8 +459,8 @@ def test_cub_scalar_output(problem, quadrature, rtol, atol):
     if quadrature is GenzMalik and ndim < 2:
         pytest.skip("Genz-Malik cubature does not support 1D integrals")
 
-    if quadrature is GaussKronrod15 or quadrature is GaussKronrod21:
-        rule = ProductRule([quadrature()] * ndim)
+    if isinstance(quadrature, GaussKronrod):
+        rule = Product([quadrature] * ndim)
     elif quadrature is GenzMalik and ndim >= 2:
         rule = GenzMalik(ndim)
     else:
@@ -528,8 +528,8 @@ problems_tensor_output = [
 
 @pytest.mark.parametrize("problem", problems_tensor_output)
 @pytest.mark.parametrize("quadrature", [
-    GaussKronrod15,
-    GaussKronrod21,
+    GaussKronrod(15),
+    GaussKronrod(21),
     GenzMalik
 ])
 @pytest.mark.parametrize("shape", [
@@ -553,8 +553,8 @@ def test_cub_tensor_output(problem, quadrature, shape, rtol, atol):
     if quadrature is GenzMalik and ndim < 2:
         pytest.skip("Genz-Malik cubature does not support 1D integrals")
 
-    if quadrature is GaussKronrod15 or quadrature is GaussKronrod21:
-        rule = ProductRule([quadrature()] * ndim)
+    if isinstance(quadrature, GaussKronrod):
+        rule = Product([quadrature] * ndim)
     elif quadrature is GenzMalik and ndim >= 2:
         rule = GenzMalik(ndim)
     else:
@@ -597,7 +597,7 @@ def test_genz_malik_func_evaluations(ndim):
 
     rule = GenzMalik(ndim)
 
-    assert rule.higher_nodes.shape[-1] == (2**ndim) + 2*ndim**2 + 2*ndim + 1
+    assert rule.higher.nodes.shape[-1] == (2**ndim) + 2*ndim**2 + 2*ndim + 1
 
 
 @pytest.mark.parametrize("quadrature", [
@@ -607,8 +607,8 @@ def test_genz_malik_func_evaluations(ndim):
     NewtonCotes(3, open=True),
     NewtonCotes(5, open=True),
     NewtonCotes(10, open=True),
-    GaussKronrod15(),
-    GaussKronrod21(),
+    GaussKronrod(15),
+    GaussKronrod(21),
 ])
 @pytest.mark.parametrize("rtol", [1e-1])
 def test_base_1d_quadratures_simple(quadrature, rtol):
