@@ -7771,7 +7771,8 @@ class TestAlexanderGovern:
         # Zero variance input, consistent with `stats.pearsonr`
         x1 = np.asarray([0.667, 0.667, 0.667])
         x2 = np.asarray([0.123, 0.456, 0.789])
-        res = stats.alexandergovern(x1, x2)
+        with pytest.warns(RuntimeWarning, match="Precision loss occurred..."):
+            res = stats.alexandergovern(x1, x2)
         assert_equal(res.statistic, np.nan)
         assert_equal(res.pvalue, np.nan)
 

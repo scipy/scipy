@@ -4046,8 +4046,7 @@ def alexandergovern(*samples, nan_policy='propagate', axis=0):
     var_w = np.sum(weights * means, axis=0, keepdims=True)
 
     # (4) determine one-sample t statistic for each group
-    # replace `means - var_w` with `_demean(means, var_w)`
-    t_stats = (means - var_w) / standard_errors
+    t_stats = _demean(means, var_w, axis=0, xp=np) / standard_errors
 
     # calculate parameters to be used in transformation
     v = np.asarray(lengths) - 1
