@@ -278,11 +278,6 @@ def hmean(a, axis=0, dtype=None, *, weights=None):
     hmean : ndarray
         See `dtype` parameter above.
 
-    Raises
-    ------
-    ValueError
-        If `a` has elements less than 0.
-
     See Also
     --------
     numpy.mean : Arithmetic average
@@ -389,11 +384,6 @@ def pmean(a, p, *, axis=0, dtype=None, weights=None):
     -------
     pmean : ndarray, see `dtype` parameter above.
         Output array containing the power mean values.
-
-    Raises
-    ------
-    ValueError
-        If `a` has elements less than 0.
 
     See Also
     --------
@@ -1591,11 +1581,6 @@ def skewtest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
     pvalue : float
         The p-value for the hypothesis test.
 
-    Raises
-    ------
-    ValueError
-        If shape of `a` along the given `axis` is less than 8.
-
     See Also
     --------
     :ref:`hypothesis_skewtest` : Extended example
@@ -1705,10 +1690,9 @@ def kurtosistest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
     ValueError
         If shape of `a` along the given `axis` is less than 5.
 
-    Warns
+    Notes
     -----
     Valid only for n>20. This function uses the method described in [1]_.
-    If any element in the denominator array is 0. Returns `nan` for such cases.
 
     See Also
     --------
@@ -1889,11 +1873,6 @@ def jarque_bera(x, *, axis=None):
             The test statistic.
         pvalue : float
             The p-value for the hypothesis test.
-
-    Raises
-    ------
-    ValueError
-        If the shape of `x` along the given `axis` is 0.
 
     See Also
     --------
@@ -2945,15 +2924,6 @@ def gstd(a, axis=0, ddof=1):
     gmean : Geometric mean
     numpy.std : Standard deviation
     gzscore : Geometric standard score
-
-    Raises
-    ------
-    ValueError
-        As the calculation requires the use of logarithms the geometric standard
-        deviation only supports strictly positive values. Any non-positive or
-        infinite values will raise a `ValueError`.
-
-        If `a` could not be safely coerced to any supported types.
 
     Notes
     -----
@@ -4376,9 +4346,7 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
     Raises
     ------
     ValueError
-        If `x` and `y` do not have the same length along `axis`, `x` and `y` do
-        not have length at least 2, `x` and `y` are not broadcastable, if `x`
-        or `y` are of complex datatypes, or if `method` is invalid.
+        If `x` and `y` do not have length at least 2.
 
     Warns
     -----
@@ -4749,7 +4717,6 @@ def fisher_exact(table, alternative='two-sided'):
     ------
     ValueError
         If `table` is not a 2x2 contingency table with non-negative entries.
-        If `alternative` is an invalid value.
 
     See Also
     --------
@@ -5367,11 +5334,9 @@ def kendalltau(x, y, *, nan_policy='propagate',
     Raises
     ------
     ValueError
-        If `x` and `y` have different lengths.
         If `nan_policy` is `omit` and `variant` is not `b`.
         If `variant` is not either `b` or `c`.
         If `method` is `exact` and there are ties in `x` and `y`.
-        If invalid `method` is provided.
 
     See Also
     --------
@@ -5600,11 +5565,6 @@ def weightedtau(x, y, rank=True, weigher=None, additive=True):
         pvalue : float
            Presently ``np.nan``, as the null distribution of the statistic is
            unknown (even in the additive hyperbolic case).
-
-    Raises
-    ------
-    ValueError
-        If `x` and `y` are of different sizes.
 
     See Also
     --------
