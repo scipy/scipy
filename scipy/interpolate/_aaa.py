@@ -57,8 +57,9 @@ class AAA:
     Attributes
     ----------
     support_points : array
-        Support points of the approximation. At these points the approximation strictly
-        interpolates the provided `f`. See notes for more details.
+        Support points of the approximation. These are a subset of the provided
+        `points` at which the approximation strictly interpolates the provided `values`.
+        See notes for more details.
     support_values : array
         Value of the approximation at the `support_points`.
     weights : array
@@ -90,7 +91,7 @@ class AAA:
     `points`, :math:`f_1,\dots,f_m` are the corresponding real or complex data values
     from `values`, and :math:`w_1,\dots,w_m` are real or complex weights. The algorithm
     then proceeds to select the next support point :math:`z_{m+1}` from the remaining
-    unselected points in `z` such that the nonlinear residual
+    unselected `points` such that the nonlinear residual
     :math:`|f(z_{m+1}) - n(z_{m+1})/d(z_{m+1})|` is maximised. The algorithm terminates
     when this maximum is less than ``rtol * np.linalg.norm(f, ord=np.inf)``. This means
     the interpolation property is only satisfied up to a tolerance. The weights are
