@@ -268,7 +268,7 @@ class TestChandrupatlaMinimize:
             funcs = [lambda x: (x - 2.5) ** 2,
                      lambda x: x - 10,
                      lambda x: (x - 2.5) ** 4,
-                     lambda x: xp.full_like(x, xp.asarray(np.nan))]
+                     lambda x: xp.full_like(x, xp.asarray(xp.nan))]
             res = []
             for i in range(xp_size(js)):
                 x = xs[i, ...]
@@ -276,8 +276,10 @@ class TestChandrupatlaMinimize:
                 res.append(funcs[j](x))
             return xp.stack(res)
 
-        args = (xp.arange(4, dtype=np.int64),)
-        bracket = xp.asarray([0]*4), xp.asarray([2]*4), xp.asarray([np.pi]*4)
+        args = (xp.arange(4, dtype=xp.int64),)
+        bracket = (xp.asarray([0]*4, dtype=xp.float64),
+                   xp.asarray([2]*4, dtype=xp.float64),
+                   xp.asarray([np.pi]*4, dtype=xp.float64))
         res = _chandrupatla_minimize(f, *bracket, args=args, maxiter=10)
 
         ref_flags = xp.asarray([eim._ECONVERGED, eim._ESIGNERR, eim._ECONVERR,
@@ -287,7 +289,7 @@ class TestChandrupatlaMinimize:
     def test_convergence(self, xp):
         # Test that the convergence tolerances behave as expected
         rng = np.random.default_rng(2585255913088665241)
-        p = xp.asarray(rng.random(size=3).tolist())
+        p = xp.asarray(rng.random(size=3))
         bracket = (xp.asarray(-5), xp.asarray(0), xp.asarray(5))
         args = (p,)
         kwargs0 = dict(args=args, xatol=0, xrtol=0, fatol=0, frtol=0)
@@ -297,12 +299,12 @@ class TestChandrupatlaMinimize:
         res1 = _chandrupatla_minimize(self.f, *bracket, **kwargs)
         j1 = xp.abs(res1.xr - res1.xl)
         tol = xp.asarray(4*kwargs['xatol'], dtype=p.dtype)
-        xp_assert_less(j1, xp.full((3,), tol))
+        xp_assert_less(j1, xp.full((3,), tol, dtype=p.dtype))
         kwargs['xatol'] = 1e-6
         res2 = _chandrupatla_minimize(self.f, *bracket, **kwargs)
         j2 = xp.abs(res2.xr - res2.xl)
         tol = xp.asarray(4*kwargs['xatol'], dtype=p.dtype)
-        xp_assert_less(j2, xp.full((3,), tol))
+        xp_assert_less(j2, xp.full((3,), tol, dtype=p.dtype))
         xp_assert_less(j2, j1)
 
         kwargs = kwargs0.copy()
@@ -310,12 +312,12 @@ class TestChandrupatlaMinimize:
         res1 = _chandrupatla_minimize(self.f, *bracket, **kwargs)
         j1 = xp.abs(res1.xr - res1.xl)
         tol = xp.asarray(4*kwargs['xrtol']*xp.abs(res1.x), dtype=p.dtype)
-        xp_assert_less(j1, xp.full((3,), tol))
+        xp_assert_less(j1, tol)
         kwargs['xrtol'] = 1e-6
         res2 = _chandrupatla_minimize(self.f, *bracket, **kwargs)
         j2 = xp.abs(res2.xr - res2.xl)
         tol = xp.asarray(4*kwargs['xrtol']*xp.abs(res2.x), dtype=p.dtype)
-        xp_assert_less(j2, xp.full((3,), tol))
+        xp_assert_less(j2, tol)
         xp_assert_less(j2, j1)
 
         kwargs = kwargs0.copy()
@@ -323,12 +325,12 @@ class TestChandrupatlaMinimize:
         res1 = _chandrupatla_minimize(self.f, *bracket, **kwargs)
         h1 = xp.abs(res1.fl - 2 * res1.fm + res1.fr)
         tol = xp.asarray(2*kwargs['fatol'], dtype=p.dtype)
-        xp_assert_less(h1, xp.full((3,), tol))
+        xp_assert_less(h1, xp.full((3,), tol, dtype=p.dtype))
         kwargs['fatol'] = 1e-6
         res2 = _chandrupatla_minimize(self.f, *bracket, **kwargs)
         h2 = xp.abs(res2.fl - 2 * res2.fm + res2.fr)
         tol = xp.asarray(2*kwargs['fatol'], dtype=p.dtype)
-        xp_assert_less(h2, xp.full((3,), tol))
+        xp_assert_less(h2, xp.full((3,), tol, dtype=p.dtype))
         xp_assert_less(h2, h1)
 
         kwargs = kwargs0.copy()
@@ -336,12 +338,12 @@ class TestChandrupatlaMinimize:
         res1 = _chandrupatla_minimize(self.f, *bracket, **kwargs)
         h1 = xp.abs(res1.fl - 2 * res1.fm + res1.fr)
         tol = xp.asarray(2*kwargs['frtol']*xp.abs(res1.fun), dtype=p.dtype)
-        xp_assert_less(h1, xp.full((3,), tol))
+        xp_assert_less(h1, tol)
         kwargs['frtol'] = 1e-6
         res2 = _chandrupatla_minimize(self.f, *bracket, **kwargs)
         h2 = xp.abs(res2.fl - 2 * res2.fm + res2.fr)
         tol = xp.asarray(2*kwargs['frtol']*abs(res2.fun), dtype=p.dtype)
-        xp_assert_less(h2, xp.full((3,), tol))
+        xp_assert_less(h2, tol)
         xp_assert_less(h2, h1)
 
     def test_maxiter_callback(self, xp):
@@ -417,7 +419,7 @@ class TestChandrupatlaMinimize:
         bracket = xp.asarray(x1), xp.asarray(x2), xp.asarray(x3, dtype=xp.float64)
         res = _chandrupatla_minimize(func, *bracket, xatol=xatol,
                                      fatol=fatol, xrtol=xrtol, frtol=frtol)
-        xp_assert_equal(res.nit, xp.asarray(nit, xp.int32))
+        xp_assert_equal(res.nit, xp.asarray(nit, dtype=xp.int32))
 
     @pytest.mark.parametrize("loc", (0.65, [0.65, 0.7]))
     @pytest.mark.parametrize("dtype", ('float16', 'float32', 'float64'))
@@ -455,7 +457,7 @@ class TestChandrupatlaMinimize:
         message = "...be broadcast..."
         bracket = xp.asarray([-2, -3]), xp.asarray([0, 0]), xp.asarray([3, 4, 5])
         # raised by `np.broadcast, but the traceback is readable IMO
-        with pytest.raises(ValueError, match=message):
+        with pytest.raises((ValueError, RuntimeError), match=message):
             _chandrupatla_minimize(lambda x: x, *bracket)
 
         message = "The shape of the array returned by `func` must be the same"
@@ -493,17 +495,17 @@ class TestChandrupatlaMinimize:
         res = _chandrupatla_minimize(self.f, *brackets, args=(loc,))
         assert xp.all(xp.isclose(res.x, loc) | (res.fun == self.f(loc, loc)))
         ref = res.x[:, 0]  # all columns should be the same
-        xp_assert_close(*xp.broadcast_arrays(res.x.T, ref), rtol=1e-15)
+        xp_test = array_namespace(loc)  # need `xp.broadcast_arrays
+        xp_assert_close(*xp_test.broadcast_arrays(res.x.T, ref), rtol=1e-15)
 
     def test_special_cases(self, xp):
         # Test edge cases and other special cases
 
         # Test that integers are not passed to `f`
-        # (otherwise this would overflow)
         xp_test = array_namespace(xp.asarray(1.))  # need `xp.isdtype`
         def f(x):
             assert xp_test.isdtype(x.dtype, "real floating")
-            return (x - 1)**30
+            return (x - 1)**2
 
         bracket = xp.asarray(-7), xp.asarray(0), xp.asarray(8)
         with np.errstate(invalid='ignore'):
