@@ -405,7 +405,7 @@ def _chandrupatla_minimize(func, x1, x2, x3, *, args=(), xatol=None,
     fatol = xp.finfo(dtype).smallest_normal if fatol is None else fatol
     frtol = xp.finfo(dtype).smallest_normal if frtol is None else frtol
     xatol = xp.finfo(dtype).smallest_normal if xatol is None else xatol
-    xrtol = xp.sqrt(xp.finfo(dtype).eps) if xrtol is None else xrtol
+    xrtol = math.sqrt(xp.finfo(dtype).eps) if xrtol is None else xrtol
 
     # Ensure that x1 < x2 < x3 initially.
     xs, fs = xp.stack((x1, x2, x3)), xp.stack((f1, f2, f3))
