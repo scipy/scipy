@@ -52,7 +52,7 @@ class AAA:
     rtol : float, optional
         Relative tolerance, defaults to ``eps**0.75``.
     max_terms : int, optional
-        Maximum number of terms in the barycentric representation, defaults to 100.
+        Maximum number of terms in the barycentric representation, defaults to ``100``.
 
     Attributes
     ----------
