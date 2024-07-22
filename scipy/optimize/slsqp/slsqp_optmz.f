@@ -1091,7 +1091,7 @@ C  SOLVE DUAL PROBLEM
 
       IF(mode.NE.1)                 GOTO 50
       mode=4
-      IF(rnorm.LT.ZERO)             GOTO 50
+      IF(rnorm.LE.ZERO)             GOTO 50
 
 C  COMPUTE SOLUTION OF PRIMAL PROBLEM
 
@@ -1876,10 +1876,8 @@ C     FORMS THE DOT PRODUCT OF TWO VECTORS.
 C     USES UNROLLED LOOPS FOR INCREMENTS EQUAL TO ONE.
 C     JACK DONGARRA, LINPACK, 3/11/78.
 
-      DOUBLE PRECISION dx(*),dy(*)
+      DOUBLE PRECISION dx(*),dy(*),dtemp
       INTEGER i,incx,incy,ix,iy,m,mp1,n
-      REAL*16 dxi, dxi1, dxi2, dxi3, dxi4, dyi, dyi1, dyi2, dyi3, dyi4
-      REAL*16 dtemp
 
       ddot_sl = 0.0d0
       dtemp = 0.0d0
@@ -1894,9 +1892,7 @@ C          NOT EQUAL TO 1
       IF(incx.LT.0)ix = (-n+1)*incx + 1
       IF(incy.LT.0)iy = (-n+1)*incy + 1
       DO 10 i = 1,n
-        dxi = dx(ix)
-        dyi = dy(iy)
-        dtemp = dtemp + dxi*dyi
+        dtemp = dtemp + dx(ix)*dy(iy)
         ix = ix + incx
         iy = iy + incy
    10 CONTINUE
@@ -1910,25 +1906,13 @@ C        CLEAN-UP LOOP
    20 m = MOD(n,5)
       IF( m .EQ. 0 ) GO TO 40
       DO 30 i = 1,m
-        dxi = dx(i)
-        dyi = dy(i)
-        dtemp = dtemp + dxi*dyi
+        dtemp = dtemp + dx(i)*dy(i)
    30 CONTINUE
       IF( n .LT. 5 ) GO TO 60
    40 mp1 = m + 1
       DO 50 i = mp1,n,5
-        dxi = dx(i)
-        dxi1 = dx(i + 1)
-        dxi2 = dx(i + 2)
-        dxi3 = dx(i + 3)
-        dxi4 = dx(i + 4)
-        dyi = dy(i)
-        dyi1 = dy(i + 1)
-        dyi2 = dy(i + 2)
-        dyi3 = dy(i + 3)
-        dyi4 = dy(i + 4)
-        dtemp = dtemp + dxi*dyi + dxi1*dyi1 +
-     *   dxi2*dyi2 + dxi3*dyi3 + dxi4*dyi4
+        dtemp = dtemp + dx(i)*dy(i) + dx(i + 1)*dy(i + 1) +
+     *   dx(i + 2)*dy(i + 2) + dx(i + 3)*dy(i + 3) + dx(i + 4)*dy(i + 4)
    50 CONTINUE
    60 ddot_sl = dtemp
       RETURN
