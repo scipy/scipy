@@ -43,12 +43,12 @@ class AAA:
 
     Parameters
     ----------
-    z : 1D array_like, shape (n,)
+    points : 1D array_like, shape (n,)
         1-D array containing values of the independent variable. Values may be real or
         complex but must be finite.
-    f : 1D array_like, shape (n,)
-        Function values ``f(z)`` at `z`. Infinite and NaN value of `f` and corresponding
-        values of `z` will be discarded.
+    values : 1D array_like, shape (n,)
+        Function values ``f(z)`` at `points`. Infinite and NaN value of `values` and
+        corresponding `points` will be discarded.
     rtol : float, optional
         Relative tolerance, defaults to ``eps**0.75``.
     max_terms : int, optional
@@ -86,11 +86,11 @@ class AAA:
         r(z) = n(z)/d(z) =
         \frac{\sum_{j=1}^m\ w_j f_j / (z - z_j)}{\sum_{j=1}^m w_j / (z - z_j)},
 
-    where :math:`z_1,\dots,z_m` are real or complex support points selected from `z`,
-    :math:`f_1,\dots,f_m` are the corresponding real or complex data values from `f`,
-    and :math:`w_1,\dots,w_m` are real or complex weights. The algorithm then proceeds
-    to select the next support point :math:`z_{m+1}` from the remaining unselected
-    points in `z` such that the nonlinear residual
+    where :math:`z_1,\dots,z_m` are real or complex support points selected from
+    `points`, :math:`f_1,\dots,f_m` are the corresponding real or complex data values
+    from `values`, and :math:`w_1,\dots,w_m` are real or complex weights. The algorithm
+    then proceeds to select the next support point :math:`z_{m+1}` from the remaining
+    unselected points in `z` such that the nonlinear residual
     :math:`|f(z_{m+1}) - n(z_{m+1})/d(z_{m+1})|` is maximised. The algorithm terminates
     when this maximum is less than ``rtol * np.linalg.norm(f, ord=np.inf)``. This means
     the interpolation property is only satisfied up to a tolerance. The weights are
@@ -101,7 +101,7 @@ class AAA:
         \text{minimise}|fd - n| \quad \text{subject to} \quad
         \sum_{i=1}^{m+1} w_i = 1,
 
-    over the unselected points in `z`.
+    over the unselected elements of `points`.
 
     References
     ----------
@@ -175,19 +175,19 @@ class AAA:
     >>> ax.legend()
     >>> plt.show()
     """
-    def __init__(self, z, f, *, rtol=None, max_terms=100):
+    def __init__(self, points, values, *, rtol=None, max_terms=100):
         # input validation
-        z = np.asarray(z)
-        f = np.asarray(f)
+        z = np.asarray(points)
+        f = np.asarray(values)
 
         if z.ndim != 1 or f.ndim != 1:
-            raise ValueError("`f` and `z` must be 1-D.")
+            raise ValueError("`points` and `values` must be 1-D.")
 
         if f.size != z.size:
-            raise ValueError("`f` and `z` must be the same size.")
+            raise ValueError("`points` and `values` must be the same size.")
         
         if not np.all(np.isfinite(z)):
-            raise ValueError("`z` must be finite.")
+            raise ValueError("`points` must be finite.")
 
         # Remove infinite or NaN function values and repeated entries
         to_keep = (np.isfinite(f)) & (~np.isnan(f))
