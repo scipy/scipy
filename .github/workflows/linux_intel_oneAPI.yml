@@ -59,24 +59,8 @@ jobs:
           miniforge-version: latest
           use-mamba: true
 
-      - name: Get Date
-        id: get-date
-        run: echo "today=$(/bin/date -u '+%Y%m%d')" >> $GITHUB_OUTPUT
-
-      - name: Cache conda
-        uses: actions/cache@v4
-        env:
-          # Increase this value to reset cache if environment.yml has not changed
-          CACHE_NUMBER: 1
-        with:
-          path: ${{ env.CONDA }}/envs/scipy-dev
-          key:
-            ${{ runner.os }}--${{ steps.get-date.outputs.today }}-conda-${{ env.CACHE_NUMBER }}-${{ hashFiles('environment.yml') }}
-        id: envcache
-
       - name: Update Conda Environment
         run: mamba env update -n scipy-dev -f environment.yml
-        if: steps.envcache.outputs.cache-hit != 'true'
 
       - name: cache install
         id: cache-install
