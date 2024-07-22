@@ -34,7 +34,7 @@ import warnings
 import numpy as np
 
 
-def _extend_mode_to_code(mode):
+def _extend_mode_to_code(mode, is_filter=False):
     """Convert an extension mode to the corresponding integer code.
     """
     if mode == 'nearest':
@@ -47,8 +47,12 @@ def _extend_mode_to_code(mode):
         return 3
     elif mode == 'constant':
         return 4
+    elif mode == 'grid-wrap' and is_filter:
+        return 1
     elif mode == 'grid-wrap':
         return 5
+    elif mode == 'grid-constant' and is_filter:
+        return 4
     elif mode == 'grid-constant':
         return 6
     else:
@@ -117,3 +121,5 @@ def _check_axes(axes, ndim):
     if len(tuple(set(axes))) != len(axes):
         raise ValueError("axes must be unique")
     return axes
+
+
