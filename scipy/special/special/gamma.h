@@ -29,4 +29,9 @@ SPECFUN_HOST_DEVICE inline std::complex<float> gamma(std::complex<float> z) {
     return static_cast<std::complex<float>>(gamma(static_cast<std::complex<double>>(z)));
 }
 
+template <typename T>
+T gamma_ratio(T a, T b) {
+    return std::tgamma(a) / std::tgamma(b);
+}
+
 } // namespace special
