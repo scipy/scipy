@@ -3227,11 +3227,6 @@ def median_abs_deviation(x, axis=0, center=np.median, scale=1.0,
         output data-type is ``np.float64``. Otherwise, the output data-type is
         the same as that of the input.
 
-    Raises
-    ------
-    ValueError
-        If `scale` is not a valid value.
-
     See Also
     --------
     numpy.std, numpy.var, numpy.median, scipy.stats.iqr, scipy.stats.tmean,
@@ -3440,11 +3435,6 @@ def trimboth(a, proportiontocut, axis=0):
         Trimmed version of array `a`. The order of the trimmed content
         is undefined.
 
-    Raises
-    ------
-    ValueError
-        If `proportiontocut` is not in the range [0, 1].
-
     See Also
     --------
     trim_mean
@@ -3614,11 +3604,6 @@ def trim_mean(a, proportiontocut, axis=0):
     -------
     trim_mean : ndarray
         Mean of trimmed array.
-
-    Raises
-    ------
-    ValueError
-        If `proportiontocut` is not in the range [0, 1].
 
     See Also
     --------
@@ -5335,7 +5320,6 @@ def kendalltau(x, y, *, nan_policy='propagate',
     ------
     ValueError
         If `nan_policy` is `omit` and `variant` is not `b`.
-        If `variant` is not either `b` or `c`.
         If `method` is `exact` and there are ties in `x` and `y`.
 
     See Also
