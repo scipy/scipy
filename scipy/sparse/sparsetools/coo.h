@@ -150,15 +150,15 @@ void coo_matvec(const npy_int64 nnz,
 /*
  *
  * Input Arguments:
- *   npy_int64  nnz     - number of nonzeros in A
- *   npy_int64  n_col_B - number of columns in B
- *   I  Ai[nnz]         - row indices
- *   I  Aj[nnz]         - column indices
- *   T  Ax[nnz]         - nonzero values
- *   T  Bx[n_col]       - input matrix flattened
+ *   npy_int64  nnz           - number of nonzeros in A
+ *   npy_int64  n_col_B       - number of columns in B
+ *   I  Ai[nnz]               - row indices
+ *   I  Aj[nnz]               - column indices
+ *   T  Ax[nnz]               - nonzero values
+ *   T  Bx[n_row_B * n_col_B] - input matrix flattened
  *
  * Output Arguments:
- *   T  Yx[n_row]     - output matrix flattened
+ *   T  Yx[n_row_A * n_col_B] - output matrix flattened
  *
  * Notes:
  *   Output array Yx must be preallocated
