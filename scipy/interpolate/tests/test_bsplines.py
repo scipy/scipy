@@ -2011,7 +2011,8 @@ class TestGivensQR:
         n = 10
         x, y, t, k = self._get_xyt(n)
         w = np.arange(1, n+1, dtype=float)
-        A, offset, nc = _bspl._data_matrix(x, t, k, w)
+
+        A, offset, nc = _dierckx.data_matrix(x, t, k, w)
 
         m = x.shape[0]
         a_csr = BSpline.design_matrix(x, t, k)
@@ -2027,7 +2028,7 @@ class TestGivensQR:
         n = 10
         x, y, t, k = self._get_xyt(n)
         y = np.c_[y, y**2]
-        A, offset, nc = _bspl._data_matrix(x, t, k, w=np.ones_like(x))
+        A, offset, nc = _dierckx.data_matrix(x, t, k, np.ones_like(x))
         R = PackedMatrix(A, offset, nc)
         _dierckx.qr_reduce(A, offset, nc, y)
 

@@ -22,16 +22,6 @@ cdef extern from "src/__fitpack.h" namespace "fitpack":
                            ssize_t prev_l,
                            int extrapolate
     ) noexcept nogil
-    void data_matrix(const double *xptr, ssize_t m,
-                       const double *tptr, ssize_t len_t,
-                       int k,
-                       const double *wptr,
-                       double *Aptr,    # outputs
-                       ssize_t *offset_ptr,
-                       Py_ssize_t *nc,
-                       double *wrk
-    ) except+ nogil
-
     void _evaluate_spline(const double *tptr, ssize_t len_t,
                           const double *cptr, ssize_t n, ssize_t m,
                           ssize_t k,
@@ -760,31 +750,3 @@ def _colloc_nd(const double[:, ::1] xvals,
 
     return np.asarray(csr_data), np.asarray(csr_indices), csr_indptr
 
-
-# ---------------------------
-# wrappers for fitpack repro
-# ---------------------------
-def _data_matrix(const double[::1] x,
-                 const double[::1] t,
-                 int k,
-                 const double[::1] w):
-    cdef:
-         ssize_t m = x.shape[0]
-         double[:, ::1] A = np.empty((m, k+1), dtype=float)
-         ssize_t[::1] offset = np.zeros(m, dtype=np.intp)
-         double[::1] wrk = np.empty(2*k+2, dtype=float)
-         ssize_t nc
-
-    if w.shape[0] != x.shape[0]:
-        raise ValueError(f"{len(w) =} != {len(x) =}.")
-
-    data_matrix(&x[0], m,
-                &t[0], t.shape[0],
-                k,
-                &w[0],
-                &A[0, 0],    # output: (A, offset, nc)
-                &offset[0],
-                &nc,
-                &wrk[0],     # work array
-    )
-    return np.asarray(A), np.asarray(offset), int(nc)

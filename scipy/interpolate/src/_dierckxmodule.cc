@@ -47,28 +47,11 @@ static PyObject*
 py_fpknot(PyObject* self, PyObject *args)
 {
     PyObject *py_x=NULL, *py_t=NULL, *py_residuals=NULL;
-    int k;   // XXX: python int => "i" in ParseTuple? 
+    int k;
 
     if(!PyArg_ParseTuple(args, "OOiO", &py_x, &py_t, &k, &py_residuals)) {
         return NULL;
     }
-
-    // XXX: Do not need to DECREF py_x etc from PyArg_ParseTuple?
-
-
-/*
-    // XXX: overkill? Mimic cython's `double[::1] x` etc --- replaced by check_array stanza below
-    PyArrayObject *a_x=NULL, *a_t=NULL, *a_residuals=NULL;
-    a_x = (PyArrayObject *)PyArray_ContiguousFromObject(py_x, NPY_DOUBLE, 1, 1);
-    a_t = (PyArrayObject *)PyArray_ContiguousFromObject(py_t, NPY_DOUBLE, 1, 1);
-    a_residuals = (PyArrayObject *)PyArray_ContiguousFromObject(py_residuals, NPY_DOUBLE, 1, 1);
-    if (a_x == NULL || a_t == NULL || a_residuals == NULL) {
-        Py_XDECREF(a_x);
-        Py_XDECREF(a_t);
-        Py_XDECREF(a_residuals);
-        return NULL;
-    }
-*/
 
     if (!(check_array(py_x, 1, NPY_DOUBLE) &&
           check_array(py_t, 1, NPY_DOUBLE) &&
@@ -89,30 +72,25 @@ py_fpknot(PyObject* self, PyObject *args)
         std::string msg = ("len(x) = " + std::to_string(len_x) + " != " +
                           std::to_string(len_r) + " = len(residuals)");
         PyErr_SetString(PyExc_ValueError, msg.c_str());
-    //    Py_XDECREF(a_x);
-    //    Py_XDECREF(a_t);
-    //    Py_XDECREF(a_residuals);
         return NULL;
     }
 
     // heavy lifting happens here
-    double new_knot = fitpack::fpknot(
-        static_cast<const double *>(PyArray_DATA(a_x)), PyArray_DIM(a_x, 0),
-        static_cast<const double *>(PyArray_DATA(a_t)), PyArray_DIM(a_t, 0),
-        k,
-        static_cast<const double *>(PyArray_DATA(a_residuals))
-    );
-
-    // XXX: need to DECREF a_* variables? Apparently not unless PyArray_ContiguousFromObject
- //   Py_XDECREF(a_x);
- //   Py_XDECREF(a_t);
- //   Py_XDECREF(a_residuals);
-
-    return PyFloat_FromDouble(new_knot);
+    try {
+        double new_knot = fitpack::fpknot(
+            static_cast<const double *>(PyArray_DATA(a_x)), PyArray_DIM(a_x, 0),
+            static_cast<const double *>(PyArray_DATA(a_t)), PyArray_DIM(a_t, 0),
+            k,
+            static_cast<const double *>(PyArray_DATA(a_residuals))
+        );
+        return PyFloat_FromDouble(new_knot);
+    }
+    catch (const std::exception& e) {
+        PyErr_SetString(PyExc_RuntimeError, e.what());
+        return NULL;        
+    };
 }
 
-
-// XXX: rework a la py_fpknot: no extra allocations, no DECREFs
 
 /*
  * def _fpback(const double[:, ::1] R, ssize_t nc,  # (R, offset, nc) triangular => offset is range(nc)
@@ -156,19 +134,25 @@ py_fpback(PyObject* self, PyObject *args)
     npy_intp dims[2] = {nc, PyArray_DIM(a_y, 1)};
     PyArrayObject *a_c = (PyArrayObject *)PyArray_SimpleNew(2, dims, NPY_DOUBLE);
     if (a_c == NULL) {
-        // XXX: 1) is the C contiguity guaranteed? 2) DECREF on failure?
         PyErr_NoMemory();
         return NULL;     
     }
 
-    // heavy lifting happens here
-    fitpack::fpback(static_cast<const double *>(PyArray_DATA(a_R)), m, nz,
-                    nc,
-                    static_cast<const double *>(PyArray_DATA(a_y)), PyArray_DIM(a_y, 1),
-                    static_cast<double *>(PyArray_DATA(a_c))
-    );
+    try {
+        // heavy lifting happens here
+        fitpack::fpback(static_cast<const double *>(PyArray_DATA(a_R)), m, nz,
+                        nc,
+                        static_cast<const double *>(PyArray_DATA(a_y)), PyArray_DIM(a_y, 1),
+                        static_cast<double *>(PyArray_DATA(a_c))
+        );
+    }
+    catch (const std::exception& e) {
+        PyErr_SetString(PyExc_RuntimeError, e.what());
+        return NULL;
+    }
 
-    return (PyObject *)a_c;  // XXX like this or incref?
+
+    return (PyObject *)a_c;
 }
 
 
@@ -183,8 +167,9 @@ py_qr_reduce(PyObject* self, PyObject *args, PyObject *kwargs)
 {
     PyObject *py_a=NULL, *py_offs=NULL, *py_y=NULL;
     Py_ssize_t nc;
-    Py_ssize_t startrow=1;  // XXX: optional, keeps the value intact if not given?
+    Py_ssize_t startrow=1; // The default is one (start from the 2nd row)
 
+    // XXX: if the overhead is large, flip back to positional only arguments
     const char *kwlist[] = {"a", "offset", "nc", "y", "startrow", NULL};
 
     if(!PyArg_ParseTupleAndKeywords(args, kwargs, "OOnO|n", const_cast<char **>(kwlist),
@@ -193,7 +178,7 @@ py_qr_reduce(PyObject* self, PyObject *args, PyObject *kwargs)
     }
 
     if (!(check_array(py_a, 2, NPY_DOUBLE) &&
-          check_array(py_offs, 1, NPY_LONG) && // XXX: typecode for ssize_t (==ptrdiff_t)?
+          check_array(py_offs, 1, NPY_INTP) && // XXX: typecode for ssize_t (==ptrdiff_t)?
           check_array(py_y, 2, NPY_DOUBLE))) {
         return NULL;
     }
@@ -202,22 +187,103 @@ py_qr_reduce(PyObject* self, PyObject *args, PyObject *kwargs)
     PyArrayObject *a_y = (PyArrayObject *)py_y;
     PyArrayObject *a_offs = (PyArrayObject *)py_offs;
 
-    // heavy lifting happens here, *in-place*
-    fitpack::qr_reduce(
-        // a(m, nz), packed
-        static_cast<double *>(PyArray_DATA(a_a)), PyArray_DIM(a_a, 0), PyArray_DIM(a_a, 1),
-        // offset(m)
-        static_cast<ssize_t *>(PyArray_DATA(a_offs)),
-        // if a were dense, it would have been a(m, nc)
-        nc,
-        // y(m, ydim2)
-        static_cast<double *>(PyArray_DATA(a_y)), PyArray_DIM(a_y, 1),
-        startrow
-    );
+    try {
+        // heavy lifting happens here, *in-place*
+        fitpack::qr_reduce(
+            // a(m, nz), packed
+            static_cast<double *>(PyArray_DATA(a_a)), PyArray_DIM(a_a, 0), PyArray_DIM(a_a, 1),
+            // offset(m)
+            static_cast<ssize_t *>(PyArray_DATA(a_offs)),
+            // if a were dense, it would have been a(m, nc)
+            nc,
+            // y(m, ydim2)
+            static_cast<double *>(PyArray_DATA(a_y)), PyArray_DIM(a_y, 1),
+            startrow
+        );
+    }
+    catch (const std::exception& e) {
+        PyErr_SetString(PyExc_RuntimeError, e.what());
+        return NULL;
+    }
 
-    //Py_DECREF(a_offs);
-    // XXX: a & y modified in-place: need to incref?
     Py_RETURN_NONE;
+}
+
+
+
+/*
+ * def _data_matrix(const double[::1] x,
+ *                  const double[::1] t,
+ *                  int k,
+ *                  const double[::1] w):
+ */
+static PyObject*
+py_data_matrix(PyObject *self, PyObject *args)
+{
+    PyObject *py_x=NULL, *py_t=NULL, *py_w=NULL;
+    npy_intp nc;
+    int k;   // NB: declare as npy_intp, and it's garbage
+
+    if(!PyArg_ParseTuple(args, "OOiO", &py_x, &py_t, &k, &py_w)) {
+        return NULL;
+    }
+
+    if (!(check_array(py_x, 1, NPY_DOUBLE) &&
+          check_array(py_t, 1, NPY_DOUBLE) &&
+          check_array(py_w, 1, NPY_DOUBLE))) {
+        return NULL;
+    }
+
+    PyArrayObject *a_x = (PyArrayObject *)py_x;
+    PyArrayObject *a_t = (PyArrayObject *)py_t;
+    PyArrayObject *a_w = (PyArrayObject *)py_w;
+
+    // sanity check sizes
+    if (PyArray_DIM(a_w, 0) != PyArray_DIM(a_x, 0)) {
+        std::string msg = ("len(w) = " + std::to_string(PyArray_DIM(a_w, 0)) + " != " +
+                           "len(x) = " + std::to_string(PyArray_DIM(a_x, 0)));
+        PyErr_SetString(PyExc_ValueError, msg.c_str());
+        return NULL;
+    }
+
+    // allocate temp and output arrays
+    npy_intp m = PyArray_DIM(a_x, 0);
+    npy_intp dims[2] = {m, k+1};
+    PyArrayObject *a_A = (PyArrayObject*)PyArray_EMPTY(2, dims, NPY_DOUBLE, 0);
+    // np.zeros(m, dtype=np.intp)
+    PyArrayObject *a_offs = (PyArrayObject*)PyArray_ZEROS(1, dims, NPY_INTP, 0);
+    double *wrk = (double *)malloc((2*k+2)*sizeof(double));
+
+    if ((a_A == NULL) || (a_offs == NULL) || (wrk == NULL)) {
+        PyErr_NoMemory();
+        Py_XDECREF(a_A);
+        Py_XDECREF(a_offs);
+        free(wrk);
+        return NULL;
+    }
+
+    try {
+        // heavy lifting happens here
+        fitpack::data_matrix(
+            static_cast<const double *>(PyArray_DATA(a_x)), m,
+            static_cast<const double *>(PyArray_DATA(a_t)), PyArray_DIM(a_t, 0),
+            k,
+            static_cast<const double *>(PyArray_DATA(a_w)),
+            static_cast<double *>(PyArray_DATA(a_A)),     // output: (A, offset, nc)
+            static_cast<npy_intp*>(PyArray_DATA(a_offs)),   // XXX: callee expects ssize_t*
+            &nc,
+            wrk
+        );
+
+        // np.asarray(A), np.asarray(offset), int(nc)
+        PyObject *py_nc = PyLong_FromSsize_t(static_cast<Py_ssize_t>(nc));
+        return Py_BuildValue("(NNN)", PyArray_Return(a_A), PyArray_Return(a_offs), py_nc);
+    }
+    catch (const std::exception& e) {
+        free(wrk);
+        PyErr_SetString(PyExc_RuntimeError, e.what());
+        return NULL;
+    }
 }
 
 
@@ -231,6 +297,8 @@ static PyMethodDef DierckxMethods[] = {
      "backsubstitution, triangular matrix"},
     {"qr_reduce", (PyCFunction)py_qr_reduce, METH_VARARGS | METH_KEYWORDS,
      "row-by-row QR triangularization"},
+    {"data_matrix", py_data_matrix, METH_VARARGS,
+     "(m, k+1) array of non-zero b-splines"},
     //...
     {NULL, NULL, 0, NULL}        /* Sentinel */
 };
