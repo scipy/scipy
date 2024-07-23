@@ -439,7 +439,7 @@ problems_scalar_output = [
             np.array([[1], [1], [1]]),
             np.array([[1], [1], [1]]),
         ),
-    )
+    ),
 ]
 
 

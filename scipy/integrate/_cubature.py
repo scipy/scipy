@@ -2,7 +2,6 @@ import math
 import heapq
 import itertools
 
-from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from functools import cached_property
 
@@ -109,76 +108,203 @@ class CubatureResult:
     rtol: float
 
 
-class Cubature(ABC):
-    @abstractmethod
+class Cubature:
+    """
+    A generic interface for numerical cubature algorithms.
+
+    Finds an estimate for the integral of ``f`` over a (hyper)rectangular region
+    described by two points ``a`` and ``b``, and optionally finds an estimate for the
+    error of this approximation.
+
+    If the cubature rule doesn't support error estimation, error_estimate will return
+    None.
+    """
+
     def estimate(self, f, a, b, args=()):
         """
-        Calculate estimate of integral of f in region described by corners a and b.
+        Calculate estimate of integral of ``f`` in region described by corners ``a``
+        and ``b``.
 
-        f should accept arrays of shape (input_dim, num_eval_points) and return arrays
-        of shape (output_dim_1, ..., output_dim_n, num_eval_points).
+        Parameters
+        ----------
+        f : callable
+            Function ``f(x, *args)`` to integrate. ``f`` should accept arrays ``x`` of
+            shape ``(ndim, eval_points)`` and return arrays of shape ``(output_dim_1,
+            ..., output_dim_n, eval_points)``.
+
+        a, b : ndarray
+            Lower and upper limits of integration.
+
+        args : tuple, optional
+            Extra arguments to pass to ``f``, if any.
+
+        Returns
+        -------
+        est : ndarray
+            Result of estimation. If ``f`` returns arrays of shape ``(output_dim_1,
+            ..., output_dim_n, eval_points)``, then ``err_est`` will be of shape
+            ``(output_dim_1, ..., output_dim_n)``.
         """
-        pass
+        raise NotImplementedError
 
-    @abstractmethod
     def error_estimate(self, f, a, b, args=()):
         """
-        Calculate error estimate for the integral of f in region described by corners a
-        and b.
+        Calculate the error estimate of this cubature rule for the integral of ``f`` in
+        the region described by corners ``a`` and ``b``.
 
-        f should accept arrays of shape (input_dim, num_eval_points) and return arrays
-        of shape (output_dim_1, ..., output_dim_n, num_eval_points).
+        If the cubature rule doesn't support error estimation, this will be ``None``.
+
+        Parameters
+        ----------
+        f : callable
+            Function ``f(x, *args)`` to integrate. ``f`` should accept arrays ``x`` of
+            shape ``(ndim, eval_points)`` and return arrays of shape ``(output_dim_1,
+            ..., output_dim_n, eval_points)``.
+
+        a, b : ndarray
+            Lower and upper limits of integration.
+
+        args : tuple, optional
+            Extra arguments to pass to ``f``, if any.
+
+        Returns
+        -------
+        err_est : ndarray
+            Estimate of the error. If the cubature rule doesn't support error
+            estimation, then this will be ``None``. If error estimation is supported and
+            ``f`` returns arrays of shape ``(output_dim_1, ..., output_dim_n,
+            eval_points)``, then ``err_est`` will be of shape ``(output_dim_1, ...,
+            output_dim_n)``.
         """
-        pass
+        return None
 
 
 class FixedCubature(Cubature):
+    """
+    A numerical cubature rule implemented as the weighted sum of function evaluations.
+
+    See Also
+    --------
+    NewtonCotes, DualEstimateCubature
+    """
+
     @property
     def nodes(self):
+        """
+        Nodes at which to evaluate the function being integrated. For an n-dim function,
+        these will be of shape ``(ndim, num_nodes)``.
+
+        Nodes should be for integrals over the region ``[-1, 1]^n``.
+        """
+
         raise NotImplementedError
 
     @property
     def weights(self):
+        """
+        Weights to multiply function evaluations at nodes in the estimate. For an n-dim
+        function, these will be of shape ``(num_nodes,)``.
+        """
+
         raise NotImplementedError
 
     def estimate(self, f, a, b, args=()):
-        # The underlying cubature rule is presumed to be for the hypercube [0, 1]^n.
+        """
+        Calculate estimate of integral of ``f`` in region described by corners ``a``
+        and ``b`` as ``sum(weights * f(nodes))``. Nodes and weights will automatically
+        be adjusted from calculating integrals over [-1, 1]^n to [a, b].
+
+        Parameters
+        ----------
+        f : callable
+            Function ``f(x, *args)`` to integrate. ``f`` should accept arrays ``x`` of
+            shape ``(ndim, eval_points)`` and return arrays of shape ``(output_dim_1,
+            ..., output_dim_n, eval_points)``.
+
+        a, b : ndarray
+            Lower and upper limits of integration, specified as arrays of shape
+            ``(ndim,)``. Note that ``f`` accepts arrays of shape ``(ndim, eval_points)``
+            so in order to calculate ``f(a)``, it is necessary to add an extra axis
+            ``f(a[:, np.newaxis])``.
+
+        args : tuple, optional
+            Extra arguments to pass to ``f``, if any.
+
+        Returns
+        -------
+        est : ndarray
+            Result of estimation. If ``f`` returns arrays of shape ``(output_dim_1,
+            ..., output_dim_n, eval_points)``, then ``err_est`` will be of shape
+            ``(output_dim_1, ..., output_dim_n)``.
+        """
+
+        # Since f accepts arrays of shape (ndim, eval_points), it is necessary to
+        # add an extra axis to a and b so that ``f`` can be evaluated there.
+        a = a[:, np.newaxis]
+        b = b[:, np.newaxis]
+        lengths = b - a
+
+        # The underlying cubature rule is for the hypercube [-1, 1]^n.
         #
         # To handle arbitrary regions of integration, it's necessary to apply a linear
         # change of coordinates to map each interval [a[i], b[i]] to [-1, 1].
-        a = a[:, np.newaxis]
-        b = b[:, np.newaxis]
-
-        lengths = b - a
-
-        # nodes have shape (input_dim, eval_points)
         nodes = (self.nodes + 1) * (lengths / 2) + a
 
         # Also need to multiply the weights by a scale factor equal to the determinant
         # of the Jacobian for this coordinate change.
         weight_scale_factor = math.prod(lengths / 2)
-
-        # weights have shape (eval_points,)
         weights = self.weights * weight_scale_factor
 
-        # f(nodes) will have shape (eval_points, output_dim)
-        # integral_estimate should have shape (output_dim,)
-        estimate = np.sum(
+        # f(nodes) will have shape (output_dim_1, ..., output_dim_n, num_nodes)
+        # Summing along the last axis means estimate will shape (output_dim_1, ...,
+        # output_dim_n)
+        est = np.sum(
             weights * f(nodes, *args),
             axis=-1
         )
 
-        return estimate
+        return est
 
-    # TODO: evaluate whether this is correct
     def error_estimate(self, f, a, b, args=()):
+        # A fixed cubature rule has no built-in error estimation in general.
         return None
 
 
 class DualEstimateCubature(Cubature):
     """
     A cubature rule with a higher-order and lower-order estimate, and where the
-    difference between the two is used to estimate the error.
+    difference between the two estimates is used as an estimate for the error.
+
+    Attributes
+    ----------
+    higher : Cubature
+        Higher-order cubature to use as the estimate.
+
+    lower : Cubature
+        Lower-order cubature. The difference between ``higher.estimate`` and
+        ``lower.estimate`` is used as an estimate for the error.
+
+    See Also
+    --------
+    GaussKronrod
+
+    Examples
+    --------
+    Newton-Cotes quadrature doesn't come with any error estimation built in. It is
+    possible to give it an error estimator by creating a DualEstimateCubature which
+    takes the difference between 10-node Newton-Cotes and 8-node Newton-Cotes:
+
+    >>> import numpy as np
+    >>> from scipy.integrate._cubature import *
+    >>> def f(x):
+    ...     return np.sin(np.sqrt(x))
+    >>> rule = NewtonCotes(10)
+    >>> a, b = np.array([0]), np.array([np.pi * 2])
+    >>> rule.error_estimate(f, a, b) is None
+     True
+    >>> rule_with_err_est = DualEstimateCubature(NewtonCotes(10), NewtonCotes(8))
+    >>> rule_with_err_est.error_estimate(f, a, b)
+     array([6.21045267])
     """
 
     def __init__(self, higher, lower):
@@ -189,21 +315,77 @@ class DualEstimateCubature(Cubature):
         return self.higher.estimate(f, a, b, args)
 
     def error_estimate(self, f, a, b, args=()):
-        # Take the difference between the higher and lower estimate to obtain estimate
-        # for the error.
         return np.abs(
             self.higher.estimate(f, a, b, args) - self.lower.estimate(f, a, b, args)
         )
 
 
 class GaussKronrod(DualEstimateCubature):
+    """
+    Gauss-Kronrod cubature. Gauss-Kronrod rules consist of two cubature rules, one
+    higher-order and one lower-order. The higher-order rule is used as the estimate of
+    the integral and the difference between them is used as an estimate for the error.
+
+    Gauss-Kronrod is a 1D rule. To use it for multidimensional integrals, it will be
+    necessary to take the Product of multiple Gauss-Kronrod rules. See Examples.
+
+    For n-node Gauss-Kronrod, the lower-order rule has ``n//2`` nodes, which are the
+    ordinary Gauss-Legendre nodes with corresponding weights. The higher-order rule has
+    ``n`` nodes, ``n//2`` of which are the same as the lower-order rule and the
+    remaining nodes are the Kronrod extension of those nodes.
+
+    Parameters
+    ----------
+    npoints : int
+        Number of nodes for the higher-order rule.
+
+    Attributes
+    ----------
+    higher : Cubature
+        Higher-order rule.
+
+    lower : Cubature
+        Lower-order rule.
+
+    Examples
+    --------
+    Evaluate a 1D integral. Note in this example that ``f`` returns an array, so the
+    estimates will also be arrays, despite the fact that this is a 1D problem.
+
+    >>> import numpy as np
+    >>> from scipy.integrate._cubature import *
+    >>> def f(x):
+    ...     return np.cos(x)
+    >>> rule = GaussKronrod(21) # Use 21-point GaussKronrod
+    >>> a, b = np.array([0]), np.array([1])
+    >>> rule.estimate(f, a, b) # True value sin(1), approximately 0.84147
+     array([0.84147098])
+    >>> rule.error_estimate(f, a, b)
+     array([1.11022302e-16])
+
+    Evaluate a 2D integral. Note that in this example ``f`` returns a float, so the
+    estimates will also be floats.
+
+    >>> import numpy as np
+    >>> from scipy.integrate._cubature import *
+    >>> def f(x):
+    ...     # f(x) = cos(x_1) + cos(x_2)
+    ...     return np.sum(np.cos(x), axis=0)
+    >>> rule = Product([GaussKronrod(15), GaussKronrod(15)]) # Use 15-point GaussKronrod
+    >>> a, b = np.array([0, 0]), np.array([1, 1])
+    >>> rule.estimate(f, a, b) # True value 2*sin(1), approximately 1.6829
+     np.float64(1.682941969615793)
+    >>> rule.error_estimate(f, a, b)
+     np.float64(2.220446049250313e-16)
+    """
+
     def __init__(self, npoints):
         if npoints != 15 and npoints != 21:
             raise Exception("Gauss-Kronrod quadrature is currently only supported for \
-                            15 or 21 nodes")
+15 or 21 nodes")
 
         self.higher = self._Higher(npoints)
-        self.lower = self._Lower(npoints)
+        self.lower = self._Lower(npoints//2)
 
     class _Higher(FixedCubature):
         def __init__(self, npoints):
@@ -305,8 +487,7 @@ class GaussKronrod(DualEstimateCubature):
 
         @cached_property
         def nodes(self):
-            if self.npoints == 21:
-                # 21//2 = 10-point nodes
+            if self.npoints == 10:
                 return np.array([[
                     0.973906528517171720077964012084452,
                     0.865063366688984510732096688423493,
@@ -319,8 +500,7 @@ class GaussKronrod(DualEstimateCubature):
                     -0.865063366688984510732096688423493,
                     -0.973906528517171720077964012084452,
                 ]])
-            elif self.npoints == 15:
-                # 15//2 = 7-point nodes
+            elif self.npoints == 7:
                 return np.array([[
                     0.949107912342758524526189684047851,
                     0.741531185599394439863864773280788,
@@ -333,8 +513,7 @@ class GaussKronrod(DualEstimateCubature):
 
         @cached_property
         def weights(self):
-            if self.npoints == 21:
-                # 10-point weights
+            if self.npoints == 10:
                 return np.array([
                     0.066671344308688137593568809893332,
                     0.149451349150580593145776339657697,
@@ -347,8 +526,7 @@ class GaussKronrod(DualEstimateCubature):
                     0.149451349150580593145776339657697,
                     0.066671344308688137593568809893332,
                 ])
-            else:
-                # 7-point weights
+            elif self.npoints == 7:
                 return np.array([
                     0.129484966168869693270611432679082,
                     0.279705391489276667901467771423780,
@@ -361,11 +539,73 @@ class GaussKronrod(DualEstimateCubature):
 
 
 class NewtonCotes(FixedCubature):
+    """
+    Newton-Cotes cubature. Newton-Cotes rules consist of function evaluations at equally
+    spaced nodes.
+
+    Newton-Cotes has no error estimator. It is possible to give it an error estimator
+    by using DualEstimateCubature to estimate the error as the difference between two
+    Newton-Cotes rules. See Examples.
+
+    Newton-Cotes is a 1D rule. To use it for multidimensional integrals, it will be
+    necessary to take the product of multiple Newton-Cotes rules. See Examples.
+
+    Parameters
+    ----------
+    npoints : int
+        Number of equally spaced evaluation points.
+
+    open : bool, default=False
+        Whether this should be an open rule. Open rules do not include the endpoints
+        as nodes.
+
+    Attributes
+    ----------
+    npoints : int
+        Number of equally spaced evaluation points.
+
+    open : bool, default=False
+        Whether this is an open rule. Open rules do not include the endpoints as nodes.
+
+    Examples
+    --------
+    Evaluating a simple integral, first without error estimation and then with error
+    estimation:
+
+    >>> import numpy as np
+    >>> from scipy.integrate._cubature import *
+    >>> def f(x):
+    ...     return np.sin(np.sqrt(x))
+    >>> rule = NewtonCotes(10)
+    >>> a, b = np.array([0]), np.array([np.pi * 2])
+    >>> rule.estimate(f, a, b) # Very inaccuracte
+     array([0.60003617])
+    >>> rule.error_estimate(f, a, b) is None
+     True
+    >>> rule_with_err_est = DualEstimateCubature(NewtonCotes(10), NewtonCotes(8))
+    >>> rule_with_err_est.error_estimate(f, a, b) # Error is high
+     array([6.21045267])
+
+    Evaluating a 2D integral, using the product of NewtonCotes with an error estimator:
+
+    >>> import numpy as np
+    >>> from scipy.integrate._cubature import *
+    >>> def f(x):
+    ...     # f(x) = cos(x_1) + cos(x_2)
+    ...     return np.sum(np.cos(x), axis=0)
+    >>> rule_with_err_est = DualEstimateCubature(NewtonCotes(10), NewtonCotes(8))
+    >>> rule_2d = Product([rule_with_err_est, rule_with_err_est])
+    >>> a, b = np.array([0, 0]), np.array([1, 1])
+    >>> rule_2d.estimate(f, a, b) # True value 2*sin(1), approximately 1.6829
+     np.float64(1.6829419696151342)
+    >>> rule_2d.error_estimate(f, a, b)
+     np.float64(6.823492881835591e-10)
+    """
+
     def __init__(self, npoints, open=False):
         if npoints < 2:
-            # TODO: check if there really is a 1-point Newton-Cotes rule?
             raise Exception(
-                "At least 2 points required for Newton Cotes"
+                "At least 2 points required for Newton-Cotes cubature"
             )
 
         self.npoints = npoints
