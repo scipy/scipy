@@ -164,8 +164,6 @@ void coo_matvec(const npy_int64 nnz,
  *
  * Notes:
  *   Output array Yx must be preallocated
- *
- *   Complexity: Linear.  Specifically O(nnz(A))
  * 
  */
 template <class I, class T>

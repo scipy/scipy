@@ -594,15 +594,12 @@ class _coo_base(_data_matrix, _minmax_mixin):
             row = np.zeros_like(col)
         else:
             raise NotImplementedError(
-                f"coo_matvec not implemented for ndim={self.ndim}")
-
+                f"coo_matmat_dense not implemented for ndim={self.ndim}")
+  
         result = np.zeros(result_shape, dtype=result_dtype)
-        # for i, other_col in enumerate(other.T):
-        #     coo_matvec(self.nnz, row, col, self.data, other_col, result[i:i + 1])
-        # return result.T.view(type=type(other))
-
         coo_matmat_dense(self.nnz, other.shape[-1], row, col, self.data, np.concatenate(other), result)
-        return result
+        return result.view(type=type(other))
+    
 
 def _ravel_coords(coords, shape, order='C'):
     """Like np.ravel_multi_index, but avoids some overflow issues."""
