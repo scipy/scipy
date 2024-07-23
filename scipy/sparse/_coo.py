@@ -98,6 +98,9 @@ class _coo_base(_data_matrix, _minmax_mixin):
                 self.data = M[coords]
                 self.has_canonical_format = True
 
+        if len(self._shape) > 2:
+            self.coords = tuple(idx.astype(np.int64, copy=False) for idx in self.coords)
+
         if dtype is not None:
             newdtype = getdtype(dtype)
             self.data = self.data.astype(newdtype, copy=False)
