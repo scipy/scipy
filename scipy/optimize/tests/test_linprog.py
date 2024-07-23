@@ -1864,6 +1864,7 @@ class LinprogHiGHSTests(LinprogCommonTests):
         # non-zero RHS
         assert np.allclose(res.ineqlin.marginals @ (b_ub - A_ub @ res.x), 0)
 
+    @pytest.mark.xfail(reason='Upstream / Wrapper issue, see gh-20589')
     def test_bug_20336(self):
         """
         Test that `linprog` now solves a poorly-scaled problem
