@@ -229,7 +229,7 @@ def test_1d_add_dense():
     den_b = np.array([0, 1, 2, 3])
     exp = den_a + den_b
     res = coo_array(den_a) + den_b
-    assert type(res) == type(exp)
+    assert type(res) is type(exp)
     assert_equal(res, exp)
 
 
@@ -256,7 +256,7 @@ def test_1d_matmul_multivector():
     other = np.array([[0, 1, 2, 3], [3, 2, 1, 0]]).T
     exp = den @ other
     res = coo_array(den) @ other
-    assert type(res) == type(exp)
+    assert type(res) is type(exp)
     assert_equal(res, exp)
 
 
