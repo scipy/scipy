@@ -1846,7 +1846,7 @@ def _lsq_solve_qr(x, y, t, k, w):
     assert y.ndim == 2
 
     y_w = y * w[:, None]
-    A, offset, nc = _bspl._data_matrix(x, t, k, w)
+    A, offset, nc = _dierckx.data_matrix(x, t, k, w)
     _dierckx.qr_reduce(A, offset, nc, y_w)         # modifies arguments in-place
     c = _dierckx.fpback(A, nc, y_w)
 
