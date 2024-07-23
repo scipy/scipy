@@ -598,7 +598,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
   
         result = np.zeros(result_shape, dtype=result_dtype)
         coo_matmat_dense(self.nnz, other.shape[-1], row, col,
-                         self.data, np.concatenate(other), result)
+                         self.data, other.ravel('C'), result)
         return result.view(type=type(other))
     
 
