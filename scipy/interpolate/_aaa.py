@@ -50,7 +50,9 @@ class AAA:
         Function values ``f(z)`` at `points`. Infinite and NaN value of `values` and
         corresponding `points` will be discarded.
     rtol : float, optional
-        Relative tolerance, defaults to ``eps**0.75``.
+        Relative tolerance, defaults to ``eps**0.75``. If a small subset of the entries
+        in `values` are much larger than the rest the default tolerance may be too
+        loose. 
     max_terms : int, optional
         Maximum number of terms in the barycentric representation, defaults to ``100``.
 
@@ -65,7 +67,8 @@ class AAA:
     weights : array
         Weights of the barycentric approximation.
     errors : array
-        Error :math:`|f(z) - r(z)|_\infty` over `z` in the successive iterations of AAA.
+        Error :math:`|f(z) - r(z)|_\infty` over `points` in the successive iterations
+        of AAA.
     
     Warns
     -----
