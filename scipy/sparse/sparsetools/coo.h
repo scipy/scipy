@@ -148,8 +148,6 @@ void coo_matvec(const npy_int64 nnz,
 
 
 /*
- * Compute Y += A*X for COO matrix A and dense vectors X,Y
- *
  *
  * Input Arguments:
  *   npy_int64  nnz     - number of nonzeros in A
