@@ -597,7 +597,8 @@ class _coo_base(_data_matrix, _minmax_mixin):
                 f"coo_matmat_dense not implemented for ndim={self.ndim}")
   
         result = np.zeros(result_shape, dtype=result_dtype)
-        coo_matmat_dense(self.nnz, other.shape[-1], row, col, self.data, np.concatenate(other), result)
+        coo_matmat_dense(self.nnz, other.shape[-1], row, col,
+                         self.data, np.concatenate(other), result)
         return result.view(type=type(other))
     
 
