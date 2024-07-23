@@ -1,3 +1,157 @@
+/*
+ * Copyright (C) 2024 SciPy developers
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * a. Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ * b. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * c. Names of the SciPy Developers may not be used to endorse or promote
+ *    products derived from this software without specific prior written
+ *    permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDERS OR CONTRIBUTORS
+ * BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY,
+ * OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
+ * THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
+/*
+ *
+ * This file is a C translation of the Fortran code known as QUADPACK written by
+ * R. Piessens, E. de Doncker-Kapenga, C. Überhuber , and D. Kahaner with the
+ * original description below.
+ *
+ */
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ *
+ * QUADPACK is a FORTRAN subroutine package for the numerical
+ * computation of definite one-dimensional integrals. It originated
+ * from a joint project of R. Piessens and E. de Doncker (Appl.
+ * Math. and Progr. Div.- K.U.Leuven, Belgium), C. Ueberhuber (Inst.
+ * Fuer Math.- Techn.U.Wien, Austria), and D. Kahaner (Nation. Bur.
+ * of Standards- Washington D.C., U.S.A.).
+ * The routine names for the DOUBLE PRECISION versions are preceded
+ * by the letter D.
+ *
+ * - QNG  : Is a simple non-adaptive automatic integrator, based on
+ *          a sequence of rules with increasing degree of algebraic
+ *          precision (Patterson, 1968).
+ *
+ * - QAG  : Is a simple globally adaptive integrator using the
+ *          strategy of Aind (Piessens, 1973). It is possible to
+ *          choose between 6 pairs of Gauss-Kronrod quadrature
+ *          formulae for the rule evaluation component. The pairs
+ *          of high degree of precision are suitable for handling
+ *          integration difficulties due to a strongly oscillating
+ *          integrand.
+ *
+ * - QAGS : Is an integrator based on globally adaptive interval
+ *          subdivision in connection with extrapolation (de Doncker,
+ *          1978) by the Epsilon algorithm (Wynn, 1956).
+ *
+ * - QAGP : Serves the same purposes as QAGS, but also allows
+ *          for eventual user-supplied information, i.e. the
+ *          abscissae of internal singularities, discontinuities
+ *          and other difficulties of the integrand function.
+ *          The algorithm is a modification of that in QAGS.
+ *
+ * - QAGI : Handles integration over infinite intervals. The
+ *          infinite range is mapped onto a finite interval and
+ *          then the same strategy as in QAGS is applied.
+ *
+ * - QAWO : Is a routine for the integration of COS(OMEGA*X)*F(X)
+ *          or SIN(OMEGA*X)*F(X) over a finite interval (A,B).
+ *          OMEGA is specified by the user
+ *          The rule evaluation component is based on the
+ *          modified Clenshaw-Curtis technique.
+ *          An adaptive subdivision scheme is used connected with
+ *          an extrapolation procedure, which is a modification
+ *          of that in QAGS and provides the possibility to deal
+ *          even with singularities in F.
+ *
+ * - QAWF : Calculates the Fourier cosine or Fourier sine
+ *          transform of F(X), for user-supplied interval (A,
+ *          INFINITY), OMEGA, and F. The procedure of QAWO is
+ *          used on successive finite intervals, and convergence
+ *          acceleration by means of the Epsilon algorithm (Wynn,
+ *          1956) is applied to the series of the integral
+ *          contributions.
+ *
+ * - QAWS : Integrates W(X)*F(X) over (A,B) with A.LT.B finite,
+ *          and   W(X) = ((X-A)**ALFA)*((B-X)**BETA)*V(X)
+ *          where V(X) = 1 or LOG(X-A) or LOG(B-X)
+ *                         or LOG(X-A)*LOG(B-X)
+ *          and   ALFA.GT.(-1), BETA.GT.(-1).
+ *          The user specifies A, B, ALFA, BETA and the type of
+ *          the function V.
+ *          A globally adaptive subdivision strategy is applied,
+ *          with modified Clenshaw-Curtis integration on the
+ *          subintervals which contain A or B.
+ *
+ * - QAWC : Computes the Cauchy Principal Value of F(X)/(X-C)
+ *          over a finite interval (A,B) and for
+ *          user-determined C.
+ *          The strategy is globally adaptive, and modified
+ *          Clenshaw-Curtis integration is used on the subranges
+ *          which contain the point X = C.
+ *
+ *    Each of the routines above also has a "more detailed" version
+ * with a name ending in E, as QAGE.  These provide more
+ * information and control than the easier versions.
+ *
+ *
+ *    The preceding routines are all automatic.  That is, the user
+ * inputs his problem and an error tolerance.  The routine
+ * attempts to perform the integration to within the requested
+ * absolute or relative error.
+ *    There are, in addition, a number of non-automatic integrators.
+ * These are most useful when the problem is such that the
+ * user knows that a fixed rule will provide the accuracy
+ * required.  Typically they return an error estimate but make
+ * no attempt to satisfy any particular input error request.
+ *
+ *   QK15 QK21 QK31 QK41 QK51 QK61
+ *        Estimate the integral on [a,b] using 15, 21,..., 61
+ *        point rule and return an error estimate.
+ *   QK15I 15 point rule for (semi)infinite interval.
+ *   QK15W 15 point rule for special singular weight functions.
+ *   QC25C 25 point rule for Cauchy Principal Values
+ *   QC25F 25 point rule for sin/cos integrand.
+ *   QMOMO Integrates k-th degree Chebychev polynomial times
+ *         function with various explicit singularities.
+ *
+ * Support functions from linpack, slatec, and blas have been omitted
+ * by default but can be obtained by asking.  For example, suppose you
+ * already have installed linpack and the blas, but not slatec.  Then
+ * use a request like  "send dqag from quadpack slatec".
+ *
+ *
+ * [see also toms/691]
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ *
+ * The original Fortran code can be found at https://www.netlib.org/quadpack/
+ *
+ * References:
+ *
+ * [1]: Robert Piessens, Elise Doncker-Kapenga, Christoph Überhuber, David
+ *      Kahaner. "QUADPACK: A subroutine package for automatic integration",
+ *      Springer, 1983, https://doi.org/10.1007/978-3-642-61786-7
+ *
+ *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
 #include "__quadpack.h"
 #include <math.h>
 
@@ -44,6 +198,207 @@ dqagie(double(*fcn)(double* x), const double bound, const int inf,
        double* abserr, int* neval, int* ier, double* alist, double* blist,
        double* rlist, double* elist, int* iord, int* last)
 {
+    // ***begin prologue  dqagie
+    // ***date written   800101   (yymmdd)
+    // ***revision date  830518   (yymmdd)
+    // ***category no.  h2a3a1,h2a4a1
+    // ***keywords  automatic integrator, infinite intervals,
+    //              general-purpose, transformation, extrapolation,
+    //              globally adaptive
+    // ***author  piessens,robert,appl. math & progr. div - k.u.leuven
+    //            de doncker,elise,appl. math & progr. div - k.u.leuven
+    // ***purpose  the routine calculates an approximation result to a given
+    //             integral   i = integral of f over (bound,+infinity)
+    //             or i = integral of f over (-infinity,bound)
+    //             or i = integral of f over (-infinity,+infinity),
+    //             hopefully satisfying following claim for accuracy
+    //             abs(i-result).le.max(epsabs,epsrel*abs(i))
+    // ***description
+    //
+    //  integration over infinite intervals
+    //  standard fortran subroutine
+    //
+    //             f      - double precision
+    //                      function subprogram defining the integrand
+    //                      function f(x). the actual name for f needs to be
+    //                      declared e x t e r n a l in the driver program.
+    //
+    //             bound  - double precision
+    //                      finite bound of integration range
+    //                      (has no meaning if interval is doubly-infinite)
+    //
+    //             inf    - double precision
+    //                      indicating the kind of integration range involved
+    //                      inf = 1 corresponds to  (bound,+infinity),
+    //                      inf = -1            to  (-infinity,bound),
+    //                      inf = 2             to (-infinity,+infinity).
+    //
+    //             epsabs - double precision
+    //                      absolute accuracy requested
+    //             epsrel - double precision
+    //                      relative accuracy requested
+    //                      if  epsabs.le.0
+    //                      and epsrel.lt.max(50*rel.mach.acc.,0.5d-28),
+    //                      the routine will end with ier = 6.
+    //
+    //             limit  - integer
+    //                      gives an upper bound on the number of subintervals
+    //                      in the partition of (a,b), limit.ge.1
+    //
+    //          on return
+    //             result - double precision
+    //                      approximation to the integral
+    //
+    //             abserr - double precision
+    //                      estimate of the modulus of the absolute error,
+    //                      which should equal or exceed abs(i-result)
+    //
+    //             neval  - integer
+    //                      number of integrand evaluations
+    //
+    //             ier    - integer
+    //                      ier = 0 normal and reliable termination of the
+    //                              routine. it is assumed that the requested
+    //                              accuracy has been achieved.
+    //                    - ier.gt.0 abnormal termination of the routine. the
+    //                              estimates for result and error are less
+    //                              reliable. it is assumed that the requested
+    //                              accuracy has not been achieved.
+    //             error messages
+    //                      ier = 1 maximum number of subdivisions allowed
+    //                              has been achieved. one can allow more
+    //                              subdivisions by increasing the value of
+    //                              limit (and taking the according dimension
+    //                              adjustments into account). however,if
+    //                              this yields no improvement it is advised
+    //                              to analyze the integrand in order to
+    //                              determine the integration difficulties.
+    //                              if the position of a local difficulty can
+    //                              be determined (e.g. singularity,
+    //                              discontinuity within the interval) one
+    //                              will probably gain from splitting up the
+    //                              interval at this point and calling the
+    //                              integrator on the subranges. if possible,
+    //                              an appropriate special-purpose integrator
+    //                              should be used, which is designed for
+    //                              handling the type of difficulty involved.
+    //                          = 2 the occurrence of roundoff error is
+    //                              detected, which prevents the requested
+    //                              tolerance from being achieved.
+    //                              the error may be under-estimated.
+    //                          = 3 extremely bad integrand behaviour occurs
+    //                              at some points of the integration
+    //                              interval.
+    //                          = 4 the algorithm does not converge.
+    //                              roundoff error is detected in the
+    //                              extrapolation table.
+    //                              it is assumed that the requested tolerance
+    //                              cannot be achieved, and that the returned
+    //                              result is the best which can be obtained.
+    //                          = 5 the integral is probably divergent, or
+    //                              slowly convergent. it must be noted that
+    //                              divergence can occur with any other value
+    //                              of ier.
+    //                          = 6 the input is invalid, because
+    //                              (epsabs.le.0 and
+    //                               epsrel.lt.max(50*rel.mach.acc.,0.5d-28),
+    //                              result, abserr, neval, last, rlist(1),
+    //                              elist(1) and iord(1) are set to zero.
+    //                              alist(1) and blist(1) are set to 0
+    //                              and 1 respectively.
+    //
+    //             alist  - double precision
+    //                      vector of dimension at least limit, the first
+    //                       last  elements of which are the left
+    //                      end points of the subintervals in the partition
+    //                      of the transformed integration range (0,1).
+    //
+    //             blist  - double precision
+    //                      vector of dimension at least limit, the first
+    //                       last  elements of which are the right
+    //                      end points of the subintervals in the partition
+    //                      of the transformed integration range (0,1).
+    //
+    //             rlist  - double precision
+    //                      vector of dimension at least limit, the first
+    //                       last  elements of which are the integral
+    //                      approximations on the subintervals
+    //
+    //             elist  - double precision
+    //                      vector of dimension at least limit,  the first
+    //                      last elements of which are the moduli of the
+    //                      absolute error estimates on the subintervals
+    //
+    //             iord   - integer
+    //                      vector of dimension limit, the first k
+    //                      elements of which are pointers to the
+    //                      error estimates over the subintervals,
+    //                      such that elist(iord(1)), ..., elist(iord(k))
+    //                      form a decreasing sequence, with k = last
+    //                      if last.le.(limit/2+2), and k = limit+1-last
+    //                      otherwise
+    //
+    //             last   - integer
+    //                      number of subintervals actually produced
+    //                      in the subdivision process
+    //
+    // ***references  (none)
+    // ***routines called  d1mach,dqelg,dqk15i,dqpsrt
+    // ***end prologue  dqagie
+    //
+    //             the dimension of rlist2 is determined by the value of
+    //             limexp in subroutine dqelg.
+    //
+    //
+    //             list of major variables
+    //             -----------------------
+    //
+    //            alist     - list of left end points of all subintervals
+    //                        considered up to now
+    //            blist     - list of right end points of all subintervals
+    //                        considered up to now
+    //            rlist(i)  - approximation to the integral over
+    //                        (alist(i),blist(i))
+    //            rlist2    - array of dimension at least (limexp+2),
+    //                        containing the part of the epsilon table
+    //                        which is still needed for further computations
+    //            elist(i)  - error estimate applying to rlist(i)
+    //            maxerr    - pointer to the interval with largest error
+    //                        estimate
+    //            errmax    - elist(maxerr)
+    //            erlast    - error on the interval currently subdivided
+    //                        (before that subdivision has taken place)
+    //            area      - sum of the integrals over the subintervals
+    //            errsum    - sum of the errors over the subintervals
+    //            errbnd    - requested accuracy max(epsabs,epsrel*
+    //                        abs(result))
+    //            *****1    - variable for the left subinterval
+    //            *****2    - variable for the right subinterval
+    //            last      - index for subdivision
+    //            nres      - number of calls to the extrapolation routine
+    //            numrl2    - number of elements currently in rlist2. if an
+    //                        appropriate approximation to the compounded
+    //                        integral has been obtained, it is put in
+    //                        rlist2(numrl2) after numrl2 has been increased
+    //                        by one.
+    //            small     - length of the smallest interval considered up
+    //                        to now, multiplied by 1.5
+    //            erlarg    - sum of the errors over the intervals larger
+    //                        than the smallest interval considered up to now
+    //            extrap    - logical variable denoting that the routine
+    //                        is attempting to perform extrapolation. i.e.
+    //                        before subdividing the smallest interval we
+    //                        try to decrease the value of erlarg.
+    //            noext     - logical variable denoting that extrapolation
+    //                        is no longer allowed (true-value)
+    //
+    //             machine dependent constants
+    //             ---------------------------
+    //
+    //            epmach is the largest relative spacing.
+    //            uflow is the smallest positive magnitude.
+    //            oflow is the largest positive magnitude.
+    //
     int ierror, iroff1, iroff2, iroff3, jupbnd, k, ksgn, ktmin, L, maxerr;
     int nres, nrmax, numrl2, extrap, noext;
 
@@ -276,6 +631,244 @@ dqagpe(double(*fcn)(double* x), const double a, const double b, int npts2,
        double* blist, double* rlist, double* elist, double* pts, int* iord,
        int* level, int* ndin, int* last)
 {
+    // ***begin prologue  dqagpe
+    // ***date written   800101   (yymmdd)
+    // ***revision date  830518   (yymmdd)
+    // ***category no.  h2a2a1
+    // ***keywords  automatic integrator, general-purpose,
+    //              singularities at user specified points,
+    //              extrapolation, globally adaptive.
+    // ***author  piessens,robert ,appl. math. & progr. div. - k.u.leuven
+    //            de doncker,elise,appl. math. & progr. div. - k.u.leuven
+    // ***purpose  the routine calculates an approximation result to a given
+    //             definite integral i = integral of f over (a,b), hopefully
+    //             satisfying following claim for accuracy abs(i-result).le.
+    //             max(epsabs,epsrel*abs(i)). break points of the integration
+    //             interval, where local difficulties of the integrand may
+    //             occur(e.g. singularities,discontinuities),provided by user.
+    // ***description
+    //
+    //         computation of a definite integral
+    //         standard fortran subroutine
+    //         double precision version
+    //
+    //         parameters
+    //          on entry
+    //             f      - double precision
+    //                      function subprogram defining the integrand
+    //                      function f(x). the actual name for f needs to be
+    //                      declared e x t e r n a l in the driver program.
+    //
+    //             a      - double precision
+    //                      lower limit of integration
+    //
+    //             b      - double precision
+    //                      upper limit of integration
+    //
+    //             npts2  - integer
+    //                      number equal to two more than the number of
+    //                      user-supplied break points within the integration
+    //                      range, npts2.ge.2.
+    //                      if npts2.lt.2, the routine will end with ier = 6.
+    //
+    //             points - double precision
+    //                      vector of dimension npts2, the first (npts2-2)
+    //                      elements of which are the user provided break
+    //                      points. if these points do not constitute an
+    //                      ascending sequence there will be an automatic
+    //                      sorting.
+    //
+    //             epsabs - double precision
+    //                      absolute accuracy requested
+    //             epsrel - double precision
+    //                      relative accuracy requested
+    //                      if  epsabs.le.0
+    //                      and epsrel.lt.max(50*rel.mach.acc.,0.5d-28),
+    //                      the routine will end with ier = 6.
+    //
+    //             limit  - integer
+    //                      gives an upper bound on the number of subintervals
+    //                      in the partition of (a,b), limit.ge.npts2
+    //                      if limit.lt.npts2, the routine will end with
+    //                      ier = 6.
+    //
+    //          on return
+    //             result - double precision
+    //                      approximation to the integral
+    //
+    //             abserr - double precision
+    //                      estimate of the modulus of the absolute error,
+    //                      which should equal or exceed abs(i-result)
+    //
+    //             neval  - integer
+    //                      number of integrand evaluations
+    //
+    //             ier    - integer
+    //                      ier = 0 normal and reliable termination of the
+    //                              routine. it is assumed that the requested
+    //                              accuracy has been achieved.
+    //                      ier.gt.0 abnormal termination of the routine.
+    //                              the estimates for integral and error are
+    //                              less reliable. it is assumed that the
+    //                              requested accuracy has not been achieved.
+    //             error messages
+    //                      ier = 1 maximum number of subdivisions allowed
+    //                              has been achieved. one can allow more
+    //                              subdivisions by increasing the value of
+    //                              limit (and taking the according dimension
+    //                              adjustments into account). however, if
+    //                              this yields no improvement it is advised
+    //                              to analyze the integrand in order to
+    //                              determine the integration difficulties. if
+    //                              the position of a local difficulty can be
+    //                              determined (i.e. singularity,
+    //                              discontinuity within the interval), it
+    //                              should be supplied to the routine as an
+    //                              element of the vector points. if necessary
+    //                              an appropriate special-purpose integrator
+    //                              must be used, which is designed for
+    //                              handling the type of difficulty involved.
+    //                          = 2 the occurrence of roundoff error is
+    //                              detected, which prevents the requested
+    //                              tolerance from being achieved.
+    //                              the error may be under-estimated.
+    //                          = 3 extremely bad integrand behaviour occurs
+    //                              at some points of the integration
+    //                              interval.
+    //                          = 4 the algorithm does not converge.
+    //                              roundoff error is detected in the
+    //                              extrapolation table. it is presumed that
+    //                              the requested tolerance cannot be
+    //                              achieved, and that the returned result is
+    //                              the best which can be obtained.
+    //                          = 5 the integral is probably divergent, or
+    //                              slowly convergent. it must be noted that
+    //                              divergence can occur with any other value
+    //                              of ier.gt.0.
+    //                          = 6 the input is invalid because
+    //                              npts2.lt.2 or
+    //                              break points are specified outside
+    //                              the integration range or
+    //                              (epsabs.le.0 and
+    //                               epsrel.lt.max(50*rel.mach.acc.,0.5d-28))
+    //                              or limit.lt.npts2.
+    //                              result, abserr, neval, last, rlist(1),
+    //                              and elist(1) are set to zero. alist(1) and
+    //                              blist(1) are set to a and b respectively.
+    //
+    //             alist  - double precision
+    //                      vector of dimension at least limit, the first
+    //                       last  elements of which are the left end points
+    //                      of the subintervals in the partition of the given
+    //                      integration range (a,b)
+    //
+    //             blist  - double precision
+    //                      vector of dimension at least limit, the first
+    //                       last  elements of which are the right end points
+    //                      of the subintervals in the partition of the given
+    //                      integration range (a,b)
+    //
+    //             rlist  - double precision
+    //                      vector of dimension at least limit, the first
+    //                       last  elements of which are the integral
+    //                      approximations on the subintervals
+    //
+    //             elist  - double precision
+    //                      vector of dimension at least limit, the first
+    //                       last  elements of which are the moduli of the
+    //                      absolute error estimates on the subintervals
+    //
+    //             pts    - double precision
+    //                      vector of dimension at least npts2, containing the
+    //                      integration limits and the break points of the
+    //                      interval in ascending sequence.
+    //
+    //             level  - integer
+    //                      vector of dimension at least limit, containing the
+    //                      subdivision levels of the subinterval, i.e. if
+    //                      (aa,bb) is a subinterval of (p1,p2) where p1 as
+    //                      well as p2 is a user-provided break point or
+    //                      integration limit, then (aa,bb) has level l if
+    //                      abs(bb-aa) = abs(p2-p1)*2**(-l).
+    //
+    //             ndin   - integer
+    //                      vector of dimension at least npts2, after first
+    //                      integration over the intervals (pts(i)),pts(i+1),
+    //                      i = 0,1, ..., npts2-2, the error estimates over
+    //                      some of the intervals may have been increased
+    //                      artificially, in order to put their subdivision
+    //                      forward. if this happens for the subinterval
+    //                      numbered k, ndin(k) is put to 1, otherwise
+    //                      ndin(k) = 0.
+    //
+    //             iord   - integer
+    //                      vector of dimension at least limit, the first k
+    //                      elements of which are pointers to the
+    //                      error estimates over the subintervals,
+    //                      such that elist(iord(1)), ..., elist(iord(k))
+    //                      form a decreasing sequence, with k = last
+    //                      if last.le.(limit/2+2), and k = limit+1-last
+    //                      otherwise
+    //
+    //             last   - integer
+    //                      number of subintervals actually produced in the
+    //                      subdivisions process
+    //
+    // ***references  (none)
+    // ***routines called  d1mach,dqelg,dqk21,dqpsrt
+    // ***end prologue  dqagpe
+    //
+    //             the dimension of rlist2 is determined by the value of
+    //             limexp in subroutine epsalg (rlist2 should be of dimension
+    //             (limexp+2) at least).
+    //
+    //
+    //             list of major variables
+    //             -----------------------
+    //
+    //            alist     - list of left end points of all subintervals
+    //                        considered up to now
+    //            blist     - list of right end points of all subintervals
+    //                        considered up to now
+    //            rlist(i)  - approximation to the integral over
+    //                        (alist(i),blist(i))
+    //            rlist2    - array of dimension at least limexp+2
+    //                        containing the part of the epsilon table which
+    //                        is still needed for further computations
+    //            elist(i)  - error estimate applying to rlist(i)
+    //            maxerr    - pointer to the interval with largest error
+    //                        estimate
+    //            errmax    - elist(maxerr)
+    //            erlast    - error on the interval currently subdivided
+    //                        (before that subdivision has taken place)
+    //            area      - sum of the integrals over the subintervals
+    //            errsum    - sum of the errors over the subintervals
+    //            errbnd    - requested accuracy max(epsabs,epsrel*
+    //                        abs(result))
+    //            *****1    - variable for the left subinterval
+    //            *****2    - variable for the right subinterval
+    //            last      - index for subdivision
+    //            nres      - number of calls to the extrapolation routine
+    //            numrl2    - number of elements in rlist2. if an appropriate
+    //                        approximation to the compounded integral has
+    //                        been obtained, it is put in rlist2(numrl2) after
+    //                        numrl2 has been increased by one.
+    //            erlarg    - sum of the errors over the intervals larger
+    //                        than the smallest interval considered up to now
+    //            extrap    - logical variable denoting that the routine
+    //                        is attempting to perform extrapolation. i.e.
+    //                        before subdividing the smallest interval we
+    //                        try to decrease the value of erlarg.
+    //            noext     - logical variable denoting that extrapolation is
+    //                        no longer allowed (true-value)
+    //
+    //             machine dependent constants
+    //             ---------------------------
+    //
+    //            epmach is the largest relative spacing.
+    //            uflow is the smallest positive magnitude.
+    //            oflow is the largest positive magnitude.
+    //
     int i, ierror, ind1, ind2, iroff1, iroff2, iroff3, j, jlow,jupbnd;
     int k, ksgn, ktmin, L, levcur, levmax, maxerr, nint, npts, nres, nrmax;
     int numrl2, extrap, noext;
@@ -586,6 +1179,206 @@ dqagse(double(*fcn)(double* x), const double a, const double b,
        double* abserr, int* neval, int* ier, double* alist, double* blist,
        double* rlist, double* elist, int* iord, int* last)
 {
+    // ***begin prologue  dqagse
+    // ***date written   800101   (yymmdd)
+    // ***revision date  830518   (yymmdd)
+    // ***category no.  h2a1a1
+    // ***keywords  automatic integrator, general-purpose,
+    //              (end point) singularities, extrapolation,
+    //              globally adaptive
+    // ***author  piessens,robert,appl. math. & progr. div. - k.u.leuven
+    //            de doncker,elise,appl. math. & progr. div. - k.u.leuven
+    // ***purpose  the routine calculates an approximation result to a given
+    //             definite integral i = integral of f over (a,b),
+    //             hopefully satisfying following claim for accuracy
+    //             abs(i-result).le.max(epsabs,epsrel*abs(i)).
+    // ***description
+    //
+    //         computation of a definite integral
+    //         standard fortran subroutine
+    //         double precision version
+    //
+    //         parameters
+    //          on entry
+    //             f      - double precision
+    //                      function subprogram defining the integrand
+    //                      function f(x). the actual name for f needs to be
+    //                      declared e x t e r n a l in the driver program.
+    //
+    //             a      - double precision
+    //                      lower limit of integration
+    //
+    //             b      - double precision
+    //                      upper limit of integration
+    //
+    //             epsabs - double precision
+    //                      absolute accuracy requested
+    //             epsrel - double precision
+    //                      relative accuracy requested
+    //                      if  epsabs.le.0
+    //                      and epsrel.lt.max(50*rel.mach.acc.,0.5d-28),
+    //                      the routine will end with ier = 6.
+    //
+    //             limit  - integer
+    //                      gives an upperbound on the number of subintervals
+    //                      in the partition of (a,b)
+    //
+    //          on return
+    //             result - double precision
+    //                      approximation to the integral
+    //
+    //             abserr - double precision
+    //                      estimate of the modulus of the absolute error,
+    //                      which should equal or exceed abs(i-result)
+    //
+    //             neval  - integer
+    //                      number of integrand evaluations
+    //
+    //             ier    - integer
+    //                      ier = 0 normal and reliable termination of the
+    //                              routine. it is assumed that the requested
+    //                              accuracy has been achieved.
+    //                      ier.gt.0 abnormal termination of the routine
+    //                              the estimates for integral and error are
+    //                              less reliable. it is assumed that the
+    //                              requested accuracy has not been achieved.
+    //             error messages
+    //                          = 1 maximum number of subdivisions allowed
+    //                              has been achieved. one can allow more sub-
+    //                              divisions by increasing the value of limit
+    //                              (and taking the according dimension
+    //                              adjustments into account). however, if
+    //                              this yields no improvement it is advised
+    //                              to analyze the integrand in order to
+    //                              determine the integration difficulties. if
+    //                              the position of a local difficulty can be
+    //                              determined (e.g. singularity,
+    //                              discontinuity within the interval) one
+    //                              will probably gain from splitting up the
+    //                              interval at this point and calling the
+    //                              integrator on the subranges. if possible,
+    //                              an appropriate special-purpose integrator
+    //                              should be used, which is designed for
+    //                              handling the type of difficulty involved.
+    //                          = 2 the occurrence of roundoff error is detec-
+    //                              ted, which prevents the requested
+    //                              tolerance from being achieved.
+    //                              the error may be under-estimated.
+    //                          = 3 extremely bad integrand behaviour
+    //                              occurs at some points of the integration
+    //                              interval.
+    //                          = 4 the algorithm does not converge.
+    //                              roundoff error is detected in the
+    //                              extrapolation table.
+    //                              it is presumed that the requested
+    //                              tolerance cannot be achieved, and that the
+    //                              returned result is the best which can be
+    //                              obtained.
+    //                          = 5 the integral is probably divergent, or
+    //                              slowly convergent. it must be noted that
+    //                              divergence can occur with any other value
+    //                              of ier.
+    //                          = 6 the input is invalid, because
+    //                              epsabs.le.0 and
+    //                              epsrel.lt.max(50*rel.mach.acc.,0.5d-28).
+    //                              result, abserr, neval, last, rlist(1),
+    //                              iord(1) and elist(1) are set to zero.
+    //                              alist(1) and blist(1) are set to a and b
+    //                              respectively.
+    //
+    //             alist  - double precision
+    //                      vector of dimension at least limit, the first
+    //                       last  elements of which are the left end points
+    //                      of the subintervals in the partition of the
+    //                      given integration range (a,b)
+    //
+    //             blist  - double precision
+    //                      vector of dimension at least limit, the first
+    //                       last  elements of which are the right end points
+    //                      of the subintervals in the partition of the given
+    //                      integration range (a,b)
+    //
+    //             rlist  - double precision
+    //                      vector of dimension at least limit, the first
+    //                       last  elements of which are the integral
+    //                      approximations on the subintervals
+    //
+    //             elist  - double precision
+    //                      vector of dimension at least limit, the first
+    //                       last  elements of which are the moduli of the
+    //                      absolute error estimates on the subintervals
+    //
+    //             iord   - integer
+    //                      vector of dimension at least limit, the first k
+    //                      elements of which are pointers to the
+    //                      error estimates over the subintervals,
+    //                      such that elist(iord(1)), ..., elist(iord(k))
+    //                      form a decreasing sequence, with k = last
+    //                      if last.le.(limit/2+2), and k = limit+1-last
+    //                      otherwise
+    //
+    //             last   - integer
+    //                      number of subintervals actually produced in the
+    //                      subdivision process
+    //
+    // ***references  (none)
+    // ***routines called  d1mach,dqelg,dqk21,dqpsrt
+    // ***end prologue  dqagse
+    //
+    //
+    //             the dimension of rlist2 is determined by the value of
+    //             limexp in subroutine dqelg (rlist2 should be of dimension
+    //             (limexp+2) at least).
+    //
+    //             list of major variables
+    //             -----------------------
+    //
+    //            alist     - list of left end points of all subintervals
+    //                        considered up to now
+    //            blist     - list of right end points of all subintervals
+    //                        considered up to now
+    //            rlist(i)  - approximation to the integral over
+    //                        (alist(i),blist(i))
+    //            rlist2    - array of dimension at least limexp+2 containing
+    //                        the part of the epsilon table which is still
+    //                        needed for further computations
+    //            elist(i)  - error estimate applying to rlist(i)
+    //            maxerr    - pointer to the interval with largest error
+    //                        estimate
+    //            errmax    - elist(maxerr)
+    //            erlast    - error on the interval currently subdivided
+    //                        (before that subdivision has taken place)
+    //            area      - sum of the integrals over the subintervals
+    //            errsum    - sum of the errors over the subintervals
+    //            errbnd    - requested accuracy max(epsabs,epsrel*
+    //                        abs(result))
+    //            *****1    - variable for the left interval
+    //            *****2    - variable for the right interval
+    //            last      - index for subdivision
+    //            nres      - number of calls to the extrapolation routine
+    //            numrl2    - number of elements currently in rlist2. if an
+    //                        appropriate approximation to the compounded
+    //                        integral has been obtained it is put in
+    //                        rlist2(numrl2) after numrl2 has been increased
+    //                        by one.
+    //            small     - length of the smallest interval considered up
+    //                        to now, multiplied by 1.5
+    //            erlarg    - sum of the errors over the intervals larger
+    //                        than the smallest interval considered up to now
+    //            extrap    - logical variable denoting that the routine is
+    //                        attempting to perform extrapolation i.e. before
+    //                        subdividing the smallest interval we try to
+    //                        decrease the value of erlarg.
+    //            noext     - logical variable denoting that extrapolation
+    //                        is no longer allowed (true value)
+    //
+    //             machine dependent constants
+    //             ---------------------------
+    //
+    //            epmach is the largest relative spacing.
+    //            uflow is the smallest positive magnitude.
+    //            oflow is the largest positive magnitude.
+    //
     int extrap, ierror, iroff1, iroff2, iroff3, k, ksgn, ktmin, L, maxerr;
     int noext, nres, nrmax, numrl2;
     double a1, a2, area, area1, area12, area2, b1, b2, defab1, defab2, defabs;
@@ -821,6 +1614,170 @@ dqawce(double(*fcn)(double* x), const double a, const double b, const double c,
        double* abserr, int* neval, int* ier, double* alist, double* blist,
        double* rlist, double* elist, int* iord, int* last)
 {
+    // ***begin prologue  dqawce
+    // ***date written   800101   (yymmdd)
+    // ***revision date  830518   (yymmdd)
+    // ***category no.  h2a2a1,j4
+    // ***keywords  automatic integrator, special-purpose,
+    //              cauchy principal value, clenshaw-curtis method
+    // ***author  piessens,robert,appl. math. & progr. div. - k.u.leuven
+    //            de doncker,elise,appl. math. & progr. div. - k.u.leuven
+    // ***  purpose  the routine calculates an approximation result to a
+    //               cauchy principal value i = integral of f*w over (a,b)
+    //               (w(x) = 1/(x-c), (c.ne.a, c.ne.b), hopefully satisfying
+    //               following claim for accuracy
+    //               abs(i-result).le.max(epsabs,epsrel*abs(i))
+    // ***description
+    //
+    //         computation of a cauchy principal value
+    //         standard fortran subroutine
+    //         double precision version
+    //
+    //         parameters
+    //          on entry
+    //             f      - double precision
+    //                      function subprogram defining the integrand
+    //                      function f(x). the actual name for f needs to be
+    //                      declared e x t e r n a l in the driver program.
+    //
+    //             a      - double precision
+    //                      lower limit of integration
+    //
+    //             b      - double precision
+    //                      upper limit of integration
+    //
+    //             c      - double precision
+    //                      parameter in the weight function, c.ne.a, c.ne.b
+    //                      if c = a or c = b, the routine will end with
+    //                      ier = 6.
+    //
+    //             epsabs - double precision
+    //                      absolute accuracy requested
+    //             epsrel - double precision
+    //                      relative accuracy requested
+    //                      if  epsabs.le.0
+    //                      and epsrel.lt.max(50*rel.mach.acc.,0.5d-28),
+    //                      the routine will end with ier = 6.
+    //
+    //             limit  - integer
+    //                      gives an upper bound on the number of subintervals
+    //                      in the partition of (a,b), limit.ge.1
+    //
+    //          on return
+    //             result - double precision
+    //                      approximation to the integral
+    //
+    //             abserr - double precision
+    //                      estimate of the modulus of the absolute error,
+    //                      which should equal or exceed abs(i-result)
+    //
+    //             neval  - integer
+    //                      number of integrand evaluations
+    //
+    //             ier    - integer
+    //                      ier = 0 normal and reliable termination of the
+    //                              routine. it is assumed that the requested
+    //                              accuracy has been achieved.
+    //                      ier.gt.0 abnormal termination of the routine
+    //                              the estimates for integral and error are
+    //                              less reliable. it is assumed that the
+    //                              requested accuracy has not been achieved.
+    //             error messages
+    //                      ier = 1 maximum number of subdivisions allowed
+    //                              has been achieved. one can allow more sub-
+    //                              divisions by increasing the value of
+    //                              limit. however, if this yields no
+    //                              improvement it is advised to analyze the
+    //                              the integrand, in order to determine the
+    //                              the integration difficulties. if the
+    //                              position of a local difficulty can be
+    //                              determined (e.g. singularity,
+    //                              discontinuity within the interval) one
+    //                              will probably gain from splitting up the
+    //                              interval at this point and calling
+    //                              appropriate integrators on the subranges.
+    //                          = 2 the occurrence of roundoff error is detec-
+    //                              ted, which prevents the requested
+    //                              tolerance from being achieved.
+    //                          = 3 extremely bad integrand behaviour
+    //                              occurs at some interior points of
+    //                              the integration interval.
+    //                          = 6 the input is invalid, because
+    //                              c = a or c = b or
+    //                              (epsabs.le.0 and
+    //                               epsrel.lt.max(50*rel.mach.acc.,0.5d-28))
+    //                              or limit.lt.1.
+    //                              result, abserr, neval, rlist(1), elist(1),
+    //                              iord(1) and last are set to zero. alist(1)
+    //                              and blist(1) are set to a and b
+    //                              respectively.
+    //
+    //             alist   - double precision
+    //                       vector of dimension at least limit, the first
+    //                        last  elements of which are the left
+    //                       end points of the subintervals in the partition
+    //                       of the given integration range (a,b)
+    //
+    //             blist   - double precision
+    //                       vector of dimension at least limit, the first
+    //                        last  elements of which are the right
+    //                       end points of the subintervals in the partition
+    //                       of the given integration range (a,b)
+    //
+    //             rlist   - double precision
+    //                       vector of dimension at least limit, the first
+    //                        last  elements of which are the integral
+    //                       approximations on the subintervals
+    //
+    //             elist   - double precision
+    //                       vector of dimension limit, the first  last
+    //                       elements of which are the moduli of the absolute
+    //                       error estimates on the subintervals
+    //
+    //             iord    - integer
+    //                       vector of dimension at least limit, the first k
+    //                       elements of which are pointers to the error
+    //                       estimates over the subintervals, so that
+    //                       elist(iord(1)), ..., elist(iord(k)) with k = last
+    //                       if last.le.(limit/2+2), and k = limit+1-last
+    //                       otherwise, form a decreasing sequence
+    //
+    //             last    - integer
+    //                       number of subintervals actually produced in
+    //                       the subdivision process
+    //
+    // ***references  (none)
+    // ***routines called  d1mach,dqc25c,dqpsrt
+    // ***end prologue  dqawce
+    //
+    //             list of major variables
+    //             -----------------------
+    //
+    //            alist     - list of left end points of all subintervals
+    //                        considered up to now
+    //            blist     - list of right end points of all subintervals
+    //                        considered up to now
+    //            rlist(i)  - approximation to the integral over
+    //                        (alist(i),blist(i))
+    //            elist(i)  - error estimate applying to rlist(i)
+    //            maxerr    - pointer to the interval with largest
+    //                        error estimate
+    //            errmax    - elist(maxerr)
+    //            area      - sum of the integrals over the subintervals
+    //            errsum    - sum of the errors over the subintervals
+    //            errbnd    - requested accuracy max(epsabs,epsrel*
+    //                        abs(result))
+    //            *****1    - variable for the left subinterval
+    //            *****2    - variable for the right subinterval
+    //            last      - index for subdivision
+    //
+    //
+    //             machine dependent constants
+    //             ---------------------------
+    //
+    //            epmach is the largest relative spacing.
+    //            uflow is the smallest positive magnitude.
+    //
     int iroff1, iroff2, k, krule, L, maxerr, nev, nrmax;
     double a1, a2, aa, area, area1, area12, area2, b1, b2, bb, errbnd, errmax;
     double error1, error12, error2, errsum;
@@ -964,6 +1921,225 @@ dqawfe(double(*fcn)(double* x), const double a, const double omega, const int in
        double* erlst, int* ierlst, int* lst, double* alist, double* blist,
        double* rlist, double* elist, int* iord, int* nnlog, double* chebmo)
 {
+    // ***begin prologue  dqawfe
+    // ***date written   800101   (yymmdd)
+    // ***revision date  830518   (yymmdd)
+    // ***category no.  h2a3a1
+    // ***keywords  automatic integrator, special-purpose,
+    //              fourier integrals,
+    //              integration between zeros with dqawoe,
+    //              convergence acceleration with dqelg
+    // ***author  piessens,robert,appl. math. & progr. div. - k.u.leuven
+    //            dedoncker,elise,appl. math. & progr. div. - k.u.leuven
+    // ***purpose  the routine calculates an approximation result to a
+    //             given fourier integal
+    //             i = integral of f(x)*w(x) over (a,infinity)
+    //             where w(x)=cos(omega*x) or w(x)=sin(omega*x),
+    //             hopefully satisfying following claim for accuracy
+    //             abs(i-result).le.epsabs.
+    // ***description
+    //
+    //         computation of fourier integrals
+    //         standard fortran subroutine
+    //         double precision version
+    //
+    //         parameters
+    //          on entry
+    //             f      - double precision
+    //                      function subprogram defining the integrand
+    //                      function f(x). the actual name for f needs to
+    //                      be declared e x t e r n a l in the driver program.
+    //
+    //             a      - double precision
+    //                      lower limit of integration
+    //
+    //             omega  - double precision
+    //                      parameter in the weight function
+    //
+    //             integr - integer
+    //                      indicates which weight function is used
+    //                      integr = 1      w(x) = cos(omega*x)
+    //                      integr = 2      w(x) = sin(omega*x)
+    //                      if integr.ne.1.and.integr.ne.2, the routine will
+    //                      end with ier = 6.
+    //
+    //             epsabs - double precision
+    //                      absolute accuracy requested, epsabs.gt.0
+    //                      if epsabs.le.0, the routine will end with ier = 6.
+    //
+    //             limlst - integer
+    //                      limlst gives an upper bound on the number of
+    //                      cycles, limlst.ge.1.
+    //                      if limlst.lt.3, the routine will end with ier = 6.
+    //
+    //             limit  - integer
+    //                      gives an upper bound on the number of subintervals
+    //                      allowed in the partition of each cycle, limit.ge.1
+    //                      each cycle, limit.ge.1.
+    //
+    //             maxp1  - integer
+    //                      gives an upper bound on the number of
+    //                      chebyshev moments which can be stored, i.e.
+    //                      for the intervals of lengths abs(b-a)*2**(-l),
+    //                      l=0,1, ..., maxp1-2, maxp1.ge.1
+    //
+    //          on return
+    //             result - double precision
+    //                      approximation to the integral x
+    //
+    //             abserr - double precision
+    //                      estimate of the modulus of the absolute error,
+    //                      which should equal or exceed abs(i-result)
+    //
+    //             neval  - integer
+    //                      number of integrand evaluations
+    //
+    //             ier    - ier = 0 normal and reliable termination of
+    //                              the routine. it is assumed that the
+    //                              requested accuracy has been achieved.
+    //                      ier.gt.0 abnormal termination of the routine. the
+    //                              estimates for integral and error are less
+    //                              reliable. it is assumed that the requested
+    //                              accuracy has not been achieved.
+    //             error messages
+    //                     if omega.ne.0
+    //                      ier = 1 maximum number of  cycles  allowed
+    //                              has been achieved., i.e. of subintervals
+    //                              (a+(k-1)c,a+kc) where
+    //                              c = (2*int(abs(omega))+1)*pi/abs(omega),
+    //                              for k = 1, 2, ..., lst.
+    //                              one can allow more cycles by increasing
+    //                              the value of limlst (and taking the
+    //                              according dimension adjustments into
+    //                              account).
+    //                              examine the array iwork which contains
+    //                              the error flags on the cycles, in order to
+    //                              look for eventual local integration
+    //                              difficulties. if the position of a local
+    //                              difficulty can be determined (e.g.
+    //                              singularity, discontinuity within the
+    //                              interval) one will probably gain from
+    //                              splitting up the interval at this point
+    //                              and calling appropriate integrators on
+    //                              the subranges.
+    //                          = 4 the extrapolation table constructed for
+    //                              convergence acceleration of the series
+    //                              formed by the integral contributions over
+    //                              the cycles, does not converge to within
+    //                              the requested accuracy. as in the case of
+    //                              ier = 1, it is advised to examine the
+    //                              array iwork which contains the error
+    //                              flags on the cycles.
+    //                          = 6 the input is invalid because
+    //                              (integr.ne.1 and integr.ne.2) or
+    //                               epsabs.le.0 or limlst.lt.3.
+    //                               result, abserr, neval, lst are set
+    //                               to zero.
+    //                          = 7 bad integrand behaviour occurs within one
+    //                              or more of the cycles. location and type
+    //                              of the difficulty involved can be
+    //                              determined from the vector ierlst. here
+    //                              lst is the number of cycles actually
+    //                              needed (see below).
+    //                              ierlst(k) = 1 the maximum number of
+    //                                            subdivisions (= limit) has
+    //                                            been achieved on the k th
+    //                                            cycle.
+    //                                        = 2 occurrence of roundoff error
+    //                                            is detected and prevents the
+    //                                            tolerance imposed on the
+    //                                            k th cycle, from being
+    //                                            achieved.
+    //                                        = 3 extremely bad integrand
+    //                                            behaviour occurs at some
+    //                                            points of the k th cycle.
+    //                                        = 4 the integration procedure
+    //                                            over the k th cycle does
+    //                                            not converge (to within the
+    //                                            required accuracy) due to
+    //                                            roundoff in the
+    //                                            extrapolation procedure
+    //                                            invoked on this cycle. it
+    //                                            is assumed that the result
+    //                                            on this interval is the
+    //                                            best which can be obtained.
+    //                                        = 5 the integral over the k th
+    //                                            cycle is probably divergent
+    //                                            or slowly convergent. it
+    //                                            must be noted that
+    //                                            divergence can occur with
+    //                                            any other value of
+    //                                            ierlst(k).
+    //                     if omega = 0 and integr = 1,
+    //                     the integral is calculated by means of dqagie
+    //                     and ier = ierlst(1) (with meaning as described
+    //                     for ierlst(k), k = 1).
+    //
+    //             rslst  - double precision
+    //                      vector of dimension at least limlst
+    //                      rslst(k) contains the integral contribution
+    //                      over the interval (a+(k-1)c,a+kc) where
+    //                      c = (2*int(abs(omega))+1)*pi/abs(omega),
+    //                      k = 1, 2, ..., lst.
+    //                      note that, if omega = 0, rslst(1) contains
+    //                      the value of the integral over (a,infinity).
+    //
+    //             erlst  - double precision
+    //                      vector of dimension at least limlst
+    //                      erlst(k) contains the error estimate corresponding
+    //                      with rslst(k).
+    //
+    //             ierlst - integer
+    //                      vector of dimension at least limlst
+    //                      ierlst(k) contains the error flag corresponding
+    //                      with rslst(k). for the meaning of the local error
+    //                      flags see description of output parameter ier.
+    //
+    //             lst    - integer
+    //                      number of subintervals needed for the integration
+    //                      if omega = 0 then lst is set to 1.
+    //
+    //             alist, blist, rlist, elist - double precision
+    //                      vector of dimension at least limit,
+    //
+    //             iord, nnlog - integer
+    //                      vector of dimension at least limit, providing
+    //                      space for the quantities needed in the subdivision
+    //                      process of each cycle
+    //
+    //             chebmo - double precision
+    //                      array of dimension at least (maxp1,25), providing
+    //                      space for the chebyshev moments needed within the
+    //                      cycles
+    //
+    // ***references  (none)
+    // ***routines called  d1mach,dqagie,dqawoe,dqelg
+    // ***end prologue  dqawfe
+    //
+    //
+    //             the dimension of  psum  is determined by the value of
+    //             limexp in subroutine dqelg (psum must be of dimension
+    //             (limexp+2) at least).
+    //
+    //            list of major variables
+    //            -----------------------
+    //
+    //            c1, c2    - end points of subinterval (of length cycle)
+    //            cycle     - (2*int(abs(omega))+1)*pi/abs(omega)
+    //            psum      - vector of dimension at least (limexp+2)
+    //                        (see routine dqelg)
+    //                        psum contains the part of the epsilon table
+    //                        which is still needed for further computations.
+    //                        each element of psum is a partial sum of the
+    //                        series which should sum to the value of the
+    //                        integral.
+    //            errsum    - sum of error estimates over the subintervals,
+    //                        calculated cumulatively
+    //            epsa      - absolute tolerance requested over current
+    //                        subinterval
+    //            chebmo    - array containing the modified chebyshev
+    //                        moments (see also routine dqc25f)
+    //
     int ktmin, l, last, ll, iter, momcom, nev, nres, numrl2;
     double abseps, correc, cycle, c1, c2, dl, drl, ep, eps, epsa;
     double errsum, fact, p1, reseps;
@@ -1100,6 +2276,258 @@ dqawoe(double(*fcn)(double* x), const double a, const double b, const double ome
        int* ier, int* last, double* alist, double* blist, double* rlist,
        double* elist, int* iord, int* nnlog, int* momcom, double* chebmo)
 {
+    //***begin prologue  dqawoe
+    //***date written   800101   (yymmdd)
+    //***revision date  830518   (yymmdd)
+    //***category no.  h2a2a1
+    //***keywords  automatic integrator, special-purpose,
+    //             integrand with oscillatory cos or sin factor,
+    //             clenshaw-curtis method, (end point) singularities,
+    //             extrapolation, globally adaptive
+    //***author  piessens,robert,appl. math. & progr. div. - k.u.leuven
+    //           de doncker,elise,appl. math. & progr. div. - k.u.leuven
+    //***purpose  the routine calculates an approximation result to a given
+    //            definite integral
+    //            i = integral of f(x)*w(x) over (a,b)
+    //            where w(x) = cos(omega*x) or w(x)=sin(omega*x),
+    //            hopefully satisfying following claim for accuracy
+    //            abs(i-result).le.max(epsabs,epsrel*abs(i)).
+    //***description
+    //
+    //        computation of oscillatory integrals
+    //        standard fortran subroutine
+    //        double precision version
+    //
+    //        parameters
+    //         on entry
+    //            f      - double precision
+    //                     function subprogram defining the integrand
+    //                     function f(x). the actual name for f needs to be
+    //                     declared e x t e r n a l in the driver program.
+    //
+    //            a      - double precision
+    //                     lower limit of integration
+    //
+    //            b      - double precision
+    //                     upper limit of integration
+    //
+    //            omega  - double precision
+    //                     parameter in the integrand weight function
+    //
+    //            integr - integer
+    //                     indicates which of the weight functions is to be
+    //                     used
+    //                     integr = 1      w(x) = cos(omega*x)
+    //                     integr = 2      w(x) = sin(omega*x)
+    //                     if integr.ne.1 and integr.ne.2, the routine
+    //                     will end with ier = 6.
+    //
+    //            epsabs - double precision
+    //                     absolute accuracy requested
+    //            epsrel - double precision
+    //                     relative accuracy requested
+    //                     if  epsabs.le.0
+    //                     and epsrel.lt.max(50*rel.mach.acc.,0.5d-28),
+    //                     the routine will end with ier = 6.
+    //
+    //            limit  - integer
+    //                     gives an upper bound on the number of subdivisions
+    //                     in the partition of (a,b), limit.ge.1.
+    //
+    //            icall  - integer
+    //                     if dqawoe is to be used only once, icall must
+    //                     be set to 1.  assume that during this call, the
+    //                     chebyshev moments (for clenshaw-curtis integration
+    //                     of degree 24) have been computed for intervals of
+    //                     lengths (abs(b-a))*2**(-l), l=0,1,2,...momcom-1.
+    //                     if icall.gt.1 this means that dqawoe has been
+    //                     called twice or more on intervals of the same
+    //                     length abs(b-a). the chebyshev moments already
+    //                     computed are then re-used in subsequent calls.
+    //                     if icall.lt.1, the routine will end with ier = 6.
+    //
+    //            maxp1  - integer
+    //                     gives an upper bound on the number of chebyshev
+    //                     moments which can be stored, i.e. for the
+    //                     intervals of lengths abs(b-a)*2**(-l),
+    //                     l=0,1, ..., maxp1-2, maxp1.ge.1.
+    //                     if maxp1.lt.1, the routine will end with ier = 6.
+    //
+    //         on return
+    //            result - double precision
+    //                     approximation to the integral
+    //
+    //            abserr - double precision
+    //                     estimate of the modulus of the absolute error,
+    //                     which should equal or exceed abs(i-result)
+    //
+    //            neval  - integer
+    //                     number of integrand evaluations
+    //
+    //            ier    - integer
+    //                     ier = 0 normal and reliable termination of the
+    //                             routine. it is assumed that the
+    //                             requested accuracy has been achieved.
+    //                   - ier.gt.0 abnormal termination of the routine.
+    //                             the estimates for integral and error are
+    //                             less reliable. it is assumed that the
+    //                             requested accuracy has not been achieved.
+    //            error messages
+    //                     ier = 1 maximum number of subdivisions allowed
+    //                             has been achieved. one can allow more
+    //                             subdivisions by increasing the value of
+    //                             limit (and taking according dimension
+    //                             adjustments into account). however, if
+    //                             this yields no improvement it is advised
+    //                             to analyze the integrand, in order to
+    //                             determine the integration difficulties.
+    //                             if the position of a local difficulty can
+    //                             be determined (e.g. singularity,
+    //                             discontinuity within the interval) one
+    //                             will probably gain from splitting up the
+    //                             interval at this point and calling the
+    //                             integrator on the subranges. if possible,
+    //                             an appropriate special-purpose integrator
+    //                             should be used which is designed for
+    //                             handling the type of difficulty involved.
+    //                         = 2 the occurrence of roundoff error is
+    //                             detected, which prevents the requested
+    //                             tolerance from being achieved.
+    //                             the error may be under-estimated.
+    //                         = 3 extremely bad integrand behaviour occurs
+    //                             at some points of the integration
+    //                             interval.
+    //                         = 4 the algorithm does not converge.
+    //                             roundoff error is detected in the
+    //                             extrapolation table.
+    //                             it is presumed that the requested
+    //                             tolerance cannot be achieved due to
+    //                             roundoff in the extrapolation table,
+    //                             and that the returned result is the
+    //                             best which can be obtained.
+    //                         = 5 the integral is probably divergent, or
+    //                             slowly convergent. it must be noted that
+    //                             divergence can occur with any other value
+    //                             of ier.gt.0.
+    //                         = 6 the input is invalid, because
+    //                             (epsabs.le.0 and
+    //                              epsrel.lt.max(50*rel.mach.acc.,0.5d-28))
+    //                             or (integr.ne.1 and integr.ne.2) or
+    //                             icall.lt.1 or maxp1.lt.1.
+    //                             result, abserr, neval, last, rlist(1),
+    //                             elist(1), iord(1) and nnlog(1) are set
+    //                             to zero. alist(1) and blist(1) are set
+    //                             to a and b respectively.
+    //
+    //            last  -  integer
+    //                     on return, last equals the number of
+    //                     subintervals produces in the subdivision
+    //                     process, which determines the number of
+    //                     significant elements actually in the
+    //                     work arrays.
+    //            alist  - double precision
+    //                     vector of dimension at least limit, the first
+    //                      last  elements of which are the left
+    //                     end points of the subintervals in the partition
+    //                     of the given integration range (a,b)
+    //
+    //            blist  - double precision
+    //                     vector of dimension at least limit, the first
+    //                      last  elements of which are the right
+    //                     end points of the subintervals in the partition
+    //                     of the given integration range (a,b)
+    //
+    //            rlist  - double precision
+    //                     vector of dimension at least limit, the first
+    //                      last  elements of which are the integral
+    //                     approximations on the subintervals
+    //
+    //            elist  - double precision
+    //                     vector of dimension at least limit, the first
+    //                      last  elements of which are the moduli of the
+    //                     absolute error estimates on the subintervals
+    //
+    //            iord   - integer
+    //                     vector of dimension at least limit, the first k
+    //                     elements of which are pointers to the error
+    //                     estimates over the subintervals,
+    //                     such that elist(iord(1)), ...,
+    //                     elist(iord(k)) form a decreasing sequence, with
+    //                     k = last if last.le.(limit/2+2), and
+    //                     k = limit+1-last otherwise.
+    //
+    //            nnlog  - integer
+    //                     vector of dimension at least limit, containing the
+    //                     subdivision levels of the subintervals, i.e.
+    //                     iwork(i) = l means that the subinterval
+    //                     numbered i is of length abs(b-a)*2**(1-l)
+    //
+    //         on entry and return
+    //            momcom - integer
+    //                     indicating that the chebyshev moments
+    //                     have been computed for intervals of lengths
+    //                     (abs(b-a))*2**(-l), l=0,1,2, ..., momcom-1,
+    //                     momcom.lt.maxp1
+    //
+    //            chebmo - double precision
+    //                     array of dimension (maxp1,25) containing the
+    //                     chebyshev moments
+    //
+    //***references  (none)
+    //***routines called  d1mach,dqc25f,dqelg,dqpsrt
+    //***end prologue  dqawoe
+    //
+    //            the dimension of rlist2 is determined by  the value of
+    //            limexp in subroutine dqelg (rlist2 should be of
+    //            dimension (limexp+2) at least).
+    //
+    //            list of major variables
+    //            -----------------------
+    //
+    //           alist     - list of left end points of all subintervals
+    //                       considered up to now
+    //           blist     - list of right end points of all subintervals
+    //                       considered up to now
+    //           rlist(i)  - approximation to the integral over
+    //                       (alist(i),blist(i))
+    //           rlist2    - array of dimension at least limexp+2
+    //                       containing the part of the epsilon table
+    //                       which is still needed for further computations
+    //           elist(i)  - error estimate applying to rlist(i)
+    //           maxerr    - pointer to the interval with largest
+    //                       error estimate
+    //           errmax    - elist(maxerr)
+    //           erlast    - error on the interval currently subdivided
+    //           area      - sum of the integrals over the subintervals
+    //           errsum    - sum of the errors over the subintervals
+    //           errbnd    - requested accuracy max(epsabs,epsrel*
+    //                       abs(result))
+    //           *****1    - variable for the left subinterval
+    //           *****2    - variable for the right subinterval
+    //           last      - index for subdivision
+    //           nres      - number of calls to the extrapolation routine
+    //           numrl2    - number of elements in rlist2. if an appropriate
+    //                       approximation to the compounded integral has
+    //                       been obtained it is put in rlist2(numrl2) after
+    //                       numrl2 has been increased by one
+    //           small     - length of the smallest interval considered
+    //                       up to now, multiplied by 1.5
+    //           erlarg    - sum of the errors over the intervals larger
+    //                       than the smallest interval considered up to now
+    //           extrap    - logical variable denoting that the routine is
+    //                       attempting to perform extrapolation, i.e. before
+    //                       subdividing the smallest interval we try to
+    //                       decrease the value of erlarg
+    //           noext     - logical variable denoting that extrapolation
+    //                       is no longer allowed (true  value)
+    //
+    //            machine dependent constants
+    //            ---------------------------
+    //
+    //           epmach is the largest relative spacing.
+    //           uflow is the smallest positive magnitude.
+    //           oflow is the largest positive magnitude.
+    //
     int extrap, extall, ierror, iroff1, iroff2, iroff3, jupbnd, k, ksgn;
     int ktmin, L, maxerr, nev, noext, nres, nrmax, nrmom, numrl2;
     double abseps, area, area1, area12, area2, a1, a2, b1, b2, correc, defab1;
@@ -1375,6 +2803,192 @@ dqawse(double(*fcn)(double* x), const double a, const double b, const double alf
        double* alist, double* blist, double* rlist, double* elist, int* iord,
        int* last)
 {
+    // ***begin prologue  dqawse
+    // ***date written   800101   (yymmdd)
+    // ***revision date  830518   (yymmdd)
+    // ***category no.  h2a2a1
+    // ***keywords  automatic integrator, special-purpose,
+    //              algebraico-logarithmic end point singularities,
+    //              clenshaw-curtis method
+    // ***author  piessens,robert,appl. math. & progr. div. - k.u.leuven
+    //            de doncker,elise,appl. math. & progr. div. - k.u.leuven
+    // ***purpose  the routine calculates an approximation result to a given
+    //             definite integral i = integral of f*w over (a,b),
+    //             (where w shows a singular behaviour at the end points,
+    //             see parameter integr).
+    //             hopefully satisfying following claim for accuracy
+    //             abs(i-result).le.max(epsabs,epsrel*abs(i)).
+    // ***description
+    //
+    //         integration of functions having algebraico-logarithmic
+    //         end point singularities
+    //         standard fortran subroutine
+    //         double precision version
+    //
+    //         parameters
+    //          on entry
+    //             f      - double precision
+    //                      function subprogram defining the integrand
+    //                      function f(x). the actual name for f needs to be
+    //                      declared e x t e r n a l in the driver program.
+    //
+    //             a      - double precision
+    //                      lower limit of integration
+    //
+    //             b      - double precision
+    //                      upper limit of integration, b.gt.a
+    //                      if b.le.a, the routine will end with ier = 6.
+    //
+    //             alfa   - double precision
+    //                      parameter in the weight function, alfa.gt.(-1)
+    //                      if alfa.le.(-1), the routine will end with
+    //                      ier = 6.
+    //
+    //             beta   - double precision
+    //                      parameter in the weight function, beta.gt.(-1)
+    //                      if beta.le.(-1), the routine will end with
+    //                      ier = 6.
+    //
+    //             integr - integer
+    //                      indicates which weight function is to be used
+    //                      = 1  (x-a)**alfa*(b-x)**beta
+    //                      = 2  (x-a)**alfa*(b-x)**beta*log(x-a)
+    //                      = 3  (x-a)**alfa*(b-x)**beta*log(b-x)
+    //                      = 4  (x-a)**alfa*(b-x)**beta*log(x-a)*log(b-x)
+    //                      if integr.lt.1 or integr.gt.4, the routine
+    //                      will end with ier = 6.
+    //
+    //             epsabs - double precision
+    //                      absolute accuracy requested
+    //             epsrel - double precision
+    //                      relative accuracy requested
+    //                      if  epsabs.le.0
+    //                      and epsrel.lt.max(50*rel.mach.acc.,0.5d-28),
+    //                      the routine will end with ier = 6.
+    //
+    //             limit  - integer
+    //                      gives an upper bound on the number of subintervals
+    //                      in the partition of (a,b), limit.ge.2
+    //                      if limit.lt.2, the routine will end with ier = 6.
+    //
+    //          on return
+    //             result - double precision
+    //                      approximation to the integral
+    //
+    //             abserr - double precision
+    //                      estimate of the modulus of the absolute error,
+    //                      which should equal or exceed abs(i-result)
+    //
+    //             neval  - integer
+    //                      number of integrand evaluations
+    //
+    //             ier    - integer
+    //                      ier = 0 normal and reliable termination of the
+    //                              routine. it is assumed that the requested
+    //                              accuracy has been achieved.
+    //                      ier.gt.0 abnormal termination of the routine
+    //                              the estimates for the integral and error
+    //                              are less reliable. it is assumed that the
+    //                              requested accuracy has not been achieved.
+    //             error messages
+    //                          = 1 maximum number of subdivisions allowed
+    //                              has been achieved. one can allow more
+    //                              subdivisions by increasing the value of
+    //                              limit. however, if this yields no
+    //                              improvement, it is advised to analyze the
+    //                              integrand in order to determine the
+    //                              integration difficulties which prevent the
+    //                              requested tolerance from being achieved.
+    //                              in case of a jump discontinuity or a local
+    //                              singularity of algebraico-logarithmic type
+    //                              at one or more interior points of the
+    //                              integration range, one should proceed by
+    //                              splitting up the interval at these
+    //                              points and calling the integrator on the
+    //                              subranges.
+    //                          = 2 the occurrence of roundoff error is
+    //                              detected, which prevents the requested
+    //                              tolerance from being achieved.
+    //                          = 3 extremely bad integrand behaviour occurs
+    //                              at some points of the integration
+    //                              interval.
+    //                          = 6 the input is invalid, because
+    //                              b.le.a or alfa.le.(-1) or beta.le.(-1), or
+    //                              integr.lt.1 or integr.gt.4, or
+    //                              (epsabs.le.0 and
+    //                               epsrel.lt.max(50*rel.mach.acc.,0.5d-28),
+    //                              or limit.lt.2.
+    //                              result, abserr, neval, rlist(1), elist(1),
+    //                              iord(1) and last are set to zero. alist(1)
+    //                              and blist(1) are set to a and b
+    //                              respectively.
+    //
+    //             alist  - double precision
+    //                      vector of dimension at least limit, the first
+    //                       last  elements of which are the left
+    //                      end points of the subintervals in the partition
+    //                      of the given integration range (a,b)
+    //
+    //             blist  - double precision
+    //                      vector of dimension at least limit, the first
+    //                       last  elements of which are the right
+    //                      end points of the subintervals in the partition
+    //                      of the given integration range (a,b)
+    //
+    //             rlist  - double precision
+    //                      vector of dimension at least limit,the first
+    //                       last  elements of which are the integral
+    //                      approximations on the subintervals
+    //
+    //             elist  - double precision
+    //                      vector of dimension at least limit, the first
+    //                       last  elements of which are the moduli of the
+    //                      absolute error estimates on the subintervals
+    //
+    //             iord   - integer
+    //                      vector of dimension at least limit, the first k
+    //                      of which are pointers to the error
+    //                      estimates over the subintervals, so that
+    //                      elist(iord(1)), ..., elist(iord(k)) with k = last
+    //                      if last.le.(limit/2+2), and k = limit+1-last
+    //                      otherwise form a decreasing sequence
+    //
+    //             last   - integer
+    //                      number of subintervals actually produced in
+    //                      the subdivision process
+    //
+    // ***references  (none)
+    // ***routines called  d1mach,dqc25s,dqmomo,dqpsrt
+    // ***end prologue  dqawse
+    //
+    //             list of major variables
+    //             -----------------------
+    //
+    //            alist     - list of left end points of all subintervals
+    //                        considered up to now
+    //            blist     - list of right end points of all subintervals
+    //                        considered up to now
+    //            rlist(i)  - approximation to the integral over
+    //                        (alist(i),blist(i))
+    //            elist(i)  - error estimate applying to rlist(i)
+    //            maxerr    - pointer to the interval with largest
+    //                        error estimate
+    //            errmax    - elist(maxerr)
+    //            area      - sum of the integrals over the subintervals
+    //            errsum    - sum of the errors over the subintervals
+    //            errbnd    - requested accuracy max(epsabs,epsrel*
+    //                        abs(result))
+    //            *****1    - variable for the left subinterval
+    //            *****2    - variable for the right subinterval
+    //            last      - index for subdivision
+    //
+    //
+    //             machine dependent constants
+    //             ---------------------------
+    //
+    //            epmach is the largest relative spacing.
+    //            uflow is the smallest positive magnitude.
+    //
     int iroff1, iroff2, k, L, maxerr, nev, nrmax;
     double area, area1, area12, area2, a1, a2, b1, b2, centre, errbnd, errmax;
     double error1, error12, error2, errsum, resas1, resas2;
@@ -1554,6 +3168,61 @@ void
 dqc25c(double(*fcn)(double* x), const double a, const double b, const double c,
        double* result, double* abserr, int* krul, int* neval)
 {
+    // ***begin prologue  dqc25c
+    // ***date written   810101   (yymmdd)
+    // ***revision date  830518   (yymmdd)
+    // ***category no.  h2a2a2,j4
+    // ***keywords  25-point clenshaw-curtis integration
+    // ***author  piessens,robert,appl. math. & progr. div. - k.u.leuven
+    //            de doncker,elise,appl. math. & progr. div. - k.u.leuven
+    // ***purpose  to compute i = integral of f*w over (a,b) with
+    //             error estimate, where w(x) = 1/(x-c)
+    // ***description
+    //
+    //         integration rules for the computation of cauchy
+    //         principal value integrals
+    //         standard fortran subroutine
+    //         double precision version
+    //
+    //         parameters
+    //            f      - double precision
+    //                     function subprogram defining the integrand function
+    //                     f(x). the actual name for f needs to be declared
+    //                     e x t e r n a l  in the driver program.
+    //
+    //            a      - double precision
+    //                     left end point of the integration interval
+    //
+    //            b      - double precision
+    //                     right end point of the integration interval, b.gt.a
+    //
+    //            c      - double precision
+    //                     parameter in the weight function
+    //
+    //            result - double precision
+    //                     approximation to the integral
+    //                     result is computed by using a generalized
+    //                     clenshaw-curtis method if c lies within ten percent
+    //                     of the integration interval. in the other case the
+    //                     15-point kronrod rule obtained by optimal addition
+    //                     of abscissae to the 7-point gauss rule, is applied.
+    //
+    //            abserr - double precision
+    //                     estimate of the modulus of the absolute error,
+    //                     which should equal or exceed abs(i-result)
+    //
+    //            krul   - integer
+    //                     key which is decreased by 1 if the 15-point
+    //                     gauss-kronrod scheme has been used
+    //
+    //            neval  - integer
+    //                     number of integrand evaluations
+    //
+    // .......................................................................
+    // ***references  (none)
+    // ***routines called  dqcheb,dqk15w,dqwgtc
+    // ***end prologue  dqc25c
+    //
     int i, isym, k, kp;
     double ak22, amom0, amom1, amom2, cc, centr, hlgth, resabs, resasc, res12, res24, u;
     double fval[25], cheb12[13], cheb24[25];
@@ -1648,7 +3317,101 @@ dqc25f(double(*fcn)(double* x), const double a, const double b, const double ome
        double* result, double* abserr, int* neval, double* resabs, double* resasc,
        int* momcom, double* chebmo)
 {
-
+    // ***begin prologue  dqc25f
+    // ***date written   810101   (yymmdd)
+    // ***revision date  830518   (yymmdd)
+    // ***category no.  h2a2a2
+    // ***keywords  integration rules for functions with cos or sin
+    //              factor, clenshaw-curtis, gauss-kronrod
+    // ***author  piessens,robert,appl. math. & progr. div. - k.u.leuven
+    //            de doncker,elise,appl. math. & progr. div. - k.u.leuven
+    // ***purpose  to compute the integral i=integral of f(x) over (a,b)
+    //             where w(x) = cos(omega*x) or w(x)=sin(omega*x) and to
+    //             compute j = integral of abs(f) over (a,b). for small value
+    //             of omega or small intervals (a,b) the 15-point gauss-kronro
+    //             rule is used. otherwise a generalized clenshaw-curtis
+    //             method is used.
+    // ***description
+    //
+    //         integration rules for functions with cos or sin factor
+    //         standard fortran subroutine
+    //         double precision version
+    //
+    //         parameters
+    //          on entry
+    //            f      - double precision
+    //                     function subprogram defining the integrand
+    //                     function f(x). the actual name for f needs to
+    //                     be declared e x t e r n a l in the calling program.
+    //
+    //            a      - double precision
+    //                     lower limit of integration
+    //
+    //            b      - double precision
+    //                     upper limit of integration
+    //
+    //            omega  - double precision
+    //                     parameter in the weight function
+    //
+    //            integr - integer
+    //                     indicates which weight function is to be used
+    //                        integr = 1   w(x) = cos(omega*x)
+    //                        integr = 2   w(x) = sin(omega*x)
+    //
+    //            nrmom  - integer
+    //                     the length of interval (a,b) is equal to the length
+    //                     of the original integration interval divided by
+    //                     2**nrmom (we suppose that the routine is used in an
+    //                     adaptive integration process, otherwise set
+    //                     nrmom = 0). nrmom must be zero at the first call.
+    //
+    //            maxp1  - integer
+    //                     gives an upper bound on the number of chebyshev
+    //                     moments which can be stored, i.e. for the
+    //                     intervals of lengths abs(bb-aa)*2**(-l),
+    //                     l = 0,1,2, ..., maxp1-2.
+    //
+    //            ksave  - integer
+    //                     key which is one when the moments for the
+    //                     current interval have been computed
+    //
+    //          on return
+    //            result - double precision
+    //                     approximation to the integral i
+    //
+    //            abserr - double precision
+    //                     estimate of the modulus of the absolute
+    //                     error, which should equal or exceed abs(i-result)
+    //
+    //            neval  - integer
+    //                     number of integrand evaluations
+    //
+    //            resabs - double precision
+    //                     approximation to the integral j
+    //
+    //            resasc - double precision
+    //                     approximation to the integral of abs(f-i/(b-a))
+    //
+    //          on entry and return
+    //            momcom - integer
+    //                     for each interval length we need to compute the
+    //                     chebyshev moments. momcom counts the number of
+    //                     intervals for which these moments have already been
+    //                     computed. if nrmom.lt.momcom or ksave = 1, the
+    //                     chebyshev moments for the interval (a,b) have
+    //                     already been computed and stored, otherwise we
+    //                     compute them and we increase momcom.
+    //
+    //            chebmo - double precision
+    //                     array of dimension at least (maxp1,25) containing
+    //                     the modified chebyshev moments for the first momcom
+    //                     momcom interval lengths
+    //
+    //  ......................................................................
+    // ***references  (none)
+    // ***routines called  d1mach,dgtsl,dqcheb,dqk15w,dqwgtf
+    // ***end prologue  dqc25f
+    //
     int i, isym, j, k, m, noequ;
     double ac, an, an2, as, asap, ass, centr, conc, cons, cospar, estc, ests;
     double hlgth, parint, par2, par22, resc12, resc24, ress12, ress24, sinpar;
@@ -1956,7 +3719,82 @@ dqc25s(double(*fcn)(double* x), const double a, const double b, const double bl,
        double* rg, double* rh, double* result, double* abserr, double* resasc,
        const int integr, int* nev)
 {
-
+    // ***begin prologue  dqc25s
+    // ***date written   810101   (yymmdd)
+    // ***revision date  830518   (yymmdd)
+    // ***category no.  h2a2a2
+    // ***keywords  25-point clenshaw-curtis integration
+    // ***author  piessens,robert,appl. math. & progr. div. - k.u.leuven
+    //            de doncker,elise,appl. math. & progr. div. - k.u.leuven
+    // ***purpose  to compute i = integral of f*w over (bl,br), with error
+    //             estimate, where the weight function w has a singular
+    //             behaviour of algebraico-logarithmic type at the points
+    //             a and/or b. (bl,br) is a part of (a,b).
+    // ***description
+    //
+    //         integration rules for integrands having algebraico-logarithmic
+    //         end point singularities
+    //         standard fortran subroutine
+    //         double precision version
+    //
+    //         parameters
+    //            f      - double precision
+    //                     function subprogram defining the integrand
+    //                     f(x). the actual name for f needs to be declared
+    //                     e x t e r n a l  in the driver program.
+    //
+    //            a      - double precision
+    //                     left end point of the original interval
+    //
+    //            b      - double precision
+    //                     right end point of the original interval, b.gt.a
+    //
+    //            bl     - double precision
+    //                     lower limit of integration, bl.ge.a
+    //
+    //            br     - double precision
+    //                     upper limit of integration, br.le.b
+    //
+    //            alfa   - double precision
+    //                     parameter in the weight function
+    //
+    //            beta   - double precision
+    //                     parameter in the weight function
+    //
+    //            ri,rj,rg,rh - double precision
+    //                     modified chebyshev moments for the application
+    //                     of the generalized clenshaw-curtis
+    //                     method (computed in subroutine dqmomo)
+    //
+    //            result - double precision
+    //                     approximation to the integral
+    //                     result is computed by using a generalized
+    //                     clenshaw-curtis method if b1 = a or br = b.
+    //                     in all other cases the 15-point kronrod
+    //                     rule is applied, obtained by optimal addition of
+    //                     abscissae to the 7-point gauss rule.
+    //
+    //            abserr - double precision
+    //                     estimate of the modulus of the absolute error,
+    //                     which should equal or exceed abs(i-result)
+    //
+    //            resasc - double precision
+    //                     approximation to the integral of abs(f*w-i/(b-a))
+    //
+    //            integr - integer
+    //                     which determines the weight function
+    //                     = 1   w(x) = (x-a)**alfa*(b-x)**beta
+    //                     = 2   w(x) = (x-a)**alfa*(b-x)**beta*log(x-a)
+    //                     = 3   w(x) = (x-a)**alfa*(b-x)**beta*log(b-x)
+    //                     = 4   w(x) = (x-a)**alfa*(b-x)**beta*log(x-a)*
+    //                                  log(b-x)
+    //
+    //            nev    - integer
+    //                     number of integrand evaluations
+    // ***references  (none)
+    // ***routines called  dqcheb,dqk15w
+    // ***end prologue  dqc25s
+    //
     int i, isym;
     double centr, dc, factor, fix, hlgth, mut_D, resabs, res12, res24, u;
     double cheb12[13] = { 0.0 };
@@ -2267,6 +4105,50 @@ dqc25s(double(*fcn)(double* x), const double a, const double b, const double bl,
 void
 dqcheb(const double* x, double* fval, double* cheb12, double* cheb24)
 {
+    // ***begin prologue  dqcheb
+    // ***refer to  dqc25c,dqc25f,dqc25s
+    // ***routines called  (none)
+    // ***revision date  830518   (yymmdd)
+    // ***keywords  chebyshev series expansion, fast fourier transform
+    // ***author  piessens,robert,appl. math. & progr. div. - k.u.leuven
+    //            de doncker,elise,appl. math. & progr. div. - k.u.leuven
+    // ***purpose  this routine computes the chebyshev series expansion
+    //             of degrees 12 and 24 of a function using a
+    //             fast fourier transform method
+    //             f(x) = sum(k=1,..,13) (cheb12(k)*t(k-1,x)),
+    //             f(x) = sum(k=1,..,25) (cheb24(k)*t(k-1,x)),
+    //             where t(k,x) is the chebyshev polynomial of degree k.
+    // ***description
+    //
+    //         chebyshev series expansion
+    //         standard fortran subroutine
+    //         double precision version
+    //
+    //         parameters
+    //           on entry
+    //            x      - double precision
+    //                     vector of dimension 11 containing the
+    //                     values cos(k*pi/24), k = 1, ..., 11
+    //
+    //            fval   - double precision
+    //                     vector of dimension 25 containing the
+    //                     function values at the points
+    //                     (b+a+(b-a)*cos(k*pi/24))/2, k = 0, ...,24,
+    //                     where (a,b) is the approximation interval.
+    //                     fval(1) and fval(25) are divided by two
+    //                     (these values are destroyed at output).
+    //
+    //           on return
+    //            cheb12 - double precision
+    //                     vector of dimension 13 containing the
+    //                     chebyshev coefficients for degree 12
+    //
+    //            cheb24 - double precision
+    //                     vector of dimension 25 containing the
+    //                     chebyshev coefficients for degree 24
+    //
+    // ***end prologue  dqcheb
+    //
     int i, j;
     double alam, alam1, alam2, part1, part2, part3;
     double v[12];
@@ -2403,6 +4285,79 @@ dqcheb(const double* x, double* fval, double* cheb12, double* cheb24)
 void
 dqelg(int* n, double* epstab, double* result, double* abserr, double* res3la, int* nres)
 {
+    // ***begin prologue  dqelg
+    // ***refer to  dqagie,dqagoe,dqagpe,dqagse
+    // ***routines called  d1mach
+    // ***revision date  830518   (yymmdd)
+    // ***keywords  epsilon algorithm, convergence acceleration,
+    //              extrapolation
+    // ***author  piessens,robert,appl. math. & progr. div. - k.u.leuven
+    //            de doncker,elise,appl. math & progr. div. - k.u.leuven
+    // ***purpose  the routine determines the limit of a given sequence of
+    //             approximations, by means of the epsilon algorithm of
+    //             p.wynn. an estimate of the absolute error is also given.
+    //             the condensed epsilon table is computed. only those
+    //             elements needed for the computation of the next diagonal
+    //             are preserved.
+    // ***description
+    //
+    //            epsilon algorithm
+    //            standard fortran subroutine
+    //            double precision version
+    //
+    //            parameters
+    //               n      - integer
+    //                        epstab(n) contains the new element in the
+    //                        first column of the epsilon table.
+    //
+    //               epstab - double precision
+    //                        vector of dimension 52 containing the elements
+    //                        of the two lower diagonals of the triangular
+    //                        epsilon table. the elements are numbered
+    //                        starting at the right-hand corner of the
+    //                        triangle.
+    //
+    //               result - double precision
+    //                        resulting approximation to the integral
+    //
+    //               abserr - double precision
+    //                        estimate of the absolute error computed from
+    //                        result and the 3 previous results
+    //
+    //               res3la - double precision
+    //                        vector of dimension 3 containing the last 3
+    //                        results
+    //
+    //               nres   - integer
+    //                        number of calls to the routine
+    //                        (should be zero at first call)
+    //
+    // ***end prologue  dqelg
+    //
+    //            list of major variables
+    //            -----------------------
+    //
+    //            e0     - the 4 elements on which the computation of a new
+    //            e1       element in the epsilon table is based
+    //            e2
+    //            e3                 e0
+    //                         e3    e1    new
+    //                               e2
+    //            newelm - number of elements to be computed in the new
+    //                     diagonal
+    //            error  - error = abs(e1-e0)+abs(e2-e1)+abs(new-e2)
+    //            result - the element in the new diagonal with least value
+    //                     of error
+    //
+    //            machine dependent constants
+    //            ---------------------------
+    //
+    //            epmach is the largest relative spacing.
+    //            oflow is the largest positive magnitude.
+    //            limexp is the maximum number of elements the epsilon
+    //            table can contain. if this number is reached, the upper
+    //            diagonal of the epsilon table is deleted.
+    //
     int i, indx, k1, k2, k3, limexp, n2_rem, newelm, starting_n;
     double delta1, delta2, delta3, epsinf, error, err1, err2, err3;
     double e0, e1, e1abs, e2, e3, res, ss, tol1, tol2, tol3;
@@ -2537,6 +4492,76 @@ void
 dqk15(double(*fcn)(double* x), const double a, const double b,
       double* result, double* abserr, double* resabs, double* resasc)
 {
+    // ***begin prologue  dqk15
+    // ***date written   800101   (yymmdd)
+    // ***revision date  830518   (yymmdd)
+    // ***category no.  h2a1a2
+    // ***keywords  15-point gauss-kronrod rules
+    // ***author  piessens,robert,appl. math. & progr. div. - k.u.leuven
+    //            de doncker,elise,appl. math. & progr. div - k.u.leuven
+    // ***purpose  to compute i = integral of f over (a,b), with error
+    //                            estimate
+    //                        j = integral of abs(f) over (a,b)
+    // ***description
+    //
+    //            integration rules
+    //            standard fortran subroutine
+    //            double precision version
+    //
+    //            parameters
+    //             on entry
+    //               f      - double precision
+    //                        function subprogram defining the integrand
+    //                        function f(x). the actual name for f needs to be
+    //                        declared e x t e r n a l in the calling program.
+    //
+    //               a      - double precision
+    //                        lower limit of integration
+    //
+    //               b      - double precision
+    //                        upper limit of integration
+    //
+    //             on return
+    //               result - double precision
+    //                        approximation to the integral i
+    //                        result is computed by applying the 15-point
+    //                        kronrod rule (resk) obtained by optimal addition
+    //                        of abscissae to the7-point gauss rule(resg).
+    //
+    //               abserr - double precision
+    //                        estimate of the modulus of the absolute error,
+    //                        which should not exceed abs(i-result)
+    //
+    //               resabs - double precision
+    //                        approximation to the integral j
+    //
+    //               resasc - double precision
+    //                        approximation to the integral of abs(f-i/(b-a))
+    //                        over (a,b)
+    //
+    // ***references  (none)
+    // ***routines called  d1mach
+    // ***end prologue  dqk15
+    //
+    //            the abscissae and weights are given for the interval (-1,1).
+    //            because of symmetry only the positive abscissae and their
+    //            corresponding weights are given.
+    //
+    //            xgk    - abscissae of the 15-point kronrod rule
+    //                     xgk(2), xgk(4), ...  abscissae of the 7-point
+    //                     gauss rule
+    //                     xgk(1), xgk(3), ...  abscissae which are optimally
+    //                     added to the 7-point gauss rule
+    //
+    //            wgk    - weights of the 15-point kronrod rule
+    //
+    //            wg     - weights of the 7-point gauss rule
+    //
+    //
+    //  gauss quadrature weights and kronron quadrature abscissae and weights
+    //  as evaluated with 80 decimal digit arithmetic by l. w. fullerton,
+    //  bell labs, nov. 1981.
+    //
     int j, jtw, jtwm1;
     double absc, centr, dhlgth, fc, fsum, fval1, fval2, hlgth, resg, resk,reskh;
     double fv1[7], fv2[7];
@@ -2646,6 +4671,92 @@ void
 dqk15i(double(*fcn)(double* x), const double boun, const int inf, const double a, const double b,
        double* result, double* abserr, double* resabs, double* resasc)
 {
+    // ***begin prologue  dqk15i
+    // ***date written   800101   (yymmdd)
+    // ***revision date  830518   (yymmdd)
+    // ***category no.  h2a3a2,h2a4a2
+    // ***keywords  15-point transformed gauss-kronrod rules
+    // ***author  piessens,robert,appl. math. & progr. div. - k.u.leuven
+    //            de doncker,elise,appl. math. & progr. div. - k.u.leuven
+    // ***purpose  the original (infinite integration range is mapped
+    //             onto the interval (0,1) and (a,b) is a part of (0,1).
+    //             it is the purpose to compute
+    //             i = integral of transformed integrand over (a,b),
+    //             j = integral of abs(transformed integrand) over (a,b).
+    // ***description
+    //
+    //            integration rule
+    //            standard fortran subroutine
+    //            double precision version
+    //
+    //            parameters
+    //             on entry
+    //               f      - double precision
+    //                        function subprogram defining the integrand
+    //                        function f(x). the actual name for f needs to be
+    //                        declared e x t e r n a l in the calling program.
+    //
+    //               boun   - double precision
+    //                        finite bound of original integration
+    //                        range (set to zero if inf = +2)
+    //
+    //               inf    - integer
+    //                        if inf = -1, the original interval is
+    //                                    (-infinity,bound),
+    //                        if inf = +1, the original interval is
+    //                                    (bound,+infinity),
+    //                        if inf = +2, the original interval is
+    //                                    (-infinity,+infinity) and
+    //                        the integral is computed as the sum of two
+    //                        integrals, one over (-infinity,0) and one over
+    //                        (0,+infinity).
+    //
+    //               a      - double precision
+    //                        lower limit for integration over subrange
+    //                        of (0,1)
+    //
+    //               b      - double precision
+    //                        upper limit for integration over subrange
+    //                        of (0,1)
+    //
+    //             on return
+    //               result - double precision
+    //                        approximation to the integral i
+    //                        result is computed by applying the 15-point
+    //                        kronrod rule(resk) obtained by optimal addition
+    //                        of abscissae to the 7-point gauss rule(resg).
+    //
+    //               abserr - double precision
+    //                        estimate of the modulus of the absolute error,
+    //                        which should equal or exceed abs(i-result)
+    //
+    //               resabs - double precision
+    //                        approximation to the integral j
+    //
+    //               resasc - double precision
+    //                        approximation to the integral of
+    //                        abs((transformed integrand)-i/(b-a)) over (a,b)
+    //
+    // ***references  (none)
+    // ***routines called  d1mach
+    // ***end prologue  dqk15i
+    //
+    //            the abscissae and weights are supplied for the interval
+    //            (-1,1).  because of symmetry only the positive abscissae and
+    //            their corresponding weights are given.
+    //
+    //            xgk    - abscissae of the 15-point kronrod rule
+    //                     xgk(2), xgk(4), ... abscissae of the 7-point
+    //                     gauss rule
+    //                     xgk(1), xgk(3), ...  abscissae which are optimally
+    //                     added to the 7-point gauss rule
+    //
+    //            wgk    - weights of the 15-point kronrod rule
+    //
+    //            wg     - weights of the 7-point gauss rule, corresponding
+    //                     to the abscissae xgk(2), xgk(4), ...
+    //                     wg(1), wg(3), ... are set to zero.
+    //
     int j;
     double absc, absc1, absc2, centr, dinf, fc, fsum, fval1, fval2, hlgth, resg;
     double resk, reskh, tabsc1, tabsc2;
@@ -2760,6 +4871,83 @@ dqk15w(double(*fcn)(double* x), quadpack_w_func w, const double p1, const double
        const double p3, const double p4, const int kp, const double a, const double b,
        double* result, double* abserr, double* resabs, double* resasc)
 {
+    // ***begin prologue  dqk15w
+    // ***date written   810101   (yymmdd)
+    // ***revision date  830518   (mmddyy)
+    // ***category no.  h2a2a2
+    // ***keywords  15-point gauss-kronrod rules
+    // ***author  piessens,robert,appl. math. & progr. div. - k.u.leuven
+    //            de doncker,elise,appl. math. & progr. div. - k.u.leuven
+    // ***purpose  to compute i = integral of f*w over (a,b), with error
+    //                            estimate
+    //                        j = integral of abs(f*w) over (a,b)
+    // ***description
+    //
+    //            integration rules
+    //            standard fortran subroutine
+    //            double precision version
+    //
+    //            parameters
+    //              on entry
+    //               f      - double precision
+    //                        function subprogram defining the integrand
+    //                        function f(x). the actual name for f needs to be
+    //                        declared e x t e r n a l in the driver program.
+    //
+    //               w      - double precision
+    //                        function subprogram defining the integrand
+    //                        weight function w(x). the actual name for w
+    //                        needs to be declared e x t e r n a l in the
+    //                        calling program.
+    //
+    //               p1, p2, p3, p4 - double precision
+    //                        parameters in the weight function
+    //
+    //               kp     - integer
+    //                        key for indicating the type of weight function
+    //
+    //               a      - double precision
+    //                        lower limit of integration
+    //
+    //               b      - double precision
+    //                        upper limit of integration
+    //
+    //             on return
+    //               result - double precision
+    //                        approximation to the integral i
+    //                        result is computed by applying the 15-point
+    //                        kronrod rule (resk) obtained by optimal addition
+    //                        of abscissae to the 7-point gauss rule (resg).
+    //
+    //               abserr - double precision
+    //                        estimate of the modulus of the absolute error,
+    //                        which should equal or exceed abs(i-result)
+    //
+    //               resabs - double precision
+    //                        approximation to the integral of abs(f)
+    //
+    //               resasc - double precision
+    //                        approximation to the integral of abs(f-i/(b-a))
+    //
+    //
+    // ***references  (none)
+    // ***routines called  d1mach
+    // ***end prologue  dqk15w
+    //
+    //            the abscissae and weights are given for the interval (-1,1).
+    //            because of symmetry only the positive abscissae and their
+    //            corresponding weights are given.
+    //
+    //            xgk    - abscissae of the 15-point gauss-kronrod rule
+    //                     xgk(2), xgk(4), ... abscissae of the 7-point
+    //                     gauss rule
+    //                     xgk(1), xgk(3), ... abscissae which are optimally
+    //                     added to the 7-point gauss rule
+    //
+    //            wgk    - weights of the 15-point gauss-kronrod rule
+    //
+    //            wg     - weights of the 7-point gauss rule
+    //
     int j, jtw, jtwm1;
     double absc, absc1, absc2, centr, dhlgth, fc, fsum, fval1, fval2, hlgth;
     double resg,resk,reskh;
@@ -2868,6 +5056,76 @@ void
 dqk21(double(*fcn)(double* x), const double a, const double b,
       double* result, double* abserr, double* resabs, double* resasc)
 {
+    // ***begin prologue  dqk21
+    // ***date written   800101   (yymmdd)
+    // ***revision date  830518   (yymmdd)
+    // ***category no.  h2a1a2
+    // ***keywords  21-point gauss-kronrod rules
+    // ***author  piessens,robert,appl. math. & progr. div. - k.u.leuven
+    //            de doncker,elise,appl. math. & progr. div. - k.u.leuven
+    // ***purpose  to compute i = integral of f over (a,b), with error
+    //                            estimate
+    //                        j = integral of abs(f) over (a,b)
+    // ***description
+    //
+    //            integration rules
+    //            standard fortran subroutine
+    //            double precision version
+    //
+    //            parameters
+    //             on entry
+    //               f      - double precision
+    //                        function subprogram defining the integrand
+    //                        function f(x). the actual name for f needs to be
+    //                        declared e x t e r n a l in the driver program.
+    //
+    //               a      - double precision
+    //                        lower limit of integration
+    //
+    //               b      - double precision
+    //                        upper limit of integration
+    //
+    //             on return
+    //               result - double precision
+    //                        approximation to the integral i
+    //                        result is computed by applying the 21-point
+    //                        kronrod rule (resk) obtained by optimal addition
+    //                        of abscissae to the 10-point gauss rule (resg).
+    //
+    //               abserr - double precision
+    //                        estimate of the modulus of the absolute error,
+    //                        which should not exceed abs(i-result)
+    //
+    //               resabs - double precision
+    //                        approximation to the integral j
+    //
+    //               resasc - double precision
+    //                        approximation to the integral of abs(f-i/(b-a))
+    //                        over (a,b)
+    //
+    // ***references  (none)
+    // ***routines called  d1mach
+    // ***end prologue  dqk21
+    //
+    //            the abscissae and weights are given for the interval (-1,1).
+    //            because of symmetry only the positive abscissae and their
+    //            corresponding weights are given.
+    //
+    //            xgk    - abscissae of the 21-point kronrod rule
+    //                     xgk(2), xgk(4), ...  abscissae of the 10-point
+    //                     gauss rule
+    //                     xgk(1), xgk(3), ...  abscissae which are optimally
+    //                     added to the 10-point gauss rule
+    //
+    //            wgk    - weights of the 21-point kronrod rule
+    //
+    //            wg     - weights of the 10-point gauss rule
+    //
+    //
+    //  gauss quadrature weights and kronron quadrature abscissae and weights
+    //  as evaluated with 80 decimal digit arithmetic by l. w. fullerton,
+    //  bell labs, nov. 1981.
+    //
     int j, jtw, jtwm1;
     double absc, centr, dhlgth, fc, fsum, fval1, fval2, hlgth, resg, resk, reskh;
     double fv1[10], fv2[10];
@@ -2984,6 +5242,77 @@ void
 dqk31(double(*fcn)(double* x), const double a, const double b,
       double* result, double* abserr, double* resabs, double* resasc)
 {
+    // ***begin prologue  dqk31
+    // ***date written   800101   (yymmdd)
+    // ***revision date  830518   (yymmdd)
+    // ***category no.  h2a1a2
+    // ***keywords  31-point gauss-kronrod rules
+    // ***author  piessens,robert,appl. math. & progr. div. - k.u.leuven
+    //            de doncker,elise,appl. math. & progr. div. - k.u.leuven
+    // ***purpose  to compute i = integral of f over (a,b) with error
+    //                            estimate
+    //                        j = integral of abs(f) over (a,b)
+    // ***description
+    //
+    //            integration rules
+    //            standard fortran subroutine
+    //            double precision version
+    //
+    //            parameters
+    //             on entry
+    //               f      - double precision
+    //                        function subprogram defining the integrand
+    //                        function f(x). the actual name for f needs to be
+    //                        declared e x t e r n a l in the calling program.
+    //
+    //               a      - double precision
+    //                        lower limit of integration
+    //
+    //               b      - double precision
+    //                        upper limit of integration
+    //
+    //             on return
+    //               result - double precision
+    //                        approximation to the integral i
+    //                        result is computed by applying the 31-point
+    //                        gauss-kronrod rule (resk), obtained by optimal
+    //                        addition of abscissae to the 15-point gauss
+    //                        rule (resg).
+    //
+    //               abserr - double precision
+    //                        estimate of the modulus of the modulus,
+    //                        which should not exceed abs(i-result)
+    //
+    //               resabs - double precision
+    //                        approximation to the integral j
+    //
+    //               resasc - double precision
+    //                        approximation to the integral of abs(f-i/(b-a))
+    //                        over (a,b)
+    //
+    // ***references  (none)
+    // ***routines called  d1mach
+    // ***end prologue  dqk31
+    //
+    //            the abscissae and weights are given for the interval (-1,1).
+    //            because of symmetry only the positive abscissae and their
+    //            corresponding weights are given.
+    //
+    //            xgk    - abscissae of the 31-point kronrod rule
+    //                     xgk(2), xgk(4), ...  abscissae of the 15-point
+    //                     gauss rule
+    //                     xgk(1), xgk(3), ...  abscissae which are optimally
+    //                     added to the 15-point gauss rule
+    //
+    //            wgk    - weights of the 31-point kronrod rule
+    //
+    //            wg     - weights of the 15-point gauss rule
+    //
+    //
+    //  gauss quadrature weights and kronron quadrature abscissae and weights
+    //  as evaluated with 80 decimal digit arithmetic by l. w. fullerton,
+    //  bell labs, nov. 1981.
+    //
     int j, jtw, jtwm1;
     double absc, centr, dhlgth, fc, fsum, fval1, fval2, hlgth, resg, resk,reskh;
     double fv1[15], fv2[15];
@@ -3113,6 +5442,77 @@ void
 dqk41(double(*fcn)(double* x), const double a, const double b,
       double* result, double* abserr, double* resabs, double* resasc)
 {
+    // ***begin prologue  dqk41
+    // ***date written   800101   (yymmdd)
+    // ***revision date  830518   (yymmdd)
+    // ***category no.  h2a1a2
+    // ***keywords  41-point gauss-kronrod rules
+    // ***author  piessens,robert,appl. math. & progr. div. - k.u.leuven
+    //            de doncker,elise,appl. math. & progr. div. - k.u.leuven
+    // ***purpose  to compute i = integral of f over (a,b), with error
+    //                            estimate
+    //                        j = integral of abs(f) over (a,b)
+    // ***description
+    //
+    //            integration rules
+    //            standard fortran subroutine
+    //            double precision version
+    //
+    //            parameters
+    //             on entry
+    //               f      - double precision
+    //                        function subprogram defining the integrand
+    //                        function f(x). the actual name for f needs to be
+    //                        declared e x t e r n a l in the calling program.
+    //
+    //               a      - double precision
+    //                        lower limit of integration
+    //
+    //               b      - double precision
+    //                        upper limit of integration
+    //
+    //             on return
+    //               result - double precision
+    //                        approximation to the integral i
+    //                        result is computed by applying the 41-point
+    //                        gauss-kronrod rule (resk) obtained by optimal
+    //                        addition of abscissae to the 20-point gauss
+    //                        rule (resg).
+    //
+    //               abserr - double precision
+    //                        estimate of the modulus of the absolute error,
+    //                        which should not exceed abs(i-result)
+    //
+    //               resabs - double precision
+    //                        approximation to the integral j
+    //
+    //               resasc - double precision
+    //                        approximation to the integal of abs(f-i/(b-a))
+    //                        over (a,b)
+    //
+    // ***references  (none)
+    // ***routines called  d1mach
+    // ***end prologue  dqk41
+    //
+    //            the abscissae and weights are given for the interval (-1,1).
+    //            because of symmetry only the positive abscissae and their
+    //            corresponding weights are given.
+    //
+    //            xgk    - abscissae of the 41-point gauss-kronrod rule
+    //                     xgk(2), xgk(4), ...  abscissae of the 20-point
+    //                     gauss rule
+    //                     xgk(1), xgk(3), ...  abscissae which are optimally
+    //                     added to the 20-point gauss rule
+    //
+    //            wgk    - weights of the 41-point gauss-kronrod rule
+    //
+    //            wg     - weights of the 20-point gauss rule
+    //
+    //
+    //  gauss quadrature weights and kronron quadrature abscissae and weights
+    //  as evaluated with 80 decimal digit arithmetic by l. w. fullerton,
+    //  bell labs, nov. 1981.
+    //
     int j, jtw, jtwm1;
     double absc, centr, dhlgth, fc, fsum, fval1, fval2, hlgth, resg, resk, reskh;
     double fv1[20], fv2[20];
@@ -3254,6 +5654,76 @@ void
 dqk51(double(*fcn)(double* x), const double a, const double b,
       double* result, double* abserr, double* resabs, double* resasc)
 {
+    // ***begin prologue  dqk51
+    // ***date written   800101   (yymmdd)
+    // ***revision date  830518   (yymmdd)
+    // ***category no.  h2a1a2
+    // ***keywords  51-point gauss-kronrod rules
+    // ***author  piessens,robert,appl. math. & progr. div. - k.u.leuven
+    //            de doncker,elise,appl. math & progr. div. - k.u.leuven
+    // ***purpose  to compute i = integral of f over (a,b) with error
+    //                            estimate
+    //                        j = integral of abs(f) over (a,b)
+    // ***description
+    //
+    //            integration rules
+    //            standard fortran subroutine
+    //            double precision version
+    //
+    //            parameters
+    //             on entry
+    //               f      - double precision
+    //                        function subroutine defining the integrand
+    //                        function f(x). the actual name for f needs to be
+    //                        declared e x t e r n a l in the calling program.
+    //
+    //               a      - double precision
+    //                        lower limit of integration
+    //
+    //               b      - double precision
+    //                        upper limit of integration
+    //
+    //             on return
+    //               result - double precision
+    //                        approximation to the integral i
+    //                        result is computed by applying the 51-point
+    //                        kronrod rule (resk) obtained by optimal addition
+    //                        of abscissae to the 25-point gauss rule (resg).
+    //
+    //               abserr - double precision
+    //                        estimate of the modulus of the absolute error,
+    //                        which should not exceed abs(i-result)
+    //
+    //               resabs - double precision
+    //                        approximation to the integral j
+    //
+    //               resasc - double precision
+    //                        approximation to the integral of abs(f-i/(b-a))
+    //                        over (a,b)
+    //
+    // ***references  (none)
+    // ***routines called  d1mach
+    // ***end prologue  dqk51
+    //
+    //            the abscissae and weights are given for the interval (-1,1).
+    //            because of symmetry only the positive abscissae and their
+    //            corresponding weights are given.
+    //
+    //            xgk    - abscissae of the 51-point kronrod rule
+    //                     xgk(2), xgk(4), ...  abscissae of the 25-point
+    //                     gauss rule
+    //                     xgk(1), xgk(3), ...  abscissae which are optimally
+    //                     added to the 25-point gauss rule
+    //
+    //            wgk    - weights of the 51-point kronrod rule
+    //
+    //            wg     - weights of the 25-point gauss rule
+    //
+    //
+    //  gauss quadrature weights and kronron quadrature abscissae and weights
+    //  as evaluated with 80 decimal digit arithmetic by l. w. fullerton,
+    //  bell labs, nov. 1981.
+    //
     int j, jtw, jtwm1;
     double absc, centr, dhlgth, fc, fsum, fval1, fval2, hlgth, resg, resk, reskh;
     double fv1[25], fv2[25];
@@ -3408,6 +5878,77 @@ void
 dqk61(double(*fcn)(double* x), const double a, const double b,
       double* result, double* abserr, double* resabs, double* resasc)
 {
+    // ***begin prologue  dqk61
+    // ***date written   800101   (yymmdd)
+    // ***revision date  830518   (yymmdd)
+    // ***category no.  h2a1a2
+    // ***keywords  61-point gauss-kronrod rules
+    // ***author  piessens,robert,appl. math. & progr. div. - k.u.leuven
+    //            de doncker,elise,appl. math. & progr. div. - k.u.leuven
+    // ***purpose  to compute i = integral of f over (a,b) with error
+    //                            estimate
+    //                        j = integral of dabs(f) over (a,b)
+    // ***description
+    //
+    //         integration rule
+    //         standard fortran subroutine
+    //         double precision version
+    //
+    //
+    //         parameters
+    //          on entry
+    //            f      - double precision
+    //                     function subprogram defining the integrand
+    //                     function f(x). the actual name for f needs to be
+    //                     declared e x t e r n a l in the calling program.
+    //
+    //            a      - double precision
+    //                     lower limit of integration
+    //
+    //            b      - double precision
+    //                     upper limit of integration
+    //
+    //          on return
+    //            result - double precision
+    //                     approximation to the integral i
+    //                     result is computed by applying the 61-point
+    //                     kronrod rule (resk) obtained by optimal addition of
+    //                     abscissae to the 30-point gauss rule (resg).
+    //
+    //            abserr - double precision
+    //                     estimate of the modulus of the absolute error,
+    //                     which should equal or exceed dabs(i-result)
+    //
+    //            resabs - double precision
+    //                     approximation to the integral j
+    //
+    //            resasc - double precision
+    //                     approximation to the integral of dabs(f-i/(b-a))
+    //
+    //
+    // ***references  (none)
+    // ***routines called  d1mach
+    // ***end prologue  dqk61
+    //
+    //            the abscissae and weights are given for the
+    //            interval (-1,1). because of symmetry only the positive
+    //            abscissae and their corresponding weights are given.
+    //
+    //            xgk   - abscissae of the 61-point kronrod rule
+    //                    xgk(2), xgk(4)  ... abscissae of the 30-point
+    //                    gauss rule
+    //                    xgk(1), xgk(3)  ... optimally added abscissae
+    //                    to the 30-point gauss rule
+    //
+    //            wgk   - weights of the 61-point kronrod rule
+    //
+    //            wg    - weigths of the 30-point gauss rule
+    //
+    //
+    //  gauss quadrature weights and kronron quadrature abscissae and weights
+    //  as evaluated with 80 decimal digit arithmetic by l. w. fullerton,
+    //  bell labs, nov. 1981.
+    //
     int j, jtw, jtwm1;
     double absc, centr, dhlgth, fc, fsum, fval1, fval2, hlgth, resg, resk, reskh;
     double fv1[30], fv2[30];
@@ -3574,6 +6115,62 @@ void
 dqmomo(const double alfa, const double beta, double* ri, double* rj, double* rg,
        double* rh, const int integr)
 {
+    // ***begin prologue  dqmomo
+    // ***date written   820101   (yymmdd)
+    // ***revision date  830518   (yymmdd)
+    // ***category no.  h2a2a1,c3a2
+    // ***keywords  modified chebyshev moments
+    // ***author  piessens,robert,appl. math. & progr. div. - k.u.leuven
+    //            de doncker,elise,appl. math. & progr. div. - k.u.leuven
+    // ***purpose  this routine computes modified chebsyshev moments. the k-th
+    //             modified chebyshev moment is defined as the integral over
+    //             (-1,1) of w(x)*t(k,x), where t(k,x) is the chebyshev
+    //             polynomial of degree k.
+    // ***description
+    //
+    //         modified chebyshev moments
+    //         standard fortran subroutine
+    //         double precision version
+    //
+    //         parameters
+    //            alfa   - double precision
+    //                     parameter in the weight function w(x), alfa.gt.(-1)
+    //
+    //            beta   - double precision
+    //                     parameter in the weight function w(x), beta.gt.(-1)
+    //
+    //            ri     - double precision
+    //                     vector of dimension 25
+    //                     ri(k) is the integral over (-1,1) of
+    //                     (1+x)**alfa*t(k-1,x), k = 1, ..., 25.
+    //
+    //            rj     - double precision
+    //                     vector of dimension 25
+    //                     rj(k) is the integral over (-1,1) of
+    //                     (1-x)**beta*t(k-1,x), k = 1, ..., 25.
+    //
+    //            rg     - double precision
+    //                     vector of dimension 25
+    //                     rg(k) is the integral over (-1,1) of
+    //                     (1+x)**alfa*log((1+x)/2)*t(k-1,x), k = 1, ..., 25.
+    //
+    //            rh     - double precision
+    //                     vector of dimension 25
+    //                     rh(k) is the integral over (-1,1) of
+    //                     (1-x)**beta*log((1-x)/2)*t(k-1,x), k = 1, ..., 25.
+    //
+    //            integr - integer
+    //                     input parameter indicating the modified
+    //                     moments to be computed
+    //                     integr = 1 compute ri, rj
+    //                            = 2 compute ri, rj, rg
+    //                            = 3 compute ri, rj, rh
+    //                            = 4 compute ri, rj, rg, rh
+    //
+    // ***references  (none)
+    // ***routines called  (none)
+    // ***end prologue  dqmomo
+    //
     int i;
     double alfp1, an, betp1, alfp2, betp2, ralf, rbet;
 
@@ -3646,6 +6243,104 @@ dqng(double(*fcn)(double* x), const double a, const double b,
      const double epsabs, const double epsrel,
      double* result, double* abserr, int* neval, int* ier)
 {
+    // ***begin prologue  dqng
+    // ***date written   800101   (yymmdd)
+    // ***revision date  810101   (yymmdd)
+    // ***category no.  h2a1a1
+    // ***keywords  automatic integrator, smooth integrand,
+    //              non-adaptive, gauss-kronrod(patterson)
+    // ***author  piessens,robert,appl. math. & progr. div. - k.u.leuven
+    //            de doncker,elise,appl math & progr. div. - k.u.leuven
+    //            kahaner,david,nbs - modified (2/82)
+    // ***purpose  the routine calculates an approximation result to a
+    //             given definite integral i = integral of f over (a,b),
+    //             hopefully satisfying following claim for accuracy
+    //             abs(i-result).le.max(epsabs,epsrel*abs(i)).
+    // ***description
+    //
+    //  non-adaptive integration
+    //  standard fortran subroutine
+    //  double precision version
+    //
+    //            f      - double precision
+    //                     function subprogram defining the integrand function
+    //                     f(x). the actual name for f needs to be declared
+    //                     e x t e r n a l in the driver program.
+    //
+    //            a      - double precision
+    //                     lower limit of integration
+    //
+    //            b      - double precision
+    //                     upper limit of integration
+    //
+    //            epsabs - double precision
+    //                     absolute accuracy requested
+    //            epsrel - double precision
+    //                     relative accuracy requested
+    //                     if  epsabs.le.0
+    //                     and epsrel.lt.max(50*rel.mach.acc.,0.5d-28),
+    //                     the routine will end with ier = 6.
+    //
+    //          on return
+    //            result - double precision
+    //                     approximation to the integral i
+    //                     result is obtained by applying the 21-point
+    //                     gauss-kronrod rule (res21) obtained by optimal
+    //                     addition of abscissae to the 10-point gauss rule
+    //                     (res10), or by applying the 43-point rule (res43)
+    //                     obtained by optimal addition of abscissae to the
+    //                     21-point gauss-kronrod rule, or by applying the
+    //                     87-point rule (res87) obtained by optimal addition
+    //                     of abscissae to the 43-point rule.
+    //
+    //            abserr - double precision
+    //                     estimate of the modulus of the absolute error,
+    //                     which should equal or exceed abs(i-result)
+    //
+    //            neval  - integer
+    //                     number of integrand evaluations
+    //
+    //            ier    - ier = 0 normal and reliable termination of the
+    //                             routine. it is assumed that the requested
+    //                             accuracy has been achieved.
+    //                     ier.gt.0 abnormal termination of the routine. it is
+    //                             assumed that the requested accuracy has
+    //                             not been achieved.
+    //            error messages
+    //                     ier = 1 the maximum number of steps has been
+    //                             executed. the integral is probably too
+    //                             difficult to be calculated by dqng.
+    //                         = 6 the input is invalid, because
+    //                             epsabs.le.0 and
+    //                             epsrel.lt.max(50*rel.mach.acc.,0.5d-28).
+    //                             result, abserr and neval are set to zero.
+    //
+    // ***references  (none)
+    // ***routines called  d1mach,xerror
+    // ***end prologue  dqng
+    //
+    //            the following data statements contain the
+    //            abscissae and weights of the integration rules used.
+    //
+    //            x1      abscissae common to the 10-, 21-, 43- and 87-
+    //                    point rule
+    //            x2      abscissae common to the 21-, 43- and 87-point rule
+    //            x3      abscissae common to the 43- and 87-point rule
+    //            x4      abscissae of the 87-point rule
+    //            w10     weights of the 10-point formula
+    //            w21a    weights of the 21-point formula for abscissae x1
+    //            w21b    weights of the 21-point formula for abscissae x2
+    //            w43a    weights of the 43-point formula for abscissae x1, x3
+    //            w43b    weights of the 43-point formula for abscissae x3
+    //            w87a    weights of the 87-point formula for abscissae x1,
+    //                    x2, x3
+    //            w87b    weights of the 87-point formula for abscissae x4
+    //
+    //
+    //  gauss-kronrod-patterson quadrature coefficients for use in
+    //  quadpack routine qng.  these coefficients were calculated with
+    //  101 decimal digit arithmetic by l. w. fullerton, bell labs, nov 1981.
+    //
     int ipx, k, l;
     double fv1[5], fv2[5], fv3[5], fv4[5], savfun[21];
     double absc, centr, dhlgth, fcentr, fval, fval1, fval2, hlgth;
@@ -3953,6 +6648,59 @@ void
 dqpsrt(const int limit, const int last, int* maxerr, double* ermax,
        const double* elist, int *iord, int* nrmax)
 {
+    // ***begin prologue  dqpsrt
+    // ***refer to  dqage,dqagie,dqagpe,dqawse
+    // ***routines called  (none)
+    // ***revision date  810101   (yymmdd)
+    // ***keywords  sequential sorting
+    // ***author  piessens,robert,appl. math. & progr. div. - k.u.leuven
+    //            de doncker,elise,appl. math. & progr. div. - k.u.leuven
+    // ***purpose  this routine maintains the descending ordering in the
+    //             list of the local error estimated resulting from the
+    //             interval subdivision process. at each call two error
+    //             estimates are inserted using the sequential search
+    //             method, top-down for the largest error estimate and
+    //             bottom-up for the smallest error estimate.
+    // ***description
+    //
+    //            ordering routine
+    //            standard fortran subroutine
+    //            double precision version
+    //
+    //            parameters (meaning at output)
+    //               limit  - integer
+    //                        maximum number of error estimates the list
+    //                        can contain
+    //
+    //               last   - integer
+    //                        number of error estimates currently in the list
+    //
+    //               maxerr - integer
+    //                        maxerr points to the nrmax-th largest error
+    //                        estimate currently in the list
+    //
+    //               ermax  - double precision
+    //                        nrmax-th largest error estimate
+    //                        ermax = elist(maxerr)
+    //
+    //               elist  - double precision
+    //                        vector of dimension last containing
+    //                        the error estimates
+    //
+    //               iord   - integer
+    //                        vector of dimension last, the first k elements
+    //                        of which contain pointers to the error
+    //                        estimates, such that
+    //                        elist(iord(1)),...,  elist(iord(k))
+    //                        form a decreasing sequence, with
+    //                        k = last if last.le.(limit/2+2), and
+    //                        k = limit+1-last otherwise
+    //
+    //               nrmax  - integer
+    //                        maxerr = iord(nrmax)
+    //
+    // ***end prologue  dqpsrt
+    //
     int i, ibeg, j, jbnd, jupbn, k;
     double errmin, errmax;
     // Index vars maxerr, iord, nrmax
@@ -4032,6 +6780,17 @@ LINE60:
 double
 dqwgtc(const double x, const double c, const double p2, const double p3, const double p4, const int integr)
 {
+    // ***begin prologue  dqwgtc
+    // ***refer to dqk15w
+    // ***routines called  (none)
+    // ***revision date  810101   (yymmdd)
+    // ***keywords  weight function, cauchy principal value
+    // ***author  piessens,robert,appl. math. & progr. div. - k.u.leuven
+    //            de doncker,elise,appl. math. & progr. div. - k.u.leuven
+    // ***purpose  this function subprogram is used together with the
+    //             routine qawc and defines the weight function.
+    // ***end prologue  dqwgtc
+    //
     return 1.0 / (x - c);
 }
 
@@ -4039,6 +6798,15 @@ dqwgtc(const double x, const double c, const double p2, const double p3, const d
 double
 dqwgtf(const double x, const double omega, const double p2, const double p3, const double p4, const int integr)
 {
+    // ***begin prologue  dqwgtf
+    // ***refer to   dqk15w
+    // ***routines called  (none)
+    // ***revision date 810101   (yymmdd)
+    // ***keywords  cos or sin in weight function
+    // ***author  piessens,robert, appl. math. & progr. div. - k.u.leuven
+    //            de doncker,elise,appl. math. * progr. div. - k.u.leuven
+    // ***end prologue  dqwgtf
+    //
     double omx = omega * x;
     if (integr == 1)
         return cos(omx);
@@ -4050,6 +6818,18 @@ dqwgtf(const double x, const double omega, const double p2, const double p3, con
 double
 dqwgts(const double x, const double a, const double b, const double alfa, const double beta, const int integr)
 {
+    // ***begin prologue  dqwgts
+    // ***refer to dqk15w
+    // ***routines called  (none)
+    // ***revision date  810101   (yymmdd)
+    // ***keywords  weight function, algebraico-logarithmic
+    //              end-point singularities
+    // ***author  piessens,robert,appl. math. & progr. div. - k.u.leuven
+    //            de doncker,elise,appl. math. & progr. div. - k.u.leuven
+    // ***purpose  this function subprogram is used together with the
+    //             routine dqaws and defines the weight function.
+    // ***end prologue  dqwgts
+    //
     double xma = x - a;
     double bmx = b - x;
     double ret = pow(xma, alfa)*pow(bmx, beta);
