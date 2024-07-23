@@ -249,7 +249,7 @@ namespace cephes {
     }
 
     SPECFUN_HOST_DEVICE inline double ndtr(double a) {
-        double x, y, z;
+        double x, y, z, t;
 
         if (std::isnan(a)) {
             set_error("ndtr", SF_ERROR_DOMAIN, NULL);
@@ -259,12 +259,16 @@ namespace cephes {
         x = a * M_SQRT1_2;
         z = std::abs(x);
 
-        if (z < M_SQRT1_2) {
+        if (z < 1.0) {
             y = 0.5 + 0.5 * erf(x);
         } else {
             y = 0.5 * erfc(z);
             if (x > 0) {
-                y = 1.0 - y;
+                t = 1.0 - y;
+		if (t == 1.0 && y != 0) {
+		    set_error("ndtr", SF_ERROR_LOSS, NULL);
+		}
+		return t;
             }
         }
 
