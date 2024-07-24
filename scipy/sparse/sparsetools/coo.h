@@ -173,9 +173,14 @@ void coo_matmat_dense(const npy_int64 nnz,
                 const T Bx[],
                       T Yx[])
 {
-    for(npy_int64 n = 0; n < nnz; n++){
-        for(npy_int64 i = 0; i < n_col_B; i++){
-            Yx[Ai[n] * n_col_B + i] += Ax[n] * Bx[Aj[n] * n_col_B + i];
+    for (npy_int64 n = 0; n < nnz; n++) {
+        const T x = Ax[n];
+        if (x != 0) {
+            const npy_int64 dst_offset = Ai[n] * n_col_B;
+            const npy_int64 src_offset = Aj[n] * n_col_B;
+            for (npy_int64 i = 0; i < n_col_B; i++) {
+                Yx[dst_offset + i] += x * Bx[src_offset + i];
+            }
         }
     }
 }
