@@ -6,19 +6,27 @@ import pytest
 import numpy as np
 
 from scipy.integrate._cubature import (
-    cub, Product, GaussKronrod, GenzMalik, NewtonCotes
+    cub, Product, GaussKronrod, GenzMalik, NewtonCotes, GaussLegendre
 )
 
 
 def genz_malik_1980_f_1(x, r, alphas):
     r"""
-    `f_1` from Genz and Malik 1980.
+    ``f_1`` from Genz and Malik 1980.
+
+    Notes
+    -----
 
     .. math:: f_1(\mathbf x) = \cos\left(2\pi r + \sum^n_{i = 1}\alpha_i x_i\right)
 
     .. code-block:: mathematica
 
         genzMalik1980f1[x_List, r_, alphas_List] := Cos[2*Pi*r + Total[x*alphas]]
+
+    References
+    ----------
+    [1] A.C. Genz, A.A. Malik, Remarks on algorithm 006: An adaptive algorithm for
+        numerical integration over an N-dimensional rectangular region (1980)
     """
 
     ndim = x.shape[0]
@@ -57,12 +65,20 @@ def genz_malik_1980_f_2(x, alphas, betas):
     r"""
     `f_2` from Genz and Malik 1980.
 
+    Notes
+    -----
+
     .. math:: f_2(\mathbf x) = \prod^n_{i = 1} (\alpha_i^2 + (x_i - \beta_i)^2)^{-1}
 
     .. code-block:: mathematica
 
         genzMalik1980f2[x_List, alphas_List, betas_List] :=
             1/Times @@ ((alphas^2 + (x - betas)^2))
+
+    References
+    ----------
+    [1] A.C. Genz, A.A. Malik, Remarks on algorithm 006: An adaptive algorithm for
+        numerical integration over an N-dimensional rectangular region (1980)
     """
     ndim = x.shape[0]
     num_eval_points = x.shape[-1]
@@ -104,11 +120,19 @@ def genz_malik_1980_f_3(x, alphas):
     r"""
     `f_3` from Genz and Malik 1980.
 
+    Notes
+    -----
+
     .. math:: f_3(\mathbf x) = \exp\left(\sum^n_{i = 1} \alpha_i x_i\right)
 
     .. code-block:: mathematica
 
         genzMalik1980f3[x_List, alphas_List] := Exp[Dot[x, alphas]]
+
+    References
+    ----------
+    [1] A.C. Genz, A.A. Malik, Remarks on algorithm 006: An adaptive algorithm for
+        numerical integration over an N-dimensional rectangular region (1980)       
     """
 
     ndim = x.shape[0]
@@ -143,11 +167,19 @@ def genz_malik_1980_f_4(x, alphas):
     r"""
     `f_4` from Genz and Malik 1980.
 
+    Notes
+    -----
+
     .. math:: f_4(\mathbf x) = \left(1 + \sum^n_{i = 1} \alpha_i x_i\right)^{-n-1}
 
     .. code-block:: mathematica
         genzMalik1980f4[x_List, alphas_List] :=
             (1 + Dot[x, alphas])^(-Length[alphas] - 1)
+
+    References
+    ----------
+    [1] A.C. Genz, A.A. Malik, Remarks on algorithm 006: An adaptive algorithm for
+        numerical integration over an N-dimensional rectangular region (1980)
     """
 
     ndim = x.shape[0]
@@ -186,6 +218,9 @@ def genz_malik_1980_f_5(x, alphas, betas):
     r"""
     `f_5` from Genz and Malik 1980.
 
+    Notes
+    -----
+
     .. math::
 
         f_5(\mathbf x) = \exp\left(-\sum^n_{i = 1} \alpha^2_i (x_i - \beta_i)^2\right)
@@ -194,6 +229,11 @@ def genz_malik_1980_f_5(x, alphas, betas):
 
         genzMalik1980f5[x_List, alphas_List, betas_List] :=
             Exp[-Total[alphas^2 * (x - betas)^2]]
+
+    References
+    ----------
+    [1] A.C. Genz, A.A. Malik, Remarks on algorithm 006: An adaptive algorithm for
+        numerical integration over an N-dimensional rectangular region (1980)
     """
 
     ndim = x.shape[0]
@@ -598,7 +638,7 @@ def test_genz_malik_func_evaluations(ndim):
 
     rule = GenzMalik(ndim)
 
-    assert rule.higher.nodes.shape[-1] == (2**ndim) + 2*ndim**2 + 2*ndim + 1
+    assert rule.nodes.shape[-1] == (2**ndim) + 2*ndim**2 + 2*ndim + 1
 
 
 @pytest.mark.parametrize("quadrature", [
@@ -608,6 +648,9 @@ def test_genz_malik_func_evaluations(ndim):
     NewtonCotes(3, open=True),
     NewtonCotes(5, open=True),
     NewtonCotes(10, open=True),
+    GaussLegendre(3),
+    GaussLegendre(5),
+    GaussLegendre(10),
     GaussKronrod(15),
     GaussKronrod(21),
 ])
@@ -633,6 +676,20 @@ def test_base_1d_quadratures_simple(quadrature, rtol):
         rtol=rtol,
         atol=0,
     )
+
+
+def test_no_error_estimate_raises_error():
+    def f(x):
+        return x
+
+    a = np.array([0])
+    b = np.array([1])
+
+    # NewtonCotes has no built in error estimate:
+    rule = NewtonCotes(3)
+
+    with pytest.raises(Exception):
+        cub(f, a, b, rule)
 
 
 def _eval_indefinite_integral(F, a, b):

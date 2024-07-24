@@ -6,11 +6,12 @@ from dataclasses import dataclass
 from functools import cached_property
 
 import numpy as np
+from scipy.special import roots_legendre
 
 
 def cub(f, a, b, rule, rtol=1e-05, atol=1e-08, max_subdivisions=10000, args=()):
     """
-    Adaptive cubature of vector- or tensor-valued function.
+    Adaptive cubature of multidimensional array-valued function.
 
     Given an arbitrary cubature rule with error estimation, this function returns the
     estimate of the integral over the region described by corners ``a`` and ``b`` to
@@ -98,9 +99,10 @@ def cub(f, a, b, rule, rtol=1e-05, atol=1e-08, max_subdivisions=10000, args=()):
         max_subdivisions = np.inf
 
     est = rule.estimate(f, a, b, args)
-    err = rule.error_estimate(f, a, b, args)
 
-    if err is None:
+    try:
+        err = rule.error_estimate(f, a, b, args)
+    except NotImplementedError:
         raise Exception("attempting cubature with a rule that doesn't implement error \
 estimation.")
 
@@ -260,7 +262,7 @@ class Cubature:
             eval_points)``, then ``err_est`` will be of shape ``(output_dim_1, ...,
             output_dim_n)``.
         """
-        return None
+        raise NotImplementedError
 
 
 class FixedCubature(Cubature):
@@ -349,23 +351,16 @@ class FixedCubature(Cubature):
 
         return est
 
-    def error_estimate(self, f, a, b, args=()):
-        # A fixed cubature rule has no built-in error estimation in general.
-        return None
 
-
-class DualEstimateCubature(Cubature):
+class ErrorFromDifference(Cubature):
     """
     A cubature rule with a higher-order and lower-order estimate, and where the
     difference between the two estimates is used as an estimate for the error.
 
     Attributes
     ----------
-    higher : Cubature
-        Higher-order cubature to use as the estimate.
-
     lower : Cubature
-        Lower-order cubature. The difference between ``higher.estimate`` and
+        Lower-order cubature. The difference between ``self.estimate`` and
         ``lower.estimate`` is used as an estimate for the error.
 
     See Also
@@ -391,64 +386,46 @@ class DualEstimateCubature(Cubature):
      array([6.21045267])
     """
 
-    def __init__(self, higher, lower):
-        self.higher = higher
+    def __init__(self, lower):
         self.lower = lower
-
-    def estimate(self, f, a, b, args=()):
-        return self.higher.estimate(f, a, b, args)
 
     def error_estimate(self, f, a, b, args=()):
         return np.abs(
-            self.higher.estimate(f, a, b, args) - self.lower.estimate(f, a, b, args)
+            self.estimate(f, a, b, args) - self.lower.estimate(f, a, b, args)
         )
 
 
-class GaussKronrod(DualEstimateCubature):
+class Product(FixedCubature, ErrorFromDifference):
     """
-    Gauss-Kronrod cubature. Gauss-Kronrod rules consist of two cubature rules, one
-    higher-order and one lower-order. The higher-order rule is used as the estimate of
-    the integral and the difference between them is used as an estimate for the error.
+    Find the n-dimensional cubature rule constructed from cubature rules of lower
+    dimension.
 
-    Gauss-Kronrod is a 1D rule. To use it for multidimensional integrals, it will be
-    necessary to take the Product of multiple Gauss-Kronrod rules. See Examples.
-
-    For n-node Gauss-Kronrod, the lower-order rule has ``n//2`` nodes, which are the
-    ordinary Gauss-Legendre nodes with corresponding weights. The higher-order rule has
-    ``n`` nodes, ``n//2`` of which are the same as the lower-order rule and the
-    remaining nodes are the Kronrod extension of those nodes.
+    Given a list of base dual-estimate cubature rules of dimension d_1, ..., d_n, this
+    will find the (d_1 + ... d_n)-dimensional cubature rule formed from taking the
+    Cartesian product of their weights.
 
     Parameters
     ----------
-    npoints : int
-        Number of nodes for the higher-order rule.
+    base_rules : list
+        List of base dual estimate cubatures used to find the product rule.
 
     Attributes
     ----------
-    higher : Cubature
-        Higher-order rule.
+    base_rules : list of DualEstimateCubature
+        List of base dual estimate cubatures used to find the product rule.
 
-    lower : Cubature
-        Lower-order rule.
+    higher : FixedCubature
+        Higher-order rule given by the product of the higher order rules given in the
+        base rules.
 
-    Examples
-    --------
-    Evaluate a 1D integral. Note in this example that ``f`` returns an array, so the
-    estimates will also be arrays, despite the fact that this is a 1D problem.
+    lower : FixedCubature
+        Lower-order rule given by the product of the lower order rules given in the base
+        rules.
 
-    >>> import numpy as np
-    >>> from scipy.integrate._cubature import *
-    >>> def f(x):
-    ...     return np.cos(x)
-    >>> rule = GaussKronrod(21) # Use 21-point GaussKronrod
-    >>> a, b = np.array([0]), np.array([1])
-    >>> rule.estimate(f, a, b) # True value sin(1), approximately 0.84147
-     array([0.84147098])
-    >>> rule.error_estimate(f, a, b)
-     array([1.11022302e-16])
+    Example
+    -------
 
-    Evaluate a 2D integral. Note that in this example ``f`` returns a float, so the
-    estimates will also be floats.
+    Evaluate a 2D integral by taking the product of two 1D rules:
 
     >>> import numpy as np
     >>> from scipy.integrate._cubature import *
@@ -463,163 +440,35 @@ class GaussKronrod(DualEstimateCubature):
      np.float64(2.220446049250313e-16)
     """
 
-    def __init__(self, npoints):
-        if npoints != 15 and npoints != 21:
-            raise Exception("Gauss-Kronrod quadrature is currently only supported for \
-15 or 21 nodes")
+    def __init__(self, base_rules):
+        self.base_rules = base_rules
+        self.lower = self._Lower(base_rules)
 
-        self.higher = self._Higher(npoints)
-        self.lower = self._Lower(npoints//2)
+    @cached_property
+    def nodes(self):
+        return _cartesian_product([rule.nodes for rule in self.base_rules])
 
-    class _Higher(FixedCubature):
-        def __init__(self, npoints):
-            self.npoints = npoints
-
-        @cached_property
-        def nodes(self):
-            if self.npoints == 21:
-                return np.array([[
-                    0.995657163025808080735527280689003,
-                    0.973906528517171720077964012084452,
-                    0.930157491355708226001207180059508,
-                    0.865063366688984510732096688423493,
-                    0.780817726586416897063717578345042,
-                    0.679409568299024406234327365114874,
-                    0.562757134668604683339000099272694,
-                    0.433395394129247190799265943165784,
-                    0.294392862701460198131126603103866,
-                    0.148874338981631210884826001129720,
-                    0,
-                    -0.148874338981631210884826001129720,
-                    -0.294392862701460198131126603103866,
-                    -0.433395394129247190799265943165784,
-                    -0.562757134668604683339000099272694,
-                    -0.679409568299024406234327365114874,
-                    -0.780817726586416897063717578345042,
-                    -0.865063366688984510732096688423493,
-                    -0.930157491355708226001207180059508,
-                    -0.973906528517171720077964012084452,
-                    -0.995657163025808080735527280689003
-                ]])
-            elif self.npoints == 15:
-                return np.array([[
-                    0.991455371120812639206854697526329,
-                    0.949107912342758524526189684047851,
-                    0.864864423359769072789712788640926,
-                    0.741531185599394439863864773280788,
-                    0.586087235467691130294144838258730,
-                    0.405845151377397166906606412076961,
-                    0.207784955007898467600689403773245,
-                    0.000000000000000000000000000000000,
-                    -0.207784955007898467600689403773245,
-                    -0.405845151377397166906606412076961,
-                    -0.586087235467691130294144838258730,
-                    -0.741531185599394439863864773280788,
-                    -0.864864423359769072789712788640926,
-                    -0.949107912342758524526189684047851,
-                    -0.991455371120812639206854697526329
-                ]])
-
-        @cached_property
-        def weights(self):
-            if self.npoints == 21:
-                return np.array([
-                    0.011694638867371874278064396062192,
-                    0.032558162307964727478818972459390,
-                    0.054755896574351996031381300244580,
-                    0.075039674810919952767043140916190,
-                    0.093125454583697605535065465083366,
-                    0.109387158802297641899210590325805,
-                    0.123491976262065851077958109831074,
-                    0.134709217311473325928054001771707,
-                    0.142775938577060080797094273138717,
-                    0.147739104901338491374841515972068,
-                    0.149445554002916905664936468389821,
-                    0.147739104901338491374841515972068,
-                    0.142775938577060080797094273138717,
-                    0.134709217311473325928054001771707,
-                    0.123491976262065851077958109831074,
-                    0.109387158802297641899210590325805,
-                    0.093125454583697605535065465083366,
-                    0.075039674810919952767043140916190,
-                    0.054755896574351996031381300244580,
-                    0.032558162307964727478818972459390,
-                    0.011694638867371874278064396062192,
-                ])
-            elif self.npoints == 15:
-                return np.array([
-                    0.022935322010529224963732008058970,
-                    0.063092092629978553290700663189204,
-                    0.104790010322250183839876322541518,
-                    0.140653259715525918745189590510238,
-                    0.169004726639267902826583426598550,
-                    0.190350578064785409913256402421014,
-                    0.204432940075298892414161999234649,
-                    0.209482141084727828012999174891714,
-                    0.204432940075298892414161999234649,
-                    0.190350578064785409913256402421014,
-                    0.169004726639267902826583426598550,
-                    0.140653259715525918745189590510238,
-                    0.104790010322250183839876322541518,
-                    0.063092092629978553290700663189204,
-                    0.022935322010529224963732008058970
-                ])
+    @cached_property
+    def weights(self):
+        return np.prod(
+            _cartesian_product([rule.weights for rule in self.base_rules]),
+            axis=0
+        )
 
     class _Lower(FixedCubature):
-        def __init__(self, npoints):
-            self.npoints = npoints
+        def __init__(self, base_rules):
+            self.base_rules = base_rules
 
         @cached_property
         def nodes(self):
-            if self.npoints == 10:
-                return np.array([[
-                    0.973906528517171720077964012084452,
-                    0.865063366688984510732096688423493,
-                    0.679409568299024406234327365114874,
-                    0.433395394129247190799265943165784,
-                    0.148874338981631210884826001129720,
-                    -0.148874338981631210884826001129720,
-                    -0.433395394129247190799265943165784,
-                    -0.679409568299024406234327365114874,
-                    -0.865063366688984510732096688423493,
-                    -0.973906528517171720077964012084452,
-                ]])
-            elif self.npoints == 7:
-                return np.array([[
-                    0.949107912342758524526189684047851,
-                    0.741531185599394439863864773280788,
-                    0.405845151377397166906606412076961,
-                    0.000000000000000000000000000000000,
-                    -0.405845151377397166906606412076961,
-                    -0.741531185599394439863864773280788,
-                    -0.949107912342758524526189684047851,
-                ]])
+            return _cartesian_product([rule.lower.nodes for rule in self.base_rules])
 
         @cached_property
         def weights(self):
-            if self.npoints == 10:
-                return np.array([
-                    0.066671344308688137593568809893332,
-                    0.149451349150580593145776339657697,
-                    0.219086362515982043995534934228163,
-                    0.269266719309996355091226921569469,
-                    0.295524224714752870173892994651338,
-                    0.295524224714752870173892994651338,
-                    0.269266719309996355091226921569469,
-                    0.219086362515982043995534934228163,
-                    0.149451349150580593145776339657697,
-                    0.066671344308688137593568809893332,
-                ])
-            elif self.npoints == 7:
-                return np.array([
-                    0.129484966168869693270611432679082,
-                    0.279705391489276667901467771423780,
-                    0.381830050505118944950369775488975,
-                    0.417959183673469387755102040816327,
-                    0.381830050505118944950369775488975,
-                    0.279705391489276667901467771423780,
-                    0.129484966168869693270611432679082
-                ])
+            return np.prod(
+                _cartesian_product([rule.lower.weights for rule in self.base_rules]),
+                axis=0
+            )
 
 
 class NewtonCotes(FixedCubature):
@@ -708,37 +557,98 @@ class NewtonCotes(FixedCubature):
         return _newton_cotes_weights(self.nodes.reshape(-1))
 
 
-class Product(DualEstimateCubature):
+class GaussLegendre(FixedCubature):
     """
-    Find the n-dimensional cubature rule constructed from cubature rules of lower
-    dimension.
+    Gauss-Legendre cubature.
 
-    Given a list of base dual-estimate cubature rules of dimension d_1, ..., d_n, this
-    will find the (d_1 + ... d_n)-dimensional cubature rule formed from taking the
-    Cartesian product of their weights.
+    Gauss-Legendre has no error estimator. It is possible to give it an error estimator
+    by using DualEstimateCubature to estimate the error as the difference between two
+    Gauss-Legendre rules. See Examples.
+
+    Gauss-Legendre is a 1D rule. To use it for multidimensional integrals, it will be
+    necessary to take the product of multiple Gauss-Legendre rules. See Examples.
 
     Parameters
     ----------
-    base_rules : list
-        List of base dual estimate cubatures used to find the product rule.
+    npoints : int
+        Number of nodes.
 
     Attributes
     ----------
-    base_rules : list of DualEstimateCubature
-        List of base dual estimate cubatures used to find the product rule.
+    npoints : int
+        Number of nodes
 
-    higher : FixedCubature
-        Higher-order rule given by the product of the higher order rules given in the
-        base rules.
+    Examples
+    --------
+    Evaluating a simple integral, first without error estimation and then with error
+    estimation:
 
-    lower : FixedCubature
-        Lower-order rule given by the product of the lower order rules given in the base
-        rules.
+    TODO
+    """
 
-    Example
-    -------
+    def __init__(self, npoints):
+        if npoints < 2:
+            raise Exception(
+                "At least 2 nodes required for Gauss-Legendre cubature"
+            )
 
-    Evaluate a 2D integral by taking the product of two 1D rules:
+        self.npoints = npoints
+
+    @cached_property
+    def nodes(self):
+        return roots_legendre(self.npoints)[0]
+
+    @cached_property
+    def weights(self):
+        return roots_legendre(self.npoints)[1]
+
+
+class GaussKronrod(FixedCubature, ErrorFromDifference):
+    """
+    Gauss-Kronrod cubature. Gauss-Kronrod rules consist of two cubature rules, one
+    higher-order and one lower-order. The higher-order rule is used as the estimate of
+    the integral and the difference between them is used as an estimate for the error.
+
+    Gauss-Kronrod is a 1D rule. To use it for multidimensional integrals, it will be
+    necessary to take the Product of multiple Gauss-Kronrod rules. See Examples.
+
+    For n-node Gauss-Kronrod, the lower-order rule has ``n//2`` nodes, which are the
+    ordinary Gauss-Legendre nodes with corresponding weights. The higher-order rule has
+    ``n`` nodes, ``n//2`` of which are the same as the lower-order rule and the
+    remaining nodes are the Kronrod extension of those nodes.
+
+    Parameters
+    ----------
+    npoints : int
+        Number of nodes for the higher-order rule.
+
+    Attributes
+    ----------
+    lower : Cubature
+        Lower-order rule.
+
+    References
+    ----------
+    [1] R. Piessens, E. de Doncker, QUADPACK, files: dqk21.f, dqk15.f (1983).
+
+    Examples
+    --------
+    Evaluate a 1D integral. Note in this example that ``f`` returns an array, so the
+    estimates will also be arrays, despite the fact that this is a 1D problem.
+
+    >>> import numpy as np
+    >>> from scipy.integrate._cubature import *
+    >>> def f(x):
+    ...     return np.cos(x)
+    >>> rule = GaussKronrod(21) # Use 21-point GaussKronrod
+    >>> a, b = np.array([0]), np.array([1])
+    >>> rule.estimate(f, a, b) # True value sin(1), approximately 0.84147
+     array([0.84147098])
+    >>> rule.error_estimate(f, a, b)
+     array([1.11022302e-16])
+
+    Evaluate a 2D integral. Note that in this example ``f`` returns a float, so the
+    estimates will also be floats.
 
     >>> import numpy as np
     >>> from scipy.integrate._cubature import *
@@ -753,43 +663,108 @@ class Product(DualEstimateCubature):
      np.float64(2.220446049250313e-16)
     """
 
-    def __init__(self, base_rules):
-        self.base_rules = base_rules
-        self.higher = self._Higher(base_rules)
-        self.lower = self._Lower(base_rules)
+    def __init__(self, npoints):
+        # TODO: nodes and weights are currently hard-coded for values 15 and 21, but in
+        # the future it would be best to compute the Kronrod extension of the lower rule
+        if npoints != 15 and npoints != 21:
+            raise Exception("Gauss-Kronrod quadrature is currently only supported for \
+15 or 21 nodes")
 
-    class _Higher(FixedCubature):
-        def __init__(self, base_rules):
-            self.base_rules = base_rules
+        self.npoints = npoints
+        self.lower = GaussLegendre(npoints//2)
 
-        @cached_property
-        def nodes(self):
-            return _cartesian_product([rule.higher.nodes for rule in self.base_rules])
+    @cached_property
+    def nodes(self):
+        if self.npoints == 21:
+            return np.array([[
+                0.995657163025808080735527280689003,
+                0.973906528517171720077964012084452,
+                0.930157491355708226001207180059508,
+                0.865063366688984510732096688423493,
+                0.780817726586416897063717578345042,
+                0.679409568299024406234327365114874,
+                0.562757134668604683339000099272694,
+                0.433395394129247190799265943165784,
+                0.294392862701460198131126603103866,
+                0.148874338981631210884826001129720,
+                0,
+                -0.148874338981631210884826001129720,
+                -0.294392862701460198131126603103866,
+                -0.433395394129247190799265943165784,
+                -0.562757134668604683339000099272694,
+                -0.679409568299024406234327365114874,
+                -0.780817726586416897063717578345042,
+                -0.865063366688984510732096688423493,
+                -0.930157491355708226001207180059508,
+                -0.973906528517171720077964012084452,
+                -0.995657163025808080735527280689003
+            ]])
+        elif self.npoints == 15:
+            return np.array([[
+                0.991455371120812639206854697526329,
+                0.949107912342758524526189684047851,
+                0.864864423359769072789712788640926,
+                0.741531185599394439863864773280788,
+                0.586087235467691130294144838258730,
+                0.405845151377397166906606412076961,
+                0.207784955007898467600689403773245,
+                0.000000000000000000000000000000000,
+                -0.207784955007898467600689403773245,
+                -0.405845151377397166906606412076961,
+                -0.586087235467691130294144838258730,
+                -0.741531185599394439863864773280788,
+                -0.864864423359769072789712788640926,
+                -0.949107912342758524526189684047851,
+                -0.991455371120812639206854697526329
+            ]])
 
-        @cached_property
-        def weights(self):
-            return np.prod(
-                _cartesian_product([rule.higher.weights for rule in self.base_rules]),
-                axis=0
-            )
+    @cached_property
+    def weights(self):
+        if self.npoints == 21:
+            return np.array([
+                0.011694638867371874278064396062192,
+                0.032558162307964727478818972459390,
+                0.054755896574351996031381300244580,
+                0.075039674810919952767043140916190,
+                0.093125454583697605535065465083366,
+                0.109387158802297641899210590325805,
+                0.123491976262065851077958109831074,
+                0.134709217311473325928054001771707,
+                0.142775938577060080797094273138717,
+                0.147739104901338491374841515972068,
+                0.149445554002916905664936468389821,
+                0.147739104901338491374841515972068,
+                0.142775938577060080797094273138717,
+                0.134709217311473325928054001771707,
+                0.123491976262065851077958109831074,
+                0.109387158802297641899210590325805,
+                0.093125454583697605535065465083366,
+                0.075039674810919952767043140916190,
+                0.054755896574351996031381300244580,
+                0.032558162307964727478818972459390,
+                0.011694638867371874278064396062192,
+            ])
+        elif self.npoints == 15:
+            return np.array([
+                0.022935322010529224963732008058970,
+                0.063092092629978553290700663189204,
+                0.104790010322250183839876322541518,
+                0.140653259715525918745189590510238,
+                0.169004726639267902826583426598550,
+                0.190350578064785409913256402421014,
+                0.204432940075298892414161999234649,
+                0.209482141084727828012999174891714,
+                0.204432940075298892414161999234649,
+                0.190350578064785409913256402421014,
+                0.169004726639267902826583426598550,
+                0.140653259715525918745189590510238,
+                0.104790010322250183839876322541518,
+                0.063092092629978553290700663189204,
+                0.022935322010529224963732008058970
+            ])
 
-    class _Lower(FixedCubature):
-        def __init__(self, base_rules):
-            self.base_rules = base_rules
 
-        @cached_property
-        def nodes(self):
-            return _cartesian_product([rule.lower.nodes for rule in self.base_rules])
-
-        @cached_property
-        def weights(self):
-            return np.prod(
-                _cartesian_product([rule.lower.weights for rule in self.base_rules]),
-                axis=0
-            )
-
-
-class GenzMalik(DualEstimateCubature):
+class GenzMalik(FixedCubature, ErrorFromDifference):
     """
     Genz-Malik cubature. Genz-Malik cubature is a true cubature rule in that it is not
     constructed as the product of 1D rules.
@@ -808,6 +783,11 @@ class GenzMalik(DualEstimateCubature):
 
     lower : Cubature
         Lower-order rule.
+
+    References
+    ----------
+    [1] A.C. Genz, A.A. Malik, Remarks on algorithm 006: An adaptive algorithm for
+        numerical integration over an N-dimensional rectangular region (1980)
 
     Examples
     --------
@@ -830,64 +810,64 @@ class GenzMalik(DualEstimateCubature):
         if ndim < 2:
             raise Exception("Genz-Malik cubature is only defined for ndim >= 2")
 
-        self.higher = self._Higher(ndim)
-        self.lower = self._Lower(ndim)
+        self.ndim = ndim
+        self.lower = self._GenzMalikEmbeddedRule(ndim)
 
-    class _Higher(FixedCubature):
-        def __init__(self, ndim):
-            self.ndim = ndim
+    @cached_property
+    def nodes(self):
+        l_2 = math.sqrt(9/70)
+        l_3 = math.sqrt(9/10)
+        l_4 = math.sqrt(9/10)
+        l_5 = math.sqrt(9/19)
 
-        @cached_property
-        def nodes(self):
-            l_2 = math.sqrt(9/70)
-            l_3 = math.sqrt(9/10)
-            l_4 = math.sqrt(9/10)
-            l_5 = math.sqrt(9/19)
+        its = itertools.chain(
+            [(0,) * self.ndim],
+            _distinct_permutations((l_2,) + (0,) * (self.ndim - 1)),
+            _distinct_permutations((-l_2,) + (0,) * (self.ndim - 1)),
+            _distinct_permutations((l_3,) + (0,) * (self.ndim - 1)),
+            _distinct_permutations((-l_3,) + (0,) * (self.ndim - 1)),
+            _distinct_permutations((l_4, l_4) + (0,) * (self.ndim - 2)),
+            _distinct_permutations((l_4, -l_4) + (0,) * (self.ndim - 2)),
+            _distinct_permutations((-l_4, -l_4) + (0,) * (self.ndim - 2)),
+            itertools.product((l_5, -l_5), repeat=self.ndim)
+        )
 
-            its = itertools.chain(
-                [(0,) * self.ndim],
-                _distinct_permutations((l_2,) + (0,) * (self.ndim - 1)),
-                _distinct_permutations((-l_2,) + (0,) * (self.ndim - 1)),
-                _distinct_permutations((l_3,) + (0,) * (self.ndim - 1)),
-                _distinct_permutations((-l_3,) + (0,) * (self.ndim - 1)),
-                _distinct_permutations((l_4, l_4) + (0,) * (self.ndim - 2)),
-                _distinct_permutations((l_4, -l_4) + (0,) * (self.ndim - 2)),
-                _distinct_permutations((-l_4, -l_4) + (0,) * (self.ndim - 2)),
-                itertools.product((l_5, -l_5), repeat=self.ndim)
-            )
+        out_size = 1 + 2 * (self.ndim + 1) * self.ndim + 2**self.ndim
 
-            out_size = 1 + 2 * (self.ndim + 1) * self.ndim + 2**self.ndim
+        out = np.fromiter(
+            itertools.chain.from_iterable(zip(*its)),
+            dtype=float,
+            count=self.ndim * out_size
+        )
 
-            out = np.fromiter(
-                itertools.chain.from_iterable(zip(*its)),
-                dtype=float,
-                count=self.ndim * out_size
-            )
+        out.shape = (self.ndim, out_size)
+        return out
 
-            out.shape = (self.ndim, out_size)
-            return out
+    @cached_property
+    def weights(self):
+        w_1 = (2**self.ndim) * (12824 - 9120 * self.ndim + 400 * self.ndim**2) \
+            / 19683
+        w_2 = (2**self.ndim) * 980/6561
+        w_3 = (2**self.ndim) * (1820 - 400 * self.ndim) / 19683
+        w_4 = (2**self.ndim) * (200 / 19683)
+        w_5 = 6859 / 19683
 
-        @cached_property
-        def weights(self):
-            w_1 = (2**self.ndim) * (12824 - 9120 * self.ndim + 400 * self.ndim**2) \
-                / 19683
-            w_2 = (2**self.ndim) * 980/6561
-            w_3 = (2**self.ndim) * (1820 - 400 * self.ndim) / 19683
-            w_4 = (2**self.ndim) * (200 / 19683)
-            w_5 = 6859 / 19683
+        return np.repeat(
+            [w_1, w_2, w_3, w_4, w_5],
+            [
+                1,
+                2 * self.ndim,
+                2*self.ndim,
+                2*(self.ndim - 1)*self.ndim,
+                2**self.ndim,
+            ]
+        )
 
-            return np.repeat(
-                [w_1, w_2, w_3, w_4, w_5],
-                [
-                    1,
-                    2 * self.ndim,
-                    2*self.ndim,
-                    2*(self.ndim - 1)*self.ndim,
-                    2**self.ndim,
-                ]
-            )
+    class _GenzMalikEmbeddedRule(FixedCubature):
+        """
+        Embedded rule for Genz-Malik used to calculate the estimate of the error.
+        """
 
-    class _Lower(FixedCubature):
         def __init__(self, ndim):
             self.ndim = ndim
 
