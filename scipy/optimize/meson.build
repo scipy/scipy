@@ -106,7 +106,7 @@ py3.extension_module('_slsqp',
   [f2py_gen.process('slsqp/slsqp.pyf'), 'slsqp/slsqp_optmz.f'],
   fortran_args: fortran_ignore_warnings,
   link_args: version_link_args,
-  dependencies: [lapack_dep, blas_dep, fortranobject_dep],
+  dependencies: [fortranobject_dep],
   install: true,
   link_language: 'fortran',
   subdir: 'scipy/optimize'
