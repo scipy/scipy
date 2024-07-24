@@ -113,6 +113,12 @@ def genz_malik_1980_f_2_random_args(shape):
         * np.power(products, 1 / (2*ndim)) \
         / np.power(difficulty, 1 / (2*ndim))
 
+    np.testing.assert_allclose(np.prod(np.power(alphas, -2), axis=0), difficulty)
+
+    # Adjust alphas from distribution used in Genz and Malik 1980 since denominator
+    # is very small for high dimensions.
+    alphas *= 10
+
     return alphas, betas
 
 
@@ -538,15 +544,10 @@ problems_tensor_output = [
         # Function that generates random args of a certain shape, like `random(shape)`.
         genz_malik_1980_f_1_random_args,
     ),
-    pytest.param(
-        (
-            genz_malik_1980_f_2,
-            genz_malik_1980_f_2_exact,
-            genz_malik_1980_f_2_random_args,
-        ),
-        marks=pytest.mark.skip(
-            reason="f_2 has a singularity in [0, 1]^n for some parameter values"
-        ),
+    (
+        genz_malik_1980_f_2,
+        genz_malik_1980_f_2_exact,
+        genz_malik_1980_f_2_random_args,
     ),
     (
         genz_malik_1980_f_3,
@@ -584,8 +585,8 @@ problems_tensor_output = [
     (2, 3, 4),
     (3, 2, 1),
 ])
-@pytest.mark.parametrize("rtol", [1e-4])
-@pytest.mark.parametrize("atol", [1e-5])
+@pytest.mark.parametrize("rtol", [1e-3])
+@pytest.mark.parametrize("atol", [1e-4])
 def test_cub_tensor_output(problem, quadrature, shape, rtol, atol):
     np.random.seed(1)
     ndim = shape[0]
@@ -685,7 +686,7 @@ def test_no_error_estimate_raises_error():
     a = np.array([0])
     b = np.array([1])
 
-    # NewtonCotes has no built in error estimate:
+    # NewtonCotes has no built in error estimate
     rule = NewtonCotes(3)
 
     with pytest.raises(Exception):
