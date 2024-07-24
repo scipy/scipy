@@ -357,7 +357,7 @@ docdict_discrete['default'] = _doc_default_disc
 # clean up all the separate docstring elements, we do not need them anymore
 for obj in [s for s in dir() if s.startswith('_doc_')]:
     exec('del ' + obj)
-del obj
+    del obj
 
 
 def _moment(data, n, mu=None):
