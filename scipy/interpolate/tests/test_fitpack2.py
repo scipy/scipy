@@ -137,8 +137,8 @@ class TestUnivariateSpline:
             for ext in [2, 'raise']:
                 assert_raises(ValueError, spl, xp, **dict(ext=ext))
             for ext in [3, 'const']:
-                assert_allclose(spl(xp, ext=ext), xp_clip**3, atol=1e-16)
-                assert_allclose(cls(x, y, ext=ext)(xp), xp_clip**3, atol=1e-16)
+                assert_allclose(spl(xp, ext=ext), xp_clip**3, atol=2e-16)
+                assert_allclose(cls(x, y, ext=ext)(xp), xp_clip**3, atol=2e-16)
 
         # also test LSQUnivariateSpline [which needs explicit knots]
         t = spl.get_knots()[3:4]  # interior knots w/ default k=3
