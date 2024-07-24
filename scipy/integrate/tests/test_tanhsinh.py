@@ -301,6 +301,7 @@ class TestTanhSinh:
             ref_attr = xp_test.stack([getattr(ref, attr) for ref in refs])
             res_attr = xp_ravel(getattr(res, attr))
             xp_assert_close(res_attr, ref_attr, rtol=1e-15)
+            assert getattr(res, attr).shape == shape
 
         assert xp_test.isdtype(res.success.dtype, 'bool')
         assert xp_test.isdtype(res.status.dtype, 'integral')

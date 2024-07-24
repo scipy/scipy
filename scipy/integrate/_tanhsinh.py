@@ -898,7 +898,7 @@ def _logsumexp(x, /, *, axis=0, keepdims=False, xp=None):
     if is_numpy(xp):
         return special.logsumexp(x, axis=axis, keepdims=keepdims)
     elif is_cupy(xp):
-        from cupyx.scipy.special import logsumexp
+        from cupyx.scipy.special import logsumexp  # type: ignore[import-not-found]
         return logsumexp(x, axis=axis, keepdims=keepdims)
     elif is_torch(xp):
         # Torch doesn't support complex
