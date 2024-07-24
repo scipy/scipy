@@ -586,13 +586,14 @@ def test_cub_tensor_output(problem, quadrature, shape, rtol, atol):
 
     assert res.status == "converged", f"error_estimate={res.error}, subdivisions=\
 {res.subdivisions}, true_error={np.abs(res.estimate - exact(a, b, *args))}"
+    assert res.estimate.shape == shape[1:]
 
 
 @pytest.mark.parametrize("ndim", range(2, 11))
 def test_genz_malik_func_evaluations(ndim):
     """
     Tests that the number of function evaluations required for Genz-Malik cubature
-    matches the number in the paper.
+    matches the number in Genz and Malik 1980.
     """
 
     rule = GenzMalik(ndim)

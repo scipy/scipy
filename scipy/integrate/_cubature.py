@@ -9,6 +9,91 @@ import numpy as np
 
 
 def cub(f, a, b, rule, rtol=1e-05, atol=1e-08, max_subdivisions=10000, args=()):
+    """
+    Adaptive cubature of vector- or tensor-valued function.
+
+    Given an arbitrary cubature rule with error estimation, this function returns the
+    estimate of the integral over the region described by corners ``a`` and ``b`` to
+    the required tolerance.
+
+    Parameters
+    ----------
+    f : callable
+        Function to integrate. ``f`` must have the signature::
+            f(x : ndarray, *args) -> ndarray
+        If ``f(x, *args)`` accepts arrays ``x`` of shape ``(input_dim_1, ...,
+        input_dim_n, num_eval_points)`` and outputs arrays of shape ``(output_dim_1,
+        ..., output_dim_n, num_eval_points)``, then ``cub`` will return arrays of shape
+        ``(output_dim_1, ..., output_dim_n)``.
+    a, b : ndarray
+        Lower and upper limits of integration. If the integral is being performed over
+        intervals x_1 in [a_1, b_1], x_2 in [a_2, b_2], ..., x_n in [a_n, b_n], then
+        a and b will be [a_1, ..., a_n] and [b_1, ..., b_n] correspondingly.
+    rule : Cubature
+        Cubature rule to use when estimating the integral. The cubature rule specified
+        must implement ``error_estimate``. See Examples.
+    rtol : float
+        Relative tolerance.
+    atol : float
+        Absolute tolerance.
+    max_subdivisions : int
+        Maximum number of times to subdivide the region of integration in order to
+        improve the estimate over a region with high error.
+    args : tuple, optional
+        Additional positional args passed to ``f``. See Examples.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.integrate._cubature import *
+    >>> def f(x, alphas):
+    ...     # Example function to integrate
+    ...     # f(x) = exp(sum(alpha * x))
+    ...
+    ...     # Support arbitrary shaped x and alphas
+    ...     ndim = x.shape[0]
+    ...     num_eval_points = x.shape[-1]
+    ...
+    ...     alphas_reshaped = np.expand_dims(alphas, -1)
+    ...     x_reshaped = x.reshape(
+    ...         ndim, *([1]*(len(alphas.shape) - 1)), num_eval_points
+    ...     )
+    ...
+    ...     return np.exp(np.sum(alphas_reshaped * x_reshaped, axis=0))
+    >>> rule_1d = GaussKronrod(21) # Use Gauss-Kronrod, which has error estimate
+    >>> alphas_1d = np.array([0.5])
+    >>> res = cub(
+    ...     f,
+    ...     np.array([0]),
+    ...     np.array([1]),
+    ...     rule_1d,
+    ...     args=(alphas_1d,)
+    ... ); res.estimate
+     np.float64(1.2974425414002562)
+    >>> # Now calculate 3D integral, constructing 3D rule from product of 1D rules
+    >>> product_rule = Product([rule_1d, rule_1d, rule_1d])
+    >>> # New values of alpha, now f calcualtes exp(0.2*x_1 + 0.5*x_2 + 0.8*x_3)
+    >>> alphas_3d = np.array([0.2, 0.5, 0.8])
+    >>> res = cub(
+    ...     f,
+    ...     np.array([0, 0, 0]),
+    ...     np.array([1, 1, 1]),
+    ...     product_rule,
+    ...     args=(alphas_3d,)
+    ... ); res.estimate
+     np.float64(2.2002853017758057)
+    >>> # Evaluate for many values of alpha simultaneously
+    >>> alphas_many = np.array([[0.1, 0.2, 2], [0.25, 0.5, 5], [0.4, 0.8, 8]])
+    >>> res = cub(
+    ...     f,
+    ...     np.array([0, 0, 0]),
+    ...     np.array([1, 1, 1]),
+    ...     rule_3d,
+    ...     args=(alphas_many,)
+    ... ); res.estimate
+     array([1.46914007e+00, 2.20028530e+00, 3.50827109e+04])
+    """
+
     if max_subdivisions is None:
         max_subdivisions = np.inf
 
@@ -16,8 +101,7 @@ def cub(f, a, b, rule, rtol=1e-05, atol=1e-08, max_subdivisions=10000, args=()):
     err = rule.error_estimate(f, a, b, args)
 
     if err is None:
-        # TODO: more descriptive error
-        raise Exception("Attempting cubature with a rule that doesn't implement error \
+        raise Exception("attempting cubature with a rule that doesn't implement error \
 estimation.")
 
     regions = [CubatureRegion(est, err, a, b)]
@@ -34,9 +118,9 @@ estimation.")
         a_k, b_k = region_k.a, region_k.b
         m_k = (a_k + b_k) / 2
 
-        # Find all 2**ndim subregions formed by splitting region_k along each axis
+        # Find all 2^ndim subregions formed by splitting region_k along each axis
         # e.g. for 1D quadrature this splits an interval in two, for 3D cubature this
-        # splits the current cube under consideration into 8 subcubes.
+        # splits the cube under consideration into 8 subcubes.
         subregion_coordinates = zip(
             _cartesian_product(np.array([a_k, m_k]).T).T,
             _cartesian_product(np.array([m_k, b_k]).T).T
@@ -625,6 +709,50 @@ class NewtonCotes(FixedCubature):
 
 
 class Product(DualEstimateCubature):
+    """
+    Find the n-dimensional cubature rule constructed from cubature rules of lower
+    dimension.
+
+    Given a list of base dual-estimate cubature rules of dimension d_1, ..., d_n, this
+    will find the (d_1 + ... d_n)-dimensional cubature rule formed from taking the
+    Cartesian product of their weights.
+
+    Parameters
+    ----------
+    base_rules : list
+        List of base dual estimate cubatures used to find the product rule.
+
+    Attributes
+    ----------
+    base_rules : list of DualEstimateCubature
+        List of base dual estimate cubatures used to find the product rule.
+
+    higher : FixedCubature
+        Higher-order rule given by the product of the higher order rules given in the
+        base rules.
+
+    lower : FixedCubature
+        Lower-order rule given by the product of the lower order rules given in the base
+        rules.
+
+    Example
+    -------
+
+    Evaluate a 2D integral by taking the product of two 1D rules:
+
+    >>> import numpy as np
+    >>> from scipy.integrate._cubature import *
+    >>> def f(x):
+    ...     # f(x) = cos(x_1) + cos(x_2)
+    ...     return np.sum(np.cos(x), axis=0)
+    >>> rule = Product([GaussKronrod(15), GaussKronrod(15)]) # Use 15-point GaussKronrod
+    >>> a, b = np.array([0, 0]), np.array([1, 1])
+    >>> rule.estimate(f, a, b) # True value 2*sin(1), approximately 1.6829
+     np.float64(1.682941969615793)
+    >>> rule.error_estimate(f, a, b)
+     np.float64(2.220446049250313e-16)
+    """
+
     def __init__(self, base_rules):
         self.base_rules = base_rules
         self.higher = self._Higher(base_rules)
@@ -662,6 +790,42 @@ class Product(DualEstimateCubature):
 
 
 class GenzMalik(DualEstimateCubature):
+    """
+    Genz-Malik cubature. Genz-Malik cubature is a true cubature rule in that it is not
+    constructed as the product of 1D rules.
+
+    Genz-Malik is only defined for integrals of dimension >= 2.
+
+    Parameters
+    ----------
+    ndim : int
+        The spacial dimension of the integrand.
+
+    Attributes
+    ----------
+    higher : Cubature
+        Higher-order rule.
+
+    lower : Cubature
+        Lower-order rule.
+
+    Examples
+    --------
+    Evaluate a 3D integral:
+
+    >>> import numpy as np
+    >>> from scipy.integrate._cubature import *
+    >>> def f(x):
+    ...     # f(x) = cos(x_1) + cos(x_2) + cos(x_3)
+    ...     return np.sum(np.cos(x), axis=0)
+    >>> rule = GenzMalik(3) # Use 3D Genz-Malik
+    >>> a, b = np.array([0, 0, 0]), np.array([1, 1, 1])
+    >>> rule.estimate(f, a, b) # True value 3*sin(1), approximately 2.5244
+     np.float64(2.5244129547230862)
+    >>> rule.error_estimate(f, a, b)
+     np.float64(1.378269656626685e-06)
+    """
+
     def __init__(self, ndim):
         if ndim < 2:
             raise Exception("Genz-Malik cubature is only defined for ndim >= 2")
