@@ -307,34 +307,7 @@ class FixedCubature(Cubature):
             ..., output_dim_n, eval_points)``, then ``err_est`` will be of shape
             ``(output_dim_1, ..., output_dim_n)``.
         """
-        orig_nodes, orig_weights = self.rule
-
-        # Since f accepts arrays of shape (ndim, eval_points), it is necessary to
-        # add an extra axis to a and b so that ``f`` can be evaluated there.
-        a = a[:, np.newaxis]
-        b = b[:, np.newaxis]
-        lengths = b - a
-
-        # The underlying cubature rule is for the hypercube [-1, 1]^n.
-        #
-        # To handle arbitrary regions of integration, it's necessary to apply a linear
-        # change of coordinates to map each interval [a[i], b[i]] to [-1, 1].
-        nodes = (orig_nodes + 1) * (lengths / 2) + a
-
-        # Also need to multiply the weights by a scale factor equal to the determinant
-        # of the Jacobian for this coordinate change.
-        weight_scale_factor = math.prod(lengths / 2)
-        weights = orig_weights * weight_scale_factor
-
-        # f(nodes) will have shape (output_dim_1, ..., output_dim_n, num_nodes)
-        # Summing along the last axis means estimate will shape (output_dim_1, ...,
-        # output_dim_n)
-        est = np.sum(
-            weights * f(nodes, *args),
-            axis=-1
-        )
-
-        return est
+        return _apply_rule(f, a, b, self.rule, args)
 
 
 class ErrorFromDifference(Cubature):
@@ -371,12 +344,16 @@ class ErrorFromDifference(Cubature):
      array([6.21045267])
     """
 
-    def __init__(self, lower):
-        self.lower = lower
-
     def error_estimate(self, f, a, b, args=()):
+        nodes, weights = self.rule
+        lower_nodes, lower_weights = self.lower_rule
+
+        error_nodes = np.concat([nodes, lower_nodes], axis=-1)
+        error_weights = np.concat([weights, -lower_weights], axis=0)
+        error_rule = (error_nodes, error_weights)
+
         return np.abs(
-            self.estimate(f, a, b, args) - self.lower.estimate(f, a, b, args)
+            _apply_rule(f, a, b, error_rule, args)
         )
 
 
@@ -427,7 +404,6 @@ class Product(FixedCubature, ErrorFromDifference):
 
     def __init__(self, base_cubatures):
         self.base_cubatures = base_cubatures
-        self.lower = self._Lower(base_cubatures)
 
     @cached_property
     def rule(self):
@@ -444,24 +420,20 @@ class Product(FixedCubature, ErrorFromDifference):
 
         return nodes, weights
 
-    class _Lower(FixedCubature):
-        def __init__(self, base_cubatures):
-            self.base_cubatures = base_cubatures
+    @cached_property
+    def lower_rule(self):
+        nodes = _cartesian_product(
+            [cubature.lower_rule[0] for cubature in self.base_cubatures]
+        )
 
-        @cached_property
-        def rule(self):
-            nodes = _cartesian_product(
-                [cubature.lower.rule[0] for cubature in self.base_cubatures]
-            )
+        weights = np.prod(
+            _cartesian_product(
+                [cubature.lower_rule[1] for cubature in self.base_cubatures]
+            ),
+            axis=0
+        )
 
-            weights = np.prod(
-                _cartesian_product(
-                    [cubature.lower.rule[1] for cubature in self.base_cubatures]
-                ),
-                axis=0
-            )
-
-            return nodes, weights
+        return nodes, weights
 
 
 class NewtonCotes(FixedCubature):
@@ -660,7 +632,7 @@ class GaussKronrod(FixedCubature, ErrorFromDifference):
 15 or 21 nodes")
 
         self.npoints = npoints
-        self.lower = GaussLegendre(npoints//2)
+        self.lower_rule = GaussLegendre(npoints//2).rule
 
     @cached_property
     def rule(self):
@@ -799,7 +771,6 @@ class GenzMalik(FixedCubature, ErrorFromDifference):
             raise Exception("Genz-Malik cubature is only defined for ndim >= 2")
 
         self.ndim = ndim
-        self.lower = self._GenzMalikEmbeddedRule(ndim)
 
     @cached_property
     def rule(self):
@@ -850,55 +821,47 @@ class GenzMalik(FixedCubature, ErrorFromDifference):
 
         return nodes, weights
 
-    class _GenzMalikEmbeddedRule(FixedCubature):
-        """
-        Embedded rule for Genz-Malik used to calculate the estimate of the error.
-        """
+    @cached_property
+    def lower_rule(self):
+        # Nodes are almost the same as the full rule, but there are no nodes
+        # corresponding to l_5.
+        l_2 = math.sqrt(9/70)
+        l_3 = math.sqrt(9/10)
+        l_4 = math.sqrt(9/10)
 
-        def __init__(self, ndim):
-            self.ndim = ndim
+        its = itertools.chain(
+            [(0,) * self.ndim],
+            _distinct_permutations((l_2,) + (0,) * (self.ndim - 1)),
+            _distinct_permutations((-l_2,) + (0,) * (self.ndim - 1)),
+            _distinct_permutations((l_3,) + (0,) * (self.ndim - 1)),
+            _distinct_permutations((-l_3,) + (0,) * (self.ndim - 1)),
+            _distinct_permutations((l_4, l_4) + (0,) * (self.ndim - 2)),
+            _distinct_permutations((l_4, -l_4) + (0,) * (self.ndim - 2)),
+            _distinct_permutations((-l_4, -l_4) + (0,) * (self.ndim - 2)),
+        )
 
-        @cached_property
-        def rule(self):
-            # Nodes are almost the same as the full rule, but there are no nodes
-            # corresponding to l_5.
-            l_2 = math.sqrt(9/70)
-            l_3 = math.sqrt(9/10)
-            l_4 = math.sqrt(9/10)
+        nodes_size = 1 + 2 * (self.ndim + 1) * self.ndim
 
-            its = itertools.chain(
-                [(0,) * self.ndim],
-                _distinct_permutations((l_2,) + (0,) * (self.ndim - 1)),
-                _distinct_permutations((-l_2,) + (0,) * (self.ndim - 1)),
-                _distinct_permutations((l_3,) + (0,) * (self.ndim - 1)),
-                _distinct_permutations((-l_3,) + (0,) * (self.ndim - 1)),
-                _distinct_permutations((l_4, l_4) + (0,) * (self.ndim - 2)),
-                _distinct_permutations((l_4, -l_4) + (0,) * (self.ndim - 2)),
-                _distinct_permutations((-l_4, -l_4) + (0,) * (self.ndim - 2)),
-            )
+        nodes = np.fromiter(
+            itertools.chain.from_iterable(zip(*its)),
+            dtype=float,
+            count=self.ndim * nodes_size
+        )
 
-            nodes_size = 1 + 2 * (self.ndim + 1) * self.ndim
+        nodes.shape = (self.ndim, nodes_size)
 
-            nodes = np.fromiter(
-                itertools.chain.from_iterable(zip(*its)),
-                dtype=float,
-                count=self.ndim * nodes_size
-            )
+        # Weights are different from those in the full rule.
+        w_1 = (2**self.ndim) * (729 - 950*self.ndim + 50*self.ndim**2) / 729
+        w_2 = (2**self.ndim) * (245 / 486)
+        w_3 = (2**self.ndim) * (265 - 100*self.ndim) / 1458
+        w_4 = (2**self.ndim) * (25 / 729)
 
-            nodes.shape = (self.ndim, nodes_size)
+        weights = np.repeat(
+            [w_1, w_2, w_3, w_4],
+            [1, 2 * self.ndim, 2*self.ndim, 2*(self.ndim - 1)*self.ndim]
+        )
 
-            # Weights are different from those in the full rule.
-            w_1 = (2**self.ndim) * (729 - 950*self.ndim + 50*self.ndim**2) / 729
-            w_2 = (2**self.ndim) * (245 / 486)
-            w_3 = (2**self.ndim) * (265 - 100*self.ndim) / 1458
-            w_4 = (2**self.ndim) * (25 / 729)
-
-            weights = np.repeat(
-                [w_1, w_2, w_3, w_4],
-                [1, 2 * self.ndim, 2*self.ndim, 2*(self.ndim - 1)*self.ndim]
-            )
-
-            return nodes, weights
+        return nodes, weights
 
 
 def _cartesian_product(points):
@@ -1017,3 +980,34 @@ def _newton_cotes_weights(points):
 
     # TODO: figure out why this 2x is necessary
     return 2*np.linalg.solve(a, b)
+
+
+def _apply_rule(f, a, b, rule, args=()):
+    orig_nodes, orig_weights = rule
+
+    # Since f accepts arrays of shape (ndim, eval_points), it is necessary to
+    # add an extra axis to a and b so that ``f`` can be evaluated there.
+    a = a[:, np.newaxis]
+    b = b[:, np.newaxis]
+    lengths = b - a
+
+    # The underlying cubature rule is for the hypercube [-1, 1]^n.
+    #
+    # To handle arbitrary regions of integration, it's necessary to apply a linear
+    # change of coordinates to map each interval [a[i], b[i]] to [-1, 1].
+    nodes = (orig_nodes + 1) * (lengths / 2) + a
+
+    # Also need to multiply the weights by a scale factor equal to the determinant
+    # of the Jacobian for this coordinate change.
+    weight_scale_factor = math.prod(lengths / 2)
+    weights = orig_weights * weight_scale_factor
+
+    # f(nodes) will have shape (output_dim_1, ..., output_dim_n, num_nodes)
+    # Summing along the last axis means estimate will shape (output_dim_1, ...,
+    # output_dim_n)
+    est = np.sum(
+        weights * f(nodes, *args),
+        axis=-1
+    )
+
+    return est
