@@ -344,6 +344,10 @@ class ErrorFromDifference(Cubature):
      array([6.21045267])
     """
 
+    def __init__(self, higher, lower):
+        self.rule = higher.rule
+        self.lower_rule = lower.rule
+
     def error_estimate(self, f, a, b, args=()):
         nodes, weights = self.rule
         lower_nodes, lower_weights = self.lower_rule
@@ -766,14 +770,21 @@ class GenzMalik(FixedCubature, ErrorFromDifference):
      np.float64(1.378269656626685e-06)
     """
 
-    def __init__(self, ndim):
+    def __init__(self, ndim, degree=7, lower_degree=5):
         if ndim < 2:
             raise Exception("Genz-Malik cubature is only defined for ndim >= 2")
 
+        if degree != 7 or lower_degree != 5:
+            raise NotImplementedError
+
         self.ndim = ndim
+        self.degree = degree
+        self.lower_degree = lower_degree
 
     @cached_property
     def rule(self):
+        # TODO: Currently only support for degree 7 Genz-Malik cubature, should aim to
+        # support arbitrary degree
         l_2 = math.sqrt(9/70)
         l_3 = math.sqrt(9/10)
         l_4 = math.sqrt(9/10)
@@ -823,6 +834,9 @@ class GenzMalik(FixedCubature, ErrorFromDifference):
 
     @cached_property
     def lower_rule(self):
+        # TODO: Currently only support for the degree 5 lower rule, in the future it
+        # would be worth supporting arbitrary degree
+
         # Nodes are almost the same as the full rule, but there are no nodes
         # corresponding to l_5.
         l_2 = math.sqrt(9/70)
