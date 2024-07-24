@@ -636,9 +636,9 @@ def test_genz_malik_func_evaluations(ndim):
     matches the number in Genz and Malik 1980.
     """
 
-    rule = GenzMalik(ndim)
+    nodes, _ = GenzMalik(ndim).rule
 
-    assert rule.nodes.shape[-1] == (2**ndim) + 2*ndim**2 + 2*ndim + 1
+    assert nodes.shape[-1] == (2**ndim) + 2*ndim**2 + 2*ndim + 1
 
 
 @pytest.mark.parametrize("quadrature", [

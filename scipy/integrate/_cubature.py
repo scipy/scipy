@@ -275,23 +275,7 @@ class FixedCubature(Cubature):
     """
 
     @property
-    def nodes(self):
-        """
-        Nodes at which to evaluate the function being integrated. For an n-dim function,
-        these will be of shape ``(ndim, num_nodes)``.
-
-        Nodes should be for integrals over the region ``[-1, 1]^n``.
-        """
-
-        raise NotImplementedError
-
-    @property
-    def weights(self):
-        """
-        Weights to multiply function evaluations at nodes in the estimate. For an n-dim
-        function, these will be of shape ``(num_nodes,)``.
-        """
-
+    def rule(self):
         raise NotImplementedError
 
     def estimate(self, f, a, b, args=()):
@@ -323,6 +307,7 @@ class FixedCubature(Cubature):
             ..., output_dim_n, eval_points)``, then ``err_est`` will be of shape
             ``(output_dim_1, ..., output_dim_n)``.
         """
+        orig_nodes, orig_weights = self.rule
 
         # Since f accepts arrays of shape (ndim, eval_points), it is necessary to
         # add an extra axis to a and b so that ``f`` can be evaluated there.
@@ -334,12 +319,12 @@ class FixedCubature(Cubature):
         #
         # To handle arbitrary regions of integration, it's necessary to apply a linear
         # change of coordinates to map each interval [a[i], b[i]] to [-1, 1].
-        nodes = (self.nodes + 1) * (lengths / 2) + a
+        nodes = (orig_nodes + 1) * (lengths / 2) + a
 
         # Also need to multiply the weights by a scale factor equal to the determinant
         # of the Jacobian for this coordinate change.
         weight_scale_factor = math.prod(lengths / 2)
-        weights = self.weights * weight_scale_factor
+        weights = orig_weights * weight_scale_factor
 
         # f(nodes) will have shape (output_dim_1, ..., output_dim_n, num_nodes)
         # Summing along the last axis means estimate will shape (output_dim_1, ...,
@@ -440,35 +425,43 @@ class Product(FixedCubature, ErrorFromDifference):
      np.float64(2.220446049250313e-16)
     """
 
-    def __init__(self, base_rules):
-        self.base_rules = base_rules
-        self.lower = self._Lower(base_rules)
+    def __init__(self, base_cubatures):
+        self.base_cubatures = base_cubatures
+        self.lower = self._Lower(base_cubatures)
 
     @cached_property
-    def nodes(self):
-        return _cartesian_product([rule.nodes for rule in self.base_rules])
+    def rule(self):
+        nodes = _cartesian_product(
+            [cubature.rule[0] for cubature in self.base_cubatures]
+        )
 
-    @cached_property
-    def weights(self):
-        return np.prod(
-            _cartesian_product([rule.weights for rule in self.base_rules]),
+        weights = np.prod(
+            _cartesian_product(
+                [cubature.rule[1] for cubature in self.base_cubatures]
+            ),
             axis=0
         )
 
+        return nodes, weights
+
     class _Lower(FixedCubature):
-        def __init__(self, base_rules):
-            self.base_rules = base_rules
+        def __init__(self, base_cubatures):
+            self.base_cubatures = base_cubatures
 
         @cached_property
-        def nodes(self):
-            return _cartesian_product([rule.lower.nodes for rule in self.base_rules])
+        def rule(self):
+            nodes = _cartesian_product(
+                [cubature.lower.rule[0] for cubature in self.base_cubatures]
+            )
 
-        @cached_property
-        def weights(self):
-            return np.prod(
-                _cartesian_product([rule.lower.weights for rule in self.base_rules]),
+            weights = np.prod(
+                _cartesian_product(
+                    [cubature.lower.rule[1] for cubature in self.base_cubatures]
+                ),
                 axis=0
             )
+
+            return nodes, weights
 
 
 class NewtonCotes(FixedCubature):
@@ -545,16 +538,16 @@ class NewtonCotes(FixedCubature):
         self.open = open
 
     @cached_property
-    def nodes(self):
+    def rule(self):
         if self.open:
             h = 2/self.npoints
-            return np.linspace(-1 + h, 1 - h, num=self.npoints).reshape(1, -1)
+            nodes = np.linspace(-1 + h, 1 - h, num=self.npoints).reshape(1, -1)
         else:
-            return np.linspace(-1, 1, num=self.npoints).reshape(1, -1)
+            nodes = np.linspace(-1, 1, num=self.npoints).reshape(1, -1)
 
-    @cached_property
-    def weights(self):
-        return _newton_cotes_weights(self.nodes.reshape(-1))
+        weights = _newton_cotes_weights(nodes.reshape(-1))
+
+        return nodes, weights
 
 
 class GaussLegendre(FixedCubature):
@@ -595,12 +588,8 @@ class GaussLegendre(FixedCubature):
         self.npoints = npoints
 
     @cached_property
-    def nodes(self):
-        return roots_legendre(self.npoints)[0]
-
-    @cached_property
-    def weights(self):
-        return roots_legendre(self.npoints)[1]
+    def rule(self):
+        return roots_legendre(self.npoints)
 
 
 class GaussKronrod(FixedCubature, ErrorFromDifference):
@@ -674,9 +663,9 @@ class GaussKronrod(FixedCubature, ErrorFromDifference):
         self.lower = GaussLegendre(npoints//2)
 
     @cached_property
-    def nodes(self):
+    def rule(self):
         if self.npoints == 21:
-            return np.array([[
+            nodes = np.array([[
                 0.995657163025808080735527280689003,
                 0.973906528517171720077964012084452,
                 0.930157491355708226001207180059508,
@@ -699,29 +688,8 @@ class GaussKronrod(FixedCubature, ErrorFromDifference):
                 -0.973906528517171720077964012084452,
                 -0.995657163025808080735527280689003
             ]])
-        elif self.npoints == 15:
-            return np.array([[
-                0.991455371120812639206854697526329,
-                0.949107912342758524526189684047851,
-                0.864864423359769072789712788640926,
-                0.741531185599394439863864773280788,
-                0.586087235467691130294144838258730,
-                0.405845151377397166906606412076961,
-                0.207784955007898467600689403773245,
-                0.000000000000000000000000000000000,
-                -0.207784955007898467600689403773245,
-                -0.405845151377397166906606412076961,
-                -0.586087235467691130294144838258730,
-                -0.741531185599394439863864773280788,
-                -0.864864423359769072789712788640926,
-                -0.949107912342758524526189684047851,
-                -0.991455371120812639206854697526329
-            ]])
 
-    @cached_property
-    def weights(self):
-        if self.npoints == 21:
-            return np.array([
+            weights = np.array([
                 0.011694638867371874278064396062192,
                 0.032558162307964727478818972459390,
                 0.054755896574351996031381300244580,
@@ -745,7 +713,25 @@ class GaussKronrod(FixedCubature, ErrorFromDifference):
                 0.011694638867371874278064396062192,
             ])
         elif self.npoints == 15:
-            return np.array([
+            nodes = np.array([[
+                0.991455371120812639206854697526329,
+                0.949107912342758524526189684047851,
+                0.864864423359769072789712788640926,
+                0.741531185599394439863864773280788,
+                0.586087235467691130294144838258730,
+                0.405845151377397166906606412076961,
+                0.207784955007898467600689403773245,
+                0.000000000000000000000000000000000,
+                -0.207784955007898467600689403773245,
+                -0.405845151377397166906606412076961,
+                -0.586087235467691130294144838258730,
+                -0.741531185599394439863864773280788,
+                -0.864864423359769072789712788640926,
+                -0.949107912342758524526189684047851,
+                -0.991455371120812639206854697526329
+            ]])
+
+            weights = np.array([
                 0.022935322010529224963732008058970,
                 0.063092092629978553290700663189204,
                 0.104790010322250183839876322541518,
@@ -762,6 +748,8 @@ class GaussKronrod(FixedCubature, ErrorFromDifference):
                 0.063092092629978553290700663189204,
                 0.022935322010529224963732008058970
             ])
+
+        return nodes, weights
 
 
 class GenzMalik(FixedCubature, ErrorFromDifference):
@@ -814,7 +802,7 @@ class GenzMalik(FixedCubature, ErrorFromDifference):
         self.lower = self._GenzMalikEmbeddedRule(ndim)
 
     @cached_property
-    def nodes(self):
+    def rule(self):
         l_2 = math.sqrt(9/70)
         l_3 = math.sqrt(9/10)
         l_4 = math.sqrt(9/10)
@@ -832,19 +820,16 @@ class GenzMalik(FixedCubature, ErrorFromDifference):
             itertools.product((l_5, -l_5), repeat=self.ndim)
         )
 
-        out_size = 1 + 2 * (self.ndim + 1) * self.ndim + 2**self.ndim
+        nodes_size = 1 + 2 * (self.ndim + 1) * self.ndim + 2**self.ndim
 
-        out = np.fromiter(
+        nodes = np.fromiter(
             itertools.chain.from_iterable(zip(*its)),
             dtype=float,
-            count=self.ndim * out_size
+            count=self.ndim * nodes_size
         )
 
-        out.shape = (self.ndim, out_size)
-        return out
+        nodes.shape = (self.ndim, nodes_size)
 
-    @cached_property
-    def weights(self):
         w_1 = (2**self.ndim) * (12824 - 9120 * self.ndim + 400 * self.ndim**2) \
             / 19683
         w_2 = (2**self.ndim) * 980/6561
@@ -852,7 +837,7 @@ class GenzMalik(FixedCubature, ErrorFromDifference):
         w_4 = (2**self.ndim) * (200 / 19683)
         w_5 = 6859 / 19683
 
-        return np.repeat(
+        weights = np.repeat(
             [w_1, w_2, w_3, w_4, w_5],
             [
                 1,
@@ -863,6 +848,8 @@ class GenzMalik(FixedCubature, ErrorFromDifference):
             ]
         )
 
+        return nodes, weights
+
     class _GenzMalikEmbeddedRule(FixedCubature):
         """
         Embedded rule for Genz-Malik used to calculate the estimate of the error.
@@ -872,7 +859,9 @@ class GenzMalik(FixedCubature, ErrorFromDifference):
             self.ndim = ndim
 
         @cached_property
-        def nodes(self):
+        def rule(self):
+            # Nodes are almost the same as the full rule, but there are no nodes
+            # corresponding to l_5.
             l_2 = math.sqrt(9/70)
             l_3 = math.sqrt(9/10)
             l_4 = math.sqrt(9/10)
@@ -888,28 +877,28 @@ class GenzMalik(FixedCubature, ErrorFromDifference):
                 _distinct_permutations((-l_4, -l_4) + (0,) * (self.ndim - 2)),
             )
 
-            out_size = 1 + 2 * (self.ndim + 1) * self.ndim
+            nodes_size = 1 + 2 * (self.ndim + 1) * self.ndim
 
-            out = np.fromiter(
+            nodes = np.fromiter(
                 itertools.chain.from_iterable(zip(*its)),
                 dtype=float,
-                count=self.ndim * out_size
+                count=self.ndim * nodes_size
             )
 
-            out.shape = (self.ndim, out_size)
-            return out
+            nodes.shape = (self.ndim, nodes_size)
 
-        @cached_property
-        def weights(self):
+            # Weights are different from those in the full rule.
             w_1 = (2**self.ndim) * (729 - 950*self.ndim + 50*self.ndim**2) / 729
             w_2 = (2**self.ndim) * (245 / 486)
             w_3 = (2**self.ndim) * (265 - 100*self.ndim) / 1458
             w_4 = (2**self.ndim) * (25 / 729)
 
-            return np.repeat(
+            weights = np.repeat(
                 [w_1, w_2, w_3, w_4],
                 [1, 2 * self.ndim, 2*self.ndim, 2*(self.ndim - 1)*self.ndim]
             )
+
+            return nodes, weights
 
 
 def _cartesian_product(points):
