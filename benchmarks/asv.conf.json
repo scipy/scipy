@@ -28,7 +28,7 @@
         "python -m build --wheel -o {build_cache_dir} {build_dir}"
     ],
 
-    // The base URL to "how a commit for the project.
+    // The base URL to show a commit for the project.
     "show_commit_url": "https://github.com/scipy/scipy/commit/",
 
     // The Pythons you'd like to test against.  If not provided, defaults
