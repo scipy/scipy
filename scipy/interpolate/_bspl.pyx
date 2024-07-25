@@ -302,7 +302,7 @@ def insert(double xval,
 
 
 @cython.wraparound(False)
-@cython.boundscheck(False)
+@cython.boundscheck(True)
 def _colloc(const double[::1] x, const double[::1] t, int k, double[::1, :] ab,
             int offset=0):
     """Build the B-spline collocation matrix.
