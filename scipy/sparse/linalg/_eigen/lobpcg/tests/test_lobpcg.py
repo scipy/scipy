@@ -517,6 +517,7 @@ def test_maxit():
     assert_allclose(np.shape(r_h), np.shape(np.asarray(r_h)))
 
 
+@pytest.mark.fail_slow(10)
 @pytest.mark.filterwarnings("ignore:Exited at iteration")
 @pytest.mark.filterwarnings("ignore:Exited postprocessing")
 def test_sakurai():
