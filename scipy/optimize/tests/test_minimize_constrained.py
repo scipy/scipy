@@ -3,7 +3,7 @@ import pytest
 from scipy.linalg import block_diag
 from scipy.sparse import csc_matrix
 from numpy.testing import (assert_array_almost_equal,
-                           assert_array_less, assert_, assert_allclose,
+                           assert_array_less, assert_,
                            suppress_warnings)
 from scipy.optimize import (NonlinearConstraint,
                             LinearConstraint,
