@@ -67,6 +67,17 @@ cdef extern from "src/__fitpack.h" namespace "fitpack":
     ) except+ nogil
 
 
+    void norm_eq_lsq(const double *xptr, ssize_t m,      # x, shape (m,)
+                     const double *tptr, ssize_t len_t,   # t, shape (len_t,)
+                     int k,
+                     const double *yptr, ssize_t ydim2,  # y, shape(m, ydim2)
+                     const double *wptr,                 # w, shape (m,)
+                     # outputs
+                     double *abT_ptr,                    # ab, shape (k+1, m) IN FORTRAN ORDER
+                     double *rhs_ptr,                    # rhs, shape (m, ydim2)
+                     double *wrk
+    ) except+ nogil
+
 
 ctypedef fused int32_or_int64:
     cnp.npy_int32
@@ -343,36 +354,18 @@ def _norm_eq_lsq(const double[::1] x,
         On exit: RHS of the normal equations.
 
     """
-    cdef:
-        int j, r, s, row, clmn, left, ci
-        double xval, wval
-        double[::1] wrk = np.empty(2*k + 2, dtype=np.float64)
+    cdef double[::1] wrk = np.empty(2*k + 2, dtype=np.float64)
 
     with nogil:
-        left = k
-        for j in range(x.shape[0]):
-            xval = x[j]
-            wval = w[j] * w[j]
-            # find interval
-            left = find_interval(t, k, xval, left, extrapolate=False)
-
-            # non-zero B-splines at xval
-            _deBoor_D(&t[0], xval, k, left, 0, &wrk[0])
-
-            # non-zero values of A.T @ A: banded storage w/ lower=True
-            # The colloq matrix in full storage would be
-            #   A[j, left-k:left+1] = wrk,
-            # Here we work out A.T @ A *in the banded storage* w/lower=True
-            # see the docstring of `scipy.linalg.cholesky_banded`.
-            for r in range(k+1):
-                row = left - k + r
-                for s in range(r+1):
-                    clmn = left - k + s
-                    ab[r-s, clmn] += wrk[r] * wrk[s] * wval
-
-                # ... and A.T @ y
-                for ci in range(rhs.shape[1]):
-                    rhs[row, ci] = rhs[row, ci] + wrk[r] * y[j, ci] * wval
+        norm_eq_lsq(&x[0], x.shape[0],
+                    &t[0], t.shape[0],
+                    k,
+                    &y[0, 0], y.shape[1],
+                    &w[0],
+                    &ab[0, 0],
+                    &rhs[0, 0],
+                    &wrk[0]
+        )
 
 @cython.wraparound(False)
 @cython.boundscheck(False)
