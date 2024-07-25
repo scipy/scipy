@@ -5,8 +5,11 @@ import itertools
 import pytest
 import numpy as np
 
+from numpy.testing import assert_allclose
+
 from scipy.integrate._cubature import (
-    cub, Product, GaussKronrod, GenzMalik, NewtonCotes, GaussLegendre
+    cub, Cubature, FixedCubature, Product, ErrorFromDifference,
+    NewtonCotes, GaussLegendre, GaussKronrod, GenzMalik,
 )
 
 
@@ -113,7 +116,7 @@ def genz_malik_1980_f_2_random_args(shape):
         * np.power(products, 1 / (2*ndim)) \
         / np.power(difficulty, 1 / (2*ndim))
 
-    np.testing.assert_allclose(np.prod(np.power(alphas, -2), axis=0), difficulty)
+    assert_allclose(np.prod(np.power(alphas, -2), axis=0), difficulty)
 
     # Adjust alphas from distribution used in Genz and Malik 1980 since denominator
     # is very small for high dimensions.
@@ -138,7 +141,7 @@ def genz_malik_1980_f_3(x, alphas):
     References
     ----------
     [1] A.C. Genz, A.A. Malik, Remarks on algorithm 006: An adaptive algorithm for
-        numerical integration over an N-dimensional rectangular region (1980)       
+        numerical integration over an N-dimensional rectangular region (1980)
     """
 
     ndim = x.shape[0]
@@ -524,7 +527,7 @@ def test_cub_scalar_output(problem, quadrature, rtol, atol):
 
     assert res.status == "converged"
 
-    np.testing.assert_allclose(
+    assert_allclose(
         res.estimate,
         exact(a, b, *args),
         rtol=rtol,
@@ -617,7 +620,7 @@ def test_cub_tensor_output(problem, quadrature, shape, rtol, atol):
         args=args,
     )
 
-    np.testing.assert_allclose(
+    assert_allclose(
         res.estimate,
         exact(a, b, *args),
         rtol=rtol,
@@ -671,7 +674,7 @@ def test_base_1d_quadratures_simple(quadrature, rtol):
     exact = (2**(n+1)/(n+1)).reshape(1, -1)
     estimate = quadrature.estimate(f, a, b)
 
-    np.testing.assert_allclose(
+    assert_allclose(
         estimate,
         exact,
         rtol=rtol,
@@ -688,6 +691,178 @@ def test_no_error_estimate_raises_error():
 
     # NewtonCotes has no built in error estimate
     rule = NewtonCotes(3)
+
+    with pytest.raises(Exception):
+        cub(f, a, b, rule)
+
+
+@pytest.mark.parametrize("quadrature_pair", [
+    (NewtonCotes(10), NewtonCotes(5)),
+    (GaussLegendre(10), GaussLegendre(5))
+])
+@pytest.mark.parametrize("rtol", [1e-1])
+def test_base_1d_quadratures_error_from_difference(quadrature_pair, rtol):
+    n = np.arange(5)
+
+    def f(x):
+        x_reshaped = x.reshape(1, 1, -1)
+        n_reshaped = n.reshape(1, -1, 1)
+
+        return np.power(x_reshaped, n_reshaped)
+
+    a = np.array([0])
+    b = np.array([2])
+
+    exact = (2**(n+1)/(n+1)).reshape(1, -1)
+
+    rule = ErrorFromDifference(
+        higher=quadrature_pair[0],
+        lower=quadrature_pair[1]
+    )
+
+    res = cub(f, a, b, rule, rtol)
+
+    assert_allclose(
+        res.estimate,
+        exact,
+        rtol=rtol,
+        atol=0,
+    )
+
+
+@pytest.mark.parametrize("rule", [
+    Product([
+        ErrorFromDifference(NewtonCotes(10), NewtonCotes(8)),
+        ErrorFromDifference(NewtonCotes(10), NewtonCotes(8)),
+    ]),
+    Product([
+        ErrorFromDifference(GaussLegendre(10), NewtonCotes(5)),
+        ErrorFromDifference(GaussLegendre(10), GaussLegendre(5)),
+    ]),
+    Product([
+        GaussKronrod(21),
+        GaussKronrod(21),
+    ]),
+    GenzMalik(2),
+])
+def test_cub_with_kwargs(rule):
+    np.random.seed(1)
+
+    f = genz_malik_1980_f_1
+    r, alphas = genz_malik_1980_f_1_random_args((2, 3))
+
+    a = np.array([0, 0])
+    b = np.array([1, 1])
+
+    res = cub(f, a, b, rule, kwargs={
+        "r": r,
+        "alphas": alphas
+    })
+    exact = genz_malik_1980_f_1_exact(a, b, r, alphas)
+
+    assert_allclose(
+        res.estimate,
+        exact,
+        rtol=1e-3,
+        atol=1e-4,
+    )
+
+
+def test_product_of_2d_by_1d():
+    n = np.arange(5)
+
+    def f(x):
+        x_reshaped = x.reshape(1, 1, -1)
+        n_reshaped = n.reshape(1, -1, 1)
+
+        return np.power(x_reshaped, n_reshaped)
+
+    a = np.array([0, 0, 0])
+    b = np.array([2, 2, 2])
+
+    rule_1 = Product([GaussKronrod(21), GaussKronrod(21), GaussKronrod(21)])
+    rule_2 = Product([
+        Product([GaussKronrod(21), GaussKronrod(21)]),
+        GaussKronrod(21),
+    ])
+
+    res_1 = cub(f, a, b, rule_1, 1e-1)
+    res_2 = cub(f, a, b, rule_2, 1e-1)
+
+    assert_allclose(
+        res_1.estimate,
+        res_2.estimate,
+    )
+
+
+def test_stops_after_max_subdivisions():
+    # Define a cubature rule with fake high error so that cub will keep on subdividing
+
+    class BadError:
+        underlying = GaussLegendre(10)
+
+        def estimate(self, f, a, b, args=(), kwargs=dict()):
+            return self.underlying.estimate(f, a, b, args, kwargs)
+
+        def error_estimate(self, f, a, b, args=(), kwargs=dict()):
+            return 1e6
+
+    def f(x):
+        return x
+
+    a = np.array([0])
+    b = np.array([1])
+    rule = BadError()
+
+    res = cub(
+        f,
+        a,
+        b,
+        rule,
+        max_subdivisions=10,
+    )
+
+    assert res.subdivisions == 10
+    assert not res.success
+    assert res.status == "not_converged"
+
+
+@pytest.mark.parametrize("quadrature", [
+    NewtonCotes,
+    GaussLegendre
+])
+def test_one_point_fixed_quad_impossible(quadrature):
+    with pytest.raises(Exception):
+        quadrature(1)
+
+
+def test_estimate_with_base_classes_raise_error():
+    def f(x):
+        return x
+
+    a = np.array([0])
+    b = np.array([1])
+
+    for base_class in [Cubature(), FixedCubature()]:
+        with pytest.raises(Exception):
+            base_class.estimate(f, a, b)
+
+
+def test_genz_malik_1d_raises_error():
+    with pytest.raises(Exception):
+        GenzMalik(1)
+
+
+def test_incompatible_dimension_raises_error():
+    def f(x):
+        return x
+
+    # Gauss-Kronrod is a 1D rule
+    rule = GaussKronrod(21)
+
+    # These limits are for a 2D problem
+    a = np.array([0, 0])
+    b = np.array([1, 1])
 
     with pytest.raises(Exception):
         cub(f, a, b, rule)

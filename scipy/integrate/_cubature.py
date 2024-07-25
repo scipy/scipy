@@ -9,7 +9,8 @@ import numpy as np
 from scipy.special import roots_legendre
 
 
-def cub(f, a, b, rule, rtol=1e-05, atol=1e-08, max_subdivisions=10000, args=()):
+def cub(f, a, b, rule, rtol=1e-05, atol=1e-08, max_subdivisions=10000,
+        args=(), kwargs=dict()):
     """
     Adaptive cubature of multidimensional array-valued function.
 
@@ -98,10 +99,10 @@ def cub(f, a, b, rule, rtol=1e-05, atol=1e-08, max_subdivisions=10000, args=()):
     if max_subdivisions is None:
         max_subdivisions = np.inf
 
-    est = rule.estimate(f, a, b, args)
+    est = rule.estimate(f, a, b, args, kwargs)
 
     try:
-        err = rule.error_estimate(f, a, b, args)
+        err = rule.error_estimate(f, a, b, args, kwargs)
     except NotImplementedError:
         raise Exception("attempting cubature with a rule that doesn't implement error \
 estimation.")
@@ -118,27 +119,23 @@ estimation.")
         err_k = region_k.error
 
         a_k, b_k = region_k.a, region_k.b
-        m_k = (a_k + b_k) / 2
-
-        # Find all 2^ndim subregions formed by splitting region_k along each axis
-        # e.g. for 1D quadrature this splits an interval in two, for 3D cubature this
-        # splits the cube under consideration into 8 subcubes.
-        subregion_coordinates = zip(
-            _cartesian_product(np.array([a_k, m_k]).T).T,
-            _cartesian_product(np.array([m_k, b_k]).T).T
-        )
 
         # Subtract the estimate of the integral and its error from the current global
         # estimates, since these will be refined in the loop over all subregions.
         est -= est_k
         err -= err_k
 
+        # Find all 2^ndim subregions formed by splitting region_k along each axis e.g.
+        # for 1D quadrature this splits an estimate over an interval into an estimate
+        # over two subintervals, for 3D cubature this splits an estimate over a cube
+        # into 8 subcubes.
+        #
         # For each of the new subregions, calculate an estimate for the integral and
         # the error there, and push these regions onto the heap for potential further
         # subdividing.
-        for a_k_sub, b_k_sub in subregion_coordinates:
-            est_sub = rule.estimate(f, a_k_sub, b_k_sub, args)
-            err_sub = rule.error_estimate(f, a_k_sub, b_k_sub, args)
+        for a_k_sub, b_k_sub in _subregion_coordinates(a_k, b_k):
+            est_sub = rule.estimate(f, a_k_sub, b_k_sub, args, kwargs)
+            err_sub = rule.error_estimate(f, a_k_sub, b_k_sub, args, kwargs)
 
             est += est_sub
             err += err_sub
@@ -206,7 +203,7 @@ class Cubature:
     None.
     """
 
-    def estimate(self, f, a, b, args=()):
+    def estimate(self, f, a, b, args=(), kwargs=dict()):
         """
         Calculate estimate of integral of ``f`` in region described by corners ``a``
         and ``b``.
@@ -233,7 +230,7 @@ class Cubature:
         """
         raise NotImplementedError
 
-    def error_estimate(self, f, a, b, args=()):
+    def error_estimate(self, f, a, b, args=(), kwargs=dict()):
         """
         Calculate the error estimate of this cubature rule for the integral of ``f`` in
         the region described by corners ``a`` and ``b``.
@@ -278,7 +275,7 @@ class FixedCubature(Cubature):
     def rule(self):
         raise NotImplementedError
 
-    def estimate(self, f, a, b, args=()):
+    def estimate(self, f, a, b, args=(), kwargs=dict()):
         """
         Calculate estimate of integral of ``f`` in region described by corners ``a``
         and ``b`` as ``sum(weights * f(nodes))``. Nodes and weights will automatically
@@ -307,10 +304,10 @@ class FixedCubature(Cubature):
             ..., output_dim_n, eval_points)``, then ``err_est`` will be of shape
             ``(output_dim_1, ..., output_dim_n)``.
         """
-        return _apply_rule(f, a, b, self.rule, args)
+        return _apply_rule(f, a, b, self.rule, args, kwargs)
 
 
-class ErrorFromDifference(Cubature):
+class ErrorFromDifference(FixedCubature):
     """
     A cubature rule with a higher-order and lower-order estimate, and where the
     difference between the two estimates is used as an estimate for the error.
@@ -345,10 +342,18 @@ class ErrorFromDifference(Cubature):
     """
 
     def __init__(self, higher, lower):
-        self.rule = higher.rule
-        self.lower_rule = lower.rule
+        self.higher = higher
+        self.lower = lower
 
-    def error_estimate(self, f, a, b, args=()):
+    @property
+    def rule(self):
+        return self.higher.rule
+
+    @property
+    def lower_rule(self):
+        return self.lower.rule
+
+    def error_estimate(self, f, a, b, args=(), kwargs=dict()):
         nodes, weights = self.rule
         lower_nodes, lower_weights = self.lower_rule
 
@@ -357,11 +362,11 @@ class ErrorFromDifference(Cubature):
         error_rule = (error_nodes, error_weights)
 
         return np.abs(
-            _apply_rule(f, a, b, error_rule, args)
+            _apply_rule(f, a, b, error_rule, args, kwargs)
         )
 
 
-class Product(FixedCubature, ErrorFromDifference):
+class Product(ErrorFromDifference):
     """
     Find the n-dimensional cubature rule constructed from cubature rules of lower
     dimension.
@@ -411,6 +416,16 @@ class Product(FixedCubature, ErrorFromDifference):
 
     @cached_property
     def rule(self):
+        underlying_nodes = [cubature.rule[0] for cubature in self.base_cubatures]
+
+        to_product = []
+
+        for node_group in underlying_nodes:
+            if len(node_group.shape) == 1:
+                to_product.append(node_group)
+            else:
+                to_product.extend(node_group)
+
         nodes = _cartesian_product(
             [cubature.rule[0] for cubature in self.base_cubatures]
         )
@@ -568,7 +583,7 @@ class GaussLegendre(FixedCubature):
         return roots_legendre(self.npoints)
 
 
-class GaussKronrod(FixedCubature, ErrorFromDifference):
+class GaussKronrod(ErrorFromDifference):
     """
     Gauss-Kronrod cubature. Gauss-Kronrod rules consist of two cubature rules, one
     higher-order and one lower-order. The higher-order rule is used as the estimate of
@@ -636,7 +651,7 @@ class GaussKronrod(FixedCubature, ErrorFromDifference):
 15 or 21 nodes")
 
         self.npoints = npoints
-        self.lower_rule = GaussLegendre(npoints//2).rule
+        self.lower = GaussLegendre(npoints//2)
 
     @cached_property
     def rule(self):
@@ -728,7 +743,7 @@ class GaussKronrod(FixedCubature, ErrorFromDifference):
         return nodes, weights
 
 
-class GenzMalik(FixedCubature, ErrorFromDifference):
+class GenzMalik(ErrorFromDifference):
     """
     Genz-Malik cubature. Genz-Malik cubature is a true cubature rule in that it is not
     constructed as the product of 1D rules.
@@ -878,125 +893,7 @@ class GenzMalik(FixedCubature, ErrorFromDifference):
         return nodes, weights
 
 
-def _cartesian_product(points):
-    """
-    Takes a list of arrays such as `[ [[x_1, x_2]], [[y_1, y_2]] ]` and
-    returns all combinations of these points, such as
-    `[[x_1, x_1, x_2, x_2], [y_1, y_2, y_1, y_2]]`
-
-    Note that this is assuming that the spatial dimension is the first axis, as opposed
-    to the last axis.
-    """
-    out = np.stack(np.meshgrid(*points, indexing='ij'), axis=0)
-    out = out.reshape(len(points), -1)
-    return out
-
-
-def _max_norm(x):
-    return np.max(np.abs(x))
-
-
-def _distinct_permutations(iterable, r=None):
-    """
-    Find the number of distinct permutations of `r` elements of `iterable`.
-    """
-
-    # Algorithm: https://w.wiki/Qai
-    def _full(A):
-        while True:
-            # Yield the permutation we have
-            yield tuple(A)
-
-            # Find the largest index i such that A[i] < A[i + 1]
-            for i in range(size - 2, -1, -1):
-                if A[i] < A[i + 1]:
-                    break
-
-            #  If no such index exists, this permutation is the last one
-            else:
-                return
-
-            # Find the largest index j greater than j such that A[i] < A[j]
-            for j in range(size - 1, i, -1):
-                if A[i] < A[j]:
-                    break
-
-            # Swap the value of A[i] with that of A[j], then reverse the
-            # sequence from A[i + 1] to form the new permutation
-            A[i], A[j] = A[j], A[i]
-            A[i+1:] = A[:i-size:-1]  # A[i + 1:][::-1]
-
-    # Algorithm: modified from the above
-    def _partial(A, r):
-        # Split A into the first r items and the last r items
-        head, tail = A[:r], A[r:]
-        right_head_indexes = range(r - 1, -1, -1)
-        left_tail_indexes = range(len(tail))
-
-        while True:
-            # Yield the permutation we have
-            yield tuple(head)
-
-            # Starting from the right, find the first index of the head with
-            # value smaller than the maximum value of the tail - call it i.
-            pivot = tail[-1]
-
-            for i in right_head_indexes:
-                if head[i] < pivot:
-                    break
-
-                pivot = head[i]
-
-            else:
-                return
-
-            # Starting from the left, find the first value of the tail
-            # with a value greater than head[i] and swap.
-            for j in left_tail_indexes:
-                if tail[j] > head[i]:
-                    head[i], tail[j] = tail[j], head[i]
-                    break
-
-            # If we didn't find one, start from the right and find the first
-            # index of the head with a value greater than head[i] and swap.
-            else:
-                for j in right_head_indexes:
-                    if head[j] > head[i]:
-                        head[i], head[j] = head[j], head[i]
-                        break
-
-            # Reverse head[i + 1:] and swap it with tail[:r - (i + 1)]
-            tail += head[:i-r:-1]  # head[i + 1:][::-1]
-            i += 1
-
-            head[i:], tail[:] = tail[:r-i], tail[r-i:]
-
-    items = sorted(iterable)
-    size = len(items)
-
-    if r is None:
-        r = size
-
-    if 0 < r <= size:
-        return _full(items) if (r == size) else _partial(items, r)
-
-    return iter(() if r else ((),))
-
-
-def _newton_cotes_weights(points):
-    order = len(points) - 1
-
-    a = np.vander(points, increasing=True)
-    a = np.transpose(a)
-
-    i = np.arange(order + 1)
-    b = (1 - np.power(-1, i + 1)) / (2 * (i + 1))
-
-    # TODO: figure out why this 2x is necessary
-    return 2*np.linalg.solve(a, b)
-
-
-def _apply_rule(f, a, b, rule, args=()):
+def _apply_rule(f, a, b, rule, args=(), kwargs=dict()):
     orig_nodes, orig_weights = rule
 
     # Since f accepts arrays of shape (ndim, eval_points), it is necessary to
@@ -1016,12 +913,104 @@ def _apply_rule(f, a, b, rule, args=()):
     weight_scale_factor = math.prod(lengths / 2)
     weights = orig_weights * weight_scale_factor
 
+    rule_ndim = nodes.shape[0]
+
+    if rule_ndim != len(a) or rule_ndim != len(b):
+        raise Exception(f"cubature rule and function are of incompatible dimension, \
+nodes have ndim {nodes.shape[0]}, while limit of integration have ndim \
+a_ndim={len(a)}, b_ndim={len(b)}")
+
     # f(nodes) will have shape (output_dim_1, ..., output_dim_n, num_nodes)
     # Summing along the last axis means estimate will shape (output_dim_1, ...,
     # output_dim_n)
     est = np.sum(
-        weights * f(nodes, *args),
+        weights * f(nodes, *args, **kwargs),
         axis=-1
     )
 
     return est
+
+
+def _cartesian_product(points):
+    """
+    Takes a list of arrays such as `[ [[x_1, x_2]], [[y_1, y_2]] ]` and
+    returns all combinations of these points, such as
+    `[[x_1, x_1, x_2, x_2], [y_1, y_2, y_1, y_2]]`
+
+    Note that this is assuming that the spatial dimension is the first axis, as opposed
+    to the last axis.
+    """
+    out = np.stack(np.meshgrid(*points, indexing='ij'), axis=0)
+    out = out.reshape(len(points), -1)
+    return out
+
+
+def _subregion_coordinates(a, b):
+    """
+    Given the coordinates of a region like a=[0, 0] and b=[1, 1], yield the coordinates
+    of all subregions, which in this case would be::
+
+        ([0, 0], [1/2, 1/2]),
+        ([0, 1/2], [1/2, 1]),
+        ([1/2, 0], [1, 1/2]),
+        ([1/2, 1/2], [1, 1])
+    """
+
+    m = (a + b)/2
+
+    for a_sub, b_sub in zip(
+        itertools.product(*np.array([a, m]).T),
+        itertools.product(*np.array([m, b]).T)
+    ):
+        yield np.array(a_sub), np.array(b_sub)
+
+
+def _max_norm(x):
+    return np.max(np.abs(x))
+
+
+def _distinct_permutations(iterable):
+    """
+    Find the number of distinct permutations of elements of `iterable`.
+    """
+
+    # Algorithm: https://w.wiki/Qai
+
+    items = sorted(iterable)
+    size = len(items)
+
+    while True:
+        # Yield the permutation we have
+        yield tuple(items)
+
+        # Find the largest index i such that A[i] < A[i + 1]
+        for i in range(size - 2, -1, -1):
+            if items[i] < items[i + 1]:
+                break
+
+        #  If no such index exists, this permutation is the last one
+        else:
+            return
+
+        # Find the largest index j greater than j such that A[i] < A[j]
+        for j in range(size - 1, i, -1):
+            if items[i] < items[j]:
+                break
+
+        # Swap the value of A[i] with that of A[j], then reverse the
+        # sequence from A[i + 1] to form the new permutation
+        items[i], items[j] = items[j], items[i]
+        items[i+1:] = items[:i-size:-1]  # A[i + 1:][::-1]
+
+
+def _newton_cotes_weights(points):
+    order = len(points) - 1
+
+    a = np.vander(points, increasing=True)
+    a = np.transpose(a)
+
+    i = np.arange(order + 1)
+    b = (1 - np.power(-1, i + 1)) / (2 * (i + 1))
+
+    # TODO: figure out why this 2x is necessary
+    return 2*np.linalg.solve(a, b)
