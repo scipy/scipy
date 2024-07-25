@@ -710,60 +710,6 @@ def test_bug_11886():
     minimize(opt, 2*[1], constraints = lin_cons)
 
 
-# Remove xfail when gh-11649 is resolved
-@pytest.mark.xfail(reason="Known bug in trust-constr; see gh-11649.",
-                   strict=True)
-def test_gh11649():
-    bnds = Bounds(lb=[-1, -1], ub=[1, 1], keep_feasible=True)
-
-    def assert_inbounds(x):
-        assert np.all(x >= bnds.lb)
-        assert np.all(x <= bnds.ub)
-
-    def obj(x):
-        assert_inbounds(x)
-        return np.exp(x[0])*(4*x[0]**2 + 2*x[1]**2 + 4*x[0]*x[1] + 2*x[1] + 1)
-
-    def nce(x):
-        assert_inbounds(x)
-        return x[0]**2 + x[1]
-
-    def nci(x):
-        assert_inbounds(x)
-        return x[0]*x[1]
-
-    x0 = np.array((0.99, -0.99))
-    nlcs = [NonlinearConstraint(nci, -10, np.inf),
-            NonlinearConstraint(nce, 1, 1)]
-
-    res = minimize(fun=obj, x0=x0, method='trust-constr',
-                   bounds=bnds, constraints=nlcs)
-    assert res.success
-    assert_inbounds(res.x)
-    assert nlcs[0].lb < nlcs[0].fun(res.x) < nlcs[0].ub
-    assert_allclose(nce(res.x), nlcs[1].ub)
-
-    ref = minimize(fun=obj, x0=x0, method='slsqp',
-                   bounds=bnds, constraints=nlcs)
-    assert_allclose(res.fun, ref.fun)
-
-
-def test_gh20665_too_many_constraints():
-    # gh-20665 reports a confusing error message when there are more equality
-    # constraints than variables. Check that the error message is improved.
-    message = "...more equality constraints than independent variables..."
-    with pytest.raises(ValueError, match=message):
-        x0 = np.ones((2,))
-        A_eq, b_eq = np.arange(6).reshape((3, 2)), np.ones((3,))
-        g = NonlinearConstraint(lambda x:  A_eq @ x, lb=b_eq, ub=b_eq)
-        minimize(rosen, x0, method='trust-constr', constraints=[g])
-    # no error with `SVDFactorization`
-    with np.testing.suppress_warnings() as sup:
-        sup.filter(UserWarning)
-        minimize(rosen, x0, method='trust-constr', constraints=[g],
-                 options={'factorization_method': 'SVDFactorization'})
-
-
 def test_gh11649():
     bnds = Bounds(lb=[-1, -1], ub=[1, 1], keep_feasible=True)
 
@@ -780,7 +726,7 @@ def test_gh11649():
         return x[0]**2 + x[1]
 
     def nce_jac(x):
-        return np.array([2 * x[0], 1])
+        return np.array([2*x[0], 1])
 
     def nci(x):
         assert_inbounds(x)
@@ -793,6 +739,24 @@ def test_gh11649():
     res = minimize(fun=obj, x0=x0, method='trust-constr',
                    bounds=bnds, constraints=nlcs)
     assert res.success
+    assert_inbounds(res.x)
+    assert nlcs[0].lb < nlcs[0].fun(res.x) < nlcs[0].ub
+
+
+def test_gh20665_too_many_constraints():
+    # gh-20665 reports a confusing error message when there are more equality
+    # constraints than variables. Check that the error message is improved.
+    message = "...more equality constraints than independent variables..."
+    with pytest.raises(ValueError, match=message):
+        x0 = np.ones((2,))
+        A_eq, b_eq = np.arange(6).reshape((3, 2)), np.ones((3,))
+        g = NonlinearConstraint(lambda x:  A_eq @ x, lb=b_eq, ub=b_eq)
+        minimize(rosen, x0, method='trust-constr', constraints=[g])
+    # no error with `SVDFactorization`
+    with np.testing.suppress_warnings() as sup:
+        sup.filter(UserWarning)
+        minimize(rosen, x0, method='trust-constr', constraints=[g],
+                 options={'factorization_method': 'SVDFactorization'})
 
 
 class TestBoundedNelderMead:
