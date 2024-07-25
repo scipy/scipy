@@ -58,6 +58,14 @@ cdef extern from "src/__fitpack.h" namespace "fitpack":
                           double *wrk
     ) noexcept nogil
 
+    void _colloc_matrix(const double *xptr, ssize_t m,
+                        const double *tptr, ssize_t len_t,
+                        int k,
+                        double *abT, ssize_t nbands,   # ab(nbands, len_t - k - 1) in F order!
+                        int offset,
+                        double *wrk
+    ) except+ nogil
+
 
 
 ctypedef fused int32_or_int64:
@@ -267,7 +275,6 @@ def _colloc(const double[::1] x, const double[::1] t, int k, double[::1, :] ab,
         spline order
     ab : ndarray, shape (2*kl + ku + 1, nt), F-order
         This parameter is modified in-place.
-        On exit: zeroed out.
         On exit: B-spline collocation matrix in the band storage with
         ``ku`` upper diagonals and ``kl`` lower diagonals.
         Here ``kl = ku = k``.
@@ -275,27 +282,16 @@ def _colloc(const double[::1] x, const double[::1] t, int k, double[::1, :] ab,
         skip this many rows
 
     """
-    cdef int left, j, a, kl, ku, clmn
-    cdef double xval
-
-    kl = ku = k
     cdef double[::1] wrk = np.empty(2*k + 2, dtype=np.float64)
 
-    # collocation matrix
     with nogil:
-        left = k
-        for j in range(x.shape[0]):
-            xval = x[j]
-            # find interval
-            left = find_interval(t, k, xval, left, extrapolate=False)
-
-            # fill a row
-            _deBoor_D(&t[0], xval, k, left, 0, &wrk[0])
-            # for a full matrix it would be ``A[j + offset, left-k:left+1] = bb``
-            # in the banded storage, need to spread the row over
-            for a in range(k+1):
-                clmn = left - k + a
-                ab[kl + ku + j + offset - clmn, clmn] = wrk[a]
+        _colloc_matrix(&x[0], x.shape[0],    # drop the last element since x[0] == x[-1]
+                       &t[0], t.shape[0],
+                       k,
+                       &ab[0, 0], ab.shape[0],
+                       offset,
+                       &wrk[0]
+        )
 
 
 @cython.wraparound(False)
