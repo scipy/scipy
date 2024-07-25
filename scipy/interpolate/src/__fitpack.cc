@@ -474,4 +474,43 @@ _evaluate_spline(
 }
 
 
+/*
+ * Spline collocation matrix in the LAPACK banded storage
+ */
+void
+_colloc_matrix(const double *xptr, ssize_t m,       // x, shape(m,)
+               const double *tptr, ssize_t len_t,   // t, shape(len_t,)
+               int k,
+               double *abT_ptr, ssize_t nbands,     // ab(nbands, len_t - k - 1) in F order!
+               int offset,
+               double *wrk                          // scratch, shape (2k+2)
+)
+{
+    auto x = ConstRealArray1D(xptr, m);
+    auto t = ConstRealArray1D(tptr, len_t);
+    auto abT = RealArray2D(abT_ptr, len_t - k - 1, nbands); // NB: transposed in C order
+
+    ssize_t kl = k, ku = k;  // upper and lower bands; NB: nbands == 2*ku+kl+1, not checked
+    ssize_t left = k;
+    for(ssize_t j=0; j < m; j++) {
+        double xval = x(j);
+        left = _find_interval(t.data, len_t, k, xval, left, 0);
+
+        // Evaluate (k+1) b-splines which are non-zero on the interval `left`.
+        // on return, first k+1 elements of work are B_{m-k},..., B_{m}
+        _deBoor_D(t.data, xval, k, left, 0, wrk);
+
+        // Fill a row. For a full matrix in the C order, it would've been
+        // ``A[j+offset, left-k:left+1] = wrk``.
+        // In the LAPACK banded storage, need to spread the row over:
+        // https://www.netlib.org/lapack/lug/node124.html
+        // Additionally, for the Fortran order, we operate on the transposed matrix
+        // (by just swapping the row and column indices)
+        for (ssize_t a=0; a < k+1 ; a++) {
+            ssize_t clmn = left - k + a;
+            abT(clmn, kl + ku + j + offset - clmn) = wrk[a];
+        }
+    }
+}
+
 } // namespace fitpack

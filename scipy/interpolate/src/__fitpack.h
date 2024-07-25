@@ -69,7 +69,7 @@ struct Array2D
 
 
 // Flip boundschecking on/off here
-constexpr bool BOUNDS_CHECK = false;
+constexpr bool BOUNDS_CHECK = true;
 
 typedef Array2D<double, BOUNDS_CHECK> RealArray2D;
 typedef Array1D<double, BOUNDS_CHECK> RealArray1D;
@@ -197,6 +197,19 @@ _evaluate_spline(
     int extrapolate,
     double *out_ptr,                           // out, shape (s, m) NOT CHECKED
     double *wrk                                // scratch, shape (2k+2,)
+);
+
+
+/*
+ * Spline collocation matrix in the LAPACK banded storage
+ */
+void
+_colloc_matrix(const double *xptr, ssize_t m,       // x, shape(m,)
+               const double *tptr, ssize_t len_t,   // t, shape(len_t,)
+               int k,
+               double *abT, ssize_t nbands,         // ab(nbands, len_t - k - 1) in F order!
+               int offset,
+               double *wrk                          // scratch, shape (2k+2,)
 );
 
 
