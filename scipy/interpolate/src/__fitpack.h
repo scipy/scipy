@@ -213,4 +213,19 @@ _colloc_matrix(const double *xptr, ssize_t m,       // x, shape(m,)
 );
 
 
+/*
+ * Construct the l.h.s. and r.h.s of the normal equations for the LSQ spline fitting.
+ */
+void
+norm_eq_lsq(const double *xptr, ssize_t m,      // x, shape (m,)
+              const double *tptr, ssize_t len_t,  // t, shape (len_t,)
+              int k,
+              const double *yptr, ssize_t ydim2,  // y, shape(m, ydim2)
+              const double *wptr,                 // w, shape (m,)
+              /* outputs */
+              double *abT_ptr,                    // ab, shape (k+1, m) IN FORTRAN ORDER
+              double *rhs_ptr,                    // rhs, shape (m, ydim2)
+              double *wrk
+);
+
 } // namespace fitpack

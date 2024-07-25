@@ -513,4 +513,57 @@ _colloc_matrix(const double *xptr, ssize_t m,       // x, shape(m,)
     }
 }
 
+void
+norm_eq_lsq(const double *xptr, ssize_t m,            // x, shape (m,)
+              const double *tptr, ssize_t len_t,        // t, shape (len_t,)
+              int k,
+              const double *yptr, ssize_t ydim2,        // y, shape(m, ydim2)
+              const double *wptr,                       // w, shape (m,)
+              /* outputs */
+              double *abT_ptr,                          // ab, shape (k+1, m) IN FORTRAN ORDER
+              double *rhs_ptr,                          // rhs, shape (m, ydim2)
+              double *wrk
+)
+{
+    auto x = ConstRealArray1D(xptr, m);
+    auto t = ConstRealArray1D(tptr, len_t);
+    auto y = ConstRealArray2D(yptr, m, ydim2);
+    auto w = ConstRealArray1D(wptr, m);
+
+    auto rhs = RealArray2D(rhs_ptr, m, ydim2);   // C order
+    auto abT = RealArray2D(abT_ptr, m, k+1);  // transposed for the F order
+
+    ssize_t left = k;
+    for(ssize_t j=0; j < m ; j++) {
+        double xval = x(j);
+        double wval = w(j) * w(j);
+
+        // where in t is xval
+        left = _find_interval(t.data, len_t, k, xval, k, 0);
+
+        // non-zero b-splines at xval
+        _deBoor_D(t.data, xval, k, left, 0, wrk);
+
+        // Fill non-zero values of A.T @ A: in the banded storage w/ lower=True and F order
+        // With full matrices, the colloc matrix would have been
+        //    A[j, left-k:left+1] = wrk
+        // Here we work out A.T @ A *in the banded storage* w/ lower=True,
+        // see the docstring of `scipy.linalg.cholesky_banded` for details
+        ssize_t r, s, row, clmn, ci;
+
+        for (r=0; r < k+1; r++) {
+            row = left - k + r;
+            for (s=0; s < r+1; s++) {
+                clmn = left - k + s;
+                abT(clmn, r-s) += wrk[r] * wrk[s] * wval;   // NB: rows/cols swapped for F order                
+            }
+
+            // ... rhs = A.T @ y
+            for (ci=0; ci < ydim2; ci++) {
+                rhs(row, ci) += wrk[r] * y(j, ci) * wval;
+            }
+        }
+    }
+}
+
 } // namespace fitpack
