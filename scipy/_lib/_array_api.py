@@ -159,7 +159,7 @@ def _asarray(
     """
     if xp is None:
         xp = array_namespace(array)
-    if xp.__name__ in {"numpy", "scipy._lib.array_api_compat.numpy"}:
+    if is_numpy(xp):
         # Use NumPy API to support order
         if copy is True:
             array = np.array(array, order=order, dtype=dtype, subok=subok)
@@ -167,10 +167,6 @@ def _asarray(
             array = np.asanyarray(array, order=order, dtype=dtype)
         else:
             array = np.asarray(array, order=order, dtype=dtype)
-
-        # At this point array is a NumPy ndarray. We convert it to an array
-        # container that is consistent with the input's namespace.
-        array = xp.asarray(array)
     else:
         try:
             array = xp.asarray(array, dtype=dtype, copy=copy)

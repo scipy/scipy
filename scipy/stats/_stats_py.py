@@ -70,9 +70,16 @@ from scipy._lib._bunch import _make_tuple_bunch
 from scipy import stats
 from scipy.optimize import root_scalar
 from scipy._lib._util import normalize_axis_index
-from scipy._lib._array_api import (array_namespace, is_numpy, atleast_nd,
-                                   xp_moveaxis_to_end, xp_sign, xp_vector_norm)
-from scipy._lib.array_api_compat import size as xp_size
+from scipy._lib._array_api import (
+    _asarray,
+    array_namespace,
+    atleast_nd,
+    is_numpy,
+    size as xp_size,
+    xp_moveaxis_to_end,
+    xp_sign,
+    xp_vector_norm,
+)
 from scipy._lib.deprecation import _deprecated
 
 
@@ -10440,7 +10447,7 @@ def _xp_mean(x, /, *, axis=None, weights=None, keepdims=False, nan_policy='propa
     """
     # ensure that `x` and `weights` are array-API compatible arrays of identical shape
     xp = array_namespace(x) if xp is None else xp
-    x = xp.asarray(x, dtype=dtype)
+    x = _asarray(x, dtype=dtype, subok=True)
     weights = xp.asarray(weights, dtype=dtype) if weights is not None else weights
 
     # to ensure that this matches the behavior of decorated functions when one of the
@@ -10526,7 +10533,7 @@ def _xp_var(x, /, *, axis=None, correction=0, keepdims=False, nan_policy='propag
     # an array-api compatible function for variance with scipy.stats interface
     # and features (e.g. `nan_policy`).
     xp = array_namespace(x) if xp is None else xp
-    x = xp.asarray(x)
+    x = _asarray(x, subok=True)
 
     # use `_xp_mean` instead of `xp.var` for desired warning behavior
     # it would be nice to combine this with `_var`, which uses `_moment`
@@ -10536,7 +10543,7 @@ def _xp_var(x, /, *, axis=None, correction=0, keepdims=False, nan_policy='propag
     # be easy.
     kwargs = dict(axis=axis, nan_policy=nan_policy, dtype=dtype, xp=xp)
     mean = _xp_mean(x, keepdims=True, **kwargs)
-    x = xp.asarray(x, dtype=mean.dtype)
+    x = _asarray(x, dtype=mean.dtype, subok=True)
     x_mean = _demean(x, mean, axis, xp=xp)
     var = _xp_mean(x_mean**2, keepdims=keepdims, **kwargs)
 
