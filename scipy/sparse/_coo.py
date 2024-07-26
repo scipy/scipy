@@ -1224,15 +1224,31 @@ def _ravel_non_reduced_axes(coords, shape, axes):
     return raveled_coords
 
 
-############# tensor dot
-    def dot(self,other, axes_a, axes_b):
-        a_2d, b_2d, og_shape_a, og_shape_b = prepare_sparse_tensors_for_dot(self, other, axes_a, axes_b)
-        prod = a_2d @ b_2d
+############# dot
+    def dot(a, b, axes=[[-1], [-2]]):
+        ############ np.dot doesn't have axes parameter, do we want to omit it or have it
+        # but make it default to a similar condition as np.dot????
+
+        ############ add error if axes isn't a 2-tuple or a 2-element array
+
+        # if axes is a tuple, change to array
+        if type(axes) is tuple:
+            axes = np.array(axes)
+
+        if axes[0][0] < 0:
+            axes[0][0] += len(a.shape)
+        if axes[1][0] < 0:
+            axes[1][0] += len(b.shape)
+
+        (axes_a, axes_b) = axes
+        a_2d, b_2d, og_shape_a, og_shape_b = _prepare_sparse_tensors_for_dot(a, b, axes_a, axes_b)
+        
+        prod = a_2d @ b_2d # routes via 2-D CSR
         prod = prod.tocoo()
-        print(prod.coords, prod.data)
+
         # Combine the shapes of the non-reduced axes
         combined_shape = og_shape_a + og_shape_b
-        print(combined_shape)
+
         # Determine the original number of dimensions
         ndim_a = len(og_shape_a)
         ndim_b = len(og_shape_b)
@@ -1242,23 +1258,73 @@ def _ravel_non_reduced_axes(coords, shape, axes):
         non_reduced_axes_b = [i + ndim_a for i in range(ndim_b) if i not in axes_b]
         
         # Unravel the 2D coordinates to get multi-dimensional coordinates
-
         unraveled_coords1 = np.unravel_index(np.array(prod.coords[0]), og_shape_a)
         
         # Convert tuple of arrays to a single array of coordinates
         nd_coords1 = (np.array(unraveled_coords1))
 
-         # Unravel the 2D coordinates to get multi-dimensional coordinates
+        # Unravel the 2D coordinates to get multi-dimensional coordinates
         unraveled_coords2 = np.unravel_index(np.array(prod.coords[1]), og_shape_b)
         
         # Convert tuple of arrays to a single array of coordinates
         nd_coords2 = np.array(unraveled_coords2)
 
-
         prod_arr = coo_array((prod.data, np.concatenate((nd_coords1,nd_coords2))), combined_shape)
         return prod_arr
+    
+    
+    def tensordot(a, b, axes):
+        ### axes parameter is required
 
-def ravel_non_reduced_axes(coords, shape, axes):
+        axes_a, axes_b = _determine_default_axes(len(a.shape), len(b.shape), axes)
+        a_2d, b_2d, og_shape_a, og_shape_b = _prepare_sparse_tensors_for_tensordot(a, b, axes_a, axes_b)
+
+        prod = a_2d @ b_2d # routed via CSR
+        prod = prod.tocoo()
+        
+        combined_shape = og_shape_a + og_shape_b
+        
+        unraveled_coords1 = np.unravel_index(prod.row, og_shape_a)
+        unraveled_coords2 = np.unravel_index(prod.col, og_shape_b)
+        
+        nd_coords1 = np.array(unraveled_coords1)
+        nd_coords2 = np.array(unraveled_coords2)
+        
+        prod_arr = coo_array((prod.data, np.concatenate((nd_coords1, nd_coords2))), shape=combined_shape)
+        
+        return prod_arr
+
+
+def _determine_default_axes(ndim_a, ndim_b, axes):
+    """
+    Determine the default axes for tensordot-like operation.
+
+    Parameters:
+    -----------
+    ndim_a : int
+        Number of dimensions of the first array.
+    ndim_b : int
+        Number of dimensions of the second array.
+    axes : int
+        Number of axes to match for the dot product.
+
+    Returns:
+    --------
+    axes_a : list of int
+        The axes of the first array to be reduced.
+    axes_b : list of int
+        The axes of the second array to be reduced.
+    """
+    if isinstance(axes, int):
+        axes_a = list(range(ndim_a - axes, ndim_a))
+        axes_b = list(range(axes))
+    else:
+        axes_a, axes_b = axes
+    
+    return axes_a, axes_b
+
+
+def _ravel_non_reduced_axes(coords, shape, axes):
 
     ndim = len(shape)
     axes = [ax if ax >= 0 else ax + ndim for ax in axes]
@@ -1276,13 +1342,13 @@ def ravel_non_reduced_axes(coords, shape, axes):
     
     return raveled_coords
 
-def prepare_sparse_tensors_for_dot(a, b, axes_a, axes_b):
+def _prepare_sparse_tensors_for_dot(a, b, axes_a, axes_b):
     ndim_a = len(a.shape)
     ndim_b = len(b.shape)
 
     # Ravel non-reduced axes coordinates
-    a_raveled_coords = ravel_non_reduced_axes(a.coords, a.shape, axes_a)
-    b_raveled_coords = ravel_non_reduced_axes(b.coords, b.shape, axes_b)
+    a_raveled_coords = _ravel_non_reduced_axes(a.coords, a.shape, axes_a)
+    b_raveled_coords = _ravel_non_reduced_axes(b.coords, b.shape, axes_b)
 
     # Get the shape of the non-reduced axes
     original_shape_a = tuple(a.shape[ax] for ax in range(ndim_a) if ax not in axes_a)
@@ -1297,6 +1363,25 @@ def prepare_sparse_tensors_for_dot(a, b, axes_a, axes_b):
 
     return coo_array((a.data, a_2d_coords), ravel_coords_shape_a), coo_array((b.data, b_2d_coords),
                                     ravel_coords_shape_b),  original_shape_a, original_shape_b
+
+def _prepare_sparse_tensors_for_tensordot(a, b, axes_a, axes_b):
+    ndim_a = len(a.shape)
+    ndim_b = len(b.shape)
+    
+    a_raveled_coords = _ravel_non_reduced_axes(a.coords, a.shape, axes_a)
+    b_raveled_coords = _ravel_non_reduced_axes(b.coords, b.shape, axes_b)
+
+    original_shape_a = tuple(a.shape[ax] for ax in range(ndim_a) if ax not in axes_a)
+    original_shape_b = tuple(b.shape[ax] for ax in range(ndim_b) if ax not in axes_b)
+    
+    ravel_coords_shape_a = (math.prod(original_shape_a), math.prod([a.shape[ax] for ax in axes_a]))
+    ravel_coords_shape_b = (math.prod([b.shape[ax] for ax in axes_b]), math.prod(original_shape_b))
+
+    a_2d_coords = np.vstack((a_raveled_coords, np.ravel_multi_index(np.array(a.coords)[axes_a, :], [a.shape[ax] for ax in axes_a])))
+    b_2d_coords = np.vstack((np.ravel_multi_index(np.array(b.coords)[axes_b, :], tuple([b.shape[ax] for ax in axes_b])), b_raveled_coords))
+    
+    return coo_array((a.data, a_2d_coords), ravel_coords_shape_a), coo_array((b.data, b_2d_coords),
+                                                ravel_coords_shape_b), original_shape_a, original_shape_b
 
 
 def _ravel_coords(coords, shape, order='C'):
