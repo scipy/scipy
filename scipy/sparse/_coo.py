@@ -1685,20 +1685,20 @@ def _prepare_sparse_tensors_for_tensordot(a, b, axes_a, axes_b, tensordot):
         non_reduced_axes_b = [i + ndim_a for i in range(ndim_b) if i not in axes_b]
         
         # Unravel the 2D coordinates to get multi-dimensional coordinates
-        unraveled_coords = np.unravel_index(np.array(prod.coords), combined_shape)
+
+        unraveled_coords1 = np.unravel_index(np.array(prod.coords[0]), og_shape_a)
         
         # Convert tuple of arrays to a single array of coordinates
-        nd_coords = np.concatenate(np.array(unraveled_coords))
-        print(nd_coords)
+        nd_coords1 = (np.array(unraveled_coords1))
+
+         # Unravel the 2D coordinates to get multi-dimensional coordinates
+        unraveled_coords2 = np.unravel_index(np.array(prod.coords[1]), og_shape_b)
+        
+        # Convert tuple of arrays to a single array of coordinates
+        nd_coords2 = np.array(unraveled_coords2)
 
 
-        ########################
-        # this part needs some filtering and permuting
-        prod_coo = (nd_coords[len(nd_coords) // 2:, :])[::-1] # this is just experimentation, its not correct
-        ########################
-
-
-        prod_arr = coo_array((prod.data, prod_coo), combined_shape)
+        prod_arr = coo_array((prod.data, np.concatenate((nd_coords1,nd_coords2))), combined_shape)
         return prod_arr
 
 def ravel_non_reduced_axes(coords, shape, axes):
