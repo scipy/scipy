@@ -794,8 +794,8 @@ class TestNdimageInterpolation:
     def test_affine_transform26(self, order):
         # test homogeneous coordinates
         data = np.array([[4, 1, 3, 2],
-                            [7, 6, 8, 5],
-                            [3, 5, 3, 6]])
+                         [7, 6, 8, 5],
+                         [3, 5, 3, 6]])
         if (order > 1):
             filtered = ndimage.spline_filter(data, order=order)
         else:
@@ -898,6 +898,17 @@ class TestNdimageInterpolation:
             x[::-1, ::-1],
         )
 
+    def test_affine_transform2(self):
+        x = np.zeros((100, 100, 100))
+        x[40:60, 40:60] = 1  # make rectangle
+        matrix = np.array([[1., 0., 0.],
+                                [0., 0.92, -0.38],
+                                [-0., 0.38, 0.92]])
+        shift = np.array([60, 60, 60])  # shift to corner of rectangle
+        origin = np.array([40, 40, 40])  # rotate around other corner
+        output = ndimage.affine_transform2(x, matrix, shift=shift, origin=origin)
+        assert np.abs(output.sum() - 35494.07) < 0.1
+
     @pytest.mark.parametrize('order', range(0, 6))
     def test_shift01(self, order):
         data = np.array([1])
@@ -970,8 +981,8 @@ class TestNdimageInterpolation:
     @pytest.mark.parametrize('order', range(0, 6))
     def test_shift07(self, order):
         data = np.array([[4, 1, 3, 2],
-                            [7, 6, 8, 5],
-                            [3, 5, 3, 6]])
+                         [7, 6, 8, 5],
+                         [3, 5, 3, 6]])
         out = ndimage.shift(data, [1, 0], order=order)
         assert_array_almost_equal(out, [[0, 0, 0, 0],
                                         [4, 1, 3, 2],
@@ -1108,8 +1119,8 @@ class TestNdimageInterpolation:
     @pytest.mark.parametrize('dtype', [np.float64, np.complex128])
     def test_zoom_affine01(self, order, dtype):
         data = np.asarray([[1, 2, 3, 4],
-                              [5, 6, 7, 8],
-                              [9, 10, 11, 12]], dtype=dtype)
+                           [5, 6, 7, 8],
+                           [9, 10, 11, 12]], dtype=dtype)
         if data.dtype.kind == 'c':
             data -= 1j * data
         with suppress_warnings() as sup:
@@ -1150,7 +1161,7 @@ class TestNdimageInterpolation:
         #       but works here for all modes because the size ratio happens to
         #       always be an integer when x.shape = (2, 2).
         x = np.array([[0, 1],
-                         [2, 3]], dtype=float)
+                      [2, 3]], dtype=float)
         # x = np.arange(16, dtype=float).reshape(4, 4)
         assert_array_almost_equal(
             ndimage.zoom(x, zoom, order=0, mode=mode),
@@ -1193,9 +1204,9 @@ class TestNdimageInterpolation:
                          [0, 1, 0, 0],
                          [0, 0, 0, 0]], dtype=np.float64)
         expected = np.array([[0, 0, 0],
-                            [0, 0, 0],
-                            [0, 1, 0],
-                            [0, 0, 0]], dtype=np.float64)
+                             [0, 0, 0],
+                             [0, 1, 0],
+                             [0, 0, 0]], dtype=np.float64)
         out = ndimage.rotate(data, 90, order=order)
         assert_array_almost_equal(out, expected)
 
@@ -1206,10 +1217,10 @@ class TestNdimageInterpolation:
                          [0, 1, 1, 0, 0],
                          [0, 0, 0, 0, 0]], dtype=dtype)
         expected = np.array([[0, 0, 0],
-                            [0, 0, 0],
-                            [0, 1, 0],
-                            [0, 1, 0],
-                            [0, 0, 0]], dtype=dtype)
+                             [0, 0, 0],
+                             [0, 1, 0],
+                             [0, 1, 0],
+                             [0, 0, 0]], dtype=dtype)
         if data.dtype.kind == 'c':
             data -= 1j * data
             expected -= 1j * expected
