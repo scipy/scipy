@@ -14,23 +14,23 @@ def cub(f, a, b, rule, rtol=1e-05, atol=1e-08, max_subdivisions=10000,
     """
     Adaptive cubature of multidimensional array-valued function.
 
-    Given an arbitrary cubature rule with error estimation, this function returns the
+    Given an arbitrary cubature rule with error estimation, this function returns an
     estimate of the integral over the region described by corners ``a`` and ``b`` to
-    the required tolerance.
+    the required tolerance, although convergence is not guaranteed for all integrals.
 
     Parameters
     ----------
     f : callable
         Function to integrate. ``f`` must have the signature::
-            f(x : ndarray, *args) -> ndarray
+            f(x : ndarray, *args, **kwargs) -> ndarray
         If ``f(x, *args)`` accepts arrays ``x`` of shape ``(input_dim_1, ...,
         input_dim_n, num_eval_points)`` and outputs arrays of shape ``(output_dim_1,
         ..., output_dim_n, num_eval_points)``, then ``cub`` will return arrays of shape
         ``(output_dim_1, ..., output_dim_n)``.
     a, b : ndarray
-        Lower and upper limits of integration. If the integral is being performed over
-        intervals x_1 in [a_1, b_1], x_2 in [a_2, b_2], ..., x_n in [a_n, b_n], then
-        a and b will be [a_1, ..., a_n] and [b_1, ..., b_n] correspondingly.
+        Lower and upper limits of integration as rank-1 arrays specifying the left and
+        right endpoints of the intervals being integrated over. Infinite limits are
+        currently not supported.
     rule : Cubature
         Cubature rule to use when estimating the integral. The cubature rule specified
         must implement ``error_estimate``. See Examples.
@@ -39,61 +39,68 @@ def cub(f, a, b, rule, rtol=1e-05, atol=1e-08, max_subdivisions=10000,
     atol : float
         Absolute tolerance.
     max_subdivisions : int
-        Maximum number of times to subdivide the region of integration in order to
-        improve the estimate over a region with high error.
+        Upper bound on the number of subdivisions to perform to improve the estimate
+        over a subregion.
     args : tuple, optional
-        Additional positional args passed to ``f``. See Examples.
+        Additional positional args passed to ``f``.
+    kwargs : tuple, optional
+        Additional keyword args passed to ``f``.
 
     Examples
     --------
+    A simple 1D integral with vector output:
+
     >>> import numpy as np
     >>> from scipy.integrate._cubature import *
-    >>> def f(x, alphas):
-    ...     # Example function to integrate
-    ...     # f(x) = exp(sum(alpha * x))
-    ...
-    ...     # Support arbitrary shaped x and alphas
+    >>> def f(x, n):
+    ...    # Make sure x and n are broadcastable
+    ...    return x.reshape(1, -1)**n
+    >>> res = cub(
+    ...     f=f,
+    ...     a=np.array([0]),
+    ...     b=np.array([1]),
+    ...     rule=GaussKronrod(21), # 1D rule
+    ...     args=(
+    ...         # Since f accepts arrays of shape (ndim, num_eval_points) we need to
+    ...         # make sure n is the right shape
+    ...         np.arange(10).reshape(-1, 1),
+    ...     )
+    ... )
+    >>> res.estimate
+     array([1.        , 0.5       , 0.33333333, 0.25      , 0.2       ,
+            0.16666667, 0.14285714, 0.125     , 0.11111111, 0.1       ])
+
+
+    A 7D integral with arbitrary-shaped array output, function from Genz & Malik 1980.
+
+    >>> import numpy as np
+    >>> from scipy.integrate._cubature import *
+    >>> def f(x, r, alphas):
     ...     ndim = x.shape[0]
     ...     num_eval_points = x.shape[-1]
-    ...
+    ...     r_reshaped = np.expand_dims(r, -1)
     ...     alphas_reshaped = np.expand_dims(alphas, -1)
     ...     x_reshaped = x.reshape(
-    ...         ndim, *([1]*(len(alphas.shape) - 1)), num_eval_points
+    ...         ndim,
+    ...         *([1]*(len(alphas.shape) - 1)),
+    ...         num_eval_points
     ...     )
-    ...
-    ...     return np.exp(np.sum(alphas_reshaped * x_reshaped, axis=0))
-    >>> rule_1d = GaussKronrod(21) # Use Gauss-Kronrod, which has error estimate
-    >>> alphas_1d = np.array([0.5])
+    ...     return np.cos(
+    ...         2*np.pi*r_reshaped + np.sum(alphas_reshaped * x_reshaped, axis=0)
+    ...     )
     >>> res = cub(
-    ...     f,
-    ...     np.array([0]),
-    ...     np.array([1]),
-    ...     rule_1d,
-    ...     args=(alphas_1d,)
-    ... ); res.estimate
-     np.float64(1.2974425414002562)
-    >>> # Now calculate 3D integral, constructing 3D rule from product of 1D rules
-    >>> product_rule = Product([rule_1d, rule_1d, rule_1d])
-    >>> # New values of alpha, now f calcualtes exp(0.2*x_1 + 0.5*x_2 + 0.8*x_3)
-    >>> alphas_3d = np.array([0.2, 0.5, 0.8])
-    >>> res = cub(
-    ...     f,
-    ...     np.array([0, 0, 0]),
-    ...     np.array([1, 1, 1]),
-    ...     product_rule,
-    ...     args=(alphas_3d,)
-    ... ); res.estimate
-     np.float64(2.2002853017758057)
-    >>> # Evaluate for many values of alpha simultaneously
-    >>> alphas_many = np.array([[0.1, 0.2, 2], [0.25, 0.5, 5], [0.4, 0.8, 8]])
-    >>> res = cub(
-    ...     f,
-    ...     np.array([0, 0, 0]),
-    ...     np.array([1, 1, 1]),
-    ...     rule_3d,
-    ...     args=(alphas_many,)
-    ... ); res.estimate
-     array([1.46914007e+00, 2.20028530e+00, 3.50827109e+04])
+    ...     f=f,
+    ...     a=np.array([0, 0, 0, 0, 0, 0, 0]),
+    ...     b=np.array([1, 1, 1, 1, 1, 1, 1]),
+    ...     rule=GenzMalik(7),
+    ...     kwargs={
+    ...         "r": np.random.rand(2, 3),
+    ...         "alphas": np.random.rand(7, 2, 3),
+    ...     }
+    ... )
+    >>> res.estimate
+     array([[ 0.69578554, -0.87958878, -0.90278537],
+            [ 0.53436481, -0.34633208, -0.16061907]])
     """
 
     if max_subdivisions is None:
@@ -120,14 +127,15 @@ estimation.")
 
         a_k, b_k = region_k.a, region_k.b
 
-        # Subtract the estimate of the integral and its error from the current global
-        # estimates, since these will be refined in the loop over all subregions.
+        # Subtract the estimate of the integral and its error over this region from the
+        # current global estimates, since these will be refined in the loop over all
+        # subregions.
         est -= est_k
         err -= err_k
 
-        # Find all 2^ndim subregions formed by splitting region_k along each axis e.g.
-        # for 1D quadrature this splits an estimate over an interval into an estimate
-        # over two subintervals, for 3D cubature this splits an estimate over a cube
+        # Find all 2^ndim subregions formed by splitting region_k along each axis, e.g.
+        # for 1D integrals this splits an estimate over an interval into an estimate
+        # over two subintervals, for 3D integrals this splits an estimate over a cube
         # into 8 subcubes.
         #
         # For each of the new subregions, calculate an estimate for the integral and
@@ -358,7 +366,7 @@ class ErrorFromDifference(FixedCubature):
         lower_nodes, lower_weights = self.lower_rule
 
         error_nodes = np.concat([nodes, lower_nodes], axis=-1)
-        error_weights = np.concat([weights, -lower_weights], axis=0)
+        error_weights = np.concat([weights, -lower_weights], axis=-1)
         error_rule = (error_nodes, error_weights)
 
         return np.abs(
@@ -580,7 +588,11 @@ class GaussLegendre(FixedCubature):
 
     @cached_property
     def rule(self):
-        return roots_legendre(self.npoints)
+        nodes, weights = roots_legendre(self.npoints)
+
+        # roots_legendre returns nodes as array of shape (self.npoints,), need to
+        # reshape so the spacial dimension is first
+        return nodes.reshape(1, -1), weights
 
 
 class GaussKronrod(ErrorFromDifference):
@@ -896,6 +908,15 @@ class GenzMalik(ErrorFromDifference):
 def _apply_rule(f, a, b, rule, args=(), kwargs=dict()):
     orig_nodes, orig_weights = rule
 
+    rule_ndim = orig_nodes.shape[0]
+    a_ndim = len(a)
+    b_ndim = len(b)
+
+    if rule_ndim != a_ndim or rule_ndim != b_ndim:
+        raise Exception(f"cubature rule and function are of incompatible dimension, \
+nodes have ndim {rule_ndim}, while limit of integration have ndim \
+a_ndim={a_ndim}, b_ndim={b_ndim}")
+
     # Since f accepts arrays of shape (ndim, eval_points), it is necessary to
     # add an extra axis to a and b so that ``f`` can be evaluated there.
     a = a[:, np.newaxis]
@@ -912,13 +933,6 @@ def _apply_rule(f, a, b, rule, args=(), kwargs=dict()):
     # of the Jacobian for this coordinate change.
     weight_scale_factor = math.prod(lengths / 2)
     weights = orig_weights * weight_scale_factor
-
-    rule_ndim = nodes.shape[0]
-
-    if rule_ndim != len(a) or rule_ndim != len(b):
-        raise Exception(f"cubature rule and function are of incompatible dimension, \
-nodes have ndim {nodes.shape[0]}, while limit of integration have ndim \
-a_ndim={len(a)}, b_ndim={len(b)}")
 
     # f(nodes) will have shape (output_dim_1, ..., output_dim_n, num_nodes)
     # Summing along the last axis means estimate will shape (output_dim_1, ...,

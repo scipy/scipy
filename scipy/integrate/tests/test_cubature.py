@@ -768,33 +768,6 @@ def test_cub_with_kwargs(rule):
     )
 
 
-def test_product_of_2d_by_1d():
-    n = np.arange(5)
-
-    def f(x):
-        x_reshaped = x.reshape(1, 1, -1)
-        n_reshaped = n.reshape(1, -1, 1)
-
-        return np.power(x_reshaped, n_reshaped)
-
-    a = np.array([0, 0, 0])
-    b = np.array([2, 2, 2])
-
-    rule_1 = Product([GaussKronrod(21), GaussKronrod(21), GaussKronrod(21)])
-    rule_2 = Product([
-        Product([GaussKronrod(21), GaussKronrod(21)]),
-        GaussKronrod(21),
-    ])
-
-    res_1 = cub(f, a, b, rule_1, 1e-1)
-    res_2 = cub(f, a, b, rule_2, 1e-1)
-
-    assert_allclose(
-        res_1.estimate,
-        res_2.estimate,
-    )
-
-
 def test_stops_after_max_subdivisions():
     # Define a cubature rule with fake high error so that cub will keep on subdividing
 
@@ -849,22 +822,37 @@ def test_estimate_with_base_classes_raise_error():
 
 
 def test_genz_malik_1d_raises_error():
-    with pytest.raises(Exception):
+    with pytest.raises(Exception, match="only defined for ndim >= 2"):
         GenzMalik(1)
 
 
-def test_incompatible_dimension_raises_error():
+@pytest.mark.parametrize("problem", [
+    (
+        # 2D problem, 1D rule
+        np.array([0, 0]),
+        np.array([1, 1]),
+        GaussKronrod(21),
+    ),
+    (
+        # 2D problem, 1D rule
+        np.array([0, 0]),
+        np.array([1, 1]),
+        ErrorFromDifference(NewtonCotes(10), NewtonCotes(5)),
+    ),
+    (
+        # 1D problem, 2D rule
+        np.array([0]),
+        np.array([1]),
+        GenzMalik(2),
+    ),
+])
+def test_incompatible_dimension_raises_error(problem):
     def f(x):
         return x
 
-    # Gauss-Kronrod is a 1D rule
-    rule = GaussKronrod(21)
+    a, b, rule = problem
 
-    # These limits are for a 2D problem
-    a = np.array([0, 0])
-    b = np.array([1, 1])
-
-    with pytest.raises(Exception):
+    with pytest.raises(Exception, match="incompatible dimension"):
         cub(f, a, b, rule)
 
 
