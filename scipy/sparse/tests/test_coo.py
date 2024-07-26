@@ -663,22 +663,22 @@ def test_nd_matmul_vector(mat_shape, vec_shape):
 
 def test_dot():
     # Example Usage
-    a_coords = np.array([[0, 1, 2], [1, 0, 1], [0, 2, 1], [0,1,2]])  # Example coordinates for a 3D COO array
-    a_data = np.array([1, 2, 3])
-    a_shape = (3, 3, 4,3)
+    # a_coords = np.array([[0, 1, 2], [1, 0, 1], [0, 2, 1], [0,1,2]])  # Example coordinates for a 3D COO array
+    # a_data = np.array([1, 2, 3])
+    # a_shape = (3, 3, 4,3)
     
-    b_coords = np.array([[0, 1, 2], [0, 1, 2], [0, 2, 1], [2,1,1]])  # Example coordinates for another 3D COO array
-    b_data = np.array([4, 5, 6])
-    b_shape = (3, 3, 3,4)
+    # b_coords = np.array([[0, 1, 2], [0, 1, 2], [0, 2, 1], [2,1,1]])  # Example coordinates for another 3D COO array
+    # b_data = np.array([4, 5, 6])
+    # b_shape = (3, 3, 3,4)
     
     a = coo_array(np.random.randint(0, 7, size=(3,4,7,5)), (3,4,7,5))
-    b = coo_array(np.random.randint(0, 7, size=(7,3,4,5)), (7,3,4,5))
+    b = coo_array(np.random.randint(0, 7, size=(9,7,3,4,5)), (9,7,3,4,5))
     
-    axes_a = [2]
-    axes_b = [0]
-    x = (np.tensordot(a.toarray(), b.toarray(), axes=[axes_a,axes_b]))
-    print(x)
+    axes_a = [0, 2]
+    axes_b = [2, 1]
+    x = (np.tensordot(a.toarray(), b.toarray(), axes=[[0],[2]]))
+    #print(x)
     print(coo_array(x))
-    dotprod = a.dot(b, axes_a, axes_b)
+    dotprod = a.dot(b, [[0], [2]])
 
     assert_equal(x, dotprod.toarray())
