@@ -1273,7 +1273,8 @@ def _make_periodic_spline(x, y, t, k, axis):
 
     # `offset` is made to shift all the non-zero elements to the end of the
     # matrix
-    _bspl._colloc(x, t, k, ab, offset=k)
+    # NB: drop the last element of `x` because `x[0] = x[-1] + T` & `y[0] == y[-1]`
+    _bspl._colloc(x[:-1], t, k, ab, offset=k)
 
     # remove zeros before the matrix
     ab = ab[-k - (k + 1) % 2:, :]
