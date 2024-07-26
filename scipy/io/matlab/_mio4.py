@@ -178,17 +178,16 @@ class VarReader4:
         # Fast product for large (>2GB) arrays.
         num_bytes = reduce(mul, hdr.dims, np.int64(dt.itemsize))
         if num_bytes > _MAX_INTP:
-            raise ValueError("Variable '" + hdr.name.decode('latin1') +
-                             "' has byte length longer than largest possible"
-                             " Numpy array on this platform")
+            raise ValueError(
+                f"Variable '{hdr.name.decode('latin1')}' has byte length "
+                f"longer than largest possible NumPy array on this platform.")
         buffer = self.mat_stream.read(num_bytes)
         if len(buffer) != num_bytes:
-            raise ValueError("Not enough bytes to read matrix '" +
-                             hdr.name.decode('latin1') +
-                             "'; is this a badly-formed file? "
-                             "Consider listing matrices with `whosmat` "
-                             "and loading named matrices with "
-                             "`variable_names` kwarg to `loadmat`")
+            raise ValueError(
+                f"Not enough bytes to read matrix "
+                f"'{hdr.name.decode('latin1')}'; is this a badly-formed file? "
+                f"Consider listing matrices with `whosmat` and loading named "
+                f"matrices with `variable_names` kwarg to `loadmat`")
         arr = np.ndarray(shape=hdr.dims,
                          dtype=dt,
                          buffer=buffer,
