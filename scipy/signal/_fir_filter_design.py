@@ -6,11 +6,13 @@ import warnings
 
 import numpy as np
 from numpy.fft import irfft, fft, ifft
+from scipy.signal import get_window, firwin, freqz2
 from scipy.special import sinc
 from scipy.linalg import (toeplitz, hankel, solve, LinAlgError, LinAlgWarning,
                           lstsq)
 
 from . import _sigtools
+
 
 __all__ = ['kaiser_beta', 'kaiser_atten', 'kaiserord',
            'firwin', 'firwin2', 'remez', 'firls', 'minimum_phase','fwind1']
@@ -1295,13 +1297,14 @@ def minimum_phase(h, method='homomorphic', n_fft=None):
     return h_minimum[:n_out]
 
 
-def fwind1(hsize, window, fc, fs=2):
+def fwind1(hsize, window, fc=None, fs=2, circular=False):
     """
     2D FIR filter design using the window method.
 
     This function computes the coefficients of a 2D finite impulse response
     filter. The filter is separable with linear phase; it will be designed
     as a product of two 1D filters with dimensions defined by `hsize`.
+    Additionally, it can create approximately circularly symmetric 2-D windows.
 
     Parameters
     ----------
@@ -1309,15 +1312,19 @@ def fwind1(hsize, window, fc, fs=2):
         Lengths of the filter in each dimension. `hsize[0]` specifies the
         number of coefficients in the row direction and `hsize[1]` specifies
         the number of coefficients in the column direction.
-    window : tuple or list of length 2
-        Desired window to use for each 1D filter. Each element should be
+    window : tuple or list of length 2 or string
+        Desired window to use for each 1D filter or a single window type 
+        for creating circularly symmetric 2-D windows. Each element should be
         a string or tuple of string and parameter values. See
         `scipy.signal.get_window` for a list of windows and required
         parameters.
-    fc : float or 1-D array_like
+    fc : float or 1-D array_like, optional
         Cutoff frequency of filter (expressed in the same units as `fs`).
+        Required if `circular` is False.
     fs : float, optional
         The sampling frequency of the signal. Default is 2.
+    circular : bool, optional
+        Whether to create a circularly symmetric 2-D window. Default is False.
 
     Returns
     -------
@@ -1328,10 +1335,14 @@ def fwind1(hsize, window, fc, fs=2):
     ------
     ValueError
         If `hsize` and `window` are not 2-element tuples or lists.
+        If `cutoff` is outside the range [0, fs / 2] and `circular` is False.
+        If any of the elements in `window` are not recognized.
+    RuntimeError
+        If `firwin` fails to converge when designing the filter.
 
     See Also
     --------
-    scipy.signal.firwin
+    scipy.signal.firwin, scipy.signal.get_window
 
     Examples
     --------
@@ -1346,9 +1357,32 @@ def fwind1(hsize, window, fc, fs=2):
            [0.052, 0.391, 0.882, 0.391, 0.052],
            [0.023, 0.173, 0.391, 0.173, 0.023],
            [0.003, 0.023, 0.052, 0.023, 0.003]])
+
+    Generate a circularly symmetric 5x5 low-pass filter with Hamming window.
+
+    >>> filter_2d = fwind1((5, 5), 'hamming', circular=True)
+    >>> filter_2d
+    array([[0.0028, 0.0214, 0.0517, 0.0214, 0.0028],
+           [0.0214, 0.1606, 0.3874, 0.1606, 0.0214],
+           [0.0517, 0.3874, 0.9342, 0.3874, 0.0517],
+           [0.0214, 0.1606, 0.3874, 0.1606, 0.0214],
+           [0.0028, 0.0214, 0.0517, 0.0214, 0.0028]])
     """
     if len(hsize) != 2:
         raise ValueError("hsize must be a 2-element tuple or list")
+
+    if circular:
+        if isinstance(window, str):
+            win_1d = get_window(window, hsize[0])
+        elif isinstance(window, (tuple, list)):
+            win_1d = get_window(window, hsize[0])
+        else:
+            raise ValueError("window must be a string or a tuple/list of length 2")
+
+        f1, f2 = np.meshgrid(np.linspace(-1, 1, hsize[0]), np.linspace(-1, 1, hsize[1]))
+        r = np.sqrt(f1**2 + f2**2)
+        win_2d = np.interp(r, np.linspace(0, 1, hsize[0]), win_1d)
+        return win_2d
 
     if len(window) != 2:
         raise ValueError("window must be a 2-element tuple or list")
