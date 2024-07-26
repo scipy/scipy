@@ -671,11 +671,11 @@ def test_dot():
     b_data = np.array([4, 5, 6])
     b_shape = (3, 3, 3,4)
     
-    a = coo_array(np.random.randint(0, 4, size=(2, 2, 3, 5)), (2, 2, 3, 5))
-    b = coo_array(np.random.randint(0, 4, size=( 2, 5, 2)), (2, 5, 2))
+    a = coo_array(np.random.randint(0, 7, size=(3,4,7,5)), (3,4,7,5))
+    b = coo_array(np.random.randint(0, 7, size=(7,3,4,5)), (7,3,4,5))
     
-    axes_a = [3]
-    axes_b = [1]
+    axes_a = [2]
+    axes_b = [0]
     x = (np.tensordot(a.toarray(), b.toarray(), axes=[axes_a,axes_b]))
     print(x)
     print(coo_array(x))
