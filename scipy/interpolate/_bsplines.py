@@ -1217,6 +1217,49 @@ def _make_interp_per_full_matr(x, y, t, k):
     return c
 
 
+def _handle_lhs_derivatives(t, k, xval, ab, kl, ku, deriv_ords, offset=0):
+    """ Fill in the entries of the collocation matrix corresponding to known
+    derivatives at `xval`.
+
+    The collocation matrix is in the banded storage, as prepared by _colloc.
+    No error checking.
+
+    Parameters
+    ----------
+    t : ndarray, shape (nt + k + 1,)
+        knots
+    k : integer
+        B-spline order
+    xval : float
+        The value at which to evaluate the derivatives at.
+    ab : ndarray, shape(2*kl + ku + 1, nt), Fortran order
+        B-spline collocation matrix.
+        This argument is modified *in-place*.
+    kl : integer
+        Number of lower diagonals of ab.
+    ku : integer
+        Number of upper diagonals of ab.
+    deriv_ords : 1D ndarray
+        Orders of derivatives known at xval
+    offset : integer, optional
+        Skip this many rows of the matrix ab.
+
+    """
+    # find where `xval` is in the knot vector, `t`
+    left = _bspl._py_find_interval(t, k, xval, k, extrapolate=False)
+
+    # compute and fill in the derivatives @ xval
+    for row in range(deriv_ords.shape[0]):
+        nu = deriv_ords[row]
+        wrk = _bspl.evaluate_all_bspl(t, k, xval, left, nu)
+
+        # if A were a full matrix, it would be just
+        # ``A[row + offset, left-k:left+1] = bb``.
+        for a in range(k+1):
+            clmn = left - k + a
+            ab[kl + ku + offset + row - clmn, clmn] = wrk[a]
+
+
 def _make_periodic_spline(x, y, t, k, axis):
     '''
     Compute the (coefficients of) interpolating B-spline with periodic
@@ -1553,12 +1596,10 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
     ab = np.zeros((2*kl + ku + 1, nt), dtype=np.float64, order='F')
     _bspl._colloc(x, t, k, ab, offset=nleft)
     if nleft > 0:
-        _bspl._handle_lhs_derivatives(t, k, x[0], ab, kl, ku,
-                                      deriv_l_ords.astype(np.dtype("long")))
+        _handle_lhs_derivatives(t, k, x[0], ab, kl, ku, deriv_l_ords)
     if nright > 0:
-        _bspl._handle_lhs_derivatives(t, k, x[-1], ab, kl, ku,
-                                      deriv_r_ords.astype(np.dtype("long")),
-                                      offset=nt-nright)
+        _handle_lhs_derivatives(t, k, x[-1], ab, kl, ku, deriv_r_ords,
+                                offset=nt-nright)
 
     # set up the RHS: values to interpolate (+ derivative values, if any)
     extradim = prod(y.shape[1:])
