@@ -1,4 +1,4 @@
-name: Intel Fortran tests
+name: Intel oneAPI tests
 
 on:
   push:
@@ -16,8 +16,8 @@ permissions:
 # store the URL for downloading Intel oneAPI.
 # Reference - https://github.com/oneapi-src/oneapi-ci/blob/b4a96bd1888c130fcb73524d2b77b90f43681cbc/.github/workflows/build_all.yml#L11-L12
 env:
-  LINUX_BASEKIT_URL: https://registrationcenter-download.intel.com/akdlm/IRC_NAS/fdc7a2bc-b7a8-47eb-8876-de6201297144/l_BaseKit_p_2024.1.0.596_offline.sh
-  LINUX_HPCKIT_URL: https://registrationcenter-download.intel.com/akdlm/IRC_NAS/7f096850-dc7b-4c35-90b5-36c12abd9eaa/l_HPCKit_p_2024.1.0.560_offline.sh
+  LINUX_BASEKIT_URL: https://registrationcenter-download.intel.com/akdlm/IRC_NAS/9a98af19-1c68-46ce-9fdd-e249240c7c42/l_BaseKit_p_2024.2.0.634_offline.sh
+  LINUX_HPCKIT_URL: https://registrationcenter-download.intel.com/akdlm/IRC_NAS/d4e49548-1492-45c9-b678-8268cb0f1b05/l_HPCKit_p_2024.2.0.635_offline.sh
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
@@ -28,7 +28,7 @@ jobs:
     name: Get commit message
     uses: ./.github/workflows/commit_message.yml
 
-  msvc_ifx_blas:
+  icx_icpx_ifx_mkl:
     name: py3.12, dev.py
     needs: get_commit_message
     # Ensure (a) this doesn't run on forks by default, and
@@ -60,7 +60,8 @@ jobs:
           use-mamba: true
 
       - name: Update Conda Environment
-        run: mamba env update -n scipy-dev -f environment.yml
+        run: |
+          mamba env update -n scipy-dev -f environment.yml
 
       - name: cache install
         id: cache-install
@@ -85,7 +86,9 @@ jobs:
         run: |
           . /opt/intel/oneapi/setvars.sh --force
           conda activate scipy-dev
-          FC=ifx python dev.py build -C-Dblas=mkl-dynamic-lp64-iomp -C-Dlapack=mkl-dynamic-lp64-iomp
+          conda remove -y compilers
+          unset FFLAGS
+          CC=icx CXX=icpx FC=ifx python dev.py build -C-Dblas=mkl-dynamic-lp64-iomp -C-Dlapack=mkl-dynamic-lp64-iomp
 
       - name: Test scipy
         shell: bash -l {0}
