@@ -1,0 +1,7 @@
+[wrap-git]
+url = https://github.com/boostorg/math.git
+revision = ff72eaad44ffddfa25b01815a7bb1730b3cb81e7
+depth = 1
+method = cmake
+[provide]
+boost = boost_math_dep
