@@ -142,14 +142,15 @@ class TestTanhSinh:
     f15.ref = np.pi / 2
     f15.b = np.inf
 
-    def error(self, res, ref, log=False):
+    def error(self, res, ref, log=False, xp=None):
+        xp = array_namespace(res, ref) if xp is None else xp
         err = abs(res - ref)
 
         if not log:
             return err
 
         with np.errstate(divide='ignore'):
-            return np.log10(err)
+            return xp.log10(err)
 
     def test_input_validation(self, xp):
         f = self.f1
@@ -372,7 +373,7 @@ class TestTanhSinh:
         last_logerr = 0
         for i in range(4):
             res = _tanhsinh(f, a, b, minlevel=0, maxlevel=i)
-            logerr = self.error(res.integral, ref, log=True)
+            logerr = self.error(res.integral, ref, log=True, xp=xp)
             assert (logerr < last_logerr * 2 or logerr < -15.5)
             last_logerr = logerr
 
@@ -386,7 +387,7 @@ class TestTanhSinh:
             f.feval += xp_size(xp.asarray(x))
             return x**2 * xp_test.atan(x)
 
-        f.ref = (math.pi - 2 + 2 * math.log(2)) / 12
+        f.ref = xp.asarray((math.pi - 2 + 2 * math.log(2)) / 12, dtype=xp.float64)
 
         default_rtol = 1e-12
         default_atol = f.ref * default_rtol  # effective default absolute tol
@@ -450,7 +451,7 @@ class TestTanhSinh:
         # Test `atol`
         f.feval, f.calls = 0, 0
         # With this tolerance, we should get the exact same result as ref
-        atol = float(np.nextafter(ref.error, np.inf))
+        atol = np.nextafter(float(ref.error), np.inf)
         res = _tanhsinh(f, a, b, rtol=0, atol=atol)
         assert res.integral == ref.integral
         assert res.error == ref.error
@@ -462,7 +463,7 @@ class TestTanhSinh:
 
         f.feval, f.calls = 0, 0
         # With a tighter tolerance, we should get a more accurate result
-        atol = float(np.nextafter(ref.error, -np.inf))
+        atol = np.nextafter(float(ref.error), -np.inf)
         res = _tanhsinh(f, a, b, rtol=0, atol=atol)
         assert self.error(res.integral, f.ref) < res.error < atol
         assert res.nfev == f.feval > ref.nfev
@@ -473,7 +474,7 @@ class TestTanhSinh:
         # Test `rtol`
         f.feval, f.calls = 0, 0
         # With this tolerance, we should get the exact same result as ref
-        rtol = float(np.nextafter(ref.error/ref.integral, np.inf))
+        rtol = np.nextafter(float(ref.error/ref.integral), np.inf)
         res = _tanhsinh(f, a, b, rtol=rtol)
         assert res.integral == ref.integral
         assert res.error == ref.error
@@ -485,7 +486,7 @@ class TestTanhSinh:
 
         f.feval, f.calls = 0, 0
         # With a tighter tolerance, we should get a more accurate result
-        rtol = float(np.nextafter(ref.error/ref.integral, -np.inf))
+        rtol = np.nextafter(float(ref.error/ref.integral), -np.inf)
         res = _tanhsinh(f, a, b, rtol=rtol)
         assert self.error(res.integral, f.ref)/f.ref < res.error/res.integral < rtol
         assert res.nfev == f.feval > ref.nfev
