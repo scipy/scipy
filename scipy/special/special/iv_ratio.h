@@ -60,7 +60,7 @@ SPECFUN_HOST_DEVICE inline double _iv_ratio_impl(double v, double x,
     if (std::isnan(v) || std::isnan(x)) {
         return std::numeric_limits<double>::quiet_NaN();
     }
-    if (v < 1 || x < 0) {
+    if (v < 0.5 || x < 0) {
         set_error(func_name, SF_ERROR_DOMAIN, NULL);
         return std::numeric_limits<double>::quiet_NaN();
     }
