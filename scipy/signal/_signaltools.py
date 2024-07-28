@@ -3351,11 +3351,11 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
     If `t` is not None, then it is used solely to calculate the resampled
     positions `resampled_t`
 
-    As noted, `resample` uses FFT transformations, which can be very
-    slow if the number of input or output samples is large and prime;
-    see :func:`~scipy.fft.fft`. In such cases, it can be faster to first downsample
-    a signal of length ``n`` with :func:`~scipy.signal.resample_poly` by a factor of
-    ``n//num`` before using `resample`. Note that this approach changes the
+    As noted, `resample` uses FFT transformations, which can be very 
+    slow if the number of input or output samples is large and prime; 
+    see :func:`~scipy.fft.fft`. In such cases, it can be faster to first downsample 
+    a signal of length ``n`` with :func:`~scipy.signal.resample_poly` by a factor of 
+    ``n//num`` before using `resample`. Note that this approach changes the 
     characteristics of the antialiasing filter.
 
     Examples
