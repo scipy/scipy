@@ -14,11 +14,12 @@ __all__ = ['periodogram', 'welch', 'lombscargle', 'csd', 'coherence',
 
 
 def lombscargle(
-    t: npt.NDArray,
+    x: npt.NDArray,
     y: npt.NDArray,
     freqs: npt.NDArray,
     precenter: bool = False,
     normalize: bool | str = False,
+    *, 
     weights: npt.NDArray | None = None,
 ) -> npt.NDArray:
     """
@@ -45,7 +46,7 @@ def lombscargle(
 
     Parameters
     ----------
-    t : array_like
+    x : array_like
         Sample times.
     y : array_like
         Measurement values.
@@ -66,7 +67,7 @@ def lombscargle(
     Raises
     ------
     ValueError
-        If the input arrays `t`, `y`, and `weights` do not have the same shape.
+        If the input arrays `x`, `y`, and `weights` do not have the same shape.
     ZeroDivisionError
         If the freqs array contains the value 0.
     ZeroDivisionError
@@ -120,11 +121,11 @@ def lombscargle(
 
     Randomly generate sample times:
 
-    >>> t = rng.uniform(0, 10*np.pi, nin)
+    >>> x = rng.uniform(0, 10*np.pi, nin)
 
     Plot a sine wave for the selected times:
 
-    >>> y = A * np.cos(w0*t)
+    >>> y = A * np.cos(w0*x)
 
     Define the array of frequencies for which to compute the periodogram:
 
@@ -133,12 +134,12 @@ def lombscargle(
     Calculate Lomb-Scargle periodogram:
 
     >>> import scipy.signal as signal
-    >>> pgram = signal.lombscargle(t, y, w, normalize=True)
+    >>> pgram = signal.lombscargle(x, y, w, normalize=True)
 
     Now make a plot of the input data:
 
     >>> fig, (ax_t, ax_w) = plt.subplots(2, 1, constrained_layout=True)
-    >>> ax_t.plot(t, y, 'b+')
+    >>> ax_t.plot(x, y, 'b+')
     >>> ax_t.set_xlabel('Time [s]')
 
     Then plot the normalized periodogram:
@@ -152,15 +153,15 @@ def lombscargle(
 
     # if no weights are provided, assume all data points are equally important
     if weights is None:
-        weights = np.ones_like(t, dtype=np.float64)
+        weights = np.ones_like(x, dtype=np.float64)
 
-    assert t.ndim == 1
+    assert x.ndim == 1
     assert y.ndim == 1
     assert freqs.ndim == 1
     assert weights.ndim == 1
 
     # validate input sizes
-    if t.shape != y.shape or t.shape != weights.shape:
+    if x.shape != y.shape or x.shape != weights.shape:
         raise ValueError("Input arrays do not have the same shape.")
 
     # check for any freq == 0
@@ -196,7 +197,7 @@ def lombscargle(
         )
 
     # convert inputs to contiguous arrays with high precision
-    t = np.ascontiguousarray(t, dtype=np.float64)
+    x = np.ascontiguousarray(x, dtype=np.float64)
     y = np.ascontiguousarray(y, dtype=np.float64)
     freqs = np.ascontiguousarray(freqs, dtype=np.float64)
     weights = np.ascontiguousarray(weights, dtype=np.float64)
@@ -205,10 +206,10 @@ def lombscargle(
     weights = weights / weights.sum()
 
     # pre-allocate arrays for intermediate and final calculations
-    coswt = np.empty_like(t)
-    sinwt = np.empty_like(t)
-    wcoswt = np.empty_like(t)
-    wsinwt = np.empty_like(t)
+    coswt = np.empty_like(x)
+    sinwt = np.empty_like(x)
+    wcoswt = np.empty_like(x)
+    wsinwt = np.empty_like(x)
     pgram = np.empty_like(freqs)
     # store a and b so that phase can be calculated outside loop, if necessary
     a = np.empty_like(freqs)
@@ -219,8 +220,8 @@ def lombscargle(
 
     # loop over the frequencies
     for i in range(freqs.shape[0]):
-        coswt[:] = np.cos(freqs[i] * t)
-        sinwt[:] = np.sin(freqs[i] * t)
+        coswt[:] = np.cos(freqs[i] * x)
+        sinwt[:] = np.sin(freqs[i] * x)
         wcoswt[:] = weights * coswt
         wsinwt[:] = weights * sinwt
         C_sum = wcoswt.sum()
@@ -262,7 +263,7 @@ def lombscargle(
     
     # otherwise, the default, normalize == OUTPUT_POWER
     # return the legacy power units
-    pgram *= float(t.shape[0]) / 4.0
+    pgram *= float(x.shape[0]) / 4.0
     return pgram
 
 
