@@ -233,11 +233,13 @@ class AAA:
             # Update data values
             fj[m] = f[mask][jj]
             # Next column of Cauchy matrix
+            # Ignore errors as we manually interpolate at support points
             with np.errstate(divide="ignore", invalid="ignore"):
                 C[:, m] = 1 / (z - z[mask][jj])
             # Update mask
             mask[np.flatnonzero(mask)[jj]] = False
             # Update Loewner matrix
+            # Ignore errors as inf values will be masked out in SVD call
             with np.errstate(invalid="ignore"):
                 A[:, m] = (f - fj[m]) * C[:, m]
 
@@ -262,6 +264,7 @@ class AAA:
             # Compute rational approximant
             # Omit columns with `wj == 0`
             i0 = wj != 0
+            # Ignore errors as we manually interpolate at support points
             with np.errstate(invalid="ignore"):
                 # Numerator
                 N = C[:, : m + 1][:, i0] @ (wj[i0] * fj[: m + 1][i0])
@@ -307,14 +310,14 @@ class AAA:
         zv = np.ravel(z)
 
         # Cauchy matrix
+        # Ignore errors due to inf/inf at support points, these will be fixed later
         with np.errstate(invalid="ignore", divide="ignore"):
             CC = 1 / np.subtract.outer(zv, self.support_points)
-        # Vector of values
-        with np.errstate(invalid="ignore"):
+            # Vector of values
             r = CC @ (self.weights * self.support_values) / (CC @ self.weights)
 
         # Deal with input inf: `r(inf) = lim r(z) = sum(w*f) / sum(w)`
-        with np.errstate(divide="ignore"):
+        if np.any(np.isinf(zv)):
             r[np.isinf(zv)] = (np.sum(self.weights * self.support_values)
                                / np.sum(self.weights))
 
@@ -367,15 +370,14 @@ class AAA:
         """
         if self._residues is None:
             # Compute residues via formula for res of quotient of analytic functions
-            with np.errstate(invalid="ignore", divide="ignore"):
-                N = (1/(np.subtract.outer(self.poles(), self.support_points))) @ (
-                    self.support_values * self.weights
-                )
-                Ddiff = (
-                    -((1/np.subtract.outer(self.poles(), self.support_points))**2)
-                    @ self.weights
-                )
-                self._residues = N / Ddiff
+            N = (1/(np.subtract.outer(self.poles(), self.support_points))) @ (
+                self.support_values * self.weights
+            )
+            Ddiff = (
+                -((1/np.subtract.outer(self.poles(), self.support_points))**2)
+                @ self.weights
+            )
+            self._residues = N / Ddiff
         return self._residues
 
     def roots(self):
