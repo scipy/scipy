@@ -156,7 +156,7 @@ def test_24_bit_odd_size_with_pad():
 def test_20_bit_extra_data():
     # 20-bit, 3 B container, 1 channel, 10 samples, 30 B data chunk
     # with extra data filling container beyond the bit depth
-    filename = 'test-8000Hz-le-1ch-10S-20bit-extra.wav'
+    filename = 'test-1234Hz-le-1ch-10S-20bit-extra.wav'
     rate, data = wavfile.read(datafile(filename), mmap=False)
 
     assert_equal(rate, 1234)
@@ -285,7 +285,7 @@ def test_unsupported_mmap():
                      'test-8000Hz-le-3ch-5S-36bit.wav',
                      'test-8000Hz-le-3ch-5S-45bit.wav',
                      'test-8000Hz-le-3ch-5S-53bit.wav',
-                     'test-8000Hz-le-1ch-10S-20bit-extra.wav'}:
+                     'test-1234Hz-le-1ch-10S-20bit-extra.wav'}:
         with raises(ValueError, match="mmap.*not compatible"):
             rate, data = wavfile.read(datafile(filename), mmap=True)
 
