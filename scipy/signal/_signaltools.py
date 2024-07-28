@@ -2608,7 +2608,7 @@ def envelope(z: np.ndarray, bp_in: tuple[int | None, int | None] = (1, None), *,
     The second example provides a geometric envelope interpretation of a complex-valued
     signal: The following plot shows the complex-valued signal as a blue
     3d-trajectory and the envelope as an orange round tube with varying diameter,
-    i.e., as :math:`|a(t)| \exp(j\rho)`, with :math:`\rho\in[-\pi,\pi]`. Also, the
+    i.e., as :math:`|a(t)| \exp(j\rho(t))`, with :math:`\rho(t)\in[-\pi,\pi]`. Also, the
     projection into the 2d real and imaginary coordinate planes of trajectory and tube
     is depicted.
 
