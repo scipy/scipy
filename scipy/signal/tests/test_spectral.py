@@ -1038,6 +1038,7 @@ class TestLombscargle:
 
     def test_precenter(self):
         # Test if precenter gives the same result as manually precentering.
+        # Precenter is now a non-functional parameter, but the test should still pass.
 
         # Input parameters
         ampl = 2.
@@ -1092,14 +1093,21 @@ class TestLombscargle:
         pgram = lombscargle(t, x, f)
         pgram2 = lombscargle(t, x, f, normalize=True)
 
+        # Calculate the scale to convert from unnormalized to normalized
+        weights = np.ones_like(t)/float(t.shape[0])
+        Y_sum = (weights * x).sum()
+        YY_hat = (weights * x * x).sum()
+        YY = YY_hat - Y_sum * Y_sum
+        scale_to_use = 2/(YY*t.shape[0])
+
         # check if normalization works as expected
-        assert_allclose(pgram * 2 / np.dot(x, x), pgram2)
+        assert_allclose(pgram * scale_to_use, pgram2)
         assert_approx_equal(np.max(pgram2), 1.0, significant=2)
 
     def test_wrong_shape(self):
         t = np.linspace(0, 1, 1)
         x = np.linspace(0, 1, 2)
-        f = np.linspace(0, 1, 3)
+        f = np.linspace(0, 1, 3) + 0.1  # will raise 2 errors if f contains 0
         assert_raises(ValueError, lombscargle, t, x, f)
 
     def test_zero_division(self):
@@ -1115,6 +1123,133 @@ class TestLombscargle:
         x = np.sin(4*t)
         f = np.linspace(0, 50, 500, endpoint=False) + 0.1
         lombscargle(t, x, f*2*np.pi)
+    
+    def test_wrong_shape_weights(self):
+        # Weights must be the same shape as t
+
+        t = np.linspace(0, 1, 1)
+        x = np.linspace(0, 1, 1)
+        f = np.linspace(0, 1, 3) + 0.1  # will raise 2 errors if f contains 0
+        weights = np.linspace(1, 2, 2)
+        assert_raises(ValueError, lombscargle, t, x, f, weights=weights)
+
+    def test_zero_division_weights(self):
+        # Weights cannot sum to 0
+        
+        t = np.zeros(1)
+        x = np.zeros(1)
+        f = np.ones(1)
+        weights = np.zeros(1)
+        assert_raises(ZeroDivisionError, lombscargle, t, x, f, weights=weights)
+    
+    def test_normalize_parameter(self):
+        # Test the validity of the normalize parameter input
+
+        # Input parameters
+        ampl = 2.
+        w = 1.
+        phi = 0.5 * np.pi
+        nin = 100
+        nout = 1000
+        p = 0.7  # Fraction of points to select
+
+        # Randomly select a fraction of an array with timesteps
+        np.random.seed(2353425)
+        r = np.random.rand(nin)
+        t = np.linspace(0.01*np.pi, 10.*np.pi, nin)[r >= p]
+
+        # Plot a sine wave for the selected times
+        x = ampl * np.sin(w*t + phi)
+
+        # Define the array of frequencies for which to compute the periodogram
+        f = np.linspace(0.01, 10., nout)
+        
+        # check each of the valid inputs
+        lombscargle(t, x, f, normalize=False)
+        lombscargle(t, x, f, normalize=True)
+        lombscargle(t, x, f, normalize='power')
+        lombscargle(t, x, f, normalize='normalize')
+        lombscargle(t, x, f, normalize='amplitude')
+
+        # check invalid inputs
+        #  1) a string that is not allowed
+        assert_raises(ValueError, lombscargle, t, x, f, normalize='lomb')
+        #  2) something besides a bool or str
+        assert_raises(TypeError, lombscargle, t, x, f, normalize=2)
+    
+    def test_offset_removal(self):
+        # Verify that the amplitude is the same, even with an offset (not removed)
+
+        # Input parameters
+        ampl = 2.
+        w = 1.
+        phi = 0.5 * np.pi
+        nin = 100
+        nout = 1000
+        p = 0.7  # Fraction of points to select
+        offset = 2.15  # Large offset
+
+        # Randomly select a fraction of an array with timesteps
+        np.random.seed(2353425)
+        r = np.random.rand(nin)
+        t = np.linspace(0.01*np.pi, 10.*np.pi, nin)[r >= p]
+
+        # Plot a sine wave for the selected times
+        y = ampl * np.sin(w*t + phi)
+
+        # Define the array of frequencies for which to compute the periodogram
+        f = np.linspace(0.01, 10., nout)
+
+        # Calculate Lomb-Scargle periodogram
+        pgram = lombscargle(t, y, f)
+        pgram_offset = lombscargle(t, y + offset, f)
+
+        # check if offset removal works as expected
+        assert_allclose(pgram, pgram_offset)
+    
+    def test_amplitude_is_correct(self):
+        # Verify that the amplitude is correct (when normalize='amplitude')
+
+        # Input parameters
+        ampl = 2.
+        w = 1.
+        phi = 0.5 * np.pi
+        nin = 100
+        nout = 1000
+        p = 0.7  # Fraction of points to select
+        offset = 2.15  # Large offset
+
+        # Randomly select a fraction of an array with timesteps
+        np.random.seed(2353425)
+        r = np.random.rand(nin)
+        t = np.linspace(0.01*np.pi, 10.*np.pi, nin)[r >= p]
+
+        # Plot a sine wave for the selected times
+        y = ampl * np.sin(w*t + phi) + offset
+
+        # Define the array of frequencies for which to compute the periodogram
+        f = np.linspace(0.01, 10., nout)
+
+        # Get the index of where the exact result should be
+        f_indx = np.where(f==w)[0][0]
+
+        # Calculate Lomb-Scargle periodogram (amplitude + phase)
+        pgram = lombscargle(t, y, f, normalize='amplitude')
+
+        # Remove phase
+        pgram = np.abs(pgram)
+
+        # Check if amplitude is correct
+        assert_approx_equal(pgram[f_indx], ampl, significant=2)
+
+    def test_negative_weight(self):
+        # Test that a negative weight produces an error
+
+        t = np.zeros(1)
+        x = np.zeros(1)
+        f = np.ones(1)
+        weights = -np.ones(1)
+        assert_raises(ValueError, lombscargle, t, x, f, weights=weights)
 
 
 class TestSTFT:
