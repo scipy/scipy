@@ -836,6 +836,10 @@ def jaccard(u, v, w=None):
        zero, the function would return ``nan``.  This was changed to return
        ``0`` instead.
 
+    .. versionchanged:: 1.15.0
+       Non-0/1 numeric input used to produce an ad hoc result.  Since 1.15.0,
+       numeric input is converted to Boolean before computation.
+
     References
     ----------
     .. [1] Kaufman, L. and Rousseeuw, P. J.  (1990).  "Finding Groups in Data:
