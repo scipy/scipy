@@ -7547,20 +7547,20 @@ class TestAlexanderGovern:
                 [14, 13, 12, 12, 12, 12, 12, 11, 11],
                 [14, 14, 13, 13, 13, 13, 13, 12, 12],
                 [15, 14, 13, 13, 13, 12, 12, 12, 11]]
-        args_int16 = np.array(args, dtype=np.int16)
-        args_int32 = np.array(args, dtype=np.int32)
-        args_uint8 = np.array(args, dtype=np.uint8)
-        args_float64 = np.array(args, dtype=np.float64)
+        args_int16 = [np.asarray(arg, dtype=np.int16) for arg in args]
+        args_int32 = [np.asarray(arg, dtype=np.int32) for arg in args]
+        args_uint8 = [np.asarray(arg, dtype=np.uint8) for arg in args]
+        args_float64 = [np.asarray(arg, dtype=np.float64) for arg in args]
 
         res_int16 = stats.alexandergovern(*args_int16)
         res_int32 = stats.alexandergovern(*args_int32)
-        res_unit8 = stats.alexandergovern(*args_uint8)
+        res_uint8 = stats.alexandergovern(*args_uint8)
         res_float64 = stats.alexandergovern(*args_float64)
 
         assert (res_int16.pvalue == res_int32.pvalue ==
-                res_unit8.pvalue == res_float64.pvalue)
+                res_uint8.pvalue == res_float64.pvalue)
         assert (res_int16.statistic == res_int32.statistic ==
-                res_unit8.statistic == res_float64.statistic)
+                res_uint8.statistic == res_float64.statistic)
 
     @pytest.mark.parametrize('case',[([1, 2], []), ([1, 2], 2), ([1, 2], [2])])
     def test_too_small_inputs(self, case):
@@ -7572,8 +7572,10 @@ class TestAlexanderGovern:
 
     def test_bad_inputs(self):
         # inputs are not finite (infinity)
-        with assert_raises(ValueError, match="Input samples must be finite."):
-            stats.alexandergovern([1, 2], [np.inf, np.inf])
+        with np.errstate(invalid='ignore'):
+            res = stats.alexandergovern([1, 2], [np.inf, np.inf])
+        assert_equal(res.statistic, np.nan)
+        assert_equal(res.pvalue, np.nan)
 
     def test_compare_r(self):
         '''
@@ -7637,6 +7639,8 @@ class TestAlexanderGovern:
                  23.56173993146409, -30.47133600859524, 11.878923752568431,
                  6.659007424270365, 21.261996745527256, -6.083678472686013,
                  7.400376198325763, 5.341975815444621]
+
+        one, two, eight = np.asarray(one), np.asarray(two), np.asarray(eight)
         soln = stats.alexandergovern(one, two, eight)
         assert_allclose(soln.statistic, 1.3599405447999450836)
         assert_allclose(soln.pvalue, 0.50663205309676440091)
@@ -7654,6 +7658,7 @@ class TestAlexanderGovern:
                   487.3, 493.08, 494.31, 499.1, 886.41]
         old = [519.01, 528.5, 530.23, 536.03, 538.56, 538.83, 557.24, 558.61,
                558.95, 565.43, 586.39, 594.69, 629.22, 645.69, 691.84]
+        young, middle, old = np.asarray(young), np.asarray(middle), np.asarray(old)
         soln = stats.alexandergovern(young, middle, old)
         assert_allclose(soln.statistic, 5.3237, atol=1e-3)
         assert_allclose(soln.pvalue, 0.06982, atol=1e-4)
@@ -7706,6 +7711,7 @@ class TestAlexanderGovern:
               -0.3601, -0.33273, -0.28859, -0.09637, -0.08969, -0.01824,
               0.260131, 0.289278, 0.518254, 0.683003, 0.877618, 1.172475,
               1.33964, 1.576766]
+        x1, x2 = np.asarray(x1), np.asarray(x2)
         soln = stats.alexandergovern(x1, x2)
         assert_allclose(soln.statistic, 0.713526, atol=1e-5)
         assert_allclose(soln.pvalue, 0.398276, atol=1e-5)
@@ -7741,21 +7747,21 @@ class TestAlexanderGovern:
         assert_allclose(soln.statistic, 0.7135182)
         assert_allclose(soln.pvalue, 0.3982783)
 
-    def test_nan_policy_propogate(self):
-        args = [[1, 2, 3, 4], [1, np.nan]]
+    def test_nan_policy_propagate(self):
+        args = np.asarray([1, 2, 3, 4]), np.asarray([1, np.nan])
         # default nan_policy is 'propagate'
         res = stats.alexandergovern(*args)
         assert_equal(res.pvalue, np.nan)
         assert_equal(res.statistic, np.nan)
 
     def test_nan_policy_raise(self):
-        args = [[1, 2, 3, 4], [1, np.nan]]
+        args = np.asarray([1, 2, 3, 4]), np.asarray([1, np.nan])
         with assert_raises(ValueError, match="The input contains nan values"):
             stats.alexandergovern(*args, nan_policy='raise')
 
     def test_nan_policy_omit(self):
-        args_nan = [[1, 2, 3, np.nan, 4], [1, np.nan, 19, 25]]
-        args_no_nan = [[1, 2, 3, 4], [1, 19, 25]]
+        args_nan = np.asarray([1, 2, 3, np.nan, 4]), np.asarray([1, np.nan, 19, 25])
+        args_no_nan = np.asarray([1, 2, 3, 4]), np.asarray([1, 19, 25])
         res_nan = stats.alexandergovern(*args_nan, nan_policy='omit')
         res_no_nan = stats.alexandergovern(*args_no_nan)
         assert_equal(res_nan.pvalue, res_no_nan.pvalue)
@@ -7763,12 +7769,12 @@ class TestAlexanderGovern:
 
     def test_constant_input(self):
         # Zero variance input, consistent with `stats.pearsonr`
-        msg = "An input array is constant; the statistic is not defined."
-        with pytest.warns(stats.ConstantInputWarning, match=msg):
-            res = stats.alexandergovern([0.667, 0.667, 0.667],
-                                        [0.123, 0.456, 0.789])
-            assert_equal(res.statistic, np.nan)
-            assert_equal(res.pvalue, np.nan)
+        x1 = np.asarray([0.667, 0.667, 0.667])
+        x2 = np.asarray([0.123, 0.456, 0.789])
+        with pytest.warns(RuntimeWarning, match="Precision loss occurred..."):
+            res = stats.alexandergovern(x1, x2)
+        assert_equal(res.statistic, np.nan)
+        assert_equal(res.pvalue, np.nan)
 
 
 class TestFOneWay:

@@ -101,7 +101,7 @@ py3.install_sources([
     'data/test-44100Hz-le-1ch-4bytes.wav',
     'data/test-48000Hz-2ch-64bit-float-le-wavex.wav',
     'data/test-8000Hz-be-3ch-5S-24bit.wav',
-    'data/test-8000Hz-le-1ch-10S-20bit-extra.wav',
+    'data/test-1234Hz-le-1ch-10S-20bit-extra.wav',
     'data/test-8000Hz-le-1ch-1byte-ulaw.wav',
     'data/test-8000Hz-le-2ch-1byteu.wav',
     'data/test-8000Hz-le-3ch-5S-24bit-inconsistent.wav',
