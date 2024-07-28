@@ -1026,7 +1026,7 @@ def _numeric_arrays(arrays, kinds='buifc'):
         the ndarrays are not in this string the function returns False and
         otherwise returns True.
     """
-    if type(arrays) == np.ndarray:
+    if isinstance(arrays, np.ndarray):
         return arrays.dtype.kind in kinds
     for array_ in arrays:
         if array_.dtype.kind not in kinds:
