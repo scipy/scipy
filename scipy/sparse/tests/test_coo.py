@@ -661,24 +661,84 @@ def test_nd_matmul_vector(mat_shape, vec_shape):
     assert_equal(res,exp)
 
 
-def test_dot():
-    # Example Usage
-    # a_coords = np.array([[0, 1, 2], [1, 0, 1], [0, 2, 1], [0,1,2]])  # Example coordinates for a 3D COO array
-    # a_data = np.array([1, 2, 3])
-    # a_shape = (3, 3, 4,3)
+dot_shapes = [
+    ((3,3), (3,3)), ((4,6), (6,7)), # matrix multiplication 2-D
+    ((3,2,4,7), (7,)), ((5,), (6,3,5,2)), # dot of n-D and 1-D arrays
+    ((4,5,7,6), (3,2,6,4)), ((2,8,7), (4,5,7,7,2)), # dot of n-D and m-D arrays
+]
+@pytest.mark.parametrize(('a_shape', 'b_shape'), dot_shapes)
+def test_dot_sparse_sparse(a_shape, b_shape): 
+    rng = np.random.default_rng(23409823)
     
-    # b_coords = np.array([[0, 1, 2], [0, 1, 2], [0, 2, 1], [2,1,1]])  # Example coordinates for another 3D COO array
-    # b_data = np.array([4, 5, 6])
-    # b_shape = (3, 3, 3,4)
-    
-    a = coo_array(np.random.randint(0, 7, size=(3,4,7,5)), (3,4,7,5))
-    b = coo_array(np.random.randint(0, 7, size=(9,7,3,4,5)), (9,7,3,4,5))
-    
-    axes_a = [0, 2]
-    axes_b = [2, 1]
-    x = (np.tensordot(a.toarray(), b.toarray(), axes=[[0],[2]]))
-    #print(x)
-    print(coo_array(x))
-    dotprod = a.dot(b, [[0], [2]])
+    arr_a = random_array(a_shape, density=0.6, random_state=rng, dtype=int)
+    arr_b = random_array(b_shape, density=0.6, random_state=rng, dtype=int)
 
-    assert_equal(x, dotprod.toarray())
+    exp = np.dot(arr_a.toarray(), arr_b.toarray())
+    res = arr_a.dot(arr_b)
+    assert_equal(res.toarray(), exp)
+
+
+def test_dot_1d_1d(): # 1-D inner product
+    a = coo_array([1,2,3])
+    b = coo_array([4,5,6])
+    res = a.dot(b)
+    exp = np.dot(a.toarray(), b.toarray())
+    assert_equal(res, exp)
+
+
+def test_dot_sparse_scalar():    
+    a = coo_array([[1, 2], [3, 4], [5, 6]])
+    b = 3
+    res = a.dot(b)
+    exp = np.dot(a.toarray(), b)
+    assert_equal(res.toarray(), exp)
+
+
+def test_dot_with_inconsistent_shapes(): 
+    arr_a = coo_array([[[1, 2]], [[3, 4]]])
+    arr_b = coo_array([4, 5, 6])
+    with pytest.raises(ValueError, match="not aligned for n-D dot"):
+        arr_a.dot(arr_b)
+
+
+tensordot_shapes_and_axes = [
+    ((4,6), (6,7), ([1], [0])),
+    ((3,2,4,7), (7,), ([3], [0])),
+    ((5,), (6,3,5,2), ([0], [2])),
+    ((4,5,7,6), (3,2,6,4), ([0, 3], [3, 2])),
+    ((2,8,7), (4,5,7,8,2), ([0, 1, 2], [4, 3, 2])),
+    ((4,5,3,2,6), (3,2,6,7,8), 3),
+    ((4,5,7),(7,3,7), 1),
+    ((2,3,4), (2,3,4), ([0, 1, 2], [0, 1, 2])),
+]
+@pytest.mark.parametrize(('a_shape', 'b_shape', 'axes'), tensordot_shapes_and_axes)
+def test_tensordot(a_shape, b_shape, axes): 
+    rng = np.random.default_rng(23409823)
+    
+    arr_a = random_array(a_shape, density=0.6, random_state=rng, dtype=int)
+    arr_b = random_array(b_shape, density=0.6, random_state=rng, dtype=int)
+
+    exp = np.tensordot(arr_a.toarray(), arr_b.toarray(), axes=axes)
+    res = arr_a.tensordot(arr_b, axes=axes)
+    if type(res) is coo_array:
+        assert_equal(res.toarray(), exp)
+    else:
+        assert_equal(res, exp)
+        
+
+def test_tensordot_with_invalid_args(): 
+    rng = np.random.default_rng(23409823)
+    
+    arr_a = random_array((3,4,5), density=0.6, random_state=rng, dtype=int)
+    arr_b = random_array((3,4,6), density=0.6, random_state=rng, dtype=int)
+
+    axes = ([2], [2]) # sizes of 2nd axes of both shapes do not match
+    with pytest.raises(ValueError, match="sizes of the corresponding axes must match"):
+        arr_a.tensordot(arr_b, axes=axes)
+
+    arr_a = random_array((5,4,2,3,7), density=0.6, random_state=rng, dtype=int)
+    arr_b = random_array((4,6,3,2), density=0.6, random_state=rng, dtype=int)
+
+    axes = ([2,0,1], [1,3]) # lists have different lengths
+    with pytest.raises(ValueError, match="axes lists/tuples must be of the same length"):
+        arr_a.tensordot(arr_b, axes=axes)
