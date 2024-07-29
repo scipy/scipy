@@ -479,7 +479,10 @@ def test_tree_concurrent_access(kdtree_type):
 
     def closure():
         barrier.wait()
-        tree_ids.append(id(T.tree))
+        tree = T.tree
+        if kdtree_type is KDTree:
+            tree = tree._node
+        tree_ids.append(id(tree))
 
     workers = []
     for _ in range(0, 10):
