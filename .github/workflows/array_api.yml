@@ -25,6 +25,7 @@ env:
     -t scipy.differentiate.tests.test_differentiate
     -t scipy.integrate.tests.test_tanhsinh
     -t scipy.stats
+    -t scipy.ndimage
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
