@@ -5,8 +5,8 @@ from numpy.testing import assert_allclose, assert_equal, suppress_warnings
 
 from scipy.conftest import array_api_compatible
 from scipy._lib._util import rng_integers
-from scipy._lib._array_api import (is_numpy, xp_assert_close,
-                                   xp_assert_equal, array_namespace)
+from scipy._lib._array_api import array_namespace, is_numpy
+from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal
 from scipy import stats, special
 from scipy.optimize import root
 
@@ -945,9 +945,8 @@ class TestMonteCarloHypothesisTest:
 
         res = monte_carlo_test(x, rvs, statistic, alternative=alternative)
 
-        xp_assert_close(res.statistic, xp.asarray(ref.statistic), check_0d=False)
-        xp_assert_close(res.pvalue, xp.asarray(ref.pvalue), atol=self.atol,
-                        check_0d=False)
+        xp_assert_close(res.statistic, xp.asarray(ref.statistic))
+        xp_assert_close(res.pvalue, xp.asarray(ref.pvalue), atol=self.atol)
 
 
     # Tests below involve statistics that are not yet array-API compatible.
