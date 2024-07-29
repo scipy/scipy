@@ -134,6 +134,7 @@ py3.extension_module('_test_odeint_banded',
 )
 
 subdir('_ivp')
+subdir('_rules')
 subdir('tests')
 
 py3.install_sources([
