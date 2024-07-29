@@ -9,13 +9,13 @@ import numpy as np
 from scipy.special import roots_legendre
 
 
-def cub(f, a, b, rule, rtol=1e-05, atol=1e-08, max_subdivisions=10000,
-        args=(), kwargs=dict()):
+def cubature(f, a, b, rule, rtol=1e-05, atol=1e-08, max_subdivisions=10000,
+             args=(), kwargs=None):
     """
     Adaptive cubature of multidimensional array-valued function.
 
     Given an arbitrary cubature rule with error estimation, this function returns an
-    estimate of the integral over the region described by corners ``a`` and ``b`` to
+    estimate of the integral over the hypercube defined by the arrays ``a`` and ``b`` to
     the required tolerance, although convergence is not guaranteed for all integrals.
 
     Parameters
@@ -23,28 +23,33 @@ def cub(f, a, b, rule, rtol=1e-05, atol=1e-08, max_subdivisions=10000,
     f : callable
         Function to integrate. ``f`` must have the signature::
             f(x : ndarray, *args, **kwargs) -> ndarray
-        If ``f(x, *args)`` accepts arrays ``x`` of shape ``(input_dim_1, ...,
-        input_dim_n, num_eval_points)`` and outputs arrays of shape ``(output_dim_1,
-        ..., output_dim_n, num_eval_points)``, then ``cub`` will return arrays of shape
+        If ``f`` accepts arrays ``x`` of shape ``(input_dim_1, ..., input_dim_n,
+        num_eval_points)`` and outputs arrays of shape ``(output_dim_1, ...,
+        output_dim_n, num_eval_points)``, then ``cub`` will return arrays of shape
         ``(output_dim_1, ..., output_dim_n)``.
-    a, b : ndarray
+    a, b : array_like
         Lower and upper limits of integration as rank-1 arrays specifying the left and
         right endpoints of the intervals being integrated over. Infinite limits are
         currently not supported.
     rule : Cubature
         Cubature rule to use when estimating the integral. The cubature rule specified
         must implement ``error_estimate``. See Examples.
-    rtol : float
-        Relative tolerance.
-    atol : float
-        Absolute tolerance.
-    max_subdivisions : int
+    rtol : float, optional
+        Relative tolerance. Default is 1e-05.
+    atol : float, optional
+        Absolute tolerance. Default is 1e-08.
+    max_subdivisions : int, optional
         Upper bound on the number of subdivisions to perform to improve the estimate
-        over a subregion.
+        over a subregion. Default is 10,000.
     args : tuple, optional
-        Additional positional args passed to ``f``.
+        Additional positional args passed to ``f``, if any.
     kwargs : tuple, optional
-        Additional keyword args passed to ``f``.
+        Additional keyword args passed to ``f``, if any.
+
+    Returns
+    -------
+    res : CubatureResult
+        Result of estimation. See CubatureResult.
 
     Examples
     --------
@@ -55,7 +60,7 @@ def cub(f, a, b, rule, rtol=1e-05, atol=1e-08, max_subdivisions=10000,
     >>> def f(x, n):
     ...    # Make sure x and n are broadcastable
     ...    return x.reshape(1, -1)**n
-    >>> res = cub(
+    >>> res = cubature(
     ...     f=f,
     ...     a=np.array([0]),
     ...     b=np.array([1]),
@@ -88,7 +93,7 @@ def cub(f, a, b, rule, rtol=1e-05, atol=1e-08, max_subdivisions=10000,
     ...     return np.cos(
     ...         2*np.pi*r_reshaped + np.sum(alphas_reshaped * x_reshaped, axis=0)
     ...     )
-    >>> res = cub(
+    >>> res = cubature(
     ...     f=f,
     ...     a=np.array([0, 0, 0, 0, 0, 0, 0]),
     ...     b=np.array([1, 1, 1, 1, 1, 1, 1]),
@@ -106,17 +111,26 @@ def cub(f, a, b, rule, rtol=1e-05, atol=1e-08, max_subdivisions=10000,
     if max_subdivisions is None:
         max_subdivisions = np.inf
 
+    if kwargs is None:
+        kwargs = dict()
+
+    a = np.asarray(a)
+    b = np.asarray(b)
+
+    if a.ndim != 1 or b.ndim != 1:
+        raise ValueError("a and b should be 1D arrays")
+
     est = rule.estimate(f, a, b, args, kwargs)
 
     try:
         err = rule.error_estimate(f, a, b, args, kwargs)
     except NotImplementedError:
-        raise Exception("attempting cubature with a rule that doesn't implement error \
+        raise ValueError("attempting cubature with a rule that doesn't implement error \
 estimation.")
 
     regions = [CubatureRegion(est, err, a, b)]
     subdivisions = 0
-    success = False
+    success = True
 
     while np.any(err > atol + rtol * np.abs(est)):
         # region_k is the region with highest estimated error
@@ -155,9 +169,8 @@ estimation.")
         subdivisions += 1
 
         if subdivisions >= max_subdivisions:
+            success = False
             break
-    else:
-        success = True
 
     status = "converged" if success else "not_converged"
 
@@ -203,31 +216,36 @@ class Cubature:
     """
     A generic interface for numerical cubature algorithms.
 
-    Finds an estimate for the integral of ``f`` over a (hyper)rectangular region
-    described by two points ``a`` and ``b``, and optionally finds an estimate for the
-    error of this approximation.
+    Finds an estimate for the integral of ``f`` over hypercube described by two arrays
+    ``a`` and ``b`` via ``estimate``, and may also find an estimate for the error of
+    this approximation via ``error_estimate``.
 
-    If the cubature rule doesn't support error estimation, error_estimate will return
-    None.
+    If error estimation is not supported by default (as in the case of Gauss-Legendre
+    or Newton-Cotes), then ``error_estimate`` will raise a NotImplementedError.
     """
 
-    def estimate(self, f, a, b, args=(), kwargs=dict()):
+    def estimate(self, f, a, b, args=(), kwargs=None):
         """
-        Calculate estimate of integral of ``f`` in region described by corners ``a``
+        Calculate estimate of integral of ``f`` in hypercube described by corners ``a``
         and ``b``.
 
         Parameters
         ----------
         f : callable
-            Function ``f(x, *args)`` to integrate. ``f`` should accept arrays ``x`` of
-            shape ``(ndim, eval_points)`` and return arrays of shape ``(output_dim_1,
-            ..., output_dim_n, eval_points)``.
-
+            Function to integrate. ``f`` must have the signature::
+                f(x : ndarray, *args, **kwargs) -> ndarray
+            If ``f`` accepts arrays ``x`` of shape ``(input_dim_1, ..., input_dim_n,
+            num_eval_points)`` and outputs arrays of shape ``(output_dim_1, ...,
+            output_dim_n, num_eval_points)``, then ``cub`` will return arrays of shape
+            ``(output_dim_1, ..., output_dim_n)``.
         a, b : ndarray
-            Lower and upper limits of integration.
-
+            Lower and upper limits of integration as rank-1 arrays specifying the left
+            and right endpoints of the intervals being integrated over. Infinite limits
+            are currently not supported.
         args : tuple, optional
-            Extra arguments to pass to ``f``, if any.
+            Additional positional args passed to ``f``, if any.
+        kwargs : tuple, optional
+            Additional keyword args passed to ``f``, if any.
 
         Returns
         -------
@@ -238,72 +256,85 @@ class Cubature:
         """
         raise NotImplementedError
 
-    def error_estimate(self, f, a, b, args=(), kwargs=dict()):
+    def error_estimate(self, f, a, b, args=(), kwargs=None):
         """
         Calculate the error estimate of this cubature rule for the integral of ``f`` in
-        the region described by corners ``a`` and ``b``.
+        the hypercube described by corners ``a`` and ``b``.
 
-        If the cubature rule doesn't support error estimation, this will be ``None``.
+        If the cubature rule doesn't support error estimation, this will raise a
+        NotImplementedError.
 
         Parameters
         ----------
         f : callable
-            Function ``f(x, *args)`` to integrate. ``f`` should accept arrays ``x`` of
-            shape ``(ndim, eval_points)`` and return arrays of shape ``(output_dim_1,
-            ..., output_dim_n, eval_points)``.
-
+            Function to integrate. ``f`` must have the signature::
+                f(x : ndarray, *args, **kwargs) -> ndarray
+            If ``f`` accepts arrays ``x`` of shape ``(input_dim_1, ..., input_dim_n,
+            num_eval_points)`` and outputs arrays of shape ``(output_dim_1, ...,
+            output_dim_n, num_eval_points)``, then ``cub`` will return arrays of shape
+            ``(output_dim_1, ..., output_dim_n)``.
         a, b : ndarray
-            Lower and upper limits of integration.
-
+            Lower and upper limits of integration as rank-1 arrays specifying the left
+            and right endpoints of the intervals being integrated over. Infinite limits
+            are currently not supported.
         args : tuple, optional
-            Extra arguments to pass to ``f``, if any.
+            Additional positional args passed to ``f``, if any.
+        kwargs : tuple, optional
+            Additional keyword args passed to ``f``, if any.
 
         Returns
         -------
         err_est : ndarray
             Estimate of the error. If the cubature rule doesn't support error
-            estimation, then this will be ``None``. If error estimation is supported and
-            ``f`` returns arrays of shape ``(output_dim_1, ..., output_dim_n,
-            eval_points)``, then ``err_est`` will be of shape ``(output_dim_1, ...,
-            output_dim_n)``.
+           estimation, then a NotImplementedError will be raised instead. If error
+           estimation is supported and ``f`` returns arrays of shape ``(output_dim_1,
+           ..., output_dim_n, eval_points)``, then ``err_est`` will be of shape
+           ``(output_dim_1, ..., output_dim_n)``.
         """
         raise NotImplementedError
 
 
 class FixedCubature(Cubature):
     """
-    A numerical cubature rule implemented as the weighted sum of function evaluations.
+    A cubature rule implemented as the weighted sum of function evaluations.
+
+    Attributes
+    ----------
+    TODO: rule attribute
 
     See Also
     --------
-    NewtonCotes, DualEstimateCubature
+    NewtonCotes, GaussLegendre, ErrorFromDifference
     """
 
     @property
     def rule(self):
         raise NotImplementedError
 
-    def estimate(self, f, a, b, args=(), kwargs=dict()):
+    def estimate(self, f, a, b, args=(), kwargs=None):
         """
-        Calculate estimate of integral of ``f`` in region described by corners ``a``
+        Calculate estimate of integral of ``f`` in hypercube described by corners ``a``
         and ``b`` as ``sum(weights * f(nodes))``. Nodes and weights will automatically
-        be adjusted from calculating integrals over [-1, 1]^n to [a, b].
+        be adjusted from calculating integrals over :math:`[-1, 1]^n` to
+        :math:`[a, b]^n`.
 
         Parameters
         ----------
         f : callable
-            Function ``f(x, *args)`` to integrate. ``f`` should accept arrays ``x`` of
-            shape ``(ndim, eval_points)`` and return arrays of shape ``(output_dim_1,
-            ..., output_dim_n, eval_points)``.
-
+            Function to integrate. ``f`` must have the signature::
+                f(x : ndarray, *args, **kwargs) -> ndarray
+            If ``f`` accepts arrays ``x`` of shape ``(input_dim_1, ..., input_dim_n,
+            num_eval_points)`` and outputs arrays of shape ``(output_dim_1, ...,
+            output_dim_n, num_eval_points)``, then ``cub`` will return arrays of shape
+            ``(output_dim_1, ..., output_dim_n)``.
         a, b : ndarray
-            Lower and upper limits of integration, specified as arrays of shape
-            ``(ndim,)``. Note that ``f`` accepts arrays of shape ``(ndim, eval_points)``
-            so in order to calculate ``f(a)``, it is necessary to add an extra axis
-            ``f(a[:, np.newaxis])``.
-
+            Lower and upper limits of integration as rank-1 arrays specifying the left
+            and right endpoints of the intervals being integrated over. Infinite limits
+            are currently not supported.
         args : tuple, optional
-            Extra arguments to pass to ``f``, if any.
+            Additional positional args passed to ``f``, if any.
+        kwargs : tuple, optional
+            Additional keyword args passed to ``f``, if any.
 
         Returns
         -------
@@ -317,36 +348,25 @@ class FixedCubature(Cubature):
 
 class ErrorFromDifference(FixedCubature):
     """
-    A cubature rule with a higher-order and lower-order estimate, and where the
-    difference between the two estimates is used as an estimate for the error.
+    A fixed cubature rule with error estimate given by the difference between two
+    underlying fixed cubature rules.
+
+    This can be used to give error estimation to cubature rules which don't have default
+    error estimation, such as NewtonCotes or GaussLegendre. This is in contrast to rules
+    like GaussKronrod which have default error estimation given by a special property of
+    that cubature rule. See Examples.
 
     Attributes
     ----------
-    lower : Cubature
-        Lower-order cubature. The difference between ``self.estimate`` and
-        ``lower.estimate`` is used as an estimate for the error.
+    TODO: rule attribute and lower_rule attribute
 
     See Also
     --------
-    GaussKronrod
+    GaussKronrod, NewtonCotes
 
     Examples
     --------
-    Newton-Cotes quadrature doesn't come with any error estimation built in. It is
-    possible to give it an error estimator by creating a DualEstimateCubature which
-    takes the difference between 10-node Newton-Cotes and 8-node Newton-Cotes:
-
-    >>> import numpy as np
-    >>> from scipy.integrate._cubature import *
-    >>> def f(x):
-    ...     return np.sin(np.sqrt(x))
-    >>> rule = NewtonCotes(10)
-    >>> a, b = np.array([0]), np.array([np.pi * 2])
-    >>> rule.error_estimate(f, a, b) is None
-     True
-    >>> rule_with_err_est = DualEstimateCubature(NewtonCotes(10), NewtonCotes(8))
-    >>> rule_with_err_est.error_estimate(f, a, b)
-     array([6.21045267])
+    TODO: examples for ErrorFromDifference
     """
 
     def __init__(self, higher, lower):
@@ -361,7 +381,10 @@ class ErrorFromDifference(FixedCubature):
     def lower_rule(self):
         return self.lower.rule
 
-    def error_estimate(self, f, a, b, args=(), kwargs=dict()):
+    def error_estimate(self, f, a, b, args=(), kwargs=None):
+        """
+        TODO: docstring for error_estimate in ErrorFromDifference
+        """
         nodes, weights = self.rule
         lower_nodes, lower_weights = self.lower_rule
 
@@ -376,30 +399,24 @@ class ErrorFromDifference(FixedCubature):
 
 class Product(ErrorFromDifference):
     """
-    Find the n-dimensional cubature rule constructed from cubature rules of lower
-    dimension.
+    Find the n-dimensional cubature rule constructed from the Cartesian product of 1D
+    cubature rules.
 
-    Given a list of base dual-estimate cubature rules of dimension d_1, ..., d_n, this
-    will find the (d_1 + ... d_n)-dimensional cubature rule formed from taking the
-    Cartesian product of their weights.
+    Given a list of N 1-dimensional cubature rules which support error estimation using
+    ErrorFromDifference, this will find the N-dimensional ErrorFromDifference cubature
+    rule obtained by taking the Cartesian product of their nodes, and estimating the
+    error by taking the difference with a lower-accuracy N-dimensional cubature rule
+    obtained using the `.lower` rule in each of the base 1-dimensional rules.
 
     Parameters
     ----------
-    base_rules : list
-        List of base dual estimate cubatures used to find the product rule.
+    base_rules : list of ErrorFromDifference
+        List of base 1-dimensional ErrorFromDifference cubature rules.
 
     Attributes
     ----------
     base_rules : list of DualEstimateCubature
-        List of base dual estimate cubatures used to find the product rule.
-
-    higher : FixedCubature
-        Higher-order rule given by the product of the higher order rules given in the
-        base rules.
-
-    lower : FixedCubature
-        Lower-order rule given by the product of the lower order rules given in the base
-        rules.
+        List of base 1-dimensional ErrorFromDifference cubature rules.
 
     Example
     -------
@@ -529,8 +546,8 @@ class NewtonCotes(FixedCubature):
 
     def __init__(self, npoints, open=False):
         if npoints < 2:
-            raise Exception(
-                "At least 2 points required for Newton-Cotes cubature"
+            raise ValueError(
+                "at least 2 points required for Newton-Cotes cubature"
             )
 
         self.npoints = npoints
@@ -580,7 +597,7 @@ class GaussLegendre(FixedCubature):
 
     def __init__(self, npoints):
         if npoints < 2:
-            raise Exception(
+            raise ValueError(
                 "At least 2 nodes required for Gauss-Legendre cubature"
             )
 
@@ -659,7 +676,7 @@ class GaussKronrod(ErrorFromDifference):
         # TODO: nodes and weights are currently hard-coded for values 15 and 21, but in
         # the future it would be best to compute the Kronrod extension of the lower rule
         if npoints != 15 and npoints != 21:
-            raise Exception("Gauss-Kronrod quadrature is currently only supported for \
+            raise ValueError("Gauss-Kronrod quadrature is currently only supported for \
 15 or 21 nodes")
 
         self.npoints = npoints
@@ -778,7 +795,9 @@ class GenzMalik(ErrorFromDifference):
     References
     ----------
     [1] A.C. Genz, A.A. Malik, Remarks on algorithm 006: An adaptive algorithm for
-        numerical integration over an N-dimensional rectangular region (1980)
+        numerical integration over an N-dimensional rectangular region, Journal of
+        Computational and Applied Mathematics, Volume 6, Issue 4, 1980, Pages 295-302,
+        ISSN 0377-0427, https://doi.org/10.1016/0771-050X(80)90039-X.
 
     Examples
     --------
@@ -799,7 +818,7 @@ class GenzMalik(ErrorFromDifference):
 
     def __init__(self, ndim, degree=7, lower_degree=5):
         if ndim < 2:
-            raise Exception("Genz-Malik cubature is only defined for ndim >= 2")
+            raise ValueError("Genz-Malik cubature is only defined for ndim >= 2")
 
         if degree != 7 or lower_degree != 5:
             raise NotImplementedError
@@ -905,7 +924,10 @@ class GenzMalik(ErrorFromDifference):
         return nodes, weights
 
 
-def _apply_rule(f, a, b, rule, args=(), kwargs=dict()):
+def _apply_rule(f, a, b, rule, args=(), kwargs=None):
+    if kwargs is None:
+        kwargs = dict()
+
     orig_nodes, orig_weights = rule
 
     rule_ndim = orig_nodes.shape[0]
@@ -913,7 +935,7 @@ def _apply_rule(f, a, b, rule, args=(), kwargs=dict()):
     b_ndim = len(b)
 
     if rule_ndim != a_ndim or rule_ndim != b_ndim:
-        raise Exception(f"cubature rule and function are of incompatible dimension, \
+        raise ValueError(f"cubature rule and function are of incompatible dimension, \
 nodes have ndim {rule_ndim}, while limit of integration have ndim \
 a_ndim={a_ndim}, b_ndim={b_ndim}")
 
