@@ -140,30 +140,33 @@ Using these with PyObject_GetAttr is faster than PyObject_GetAttrString which
 has to create a new python string internally.
  */
 struct {
-  py_ref ua_convert;
-  py_ref ua_domain;
-  py_ref ua_function;
+  py_ref* ua_convert;
+  py_ref* ua_domain;
+  py_ref* ua_function;
 
   bool init() {
-    ua_convert = py_ref::steal(PyUnicode_InternFromString("__ua_convert__"));
-    if (!ua_convert)
+    static py_ref ua_convert_str = py_ref::steal(PyUnicode_InternFromString("__ua_convert__"));
+    ua_convert = &ua_convert_str;
+    if (!*ua_convert)
       return false;
 
-    ua_domain = py_ref::steal(PyUnicode_InternFromString("__ua_domain__"));
-    if (!ua_domain)
+    static py_ref ua_domain_str = py_ref::steal(PyUnicode_InternFromString("__ua_domain__"));
+    ua_domain = &ua_domain_str;
+    if (!*ua_domain)
       return false;
 
-    ua_function = py_ref::steal(PyUnicode_InternFromString("__ua_function__"));
-    if (!ua_function)
+    static py_ref ua_function_str = py_ref::steal(PyUnicode_InternFromString("__ua_function__"));
+    ua_function = &ua_function_str;
+    if (!*ua_function)
       return false;
 
     return true;
   }
 
   void clear() {
-    ua_convert.reset();
-    ua_domain.reset();
-    ua_function.reset();
+    ua_convert->reset();
+    ua_domain->reset();
+    ua_function->reset();
   }
 } identifiers;
 
@@ -202,7 +205,7 @@ std::string domain_to_string(PyObject * domain) {
 
 Py_ssize_t backend_get_num_domains(PyObject * backend) {
   auto domain =
-      py_ref::steal(PyObject_GetAttr(backend, identifiers.ua_domain.get()));
+      py_ref::steal(PyObject_GetAttr(backend, identifiers.ua_domain->get()));
   if (!domain)
     return -1;
 
@@ -225,7 +228,7 @@ enum class LoopReturn { Continue, Break, Error };
 template <typename Func>
 LoopReturn backend_for_each_domain(PyObject * backend, Func f) {
   auto domain =
-      py_ref::steal(PyObject_GetAttr(backend, identifiers.ua_domain.get()));
+      py_ref::steal(PyObject_GetAttr(backend, identifiers.ua_domain->get()));
   if (!domain)
     return LoopReturn::Error;
 
@@ -1170,7 +1173,7 @@ py_ref Function::canonicalize_kwargs(PyObject * kwargs) {
 
 py_func_args Function::replace_dispatchables(
     PyObject * backend, PyObject * args, PyObject * kwargs, PyObject * coerce) {
-  auto has_ua_convert = PyObject_HasAttr(backend, identifiers.ua_convert.get());
+  auto has_ua_convert = PyObject_HasAttr(backend, identifiers.ua_convert->get());
   if (!has_ua_convert) {
     return {py_ref::ref(args), py_ref::ref(kwargs)};
   }
@@ -1182,7 +1185,7 @@ py_func_args Function::replace_dispatchables(
 
   PyObject * convert_args[] = {backend, dispatchables.get(), coerce};
   auto res = py_ref::steal(Q_PyObject_VectorcallMethod(
-      identifiers.ua_convert.get(), convert_args,
+      identifiers.ua_convert->get(), convert_args,
       array_size(convert_args) | Q_PY_VECTORCALL_ARGUMENTS_OFFSET, nullptr));
   if (!res) {
     return {};
@@ -1287,7 +1290,7 @@ PyObject * Function::call(PyObject * args_, PyObject * kwargs_) {
             backend, reinterpret_cast<PyObject *>(this), new_args.args.get(),
             new_args.kwargs.get()};
         result = py_ref::steal(Q_PyObject_VectorcallMethod(
-            identifiers.ua_function.get(), args,
+            identifiers.ua_function->get(), args,
             array_size(args) | Q_PY_VECTORCALL_ARGUMENTS_OFFSET, nullptr));
 
         // raise BackendNotImplemeted is equivalent to return NotImplemented
@@ -1554,7 +1557,7 @@ PyObject * determine_backend(PyObject * /*self*/, PyObject * args) {
   auto result = for_each_backend_in_domain(
       domain, [&](PyObject * backend, bool coerce_backend) {
         auto has_ua_convert =
-            PyObject_HasAttr(backend, identifiers.ua_convert.get());
+            PyObject_HasAttr(backend, identifiers.ua_convert->get());
 
         if (!has_ua_convert) {
           // If no __ua_convert__, assume it won't accept the type
@@ -1566,7 +1569,7 @@ PyObject * determine_backend(PyObject * /*self*/, PyObject * args) {
             (coerce && coerce_backend) ? Py_True : Py_False};
 
         auto res = py_ref::steal(Q_PyObject_VectorcallMethod(
-            identifiers.ua_convert.get(), convert_args,
+            identifiers.ua_convert->get(), convert_args,
             array_size(convert_args) | Q_PY_VECTORCALL_ARGUMENTS_OFFSET,
             nullptr));
         if (!res) {
