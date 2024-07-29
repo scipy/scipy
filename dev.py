@@ -309,11 +309,6 @@ class Dirs:
         else:
             self.installed = self.build.parent / (self.build.stem + "-install")
 
-        if sys.platform == 'win32' and sys.version_info < (3, 10):
-            # Work around a pathlib bug; these must be absolute paths
-            self.build = Path(os.path.abspath(self.build))
-            self.installed = Path(os.path.abspath(self.installed))
-
         # relative path for site-package with py version
         # i.e. 'lib/python3.10/site-packages'
         self.site = self.get_site_packages()
