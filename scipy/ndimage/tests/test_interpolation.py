@@ -75,8 +75,6 @@ class TestNdimageInterpolation:
                                         output_shape=(4,)),
             xp.asarray(expected_value))
 
-    @skip_xp_backends("torch", reasons=["ValueError: only one element tensors "
-                                         "can be converted to Python scalars"])
     @pytest.mark.parametrize('mode', ['mirror', 'reflect', 'grid-mirror',
                                       'grid-wrap', 'grid-constant',
                                       'nearest'])
@@ -92,14 +90,15 @@ class TestNdimageInterpolation:
         np_data = np.arange(-6, 7, dtype=np.float64)
         data = xp.asarray(np_data)
         x = xp.asarray(np.linspace(-8, 15, num=1000))
-        y = ndimage.map_coordinates(data, xp.asarray([x]), order=order, mode=mode)
+        newaxis = array_namespace(x).newaxis
+        y = ndimage.map_coordinates(data, x[newaxis, ...], order=order, mode=mode)
 
         # compute expected value using explicit padding via np.pad
         npad = 32
         pad_mode = ndimage_to_numpy_mode.get(mode)
         padded = xp.asarray(np.pad(np_data, npad, mode=pad_mode))
-        expected = ndimage.map_coordinates(padded, xp.asarray([npad + x]), order=order,
-                                           mode=mode)
+        coords = xp.asarray(npad + x)[newaxis, ...]
+        expected = ndimage.map_coordinates(padded, coords, order=order, mode=mode)
 
         atol = 1e-5 if mode == 'grid-constant' else 1e-12
         xp_assert_close(y, expected, rtol=1e-7, atol=atol)
