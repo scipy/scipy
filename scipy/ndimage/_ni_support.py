@@ -93,10 +93,13 @@ def _get_output(output, input, shape=None, complex_output=False):
         elif not issubclass(output.type, np.number):
             raise RuntimeError("output must have numeric dtype")
         output = np.zeros(shape, dtype=output)
-    elif output.shape != shape:
-        raise RuntimeError("output shape not correct")
-    elif complex_output and output.dtype.kind != 'c':
-        raise RuntimeError("output must have complex dtype")
+    else:
+        # output was supplied as an array
+        output = np.asarray(output)
+        if output.shape != shape:
+            raise RuntimeError("output shape not correct")
+        elif complex_output and output.dtype.kind != 'c':
+            raise RuntimeError("output must have complex dtype")
     return output
 
 
@@ -117,3 +120,22 @@ def _check_axes(axes, ndim):
     if len(tuple(set(axes))) != len(axes):
         raise ValueError("axes must be unique")
     return axes
+
+
+def _skip_if_dtype(arg):
+    """'array or dtype' polymorphism.
+
+    Return None for np.int8, dtype('float32') or 'f' etc
+           arg for np.empty(3) etc
+    """
+    if isinstance(arg, str):
+        return None
+    if type(arg) is type:
+        return None if issubclass(arg, np.generic) else arg
+    else:
+        return None if isinstance(arg, np.dtype) else arg
+
+
+def _skip_if_int(arg):
+    return None if (arg is None or isinstance(arg, int)) else arg
+
