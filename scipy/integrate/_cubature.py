@@ -41,9 +41,9 @@ def cub(f, a, b, rule="gk21", rtol=1e-05, atol=1e-08, max_subdivisions=10000,
     """
     Adaptive cubature of multidimensional array-valued function.
 
-    Given an arbitrary cubature rule with error estimation, this function returns an
-    estimate of the integral over the hypercube defined by the arrays ``a`` and ``b`` to
-    the required tolerance, although convergence is not guaranteed for all integrals.
+    Given an arbitrary cubature rule, this function returns an estimate of the integral
+    over the hypercube defined by the arrays ``a`` and ``b`` to the required tolerance,
+    although convergence is not guaranteed for all integrals.
 
     Parameters
     ----------
@@ -84,15 +84,16 @@ def cub(f, a, b, rule="gk21", rtol=1e-05, atol=1e-08, max_subdivisions=10000,
     A simple 1D integral with vector output:
 
     >>> import numpy as np
-    >>> from scipy.integrate._cubature import *
+    >>> from scipy.integrate._cubature import cub
+    >>> from scipy.integrate._rules import GaussKronrodQuad
     >>> def f(x, n):
     ...    # Make sure x and n are broadcastable
     ...    return x.reshape(1, -1)**n
     >>> res = cubature(
-    ...     f=f,
-    ...     a=np.array([0]),
-    ...     b=np.array([1]),
-    ...     rule=GaussKronrod(21), # 1D rule
+    ...     f,
+    ...     [0],
+    ...     [1],
+    ...     GaussKronrodQuad(21), # 1D rule
     ...     args=(
     ...         # Since f accepts arrays of shape (ndim, num_eval_points) we need to
     ...         # make sure n is the right shape
@@ -107,8 +108,10 @@ def cub(f, a, b, rule="gk21", rtol=1e-05, atol=1e-08, max_subdivisions=10000,
     A 7D integral with arbitrary-shaped array output:
 
     >>> import numpy as np
-    >>> from scipy.integrate._cubature import *
+    >>> from scipy.integrate._cubature import cub
+    >>> from scipy.integrate._rules import GenzMalikCub
     >>> def f(x, r, alphas):
+    ...     # f(x) = cos(2pi*r + alpha @ x)
     ...     ndim = x.shape[0]
     ...     num_eval_points = x.shape[-1]
     ...     r_reshaped = np.expand_dims(r, -1)
@@ -125,7 +128,7 @@ def cub(f, a, b, rule="gk21", rtol=1e-05, atol=1e-08, max_subdivisions=10000,
     ...     f=f,
     ...     a=np.array([0, 0, 0, 0, 0, 0, 0]),
     ...     b=np.array([1, 1, 1, 1, 1, 1, 1]),
-    ...     rule=GenzMalik(7),
+    ...     rule=GenzMalikCub(7),
     ...     kwargs={
     ...         "r": np.random.rand(2, 3),
     ...         "alphas": np.random.rand(7, 2, 3),
@@ -134,6 +137,54 @@ def cub(f, a, b, rule="gk21", rtol=1e-05, atol=1e-08, max_subdivisions=10000,
     >>> res.estimate
      array([[ 0.69578554, -0.87958878, -0.90278537],
             [ 0.53436481, -0.34633208, -0.16061907]])
+
+    Calculating an integral using a custom cubature rule, in this case 3D Genz-Malik
+    cubature for the estimate and then the difference between this and 3D 21-node
+    Gauss-Kronrod for the error estimate.
+
+    >>> import numpy as np
+    >>> from scipy.integrate._cubature import cub, FixedProductCub
+    >>> from scipy.integrate._rules import GenzMalikCub, GaussKronrodQuad
+    >>> def f(x, r, alphas):
+    ...     # f(x) = cos(2pi*r + alpha @ x)
+    ...     ndim = x.shape[0]
+    ...     num_eval_points = x.shape[-1]
+    ...     r_reshaped = np.expand_dims(r, -1)
+    ...     alphas_reshaped = np.expand_dims(alphas, -1)
+    ...     x_reshaped = x.reshape(
+    ...         ndim,
+    ...         *([1]*(len(alphas.shape) - 1)),
+    ...         num_eval_points
+    ...     )
+    ...     return np.cos(
+    ...         2*np.pi*r_reshaped + np.sum(alphas_reshaped * x_reshaped, axis=0)
+    ...     )
+    >>> genz = GenzMalikCub(3)
+    ... kronrod = FixedProductCub([GaussKronrodQuad(21)] * 3)
+    ...
+    ... class CustomRule(Cub):
+    ...     def estimate(self, f, a, b, args=(), kwargs=None):
+    ...         if kwargs is None: kwargs = dict()
+    ...         return genz.estimate(f, a, b, args, kwargs)
+    ...
+    ...     def error_estimate(self, f, a, b, args=(), kwargs=None):
+    ...         if kwargs is None: kwargs = dict()
+    ...         return np.abs(
+    ...             genz.estimate(f, a, b, args, kwargs)
+    ...             - kronrod.estimate(f, a, b, args, kwargs)
+    ...         )
+    >>> cub(
+    ...     f=f,
+    ...     a=np.array([0, 0, 0]),
+    ...     b=np.array([1, 1, 1]),
+    ...     rule=CustomRule(),
+    ...     kwargs={
+    ...         "r": np.random.rand(2, 3),
+    ...         "alphas": np.random.rand(3, 2, 3),
+    ...     }
+    ... ).estimate
+     array([[ 0.6998506 ,  0.49574607, -0.85640276],
+           [ 0.0758674 , -0.76808139, -0.65624455]])
     """
 
     if max_subdivisions is None:
