@@ -350,6 +350,7 @@ python_sources = [
   '__init__.py',
   '_add_newdocs.py',
   '_basic.py',
+  '_basic.pyi',
   '_ellip_harm.py',
   '_input_validation.py',
   '_lambertw.py',
