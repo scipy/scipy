@@ -256,7 +256,7 @@ class AAA:
                 wj = (V.conj()[mm, :].sum(axis=0) / np.sqrt(mm.sum())).astype(dtype)
             else:
                 # Fewer rows than columns
-                V = scipy.linalg.null_space(A[mask, : m + 1])
+                V = scipy.linalg.null_space(A[mask, : m + 1], check_finite=False)
                 nm = V.shape[-1]
                 # Aim for non-sparse wt vector
                 wj = V.sum(axis=-1) / np.sqrt(nm)
