@@ -20,7 +20,8 @@ of the inconsistencies present in NumPy, as well as 20+ years of code on top,
 the `xp_assert_*` functions here enforce consistency in the only way that
 doesn't go against the tide, i.e. by forbidding 0d-arrays as the return type.
 
-However, where possible, it remains preferable to use the assert functions from
+However, when scalars are not generally the expected NumPy return type,
+it remains preferable to use the assert functions from
 the `scipy._lib._array_api` module, which have less surprising behaviour.
 """
 from __future__ import annotations

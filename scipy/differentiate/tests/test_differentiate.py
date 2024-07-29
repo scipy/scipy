@@ -30,7 +30,7 @@ class TestDifferentiate:
         default_dtype = xp.asarray(1.).dtype
         res = differentiate(self.f, xp.asarray(x, dtype=default_dtype))
         ref = xp.asarray(stats.norm().pdf(x), dtype=default_dtype)
-        xp_assert_close(res.df, ref, check_0d=False)
+        xp_assert_close(res.df, ref[()])
         # This would be nice, but doesn't always work out. `error` is an
         # estimate, not a bound.
         if not is_torch(xp):
@@ -366,7 +366,7 @@ class TestDifferentiate:
         if not is_torch(xp):  # torch defaults to float32
             res = differentiate(f, xp.asarray(7), tolerances=dict(rtol=1e-10))
             assert res.success
-            xp_assert_close(res.df, xp.asarray(99*7.**98), check_0d=False)
+            xp_assert_close(res.df, xp.asarray(99*7.**98)[()])
 
         # Test that if success is achieved in the correct number
         # of iterations if function is a polynomial. Ideally, all polynomials
@@ -384,8 +384,7 @@ class TestDifferentiate:
 
             res = differentiate(f, x, maxiter=1, order=max(1, n))
             xp_assert_close(res.df, ref, rtol=1e-15)
-            xp_assert_equal(res.error, xp.asarray(xp.nan, dtype=xp.float64),
-                            check_0d=False)
+            xp_assert_equal(res.error, xp.asarray(xp.nan, dtype=xp.float64)[()])
 
             res = differentiate(f, x, order=max(1, n))
             assert res.success
@@ -397,7 +396,7 @@ class TestDifferentiate:
             return c*x - 1
 
         res = differentiate(f, xp.asarray(2), args=xp.asarray(3))
-        xp_assert_close(res.df, xp.asarray(3.), check_0d=False)
+        xp_assert_close(res.df, xp.asarray(3.)[()])
 
     # no need to run a test on multiple backends if it's xfailed
     @pytest.mark.skip_xp_backends(np_only=True)

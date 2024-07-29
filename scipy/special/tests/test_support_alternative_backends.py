@@ -97,7 +97,8 @@ def test_support_alternative_backends(xp, f_name_n_args, dtype, shapes):
     ref = xp.asarray(f(*args_np), dtype=dtype_xp)
 
     eps = np.finfo(dtype_np).eps
-    xp_assert_close(res, ref, atol=10*eps, check_0d=False)
+    ref = ref[()] if ref.ndim == 0 else ref
+    xp_assert_close(res, ref, atol=10*eps)
 
 
 @array_api_compatible

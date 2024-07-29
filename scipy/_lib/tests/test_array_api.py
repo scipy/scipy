@@ -120,29 +120,32 @@ class TestArrayAPI:
 
         # identity always passes
         xp_assert_equal(xp.float64(0), xp.float64(0))
-        xp_assert_equal(xp.array(0.), xp.array(0.))
+        xp_assert_equal(xp.asarray(0.), xp.asarray(0.))
         xp_assert_equal(xp.float64(0), xp.float64(0), check_0d=False)
-        xp_assert_equal(xp.array(0.), xp.array(0.), check_0d=False)
+        xp_assert_equal(xp.asarray(0.), xp.asarray(0.), check_0d=False)
 
         # Check default convention: 0d-arrays are distinguished from scalars
         message = "Array-ness does not match:.*"
         with pytest.raises(AssertionError, match=message):
-            xp_assert_equal(xp.array(0.), xp.float64(0))
+            xp_assert_equal(xp.asarray(0.), xp.float64(0))
         with pytest.raises(AssertionError, match=message):
-            xp_assert_equal(xp.float64(0), xp.array(0.))
+            xp_assert_equal(xp.float64(0), xp.asarray(0.))
         with pytest.raises(AssertionError, match=message):
-            xp_assert_equal(xp.array(42), xp.int64(42))
+            xp_assert_equal(xp.asarray(42), xp.int64(42))
         with pytest.raises(AssertionError, match=message):
-            xp_assert_equal(xp.int64(42), xp.array(42))
+            xp_assert_equal(xp.int64(42), xp.asarray(42))
 
         # with `check_0d=False`, scalars-vs-0d passes (if values match)
-        xp_assert_equal(xp.array(0.), xp.float64(0), check_0d=False)
-        xp_assert_equal(xp.float64(0), xp.array(0.), check_0d=False)
+        xp_assert_equal(xp.asarray(0.), xp.float64(0), check_0d=False)
+        xp_assert_equal(xp.float64(0), xp.asarray(0.), check_0d=False)
         # also with regular python objects
-        xp_assert_equal(xp.array(0.), 0., check_0d=False)
-        xp_assert_equal(0., xp.array(0.), check_0d=False)
-        xp_assert_equal(xp.array(42), 42, check_0d=False)
-        xp_assert_equal(42, xp.array(42), check_0d=False)
+        xp_assert_equal(xp.asarray(0.), 0., check_0d=False)
+        xp_assert_equal(0., xp.asarray(0.), check_0d=False)
+        xp_assert_equal(xp.asarray(42), 42, check_0d=False)
+        xp_assert_equal(42, xp.asarray(42), check_0d=False)
+
+        # as an alternative to `check_0d=False`, explicitly expect scalar
+        xp_assert_equal(xp.float64(0), xp.asarray(0.)[()])
 
 
     @array_api_compatible
@@ -153,32 +156,32 @@ class TestArrayAPI:
         # identity passes, if first argument is not 0d (or check_0d=True)
         xp_assert_equal_no_0d(xp.float64(0), xp.float64(0))
         xp_assert_equal_no_0d(xp.float64(0), xp.float64(0), check_0d=True)
-        xp_assert_equal_no_0d(xp.array(0.), xp.array(0.), check_0d=True)
+        xp_assert_equal_no_0d(xp.asarray(0.), xp.asarray(0.), check_0d=True)
 
         # by default, 0d values are forbidden as the first argument
         message = "Result is a NumPy 0d-array.*"
         with pytest.raises(AssertionError, match=message):
-            xp_assert_equal_no_0d(xp.array(0.), xp.array(0.))
+            xp_assert_equal_no_0d(xp.asarray(0.), xp.asarray(0.))
         with pytest.raises(AssertionError, match=message):
-            xp_assert_equal_no_0d(xp.array(0.), xp.float64(0))
+            xp_assert_equal_no_0d(xp.asarray(0.), xp.float64(0))
         with pytest.raises(AssertionError, match=message):
-            xp_assert_equal_no_0d(xp.array(42), xp.int64(42))
+            xp_assert_equal_no_0d(xp.asarray(42), xp.int64(42))
 
         # Check default convention: 0d-arrays are NOT distinguished from scalars
-        xp_assert_equal_no_0d(xp.float64(0), xp.array(0.))
-        xp_assert_equal_no_0d(xp.int64(42), xp.array(42))
+        xp_assert_equal_no_0d(xp.float64(0), xp.asarray(0.))
+        xp_assert_equal_no_0d(xp.int64(42), xp.asarray(42))
 
         # opt in to 0d-check remains possible
         message = "Array-ness does not match:.*"
         with pytest.raises(AssertionError, match=message):
-            xp_assert_equal_no_0d(xp.array(0.), xp.float64(0), check_0d=True)
+            xp_assert_equal_no_0d(xp.asarray(0.), xp.float64(0), check_0d=True)
         with pytest.raises(AssertionError, match=message):
-            xp_assert_equal_no_0d(xp.float64(0), xp.array(0.), check_0d=True)
+            xp_assert_equal_no_0d(xp.float64(0), xp.asarray(0.), check_0d=True)
         with pytest.raises(AssertionError, match=message):
-            xp_assert_equal_no_0d(xp.array(42), xp.int64(0), check_0d=True)
+            xp_assert_equal_no_0d(xp.asarray(42), xp.int64(0), check_0d=True)
         with pytest.raises(AssertionError, match=message):
-            xp_assert_equal_no_0d(xp.int64(0), xp.array(42), check_0d=True)
+            xp_assert_equal_no_0d(xp.int64(0), xp.asarray(42), check_0d=True)
 
         # scalars-vs-0d passes (if values match) also with regular python objects
-        xp_assert_equal_no_0d(0., xp.array(0.))
-        xp_assert_equal_no_0d(42, xp.array(42))
+        xp_assert_equal_no_0d(0., xp.asarray(0.))
+        xp_assert_equal_no_0d(42, xp.asarray(42))

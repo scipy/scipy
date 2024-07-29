@@ -2621,7 +2621,7 @@ def test_uniform_filter1d_roundoff_errors(xp):
 
     for filter_size in range(3, 10):
         out = ndimage.uniform_filter1d(in_, filter_size)
-        xp_assert_equal(xp.sum(out), xp.asarray(10 - filter_size), check_0d=False)
+        xp_assert_equal(xp.sum(out), xp.asarray(10 - filter_size)[()])
 
 
 def test_footprint_all_zeros(xp):

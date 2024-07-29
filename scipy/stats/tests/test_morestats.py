@@ -27,8 +27,11 @@ from scipy.stats._axis_nan_policy import (SmallSampleWarning, too_small_nd_omit,
 
 from scipy.conftest import array_api_compatible
 from scipy._lib._array_api import array_namespace, is_numpy
-from scipy._lib._array_api_no_0d import (xp_assert_close, xp_assert_equal,
-                                         xp_assert_less)
+from scipy._lib._array_api_no_0d import (
+    xp_assert_close,
+    xp_assert_equal,
+    xp_assert_less,
+)
 
 
 skip_xp_backends = pytest.mark.skip_xp_backends

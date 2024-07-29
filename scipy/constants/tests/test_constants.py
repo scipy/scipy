@@ -13,7 +13,7 @@ skip_xp_backends = pytest.mark.skip_xp_backends
 class TestConvertTemperature:
     def test_convert_temperature(self, xp):
         xp_assert_equal(sc.convert_temperature(xp.asarray(32.), 'f', 'Celsius'),
-                        xp.asarray(0.0), check_0d=False)
+                        xp.asarray(0.0)[()])
         xp_assert_equal(sc.convert_temperature(xp.asarray([0., 0.]),
                                                'celsius', 'Kelvin'),
                         xp.asarray([273.15, 273.15]))
