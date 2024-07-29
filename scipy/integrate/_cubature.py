@@ -89,7 +89,7 @@ def cub(f, a, b, rule="gk21", rtol=1e-05, atol=1e-08, max_subdivisions=10000,
     >>> def f(x, n):
     ...    # Make sure x and n are broadcastable
     ...    return x.reshape(1, -1)**n
-    >>> res = cubature(
+    >>> res = cub(
     ...     f,
     ...     [0],
     ...     [1],
@@ -124,7 +124,7 @@ def cub(f, a, b, rule="gk21", rtol=1e-05, atol=1e-08, max_subdivisions=10000,
     ...     return np.cos(
     ...         2*np.pi*r_reshaped + np.sum(alphas_reshaped * x_reshaped, axis=0)
     ...     )
-    >>> res = cubature(
+    >>> res = cub(
     ...     f=f,
     ...     a=np.array([0, 0, 0, 0, 0, 0, 0]),
     ...     b=np.array([1, 1, 1, 1, 1, 1, 1]),
