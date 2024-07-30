@@ -461,7 +461,8 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, abs_step=None,
         raise ValueError("Bounds not supported when "
                          "`as_linear_operator` is True.")
 
-    kwargs = {} if kwargs is None else kwargs
+    if kwargs is None:
+        kwargs = {}
 
     def fun_wrapped(x):
         # send user function same fp type as x0. (but only if cs is not being
@@ -764,7 +765,8 @@ def check_derivative(fun, jac, x0, bounds=(-np.inf, np.inf), args=(),
     >>> check_derivative(f, jac, x0, args=(1, 2))
     2.4492935982947064e-16
     """
-    kwargs = {} if kwargs is None else kwargs
+    if kwargs is None:
+        kwargs = {}
     J_to_test = jac(x0, *args, **kwargs)
     if issparse(J_to_test):
         J_diff = approx_derivative(fun, x0, bounds=bounds, sparsity=J_to_test,

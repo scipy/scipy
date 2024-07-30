@@ -47,7 +47,8 @@ class LagrangianHessian:
         self.constraints_hess = constraints_hess
 
     def __call__(self, x, v_eq, v_ineq=None):
-        v_ineq = np.empty(0) if v_ineq is None else v_ineq
+        if v_ineq is None:
+            v_ineq = np.empty(0)
         H_objective = self.objective_hess(x)
         H_constraints = self.constraints_hess(x, v_eq, v_ineq)
 

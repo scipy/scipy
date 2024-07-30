@@ -655,7 +655,8 @@ class AttrDict(dict):
     '''
 
     def __init__(self, init=None):
-        init = {} if init is None else init
+        if init is None:
+            init = {}
         dict.__init__(self, init)
 
     def __getitem__(self, name):

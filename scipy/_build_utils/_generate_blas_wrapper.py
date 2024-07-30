@@ -82,12 +82,14 @@ def make_all(outdir,
              blas_signature_file=None,
              lapack_signature_file=None,
              accelerate=False):
-    blas_signature_file = os.path.join(
-                 LINALG_DIR, "cython_blas_signatures.txt"
-    ) if blas_signature_file is None else blas_signature_file
-    lapack_signature_file = os.path.join(
-                 LINALG_DIR, "cython_lapack_signatures.txt"
-    ) if lapack_signature_file is None else lapack_signature_file
+    if blas_signature_file is None:
+        blas_signature_file = os.path.join(
+            LINALG_DIR, "cython_blas_signatures.txt"
+        )
+    if lapack_signature_file is None:
+        lapack_signature_file = os.path.join(
+            LINALG_DIR, "cython_lapack_signatures.txt"
+        )
     with open(blas_signature_file) as f:
         blas_sigs = f.readlines()
     with open(lapack_signature_file) as f:

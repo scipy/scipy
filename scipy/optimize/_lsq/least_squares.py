@@ -827,8 +827,10 @@ def least_squares(
     if method == 'trf':
         x0 = make_strictly_feasible(x0, lb, ub)
 
-    kwargs = {} if kwargs is None else kwargs
-    tr_options = {} if tr_options is None else tr_options
+    if kwargs is None:
+        kwargs = {}
+    if tr_options is None:
+        tr_options = {}
 
     def fun_wrapped(x):
         return np.atleast_1d(fun(x, *args, **kwargs))

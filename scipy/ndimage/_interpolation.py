@@ -333,7 +333,8 @@ def geometric_transform(input, mapping, output_shape=None,
     array([2, 3, 4, 1, 2])
 
     """
-    extra_keywords = {} if extra_keywords is None else extra_keywords
+    if extra_keywords is None:
+        extra_keywords = {}
     if order < 0 or order > 5:
         raise RuntimeError('spline order not supported')
     input = np.asarray(input)
