@@ -381,6 +381,24 @@ def xp_assert_less(actual, desired, check_namespace=True, check_dtype=True,
                                         err_msg=err_msg, verbose=verbose)
 
 
+def assert_array_almost_equal(actual, desired, decimal=6, *args, **kwds):
+    """Backwards compatible replacement. In new code, use xp_assert_close instead.
+    """
+    rtol, atol = 0, 1.5*10**(-decimal)
+    return xp_assert_close(actual, desired,
+                           atol=atol, rtol=rtol, check_dtype=False, check_shape=False,
+                           *args, **kwds)
+
+
+def assert_almost_equal(actual, desired, decimal=7, *args, **kwds):
+    """Backwards compatible replacement. In new code, use xp_assert_close instead.
+    """
+    rtol, atol = 0, 1.5*10**(-decimal)
+    return xp_assert_close(actual, desired,
+                           atol=atol, rtol=rtol, check_dtype=False, check_shape=False,
+                           *args, **kwds)
+
+
 def cov(x: Array, *, xp: ModuleType | None = None) -> Array:
     if xp is None:
         xp = array_namespace(x)
@@ -579,6 +597,13 @@ def xp_ravel(x: Array, /, *, xp: ModuleType | None = None) -> Array:
     # this function for readability
     xp = array_namespace(x) if xp is None else xp
     return xp.reshape(x, (-1,))
+
+
+def xp_real(x: Array, /, *, xp: ModuleType | None = None) -> Array:
+    # Convenience wrapper of xp.real that allows non-complex input;
+    # see data-apis/array-api#824
+    xp = array_namespace(x) if xp is None else xp
+    return xp.real(x) if xp.isdtype(x.dtype, 'complex floating') else x
 
 
 def xp_take_along_axis(arr: Array,
