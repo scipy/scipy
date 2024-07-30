@@ -885,6 +885,41 @@ class _coo_base(_data_matrix, _minmax_mixin):
         prod_arr = coo_array((prod.data, tuple(coords)), shape=combined_shape)
         
         return prod_arr
+    
+    def _block_diag(self):
+        """
+        Converts an N-D COO array into a 2-D COO array in block diagonal form.
+
+        Parameters:
+        nd_arr (coo_array): An N-Dimensional COO sparse array.
+
+        Returns:
+        coo_array: A 2-Dimensional COO sparse array in block diagonal form.
+        """
+        # Get the shape of the N-D array
+        shape = self.shape
+
+        num_blocks = math.prod(shape[:-2])
+        n_col = shape[-1]
+        n_row = shape[-2]
+        new_row = np.zeros(shape=(self.nnz,))
+        new_col = np.zeros(shape=(self.nnz,))
+
+        # Calculate strides for the first n-2 dimensions
+        strides = np.cumprod((1,) + shape[:-2][::-1])[::-1][1:]
+
+        # Function to calculate the offset index
+        def offset_index(coords, strides):
+            return sum(c * s for c, s in zip(coords, strides))
+        
+        coords_for_current_nnz = np.array(self.coords)
+        offset_coords = np.apply_along_axis(offset_index, 0, coords_for_current_nnz[:-2], strides)
+        
+        new_row = offset_coords * n_row + self.coords[-2]
+        new_col = offset_coords * n_col + self.coords[-1]
+
+        new_shape = (num_blocks * n_row, num_blocks * n_col)
+        return coo_array((self.data, (new_row, new_col)), shape=new_shape)
 
 
 def _determine_default_axes(ndim_a, ndim_b, axes):

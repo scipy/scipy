@@ -1,6 +1,7 @@
 import numpy as np
 from numpy.testing import assert_equal
 import pytest
+from scipy.linalg import block_diag
 from scipy.sparse import coo_array, random_array
 
 
@@ -742,3 +743,19 @@ def test_tensordot_with_invalid_args():
     axes = ([2,0,1], [1,3]) # lists have different lengths
     with pytest.raises(ValueError, match="axes lists/tuples must be of the same length"):
         arr_a.tensordot(arr_b, axes=axes)
+
+def test_block_diag():
+    np.random.seed(12)
+
+    arr = np.random.randn(4,5,6,7,8)
+
+    # converting n-d numpy array to an array of slices of 2-D matrices, to pass as argument into scipy.linalg.block_diag
+    coo_arr = coo_array(arr)
+    num_slices = np.prod(arr.shape[:-2])
+    reshaped_array = arr.reshape((num_slices,) + arr.shape[-2:])
+    matrices = [reshaped_array[i, :, :] for i in range(num_slices)]
+    exp = block_diag(*matrices)
+
+    res = coo_arr._block_diag()
+
+    assert_equal(res.toarray(), exp)
