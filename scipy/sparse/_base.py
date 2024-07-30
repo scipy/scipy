@@ -1165,8 +1165,13 @@ class _spbase:
                 np.ones((N, 1), dtype=res_dtype)
             )
 
-        if out is not None and out.shape != ret.shape:
-            raise ValueError("dimensions do not match")
+        if out is not None:
+            if isinstance(self, sparray):
+                if out.shape != ret.squeeze().shape:
+                    raise ValueError("dimensions do not match")
+            else:
+                if out.shape != ret.shape:
+                    raise ValueError("dimensions do not match")
 
         return ret.sum(axis=axis, dtype=dtype, out=out)
 
