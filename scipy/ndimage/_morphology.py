@@ -881,6 +881,8 @@ def binary_hit_or_miss(input, structure1=None, structure2=None,
     input = np.asarray(input)
     if structure1 is None:
         structure1 = generate_binary_structure(input.ndim, 1)
+    else:
+        structure1 = np.asarray(structure1)
     if structure2 is None:
         structure2 = np.logical_not(structure1)
     origin1 = _ni_support._normalize_sequence(origin1, input.ndim)
@@ -1106,6 +1108,7 @@ def binary_fill_holes(input, structure=None, output=None, origin=0):
            [0, 0, 0, 0, 0]])
 
     """
+    input = np.asarray(input)
     mask = np.logical_not(input)
     tmp = np.zeros(mask.shape, bool)
     inplace = isinstance(output, np.ndarray)
@@ -1790,6 +1793,8 @@ def white_tophat(input, size=None, footprint=None, structure=None,
            [0, 0, 0, 0, 0]])
 
     """
+    input = np.asarray(input)
+
     if (size is not None) and (footprint is not None):
         warnings.warn("ignoring size because footprint is set",
                       UserWarning, stacklevel=2)
@@ -1870,6 +1875,8 @@ def black_tophat(input, size=None, footprint=None,
            [0, 0, 0, 0, 0]])
 
     """
+    input = np.asarray(input)
+
     if (size is not None) and (footprint is not None):
         warnings.warn("ignoring size because footprint is set",
                       UserWarning, stacklevel=2)

@@ -243,6 +243,7 @@ def dunnett(
     See Also
     --------
     tukey_hsd : performs pairwise comparison of means.
+    :ref:`hypothesis_dunnett` : Extended example
 
     Notes
     -----
@@ -261,7 +262,6 @@ def dunnett(
     When pairwise comparisons between experimental groups are not needed,
     Dunnett's test is preferable due to its higher power.
 
-
     The use of this test relies on several assumptions.
 
     1. The observations are independent within and among groups.
@@ -271,60 +271,43 @@ def dunnett(
 
     References
     ----------
-    .. [1] Charles W. Dunnett. "A Multiple Comparison Procedure for Comparing
-       Several Treatments with a Control."
-       Journal of the American Statistical Association, 50:272, 1096-1121,
-       :doi:`10.1080/01621459.1955.10501294`, 1955.
+    .. [1] Dunnett, Charles W. (1955) "A Multiple Comparison Procedure for
+           Comparing Several Treatments with a Control." Journal of the American
+           Statistical Association, 50:272, 1096-1121,
+           :doi:`10.1080/01621459.1955.10501294`
+    .. [2] Thomson, M. L., & Short, M. D. (1969). Mucociliary function in
+           health, chronic obstructive airway disease, and asbestosis. Journal
+           of applied physiology, 26(5), 535-539.
+           :doi:`10.1152/jappl.1969.26.5.535`
 
     Examples
     --------
-    In [1]_, the influence of drugs on blood count measurements on three groups
-    of animal is investigated.
+    We'll use data from [2]_, Table 1. The null hypothesis is that the means of
+    the distributions underlying the samples and control are equal.
 
-    The following table summarizes the results of the experiment in which
-    two groups received different drugs, and one group acted as a control.
-    Blood counts (in millions of cells per cubic millimeter) were recorded::
+    First, we test that the means of the distributions underlying the samples
+    and control are unequal (``alternative='two-sided'``, the default).
 
     >>> import numpy as np
-    >>> control = np.array([7.40, 8.50, 7.20, 8.24, 9.84, 8.32])
-    >>> drug_a = np.array([9.76, 8.80, 7.68, 9.36])
-    >>> drug_b = np.array([12.80, 9.68, 12.16, 9.20, 10.55])
-
-    We would like to see if the means between any of the groups are
-    significantly different. First, visually examine a box and whisker plot.
-
-    >>> import matplotlib.pyplot as plt
-    >>> fig, ax = plt.subplots(1, 1)
-    >>> ax.boxplot([control, drug_a, drug_b])
-    >>> ax.set_xticklabels(["Control", "Drug A", "Drug B"])  # doctest: +SKIP
-    >>> ax.set_ylabel("mean")  # doctest: +SKIP
-    >>> plt.show()
-
-    Note the overlapping interquartile ranges of the drug A group and control
-    group and the apparent separation between the drug B group and control
-    group.
-
-    Next, we will use Dunnett's test to assess whether the difference
-    between group means is significant while controlling the family-wise error
-    rate: the probability of making any false discoveries.
-    Let the null hypothesis be that the experimental groups have the same
-    mean as the control and the alternative be that an experimental group does
-    not have the same mean as the control. We will consider a 5% family-wise
-    error rate to be acceptable, and therefore we choose 0.05 as the threshold
-    for significance.
-
     >>> from scipy.stats import dunnett
-    >>> res = dunnett(drug_a, drug_b, control=control)
+    >>> samples = [[3.8, 2.7, 4.0, 2.4], [2.8, 3.4, 3.7, 2.2, 2.0]]
+    >>> control = [2.9, 3.0, 2.5, 2.6, 3.2]
+    >>> res = dunnett(*samples, control=control)
+    >>> res.statistic
+    array([ 0.90874545, -0.05007117])
     >>> res.pvalue
-    array([0.62004941, 0.0059035 ])  # may vary
+    array([0.58325114, 0.99819341])
 
-    The p-value corresponding with the comparison between group A and control
-    exceeds 0.05, so we do not reject the null hypothesis for that comparison.
-    However, the p-value corresponding with the comparison between group B
-    and control is less than 0.05, so we consider the experimental results
-    to be evidence against the null hypothesis in favor of the alternative:
-    group B has a different mean than the control group.
+    Now, we test that the means of the distributions underlying the samples are
+    greater than the mean of the distribution underlying the control.
 
+    >>> res = dunnett(*samples, control=control, alternative='greater')
+    >>> res.statistic
+    array([ 0.90874545, -0.05007117])
+    >>> res.pvalue
+    array([0.30230596, 0.69115597])
+
+    For a more detailed example, see :ref:`hypothesis_dunnett`.
     """
     samples_, control_, rng = _iv_dunnett(
         samples=samples, control=control,

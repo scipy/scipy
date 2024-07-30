@@ -17,7 +17,6 @@ py3.install_sources([
     'test_constraints.py',
     'test_cython_optimize.py',
     'test_differentiable_functions.py',
-    'test_differentiate.py',
     'test_direct.py',
     'test_extending.py',
     'test_hessian_update_strategy.py',
