@@ -6,7 +6,8 @@ from dataclasses import dataclass
 import numpy as np
 
 from scipy.integrate._rules import (
-    GaussKronrodQuad, ErrorFromDifference, NewtonCotesQuad, FixedProductCub
+    FixedProductErrorFromDifferenceCub, ErrorFromDifference,
+    GaussKronrodQuad, NewtonCotesQuad,
 )
 
 
@@ -42,8 +43,10 @@ def cub(f, a, b, rule="gk21", rtol=1e-05, atol=1e-08, max_subdivisions=10000,
     Adaptive cubature of multidimensional array-valued function.
 
     Given an arbitrary cubature rule, this function returns an estimate of the integral
-    over the hypercube defined by the arrays ``a`` and ``b`` to the required tolerance,
-    although convergence is not guaranteed for all integrals.
+    over the defined by the arrays ``a`` and ``b`` specifying the corners of a hypercube
+    to the required tolerance.
+
+    Convergence is not guaranteed for all integrals.
 
     Parameters
     ----------
@@ -143,8 +146,8 @@ def cub(f, a, b, rule="gk21", rtol=1e-05, atol=1e-08, max_subdivisions=10000,
     Gauss-Kronrod for the error estimate.
 
     >>> import numpy as np
-    >>> from scipy.integrate._cubature import cub, FixedProductCub
-    >>> from scipy.integrate._rules import GenzMalikCub, GaussKronrodQuad
+    >>> from scipy.integrate._cubature import cub, FixedProductErrorFromDifferenceCub
+    >>> from scipy.integrate._rules import Cub, GenzMalikCub, GaussKronrodQuad
     >>> def f(x, r, alphas):
     ...     # f(x) = cos(2pi*r + alpha @ x)
     ...     ndim = x.shape[0]
@@ -160,7 +163,7 @@ def cub(f, a, b, rule="gk21", rtol=1e-05, atol=1e-08, max_subdivisions=10000,
     ...         2*np.pi*r_reshaped + np.sum(alphas_reshaped * x_reshaped, axis=0)
     ...     )
     >>> genz = GenzMalikCub(3)
-    ... kronrod = FixedProductCub([GaussKronrodQuad(21)] * 3)
+    ... kronrod = FixedProductErrorFromDifferenceCub([GaussKronrodQuad(21)] * 3)
     ...
     ... class CustomRule(Cub):
     ...     def estimate(self, f, a, b, args=(), kwargs=None):
@@ -210,7 +213,7 @@ def cub(f, a, b, rule="gk21", rtol=1e-05, atol=1e-08, max_subdivisions=10000,
         if base_quadrature is None:
             raise ValueError(f"unknown rule {rule}")
 
-        rule = FixedProductCub([base_quadrature] * len(a))
+        rule = FixedProductErrorFromDifferenceCub([base_quadrature] * len(a))
 
     if a.ndim != 1 or b.ndim != 1:
         raise ValueError("a and b should be 1D arrays")

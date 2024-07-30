@@ -9,8 +9,7 @@ from scipy.integrate._rules import ErrorFromDifference
 
 class GenzMalikCub(ErrorFromDifference):
     """
-    Genz-Malik cubature. Genz-Malik cubature is a true cubature rule in that it is not
-    constructed as the product of 1D rules.
+    Genz-Malik cubature.
 
     Genz-Malik is only defined for integrals of dimension >= 2.
 
@@ -39,11 +38,12 @@ class GenzMalikCub(ErrorFromDifference):
     Evaluate a 3D integral:
 
     >>> import numpy as np
-    >>> from scipy.integrate._cubature import *
+    >>> from scipy.integrate._cubature import cub
+    >>> from scipy.integrate._rules import GenzMalikCub
     >>> def f(x):
     ...     # f(x) = cos(x_1) + cos(x_2) + cos(x_3)
     ...     return np.sum(np.cos(x), axis=0)
-    >>> rule = GenzMalik(3) # Use 3D Genz-Malik
+    >>> rule = GenzMalikCub(3) # Use 3D Genz-Malik
     >>> a, b = np.array([0, 0, 0]), np.array([1, 1, 1])
     >>> rule.estimate(f, a, b) # True value 3*sin(1), approximately 2.5244
      np.float64(2.5244129547230862)
@@ -63,7 +63,7 @@ class GenzMalikCub(ErrorFromDifference):
         self.lower_degree = lower_degree
 
     @cached_property
-    def rule(self):
+    def nodes_and_weights(self):
         # TODO: Currently only support for degree 7 Genz-Malik cubature, should aim to
         # support arbitrary degree
         l_2 = math.sqrt(9/70)
@@ -114,7 +114,7 @@ class GenzMalikCub(ErrorFromDifference):
         return nodes, weights
 
     @cached_property
-    def lower_rule(self):
+    def lower_nodes_and_weights(self):
         # TODO: Currently only support for the degree 5 lower rule, in the future it
         # would be worth supporting arbitrary degree
 

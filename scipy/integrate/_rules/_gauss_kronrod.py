@@ -8,12 +8,13 @@ from ._gauss_legendre import GaussLegendreQuad
 
 class GaussKronrodQuad(ErrorFromDifference):
     """
-    Gauss-Kronrod cubature. Gauss-Kronrod rules consist of two cubature rules, one
+    Gauss-Kronrod quadrature. Gauss-Kronrod rules consist of two quadrature rules, one
     higher-order and one lower-order. The higher-order rule is used as the estimate of
     the integral and the difference between them is used as an estimate for the error.
 
     Gauss-Kronrod is a 1D rule. To use it for multidimensional integrals, it will be
-    necessary to take the Product of multiple Gauss-Kronrod rules. See Examples.
+    necessary to take the FixedProductErrorFromDifferenceCub of multiple Gauss-Kronrod
+    rules. See Examples.
 
     For n-node Gauss-Kronrod, the lower-order rule has ``n//2`` nodes, which are the
     ordinary Gauss-Legendre nodes with corresponding weights. The higher-order rule has
@@ -40,10 +41,11 @@ class GaussKronrodQuad(ErrorFromDifference):
     estimates will also be arrays, despite the fact that this is a 1D problem.
 
     >>> import numpy as np
-    >>> from scipy.integrate._cubature import *
+    >>> from scipy.integrate._cubature import cub
+    >>> from scipy.integrate._rules import GaussKronrodQuad
     >>> def f(x):
     ...     return np.cos(x)
-    >>> rule = GaussKronrod(21) # Use 21-point GaussKronrod
+    >>> rule = GaussKronrodQuad(21) # Use 21-point GaussKronrod
     >>> a, b = np.array([0]), np.array([1])
     >>> rule.estimate(f, a, b) # True value sin(1), approximately 0.84147
      array([0.84147098])
@@ -54,11 +56,16 @@ class GaussKronrodQuad(ErrorFromDifference):
     estimates will also be floats.
 
     >>> import numpy as np
-    >>> from scipy.integrate._cubature import *
+    >>> from scipy.integrate._cubature import cub
+    >>> from scipy.integrate._rules import (
+    ...     FixedProductErrorFromDifferenceCub, GaussKronrodQuad
+    ... )
     >>> def f(x):
     ...     # f(x) = cos(x_1) + cos(x_2)
     ...     return np.sum(np.cos(x), axis=0)
-    >>> rule = Product([GaussKronrod(15), GaussKronrod(15)]) # Use 15-point GaussKronrod
+    >>> rule = FixedProductErrorFromDifferenceCub(
+    ...     [GaussKronrodQuad(15), GaussKronrodQuad(15)]
+    ... ) # Use 15-point GaussKronrod
     >>> a, b = np.array([0, 0]), np.array([1, 1])
     >>> rule.estimate(f, a, b) # True value 2*sin(1), approximately 1.6829
      np.float64(1.682941969615793)
@@ -77,9 +84,9 @@ class GaussKronrodQuad(ErrorFromDifference):
         self.lower = GaussLegendreQuad(npoints//2)
 
     @cached_property
-    def rule(self):
+    def nodes_and_weights(self):
         if self.npoints == 21:
-            nodes = np.array([[
+            nodes = np.array([
                 0.995657163025808080735527280689003,
                 0.973906528517171720077964012084452,
                 0.930157491355708226001207180059508,
@@ -101,7 +108,7 @@ class GaussKronrodQuad(ErrorFromDifference):
                 -0.930157491355708226001207180059508,
                 -0.973906528517171720077964012084452,
                 -0.995657163025808080735527280689003
-            ]])
+            ])
 
             weights = np.array([
                 0.011694638867371874278064396062192,
@@ -127,7 +134,7 @@ class GaussKronrodQuad(ErrorFromDifference):
                 0.011694638867371874278064396062192,
             ])
         elif self.npoints == 15:
-            nodes = np.array([[
+            nodes = np.array([
                 0.991455371120812639206854697526329,
                 0.949107912342758524526189684047851,
                 0.864864423359769072789712788640926,
@@ -143,7 +150,7 @@ class GaussKronrodQuad(ErrorFromDifference):
                 -0.864864423359769072789712788640926,
                 -0.949107912342758524526189684047851,
                 -0.991455371120812639206854697526329
-            ]])
+            ])
 
             weights = np.array([
                 0.022935322010529224963732008058970,

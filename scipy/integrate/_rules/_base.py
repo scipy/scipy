@@ -8,14 +8,70 @@ from functools import cached_property
 
 class Cub:
     """
-    A generic interface for numerical cubature algorithms.
+    Base class for numerical integration algorithms (cubatures).
 
     Finds an estimate for the integral of ``f`` over hypercube described by two arrays
-    ``a`` and ``b`` via ``estimate``, and may also find an estimate for the error of
-    this approximation via ``error_estimate``.
+    ``a`` and ``b`` via `estimate`, and find an estimate for the error of this
+    approximation via `error_estimate`.
 
-    If error estimation is not supported by default (as in the case of Gauss-Legendre
-    or Newton-Cotes), then ``error_estimate`` will raise a NotImplementedError.
+    If a subclass does not implement its own `error_estimate`, then it will use a
+    default error estimate based on the difference between the estimate over the whole
+    region and the sum of the estimates over each subregion.
+
+    See Also
+    --------
+    `FixedCub`, for cubature rules implemented as the weighted sum of function
+    evaluations.
+
+    Examples
+    --------
+    Calculating an integral using a custom cubature rule, in this case 3D Genz-Malik
+    cubature for the estimate and then the difference between this and 3D 21-node
+    Gauss-Kronrod for the error estimate.
+
+    >>> import numpy as np
+    >>> from scipy.integrate._cubature import cub, FixedProductErrorFromDifferenceCub
+    >>> from scipy.integrate._rules import Cub, GenzMalikCub, GaussKronrodQuad
+    >>> def f(x, r, alphas):
+    ...     # f(x) = cos(2pi*r + alpha @ x)
+    ...     ndim = x.shape[0]
+    ...     num_eval_points = x.shape[-1]
+    ...     r_reshaped = np.expand_dims(r, -1)
+    ...     alphas_reshaped = np.expand_dims(alphas, -1)
+    ...     x_reshaped = x.reshape(
+    ...         ndim,
+    ...         *([1]*(len(alphas.shape) - 1)),
+    ...         num_eval_points
+    ...     )
+    ...     return np.cos(
+    ...         2*np.pi*r_reshaped + np.sum(alphas_reshaped * x_reshaped, axis=0)
+    ...     )
+    >>> genz = GenzMalikCub(3)
+    ... kronrod = FixedProductErrorFromDifferenceCub([GaussKronrodQuad(21)] * 3)
+    ...
+    ... class CustomRule(Cub):
+    ...     def estimate(self, f, a, b, args=(), kwargs=None):
+    ...         if kwargs is None: kwargs = dict()
+    ...         return genz.estimate(f, a, b, args, kwargs)
+    ...
+    ...     def error_estimate(self, f, a, b, args=(), kwargs=None):
+    ...         if kwargs is None: kwargs = dict()
+    ...         return np.abs(
+    ...             genz.estimate(f, a, b, args, kwargs)
+    ...             - kronrod.estimate(f, a, b, args, kwargs)
+    ...         )
+    >>> cub(
+    ...     f=f,
+    ...     a=np.array([0, 0, 0]),
+    ...     b=np.array([1, 1, 1]),
+    ...     rule=CustomRule(),
+    ...     kwargs={
+    ...         "r": np.random.rand(2, 3),
+    ...         "alphas": np.random.rand(3, 2, 3),
+    ...     }
+    ... ).estimate
+     array([[ 0.6998506 ,  0.49574607, -0.85640276],
+           [ 0.0758674 , -0.76808139, -0.65624455]])
     """
 
     def estimate(self, f, a, b, args=(), kwargs=None):
@@ -55,8 +111,14 @@ class Cub:
         Calculate the error estimate of this cubature rule for the integral of ``f`` in
         the hypercube described by corners ``a`` and ``b``.
 
-        If the cubature rule doesn't support error estimation, this will raise a
-        NotImplementedError.
+        If a subclass does not override this method, then a default error estimator is
+        used. This estimates the error as ``|est - refined_est|`` where ``est`` is
+        ``estimate(f, a, b)`` and ``refined_est`` is the sum of
+        ``estimate(f, a_k, b_k)`` where ``a_k, b_k`` are the coordinates of each
+        subregion of the hypercube described by ``a`` and ``b``. In the 1D case, this
+        is equivalent to comparing the integral over an entire interval ``[a, b]`` to
+        the sum of the integrals over the left and right subintervals, ``[a, (a+b)/2]``
+        and ``[(a+b)/2, b]``.
 
         Parameters
         ----------
@@ -97,19 +159,25 @@ class Cub:
 
 class FixedCub(Cub):
     """
-    A cubature rule implemented as the weighted sum of function evaluations.
+    A cubature rule implemented as the weighted sum of function evaluations at fixed
+    nodes.
 
     Attributes
     ----------
-    TODO: rule attribute
+    nodes_and_weights : (ndarray, ndarray)
+        A tuple ``(nodes, weights)`` of nodes at which to evaluate ``f`` and the
+        corresponding weights. ``nodes`` should be of shape ``(num_nodes,)`` for 1D
+        cubature rules (quadratures) and more generally for N-D cubature rules, it
+        should be of shape ``(ndim, num_nodes)``. ``weights`` should be of shape
+        `(num_nodes,)`. The nodes and weights should be for integrals over `[-1, 1]^n`.
 
     See Also
     --------
-    NewtonCotes, GaussLegendre, ErrorFromDifference
+    NewtonCotesQuad, GaussLegendreQuad, ErrorFromDifference
     """
 
     @property
-    def rule(self):
+    def nodes_and_weights(self):
         raise NotImplementedError
 
     def estimate(self, f, a, b, args=(), kwargs=None):
@@ -144,7 +212,9 @@ class FixedCub(Cub):
             ..., output_dim_n, eval_points)``, then ``err_est`` will be of shape
             ``(output_dim_1, ..., output_dim_n)``.
         """
-        return _apply_rule(f, a, b, self.rule, args, kwargs)
+        nodes, weights = self.nodes_and_weights
+
+        return _apply_fixed_rule(f, a, b, nodes, weights, args, kwargs)
 
 
 class ErrorFromDifference(FixedCub):
@@ -153,13 +223,24 @@ class ErrorFromDifference(FixedCub):
     underlying fixed cubature rules.
 
     This can be used to give error estimation to cubature rules which don't have default
-    error estimation, such as NewtonCotes or GaussLegendre. This is in contrast to rules
-    like GaussKronrod which have default error estimation given by a special property of
-    that cubature rule. See Examples.
+    error estimation, such as NewtonCotesQuad or GaussLegendreQuad. This is in contrast
+    to rules like GaussKronrod which have default error estimation given by a special
+    property of that cubature rule. See Examples.
 
     Attributes
     ----------
-    TODO: rule attribute and lower_rule attribute
+    higher : FixedCub
+        Higher accuracy fixed cubature rule.
+
+    lower : FixedCub
+        Lower accuracy fixed cubature rule.
+
+    nodes_and_weights : (ndarray, ndarray)
+        Nodes and weights. These are mirrored from ``higher.nodes_and_weights``.
+
+    lower_nodes_and_weights : (ndarray, ndarray)
+        Nodes and weights for the lower rule. These are mirrored from
+        ``lower.nodes_and_weights``.
 
     See Also
     --------
@@ -167,7 +248,21 @@ class ErrorFromDifference(FixedCub):
 
     Examples
     --------
-    TODO: examples for ErrorFromDifference
+    Gauss-Legendre rules have no intrinsic error estimation. We can build a cubature
+    rule with error estimation by taking the difference between an accurate cubature
+    rule and a less accurate cubature rule:
+
+    >>> import numpy as np
+    >>> from scipy.integrate._cubature import cub
+    >>> from scipy.integrate._rules import GaussLegendreQuad, ErrorFromDifference
+    >>> higher_accuracy_rule = GaussLegendreQuad(20)
+    >>> lower_accuracy_rule = GaussLegendreQuad(10)
+    >>> custom_rule = ErrorFromDifference(
+    ...     higher_accuracy_rule,
+    ...     lower_accuracy_rule
+    ... )
+    >>> cub(lambda x: np.sin(x), 0, 1, custom_rule)
+     array([0.45969769])
     """
 
     def __init__(self, higher, lower):
@@ -175,33 +270,119 @@ class ErrorFromDifference(FixedCub):
         self.lower = lower
 
     @property
-    def rule(self):
-        return self.higher.rule
+    def nodes_and_weights(self):
+        return self.higher.nodes_and_weights
 
     @property
-    def lower_rule(self):
-        return self.lower.rule
+    def lower_nodes_and_weights(self):
+        return self.lower.nodes_and_weights
 
     def error_estimate(self, f, a, b, args=(), kwargs=None):
         """
-        TODO: docstring for error_estimate in ErrorFromDifference
+        Calculate the error estimate of this cubature rule for the integral of ``f`` in
+        the hypercube described by corners ``a`` and ``b``.
+
+        The error estimate used is the difference between the approximation given by
+        ``lower`` and ``higher``.
+
+        Parameters
+        ----------
+        f : callable
+            Function to integrate. ``f`` must have the signature::
+                f(x : ndarray, *args, **kwargs) -> ndarray
+            If ``f`` accepts arrays ``x`` of shape ``(input_dim_1, ..., input_dim_n,
+            num_eval_points)`` and outputs arrays of shape ``(output_dim_1, ...,
+            output_dim_n, num_eval_points)``, then ``cub`` will return arrays of shape
+            ``(output_dim_1, ..., output_dim_n)``.
+        a, b : ndarray
+            Lower and upper limits of integration as rank-1 arrays specifying the left
+            and right endpoints of the intervals being integrated over. Infinite limits
+            are currently not supported.
+        args : tuple, optional
+            Additional positional args passed to ``f``, if any.
+        kwargs : tuple, optional
+            Additional keyword args passed to ``f``, if any.
+
+        Returns
+        -------
+        err_est : ndarray
+            Estimate of the error. If the cubature rule doesn't support error
+           estimation, then a NotImplementedError will be raised instead. If error
+           estimation is supported and ``f`` returns arrays of shape ``(output_dim_1,
+           ..., output_dim_n, eval_points)``, then ``err_est`` will be of shape
+           ``(output_dim_1, ..., output_dim_n)``.
         """
-        nodes, weights = self.rule
-        lower_nodes, lower_weights = self.lower_rule
+
+        nodes, weights = self.nodes_and_weights
+        lower_nodes, lower_weights = self.lower_nodes_and_weights
 
         error_nodes = np.concat([nodes, lower_nodes], axis=-1)
         error_weights = np.concat([weights, -lower_weights], axis=-1)
-        error_rule = (error_nodes, error_weights)
 
         return np.abs(
-            _apply_rule(f, a, b, error_rule, args, kwargs)
+            _apply_fixed_rule(f, a, b, error_nodes, error_weights, args, kwargs)
         )
 
 
-class FixedProductCub(ErrorFromDifference):
+class FixedProductCub(FixedCub):
     """
     Find the n-dimensional cubature rule constructed from the Cartesian product of 1D
-    cubature rules.
+    fixed cubature rules.
+
+    Parameters
+    ----------
+    base_rules : list of FixedCub
+        List of base 1-dimensional FixedCub cubature rules.
+
+    Attributes
+    ----------
+    base_rules : list of FixedCub
+        List of base 1-dimensional FixedCub cubature rules.
+
+    Example
+    -------
+
+    Evaluate a 2D integral by taking the product of two 1D rules:
+
+    >>> import numpy as np
+    >>> from scipy.integrate._cubature import cub
+    >>> from scipy.integrate._rules import (
+    ...  FixedProductCub, NewtonCotesQuad
+    >>> )
+    >>> def f(x):
+    ...     # f(x) = cos(x_1) + cos(x_2)
+    ...     return np.sum(np.cos(x), axis=0)
+    >>> rule = FixedProductCub(
+    ...     [NewtonCotesQuad(10), NewtonCotesQuad(10)]
+    ... ) # Use 10-point NewtonCotesQuad
+    >>> a, b = np.array([0, 0]), np.array([1, 1])
+    >>> rule.estimate(f, a, b) # True value 2*sin(1), approximately 1.6829
+     np.float64(1.682941969615793)
+    >>> rule.error_estimate(f, a, b)
+     np.float64(2.220446049250313e-16)
+    """
+
+    def __init__(self, base_rules):
+        self.base_rules = base_rules
+
+    @cached_property
+    def nodes_and_weights(self):
+        nodes = _cartesian_product(
+            [rule.nodes_and_weights[0] for rule in self.base_rules]
+        )
+
+        weights = np.prod(_cartesian_product(
+            [rule.nodes_and_weights[1] for rule in self.base_rules]
+        ), axis=0)
+
+        return nodes, weights
+
+
+class FixedProductErrorFromDifferenceCub(ErrorFromDifference):
+    """
+    Find the n-dimensional cubature rule constructed from the Cartesian product of 1D
+    `ErrorFromDifference` cubature rules, and estimate the error as the difference
+    between the product of the higher rules and the product of the lower rules.
 
     Given a list of N 1-dimensional cubature rules which support error estimation using
     ErrorFromDifference, this will find the N-dimensional ErrorFromDifference cubature
@@ -216,7 +397,7 @@ class FixedProductCub(ErrorFromDifference):
 
     Attributes
     ----------
-    base_rules : list of DualEstimateCubature
+    base_rules : list of ErrorFromDifference
         List of base 1-dimensional ErrorFromDifference cubature rules.
 
     Example
@@ -225,11 +406,16 @@ class FixedProductCub(ErrorFromDifference):
     Evaluate a 2D integral by taking the product of two 1D rules:
 
     >>> import numpy as np
-    >>> from scipy.integrate._cubature import *
+    >>> from scipy.integrate._cubature import cub
+    >>> from scipy.integrate._rules import (
+    ...  FixedProductErrorFromDifferenceCub, GaussKronrodQuad
+    >>> )
     >>> def f(x):
     ...     # f(x) = cos(x_1) + cos(x_2)
     ...     return np.sum(np.cos(x), axis=0)
-    >>> rule = Product([GaussKronrod(15), GaussKronrod(15)]) # Use 15-point GaussKronrod
+    >>> rule = FixedProductErrorFromDifferenceCub(
+    ...     [GaussKronrodQuad(15), GaussKronrodQuad(15)]
+    ... ) # Use 15-point GaussKronrodQuad, which implements ErrorFromDifference
     >>> a, b = np.array([0, 0]), np.array([1, 1])
     >>> rule.estimate(f, a, b) # True value 2*sin(1), approximately 1.6829
      np.float64(1.682941969615793)
@@ -237,46 +423,30 @@ class FixedProductCub(ErrorFromDifference):
      np.float64(2.220446049250313e-16)
     """
 
-    def __init__(self, base_cubatures):
-        self.base_cubatures = base_cubatures
+    def __init__(self, base_rules):
+        self.base_rules = base_rules
 
     @cached_property
-    def rule(self):
-        underlying_nodes = [cubature.rule[0] for cubature in self.base_cubatures]
-
-        to_product = []
-
-        for node_group in underlying_nodes:
-            if len(node_group.shape) == 1:
-                to_product.append(node_group)
-            else:
-                to_product.extend(node_group)
-
+    def nodes_and_weights(self):
         nodes = _cartesian_product(
-            [cubature.rule[0] for cubature in self.base_cubatures]
+            [rule.nodes_and_weights[0] for rule in self.base_rules]
         )
 
-        weights = np.prod(
-            _cartesian_product(
-                [cubature.rule[1] for cubature in self.base_cubatures]
-            ),
-            axis=0
-        )
+        weights = np.prod(_cartesian_product(
+            [rule.nodes_and_weights[1] for rule in self.base_rules]
+        ), axis=0)
 
         return nodes, weights
 
     @cached_property
-    def lower_rule(self):
+    def lower_nodes_and_weights(self):
         nodes = _cartesian_product(
-            [cubature.lower_rule[0] for cubature in self.base_cubatures]
+            [cubature.lower_nodes_and_weights[0] for cubature in self.base_rules]
         )
 
-        weights = np.prod(
-            _cartesian_product(
-                [cubature.lower_rule[1] for cubature in self.base_cubatures]
-            ),
-            axis=0
-        )
+        weights = np.prod(_cartesian_product(
+            [cubature.lower_nodes_and_weights[1] for cubature in self.base_rules]
+        ), axis=0)
 
         return nodes, weights
 
@@ -315,11 +485,13 @@ def _subregion_coordinates(a, b):
         yield np.array(a_sub), np.array(b_sub)
 
 
-def _apply_rule(f, a, b, rule, args=(), kwargs=None):
+def _apply_fixed_rule(f, a, b, orig_nodes, orig_weights, args=(), kwargs=None):
     if kwargs is None:
         kwargs = dict()
 
-    orig_nodes, orig_weights = rule
+    # Ensure orig_nodes are at least 2D, since 1D cubature methods return arrays of
+    # shape (num_eval_points,) rather than (1,num_eval_points)
+    orig_nodes = np.atleast_2d(orig_nodes)
 
     rule_ndim = orig_nodes.shape[0]
     a_ndim = len(a)

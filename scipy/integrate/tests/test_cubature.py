@@ -8,7 +8,7 @@ import numpy as np
 from numpy.testing import assert_allclose
 
 from scipy.integrate._rules import (
-    Cub, FixedCub, FixedProductCub, ErrorFromDifference,
+    Cub, FixedCub, FixedProductErrorFromDifferenceCub, ErrorFromDifference,
     NewtonCotesQuad, GaussLegendreQuad, GaussKronrodQuad, GenzMalikCub
 )
 
@@ -521,7 +521,7 @@ def test_cub_scalar_output(problem, quadrature, rtol, atol):
         pytest.skip("Genz-Malik cubature does not support 1D integrals")
 
     if isinstance(quadrature, GaussKronrodQuad):
-        rule = FixedProductCub([quadrature] * ndim)
+        rule = FixedProductErrorFromDifferenceCub([quadrature] * ndim)
     elif quadrature is GenzMalikCub and ndim >= 2:
         rule = GenzMalikCub(ndim)
     else:
@@ -610,7 +610,7 @@ def test_cub_tensor_output(problem, quadrature, shape, rtol, atol):
         pytest.skip("Genz-Malik cubature does not support 1D integrals")
 
     if isinstance(quadrature, GaussKronrodQuad):
-        rule = FixedProductCub([quadrature] * ndim)
+        rule = FixedProductErrorFromDifferenceCub([quadrature] * ndim)
     elif quadrature is GenzMalikCub and ndim >= 2:
         rule = GenzMalikCub(ndim)
     else:
@@ -652,7 +652,7 @@ def test_genz_malik_func_evaluations(ndim):
     matches the number in Genz and Malik 1980.
     """
 
-    nodes, _ = GenzMalikCub(ndim).rule
+    nodes, _ = GenzMalikCub(ndim).nodes_and_weights
 
     assert nodes.shape[-1] == (2**ndim) + 2*ndim**2 + 2*ndim + 1
 
@@ -670,8 +670,7 @@ def test_genz_malik_func_evaluations(ndim):
     GaussKronrodQuad(15),
     GaussKronrodQuad(21),
 ])
-@pytest.mark.parametrize("rtol", [1e-1])
-def test_base_1d_quadratures_simple(quadrature, rtol):
+def test_base_1d_quadratures_simple(quadrature):
     n = np.arange(5)
 
     def f(x):
@@ -689,7 +688,7 @@ def test_base_1d_quadratures_simple(quadrature, rtol):
     assert_allclose(
         estimate,
         exact,
-        rtol=rtol,
+        rtol=1e-1,
         atol=0,
     )
 
@@ -749,8 +748,7 @@ def test_can_pass_list_to_cub():
     (NewtonCotesQuad(10), NewtonCotesQuad(5)),
     (GaussLegendreQuad(10), GaussLegendreQuad(5))
 ])
-@pytest.mark.parametrize("rtol", [1e-1])
-def test_base_1d_quadratures_error_from_difference(quadrature_pair, rtol):
+def test_base_1d_quadratures_error_from_difference(quadrature_pair):
     n = np.arange(5)
 
     def f(x):
@@ -769,26 +767,26 @@ def test_base_1d_quadratures_error_from_difference(quadrature_pair, rtol):
         lower=quadrature_pair[1]
     )
 
-    res = cub(f, a, b, rule, rtol)
+    res = cub(f, a, b, rule, rtol=1e-1)
 
     assert_allclose(
         res.estimate,
         exact,
-        rtol=rtol,
+        rtol=1e-1,
         atol=0,
     )
 
 
 @pytest.mark.parametrize("rule", [
-    FixedProductCub([
+    FixedProductErrorFromDifferenceCub([
         ErrorFromDifference(NewtonCotesQuad(10), NewtonCotesQuad(8)),
         ErrorFromDifference(NewtonCotesQuad(10), NewtonCotesQuad(8)),
     ]),
-    FixedProductCub([
+    FixedProductErrorFromDifferenceCub([
         ErrorFromDifference(GaussLegendreQuad(10), NewtonCotesQuad(5)),
         ErrorFromDifference(GaussLegendreQuad(10), GaussLegendreQuad(5)),
     ]),
-    FixedProductCub([
+    FixedProductErrorFromDifferenceCub([
         GaussKronrodQuad(21),
         GaussKronrodQuad(21),
     ]),
