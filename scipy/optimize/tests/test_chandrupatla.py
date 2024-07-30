@@ -1,7 +1,6 @@
 import math
 import pytest
 import numpy as np
-from numpy.testing import assert_allclose, assert_equal, assert_array_less
 
 from scipy import stats, special
 import scipy._lib._elementwise_iterative_method as eim
@@ -927,7 +926,7 @@ class TestChandrupatla(TestScalarRootFinders):
         root = xp.asarray([0, 1])
         res = _chandrupatla_root(f, xp.asarray(1), xp.asarray(1), args=(root,))
         xp_assert_equal(res.success, xp.asarray([False, True]))
-        xp_assert_equal(res.x, xp.asarray([np.nan, 1.]))
+        xp_assert_equal(res.x, xp.asarray([xp.nan, 1.]))
 
         def f(x):
             return 1/x
@@ -936,7 +935,7 @@ class TestChandrupatla(TestScalarRootFinders):
             inf = xp.asarray(xp.inf)
             res = _chandrupatla_root(f, inf, inf)
         assert res.success
-        xp_assert_equal(res.x, xp.asarray(np.inf))
+        xp_assert_equal(res.x, xp.asarray(xp.inf))
 
         # Test maxiter = 0. Should do nothing to bracket.
         def f(x):

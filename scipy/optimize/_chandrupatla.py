@@ -135,7 +135,8 @@ def _chandrupatla(func, a, b, *, args=(), xatol=None, xrtol=None,
     func, xs, fs, args, shape, dtype, xp = temp
     x1, x2 = xs
     f1, f2 = fs
-    status = xp.full_like(x1, xp.asarray(eim._EINPROGRESS), dtype=xp.int32)  # in progress
+    status = xp.full_like(x1, xp.asarray(eim._EINPROGRESS),
+                          dtype=xp.int32)  # in progress
     nit, nfev = 0, 2  # two function evaluations performed above
     finfo = xp.finfo(dtype)
     xatol = 4*finfo.smallest_normal if xatol is None else xatol
@@ -400,7 +401,8 @@ def _chandrupatla_minimize(func, x1, x2, x3, *, args=(), xatol=None,
     x1, x2, x3 = xs
     f1, f2, f3 = fs
     phi = xp.asarray(0.5 + 0.5*5**0.5, dtype=dtype)[()]  # golden ratio
-    status = xp.full_like(x1, xp.asarray(eim._EINPROGRESS), dtype=xp.int32)  # in progress
+    status = xp.full_like(x1, xp.asarray(eim._EINPROGRESS),
+                          dtype=xp.int32)  # in progress
     nit, nfev = 0, 3  # three function evaluations performed above
     fatol = xp.finfo(dtype).smallest_normal if fatol is None else fatol
     frtol = xp.finfo(dtype).smallest_normal if frtol is None else frtol
