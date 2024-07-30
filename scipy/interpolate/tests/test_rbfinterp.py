@@ -10,6 +10,7 @@ from scipy.interpolate._rbfinterp import (
     RBFInterpolator
     )
 from scipy.interpolate import _rbfinterp_pythran
+from scipy._lib._testutils import _run_concurrent_barrier
 
 
 def _vandermonde(x, degree):
@@ -495,6 +496,22 @@ class TestRBFInterpolatorNeighbors20(_TestRBFInterpolator):
             yitp2.append(RBFInterpolator(x[nbr], y[nbr])(xi[None])[0])
 
         assert_allclose(yitp1, yitp2, atol=1e-8)
+
+    def test_concurrency(self):
+        # Check that no segfaults appear with concurrent access to
+        # RbfInterpolator
+        seq = Halton(2, scramble=False, seed=np.random.RandomState(0))
+        x = seq.random(100)
+        xitp = seq.random(100)
+
+        y = _2d_test_function(x)
+
+        interp = self.build(x, y)
+
+        def worker_fn(_, interp, xp):
+            interp(xp)
+
+        _run_concurrent_barrier(10, worker_fn, interp, xitp)
 
 
 class TestRBFInterpolatorNeighborsInf(TestRBFInterpolatorNeighborsNone):

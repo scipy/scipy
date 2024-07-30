@@ -2009,14 +2009,18 @@ class TestFindRepeats:
 
     def test_basic(self):
         a = [1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 5]
-        res, nums = stats.find_repeats(a)
+        message = "`scipy.stats.find_repeats` is deprecated..."
+        with pytest.deprecated_call(match=message):
+            res, nums = stats.find_repeats(a)
         assert_array_equal(res, [1, 2, 3, 4])
         assert_array_equal(nums, [3, 3, 2, 2])
 
     def test_empty_result(self):
         # Check that empty arrays are returned when there are no repeats.
         for a in [[10, 20, 50, 30, 40], []]:
-            repeated, counts = stats.find_repeats(a)
+            message = "`scipy.stats.find_repeats` is deprecated..."
+            with pytest.deprecated_call(match=message):
+                repeated, counts = stats.find_repeats(a)
             assert_array_equal(repeated, [])
             assert_array_equal(counts, [])
 
@@ -2756,29 +2760,34 @@ class TestSEM:
         assert_raises(ValueError, stats.sem, x, nan_policy='foobar')
 
 
+@array_api_compatible
+@pytest.mark.usefixtures("skip_xp_backends")
+@skip_xp_backends('jax.numpy', reasons=["JAX can't do item assignment"])
 class TestZmapZscore:
 
     @pytest.mark.parametrize(
         'x, y',
-        [([1, 2, 3, 4], [1, 2, 3, 4]),
-         ([1, 2, 3], [0, 1, 2, 3, 4])]
+        [([1., 2., 3., 4.], [1., 2., 3., 4.]),
+         ([1., 2., 3.], [0., 1., 2., 3., 4.])]
     )
-    def test_zmap(self, x, y):
-        z = stats.zmap(x, y)
+    def test_zmap(self, x, y, xp):
         # For these simple cases, calculate the expected result directly
         # by using the formula for the z-score.
-        expected = (x - np.mean(y))/np.std(y)
-        assert_allclose(z, expected, rtol=1e-12)
+        x, y = xp.asarray(x), xp.asarray(y)
+        xp_test = array_namespace(x, y)  # std needs correction
+        expected = (x - xp.mean(y)) / xp_test.std(y, correction=0)
+        z = stats.zmap(x, y)
+        xp_assert_close(z, expected)
 
-    def test_zmap_axis(self):
+    def test_zmap_axis(self, xp):
         # Test use of 'axis' keyword in zmap.
         x = np.array([[0.0, 0.0, 1.0, 1.0],
                       [1.0, 1.0, 1.0, 2.0],
                       [2.0, 0.0, 2.0, 0.0]])
 
-        t1 = 1.0/np.sqrt(2.0/3)
-        t2 = np.sqrt(3.)/3
-        t3 = np.sqrt(2.)
+        t1 = 1.0/(2.0/3)**0.5
+        t2 = 3.**0.5/3
+        t3 = 2.**0.5
 
         z0 = stats.zmap(x, x, axis=0)
         z1 = stats.zmap(x, x, axis=1)
@@ -2787,73 +2796,72 @@ class TestZmapZscore:
                        [0.0, t3, -t3/2, t1],
                        [t1, -t3/2, t3, -t1]]
         z1_expected = [[-1.0, -1.0, 1.0, 1.0],
-                       [-t2, -t2, -t2, np.sqrt(3.)],
+                       [-t2, -t2, -t2, 3.**0.5],
                        [1.0, -1.0, 1.0, -1.0]]
 
-        assert_array_almost_equal(z0, z0_expected)
-        assert_array_almost_equal(z1, z1_expected)
+        xp_assert_close(z0, z0_expected)
+        xp_assert_close(z1, z1_expected)
 
-    def test_zmap_ddof(self):
+    def test_zmap_ddof(self, xp):
         # Test use of 'ddof' keyword in zmap.
-        x = np.array([[0.0, 0.0, 1.0, 1.0],
-                      [0.0, 1.0, 2.0, 3.0]])
+        x = xp.asarray([[0.0, 0.0, 1.0, 1.0],
+                        [0.0, 1.0, 2.0, 3.0]])
 
         z = stats.zmap(x, x, axis=1, ddof=1)
 
-        z0_expected = np.array([-0.5, -0.5, 0.5, 0.5])/(1.0/np.sqrt(3))
-        z1_expected = np.array([-1.5, -0.5, 0.5, 1.5])/(np.sqrt(5./3))
-        assert_array_almost_equal(z[0], z0_expected)
-        assert_array_almost_equal(z[1], z1_expected)
+        z0_expected = xp.asarray([-0.5, -0.5, 0.5, 0.5])/(1.0/3**0.5)
+        z1_expected = xp.asarray([-1.5, -0.5, 0.5, 1.5])/(5./3)**0.5
+        xp_assert_close(z[0, :], z0_expected)
+        xp_assert_close(z[1, :], z1_expected)
 
     @pytest.mark.parametrize('ddof', [0, 2])
-    def test_zmap_nan_policy_omit(self, ddof):
+    def test_zmap_nan_policy_omit(self, ddof, xp):
         # nans in `scores` are propagated, regardless of `nan_policy`.
         # `nan_policy` only affects how nans in `compare` are handled.
-        scores = np.array([-3, -1, 2, np.nan])
-        compare = np.array([-8, -3, 2, 7, 12, np.nan])
+        scores = xp.asarray([-3, -1, 2, np.nan])
+        compare = xp.asarray([-8, -3, 2, 7, 12, np.nan])
         z = stats.zmap(scores, compare, ddof=ddof, nan_policy='omit')
-        assert_allclose(z, stats.zmap(scores, compare[~np.isnan(compare)],
-                                      ddof=ddof))
+        ref = stats.zmap(scores, compare[~xp.isnan(compare)], ddof=ddof)
+        xp_assert_close(z, ref)
 
     @pytest.mark.parametrize('ddof', [0, 2])
-    def test_zmap_nan_policy_omit_with_axis(self, ddof):
-        scores = np.arange(-5.0, 9.0).reshape(2, -1)
-        compare = np.linspace(-8, 6, 24).reshape(2, -1)
-        compare[0, 4] = np.nan
-        compare[0, 6] = np.nan
-        compare[1, 1] = np.nan
+    def test_zmap_nan_policy_omit_with_axis(self, ddof, xp):
+        scores = xp.reshape(xp.arange(-5.0, 9.0), (2, -1))
+        compare = xp.reshape(xp.linspace(-8, 6, 24), (2, -1))
+        compare[0, 4] = xp.nan
+        compare[0, 6] = xp.nan
+        compare[1, 1] = xp.nan
         z = stats.zmap(scores, compare, nan_policy='omit', axis=1, ddof=ddof)
-        expected = np.array([stats.zmap(scores[0],
-                                        compare[0][~np.isnan(compare[0])],
-                                        ddof=ddof),
-                             stats.zmap(scores[1],
-                                        compare[1][~np.isnan(compare[1])],
-                                        ddof=ddof)])
-        assert_allclose(z, expected, rtol=1e-14)
+        res0 = stats.zmap(scores[0, :], compare[0, :][~xp.isnan(compare[0, :])],
+                          ddof=ddof)
+        res1 = stats.zmap(scores[1, :], compare[1, :][~xp.isnan(compare[1, :])],
+                          ddof=ddof)
+        expected = xp.stack((res0, res1))
+        xp_assert_close(z, expected)
 
-    def test_zmap_nan_policy_raise(self):
-        scores = np.array([1, 2, 3])
-        compare = np.array([-8, -3, 2, 7, 12, np.nan])
+    def test_zmap_nan_policy_raise(self, xp):
+        scores = xp.asarray([1, 2, 3])
+        compare = xp.asarray([-8, -3, 2, 7, 12, xp.nan])
         with pytest.raises(ValueError, match='input contains nan'):
             stats.zmap(scores, compare, nan_policy='raise')
 
-    def test_zscore(self):
+    def test_zscore(self, xp):
         # not in R, so tested by using:
         #    (testcase[i] - mean(testcase, axis=0)) / sqrt(var(testcase) * 3/4)
-        y = stats.zscore([1, 2, 3, 4])
-        desired = ([-1.3416407864999, -0.44721359549996, 0.44721359549996,
-                    1.3416407864999])
-        assert_array_almost_equal(desired, y, decimal=12)
+        y = stats.zscore(xp.asarray([1, 2, 3, 4]))
+        desired = [-1.3416407864999, -0.44721359549996,
+                   0.44721359549996, 1.3416407864999]
+        xp_assert_close(y, xp.asarray(desired))
 
-    def test_zscore_axis(self):
+    def test_zscore_axis(self, xp):
         # Test use of 'axis' keyword in zscore.
-        x = np.array([[0.0, 0.0, 1.0, 1.0],
-                      [1.0, 1.0, 1.0, 2.0],
-                      [2.0, 0.0, 2.0, 0.0]])
+        x = xp.asarray([[0.0, 0.0, 1.0, 1.0],
+                        [1.0, 1.0, 1.0, 2.0],
+                        [2.0, 0.0, 2.0, 0.0]])
 
-        t1 = 1.0/np.sqrt(2.0/3)
-        t2 = np.sqrt(3.)/3
-        t3 = np.sqrt(2.)
+        t1 = 1.0/(2.0/3)**0.5
+        t2 = 3**0.5/3
+        t3 = 2**0.5
 
         z0 = stats.zscore(x, axis=0)
         z1 = stats.zscore(x, axis=1)
@@ -2862,125 +2870,141 @@ class TestZmapZscore:
                        [0.0, t3, -t3/2, t1],
                        [t1, -t3/2, t3, -t1]]
         z1_expected = [[-1.0, -1.0, 1.0, 1.0],
-                       [-t2, -t2, -t2, np.sqrt(3.)],
+                       [-t2, -t2, -t2, 3**0.5],
                        [1.0, -1.0, 1.0, -1.0]]
 
-        assert_array_almost_equal(z0, z0_expected)
-        assert_array_almost_equal(z1, z1_expected)
+        xp_assert_close(z0, xp.asarray(z0_expected))
+        xp_assert_close(z1, xp.asarray(z1_expected))
 
-    def test_zscore_ddof(self):
+    def test_zscore_ddof(self, xp):
         # Test use of 'ddof' keyword in zscore.
-        x = np.array([[0.0, 0.0, 1.0, 1.0],
-                      [0.0, 1.0, 2.0, 3.0]])
+        x = xp.asarray([[0.0, 0.0, 1.0, 1.0],
+                        [0.0, 1.0, 2.0, 3.0]])
 
         z = stats.zscore(x, axis=1, ddof=1)
 
-        z0_expected = np.array([-0.5, -0.5, 0.5, 0.5])/(1.0/np.sqrt(3))
-        z1_expected = np.array([-1.5, -0.5, 0.5, 1.5])/(np.sqrt(5./3))
-        assert_array_almost_equal(z[0], z0_expected)
-        assert_array_almost_equal(z[1], z1_expected)
+        z0_expected = xp.asarray([-0.5, -0.5, 0.5, 0.5])/(1.0/3**0.5)
+        z1_expected = xp.asarray([-1.5, -0.5, 0.5, 1.5])/((5./3)**0.5)
+        xp_assert_close(z[0, :], z0_expected)
+        xp_assert_close(z[1, :], z1_expected)
 
-    def test_zscore_nan_propagate(self):
-        x = np.array([1, 2, np.nan, 4, 5])
+    def test_zscore_nan_propagate(self, xp):
+        x = xp.asarray([1, 2, np.nan, 4, 5])
         z = stats.zscore(x, nan_policy='propagate')
-        assert all(np.isnan(z))
+        xp_assert_equal(z, xp.full(x.shape, xp.nan))
 
-    def test_zscore_nan_omit(self):
-        x = np.array([1, 2, np.nan, 4, 5])
+    def test_zscore_nan_omit(self, xp):
+        x = xp.asarray([1, 2, xp.nan, 4, 5])
 
         z = stats.zscore(x, nan_policy='omit')
 
-        expected = np.array([-1.2649110640673518,
-                             -0.6324555320336759,
-                             np.nan,
-                             0.6324555320336759,
-                             1.2649110640673518
-                             ])
-        assert_array_almost_equal(z, expected)
+        expected = xp.asarray([-1.2649110640673518,
+                               -0.6324555320336759,
+                               xp.nan,
+                               0.6324555320336759,
+                               1.2649110640673518
+                               ])
+        xp_assert_close(z, expected)
 
-    def test_zscore_nan_omit_with_ddof(self):
-        x = np.array([np.nan, 1.0, 3.0, 5.0, 7.0, 9.0])
+    def test_zscore_nan_omit_with_ddof(self, xp):
+        x = xp.asarray([xp.nan, 1.0, 3.0, 5.0, 7.0, 9.0])
+        xp_test = array_namespace(x)  # numpy needs concat
         z = stats.zscore(x, ddof=1, nan_policy='omit')
-        expected = np.r_[np.nan, stats.zscore(x[1:], ddof=1)]
-        assert_allclose(z, expected, rtol=1e-13)
+        expected = xp_test.concat([xp.asarray([xp.nan]), stats.zscore(x[1:], ddof=1)])
+        xp_assert_close(z, expected)
 
-    def test_zscore_nan_raise(self):
-        x = np.array([1, 2, np.nan, 4, 5])
+    def test_zscore_nan_raise(self, xp):
+        x = xp.asarray([1, 2, xp.nan, 4, 5])
+        with pytest.raises(ValueError, match="The input contains nan..."):
+            stats.zscore(x, nan_policy='raise')
 
-        assert_raises(ValueError, stats.zscore, x, nan_policy='raise')
+    def test_zscore_constant_input_1d(self, xp):
+        x = xp.asarray([-0.087] * 3)
+        with pytest.warns(RuntimeWarning, match="Precision loss occurred..."):
+            z = stats.zscore(x)
+        xp_assert_equal(z, xp.full(x.shape, xp.nan))
 
-    def test_zscore_constant_input_1d(self):
-        x = [-0.087] * 3
-        z = stats.zscore(x)
-        assert_equal(z, np.full(len(x), np.nan))
+    def test_zscore_constant_input_2d(self, xp):
+        x = xp.asarray([[10.0, 10.0, 10.0, 10.0],
+                        [10.0, 11.0, 12.0, 13.0]])
+        with pytest.warns(RuntimeWarning, match="Precision loss occurred..."):
+            z0 = stats.zscore(x, axis=0)
+        xp_assert_close(z0, xp.asarray([[xp.nan, -1.0, -1.0, -1.0],
+                                        [xp.nan, 1.0, 1.0, 1.0]]))
 
-    def test_zscore_constant_input_2d(self):
-        x = np.array([[10.0, 10.0, 10.0, 10.0],
-                      [10.0, 11.0, 12.0, 13.0]])
-        z0 = stats.zscore(x, axis=0)
-        assert_equal(z0, np.array([[np.nan, -1.0, -1.0, -1.0],
-                                   [np.nan, 1.0, 1.0, 1.0]]))
-        z1 = stats.zscore(x, axis=1)
-        assert_equal(z1, np.array([[np.nan, np.nan, np.nan, np.nan],
-                                   stats.zscore(x[1])]))
+        with pytest.warns(RuntimeWarning, match="Precision loss occurred..."):
+            z1 = stats.zscore(x, axis=1)
+        xp_assert_equal(z1, xp.stack([xp.asarray([xp.nan, xp.nan, xp.nan, xp.nan]),
+                                      stats.zscore(x[1, :])]))
+
         z = stats.zscore(x, axis=None)
-        assert_equal(z, stats.zscore(x.ravel()).reshape(x.shape))
+        xp_assert_equal(z, xp.reshape(stats.zscore(xp.reshape(x, (-1,))), x.shape))
 
-        y = np.ones((3, 6))
-        z = stats.zscore(y, axis=None)
-        assert_equal(z, np.full(y.shape, np.nan))
+        y = xp.ones((3, 6))
+        with pytest.warns(RuntimeWarning, match="Precision loss occurred..."):
+            z = stats.zscore(y, axis=None)
+        xp_assert_equal(z, xp.full(y.shape, xp.asarray(xp.nan)))
 
-    def test_zscore_constant_input_2d_nan_policy_omit(self):
-        x = np.array([[10.0, 10.0, 10.0, 10.0],
-                      [10.0, 11.0, 12.0, np.nan],
-                      [10.0, 12.0, np.nan, 10.0]])
-        z0 = stats.zscore(x, nan_policy='omit', axis=0)
-        s = np.sqrt(3/2)
-        s2 = np.sqrt(2)
-        assert_allclose(z0, np.array([[np.nan, -s, -1.0, np.nan],
-                                      [np.nan, 0, 1.0, np.nan],
-                                      [np.nan, s, np.nan, np.nan]]))
-        z1 = stats.zscore(x, nan_policy='omit', axis=1)
-        assert_allclose(z1, np.array([[np.nan, np.nan, np.nan, np.nan],
-                                      [-s, 0, s, np.nan],
-                                      [-s2/2, s2, np.nan, -s2/2]]))
+    def test_zscore_constant_input_2d_nan_policy_omit(self, xp):
+        x = xp.asarray([[10.0, 10.0, 10.0, 10.0],
+                        [10.0, 11.0, 12.0, xp.nan],
+                        [10.0, 12.0, xp.nan, 10.0]])
+        s = (3/2)**0.5
+        s2 = 2**0.5
 
-    def test_zscore_2d_all_nan_row(self):
+        with pytest.warns(RuntimeWarning, match="Precision loss occurred..."):
+            z0 = stats.zscore(x, nan_policy='omit', axis=0)
+        xp_assert_close(z0, xp.asarray([[xp.nan, -s, -1.0, xp.nan],
+                                        [xp.nan, 0, 1.0, xp.nan],
+                                        [xp.nan, s, xp.nan, xp.nan]]))
+
+        with pytest.warns(RuntimeWarning, match="Precision loss occurred..."):
+            z1 = stats.zscore(x, nan_policy='omit', axis=1)
+        xp_assert_close(z1, xp.asarray([[xp.nan, xp.nan, xp.nan, xp.nan],
+                                        [-s, 0, s, xp.nan],
+                                        [-s2/2, s2, xp.nan, -s2/2]]))
+
+    def test_zscore_2d_all_nan_row(self, xp):
         # A row is all nan, and we use axis=1.
-        x = np.array([[np.nan, np.nan, np.nan, np.nan],
-                      [10.0, 10.0, 12.0, 12.0]])
+        x = xp.asarray([[np.nan, np.nan, np.nan, np.nan],
+                        [10.0, 10.0, 12.0, 12.0]])
         z = stats.zscore(x, nan_policy='omit', axis=1)
-        assert_equal(z, np.array([[np.nan, np.nan, np.nan, np.nan],
-                                  [-1.0, -1.0, 1.0, 1.0]]))
+        xp_assert_close(z, xp.asarray([[np.nan, np.nan, np.nan, np.nan],
+                                       [-1.0, -1.0, 1.0, 1.0]]))
 
-    def test_zscore_2d_all_nan(self):
+    def test_zscore_2d_all_nan(self, xp):
         # The entire 2d array is nan, and we use axis=None.
-        y = np.full((2, 3), np.nan)
+        y = xp.full((2, 3), xp.nan)
         z = stats.zscore(y, nan_policy='omit', axis=None)
-        assert_equal(z, y)
+        xp_assert_equal(z, y)
 
     @pytest.mark.parametrize('x', [np.array([]), np.zeros((3, 0, 5))])
-    def test_zscore_empty_input(self, x):
+    def test_zscore_empty_input(self, x, xp):
+        x = xp.asarray(x)
         z = stats.zscore(x)
-        assert_equal(z, x)
+        xp_assert_equal(z, x)
 
-    def test_gzscore_normal_array(self):
-        x = np.array([1, 2, 3, 4])
-        z = stats.gzscore(x)
+    def test_gzscore_normal_array(self, xp):
+        x = np.asarray([1, 2, 3, 4])
+        z = stats.gzscore(xp.asarray(x))
         desired = np.log(x / stats.gmean(x)) / np.log(stats.gstd(x, ddof=0))
-        assert_allclose(desired, z)
+        xp_assert_close(z, xp.asarray(desired, dtype=xp.asarray(1.).dtype))
 
     @skip_xp_invalid_arg
-    def test_gzscore_masked_array(self):
+    def test_gzscore_masked_array(self, xp):
         x = np.array([1, 2, -1, 3, 4])
-        mx = np.ma.masked_array(x, mask=[0, 0, 1, 0, 0])
+        mask = [0, 0, 1, 0, 0]
+        mx = np.ma.masked_array(x, mask=mask)
         z = stats.gzscore(mx)
         desired = ([-1.526072095151, -0.194700599824, np.inf, 0.584101799472,
                     1.136670895503])
-        assert_allclose(desired, z)
+        desired = np.ma.masked_array(desired, mask=mask)
+        assert_allclose(z.compressed(), desired.compressed())
+        assert_allclose(z.mask, desired.mask)
+        assert isinstance(z, np.ma.MaskedArray)
 
     @skip_xp_invalid_arg
-    def test_zscore_masked_element_0_gh19039(self):
+    def test_zscore_masked_element_0_gh19039(self, xp):
         # zscore returned all NaNs when 0th element was masked. See gh-19039.
         rng = np.random.default_rng(8675309)
         x = rng.standard_normal(10)
@@ -2996,10 +3020,21 @@ class TestZmapZscore:
         assert_allclose(res[1:], ref)
 
         y[1:] = y[1]  # when non-masked elements are identical, result is nan
-        res = stats.zscore(y)
+        with pytest.warns(RuntimeWarning, match="Precision loss occurred..."):
+            res = stats.zscore(y)
         assert_equal(res[1:], np.nan)
-        res = stats.zscore(y, axis=None)
+        with pytest.warns(RuntimeWarning, match="Precision loss occurred..."):
+            res = stats.zscore(y, axis=None)
         assert_equal(res[1:], np.nan)
+
+    def test_degenerate_input(self, xp):
+        scores = xp.arange(3)
+        compare = xp.ones(3)
+        ref = xp.asarray([-xp.inf, xp.nan, xp.inf])
+        with pytest.warns(RuntimeWarning, match="Precision loss occurred..."):
+            res = stats.zmap(scores, compare)
+        xp_assert_equal(res, ref)
+
 
 class TestMedianAbsDeviation:
     def setup_class(self):
@@ -7512,20 +7547,20 @@ class TestAlexanderGovern:
                 [14, 13, 12, 12, 12, 12, 12, 11, 11],
                 [14, 14, 13, 13, 13, 13, 13, 12, 12],
                 [15, 14, 13, 13, 13, 12, 12, 12, 11]]
-        args_int16 = np.array(args, dtype=np.int16)
-        args_int32 = np.array(args, dtype=np.int32)
-        args_uint8 = np.array(args, dtype=np.uint8)
-        args_float64 = np.array(args, dtype=np.float64)
+        args_int16 = [np.asarray(arg, dtype=np.int16) for arg in args]
+        args_int32 = [np.asarray(arg, dtype=np.int32) for arg in args]
+        args_uint8 = [np.asarray(arg, dtype=np.uint8) for arg in args]
+        args_float64 = [np.asarray(arg, dtype=np.float64) for arg in args]
 
         res_int16 = stats.alexandergovern(*args_int16)
         res_int32 = stats.alexandergovern(*args_int32)
-        res_unit8 = stats.alexandergovern(*args_uint8)
+        res_uint8 = stats.alexandergovern(*args_uint8)
         res_float64 = stats.alexandergovern(*args_float64)
 
         assert (res_int16.pvalue == res_int32.pvalue ==
-                res_unit8.pvalue == res_float64.pvalue)
+                res_uint8.pvalue == res_float64.pvalue)
         assert (res_int16.statistic == res_int32.statistic ==
-                res_unit8.statistic == res_float64.statistic)
+                res_uint8.statistic == res_float64.statistic)
 
     @pytest.mark.parametrize('case',[([1, 2], []), ([1, 2], 2), ([1, 2], [2])])
     def test_too_small_inputs(self, case):
@@ -7537,8 +7572,10 @@ class TestAlexanderGovern:
 
     def test_bad_inputs(self):
         # inputs are not finite (infinity)
-        with assert_raises(ValueError, match="Input samples must be finite."):
-            stats.alexandergovern([1, 2], [np.inf, np.inf])
+        with np.errstate(invalid='ignore'):
+            res = stats.alexandergovern([1, 2], [np.inf, np.inf])
+        assert_equal(res.statistic, np.nan)
+        assert_equal(res.pvalue, np.nan)
 
     def test_compare_r(self):
         '''
@@ -7602,6 +7639,8 @@ class TestAlexanderGovern:
                  23.56173993146409, -30.47133600859524, 11.878923752568431,
                  6.659007424270365, 21.261996745527256, -6.083678472686013,
                  7.400376198325763, 5.341975815444621]
+
+        one, two, eight = np.asarray(one), np.asarray(two), np.asarray(eight)
         soln = stats.alexandergovern(one, two, eight)
         assert_allclose(soln.statistic, 1.3599405447999450836)
         assert_allclose(soln.pvalue, 0.50663205309676440091)
@@ -7619,6 +7658,7 @@ class TestAlexanderGovern:
                   487.3, 493.08, 494.31, 499.1, 886.41]
         old = [519.01, 528.5, 530.23, 536.03, 538.56, 538.83, 557.24, 558.61,
                558.95, 565.43, 586.39, 594.69, 629.22, 645.69, 691.84]
+        young, middle, old = np.asarray(young), np.asarray(middle), np.asarray(old)
         soln = stats.alexandergovern(young, middle, old)
         assert_allclose(soln.statistic, 5.3237, atol=1e-3)
         assert_allclose(soln.pvalue, 0.06982, atol=1e-4)
@@ -7671,6 +7711,7 @@ class TestAlexanderGovern:
               -0.3601, -0.33273, -0.28859, -0.09637, -0.08969, -0.01824,
               0.260131, 0.289278, 0.518254, 0.683003, 0.877618, 1.172475,
               1.33964, 1.576766]
+        x1, x2 = np.asarray(x1), np.asarray(x2)
         soln = stats.alexandergovern(x1, x2)
         assert_allclose(soln.statistic, 0.713526, atol=1e-5)
         assert_allclose(soln.pvalue, 0.398276, atol=1e-5)
@@ -7706,21 +7747,21 @@ class TestAlexanderGovern:
         assert_allclose(soln.statistic, 0.7135182)
         assert_allclose(soln.pvalue, 0.3982783)
 
-    def test_nan_policy_propogate(self):
-        args = [[1, 2, 3, 4], [1, np.nan]]
+    def test_nan_policy_propagate(self):
+        args = np.asarray([1, 2, 3, 4]), np.asarray([1, np.nan])
         # default nan_policy is 'propagate'
         res = stats.alexandergovern(*args)
         assert_equal(res.pvalue, np.nan)
         assert_equal(res.statistic, np.nan)
 
     def test_nan_policy_raise(self):
-        args = [[1, 2, 3, 4], [1, np.nan]]
+        args = np.asarray([1, 2, 3, 4]), np.asarray([1, np.nan])
         with assert_raises(ValueError, match="The input contains nan values"):
             stats.alexandergovern(*args, nan_policy='raise')
 
     def test_nan_policy_omit(self):
-        args_nan = [[1, 2, 3, np.nan, 4], [1, np.nan, 19, 25]]
-        args_no_nan = [[1, 2, 3, 4], [1, 19, 25]]
+        args_nan = np.asarray([1, 2, 3, np.nan, 4]), np.asarray([1, np.nan, 19, 25])
+        args_no_nan = np.asarray([1, 2, 3, 4]), np.asarray([1, 19, 25])
         res_nan = stats.alexandergovern(*args_nan, nan_policy='omit')
         res_no_nan = stats.alexandergovern(*args_no_nan)
         assert_equal(res_nan.pvalue, res_no_nan.pvalue)
@@ -7728,12 +7769,12 @@ class TestAlexanderGovern:
 
     def test_constant_input(self):
         # Zero variance input, consistent with `stats.pearsonr`
-        msg = "An input array is constant; the statistic is not defined."
-        with pytest.warns(stats.ConstantInputWarning, match=msg):
-            res = stats.alexandergovern([0.667, 0.667, 0.667],
-                                        [0.123, 0.456, 0.789])
-            assert_equal(res.statistic, np.nan)
-            assert_equal(res.pvalue, np.nan)
+        x1 = np.asarray([0.667, 0.667, 0.667])
+        x2 = np.asarray([0.123, 0.456, 0.789])
+        with pytest.warns(RuntimeWarning, match="Precision loss occurred..."):
+            res = stats.alexandergovern(x1, x2)
+        assert_equal(res.statistic, np.nan)
+        assert_equal(res.pvalue, np.nan)
 
 
 class TestFOneWay:
@@ -9373,7 +9414,7 @@ class TestXP_Var:
 
     def test_dtype(self, xp):
         max = xp.finfo(xp.float32).max
-        x_np = np.asarray([max, max], dtype=np.float32)
+        x_np = np.asarray([max, max/2], dtype=np.float32)
         x_xp = xp.asarray(x_np)
 
         # Overflow occurs for float32 input

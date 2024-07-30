@@ -680,14 +680,14 @@ SPECFUN_HOST_DEVICE inline std::complex<double> hyp2f1(double a, double b, doubl
                                detail::hyp2f1_MAXITER, "hyp2f1");
 }
 
-inline std::complex<float> hyp2f1(float a, float b, float c, std::complex<float> x) {
+SPECFUN_HOST_DEVICE inline std::complex<float> hyp2f1(float a, float b, float c, std::complex<float> x) {
     return static_cast<std::complex<float>>(hyp2f1(static_cast<double>(a), static_cast<double>(b),
                                                    static_cast<double>(c), static_cast<std::complex<double>>(x)));
 }
 
-inline double hyp2f1(double a, double b, double c, double x) { return cephes::hyp2f1(a, b, c, x); }
+SPECFUN_HOST_DEVICE inline double hyp2f1(double a, double b, double c, double x) { return cephes::hyp2f1(a, b, c, x); }
 
-inline float hyp2f1(float a, float b, float c, float x) {
+SPECFUN_HOST_DEVICE inline float hyp2f1(float a, float b, float c, float x) {
     return hyp2f1(static_cast<double>(a), static_cast<double>(b), static_cast<double>(c), static_cast<double>(x));
 }
 

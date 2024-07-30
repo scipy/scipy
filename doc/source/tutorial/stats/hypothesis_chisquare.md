@@ -13,14 +13,14 @@ kernelspec:
 
 ```{eval-rst}
 .. jupyterlite:: ../../_contents/hypothesis_chisquare.ipynb
-   :new_tab: False
+   :new_tab: True
 ```
 
 (hypothesis_chisquare)=
 # Chi-square test
 
 The {class}`chi-square test <scipy.stats.chisquare>` tests the null hypothesis
-that the categorical data has the given frequencies.
+that a given set of categorical data has the given frequencies.
 
 In [^1], bird foraging behavior was investigated in an old-growth forest of
 Oregon. In the forest, 44% of the canopy volume was Douglas fir, 24% was
@@ -62,6 +62,6 @@ tree canopy volume.
 
 ## References
 
-[^1]: Mannan, R. William and E. Charles. Meslow. "Bird populations and vegetation
- characteristics in managed and old-growth forests, northeastern Oregon."
- Journal of Wildlife Management 48, 1219-1238, :doi:`10.2307/3801783`, 1984.
+[^1]: Mannan, R. William and Meslow, E. Charles (1984) "Bird populations and
+vegetation characteristics in managed and old-growth forests, northeastern
+Oregon." Journal of Wildlife Management 48, 1219-1238. {doi}`10.2307/3801783`

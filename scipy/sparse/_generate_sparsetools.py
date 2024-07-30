@@ -123,6 +123,7 @@ coo_todense         v iilIIT*Ti
 coo_todense_nd      v IllIT*Ti
 coo_matvec          v lIITT*T
 coo_matvec_nd       v llIITT*T
+coo_matmat_dense    v llIITT*T
 dia_matvec          v iiiiITT*T
 cs_graph_components i iII*I
 """
