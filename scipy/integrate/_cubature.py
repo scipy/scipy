@@ -39,7 +39,7 @@ class CubatureResult:
 
 def cub(f, a, b, rule="gk21", rtol=1e-05, atol=1e-08, max_subdivisions=10000,
         args=(), kwargs=None):
-    """
+    r"""
     Adaptive cubature of multidimensional array-valued function.
 
     Given an arbitrary cubature rule, this function returns an estimate of the integral
@@ -52,7 +52,8 @@ def cub(f, a, b, rule="gk21", rtol=1e-05, atol=1e-08, max_subdivisions=10000,
     ----------
     f : callable
         Function to integrate. ``f`` must have the signature::
-            f(x : ndarray, *args, **kwargs) -> ndarray
+            f(x : ndarray, \*args, \*\*kwargs) -> ndarray
+
         If ``f`` accepts arrays ``x`` of shape ``(input_dim_1, ..., input_dim_n,
         num_eval_points)`` and outputs arrays of shape ``(output_dim_1, ...,
         output_dim_n, num_eval_points)``, then ``cub`` will return arrays of shape
@@ -127,6 +128,7 @@ def cub(f, a, b, rule="gk21", rtol=1e-05, atol=1e-08, max_subdivisions=10000,
     ...     return np.cos(
     ...         2*np.pi*r_reshaped + np.sum(alphas_reshaped * x_reshaped, axis=0)
     ...     )
+    >>> np.random.seed(1)
     >>> res = cub(
     ...     f=f,
     ...     a=np.array([0, 0, 0, 0, 0, 0, 0]),
@@ -163,31 +165,31 @@ def cub(f, a, b, rule="gk21", rtol=1e-05, atol=1e-08, max_subdivisions=10000,
     ...         2*np.pi*r_reshaped + np.sum(alphas_reshaped * x_reshaped, axis=0)
     ...     )
     >>> genz = GenzMalikCub(3)
-    ... kronrod = FixedProductErrorFromDifferenceCub([GaussKronrodQuad(21)] * 3)
-    ...
-    ... class CustomRule(Cub):
+    >>> kronrod = FixedProductErrorFromDifferenceCub([GaussKronrodQuad(21)] * 3)
+    >>> class CustomRule(Cub):
     ...     def estimate(self, f, a, b, args=(), kwargs=None):
     ...         if kwargs is None: kwargs = dict()
     ...         return genz.estimate(f, a, b, args, kwargs)
-    ...
     ...     def error_estimate(self, f, a, b, args=(), kwargs=None):
     ...         if kwargs is None: kwargs = dict()
     ...         return np.abs(
     ...             genz.estimate(f, a, b, args, kwargs)
     ...             - kronrod.estimate(f, a, b, args, kwargs)
     ...         )
+    >>> np.random.seed(1)
+    >>> r, alphas = np.random.rand(2, 3), np.random.rand(3, 2, 3)
     >>> cub(
     ...     f=f,
     ...     a=np.array([0, 0, 0]),
     ...     b=np.array([1, 1, 1]),
     ...     rule=CustomRule(),
     ...     kwargs={
-    ...         "r": np.random.rand(2, 3),
-    ...         "alphas": np.random.rand(3, 2, 3),
+    ...         "r": r,
+    ...         "alphas": alphas,
     ...     }
     ... ).estimate
-     array([[ 0.6998506 ,  0.49574607, -0.85640276],
-           [ 0.0758674 , -0.76808139, -0.65624455]])
+     array([[ 0.6369219 , -0.90656298, -0.82183961],
+            [ 0.48873062, -0.87426057,  0.50205197]])
     """
 
     if max_subdivisions is None:

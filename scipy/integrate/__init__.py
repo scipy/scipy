@@ -13,6 +13,7 @@ Integrating functions, given function object
 
    quad          -- General purpose integration
    quad_vec      -- General purpose integration of vector-valued functions
+   cub           -- General purpose multi-dimensional integration of array-valued functions
    dblquad       -- General purpose double integration
    tplquad       -- General purpose triple integration
    nquad         -- General purpose N-D integration
@@ -20,6 +21,23 @@ Integrating functions, given function object
    newton_cotes  -- Weights and error coefficient for Newton-Cotes integration
    qmc_quad      -- N-D integration using Quasi-Monte Carlo quadrature
    IntegrationWarning -- Warning on issues during integration
+
+Cubature rules
+--------------
+
+.. autosummary::
+   :toctree: generated/
+
+   Cub                                -- Base class for cubature rules.
+   FixedCub                           -- Cubature rules implemented as the weighted sum of function evaluations
+   ErrorFromDifference                -- Cubature rules with error estimators given by the difference between two underlying fixed cubature rules
+   FixedProductCub                    -- N-D cubature rules from products of 1-D cubature rules
+   FixedProductErrorFromDifferenceCub -- N-D cubature from the product of 1-D cubature rules with error estimators
+   NewtonCotesQuad                    -- Newton-Cotes quadrature
+   GaussLegendreQuad                  -- Gauss-Legendre quadrature
+   GaussKronrodQuad                   -- Gauss-Kronrod quadrature
+   GenzMalikCub                       -- Genz-Malik cubature
+
 
 Integrating functions, given fixed samples
 ==========================================
@@ -105,6 +123,13 @@ from ._ivp import (solve_ivp, OdeSolution, DenseOutput,
                    OdeSolver, RK23, RK45, DOP853, Radau, BDF, LSODA)
 from ._quad_vec import quad_vec
 from ._tanhsinh import nsum
+from ._cubature import cub
+from ._rules import (
+    Cub, FixedCub, ErrorFromDifference,
+    FixedProductCub, FixedProductErrorFromDifferenceCub,
+    GenzMalikCub,
+    NewtonCotesQuad, GaussKronrodQuad, GaussLegendreQuad,
+)
 
 # Deprecated namespaces, to be removed in v2.0.0
 from . import dop, lsoda, vode, odepack, quadpack

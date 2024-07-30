@@ -20,8 +20,7 @@ class Cub:
 
     See Also
     --------
-    `FixedCub`, for cubature rules implemented as the weighted sum of function
-    evaluations.
+    FixedCub
 
     Examples
     --------
@@ -47,35 +46,35 @@ class Cub:
     ...         2*np.pi*r_reshaped + np.sum(alphas_reshaped * x_reshaped, axis=0)
     ...     )
     >>> genz = GenzMalikCub(3)
-    ... kronrod = FixedProductErrorFromDifferenceCub([GaussKronrodQuad(21)] * 3)
-    ...
-    ... class CustomRule(Cub):
+    >>> kronrod = FixedProductErrorFromDifferenceCub([GaussKronrodQuad(21)] * 3)
+    >>> class CustomRule(Cub):
     ...     def estimate(self, f, a, b, args=(), kwargs=None):
     ...         if kwargs is None: kwargs = dict()
     ...         return genz.estimate(f, a, b, args, kwargs)
-    ...
     ...     def error_estimate(self, f, a, b, args=(), kwargs=None):
     ...         if kwargs is None: kwargs = dict()
     ...         return np.abs(
     ...             genz.estimate(f, a, b, args, kwargs)
     ...             - kronrod.estimate(f, a, b, args, kwargs)
     ...         )
+    >>> np.random.seed(1)
+    >>> r, alphas = np.random.rand(2, 3), np.random.rand(3, 2, 3)
     >>> cub(
     ...     f=f,
     ...     a=np.array([0, 0, 0]),
     ...     b=np.array([1, 1, 1]),
     ...     rule=CustomRule(),
     ...     kwargs={
-    ...         "r": np.random.rand(2, 3),
-    ...         "alphas": np.random.rand(3, 2, 3),
+    ...         "r": r,
+    ...         "alphas": alphas,
     ...     }
     ... ).estimate
-     array([[ 0.6998506 ,  0.49574607, -0.85640276],
-           [ 0.0758674 , -0.76808139, -0.65624455]])
+     array([[-0.9635857 ,  0.48159229,  0.79091717],
+            [-0.92119516,  0.07230874,  0.02134233]])
     """
 
     def estimate(self, f, a, b, args=(), kwargs=None):
-        """
+        r"""
         Calculate estimate of integral of ``f`` in hypercube described by corners ``a``
         and ``b``.
 
@@ -83,7 +82,8 @@ class Cub:
         ----------
         f : callable
             Function to integrate. ``f`` must have the signature::
-                f(x : ndarray, *args, **kwargs) -> ndarray
+                f(x : ndarray, \*args, \*\*kwargs) -> ndarray
+
             If ``f`` accepts arrays ``x`` of shape ``(input_dim_1, ..., input_dim_n,
             num_eval_points)`` and outputs arrays of shape ``(output_dim_1, ...,
             output_dim_n, num_eval_points)``, then ``cub`` will return arrays of shape
@@ -107,7 +107,7 @@ class Cub:
         raise NotImplementedError
 
     def error_estimate(self, f, a, b, args=(), kwargs=None):
-        """
+        r"""
         Calculate the error estimate of this cubature rule for the integral of ``f`` in
         the hypercube described by corners ``a`` and ``b``.
 
@@ -124,7 +124,8 @@ class Cub:
         ----------
         f : callable
             Function to integrate. ``f`` must have the signature::
-                f(x : ndarray, *args, **kwargs) -> ndarray
+                f(x : ndarray, \*args, \*\*kwargs) -> ndarray
+
             If ``f`` accepts arrays ``x`` of shape ``(input_dim_1, ..., input_dim_n,
             num_eval_points)`` and outputs arrays of shape ``(output_dim_1, ...,
             output_dim_n, num_eval_points)``, then ``cub`` will return arrays of shape
@@ -142,10 +143,10 @@ class Cub:
         -------
         err_est : ndarray
             Estimate of the error. If the cubature rule doesn't support error
-           estimation, then a NotImplementedError will be raised instead. If error
-           estimation is supported and ``f`` returns arrays of shape ``(output_dim_1,
-           ..., output_dim_n, eval_points)``, then ``err_est`` will be of shape
-           ``(output_dim_1, ..., output_dim_n)``.
+            estimation, then a NotImplementedError will be raised instead. If error
+            estimation is supported and ``f`` returns arrays of shape ``(output_dim_1,
+            ..., output_dim_n, eval_points)``, then ``err_est`` will be of shape
+            ``(output_dim_1, ..., output_dim_n)``.
         """
 
         est = self.estimate(f, a, b, args, kwargs)
@@ -181,7 +182,7 @@ class FixedCub(Cub):
         raise NotImplementedError
 
     def estimate(self, f, a, b, args=(), kwargs=None):
-        """
+        r"""
         Calculate estimate of integral of ``f`` in hypercube described by corners ``a``
         and ``b`` as ``sum(weights * f(nodes))``. Nodes and weights will automatically
         be adjusted from calculating integrals over :math:`[-1, 1]^n` to
@@ -191,7 +192,8 @@ class FixedCub(Cub):
         ----------
         f : callable
             Function to integrate. ``f`` must have the signature::
-                f(x : ndarray, *args, **kwargs) -> ndarray
+                f(x : ndarray, \*args, \*\*kwargs) -> ndarray
+
             If ``f`` accepts arrays ``x`` of shape ``(input_dim_1, ..., input_dim_n,
             num_eval_points)`` and outputs arrays of shape ``(output_dim_1, ...,
             output_dim_n, num_eval_points)``, then ``cub`` will return arrays of shape
@@ -244,7 +246,7 @@ class ErrorFromDifference(FixedCub):
 
     See Also
     --------
-    GaussKronrod, NewtonCotes
+    GaussKronrodQuad, NewtonCotesQuad
 
     Examples
     --------
@@ -261,7 +263,7 @@ class ErrorFromDifference(FixedCub):
     ...     higher_accuracy_rule,
     ...     lower_accuracy_rule
     ... )
-    >>> cub(lambda x: np.sin(x), 0, 1, custom_rule)
+    >>> cub(lambda x: np.sin(x), 0, 1, custom_rule).estimate
      array([0.45969769])
     """
 
@@ -278,7 +280,7 @@ class ErrorFromDifference(FixedCub):
         return self.lower.nodes_and_weights
 
     def error_estimate(self, f, a, b, args=(), kwargs=None):
-        """
+        r"""
         Calculate the error estimate of this cubature rule for the integral of ``f`` in
         the hypercube described by corners ``a`` and ``b``.
 
@@ -289,7 +291,8 @@ class ErrorFromDifference(FixedCub):
         ----------
         f : callable
             Function to integrate. ``f`` must have the signature::
-                f(x : ndarray, *args, **kwargs) -> ndarray
+                f(x : ndarray, \*args, \*\*kwargs) -> ndarray
+
             If ``f`` accepts arrays ``x`` of shape ``(input_dim_1, ..., input_dim_n,
             num_eval_points)`` and outputs arrays of shape ``(output_dim_1, ...,
             output_dim_n, num_eval_points)``, then ``cub`` will return arrays of shape
@@ -307,10 +310,10 @@ class ErrorFromDifference(FixedCub):
         -------
         err_est : ndarray
             Estimate of the error. If the cubature rule doesn't support error
-           estimation, then a NotImplementedError will be raised instead. If error
-           estimation is supported and ``f`` returns arrays of shape ``(output_dim_1,
-           ..., output_dim_n, eval_points)``, then ``err_est`` will be of shape
-           ``(output_dim_1, ..., output_dim_n)``.
+            estimation, then a NotImplementedError will be raised instead. If error
+            estimation is supported and ``f`` returns arrays of shape ``(output_dim_1,
+            ..., output_dim_n, eval_points)``, then ``err_est`` will be of shape
+            ``(output_dim_1, ..., output_dim_n)``.
         """
 
         nodes, weights = self.nodes_and_weights
@@ -339,8 +342,8 @@ class FixedProductCub(FixedCub):
     base_rules : list of FixedCub
         List of base 1-dimensional FixedCub cubature rules.
 
-    Example
-    -------
+    Examples
+    --------
 
     Evaluate a 2D integral by taking the product of two 1D rules:
 
@@ -348,7 +351,7 @@ class FixedProductCub(FixedCub):
     >>> from scipy.integrate._cubature import cub
     >>> from scipy.integrate._rules import (
     ...  FixedProductCub, NewtonCotesQuad
-    >>> )
+    ... )
     >>> def f(x):
     ...     # f(x) = cos(x_1) + cos(x_2)
     ...     return np.sum(np.cos(x), axis=0)
@@ -400,8 +403,8 @@ class FixedProductErrorFromDifferenceCub(ErrorFromDifference):
     base_rules : list of ErrorFromDifference
         List of base 1-dimensional ErrorFromDifference cubature rules.
 
-    Example
-    -------
+    Examples
+    --------
 
     Evaluate a 2D integral by taking the product of two 1D rules:
 
@@ -409,7 +412,7 @@ class FixedProductErrorFromDifferenceCub(ErrorFromDifference):
     >>> from scipy.integrate._cubature import cub
     >>> from scipy.integrate._rules import (
     ...  FixedProductErrorFromDifferenceCub, GaussKronrodQuad
-    >>> )
+    ... )
     >>> def f(x):
     ...     # f(x) = cos(x_1) + cos(x_2)
     ...     return np.sum(np.cos(x), axis=0)
