@@ -1,8 +1,12 @@
 # mypy: disable-error-code="attr-defined"
+import math
 import numpy as np
 from scipy import special
 import scipy._lib._elementwise_iterative_method as eim
 from scipy._lib._util import _RichResult
+from scipy._lib._array_api import (array_namespace, copy as xp_copy, xp_ravel,
+                                   xp_real, is_numpy, is_cupy, is_torch,
+                                   xp_take_along_axis)
 
 
 __all__ = ['nsum']
@@ -193,7 +197,7 @@ def _tanhsinh(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
     ...     return np.exp(-x**2)
     >>> res = _tanhsinh(f, -np.inf, np.inf)
     >>> res.integral  # true value is np.sqrt(np.pi), 1.7724538509055159
-     1.7724538509055159
+    1.7724538509055159
     >>> res.error  # actual error is 0
     4.0007963937534104e-16
 
@@ -208,7 +212,7 @@ def _tanhsinh(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
     may not be able to find the important region.
 
     >>> _tanhsinh(f, -np.inf, 1000).integral
-    4.500490856620352
+    4.500490856616431
 
     In such cases, or when there are singularities within the interval,
     break the integral into parts with endpoints at the important points.
@@ -224,11 +228,12 @@ def _tanhsinh(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
 
     >>> res = _tanhsinh(f, 20, 30, rtol=1e-10)
     >>> res.integral, res.error
-    4.7819613911309014e-176, 4.670364401645202e-187
+    (4.7819613911309014e-176, 4.670364401645202e-187)
     >>> def log_f(x):
     ...     return -x**2
+    >>> res = _tanhsinh(log_f, 20, 30, log=True, rtol=np.log(1e-10))
     >>> np.exp(res.integral), np.exp(res.error)
-    4.7819613911306924e-176, 4.670364401645093e-187
+    (4.7819613911306924e-176, 4.670364401645093e-187)
 
     The limits of integration and elements of `args` may be broadcastable
     arrays, and integration is performed elementwise.
@@ -240,6 +245,7 @@ def _tanhsinh(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
     >>> res = _tanhsinh(dist.pdf, a, x)
     >>> ref = dist.cdf(x)
     >>> np.allclose(res.integral, ref)
+    True
 
     By default, `preserve_shape` is False, and therefore the callable
     `f` may be called with arrays of any broadcastable shapes.
@@ -254,7 +260,7 @@ def _tanhsinh(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
     >>> c = [1, 10, 30, 100]
     >>> res = _tanhsinh(f, 0, 1, args=(c,), minlevel=1)
     >>> shapes
-    [(4,), (4, 66), (3, 64), (2, 128), (1, 256)]
+    [(4,), (4, 34), (4, 32), (3, 64), (2, 128), (1, 256)]
 
     To understand where these shapes are coming from - and to better
     understand how `_tanhsinh` computes accurate results - note that
@@ -264,7 +270,7 @@ def _tanhsinh(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
     accuracy:
 
     >>> res.nfev
-    array([ 67, 131, 259, 515])
+    array([ 67, 131, 259, 515], dtype=int32)
 
     The initial ``shape``, ``(4,)``, corresponds with evaluating the
     integrand at a single abscissa and all four frequencies; this is used
@@ -308,7 +314,7 @@ def _tanhsinh(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
 
     """
     (f, a, b, log, maxfun, maxlevel, minlevel,
-     atol, rtol, args, preserve_shape, callback) = _tanhsinh_iv(
+     atol, rtol, args, preserve_shape, callback, xp) = _tanhsinh_iv(
         f, a, b, log, maxfun, maxlevel, minlevel, atol,
         rtol, args, preserve_shape, callback)
 
@@ -321,53 +327,54 @@ def _tanhsinh(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
     # shape and dtype. Did you know that 0d and >0d arrays follow different
     # type promotion rules?
     with np.errstate(over='ignore', invalid='ignore', divide='ignore'):
-        c = ((a.ravel() + b.ravel())/2).reshape(a.shape)
-        inf_a, inf_b = np.isinf(a), np.isinf(b)
-        c[inf_a] = b[inf_a] - 1  # takes care of infinite a
-        c[inf_b] = a[inf_b] + 1  # takes care of infinite b
-        c[inf_a & inf_b] = 0  # takes care of infinite a and b
+        c = xp.reshape((xp_ravel(a) + xp_ravel(b))/2, a.shape)
+        inf_a, inf_b = xp.isinf(a), xp.isinf(b)
+        c[inf_a] = b[inf_a] - 1.  # takes care of infinite a
+        c[inf_b] = a[inf_b] + 1.  # takes care of infinite b
+        c[inf_a & inf_b] = 0.  # takes care of infinite a and b
         temp = eim._initialize(f, (c,), args, complex_ok=True,
-                               preserve_shape=preserve_shape)
+                               preserve_shape=preserve_shape, xp=xp)
     f, xs, fs, args, shape, dtype, xp = temp
-    a = np.broadcast_to(a, shape).astype(dtype).ravel()
-    b = np.broadcast_to(b, shape).astype(dtype).ravel()
+    a = xp_ravel(xp.astype(xp.broadcast_to(a, shape), dtype))
+    b = xp_ravel(xp.astype(xp.broadcast_to(b, shape), dtype))
 
     # Transform improper integrals
-    a, b, a0, negative, abinf, ainf, binf = _transform_integrals(a, b)
+    a, b, a0, negative, abinf, ainf, binf = _transform_integrals(a, b, xp)
 
     # Define variables we'll need
     nit, nfev = 0, 1  # one function evaluation performed above
-    zero = -np.inf if log else 0
-    pi = dtype.type(np.pi)
+    zero = -xp.inf if log else 0
+    pi = xp.asarray(xp.pi, dtype=dtype)[()]
     maxiter = maxlevel - minlevel + 1
-    eps = np.finfo(dtype).eps
+    eps = xp.finfo(dtype).eps
     if rtol is None:
-        rtol = 0.75*np.log(eps) if log else eps**0.75
+        rtol = 0.75*math.log(eps) if log else eps**0.75
 
-    Sn = np.full(shape, zero, dtype=dtype).ravel()  # latest integral estimate
-    Sn[np.isnan(a) | np.isnan(b) | np.isnan(fs[0])] = np.nan
-    Sk = np.empty_like(Sn).reshape(-1, 1)[:, 0:0]  # all integral estimates
-    aerr = np.full(shape, np.nan, dtype=dtype).ravel()  # absolute error
-    status = np.full(shape, eim._EINPROGRESS, dtype=int).ravel()
-    h0 = np.real(_get_base_step(dtype=dtype))  # base step
+    Sn = xp_ravel(xp.full(shape, zero, dtype=dtype))  # latest integral estimate
+    Sn[xp.isnan(a) | xp.isnan(b) | xp.isnan(fs[0])] = xp.nan
+    Sk = xp.reshape(xp.empty_like(Sn), (-1, 1))[:, 0:0]  # all integral estimates
+    aerr = xp_ravel(xp.full(shape, xp.nan, dtype=dtype))  # absolute error
+    status = xp_ravel(xp.full(shape, eim._EINPROGRESS, dtype=xp.int32))
+    h0 = _get_base_step(dtype, xp)
+    h0 = xp_real(h0) # base step
 
     # For term `d4` of error estimate ([1] Section 5), we need to keep the
     # most extreme abscissae and corresponding `fj`s, `wj`s in Euler-Maclaurin
     # sum. Here, we initialize these variables.
-    xr0 = np.full(shape, -np.inf, dtype=dtype).ravel()
-    fr0 = np.full(shape, np.nan, dtype=dtype).ravel()
-    wr0 = np.zeros(shape, dtype=dtype).ravel()
-    xl0 = np.full(shape, np.inf, dtype=dtype).ravel()
-    fl0 = np.full(shape, np.nan, dtype=dtype).ravel()
-    wl0 = np.zeros(shape, dtype=dtype).ravel()
-    d4 = np.zeros(shape, dtype=dtype).ravel()
+    xr0 = xp_ravel(xp.full(shape, -xp.inf, dtype=dtype))
+    fr0 = xp_ravel(xp.full(shape, xp.nan, dtype=dtype))
+    wr0 = xp_ravel(xp.zeros(shape, dtype=dtype))
+    xl0 = xp_ravel(xp.full(shape, xp.inf, dtype=dtype))
+    fl0 = xp_ravel(xp.full(shape, xp.nan, dtype=dtype))
+    wl0 = xp_ravel(xp.zeros(shape, dtype=dtype))
+    d4 = xp_ravel(xp.zeros(shape, dtype=dtype))
 
     work = _RichResult(
         Sn=Sn, Sk=Sk, aerr=aerr, h=h0, log=log, dtype=dtype, pi=pi, eps=eps,
-        a=a.reshape(-1, 1), b=b.reshape(-1, 1),  # integration limits
+        a=xp.reshape(a, (-1, 1)), b=xp.reshape(b, (-1, 1)),  # integration limits
         n=minlevel, nit=nit, nfev=nfev, status=status,  # iter/eval counts
         xr0=xr0, fr0=fr0, wr0=wr0, xl0=xl0, fl0=fl0, wl0=wl0, d4=d4,  # err est
-        ainf=ainf, binf=binf, abinf=abinf, a0=a0.reshape(-1, 1))  # transforms
+        ainf=ainf, binf=binf, abinf=abinf, a0=xp.reshape(a0, (-1, 1)))  # transforms
     # Constant scalars don't need to be put in `work` unless they need to be
     # passed outside `tanhsinh`. Examples: atol, rtol, h0, minlevel.
 
@@ -379,12 +386,13 @@ def _tanhsinh(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
         # Determine abscissae at which to evaluate `f`
         work.h = h0 / 2**work.n
         xjc, wj = _get_pairs(work.n, h0, dtype=work.dtype,
-                             inclusive=(work.n == minlevel))
-        work.xj, work.wj = _transform_to_limits(xjc, wj, work.a, work.b)
+                             inclusive=(work.n == minlevel), xp=xp)
+        work.xj, work.wj = _transform_to_limits(xjc, wj, work.a, work.b, xp)
 
         # Perform abscissae substitutions for infinite limits of integration
-        xj = work.xj.copy()
-        xj[work.abinf] = xj[work.abinf] / (1 - xj[work.abinf]**2)
+        xj = xp_copy(work.xj)
+        # use xp_real here to avoid cupy/cupy#8434
+        xj[work.abinf] = xj[work.abinf] / (1 - xp_real(xj[work.abinf])**2)
         xj[work.binf] = 1/xj[work.binf] - 1 + work.a0[work.binf]
         xj[work.ainf] *= -1
         return xj
@@ -392,19 +400,19 @@ def _tanhsinh(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
     def post_func_eval(x, fj, work):
         # Weight integrand as required by substitutions for infinite limits
         if work.log:
-            fj[work.abinf] += (np.log(1 + work.xj[work.abinf] ** 2)
-                               - 2*np.log(1 - work.xj[work.abinf] ** 2))
-            fj[work.binf] -= 2 * np.log(work.xj[work.binf])
+            fj[work.abinf] += (xp.log(1 + work.xj[work.abinf]**2)
+                               - 2*xp.log(1 - work.xj[work.abinf]**2))
+            fj[work.binf] -= 2 * xp.log(work.xj[work.binf])
         else:
             fj[work.abinf] *= ((1 + work.xj[work.abinf]**2) /
                                (1 - work.xj[work.abinf]**2)**2)
             fj[work.binf] *= work.xj[work.binf]**-2.
 
         # Estimate integral with Euler-Maclaurin Sum
-        fjwj, Sn = _euler_maclaurin_sum(fj, work)
+        fjwj, Sn = _euler_maclaurin_sum(fj, work, xp)
         if work.Sk.shape[-1]:
             Snm1 = work.Sk[:, -1]
-            Sn = (special.logsumexp([Snm1 - np.log(2), Sn], axis=0) if log
+            Sn = (_logsumexp(xp.stack([Snm1 - math.log(2), Sn]), axis=0, xp=xp) if log
                   else Snm1 / 2 + Sn)
 
         work.fjwj = fjwj
@@ -412,29 +420,31 @@ def _tanhsinh(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
 
     def check_termination(work):
         """Terminate due to convergence or encountering non-finite values"""
-        stop = np.zeros(work.Sn.shape, dtype=bool)
+        stop = xp.zeros(work.Sn.shape, dtype=bool)
 
         # Terminate before first iteration if integration limits are equal
         if work.nit == 0:
-            i = (work.a == work.b).ravel()  # ravel singleton dimension
-            zero = -np.inf if log else 0
+            i = xp_ravel(work.a == work.b)  # ravel singleton dimension
+            zero = -xp.inf if log else 0
             work.Sn[i] = zero
             work.aerr[i] = zero
             work.status[i] = eim._ECONVERGED
             stop[i] = True
         else:
             # Terminate if convergence criterion is met
-            work.rerr, work.aerr = _estimate_error(work)
-            i = ((work.rerr < rtol) | (work.rerr + np.real(work.Sn) < atol) if log
-                 else (work.rerr < rtol) | (work.rerr * abs(work.Sn) < atol))
+            work.rerr, work.aerr = _estimate_error(work, xp)
+            i = ((work.rerr < rtol) | (work.rerr + xp_real(work.Sn) < atol) if log
+                 else (work.rerr < rtol) | (work.rerr * xp.abs(work.Sn) < atol))
             work.status[i] = eim._ECONVERGED
             stop[i] = True
 
         # Terminate if integral estimate becomes invalid
         if log:
-            i = (np.isposinf(np.real(work.Sn)) | np.isnan(work.Sn)) & ~stop
+            Sn_real = xp_real(work.Sn)
+            Sn_pos_inf = xp.isinf(Sn_real) & (Sn_real > 0)
+            i = (Sn_pos_inf | xp.isnan(work.Sn)) & ~stop
         else:
-            i = ~np.isfinite(work.Sn) & ~stop
+            i = ~xp.isfinite(work.Sn) & ~stop
         work.status[i] = eim._EVALUEERR
         stop[i] = True
 
@@ -442,15 +452,16 @@ def _tanhsinh(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
 
     def post_termination_check(work):
         work.n += 1
-        work.Sk = np.concatenate((work.Sk, work.Sn[:, np.newaxis]), axis=-1)
+        work.Sk = xp.concat((work.Sk, work.Sn[:, xp.newaxis]), axis=-1)
         return
 
     def customize_result(res, shape):
         # If the integration limits were such that b < a, we reversed them
         # to perform the calculation, and the final result needs to be negated.
-        if log and np.any(negative):
-            pi = res['integral'].dtype.type(np.pi)
-            j = np.complex64(1j)  # minimum complex type
+        if log and xp.any(negative):
+            dtype = res['integral'].dtype
+            pi = xp.asarray(xp.pi, dtype=dtype)[()]
+            j = xp.asarray(1j, dtype=xp.complex64)[()]  # minimum complex type
             res['integral'] = res['integral'] + negative*pi*j
         else:
             res['integral'][negative] *= -1
@@ -471,7 +482,7 @@ def _tanhsinh(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
     return res
 
 
-def _get_base_step(dtype=np.float64):
+def _get_base_step(dtype, xp):
     # Compute the base step length for the provided dtype. Theoretically, the
     # Euler-Maclaurin sum is infinite, but it gets cut off when either the
     # weights underflow or the abscissae cannot be distinguished from the
@@ -479,8 +490,8 @@ def _get_base_step(dtype=np.float64):
     # float64, and it occurs when `xjc` (the abscissa complement)
     # in `_compute_pair` underflows. We can solve for the argument `tmax` at
     # which it will underflow using [2] Eq. 13.
-    fmin = 4*np.finfo(dtype).tiny  # stay a little away from the limit
-    tmax = np.arcsinh(np.log(2/fmin - 1) / np.pi)
+    fmin = 4*xp.finfo(dtype).smallest_normal  # stay a little away from the limit
+    tmax = math.asinh(math.log(2/fmin - 1) / xp.pi)
 
     # Based on this, we can choose a base step size `h` for level 0.
     # The number of function evaluations will be `2 + m*2^(k+1)`, where `k` is
@@ -490,13 +501,13 @@ def _get_base_step(dtype=np.float64):
     # results in a base step size close to `1`, which is what [1] uses (and I
     # used here until I found [2] and these ideas settled).
     h0 = tmax / _N_BASE_STEPS
-    return h0.astype(dtype)
+    return xp.asarray(h0, dtype=dtype)[()]
 
 
 _N_BASE_STEPS = 8
 
 
-def _compute_pair(k, h0):
+def _compute_pair(k, h0, xp):
     # Compute the abscissa-weight pairs for each level k. See [1] page 9.
 
     # For now, we compute and store in 64-bit precision. If higher-precision
@@ -512,18 +523,18 @@ def _compute_pair(k, h0):
 
     # For iterations after the first, "....the integrand function needs to be
     # evaluated only at the odd-indexed abscissas at each level."
-    j = np.arange(max+1) if k == 0 else np.arange(1, max+1, 2)
+    j = xp.arange(max+1) if k == 0 else xp.arange(1, max+1, 2)
     jh = j * h
 
     # "In this case... the weights wj = u1/cosh(u2)^2, where..."
-    pi_2 = np.pi / 2
-    u1 = pi_2*np.cosh(jh)
-    u2 = pi_2*np.sinh(jh)
+    pi_2 = xp.pi / 2
+    u1 = pi_2*xp.cosh(jh)
+    u2 = pi_2*xp.sinh(jh)
     # Denominators get big here. Overflow then underflow doesn't need warning.
     # with np.errstate(under='ignore', over='ignore'):
-    wj = u1 / np.cosh(u2)**2
+    wj = u1 / xp.cosh(u2)**2
     # "We actually store 1-xj = 1/(...)."
-    xjc = 1 / (np.exp(u2) * np.cosh(u2))  # complement of xj = np.tanh(u2)
+    xjc = 1 / (xp.exp(u2) * xp.cosh(u2))  # complement of xj = xp.tanh(u2)
 
     # When level k == 0, the zeroth xj corresponds with xj = 0. To simplify
     # code, the function will be evaluated there twice; each gets half weight.
@@ -532,40 +543,42 @@ def _compute_pair(k, h0):
     return xjc, wj  # store at full precision
 
 
-def _pair_cache(k, h0):
+def _pair_cache(k, h0, xp):
     # Cache the abscissa-weight pairs up to a specified level.
     # Abscissae and weights of consecutive levels are concatenated.
     # `index` records the indices that correspond with each level:
     # `xjc[index[k]:index[k+1]` extracts the level `k` abscissae.
-    if h0 != _pair_cache.h0:
-        _pair_cache.xjc = np.empty(0)
-        _pair_cache.wj = np.empty(0)
+    if not isinstance(h0, type(_pair_cache.h0)) or h0 != _pair_cache.h0:
+        _pair_cache.xjc = xp.empty(0)
+        _pair_cache.wj = xp.empty(0)
         _pair_cache.indices = [0]
 
     xjcs = [_pair_cache.xjc]
     wjs = [_pair_cache.wj]
 
     for i in range(len(_pair_cache.indices)-1, k + 1):
-        xjc, wj = _compute_pair(i, h0)
+        xjc, wj = _compute_pair(i, h0, xp)
         xjcs.append(xjc)
         wjs.append(wj)
-        _pair_cache.indices.append(_pair_cache.indices[-1] + len(xjc))
+        _pair_cache.indices.append(_pair_cache.indices[-1] + xjc.shape[0])
 
-    _pair_cache.xjc = np.concatenate(xjcs)
-    _pair_cache.wj = np.concatenate(wjs)
+    _pair_cache.xjc = xp.concat(xjcs)
+    _pair_cache.wj = xp.concat(wjs)
     _pair_cache.h0 = h0
 
-_pair_cache.xjc = np.empty(0)
-_pair_cache.wj = np.empty(0)
+_pair_cache.xjc = None
+_pair_cache.wj = None
 _pair_cache.indices = [0]
 _pair_cache.h0 = None
 
 
-def _get_pairs(k, h0, inclusive=False, dtype=np.float64):
+def _get_pairs(k, h0, inclusive, dtype, xp):
     # Retrieve the specified abscissa-weight pairs from the cache
     # If `inclusive`, return all up to and including the specified level
-    if len(_pair_cache.indices) <= k+2 or h0 != _pair_cache.h0:
-        _pair_cache(k, h0)
+    if (len(_pair_cache.indices) <= k+2
+        or not isinstance (h0, type(_pair_cache.h0))
+        or h0 != _pair_cache.h0):
+            _pair_cache(k, h0, xp)
 
     xjc = _pair_cache.xjc
     wj = _pair_cache.wj
@@ -574,30 +587,32 @@ def _get_pairs(k, h0, inclusive=False, dtype=np.float64):
     start = 0 if inclusive else indices[k]
     end = indices[k+1]
 
-    return xjc[start:end].astype(dtype), wj[start:end].astype(dtype)
+    return xp.astype(xjc[start:end], dtype), xp.astype(wj[start:end], dtype)
 
 
-def _transform_to_limits(xjc, wj, a, b):
+def _transform_to_limits(xjc, wj, a, b, xp):
     # Transform integral according to user-specified limits. This is just
     # math that follows from the fact that the standard limits are (-1, 1).
     # Note: If we had stored xj instead of xjc, we would have
     # xj = alpha * xj + beta, where beta = (a + b)/2
     alpha = (b - a) / 2
-    xj = np.concatenate((-alpha * xjc + b, alpha * xjc + a), axis=-1)
+    xj = xp.concat((-alpha * xjc + b, alpha * xjc + a), axis=-1)
     wj = wj*alpha  # arguments get broadcasted, so we can't use *=
-    wj = np.concatenate((wj, wj), axis=-1)
+    wj = xp.concat((wj, wj), axis=-1)
 
     # Points at the boundaries can be generated due to finite precision
     # arithmetic, but these function values aren't supposed to be included in
     # the Euler-Maclaurin sum. Ideally we wouldn't evaluate the function at
     # these points; however, we can't easily filter out points since this
     # function is vectorized. Instead, zero the weights.
-    invalid = (xj <= a) | (xj >= b)
+    # Note: values may have complex dtype, but have zero imaginary part
+    xj_real, a_real, b_real = xp_real(xj), xp_real(a), xp_real(b)
+    invalid = (xj_real <= a_real) | (xj_real >= b_real)
     wj[invalid] = 0
     return xj, wj
 
 
-def _euler_maclaurin_sum(fj, work):
+def _euler_maclaurin_sum(fj, work, xp):
     # Perform the Euler-Maclaurin Sum, [1] Section 4
 
     # The error estimate needs to know the magnitude of the last term
@@ -613,38 +628,41 @@ def _euler_maclaurin_sum(fj, work):
     n_x, n_active = xj.shape  # number of abscissae, number of active elements
 
     # We'll work with the left and right sides separately
-    xr, xl = xj.reshape(2, n_x // 2, n_active).copy()  # this gets modified
-    fr, fl = fj.reshape(2, n_x // 2, n_active)
-    wr, wl = wj.reshape(2, n_x // 2, n_active)
+    xr, xl = xp_copy(xp.reshape(xj, (2, n_x // 2, n_active)))  # this gets modified
+    fr, fl = xp.reshape(fj, (2, n_x // 2, n_active))
+    wr, wl = xp.reshape(wj, (2, n_x // 2, n_active))
 
-    invalid_r = ~np.isfinite(fr) | (wr == 0)
-    invalid_l = ~np.isfinite(fl) | (wl == 0)
+    invalid_r = ~xp.isfinite(fr) | (wr == 0)
+    invalid_l = ~xp.isfinite(fl) | (wl == 0)
 
     # integer index of the maximum abscissa at this level
-    xr[invalid_r] = -np.inf
-    ir = np.argmax(xr, axis=0, keepdims=True)
+    xr[invalid_r] = -xp.inf
+    ir = xp.argmax(xp_real(xr), axis=0, keepdims=True)
     # abscissa, function value, and weight at this index
-    xr_max = np.take_along_axis(xr, ir, axis=0)[0]
-    fr_max = np.take_along_axis(fr, ir, axis=0)[0]
-    wr_max = np.take_along_axis(wr, ir, axis=0)[0]
+    ### Not Array API Compatible... yet ###
+    xr_max = xp_take_along_axis(xr, ir, axis=0)[0]
+    fr_max = xp_take_along_axis(fr, ir, axis=0)[0]
+    wr_max = xp_take_along_axis(wr, ir, axis=0)[0]
     # boolean indices at which maximum abscissa at this level exceeds
     # the incumbent maximum abscissa (from all previous levels)
-    j = xr_max > xr0
+    # note: abscissa may have complex dtype, but will have zero imaginary part
+    j = xp_real(xr_max) > xp_real(xr0)
     # Update record of the incumbent abscissa, function value, and weight
     xr0[j] = xr_max[j]
     fr0[j] = fr_max[j]
     wr0[j] = wr_max[j]
 
     # integer index of the minimum abscissa at this level
-    xl[invalid_l] = np.inf
-    il = np.argmin(xl, axis=0, keepdims=True)
+    xl[invalid_l] = xp.inf
+    il = xp.argmin(xp_real(xl), axis=0, keepdims=True)
     # abscissa, function value, and weight at this index
-    xl_min = np.take_along_axis(xl, il, axis=0)[0]
-    fl_min = np.take_along_axis(fl, il, axis=0)[0]
-    wl_min = np.take_along_axis(wl, il, axis=0)[0]
+    xl_min = xp_take_along_axis(xl, il, axis=0)[0]
+    fl_min = xp_take_along_axis(fl, il, axis=0)[0]
+    wl_min = xp_take_along_axis(wl, il, axis=0)[0]
     # boolean indices at which minimum abscissa at this level is less than
     # the incumbent minimum abscissa (from all previous levels)
-    j = xl_min < xl0
+    # note: abscissa may have complex dtype, but will have zero imaginary part
+    j = xp_real(xl_min) < xp_real(xl0)
     # Update record of the incumbent abscissa, function value, and weight
     xl0[j] = xl_min[j]
     fl0[j] = fl_min[j]
@@ -653,28 +671,28 @@ def _euler_maclaurin_sum(fj, work):
 
     # Compute the error estimate `d4` - the magnitude of the leftmost or
     # rightmost term, whichever is greater.
-    flwl0 = fl0 + np.log(wl0) if work.log else fl0 * wl0  # leftmost term
-    frwr0 = fr0 + np.log(wr0) if work.log else fr0 * wr0  # rightmost term
-    magnitude = np.real if work.log else np.abs
-    work.d4 = np.maximum(magnitude(flwl0), magnitude(frwr0))
+    flwl0 = fl0 + xp.log(wl0) if work.log else fl0 * wl0  # leftmost term
+    frwr0 = fr0 + xp.log(wr0) if work.log else fr0 * wr0  # rightmost term
+    magnitude = xp_real if work.log else xp.abs
+    work.d4 = xp.maximum(magnitude(flwl0), magnitude(frwr0))
 
     # There are two approaches to dealing with function values that are
     # numerically infinite due to approaching a singularity - zero them, or
     # replace them with the function value at the nearest non-infinite point.
     # [3] pg. 22 suggests the latter, so let's do that given that we have the
     # information.
-    fr0b = np.broadcast_to(fr0[np.newaxis, :], fr.shape)
-    fl0b = np.broadcast_to(fl0[np.newaxis, :], fl.shape)
+    fr0b = xp.broadcast_to(fr0[xp.newaxis, :], fr.shape)
+    fl0b = xp.broadcast_to(fl0[xp.newaxis, :], fl.shape)
     fr[invalid_r] = fr0b[invalid_r]
     fl[invalid_l] = fl0b[invalid_l]
 
     # When wj is zero, log emits a warning
     # with np.errstate(divide='ignore'):
-    fjwj = fj + np.log(work.wj) if work.log else fj * work.wj
+    fjwj = fj + xp.log(work.wj) if work.log else fj * work.wj
 
     # update integral estimate
-    Sn = (special.logsumexp(fjwj + np.log(work.h), axis=-1) if work.log
-          else np.sum(fjwj, axis=-1) * work.h)
+    Sn = (_logsumexp(fjwj + xp.log(work.h), axis=-1, xp=xp) if work.log
+          else xp.sum(fjwj, axis=-1) * work.h)
 
     work.xr0, work.fr0, work.wr0 = xr0, fr0, wr0
     work.xl0, work.fl0, work.wl0 = xl0, fl0, wl0
@@ -682,18 +700,18 @@ def _euler_maclaurin_sum(fj, work):
     return fjwj, Sn
 
 
-def _estimate_error(work):
+def _estimate_error(work, xp):
     # Estimate the error according to [1] Section 5
 
     if work.n == 0 or work.nit == 0:
         # The paper says to use "one" as the error before it can be calculated.
         # NaN seems to be more appropriate.
-        nan = np.full_like(work.Sn, np.nan)
+        nan = xp.full_like(work.Sn, xp.nan)
         return nan, nan
 
     indices = _pair_cache.indices
 
-    n_active = len(work.Sn)  # number of active elements
+    n_active = work.Sn.shape[0]  # number of active elements
     axis_kwargs = dict(axis=-1, keepdims=True)
 
     # With a jump start (starting at level higher than 0), we haven't
@@ -705,15 +723,15 @@ def _estimate_error(work):
         n_x = indices[work.n]  # number of abscissa up to this level
         # The right and left fjwj terms from all levels are concatenated along
         # the last axis. Get out only the terms up to this level.
-        fjwj_rl = work.fjwj.reshape(n_active, 2, -1)
-        fjwj = fjwj_rl[:, :, :n_x].reshape(n_active, 2*n_x)
+        fjwj_rl = xp.reshape(work.fjwj, (n_active, 2, -1))
+        fjwj = xp.reshape(fjwj_rl[:, :, :n_x], (n_active, 2*n_x))
         # Compute the Euler-Maclaurin sum at this level
-        Snm1 = (special.logsumexp(fjwj, **axis_kwargs) + np.log(h) if work.log
-                else np.sum(fjwj, **axis_kwargs) * h)
-        work.Sk = np.concatenate((Snm1, work.Sk), axis=-1)
+        Snm1 = (_logsumexp(fjwj, xp=xp, **axis_kwargs) + xp.log(h) if work.log
+                else xp.sum(fjwj, **axis_kwargs) * h)
+        work.Sk = xp.concat((Snm1, work.Sk), axis=-1)
 
     if work.n == 1:
-        nan = np.full_like(work.Sn, np.nan)
+        nan = xp.full_like(work.Sn, xp.nan)
         return nan, nan
 
     # The paper says not to calculate the error for n<=2, but it's not clear
@@ -724,61 +742,66 @@ def _estimate_error(work):
         n_x = indices[work.n-1]  # number of abscissa up to this level
         # The right and left fjwj terms from all levels are concatenated along
         # the last axis. Get out only the terms up to this level.
-        fjwj_rl = work.fjwj.reshape(len(work.Sn), 2, -1)
-        fjwj = fjwj_rl[..., :n_x].reshape(n_active, 2*n_x)
+        fjwj_rl = xp.reshape(work.fjwj, (work.Sn.shape[0], 2, -1))
+        fjwj = xp.reshape(fjwj_rl[..., :n_x], (n_active, 2*n_x))
         # Compute the Euler-Maclaurin sum at this level
-        Snm2 = (special.logsumexp(fjwj, **axis_kwargs) + np.log(h) if work.log
-                else np.sum(fjwj, **axis_kwargs) * h)
-        work.Sk = np.concatenate((Snm2, work.Sk), axis=-1)
+        Snm2 = (_logsumexp(fjwj, xp=xp, **axis_kwargs) + xp.log(h) if work.log
+                else xp.sum(fjwj, **axis_kwargs) * h)
+        work.Sk = xp.concat((Snm2, work.Sk), axis=-1)
 
     Snm2 = work.Sk[..., -2]
     Snm1 = work.Sk[..., -1]
 
-    e1 = work.eps
+    e1 = xp.asarray(work.eps)[()]
 
     if work.log:
-        log_e1 = np.log(e1)
+        log_e1 = xp.log(e1)
         # Currently, only real integrals are supported in log-scale. All
         # complex values have imaginary part in increments of pi*j, which just
         # carries sign information of the original integral, so use of
-        # `np.real` here is equivalent to absolute value in real scale.
-        d1 = np.real(special.logsumexp([work.Sn, Snm1 + work.pi*1j], axis=0))
-        d2 = np.real(special.logsumexp([work.Sn, Snm2 + work.pi*1j], axis=0))
-        d3 = log_e1 + np.max(np.real(work.fjwj), axis=-1)
+        # `xp.real` here is equivalent to absolute value in real scale.
+        d1 = xp_real(_logsumexp(xp.stack([work.Sn, Snm1 + work.pi*1j]), axis=0, xp=xp))
+        d2 = xp_real(_logsumexp(xp.stack([work.Sn, Snm2 + work.pi*1j]), axis=0, xp=xp))
+        d3 = log_e1 + xp.max(xp_real(work.fjwj), axis=-1)
         d4 = work.d4
-        aerr = np.max([d1 ** 2 / d2, 2 * d1, d3, d4], axis=0)
-        rerr = np.maximum(log_e1, aerr - np.real(work.Sn))
+        ds = xp.stack([d1 ** 2 / d2, 2 * d1, d3, d4])
+        aerr = xp.max(ds, axis=0)
+        rerr = xp.maximum(log_e1, aerr - xp_real(work.Sn))
     else:
         # Note: explicit computation of log10 of each of these is unnecessary.
-        d1 = np.abs(work.Sn - Snm1)
-        d2 = np.abs(work.Sn - Snm2)
-        d3 = e1 * np.max(np.abs(work.fjwj), axis=-1)
+        d1 = xp.abs(work.Sn - Snm1)
+        d2 = xp.abs(work.Sn - Snm2)
+        d3 = e1 * xp.max(xp.abs(work.fjwj), axis=-1)
         d4 = work.d4
         # If `d1` is 0, no need to warn. This does the right thing.
         # with np.errstate(divide='ignore'):
-        aerr = np.max([d1**(np.log(d1)/np.log(d2)), d1**2, d3, d4], axis=0)
-        rerr = np.maximum(e1, aerr/np.abs(work.Sn))
-    return rerr, aerr.reshape(work.Sn.shape)
+        ds = xp.stack([d1**(xp.log(d1)/xp.log(d2)), d1**2, d3, d4])
+        aerr = xp.max(ds, axis=0)
+        rerr = xp.maximum(e1, aerr/xp.abs(work.Sn))
+
+    aerr = xp.reshape(xp.astype(aerr, work.dtype), work.Sn.shape)
+    return rerr, aerr
 
 
-def _transform_integrals(a, b):
+def _transform_integrals(a, b, xp):
     # Transform integrals to a form with finite a < b
     # For b < a, we reverse the limits and will multiply the final result by -1
     # For infinite limit on the right, we use the substitution x = 1/t - 1 + a
     # For infinite limit on the left, we substitute x = -x and treat as above
     # For infinite limits, we substitute x = t / (1-t**2)
 
-    negative = b < a
+    # `a, b` may have complex dtype but have zero imaginary part
+    negative = xp_real(b) < xp_real(a)
     a[negative], b[negative] = b[negative], a[negative]
 
-    abinf = np.isinf(a) & np.isinf(b)
+    abinf = xp.isinf(a) & xp.isinf(b)
     a[abinf], b[abinf] = -1, 1
 
-    ainf = np.isinf(a)
+    ainf = xp.isinf(a)
     a[ainf], b[ainf] = -b[ainf], -a[ainf]
 
-    binf = np.isinf(b)
-    a0 = a.copy()
+    binf = xp.isinf(b)
+    a0 = xp_copy(a)
     a[binf], b[binf] = 0, 1
 
     return a, b, a0, negative, abinf, ainf, binf
@@ -788,13 +811,17 @@ def _tanhsinh_iv(f, a, b, log, maxfun, maxlevel, minlevel,
                  atol, rtol, args, preserve_shape, callback):
     # Input validation and standardization
 
+    xp = array_namespace(a, b)
+
     message = '`f` must be callable.'
     if not callable(f):
         raise ValueError(message)
 
     message = 'All elements of `a` and `b` must be real numbers.'
-    a, b = np.broadcast_arrays(a, b)
-    if np.any(np.iscomplex(a)) or np.any(np.iscomplex(b)):
+    a, b = xp.asarray(a), xp.asarray(b)
+    a, b = xp.broadcast_arrays(a, b)
+    if (xp.isdtype(a.dtype, 'complex floating')
+            or xp.isdtype(b.dtype, 'complex floating')):
         raise ValueError(message)
 
     message = '`log` must be True or False.'
@@ -803,10 +830,11 @@ def _tanhsinh_iv(f, a, b, log, maxfun, maxlevel, minlevel,
     log = bool(log)
 
     if atol is None:
-        atol = -np.inf if log else 0
+        atol = -xp.inf if log else 0
 
     rtol_temp = rtol if rtol is not None else 0.
 
+    # using NumPy for convenience here; these are just floats, not arrays
     params = np.asarray([atol, rtol_temp, 0.])
     message = "`atol` and `rtol` must be real numbers."
     if not np.issubdtype(params.dtype, np.floating):
@@ -844,6 +872,7 @@ def _tanhsinh_iv(f, a, b, log, maxfun, maxlevel, minlevel,
 
     if not np.iterable(args):
         args = (args,)
+    args = (xp.asarray(arg) for arg in args)
 
     message = '`preserve_shape` must be True or False.'
     if preserve_shape not in {True, False}:
@@ -853,18 +882,29 @@ def _tanhsinh_iv(f, a, b, log, maxfun, maxlevel, minlevel,
         raise ValueError('`callback` must be callable.')
 
     return (f, a, b, log, maxfun, maxlevel, minlevel,
-            atol, rtol, args, preserve_shape, callback)
+            atol, rtol, args, preserve_shape, callback, xp)
 
 
-def _logsumexp(x, axis=0):
-    # logsumexp raises with empty array
-    x = np.asarray(x)
+def _logsumexp(x, /, *, axis=0, keepdims=False, xp=None):
+    # Dispatcher for _logsumexp until scipy/scipy#21149 merges
+    # Also, logsumexp raises with empty array; don't do that.
+    xp = array_namespace(x) if xp is None else xp
+    x = xp.asarray(x)
     shape = list(x.shape)
     if shape[axis] == 0:
         shape.pop(axis)
-        return np.full(shape, fill_value=-np.inf, dtype=x.dtype)
-    else:
-        return special.logsumexp(x, axis=axis)
+        return xp.full(shape, fill_value=-xp.inf, dtype=x.dtype)
+
+    if is_numpy(xp):
+        return special.logsumexp(x, axis=axis, keepdims=keepdims)
+    elif is_cupy(xp):
+        from cupyx.scipy.special import logsumexp  # type: ignore[import-not-found]
+        return logsumexp(x, axis=axis, keepdims=keepdims)
+    elif is_torch(xp):
+        # Torch doesn't support complex
+        x = np.asarray(x)
+        y = special.logsumexp(x, axis=axis, keepdims=keepdims)[()]
+        return xp.asarray(y)
 
 
 def _nsum_iv(f, a, b, step, args, log, maxterms, tolerances):
@@ -1099,7 +1139,7 @@ def nsum(f, a, b, *, step=1, args=(), log=False, maxterms=int(2**20), tolerances
 
     >>> res = nsum(lambda x: 1/x - 1/(x+1), 1, np.inf, step=2)
     >>> res.sum, res.sum - np.log(2)  # result, difference vs analytical sum
-    (0.6931471805598692, -7.605027718682322e-14)
+    (0.6931471805598691, -7.616129948928574e-14)
     
     """ # noqa: E501
     # Potential future work:
