@@ -3,7 +3,7 @@ import os.path
 
 import numpy as np
 from numpy.testing import suppress_warnings
-from scipy._lib._array_api import (
+from scipy._lib._array_api_no_0d import (
     xp_assert_equal,
     xp_assert_close,
     assert_array_almost_equal,
