@@ -927,6 +927,9 @@ class TestNdimageFilters:
     )
     @pytest.mark.parametrize('origin', [(0, 0), (-1, 1)])
     def test_correlate_convolve_axes(self, func, dtype, axes, origin, xp):
+        if is_cupy(xp):
+            pytest.xfail("https://github.com/cupy/cupy/pull/8339")
+
         array = np.arange(6 * 8 * 12, dtype=dtype).reshape(6, 8, 12)
         weights = np.arange(3 * 5).reshape(3, 5)
 
