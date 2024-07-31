@@ -1170,8 +1170,11 @@ class _BigFloat:
         return "BIG_FLOAT"
 
 
+_BigFloat_singleton = _BigFloat()
+
+
 def boxcox_normmax(
-    x, brack=None, method='pearsonr', optimizer=None, *, ymax=_BigFloat()
+    x, brack=None, method='pearsonr', optimizer=None, *, ymax=_BigFloat_singleton
 ):
     """Compute optimal Box-Cox transform parameter for input data.
 
@@ -1288,7 +1291,7 @@ def boxcox_normmax(
         raise ValueError(message)
 
     end_msg = "exceed specified `ymax`."
-    if isinstance(ymax, _BigFloat):
+    if ymax is _BigFloat_singleton:
         dtype = x.dtype if np.issubdtype(x.dtype, np.floating) else np.float64
         # 10000 is a safety factor because `special.boxcox` overflows prematurely.
         ymax = np.finfo(dtype).max / 10000
