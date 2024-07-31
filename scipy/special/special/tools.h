@@ -157,12 +157,13 @@ namespace detail {
     SPECFUN_HOST_DEVICE std::pair<T, std::uint64_t> series_eval_kahan(
         Generator &&g, real_type_t<T> tol, std::uint64_t max_terms, T init_val = T(0)) {
 
+        using std::abs;
         T sum = init_val;
-        T comp = 0;
+        T comp = T(0);
         for (std::uint64_t i = 0; i < max_terms; ++i) {
             T term = g();
             kahan_step(sum, comp, term);
-            if (std::abs(term) <= tol * std::abs(sum)) {
+            if (abs(term) <= tol * abs(sum)) {
                 return {sum, i + 1};
             }
         }
@@ -234,8 +235,8 @@ namespace detail {
             init();
         }
 
-        SPECFUN_HOST_DEVICE double operator()() {
-            double v = v_;
+        SPECFUN_HOST_DEVICE T operator()() {
+            T v = v_;
             advance();
             return v;
         }
@@ -257,7 +258,7 @@ namespace detail {
             T p = a + a * r_;
             T q = p + b * b_;
             r_ = -p / q;
-            v_ *= r_;
+            v_ = v_ * r_;
             b_ = b;
         }
 
