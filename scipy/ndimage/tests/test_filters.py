@@ -1072,7 +1072,7 @@ class TestNdimageFilters:
     def test_filter_invalid_axes(self, filter_func, args, axes, xp):
         if is_cupy(xp):
             pytest.xfail("https://github.com/cupy/cupy/pull/8339")
-
+        args = (xp.asarray(arg) if hasattr(arg, 'shape') else arg for arg in args)
         array = xp.arange(6 * 8 * 12, dtype=xp.float64)
         array = xp.reshape(array, (6, 8, 12))
         if any(isinstance(ax, float) for ax in axes):
@@ -1140,7 +1140,7 @@ class TestNdimageFilters:
         kwargs = dict(**kwargs, axes=axes)
         kwargs[key] = (val,) * n_mismatch
         if filter_func in [ndimage.convolve, ndimage.correlate]:
-            kwargs["weights"] = np.ones((5,) * len(axes))
+            kwargs["weights"] = xp.ones((5,) * len(axes))
         err_msg = "sequence argument must have length equal to input rank"
         with pytest.raises(RuntimeError, match=err_msg):
             filter_func(array, **kwargs)
