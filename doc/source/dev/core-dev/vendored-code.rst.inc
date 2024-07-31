@@ -14,9 +14,10 @@ Maintainers should be careful to *not* accept contributions
 upstream. Instead, they should direct contributors to the upstream repo.
 Currently, this includes the following parts of the codebase:
 
+- DIRECT_, at ``scipy/optimize/_direct``
 - ARPACK_, at ``scipy/sparse/linalg/_eigen/arpack/ARPACK``
 - SuperLU_, at ``scipy/sparse/linalg/_dsolve/SuperLU``
-- QHull_, at ``scipy/spatial/qhull``
+- QHull_, at ``scipy/spatial/qhull_src``
 - trlib_, at ``scipy/optimize/_trlib``
 - UNU.RAN_, at ``scipy/stats/_unuran``
 
@@ -25,3 +26,4 @@ Currently, this includes the following parts of the codebase:
 .. _QHull: https://github.com/qhull/qhull
 .. _trlib: https://github.com/felixlen/trlib
 .. _UNU.RAN: https://statmath.wu.ac.at/unuran/
+.. _DIRECT: https://github.com/stevengj/nlopt/tree/master/src/algs/direct

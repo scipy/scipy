@@ -2,6 +2,7 @@
 #
 # Further enhancements and tests added by numerous SciPy developers.
 #
+import math
 import warnings
 import sys
 from functools import partial
@@ -26,8 +27,13 @@ from scipy.stats._axis_nan_policy import (SmallSampleWarning, too_small_nd_omit,
                                           too_small_1d_omit, too_small_1d_not_omit)
 
 from scipy.conftest import array_api_compatible
-from scipy._lib._array_api import (array_namespace, xp_assert_close, xp_assert_less,
-                                   xp_assert_equal, is_numpy)
+from scipy._lib._array_api import (
+    array_namespace,
+    is_numpy,
+    xp_assert_close,
+    xp_assert_equal,
+    xp_assert_less,
+)
 
 
 skip_xp_backends = pytest.mark.skip_xp_backends
@@ -754,7 +760,7 @@ class TestBartlett:
         args = [xp.asarray(arg) for arg in args]
         res = stats.bartlett(*args)
         attributes = ('statistic', 'pvalue')
-        check_named_results(res, attributes)
+        check_named_results(res, attributes, xp=xp)
 
     @pytest.mark.skip_xp_backends(
         "jax.numpy", cpu_only=True,
@@ -1918,23 +1924,30 @@ class TestPpccMax:
                             -0.71215366521264145, decimal=7)
 
 
+@pytest.mark.usefixtures("skip_xp_backends")
+@skip_xp_backends(cpu_only=True)
+@array_api_compatible
 class TestBoxcox_llf:
 
-    def test_basic(self):
+    @pytest.mark.parametrize("dtype", ["float32", "float64"])
+    def test_basic(self, dtype, xp):
+        dt = getattr(xp, dtype)
         x = stats.norm.rvs(size=10000, loc=10, random_state=54321)
         lmbda = 1
-        llf = stats.boxcox_llf(lmbda, x)
+        llf = stats.boxcox_llf(lmbda, xp.asarray(x, dtype=dt))
         llf_expected = -x.size / 2. * np.log(np.sum(x.std()**2))
-        assert_allclose(llf, llf_expected)
+        xp_assert_close(llf, xp.asarray(llf_expected, dtype=dt))
 
-    def test_array_like(self):
+    @skip_xp_backends(np_only=True,
+                      reasons=['array-likes only accepted for NumPy backend.'])
+    def test_array_like(self, xp):
         x = stats.norm.rvs(size=100, loc=10, random_state=54321)
         lmbda = 1
         llf = stats.boxcox_llf(lmbda, x)
         llf2 = stats.boxcox_llf(lmbda, list(x))
-        assert_allclose(llf, llf2, rtol=1e-12)
+        xp_assert_close(llf, llf2, rtol=1e-12)
 
-    def test_2d_input(self):
+    def test_2d_input(self, xp):
         # Note: boxcox_llf() was already working with 2-D input (sort of), so
         # keep it like that.  boxcox() doesn't work with 2-D input though, due
         # to brent() returning a scalar.
@@ -1942,24 +1955,25 @@ class TestBoxcox_llf:
         lmbda = 1
         llf = stats.boxcox_llf(lmbda, x)
         llf2 = stats.boxcox_llf(lmbda, np.vstack([x, x]).T)
-        assert_allclose([llf, llf], llf2, rtol=1e-12)
+        xp_assert_close(xp.asarray([llf, llf]), xp.asarray(llf2), rtol=1e-12)
 
-    def test_empty(self):
-        assert_(np.isnan(stats.boxcox_llf(1, [])))
+    def test_empty(self, xp):
+        assert xp.isnan(xp.asarray(stats.boxcox_llf(1, xp.asarray([]))))
 
-    def test_gh_6873(self):
+    def test_gh_6873(self, xp):
         # Regression test for gh-6873.
         # This example was taken from gh-7534, a duplicate of gh-6873.
-        data = [198.0, 233.0, 233.0, 392.0]
+        data = xp.asarray([198.0, 233.0, 233.0, 392.0])
         llf = stats.boxcox_llf(-8, data)
         # The expected value was computed with mpmath.
-        assert_allclose(llf, -17.93934208579061)
+        xp_assert_close(llf, xp.asarray(-17.93934208579061))
 
-    def test_instability_gh20021(self):
-        data = [2003, 1950, 1997, 2000, 2009]
+    def test_instability_gh20021(self, xp):
+        data = xp.asarray([2003, 1950, 1997, 2000, 2009])
         llf = stats.boxcox_llf(1e-8, data)
         # The expected value was computed with mpsci, set mpmath.mp.dps=100
-        assert_allclose(llf, -15.32401272869016598)
+        # expect float64 output for integer input
+        xp_assert_close(llf, xp.asarray(-15.32401272869016598, dtype=xp.float64))
 
 
 # This is the data from github user Qukaiyi, given as an example
@@ -2709,6 +2723,42 @@ class TestCircFuncs:
         xp_assert_close(stats.circvar(x, high=180), xp.asarray(0.2339555554617))
         xp_assert_close(stats.circstd(x, high=180), xp.asarray(20.91551378))
 
+    def test_circstd_zero(self, xp):
+        # circstd() of a single number should return positive zero.
+        y = stats.circstd(xp.asarray([0]))
+        assert math.copysign(1.0, y) == 1.0
+
+    def test_circmean_accuracy_tiny_input(self, xp):
+        # For tiny x such that sin(x) == x and cos(x) == 1.0 numerically,
+        # circmean(x) should return x because atan2(sin(x), cos(x)) == x.
+        # This test verifies this.
+        #
+        # The purpose of this test is not to show that circmean() is
+        # accurate in the last digit for certain input, because this is
+        # neither guaranteed not particularly useful.  Rather, it is a
+        # "white-box" sanity check that no undue loss of precision is
+        # introduced by conversion between (high - low) and (2 * pi).
+
+        x = xp.linspace(1e-9, 1e-8, 100)
+        assert xp.all(xp.sin(x) == x) and xp.all(xp.cos(x) == 1.0)
+
+        m = (x * (2 * xp.pi) / (2 * xp.pi)) != x
+        assert xp.any(m)
+        x = x[m]
+
+        y = stats.circmean(x[:, None], axis=1)
+        assert xp.all(y == x)
+
+    def test_circmean_accuracy_huge_input(self, xp):
+        # White-box test that circmean() does not introduce undue loss of
+        # numerical accuracy by eagerly rotating the input.  This is detected
+        # by supplying a huge input x such that (x - low) == x numerically.
+        x = xp.asarray(1e17, dtype=xp.float64)
+        y = math.atan2(xp.sin(x), xp.cos(x))  # -2.6584887370946806
+        expected = xp.asarray(y, dtype=xp.float64)
+        actual = stats.circmean(x, high=xp.pi, low=-xp.pi)
+        xp_assert_close(actual, expected, rtol=1e-15, atol=0.0)
+
 
 class TestCircFuncsNanPolicy:
     # `nan_policy` is implemented by the `_axis_nan_policy` decorator, which is
@@ -2923,13 +2973,12 @@ class TestMedianTest:
         res = stats.median_test(x, y, correction=correction)
         assert_equal((res.statistic, res.pvalue, res.median, res.table), res)
 
-
+@array_api_compatible
 class TestDirectionalStats:
     # Reference implementations are not available
-    def test_directional_stats_correctness(self):
+    def test_directional_stats_correctness(self, xp):
         # Data from Fisher: Dispersion on a sphere, 1953 and
         # Mardia and Jupp, Directional Statistics.
-
         decl = -np.deg2rad(np.array([343.2, 62., 36.9, 27., 359.,
                                      5.7, 50.4, 357.6, 44.]))
         incl = -np.deg2rad(np.array([66.1, 68.7, 70.1, 82.1, 79.5,
@@ -2938,90 +2987,97 @@ class TestDirectionalStats:
                          np.cos(incl) * np.sin(decl),
                          np.sin(incl)),
                         axis=1)
+        
+        decl = xp.asarray(decl.tolist())
+        incl = xp.asarray(incl.tolist())
+        data = xp.asarray(data.tolist())
 
         dirstats = stats.directional_stats(data)
         directional_mean = dirstats.mean_direction
-        mean_rounded = np.round(directional_mean, 4)
 
-        reference_mean = np.array([0.2984, -0.1346, -0.9449])
-        assert_allclose(mean_rounded, reference_mean)
+        reference_mean = xp.asarray([0.2984, -0.1346, -0.9449])
+        xp_assert_close(directional_mean, reference_mean, atol=1e-4)
 
     @pytest.mark.parametrize('angles, ref', [
         ([-np.pi/2, np.pi/2], 1.),
-        ([0, 2*np.pi], 0.)
+        ([0, 2 * np.pi], 0.)
     ])
-    def test_directional_stats_2d_special_cases(self, angles, ref):
-        if callable(ref):
-            ref = ref(angles)
-        data = np.stack([np.cos(angles), np.sin(angles)], axis=1)
+    def test_directional_stats_2d_special_cases(self, angles, ref, xp):
+        angles = xp.asarray(angles)
+        ref = xp.asarray(ref)
+        data = xp.stack([xp.cos(angles), xp.sin(angles)], axis=1)
         res = 1 - stats.directional_stats(data).mean_resultant_length
-        assert_allclose(res, ref)
+        xp_assert_close(res, ref)
 
-    def test_directional_stats_2d(self):
+    def test_directional_stats_2d(self, xp):
         # Test that for circular data directional_stats
         # yields the same result as circmean/circvar
         rng = np.random.default_rng(0xec9a6899d5a2830e0d1af479dbe1fd0c)
-        testdata = 2 * np.pi * rng.random((1000, ))
-        testdata_vector = np.stack((np.cos(testdata),
-                                    np.sin(testdata)),
+        testdata = xp.asarray(2 * xp.pi * rng.random((1000, )))
+        testdata_vector = xp.stack((xp.cos(testdata),
+                                    xp.sin(testdata)),
                                    axis=1)
         dirstats = stats.directional_stats(testdata_vector)
         directional_mean = dirstats.mean_direction
-        directional_mean_angle = np.arctan2(directional_mean[1],
-                                            directional_mean[0])
-        directional_mean_angle = directional_mean_angle % (2*np.pi)
+        xp_test = array_namespace(directional_mean)  # np needs atan2
+        directional_mean_angle = xp_test.atan2(directional_mean[1],
+                                               directional_mean[0])
+        directional_mean_angle = directional_mean_angle % (2 * xp.pi)
         circmean = stats.circmean(testdata)
-        assert_allclose(circmean, directional_mean_angle)
+        xp_assert_close(directional_mean_angle, circmean)
 
-        directional_var = 1 - dirstats.mean_resultant_length
+        directional_var = 1. - dirstats.mean_resultant_length
         circular_var = stats.circvar(testdata)
-        assert_allclose(directional_var, circular_var)
+        xp_assert_close(directional_var, circular_var)
 
-    def test_directional_mean_higher_dim(self):
+    def test_directional_mean_higher_dim(self, xp):
         # test that directional_stats works for higher dimensions
         # here a 4D array is reduced over axis = 2
-        data = np.array([[0.8660254, 0.5, 0.],
-                         [0.8660254, -0.5, 0.]])
-        full_array = np.tile(data, (2, 2, 2, 1))
-        expected = np.array([[[1., 0., 0.],
-                              [1., 0., 0.]],
-                             [[1., 0., 0.],
-                              [1., 0., 0.]]])
+        data = xp.asarray([[0.8660254, 0.5, 0.],
+                           [0.8660254, -0.5, 0.]])
+        full_array = xp.asarray(xp.tile(data, (2, 2, 2, 1)))
+        expected = xp.asarray([[[1., 0., 0.],
+                                [1., 0., 0.]],
+                               [[1., 0., 0.],
+                                [1., 0., 0.]]])
         dirstats = stats.directional_stats(full_array, axis=2)
-        assert_allclose(expected, dirstats.mean_direction)
+        xp_assert_close(dirstats.mean_direction, expected)
 
-    def test_directional_stats_list_ndarray_input(self):
+    @skip_xp_backends(np_only=True, reasons=['checking array-like input'])
+    def test_directional_stats_list_ndarray_input(self, xp):
         # test that list and numpy array inputs yield same results
         data = [[0.8660254, 0.5, 0.], [0.8660254, -0.5, 0]]
-        data_array = np.asarray(data)
-        res = stats.directional_stats(data)
-        ref = stats.directional_stats(data_array)
-        assert_allclose(res.mean_direction, ref.mean_direction)
-        assert_allclose(res.mean_resultant_length,
-                        res.mean_resultant_length)
+        data_array = xp.asarray(data, dtype=xp.float64)
+        ref = stats.directional_stats(data)
+        res = stats.directional_stats(data_array)
+        xp_assert_close(res.mean_direction,
+                        xp.asarray(ref.mean_direction))
+        xp_assert_close(res.mean_resultant_length,
+                        xp.asarray(res.mean_resultant_length))
 
-    def test_directional_stats_1d_error(self):
+    def test_directional_stats_1d_error(self, xp):
         # test that one-dimensional data raises ValueError
-        data = np.ones((5, ))
+        data = xp.ones((5, ))
         message = (r"samples must at least be two-dimensional. "
                    r"Instead samples has shape: (5,)")
         with pytest.raises(ValueError, match=re.escape(message)):
             stats.directional_stats(data)
 
-    def test_directional_stats_normalize(self):
+    @pytest.mark.parametrize("dtype", ["float32", "float64"])
+    def test_directional_stats_normalize(self, dtype, xp):
         # test that directional stats calculations yield same results
         # for unnormalized input with normalize=True and normalized
         # input with normalize=False
         data = np.array([[0.8660254, 0.5, 0.],
-                         [1.7320508, -1., 0.]])
-        res = stats.directional_stats(data, normalize=True)
+                         [1.7320508, -1., 0.]], dtype=dtype)
+        res = stats.directional_stats(xp.asarray(data), normalize=True)
         normalized_data = data / np.linalg.norm(data, axis=-1,
                                                 keepdims=True)
-        ref = stats.directional_stats(normalized_data,
-                                      normalize=False)
-        assert_allclose(res.mean_direction, ref.mean_direction)
-        assert_allclose(res.mean_resultant_length,
-                        ref.mean_resultant_length)
+        ref = stats.directional_stats(normalized_data, normalize=False)
+        xp_assert_close(res.mean_direction,
+                        xp.asarray(ref.mean_direction))
+        xp_assert_close(res.mean_resultant_length,
+                        xp.asarray(ref.mean_resultant_length))
 
 
 class TestFDRControl:

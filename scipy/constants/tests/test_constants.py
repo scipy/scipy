@@ -3,6 +3,7 @@ import pytest
 import scipy.constants as sc
 from scipy.conftest import array_api_compatible
 from scipy._lib._array_api import xp_assert_equal, xp_assert_close
+from numpy.testing import assert_allclose
 
 
 pytestmark = [array_api_compatible, pytest.mark.usefixtures("skip_xp_backends")]
@@ -53,7 +54,7 @@ class TestConvertTemperature:
 
     @skip_xp_backends(np_only=True, reasons=['Python list input uses NumPy backend'])
     def test_convert_temperature_array_like(self):
-        xp_assert_close(sc.convert_temperature([491.67, 0.], 'rankine', 'kelvin'),
+        assert_allclose(sc.convert_temperature([491.67, 0.], 'rankine', 'kelvin'),
                         [273.15, 0.], rtol=0., atol=1e-13)
 
 
@@ -73,7 +74,7 @@ class TestLambdaToNu:
 
     @skip_xp_backends(np_only=True, reasons=['Python list input uses NumPy backend'])
     def test_lambda_to_nu_array_like(self, xp):
-        xp_assert_equal(sc.lambda2nu([sc.speed_of_light, 1]),
+        assert_allclose(sc.lambda2nu([sc.speed_of_light, 1]),
                         [1, sc.speed_of_light])
 
 
@@ -84,6 +85,6 @@ class TestNuToLambda:
 
     @skip_xp_backends(np_only=True, reasons=['Python list input uses NumPy backend'])
     def test_nu_to_lambda_array_like(self, xp):
-        xp_assert_equal(sc.nu2lambda([sc.speed_of_light, 1]),
+        assert_allclose(sc.nu2lambda([sc.speed_of_light, 1]),
                         [1, sc.speed_of_light])
 

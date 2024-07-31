@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.linalg import lstsq
 from scipy._lib._util import float_factorial
-from scipy.ndimage import convolve1d
+from scipy.ndimage import convolve1d  # type: ignore[attr-defined]
 from ._arraytools import axis_slice
 
 

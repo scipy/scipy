@@ -45,7 +45,9 @@ maintainers = [
 # release branches, see:
 #     https://scipy.github.io/devdocs/dev/core-dev/index.html#version-ranges-for-numpy-and-other-dependencies
 requires-python = ">=3.10"
-dependencies = ["numpy>=1.23.5"]  # keep in sync with `min_numpy_version` in meson.build
+dependencies = [
+    "numpy>=1.23.5",
+] # keep in sync with `min_numpy_version` in meson.build
 readme = "README.rst"
 classifiers = [
     "Development Status :: 5 - Production/Stable",
@@ -80,7 +82,7 @@ test = [
     "scikit-umfpack",
     "pooch",
     "hypothesis>=6.30",
-    "array-api-strict",
+    "array-api-strict>=2.0",
     "Cython",
     "meson",
     'ninja; sys_platform != "emscripten"',
@@ -89,13 +91,14 @@ doc = [
     "sphinx>=5.0.0",
     "intersphinx_registry",
     "pydata-sphinx-theme>=0.15.2",
+    "sphinx-copybutton",
     "sphinx-design>=0.4.0",
     "matplotlib>=3.5",
     "numpydoc",
     "jupytext",
     "myst-nb",
     "pooch",
-    "jupyterlite-sphinx>=0.13.1",
+    "jupyterlite-sphinx>=0.16.2",
     "jupyterlite-pyodide-kernel",
 ]
 dev = [
@@ -123,13 +126,12 @@ dodoFile = "dev.py"
 
 [tool.cibuildwheel]
 skip = "cp36-* cp37-* cp38-* pp* *_ppc64le *_i686 *_s390x"
-# gmpy2 and scikit-umfpack are usually added for testing. However, there are
-# currently wheels missing that make the test script fail.
+# We're only testing with essential test dependencies, not optional ones.
+# Some of those require binary wheels (often missing for some platforms),
+# or they slow down the test suite runs too much or simply aren't necessary.
 test-requires = [
     "pytest",
-    "pytest-cov",
     "pytest-xdist",
-    "mpmath",
     "threadpoolctl",
     "pooch",
     "hypothesis",
@@ -144,13 +146,13 @@ before-build = "bash {project}/tools/wheels/cibw_before_build_linux.sh {project}
 
 [tool.cibuildwheel.linux.environment]
 # /project will be the $PWD equivalent inside the docker used to build the wheel
-PKG_CONFIG_PATH="/project/"
+PKG_CONFIG_PATH = "/project/"
 
 [tool.cibuildwheel.macos]
 before-build = "bash {project}/tools/wheels/cibw_before_build_macos.sh {project}"
 
 [tool.cibuildwheel.macos.environment]
-PKG_CONFIG_PATH="{project}"
+PKG_CONFIG_PATH = "{project}"
 
 [tool.cibuildwheel.windows]
 before-build = "bash {project}/tools/wheels/cibw_before_build_win.sh {project}"
@@ -158,6 +160,6 @@ repair-wheel-command = "bash ./tools/wheels/repair_windows.sh {wheel} {dest_dir}
 
 [tool.cibuildwheel.windows.environment]
 # This does not work because pkg-config does not like backslashes,
-PKG_CONFIG_PATH="{project}"
+PKG_CONFIG_PATH = "{project}"
 # do this instead (which will override this setting)
 # set CIBW_ENVIRONMENT_WINDOWS=PKG_CONFIG_PATH=PWD.replace('\\', '/')

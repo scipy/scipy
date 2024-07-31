@@ -36,8 +36,8 @@ def warn_extraneous(extraneous):
         Extraneous keyword arguments
     """
     if extraneous:
-        warn("The following arguments have no effect for a chosen solver: {}."
-             .format(", ".join(f"`{x}`" for x in extraneous)),
+        warn("The following arguments have no effect for a chosen solver: "
+             f"{', '.join(f'`{x}`' for x in extraneous)}.",
              stacklevel=3)
 
 

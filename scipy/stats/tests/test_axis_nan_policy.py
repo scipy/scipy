@@ -51,6 +51,16 @@ def xp_mean_2samp(*args, **kwargs):
     return stats._stats_py._xp_mean(args[0], *args[2:], weights=weights, **kwargs)
 
 
+def xp_var(*args, **kwargs):
+    kwargs.pop('_no_deco', None)
+    return stats._stats_py._xp_var(*args, **kwargs)
+
+
+def combine_pvalues_weighted(*args, **kwargs):
+    return stats.combine_pvalues(args[0], *args[2:], weights=args[1],
+                                 method='stouffer', **kwargs)
+
+
 axis_nan_policy_cases = [
     # function, args, kwds, number of samples, number of outputs,
     # ... paired, unpacker function
@@ -126,8 +136,10 @@ axis_nan_policy_cases = [
     (stats.alexandergovern, tuple(), {}, 2, 2, False,
      lambda res: (res.statistic, res.pvalue)),
     (stats.combine_pvalues, tuple(), {}, 1, 2, False, None),
+    (combine_pvalues_weighted, tuple(), {}, 2, 2, True, None),
     (xp_mean_1samp, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (xp_mean_2samp, tuple(), dict(), 2, 1, True, lambda x: (x,)),
+    (xp_var, tuple(), dict(), 1, 1, False, lambda x: (x,)),
 ]
 
 # If the message is one of those expected, put nans in
@@ -1239,10 +1251,6 @@ def test_mean_mixed_mask_nan_weights(weighted_fun_name, unpacker):
     a_masked3 = np.ma.masked_array(a, mask=(mask_a1 | mask_a2))
     b_masked3 = np.ma.masked_array(b, mask=(mask_b1 | mask_b2))
 
-    mask_all = (mask_a1 | mask_a2 | mask_b1 | mask_b2)
-    a_masked4 = np.ma.masked_array(a, mask=mask_all)
-    b_masked4 = np.ma.masked_array(b, mask=mask_all)
-
     with np.testing.suppress_warnings() as sup:
         message = 'invalid value encountered'
         sup.filter(RuntimeWarning, message)
@@ -1251,21 +1259,11 @@ def test_mean_mixed_mask_nan_weights(weighted_fun_name, unpacker):
         res2 = func(a_masked2, weights=b_masked2, nan_policy="omit", axis=axis)
         res3 = func(a_masked3, weights=b_masked3, nan_policy="raise", axis=axis)
         res4 = func(a_masked3, weights=b_masked3, nan_policy="propagate", axis=axis)
-        # Would test with a_masked3/b_masked3, but there is a bug in np.average
-        # that causes a bug in _no_deco mean with masked weights. Would use
-        # np.ma.average, but that causes other problems. See numpy/numpy#7330.
-        if weighted_fun_name in {"hmean"}:
-            weighted_fun_ma = getattr(stats.mstats, weighted_fun_name)
-            res5 = weighted_fun_ma(a_masked4, weights=b_masked4,
-                                   axis=axis, _no_deco=True)
 
     np.testing.assert_array_equal(res1, res)
     np.testing.assert_array_equal(res2, res)
     np.testing.assert_array_equal(res3, res)
     np.testing.assert_array_equal(res4, res)
-    if weighted_fun_name in {"hmean"}:
-        # _no_deco mean returns masked array, last element was masked
-        np.testing.assert_allclose(res5.compressed(), res[~np.isnan(res)])
 
 
 def test_raise_invalid_args_g17713():

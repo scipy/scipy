@@ -28,7 +28,7 @@ if np.lib.NumpyVersion(np.__version__) >= '1.25.0':
         DTypePromotionError
     )
 else:
-    from numpy import (
+    from numpy import (  # type: ignore[attr-defined, no-redef]
         AxisError, ComplexWarning, VisibleDeprecationWarning  # noqa: F401
     )
     DTypePromotionError = TypeError  # type: ignore
@@ -141,9 +141,17 @@ def _lazywhere(cond, arrays, f, fillvalue=None, f2=None):
     temp1 = xp.asarray(f(*(arr[cond] for arr in arrays)))
 
     if f2 is None:
-        fillvalue = xp.asarray(fillvalue)
-        dtype = xp.result_type(temp1.dtype, fillvalue.dtype)
-        out = xp.full(cond.shape, fill_value=fillvalue, dtype=dtype)
+        # If `fillvalue` is a Python scalar and we convert to `xp.asarray`, it gets the
+        # default `int` or `float` type of `xp`, so `result_type` could be wrong.
+        # `result_type` should/will handle mixed array/Python scalars;
+        # remove this special logic when it does.
+        if type(fillvalue) in {bool, int, float, complex}:
+            with np.errstate(invalid='ignore'):
+                dtype = (temp1 * fillvalue).dtype
+        else:
+           dtype = xp.result_type(temp1.dtype, fillvalue)
+        out = xp.full(cond.shape, dtype=dtype,
+                      fill_value=xp.asarray(fillvalue, dtype=dtype))
     else:
         ncond = ~cond
         temp2 = xp.asarray(f2(*(arr[ncond] for arr in arrays)))

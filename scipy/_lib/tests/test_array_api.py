@@ -101,7 +101,8 @@ class TestArrayAPI:
             xp_assert_equal(x, y, **options)
         else:
             with pytest.raises(AssertionError, match="Shapes do not match."):
-                xp_assert_equal(x, y, **options)
+                xp_assert_equal(x, xp.asarray(y), allow_0d=True, **options)
+
 
     @array_api_compatible
     def test_check_scalar(self, xp):
@@ -109,6 +110,20 @@ class TestArrayAPI:
             pytest.skip("Scalars only exist in NumPy")
 
         if is_numpy(xp):
-            with pytest.raises(AssertionError, match="Types do not match."):
+            # Check default convention: 0d arrays are not allowed
+            message = "Result is a NumPy 0d array. Many SciPy functions..."
+            with pytest.raises(AssertionError, match=message):
                 xp_assert_equal(xp.asarray(0.), xp.float64(0))
+            with pytest.raises(AssertionError, match=message):
+                xp_assert_equal(xp.asarray(0.), xp.asarray(0.))
             xp_assert_equal(xp.float64(0), xp.asarray(0.))
+            xp_assert_equal(xp.float64(0), xp.float64(0))
+
+            # Check `allow_0d`
+            message = "Types do not match:\n..."
+            with pytest.raises(AssertionError, match=message):
+                xp_assert_equal(xp.asarray(0.), xp.float64(0), allow_0d=True)
+            with pytest.raises(AssertionError, match=message):
+                xp_assert_equal(xp.float64(0), xp.asarray(0.), allow_0d=True)
+            xp_assert_equal(xp.float64(0), xp.float64(0), allow_0d=True)
+            xp_assert_equal(xp.asarray(0.), xp.asarray(0.), allow_0d=True)

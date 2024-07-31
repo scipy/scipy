@@ -353,6 +353,6 @@ class TestSphericalVoronoi:
         for region in sv.regions:
             assert isinstance(region, list)
         sv.sort_vertices_of_regions()
-        assert type(sv.regions[0][0]) == dtype
+        assert isinstance(sv.regions[0][0], dtype)
         sv.sort_vertices_of_regions()
-        assert type(sv.regions[0][0]) == dtype
+        assert isinstance(sv.regions[0][0], dtype)

@@ -35,6 +35,9 @@ and ``y``, and a third array, ``xnew``, of points to evaluate the interpolation 
 
 ..   :caption: One-dimensional interpolation using `numpy.interp`
 
+One limitation of `numpy.interp` is that it does not allow controlling the
+extrapolation. See the :ref:`interpolation with B-Splines section <tutorial-interpolate_bsplines>`
+section for alternative routines which provide this kind of functionality.
 
 Cubic splines
 =============
@@ -109,6 +112,8 @@ data with an outlier:
     >>> plt.show()
 
 
+.. _tutorial-interpolate_bsplines:
+
 Interpolation with B-splines
 ============================
 
@@ -155,6 +160,25 @@ Boundary conditions for the spline interpolation can be controlled by
 the ``bc_type`` argument to `make_interp_spline` function and `CubicSpline`
 constructor. By default, both use the 'not-a-knot' boundary
 condition.
+
+
+Non-cubic splines
+-----------------
+
+One use of ``make_interp_spline`` is constructing a linear interpolant with
+linear extrapolation since ``make_interp_spline`` extrapolates by default. Consider
+
+    >>> from scipy.interpolate import make_interp_spline
+    >>> x = np.linspace(0, 5, 11)
+    >>> y = 2*x
+    >>> spl = make_interp_spline(x, y, k=1)  # k=1: linear
+    >>> spl([-1, 6])
+    [-2, 12]
+    >>> np.interp([-1, 6], x, y)
+    [0, 10]
+
+See :ref:`the extrapolation section <tutorial-extrapolation>` for more details
+and discussion.
 
 
 .. _tutorial-interpolate_parametric:

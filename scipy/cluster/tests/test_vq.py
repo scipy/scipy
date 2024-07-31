@@ -355,7 +355,7 @@ class TestKMean:
             init = _krandinit(data, k, rng, xp)
             orig_cov = cov(data.T)
             init_cov = cov(init.T)
-            xp_assert_close(orig_cov, init_cov, atol=1e-2)
+            xp_assert_close(orig_cov, init_cov, atol=1.1e-2)
 
     def test_kmeans2_empty(self, xp):
         # Regression test for gh-1032.

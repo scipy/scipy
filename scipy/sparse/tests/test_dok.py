@@ -203,8 +203,4 @@ def test_dunder_ge(A, Asp):
 
 # Note: iter dunder follows np.array not dict
 def test_dunder_iter(A, Asp):
-    if isinstance(Asp, dok_array):
-        with pytest.raises(NotImplementedError):
-            [a.toarray() for a in Asp]
-    else:
-        assert all((a == asp).all() for a, asp in zip(A, Asp))
+    assert all((a == asp).all() for a, asp in zip(A, Asp))

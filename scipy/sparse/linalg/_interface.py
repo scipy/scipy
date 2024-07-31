@@ -445,8 +445,7 @@ class LinearOperator:
             elif x.ndim == 2:
                 return self.matmat(x)
             else:
-                raise ValueError('expected 1-d or 2-d array or matrix, got %r'
-                                 % x)
+                raise ValueError(f'expected 1-d or 2-d array or matrix, got {x!r}')
 
     def __matmul__(self, other):
         if np.isscalar(other):
@@ -500,8 +499,7 @@ class LinearOperator:
             elif x.ndim == 2:
                 return self.T.matmat(x.T).T
             else:
-                raise ValueError('expected 1-d or 2-d array or matrix, got %r'
-                                 % x)
+                raise ValueError(f'expected 1-d or 2-d array or matrix, got {x!r}')
 
     def __pow__(self, p):
         if np.isscalar(p):
@@ -759,7 +757,7 @@ class _PowerLinearOperator(LinearOperator):
         if not isinstance(A, LinearOperator):
             raise ValueError('LinearOperator expected as A')
         if A.shape[0] != A.shape[1]:
-            raise ValueError('square LinearOperator expected, got %r' % A)
+            raise ValueError(f'square LinearOperator expected, got {A!r}')
         if not isintlike(p) or p < 0:
             raise ValueError('non-negative integer expected as p')
 

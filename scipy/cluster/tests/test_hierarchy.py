@@ -32,7 +32,8 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 import numpy as np
-from numpy.testing import assert_allclose, assert_equal, assert_, assert_warns
+from numpy.testing import (assert_allclose, assert_equal, assert_array_equal, assert_,
+                           assert_warns)
 import pytest
 from pytest import raises as assert_raises
 
@@ -282,6 +283,18 @@ class TestFcluster:
         Z = single(xp.asarray(hierarchy_test_data.Q_X))
         T = fcluster(Z, t, criterion='maxclust_monocrit', monocrit=maxdists(Z))
         assert_(is_isomorphic(T, expectedT))
+
+    def test_fcluster_maxclust_gh_12651(self, xp):
+        y = xp.asarray([[1], [4], [5]])
+        Z = single(y)
+        assert_array_equal(fcluster(Z, t=1, criterion="maxclust"),
+                           xp.asarray([1, 1, 1]))
+        assert_array_equal(fcluster(Z, t=2, criterion="maxclust"),
+                           xp.asarray([2, 1, 1]))
+        assert_array_equal(fcluster(Z, t=3, criterion="maxclust"),
+                           xp.asarray([1, 2, 3]))
+        assert_array_equal(fcluster(Z, t=5, criterion="maxclust"),
+                           xp.asarray([1, 2, 3]))
 
 
 @skip_xp_backends(cpu_only=True)
@@ -946,9 +959,9 @@ class TestDendrogram:
     def test_labels_as_array_or_list(self, xp):
         # test for gh-12418
         Z = linkage(xp.asarray(hierarchy_test_data.ytdist), 'single')
-        labels = xp.asarray([1, 3, 2, 6, 4, 5])
-        result1 = dendrogram(Z, labels=labels, no_plot=True)
-        result2 = dendrogram(Z, labels=list(labels), no_plot=True)
+        labels = [1, 3, 2, 6, 4, 5]
+        result1 = dendrogram(Z, labels=xp.asarray(labels), no_plot=True)
+        result2 = dendrogram(Z, labels=labels, no_plot=True)
         assert result1 == result2
 
     @pytest.mark.skipif(not have_matplotlib, reason="no matplotlib")
@@ -1260,3 +1273,12 @@ def test_Heap(xp):
     pair = heap.get_min()
     assert_equal(pair['key'], 1)
     assert_equal(pair['value'], 10)
+
+
+@skip_xp_backends(cpu_only=True)
+def test_centroid_neg_distance(xp):
+    # gh-21011
+    values = xp.asarray([0, 0, -1])
+    with pytest.raises(ValueError):
+        # This is just checking that this doesn't crash
+        linkage(values, method='centroid')

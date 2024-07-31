@@ -464,7 +464,7 @@ class betanbinom_gen(rv_discrete):
                       + 2. * (a - 1.)**2.))
             denominator = ((a - 4.) * (a - 3.) * b * n
                            * (a + b - 1.) * (a + n - 1.))
-            # Wolfram Alpha uses Pearson kurtosis, so we substract 3 to get
+            # Wolfram Alpha uses Pearson kurtosis, so we subtract 3 to get
             # scipy's Fisher kurtosis
             return term * term_2 / denominator - 3.
         if 'k' in moments:
@@ -1389,7 +1389,7 @@ class zipfian_gen(rv_discrete):
 
     %(example)s
 
-    Confirm that `zipfian` reduces to `zipf` for large `n`, `a > 1`.
+    Confirm that `zipfian` reduces to `zipf` for large `n`, ``a > 1``.
 
     >>> import numpy as np
     >>> from scipy.stats import zipf, zipfian

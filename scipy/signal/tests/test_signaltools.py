@@ -2362,7 +2362,7 @@ class TestSOSFiltFilt(TestFiltFilt):
             sos = zpk2sos(*zpk)
             y = filtfilt(b, a, x)
             y_sos = sosfiltfilt(sos, x)
-            assert_allclose(y, y_sos, atol=1e-12, err_msg='order=%s' % order)
+            assert_allclose(y, y_sos, atol=1e-12, err_msg=f'order={order}')
 
 
 def filtfilt_gust_opt(b, a, x):

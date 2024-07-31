@@ -160,7 +160,7 @@ def argsort_which(eigenvalues, typ, k, which,
         elif mode == 'buckling':
             reval = eigenvalues / (eigenvalues - sigma)
         else:
-            raise ValueError("mode='%s' not recognized" % mode)
+            raise ValueError(f"mode='{mode}' not recognized")
 
         reval = np.round(reval, decimals=_ndigits[typ])
 
@@ -175,7 +175,7 @@ def argsort_which(eigenvalues, typ, k, which,
         else:
             ind = np.argsort(np.imag(reval))
     else:
-        raise ValueError("which='%s' is unrecognized" % which)
+        raise ValueError(f"which='{which}' is unrecognized")
 
     if which in ['LM', 'LA', 'LR', 'LI']:
         return ind[-k:]
@@ -195,17 +195,13 @@ def eval_evec(symmetric, d, typ, k, which, v0=None, sigma=None,
         eigs_func = eigs
 
     if general:
-        err = ("error for {}:general, typ={}, which={}, sigma={}, "
-               "mattype={}, OPpart={}, mode={}".format(eigs_func.__name__,
-                                                   typ, which, sigma,
-                                                   mattype.__name__,
-                                                   OPpart, mode))
+        err = (f"error for {eigs_func.__name__}:general, typ={typ}, which={which}, "
+               f"sigma={sigma}, mattype={mattype.__name__},"
+               f" OPpart={OPpart}, mode={mode}")
     else:
-        err = ("error for {}:standard, typ={}, which={}, sigma={}, "
-               "mattype={}, OPpart={}, mode={}".format(eigs_func.__name__,
-                                                   typ, which, sigma,
-                                                   mattype.__name__,
-                                                   OPpart, mode))
+        err = (f"error for {eigs_func.__name__}:standard, typ={typ}, which={which}, "
+               f"sigma={sigma}, mattype={mattype.__name__}, "
+               f"OPpart={OPpart}, mode={mode}")
 
     a = d['mat'].astype(typ)
     ac = mattype(a)
@@ -284,7 +280,7 @@ class DictWithRepr(dict):
         self.name = name
 
     def __repr__(self):
-        return "<%s>" % self.name
+        return f"<{self.name}>"
 
 
 class SymmetricParams:

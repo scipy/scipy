@@ -244,7 +244,7 @@ class netcdf_file:
         else:  # maybe it's a string
             self.filename = filename
             omode = 'r+' if mode == 'a' else mode
-            self.fp = open(self.filename, '%sb' % omode)
+            self.fp = open(self.filename, f'{omode}b')
             if mmap is None:
                 # Mmapped files on PyPy cannot be usually closed
                 # before the GC runs, so it's better to use mmap=False
@@ -385,7 +385,7 @@ class netcdf_file:
         type = dtype(type)
         typecode, size = type.char, type.itemsize
         if (typecode, size) not in REVERSE:
-            raise ValueError("NetCDF 3 does not support type %s" % type)
+            raise ValueError(f"NetCDF 3 does not support type {type}")
 
         # convert to big endian always for NetCDF 3
         data = empty(shape_, dtype=type.newbyteorder("B"))
@@ -576,7 +576,7 @@ class netcdf_file:
                     break
 
         typecode, size = TYPEMAP[nc_type]
-        dtype_ = '>%s' % typecode
+        dtype_ = f'>{typecode}'
         # asarray() dies with bytes and '>c' in py3k. Change to 'S'
         dtype_ = 'S' if dtype_ == '>c' else dtype_
 
@@ -601,8 +601,7 @@ class netcdf_file:
         # Check magic bytes and version
         magic = self.fp.read(3)
         if not magic == b'CDF':
-            raise TypeError("Error: %s is not a valid NetCDF 3 file" %
-                            self.filename)
+            raise TypeError(f"Error: {self.filename} is not a valid NetCDF 3 file")
         self.__dict__['version_byte'] = frombuffer(self.fp.read(1), '>b')[0]
 
         # Read file headers and set data.
@@ -750,7 +749,7 @@ class netcdf_file:
         begin = [self._unpack_int, self._unpack_int64][self.version_byte-1]()
 
         typecode, size = TYPEMAP[nc_type]
-        dtype_ = '>%s' % typecode
+        dtype_ = f'>{typecode}'
 
         return name, dimensions, shape, attributes, typecode, size, dtype_, begin, vsize
 
@@ -765,7 +764,7 @@ class netcdf_file:
         self.fp.read(-count % 4)  # read padding
 
         if typecode != 'c':
-            values = frombuffer(values, dtype='>%s' % typecode).copy()
+            values = frombuffer(values, dtype=f'>{typecode}').copy()
             if values.shape == (1,):
                 values = values[0]
         else:

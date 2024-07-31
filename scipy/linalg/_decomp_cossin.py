@@ -148,8 +148,8 @@ def cossin(X, p=None, q=None, separate=False,
         if p + mmp != q + mmq:
             raise ValueError("The subblocks have compatible sizes but "
                              "don't form a square array (instead they form a"
-                             " {}x{} array). This might be due to missing "
-                             "p, q arguments.".format(p + mmp, q + mmq))
+                              f" {p + mmp}x{q + mmq} array). This might be "
+                              "due to missing p, q arguments.")
 
         m = p + mmp
 

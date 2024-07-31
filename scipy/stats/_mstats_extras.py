@@ -25,7 +25,7 @@ from . import _mstats_basic as mstats
 from scipy.stats.distributions import norm, beta, t, binom
 
 
-def hdquantiles(data, prob=list([.25,.5,.75]), axis=None, var=False,):
+def hdquantiles(data, prob=(.25, .5, .75), axis=None, var=False,):
     """
     Computes quantile estimates with the Harrell-Davis method.
 
@@ -147,7 +147,7 @@ def hdmedian(data, axis=-1, var=False):
     return result.squeeze()
 
 
-def hdquantiles_sd(data, prob=list([.25,.5,.75]), axis=None):
+def hdquantiles_sd(data, prob=(.25, .5, .75), axis=None):
     """
     The standard error of the Harrell-Davis quantile estimates by jackknife.
 
@@ -261,7 +261,7 @@ def trimmed_mean_ci(data, limits=(0.2,0.2), inclusive=(True,True),
     return np.array((tmean - tppf*tstde, tmean+tppf*tstde))
 
 
-def mjci(data, prob=[0.25,0.5,0.75], axis=None):
+def mjci(data, prob=(0.25, 0.5, 0.75), axis=None):
     """
     Returns the Maritz-Jarrett estimators of the standard error of selected
     experimental quantiles of the data.
@@ -306,7 +306,7 @@ def mjci(data, prob=[0.25,0.5,0.75], axis=None):
         return ma.apply_along_axis(_mjci_1D, axis, data, p)
 
 
-def mquantiles_cimj(data, prob=[0.25,0.50,0.75], alpha=0.05, axis=None):
+def mquantiles_cimj(data, prob=(0.25, 0.50, 0.75), alpha=0.05, axis=None):
     """
     Computes the alpha confidence interval for the selected quantiles of the
     data, with Maritz-Jarrett estimators.

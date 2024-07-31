@@ -292,8 +292,8 @@ class FuncData:
             if np.any(bad_j):
                 # Some bad results: inform what, where, and how bad
                 msg = [""]
-                msg.append("Max |adiff|: %g" % diff[bad_j].max())
-                msg.append("Max |rdiff|: %g" % rdiff[bad_j].max())
+                msg.append(f"Max |adiff|: {diff[bad_j].max():g}")
+                msg.append(f"Max |rdiff|: {rdiff[bad_j].max():g}")
                 msg.append("Bad results (%d out of %d) for the following points "
                            "(in output %d):"
                            % (np.sum(bad_j), point_count, output_num,))
@@ -315,7 +315,7 @@ class FuncData:
         else:
             is_complex = ""
         if self.dataname:
-            return "<Data for {}{}: {}>".format(self.func.__name__, is_complex,
-                                            os.path.basename(self.dataname))
+            return (f"<Data for {self.func.__name__}{is_complex}: "
+                    f"{os.path.basename(self.dataname)}>")
         else:
             return f"<Data for {self.func.__name__}{is_complex}>"

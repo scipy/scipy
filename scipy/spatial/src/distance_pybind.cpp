@@ -221,8 +221,7 @@ ArrayDescriptor get_descriptor(const py::array& arr) {
     const auto arr_shape = arr.shape();
     desc.shape.assign(arr_shape, arr_shape + ndim);
 
-    // TODO: Replace the following with `arr.itemsize()` this is a temporary workaround:
-    desc.element_size = PyArray_ITEMSIZE(reinterpret_cast<PyArrayObject *>(arr.ptr()));
+    desc.element_size = arr.itemsize();
     const auto arr_strides = arr.strides();
     desc.strides.assign(arr_strides, arr_strides + ndim);
     for (intptr_t i = 0; i < ndim; ++i) {

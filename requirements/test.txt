@@ -6,12 +6,12 @@ pytest-timeout
 pytest-xdist
 asv
 mpmath
-# gymp2  # does not yet support Python 3.12
+gmpy2
 threadpoolctl
 # scikit-umfpack  # circular dependency issues
 pooch
 hypothesis>=6.30
-array-api-strict
+array-api-strict>=2.0
 Cython
 meson
 ninja; sys_platform != "emscripten"

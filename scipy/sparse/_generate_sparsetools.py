@@ -121,6 +121,7 @@ OTHER_ROUTINES = """
 coo_tocsr           v iiiIIT*I*I*T
 coo_todense         v iilIIT*Ti
 coo_matvec          v lIITT*T
+coo_matmat_dense    v llIITT*T
 dia_matvec          v iiiiITT*T
 cs_graph_components i iII*I
 """
@@ -204,7 +205,7 @@ def newer(source, target):
     both exist and 'target' is the same age or younger than 'source'.
     """
     if not os.path.exists(source):
-        raise ValueError("file '%s' does not exist" % os.path.abspath(source))
+        raise ValueError(f"file '{os.path.abspath(source)}' does not exist")
     if not os.path.exists(target):
         return 1
 

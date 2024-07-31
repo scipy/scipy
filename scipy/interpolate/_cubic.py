@@ -482,7 +482,7 @@ class Akima1DInterpolator(CubicHermiteSpline):
     >>> ax.legend()
     >>> fig.show()
 
-    The overshoot that occured in ``"akima"`` has been avoided in ``"makima"``.
+    The overshoot that occurred in ``"akima"`` has been avoided in ``"makima"``.
 
     References
     ----------
@@ -607,7 +607,7 @@ class CubicSpline(CubicHermiteSpline):
         If `bc_type` is a 2-tuple, the first and the second value will be
         applied at the curve start and end respectively. The tuple values can
         be one of the previously mentioned strings (except 'periodic') or a
-        tuple `(order, deriv_values)` allowing to specify arbitrary
+        tuple ``(order, deriv_values)`` allowing to specify arbitrary
         derivatives at curve ends:
 
         * `order`: the derivative order, 1 or 2.

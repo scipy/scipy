@@ -1179,11 +1179,11 @@ class TestLstsq:
                         x = out[0]
                         r = out[2]
                         assert_(r == 2,
-                                'expected efficient rank 2, got %s' % r)
+                                f'expected efficient rank 2, got {r}')
                         assert_allclose(dot(a, x), b,
                                         atol=25 * _eps_cast(a1.dtype),
                                         rtol=25 * _eps_cast(a1.dtype),
-                                        err_msg="driver: %s" % lapack_driver)
+                                        err_msg=f"driver: {lapack_driver}")
 
     def test_simple_overdet(self):
         for dtype in REAL_DTYPES:
@@ -1203,16 +1203,16 @@ class TestLstsq:
                     else:
                         residuals = out[1]
                     r = out[2]
-                    assert_(r == 2, 'expected efficient rank 2, got %s' % r)
+                    assert_(r == 2, f'expected efficient rank 2, got {r}')
                     assert_allclose(abs((dot(a, x) - b)**2).sum(axis=0),
                                     residuals,
                                     rtol=25 * _eps_cast(a1.dtype),
                                     atol=25 * _eps_cast(a1.dtype),
-                                    err_msg="driver: %s" % lapack_driver)
+                                    err_msg=f"driver: {lapack_driver}")
                     assert_allclose(x, (-0.428571428571429, 0.85714285714285),
                                     rtol=25 * _eps_cast(a1.dtype),
                                     atol=25 * _eps_cast(a1.dtype),
-                                    err_msg="driver: %s" % lapack_driver)
+                                    err_msg=f"driver: {lapack_driver}")
 
     def test_simple_overdet_complex(self):
         for dtype in COMPLEX_DTYPES:
@@ -1234,18 +1234,18 @@ class TestLstsq:
                     else:
                         residuals = out[1]
                     r = out[2]
-                    assert_(r == 2, 'expected efficient rank 2, got %s' % r)
+                    assert_(r == 2, f'expected efficient rank 2, got {r}')
                     assert_allclose(abs((dot(a, x) - b)**2).sum(axis=0),
                                     residuals,
                                     rtol=25 * _eps_cast(a1.dtype),
                                     atol=25 * _eps_cast(a1.dtype),
-                                    err_msg="driver: %s" % lapack_driver)
+                                    err_msg=f"driver: {lapack_driver}")
                     assert_allclose(
                                 x, (-0.4831460674157303 + 0.258426966292135j,
                                     0.921348314606741 + 0.292134831460674j),
                                 rtol=25 * _eps_cast(a1.dtype),
                                 atol=25 * _eps_cast(a1.dtype),
-                                err_msg="driver: %s" % lapack_driver)
+                                err_msg=f"driver: {lapack_driver}")
 
     def test_simple_underdet(self):
         for dtype in REAL_DTYPES:
@@ -1262,12 +1262,12 @@ class TestLstsq:
 
                     x = out[0]
                     r = out[2]
-                    assert_(r == 2, 'expected efficient rank 2, got %s' % r)
+                    assert_(r == 2, f'expected efficient rank 2, got {r}')
                     assert_allclose(x, (-0.055555555555555, 0.111111111111111,
                                         0.277777777777777),
                                     rtol=25 * _eps_cast(a1.dtype),
                                     atol=25 * _eps_cast(a1.dtype),
-                                    err_msg="driver: %s" % lapack_driver)
+                                    err_msg=f"driver: {lapack_driver}")
 
     @pytest.mark.parametrize("dtype", REAL_DTYPES)
     @pytest.mark.parametrize("n", (20, 200))
@@ -1297,13 +1297,13 @@ class TestLstsq:
                           dot(a, x), b,
                           rtol=500 * _eps_cast(a1.dtype),
                           atol=500 * _eps_cast(a1.dtype),
-                          err_msg="driver: %s" % lapack_driver)
+                          err_msg=f"driver: {lapack_driver}")
             else:
                 assert_allclose(
                           dot(a, x), b,
                           rtol=1000 * _eps_cast(a1.dtype),
                           atol=1000 * _eps_cast(a1.dtype),
-                          err_msg="driver: %s" % lapack_driver)
+                          err_msg=f"driver: {lapack_driver}")
 
     @pytest.mark.skipif(IS_MUSL, reason="may segfault on Alpine, see gh-17630")
     @pytest.mark.parametrize("dtype", COMPLEX_DTYPES)
@@ -1334,13 +1334,13 @@ class TestLstsq:
                           dot(a, x), b,
                           rtol=400 * _eps_cast(a1.dtype),
                           atol=400 * _eps_cast(a1.dtype),
-                          err_msg="driver: %s" % lapack_driver)
+                          err_msg=f"driver: {lapack_driver}")
             else:
                 assert_allclose(
                           dot(a, x), b,
                           rtol=1000 * _eps_cast(a1.dtype),
                           atol=1000 * _eps_cast(a1.dtype),
-                          err_msg="driver: %s" % lapack_driver)
+                          err_msg=f"driver: {lapack_driver}")
 
     def test_random_overdet(self):
         rng = np.random.RandomState(1234)
@@ -1368,7 +1368,7 @@ class TestLstsq:
                                           x, direct_lstsq(a, b, cmplx=0),
                                           rtol=25 * _eps_cast(a1.dtype),
                                           atol=25 * _eps_cast(a1.dtype),
-                                          err_msg="driver: %s" % lapack_driver)
+                                          err_msg=f"driver: {lapack_driver}")
 
     def test_random_complex_overdet(self):
         rng = np.random.RandomState(1234)
@@ -1398,7 +1398,7 @@ class TestLstsq:
                                       x, direct_lstsq(a, b, cmplx=1),
                                       rtol=25 * _eps_cast(a1.dtype),
                                       atol=25 * _eps_cast(a1.dtype),
-                                      err_msg="driver: %s" % lapack_driver)
+                                      err_msg=f"driver: {lapack_driver}")
 
     def test_check_finite(self):
         with suppress_warnings() as sup:
@@ -1426,11 +1426,11 @@ class TestLstsq:
                         overwrite_b=overwrite)
             x = out[0]
             r = out[2]
-            assert_(r == 2, 'expected efficient rank 2, got %s' % r)
+            assert_(r == 2, f'expected efficient rank 2, got {r}')
             assert_allclose(dot(a, x), b,
                             rtol=25 * _eps_cast(a.dtype),
                             atol=25 * _eps_cast(a.dtype),
-                            err_msg="driver: %s" % lapack_driver)
+                            err_msg=f"driver: {lapack_driver}")
 
     def test_empty(self):
         for a_shape, b_shape in (((0, 2), (0,)),

@@ -335,7 +335,7 @@ class MatFile5Reader(MatFileReader):
                 warnings.warn(
                     f'Unreadable variable "{name}", because "{err}"',
                     Warning, stacklevel=2)
-                res = "Read error: %s" % err
+                res = f"Read error: {err}"
             self.mat_stream.seek(next_position)
             mdict[name] = res
             if hdr.is_global:

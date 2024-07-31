@@ -88,9 +88,10 @@ class NDInterpolatorBase:
             self.scale = np.ptp(points, axis=0)
             self.scale[~(self.scale > 0)] = 1.0  # avoid division by 0
             self.points /= self.scale
-        
-        self._calculate_triangulation(self.points)
-        
+
+        if self.tri is None:
+            self._calculate_triangulation(self.points)
+
         if need_values or values is not None:
             self._set_values(values, fill_value, need_contiguous, ndim)
         else:

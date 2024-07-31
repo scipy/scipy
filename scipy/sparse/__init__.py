@@ -127,8 +127,8 @@ Sparse tools:
 
 Identifying sparse arrays:
 
-- use `isinstance(A, sp.sparse.sparray)` to check whether an array or matrix.
-- use `A.format == 'csr'` to check the sparse format
+- use ``isinstance(A, sp.sparse.sparray)`` to check whether an array or matrix.
+- use ``A.format == 'csr'`` to check the sparse format
 
 Identifying sparse matrices:
 

@@ -228,7 +228,7 @@ def _prepad_for_spline_filter(input, mode, cval):
 def geometric_transform(input, mapping, output_shape=None,
                         output=None, order=3,
                         mode='constant', cval=0.0, prefilter=True,
-                        extra_arguments=(), extra_keywords={}):
+                        extra_arguments=(), extra_keywords=None):
     """
     Apply an arbitrary geometric transform.
 
@@ -333,6 +333,8 @@ def geometric_transform(input, mapping, output_shape=None,
     array([2, 3, 4, 1, 2])
 
     """
+    if extra_keywords is None:
+        extra_keywords = {}
     if order < 0 or order > 5:
         raise RuntimeError('spline order not supported')
     input = np.asarray(input)

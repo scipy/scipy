@@ -7,7 +7,7 @@ from numpy.testing import assert_equal, assert_allclose
 
 from scipy.sparse import (
         bsr_array, csc_array, dia_array, lil_array,
-        coo_array, csr_array, dok_array, SparseEfficiencyWarning,
+        coo_array, csr_array, dok_array,
     )
 from scipy.sparse._sputils import supported_dtypes, matrix
 from scipy._lib._util import ComplexWarning
@@ -407,44 +407,3 @@ class TestCommon1D:
         assert_equal(S.toarray(), [1, 0, 3])
         S.resize((5,))
         assert_equal(S.toarray(), [1, 0, 3, 0, 0])
-
-
-@pytest.mark.parametrize("spcreator", [csr_array, dok_array])
-class TestGetSet1D:
-    def test_getelement(self, spcreator):
-        D = np.array([4, 3, 0])
-        A = spcreator(D)
-
-        N = D.shape[0]
-        for j in range(-N, N):
-            assert_equal(A[j], D[j])
-
-        for ij in [3, -4]:
-            with pytest.raises(
-                (IndexError, TypeError), match='index value out of bounds'
-            ):
-                A.__getitem__(ij)
-
-        # single element tuples unwrapped
-        assert A[(0,)] == 4
-
-        with pytest.raises(IndexError, match='index value out of bounds'):
-            A.__getitem__((4,))
-
-    def test_setelement(self, spcreator):
-        dtype = np.float64
-        A = spcreator((12,), dtype=dtype)
-        with np.testing.suppress_warnings() as sup:
-            sup.filter(SparseEfficiencyWarning, "Changing the sparsity structure")
-            A[0] = dtype(0)
-            A[1] = dtype(3)
-            A[8] = dtype(9.0)
-            A[-2] = dtype(7)
-            A[5] = 9
-
-            A[-9,] = dtype(8)
-            A[1,] = dtype(5)  # overwrite using 1-tuple index
-
-            for ij in [13, -14, (13,), (14,)]:
-                with pytest.raises(IndexError, match='index value out of bounds'):
-                    A.__setitem__(ij, 123.0)

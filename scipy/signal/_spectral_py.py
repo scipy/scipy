@@ -1761,8 +1761,8 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
     .. versionadded:: 0.16.0
     """
     if mode not in ['psd', 'stft']:
-        raise ValueError("Unknown value for mode %s, must be one of: "
-                         "{'psd', 'stft'}" % mode)
+        raise ValueError(f"Unknown value for mode {mode}, must be one of: "
+                         "{'psd', 'stft'}")
 
     boundary_funcs = {'even': even_ext,
                       'odd': odd_ext,
@@ -1771,8 +1771,8 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
                       None: None}
 
     if boundary not in boundary_funcs:
-        raise ValueError("Unknown boundary option '{}', must be one of: {}"
-                         .format(boundary, list(boundary_funcs.keys())))
+        raise ValueError(f"Unknown boundary option '{boundary}', "
+                         f"must be one of: {list(boundary_funcs.keys())}")
 
     # If x and y are the same object we can save ourselves some computation.
     same_data = y is x
@@ -1865,7 +1865,7 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
 
     if padded:
         # Pad to integer number of windowed segments
-        # I.e make x.shape[-1] = nperseg + (nseg-1)*nstep, with integer nseg
+        # I.e. make x.shape[-1] = nperseg + (nseg-1)*nstep, with integer nseg
         nadd = (-(x.shape[-1]-nperseg) % nstep) % nperseg
         zeros_shape = list(x.shape[:-1]) + [nadd]
         x = np.concatenate((x, np.zeros(zeros_shape)), axis=-1)
@@ -1898,7 +1898,7 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
     elif scaling == 'spectrum':
         scale = 1.0 / win.sum()**2
     else:
-        raise ValueError('Unknown scaling: %r' % scaling)
+        raise ValueError(f'Unknown scaling: {scaling!r}')
 
     if mode == 'stft':
         scale = np.sqrt(scale)

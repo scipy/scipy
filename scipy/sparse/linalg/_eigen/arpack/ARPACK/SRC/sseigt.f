@@ -3,7 +3,7 @@ c\BeginDoc
 c
 c\Name: sseigt
 c
-c\Description: 
+c\Description:
 c  Compute the eigenvalues of the current symmetric tridiagonal matrix
 c  and the corresponding error bounds given the current residual norm.
 c
@@ -20,16 +20,16 @@ c  N       Integer.  (INPUT)
 c          Size of the symmetric tridiagonal matrix H.
 c
 c  H       Real N by 2 array.  (INPUT)
-c          H contains the symmetric tridiagonal matrix with the 
-c          subdiagonal in the first column starting at H(2,1) and the 
+c          H contains the symmetric tridiagonal matrix with the
+c          subdiagonal in the first column starting at H(2,1) and the
 c          main diagonal in second column.
 c
 c  LDH     Integer.  (INPUT)
-c          Leading dimension of H exactly as declared in the calling 
+c          Leading dimension of H exactly as declared in the calling
 c          program.
 c
 c  EIG     Real array of length N.  (OUTPUT)
-c          On output, EIG contains the N eigenvalues of H possibly 
+c          On output, EIG contains the N eigenvalues of H possibly
 c          unsorted.  The BOUNDS arrays are returned in the
 c          same sorted order as EIG.
 c
@@ -65,16 +65,16 @@ c     scopy   Level 1 BLAS that copies one vector to another.
 c
 c\Author
 c     Danny Sorensen               Phuong Vu
-c     Richard Lehoucq              CRPC / Rice University 
-c     Dept. of Computational &     Houston, Texas 
+c     Richard Lehoucq              CRPC / Rice University
+c     Dept. of Computational &     Houston, Texas
 c     Applied Mathematics
-c     Rice University           
-c     Houston, Texas            
+c     Rice University
+c     Houston, Texas
 c
 c\Revision history:
 c     xx/xx/92: Version ' 2.4'
 c
-c\SCCS Information: @(#) 
+c\SCCS Information: @(#)
 c FILE: seigt.F   SID: 2.4   DATE OF SID: 8/27/96   RELEASE: 2
 c
 c\Remarks
@@ -84,7 +84,7 @@ c\EndLib
 c
 c-----------------------------------------------------------------------
 c
-      subroutine sseigt 
+      subroutine sseigt
      &   ( rnorm, n, h, ldh, eig, bounds, workl, ierr )
 c
 c     %----------------------------------------------------%
@@ -136,7 +136,7 @@ c
 c     %-------------------------------%
 c     | Initialize timing statistics  |
 c     | & message level for debugging |
-c     %-------------------------------% 
+c     %-------------------------------%
 c
       call arscnd (t0)
       msglvl = mseigt
@@ -167,7 +167,7 @@ c
       do 30 k = 1, n
          bounds(k) = rnorm*abs(bounds(k))
    30 continue
-c 
+c
       call arscnd (t1)
       tseigt = tseigt + (t1 - t0)
 c

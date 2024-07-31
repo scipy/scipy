@@ -38,7 +38,7 @@ def _perm_test(x, y, stat, reps=1000, workers=-1, random_state=None):
     Parameters
     ----------
     x, y : ndarray
-        `x` and `y` have shapes `(n, p)` and `(n, q)`.
+        `x` and `y` have shapes ``(n, p)`` and ``(n, q)``.
     stat : float
         The sample test statistic.
     reps : int, optional
@@ -167,7 +167,7 @@ def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000,
         An object containing attributes:
 
         statistic : float
-            The sample MGC test statistic within `[-1, 1]`.
+            The sample MGC test statistic within ``[-1, 1]``.
         pvalue : float
             The p-value obtained via permutation.
         mgc_dict : dict
@@ -177,7 +177,7 @@ def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000,
                     A 2D representation of the latent geometry of the
                     relationship.
                 - opt_scale : (int, int)
-                    The estimated optimal scale as a `(x, y)` pair.
+                    The estimated optimal scale as a ``(x, y)`` pair.
                 - null_dist : list
                     The null distribution derived from the permuted matrices.
 
@@ -384,14 +384,14 @@ def _mgc_stat(distx, disty):
     Parameters
     ----------
     distx, disty : ndarray
-        `distx` and `disty` have shapes `(n, p)` and `(n, q)` or
-        `(n, n)` and `(n, n)`
+        `distx` and `disty` have shapes ``(n, p)`` and ``(n, q)`` or
+        ``(n, n)`` and ``(n, n)``
         if distance matrices.
 
     Returns
     -------
     stat : float
-        The sample MGC test statistic within `[-1, 1]`.
+        The sample MGC test statistic within ``[-1, 1]``.
     stat_dict : dict
         Contains additional useful additional returns containing the following
         keys:
@@ -399,7 +399,7 @@ def _mgc_stat(distx, disty):
             - stat_mgc_map : ndarray
                 MGC-map of the statistics.
             - opt_scale : (float, float)
-                The estimated optimal scale as a `(x, y)` pair.
+                The estimated optimal scale as a ``(x, y)`` pair.
 
     """
     # calculate MGC map and optimal scale
@@ -434,7 +434,7 @@ def _threshold_mgc_map(stat_mgc_map, samp_size):
     Parameters
     ----------
     stat_mgc_map : ndarray
-        All local correlations within `[-1,1]`.
+        All local correlations within ``[-1,1]``.
     samp_size : int
         The sample size of original data.
 
@@ -483,14 +483,14 @@ def _smooth_mgc_map(sig_connect, stat_mgc_map):
     sig_connect : ndarray
         A binary matrix with 1's indicating the significant region.
     stat_mgc_map : ndarray
-        All local correlations within `[-1, 1]`.
+        All local correlations within ``[-1, 1]``.
 
     Returns
     -------
     stat : float
-        The sample MGC statistic within `[-1, 1]`.
+        The sample MGC statistic within ``[-1, 1]``.
     opt_scale: (float, float)
-        The estimated optimal scale as an `(x, y)` pair.
+        The estimated optimal scale as an ``(x, y)`` pair.
 
     """
     m, n = stat_mgc_map.shape
@@ -531,16 +531,16 @@ def _two_sample_transform(u, v):
     Parameters
     ----------
     u, v : ndarray
-        `u` and `v` have shapes `(n, p)` and `(m, p)`.
+        `u` and `v` have shapes ``(n, p)`` and ``(m, p)``.
 
     Returns
     -------
     x : ndarray
-        Concatenate `u` and `v` along the `axis = 0`. `x` thus has shape
-        `(2n, p)`.
+        Concatenate `u` and `v` along the ``axis = 0``. `x` thus has shape
+        ``(2n, p)``.
     y : ndarray
         Label matrix for `x` where 0 refers to samples that comes from `u` and
-        1 refers to samples that come from `v`. `y` thus has shape `(2n, 1)`.
+        1 refers to samples that come from `v`. `y` thus has shape ``(2n, 1)``.
 
     """
     nx = u.shape[0]

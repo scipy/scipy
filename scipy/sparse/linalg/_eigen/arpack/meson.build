@@ -1,4 +1,5 @@
 arpack_sources = [
+  'ARPACK/SRC/ccdotc.f',
   'ARPACK/SRC/cgetv0.f',
   'ARPACK/SRC/cnaitr.f',
   'ARPACK/SRC/cnapps.f',
@@ -65,6 +66,7 @@ arpack_sources = [
   'ARPACK/SRC/zngets.f',
   'ARPACK/SRC/zsortc.f',
   'ARPACK/SRC/zstatn.f',
+  'ARPACK/SRC/zzdotc.f',
   'ARPACK/UTIL/cmout.f',
   'ARPACK/UTIL/cvout.f',
   'ARPACK/UTIL/dmout.f',

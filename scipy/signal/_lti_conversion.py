@@ -528,6 +528,6 @@ def cont2discrete(system, dt, method="zoh", alpha=None):
         dd = c @ b * dt
 
     else:
-        raise ValueError("Unknown transformation method '%s'" % method)
+        raise ValueError(f"Unknown transformation method '{method}'")
 
     return ad, bd, cd, dd, dt

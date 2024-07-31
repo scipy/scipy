@@ -8,7 +8,8 @@ from scipy.special import poch
 from scipy.conftest import array_api_compatible
 from scipy._lib._array_api import xp_assert_close
 
-pytestmark = array_api_compatible
+pytestmark = [array_api_compatible, pytest.mark.usefixtures("skip_xp_backends"),]
+skip_xp_backends = pytest.mark.skip_xp_backends
 
 
 def test_fht_agrees_with_fftlog(xp):
@@ -167,3 +168,12 @@ def test_fht_exact(n, xp):
     At = xp.asarray((2/k)**gamma * poch((mu+1-gamma)/2, gamma))
 
     xp_assert_close(A, At)
+
+@skip_xp_backends(np_only=True,
+                  reasons=['array-likes only supported for NumPy backend'])
+@pytest.mark.parametrize("op", [fht, ifht])
+def test_array_like(xp, op):
+    x = [[[1.0, 1.0], [1.0, 1.0]],
+         [[1.0, 1.0], [1.0, 1.0]],
+         [[1.0, 1.0], [1.0, 1.0]]]
+    xp_assert_close(op(x, 1.0, 2.0), op(xp.asarray(x), 1.0, 2.0))

@@ -191,6 +191,21 @@ class TestBracketMethods(TestScalarRootFinders):
         assert_allclose(root, 1.0, atol=self.xtol, rtol=self.rtol)
 
     @pytest.mark.parametrize('method', bracket_methods)
+    @pytest.mark.parametrize('function', tstutils_functions)
+    def test_bracket_is_array(self, method, function):
+        # Test bracketing root finders called via `root_scalar` on a small set
+        # of simple problems, each of which has a root at `x=1`. Check that
+        # passing `bracket` as a `ndarray` is accepted and leads to finding the
+        # correct root.
+        a, b = .5, sqrt(3)
+        r = root_scalar(function, method=method.__name__,
+                        bracket=np.array([a, b]), x0=a, xtol=self.xtol,
+                        rtol=self.rtol)
+        assert r.converged
+        assert_allclose(r.root, 1.0, atol=self.xtol, rtol=self.rtol)
+        assert r.method == method.__name__
+
+    @pytest.mark.parametrize('method', bracket_methods)
     def test_aps_collection(self, method):
         self.run_collection('aps', method, method.__name__, smoothness=1)
 
@@ -437,18 +452,23 @@ class TestNewton(TestScalarRootFinders):
         # to secant. When x1 was not specified, secant failed.
         # Check that without fprime, the default is secant if x1 is specified
         # and newton otherwise.
-        res_newton_default = root_scalar(f1, method='newton', x0=3, xtol=1e-6)
-        res_secant_default = root_scalar(f1, method='secant', x0=3, x1=2,
+        # Also confirm that `x` is always a scalar (gh-21148)
+        def f(x):
+            assert np.isscalar(x)
+            return f1(x)
+
+        res_newton_default = root_scalar(f, method='newton', x0=3, xtol=1e-6)
+        res_secant_default = root_scalar(f, method='secant', x0=3, x1=2,
                                          xtol=1e-6)
         # `newton` uses the secant method when `x1` and `x2` are specified
-        res_secant = newton(f1, x0=3, x1=2, tol=1e-6, full_output=True)[1]
+        res_secant = newton(f, x0=3, x1=2, tol=1e-6, full_output=True)[1]
 
         # all three found a root
-        assert_allclose(f1(res_newton_default.root), 0, atol=1e-6)
+        assert_allclose(f(res_newton_default.root), 0, atol=1e-6)
         assert res_newton_default.root.shape == tuple()
-        assert_allclose(f1(res_secant_default.root), 0, atol=1e-6)
+        assert_allclose(f(res_secant_default.root), 0, atol=1e-6)
         assert res_secant_default.root.shape == tuple()
-        assert_allclose(f1(res_secant.root), 0, atol=1e-6)
+        assert_allclose(f(res_secant.root), 0, atol=1e-6)
         assert res_secant.root.shape == tuple()
 
         # Defaults are correct
@@ -498,7 +518,7 @@ def test_gh_5555():
     for method in methods:
         res = method(f, -1e8, 1e7, xtol=xtol, rtol=rtol)
         assert_allclose(root, res, atol=xtol, rtol=rtol,
-                        err_msg='method %s' % method.__name__)
+                        err_msg=f'method {method.__name__}')
 
 
 def test_gh_5557():

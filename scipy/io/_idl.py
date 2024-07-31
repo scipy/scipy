@@ -654,7 +654,9 @@ class AttrDict(dict):
         AttributeError: 'AttrDict' object has no attribute 'missing'
     '''
 
-    def __init__(self, init={}):
+    def __init__(self, init=None):
+        if init is None:
+            init = {}
         dict.__init__(self, init)
 
     def __getitem__(self, name):
@@ -756,7 +758,7 @@ def readsav(file_name, idict=None, python_dict=False,
     # Read the signature, which should be 'SR'
     signature = _read_bytes(f, 2)
     if signature != b'SR':
-        raise Exception("Invalid SIGNATURE: %s" % signature)
+        raise Exception(f"Invalid SIGNATURE: {signature}")
 
     # Next, the record format, which is '\x00\x04' for normal .sav
     # files, and '\x00\x06' for compressed .sav files.
@@ -776,7 +778,7 @@ def readsav(file_name, idict=None, python_dict=False,
             fout = tempfile.NamedTemporaryFile(suffix='.sav')
 
         if verbose:
-            print(" -> expanding to %s" % fout.name)
+            print(f" -> expanding to {fout.name}")
 
         # Write header
         fout.write(b'SR\x00\x04')
@@ -828,7 +830,7 @@ def readsav(file_name, idict=None, python_dict=False,
         f.seek(4)
 
     else:
-        raise Exception("Invalid RECFMT: %s" % recfmt)
+        raise Exception(f"Invalid RECFMT: {recfmt}")
 
     # Loop through records, and add them to the list
     while True:
@@ -861,40 +863,39 @@ def readsav(file_name, idict=None, python_dict=False,
         for record in records:
             if record['rectype'] == "TIMESTAMP":
                 print("-"*50)
-                print("Date: %s" % record['date'])
-                print("User: %s" % record['user'])
-                print("Host: %s" % record['host'])
+                print(f"Date: {record['date']}")
+                print(f"User: {record['user']}")
+                print(f"Host: {record['host']}")
                 break
 
         # Print out version info about the file
         for record in records:
             if record['rectype'] == "VERSION":
                 print("-"*50)
-                print("Format: %s" % record['format'])
-                print("Architecture: %s" % record['arch'])
-                print("Operating System: %s" % record['os'])
-                print("IDL Version: %s" % record['release'])
+                print(f"Format: {record['format']}")
+                print(f"Architecture: {record['arch']}")
+                print(f"Operating System: {record['os']}")
+                print(f"IDL Version: {record['release']}")
                 break
 
         # Print out identification info about the file
         for record in records:
             if record['rectype'] == "IDENTIFICATON":
                 print("-"*50)
-                print("Author: %s" % record['author'])
-                print("Title: %s" % record['title'])
-                print("ID Code: %s" % record['idcode'])
+                print(f"Author: {record['author']}")
+                print(f"Title: {record['title']}")
+                print(f"ID Code: {record['idcode']}")
                 break
 
         # Print out descriptions saved with the file
         for record in records:
             if record['rectype'] == "DESCRIPTION":
                 print("-"*50)
-                print("Description: %s" % record['description'])
+                print(f"Description: {record['description']}")
                 break
 
         print("-"*50)
-        print("Successfully read %i records of which:" %
-                                            (len(records)))
+        print(f"Successfully read {len(records)} records of which:")
 
         # Create convenience list of record types
         rectypes = [r['rectype'] for r in records]

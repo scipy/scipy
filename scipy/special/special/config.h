@@ -56,11 +56,13 @@
 #ifdef __CUDACC__
 #define SPECFUN_HOST_DEVICE __host__ __device__
 
-#include <cuda/std/algorithm>
+
 #include <cuda/std/cmath>
 #include <cuda/std/cstdint>
+#include <cuda/std/cstddef>
 #include <cuda/std/limits>
 #include <cuda/std/type_traits>
+#include <cuda/std/utility>
 
 // Fallback to global namespace for functions unsupported on NVRTC Jit
 #ifdef _LIBCUDACXX_COMPILER_NVRTC
@@ -93,7 +95,7 @@ SPECFUN_HOST_DEVICE inline double tan(double x) { return cuda::std::tan(x); }
 
 SPECFUN_HOST_DEVICE inline double atan(double x) { return cuda::std::atan(x); }
 
-SPECFUN_HOSt_DEVICE inline double acos(double x) { return cuda::std::acos(x); }
+SPECFUN_HOST_DEVICE inline double acos(double x) { return cuda::std::acos(x); }
 
 SPECFUN_HOST_DEVICE inline double sinh(double x) { return cuda::std::sinh(x); }
 
@@ -116,8 +118,8 @@ SPECFUN_HOST_DEVICE inline double fmax(double x, double y) { return cuda::std::f
 SPECFUN_HOST_DEVICE inline double fmin(double x, double y) { return cuda::std::fmin(x, y); }
 SPECFUN_HOST_DEVICE inline double log10(double num) { return cuda::std::log10(num); }
 SPECFUN_HOST_DEVICE inline double log1p(double num) { return cuda::std::log1p(num); }
-SPECFUN_HOST_DEVICE inline double frexp(double num, int *exp) { return cuda::std::frexp(num); }
-SPECFUN_HOST_DEVICE inline double ldexp(double num, int *exp) { return cuda::std::ldexp(num); }
+SPECFUN_HOST_DEVICE inline double frexp(double num, int *exp) { return cuda::std::frexp(num, exp); }
+SPECFUN_HOST_DEVICE inline double ldexp(double num, int exp) { return cuda::std::ldexp(num, exp); }
 SPECFUN_HOST_DEVICE inline double fmod(double x, double y) { return cuda::std::fmod(x, y); }
 #else
 SPECFUN_HOST_DEVICE inline double ceil(double x) { return ::ceil(x); }
@@ -131,8 +133,8 @@ SPECFUN_HOST_DEVICE inline double fmax(double x, double y) { return ::fmax(x, y)
 SPECFUN_HOST_DEVICE inline double fmin(double x, double y) { return ::fmin(x, y); }
 SPECFUN_HOST_DEVICE inline double log10(double num) { return ::log10(num); }
 SPECFUN_HOST_DEVICE inline double log1p(double num) { return ::log1p(num); }
-SPECFUN_HOST_DEVICE inline double frexp(double num, int *exp) { return ::frexp(num); }
-SPECFUN_HOST_DEVICE inline double ldexp(double num, int *exp) { return ::ldexp(num); }
+SPECFUN_HOST_DEVICE inline double frexp(double num, int *exp) { return ::frexp(num, exp); }
+SPECFUN_HOST_DEVICE inline double ldexp(double num, int exp) { return ::ldexp(num, exp); }
 SPECFUN_HOST_DEVICE inline double fmod(double x, double y) { return ::fmod(x, y); }
 #endif
 
@@ -141,9 +143,10 @@ SPECFUN_HOST_DEVICE void swap(T &a, T &b) {
     cuda::std::swap(a, b);
 }
 
-template <typename T>
-SPECFUN_HOST_DEVICE const T &clamp(const T &v, const T &lo, const T &hi) {
-    return cuda::std::clamp(v, lo, hi);
+// Reimplement std::clamp until it's available in CuPy
+template<typename T>
+SPECFUN_HOST_DEVICE constexpr T clamp(T &v, T &lo, T &hi) {
+    return v < lo ? lo : (v > hi ? lo : v);
 }
 
 template <typename T>
@@ -194,9 +197,24 @@ SPECFUN_HOST_DEVICE complex<T> pow(const complex<T> &x, const T &y) {
 }
 
 // Other types and utilities
-using cuda::std::is_floating_point;
-using cuda::std::pair;
+template <typename T>
+using is_floating_point = cuda::std::is_floating_point<T>;
+
+template <bool Cond, typename T = void>
+using enable_if = cuda::std::enable_if<Cond, T>;
+
+template <typename T>
+using decay = cuda::std::decay<T>;
+
+template <typename T>
+using invoke_result = cuda::std::invoke_result<T>;
+
+template <typename T1, typename T2>
+using pair = cuda::std::pair<T1, T2>;
+
 using cuda::std::uint64_t;
+using cuda::std::size_t;
+using cuda::std::ptrdiff_t;
 
 #define SPECFUN_ASSERT(a)
 
@@ -209,8 +227,8 @@ using cuda::std::uint64_t;
 #include <cassert>
 #include <cmath>
 #include <complex>
-#include <cstdint>
 #include <cstddef>
+#include <cstdint>
 #include <iterator>
 #include <limits>
 #include <math.h>
@@ -224,3 +242,20 @@ using cuda::std::uint64_t;
 #endif
 
 #endif
+
+namespace special {
+
+template <typename T>
+struct remove_complex {
+    using type = T;
+};
+
+template <typename T>
+struct remove_complex<std::complex<T>> {
+    using type = T;
+};
+
+template <typename T>
+using remove_complex_t = typename remove_complex<T>::type;
+
+} // namespace special

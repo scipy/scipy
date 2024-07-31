@@ -190,9 +190,9 @@ def gcrotmk(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=1000, M=None, callback
     ----------
     A : {sparse matrix, ndarray, LinearOperator}
         The real or complex N-by-N matrix of the linear system.
-        Alternatively, ``A`` can be a linear operator which can
+        Alternatively, `A` can be a linear operator which can
         produce ``Ax`` using, e.g.,
-        ``scipy.sparse.linalg.LinearOperator``.
+        `LinearOperator`.
     b : ndarray
         Right hand side of the linear system. Has shape (N,) or (N,1).
     x0 : ndarray
@@ -200,26 +200,27 @@ def gcrotmk(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=1000, M=None, callback
     rtol, atol : float, optional
         Parameters for the convergence test. For convergence,
         ``norm(b - A @ x) <= max(rtol*norm(b), atol)`` should be satisfied.
-        The default is ``rtol=1e-5``, the default for ``atol`` is ``0.0``.
+        The default is ``rtol=1e-5`` and ``atol=0.0``.
     maxiter : int, optional
         Maximum number of iterations.  Iteration will stop after maxiter
-        steps even if the specified tolerance has not been achieved.
+        steps even if the specified tolerance has not been achieved. The
+        default is ``1000``.
     M : {sparse matrix, ndarray, LinearOperator}, optional
-        Preconditioner for A.  The preconditioner should approximate the
-        inverse of A. gcrotmk is a 'flexible' algorithm and the preconditioner
+        Preconditioner for `A`.  The preconditioner should approximate the
+        inverse of `A`. gcrotmk is a 'flexible' algorithm and the preconditioner
         can vary from iteration to iteration. Effective preconditioning
         dramatically improves the rate of convergence, which implies that
         fewer iterations are needed to reach a given error tolerance.
     callback : function, optional
         User-supplied function to call after each iteration.  It is called
-        as callback(xk), where xk is the current solution vector.
+        as ``callback(xk)``, where ``xk`` is the current solution vector.
     m : int, optional
         Number of inner FGMRES iterations per each outer iteration.
         Default: 20
     k : int, optional
         Number of vectors to carry between inner FGMRES iterations.
-        According to [2]_, good values are around m.
-        Default: m
+        According to [2]_, good values are around `m`.
+        Default: `m`
     CU : list of tuples, optional
         List of tuples ``(c, u)`` which contain the columns of the matrices
         C and U in the GCROT(m,k) algorithm. For details, see [2]_.
@@ -246,6 +247,17 @@ def gcrotmk(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=1000, M=None, callback
         * 0  : successful exit
         * >0 : convergence to tolerance not achieved, number of iterations
 
+    References
+    ----------
+    .. [1] E. de Sturler, ''Truncation strategies for optimal Krylov subspace
+           methods'', SIAM J. Numer. Anal. 36, 864 (1999).
+    .. [2] J.E. Hicken and D.W. Zingg, ''A simplified and flexible variant
+           of GCROT for solving nonsymmetric linear systems'',
+           SIAM J. Sci. Comput. 32, 172 (2010).
+    .. [3] M.L. Parks, E. de Sturler, G. Mackey, D.D. Johnson, S. Maiti,
+           ''Recycling Krylov subspaces for sequences of linear systems'',
+           SIAM J. Sci. Comput. 28, 1651 (2006).
+
     Examples
     --------
     >>> import numpy as np
@@ -259,17 +271,6 @@ def gcrotmk(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=1000, M=None, callback
     0
     >>> np.allclose(A.dot(x), b)
     True
-
-    References
-    ----------
-    .. [1] E. de Sturler, ''Truncation strategies for optimal Krylov subspace
-           methods'', SIAM J. Numer. Anal. 36, 864 (1999).
-    .. [2] J.E. Hicken and D.W. Zingg, ''A simplified and flexible variant
-           of GCROT for solving nonsymmetric linear systems'',
-           SIAM J. Sci. Comput. 32, 172 (2010).
-    .. [3] M.L. Parks, E. de Sturler, G. Mackey, D.D. Johnson, S. Maiti,
-           ''Recycling Krylov subspaces for sequences of linear systems'',
-           SIAM J. Sci. Comput. 28, 1651 (2006).
 
     """
     A,M,x,b,postprocess = make_system(A,M,x0,b)

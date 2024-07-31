@@ -450,7 +450,7 @@ class LinprogCommonTests:
         b_ub = [10, 8, 4]
 
         def f(c, A_ub=None, b_ub=None, A_eq=None,
-              b_eq=None, bounds=None, options={}):
+              b_eq=None, bounds=None, options=None):
             linprog(c, A_ub, b_ub, A_eq, b_eq, bounds,
                     method=self.method, options=options)
 

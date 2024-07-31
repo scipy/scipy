@@ -63,7 +63,7 @@ Alignment should be checked before these wrappers are used.
 
 If using ``cdotu``, ``cdotc``, ``zdotu``, ``zdotc``, ``sladiv``, or ``dladiv``,
 the ``CYTHON_CCOMPLEX`` define must be set to 0 during compilation. For
-example, in a `meson.build` file when using Meson::
+example, in a ``meson.build`` file when using Meson::
 
     py.extension_module('ext_module'
         'ext_module.pyx',

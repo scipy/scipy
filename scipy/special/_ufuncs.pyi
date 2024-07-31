@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any
 
 import numpy as np
 
@@ -242,8 +242,8 @@ __all__ = [
     'zetac'
 ]
 
-def geterr() -> Dict[str, str]: ...
-def seterr(**kwargs: str) -> Dict[str, str]: ...
+def geterr() -> dict[str, str]: ...
+def seterr(**kwargs: str) -> dict[str, str]: ...
 
 class errstate:
     def __init__(self, **kargs: str) -> None: ...

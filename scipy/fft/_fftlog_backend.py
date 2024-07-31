@@ -13,6 +13,7 @@ LN_2 = np.log(2)
 
 def fht(a, dln, mu, offset=0.0, bias=0.0):
     xp = array_namespace(a)
+    a = xp.asarray(a)
 
     # size of transform
     n = a.shape[-1]
@@ -40,6 +41,7 @@ def fht(a, dln, mu, offset=0.0, bias=0.0):
 
 def ifht(A, dln, mu, offset=0.0, bias=0.0):
     xp = array_namespace(A)
+    A = xp.asarray(A)
 
     # size of transform
     n = A.shape[-1]

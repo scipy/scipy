@@ -1,14 +1,8 @@
 """Indexing mixin for sparse array/matrix classes.
 """
-from __future__ import annotations
-
-from typing import TYPE_CHECKING
-
 import numpy as np
 from ._sputils import isintlike
-
-if TYPE_CHECKING:
-    import numpy.typing as npt
+from ._base import sparray, issparse
 
 INT_TYPES = (int, np.integer)
 
@@ -32,74 +26,127 @@ class IndexMixin:
     """
     This class provides common dispatching and validation logic for indexing.
     """
-    def _raise_on_1d_array_slice(self):
-        """We do not currently support 1D sparse arrays.
-
-        This function is called each time that a 1D array would
-        result, raising an error instead.
-
-        Once 1D sparse arrays are implemented, it should be removed.
-        """
-        from scipy.sparse import sparray
-
-        if isinstance(self, sparray):
-            raise NotImplementedError(
-                'We have not yet implemented 1D sparse slices; '
-                'please index using explicit indices, e.g. `x[:, [0]]`'
-            )
-
     def __getitem__(self, key):
-        row, col = self._validate_indices(key)
+        index, new_shape = self._validate_indices(key)
+
+        # 1D array
+        if len(index) == 1:
+            idx = index[0]
+            if isinstance(idx, np.ndarray):
+                if idx.shape == ():
+                    idx = idx.item()
+            if isinstance(idx, INT_TYPES):
+                res = self._get_int(idx)
+            elif isinstance(idx, slice):
+                res = self._get_slice(idx)
+            else:  # assume array idx
+                res = self._get_array(idx)
+
+            # package the result and return
+            if not isinstance(self, sparray):
+                return res
+            # handle np.newaxis in idx when result would otherwise be a scalar
+            if res.shape == () and new_shape != ():
+                if len(new_shape) == 1:
+                    return self.__class__([res], shape=new_shape, dtype=self.dtype)
+                if len(new_shape) == 2:
+                    return self.__class__([[res]], shape=new_shape, dtype=self.dtype)
+            return res.reshape(new_shape)
+
+        # 2D array
+        row, col = index
 
         # Dispatch to specialized methods.
         if isinstance(row, INT_TYPES):
             if isinstance(col, INT_TYPES):
-                return self._get_intXint(row, col)
+                res = self._get_intXint(row, col)
             elif isinstance(col, slice):
-                self._raise_on_1d_array_slice()
-                return self._get_intXslice(row, col)
+                res = self._get_intXslice(row, col)
             elif col.ndim == 1:
-                self._raise_on_1d_array_slice()
-                return self._get_intXarray(row, col)
+                res = self._get_intXarray(row, col)
             elif col.ndim == 2:
-                return self._get_intXarray(row, col)
-            raise IndexError('index results in >2 dimensions')
+                res = self._get_intXarray(row, col)
+            else:
+                raise IndexError('index results in >2 dimensions')
         elif isinstance(row, slice):
             if isinstance(col, INT_TYPES):
-                self._raise_on_1d_array_slice()
-                return self._get_sliceXint(row, col)
+                res = self._get_sliceXint(row, col)
             elif isinstance(col, slice):
                 if row == slice(None) and row == col:
-                    return self.copy()
-                return self._get_sliceXslice(row, col)
+                    res = self.copy()
+                else:
+                    res = self._get_sliceXslice(row, col)
             elif col.ndim == 1:
-                return self._get_sliceXarray(row, col)
-            raise IndexError('index results in >2 dimensions')
-        elif row.ndim == 1:
-            if isinstance(col, INT_TYPES):
-                self._raise_on_1d_array_slice()
-                return self._get_arrayXint(row, col)
-            elif isinstance(col, slice):
-                return self._get_arrayXslice(row, col)
-        else:  # row.ndim == 2
-            if isinstance(col, INT_TYPES):
-                return self._get_arrayXint(row, col)
-            elif isinstance(col, slice):
+                res = self._get_sliceXarray(row, col)
+            else:
                 raise IndexError('index results in >2 dimensions')
-            elif row.shape[1] == 1 and (col.ndim == 1 or col.shape[0] == 1):
-                # special case for outer indexing
-                return self._get_columnXarray(row[:,0], col.ravel())
+        else:
+            if isinstance(col, INT_TYPES):
+                res = self._get_arrayXint(row, col)
+            elif isinstance(col, slice):
+                res = self._get_arrayXslice(row, col)
+            # arrayXarray preprocess
+            elif (row.ndim == 2 and row.shape[1] == 1
+                and (col.ndim == 1 or col.shape[0] == 1)):
+                # outer indexing
+                res = self._get_columnXarray(row[:, 0], col.ravel())
+            else:
+                # inner indexing
+                row, col = _broadcast_arrays(row, col)
+                if row.shape != col.shape:
+                    raise IndexError('number of row and column indices differ')
+                if row.size == 0:
+                    res = self.__class__(np.atleast_2d(row).shape, dtype=self.dtype)
+                else:
+                    res = self._get_arrayXarray(row, col)
 
-        # The only remaining case is inner (fancy) indexing
-        row, col = _broadcast_arrays(row, col)
-        if row.shape != col.shape:
-            raise IndexError('number of row and column indices differ')
-        if row.size == 0:
-            return self.__class__(np.atleast_2d(row).shape, dtype=self.dtype)
-        return self._get_arrayXarray(row, col)
+        # package the result and return
+        if isinstance(self, sparray) and res.shape != new_shape:
+            # handle formats that support indexing but not 1D (lil for now)
+            if self.format == "lil" and len(new_shape) != 2:
+                return res.tocoo().reshape(new_shape)
+            return res.reshape(new_shape)
+        return res
 
     def __setitem__(self, key, x):
-        row, col = self._validate_indices(key)
+        index, _ = self._validate_indices(key)
+
+        # 1D array
+        if len(index) == 1:
+            idx = index[0]
+
+            if issparse(x):
+                x = x.toarray()
+            else:
+                x = np.asarray(x, dtype=self.dtype)
+
+            if isinstance(idx, INT_TYPES):
+                if x.size != 1:
+                    raise ValueError('Trying to assign a sequence to an item')
+                self._set_int(idx, x.flat[0])
+                return
+
+            if isinstance(idx, slice):
+                # check for simple case of slice that gives 1 item
+                # Note: Python `range` does not use lots of memory
+                idx_range = range(*idx.indices(self.shape[0]))
+                N = len(idx_range)
+                if N == 1 and x.size == 1:
+                    self._set_int(idx_range[0], x.flat[0])
+                    return
+                idx = np.arange(*idx.indices(self.shape[0]))
+                idx_shape = idx.shape
+            else:
+                idx_shape = idx.squeeze().shape
+            # broadcast scalar to full 1d
+            if x.squeeze().shape != idx_shape:
+                x = np.broadcast_to(x, idx.shape)
+            if x.size != 0:
+                self._set_array(idx, x)
+            return
+
+        # 2D array
+        row, col = index
 
         if isinstance(row, INT_TYPES) and isinstance(col, INT_TYPES):
             x = np.asarray(x, dtype=self.dtype)
@@ -124,7 +171,6 @@ class IndexMixin:
         if i.shape != j.shape:
             raise IndexError('number of row and column indices differ')
 
-        from ._base import issparse
         if issparse(x):
             if i.ndim == 1:
                 # Inner indexing, so treat them like row vectors.
@@ -151,52 +197,87 @@ class IndexMixin:
             self._set_arrayXarray(i, j, x)
 
     def _validate_indices(self, key):
-        # First, check if indexing with single boolean matrix.
-        from ._base import _spbase
-        if (isinstance(key, (_spbase, np.ndarray)) and
-                key.ndim == 2 and key.dtype.kind == 'b'):
-            if key.shape != self.shape:
-                raise IndexError('boolean index shape does not match array shape')
-            row, col = key.nonzero()
-        else:
-            row, col = _unpack_index(key)
-        M, N = self.shape
+        """Returns two tuples: (index tuple, requested shape tuple)"""
+        # single ellipsis
+        if key is Ellipsis:
+            return (slice(None),) * self.ndim, self.shape
 
-        def _validate_bool_idx(
-            idx: npt.NDArray[np.bool_],
-            axis_size: int,
-            axis_name: str
-        ) -> npt.NDArray[np.int_]:
-            if len(idx) != axis_size:
+        if not isinstance(key, tuple):
+            key = [key]
+
+        ellps_pos = None
+        idx_shape = []
+        index = []
+        index_ndim = 0
+        array_indices = []
+        for i, idx in enumerate(key):
+            if idx is Ellipsis:
+                if ellps_pos is not None:
+                    raise IndexError('an index can only have a single ellipsis')
+                ellps_pos = i
+            elif idx is None:
+                idx_shape.append(1)
+            elif isinstance(idx, slice):
+                index.append(idx)
+                len_slice = len(range(*idx.indices(self._shape[index_ndim])))
+                idx_shape.append(len_slice)
+                index_ndim += 1
+            elif isintlike(idx):
+                N = self._shape[index_ndim]
+                if not (-N <= idx < N):
+                    raise IndexError(f'index ({idx}) out of range')
+                idx = int(idx + N if idx < 0 else idx)
+                index.append(idx)
+                index_ndim += 1
+            elif (ix := _compatible_boolean_index(idx, self.ndim)) is not None:
+                tmp_ndim = index_ndim + ix.ndim
+                mid_shape = self._shape[index_ndim:tmp_ndim]
+                if ix.shape != mid_shape:
+                    raise IndexError(
+                        f"bool index {i} has shape {mid_shape} instead of {ix.shape}"
+                    )
+                index.extend(ix.nonzero())
+                array_indices.extend(range(index_ndim, tmp_ndim))
+                index_ndim = tmp_ndim
+            elif issparse(idx):
+                # TODO: make sparse matrix indexing work for sparray
                 raise IndexError(
-                    f"boolean {axis_name} index has incorrect length: {len(idx)} "
-                    f"instead of {axis_size}"
-                )
-            return _boolean_index_to_array(idx)
+                    'Indexing with sparse matrices is not supported '
+                    'except boolean indexing where matrix and index '
+                    'are equal shapes.')
+            else:  # dense array
+                N = self._shape[index_ndim]
+                idx = np.array(idx)
+                idx = self._asindices(idx, N)
+                index.append(idx)
+                array_indices.append(index_ndim)
+                index_ndim += 1
+        if index_ndim > self.ndim:
+            raise IndexError(
+                f'invalid index ndim. Array is {self.ndim}D. Index needs {index_ndim}D'
+            )
+        if len(array_indices) > 1:
+            idx_arrays = _broadcast_arrays(*(index[i] for i in array_indices))
+            if any(idx_arrays[0].shape != ix.shape for ix in idx_arrays[1:]):
+                raise IndexError('array indices after broadcast differ in shape')
+            idx_shape = list(idx_arrays[0].shape) + idx_shape
+        elif len(array_indices) == 1:
+            arr_index = array_indices[0]
+            arr_shape = list(index[arr_index].shape)
+            idx_shape = idx_shape[:arr_index] + arr_shape + idx_shape[arr_index:]
 
-        if isintlike(row):
-            row = int(row)
-            if row < -M or row >= M:
-                raise IndexError('row index (%d) out of range' % row)
-            if row < 0:
-                row += M
-        elif (bool_row := _compatible_boolean_index(row)) is not None:
-            row = _validate_bool_idx(bool_row, M, "row")
-        elif not isinstance(row, slice):
-            row = self._asindices(row, M)
+        # add slice(None) (which is colon) to fill out full index
+        nslice = self.ndim - index_ndim
+        if nslice > 0:
+            if ellps_pos is None:
+                ellps_pos = index_ndim
+            index = index[:ellps_pos] + [slice(None)] * nslice + index[ellps_pos:]
+            mid_shape = list(self.shape[ellps_pos : ellps_pos + nslice])
+            idx_shape = idx_shape[:ellps_pos] + mid_shape + idx_shape[ellps_pos:]
 
-        if isintlike(col):
-            col = int(col)
-            if col < -N or col >= N:
-                raise IndexError('column index (%d) out of range' % col)
-            if col < 0:
-                col += N
-        elif (bool_col := _compatible_boolean_index(col)) is not None:
-            col = _validate_bool_idx(bool_col, N, "column")
-        elif not isinstance(col, slice):
-            col = self._asindices(col, N)
-
-        return row, col
+        if (ndim := len(idx_shape)) > 2:
+            raise IndexError(f'Only 1D or 2D arrays allowed. Index makes {ndim}D')
+        return tuple(index), tuple(idx_shape)
 
     def _asindices(self, idx, length):
         """Convert `idx` to a valid index for an axis with a given length.
@@ -250,6 +331,15 @@ class IndexMixin:
             i += N
         return self._get_sliceXint(slice(None), i)
 
+    def _get_int(self, idx):
+        raise NotImplementedError()
+
+    def _get_slice(self, idx):
+        raise NotImplementedError()
+
+    def _get_array(self, idx):
+        raise NotImplementedError()
+
     def _get_intXint(self, row, col):
         raise NotImplementedError()
 
@@ -280,6 +370,12 @@ class IndexMixin:
     def _get_arrayXarray(self, row, col):
         raise NotImplementedError()
 
+    def _set_int(self, idx, x):
+        raise NotImplementedError()
+
+    def _set_array(self, idx, x):
+        raise NotImplementedError()
+
     def _set_intXint(self, row, col, x):
         raise NotImplementedError()
 
@@ -293,100 +389,25 @@ class IndexMixin:
         self._set_arrayXarray(row, col, x)
 
 
-def _unpack_index(index) -> tuple[
-    int | slice | npt.NDArray[np.bool_ | np.int_],
-    int | slice | npt.NDArray[np.bool_ | np.int_]
-]:
-    """ Parse index. Always return a tuple of the form (row, col).
-    Valid type for row/col is integer, slice, array of bool, or array of integers.
-    """
-    # Parse any ellipses.
-    index = _check_ellipsis(index)
+def _compatible_boolean_index(idx, desired_ndim):
+    """Check for boolean array or array-like. peek before asarray for array-like"""
+    # use attribute ndim to indicate a compatible array and check dtype
+    # if not, look at 1st element as quick rejection of bool, else slower asanyarray
+    if not hasattr(idx, 'ndim'):
+        # is first element boolean?
+        try:
+            ix = next(iter(idx), None)
+            for _ in range(desired_ndim):
+                if isinstance(ix, bool):
+                    break
+                ix = next(iter(ix), None)
+            else:
+                return None
+        except TypeError:
+            return None
+        # since first is boolean, construct array and check all elements
+        idx = np.asanyarray(idx)
 
-    # Next, parse the tuple or object
-    if isinstance(index, tuple):
-        if len(index) == 2:
-            row, col = index
-        elif len(index) == 1:
-            row, col = index[0], slice(None)
-        else:
-            raise IndexError('invalid number of indices')
-    else:
-        idx = _compatible_boolean_index(index)
-        if idx is None:
-            row, col = index, slice(None)
-        elif idx.ndim < 2:
-            return idx, slice(None)
-        elif idx.ndim == 2:
-            return idx.nonzero()
-    # Next, check for validity and transform the index as needed.
-    from ._base import issparse
-    if issparse(row) or issparse(col):
-        # Supporting sparse boolean indexing with both row and col does
-        # not work because spmatrix.ndim is always 2.
-        raise IndexError(
-            'Indexing with sparse matrices is not supported '
-            'except boolean indexing where matrix and index '
-            'are equal shapes.')
-    return row, col
-
-
-def _check_ellipsis(index):
-    """Process indices with Ellipsis. Returns modified index."""
-    if index is Ellipsis:
-        return (slice(None), slice(None))
-
-    if not isinstance(index, tuple):
-        return index
-
-    # Find any Ellipsis objects.
-    ellipsis_indices = [i for i, v in enumerate(index) if v is Ellipsis]
-    if not ellipsis_indices:
-        return index
-    if len(ellipsis_indices) > 1:
-        raise IndexError("an index can only have a single ellipsis ('...')")
-
-    # Replace the Ellipsis object with 0, 1, or 2 null-slices as needed.
-    i, = ellipsis_indices
-    num_slices = max(0, 3 - len(index))
-    return index[:i] + (slice(None),) * num_slices + index[i + 1:]
-
-
-def _maybe_bool_ndarray(idx):
-    """Returns a compatible array if elements are boolean.
-    """
-    idx = np.asanyarray(idx)
     if idx.dtype.kind == 'b':
         return idx
     return None
-
-
-def _first_element_bool(idx, max_dim=2):
-    """Returns True if first element of the incompatible
-    array type is boolean.
-    """
-    if max_dim < 1:
-        return None
-    try:
-        first = next(iter(idx), None)
-    except TypeError:
-        return None
-    if isinstance(first, bool):
-        return True
-    return _first_element_bool(first, max_dim-1)
-
-
-def _compatible_boolean_index(idx):
-    """Returns a boolean index array that can be converted to
-    integer array. Returns None if no such array exists.
-    """
-    # Presence of attribute `ndim` indicates a compatible array type.
-    if hasattr(idx, 'ndim') or _first_element_bool(idx):
-        return _maybe_bool_ndarray(idx)
-    return None
-
-
-def _boolean_index_to_array(idx):
-    if idx.ndim > 1:
-        raise IndexError('invalid index shape')
-    return np.where(idx)[0]

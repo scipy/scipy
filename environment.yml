@@ -42,6 +42,7 @@ dependencies:
   - setuptools<67.3  # avoid pkg_resources deprecation warnings from MPL/scikit-umfpack
   - matplotlib
   - pydata-sphinx-theme>=0.15.2
+  - sphinx-copybutton
   - sphinx-design
   - jupytext
   - myst-nb

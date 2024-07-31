@@ -40,7 +40,7 @@ def fft1(x):
     phase = np.arange(L).reshape(-1, 1) * phase
     return np.sum(x*np.exp(phase), axis=1)
 
-class TestFFT1D:
+class TestFFT:
 
     def test_identity(self, xp):
         maxlen = 512
@@ -338,6 +338,24 @@ class TestFFT1D:
         res_fft = fft.ifft(fft.fft(x))
         # Check both numerical results and exact dtype matches
         xp_assert_close(res_fft, x)
+
+    @skip_xp_backends(np_only=True,
+                      reasons=['array-likes only supported for NumPy backend'])
+    @pytest.mark.parametrize("op", [fft.fft, fft.ifft,
+                                    fft.fft2, fft.ifft2,
+                                    fft.fftn, fft.ifftn,
+                                    fft.rfft, fft.irfft,
+                                    fft.rfft2, fft.irfft2,
+                                    fft.rfftn, fft.irfftn,
+                                    fft.hfft, fft.ihfft,
+                                    fft.hfft2, fft.ihfft2,
+                                    fft.hfftn, fft.ihfftn,])
+    def test_array_like(self, xp, op):
+        x = [[[1.0, 1.0], [1.0, 1.0]],
+             [[1.0, 1.0], [1.0, 1.0]],
+             [[1.0, 1.0], [1.0, 1.0]]]
+        xp_assert_close(op(x), op(xp.asarray(x)))
+
 
 @skip_xp_backends(np_only=True)
 @pytest.mark.parametrize(
