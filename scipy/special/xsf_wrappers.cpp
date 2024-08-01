@@ -1,5 +1,5 @@
 #include "xsf_wrappers.h"
-#include "special.h"
+#include "xsf_special.h"
 #include "xsf/airy.h"
 #include "xsf/amos.h"
 #include "xsf/bessel.h"

@@ -7,6 +7,10 @@
 #include "xsf/specfun.h"
 #include "xsf/sph_harm.h"
 
+// This header exists to add behaviors to special functions from the xsf library,
+// either because they involve some Python-specific features or because there are
+// legacy behaviors that need to be preserved
+
 namespace {
 
 template <typename T>

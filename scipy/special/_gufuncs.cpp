@@ -1,6 +1,6 @@
 #include "ufunc.h"
 
-#include "special.h"
+#include "xsf_special.h"
 
 using namespace std;
 
