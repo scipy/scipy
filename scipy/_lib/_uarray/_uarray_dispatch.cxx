@@ -99,7 +99,7 @@ constexpr size_t array_size(const T (&array)[N]) {
 }
 
 struct backend_options {
-  py_ref backend;
+  PyObject* backend;
   bool coerce = false;
   bool only = false;
 
@@ -116,19 +116,19 @@ struct backend_options {
 
 struct global_backends {
   backend_options global;
-  std::vector<py_ref> registered;
+  std::vector<PyObject*> registered;
   bool try_global_backend_last = false;
 };
 
 struct local_backends {
-  std::vector<py_ref> skipped;
+  std::vector<PyObject*> skipped;
   std::vector<backend_options> preferred;
 };
 
 using global_state_t = std::unordered_map<std::string, global_backends>;
 using local_state_t = std::unordered_map<std::string, local_backends>;
 
-static py_ref BackendNotImplementedError;
+static PyObject* BackendNotImplementedError;
 static global_state_t global_domain_map;
 thread_local global_state_t * current_global_state = &global_domain_map;
 thread_local global_state_t thread_local_domain_map;
@@ -140,33 +140,30 @@ Using these with PyObject_GetAttr is faster than PyObject_GetAttrString which
 has to create a new python string internally.
  */
 struct {
-  py_ref* ua_convert;
-  py_ref* ua_domain;
-  py_ref* ua_function;
+  PyObject* ua_convert;
+  PyObject* ua_domain;
+  PyObject* ua_function;
 
   bool init() {
-    static py_ref ua_convert_str = py_ref::steal(PyUnicode_InternFromString("__ua_convert__"));
-    ua_convert = &ua_convert_str;
-    if (!*ua_convert)
+    ua_convert = Py_XNewRef(PyUnicode_InternFromString("__ua_convert__"));
+    if (!ua_convert)
       return false;
 
-    static py_ref ua_domain_str = py_ref::steal(PyUnicode_InternFromString("__ua_domain__"));
-    ua_domain = &ua_domain_str;
-    if (!*ua_domain)
+    ua_domain = Py_XNewRef(PyUnicode_InternFromString("__ua_domain__"));
+    if (!ua_domain)
       return false;
 
-    static py_ref ua_function_str = py_ref::steal(PyUnicode_InternFromString("__ua_function__"));
-    ua_function = &ua_function_str;
-    if (!*ua_function)
+    ua_function = Py_XNewRef(PyUnicode_InternFromString("__ua_function__"));
+    if (!ua_function)
       return false;
 
     return true;
   }
 
   void clear() {
-    ua_convert->reset();
-    ua_domain->reset();
-    ua_function->reset();
+    // Py_CLEAR(ua_convert);
+    // Py_CLEAR(ua_domain);
+    // Py_CLEAR(ua_function);
   }
 } identifiers;
 
@@ -205,7 +202,7 @@ std::string domain_to_string(PyObject * domain) {
 
 Py_ssize_t backend_get_num_domains(PyObject * backend) {
   auto domain =
-      py_ref::steal(PyObject_GetAttr(backend, identifiers.ua_domain->get()));
+      py_ref::steal(PyObject_GetAttr(backend, identifiers.ua_domain));
   if (!domain)
     return -1;
 
@@ -228,7 +225,7 @@ enum class LoopReturn { Continue, Break, Error };
 template <typename Func>
 LoopReturn backend_for_each_domain(PyObject * backend, Func f) {
   auto domain =
-      py_ref::steal(PyObject_GetAttr(backend, identifiers.ua_domain->get()));
+      py_ref::steal(PyObject_GetAttr(backend, identifiers.ua_domain));
   if (!domain)
     return LoopReturn::Error;
 
@@ -351,13 +348,13 @@ struct BackendState {
   static std::vector<T> convert_iter(
       PyObject * input, Convertor item_convertor) {
     std::vector<T> output;
-    py_ref iterator = py_ref::steal(PyObject_GetIter(input));
+    PyObject* iterator = PyObject_GetIter(input);
     if (!iterator)
       throw std::invalid_argument("");
 
-    py_ref item;
-    while ((item = py_ref::steal(PyIter_Next(iterator.get())))) {
-      output.push_back(item_convertor(item.get()));
+    PyObject* item;
+    while ((item = PyIter_Next(iterator))) {
+      output.push_back(item_convertor(item));
     }
 
     if (PyErr_Occurred())
@@ -405,7 +402,7 @@ struct BackendState {
       throw std::invalid_argument("");
 
     if (py_backend != Py_None) {
-      output.backend = py_ref::ref(py_backend);
+      output.backend = Py_NewRef(py_backend);
     }
     output.coerce = coerce;
     output.only = only;
@@ -413,7 +410,7 @@ struct BackendState {
     return output;
   }
 
-  static py_ref convert_backend(PyObject * input) { return py_ref::ref(input); }
+  static PyObject* convert_backend(PyObject * input) { return Py_NewRef(input); }
 
   static local_backends convert_local_backends(PyObject * input) {
     PyObject *py_skipped, *py_preferred;
@@ -422,7 +419,7 @@ struct BackendState {
 
     local_backends output;
     output.skipped =
-        convert_iter<py_ref>(py_skipped, BackendState::convert_backend);
+        convert_iter<PyObject*>(py_skipped, BackendState::convert_backend);
     output.preferred = convert_iter<backend_options>(
         py_preferred, BackendState::convert_backend_options);
 
@@ -439,7 +436,7 @@ struct BackendState {
     global_backends output;
     output.global = BackendState::convert_backend_options(py_global);
     output.registered =
-        convert_iter<py_ref>(py_registered, BackendState::convert_backend);
+        convert_iter<PyObject*>(py_registered, BackendState::convert_backend);
     output.try_global_backend_last = try_global_backend_last;
 
     return output;
@@ -463,7 +460,7 @@ struct BackendState {
 
   static py_ref convert_py(backend_options input) {
     if (!input.backend) {
-      input.backend = py_ref::ref(Py_None);
+      input.backend = Py_NewRef(Py_None);
     }
     py_ref output = py_make_tuple(
         input.backend, py_bool(input.coerce), py_bool(input.only));
@@ -541,7 +538,8 @@ struct BackendState {
 /** Clean up global python references when the module is finalized. */
 void globals_free(void * /* self */) {
   global_domain_map.clear();
-  BackendNotImplementedError.reset();
+  // BackendNotImplementedError.reset();
+  Py_DECREF(BackendNotImplementedError);
   identifiers.clear();
 }
 
@@ -555,10 +553,10 @@ void globals_free(void * /* self */) {
 int globals_traverse(PyObject * self, visitproc visit, void * arg) {
   for (const auto & kv : global_domain_map) {
     const auto & globals = kv.second;
-    PyObject * backend = globals.global.backend.get();
+    PyObject * backend = globals.global.backend;
     Py_VISIT(backend);
     for (const auto & reg : globals.registered) {
-      backend = reg.get();
+      backend = reg;
       Py_VISIT(backend);
     }
   }
@@ -583,7 +581,7 @@ PyObject * set_global_backend(PyObject * /* self */, PyObject * args) {
   const auto res =
       backend_for_each_domain_string(backend, [&](const std::string & domain) {
         backend_options options;
-        options.backend = py_ref::ref(backend);
+        options.backend = Py_NewRef(backend);
         options.coerce = coerce;
         options.only = only;
 
@@ -611,7 +609,7 @@ PyObject * register_backend(PyObject * /* self */, PyObject * args) {
   const auto ret =
       backend_for_each_domain_string(backend, [&](const std::string & domain) {
         (*current_global_state)[domain].registered.push_back(
-            py_ref::ref(backend));
+            Py_NewRef(backend));
         return LoopReturn::Continue;
       });
   if (ret == LoopReturn::Error)
@@ -635,7 +633,7 @@ void clear_single(const std::string & domain, bool registered, bool global) {
   }
 
   if (global) {
-    domain_globals->second.global.backend.reset();
+    Py_CLEAR(domain_globals->second.global.backend);
     domain_globals->second.try_global_backend_last = false;
   }
 }
@@ -792,7 +790,7 @@ struct SetBackendContext {
       }
 
       backend_options opt;
-      opt.backend = py_ref::ref(backend);
+      opt.backend = Py_NewRef(backend);
       opt.coerce = coerce;
       opt.only = only;
 
@@ -820,7 +818,7 @@ struct SetBackendContext {
   }
 
   static int traverse(SetBackendContext * self, visitproc visit, void * arg) {
-    Py_VISIT(self->ctx_.get_backend().backend.get());
+    Py_VISIT(self->ctx_.get_backend().backend);
     return 0;
   }
 
@@ -835,7 +833,7 @@ struct SetBackendContext {
 struct SkipBackendContext {
   PyObject_HEAD
 
-  context_helper<py_ref> ctx_;
+  context_helper<PyObject*> ctx_;
 
   static void dealloc(SkipBackendContext * self) {
     PyObject_GC_UnTrack(self);
@@ -887,7 +885,7 @@ struct SkipBackendContext {
         return -1;
       }
 
-      if (!self->ctx_.init(std::move(backend_lists), py_ref::ref(backend))) {
+      if (!self->ctx_.init(std::move(backend_lists), Py_NewRef(backend))) {
         return -1;
       }
     } catch (std::bad_alloc &) {
@@ -911,7 +909,7 @@ struct SkipBackendContext {
   }
 
   static int traverse(SkipBackendContext * self, visitproc visit, void * arg) {
-    Py_VISIT(self->ctx_.get_backend().get());
+    Py_VISIT(self->ctx_.get_backend());
     return 0;
   }
 
@@ -921,7 +919,7 @@ struct SkipBackendContext {
 };
 
 const local_backends & get_local_backends(const std::string & domain_key) {
-  static const local_backends null_local_backends;
+  static const local_backends null_local_backends{};
   auto itr = local_domain_map.find(domain_key);
   if (itr == local_domain_map.end()) {
     return null_local_backends;
@@ -931,7 +929,7 @@ const local_backends & get_local_backends(const std::string & domain_key) {
 
 
 const global_backends & get_global_backends(const std::string & domain_key) {
-  static const global_backends null_global_backends;
+  static const global_backends null_global_backends{};
   const auto & cur_globals = *current_global_state;
   auto itr = cur_globals.find(domain_key);
   if (itr == cur_globals.end()) {
@@ -950,8 +948,8 @@ LoopReturn for_each_backend_in_domain(
 
   auto should_skip = [&](PyObject * backend) -> int {
     bool success = true;
-    auto it = std::find_if(skip.begin(), skip.end(), [&](const py_ref & be) {
-      auto result = PyObject_RichCompareBool(be.get(), backend, Py_EQ);
+    auto it = std::find_if(skip.begin(), skip.end(), [&](PyObject* be) {
+      auto result = PyObject_RichCompareBool(be, backend, Py_EQ);
       success = (result >= 0);
       return (result != 0);
     });
@@ -966,13 +964,13 @@ LoopReturn for_each_backend_in_domain(
   LoopReturn ret = LoopReturn::Continue;
   for (int i = pref.size() - 1; i >= 0; --i) {
     auto options = pref[i];
-    int skip_current = should_skip(options.backend.get());
+    int skip_current = should_skip(options.backend);
     if (skip_current < 0)
       return LoopReturn::Error;
     if (skip_current)
       continue;
 
-    ret = call(options.backend.get(), options.coerce);
+    ret = call(options.backend, options.coerce);
     if (ret != LoopReturn::Continue)
       return ret;
 
@@ -986,13 +984,13 @@ LoopReturn for_each_backend_in_domain(
     if (!options.backend)
       return LoopReturn::Continue;
 
-    int skip_current = should_skip(options.backend.get());
+    int skip_current = should_skip(options.backend);
     if (skip_current < 0)
       return LoopReturn::Error;
     if (skip_current > 0)
       return LoopReturn::Continue;
 
-    return call(options.backend.get(), options.coerce);
+    return call(options.backend, options.coerce);
   };
 
   if (!globals.try_global_backend_last) {
@@ -1005,14 +1003,14 @@ LoopReturn for_each_backend_in_domain(
   }
 
   for (size_t i = 0; i < globals.registered.size(); ++i) {
-    py_ref backend = globals.registered[i];
-    int skip_current = should_skip(backend.get());
+    PyObject* backend = globals.registered[i];
+    int skip_current = should_skip(backend);
     if (skip_current < 0)
       return LoopReturn::Error;
     if (skip_current)
       continue;
 
-    ret = call(backend.get(), false);
+    ret = call(backend, false);
     if (ret != LoopReturn::Continue)
       return ret;
   }
@@ -1042,7 +1040,8 @@ LoopReturn for_each_backend(std::string domain, Callback call) {
 }
 
 struct py_func_args {
-  py_ref args, kwargs;
+  PyObject* args;
+  PyObject* kwargs;
 };
 
 struct Function {
@@ -1059,8 +1058,8 @@ struct Function {
       PyObject * backend, PyObject * args, PyObject * kwargs,
       PyObject * coerce);
 
-  py_ref canonicalize_args(PyObject * args);
-  py_ref canonicalize_kwargs(PyObject * kwargs);
+  PyObject* canonicalize_args(PyObject * args);
+  PyObject* canonicalize_kwargs(PyObject * kwargs);
 
   static void dealloc(Function * self) {
     PyObject_GC_UnTrack(self);
@@ -1134,12 +1133,12 @@ bool is_default(PyObject * value, PyObject * def) {
 }
 
 
-py_ref Function::canonicalize_args(PyObject * args) {
+PyObject* Function::canonicalize_args(PyObject * args) {
   const auto arg_size = PyTuple_GET_SIZE(args);
   const auto def_size = PyTuple_GET_SIZE(def_args_.get());
 
   if (arg_size > def_size)
-    return py_ref::ref(args);
+    return Py_NewRef(args);
 
   Py_ssize_t mismatch = 0;
   for (Py_ssize_t i = arg_size - 1; i >= 0; --i) {
@@ -1151,13 +1150,13 @@ py_ref Function::canonicalize_args(PyObject * args) {
     }
   }
 
-  return py_ref::steal(PyTuple_GetSlice(args, 0, mismatch));
+  return Py_NewRef(PyTuple_GetSlice(args, 0, mismatch));
 }
 
 
-py_ref Function::canonicalize_kwargs(PyObject * kwargs) {
+PyObject* Function::canonicalize_kwargs(PyObject * kwargs) {
   if (kwargs == nullptr)
-    return py_ref::steal(PyDict_New());
+    return Py_NewRef(PyDict_New());
 
   PyObject *key, *def_value;
   Py_ssize_t pos = 0;
@@ -1167,15 +1166,15 @@ py_ref Function::canonicalize_kwargs(PyObject * kwargs) {
       PyDict_DelItem(kwargs, key);
     }
   }
-  return py_ref::ref(kwargs);
+  return Py_NewRef(kwargs);
 }
 
 
 py_func_args Function::replace_dispatchables(
     PyObject * backend, PyObject * args, PyObject * kwargs, PyObject * coerce) {
-  auto has_ua_convert = PyObject_HasAttr(backend, identifiers.ua_convert->get());
+  auto has_ua_convert = PyObject_HasAttr(backend, identifiers.ua_convert);
   if (!has_ua_convert) {
-    return {py_ref::ref(args), py_ref::ref(kwargs)};
+    return py_func_args { Py_NewRef(args), Py_NewRef(kwargs) };
   }
 
   auto dispatchables =
@@ -1185,14 +1184,14 @@ py_func_args Function::replace_dispatchables(
 
   PyObject * convert_args[] = {backend, dispatchables.get(), coerce};
   auto res = py_ref::steal(Q_PyObject_VectorcallMethod(
-      identifiers.ua_convert->get(), convert_args,
+      identifiers.ua_convert, convert_args,
       array_size(convert_args) | Q_PY_VECTORCALL_ARGUMENTS_OFFSET, nullptr));
   if (!res) {
     return {};
   }
 
   if (res == Py_NotImplemented) {
-    return {std::move(res), nullptr};
+    return py_func_args {std::move(res.get()), nullptr};
   }
 
   auto replaced_args = py_ref::steal(PySequence_Tuple(res.get()));
@@ -1214,12 +1213,12 @@ py_func_args Function::replace_dispatchables(
     return {};
   }
 
-  auto new_args = py_ref::ref(PyTuple_GET_ITEM(res.get(), 0));
-  auto new_kwargs = py_ref::ref(PyTuple_GET_ITEM(res.get(), 1));
+  auto new_args = Py_NewRef(PyTuple_GET_ITEM(res.get(), 0));
+  auto new_kwargs = Py_NewRef(PyTuple_GET_ITEM(res.get(), 1));
 
-  new_kwargs = canonicalize_kwargs(new_kwargs.get());
+  new_kwargs = canonicalize_kwargs(new_kwargs);
 
-  if (!PyTuple_Check(new_args.get()) || !PyDict_Check(new_kwargs.get())) {
+  if (!PyTuple_Check(new_args) || !PyDict_Check(new_kwargs)) {
     PyErr_SetString(PyExc_ValueError, "Invalid return from argument_replacer");
     return {};
   }
@@ -1280,22 +1279,22 @@ PyObject * Function::call(PyObject * args_, PyObject * kwargs_) {
   auto ret =
       for_each_backend(domain_key_, [&, this](PyObject * backend, bool coerce) {
         auto new_args = replace_dispatchables(
-            backend, args.get(), kwargs.get(), coerce ? Py_True : Py_False);
+            backend, args, kwargs, coerce ? Py_True : Py_False);
         if (new_args.args == Py_NotImplemented)
           return LoopReturn::Continue;
         if (new_args.args == nullptr)
           return LoopReturn::Error;
 
         PyObject * args[] = {
-            backend, reinterpret_cast<PyObject *>(this), new_args.args.get(),
-            new_args.kwargs.get()};
+            backend, reinterpret_cast<PyObject *>(this), new_args.args,
+            new_args.kwargs};
         result = py_ref::steal(Q_PyObject_VectorcallMethod(
-            identifiers.ua_function->get(), args,
+            identifiers.ua_function, args,
             array_size(args) | Q_PY_VECTORCALL_ARGUMENTS_OFFSET, nullptr));
 
         // raise BackendNotImplemeted is equivalent to return NotImplemented
         if (!result &&
-            PyErr_ExceptionMatches(BackendNotImplementedError.get())) {
+            PyErr_ExceptionMatches(BackendNotImplementedError)) {
           errors.push_back({py_ref::ref(backend), py_errinf::fetch()});
           result = py_ref::ref(Py_NotImplemented);
         }
@@ -1303,7 +1302,7 @@ PyObject * Function::call(PyObject * args_, PyObject * kwargs_) {
         // Try the default with this backend
         if (result == Py_NotImplemented && def_impl_ != Py_None) {
           backend_options opt;
-          opt.backend = py_ref::ref(backend);
+          opt.backend = Py_NewRef(backend);
           opt.coerce = coerce;
           opt.only = true;
           context_helper<backend_options> ctx;
@@ -1320,10 +1319,10 @@ PyObject * Function::call(PyObject * args_, PyObject * kwargs_) {
             return LoopReturn::Error;
 
           result = py_ref::steal(PyObject_Call(
-              def_impl_.get(), new_args.args.get(), new_args.kwargs.get()));
+              def_impl_.get(), new_args.args, new_args.kwargs));
 
           if (PyErr_Occurred() &&
-              PyErr_ExceptionMatches(BackendNotImplementedError.get())) {
+              PyErr_ExceptionMatches(BackendNotImplementedError)) {
             errors.push_back({py_ref::ref(backend), py_errinf::fetch()});
             result = py_ref::ref(Py_NotImplemented);
           }
@@ -1351,9 +1350,9 @@ PyObject * Function::call(PyObject * args_, PyObject * kwargs_) {
   // Only call if no backend was marked only or coerce
   if (ret == LoopReturn::Continue && def_impl_ != Py_None) {
     result =
-        py_ref::steal(PyObject_Call(def_impl_.get(), args.get(), kwargs.get()));
+        py_ref::steal(PyObject_Call(def_impl_.get(), args, kwargs));
     if (!result) {
-      if (!PyErr_ExceptionMatches(BackendNotImplementedError.get()))
+      if (!PyErr_ExceptionMatches(BackendNotImplementedError))
         return nullptr;
 
       errors.push_back({py_ref::ref(Py_None), py_errinf::fetch()});
@@ -1377,7 +1376,7 @@ PyObject * Function::call(PyObject * args_, PyObject * kwargs_) {
 
     PyTuple_SET_ITEM(exception_tuple.get(), i + 1, pair.release());
   }
-  PyErr_SetObject(BackendNotImplementedError.get(), exception_tuple.get());
+  PyErr_SetObject(BackendNotImplementedError, exception_tuple.get());
   return nullptr;
 }
 
@@ -1557,7 +1556,7 @@ PyObject * determine_backend(PyObject * /*self*/, PyObject * args) {
   auto result = for_each_backend_in_domain(
       domain, [&](PyObject * backend, bool coerce_backend) {
         auto has_ua_convert =
-            PyObject_HasAttr(backend, identifiers.ua_convert->get());
+            PyObject_HasAttr(backend, identifiers.ua_convert);
 
         if (!has_ua_convert) {
           // If no __ua_convert__, assume it won't accept the type
@@ -1569,7 +1568,7 @@ PyObject * determine_backend(PyObject * /*self*/, PyObject * args) {
             (coerce && coerce_backend) ? Py_True : Py_False};
 
         auto res = py_ref::steal(Q_PyObject_VectorcallMethod(
-            identifiers.ua_convert->get(), convert_args,
+            identifiers.ua_convert, convert_args,
             array_size(convert_args) | Q_PY_VECTORCALL_ARGUMENTS_OFFSET,
             nullptr));
         if (!res) {
@@ -1590,7 +1589,7 @@ PyObject * determine_backend(PyObject * /*self*/, PyObject * args) {
 
   // All backends failed, raise an error
   PyErr_SetString(
-      BackendNotImplementedError.get(),
+      BackendNotImplementedError,
       "No backends could accept input of this type.");
   return nullptr;
 }
@@ -1807,16 +1806,16 @@ PyMODINIT_FUNC PyInit__uarray(void) {
   Py_INCREF(&BackendStateType);
   PyModule_AddObject(m.get(), "_BackendState", (PyObject *)&BackendStateType);
 
-  BackendNotImplementedError = py_ref::steal(PyErr_NewExceptionWithDoc(
+  BackendNotImplementedError = PyErr_NewExceptionWithDoc(
       "uarray.BackendNotImplementedError",
       "An exception that is thrown when no compatible"
       " backend is found for a method.",
-      PyExc_NotImplementedError, nullptr));
+      PyExc_NotImplementedError, nullptr);
   if (!BackendNotImplementedError)
     return nullptr;
-  Py_INCREF(BackendNotImplementedError.get());
+  Py_INCREF(BackendNotImplementedError);
   PyModule_AddObject(
-      m.get(), "BackendNotImplementedError", BackendNotImplementedError.get());
+      m.get(), "BackendNotImplementedError", BackendNotImplementedError);
 
   if (!identifiers.init())
     return nullptr;
