@@ -101,6 +101,7 @@ namespace cephes {
         constexpr double STRUVE_GOOD_EPS = 1e-12;
         constexpr double STRUVE_ACCEPTABLE_EPS = 1e-7;
         constexpr double STRUVE_ACCEPTABLE_ATOL = 1e-300;
+        constexpr double STRUVE_ZERO_EPS = 1e-7;
 
         /*
          * Large-z expansion for Struve H and L
@@ -291,7 +292,7 @@ namespace cephes {
         }
 
         SPECFUN_HOST_DEVICE inline double struve_hl(double v, double z, int is_h) {
-            double value[4], err[4], tmp;
+            double value[4], err[4], tmp, envelope_value;
             int n;
 
             if (z < 0) {
@@ -365,6 +366,20 @@ namespace cephes {
             if (tmp > 700) {
                 set_error("struve", SF_ERROR_OVERFLOW, NULL);
                 return std::numeric_limits<double>::infinity() * special::cephes::gammasgn(v + 1.5);
+            }
+
+            envelope_value = 0;
+            if (v != 0) {
+                /* https://dlmf.nist.gov/11.6.5 */
+                envelope_value = (z / (M_PI * v * sqrt(2))) * pow((M_E * z) / (2 * v), v);
+            }
+            else if (v == 0 && err[n] > STRUVE_ACCEPTABLE_EPS * fabs(value[n])) {
+                /* value close to zero */
+                envelope_value = 1000;
+            }
+
+            if (fabs(value[n]) < STRUVE_ZERO_EPS * envelope_value && fabs(err[n]) < STRUVE_ACCEPTABLE_EPS * envelope_value) {
+                return value[n];
             }
 
             /* Failure */
