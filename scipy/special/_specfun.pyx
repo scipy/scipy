@@ -3,20 +3,20 @@ from libcpp.complex cimport complex as ccomplex
 cimport numpy as cnp
 cnp.import_array()
 
-cdef extern from "special/airy.h" nogil:
+cdef extern from "xsf/airy.h" nogil:
     void specfun_airyzo 'xsf::airyzo'(int nt, int kf, double *xa, double *xb, double *xc, double *xd)
 
-cdef extern from "special/fresnel.h" nogil:
+cdef extern from "xsf/fresnel.h" nogil:
     void specfun_fcszo 'xsf::fcszo'(int kf, int nt, ccomplex[double] *zo)
 
-cdef extern from "special/kelvin.h" nogil:
+cdef extern from "xsf/kelvin.h" nogil:
     void specfun_klvnzo 'xsf::klvnzo'(int nt, int kd, double *zo)
 
-cdef extern from "special/par_cyl.h" nogil:
+cdef extern from "xsf/par_cyl.h" nogil:
     void specfun_pbdv 'xsf::detail::pbdv'(double x, double v, double *dv, double *dp, double *pdf, double *pdd)
     void specfun_pbvv 'xsf::detail::pbvv'(double x, double v, double *vv, double *vp, double *pvf, double *pvd)
 
-cdef extern from "special/specfun/specfun.h" nogil:
+cdef extern from "xsf/specfun/specfun.h" nogil:
     void specfun_bernob 'xsf::specfun::bernob'(int n, double *bn)
     void specfun_cerzo 'xsf::specfun::cerzo'(int nt, ccomplex[double] *zo)
     void specfun_cpbdn 'xsf::specfun::cpbdn'(int n, ccomplex[double] z, ccomplex[double] *cpb, ccomplex[double] *cpd)

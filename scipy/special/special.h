@@ -2,10 +2,10 @@
 
 #include "Python.h"
 
-#include "special/bessel.h"
-#include "special/legendre.h"
-#include "special/specfun.h"
-#include "special/sph_harm.h"
+#include "xsf/bessel.h"
+#include "xsf/legendre.h"
+#include "xsf/specfun.h"
+#include "xsf/sph_harm.h"
 
 namespace {
 

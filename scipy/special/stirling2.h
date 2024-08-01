@@ -7,8 +7,8 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#include "special/binom.h"
-#include "special/lambertw.h"
+#include "xsf/binom.h"
+#include "xsf/lambertw.h"
 
 
 /*     Stirling numbers of the second kind
