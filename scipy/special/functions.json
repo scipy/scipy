@@ -851,19 +851,15 @@
         }
     },
     "shichi": {
-        "_sici.pxd": {
-            "cshichi": "D*DD->*i"
-        },
         "special_wrappers.h": {
-            "cephes_shichi_wrap": "d*dd->*i"
+            "special_cshichi": "D*DD->*i",
+            "special_shichi": "d*dd->*i"
         }
     },
     "sici": {
-        "_sici.pxd": {
-            "csici": "D*DD->*i"
-        },
         "special_wrappers.h": {
-            "cephes_sici_wrap": "d*dd->*i"
+            "special_csici": "D*DD->*i",
+            "special_sici": "d*dd->*i"
         }
     },
     "sindg": {

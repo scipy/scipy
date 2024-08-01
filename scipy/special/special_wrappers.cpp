@@ -31,6 +31,7 @@
 #include "special/loggamma.h"
 #include "special/trig.h"
 #include "special/wright_bessel.h"
+#include "special/sici.h"
 
 #include "special/cephes/bdtr.h"
 #include "special/cephes/besselpoly.h"
@@ -99,8 +100,6 @@
 #include "special/cephes/ndtr.h"
 #include "special/cephes/ndtri.h"
 #include "special/cephes/pdtr.h"
-#include "special/cephes/shichi.h"
-#include "special/cephes/sici.h"
 
 using namespace std;
 
@@ -446,6 +445,20 @@ npy_cdouble special_sph_harm_unsafe(double m, double n, double theta, double phi
     return to_ccomplex(::sph_harm(static_cast<long>(m), static_cast<long>(n), theta, phi));
 }
 
+int special_sici(double x, double *si, double *ci) { return special::sici(x, si, ci); }
+
+int special_shichi(double x, double *shi, double *chi) { return special::shichi(x, shi, chi); }
+
+int special_csici(npy_cdouble z, npy_cdouble *si, npy_cdouble *ci) {
+    return special::sici(to_complex(z), reinterpret_cast<complex<double> *>(si),
+			 reinterpret_cast<complex<double> *>(ci));
+}
+
+int special_cshichi(npy_cdouble z, npy_cdouble *shi, npy_cdouble *chi) {
+    return special::shichi(to_complex(z), reinterpret_cast<complex<double> *>(shi),
+			   reinterpret_cast<complex<double> *>(chi));
+}
+
 double cephes_hyp2f1_wrap(double a, double b, double c, double x) { return special::cephes::hyp2f1(a, b, c, x); }
 
 double cephes_airy_wrap(double x, double *ai, double *aip, double *bi, double *bip) {
@@ -501,10 +514,6 @@ double cephes_ndtri_wrap(double x) { return special::cephes::ndtri(x); }
 double cephes_pdtri_wrap(int k, double y) { return special::cephes::pdtri(k, y); }
 
 double cephes_poch_wrap(double x, double m) { return special::cephes::poch(x, m); }
-
-int cephes_sici_wrap(double x, double *si, double *ci) { return special::cephes::sici(x, si, ci); }
-
-int cephes_shichi_wrap(double x, double *si, double *ci) { return special::cephes::shichi(x, si, ci); }
 
 double cephes_smirnov_wrap(int n, double x) { return special::cephes::smirnov(n, x); }
 
