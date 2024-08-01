@@ -48,7 +48,7 @@ sf_error_state_dep = declare_dependency(
 
 ufuncs_sources = [
   '_cosine.c',
-  'special_wrappers.cpp',
+  'xsf_wrappers.cpp',
   'sf_error.cc',
   'dd_real_wrappers.cpp'
 ]
@@ -212,7 +212,7 @@ py3.extension_module('cython_special',
   [
     uf_cython_gen.process('cython_special.pyx'),
     '_cosine.c',
-    'special_wrappers.cpp',
+    'xsf_wrappers.cpp',
     'sf_error.cc',
     'dd_real_wrappers.cpp'
   ],

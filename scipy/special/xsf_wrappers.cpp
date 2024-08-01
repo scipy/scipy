@@ -1,4 +1,4 @@
-#include "special_wrappers.h"
+#include "xsf_wrappers.h"
 #include "special.h"
 #include "xsf/airy.h"
 #include "xsf/amos.h"
