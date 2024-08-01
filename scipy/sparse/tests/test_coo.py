@@ -3,6 +3,7 @@ from numpy.testing import assert_equal
 import pytest
 from scipy.linalg import block_diag
 from scipy.sparse import coo_array, random_array
+from .._coo import _block_diag, _extract_block_diag
 
 
 def test_shape_constructor():
@@ -663,7 +664,7 @@ def test_nd_matmul_vector(mat_shape, vec_shape):
 
 
 dot_shapes = [
-    ((3,3), (3,3)), ((4,6), (6,7)), # matrix multiplication 2-D
+    ((3,3), (3,3)), ((4,6), (6,7)), ((1,4), (4,1)),# matrix multiplication 2-D
     ((3,2,4,7), (7,)), ((5,), (6,3,5,2)), # dot of n-D and 1-D arrays
     ((4,5,7,6), (3,2,6,4)), ((2,8,7), (4,5,7,7,2)), # dot of n-D and m-D arrays
 ]
@@ -744,18 +745,67 @@ def test_tensordot_with_invalid_args():
     with pytest.raises(ValueError, match="axes lists/tuples must be of the same length"):
         arr_a.tensordot(arr_b, axes=axes)
 
-def test_block_diag():
-    np.random.seed(12)
 
-    arr = np.random.randn(4,5,6,7,8)
+@pytest.mark.parametrize(('shape'), [(4,5,6,7,8), (6,4),
+                                     (5,9,3,2), (9,5,2,3,4),])
+def test_block_diag(shape):
+    rng = np.random.default_rng(23409823)
+    sp_x = random_array(shape, density=0.6, random_state=rng, dtype=int)
+    den_x = sp_x.toarray()
 
-    # converting n-d numpy array to an array of slices of 2-D matrices, to pass as argument into scipy.linalg.block_diag
-    coo_arr = coo_array(arr)
-    num_slices = np.prod(arr.shape[:-2])
-    reshaped_array = arr.reshape((num_slices,) + arr.shape[-2:])
+    # converting n-d numpy array to an array of slices of 2-D matrices,
+    # to pass as argument into scipy.linalg.block_diag
+    num_slices = int(np.prod(den_x.shape[:-2]))
+    reshaped_array = den_x.reshape((num_slices,) + den_x.shape[-2:])
     matrices = [reshaped_array[i, :, :] for i in range(num_slices)]
     exp = block_diag(*matrices)
 
-    res = coo_arr._block_diag()
+    res = _block_diag(sp_x)
 
     assert_equal(res.toarray(), exp)
+
+
+@pytest.mark.parametrize(('shape'), [(4,5,6,7,8), (6,4),
+                                     (5,9,3,2), (9,5,2,3,4),])
+def test_extract_block_diag(shape):
+    rng = np.random.default_rng(23409823)
+    sp_x = random_array(shape, density=0.6, random_state=rng, dtype=int)
+    den_x = sp_x.toarray()
+    res = _extract_block_diag(_block_diag(sp_x), shape)
+
+    assert_equal(res.toarray(), sp_x.toarray())
+
+
+mat_mat_shapes = [
+    ((2, 3, 4, 5), (2, 3, 5, 7)), 
+    ((0, 0), (0,)), 
+    ((4, 4, 2, 0), (0,)),
+    ((7,8,3), (3,)),
+    ((6, 5, 3, 2, 4), (4, 3)),
+    ((1, 3, 2, 4), (6, 5, 1, 4, 3)),
+    ((6, 1, 1, 2, 4), (1, 3, 4, 3)),
+    ((2, 5), (5, 1))
+]
+@pytest.mark.parametrize(('mat_shape1', 'mat_shape2'), mat_mat_shapes)
+def test_nd_matmul_sparse(mat_shape1, mat_shape2):
+    rng = np.random.default_rng(23409823)
+
+    sp_x = random_array(mat_shape1, density=0.6, random_state=rng, dtype=int)
+    sp_y = random_array(mat_shape2, density=0.6, random_state=rng, dtype=int)
+    den_x, den_y = sp_x.toarray(), sp_y.toarray()
+    exp = den_x @ den_y
+    res = sp_x @ sp_y
+    assert_equal(res.toarray(), exp)
+
+
+def test_nd_matmul_sparse_with_inconsistent_arrays():
+    rng = np.random.default_rng(23409823)
+
+    sp_x = random_array((4,5,7,6,3), density=0.6, random_state=rng, dtype=int)
+    sp_y = random_array((1,5,3,2,5), density=0.6, random_state=rng, dtype=int)
+    with pytest.raises(ValueError, match="matmul: dimension mismatch with signature"):
+        sp_x @ sp_y
+    
+    sp_z = random_array((1,5,3,2), density=0.6, random_state=rng, dtype=int)
+    with pytest.raises(ValueError, match="Batch dimensions are not broadcastable"):
+        sp_x @ sp_z
