@@ -63,7 +63,7 @@
 #include "j0.h"
 #include "j1.h"
 
-namespace special {
+namespace xsf {
 namespace cephes {
 
     SPECFUN_HOST_DEVICE inline double yn(int n, double x) {
@@ -115,4 +115,4 @@ namespace cephes {
     }
 
 } // namespace cephes
-} // namespace special
+} // namespace xsf

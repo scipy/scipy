@@ -90,7 +90,7 @@
 #include "gamma.h"
 #include "scipy_iv.h"
 
-namespace special {
+namespace xsf {
 namespace cephes {
 
     namespace detail {
@@ -138,8 +138,8 @@ namespace cephes {
             }
 
             /* Evaluate sum */
-            term = -sgn / std::sqrt(M_PI) * std::exp(-special::cephes::lgam(v + 0.5) + (v - 1) * std::log(z / 2)) *
-                   special::cephes::gammasgn(v + 0.5);
+            term = -sgn / std::sqrt(M_PI) * std::exp(-xsf::cephes::lgam(v + 0.5) + (v - 1) * std::log(z / 2)) *
+                   xsf::cephes::gammasgn(v + 0.5);
             sum = term;
             maxterm = 0;
 
@@ -155,9 +155,9 @@ namespace cephes {
             }
 
             if (is_h) {
-                sum += special::cyl_bessel_y(v, z);
+                sum += xsf::cyl_bessel_y(v, z);
             } else {
-                sum += special::cephes::iv(v, z);
+                sum += xsf::cephes::iv(v, z);
             }
 
             /*
@@ -187,7 +187,7 @@ namespace cephes {
                 sgn = 1;
             }
 
-            tmp = -special::cephes::lgam(v + 1.5) + (v + 1) * std::log(z / 2);
+            tmp = -xsf::cephes::lgam(v + 1.5) + (v + 1) * std::log(z / 2);
             if (tmp < -600 || tmp > 600) {
                 /* Scale exponent to postpone underflow/overflow */
                 scaleexp = tmp / 2;
@@ -196,7 +196,7 @@ namespace cephes {
                 scaleexp = 0;
             }
 
-            term = 2 / std::sqrt(M_PI) * std::exp(tmp) * special::cephes::gammasgn(v + 1.5);
+            term = 2 / std::sqrt(M_PI) * std::exp(tmp) * xsf::cephes::gammasgn(v + 1.5);
             sum = term;
             maxterm = 0;
 
@@ -267,10 +267,10 @@ namespace cephes {
 
             for (n = 0; n < STRUVE_MAXITER; ++n) {
                 if (is_h) {
-                    term = cterm * special::cyl_bessel_j(n + v + 0.5, z) / (n + 0.5);
+                    term = cterm * xsf::cyl_bessel_j(n + v + 0.5, z) / (n + 0.5);
                     cterm *= z / 2 / (n + 1);
                 } else {
-                    term = cterm * special::cephes::iv(n + v + 0.5, z) / (n + 0.5);
+                    term = cterm * xsf::cephes::iv(n + v + 0.5, z) / (n + 0.5);
                     cterm *= -z / 2 / (n + 1);
                 }
                 sum += term;
@@ -304,9 +304,9 @@ namespace cephes {
                 }
             } else if (z == 0) {
                 if (v < -1) {
-                    return special::cephes::gammasgn(v + 1.5) * std::numeric_limits<double>::infinity();
+                    return xsf::cephes::gammasgn(v + 1.5) * std::numeric_limits<double>::infinity();
                 } else if (v == -1) {
-                    return 2 / std::sqrt(M_PI) / special::cephes::Gamma(0.5);
+                    return 2 / std::sqrt(M_PI) / xsf::cephes::Gamma(0.5);
                 } else {
                     return 0;
                 }
@@ -315,9 +315,9 @@ namespace cephes {
             n = -v - 0.5;
             if (n == -v - 0.5 && n > 0) {
                 if (is_h) {
-                    return (n % 2 == 0 ? 1 : -1) * special::cyl_bessel_j(n + 0.5, z);
+                    return (n % 2 == 0 ? 1 : -1) * xsf::cyl_bessel_j(n + 0.5, z);
                 } else {
-                    return special::cephes::iv(n + 0.5, z);
+                    return xsf::cephes::iv(n + 0.5, z);
                 }
             }
 
@@ -358,13 +358,13 @@ namespace cephes {
             }
 
             /* Maybe it really is an overflow? */
-            tmp = -special::cephes::lgam(v + 1.5) + (v + 1) * std::log(z / 2);
+            tmp = -xsf::cephes::lgam(v + 1.5) + (v + 1) * std::log(z / 2);
             if (!is_h) {
                 tmp = std::abs(tmp);
             }
             if (tmp > 700) {
                 set_error("struve", SF_ERROR_OVERFLOW, NULL);
-                return std::numeric_limits<double>::infinity() * special::cephes::gammasgn(v + 1.5);
+                return std::numeric_limits<double>::infinity() * xsf::cephes::gammasgn(v + 1.5);
             }
 
             /* Failure */
@@ -378,4 +378,4 @@ namespace cephes {
     SPECFUN_HOST_DEVICE inline double struve_l(double v, double z) { return detail::struve_hl(v, z, 0); }
 
 } // namespace cephes
-} // namespace special
+} // namespace xsf

@@ -30,7 +30,7 @@
 #include "error.h"
 #include "evalpoly.h"
 
-namespace special {
+namespace xsf {
 constexpr double EXPN1 = 0.36787944117144232159553; // exp(-1)
 constexpr double OMEGA = 0.56714329040978387299997; // W(1, 0)
 
@@ -147,4 +147,4 @@ SPECFUN_HOST_DEVICE inline std::complex<float> lambertw(std::complex<float> z, l
         lambertw(static_cast<std::complex<double>>(z), k, static_cast<double>(tol)));
 }
 
-} // namespace special
+} // namespace xsf

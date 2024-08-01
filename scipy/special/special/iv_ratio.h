@@ -6,7 +6,7 @@
 #include "tools.h"
 #include "error.h"
 
-namespace special {
+namespace xsf {
 
 /* Generates the "tail" of Perron's continued fraction for `iv(v,x)/iv(v-1,x)`
  * for v >= 1 and x >= 0.
@@ -103,4 +103,4 @@ SPECFUN_HOST_DEVICE inline float iv_ratio(float v, float x) {
     return iv_ratio(static_cast<double>(v), static_cast<double>(x));
 }
 
-} // namespace special
+} // namespace xsf

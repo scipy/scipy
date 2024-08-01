@@ -72,7 +72,7 @@
 
 #include "../config.h"
 
-namespace special {
+namespace xsf {
 namespace specfun {
 
 void airyb(double, double*, double*, double*, double*);

@@ -73,7 +73,7 @@
 #include "../error.h"
 #include "const.h"
 
-namespace special {
+namespace xsf {
 namespace cephes {
 
     SPECFUN_HOST_DEVICE inline int ellpj(double u, double m, double *sn, double *cn, double *dn, double *ph) {
@@ -159,4 +159,4 @@ namespace cephes {
     }
 
 } // namespace cephes
-} // namespace special
+} // namespace xsf

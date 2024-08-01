@@ -7,7 +7,7 @@
 #include "../config.h"
 #include "gamma.h"
 
-namespace special {
+namespace xsf {
 namespace cephes {
     namespace detail {
 
@@ -48,4 +48,4 @@ namespace cephes {
             return -sum;
     }
 } // namespace cephes
-} // namespace special
+} // namespace xsf

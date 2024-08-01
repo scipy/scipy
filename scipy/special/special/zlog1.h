@@ -7,7 +7,7 @@
 
 #include "config.h"
 
-namespace special {
+namespace xsf {
 namespace detail {
 
     SPECFUN_HOST_DEVICE inline std::complex<double> zlog1(std::complex<double> z) {
@@ -32,4 +32,4 @@ namespace detail {
         return res;
     }
 } // namespace detail
-} // namespace special
+} // namespace xsf

@@ -171,7 +171,7 @@
 #include "incbet.h"
 #include "incbi.h"
 
-namespace special {
+namespace xsf {
 namespace cephes {
 
     SPECFUN_HOST_DEVICE inline double fdtrc(double a, double b, double x) {
@@ -220,4 +220,4 @@ namespace cephes {
     }
 
 } // namespace cephes
-} // namespace special
+} // namespace xsf

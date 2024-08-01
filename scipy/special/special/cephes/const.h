@@ -58,7 +58,7 @@
  */
 #pragma once
 
-namespace special {
+namespace xsf {
 namespace cephes {
     namespace detail {
         constexpr std::uint64_t MAXITER = 500;
@@ -84,4 +84,4 @@ namespace cephes {
         constexpr long double SCIPY_El = 2.718281828459045235360287471352662498L;
     } // namespace detail
 } // namespace cephes
-} // namespace special
+} // namespace xsf

@@ -136,7 +136,7 @@
 #include "igam.h"
 #include "igami.h"
 
-namespace special {
+namespace xsf {
 namespace cephes {
 
     SPECFUN_HOST_DEVICE inline double pdtrc(double k, double m) {
@@ -180,4 +180,4 @@ namespace cephes {
     }
 
 } // namespace cephes
-} // namespace special
+} // namespace xsf

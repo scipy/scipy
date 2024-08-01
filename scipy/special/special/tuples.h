@@ -5,7 +5,7 @@
 #include "config.h"
 #include "third_party/kokkos/mdspan.hpp"
 
-namespace special {
+namespace xsf {
 
 template <size_t I, typename Res, size_t NArgs = 1>
 struct grad_tuple_element;
@@ -212,4 +212,4 @@ namespace tuples {
     }
 
 } // namespace tuples
-} // namespace special
+} // namespace xsf

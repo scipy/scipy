@@ -3,7 +3,7 @@
 #include "amos/amos.h"
 #include "error.h"
 
-namespace special {
+namespace xsf {
 
 inline sf_error_t ierr_to_sferr(int nz, int ierr) {
     /* Return sf_error equivalents for amos ierr values */
@@ -27,4 +27,4 @@ inline sf_error_t ierr_to_sferr(int nz, int ierr) {
 
     return SF_ERROR_OK;
 }
-} // namespace special
+} // namespace xsf

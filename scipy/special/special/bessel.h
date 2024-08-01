@@ -10,7 +10,7 @@
 
 extern "C" double cephes_iv(double v, double x);
 
-namespace special {
+namespace xsf {
 namespace detail {
 
     template <typename T>
@@ -1135,4 +1135,4 @@ inline std::complex<float> cyl_hankel_2(float v, std::complex<float> z) {
     return static_cast<std::complex<float>>(cyl_hankel_2(static_cast<double>(v), static_cast<std::complex<double>>(z)));
 }
 
-} // namespace special
+} // namespace xsf

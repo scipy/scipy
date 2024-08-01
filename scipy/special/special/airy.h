@@ -1,16 +1,16 @@
 #pragma once
 
 #include "amos.h"
+#include "cephes/airy.h"
 #include "config.h"
 #include "error.h"
-#include "cephes/airy.h"
 
 inline int cephes_airy(float xf, float *aif, float *aipf, float *bif, float *bipf) {
     double ai;
     double aip;
     double bi;
     double bip;
-    int res = special::cephes::airy(xf, &ai, &aip, &bi, &bip);
+    int res = xsf::cephes::airy(xf, &ai, &aip, &bi, &bip);
 
     *aif = ai;
     *aipf = aip;
@@ -19,7 +19,7 @@ inline int cephes_airy(float xf, float *aif, float *aipf, float *bif, float *bip
     return res;
 }
 
-namespace special {
+namespace xsf {
 namespace detail {
 
     template <typename T>
@@ -564,4 +564,4 @@ void itairy(T x, T &apt, T &bpt, T &ant, T &bnt) {
     }
 }
 
-} // namespace special
+} // namespace xsf

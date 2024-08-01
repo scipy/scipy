@@ -97,7 +97,7 @@
 #include <math.h>
 #include <complex.h>
 
-namespace special {
+namespace xsf {
 namespace amos {
 
 int acai(std::complex<double>, double, int, int, int, std::complex<double> *, double, double, double, double);

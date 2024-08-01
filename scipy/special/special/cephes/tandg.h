@@ -78,7 +78,7 @@
 #include "../config.h"
 #include "../error.h"
 
-namespace special {
+namespace xsf {
 namespace cephes {
 
     namespace detail {
@@ -136,4 +136,4 @@ namespace cephes {
     SPECFUN_HOST_DEVICE inline double cotdg(double x) { return (detail::tancot(x, 1)); }
 
 } // namespace cephes
-} // namespace special
+} // namespace xsf

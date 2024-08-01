@@ -77,7 +77,7 @@
 #include "gamma.h"
 #include "psi.h"
 
-namespace special {
+namespace xsf {
 namespace cephes {
 
     namespace detail {
@@ -225,7 +225,7 @@ namespace cephes {
                     }
                     err += err1 + (MACHEP * r) / y;
 
-                    y *= special::cephes::Gamma(c);
+                    y *= xsf::cephes::Gamma(c);
                     goto done;
                 } else {
                     /* Psi function expansion, AMS55 #15.3.10, #15.3.11, #15.3.12
@@ -250,15 +250,15 @@ namespace cephes {
                     ax = std::log(s);
 
                     /* sum for t = 0 */
-                    y = special::cephes::psi(1.0) + special::cephes::psi(1.0 + e) - special::cephes::psi(a + d1) -
-                        special::cephes::psi(b + d1) - ax;
-                    y /= special::cephes::Gamma(e + 1.0);
+                    y = xsf::cephes::psi(1.0) + xsf::cephes::psi(1.0 + e) - xsf::cephes::psi(a + d1) -
+                        xsf::cephes::psi(b + d1) - ax;
+                    y /= xsf::cephes::Gamma(e + 1.0);
 
-                    p = (a + d1) * (b + d1) * s / special::cephes::Gamma(e + 2.0); /* Poch for t=1 */
+                    p = (a + d1) * (b + d1) * s / xsf::cephes::Gamma(e + 2.0); /* Poch for t=1 */
                     t = 1.0;
                     do {
-                        r = special::cephes::psi(1.0 + t) + special::cephes::psi(1.0 + t + e) -
-                            special::cephes::psi(a + t + d1) - special::cephes::psi(b + t + d1) - ax;
+                        r = xsf::cephes::psi(1.0 + t) + xsf::cephes::psi(1.0 + t + e) -
+                            xsf::cephes::psi(a + t + d1) - xsf::cephes::psi(b + t + d1) - ax;
                         q = p * r;
                         y += q;
                         p *= s * (a + t + d1) / (t + 1.0);
@@ -272,7 +272,7 @@ namespace cephes {
                     } while (y == 0 || std::abs(q / y) > hyp2f1_EPS);
 
                     if (id == 0.0) {
-                        y *= special::cephes::Gamma(c) / (special::cephes::Gamma(a) * special::cephes::Gamma(b));
+                        y *= xsf::cephes::Gamma(c) / (xsf::cephes::Gamma(a) * xsf::cephes::Gamma(b));
                         goto psidon;
                     }
 
@@ -291,11 +291,11 @@ namespace cephes {
                         y1 += p;
                     }
                 nosum:
-                    p = special::cephes::Gamma(c);
-                    y1 *= special::cephes::Gamma(e) * p /
-                          (special::cephes::Gamma(a + d1) * special::cephes::Gamma(b + d1));
+                    p = xsf::cephes::Gamma(c);
+                    y1 *= xsf::cephes::Gamma(e) * p /
+                          (xsf::cephes::Gamma(a + d1) * xsf::cephes::Gamma(b + d1));
 
-                    y *= p / (special::cephes::Gamma(a + d2) * special::cephes::Gamma(b + d2));
+                    y *= p / (xsf::cephes::Gamma(a + d2) * xsf::cephes::Gamma(b + d2));
                     if ((aid & 1) != 0)
                         y = -y;
 
@@ -592,4 +592,4 @@ namespace cephes {
     }
 
 } // namespace cephes
-} // namespace special
+} // namespace xsf

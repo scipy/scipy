@@ -24,7 +24,7 @@
 #include "polevl.h"
 #include "zeta.h"
 
-namespace special {
+namespace xsf {
 namespace cephes {
 
     namespace detail {
@@ -160,7 +160,7 @@ namespace cephes {
             xfac = -x;
             for (n = 2; n < 42; n++) {
                 xfac *= -x;
-                coeff = special::cephes::zeta(n, 1) * xfac / n;
+                coeff = xsf::cephes::zeta(n, 1) * xfac / n;
                 res += coeff;
                 if (std::abs(coeff) < detail::MACHEP * std::abs(res)) {
                     break;
@@ -183,4 +183,4 @@ namespace cephes {
     }
 
 } // namespace cephes
-} // namespace special
+} // namespace xsf

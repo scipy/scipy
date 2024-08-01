@@ -15,7 +15,7 @@
 #include "config.h"
 #include "evalpoly.h"
 
-namespace special {
+namespace xsf {
 
 template <typename T>
 SPECFUN_HOST_DEVICE T sinpi(T x) {
@@ -108,4 +108,4 @@ SPECFUN_HOST_DEVICE std::complex<T> cospi(std::complex<T> z) {
     return {coshfac * exphpiy, sinhfac * exphpiy};
 }
 
-} // namespace special
+} // namespace xsf

@@ -2,7 +2,7 @@
 
 #include "specfun/specfun.h"
 
-namespace special {
+namespace xsf {
 namespace detail {
 
     template <typename T>
@@ -664,4 +664,4 @@ void pbvv(T v, T x, T &pvf, T &pvd) {
     }
 }
 
-} // namespace special
+} // namespace xsf

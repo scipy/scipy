@@ -18,7 +18,7 @@
 #include "igam.h"
 #include "polevl.h"
 
-namespace special {
+namespace xsf {
 namespace cephes {
 
     namespace detail {
@@ -93,7 +93,7 @@ namespace cephes {
                     result = -std::log(q);
                 }
             } else if (a < 1) {
-                double g = special::cephes::Gamma(a);
+                double g = xsf::cephes::Gamma(a);
                 double b = q * g;
 
                 if ((b > 0.6) || ((b >= 0.45) && (a >= 0.3))) {
@@ -172,7 +172,7 @@ namespace cephes {
                         result = w;
                     } else {
                         double D = std::fmax(2, a * (a - 1));
-                        double lg = special::cephes::lgam(a);
+                        double lg = xsf::cephes::lgam(a);
                         double lb = std::log(q) + lg;
                         if (lb < -D * 2.3) {
                             /* DiDonato and Morris Eq 25: */
@@ -209,7 +209,7 @@ namespace cephes {
                     double ap2 = a + 2;
                     if (w < 0.15 * ap1) {
                         /* DiDonato and Morris Eq 35: */
-                        double v = std::log(p) + special::cephes::lgam(ap1);
+                        double v = std::log(p) + xsf::cephes::lgam(ap1);
                         z = std::exp((v + w) / a);
                         s = std::log1p(z / ap1 * (1 + z / ap2));
                         z = std::exp((v + z - s) / a);
@@ -224,7 +224,7 @@ namespace cephes {
                     } else {
                         /* DiDonato and Morris Eq 36: */
                         double ls = std::log(didonato_SN(a, z, 100, 1e-4));
-                        double v = std::log(p) + special::cephes::lgam(ap1);
+                        double v = std::log(p) + xsf::cephes::lgam(ap1);
                         z = std::exp((v + z - ls) / a);
                         result = z * (1 - (a * std::log(z) - z - v + ls) / (a - z));
                     }
@@ -310,4 +310,4 @@ namespace cephes {
     }
 
 } // namespace cephes
-} // namespace special
+} // namespace xsf

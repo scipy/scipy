@@ -68,7 +68,7 @@
 #include "const.h"
 #include "gamma.h"
 
-namespace special {
+namespace xsf {
 namespace cephes {
 
     namespace detail {
@@ -196,23 +196,23 @@ namespace cephes {
             u = -temp * a;
 
             if (b > 0) {
-                temp = special::cephes::lgam(b);
+                temp = xsf::cephes::lgam(b);
                 t += temp;
                 u += temp;
             }
 
             h1 = hyp2f0(a, a - b + 1, -1.0 / x, 1, &err1);
 
-            temp = std::exp(u) / special::cephes::Gamma(b - a);
+            temp = std::exp(u) / xsf::cephes::Gamma(b - a);
             h1 *= temp;
             err1 *= temp;
 
             h2 = hyp2f0(b - a, 1.0 - a, 1.0 / x, 2, &err2);
 
             if (a < 0)
-                temp = std::exp(t) / special::cephes::Gamma(a);
+                temp = std::exp(t) / xsf::cephes::Gamma(a);
             else
-                temp = std::exp(t - special::cephes::lgam(a));
+                temp = std::exp(t - xsf::cephes::lgam(a));
 
             h2 *= temp;
             err2 *= temp;
@@ -225,7 +225,7 @@ namespace cephes {
             acanc = std::abs(err1) + std::abs(err2);
 
             if (b < 0) {
-                temp = special::cephes::Gamma(b);
+                temp = xsf::cephes::Gamma(b);
                 asum *= temp;
                 acanc *= std::abs(temp);
             }
@@ -357,4 +357,4 @@ namespace cephes {
     }
 
 } // namespace cephes
-} // namespace special
+} // namespace xsf

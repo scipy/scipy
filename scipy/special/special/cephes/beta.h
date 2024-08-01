@@ -54,7 +54,7 @@
 #include "const.h"
 #include "gamma.h"
 
-namespace special {
+namespace xsf {
 namespace cephes {
 
     SPECFUN_HOST_DEVICE double beta(double, double);
@@ -85,7 +85,7 @@ namespace cephes {
             int sgn;
             if (b == static_cast<int>(b) && 1 - a - b > 0) {
                 sgn = (static_cast<int>(b) % 2 == 0) ? 1 : -1;
-                return sgn * special::cephes::beta(1 - a - b, b);
+                return sgn * xsf::cephes::beta(1 - a - b, b);
             } else {
                 set_error("lbeta", SF_ERROR_OVERFLOW, NULL);
                 return std::numeric_limits<double>::infinity();
@@ -95,7 +95,7 @@ namespace cephes {
         SPECFUN_HOST_DEVICE inline double lbeta_negint(int a, double b) {
             double r;
             if (b == static_cast<int>(b) && 1 - a - b > 0) {
-                r = special::cephes::lbeta(1 - a - b, b);
+                r = xsf::cephes::lbeta(1 - a - b, b);
                 return r;
             } else {
                 set_error("lbeta", SF_ERROR_OVERFLOW, NULL);
@@ -252,4 +252,4 @@ namespace cephes {
         return (std::log(y));
     }
 } // namespace cephes
-} // namespace special
+} // namespace xsf

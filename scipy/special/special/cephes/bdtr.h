@@ -157,7 +157,7 @@
 #include "incbi.h"
 #include "unity.h"
 
-namespace special {
+namespace xsf {
 namespace cephes {
 
     SPECFUN_HOST_DEVICE inline double bdtrc(double k, int n, double p) {
@@ -259,4 +259,4 @@ namespace cephes {
     }
 
 } // namespace cephes
-} // namespace special
+} // namespace xsf

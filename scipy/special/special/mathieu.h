@@ -2,7 +2,7 @@
 
 #include "specfun/specfun.h"
 
-namespace special {
+namespace xsf {
 
 template <typename T>
 T sem_cva(T m, T q);
@@ -182,4 +182,4 @@ void msm2(T m, T q, T x, T &f2r, T &d2r) {
     }
 }
 
-} // namespace special
+} // namespace xsf

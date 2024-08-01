@@ -2,7 +2,7 @@
 
 #include "specfun.h"
 
-namespace special {
+namespace xsf {
 
 template <typename T>
 T prolate_segv(T m, T n, T c) {
@@ -286,4 +286,4 @@ void oblate_radial2(T m, T n, T c, T cv, T x, T &r2f, T &r2d) {
     }
 }
 
-} // namespace special
+} // namespace xsf

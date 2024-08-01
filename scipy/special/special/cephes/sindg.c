@@ -36,7 +36,8 @@
  * sindg total loss   x > 1.0e14 (IEEE)     0.0
  *
  */
-/*							cosdg.c
+
+/*							cosdg.c
  *
  *	Circular cosine of angle in degrees
  *
@@ -69,7 +70,7 @@
  *  See also sin().
  *
  */
-
+
 /* Cephes Math Library Release 2.0:  April, 1987
  * Copyright 1985, 1987 by Stephen L. Moshier
  * Direct inquiries to 30 Frost Street, Cambridge, MA 02140 */

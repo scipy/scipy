@@ -27,7 +27,7 @@
 #include "digamma.h"
 #include "error.h"
 
-namespace special {
+namespace xsf {
 
 namespace detail {
     // rgamma_zero: smallest value x for which rgamma(x) == 0 as x gets large
@@ -838,4 +838,4 @@ SPECFUN_HOST_DEVICE inline float log_wright_bessel(float a, float b, float x) {
     return log_wright_bessel(static_cast<double>(a), static_cast<double>(b), static_cast<double>(x));
 }
 
-} // namespace special
+} // namespace xsf

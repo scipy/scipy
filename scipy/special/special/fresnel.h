@@ -2,7 +2,7 @@
 
 #include "config.h"
 
-namespace special {
+namespace xsf {
 namespace detail {
 
     inline void cfc(std::complex<double> z, std::complex<double> *zf, std::complex<double> *zd) {
@@ -401,4 +401,4 @@ inline void fcszo(int kf, int nt, std::complex<double> *zo) {
     return;
 }
 
-} // namespace special
+} // namespace xsf

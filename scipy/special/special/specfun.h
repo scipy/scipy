@@ -26,7 +26,7 @@
         }                                                                                                              \
     } while (0)
 
-namespace special {
+namespace xsf {
 
 inline std::complex<double> chyp2f1(double a, double b, double c, std::complex<double> z) {
     int l0 = ((c == floor(c)) && (c < 0));

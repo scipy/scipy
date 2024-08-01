@@ -52,7 +52,7 @@
 #include "gamma.h"
 #include "trig.h"
 
-namespace special {
+namespace xsf {
 namespace cephes {
 
     namespace detail {
@@ -122,4 +122,4 @@ namespace cephes {
         return (y);
     }
 } // namespace cephes
-} // namespace special
+} // namespace xsf

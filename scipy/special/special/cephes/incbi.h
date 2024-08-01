@@ -56,7 +56,7 @@
 #include "incbet.h"
 #include "ndtri.h"
 
-namespace special {
+namespace xsf {
 namespace cephes {
 
     SPECFUN_HOST_DEVICE inline double incbi(double aa, double bb, double yy0) {
@@ -290,4 +290,4 @@ namespace cephes {
     }
 
 } // namespace cephes
-} // namespace special
+} // namespace xsf

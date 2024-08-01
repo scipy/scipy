@@ -29,7 +29,7 @@
 #include "trig.h"
 #include "zlog1.h"
 
-namespace special {
+namespace xsf {
 
 namespace detail {
     constexpr double loggamma_SMALLX = 7;
@@ -160,4 +160,4 @@ SPECFUN_HOST_DEVICE inline std::complex<float> rgamma(std::complex<float> z) {
     return static_cast<std::complex<float>>(rgamma(static_cast<std::complex<double>>(z)));
 }
 
-} // namespace special
+} // namespace xsf

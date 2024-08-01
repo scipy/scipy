@@ -4,7 +4,7 @@
 
 #include "config.h"
 
-namespace special {
+namespace xsf {
 
 template <typename T>
 T expit(T x) {
@@ -54,4 +54,4 @@ T log_expit(T x) {
     return -std::log1p(std::exp(-x));
 };
 
-} // namespace special
+} // namespace xsf

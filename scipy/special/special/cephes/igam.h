@@ -114,7 +114,7 @@
 #include "ndtr.h"
 #include "unity.h"
 
-namespace special {
+namespace xsf {
 namespace cephes {
 
     namespace detail {
@@ -141,7 +141,7 @@ namespace cephes {
             double ax, fac, res, num;
 
             if (std::abs(a - x) > 0.4 * std::abs(a)) {
-                ax = a * std::log(x) - x - special::cephes::lgam(a);
+                ax = a * std::log(x) - x - xsf::cephes::lgam(a);
                 if (ax < -MAXLOG) {
                     set_error("igam", SF_ERROR_UNDERFLOW, NULL);
                     return 0.0;
@@ -149,14 +149,14 @@ namespace cephes {
                 return std::exp(ax);
             }
 
-            fac = a + special::cephes::lanczos_g - 0.5;
-            res = std::sqrt(fac / std::exp(1)) / special::cephes::lanczos_sum_expg_scaled(a);
+            fac = a + xsf::cephes::lanczos_g - 0.5;
+            res = std::sqrt(fac / std::exp(1)) / xsf::cephes::lanczos_sum_expg_scaled(a);
 
             if ((a < 200) && (x < 200)) {
                 res *= std::exp(a - x) * std::pow(x / fac, a);
             } else {
-                num = x - a - special::cephes::lanczos_g + 0.5;
-                res *= std::exp(a * special::cephes::log1pmx(num / fac) + x * (0.5 - special::cephes::lanczos_g) / fac);
+                num = x - a - xsf::cephes::lanczos_g + 0.5;
+                res *= std::exp(a * xsf::cephes::log1pmx(num / fac) + x * (0.5 - xsf::cephes::lanczos_g) / fac);
             }
 
             return res;
@@ -260,8 +260,8 @@ namespace cephes {
             }
 
             logx = std::log(x);
-            term = -special::cephes::expm1(a * logx - special::cephes::lgam1p(a));
-            return term - std::exp(a * logx - special::cephes::lgam(a)) * sum;
+            term = -xsf::cephes::expm1(a * logx - xsf::cephes::lgam1p(a));
+            return term - std::exp(a * logx - xsf::cephes::lgam(a)) * sum;
         }
 
         /* Compute igam/igamc using DLMF 8.12.3/8.12.4. */
@@ -283,13 +283,13 @@ namespace cephes {
             }
 
             if (lambda > 1) {
-                eta = std::sqrt(-2 * special::cephes::log1pmx(sigma));
+                eta = std::sqrt(-2 * xsf::cephes::log1pmx(sigma));
             } else if (lambda < 1) {
-                eta = -std::sqrt(-2 * special::cephes::log1pmx(sigma));
+                eta = -std::sqrt(-2 * xsf::cephes::log1pmx(sigma));
             } else {
                 eta = 0;
             }
-            res = 0.5 * special::cephes::erfc(sgn * eta * std::sqrt(a / 2));
+            res = 0.5 * xsf::cephes::erfc(sgn * eta * std::sqrt(a / 2));
 
             for (k = 0; k < igam_asymp_coeff_K; k++) {
                 ck = igam_asymp_coeff_d[k][0];
@@ -418,4 +418,4 @@ namespace cephes {
     }
 
 } // namespace cephes
-} // namespace special
+} // namespace xsf

@@ -12,7 +12,7 @@
 #include "cephes/beta.h"
 #include "cephes/gamma.h"
 
-namespace special {
+namespace xsf {
 
 SPECFUN_HOST_DEVICE inline double binom(double n, double k) {
     double kx, nx, num, den, dk, sgn;
@@ -86,4 +86,4 @@ SPECFUN_HOST_DEVICE inline float binom(float n, float k) {
     return binom(static_cast<double>(n), static_cast<double>(k));
 }
 
-} // namespace special
+} // namespace xsf

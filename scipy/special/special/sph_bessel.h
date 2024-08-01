@@ -31,7 +31,7 @@ Translated to C++ by SciPy developers in 2024.
 #include "amos.h"
 #include "error.h"
 
-namespace special {
+namespace xsf {
 
 template <typename T>
 T sph_bessel_j(long n, T x) {
@@ -379,4 +379,4 @@ T sph_bessel_k_jac(long n, T x) {
     return -sph_bessel_k(n - 1, x) - static_cast<T>(n + 1) * sph_bessel_k(n, x) / x;
 }
 
-} // namespace special
+} // namespace xsf

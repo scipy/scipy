@@ -13,7 +13,7 @@
 
 #include "../config.h"
 
-namespace special {
+namespace xsf {
 namespace cephes {
 
     /* Compute sin(pi * x). */
@@ -55,4 +55,4 @@ namespace cephes {
         }
     }
 } // namespace cephes
-} // namespace special
+} // namespace xsf

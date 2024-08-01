@@ -101,7 +101,7 @@
 #include "polevl.h"
 #include "trig.h"
 
-namespace special {
+namespace xsf {
 namespace cephes {
     namespace detail {
         constexpr double gamma_P[] = {1.60119522476751861407E-4, 1.19135147006586384913E-3, 1.04213797561761569935E-2,
@@ -130,7 +130,7 @@ namespace cephes {
                 return (std::numeric_limits<double>::infinity());
             }
             w = 1.0 / x;
-            w = 1.0 + w * special::cephes::polevl(w, gamma_STIR, 4);
+            w = 1.0 + w * xsf::cephes::polevl(w, gamma_STIR, 4);
             y = std::exp(x);
             if (x > MAXSTIR) { /* Avoid overflow in pow() */
                 v = std::pow(x, 0.5 * x - 0.25);
@@ -373,4 +373,4 @@ namespace cephes {
     }
 
 } // namespace cephes
-} // namespace special
+} // namespace xsf

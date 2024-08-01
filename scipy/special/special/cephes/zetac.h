@@ -58,7 +58,7 @@
 #include "polevl.h"
 #include "zeta.h"
 
-namespace special {
+namespace xsf {
 namespace cephes {
 
     namespace detail {
@@ -161,20 +161,20 @@ namespace cephes {
 
             if (x < 1.0) {
                 w = 1.0 - x;
-                a = special::cephes::polevl(x, zetac_R, 5) / (w * special::cephes::p1evl(x, zetac_S, 5));
+                a = xsf::cephes::polevl(x, zetac_R, 5) / (w * xsf::cephes::p1evl(x, zetac_S, 5));
                 return a;
             }
 
             if (x <= 10.0) {
                 b = std::pow(2.0, x) * (x - 1.0);
                 w = 1.0 / x;
-                s = (x * special::cephes::polevl(w, zetac_P, 8)) / (b * special::cephes::p1evl(w, zetac_Q, 8));
+                s = (x * xsf::cephes::polevl(w, zetac_P, 8)) / (b * xsf::cephes::p1evl(w, zetac_Q, 8));
                 return s;
             }
 
             if (x <= 50.0) {
                 b = std::pow(2.0, -x);
-                w = special::cephes::polevl(x, zetac_A, 10) / special::cephes::p1evl(x, zetac_B, 10);
+                w = xsf::cephes::polevl(x, zetac_A, 10) / xsf::cephes::p1evl(x, zetac_B, 10);
                 w = std::exp(w) + b;
                 return w;
             }
@@ -198,7 +198,7 @@ namespace cephes {
          * formula because to double precision 1 - x = 1 and zetac(1) = inf.
          */
         SPECFUN_HOST_DEVICE inline double zetac_smallneg(double x) {
-            return special::cephes::polevl(x, zetac_TAYLOR0, 9);
+            return xsf::cephes::polevl(x, zetac_TAYLOR0, 9);
         }
 
         /*
@@ -217,10 +217,10 @@ namespace cephes {
             /* Reduce the argument to sine */
             x_shift = std::fmod(x, 4);
             small_term = -SQRT2PI * sin(0.5 * M_PI * x_shift);
-            small_term *= special::cephes::lanczos_sum_expg_scaled(x + 1) * special::cephes::zeta(x + 1, 1);
+            small_term *= xsf::cephes::lanczos_sum_expg_scaled(x + 1) * xsf::cephes::zeta(x + 1, 1);
 
             /* Group large terms together to prevent overflow */
-            base = (x + special::cephes::lanczos_g + 0.5) / (2 * M_PI * M_E);
+            base = (x + xsf::cephes::lanczos_g + 0.5) / (2 * M_PI * M_E);
             large_term = std::pow(base, x + 0.5);
             if (std::isfinite(large_term)) {
                 return large_term * small_term;
@@ -277,4 +277,4 @@ namespace cephes {
     }
 
 } // namespace cephes
-} // namespace special
+} // namespace xsf

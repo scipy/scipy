@@ -2,7 +2,7 @@
 
 #include "specfun.h"
 
-namespace special {
+namespace xsf {
 
 namespace detail {
 
@@ -421,4 +421,4 @@ inline void klvnzo(int nt, int kd, double *zo) {
     }
 }
 
-} // namespace special
+} // namespace xsf

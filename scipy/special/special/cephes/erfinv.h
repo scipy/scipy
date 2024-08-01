@@ -6,7 +6,7 @@
 
 #include "ndtri.h"
 
-namespace special {
+namespace xsf {
 namespace cephes {
 
     /*
@@ -73,4 +73,4 @@ namespace cephes {
     }
 
 } // namespace cephes
-} // namespace special
+} // namespace xsf

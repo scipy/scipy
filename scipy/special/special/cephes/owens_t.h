@@ -22,7 +22,7 @@
 #include "ndtr.h"
 #include "unity.h"
 
-namespace special {
+namespace xsf {
 namespace cephes {
 
     namespace detail {
@@ -113,10 +113,10 @@ namespace cephes {
             return owens_t_SELECT_METHOD[iaint * 15 + ihint];
         }
 
-        SPECFUN_HOST_DEVICE inline double owens_t_norm1(double x) { return special::cephes::erf(x / std::sqrt(2)) / 2; }
+        SPECFUN_HOST_DEVICE inline double owens_t_norm1(double x) { return xsf::cephes::erf(x / std::sqrt(2)) / 2; }
 
         SPECFUN_HOST_DEVICE inline double owens_t_norm2(double x) {
-            return special::cephes::erfc(x / std::sqrt(2)) / 2;
+            return xsf::cephes::erfc(x / std::sqrt(2)) / 2;
         }
 
         SPECFUN_HOST_DEVICE inline double owensT1(double h, double a, double m) {
@@ -127,7 +127,7 @@ namespace cephes {
             double dhs = std::exp(hs);
             double as = a * a;
             double aj = a / (2 * M_PI);
-            double dj = special::cephes::expm1(hs);
+            double dj = xsf::cephes::expm1(hs);
             double gj = hs * dhs;
 
             double val = std::atan(a) / (2 * M_PI);
@@ -156,7 +156,7 @@ namespace cephes {
             double y = 1.0 / hs;
             double val = 0.0;
             double vi = a * std::exp(-0.5 * ah * ah) / std::sqrt(2 * M_PI);
-            double z = (special::cephes::ndtr(ah) - 0.5) / h;
+            double z = (xsf::cephes::ndtr(ah) - 0.5) / h;
 
             while (1) {
                 val += z;
@@ -349,4 +349,4 @@ namespace cephes {
     }
 
 } // namespace cephes
-} // namespace special
+} // namespace xsf

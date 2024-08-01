@@ -243,7 +243,7 @@ using cuda::std::ptrdiff_t;
 
 #endif
 
-namespace special {
+namespace xsf {
 
 template <typename T>
 struct remove_complex {
@@ -258,4 +258,4 @@ struct remove_complex<std::complex<T>> {
 template <typename T>
 using remove_complex_t = typename remove_complex<T>::type;
 
-} // namespace special
+} // namespace xsf

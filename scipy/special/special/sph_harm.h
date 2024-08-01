@@ -2,7 +2,7 @@
 
 #include "legendre.h"
 
-namespace special {
+namespace xsf {
 
 template <typename T>
 void sph_harm_y_next(int m, T phi, std::tuple<const T (&)[2]> p, std::tuple<std::complex<T> &> res) {
@@ -107,4 +107,4 @@ void sph_harm_y_all(T theta, T phi, std::tuple<OutMats...> res) {
     );
 }
 
-} // namespace special
+} // namespace xsf

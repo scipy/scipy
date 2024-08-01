@@ -35,7 +35,7 @@
 #include "../config.h"
 #include "polevl.h"
 
-namespace special {
+namespace xsf {
 namespace cephes {
 
     namespace detail {
@@ -109,4 +109,4 @@ namespace cephes {
         return ratevl(x, detail::lanczos_sum_expg_scaled_num, 12, detail::lanczos_sum_expg_scaled_denom, 12);
     }
 } // namespace cephes
-} // namespace special
+} // namespace xsf

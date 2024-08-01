@@ -2,7 +2,7 @@
 
 #include "cephes/zeta.h"
 
-namespace special {
+namespace xsf {
 
 template <typename T>
 SPECFUN_HOST_DEVICE T zeta(T x, T q) {
@@ -17,4 +17,4 @@ SPECFUN_HOST_DEVICE inline float zeta(float xf, float qf) {
     return zeta(x, q);
 }
 
-} // namespace special
+} // namespace xsf

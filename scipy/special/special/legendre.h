@@ -3,7 +3,7 @@
 #include "error.h"
 #include "recur.h"
 
-namespace special {
+namespace xsf {
 
 template <typename T>
 struct legendre_p_initializer_n {
@@ -1390,4 +1390,4 @@ void lqmn(std::complex<T> z, OutputMat1 cqm, OutputMat2 cqd) {
     }
 }
 
-} // namespace special
+} // namespace xsf

@@ -91,7 +91,7 @@
 #include "const.h"
 #include "polevl.h"
 
-namespace special {
+namespace xsf {
 namespace cephes {
 
     namespace detail {
@@ -195,4 +195,4 @@ namespace cephes {
         return (p * detail::SQRT2OPI / std::sqrt(x));
     }
 } // namespace cephes
-} // namespace special
+} // namespace xsf

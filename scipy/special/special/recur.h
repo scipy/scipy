@@ -2,7 +2,7 @@
 
 #include "tuples.h"
 
-namespace special {
+namespace xsf {
 
 template <typename T, size_t N>
 T dot(const T (&x)[N], const T (&y)[N]) {
@@ -139,4 +139,4 @@ void backward_recur(InputIt first, InputIt last, Recurrence r, std::tuple<T (&)[
     }
 }
 
-} // namespace special
+} // namespace xsf

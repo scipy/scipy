@@ -50,7 +50,7 @@
 
 #include "unity.h"
 
-namespace special {
+namespace xsf {
 namespace cephes {
 
     namespace detail {
@@ -556,7 +556,7 @@ namespace cephes {
                 return -infinity();
             }
             la = std::log1p(a.hi);
-            elam1 = special::cephes::expm1(la);
+            elam1 = xsf::cephes::expm1(la);
             ll = std::log1p(a.lo / (1 + a.hi));
             if (a.hi > 0) {
                 ll -= (elam1 - a.hi) / (elam1 + 1);
@@ -567,4 +567,4 @@ namespace cephes {
     } // namespace detail
 
 } // namespace cephes
-} // namespace special
+} // namespace xsf

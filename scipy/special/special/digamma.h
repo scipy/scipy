@@ -22,7 +22,7 @@
 #include "error.h"
 #include "trig.h"
 
-namespace special {
+namespace xsf {
 namespace detail {
     // All of the following were computed with mpmath
     // Location of the positive root
@@ -201,4 +201,4 @@ SPECFUN_HOST_DEVICE inline std::complex<float> digamma(std::complex<float> z) {
     return static_cast<std::complex<float>>(digamma(static_cast<std::complex<double>>(z)));
 }
 
-} // namespace special
+} // namespace xsf

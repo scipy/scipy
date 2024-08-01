@@ -5,7 +5,7 @@
 #include "config.h"
 #include "error.h"
 
-namespace special {
+namespace xsf {
 namespace detail {
 
     /* Result type of a "generator", a callable object that produces a value
@@ -267,4 +267,4 @@ namespace detail {
     }
 
 } // namespace detail
-} // namespace special
+} // namespace xsf

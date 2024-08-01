@@ -60,7 +60,7 @@
 #include "j1.h"
 #include "polevl.h"
 
-namespace special {
+namespace xsf {
 namespace cephes {
 
     namespace detail {
@@ -241,7 +241,7 @@ namespace cephes {
             t = std::frexp(0.5 * x, &ex);
             ex = ex * n;
             if ((ex > -1023) && (ex < 1023) && (n > 0.0) && (n < (MAXGAM - 1.0))) {
-                t = std::pow(0.5 * x, n) / special::cephes::Gamma(n + 1.0);
+                t = std::pow(0.5 * x, n) / xsf::cephes::Gamma(n + 1.0);
                 y *= t;
             } else {
                 t = n * std::log(0.5 * x) - lgam_sgn(n + 1.0, &sgngam);
@@ -347,20 +347,20 @@ namespace cephes {
 
             /* Airy function */
             zz = -cbtwo * z;
-            special::cephes::airy(zz, &ai, &aip, &bi, &bip);
+            xsf::cephes::airy(zz, &ai, &aip, &bi, &bip);
 
             /* polynomials in expansion */
             zz = z * z;
             z3 = zz * z;
             F[0] = 1.0;
             F[1] = -z / 5.0;
-            F[2] = special::cephes::polevl(z3, jv_PF2, 1) * zz;
-            F[3] = special::cephes::polevl(z3, jv_PF3, 2);
-            F[4] = special::cephes::polevl(z3, jv_PF4, 3) * z;
+            F[2] = xsf::cephes::polevl(z3, jv_PF2, 1) * zz;
+            F[3] = xsf::cephes::polevl(z3, jv_PF3, 2);
+            F[4] = xsf::cephes::polevl(z3, jv_PF4, 3) * z;
             G[0] = 0.3 * zz;
-            G[1] = special::cephes::polevl(z3, jv_PG1, 1);
-            G[2] = special::cephes::polevl(z3, jv_PG2, 2) * z;
-            G[3] = special::cephes::polevl(z3, jv_PG3, 2) * zz;
+            G[1] = xsf::cephes::polevl(z3, jv_PG1, 1);
+            G[2] = xsf::cephes::polevl(z3, jv_PG2, 2) * z;
+            G[3] = xsf::cephes::polevl(z3, jv_PG3, 2) * zz;
 
             pp = 0.0;
             qq = 0.0;
@@ -472,20 +472,20 @@ namespace cephes {
             n23 = cbrt(n * n);
             t = n23 * zeta;
 
-            special::cephes::airy(t, &ai, &aip, &bi, &bip);
+            xsf::cephes::airy(t, &ai, &aip, &bi, &bip);
 
             /* polynomials in expansion */
             u[0] = 1.0;
             zzi = 1.0 / zz;
-            u[1] = special::cephes::polevl(zzi, jv_P1, 1) / sz;
-            u[2] = special::cephes::polevl(zzi, jv_P2, 2) / zz;
-            u[3] = special::cephes::polevl(zzi, jv_P3, 3) / (sz * zz);
+            u[1] = xsf::cephes::polevl(zzi, jv_P1, 1) / sz;
+            u[2] = xsf::cephes::polevl(zzi, jv_P2, 2) / zz;
+            u[3] = xsf::cephes::polevl(zzi, jv_P3, 3) / (sz * zz);
             pp = zz * zz;
-            u[4] = special::cephes::polevl(zzi, jv_P4, 4) / pp;
-            u[5] = special::cephes::polevl(zzi, jv_P5, 5) / (pp * sz);
+            u[4] = xsf::cephes::polevl(zzi, jv_P4, 4) / pp;
+            u[5] = xsf::cephes::polevl(zzi, jv_P5, 5) / (pp * sz);
             pp *= zz;
-            u[6] = special::cephes::polevl(zzi, jv_P6, 6) / pp;
-            u[7] = special::cephes::polevl(zzi, jv_P7, 7) / (pp * sz);
+            u[6] = xsf::cephes::polevl(zzi, jv_P6, 6) / pp;
+            u[7] = xsf::cephes::polevl(zzi, jv_P7, 7) / (pp * sz);
 
             pp = 0.0;
             qq = 0.0;
@@ -712,4 +712,4 @@ namespace cephes {
     }
 
 } // namespace cephes
-} // namespace special
+} // namespace xsf

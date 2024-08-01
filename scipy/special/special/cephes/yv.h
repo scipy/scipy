@@ -15,7 +15,7 @@
 #include "jv.h"
 #include "yn.h"
 
-namespace special {
+namespace xsf {
 namespace cephes {
 
     /*
@@ -52,4 +52,4 @@ namespace cephes {
         return (y);
     }
 } // namespace cephes
-} // namespace special
+} // namespace xsf

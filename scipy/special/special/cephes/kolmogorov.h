@@ -60,7 +60,7 @@
 #include "dd_real.h"
 #include "unity.h"
 
-namespace special {
+namespace xsf {
 namespace cephes {
 
     namespace detail {
@@ -468,7 +468,7 @@ namespace cephes {
                     adj += (m * r) * ((m - 1) / 2.0 * r);
                 } else {
                     /* Take exp of scaled log */
-                    adj = special::cephes::expm1(m * std::log1p(r));
+                    adj = xsf::cephes::expm1(m * std::log1p(r));
                 }
             }
             return double_double(ans) + ans * adj;
@@ -698,7 +698,7 @@ namespace cephes {
                     sf = std::exp(logp);
                     cdf = 1 - sf;
                 } else {
-                    cdf = -special::cephes::expm1(logp);
+                    cdf = -xsf::cephes::expm1(logp);
                     sf = 1 - cdf;
                 }
                 pdf = (6.0 * n * x + 1) * 2 * sf / 3;
@@ -1038,4 +1038,4 @@ namespace cephes {
     }
 
 } // namespace cephes
-} // namespace special
+} // namespace xsf

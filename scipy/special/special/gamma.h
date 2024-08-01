@@ -3,7 +3,7 @@
 #include "cephes/gamma.h"
 #include "loggamma.h"
 
-namespace special {
+namespace xsf {
 
 template <typename T>
 SPECFUN_HOST_DEVICE T gamma(T x) {
@@ -34,4 +34,4 @@ T gamma_ratio(T a, T b) {
     return std::tgamma(a) / std::tgamma(b);
 }
 
-} // namespace special
+} // namespace xsf

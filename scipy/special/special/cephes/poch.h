@@ -7,7 +7,7 @@
 #include "../config.h"
 #include "gamma.h"
 
-namespace special {
+namespace xsf {
 namespace cephes {
 
     namespace detail {
@@ -82,4 +82,4 @@ namespace cephes {
         return r * std::exp(lgam(a + m) - lgam(a)) * gammasgn(a + m) * gammasgn(a);
     }
 } // namespace cephes
-} // namespace special
+} // namespace xsf

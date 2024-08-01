@@ -18,7 +18,7 @@ typedef enum {
 
 #include "config.h"
 
-namespace special {
+namespace xsf {
 
 #ifndef SP_SPECFUN_ERROR
 SPECFUN_HOST_DEVICE inline void set_error(const char *func_name, sf_error_t code, const char *fmt, ...) {
@@ -51,6 +51,6 @@ SPECFUN_HOST_DEVICE void set_error_and_nan(const char *name, sf_error_t code, st
     }
 }
 
-} // namespace special
+} // namespace xsf
 
 #endif

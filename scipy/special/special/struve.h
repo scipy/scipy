@@ -2,7 +2,7 @@
 
 #include "config.h"
 
-namespace special {
+namespace xsf {
 namespace detail {
 
     inline double itth0(double x) {
@@ -217,4 +217,4 @@ T itmodstruve0(T x) {
     return out;
 }
 
-} // namespace special
+} // namespace xsf

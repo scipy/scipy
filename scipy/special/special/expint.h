@@ -3,7 +3,7 @@
 #include "error.h"
 #include "specfun.h"
 
-namespace special {
+namespace xsf {
 
 template <typename T>
 T exp1(T x) {
@@ -114,4 +114,4 @@ inline double scaled_exp1(double x) {
 
 inline float scaled_exp1(float x) { return scaled_exp1(static_cast<double>(x)); }
 
-} // namespace special
+} // namespace xsf

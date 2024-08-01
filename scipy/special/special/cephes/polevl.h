@@ -65,7 +65,7 @@
 
 #include "../config.h"
 
-namespace special {
+namespace xsf {
 namespace cephes {
     SPECFUN_HOST_DEVICE inline double polevl(double x, const double coef[], int N) {
         double ans;
@@ -164,4 +164,4 @@ namespace cephes {
         }
     }
 } // namespace cephes
-} // namespace special
+} // namespace xsf

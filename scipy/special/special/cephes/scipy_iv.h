@@ -78,7 +78,7 @@
 #include "gamma.h"
 #include "trig.h"
 
-namespace special {
+namespace xsf {
 namespace cephes {
 
     namespace detail {
@@ -441,7 +441,7 @@ namespace cephes {
                     *i_value = i_prefactor * i_sum;
                 } else {
                     /* (AMS 9.6.2) */
-                    *i_value = (i_prefactor * i_sum + (2 / M_PI) * special::cephes::sinpi(v) * k_prefactor * k_sum);
+                    *i_value = (i_prefactor * i_sum + (2 / M_PI) * xsf::cephes::sinpi(v) * k_prefactor * k_sum);
                 }
             }
         }
@@ -472,13 +472,13 @@ namespace cephes {
             SPECFUN_ASSERT(std::abs(x) <= 2);
             SPECFUN_ASSERT(std::abs(v) <= 0.5f);
 
-            gp = special::cephes::Gamma(v + 1) - 1;
-            gm = special::cephes::Gamma(-v + 1) - 1;
+            gp = xsf::cephes::Gamma(v + 1) - 1;
+            gm = xsf::cephes::Gamma(-v + 1) - 1;
 
             a = std::log(x / 2);
             b = std::exp(v * a);
             sigma = -a * v;
-            c = std::abs(v) < MACHEP ? 1 : special::cephes::sinpi(v) / (v * M_PI);
+            c = std::abs(v) < MACHEP ? 1 : xsf::cephes::sinpi(v) / (v * M_PI);
             d = std::abs(sigma) < MACHEP ? 1 : std::sinh(sigma) / sigma;
             gamma1 = std::abs(v) < MACHEP ? -SCIPY_EULER : (0.5 / v) * (gp - gm) * c;
             gamma2 = (2 + gp + gm) * c / 2;
@@ -675,7 +675,7 @@ namespace cephes {
                 if (reflect && (kind & ikv_temme_need_i)) {
                     double z = (u + n % 2);
 
-                    Iv = special::cephes::sinpi(z) == 0 ? Iv : std::numeric_limits<double>::infinity();
+                    Iv = xsf::cephes::sinpi(z) == 0 ? Iv : std::numeric_limits<double>::infinity();
                     if (std::isinf(Iv)) {
                         set_error("ikv_temme", SF_ERROR_OVERFLOW, NULL);
                     }
@@ -732,7 +732,7 @@ namespace cephes {
                 double z = (u + n % 2);
 
                 if (Iv_p != NULL) {
-                    *Iv_p = Iv + (2 / M_PI) * special::cephes::sinpi(z) * Kv; /* reflection formula */
+                    *Iv_p = Iv + (2 / M_PI) * xsf::cephes::sinpi(z) * Kv; /* reflection formula */
                 }
                 if (Kv_p != NULL) {
                     *Kv_p = Kv;
@@ -808,4 +808,4 @@ namespace cephes {
     }
 
 } // namespace cephes
-} // namespace special
+} // namespace xsf
