@@ -12,7 +12,8 @@ import numpy as np
 from .._lib._util import copy_if_needed
 from ._matrix import spmatrix
 from ._sparsetools import (coo_tocsr, coo_todense, coo_todense_nd,
-                           coo_matvec, coo_matvec_nd, coo_matmat_dense)
+                           coo_matvec, coo_matvec_nd, coo_matmat_dense,
+                           coo_matmat_dense_nd)
 from ._base import issparse, SparseEfficiencyWarning, _spbase, sparray
 from ._data import _data_matrix, _minmax_mixin
 from ._sputils import (upcast_char, to_native, isshape, getdtype,
@@ -768,23 +769,34 @@ class _coo_base(_data_matrix, _minmax_mixin):
 
     def _matmul_multivector(self, other):
         result_dtype = upcast_char(self.dtype.char, other.dtype.char)
-        if self.ndim == 2:
-            result_shape = (self.shape[0], other.shape[1])
-            col = self.col
-            row = self.row
-        elif self.ndim == 1:
-            result_shape = (other.shape[1],)
-            col = self.coords[0]
-            row = np.zeros_like(col)
-        else:
-            raise NotImplementedError(
-                f"coo_matmat_dense not implemented for ndim={self.ndim}")
-
-        result = np.zeros(result_shape, dtype=result_dtype)
-        coo_matmat_dense(self.nnz, other.shape[-1], row, col,
-                         self.data, other.ravel('C'), result)
-        return result.view(type=type(other))
-
+        if self.ndim < 3 and other.ndim < 3:
+            if self.ndim == 2:
+                result_shape = (self.shape[0], other.shape[1])
+                col = self.col
+                row = self.row
+            else: # self.ndim == 1
+                result_shape = (other.shape[1],)
+                col = self.coords[0]
+                row = np.zeros_like(col)
+            result = np.zeros(result_shape, dtype=result_dtype)
+            coo_matmat_dense(self.nnz, other.shape[-1], row, col,
+                            self.data, other.ravel('C'), result)
+            return result.view(type=type(other))
+        
+        else: # self.ndim >= 3 or other.ndim >= 3
+            broadcast_shape = np.broadcast_shapes(self.shape[:-2], other.shape[:-2])
+            self_shape = broadcast_shape + self.shape[-2:]
+            other_shape = broadcast_shape + other.shape[-2:]
+            
+            self = self.broadcast_to(self_shape)
+            other = np.broadcast_to(other, other_shape)
+            result_shape = broadcast_shape + self.shape[-2:-1] + other.shape[-1:]
+            result = np.zeros(math.prod(result_shape), dtype=result_dtype)
+            coo_matmat_dense_nd(self.nnz, len(self.shape), other.shape[-1],
+                                np.array(other_shape), np.array(result_shape),
+                                np.concatenate(self.coords),
+                                self.data, other.ravel('C'), result)
+            return result.reshape(result_shape)
 
 ############# dot
     def dot(a, b):
