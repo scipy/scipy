@@ -809,3 +809,25 @@ def test_nd_matmul_sparse_with_inconsistent_arrays():
     sp_z = random_array((1,5,3,2), density=0.6, random_state=rng, dtype=int)
     with pytest.raises(ValueError, match="Batch dimensions are not broadcastable"):
         sp_x @ sp_z
+
+
+mat_mat_shapes = [
+    ((2, 3, 4, 5), (2, 3, 5, 7)), 
+    ((0, 0), (0,)), 
+    ((4, 4, 2, 0), (0,)),
+    ((7,8,3), (3,)),
+    ((6, 5, 3, 2, 4), (4, 3)),
+    ((1, 3, 2, 4), (6, 5, 1, 4, 3)),
+    ((6, 1, 1, 2, 4), (1, 3, 4, 3)),
+    ((2, 5), (5, 1))
+]
+@pytest.mark.parametrize(('mat_shape1', 'mat_shape2'), mat_mat_shapes)
+def test_nd_matmul_dense(mat_shape1, mat_shape2):
+    rng = np.random.default_rng(23409823)
+
+    sp_x = random_array(mat_shape1, density=0.6, random_state=rng, dtype=int)
+    sp_y = random_array(mat_shape2, density=0.6, random_state=rng, dtype=int)
+    den_x, den_y = sp_x.toarray(), sp_y.toarray()
+    exp = den_x @ den_y
+    res = sp_x @ den_y
+    assert_equal(res, exp)
