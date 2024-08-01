@@ -1040,6 +1040,10 @@ PyInit__sigtools(void)
         return NULL;
     }
 
+#if Py_GIL_DISABLED
+    PyUnstable_Module_SetGIL(module, Py_MOD_GIL_NOT_USED);
+#endif
+
     scipy_signal__sigtools_linear_filter_module_init();
 
     return module;
