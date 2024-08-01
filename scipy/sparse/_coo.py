@@ -1737,6 +1737,39 @@ def _prepare_sparse_tensors_for_tensordot(a, b, axes_a, axes_b, tensordot):
             prod_arr = prod_arr.reshape(combined_shape[:-1])
 
         return prod_arr
+    
+    def _dense_dot(a, b):
+        a_is_1d = False
+        b_is_1d = False
+
+        # reshape to 2-D if a or b is 1-D
+        if a.ndim == 1:
+            a = a.reshape((1, a.shape[0])) # prepend 1 to shape
+            a_is_1d = True
+
+        if len(b.shape) == 1:
+            b = b.reshape((b.shape[0], 1)) # append 1 to shape
+            b_is_1d = True
+
+        if a.shape[-1] != b.shape[-2]:
+                raise ValueError(f"shapes {a.shape} and {b.shape} are not aligned for n-D dot")
+
+        new_shape_A = a.shape[:-1] + (1,) * (len(b.shape) - 1) + a.shape[-1:]
+        print(new_shape_A)
+        new_shape_B = (1,) * (len(a.shape) - 1) + tuple(b.shape)
+        print(new_shape_B)
+
+        result_shape = a.shape[:-1] + b.shape[:-2] + b.shape[-1:]
+        result = a.reshape(new_shape_A) @ b.reshape(new_shape_B)
+        prod_arr = result.reshape(result_shape)
+
+        # reshape back if a or b were originally 1-D
+        if a_is_1d:
+            prod_arr = prod_arr.reshape(result_shape[1:])
+        if b_is_1d:
+            prod_arr = prod_arr.reshape(result_shape[:-1])
+
+        return prod_arr
 
 
     def tensordot(a, b, axes=2):
@@ -1780,7 +1813,7 @@ def _prepare_sparse_tensors_for_tensordot(a, b, axes_a, axes_b, tensordot):
         axes_b = [axis + b.ndim if axis < 0 else axis for axis in axes_b]
         
         if isdense(b):
-            return a._dense_tensordot(b)
+            return a._dense_tensordot(b, axes_a, axes_b)
         else:
             return a._sparse_tensordot(b, axes_a, axes_b)
 
@@ -1825,8 +1858,8 @@ def _prepare_sparse_tensors_for_tensordot(a, b, axes_a, axes_b, tensordot):
         """
         Converts an N-D COO array into a 2-D COO array in block diagonal form.
 
-        Parameters:
-        nd_arr (coo_array): An N-Dimensional COO sparse array.
+    Parameters:
+    self (coo_array): An N-Dimensional COO sparse array.
 
         Returns:
         coo_array: A 2-Dimensional COO sparse array in block diagonal form.
