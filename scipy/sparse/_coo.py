@@ -1378,40 +1378,141 @@ def _ravel_non_reduced_axes(coords, shape, axes):
         
         return prod_arr
     
-    def _block_diag(self):
-        """
-        Converts an N-D COO array into a 2-D COO array in block diagonal form.
 
+    def _matmul_sparse(A, B):
+        """
+        Perform sparse-sparse matrix multiplication for two n-D COO arrays.
+        The method converts A and B n-D arrays to 2-D block array format,
+        uses csr_matmat to multiply them, and then converts the
+        result back to n-D COO array.
+        
         Parameters:
-        nd_arr (coo_array): An N-Dimensional COO sparse array.
-
+        A (COO): The first n-D sparse array in COO format.
+        B (COO): The second n-D sparse array in COO format.
+        
         Returns:
-        coo_array: A 2-Dimensional COO sparse array in block diagonal form.
+        C (COO): The resulting n-D sparse array after multiplication.
         """
-        # Get the shape of the N-D array
-        shape = self.shape
+        if A.ndim < 3:
+            return _data_matrix._matmul_sparse(A, B)
 
-        num_blocks = math.prod(shape[:-2])
-        n_col = shape[-1]
-        n_row = shape[-2]
-        new_row = np.zeros(shape=(self.nnz,))
-        new_col = np.zeros(shape=(self.nnz,))
-
-        # Calculate strides for the first n-2 dimensions
-        strides = np.cumprod((1,) + shape[:-2][::-1])[::-1][1:]
-
-        # Function to calculate the offset index
-        def offset_index(coords, strides):
-            return sum(c * s for c, s in zip(coords, strides))
+        # Get the shapes of A and B
+        shape_A = A.shape
+        shape_B = B.shape
         
-        coords_for_current_nnz = np.array(self.coords)
-        offset_coords = np.apply_along_axis(offset_index, 0, coords_for_current_nnz[:-2], strides)
-        
-        new_row = offset_coords * n_row + self.coords[-2]
-        new_col = offset_coords * n_col + self.coords[-1]
+        # Determine the new shape to broadcast A and B
+        broadcast_shape = np.broadcast_shapes(shape_A[:-2], shape_B[:-2])
+        new_shape_A = tuple(broadcast_shape) + shape_A[-2:]
+        new_shape_B = tuple(broadcast_shape) + shape_B[-2:]
 
-        new_shape = (num_blocks * n_row, num_blocks * n_col)
-        return coo_array((self.data, (new_row, new_col)), shape=new_shape)
+        A_broadcasted = A.broadcast_to(new_shape_A)
+        B_broadcasted = B.broadcast_to(new_shape_B)
+        
+        # Convert n-D COO arrays to 2-D block diagonal arrays
+        A_block_diag = _block_diag(A_broadcasted)
+        B_block_diag = _block_diag(B_broadcasted)
+        
+        # Use csr_matmat to perform sparse matrix multiplication
+        C_block_diag = (A_block_diag @ B_block_diag).tocoo()
+        
+        # Convert the 2-D block diagonal array back to n-D
+        C = _extract_block_diag(C_block_diag, shape=(*broadcast_shape, A.shape[-2], B.shape[-1]))
+        
+        return C
+
+
+    def broadcast_to(self, new_shape):
+        old_shape = self.shape
+
+        # Check if the new shape is compatible for broadcasting
+        if len(new_shape) < len(old_shape):
+            raise ValueError("New shape must have at least as many dimensions as the current shape")
+        
+        # Add leading ones to the old shape if necessary
+        shape = (1,) * (len(new_shape) - len(old_shape)) + tuple(old_shape)
+        
+        # Ensure the old shape can be broadcast to the new shape
+        if any((o != 1 and o != n) for o, n in zip(shape, new_shape)):
+            raise ValueError(f"current shape {old_shape} cannot be broadcast to new shape {new_shape}")
+
+        # Reshape the COO array to match the new dimensions
+        self = self.reshape(shape)
+
+        coords = np.array(self.coords)
+        data = np.array(self.data)
+
+        cum_repeat = 1 # Cumulative repeat factor for broadcasting
+        new_coords = coords[-2:].copy()  # Copy last two coordinates to start
+        new_data = data.copy() # copy data array
+        for i in range(-3, -(len(shape)+1), -1):
+            if shape[i] != new_shape[i]:
+                repeat_count = new_shape[i] # number of times to repeat data and coordinates
+                cum_repeat *= repeat_count # update cumulative repeat factor
+                nnz = len(new_data) # Number of non-zero elements so far
+
+                  # Tile data and coordinates to match the new repeat count
+                new_data = np.tile(new_data, repeat_count)
+                new_coords = np.tile(new_coords[i+1:], repeat_count)
+
+                # Create new dimensions and stack them
+                new_dim = np.repeat(np.arange(0, repeat_count), nnz)
+                new_coords = np.vstack((new_dim, new_coords))
+            else:
+                # If no broadcasting needed, tile the coordinates
+                new_dim = np.tile(coords[i], cum_repeat)
+                new_coords = np.vstack((new_dim, new_coords))
+                
+        return coo_array((new_data, new_coords), new_shape)
+        
+
+def _block_diag(self):
+    """
+    Converts an N-D COO array into a 2-D COO array in block diagonal form.
+
+    Parameters:
+    self (coo_array): An N-Dimensional COO sparse array.
+
+    Returns:
+    coo_array: A 2-Dimensional COO sparse array in block diagonal form.
+    """
+    if self.ndim<2:
+        raise ValueError("array must have atleast dim=2")
+    num_blocks = math.prod(self.shape[:-2])
+    n_col = self.shape[-1]
+    n_row = self.shape[-2]
+    res_arr = self.reshape((num_blocks, n_row, n_col))
+    new_indices = np.empty((2, self.nnz), dtype = int)
+    for axis in [1, 2]:
+        new_indices[axis - 1] = res_arr.coords[axis] + res_arr.coords[0] * res_arr.shape[axis]
+
+    new_shape = (num_blocks * n_row, num_blocks * n_col)
+    return coo_array((self.data, tuple(new_indices)), shape=new_shape)
+
+
+def _extract_block_diag(self, shape):
+    n_row, n_col = shape[-2], shape[-1]
+
+    # Extract data and coordinates from the block diagonal COO array
+    data = self.data
+    row, col = self.row, self.col
+
+    # Initialize new coordinates array
+    new_coords = np.empty((len(shape), self.nnz), dtype=int)
+    
+    # Calculate within-block indices
+    new_coords[-2] = row % n_row
+    new_coords[-1] = col % n_col
+
+    # Calculate coordinates for higher dimensions
+    temp_block_idx = row // n_row
+    for i in range(len(shape) - 3, -1, -1):
+        size = shape[i]
+        new_coords[i] = temp_block_idx % size
+        temp_block_idx = temp_block_idx // size
+
+    # Create the new COO array with the original n-D shape
+    return coo_array((data, tuple(new_coords)), shape=shape)
+
 
 
 def _determine_default_axes(ndim_a, ndim_b, axes):
