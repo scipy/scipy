@@ -123,7 +123,7 @@ namespace cephes {
         /* Gamma function computed by Stirling's formula.
          * The polynomial STIR is valid for 33 <= x <= 172.
          */
-        SPECFUN_HOST_DEVICE inline double stirf(double x) {
+        XSF_HOST_DEVICE inline double stirf(double x) {
             double y, w, v;
 
             if (x >= MAXGAM) {
@@ -143,7 +143,7 @@ namespace cephes {
         }
     } // namespace detail
 
-    SPECFUN_HOST_DEVICE inline double Gamma(double x) {
+    XSF_HOST_DEVICE inline double Gamma(double x) {
         double p, q, z;
         int i;
         int sgngam = 1;
@@ -247,7 +247,7 @@ namespace cephes {
 #pragma GCC push_options
 #pragma GCC optimize("00")
 #endif
-        SPECFUN_HOST_DEVICE inline double lgam_large_x(double x) {
+        XSF_HOST_DEVICE inline double lgam_large_x(double x) {
             double q = (x - 0.5) * std::log(x) - x + LS2PI;
             if (x > 1.0e8) {
                 return (q);
@@ -260,7 +260,7 @@ namespace cephes {
 #pragma GCC pop_options
 #endif
 
-        SPECFUN_HOST_DEVICE inline double lgam_sgn(double x, int *sign) {
+        XSF_HOST_DEVICE inline double lgam_sgn(double x, int *sign) {
             double p, q, u, w, z;
             int i;
 
@@ -346,13 +346,13 @@ namespace cephes {
     } // namespace detail
 
     /* Logarithm of Gamma function */
-    SPECFUN_HOST_DEVICE inline double lgam(double x) {
+    XSF_HOST_DEVICE inline double lgam(double x) {
         int sign;
         return detail::lgam_sgn(x, &sign);
     }
 
     /* Sign of the Gamma function */
-    SPECFUN_HOST_DEVICE inline double gammasgn(double x) {
+    XSF_HOST_DEVICE inline double gammasgn(double x) {
         double fx;
 
         if (std::isnan(x)) {

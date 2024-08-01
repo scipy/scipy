@@ -161,14 +161,14 @@
 namespace xsf {
 namespace cephes {
 
-    SPECFUN_HOST_DEVICE inline double chdtrc(double df, double x) {
+    XSF_HOST_DEVICE inline double chdtrc(double df, double x) {
 
         if (x < 0.0)
             return 1.0; /* modified by T. Oliphant */
         return (igamc(df / 2.0, x / 2.0));
     }
 
-    SPECFUN_HOST_DEVICE inline double chdtr(double df, double x) {
+    XSF_HOST_DEVICE inline double chdtr(double df, double x) {
 
         if ((x < 0.0)) { /* || (df < 1.0) ) */
             set_error("chdtr", SF_ERROR_DOMAIN, NULL);
@@ -177,7 +177,7 @@ namespace cephes {
         return (igam(df / 2.0, x / 2.0));
     }
 
-    SPECFUN_HOST_DEVICE double chdtri(double df, double y) {
+    XSF_HOST_DEVICE double chdtri(double df, double y) {
         double x;
 
         if ((y < 0.0) || (y > 1.0)) { /* || (df < 1.0) ) */

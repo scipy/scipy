@@ -18,12 +18,12 @@
 namespace xsf {
 
 template <typename T>
-SPECFUN_HOST_DEVICE T sinpi(T x) {
+XSF_HOST_DEVICE T sinpi(T x) {
     return cephes::sinpi(x);
 }
 
 template <typename T>
-SPECFUN_HOST_DEVICE std::complex<T> sinpi(std::complex<T> z) {
+XSF_HOST_DEVICE std::complex<T> sinpi(std::complex<T> z) {
     T x = z.real();
     T piy = M_PI * z.imag();
     T abspiy = std::abs(piy);
@@ -67,12 +67,12 @@ SPECFUN_HOST_DEVICE std::complex<T> sinpi(std::complex<T> z) {
 }
 
 template <typename T>
-SPECFUN_HOST_DEVICE T cospi(T x) {
+XSF_HOST_DEVICE T cospi(T x) {
     return cephes::cospi(x);
 }
 
 template <typename T>
-SPECFUN_HOST_DEVICE std::complex<T> cospi(std::complex<T> z) {
+XSF_HOST_DEVICE std::complex<T> cospi(std::complex<T> z) {
     T x = z.real();
     T piy = M_PI * z.imag();
     T abspiy = std::abs(piy);

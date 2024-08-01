@@ -111,7 +111,7 @@ namespace cephes {
 
     } // namespace detail
 
-    SPECFUN_HOST_DEVICE inline double ndtri(double y0) {
+    XSF_HOST_DEVICE inline double ndtri(double y0) {
         double x, y, z, y2, x0, x1;
         int code;
 

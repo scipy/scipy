@@ -137,7 +137,7 @@ namespace cephes {
         /*
          * Compute zetac for positive arguments
          */
-        SPECFUN_HOST_DEVICE inline double zetac_positive(double x) {
+        XSF_HOST_DEVICE inline double zetac_positive(double x) {
             int i;
             double a, b, s, w;
 
@@ -197,7 +197,7 @@ namespace cephes {
          * Compute zetac for small negative x. We can't use the reflection
          * formula because to double precision 1 - x = 1 and zetac(1) = inf.
          */
-        SPECFUN_HOST_DEVICE inline double zetac_smallneg(double x) {
+        XSF_HOST_DEVICE inline double zetac_smallneg(double x) {
             return xsf::cephes::polevl(x, zetac_TAYLOR0, 9);
         }
 
@@ -205,7 +205,7 @@ namespace cephes {
          * Compute zetac using the reflection formula (see DLMF 25.4.2) plus
          * the Lanczos approximation for Gamma to avoid overflow.
          */
-        SPECFUN_HOST_DEVICE inline double zeta_reflection(double x) {
+        XSF_HOST_DEVICE inline double zeta_reflection(double x) {
             double base, large_term, small_term, hx, x_shift;
 
             hx = x / 2;
@@ -245,7 +245,7 @@ namespace cephes {
     /*
      * Riemann zeta function, minus one
      */
-    SPECFUN_HOST_DEVICE inline double zetac(double x) {
+    XSF_HOST_DEVICE inline double zetac(double x) {
         if (std::isnan(x)) {
             return x;
         } else if (x == -std::numeric_limits<double>::infinity()) {
@@ -262,7 +262,7 @@ namespace cephes {
     /*
      * Riemann zeta function
      */
-    SPECFUN_HOST_DEVICE inline double riemann_zeta(double x) {
+    XSF_HOST_DEVICE inline double riemann_zeta(double x) {
         if (std::isnan(x)) {
             return x;
         } else if (x == -std::numeric_limits<double>::infinity()) {

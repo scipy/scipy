@@ -5,12 +5,12 @@
 namespace xsf {
 
 template <typename T>
-SPECFUN_HOST_DEVICE T zeta(T x, T q) {
+XSF_HOST_DEVICE T zeta(T x, T q) {
     return cephes::zeta(x, q);
 }
 
 template <>
-SPECFUN_HOST_DEVICE inline float zeta(float xf, float qf) {
+XSF_HOST_DEVICE inline float zeta(float xf, float qf) {
     double x = xf;
     double q = qf;
 

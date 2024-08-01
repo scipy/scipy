@@ -160,7 +160,7 @@
 namespace xsf {
 namespace cephes {
 
-    SPECFUN_HOST_DEVICE inline double bdtrc(double k, int n, double p) {
+    XSF_HOST_DEVICE inline double bdtrc(double k, int n, double p) {
         double dk, dn;
         double fk = std::floor(k);
 
@@ -194,7 +194,7 @@ namespace cephes {
         return dk;
     }
 
-    SPECFUN_HOST_DEVICE inline double bdtr(double k, int n, double p) {
+    XSF_HOST_DEVICE inline double bdtr(double k, int n, double p) {
         double dk, dn;
         double fk = std::floor(k);
 
@@ -221,7 +221,7 @@ namespace cephes {
         return dk;
     }
 
-    SPECFUN_HOST_DEVICE inline double bdtri(double k, int n, double y) {
+    XSF_HOST_DEVICE inline double bdtri(double k, int n, double y) {
         double p, dn, dk;
         double fk = std::floor(k);
 

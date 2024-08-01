@@ -84,7 +84,7 @@ namespace cephes {
     namespace detail {
         constexpr double tandg_lossth = 1.0e14;
 
-        SPECFUN_HOST_DEVICE inline double tancot(double xx, int cotflg) {
+        XSF_HOST_DEVICE inline double tancot(double xx, int cotflg) {
             double x;
             int sign;
 
@@ -131,9 +131,9 @@ namespace cephes {
 
     } // namespace detail
 
-    SPECFUN_HOST_DEVICE inline double tandg(double x) { return (detail::tancot(x, 0)); }
+    XSF_HOST_DEVICE inline double tandg(double x) { return (detail::tancot(x, 0)); }
 
-    SPECFUN_HOST_DEVICE inline double cotdg(double x) { return (detail::tancot(x, 1)); }
+    XSF_HOST_DEVICE inline double cotdg(double x) { return (detail::tancot(x, 1)); }
 
 } // namespace cephes
 } // namespace xsf

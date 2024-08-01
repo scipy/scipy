@@ -5,6 +5,6 @@
 
 namespace xsf {
 
-SPECFUN_HOST_DEVICE inline double ellipk(double m) { return cephes::ellpk(1.0 - m); }
+XSF_HOST_DEVICE inline double ellipk(double m) { return cephes::ellpk(1.0 - m); }
 
 } // namespace xsf

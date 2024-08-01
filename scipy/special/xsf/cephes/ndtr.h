@@ -173,9 +173,9 @@ namespace cephes {
 
     } // namespace detail
 
-    SPECFUN_HOST_DEVICE inline double erf(double x);
+    XSF_HOST_DEVICE inline double erf(double x);
 
-    SPECFUN_HOST_DEVICE inline double erfc(double a) {
+    XSF_HOST_DEVICE inline double erfc(double a) {
         double p, q, x, y, z;
 
         if (std::isnan(a)) {
@@ -227,7 +227,7 @@ namespace cephes {
         }
     }
 
-    SPECFUN_HOST_DEVICE inline double erf(double x) {
+    XSF_HOST_DEVICE inline double erf(double x) {
         double y, z;
 
         if (std::isnan(x)) {
@@ -248,7 +248,7 @@ namespace cephes {
         return y;
     }
 
-    SPECFUN_HOST_DEVICE inline double ndtr(double a) {
+    XSF_HOST_DEVICE inline double ndtr(double a) {
         double x, y, z;
 
         if (std::isnan(a)) {

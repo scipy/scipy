@@ -26,7 +26,7 @@ namespace cephes {
 
     } // namespace detail
 
-    SPECFUN_HOST_DEVICE inline double tukeylambdacdf(double x, double lmbda) {
+    XSF_HOST_DEVICE inline double tukeylambdacdf(double x, double lmbda) {
         double pmin, pmid, pmax, plow, phigh, xeval;
         int count;
 

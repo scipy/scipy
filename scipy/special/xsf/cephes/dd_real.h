@@ -69,7 +69,7 @@ namespace cephes {
          */
 
         /* Computes fl(a+b) and err(a+b).  Assumes |a| >= |b|. */
-        SPECFUN_HOST_DEVICE inline double quick_two_sum(double a, double b, double *err) {
+        XSF_HOST_DEVICE inline double quick_two_sum(double a, double b, double *err) {
             volatile double s = a + b;
             volatile double c = s - a;
             *err = b - c;
@@ -77,7 +77,7 @@ namespace cephes {
         }
 
         /* Computes fl(a+b) and err(a+b).  */
-        SPECFUN_HOST_DEVICE inline double two_sum(double a, double b, double *err) {
+        XSF_HOST_DEVICE inline double two_sum(double a, double b, double *err) {
             volatile double s = a + b;
             volatile double c = s - a;
             volatile double d = b - c;
@@ -87,21 +87,21 @@ namespace cephes {
         }
 
         /* Computes fl(a*b) and err(a*b). */
-        SPECFUN_HOST_DEVICE inline double two_prod(double a, double b, double *err) {
+        XSF_HOST_DEVICE inline double two_prod(double a, double b, double *err) {
             volatile double p = a * b;
             *err = std::fma(a, b, -p);
             return p;
         }
 
         /* Computes fl(a*a) and err(a*a).  Faster than the above method. */
-        SPECFUN_HOST_DEVICE inline double two_sqr(double a, double *err) {
+        XSF_HOST_DEVICE inline double two_sqr(double a, double *err) {
             volatile double p = a * a;
             *err = std::fma(a, a, -p);
             return p;
         }
 
         /* Computes the nearest integer to d. */
-        SPECFUN_HOST_DEVICE inline double two_nint(double d) {
+        XSF_HOST_DEVICE inline double two_nint(double d) {
             if (d == std::floor(d)) {
                 return d;
             }
@@ -115,17 +115,17 @@ namespace cephes {
             double_double(double high, double low) : hi(high), lo(low) {}
             explicit double_double(double high) : hi(high), lo(0.0) {}
 
-            SPECFUN_HOST_DEVICE explicit operator double() const { return hi; }
-            SPECFUN_HOST_DEVICE explicit operator int() const { return static_cast<int>(hi); }
+            XSF_HOST_DEVICE explicit operator double() const { return hi; }
+            XSF_HOST_DEVICE explicit operator int() const { return static_cast<int>(hi); }
         };
 
         // Arithmetic operations
 
-        SPECFUN_HOST_DEVICE inline double_double operator-(const double_double &x) {
+        XSF_HOST_DEVICE inline double_double operator-(const double_double &x) {
             return double_double(-x.hi, -x.lo);
         }
 
-        SPECFUN_HOST_DEVICE inline double_double operator+(const double_double &lhs, const double_double &rhs) {
+        XSF_HOST_DEVICE inline double_double operator+(const double_double &lhs, const double_double &rhs) {
             /* This one satisfies IEEE style error bound,
                due to K. Briggs and W. Kahan.                   */
             double s1, s2, t1, t2;
@@ -139,7 +139,7 @@ namespace cephes {
             return double_double(s1, s2);
         }
 
-        SPECFUN_HOST_DEVICE inline double_double operator+(const double_double &lhs, const double rhs) {
+        XSF_HOST_DEVICE inline double_double operator+(const double_double &lhs, const double rhs) {
             double s1, s2;
             s1 = two_sum(lhs.hi, rhs, &s2);
             s2 += lhs.lo;
@@ -147,7 +147,7 @@ namespace cephes {
             return double_double(s1, s2);
         }
 
-        SPECFUN_HOST_DEVICE inline double_double operator+(const double lhs, const double_double &rhs) {
+        XSF_HOST_DEVICE inline double_double operator+(const double lhs, const double_double &rhs) {
             double s1, s2;
             s1 = two_sum(lhs, rhs.hi, &s2);
             s2 += rhs.lo;
@@ -155,11 +155,11 @@ namespace cephes {
             return double_double(s1, s2);
         }
 
-        SPECFUN_HOST_DEVICE inline double_double operator-(const double_double &lhs, const double_double &rhs) {
+        XSF_HOST_DEVICE inline double_double operator-(const double_double &lhs, const double_double &rhs) {
             return lhs + (-rhs);
         }
 
-        SPECFUN_HOST_DEVICE inline double_double operator-(const double_double &lhs, const double rhs) {
+        XSF_HOST_DEVICE inline double_double operator-(const double_double &lhs, const double rhs) {
             double s1, s2;
             s1 = two_sum(lhs.hi, -rhs, &s2);
             s2 += lhs.lo;
@@ -167,7 +167,7 @@ namespace cephes {
             return double_double(s1, s2);
         }
 
-        SPECFUN_HOST_DEVICE inline double_double operator-(const double lhs, const double_double &rhs) {
+        XSF_HOST_DEVICE inline double_double operator-(const double lhs, const double_double &rhs) {
             double s1, s2;
             s1 = two_sum(lhs, -rhs.hi, &s2);
             s2 -= rhs.lo;
@@ -175,7 +175,7 @@ namespace cephes {
             return double_double(s1, s2);
         }
 
-        SPECFUN_HOST_DEVICE inline double_double operator*(const double_double &lhs, const double_double &rhs) {
+        XSF_HOST_DEVICE inline double_double operator*(const double_double &lhs, const double_double &rhs) {
             double p1, p2;
             p1 = two_prod(lhs.hi, rhs.hi, &p2);
             p2 += (lhs.hi * rhs.lo + lhs.lo * rhs.hi);
@@ -183,7 +183,7 @@ namespace cephes {
             return double_double(p1, p2);
         }
 
-        SPECFUN_HOST_DEVICE inline double_double operator*(const double_double &lhs, const double rhs) {
+        XSF_HOST_DEVICE inline double_double operator*(const double_double &lhs, const double rhs) {
             double p1, p2, e1, e2;
             p1 = two_prod(lhs.hi, rhs, &e1);
             p2 = two_prod(lhs.lo, rhs, &e2);
@@ -191,7 +191,7 @@ namespace cephes {
             return double_double(p1, e1);
         }
 
-        SPECFUN_HOST_DEVICE inline double_double operator*(const double lhs, const double_double &rhs) {
+        XSF_HOST_DEVICE inline double_double operator*(const double lhs, const double_double &rhs) {
             double p1, p2, e1, e2;
             p1 = two_prod(lhs, rhs.hi, &e1);
             p2 = two_prod(lhs, rhs.lo, &e2);
@@ -199,7 +199,7 @@ namespace cephes {
             return double_double(p1, e1);
         }
 
-        SPECFUN_HOST_DEVICE inline double_double operator/(const double_double &lhs, const double_double &rhs) {
+        XSF_HOST_DEVICE inline double_double operator/(const double_double &lhs, const double_double &rhs) {
             double q1, q2, q3;
             double_double r;
 
@@ -217,39 +217,39 @@ namespace cephes {
             return r;
         }
 
-        SPECFUN_HOST_DEVICE inline double_double operator/(const double_double &lhs, const double rhs) {
+        XSF_HOST_DEVICE inline double_double operator/(const double_double &lhs, const double rhs) {
             return lhs / double_double(rhs);
         }
 
-        SPECFUN_HOST_DEVICE inline double_double operator/(const double lhs, const double_double &rhs) {
+        XSF_HOST_DEVICE inline double_double operator/(const double lhs, const double_double &rhs) {
             return double_double(lhs) / rhs;
         }
 
-        SPECFUN_HOST_DEVICE inline bool operator==(const double_double &lhs, const double_double &rhs) {
+        XSF_HOST_DEVICE inline bool operator==(const double_double &lhs, const double_double &rhs) {
             return (lhs.hi == rhs.hi && lhs.lo == rhs.lo);
         }
 
-        SPECFUN_HOST_DEVICE inline bool operator==(const double_double &lhs, const double rhs) {
+        XSF_HOST_DEVICE inline bool operator==(const double_double &lhs, const double rhs) {
             return (lhs.hi == rhs && lhs.lo == 0.0);
         }
 
-        SPECFUN_HOST_DEVICE inline bool operator==(const double lhs, const double_double &rhs) {
+        XSF_HOST_DEVICE inline bool operator==(const double lhs, const double_double &rhs) {
             return (lhs == rhs.hi) && (rhs.lo == 0.0);
         }
 
-        SPECFUN_HOST_DEVICE inline bool operator!=(const double_double &lhs, const double_double &rhs) {
+        XSF_HOST_DEVICE inline bool operator!=(const double_double &lhs, const double_double &rhs) {
             return (lhs.hi != rhs.hi) || (lhs.lo != rhs.lo);
         }
 
-        SPECFUN_HOST_DEVICE inline bool operator!=(const double_double &lhs, const double rhs) {
+        XSF_HOST_DEVICE inline bool operator!=(const double_double &lhs, const double rhs) {
             return (lhs.hi != rhs) || (lhs.lo != 0.0);
         }
 
-        SPECFUN_HOST_DEVICE inline bool operator!=(const double lhs, const double_double &rhs) {
+        XSF_HOST_DEVICE inline bool operator!=(const double lhs, const double_double &rhs) {
             return (rhs.hi != lhs) || (rhs.lo != 0.0);
         }
 
-        SPECFUN_HOST_DEVICE inline bool operator<(const double_double &lhs, const double_double &rhs) {
+        XSF_HOST_DEVICE inline bool operator<(const double_double &lhs, const double_double &rhs) {
             if (lhs.hi < rhs.hi) {
                 return true;
             }
@@ -259,7 +259,7 @@ namespace cephes {
             return lhs.lo < rhs.lo;
         }
 
-        SPECFUN_HOST_DEVICE inline bool operator<(const double_double &lhs, const double rhs) {
+        XSF_HOST_DEVICE inline bool operator<(const double_double &lhs, const double rhs) {
             if (lhs.hi < rhs) {
                 return true;
             }
@@ -270,15 +270,15 @@ namespace cephes {
         }
 
         template <typename T>
-        SPECFUN_HOST_DEVICE bool operator>(const double_double &lhs, const T &rhs) {
+        XSF_HOST_DEVICE bool operator>(const double_double &lhs, const T &rhs) {
             return rhs < lhs;
         }
 
-        SPECFUN_HOST_DEVICE inline bool operator<(const double lhs, const double_double &rhs) { return rhs > lhs; }
+        XSF_HOST_DEVICE inline bool operator<(const double lhs, const double_double &rhs) { return rhs > lhs; }
 
-        SPECFUN_HOST_DEVICE inline bool operator>(const double lhs, const double_double &rhs) { return rhs < lhs; }
+        XSF_HOST_DEVICE inline bool operator>(const double lhs, const double_double &rhs) { return rhs < lhs; }
 
-        SPECFUN_HOST_DEVICE inline bool operator<=(const double_double &lhs, const double_double &rhs) {
+        XSF_HOST_DEVICE inline bool operator<=(const double_double &lhs, const double_double &rhs) {
             if (lhs.hi < rhs.hi) {
                 return true;
             }
@@ -288,7 +288,7 @@ namespace cephes {
             return lhs.lo <= rhs.lo;
         }
 
-        SPECFUN_HOST_DEVICE inline bool operator<=(const double_double &lhs, const double rhs) {
+        XSF_HOST_DEVICE inline bool operator<=(const double_double &lhs, const double rhs) {
             if (lhs.hi < rhs) {
                 return true;
             }
@@ -299,26 +299,26 @@ namespace cephes {
         }
 
         template <typename T>
-        SPECFUN_HOST_DEVICE bool operator>=(const double_double &lhs, const T &rhs) {
+        XSF_HOST_DEVICE bool operator>=(const double_double &lhs, const T &rhs) {
             return rhs <= lhs;
         }
 
-        SPECFUN_HOST_DEVICE inline bool operator>=(const double lhs, const double_double &rhs) { return rhs <= lhs; }
+        XSF_HOST_DEVICE inline bool operator>=(const double lhs, const double_double &rhs) { return rhs <= lhs; }
 
-        SPECFUN_HOST_DEVICE inline bool operator<=(const double lhs, const double_double &rhs) { return rhs >= lhs; }
+        XSF_HOST_DEVICE inline bool operator<=(const double lhs, const double_double &rhs) { return rhs >= lhs; }
 
         // Math functions
 
-        SPECFUN_HOST_DEVICE inline double_double mul_pwr2(const double_double &lhs, double rhs) {
+        XSF_HOST_DEVICE inline double_double mul_pwr2(const double_double &lhs, double rhs) {
             /* double-double * double,  where double is a power of 2. */
             return double_double(lhs.hi * rhs, lhs.lo * rhs);
         }
 
-        SPECFUN_HOST_DEVICE inline bool isfinite(const double_double &a) { return std::isfinite(a.hi); }
+        XSF_HOST_DEVICE inline bool isfinite(const double_double &a) { return std::isfinite(a.hi); }
 
-        SPECFUN_HOST_DEVICE inline bool isinf(const double_double &a) { return std::isinf(a.hi); }
+        XSF_HOST_DEVICE inline bool isinf(const double_double &a) { return std::isinf(a.hi); }
 
-        SPECFUN_HOST_DEVICE inline double_double round(const double_double &a) {
+        XSF_HOST_DEVICE inline double_double round(const double_double &a) {
             double hi = two_nint(a.hi);
             double lo;
 
@@ -340,7 +340,7 @@ namespace cephes {
             return double_double(hi, lo);
         }
 
-        SPECFUN_HOST_DEVICE inline double_double floor(const double_double &a) {
+        XSF_HOST_DEVICE inline double_double floor(const double_double &a) {
             double hi = std::floor(a.hi);
             double lo = 0.0;
 
@@ -353,7 +353,7 @@ namespace cephes {
             return double_double(hi, lo);
         }
 
-        SPECFUN_HOST_DEVICE inline double_double ceil(const double_double &a) {
+        XSF_HOST_DEVICE inline double_double ceil(const double_double &a) {
             double hi = std::ceil(a.hi);
             double lo = 0.0;
 
@@ -366,30 +366,30 @@ namespace cephes {
             return double_double(hi, lo);
         }
 
-        SPECFUN_HOST_DEVICE inline double_double trunc(const double_double &a) {
+        XSF_HOST_DEVICE inline double_double trunc(const double_double &a) {
             return (a.hi >= 0.0) ? floor(a) : ceil(a);
         }
 
-        SPECFUN_HOST_DEVICE inline double_double abs(const double_double &a) { return (a.hi < 0.0 ? -a : a); }
+        XSF_HOST_DEVICE inline double_double abs(const double_double &a) { return (a.hi < 0.0 ? -a : a); }
 
-        SPECFUN_HOST_DEVICE inline double_double fmod(const double_double &lhs, const double_double &rhs) {
+        XSF_HOST_DEVICE inline double_double fmod(const double_double &lhs, const double_double &rhs) {
             double_double n = trunc(lhs / rhs);
             return lhs - rhs * n;
         }
 
-        SPECFUN_HOST_DEVICE inline double_double remainder(const double_double &lhs, const double_double &rhs) {
+        XSF_HOST_DEVICE inline double_double remainder(const double_double &lhs, const double_double &rhs) {
             double_double n = round(lhs / rhs);
             return lhs - rhs * n;
         }
 
-        SPECFUN_HOST_DEVICE inline std::pair<double_double, double_double> divrem(const double_double &lhs,
+        XSF_HOST_DEVICE inline std::pair<double_double, double_double> divrem(const double_double &lhs,
                                                                                   const double_double &rhs) {
             double_double n = round(lhs / rhs);
             double_double remainder = lhs - n * rhs;
             return {n, remainder};
         }
 
-        SPECFUN_HOST_DEVICE inline double_double square(const double_double &a) {
+        XSF_HOST_DEVICE inline double_double square(const double_double &a) {
             double p1, p2;
             double s1, s2;
             p1 = two_sqr(a.hi, &p2);
@@ -399,18 +399,18 @@ namespace cephes {
             return double_double(s1, s2);
         }
 
-        SPECFUN_HOST_DEVICE inline double_double square(const double a) {
+        XSF_HOST_DEVICE inline double_double square(const double a) {
             double p1, p2;
             p1 = two_sqr(a, &p2);
             return double_double(p1, p2);
         }
 
-        SPECFUN_HOST_DEVICE inline double_double ldexp(const double_double &a, int expt) {
+        XSF_HOST_DEVICE inline double_double ldexp(const double_double &a, int expt) {
             // float128 * (2.0 ^ expt)
             return double_double(std::ldexp(a.hi, expt), std::ldexp(a.lo, expt));
         }
 
-        SPECFUN_HOST_DEVICE inline double_double frexp(const double_double &a, int *expt) {
+        XSF_HOST_DEVICE inline double_double frexp(const double_double &a, int *expt) {
             //    r"""return b and l s.t. 0.5<=|b|<1 and 2^l == a
             //    0.5<=|b[0]|<1.0 or |b[0]| == 1.0 and b[0]*b[1]<0
             //    """
@@ -428,11 +428,11 @@ namespace cephes {
 
         // Numeric limits
 
-        SPECFUN_HOST_DEVICE inline double_double quiet_NaN() {
+        XSF_HOST_DEVICE inline double_double quiet_NaN() {
             return double_double(std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN());
         }
 
-        SPECFUN_HOST_DEVICE inline double_double infinity() {
+        XSF_HOST_DEVICE inline double_double infinity() {
             return double_double(std::numeric_limits<double>::infinity(), std::numeric_limits<double>::infinity());
         }
 
@@ -458,7 +458,7 @@ namespace cephes {
         const double EPS = 4.93038065763132e-32; // 2^-104
 
         /* Exponential.  Computes exp(x) in double-double precision. */
-        SPECFUN_HOST_DEVICE inline double_double exp(const double_double &a) {
+        XSF_HOST_DEVICE inline double_double exp(const double_double &a) {
             /* Strategy:  We first reduce the size of x by noting that
 
                exp(kr + m * log(2)) = 2^m * exp(r)^k
@@ -516,7 +516,7 @@ namespace cephes {
 
         /* Logarithm.  Computes log(x) in double-double precision.
            This is a natural logarithm (i.e., base e).            */
-        SPECFUN_HOST_DEVICE inline double_double log(const double_double &a) {
+        XSF_HOST_DEVICE inline double_double log(const double_double &a) {
             /* Strategy.  The Taylor series for log converges much more
                slowly than that of exp, due to the lack of the factorial
                term in the denominator.  Hence this routine instead tries
@@ -549,7 +549,7 @@ namespace cephes {
             return x;
         }
 
-        SPECFUN_HOST_DEVICE inline double_double log1p(const double_double &a) {
+        XSF_HOST_DEVICE inline double_double log1p(const double_double &a) {
             double_double ans;
             double la, elam1, ll;
             if (a.hi <= -1.0) {

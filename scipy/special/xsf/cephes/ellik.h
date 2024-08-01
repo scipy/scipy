@@ -87,7 +87,7 @@ namespace cephes {
          *
          * In this routine, we assume m < 0 and  0 > phi > pi/2.
          */
-        SPECFUN_HOST_DEVICE inline double ellik_neg_m(double phi, double m) {
+        XSF_HOST_DEVICE inline double ellik_neg_m(double phi, double m) {
             double x, y, z, x1, y1, z1, A0, A, Q, X, Y, Z, E2, E3, scale;
             int n = 0;
             double mpp = (m * phi) * phi;
@@ -157,7 +157,7 @@ namespace cephes {
 
     } // namespace detail
 
-    SPECFUN_HOST_DEVICE inline double ellik(double phi, double m) {
+    XSF_HOST_DEVICE inline double ellik(double phi, double m) {
         double a, b, c, e, temp, t, K, denom, npio2;
         int d, mod, sign;
 

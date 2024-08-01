@@ -164,7 +164,7 @@
 namespace xsf {
 namespace cephes {
 
-    SPECFUN_HOST_DEVICE inline double nbdtrc(int k, int n, double p) {
+    XSF_HOST_DEVICE inline double nbdtrc(int k, int n, double p) {
         double dk, dn;
 
         if ((p < 0.0) || (p > 1.0)) {
@@ -181,7 +181,7 @@ namespace cephes {
         return (incbet(dk, dn, 1.0 - p));
     }
 
-    SPECFUN_HOST_DEVICE inline double nbdtr(int k, int n, double p) {
+    XSF_HOST_DEVICE inline double nbdtr(int k, int n, double p) {
         double dk, dn;
 
         if ((p < 0.0) || (p > 1.0)) {
@@ -197,7 +197,7 @@ namespace cephes {
         return (incbet(dn, dk, p));
     }
 
-    SPECFUN_HOST_DEVICE inline double nbdtri(int k, int n, double p) {
+    XSF_HOST_DEVICE inline double nbdtri(int k, int n, double p) {
         double dk, dn, w;
 
         if ((p < 0.0) || (p > 1.0)) {

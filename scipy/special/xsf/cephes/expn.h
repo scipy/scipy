@@ -110,7 +110,7 @@ namespace cephes {
         constexpr int expn_Adegs[] = {0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
 
         /* Asymptotic expansion for large n, DLMF 8.20(ii) */
-        SPECFUN_HOST_DEVICE double expn_large_n(int n, double x) {
+        XSF_HOST_DEVICE double expn_large_n(int n, double x) {
             int k;
             double p = n;
             double lambda = x / p;
@@ -142,7 +142,7 @@ namespace cephes {
         }
     } // namespace detail
 
-    SPECFUN_HOST_DEVICE double expn(int n, double x) {
+    XSF_HOST_DEVICE double expn(int n, double x) {
         double ans, r, t, yk, xk;
         double pk, pkm1, pkm2, qk, qkm1, qkm2;
         double psi, z;

@@ -108,7 +108,7 @@ namespace cephes {
         constexpr double _xtol = std::numeric_limits<double>::epsilon();
         constexpr double _rtol = 2 * _xtol;
 
-        SPECFUN_HOST_DEVICE inline bool _within_tol(double x, double y, double atol, double rtol) {
+        XSF_HOST_DEVICE inline bool _within_tol(double x, double y, double atol, double rtol) {
             double diff = std::abs(x - y);
             bool result = (diff <= (atol + rtol * std::abs(y)));
             return result;
@@ -118,7 +118,7 @@ namespace cephes {
         /* Kolmogorov : Two-sided                      **************************** */
         /* ************************************************************************ */
 
-        SPECFUN_HOST_DEVICE inline ThreeProbs _kolmogorov(double x) {
+        XSF_HOST_DEVICE inline ThreeProbs _kolmogorov(double x) {
             double P = 1.0;
             double D = 0;
             double sf, cdf, pdf;
@@ -211,7 +211,7 @@ namespace cephes {
         }
 
         /* Find x such kolmogorov(x)=psf, kolmogc(x)=pcdf */
-        SPECFUN_HOST_DEVICE inline double _kolmogi(double psf, double pcdf) {
+        XSF_HOST_DEVICE inline double _kolmogi(double psf, double pcdf) {
             double x, t;
             double xmin = 0;
             double xmax = std::numeric_limits<double>::infinity();
@@ -274,7 +274,7 @@ namespace cephes {
                     x = (a + b) / 2;
                 }
             }
-            SPECFUN_ASSERT(a <= b);
+            XSF_ASSERT(a <= b);
 
             iterations = 0;
             do {
@@ -336,21 +336,21 @@ namespace cephes {
 
     } // namespace detail
 
-    SPECFUN_HOST_DEVICE inline double kolmogorov(double x) {
+    XSF_HOST_DEVICE inline double kolmogorov(double x) {
         if (std::isnan(x)) {
             return std::numeric_limits<double>::quiet_NaN();
         }
         return detail::_kolmogorov(x).sf;
     }
 
-    SPECFUN_HOST_DEVICE inline double kolmogc(double x) {
+    XSF_HOST_DEVICE inline double kolmogc(double x) {
         if (std::isnan(x)) {
             return std::numeric_limits<double>::quiet_NaN();
         }
         return detail::_kolmogorov(x).cdf;
     }
 
-    SPECFUN_HOST_DEVICE inline double kolmogp(double x) {
+    XSF_HOST_DEVICE inline double kolmogp(double x) {
         if (std::isnan(x)) {
             return std::numeric_limits<double>::quiet_NaN();
         }
@@ -363,7 +363,7 @@ namespace cephes {
     /* Functional inverse of Kolmogorov survival statistic for two-sided test.
      * Finds x such that kolmogorov(x) = p.
      */
-    SPECFUN_HOST_DEVICE inline double kolmogi(double p) {
+    XSF_HOST_DEVICE inline double kolmogi(double p) {
         if (std::isnan(p)) {
             return std::numeric_limits<double>::quiet_NaN();
         }
@@ -373,7 +373,7 @@ namespace cephes {
     /* Functional inverse of Kolmogorov cumulative statistic for two-sided test.
      * Finds x such that kolmogc(x) = p = (or kolmogorov(x) = 1-p).
      */
-    SPECFUN_HOST_DEVICE inline double kolmogci(double p) {
+    XSF_HOST_DEVICE inline double kolmogci(double p) {
         if (std::isnan(p)) {
             return std::numeric_limits<double>::quiet_NaN();
         }
@@ -386,7 +386,7 @@ namespace cephes {
         /* ********** Smirnov : One-sided ***************************************** */
         /* ************************************************************************ */
 
-        SPECFUN_HOST_DEVICE inline double nextPowerOf2(double x) {
+        XSF_HOST_DEVICE inline double nextPowerOf2(double x) {
             double q = std::ldexp(x, 1 - std::numeric_limits<double>::digits);
             double L = std::abs(q + x);
             if (L == 0) {
@@ -400,7 +400,7 @@ namespace cephes {
             return L;
         }
 
-        SPECFUN_HOST_DEVICE inline double modNX(int n, double x, int *pNXFloor, double *pNX) {
+        XSF_HOST_DEVICE inline double modNX(int n, double x, int *pNXFloor, double *pNX) {
             /*
              * Compute floor(n*x) and remainder *exactly*.
              * If remainder is too close to 1 (E.g. (1, -std::numeric_limits<double>::epsilon()/2))
@@ -414,13 +414,13 @@ namespace cephes {
             alphaD = nxD - nxfloorD;
             alpha = alphaD.hi;
             nxfloor = static_cast<int>(nxfloorD);
-            SPECFUN_ASSERT(alpha >= 0);
-            SPECFUN_ASSERT(alpha <= 1);
+            XSF_ASSERT(alpha >= 0);
+            XSF_ASSERT(alpha <= 1);
             if (alpha == 1) {
                 nxfloor += 1;
                 alpha = 0;
             }
-            SPECFUN_ASSERT(alpha < 1.0);
+            XSF_ASSERT(alpha < 1.0);
             *pNX = static_cast<double>(nxD);
             *pNXFloor = nxfloor;
             return alpha;
@@ -433,17 +433,17 @@ namespace cephes {
          *  I.e a Mantissa/significand, and an exponent.
          *  Cman lies between 0.5 and 1, and the exponent has >=32-bit.
          */
-        SPECFUN_HOST_DEVICE inline void updateBinomial(double_double *Cman, int *Cexpt, int n, int j) {
+        XSF_HOST_DEVICE inline void updateBinomial(double_double *Cman, int *Cexpt, int n, int j) {
             int expt;
             double_double rat = double_double(n - j) / (j + 1.0);
             double_double man2 = *Cman * rat;
             man2 = frexp(man2, &expt);
-            SPECFUN_ASSERT(man2 != 0.0);
+            XSF_ASSERT(man2 != 0.0);
             *Cexpt += expt;
             *Cman = man2;
         }
 
-        SPECFUN_HOST_DEVICE double_double pow_D(const double_double &a, int m) {
+        XSF_HOST_DEVICE double_double pow_D(const double_double &a, int m) {
             /*
              * Using dd_npwr() here would be quite time-consuming.
              * Tradeoff accuracy-time by using pow().
@@ -474,7 +474,7 @@ namespace cephes {
             return double_double(ans) + ans * adj;
         }
 
-        SPECFUN_HOST_DEVICE inline double pow2(double a, double b, int m) {
+        XSF_HOST_DEVICE inline double pow2(double a, double b, int m) {
             return static_cast<double>(pow_D(double_double(a) + b, m));
         }
 
@@ -484,7 +484,7 @@ namespace cephes {
          */
         constexpr int SM_MAX_EXPONENT = 960;
 
-        SPECFUN_HOST_DEVICE double_double pow2Scaled_D(const double_double &a, int m, int *pExponent) {
+        XSF_HOST_DEVICE double_double pow2Scaled_D(const double_double &a, int m, int *pExponent) {
             /* Compute a^m = significand*2^expt and return as (significand, expt) */
             double_double ans, y;
             int ansE, yE;
@@ -546,7 +546,7 @@ namespace cephes {
             return ans;
         }
 
-        SPECFUN_HOST_DEVICE inline double_double pow4_D(double a, double b, double c, double d, int m) {
+        XSF_HOST_DEVICE inline double_double pow4_D(double a, double b, double c, double d, int m) {
             /* Compute ((a+b)/(c+d)) ^ m */
             double_double A, C, X;
             if (m <= 0) {
@@ -567,12 +567,12 @@ namespace cephes {
             return pow_D(X, m);
         }
 
-        SPECFUN_HOST_DEVICE inline double pow4(double a, double b, double c, double d, int m) {
+        XSF_HOST_DEVICE inline double pow4(double a, double b, double c, double d, int m) {
             double_double ret = pow4_D(a, b, c, d, m);
             return static_cast<double>(ret);
         }
 
-        SPECFUN_HOST_DEVICE inline double_double logpow4_D(double a, double b, double c, double d, int m) {
+        XSF_HOST_DEVICE inline double_double logpow4_D(double a, double b, double c, double d, int m) {
             /*
              * Compute log(((a+b)/(c+d)) ^ m)
              *    == m * log((a+b)/(c+d))
@@ -592,7 +592,7 @@ namespace cephes {
                 return infinity();
             }
             X = A / C;
-            SPECFUN_ASSERT(X.hi >= 0);
+            XSF_ASSERT(X.hi >= 0);
             if (0.5 <= X.hi && X.hi <= 1.5) {
                 double_double A1 = A - C;
                 double_double X1 = A1 / C;
@@ -604,7 +604,7 @@ namespace cephes {
             return ans;
         }
 
-        SPECFUN_HOST_DEVICE inline double logpow4(double a, double b, double c, double d, int m) {
+        XSF_HOST_DEVICE inline double logpow4(double a, double b, double c, double d, int m) {
             double_double ans = logpow4_D(a, b, c, d, m);
             return static_cast<double>(ans);
         }
@@ -613,7 +613,7 @@ namespace cephes {
          *  Compute a single term in the summation, A_v(n, x):
          *  A_v(n, x) =  Binomial(n,v) * (1-x-v/n)^(n-v) * (x+v/n)^(v-1)
          */
-        SPECFUN_HOST_DEVICE inline void computeAv(int n, double x, int v, const double_double &Cman, int Cexpt,
+        XSF_HOST_DEVICE inline void computeAv(int n, double x, int v, const double_double &Cman, int Cexpt,
                                                   double_double *pt1, double_double *pt2, double_double *pAv) {
             int t1E, t2E, ansE;
             double_double Av;
@@ -630,7 +630,7 @@ namespace cephes {
             *pt2 = t2;
         }
 
-        SPECFUN_HOST_DEVICE inline ThreeProbs _smirnov(int n, double x) {
+        XSF_HOST_DEVICE inline ThreeProbs _smirnov(int n, double x) {
             double nx, alpha;
             double_double AjSum = double_double(0.0);
             double_double dAjSum = double_double(0.0);
@@ -673,7 +673,7 @@ namespace cephes {
                 sf = 1 - cdf;
                 /* Adjust if x=1/n *exactly* */
                 if (nxfl == 1) {
-                    SPECFUN_ASSERT(alpha == 0);
+                    XSF_ASSERT(alpha == 0);
                     pdf -= 0.5;
                 }
                 return {sf, cdf, pdf};
@@ -764,7 +764,7 @@ namespace cephes {
                         dAjCoeff = dAjCoeff + oneOverX;
                         dAj = Aj * dAjCoeff;
 
-                        SPECFUN_ASSERT(isfinite(Aj));
+                        XSF_ASSERT(isfinite(Aj));
                         AjSum = AjSum + Aj;
                         dAjSum = dAjSum + dAj;
                     }
@@ -776,20 +776,20 @@ namespace cephes {
                             break;
                         }
                     } else if (j > vmid) {
-                        SPECFUN_ASSERT(Aj == 0.0);
+                        XSF_ASSERT(Aj == 0.0);
                         break;
                     }
                     updateBinomial(&Cman, &Cexpt, n, j);
                 }
-                SPECFUN_ASSERT(isfinite(AjSum));
-                SPECFUN_ASSERT(isfinite(dAjSum));
+                XSF_ASSERT(isfinite(AjSum));
+                XSF_ASSERT(isfinite(dAjSum));
                 {
                     double_double derivD = x * dAjSum;
                     double_double probD = x * AjSum;
                     double deriv = static_cast<double>(derivD);
                     double prob = static_cast<double>(probD);
 
-                    SPECFUN_ASSERT(nx != 1 || alpha > 0);
+                    XSF_ASSERT(nx != 1 || alpha > 0);
                     if (step < 0) {
                         cdf = prob;
                         sf = 1 - prob;
@@ -811,7 +811,7 @@ namespace cephes {
          * Functional inverse of Smirnov distribution
          * finds x such that smirnov(n, x) = psf; smirnovc(n, x) = pcdf).
          */
-        SPECFUN_HOST_DEVICE inline double _smirnovi(int n, double psf, double pcdf) {
+        XSF_HOST_DEVICE inline double _smirnovi(int n, double psf, double pcdf) {
             /*
              * Need to use a bracketing NR algorithm here and be very careful
              *  about the starting point.
@@ -903,7 +903,7 @@ namespace cephes {
             if (x < a || x > b) {
                 x = (a + b) / 2;
             }
-            SPECFUN_ASSERT(x < 1);
+            XSF_ASSERT(x < 1);
 
             /*
              * Skip computing fa, fb as that takes cycles and the exact values
@@ -918,8 +918,8 @@ namespace cephes {
             dx = dxold;
             do {
                 double dfdx, x0 = x, deltax, df;
-                SPECFUN_ASSERT(x < 1);
-                SPECFUN_ASSERT(x > 0);
+                XSF_ASSERT(x < 1);
+                XSF_ASSERT(x > 0);
                 {
                     ThreeProbs probs = _smirnov(n, x0);
                     df = ((pcdf < 0.5) ? (pcdf - probs.cdf) : (probs.sf - psf));
@@ -984,14 +984,14 @@ namespace cephes {
 
     } // namespace detail
 
-    SPECFUN_HOST_DEVICE inline double smirnov(int n, double d) {
+    XSF_HOST_DEVICE inline double smirnov(int n, double d) {
         if (std::isnan(d)) {
             return std::numeric_limits<double>::quiet_NaN();
         }
         return detail::_smirnov(n, d).sf;
     }
 
-    SPECFUN_HOST_DEVICE inline double smirnovc(int n, double d) {
+    XSF_HOST_DEVICE inline double smirnovc(int n, double d) {
         if (std::isnan(d)) {
             return NAN;
         }
@@ -1002,7 +1002,7 @@ namespace cephes {
      * Derivative of smirnov(n, d)
      *  One interior point of discontinuity at d=1/n.
      */
-    SPECFUN_HOST_DEVICE inline double smirnovp(int n, double d) {
+    XSF_HOST_DEVICE inline double smirnovp(int n, double d) {
         if (!(n > 0 && d >= 0.0 && d <= 1.0)) {
             return (std::numeric_limits<double>::quiet_NaN());
         }
@@ -1023,14 +1023,14 @@ namespace cephes {
         return -detail::_smirnov(n, d).pdf;
     }
 
-    SPECFUN_HOST_DEVICE inline double smirnovi(int n, double p) {
+    XSF_HOST_DEVICE inline double smirnovi(int n, double p) {
         if (std::isnan(p)) {
             return std::numeric_limits<double>::quiet_NaN();
         }
         return detail::_smirnovi(n, p, 1 - p);
     }
 
-    SPECFUN_HOST_DEVICE inline double smirnovci(int n, double p) {
+    XSF_HOST_DEVICE inline double smirnovci(int n, double p) {
         if (std::isnan(p)) {
             return std::numeric_limits<double>::quiet_NaN();
         }

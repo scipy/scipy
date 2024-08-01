@@ -33,7 +33,7 @@ namespace xsf {
 struct IvRatioCFTailGenerator {
 
     // It is assumed that v >= 1, x >= 0, c > 0, and all are finite.
-    SPECFUN_HOST_DEVICE IvRatioCFTailGenerator(double vc, double xc, double c) noexcept {
+    XSF_HOST_DEVICE IvRatioCFTailGenerator(double vc, double xc, double c) noexcept {
         a0_ = -(2*vc-c)*xc;
         as_ = -2*c*xc;
         b0_ = 2*(vc+xc);
@@ -41,7 +41,7 @@ struct IvRatioCFTailGenerator {
         k_ = 0;
     }
 
-    SPECFUN_HOST_DEVICE std::pair<double, double> operator()() {
+    XSF_HOST_DEVICE std::pair<double, double> operator()() {
         ++k_;
         return {std::fma(k_, as_, a0_), std::fma(k_, bs_, b0_)};
     }
@@ -52,7 +52,7 @@ private:
     std::uint64_t k_; // current index
 };
 
-SPECFUN_HOST_DEVICE inline double iv_ratio(double v, double x) {
+XSF_HOST_DEVICE inline double iv_ratio(double v, double x) {
 
     if (std::isnan(v) || std::isnan(x)) {
         return std::numeric_limits<double>::quiet_NaN();
@@ -99,7 +99,7 @@ SPECFUN_HOST_DEVICE inline double iv_ratio(double v, double x) {
     return xc / (xc + fc);
 }
 
-SPECFUN_HOST_DEVICE inline float iv_ratio(float v, float x) {
+XSF_HOST_DEVICE inline float iv_ratio(float v, float x) {
     return iv_ratio(static_cast<double>(v), static_cast<double>(x));
 }
 

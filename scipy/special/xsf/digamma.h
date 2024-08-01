@@ -35,7 +35,7 @@ namespace detail {
     constexpr double digamma_negrootval = 7.2897639029768949e-17;
 
     template <typename T>
-    SPECFUN_HOST_DEVICE T digamma_zeta_series(T z, double root, double rootval) {
+    XSF_HOST_DEVICE T digamma_zeta_series(T z, double root, double rootval) {
         T res = rootval;
         T coeff = -1.0;
 
@@ -52,8 +52,8 @@ namespace detail {
         return res;
     }
 
-    SPECFUN_HOST_DEVICE inline std::complex<double> digamma_forward_recurrence(std::complex<double> z,
-                                                                               std::complex<double> psiz, int n) {
+    XSF_HOST_DEVICE inline std::complex<double>
+    digamma_forward_recurrence(std::complex<double> z, std::complex<double> psiz, int n) {
         /* Compute digamma(z + n) using digamma(z) using the recurrence
          * relation
          *
@@ -68,8 +68,8 @@ namespace detail {
         return res;
     }
 
-    SPECFUN_HOST_DEVICE inline std::complex<double> digamma_backward_recurrence(std::complex<double> z,
-                                                                                std::complex<double> psiz, int n) {
+    XSF_HOST_DEVICE inline std::complex<double>
+    digamma_backward_recurrence(std::complex<double> z, std::complex<double> psiz, int n) {
         /* Compute digamma(z - n) using digamma(z) and a recurrence relation. */
         std::complex<double> res = psiz;
 
@@ -79,15 +79,16 @@ namespace detail {
         return res;
     }
 
-    SPECFUN_HOST_DEVICE inline std::complex<double> digamma_asymptotic_series(std::complex<double> z) {
+    XSF_HOST_DEVICE inline std::complex<double> digamma_asymptotic_series(std::complex<double> z) {
         /* Evaluate digamma using an asymptotic series. See
          *
          * https://dlmf.nist.gov/5.11#E2 */
-        double bernoulli2k[] = {
-            0.166666666666666667,  -0.0333333333333333333, 0.0238095238095238095, -0.0333333333333333333,
-            0.0757575757575757576, -0.253113553113553114,  1.16666666666666667,   -7.09215686274509804,
-            54.9711779448621554,   -529.124242424242424,   6192.12318840579710,   -86580.2531135531136,
-            1425517.16666666667,   -27298231.0678160920,   601580873.900642368,   -15116315767.0921569};
+        double bernoulli2k[] = {0.166666666666666667,   -0.0333333333333333333, 0.0238095238095238095,
+                                -0.0333333333333333333, 0.0757575757575757576,  -0.253113553113553114,
+                                1.16666666666666667,    -7.09215686274509804,   54.9711779448621554,
+                                -529.124242424242424,   6192.12318840579710,    -86580.2531135531136,
+                                1425517.16666666667,    -27298231.0678160920,   601580873.900642368,
+                                -15116315767.0921569};
         std::complex<double> rzz = 1.0 / z / z;
         std::complex<double> zfac = 1.0;
         std::complex<double> term;
@@ -116,7 +117,7 @@ namespace detail {
 
 } // namespace detail
 
-SPECFUN_HOST_DEVICE inline double digamma(double z) {
+XSF_HOST_DEVICE inline double digamma(double z) {
     /* Wrap Cephes' psi to take advantage of the series expansion around
      * the smallest negative zero.
      */
@@ -126,9 +127,9 @@ SPECFUN_HOST_DEVICE inline double digamma(double z) {
     return cephes::psi(z);
 }
 
-SPECFUN_HOST_DEVICE inline float digamma(float z) { return static_cast<float>(digamma(static_cast<double>(z))); }
+XSF_HOST_DEVICE inline float digamma(float z) { return static_cast<float>(digamma(static_cast<double>(z))); }
 
-SPECFUN_HOST_DEVICE inline std::complex<double> digamma(std::complex<double> z) {
+XSF_HOST_DEVICE inline std::complex<double> digamma(std::complex<double> z) {
     /*
      * Compute the digamma function for complex arguments. The strategy
      * is:
@@ -197,7 +198,7 @@ SPECFUN_HOST_DEVICE inline std::complex<double> digamma(std::complex<double> z) 
     return res;
 }
 
-SPECFUN_HOST_DEVICE inline std::complex<float> digamma(std::complex<float> z) {
+XSF_HOST_DEVICE inline std::complex<float> digamma(std::complex<float> z) {
     return static_cast<std::complex<float>>(digamma(static_cast<std::complex<double>>(z)));
 }
 

@@ -159,7 +159,7 @@ namespace cephes {
 
     } // namespace detail
 
-    SPECFUN_HOST_DEVICE inline double j0(double x) {
+    XSF_HOST_DEVICE inline double j0(double x) {
         double w, z, p, q, xn;
 
         if (x < 0) {
@@ -195,7 +195,7 @@ namespace cephes {
      * = 0.073804295108687225.
      */
 
-    SPECFUN_HOST_DEVICE inline double y0(double x) {
+    XSF_HOST_DEVICE inline double y0(double x) {
         double w, z, p, q, xn;
 
         if (x <= 5.0) {

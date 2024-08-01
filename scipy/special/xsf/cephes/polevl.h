@@ -67,7 +67,7 @@
 
 namespace xsf {
 namespace cephes {
-    SPECFUN_HOST_DEVICE inline double polevl(double x, const double coef[], int N) {
+    XSF_HOST_DEVICE inline double polevl(double x, const double coef[], int N) {
         double ans;
         int i;
         const double *p;
@@ -98,7 +98,7 @@ namespace cephes {
      * Otherwise same as polevl.
      */
 
-    SPECFUN_HOST_DEVICE inline double p1evl(double x, const double coef[], int N) {
+    XSF_HOST_DEVICE inline double p1evl(double x, const double coef[], int N) {
         double ans;
         const double *p;
         int i;
@@ -117,7 +117,7 @@ namespace cephes {
     /* Evaluate a rational function. See [1]. */
 
     /* The function ratevl is only used once in cephes/lanczos.h. */
-    SPECFUN_HOST_DEVICE inline double ratevl(double x, const double num[], int M, const double denom[], int N) {
+    XSF_HOST_DEVICE inline double ratevl(double x, const double num[], int M, const double denom[], int N) {
         int i, dir;
         double y, num_ans, denom_ans;
         double absx = std::abs(x);

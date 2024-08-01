@@ -89,7 +89,7 @@ namespace cephes {
 
     } // namespace detail
 
-    SPECFUN_HOST_DEVICE inline double ellpe(double x) {
+    XSF_HOST_DEVICE inline double ellpe(double x) {
         x = 1.0 - x;
         if (x <= 0.0) {
             if (x == 0.0)

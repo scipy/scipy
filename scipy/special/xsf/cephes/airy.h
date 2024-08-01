@@ -164,7 +164,7 @@ namespace cephes {
 
     } // namespace detail
 
-    SPECFUN_HOST_DEVICE inline int airy(double x, double *ai, double *aip, double *bi, double *bip) {
+    XSF_HOST_DEVICE inline int airy(double x, double *ai, double *aip, double *bi, double *bip) {
         double z, zz, t, f, g, uf, ug, k, zeta, theta;
         int domflg;
 

@@ -118,7 +118,7 @@ namespace cephes {
 
     } // namespace detail
 
-    SPECFUN_HOST_DEVICE inline double k1(double x) {
+    XSF_HOST_DEVICE inline double k1(double x) {
         double y, z;
 
         if (x == 0.0) {
@@ -139,7 +139,7 @@ namespace cephes {
         return (std::exp(-x) * chbevl(8.0 / x - 2.0, detail::k1_B, 25) / std::sqrt(x));
     }
 
-    SPECFUN_HOST_DEVICE double k1e(double x) {
+    XSF_HOST_DEVICE double k1e(double x) {
         double y;
 
         if (x == 0.0) {

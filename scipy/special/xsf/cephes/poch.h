@@ -12,12 +12,12 @@ namespace cephes {
 
     namespace detail {
 
-        SPECFUN_HOST_DEVICE inline double is_nonpos_int(double x) {
+        XSF_HOST_DEVICE inline double is_nonpos_int(double x) {
             return x <= 0 && x == std::ceil(x) && std::abs(x) < 1e13;
         }
     } // namespace detail
 
-    SPECFUN_HOST_DEVICE inline double poch(double a, double m) {
+    XSF_HOST_DEVICE inline double poch(double a, double m) {
         double r = 1.0;
 
         /*

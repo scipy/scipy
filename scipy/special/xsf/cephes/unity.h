@@ -50,7 +50,7 @@ namespace cephes {
 
     } // namespace detail
 
-    SPECFUN_HOST_DEVICE inline double log1p(double x) {
+    XSF_HOST_DEVICE inline double log1p(double x) {
         double z;
 
         z = 1.0 + x;
@@ -62,7 +62,7 @@ namespace cephes {
     }
 
     /* log(1 + x) - x */
-    SPECFUN_HOST_DEVICE inline double log1pmx(double x) {
+    XSF_HOST_DEVICE inline double log1pmx(double x) {
         if (std::abs(x) < 0.5) {
             uint64_t n;
             double xfac = x;
@@ -106,7 +106,7 @@ namespace cephes {
 
     } // namespace detail
 
-    SPECFUN_HOST_DEVICE inline double expm1(double x) {
+    XSF_HOST_DEVICE inline double expm1(double x) {
         double r, xx;
 
         if (!std::isfinite(x)) {
@@ -137,7 +137,7 @@ namespace cephes {
 
     }
 
-    SPECFUN_HOST_DEVICE inline double cosm1(double x) {
+    XSF_HOST_DEVICE inline double cosm1(double x) {
         double xx;
 
         if ((x < -M_PI_4) || (x > M_PI_4))
@@ -149,7 +149,7 @@ namespace cephes {
 
     namespace detail {
         /* Compute lgam(x + 1) around x = 0 using its Taylor series. */
-        SPECFUN_HOST_DEVICE inline double lgam1p_taylor(double x) {
+        XSF_HOST_DEVICE inline double lgam1p_taylor(double x) {
             int n;
             double xfac, coeff, res;
 
@@ -172,7 +172,7 @@ namespace cephes {
     } // namespace detail
 
     /* Compute lgam(x + 1). */
-    SPECFUN_HOST_DEVICE inline double lgam1p(double x) {
+    XSF_HOST_DEVICE inline double lgam1p(double x) {
         if (std::abs(x) <= 0.5) {
             return detail::lgam1p_taylor(x);
         } else if (std::abs(x - 1) < 0.5) {

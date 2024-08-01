@@ -62,7 +62,7 @@ namespace detail {
      * and may adjust it again based on further analysis. */
     constexpr std::uint64_t hyp2f1_MAXITER = 3000;
 
-    SPECFUN_HOST_DEVICE inline double four_gammas_lanczos(double u, double v, double w, double x) {
+    XSF_HOST_DEVICE inline double four_gammas_lanczos(double u, double v, double w, double x) {
         /* Compute ratio of gamma functions using lanczos approximation.
          *
          * Computes gamma(u)*gamma(v)/(gamma(w)*gamma(x))
@@ -193,7 +193,7 @@ namespace detail {
         return result;
     }
 
-    SPECFUN_HOST_DEVICE inline double four_gammas(double u, double v, double w, double x) {
+    XSF_HOST_DEVICE inline double four_gammas(double u, double v, double w, double x) {
         double result;
 
         // Without loss of generality, ensure |u| >= |v| and |w| >= |x|.
@@ -229,10 +229,10 @@ namespace detail {
          * computation when |z| < 0.9.
          */
       public:
-        SPECFUN_HOST_DEVICE HypergeometricSeriesGenerator(double a, double b, double c, std::complex<double> z)
+        XSF_HOST_DEVICE HypergeometricSeriesGenerator(double a, double b, double c, std::complex<double> z)
             : a_(a), b_(b), c_(c), z_(z), term_(1.0), k_(0) {}
 
-        SPECFUN_HOST_DEVICE std::complex<double> operator()() {
+        XSF_HOST_DEVICE std::complex<double> operator()() {
             std::complex<double> output = term_;
             term_ = term_ * (a_ + k_) * (b_ + k_) / ((k_ + 1) * (c_ + k_)) * z_;
             ++k_;
@@ -248,13 +248,13 @@ namespace detail {
     class Hyp2f1Transform1Generator {
         /* 1 -z transformation of standard series.*/
       public:
-        SPECFUN_HOST_DEVICE Hyp2f1Transform1Generator(double a, double b, double c, std::complex<double> z)
+        XSF_HOST_DEVICE Hyp2f1Transform1Generator(double a, double b, double c, std::complex<double> z)
             : factor1_(four_gammas(c, c - a - b, c - a, c - b)),
               factor2_(four_gammas(c, a + b - c, a, b) * std::pow(1.0 - z, c - a - b)),
               generator1_(HypergeometricSeriesGenerator(a, b, a + b - c + 1, 1.0 - z)),
               generator2_(HypergeometricSeriesGenerator(c - a, c - b, c - a - b + 1, 1.0 - z)) {}
 
-        SPECFUN_HOST_DEVICE std::complex<double> operator()() {
+        XSF_HOST_DEVICE std::complex<double> operator()() {
             return factor1_ * generator1_() + factor2_ * generator2_();
         }
 
@@ -266,12 +266,12 @@ namespace detail {
     class Hyp2f1Transform1LimitSeriesGenerator {
         /* 1 - z transform in limit as c - a - b approaches an integer m. */
       public:
-        SPECFUN_HOST_DEVICE Hyp2f1Transform1LimitSeriesGenerator(double a, double b, double m, std::complex<double> z)
+        XSF_HOST_DEVICE Hyp2f1Transform1LimitSeriesGenerator(double a, double b, double m, std::complex<double> z)
             : d1_(xsf::digamma(a)), d2_(xsf::digamma(b)), d3_(xsf::digamma(1 + m)),
               d4_(xsf::digamma(1.0)), a_(a), b_(b), m_(m), z_(z), log_1_z_(std::log(1.0 - z)),
               factor_(1.0 / cephes::Gamma(m + 1)), k_(0) {}
 
-        SPECFUN_HOST_DEVICE std::complex<double> operator()() {
+        XSF_HOST_DEVICE std::complex<double> operator()() {
             std::complex<double> term_ = (d1_ + d2_ - d3_ - d4_ + log_1_z_) * factor_;
             // Use digamma(x + 1) = digamma(x) + 1/x
             d1_ += 1 / (a_ + k_);       // d1 = digamma(a + k)
@@ -292,13 +292,13 @@ namespace detail {
     class Hyp2f1Transform2Generator {
         /* 1/z transformation of standard series.*/
       public:
-        SPECFUN_HOST_DEVICE Hyp2f1Transform2Generator(double a, double b, double c, std::complex<double> z)
+        XSF_HOST_DEVICE Hyp2f1Transform2Generator(double a, double b, double c, std::complex<double> z)
             : factor1_(four_gammas(c, b - a, b, c - a) * std::pow(-z, -a)),
               factor2_(four_gammas(c, a - b, a, c - b) * std::pow(-z, -b)),
               generator1_(HypergeometricSeriesGenerator(a, a - c + 1, a - b + 1, 1.0 / z)),
               generator2_(HypergeometricSeriesGenerator(b, b - c + 1, b - a + 1, 1.0 / z)) {}
 
-        SPECFUN_HOST_DEVICE std::complex<double> operator()() {
+        XSF_HOST_DEVICE std::complex<double> operator()() {
             return factor1_ * generator1_() + factor2_ * generator2_();
         }
 
@@ -311,7 +311,7 @@ namespace detail {
         /* 1/z transform in limit as a - b approaches a non-negative integer m. (Can swap a and b to
          * handle the m a negative integer case. */
       public:
-        SPECFUN_HOST_DEVICE Hyp2f1Transform2LimitSeriesGenerator(double a, double b, double c, double m,
+        XSF_HOST_DEVICE Hyp2f1Transform2LimitSeriesGenerator(double a, double b, double c, double m,
                                                                  std::complex<double> z)
             : d1_(xsf::digamma(1.0)), d2_(xsf::digamma(1 + m)), d3_(xsf::digamma(a)),
               d4_(xsf::digamma(c - a)), a_(a), b_(b), c_(c), m_(m), z_(z), log_neg_z_(std::log(-z)),
@@ -319,7 +319,7 @@ namespace detail {
                       xsf::cephes::Gamma(m + 1)),
               k_(0) {}
 
-        SPECFUN_HOST_DEVICE std::complex<double> operator()() {
+        XSF_HOST_DEVICE std::complex<double> operator()() {
             std::complex<double> term = (d1_ + d2_ - d3_ - d4_ + log_neg_z_) * factor_;
             // Use digamma(x + 1) = digamma(x) + 1/x
             d1_ += 1 / (1.0 + k_);         // d1 = digamma(1 + k)
@@ -341,7 +341,7 @@ namespace detail {
         /* 1/z transform in limit as a - b approaches a non-negative integer m, and c - a approaches
          * a positive integer n. */
       public:
-        SPECFUN_HOST_DEVICE Hyp2f1Transform2LimitSeriesCminusAIntGenerator(double a, double b, double c, double m,
+        XSF_HOST_DEVICE Hyp2f1Transform2LimitSeriesCminusAIntGenerator(double a, double b, double c, double m,
                                                                            double n, std::complex<double> z)
             : d1_(xsf::digamma(1.0)), d2_(xsf::digamma(1 + m)), d3_(xsf::digamma(a)),
               d4_(xsf::digamma(n)), a_(a), b_(b), c_(c), m_(m), n_(n), z_(z), log_neg_z_(std::log(-z)),
@@ -349,7 +349,7 @@ namespace detail {
                       xsf::cephes::Gamma(m + 1)),
               k_(0) {}
 
-        SPECFUN_HOST_DEVICE std::complex<double> operator()() {
+        XSF_HOST_DEVICE std::complex<double> operator()() {
             std::complex<double> term;
             if (k_ < n_) {
                 term = (d1_ + d2_ - d3_ - d4_ + log_neg_z_) * factor_;
@@ -414,11 +414,11 @@ namespace detail {
          * for the 1 - z transform also has an initial finite sum, but it is a standard hypergeometric
          * series. */
       public:
-        SPECFUN_HOST_DEVICE Hyp2f1Transform2LimitFinitePartGenerator(double b, double c, double m,
+        XSF_HOST_DEVICE Hyp2f1Transform2LimitFinitePartGenerator(double b, double c, double m,
                                                                      std::complex<double> z)
             : b_(b), c_(c), m_(m), z_(z), term_(cephes::Gamma(m) / cephes::Gamma(c - b)), k_(0) {}
 
-        SPECFUN_HOST_DEVICE std::complex<double> operator()() {
+        XSF_HOST_DEVICE std::complex<double> operator()() {
             std::complex<double> output = term_;
             term_ = term_ * (b_ + k_) * (c_ - b_ - k_ - 1) / ((k_ + 1) * (m_ - k_ - 1)) / z_;
             ++k_;
@@ -439,10 +439,10 @@ namespace detail {
          * transformations.
          */
       public:
-        SPECFUN_HOST_DEVICE LopezTemmeSeriesGenerator(double a, double b, double c, std::complex<double> z)
+        XSF_HOST_DEVICE LopezTemmeSeriesGenerator(double a, double b, double c, std::complex<double> z)
             : n_(0), a_(a), b_(b), c_(c), phi_previous_(1.0), phi_(1 - 2 * b / c), z_(z), Z_(a * z / (z - 2.0)) {}
 
-        SPECFUN_HOST_DEVICE std::complex<double> operator()() {
+        XSF_HOST_DEVICE std::complex<double> operator()() {
             if (n_ == 0) {
                 ++n_;
                 return 1.0;
@@ -463,7 +463,7 @@ namespace detail {
         std::complex<double> z_, Z_;
     };
 
-    SPECFUN_HOST_DEVICE std::complex<double> hyp2f1_transform1_limiting_case(double a, double b, double c, double m,
+    XSF_HOST_DEVICE std::complex<double> hyp2f1_transform1_limiting_case(double a, double b, double c, double m,
                                                                              std::complex<double> z) {
         /* 1 - z transform in limiting case where c - a - b approaches an integer m. */
         std::complex<double> result = 0.0;
@@ -495,7 +495,7 @@ namespace detail {
         }
     }
 
-    SPECFUN_HOST_DEVICE std::complex<double> hyp2f1_transform2_limiting_case(double a, double b, double c, double m,
+    XSF_HOST_DEVICE std::complex<double> hyp2f1_transform2_limiting_case(double a, double b, double c, double m,
                                                                              std::complex<double> z) {
         /* 1 / z transform in limiting case where a - b approaches a non-negative integer m. Negative integer case
          * can be handled by swapping a and b. */
@@ -519,7 +519,7 @@ namespace detail {
 
 } // namespace detail
 
-SPECFUN_HOST_DEVICE inline std::complex<double> hyp2f1(double a, double b, double c, std::complex<double> z) {
+XSF_HOST_DEVICE inline std::complex<double> hyp2f1(double a, double b, double c, std::complex<double> z) {
     /* Special Cases
      * -----------------------------------------------------------------------
      * Takes constant value 1 when a = 0 or b = 0, even if c is a non-positive
@@ -680,14 +680,14 @@ SPECFUN_HOST_DEVICE inline std::complex<double> hyp2f1(double a, double b, doubl
                                detail::hyp2f1_MAXITER, "hyp2f1");
 }
 
-SPECFUN_HOST_DEVICE inline std::complex<float> hyp2f1(float a, float b, float c, std::complex<float> x) {
+XSF_HOST_DEVICE inline std::complex<float> hyp2f1(float a, float b, float c, std::complex<float> x) {
     return static_cast<std::complex<float>>(hyp2f1(static_cast<double>(a), static_cast<double>(b),
                                                    static_cast<double>(c), static_cast<std::complex<double>>(x)));
 }
 
-SPECFUN_HOST_DEVICE inline double hyp2f1(double a, double b, double c, double x) { return cephes::hyp2f1(a, b, c, x); }
+XSF_HOST_DEVICE inline double hyp2f1(double a, double b, double c, double x) { return cephes::hyp2f1(a, b, c, x); }
 
-SPECFUN_HOST_DEVICE inline float hyp2f1(float a, float b, float c, float x) {
+XSF_HOST_DEVICE inline float hyp2f1(float a, float b, float c, float x) {
     return hyp2f1(static_cast<double>(a), static_cast<double>(b), static_cast<double>(c), static_cast<double>(x));
 }
 

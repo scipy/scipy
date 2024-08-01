@@ -71,7 +71,7 @@ namespace cephes {
 
     } // namespace detail
 
-    SPECFUN_HOST_DEVICE double rgamma(double x) {
+    XSF_HOST_DEVICE double rgamma(double x) {
         double w, y, z;
         int sign;
 

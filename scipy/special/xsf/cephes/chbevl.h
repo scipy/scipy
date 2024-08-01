@@ -63,7 +63,7 @@
 namespace xsf {
 namespace cephes {
 
-    SPECFUN_HOST_DEVICE double chbevl(double x, const double array[], int n) {
+    XSF_HOST_DEVICE double chbevl(double x, const double array[], int n) {
         double b0, b1, b2;
         const double *p;
         int i;

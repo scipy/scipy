@@ -131,7 +131,7 @@ namespace cephes {
 
     } // namespace detail
 
-    SPECFUN_HOST_DEVICE inline int fresnl(double xxa, double *ssa, double *cca) {
+    XSF_HOST_DEVICE inline int fresnl(double xxa, double *ssa, double *cca) {
         double f, g, cc, ss, c, s, t, u;
         double x, x2;
 

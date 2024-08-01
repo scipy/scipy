@@ -14,7 +14,7 @@ namespace cephes {
         constexpr double besselpoly_EPS = 1.0e-17;
     }
 
-    SPECFUN_HOST_DEVICE inline double besselpoly(double a, double lambda, double nu) {
+    XSF_HOST_DEVICE inline double besselpoly(double a, double lambda, double nu) {
 
         int m, factor = 0;
         double Sm, relerr, Sol;

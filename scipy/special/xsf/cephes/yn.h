@@ -66,7 +66,7 @@
 namespace xsf {
 namespace cephes {
 
-    SPECFUN_HOST_DEVICE inline double yn(int n, double x) {
+    XSF_HOST_DEVICE inline double yn(int n, double x) {
         double an, anm1, anm2, r;
         int k, sign;
 

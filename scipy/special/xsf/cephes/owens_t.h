@@ -91,7 +91,7 @@ namespace cephes {
             0.81130545742299586629E-02, 0.60419009528470238773E-02, 0.38862217010742057883E-02,
             0.16793031084546090448E-02};
 
-        SPECFUN_HOST_DEVICE inline int get_method(double h, double a) {
+        XSF_HOST_DEVICE inline int get_method(double h, double a) {
             int ihint, iaint, i;
 
             ihint = 14;
@@ -113,13 +113,13 @@ namespace cephes {
             return owens_t_SELECT_METHOD[iaint * 15 + ihint];
         }
 
-        SPECFUN_HOST_DEVICE inline double owens_t_norm1(double x) { return xsf::cephes::erf(x / std::sqrt(2)) / 2; }
+        XSF_HOST_DEVICE inline double owens_t_norm1(double x) { return xsf::cephes::erf(x / std::sqrt(2)) / 2; }
 
-        SPECFUN_HOST_DEVICE inline double owens_t_norm2(double x) {
+        XSF_HOST_DEVICE inline double owens_t_norm2(double x) {
             return xsf::cephes::erfc(x / std::sqrt(2)) / 2;
         }
 
-        SPECFUN_HOST_DEVICE inline double owensT1(double h, double a, double m) {
+        XSF_HOST_DEVICE inline double owensT1(double h, double a, double m) {
             int j = 1;
             int jj = 1;
 
@@ -148,7 +148,7 @@ namespace cephes {
             return val;
         }
 
-        SPECFUN_HOST_DEVICE inline double owensT2(double h, double a, double ah, double m) {
+        XSF_HOST_DEVICE inline double owensT2(double h, double a, double ah, double m) {
             int i = 1;
             int maxi = 2 * m + 1;
             double hs = h * h;
@@ -172,7 +172,7 @@ namespace cephes {
             return val;
         }
 
-        SPECFUN_HOST_DEVICE inline double owensT3(double h, double a, double ah) {
+        XSF_HOST_DEVICE inline double owensT3(double h, double a, double ah) {
             double aa, hh, y, vi, zi, result;
             int i;
 
@@ -195,7 +195,7 @@ namespace cephes {
             return result;
         }
 
-        SPECFUN_HOST_DEVICE inline double owensT4(double h, double a, double m) {
+        XSF_HOST_DEVICE inline double owensT4(double h, double a, double m) {
             double maxi, hh, naa, ai, yi, result;
             int i;
 
@@ -223,7 +223,7 @@ namespace cephes {
             return result;
         }
 
-        SPECFUN_HOST_DEVICE inline double owensT5(double h, double a) {
+        XSF_HOST_DEVICE inline double owensT5(double h, double a) {
             double result, r, aa, nhh;
             int i;
 
@@ -242,7 +242,7 @@ namespace cephes {
             return result;
         }
 
-        SPECFUN_HOST_DEVICE inline double owensT6(double h, double a) {
+        XSF_HOST_DEVICE inline double owensT6(double h, double a) {
             double normh, y, r, result;
 
             normh = owens_t_norm2(h);
@@ -257,7 +257,7 @@ namespace cephes {
             return result;
         }
 
-        SPECFUN_HOST_DEVICE inline double owens_t_dispatch(double h, double a, double ah) {
+        XSF_HOST_DEVICE inline double owens_t_dispatch(double h, double a, double ah) {
             int index, meth_code;
             double m, result;
 
@@ -303,7 +303,7 @@ namespace cephes {
 
     } // namespace detail
 
-    SPECFUN_HOST_DEVICE inline double owens_t(double h, double a) {
+    XSF_HOST_DEVICE inline double owens_t(double h, double a) {
         double result, fabs_a, fabs_ah, normh, normah;
 
         if (std::isnan(h) || std::isnan(a)) {

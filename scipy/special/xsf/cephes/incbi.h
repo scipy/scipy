@@ -59,7 +59,7 @@
 namespace xsf {
 namespace cephes {
 
-    SPECFUN_HOST_DEVICE inline double incbi(double aa, double bb, double yy0) {
+    XSF_HOST_DEVICE inline double incbi(double aa, double bb, double yy0) {
         double a, b, y0, d, y, x, x0, x1, lgm, yp, di, dithresh, yl, yh, xt;
         int i, rflg, dir, nflg;
 

@@ -118,7 +118,7 @@ namespace cephes {
          *
          * The series is only asymptotic, so this requires z large enough.
          */
-        SPECFUN_HOST_DEVICE inline double hyp3f0(double a1, double a2, double a3, double z) {
+        XSF_HOST_DEVICE inline double hyp3f0(double a1, double a2, double a3, double z) {
             int n, maxiter;
             double err, sum, term, m;
 
@@ -151,7 +151,7 @@ namespace cephes {
     } // namespace detail
 
     /* Sine and cosine integrals */
-    SPECFUN_HOST_DEVICE inline int shichi(double x, double *si, double *ci) {
+    XSF_HOST_DEVICE inline int shichi(double x, double *si, double *ci) {
         double k, z, c, s, a, b;
         short sign;
 

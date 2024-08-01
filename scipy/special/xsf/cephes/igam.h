@@ -137,7 +137,7 @@ namespace cephes {
          * corrected from (15) and (16) in [2] by replacing exp(x - a) with
          * exp(a - x).
          */
-        SPECFUN_HOST_DEVICE inline double igam_fac(double a, double x) {
+        XSF_HOST_DEVICE inline double igam_fac(double a, double x) {
             double ax, fac, res, num;
 
             if (std::abs(a - x) > 0.4 * std::abs(a)) {
@@ -163,7 +163,7 @@ namespace cephes {
         }
 
         /* Compute igamc using DLMF 8.9.2. */
-        SPECFUN_HOST_DEVICE inline double igamc_continued_fraction(double a, double x) {
+        XSF_HOST_DEVICE inline double igamc_continued_fraction(double a, double x) {
             int i;
             double ans, ax, c, yc, r, t, y, z;
             double pk, pkm1, pkm2, qk, qkm1, qkm2;
@@ -215,7 +215,7 @@ namespace cephes {
         }
 
         /* Compute igam using DLMF 8.11.4. */
-        SPECFUN_HOST_DEVICE inline double igam_series(double a, double x) {
+        XSF_HOST_DEVICE inline double igam_series(double a, double x) {
             int i;
             double ans, ax, c, r;
 
@@ -244,7 +244,7 @@ namespace cephes {
         /* Compute igamc using DLMF 8.7.3. This is related to the series in
          * igam_series but extra care is taken to avoid cancellation.
          */
-        SPECFUN_HOST_DEVICE inline double igamc_series(double a, double x) {
+        XSF_HOST_DEVICE inline double igamc_series(double a, double x) {
             int n;
             double fac = 1;
             double sum = 0;
@@ -265,7 +265,7 @@ namespace cephes {
         }
 
         /* Compute igam/igamc using DLMF 8.12.3/8.12.4. */
-        SPECFUN_HOST_DEVICE inline double asymptotic_series(double a, double x, int func) {
+        XSF_HOST_DEVICE inline double asymptotic_series(double a, double x, int func) {
             int k, n, sgn;
             int maxpow = 0;
             double lambda = x / a;
@@ -323,9 +323,9 @@ namespace cephes {
 
     } // namespace detail
 
-    SPECFUN_HOST_DEVICE inline double igamc(double a, double x);
+    XSF_HOST_DEVICE inline double igamc(double a, double x);
 
-    SPECFUN_HOST_DEVICE inline double igam(double a, double x) {
+    XSF_HOST_DEVICE inline double igam(double a, double x) {
         double absxma_a;
 
         if (x < 0 || a < 0) {
@@ -364,7 +364,7 @@ namespace cephes {
         return detail::igam_series(a, x);
     }
 
-    SPECFUN_HOST_DEVICE double igamc(double a, double x) {
+    XSF_HOST_DEVICE double igamc(double a, double x) {
         double absxma_a;
 
         if (x < 0 || a < 0) {

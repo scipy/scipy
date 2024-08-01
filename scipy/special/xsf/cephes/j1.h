@@ -145,7 +145,7 @@ namespace cephes {
 
     } // namespace detail
 
-    SPECFUN_HOST_DEVICE inline double j1(double x) {
+    XSF_HOST_DEVICE inline double j1(double x) {
         double w, z, p, q, xn;
 
         w = x;
@@ -169,7 +169,7 @@ namespace cephes {
         return (p * detail::SQRT2OPI / std::sqrt(x));
     }
 
-    SPECFUN_HOST_DEVICE inline double y1(double x) {
+    XSF_HOST_DEVICE inline double y1(double x) {
         double w, z, p, q, xn;
 
         if (x <= 5.0) {

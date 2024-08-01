@@ -80,7 +80,7 @@ namespace cephes {
         /* Power series for incomplete beta integral.
          * Use when b*x is small and x not too close to 1.  */
 
-        SPECFUN_HOST_DEVICE inline double incbet_pseries(double a, double b, double x) {
+        XSF_HOST_DEVICE inline double incbet_pseries(double a, double b, double x) {
             double s, t, u, v, n, t1, z, ai;
 
             ai = 1.0 / a;
@@ -117,7 +117,7 @@ namespace cephes {
         }
 
         /* Continued fraction expansion #1 for incomplete beta integral */
-        SPECFUN_HOST_DEVICE inline double incbcf(double a, double b, double x) {
+        XSF_HOST_DEVICE inline double incbcf(double a, double b, double x) {
             double xk, pk, pkm1, pkm2, qk, qkm1, qkm2;
             double k1, k2, k3, k4, k5, k6, k7, k8;
             double r, t, ans, thresh;
@@ -199,7 +199,7 @@ namespace cephes {
         }
 
         /* Continued fraction expansion #2 for incomplete beta integral */
-        SPECFUN_HOST_DEVICE inline double incbd(double a, double b, double x) {
+        XSF_HOST_DEVICE inline double incbd(double a, double b, double x) {
             double xk, pk, pkm1, pkm2, qk, qkm1, qkm2;
             double k1, k2, k3, k4, k5, k6, k7, k8;
             double r, t, ans, z, thresh;
@@ -282,7 +282,7 @@ namespace cephes {
 
     } // namespace detail
 
-    SPECFUN_HOST_DEVICE inline double incbet(double aa, double bb, double xx) {
+    XSF_HOST_DEVICE inline double incbet(double aa, double bb, double xx) {
         double a, b, t, x, xc, w, y;
         int flag;
 

@@ -23,7 +23,7 @@ namespace cephes {
 
     namespace detail {
 
-        SPECFUN_HOST_DEVICE double find_inverse_s(double p, double q) {
+        XSF_HOST_DEVICE double find_inverse_s(double p, double q) {
             /*
              * Computation of the Incomplete Gamma Function Ratios and their Inverse
              * ARMIDO R. DIDONATO and ALFRED H. MORRIS, JR.
@@ -47,7 +47,7 @@ namespace cephes {
             return s;
         }
 
-        SPECFUN_HOST_DEVICE inline double didonato_SN(double a, double x, unsigned N, double tolerance) {
+        XSF_HOST_DEVICE inline double didonato_SN(double a, double x, unsigned N, double tolerance) {
             /*
              * Computation of the Incomplete Gamma Function Ratios and their Inverse
              * ARMIDO R. DIDONATO and ALFRED H. MORRIS, JR.
@@ -74,7 +74,7 @@ namespace cephes {
             return sum;
         }
 
-        SPECFUN_HOST_DEVICE inline double find_inverse_gamma(double a, double p, double q) {
+        XSF_HOST_DEVICE inline double find_inverse_gamma(double a, double p, double q) {
             /*
              * In order to understand what's going on here, you will
              * need to refer to:
@@ -235,9 +235,9 @@ namespace cephes {
 
     } // namespace detail
 
-    SPECFUN_HOST_DEVICE inline double igamci(double a, double q);
+    XSF_HOST_DEVICE inline double igamci(double a, double q);
 
-    SPECFUN_HOST_DEVICE inline double igami(double a, double p) {
+    XSF_HOST_DEVICE inline double igami(double a, double p) {
         int i;
         double x, fac, f_fp, fpp_fp;
 
@@ -275,7 +275,7 @@ namespace cephes {
         return x;
     }
 
-    SPECFUN_HOST_DEVICE inline double igamci(double a, double q) {
+    XSF_HOST_DEVICE inline double igamci(double a, double q) {
         int i;
         double x, fac, f_fp, fpp_fp;
 

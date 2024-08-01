@@ -118,7 +118,7 @@ namespace cephes {
 
     } // namespace detail
 
-    SPECFUN_HOST_DEVICE inline double k0(double x) {
+    XSF_HOST_DEVICE inline double k0(double x) {
         double y, z;
 
         if (x == 0.0) {
@@ -139,7 +139,7 @@ namespace cephes {
         return (y);
     }
 
-    SPECFUN_HOST_DEVICE double inline k0e(double x) {
+    XSF_HOST_DEVICE double inline k0e(double x) {
         double y;
 
         if (x == 0.0) {

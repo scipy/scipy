@@ -88,7 +88,7 @@ namespace cephes {
 
     } // namespace detail
 
-    SPECFUN_HOST_DEVICE inline double ellpk(double x) {
+    XSF_HOST_DEVICE inline double ellpk(double x) {
 
         if (x < 0.0) {
             set_error("ellpk", SF_ERROR_DOMAIN, NULL);

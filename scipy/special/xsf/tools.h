@@ -43,19 +43,19 @@ namespace detail {
 
     // Return NaN, handling both real and complex types.
     template <typename T>
-    SPECFUN_HOST_DEVICE inline typename std::enable_if<std::is_floating_point<T>::value, T>::type maybe_complex_NaN() {
+    XSF_HOST_DEVICE inline typename std::enable_if<std::is_floating_point<T>::value, T>::type maybe_complex_NaN() {
         return std::numeric_limits<T>::quiet_NaN();
     }
 
     template <typename T>
-    SPECFUN_HOST_DEVICE inline typename std::enable_if<!std::is_floating_point<T>::value, T>::type maybe_complex_NaN() {
+    XSF_HOST_DEVICE inline typename std::enable_if<!std::is_floating_point<T>::value, T>::type maybe_complex_NaN() {
         using V = typename T::value_type;
         return {std::numeric_limits<V>::quiet_NaN(), std::numeric_limits<V>::quiet_NaN()};
     }
 
     // Series evaluators.
     template <typename Generator, typename T = generator_result_t<Generator>>
-    SPECFUN_HOST_DEVICE T series_eval(Generator &g, T init_val, real_type_t<T> tol, std::uint64_t max_terms,
+    XSF_HOST_DEVICE T series_eval(Generator &g, T init_val, real_type_t<T> tol, std::uint64_t max_terms,
                                       const char *func_name) {
         /* Sum an infinite series to a given precision.
          *
@@ -88,7 +88,7 @@ namespace detail {
     }
 
     template <typename Generator, typename T = generator_result_t<Generator>>
-    SPECFUN_HOST_DEVICE T series_eval_fixed_length(Generator &g, T init_val, std::uint64_t num_terms) {
+    XSF_HOST_DEVICE T series_eval_fixed_length(Generator &g, T init_val, std::uint64_t num_terms) {
         /* Sum a fixed number of terms from a series.
          *
          * g : a generator of terms for the series.
@@ -108,7 +108,7 @@ namespace detail {
 
     /* Performs one step of Kahan summation. */
     template <typename T>
-    SPECFUN_HOST_DEVICE void kahan_step(T& sum, T& comp, T x) {
+    XSF_HOST_DEVICE void kahan_step(T& sum, T& comp, T x) {
         T y = x - comp;
         T t = sum + y;
         comp = (t - sum) - y;
@@ -154,7 +154,7 @@ namespace detail {
      * returns `(S[n], n)`.  Otherwise, returns `(S[max_terms], 0)`.
      */
     template <typename Generator, typename T = generator_result_t<Generator>>
-    SPECFUN_HOST_DEVICE std::pair<T, std::uint64_t> series_eval_kahan(
+    XSF_HOST_DEVICE std::pair<T, std::uint64_t> series_eval_kahan(
         Generator &&g, real_type_t<T> tol, std::uint64_t max_terms, T init_val = T(0)) {
 
         T sum = init_val;
@@ -220,18 +220,18 @@ namespace detail {
     class ContinuedFractionSeriesGenerator {
 
     public:
-        SPECFUN_HOST_DEVICE explicit ContinuedFractionSeriesGenerator(Generator &cf) : cf_(cf) {
+        XSF_HOST_DEVICE explicit ContinuedFractionSeriesGenerator(Generator &cf) : cf_(cf) {
             init();
         }
 
-        SPECFUN_HOST_DEVICE double operator()() {
+        XSF_HOST_DEVICE double operator()() {
             double v = v_;
             advance();
             return v;
         }
 
     private:
-        SPECFUN_HOST_DEVICE void init() {
+        XSF_HOST_DEVICE void init() {
             auto [num, denom] = cf_();
             T a = num;
             T b = denom;
@@ -240,7 +240,7 @@ namespace detail {
             b_ = b;
         }
 
-        SPECFUN_HOST_DEVICE void advance() {
+        XSF_HOST_DEVICE void advance() {
             auto [num, denom] = cf_();
             T a = num;
             T b = denom;
@@ -261,7 +261,7 @@ namespace detail {
      * See ContinuedFractionSeriesGenerator for details.
      */
     template <typename Generator, typename T = pair_value_t<generator_result_t<Generator>>>
-    SPECFUN_HOST_DEVICE ContinuedFractionSeriesGenerator<Generator, T>
+    XSF_HOST_DEVICE ContinuedFractionSeriesGenerator<Generator, T>
     continued_fraction_series(Generator &cf) {
         return ContinuedFractionSeriesGenerator<Generator, T>(cf);
     }

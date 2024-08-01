@@ -138,7 +138,7 @@ namespace cephes {
 
     } // namespace detail
 
-    SPECFUN_HOST_DEVICE inline int sici(double x, double *si, double *ci) {
+    XSF_HOST_DEVICE inline int sici(double x, double *si, double *ci) {
         double z, c, s, f, g;
         short sign;
 

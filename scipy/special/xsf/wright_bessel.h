@@ -33,7 +33,7 @@ namespace detail {
     // rgamma_zero: smallest value x for which rgamma(x) == 0 as x gets large
     constexpr double rgamma_zero = 178.47241115886637;
 
-    SPECFUN_HOST_DEVICE inline double exp_rgamma(double x, double y) {
+    XSF_HOST_DEVICE inline double exp_rgamma(double x, double y) {
         /* Compute exp(x) / gamma(y) = exp(x) * rgamma(y).
          *
          * This helper function avoids overflow by using the lanczos
@@ -43,7 +43,7 @@ namespace detail {
                cephes::lanczos_sum_expg_scaled(y);
     }
 
-    SPECFUN_HOST_DEVICE inline double wb_series(double a, double b, double x, unsigned int nstart, unsigned int nstop) {
+    XSF_HOST_DEVICE inline double wb_series(double a, double b, double x, unsigned int nstart, unsigned int nstop) {
         /* 1. Taylor series expansion in x=0 for x <= 1.
          *
          * Phi(a, b, x) = sum_k x^k / k! / Gamma(a*k + b)
@@ -69,7 +69,7 @@ namespace detail {
     }
 
     template<bool log_wb>
-    SPECFUN_HOST_DEVICE inline double wb_large_a(double a, double b, double x, int n) {
+    XSF_HOST_DEVICE inline double wb_large_a(double a, double b, double x, int n) {
         /* 2. Taylor series expansion in x=0, for large a.
          *
          * Phi(a, b, x) = sum_k x^k / k! / Gamma(a*k + b)
@@ -103,7 +103,7 @@ namespace detail {
     }
 
     template<bool log_wb>
-    SPECFUN_HOST_DEVICE inline double wb_small_a(double a, double b, double x, int order) {
+    XSF_HOST_DEVICE inline double wb_small_a(double a, double b, double x, int order) {
         /* 3. Taylor series in a=0 up to order 5, for tiny a and not too large x
          *
          * Phi(a, b, x) = exp(x)/Gamma(b)
@@ -224,7 +224,7 @@ namespace detail {
     }
 
     template<bool log_wb>
-    SPECFUN_HOST_DEVICE inline double wb_asymptotic(double a, double b, double x) {
+    XSF_HOST_DEVICE inline double wb_asymptotic(double a, double b, double x) {
         /* 4. Asymptotic expansion for large x up to order 8
          *
          * Phi(a, b, x) ~ Z^(1/2-b) * exp((1+a)/a * Z) * sum_k (-1)^k * C_k / Z^k
@@ -453,7 +453,7 @@ namespace detail {
         return res;
     }
 
-    SPECFUN_HOST_DEVICE inline double wb_Kmod(double exp_term, double eps, double a, double b, double x, double r) {
+    XSF_HOST_DEVICE inline double wb_Kmod(double exp_term, double eps, double a, double b, double x, double r) {
         /* Compute integrand Kmod(eps, a, b, x, r) for Gauss-Laguerre quadrature.
          *
          * K(a, b, x, r+eps) = exp(-r-eps) * Kmod(eps, a, b, x, r)
@@ -469,7 +469,7 @@ namespace detail {
                std::sin(x_r_a * cephes::sinpi(a) + M_PI * b);
     }
 
-    SPECFUN_HOST_DEVICE inline double wb_P(double exp_term, double eps, double a, double b, double x, double phi) {
+    XSF_HOST_DEVICE inline double wb_P(double exp_term, double eps, double a, double b, double x, double phi) {
         /* Compute integrand P for Gauss-Legendre quadrature.
          *
          * P(eps, a, b, x, phi) = exp(eps * cos(phi) + x * eps^(-a) * cos(a*phi))
@@ -549,7 +549,7 @@ namespace detail {
     constexpr double wb_A[] = {0.41037, 0.30833, 6.9952, 18.382, -2.8566, 2.1122};
 
     template<bool log_wb>
-    SPECFUN_HOST_DEVICE inline double wright_bessel_integral(double a, double b, double x) {
+    XSF_HOST_DEVICE inline double wright_bessel_integral(double a, double b, double x) {
         /* 5. Integral representation
          *
          * K(a, b, x, r) = exp(-r + x * r^(-a) * cos(pi*a)) * r^(-b)
@@ -658,7 +658,7 @@ namespace detail {
 } // namespace detail
 
 template<bool log_wb>
-SPECFUN_HOST_DEVICE inline double wright_bessel_t(double a, double b, double x) {
+XSF_HOST_DEVICE inline double wright_bessel_t(double a, double b, double x) {
     /* Compute Wright's generalized Bessel function for scalar arguments.
      *
      * According to [1], it is an entire function defined as
@@ -822,19 +822,19 @@ SPECFUN_HOST_DEVICE inline double wright_bessel_t(double a, double b, double x) 
 }
 
 
-SPECFUN_HOST_DEVICE inline double wright_bessel(double a, double b, double x) {
+XSF_HOST_DEVICE inline double wright_bessel(double a, double b, double x) {
     return wright_bessel_t<false>(a, b, x);
 }
 
-SPECFUN_HOST_DEVICE inline float wright_bessel(float a, float b, float x) {
+XSF_HOST_DEVICE inline float wright_bessel(float a, float b, float x) {
     return wright_bessel(static_cast<double>(a), static_cast<double>(b), static_cast<double>(x));
 }
 
-SPECFUN_HOST_DEVICE inline double log_wright_bessel(double a, double b, double x) {
+XSF_HOST_DEVICE inline double log_wright_bessel(double a, double b, double x) {
     return wright_bessel_t<true>(a, b, x);
 }
 
-SPECFUN_HOST_DEVICE inline float log_wright_bessel(float a, float b, float x) {
+XSF_HOST_DEVICE inline float log_wright_bessel(float a, float b, float x) {
     return log_wright_bessel(static_cast<double>(a), static_cast<double>(b), static_cast<double>(x));
 }
 

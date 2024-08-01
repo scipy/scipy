@@ -93,7 +93,7 @@ namespace cephes {
 
     }
 
-    SPECFUN_HOST_DEVICE inline double kn(int nn, double x) {
+    XSF_HOST_DEVICE inline double kn(int nn, double x) {
         double k, kf, nk1f, nkf, zn, t, s, z0, z;
         double ans, fn, pn, pk, zmn, tlg, tox;
         int i, n;

@@ -174,7 +174,7 @@
 namespace xsf {
 namespace cephes {
 
-    SPECFUN_HOST_DEVICE inline double fdtrc(double a, double b, double x) {
+    XSF_HOST_DEVICE inline double fdtrc(double a, double b, double x) {
         double w;
 
         if ((a <= 0.0) || (b <= 0.0) || (x < 0.0)) {
@@ -185,7 +185,7 @@ namespace cephes {
         return incbet(0.5 * b, 0.5 * a, w);
     }
 
-    SPECFUN_HOST_DEVICE inline double fdtr(double a, double b, double x) {
+    XSF_HOST_DEVICE inline double fdtr(double a, double b, double x) {
         double w;
 
         if ((a <= 0.0) || (b <= 0.0) || (x < 0.0)) {
@@ -197,7 +197,7 @@ namespace cephes {
         return incbet(0.5 * a, 0.5 * b, w);
     }
 
-    SPECFUN_HOST_DEVICE inline double fdtri(double a, double b, double y) {
+    XSF_HOST_DEVICE inline double fdtri(double a, double b, double y) {
         double w, x;
 
         if ((a <= 0.0) || (b <= 0.0) || (y <= 0.0) || (y > 1.0)) {

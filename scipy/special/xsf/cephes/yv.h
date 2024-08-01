@@ -21,7 +21,7 @@ namespace cephes {
     /*
      * Bessel function of noninteger order
      */
-    SPECFUN_HOST_DEVICE inline double yv(double v, double x) {
+    XSF_HOST_DEVICE inline double yv(double v, double x) {
         double y, t;
         int n;
 

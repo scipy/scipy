@@ -35,7 +35,7 @@ constexpr double EXPN1 = 0.36787944117144232159553; // exp(-1)
 constexpr double OMEGA = 0.56714329040978387299997; // W(1, 0)
 
 namespace detail {
-    SPECFUN_HOST_DEVICE inline std::complex<double> lambertw_branchpt(std::complex<double> z) {
+    XSF_HOST_DEVICE inline std::complex<double> lambertw_branchpt(std::complex<double> z) {
         // Series for W(z, 0) around the branch point; see 4.22 in [1].
         double coeffs[] = {-1.0 / 3.0, 1.0, -1.0};
         std::complex<double> p = std::sqrt(2.0 * (M_E * z + 1.0));
@@ -43,7 +43,7 @@ namespace detail {
         return cevalpoly(coeffs, 2, p);
     }
 
-    SPECFUN_HOST_DEVICE inline std::complex<double> lambertw_pade0(std::complex<double> z) {
+    XSF_HOST_DEVICE inline std::complex<double> lambertw_pade0(std::complex<double> z) {
         // (3, 2) Pade approximation for W(z, 0) around 0.
         double num[] = {12.85106382978723404255, 12.34042553191489361902, 1.0};
         double denom[] = {32.53191489361702127660, 14.34042553191489361702, 1.0};
@@ -54,7 +54,7 @@ namespace detail {
         return z * cevalpoly(num, 2, z) / cevalpoly(denom, 2, z);
     }
 
-    SPECFUN_HOST_DEVICE inline std::complex<double> lambertw_asy(std::complex<double> z, long k) {
+    XSF_HOST_DEVICE inline std::complex<double> lambertw_asy(std::complex<double> z, long k) {
         /* Compute the W function using the first two terms of the
          * asymptotic series. See 4.20 in [1].
          */
@@ -64,7 +64,7 @@ namespace detail {
 
 } // namespace detail
 
-SPECFUN_HOST_DEVICE inline std::complex<double> lambertw(std::complex<double> z, long k, double tol) {
+XSF_HOST_DEVICE inline std::complex<double> lambertw(std::complex<double> z, long k, double tol) {
     double absz;
     std::complex<double> w;
     std::complex<double> ew, wew, wewz, wn;
@@ -142,7 +142,7 @@ SPECFUN_HOST_DEVICE inline std::complex<double> lambertw(std::complex<double> z,
     return {std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN()};
 }
 
-SPECFUN_HOST_DEVICE inline std::complex<float> lambertw(std::complex<float> z, long k, float tol) {
+XSF_HOST_DEVICE inline std::complex<float> lambertw(std::complex<float> z, long k, float tol) {
     return static_cast<std::complex<float>>(
         lambertw(static_cast<std::complex<double>>(z), k, static_cast<double>(tol)));
 }

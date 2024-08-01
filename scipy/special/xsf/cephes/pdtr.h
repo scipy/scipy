@@ -139,7 +139,7 @@
 namespace xsf {
 namespace cephes {
 
-    SPECFUN_HOST_DEVICE inline double pdtrc(double k, double m) {
+    XSF_HOST_DEVICE inline double pdtrc(double k, double m) {
         double v;
 
         if (k < 0.0 || m < 0.0) {
@@ -153,7 +153,7 @@ namespace cephes {
         return (igam(v, m));
     }
 
-    SPECFUN_HOST_DEVICE inline double pdtr(double k, double m) {
+    XSF_HOST_DEVICE inline double pdtr(double k, double m) {
         double v;
 
         if (k < 0 || m < 0) {
@@ -167,7 +167,7 @@ namespace cephes {
         return (igamc(v, m));
     }
 
-    SPECFUN_HOST_DEVICE inline double pdtri(int k, double y) {
+    XSF_HOST_DEVICE inline double pdtri(int k, double y) {
         double v;
 
         if ((k < 0) || (y < 0.0) || (y >= 1.0)) {

@@ -57,7 +57,7 @@ namespace cephes {
         constexpr double CBRT2I = 0.79370052598409973737585;
         constexpr double CBRT4I = 0.62996052494743658238361;
 
-        SPECFUN_HOST_DEVICE inline double cbrt(double x) {
+        XSF_HOST_DEVICE inline double cbrt(double x) {
             int e, rem, sign;
             double z;
 

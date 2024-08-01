@@ -75,7 +75,7 @@ namespace cephes {
 
     } // namespace detail
 
-    SPECFUN_HOST_DEVICE inline double spence(double x) {
+    XSF_HOST_DEVICE inline double spence(double x) {
         double w, y, z;
         int flag;
 

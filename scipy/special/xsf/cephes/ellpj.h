@@ -76,7 +76,7 @@
 namespace xsf {
 namespace cephes {
 
-    SPECFUN_HOST_DEVICE inline int ellpj(double u, double m, double *sn, double *cn, double *dn, double *ph) {
+    XSF_HOST_DEVICE inline int ellpj(double u, double m, double *sn, double *cn, double *dn, double *ph) {
         double ai, b, phi, t, twon, dnfac;
         double a[9], c[9];
         int i;

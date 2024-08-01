@@ -16,7 +16,7 @@ namespace cephes {
      * -1 < y < 1. This restriction ensures the existence of a unique result
      * such that erf(erfinv(y)) = y.
      */
-    SPECFUN_HOST_DEVICE inline double erfinv(double y) {
+    XSF_HOST_DEVICE inline double erfinv(double y) {
         constexpr double domain_lb = -1;
         constexpr double domain_ub = 1;
 
@@ -53,7 +53,7 @@ namespace cephes {
      * domain 0 < y < 2. This restriction ensures the existence of a unique result
      * such that erfc(erfcinv(y)) = y.
      */
-    SPECFUN_HOST_DEVICE inline double erfcinv(double y) {
+    XSF_HOST_DEVICE inline double erfcinv(double y) {
         constexpr double domain_lb = 0;
         constexpr double domain_ub = 2;
 

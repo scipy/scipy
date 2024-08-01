@@ -86,7 +86,7 @@ namespace cephes {
 
     } // namespace detail
 
-    SPECFUN_HOST_DEVICE inline double exp10(double x) {
+    XSF_HOST_DEVICE inline double exp10(double x) {
         double px, xx;
         short n;
 

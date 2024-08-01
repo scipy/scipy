@@ -97,7 +97,7 @@ namespace cephes {
                                     2.0767117023730469,
                                     1.0};
 
-        SPECFUN_HOST_DEVICE double digamma_imp_1_2(double x) {
+        XSF_HOST_DEVICE double digamma_imp_1_2(double x) {
             /*
              * Rational approximation on [1, 2] taken from Boost.
              *
@@ -122,7 +122,7 @@ namespace cephes {
             return g * psi_Y + g * r;
         }
 
-        SPECFUN_HOST_DEVICE double psi_asy(double x) {
+        XSF_HOST_DEVICE double psi_asy(double x) {
             double y, z;
 
             if (x < 1.0e17) {
@@ -136,7 +136,7 @@ namespace cephes {
         }
     } // namespace detail
 
-    SPECFUN_HOST_DEVICE double psi(double x) {
+    XSF_HOST_DEVICE double psi(double x) {
         double y = 0.0;
         double q, r;
         int i, n;

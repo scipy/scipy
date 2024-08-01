@@ -102,7 +102,7 @@ namespace cephes {
 
     } // namespace detail
 
-    SPECFUN_HOST_DEVICE inline double sindg(double x) {
+    XSF_HOST_DEVICE inline double sindg(double x) {
         double y, z, zz;
         int j, sign;
 
@@ -154,7 +154,7 @@ namespace cephes {
         return (y);
     }
 
-    SPECFUN_HOST_DEVICE inline double cosdg(double x) {
+    XSF_HOST_DEVICE inline double cosdg(double x) {
         double y, z, zz;
         int j, sign;
 
@@ -213,7 +213,7 @@ namespace cephes {
         constexpr double sindg_P64800 = 4.848136811095359935899141023579479759563533023727e-6;
     }
 
-    SPECFUN_HOST_DEVICE inline double radian(double d, double m, double s) {
+    XSF_HOST_DEVICE inline double radian(double d, double m, double s) {
         return (((d * 60.0 + m) * 60.0 + s) * detail::sindg_P64800);
     }
 

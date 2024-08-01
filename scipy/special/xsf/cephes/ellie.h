@@ -85,7 +85,7 @@ namespace cephes {
          *
          * In this routine, we assume m < 0 and  0 > phi > pi/2.
          */
-        SPECFUN_HOST_DEVICE inline double ellie_neg_m(double phi, double m) {
+        XSF_HOST_DEVICE inline double ellie_neg_m(double phi, double m) {
             double x, y, z, x1, y1, z1, ret, Q;
             double A0f, Af, Xf, Yf, Zf, E2f, E3f, scalef;
             double A0d, Ad, seriesn, seriesd, Xd, Yd, Zd, E2d, E3d, E4d, E5d, scaled;
@@ -187,7 +187,7 @@ namespace cephes {
 
     } // namespace detail
 
-    SPECFUN_HOST_DEVICE inline double ellie(double phi, double m) {
+    XSF_HOST_DEVICE inline double ellie(double phi, double m) {
         double a, b, c, e, temp;
         double lphi, t, E, denom, npio2;
         int d, mod, sign;

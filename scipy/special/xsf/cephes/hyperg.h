@@ -74,7 +74,7 @@ namespace cephes {
     namespace detail {
 
         /* the `type` parameter determines what converging factor to use */
-        SPECFUN_HOST_DEVICE inline double hyp2f0(double a, double b, double x, int type, double *err) {
+        XSF_HOST_DEVICE inline double hyp2f0(double a, double b, double x, int type, double *err) {
             double a0, alast, t, tlast, maxt;
             double n, an, bn, u, sum, temp;
 
@@ -183,7 +183,7 @@ namespace cephes {
          *                               |  (a)                        )
          */
 
-        SPECFUN_HOST_DEVICE inline double hy1f1a(double a, double b, double x, double *err) {
+        XSF_HOST_DEVICE inline double hy1f1a(double a, double b, double x, double *err) {
             double h1, h2, t, u, temp, acanc, asum, err1, err2;
 
             if (x == 0) {
@@ -249,7 +249,7 @@ namespace cephes {
         }
 
         /* Power series summation for confluent hypergeometric function */
-        SPECFUN_HOST_DEVICE inline double hy1f1p(double a, double b, double x, double *err) {
+        XSF_HOST_DEVICE inline double hy1f1p(double a, double b, double x, double *err) {
             double n, a0, sum, t, u, temp, maxn;
             double an, bn, maxt;
             double y, c, sumc;
@@ -321,7 +321,7 @@ namespace cephes {
 
     } // namespace detail
 
-    SPECFUN_HOST_DEVICE inline double hyperg(double a, double b, double x) {
+    XSF_HOST_DEVICE inline double hyperg(double a, double b, double x) {
         double asum, psum, acanc, pcanc, temp;
 
         /* See if a Kummer transformation will help */

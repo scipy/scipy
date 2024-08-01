@@ -71,7 +71,7 @@ namespace cephes {
          * AMS55 #9.1.27 and 9.1.73.
          */
 
-        SPECFUN_HOST_DEVICE inline double jv_recur(double *n, double x, double *newn, int cancel) {
+        XSF_HOST_DEVICE inline double jv_recur(double *n, double x, double *newn, int cancel) {
             double pkm2, pkm1, pk, qkm2, qkm1;
 
             /* double pkp1; */
@@ -221,7 +221,7 @@ namespace cephes {
          * AMS55 #9.1.10.
          */
 
-        SPECFUN_HOST_DEVICE inline double jv_jvs(double n, double x) {
+        XSF_HOST_DEVICE inline double jv_jvs(double n, double x) {
             double t, u, y, z, k;
             int ex, sgngam;
 
@@ -267,7 +267,7 @@ namespace cephes {
          * AMS55 #9.2.5.
          */
 
-        SPECFUN_HOST_DEVICE inline double jv_hankel(double n, double x) {
+        XSF_HOST_DEVICE inline double jv_hankel(double n, double x) {
             double t, u, z, k, sign, conv;
             double p, q, j, m, pp, qq;
             int flag;
@@ -333,7 +333,7 @@ namespace cephes {
 
         constexpr double jv_PG3[] = {1.9607142857142857143e-2, -1.5983694083694083694e-1, 6.3838383838383838384e-3};
 
-        SPECFUN_HOST_DEVICE inline double jv_jnt(double n, double x) {
+        XSF_HOST_DEVICE inline double jv_jnt(double n, double x) {
             double z, zz, z3;
             double cbn, n23, cbtwo;
             double ai, aip, bi, bip; /* Airy functions */
@@ -432,7 +432,7 @@ namespace cephes {
                                     1.1655393336864533248E4,  -5.3056469786134031084E3, 1.2009029132163524628E3,
                                     -1.0809091978839465550E2, 1.7277275025844573975E0};
 
-        SPECFUN_HOST_DEVICE inline double jv_jnx(double n, double x) {
+        XSF_HOST_DEVICE inline double jv_jnx(double n, double x) {
             double zeta, sqz, zz, zp, np;
             double cbn, n23, t, z, sz;
             double pp, qq, z32i, zzi;
@@ -557,7 +557,7 @@ namespace cephes {
 
     } // namespace detail
 
-    SPECFUN_HOST_DEVICE inline double jv(double n, double x) {
+    XSF_HOST_DEVICE inline double jv(double n, double x) {
         double k, q, t, y, an;
         int i, sign, nint;
 

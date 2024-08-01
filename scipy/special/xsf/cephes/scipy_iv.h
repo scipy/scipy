@@ -87,7 +87,7 @@ namespace cephes {
          * Compute Iv from (AMS5 9.7.1), asymptotic expansion for large |z|
          * Iv ~ exp(x)/sqrt(2 pi x) ( 1 + (4*v*v-1)/8x + (4*v*v-1)(4*v*v-9)/8x/2! + ...)
          */
-        SPECFUN_HOST_DEVICE inline double iv_asymptotic(double v, double x) {
+        XSF_HOST_DEVICE inline double iv_asymptotic(double v, double x) {
             double mu;
             double sum, term, prefactor, factor;
             int k;
@@ -367,7 +367,7 @@ namespace cephes {
         /*
          * Compute Iv, Kv from (AMS5 9.7.7 + 9.7.8), asymptotic expansion for large v
          */
-        SPECFUN_HOST_DEVICE inline void ikv_asymptotic_uniform(double v, double x, double *i_value, double *k_value) {
+        XSF_HOST_DEVICE inline void ikv_asymptotic_uniform(double v, double x, double *i_value, double *k_value) {
             double i_prefactor, k_prefactor;
             double t, t2, eta, z;
             double i_sum, k_sum, term, divisor;
@@ -458,7 +458,7 @@ namespace cephes {
          * Calculate K(v, x) and K(v+1, x) by method analogous to
          * Temme, Journal of Computational Physics, vol 21, 343 (1976)
          */
-        SPECFUN_HOST_DEVICE inline int temme_ik_series(double v, double x, double *K, double *K1) {
+        XSF_HOST_DEVICE inline int temme_ik_series(double v, double x, double *K, double *K1) {
             double f, h, p, q, coef, sum, sum1, tolerance;
             double a, b, c, d, sigma, gamma1, gamma2;
             std::uint64_t k;
@@ -469,8 +469,8 @@ namespace cephes {
              * |x| <= 2, Temme series converge rapidly
              * |x| > 2, the larger the |x|, the slower the convergence
              */
-            SPECFUN_ASSERT(std::abs(x) <= 2);
-            SPECFUN_ASSERT(std::abs(v) <= 0.5f);
+            XSF_ASSERT(std::abs(x) <= 2);
+            XSF_ASSERT(std::abs(v) <= 0.5f);
 
             gp = xsf::cephes::Gamma(v + 1) - 1;
             gm = xsf::cephes::Gamma(-v + 1) - 1;
@@ -518,7 +518,7 @@ namespace cephes {
 
         /* Evaluate continued fraction fv = I_(v+1) / I_v, derived from
          * Abramowitz and Stegun, Handbook of Mathematical Functions, 1972, 9.1.73 */
-        SPECFUN_HOST_DEVICE inline int CF1_ik(double v, double x, double *fv) {
+        XSF_HOST_DEVICE inline int CF1_ik(double v, double x, double *fv) {
             double C, D, f, a, b, delta, tiny, tolerance;
             std::uint64_t k;
 
@@ -567,7 +567,7 @@ namespace cephes {
          * z1 / z0 = U(v+1.5, 2v+1, 2x) / U(v+0.5, 2v+1, 2x), see
          * Thompson and Barnett, Computer Physics Communications, vol 47, 245 (1987)
          */
-        SPECFUN_HOST_DEVICE inline int CF2_ik(double v, double x, double *Kv, double *Kv1) {
+        XSF_HOST_DEVICE inline int CF2_ik(double v, double x, double *Kv, double *Kv1) {
 
             double S, C, Q, D, f, a, b, q, delta, tolerance, current, prev;
             std::uint64_t k;
@@ -577,7 +577,7 @@ namespace cephes {
              * |x| -> 0, CF2_ik fails to converge
              */
 
-            SPECFUN_ASSERT(std::abs(x) > 1);
+            XSF_ASSERT(std::abs(x) > 1);
 
             /*
              * Steed's algorithm, see Thompson and Barnett,
@@ -630,7 +630,7 @@ namespace cephes {
          * Compute I(v, x) and K(v, x) simultaneously by Temme's method, see
          * Temme, Journal of Computational Physics, vol 19, 324 (1975)
          */
-        SPECFUN_HOST_DEVICE inline void ikv_temme(double v, double x, double *Iv_p, double *Kv_p) {
+        XSF_HOST_DEVICE inline void ikv_temme(double v, double x, double *Iv_p, double *Kv_p) {
             /* Kv1 = K_(v+1), fv = I_(v+1) / I_v */
             /* Ku1 = K_(u+1), fu = I_(u+1) / I_u */
             double u, Iv, Kv, Kv1, Ku, Ku1, fv;
@@ -750,7 +750,7 @@ namespace cephes {
 
     } // namespace detail
 
-    SPECFUN_HOST_DEVICE inline double iv(double v, double x) {
+    XSF_HOST_DEVICE inline double iv(double v, double x) {
         int sign;
         double t, ax, res;
 

@@ -108,7 +108,7 @@
 namespace xsf {
 namespace cephes {
 
-    SPECFUN_HOST_DEVICE inline double gdtr(double a, double b, double x) {
+    XSF_HOST_DEVICE inline double gdtr(double a, double b, double x) {
 
         if (x < 0.0) {
             sf_error("gdtr", SF_ERROR_DOMAIN, NULL);
@@ -117,7 +117,7 @@ namespace cephes {
         return (igam(b, a * x));
     }
 
-    SPECFUN_HOST_DEVICE inline double gdtrc(double a, double b, double x) {
+    XSF_HOST_DEVICE inline double gdtrc(double a, double b, double x) {
 
         if (x < 0.0) {
             set_error("gdtrc", SF_ERROR_DOMAIN, NULL);
@@ -126,7 +126,7 @@ namespace cephes {
         return (igamc(b, a * x));
     }
 
-    SPECFUN_HOST_DEVICE inline double gdtri(double a, double b, double y) {
+    XSF_HOST_DEVICE inline double gdtri(double a, double b, double y) {
 
         if ((y < 0.0) || (y > 1.0) || (a <= 0.0) || (b < 0.0)) {
             sf_error("gdtri", SF_ERROR_DOMAIN, NULL);

@@ -106,7 +106,7 @@ namespace cephes {
          * Large-z expansion for Struve H and L
          * https://dlmf.nist.gov/11.6.1
          */
-        SPECFUN_HOST_DEVICE inline double struve_asymp_large_z(double v, double z, int is_h, double *err) {
+        XSF_HOST_DEVICE inline double struve_asymp_large_z(double v, double z, int is_h, double *err) {
             int n, sgn, maxiter;
             double term, sum, maxterm;
             double m;
@@ -176,7 +176,7 @@ namespace cephes {
          *
          * Starts to converge roughly at |n| > |z|
          */
-        SPECFUN_HOST_DEVICE inline double struve_power_series(double v, double z, int is_h, double *err) {
+        XSF_HOST_DEVICE inline double struve_power_series(double v, double z, int is_h, double *err) {
             int n, sgn;
             double term, sum, maxterm, scaleexp, tmp;
             double_double cterm, csum, cdiv, z2, c2v, ctmp;
@@ -250,7 +250,7 @@ namespace cephes {
          * Bessel series
          * https://dlmf.nist.gov/11.4.19
          */
-        SPECFUN_HOST_DEVICE inline double struve_bessel_series(double v, double z, int is_h, double *err) {
+        XSF_HOST_DEVICE inline double struve_bessel_series(double v, double z, int is_h, double *err) {
             int n;
             double term, cterm, sum, maxterm;
 
@@ -290,7 +290,7 @@ namespace cephes {
             return sum;
         }
 
-        SPECFUN_HOST_DEVICE inline double struve_hl(double v, double z, int is_h) {
+        XSF_HOST_DEVICE inline double struve_hl(double v, double z, int is_h) {
             double value[4], err[4], tmp;
             int n;
 
@@ -373,9 +373,9 @@ namespace cephes {
         }
     } // namespace detail
 
-    SPECFUN_HOST_DEVICE inline double struve_h(double v, double z) { return detail::struve_hl(v, z, 1); }
+    XSF_HOST_DEVICE inline double struve_h(double v, double z) { return detail::struve_hl(v, z, 1); }
 
-    SPECFUN_HOST_DEVICE inline double struve_l(double v, double z) { return detail::struve_hl(v, z, 0); }
+    XSF_HOST_DEVICE inline double struve_l(double v, double z) { return detail::struve_hl(v, z, 0); }
 
 } // namespace cephes
 } // namespace xsf
