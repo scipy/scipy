@@ -67,6 +67,16 @@
             "cephes_zeta": "dd->d"
         }
     },
+    "_abs_sq": {
+        "_abs2.h++": {
+            "cabs2": "Dd->d",
+            "cabs2f": "Ff->f",
+            "cabs2g": "Gg->g",
+            "abs2": "dd->d",
+            "abs2f": "ff->f",
+            "abs2g": "gg->g"
+        }
+    },
     "agm": {
         "_agm.pxd": {
             "agm": "dd->d"
