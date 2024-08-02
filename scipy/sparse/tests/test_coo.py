@@ -872,3 +872,17 @@ def test_tensordot_sparse_dense(a_shape, b_shape, axes):
     res = arr_a.tensordot(arr_b.toarray(), axes=axes)
     assert_equal(res, exp)
 
+
+@pytest.mark.parametrize(('actual_shape', 'broadcast_shape'),
+                         [((1,3,5,4), (2,3,5,4)), ((2,1,5,4), (6,2,3,5,4)),
+                          ((1,1,7,8,9), (4,5,6,7,8,9)), ((5,3), (4,5,3)),
+                          ((1,3,1,5,4), (8,2,3,9,5,4)),])
+def test_broadcast_to(actual_shape, broadcast_shape):
+    rng = np.random.default_rng(23409823)
+    
+    arr = random_array(actual_shape, density=0.6, random_state=rng, dtype=int)
+    res = arr.broadcast_to(broadcast_shape)
+    print(res.shape)
+    exp = np.broadcast_to(arr.toarray(), broadcast_shape)
+    print(exp.shape)
+    assert_equal(res.toarray(), exp)
