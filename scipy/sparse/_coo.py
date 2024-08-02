@@ -1294,6 +1294,39 @@ def _ravel_non_reduced_axes(coords, shape, axes):
             prod_arr = prod_arr.reshape(combined_shape[:-1])
 
         return prod_arr
+    
+    def _dense_dot(a, b):
+        a_is_1d = False
+        b_is_1d = False
+
+        # reshape to 2-D if a or b is 1-D
+        if a.ndim == 1:
+            a = a.reshape((1, a.shape[0])) # prepend 1 to shape
+            a_is_1d = True
+
+        if len(b.shape) == 1:
+            b = b.reshape((b.shape[0], 1)) # append 1 to shape
+            b_is_1d = True
+
+        if a.shape[-1] != b.shape[-2]:
+                raise ValueError(f"shapes {a.shape} and {b.shape} are not aligned for n-D dot")
+
+        new_shape_A = a.shape[:-1] + (1,) * (len(b.shape) - 1) + a.shape[-1:]
+        print(new_shape_A)
+        new_shape_B = (1,) * (len(a.shape) - 1) + tuple(b.shape)
+        print(new_shape_B)
+
+        result_shape = a.shape[:-1] + b.shape[:-2] + b.shape[-1:]
+        result = a.reshape(new_shape_A) @ b.reshape(new_shape_B)
+        prod_arr = result.reshape(result_shape)
+
+        # reshape back if a or b were originally 1-D
+        if a_is_1d:
+            prod_arr = prod_arr.reshape(result_shape[1:])
+        if b_is_1d:
+            prod_arr = prod_arr.reshape(result_shape[:-1])
+
+        return prod_arr
 
 
     def tensordot(a, b, axes=2):
@@ -1337,7 +1370,7 @@ def _ravel_non_reduced_axes(coords, shape, axes):
         axes_b = [axis + b.ndim if axis < 0 else axis for axis in axes_b]
         
         if isdense(b):
-            return a._dense_tensordot(b)
+            return a._dense_tensordot(b, axes_a, axes_b)
         else:
             return a._sparse_tensordot(b, axes_a, axes_b)
 
@@ -1378,6 +1411,32 @@ def _ravel_non_reduced_axes(coords, shape, axes):
         
         return prod_arr
     
+    def _dense_tensordot(a, b, axes_a, axes_b):
+        ndim_a = len(a.shape)
+        ndim_b = len(b.shape)
+
+        non_reduced_axes_a = [ax for ax in range(ndim_a) if ax not in axes_a]
+        reduced_shape_a = [a.shape[s] for s in axes_a]
+        non_reduced_shape_a = [a.shape[s] for s in non_reduced_axes_a]
+
+        non_reduced_axes_b = [ax for ax in range(ndim_b) if ax not in axes_b]
+        reduced_shape_b = [b.shape[s] for s in axes_b]
+        non_reduced_shape_b = [b.shape[s] for s in non_reduced_axes_b]
+
+        permute_a = non_reduced_axes_a + list(axes_a)
+        permute_b = non_reduced_axes_b[:-1] + list(axes_b) + non_reduced_axes_b[-1:]
+        a = np.transpose(a, permute_a)
+        b = np.transpose(b, permute_b)
+
+        reshape_a = (*non_reduced_shape_a, math.prod(reduced_shape_a))
+        reshape_b = (*non_reduced_shape_b[:-1], math.prod(reduced_shape_b), *non_reduced_shape_b[-1:])
+        
+        a = a.reshape(reshape_a)
+        b = b.reshape(reshape_b)
+        
+        prod_arr = a.dot(b)
+        return prod_arr
+
 
     def _matmul_sparse(A, B):
         """
