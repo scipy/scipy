@@ -656,6 +656,10 @@ class _coo_base(_data_matrix, _minmax_mixin):
             result = self._matmul_vector(other.ravel())
             return result.reshape(*self.shape[:-1], 1)
         
+        err_prefix = "matmul: dimension mismatch with signature"
+        if other.ndim == 1:
+            msg = f"{err_prefix} (n,k={N}),(k={other.shape[0]},)->(n,)"
+            raise ValueError(msg)
         msg = "n-D matrix-matrix multiplication not implemented for ndim>2"
         raise NotImplementedError(msg)
 
