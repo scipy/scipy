@@ -831,3 +831,44 @@ def test_nd_matmul_dense(mat_shape1, mat_shape2):
     exp = den_x @ den_y
     res = sp_x @ den_y
     assert_equal(res, exp)
+
+
+dot_shapes = [
+    ((4,), (4,)), ((16,), (16,)), # 1d-1d dot
+    ((3,3), (3,3)), ((4,6), (6,7)), ((1,4), (4,1)), # matrix multiplication 2-D
+    ((3,2,4,7), (7,)), ((5,), (6,3,5,2)), # dot of n-D and 1-D arrays
+    ((4,6), (3,2,6,4)), ((2,8,7), (4,5,7,7,2)), # dot of n-D and m-D arrays
+]
+@pytest.mark.parametrize(('a_shape', 'b_shape'), dot_shapes)
+def test_dot_sparse_dense(a_shape, b_shape): 
+    rng = np.random.default_rng(23409823)
+    
+    arr_a = random_array(a_shape, density=0.6, random_state=rng, dtype=int)
+    arr_b = random_array(b_shape, density=0.6, random_state=rng, dtype=int)
+
+    exp = np.dot(arr_a.toarray(), arr_b.toarray())
+    res = arr_a.dot(arr_b.toarray())
+    assert_equal(res, exp)
+
+
+tensordot_shapes_and_axes = [
+    ((4,6), (6,7), ([1], [0])),
+    ((3,2,4,7), (7,), ([3], [0])),
+    ((5,), (6,3,5,2), ([0], [2])),
+    ((4,5,7,6), (3,2,6,4), ([0, 3], [3, 2])),
+    ((2,8,7), (4,5,7,8,2), ([0, 1, 2], [4, 3, 2])),
+    ((4,5,3,2,6), (3,2,6,7,8), 3),
+    ((4,5,7),(7,3,7), 1),
+    ((2,3,4), (2,3,4), ([0, 1, 2], [0, 1, 2])),
+]
+@pytest.mark.parametrize(('a_shape', 'b_shape', 'axes'), tensordot_shapes_and_axes)
+def test_tensordot_sparse_dense(a_shape, b_shape, axes): 
+    rng = np.random.default_rng(23409823)
+    
+    arr_a = random_array(a_shape, density=0.6, random_state=rng, dtype=int)
+    arr_b = random_array(b_shape, density=0.6, random_state=rng, dtype=int)
+
+    exp = np.tensordot(arr_a.toarray(), arr_b.toarray(), axes=axes)
+    res = arr_a.tensordot(arr_b.toarray(), axes=axes)
+    assert_equal(res, exp)
+
