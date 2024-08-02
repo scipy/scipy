@@ -761,12 +761,6 @@ class _coo_base(_data_matrix, _minmax_mixin):
             return NotImplemented
 
 
-
-
-
-
-
-
     def _matmul_multivector(self, other):
         result_dtype = upcast_char(self.dtype.char, other.dtype.char)
         if self.ndim < 3 and other.ndim < 3:
