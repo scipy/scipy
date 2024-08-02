@@ -544,7 +544,7 @@ def test_cub_scalar_output(problem, quadrature, rtol, atol):
         exact(a, b, *args),
         rtol=rtol,
         atol=atol,
-        err_msg=f"error_estimate={res.error}, subdivisions={res.subdivisions}"
+        err_msg=f"estimate_error={res.error}, subdivisions={res.subdivisions}"
     )
 
 
@@ -637,10 +637,10 @@ def test_cub_tensor_output(problem, quadrature, shape, rtol, atol):
         exact(a, b, *args),
         rtol=rtol,
         atol=atol,
-        err_msg=f"error_estimate={res.error}, subdivisions={res.subdivisions}"
+        err_msg=f"estimate_error={res.error}, subdivisions={res.subdivisions}"
     )
 
-    assert res.status == "converged", f"error_estimate={res.error}, subdivisions=\
+    assert res.status == "converged", f"estimate_error={res.error}, subdivisions=\
 {res.subdivisions}, true_error={np.abs(res.estimate - exact(a, b, *args))}"
     assert res.estimate.shape == shape[1:]
 
@@ -818,13 +818,13 @@ def test_cub_with_kwargs(rule):
 def test_stops_after_max_subdivisions():
     # Define a cubature rule with fake high error so that cub will keep on subdividing
 
-    class BadError:
+    class BadError(Cub):
         underlying = GaussLegendreQuad(10)
 
         def estimate(self, f, a, b, args=(), kwargs=dict()):
             return self.underlying.estimate(f, a, b, args, kwargs)
 
-        def error_estimate(self, f, a, b, args=(), kwargs=dict()):
+        def estimate_error(self, f, a, b, args=(), kwargs=dict()):
             return 1e6
 
     def f(x):

@@ -47,7 +47,7 @@ class GenzMalikCub(ErrorFromDifference):
     >>> a, b = np.array([0, 0, 0]), np.array([1, 1, 1])
     >>> rule.estimate(f, a, b) # True value 3*sin(1), approximately 2.5244
      np.float64(2.5244129547230862)
-    >>> rule.error_estimate(f, a, b)
+    >>> rule.estimate_error(f, a, b)
      np.float64(1.378269656626685e-06)
     """
 

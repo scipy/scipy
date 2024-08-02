@@ -170,7 +170,7 @@ def cub(f, a, b, rule="gk21", rtol=1e-05, atol=1e-08, max_subdivisions=10000,
     ...     def estimate(self, f, a, b, args=(), kwargs=None):
     ...         if kwargs is None: kwargs = dict()
     ...         return genz.estimate(f, a, b, args, kwargs)
-    ...     def error_estimate(self, f, a, b, args=(), kwargs=None):
+    ...     def estimate_error(self, f, a, b, args=(), kwargs=None):
     ...         if kwargs is None: kwargs = dict()
     ...         return np.abs(
     ...             genz.estimate(f, a, b, args, kwargs)
@@ -223,7 +223,7 @@ def cub(f, a, b, rule="gk21", rtol=1e-05, atol=1e-08, max_subdivisions=10000,
     est = rule.estimate(f, a, b, args, kwargs)
 
     try:
-        err = rule.error_estimate(f, a, b, args, kwargs)
+        err = rule.estimate_error(f, a, b, args, kwargs)
     except NotImplementedError:
         raise ValueError("attempting cubature with a rule that doesn't implement error \
 estimation.")
@@ -257,7 +257,7 @@ estimation.")
         # subdividing.
         for a_k_sub, b_k_sub in _subregion_coordinates(a_k, b_k):
             est_sub = rule.estimate(f, a_k_sub, b_k_sub, args, kwargs)
-            err_sub = rule.error_estimate(f, a_k_sub, b_k_sub, args, kwargs)
+            err_sub = rule.estimate_error(f, a_k_sub, b_k_sub, args, kwargs)
 
             est += est_sub
             err += err_sub

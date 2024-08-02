@@ -12,9 +12,9 @@ class Cub:
 
     Finds an estimate for the integral of ``f`` over hypercube described by two arrays
     ``a`` and ``b`` via `estimate`, and find an estimate for the error of this
-    approximation via `error_estimate`.
+    approximation via `estimate_error`.
 
-    If a subclass does not implement its own `error_estimate`, then it will use a
+    If a subclass does not implement its own `estimate_error`, then it will use a
     default error estimate based on the difference between the estimate over the whole
     region and the sum of the estimates over each subregion.
 
@@ -51,7 +51,7 @@ class Cub:
     ...     def estimate(self, f, a, b, args=(), kwargs=None):
     ...         if kwargs is None: kwargs = dict()
     ...         return genz.estimate(f, a, b, args, kwargs)
-    ...     def error_estimate(self, f, a, b, args=(), kwargs=None):
+    ...     def estimate_error(self, f, a, b, args=(), kwargs=None):
     ...         if kwargs is None: kwargs = dict()
     ...         return np.abs(
     ...             genz.estimate(f, a, b, args, kwargs)
@@ -106,7 +106,7 @@ class Cub:
         """
         raise NotImplementedError
 
-    def error_estimate(self, f, a, b, args=(), kwargs=None):
+    def estimate_error(self, f, a, b, args=(), kwargs=None):
         r"""
         Calculate the error estimate of this cubature rule for the integral of ``f`` in
         the hypercube described by corners ``a`` and ``b``.
@@ -279,7 +279,7 @@ class ErrorFromDifference(FixedCub):
     def lower_nodes_and_weights(self):
         return self.lower.nodes_and_weights
 
-    def error_estimate(self, f, a, b, args=(), kwargs=None):
+    def estimate_error(self, f, a, b, args=(), kwargs=None):
         r"""
         Calculate the error estimate of this cubature rule for the integral of ``f`` in
         the hypercube described by corners ``a`` and ``b``.
@@ -361,7 +361,7 @@ class FixedProductCub(FixedCub):
     >>> a, b = np.array([0, 0]), np.array([1, 1])
     >>> rule.estimate(f, a, b) # True value 2*sin(1), approximately 1.6829
      np.float64(1.682941969615793)
-    >>> rule.error_estimate(f, a, b)
+    >>> rule.estimate_error(f, a, b)
      np.float64(2.220446049250313e-16)
     """
 
@@ -383,7 +383,7 @@ class FixedProductCub(FixedCub):
 
 class FixedProductErrorFromDifferenceCub(ErrorFromDifference):
     """
-    Find the n-dimensional cubature rule constructed from the Cartesian product of 1D
+    Find the n-dimensional cubature rule constructed from the Cartesian product of 1-D
     `ErrorFromDifference` cubature rules, and estimate the error as the difference
     between the product of the higher rules and the product of the lower rules.
 
@@ -391,7 +391,8 @@ class FixedProductErrorFromDifferenceCub(ErrorFromDifference):
     ErrorFromDifference, this will find the N-dimensional ErrorFromDifference cubature
     rule obtained by taking the Cartesian product of their nodes, and estimating the
     error by taking the difference with a lower-accuracy N-dimensional cubature rule
-    obtained using the `.lower` rule in each of the base 1-dimensional rules.
+    obtained using the `.lower_nodes_and_weights` rule in each of the base 1-dimensional
+    rules.
 
     Parameters
     ----------
@@ -422,7 +423,7 @@ class FixedProductErrorFromDifferenceCub(ErrorFromDifference):
     >>> a, b = np.array([0, 0]), np.array([1, 1])
     >>> rule.estimate(f, a, b) # True value 2*sin(1), approximately 1.6829
      np.float64(1.682941969615793)
-    >>> rule.error_estimate(f, a, b)
+    >>> rule.estimate_error(f, a, b)
      np.float64(2.220446049250313e-16)
     """
 

@@ -32,7 +32,7 @@ class NewtonCotesQuad(FixedCub):
     >>> a, b = np.array([0]), np.array([1])
     >>> rule.estimate(f, a, b) # True value sin(1), approximately 0.84147
      array([0.84147098])
-    >>> rule.error_estimate(f, a, b)
+    >>> rule.estimate_error(f, a, b)
      array([1.11022302e-16])
 
     Evaluate a 2D integral. Note that in this example ``f`` returns a float, so the
@@ -50,7 +50,7 @@ class NewtonCotesQuad(FixedCub):
     >>> a, b = np.array([0, 0]), np.array([1, 1])
     >>> rule.estimate(f, a, b) # True value 2*sin(1), approximately 1.6829
      np.float64(1.682941969615793)
-    >>> rule.error_estimate(f, a, b)
+    >>> rule.estimate_error(f, a, b)
      np.float64(2.220446049250313e-16)
     """
 
