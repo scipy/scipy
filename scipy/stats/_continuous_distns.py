@@ -4884,7 +4884,7 @@ class invgauss_gen(rv_continuous):
     def fit(self, data, *args, **kwds):
         method = kwds.get('method', 'mle')
 
-        if (isinstance(data, CensoredData) or type(self) == wald_gen
+        if (isinstance(data, CensoredData) or isinstance(self, wald_gen)
                 or method.lower() == 'mm'):
             return super().fit(data, *args, **kwds)
 
