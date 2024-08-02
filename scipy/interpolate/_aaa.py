@@ -47,8 +47,8 @@ class AAA:
         1-D array containing values of the independent variable. Values may be real or
         complex but must be finite.
     values : 1D array_like, shape (n,)
-        Function values ``f(z)`` at `points`. Infinite and NaN value of `values` and
-        corresponding `points` will be discarded.
+        Function values ``f(z)`` at `points`. Infinite and NaN values of `values` and
+        corresponding values of `points` will be discarded.
     rtol : float, optional
         Relative tolerance, defaults to ``eps**0.75``. If a small subset of the entries
         in `values` are much larger than the rest the default tolerance may be too
@@ -92,18 +92,24 @@ class AAA:
 
     where :math:`z_1,\dots,z_m` are real or complex support points selected from
     `points`, :math:`f_1,\dots,f_m` are the corresponding real or complex data values
-    from `values`, and :math:`w_1,\dots,w_m` are real or complex weights. The algorithm
-    then proceeds to select the next support point :math:`z_{m+1}` from the remaining
-    unselected `points` such that the nonlinear residual
+    from `values`, and :math:`w_1,\dots,w_m` are real or complex weights.
+    
+    Each iteration of the algorithm has two parts: the greedy selection the next support
+    point and the computation of the weights. The first part of each iteration is to
+    select the next support point to be added :math:`z_{m+1}` from the remaining
+    unselected `points`, such that the nonlinear residual
     :math:`|f(z_{m+1}) - n(z_{m+1})/d(z_{m+1})|` is maximised. The algorithm terminates
     when this maximum is less than ``rtol * np.linalg.norm(f, ord=np.inf)``. This means
-    the interpolation property is only satisfied up to a tolerance. The weights are
-    selected to solve the least-squares problem
+    the interpolation property is only satisfied up to a tolerance, except at the
+    support points where approximation exactly interpolates the supplied data.
+    
+    In the second part of each iteration, the weights :math:`w_j` are selected to solve
+    the least-squares problem
 
     .. math::
 
-        \text{minimise}|fd - n| \quad \text{subject to} \quad
-        \sum_{i=1}^{m+1} w_i = 1,
+        \text{minimise}_{w_j}|fd - n| \quad \text{subject to} \quad
+        \sum_{j=1}^{m+1} w_j = 1,
 
     over the unselected elements of `points`.
 
