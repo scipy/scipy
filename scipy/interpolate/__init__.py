@@ -137,6 +137,15 @@ Low-level interface to FITPACK functions:
    bisplrep
    bisplev
 
+Rational Approximation
+======================
+
+.. autosummary::
+   :toctree: generated/
+
+   pade
+   AAA
+
 Additional tools
 ================
 
@@ -145,7 +154,6 @@ Additional tools
 
    lagrange
    approximate_taylor_polynomial
-   pade
 
 .. seealso::
 
@@ -187,6 +195,8 @@ from ._pade import *
 from ._rgi import *
 
 from ._ndbspline import NdBSpline
+
+from ._aaa import *
 
 # Deprecated namespaces, to be removed in v2.0.0
 from . import fitpack, fitpack2, interpolate, ndgriddata, polyint, rbf

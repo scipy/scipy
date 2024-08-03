@@ -7,10 +7,9 @@
 
 
 /* defined below */
-void f_medfilt2(float*,float*,npy_intp*,npy_intp*);
-void d_medfilt2(double*,double*,npy_intp*,npy_intp*);
-void b_medfilt2(unsigned char*,unsigned char*,npy_intp*,npy_intp*);
-extern char *check_malloc (size_t);
+void f_medfilt2(float*,float*,npy_intp*,npy_intp*,int*);
+void d_medfilt2(double*,double*,npy_intp*,npy_intp*,int*);
+void b_medfilt2(unsigned char*,unsigned char*,npy_intp*,npy_intp*,int*);
 
 
 /* The QUICK_SELECT routine is based on Hoare's Quickselect algorithm,
@@ -72,7 +71,7 @@ TYPE NAME(TYPE arr[], int n)                                            \
 
 /* 2-D median filter with zero-padding on edges. */
 #define MEDIAN_FILTER_2D(NAME, TYPE, SELECT)                            \
-void NAME(TYPE* in, TYPE* out, npy_intp* Nwin, npy_intp* Ns)                    \
+void NAME(TYPE* in, TYPE* out, npy_intp* Nwin, npy_intp* Ns, int* errnum)    \
 {                                                                       \
     int nx, ny, hN[2];                                                  \
     int pre_x, pre_y, pos_x, pos_y;                                     \
@@ -80,7 +79,11 @@ void NAME(TYPE* in, TYPE* out, npy_intp* Nwin, npy_intp* Ns)                    
     TYPE *myvals, *fptr1, *fptr2, *ptr1, *ptr2;                         \
                                                                         \
     totN = Nwin[0] * Nwin[1];                                           \
-    myvals = (TYPE *) check_malloc( totN * sizeof(TYPE));               \
+    myvals = (TYPE *) malloc( totN * sizeof(TYPE));                     \
+    if (myvals == NULL) {                                               \
+	*errnum = -1;                                                   \
+	return;                                                         \
+    }                                                                   \
                                                                         \
     Py_BEGIN_ALLOW_THREADS                                              \
                                                                         \
@@ -118,6 +121,7 @@ void NAME(TYPE* in, TYPE* out, npy_intp* Nwin, npy_intp* Ns)                    
     Py_END_ALLOW_THREADS                                                \
                                                                         \
     free(myvals);                                                       \
+    *errnum = 0;                                                        \
 }
 
 

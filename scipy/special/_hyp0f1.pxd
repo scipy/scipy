@@ -6,7 +6,7 @@ from ._complexstuff cimport (
     zsqrt, zpow, zabs, npy_cdouble_from_double_complex,
     double_complex_from_npy_cdouble)
 
-cdef extern from "special_wrappers.h" nogil:
+cdef extern from "xsf_wrappers.h" nogil:
     double cephes_iv_wrap(double v, double x)
     double cephes_jv_wrap(double v, double x)
     double cephes_gamma_wrap(double x)
@@ -17,7 +17,7 @@ cdef extern from "float.h":
     double DBL_MAX, DBL_MIN
 
 
-cdef extern from "special_wrappers.h":
+cdef extern from "xsf_wrappers.h":
     np.npy_cdouble special_ccyl_bessel_i(double v, np.npy_cdouble z) nogil
     np.npy_cdouble special_ccyl_bessel_j(double v, np.npy_cdouble z) nogil
     double special_sinpi(double x) nogil

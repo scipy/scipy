@@ -2076,7 +2076,7 @@ def test_gttrf_gttrs(dtype):
         gttrf(dl, d, du[:-1])
 
     # test that matrix of size n=2 raises exception
-    with assert_raises(Exception):
+    with assert_raises(ValueError):
         gttrf(dl[0], d[:1], du[0])
 
     # test that singular (row of all zeroes) matrix fails via info

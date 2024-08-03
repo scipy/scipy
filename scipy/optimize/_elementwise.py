@@ -35,12 +35,12 @@ def find_root(f, init, /, *, args=(), tolerances=None, maxiter=None, callback=No
         array ``x`` or the arrays in ``args``.
 
         `find_root` seeks an array ``x`` such that ``f(x)`` is an array of zeros.
-    init : 2-tuple of real number arrays
+    init : 2-tuple of float array_like
         The lower and upper endpoints of a bracket surrounding the desired root.
         A bracket is valid if arrays ``xl, xr = init`` satisfy ``xl < xr`` and
         ``sign(f(xl)) == -sign(f(xr))`` elementwise. Arrays be broadcastable with
         one another and `args`.
-    args : tuple of real number arrays, optional
+    args : tuple of array_like, optional
         Additional positional array arguments to be passed to `f`. Arrays
         must be broadcastable with one another and the arrays of `init`.
         If the callable for which the root is desired requires arguments that are
@@ -264,13 +264,13 @@ def find_minimum(f, init, /, *, args=(), tolerances=None, maxiter=100, callback=
 
         `find_minimum` seeks an array ``x`` such that ``f(x)`` is an array of
         local minima.
-    init : 3-tuple of real number arrays
+    init : 3-tuple of float array_like
         The abscissae of a standard scalar minimization bracket. A bracket is
         valid if arrays ``x1, x2, x3 = init`` satisfy ``x1 < x2 < x3`` and
         ``func(x1) >= func(x2) <= func(x3)``, where one of the inequalities
         is strict. Arrays must be broadcastable with one another and the arrays
         of `args`.
-    args : tuple of real number arrays, optional
+    args : tuple of array_like, optional
         Additional positional array arguments to be passed to `f`. Arrays
         must be broadcastable with one another and the arrays of `init`.
         If the callable for which the root is desired requires arguments that are
@@ -487,16 +487,16 @@ def bracket_root(f, xl0, xr0=None, *, xmin=None, xmax=None, factor=None, args=()
         `f` must be an elementwise function: each element ``f(x)[i]``
         must equal ``f(x[i])`` for all indices ``i``. It must not mutate the
         array ``x`` or the arrays in ``args``.
-    xl0, xr0: float array
+    xl0, xr0: float array_like
         Starting guess of bracket, which need not contain a root. If `xr0` is
         not provided, ``xr0 = xl0 + 1``. Must be broadcastable with all other
         array inputs.
-    xmin, xmax : float array, optional
+    xmin, xmax : float array_like, optional
         Minimum and maximum allowable endpoints of the bracket, inclusive. Must
         be broadcastable with all other array inputs.
-    factor : float array, default: 2
+    factor : float array_like, default: 2
         The factor used to grow the bracket. See Notes.
-    args : tuple of arrays, optional
+    args : tuple of array_like, optional
         Additional positional array arguments to be passed to `f`.
         If the callable for which the root is desired requires arguments that are
         not broadcastable with `x`, wrap that callable with `f` such that `f`
@@ -660,9 +660,9 @@ def bracket_minimum(f, xm0, *, xl0=None, xr0=None, xmin=None, xmax=None,
     xmin, xmax : float array_like, optional
         Minimum and maximum allowable endpoints of the bracket, inclusive. Must
         be broadcastable with all other array inputs.
-    factor : float array, default: 2
+    factor : float array_like, default: 2
         The factor used to grow the bracket. See Notes.
-    args : tuple of arrays, optional
+    args : tuple of array_like, optional
         Additional positional array arguments to be passed to `f`.
         If the callable for which the root is desired requires arguments that are
         not broadcastable with `x`, wrap that callable with `f` such that `f`

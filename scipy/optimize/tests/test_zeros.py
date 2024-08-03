@@ -452,18 +452,23 @@ class TestNewton(TestScalarRootFinders):
         # to secant. When x1 was not specified, secant failed.
         # Check that without fprime, the default is secant if x1 is specified
         # and newton otherwise.
-        res_newton_default = root_scalar(f1, method='newton', x0=3, xtol=1e-6)
-        res_secant_default = root_scalar(f1, method='secant', x0=3, x1=2,
+        # Also confirm that `x` is always a scalar (gh-21148)
+        def f(x):
+            assert np.isscalar(x)
+            return f1(x)
+
+        res_newton_default = root_scalar(f, method='newton', x0=3, xtol=1e-6)
+        res_secant_default = root_scalar(f, method='secant', x0=3, x1=2,
                                          xtol=1e-6)
         # `newton` uses the secant method when `x1` and `x2` are specified
-        res_secant = newton(f1, x0=3, x1=2, tol=1e-6, full_output=True)[1]
+        res_secant = newton(f, x0=3, x1=2, tol=1e-6, full_output=True)[1]
 
         # all three found a root
-        assert_allclose(f1(res_newton_default.root), 0, atol=1e-6)
+        assert_allclose(f(res_newton_default.root), 0, atol=1e-6)
         assert res_newton_default.root.shape == tuple()
-        assert_allclose(f1(res_secant_default.root), 0, atol=1e-6)
+        assert_allclose(f(res_secant_default.root), 0, atol=1e-6)
         assert res_secant_default.root.shape == tuple()
-        assert_allclose(f1(res_secant.root), 0, atol=1e-6)
+        assert_allclose(f(res_secant.root), 0, atol=1e-6)
         assert res_secant.root.shape == tuple()
 
         # Defaults are correct

@@ -172,11 +172,11 @@ def convolve1d(input, weights, axis=-1, output=None, mode="reflect",
     >>> convolve1d([2, 8, 0, 4, 1, 9, 9, 0], weights=[1, 3])
     array([14, 24,  4, 13, 12, 36, 27,  0])
     """
+    weights = np.asarray(weights)
     weights = weights[::-1]
     origin = -origin
-    if not len(weights) & 1:
+    if not weights.shape[0] & 1:
         origin -= 1
-    weights = np.asarray(weights)
     if weights.dtype.kind == 'c':
         # pre-conjugate here to counteract the conjugation in correlate1d
         weights = weights.conj()

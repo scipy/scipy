@@ -146,7 +146,7 @@ def _stdtr(xp, spx):
 
 _generic_implementations = {'rel_entr': _rel_entr,
                             'xlogy': _xlogy,
-                            'chdtr,': _chdtr,
+                            'chdtr': _chdtr,
                             'chdtrc': _chdtrc,
                             'betaincc': _betaincc,
                             'stdtr': _stdtr,

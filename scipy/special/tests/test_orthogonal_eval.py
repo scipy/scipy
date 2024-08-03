@@ -40,7 +40,7 @@ class TestPolys:
 
     """
 
-    def check_poly(self, func, cls, param_ranges=[], x_range=[], nn=10,
+    def check_poly(self, func, cls, param_ranges=(), x_range=(), nn=10,
                    nparam=10, nx=10, rtol=1e-8):
         np.random.seed(1234)
 
@@ -145,7 +145,7 @@ class TestRecurrence:
 
     """
 
-    def check_poly(self, func, param_ranges=[], x_range=[], nn=10,
+    def check_poly(self, func, param_ranges=(), x_range=(), nn=10,
                    nparam=10, nx=10, rtol=1e-8):
         np.random.seed(1234)
 

@@ -449,6 +449,7 @@ class TestFFTShift:
             x = xp.asarray(np.random.random((n,)))
             xp_assert_close(fft.ifftshift(fft.fftshift(x)), x)
 
+    @skip_xp_backends('cupy', reasons=['cupy/cupy#8393'])
     def test_axes_keyword(self, xp):
         freqs = xp.asarray([[0., 1, 2], [3, 4, -4], [-3, -2, -1]])
         shifted = xp.asarray([[-1., -3, -2], [2, 0, 1], [-4, 3, 4]])
@@ -460,6 +461,7 @@ class TestFFTShift:
         xp_assert_close(fft.fftshift(freqs), shifted)
         xp_assert_close(fft.ifftshift(shifted), freqs)
     
+    @skip_xp_backends('cupy', reasons=['cupy/cupy#8393'])
     def test_uneven_dims(self, xp):
         """ Test 2D input, which has uneven dimension sizes """
         freqs = xp.asarray([

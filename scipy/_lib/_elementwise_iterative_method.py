@@ -24,7 +24,7 @@ _EINPUTERR = -5
 _ECONVERGED = 0
 _EINPROGRESS = 1
 
-def _initialize(func, xs, args, complex_ok=False, preserve_shape=None):
+def _initialize(func, xs, args, complex_ok=False, preserve_shape=None, xp=None):
     """Initialize abscissa, function, and args arrays for elementwise function
 
     Parameters
@@ -47,6 +47,8 @@ def _initialize(func, xs, args, complex_ok=False, preserve_shape=None):
         to reshape and compress arguments at will. When
         ``preserve_shape=False``, arguments passed to `func` must have shape
         `shape` or ``shape + (n,)``, where ``n`` is any integer.
+    xp : namespace
+        Namespace of array arguments in `xs`.
 
     Returns
     -------
@@ -72,7 +74,7 @@ def _initialize(func, xs, args, complex_ok=False, preserve_shape=None):
     `scipy.optimize._chandrupatla`.
     """
     nx = len(xs)
-    xp = array_namespace(*xs)
+    xp = array_namespace(*xs) if xp is None else xp
 
     # Try to preserve `dtype`, but we need to ensure that the arguments are at
     # least floats before passing them into the function; integers can overflow
@@ -199,7 +201,7 @@ def _loop(work, callback, shape, maxiter, func, args, dtype, pre_func_eval,
     active = xp.arange(n_elements)  # in-progress element indices
     res_dict = {i: xp.zeros(n_elements, dtype=dtype) for i, j in res_work_pairs}
     res_dict['success'] = xp.zeros(n_elements, dtype=xp.bool)
-    res_dict['status'] = xp.full(n_elements, _EINPROGRESS, dtype=xp.int32)
+    res_dict['status'] = xp.full(n_elements, xp.asarray(_EINPROGRESS), dtype=xp.int32)
     res_dict['nit'] = xp.zeros(n_elements, dtype=xp.int32)
     res_dict['nfev'] = xp.zeros(n_elements, dtype=xp.int32)
     res = _RichResult(res_dict)

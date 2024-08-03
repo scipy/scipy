@@ -16,6 +16,7 @@ from scipy.special import poch, gamma
 from scipy.interpolate import _ppoly
 
 from scipy._lib._gcutils import assert_deallocated, IS_PYPY
+from scipy._lib._testutils import _run_concurrent_barrier
 
 from scipy.integrate import nquad
 
@@ -929,7 +930,7 @@ class TestAkima1DInterpolator:
             Akima1DInterpolator(x, y, method="invalid")  # type: ignore
 
     def test_extrapolate_attr(self):
-        # 
+        #
         x = np.linspace(-5, 5, 11)
         y = x**2
         x_ext = np.linspace(-10, 10, 17)
@@ -957,6 +958,18 @@ def test_complex(method):
     msg = "real values"
     with pytest.raises(ValueError, match=msg):
         method(x, y)
+
+    def test_concurrency(self):
+        # Check that no segfaults appear with concurrent access to Akima1D
+        x = np.linspace(-5, 5, 11)
+        y = x**2
+        x_ext = np.linspace(-10, 10, 17)
+        ak = Akima1DInterpolator(x, y, extrapolate=True)
+
+        def worker_fn(_, ak, x_ext):
+            ak(x_ext)
+
+        _run_concurrent_barrier(10, worker_fn, ak, x_ext)
 
 
 class TestPPolyCommon:
@@ -1057,6 +1070,21 @@ class TestPPolyCommon:
             assert_equal(np.shape(p(np.array(0.5))), ())
 
             assert_raises(ValueError, p, np.array([[0.1, 0.2], [0.4]], dtype=object))
+
+    def test_concurrency(self):
+        # Check that no segfaults appear with concurrent access to BPoly, PPoly
+        c = np.random.rand(8, 12, 5, 6, 7)
+        x = np.sort(np.random.rand(13))
+        xp = np.random.rand(3, 4)
+
+        for cls in (PPoly, BPoly):
+            interp = cls(c, x)
+
+            def worker_fn(_, interp, xp):
+                interp(xp)
+
+            _run_concurrent_barrier(10, worker_fn, interp, xp)
+
 
     def test_complex_coef(self):
         np.random.seed(12345)
@@ -1594,13 +1622,13 @@ class TestPPoly:
 
             for y in [0, np.random.random()]:
                 w = np.empty(c.shape, dtype=complex)
-                _ppoly._croots_poly1(c, w)
+                _ppoly._croots_poly1(c, w, y)
 
                 if k == 1:
                     assert_(np.isnan(w).all())
                     continue
 
-                res = 0
+                res = -y
                 cres = 0
                 for i in range(k):
                     res += c[i,None] * w**(k-1-i)
@@ -2342,6 +2370,25 @@ class TestNdPPoly:
         pz = p.integrate_1d(a, b, axis=2)
         paz = p.antiderivative((0, 0, 1))
         assert_allclose(pz((u, v)), paz((u, v, b)) - paz((u, v, a)))
+
+
+    def test_concurrency(self):
+        rng = np.random.default_rng(12345)
+
+        c = rng.uniform(size=(4, 5, 6, 7, 8, 9))
+        x = np.linspace(0, 1, 7+1)
+        y = np.linspace(0, 1, 8+1)**2
+        z = np.linspace(0, 1, 9+1)**3
+
+        p = NdPPoly(c, (x, y, z))
+
+        def worker_fn(_, spl):
+            xi = rng.uniform(size=40)
+            yi = rng.uniform(size=40)
+            zi = rng.uniform(size=40)
+            spl((xi, yi, zi))
+
+        _run_concurrent_barrier(10, worker_fn, p)
 
 
 def _ppoly_eval_1(c, x, xps):

@@ -498,9 +498,12 @@ def hb_read(path_or_open_file):
     >>> data = csr_array(eye(3))  # create a sparse array
     >>> hb_write("data.hb", data)  # write a hb file
     >>> print(hb_read("data.hb"))  # read a hb file
-    (np.int32(0), np.int32(0))	1.0
-    (np.int32(1), np.int32(1))	1.0
-    (np.int32(2), np.int32(2))	1.0
+    <Compressed Sparse Column sparse matrix of dtype 'float64'
+        with 3 stored elements and shape (3, 3)>
+        Coords	Values
+        (0, 0)	1.0
+        (1, 1)	1.0
+        (2, 2)	1.0
     """
     def _get_matrix(fid):
         hb = HBFile(fid)
@@ -548,9 +551,12 @@ def hb_write(path_or_open_file, m, hb_info=None):
     >>> data = csr_array(eye(3))  # create a sparse array
     >>> hb_write("data.hb", data)  # write a hb file
     >>> print(hb_read("data.hb"))  # read a hb file
-    (np.int32(0), np.int32(0))	1.0
-    (np.int32(1), np.int32(1))	1.0
-    (np.int32(2), np.int32(2))	1.0
+    <Compressed Sparse Column sparse matrix of dtype 'float64'
+        with 3 stored elements and shape (3, 3)>
+        Coords	Values
+        (0, 0)	1.0
+        (1, 1)	1.0
+        (2, 2)	1.0
     """
     m = m.tocsc(copy=False)
 

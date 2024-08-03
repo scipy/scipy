@@ -3,44 +3,6 @@ mach_src = [
   'mach/xerror.f'
 ]
 
-quadpack_src = [
-  'quadpack/dqag.f',
-  'quadpack/dqage.f',
-  'quadpack/dqagi.f',
-  'quadpack/dqagie.f',
-  'quadpack/dqagp.f',
-  'quadpack/dqagpe.f',
-  'quadpack/dqags.f',
-  'quadpack/dqagse.f',
-  'quadpack/dqawc.f',
-  'quadpack/dqawce.f',
-  'quadpack/dqawf.f',
-  'quadpack/dqawfe.f',
-  'quadpack/dqawo.f',
-  'quadpack/dqawoe.f',
-  'quadpack/dqaws.f',
-  'quadpack/dqawse.f',
-  'quadpack/dqc25c.f',
-  'quadpack/dqc25f.f',
-  'quadpack/dqc25s.f',
-  'quadpack/dqcheb.f',
-  'quadpack/dqelg.f',
-  'quadpack/dqk15.f',
-  'quadpack/dqk15i.f',
-  'quadpack/dqk15w.f',
-  'quadpack/dqk21.f',
-  'quadpack/dqk31.f',
-  'quadpack/dqk41.f',
-  'quadpack/dqk51.f',
-  'quadpack/dqk61.f',
-  'quadpack/dqmomo.f',
-  'quadpack/dqng.f',
-  'quadpack/dqpsrt.f',
-  'quadpack/dqwgtc.f',
-  'quadpack/dqwgtf.f',
-  'quadpack/dqwgts.f'
-]
-
 lsoda_src = [
   'odepack/blkdta000.f',
   'odepack/bnorm.f',
@@ -79,12 +41,6 @@ mach_lib = static_library('mach_lib',
   gnu_symbol_visibility: 'hidden',
 )
 
-quadpack_lib = static_library('quadpack_lib',
-  quadpack_src,
-  fortran_args: fortran_ignore_warnings,
-  gnu_symbol_visibility: 'hidden',
-)
-
 lsoda_lib = static_library('lsoda_lib',
   lsoda_src,
   fortran_args: fortran_ignore_warnings,
@@ -106,14 +62,10 @@ dop_lib = static_library('dop_lib',
 )
 
 py3.extension_module('_quadpack',
-  ['__quadpack.h', '_quadpackmodule.c'],
-  fortran_args: fortran_ignore_warnings,
+  ['__quadpack.h', '__quadpack.c'],
   include_directories: ['../_lib/src'],
-  link_with: [quadpack_lib, mach_lib],
-  link_args: version_link_args,
-  dependencies: [lapack_dep, np_dep],
+  dependencies: np_dep,
   install: true,
-  link_language: 'fortran',
   subdir: 'scipy/integrate'
 )
 

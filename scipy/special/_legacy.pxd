@@ -12,7 +12,7 @@ from libc.math cimport isnan, isinf, NAN
 from . cimport sf_error
 from ._ellip_harm cimport ellip_harmonic
 
-cdef extern from "special_wrappers.h" nogil:
+cdef extern from "xsf_wrappers.h" nogil:
     double cephes_bdtrc_wrap(double k, int n, double p)
     double cephes_bdtr_wrap(double k, int n, double p)
     double cephes_bdtri_wrap(double k, int n, double y)
@@ -28,7 +28,7 @@ cdef extern from "special_wrappers.h" nogil:
     double cephes_smirnovci_wrap(int n, double x)
     double cephes_smirnovp_wrap(int n, double x)
 
-cdef extern from "special_wrappers.h":
+cdef extern from "xsf_wrappers.h":
     double special_cyl_bessel_k_int(int n, double z) nogil
 
 cdef extern from "Python.h":

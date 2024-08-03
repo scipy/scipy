@@ -11,6 +11,11 @@ scipy.constants:
   - any-glob-to-any-file:
     - scipy/constants/**
 
+scipy.differentiate:
+- changed-files:
+  - any-glob-to-any-file:
+    - scipy/differentiate/**
+
 scipy.fft:
 - changed-files:
   - any-glob-to-any-file:

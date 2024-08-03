@@ -3,35 +3,35 @@ from libcpp.complex cimport complex as ccomplex
 cimport numpy as cnp
 cnp.import_array()
 
-cdef extern from "special/airy.h" nogil:
-    void specfun_airyzo 'special::airyzo'(int nt, int kf, double *xa, double *xb, double *xc, double *xd)
+cdef extern from "xsf/airy.h" nogil:
+    void specfun_airyzo 'xsf::airyzo'(int nt, int kf, double *xa, double *xb, double *xc, double *xd)
 
-cdef extern from "special/fresnel.h" nogil:
-    void specfun_fcszo 'special::fcszo'(int kf, int nt, ccomplex[double] *zo)
+cdef extern from "xsf/fresnel.h" nogil:
+    void specfun_fcszo 'xsf::fcszo'(int kf, int nt, ccomplex[double] *zo)
 
-cdef extern from "special/kelvin.h" nogil:
-    void specfun_klvnzo 'special::klvnzo'(int nt, int kd, double *zo)
+cdef extern from "xsf/kelvin.h" nogil:
+    void specfun_klvnzo 'xsf::klvnzo'(int nt, int kd, double *zo)
 
-cdef extern from "special/par_cyl.h" nogil:
-    void specfun_pbdv 'special::detail::pbdv'(double x, double v, double *dv, double *dp, double *pdf, double *pdd)
-    void specfun_pbvv 'special::detail::pbvv'(double x, double v, double *vv, double *vp, double *pvf, double *pvd)
+cdef extern from "xsf/par_cyl.h" nogil:
+    void specfun_pbdv 'xsf::detail::pbdv'(double x, double v, double *dv, double *dp, double *pdf, double *pdd)
+    void specfun_pbvv 'xsf::detail::pbvv'(double x, double v, double *vv, double *vp, double *pvf, double *pvd)
 
-cdef extern from "special/specfun/specfun.h" nogil:
-    void specfun_bernob 'special::specfun::bernob'(int n, double *bn)
-    void specfun_cerzo 'special::specfun::cerzo'(int nt, ccomplex[double] *zo)
-    void specfun_cpbdn 'special::specfun::cpbdn'(int n, ccomplex[double] z, ccomplex[double] *cpb, ccomplex[double] *cpd)
-    void specfun_cyzo 'special::specfun::cyzo'(int nt, int kf, int kc, ccomplex[double] *zo, ccomplex[double] *zv)
-    void specfun_eulerb 'special::specfun::eulerb'(int n, double *en)
-    void specfun_fcoef 'special::specfun::fcoef'(int kd, int m, double q, double a, double *fc)
-    void specfun_jdzo 'special::specfun::jdzo'(int nt, double *zo, int *n, int *m, int *p)
-    void specfun_jyzo 'special::specfun::jyzo'(int n, int nt, double *rj0, double *rj1, double *ry0, double *ry1)
-    void specfun_lamn 'special::specfun::lamn'(int n, double x, int *nm, double *bl, double *dl)
-    void specfun_lamv 'special::specfun::lamv'(double v, double x, double *vm, double *vl, double *dl)
-    void specfun_lqnb 'special::specfun::lqnb'(int n, double x, double* qn, double* qd)
-    void specfun_pbdv 'special::specfun::pbdv'(double x, double v, double *dv, double *dp, double *pdf, double *pdd)
-    void specfun_pbvv 'special::specfun::pbvv'(double x, double v, double *vv, double *vp, double *pvf, double *pvd)
-    void specfun_sdmn 'special::specfun::sdmn'(int m, int n, double c, double cv, double kd, double *df)
-    void specfun_segv 'special::specfun::segv'(int m, int n, double c, int kd, double *cv, double *eg)
+cdef extern from "xsf/specfun/specfun.h" nogil:
+    void specfun_bernob 'xsf::specfun::bernob'(int n, double *bn)
+    void specfun_cerzo 'xsf::specfun::cerzo'(int nt, ccomplex[double] *zo)
+    void specfun_cpbdn 'xsf::specfun::cpbdn'(int n, ccomplex[double] z, ccomplex[double] *cpb, ccomplex[double] *cpd)
+    void specfun_cyzo 'xsf::specfun::cyzo'(int nt, int kf, int kc, ccomplex[double] *zo, ccomplex[double] *zv)
+    void specfun_eulerb 'xsf::specfun::eulerb'(int n, double *en)
+    void specfun_fcoef 'xsf::specfun::fcoef'(int kd, int m, double q, double a, double *fc)
+    void specfun_jdzo 'xsf::specfun::jdzo'(int nt, double *zo, int *n, int *m, int *p)
+    void specfun_jyzo 'xsf::specfun::jyzo'(int n, int nt, double *rj0, double *rj1, double *ry0, double *ry1)
+    void specfun_lamn 'xsf::specfun::lamn'(int n, double x, int *nm, double *bl, double *dl)
+    void specfun_lamv 'xsf::specfun::lamv'(double v, double x, double *vm, double *vl, double *dl)
+    void specfun_lqnb 'xsf::specfun::lqnb'(int n, double x, double* qn, double* qd)
+    void specfun_pbdv 'xsf::specfun::pbdv'(double x, double v, double *dv, double *dp, double *pdf, double *pdd)
+    void specfun_pbvv 'xsf::specfun::pbvv'(double x, double v, double *vv, double *vp, double *pvf, double *pvd)
+    void specfun_sdmn 'xsf::specfun::sdmn'(int m, int n, double c, double cv, double kd, double *df)
+    void specfun_segv 'xsf::specfun::segv'(int m, int n, double c, int kd, double *cv, double *eg)
 
 
 def airyzo(int nt, int kf):

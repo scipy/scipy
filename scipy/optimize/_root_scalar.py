@@ -308,7 +308,12 @@ def root_scalar(f, args=(), method=None, bracket=None,
                 # use of `newton`. In that case, `approx_derivative` will
                 # always get scalar input. Nonetheless, it always returns an
                 # array, so we extract the element to produce scalar output.
-                return approx_derivative(f, x, method='2-point', args=args)[0]
+                # Similarly, `approx_derivative` always passes array input, so
+                # we extract the element to ensure the user's function gets
+                # scalar input.
+                def f_wrapped(x, *args):
+                    return f(x[0], *args)
+                return approx_derivative(f_wrapped, x, method='2-point', args=args)[0]
 
         if 'xtol' in kwargs:
             kwargs['tol'] = kwargs.pop('xtol')
@@ -415,8 +420,9 @@ def _root_scalar_secant_doc():
         Maximum number of iterations.
     x0 : float, required
         Initial guess.
-    x1 : float, required
-        A second guess.
+    x1 : float, optional
+        A second guess. Must be different from `x0`. If not specified,
+        a value near `x0` will be chosen.
     options: dict, optional
         Specifies any method-specific options not covered above.
 

@@ -291,3 +291,8 @@ Name: mdspan
 Files: scipy/special/special/third_party/kokkos/mdspan.hpp
 License: Apache License v2.0 with LLVM Exceptions
   For details, see scipy/special/special/third_party/kokkos/mdspan.hpp
+
+Name: Chebfun
+Files: scipy/interpolate/[_aaa.py, tests/test_aaa.py]
+License 3-Clause BSD
+  For details, see scipy/interpolate/_aaa.py

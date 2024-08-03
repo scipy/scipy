@@ -3193,7 +3193,7 @@ def normaltest(a, axis=0):
     return NormaltestResult(k2, distributions.chi2.sf(k2, 2))
 
 
-def mquantiles(a, prob=list([.25,.5,.75]), alphap=.4, betap=.4, axis=None,
+def mquantiles(a, prob=(.25, .5, .75), alphap=.4, betap=.4, axis=None,
                limit=()):
     """
     Computes empirical quantiles for a data array.

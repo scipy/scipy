@@ -6,6 +6,8 @@ from numpy.testing import (assert_, assert_array_almost_equal,
                            assert_almost_equal)
 from numpy import linspace, sin, cos, random, exp, allclose
 from scipy.interpolate._rbf import Rbf
+from scipy._lib._testutils import _run_concurrent_barrier
+
 
 FUNCTIONS = ('multiquadric', 'inverse multiquadric', 'gaussian',
              'cubic', 'quintic', 'thin-plate', 'linear')
@@ -220,3 +222,16 @@ def test_rbf_epsilon_none_collinear():
     z = [5, 6, 7]
     rbf = Rbf(x, y, z, epsilon=None)
     assert_(rbf.epsilon > 0)
+
+
+def test_rbf_concurrency():
+    x = linspace(0, 10, 100)
+    y0 = sin(x)
+    y1 = cos(x)
+    y = np.vstack([y0, y1]).T
+    rbf = Rbf(x, y, mode='N-D')
+
+    def worker_fn(_, interp, xp):
+        interp(xp)
+
+    _run_concurrent_barrier(10, worker_fn, rbf, x)

@@ -716,7 +716,7 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
         dy / dx = f(x, y, p) + S * y / (x - a), a <= x <= b
         bc(y(a), y(b), p) = 0
 
-    Here x is a 1-D independent variable, y(x) is an N-D
+    Here x is a 1-D independent variable, y(x) is an n-D
     vector-valued function and p is a k-D vector of unknown
     parameters which is to be found along with y(x). For the problem to be
     determined, there must be n + k boundary conditions, i.e., bc must be an

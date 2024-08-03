@@ -2076,8 +2076,6 @@ class Delaunay(_QhullUser):
 
         Parameters
         ----------
-        tri : DelaunayInfo
-            Delaunay triangulation
         xi : ndarray of double, shape (..., ndim)
             Points to locate
         bruteforce : bool, optional

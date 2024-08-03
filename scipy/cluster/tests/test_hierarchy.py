@@ -32,7 +32,8 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 import numpy as np
-from numpy.testing import assert_allclose, assert_equal, assert_, assert_warns
+from numpy.testing import (assert_allclose, assert_equal, assert_array_equal, assert_,
+                           assert_warns)
 import pytest
 from pytest import raises as assert_raises
 
@@ -282,6 +283,18 @@ class TestFcluster:
         Z = single(xp.asarray(hierarchy_test_data.Q_X))
         T = fcluster(Z, t, criterion='maxclust_monocrit', monocrit=maxdists(Z))
         assert_(is_isomorphic(T, expectedT))
+
+    def test_fcluster_maxclust_gh_12651(self, xp):
+        y = xp.asarray([[1], [4], [5]])
+        Z = single(y)
+        assert_array_equal(fcluster(Z, t=1, criterion="maxclust"),
+                           xp.asarray([1, 1, 1]))
+        assert_array_equal(fcluster(Z, t=2, criterion="maxclust"),
+                           xp.asarray([2, 1, 1]))
+        assert_array_equal(fcluster(Z, t=3, criterion="maxclust"),
+                           xp.asarray([1, 2, 3]))
+        assert_array_equal(fcluster(Z, t=5, criterion="maxclust"),
+                           xp.asarray([1, 2, 3]))
 
 
 @skip_xp_backends(cpu_only=True)

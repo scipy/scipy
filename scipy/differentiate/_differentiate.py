@@ -77,10 +77,10 @@ def differentiate(f, x, *, args=(), tolerances=None, maxiter=10,
         ``xi``. `f` must be an elementwise function: each scalar element ``f(xi)[j]``
         must equal ``f(xi[j])`` for valid indices ``j``. It must not mutate the array
         ``xi`` or the arrays in ``argsi``.
-    x : real number array
+    x : float array_like
         Abscissae at which to evaluate the derivative. Must be broadcastable with
         `args` and `step_direction`.
-    args : tuple of real number arrays, optional
+    args : tuple of array_like, optional
         Additional positional array arguments to be passed to `f`. Arrays
         must be broadcastable with one another and the arrays of `init`.
         If the callable for which the root is desired requires arguments that are
@@ -111,7 +111,7 @@ def differentiate(f, x, *, args=(), tolerances=None, maxiter=10,
     maxiter : int, default: 10
         The maximum number of iterations of the algorithm to perform. See
         Notes.
-    step_direction : integer array
+    step_direction : integer array_like
         An array representing the direction of the finite difference steps (for
         use when `x` lies near to the boundary of the domain of the function.)
         Must be broadcastable with `x` and all `args`.
@@ -708,7 +708,7 @@ def jacobian(f, x, *, tolerances=None, maxiter=10,
         `functools.partial` or ``lambda``) and pass the wrapped callable
         into `jacobian`. `f` must not mutate the array ``xi``. See Notes
         regarding vectorization and the dimensionality of the input and output.
-    x : array_like
+    x : float array_like
         Points at which to evaluate the Jacobian. Must have at least one dimension.
         See Notes regarding the dimensionality and vectorization.
     tolerances : dictionary of floats, optional

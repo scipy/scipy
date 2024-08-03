@@ -1,0 +1,98 @@
+name: Intel oneAPI tests
+
+on:
+  push:
+    branches:
+      - maintenance/**
+  pull_request:
+    branches:
+      - main
+      - maintenance/**
+
+permissions:
+   contents: read  # to fetch code (actions/checkout)
+
+# The environment variable LINUX_BASEKIT_URL and LINUX_HPCKIT_URL
+# store the URL for downloading Intel oneAPI.
+# Reference - https://github.com/oneapi-src/oneapi-ci/blob/b4a96bd1888c130fcb73524d2b77b90f43681cbc/.github/workflows/build_all.yml#L11-L12
+env:
+  LINUX_BASEKIT_URL: https://registrationcenter-download.intel.com/akdlm/IRC_NAS/9a98af19-1c68-46ce-9fdd-e249240c7c42/l_BaseKit_p_2024.2.0.634_offline.sh
+  LINUX_HPCKIT_URL: https://registrationcenter-download.intel.com/akdlm/IRC_NAS/d4e49548-1492-45c9-b678-8268cb0f1b05/l_HPCKit_p_2024.2.0.635_offline.sh
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  get_commit_message:
+    name: Get commit message
+    uses: ./.github/workflows/commit_message.yml
+
+  icx_icpx_ifx_mkl:
+    name: py3.12, dev.py
+    needs: get_commit_message
+    # Ensure (a) this doesn't run on forks by default, and
+    #        (b) it does run with Act locally (`github` doesn't exist there)
+    if: >
+      needs.get_commit_message.outputs.message == 1
+      && (github.repository == 'scipy/scipy' || github.repository == '')
+    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        python-version: ["3.12"]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4.1.1
+        with:
+          submodules: recursive
+
+      - name: Setup Conda
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          python-version: ${{ matrix.python-version }}
+          channels: conda-forge
+          channel-priority: true
+          activate-environment: scipy-dev
+          use-only-tar-bz2: false
+          miniforge-variant: Mambaforge
+          miniforge-version: latest
+          use-mamba: true
+
+      - name: Update Conda Environment
+        run: |
+          mamba env update -n scipy-dev -f environment.yml
+
+      - name: cache install
+        id: cache-install
+        uses: actions/cache@v3
+        with:
+          path: |
+              /opt/intel/oneapi/
+          key: install-${{ env.LINUX_BASEKIT_URL }}-${{ env.LINUX_HPCKIT_URL }}-compiler
+      - name: Install oneAPI Base kit
+        if: steps.cache-install.outputs.cache-hit != 'true'
+        run: |
+          printenv LINUX_BASEKIT_URL
+          bash tools/install_intel_oneAPI_linux.sh $LINUX_BASEKIT_URL
+      - name: Install oneAPI HPC kit
+        if: steps.cache-install.outputs.cache-hit != 'true'
+        run: |
+          printenv LINUX_HPCKIT_URL
+          bash tools/install_intel_oneAPI_linux.sh $LINUX_HPCKIT_URL
+
+      - name: Initialise Intel oneAPI and Build SciPy
+        shell: bash -l {0}
+        run: |
+          . /opt/intel/oneapi/setvars.sh --force
+          conda activate scipy-dev
+          conda remove -y compilers
+          unset FFLAGS
+          CC=icx CXX=icpx FC=ifx python dev.py build -C-Dblas=mkl-dynamic-lp64-iomp -C-Dlapack=mkl-dynamic-lp64-iomp
+
+      - name: Test scipy
+        shell: bash -l {0}
+        run: |
+          . /opt/intel/oneapi/setvars.sh --force
+          conda activate scipy-dev
+          python dev.py test

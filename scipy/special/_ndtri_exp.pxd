@@ -103,7 +103,7 @@ from libc.float cimport DBL_MAX
 from libc.math cimport exp, expm1, log, log1p, sqrt, M_SQRT2, INFINITY
 
 
-cdef extern from "special_wrappers.h" nogil:
+cdef extern from "xsf_wrappers.h" nogil:
     double cephes_ndtri_wrap(double x)
     double cephes_polevl_wrap(double x, const double coef[], int N)
     double cephes_p1evl_wrap(double x, const double coef[], int N)

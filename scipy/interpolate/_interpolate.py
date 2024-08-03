@@ -670,6 +670,12 @@ class _PPolyBase:
             Additional breakpoints. Must be sorted in the same order as
             ``self.x`` and either to the right or to the left of the current
             breakpoints.
+
+        Notes
+        -----
+        This method is not thread safe and must not be executed concurrently
+        with other methods available in this class. Doing so may cause
+        unexpected errors or numerical output mismatches.
         """
 
         c = np.asarray(c)
@@ -696,7 +702,7 @@ class _PPolyBase:
         if self.x[-1] >= self.x[0]:
             if not x[-1] >= x[0]:
                 raise ValueError("`x` is in the different order "
-                                 "than `self.x`.")
+                                "than `self.x`.")
 
             if x[0] >= self.x[-1]:
                 action = 'append'
@@ -704,11 +710,11 @@ class _PPolyBase:
                 action = 'prepend'
             else:
                 raise ValueError("`x` is neither on the left or on the right "
-                                 "from `self.x`.")
+                                "from `self.x`.")
         else:
             if not x[-1] <= x[0]:
                 raise ValueError("`x` is in the different order "
-                                 "than `self.x`.")
+                                "than `self.x`.")
 
             if x[0] <= self.x[-1]:
                 action = 'append'
@@ -716,13 +722,13 @@ class _PPolyBase:
                 action = 'prepend'
             else:
                 raise ValueError("`x` is neither on the left or on the right "
-                                 "from `self.x`.")
+                                "from `self.x`.")
 
         dtype = self._get_dtype(c.dtype)
 
         k2 = max(c.shape[0], self.c.shape[0])
         c2 = np.zeros((k2, self.c.shape[1] + c.shape[1]) + self.c.shape[2:],
-                      dtype=dtype)
+                    dtype=dtype)
 
         if action == 'append':
             c2[k2-self.c.shape[0]:, :self.c.shape[1]] = self.c
@@ -1151,7 +1157,7 @@ class PPoly(_PPolyBase):
 
         Examples
         --------
-        Construct an interpolating spline and convert it to a `PPoly` instance 
+        Construct an interpolating spline and convert it to a `PPoly` instance
 
         >>> import numpy as np
         >>> from scipy.interpolate import splrep, PPoly

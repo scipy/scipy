@@ -1688,7 +1688,7 @@ class TestSystematic:
                 # mpmath has bad performance here
                 return np.nan
 
-            typ = 2 if abs(z) < 1 else 3
+            typ = 2 if abs(z) <= 1 else 3
             v = exception_to_nan(mpmath.legenp)(n, m, z, type=typ)
 
             if abs(v) > 1e306:

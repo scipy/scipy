@@ -2,7 +2,6 @@
 # Author:  Travis Oliphant, 2002
 #
 
-import operator
 import numpy as np
 import math
 import warnings
@@ -10,14 +9,18 @@ from collections import defaultdict
 from heapq import heapify, heappop
 from numpy import (pi, asarray, floor, isscalar, sqrt, where,
                    sin, place, issubdtype, extract, inexact, nan, zeros, sinc)
+
 from . import _ufuncs
 from ._ufuncs import (mathieu_a, mathieu_b, iv, jv, gamma,
                       psi, hankel1, hankel2, yv, kv, poch, binom,
                       _stirling2_inexact)
-from ._gufuncs import (_lpn, _lpmn, _clpmn, _lqn, _lqmn, _rctj, _rcty,
-                       _sph_harm_all as _sph_harm_all_gufunc)
+
+from ._gufuncs import _lqn, _lqmn, _rctj, _rcty
+from ._input_validation import _nonneg_int_or_fail
 from . import _specfun
 from ._comb import _comb_int
+from ._multiufuncs import (assoc_legendre_p_all,
+                           legendre_p_all)
 
 
 __all__ = [
@@ -89,22 +92,6 @@ _FACTORIALK_LIMITS_64BITS = {1: 20, 2: 33, 3: 44, 4: 54, 5: 65,
 # mapping k to last n such that factorialk(n, k) < np.iinfo(np.int32).max
 _FACTORIALK_LIMITS_32BITS = {1: 12, 2: 19, 3: 25, 4: 31, 5: 37,
                              6: 43, 7: 47, 8: 51, 9: 56}
-
-
-def _nonneg_int_or_fail(n, var_name, strict=True):
-    try:
-        if strict:
-            # Raises an exception if float
-            n = operator.index(n)
-        elif n == floor(n):
-            n = int(n)
-        else:
-            raise ValueError()
-        if n < 0:
-            raise ValueError()
-    except (ValueError, TypeError) as err:
-        raise err.__class__(f"{var_name} must be a non-negative integer") from err
-    return n
 
 
 def diric(x, n):
@@ -1340,10 +1327,10 @@ def riccati_jn(n, x):
     else:
         n1 = n
 
-    jn = np.empty((n1 + 1,), dtype = np.float64)
+    jn = np.empty((n1 + 1,), dtype=np.float64)
     jnp = np.empty_like(jn)
 
-    _rctj(x, out = (jn, jnp))
+    _rctj(x, out=(jn, jnp))
     return jn[:(n+1)], jnp[:(n+1)]
 
 
@@ -1396,9 +1383,9 @@ def riccati_yn(n, x):
     else:
         n1 = n
 
-    yn = np.empty((n1 + 1,), dtype = np.float64)
+    yn = np.empty((n1 + 1,), dtype=np.float64)
     ynp = np.empty_like(yn)
-    _rcty(x, out = (yn, ynp))
+    _rcty(x, out=(yn, ynp))
 
     return yn[:(n+1)], ynp[:(n+1)]
 
@@ -1725,6 +1712,10 @@ def lpmn(m, n, z):
     This function takes a real argument ``z``. For complex arguments ``z``
     use clpmn instead.
 
+    .. deprecated:: 1.15.0
+        This function is deprecated and will be removed in a future version.
+        Use `scipy.special.assoc_legendre_p_all` instead.
+
     Parameters
     ----------
     m : int
@@ -1762,33 +1753,29 @@ def lpmn(m, n, z):
            https://dlmf.nist.gov/14.3
 
     """
+
     n = _nonneg_int_or_fail(n, 'n', strict=False)
-    if not isscalar(m) or (abs(m) > n):
+
+    if (abs(m) > n):
         raise ValueError("m must be <= n.")
-    if not isscalar(n) or (n < 0):
-        raise ValueError("n must be a non-negative integer.")
+
     if np.iscomplexobj(z):
         raise ValueError("Argument must be real. Use clpmn instead.")
 
     m, n = int(m), int(n)  # Convert to int to maintain backwards compatibility.
-    if (m < 0):
-        m_signbit = True
-        m_abs = -m
-    else:
-        m_signbit = False
-        m_abs = m
 
-    z = np.asarray(z)
-    if (not np.issubdtype(z.dtype, np.inexact)):
-        z = z.astype(np.float64)
+    branch_cut = np.where(np.abs(z) <= 1, 2, 3)
 
-    p = np.empty((m_abs + 1, n + 1) + z.shape, dtype=np.float64)
-    pd = np.empty_like(p)
-    if (z.ndim == 0):
-        _lpmn(z, m_signbit, out = (p, pd))
+    p, pd = assoc_legendre_p_all(n, abs(m), z, branch_cut=branch_cut, diff_n=1)
+    p = np.swapaxes(p, 0, 1)
+    pd = np.swapaxes(pd, 0, 1)
+
+    if (m >= 0):
+        p = p[:(m + 1)]
+        pd = pd[:(m + 1)]
     else:
-        _lpmn(z, m_signbit, out = (np.moveaxis(p, (0, 1), (-2, -1)),
-            np.moveaxis(pd, (0, 1), (-2, -1))))  # new axes must be last for the ufunc
+        p = np.insert(p[:(m - 1):-1], 0, p[0], axis=0)
+        pd = np.insert(pd[:(m - 1):-1], 0, pd[0], axis=0)
 
     return p, pd
 
@@ -1800,6 +1787,10 @@ def clpmn(m, n, z, type=3):
     degree n, ``Pmn(z)`` = :math:`P_n^m(z)`, and its derivative, ``Pmn'(z)``.
     Returns two arrays of size ``(m+1, n+1)`` containing ``Pmn(z)`` and
     ``Pmn'(z)`` for all orders from ``0..m`` and degrees from ``0..n``.
+
+    .. deprecated:: 1.15.0
+        This function is deprecated and will be removed in a future version.
+        Use `scipy.special.assoc_legendre_p_all` instead.
 
     Parameters
     ----------
@@ -1848,34 +1839,30 @@ def clpmn(m, n, z, type=3):
            https://dlmf.nist.gov/14.21
 
     """
-    if not isscalar(m) or (abs(m) > n):
+
+    if (abs(m) > n):
         raise ValueError("m must be <= n.")
-    if not isscalar(n) or (n < 0):
-        raise ValueError("n must be a non-negative integer.")
+
     if not (type == 2 or type == 3):
         raise ValueError("type must be either 2 or 3.")
 
     m, n = int(m), int(n)  # Convert to int to maintain backwards compatibility.
-    if (m < 0):
-        mp = -m
-        m_signbit = True
+
+    if not np.iscomplexobj(z):
+        z = np.asarray(z, dtype=complex)
+
+    out, out_jac = assoc_legendre_p_all(n, abs(m), z, branch_cut=type, diff_n=1)
+    out = np.swapaxes(out, 0, 1)
+    out_jac = np.swapaxes(out_jac, 0, 1)
+
+    if (m >= 0):
+        out = out[:(m + 1)]
+        out_jac = out_jac[:(m + 1)]
     else:
-        mp = m
-        m_signbit = False
+        out = np.insert(out[:(m - 1):-1], 0, out[0], axis=0)
+        out_jac = np.insert(out_jac[:(m - 1):-1], 0, out_jac[0], axis=0)
 
-    z = np.asarray(z)
-    if (not np.issubdtype(z.dtype, np.inexact)):
-        z = z.astype(np.complex128)
-
-    p = np.empty((mp + 1, n + 1) + z.shape, dtype=np.complex128)
-    pd = np.empty_like(p)
-    if (z.ndim == 0):
-        _clpmn(z, type, m_signbit, out = (p, pd))
-    else:
-        _clpmn(z, type, m_signbit, out = (np.moveaxis(p, (0, 1), (-2, -1)),
-            np.moveaxis(pd, (0, 1), (-2, -1))))  # new axes must be last for the ufunc
-
-    return p, pd
+    return out, out_jac
 
 
 def lqmn(m, n, z):
@@ -1926,15 +1913,17 @@ def lqmn(m, n, z):
         z = z.astype(np.float64)
 
     if np.iscomplexobj(z):
-        q = np.empty((mm + 1, nn + 1) + z.shape, dtype = np.complex128)
+        q = np.empty((mm + 1, nn + 1) + z.shape, dtype=np.complex128)
     else:
-        q = np.empty((mm + 1, nn + 1) + z.shape, dtype = np.float64)
+        q = np.empty((mm + 1, nn + 1) + z.shape, dtype=np.float64)
     qd = np.empty_like(q)
     if (z.ndim == 0):
-        _lqmn(z, out = (q, qd))
+        _lqmn(z, out=(q, qd))
     else:
-        _lqmn(z, out = (np.moveaxis(q, (0, 1), (-2, -1)),
-            np.moveaxis(qd, (0, 1), (-2, -1))))  # new axes must be last for the ufunc
+        # new axes must be last for the ufunc
+        _lqmn(z,
+              out=(np.moveaxis(q, (0, 1), (-2, -1)),
+                   np.moveaxis(qd, (0, 1), (-2, -1))))
 
     return q[:(m+1), :(n+1)], qd[:(m+1), :(n+1)]
 
@@ -2050,28 +2039,18 @@ def lpn(n, z):
 
     See also special.legendre for polynomial class.
 
+    .. deprecated:: 1.15.0
+        This function is deprecated and will be removed in a future version.
+        Use `scipy.special.legendre_p_all` instead.
+
     References
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
            https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
-
     """
-    n = _nonneg_int_or_fail(n, 'n', strict=False)
 
-    z = np.asarray(z)
-    if (not np.issubdtype(z.dtype, np.inexact)):
-        z = z.astype(np.float64)
-
-    pn = np.empty((n + 1,) + z.shape, dtype=z.dtype)
-    pd = np.empty_like(pn)
-    if (z.ndim == 0):
-        _lpn(z, out = (pn, pd))
-    else:
-        _lpn(z, out = (np.moveaxis(pn, 0, -1),
-            np.moveaxis(pd, 0, -1))) # new axes must be last for the ufunc
-
-    return pn, pd
+    return legendre_p_all(n, z, diff_n=1)
 
 
 def lqn(n, z):
@@ -2103,10 +2082,12 @@ def lqn(n, z):
         qn = np.empty((n1 + 1,) + z.shape, dtype=np.float64)
     qd = np.empty_like(qn)
     if (z.ndim == 0):
-        _lqn(z, out = (qn, qd))
+        _lqn(z, out=(qn, qd))
     else:
-        _lqn(z, out = (np.moveaxis(qn, 0, -1),
-            np.moveaxis(qd, 0, -1))) # new axes must be last for the ufunc
+          # new axes must be last for the ufunc
+        _lqn(z,
+             out=(np.moveaxis(qn, 0, -1),
+                  np.moveaxis(qd, 0, -1)))
 
     return qn[:(n+1)], qd[:(n+1)]
 
@@ -3431,21 +3412,3 @@ def zeta(x, q=None, out=None):
         return _ufuncs._riemann_zeta(x, out)
     else:
         return _ufuncs._zeta(x, q, out)
-
-
-def _sph_harm_all(m, n, theta, phi):
-    """Private function. This may be removed or modified at any time."""
-
-    theta = np.asarray(theta)
-    if (not np.issubdtype(theta.dtype, np.inexact)):
-        theta = theta.astype(np.float64)
-
-    phi = np.asarray(phi)
-    if (not np.issubdtype(phi.dtype, np.inexact)):
-        phi = phi.astype(np.float64)
-
-    out = np.empty((2 * m + 1, n + 1) + np.broadcast_shapes(theta.shape, phi.shape),
-        dtype = np.result_type(1j, theta.dtype, phi.dtype))
-    _sph_harm_all_gufunc(theta, phi, out = np.moveaxis(out, (0, 1), (-2, -1)))
-
-    return out

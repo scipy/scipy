@@ -309,11 +309,6 @@ class Dirs:
         else:
             self.installed = self.build.parent / (self.build.stem + "-install")
 
-        if sys.platform == 'win32' and sys.version_info < (3, 10):
-            # Work around a pathlib bug; these must be absolute paths
-            self.build = Path(os.path.abspath(self.build))
-            self.installed = Path(os.path.abspath(self.installed))
-
         # relative path for site-package with py version
         # i.e. 'lib/python3.10/site-packages'
         self.site = self.get_site_packages()
@@ -416,6 +411,8 @@ class Build(Task):
               "build and build-install directories)."))
     debug = Option(
         ['--debug', '-d'], default=False, is_flag=True, help="Debug build")
+    release = Option(
+        ['--release', '-r'], default=False, is_flag=True, help="Release build")
     parallel = Option(
         ['--parallel', '-j'], default=None, metavar='N_JOBS',
         help=("Number of parallel jobs for building. "
@@ -486,6 +483,25 @@ class Build(Task):
                 return
         if args.werror:
             cmd += ["--werror"]
+        if args.debug or args.release:
+            if args.debug and args.release:
+                raise ValueError("Set at most one of `--debug` and `--release`!")
+            if args.debug:
+                buildtype = 'debug'
+                cflags_unwanted = ('-O1', '-O2', '-O3')
+            elif args.release:
+                buildtype = 'release'
+                cflags_unwanted = ('-O0', '-O1', '-O2')
+            cmd += [f"-Dbuildtype={buildtype}"]
+            if 'CFLAGS' in os.environ.keys():
+                # Check that CFLAGS doesn't contain something that supercedes -O0
+                # for a plain debug build (conda envs tend to set -O2)
+                cflags = os.environ['CFLAGS'].split()
+                for flag in cflags_unwanted:
+                    if flag in cflags:
+                        raise ValueError(f"A {buildtype} build isn't possible, "
+                                         f"because CFLAGS contains `{flag}`."
+                                          "Please also check CXXFLAGS and FFLAGS.")
         if args.gcov:
             cmd += ['-Db_coverage=true']
         if args.asan:
