@@ -8,7 +8,6 @@ import sys
 from functools import partial
 
 import numpy as np
-import numpy.testing
 from numpy.random import RandomState
 from numpy.testing import (assert_array_equal, assert_almost_equal,
                            assert_array_less, assert_array_almost_equal,
@@ -782,6 +781,14 @@ class TestBartlett:
         NaN = xp.asarray(xp.nan)
         xp_assert_equal(res.statistic, NaN)
         xp_assert_equal(res.pvalue, NaN)
+
+    def test_negative_pvalue_gh21152(self, xp):
+        a = xp.asarray([10.1, 10.2, 10.3, 10.4], dtype=xp.float32)
+        b = xp.asarray([10.15, 10.25, 10.35, 10.45], dtype=xp.float32)
+        c = xp.asarray([10.05, 10.15, 10.25, 10.35], dtype=xp.float32)
+        res = stats.bartlett(a, b, c)
+        assert xp.all(res.statistic >= 0)
+        assert res.statistic.dtype == xp.float32
 
 
 class TestLevene:
