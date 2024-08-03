@@ -71,8 +71,7 @@ from scipy import stats
 from scipy.optimize import root_scalar
 from scipy._lib._util import normalize_axis_index
 from scipy._lib._array_api import (array_namespace, is_numpy, atleast_nd,
-                                   xp_clip, xp_moveaxis_to_end, xp_sign,
-                                   xp_minimum, xp_vector_norm)
+                                   xp_moveaxis_to_end, xp_sign, xp_vector_norm)
 from scipy._lib.array_api_compat import size as xp_size
 from scipy._lib.deprecation import _deprecated
 
@@ -1518,9 +1517,8 @@ def _get_pvalue(statistic, distribution, alternative, symmetric=True, xp=None):
         pvalue = distribution.sf(statistic)
     elif alternative == 'two-sided':
         pvalue = 2 * (distribution.sf(xp.abs(statistic)) if symmetric
-                      else xp_minimum(distribution.cdf(statistic),
-                                      distribution.sf(statistic),
-                                      xp=xp))
+                      else xp.minimum(distribution.cdf(statistic),
+                                      distribution.sf(statistic)))
     else:
         message = "`alternative` must be 'less', 'greater', or 'two-sided'."
         raise ValueError(message)
@@ -4625,9 +4623,7 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
     # Presumably, if abs(r) > 1, then it is only some small artifact of
     # floating point arithmetic.
     one = xp.asarray(1, dtype=dtype)
-    # `clip` only recently added to array API, so it's not yet available in
-    # array_api_strict. Replace with e.g. `xp.clip(r, -one, one)` when available.
-    r = xp.asarray(xp_clip(r, -one, one, xp=xp))
+    r = xp.asarray(xp.clip(r, -one, one))
     r[const_xy] = xp.nan
 
     # As explained in the docstring, the distribution of `r` under the null
@@ -7073,7 +7069,7 @@ def power_divergence(f_obs, f_exp=None, ddof=0, axis=0, lambda_=None):
             f_obs_sum = _m_sum(f_obs_float, axis=axis, preserve_mask=False, xp=xp)
             f_exp_sum = _m_sum(f_exp, axis=axis, preserve_mask=False, xp=xp)
             relative_diff = (xp.abs(f_obs_sum - f_exp_sum) /
-                             xp_minimum(f_obs_sum, f_exp_sum))
+                             xp.minimum(f_obs_sum, f_exp_sum))
             diff_gt_tol = xp.any(relative_diff > rtol, axis=None)
         if diff_gt_tol:
             msg = (f"For each axis slice, the sum of the observed "

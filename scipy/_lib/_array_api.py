@@ -126,7 +126,11 @@ def array_namespace(*arrays: Array) -> ModuleType:
 
     _arrays = compliance_scipy(_arrays)
 
-    return array_api_compat.array_namespace(*_arrays)
+    # data-apis/array-api-compat#168
+    try: # return the wrapped namespace for NumPy arrays
+        return array_api_compat.array_namespace(*_arrays, use_compat=True)
+    except ValueError: # if the library is not wrapped, like array-api-strict
+        return array_api_compat.array_namespace(*_arrays, use_compat=None)
 
 
 def _asarray(
@@ -491,41 +495,6 @@ def scipy_namespace_for(xp: ModuleType) -> ModuleType | None:
         return xp
 
     return None
-
-
-# temporary substitute for xp.minimum, which is not yet in all backends
-# or covered by array_api_compat.
-def xp_minimum(x1: Array, x2: Array, /) -> Array:
-    # xp won't be passed in because it doesn't need to be passed in to xp.minimum
-    xp = array_namespace(x1, x2)
-    if hasattr(xp, 'minimum'):
-        return xp.minimum(x1, x2)
-    x1, x2 = xp.broadcast_arrays(x1, x2)
-    i = (x2 < x1) | xp.isnan(x2)
-    res = xp.where(i, x2, x1)
-    return res[()] if res.ndim == 0 else res
-
-
-# temporary substitute for xp.clip, which is not yet in all backends
-# or covered by array_api_compat.
-def xp_clip(
-        x: Array,
-        /,
-        min: int | float | Array | None = None,
-        max: int | float | Array | None = None,
-        *,
-        xp: ModuleType | None = None) -> Array:
-    xp = array_namespace(x) if xp is None else xp
-    a, b = xp.asarray(min, dtype=x.dtype), xp.asarray(max, dtype=x.dtype)
-    if hasattr(xp, 'clip'):
-        return xp.clip(x, a, b)
-    x, a, b = xp.broadcast_arrays(x, a, b)
-    y = xp.asarray(x, copy=True)
-    ia = y < a
-    y[ia] = a[ia]
-    ib = y > b
-    y[ib] = b[ib]
-    return y[()] if y.ndim == 0 else y
 
 
 # temporary substitute for xp.moveaxis, which is not yet in all backends
