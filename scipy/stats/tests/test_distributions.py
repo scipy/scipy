@@ -556,6 +556,21 @@ class TestCauchy:
         assert_allclose(p, ref, rtol=1e-15)
 
     # Reference values were computed with mpmath.
+    @pytest.mark.parametrize('x, ref',
+                            [(4e250, -7.957747154594767e-252),
+                             (1e25, -3.1830988618379063e-26),
+                             (10.0, -0.03223967552667532),
+                             (0.0, -0.6931471805599453),
+                             (-10.0, -3.4506339556469654),
+                             (-7e45, -106.70696921963678),
+                             (-3e225, -520.3249880981778)])
+    def test_logcdf_logsf(self, x, ref):
+        logcdf = stats.cauchy.logcdf(x)
+        assert_allclose(logcdf, ref, rtol=5e-15)
+        logsf = stats.cauchy.logsf(-x)
+        assert_allclose(logsf, ref, rtol=5e-15)
+
+    # Reference values were computed with mpmath.
     @pytest.mark.parametrize(
         'p, ref',
         [(1e-20, -3.1830988618379067e+19),
@@ -592,6 +607,20 @@ class TestChi:
         x = stats.chi.isf(self.CHI_SF_10_4, 4)
         assert_allclose(x, 10, rtol=1e-15)
 
+    def test_logcdf(self):
+        x = 10.0
+        df = 15
+        logcdf = stats.chi.logcdf(x, df)
+        # Reference value computed with mpath.
+        assert_allclose(logcdf, -1.304704343625153e-14, rtol=5e-15)
+
+    def test_logsf(self):
+        x = 0.01
+        df = 15
+        logsf = stats.chi.logsf(x, df)
+        # Reference value computed with mpath.
+        assert_allclose(logsf, -3.936060782678026e-37, rtol=5e-15)
+
     # reference value for 1e14 was computed via mpmath
     # from mpmath import mp
     # mp.dps = 500
@@ -600,8 +629,7 @@ class TestChi:
 
     @pytest.mark.parametrize('df, ref',
                              [(1e3, CHI_MEAN_1000),
-                              (1e14, 9999999.999999976)]
-                            )
+                              (1e14, 9999999.999999976)])
     def test_mean(self, df, ref):
         assert_allclose(stats.chi.mean(df), ref, rtol=1e-12)
 
@@ -1150,6 +1178,15 @@ class TestHypSecant:
         x = stats.hypsecant.isf(p)
         assert_allclose(x, reference, rtol=5e-15)
 
+    def test_logcdf_logsf(self):
+        x = 50.0
+        # Reference value was computed with mpmath.
+        ref = -1.2278802891647964e-22
+        logcdf = stats.hypsecant.logcdf(x)
+        assert_allclose(logcdf, ref, rtol=5e-15)
+        logsf = stats.hypsecant.logsf(-x)
+        assert_allclose(logsf, ref, rtol=5e-15)
+
 
 class TestNormInvGauss:
     def setup_method(self):
@@ -1402,6 +1439,22 @@ class TestGompertz:
         assert_allclose(stats.gompertz.sf(x, c), sfx, rtol=1e-14)
         assert_allclose(stats.gompertz.isf(sfx, c), x, rtol=1e-14)
 
+    def test_logcdf(self):
+        x = 8.0
+        c = 0.1
+        # Reference value computed with mpmath.
+        ref = -3.820049516821143e-130
+        logcdf = stats.gompertz.logcdf(x, c)
+        assert_allclose(logcdf, ref, rtol=5e-15)
+
+    def test_logsf(self):
+        x = 3e-80
+        c = 12
+        # Reference value computed with mpmath.
+        ref = -3.6e-79
+        logsf = stats.gompertz.logsf(x, c)
+        assert_allclose(logsf, ref, rtol=5e-15)
+
     # reference values were computed with mpmath
     # from mpmath import mp
     # mp.dps = 100
@@ -1558,6 +1611,20 @@ class TestHalfLogistic:
                                         (1-1e-15, 1.9984014443252818e-15)])
     def test_isf(self, q, ref):
         assert_allclose(stats.halflogistic.isf(q), ref, rtol=1e-15)
+
+    def test_logcdf(self):
+        x = 30.0
+        # Reference value computed with mpmath.
+        ref = -1.871524593768035e-13
+        logcdf = stats.halflogistic.logcdf(x)
+        assert_allclose(logcdf, ref, rtol=5e-15)
+
+    def test_logsf(self):
+        x = 2e-14
+        # Reference value computed with mpmath.
+        ref = -1.000000000000005e-14
+        logsf = stats.halflogistic.logsf(x)
+        assert_allclose(logsf, ref, rtol=5e-15)
 
     @pytest.mark.parametrize("rvs_loc", [1e-5, 1e10])
     @pytest.mark.parametrize("rvs_scale", [1e-2, 100, 1e8])
@@ -2192,6 +2259,22 @@ class TestLoggamma:
         # should give -1000.0.
         lp = stats.loggamma.logpdf(-500, 2)
         assert_allclose(lp, -1000.0, rtol=1e-14)
+
+    def test_logcdf(self):
+        x = 4.0
+        c = 4.5
+        logcdf = stats.loggamma.logcdf(x, c)
+        # Reference value computed with mpmath.
+        ref = -2.1429747073164531e-19
+        assert_allclose(logcdf, ref, rtol=5e-15)
+
+    def test_logsf(self):
+        x = -25.0
+        c = 3.5
+        logsf = stats.loggamma.logsf(x, c)
+        # Reference value computed with mpmath.
+        ref = -8.58200139319556e-40
+        assert_allclose(logsf, ref, rtol=5e-15)
 
     def test_stats(self):
         # The following precomputed values are from the table in section 2.2
@@ -3397,6 +3480,15 @@ class TestLaplace:
         x = stats.laplace.isf(p)
         assert_allclose(x, -np.log(2*p), rtol=1e-13)
 
+    def test_logcdf_logsf(self):
+        x = 40
+        # Reference value computed with mpmath.
+        ref = -2.1241771276457944e-18
+        logcdf = stats.laplace.logcdf(x)
+        assert_allclose(logcdf, ref)
+        logsf = stats.laplace.logsf(-x)
+        assert_allclose(logsf, ref, rtol=5e-15)
+
 
 class TestLogLaplace:
 
@@ -3694,6 +3786,22 @@ class TestInvGamma:
         xx = stats.invgamma.isf(y, 1)
         assert_allclose(x, xx, rtol=1.0)
 
+    def test_logcdf(self):
+        x = 1e7
+        a = 2.25
+        # Reference value computed with mpmath.
+        ref = -6.97567687425534e-17
+        logcdf = stats.invgamma.logcdf(x, a)
+        assert_allclose(logcdf, ref, rtol=5e-15)
+
+    def test_logsf(self):
+        x = 0.01
+        a = 3.5
+        # Reference value computed with mpmath.
+        ref = -1.147781224014262e-39
+        logsf = stats.invgamma.logsf(x, a)
+        assert_allclose(logsf, ref, rtol=5e-15)
+
     @pytest.mark.parametrize("a, ref",
                              [(100000000.0, -26.21208257605721),
                               (1e+100, -343.9688254159022)])
@@ -3852,6 +3960,19 @@ class TestStudentT:
                    7.69459862670642e-23, 0.15915494309189535]
         assert_allclose(stats.t.logpdf(x, df), logpdf_ref, rtol=1e-14)
         assert_allclose(stats.t.pdf(x, df), pdf_ref, rtol=1e-14)
+
+    # Reference values were computed with mpmath, and double-checked with
+    # Wolfram Alpha.
+    @pytest.mark.parametrize('x, df, ref',
+                             [(-75.0, 15, -46.76036184546812),
+                              (0, 15, -0.6931471805599453),
+                              (75.0, 15, -4.9230344937641665e-21)])
+    def test_logcdf_logsf(self, x, df, ref):
+        logcdf = stats.t.logcdf(x, df)
+        assert_allclose(logcdf, ref, rtol=5e-15)
+        # The reference value is logcdf(x, df) == logsf(-x, df).
+        logsf = stats.t.logsf(-x, df)
+        assert_allclose(logsf, ref, rtol=5e-15)
 
 
 class TestRvDiscrete:
@@ -4790,6 +4911,22 @@ class TestBeta:
             # this try-except wrapper and just call the function.
             pass
 
+    # Reference values computed with mpmath.
+    @pytest.mark.parametrize('x, a, b, ref',
+                             [(0.999, 1.5, 2.5, -6.439838145196121e-08),
+                              (2e-9, 3.25, 2.5, -63.13030939685114)])
+    def test_logcdf(self, x, a, b, ref):
+        logcdf = stats.beta.logcdf(x, a, b)
+        assert_allclose(logcdf, ref, rtol=5e-15)
+
+    # Reference values computed with mpmath.
+    @pytest.mark.parametrize('x, a, b, ref',
+                             [(2e-9, 1.5, 2.5, -3.0368535131140806e-13),
+                              (0.998, 3.25, 2.5, -13.309796070871489)])
+    def test_logsf(self, x, a, b, ref):
+        logsf = stats.beta.logsf(x, a, b)
+        assert_allclose(logsf, ref, 5e-15)
+
     # entropy accuracy was confirmed using the following mpmath function
     # from mpmath import mp
     # mp.dps = 50
@@ -4980,6 +5117,23 @@ class TestBetaPrime:
         sf_values = stats.betaprime.sf(x, a, b)
         assert_allclose(sf_values, ref, rtol=1e-12)
 
+    def test_logcdf(self):
+        x = 800
+        a = 0.5
+        b = 5.0
+        ref = -7.467307556554531e-16
+        logcdf = stats.betaprime.logcdf(x, a, b)
+        assert_allclose(logcdf, ref, rtol=5e-15)
+
+    def test_logsf(self):
+        x = 1e-8
+        a = 4.5
+        b = 0.5
+        ref = -2.5868992866500915e-37
+        logsf = stats.betaprime.logsf(x, a, b)
+        assert_allclose(logsf, ref, rtol=5e-15)
+
+
     def test_fit_stats_gh18274(self):
         # gh-18274 reported spurious warning emitted when fitting `betaprime`
         # to data. Some of these were emitted by stats, too. Check that the
@@ -5039,6 +5193,20 @@ class TestGamma:
                           39.14394658089878, atol=1e-14)
         assert np.isclose(stats.gamma.isf(1e-50, 100),
                           330.6557590436547, atol=1e-13)
+
+    def test_logcdf(self):
+        x = 80
+        a = 7
+        ref = -7.096510270453943e-27
+        logcdf = stats.gamma.logcdf(x, a)
+        assert_allclose(logcdf, ref, rtol=5e-15)
+
+    def test_logsf(self):
+        x = 0.001
+        a = 3.0
+        ref = -1.6654171666664883e-10
+        logsf = stats.gamma.logsf(x, a)
+        assert_allclose(logsf, ref, rtol=5e-15)
 
     @pytest.mark.parametrize('scale', [1.0, 5.0])
     def test_delta_cdf(self, scale):
@@ -5203,12 +5371,35 @@ class TestDgamma:
 
 
 class TestChi2:
+
     # regression tests after precision improvements, ticket:1041, not verified
     def test_precision(self):
         assert_almost_equal(stats.chi2.pdf(1000, 1000), 8.919133934753128e-003,
                             decimal=14)
         assert_almost_equal(stats.chi2.pdf(100, 100), 0.028162503162596778,
                             decimal=14)
+
+    # Reference values computed with mpmath.
+    @pytest.mark.parametrize(
+        'x, df, ref',
+        [(750.0, 3, -3.0172957781136564e-162),
+         (120.0, 15, -1.8924849646375648e-18),
+         (15.0, 13, -0.36723446372517876)]
+    )
+    def test_logcdf(self, x, df, ref):
+        logcdf = stats.chi2.logcdf(x, df)
+        assert_allclose(logcdf, ref, rtol=5e-15)
+
+    # Reference values computed with mpmath.
+    @pytest.mark.parametrize(
+        'x, df, ref',
+        [(1e-4, 15, -3.936060782678026e-37),
+         (1.5, 40, -6.384797888313517e-22),
+         (3.0, 10, -0.018750635779926784)]
+    )
+    def test_logsf(self, x, df, ref):
+        logsf = stats.chi2.logsf(x, df)
+        assert_allclose(logsf, ref, rtol=5e-15)
 
     def test_ppf(self):
         # Expected values computed with mpmath.
@@ -5242,6 +5433,10 @@ class TestChi2:
                               (1e15, 19.034900320939986)])
     def test_entropy(self, df, ref):
         assert_allclose(stats.chi2(df).entropy(), ref, rtol=1e-13)
+
+    def test_regression_ticket_1326(self):
+        # adjust to avoid nan with 0*log(0)
+        assert_almost_equal(stats.chi2.pdf(0.0, 2), 0.5, 14)
 
 
 class TestGumbelL:
@@ -7247,6 +7442,22 @@ class TestExponWeib:
         isf = stats.exponweib.isf(p, a, c)
         assert_allclose(isf, ref, rtol=5e-14)
 
+    # Reference values computed with mpmath.
+    @pytest.mark.parametrize('x, a, c, ref',
+                             [(2, 3, 8, -1.9848783170128456e-111),
+                              (1000, 0.5, 0.75, -2.946296827524972e-78)])
+    def test_logcdf(self, x, a, c, ref):
+        logcdf = stats.exponweib.logcdf(x, a, c)
+        assert_allclose(logcdf, ref, rtol=5e-15)
+
+    # Reference values computed with mpmath.
+    @pytest.mark.parametrize('x, a, c, ref',
+                             [(1e-65, 1.5, 1.25, -1.333521432163324e-122),
+                              (2e-10, 2, 10, -1.0485760000000007e-194)])
+    def test_logsf(self, x, a, c, ref):
+        logsf = stats.exponweib.logsf(x, a, c)
+        assert_allclose(logsf, ref, rtol=5e-15)
+
 
 class TestFatigueLife:
 
@@ -7770,6 +7981,18 @@ class TestMaxwell:
     def test_isf(self, q, ref):
         assert_allclose(stats.maxwell.isf(q), ref, rtol=1e-15)
 
+    def test_logcdf(self):
+        # Reference value computed with mpmath.
+        ref = -1.8729310110194814e-17
+        logcdf = stats.maxwell.logcdf(9)
+        assert_allclose(logcdf, ref, rtol=5e-15)
+
+    def test_logsf(self):
+        # Reference value computed with mpmath.
+        ref = -2.6596152026762177e-25
+        logsf = stats.maxwell.logsf(1e-8)
+        assert_allclose(logsf, ref, rtol=5e-15)
+
 
 class TestMielke:
     def test_moments(self):
@@ -8186,6 +8409,77 @@ class TestTukeyLambda:
         assert_almost_equal(mv, expected, decimal=10)
 
 
+class TestLevy:
+
+    def test_levy_cdf_ppf(self):
+        # Test levy.cdf, including small arguments.
+        x = np.array([1000, 1.0, 0.5, 0.1, 0.01, 0.001])
+
+        # Expected values were calculated separately with mpmath.
+        # E.g.
+        # >>> mpmath.mp.dps = 100
+        # >>> x = mpmath.mp.mpf('0.01')
+        # >>> cdf = mpmath.erfc(mpmath.sqrt(1/(2*x)))
+        expected = np.array([0.9747728793699604,
+                             0.3173105078629141,
+                             0.1572992070502851,
+                             0.0015654022580025495,
+                             1.523970604832105e-23,
+                             1.795832784800726e-219])
+
+        y = stats.levy.cdf(x)
+        assert_allclose(y, expected, rtol=1e-10)
+
+        # ppf(expected) should get us back to x.
+        xx = stats.levy.ppf(expected)
+        assert_allclose(xx, x, rtol=1e-13)
+
+    def test_levy_sf(self):
+        # Large values, far into the tail of the distribution.
+        x = np.array([1e15, 1e25, 1e35, 1e50])
+        # Expected values were calculated with mpmath.
+        expected = np.array([2.5231325220201597e-08,
+                             2.52313252202016e-13,
+                             2.52313252202016e-18,
+                             7.978845608028653e-26])
+        y = stats.levy.sf(x)
+        assert_allclose(y, expected, rtol=1e-14)
+
+    # The expected values for levy.isf(p) were calculated with mpmath.
+    # For loc=0 and scale=1, the inverse SF can be computed with
+    #
+    #     import mpmath
+    #
+    #     def levy_invsf(p):
+    #         return 1/(2*mpmath.erfinv(p)**2)
+    #
+    # For example, with mpmath.mp.dps set to 60, float(levy_invsf(1e-20))
+    # returns 6.366197723675814e+39.
+    #
+    @pytest.mark.parametrize('p, expected_isf',
+                             [(1e-20, 6.366197723675814e+39),
+                              (1e-8, 6366197723675813.0),
+                              (0.375, 4.185810119346273),
+                              (0.875, 0.42489442055310134),
+                              (0.999, 0.09235685880262713),
+                              (0.9999999962747097, 0.028766845244146945)])
+    def test_levy_isf(self, p, expected_isf):
+        x = stats.levy.isf(p)
+        assert_allclose(x, expected_isf, atol=5e-15)
+
+    def test_levy_logcdf(self):
+        x = 1e50
+        ref = -7.978845608028653e-26
+        logcdf = stats.levy.logcdf(x)
+        assert_allclose(logcdf, ref, rtol=5e-15)
+
+    def test_levy_logsf(self):
+        x = 5e-3
+        ref = -2.0884875837625492e-45
+        logsf = stats.levy.logsf(x)
+        assert_allclose(logsf, ref, rtol=5e-15)
+
+
 def test_540_567():
     # test for nan returned in tickets 540, 567
     assert_almost_equal(stats.norm.cdf(-1.7624320982), 0.03899815971089126,
@@ -8196,11 +8490,6 @@ def test_540_567():
                                        scale=0.204423758009),
                         0.98353464004309321,
                         decimal=10, err_msg='test_540_567')
-
-
-def test_regression_ticket_1326():
-    # adjust to avoid nan with 0*log(0)
-    assert_almost_equal(stats.chi2.pdf(0.0, 2), 0.5, 14)
 
 
 @pytest.mark.skipif(DOCSTRINGS_STRIPPED, reason="docstrings stripped")
@@ -8426,65 +8715,6 @@ def test_norm_logcdf():
     deriv = (stats.norm.logcdf(x + 1e-10j)/1e-10).imag
     deriv_expected = np.exp(stats.norm.logpdf(x) - stats.norm.logcdf(x))
     assert_allclose(deriv, deriv_expected, atol=1e-10)
-
-
-def test_levy_cdf_ppf():
-    # Test levy.cdf, including small arguments.
-    x = np.array([1000, 1.0, 0.5, 0.1, 0.01, 0.001])
-
-    # Expected values were calculated separately with mpmath.
-    # E.g.
-    # >>> mpmath.mp.dps = 100
-    # >>> x = mpmath.mp.mpf('0.01')
-    # >>> cdf = mpmath.erfc(mpmath.sqrt(1/(2*x)))
-    expected = np.array([0.9747728793699604,
-                         0.3173105078629141,
-                         0.1572992070502851,
-                         0.0015654022580025495,
-                         1.523970604832105e-23,
-                         1.795832784800726e-219])
-
-    y = stats.levy.cdf(x)
-    assert_allclose(y, expected, rtol=1e-10)
-
-    # ppf(expected) should get us back to x.
-    xx = stats.levy.ppf(expected)
-    assert_allclose(xx, x, rtol=1e-13)
-
-
-def test_levy_sf():
-    # Large values, far into the tail of the distribution.
-    x = np.array([1e15, 1e25, 1e35, 1e50])
-    # Expected values were calculated with mpmath.
-    expected = np.array([2.5231325220201597e-08,
-                         2.52313252202016e-13,
-                         2.52313252202016e-18,
-                         7.978845608028653e-26])
-    y = stats.levy.sf(x)
-    assert_allclose(y, expected, rtol=1e-14)
-
-
-# The expected values for levy.isf(p) were calculated with mpmath.
-# For loc=0 and scale=1, the inverse SF can be computed with
-#
-#     import mpmath
-#
-#     def levy_invsf(p):
-#         return 1/(2*mpmath.erfinv(p)**2)
-#
-# For example, with mpmath.mp.dps set to 60, float(levy_invsf(1e-20))
-# returns 6.366197723675814e+39.
-#
-@pytest.mark.parametrize('p, expected_isf',
-                         [(1e-20, 6.366197723675814e+39),
-                          (1e-8, 6366197723675813.0),
-                          (0.375, 4.185810119346273),
-                          (0.875, 0.42489442055310134),
-                          (0.999, 0.09235685880262713),
-                          (0.9999999962747097, 0.028766845244146945)])
-def test_levy_isf(p, expected_isf):
-    x = stats.levy.isf(p)
-    assert_allclose(x, expected_isf, atol=5e-15)
 
 
 def test_levy_l_sf():
@@ -9552,10 +9782,26 @@ class TestNakagami:
         x1 = stats.nakagami.isf(sf, nu)
         assert_allclose(x1, x0, rtol=1e-13)
 
+    def test_logcdf(self):
+        x = 8
+        nu = 0.5
+        # Reference value computed with mpmath.
+        ref = -1.2441921148543576e-15
+        logcdf = stats.nakagami.logcdf(x, nu)
+        assert_allclose(logcdf, ref, rtol=5e-15)
+
+    def test_logsf(self):
+        x = 0.05
+        nu = 12
+        # Reference value computed with mpmath.
+        ref = -1.0791764722337046e-27
+        logsf = stats.nakagami.logsf(x, nu)
+        assert_allclose(logsf, ref, rtol=5e-15)
+
     @pytest.mark.parametrize("m, ref",
         [(5, -0.097341814372152),
-        (0.5, 0.7257913526447274),
-        (10, -0.43426184310934907)])
+         (0.5, 0.7257913526447274),
+         (10, -0.43426184310934907)])
     def test_entropy(self, m, ref):
         # from sympy import *
         # from mpmath import mp
