@@ -1395,7 +1395,7 @@ def test_kendalltau():
     # cor.test(x,y,method="kendall",exact=1)
     expected = (0.0, 1.0)
     for taux in variants:
-        res = stats.kendalltau(x, y)
+        res = stats.kendalltau(x, y, variant=taux)
         assert_approx_equal(res[0], expected[0])
         assert_approx_equal(res[1], expected[1])
 
@@ -1406,7 +1406,7 @@ def test_kendalltau():
     # cor.test(x,y,method="kendall",exact=1)
     expected = (0.0, 1.0)
     for taux in variants:
-        res = stats.kendalltau(x, y)
+        res = stats.kendalltau(x, y, variant=taux)
         assert_approx_equal(res[0], expected[0])
         assert_approx_equal(res[1], expected[1])
 
@@ -1417,7 +1417,7 @@ def test_kendalltau():
     # cor.test(x,y,method="kendall",exact=1)
     expected = (-0.14285714286, 0.77261904762)
     for taux in variants:
-        res = stats.kendalltau(x, y)
+        res = stats.kendalltau(x, y, variant=taux)
         assert_approx_equal(res[0], expected[0])
         assert_approx_equal(res[1], expected[1])
 
@@ -1428,7 +1428,7 @@ def test_kendalltau():
     # cor.test(x,y,method="kendall",exact=1)
     expected = (0.047619047619, 1.0)
     for taux in variants:
-        res = stats.kendalltau(x, y)
+        res = stats.kendalltau(x, y, variant=taux)
         assert_approx_equal(res[0], expected[0])
         assert_approx_equal(res[1], expected[1])
 
