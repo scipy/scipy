@@ -4,7 +4,7 @@ import numpy as np
 from scipy import special
 import scipy._lib._elementwise_iterative_method as eim
 from scipy._lib._util import _RichResult
-from scipy._lib._array_api import (array_namespace, copy as xp_copy, xp_ravel,
+from scipy._lib._array_api import (array_namespace, xp_copy, xp_ravel,
                                    xp_real, is_numpy, is_cupy, is_torch,
                                    xp_take_along_axis)
 

@@ -2,7 +2,7 @@ import math
 import numpy as np
 import scipy._lib._elementwise_iterative_method as eim
 from scipy._lib._util import _RichResult
-from scipy._lib._array_api import xp_sign, copy as xp_copy, xp_take_along_axis
+from scipy._lib._array_api import xp_sign, xp_copy, xp_take_along_axis
 
 # TODO:
 # - (maybe?) don't use fancy indexing assignment

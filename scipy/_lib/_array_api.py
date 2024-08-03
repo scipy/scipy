@@ -20,12 +20,21 @@ import numpy.typing as npt
 from scipy._lib import array_api_compat
 from scipy._lib.array_api_compat import (
     is_array_api_obj,
-    size,
+    size as xp_size,
     numpy as np_compat,
-    device
+    device as xp_device
 )
 
-__all__ = ['array_namespace', '_asarray', 'size', 'device']
+__all__ = [
+    '_asarray', 'array_namespace', 'assert_almost_equal', 'assert_array_almost_equal',
+    'get_xp_devices',
+    'is_array_api_strict', 'is_complex', 'is_cupy', 'is_jax', 'is_numpy', 'is_torch', 
+    'SCIPY_ARRAY_API', 'SCIPY_DEVICE', 'scipy_namespace_for',
+    'xp_assert_close', 'xp_assert_equal', 'xp_assert_less',
+    'xp_atleast_nd', 'xp_copy', 'xp_copysign', 'xp_device',
+    'xp_moveaxis_to_end', 'xp_ravel', 'xp_real', 'xp_sign', 'xp_size',
+    'xp_take_along_axis', 'xp_unsupported_param_msg', 'xp_vector_norm',
+]
 
 
 # To enable array API and strict array-like input validation
@@ -44,7 +53,7 @@ if TYPE_CHECKING:
     ArrayLike = Array | npt.ArrayLike
 
 
-def compliance_scipy(arrays: list[ArrayLike]) -> list[Array]:
+def _compliance_scipy(arrays: list[ArrayLike]) -> list[Array]:
     """Raise exceptions on known-bad subclasses.
 
     The following subclasses are not supported and raise and error:
@@ -111,7 +120,7 @@ def array_namespace(*arrays: Array) -> ModuleType:
 
     1. Check for the global switch: SCIPY_ARRAY_API. This can also be accessed
        dynamically through ``_GLOBAL_CONFIG['SCIPY_ARRAY_API']``.
-    2. `compliance_scipy` raise exceptions on known-bad subclasses. See
+    2. `_compliance_scipy` raise exceptions on known-bad subclasses. See
        its definition for more details.
 
     When the global switch is False, it defaults to the `numpy` namespace.
@@ -124,7 +133,7 @@ def array_namespace(*arrays: Array) -> ModuleType:
 
     _arrays = [array for array in arrays if array is not None]
 
-    _arrays = compliance_scipy(_arrays)
+    _arrays = _compliance_scipy(_arrays)
 
     return array_api_compat.array_namespace(*_arrays)
 
@@ -176,18 +185,18 @@ def _asarray(
     return array
 
 
-def atleast_nd(x: Array, *, ndim: int, xp: ModuleType | None = None) -> Array:
+def xp_atleast_nd(x: Array, *, ndim: int, xp: ModuleType | None = None) -> Array:
     """Recursively expand the dimension to have at least `ndim`."""
     if xp is None:
         xp = array_namespace(x)
     x = xp.asarray(x)
     if x.ndim < ndim:
         x = xp.expand_dims(x, axis=0)
-        x = atleast_nd(x, ndim=ndim, xp=xp)
+        x = xp_atleast_nd(x, ndim=ndim, xp=xp)
     return x
 
 
-def copy(x: Array, *, xp: ModuleType | None = None) -> Array:
+def xp_copy(x: Array, *, xp: ModuleType | None = None) -> Array:
     """
     Copies an array.
 
@@ -207,7 +216,8 @@ def copy(x: Array, *, xp: ModuleType | None = None) -> Array:
     This copy function does not offer all the semantics of `np.copy`, i.e. the
     `subok` and `order` keywords are not used.
     """
-    # Note: xp.asarray fails if xp is numpy.
+    # Note: for older NumPy versions, `np.asarray` did not support the `copy` kwarg,
+    # so this uses our other helper `_asarray`.
     if xp is None:
         xp = array_namespace(x)
 
@@ -395,14 +405,14 @@ def assert_almost_equal(actual, desired, decimal=7, *args, **kwds):
                            *args, **kwds)
 
 
-def cov(x: Array, *, xp: ModuleType | None = None) -> Array:
+def xp_cov(x: Array, *, xp: ModuleType | None = None) -> Array:
     if xp is None:
         xp = array_namespace(x)
 
-    X = copy(x, xp=xp)
+    X = xp_copy(x, xp=xp)
     dtype = xp.result_type(X, xp.float64)
 
-    X = atleast_nd(X, ndim=2, xp=xp)
+    X = xp_atleast_nd(X, ndim=2, xp=xp)
     X = xp.asarray(X, dtype=dtype)
 
     avg = xp.mean(X, axis=1)

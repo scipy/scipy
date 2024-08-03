@@ -9,7 +9,7 @@ from numpy.testing import assert_allclose, assert_equal
 from scipy.conftest import array_api_compatible
 import scipy._lib._elementwise_iterative_method as eim
 from scipy._lib._array_api import (array_namespace, xp_assert_close, xp_assert_equal,
-                                   size as xp_size, xp_ravel, copy as xp_copy)
+                                   xp_size, xp_ravel, xp_copy)
 from scipy import special, stats
 from scipy.integrate import quad_vec, nsum
 from scipy.integrate._tanhsinh import _tanhsinh, _pair_cache
