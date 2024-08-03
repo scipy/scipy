@@ -86,12 +86,12 @@ class TestDifferentiate:
         ref_nfev = [np.int32(ref.nfev) for ref in refs]
         xp_assert_equal(xp.reshape(res.nfev, (-1,)), xp.asarray(ref_nfev))
         if not is_numpy(xp):  # can't expect other backends to be exactly the same
-            xp.max(res.nfev) == f.feval
+            assert xp.max(res.nfev) == f.feval
 
         ref_nit = [np.int32(ref.nit) for ref in refs]
         xp_assert_equal(xp.reshape(res.nit, (-1,)), xp.asarray(ref_nit))
         if not is_numpy(xp):  # can't expect other backends to be exactly the same
-            xp.max(res.nit) == f.nit
+            assert xp.max(res.nit) == f.nit
 
     def test_flags(self, xp):
         # Test cases that should produce different status flags; show that all
