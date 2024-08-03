@@ -2687,6 +2687,7 @@ class TestCircFuncs:
         x = xp.asarray([355, 5, 2, 359, 10, 350, np.nan])
         xp_assert_equal(test_func(x, high=360), xp.asarray(xp.nan))
 
+    @skip_xp_backends('cupy', reasons=['cupy/cupy#8391'])
     @pytest.mark.parametrize("test_func,expected",
                              [(stats.circmean,
                                {None: np.nan, 0: 355.66582264, 1: 0.28725053}),
