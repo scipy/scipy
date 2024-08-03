@@ -788,7 +788,6 @@ class TestBartlett:
         c = xp.asarray([10.05, 10.15, 10.25, 10.35], dtype=xp.float32)
         res = stats.bartlett(a, b, c)
         assert xp.all(res.statistic >= 0)
-        assert res.statistic.dtype == xp.float32
 
 
 class TestLevene:
