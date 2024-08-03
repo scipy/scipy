@@ -154,4 +154,8 @@ if use_pythran
   xsimd_dep = dependency('xsimd', required: false)
 endif
 
+cmake = import('cmake')
+boost_math = cmake.subproject('boost_math')
+boost_math_dep = boost_math.dependency('boost_math')
+
 subdir('scipy')
