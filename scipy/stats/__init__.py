@@ -404,6 +404,7 @@ Others are generalized to multiple samples.
    f_oneway
    tukey_hsd
    dunnett
+   dunnett_from_stats
    kruskal
    alexandergovern
    fligner
