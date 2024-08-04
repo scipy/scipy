@@ -6,11 +6,6 @@
 #include "sf_error.h"
 
 
-// Override some default BOOST policies.
-// These are required to ensure that the Boost function ibeta_inv
-// handles extremely small p values with precision comparable to the
-// Cephes incbi function.
-
 #include "boost/math/special_functions/beta.hpp"
 #include "boost/math/special_functions/erf.hpp"
 #include "boost/math/special_functions/powm1.hpp"
