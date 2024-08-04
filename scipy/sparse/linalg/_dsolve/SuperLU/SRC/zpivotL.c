@@ -140,6 +140,15 @@ if ( jcol == MIN_COL ) {
         // report the rank, let dgstrf handle the pivot
 	*pivrow = lsub_ptr[pivptr];
 	perm_r[*pivrow] = jcol;
+#elif 1
+#if SCIPY_FIX
+	if (pivptr < nsupr) {
+	    *pivrow = lsub_ptr[pivptr];
+	}
+	else {
+	    *pivrow = diagind;
+	}
+#endif
 #endif
 	*usepr = 0;
 	return (jcol+1);
