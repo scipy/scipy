@@ -107,7 +107,7 @@ index ad9237c1c..e3cff55ab 100644
  	      &lusup[ufirst], &incx );
  	dgemv_( "N", &nrow, &nsupc, &alpha, &lusup[luptr+nsupc], &nsupr, 
 diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_cpivotL.c b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_cpivotL.c
-index 55c456b80..651659a9d 100644
+index 55c456b80..2d6748be3 100644
 --- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_cpivotL.c
 +++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_cpivotL.c
 @@ -146,9 +146,12 @@ ilu_cpivotL(
@@ -116,7 +116,7 @@ index 55c456b80..651659a9d 100644
      if (pivmax < 0.0) {
 -    	/*fprintf(stderr, "[0]: jcol=%d, SINGULAR!!!\n", jcol);
 +#if SCIPY_FIX
-+ABORT("[0]: matrix is singular");
++		ABORT("[0]: matrix is singular");
 +    /*fprintf(stderr, "[0]: jcol=%d, SINGULAR!!!\n", jcol);
  	fflush(stderr);
  	exit(1); */
@@ -124,6 +124,22 @@ index 55c456b80..651659a9d 100644
  	*usepr = 0;
  	return (jcol+1);
      }
+@@ -163,11 +166,15 @@ ilu_cpivotL(
+ 	    for (icol = jcol; icol < n; icol++)
+ 		if (marker[swap[icol]] <= jcol) break;
+ 	    if (icol >= n) {
++#if SCIPY_FIX
++		ABORT("[1]: matrix is singular");
++#else
+ 		/* fprintf(stderr, "[1]: jcol=%d, SINGULAR!!!\n", jcol);
+ 		fflush(stderr);
+ 		exit(1); */
+    	        *usepr = 0;
+ 	        return (jcol+1);
++#endif
+ 	    }
+ 
+ 	    *pivrow = swap[icol];
 diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_dpivotL.c b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_dpivotL.c
 index be1dcb737..0f2c83341 100644
 --- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_dpivotL.c
@@ -232,30 +248,6 @@ index 3af7e760b..d2d8543f7 100644
  	    }
  
  	    *pivrow = swap[icol];
-diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_Cnames.h b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_Cnames.h
-index b95c01830..97ba246cc 100644
---- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_Cnames.h
-+++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_Cnames.h
-@@ -29,6 +29,7 @@ at the top-level directory.
- #ifndef __SUPERLU_CNAMES /* allow multiple inclusions */
- #define __SUPERLU_CNAMES
- 
-+#include "scipy_slu_config.h"
- 
- #define ADD_       0
- #define ADD__      1
-diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_util.h b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_util.h
-index 1afbdd0e7..61552b753 100644
---- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_util.h
-+++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_util.h
-@@ -32,6 +32,7 @@ at the top-level directory.
- #include <assert.h>
- #include "superlu_enum_consts.h"
- 
-+#include "scipy_slu_config.h"
- 
- /***********************************************************************
-  * Macros
 diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/spanel_bmod.c b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/spanel_bmod.c
 index 9a2d8064a..77f585cca 100644
 --- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/spanel_bmod.c
@@ -312,19 +304,6 @@ index db761ca11..da1ee1dca 100644
  	strsv_( "L", "N", "U", &nsupc, &lusup[luptr], &nsupr, 
  	      &lusup[ufirst], &incx );
  	sgemv_( "N", &nrow, &nsupc, &alpha, &lusup[luptr+nsupc], &nsupr, 
-diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/superlu_config.h b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/superlu_config.h
-index eeb2a1e43..c3e7bac1c 100644
---- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/superlu_config.h
-+++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/superlu_config.h
-@@ -3,7 +3,7 @@
- #define SUPERLU_CONFIG_H
- 
- /* Enable metis */
--#define HAVE_METIS TRUE
-+/*#define HAVE_METIS FALSE */
- 
- /* Enable colamd */
- /* #undef HAVE_COLAMD */
 diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/zpanel_bmod.c b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/zpanel_bmod.c
 index a41bbcaaa..8390fcd5a 100644
 --- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/zpanel_bmod.c
@@ -379,3 +358,82 @@ index 351e0ad62..4015b2380 100644
  	ztrsv_( "L", "N", "U", &nsupc, &lusup[luptr], &nsupr, 
  	      &lusup[ufirst], &incx );
  	zgemv_( "N", &nrow, &nsupc, &alpha, &lusup[luptr+nsupc], &nsupr, 
+diff --git a/scipy/sparse/linalg/dsolve/SuperLU/SRC/scipy_slu_config.h b/scipy/sparse/linalg/dsolve/SuperLU/SRC/scipy_slu_config.h
+new file mode 100644
+index 000000000..5afc93b5d
+--- /dev/null
++++ b/scipy/sparse/linalg/dsolve/SuperLU/SRC/scipy_slu_config.h
+@@ -0,0 +1,36 @@
++#ifndef SCIPY_SLU_CONFIG_H
++#define SCIPY_SLU_CONFIG_H
++
++#include <stdlib.h>
++
++/*
++ * Support routines
++ */
++void superlu_python_module_abort(char *msg);
++void *superlu_python_module_malloc(size_t size);
++void superlu_python_module_free(void *ptr);
++
++#define USER_ABORT  superlu_python_module_abort
++#define USER_MALLOC superlu_python_module_malloc
++#define USER_FREE   superlu_python_module_free
++
++#define SCIPY_FIX 1
++
++/*
++ * Fortran configuration
++ */
++#if defined(NO_APPEND_FORTRAN)
++#if defined(UPPERCASE_FORTRAN)
++#define UpCase 1
++#else
++#define NoChange 1
++#endif
++#else
++#if defined(UPPERCASE_FORTRAN)
++#error Uppercase and trailing slash in Fortran names not supported
++#else
++#define Add_ 1
++#endif
++#endif
++
++#endif
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_Cnames.h b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_Cnames.h
+index b95c01830..97ba246cc 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_Cnames.h
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_Cnames.h
+@@ -29,6 +29,7 @@ at the top-level directory.
+ #ifndef __SUPERLU_CNAMES /* allow multiple inclusions */
+ #define __SUPERLU_CNAMES
+ 
++#include "scipy_slu_config.h"
+ 
+ #define ADD_       0
+ #define ADD__      1
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_util.h b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_util.h
+index 1afbdd0e7..61552b753 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_util.h
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_util.h
+@@ -32,6 +32,7 @@ at the top-level directory.
+ #include <assert.h>
+ #include "superlu_enum_consts.h"
+ 
++#include "scipy_slu_config.h"
+ 
+ /***********************************************************************
+  * Macros
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/superlu_config.h b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/superlu_config.h
+index eeb2a1e43..c3e7bac1c 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/superlu_config.h
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/superlu_config.h
+@@ -3,7 +3,7 @@
+ #define SUPERLU_CONFIG_H
+ 
+ /* Enable metis */
+-#define HAVE_METIS TRUE
++/*#define HAVE_METIS FALSE */
+ 
+ /* Enable colamd */
+ /* #undef HAVE_COLAMD */
