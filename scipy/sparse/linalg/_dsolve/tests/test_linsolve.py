@@ -728,7 +728,9 @@ class TestSplu:
         A = identity(10, format='csr').tocsr()
         A[-1, -1] = 0
         b = np.zeros(10)
-        _ = spsolve(A, b)
+        with pytest.warns(MatrixRankWarning):
+            res = spsolve(A, b)
+            assert np.isnan(res).all()
 
 
 class TestGstrsErrors:
