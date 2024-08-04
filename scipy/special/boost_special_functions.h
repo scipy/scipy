@@ -536,7 +536,7 @@ Real beta_ppf_wrap(const Real x, const Real a, const Real b)
         boost::math::policies::domain_error<boost::math::policies::ignore_error >,
         boost::math::policies::overflow_error<boost::math::policies::user_error >,
         boost::math::policies::evaluation_error<boost::math::policies::user_error >,
-        boost::math::policies::promote_float<false > > BetaPolicyForStats;
+        boost::math::policies::promote_double<false > > BetaPolicyForStats;
 
     return ibeta_inv_wrap(a, b, x, BetaPolicyForStats());
 }
