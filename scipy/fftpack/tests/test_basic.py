@@ -6,7 +6,7 @@ import pytest
 from pytest import raises as assert_raises
 from scipy.fftpack import ifft, fft, fftn, ifftn, rfft, irfft, fft2
 
-from numpy import (arange, add, array, asarray, zeros, dot, exp, pi,
+from numpy import (arange, array, asarray, zeros, dot, exp, pi,
                    swapaxes, double, cdouble)
 import numpy as np
 import numpy.fft
@@ -34,18 +34,12 @@ SMALL_PRIME_SIZES = [
 
 def _assert_close_in_norm(x, y, rtol, size, rdt):
     # helper function for testing
-    err_msg = "size: %s  rdt: %s" % (size, rdt)
+    err_msg = f"size: {size}  rdt: {rdt}"
     assert_array_less(np.linalg.norm(x - y), rtol*np.linalg.norm(x), err_msg)
 
 
 def random(size):
     return rand(*size)
-
-
-def get_mat(n):
-    data = arange(n)
-    data = add.outer(data, data)
-    return data
 
 
 def direct_dft(x):
@@ -114,7 +108,7 @@ def direct_irdft(x):
     return direct_idft(x1).real
 
 
-class _TestFFTBase(object):
+class _TestFFTBase:
     def setup_method(self):
         self.cdt = None
         self.rdt = None
@@ -154,8 +148,8 @@ class _TestFFTBase(object):
 
 class TestDoubleFFT(_TestFFTBase):
     def setup_method(self):
-        self.cdt = np.cdouble
-        self.rdt = np.double
+        self.cdt = np.complex128
+        self.rdt = np.float64
 
 
 class TestSingleFFT(_TestFFTBase):
@@ -163,12 +157,15 @@ class TestSingleFFT(_TestFFTBase):
         self.cdt = np.complex64
         self.rdt = np.float32
 
-    @pytest.mark.xfail(run=False, reason="single-precision FFT implementation is partially disabled, until accuracy issues with large prime powers are resolved")
+    reason = ("single-precision FFT implementation is partially disabled, "
+              "until accuracy issues with large prime powers are resolved")
+
+    @pytest.mark.xfail(run=False, reason=reason)
     def test_notice(self):
         pass
 
 
-class TestFloat16FFT(object):
+class TestFloat16FFT:
 
     def test_1_argument_real(self):
         x1 = np.array([1, 2, 3, 4], dtype=np.float16)
@@ -187,7 +184,7 @@ class TestFloat16FFT(object):
         assert_array_almost_equal(y[1], direct_dft(x2.astype(np.float32)))
 
 
-class _TestIFFTBase(object):
+class _TestIFFTBase:
     def setup_method(self):
         np.random.seed(1234)
 
@@ -261,8 +258,8 @@ class _TestIFFTBase(object):
 
 class TestDoubleIFFT(_TestIFFTBase):
     def setup_method(self):
-        self.cdt = np.cdouble
-        self.rdt = np.double
+        self.cdt = np.complex128
+        self.rdt = np.float64
 
 
 class TestSingleIFFT(_TestIFFTBase):
@@ -271,7 +268,7 @@ class TestSingleIFFT(_TestIFFTBase):
         self.rdt = np.float32
 
 
-class _TestRFFTBase(object):
+class _TestRFFTBase:
     def setup_method(self):
         np.random.seed(1234)
 
@@ -288,7 +285,7 @@ class _TestRFFTBase(object):
         assert_raises(ValueError, rfft, [[1,1],[2,2]], -5)
 
     # See gh-5790
-    class MockSeries(object):
+    class MockSeries:
         def __init__(self, data):
             self.data = np.asarray(data)
 
@@ -296,9 +293,8 @@ class _TestRFFTBase(object):
             try:
                 return getattr(self.data, item)
             except AttributeError as e:
-                raise AttributeError(("'MockSeries' object "
-                                      "has no attribute '{attr}'".
-                                      format(attr=item))) from e
+                raise AttributeError("'MockSeries' object "
+                                      f"has no attribute '{item}'") from e
 
     def test_non_ndarray_with_dtype(self):
         x = np.array([1., 2., 3., 4., 5.])
@@ -317,8 +313,8 @@ class _TestRFFTBase(object):
 
 class TestRFFTDouble(_TestRFFTBase):
     def setup_method(self):
-        self.cdt = np.cdouble
-        self.rdt = np.double
+        self.cdt = np.complex128
+        self.rdt = np.float64
 
 
 class TestRFFTSingle(_TestRFFTBase):
@@ -327,7 +323,7 @@ class TestRFFTSingle(_TestRFFTBase):
         self.rdt = np.float32
 
 
-class _TestIRFFTBase(object):
+class _TestIRFFTBase:
     def setup_method(self):
         np.random.seed(1234)
 
@@ -387,8 +383,8 @@ class _TestIRFFTBase(object):
 
 class TestIRFFTDouble(_TestIRFFTBase):
     def setup_method(self):
-        self.cdt = np.cdouble
-        self.rdt = np.double
+        self.cdt = np.complex128
+        self.rdt = np.float64
         self.ndec = 14
 
 
@@ -399,7 +395,7 @@ class TestIRFFTSingle(_TestIRFFTBase):
         self.ndec = 5
 
 
-class Testfft2(object):
+class Testfft2:
     def setup_method(self):
         np.random.seed(1234)
 
@@ -417,7 +413,7 @@ class Testfft2(object):
         assert_raises(ValueError, fft2, [[1, 1], [2, 2]], (4, -3))
 
 
-class TestFftnSingle(object):
+class TestFftnSingle:
     def setup_method(self):
         np.random.seed(1234)
 
@@ -478,7 +474,7 @@ class TestFftnSingle(object):
         assert_array_almost_equal_nulp(y1, y2, 2e6)
 
 
-class TestFftn(object):
+class TestFftn:
     def setup_method(self):
         np.random.seed(1234)
 
@@ -694,7 +690,7 @@ class TestFftn(object):
             fftn([[1, 1], [2, 2]], (4, -3))
 
 
-class TestIfftn(object):
+class TestIfftn:
     dtype = None
     cdtype = None
 
@@ -737,21 +733,21 @@ class TestIfftn(object):
             ifftn([[1, 1], [2, 2]], (4, -3))
 
 
-class FakeArray(object):
+class FakeArray:
     def __init__(self, data):
         self._data = data
         self.__array_interface__ = data.__array_interface__
 
 
-class FakeArray2(object):
+class FakeArray2:
     def __init__(self, data):
         self._data = data
 
-    def __array__(self):
+    def __array__(self, dtype=None, copy=None):
         return self._data
 
 
-class TestOverwrite(object):
+class TestOverwrite:
     """Check input overwrite behavior of the FFT functions."""
 
     real_dtypes = (np.float32, np.float64)
@@ -763,10 +759,10 @@ class TestOverwrite(object):
         for fake in [lambda x: x, FakeArray, FakeArray2]:
             routine(fake(x2), fftsize, axis, overwrite_x=overwrite_x)
 
-            sig = "%s(%s%r, %r, axis=%r, overwrite_x=%r)" % (
-                routine.__name__, x.dtype, x.shape, fftsize, axis, overwrite_x)
+            sig = (f"{routine.__name__}({x.dtype}{x.shape!r}, {fftsize!r}, "
+                   f"axis={axis!r}, overwrite_x={overwrite_x!r})")
             if not overwrite_x:
-                assert_equal(x2, x, err_msg="spurious overwrite in %s" % sig)
+                assert_equal(x2, x, err_msg=f"spurious overwrite in {sig}")
 
     def _check_1d(self, routine, dtype, shape, axis, overwritable_dtypes,
                   fftsize, overwrite_x):
@@ -856,3 +852,22 @@ class TestOverwrite(object):
                            overwrite_x)
         self._check_nd_one(ifftn, dtype, shape, axes, overwritable,
                            overwrite_x)
+
+
+@pytest.mark.parametrize('func', [fftn, ifftn, fft2])
+def test_shape_axes_ndarray(func):
+    # Test fftn and ifftn work with NumPy arrays for shape and axes arguments
+    # Regression test for gh-13342
+    a = np.random.rand(10, 10)
+
+    expect = func(a, shape=(5, 5))
+    actual = func(a, shape=np.array([5, 5]))
+    assert_equal(expect, actual)
+
+    expect = func(a, axes=(-1,))
+    actual = func(a, axes=np.array([-1,]))
+    assert_equal(expect, actual)
+
+    expect = func(a, shape=(4, 7), axes=(1, 0))
+    actual = func(a, shape=np.array([4, 7]), axes=np.array([1, 0]))
+    assert_equal(expect, actual)

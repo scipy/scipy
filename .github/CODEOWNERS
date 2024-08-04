@@ -1,0 +1,65 @@
+# The purpose of this file is to trigger review requests when PRs touch
+# particular files. Those reviews are not mandatory, however it's often useful
+# to have an expert pinged who is interested in only one part of SciPy and
+# doesn't follow general development.
+#
+# Note that only GitHub handles (whether individuals or teams) with commit
+# rights should be added to this file.
+# See https://docs.github.com/en/github/creating-cloning-and-archiving-repositories/about-code-owners
+# for more details about how CODEOWNERS works.
+
+# Each line is a file pattern followed by one or more owners.
+
+.github/CODEOWNERS  @rgommers @larsoner
+
+# Build related files
+pyproject.toml  @rgommers
+tools/generate_requirements.py  @rgommers
+requirements/  @rgommers
+environment.yml  @rgommers
+meson*  @rgommers
+
+# Dev CLI
+dev.py  @rgommers
+
+# SciPy submodules (please keep in alphabetical order)
+scipy/fft/  @peterbell10
+scipy/fftpack/  @peterbell10
+scipy/linalg/  @larsoner @ilayn
+scipy/integrate/ @steppi
+scipy/interpolate/  @ev-br
+scipy/optimize/  @andyfaff
+scipy/signal/  @larsoner @ilayn
+scipy/sparse/  @perimosocordiae
+scipy/spatial/  @tylerjereddy @peterbell10
+scipy/special/  @person142 @steppi
+scipy/stats/_distn_infrastructure/  @andyfaff @ev-br
+scipy/stats/*distr*.py  @ev-br
+scipy/stats/_continuous_distns/  @andyfaff
+scipy/stats/_covariance.py  @mdhaber
+scipy/stats/_hypothesis.py  @tupui
+scipy/stats/*qmc.*  @tupui
+scipy/stats/_multicomp.py  @tupui @mdhaber
+scipy/stats/_resampling.py  @mdhaber
+scipy/stats/*sobol*  @tupui
+scipy/stats/_sensitivity_analysis.py  @tupui
+scipy/stats/_survival.py  @tupui @mdhaber
+scipy/stats/.unuran/  @tirthasheshpatel
+
+# Testing infrastructure
+ci/  @larsoner @andyfaff
+tools/refguide_check.py  @ev-br
+tools/  @larsoner @rgommers
+pytest.ini  @larsoner
+.coveragerc  @larsoner
+benchmarks/asv.conf.json  @larsoner
+
+# CI config
+.circleci/  @larsoner
+.github/workflows/  @larsoner @andyfaff
+.cirrus.star  @larsoner @andyfaff
+
+# Doc
+requirements/doc.txt  @tupui
+doc/source/conf.py  @tupui
+doc/source/_static/  @tupui

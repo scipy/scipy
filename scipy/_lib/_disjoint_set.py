@@ -1,13 +1,12 @@
 """
 Disjoint set data structure
 """
-import collections
 
 
 class DisjointSet:
     """ Disjoint set data structure for incremental connectivity queries.
 
-    .. versionadded: 1.6.0
+    .. versionadded:: 1.6.0
 
     Attributes
     ----------
@@ -20,6 +19,7 @@ class DisjointSet:
     merge
     connected
     subset
+    subset_size
     subsets
     __getitem__
 
@@ -77,6 +77,12 @@ class DisjointSet:
     >>> disjoint_set.subset('a')
     {'a', 3, 'b'}
 
+    Get the size of the subset containing 'a' (without actually instantiating
+    the subset):
+
+    >>> disjoint_set.subset_size('a')
+    3
+
     Get all subsets in the disjoint set:
 
     >>> disjoint_set.subsets()
@@ -88,9 +94,8 @@ class DisjointSet:
         self._parents = {}
         # _nbrs is a circular linked list which links connected elements.
         self._nbrs = {}
-        # _indices tracks the element insertion order - OrderedDict is used to
-        # ensure correct ordering in `__iter__`.
-        self._indices = collections.OrderedDict()
+        # _indices tracks the element insertion order in `__iter__`.
+        self._indices = {}
         if elements is not None:
             for x in elements:
                 self.add(x)
@@ -212,12 +217,31 @@ class DisjointSet:
             nxt = self._nbrs[nxt]
         return set(result)
 
+    def subset_size(self, x):
+        """Get the size of the subset containing `x`.
+
+        Note that this method is faster than ``len(self.subset(x))`` because
+        the size is directly read off an internal field, without the need to
+        instantiate the full subset.
+
+        Parameters
+        ----------
+        x : hashable object
+            Input element.
+
+        Returns
+        -------
+        result : int
+            Size of the subset containing `x`.
+        """
+        return self._sizes[self[x]]
+
     def subsets(self):
         """Get all the subsets in the disjoint set.
 
         Returns
         -------
-        result : set
+        result : list
             Subsets in the disjoint set.
         """
         result = []

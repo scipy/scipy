@@ -78,12 +78,12 @@ def assert_deallocated(func, *args, **kwargs):
 
     Examples
     --------
-    >>> class C(object): pass
+    >>> class C: pass
     >>> with assert_deallocated(C) as c:
     ...     # do something
     ...     del c
 
-    >>> class C(object):
+    >>> class C:
     ...     def __init__(self):
     ...         self._circular = self # Make circular reference
     >>> with assert_deallocated(C) as c: #doctest: +IGNORE_EXCEPTION_DETAIL

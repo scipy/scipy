@@ -1,14 +1,10 @@
-# -*- coding: utf-8 -*-
 import numpy as np
 from numpy import abs, asarray
 
-from ..common import safe_import
-
-with safe_import():
-    from scipy.special import factorial
+from ..common import safe_import  # noqa:F401
 
 
-class Benchmark(object):
+class Benchmark:
 
     """
     Defines a global optimization benchmark problem.
@@ -65,7 +61,7 @@ class Benchmark(object):
         self.custom_bounds = None
 
     def __str__(self):
-        return '{0} ({1} dimensions)'.format(self.__class__.__name__, self.N)
+        return f'{self.__class__.__name__} ({self.N} dimensions)'
 
     def __repr__(self):
         return self.__class__.__name__
@@ -107,9 +103,10 @@ class Benchmark(object):
             return True
 
         # the solution should still be in bounds, otherwise immediate fail.
-        if np.any(x > np.asfarray(self.bounds)[:, 1]):
+        bounds = np.asarray(self.bounds, dtype=np.float64)
+        if np.any(x > bounds[:, 1]):
             return False
-        if np.any(x < np.asfarray(self.bounds)[:, 0]):
+        if np.any(x < bounds[:, 0]):
             return False
 
         # you found a lower global minimum.  This shouldn't happen.

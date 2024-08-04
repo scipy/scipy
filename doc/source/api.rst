@@ -1,1 +1,0 @@
-.. include:: ../API.rst.txt

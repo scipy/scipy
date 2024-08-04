@@ -92,9 +92,9 @@ submitting a pull request.
 To run all benchmarks, navigate to the root SciPy directory at the
 command line and execute::
 
-   python runtests.py --bench
+   python dev.py bench
 
-where ``--bench`` activates the benchmark suite instead of the test
+where ``bench`` activates the benchmark suite instead of the test
 suite. This builds SciPy and runs the benchmarks. (*Note: this could
 take a while. Benchmarks often take longer to run than unit tests, and
 each benchmark is run multiple times to measure the distribution in
@@ -104,17 +104,17 @@ To run benchmarks from a particular benchmark module, such as
 ``optimize_linprog.py``, simply append the filename without the
 extension::
 
-   python runtests.py --bench optimize_linprog
+   python dev.py bench -t optimize_linprog
 
 To run a benchmark defined in a class, such as ``KleeMinty`` from
 ``optimize_linprog.py``::
 
-   python runtests.py --bench optimize_linprog.KleeMinty
+   python dev.py bench -t optimize_linprog.KleeMinty
 
 To compare benchmark results between the active branch and another, such
-as ``master``::
+as ``main``::
 
-   python runtests.py --bench-compare master optimize_linprog.KleeMinty
+   python dev.py bench --compare main  # select again by `-t optimize_linprog`
 
 All of the commands above display the results in plain text in the
 console, and the results are not saved for comparison with future
@@ -147,8 +147,13 @@ track its performance over time::
 
 .. note::
 
-   This will take a while, because SciPy has to be rebuilt for each
-   commit! For more information about specifying ranges of commits, see
+   This will take a while, because SciPy has to be rebuilt for each commit! To
+   speed up the building process of benchmarks you can install `ccache`_ and
+   `f90cache`_. The benchmark suite will automatically detect them if they are
+   installed in the ``/usr/lib`` and ``/usr/local/lib``. Otherwise you must add
+   them to the ``PATH`` environment variable.
+
+   For more information about specifying ranges of commits, see
    the `git revisions documentation`_.
 
 To "publish" the results (prepare them to be viewed) and "preview" them
@@ -173,12 +178,15 @@ check out the ``asv find`` command and the ``--quick``,
 .. _Benchmarking SciPy: https://youtu.be/edLQ8KRpupQ
 .. _airspeed velocity (asv) documentation: https://asv.readthedocs.io/en/stable/
 .. _airspeed velocity of an unladen scipy: https://pv.github.io/scipy-bench/
-.. _SciPy benchmarks readme: https://github.com/scipy/scipy/blob/master/benchmarks/README.rst
+.. _SciPy benchmarks readme: https://github.com/scipy/scipy/blob/main/benchmarks/README.rst
 .. _Klee-Minty hypercube problem: https://en.wikipedia.org/wiki/Klee%E2%80%93Minty_cube
 .. _KleeMinty.time_klee_minty: https://pv.github.io/scipy-bench/#optimize_linprog.KleeMinty.time_klee_minty
 
 .. |optimize-linprog-py| replace:: ``scipy/benchmarks/benchmarks/optimize_linprog.py``
-.. _optimize-linprog-py: https://github.com/scipy/scipy/blob/master/benchmarks/benchmarks/optimize_linprog.py
+.. _optimize-linprog-py: https://github.com/scipy/scipy/blob/main/benchmarks/benchmarks/optimize_linprog.py
 
 .. |7fa17f2369e0e5ad055b23cc1a5ee079f9e8ca32| replace:: ``7fa17f2369e0e5ad055b23cc1a5ee079f9e8ca32``
 .. _7fa17f2369e0e5ad055b23cc1a5ee079f9e8ca32: https://github.com/scipy/scipy/commit/7fa17f2369e0e5ad055b23cc1a5ee079f9e8ca32
+
+.. _ccache: https://ccache.dev
+.. _f90cache: https://perso.univ-rennes1.fr/edouard.canot/f90cache/

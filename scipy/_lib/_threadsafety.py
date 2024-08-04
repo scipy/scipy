@@ -10,7 +10,7 @@ class ReentrancyError(RuntimeError):
     pass
 
 
-class ReentrancyLock(object):
+class ReentrancyLock:
     """
     Threading lock that raises an exception for reentrant calls.
 
@@ -52,7 +52,7 @@ def non_reentrant(err_msg=None):
     def decorator(func):
         msg = err_msg
         if msg is None:
-            msg = "%s is not re-entrant" % func.__name__
+            msg = f"{func.__name__} is not re-entrant"
         lock = ReentrancyLock(msg)
         return lock.decorate(func)
     return decorator

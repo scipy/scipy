@@ -1,3 +1,6 @@
+from __future__ import annotations
+from typing import Callable
+
 import pytest
 from itertools import product
 from numpy.testing import assert_allclose, suppress_warnings
@@ -19,7 +22,7 @@ CYTHON_SIGNATURE_MAP = {
     'F': 'float complex',
     'D': 'double complex',
     'G': 'long double complex',
-    'i':'int',
+    'i': 'int',
     'l': 'long'
 }
 
@@ -37,7 +40,7 @@ TEST_POINTS = {
 }
 
 
-PARAMS = [
+PARAMS: list[tuple[Callable, Callable, tuple[str, ...], str | None]] = [
     (special.agm, cython_special.agm, ('dd',), None),
     (special.airy, cython_special._airy_pywrap, ('d', 'D'), None),
     (special.airye, cython_special._airye_pywrap, ('d', 'D'), None),
@@ -53,7 +56,9 @@ PARAMS = [
     (special.besselpoly, cython_special.besselpoly, ('ddd',), None),
     (special.beta, cython_special.beta, ('dd',), None),
     (special.betainc, cython_special.betainc, ('ddd',), None),
+    (special.betaincc, cython_special.betaincc, ('ddd',), None),
     (special.betaincinv, cython_special.betaincinv, ('ddd',), None),
+    (special.betainccinv, cython_special.betainccinv, ('ddd',), None),
     (special.betaln, cython_special.betaln, ('dd',), None),
     (special.binom, cython_special.binom, ('dd',), None),
     (special.boxcox, cython_special.boxcox, ('dd',), None),
@@ -81,13 +86,18 @@ PARAMS = [
     (special.ellipkinc, cython_special.ellipkinc, ('dd',), None),
     (special.ellipkm1, cython_special.ellipkm1, ('d',), None),
     (special.ellipk, cython_special.ellipk, ('d',), None),
+    (special.elliprc, cython_special.elliprc, ('dd', 'DD'), None),
+    (special.elliprd, cython_special.elliprd, ('ddd', 'DDD'), None),
+    (special.elliprf, cython_special.elliprf, ('ddd', 'DDD'), None),
+    (special.elliprg, cython_special.elliprg, ('ddd', 'DDD'), None),
+    (special.elliprj, cython_special.elliprj, ('dddd', 'DDDD'), None),
     (special.entr, cython_special.entr, ('d',), None),
     (special.erf, cython_special.erf, ('d', 'D'), None),
     (special.erfc, cython_special.erfc, ('d', 'D'), None),
     (special.erfcx, cython_special.erfcx, ('d', 'D'), None),
     (special.erfi, cython_special.erfi, ('d', 'D'), None),
-    (special.erfinv, cython_special.erfinv, ('d'), None),
-    (special.erfcinv, cython_special.erfcinv, ('d'), None),
+    (special.erfinv, cython_special.erfinv, ('d',), None),
+    (special.erfcinv, cython_special.erfcinv, ('d',), None),
     (special.eval_chebyc, cython_special.eval_chebyc, ('dd', 'dD', 'ld'), None),
     (special.eval_chebys, cython_special.eval_chebys, ('dd', 'dD', 'ld'),
      'd and l differ for negative int'),
@@ -111,7 +121,8 @@ PARAMS = [
      'd and l differ for negative int'),
     (special.eval_sh_jacobi, cython_special.eval_sh_jacobi, ('dddd', 'dddD', 'lddd'),
      'd and l differ for negative int'),
-    (special.eval_sh_legendre, cython_special.eval_sh_legendre, ('dd', 'dD', 'ld'), None),
+    (special.eval_sh_legendre, cython_special.eval_sh_legendre, ('dd', 'dD', 'ld'),
+     None),
     (special.exp1, cython_special.exp1, ('d', 'D'), None),
     (special.exp10, cython_special.exp10, ('d',), None),
     (special.exp2, cython_special.exp2, ('d',), None),
@@ -182,7 +193,10 @@ PARAMS = [
     (special.kv, cython_special.kv, ('dd', 'dD'), None),
     (special.kve, cython_special.kve, ('dd', 'dD'), None),
     (special.log1p, cython_special.log1p, ('d', 'D'), None),
+    (special.log_expit, cython_special.log_expit, ('f', 'd', 'g'), None),
     (special.log_ndtr, cython_special.log_ndtr, ('d', 'D'), None),
+    (special.log_wright_bessel, cython_special.log_wright_bessel, ('ddd',), None),
+    (special.ndtri_exp, cython_special.ndtri_exp, ('d',), None),
     (special.loggamma, cython_special.loggamma, ('D',), None),
     (special.logit, cython_special.logit, ('f', 'd', 'g'), None),
     (special.lpmv, cython_special.lpmv, ('ddd',), None),
@@ -219,9 +233,11 @@ PARAMS = [
     (special.obl_ang1_cv, cython_special._obl_ang1_cv_pywrap, ('ddddd',), None),
     (special.obl_cv, cython_special.obl_cv, ('ddd',), None),
     (special.obl_rad1, cython_special._obl_rad1_pywrap, ('dddd',), "see gh-6211"),
-    (special.obl_rad1_cv, cython_special._obl_rad1_cv_pywrap, ('ddddd',), "see gh-6211"),
+    (special.obl_rad1_cv, cython_special._obl_rad1_cv_pywrap, ('ddddd',),
+     "see gh-6211"),
     (special.obl_rad2, cython_special._obl_rad2_pywrap, ('dddd',), "see gh-6211"),
-    (special.obl_rad2_cv, cython_special._obl_rad2_cv_pywrap, ('ddddd',), "see gh-6211"),
+    (special.obl_rad2_cv, cython_special._obl_rad2_cv_pywrap, ('ddddd',),
+     "see gh-6211"),
     (special.pbdv, cython_special._pbdv_pywrap, ('dd',), None),
     (special.pbvv, cython_special._pbvv_pywrap, ('dd',), None),
     (special.pbwa, cython_special._pbwa_pywrap, ('dd',), None),
@@ -230,23 +246,30 @@ PARAMS = [
     (special.pdtri, cython_special.pdtri, ('ld', 'dd'), None),
     (special.pdtrik, cython_special.pdtrik, ('dd',), None),
     (special.poch, cython_special.poch, ('dd',), None),
+    (special.powm1, cython_special.powm1, ('dd',), None),
     (special.pro_ang1, cython_special._pro_ang1_pywrap, ('dddd',), None),
     (special.pro_ang1_cv, cython_special._pro_ang1_cv_pywrap, ('ddddd',), None),
     (special.pro_cv, cython_special.pro_cv, ('ddd',), None),
     (special.pro_rad1, cython_special._pro_rad1_pywrap, ('dddd',), "see gh-6211"),
-    (special.pro_rad1_cv, cython_special._pro_rad1_cv_pywrap, ('ddddd',), "see gh-6211"),
+    (special.pro_rad1_cv, cython_special._pro_rad1_cv_pywrap, ('ddddd',),
+     "see gh-6211"),
     (special.pro_rad2, cython_special._pro_rad2_pywrap, ('dddd',), "see gh-6211"),
-    (special.pro_rad2_cv, cython_special._pro_rad2_cv_pywrap, ('ddddd',), "see gh-6211"),
+    (special.pro_rad2_cv, cython_special._pro_rad2_cv_pywrap, ('ddddd',), 
+     "see gh-6211"),
     (special.pseudo_huber, cython_special.pseudo_huber, ('dd',), None),
     (special.psi, cython_special.psi, ('d', 'D'), None),
     (special.radian, cython_special.radian, ('ddd',), None),
     (special.rel_entr, cython_special.rel_entr, ('dd',), None),
     (special.rgamma, cython_special.rgamma, ('d', 'D'), None),
     (special.round, cython_special.round, ('d',), None),
-    (special.spherical_jn, cython_special.spherical_jn, ('ld', 'ldb', 'lD', 'lDb'), None),
-    (special.spherical_yn, cython_special.spherical_yn, ('ld', 'ldb', 'lD', 'lDb'), None),
-    (special.spherical_in, cython_special.spherical_in, ('ld', 'ldb', 'lD', 'lDb'), None),
-    (special.spherical_kn, cython_special.spherical_kn, ('ld', 'ldb', 'lD', 'lDb'), None),
+    (special.spherical_jn, cython_special.spherical_jn, ('ld', 'ldb', 'lD', 'lDb'),
+     None),
+    (special.spherical_yn, cython_special.spherical_yn, ('ld', 'ldb', 'lD', 'lDb'),
+     None),
+    (special.spherical_in, cython_special.spherical_in, ('ld', 'ldb', 'lD', 'lDb'),
+     None),
+    (special.spherical_kn, cython_special.spherical_kn, ('ld', 'ldb', 'lD', 'lDb'),
+     None),
     (special.shichi, cython_special._shichi_pywrap, ('d', 'D'), None),
     (special.sici, cython_special._sici_pywrap, ('d', 'D'), None),
     (special.sindg, cython_special.sindg, ('d',), None),
@@ -262,6 +285,7 @@ PARAMS = [
     (special.tklmbda, cython_special.tklmbda, ('dd',), None),
     (special.voigt_profile, cython_special.voigt_profile, ('ddd',), None),
     (special.wofz, cython_special.wofz, ('D',), None),
+    (special.wright_bessel, cython_special.wright_bessel, ('ddd',), None),
     (special.wrightomega, cython_special.wrightomega, ('D',), None),
     (special.xlog1py, cython_special.xlog1py, ('dd', 'DD'), None),
     (special.xlogy, cython_special.xlogy, ('dd', 'DD'), None),
@@ -279,7 +303,7 @@ IDS = [x[0].__name__ for x in PARAMS]
 
 
 def _generate_test_points(typecodes):
-    axes = tuple(map(lambda x: TEST_POINTS[x], typecodes))
+    axes = tuple(TEST_POINTS[x] for x in typecodes)
     pts = list(product(*axes))
     return pts
 
@@ -293,9 +317,10 @@ def test_cython_api_completeness():
                 if cyfun is func:
                     break
             else:
-                raise RuntimeError("{} missing from tests!".format(name))
+                raise RuntimeError(f"{name} missing from tests!")
 
 
+@pytest.mark.fail_slow(20)
 @pytest.mark.parametrize("param", PARAMS, ids=IDS)
 def test_cython_api(param):
     pyfunc, cyfunc, specializations, knownfailure = param
@@ -337,4 +362,4 @@ def test_cython_api(param):
                 sup.filter(DeprecationWarning)
                 pyval = pyfunc(*pt)
                 cyval = cy_spec_func(*pt)
-            assert_allclose(cyval, pyval, err_msg="{} {} {}".format(pt, typecodes, signature))
+            assert_allclose(cyval, pyval, err_msg=f"{pt} {typecodes} {signature}")

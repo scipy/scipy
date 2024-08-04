@@ -94,6 +94,15 @@ class TestMatmulToeplitz:
             self.rng.normal(size=(n//2, 3))*1j
         self.do(x, c, r, False)
 
+    def test_empty(self):
+        c = []
+        r = []
+        x = []
+        self.do(x, c, r, False)
+
+        x = np.empty((0, 0))
+        self.do(x, c, r, False)
+
     def test_exceptions(self):
 
         n = 100

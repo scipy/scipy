@@ -85,7 +85,7 @@ def _remove_zero_rows(A, b):
     message = ""
     i_zero = _row_count(A) == 0
     A = A[np.logical_not(i_zero), :]
-    if not(np.allclose(b[i_zero], 0)):
+    if not np.allclose(b[i_zero], 0):
         status = 2
         message = "There is a zero row in A_eq with a nonzero corresponding " \
                   "entry in b_eq. The problem is infeasible."
@@ -118,7 +118,7 @@ def _remove_redundancy_pivot_dense(A, rhs, true_rank=None):
         An array representing the right-hand side of a system of equations
 
     Returns
-    ----------
+    -------
     A : 2-D sparse matrix
         A matrix representing the left-hand side of a system of equations
     rhs : 1-D array
@@ -204,7 +204,7 @@ def _remove_redundancy_pivot_dense(A, rhs, true_rank=None):
         js = js_candidates[js_mask]
         batch = 50
 
-        # This is a tiny bit faster than looping over columns indivually,
+        # This is a tiny bit faster than looping over columns individually,
         # like for j in js: if abs(A[:,j].transpose().dot(pi)) > tolapiv:
         for j_index in range(0, len(js), batch):
             j_indices = js[j_index: min(j_index+batch, len(js))]

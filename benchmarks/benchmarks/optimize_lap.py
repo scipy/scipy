@@ -1,3 +1,5 @@
+from concurrent.futures import ThreadPoolExecutor, wait
+
 import numpy as np
 from .common import Benchmark, safe_import
 
@@ -31,11 +33,12 @@ def random_spatial(shape):
 class LinearAssignment(Benchmark):
 
     sizes = range(100, 401, 100)
-    param_names = ['shapes', 'cost_type']
-    params = [
-        [(i, i) for i in sizes] + [(i, 2 * i) for i in sizes],
-        ['uniform', 'spatial', 'logarithmic', 'integer', 'binary']
-    ]
+    shapes = [(i, i) for i in sizes]
+    shapes.extend([(i, 2 * i) for i in sizes])
+    shapes.extend([(2 * i, i) for i in sizes])
+    cost_types = ['uniform', 'spatial', 'logarithmic', 'integer', 'binary']
+    param_names = ['shape', 'cost_type']
+    params = [shapes, cost_types]
 
     def setup(self, shape, cost_type):
 
@@ -49,3 +52,17 @@ class LinearAssignment(Benchmark):
 
     def time_evaluation(self, *args):
         linear_sum_assignment(self.cost_matrix)
+
+
+class ParallelLinearAssignment(Benchmark):
+    shape = (100, 100)
+    param_names = ['threads']
+    params = [[1, 2, 4]]
+
+    def setup(self, threads):
+        self.cost_matrices = [random_uniform(self.shape) for _ in range(20)]
+
+    def time_evaluation(self, threads):
+        with ThreadPoolExecutor(max_workers=threads) as pool:
+            wait({pool.submit(linear_sum_assignment, cost_matrix)
+                  for cost_matrix in self.cost_matrices})

@@ -46,7 +46,7 @@ def chr12c():
     return A, B, opt_perm
 
 
-class QAPCommonTests(object):
+class QAPCommonTests:
     """
     Base class for `quadratic_assignment` tests.
     """
@@ -325,7 +325,7 @@ class Test2opt(QAPCommonTests):
             )
 
 
-class TestQAPOnce():
+class TestQAPOnce:
     def setup_method(self):
         np.random.seed(0)
 

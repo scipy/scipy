@@ -3,8 +3,11 @@ parameters into function and method docstrings'''
 
 import sys
 
-__all__ = ['docformat', 'inherit_docstring_from', 'indentcount_lines',
-           'filldoc', 'unindent_dict', 'unindent_string', 'doc_replace']
+__all__ = [
+    'docformat', 'inherit_docstring_from', 'indentcount_lines',
+    'filldoc', 'unindent_dict', 'unindent_string', 'extend_notes_in_docstring',
+    'replace_notes_in_docstring', 'doc_replace'
+]
 
 
 def docformat(docstring, docdict=None):
@@ -93,7 +96,7 @@ def inherit_docstring_from(cls):
     In the following, the docstring for Bar.func created using the
     docstring of `Foo.func`.
 
-    >>> class Foo(object):
+    >>> class Foo:
     ...     def func(self):
     ...         '''Do something useful.'''
     ...         return
@@ -255,11 +258,11 @@ def doc_replace(obj, oldval, newval):
 
     Parameters
     ----------
-    obj: object
+    obj : object
         The object to take the docstring from.
-    oldval: string
+    oldval : string
         The string to replace from the original docstring.
-    newval: string
+    newval : string
         The string to replace ``oldval`` with.
     """
     # __doc__ may be None for optimized Python (-OO)

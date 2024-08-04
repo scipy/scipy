@@ -4,27 +4,23 @@ Simple benchmarks for the sparse module
 import warnings
 import time
 import timeit
-try:
-    import cPickle as pickle
-except ImportError:
-    import pickle
+import pickle
 
-import numpy
 import numpy as np
-from numpy import ones, array, asarray, empty, random
+from numpy import ones, array, asarray, empty
 
 from .common import Benchmark, safe_import
 
 with safe_import():
     from scipy import sparse
-    from scipy.sparse import (csr_matrix, coo_matrix, dia_matrix, lil_matrix,
+    from scipy.sparse import (coo_matrix, dia_matrix, lil_matrix,
                               dok_matrix, rand, SparseEfficiencyWarning)
 
 
 def random_sparse(m, n, nnz_per_row):
-    rows = numpy.arange(m).repeat(nnz_per_row)
-    cols = numpy.random.randint(0, n, size=nnz_per_row*m)
-    vals = numpy.random.random_sample(m*nnz_per_row)
+    rows = np.arange(m).repeat(nnz_per_row)
+    cols = np.random.randint(0, n, size=nnz_per_row*m)
+    vals = np.random.random_sample(m*nnz_per_row)
     return coo_matrix((vals, (rows, cols)), (m, n)).tocsr()
 
 
@@ -55,14 +51,14 @@ def poisson2d(N, dtype='d', format=None):
 class Arithmetic(Benchmark):
     param_names = ['format', 'XY', 'op']
     params = [
-        ['csr'],
+        ['csr', 'csc', 'coo', 'dia'],
         ['AA', 'AB', 'BA', 'BB'],
         ['__add__', '__sub__', 'multiply', '__mul__']
     ]
 
     def setup(self, format, XY, op):
-        matrices = dict(A=poisson2d(250, format=format),
-                        B=poisson2d(250, format=format)**2)
+        matrices = dict(A=poisson2d(250, format=format))
+        matrices['B'] = (matrices['A']**2).asformat(format)
 
         x = matrices[XY[0]]
         self.y = matrices[XY[1]]
@@ -146,16 +142,16 @@ class Matmul(Benchmark):
         C1 = 10
         C2 = 1000000
 
-        random.seed(0)
+        rng = np.random.default_rng(0)
 
-        i = random.randint(H1, size=C1)
-        j = random.randint(W1, size=C1)
-        data = random.rand(C1)
+        i = rng.integers(H1, size=C1)
+        j = rng.integers(W1, size=C1)
+        data = rng.random(C1)
         self.matrix1 = coo_matrix((data, (i, j)), shape=(H1, W1)).tocsr()
 
-        i = random.randint(H2, size=C2)
-        j = random.randint(W2, size=C2)
-        data = random.rand(C2)
+        i = rng.integers(H2, size=C2)
+        j = rng.integers(W2, size=C2)
+        data = rng.random(C2)
         self.matrix2 = coo_matrix((data, (i, j)), shape=(H2, W2)).tocsr()
 
     def time_large(self):
@@ -163,7 +159,9 @@ class Matmul(Benchmark):
             self.matrix1 * self.matrix2
 
     # Retain old benchmark results (remove this if changing the benchmark)
-    time_large.version = "33aee08539377a7cb0fabaf0d9ff9d6d80079a428873f451b378c39f6ead48cb"
+    time_large.version = (
+        "33aee08539377a7cb0fabaf0d9ff9d6d80079a428873f451b378c39f6ead48cb"
+    )
 
 
 class Construction(Benchmark):
@@ -222,6 +220,20 @@ class BlockDiagSparseConstruction(Benchmark):
         sparse.block_diag(self.matrices)
 
 
+class CsrHstack(Benchmark):
+    param_names = ['num_rows']
+    params = [10000, 25000, 50000, 100000, 250000]
+
+    def setup(self, num_rows):
+        num_cols = int(1e5)
+        density = 2e-3
+        nnz_per_row = int(density*num_cols)
+        self.mat = random_sparse(num_rows, num_cols, nnz_per_row)
+
+    def time_csr_hstack(self, num_rows):
+        sparse.hstack([self.mat, self.mat])
+
+
 class Conversion(Benchmark):
     params = [
         ['csr', 'csc', 'coo', 'dia', 'lil', 'dok', 'bsr'],
@@ -265,11 +277,11 @@ class Getset(Benchmark):
         i, j = [], []
         while len(i) < N:
             n = N - len(i)
-            ip = numpy.random.randint(0, A.shape[0], size=n)
-            jp = numpy.random.randint(0, A.shape[1], size=n)
-            i = numpy.r_[i, ip]
-            j = numpy.r_[j, jp]
-        v = numpy.random.rand(n)
+            ip = np.random.randint(0, A.shape[0], size=n)
+            jp = np.random.randint(0, A.shape[1], size=n)
+            i = np.r_[i, ip]
+            j = np.r_[j, jp]
+        v = np.random.rand(n)
 
         if N == 1:
             i = int(i)
@@ -334,7 +346,7 @@ class NullSlice(Benchmark):
         X = coo_matrix((data, (row, col)), shape=(n, k))
         X.sum_duplicates()
         X = X.asformat(format)
-        with open('{}-{}.pck'.format(density, format), 'wb') as f:
+        with open(f'{density}-{format}.pck', 'wb') as f:
             pickle.dump(X, f, protocol=pickle.HIGHEST_PROTOCOL)
 
     def setup_cache(self):
@@ -346,7 +358,7 @@ class NullSlice(Benchmark):
 
     def setup(self, density, format):
         # Unpickling is faster than computing the random matrix...
-        with open('{}-{}.pck'.format(density, format), 'rb') as f:
+        with open(f'{density}-{format}.pck', 'rb') as f:
             self.X = pickle.load(f)
 
     def time_getrow(self, density, format):
@@ -368,12 +380,24 @@ class NullSlice(Benchmark):
         self.X[:, np.arange(100)]
 
     # Retain old benchmark results (remove this if changing the benchmark)
-    time_10000_rows.version = "dc19210b894d5fd41d4563f85b7459ef5836cddaf77154b539df3ea91c5d5c1c"
-    time_100_cols.version = "8d43ed52084cdab150018eedb289a749a39f35d4dfa31f53280f1ef286a23046"
-    time_3_cols.version = "93e5123910772d62b3f72abff56c2732f83d217221bce409b70e77b89c311d26"
-    time_3_rows.version = "a9eac80863a0b2f4b510269955041930e5fdd15607238257eb78244f891ebfe6"
-    time_getcol.version = "291388763b355f0f3935db9272a29965d14fa3f305d3306059381e15300e638b"
-    time_getrow.version = "edb9e4291560d6ba8dd58ef371b3a343a333bc10744496adb3ff964762d33c68"
+    time_10000_rows.version = (
+        "dc19210b894d5fd41d4563f85b7459ef5836cddaf77154b539df3ea91c5d5c1c"
+    )
+    time_100_cols.version = (
+        "8d43ed52084cdab150018eedb289a749a39f35d4dfa31f53280f1ef286a23046"
+    )
+    time_3_cols.version = (
+        "93e5123910772d62b3f72abff56c2732f83d217221bce409b70e77b89c311d26"
+    )
+    time_3_rows.version = (
+        "a9eac80863a0b2f4b510269955041930e5fdd15607238257eb78244f891ebfe6"
+    )
+    time_getcol.version = (
+        "291388763b355f0f3935db9272a29965d14fa3f305d3306059381e15300e638b"
+    )
+    time_getrow.version = (
+        "edb9e4291560d6ba8dd58ef371b3a343a333bc10744496adb3ff964762d33c68"
+    )
 
 
 class Diagonal(Benchmark):
@@ -393,7 +417,9 @@ class Diagonal(Benchmark):
         self.X.diagonal()
 
     # Retain old benchmark results (remove this if changing the benchmark)
-    time_diagonal.version = "d84f53fdc6abc208136c8ce48ca156370f6803562f6908eb6bd1424f50310cf1"
+    time_diagonal.version = (
+        "d84f53fdc6abc208136c8ce48ca156370f6803562f6908eb6bd1424f50310cf1"
+    )
 
 
 class Sum(Benchmark):
@@ -418,9 +444,15 @@ class Sum(Benchmark):
         self.X.sum(axis=1)
 
     # Retain old benchmark results (remove this if changing the benchmark)
-    time_sum.version = "05c305857e771024535e546360203b17f5aca2b39b023a49ab296bd746d6cdd3"
-    time_sum_axis0.version = "8aca682fd69aa140c69c028679826bdf43c717589b1961b4702d744ed72effc6"
-    time_sum_axis1.version = "1a6e05244b77f857c61f8ee09ca3abd006a10ba07eff10b1c5f9e0ac20f331b2"
+    time_sum.version = (
+        "05c305857e771024535e546360203b17f5aca2b39b023a49ab296bd746d6cdd3"
+    )
+    time_sum_axis0.version = (
+        "8aca682fd69aa140c69c028679826bdf43c717589b1961b4702d744ed72effc6"
+    )
+    time_sum_axis1.version = (
+        "1a6e05244b77f857c61f8ee09ca3abd006a10ba07eff10b1c5f9e0ac20f331b2"
+    )
 
 
 class Iteration(Benchmark):
@@ -452,7 +484,9 @@ class Densify(Benchmark):
         self.X.toarray(order=order)
 
     # Retain old benchmark results (remove this if changing the benchmark)
-    time_toarray.version = "2fbf492ec800b982946a62785beda803460b913cc80080043a5d407025893b2b"
+    time_toarray.version = (
+        "2fbf492ec800b982946a62785beda803460b913cc80080043a5d407025893b2b"
+    )
 
 
 class Random(Benchmark):

@@ -45,6 +45,7 @@ Unstructured data:
    LinearNDInterpolator
    NearestNDInterpolator
    CloughTocher2DInterpolator
+   RBFInterpolator
    Rbf
    interp2d
 
@@ -67,7 +68,7 @@ Tensor product polynomials:
    :toctree: generated/
 
    NdPPoly
-
+   NdBSpline
 
 1-D Splines
 ===========
@@ -78,6 +79,7 @@ Tensor product polynomials:
    BSpline
    make_interp_spline
    make_lsq_spline
+   make_smoothing_spline
 
 Functional interface to FITPACK routines:
 
@@ -135,6 +137,15 @@ Low-level interface to FITPACK functions:
    bisplrep
    bisplev
 
+Rational Approximation
+======================
+
+.. autosummary::
+   :toctree: generated/
+
+   pade
+   AAA
+
 Additional tools
 ================
 
@@ -143,7 +154,6 @@ Additional tools
 
    lagrange
    approximate_taylor_polynomial
-   pade
 
 .. seealso::
 
@@ -162,23 +172,34 @@ Additional tools
 ``pchip`` is an alias of `PchipInterpolator` for backward compatibility
 (should not be used in new code).
 """
-from .interpolate import *
-from .fitpack import *
+from ._interpolate import *
+from ._fitpack_py import *
 
 # New interface to fitpack library:
-from .fitpack2 import *
+from ._fitpack2 import *
 
-from .rbf import Rbf
+from ._rbf import Rbf
 
-from .polyint import *
+from ._rbfinterp import *
+
+from ._polyint import *
 
 from ._cubic import *
 
-from .ndgriddata import *
+from ._ndgriddata import *
 
 from ._bsplines import *
 
 from ._pade import *
+
+from ._rgi import *
+
+from ._ndbspline import NdBSpline
+
+from ._aaa import *
+
+# Deprecated namespaces, to be removed in v2.0.0
+from . import fitpack, fitpack2, interpolate, ndgriddata, polyint, rbf
 
 __all__ = [s for s in dir() if not s.startswith('_')]
 

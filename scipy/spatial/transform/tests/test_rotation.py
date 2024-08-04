@@ -2,11 +2,21 @@ import pytest
 
 import numpy as np
 from numpy.testing import assert_equal, assert_array_almost_equal
-from numpy.testing import assert_allclose, assert_array_less
+from numpy.testing import assert_allclose
 from scipy.spatial.transform import Rotation, Slerp
 from scipy.stats import special_ortho_group
 from itertools import permutations
 
+import pickle
+import copy
+
+def basis_vec(axis):
+    if axis == 'x':
+        return [1, 0, 0]
+    elif axis == 'y':
+        return [0, 1, 0]
+    elif axis == 'z':
+        return [0, 0, 1]
 
 def test_generic_quat_matrix():
     x = np.array([[3, 4, 0, 0], [5, 12, 0, 0]])
@@ -29,17 +39,114 @@ def test_from_single_2d_quaternion():
     assert_array_almost_equal(r.as_quat(), expected_quat)
 
 
+def test_from_quat_scalar_first():
+    rng = np.random.RandomState(0)
+
+    r = Rotation.from_quat([1, 0, 0, 0], scalar_first=True)
+    assert_allclose(r.as_matrix(), np.eye(3), rtol=1e-15, atol=1e-16)
+
+    r = Rotation.from_quat(np.tile([1, 0, 0, 0], (10, 1)), scalar_first=True)
+    assert_allclose(r.as_matrix(), np.tile(np.eye(3), (10, 1, 1)),
+                    rtol=1e-15, atol=1e-16)
+
+    q = rng.randn(100, 4)
+    q /= np.linalg.norm(q, axis=1)[:, None]
+    for qi in q:
+        r = Rotation.from_quat(qi, scalar_first=True)
+        assert_allclose(np.roll(r.as_quat(), 1), qi, rtol=1e-15)
+
+    r = Rotation.from_quat(q, scalar_first=True)
+    assert_allclose(np.roll(r.as_quat(), 1, axis=1), q, rtol=1e-15)
+
+
+def test_as_quat_scalar_first():
+    rng = np.random.RandomState(0)
+
+    r = Rotation.from_euler('xyz', np.zeros(3))
+    assert_allclose(r.as_quat(scalar_first=True), [1, 0, 0, 0],
+                    rtol=1e-15, atol=1e-16)
+
+    r = Rotation.from_euler('xyz', np.zeros((10, 3)))
+    assert_allclose(r.as_quat(scalar_first=True),
+                    np.tile([1, 0, 0, 0], (10, 1)), rtol=1e-15, atol=1e-16)
+
+    q = rng.randn(100, 4)
+    q /= np.linalg.norm(q, axis=1)[:, None]
+    for qi in q:
+        r = Rotation.from_quat(qi)
+        assert_allclose(r.as_quat(scalar_first=True), np.roll(qi, 1),
+                        rtol=1e-15)
+
+        assert_allclose(r.as_quat(canonical=True, scalar_first=True),
+                        np.roll(r.as_quat(canonical=True), 1),
+                        rtol=1e-15)
+
+    r = Rotation.from_quat(q)
+    assert_allclose(r.as_quat(scalar_first=True), np.roll(q, 1, axis=1),
+                    rtol=1e-15)
+
+    assert_allclose(r.as_quat(canonical=True, scalar_first=True),
+                    np.roll(r.as_quat(canonical=True), 1, axis=1), rtol=1e-15)
+
+
 def test_from_square_quat_matrix():
     # Ensure proper norm array broadcasting
     x = np.array([
         [3, 0, 0, 4],
         [5, 0, 12, 0],
         [0, 0, 0, 1],
-        [0, 0, 0, -1]
+        [-1, -1, -1, 1],
+        [0, 0, 0, -1],  # Check double cover
+        [-1, -1, -1, -1]  # Check double cover
         ])
     r = Rotation.from_quat(x)
-    expected_quat = x / np.array([[5], [13], [1], [1]])
+    expected_quat = x / np.array([[5], [13], [1], [2], [1], [2]])
     assert_array_almost_equal(r.as_quat(), expected_quat)
+
+
+def test_quat_double_to_canonical_single_cover():
+    x = np.array([
+        [-1, 0, 0, 0],
+        [0, -1, 0, 0],
+        [0, 0, -1, 0],
+        [0, 0, 0, -1],
+        [-1, -1, -1, -1]
+        ])
+    r = Rotation.from_quat(x)
+    expected_quat = np.abs(x) / np.linalg.norm(x, axis=1)[:, None]
+    assert_allclose(r.as_quat(canonical=True), expected_quat)
+
+
+def test_quat_double_cover():
+    # See the Rotation.from_quat() docstring for scope of the quaternion
+    # double cover property.
+    # Check from_quat and as_quat(canonical=False)
+    q = np.array([0, 0, 0, -1])
+    r = Rotation.from_quat(q)
+    assert_equal(q, r.as_quat(canonical=False))
+
+    # Check composition and inverse
+    q = np.array([1, 0, 0, 1])/np.sqrt(2)  # 90 deg rotation about x
+    r = Rotation.from_quat(q)
+    r3 = r*r*r
+    assert_allclose(r.as_quat(canonical=False)*np.sqrt(2),
+                    [1, 0, 0, 1])
+    assert_allclose(r.inv().as_quat(canonical=False)*np.sqrt(2),
+                    [-1, 0, 0, 1])
+    assert_allclose(r3.as_quat(canonical=False)*np.sqrt(2),
+                    [1, 0, 0, -1])
+    assert_allclose(r3.inv().as_quat(canonical=False)*np.sqrt(2),
+                    [-1, 0, 0, -1])
+
+    # More sanity checks
+    assert_allclose((r*r.inv()).as_quat(canonical=False),
+                    [0, 0, 0, 1], atol=2e-16)
+    assert_allclose((r3*r3.inv()).as_quat(canonical=False),
+                    [0, 0, 0, 1], atol=2e-16)
+    assert_allclose((r*r3).as_quat(canonical=False),
+                    [0, 0, 0, -1], atol=2e-16)
+    assert_allclose((r.inv()*r3.inv()).as_quat(canonical=False),
+                    [0, 0, 0, -1], atol=2e-16)
 
 
 def test_malformed_1d_from_quat():
@@ -188,8 +295,8 @@ def test_matrix_calculation_pipeline():
 
 
 def test_from_matrix_ortho_output():
-    np.random.seed(0)
-    mat = np.random.random((100, 3, 3))
+    rnd = np.random.RandomState(0)
+    mat = rnd.random_sample((100, 3, 3))
     ortho_mat = Rotation.from_matrix(mat).as_matrix()
 
     mult_result = np.einsum('...ij,...jk->...ik', ortho_mat,
@@ -257,6 +364,18 @@ def test_from_rotvec_small_angle():
     assert_equal(quat[2], np.array([0, 0, 0, 1]))
 
 
+def test_degrees_from_rotvec():
+    rotvec1 = [1.0 / np.cbrt(3), 1.0 / np.cbrt(3), 1.0 / np.cbrt(3)]
+    rot1 = Rotation.from_rotvec(rotvec1, degrees=True)
+    quat1 = rot1.as_quat()
+
+    rotvec2 = np.deg2rad(rotvec1)
+    rot2 = Rotation.from_rotvec(rotvec2)
+    quat2 = rot2.as_quat()
+
+    assert_allclose(quat1, quat2)
+
+
 def test_malformed_1d_from_rotvec():
     with pytest.raises(ValueError, match='Expected `rot_vec` to have shape'):
         Rotation.from_rotvec([1, 2])
@@ -305,6 +424,17 @@ def test_as_rotvec_single_2d_input():
     assert_allclose(actual_rotvec, expected_rotvec)
 
 
+def test_as_rotvec_degrees():
+    # x->y, y->z, z->x
+    mat = [[0, 0, 1], [1, 0, 0], [0, 1, 0]]
+    rot = Rotation.from_matrix(mat)
+    rotvec = rot.as_rotvec(degrees=True)
+    angle = np.linalg.norm(rotvec)
+    assert_allclose(angle, 120.0)
+    assert_allclose(rotvec[0], rotvec[1])
+    assert_allclose(rotvec[1], rotvec[2])
+
+
 def test_rotvec_calc_pipeline():
     # Include small angles
     rotvec = np.array([
@@ -313,6 +443,8 @@ def test_rotvec_calc_pipeline():
         [-3e-4, 3.5e-4, 7.5e-5]
         ])
     assert_allclose(Rotation.from_rotvec(rotvec).as_rotvec(), rotvec)
+    assert_allclose(Rotation.from_rotvec(rotvec, degrees=True).as_rotvec(degrees=True),
+                    rotvec)
 
 
 def test_from_1d_single_mrp():
@@ -371,7 +503,10 @@ def test_past_180_degree_rotation():
     # ensure that a > 180 degree rotation is returned as a <180 rotation in MRPs
     # in this case 270 should be returned as -90
     expected_mrp = np.array([-np.tan(np.pi/2/4), 0.0, 0])
-    assert_array_almost_equal(Rotation.from_euler('xyz', [270, 0, 0], degrees=True).as_mrp(), expected_mrp)
+    assert_array_almost_equal(
+        Rotation.from_euler('xyz', [270, 0, 0], degrees=True).as_mrp(),
+        expected_mrp
+    )
 
 
 def test_as_mrp_single_1d_input():
@@ -422,8 +557,8 @@ def test_single_intrinsic_extrinsic_rotation():
 
 def test_from_euler_rotation_order():
     # Intrinsic rotation is same as extrinsic with order reversed
-    np.random.seed(0)
-    a = np.random.randint(low=0, high=180, size=(6, 3))
+    rnd = np.random.RandomState(0)
+    a = rnd.randint(low=0, high=180, size=(6, 3))
     b = a[:, ::-1]
     x = Rotation.from_euler('xyz', a, degrees=True).as_quat()
     y = Rotation.from_euler('ZYX', b, degrees=True).as_quat()
@@ -549,127 +684,194 @@ def test_from_euler_extrinsic_rotation_313():
     ]))
 
 
-def test_as_euler_asymmetric_axes():
-    np.random.seed(0)
-    n = 10
-    angles = np.empty((n, 3))
-    angles[:, 0] = np.random.uniform(low=-np.pi, high=np.pi, size=(n,))
-    angles[:, 1] = np.random.uniform(low=-np.pi / 2, high=np.pi / 2, size=(n,))
-    angles[:, 2] = np.random.uniform(low=-np.pi, high=np.pi, size=(n,))
+@pytest.mark.parametrize("seq_tuple", permutations("xyz"))
+@pytest.mark.parametrize("intrinsic", (False, True))
+def test_as_euler_asymmetric_axes(seq_tuple, intrinsic):
+    # helper function for mean error tests
+    def test_stats(error, mean_max, rms_max):
+        mean = np.mean(error, axis=0)
+        std = np.std(error, axis=0)
+        rms = np.hypot(mean, std)
+        assert np.all(np.abs(mean) < mean_max)
+        assert np.all(rms < rms_max)
 
-    for seq_tuple in permutations('xyz'):
-        # Extrinsic rotations
-        seq = ''.join(seq_tuple)
-        assert_allclose(angles, Rotation.from_euler(seq, angles).as_euler(seq))
-        # Intrinsic rotations
+    rnd = np.random.RandomState(0)
+    n = 1000
+    angles = np.empty((n, 3))
+    angles[:, 0] = rnd.uniform(low=-np.pi, high=np.pi, size=(n,))
+    angles[:, 1] = rnd.uniform(low=-np.pi / 2, high=np.pi / 2, size=(n,))
+    angles[:, 2] = rnd.uniform(low=-np.pi, high=np.pi, size=(n,))
+
+    seq = "".join(seq_tuple)
+    if intrinsic:
+        # Extrinsic rotation (wrt to global world) at lower case
+        # intrinsinc (WRT the object itself) lower case.
         seq = seq.upper()
-        assert_allclose(angles, Rotation.from_euler(seq, angles).as_euler(seq))
+    rotation = Rotation.from_euler(seq, angles)
+    angles_quat = rotation.as_euler(seq)
+    angles_mat = rotation._as_euler_from_matrix(seq)
+    assert_allclose(angles, angles_quat, atol=0, rtol=1e-12)
+    assert_allclose(angles, angles_mat, atol=0, rtol=1e-12)
+    test_stats(angles_quat - angles, 1e-15, 1e-14)
+    test_stats(angles_mat - angles, 1e-15, 1e-14)
 
 
-def test_as_euler_symmetric_axes():
-    np.random.seed(0)
-    n = 10
+
+@pytest.mark.parametrize("seq_tuple", permutations("xyz"))
+@pytest.mark.parametrize("intrinsic", (False, True))
+def test_as_euler_symmetric_axes(seq_tuple, intrinsic):
+    # helper function for mean error tests
+    def test_stats(error, mean_max, rms_max):
+        mean = np.mean(error, axis=0)
+        std = np.std(error, axis=0)
+        rms = np.hypot(mean, std)
+        assert np.all(np.abs(mean) < mean_max)
+        assert np.all(rms < rms_max)
+
+    rnd = np.random.RandomState(0)
+    n = 1000
     angles = np.empty((n, 3))
-    angles[:, 0] = np.random.uniform(low=-np.pi, high=np.pi, size=(n,))
-    angles[:, 1] = np.random.uniform(low=0, high=np.pi, size=(n,))
-    angles[:, 2] = np.random.uniform(low=-np.pi, high=np.pi, size=(n,))
+    angles[:, 0] = rnd.uniform(low=-np.pi, high=np.pi, size=(n,))
+    angles[:, 1] = rnd.uniform(low=0, high=np.pi, size=(n,))
+    angles[:, 2] = rnd.uniform(low=-np.pi, high=np.pi, size=(n,))
 
-    for axis1 in ['x', 'y', 'z']:
-        for axis2 in ['x', 'y', 'z']:
-            if axis1 == axis2:
-                continue
-            # Extrinsic rotations
-            seq = axis1 + axis2 + axis1
-            assert_allclose(
-                angles, Rotation.from_euler(seq, angles).as_euler(seq))
-            # Intrinsic rotations
-            seq = seq.upper()
-            assert_allclose(
-                angles, Rotation.from_euler(seq, angles).as_euler(seq))
+    # Rotation of the form A/B/A are rotation around symmetric axes
+    seq = "".join([seq_tuple[0], seq_tuple[1], seq_tuple[0]])
+    if intrinsic:
+        seq = seq.upper()
+    rotation = Rotation.from_euler(seq, angles)
+    angles_quat = rotation.as_euler(seq)
+    angles_mat = rotation._as_euler_from_matrix(seq)
+    assert_allclose(angles, angles_quat, atol=0, rtol=1e-13)
+    assert_allclose(angles, angles_mat, atol=0, rtol=1e-9)
+    test_stats(angles_quat - angles, 1e-16, 1e-14)
+    test_stats(angles_mat - angles, 1e-15, 1e-13)
 
 
-def test_as_euler_degenerate_asymmetric_axes():
+@pytest.mark.parametrize("seq_tuple", permutations("xyz"))
+@pytest.mark.parametrize("intrinsic", (False, True))
+def test_as_euler_degenerate_asymmetric_axes(seq_tuple, intrinsic):
     # Since we cannot check for angle equality, we check for rotation matrix
     # equality
     angles = np.array([
         [45, 90, 35],
         [35, -90, 20],
         [35, 90, 25],
-        [25, -90, 15]
-        ])
+        [25, -90, 15]])
+
+    seq = "".join(seq_tuple)
+    if intrinsic:
+        # Extrinsic rotation (wrt to global world) at lower case
+        # Intrinsic (WRT the object itself) upper case.
+        seq = seq.upper()
+    rotation = Rotation.from_euler(seq, angles, degrees=True)
+    mat_expected = rotation.as_matrix()
 
     with pytest.warns(UserWarning, match="Gimbal lock"):
-        for seq_tuple in permutations('xyz'):
-            # Extrinsic rotations
-            seq = ''.join(seq_tuple)
-            rotation = Rotation.from_euler(seq, angles, degrees=True)
-            mat_expected = rotation.as_matrix()
+        angle_estimates = rotation.as_euler(seq, degrees=True)
+    mat_estimated = Rotation.from_euler(seq, angle_estimates, degrees=True).as_matrix()
 
-            angle_estimates = rotation.as_euler(seq, degrees=True)
-            mat_estimated = Rotation.from_euler(
-                seq, angle_estimates, degrees=True
-                ).as_matrix()
-
-            assert_array_almost_equal(mat_expected, mat_estimated)
-
-            # Intrinsic rotations
-            seq = seq.upper()
-            rotation = Rotation.from_euler(seq, angles, degrees=True)
-            mat_expected = rotation.as_matrix()
-
-            angle_estimates = rotation.as_euler(seq, degrees=True)
-            mat_estimated = Rotation.from_euler(
-                seq, angle_estimates, degrees=True
-                ).as_matrix()
-
-            assert_array_almost_equal(mat_expected, mat_estimated)
+    assert_array_almost_equal(mat_expected, mat_estimated)
 
 
-def test_as_euler_degenerate_symmetric_axes():
+@pytest.mark.parametrize("seq_tuple", permutations("xyz"))
+@pytest.mark.parametrize("intrinsic", (False, True))
+def test_as_euler_degenerate_symmetric_axes(seq_tuple, intrinsic):
     # Since we cannot check for angle equality, we check for rotation matrix
     # equality
     angles = np.array([
         [15, 0, 60],
         [35, 0, 75],
         [60, 180, 35],
-        [15, -180, 25],
-        ])
+        [15, -180, 25]])
+
+    # Rotation of the form A/B/A are rotation around symmetric axes
+    seq = "".join([seq_tuple[0], seq_tuple[1], seq_tuple[0]])
+    if intrinsic:
+        # Extrinsic rotation (wrt to global world) at lower case
+        # Intrinsic (WRT the object itself) upper case.
+        seq = seq.upper()
+    rotation = Rotation.from_euler(seq, angles, degrees=True)
+    mat_expected = rotation.as_matrix()
 
     with pytest.warns(UserWarning, match="Gimbal lock"):
-        for axis1 in ['x', 'y', 'z']:
-            for axis2 in ['x', 'y', 'z']:
-                if axis1 == axis2:
-                    continue
+        angle_estimates = rotation.as_euler(seq, degrees=True)
+    mat_estimated = Rotation.from_euler(seq, angle_estimates, degrees=True).as_matrix()
 
-                # Extrinsic rotations
-                seq = axis1 + axis2 + axis1
-                rotation = Rotation.from_euler(seq, angles, degrees=True)
-                mat_expected = rotation.as_matrix()
+    assert_array_almost_equal(mat_expected, mat_estimated)
 
-                angle_estimates = rotation.as_euler(seq, degrees=True)
-                mat_estimated = Rotation.from_euler(
-                    seq, angle_estimates, degrees=True
-                    ).as_matrix()
 
-                assert_array_almost_equal(mat_expected, mat_estimated)
+@pytest.mark.parametrize("seq_tuple", permutations("xyz"))
+@pytest.mark.parametrize("intrinsic", (False, True))
+def test_as_euler_degenerate_compare_algorithms(seq_tuple, intrinsic):
+    # this test makes sure that both algorithms are doing the same choices
+    # in degenerate cases
 
-                # Intrinsic rotations
-                seq = seq.upper()
-                rotation = Rotation.from_euler(seq, angles, degrees=True)
-                mat_expected = rotation.as_matrix()
+    # asymmetric axes
+    angles = np.array([
+        [45, 90, 35],
+        [35, -90, 20],
+        [35, 90, 25],
+        [25, -90, 15]])
 
-                angle_estimates = rotation.as_euler(seq, degrees=True)
-                mat_estimated = Rotation.from_euler(
-                    seq, angle_estimates, degrees=True
-                    ).as_matrix()
+    seq = "".join(seq_tuple)
+    if intrinsic:
+        # Extrinsic rotation (wrt to global world at lower case
+        # Intrinsic (WRT the object itself) upper case.
+        seq = seq.upper()
 
-                assert_array_almost_equal(mat_expected, mat_estimated)
+    rot = Rotation.from_euler(seq, angles, degrees=True)
+    with pytest.warns(UserWarning, match="Gimbal lock"):
+        estimates_matrix = rot._as_euler_from_matrix(seq, degrees=True)
+    with pytest.warns(UserWarning, match="Gimbal lock"):
+        estimates_quat = rot.as_euler(seq, degrees=True)
+    assert_allclose(
+        estimates_matrix[:, [0, 2]], estimates_quat[:, [0, 2]], atol=0, rtol=1e-12
+    )
+    assert_allclose(estimates_matrix[:, 1], estimates_quat[:, 1], atol=0, rtol=1e-7)
+
+    # symmetric axes
+    # Absolute error tolerance must be looser to directly compare the results
+    # from both algorithms, because of numerical loss of precision for the
+    # method _as_euler_from_matrix near a zero angle value
+
+    angles = np.array([
+        [15, 0, 60],
+        [35, 0, 75],
+        [60, 180, 35],
+        [15, -180, 25]])
+
+    idx = angles[:, 1] == 0  # find problematic angles indices
+
+    # Rotation of the form A/B/A are rotation around symmetric axes
+    seq = "".join([seq_tuple[0], seq_tuple[1], seq_tuple[0]])
+    if intrinsic:
+        # Extrinsinc rotation (wrt to global world) at lower case
+        # Intrinsic (WRT the object itself) upper case.
+        seq = seq.upper()
+
+    rot = Rotation.from_euler(seq, angles, degrees=True)
+    with pytest.warns(UserWarning, match="Gimbal lock"):
+        estimates_matrix = rot._as_euler_from_matrix(seq, degrees=True)
+    with pytest.warns(UserWarning, match="Gimbal lock"):
+        estimates_quat = rot.as_euler(seq, degrees=True)
+    assert_allclose(
+        estimates_matrix[:, [0, 2]], estimates_quat[:, [0, 2]], atol=0, rtol=1e-12
+    )
+
+    assert_allclose(
+        estimates_matrix[~idx, 1], estimates_quat[~idx, 1], atol=0, rtol=1e-7
+    )
+
+    assert_allclose(
+        estimates_matrix[idx, 1], estimates_quat[idx, 1], atol=1e-6
+    )  # problematic, angles[1] = 0
 
 
 def test_inv():
-    np.random.seed(0)
+    rnd = np.random.RandomState(0)
     n = 10
-    p = Rotation.from_quat(np.random.normal(size=(n, 4)))
+    p = Rotation.random(num=n, random_state=rnd)
     q = p.inv()
 
     p_mat = p.as_matrix()
@@ -685,8 +887,8 @@ def test_inv():
 
 
 def test_inv_single_rotation():
-    np.random.seed(0)
-    p = Rotation.from_quat(np.random.normal(size=(4,)))
+    rnd = np.random.RandomState(0)
+    p = Rotation.random(random_state=rnd)
     q = p.inv()
 
     p_mat = p.as_matrix()
@@ -699,7 +901,7 @@ def test_inv_single_rotation():
     assert_array_almost_equal(res1, eye)
     assert_array_almost_equal(res2, eye)
 
-    x = Rotation.from_quat(np.random.normal(size=(1, 4)))
+    x = Rotation.random(num=1, random_state=rnd)
     y = x.inv()
 
     x_matrix = x.as_matrix()
@@ -727,7 +929,7 @@ def test_single_identity_magnitude():
 
 def test_identity_invariance():
     n = 10
-    p = Rotation.random(n)
+    p = Rotation.random(n, random_state=0)
 
     result = p * Rotation.identity(n)
     assert_array_almost_equal(p.as_quat(), result.as_quat())
@@ -738,7 +940,7 @@ def test_identity_invariance():
 
 def test_single_identity_invariance():
     n = 10
-    p = Rotation.random(n)
+    p = Rotation.random(n, random_state=0)
 
     result = p * Rotation.identity()
     assert_array_almost_equal(p.as_quat(), result.as_quat())
@@ -764,6 +966,30 @@ def test_magnitude_single_rotation():
 
     result2 = r[3].magnitude()
     assert_allclose(result2, 0)
+
+
+def test_approx_equal():
+    rng = np.random.RandomState(0)
+    p = Rotation.random(10, random_state=rng)
+    q = Rotation.random(10, random_state=rng)
+    r = p * q.inv()
+    r_mag = r.magnitude()
+    atol = np.median(r_mag)  # ensure we get mix of Trues and Falses
+    assert_equal(p.approx_equal(q, atol), (r_mag < atol))
+
+
+def test_approx_equal_single_rotation():
+    # also tests passing single argument to approx_equal
+    p = Rotation.from_rotvec([0, 0, 1e-9])  # less than default atol of 1e-8
+    q = Rotation.from_quat(np.eye(4))
+    assert p.approx_equal(q[3])
+    assert not p.approx_equal(q[0])
+
+    # test passing atol and using degrees
+    assert not p.approx_equal(q[3], atol=1e-10)
+    assert not p.approx_equal(q[3], atol=1e-8, degrees=True)
+    with pytest.warns(UserWarning, match="atol must be set"):
+        assert p.approx_equal(q[3], degrees=True)
 
 
 def test_mean():
@@ -800,7 +1026,7 @@ def test_reduction_no_indices():
 
 def test_reduction_none_indices():
     result = Rotation.identity().reduce(return_indices=True)
-    assert type(result) == tuple
+    assert type(result) is tuple
     assert len(result) == 3
 
     reduced, left_best, right_best = result
@@ -821,7 +1047,7 @@ def test_reduction_scalar_calculation():
         for j, pj in enumerate(p):
             for k, rk in enumerate(r):
                 scalars[i, j, k] = np.abs((li * pj * rk).as_quat()[3])
-    scalars = np.reshape(np.rollaxis(scalars, 1), (scalars.shape[1], -1))
+    scalars = np.reshape(np.moveaxis(scalars, 1, 0), (scalars.shape[1], -1))
 
     max_ind = np.argmax(np.reshape(scalars, (len(p), -1)), axis=1)
     left_best_check = max_ind // len(r)
@@ -952,6 +1178,39 @@ def test_getitem():
     assert_allclose(r[:-1].as_matrix(), np.expand_dims(mat[0], axis=0), atol=1e-15)
 
 
+def test_getitem_single():
+    with pytest.raises(TypeError, match='not subscriptable'):
+        Rotation.identity()[0]
+
+
+def test_setitem_single():
+    r = Rotation.identity()
+    with pytest.raises(TypeError, match='not subscriptable'):
+        r[0] = Rotation.identity()
+
+
+def test_setitem_slice():
+    rng = np.random.RandomState(seed=0)
+    r1 = Rotation.random(10, random_state=rng)
+    r2 = Rotation.random(5, random_state=rng)
+    r1[1:6] = r2
+    assert_equal(r1[1:6].as_quat(), r2.as_quat())
+
+
+def test_setitem_integer():
+    rng = np.random.RandomState(seed=0)
+    r1 = Rotation.random(10, random_state=rng)
+    r2 = Rotation.random(random_state=rng)
+    r1[1] = r2
+    assert_equal(r1[1].as_quat(), r2.as_quat())
+
+
+def test_setitem_wrong_type():
+    r = Rotation.random(10, random_state=0)
+    with pytest.raises(TypeError, match='Rotation object'):
+        r[0] = 1
+
+
 def test_n_rotations():
     mat = np.empty((2, 3, 3))
     mat[0] = np.array([
@@ -970,24 +1229,33 @@ def test_n_rotations():
     assert_equal(len(r[:-1]), 1)
 
 
+def test_random_rotation_shape():
+    rnd = np.random.RandomState(0)
+    assert_equal(Rotation.random(random_state=rnd).as_quat().shape, (4,))
+    assert_equal(Rotation.random(None, random_state=rnd).as_quat().shape, (4,))
+
+    assert_equal(Rotation.random(1, random_state=rnd).as_quat().shape, (1, 4))
+    assert_equal(Rotation.random(5, random_state=rnd).as_quat().shape, (5, 4))
+
+
 def test_align_vectors_no_rotation():
     x = np.array([[1, 2, 3], [4, 5, 6]])
     y = x.copy()
 
-    r, rmsd = Rotation.align_vectors(x, y)
+    r, rssd = Rotation.align_vectors(x, y)
     assert_array_almost_equal(r.as_matrix(), np.eye(3))
-    assert_allclose(rmsd, 0, atol=1e-6)
+    assert_allclose(rssd, 0, atol=1e-6)
 
 
 def test_align_vectors_no_noise():
-    np.random.seed(0)
-    c = Rotation.from_quat(np.random.normal(size=4))
-    b = np.random.normal(size=(5, 3))
+    rnd = np.random.RandomState(0)
+    c = Rotation.random(random_state=rnd)
+    b = rnd.normal(size=(5, 3))
     a = c.apply(b)
 
-    est, rmsd = Rotation.align_vectors(a, b)
+    est, rssd = Rotation.align_vectors(a, b)
     assert_allclose(c.as_quat(), est.as_quat())
-    assert_allclose(rmsd, 0, atol=1e-7)
+    assert_allclose(rssd, 0, atol=1e-7)
 
 
 def test_align_vectors_improper_rotation():
@@ -997,37 +1265,50 @@ def test_align_vectors_improper_rotation():
     y = np.array([[0.02386536, -0.82176463, 0.5693271],
                   [-0.27654929, -0.95191427, -0.1318321]])
 
-    est, rmsd = Rotation.align_vectors(x, y)
+    est, rssd = Rotation.align_vectors(x, y)
     assert_allclose(x, est.apply(y), atol=1e-6)
-    assert_allclose(rmsd, 0, atol=1e-7)
+    assert_allclose(rssd, 0, atol=1e-7)
+
+
+def test_align_vectors_rssd_sensitivity():
+    rssd_expected = 0.141421356237308
+    sens_expected = np.array([[0.2, 0. , 0.],
+                              [0. , 1.5, 1.],
+                              [0. , 1. , 1.]])
+    atol = 1e-6
+    a = [[0, 1, 0], [0, 1, 1], [0, 1, 1]]
+    b = [[1, 0, 0], [1, 1.1, 0], [1, 0.9, 0]]
+    rot, rssd, sens = Rotation.align_vectors(a, b, return_sensitivity=True)
+    assert np.isclose(rssd, rssd_expected, atol=atol)
+    assert np.allclose(sens, sens_expected, atol=atol)
 
 
 def test_align_vectors_scaled_weights():
-    rng = np.random.RandomState(0)
-    c = Rotation.random(random_state=rng)
-    b = rng.normal(size=(5, 3))
-    a = c.apply(b)
+    n = 10
+    a = Rotation.random(n, random_state=0).apply([1, 0, 0])
+    b = Rotation.random(n, random_state=1).apply([1, 0, 0])
+    scale = 2
 
-    est1, rmsd1, cov1 = Rotation.align_vectors(a, b, np.ones(5), True)
-    est2, rmsd2, cov2 = Rotation.align_vectors(a, b, 2 * np.ones(5), True)
+    est1, rssd1, cov1 = Rotation.align_vectors(a, b, np.ones(n), True)
+    est2, rssd2, cov2 = Rotation.align_vectors(a, b, scale * np.ones(n), True)
 
     assert_allclose(est1.as_matrix(), est2.as_matrix())
-    assert_allclose(np.sqrt(2) * rmsd1, rmsd2)
+    assert_allclose(np.sqrt(scale) * rssd1, rssd2, atol=1e-6)
     assert_allclose(cov1, cov2)
 
 
 def test_align_vectors_noise():
-    np.random.seed(0)
+    rnd = np.random.RandomState(0)
     n_vectors = 100
-    rot = Rotation.from_euler('xyz', np.random.normal(size=3))
-    vectors = np.random.normal(size=(n_vectors, 3))
+    rot = Rotation.random(random_state=rnd)
+    vectors = rnd.normal(size=(n_vectors, 3))
     result = rot.apply(vectors)
 
-    # The paper adds noise as indepedently distributed angular errors
+    # The paper adds noise as independently distributed angular errors
     sigma = np.deg2rad(1)
     tolerance = 1.5 * sigma
     noise = Rotation.from_rotvec(
-        np.random.normal(
+        rnd.normal(
             size=(n_vectors, 3),
             scale=sigma
         )
@@ -1037,7 +1318,7 @@ def test_align_vectors_noise():
     # rotations to each vector.
     noisy_result = noise.apply(result)
 
-    est, rmsd, cov = Rotation.align_vectors(noisy_result, vectors,
+    est, rssd, cov = Rotation.align_vectors(noisy_result, vectors,
                                             return_sensitivity=True)
 
     # Use rotation compositions to find out closeness
@@ -1052,21 +1333,15 @@ def test_align_vectors_noise():
     assert_allclose(cov[1, 1], 0, atol=tolerance)
     assert_allclose(cov[2, 2], 0, atol=tolerance)
 
-    assert_allclose(rmsd, np.sum((noisy_result - est.apply(vectors))**2)**0.5)
-
-
-def test_align_vectors_single_vector():
-    with pytest.warns(UserWarning, match="Optimal rotation is not"):
-        r_estimate, rmsd = Rotation.align_vectors([[1, -1, 1]], [[1, 1, -1]])
-        assert_allclose(rmsd, 0, atol=1e-16)
+    assert_allclose(rssd, np.sum((noisy_result - est.apply(vectors))**2)**0.5)
 
 
 def test_align_vectors_invalid_input():
     with pytest.raises(ValueError, match="Expected input `a` to have shape"):
-        Rotation.align_vectors([1, 2, 3], [[1, 2, 3]])
+        Rotation.align_vectors([1, 2, 3, 4], [1, 2, 3])
 
     with pytest.raises(ValueError, match="Expected input `b` to have shape"):
-        Rotation.align_vectors([[1, 2, 3]], [1, 2, 3])
+        Rotation.align_vectors([1, 2, 3], [1, 2, 3, 4])
 
     with pytest.raises(ValueError, match="Expected inputs `a` and `b` "
                                          "to have same shapes"):
@@ -1078,21 +1353,165 @@ def test_align_vectors_invalid_input():
 
     with pytest.raises(ValueError,
                        match="Expected `weights` to have number of values"):
-        Rotation.align_vectors([[1, 2, 3]], [[1, 2, 3]], weights=[1, 2])
+        Rotation.align_vectors([[1, 2, 3], [4, 5, 6]], [[1, 2, 3], [4, 5, 6]],
+                               weights=[1, 2, 3])
+
+    with pytest.raises(ValueError,
+                       match="`weights` may not contain negative values"):
+        Rotation.align_vectors([[1, 2, 3]], [[1, 2, 3]], weights=[-1])
+
+    with pytest.raises(ValueError,
+                       match="Only one infinite weight is allowed"):
+        Rotation.align_vectors([[1, 2, 3], [4, 5, 6]], [[1, 2, 3], [4, 5, 6]],
+                               weights=[np.inf, np.inf])
+
+    with pytest.raises(ValueError,
+                       match="Cannot align zero length primary vectors"):
+        Rotation.align_vectors([[0, 0, 0]], [[1, 2, 3]])
+
+    with pytest.raises(ValueError,
+                       match="Cannot return sensitivity matrix"):
+        Rotation.align_vectors([[1, 2, 3], [4, 5, 6]], [[1, 2, 3], [4, 5, 6]],
+                               return_sensitivity=True, weights=[np.inf, 1])
+
+    with pytest.raises(ValueError,
+                       match="Cannot return sensitivity matrix"):
+        Rotation.align_vectors([[1, 2, 3]], [[1, 2, 3]],
+                               return_sensitivity=True)
 
 
-def test_random_rotation_shape():
-    assert_equal(Rotation.random().as_quat().shape, (4,))
-    assert_equal(Rotation.random(None).as_quat().shape, (4,))
+def test_align_vectors_align_constrain():
+    # Align the primary +X B axis with the primary +Y A axis, and rotate about
+    # it such that the +Y B axis (residual of the [1, 1, 0] secondary b vector)
+    # is aligned with the +Z A axis (residual of the [0, 1, 1] secondary a
+    # vector)
+    atol = 1e-12
+    b = [[1, 0, 0], [1, 1, 0]]
+    a = [[0, 1, 0], [0, 1, 1]]
+    m_expected = np.array([[0, 0, 1],
+                           [1, 0, 0],
+                           [0, 1, 0]])
+    R, rssd = Rotation.align_vectors(a, b, weights=[np.inf, 1])
+    assert_allclose(R.as_matrix(), m_expected, atol=atol)
+    assert_allclose(R.apply(b), a, atol=atol)  # Pri and sec align exactly
+    assert np.isclose(rssd, 0, atol=atol)
 
-    assert_equal(Rotation.random(1).as_quat().shape, (1, 4))
-    assert_equal(Rotation.random(5).as_quat().shape, (5, 4))
+    # Do the same but with an inexact secondary rotation
+    b = [[1, 0, 0], [1, 2, 0]]
+    rssd_expected = 1.0
+    R, rssd = Rotation.align_vectors(a, b, weights=[np.inf, 1])
+    assert_allclose(R.as_matrix(), m_expected, atol=atol)
+    assert_allclose(R.apply(b)[0], a[0], atol=atol)  # Only pri aligns exactly
+    assert np.isclose(rssd, rssd_expected, atol=atol)
+    a_expected = [[0, 1, 0], [0, 1, 2]]
+    assert_allclose(R.apply(b), a_expected, atol=atol)
+
+    # Check random vectors
+    b = [[1, 2, 3], [-2, 3, -1]]
+    a = [[-1, 3, 2], [1, -1, 2]]
+    rssd_expected = 1.3101595297515016
+    R, rssd = Rotation.align_vectors(a, b, weights=[np.inf, 1])
+    assert_allclose(R.apply(b)[0], a[0], atol=atol)  # Only pri aligns exactly
+    assert np.isclose(rssd, rssd_expected, atol=atol)
+
+
+def test_align_vectors_near_inf():
+    # align_vectors should return near the same result for high weights as for
+    # infinite weights. rssd will be different with floating point error on the
+    # exactly aligned vector being multiplied by a large non-infinite weight
+    n = 100
+    mats = []
+    for i in range(6):
+        mats.append(Rotation.random(n, random_state=10 + i).as_matrix())
+
+    for i in range(n):
+        # Get random pairs of 3-element vectors
+        a = [1*mats[0][i][0], 2*mats[1][i][0]]
+        b = [3*mats[2][i][0], 4*mats[3][i][0]]
+
+        R, _ = Rotation.align_vectors(a, b, weights=[1e10, 1])
+        R2, _ = Rotation.align_vectors(a, b, weights=[np.inf, 1])
+        assert_allclose(R.as_matrix(), R2.as_matrix(), atol=1e-4)
+
+    for i in range(n):
+        # Get random triplets of 3-element vectors
+        a = [1*mats[0][i][0], 2*mats[1][i][0], 3*mats[2][i][0]]
+        b = [4*mats[3][i][0], 5*mats[4][i][0], 6*mats[5][i][0]]
+
+        R, _ = Rotation.align_vectors(a, b, weights=[1e10, 2, 1])
+        R2, _ = Rotation.align_vectors(a, b, weights=[np.inf, 2, 1])
+        assert_allclose(R.as_matrix(), R2.as_matrix(), atol=1e-4)
+
+
+def test_align_vectors_parallel():
+    atol = 1e-12
+    a = [[1, 0, 0], [0, 1, 0]]
+    b = [[0, 1, 0], [0, 1, 0]]
+    m_expected = np.array([[0, 1, 0],
+                           [-1, 0, 0],
+                           [0, 0, 1]])
+    R, _ = Rotation.align_vectors(a, b, weights=[np.inf, 1])
+    assert_allclose(R.as_matrix(), m_expected, atol=atol)
+    R, _ = Rotation.align_vectors(a[0], b[0])
+    assert_allclose(R.as_matrix(), m_expected, atol=atol)
+    assert_allclose(R.apply(b[0]), a[0], atol=atol)
+
+    b = [[1, 0, 0], [1, 0, 0]]
+    m_expected = np.array([[1, 0, 0],
+                           [0, 1, 0],
+                           [0, 0, 1]])
+    R, _ = Rotation.align_vectors(a, b, weights=[np.inf, 1])
+    assert_allclose(R.as_matrix(), m_expected, atol=atol)
+    R, _ = Rotation.align_vectors(a[0], b[0])
+    assert_allclose(R.as_matrix(), m_expected, atol=atol)
+    assert_allclose(R.apply(b[0]), a[0], atol=atol)
+
+
+def test_align_vectors_antiparallel():
+    # Test exact 180 deg rotation
+    atol = 1e-12
+    as_to_test = np.array([[[1, 0, 0], [0, 1, 0]],
+                           [[0, 1, 0], [1, 0, 0]],
+                           [[0, 0, 1], [0, 1, 0]]])
+    bs_to_test = [[-a[0], a[1]] for a in as_to_test]
+    for a, b in zip(as_to_test, bs_to_test):
+        R, _ = Rotation.align_vectors(a, b, weights=[np.inf, 1])
+        assert_allclose(R.magnitude(), np.pi, atol=atol)
+        assert_allclose(R.apply(b[0]), a[0], atol=atol)
+
+    # Test exact rotations near 180 deg
+    Rs = Rotation.random(100, random_state=0)
+    dRs = Rotation.from_rotvec(Rs.as_rotvec()*1e-4)  # scale down to small angle
+    a = [[ 1, 0, 0], [0, 1, 0]]
+    b = [[-1, 0, 0], [0, 1, 0]]
+    as_to_test = []
+    for dR in dRs:
+        as_to_test.append([dR.apply(a[0]), a[1]])
+    for a in as_to_test:
+        R, _ = Rotation.align_vectors(a, b, weights=[np.inf, 1])
+        R2, _ = Rotation.align_vectors(a, b, weights=[1e10, 1])
+        assert_allclose(R.as_matrix(), R2.as_matrix(), atol=atol)
+
+
+def test_align_vectors_primary_only():
+    atol = 1e-12
+    mats_a = Rotation.random(100, random_state=0).as_matrix()
+    mats_b = Rotation.random(100, random_state=1).as_matrix()
+    for mat_a, mat_b in zip(mats_a, mats_b):
+        # Get random 3-element unit vectors
+        a = mat_a[0]
+        b = mat_b[0]
+
+        # Compare to align_vectors with primary only
+        R, rssd = Rotation.align_vectors(a, b)
+        assert_allclose(R.apply(b), a, atol=atol)
+        assert np.isclose(rssd, 0, atol=atol)
 
 
 def test_slerp():
-    np.random.seed(0)
+    rnd = np.random.RandomState(0)
 
-    key_rots = Rotation.from_quat(np.random.uniform(size=(5, 4)))
+    key_rots = Rotation.from_quat(rnd.uniform(size=(5, 4)))
     key_quats = key_rots.as_quat()
 
     key_times = [0, 1, 2, 3, 4]
@@ -1133,17 +1552,33 @@ def test_slerp():
     assert_equal(len(interp_rots), len(times))
 
 
+def test_slerp_rot_is_rotation():
+    with pytest.raises(TypeError, match="must be a `Rotation` instance"):
+        r = np.array([[1,2,3,4],
+                      [0,0,0,1]])
+        t = np.array([0, 1])
+        Slerp(t, r)
+
+
 def test_slerp_single_rot():
-    with pytest.raises(ValueError, match="must be a sequence of rotations"):
+    msg = "must be a sequence of at least 2 rotations"
+    with pytest.raises(ValueError, match=msg):
         r = Rotation.from_quat([1, 2, 3, 4])
+        Slerp([1], r)
+
+
+def test_slerp_rot_len1():
+    msg = "must be a sequence of at least 2 rotations"
+    with pytest.raises(ValueError, match=msg):
+        r = Rotation.from_quat([[1, 2, 3, 4]])
         Slerp([1], r)
 
 
 def test_slerp_time_dim_mismatch():
     with pytest.raises(ValueError,
                        match="times to be specified in a 1 dimensional array"):
-        np.random.seed(0)
-        r = Rotation.from_quat(np.random.uniform(size=(2, 4)))
+        rnd = np.random.RandomState(0)
+        r = Rotation.from_quat(rnd.uniform(size=(2, 4)))
         t = np.array([[1],
                       [2]])
         Slerp(t, r)
@@ -1152,31 +1587,31 @@ def test_slerp_time_dim_mismatch():
 def test_slerp_num_rotations_mismatch():
     with pytest.raises(ValueError, match="number of rotations to be equal to "
                                          "number of timestamps"):
-        np.random.seed(0)
-        r = Rotation.from_quat(np.random.uniform(size=(5, 4)))
+        rnd = np.random.RandomState(0)
+        r = Rotation.from_quat(rnd.uniform(size=(5, 4)))
         t = np.arange(7)
         Slerp(t, r)
 
 
 def test_slerp_equal_times():
     with pytest.raises(ValueError, match="strictly increasing order"):
-        np.random.seed(0)
-        r = Rotation.from_quat(np.random.uniform(size=(5, 4)))
+        rnd = np.random.RandomState(0)
+        r = Rotation.from_quat(rnd.uniform(size=(5, 4)))
         t = [0, 1, 2, 2, 4]
         Slerp(t, r)
 
 
 def test_slerp_decreasing_times():
     with pytest.raises(ValueError, match="strictly increasing order"):
-        np.random.seed(0)
-        r = Rotation.from_quat(np.random.uniform(size=(5, 4)))
+        rnd = np.random.RandomState(0)
+        r = Rotation.from_quat(rnd.uniform(size=(5, 4)))
         t = [0, 1, 3, 2, 4]
         Slerp(t, r)
 
 
 def test_slerp_call_time_dim_mismatch():
-    np.random.seed(0)
-    r = Rotation.from_quat(np.random.uniform(size=(5, 4)))
+    rnd = np.random.RandomState(0)
+    r = Rotation.from_quat(rnd.uniform(size=(5, 4)))
     t = np.arange(5)
     s = Slerp(t, r)
 
@@ -1188,8 +1623,8 @@ def test_slerp_call_time_dim_mismatch():
 
 
 def test_slerp_call_time_out_of_range():
-    np.random.seed(0)
-    r = Rotation.from_quat(np.random.uniform(size=(5, 4)))
+    rnd = np.random.RandomState(0)
+    r = Rotation.from_quat(rnd.uniform(size=(5, 4)))
     t = np.arange(5) + 1
     s = Slerp(t, r)
 
@@ -1219,9 +1654,52 @@ def test_multiplication_stability():
         assert_allclose(np.linalg.norm(rs.as_quat(), axis=1), 1)
 
 
+def test_pow():
+    atol = 1e-14
+    p = Rotation.random(10, random_state=0)
+    p_inv = p.inv()
+    # Test the short-cuts and other integers
+    for n in [-5, -2, -1, 0, 1, 2, 5]:
+        # Test accuracy
+        q = p ** n
+        r = Rotation.identity(10)
+        for _ in range(abs(n)):
+            if n > 0:
+                r = r * p
+            else:
+                r = r * p_inv
+        ang = (q * r.inv()).magnitude()
+        assert np.all(ang < atol)
+
+        # Test shape preservation
+        r = Rotation.from_quat([0, 0, 0, 1])
+        assert (r**n).as_quat().shape == (4,)
+        r = Rotation.from_quat([[0, 0, 0, 1]])
+        assert (r**n).as_quat().shape == (1, 4)
+
+    # Large angle fractional
+    for n in [-1.5, -0.5, -0.0, 0.0, 0.5, 1.5]:
+        q = p ** n
+        r = Rotation.from_rotvec(n * p.as_rotvec())
+        assert_allclose(q.as_quat(), r.as_quat(), atol=atol)
+
+    # Small angle
+    p = Rotation.from_rotvec([1e-12, 0, 0])
+    n = 3
+    q = p ** n
+    r = Rotation.from_rotvec(n * p.as_rotvec())
+    assert_allclose(q.as_quat(), r.as_quat(), atol=atol)
+
+
+def test_pow_errors():
+    p = Rotation.random(random_state=0)
+    with pytest.raises(NotImplementedError, match='modulus not supported'):
+        pow(p, 1, 1)
+
+
 def test_rotation_within_numpy_array():
-    single = Rotation.random()
-    multiple = Rotation.random(2)
+    single = Rotation.random(random_state=0)
+    multiple = Rotation.random(2, random_state=1)
 
     array = np.array(single)
     assert_equal(array.shape, ())
@@ -1247,3 +1725,232 @@ def test_rotation_within_numpy_array():
 
     array = np.array([multiple, multiple, multiple])
     assert_equal(array.shape, (3, 2))
+
+
+def test_pickling():
+    r = Rotation.from_quat([0, 0, np.sin(np.pi/4), np.cos(np.pi/4)])
+    pkl = pickle.dumps(r)
+    unpickled = pickle.loads(pkl)
+    assert_allclose(r.as_matrix(), unpickled.as_matrix(), atol=1e-15)
+
+
+def test_deepcopy():
+    r = Rotation.from_quat([0, 0, np.sin(np.pi/4), np.cos(np.pi/4)])
+    r1 = copy.deepcopy(r)
+    assert_allclose(r.as_matrix(), r1.as_matrix(), atol=1e-15)
+
+
+def test_as_euler_contiguous():
+    r = Rotation.from_quat([0, 0, 0, 1])
+    e1 = r.as_euler('xyz')  # extrinsic euler rotation
+    e2 = r.as_euler('XYZ')  # intrinsic
+    assert e1.flags['C_CONTIGUOUS'] is True
+    assert e2.flags['C_CONTIGUOUS'] is True
+    assert all(i >= 0 for i in e1.strides)
+    assert all(i >= 0 for i in e2.strides)
+
+
+def test_concatenate():
+    rotation = Rotation.random(10, random_state=0)
+    sizes = [1, 2, 3, 1, 3]
+    starts = [0] + list(np.cumsum(sizes))
+    split = [rotation[i:i + n] for i, n in zip(starts, sizes)]
+    result = Rotation.concatenate(split)
+    assert_equal(rotation.as_quat(), result.as_quat())
+
+
+def test_concatenate_wrong_type():
+    with pytest.raises(TypeError, match='Rotation objects only'):
+        Rotation.concatenate([Rotation.identity(), 1, None])
+
+
+# Regression test for gh-16663
+def test_len_and_bool():
+    rotation_multi_empty = Rotation(np.empty((0, 4)))
+    rotation_multi_one = Rotation([[0, 0, 0, 1]])
+    rotation_multi = Rotation([[0, 0, 0, 1], [0, 0, 0, 1]])
+    rotation_single = Rotation([0, 0, 0, 1])
+
+    assert len(rotation_multi_empty) == 0
+    assert len(rotation_multi_one) == 1
+    assert len(rotation_multi) == 2
+    with pytest.raises(TypeError, match="Single rotation has no len()."):
+        len(rotation_single)
+
+    # Rotation should always be truthy. See gh-16663
+    assert rotation_multi_empty
+    assert rotation_multi_one
+    assert rotation_multi
+    assert rotation_single
+
+
+def test_from_davenport_single_rotation():
+    axis = [0, 0, 1]
+    quat = Rotation.from_davenport(axis, 'extrinsic', 90, 
+                                   degrees=True).as_quat()
+    expected_quat = np.array([0, 0, 1, 1]) / np.sqrt(2)
+    assert_allclose(quat, expected_quat)
+
+
+def test_from_davenport_one_or_two_axes():
+    ez = [0, 0, 1]
+    ey = [0, 1, 0]
+
+    # Single rotation, single axis, axes.shape == (3, )
+    rot = Rotation.from_rotvec(np.array(ez) * np.pi/4)
+    rot_dav = Rotation.from_davenport(ez, 'e', np.pi/4)
+    assert_allclose(rot.as_quat(canonical=True),
+                    rot_dav.as_quat(canonical=True))
+
+    # Single rotation, single axis, axes.shape == (1, 3)
+    rot = Rotation.from_rotvec([np.array(ez) * np.pi/4])
+    rot_dav = Rotation.from_davenport([ez], 'e', [np.pi/4])
+    assert_allclose(rot.as_quat(canonical=True),
+                    rot_dav.as_quat(canonical=True))
+    
+    # Single rotation, two axes, axes.shape == (2, 3)
+    rot = Rotation.from_rotvec([np.array(ez) * np.pi/4, 
+                                np.array(ey) * np.pi/6])
+    rot = rot[0] * rot[1]
+    rot_dav = Rotation.from_davenport([ey, ez], 'e', [np.pi/6, np.pi/4])
+    assert_allclose(rot.as_quat(canonical=True),
+                    rot_dav.as_quat(canonical=True))
+    
+    # Two rotations, single axis, axes.shape == (3, )
+    rot = Rotation.from_rotvec([np.array(ez) * np.pi/6, 
+                                np.array(ez) * np.pi/4])
+    rot_dav = Rotation.from_davenport([ez], 'e', [np.pi/6, np.pi/4])
+    assert_allclose(rot.as_quat(canonical=True),
+                    rot_dav.as_quat(canonical=True))
+
+
+def test_from_davenport_invalid_input():
+    ez = [0, 0, 1]
+    ey = [0, 1, 0]
+    ezy = [0, 1, 1]
+    with pytest.raises(ValueError, match="must be orthogonal"):
+        Rotation.from_davenport([ez, ezy], 'e', [0, 0])
+    with pytest.raises(ValueError, match="must be orthogonal"):
+        Rotation.from_davenport([ez, ey, ezy], 'e', [0, 0, 0])
+    with pytest.raises(ValueError, match="order should be"):
+        Rotation.from_davenport([ez], 'xyz', [0])
+    with pytest.raises(ValueError, match="Expected `angles`"):
+        Rotation.from_davenport([ez, ey, ez], 'e', [0, 1, 2, 3])
+
+
+def test_as_davenport():
+    rnd = np.random.RandomState(0)
+    n = 100
+    angles = np.empty((n, 3))
+    angles[:, 0] = rnd.uniform(low=-np.pi, high=np.pi, size=(n,))
+    angles_middle = rnd.uniform(low=0, high=np.pi, size=(n,))
+    angles[:, 2] = rnd.uniform(low=-np.pi, high=np.pi, size=(n,))
+    lambdas = rnd.uniform(low=0, high=np.pi, size=(20,))
+
+    e1 = np.array([1, 0, 0])
+    e2 = np.array([0, 1, 0])
+
+    for lamb in lambdas:
+        ax_lamb = [e1, e2, Rotation.from_rotvec(lamb*e2).apply(e1)]
+        angles[:, 1] = angles_middle - lamb
+        for order in ['extrinsic', 'intrinsic']:
+            ax = ax_lamb if order == 'intrinsic' else ax_lamb[::-1]
+            rot = Rotation.from_davenport(ax, order, angles)
+            angles_dav = rot.as_davenport(ax, order)
+            assert_allclose(angles_dav, angles)
+
+
+def test_as_davenport_degenerate():
+    # Since we cannot check for angle equality, we check for rotation matrix
+    # equality
+    rnd = np.random.RandomState(0)
+    n = 5
+    angles = np.empty((n, 3))
+
+    # symmetric sequences
+    angles[:, 0] = rnd.uniform(low=-np.pi, high=np.pi, size=(n,))
+    angles_middle = [rnd.choice([0, np.pi]) for i in range(n)]
+    angles[:, 2] = rnd.uniform(low=-np.pi, high=np.pi, size=(n,))
+    lambdas = rnd.uniform(low=0, high=np.pi, size=(5,))
+
+    e1 = np.array([1, 0, 0])
+    e2 = np.array([0, 1, 0])
+
+    for lamb in lambdas:
+        ax_lamb = [e1, e2, Rotation.from_rotvec(lamb*e2).apply(e1)]
+        angles[:, 1] = angles_middle - lamb
+        for order in ['extrinsic', 'intrinsic']:
+            ax = ax_lamb if order == 'intrinsic' else ax_lamb[::-1]
+            rot = Rotation.from_davenport(ax, order, angles)
+            with pytest.warns(UserWarning, match="Gimbal lock"):
+                angles_dav = rot.as_davenport(ax, order)
+            mat_expected = rot.as_matrix()
+            mat_estimated = Rotation.from_davenport(ax, order, angles_dav).as_matrix()
+            assert_array_almost_equal(mat_expected, mat_estimated)
+
+
+def test_compare_from_davenport_from_euler():
+    rnd = np.random.RandomState(0)
+    n = 100
+    angles = np.empty((n, 3))
+
+    # symmetric sequences
+    angles[:, 0] = rnd.uniform(low=-np.pi, high=np.pi, size=(n,))
+    angles[:, 1] = rnd.uniform(low=0, high=np.pi, size=(n,))
+    angles[:, 2] = rnd.uniform(low=-np.pi, high=np.pi, size=(n,))
+    for order in ['extrinsic', 'intrinsic']:
+        for seq_tuple in permutations('xyz'):
+            seq = ''.join([seq_tuple[0], seq_tuple[1], seq_tuple[0]])
+            ax = [basis_vec(i) for i in seq]
+            if order == 'intrinsic':
+                seq = seq.upper()
+            eul = Rotation.from_euler(seq, angles)
+            dav = Rotation.from_davenport(ax, order, angles)
+            assert_allclose(eul.as_quat(canonical=True), dav.as_quat(canonical=True), 
+                            rtol=1e-12)
+
+    # asymmetric sequences
+    angles[:, 1] -= np.pi / 2
+    for order in ['extrinsic', 'intrinsic']:
+        for seq_tuple in permutations('xyz'):
+            seq = ''.join(seq_tuple)
+            ax = [basis_vec(i) for i in seq]
+            if order == 'intrinsic':
+                seq = seq.upper()
+            eul = Rotation.from_euler(seq, angles)
+            dav = Rotation.from_davenport(ax, order, angles)
+            assert_allclose(eul.as_quat(), dav.as_quat(), rtol=1e-12)
+
+
+def test_compare_as_davenport_as_euler():
+    rnd = np.random.RandomState(0)
+    n = 100
+    angles = np.empty((n, 3))
+
+    # symmetric sequences
+    angles[:, 0] = rnd.uniform(low=-np.pi, high=np.pi, size=(n,))
+    angles[:, 1] = rnd.uniform(low=0, high=np.pi, size=(n,))
+    angles[:, 2] = rnd.uniform(low=-np.pi, high=np.pi, size=(n,))
+    for order in ['extrinsic', 'intrinsic']:
+        for seq_tuple in permutations('xyz'):
+            seq = ''.join([seq_tuple[0], seq_tuple[1], seq_tuple[0]])
+            ax = [basis_vec(i) for i in seq]
+            if order == 'intrinsic':
+                seq = seq.upper()
+            rot = Rotation.from_euler(seq, angles)
+            eul = rot.as_euler(seq)
+            dav = rot.as_davenport(ax, order)
+            assert_allclose(eul, dav, rtol=1e-12)
+
+    # asymmetric sequences
+    angles[:, 1] -= np.pi / 2
+    for order in ['extrinsic', 'intrinsic']:
+        for seq_tuple in permutations('xyz'):
+            seq = ''.join(seq_tuple)
+            ax = [basis_vec(i) for i in seq]
+            if order == 'intrinsic':
+                seq = seq.upper()
+            rot = Rotation.from_euler(seq, angles)
+            eul = rot.as_euler(seq)
+            dav = rot.as_davenport(ax, order)
+            assert_allclose(eul, dav, rtol=1e-12)

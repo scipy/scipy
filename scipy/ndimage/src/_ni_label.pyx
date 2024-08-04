@@ -3,8 +3,6 @@
 # Requires Cython version 0.17 or greater due to type templating.
 ######################################################################
 
-cimport cython
-from cython cimport sizeof
 import numpy as np
 cimport numpy as np
 
@@ -54,7 +52,7 @@ ctypedef fused data_t:
 # the fused data is nonzero, BACKGROUND elsewhere
 ######################################################################
 cdef void fused_nonzero_line(data_t *p, np.intp_t stride,
-                             np.uintp_t *line, np.intp_t L) nogil:
+                             np.uintp_t *line, np.intp_t L) noexcept nogil:
     cdef np.intp_t i
     for i in range(L):
         line[i] = FOREGROUND if \
@@ -66,7 +64,7 @@ cdef void fused_nonzero_line(data_t *p, np.intp_t stride,
 # Load a line from a fused data array to a np.uintp_t array
 ######################################################################
 cdef void fused_read_line(data_t *p, np.intp_t stride,
-                          np.uintp_t *line, np.intp_t L) nogil:
+                          np.uintp_t *line, np.intp_t L) noexcept nogil:
     cdef np.intp_t i
     for i in range(L):
         line[i] = <np.uintp_t> (<data_t *> ((<char *> p) + i * stride))[0]
@@ -77,7 +75,7 @@ cdef void fused_read_line(data_t *p, np.intp_t stride,
 # returning True if overflowed
 ######################################################################
 cdef bint fused_write_line(data_t *p, np.intp_t stride,
-                           np.uintp_t *line, np.intp_t L) nogil:
+                           np.uintp_t *line, np.intp_t L) noexcept nogil:
     cdef np.intp_t i
     for i in range(L):
         # Check before overwrite, as this prevents us accidentally writing a 0
@@ -106,11 +104,11 @@ def get_write_line(np.ndarray[data_t] a):
 # Typedefs for referring to specialized instances of fused functions
 ######################################################################
 ctypedef void (*nonzero_line_func_t)(void *p, np.intp_t stride,
-                                     np.uintp_t *line, np.intp_t L) nogil
+                                     np.uintp_t *line, np.intp_t L) noexcept nogil
 ctypedef void (*read_line_func_t)(void *p, np.intp_t stride,
-                                  np.uintp_t *line, np.intp_t L) nogil
+                                  np.uintp_t *line, np.intp_t L) noexcept nogil
 ctypedef bint (*write_line_func_t)(void *p, np.intp_t stride,
-                                   np.uintp_t *line, np.intp_t L) nogil
+                                   np.uintp_t *line, np.intp_t L) noexcept nogil
 
 
 ######################################################################
@@ -118,7 +116,7 @@ ctypedef bint (*write_line_func_t)(void *p, np.intp_t stride,
 ######################################################################
 cdef inline np.uintp_t mark_for_merge(np.uintp_t a,
                                       np.uintp_t b,
-                                      np.uintp_t *mergetable) nogil:
+                                      np.uintp_t *mergetable) noexcept nogil:
 
     cdef:
         np.uintp_t orig_a, orig_b, minlabel
@@ -151,7 +149,7 @@ cdef inline np.uintp_t mark_for_merge(np.uintp_t a,
 ######################################################################
 cdef inline np.uintp_t take_label_or_merge(np.uintp_t cur_label,
                                            np.uintp_t neighbor_label,
-                                           np.uintp_t *mergetable) nogil:
+                                           np.uintp_t *mergetable) noexcept nogil:
     if neighbor_label == BACKGROUND:
         return cur_label
     if cur_label == FOREGROUND:
@@ -174,7 +172,7 @@ cdef np.uintp_t label_line_with_neighbor(np.uintp_t *line,
                                          bint label_unlabeled,
                                          bint use_previous,
                                          np.uintp_t next_region,
-                                         np.uintp_t *mergetable) nogil:
+                                         np.uintp_t *mergetable) noexcept nogil:
     cdef:
         np.intp_t i
 
@@ -203,13 +201,13 @@ cpdef _label(np.ndarray input,
              np.ndarray structure,
              np.ndarray output):
     # check dimensions
-    # To understand the need for the casts to object, see
-    # http://trac.cython.org/cython_trac/ticket/302
+    # To understand the need for the casts to object in order to use
+    # tuple.__eq__, see https://github.com/cython/cython/issues/863
     assert (<object> input).shape == (<object> output).shape, \
         ("Shapes must match for input and output,"
          "{} != {}".format((<object> input).shape, (<object> output).shape))
 
-    structure = np.asanyarray(structure, dtype=np.int_).copy()
+    structure = np.asanyarray(structure, dtype=np.bool_).copy()
     assert input.ndim == structure.ndim, \
         ("Structuring element must have same "
          "# of dimensions as input, "
@@ -249,8 +247,8 @@ cpdef _label(np.ndarray input,
         np.intp_t L, delta, i
         np.intp_t si, so, ss
         np.intp_t total_offset
-        np.intp_t output_ndim, structure_ndim, strides
-        bint needs_self_labeling, valid, center, use_previous, overflowed
+        np.intp_t output_ndim, structure_ndim
+        bint needs_self_labeling, valid, use_previous, overflowed
         np.ndarray _line_buffer, _neighbor_buffer
         np.uintp_t *line_buffer
         np.uintp_t *neighbor_buffer
@@ -328,9 +326,9 @@ cpdef _label(np.ndarray input,
                 # Take neighbor labels
                 PyArray_ITER_RESET(itstruct)
                 for ni in range(num_neighbors):
-                    neighbor_use_prev = (<np.int_t *> PyArray_ITER_DATA(itstruct))[0]
-                    neighbor_use_adjacent = (<np.int_t *> (<char *> PyArray_ITER_DATA(itstruct) + ss))[0]
-                    neighbor_use_next = (<np.int_t *> (<char *> PyArray_ITER_DATA(itstruct) + 2 * ss))[0]
+                    neighbor_use_prev = (<np.npy_bool *> PyArray_ITER_DATA(itstruct))[0]
+                    neighbor_use_adjacent = (<np.npy_bool *> (<char *> PyArray_ITER_DATA(itstruct) + ss))[0]
+                    neighbor_use_next = (<np.npy_bool *> (<char *> PyArray_ITER_DATA(itstruct) + 2 * ss))[0]
                     if not (neighbor_use_prev or
                             neighbor_use_adjacent or
                             neighbor_use_next):
@@ -424,7 +422,7 @@ cpdef _label(np.ndarray input,
                     # we've compacted every label below this, and the
                     # mergetable has an invariant (from mark_for_merge()) that
                     # it always points downward.  Therefore, we can fetch the
-                    # final lable by two steps of indirection.
+                    # final label by two steps of indirection.
                     mergetable[src_label] = mergetable[mergetable[src_label]]
 
             PyArray_ITER_RESET(ito)

@@ -51,9 +51,9 @@ c     p(x) = (x+1)*(x+2)*...*(x+nq-1).
 c initially, p(x) = 1.
 c-----------------------------------------------------------------------
         rq1fac = rqfac
-        rqfac = rqfac/dfloat(nq)
+        rqfac = rqfac/dble(nq)
         nqm1 = nq - 1
-        fnqm1 = dfloat(nqm1)
+        fnqm1 = dble(nqm1)
         nqp1 = nq + 1
 c form coefficients of p(x)*(x+nq-1). ----------------------------------
         pc(nq) = 0.0d0
@@ -67,17 +67,17 @@ c compute integral, -1 to 0, of p(x) and x*p(x). -----------------------
         tsign = 1.0d0
         do 120 i = 2,nq
           tsign = -tsign
-          pint = pint + tsign*pc(i)/dfloat(i)
- 120      xpin = xpin + tsign*pc(i)/dfloat(i+1)
+          pint = pint + tsign*pc(i)/dble(i)
+ 120      xpin = xpin + tsign*pc(i)/dble(i+1)
 c store coefficients in elco and tesco. --------------------------------
         elco(1,nq) = pint*rq1fac
         elco(2,nq) = 1.0d0
         do 130 i = 2,nq
- 130      elco(i+1,nq) = rq1fac*pc(i)/dfloat(i)
+ 130      elco(i+1,nq) = rq1fac*pc(i)/dble(i)
         agamq = rqfac*xpin
         ragq = 1.0d0/agamq
         tesco(2,nq) = ragq
-        if (nq .lt. 12) tesco(1,nqp1) = ragq*rqfac/dfloat(nqp1)
+        if (nq .lt. 12) tesco(1,nqp1) = ragq*rqfac/dble(nqp1)
         tesco(3,nqm1) = ragq
  140    continue
       return
@@ -90,7 +90,7 @@ c the pc array will contain the coefficients of the polynomial
 c     p(x) = (x+1)*(x+2)*...*(x+nq).
 c initially, p(x) = 1.
 c-----------------------------------------------------------------------
-        fnq = dfloat(nq)
+        fnq = dble(nq)
         nqp1 = nq + 1
 c form coefficients of p(x)*(x+nq). ------------------------------------
         pc(nqp1) = 0.0d0
@@ -103,8 +103,8 @@ c store coefficients in elco and tesco. --------------------------------
  220      elco(i,nq) = pc(i)/pc(2)
         elco(2,nq) = 1.0d0
         tesco(1,nq) = rq1fac
-        tesco(2,nq) = dfloat(nqp1)/elco(1,nq)
-        tesco(3,nq) = dfloat(nq+2)/elco(1,nq)
+        tesco(2,nq) = dble(nqp1)/elco(1,nq)
+        tesco(3,nq) = dble(nq+2)/elco(1,nq)
         rq1fac = rq1fac/fnq
  230    continue
       return

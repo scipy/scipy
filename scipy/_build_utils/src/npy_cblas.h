@@ -6,6 +6,7 @@
 #ifndef _NPY_CBLAS_H_
 #define _NPY_CBLAS_H_
 
+#include <numpy/npy_common.h>
 #include <stddef.h>
 
 /* Allow the use in C++ code.  */
@@ -31,6 +32,13 @@ enum CBLAS_SIDE {CblasLeft=141, CblasRight=142};
 #define BLAS_FORTRAN_SUFFIX _
 #endif
 
+// New Accelerate suffix is always $NEWLAPACK (no underscore)
+#ifdef ACCELERATE_NEW_LAPACK
+#undef BLAS_FORTRAN_SUFFIX
+#define BLAS_FORTRAN_SUFFIX
+#define BLAS_SYMBOL_SUFFIX $NEWLAPACK
+#endif
+
 #ifndef BLAS_SYMBOL_PREFIX
 #define BLAS_SYMBOL_PREFIX
 #endif
@@ -43,12 +51,23 @@ enum CBLAS_SIDE {CblasLeft=141, CblasRight=142};
 #define BLAS_FUNC_EXPAND(name,prefix,suffix,suffix2) BLAS_FUNC_CONCAT(name,prefix,suffix,suffix2)
 
 #define CBLAS_FUNC(name) BLAS_FUNC_EXPAND(name,BLAS_SYMBOL_PREFIX,,BLAS_SYMBOL_SUFFIX)
+/*
+ * Use either the OpenBLAS scheme with the `64_` suffix behind the Fortran
+ * compiler symbol mangling, or the MKL scheme (and upcoming
+ * reference-lapack#666) which does it the other way around and uses `_64`.
+ */
+#ifdef OPENBLAS_ILP64_NAMING_SCHEME
 #define BLAS_FUNC(name) BLAS_FUNC_EXPAND(name,BLAS_SYMBOL_PREFIX,BLAS_FORTRAN_SUFFIX,BLAS_SYMBOL_SUFFIX)
+#else
+#define BLAS_FUNC(name) BLAS_FUNC_EXPAND(name,BLAS_SYMBOL_PREFIX,BLAS_SYMBOL_SUFFIX,BLAS_FORTRAN_SUFFIX)
+#endif
 
 #ifdef HAVE_BLAS_ILP64
 #define CBLAS_INT npy_int64
+#define CBLAS_INT_MAX NPY_MAX_INT64
 #else
 #define CBLAS_INT int
+#define CBLAS_INT_MAX INT_MAX
 #endif
 
 #define BLASNAME(name) CBLAS_FUNC(name)
@@ -59,8 +78,41 @@ enum CBLAS_SIDE {CblasLeft=141, CblasRight=142};
 #undef BLASINT
 #undef BLASNAME
 
+
+/*
+ * Convert NumPy stride to BLAS stride. Returns 0 if conversion cannot be done
+ * (BLAS won't handle negative or zero strides the way we want).
+ */
+static inline CBLAS_INT
+blas_stride(npy_intp stride, unsigned itemsize)
+{
+    /*
+     * Should probably check pointer alignment also, but this may cause
+     * problems if we require complex to be 16 byte aligned.
+     */
+    if (stride > 0 && (stride % itemsize) == 0) {
+        stride /= itemsize;
+        if (stride <= CBLAS_INT_MAX) {
+            return stride;
+        }
+    }
+    return 0;
+}
+
+/*
+ * Define a chunksize for CBLAS.
+ *
+ * The chunksize is the greatest power of two less than CBLAS_INT_MAX.
+ */
+#if NPY_MAX_INTP > CBLAS_INT_MAX
+# define NPY_CBLAS_CHUNK  (CBLAS_INT_MAX / 2 + 1)
+#else
+# define NPY_CBLAS_CHUNK  NPY_MAX_INTP
+#endif
+
+
 #ifdef __cplusplus
 }
 #endif
 
-#endif
+#endif  /* _NPY_CBLAS_H_ */

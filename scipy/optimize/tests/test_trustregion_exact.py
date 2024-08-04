@@ -5,6 +5,7 @@ To run it in its simplest form::
   nosetests test_optimize.py
 
 """
+import pytest
 import numpy as np
 from scipy.optimize._trustregion_exact import (
     estimate_smallest_singular_value,
@@ -45,7 +46,7 @@ def random_entry(n, min_eig, max_eig, case):
     return A, g
 
 
-class TestEstimateSmallestSingularValue(object):
+class TestEstimateSmallestSingularValue:
 
     def test_for_ill_condiotioned_matrix(self):
 
@@ -70,7 +71,7 @@ class TestEstimateSmallestSingularValue(object):
         assert_array_almost_equal(abs(zmin), abs(zmin_svd), decimal=8)
 
 
-class TestSingularLeadingSubmatrix(object):
+class TestSingularLeadingSubmatrix:
 
     def test_for_already_singular_leading_submatrix(self):
 
@@ -93,7 +94,7 @@ class TestSingularLeadingSubmatrix(object):
         # Check if the leading submatrix is singular.
         assert_array_almost_equal(det(A[:k, :k]), 0)
 
-        # Check if `v` fullfil the specified properties
+        # Check if `v` fulfil the specified properties
         quadratic_term = np.dot(v, np.dot(A, v))
         assert_array_almost_equal(quadratic_term, 0)
 
@@ -120,7 +121,7 @@ class TestSingularLeadingSubmatrix(object):
         # Check if the leading submatrix is singular.
         assert_array_almost_equal(det(A[:k, :k]), 0)
 
-        # Check if `v` fullfil the specified properties
+        # Check if `v` fulfil the specified properties
         quadratic_term = np.dot(v, np.dot(A, v))
         assert_array_almost_equal(quadratic_term, 0)
 
@@ -145,12 +146,12 @@ class TestSingularLeadingSubmatrix(object):
         # Check if the leading submatrix is singular
         assert_array_almost_equal(det(A[:k, :k]), 0)
 
-        # Check if `v` fullfil the specified properties
+        # Check if `v` fulfil the specified properties
         quadratic_term = np.dot(v, np.dot(A, v))
         assert_array_almost_equal(quadratic_term, 0)
 
 
-class TestIterativeSubproblem(object):
+class TestIterativeSubproblem:
 
     def test_for_the_easy_case(self):
 
@@ -274,6 +275,7 @@ class TestIterativeSubproblem(object):
                                       -0.84954934])
         assert_array_almost_equal(hits_boundary, True)
 
+    @pytest.mark.fail_slow(10)
     def test_for_random_entries(self):
         # Seed
         np.random.seed(1)

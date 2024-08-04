@@ -23,18 +23,18 @@ import scipy as sp
 import scipy.sparse as sps
 from warnings import warn
 from scipy.linalg import LinAlgError
-from .optimize import OptimizeWarning, OptimizeResult, _check_unknown_options
+from ._optimize import OptimizeWarning, OptimizeResult, _check_unknown_options
 from ._linprog_util import _postsolve
 has_umfpack = True
 has_cholmod = True
 try:
-    import sksparse
-    from sksparse.cholmod import cholesky as cholmod
+    import sksparse  # noqa: F401
+    from sksparse.cholmod import cholesky as cholmod  # noqa: F401
     from sksparse.cholmod import analyze as cholmod_analyze
 except ImportError:
     has_cholmod = False
 try:
-    import scikits.umfpack  # test whether to use factorized
+    import scikits.umfpack  # test whether to use factorized  # noqa: F401
 except ImportError:
     has_umfpack = False
 
@@ -114,7 +114,10 @@ def _get_solver(M, sparse=False, lstsq=False, sym_pos=True,
                 # this seems to cache the matrix factorization, so solving
                 # with multiple right hand sides is much faster
                 def solve(r, sym_pos=sym_pos):
-                    return sp.linalg.solve(M, r, sym_pos=sym_pos)
+                    if sym_pos:
+                        return sp.linalg.solve(M, r, assume_a="pos")
+                    else:
+                        return sp.linalg.solve(M, r)
     # There are many things that can go wrong here, and it's hard to say
     # what all of them are. It doesn't really matter: if the matrix can't be
     # factorized, return None. get_solver will be called again with different
@@ -257,7 +260,7 @@ def _get_delta(A, b, c, x, y, z, tau, kappa, gamma, eta, sparse=False,
         # 3. scipy.sparse.linalg.splu
         # 4. scipy.sparse.linalg.lsqr
         solved = False
-        while(not solved):
+        while not solved:
             try:
                 # [4] Equation 8.28
                 p, q = _sym_solve(Dinv, A, c, b, solve)
@@ -721,9 +724,6 @@ def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol, sparse, lstsq,
 
     if sparse:
         A = sps.csc_matrix(A)
-        A.T = A.transpose()  # A.T is defined for sparse matrices but is slow
-        # Redefine it to avoid calculating again
-        # This is fine as long as A doesn't change
 
     while go:
 
@@ -990,7 +990,8 @@ def _linprog_ip(c, c0, A, b, callback, postsolve_args, maxiter=1000, tol=1e-8,
 
     1. ``sksparse.cholmod.cholesky`` (if scikit-sparse and SuiteSparse are installed)
 
-    2. ``scipy.sparse.linalg.factorized`` (if scikit-umfpack and SuiteSparse are installed)
+    2. ``scipy.sparse.linalg.factorized``
+        (if scikit-umfpack and SuiteSparse are installed)
 
     3. ``scipy.sparse.linalg.splu`` (which uses SuperLU distributed with SciPy)
 

@@ -54,7 +54,7 @@ def main():
     module = importlib.import_module('scipy.' + args.module)
 
     fnew = []
-    with open(filename, 'r') as f:
+    with open(filename) as f:
         line = f.readline()
         while line:
             if '.. autosummary::' in line:
@@ -108,4 +108,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-        

@@ -6,11 +6,12 @@ from numpy.testing import (assert_, assert_array_almost_equal,
 from pytest import raises as assert_raises
 import pytest
 import numpy as np
+import scipy
 
 from scipy.optimize import fmin_slsqp, minimize, Bounds, NonlinearConstraint
 
 
-class MyCallBack(object):
+class MyCallBack:
     """pass a custom callback function
 
     This makes sure it's being used.
@@ -24,7 +25,7 @@ class MyCallBack(object):
         self.ncalls += 1
 
 
-class TestSLSQP(object):
+class TestSLSQP:
     """
     Test SLSQP algorithm using Example 14.4 from Numerical Methods for
     Engineers by Steven Chapra and Raymond Canale.
@@ -372,8 +373,10 @@ class TestSLSQP(object):
         # At x0 = [0, 1], the second constraint is clearly infeasible.
         # This triggers a call with n2==1 in the LSQ subroutine.
         x = [0, 1]
-        f1 = lambda x: x[0] + x[1] - 2
-        f2 = lambda x: x[0]**2 - 1
+        def f1(x):
+            return x[0] + x[1] - 2
+        def f2(x):
+            return x[0] ** 2 - 1
         sol = minimize(
             lambda x: x[0]**2 + x[1]**2,
             x,
@@ -487,6 +490,9 @@ class TestSLSQP(object):
         assert_(sol.success)
         assert_allclose(sol.x, 0, atol=1e-10)
 
+    @pytest.mark.xfail(scipy.show_config(mode='dicts')['Compilers']['fortran']['name']
+                       == "intel-llvm",
+                       reason="Runtime warning due to floating point issues, not logic")
     def test_inconsistent_inequalities(self):
         # gh-7618
 
@@ -512,7 +518,8 @@ class TestSLSQP(object):
         assert_(not res.success)
 
     def test_new_bounds_type(self):
-        f = lambda x: x[0]**2 + x[1]**2
+        def f(x):
+            return x[0] ** 2 + x[1] ** 2
         bounds = Bounds([1, 0], [np.inf, np.inf])
         sol = minimize(f, [0, 0], method='slsqp', bounds=bounds)
         assert_(sol.success)
@@ -520,7 +527,7 @@ class TestSLSQP(object):
 
     def test_nested_minimization(self):
 
-        class NestedProblem():
+        class NestedProblem:
 
             def __init__(self):
                 self.F_outer_count = 0
@@ -576,7 +583,8 @@ class TestSLSQP(object):
                 {'type': 'ineq', 'fun': lambda x: x[1] + x[2] - 2})
         bnds = ((-2, 2), (-2, 2), (-2, 2))
 
-        target = lambda x: 1
+        def target(x):
+            return 1
         x0 = [-1.8869783504471584, -0.640096352696244, -0.8174212253407696]
         res = minimize(target, x0, method='SLSQP', bounds=bnds, constraints=cons,
                        options={'disp':False, 'maxiter':10000})

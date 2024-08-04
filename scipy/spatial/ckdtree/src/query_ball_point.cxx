@@ -1,3 +1,6 @@
+#include "ckdtree_decl.h"
+#include "rectangle.h"
+
 #include <cmath>
 #include <cstdlib>
 #include <cstring>
@@ -10,9 +13,6 @@
 #include <typeinfo>
 #include <stdexcept>
 #include <ios>
-
-#include "ckdtree_decl.h"
-#include "rectangle.h"
 
 
 static void
@@ -128,7 +128,7 @@ query_ball_point(const ckdtree *self, const double *x,
             Rectangle point(m, x + i * m, x + i * m);
             HANDLE(CKDTREE_LIKELY(p == 2), MinkowskiDistP2)
             HANDLE(p == 1, MinkowskiDistP1)
-            HANDLE(ckdtree_isinf(p), MinkowskiDistPinf)
+            HANDLE(std::isinf(p), MinkowskiDistPinf)
             HANDLE(1, MinkowskiDistPp)
             {}
         } else {
@@ -139,7 +139,7 @@ query_ball_point(const ckdtree *self, const double *x,
             }
             HANDLE(CKDTREE_LIKELY(p == 2), BoxMinkowskiDistP2)
             HANDLE(p == 1, BoxMinkowskiDistP1)
-            HANDLE(ckdtree_isinf(p), BoxMinkowskiDistPinf)
+            HANDLE(std::isinf(p), BoxMinkowskiDistPinf)
             HANDLE(1, BoxMinkowskiDistPp)
             {}
         }
