@@ -63,12 +63,8 @@ def _solve_asarray_validated(a, b, owa, owb):
         info = 1
 
     # If not contiguous or not the right type, pay the price with a copy
-    a1 = np.array(a1, dtype='fdFD'[info],
-                  copy=(not a1.flags.forc) or not (owa or _datacopied(a1, a)),
-                  order='K')
-    b1 = np.array(b1, dtype='fdFD'[info],
-                  copy=(not b1.flags.forc) or not (owb or _datacopied(b1, b)),
-                  order='F')
+    a1 = np.asarray(a1, dtype='fdFD'[info], order='K')
+    b1 = np.asarray(b1, dtype='fdFD'[info], order='F')
 
     return a1, b1
 
