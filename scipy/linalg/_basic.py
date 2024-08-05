@@ -458,7 +458,15 @@ def solve_banded(l_and_u, ab, b, overwrite_ab=False, overwrite_b=False,
     overwrite_b = overwrite_b or _datacopied(b1, b)
     if a1.shape[-1] == 1:
         b2 = np.array(b1, copy=(not overwrite_b))
-        b2 /= a1[1, 0]
+        # Generally, m >= nlower + nupper + 1 (with m = a1.shape[-1])
+        # implies that nlower == nupper == 0 when m == 1,
+        # so that a1[0, 0] is the correct way to index the matrix.
+        # This may not always be the case (the GBSV documentation for Lapack
+        # https://netlib.org/lapack/explore-html/db/df8/group__gbsv_gaff55317eb
+        # 3aed2278a85919a488fec07.html#gaff55317eb3aed2278a85919a488fec07
+        # does not place a lower bound on the argument `N`),
+        # so we need to index the main diagonal by offsetting by nupper rows
+        b2 /= a1[nupper, 0]
         return b2
     if nlower == nupper == 1:
         overwrite_ab = overwrite_ab or _datacopied(a1, ab)
