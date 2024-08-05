@@ -867,6 +867,64 @@ class TestSolve:
         assert_(x.size == 0, 'Returned array is not empty')
         assert_(x.shape == (2, 0), 'Returned empty array shape is wrong')
 
+    @pytest.mark.parametrize('dtype', [np.float64, np.complex128])
+    @pytest.mark.parametrize('assume_a', ['dia', 'tri', 'ltr', 'utr', 'sym', 'her'])
+    @pytest.mark.parametrize('nrhs', [(), (5,)])
+    @pytest.mark.parametrize('transposed', [True, False])
+    @pytest.mark.parametrize('overwrite', [True, False])
+    @pytest.mark.parametrize('fortran', [True, False])
+    def test_structure_detection(self, dtype, assume_a, nrhs, transposed,
+                                 overwrite, fortran):
+        rng = np.random.default_rng(982345982439826)
+        n = 5
+        b = rng.random(size=(n,) + nrhs)
+        A = rng.random(size=(n, n))
+
+        if np.issubdtype(dtype, np.complexfloating):
+            b = b + rng.random(size=(n,) + nrhs) * 1j
+            A = A + rng.random(size=(n, n)) * 1j
+
+        if assume_a == 'dia':
+            A = np.diag(np.diag(A))
+        elif assume_a == 'ltr':
+            A = np.tril(A)
+        elif assume_a == 'utr':
+            A = np.triu(A)
+        elif assume_a == 'tri':
+            A = (np.diag(np.diag(A))
+                 + np.diag(np.diag(A, -1), -1)
+                 + np.diag(np.diag(A, 1), 1))
+        elif assume_a == 'sym':
+            A = A + A.T
+        elif assume_a == 'her':
+            A = A + A.conj().T
+
+        if fortran:
+            A = np.asfortranarray(A)
+
+        A_copy = A.copy()
+        b_copy = b.copy()
+
+        if np.issubdtype(dtype, np.complexfloating) and transposed:
+            message = "scipy.linalg.solve can currently..."
+            with pytest.raises(NotImplementedError, match=message):
+                solve(A, b, overwrite_a=overwrite, overwrite_b=overwrite,
+                      transposed=transposed)
+            return
+
+        res = solve(A, b, overwrite_a=overwrite, overwrite_b=overwrite,
+                    transposed=transposed)
+
+        if not overwrite:
+            assert_equal(A, A_copy)
+            assert_equal(b, b_copy)
+
+        ref = solve(A_copy, b_copy, assume_a=assume_a, transposed=transposed)
+        assert_equal(res, ref)
+
+        ref = np.linalg.solve(A_copy.T if transposed else A_copy, b_copy)
+        assert_allclose(res, ref)
+
 
 class TestSolveTriangular:
 

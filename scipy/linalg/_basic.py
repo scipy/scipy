@@ -13,7 +13,6 @@ from ._misc import LinAlgError, _datacopied, LinAlgWarning
 from ._decomp import _asarray_validated
 from . import _decomp, _decomp_svd
 from ._solve_toeplitz import levinson
-from ._decomp_cholesky import cho_factor, cho_solve
 from ._cythonized_array_utils import (find_det_from_lu, bandwidth, issymmetric,
                                       ishermitian)
 
@@ -62,10 +61,10 @@ def _find_matrix_structure(a):
     elif above <= 1 and below <= 1:
         return 'tri'
 
-    if np.issubdtype(a.dtype, np.floating) and issymmetric(a):
-        return 'sym'
-    elif np.issubdtype(a.dtype, np.complexfloating) and ishermitian(a):
+    if np.issubdtype(a.dtype, np.complexfloating) and ishermitian(a):
         return 'her'
+    elif issymmetric(a):
+        return 'sym'
 
     return 'gen'
 
