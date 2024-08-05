@@ -133,7 +133,7 @@ class CanonicalConstraint:
                 index_ineq += c.n_ineq
 
             def matvec(p):
-                result = np.zeros_like(p)
+                result = np.zeros_like(p, dtype=float)
                 for h in hess_all:
                     result += h.dot(p)
                 return result
