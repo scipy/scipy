@@ -13,7 +13,9 @@ from ._misc import LinAlgError, _datacopied, LinAlgWarning
 from ._decomp import _asarray_validated
 from . import _decomp, _decomp_svd
 from ._solve_toeplitz import levinson
-from ._cythonized_array_utils import find_det_from_lu
+from ._decomp_cholesky import cho_factor, cho_solve
+from ._cythonized_array_utils import (find_det_from_lu, bandwidth, issymmetric,
+                                      ishermitian)
 
 __all__ = ['solve', 'solve_triangular', 'solveh_banded', 'solve_banded',
            'solve_toeplitz', 'solve_circulant', 'inv', 'det', 'lstsq',
@@ -48,8 +50,28 @@ def _solve_check(n, info, lamch=None, rcond=None):
              LinAlgWarning, stacklevel=3)
 
 
+def _find_matrix_structure(a):
+    below, above = bandwidth(a)
+
+    if below == above == 0:
+        return 'dia'
+    elif above == 0:
+        return 'ltr'
+    elif below == 0:
+        return 'utr'
+    elif above <= 1 and below <= 1:
+        return 'tri'
+
+    if np.issubdtype(a.dtype, np.floating) and issymmetric(a):
+        return 'sym'
+    elif np.issubdtype(a.dtype, np.complexfloating) and ishermitian(a):
+        return 'her'
+
+    return 'gen'
+
+
 def solve(a, b, lower=False, overwrite_a=False,
-          overwrite_b=False, check_finite=True, assume_a='gen',
+          overwrite_b=False, check_finite=True, assume_a=None,
           transposed=False):
     """
     Solves the linear equation set ``a @ x == b`` for the unknown ``x``
@@ -59,19 +81,20 @@ def solve(a, b, lower=False, overwrite_a=False,
     corresponding string to ``assume_a`` key chooses the dedicated solver.
     The available options are
 
-    ===================  ========
-     generic matrix       'gen'
-     symmetric            'sym'
-     hermitian            'her'
-     positive definite    'pos'
-    ===================  ========
+    =============================  =======
+     diagonal                       'dia'
+     tri-diagonal                   'tri'
+     lower triangular               'ltr'
+     upper triangular     '         'utr'
+     symmetric                      'sym'
+     hermitian                      'her'
+     positive definite              'pos'
+     generic matrix                 'gen'
+    =============================  =======
 
-    If omitted, ``'gen'`` is the default structure.
-
-    The datatype of the arrays define which solver is called regardless
-    of the values. In other words, even when the complex array entries have
-    precisely zero imaginary parts, the complex solver will be called based
-    on the data type of the array.
+    If omitted or ``None``, checks are performed to identify structure so the
+    appropriate solver can be called. If no structure is found,
+    ``assume_a='gen'`` is used.
 
     Parameters
     ----------
@@ -80,8 +103,8 @@ def solve(a, b, lower=False, overwrite_a=False,
     b : (N, NRHS) array_like
         Input data for the right hand side.
     lower : bool, default: False
-        Ignored if ``assume_a == 'gen'`` (the default). If True, the
-        calculation uses only the data in the lower triangle of `a`;
+        Ignored unless ``assume_a`` is one of ``'sym'``, ``'her'``, or ``'pos'``.
+        If True, the calculation uses only the data in the lower triangle of `a`;
         entries above the diagonal are ignored. If False (default), the
         calculation uses only the data in the upper triangle of `a`; entries
         below the diagonal are ignored.
@@ -93,7 +116,7 @@ def solve(a, b, lower=False, overwrite_a=False,
         Whether to check that the input matrices contain only finite numbers.
         Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
-    assume_a : str, {'gen', 'sym', 'her', 'pos'}
+    assume_a : str, {None, 'gen', 'sym', 'her', 'pos'}
         Valid entries are explained above.
     transposed : bool, default: False
         If True, solve ``a.T @ x == b``. Raises `NotImplementedError`
@@ -125,6 +148,11 @@ def solve(a, b, lower=False, overwrite_a=False,
     The generic, symmetric, Hermitian and positive definite solutions are
     obtained via calling ?GESV, ?SYSV, ?HESV, and ?POSV routines of
     LAPACK respectively.
+
+    The datatype of the arrays define which solver is called regardless
+    of the values. In other words, even when the complex array entries have
+    precisely zero imaginary parts, the complex solver will be called based
+    on the data type of the array.
 
     Examples
     --------
@@ -173,7 +201,7 @@ def solve(a, b, lower=False, overwrite_a=False,
             b1 = b1[:, None]
         b_is_1D = True
 
-    if assume_a not in ('gen', 'sym', 'her', 'pos'):
+    if assume_a not in {None, 'dia', 'tri', 'ltr', 'utr', 'sym', 'her', 'pos', 'gen'}:
         raise ValueError(f'{assume_a} is not a recognized matrix structure')
 
     # for a real matrix, describe it as "symmetric", not "hermitian"
@@ -194,6 +222,9 @@ def solve(a, b, lower=False, overwrite_a=False,
     # However, in any case they only reduce computations slightly...
     lange = get_lapack_funcs('lange', (a1,))
 
+    if assume_a is None:
+        assume_a = _find_matrix_structure(a1)
+
     # Since the I-norm and 1-norm are the same for symmetric matrices
     # we can collect them all in this one call
     # Note however, that when issuing 'gen' and form!='none', then
@@ -210,6 +241,8 @@ def solve(a, b, lower=False, overwrite_a=False,
         norm = '1'
 
     anorm = lange(norm, a1)
+
+    info, rcond = 0, np.inf
 
     # Generalized case 'gesv'
     if assume_a == 'gen':
@@ -243,6 +276,20 @@ def solve(a, b, lower=False, overwrite_a=False,
                                  overwrite_b=overwrite_b)
         _solve_check(n, info)
         rcond, info = sycon(lu, ipvt, anorm)
+    # Diagonal case
+    elif assume_a == 'dia':
+        x = (b1.T / np.diag(a1)).T
+    # Tri-diagonal case
+    elif assume_a == 'tri':
+        a1 = a1.T if transposed else a1
+        dl, d, du = np.diag(a1, -1), np.diag(a1, 0), np.diag(a1, 1)
+        _gtsv = get_lapack_funcs('gtsv', (a1, b1))
+        x, info = _gtsv(dl, d, du, b1, False, False, False, overwrite_b)[3:]
+    # Triangular case
+    elif assume_a in {'ltr', 'utr'}:
+        lower = assume_a == 'ltr'
+        x = solve_triangular(a1, b1, lower=lower, overwrite_b=overwrite_b,
+                             check_finite=False, trans=transposed)
     # Positive definite case 'posv'
     else:
         pocon, posv = get_lapack_funcs(('pocon', 'posv'),

@@ -763,8 +763,11 @@ class TestSolve:
         assert_raises(LinAlgError, solve, a, b)
 
     def test_ill_condition_warning(self):
-        a = np.array([[1, 1], [1+1e-16, 1-1e-16]])
-        b = np.ones(2)
+        a = np.array([[1, 1, 1],
+                      [1+1e-16, 1-1e-16, 1],
+                      [1-1e-16, 1+1e-16, 1],
+                      ])
+        b = np.ones(3)
         with warnings.catch_warnings():
             warnings.simplefilter('error')
             assert_raises(LinAlgWarning, solve, a, b)
