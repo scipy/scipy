@@ -908,7 +908,7 @@ class TestSolve:
         if fortran:
             A = np.asfortranarray(A)
 
-        A_copy = A.copy()
+        A_copy = A.copy(order='A')
         b_copy = b.copy()
 
         if np.issubdtype(dtype, np.complexfloating) and transposed:
