@@ -210,8 +210,6 @@ scipy/linalg/_blas_subroutine_wrappers.f
 scipy/linalg/_blas_subroutines.h
 scipy/linalg/_lapack_subroutine_wrappers.f
 scipy/linalg/_lapack_subroutines.h
-scipy/linalg/_linsolve.c
-scipy/linalg/_linsolve.pyx
 scipy/linalg/cblas.pyf
 scipy/linalg/clapack.pyf
 scipy/linalg/cython_blas.c

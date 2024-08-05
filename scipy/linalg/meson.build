@@ -207,21 +207,6 @@ py3.extension_module('_matfuncs_expm',
   subdir: 'scipy/linalg'
 )
 
-_linsolve_pyx = custom_target('_linsolve',
-  output: '_linsolve.pyx',
-  input: '_linsolve.pyx.in',
-  command: [tempita, '@INPUT@', '-o', '@OUTDIR@']
-)
-
-py3.extension_module('_linsolve',
-  linalg_cython_gen.process(_linsolve_pyx),
-  c_args: cython_c_args,
-  dependencies: np_dep,
-  link_args: version_link_args,
-  install: true,
-  subdir: 'scipy/linalg'
-)
-
 _cythonized_array_utils = py3.extension_module('_cythonized_array_utils',
   linalg_init_utils_cython_gen.process('_cythonized_array_utils.pyx'),
   c_args: [cython_c_args, Wno_maybe_uninitialized],
