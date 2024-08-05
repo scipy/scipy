@@ -13,13 +13,14 @@ numerical differentiation of black-box functions.
 
    differentiate
    jacobian
+   hessian
 
 """
 
 
 from ._differentiate import *
 
-__all__ = ['differentiate', 'jacobian']
+__all__ = ['differentiate', 'jacobian', 'hessian']
 
 from scipy._lib._testutils import PytestTester
 test = PytestTester(__name__)
