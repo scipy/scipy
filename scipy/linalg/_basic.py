@@ -280,8 +280,8 @@ def solve(a, b, lower=False, overwrite_a=False,
     # Triangular case
     elif assume_a in {'lower triangular', 'upper triangular'}:
         lower = assume_a == 'lower triangular'
-        x = solve_triangular(a1, b1, lower=lower, overwrite_b=overwrite_b,
-                             check_finite=False, trans=transposed)
+        x = _solve_triangular(a1, b1, lower=lower, overwrite_b=overwrite_b,
+                              trans=transposed)
     # Positive definite case 'posv'
     else:
         pocon, posv = get_lapack_funcs(('pocon', 'posv'),
@@ -386,6 +386,13 @@ def solve_triangular(a, b, trans=0, lower=False, unit_diagonal=False,
         return np.empty_like(b1, dtype=dt_nonempty)
 
     overwrite_b = overwrite_b or _datacopied(b1, b)
+
+    return _solve_triangular(a1, b1, trans, lower, unit_diagonal, overwrite_b)
+
+
+# solve_triangular without the input validation
+def _solve_triangular(a1, b1, trans=0, lower=False, unit_diagonal=False,
+                      overwrite_b=False):
 
     trans = {'N': 0, 'T': 1, 'C': 2}.get(trans, trans)
     trtrs, = get_lapack_funcs(('trtrs',), (a1, b1))
