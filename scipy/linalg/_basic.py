@@ -50,7 +50,7 @@ def _solve_check(n, info, lamch=None, rcond=None):
 
 
 def _find_matrix_structure(a):
-    below, above = bandwidth(a)
+    below, above = _bandwidth(a)
 
     if below == above == 0:
         return 'diagonal'
@@ -61,9 +61,9 @@ def _find_matrix_structure(a):
     elif above <= 1 and below <= 1:
         return 'tridiagonal'
 
-    if np.issubdtype(a.dtype, np.complexfloating) and ishermitian(a):
+    if np.issubdtype(a.dtype, np.complexfloating) and _ishermitian(a):
         return 'hermitian'
-    elif issymmetric(a):
+    elif _issymmetric(a):
         return 'symmetric'
 
     return 'general'
@@ -298,6 +298,27 @@ def solve(a, b, lower=False, overwrite_a=False,
         x = x.ravel()
 
     return x
+
+
+def _bandwidth(a):
+    try:
+        return bandwidth(a)
+    except TypeError:
+        return bandwidth(a != 0)
+
+
+def _issymmetric(a):
+    try:
+        return issymmetric(a)
+    except TypeError:
+        return (a == a.T).all()
+
+
+def _ishermitian(a):
+    try:
+        return ishermitian(a)
+    except TypeError:
+        return (a == a.conj().T).all()
 
 
 def solve_triangular(a, b, trans=0, lower=False, unit_diagonal=False,
