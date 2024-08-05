@@ -38,14 +38,14 @@ def get_array_special_func(f_name, xp, n_array_args):
             return _f
 
     _f = getattr(_ufuncs, f_name, None)
-    def f(*args, _f=_f, _xp=xp, **kwargs):
+    def __f(*args, _f=_f, _xp=xp, **kwargs):
         array_args = args[:n_array_args]
         other_args = args[n_array_args:]
         array_args = [np.asarray(arg) for arg in array_args]
         out = _f(*array_args, *other_args, **kwargs)
         return _xp.asarray(out)
 
-    return f
+    return __f
 
 
 def _get_shape_dtype(*args, xp):
