@@ -176,14 +176,15 @@ class IndexMixin:
                 # Inner indexing, so treat them like row vectors.
                 i = i[None]
                 j = j[None]
-            broadcast_row = x.shape[0] == 1 and i.shape[0] != 1
-            broadcast_col = x.shape[1] == 1 and i.shape[1] != 1
-            if not ((broadcast_row or x.shape[0] == i.shape[0]) and
-                    (broadcast_col or x.shape[1] == i.shape[1])):
+            xM, xN = x._shape_as_2d
+            broadcast_row = xM == 1 and i.shape[0] != 1
+            broadcast_col = xN == 1 and i.shape[1] != 1
+            if not ((broadcast_row or xM == i.shape[0]) and
+                    (broadcast_col or xN == i.shape[1])):
                 raise ValueError('shape mismatch in assignment')
-            if x.shape[0] == 0 or x.shape[1] == 0:
+            if 0 in x.shape:
                 return
-            x = x.tocoo(copy=True)
+            x = x.tocoo(copy=True).reshape(x._shape_as_2d)
             x.sum_duplicates()
             self._set_arrayXarray_sparse(i, j, x)
         else:
@@ -219,7 +220,8 @@ class IndexMixin:
                 idx_shape.append(1)
             elif isinstance(idx, slice):
                 index.append(idx)
-                len_slice = len(range(*idx.indices(self._shape[index_ndim])))
+                Ms = self._shape[index_ndim] if ellps_pos is None else self._shape[-1]
+                len_slice = len(range(*idx.indices(Ms)))
                 idx_shape.append(len_slice)
                 index_ndim += 1
             elif isintlike(idx):
