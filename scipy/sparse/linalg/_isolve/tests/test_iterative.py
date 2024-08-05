@@ -3,7 +3,6 @@
 
 import itertools
 import platform
-import sys
 import pytest
 
 import numpy as np
@@ -451,9 +450,6 @@ def test_maxiter_worsening(solver):
     # This can occur due to the solvers hitting close to breakdown,
     # which they should detect and halt as necessary.
     # cf. gh-9100
-    if (solver is gmres and platform.machine() == 'aarch64'
-            and sys.version_info[1] == 9):
-        pytest.xfail(reason="gh-13019")
     if (solver is lgmres and
             platform.machine() not in ['x86_64' 'x86', 'aarch64', 'arm64']):
         # see gh-17839

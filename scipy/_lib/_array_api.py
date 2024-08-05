@@ -381,6 +381,24 @@ def xp_assert_less(actual, desired, check_namespace=True, check_dtype=True,
                                         err_msg=err_msg, verbose=verbose)
 
 
+def assert_array_almost_equal(actual, desired, decimal=6, *args, **kwds):
+    """Backwards compatible replacement. In new code, use xp_assert_close instead.
+    """
+    rtol, atol = 0, 1.5*10**(-decimal)
+    return xp_assert_close(actual, desired,
+                           atol=atol, rtol=rtol, check_dtype=False, check_shape=False,
+                           *args, **kwds)
+
+
+def assert_almost_equal(actual, desired, decimal=7, *args, **kwds):
+    """Backwards compatible replacement. In new code, use xp_assert_close instead.
+    """
+    rtol, atol = 0, 1.5*10**(-decimal)
+    return xp_assert_close(actual, desired,
+                           atol=atol, rtol=rtol, check_dtype=False, check_shape=False,
+                           *args, **kwds)
+
+
 def cov(x: Array, *, xp: ModuleType | None = None) -> Array:
     if xp is None:
         xp = array_namespace(x)
@@ -539,7 +557,7 @@ def xp_sign(x: Array, /, *, xp: ModuleType | None = None) -> Array:
     xp = array_namespace(x) if xp is None else xp
     if is_numpy(xp):  # only NumPy implements the special cases correctly
         return xp.sign(x)
-    sign = xp.full_like(x, xp.nan)
+    sign = xp.full_like(x, xp.asarray(xp.nan))
     one = xp.asarray(1, dtype=x.dtype)
     sign = xp.where(x > 0, one, sign)
     sign = xp.where(x < 0, -one, sign)
@@ -547,7 +565,7 @@ def xp_sign(x: Array, /, *, xp: ModuleType | None = None) -> Array:
     return sign
 
 # maybe use `scipy.linalg` if/when array API support is added
-def xp_vector_norm(x: Array, /, *, 
+def xp_vector_norm(x: Array, /, *,
                    axis: int | tuple[int] | None = None,
                    keepdims: bool = False,
                    ord: int | float = 2,
@@ -571,3 +589,33 @@ def xp_vector_norm(x: Array, /, *,
     else:
         # to maintain backwards compatibility
         return np.linalg.norm(x, ord=ord, axis=axis, keepdims=keepdims)
+
+
+def xp_ravel(x: Array, /, *, xp: ModuleType | None = None) -> Array:
+    # Equivalent of np.ravel written in terms of array API
+    # Even though it's one line, it comes up so often that it's worth having
+    # this function for readability
+    xp = array_namespace(x) if xp is None else xp
+    return xp.reshape(x, (-1,))
+
+
+def xp_real(x: Array, /, *, xp: ModuleType | None = None) -> Array:
+    # Convenience wrapper of xp.real that allows non-complex input;
+    # see data-apis/array-api#824
+    xp = array_namespace(x) if xp is None else xp
+    return xp.real(x) if xp.isdtype(x.dtype, 'complex floating') else x
+
+
+def xp_take_along_axis(arr: Array,
+                       indices: Array, /, *,
+                       axis: int = -1,
+                       xp: ModuleType | None = None) -> Array:
+    # Dispatcher for np.take_along_axis for backends that support it;
+    # see data-apis/array-api/pull#816
+    xp = array_namespace(arr) if xp is None else xp
+    if is_torch(xp):
+        return xp.take_along_dim(arr, indices, dim=axis)
+    elif is_array_api_strict(xp):
+        raise NotImplementedError("Array API standard does not define take_along_axis")
+    else:
+        return xp.take_along_axis(arr, indices, axis)

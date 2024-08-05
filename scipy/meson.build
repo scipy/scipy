@@ -83,7 +83,7 @@ fortranobject_c = incdir_f2py / 'fortranobject.c'
 npymath_path = _incdir_numpy_abs / '..' / 'lib'
 npymath_lib = cc.find_library('npymath', dirs: npymath_path)
 
-pybind11_dep = dependency('pybind11', version: '>=2.12.0')
+pybind11_dep = dependency('pybind11', version: '>=2.13.1')
 
 # Pythran include directory and build flags
 if use_pythran
@@ -162,6 +162,8 @@ endif
 # 1. `.pyf.src` files, because `@BASENAME@` will still include .pyf
 # 2. targets with #include's (due to no `depend_files` - see feature request
 #    at meson#8295)
+# TODO: add argument to mark extension modules as safe to run without the GIL,
+#       once f2py supports that (see numpy#26157).
 f2py_gen = generator(generate_f2pymod,
   arguments : ['@INPUT@', '-o', '@BUILD_DIR@'],
   output : ['_@BASENAME@module.c', '_@BASENAME@-f2pywrappers.f'],
@@ -320,6 +322,9 @@ _cython_tree = [
 ]
 
 cython_args = ['-3', '--fast-fail', '--output-file', '@OUTPUT@', '--include-dir', '@BUILD_ROOT@', '@INPUT@']
+if cy.version().version_compare('>=3.1.0')
+  cython_args += ['-Xfreethreading_compatible=True']
+endif
 cython_cplus_args = ['--cplus'] + cython_args
 
 cython_gen = generator(cython,
@@ -333,6 +338,8 @@ cython_gen_cpp = generator(cython,
   depends : [_cython_tree])
 
 if use_pythran
+  # TODO: add argument to mark extension modules as safe to run without the GIL,
+  #       once pythran supports that.
   pythran_gen = generator(pythran,
     arguments : ['-E', '@INPUT@', '-o', '@OUTPUT@'],
     output : '@BASENAME@.cpp',

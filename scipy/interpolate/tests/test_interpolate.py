@@ -1622,13 +1622,13 @@ class TestPPoly:
 
             for y in [0, np.random.random()]:
                 w = np.empty(c.shape, dtype=complex)
-                _ppoly._croots_poly1(c, w)
+                _ppoly._croots_poly1(c, w, y)
 
                 if k == 1:
                     assert_(np.isnan(w).all())
                     continue
 
-                res = 0
+                res = -y
                 cres = 0
                 for i in range(k):
                     res += c[i,None] * w**(k-1-i)

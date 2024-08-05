@@ -18,6 +18,7 @@ from scipy._lib._array_api import (
     xp_minimum,
     xp_moveaxis_to_end,
     xp_vector_norm,
+    xp_clip
 )
 
 from ._ansari_swilk_statistics import gscale, swilk
@@ -1170,8 +1171,11 @@ class _BigFloat:
         return "BIG_FLOAT"
 
 
+_BigFloat_singleton = _BigFloat()
+
+
 def boxcox_normmax(
-    x, brack=None, method='pearsonr', optimizer=None, *, ymax=_BigFloat()
+    x, brack=None, method='pearsonr', optimizer=None, *, ymax=_BigFloat_singleton
 ):
     """Compute optimal Box-Cox transform parameter for input data.
 
@@ -1288,7 +1292,7 @@ def boxcox_normmax(
         raise ValueError(message)
 
     end_msg = "exceed specified `ymax`."
-    if isinstance(ymax, _BigFloat):
+    if ymax is _BigFloat_singleton:
         dtype = x.dtype if np.issubdtype(x.dtype, np.floating) else np.float64
         # 10000 is a safety factor because `special.boxcox` overflows prematurely.
         ymax = np.finfo(dtype).max / 10000
@@ -2882,15 +2886,20 @@ def bartlett(*samples, axis=0):
     ssq = [arr[xp.newaxis, ...] for arr in ssq]
     Ni = xp.concat(Ni, axis=0)
     ssq = xp.concat(ssq, axis=0)
-    Ntot = xp.sum(Ni, axis=0)
-    spsq = xp.sum((Ni - 1)*ssq, axis=0) / (Ntot - k)
-    numer = (Ntot - k) * xp.log(spsq) - xp.sum((Ni - 1)*xp.log(ssq), axis=0)
-    denom = 1 + 1/(3*(k - 1)) * ((xp.sum(1/(Ni - 1), axis=0)) - 1/(Ntot - k))
+    # sum dtype can be removed when 2023.12 rules kick in
+    dtype = Ni.dtype
+    Ntot = xp.sum(Ni, axis=0, dtype=dtype)
+    spsq = xp.sum((Ni - 1)*ssq, axis=0, dtype=dtype) / (Ntot - k)
+    numer = ((Ntot - k) * xp.log(spsq)
+             - xp.sum((Ni - 1)*xp.log(ssq), axis=0, dtype=dtype))
+    denom = (1 + 1/(3*(k - 1))
+             * ((xp.sum(1/(Ni - 1), axis=0, dtype=dtype)) - 1/(Ntot - k)))
     T = numer / denom
 
     chi2 = _SimpleChi2(xp.asarray(k-1))
     pvalue = _get_pvalue(T, chi2, alternative='greater', symmetric=False, xp=xp)
 
+    T = xp_clip(T, min=0., max=xp.inf)
     T = T[()] if T.ndim == 0 else T
     pvalue = pvalue[()] if pvalue.ndim == 0 else pvalue
 

@@ -20,7 +20,7 @@ cdef extern from "dd_real_wrappers.h":
     double2 dd_mul(const double2* a, const double2* b) nogil
     double dd_to_double(const double2* a) nogil
 
-cdef extern from "special_wrappers.h" nogil:
+cdef extern from "xsf_wrappers.h" nogil:
     double cephes_cosm1_wrap(double x)
     double cephes_expm1_wrap(double x)
     double cephes_log1p_wrap(double x)
