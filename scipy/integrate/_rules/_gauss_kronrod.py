@@ -2,18 +2,18 @@ import numpy as np
 
 from functools import cached_property
 
-from ._base import ErrorFromDifference
+from ._base import NestedFixedRule
 from ._gauss_legendre import GaussLegendreQuad
 
 
-class GaussKronrodQuad(ErrorFromDifference):
+class GaussKronrodQuad(NestedFixedRule):
     """
     Gauss-Kronrod quadrature. Gauss-Kronrod rules consist of two quadrature rules, one
     higher-order and one lower-order. The higher-order rule is used as the estimate of
     the integral and the difference between them is used as an estimate for the error.
 
     Gauss-Kronrod is a 1D rule. To use it for multidimensional integrals, it will be
-    necessary to take the FixedProductErrorFromDifferenceCub of multiple Gauss-Kronrod
+    necessary to take the ProductNestedFixed of multiple Gauss-Kronrod
     rules. See Examples.
 
     For n-node Gauss-Kronrod, the lower-order rule has ``n//2`` nodes, which are the
@@ -28,7 +28,7 @@ class GaussKronrodQuad(ErrorFromDifference):
 
     Attributes
     ----------
-    lower : Cubature
+    lower : Rule
         Lower-order rule.
 
     References
@@ -58,12 +58,12 @@ class GaussKronrodQuad(ErrorFromDifference):
     >>> import numpy as np
     >>> from scipy.integrate._cubature import cub
     >>> from scipy.integrate._rules import (
-    ...     FixedProductErrorFromDifferenceCub, GaussKronrodQuad
+    ...     ProductNestedFixed, GaussKronrodQuad
     ... )
     >>> def f(x):
     ...     # f(x) = cos(x_1) + cos(x_2)
     ...     return np.sum(np.cos(x), axis=0)
-    >>> rule = FixedProductErrorFromDifferenceCub(
+    >>> rule = ProductNestedFixed(
     ...     [GaussKronrodQuad(15), GaussKronrodQuad(15)]
     ... ) # Use 15-point GaussKronrod
     >>> a, b = np.array([0, 0]), np.array([1, 1])
@@ -81,7 +81,7 @@ class GaussKronrodQuad(ErrorFromDifference):
 15 or 21 nodes")
 
         self.npoints = npoints
-        self.lower = GaussLegendreQuad(npoints//2)
+        self.gauss = GaussLegendreQuad(npoints//2)
 
     @cached_property
     def nodes_and_weights(self):
@@ -171,3 +171,7 @@ class GaussKronrodQuad(ErrorFromDifference):
             ])
 
         return nodes, weights
+
+    @property
+    def lower_nodes_and_weights(self):
+        return self.gauss.nodes_and_weights

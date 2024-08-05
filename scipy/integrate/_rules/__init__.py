@@ -1,8 +1,9 @@
 """Numerical cubature algorithms"""
 
 from ._base import (
-    Cub, FixedCub, ErrorFromDifference,
-    FixedProductCub, FixedProductErrorFromDifferenceCub
+    Rule, FixedRule,
+    NestedFixedRule, NestedRule,
+    ProductFixed, ProductNestedFixed
 )
 from ._genz_malik import GenzMalikCub
 from ._newton_cotes import NewtonCotesQuad

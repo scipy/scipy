@@ -2,15 +2,15 @@ from functools import cached_property
 
 from scipy.special import roots_legendre
 
-from ._base import FixedCub
+from ._base import FixedRule
 
 
-class GaussLegendreQuad(FixedCub):
+class GaussLegendreQuad(FixedRule):
     """
     Gauss-Legendre quadrature.
 
     Gauss-Legendre is a 1D rule. To use it for multidimensional integrals, it will be
-    necessary to take the FixedProductCub of multiple Gauss-Legendre rules. See
+    necessary to take the ProductFixed of multiple Gauss-Legendre rules. See
     Examples.
 
     Parameters
@@ -40,11 +40,11 @@ class GaussLegendreQuad(FixedCub):
 
     >>> import numpy as np
     >>> from scipy.integrate._cubature import cub
-    >>> from scipy.integrate._rules import FixedProductCub, GaussLegendreQuad
+    >>> from scipy.integrate._rules import ProductFixed, GaussLegendreQuad
     >>> def f(x):
     ...     # f(x) = cos(x_1) + cos(x_2)
     ...     return np.sum(np.cos(x), axis=0)
-    >>> rule = FixedProductCub(
+    >>> rule = ProductFixed(
     ...     [GaussLegendreQuad(15), GaussLegendreQuad(15)]
     ... ) # Use 15-point GaussKronrod
     >>> a, b = np.array([0, 0]), np.array([1, 1])

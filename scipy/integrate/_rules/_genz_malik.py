@@ -4,10 +4,10 @@ import numpy as np
 
 from functools import cached_property
 
-from scipy.integrate._rules import ErrorFromDifference
+from scipy.integrate._rules import NestedFixedRule
 
 
-class GenzMalikCub(ErrorFromDifference):
+class GenzMalikCub(NestedFixedRule):
     """
     Genz-Malik cubature.
 
@@ -93,6 +93,10 @@ class GenzMalikCub(ErrorFromDifference):
 
         nodes.shape = (self.ndim, nodes_size)
 
+        # It's convenient to generate the nodes as a sequence of evaluation points
+        # like (num_points, ndim), but nodes needs to be (ndim, num_points)
+        nodes = nodes.T
+
         w_1 = (2**self.ndim) * (12824 - 9120 * self.ndim + 400 * self.ndim**2) \
             / 19683
         w_2 = (2**self.ndim) * 980/6561
@@ -144,6 +148,7 @@ class GenzMalikCub(ErrorFromDifference):
         )
 
         nodes.shape = (self.ndim, nodes_size)
+        nodes = nodes.T
 
         # Weights are different from those in the full rule.
         w_1 = (2**self.ndim) * (729 - 950*self.ndim + 50*self.ndim**2) / 729

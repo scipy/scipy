@@ -8,7 +8,8 @@ import numpy as np
 from numpy.testing import assert_allclose
 
 from scipy.integrate._rules import (
-    Cub, FixedCub, FixedProductErrorFromDifferenceCub, ErrorFromDifference,
+    Rule, FixedRule, ProductNestedFixed,
+    NestedFixedRule, NestedRule,
     NewtonCotesQuad, GaussLegendreQuad, GaussKronrodQuad, GenzMalikCub
 )
 
@@ -36,34 +37,32 @@ def genz_malik_1980_f_1(x, r, alphas):
         ISSN 0377-0427, https://doi.org/10.1016/0771-050X(80)90039-X.
     """
 
-    ndim = x.shape[0]
-    num_eval_points = x.shape[-1]
+    ndim = x.shape[-1]
+    num_eval_points = x.shape[0]
 
-    r_reshaped = np.expand_dims(r, -1)
-    alphas_reshaped = np.expand_dims(alphas, -1)
-    x_reshaped = x.reshape(ndim, *([1]*(len(alphas.shape) - 1)), num_eval_points)
+    alphas_reshaped = alphas[np.newaxis, :]
+    x_reshaped = x.reshape(num_eval_points, *([1]*(len(alphas.shape) - 1)), ndim)
 
-    return np.cos(2*np.pi*r_reshaped + np.sum(alphas_reshaped * x_reshaped, axis=0))
+    return np.cos(2*np.pi*r + np.sum(alphas_reshaped * x_reshaped, axis=-1))
 
 
 def genz_malik_1980_f_1_exact(a, b, r, alphas):
     ndim = len(a)
-    a = a.reshape(ndim, *([1]*(len(alphas.shape) - 1)))
-    b = b.reshape(ndim, *([1]*(len(alphas.shape) - 1)))
+    a = a.reshape(*([1]*(len(alphas.shape) - 1)), ndim)
+    b = b.reshape(*([1]*(len(alphas.shape) - 1)), ndim)
 
-    return (-2)**ndim * 1/np.prod(alphas, axis=0) \
-        * np.cos(2*np.pi*r + np.sum(alphas * (a+b)/2, axis=0)) \
-        * np.prod(
-            np.sin(alphas * (a-b)/2), axis=0
-        )
+    return (-2)**ndim * 1/np.prod(alphas, axis=-1) \
+        * np.cos(2*np.pi*r + np.sum(alphas * (a+b)/2, axis=-1)) \
+        * np.prod(np.sin(alphas * (a-b)/2), axis=-1)
 
 
 def genz_malik_1980_f_1_random_args(shape):
-    r = np.random.rand(*shape[1:])
+    r = np.random.rand(*shape[:-1])
     alphas = np.random.rand(*shape)
 
     difficulty = 9
-    alphas = difficulty * alphas / np.sum(alphas, axis=0)
+    normalisation_factors = np.expand_dims(np.sum(alphas, axis=-1), -1)
+    alphas = difficulty * alphas / normalisation_factors
 
     return (r, alphas)
 
@@ -89,40 +88,42 @@ def genz_malik_1980_f_2(x, alphas, betas):
         Computational and Applied Mathematics, Volume 6, Issue 4, 1980, Pages 295-302,
         ISSN 0377-0427, https://doi.org/10.1016/0771-050X(80)90039-X.
     """
-    ndim = x.shape[0]
-    num_eval_points = x.shape[-1]
+    ndim = x.shape[-1]
+    num_eval_points = x.shape[0]
 
-    alphas_reshaped = np.expand_dims(alphas, -1)
-    betas_reshaped = np.expand_dims(betas, -1)
+    alphas_reshaped = alphas[np.newaxis, :]
+    betas_reshaped = betas[np.newaxis, :]
 
-    x_reshaped = x.reshape(ndim, *([1]*(len(alphas.shape) - 1)), num_eval_points)
+    x_reshaped = x.reshape(num_eval_points, *([1]*(len(alphas.shape) - 1)), ndim)
 
-    return 1/np.prod(alphas_reshaped**2 + (x_reshaped-betas_reshaped)**2, axis=0)
+    return 1/np.prod(alphas_reshaped**2 + (x_reshaped-betas_reshaped)**2, axis=-1)
 
 
 def genz_malik_1980_f_2_exact(a, b, alphas, betas):
     ndim = len(a)
-    a = a.reshape(ndim, *([1]*(len(alphas.shape) - 1)))
-    b = b.reshape(ndim, *([1]*(len(alphas.shape) - 1)))
+    a = a.reshape(*([1]*(len(alphas.shape) - 1)), ndim)
+    b = b.reshape(*([1]*(len(alphas.shape) - 1)), ndim)
 
-    return (-1)**ndim * 1/np.prod(alphas, axis=0) * np.prod(
-        np.arctan((a - betas)/alphas) - np.arctan((b - betas)/alphas),
-        axis=0
-    )
+    return (-1)**ndim * 1/np.prod(alphas, axis=-1) \
+        * np.prod(
+            np.arctan((a - betas)/alphas) - np.arctan((b - betas)/alphas),
+            axis=-1
+        )
 
 
 def genz_malik_1980_f_2_random_args(shape):
-    ndim = shape[0]
+    ndim = shape[-1]
     alphas = np.random.rand(*shape)
     betas = np.random.rand(*shape)
 
     difficulty = 25
-    products = np.prod(np.power(alphas, -2), axis=0)
+    products = np.prod(np.power(alphas, -2), axis=-1)
+    normalisation_factors = np.expand_dims(np.power(products, 1 / (2*ndim)), axis=-1)
     alphas = alphas \
-        * np.power(products, 1 / (2*ndim)) \
+        * normalisation_factors \
         / np.power(difficulty, 1 / (2*ndim))
 
-    assert_allclose(np.prod(np.power(alphas, -2), axis=0), difficulty)
+    assert_allclose(np.prod(np.power(alphas, -2), axis=-1), difficulty)
 
     # Adjust alphas from distribution used in Genz and Malik 1980 since denominator
     # is very small for high dimensions.
@@ -152,30 +153,29 @@ def genz_malik_1980_f_3(x, alphas):
         ISSN 0377-0427, https://doi.org/10.1016/0771-050X(80)90039-X.
     """
 
-    ndim = x.shape[0]
-    num_eval_points = x.shape[-1]
+    ndim = x.shape[-1]
+    num_eval_points = x.shape[0]
 
-    alphas_reshaped = np.expand_dims(alphas, -1)
-    x_reshaped = x.reshape(ndim, *([1]*(len(alphas.shape) - 1)), num_eval_points)
+    alphas_reshaped = alphas[np.newaxis, :]
+    x_reshaped = x.reshape(num_eval_points, *([1]*(len(alphas.shape) - 1)), ndim)
 
-    return np.exp(np.sum(alphas_reshaped * x_reshaped, axis=0))
+    return np.exp(np.sum(alphas_reshaped * x_reshaped, axis=-1))
 
 
 def genz_malik_1980_f_3_exact(a, b, alphas):
     ndim = len(a)
-    a = a.reshape(ndim, *([1]*(len(alphas.shape) - 1)))
-    b = b.reshape(ndim, *([1]*(len(alphas.shape) - 1)))
+    a = a.reshape(*([1]*(len(alphas.shape) - 1)), ndim)
+    b = b.reshape(*([1]*(len(alphas.shape) - 1)), ndim)
 
-    return (-1)**ndim * 1/np.prod(alphas, axis=0) * np.prod(
-        np.exp(alphas * a) - np.exp(alphas * b),
-        axis=0
-    )
+    return (-1)**ndim * 1/np.prod(alphas, axis=-1) \
+        * np.prod(np.exp(alphas * a) - np.exp(alphas * b), axis=-1)
 
 
 def genz_malik_1980_f_3_random_args(shape):
     alphas = np.random.rand(*shape)
+    normalisation_factors = np.expand_dims(np.sum(alphas, axis=-1), -1)
     difficulty = 12
-    alphas = difficulty * alphas / np.sum(alphas, axis=0)
+    alphas = difficulty * alphas / normalisation_factors
 
     return (alphas,)
 
@@ -201,34 +201,35 @@ def genz_malik_1980_f_4(x, alphas):
         ISSN 0377-0427, https://doi.org/10.1016/0771-050X(80)90039-X.
     """
 
-    ndim = x.shape[0]
-    num_eval_points = x.shape[-1]
+    ndim = x.shape[-1]
+    num_eval_points = x.shape[0]
 
-    alphas_reshaped = np.expand_dims(alphas, -1)
-    x_reshaped = x.reshape(ndim, *([1]*(len(alphas.shape) - 1)), num_eval_points)
+    alphas_reshaped = alphas[np.newaxis, :]
+    x_reshaped = x.reshape(num_eval_points, *([1]*(len(alphas.shape) - 1)), ndim)
 
-    return ((1 + np.sum(alphas_reshaped * x_reshaped, axis=0))**(-x.shape[0]-1))
+    return ((1 + np.sum(alphas_reshaped * x_reshaped, axis=-1))**(-ndim-1))
 
 
 def genz_malik_1980_f_4_exact(a, b, alphas):
     ndim = len(a)
 
     def F(x):
-        x_reshaped = x.reshape(ndim, *([1]*(len(alphas.shape) - 1)))
+        x_reshaped = x.reshape(*([1]*(len(alphas.shape) - 1)), ndim)
 
-        return (-1)**ndim/np.prod(alphas, axis=0) / (
-            math.factorial(ndim) * (1 + np.sum(alphas * x_reshaped, axis=0))
+        return (-1)**ndim/np.prod(alphas, axis=-1) / (
+            math.factorial(ndim) * (1 + np.sum(alphas * x_reshaped, axis=-1))
         )
 
     return _eval_indefinite_integral(F, a, b)
 
 
 def genz_malik_1980_f_4_random_args(shape):
-    ndim = shape[0]
+    ndim = shape[-1]
 
     alphas = np.random.rand(*shape)
+    normalisation_factors = np.expand_dims(np.sum(alphas, axis=-1), -1)
     difficulty = 14
-    alphas = (difficulty/ndim) * alphas / np.sum(alphas, axis=0)
+    alphas = (difficulty/ndim) * alphas / normalisation_factors
 
     return (alphas,)
 
@@ -257,29 +258,31 @@ def genz_malik_1980_f_5(x, alphas, betas):
         ISSN 0377-0427, https://doi.org/10.1016/0771-050X(80)90039-X.
     """
 
-    ndim = x.shape[0]
-    num_eval_points = x.shape[-1]
+    ndim = x.shape[-1]
+    num_eval_points = x.shape[0]
 
-    alphas_reshaped = np.expand_dims(alphas, -1)
-    betas_reshaped = np.expand_dims(betas, -1)
+    alphas_reshaped = alphas[np.newaxis, :]
+    betas_reshaped = betas[np.newaxis, :]
 
-    x_reshaped = x.reshape(ndim, *([1]*(len(alphas.shape) - 1)), num_eval_points)
+    x_reshaped = x.reshape(num_eval_points, *([1]*(len(alphas.shape) - 1)), ndim)
 
     return np.exp(
-        -np.sum(alphas_reshaped**2 * (x_reshaped - betas_reshaped)**2, axis=0)
+        -np.sum(alphas_reshaped**2 * (x_reshaped - betas_reshaped)**2, axis=-1)
     )
 
 
 def genz_malik_1980_f_5_exact(a, b, alphas, betas):
     ndim = len(a)
-    a = a.reshape(ndim, *([1]*(len(alphas.shape) - 1)))
-    b = b.reshape(ndim, *([1]*(len(alphas.shape) - 1)))
+    a = a.reshape(*([1]*(len(alphas.shape) - 1)), ndim)
+    b = b.reshape(*([1]*(len(alphas.shape) - 1)), ndim)
 
-    return (1/2)**ndim * 1/np.prod(alphas, axis=0) * np.power(np.pi, ndim/2) * np.prod(
-        scipy.special.erf(alphas * (betas - a))
-        + scipy.special.erf(alphas * (b - betas)),
-        axis=0
-    )
+    return (1/2)**ndim * 1/np.prod(alphas, axis=-1) \
+        * np.power(np.pi, ndim/2) \
+        * np.prod(
+            scipy.special.erf(alphas * (betas - a))
+            + scipy.special.erf(alphas * (b - betas)),
+            axis=-1
+        )
 
 
 def genz_malik_1980_f_5_random_args(shape):
@@ -287,8 +290,10 @@ def genz_malik_1980_f_5_random_args(shape):
     betas = np.random.rand(*shape)
 
     difficulty = 21
-    l2_norm = np.sum(np.power(alphas, 2), axis=0)
-    alphas = alphas / np.sqrt(l2_norm) * np.sqrt(difficulty)
+    normalisation_factors = np.expand_dims(
+        np.sqrt(np.sum(np.power(alphas, 2), axis=-1)), -1
+    )
+    alphas = alphas / normalisation_factors * np.sqrt(difficulty)
 
     return alphas, betas
 
@@ -311,7 +316,7 @@ problems_scalar_output = [
         # Arguments to pass to `f` and `exact`
         (
             np.array([1/4]),
-            np.array([[5]]),
+            np.array([5]),
         )
     ),
     (
@@ -321,7 +326,7 @@ problems_scalar_output = [
         np.array([1, 1]),
         (
             np.array([1/4]),
-            np.array([[2], [4]]),
+            np.array([2, 4]),
         ),
     ),
     (
@@ -331,7 +336,7 @@ problems_scalar_output = [
         np.array([10, 10]),
         (
             np.array([1/2]),
-            np.array([[2], [4]]),
+            np.array([2, 4]),
         )
     ),
     (
@@ -341,7 +346,7 @@ problems_scalar_output = [
         np.array([10, 10, 10]),
         (
             np.array([1/2]),
-            np.array([[1], [1], [1]]),
+            np.array([1, 1, 1]),
         )
     ),
 
@@ -373,8 +378,8 @@ problems_scalar_output = [
         np.array([0, 0, 0]),
         np.array([1, 1, 1]),
         (
-            np.array([[1], [1], [1]]),
-            np.array([[1], [1], [1]]),
+            np.array([1, 1, 1]),
+            np.array([1, 1, 1]),
         )
     ),
     (
@@ -383,8 +388,8 @@ problems_scalar_output = [
         np.array([0, 0, 0]),
         np.array([1, 1, 1]),
         (
-            np.array([[2], [3], [4]]),
-            np.array([[2], [3], [4]]),
+            np.array([2, 3, 4]),
+            np.array([2, 3, 4]),
         )
     ),
     (
@@ -403,8 +408,8 @@ problems_scalar_output = [
         np.array([-1, -1, -1, -1]),
         np.array([1, 1, 1, 1]),
         (
-            np.array([[1], [1], [1], [1]]),
-            np.array([[1], [1], [1], [1]]),
+            np.array([1, 1, 1, 1]),
+            np.array([1, 1, 1, 1]),
         )
     ),
 
@@ -415,7 +420,7 @@ problems_scalar_output = [
         np.array([-1]),
         np.array([1]),
         (
-            np.array([[1/2]]),
+            np.array([1/2]),
         ),
     ),
     (
@@ -424,7 +429,7 @@ problems_scalar_output = [
         np.array([0, -1]),
         np.array([1, 1]),
         (
-            np.array([[5], [5]]),
+            np.array([5, 5]),
         ),
     ),
     (
@@ -433,7 +438,7 @@ problems_scalar_output = [
         np.array([-1, -1, -1]),
         np.array([1, 1, 1]),
         (
-            np.array([[1], [1], [1]]),
+            np.array([1, 1, 1]),
         ),
     ),
 
@@ -443,7 +448,9 @@ problems_scalar_output = [
         genz_malik_1980_f_4_exact,
         np.array([0]),
         np.array([2]),
-        (np.array([1]),),
+        (
+            np.array([1]),
+        ),
     ),
     (
         genz_malik_1980_f_4,
@@ -467,8 +474,8 @@ problems_scalar_output = [
         np.array([-1]),
         np.array([1]),
         (
-            np.array([[-2]]),
-            np.array([[2]]),
+            np.array([-2]),
+            np.array([2]),
         ),
     ),
     (
@@ -477,8 +484,8 @@ problems_scalar_output = [
         np.array([-1, -1]),
         np.array([1, 1]),
         (
-            np.array([[2], [3]]),
-            np.array([[4], [5]]),
+            np.array([2, 3]),
+            np.array([4, 5]),
         ),
     ),
     (
@@ -487,8 +494,8 @@ problems_scalar_output = [
         np.array([-1, -1]),
         np.array([1, 1]),
         (
-            np.array([[-1], [1]]),
-            np.array([[0], [0]]),
+            np.array([-1, 1]),
+            np.array([0, 0]),
         ),
     ),
     (
@@ -497,8 +504,8 @@ problems_scalar_output = [
         np.array([-1, -1, -1]),
         np.array([1, 1, 1]),
         (
-            np.array([[1], [1], [1]]),
-            np.array([[1], [1], [1]]),
+            np.array([1, 1, 1]),
+            np.array([1, 1, 1]),
         ),
     ),
 ]
@@ -521,7 +528,7 @@ def test_cub_scalar_output(problem, quadrature, rtol, atol):
         pytest.skip("Genz-Malik cubature does not support 1D integrals")
 
     if isinstance(quadrature, GaussKronrodQuad):
-        rule = FixedProductErrorFromDifferenceCub([quadrature] * ndim)
+        rule = ProductNestedFixed([quadrature] * ndim)
     elif quadrature is GenzMalikCub and ndim >= 2:
         rule = GenzMalikCub(ndim)
     else:
@@ -548,7 +555,7 @@ def test_cub_scalar_output(problem, quadrature, rtol, atol):
     )
 
 
-problems_tensor_output = [
+problems_array_output = [
     (
         # Function to integrate, like `f(x, *args)`
         genz_malik_1980_f_1,
@@ -582,7 +589,7 @@ problems_tensor_output = [
 ]
 
 
-@pytest.mark.parametrize("problem", problems_tensor_output)
+@pytest.mark.parametrize("problem", problems_array_output)
 @pytest.mark.parametrize("quadrature", [
     GaussKronrodQuad(15),
     GaussKronrodQuad(21),
@@ -592,25 +599,25 @@ problems_tensor_output = [
     (2,),
     (3,),
     (4,),
-    (2, 1),
-    (3, 1),
-    (4, 1),
-    (5, 1),
-    (2, 3,),
-    (2, 3, 4),
-    (3, 2, 1),
+    (1, 2),
+    (1, 3),
+    (1, 4),
+    (1, 5),
+    (3, 2),
+    (3, 4, 2),
+    (2, 1, 3),
 ])
 @pytest.mark.parametrize("rtol", [1e-3])
 @pytest.mark.parametrize("atol", [1e-4])
-def test_cub_tensor_output(problem, quadrature, shape, rtol, atol):
+def test_cub_array_output(problem, quadrature, shape, rtol, atol):
     np.random.seed(1)
-    ndim = shape[0]
+    ndim = shape[-1]
 
     if quadrature is GenzMalikCub and ndim < 2:
         pytest.skip("Genz-Malik cubature does not support 1D integrals")
 
     if isinstance(quadrature, GaussKronrodQuad):
-        rule = FixedProductErrorFromDifferenceCub([quadrature] * ndim)
+        rule = ProductNestedFixed([quadrature] * ndim)
     elif quadrature is GenzMalikCub and ndim >= 2:
         rule = GenzMalikCub(ndim)
     else:
@@ -642,7 +649,7 @@ def test_cub_tensor_output(problem, quadrature, shape, rtol, atol):
 
     assert res.status == "converged", f"estimate_error={res.error}, subdivisions=\
 {res.subdivisions}, true_error={np.abs(res.estimate - exact(a, b, *args))}"
-    assert res.estimate.shape == shape[1:]
+    assert res.estimate.shape == shape[:-1]
 
 
 @pytest.mark.parametrize("ndim", range(2, 11))
@@ -654,7 +661,7 @@ def test_genz_malik_func_evaluations(ndim):
 
     nodes, _ = GenzMalikCub(ndim).nodes_and_weights
 
-    assert nodes.shape[-1] == (2**ndim) + 2*ndim**2 + 2*ndim + 1
+    assert nodes.shape[0] == (2**ndim) + 2*ndim**2 + 2*ndim + 1
 
 
 @pytest.mark.parametrize("quadrature", [
@@ -674,7 +681,7 @@ def test_base_1d_quadratures_simple(quadrature):
     n = np.arange(5)
 
     def f(x):
-        x_reshaped = x.reshape(1, 1, -1)
+        x_reshaped = x.reshape(-1, 1, 1)
         n_reshaped = n.reshape(1, -1, 1)
 
         return np.power(x_reshaped, n_reshaped)
@@ -682,7 +689,7 @@ def test_base_1d_quadratures_simple(quadrature):
     a = np.array([0])
     b = np.array([2])
 
-    exact = (2**(n+1)/(n+1)).reshape(1, -1)
+    exact = (2**(n+1)/(n+1)).reshape(-1, 1)
     estimate = quadrature.estimate(f, a, b)
 
     assert_allclose(
@@ -702,7 +709,7 @@ def test_can_pass_str_to_cub(quadrature_str):
     n = np.arange(5)
 
     def f(x):
-        x_reshaped = x.reshape(1, 1, -1)
+        x_reshaped = x.reshape(-1, 1, 1)
         n_reshaped = n.reshape(1, -1, 1)
 
         return np.power(x_reshaped, n_reshaped)
@@ -710,7 +717,7 @@ def test_can_pass_str_to_cub(quadrature_str):
     a = np.array([0])
     b = np.array([2])
 
-    exact = (2**(n+1)/(n+1)).reshape(1, -1)
+    exact = (2**(n+1)/(n+1)).reshape(-1, 1)
     res = cub(f, a, b, quadrature_str)
 
     assert_allclose(
@@ -725,7 +732,7 @@ def test_can_pass_list_to_cub():
     n = np.arange(5)
 
     def f(x):
-        x_reshaped = x.reshape(1, 1, -1)
+        x_reshaped = x.reshape(-1, 1, 1)
         n_reshaped = n.reshape(1, -1, 1)
 
         return np.power(x_reshaped, n_reshaped)
@@ -733,7 +740,7 @@ def test_can_pass_list_to_cub():
     a = [0]
     b = [2]
 
-    exact = (2**(n+1)/(n+1)).reshape(1, -1)
+    exact = (2**(n+1)/(n+1)).reshape(-1, 1)
     res = cub(f, a, b)
 
     assert_allclose(
@@ -752,7 +759,7 @@ def test_base_1d_quadratures_error_from_difference(quadrature_pair):
     n = np.arange(5)
 
     def f(x):
-        x_reshaped = x.reshape(1, 1, -1)
+        x_reshaped = x.reshape(-1, 1, 1)
         n_reshaped = n.reshape(1, -1, 1)
 
         return np.power(x_reshaped, n_reshaped)
@@ -760,9 +767,9 @@ def test_base_1d_quadratures_error_from_difference(quadrature_pair):
     a = np.array([0])
     b = np.array([2])
 
-    exact = (2**(n+1)/(n+1)).reshape(1, -1)
+    exact = (2**(n+1)/(n+1)).reshape(-1, 1)
 
-    rule = ErrorFromDifference(
+    rule = NestedFixedRule(
         higher=quadrature_pair[0],
         lower=quadrature_pair[1]
     )
@@ -778,15 +785,15 @@ def test_base_1d_quadratures_error_from_difference(quadrature_pair):
 
 
 @pytest.mark.parametrize("rule", [
-    FixedProductErrorFromDifferenceCub([
-        ErrorFromDifference(NewtonCotesQuad(10), NewtonCotesQuad(8)),
-        ErrorFromDifference(NewtonCotesQuad(10), NewtonCotesQuad(8)),
+    ProductNestedFixed([
+        NestedFixedRule(NewtonCotesQuad(10), NewtonCotesQuad(8)),
+        NestedFixedRule(NewtonCotesQuad(10), NewtonCotesQuad(8)),
     ]),
-    FixedProductErrorFromDifferenceCub([
-        ErrorFromDifference(GaussLegendreQuad(10), NewtonCotesQuad(5)),
-        ErrorFromDifference(GaussLegendreQuad(10), GaussLegendreQuad(5)),
+    ProductNestedFixed([
+        NestedFixedRule(GaussLegendreQuad(10), NewtonCotesQuad(5)),
+        NestedFixedRule(GaussLegendreQuad(10), GaussLegendreQuad(5)),
     ]),
-    FixedProductErrorFromDifferenceCub([
+    ProductNestedFixed([
         GaussKronrodQuad(21),
         GaussKronrodQuad(21),
     ]),
@@ -796,7 +803,7 @@ def test_cub_with_kwargs(rule):
     np.random.seed(1)
 
     f = genz_malik_1980_f_1
-    r, alphas = genz_malik_1980_f_1_random_args((2, 3))
+    r, alphas = genz_malik_1980_f_1_random_args((3, 2))
 
     a = np.array([0, 0])
     b = np.array([1, 1])
@@ -818,7 +825,7 @@ def test_cub_with_kwargs(rule):
 def test_stops_after_max_subdivisions():
     # Define a cubature rule with fake high error so that cub will keep on subdividing
 
-    class BadError(Cub):
+    class BadError(Rule):
         underlying = GaussLegendreQuad(10)
 
         def estimate(self, f, a, b, args=(), kwargs=dict()):
@@ -863,7 +870,7 @@ def test_estimate_with_base_classes_raise_error():
     a = np.array([0])
     b = np.array([1])
 
-    for base_class in [Cub(), FixedCub()]:
+    for base_class in [Rule(), FixedRule()]:
         with pytest.raises(Exception):
             base_class.estimate(f, a, b)
 
@@ -884,7 +891,7 @@ def test_genz_malik_1d_raises_error():
         # 2D problem, 1D rule
         np.array([0, 0]),
         np.array([1, 1]),
-        ErrorFromDifference(NewtonCotesQuad(10), NewtonCotesQuad(5)),
+        NestedRule(NewtonCotesQuad(10), NewtonCotesQuad(5)),
     ),
     (
         # 1D problem, 2D rule

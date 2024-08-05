@@ -2,15 +2,15 @@ import numpy as np
 
 from functools import cached_property
 
-from ._base import FixedCub
+from ._base import FixedRule
 
 
-class NewtonCotesQuad(FixedCub):
+class NewtonCotesQuad(FixedRule):
     """
     Newton-Cotes quadrature.
 
     Newton-Cotes is a 1D rule. To use it for multidimensional integrals, it will be
-    necessary to take the FixedProductCub of multiple Newton-Cotes rules. See
+    necessary to take the ProductFixed of multiple Newton-Cotes rules. See
     Examples.
 
     Parameters
@@ -40,11 +40,11 @@ class NewtonCotesQuad(FixedCub):
 
     >>> import numpy as np
     >>> from scipy.integrate._cubature import cub
-    >>> from scipy.integrate._rules import FixedProductCub, NewtonCotesQuad
+    >>> from scipy.integrate._rules import ProductFixed, NewtonCotesQuad
     >>> def f(x):
     ...     # f(x) = cos(x_1) + cos(x_2)
     ...     return np.sum(np.cos(x), axis=0)
-    >>> rule = FixedProductCub(
+    >>> rule = ProductFixed(
     ...     [NewtonCotesQuad(15), NewtonCotesQuad(15)]
     ... ) # Use 15-point GaussKronrod
     >>> a, b = np.array([0, 0]), np.array([1, 1])

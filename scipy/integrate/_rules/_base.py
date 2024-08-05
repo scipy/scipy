@@ -1,4 +1,3 @@
-import math
 import itertools
 
 import numpy as np
@@ -6,7 +5,7 @@ import numpy as np
 from functools import cached_property
 
 
-class Cub:
+class Rule:
     """
     Base class for numerical integration algorithms (cubatures).
 
@@ -16,11 +15,11 @@ class Cub:
 
     If a subclass does not implement its own `estimate_error`, then it will use a
     default error estimate based on the difference between the estimate over the whole
-    region and the sum of the estimates over each subregion.
+    region and the sum of estimates over that region divided into 2^ndim subregions.
 
     See Also
     --------
-    FixedCub
+    FixedRule
 
     Examples
     --------
@@ -29,8 +28,8 @@ class Cub:
     Gauss-Kronrod for the error estimate.
 
     >>> import numpy as np
-    >>> from scipy.integrate._cubature import cub, FixedProductErrorFromDifferenceCub
-    >>> from scipy.integrate._rules import Cub, GenzMalikCub, GaussKronrodQuad
+    >>> from scipy.integrate._cubature import cub, ProductNestedFixed
+    >>> from scipy.integrate._rules import Rule, GenzMalikCub, GaussKronrodQuad
     >>> def f(x, r, alphas):
     ...     # f(x) = cos(2pi*r + alpha @ x)
     ...     ndim = x.shape[0]
@@ -46,7 +45,7 @@ class Cub:
     ...         2*np.pi*r_reshaped + np.sum(alphas_reshaped * x_reshaped, axis=0)
     ...     )
     >>> genz = GenzMalikCub(3)
-    >>> kronrod = FixedProductErrorFromDifferenceCub([GaussKronrodQuad(21)] * 3)
+    >>> kronrod = ProductNestedFixed([GaussKronrodQuad(21)] * 3)
     >>> class CustomRule(Cub):
     ...     def estimate(self, f, a, b, args=(), kwargs=None):
     ...         if kwargs is None: kwargs = dict()
@@ -158,7 +157,7 @@ class Cub:
         return np.abs(est - refined_est)
 
 
-class FixedCub(Cub):
+class FixedRule(Rule):
     """
     A cubature rule implemented as the weighted sum of function evaluations at fixed
     nodes.
@@ -174,7 +173,7 @@ class FixedCub(Cub):
 
     See Also
     --------
-    NewtonCotesQuad, GaussLegendreQuad, ErrorFromDifference
+    NewtonCotesQuad, GaussLegendreQuad, NestedRule
     """
 
     @property
@@ -219,73 +218,31 @@ class FixedCub(Cub):
         return _apply_fixed_rule(f, a, b, nodes, weights, args, kwargs)
 
 
-class ErrorFromDifference(FixedCub):
-    """
-    A fixed cubature rule with error estimate given by the difference between two
-    underlying fixed cubature rules.
-
-    This can be used to give error estimation to cubature rules which don't have default
-    error estimation, such as NewtonCotesQuad or GaussLegendreQuad. This is in contrast
-    to rules like GaussKronrod which have default error estimation given by a special
-    property of that cubature rule. See Examples.
-
-    Attributes
-    ----------
-    higher : FixedCub
-        Higher accuracy fixed cubature rule.
-
-    lower : FixedCub
-        Lower accuracy fixed cubature rule.
-
-    nodes_and_weights : (ndarray, ndarray)
-        Nodes and weights. These are mirrored from ``higher.nodes_and_weights``.
-
-    lower_nodes_and_weights : (ndarray, ndarray)
-        Nodes and weights for the lower rule. These are mirrored from
-        ``lower.nodes_and_weights``.
-
-    See Also
-    --------
-    GaussKronrodQuad, NewtonCotesQuad
-
-    Examples
-    --------
-    Gauss-Legendre rules have no intrinsic error estimation. We can build a cubature
-    rule with error estimation by taking the difference between an accurate cubature
-    rule and a less accurate cubature rule:
-
-    >>> import numpy as np
-    >>> from scipy.integrate._cubature import cub
-    >>> from scipy.integrate._rules import GaussLegendreQuad, ErrorFromDifference
-    >>> higher_accuracy_rule = GaussLegendreQuad(20)
-    >>> lower_accuracy_rule = GaussLegendreQuad(10)
-    >>> custom_rule = ErrorFromDifference(
-    ...     higher_accuracy_rule,
-    ...     lower_accuracy_rule
-    ... )
-    >>> cub(lambda x: np.sin(x), 0, 1, custom_rule).estimate
-     array([0.45969769])
-    """
-
+class NestedFixedRule(FixedRule):
     def __init__(self, higher, lower):
         self.higher = higher
         self.lower = lower
 
     @property
     def nodes_and_weights(self):
-        return self.higher.nodes_and_weights
+        if self.higher is not None:
+            return self.higher.nodes_and_weights
+        else:
+            raise NotImplementedError
 
     @property
     def lower_nodes_and_weights(self):
-        return self.lower.nodes_and_weights
+        if self.lower is not None:
+            return self.lower.nodes_and_weights
+        else:
+            raise NotImplementedError
 
     def estimate_error(self, f, a, b, args=(), kwargs=None):
         r"""
         Calculate the error estimate of this cubature rule for the integral of ``f`` in
         the hypercube described by corners ``a`` and ``b``.
 
-        The error estimate used is the difference between the approximation given by
-        ``lower`` and ``higher``.
+        TODO
 
         Parameters
         ----------
@@ -319,28 +276,69 @@ class ErrorFromDifference(FixedCub):
         nodes, weights = self.nodes_and_weights
         lower_nodes, lower_weights = self.lower_nodes_and_weights
 
-        error_nodes = np.concat([nodes, lower_nodes], axis=-1)
-        error_weights = np.concat([weights, -lower_weights], axis=-1)
+        error_nodes = np.concat([nodes, lower_nodes], axis=0)
+        error_weights = np.concat([weights, -lower_weights], axis=0)
 
         return np.abs(
             _apply_fixed_rule(f, a, b, error_nodes, error_weights, args, kwargs)
         )
 
 
-class FixedProductCub(FixedCub):
+class NestedRule(Rule):
+    """
+    A fixed cubature rule with error estimate given by the difference between two
+    underlying cubature rules.
+
+    This can be used to give error estimation to cubature rules which don't have default
+    error estimation, such as NewtonCotesQuad or GaussLegendreQuad. This is in contrast
+    to rules like GaussKronrodQuad which have default error estimation given by a
+    special property of that rule. See Examples.
+
+    Attributes
+    ----------
+    higher : Rule
+        Higher accuracy cubature rule.
+
+    lower : Rule
+        Lower accuracy cubature rule.
+
+    See Also
+    --------
+    GaussKronrodQuad, NewtonCotesQuad
+
+    Examples
+    --------
+    TODO
+    """
+
+    def __init__(self, higher, lower):
+        self.higher = higher
+        self.lower = lower
+
+    def estimate(self, f, a, b, args, kwargs):
+        return self.higher.estimate(f, a, b, args, kwargs)
+
+    def estimate_error(self, f, a, b, args, kwargs):
+        return np.abs(
+            self.higher.estimate(f, a, b, args, kwargs)
+            - self.lower.estimate(f, a, b, args, kwargs)
+        )
+
+
+class ProductFixed(FixedRule):
     """
     Find the n-dimensional cubature rule constructed from the Cartesian product of 1D
     fixed cubature rules.
 
     Parameters
     ----------
-    base_rules : list of FixedCub
-        List of base 1-dimensional FixedCub cubature rules.
+    base_rules : list of FixedRule
+        List of base 1-dimensional FixedRule cubature rules.
 
     Attributes
     ----------
-    base_rules : list of FixedCub
-        List of base 1-dimensional FixedCub cubature rules.
+    base_rules : list of FixedRule
+        List of base 1-dimensional FixedRule cubature rules.
 
     Examples
     --------
@@ -350,12 +348,12 @@ class FixedProductCub(FixedCub):
     >>> import numpy as np
     >>> from scipy.integrate._cubature import cub
     >>> from scipy.integrate._rules import (
-    ...  FixedProductCub, NewtonCotesQuad
+    ...  ProductFixed, NewtonCotesQuad
     ... )
     >>> def f(x):
     ...     # f(x) = cos(x_1) + cos(x_2)
     ...     return np.sum(np.cos(x), axis=0)
-    >>> rule = FixedProductCub(
+    >>> rule = ProductFixed(
     ...     [NewtonCotesQuad(10), NewtonCotesQuad(10)]
     ... ) # Use 10-point NewtonCotesQuad
     >>> a, b = np.array([0, 0]), np.array([1, 1])
@@ -376,19 +374,19 @@ class FixedProductCub(FixedCub):
 
         weights = np.prod(_cartesian_product(
             [rule.nodes_and_weights[1] for rule in self.base_rules]
-        ), axis=0)
+        ), axis=-1)
 
         return nodes, weights
 
 
-class FixedProductErrorFromDifferenceCub(ErrorFromDifference):
+class ProductNestedFixed(NestedFixedRule):
     """
     Find the n-dimensional cubature rule constructed from the Cartesian product of 1-D
-    `ErrorFromDifference` cubature rules, and estimate the error as the difference
+    `NestedRule` cubature rules, and estimate the error as the difference
     between the product of the higher rules and the product of the lower rules.
 
     Given a list of N 1-dimensional cubature rules which support error estimation using
-    ErrorFromDifference, this will find the N-dimensional ErrorFromDifference cubature
+    NestedRule, this will find the N-dimensional NestedRule cubature
     rule obtained by taking the Cartesian product of their nodes, and estimating the
     error by taking the difference with a lower-accuracy N-dimensional cubature rule
     obtained using the `.lower_nodes_and_weights` rule in each of the base 1-dimensional
@@ -396,13 +394,13 @@ class FixedProductErrorFromDifferenceCub(ErrorFromDifference):
 
     Parameters
     ----------
-    base_rules : list of ErrorFromDifference
-        List of base 1-dimensional ErrorFromDifference cubature rules.
+    base_rules : list of NestedRule
+        List of base 1-dimensional NestedRule cubature rules.
 
     Attributes
     ----------
-    base_rules : list of ErrorFromDifference
-        List of base 1-dimensional ErrorFromDifference cubature rules.
+    base_rules : list of NestedRule
+        List of base 1-dimensional NestedRule cubature rules.
 
     Examples
     --------
@@ -412,14 +410,14 @@ class FixedProductErrorFromDifferenceCub(ErrorFromDifference):
     >>> import numpy as np
     >>> from scipy.integrate._cubature import cub
     >>> from scipy.integrate._rules import (
-    ...  FixedProductErrorFromDifferenceCub, GaussKronrodQuad
+    ...  ProductNestedFixed, GaussKronrodQuad
     ... )
     >>> def f(x):
     ...     # f(x) = cos(x_1) + cos(x_2)
     ...     return np.sum(np.cos(x), axis=0)
-    >>> rule = FixedProductErrorFromDifferenceCub(
+    >>> rule = ProductNestedFixed(
     ...     [GaussKronrodQuad(15), GaussKronrodQuad(15)]
-    ... ) # Use 15-point GaussKronrodQuad, which implements ErrorFromDifference
+    ... ) # Use 15-point GaussKronrodQuad, which implements NestedRule
     >>> a, b = np.array([0, 0]), np.array([1, 1])
     >>> rule.estimate(f, a, b) # True value 2*sin(1), approximately 1.6829
      np.float64(1.682941969615793)
@@ -438,7 +436,7 @@ class FixedProductErrorFromDifferenceCub(ErrorFromDifference):
 
         weights = np.prod(_cartesian_product(
             [rule.nodes_and_weights[1] for rule in self.base_rules]
-        ), axis=0)
+        ), axis=-1)
 
         return nodes, weights
 
@@ -450,23 +448,20 @@ class FixedProductErrorFromDifferenceCub(ErrorFromDifference):
 
         weights = np.prod(_cartesian_product(
             [cubature.lower_nodes_and_weights[1] for cubature in self.base_rules]
-        ), axis=0)
+        ), axis=-1)
 
         return nodes, weights
 
 
-def _cartesian_product(points):
-    """
-    Takes a list of arrays such as `[ [[x_1, x_2]], [[y_1, y_2]] ]` and
-    returns all combinations of these points, such as
-    `[[x_1, x_1, x_2, x_2], [y_1, y_2, y_1, y_2]]`
+def _cartesian_product(arrays):
+    la = len(arrays)
+    dtype = np.result_type(*arrays)
+    arr = np.empty([la] + [len(a) for a in arrays], dtype=dtype)
 
-    Note that this is assuming that the spatial dimension is the first axis, as opposed
-    to the last axis.
-    """
-    out = np.stack(np.meshgrid(*points, indexing='ij'), axis=0)
-    out = out.reshape(len(points), -1)
-    return out
+    for i, a in enumerate(np.ix_(*arrays)):
+        arr[i, ...] = a
+
+    return arr.reshape(la, -1).T
 
 
 def _subregion_coordinates(a, b):
@@ -493,23 +488,25 @@ def _apply_fixed_rule(f, a, b, orig_nodes, orig_weights, args=(), kwargs=None):
     if kwargs is None:
         kwargs = dict()
 
-    # Ensure orig_nodes are at least 2D, since 1D cubature methods return arrays of
-    # shape (num_eval_points,) rather than (1,num_eval_points)
-    orig_nodes = np.atleast_2d(orig_nodes)
+    # Ensure orig_nodes are at least 2D, since 1D cubature methods can return arrays of
+    # shape (num_eval_points,) rather than (num_eval_points, 1)
+    if orig_nodes.ndim == 1:
+        orig_nodes = orig_nodes[:, np.newaxis]
 
-    rule_ndim = orig_nodes.shape[0]
+    rule_ndim = orig_nodes.shape[-1]
+
     a_ndim = len(a)
     b_ndim = len(b)
 
     if rule_ndim != a_ndim or rule_ndim != b_ndim:
         raise ValueError(f"cubature rule and function are of incompatible dimension, \
-nodes have ndim {rule_ndim}, while limit of integration have ndim \
-a_ndim={a_ndim}, b_ndim={b_ndim}")
+nodes have ndim {rule_ndim}, while limit of integration have ndim a_ndim={a_ndim}, \
+b_ndim={b_ndim}")
 
-    # Since f accepts arrays of shape (ndim, eval_points), it is necessary to
+    # Since f accepts arrays of shape (eval_points, ndim), it is necessary to
     # add an extra axis to a and b so that ``f`` can be evaluated there.
-    a = a[:, np.newaxis]
-    b = b[:, np.newaxis]
+    a = a[np.newaxis, :]
+    b = b[np.newaxis, :]
     lengths = b - a
 
     # The underlying cubature rule is for the hypercube [-1, 1]^n.
@@ -520,15 +517,19 @@ a_ndim={a_ndim}, b_ndim={b_ndim}")
 
     # Also need to multiply the weights by a scale factor equal to the determinant
     # of the Jacobian for this coordinate change.
-    weight_scale_factor = math.prod(lengths / 2)
+    weight_scale_factor = np.prod(lengths / 2)
     weights = orig_weights * weight_scale_factor
+    weights = weights
 
-    # f(nodes) will have shape (output_dim_1, ..., output_dim_n, num_nodes)
-    # Summing along the last axis means estimate will shape (output_dim_1, ...,
+    f_nodes = f(nodes, *args, **kwargs)
+    weights_reshaped = weights.reshape(-1, *([1] * (f_nodes.ndim - 1)))
+
+    # f(nodes) will have shape (num_nodes, output_dim_1, ..., output_dim_n)
+    # Summing along the first axis means estimate will shape (output_dim_1, ...,
     # output_dim_n)
     est = np.sum(
-        weights * f(nodes, *args, **kwargs),
-        axis=-1
+        weights_reshaped * f_nodes,
+        axis=0
     )
 
     return est

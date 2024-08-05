@@ -22,21 +22,22 @@ Integrating functions, given function object
    qmc_quad      -- N-D integration using Quasi-Monte Carlo quadrature
    IntegrationWarning -- Warning on issues during integration
 
-Cubature rules
---------------
+Rules for cub
+-------------
 
 .. autosummary::
    :toctree: generated/
 
-   Cub                                -- Base class for cubature rules.
-   FixedCub                           -- Cubature rules implemented as the weighted sum of function evaluations
-   ErrorFromDifference                -- Cubature rules with error estimators given by the difference between two underlying fixed cubature rules
-   FixedProductCub                    -- N-D cubature rules from products of 1-D cubature rules
-   FixedProductErrorFromDifferenceCub -- N-D cubature from the product of 1-D cubature rules with error estimators
+   Rule                               -- Base class for cubature rules.
+   FixedRule                          -- Rules implemented as the weighted sum of function evaluations
+   NestedRule                         -- Rules with error estimators given by the difference between two underlying rules
+   NestedFixedRule                    -- Rules with a higher-order and lower-order fixed rule, with error estimators given by their difference
+   ProductFixed                       -- Construct N-D fixed cubature rules from the product of 1-D fixed quadrature rules
+   ProductNestedFixed                 -- Construct N-D nested fixed cubature rules from the product of 1-D nested fixed quadrature rules
    NewtonCotesQuad                    -- Newton-Cotes quadrature
    GaussLegendreQuad                  -- Gauss-Legendre quadrature
-   GaussKronrodQuad                   -- Gauss-Kronrod quadrature
-   GenzMalikCub                       -- Genz-Malik cubature
+   GaussKronrodQuad                   -- Gauss-Kronrod nested quadrature
+   GenzMalikCub                       -- Genz-Malik nested cubature
 
 
 Integrating functions, given fixed samples
@@ -125,8 +126,9 @@ from ._quad_vec import quad_vec
 from ._tanhsinh import nsum
 from ._cubature import cub
 from ._rules import (
-    Cub, FixedCub, ErrorFromDifference,
-    FixedProductCub, FixedProductErrorFromDifferenceCub,
+    Rule, FixedRule,
+    NestedRule, NestedFixedRule,
+    ProductFixed, ProductNestedFixed,
     GenzMalikCub,
     NewtonCotesQuad, GaussKronrodQuad, GaussLegendreQuad,
 )
