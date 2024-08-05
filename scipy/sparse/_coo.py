@@ -459,7 +459,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
             raise ValueError("diagonal requires two dimensions")
         rows, cols = self.shape
         if k <= -rows or k >= cols:
-            return np.empty(0, dtype=self.data.dtype)
+            return coo_array(np.empty(0, dtype=self.data.dtype))
         diag = np.zeros(min(rows + min(k, 0), cols - max(k, 0)),
                         dtype=self.dtype)
         diag_mask = (self.row + k) == self.col
@@ -472,6 +472,29 @@ class _coo_base(_data_matrix, _minmax_mixin):
             (row, _), data = self._sum_duplicates(inds, self.data[diag_mask])
         diag[row + min(k, 0)] = data
 
+        return diag
+    
+    def diagonalnd(self, axis1=0, axis2=1, offset=0):
+        x, y = self.shape[axis1], self.shape[axis2]
+        diag_size = min(x, y)
+        diag_shape = [*(self.shape[i] for i in range(len(self.shape)) if i!=axis1 and i!=axis2), diag_size]
+        if offset <= -x or offset >= y:
+            diag_shape[-1] = 0
+            return coo_array(np.empty(tuple(diag_shape), dtype=self.data.dtype))
+        diag_shape[-1] = min(x + min(offset, 0), y - max(offset, 0)) 
+        # diag = np.zeros(diag_shape, dtype=self.dtype)
+        diag_mask = (self.coords[axis1] + offset) == self.coords[axis2]
+        new_data = self.data[diag_mask]
+        inds = [idx[diag_mask] for idx in self.coords]
+        # min shape out of both axes
+        if offset>=0:
+            ax = axis1
+        else:
+            ax = axis2
+        inds = tuple(inds[i] for i in range(len(self.shape)) if i!=axis2 and i!=axis1) + \
+                    tuple(inds[ax:ax+1])
+        
+        diag = coo_array((new_data, inds), diag_shape)
         return diag
 
     diagonal.__doc__ = _data_matrix.diagonal.__doc__
@@ -1152,7 +1175,6 @@ class _coo_base(_data_matrix, _minmax_mixin):
                 new_coords = (new_dim,) + new_coords
                 
         return coo_array((new_data, new_coords), new_shape)
-        
 
 def _block_diag(self):
     """
