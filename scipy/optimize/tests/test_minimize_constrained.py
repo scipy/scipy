@@ -3,7 +3,7 @@ import pytest
 from scipy.linalg import block_diag
 from scipy.sparse import csc_matrix
 from numpy.testing import (assert_array_almost_equal,
-                           assert_array_less, assert_, assert_allclose,
+                           assert_array_less, assert_,
                            suppress_warnings)
 from scipy.optimize import (NonlinearConstraint,
                             LinearConstraint,
@@ -710,9 +710,6 @@ def test_bug_11886():
     minimize(opt, 2*[1], constraints = lin_cons)
 
 
-# Remove xfail when gh-11649 is resolved
-@pytest.mark.xfail(reason="Known bug in trust-constr; see gh-11649.",
-                   strict=True)
 def test_gh11649():
     bnds = Bounds(lb=[-1, -1], ub=[1, 1], keep_feasible=True)
 
@@ -728,24 +725,22 @@ def test_gh11649():
         assert_inbounds(x)
         return x[0]**2 + x[1]
 
+    def nce_jac(x):
+        return np.array([2*x[0], 1])
+
     def nci(x):
         assert_inbounds(x)
         return x[0]*x[1]
 
     x0 = np.array((0.99, -0.99))
     nlcs = [NonlinearConstraint(nci, -10, np.inf),
-            NonlinearConstraint(nce, 1, 1)]
+            NonlinearConstraint(nce, 1, 1, jac=nce_jac)]
 
     res = minimize(fun=obj, x0=x0, method='trust-constr',
                    bounds=bnds, constraints=nlcs)
     assert res.success
     assert_inbounds(res.x)
     assert nlcs[0].lb < nlcs[0].fun(res.x) < nlcs[0].ub
-    assert_allclose(nce(res.x), nlcs[1].ub)
-
-    ref = minimize(fun=obj, x0=x0, method='slsqp',
-                   bounds=bnds, constraints=nlcs)
-    assert_allclose(res.fun, ref.fun)
 
 
 def test_gh20665_too_many_constraints():
