@@ -1499,11 +1499,19 @@ def _ravel_non_reduced_axes(coords, shape, axes):
 
         coords = np.array(self.coords)
         data = np.array(self.data)
-
-        cum_repeat = 1 # Cumulative repeat factor for broadcasting
-        new_coords = coords[-2:].copy()  # Copy last two coordinates to start
+        new_coords = coords[-1:].copy()  # Copy last two coordinates to start
         new_data = data.copy() # copy data array
-        for i in range(-3, -(len(shape)+1), -1):
+        cum_repeat = 1 # Cumulative repeat factor for broadcasting
+        
+        if shape[-1] != new_shape[-1]: # broadcasting the n-th (col) dimension
+            repeat_count = new_shape[-1]
+            cum_repeat *= repeat_count
+            nnz = len(new_data)
+            new_data = np.tile(new_data, repeat_count)
+            new_dim = np.repeat(np.arange(0, repeat_count), nnz)
+            new_coords = np.array([new_dim])
+        
+        for i in range(-2, -(len(shape)+1), -1):
             if shape[i] != new_shape[i]:
                 repeat_count = new_shape[i] # number of times to repeat data and coordinates
                 cum_repeat *= repeat_count # update cumulative repeat factor
