@@ -4635,6 +4635,13 @@ class TestBetaPrime:
     def test_ppf_gh_17631(self, x, a, b, p):
         assert_allclose(stats.betaprime.ppf(p, a, b), x, rtol=2e-14)
 
+    def test__ppf(self):
+        # Verify that _ppf supports scalar arrays.
+        a = np.array(1.0)
+        b = np.array(1.0)
+        p = np.array(0.5)
+        assert_allclose(stats.betaprime._ppf(p, a, b), 1.0, rtol=5e-16)
+
     @pytest.mark.parametrize(
         'x, a, b, expected',
         cdf_vals + [
