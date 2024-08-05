@@ -868,7 +868,10 @@ class TestSolve:
         assert_(x.shape == (2, 0), 'Returned empty array shape is wrong')
 
     @pytest.mark.parametrize('dtype', [np.float64, np.complex128])
-    @pytest.mark.parametrize('assume_a', ['dia', 'tri', 'ltr', 'utr', 'sym', 'her'])
+    @pytest.mark.parametrize('assume_a', ['diagonal', 'tridiagonal', 'lower triangular',
+                                          'upper triangular', 'symmetric', 'hermitian',
+                                          'positive definite', 'general',
+                                          'sym', 'her', 'pos', 'gen'])
     @pytest.mark.parametrize('nrhs', [(), (5,)])
     @pytest.mark.parametrize('transposed', [True, False])
     @pytest.mark.parametrize('overwrite', [True, False])
@@ -884,20 +887,23 @@ class TestSolve:
             b = b + rng.random(size=(n,) + nrhs) * 1j
             A = A + rng.random(size=(n, n)) * 1j
 
-        if assume_a == 'dia':
+        if assume_a == 'diagonal':
             A = np.diag(np.diag(A))
-        elif assume_a == 'ltr':
+        elif assume_a == 'lower triangular':
             A = np.tril(A)
-        elif assume_a == 'utr':
+        elif assume_a == 'upper triangular':
             A = np.triu(A)
-        elif assume_a == 'tri':
+        elif assume_a == 'tridiagonal':
             A = (np.diag(np.diag(A))
                  + np.diag(np.diag(A, -1), -1)
                  + np.diag(np.diag(A, 1), 1))
-        elif assume_a == 'sym':
+        elif assume_a in {'symmetric', 'sym'}:
             A = A + A.T
-        elif assume_a == 'her':
+        elif assume_a in {'hermitian', 'her'}:
             A = A + A.conj().T
+        elif assume_a in {'positive definite', 'pos'}:
+            A = A + A.T
+            A += np.diag(A.sum(axis=1))
 
         if fortran:
             A = np.asfortranarray(A)
@@ -918,6 +924,8 @@ class TestSolve:
         if not overwrite:
             assert_equal(A, A_copy)
             assert_equal(b, b_copy)
+
+        assume_a = 'sym' if assume_a in {'positive definite', 'pos'} else assume_a
 
         ref = solve(A_copy, b_copy, assume_a=assume_a, transposed=transposed)
         assert_equal(res, ref)
