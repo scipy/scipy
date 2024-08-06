@@ -1035,16 +1035,20 @@ class betaprime_gen(rv_continuous):
 
     def _ppf(self, p, a, b):
         p, a, b = np.broadcast_arrays(p, a, b)
-        # by default, compute compute the ppf by solving the following:
+        # By default, compute the ppf by solving the following:
         # p = beta._cdf(x/(1+x), a, b). This implies x = r/(1-r) with
         # r = beta._ppf(p, a, b). This can cause numerical issues if r is
-        # very close to 1. in that case, invert the alternative expression of
+        # very close to 1. In that case, invert the alternative expression of
         # the cdf: p = beta._sf(1/(1+x), b, a).
         r = stats.beta._ppf(p, a, b)
         with np.errstate(divide='ignore'):
             out = r / (1 - r)
-        i = (r > 0.9999)
-        out[i] = 1/stats.beta._isf(p[i], b[i], a[i]) - 1
+        rnear1 = r > 0.9999
+        if np.isscalar(r):
+            if rnear1:
+                out = 1/stats.beta._isf(p, b, a) - 1
+        else:
+            out[rnear1] = 1/stats.beta._isf(p[rnear1], b[rnear1], a[rnear1]) - 1
         return out
 
     def _munp(self, n, a, b):
@@ -4880,7 +4884,7 @@ class invgauss_gen(rv_continuous):
     def fit(self, data, *args, **kwds):
         method = kwds.get('method', 'mle')
 
-        if (isinstance(data, CensoredData) or type(self) == wald_gen
+        if (isinstance(data, CensoredData) or isinstance(self, wald_gen)
                 or method.lower() == 'mm'):
             return super().fit(data, *args, **kwds)
 
