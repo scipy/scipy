@@ -77,6 +77,21 @@ def solve(a, b, lower=False, overwrite_a=False,
     Solves the linear equation set ``a @ x == b`` for the unknown ``x``
     for square `a` matrix.
 
+    If the data matrix is known to be a particular type then supplying the
+    corresponding string to ``assume_a`` key chooses the dedicated solver.
+    The available options are
+
+    ===================  ================================
+     diagonal             'diagonal'
+     tridiagonal          'tridiagonal'
+     upper triangular     'upper triangular'
+     lower triangular     'lower triangular'
+     symmetric            'symmetric' (or 'sym')
+     hermitian            'hermitian' (or 'her')
+     positive definite    'positive definite' (or 'pos')
+     general              'general' (or 'gen')
+    ===================  ================================
+
     Parameters
     ----------
     a : (N, N) array_like
@@ -98,14 +113,9 @@ def solve(a, b, lower=False, overwrite_a=False,
         Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
     assume_a : str, optional
-        If the data matrix is known to be a particular type, then supplying the
-        corresponding string to ``assume_a`` key chooses the dedicated solver.
+        Valid entries are described above.
         If omitted or ``None``, checks are performed to identify structure so the
-        appropriate solver can be called. Valid entries are the 'diagonal',
-        'tridiagonal', 'upper triangular', 'lower triangular', 'symmetric',
-        'hermitian', 'positive definite', and 'general'. For backward compatibility,
-        the abbreviations 'sym', 'her', 'pos', and 'gen' are accepted for the
-        last four options, respectively.
+        appropriate solver can be called.
     transposed : bool, default: False
         If True, solve ``a.T @ x == b``. Raises `NotImplementedError`
         for complex `a`.
