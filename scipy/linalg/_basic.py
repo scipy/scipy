@@ -50,6 +50,7 @@ def _solve_check(n, info, lamch=None, rcond=None):
 
 
 def _find_matrix_structure(a):
+    n = a.shape[0]
     below, above = _bandwidth(a)
 
     if below == above == 0:
@@ -58,7 +59,7 @@ def _find_matrix_structure(a):
         return 'lower triangular'
     elif below == 0:
         return 'upper triangular'
-    elif above <= 1 and below <= 1:
+    elif above <= 1 and below <= 1 and n > 3:
         return 'tridiagonal'
 
     if np.issubdtype(a.dtype, np.complexfloating) and _ishermitian(a):
@@ -201,6 +202,9 @@ def solve(a, b, lower=False, overwrite_a=False,
     if assume_a == 'hermitian' and not np.iscomplexobj(a1):
         assume_a = 'symmetric'
 
+    if assume_a is None:
+        assume_a = _find_matrix_structure(a1)
+
     # Get the correct lamch function.
     # The LAMCH functions only exists for S and D
     # So for complex values we have to convert to real/double.
@@ -212,10 +216,12 @@ def solve(a, b, lower=False, overwrite_a=False,
     # Currently we do not have the other forms of the norm calculators
     #   lansy, lanpo, lanhe.
     # However, in any case they only reduce computations slightly...
-    lange = get_lapack_funcs('lange', (a1,))
-
-    if assume_a is None:
-        assume_a = _find_matrix_structure(a1)
+    if assume_a == 'diagonal':
+        lange = _lange_diagonal
+    elif assume_a == 'tridiagonal':
+        lange = _lange_tridiagonal
+    else:
+        lange = get_lapack_funcs('lange', (a1,))
 
     # Since the I-norm and 1-norm are the same for symmetric matrices
     # we can collect them all in this one call
@@ -270,7 +276,10 @@ def solve(a, b, lower=False, overwrite_a=False,
         rcond, info = sycon(lu, ipvt, anorm)
     # Diagonal case
     elif assume_a == 'diagonal':
-        x = (b1.T / np.diag(a1)).T
+        diag_a = np.diag(a1)
+        x = (b1.T / diag_a).T
+        abs_diag_a = np.abs(diag_a)
+        rcond = abs_diag_a.min() / abs_diag_a.max()
     # Tri-diagonal case
     elif assume_a == 'tridiagonal':
         a1 = a1.T if transposed else a1
@@ -298,6 +307,24 @@ def solve(a, b, lower=False, overwrite_a=False,
         x = x.ravel()
 
     return x
+
+
+def _lange_diagonal(_, a):
+    # Equivalent of dlange for diagonal matrix, assuming
+    # norm is either 'I' or '1' (really just not the Frobenius norm)
+    return np.abs(np.diag(a)).max()
+
+
+def _lange_tridiagonal(norm, a):
+    # Equivalent of dlange for tridiagonal matrix, assuming
+    # norm is either 'I' or '1'
+    if norm == 'I':
+        a = a.T
+    dl, d, du = np.diag(a, -1), np.diag(a, 0), np.diag(a, 1)
+    a = abs(dl[0]) + abs(d[0])
+    b = (np.abs(dl[1:]) + np.abs(d[1:-1]) + np.abs(du[:-1])).max()
+    c = abs(du[-1]) + abs(d[-1])
+    return max(a, b, c)
 
 
 def _bandwidth(a):
