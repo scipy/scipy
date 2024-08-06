@@ -184,8 +184,8 @@ def binopt(x1, x2, op, /):
     x2_nonzero = np.column_stack(x2.nonzero())
     x1_nonzero = np.column_stack(x1.nonzero())
     non_zero_coords = np.moveaxis(np.unique(np.concatenate((x2_nonzero, x1_nonzero)), axis=0), 1, 0)
-    x1_data = x1[*non_zero_coords][0]
-    x2_data = x2[*non_zero_coords][0]
+    x1_data = x1[non_zero_coords][0]
+    x2_data = x2[non_zero_coords][0]
     op_data = np.ravel(op(x1_data, x2_data))
     return sparse.coo_array((op_data, (non_zero_coords[0], non_zero_coords[1]))).tocsr()
 
