@@ -1628,6 +1628,72 @@ _convert_to_bool = partial(_convert_to_type, out_type=bool)
 _distance_wrap.pdist_correlation_double_wrap = _correlation_pdist_wrap
 _distance_wrap.cdist_correlation_double_wrap = _correlation_cdist_wrap
 
+def _distance_pybind_cdist_cosine(XA, XB, *, out=None, **kwargs):
+    w = kwargs.pop('w', None)
+    if w is not None:
+        w = w / w.sum()
+
+    XA = XA.astype(np.float64)
+    XB = XB.astype(np.float64)
+    return _distance_pybind.cdist_cosine(XA, XB, w, out, **kwargs)
+
+def _distance_pybind_pdist_cosine(XA, *, out=None, **kwargs):
+    w = kwargs.pop('w', None)
+    if w is not None:
+        w = w / w.sum()
+
+    XA = XA.astype(np.float64)
+    return _distance_pybind.pdist_cosine(XA, w, out, **kwargs)
+
+def _distance_pybind_cdist_correlation(XA, XB, *, out=None, **kwargs):
+    w = kwargs.pop('w', None)
+    if w is not None:
+        w = w / w.sum()
+
+    XA = XA.astype(np.float64)
+    XB = XB.astype(np.float64)
+    return _distance_pybind.cdist_correlation(XA, XB, w, out, **kwargs)
+
+def _distance_pybind_pdist_correlation(XA, *, out=None, **kwargs):
+    w = kwargs.pop('w', None)
+    if w is not None:
+        w = w / w.sum()
+
+    XA = XA.astype(np.float64)
+    return _distance_pybind.pdist_correlation(XA, w, out, **kwargs)
+
+def _distance_pybind_cdist_seuclidean(XA, XB, *, out=None, **kwargs):
+    V = kwargs.pop('V', None)
+    w = None
+    if V is not None:
+        w = np.reciprocal(V)
+
+    return _distance_pybind.cdist_seuclidean(XA, XB, w, out, **kwargs)
+
+def _distance_pybind_pdist_seuclidean(X, *, out=None, **kwargs):
+    V = kwargs.pop('V', None)
+    w = None
+    if V is not None:
+        w = np.reciprocal(V)
+
+    return _distance_pybind.pdist_seuclidean(X, w, out, **kwargs)
+
+def _distance_pybind_pdist_jensenshannon(XA, *, out=None, **kwargs):
+    XA = XA.astype(np.float64)
+    return _distance_pybind.pdist_jensenshannon(XA, out, **kwargs)
+
+def _distance_pybind_cdist_jensenshannon(XA, XB, *, out=None, **kwargs):
+    XA = XA.astype(np.float64)
+    XB = XB.astype(np.float64)
+    return _distance_pybind.cdist_jensenshannon(XA, XB, out, **kwargs)
+
+def _distance_pybind_cdist_mahalanobis(XA, XB, *, out=None, **kwargs):
+    VI = kwargs.pop('VI', None)
+    return _distance_pybind.cdist_mahalanobis(XA, XB, VI, out, **kwargs)
+
+def _distance_pybind_pdist_mahalanobis(X, *, out=None, **kwargs):
+    VI = kwargs.pop('VI', None)
+    return _distance_pybind.pdist_mahalanobis(X, VI, out, **kwargs)
 
 @dataclasses.dataclass(frozen=True)
 class CDistMetricWrapper:
@@ -1738,15 +1804,15 @@ _METRIC_INFOS = [
         canonical_name='correlation',
         aka={'correlation', 'co'},
         dist_func=correlation,
-        cdist_func=CDistMetricWrapper('correlation'),
-        pdist_func=PDistMetricWrapper('correlation'),
+        cdist_func=_distance_pybind_cdist_correlation,
+        pdist_func=_distance_pybind_pdist_correlation,
     ),
     MetricInfo(
         canonical_name='cosine',
         aka={'cosine', 'cos'},
         dist_func=cosine,
-        cdist_func=CDistMetricWrapper('cosine'),
-        pdist_func=PDistMetricWrapper('cosine'),
+        cdist_func=_distance_pybind_cdist_cosine,
+        pdist_func=_distance_pybind_pdist_cosine,
     ),
     MetricInfo(
         canonical_name='dice',
@@ -1784,8 +1850,8 @@ _METRIC_INFOS = [
         canonical_name='jensenshannon',
         aka={'jensenshannon', 'js'},
         dist_func=jensenshannon,
-        cdist_func=CDistMetricWrapper('jensenshannon'),
-        pdist_func=PDistMetricWrapper('jensenshannon'),
+        cdist_func=_distance_pybind_cdist_jensenshannon,
+        pdist_func=_distance_pybind_pdist_jensenshannon,
     ),
     MetricInfo(
         canonical_name='kulczynski1',
@@ -1800,8 +1866,8 @@ _METRIC_INFOS = [
         aka={'mahalanobis', 'mahal', 'mah'},
         validator=_validate_mahalanobis_kwargs,
         dist_func=mahalanobis,
-        cdist_func=CDistMetricWrapper('mahalanobis'),
-        pdist_func=PDistMetricWrapper('mahalanobis'),
+        cdist_func=_distance_pybind_cdist_mahalanobis,
+        pdist_func=_distance_pybind_pdist_mahalanobis,
     ),
     MetricInfo(
         canonical_name='minkowski',
@@ -1832,8 +1898,8 @@ _METRIC_INFOS = [
         aka={'seuclidean', 'se', 's'},
         validator=_validate_seuclidean_kwargs,
         dist_func=seuclidean,
-        cdist_func=CDistMetricWrapper('seuclidean'),
-        pdist_func=PDistMetricWrapper('seuclidean'),
+        cdist_func=_distance_pybind_cdist_seuclidean,
+        pdist_func=_distance_pybind_pdist_seuclidean,
     ),
     MetricInfo(
         canonical_name='sokalmichener',
@@ -2574,7 +2640,7 @@ def num_obs_dm(d):
     --------
     Find the number of original observations corresponding
     to a square redundant distance matrix d.
-    
+
     >>> from scipy.spatial.distance import num_obs_dm
     >>> d = [[0, 100, 200], [100, 0, 150], [200, 150, 0]]
     >>> num_obs_dm(d)
@@ -2604,7 +2670,7 @@ def num_obs_y(Y):
     --------
     Find the number of original observations corresponding to a
     condensed distance matrix Y.
-    
+
     >>> from scipy.spatial.distance import num_obs_y
     >>> Y = [1, 2, 3.5, 7, 10, 4]
     >>> num_obs_y(Y)
