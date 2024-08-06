@@ -327,11 +327,10 @@ def _lange_tridiagonal(norm, a):
     # norm is either 'I' or '1'
     if norm == 'I':
         a = a.T
-    dl, d, du = np.diag(a, -1), np.diag(a, 0), np.diag(a, 1)
-    a = abs(dl[0]) + abs(d[0])
-    b = (np.abs(dl[1:]) + np.abs(d[1:-1]) + np.abs(du[:-1])).max()
-    c = abs(du[-1]) + abs(d[-1])
-    return max(a, b, c)
+    d = np.abs(np.diag(a))
+    d[1:] += np.abs(np.diag(a, 1))
+    d[:-1] += np.abs(np.diag(a, -1))
+    return d.max()
 
 
 def _bandwidth(a):
