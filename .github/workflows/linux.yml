@@ -602,7 +602,8 @@ jobs:
     
     - name: Run array-api-tests against scipy sparse
       run: |
-        echo $PWD
+        ls /home/runner/work/
+        ls /home/runner/work/scipy
         export ARRAY_API_TESTS_MODULE=scipy.sparse._array_api
         cd ../array-api-tests
         pip install -r requirements.txt
