@@ -2156,10 +2156,14 @@ def test_gttrf_gttrs_NAG_f07cdf_f07cef_f07crf_f07csf(du, d, dl, du_exp, d_exp,
 def test_gtcon(dtype, norm, n):
     rng = np.random.default_rng(23498324)
 
-    d = rng.random(n)
-    dl = rng.random(n - 1)
-    du = rng.random(n - 1)
+    d = rng.random(n) + rng.random(n)*1j
+    dl = rng.random(n - 1) + rng.random(n - 1)*1j
+    du = rng.random(n - 1) + rng.random(n - 1)*1j
     A = np.diag(d) + np.diag(dl, -1) + np.diag(du, 1)
+    with np.testing.suppress_warnings() as sup:
+        sup.filter(np.exceptions.ComplexWarning)
+        A = A.astype(dtype)
+        d, dl, du = d.astype(dtype), dl.astype(dtype), du.astype(dtype)
 
     anorm = np.abs(A).sum(axis=0).max()
 
@@ -2171,7 +2175,8 @@ def test_gtcon(dtype, norm, n):
     lu, ipvt, info = getrf(A)
     ref, _ = gecon(lu, anorm, norm=norm)
 
-    assert_allclose(res, ref)
+    rtol = np.finfo(dtype).eps**0.75
+    assert_allclose(res, ref, rtol=rtol)
 
 
 @pytest.mark.parametrize('dtype', DTYPES)
