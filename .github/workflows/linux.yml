@@ -610,5 +610,4 @@ jobs:
         export ARRAY_API_TESTS_MODULE=scipy.sparse._array_api
         cd array-api-tests
         pip install -r requirements.txt
-        pip install ninja
         pytest array_api_tests --skips-file ../scipy/scipy/sparse/array_api/array-api-skips.txt
