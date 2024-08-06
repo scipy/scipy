@@ -591,7 +591,7 @@ jobs:
     - name: Setup build and install scipy
       run: |
         cd scipy
-        pip install -e .
+        pip install . --no-build-isolation
 
     - name: Checkout array-api-tests
       uses: actions/checkout@v4
@@ -610,5 +610,4 @@ jobs:
         export ARRAY_API_TESTS_MODULE=scipy.sparse._array_api
         cd array-api-tests
         pip install -r requirements.txt
-        cp ../scipy/scipy/sparse/_array_api/init_for_array_api_tests.py array_api_tests/__init__.py
         pytest array_api_tests --skips-file ../scipy/scipy/sparse/_array_api/array-api-skips.txt
