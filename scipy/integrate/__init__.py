@@ -22,23 +22,6 @@ Integrating functions, given function object
    qmc_quad      -- N-D integration using Quasi-Monte Carlo quadrature
    IntegrationWarning -- Warning on issues during integration
 
-Rules for `cub`
----------------
-
-.. autosummary::
-   :toctree: generated/
-
-   Rule               -- Base class for integration rules.
-   FixedRule          -- Rules implemented as the weighted sum of function evaluations
-   NestedRule         -- Rules with error estimators given by the difference between two underlying rules
-   NestedFixedRule    -- Rules with a higher-order and lower-order fixed rule, with error estimators given by their difference
-   ProductFixed       -- Construct N-D fixed cubature rules from the product of 1-D fixed quadrature rules
-   ProductNestedFixed -- Construct N-D nested fixed cubature rules from the product of 1-D nested fixed quadrature rules
-   NewtonCotesQuad    -- Newton-Cotes quadrature
-   GaussLegendreQuad  -- Gauss-Legendre quadrature
-   GaussKronrodQuad   -- Gauss-Kronrod nested quadrature
-   GenzMalikCub       -- Genz-Malik nested cubature
-
 
 Integrating functions, given fixed samples
 ==========================================
@@ -125,13 +108,6 @@ from ._ivp import (solve_ivp, OdeSolution, DenseOutput,
 from ._quad_vec import quad_vec
 from ._tanhsinh import nsum
 from ._cubature import cub
-from ._rules import (
-    Rule, FixedRule,
-    NestedRule, NestedFixedRule,
-    ProductFixed, ProductNestedFixed,
-    GenzMalikCub,
-    NewtonCotesQuad, GaussKronrodQuad, GaussLegendreQuad,
-)
 
 # Deprecated namespaces, to be removed in v2.0.0
 from . import dop, lsoda, vode, odepack, quadpack

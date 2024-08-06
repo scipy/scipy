@@ -29,8 +29,10 @@ class Rule:
     error.
 
     >>> import numpy as np
-    >>> from scipy.integrate import cub, ProductFixed
-    >>> from scipy.integrate._rules import Rule, GenzMalikCub, GaussLegendreQuad
+    >>> from scipy.integrate import cub
+    >>> from scipy.integrate._rules import (
+    ...     Rule, ProductFixed, GenzMalikCub, GaussLegendreQuad
+    ... )
     >>> def f(x, r, alphas):
     ...     # f(x) = cos(2*pi*r + alpha @ x)
     ...     # Need to allow r and alphas to be arbitrary shape

@@ -67,10 +67,10 @@ def cub(f, a, b, rule="gk21", rtol=1e-05, atol=1e-08, max_subdivisions=10000,
         right endpoints of the intervals being integrated over. If a float is passed,
         these will be converted to singleton arrays. Infinite limits are currently not
         supported.
-    rule : str or instance of Rule, optional
+    rule : str or instance of ``Rule``, optional
         Cubature rule to use when estimating the integral. If passing a string, the
         options are "gk21", "gk15", or "trapezoid". Default is "gk21". If passing an
-        instance of a `Rule`, then the options can be found in
+        instance of a ``Rule``, then the options can be found in
         ``scipy.integrate._rules``.
     rtol : float, optional
         Relative tolerance. Default is 1e-05.
@@ -88,10 +88,6 @@ def cub(f, a, b, rule="gk21", rtol=1e-05, atol=1e-08, max_subdivisions=10000,
     -------
     res : CubatureResult
         Result of estimation. See `CubatureResult`.
-
-    See Also
-    --------
-    Rule
 
     Examples
     --------
@@ -155,8 +151,10 @@ def cub(f, a, b, rule="gk21", rtol=1e-05, atol=1e-08, max_subdivisions=10000,
     Gauss-Legendre quadrature as an estimate for the error.
 
     >>> import numpy as np
-    >>> from scipy.integrate import cub, ProductFixed
-    >>> from scipy.integrate._rules import Rule, GenzMalikCub, GaussLegendreQuad
+    >>> from scipy.integrate import cub
+    >>> from scipy.integrate._rules import (
+    ...     Rule, ProductFixed, GenzMalikCub, GaussLegendreQuad
+    ... )
     >>> genz = GenzMalikCub(3)
     >>> gauss = GaussLegendreQuad(5)
     >>> # Gauss-Legendre is 1D, so we find the 3D product rule:
@@ -188,7 +186,7 @@ def cub(f, a, b, rule="gk21", rtol=1e-05, atol=1e-08, max_subdivisions=10000,
 
     This particular example estimates the error using the difference between two
     approximations, one more accurate than the other. These are called nested rules
-    and can be created using `NestedRule`:
+    and can be created using ``NestedRule``:
 
     >>> from scipy.integrate._rules import NestedRule
     >>> rule = NestedRule(
