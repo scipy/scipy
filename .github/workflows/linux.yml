@@ -608,6 +608,8 @@ jobs:
         ls /home/runner/work/scipy
         echo $GITHUB_WORKSPACE
         ls /home/runner/work/scipy/scipy
+        echo $GITHUB_WORKSPACE
+        ls $GITHUB_WORKSPACE
         export ARRAY_API_TESTS_MODULE=scipy.sparse._array_api
         cd ../array-api-tests
         pip install -r requirements.txt
