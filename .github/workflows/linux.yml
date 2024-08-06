@@ -592,7 +592,7 @@ jobs:
     - name: Setup build and install scipy
       run: |
         cd scipy
-        pip install . --no-build-isolation
+        pip install -e . --no-build-isolation
 
     - name: Checkout array-api-tests
       uses: actions/checkout@v4
