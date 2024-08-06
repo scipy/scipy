@@ -55,6 +55,7 @@ class AAA:
         loose. 
     max_terms : int, optional
         Maximum number of terms in the barycentric representation, defaults to ``100``.
+        Must be greater than or equal to one.
 
     Attributes
     ----------
@@ -198,6 +199,10 @@ class AAA:
         
         if not np.all(np.isfinite(z)):
             raise ValueError("`points` must be finite.")
+        
+        if max_terms < 1 or not np.issubdtype(type(max_terms), np.integer):
+            raise ValueError("`max_terms` must be an integer value greater than or "
+                             "equal to one.")
 
         # Remove infinite or NaN function values and repeated entries
         to_keep = (np.isfinite(f)) & (~np.isnan(f))
