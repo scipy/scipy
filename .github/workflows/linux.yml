@@ -602,8 +602,12 @@ jobs:
     
     - name: Run array-api-tests against scipy sparse
       run: |
+        echo $GITHUB_WORKSPACE
         ls /home/runner/work/
+        echo $GITHUB_WORKSPACE
         ls /home/runner/work/scipy
+        echo $GITHUB_WORKSPACE
+        ls /home/runner/work/scipy/scipy
         export ARRAY_API_TESTS_MODULE=scipy.sparse._array_api
         cd ../array-api-tests
         pip install -r requirements.txt
