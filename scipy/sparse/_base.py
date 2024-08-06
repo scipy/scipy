@@ -1167,11 +1167,11 @@ class _spbase:
 
         if out is not None:
             if isinstance(self, sparray):
-                if out.shape != ret.squeeze().shape:
-                    raise ValueError("dimensions do not match")
+                ret_shape = ret.shape[:axis] + ret.shape[axis + 1:]
             else:
-                if out.shape != ret.shape:
-                    raise ValueError("dimensions do not match")
+                ret_shape = ret.shape
+            if out.shape != ret_shape:
+                raise ValueError("dimensions do not match")
 
         return ret.sum(axis=axis, dtype=dtype, out=out)
 

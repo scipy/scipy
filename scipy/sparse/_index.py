@@ -172,19 +172,18 @@ class IndexMixin:
             raise IndexError('number of row and column indices differ')
 
         if issparse(x):
+            if 0 in x.shape:
+                return
             if i.ndim == 1:
                 # Inner indexing, so treat them like row vectors.
                 i = i[None]
                 j = j[None]
-            xM, xN = x._shape_as_2d
-            broadcast_row = xM == 1 and i.shape[0] != 1
-            broadcast_col = xN == 1 and i.shape[1] != 1
-            if not ((broadcast_row or xM == i.shape[0]) and
-                    (broadcast_col or xN == i.shape[1])):
-                raise ValueError('shape mismatch in assignment')
-            if 0 in x.shape:
-                return
             x = x.tocoo(copy=True).reshape(x._shape_as_2d)
+            broadcast_row = x.shape[0] == 1 and i.shape[0] != 1
+            broadcast_col = x.shape[1] == 1 and i.shape[1] != 1
+            if not ((broadcast_row or x.shape[0] == i.shape[0]) and
+                    (broadcast_col or x.shape[1] == i.shape[1])):
+                raise ValueError('shape mismatch in assignment')
             x.sum_duplicates()
             self._set_arrayXarray_sparse(i, j, x)
         else:
