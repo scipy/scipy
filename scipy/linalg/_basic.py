@@ -51,7 +51,7 @@ def _solve_check(n, info, lamch=None, rcond=None):
 
 def _find_matrix_structure(a):
     n = a.shape[0]
-    below, above = _bandwidth(a)
+    below, above = bandwidth(a)
 
     if below == above == 0:
         return 'diagonal'
@@ -62,9 +62,9 @@ def _find_matrix_structure(a):
     elif above <= 1 and below <= 1 and n > 3:
         return 'tridiagonal'
 
-    if np.issubdtype(a.dtype, np.complexfloating) and _ishermitian(a):
+    if np.issubdtype(a.dtype, np.complexfloating) and ishermitian(a):
         return 'hermitian'
-    elif _issymmetric(a):
+    elif issymmetric(a):
         return 'symmetric'
 
     return 'general'
@@ -172,6 +172,7 @@ def solve(a, b, lower=False, overwrite_a=False,
 
     a1 = atleast_2d(_asarray_validated(a, check_finite=check_finite))
     b1 = atleast_1d(_asarray_validated(b, check_finite=check_finite))
+    a1, b1 = _ensure_dtype_cdsz(a1, b1)
     n = a1.shape[0]
 
     overwrite_a = overwrite_a or _datacopied(a1, a)
@@ -333,25 +334,19 @@ def _lange_tridiagonal(norm, a):
     return d.max()
 
 
-def _bandwidth(a):
-    try:
-        return bandwidth(a)
-    except TypeError:
-        return bandwidth(a != 0)
-
-
-def _issymmetric(a):
-    try:
-        return issymmetric(a)
-    except TypeError:
-        return (a == a.T).all()
-
-
-def _ishermitian(a):
-    try:
-        return ishermitian(a)
-    except TypeError:
-        return (a == a.conj().T).all()
+def _ensure_dtype_cdsz(*arrays):
+    # Ensure that the dtype of arrays is one of the standard types
+    # compatible with LAPACK functions (single or double precision
+    # real or complex).
+    dtype = np.result_type(*arrays)
+    if not np.issubdtype(dtype, np.inexact):
+        return (array.astype(np.float64) for array in arrays)
+    complex = np.issubdtype(dtype, np.complexfloating)
+    if np.finfo(dtype).bits <= 32:
+        dtype = np.complex64 if complex else np.float32
+    elif np.finfo(dtype).bits >= 64:
+        dtype = np.complex128 if complex else np.float64
+    return (array.astype(dtype, copy=False) for array in arrays)
 
 
 def solve_triangular(a, b, trans=0, lower=False, unit_diagonal=False,
