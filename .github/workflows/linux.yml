@@ -545,6 +545,7 @@ jobs:
     - uses: actions/checkout@v4.1.1
       with:
         submodules: recursive
+        path: scipy
 
     - name: Setup Python
       uses: actions/setup-python@v5
@@ -614,6 +615,6 @@ jobs:
         echo $GITHUB_WORKSPACE
         ls $GITHUB_WORKSPACE
         export ARRAY_API_TESTS_MODULE=scipy.sparse._array_api
-        cd ../array-api-tests
+        cd array-api-tests
         pip install -r requirements.txt
         pytest array_api_tests --skips-file ../scipy/scipy/sparse/array_api/array-api-skips.txt
