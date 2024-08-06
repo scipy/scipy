@@ -43,7 +43,7 @@ class TestAAA:
             AAA([[0], [0]], [[1], [1]])
         with pytest.raises(ValueError, match="finite"):
             AAA([np.inf], [1])
-        with pytest.raises(ValueError, match="integer"):
+        with pytest.raises(TypeError):
             AAA([1], [1], max_terms=1.0)
         with pytest.raises(ValueError, match="greater"):
             AAA([1], [1], max_terms=-1)

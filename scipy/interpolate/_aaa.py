@@ -24,6 +24,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import warnings
+import operator
 
 import numpy as np
 import scipy
@@ -52,7 +53,7 @@ class AAA:
     rtol : float, optional
         Relative tolerance, defaults to ``eps**0.75``. If a small subset of the entries
         in `values` are much larger than the rest the default tolerance may be too
-        loose. 
+        loose.
     max_terms : int, optional
         Maximum number of terms in the barycentric representation, defaults to ``100``.
         Must be greater than or equal to one.
@@ -70,7 +71,7 @@ class AAA:
     errors : array
         Error :math:`|f(z) - r(z)|_\infty` over `points` in the successive iterations
         of AAA.
-    
+
     Warns
     -----
     RuntimeWarning
@@ -94,7 +95,7 @@ class AAA:
     where :math:`z_1,\dots,z_m` are real or complex support points selected from
     `points`, :math:`f_1,\dots,f_m` are the corresponding real or complex data values
     from `values`, and :math:`w_1,\dots,w_m` are real or complex weights.
-    
+
     Each iteration of the algorithm has two parts: the greedy selection the next support
     point and the computation of the weights. The first part of each iteration is to
     select the next support point to be added :math:`z_{m+1}` from the remaining
@@ -103,7 +104,7 @@ class AAA:
     when this maximum is less than ``rtol * np.linalg.norm(f, ord=np.inf)``. This means
     the interpolation property is only satisfied up to a tolerance, except at the
     support points where approximation exactly interpolates the supplied data.
-    
+
     In the second part of each iteration, the weights :math:`w_j` are selected to solve
     the least-squares problem
 
@@ -196,11 +197,12 @@ class AAA:
 
         if f.size != z.size:
             raise ValueError("`points` and `values` must be the same size.")
-        
+
         if not np.all(np.isfinite(z)):
             raise ValueError("`points` must be finite.")
-        
-        if max_terms < 1 or not np.issubdtype(type(max_terms), np.integer):
+
+        max_terms = operator.index(max_terms)
+        if max_terms < 1:
             raise ValueError("`max_terms` must be an integer value greater than or "
                              "equal to one.")
 
