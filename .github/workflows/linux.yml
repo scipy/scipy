@@ -595,10 +595,13 @@ jobs:
       uses: actions/checkout@v4
       with:
         repository: data-apis/array-api-tests
+        path: array-api-tests
+
     - name: Checkout array-api-stubs
       uses: actions/checkout@v4
       with:
         repository: data-apis/array-api
+        path: array-api
     
     - name: Run array-api-tests against scipy sparse
       run: |
