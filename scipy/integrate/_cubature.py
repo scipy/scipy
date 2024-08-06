@@ -42,9 +42,9 @@ def cub(f, a, b, rule="gk21", rtol=1e-05, atol=1e-08, max_subdivisions=10000,
     r"""
     Adaptive cubature of multidimensional array-valued function.
 
-    Given an arbitrary cubature rule, this function returns an estimate of the integral
-    to the requested tolerance over the region defined by the arrays ``a`` and ``b``
-    specifying the corners of a hypercube.
+    Given an arbitrary integration rule, this function returns an estimate of the
+    integral to the requested tolerance over the region defined by the arrays ``a`` and
+    ``b`` specifying the corners of a hypercube.
 
     Convergence is not guaranteed for all integrals.
 
@@ -55,22 +55,23 @@ def cub(f, a, b, rule="gk21", rtol=1e-05, atol=1e-08, max_subdivisions=10000,
             f(x : ndarray, \*args, \*\*kwargs) -> ndarray
 
         ``f`` should accepts arrays ``x`` of shape::
-            (num_eval_points, ndim)
+            (npoints, ndim)
 
         and output arrays of shape::
-            (num_eval_points, output_dim_1, ..., output_dim_n)
+            (npoints, output_dim_1, ..., output_dim_n)
 
         In this case, ``cub`` will return arrays of shape::
             (output_dim_1, ..., output_dim_n)
     a, b : array_like or float
         Lower and upper limits of integration as rank-1 arrays specifying the left and
         right endpoints of the intervals being integrated over. If a float is passed,
-        these will be automatically converted to singleton arrays. Infinite limits are
-        currently not supported.
+        these will be converted to singleton arrays. Infinite limits are currently not
+        supported.
     rule : str or instance of Rule, optional
         Cubature rule to use when estimating the integral. If passing a string, the
         options are "gk21", "gk15", or "trapezoid". Default is "gk21". If passing an
-        instance of a `Rule`, then the options can be found in `scipy.integrate._rules`.
+        instance of a `Rule`, then the options can be found in
+        ``scipy.integrate._rules``.
     rtol : float, optional
         Relative tolerance. Default is 1e-05.
     atol : float, optional
@@ -96,10 +97,10 @@ def cub(f, a, b, rule="gk21", rtol=1e-05, atol=1e-08, max_subdivisions=10000,
     --------
     A simple 1D integral with vector output. Here ``f(x) = x^n`` is integrated over the
     interval ``[0, 1]``. Since no rule is specified, the default "gk21" is used, which
-    corresponds to `GaussKronrod` with 21 nodes.
+    corresponds to `GaussKronrod` rule with 21 nodes.
 
     >>> import numpy as np
-    >>> from scipy.integrate._cubature import cub
+    >>> from scipy.integrate import cub
     >>> from scipy.integrate._rules import GaussKronrodQuad
     >>> def f(x, n):
     ...    return x.reshape(-1, 1)**n  # Make sure x and n are broadcastable
@@ -108,7 +109,7 @@ def cub(f, a, b, rule="gk21", rtol=1e-05, atol=1e-08, max_subdivisions=10000,
     ...     a=[0],
     ...     b=[1],
     ...     args=(
-    ...         # Since f accepts arrays of shape (num_eval_points, ndim) we need to
+    ...         # Since f accepts arrays of shape (npoints, ndim) we need to
     ...         # make sure n is the right shape
     ...         np.arange(10).reshape(1, -1),
     ...     )
@@ -124,23 +125,15 @@ def cub(f, a, b, rule="gk21", rtol=1e-05, atol=1e-08, max_subdivisions=10000,
     hybercube, ``[0, 1]^7``.
 
     >>> import numpy as np
-    >>> from scipy.integrate._cubature import cub
+    >>> from scipy.integrate import cub
     >>> from scipy.integrate._rules import GenzMalikCub
     >>> def f(x, r, alphas):
     ...     # f(x) = cos(2*pi*r + alpha @ x)
     ...     # Need to allow r and alphas to be arbitrary shape
-    ...     ndim = x.shape[-1]
-    ...     num_eval_points = x.shape[0]
-    ...     r_reshaped = np.expand_dims(r, -1)
-    ...     alphas_reshaped = np.expand_dims(alphas, -1)
-    ...     x_reshaped = x.reshape(
-    ...         ndim,
-    ...         *([1]*(len(alphas.shape) - 1)),
-    ...         num_eval_points
-    ...     )
-    ...     return np.cos(
-    ...         2*np.pi*r_reshaped + np.sum(alphas_reshaped * x_reshaped, axis=0)
-    ...     )
+    ...     npoints, ndim = x.shape[0], x.shape[-1]
+    ...     alphas_reshaped = alphas[np.newaxis, :]
+    ...     x_reshaped = x.reshape(npoints, *([1]*(len(alphas.shape) - 1)), ndim)
+    ...     return np.cos(2*np.pi*r + np.sum(alphas_reshaped * x_reshaped, axis=-1))
     >>> np.random.seed(1)
     >>> res = cub(
     ...     f=f,
@@ -153,15 +146,16 @@ def cub(f, a, b, rule="gk21", rtol=1e-05, atol=1e-08, max_subdivisions=10000,
     ...     }
     ... )
     >>> res.estimate
-     array([[ 0.69578554, -0.87958878, -0.90278537],
-            [ 0.53436481, -0.34633208, -0.16061907]])
+     array([[-0.61336595,  0.88388877, -0.57997549],
+            [-0.86968418, -0.86877137, -0.64602074]])
 
     It is also possible to use a custom rule. In the following, a custom rule is created
     which uses 3D Genz-Malik cubature for the estimate of the integral, and the
     difference between this estimate and a less accurate estimate using 5-node
     Gauss-Legendre quadrature as an estimate for the error.
 
-    >>> from scipy.integrate._cubature import cub, ProductFixed
+    >>> import numpy as np
+    >>> from scipy.integrate import cub, ProductFixed
     >>> from scipy.integrate._rules import Rule, GenzMalikCub, GaussLegendreQuad
     >>> genz = GenzMalikCub(3)
     >>> gauss = GaussLegendreQuad(5)
@@ -169,45 +163,42 @@ def cub(f, a, b, rule="gk21", rtol=1e-05, atol=1e-08, max_subdivisions=10000,
     >>> gauss_3d = ProductFixed([gauss, gauss, gauss])
     >>> class CustomRule(Rule):
     ...     def estimate(self, f, a, b, args=(), kwargs=None):
-    ...         if kwargs is None: kwargs = dict()
+    ...         kwargs = kwargs or {}
     ...         return genz.estimate(f, a, b, args, kwargs)
     ...     def estimate_error(self, f, a, b, args=(), kwargs=None):
-    ...         if kwargs is None: kwargs = dict()
+    ...         kwargs = kwargs or {}
     ...         return np.abs(
     ...             genz.estimate(f, a, b, args, kwargs)
     ...             - gauss_3d.estimate(f, a, b, args, kwargs)
     ...         )
     >>> np.random.seed(1)
-    >>> r, alphas = np.random.rand(2, 3), np.random.rand(3, 2, 3)
     >>> cub(
     ...     f=f,
     ...     a=np.array([0, 0, 0]),
     ...     b=np.array([1, 1, 1]),
     ...     rule=CustomRule(),
     ...     kwargs={
-    ...         "r": r
-    ...         "alphas": alphas,
+    ...         "r": np.random.rand(2),
+    ...         "alphas": np.random.rand(3, 2, 3),
     ...     }
     ... ).estimate
-     array([[ 0.6369219 , -0.90656298, -0.82183961],
-            [ 0.48873062, -0.87426057,  0.50205197]])
+     array([[-0.95179502,  0.12444608],
+            [-0.96247411,  0.60866385],
+            [-0.97360014,  0.25515587]])
 
     This particular example estimates the error using the difference between two
-    approximations, one more accurate than the other. These are called nested cubatures
-    and can be created more easily using `NestedRule`:
+    approximations, one more accurate than the other. These are called nested rules
+    and can be created using `NestedRule`:
 
     >>> from scipy.integrate._rules import NestedRule
     >>> rule = NestedRule(
     ...     higher=genz,
-    ...     lower=ProductFixed([gauss, gauss, gauss])
+    ...     lower=gauss_3d,
     ... ) # Equivalent to CustomRule()
     """
 
-    if max_subdivisions is None:
-        max_subdivisions = np.inf
-
-    if kwargs is None:
-        kwargs = dict()
+    kwargs = kwargs or {}
+    max_subdivisions = np.inf if max_subdivisions is None else max_subdivisions
 
     # Convert a and b to arrays of at least 1D
     a = np.atleast_1d(a)

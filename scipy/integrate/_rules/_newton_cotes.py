@@ -10,8 +10,8 @@ class NewtonCotesQuad(FixedRule):
     Newton-Cotes quadrature.
 
     Newton-Cotes is a 1D rule. To use it for multidimensional integrals, it will be
-    necessary to take the ProductFixed of multiple Newton-Cotes rules. See
-    Examples.
+    necessary to take the product of multiple Newton-Cotes rules used `ProductFixed`.
+    See Examples.
 
     Parameters
     ----------
@@ -24,7 +24,7 @@ class NewtonCotesQuad(FixedRule):
     estimates will also be arrays, despite the fact that this is a 1D problem.
 
     >>> import numpy as np
-    >>> from scipy.integrate._cubature import cub
+    >>> from scipy.integrate import cub
     >>> from scipy.integrate._rules import NewtonCotesQuad
     >>> def f(x):
     ...     return np.cos(x)
@@ -39,14 +39,14 @@ class NewtonCotesQuad(FixedRule):
     estimates will also be floats.
 
     >>> import numpy as np
-    >>> from scipy.integrate._cubature import cub
+    >>> from scipy.integrate import cub
     >>> from scipy.integrate._rules import ProductFixed, NewtonCotesQuad
     >>> def f(x):
     ...     # f(x) = cos(x_1) + cos(x_2)
-    ...     return np.sum(np.cos(x), axis=0)
+    ...     return np.sum(np.cos(x), axis=-1)
     >>> rule = ProductFixed(
     ...     [NewtonCotesQuad(15), NewtonCotesQuad(15)]
-    ... ) # Use 15-point GaussKronrod
+    ... ) # Use 15-point Newton-Cotes
     >>> a, b = np.array([0, 0]), np.array([1, 1])
     >>> rule.estimate(f, a, b) # True value 2*sin(1), approximately 1.6829
      np.float64(1.682941969615793)

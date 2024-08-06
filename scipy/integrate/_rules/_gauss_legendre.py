@@ -10,8 +10,8 @@ class GaussLegendreQuad(FixedRule):
     Gauss-Legendre quadrature.
 
     Gauss-Legendre is a 1D rule. To use it for multidimensional integrals, it will be
-    necessary to take the ProductFixed of multiple Gauss-Legendre rules. See
-    Examples.
+    necessary to take the product of multiple Gauss-Legendre rules used `ProductFixed`.
+    See Examples.
 
     Parameters
     ----------
@@ -21,10 +21,10 @@ class GaussLegendreQuad(FixedRule):
     Examples
     --------
     Evaluate a 1D integral. Note in this example that ``f`` returns an array, so the
-    estimates will also be arrays, despite the fact that this is a 1D problem.
+    estimates will also be arrays.
 
     >>> import numpy as np
-    >>> from scipy.integrate._cubature import cub
+    >>> from scipy.integrate import cub
     >>> from scipy.integrate._rules import GaussLegendreQuad
     >>> def f(x):
     ...     return np.cos(x)
@@ -39,14 +39,14 @@ class GaussLegendreQuad(FixedRule):
     estimates will also be floats.
 
     >>> import numpy as np
-    >>> from scipy.integrate._cubature import cub
+    >>> from scipy.integrate import cub
     >>> from scipy.integrate._rules import ProductFixed, GaussLegendreQuad
     >>> def f(x):
     ...     # f(x) = cos(x_1) + cos(x_2)
-    ...     return np.sum(np.cos(x), axis=0)
+    ...     return np.sum(np.cos(x), axis=-1)
     >>> rule = ProductFixed(
     ...     [GaussLegendreQuad(15), GaussLegendreQuad(15)]
-    ... ) # Use 15-point GaussKronrod
+    ... )
     >>> a, b = np.array([0, 0]), np.array([1, 1])
     >>> rule.estimate(f, a, b) # True value 2*sin(1), approximately 1.6829
      np.float64(1.682941969615793)

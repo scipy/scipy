@@ -38,11 +38,11 @@ class GenzMalikCub(NestedFixedRule):
     Evaluate a 3D integral:
 
     >>> import numpy as np
-    >>> from scipy.integrate._cubature import cub
+    >>> from scipy.integrate import cub
     >>> from scipy.integrate._rules import GenzMalikCub
     >>> def f(x):
     ...     # f(x) = cos(x_1) + cos(x_2) + cos(x_3)
-    ...     return np.sum(np.cos(x), axis=0)
+    ...     return np.sum(np.cos(x), axis=-1)
     >>> rule = GenzMalikCub(3) # Use 3D Genz-Malik
     >>> a, b = np.array([0, 0, 0]), np.array([1, 1, 1])
     >>> rule.estimate(f, a, b) # True value 3*sin(1), approximately 2.5244

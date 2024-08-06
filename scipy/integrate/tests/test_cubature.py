@@ -13,7 +13,7 @@ from scipy.integrate._rules import (
     NewtonCotesQuad, GaussLegendreQuad, GaussKronrodQuad, GenzMalikCub
 )
 
-from scipy.integrate._cubature import cub
+from scipy.integrate import cub
 
 
 def genz_malik_1980_f_1(x, r, alphas):
@@ -37,11 +37,10 @@ def genz_malik_1980_f_1(x, r, alphas):
         ISSN 0377-0427, https://doi.org/10.1016/0771-050X(80)90039-X.
     """
 
-    ndim = x.shape[-1]
-    num_eval_points = x.shape[0]
+    npoints, ndim = x.shape[0], x.shape[-1]
 
     alphas_reshaped = alphas[np.newaxis, :]
-    x_reshaped = x.reshape(num_eval_points, *([1]*(len(alphas.shape) - 1)), ndim)
+    x_reshaped = x.reshape(npoints, *([1]*(len(alphas.shape) - 1)), ndim)
 
     return np.cos(2*np.pi*r + np.sum(alphas_reshaped * x_reshaped, axis=-1))
 
@@ -88,13 +87,12 @@ def genz_malik_1980_f_2(x, alphas, betas):
         Computational and Applied Mathematics, Volume 6, Issue 4, 1980, Pages 295-302,
         ISSN 0377-0427, https://doi.org/10.1016/0771-050X(80)90039-X.
     """
-    ndim = x.shape[-1]
-    num_eval_points = x.shape[0]
+    npoints, ndim = x.shape[0], x.shape[-1]
 
     alphas_reshaped = alphas[np.newaxis, :]
     betas_reshaped = betas[np.newaxis, :]
 
-    x_reshaped = x.reshape(num_eval_points, *([1]*(len(alphas.shape) - 1)), ndim)
+    x_reshaped = x.reshape(npoints, *([1]*(len(alphas.shape) - 1)), ndim)
 
     return 1/np.prod(alphas_reshaped**2 + (x_reshaped-betas_reshaped)**2, axis=-1)
 
@@ -153,11 +151,10 @@ def genz_malik_1980_f_3(x, alphas):
         ISSN 0377-0427, https://doi.org/10.1016/0771-050X(80)90039-X.
     """
 
-    ndim = x.shape[-1]
-    num_eval_points = x.shape[0]
-
+    npoints, ndim = x.shape[0], x.shape[-1]
+    
     alphas_reshaped = alphas[np.newaxis, :]
-    x_reshaped = x.reshape(num_eval_points, *([1]*(len(alphas.shape) - 1)), ndim)
+    x_reshaped = x.reshape(npoints, *([1]*(len(alphas.shape) - 1)), ndim)
 
     return np.exp(np.sum(alphas_reshaped * x_reshaped, axis=-1))
 
@@ -201,11 +198,10 @@ def genz_malik_1980_f_4(x, alphas):
         ISSN 0377-0427, https://doi.org/10.1016/0771-050X(80)90039-X.
     """
 
-    ndim = x.shape[-1]
-    num_eval_points = x.shape[0]
+    npoints, ndim = x.shape[0], x.shape[-1]
 
     alphas_reshaped = alphas[np.newaxis, :]
-    x_reshaped = x.reshape(num_eval_points, *([1]*(len(alphas.shape) - 1)), ndim)
+    x_reshaped = x.reshape(npoints, *([1]*(len(alphas.shape) - 1)), ndim)
 
     return ((1 + np.sum(alphas_reshaped * x_reshaped, axis=-1))**(-ndim-1))
 
@@ -258,13 +254,12 @@ def genz_malik_1980_f_5(x, alphas, betas):
         ISSN 0377-0427, https://doi.org/10.1016/0771-050X(80)90039-X.
     """
 
-    ndim = x.shape[-1]
-    num_eval_points = x.shape[0]
+    npoints, ndim = x.shape[0], x.shape[-1]
 
     alphas_reshaped = alphas[np.newaxis, :]
     betas_reshaped = betas[np.newaxis, :]
 
-    x_reshaped = x.reshape(num_eval_points, *([1]*(len(alphas.shape) - 1)), ndim)
+    x_reshaped = x.reshape(npoints, *([1]*(len(alphas.shape) - 1)), ndim)
 
     return np.exp(
         -np.sum(alphas_reshaped**2 * (x_reshaped - betas_reshaped)**2, axis=-1)
@@ -823,7 +818,7 @@ def test_cub_with_kwargs(rule):
 
 
 def test_stops_after_max_subdivisions():
-    # Define a cubature rule with fake high error so that cub will keep on subdividing
+    # Define a rule with fake high error so that cub will keep on subdividing
 
     class BadError(Rule):
         underlying = GaussLegendreQuad(10)

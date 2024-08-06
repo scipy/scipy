@@ -13,8 +13,8 @@ class GaussKronrodQuad(NestedFixedRule):
     the integral and the difference between them is used as an estimate for the error.
 
     Gauss-Kronrod is a 1D rule. To use it for multidimensional integrals, it will be
-    necessary to take the ProductNestedFixed of multiple Gauss-Kronrod
-    rules. See Examples.
+    necessary to take use ProductNestedFixed and multiple Gauss-Kronrod rules.
+    See Examples.
 
     For n-node Gauss-Kronrod, the lower-order rule has ``n//2`` nodes, which are the
     ordinary Gauss-Legendre nodes with corresponding weights. The higher-order rule has
@@ -41,7 +41,7 @@ class GaussKronrodQuad(NestedFixedRule):
     estimates will also be arrays, despite the fact that this is a 1D problem.
 
     >>> import numpy as np
-    >>> from scipy.integrate._cubature import cub
+    >>> from scipy.integrate import cub
     >>> from scipy.integrate._rules import GaussKronrodQuad
     >>> def f(x):
     ...     return np.cos(x)
@@ -56,16 +56,16 @@ class GaussKronrodQuad(NestedFixedRule):
     estimates will also be floats.
 
     >>> import numpy as np
-    >>> from scipy.integrate._cubature import cub
+    >>> from scipy.integrate import cub
     >>> from scipy.integrate._rules import (
     ...     ProductNestedFixed, GaussKronrodQuad
     ... )
     >>> def f(x):
     ...     # f(x) = cos(x_1) + cos(x_2)
-    ...     return np.sum(np.cos(x), axis=0)
+    ...     return np.sum(np.cos(x), axis=-1)
     >>> rule = ProductNestedFixed(
     ...     [GaussKronrodQuad(15), GaussKronrodQuad(15)]
-    ... ) # Use 15-point GaussKronrod
+    ... ) # Use 15-point Gauss-Kronrod
     >>> a, b = np.array([0, 0]), np.array([1, 1])
     >>> rule.estimate(f, a, b) # True value 2*sin(1), approximately 1.6829
      np.float64(1.682941969615793)
