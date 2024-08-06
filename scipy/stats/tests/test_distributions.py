@@ -4635,6 +4635,13 @@ class TestBetaPrime:
     def test_ppf_gh_17631(self, x, a, b, p):
         assert_allclose(stats.betaprime.ppf(p, a, b), x, rtol=2e-14)
 
+    def test__ppf(self):
+        # Verify that _ppf supports scalar arrays.
+        a = np.array(1.0)
+        b = np.array(1.0)
+        p = np.array(0.5)
+        assert_allclose(stats.betaprime._ppf(p, a, b), 1.0, rtol=5e-16)
+
     @pytest.mark.parametrize(
         'x, a, b, expected',
         cdf_vals + [
@@ -9234,6 +9241,17 @@ class TestArgus:
     def test_sf_small_chi(self, chi, expected):
         x = np.array([0.1, 0.5, 0.9])
         assert_allclose(stats.argus.sf(x, chi), expected, rtol=1e-14)
+
+    # Expected values were computed with mpmath.
+    @pytest.mark.parametrize(
+        'x, chi, expected',
+        [(0.9999999, 0.25, 9.113252974162428e-11),
+         (0.9999999, 3.0, 6.616650419714568e-10),
+         (0.999999999, 2.5, 4.130195911418939e-13),
+         (0.999999999, 10.0, 2.3788319094393724e-11)])
+    def test_sf_near_1(self, x, chi, expected):
+        sf = stats.argus.sf(x, chi)
+        assert_allclose(sf, expected, rtol=5e-15)
 
     # Expected values were computed with mpmath (code: see gh-13370).
     @pytest.mark.parametrize(

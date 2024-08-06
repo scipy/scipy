@@ -201,7 +201,7 @@ def _loop(work, callback, shape, maxiter, func, args, dtype, pre_func_eval,
     active = xp.arange(n_elements)  # in-progress element indices
     res_dict = {i: xp.zeros(n_elements, dtype=dtype) for i, j in res_work_pairs}
     res_dict['success'] = xp.zeros(n_elements, dtype=xp.bool)
-    res_dict['status'] = xp.full(n_elements, _EINPROGRESS, dtype=xp.int32)
+    res_dict['status'] = xp.full(n_elements, xp.asarray(_EINPROGRESS), dtype=xp.int32)
     res_dict['nit'] = xp.zeros(n_elements, dtype=xp.int32)
     res_dict['nfev'] = xp.zeros(n_elements, dtype=xp.int32)
     res = _RichResult(res_dict)

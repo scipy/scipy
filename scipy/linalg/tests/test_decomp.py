@@ -742,7 +742,7 @@ class TestEigTridiagonal:
 
         for driver in ('sterf', 'stev'):
             assert_raises(ValueError, eigvalsh_tridiagonal, self.d, self.e,
-                          lapack_driver='stev', select='i',
+                          lapack_driver=driver, select='i',
                           select_range=(0, 1))
         for driver in ('stebz', 'stemr', 'auto'):
             # extracting eigenvalues with respect to the full index range

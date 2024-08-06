@@ -12,7 +12,8 @@ from . import types
 
 from scipy.conftest import array_api_compatible
 skip_xp_backends = pytest.mark.skip_xp_backends
-pytestmark = [array_api_compatible, pytest.mark.usefixtures("skip_xp_backends"),]
+pytestmark = [array_api_compatible, pytest.mark.usefixtures("skip_xp_backends"),
+              skip_xp_backends(cpu_only=True, exceptions=['cupy', 'jax.numpy'],)]
 
 
 class TestNdimageMorphology:
@@ -1935,7 +1936,7 @@ class TestNdimageMorphology:
         assert_array_almost_equal(out, expected)
 
     @skip_xp_backends(
-	np_only=True, reasons=['inplace output= arrays are numpy-specific']
+        np_only=True, reasons=['inplace output= arrays are numpy-specific'],
     )
     def test_binary_dilation34(self, xp):
         if is_cupy(xp):
@@ -2265,7 +2266,8 @@ class TestNdimageMorphology:
                                               [2, 3, 1, 3, 1],
                                               [5, 5, 3, 3, 1]]))
 
-    @skip_xp_backends("jax.numpy", reason="output array is read-only.")
+    @skip_xp_backends("jax.numpy", reasons=["output array is read-only."],
+                      cpu_only=True, exceptions=['cupy', 'jax.numpy'],)
     def test_grey_erosion01_overlap(self, xp):
         if is_cupy(xp):
             pytest.xfail("https://github.com/cupy/cupy/issues/8398")
@@ -2461,7 +2463,8 @@ class TestNdimageMorphology:
                                                structure=structure)
         assert_array_almost_equal(expected, output)
 
-    @skip_xp_backends("jax.numpy", reason="output array is read-only.")
+    @skip_xp_backends("jax.numpy", reasons=["output array is read-only."],
+                      cpu_only=True, exceptions=['cupy', 'jax.numpy'],)
     def test_white_tophat01(self, xp):
         array = xp.asarray([[3, 2, 5, 1, 4],
                             [7, 6, 9, 3, 5],
@@ -2515,7 +2518,8 @@ class TestNdimageMorphology:
         output = ndimage.white_tophat(array, structure=structure)
         xp_assert_equal(expected, output)
 
-    @skip_xp_backends("jax.numpy", reason="output array is read-only.")
+    @skip_xp_backends("jax.numpy", reasons=["output array is read-only."],
+                      cpu_only=True, exceptions=['cupy', 'jax.numpy'],)
     def test_white_tophat04(self, xp):
         array = np.eye(5, dtype=bool)
         structure = np.ones((3, 3), dtype=bool)
@@ -2527,7 +2531,8 @@ class TestNdimageMorphology:
         output = xp.empty_like(array, dtype=xp.float64)
         ndimage.white_tophat(array, structure=structure, output=output)
 
-    @skip_xp_backends("jax.numpy", reason="output array is read-only.")
+    @skip_xp_backends("jax.numpy", reasons=["output array is read-only."],
+                      cpu_only=True, exceptions=['cupy', 'jax.numpy'],)
     def test_black_tophat01(self, xp):
         array = xp.asarray([[3, 2, 5, 1, 4],
                             [7, 6, 9, 3, 5],
@@ -2581,7 +2586,8 @@ class TestNdimageMorphology:
         output = ndimage.black_tophat(array, structure=structure)
         xp_assert_equal(expected, output)
 
-    @skip_xp_backends("jax.numpy", reason="output array is read-only.")
+    @skip_xp_backends("jax.numpy", reasons=["output array is read-only."],
+                      cpu_only=True, exceptions=['cupy', 'jax.numpy'],)
     def test_black_tophat04(self, xp):
         array = xp.asarray(np.eye(5, dtype=bool))
         structure = xp.asarray(np.ones((3, 3), dtype=bool))
