@@ -199,17 +199,14 @@ def solve(a, b, lower=False, overwrite_a=False,
             b1 = b1[:, None]
         b_is_1D = True
 
-    assume_a_map = {'sym': 'symmetric', 'her': 'hermitian',
-                    'pos': 'positive definite', 'gen': 'general'}
-    assume_a = assume_a_map.get(assume_a, assume_a)
     if assume_a not in {None, 'diagonal', 'tridiagonal', 'lower triangular',
                         'upper triangular', 'symmetric', 'hermitian',
-                        'positive definite', 'general'}:
+                        'positive definite', 'general', 'sym', 'her', 'pos', 'gen'}:
         raise ValueError(f'{assume_a} is not a recognized matrix structure')
 
     # for a real matrix, describe it as "symmetric", not "hermitian"
     # (lapack doesn't know what to do with real hermitian matrices)
-    if assume_a == 'hermitian' and not np.iscomplexobj(a1):
+    if assume_a in {'hermitian', 'her'} and not np.iscomplexobj(a1):
         assume_a = 'symmetric'
 
     if assume_a is None:
@@ -253,7 +250,7 @@ def solve(a, b, lower=False, overwrite_a=False,
     info, rcond = 0, np.inf
 
     # Generalized case 'gesv'
-    if assume_a == 'general':
+    if assume_a in {'general', 'gen'}:
         gecon, getrf, getrs = get_lapack_funcs(('gecon', 'getrf', 'getrs'),
                                                (a1, b1))
         lu, ipvt, info = getrf(a1, overwrite_a=overwrite_a)
@@ -263,7 +260,7 @@ def solve(a, b, lower=False, overwrite_a=False,
         _solve_check(n, info)
         rcond, info = gecon(lu, anorm, norm=norm)
     # Hermitian case 'hesv'
-    elif assume_a == 'hermitian':
+    elif assume_a in {'hermitian', 'her'}:
         hecon, hesv, hesv_lw = get_lapack_funcs(('hecon', 'hesv',
                                                  'hesv_lwork'), (a1, b1))
         lwork = _compute_lwork(hesv_lw, n, lower)
@@ -274,7 +271,7 @@ def solve(a, b, lower=False, overwrite_a=False,
         _solve_check(n, info)
         rcond, info = hecon(lu, ipvt, anorm)
     # Symmetric case 'sysv'
-    elif assume_a == 'symmetric':
+    elif assume_a in {'symmetric', 'sym'}:
         sycon, sysv, sysv_lw = get_lapack_funcs(('sycon', 'sysv',
                                                  'sysv_lwork'), (a1, b1))
         lwork = _compute_lwork(sysv_lw, n, lower)
