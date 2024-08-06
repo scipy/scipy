@@ -590,6 +590,14 @@ jobs:
 
     - name: Setup build and install scipy
       run: |
+        echo $GITHUB_WORKSPACE
+        ls /home/runner/work/
+        echo $GITHUB_WORKSPACE
+        ls /home/runner/work/scipy
+        echo $GITHUB_WORKSPACE
+        ls /home/runner/work/scipy/scipy
+        echo $GITHUB_WORKSPACE
+        ls $GITHUB_WORKSPACE
         pip install -e .
 
     - name: Checkout array-api-tests
