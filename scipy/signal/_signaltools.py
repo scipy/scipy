@@ -2469,8 +2469,8 @@ def envelope(z: np.ndarray, bp_in: tuple[int | None, int | None] = (1, None), *,
     the signal. Hence, `|a(t)|` "envelopes" the class of all signals with amplitude
     `a(t)` and arbitrary phase `phi(t)`.
     For real-valued signals, `x(t) = a(t) * cos(phi(t))` is the analogous formulation.
-    `|a(t)|` can be determined by converting `x(t)` into an analytic signal `z_a(t)`
-    by means of a Hilbert transform, i.e.,
+    Hence, `|a(t)|` can be determined by converting `x(t)` into an analytic signal
+    `z_a(t)` by means of a Hilbert transform, i.e.,
     `z_a(t) = a(t) * cos(phi(t)) + 1j * a(t) * sin(phi(t))`, which produces a
     complex-valued signal with the same envelope `|a(t)|`.
 
@@ -2479,11 +2479,11 @@ def envelope(z: np.ndarray, bp_in: tuple[int | None, int | None] = (1, None), *,
     z :
         Real- or complex-valued input signal, which is assumed to be made up of `n`
         samples and having sampling interval `T`. `z` may also be a multidimensional
-        signal with the time axis being defined by `axis`.
+        array with the time axis being defined by `axis`.
     bp_in :
         2-tuple defining the frequency band ``bp_in[0]:bp_in[1]`` of the input filter.
-        The corner frequencies are specified as multiples of `1/(n*T)` and the allowed
-        frequency range is specified by ``-n//2 <= bp_in[0] < bp_in[1] <= (n+1)//2``.
+        The corner frequencies are specified as integer multiples of `1/(n*T)` with
+        ``-n//2 <= bp_in[0] < bp_in[1] <= (n+1)//2`` being the allowed frequency range.
         ``None`` entries are replaced with `-n//2` or `(n+1)//2` respectively. The
         default of ``(1, None)`` removes the mean value as well as the negative
         frequency components.
@@ -2491,9 +2491,10 @@ def envelope(z: np.ndarray, bp_in: tuple[int | None, int | None] = (1, None), *,
         If not ``None`` the output will be resampled to `n_out` samples. The default
         of ``None`` sets the output to the same length as the input `z`.
     squared :
-        If set, the square of the envelope is returned. This is useful, if filters need
-        to be applied to the result, since the squared envelope possesses fewer
-        harmonics.
+        If set, the square of the envelope is returned. The bandwidth of the squared
+        envelope is often smaller than the non-squared envelope bandwidth due to the
+        nonlinear nature of the utilized `abs` function. I.e., the embbeded square root
+        function typically produces addiational harmonics.
     residual :
         This option determines what kind of residual, i.e., the signal part which the
         input bandpass filter removes, is returned. `'all'` returns everything except
@@ -2506,8 +2507,8 @@ def envelope(z: np.ndarray, bp_in: tuple[int | None, int | None] = (1, None), *,
     Returns
     -------
     z_env :
-        The envelope of input `x`.
-    x_res :
+        The envelope of input `z`.
+    z_res :
         Optional residual, i.e., the signal part which the input bandpass filter
         removed. What is returned is determined by the parameter `residual`. Note that
         for real-valued signals, also a real-valued residual is returned. Hence, the
@@ -2572,9 +2573,9 @@ def envelope(z: np.ndarray, bp_in: tuple[int | None, int | None] = (1, None), *,
     a low-frequency drift. To separate the drift from the envelope, a 4 Hz highpass
     filter is used. The low-pass residuum of the input bandpass filter is utilized to
     determine an asymmetric upper and lower bound to enclose the signal. Due to the
-    smoothness of the resulting envelope, it is down-sampled from 1000 to 40 samples.
-    Note that the instantaneous amplitude `x_a` and the computed envelope `x_env` are
-    not perfectly identical. This due to the signal not being perfectly periodic as
+    smoothness of the resulting envelope, it is down-sampled from 500 to 40 samples.
+    Note that the instantaneous amplitude `a_x` and the computed envelope `x_env` are
+    not perfectly identical. This is due to the signal not being perfectly periodic as
     well as the existence of some spectral overlapping of `x_carrier` and `x_drift`.
     Hence, they cannot be completely separated by a bandpass filter.
 
@@ -2583,20 +2584,23 @@ def envelope(z: np.ndarray, bp_in: tuple[int | None, int | None] = (1, None), *,
     >>> from scipy.signal.windows import gaussian
     >>> from scipy.signal import envelope
     ...
-    >>> n, T, n_out = 1000, 1/1000, 40
-    >>> t = np.arange(n) * T
-    >>> x_a = gaussian(len(t), 0.2/T)  # instantaneous amplitude
-    >>> x_phi = 60*np.pi*t + 40*np.cos(np.pi*t)  # instantaneous phase
-    >>> x_carrier = x_a * np.cos(x_phi)
-    >>> x_drift = 0.3 * gaussian(len(t), 0.2/T)  # drift
+    >>> n, n_out = 500, 40  # number of signal samples and envelope samples
+    >>> T = 2 / n  # sampling interval for 2 s duration
+    >>> t = np.arange(n) * T  # time stamps
+    >>> a_x = gaussian(len(t), 0.4/T)  # instantaneous amplitude
+    >>> phi_x = 30*np.pi*t + 35*np.cos(2*np.pi*0.25*t)  # instantaneous phase
+    >>> x_carrier = a_x * np.cos(phi_x)
+    >>> x_drift = 0.3 * gaussian(len(t), 0.4/T)  # drift
+    >>> x = x_carrier + x_drift
     ...
-    >>> x_env, x_res = envelope(x_carrier + x_drift, (4, None), n_out=n_out)
+    >>> bp_in = (int(4 * (n*T)), None)  # 4 Hz highpass input filter
+    >>> x_env, x_res = envelope(x, bp_in, n_out=n_out)
     >>> t_out = np.arange(n_out) * (n / n_out) * T
     ...
     >>> fg0, ax0 = plt.subplots(1, 1, tight_layout=True)
     >>> ax0.set_title(r"$4\,$Hz Highpass Envelope of Drifting Signal")
-    >>> ax0.set(xlabel="Time in seconds", xlim=(0, 1), ylabel="Amplitude")
-    >>> ax0.plot(t, x_carrier + x_drift, 'C0-', alpha=0.5, label="Signal")
+    >>> ax0.set(xlabel="Time in seconds", xlim=(0, n*T), ylabel="Amplitude")
+    >>> ax0.plot(t, x, 'C0-', alpha=0.5, label="Signal")
     >>> ax0.plot(t, x_drift, 'C2--', alpha=0.25, label="Drift")
     >>> ax0.plot(t_out, x_res+x_env, 'C1.-', alpha=0.5, label="Envelope")
     >>> ax0.plot(t_out, x_res-x_env, 'C1.-', alpha=0.5, label=None)
@@ -2604,29 +2608,34 @@ def envelope(z: np.ndarray, bp_in: tuple[int | None, int | None] = (1, None), *,
     >>> ax0.legend()
     >>> plt.show()
 
-
-    The second example provides a geometric envelope interpretation of a complex-valued
-    signal: The following plot shows the complex-valued signal as a blue
-    3d-trajectory and the envelope as an orange round tube with varying diameter,
-    i.e., as :math:`|a(t)| \exp(j\rho(t))`, with :math:`\rho(t)\in[-\pi,\pi]`. Also, the
+    The second example provides a geometric envelope interpretation of complex-valued
+    signals: The following two plots show the complex-valued signal as a blue
+    3d-trajectory and the envelope as an orange round tube with varying diameter, i.e.,
+    as :math:`|a(t)| \exp(j\rho(t))`, with :math:`\rho(t)\in[-\pi,\pi]`. Also, the
     projection into the 2d real and imaginary coordinate planes of trajectory and tube
-    is depicted.
+    is depicted. Every point of the complex-valued signal touches the tube's surface.
 
-    The left plot shows an analytical signal, i.e, the phase difference between
-    real and imaginary is always 90 degrees resulting in a spiraling trajectory. It can
-    be seen that in this case the real part has also the expected envelope, i.e.,
-    representing the absolute value of the instantaneous amplitude. The right plot
-    shows a real-valued signal interpreted as a complex signal, i.e., having zero
-    imaginary part. There the resulting envelope is not as smooth as in the analytic
-    case and the instantaneous amplitude in the real plane is not recovered.
+    The left plot shows an analytic signal, i.e, the phase difference between
+    imaginary and real part is always 90 degrees, resulting in a spiraling trajectory.
+    It can be seen that in this case the real part has also the expected envelope,
+    i.e., representing the absolute value of the instantaneous amplitude.
+
+    The right plot shows the real part of that analytic signal being interpreted
+    as a complex-vauled signal, i.e., having zero imaginary part. There the resulting
+    envelope is not as smooth as in the analytic case and the instantaneous amplitude
+    in the real plane is not recovered. If `z_re` had been passed as a real-valued
+    signal, i.e., as ``z_re = z.real`` instead of ``z_re = z.real + 0j``, the result
+    would have been identical to the left plot. The reason for this is that real-valued
+    signals are interpreted as being the real part of a complex-valued analytic signal.
 
     >>> import matplotlib.pyplot as plt
     >>> import numpy as np
     >>> from scipy.signal.windows import gaussian
     >>> from scipy.signal import envelope
     ...
-    >>> n, T, f_c = 1000, 1/1000, 3
-    >>> t = np.arange(n) * T
+    >>> n, T = 1000, 1/1000  # number of samples and sampling interval
+    >>> t = np.arange(n) * T  # time stamps for 1 s duration
+    >>> f_c = 3  # Carrier frequency for signal
     >>> z = gaussian(len(t), 0.3/T) * np.exp(2j*np.pi*f_c*t)  # analytic signal
     >>> z_re = z.real + 0j  # complex signal with zero imaginary part
     ...
@@ -2635,13 +2644,13 @@ def envelope(z: np.ndarray, bp_in: tuple[int | None, int | None] = (1, None), *,
     >>> # Generate grids to visualize envelopes as 2d and 3d surfaces:
     >>> E2d_t, E2_amp = np.meshgrid(t, [-1, 1])
     >>> E2d_1 = np.ones_like(E2_amp)
-    >>> E3d_t, E3d_phi = np.meshgrid(t, np.linspace(0, 2 * np.pi, 300))
+    >>> E3d_t, E3d_phi = np.meshgrid(t, np.linspace(-np.pi, np.pi, 300))
     >>> ma = 1.8  # maximum axis values in real and imaginary direction
     ...
     >>> fg0 = plt.figure(figsize=(6.2, 4.))
     >>> ax00 = fg0.add_subplot(1, 2, 1, projection='3d')
-    >>> ax01 = fg0.add_subplot(1, 2, 2, projection='3d', sharex=ax00, sharey=ax00,
-    ...                        sharez=ax00)
+    >>> ax01 = fg0.add_subplot(1, 2, 2, projection='3d', sharex=ax00,
+    ...                        sharey=ax00, sharez=ax00)
     >>> ax00.set_title("Analytic Signal")
     >>> ax00.set(xlim=(0, 1), ylim=(-ma, ma), zlim=(-ma, ma))
     >>> ax01.set_title("Real-valued Signal")
@@ -2658,7 +2667,6 @@ def envelope(z: np.ndarray, bp_in: tuple[int | None, int | None] = (1, None), *,
     ...     ax_.view_init(elev=22.7, azim=-114.3)
     >>> fg0.subplots_adjust(left=0.08, right=0.97, wspace=0.15)
     >>> plt.show()
-
     """
     if not (-z.ndim <= axis < z.ndim):
         raise ValueError(f"Invalid parameter {axis=} for {z.shape=}!")
