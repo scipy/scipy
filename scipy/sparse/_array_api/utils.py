@@ -106,4 +106,10 @@ try:
     # for attr in __all__:
     #     assert len(locals()[attr]) != 0, f"{attr} is empty"
 except KeyError:
-    pass
+ 
+    def fill_array_with_not_implemented(array):
+        pass
+    def fill_linalg_with_not_implemented():
+        pass
+    def fill_array_module_with_not_implemented(module):
+        pass

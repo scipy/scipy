@@ -205,4 +205,3 @@ def bitwise_or(x1, x2, /):
 
 def bitwise_and(x1, x2, /):
     binopt(x1, x2, np.bitwise_and)
-
