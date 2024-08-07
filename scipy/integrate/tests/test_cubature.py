@@ -10,7 +10,8 @@ from numpy.testing import assert_allclose
 from scipy.integrate._rules import (
     Rule, FixedRule, ProductNestedFixed,
     NestedFixedRule, NestedRule,
-    NewtonCotesQuadrature, GaussLegendreQuadrature, GaussKronrodQuadrature, GenzMalikCubature
+    NewtonCotesQuadrature, GaussLegendreQuadrature, GaussKronrodQuadrature,
+    GenzMalikCubature
 )
 
 from scipy.integrate import cubature
@@ -695,25 +696,25 @@ def test_base_1d_quadratures_simple(quadrature):
     )
 
 
-@pytest.mark.parametrize("quadrature_str", [
+@pytest.mark.parametrize("rule_str", [
+    "gauss-kronrod",
+    "newton-cotes",
+    "genz-malik",
     "gk21",
     "gk15",
-    "trapezoid"
+    "trapezoid",
 ])
-def test_can_pass_str_to_cub(quadrature_str):
+def test_can_pass_str_to_cub(rule_str):
     n = np.arange(5)
 
     def f(x):
-        x_reshaped = x.reshape(-1, 1, 1)
-        n_reshaped = n.reshape(1, -1, 1)
+        return np.power(np.sum(x, axis=-1).reshape(-1, 1), n.reshape(1, -1))
 
-        return np.power(x_reshaped, n_reshaped)
+    a = np.array([0, 0])
+    b = np.array([2, 2])
 
-    a = np.array([0])
-    b = np.array([2])
-
-    exact = (2**(n+1)/(n+1)).reshape(-1, 1)
-    res = cubature(f, a, b, quadrature_str)
+    exact = (-2**(3+n) + 4**(2+n))/((1+n)*(2+n))
+    res = cubature(f, a, b, rule_str)
 
     assert_allclose(
         res.estimate,

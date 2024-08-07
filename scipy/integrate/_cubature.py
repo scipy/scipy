@@ -8,6 +8,7 @@ import numpy as np
 from scipy.integrate._rules import (
     ProductNestedFixed, NestedFixedRule,
     GaussKronrodQuadrature, NewtonCotesQuadrature,
+    GenzMalikCubature,
 )
 
 
@@ -67,11 +68,14 @@ def cubature(f, a, b, rule="gk21", rtol=1e-05, atol=1e-08, max_subdivisions=1000
         right endpoints of the intervals being integrated over. If a float is passed,
         these will be converted to singleton arrays. Infinite limits are currently not
         supported.
-    rule : str or instance of ``Rule``, optional
-        Cubature rule to use when estimating the integral. If passing a string, the
-        options are "gk21", "gk15", or "trapezoid". Default is "gk21". If passing an
-        instance of a ``Rule``, then the options can be found in
-        ``scipy.integrate._rules``.
+    rule : str, optional
+        Rule used to estimate the integral. If passing a string, the options are
+        "gauss-kronrod" (21 node), "newton-cotes" (5 node) or "genz-malik" (degree 7).
+        If a rule like "gauss-kronrod" or "newton-cotes" is specified for an ``n``-dim
+        integrand, the corresponding Cartesian product rule is used.
+
+        "gk21", "gk15" and "trapezoid" are also supported for compatibility with
+        `quad_vec`.
     rtol : float, optional
         Relative tolerance. Default is 1e-05.
     atol : float, optional
@@ -121,7 +125,6 @@ def cubature(f, a, b, rule="gk21", rtol=1e-05, atol=1e-08, max_subdivisions=1000
 
     >>> import numpy as np
     >>> from scipy.integrate import cubature
-    >>> from scipy.integrate._rules import GenzMalikCubature
     >>> def f(x, r, alphas):
     ...     # f(x) = cos(2*pi*r + alpha @ x)
     ...     # Need to allow r and alphas to be arbitrary shape
@@ -134,7 +137,7 @@ def cubature(f, a, b, rule="gk21", rtol=1e-05, atol=1e-08, max_subdivisions=1000
     ...     f=f,
     ...     a=np.array([0, 0, 0, 0, 0, 0, 0]),
     ...     b=np.array([1, 1, 1, 1, 1, 1, 1]),
-    ...     rule=GenzMalikCubature(7),
+    ...     rule="genz-malik",
     ...     kwargs={
     ...         "r": np.random.rand(2, 3),
     ...         "alphas": np.random.rand(2, 3, 7),
@@ -143,56 +146,10 @@ def cubature(f, a, b, rule="gk21", rtol=1e-05, atol=1e-08, max_subdivisions=1000
     >>> res.estimate
      array([[-0.61336595,  0.88388877, -0.57997549],
             [-0.86968418, -0.86877137, -0.64602074]])
-
-    It is also possible to use a custom rule. In the following, a custom rule is created
-    which uses 3D Genz-Malik cubature for the estimate of the integral, and the
-    difference between this estimate and a less accurate estimate using 5-node
-    Gauss-Legendre quadrature as an estimate for the error.
-
-    >>> import numpy as np
-    >>> from scipy.integrate import cubature
-    >>> from scipy.integrate._rules import (
-    ...     Rule, ProductFixed, GenzMalikCubature, GaussLegendreQuadrature
-    ... )
-    >>> genz = GenzMalikCubature(3)
-    >>> gauss = GaussLegendreQuadrature(5)
-    >>> # Gauss-Legendre is 1D, so we find the 3D product rule:
-    >>> gauss_3d = ProductFixed([gauss, gauss, gauss])
-    >>> class CustomRule(Rule):
-    ...     def estimate(self, f, a, b, args=(), kwargs=None):
-    ...         kwargs = kwargs or {}
-    ...         return genz.estimate(f, a, b, args, kwargs)
-    ...     def estimate_error(self, f, a, b, args=(), kwargs=None):
-    ...         kwargs = kwargs or {}
-    ...         return np.abs(
-    ...             genz.estimate(f, a, b, args, kwargs)
-    ...             - gauss_3d.estimate(f, a, b, args, kwargs)
-    ...         )
-    >>> np.random.seed(1)
-    >>> cubature(
-    ...     f=f,
-    ...     a=np.array([0, 0, 0]),
-    ...     b=np.array([1, 1, 1]),
-    ...     rule=CustomRule(),
-    ...     kwargs={
-    ...         "r": np.random.rand(2),
-    ...         "alphas": np.random.rand(3, 2, 3),
-    ...     }
-    ... ).estimate
-     array([[-0.95179502,  0.12444608],
-            [-0.96247411,  0.60866385],
-            [-0.97360014,  0.25515587]])
-
-    This particular example estimates the error using the difference between two
-    approximations, one more accurate than the other. These are called nested rules
-    and can be created using ``NestedRule``:
-
-    >>> from scipy.integrate._rules import NestedRule
-    >>> rule = NestedRule(
-    ...     higher=genz,
-    ...     lower=gauss_3d,
-    ... ) # Equivalent to CustomRule()
     """
+
+    # It is also possible to use a custom rule, but this is not yet part of the public
+    # API. An example of this can be found in the class scipy.integrate._rules.Rule.
 
     kwargs = kwargs or {}
     max_subdivisions = np.inf if max_subdivisions is None else max_subdivisions
@@ -201,26 +158,38 @@ def cubature(f, a, b, rule="gk21", rtol=1e-05, atol=1e-08, max_subdivisions=1000
     a = np.atleast_1d(a)
     b = np.atleast_1d(b)
 
-    # If the rule is a string, convert to a corresponding product rule
-    if isinstance(rule, str):
-        quadratues = {
-            "gk21": GaussKronrodQuadrature(21),
-            "gk15": GaussKronrodQuadrature(15),
-            "trapezoid": NestedFixedRule(
-                NewtonCotesQuadrature(5),
-                NewtonCotesQuadrature(3),
-            ),
-        }
-
-        base_quadrature = quadratues.get(rule)
-
-        if base_quadrature is None:
-            raise ValueError(f"unknown rule {rule}")
-
-        rule = ProductNestedFixed([base_quadrature] * len(a))
-
     if a.ndim != 1 or b.ndim != 1:
         raise ValueError("a and b should be 1D arrays")
+
+    # If the rule is a string, convert to a corresponding product rule
+    if isinstance(rule, str):
+        ndim = len(a)
+
+        if rule == "genz-malik":
+            rule = GenzMalikCubature(ndim)
+        else:
+            quadratues = {
+                "gauss-kronrod": GaussKronrodQuadrature(21),
+                "newton-cotes": NestedFixedRule(
+                    NewtonCotesQuadrature(5),
+                    NewtonCotesQuadrature(3),
+                ),
+
+                # Also allow names quad_vec uses:
+                "gk21": GaussKronrodQuadrature(21),
+                "gk15": GaussKronrodQuadrature(15),
+                "trapezoid": NestedFixedRule(
+                    NewtonCotesQuadrature(5),
+                    NewtonCotesQuadrature(3),
+                ),
+            }
+
+            base_rule = quadratues.get(rule)
+
+            if base_rule is None:
+                raise ValueError(f"unknown rule {rule}")
+
+            rule = ProductNestedFixed([base_rule] * ndim)
 
     est = rule.estimate(f, a, b, args, kwargs)
 
