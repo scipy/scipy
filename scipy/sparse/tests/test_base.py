@@ -4137,6 +4137,25 @@ class TestCSR(sparse_test_class()):
         assert (a + b).nnz == 2
         assert a.multiply(b).nnz == 1
 
+    def test_broadcast_to(self):
+        a = np.array([[1, 0, 2]])
+        b = np.array([[1], [0], [2]])
+        c = np.array([[1, 0, 2], [0, 3, 0]])
+        d = np.array([[7]])
+        e = np.array([[0]])
+        f = np.array([[0,0,0,0]])
+        res_a = csr_matrix(a).broadcast_to((2,3))
+        res_b = csr_matrix(b).broadcast_to((3,4))
+        res_c = csr_matrix(c).broadcast_to((2,3))
+        res_d = csr_matrix(d).broadcast_to((4,4))
+        res_e = csr_matrix(e).broadcast_to((5,6))
+        res_f = csr_matrix(f).broadcast_to((2,4))
+        assert_array_equal(res_a.toarray(), np.broadcast_to(a, (2,3)))
+        assert_array_equal(res_b.toarray(), np.broadcast_to(b, (3,4)))
+        assert_array_equal(res_c.toarray(), c)
+        assert_array_equal(res_d.toarray(), np.broadcast_to(d, (4,4)))
+        assert_array_equal(res_e.toarray(), np.broadcast_to(e, (5,6)))
+        assert_array_equal(res_f.toarray(), np.broadcast_to(f, (2,4)))
 
 TestCSR.init_class()
 
