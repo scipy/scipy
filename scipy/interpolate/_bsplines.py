@@ -13,6 +13,7 @@ from scipy.sparse import csr_array
 from scipy.special import poch
 from itertools import combinations
 
+
 __all__ = ["BSpline", "make_interp_spline", "make_lsq_spline",
            "make_smoothing_spline"]
 
@@ -336,7 +337,7 @@ class BSpline:
         return cls.construct_fast(t, c, k, extrapolate)
 
     @classmethod
-    def design_matrix(cls, x, t, k, extrapolate=False):
+    def design_matrix(cls, x, t, k, extrapolate=False, nu=0):
         """
         Returns a design matrix as a CSR format sparse array.
 
@@ -455,7 +456,7 @@ class BSpline:
 
         # indptr is not passed to Cython as it is already fully computed
         data, indices = _bspl._make_design_matrix(
-            x, t, k, extrapolate, indices
+            x, t, k, extrapolate, indices, nu
         )
         return csr_array(
             (data, indices, indptr),
@@ -940,7 +941,7 @@ def _insert(xval, t, c, k, periodic=False):
     # satisfy these boundary constraints, i.e.
     #      tt(i+nn-2*k-1) = tt(i)+per  ,i=1,2,...,2*k+1
     #      cc(i+nn-2*k-1) = cc(i)      ,i=1,2,...,k
-    interval = _bspl._find_interval(t, k, xval, k, False)
+    interval = _bspl._py_find_interval(t, k, xval, k, False)
     if interval < 0:
         # extrapolated values are guarded for in BSpline.insert_knot
         raise ValueError(f"Cannot insert the knot at {xval}.")
@@ -998,13 +999,22 @@ def _insert(xval, t, c, k, periodic=False):
 
 def _not_a_knot(x, k):
     """Given data x, construct the knot vector w/ not-a-knot BC.
-    cf de Boor, XIII(12)."""
-    x = np.asarray(x)
-    if k % 2 != 1:
-        raise ValueError(f"Odd degree for now only. Got {k}.")
+    cf de Boor, XIII(12).
 
-    m = (k - 1) // 2
-    t = x[m+1:-m-1]
+    For even k, it's a bit ad hoc: Greville sites + omit 2nd and 2nd-to-last
+    data points, a la not-a-knot.
+    This seems to match what Dierckx does, too:
+    https://github.com/scipy/scipy/blob/maintenance/1.11.x/scipy/interpolate/fitpack/fpcurf.f#L63-L80
+    """
+    x = np.asarray(x)
+    if k % 2 == 1:
+        k2 = (k + 1) // 2
+        t = x.copy()
+    else:
+        k2 = k // 2
+        t = (x[1:] + x[:-1]) / 2
+
+    t = t[k2:-k2]
     t = np.r_[(x[0],)*(k+1), t, (x[-1],)*(k+1)]
     return t
 
@@ -1490,13 +1500,6 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
         if deriv_l is None and deriv_r is None:
             if bc_type == 'periodic':
                 t = _periodic_knots(x, k)
-            elif k == 2:
-                # OK, it's a bit ad hoc: Greville sites + omit
-                # 2nd and 2nd-to-last points, a la not-a-knot
-                t = (x[1:] + x[:-1]) / 2.
-                t = np.r_[(x[0],)*(k+1),
-                          t[1:-1],
-                          (x[-1],)*(k+1)]
             else:
                 t = _not_a_knot(x, k)
         else:
@@ -1582,7 +1585,7 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
     return BSpline.construct_fast(t, c, k, axis=axis)
 
 
-def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True):
+def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True, *, method="qr"):
     r"""Compute the (coefficients of) an LSQ (Least SQuared) based
     fitting B-spline.
 
@@ -1620,6 +1623,11 @@ def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True):
         Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
         Default is True.
+    method : str, optional
+        Method for solving the linear LSQ problem. Allowed values are "norm-eq"
+        (Explicitly construct and solve the normal system of equations), and
+        "qr" (Use the QR factorization of the design matrix).
+        Default is "qr".
 
     Returns
     -------
@@ -1702,20 +1710,24 @@ def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True):
 
     y = np.moveaxis(y, axis, 0)    # now internally interp axis is zero
 
-    if x.ndim != 1 or np.any(x[1:] - x[:-1] <= 0):
-        raise ValueError("Expect x to be a 1-D sorted array_like.")
+    if x.ndim != 1:
+        raise ValueError("Expect x to be a 1-D sequence.")
     if x.shape[0] < k+1:
         raise ValueError("Need more x points.")
     if k < 0:
         raise ValueError("Expect non-negative k.")
     if t.ndim != 1 or np.any(t[1:] - t[:-1] < 0):
-        raise ValueError("Expect t to be a 1-D sorted array_like.")
+        raise ValueError("Expect t to be a 1D strictly increasing sequence.")
     if x.size != y.shape[0]:
         raise ValueError(f'Shapes of x {x.shape} and y {y.shape} are incompatible')
     if k > 0 and np.any((x < t[k]) | (x > t[-k])):
         raise ValueError(f'Out of bounds w/ x = {x}.')
     if x.size != w.size:
         raise ValueError(f'Shapes of x {x.shape} and w {w.shape} are incompatible')
+    if method == "norm-eq" and np.any(x[1:] - x[:-1] <= 0):
+        raise ValueError("Expect x to be a 1D strictly increasing sequence.")
+    if method == "qr" and any(x[1:] - x[:-1] < 0):
+        raise ValueError("Expect x to be a 1D non-decreasing sequence.")
 
     # number of coefficients
     n = t.size - k - 1
@@ -1730,30 +1742,73 @@ def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True):
     extradim = prod(yy.shape[1:])
     yy = yy.reshape(-1, extradim)
 
-    # construct A.T @ A and rhs with A the collocation matrix, and
-    # rhs = A.T @ y for solving the LSQ problem  ``A.T @ A @ c = A.T @ y``
-    lower = True
-    ab = np.zeros((k+1, n), dtype=np.float64, order='F')
-    rhs = np.zeros((n, extradim), dtype=np.float64)
-    _bspl._norm_eq_lsq(x, t, k,
-                       yy,
-                       w,
-                       ab, rhs)
+    # complex y: view as float, preserve the length
+    was_complex =  y.dtype.kind == 'c'
+    yy = y.view(float)
+    if was_complex and y.ndim == 1:
+        yy = yy.reshape(y.shape[0], 2)
 
-    # undo complex -> float and flattening the trailing dims
-    if was_complex:
-        rhs = rhs.view(complex)
+    # multiple r.h.s
+    extradim = prod(yy.shape[1:])
+    yy = yy.reshape(-1, extradim)
 
-    rhs = rhs.reshape((n,) + y.shape[1:])
+    if method == "norm-eq":
+        # construct A.T @ A and rhs with A the collocation matrix, and
+        # rhs = A.T @ y for solving the LSQ problem  ``A.T @ A @ c = A.T @ y``
+        lower = True
+        ab = np.zeros((k+1, n), dtype=np.float64, order='F')
+        rhs = np.zeros((n, extradim), dtype=np.float64)
+        _bspl._norm_eq_lsq(x, t, k,
+                           yy,
+                           w,
+                           ab, rhs)
 
-    # have observation matrix & rhs, can solve the LSQ problem
-    cho_decomp = cholesky_banded(ab, overwrite_ab=True, lower=lower,
-                                 check_finite=check_finite)
-    c = cho_solve_banded((cho_decomp, lower), rhs, overwrite_b=True,
-                         check_finite=check_finite)
+        # undo complex -> float and flattening the trailing dims
+        if was_complex:
+            rhs = rhs.view(complex)
 
+        rhs = rhs.reshape((n,) + y.shape[1:])
+
+        # have observation matrix & rhs, can solve the LSQ problem
+        cho_decomp = cholesky_banded(ab, overwrite_ab=True, lower=lower,
+                                     check_finite=check_finite)
+        c = cho_solve_banded((cho_decomp, lower), rhs, overwrite_b=True,
+                             check_finite=check_finite)
+    elif method == "qr":
+        _, _, c = _lsq_solve_qr(x, yy, t, k, w)
+
+        if was_complex:
+            c = c.view(complex)
+
+    else:
+        raise ValueError(f"Unknown {method =}.")
+
+
+    # restore the shape of `c` for both single and multiple r.h.s.
+    c = c.reshape((n,) + y.shape[1:])
     c = np.ascontiguousarray(c)
     return BSpline.construct_fast(t, c, k, axis=axis)
+
+
+######################
+# LSQ spline helpers #
+######################
+
+def _lsq_solve_qr(x, y, t, k, w):
+    """Solve for the LSQ spline coeffs given x, y and knots.
+
+    `y` is always 2D: for 1D data, the shape is ``(m, 1)``.
+    `w` is always 1D: one weight value per `x` value.
+
+    """
+    assert y.ndim == 2
+
+    y_w = y * w[:, None]
+    A, offset, nc = _bspl._data_matrix(x, t, k, w)
+    _bspl._qr_reduce(A, offset, nc, y_w)         # modifies arguments in-place
+    c = _bspl._fpback(A, nc, y_w)
+
+    return A, y_w, c
 
 
 #############################
