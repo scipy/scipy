@@ -436,8 +436,8 @@ class NestedFixedRule(FixedRule):
         nodes, weights = self.nodes_and_weights
         lower_nodes, lower_weights = self.lower_nodes_and_weights
 
-        error_nodes = np.concat([nodes, lower_nodes], axis=0)
-        error_weights = np.concat([weights, -lower_weights], axis=0)
+        error_nodes = np.concatenate([nodes, lower_nodes], axis=0)
+        error_weights = np.concatenate([weights, -lower_weights], axis=0)
 
         return np.abs(
             _apply_fixed_rule(f, a, b, error_nodes, error_weights, args, kwargs)
