@@ -2160,10 +2160,9 @@ def test_gtcon(dtype, norm, n):
     dl = rng.random(n - 1) + rng.random(n - 1)*1j
     du = rng.random(n - 1) + rng.random(n - 1)*1j
     A = np.diag(d) + np.diag(dl, -1) + np.diag(du, 1)
-    with np.testing.suppress_warnings() as sup:
-        sup.filter(np.exceptions.ComplexWarning)
-        A = A.astype(dtype)
-        d, dl, du = d.astype(dtype), dl.astype(dtype), du.astype(dtype)
+    if np.issubdtype(dtype, np.floating):
+        A, d, dl, du = A.real, d.real, dl.real, du.real
+    A, d, dl, du = A.astype(dtype), d.astype(dtype), dl.astype(dtype), du.astype(dtype)
 
     anorm = np.abs(A).sum(axis=0).max()
 
