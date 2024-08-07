@@ -227,7 +227,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
         if axes is None:
             axes = range(self.ndim)[::-1]
         elif isinstance(self, sparray):
-            if len(axes) != self.ndim:
+            if not hasattr(axes, "__len__") or len(axes) != self.ndim:
                 raise ValueError("axes don't match matrix dimensions")
             if len(set(axes)) != self.ndim:
                 raise ValueError("repeated axis in transpose")
