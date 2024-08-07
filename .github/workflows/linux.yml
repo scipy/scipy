@@ -609,6 +609,7 @@ jobs:
     - name: Run array-api-tests against scipy sparse
       run: |
         export ARRAY_API_TESTS_MODULE=scipy.sparse._array_api
+        export ARRAY_API_REPO_PATH=$GITHUB_WORKSPACE/array-api
         cd array-api-tests
         pip install -r requirements.txt
         pytest array_api_tests --skips-file ../scipy/scipy/sparse/_array_api/array-api-skips.txt

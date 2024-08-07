@@ -1,7 +1,8 @@
-To get the `array-api` test suite, running one needs to do a few things.  First, you will need to get the [array-api test suite](https://github.com/data-apis/array-api-tests) and install this package into that environment:
+To get the `array-api` test suite, running one needs to do a few things.  First, you will need to get the [array-api test suite](https://github.com/data-apis/array-api-tests) and the [array-api spec](https://github.com/data-apis/array-api) and install this package into that environment:
 
 ```shell
 git clone https://github.com/data-apis/array-api-tests.git
+git clone https://github.com/data-apis/array-api.git
 cd array-api-tests
 # Simplest to just get the dev dependencies of scipy since we will build from source. 
 # Also if you have a dev environment already created, you may will want to change the name in this environment.yml.
@@ -15,6 +16,12 @@ Next, you will need to replace the runnable by setting the following variable:
 
 ```shell
 export ARRAY_API_TESTS_MODULE=scipy.sparse._array_api
+```
+
+and inform the api here where to find the `array_api` stubs:
+
+```shell
+export ARRAY_API_REPO_PATH=path/to/array_api
 ```
 
 Once this is done, you can run the test suite via:

@@ -3,6 +3,7 @@ import inspect
 import sys
 from importlib import import_module
 from importlib.util import find_spec
+import os
 from pathlib import Path
 from types import FunctionType, ModuleType
 from typing import Dict, List
@@ -44,9 +45,10 @@ __all__ = [
 
 spec_module = "_" + __array_api_version__.replace('.', '_')
 
-spec_dir = Path(__file__).parent.parent.parent.parent.parent / "array-api" / "spec" / __array_api_version__ / "API_specification"
+array_api_repo = Path(os.environ["ARRAY_API_REPO_PATH"])
+spec_dir = array_api_repo / "spec" / __array_api_version__ / "API_specification"
 assert spec_dir.exists(), f"{spec_dir} not found - the array api needs to be checked out to the top level"
-sigs_dir = Path(__file__).parent.parent.parent.parent.parent / "array-api" / "src" / "array_api_stubs" / spec_module
+sigs_dir = array_api_repo / "src" / "array_api_stubs" / spec_module
 assert sigs_dir.exists()
 
 sigs_abs_path: str = str(sigs_dir.parent.parent.resolve())
