@@ -7,7 +7,7 @@ import numpy as np
 
 from scipy.integrate._rules import (
     ProductNestedFixed, NestedFixedRule,
-    GaussKronrodQuad, NewtonCotesQuad,
+    GaussKronrodQuadrature, NewtonCotesQuadrature,
 )
 
 
@@ -121,7 +121,7 @@ def cubature(f, a, b, rule="gk21", rtol=1e-05, atol=1e-08, max_subdivisions=1000
 
     >>> import numpy as np
     >>> from scipy.integrate import cubature
-    >>> from scipy.integrate._rules import GenzMalikCub
+    >>> from scipy.integrate._rules import GenzMalikCubature
     >>> def f(x, r, alphas):
     ...     # f(x) = cos(2*pi*r + alpha @ x)
     ...     # Need to allow r and alphas to be arbitrary shape
@@ -134,7 +134,7 @@ def cubature(f, a, b, rule="gk21", rtol=1e-05, atol=1e-08, max_subdivisions=1000
     ...     f=f,
     ...     a=np.array([0, 0, 0, 0, 0, 0, 0]),
     ...     b=np.array([1, 1, 1, 1, 1, 1, 1]),
-    ...     rule=GenzMalikCub(7),
+    ...     rule=GenzMalikCubature(7),
     ...     kwargs={
     ...         "r": np.random.rand(2, 3),
     ...         "alphas": np.random.rand(2, 3, 7),
@@ -152,10 +152,10 @@ def cubature(f, a, b, rule="gk21", rtol=1e-05, atol=1e-08, max_subdivisions=1000
     >>> import numpy as np
     >>> from scipy.integrate import cubature
     >>> from scipy.integrate._rules import (
-    ...     Rule, ProductFixed, GenzMalikCub, GaussLegendreQuad
+    ...     Rule, ProductFixed, GenzMalikCubature, GaussLegendreQuadrature
     ... )
-    >>> genz = GenzMalikCub(3)
-    >>> gauss = GaussLegendreQuad(5)
+    >>> genz = GenzMalikCubature(3)
+    >>> gauss = GaussLegendreQuadrature(5)
     >>> # Gauss-Legendre is 1D, so we find the 3D product rule:
     >>> gauss_3d = ProductFixed([gauss, gauss, gauss])
     >>> class CustomRule(Rule):
@@ -204,9 +204,12 @@ def cubature(f, a, b, rule="gk21", rtol=1e-05, atol=1e-08, max_subdivisions=1000
     # If the rule is a string, convert to a corresponding product rule
     if isinstance(rule, str):
         quadratues = {
-            "gk21": GaussKronrodQuad(21),
-            "gk15": GaussKronrodQuad(15),
-            "trapezoid": NestedFixedRule(NewtonCotesQuad(5), NewtonCotesQuad(3)),
+            "gk21": GaussKronrodQuadrature(21),
+            "gk15": GaussKronrodQuadrature(15),
+            "trapezoid": NestedFixedRule(
+                NewtonCotesQuadrature(5),
+                NewtonCotesQuadrature(3),
+            ),
         }
 
         base_quadrature = quadratues.get(rule)

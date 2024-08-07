@@ -31,7 +31,7 @@ class Rule:
     >>> import numpy as np
     >>> from scipy.integrate import cubature
     >>> from scipy.integrate._rules import (
-    ...     Rule, ProductFixed, GenzMalikCub, GaussLegendreQuad
+    ...     Rule, ProductFixed, GenzMalikCubature, GaussLegendreQuadrature
     ... )
     >>> def f(x, r, alphas):
     ...     # f(x) = cos(2*pi*r + alpha @ x)
@@ -40,8 +40,8 @@ class Rule:
     ...     alphas_reshaped = alphas[np.newaxis, :]
     ...     x_reshaped = x.reshape(npoints, *([1]*(len(alphas.shape) - 1)), ndim)
     ...     return np.cos(2*np.pi*r + np.sum(alphas_reshaped * x_reshaped, axis=-1))
-    >>> genz = GenzMalikCub(ndim=3)
-    >>> gauss = GaussLegendreQuad(npoints=5)
+    >>> genz = GenzMalikCubature(ndim=3)
+    >>> gauss = GaussLegendreQuadrature(npoints=5)
     >>> # Gauss-Legendre is 1D, so we find the 3D product rule:
     >>> gauss_3d = ProductFixed([gauss, gauss, gauss])
     >>> class CustomRule(Rule):
@@ -188,7 +188,8 @@ class FixedRule(Rule):
 
     See Also
     --------
-    NestedRule, NewtonCotesQuad, GaussLegendreQuad, GaussKronrodQuad, GenzMalikCub
+    NestedRule, NewtonCotesQuadrature, GaussLegendreQuadrature, GaussKronrodQuadrature,
+    GenzMalikCubature
 
     Examples
     --------
@@ -283,7 +284,7 @@ class NestedRule(Rule):
 
     See Also
     --------
-    GaussKronrodQuad, NestedFixedRule
+    GaussKronrodQuadrature, NestedFixedRule
 
     Examples
     --------
@@ -294,10 +295,10 @@ class NestedRule(Rule):
 
     >>> from scipy.integrate import cubature
     >>> from scipy.integrate._rules import (
-    ...     GaussLegendreQuad, NestedRule, ProductFixed
+    ...     GaussLegendreQuadrature, NestedRule, ProductFixed
     ... )
-    >>> higher = GaussLegendreQuad(10)
-    >>> lower = GaussLegendreQuad(5)
+    >>> higher = GaussLegendreQuadrature(10)
+    >>> lower = GaussLegendreQuadrature(5)
     >>> rule = NestedRule(
     ...     higher,
     ...     lower,
@@ -361,17 +362,17 @@ class NestedFixedRule(FixedRule):
 
     See Also
     --------
-    GaussKronrodQuad, NestedRule
+    GaussKronrodQuadrature, NestedRule
 
     Examples
     --------
 
     >>> from scipy.integrate import cubature
     >>> from scipy.integrate._rules import (
-    ...     GaussLegendreQuad, NestedFixedRule, ProductNestedFixed
+    ...     GaussLegendreQuadrature, NestedFixedRule, ProductNestedFixed
     ... )
-    >>> higher = GaussLegendreQuad(10)
-    >>> lower = GaussLegendreQuad(5)
+    >>> higher = GaussLegendreQuadrature(10)
+    >>> lower = GaussLegendreQuadrature(5)
     >>> rule = NestedFixedRule(
     ...     higher,
     ...     lower
@@ -467,14 +468,14 @@ class ProductFixed(FixedRule):
     >>> import numpy as np
     >>> from scipy.integrate import cubature
     >>> from scipy.integrate._rules import (
-    ...  ProductFixed, NewtonCotesQuad
+    ...  ProductFixed, NewtonCotesQuadrature
     ... )
     >>> def f(x):
     ...     # f(x) = cos(x_1) + cos(x_2)
     ...     return np.sum(np.cos(x), axis=-1)
     >>> rule = ProductFixed(
-    ...     [NewtonCotesQuad(10), NewtonCotesQuad(10)]
-    ... ) # Use 10-point NewtonCotesQuad
+    ...     [NewtonCotesQuadrature(10), NewtonCotesQuadrature(10)]
+    ... ) # Use 10-point NewtonCotesQuadrature
     >>> a, b = np.array([0, 0]), np.array([1, 1])
     >>> rule.estimate(f, a, b) # True value 2*sin(1), approximately 1.6829
      np.float64(1.682941969615793)
@@ -534,13 +535,13 @@ class ProductNestedFixed(NestedFixedRule):
     >>> import numpy as np
     >>> from scipy.integrate import cubature
     >>> from scipy.integrate._rules import (
-    ...  ProductNestedFixed, GaussKronrodQuad
+    ...  ProductNestedFixed, GaussKronrodQuadrature
     ... )
     >>> def f(x):
     ...     # f(x) = cos(x_1) + cos(x_2)
     ...     return np.sum(np.cos(x), axis=-1)
     >>> rule = ProductNestedFixed(
-    ...     [GaussKronrodQuad(15), GaussKronrodQuad(15)]
+    ...     [GaussKronrodQuadrature(15), GaussKronrodQuadrature(15)]
     ... ) # Use 15-point Gauss-Kronrod, which implements NestedRule
     >>> a, b = np.array([0, 0]), np.array([1, 1])
     >>> rule.estimate(f, a, b) # True value 2*sin(1), approximately 1.6829

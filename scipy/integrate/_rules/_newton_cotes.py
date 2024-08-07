@@ -5,7 +5,7 @@ from functools import cached_property
 from ._base import FixedRule
 
 
-class NewtonCotesQuad(FixedRule):
+class NewtonCotesQuadrature(FixedRule):
     """
     Newton-Cotes quadrature.
 
@@ -25,10 +25,10 @@ class NewtonCotesQuad(FixedRule):
 
     >>> import numpy as np
     >>> from scipy.integrate import cubature
-    >>> from scipy.integrate._rules import NewtonCotesQuad
+    >>> from scipy.integrate._rules import NewtonCotesQuadrature
     >>> def f(x):
     ...     return np.cos(x)
-    >>> rule = NewtonCotesQuad(21) # Use 21-point GaussLegendre
+    >>> rule = NewtonCotesQuadrature(21) # Use 21-point GaussLegendre
     >>> a, b = np.array([0]), np.array([1])
     >>> rule.estimate(f, a, b) # True value sin(1), approximately 0.84147
      array([0.84147098])
@@ -40,12 +40,12 @@ class NewtonCotesQuad(FixedRule):
 
     >>> import numpy as np
     >>> from scipy.integrate import cubature
-    >>> from scipy.integrate._rules import ProductFixed, NewtonCotesQuad
+    >>> from scipy.integrate._rules import ProductFixed, NewtonCotesQuadrature
     >>> def f(x):
     ...     # f(x) = cos(x_1) + cos(x_2)
     ...     return np.sum(np.cos(x), axis=-1)
     >>> rule = ProductFixed(
-    ...     [NewtonCotesQuad(15), NewtonCotesQuad(15)]
+    ...     [NewtonCotesQuadrature(15), NewtonCotesQuadrature(15)]
     ... ) # Use 15-point Newton-Cotes
     >>> a, b = np.array([0, 0]), np.array([1, 1])
     >>> rule.estimate(f, a, b) # True value 2*sin(1), approximately 1.6829

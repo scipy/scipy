@@ -5,7 +5,7 @@ from scipy.special import roots_legendre
 from ._base import FixedRule
 
 
-class GaussLegendreQuad(FixedRule):
+class GaussLegendreQuadrature(FixedRule):
     """
     Gauss-Legendre quadrature.
 
@@ -25,10 +25,10 @@ class GaussLegendreQuad(FixedRule):
 
     >>> import numpy as np
     >>> from scipy.integrate import cubature
-    >>> from scipy.integrate._rules import GaussLegendreQuad
+    >>> from scipy.integrate._rules import GaussLegendreQuadrature
     >>> def f(x):
     ...     return np.cos(x)
-    >>> rule = GaussLegendreQuad(21) # Use 21-point GaussLegendre
+    >>> rule = GaussLegendreQuadrature(21) # Use 21-point GaussLegendre
     >>> a, b = np.array([0]), np.array([1])
     >>> rule.estimate(f, a, b) # True value sin(1), approximately 0.84147
      array([0.84147098])
@@ -40,12 +40,12 @@ class GaussLegendreQuad(FixedRule):
 
     >>> import numpy as np
     >>> from scipy.integrate import cubature
-    >>> from scipy.integrate._rules import ProductFixed, GaussLegendreQuad
+    >>> from scipy.integrate._rules import ProductFixed, GaussLegendreQuadrature
     >>> def f(x):
     ...     # f(x) = cos(x_1) + cos(x_2)
     ...     return np.sum(np.cos(x), axis=-1)
     >>> rule = ProductFixed(
-    ...     [GaussLegendreQuad(15), GaussLegendreQuad(15)]
+    ...     [GaussLegendreQuadrature(15), GaussLegendreQuadrature(15)]
     ... )
     >>> a, b = np.array([0, 0]), np.array([1, 1])
     >>> rule.estimate(f, a, b) # True value 2*sin(1), approximately 1.6829

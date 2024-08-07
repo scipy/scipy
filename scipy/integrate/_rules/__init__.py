@@ -5,9 +5,9 @@ from ._base import (
     NestedFixedRule, NestedRule,
     ProductFixed, ProductNestedFixed
 )
-from ._genz_malik import GenzMalikCub
-from ._newton_cotes import NewtonCotesQuad
-from ._gauss_kronrod import GaussKronrodQuad
-from ._gauss_legendre import GaussLegendreQuad
+from ._genz_malik import GenzMalikCubature
+from ._newton_cotes import NewtonCotesQuadrature
+from ._gauss_kronrod import GaussKronrodQuadrature
+from ._gauss_legendre import GaussLegendreQuadrature
 
 __all__ = [s for s in dir() if not s.startswith('_')]

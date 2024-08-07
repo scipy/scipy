@@ -7,7 +7,7 @@ from functools import cached_property
 from scipy.integrate._rules import NestedFixedRule
 
 
-class GenzMalikCub(NestedFixedRule):
+class GenzMalikCubature(NestedFixedRule):
     """
     Genz-Malik cubature.
 
@@ -39,11 +39,11 @@ class GenzMalikCub(NestedFixedRule):
 
     >>> import numpy as np
     >>> from scipy.integrate import cubature
-    >>> from scipy.integrate._rules import GenzMalikCub
+    >>> from scipy.integrate._rules import GenzMalikCubature
     >>> def f(x):
     ...     # f(x) = cos(x_1) + cos(x_2) + cos(x_3)
     ...     return np.sum(np.cos(x), axis=-1)
-    >>> rule = GenzMalikCub(3) # Use 3D Genz-Malik
+    >>> rule = GenzMalikCubature(3) # Use 3D Genz-Malik
     >>> a, b = np.array([0, 0, 0]), np.array([1, 1, 1])
     >>> rule.estimate(f, a, b) # True value 3*sin(1), approximately 2.5244
      np.float64(2.5244129547230862)

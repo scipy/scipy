@@ -3,10 +3,10 @@ import numpy as np
 from functools import cached_property
 
 from ._base import NestedFixedRule
-from ._gauss_legendre import GaussLegendreQuad
+from ._gauss_legendre import GaussLegendreQuadrature
 
 
-class GaussKronrodQuad(NestedFixedRule):
+class GaussKronrodQuadrature(NestedFixedRule):
     """
     Gauss-Kronrod quadrature.
 
@@ -43,10 +43,10 @@ class GaussKronrodQuad(NestedFixedRule):
 
     >>> import numpy as np
     >>> from scipy.integrate import cubature
-    >>> from scipy.integrate._rules import GaussKronrodQuad
+    >>> from scipy.integrate._rules import GaussKronrodQuadrature
     >>> def f(x):
     ...     return np.cos(x)
-    >>> rule = GaussKronrodQuad(21) # Use 21-point GaussKronrod
+    >>> rule = GaussKronrodQuadrature(21) # Use 21-point GaussKronrod
     >>> a, b = np.array([0]), np.array([1])
     >>> rule.estimate(f, a, b) # True value sin(1), approximately 0.84147
      array([0.84147098])
@@ -59,13 +59,13 @@ class GaussKronrodQuad(NestedFixedRule):
     >>> import numpy as np
     >>> from scipy.integrate import cubature
     >>> from scipy.integrate._rules import (
-    ...     ProductNestedFixed, GaussKronrodQuad
+    ...     ProductNestedFixed, GaussKronrodQuadrature
     ... )
     >>> def f(x):
     ...     # f(x) = cos(x_1) + cos(x_2)
     ...     return np.sum(np.cos(x), axis=-1)
     >>> rule = ProductNestedFixed(
-    ...     [GaussKronrodQuad(15), GaussKronrodQuad(15)]
+    ...     [GaussKronrodQuadrature(15), GaussKronrodQuadrature(15)]
     ... ) # Use 15-point Gauss-Kronrod
     >>> a, b = np.array([0, 0]), np.array([1, 1])
     >>> rule.estimate(f, a, b) # True value 2*sin(1), approximately 1.6829
@@ -82,7 +82,7 @@ class GaussKronrodQuad(NestedFixedRule):
                                       "supported for 15 or 21 nodes")
 
         self.npoints = npoints
-        self.gauss = GaussLegendreQuad(npoints//2)
+        self.gauss = GaussLegendreQuadrature(npoints//2)
 
     @cached_property
     def nodes_and_weights(self):

@@ -10,7 +10,7 @@ from numpy.testing import assert_allclose
 from scipy.integrate._rules import (
     Rule, FixedRule, ProductNestedFixed,
     NestedFixedRule, NestedRule,
-    NewtonCotesQuad, GaussLegendreQuad, GaussKronrodQuad, GenzMalikCub
+    NewtonCotesQuadrature, GaussLegendreQuadrature, GaussKronrodQuadrature, GenzMalikCubature
 )
 
 from scipy.integrate import cubature
@@ -508,9 +508,9 @@ problems_scalar_output = [
 
 @pytest.mark.parametrize("problem", problems_scalar_output)
 @pytest.mark.parametrize("quadrature", [
-    GaussKronrodQuad(15),
-    GaussKronrodQuad(21),
-    GenzMalikCub
+    GaussKronrodQuadrature(15),
+    GaussKronrodQuadrature(21),
+    GenzMalikCubature
 ])
 @pytest.mark.parametrize("rtol", [1e-4])
 @pytest.mark.parametrize("atol", [1e-5])
@@ -519,13 +519,13 @@ def test_cub_scalar_output(problem, quadrature, rtol, atol):
 
     ndim = len(a)
 
-    if quadrature is GenzMalikCub and ndim < 2:
+    if quadrature is GenzMalikCubature and ndim < 2:
         pytest.skip("Genz-Malik cubature does not support 1D integrals")
 
-    if isinstance(quadrature, GaussKronrodQuad):
+    if isinstance(quadrature, GaussKronrodQuadrature):
         rule = ProductNestedFixed([quadrature] * ndim)
-    elif quadrature is GenzMalikCub and ndim >= 2:
-        rule = GenzMalikCub(ndim)
+    elif quadrature is GenzMalikCubature and ndim >= 2:
+        rule = GenzMalikCubature(ndim)
     else:
         raise "Unknown quadrature rule specified"
 
@@ -586,9 +586,9 @@ problems_array_output = [
 
 @pytest.mark.parametrize("problem", problems_array_output)
 @pytest.mark.parametrize("quadrature", [
-    GaussKronrodQuad(15),
-    GaussKronrodQuad(21),
-    GenzMalikCub
+    GaussKronrodQuadrature(15),
+    GaussKronrodQuadrature(21),
+    GenzMalikCubature
 ])
 @pytest.mark.parametrize("shape", [
     (2,),
@@ -608,13 +608,13 @@ def test_cub_array_output(problem, quadrature, shape, rtol, atol):
     np.random.seed(1)
     ndim = shape[-1]
 
-    if quadrature is GenzMalikCub and ndim < 2:
+    if quadrature is GenzMalikCubature and ndim < 2:
         pytest.skip("Genz-Malik cubature does not support 1D integrals")
 
-    if isinstance(quadrature, GaussKronrodQuad):
+    if isinstance(quadrature, GaussKronrodQuadrature):
         rule = ProductNestedFixed([quadrature] * ndim)
-    elif quadrature is GenzMalikCub and ndim >= 2:
-        rule = GenzMalikCub(ndim)
+    elif quadrature is GenzMalikCubature and ndim >= 2:
+        rule = GenzMalikCubature(ndim)
     else:
         raise "Unknown quadrature rule specified"
 
@@ -654,23 +654,23 @@ def test_genz_malik_func_evaluations(ndim):
     matches the number in Genz and Malik 1980.
     """
 
-    nodes, _ = GenzMalikCub(ndim).nodes_and_weights
+    nodes, _ = GenzMalikCubature(ndim).nodes_and_weights
 
     assert nodes.shape[0] == (2**ndim) + 2*ndim**2 + 2*ndim + 1
 
 
 @pytest.mark.parametrize("quadrature", [
-    NewtonCotesQuad(3),
-    NewtonCotesQuad(5),
-    NewtonCotesQuad(10),
-    NewtonCotesQuad(3, open=True),
-    NewtonCotesQuad(5, open=True),
-    NewtonCotesQuad(10, open=True),
-    GaussLegendreQuad(3),
-    GaussLegendreQuad(5),
-    GaussLegendreQuad(10),
-    GaussKronrodQuad(15),
-    GaussKronrodQuad(21),
+    NewtonCotesQuadrature(3),
+    NewtonCotesQuadrature(5),
+    NewtonCotesQuadrature(10),
+    NewtonCotesQuadrature(3, open=True),
+    NewtonCotesQuadrature(5, open=True),
+    NewtonCotesQuadrature(10, open=True),
+    GaussLegendreQuadrature(3),
+    GaussLegendreQuadrature(5),
+    GaussLegendreQuadrature(10),
+    GaussKronrodQuadrature(15),
+    GaussKronrodQuadrature(21),
 ])
 def test_base_1d_quadratures_simple(quadrature):
     n = np.arange(5)
@@ -747,8 +747,8 @@ def test_can_pass_list_to_cub():
 
 
 @pytest.mark.parametrize("quadrature_pair", [
-    (NewtonCotesQuad(10), NewtonCotesQuad(5)),
-    (GaussLegendreQuad(10), GaussLegendreQuad(5))
+    (NewtonCotesQuadrature(10), NewtonCotesQuadrature(5)),
+    (GaussLegendreQuadrature(10), GaussLegendreQuadrature(5))
 ])
 def test_base_1d_quadratures_error_from_difference(quadrature_pair):
     n = np.arange(5)
@@ -781,18 +781,18 @@ def test_base_1d_quadratures_error_from_difference(quadrature_pair):
 
 @pytest.mark.parametrize("rule", [
     ProductNestedFixed([
-        NestedFixedRule(NewtonCotesQuad(10), NewtonCotesQuad(8)),
-        NestedFixedRule(NewtonCotesQuad(10), NewtonCotesQuad(8)),
+        NestedFixedRule(NewtonCotesQuadrature(10), NewtonCotesQuadrature(8)),
+        NestedFixedRule(NewtonCotesQuadrature(10), NewtonCotesQuadrature(8)),
     ]),
     ProductNestedFixed([
-        NestedFixedRule(GaussLegendreQuad(10), NewtonCotesQuad(5)),
-        NestedFixedRule(GaussLegendreQuad(10), GaussLegendreQuad(5)),
+        NestedFixedRule(GaussLegendreQuadrature(10), NewtonCotesQuadrature(5)),
+        NestedFixedRule(GaussLegendreQuadrature(10), GaussLegendreQuadrature(5)),
     ]),
     ProductNestedFixed([
-        GaussKronrodQuad(21),
-        GaussKronrodQuad(21),
+        GaussKronrodQuadrature(21),
+        GaussKronrodQuadrature(21),
     ]),
-    GenzMalikCub(2),
+    GenzMalikCubature(2),
 ])
 def test_cub_with_kwargs(rule):
     np.random.seed(1)
@@ -821,7 +821,7 @@ def test_stops_after_max_subdivisions():
     # Define a rule with fake high error so that cub will keep on subdividing
 
     class BadError(Rule):
-        underlying = GaussLegendreQuad(10)
+        underlying = GaussLegendreQuadrature(10)
 
         def estimate(self, f, a, b, args=(), kwargs=None):
             kwargs = kwargs or {}
@@ -852,8 +852,8 @@ def test_stops_after_max_subdivisions():
 
 
 @pytest.mark.parametrize("quadrature", [
-    NewtonCotesQuad,
-    GaussLegendreQuad
+    NewtonCotesQuadrature,
+    GaussLegendreQuadrature
 ])
 def test_one_point_fixed_quad_impossible(quadrature):
     with pytest.raises(Exception):
@@ -874,7 +874,7 @@ def test_estimate_with_base_classes_raise_error():
 
 def test_genz_malik_1d_raises_error():
     with pytest.raises(Exception, match="only defined for ndim >= 2"):
-        GenzMalikCub(1)
+        GenzMalikCubature(1)
 
 
 @pytest.mark.parametrize("problem", [
@@ -882,19 +882,19 @@ def test_genz_malik_1d_raises_error():
         # 2D problem, 1D rule
         np.array([0, 0]),
         np.array([1, 1]),
-        GaussKronrodQuad(21),
+        GaussKronrodQuadrature(21),
     ),
     (
         # 2D problem, 1D rule
         np.array([0, 0]),
         np.array([1, 1]),
-        NestedRule(NewtonCotesQuad(10), NewtonCotesQuad(5)),
+        NestedRule(NewtonCotesQuadrature(10), NewtonCotesQuadrature(5)),
     ),
     (
         # 1D problem, 2D rule
         np.array([0]),
         np.array([1]),
-        GenzMalikCub(2),
+        GenzMalikCubature(2),
     ),
 ])
 def test_incompatible_dimension_raises_error(problem):
