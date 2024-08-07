@@ -826,7 +826,7 @@ class levy_stable_gen(rv_continuous):
 
     def _parameterization(self):
         allowed = ("S0", "S1")
-        pz = self.parameterization
+        pz = levy_stable.parameterization
         if pz not in allowed:
             raise RuntimeError(
                 f"Parameterization '{pz}' in supported list: {allowed}"
