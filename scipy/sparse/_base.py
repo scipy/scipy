@@ -1,5 +1,6 @@
 """Base class for sparse matrices"""
 
+from functools import reduce
 import numpy as np
 
 from ._sputils import (asmatrix, check_reshape_kwargs, check_shape,
@@ -1382,6 +1383,18 @@ class sparray:
     def __array_namespace__(self, *, api_version: str | None = None):
         from . import _array_api
         return _array_api
+
+    def __int__(self):
+        if reduce((lambda x, y: x * y), self.shape) == 1:
+            return int(self.todense()[0])
+        else:
+            raise TypeError("only size-1 arrays can be converted to Python scalars")
+    
+    def __float__(self):
+        if reduce((lambda x, y: x * y), self.shape) == 1:
+            return float(self.todense()[0])
+        else:
+            raise TypeError("only size-1 arrays can be converted to Python scalars")
 
 
 sparray.__doc__ = _spbase.__doc__
