@@ -4,6 +4,7 @@ To get the `array-api` test suite, running one needs to do a few things.  First,
 git clone https://github.com/data-apis/array-api-tests.git
 git clone https://github.com/data-apis/array-api.git
 cd array-api-tests
+git submodule update --init
 # Simplest to just get the dev dependencies of scipy since we will build from source. 
 # Also if you have a dev environment already created, you may will want to change the name in this environment.yml.
 # Alternatively, you can use that dev environment directly and just skip to installing the array-api requirements.txt.

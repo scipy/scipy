@@ -46,9 +46,7 @@ __all__ = [
 spec_module = "_" + __array_api_version__.replace('.', '_')
 
 array_api_repo = Path(os.environ["ARRAY_API_REPO_PATH"])
-print(array_api_repo)
 spec_dir = array_api_repo / "spec" / __array_api_version__ / "API_specification"
-print(spec_dir)
 assert spec_dir.exists(), f"{spec_dir} not found - the array api needs to be checked out to the top level"
 sigs_dir = array_api_repo / "src" / "array_api_stubs" / spec_module
 assert sigs_dir.exists()

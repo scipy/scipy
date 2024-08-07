@@ -598,6 +598,7 @@ jobs:
       uses: actions/checkout@v4
       with:
         repository: data-apis/array-api-tests
+        submodules: recursive
         path: array-api-tests
 
     - name: Checkout array-api-stubs
@@ -608,10 +609,8 @@ jobs:
     
     - name: Run array-api-tests against scipy sparse
       run: |
-        echo $GITHUB_WORKSPACE
         export ARRAY_API_TESTS_MODULE=scipy.sparse._array_api
         export ARRAY_API_REPO_PATH=$GITHUB_WORKSPACE/array-api
-        echo $ARRAY_API_REPO_PATH
         cd array-api-tests
         pip install -r requirements.txt
         pytest array_api_tests --skips-file ../scipy/scipy/sparse/_array_api/array-api-skips.txt
