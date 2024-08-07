@@ -48,7 +48,6 @@ from numpy import (
     tan,
     tanh,
     trunc,
-    bool,
     int8,
     int16,
     int32,
@@ -62,6 +61,9 @@ from numpy import (
     complex64,
     complex128,
 )
+# `np.bool` is depracated
+bool
+
 from scipy.sparse import csr_array
 
 from .array_api_version import __array_api_version__
