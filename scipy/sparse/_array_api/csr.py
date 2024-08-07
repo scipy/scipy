@@ -122,7 +122,14 @@ def argmax(x, /, *, axis: int | tuple[int, ...] | None = None, keepdims: bool = 
 def argmin(x, /, *, axis: int | tuple[int, ...] | None = None, keepdims: bool = False):
     return x.argmin(axis=axis)
 
-def var(x, /, *, axis: int | tuple[int, ...] | None = None, correction: int | float = 0.0, keepdims: bool = False):
+def var(
+    x,
+    /,
+    *,
+    axis: int | tuple[int, ...] | None = None,
+    correction: int | float = 0.0,
+    keepdims: bool = False
+):
     divisor = 1
     if isinstance(axis, tuple):
         if len(axis) != 1:
