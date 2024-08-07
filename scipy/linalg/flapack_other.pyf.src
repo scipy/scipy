@@ -551,7 +551,7 @@ subroutine <prefix>trcon(norm, uplo, diag, n, a, lda, rcond, work, irwork, info)
     ! ?TRCON estimates the reciprocal of the condition number of a
     ! triangular matrix A, in either the 1-norm or the infinity-norm.
 
-    callstatement (*f2py_func)(norm,uplo,diag,&n,a,&lda,&rcond,work,iwork,&info);
+    callstatement (*f2py_func)(norm,uplo,diag,&n,a,&lda,&rcond,work,irwork,&info);
     callprotoargument char*,char*,char*,F_INT*,<ctype>*,F_INT*,<ctypereal>*,<ctype>*,<F_INT,F_INT,float,double>*,F_INT*
 
     character optional intent(in), check(*norm=='1'||*norm=='I'||*norm=='O') :: norm = '1'
