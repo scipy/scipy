@@ -15,7 +15,7 @@ class Rule:
 
     If a subclass does not implement its own `estimate_error`, then it will use a
     default error estimate based on the difference between the estimate over the whole
-    region and the sum of estimates over that region divided into 2^ndim subregions.
+    region and the sum of estimates over that region divided into ``2^ndim`` subregions.
 
     See Also
     --------
@@ -83,22 +83,22 @@ class Rule:
 
     def estimate(self, f, a, b, args=(), kwargs=None):
         r"""
-        Calculate estimate of integral of ``f`` in rectangular region described by
-        corners ``a`` and ``b``.
+        Calculate estimate of integral of `f` in rectangular region described by
+        corners `a` and ``b``.
 
         Parameters
         ----------
         f : callable
-            Function to integrate. ``f`` must have the signature::
+            Function to integrate. `f` must have the signature::
                 f(x : ndarray, \*args, \*\*kwargs) -> ndarray
 
-            ``f`` should accepts arrays ``x`` of shape::
+            `f` should accept arrays ``x`` of shape::
                 (npoints, ndim)
 
             and output arrays of shape::
                 (npoints, output_dim_1, ..., output_dim_n)
 
-            In this case, ``estimate`` will return arrays of shape::
+            In this case, `estimate` will return arrays of shape::
                 (output_dim_1, ..., output_dim_n)
         a, b : ndarray
             Lower and upper limits of integration as rank-1 arrays specifying the left
@@ -112,16 +112,16 @@ class Rule:
         Returns
         -------
         est : ndarray
-            Result of estimation. If ``f`` returns arrays of shape ``(npoints,
-            output_dim_1, ..., output_dim_n)``, then ``est`` will be of shape
+            Result of estimation. If `f` returns arrays of shape ``(npoints,
+            output_dim_1, ..., output_dim_n)``, then `est` will be of shape
             ``(output_dim_1, ..., output_dim_n)``.
         """
         raise NotImplementedError
 
     def estimate_error(self, f, a, b, args=(), kwargs=None):
         r"""
-        Estimate the error of the approximation for the integral of ``f`` in rectangular
-        region described by corners ``a`` and ``b``.
+        Estimate the error of the approximation for the integral of `f` in rectangular
+        region described by corners `a` and `b`.
 
         If a subclass does not override this method, then a default error estimator is
         used. This estimates the error as ``|est - refined_est|`` where ``est`` is
@@ -135,31 +135,31 @@ class Rule:
         Parameters
         ----------
         f : callable
-            Function to estimate error for. ``f`` must have the signature::
+            Function to estimate error for. `f` must have the signature::
                 f(x : ndarray, \*args, \*\*kwargs) -> ndarray
 
-            ``f`` should accepts arrays ``x`` of shape::
+            `f` should accept arrays `x` of shape::
                 (npoints, ndim)
 
             and output arrays of shape::
                 (npoints, output_dim_1, ..., output_dim_n)
 
-            In this case, ``estimate`` will return arrays of shape::
+            In this case, `estimate` will return arrays of shape::
                 (output_dim_1, ..., output_dim_n)
         a, b : ndarray
             Lower and upper limits of integration as rank-1 arrays specifying the left
             and right endpoints of the intervals being integrated over. Infinite limits
             are currently not supported.
         args : tuple, optional
-            Additional positional args passed to ``f``, if any.
+            Additional positional args passed to `f`, if any.
         kwargs : tuple, optional
-            Additional keyword args passed to ``f``, if any.
+            Additional keyword args passed to `f`, if any.
 
         Returns
         -------
         err_est : ndarray
-            Result of error estimation. If ``f`` returns arrays of shape
-            ``(npoints, output_dim_1, ..., output_dim_n)``, then ``est`` will be
+            Result of error estimation. If `f` returns arrays of shape
+            ``(npoints, output_dim_1, ..., output_dim_n)``, then `est` will be
             of shape ``(output_dim_1, ..., output_dim_n)``.
         """
 
@@ -183,7 +183,8 @@ class FixedRule(Rule):
         corresponding weights. ``nodes`` should be of shape ``(num_nodes,)`` for 1D
         cubature rules (quadratures) and more generally for N-D cubature rules, it
         should be of shape ``(num_nodes, ndim)``. ``weights`` should be of shape
-        `(num_nodes,)`. The nodes and weights should be for integrals over `[-1, 1]^n`.
+        ``(num_nodes,)``. The nodes and weights should be for integrals over
+        :math:`[-1, 1]^n`.
 
     See Also
     --------
@@ -217,8 +218,8 @@ class FixedRule(Rule):
 
     def estimate(self, f, a, b, args=(), kwargs=None):
         r"""
-        Calculate estimate of integral of ``f`` in rectangular region described by
-        corners ``a`` and ``b`` as ``sum(weights * f(nodes))``.
+        Calculate estimate of integral of `f` in rectangular region described by
+        corners `a` and `b` as ``sum(weights * f(nodes))``.
 
         Nodes and weights will automatically be adjusted from calculating integrals over
         :math:`[-1, 1]^n` to :math:`[a, b]^n`.
@@ -226,31 +227,31 @@ class FixedRule(Rule):
         Parameters
         ----------
         f : callable
-            Function to integrate. ``f`` must have the signature::
+            Function to integrate. `f` must have the signature::
                 f(x : ndarray, \*args, \*\*kwargs) -> ndarray
 
-            ``f`` should accepts arrays ``x`` of shape::
+            `f` should accept arrays `x` of shape::
                 (npoints, ndim)
 
             and output arrays of shape::
                 (npoints, output_dim_1, ..., output_dim_n)
 
-            In this case, ``estimate`` will return arrays of shape::
+            In this case, `estimate` will return arrays of shape::
                 (output_dim_1, ..., output_dim_n)
         a, b : ndarray
             Lower and upper limits of integration as rank-1 arrays specifying the left
             and right endpoints of the intervals being integrated over. Infinite limits
             are currently not supported.
         args : tuple, optional
-            Additional positional args passed to ``f``, if any.
+            Additional positional args passed to `f`, if any.
         kwargs : tuple, optional
-            Additional keyword args passed to ``f``, if any.
+            Additional keyword args passed to `f`, if any.
 
         Returns
         -------
         est : ndarray
-            Result of estimation. If ``f`` returns arrays of shape ``(npoints,
-            output_dim_1, ..., output_dim_n)``, then ``est`` will be of shape
+            Result of estimation. If `f` returns arrays of shape ``(npoints,
+            output_dim_1, ..., output_dim_n)``, then `est` will be of shape
             ``(output_dim_1, ..., output_dim_n)``.
         """
         nodes, weights = self.nodes_and_weights
@@ -260,8 +261,9 @@ class FixedRule(Rule):
 
 class NestedRule(Rule):
     r"""
-    A rule with error estimate given by the difference between two underlying rules. If
-    constructed as ``NestedRule(higher, lower)``, this will use::
+    A rule with error estimate given by the difference between two underlying rules.
+
+    If constructed as ``NestedRule(higher, lower)``, this will use::
 
         estimate(f, a, b) := higher.estimate(f, a, b)
         estimate_error(f, a, b) := \|higher.estimate(f, a, b) - lower.estimate(f, a, b)|
@@ -340,7 +342,9 @@ class NestedRule(Rule):
 class NestedFixedRule(FixedRule):
     r"""
     A cubature rule with error estimate given by the difference between two underlying
-    fixed rules. If constructed as ``NestedFixedRule(higher, lower)``, this will use::
+    fixed rules.
+
+    If constructed as ``NestedFixedRule(higher, lower)``, this will use::
 
         estimate(f, a, b) := higher.estimate(f, a, b)
         estimate_error(f, a, b) := \|higher.estimate(f, a, b) - lower.estimate(f, a, b)|
@@ -395,37 +399,37 @@ class NestedFixedRule(FixedRule):
 
     def estimate_error(self, f, a, b, args=(), kwargs=None):
         r"""
-        Estimate the error of the approximation for the integral of ``f`` in rectangular
-        region described by corners ``a`` and ``b``.
+        Estimate the error of the approximation for the integral of `f` in rectangular
+        region described by corners `a` and `b`.
 
         Parameters
         ----------
         f : callable
-            Function to estimate error for. ``f`` must have the signature::
+            Function to estimate error for. `f` must have the signature::
                 f(x : ndarray, \*args, \*\*kwargs) -> ndarray
 
-            ``f`` should accepts arrays ``x`` of shape::
+            `f` should accept arrays `x` of shape::
                 (npoints, ndim)
 
             and output arrays of shape::
                 (npoints, output_dim_1, ..., output_dim_n)
 
-            In this case, ``estimate`` will return arrays of shape::
+            In this case, `estimate` will return arrays of shape::
                 (output_dim_1, ..., output_dim_n)
         a, b : ndarray
             Lower and upper limits of integration as rank-1 arrays specifying the left
             and right endpoints of the intervals being integrated over. Infinite limits
             are currently not supported.
         args : tuple, optional
-            Additional positional args passed to ``f``, if any.
+            Additional positional args passed to `f`, if any.
         kwargs : tuple, optional
-            Additional keyword args passed to ``f``, if any.
+            Additional keyword args passed to `f`, if any.
 
         Returns
         -------
         err_est : ndarray
-            Result of error estimation. If ``f`` returns arrays of shape
-            ``(npoints, output_dim_1, ..., output_dim_n)``, then ``est`` will be
+            Result of error estimation. If `f` returns arrays of shape
+            ``(npoints, output_dim_1, ..., output_dim_n)``, then `est` will be
             of shape ``(output_dim_1, ..., output_dim_n)``.
         """
 
@@ -481,8 +485,7 @@ class ProductFixed(FixedRule):
     def __init__(self, base_rules):
         for rule in base_rules:
             if not isinstance(rule, FixedRule):
-                raise ValueError("base rules need to be instance of \
-FixedRule")
+                raise ValueError("base rules need to be instance of FixedRule")
 
         self.base_rules = base_rules
 
@@ -492,9 +495,12 @@ FixedRule")
             [rule.nodes_and_weights[0] for rule in self.base_rules]
         )
 
-        weights = np.prod(_cartesian_product(
-            [rule.nodes_and_weights[1] for rule in self.base_rules]
-        ), axis=-1)
+        weights = np.prod(
+            _cartesian_product(
+                [rule.nodes_and_weights[1] for rule in self.base_rules]
+            ),
+            axis=-1,
+        )
 
         return nodes, weights
 
@@ -502,14 +508,13 @@ FixedRule")
 class ProductNestedFixed(NestedFixedRule):
     """
     Find the n-dimensional cubature rule constructed from the Cartesian product of 1-D
-    `NestedFixedRule` quadrature rules, and estimate the error as the difference between
-    the product of the higher rules and the product of the lower rules.
+    `NestedFixedRule` quadrature rules.
 
     Given a list of N 1-dimensional quadrature rules which support error estimation
     using NestedFixedRule, this will find the N-dimensional NestedRule cubature rule
     obtained by taking the Cartesian product of their nodes, and estimating the error by
     taking the difference with a lower-accuracy N-dimensional cubature rule obtained
-    using the `.lower_nodes_and_weights` rule in each of the base 1-dimensional rules.
+    using the ``.lower_nodes_and_weights`` rule in each of the base 1-dimensional rules.
 
     Parameters
     ----------
@@ -547,8 +552,8 @@ class ProductNestedFixed(NestedFixedRule):
     def __init__(self, base_rules):
         for rule in base_rules:
             if not isinstance(rule, NestedFixedRule):
-                raise ValueError("base rules for product need to be instance of \
-NestedFixedRule")
+                raise ValueError("base rules for product need to be instance of"
+                                 "NestedFixedRule")
 
         self.base_rules = base_rules
 
@@ -558,9 +563,12 @@ NestedFixedRule")
             [rule.nodes_and_weights[0] for rule in self.base_rules]
         )
 
-        weights = np.prod(_cartesian_product(
-            [rule.nodes_and_weights[1] for rule in self.base_rules]
-        ), axis=-1)
+        weights = np.prod(
+            _cartesian_product(
+                [rule.nodes_and_weights[1] for rule in self.base_rules]
+            ),
+            axis=-1,
+        )
 
         return nodes, weights
 
@@ -570,9 +578,12 @@ NestedFixedRule")
             [cubature.lower_nodes_and_weights[0] for cubature in self.base_rules]
         )
 
-        weights = np.prod(_cartesian_product(
-            [cubature.lower_nodes_and_weights[1] for cubature in self.base_rules]
-        ), axis=-1)
+        weights = np.prod(
+            _cartesian_product(
+                [cubature.lower_nodes_and_weights[1] for cubature in self.base_rules]
+            ),
+            axis=-1,
+        )
 
         return nodes, weights
 
@@ -622,8 +633,9 @@ def _apply_fixed_rule(f, a, b, orig_nodes, orig_weights, args=(), kwargs=None):
     b_ndim = len(b)
 
     if rule_ndim != a_ndim or rule_ndim != b_ndim:
-        raise ValueError(f"rule and function are of incompatible dimension, nodes have \
-ndim {rule_ndim}, while limit of integration has ndim a_ndim={a_ndim}, b_ndim={b_ndim}")
+        raise ValueError(f"rule and function are of incompatible dimension, nodes have"
+                         f"ndim {rule_ndim}, while limit of integration has ndim"
+                         f"a_ndim={a_ndim}, b_ndim={b_ndim}")
 
     # Since f accepts arrays of shape (eval_points, ndim), it is necessary to
     # add an extra axis to a and b so that ``f`` can be evaluated there.

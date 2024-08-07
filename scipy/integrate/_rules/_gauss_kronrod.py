@@ -8,13 +8,14 @@ from ._gauss_legendre import GaussLegendreQuad
 
 class GaussKronrodQuad(NestedFixedRule):
     """
-    Gauss-Kronrod quadrature. Gauss-Kronrod rules consist of two quadrature rules, one
-    higher-order and one lower-order. The higher-order rule is used as the estimate of
-    the integral and the difference between them is used as an estimate for the error.
+    Gauss-Kronrod quadrature.
+
+    Gauss-Kronrod rules consist of two quadrature rules, one higher-order and one
+    lower-order. The higher-order rule is used as the estimate of the integral and the
+    difference between them is used as an estimate for the error.
 
     Gauss-Kronrod is a 1D rule. To use it for multidimensional integrals, it will be
-    necessary to take use ProductNestedFixed and multiple Gauss-Kronrod rules.
-    See Examples.
+    necessary to use ProductNestedFixed and multiple Gauss-Kronrod rules. See Examples.
 
     For n-node Gauss-Kronrod, the lower-order rule has ``n//2`` nodes, which are the
     ordinary Gauss-Legendre nodes with corresponding weights. The higher-order rule has
@@ -77,8 +78,8 @@ class GaussKronrodQuad(NestedFixedRule):
         # TODO: nodes and weights are currently hard-coded for values 15 and 21, but in
         # the future it would be best to compute the Kronrod extension of the lower rule
         if npoints != 15 and npoints != 21:
-            raise ValueError("Gauss-Kronrod quadrature is currently only supported for \
-15 or 21 nodes")
+            raise NotImplementedError("Gauss-Kronrod quadrature is currently only"
+                                      "supported for 15 or 21 nodes")
 
         self.npoints = npoints
         self.gauss = GaussLegendreQuad(npoints//2)
@@ -107,7 +108,7 @@ class GaussKronrodQuad(NestedFixedRule):
                 -0.865063366688984510732096688423493,
                 -0.930157491355708226001207180059508,
                 -0.973906528517171720077964012084452,
-                -0.995657163025808080735527280689003
+                -0.995657163025808080735527280689003,
             ])
 
             weights = np.array([
@@ -149,7 +150,7 @@ class GaussKronrodQuad(NestedFixedRule):
                 -0.741531185599394439863864773280788,
                 -0.864864423359769072789712788640926,
                 -0.949107912342758524526189684047851,
-                -0.991455371120812639206854697526329
+                -0.991455371120812639206854697526329,
             ])
 
             weights = np.array([
@@ -167,7 +168,7 @@ class GaussKronrodQuad(NestedFixedRule):
                 0.140653259715525918745189590510238,
                 0.104790010322250183839876322541518,
                 0.063092092629978553290700663189204,
-                0.022935322010529224963732008058970
+                0.022935322010529224963732008058970,
             ])
 
         return nodes, weights

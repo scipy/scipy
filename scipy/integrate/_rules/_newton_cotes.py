@@ -10,7 +10,7 @@ class NewtonCotesQuad(FixedRule):
     Newton-Cotes quadrature.
 
     Newton-Cotes is a 1D rule. To use it for multidimensional integrals, it will be
-    necessary to take the product of multiple Newton-Cotes rules used `ProductFixed`.
+    necessary to take the product of multiple Newton-Cotes rules using `ProductFixed`.
     See Examples.
 
     Parameters

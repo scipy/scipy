@@ -152,7 +152,7 @@ def genz_malik_1980_f_3(x, alphas):
     """
 
     npoints, ndim = x.shape[0], x.shape[-1]
-    
+
     alphas_reshaped = alphas[np.newaxis, :]
     x_reshaped = x.reshape(npoints, *([1]*(len(alphas.shape) - 1)), ndim)
 
@@ -823,10 +823,12 @@ def test_stops_after_max_subdivisions():
     class BadError(Rule):
         underlying = GaussLegendreQuad(10)
 
-        def estimate(self, f, a, b, args=(), kwargs=dict()):
+        def estimate(self, f, a, b, args=(), kwargs=None):
+            kwargs = kwargs or {}
             return self.underlying.estimate(f, a, b, args, kwargs)
 
-        def estimate_error(self, f, a, b, args=(), kwargs=dict()):
+        def estimate_error(self, f, a, b, args=(), kwargs=None):
+            kwargs = kwargs or {}
             return 1e6
 
     def f(x):

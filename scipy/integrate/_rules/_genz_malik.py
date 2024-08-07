@@ -16,7 +16,7 @@ class GenzMalikCub(NestedFixedRule):
     Parameters
     ----------
     ndim : int
-        The spacial dimension of the integrand.
+        The spatial dimension of the integrand.
 
     Attributes
     ----------
@@ -56,7 +56,8 @@ class GenzMalikCub(NestedFixedRule):
             raise ValueError("Genz-Malik cubature is only defined for ndim >= 2")
 
         if degree != 7 or lower_degree != 5:
-            raise NotImplementedError
+            raise NotImplementedError("Genz-Malik cubature is currently only supported"
+                                      "for degree=7, lower_degree=5")
 
         self.ndim = ndim
         self.degree = degree
@@ -80,24 +81,26 @@ class GenzMalikCub(NestedFixedRule):
             _distinct_permutations((l_4, l_4) + (0,) * (self.ndim - 2)),
             _distinct_permutations((l_4, -l_4) + (0,) * (self.ndim - 2)),
             _distinct_permutations((-l_4, -l_4) + (0,) * (self.ndim - 2)),
-            itertools.product((l_5, -l_5), repeat=self.ndim)
+            itertools.product((l_5, -l_5), repeat=self.ndim),
         )
 
-        nodes_size = 1 + 2 * (self.ndim + 1) * self.ndim + 2**self.ndim
+        nodes_size = 1 + (2 * (self.ndim + 1) * self.ndim) + 2**self.ndim
+        count = nodes_size * self.ndim
 
         nodes = np.fromiter(
             itertools.chain.from_iterable(zip(*its)),
             dtype=float,
-            count=self.ndim * nodes_size
+            count=count,
         )
 
         nodes.shape = (self.ndim, nodes_size)
 
         # It's convenient to generate the nodes as a sequence of evaluation points
-        # like (num_points, ndim), but nodes needs to be (ndim, num_points)
+        # as an array of shape (npoints, ndim), but nodes needs to have shape
+        # (ndim, npoints)
         nodes = nodes.T
 
-        w_1 = (2**self.ndim) * (12824 - 9120 * self.ndim + 400 * self.ndim**2) \
+        w_1 = (2**self.ndim) * (12824 - 9120 * self.ndim + (400 * self.ndim**2)) \
             / 19683
         w_2 = (2**self.ndim) * 980/6561
         w_3 = (2**self.ndim) * (1820 - 400 * self.ndim) / 19683
@@ -139,12 +142,13 @@ class GenzMalikCub(NestedFixedRule):
             _distinct_permutations((-l_4, -l_4) + (0,) * (self.ndim - 2)),
         )
 
-        nodes_size = 1 + 2 * (self.ndim + 1) * self.ndim
+        nodes_size = 1 + (2 * (self.ndim + 1) * self.ndim)
+        count = nodes_size * self.ndim
 
         nodes = np.fromiter(
             itertools.chain.from_iterable(zip(*its)),
             dtype=float,
-            count=self.ndim * nodes_size
+            count=count,
         )
 
         nodes.shape = (self.ndim, nodes_size)
@@ -158,7 +162,7 @@ class GenzMalikCub(NestedFixedRule):
 
         weights = np.repeat(
             [w_1, w_2, w_3, w_4],
-            [1, 2 * self.ndim, 2*self.ndim, 2*(self.ndim - 1)*self.ndim]
+            [1, 2 * self.ndim, 2*self.ndim, 2*(self.ndim - 1)*self.ndim],
         )
 
         return nodes, weights

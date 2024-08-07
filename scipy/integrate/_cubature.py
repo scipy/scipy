@@ -43,24 +43,24 @@ def cub(f, a, b, rule="gk21", rtol=1e-05, atol=1e-08, max_subdivisions=10000,
     Adaptive cubature of multidimensional array-valued function.
 
     Given an arbitrary integration rule, this function returns an estimate of the
-    integral to the requested tolerance over the region defined by the arrays ``a`` and
-    ``b`` specifying the corners of a hypercube.
+    integral to the requested tolerance over the region defined by the arrays `a` and
+    `b` specifying the corners of a hypercube.
 
     Convergence is not guaranteed for all integrals.
 
     Parameters
     ----------
     f : callable
-        Function to integrate. ``f`` must have the signature::
+        Function to integrate. `f` must have the signature::
             f(x : ndarray, \*args, \*\*kwargs) -> ndarray
 
-        ``f`` should accepts arrays ``x`` of shape::
+        `f` should accept arrays ``x`` of shape::
             (npoints, ndim)
 
         and output arrays of shape::
             (npoints, output_dim_1, ..., output_dim_n)
 
-        In this case, ``cub`` will return arrays of shape::
+        In this case, `cub` will return arrays of shape::
             (output_dim_1, ..., output_dim_n)
     a, b : array_like or float
         Lower and upper limits of integration as rank-1 arrays specifying the left and
@@ -80,9 +80,9 @@ def cub(f, a, b, rule="gk21", rtol=1e-05, atol=1e-08, max_subdivisions=10000,
         Upper bound on the number of subdivisions to perform to improve the estimate
         over a subregion. Default is 10,000.
     args : tuple, optional
-        Additional positional args passed to ``f``, if any.
+        Additional positional args passed to `f`, if any.
     kwargs : tuple, optional
-        Additional keyword args passed to ``f``, if any.
+        Additional keyword args passed to `f`, if any.
 
     Returns
     -------
@@ -97,7 +97,6 @@ def cub(f, a, b, rule="gk21", rtol=1e-05, atol=1e-08, max_subdivisions=10000,
 
     >>> import numpy as np
     >>> from scipy.integrate import cub
-    >>> from scipy.integrate._rules import GaussKronrodQuad
     >>> def f(x, n):
     ...    return x.reshape(-1, 1)**n  # Make sure x and n are broadcastable
     >>> res = cub(
@@ -225,8 +224,8 @@ def cub(f, a, b, rule="gk21", rtol=1e-05, atol=1e-08, max_subdivisions=10000,
     try:
         err = rule.estimate_error(f, a, b, args, kwargs)
     except NotImplementedError:
-        raise ValueError("attempting cubature with a rule that doesn't implement error \
-estimation.")
+        raise ValueError("attempting cubature with a rule that doesn't implement error"
+                         "estimation.")
 
     regions = [CubatureRegion(est, err, a, b)]
     subdivisions = 0

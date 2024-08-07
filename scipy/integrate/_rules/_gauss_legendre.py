@@ -10,7 +10,7 @@ class GaussLegendreQuad(FixedRule):
     Gauss-Legendre quadrature.
 
     Gauss-Legendre is a 1D rule. To use it for multidimensional integrals, it will be
-    necessary to take the product of multiple Gauss-Legendre rules used `ProductFixed`.
+    necessary to take the product of multiple Gauss-Legendre rules using `ProductFixed`.
     See Examples.
 
     Parameters
