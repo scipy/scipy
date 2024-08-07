@@ -71,6 +71,10 @@ def floor(x, /):
     return sparse.csr_array((np.floor(x.data), x.indices, x.indptr), shape=x.shape)
 
 def take(x, indices, /, *, axis: int | None = None):
+    if axis is None:
+        if x.ndim > 1:
+            raise ValueError("axis must be specified when input is > 1d")
+        return x[indices]
     idxer = [slice(None)] * x.ndim
     idxer[axis] = indices
     return x[tuple(idxer)]
