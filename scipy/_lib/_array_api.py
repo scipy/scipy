@@ -576,6 +576,14 @@ def xp_real(x: Array, /, *, xp: ModuleType | None = None) -> Array:
     xp = array_namespace(x) if xp is None else xp
     return xp.real(x) if xp.isdtype(x.dtype, 'complex floating') else x
 
+def xp_conj(x: Array, /, xp: ModuleType | None = None) -> Array:
+    """Work around torch.conj() being lazy"""
+    xp = array_namespace(x) if xp is None else xp
+    if is_torch(xp):
+        return xp.conj_physical(x)
+    else:
+        return xp.conj(x)
+
 
 def xp_take_along_axis(arr: Array,
                        indices: Array, /, *,

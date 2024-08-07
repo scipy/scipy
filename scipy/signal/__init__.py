@@ -317,6 +317,9 @@ from . import (
     spectral, signaltools, waveforms, wavelets, spline
 )
 
+# overwrite supported names/objects star-imported above
+from ._support_alternative_backends import *
+
 __all__ = [
     s for s in dir() if not s.startswith("_")
 ]
