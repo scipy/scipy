@@ -608,6 +608,7 @@ jobs:
     
     - name: Run array-api-tests against scipy sparse
       run: |
+        echo $GITHUB_WORKSPACE
         export ARRAY_API_TESTS_MODULE=scipy.sparse._array_api
         export ARRAY_API_REPO_PATH=$GITHUB_WORKSPACE/array-api
         cd array-api-tests
