@@ -126,11 +126,7 @@ def array_namespace(*arrays: Array) -> ModuleType:
 
     _arrays = compliance_scipy(_arrays)
 
-    # data-apis/array-api-compat#168
-    try: # return the wrapped namespace for NumPy arrays
-        return array_api_compat.array_namespace(*_arrays, use_compat=True)
-    except ValueError: # if the library is not wrapped, like array-api-strict
-        return array_api_compat.array_namespace(*_arrays, use_compat=None)
+    return array_api_compat.array_namespace(*_arrays)
 
 
 def _asarray(
