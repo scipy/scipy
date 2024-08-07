@@ -651,13 +651,13 @@ class TestTbtrs:
 
 
 
-@pytest.mark.parametrize('dtype', [np.float32, np.float64])
+@pytest.mark.parametrize('dtype', DTYPES)
 @pytest.mark.parametrize('norm', ['I', '1', 'O'])
 @pytest.mark.parametrize('uplo', ['U', 'L'])
 @pytest.mark.parametrize('diag', ['N', 'U'])
 @pytest.mark.parametrize('n', [3, 10])
 def test_trcon(dtype, norm, uplo, diag, n):
-    rng = np.random.default_rng(23498324)
+    rng = np.random.default_rng(76563598)
 
     A = rng.random(size=(n, n)) + rng.random(size=(n, n))*1j
     A = A.real if np.issubdtype(dtype, np.floating) else A
