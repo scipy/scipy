@@ -37,8 +37,8 @@ class CubatureResult:
     rtol: float
 
 
-def cub(f, a, b, rule="gk21", rtol=1e-05, atol=1e-08, max_subdivisions=10000,
-        args=(), kwargs=None):
+def cubature(f, a, b, rule="gk21", rtol=1e-05, atol=1e-08, max_subdivisions=10000,
+             args=(), kwargs=None):
     r"""
     Adaptive cubature of multidimensional array-valued function.
 
@@ -96,10 +96,10 @@ def cub(f, a, b, rule="gk21", rtol=1e-05, atol=1e-08, max_subdivisions=10000,
     corresponds to `GaussKronrod` rule with 21 nodes.
 
     >>> import numpy as np
-    >>> from scipy.integrate import cub
+    >>> from scipy.integrate import cubature
     >>> def f(x, n):
     ...    return x.reshape(-1, 1)**n  # Make sure x and n are broadcastable
-    >>> res = cub(
+    >>> res = cubature(
     ...     f,
     ...     a=[0],
     ...     b=[1],
@@ -120,7 +120,7 @@ def cub(f, a, b, rule="gk21", rtol=1e-05, atol=1e-08, max_subdivisions=10000,
     hybercube, ``[0, 1]^7``.
 
     >>> import numpy as np
-    >>> from scipy.integrate import cub
+    >>> from scipy.integrate import cubature
     >>> from scipy.integrate._rules import GenzMalikCub
     >>> def f(x, r, alphas):
     ...     # f(x) = cos(2*pi*r + alpha @ x)
@@ -130,7 +130,7 @@ def cub(f, a, b, rule="gk21", rtol=1e-05, atol=1e-08, max_subdivisions=10000,
     ...     x_reshaped = x.reshape(npoints, *([1]*(len(alphas.shape) - 1)), ndim)
     ...     return np.cos(2*np.pi*r + np.sum(alphas_reshaped * x_reshaped, axis=-1))
     >>> np.random.seed(1)
-    >>> res = cub(
+    >>> res = cubature(
     ...     f=f,
     ...     a=np.array([0, 0, 0, 0, 0, 0, 0]),
     ...     b=np.array([1, 1, 1, 1, 1, 1, 1]),
@@ -150,7 +150,7 @@ def cub(f, a, b, rule="gk21", rtol=1e-05, atol=1e-08, max_subdivisions=10000,
     Gauss-Legendre quadrature as an estimate for the error.
 
     >>> import numpy as np
-    >>> from scipy.integrate import cub
+    >>> from scipy.integrate import cubature
     >>> from scipy.integrate._rules import (
     ...     Rule, ProductFixed, GenzMalikCub, GaussLegendreQuad
     ... )
@@ -169,7 +169,7 @@ def cub(f, a, b, rule="gk21", rtol=1e-05, atol=1e-08, max_subdivisions=10000,
     ...             - gauss_3d.estimate(f, a, b, args, kwargs)
     ...         )
     >>> np.random.seed(1)
-    >>> cub(
+    >>> cubature(
     ...     f=f,
     ...     a=np.array([0, 0, 0]),
     ...     b=np.array([1, 1, 1]),

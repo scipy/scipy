@@ -42,7 +42,7 @@ class GaussKronrodQuad(NestedFixedRule):
     estimates will also be arrays, despite the fact that this is a 1D problem.
 
     >>> import numpy as np
-    >>> from scipy.integrate import cub
+    >>> from scipy.integrate import cubature
     >>> from scipy.integrate._rules import GaussKronrodQuad
     >>> def f(x):
     ...     return np.cos(x)
@@ -57,7 +57,7 @@ class GaussKronrodQuad(NestedFixedRule):
     estimates will also be floats.
 
     >>> import numpy as np
-    >>> from scipy.integrate import cub
+    >>> from scipy.integrate import cubature
     >>> from scipy.integrate._rules import (
     ...     ProductNestedFixed, GaussKronrodQuad
     ... )

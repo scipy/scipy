@@ -29,7 +29,7 @@ class Rule:
     error.
 
     >>> import numpy as np
-    >>> from scipy.integrate import cub
+    >>> from scipy.integrate import cubature
     >>> from scipy.integrate._rules import (
     ...     Rule, ProductFixed, GenzMalikCub, GaussLegendreQuad
     ... )
@@ -55,7 +55,7 @@ class Rule:
     ...             - gauss_3d.estimate(f, a, b, args, kwargs)
     ...         )
     >>> np.random.seed(1)
-    >>> res = cub(
+    >>> res = cubature(
     ...     f=f,
     ...     a=np.array([0, 0, 0]),
     ...     b=np.array([1, 1, 1]),
@@ -292,7 +292,7 @@ class NestedRule(Rule):
     information will be lost, and you won't be able to take the product of two
     `NestedRule`:
 
-    >>> from scipy.integrate import cub
+    >>> from scipy.integrate import cubature
     >>> from scipy.integrate._rules import (
     ...     GaussLegendreQuad, NestedRule, ProductFixed
     ... )
@@ -366,7 +366,7 @@ class NestedFixedRule(FixedRule):
     Examples
     --------
 
-    >>> from scipy.integrate import cub
+    >>> from scipy.integrate import cubature
     >>> from scipy.integrate._rules import (
     ...     GaussLegendreQuad, NestedFixedRule, ProductNestedFixed
     ... )
@@ -465,7 +465,7 @@ class ProductFixed(FixedRule):
     Evaluate a 2D integral by taking the product of two 1D rules:
 
     >>> import numpy as np
-    >>> from scipy.integrate import cub
+    >>> from scipy.integrate import cubature
     >>> from scipy.integrate._rules import (
     ...  ProductFixed, NewtonCotesQuad
     ... )
@@ -532,7 +532,7 @@ class ProductNestedFixed(NestedFixedRule):
     Evaluate a 2D integral by taking the product of two 1D rules:
 
     >>> import numpy as np
-    >>> from scipy.integrate import cub
+    >>> from scipy.integrate import cubature
     >>> from scipy.integrate._rules import (
     ...  ProductNestedFixed, GaussKronrodQuad
     ... )

@@ -13,7 +13,7 @@ from scipy.integrate._rules import (
     NewtonCotesQuad, GaussLegendreQuad, GaussKronrodQuad, GenzMalikCub
 )
 
-from scipy.integrate import cub
+from scipy.integrate import cubature
 
 
 def genz_malik_1980_f_1(x, r, alphas):
@@ -529,7 +529,7 @@ def test_cub_scalar_output(problem, quadrature, rtol, atol):
     else:
         raise "Unknown quadrature rule specified"
 
-    res = cub(
+    res = cubature(
         f,
         a,
         b,
@@ -624,7 +624,7 @@ def test_cub_array_output(problem, quadrature, shape, rtol, atol):
     a = np.array([0] * ndim)
     b = np.array([1] * ndim)
 
-    res = cub(
+    res = cubature(
         f,
         a,
         b,
@@ -713,7 +713,7 @@ def test_can_pass_str_to_cub(quadrature_str):
     b = np.array([2])
 
     exact = (2**(n+1)/(n+1)).reshape(-1, 1)
-    res = cub(f, a, b, quadrature_str)
+    res = cubature(f, a, b, quadrature_str)
 
     assert_allclose(
         res.estimate,
@@ -736,7 +736,7 @@ def test_can_pass_list_to_cub():
     b = [2]
 
     exact = (2**(n+1)/(n+1)).reshape(-1, 1)
-    res = cub(f, a, b)
+    res = cubature(f, a, b)
 
     assert_allclose(
         res.estimate,
@@ -769,7 +769,7 @@ def test_base_1d_quadratures_error_from_difference(quadrature_pair):
         lower=quadrature_pair[1]
     )
 
-    res = cub(f, a, b, rule, rtol=1e-1)
+    res = cubature(f, a, b, rule, rtol=1e-1)
 
     assert_allclose(
         res.estimate,
@@ -803,7 +803,7 @@ def test_cub_with_kwargs(rule):
     a = np.array([0, 0])
     b = np.array([1, 1])
 
-    res = cub(f, a, b, rule, kwargs={
+    res = cubature(f, a, b, rule, kwargs={
         "r": r,
         "alphas": alphas
     })
@@ -838,7 +838,7 @@ def test_stops_after_max_subdivisions():
     b = np.array([1])
     rule = BadError()
 
-    res = cub(
+    res = cubature(
         f,
         a,
         b,
@@ -904,7 +904,7 @@ def test_incompatible_dimension_raises_error(problem):
     a, b, rule = problem
 
     with pytest.raises(Exception, match="incompatible dimension"):
-        cub(f, a, b, rule)
+        cubature(f, a, b, rule)
 
 
 def _eval_indefinite_integral(F, a, b):

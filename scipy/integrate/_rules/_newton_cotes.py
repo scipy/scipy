@@ -24,7 +24,7 @@ class NewtonCotesQuad(FixedRule):
     estimates will also be arrays, despite the fact that this is a 1D problem.
 
     >>> import numpy as np
-    >>> from scipy.integrate import cub
+    >>> from scipy.integrate import cubature
     >>> from scipy.integrate._rules import NewtonCotesQuad
     >>> def f(x):
     ...     return np.cos(x)
@@ -39,7 +39,7 @@ class NewtonCotesQuad(FixedRule):
     estimates will also be floats.
 
     >>> import numpy as np
-    >>> from scipy.integrate import cub
+    >>> from scipy.integrate import cubature
     >>> from scipy.integrate._rules import ProductFixed, NewtonCotesQuad
     >>> def f(x):
     ...     # f(x) = cos(x_1) + cos(x_2)

@@ -38,7 +38,7 @@ class GenzMalikCub(NestedFixedRule):
     Evaluate a 3D integral:
 
     >>> import numpy as np
-    >>> from scipy.integrate import cub
+    >>> from scipy.integrate import cubature
     >>> from scipy.integrate._rules import GenzMalikCub
     >>> def f(x):
     ...     # f(x) = cos(x_1) + cos(x_2) + cos(x_3)
