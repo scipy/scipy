@@ -36,7 +36,7 @@ from scipy.optimize import _moduleTNC as moduleTNC
 from ._optimize import (MemoizeJac, OptimizeResult, _check_unknown_options,
                        _prepare_scalar_function)
 from ._constraints import old_bound_to_new
-from scipy._lib._array_api import atleast_nd, array_namespace
+from scipy._lib._array_api import xp_atleast_nd, array_namespace
 
 from numpy import inf, array, zeros
 
@@ -356,7 +356,7 @@ def _minimize_tnc(fun, x0, args=(), jac=None, bounds=None,
     pgtol = gtol
 
     xp = array_namespace(x0)
-    x0 = atleast_nd(x0, ndim=1, xp=xp)
+    x0 = xp_atleast_nd(x0, ndim=1, xp=xp)
     dtype = xp.float64
     if xp.isdtype(x0.dtype, "real floating"):
         dtype = x0.dtype

@@ -42,7 +42,6 @@ from scipy.optimize import milp, LinearConstraint
 from scipy._lib._util import (check_random_state, _get_nan,
                               _rename_parameter, _contains_nan,
                               AxisError, _lazywhere)
-from scipy._lib._array_api import _asarray as xp_asarray
 
 import scipy.special as special
 # Import unused here but needs to stay until end of deprecation periode
@@ -73,9 +72,9 @@ from scipy._lib._util import normalize_axis_index
 from scipy._lib._array_api import (
     _asarray,
     array_namespace,
-    atleast_nd,
+    xp_atleast_nd,
     is_numpy,
-    size as xp_size,
+    xp_size,
     xp_moveaxis_to_end,
     xp_sign,
     xp_vector_norm,
@@ -144,7 +143,7 @@ def _chk2_asarray(a, b, axis):
 
 def _convert_common_float(*arrays, xp=None):
     xp = array_namespace(*arrays) if xp is None else xp
-    arrays = [xp_asarray(array, subok=True) for array in arrays]
+    arrays = [_asarray(array, subok=True) for array in arrays]
     dtypes = [(xp.asarray(1.).dtype if xp.isdtype(array.dtype, 'integral')
                else array.dtype) for array in arrays]
     dtype = xp.result_type(*dtypes)
@@ -2594,7 +2593,7 @@ def sem(a, axis=0, ddof=1, nan_policy='propagate'):
     if axis is None:
         a = xp.reshape(a, (-1,))
         axis = 0
-    a = atleast_nd(a, ndim=1, xp=xp)
+    a = xp_atleast_nd(a, ndim=1, xp=xp)
     n = a.shape[axis]
     s = xp.std(a, axis=axis, correction=ddof) / n**0.5
     return s
