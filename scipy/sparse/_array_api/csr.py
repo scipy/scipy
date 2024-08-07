@@ -203,9 +203,6 @@ def bitwise_invert(x, /):
 def bitwise_or(x1, x2, /):
     binopt(x1, x2, np.bitwise_or)
 
-def bitwise_or(x1, x2, /):
-    binopt(x1, x2, np.bitwise_xor)
-
 def bitwise_and(x1, x2, /):
     binopt(x1, x2, np.bitwise_and)
 
