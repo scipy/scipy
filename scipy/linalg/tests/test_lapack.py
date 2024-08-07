@@ -650,6 +650,40 @@ class TestTbtrs:
         assert_raises(Exception, tbtrs, ab, b)
 
 
+
+@pytest.mark.parametrize('dtype', [np.float32, np.float64])
+@pytest.mark.parametrize('norm', ['I', '1', 'O'])
+@pytest.mark.parametrize('uplo', ['U', 'L'])
+@pytest.mark.parametrize('diag', ['N', 'U'])
+@pytest.mark.parametrize('n', [3, 10])
+def test_trcon(dtype, norm, uplo, diag, n):
+    rng = np.random.default_rng(23498324)
+
+    A = rng.random(size=(n, n)) + rng.random(size=(n, n))*1j
+    A = A.real if np.issubdtype(dtype, np.floating) else A
+    A = np.triu(A) if uplo == 'U' else np.tril(A)
+    if diag == 'U':
+        i = np.arange(n)
+        A[i, i] = 1
+    A = A.astype(dtype)
+
+    trcon = get_lapack_funcs('trcon', (A,))
+    res, _ = trcon(A, norm=norm, uplo=uplo, diag=diag)
+
+    if norm == 'I':
+        norm_A = np.linalg.norm(A, ord=np.inf)
+        norm_inv_A = np.linalg.norm(np.linalg.inv(A), ord=np.inf)
+        ref = 1 / (norm_A * norm_inv_A)
+    else:
+        anorm = np.abs(A).sum(axis=0).max()
+        gecon, getrf = get_lapack_funcs(('gecon', 'getrf'), (A,))
+        lu, ipvt, info = getrf(A)
+        ref, _ = gecon(lu, anorm, norm=norm)
+
+    rtol = np.finfo(dtype).eps**0.75
+    assert_allclose(res, ref, rtol=rtol)
+
+
 def test_lartg():
     for dtype in 'fdFD':
         lartg = get_lapack_funcs('lartg', dtype=dtype)
