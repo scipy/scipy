@@ -2,21 +2,6 @@ from .utils import fill_array_with_not_implemented, fill_linalg_with_not_impleme
 
 from .csr import *
 from ..import linalg
-from numpy.array_api import(
-    bool,
-    int8,
-    int16,
-    int32,
-    int64,
-    uint8,
-    uint16,
-    uint32,
-    uint64,
-    float32,
-    float64,
-    complex64,
-    complex128,
-)
 from numpy import (
     e,
     pi,
@@ -57,13 +42,25 @@ from numpy import (
     remainder,
     round,
     sign,
-    sin,
     sinh,
     square,
     sqrt,
     tan,
     tanh,
     trunc,
+    bool,
+    int8,
+    int16,
+    int32,
+    int64,
+    uint8,
+    uint16,
+    uint32,
+    uint64,
+    float32,
+    float64,
+    complex64,
+    complex128,
 )
 from scipy.sparse import csr_array
 
