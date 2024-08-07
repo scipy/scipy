@@ -500,7 +500,20 @@ class BSpline:
 
         out = np.empty((len(x), prod(self.c.shape[1:])), dtype=self.c.dtype)
         self._ensure_c_contiguous()
-        self._evaluate(x, nu, extrapolate, out)
+
+        # if self.c is complex, so is `out`; cython code in _bspl.pyx expectes
+        # floats though, so make a view---this expands the last axis, and
+        # the view is C contiguous if the original is.
+        # if c.dtype is complex of shape (n,), c.view(float).shape == (2*n,)
+        # if c.dtype is complex of shape (n, m), c.view(float).shape == (n, 2*m)
+
+        cc = self.c.view(float)
+        if self.c.ndim == 1 and self.c.dtype.kind == 'c':
+            cc = cc.reshape(self.c.shape[0], 2)
+
+        _bspl.evaluate_spline(self.t, cc.reshape(cc.shape[0], -1),
+                              self.k, x, nu, extrapolate, out.view(float))
+
         out = out.reshape(x_shape + self.c.shape[1:])
         if self.axis != 0:
             # transpose to move the calculated values to the interpolation axis
@@ -508,10 +521,6 @@ class BSpline:
             l = l[x_ndim:x_ndim+self.axis] + l[:x_ndim] + l[x_ndim+self.axis:]
             out = out.transpose(l)
         return out
-
-    def _evaluate(self, xp, nu, extrapolate, out):
-        _bspl.evaluate_spline(self.t, self.c.reshape(self.c.shape[0], -1),
-                              self.k, xp, nu, extrapolate, out)
 
     def _ensure_c_contiguous(self):
         """
@@ -802,8 +811,8 @@ class BSpline:
         """
         from ._cubic import CubicSpline
         if not isinstance(pp, CubicSpline):
-            raise NotImplementedError("Only CubicSpline objects are accepted "
-                                      "for now. Got %s instead." % type(pp))
+            raise NotImplementedError(f"Only CubicSpline objects are accepted "
+                                      f"for now. Got {type(pp)} instead.")
         x = pp.x
         coef = pp.c
         k = pp.c.shape[0] - 1
@@ -816,7 +825,7 @@ class BSpline:
         elif bc_type == 'periodic':
             t = _periodic_knots(x, k)
         else:
-            raise TypeError('Unknown boundary condition: %s' % bc_type)
+            raise TypeError(f'Unknown boundary condition: {bc_type}')
 
         nod = t.shape[0] - (n + k + 1)  # number of derivatives at the ends
         c = np.zeros(n + nod, dtype=pp.c.dtype)
@@ -905,19 +914,82 @@ class BSpline:
         if m <= 0:
             raise ValueError(f"`m` must be positive, got {m = }.")
 
-        extradim = self.c.shape[1:]
-        num_extra = prod(extradim)
-
         tt = self.t.copy()
         cc = self.c.copy()
-        cc = cc.reshape(-1, num_extra)
 
         for _ in range(m):
-            tt, cc = _bspl.insert(x, tt, cc, self.k, self.extrapolate == "periodic")
+            tt, cc = _insert(x, tt, cc, self.k, self.extrapolate == "periodic")
+        return self.construct_fast(tt, cc, self.k, self.extrapolate, self.axis)
 
-        return self.construct_fast(
-            tt, cc.reshape((-1,) + extradim), self.k, self.extrapolate, self.axis
-        )
+
+def _insert(xval, t, c, k, periodic=False):
+    """Insert a single knot at `xval`."""
+    #
+    # This is a port of the FORTRAN `insert` routine by P. Dierckx,
+    # https://github.com/scipy/scipy/blob/maintenance/1.11.x/scipy/interpolate/fitpack/insert.f
+    # which carries the following comment:
+    #
+    # subroutine insert inserts a new knot x into a spline function s(x)
+    # of degree k and calculates the b-spline representation of s(x) with
+    # respect to the new set of knots. in addition, if iopt.ne.0, s(x)
+    # will be considered as a periodic spline with period per=t(n-k)-t(k+1)
+    # satisfying the boundary constraints
+    #      t(i+n-2*k-1) = t(i)+per  ,i=1,2,...,2*k+1
+    #      c(i+n-2*k-1) = c(i)      ,i=1,2,...,k
+    # in that case, the knots and b-spline coefficients returned will also
+    # satisfy these boundary constraints, i.e.
+    #      tt(i+nn-2*k-1) = tt(i)+per  ,i=1,2,...,2*k+1
+    #      cc(i+nn-2*k-1) = cc(i)      ,i=1,2,...,k
+    interval = _bspl._find_interval(t, k, xval, k, False)
+    if interval < 0:
+        # extrapolated values are guarded for in BSpline.insert_knot
+        raise ValueError(f"Cannot insert the knot at {xval}.")
+
+    # super edge case: a knot with multiplicity > k+1
+    # see https://github.com/scipy/scipy/commit/037204c3e91
+    if t[interval] == t[interval + k + 1]:
+        interval -= 1
+
+    if periodic:
+        if (interval + 1 <= 2*k) and (interval + 1 >= t.shape[0] - 2*k):
+            # in case of a periodic spline (iopt.ne.0) there must be
+            # either at least k interior knots t(j) satisfying t(k+1)<t(j)<=x
+            # or at least k interior knots t(j) satisfying x<=t(j)<t(n-k)
+            raise ValueError("Not enough internal knots.")
+
+    # knots
+    tt = np.r_[t[:interval+1], xval, t[interval+1:]]
+
+    newshape = (c.shape[0] + 1,) + c.shape[1:]
+    cc = np.zeros(newshape, dtype=c.dtype)
+
+    # coefficients
+    cc[interval+1:, ...] = c[interval:, ...]
+
+    for i in range(interval, interval-k, -1):
+        fac = (xval - tt[i]) / (tt[i+k+1] - tt[i])
+        cc[i, ...] = fac*c[i, ...] + (1. - fac)*c[i-1, ...]
+
+    cc[:interval - k+1, ...] = c[:interval - k+1, ...]
+
+    if periodic:
+        # c   incorporate the boundary conditions for a periodic spline.
+        n = tt.shape[0]
+        nk = n - k - 1
+        n2k = n - 2*k - 1
+        T = tt[nk] - tt[k]   # period
+
+        if interval >= nk - k:
+            # adjust the left-hand boundary knots & coefs
+            tt[:k] = tt[nk - k:nk] - T
+            cc[:k, ...] = cc[n2k:n2k + k, ...]
+
+        if interval <= 2*k-1:
+            # adjust the right-hand boundary knots & coefs
+            tt[n-k:] = tt[k+1:k+1+k] + T
+            cc[n2k:n2k + k, ...] = cc[:k, ...]
+
+    return tt, cc
 
 
 #################################
@@ -929,7 +1001,7 @@ def _not_a_knot(x, k):
     cf de Boor, XIII(12)."""
     x = np.asarray(x)
     if k % 2 != 1:
-        raise ValueError("Odd degree for now only. Got %s." % k)
+        raise ValueError(f"Odd degree for now only. Got {k}.")
 
     m = (k - 1) // 2
     t = x[m+1:-m-1]
@@ -949,7 +1021,7 @@ def _convert_string_aliases(deriv, target_shape):
         elif deriv == "natural":
             deriv = [(2, np.zeros(target_shape))]
         else:
-            raise ValueError("Unknown boundary condition : %s" % deriv)
+            raise ValueError(f"Unknown boundary condition : {deriv}")
     return deriv
 
 
@@ -1201,7 +1273,8 @@ def _make_periodic_spline(x, y, t, k, axis):
 
     # `offset` is made to shift all the non-zero elements to the end of the
     # matrix
-    _bspl._colloc(x, t, k, ab, offset=k)
+    # NB: drop the last element of `x` because `x[0] = x[-1] + T` & `y[0] == y[-1]`
+    _bspl._colloc(x[:-1], t, k, ab, offset=k)
 
     # remove zeros before the matrix
     ab = ab[-k - (k + 1) % 2:, :]
@@ -1364,7 +1437,7 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
         try:
             deriv_l, deriv_r = bc_type
         except TypeError as e:
-            raise ValueError("Unknown boundary condition: %s" % bc_type) from e
+            raise ValueError(f"Unknown boundary condition: {bc_type}") from e
 
     y = np.asarray(y)
 
@@ -1439,7 +1512,7 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
         raise ValueError('Got %d knots, need at least %d.' %
                          (t.size, x.size + k + 1))
     if (x[0] < t[k]) or (x[-1] > t[-k]):
-        raise ValueError('Out of bounds w/ x = %s.' % x)
+        raise ValueError(f'Out of bounds w/ x = {x}.')
 
     if bc_type == 'periodic':
         return _make_periodic_spline(x, y, t, k, axis)
@@ -1640,23 +1713,37 @@ def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True):
     if x.size != y.shape[0]:
         raise ValueError(f'Shapes of x {x.shape} and y {y.shape} are incompatible')
     if k > 0 and np.any((x < t[k]) | (x > t[-k])):
-        raise ValueError('Out of bounds w/ x = %s.' % x)
+        raise ValueError(f'Out of bounds w/ x = {x}.')
     if x.size != w.size:
         raise ValueError(f'Shapes of x {x.shape} and w {w.shape} are incompatible')
 
     # number of coefficients
     n = t.size - k - 1
 
+    # complex y: view as float, preserve the length
+    was_complex =  y.dtype.kind == 'c'
+    yy = y.view(float)
+    if was_complex and y.ndim == 1:
+        yy = yy.reshape(y.shape[0], 2)
+
+    # multiple r.h.s
+    extradim = prod(yy.shape[1:])
+    yy = yy.reshape(-1, extradim)
+
     # construct A.T @ A and rhs with A the collocation matrix, and
     # rhs = A.T @ y for solving the LSQ problem  ``A.T @ A @ c = A.T @ y``
     lower = True
-    extradim = prod(y.shape[1:])
     ab = np.zeros((k+1, n), dtype=np.float64, order='F')
-    rhs = np.zeros((n, extradim), dtype=y.dtype, order='F')
+    rhs = np.zeros((n, extradim), dtype=np.float64)
     _bspl._norm_eq_lsq(x, t, k,
-                       y.reshape(-1, extradim),
+                       yy,
                        w,
                        ab, rhs)
+
+    # undo complex -> float and flattening the trailing dims
+    if was_complex:
+        rhs = rhs.view(complex)
+
     rhs = rhs.reshape((n,) + y.shape[1:])
 
     # have observation matrix & rhs, can solve the LSQ problem

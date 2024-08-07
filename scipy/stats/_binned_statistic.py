@@ -733,8 +733,8 @@ def _bin_edges(sample, bins=None, range=None):
         for i in builtins.range(Ndim):
             if range[i][1] < range[i][0]:
                 raise ValueError(
-                    "In {}range, start must be <= stop".format(
-                        f"dimension {i + 1} of " if Ndim > 1 else ""))
+                    f"In {f'dimension {i + 1} of ' if Ndim > 1 else ''}range,"
+                    " start must be <= stop")
             smin[i], smax[i] = range[i]
 
     # Make sure the bins have a finite width.

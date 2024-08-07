@@ -13,6 +13,7 @@ import hypothesis
 from scipy._lib._fpumode import get_fpu_mode
 from scipy._lib._testutils import FPUModeChangeWarning
 from scipy._lib._array_api import SCIPY_ARRAY_API, SCIPY_DEVICE
+from scipy._lib import _pep440
 
 try:
     from scipy_doctest.conftest import dt_config
@@ -41,7 +42,8 @@ def pytest_configure(config):
         config.addinivalue_line(
             "markers", 'fail_slow: mark a test for a non-default timeout failure')
     config.addinivalue_line("markers",
-        "skip_xp_backends(*backends, reasons=None, np_only=False, cpu_only=False): "
+        "skip_xp_backends(*backends, reasons=None, np_only=False, cpu_only=False, "
+        "exceptions=None): "
         "mark the desired skip configuration for the `skip_xp_backends` fixture.")
 
 
@@ -117,6 +119,11 @@ if SCIPY_ARRAY_API and isinstance(SCIPY_ARRAY_API, str):
     try:
         import array_api_strict
         xp_available_backends.update({'array_api_strict': array_api_strict})
+        if _pep440.parse(array_api_strict.__version__) < _pep440.Version('2.0'):
+            raise ImportError("array-api-strict must be >= version 2.0")
+        array_api_strict.set_array_api_strict_flags(
+            api_version='2023.12'
+        )
     except ImportError:
         pass
 
@@ -196,6 +203,9 @@ def skip_xp_backends(xp, request):
         There is no need to provide any ``backends`` in this case,
         but any ``backends`` will also be skipped on the CPU.
         Default: ``False``.
+    exceptions : list, optional
+        A list of exceptions for use with `cpu_only`. This should be provided
+        when delegation is implemented for some, but not all, non-CPU backends.
     """
     if "skip_xp_backends" not in request.keywords:
         return
@@ -203,21 +213,34 @@ def skip_xp_backends(xp, request):
     kwargs = request.keywords["skip_xp_backends"].kwargs
     np_only = kwargs.get("np_only", False)
     cpu_only = kwargs.get("cpu_only", False)
+    exceptions = kwargs.get("exceptions", None)
+    
+    # input validation
+    if np_only and cpu_only:
+        raise ValueError("at most one of `np_only` and `cpu_only` should be provided")
+    if exceptions and not cpu_only:
+        raise ValueError("`exceptions` is only valid alongside `cpu_only`")
+
     if np_only:
         reasons = kwargs.get("reasons", ["do not run with non-NumPy backends."])
+        if len(reasons) > 1:
+            raise ValueError("please provide a singleton list to `reasons` "
+                             "when using `np_only`")
         reason = reasons[0]
         if xp.__name__ != 'numpy':
             pytest.skip(reason=reason)
         return
     if cpu_only:
-        reason = "do not run with `SCIPY_ARRAY_API` set and not on CPU"
+        reason = ("no array-agnostic implementation or delegation available "
+                  "for this backend and device")
+        exceptions = [] if exceptions is None else exceptions
         if SCIPY_ARRAY_API and SCIPY_DEVICE != 'cpu':
-            if xp.__name__ == 'cupy':
+            if xp.__name__ == 'cupy' and 'cupy' not in exceptions:
                 pytest.skip(reason=reason)
-            elif xp.__name__ == 'torch':
+            elif xp.__name__ == 'torch' and 'torch' not in exceptions:
                 if 'cpu' not in xp.empty(0).device.type:
                     pytest.skip(reason=reason)
-            elif xp.__name__ == 'jax.numpy':
+            elif xp.__name__ == 'jax.numpy' and 'jax.numpy' not in exceptions:
                 for d in xp.empty(0).devices():
                     if 'cpu' not in d.device_kind:
                         pytest.skip(reason=reason)
@@ -347,7 +370,6 @@ if HAVE_SCPDT:
                     warnings.simplefilter('error', Warning)
                     yield
 
-
     dt_config.user_context_mgr = warnings_errors_and_rng
     dt_config.skiplist = set([
         'scipy.linalg.LinAlgError',     # comes from numpy
@@ -389,6 +411,15 @@ if HAVE_SCPDT:
         "scipy.optimize.cython_optimize",
         "scipy.test",
         "scipy.show_config",
+        # equivalent to "pytest --ignore=path/to/file"
+        "scipy/special/_precompute",
+        "scipy/interpolate/_interpnd_info.py",
+        "scipy/_lib/array_api_compat",
+        "scipy/_lib/highs",
+        "scipy/_lib/unuran",
+        "scipy/_lib/_gcutils.py",
+        "scipy/_lib/doccer.py",
+        "scipy/_lib/_uarray",
     ]
 
     dt_config.pytest_extra_xfail = {

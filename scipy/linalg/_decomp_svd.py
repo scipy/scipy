@@ -44,8 +44,6 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
         to compute the SVD. MATLAB and Octave use the ``'gesvd'`` approach.
         Default is ``'gesdd'``.
 
-        .. versionadded:: 0.18
-
     Returns
     -------
     U : ndarray
@@ -347,7 +345,8 @@ def orth(A, rcond=None):
     return Q
 
 
-def null_space(A, rcond=None):
+def null_space(A, rcond=None, *, overwrite_a=False, check_finite=True,
+               lapack_driver='gesdd'):
     """
     Construct an orthonormal basis for the null space of A using SVD
 
@@ -359,6 +358,18 @@ def null_space(A, rcond=None):
         Relative condition number. Singular values ``s`` smaller than
         ``rcond * max(s)`` are considered zero.
         Default: floating point eps * max(M,N).
+    overwrite_a : bool, optional
+        Whether to overwrite `a`; may improve performance.
+        Default is False.
+    check_finite : bool, optional
+        Whether to check that the input matrix contains only finite numbers.
+        Disabling may give a performance gain, but may result in problems
+        (crashes, non-termination) if the inputs do contain infinities or NaNs.
+    lapack_driver : {'gesdd', 'gesvd'}, optional
+        Whether to use the more efficient divide-and-conquer approach
+        (``'gesdd'``) or general rectangular approach (``'gesvd'``)
+        to compute the SVD. MATLAB and Octave use the ``'gesvd'`` approach.
+        Default is ``'gesdd'``.
 
     Returns
     -------
@@ -401,7 +412,8 @@ def null_space(A, rcond=None):
            [  6.92087741e-17,   1.00000000e+00]])
 
     """
-    u, s, vh = svd(A, full_matrices=True)
+    u, s, vh = svd(A, full_matrices=True, overwrite_a=overwrite_a,
+                   check_finite=check_finite, lapack_driver=lapack_driver)
     M, N = u.shape[0], vh.shape[1]
     if rcond is None:
         rcond = np.finfo(s.dtype).eps * max(M, N)

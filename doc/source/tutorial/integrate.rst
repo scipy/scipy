@@ -466,7 +466,7 @@ has an exact solution using the matrix exponential:
 However, in this case, :math:`\mathbf{A}\left(t\right)` and its integral do not commute.
 
 This differential equation can be solved using the function :obj:`solve_ivp`.
-It requires the derivative, *fprime*, the time span `[t_start, t_end]`
+It requires the derivative, *fprime*, the time span ``[t_start, t_end]``
 and the initial conditions vector, *y0*, as input arguments and returns
 an object whose *y* field is an array with consecutive solution values as
 columns. The initial conditions are therefore given in the first output column.

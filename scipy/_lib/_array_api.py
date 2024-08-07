@@ -155,7 +155,7 @@ def _asarray(
     """
     if xp is None:
         xp = array_namespace(array)
-    if xp.__name__ in {"numpy", "scipy._lib.array_api_compat.numpy"}:
+    if is_numpy(xp):
         # Use NumPy API to support order
         if copy is True:
             array = np.array(array, order=order, dtype=dtype, subok=subok)
@@ -163,10 +163,6 @@ def _asarray(
             array = np.asanyarray(array, order=order, dtype=dtype)
         else:
             array = np.asarray(array, order=order, dtype=dtype)
-
-        # At this point array is a NumPy ndarray. We convert it to an array
-        # container that is consistent with the input's namespace.
-        array = xp.asarray(array)
     else:
         try:
             array = xp.asarray(array, dtype=dtype, copy=copy)
@@ -229,16 +225,23 @@ def is_cupy(xp: ModuleType) -> bool:
 def is_torch(xp: ModuleType) -> bool:
     return xp.__name__ in ('torch', 'scipy._lib.array_api_compat.torch')
 
+
 def is_jax(xp):
     return xp.__name__ in ('jax.numpy', 'jax.experimental.array_api')
 
 
+def is_array_api_strict(xp):
+    return xp.__name__ == 'array_api_strict'
+
+
 def _strict_check(actual, desired, xp,
-                  check_namespace=True, check_dtype=True, check_shape=True):
+                  check_namespace=True, check_dtype=True, check_shape=True,
+                  allow_0d=False):
     __tracebackhide__ = True  # Hide traceback for py.test
     if check_namespace:
         _assert_matching_namespace(actual, desired)
 
+    was_scalar = np.isscalar(desired)
     desired = xp.asarray(desired)
 
     if check_dtype:
@@ -248,7 +251,7 @@ def _strict_check(actual, desired, xp,
     if check_shape:
         _msg = f"Shapes do not match.\nActual: {actual.shape}\nDesired: {desired.shape}"
         assert actual.shape == desired.shape, _msg
-        _check_scalar(actual, desired, xp)
+        _check_scalar(actual, desired, xp, allow_0d=allow_0d, was_scalar=was_scalar)
 
     desired = xp.broadcast_to(desired, actual.shape)
     return desired
@@ -266,7 +269,7 @@ def _assert_matching_namespace(actual, desired):
         assert arr_space == desired_space, _msg
 
 
-def _check_scalar(actual, desired, xp):
+def _check_scalar(actual, desired, xp, *, allow_0d, was_scalar):
     __tracebackhide__ = True  # Hide traceback for py.test
     # Shape check alone is sufficient unless desired.shape == (). Also,
     # only NumPy distinguishes between scalars and arrays.
@@ -285,19 +288,31 @@ def _check_scalar(actual, desired, xp):
     # array for `desired`, we would typically want the type of `actual` to be
     # the type of `desired[()]`. If the developer wants to override this
     # behavior, they can set `check_shape=False`.
-    desired = desired[()]
-    _msg = f"Types do not match:\n Actual: {type(actual)}\n Desired: {type(desired)}"
-    assert (xp.isscalar(actual) and xp.isscalar(desired)
-            or (not xp.isscalar(actual) and not xp.isscalar(desired))), _msg
+    if was_scalar:
+        desired = desired[()]
+
+    if allow_0d:
+        _msg = ("Types do not match:\n Actual: "
+                f"{type(actual)}\n Desired: {type(desired)}")
+        assert ((xp.isscalar(actual) and xp.isscalar(desired))
+                or (not xp.isscalar(actual) and not xp.isscalar(desired))), _msg
+    else:
+        _msg = ("Result is a NumPy 0d array. Many SciPy functions intend to follow "
+                "the convention of many NumPy functions, returning a scalar when a "
+                "0d array would be correct. `xp_assert_` functions err on the side of "
+                "caution and do not accept 0d arrays by default. If the correct result "
+                "may be a 0d NumPy array, pass `allow_0d=True`.")
+        assert xp.isscalar(actual), _msg
 
 
 def xp_assert_equal(actual, desired, check_namespace=True, check_dtype=True,
-                    check_shape=True, err_msg='', xp=None):
+                    check_shape=True, allow_0d=False, err_msg='', xp=None):
     __tracebackhide__ = True  # Hide traceback for py.test
     if xp is None:
         xp = array_namespace(actual)
     desired = _strict_check(actual, desired, xp, check_namespace=check_namespace,
-                            check_dtype=check_dtype, check_shape=check_shape)
+                            check_dtype=check_dtype, check_shape=check_shape,
+                            allow_0d=allow_0d)
     if is_cupy(xp):
         return xp.testing.assert_array_equal(actual, desired, err_msg=err_msg)
     elif is_torch(xp):
@@ -311,12 +326,14 @@ def xp_assert_equal(actual, desired, check_namespace=True, check_dtype=True,
 
 
 def xp_assert_close(actual, desired, rtol=None, atol=0, check_namespace=True,
-                    check_dtype=True, check_shape=True, err_msg='', xp=None):
+                    check_dtype=True, check_shape=True, allow_0d=False,
+                    err_msg='', xp=None):
     __tracebackhide__ = True  # Hide traceback for py.test
     if xp is None:
         xp = array_namespace(actual)
     desired = _strict_check(actual, desired, xp, check_namespace=check_namespace,
-                            check_dtype=check_dtype, check_shape=check_shape)
+                            check_dtype=check_dtype, check_shape=check_shape,
+                            allow_0d=allow_0d)
 
     floating = xp.isdtype(actual.dtype, ('real floating', 'complex floating'))
     if rtol is None and floating:
@@ -340,12 +357,13 @@ def xp_assert_close(actual, desired, rtol=None, atol=0, check_namespace=True,
 
 
 def xp_assert_less(actual, desired, check_namespace=True, check_dtype=True,
-                   check_shape=True, err_msg='', verbose=True, xp=None):
+                   check_shape=True, allow_0d=False, err_msg='', verbose=True, xp=None):
     __tracebackhide__ = True  # Hide traceback for py.test
     if xp is None:
         xp = array_namespace(actual)
     desired = _strict_check(actual, desired, xp, check_namespace=check_namespace,
-                            check_dtype=check_dtype, check_shape=check_shape)
+                            check_dtype=check_dtype, check_shape=check_shape,
+                            allow_0d=allow_0d)
     if is_cupy(xp):
         return xp.testing.assert_array_less(actual, desired,
                                             err_msg=err_msg, verbose=verbose)
@@ -357,6 +375,24 @@ def xp_assert_less(actual, desired, check_namespace=True, check_dtype=True,
     # JAX uses `np.testing`
     return np.testing.assert_array_less(actual, desired,
                                         err_msg=err_msg, verbose=verbose)
+
+
+def assert_array_almost_equal(actual, desired, decimal=6, *args, **kwds):
+    """Backwards compatible replacement. In new code, use xp_assert_close instead.
+    """
+    rtol, atol = 0, 1.5*10**(-decimal)
+    return xp_assert_close(actual, desired,
+                           atol=atol, rtol=rtol, check_dtype=False, check_shape=False,
+                           *args, **kwds)
+
+
+def assert_almost_equal(actual, desired, decimal=7, *args, **kwds):
+    """Backwards compatible replacement. In new code, use xp_assert_close instead.
+    """
+    rtol, atol = 0, 1.5*10**(-decimal)
+    return xp_assert_close(actual, desired,
+                           atol=atol, rtol=rtol, check_dtype=False, check_shape=False,
+                           *args, **kwds)
 
 
 def cov(x: Array, *, xp: ModuleType | None = None) -> Array:
@@ -428,17 +464,16 @@ def get_xp_devices(xp: ModuleType) -> list[str] | list[None]:
 
     # given namespace is not known to have a list of available devices;
     # return `[None]` so that one can use this in tests for `device=None`.
-    return [None] 
+    return [None]
 
 
-def scipy_namespace_for(xp: ModuleType) -> ModuleType:
+def scipy_namespace_for(xp: ModuleType) -> ModuleType | None:
+    """Return the `scipy`-like namespace of a non-NumPy backend
+
+    That is, return the namespace corresponding with backend `xp` that contains
+    `scipy` sub-namespaces like `linalg` and `special`. If no such namespace
+    exists, return ``None``. Useful for dispatching.
     """
-    Return the `scipy` namespace for alternative backends, where it exists,
-    such as `cupyx.scipy` and `jax.scipy`. Useful for ad hoc dispatching.
-
-    Default: return `scipy` (this package).
-    """
-
 
     if is_cupy(xp):
         import cupyx  # type: ignore[import-not-found,import-untyped]
@@ -448,43 +483,10 @@ def scipy_namespace_for(xp: ModuleType) -> ModuleType:
         import jax  # type: ignore[import-not-found]
         return jax.scipy
 
-    import scipy
-    return scipy
+    if is_torch(xp):
+        return xp
 
-
-# temporary substitute for xp.minimum, which is not yet in all backends
-# or covered by array_api_compat.
-def xp_minimum(x1: Array, x2: Array, /) -> Array:
-    # xp won't be passed in because it doesn't need to be passed in to xp.minimum
-    xp = array_namespace(x1, x2)
-    if hasattr(xp, 'minimum'):
-        return xp.minimum(x1, x2)
-    x1, x2 = xp.broadcast_arrays(x1, x2)
-    i = (x2 < x1) | xp.isnan(x2)
-    res = xp.where(i, x2, x1)
-    return res[()] if res.ndim == 0 else res
-
-
-# temporary substitute for xp.clip, which is not yet in all backends
-# or covered by array_api_compat.
-def xp_clip(
-        x: Array,
-        /,
-        min: int | float | Array | None = None,
-        max: int | float | Array | None = None,
-        *,
-        xp: ModuleType | None = None) -> Array:
-    xp = array_namespace(x) if xp is None else xp
-    a, b = xp.asarray(min, dtype=x.dtype), xp.asarray(max, dtype=x.dtype)
-    if hasattr(xp, 'clip'):
-        return xp.clip(x, a, b)
-    x, a, b = xp.broadcast_arrays(x, a, b)
-    y = xp.asarray(x, copy=True)
-    ia = y < a
-    y[ia] = a[ia]
-    ib = y > b
-    y[ib] = b[ib]
-    return y[()] if y.ndim == 0 else y
+    return None
 
 
 # temporary substitute for xp.moveaxis, which is not yet in all backends
@@ -516,9 +518,65 @@ def xp_sign(x: Array, /, *, xp: ModuleType | None = None) -> Array:
     xp = array_namespace(x) if xp is None else xp
     if is_numpy(xp):  # only NumPy implements the special cases correctly
         return xp.sign(x)
-    sign = xp.full_like(x, xp.nan)
+    sign = xp.full_like(x, xp.asarray(xp.nan))
     one = xp.asarray(1, dtype=x.dtype)
     sign = xp.where(x > 0, one, sign)
     sign = xp.where(x < 0, -one, sign)
     sign = xp.where(x == 0, 0*one, sign)
     return sign
+
+# maybe use `scipy.linalg` if/when array API support is added
+def xp_vector_norm(x: Array, /, *,
+                   axis: int | tuple[int] | None = None,
+                   keepdims: bool = False,
+                   ord: int | float = 2,
+                   xp: ModuleType | None = None) -> Array:
+    xp = array_namespace(x) if xp is None else xp
+
+    if SCIPY_ARRAY_API:
+        # check for optional `linalg` extension
+        if hasattr(xp, 'linalg'):
+            return xp.linalg.vector_norm(x, axis=axis, keepdims=keepdims, ord=ord)
+        else:
+            if ord != 2:
+                raise ValueError(
+                    "only the Euclidean norm (`ord=2`) is currently supported in "
+                    "`xp_vector_norm` for backends not implementing the `linalg` "
+                    "extension."
+                )
+            # return (x @ x)**0.5
+            # or to get the right behavior with nd, complex arrays
+            return xp.sum(xp.conj(x) * x, axis=axis, keepdims=keepdims)**0.5
+    else:
+        # to maintain backwards compatibility
+        return np.linalg.norm(x, ord=ord, axis=axis, keepdims=keepdims)
+
+
+def xp_ravel(x: Array, /, *, xp: ModuleType | None = None) -> Array:
+    # Equivalent of np.ravel written in terms of array API
+    # Even though it's one line, it comes up so often that it's worth having
+    # this function for readability
+    xp = array_namespace(x) if xp is None else xp
+    return xp.reshape(x, (-1,))
+
+
+def xp_real(x: Array, /, *, xp: ModuleType | None = None) -> Array:
+    # Convenience wrapper of xp.real that allows non-complex input;
+    # see data-apis/array-api#824
+    xp = array_namespace(x) if xp is None else xp
+    return xp.real(x) if xp.isdtype(x.dtype, 'complex floating') else x
+
+
+def xp_take_along_axis(arr: Array,
+                       indices: Array, /, *,
+                       axis: int = -1,
+                       xp: ModuleType | None = None) -> Array:
+    # Dispatcher for np.take_along_axis for backends that support it;
+    # see data-apis/array-api/pull#816
+    xp = array_namespace(arr) if xp is None else xp
+    if is_torch(xp):
+        return xp.take_along_dim(arr, indices, dim=axis)
+    elif is_array_api_strict(xp):
+        raise NotImplementedError("Array API standard does not define take_along_axis")
+    else:
+        return xp.take_along_axis(arr, indices, axis)

@@ -85,7 +85,7 @@ different shape parameters. In such a situation, the setup step of
 `sampling.NumericalInverseHermite` or `sampling.NumericalInversePolynomial` will
 lead to poor performance. As an example, assume we are interested to generate
 100 samples for the Gamma distribution with 1000 different shape parameters
-given by `np.arange(1.5, 5, 1000)`.
+given by ``np.arange(1.5, 5, 1000)``.
 
     >>> import math
     >>> class GammaDist:

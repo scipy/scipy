@@ -335,7 +335,7 @@ masked array with ``mask=False``.""").split('\n')
 def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
                              n_samples=1, paired=False,
                              result_to_tuple=None, too_small=0,
-                             n_outputs=2, kwd_samples=[], override=None):
+                             n_outputs=2, kwd_samples=(), override=None):
     """Factory for a wrapper that adds axis/nan_policy params to a function.
 
     Parameters
@@ -380,7 +380,7 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
         ``n_outputs=1``. Alternatively, may be a callable that accepts a
         dictionary of arguments passed into the wrapped function and returns
         the number of outputs corresponding with those arguments.
-    kwd_samples : sequence, default: []
+    kwd_samples : sequence, default: ()
         The names of keyword parameters that should be treated as samples. For
         example, `gmean` accepts as its first argument a sample `a` but
         also `weights` as a fourth, optional keyword argument. In this case, we

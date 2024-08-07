@@ -1045,6 +1045,17 @@ class TestCurveFit:
         p0 = np.array([1.0, 5.0])
         curve_fit(line, x, y, p0, method='lm', jac=jac)
 
+    @pytest.mark.parametrize('method', ['trf', 'dogbox'])
+    def test_gh20155_error_mentions_x0(self, method):
+        # `curve_fit` produced an error message that refered to an undocumented
+        # variable `x0`, which was really `p0`. Check that this is resolved.
+        def func(x,a):
+            return x**a
+        message = "Initial guess is outside of provided bounds"
+        with pytest.raises(ValueError, match=message):
+            curve_fit(func, self.x, self.y, p0=[1], bounds=(1000, 1001),
+                      method=method)
+
 
 class TestFixedPoint:
 
