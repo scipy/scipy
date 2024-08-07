@@ -560,7 +560,7 @@ LINE777:
         ddum = -gdold;
     } else {
         dr = (gd - gdold)*stp;
-        dscal(&n, &stp, d, &one_int);
+        DSCAL(&n, &stp, d, &one_int);
         ddum = -gdold*stp;
     }
 
@@ -731,6 +731,7 @@ bmv(const int m, const double* sy, const double* wt, const int col,
 {
     int i, k, i2, one_int = 1;
     double ssum;
+    char *uplo = "U", *trans = "T", *diag = "N";
 
     if (col == 0) { return; }
 
@@ -754,7 +755,7 @@ bmv(const int m, const double* sy, const double* wt, const int col,
 
     // Solve the triangular system
     // dtrtrs(uplo, trans, diag, n, nrhs, a, lda, b, ldb, info)
-    DTRTRS("U", "T", "N", &col, &one_int, wt, &m, &p[col], &col, info);
+    DTRTRS(uplo, trans, diag, &col, &one_int, wt, &m, &p[col], &col, info);
     if (*info != 0) { return; }
 
     // Solve D^(1/2)p1=v1.
@@ -769,7 +770,7 @@ bmv(const int m, const double* sy, const double* wt, const int col,
 
     // solve J^Tp2=p2.
     // dtrtrs(uplo, trans, diag, n, nrhs, a, lda, b, ldb, info)
-    DTRTRS("U", "T", "N", &col, &one_int, wt, &m, &p[col], &col, info);
+    DTRTRS(uplo, trans, diag, &col, &one_int, wt, &m, &p[col], &col, info);
     if (*info != 0) { return; }
 
     // compute p1=-D^(-1/2)(p1-D^(-1/2)L'p2)
@@ -906,7 +907,7 @@ cauchy(const int n, const double* x, const double* l, const double* u,
     if (theta != 1.0)
     {
         // Complete the initialization of p for theta not= one.
-        dscal(&col, &theta, &p[col], &one_int);
+        DSCAL(&col, &theta, &p[col], &one_int);
     }
     // Initialize GCP xcp = x.
     DCOPY(&n, x, &one_int, xcp, &one_int);
@@ -1008,7 +1009,7 @@ cauchy(const int n, const double* x, const double* l, const double* u,
         f2 = f2 - theta*dibp2;
         if (col > 0) {
             // Update c = c + dt*p.
-            daxpy(&col2, &dt, p, &one_int, c, &one_int);
+            DAXPY(&col2, &dt, p, &one_int, c, &one_int);
             // Choose wbp, the row of W corresponding to the breakpoint encountered.
             pointr = head;
 
@@ -1027,7 +1028,7 @@ cauchy(const int n, const double* x, const double* l, const double* u,
             wmw = DDOT(&col2, wbp, &one_int, v, &one_int);
             // Update p = p - dibp*wbp.
             dibp = -dibp;
-            daxpy(&col2, &dibp, wbp, &one_int, p, &one_int);
+            DAXPY(&col2, &dibp, wbp, &one_int, p, &one_int);
             dibp = -dibp;
 
             // Complete updating f1 and f2 while col > 0.
@@ -1059,13 +1060,13 @@ LINE888:
 
     // Move free variables (i.e. the ones w/o breakpoints) and the variables
     // whose breakpoints haven't been reached.
-    daxpy(&n, &tsum, d, &one_int, xcp, &one_int);
+    DAXPY(&n, &tsum, d, &one_int, xcp, &one_int);
 
 LINE999:
     // Update c = c + dtm*p = W'(x^c - x)
     // which will be used in computing r = Z'(B(x^c - x) + g).
 
-    if (col > 0) { daxpy(&col2, &dtm, p, &one_int, c, &one_int); }
+    if (col > 0) { DAXPY(&col2, &dtm, p, &one_int, c, &one_int); }
 
     return;
 }
@@ -1163,6 +1164,7 @@ formk(const int n, const int nsub, const int* ind, const int nenter, const int i
     int m2, ipntr, jpntr, iy, is, jy, js, is1, js1, k1, i, k, col2, pbegin, pend;
     int dbegin, dend, upcl, one_int = 1, temp_int;
     double temp1, temp2, temp3, temp4;
+    char *uplo = "U", *trans = "T", *diag = "N";
 
     // Form the lower triangular part of
     //           WN1 = [Y' ZZ'Y   L_a'+R_z']
@@ -1179,10 +1181,10 @@ formk(const int n, const int nsub, const int* ind, const int nenter, const int i
             {
                 js = m + jy;
                 temp_int = m - jy + 1;
-                DCOPY(&temp_int, wn1[(jy + 1) + 2*m*(jy + 1)], &one_int, wn1[jy + 2*m*jy], &one_int);
-                DCOPY(&temp_int, wn1[(js + 1) + 2*m*(js + 1)], &one_int, wn1[js + 2*m*js], &one_int);
+                DCOPY(&temp_int, &wn1[(jy + 1) + 2*m*(jy + 1)], &one_int, &wn1[jy + 2*m*jy], &one_int);
+                DCOPY(&temp_int, &wn1[(js + 1) + 2*m*(js + 1)], &one_int, &wn1[js + 2*m*js], &one_int);
                 temp_int = m - 1;
-                DCOPY(&temp_int, wn1[(m + 1) + 2*m*(jy + 1)], &one_int, wn1[m + 2*m*jy], &one_int);
+                DCOPY(&temp_int, &wn1[(m + 1) + 2*m*(jy + 1)], &one_int, &wn1[m + 2*m*jy], &one_int);
             }
             // 10
         }
@@ -1364,14 +1366,14 @@ formk(const int n, const int nsub, const int* ind, const int nenter, const int i
     //                      with L' stored in the upper triangle of wn.
 
     // dpotrf(uplo, n, a, lda, info)
-    DPOTRF('U', &col, wn, &m2, info);
+    DPOTRF(uplo, &col, wn, &m2, info);
     if (*info != 0) { *info = -1; return; }
 
     // Then form L^-1(-L_a'+R_z') in the (1,2) block.
     col2 = 2*col;
 
     // dtrtrs(uplo, trans, diag, n, nrhs, a, lda, b, ldb, info)
-    DTRTRS('U', 'T', 'N', col, col, wn, m2, &wn[2*m*col],col, info);
+    DTRTRS(uplo, trans, diag, &col, &col, wn, &m2, &wn[2*m*col], &col, info);
 
     // Form S'AA'S*theta + (L^-1(-L_a'+R_z'))'L^-1(-L_a'+R_z') in the upper
     //  triangle of (2,2) block of wn.
@@ -1379,14 +1381,14 @@ formk(const int n, const int nsub, const int* ind, const int nenter, const int i
     {
         for (js = is; js < col2; js++)
         {
-            wn[is + 2*m*js] = wn[is + 2*m*js] + DDOT(col, wn[2*m*is], &one_int, wn[2*m*js], &one_int);
+            wn[is + 2*m*js] = wn[is + 2*m*js] + DDOT(&col, &wn[2*m*is], &one_int, &wn[2*m*js], &one_int);
         }
         // 74
     }
     // 72
 
     // dpotrf(uplo, n, a, lda, info)
-    DPOTRF('U', &col, wn[col+1 + 2*m*(col+1)], &m2, info);
+    DPOTRF(uplo, &col, wn[col+1 + 2*m*(col+1)], &m2, info);
     if (*info != 0) { *info = -2; }
 
     return;
@@ -1399,7 +1401,7 @@ formt(const int m, double* wt, double* sy, double* ss, const int col,
 {
     int i, j, k, k1;
     double ddum;
-
+    char *uplo = "U";
     // Form the upper half of  T = theta*SS + L*D^(-1)*L', store T in the upper
     // triangle of the array wt.
     for (j = 0; j < col; j++)
@@ -1427,7 +1429,7 @@ formt(const int m, double* wt, double* sy, double* ss, const int col,
 
     // Cholesky factorize T to J*J' with J' stored in the upper triangle of wt.
     // dpotrf(uplo, n, a, lda, info)
-    DPOTRF("U", &col, wt, &m, &info);
+    DPOTRF(uplo, &col, wt, &m, &info);
     if (info != 0) { *info = -3; }
 
     return;
@@ -1587,7 +1589,7 @@ lnsrlb(const int n, const double* l, const double* u, int* nbd, double* x,
 
     if (*task_msg == FG_LNSRCH) { goto LINE556; }
 
-    *dnorm = dnrm2(&n, d, &one_int);
+    *dnorm = DNRM2(&n, d, &one_int);
     *dtd = pow(*dnorm, 2.0);
 
     // Determine the maximum step length.
@@ -1727,9 +1729,9 @@ matupd(const int n, const int m, double* ws, double *wy, double* sy, double* ss,
     {
         for (j = 1; j < *col; j++)
         {
-            DCOPY(&j, ss[1 + m*j], &one_int, ss[m*(j-1)], &one_int);
+            DCOPY(&j, &ss[1 + m*j], &one_int, &ss[m*(j-1)], &one_int);
             temp_int = *col - j;
-            DCOPY(&temp_int, sy[j + m*j], &one_int, sy[(j-1) + m*(j-1)], &one_int);
+            DCOPY(&temp_int, &sy[j + m*j], &one_int, &sy[(j-1) + m*(j-1)], &one_int);
         }
         // 50
     }
@@ -1793,6 +1795,7 @@ void subsm(const int n, const int m, const int nsub, const int* ind,
 {
     int pointr, m2, col2, ibd, jy, js, i, j, k, one_int = 1;
     double alpha, xk, dk, temp, temp1, temp2, dd_p;
+    char *uplo = "U", *trans = "T", *diag = "N";
 
     // n, m, col, nsub are size variables.
     // ind, head are index variables/arrays.
@@ -1820,7 +1823,7 @@ void subsm(const int n, const int m, const int nsub, const int* ind,
     col2 = 2*col;
 
     // dtrtrs(uplo, trans, diag, n, nrhs, a, lda, b, ldb, info)
-    DTRTRS('U', 'T', 'N', &col2, &one_int, wn, &m2, wv, &col2, info);
+    DTRTRS(uplo, trans, diag, &col2, &one_int, wn, &m2, wv, &col2, info);
     if (*info != 0) { return; }
 
     // Compute d = (1/theta)d + (1/theta**2)Z'W wv.
@@ -1841,7 +1844,7 @@ void subsm(const int n, const int m, const int nsub, const int* ind,
 
     temp = 1.0 / theta;
     // n, da, dx, incx
-    dscal(&nsub, &temp, d, &one_int);
+    DSCAL(&nsub, &temp, d, &one_int);
 
     // -----------------------------------------------------
     // Let us try the projection, d is the Newton direction.
