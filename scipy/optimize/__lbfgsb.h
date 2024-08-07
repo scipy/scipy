@@ -11,11 +11,31 @@ extern "C"
 #include <math.h>
 
 #define PYERR(errobj,message) {PyErr_SetString(errobj,message); return NULL;}
-#define DNRM2 BLAS_FUNC(dnrm2)
-#define DDOT BLAS_FUNC(ddot)
+#define DAXPY BLAS_FUNC(daxpy)
 #define DCOPY BLAS_FUNC(dcopy)
-#define DTRSM BLAS_FUNC(dtrsm)
-#define DPOTRF F_FUNC(dpotrf)
+#define DDOT BLAS_FUNC(ddot)
+#define DNRM2 BLAS_FUNC(dnrm2)
+#define DSCAL BLAS_FUNC(dscal)
+#define DPOTRF BLAS_FUNC(dpotrf)
+#define DTRTRS BLAS_FUNC(dtrtrs)
+
+
+static void DAXPY(const int* n, const double* da, const double* dx,
+                  const int* incx, double* dy, const int* incy);
+static void DCOPY(const int* n, const double* dx, const int *incx,
+                  double *dy, const int *incy);
+static double DDOT(const int *n, const double *dx, const int *incx,
+                   const double *dy, const int *incy);
+static double DNRM2(const int *n, const double *x, const int *incx);
+static void DSCAL(const int *n, const double *da, double *dx,
+                  const int *incx);
+static void DPORTF(const char* uplo, const int *n, double *a, const int *lda,
+                   int *info);
+static void DTRTRS(const char* uplo, const char *trans, const char *diag,
+                   const int *n, const int *nrhs,
+                   const double *a, const int *lda, double *b, const int *ldb,
+                   int *info);
+
 
 static PyObject* lbfgsb_error;
 
