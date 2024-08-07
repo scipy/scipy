@@ -84,7 +84,7 @@ try:
             ])
 
     EXTENSIONS: List[str] = ["linalg"]  # TODO: add "fft" once stubs available
-    extension_to_funcs: Dict[str, List[FunctionType]] = {}
+    extension_to_funcs: Dict[str, List[tuple[str, FunctionType]]] = {}
     for ext in EXTENSIONS:
         mod = name_to_mod[ext]
         extension_to_funcs[ext] = [
