@@ -6,7 +6,6 @@ from importlib.util import find_spec
 import os
 from pathlib import Path
 from types import FunctionType, ModuleType
-from typing import Dict, List
 
 from scipy.sparse import linalg
 
@@ -27,27 +26,20 @@ def fill_with_not_implemented(object_to_be_filled, expected_methods):
             has_method = hasattr(object_to_be_filled, name)
         if not has_method:
             not_implemented_with_signature = partial(not_implemented)
-            not_implemented_with_signature.__signature__ = inspect.signature(implementation)
+            not_implemented_with_signature.__signature__ = inspect.signature(
+                implementation
+            )
             not_implemented_with_signature.__name__ = name
             if is_dict:
                 object_to_be_filled[name] = not_implemented_with_signature
             else:
                 setattr(object_to_be_filled, name, not_implemented_with_signature)
 
-__all__ = [
-    "name_to_func",
-    "array_methods",
-    "array_attributes",
-    "category_to_funcs",
-    "EXTENSIONS",
-    "extension_to_funcs",
-]
-
 spec_module = "_" + __array_api_version__.replace('.', '_')
 try:
     array_api_repo = Path(os.environ["ARRAY_API_REPO_PATH"])
     spec_dir = array_api_repo / "spec" / __array_api_version__ / "API_specification"
-    assert spec_dir.exists(), f"{spec_dir} not found - the array api needs to be checked out to the top level"
+    assert spec_dir.exists()
     sigs_dir = array_api_repo / "src" / "array_api_stubs" / spec_module
     assert sigs_dir.exists()
 
@@ -55,7 +47,7 @@ try:
     sys.path.append(sigs_abs_path)
     assert find_spec(f"array_api_stubs.{spec_module}") is not None
 
-    name_to_mod: Dict[str, ModuleType] = {}
+    name_to_mod: dict[str, ModuleType] = {}
     for path in sigs_dir.glob("*.py"):
         name = path.name.replace(".py", "")
         name_to_mod[name] = import_module(f"array_api_stubs.{spec_module}.{name}")
@@ -72,7 +64,10 @@ try:
     ]
 
     def fill_array_with_not_implemented(array):
-        return fill_with_not_implemented(array, array_methods_with_names_without___init__)
+        return fill_with_not_implemented(
+            array,
+            array_methods_with_names_without___init__
+        )
 
 
     top_level_functions = []
@@ -83,8 +78,8 @@ try:
                 if n in mod.__all__
             ])
 
-    EXTENSIONS: List[str] = ["linalg"]  # TODO: add "fft" once stubs available
-    extension_to_funcs: Dict[str, List[tuple[str, FunctionType]]] = {}
+    EXTENSIONS: list[str] = ["linalg"]  # TODO: add "fft" once stubs available
+    extension_to_funcs: dict[str, list[tuple[str, FunctionType]]] = {}
     for ext in EXTENSIONS:
         mod = name_to_mod[ext]
         extension_to_funcs[ext] = [
@@ -113,3 +108,10 @@ except KeyError:
         pass
     def fill_array_module_with_not_implemented(module):
         pass
+
+
+__all__ = [
+    "fill_array_with_not_implemented",
+    "fill_linalg_with_not_implemented",
+    "fill_array_module_with_not_implemented",
+]

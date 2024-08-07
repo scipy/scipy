@@ -3,7 +3,8 @@ import numpy as np
 import numpy.typing as npt
 
 def asarray(obj, *, dtype=None, copy=None, device=None):
-    # This is a HUGE hack to get the array-api test suite even running, much less doing anything sensible.
+    # This is a HUGE hack to get the array-api test
+    # suite even running, much less doing anything sensible.
     if np.isscalar(obj):
          obj = np.array(obj).reshape(1, -1)
     if isinstance(obj, list):
@@ -48,7 +49,9 @@ def arange(start, stop, step, *, dtype=None, device=None):
     return sparse.csr_array(np.arange(start, stop, step, dtype=dtype))
 
 def linspace(start, stop, /, num, *, dtype=None, device=None, endpoint=True):
-    return sparse.csr_array(np.linspace(start, stop, num, dtype=dtype, endpoint=endpoint))
+    return sparse.csr_array(
+        np.linspace(start, stop, num, dtype=dtype, endpoint=endpoint)
+    )
 
 def any(x, /, *, axis = None, keepdims=False):
     if axis is None:
@@ -103,7 +106,14 @@ def min(x, /, *, axis: int | tuple[int, ...] | None = None, keepdims: bool = Fal
 def max(x, /, *, axis: int | tuple[int, ...] | None = None, keepdims: bool = False):
     return x.max(axis=axis)
 
-def sum(x, /, *, axis: int | tuple[int, ...] | None = None, dtype: npt.DTypeLike | None = None, keepdims: bool = False):
+def sum(
+        x,
+        /,
+        *,
+        axis: int | tuple[int, ...] | None = None,
+        dtype: npt.DTypeLike | None = None,
+        keepdims: bool = False
+    ):
     return x.sum(axis=axis)
 
 def argmax(x, /, *, axis: int | tuple[int, ...] | None = None, keepdims: bool = False):
@@ -116,12 +126,21 @@ def var(x, /, *, axis: int | tuple[int, ...] | None = None, correction: int | fl
     divisor = 1
     if isinstance(axis, tuple):
         if len(axis) != 1:
-            raise NotImplementedError("Cannot calculate variance over more than one axis for sparse")
+            raise NotImplementedError(
+                "Cannot calculate variance over more than one axis for sparse"
+            )
         axis = axis[0]
         divisor = (x.shape[axis] - correction)
     return (1 / divisor) * (x ** 2).mean(axis=axis) - np.square(x.mean(axis=axis))
 
-def std(x, /, *, axis: int | tuple[int, ...] | None = None, correction: int | float = 0.0, keepdims: bool = False):
+def std(
+        x,
+        /,
+        *,
+        axis: int | tuple[int, ...] | None = None,
+        correction: int | float = 0.0,
+        keepdims: bool = False
+    ):
     return np.sqrt(var(x, axis=axis, correction=correction, keepdims=keepdims))
 
 def unique_values(x, /):
@@ -140,10 +159,14 @@ def unique_counts(x, /):
     return values, counts
 
 def unique_all(x, /):
-    raise NotImplementedError('Construction of `inverse_indices` for sparse arrays is inefficient')
+    raise NotImplementedError(
+        'Construction of `inverse_indices` for sparse arrays is inefficient'
+    )
 
 def unique_inverse(x, /):
-    raise NotImplementedError('Construction of `inverse_indices` for sparse arrays is inefficient')
+    raise NotImplementedError(
+        'Construction of `inverse_indices` for sparse arrays is inefficient'
+    )
 
 def where(condition, x1, x2, /):
     data = x2.copy()
@@ -186,7 +209,9 @@ def not_equal(x1, x2, /):
 def binopt(x1, x2, op, /):
     x2_nonzero = np.column_stack(x2.nonzero())
     x1_nonzero = np.column_stack(x1.nonzero())
-    non_zero_coords = np.moveaxis(np.unique(np.concatenate((x2_nonzero, x1_nonzero)), axis=0), 1, 0)
+    non_zero_coords = np.moveaxis(
+        np.unique(np.concatenate((x2_nonzero, x1_nonzero)), axis=0), 1, 0
+    )
     x1_data = x1[non_zero_coords][0]
     x2_data = x2[non_zero_coords][0]
     op_data = np.ravel(op(x1_data, x2_data))

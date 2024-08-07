@@ -1,5 +1,11 @@
-from .utils import fill_array_with_not_implemented, fill_linalg_with_not_implemented, fill_array_module_with_not_implemented
+from .utils import (
+    fill_array_with_not_implemented,
+    fill_linalg_with_not_implemented,
+    fill_array_module_with_not_implemented
+)
+from scipy.sparse import csr_array
 
+from .array_api_version import __array_api_version__
 from .csr import *
 from ..import linalg
 from numpy import (
@@ -63,10 +69,6 @@ from numpy import (
 )
 # `np.bool` is depracated
 bool
-
-from scipy.sparse import csr_array
-
-from .array_api_version import __array_api_version__
 
 # From numpy
 __all__ = [
