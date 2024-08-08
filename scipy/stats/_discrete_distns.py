@@ -1550,9 +1550,8 @@ class poisson_binom_gen(rv_discrete):
     subsets of :math:`k` integers that can be selected :math:`\{1, 2, \dots, n-1, n\}`,
     and :math:`A^C` is the complement of a set :math:`A`.
 
-    `poisson_binom` takes an arbitrary number positional-only arguments for
-    shape parameters :math:`p_i`. Unlike other discrete distributions, the
-    `loc` parmaeter may only be specified by keyword.
+    `poisson_binom` takes a single array arguments for shape parameters :math:`p_i` where
+    the last axis corresponds with the index :math:`i` and any others are batch dimensions.
 
     %(after_notes)s
 
@@ -1618,38 +1617,42 @@ class poisson_binom_gen(rv_discrete):
         var = sum(arg * (1-arg) for arg in args)
         return (mean, var**0.5, None, None)
 
+    def _munp(self, n, *args):
+        args = np.asarray(args)
+        pmfs = np.moveaxis(self._pmfs(*args), 0, -1)
+        k = np.arange(pmfs.shape[-1], dtype=float)
+        return np.sum(k**n * pmfs, axis=-1)
+
+    def _entropy(self, *args, **kwds):
+        args = np.asarray(args)
+        pmfs = self._pmfs(*args)
+        logpmfs = np.log(pmfs)
+        return -np.sum(logpmfs*pmfs, axis=0)
+
     def freeze(self, *args, **kwds):
         return poisson_binomial_frozen(self, *args, **kwds)
 
 poisson_binom = poisson_binom_gen(name='poisson_binom', longname='A Poisson Binomial')
 
-# The _parse_args methods don't work with variable size *args. I don't want
-# to mess with the distribution infrastructure, and we can't just override
-# them because they are bound to the instance in a non-standard way, so we
-# write them and forcibly bind them to the instance ourselves.
+# The _parse_args methods don't work with variable size *args are vector-valued
+# shape parameters, so we rewrite them.
+# Note that `p` comes in as an array with the index of `p_i` corresponding
+# with the last axis; we return it as a tuple (p_1, p_2, ..., p_n).
 
-def _unpack_args_kwds(args, kwds, defaults):
-    args = list(args)
-    out = [args.pop(0) if len(args) else kwds.pop(name, defaults[name])
-           for i, name in enumerate(defaults)]
-    out[0] = tuple(np.atleast_1d(out[0]))
-    out.insert(2, 1.0)  # insert scale
-    if len(args) or len(kwds):  # if anything is left
-        message = f"Unexpected arguments {args or kwds}"
-        raise TypeError(message)
-    return out
+def _parse_args_rvs(self, p, loc=0, size=None):
+    return tuple(np.moveaxis(p, -1, 0)), loc, 1.0, size
 
-def _parse_args_rvs(self, *args, **kwds):
-    defaults = dict(p=[0], loc=0, size=None)
-    return _unpack_args_kwds(args, kwds, defaults)
+def _parse_args_stats(self, p, loc=0, moments='mv'):
+    return tuple(np.moveaxis(p, -1, 0)), loc, 1.0, moments
 
-def _parse_args_stats(self, *args, **kwds):
-    defaults = dict(p=[0], loc=0, moments='mv')
-    return _unpack_args_kwds(args, kwds, defaults)
+def _parse_args(self, p, loc=0):
+    return tuple(np.moveaxis(p, -1, 0)), loc, 1.0
 
-def _parse_args(self, *args, **kwds):
-    defaults = dict(p=[0], loc=0)
-    return _unpack_args_kwds(args, kwds, defaults)
+# The infrastructure manually binds these methods to the instance, so
+# we can only override them by manually binding them, too.
+poisson_binom._parse_args_rvs = _parse_args_rvs.__get__(poisson_binom, poisson_binom_gen)
+poisson_binom._parse_args_stats = _parse_args_stats.__get__(poisson_binom, poisson_binom_gen)
+poisson_binom._parse_args = _parse_args.__get__(poisson_binom, poisson_binom_gen)
 
 class poisson_binomial_frozen(rv_discrete_frozen):
     # copied from rv_frozen; we just need to bind the `_parse_args` methods
@@ -1659,6 +1662,8 @@ class poisson_binomial_frozen(rv_discrete_frozen):
 
         # create a new instance
         self.dist = dist.__class__(**dist._updated_ctor_param())
+
+        # Here is the only modification
         self.dist._parse_args_rvs = _parse_args_rvs.__get__(poisson_binom, poisson_binom_gen)
         self.dist._parse_args_stats = _parse_args_stats.__get__(poisson_binom, poisson_binom_gen)
         self.dist._parse_args = _parse_args.__get__(poisson_binom, poisson_binom_gen)
@@ -1667,9 +1672,7 @@ class poisson_binomial_frozen(rv_discrete_frozen):
         self.a, self.b = self.dist._get_support(*shapes)
 
 
-poisson_binom._parse_args_rvs = _parse_args_rvs.__get__(poisson_binom, poisson_binom_gen)
-poisson_binom._parse_args_stats = _parse_args_stats.__get__(poisson_binom, poisson_binom_gen)
-poisson_binom._parse_args = _parse_args.__get__(poisson_binom, poisson_binom_gen)
+
 
 
 class skellam_gen(rv_discrete):
