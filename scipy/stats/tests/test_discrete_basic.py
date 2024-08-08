@@ -338,7 +338,7 @@ def test_methods_with_lists(method, distname, args):
     loc = [0, 1]
     result = f(z, *p2, loc=loc)
     npt.assert_allclose(result,
-                        [f(*v[:-1], loc=v[-1]) for v in zip(z, *p2, loc)],
+                        [f(*v) for v in zip(z, *p2, loc)],
                         rtol=1e-15, atol=1e-15)
 
 

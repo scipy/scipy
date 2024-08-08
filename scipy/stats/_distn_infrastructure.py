@@ -826,7 +826,10 @@ class rv_generic:
 
         if shapes_vals is None:
             shapes_vals = ()
-        vals = ', '.join(f'{val:.3g}' for val in shapes_vals)
+        try:
+            vals = ', '.join(f'{val:.3g}' for val in shapes_vals)
+        except:
+            vals = ', '.join(f'{val}' for val in shapes_vals)
         tempdict['vals'] = vals
 
         tempdict['shapes_'] = self.shapes or ''

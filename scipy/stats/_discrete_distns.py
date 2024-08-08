@@ -1627,17 +1627,29 @@ poisson_binom = poisson_binom_gen(name='poisson_binom', longname='A Poisson Bino
 # to mess with the distribution infrastructure, and we can't just override
 # them because they are bound to the instance in a non-standard way, so we
 # write them and forcibly bind them to the instance ourselves.
+
+def _unpack_args_kwds(args, kwds, defaults):
+    args = list(args)
+    out = [args.pop(0) if len(args) else kwds.pop(name, defaults[name])
+           for i, name in enumerate(defaults)]
+    out[0] = tuple(np.atleast_1d(out[0]))
+    out.insert(2, 1.0)  # insert scale
+    if len(args) or len(kwds):  # if anything is left
+        message = f"Unexpected arguments {args or kwds}"
+        raise TypeError(message)
+    return out
+
 def _parse_args_rvs(self, *args, **kwds):
-    args = np.broadcast_arrays(*args)
-    return args, kwds.pop('loc', 0), 1, kwds.pop('size', None)
+    defaults = dict(p=[0], loc=0, size=None)
+    return _unpack_args_kwds(args, kwds, defaults)
 
 def _parse_args_stats(self, *args, **kwds):
-    args = np.broadcast_arrays(*args)
-    return args, kwds.pop('loc', 0), 1, kwds.pop('moments', 'mv')
+    defaults = dict(p=[0], loc=0, moments='mv')
+    return _unpack_args_kwds(args, kwds, defaults)
 
 def _parse_args(self, *args, **kwds):
-    args = np.broadcast_arrays(*args)
-    return args, kwds.pop('loc', 0), 1
+    defaults = dict(p=[0], loc=0)
+    return _unpack_args_kwds(args, kwds, defaults)
 
 class poisson_binomial_frozen(rv_discrete_frozen):
     # copied from rv_frozen; we just need to bind the `_parse_args` methods
