@@ -1561,7 +1561,7 @@ class poisson_binom_gen(rv_discrete):
 
     %(example)s
 
-    """
+    """  # noqa: E501
     def _shape_info(self):
         # message = 'Fitting is not implemented for this distribution."
         # raise NotImplementedError(message)
@@ -1604,7 +1604,10 @@ class poisson_binom_gen(rv_discrete):
     def _pmf(self, k, *args):
         k = np.asarray(k, dtype=int)
         pmfs = self._pmfs(*args)
-        return np.take_along_axis(pmfs, k[np.newaxis, :], axis=0)
+        if k.shape == pmfs.shape:
+            return pmfs[k]
+        else:
+            return np.take_along_axis(pmfs, k[np.newaxis, :], axis=0)
 
     def _cdf(self, k, *args):
         k = np.asarray(k, dtype=int)
@@ -1615,19 +1618,7 @@ class poisson_binom_gen(rv_discrete):
     def _stats(self, *args, **kwds):
         mean = sum(args)
         var = sum(arg * (1-arg) for arg in args)
-        return (mean, var**0.5, None, None)
-
-    def _munp(self, n, *args):
-        args = np.asarray(args)
-        pmfs = np.moveaxis(self._pmfs(*args), 0, -1)
-        k = np.arange(pmfs.shape[-1], dtype=float)
-        return np.sum(k**n * pmfs, axis=-1)
-
-    def _entropy(self, *args, **kwds):
-        args = np.asarray(args)
-        pmfs = self._pmfs(*args)
-        logpmfs = np.log(pmfs)
-        return -np.sum(logpmfs*pmfs, axis=0)
+        return (mean, var, None, None)
 
     def freeze(self, *args, **kwds):
         return poisson_binomial_frozen(self, *args, **kwds)
@@ -1650,9 +1641,10 @@ def _parse_args(self, p, loc=0):
 
 # The infrastructure manually binds these methods to the instance, so
 # we can only override them by manually binding them, too.
-poisson_binom._parse_args_rvs = _parse_args_rvs.__get__(poisson_binom, poisson_binom_gen)
-poisson_binom._parse_args_stats = _parse_args_stats.__get__(poisson_binom, poisson_binom_gen)
-poisson_binom._parse_args = _parse_args.__get__(poisson_binom, poisson_binom_gen)
+_pb_obj, _pb_cls = poisson_binom, poisson_binom_gen
+poisson_binom._parse_args_rvs = _parse_args_rvs.__get__(_pb_obj, _pb_cls)
+poisson_binom._parse_args_stats = _parse_args_stats.__get__(_pb_obj, _pb_cls)
+poisson_binom._parse_args = _parse_args.__get__(_pb_obj, _pb_cls)
 
 class poisson_binomial_frozen(rv_discrete_frozen):
     # copied from rv_frozen; we just need to bind the `_parse_args` methods
@@ -1664,9 +1656,9 @@ class poisson_binomial_frozen(rv_discrete_frozen):
         self.dist = dist.__class__(**dist._updated_ctor_param())
 
         # Here is the only modification
-        self.dist._parse_args_rvs = _parse_args_rvs.__get__(poisson_binom, poisson_binom_gen)
-        self.dist._parse_args_stats = _parse_args_stats.__get__(poisson_binom, poisson_binom_gen)
-        self.dist._parse_args = _parse_args.__get__(poisson_binom, poisson_binom_gen)
+        self.dist._parse_args_rvs = _parse_args_rvs.__get__(_pb_obj, _pb_cls)
+        self.dist._parse_args_stats = _parse_args_stats.__get__(_pb_obj, _pb_cls)
+        self.dist._parse_args = _parse_args.__get__(_pb_obj, _pb_cls)
 
         shapes, _, _ = self.dist._parse_args(*args, **kwds)
         self.a, self.b = self.dist._get_support(*shapes)

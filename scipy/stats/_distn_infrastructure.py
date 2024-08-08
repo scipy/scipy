@@ -828,7 +828,7 @@ class rv_generic:
             shapes_vals = ()
         try:
             vals = ', '.join(f'{val:.3g}' for val in shapes_vals)
-        except:
+        except TypeError:
             vals = ', '.join(f'{val}' for val in shapes_vals)
         tempdict['vals'] = vals
 
@@ -3044,7 +3044,7 @@ def _drv2_moment(self, n, *args):
         return np.power(x, n) * self._pmf(x, *args)
 
     _a, _b = self._get_support(*args)
-    return _expect(fun, _a, _b, self.ppf(0.5, *args), self.inc)
+    return _expect(fun, _a, _b, self._ppf(0.5, *args), self.inc)
 
 
 def _drv2_ppfsingle(self, q, *args):  # Use basic bisection algorithm
@@ -3765,8 +3765,8 @@ class rv_discrete(rv_generic):
             return stats.entropy(self.pk)
         else:
             _a, _b = self._get_support(*args)
-            return _expect(lambda x: entr(self.pmf(x, *args)),
-                           _a, _b, self.ppf(0.5, *args), self.inc)
+            return _expect(lambda x: entr(self._pmf(x, *args)),
+                           _a, _b, self._ppf(0.5, *args), self.inc)
 
     def expect(self, func=None, args=(), loc=0, lb=None, ub=None,
                conditional=False, maxcount=1000, tolerance=1e-10, chunksize=32):
@@ -3822,6 +3822,8 @@ class rv_discrete(rv_generic):
         The function is not vectorized.
 
         """
+        args, _, _ = self._parse_args(*args)
+
         if func is None:
             def fun(x):
                 # loc and args from outer scope
@@ -3833,7 +3835,6 @@ class rv_discrete(rv_generic):
         # used pmf because _pmf does not check support in randint and there
         # might be problems(?) with correct self.a, self.b at this stage maybe
         # not anymore, seems to work now with _pmf
-
         _a, _b = self._get_support(*args)
         if lb is None:
             lb = _a
@@ -3853,7 +3854,7 @@ class rv_discrete(rv_generic):
             return res / invfac
 
         # iterate over the support, starting from the median
-        x0 = self.ppf(0.5, *args)
+        x0 = self._ppf(0.5, *args)
         res = _expect(fun, lb, ub, x0, self.inc, maxcount, tolerance, chunksize)
         return res / invfac
 

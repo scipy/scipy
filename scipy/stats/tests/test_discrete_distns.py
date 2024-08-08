@@ -662,7 +662,7 @@ class TestPoissonBinomial:
         k = np.arange(n + 1)
         p = rng.random(n)  #  [0.9480654803913988, 0.052428488100509374,
                            #   0.25863527358887417, 0.057764076043633206]
-        res = poisson_binom.pmf(k, *p)
+        res = poisson_binom.pmf(k, p)
         ref = [0.0343763443678060318, 0.6435428452689714307, 0.2936345519235536994,
                0.0277036647503902354, 0.0007425936892786034]
         assert_allclose(res, ref)

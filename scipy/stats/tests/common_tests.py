@@ -171,7 +171,8 @@ def check_named_args(distfn, x, shape_args, defaults, meths):
     else:
         shapes_ = ''
     npt.assert_(len(shapes_) == distfn.numargs)
-    # npt.assert_(len(shapes_) == len(shape_argnames))
+    if distfn.name != 'poisson_binom':
+        npt.assert_(len(shapes_) == len(shape_argnames))
 
     # check calling w/ named arguments
     shape_args = list(shape_args)
@@ -345,7 +346,7 @@ def check_freezing(distfn, args):
 
 def check_rvs_broadcast(distfunc, distname, allargs, shape, shape_only, otype):
     np.random.seed(123)
-    sample = distfunc.rvs(*allargs[:-1], loc=allargs[-1])
+    sample = distfunc.rvs(*allargs)
     assert_equal(sample.shape, shape, f"{distname}: rvs failed to broadcast")
     if not shape_only:
         rvs = np.vectorize(lambda *allargs: distfunc.rvs(*allargs), otypes=otype)
