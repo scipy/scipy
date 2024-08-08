@@ -28,8 +28,8 @@ from ._distn_infrastructure import (_vectorize_rvs_over_shapes,
     get_distribution_names, _kurtosis, _isintegral,
     rv_continuous, _skew, _get_fixed_fit_value, _check_shape, _ShapeInfo)
 from ._ksstats import kolmogn, kolmognp, kolmogni
-from ._constants import (_XMIN, _LOGXMIN, _EULER, _ZETA3, _SQRT_PI,
-                         _SQRT_2_OVER_PI, _LOG_SQRT_2_OVER_PI)
+from ._constants import (_EPS, _XMIN, _LOGXMIN, _EULER, _ZETA3, _SQRT_PI,
+                         _SQRT_2_OVER_PI, _LOG_PI, _LOG_SQRT_2_OVER_PI)
 from ._censored_data import CensoredData
 from scipy.optimize import root_scalar
 from scipy.stats._warnings_errors import FitError
@@ -1451,7 +1451,22 @@ class cauchy_gen(rv_continuous):
 
     def _pdf(self, x):
         # cauchy.pdf(x) = 1 / (pi * (1 + x**2))
-        return 1.0/np.pi/(1.0+x*x)
+        with np.errstate(over='ignore'):
+            return 1.0/np.pi/(1.0+x*x)
+
+    def _logpdf(self, x):
+        # The formula
+        #     log(1/(pi*(1 + x**2))) = -log(pi) - log(1 + x**2)
+        #                            = -log(pi) - log(|x|*(1/|x| + |x|))
+        #                            = -log(pi) - (log(|x| + log(1/|x| + |x|)))
+        # is used to avoid overflow in x**2 for large x.
+        absx = np.abs(x)
+        # Avoid division by 0 where x is 0, and avoid overflow with subnormal
+        # values.  Changing to _EPS is harmless, because _EPS is small enough
+        # that logpdf(_EPS) is equal to logpdf(0) (assuming double precision
+        # floats).
+        absx[absx < _EPS] = _EPS
+        return -_LOG_PI - (np.log(absx) + np.log(1/absx + absx))
 
     def _cdf(self, x):
         return np.arctan2(1, -x)/np.pi
