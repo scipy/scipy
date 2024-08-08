@@ -15,7 +15,8 @@ import numpy as np
 
 from ._distn_infrastructure import (rv_discrete, get_distribution_names,
                                     _vectorize_rvs_over_shapes,
-                                    _ShapeInfo, _isintegral)
+                                    _ShapeInfo, _isintegral,
+                                    rv_discrete_frozen)
 from ._biasedurn import (_PyFishersNCHypergeometric,
                          _PyWalleniusNCHypergeometric,
                          _PyStochasticLib3)
@@ -1526,6 +1527,137 @@ class dlaplace_gen(rv_discrete):
 
 dlaplace = dlaplace_gen(a=-np.inf,
                         name='dlaplace', longname='A discrete Laplacian')
+
+
+class poisson_binom_gen(rv_discrete):
+    r"""A Poisson Binomial discrete random variable.
+
+    %(before_notes)s
+
+    See Also
+    --------
+    binom
+
+    Notes
+    -----
+    The probability mass function for `poisson_binom` is:
+
+    .. math::
+
+     f(k; p_1, p_2, ..., p_n) = \sum_{A \in F_k} \prod_{i \in A} p_i \prod_{j \in A^C} 1 - p_j
+
+    where :math:`k \in \{1, 2, \dots, n-1, n\}`, :math:`F_k` is the set of all
+    subsets of :math:`k` integers that can be selected :math:`\{1, 2, \dots, n-1, n\}`,
+    and :math:`A^C` is the complement of a set :math:`A`.
+
+    `poisson_binom` takes an arbitrary number positional-only arguments for
+    shape parameters :math:`p_i`. Unlike other discrete distributions, the
+    `loc` parmaeter may only be specified by keyword.
+
+    %(after_notes)s
+
+    References
+    ----------
+    .. [1] "Poisson binomial distribution", Wikipedia, https://en.wikipedia.org/wiki/Poisson_binomial_distribution
+
+    %(example)s
+
+    """
+    def _shape_info(self):
+        # message = 'Fitting is not implemented for this distribution."
+        # raise NotImplementedError(message)
+        return []
+
+    def _argcheck(self, *args):
+        conds = [(0 < arg) & (arg < 1) for arg in args]
+        conds = np.stack(conds)
+        return np.all(conds, axis=0)
+
+    def _rvs(self, *args, size=None, random_state=None):
+        args = np.stack(args, axis=-1)
+        size = (tuple(np.append(np.atleast_1d(size), args.shape)) if size is not None
+                else args.shape)
+        # should use NumPy Bernoulli
+        return bernoulli.rvs(args, size=size, random_state=random_state).sum(axis=-1)
+
+    def _get_support(self, *args):
+        return 0, len(args)
+
+    def _pmfs(self, *args):
+        n = len(args)
+        # Each arg is a probability of success; they've been broadcasted
+        # the same shape already. Apparently, they can be Python scalars,
+        # though, so make sure they are a
+        arg0 = np.asarray(args[0])
+        base_shape = arg0.shape[0:]
+        dtype = arg0.dtype
+        pmf = np.ones((1,) + base_shape, dtype=dtype)
+        for i in range(1, n+1):
+            p_i = args[i - 1]
+            pmf_i = np.ones((i+1,) + base_shape, dtype=dtype)
+            pmf_i[0] = (1 - p_i) * pmf[0]
+            pmf_i[i] = p_i * pmf[i-1]
+            for j in range(1, (i-1) + 1):
+                pmf_i[j] = p_i * pmf[j-1] + (1 - p_i) * pmf[j]
+            pmf = pmf_i
+        return pmf
+
+    def _pmf(self, k, *args):
+        k = np.asarray(k, dtype=int)
+        pmfs = self._pmfs(*args)
+        return np.take_along_axis(pmfs, k[np.newaxis, :], axis=0)
+
+    def _cdf(self, k, *args):
+        k = np.asarray(k, dtype=int)
+        pmfs = self._pmfs(*args)
+        cdfs = np.cumsum(pmfs, axis=0)
+        return np.take_along_axis(cdfs, k[np.newaxis, ...], axis=0)
+
+    def _stats(self, *args, **kwds):
+        mean = sum(args)
+        var = sum(arg * (1-arg) for arg in args)
+        return (mean, var**0.5, None, None)
+
+    def freeze(self, *args, **kwds):
+        return poisson_binomial_frozen(self, *args, **kwds)
+
+poisson_binom = poisson_binom_gen(name='poisson_binom', longname='A Poisson Binomial')
+
+# _parse_args_rvs work with variable size *args. I don't want to mess
+# with the distribution infrastructure, and we can't just override it
+# because it is bound to the instance in a non-standard way. So we
+# replace it by forcibly binding it ourselves.
+def _parse_args_rvs(self, *args, **kwds):
+    args = np.broadcast_arrays(*args)
+    return args, kwds.pop('loc', 0), 1, kwds.pop('size', None)
+
+def _parse_args_stats(self, *args, **kwds):
+    args = np.broadcast_arrays(*args)
+    return args, kwds.pop('loc', 0), 1, kwds.pop('moments', 'mv')
+
+def _parse_args(self, *args, **kwds):
+    args = np.broadcast_arrays(*args)
+    return args, kwds.pop('loc', 0), 1
+
+class poisson_binomial_frozen(rv_discrete_frozen):
+    # copied from rv_frozen; we just need to bind the `_parse_args` methods
+    def __init__(self, dist, *args, **kwds):
+        self.args = args
+        self.kwds = kwds
+
+        # create a new instance
+        self.dist = dist.__class__(**dist._updated_ctor_param())
+        self.dist._parse_args_rvs = _parse_args_rvs.__get__(poisson_binom, poisson_binom_gen)
+        self.dist._parse_args_stats = _parse_args_stats.__get__(poisson_binom, poisson_binom_gen)
+        self.dist._parse_args = _parse_args.__get__(poisson_binom, poisson_binom_gen)
+
+        shapes, _, _ = self.dist._parse_args(*args, **kwds)
+        self.a, self.b = self.dist._get_support(*shapes)
+
+
+poisson_binom._parse_args_rvs = _parse_args_rvs.__get__(poisson_binom, poisson_binom_gen)
+poisson_binom._parse_args_stats = _parse_args_stats.__get__(poisson_binom, poisson_binom_gen)
+poisson_binom._parse_args = _parse_args.__get__(poisson_binom, poisson_binom_gen)
 
 
 class skellam_gen(rv_discrete):

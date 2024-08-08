@@ -117,7 +117,7 @@ def test_rvs_broadcast(dist, shape_args):
     # test might also have to be changed.
     shape_only = dist in ['betabinom', 'betanbinom', 'skellam', 'yulesimon',
                           'dlaplace', 'nchypergeom_fisher',
-                          'nchypergeom_wallenius']
+                          'nchypergeom_wallenius', 'poisson_binom']
 
     try:
         distfunc = getattr(stats, dist)
@@ -129,9 +129,8 @@ def test_rvs_broadcast(dist, shape_args):
     allargs = []
     bshape = []
     # Generate shape parameter arguments...
-    for k in range(nargs):
+    for k, param_val in enumerate(shape_args):
         shp = (k + 3,) + (1,)*(k + 1)
-        param_val = shape_args[k]
         allargs.append(np.full(shp, param_val))
         bshape.insert(0, shp[0])
     allargs.append(loc)
@@ -330,15 +329,16 @@ def test_methods_with_lists(method, distname, args):
         dist = getattr(stats, distname)
     except TypeError:
         return
+    f = getattr(dist, method)
     if method in ['ppf', 'isf']:
         z = [0.1, 0.2]
     else:
         z = [0, 1]
     p2 = [[p]*2 for p in args]
     loc = [0, 1]
-    result = dist.pmf(z, *p2, loc=loc)
+    result = f(z, *p2, loc=loc)
     npt.assert_allclose(result,
-                        [dist.pmf(*v) for v in zip(z, *p2, loc)],
+                        [f(*v[:-1], loc=v[-1]) for v in zip(z, *p2, loc)],
                         rtol=1e-15, atol=1e-15)
 
 

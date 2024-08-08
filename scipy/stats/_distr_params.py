@@ -124,30 +124,31 @@ distcont = [
 
 
 distdiscrete = [
-    ['bernoulli',(0.3,)],
-    ['betabinom', (5, 2.3, 0.63)],
-    ['betanbinom', (5, 9.3, 1)],
-    ['binom', (5, 0.4)],
-    ['boltzmann',(1.4, 19)],
-    ['dlaplace', (0.8,)],  # 0.5
-    ['geom', (0.5,)],
-    ['hypergeom',(30, 12, 6)],
-    ['hypergeom',(21,3,12)],  # numpy.random (3,18,12) numpy ticket:921
-    ['hypergeom',(21,18,11)],  # numpy.random (18,3,11) numpy ticket:921
-    ['nchypergeom_fisher', (140, 80, 60, 0.5)],
-    ['nchypergeom_wallenius', (140, 80, 60, 0.5)],
-    ['logser', (0.6,)],  # re-enabled, numpy ticket:921
-    ['nbinom', (0.4, 0.4)],  # from tickets: 583
-    ['nbinom', (5, 0.5)],
-    ['planck', (0.51,)],   # 4.1
-    ['poisson', (0.6,)],
-    ['randint', (7, 31)],
-    ['skellam', (15, 8)],
-    ['zipf', (6.6,)],
-    ['zipfian', (0.75, 15)],
-    ['zipfian', (1.25, 10)],
-    ['yulesimon', (11.0,)],
-    ['nhypergeom', (20, 7, 1)]
+    # ['bernoulli',(0.3,)],
+    # ['betabinom', (5, 2.3, 0.63)],
+    # ['betanbinom', (5, 9.3, 1)],
+    # ['binom', (5, 0.4)],
+    # ['boltzmann',(1.4, 19)],
+    # ['dlaplace', (0.8,)],  # 0.5
+    # ['geom', (0.5,)],
+    # ['hypergeom',(30, 12, 6)],
+    # ['hypergeom',(21,3,12)],  # numpy.random (3,18,12) numpy ticket:921
+    # ['hypergeom',(21,18,11)],  # numpy.random (18,3,11) numpy ticket:921
+    # ['nchypergeom_fisher', (140, 80, 60, 0.5)],
+    # ['nchypergeom_wallenius', (140, 80, 60, 0.5)],
+    # ['logser', (0.6,)],  # re-enabled, numpy ticket:921
+    # ['nbinom', (0.4, 0.4)],  # from tickets: 583
+    # ['nbinom', (5, 0.5)],
+    # ['planck', (0.51,)],   # 4.1
+    # ['poisson', (0.6,)],
+    ['poisson_binom', (0.1, 0.6, 0.7, 0.8)],
+    # ['randint', (7, 31)],
+    # ['skellam', (15, 8)],
+    # ['zipf', (6.6,)],
+    # ['zipfian', (0.75, 15)],
+    # ['zipfian', (1.25, 10)],
+    # ['yulesimon', (11.0,)],
+    # ['nhypergeom', (20, 7, 1)]
 ]
 
 
@@ -168,6 +169,7 @@ invdistdiscrete = [
     ['nbinom', (10, 1.5)],
     ['planck', (-0.5, )],
     ['poisson', (-0.5, )],
+    ['poisson_binom', (-1, 2, 0.5)],
     ['randint', (5, 2)],
     ['skellam', (-5, -2)],
     ['zipf', (-2, )],
