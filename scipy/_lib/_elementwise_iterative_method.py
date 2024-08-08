@@ -14,7 +14,7 @@
 import math
 import numpy as np
 from ._util import _RichResult, _call_callback_maybe_halt
-from ._array_api import array_namespace, size as xp_size
+from ._array_api import array_namespace, xp_size
 
 _ESIGNERR = -1
 _ECONVERR = -2

@@ -42,7 +42,6 @@ from scipy.optimize import milp, LinearConstraint
 from scipy._lib._util import (check_random_state, _get_nan,
                               _rename_parameter, _contains_nan,
                               AxisError, _lazywhere)
-from scipy._lib._array_api import _asarray as xp_asarray
 
 import scipy.special as special
 # Import unused here but needs to stay until end of deprecation periode
@@ -70,10 +69,16 @@ from scipy._lib._bunch import _make_tuple_bunch
 from scipy import stats
 from scipy.optimize import root_scalar
 from scipy._lib._util import normalize_axis_index
-from scipy._lib._array_api import (array_namespace, is_numpy, atleast_nd,
-                                   xp_clip, xp_moveaxis_to_end, xp_sign,
-                                   xp_minimum, xp_vector_norm)
-from scipy._lib.array_api_compat import size as xp_size
+from scipy._lib._array_api import (
+    _asarray,
+    array_namespace,
+    xp_atleast_nd,
+    is_numpy,
+    xp_size,
+    xp_moveaxis_to_end,
+    xp_sign,
+    xp_vector_norm,
+)
 from scipy._lib.deprecation import _deprecated
 
 
@@ -138,7 +143,7 @@ def _chk2_asarray(a, b, axis):
 
 def _convert_common_float(*arrays, xp=None):
     xp = array_namespace(*arrays) if xp is None else xp
-    arrays = [xp_asarray(array, subok=True) for array in arrays]
+    arrays = [_asarray(array, subok=True) for array in arrays]
     dtypes = [(xp.asarray(1.).dtype if xp.isdtype(array.dtype, 'integral')
                else array.dtype) for array in arrays]
     dtype = xp.result_type(*dtypes)
@@ -1518,9 +1523,8 @@ def _get_pvalue(statistic, distribution, alternative, symmetric=True, xp=None):
         pvalue = distribution.sf(statistic)
     elif alternative == 'two-sided':
         pvalue = 2 * (distribution.sf(xp.abs(statistic)) if symmetric
-                      else xp_minimum(distribution.cdf(statistic),
-                                      distribution.sf(statistic),
-                                      xp=xp))
+                      else xp.minimum(distribution.cdf(statistic),
+                                      distribution.sf(statistic)))
     else:
         message = "`alternative` must be 'less', 'greater', or 'two-sided'."
         raise ValueError(message)
@@ -2589,7 +2593,7 @@ def sem(a, axis=0, ddof=1, nan_policy='propagate'):
     if axis is None:
         a = xp.reshape(a, (-1,))
         axis = 0
-    a = atleast_nd(a, ndim=1, xp=xp)
+    a = xp_atleast_nd(a, ndim=1, xp=xp)
     n = a.shape[axis]
     s = xp.std(a, axis=axis, correction=ddof) / n**0.5
     return s
@@ -4625,9 +4629,7 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
     # Presumably, if abs(r) > 1, then it is only some small artifact of
     # floating point arithmetic.
     one = xp.asarray(1, dtype=dtype)
-    # `clip` only recently added to array API, so it's not yet available in
-    # array_api_strict. Replace with e.g. `xp.clip(r, -one, one)` when available.
-    r = xp.asarray(xp_clip(r, -one, one, xp=xp))
+    r = xp.asarray(xp.clip(r, -one, one))
     r[const_xy] = xp.nan
 
     # As explained in the docstring, the distribution of `r` under the null
@@ -7073,7 +7075,7 @@ def power_divergence(f_obs, f_exp=None, ddof=0, axis=0, lambda_=None):
             f_obs_sum = _m_sum(f_obs_float, axis=axis, preserve_mask=False, xp=xp)
             f_exp_sum = _m_sum(f_exp, axis=axis, preserve_mask=False, xp=xp)
             relative_diff = (xp.abs(f_obs_sum - f_exp_sum) /
-                             xp_minimum(f_obs_sum, f_exp_sum))
+                             xp.minimum(f_obs_sum, f_exp_sum))
             diff_gt_tol = xp.any(relative_diff > rtol, axis=None)
         if diff_gt_tol:
             msg = (f"For each axis slice, the sum of the observed "
@@ -10444,7 +10446,7 @@ def _xp_mean(x, /, *, axis=None, weights=None, keepdims=False, nan_policy='propa
     """
     # ensure that `x` and `weights` are array-API compatible arrays of identical shape
     xp = array_namespace(x) if xp is None else xp
-    x = xp.asarray(x, dtype=dtype)
+    x = _asarray(x, dtype=dtype, subok=True)
     weights = xp.asarray(weights, dtype=dtype) if weights is not None else weights
 
     # to ensure that this matches the behavior of decorated functions when one of the
@@ -10530,7 +10532,7 @@ def _xp_var(x, /, *, axis=None, correction=0, keepdims=False, nan_policy='propag
     # an array-api compatible function for variance with scipy.stats interface
     # and features (e.g. `nan_policy`).
     xp = array_namespace(x) if xp is None else xp
-    x = xp.asarray(x)
+    x = _asarray(x, subok=True)
 
     # use `_xp_mean` instead of `xp.var` for desired warning behavior
     # it would be nice to combine this with `_var`, which uses `_moment`
@@ -10540,7 +10542,7 @@ def _xp_var(x, /, *, axis=None, correction=0, keepdims=False, nan_policy='propag
     # be easy.
     kwargs = dict(axis=axis, nan_policy=nan_policy, dtype=dtype, xp=xp)
     mean = _xp_mean(x, keepdims=True, **kwargs)
-    x = xp.asarray(x, dtype=mean.dtype)
+    x = _asarray(x, dtype=mean.dtype, subok=True)
     x_mean = _demean(x, mean, axis, xp=xp)
     var = _xp_mean(x_mean**2, keepdims=keepdims, **kwargs)
 

@@ -19,6 +19,7 @@ test_data = [
     (scu._beta_pdf, (0.5, 2, 3), 1.5),
     (scu._beta_pdf, (0, 1, 5), 5.0),
     (scu._beta_pdf, (1, 5, 1), 5.0),
+    (scu._beta_ppf, (0.5, 5., 5.), 0.5),  # gh-21303
     (scu._binom_cdf, (1, 3, 0.5), 0.5),
     (scu._binom_pmf, (1, 4, 0.5), 0.25),
     (scu._hypergeom_cdf, (2, 3, 5, 6), 0.5),

@@ -3,7 +3,7 @@ import pytest
 
 from scipy.conftest import array_api_compatible
 from scipy._lib._array_api import (
-    _GLOBAL_CONFIG, array_namespace, _asarray, copy, xp_assert_equal, is_numpy
+    _GLOBAL_CONFIG, array_namespace, _asarray, xp_copy, xp_assert_equal, is_numpy
 )
 import scipy._lib.array_api_compat.numpy as np_compat
 
@@ -60,7 +60,7 @@ class TestArrayAPI:
     def test_copy(self, xp):
         for _xp in [xp, None]:
             x = xp.asarray([1, 2, 3])
-            y = copy(x, xp=_xp)
+            y = xp_copy(x, xp=_xp)
             # with numpy we'd want to use np.shared_memory, but that's not specified
             # in the array-api
             x[0] = 10

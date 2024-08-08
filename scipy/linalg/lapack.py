@@ -793,6 +793,11 @@ All functions
    cgttrs
    zgttrs
 
+   sgtcon
+   dgtcon
+   cgtcon
+   zgtcon
+
    stpqrt
    dtpqrt
    ctpqrt

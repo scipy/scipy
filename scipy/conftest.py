@@ -180,6 +180,8 @@ skip_xp_invalid_arg = pytest.mark.skipif(SCIPY_ARRAY_API,
 def skip_xp_backends(xp, request):
     """
     Skip based on the ``skip_xp_backends`` marker.
+    
+    See the "Support for the array API standard" docs page for usage examples.
 
     Parameters
     ----------

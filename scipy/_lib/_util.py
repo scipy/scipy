@@ -15,7 +15,7 @@ from typing import (
 )
 
 import numpy as np
-from scipy._lib._array_api import array_namespace, is_numpy, size as xp_size
+from scipy._lib._array_api import array_namespace, is_numpy, xp_size
 
 
 AxisError: type[Exception]

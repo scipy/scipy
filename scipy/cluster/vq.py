@@ -68,7 +68,7 @@ import warnings
 import numpy as np
 from collections import deque
 from scipy._lib._array_api import (
-    _asarray, array_namespace, size, atleast_nd, copy, cov
+    _asarray, array_namespace, xp_size, xp_atleast_nd, xp_copy, xp_cov
 )
 from scipy._lib._util import check_random_state, rng_integers
 from scipy.spatial.distance import cdist
@@ -472,8 +472,8 @@ def kmeans(obs, k_or_guess, iter=20, thresh=1e-5, check_finite=True,
         raise ValueError(f"iter must be at least 1, got {iter}")
 
     # Determine whether a count (scalar) or an initial guess (array) was passed.
-    if size(guess) != 1:
-        if size(guess) < 1:
+    if xp_size(guess) != 1:
+        if xp_size(guess) < 1:
             raise ValueError(f"Asked for 0 clusters. Initial book was {guess}")
         return _kmeans(obs, guess, thresh=thresh, xp=xp)
 
@@ -551,23 +551,23 @@ def _krandinit(data, k, rng, xp):
     k = np.asarray(k)
 
     if data.ndim == 1:
-        _cov = cov(data)
+        _cov = xp_cov(data)
         x = rng.standard_normal(size=k)
         x = xp.asarray(x)
         x *= xp.sqrt(_cov)
     elif data.shape[1] > data.shape[0]:
         # initialize when the covariance matrix is rank deficient
         _, s, vh = xp.linalg.svd(data - mu, full_matrices=False)
-        x = rng.standard_normal(size=(k, size(s)))
+        x = rng.standard_normal(size=(k, xp_size(s)))
         x = xp.asarray(x)
         sVh = s[:, None] * vh / xp.sqrt(data.shape[0] - xp.asarray(1.))
         x = x @ sVh
     else:
-        _cov = atleast_nd(cov(data.T), ndim=2)
+        _cov = xp_atleast_nd(xp_cov(data.T), ndim=2)
 
         # k rows, d cols (one row = one obs)
         # Generate k sample of a random variable ~ Gaussian(mu, cov)
-        x = rng.standard_normal(size=(k, size(mu)))
+        x = rng.standard_normal(size=(k, xp_size(mu)))
         x = xp.asarray(x)
         x = x @ xp.linalg.cholesky(_cov).T
 
@@ -782,7 +782,7 @@ def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
     else:
         xp = array_namespace(data, k)
     data = _asarray(data, xp=xp, check_finite=check_finite)
-    code_book = copy(k, xp=xp)
+    code_book = xp_copy(k, xp=xp)
     if data.ndim == 1:
         d = 1
     elif data.ndim == 2:
@@ -790,11 +790,11 @@ def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
     else:
         raise ValueError("Input of rank > 2 is not supported.")
 
-    if size(data) < 1 or size(code_book) < 1:
+    if xp_size(data) < 1 or xp_size(code_book) < 1:
         raise ValueError("Empty input is not supported.")
 
     # If k is not a single value, it should be compatible with data's shape
-    if minit == 'matrix' or size(code_book) > 1:
+    if minit == 'matrix' or xp_size(code_book) > 1:
         if data.ndim != code_book.ndim:
             raise ValueError("k array doesn't match data rank")
         nc = code_book.shape[0]

@@ -43,6 +43,10 @@ class TestAAA:
             AAA([[0], [0]], [[1], [1]])
         with pytest.raises(ValueError, match="finite"):
             AAA([np.inf], [1])
+        with pytest.raises(TypeError):
+            AAA([1], [1], max_terms=1.0)
+        with pytest.raises(ValueError, match="greater"):
+            AAA([1], [1], max_terms=-1)
     
     def test_convergence_error(self):
         with pytest.warns(RuntimeWarning, match="AAA failed"):

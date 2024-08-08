@@ -6,8 +6,8 @@ from scipy import stats, special
 import scipy._lib._elementwise_iterative_method as eim
 from scipy.conftest import array_api_compatible
 from scipy._lib._array_api import (array_namespace, xp_assert_close, xp_assert_equal,
-                                   xp_assert_less, xp_minimum, is_numpy, is_cupy,
-                                   xp_ravel, size as xp_size)
+                                   xp_assert_less, is_numpy, is_cupy,
+                                   xp_ravel, xp_size,)
 
 from scipy.optimize.elementwise import find_minimum, find_root
 from scipy.optimize._tstutils import _CHANDRUPATLA_TESTS
@@ -655,7 +655,7 @@ class TestChandrupatla(TestScalarRootFinders):
         xp_assert_equal(res.fr, self.f(res.xr, *args_xp))
 
         assert xp.all(xp.abs(res.fun[finite]) ==
-                      xp_minimum(xp.abs(res.fl[finite]),
+                      xp.minimum(xp.abs(res.fl[finite]),
                                  xp.abs(res.fr[finite])))
 
     def test_flags(self, xp):
@@ -727,7 +727,7 @@ class TestChandrupatla(TestScalarRootFinders):
         kwargs = kwargs0.copy()
         kwargs['frtol'] = 1e-3
         x1, x2 = bracket
-        f0 = xp_minimum(xp.abs(self.f(x1, *args)), xp.abs(self.f(x2, *args)))
+        f0 = xp.minimum(xp.abs(self.f(x1, *args)), xp.abs(self.f(x2, *args)))
         res1 = _chandrupatla_root(self.f, *bracket, **kwargs)
         xp_assert_less(xp.abs(res1.fun), 1e-3*f0)
         kwargs['frtol'] = 1e-6

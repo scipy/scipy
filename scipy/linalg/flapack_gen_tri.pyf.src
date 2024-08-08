@@ -66,6 +66,57 @@ subroutine <prefix>gttrs(trans, n, nrhs, dl, d, du, du2, ipiv, b, ldb, info)
 end subroutine gttrs
 
 
+subroutine <prefix2>gtcon(norm,n,dl,d,du,du2,ipiv,anorm,rcond,work,iwork,info)
+    ! ?GTCON estimates the reciprocal of the condition number of a real
+    ! tridiagonal matrix A using the LU factorization as computed by
+    ! ?GTTRF.
+    ! An estimate is obtained for norm(inv(A)), and the reciprocal of the
+    ! condition number is computed as RCOND = 1 / (ANORM * norm(inv(A))).
+    threadsafe
+    callstatement (*f2py_func)(norm,&n,dl,d,du,du2,ipiv,&anorm,&rcond,work,iwork,&info)
+    callprotoargument char*, F_INT*, <ctype2>*, <ctype2>*, <ctype2>*, <ctype2>*, F_INT*, <ctype2>*, <ctype2>*, <ctype2>*, F_INT*, F_INT*
+
+    character optional, intent(in) :: norm = '1'
+    integer intent(hide), depend(d) :: n = max(3, len(d))
+    <ftype2> intent(in), depend(n), dimension(n - 1) :: dl
+    <ftype2> intent(in), dimension(n) :: d
+    <ftype2> intent(in), depend(n), dimension(n - 1) :: du
+    <ftype2> intent(in), depend(n), dimension(n - 2) :: du2
+    integer intent(in), depend(n), dimension(n) :: ipiv
+    <ftype2> intent(in) :: anorm
+    <ftype2> intent(out) :: rcond
+    <ftype2> intent(hide, cache), dimension(2*n), depend(n) :: work
+    integer intent(hide, cache), dimension(n), depend(n) :: iwork
+    integer intent(out) :: info
+
+end subroutine <prefix2>gtcon
+
+
+subroutine <prefix2c>gtcon(norm,n,dl,d,du,du2,ipiv,anorm,rcond,work,info)
+    ! ?GTCON estimates the reciprocal of the condition number of a real
+    ! tridiagonal matrix A using the LU factorization as computed by
+    ! ?GTTRF.
+    ! An estimate is obtained for norm(inv(A)), and the reciprocal of the
+    ! condition number is computed as RCOND = 1 / (ANORM * norm(inv(A))).
+    threadsafe
+    callstatement (*f2py_func)(norm,&n,dl,d,du,du2,ipiv,&anorm,&rcond,work,&info)
+    callprotoargument char*, F_INT*, <ctype2c>*, <ctype2c>*, <ctype2c>*, <ctype2c>*, F_INT*, <ctype2>*, <ctype2>*, <ctype2c>*, F_INT*
+
+    character optional, intent(in) :: norm = '1'
+    integer intent(hide), depend(d) :: n = max(3, len(d))
+    <ftype2c> intent(in), depend(n), dimension(n - 1) :: dl
+    <ftype2c> intent(in), dimension(n) :: d
+    <ftype2c> intent(in), depend(n), dimension(n - 1) :: du
+    <ftype2c> intent(in), depend(n), dimension(n - 2) :: du2
+    integer intent(in), depend(n), dimension(n) :: ipiv
+    <ftype2> intent(in) :: anorm
+    <ftype2> intent(out) :: rcond
+    <ftype2c> intent(hide, cache), dimension(2*n), depend(n) :: work
+    integer intent(out) :: info
+
+end subroutine <prefix2c>gtcon
+
+
 subroutine <prefix2>gtsvx(fact,trans,n,nrhs,dl,d,du,dlf,df,duf,du2,ipiv,b,ldb,x,ldx,rcond,ferr,berr,work,iwork,info)
     ! ?GTSVX uses the LU factorization to compute the solution to a real
     ! system of linear equations A * X = B or A**T * X = B,

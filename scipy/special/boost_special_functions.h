@@ -6,11 +6,6 @@
 #include "sf_error.h"
 
 
-// Override some default BOOST policies.
-// These are required to ensure that the Boost function ibeta_inv
-// handles extremely small p values with precision comparable to the
-// Cephes incbi function.
-
 #include "boost/math/special_functions/beta.hpp"
 #include "boost/math/special_functions/erf.hpp"
 #include "boost/math/special_functions/powm1.hpp"
@@ -536,7 +531,7 @@ Real beta_ppf_wrap(const Real x, const Real a, const Real b)
         boost::math::policies::domain_error<boost::math::policies::ignore_error >,
         boost::math::policies::overflow_error<boost::math::policies::user_error >,
         boost::math::policies::evaluation_error<boost::math::policies::user_error >,
-        boost::math::policies::promote_float<false > > BetaPolicyForStats;
+        boost::math::policies::promote_double<false > > BetaPolicyForStats;
 
     return ibeta_inv_wrap(a, b, x, BetaPolicyForStats());
 }

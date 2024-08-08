@@ -386,10 +386,6 @@ def simpson(y, *, x=None, dx=1.0, axis=-1):
     Integrate y(x) using samples along the given axis and the composite
     Simpson's rule. If x is None, spacing of dx is assumed.
 
-    If there are an even number of samples, N, then there are an odd
-    number of intervals (N-1), but Simpson's rule requires an even number
-    of intervals. The parameter 'even' controls how this is handled.
-
     Parameters
     ----------
     y : array_like

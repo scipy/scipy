@@ -1188,3 +1188,22 @@ def test_gh_20623(diagram_type):
     invalid_data = rng.random((4, 10, 3))
     with pytest.raises(ValueError, match="dimensions"):
         diagram_type(invalid_data)
+
+
+def test_gh_21286():
+    generators = np.array([[0, 0], [0, 1.1], [1, 0], [1, 1]])
+    tri = qhull.Delaunay(generators)
+    # verify absence of segfault reported in ticket:
+    with pytest.raises(IndexError):
+        tri.find_simplex(1)
+    with pytest.raises(IndexError):
+        # strikingly, Delaunay object has shape
+        # () just like np.asanyarray(1) above
+        tri.find_simplex(tri)
+
+
+def test_find_simplex_ndim_err():
+    generators = np.array([[0, 0], [0, 1.1], [1, 0], [1, 1]])
+    tri = qhull.Delaunay(generators)
+    with pytest.raises(ValueError):
+        tri.find_simplex([2, 2, 2])

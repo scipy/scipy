@@ -44,8 +44,8 @@ exception_list_test_files = [
     "_lib/array_api_compat/tests/test_array_namespace.py",
     "_lib/array_api_compat/tests/test_common.py",
     "_lib/array_api_compat/tests/test_isdtype.py",
+    "_lib/array_api_compat/tests/test_no_dependencies.py",
     "_lib/array_api_compat/tests/test_vendoring.py",
-    "_lib/array_api_compat/tests/test_array_namespace.py",
     "cobyqa/cobyqa/tests/test_main.py",
     "cobyqa/cobyqa/tests/test_models.py",
     "cobyqa/cobyqa/tests/test_problem.py",
@@ -103,7 +103,7 @@ def main(install_dir, no_tests):
         if pyi_file not in installed_pyi_files.keys():
             if no_tests and "test" in scipy_pyi_files[pyi_file]:
                 continue
-            raise Exception("%s is not installed" % scipy_pyi_files[pyi_file])
+            raise Exception(f"{scipy_pyi_files[pyi_file]} is not installed")
 
     print("----------- All the necessary .pyi files were installed --------------")
 

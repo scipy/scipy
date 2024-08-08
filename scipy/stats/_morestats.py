@@ -14,11 +14,9 @@ from scipy._lib._util import _rename_parameter, _contains_nan, _get_nan
 
 from scipy._lib._array_api import (
     array_namespace,
-    size as xp_size,
-    xp_minimum,
+    xp_size,
     xp_moveaxis_to_end,
     xp_vector_norm,
-    xp_clip
 )
 
 from ._ansari_swilk_statistics import gscale, swilk
@@ -2899,7 +2897,7 @@ def bartlett(*samples, axis=0):
     chi2 = _SimpleChi2(xp.asarray(k-1))
     pvalue = _get_pvalue(T, chi2, alternative='greater', symmetric=False, xp=xp)
 
-    T = xp_clip(T, min=0., max=xp.inf)
+    T = xp.clip(T, min=0., max=xp.inf)
     T = T[()] if T.ndim == 0 else T
     pvalue = pvalue[()] if pvalue.ndim == 0 else pvalue
 
@@ -4103,7 +4101,7 @@ def circvar(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     cos_mean = xp.mean(cos_samp, axis=axis)
     hypotenuse = (sin_mean**2. + cos_mean**2.)**0.5
     # hypotenuse can go slightly above 1 due to rounding errors
-    R = xp_minimum(xp.asarray(1.), hypotenuse)
+    R = xp.clip(hypotenuse, max=1.)
 
     res = 1. - R
     return res
@@ -4207,7 +4205,7 @@ def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate', *,
     cos_mean = xp.mean(cos_samp, axis=axis)  # [1] (2.2.3)
     hypotenuse = (sin_mean**2. + cos_mean**2.)**0.5
     # hypotenuse can go slightly above 1 due to rounding errors
-    R = xp_minimum(xp.asarray(1.), hypotenuse)  # [1] (2.2.4)
+    R = xp.clip(hypotenuse, max=1.)  # [1] (2.2.4)
 
     res = (-2*xp.log(R))**0.5+0.0  # torch.pow returns -0.0 if R==1
     if not normalize:
