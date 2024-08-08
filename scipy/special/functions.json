@@ -1033,6 +1033,18 @@
             "invgauss_isf_double": "ddd->d"
         }
     },
+    "_cauchy_ppf": {
+        "boost_special_functions.h++": {
+            "cauchy_ppf_float": "fff->f",
+            "cauchy_ppf_double": "ddd->d"
+        }
+    },
+    "_cauchy_isf": {
+        "boost_special_functions.h++": {
+            "cauchy_isf_float": "fff->f",
+            "cauchy_isf_double": "ddd->d"
+        }
+    },
     "_ncx2_pdf": {
         "boost_special_functions.h++": {
             "ncx2_pdf_float": "fff->f",
