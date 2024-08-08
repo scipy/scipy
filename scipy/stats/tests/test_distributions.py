@@ -9862,3 +9862,12 @@ def test_sf_isf_overrides(case):
     ref = 1 - np.logspace(lp2, lpm, 20)
     res = dist_frozen.sf(dist_frozen.isf(ref))
     assert_allclose(res, ref, atol=atol, rtol=rtol)
+
+def test_levy_stable_parameterization_S0():
+    stable_distribution = stats.levy_stable(alpha=1.9, beta=0.1, loc=0.0, scale=1.0)
+    stats.levy_stable.parameterization = "S0"
+    samples_s0 = stable_distribution.rvs(size=(1000,1), random_state=49)
+    stats.levy_stable.parameterization = "S1"
+    samples_s1 = stable_distribution.rvs(size=(1000,1), random_state=49)
+    assert not np.all(np.isclose(samples_s0, samples_s1))
+    
