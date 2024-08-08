@@ -4905,6 +4905,42 @@ class TestDgamma:
         for i in range(len(y)):
             assert y[i] == stats.dgamma.entropy(x[i])
 
+class TestCauchy:
+    def test_pdf(self):
+        assert_almost_equal(stats.cauchy.pdf(0), 3.18309886183790671538e-1,
+                            decimal=15)
+        assert_almost_equal(stats.cauchy.pdf(1), 1.59154943091895335769e-1,
+                            decimal=15)
+        assert_almost_equal(stats.cauchy.pdf(2), 6.36619772367581343076e-2,
+                            decimal=15)
+
+    def test_cdf(self):
+        assert_almost_equal(stats.cauchy.cdf(-100000), 3.18309886173180341999e-6,
+                            decimal=15)
+        assert_equal(stats.cauchy.cdf(-1), 0.25)
+        assert_equal(stats.cauchy.cdf(0), 0.5)
+
+    def test_sf(self):
+        assert_almost_equal(stats.cauchy.sf(100000), 3.18309886173180341999e-6,
+                            decimal=15)
+        assert_equal(stats.cauchy.sf(1), 0.25)
+        assert_equal(stats.cauchy.sf(0), 0.5)
+
+    def test_ppf(self):
+        assert_almost_equal(stats.cauchy.ppf(2**-32), -1.36713055115286317932e9,
+                            decimal=15)
+        assert_equal(stats.cauchy.ppf(0.5), 0)
+
+        assert np.isneginf(stats.cauchy.ppf(0))
+        assert np.isposinf(stats.cauchy.ppf(1))
+
+    def test_isf(self):
+        assert_almost_equal(stats.cauchy.isf(2**-32), 1.36713055115286317932e9,
+                            decimal=15)
+        assert_equal(stats.cauchy.isf(0.5), 0)
+
+        assert np.isposinf(stats.cauchy.isf(0))
+        assert np.isneginf(stats.cauchy.isf(1))
 
 class TestChi2:
     # regression tests after precision improvements, ticket:1041, not verified
