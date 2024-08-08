@@ -1,6 +1,7 @@
 import itertools
 
 import numpy as np
+import math
 
 from functools import cached_property
 
@@ -638,10 +639,6 @@ def _apply_fixed_rule(f, a, b, orig_nodes, orig_weights, args=(), kwargs=None):
                          f"ndim {rule_ndim}, while limit of integration has ndim"
                          f"a_ndim={a_ndim}, b_ndim={b_ndim}")
 
-    # Since f accepts arrays of shape (eval_points, ndim), it is necessary to
-    # add an extra axis to a and b so that ``f`` can be evaluated there.
-    a = a[np.newaxis, :]
-    b = b[np.newaxis, :]
     lengths = b - a
 
     # The underlying rule is for the hypercube [-1, 1]^n.
@@ -652,9 +649,8 @@ def _apply_fixed_rule(f, a, b, orig_nodes, orig_weights, args=(), kwargs=None):
 
     # Also need to multiply the weights by a scale factor equal to the determinant
     # of the Jacobian for this coordinate change.
-    weight_scale_factor = np.prod(lengths / 2)
+    weight_scale_factor = math.prod(lengths) / 2**rule_ndim
     weights = orig_weights * weight_scale_factor
-    weights = weights
 
     f_nodes = f(nodes, *args, **kwargs)
     weights_reshaped = weights.reshape(-1, *([1] * (f_nodes.ndim - 1)))
@@ -662,9 +658,6 @@ def _apply_fixed_rule(f, a, b, orig_nodes, orig_weights, args=(), kwargs=None):
     # f(nodes) will have shape (num_nodes, output_dim_1, ..., output_dim_n)
     # Summing along the first axis means estimate will shape (output_dim_1, ...,
     # output_dim_n)
-    est = np.sum(
-        weights_reshaped * f_nodes,
-        axis=0
-    )
+    est = np.sum(weights_reshaped * f_nodes, axis=0)
 
     return est
