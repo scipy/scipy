@@ -9870,4 +9870,3 @@ def test_levy_stable_parameterization_S0():
     stats.levy_stable.parameterization = "S1"
     samples_s1 = stable_distribution.rvs(size=(1000,1), random_state=49)
     assert not np.all(np.isclose(samples_s0, samples_s1))
-    
