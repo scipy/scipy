@@ -2266,7 +2266,9 @@ class TestNdimageMorphology:
                                               [2, 3, 1, 3, 1],
                                               [5, 5, 3, 3, 1]]))
 
-    @skip_xp_backends("jax.numpy", reasons=["output array is read-only."],
+    @skip_xp_backends("jax.numpy", "dask.array",
+                      reasons=["output array is read-only.",
+                               "output array is read-only.",],
                       cpu_only=True, exceptions=['cupy', 'jax.numpy'],)
     def test_grey_erosion01_overlap(self, xp):
         if is_cupy(xp):
@@ -2463,7 +2465,9 @@ class TestNdimageMorphology:
                                                structure=structure)
         assert_array_almost_equal(expected, output)
 
-    @skip_xp_backends("jax.numpy", reasons=["output array is read-only."],
+    @skip_xp_backends("jax.numpy", "dask.array",
+                      reasons=["output array is read-only.",
+                               "output array is read-only.",],
                       cpu_only=True, exceptions=['cupy', 'jax.numpy'],)
     def test_white_tophat01(self, xp):
         array = xp.asarray([[3, 2, 5, 1, 4],
@@ -2518,7 +2522,9 @@ class TestNdimageMorphology:
         output = ndimage.white_tophat(array, structure=structure)
         xp_assert_equal(expected, output)
 
-    @skip_xp_backends("jax.numpy", reasons=["output array is read-only."],
+    @skip_xp_backends("jax.numpy", "dask.array",
+                      reasons=["output array is read-only.",
+                               "output array is read-only.",],
                       cpu_only=True, exceptions=['cupy', 'jax.numpy'],)
     def test_white_tophat04(self, xp):
         array = np.eye(5, dtype=bool)
@@ -2531,7 +2537,9 @@ class TestNdimageMorphology:
         output = xp.empty_like(array, dtype=xp.float64)
         ndimage.white_tophat(array, structure=structure, output=output)
 
-    @skip_xp_backends("jax.numpy", reasons=["output array is read-only."],
+    @skip_xp_backends("jax.numpy", "dask.array",
+                      reasons=["output array is read-only.",
+                               "output array is read-only.",],
                       cpu_only=True, exceptions=['cupy', 'jax.numpy'],)
     def test_black_tophat01(self, xp):
         array = xp.asarray([[3, 2, 5, 1, 4],
@@ -2586,7 +2594,9 @@ class TestNdimageMorphology:
         output = ndimage.black_tophat(array, structure=structure)
         xp_assert_equal(expected, output)
 
-    @skip_xp_backends("jax.numpy", reasons=["output array is read-only."],
+    @skip_xp_backends("jax.numpy", "dask.array",
+                      reasons=["output array is read-only.",
+                               "output array is read-only.",],
                       cpu_only=True, exceptions=['cupy', 'jax.numpy'],)
     def test_black_tophat04(self, xp):
         array = xp.asarray(np.eye(5, dtype=bool))
