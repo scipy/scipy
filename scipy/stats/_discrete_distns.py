@@ -1623,10 +1623,10 @@ class poisson_binom_gen(rv_discrete):
 
 poisson_binom = poisson_binom_gen(name='poisson_binom', longname='A Poisson Binomial')
 
-# _parse_args_rvs work with variable size *args. I don't want to mess
-# with the distribution infrastructure, and we can't just override it
-# because it is bound to the instance in a non-standard way. So we
-# replace it by forcibly binding it ourselves.
+# The _parse_args methods don't work with variable size *args. I don't want
+# to mess with the distribution infrastructure, and we can't just override
+# them because they are bound to the instance in a non-standard way, so we
+# write them and forcibly bind them to the instance ourselves.
 def _parse_args_rvs(self, *args, **kwds):
     args = np.broadcast_arrays(*args)
     return args, kwds.pop('loc', 0), 1, kwds.pop('size', None)
