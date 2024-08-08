@@ -39,6 +39,7 @@ from scipy import special
 import scipy.special._ufuncs as cephes
 from scipy.special import ellipe, ellipk, ellipkm1
 from scipy.special import elliprc, elliprd, elliprf, elliprg, elliprj
+from scipy.special import softplus
 from scipy.special import mathieu_odd_coef, mathieu_even_coef, stirling2
 from scipy._lib._util import np_long, np_ulong
 
@@ -3661,6 +3662,31 @@ class TestRiccati:
             C[1,n] = x*yp + y
         assert_array_almost_equal(C, special.riccati_yn(n, x), 8)
 
+
+class TestSoftplus:
+    @pytest.mark.parametrize("value, expected",[
+        (0, 0.6931471805599453),
+        ([-1, 0, 1], np.array([0.31326169, 0.69314718, 1.31326169])),
+        (100, 100.0),
+        (-5, 0.006715348489118068),
+        (-100, 3.720075976020836e-44),
+        (10000, 10000.0)
+    ])
+    def test_softplus(self, value, expected):
+        
+        # Test cases for the softplus function.
+        # Note : ``value`` is selected based on the intervals provided in Eq.(10) of the the following paper:
+        # Mächler, M. (2012). log1mexp-note.pdf. Rmpfr: R MPFR - Multiple Precision Floating-Point Reliable.
+        # Retrieved from https://cran.r-project.org/web/packages/Rmpfr/vignettes/log1mexp-note.pdf
+        result = softplus(value)
+        assert_allclose(result, expected)
+
+    def test_softplus_with_kwargs(self):
+        x = np.arange(5) - 2
+        out = np.ones(5)
+        where = x>0
+        softplus(x, out=out, where=where)
+        assert_allclose(out, np.array([1., 1., 1., 1.31326169, 2.12692801]))
 
 class TestRound:
     def test_round(self):
