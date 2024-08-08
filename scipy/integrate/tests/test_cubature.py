@@ -696,6 +696,25 @@ def test_base_1d_quadratures_simple(quadrature):
     )
 
 
+def basic_1d_integrand(x, n):
+    x_reshaped = x.reshape(-1, 1, 1)
+    n_reshaped = n.reshape(1, -1, 1)
+
+    return np.power(x_reshaped, n_reshaped)
+
+
+def basic_1d_integrand_exact(n):
+    return (2**(n+1)/(n+1)).reshape(-1, 1)
+
+
+def basic_nd_integrand(x, n):
+    return np.power(np.sum(x, axis=-1).reshape(-1, 1), n.reshape(1, -1))
+
+
+def basic_nd_integrand_exact(n):
+    return (-2**(3+n) + 4**(2+n))/((1+n)*(2+n))
+
+
 @pytest.mark.parametrize("rule_str", [
     "gauss-kronrod",
     "newton-cotes",
@@ -706,19 +725,14 @@ def test_base_1d_quadratures_simple(quadrature):
 ])
 def test_can_pass_str_to_cub(rule_str):
     n = np.arange(5)
-
-    def f(x):
-        return np.power(np.sum(x, axis=-1).reshape(-1, 1), n.reshape(1, -1))
-
     a = np.array([0, 0])
     b = np.array([2, 2])
 
-    exact = (-2**(3+n) + 4**(2+n))/((1+n)*(2+n))
-    res = cubature(f, a, b, rule_str)
+    res = cubature(basic_nd_integrand, a, b, rule_str, args=(n,))
 
     assert_allclose(
         res.estimate,
-        exact,
+        basic_nd_integrand_exact(n),
         rtol=1e-1,
         atol=0,
     )
@@ -727,21 +741,19 @@ def test_can_pass_str_to_cub(rule_str):
 def test_can_pass_list_to_cub():
     n = np.arange(5)
 
-    def f(x):
-        x_reshaped = x.reshape(-1, 1, 1)
-        n_reshaped = n.reshape(1, -1, 1)
-
-        return np.power(x_reshaped, n_reshaped)
-
     a = [0]
     b = [2]
 
-    exact = (2**(n+1)/(n+1)).reshape(-1, 1)
-    res = cubature(f, a, b)
+    res = cubature(
+        basic_1d_integrand,
+        a,
+        b,
+        args=(n,)
+    )
 
     assert_allclose(
         res.estimate,
-        exact,
+        basic_1d_integrand_exact(n),
         rtol=1e-1,
         atol=0,
     )
@@ -753,28 +765,19 @@ def test_can_pass_list_to_cub():
 ])
 def test_base_1d_quadratures_error_from_difference(quadrature_pair):
     n = np.arange(5)
-
-    def f(x):
-        x_reshaped = x.reshape(-1, 1, 1)
-        n_reshaped = n.reshape(1, -1, 1)
-
-        return np.power(x_reshaped, n_reshaped)
-
     a = np.array([0])
     b = np.array([2])
-
-    exact = (2**(n+1)/(n+1)).reshape(-1, 1)
 
     rule = NestedFixedRule(
         higher=quadrature_pair[0],
         lower=quadrature_pair[1]
     )
 
-    res = cubature(f, a, b, rule, rtol=1e-1)
+    res = cubature(basic_1d_integrand, a, b, rule, rtol=1e-1, args=(np.arange(5),))
 
     assert_allclose(
         res.estimate,
-        exact,
+        basic_1d_integrand_exact(n),
         rtol=1e-1,
         atol=0,
     )
@@ -818,33 +821,33 @@ def test_cub_with_kwargs(rule):
     )
 
 
+class BadError(Rule):
+    """
+    A rule with fake high error so that cub will keep on subdividing.
+    """
+    underlying = GaussLegendreQuadrature(10)
+
+    def estimate(self, f, a, b, args=(), kwargs=None):
+        kwargs = kwargs or {}
+        return self.underlying.estimate(f, a, b, args, kwargs)
+
+    def estimate_error(self, f, a, b, args=(), kwargs=None):
+        kwargs = kwargs or {}
+        return 1e6
+
+
 def test_stops_after_max_subdivisions():
-    # Define a rule with fake high error so that cub will keep on subdividing
-
-    class BadError(Rule):
-        underlying = GaussLegendreQuadrature(10)
-
-        def estimate(self, f, a, b, args=(), kwargs=None):
-            kwargs = kwargs or {}
-            return self.underlying.estimate(f, a, b, args, kwargs)
-
-        def estimate_error(self, f, a, b, args=(), kwargs=None):
-            kwargs = kwargs or {}
-            return 1e6
-
-    def f(x):
-        return x
-
     a = np.array([0])
     b = np.array([1])
     rule = BadError()
 
     res = cubature(
-        f,
+        basic_1d_integrand,  # Any function would suffice
         a,
         b,
         rule,
         max_subdivisions=10,
+        args=(np.arange(5),)
     )
 
     assert res.subdivisions == 10
@@ -862,15 +865,12 @@ def test_one_point_fixed_quad_impossible(quadrature):
 
 
 def test_estimate_with_base_classes_raise_error():
-    def f(x):
-        return x
-
     a = np.array([0])
     b = np.array([1])
 
     for base_class in [Rule(), FixedRule()]:
         with pytest.raises(Exception):
-            base_class.estimate(f, a, b)
+            base_class.estimate(basic_1d_integrand, a, b)
 
 
 def test_genz_malik_1d_raises_error():
@@ -899,13 +899,10 @@ def test_genz_malik_1d_raises_error():
     ),
 ])
 def test_incompatible_dimension_raises_error(problem):
-    def f(x):
-        return x
-
     a, b, rule = problem
 
     with pytest.raises(Exception, match="incompatible dimension"):
-        cubature(f, a, b, rule)
+        cubature(basic_1d_integrand, a, b, rule)
 
 
 def _eval_indefinite_integral(F, a, b):

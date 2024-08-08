@@ -1,5 +1,6 @@
 import heapq
 import itertools
+import concurrent.futures
 
 from dataclasses import dataclass
 
@@ -203,45 +204,55 @@ def cubature(f, a, b, rule="gk21", rtol=1e-05, atol=1e-08, max_subdivisions=1000
     subdivisions = 0
     success = True
 
-    while np.any(err > atol + rtol * np.abs(est)):
-        # region_k is the region with highest estimated error
-        region_k = heapq.heappop(regions)
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        while np.any(err > atol + rtol * np.abs(est)):
+            # region_k is the region with highest estimated error
+            region_k = heapq.heappop(regions)
 
-        est_k = region_k.estimate
-        err_k = region_k.error
+            est_k = region_k.estimate
+            err_k = region_k.error
 
-        a_k, b_k = region_k.a, region_k.b
+            a_k, b_k = region_k.a, region_k.b
 
-        # Subtract the estimate of the integral and its error over this region from the
-        # current global estimates, since these will be refined in the loop over all
-        # subregions.
-        est -= est_k
-        err -= err_k
+            # Subtract the estimate of the integral and its error over this region from
+            # the current global estimates, since these will be refined in the loop over
+            # all subregions.
+            est -= est_k
+            err -= err_k
 
-        # Find all 2^ndim subregions formed by splitting region_k along each axis, e.g.
-        # for 1D integrals this splits an estimate over an interval into an estimate
-        # over two subintervals, for 3D integrals this splits an estimate over a cube
-        # into 8 subcubes.
-        #
-        # For each of the new subregions, calculate an estimate for the integral and
-        # the error there, and push these regions onto the heap for potential further
-        # subdividing.
-        for a_k_sub, b_k_sub in _subregion_coordinates(a_k, b_k):
-            est_sub = rule.estimate(f, a_k_sub, b_k_sub, args, kwargs)
-            err_sub = rule.estimate_error(f, a_k_sub, b_k_sub, args, kwargs)
+            # Find all 2^ndim subregions formed by splitting region_k along each axis,
+            # e.g. for 1D integrals this splits an estimate over an interval into an
+            # estimate over two subintervals, for 3D integrals this splits an estimate
+            # over a cube into 8 subcubes.
+            #
+            # For each of the new subregions, calculate an estimate for the integral and
+            # the error there, and push these regions onto the heap for potential
+            # further subdividing.
+            executor_args = zip(
+                itertools.repeat(f),
+                itertools.repeat(rule),
+                itertools.repeat(args),
+                itertools.repeat(kwargs),
+                _subregion_coordinates(a_k, b_k),
+            )
 
-            est += est_sub
-            err += err_sub
+            # TODO: warn about top level func
 
-            new_region = CubatureRegion(est_sub, err_sub, a_k_sub, b_k_sub)
+            for subdivision_result in executor.map(_process_subregion, executor_args):
+                a_k_sub, b_k_sub, est_sub, err_sub = subdivision_result
 
-            heapq.heappush(regions, new_region)
+                est += est_sub
+                err += err_sub
 
-        subdivisions += 1
+                new_region = CubatureRegion(est_sub, err_sub, a_k_sub, b_k_sub)
 
-        if subdivisions >= max_subdivisions:
-            success = False
-            break
+                heapq.heappush(regions, new_region)
+
+            subdivisions += 1
+
+            if subdivisions >= max_subdivisions:
+                success = False
+                break
 
     status = "converged" if success else "not_converged"
 
@@ -255,6 +266,16 @@ def cubature(f, a, b, rule="gk21", rtol=1e-05, atol=1e-08, max_subdivisions=1000
         atol=atol,
         rtol=rtol,
     )
+
+
+def _process_subregion(data):
+    f, rule, args, kwargs, coord = data
+    a_k_sub, b_k_sub = coord
+
+    est_sub = rule.estimate(f, a_k_sub, b_k_sub, args, kwargs)
+    err_sub = rule.estimate_error(f, a_k_sub, b_k_sub, args, kwargs)
+
+    return a_k_sub, b_k_sub, est_sub, err_sub
 
 
 def _subregion_coordinates(a, b):
