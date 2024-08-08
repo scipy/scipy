@@ -27,6 +27,7 @@ from scipy.integrate import (IntegrationWarning, quad, trapezoid,
                              cumulative_trapezoid)
 import scipy.stats as stats
 from scipy.stats._distn_infrastructure import argsreduce
+from scipy.stats._constants import _XMAX
 import scipy.stats.distributions
 
 from scipy.special import xlogy, polygamma, entr
@@ -520,16 +521,19 @@ class TestCauchy:
     @pytest.mark.parametrize(
         'x, ref',
         [(0.0, -1.1447298858494002),
-         (6e-323, -1.1447298858494002),
+         (5e-324, -1.1447298858494002),
          (1e-34, -1.1447298858494002),
+         (2.2e-16, -1.1447298858494002),
+         (2e-8, -1.1447298858494006),
          (5e-4, -1.144730135849369),
+         (0.1, -1.1546802167025683),
          (1.5, -2.3233848821910463),
          (2e18, -85.42408759475494),
          (1e200, -922.1787670834676),
-         (4e303, -1399.283884962481)])
+         (_XMAX, -1420.7101556726175)])
     def test_logpdf(self, x, ref):
         logp = stats.cauchy.logpdf([x, -x])
-        assert_allclose(logp, [ref, ref], rtol=5e-15)
+        assert_allclose(logp, [ref, ref], rtol=1e-15)
 
     # Reference values were computed with mpmath.
     @pytest.mark.parametrize(
