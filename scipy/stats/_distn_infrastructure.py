@@ -3369,7 +3369,8 @@ class rv_discrete(rv_generic):
         return self._cdf(k, *args) - self._cdf(k-1, *args)
 
     def _logpmf(self, k, *args):
-        return log(self._pmf(k, *args))
+        with np.errstate(divide='ignore'):
+            return log(self._pmf(k, *args))
 
     def _logpxf(self, k, *args):
         # continuous distributions have PDF, discrete have PMF, but sometimes
