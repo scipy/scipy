@@ -517,7 +517,8 @@ py::array pdist_weighted(
     auto x_desc = get_descriptor(x);
     auto x_data = x.data();
 
-    scalar_t* w_data = new scalar_t[x_desc.shape[1]];
+    std::vector<scalar_t> w_data_(x_desc.shape[1]);
+    scalar_t* w_data = w_data_.data();
     _compute_variance_across_rows(w_data, x_desc, x_data);
     ArrayDescriptor w_desc(1);
     w_desc.element_size = x_desc.element_size;
@@ -531,7 +532,6 @@ py::array pdist_weighted(
             w_data, f, PreprocessingType::None);
     }
 
-    delete [] w_data;
     return std::move(out);
 }
 
@@ -607,7 +607,8 @@ py::array cdist_weighted(
     auto y_desc = get_descriptor(y);
     auto y_data = y.data();
 
-    scalar_t* w_data = new scalar_t[x_desc.shape[1]];
+    std::vector<scalar_t> w_data_(x_desc.shape[1]);
+    scalar_t* w_data = w_data_.data();
     _compute_variance_across_rows(w_data, x_desc, x_data, y_desc, y_data);
     ArrayDescriptor w_desc(1);
     w_desc.element_size = x_desc.element_size;
@@ -621,7 +622,6 @@ py::array cdist_weighted(
             w_desc, w_data, f, PreprocessingType::None);
     }
 
-    delete [] w_data;
     return std::move(out);
 }
 
@@ -841,7 +841,8 @@ ALWAYS_INLINE void cdist_mahalanobis_impl(ArrayDescriptor x, const scalar_t* x_d
     ArrayDescriptor out, scalar_t* out_data, intptr_t vi_col_offset) {
     const intptr_t num_rowsX = x.shape[0], num_rowsY = y.shape[0];
     const intptr_t num_cols = x.shape[1];
-    scalar_t* uv_diff1 = new scalar_t[2*num_cols];
+    std::vector<scalar_t> diffs(2*num_cols);
+    scalar_t* uv_diff1 = diffs.data();
     scalar_t* uv_diff2 = uv_diff1 + num_cols;
 
     for( intptr_t i = 0; i < num_rowsX; i++ ) {
@@ -868,8 +869,6 @@ ALWAYS_INLINE void cdist_mahalanobis_impl(ArrayDescriptor x, const scalar_t* x_d
             out_data[i*out.strides[0] + j*out.strides[1]] = std::sqrt(s);
         }
     }
-
-    delete [] uv_diff1;
 }
 
 template <typename scalar_t>
@@ -1059,7 +1058,8 @@ py::array cdist_mahalanobis_without_vi(
     vi.element_size = x.element_size;
     vi.shape = {num_cols, 2*num_cols};
     vi.strides = {2*num_cols, 1};
-    scalar_t* vi_data = new scalar_t[2*num_cols*num_cols];
+    std::vector<scalar_t> vi_data_(2*num_cols*num_cols);
+    scalar_t* vi_data = vi_data_.data();
 
     ArrayDescriptor X[2] = {x, y};
     const scalar_t* X_data[2] = {x_data, y_data};
@@ -1068,8 +1068,6 @@ py::array cdist_mahalanobis_without_vi(
     _compute_inverse_matrix(vi, vi_data);
 
     cdist_mahalanobis_impl(x, x_data, y, y_data, vi, vi_data, out, out_data, num_cols);
-
-    delete [] vi_data;
 
     return out_array;
 }
@@ -1161,7 +1159,8 @@ ALWAYS_INLINE void pdist_mahalanobis_impl(
     ArrayDescriptor out, scalar_t* out_data, intptr_t vi_col_offset) {
     const intptr_t num_rowsX = x.shape[0];
     const intptr_t num_cols = x.shape[1];
-    scalar_t* uv_diff1 = new scalar_t[2*num_cols];
+    std::vector<scalar_t> diffs(2*num_cols);
+    scalar_t* uv_diff1 = diffs.data();
     scalar_t* uv_diff2 = uv_diff1 + num_cols;
     intptr_t o = 0;
 
@@ -1189,8 +1188,6 @@ ALWAYS_INLINE void pdist_mahalanobis_impl(
             out_data[o] = std::sqrt(s);
         }
     }
-
-    delete [] uv_diff1;
 }
 
 template <typename scalar_t>
@@ -1210,7 +1207,8 @@ py::array pdist_mahalanobis_without_vi(
     vi.element_size = x.element_size;
     vi.shape = {num_cols, 2*num_cols};
     vi.strides = {2*num_cols, 1};
-    scalar_t* vi_data = new scalar_t[2*num_cols*num_cols];
+    std::vector<scalar_t> vi_data_(2*num_cols*num_cols);
+    scalar_t* vi_data = vi_data_.data();
 
     ArrayDescriptor X[1] = {x};
     const scalar_t* X_data[1] = {x_data};
@@ -1219,8 +1217,6 @@ py::array pdist_mahalanobis_without_vi(
     _compute_inverse_matrix(vi, vi_data);
 
     pdist_mahalanobis_impl(x, x_data, vi, vi_data, out, out_data, num_cols);
-
-    delete [] vi_data;
 
     return out_array;
 }
