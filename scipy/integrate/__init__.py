@@ -13,6 +13,7 @@ Integrating functions, given function object
 
    quad          -- General purpose integration
    quad_vec      -- General purpose integration of vector-valued functions
+   cubature      -- General purpose multi-dimensional integration of array-valued functions
    dblquad       -- General purpose double integration
    tplquad       -- General purpose triple integration
    nquad         -- General purpose N-D integration
@@ -20,6 +21,7 @@ Integrating functions, given function object
    newton_cotes  -- Weights and error coefficient for Newton-Cotes integration
    qmc_quad      -- N-D integration using Quasi-Monte Carlo quadrature
    IntegrationWarning -- Warning on issues during integration
+
 
 Integrating functions, given fixed samples
 ==========================================
@@ -105,6 +107,7 @@ from ._ivp import (solve_ivp, OdeSolution, DenseOutput,
                    OdeSolver, RK23, RK45, DOP853, Radau, BDF, LSODA)
 from ._quad_vec import quad_vec
 from ._tanhsinh import nsum
+from ._cubature import cubature
 
 # Deprecated namespaces, to be removed in v2.0.0
 from . import dop, lsoda, vode, odepack, quadpack
