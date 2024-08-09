@@ -1550,8 +1550,10 @@ class poisson_binom_gen(rv_discrete):
     subsets of :math:`k` integers that can be selected :math:`\{1, 2, \dots, n-1, n\}`,
     and :math:`A^C` is the complement of a set :math:`A`.
 
-    `poisson_binom` takes a single array arguments for shape parameters :math:`p_i` where
-    the last axis corresponds with the index :math:`i` and any others are batch dimensions.
+    `poisson_binom` accepts a single array argument ``p`` for shape parameters
+    :math:`0 < p_i < 1`, where the last axis corresponds with the index :math:`i` and
+    any others are for batch dimensions. Broadcasting behaves according to the usual
+    rules except that the last axis of ``p`` is ignored.
 
     %(after_notes)s
 
@@ -1568,25 +1570,27 @@ class poisson_binom_gen(rv_discrete):
         return []
 
     def _argcheck(self, *args):
-        conds = [(0 < arg) & (arg < 1) for arg in args]
-        conds = np.stack(conds)
+        p = np.stack(args, axis=0)
+        conds = (0 < p) & (p < 1)
         return np.all(conds, axis=0)
 
     def _rvs(self, *args, size=None, random_state=None):
-        args = np.stack(args, axis=-1)
-        size = (tuple(np.append(np.atleast_1d(size), args.shape)) if size is not None
-                else args.shape)
-        # should use NumPy Bernoulli
-        return bernoulli.rvs(args, size=size, random_state=random_state).sum(axis=-1)
+        # convenient to work along the last axis here to avoid interference with `size`
+        p = np.stack(args, axis=-1)
+        # Size passed by the user is the *shape of the returned array*, so it won't
+        # contain the length of the last axis of p.
+        size = (p.shape if size is None else
+                (size, 1) if np.isscalar(size) else tuple(size) + (1,))
+        size = np.broadcast_shapes(p.shape, size)
+        return bernoulli.rvs(p, size=size, random_state=random_state).sum(axis=-1)
 
     def _get_support(self, *args):
         return 0, len(args)
 
     def _pmfs(self, *args):
         n = len(args)
-        # Each arg is a probability of success; they've been broadcasted
-        # the same shape already. Apparently, they can be Python scalars,
-        # though, so make sure they are a
+        # Apparently, the probabilities in `args` can be Python scalars,
+        # so make sure they are NumPy objects before getting shape/dtype.
         arg0 = np.asarray(args[0])
         base_shape = arg0.shape[0:]
         dtype = arg0.dtype
@@ -1616,20 +1620,22 @@ class poisson_binom_gen(rv_discrete):
         return np.take_along_axis(cdfs, k[np.newaxis, ...], axis=0)
 
     def _stats(self, *args, **kwds):
-        mean = sum(args)
-        var = sum(arg * (1-arg) for arg in args)
+        p = np.stack(args, axis=0)
+        mean = np.sum(p, axis=0)
+        var = np.sum(p * (1-p), axis=0)
         return (mean, var, None, None)
 
     def __call__(self, *args, **kwds):
         return poisson_binomial_frozen(self, *args, **kwds)
 
-poisson_binom = poisson_binom_gen(name='poisson_binom', longname='A Poisson Binomial',
+
+poisson_binom = poisson_binom_gen(name='poisson_binom', longname='A Poisson binomial',
                                   shapes='p')
 
-# The _parse_args methods don't work with variable size *args are vector-valued
-# shape parameters, so we rewrite them.
-# Note that `p` comes in as an array with the index of `p_i` corresponding
-# with the last axis; we return it as a tuple (p_1, p_2, ..., p_n).
+# The _parse_args methods don't work with vector-valued shape parameters, so we rewrite
+# them. Note that `p` is accepted as an array with the index `i` of `p_i` corresponding
+# with the last axis; we return it as a tuple (p_1, p_2, ..., p_n) so that it looks
+# like `n` scalar (or arrays of scalar-valued) shape parameters to the infrastructure.
 
 def _parse_args_rvs(self, p, loc=0, size=None):
     return tuple(np.moveaxis(p, -1, 0)), loc, 1.0, size
@@ -1642,27 +1648,27 @@ def _parse_args(self, p, loc=0):
 
 # The infrastructure manually binds these methods to the instance, so
 # we can only override them by manually binding them, too.
-_pb_obj, _pb_cls = poisson_binom, poisson_binom_gen
+_pb_obj, _pb_cls = poisson_binom, poisson_binom_gen  # shorter names (for PEP8)
 poisson_binom._parse_args_rvs = _parse_args_rvs.__get__(_pb_obj, _pb_cls)
 poisson_binom._parse_args_stats = _parse_args_stats.__get__(_pb_obj, _pb_cls)
 poisson_binom._parse_args = _parse_args.__get__(_pb_obj, _pb_cls)
 
 class poisson_binomial_frozen(rv_discrete_frozen):
     # copied from rv_frozen; we just need to bind the `_parse_args` methods
-    def __init__(self, dist, *args, **kwds):
-        self.args = args
-        self.kwds = kwds
+    def __init__(self, dist, *args, **kwds):                        # verbatim
+        self.args = args                                            # verbatim
+        self.kwds = kwds                                            # verbatim
 
-        # create a new instance
-        self.dist = dist.__class__(**dist._updated_ctor_param())
+        # create a new instance                                     # verbatim
+        self.dist = dist.__class__(**dist._updated_ctor_param())    # verbatim
 
         # Here is the only modification
         self.dist._parse_args_rvs = _parse_args_rvs.__get__(_pb_obj, _pb_cls)
         self.dist._parse_args_stats = _parse_args_stats.__get__(_pb_obj, _pb_cls)
         self.dist._parse_args = _parse_args.__get__(_pb_obj, _pb_cls)
 
-        shapes, _, _ = self.dist._parse_args(*args, **kwds)
-        self.a, self.b = self.dist._get_support(*shapes)
+        shapes, _, _ = self.dist._parse_args(*args, **kwds)         # verbatim
+        self.a, self.b = self.dist._get_support(*shapes)            # verbatim
 
     def expect(self, func=None, lb=None, ub=None, conditional=False, **kwds):
         a, loc, scale = self.dist._parse_args(*self.args, **self.kwds)
