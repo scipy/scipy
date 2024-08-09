@@ -1038,7 +1038,7 @@ class Bench(Task):
                 commit_a = out.strip()
                 cmd_compare = [
                     'asv', 'continuous', '--show-stderr', '--factor', '1.05',
-                    '--quick', commit_a, commit_b
+                    commit_a, commit_b
                 ] + bench_args
                 cls.run_asv(dirs, cmd_compare)
                 sys.exit(1)
