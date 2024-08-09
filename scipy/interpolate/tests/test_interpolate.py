@@ -16,7 +16,7 @@ from scipy.special import poch, gamma
 from scipy.interpolate import _ppoly
 
 from scipy._lib._gcutils import assert_deallocated, IS_PYPY
-from scipy._lib._testutils import _run_concurrent_barrier
+from scipy._lib._testutils import run_in_parallel
 
 from scipy.integrate import nquad
 
@@ -948,6 +948,20 @@ class TestAkima1DInterpolator:
         # Testing extrapoation to actual function.
         assert_allclose(y_ext, ak_true(x_ext), atol=1e-15)
 
+    @pytest.fixture
+    def concurrent_akima(self):
+        x = np.linspace(-5, 5, 11)
+        y = x**2
+        x_ext = np.linspace(-10, 10, 17)
+        ak = Akima1DInterpolator(x, y, extrapolate=True)
+        return ak, x_ext
+
+    @run_in_parallel
+    def test_concurrency(self, concurrent_akima):
+        # Check that no segfaults appear with concurrent access to Akima1D
+        ak, x_ext = concurrent_akima
+        return ak(x_ext)
+
 
 @pytest.mark.parametrize("method", [Akima1DInterpolator, PchipInterpolator])
 def test_complex(method):
@@ -958,18 +972,6 @@ def test_complex(method):
     msg = "real values"
     with pytest.raises(ValueError, match=msg):
         method(x, y)
-
-    def test_concurrency(self):
-        # Check that no segfaults appear with concurrent access to Akima1D
-        x = np.linspace(-5, 5, 11)
-        y = x**2
-        x_ext = np.linspace(-10, 10, 17)
-        ak = Akima1DInterpolator(x, y, extrapolate=True)
-
-        def worker_fn(_, ak, x_ext):
-            ak(x_ext)
-
-        _run_concurrent_barrier(10, worker_fn, ak, x_ext)
 
 
 class TestPPolyCommon:
@@ -1071,20 +1073,20 @@ class TestPPolyCommon:
 
             assert_raises(ValueError, p, np.array([[0.1, 0.2], [0.4]], dtype=object))
 
-    def test_concurrency(self):
-        # Check that no segfaults appear with concurrent access to BPoly, PPoly
+    @pytest.fixture
+    def concurrent_inputs(self, request):
         c = np.random.rand(8, 12, 5, 6, 7)
         x = np.sort(np.random.rand(13))
         xp = np.random.rand(3, 4)
+        return request.param(c, x), xp
 
-        for cls in (PPoly, BPoly):
-            interp = cls(c, x)
-
-            def worker_fn(_, interp, xp):
-                interp(xp)
-
-            _run_concurrent_barrier(10, worker_fn, interp, xp)
-
+    @pytest.mark.parametrize('concurrent_inputs', [PPoly, BPoly],
+                             indirect=['concurrent_inputs'])
+    @run_in_parallel
+    def test_concurrency(self, concurrent_inputs):
+        # Check that no segfaults appear with concurrent access to BPoly, PPoly
+        interp, xp = concurrent_inputs
+        return interp(xp)
 
     def test_complex_coef(self):
         np.random.seed(12345)
@@ -2371,8 +2373,8 @@ class TestNdPPoly:
         paz = p.antiderivative((0, 0, 1))
         assert_allclose(pz((u, v)), paz((u, v, b)) - paz((u, v, a)))
 
-
-    def test_concurrency(self):
+    @pytest.fixture
+    def random_ndppoly(self):
         rng = np.random.default_rng(12345)
 
         c = rng.uniform(size=(4, 5, 6, 7, 8, 9))
@@ -2382,13 +2384,15 @@ class TestNdPPoly:
 
         p = NdPPoly(c, (x, y, z))
 
-        def worker_fn(_, spl):
-            xi = rng.uniform(size=40)
-            yi = rng.uniform(size=40)
-            zi = rng.uniform(size=40)
-            spl((xi, yi, zi))
+        xi = rng.uniform(size=40)
+        yi = rng.uniform(size=40)
+        zi = rng.uniform(size=40)
+        return p, (xi, yi, zi)
 
-        _run_concurrent_barrier(10, worker_fn, p)
+    @run_in_parallel
+    def test_concurrency(self, random_ndppoly):
+        spl, inputs = random_ndppoly
+        return spl(inputs)
 
 
 def _ppoly_eval_1(c, x, xps):

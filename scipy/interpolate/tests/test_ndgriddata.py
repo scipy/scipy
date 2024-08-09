@@ -6,8 +6,7 @@ from pytest import raises as assert_raises
 from scipy.interpolate import (griddata, NearestNDInterpolator,
                                LinearNDInterpolator,
                                CloughTocher2DInterpolator)
-from scipy._lib._testutils import _run_concurrent_barrier
-
+from scipy._lib._testutils import run_in_parallel
 
 parametrize_interpolators = pytest.mark.parametrize(
     "interpolator", [NearestNDInterpolator, LinearNDInterpolator,
@@ -235,16 +234,18 @@ class TestNearestNDInterpolator:
         with assert_raises(TypeError):
             NI([0.5, 0.5], query_options="not a dictionary")
 
-    def test_concurrency(self):
+    @pytest.fixture
+    def concurrent_interp(self):
         npts, nd = 50, 3
         x = np.arange(npts * nd).reshape((npts, nd))
         y = np.arange(npts)
         nndi = NearestNDInterpolator(x, y)
+        return nndi, x
 
-        def worker_fn(_, spl):
-            spl(x)
-
-        _run_concurrent_barrier(10, worker_fn, nndi)
+    @run_in_parallel
+    def test_concurrency(self, concurrent_interp):
+        spl, x = concurrent_interp
+        return spl(x)
 
 
 class TestNDInterpolators:

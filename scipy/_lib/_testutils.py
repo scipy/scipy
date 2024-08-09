@@ -3,6 +3,7 @@ Generic test utilities.
 
 """
 
+import functools
 import inspect
 import os
 import re
@@ -14,6 +15,7 @@ import threading
 from importlib.util import module_from_spec, spec_from_file_location
 
 import numpy as np
+from numpy.testing import assert_allclose
 import scipy
 
 try:
@@ -326,41 +328,104 @@ def _test_cython_extension(tmp_path, srcdir):
     return load("extending"), load("extending_cpp")
 
 
-def _run_concurrent_barrier(n_workers, fn, *args, **kwargs):
+def run_in_parallel(
+        wrapped=None, n_workers=10, use_barrier=True, assert_all_equal=True,
+        pass_thread_id=False):
     """
-    Run a given function concurrently across a given number of threads.
+    Decorates a given function to execute it concurrently
+    across a given number of threads.
 
-    This is equivalent to using a ThreadPoolExecutor, but using the threading
-    primitives instead. This function ensures that the closure passed by
-    parameter gets called concurrently by setting up a barrier before it gets
-    called before any of the threads.
+    Usually, this decorator is used to mark tests for concurrent execution of
+    functions or classes against a fixed set of inputs, whose results are
+    compared as well:
+
+    .. code-block:: python
+
+        import pytest
+        import numpy as np
+        from scipy._lib._testutils import run_in_parallel
+
+        class ExampleClass:
+            def __call__(self, x):
+                return x + 5
+
+        @pytest.fixture
+        def fixed_inputs():
+            example_input = np.ones(4, 5)
+            return ExampleClass(), example_input
+
+        @run_in_parallel
+        def test_concurrent(fixed_inputs):
+            # Check that ExampleClass does not mutate under concurrency
+            # and that concurrent calls yield the same return value
+            to_call, input = fixed_inputs
+            return to_call(input)
+
+    This decorator is interoperable with pytest fixtures and markers as well:
+
+    .. code-block:: python
+
+        @pytest.mark.parametrize('param', [0, 1])
+        @run_in_parallel
+        def test_concurrent(fixed_inputs, param):
+            to_call, input = fixed_inputs
+            return to_call(input)
+
+    Also, the thread number can be obtained by setting `pass_thread_id=True`
+    and defining the `thread_id` kwarg in the target function:
+
+    .. code-block:: python
+
+        @run_in_parallel(pass_thread_id=True)
+        def test_concurrent(thread_id=0):
+            # thread_id has the thread number that is executing this function.
+            pass
+
+    Finally, it is possible to opt-out from output comparison by setting
+    `assert_all_close=False`
 
     Arguments
     ---------
     n_workers: int
-        Number of concurrent threads to spawn.
-    fn: callable
-        Function closure to execute concurrently. Its first argument will
-        be the thread id.
-    *args: tuple
-        Variable number of positional arguments to pass to the function.
-    **kwargs: dict
-        Keyword arguments to pass to the function.
+        Number of concurrent threads to spawn. Default: 10
+    use_barrier: bool
+        If `True`, then a barrier is set before all threads start executing the
+        target function. Default: `True`
+    assert_all_equal: bool
+        If `True`, then the return value produced by the function will be
+        compared for equality across all executing threads. Default: `True`
+    pass_thread_id: bool
+        If `True`, then the thread number identifier is passed down to the
+        target function via the `thread_id` keyword argument.
     """
-    barrier = threading.Barrier(n_workers)
 
-    def closure(i, *args, **kwargs):
-        barrier.wait()
-        fn(i, *args, **kwargs)
+    def wrapped_parallel(fn):
+        barrier = threading.Barrier(n_workers) if use_barrier else None
+        results = []
+        @functools.wraps(fn)
+        def inner(*args, **kwargs):
+            def closure(*args, **kwargs):
+                if use_barrier:
+                    barrier.wait()
+                results.append(fn(*args, **kwargs))
 
-    workers = []
-    for i in range(0, n_workers):
-        workers.append(threading.Thread(
-            target=closure,
-            args=(i,) + args, kwargs=kwargs))
+            workers = []
+            for i in range(0, n_workers):
+                worker_kwargs = kwargs
+                if pass_thread_id:
+                    worker_kwargs = dict(thread_id=i, **kwargs)
+                workers.append(threading.Thread(
+                    target=closure,
+                    args=args, kwargs=worker_kwargs))
 
-    for worker in workers:
-        worker.start()
+            for worker in workers:
+                worker.start()
 
-    for worker in workers:
-        worker.join()
+            for worker in workers:
+                worker.join()
+
+            if assert_all_equal:
+                for i in range(1, n_workers):
+                    assert_allclose(results[i - 1], results[i])
+        return inner
+    return wrapped_parallel if wrapped is None else wrapped_parallel(wrapped)
