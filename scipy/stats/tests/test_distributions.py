@@ -60,7 +60,6 @@ def test_api_regression():
     _assert_hasattr(scipy.stats.distributions, 'f_gen')
 
 
-@pytest.mark.skip()
 def test_distributions_submodule():
     actual = set(scipy.stats.distributions.__all__)
     continuous = [dist[0] for dist in distcont]    # continuous dist names
@@ -6446,7 +6445,6 @@ class TestExpect:
         res_l = stats.logser.expect(lambda k: k, args=(p,), loc=loc)
         assert_allclose(res_l, res_0 + loc, atol=1e-15)
 
-    @pytest.mark.skip()
     def test_skellam(self):
         # Use a discrete distribution w/ bi-infinite support. Compute two first
         # moments and compare to known values (cf skellam.stats)
@@ -6456,7 +6454,6 @@ class TestExpect:
         assert_allclose(m1, p1 - p2, atol=1e-12)
         assert_allclose(m2 - m1**2, p1 + p2, atol=1e-12)
 
-    @pytest.mark.skip()
     def test_randint(self):
         # Use a discrete distribution w/ parameter-dependent support, which
         # is larger than the default chunksize
@@ -6477,7 +6474,6 @@ class TestExpect:
                                   maxcount=1001, chunksize=32, tolerance=1e-8)
         assert_almost_equal(n0, n1, decimal=14)
 
-    @pytest.mark.skip()
     def test_moment(self):
         # test the .moment() method: compute a higher moment and compare to
         # a known value
@@ -9549,7 +9545,6 @@ def test_cosine_logpdf_endpoints():
     assert_array_less(logp, -37.18838327496655)
 
 
-@pytest.mark.skip()
 def test_distr_params_lists():
     # distribution objects are extra distributions added in
     # test_discrete_basic. All other distributions are strings (names)

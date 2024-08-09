@@ -3935,7 +3935,7 @@ def _iter_chunked(x0, x1, chunksize=4, inc=1):
     s = 1 if inc > 0 else -1
     stepsize = abs(chunksize * inc)
 
-    x = x0
+    x = np.copy(x0)
     while (x - x1) * inc < 0:
         delta = min(stepsize, abs(x - x1))
         step = delta * s
