@@ -20,30 +20,22 @@ extern "C"
 #define DTRTRS BLAS_FUNC(dtrtrs)
 
 
-static void DAXPY(const int* n, const double* da, const double* dx,
-                  const int* incx, double* dy, const int* incy);
-static void DCOPY(const int* n, const double* dx, const int *incx,
-                  double *dy, const int *incy);
-static double DDOT(const int *n, const double *dx, const int *incx,
-                   const double *dy, const int *incy);
-static double DNRM2(const int *n, const double *x, const int *incx);
-static void DSCAL(const int *n, const double *da, double *dx,
-                  const int *incx);
-static void DPORTF(const char* uplo, const int *n, double *a, const int *lda,
-                   int *info);
-static void DTRTRS(const char* uplo, const char *trans, const char *diag,
-                   const int *n, const int *nrhs,
-                   const double *a, const int *lda, double *b, const int *ldb,
-                   int *info);
+void DAXPY(int* n, double* da, double* dx, int* incx, double* dy, int* incy);
+void DCOPY(int* n, double* dx, int *incx, double *dy, int *incy);
+double DDOT(int *n, double *dx, int *incx, double *dy, int *incy);
+double DNRM2(int *n, double *x, int *incx);
+void DSCAL(int *n, double *da, double *dx, int *incx);
+void DPORTF(char* uplo, int *n, double *a, int *lda, int *info);
+void DTRTRS(char* uplo, char *trans, char *diag, int *n, int *nrhs, double *a, int *lda, double *b, int *ldb, int *info);
 
 
 static PyObject* lbfgsb_error;
 
 static void setulb(
-    const int n, const int m, double* x, double* l, double* u, int* nbd,
-    double* f, double* g, const double factr, const double pgtol,
-    double* wa, int* iwa, int* task, int* task_msg, const int iprint,
-    int* lsave, int* isave, double* dsave, const int maxls
+    int n, int m, double* x, double* l, double* u, int* nbd,
+    double* f, double* g, double factr, double pgtol,
+    double* wa, int* iwa, int* task, int* task_msg, int iprint,
+    int* lsave, int* isave, double* dsave, int maxls
 );
 
 static char doc_setulb[] = "setulb";
