@@ -716,6 +716,11 @@ All functions
    ctpttr
    ztpttr
 
+   strcon
+   dtrcon
+   ctrcon
+   ztrcon
+
    strexc
    dtrexc
    ctrexc

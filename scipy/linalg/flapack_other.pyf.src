@@ -546,6 +546,28 @@ subroutine <prefix>trtrs(lower, trans, unitdiag, n, nrhs, a, lda, b, ldb, info)
 end subroutine <prefix>trtrs
 
 
+subroutine <prefix>trcon(norm, uplo, diag, n, a, lda, rcond, work, irwork, info)
+
+    ! ?TRCON estimates the reciprocal of the condition number of a
+    ! triangular matrix A, in either the 1-norm or the infinity-norm.
+
+    callstatement (*f2py_func)(norm,uplo,diag,&n,a,&lda,&rcond,work,irwork,&info);
+    callprotoargument char*,char*,char*,F_INT*,<ctype>*,F_INT*,<ctypereal>*,<ctype>*,<F_INT,F_INT,float,double>*,F_INT*
+
+    character optional intent(in), check(*norm=='1'||*norm=='I'||*norm=='O') :: norm = '1'
+    character optional intent(in), check(*uplo=='U'||*uplo=='L') :: uplo = 'U'
+    character optional intent(in), check(*diag=='N'||*diag=='U') :: diag = 'N'
+    <ftype> intent(in), dimension(lda, n) :: a
+    integer intent(hide), depend(a) :: n = shape(a, 1)
+    integer intent(hide), depend(n) :: lda = MAX(1, n)
+    <ftype> intent(hide), dimension(3*n), depend(n) :: work
+    <integer, integer, real, double precision> intent(hide), dimension(n), depend(n) :: irwork
+    <ftypereal> intent(out) :: rcond
+    integer intent(out) :: info
+
+end subroutine <prefix>trcon
+
+
 subroutine <prefix>tbtrs(uplo,trans,diag,n,kd,nrhs,ab,ldab,b,ldb,info)
     ! x, info  = tbtrs(ab, b, uplo="U", trans="N", diag="N", overwrite_b=0)
     ! ?TBTRS solves a triangular system of the form
