@@ -1620,10 +1620,11 @@ class poisson_binom_gen(rv_discrete):
         var = sum(arg * (1-arg) for arg in args)
         return (mean, var, None, None)
 
-    def freeze(self, *args, **kwds):
+    def __call__(self, *args, **kwds):
         return poisson_binomial_frozen(self, *args, **kwds)
 
-poisson_binom = poisson_binom_gen(name='poisson_binom', longname='A Poisson Binomial')
+poisson_binom = poisson_binom_gen(name='poisson_binom', longname='A Poisson Binomial',
+                                  shapes='p')
 
 # The _parse_args methods don't work with variable size *args are vector-valued
 # shape parameters, so we rewrite them.
@@ -1662,9 +1663,6 @@ class poisson_binomial_frozen(rv_discrete_frozen):
 
         shapes, _, _ = self.dist._parse_args(*args, **kwds)
         self.a, self.b = self.dist._get_support(*shapes)
-
-
-
 
 
 class skellam_gen(rv_discrete):
