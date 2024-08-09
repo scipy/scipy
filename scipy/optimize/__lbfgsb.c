@@ -61,103 +61,103 @@ enum StatusWord {
 // Internal functions
 
 static void mainlb(
-    const int n, const int m, double* x, const double* l, const double* u,
-    int* nbd, double* f, double* g, const double factr, const double pgtol,
+    int n, int m, double* x, double* l, double* u,
+    int* nbd, double* f, double* g, double factr, double pgtol,
     double* ws, double* wy, double* sy, double* ss, double* wt, double* wn,
     double* snd, double* z, double* r, double* d, double* t, double* xp,
     double* wa, int* index, int* iwhere, int* indx2, int* task,
-    int* task_msg, int* lsave, int* isave, double* dsave, const int maxls
+    int* task_msg, int* lsave, int* isave, double* dsave, int maxls
 );
 static void active(
-    const int n, const double* l, const double* u, const int* nbd, double* x,
+    int n, double* l, double* u, int* nbd, double* x,
     int* iwhere, int* prjctd, int* cnstnd, int* boxed
 );
 static void bmv(
-    const int m, const double* sy, const double* wt, const int col,
-    const double* v, double* p, int* info
+    int m, double* sy, double* wt, int col,
+    double* v, double* p, int* info
 );
 static void cauchy(
-    const int n, const double* x, const double* l, const double* u,
-    const int* nbd, const double *g, int* iorder, int* iwhere, double* t,
-    double* d, double* xcp, const int m, const double* wy, const double* ws,
-    const double* sy, const double* wt, const double theta, const int col,
-    const int head, double* p, double* c, double* wbp, double* v, int* nseg,
-    const double sbgnrm, int* info
+    int n, double* x, double* l, double* u,
+    int* nbd, double *g, int* iorder, int* iwhere, double* t,
+    double* d, double* xcp, int m, double* wy, double* ws,
+    double* sy, double* wt, double theta, int col,
+    int head, double* p, double* c, double* wbp, double* v, int* nseg,
+    double sbgnrm, int* info
 );
 static void cmprlb(
-    const int n, const int m, const double* x, const double* g,
-    const double* ws, const double* wy, const double* sy, const double* wt,
-    const double* z, double* r, double* wa, int* index,
-    const double theta, const int col, const int head, const int nfree,
-    const int cnstnd, int* info
+    int n, int m, double* x, double* g,
+    double* ws, double* wy, double* sy, double* wt,
+    double* z, double* r, double* wa, int* index,
+    double theta, int col, int head, int nfree,
+    int cnstnd, int* info
 );
 static void errclb(
-    const int n, const int m, const double factr, const double* l,
-    const double* u, const int* nbd, int* task, int* task_msg, int* info, int* k
+    int n, int m, double factr, double* l,
+    double* u, int* nbd, int* task, int* task_msg, int* info, int* k
 );
 static void formk(
-    const int n, const int nsub, const int* ind, const int nenter,
-    const int ileave, const int* indx2, const int iupdat, const int updatd,
-    double* wn, double* wn1, const int m, const double* ws, const double* wy,
-    const double* sy, const double theta, const int col, const int head,
+    int n, int nsub, int* ind, int nenter,
+    int ileave, int* indx2, int iupdat, int updatd,
+    double* wn, double* wn1, int m, double* ws, double* wy,
+    double* sy, double theta, int col, int head,
     int* info
 );
 static void formt(
-    const int m, double* wt, double* sy, double* ss, const int col,
-    const double theta, int* info
+    int m, double* wt, double* sy, double* ss, int col,
+    double theta, int* info
 );
 static void freev(
-    const int n, int* nfree, int* idx, int* nenter, int* ileave, int* idx2,
-    const int* iwhere, int* wrk, const int updatd, const int cnstnd,
-    const int iter
+    int n, int* nfree, int* idx, int* nenter, int* ileave, int* idx2,
+    int* iwhere, int* wrk, int updatd, int cnstnd,
+    int iter
 );
-static void hpsolb(const int n, double* t, int* iorder, const int iheap);
+static void hpsolb(int n, double* t, int* iorder, int iheap);
 static void lnsrlb(
-    const int n, const double* l, const double* u, int* nbd, double* x,
-    const double f, double* fold, double *gd, double *gdold, double* g,
+    int n, double* l, double* u, int* nbd, double* x,
+    double f, double* fold, double *gd, double *gdold, double* g,
     double* d, double* r, double* t, double* z, double* stp, double* dnorm,
-    double* dtd, double* xstep, double* stpmx, const int iter, int* ifun,
-    int* iback, int* nfgv, int* info, int* task, int* task_msg, const int boxed,
-    const int cnstnd, int* isave, double* dsave
+    double* dtd, double* xstep, double* stpmx, int iter, int* ifun,
+    int* iback, int* nfgv, int* info, int* task, int* task_msg, int boxed,
+    int cnstnd, int* isave, double* dsave
 );
 static void matupd(
-    const int n, const int m, double* ws, double *wy, double* sy, double* ss,
-    const double* d, const double* r, int* itail, const int iupdat, int* col,
-    int* head, double* theta, const double rr, const double dr, const double stp,
-    const double dtd
+    int n, int m, double* ws, double *wy, double* sy, double* ss,
+    double* d, double* r, int* itail, int iupdat, int* col,
+    int* head, double* theta, double rr, double dr, double stp,
+    double dtd
 );
 static void projgr(
-    const int n, const double* l, const double* u, const int* nbd,
-    const double* x, const double* g, double* sbgnrm
+    int n, double* l, double* u, int* nbd,
+    double* x, double* g, double* sbgnrm
 );
 static void subsm(
-    const int n, const int m, const int nsub, const int* ind, const double* l,
-    const double* u, const int* nbd, double* x, double* d, double* xp,
-    const double* ws, const double* wy, const double theta, const double* xx,
-    const double* gg, const int col, const int head, int* iword, double* wv,
+    int n, int m, int nsub, int* ind, double* l,
+    double* u, int* nbd, double* x, double* d, double* xp,
+    double* ws, double* wy, double theta, double* xx,
+    double* gg, int col, int head, int* iword, double* wv,
     double* wn, int* info
 );
 
 // Line search functions
 static void dcsrch(
-    const double f, const double g, double* stp, const double ftol,
-    const double gtol, const double xtol, const double stpmin,
-    const double stpmax, int* task, int* task_msg, int* isave, double* dsave
+    double f, double g, double* stp, double ftol,
+    double gtol, double xtol, double stpmin,
+    double stpmax, int* task, int* task_msg, int* isave, double* dsave
 );
 static void dcstep (
     double* stx, double* fx, double* dx, double* sty, double* fy, double* dy,
-    double* stp, const double fp, const double dp, int* brackt,
-    const double stpmin, const double stpmax
+    double* stp, double fp, double dp, int* brackt,
+    double stpmin, double stpmax
 );
 
-static const double epsmach = 2.220446049250313e-016;  /* np.finfo(np.float64).eps  */
+static double epsmach = 2.220446049250313e-016;  /* np.finfo(np.float64).eps  */
 
 
 void
-setulb(const int n, const int m, double* x, double* l, double* u, int* nbd,
-       double* f, double* g, const double factr, const double pgtol,
-       double* wa, int* iwa, int* task, int* task_msg, const int iprint,
-       int* lsave, int* isave, double* dsave, const int maxls)
+setulb(int n, int m, double* x, double* l, double* u, int* nbd,
+       double* f, double* g, double factr, double pgtol,
+       double* wa, int* iwa, int* task, int* task_msg, int iprint,
+       int* lsave, int* isave, double* dsave, int maxls)
 {
     int lws, lr, lz, lt, ld, lxp, lwa, lwy, lsy, lss, lwt, lwn, lsnd;
 
@@ -206,12 +206,12 @@ setulb(const int n, const int m, double* x, double* l, double* u, int* nbd,
 
 
 void
-mainlb(const int n, const int m, double* x, const double* l, const double* u,
-       int* nbd, double* f, double* g, const double factr, const double pgtol,
+mainlb(int n, int m, double* x, double* l, double* u,
+       int* nbd, double* f, double* g, double factr, double pgtol,
        double* ws, double* wy, double* sy, double* ss, double* wt, double* wn,
        double* snd, double* z, double* r, double* d, double* t, double* xp,
        double* wa, int* index, int* iwhere, int* indx2, int* task,
-       int* task_msg, int* lsave, int* isave, double* dsave, const int maxls)
+       int* task_msg, int* lsave, int* isave, double* dsave, int maxls)
 {
 
     int prjctd, cnstnd, boxed, updatd, wrk;
@@ -221,7 +221,7 @@ mainlb(const int n, const int m, double* x, const double* l, const double* u,
     double theta, fold, dr, rr, tol, xstep, sbgnrm, stpmx, ddum, dnorm, dtd;
     double gd, gdold, stp;
 
-    int one_int = 1;
+    int one_int = 1, mut_n;
 
     if (*task == START) {
 
@@ -321,8 +321,9 @@ mainlb(const int n, const int m, double* x, const double* l, const double* u,
         {
             if (*task_msg == STOP_CPU)
             {
-                DCOPY(&n, t, &one_int, x, &one_int);
-                DCOPY(&n, r, &one_int, g, &one_int);
+                mut_n = n;
+                DCOPY(&mut_n, t, &one_int, x, &one_int);
+                DCOPY(&mut_n, r, &one_int, g, &one_int);
                 *f = fold;
             }
             goto LINE999;
@@ -355,7 +356,8 @@ LINE222:
 
     if ((!cnstnd) && (col > 0))
     {
-        DCOPY(&n, x, &one_int, z, &one_int);
+        mut_n = n;
+        DCOPY(&mut_n, x, &one_int, z, &one_int);
         wrk = updatd;
         nseg = 0;
         goto LINE333;
@@ -466,8 +468,9 @@ LINE666:
            task_msg, boxed, cnstnd, isave, dsave);
     if ((info != 0) || (iback >= maxls))
     {
-        DCOPY(&n, t, &one_int, x, &one_int);
-        DCOPY(&n, r, &one_int, g, &one_int);
+        mut_n = n;
+        DCOPY(&mut_n, t, &one_int, x, &one_int);
+        DCOPY(&mut_n, r, &one_int, g, &one_int);
         *f = fold;
 
         if (col == 0)
@@ -552,7 +555,8 @@ LINE777:
         r[i] = g[i] - r[i];
     }
     // 42
-    rr = pow(DNRM2(&n, r, &one_int), 2.0);
+    mut_n = n;
+    rr = pow(DNRM2(&mut_n, r, &one_int), 2.0);
 
     if (stp == 1.0)
     {
@@ -560,7 +564,7 @@ LINE777:
         ddum = -gdold;
     } else {
         dr = (gd - gdold)*stp;
-        DSCAL(&n, &stp, d, &one_int);
+        DSCAL(&mut_n, &stp, d, &one_int);
         ddum = -gdold*stp;
     }
 
@@ -662,7 +666,7 @@ LINE1000:
 
 
 void
-active(const int n, const double* l, const double* u, const int* nbd, double* x,
+active(int n, double* l, double* u, int* nbd, double* x,
        int* iwhere, int* prjctd, int* cnstnd, int* boxed)
 {
     int nbdd, i;
@@ -726,8 +730,8 @@ active(const int n, const double* l, const double* u, const int* nbd, double* x,
 
 
 void
-bmv(const int m, const double* sy, const double* wt, const int col,
-    const double* v, double* p, int* info)
+bmv(int m, double* sy, double* wt, int col,
+    double* v, double* p, int* info)
 {
     int i, k, i2, one_int = 1;
     double ssum;
@@ -799,21 +803,22 @@ bmv(const int m, const double* sy, const double* wt, const int col,
 
 
 void
-cauchy(const int n, const double* x, const double* l, const double* u,
-       const int* nbd, const double *g, int* iorder, int* iwhere, double* t,
-       double* d, double* xcp, const int m, const double* wy, const double* ws,
-       const double* sy, const double* wt, const double theta, const int col,
-       const int head, double* p, double* c, double* wbp, double* v,
-       int* nseg, const double sbgnrm, int* info)
+cauchy(int n, double* x, double* l, double* u,
+       int* nbd, double *g, int* iorder, int* iwhere, double* t,
+       double* d, double* xcp, int m, double* wy, double* ws,
+       double* sy, double* wt, double theta, int col,
+       int head, double* p, double* c, double* wbp, double* v,
+       int* nseg, double sbgnrm, int* info)
 {
-    int bnded, xlower, xupper;
+    int bnded, xlower, xupper, mut_n;
     int i, j, col2, nfree, nbreak, pointr, ibp, nleft, ibkmin, iter, one_int = 1;
     double f1, f2, dt, dtm, tsum, dibp, zibp, dibp2, bkmin, tu, tl, wmc, wmp;
     double wmw, tj, tj0, neggi, f2_org;
 
     if (sbgnrm <= 0.0)
     {
-        DCOPY(&n, x, &one_int, xcp, &one_int);
+        mut_n = n;
+        DCOPY(&mut_n, x, &one_int, xcp, &one_int);
         return;
     }
     bnded = 1;
@@ -910,7 +915,8 @@ cauchy(const int n, const double* x, const double* l, const double* u,
         DSCAL(&col, &theta, &p[col], &one_int);
     }
     // Initialize GCP xcp = x.
-    DCOPY(&n, x, &one_int, xcp, &one_int);
+    mut_n = n;
+    DCOPY(&mut_n, x, &one_int, xcp, &one_int);
     if ((nbreak == 0) && (nfree == n))
     {
         // is a zero vector, return with the initial xcp as GCP.
@@ -1073,11 +1079,11 @@ LINE999:
 
 
 void
-cmprlb(const int n, const int m, const double* x, const double* g,
-       const double* ws, const double* wy, const double* sy, const double* wt,
-       const double* z, double* r, double* wa, int* index,
-       const double theta, const int col, const int head, const int nfree,
-       const int cnstnd, int* info)
+cmprlb(int n, int m, double* x, double* g,
+       double* ws, double* wy, double* sy, double* wt,
+       double* z, double* r, double* wa, int* index,
+       double theta, int col, int head, int nfree,
+       int cnstnd, int* info)
 {
     int i, j, k, pointr;
     double a1, a2;
@@ -1117,8 +1123,8 @@ cmprlb(const int n, const int m, const double* x, const double* g,
 
 
 void
-errclb(const int n, const int m, const double factr, const double* l,
-       const double* u, const int* nbd, int* task, int* task_msg, int* info,
+errclb(int n, int m, double factr, double* l,
+       double* u, int* nbd, int* task, int* task_msg, int* info,
        int* k)
 {
     int i;
@@ -1156,10 +1162,10 @@ errclb(const int n, const int m, const double factr, const double* l,
 
 
 void
-formk(const int n, const int nsub, const int* ind, const int nenter, const int ileave,
-      const int* indx2, const int iupdat, const int updatd, double* wn,
-      double* wn1, const int m, const double* ws, const double* wy,
-      const double* sy, const double theta, const int col, const int head, int* info)
+formk(int n, int nsub, int* ind, int nenter, int ileave,
+      int* indx2, int iupdat, int updatd, double* wn,
+      double* wn1, int m, double* ws, double* wy,
+      double* sy, double theta, int col, int head, int* info)
 {
     int m2, ipntr, jpntr, iy, is, jy, js, is1, js1, k1, i, k, col2, pbegin, pend;
     int dbegin, dend, upcl, one_int = 1, temp_int;
@@ -1396,8 +1402,8 @@ formk(const int n, const int nsub, const int* ind, const int nenter, const int i
 
 
 void
-formt(const int m, double* wt, double* sy, double* ss, const int col,
-      const double theta, int* info)
+formt(int m, double* wt, double* sy, double* ss, int col,
+      double theta, int* info)
 {
     int i, j, k, k1;
     double ddum;
@@ -1437,9 +1443,9 @@ formt(const int m, double* wt, double* sy, double* ss, const int col,
 
 
 void
-freev(const int n, int* nfree, int* idx, int* nenter, int* ileave, int* idx2,
-      const int* iwhere, int* wrk, const int updatd, const int cnstnd,
-      const int iter)
+freev(int n, int* nfree, int* idx, int* nenter, int* ileave, int* idx2,
+      int* iwhere, int* wrk, int updatd, int cnstnd,
+      int iter)
 {
     int i, iact, k;
 
@@ -1495,7 +1501,7 @@ freev(const int n, int* nfree, int* idx, int* nenter, int* ileave, int* idx2,
 
 
 void
-hpsolb(const int n, double* t, int* iorder, const int iheap)
+hpsolb(int n, double* t, int* iorder, int iheap)
 {
     int i, j, k, indxin, indxout;
     double ddum, out;
@@ -1577,12 +1583,12 @@ hpsolb(const int n, double* t, int* iorder, const int iheap)
 
 
 void
-lnsrlb(const int n, const double* l, const double* u, int* nbd, double* x,
-       const double f, double* fold, double *gd, double *gdold, double* g,
+lnsrlb(int n, double* l, double* u, int* nbd, double* x,
+       double f, double* fold, double *gd, double *gdold, double* g,
        double* d, double* r, double* t, double* z, double* stp, double* dnorm,
-       double* dtd, double* xstep, double* stpmx, const int iter, int* ifun,
+       double* dtd, double* xstep, double* stpmx, int iter, int* ifun,
        int* iback, int* nfgv, int* info, int* task, int* task_msg,
-       const int boxed, const int cnstnd, int* isave, double* dsave)
+       int boxed, int cnstnd, int* isave, double* dsave)
 {
     int i, temp_task, temp_taskmsg, one_int = 1;
     double a1, a2, ftol = 1e-3, gtol = 0.9, xtol = 0.1;
@@ -1695,10 +1701,10 @@ LINE556:
 
 
 void
-matupd(const int n, const int m, double* ws, double *wy, double* sy, double* ss,
-       const double* d, const double* r, int* itail, const int iupdat, int* col,
-       int* head, double* theta, const double rr, const double dr, const double stp,
-       const double dtd)
+matupd(int n, int m, double* ws, double *wy, double* sy, double* ss,
+       double* d, double* r, int* itail, int iupdat, int* col,
+       int* head, double* theta, double rr, double dr, double stp,
+       double dtd)
 {
     int i, j, pointr, temp_int, one_int;
 
@@ -1754,8 +1760,8 @@ matupd(const int n, const int m, double* ws, double *wy, double* sy, double* ss,
 
 
 void
-projgr(const int n, const double* l, const double* u, const int* nbd,
-       const double* x, const double* g, double* sbgnrm)
+projgr(int n, double* l, double* u, int* nbd,
+       double* x, double* g, double* sbgnrm)
 {
     int i;
     double gi;
@@ -1787,11 +1793,11 @@ projgr(const int n, const double* l, const double* u, const int* nbd,
 }
 
 
-void subsm(const int n, const int m, const int nsub, const int* ind,
-           const double* l, const double* u, const int* nbd, double* x,
-           double* d, double* xp, const double* ws, const double* wy,
-           const double theta, const double* xx, const double* gg, const int col,
-           const int head, int* iword, double* wv, double* wn, int* info)
+void subsm(int n, int m, int nsub, int* ind,
+           double* l, double* u, int* nbd, double* x,
+           double* d, double* xp, double* ws, double* wy,
+           double theta, double* xx, double* gg, int col,
+           int head, int* iword, double* wv, double* wn, int* info)
 {
     int pointr, m2, col2, ibd, jy, js, i, j, k, one_int = 1;
     double alpha, xk, dk, temp, temp1, temp2, dd_p;
@@ -1962,8 +1968,8 @@ void subsm(const int n, const int m, const int nsub, const int* ind,
 
 
 void
-dcsrch(const double f, const double g, double* stp, const double ftol, const double gtol,
-       const double xtol, const double stpmin, const double stpmax, int* task,
+dcsrch(double f, double g, double* stp, double ftol, double gtol,
+       double xtol, double stpmin, double stpmax, int* task,
        int* task_msg, int* isave, double* dsave)
 {
 
@@ -2180,8 +2186,8 @@ SAVEVARS:
 
 void
 dcstep (double* stx, double* fx, double* dx, double* sty, double* fy, double* dy,
-        double* stp, const double fp, const double dp, int* brackt,
-        const double stpmin, const double stpmax)
+        double* stp, double fp, double dp, int* brackt,
+        double stpmin, double stpmax)
 {
     double gamma, p, q, r, s, sgnd, stpc, stpf, stpq, theta;
     sgnd = dp * (*dx / fabs(*dx));
