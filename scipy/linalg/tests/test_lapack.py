@@ -3415,9 +3415,12 @@ def test_tgsyl(dtype, trans, ijob):
                         err_msg='lhs2 and rhs2 do not match')
 
 
+@pytest.mark.parametrize('mtype', ['sy', 'he'])  # matrix type
 @pytest.mark.parametrize('dtype', DTYPES)
 @pytest.mark.parametrize('lower', (0, 1))
-def test_sytrs(dtype, lower):
+def test_sy_hetrs(mtype, dtype, lower):
+    if mtype == 'he' and dtype in REAL_DTYPES:
+        pytest.skip("hetrs not for real dtypes.")
     rng = np.random.default_rng(1723059677121834)
     n, nrhs = 20, 5
     if dtype in COMPLEX_DTYPES:
@@ -3425,33 +3428,14 @@ def test_sytrs(dtype, lower):
     else:
         A = rng.uniform(size=(n, n)).astype(dtype)
 
-    A = A + A.T
+    A = A + A.T if mtype == 'sy' else A + A.conj().T
     b = rng.uniform(size=(n, nrhs)).astype(dtype)
-    sytrf, sytrf_lwork, sytrs = get_lapack_funcs(['sytrf', 'sytrf_lwork', 'sytrs'],
-                                                 dtype=dtype)
-    lwork = sytrf_lwork(n, lower=lower)
-    ldu, ipiv, info = sytrf(A, lwork=lwork)
+    names = f'{mtype}trf', f'{mtype}trf_lwork', f'{mtype}trs'
+    trf, trf_lwork, trs = get_lapack_funcs(names, dtype=dtype)
+    lwork = trf_lwork(n, lower=lower)
+    ldu, ipiv, info = trf(A, lwork=lwork)
     assert info == 0
-    x, info = sytrs(a=ldu, ipiv=ipiv, b=b)
+    x, info = trs(a=ldu, ipiv=ipiv, b=b)
     assert info == 0
     eps = np.finfo(dtype).eps
     assert_allclose(A@x, b, atol=100*n*eps)
-
-
-@pytest.mark.parametrize('dtype', COMPLEX_DTYPES)
-@pytest.mark.parametrize('lower', (0, 1))
-def test_hetrs(dtype, lower):
-    rng = np.random.default_rng(1723059677121834)
-    n, nrhs = 20, 5
-    A = (rng.uniform(size=(n, n)) + rng.uniform(size=(n, n))*1j).astype(dtype)
-    A = A + A.conj().T
-    b = np.random.rand(n, nrhs).astype(dtype)
-    hetrf, hetrf_lwork, hetrs = get_lapack_funcs(['hetrf', 'hetrf_lwork', 'hetrs'],
-                                                 dtype=dtype)
-    lwork = hetrf_lwork(n, lower=lower)
-    ldu, ipiv, info = hetrf(A, lwork=lwork)
-    assert info == 0
-    x, info = hetrs(a=ldu, ipiv=ipiv, b=b)
-    assert info == 0
-    eps = np.finfo(dtype).eps
-    assert_allclose(A @ x, b, atol=100*n*eps)
