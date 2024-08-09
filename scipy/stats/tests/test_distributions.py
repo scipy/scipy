@@ -509,6 +509,28 @@ class TestBradford:
 
 class TestCauchy:
 
+    def test_pdf_no_overflow_warning(self):
+        # The argument is large enough that x**2 will overflow to
+        # infinity and 1/(1 + x**2) will be 0.  This should not
+        # trigger a warning.
+        p = stats.cauchy.pdf(1e200)
+        assert p == 0.0
+
+    # Reference values were computed with mpmath.
+    @pytest.mark.parametrize(
+        'x, ref',
+        [(0.0, -1.1447298858494002),
+         (6e-323, -1.1447298858494002),
+         (1e-34, -1.1447298858494002),
+         (5e-4, -1.144730135849369),
+         (1.5, -2.3233848821910463),
+         (2e18, -85.42408759475494),
+         (1e200, -922.1787670834676),
+         (4e303, -1399.283884962481)])
+    def test_logpdf(self, x, ref):
+        logp = stats.cauchy.logpdf([x, -x])
+        assert_allclose(logp, [ref, ref], rtol=5e-15)
+
     # Reference values were computed with mpmath.
     @pytest.mark.parametrize(
         'x, ref',
