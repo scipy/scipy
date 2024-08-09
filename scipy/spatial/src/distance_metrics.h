@@ -319,7 +319,8 @@ struct NormaliseInput {
 
     template <typename T>
     void operator()(StridedView2D<T> x) {
-        T* rownorms = new T[x.shape[0]];
+        std::vector<T> rownorms_(x.shape[0]);
+        T* rownorms = rownorms_.data();
         transform_reduce_2d_(rownorms, x, [](T x) INLINE_LAMBDA {
             return x*x;
         },
@@ -330,13 +331,12 @@ struct NormaliseInput {
         transform_reduce_2d_(x, rownorms, [](T x, T y) INLINE_LAMBDA {
             return x/y;
         });
-
-        delete [] rownorms;
     }
 
     template <typename T>
     void operator()(StridedView2D<T> x, StridedView2D<const T> w) {
-        T* rownorms = new T[x.shape[0]];
+        std::vector<T> rownorms_(x.shape[0]);
+        T* rownorms = rownorms_.data();
         transform_reduce_2d_(rownorms, x, w, [](T x, T w) INLINE_LAMBDA {
             return w*x*x;
         },
@@ -347,8 +347,6 @@ struct NormaliseInput {
         transform_reduce_2d_(x, rownorms, [](T x, T y) INLINE_LAMBDA {
             return x/y;
         });
-
-        delete [] rownorms;
     }
 
 };
@@ -357,7 +355,8 @@ struct CentraliseInput {
 
     template <typename T>
     void operator()(StridedView2D<T> x) {
-        T* rowmeans = new T[x.shape[0]];
+        std::vector<T> rowmeans_(x.shape[0]);
+        T* rowmeans = rowmeans_.data();
         auto num_cols = x.shape[1];
         transform_reduce_2d_(rowmeans, x, [](T x) INLINE_LAMBDA {
             return x;
@@ -369,13 +368,12 @@ struct CentraliseInput {
         transform_reduce_2d_(x, rowmeans, [](T x, T y) INLINE_LAMBDA {
             return x - y;
         });
-
-        delete [] rowmeans;
     }
 
     template <typename T>
     void operator()(StridedView2D<T> x, StridedView2D<const T> w) {
-        T* rowmeans = new T[x.shape[0]];
+        std::vector<T> rowmeans_(x.shape[0]);
+        T* rowmeans = rowmeans_.data();
         transform_reduce_2d_(rowmeans, x, w, [](T x, T w) INLINE_LAMBDA {
             return w*x;
         });
@@ -383,8 +381,6 @@ struct CentraliseInput {
         transform_reduce_2d_(x, rowmeans, [](T x, T y) INLINE_LAMBDA {
             return x - y;
         });
-
-        delete [] rowmeans;
     }
 
 };
@@ -417,7 +413,8 @@ struct ScaleInputForJensenshannon {
 
     template <typename T>
     void operator()(StridedView2D<T> x) {
-        T* rowsums = new T[x.shape[0]];
+        std::vector<T> rowsums_(x.shape[0]);
+        T* rowsums = rowsums_.data();
         transform_reduce_2d_(rowsums, x, [](T x) INLINE_LAMBDA {
             return x < 0.0 ? NAN : x;
         },
@@ -428,8 +425,6 @@ struct ScaleInputForJensenshannon {
         transform_reduce_2d_(x, rowsums, [](T x, T y) INLINE_LAMBDA {
             return y == 0.0 ? NAN : x/y;
         });
-
-        delete [] rowsums;
     }
 
 };
