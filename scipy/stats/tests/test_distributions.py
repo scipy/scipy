@@ -9804,7 +9804,7 @@ class TestIrwinHall:
         # IH(1) PDF is by definition U(0,1)
         # we should be too, but differences in floating point eval order happen
         # it's unclear if we can get down to the single ulp for doubles unless
-        # quads are used we're within 6-10 ulps otherwise (across sf/cdf/pdf) 
+        # quads are used we're within 6-10 ulps otherwise (across sf/cdf/pdf)
         # which is pretty good
 
         pts = np.linspace(0, 1, 100)
