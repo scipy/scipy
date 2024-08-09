@@ -73,17 +73,15 @@ void validate_weights(const ArrayDescriptor& w, const T* w_data) {
 
 template <typename T>
 ALWAYS_INLINE void preprocess_inputs(
-    ArrayDescriptor x, const T* in_data, PreprocessingType type) {
+    ArrayDescriptor x, T* in_data, PreprocessingType type) {
     if( type == PreprocessingType::None ) {
         return ;
     }
 
-    T* in_data_ = const_cast<T*>(in_data);
-
     StridedView2D<T> x_view;
     x_view.strides = {x.strides[0], x.strides[1]};
     x_view.shape = {x.shape[0], x.shape[1]};
-    x_view.data = in_data_;
+    x_view.data = in_data;
 
     switch( type ) {
         case PreprocessingType::Normalise: {
@@ -106,18 +104,21 @@ ALWAYS_INLINE void preprocess_inputs(
 
 template <typename T>
 ALWAYS_INLINE void preprocess_inputs(
-    ArrayDescriptor x, const T* in_data,
+    ArrayDescriptor /*x*/, const T* /*in_data*/, PreprocessingType /*type*/) {
+}
+
+template <typename T>
+ALWAYS_INLINE void preprocess_inputs(
+    ArrayDescriptor x, T* in_data,
     StridedView2D<const T> w_view, PreprocessingType type) {
     if( type == PreprocessingType::None ) {
         return ;
     }
 
-    T* in_data_ = const_cast<T*>(in_data);
-
     StridedView2D<T> x_view;
     x_view.strides = {x.strides[0], x.strides[1]};
     x_view.shape = {x.shape[0], x.shape[1]};
-    x_view.data = in_data_;
+    x_view.data = in_data;
 
     switch( type ) {
         case PreprocessingType::Normalise: {
@@ -135,8 +136,15 @@ ALWAYS_INLINE void preprocess_inputs(
 }
 
 template <typename T>
+ALWAYS_INLINE void preprocess_inputs(
+    ArrayDescriptor /*x*/, const T* /*in_data*/,
+    StridedView2D<const T> /*w_view*/, PreprocessingType /*type*/) {
+
+}
+
+template <typename T, typename U>
 void pdist_impl(ArrayDescriptor out, T* out_data,
-                ArrayDescriptor x, const T* in_data,
+                ArrayDescriptor x, U* in_data,
                 DistanceFunc<T> f,
                 PreprocessingType type) {
     const intptr_t num_rows = x.shape[0], num_cols = x.shape[1];
@@ -169,9 +177,9 @@ void pdist_impl(ArrayDescriptor out, T* out_data,
     }
 }
 
-template <typename T>
+template <typename T, typename U>
 void pdist_weighted_impl(ArrayDescriptor out, T* out_data,
-                         ArrayDescriptor x, const T* x_data,
+                         ArrayDescriptor x, U* x_data,
                          ArrayDescriptor w, const T* w_data,
                          WeightedDistanceFunc<T> f,
                          PreprocessingType type) {
@@ -329,10 +337,10 @@ ALWAYS_INLINE void _compute_variance_across_rows(
     }
 }
 
-template <typename T>
+template <typename T, typename U>
 void cdist_impl(ArrayDescriptor out, T* out_data,
-                ArrayDescriptor x, const T* x_data,
-                ArrayDescriptor y, const T* y_data,
+                ArrayDescriptor x, U* x_data,
+                ArrayDescriptor y, U* y_data,
                 DistanceFunc<T> f, PreprocessingType type) {
 
     const auto num_rowsX = x.shape[0];
@@ -365,10 +373,10 @@ void cdist_impl(ArrayDescriptor out, T* out_data,
     }
 }
 
-template <typename T>
+template <typename T, typename U>
 void cdist_weighted_impl(ArrayDescriptor out, T* out_data,
-                         ArrayDescriptor x, const T* x_data,
-                         ArrayDescriptor y, const T* y_data,
+                         ArrayDescriptor x, U* x_data,
+                         ArrayDescriptor y, U* y_data,
                          ArrayDescriptor w, const T* w_data,
                          WeightedDistanceFunc<T> f,
                          PreprocessingType type) {
@@ -462,20 +470,29 @@ py::array npy_asarray(const py::handle& obj, int flags = 0) {
     return py::reinterpret_steal<py::array>(arr);
 }
 
+ALWAYS_INLINE int set_flags(PreprocessingType type) {
+    int flags = NPY_ARRAY_ALIGNED | NPY_ARRAY_NOTSWAPPED;
+    if( type != PreprocessingType::None ) {
+        flags = NPY_ARRAY_ENSURECOPY;
+    }
+    return flags;
+}
+
 template <typename scalar_t>
 py::array pdist_unweighted(const py::array& out_obj, const py::array& x_obj,
-                           DistanceFunc<scalar_t> f,
-                           PreprocessingType type) {
-    auto x = npy_asarray<scalar_t>(x_obj,
-                                   NPY_ARRAY_ALIGNED | NPY_ARRAY_NOTSWAPPED);
+                           DistanceFunc<scalar_t> f, PreprocessingType type) {
+    auto x = npy_asarray<scalar_t>(x_obj, set_flags(type));
     auto out = py::cast<py::array_t<scalar_t>>(out_obj);
     auto out_desc = get_descriptor(out);
     auto out_data = out.mutable_data();
     auto x_desc = get_descriptor(x);
-    auto x_data = x.data();
     {
         py::gil_scoped_release guard;
-        pdist_impl(out_desc, out_data, x_desc, x_data, f, type);
+        if( type != PreprocessingType::None ) {
+            pdist_impl(out_desc, out_data, x_desc, x.mutable_data(), f, type);
+        } else {
+            pdist_impl(out_desc, out_data, x_desc, x.data(), f, type);
+        }
     }
     return std::move(out);
 }
@@ -485,22 +502,25 @@ py::array pdist_weighted(
         const py::array& out_obj, const py::array& x_obj,
         const py::array& w_obj, WeightedDistanceFunc<scalar_t> f,
         PreprocessingType type) {
-    auto x = npy_asarray<scalar_t>(x_obj,
-                                   NPY_ARRAY_ALIGNED | NPY_ARRAY_NOTSWAPPED);
+    auto x = npy_asarray<scalar_t>(x_obj, set_flags(type));
     auto w = npy_asarray<scalar_t>(w_obj,
                                    NPY_ARRAY_ALIGNED | NPY_ARRAY_NOTSWAPPED);
     auto out = py::cast<py::array_t<scalar_t>>(out_obj);
     auto out_desc = get_descriptor(out);
     auto out_data = out.mutable_data();
     auto x_desc = get_descriptor(x);
-    auto x_data = x.data();
     auto w_desc = get_descriptor(w);
     auto w_data = w.data();
     {
         py::gil_scoped_release guard;
         validate_weights(w_desc, w_data);
-        pdist_weighted_impl(
-            out_desc, out_data, x_desc, x_data, w_desc, w_data, f, type);
+        if( type != PreprocessingType::None ) {
+            pdist_weighted_impl(
+                out_desc, out_data, x_desc, x.mutable_data(), w_desc, w_data, f, type);
+        } else {
+            pdist_weighted_impl(
+                out_desc, out_data, x_desc, x.data(), w_desc, w_data, f, type);
+        }
     }
     return std::move(out);
 }
@@ -539,21 +559,23 @@ template <typename scalar_t>
 py::array cdist_unweighted(const py::array& out_obj, const py::array& x_obj,
                            const py::array& y_obj, DistanceFunc<scalar_t> f,
                            PreprocessingType type) {
-    auto x = npy_asarray<scalar_t>(x_obj,
-                                 NPY_ARRAY_ALIGNED | NPY_ARRAY_NOTSWAPPED);
-    auto y = npy_asarray<scalar_t>(y_obj,
-                                 NPY_ARRAY_ALIGNED | NPY_ARRAY_NOTSWAPPED);
+    auto x = npy_asarray<scalar_t>(x_obj, set_flags(type));
+    auto y = npy_asarray<scalar_t>(y_obj, set_flags(type));
     auto out = py::cast<py::array_t<scalar_t>>(out_obj);
 
     auto out_desc = get_descriptor(out);
     auto out_data = out.mutable_data();
     auto x_desc = get_descriptor(x);
-    auto x_data = x.data();
     auto y_desc = get_descriptor(y);
-    auto y_data = y.data();
     {
         py::gil_scoped_release guard;
-        cdist_impl(out_desc, out_data, x_desc, x_data, y_desc, y_data, f, type);
+        if( type != PreprocessingType::None ) {
+            cdist_impl(out_desc, out_data, x_desc, x.mutable_data(),
+                       y_desc, y.mutable_data(), f, type);
+        } else {
+            cdist_impl(out_desc, out_data, x_desc, x.data(),
+                       y_desc, y.data(), f, type);
+        }
     }
     return std::move(out);
 }
@@ -562,12 +584,9 @@ template <typename scalar_t>
 py::array cdist_weighted(
         const py::array& out_obj, const py::array& x_obj,
         const py::array& y_obj, const py::array& w_obj,
-        WeightedDistanceFunc<scalar_t> f,
-        PreprocessingType type) {
-    auto x = npy_asarray<scalar_t>(x_obj,
-                                 NPY_ARRAY_ALIGNED | NPY_ARRAY_NOTSWAPPED);
-    auto y = npy_asarray<scalar_t>(y_obj,
-                                 NPY_ARRAY_ALIGNED | NPY_ARRAY_NOTSWAPPED);
+        WeightedDistanceFunc<scalar_t> f, PreprocessingType type) {
+    auto x = npy_asarray<scalar_t>(x_obj, set_flags(type));
+    auto y = npy_asarray<scalar_t>(y_obj, set_flags(type));
     auto w = npy_asarray<scalar_t>(w_obj,
                                  NPY_ARRAY_ALIGNED | NPY_ARRAY_NOTSWAPPED);
     auto out = py::cast<py::array_t<scalar_t>>(out_obj);
@@ -575,17 +594,21 @@ py::array cdist_weighted(
     auto out_desc = get_descriptor(out);
     auto out_data = out.mutable_data();
     auto x_desc = get_descriptor(x);
-    auto x_data = x.data();
     auto y_desc = get_descriptor(y);
-    auto y_data = y.data();
     auto w_desc = get_descriptor(w);
     auto w_data = w.data();
     {
         py::gil_scoped_release guard;
         validate_weights(w_desc, w_data);
-        cdist_weighted_impl(
-            out_desc, out_data, x_desc, x_data, y_desc, y_data,
-            w_desc, w_data, f, type);
+        if( type != PreprocessingType::None ) {
+            cdist_weighted_impl(
+                out_desc, out_data, x_desc, x.mutable_data(),
+                y_desc, y.mutable_data(), w_desc, w_data, f, type);
+        } else {
+            cdist_weighted_impl(
+                out_desc, out_data, x_desc, x.data(),
+                y_desc, y.data(), w_desc, w_data, f, type);
+        }
     }
     return std::move(out);
 }
