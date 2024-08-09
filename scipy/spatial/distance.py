@@ -1633,8 +1633,6 @@ def _distance_pybind_cdist_cosine(XA, XB, *, out=None, **kwargs):
     if w is not None:
         w = w / w.sum()
 
-    XA = XA.astype(np.float64)
-    XB = XB.astype(np.float64)
     return _distance_pybind.cdist_cosine(XA, XB, w, out, **kwargs)
 
 def _distance_pybind_pdist_cosine(XA, *, out=None, **kwargs):
@@ -1642,7 +1640,6 @@ def _distance_pybind_pdist_cosine(XA, *, out=None, **kwargs):
     if w is not None:
         w = w / w.sum()
 
-    XA = XA.astype(np.float64)
     return _distance_pybind.pdist_cosine(XA, w, out, **kwargs)
 
 def _distance_pybind_cdist_correlation(XA, XB, *, out=None, **kwargs):
@@ -1650,8 +1647,6 @@ def _distance_pybind_cdist_correlation(XA, XB, *, out=None, **kwargs):
     if w is not None:
         w = w / w.sum()
 
-    XA = XA.astype(np.float64)
-    XB = XB.astype(np.float64)
     return _distance_pybind.cdist_correlation(XA, XB, w, out, **kwargs)
 
 def _distance_pybind_pdist_correlation(XA, *, out=None, **kwargs):
@@ -1659,7 +1654,6 @@ def _distance_pybind_pdist_correlation(XA, *, out=None, **kwargs):
     if w is not None:
         w = w / w.sum()
 
-    XA = XA.astype(np.float64)
     return _distance_pybind.pdist_correlation(XA, w, out, **kwargs)
 
 def _distance_pybind_cdist_seuclidean(XA, XB, *, out=None, **kwargs):
@@ -1677,15 +1671,6 @@ def _distance_pybind_pdist_seuclidean(X, *, out=None, **kwargs):
         w = np.reciprocal(V)
 
     return _distance_pybind.pdist_seuclidean(X, w, out, **kwargs)
-
-def _distance_pybind_pdist_jensenshannon(XA, *, out=None, **kwargs):
-    XA = XA.astype(np.float64)
-    return _distance_pybind.pdist_jensenshannon(XA, out, **kwargs)
-
-def _distance_pybind_cdist_jensenshannon(XA, XB, *, out=None, **kwargs):
-    XA = XA.astype(np.float64)
-    XB = XB.astype(np.float64)
-    return _distance_pybind.cdist_jensenshannon(XA, XB, out, **kwargs)
 
 def _distance_pybind_cdist_mahalanobis(XA, XB, *, out=None, **kwargs):
     VI = kwargs.pop('VI', None)
@@ -1850,8 +1835,8 @@ _METRIC_INFOS = [
         canonical_name='jensenshannon',
         aka={'jensenshannon', 'js'},
         dist_func=jensenshannon,
-        cdist_func=_distance_pybind_cdist_jensenshannon,
-        pdist_func=_distance_pybind_pdist_jensenshannon,
+        cdist_func=_distance_pybind.cdist_jensenshannon,
+        pdist_func=_distance_pybind.pdist_jensenshannon,
     ),
     MetricInfo(
         canonical_name='kulczynski1',
