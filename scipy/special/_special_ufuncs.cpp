@@ -197,6 +197,7 @@ extern const char *hankel2e_doc;
 extern const char *hyp2f1_doc;
 extern const char *iv_doc;
 extern const char *iv_ratio_doc;
+extern const char *iv_ratio_c_doc;
 extern const char *ive_doc;
 extern const char *jv_doc;
 extern const char *jve_doc;
@@ -432,6 +433,10 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
     PyObject *iv_ratio = SpecFun_NewUFunc(
         {static_cast<func_dd_d_t>(xsf::iv_ratio), static_cast<func_ff_f_t>(xsf::iv_ratio)}, "_iv_ratio", iv_ratio_doc);
     PyModule_AddObjectRef(_special_ufuncs, "_iv_ratio", iv_ratio);
+
+    PyObject *iv_ratio_c = SpecFun_NewUFunc(
+        {static_cast<func_dd_d_t>(xsf::iv_ratio_c), static_cast<func_ff_f_t>(xsf::iv_ratio_c)}, "_iv_ratio_c", iv_ratio_c_doc);
+    PyModule_AddObjectRef(_special_ufuncs, "_iv_ratio_c", iv_ratio_c);
 
     PyObject *ive =
         SpecFun_NewUFunc({static_cast<func_ff_f_t>(xsf::cyl_bessel_ie), static_cast<func_dd_d_t>(xsf::cyl_bessel_ie),

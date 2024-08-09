@@ -389,6 +389,12 @@ namespace cephes {
             return {n, remainder};
         }
 
+        XSF_HOST_DEVICE inline double_double fma(
+            const double_double &a, const double_double &b, const double_double &c) {
+            // TODO: make an accurate fma
+            return a * b + c;
+        }
+
         XSF_HOST_DEVICE inline double_double square(const double_double &a) {
             double p1, p2;
             double s1, s2;
