@@ -232,9 +232,12 @@ cgssv(superlu_options_t *options, SuperMatrix *A, int *perm_c, int *perm_r,
         /* Solve the system A*X=B, overwriting B with X. */
 	int info1;
         cgstrs (trans, L, U, perm_c, perm_r, B, stat, &info1);
-    } else {
+    }
+#if ( PRNTlevel>=1 )
+     else {
         printf("cgstrf info %lld\n", (long long) *info); fflush(stdout);
     }
+#endif
     
     utime[SOLVE] = SuperLU_timer_() - t;
 

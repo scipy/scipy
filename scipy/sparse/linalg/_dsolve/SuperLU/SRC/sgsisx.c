@@ -373,7 +373,7 @@ at the top-level directory.
  * mem_usage (output) mem_usage_t*
  *	   Record the memory usage statistics, consisting of following fields:
  *	   - for_lu (float)
- *	     The amount of space used in bytes for L\\U data structures.
+ *	     The amount of space used in bytes for L\U data structures.
  *	   - total_needed (float)
  *	     The amount of space needed in bytes to perform factorization.
  *	   - expansions (int)
@@ -454,12 +454,12 @@ sgsisx(superlu_options_t *options, SuperMatrix *A, int *perm_c, int *perm_r,
     }
 
     /* Test the input parameters */
-    if (options->Fact != DOFACT && options->Fact != SamePattern &&
-	options->Fact != SamePattern_SameRowPerm &&
-	options->Fact != FACTORED &&
-	options->Trans != NOTRANS && options->Trans != TRANS && 
-	options->Trans != CONJ &&
-	options->Equil != NO && options->Equil != YES)
+    if ( (options->Fact != DOFACT && options->Fact != SamePattern &&
+	  options->Fact != SamePattern_SameRowPerm &&
+	  options->Fact != FACTORED) ||
+	 (options->Trans != NOTRANS && options->Trans != TRANS && 
+	  options->Trans != CONJ) ||
+	 (options->Equil != NO && options->Equil != YES) )
 	*info = -1;
     else if ( A->nrow != A->ncol || A->nrow < 0 ||
 	      (A->Stype != SLU_NC && A->Stype != SLU_NR) ||

@@ -540,7 +540,7 @@ cgsitrf(superlu_options_t *options, SuperMatrix *A, int relax, int panel_size,
 			tol_U = SUPERLU_MAX(drop_tol, tol_U * 0.5);
 		}
 
-		if (drop_sum.r != 0.0 && drop_sum.i != 0.0)
+		if (drop_sum.r != 0.0 || drop_sum.i != 0.0)
 		{
                     omega = SUPERLU_MIN(2.0*(1.0-alpha)/c_abs1(&drop_sum), 1.0);
                     cs_mult(&drop_sum, &drop_sum, omega);
