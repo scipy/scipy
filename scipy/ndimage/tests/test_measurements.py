@@ -9,7 +9,7 @@ from scipy._lib._array_api import (
     assert_array_almost_equal,
     assert_almost_equal,
 )
-from scipy._lib._array_api import is_jax, is_torch, array_namespace
+from scipy._lib._array_api import is_torch, array_namespace
 
 import pytest
 from pytest import raises as assert_raises
@@ -20,7 +20,9 @@ from . import types
 
 from scipy.conftest import array_api_compatible
 skip_xp_backends = pytest.mark.skip_xp_backends
+xfail_xp_backends = pytest.mark.xfail_xp_backends
 pytestmark = [array_api_compatible, pytest.mark.usefixtures("skip_xp_backends"),
+              pytest.mark.usefixtures("xfail_xp_backends"),
               skip_xp_backends(cpu_only=True, exceptions=['cupy', 'jax.numpy'],)]
 
 IS_WINDOWS_AND_NP1 = os.name == 'nt' and np.__version__ < '2'
@@ -361,10 +363,8 @@ def test_label_output_dtype(xp):
         assert output.dtype == t
 
 
+@xfail_xp_backends('jax.numpy', reasons=['JAX does not raise'])
 def test_label_output_wrong_size(xp):
-    if is_jax(xp):
-        pytest.xfail("JAX does not raise")
-
     data = xp.ones([5])
     for t in types:
         dtype = getattr(xp, t)
@@ -1134,11 +1134,9 @@ def test_maximum_position06(xp):
         assert output[1] == (1, 1)
 
 
+@xfail_xp_backends('torch', reasons=["output[1] is wrong on pytorch"])
 def test_maximum_position07(xp):
     # Test float labels
-    if is_torch(xp):
-        pytest.xfail("output[1] is wrong on pytorch")
-
     labels = xp.asarray([1.0, 2.5, 0.0, 4.5])
     for type in types:
         dtype = getattr(xp, type)
