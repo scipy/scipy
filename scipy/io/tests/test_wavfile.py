@@ -259,7 +259,7 @@ def test_64_bit_even_size():
     # 64-bit, 8 B container, 3 channels, 5 samples, 120 B data chunk
     for mmap in [False, True]:
         filename = 'test-8000Hz-le-3ch-5S-64bit.wav'
-        rate, data = wavfile.read(datafile(filename), mmap=False)
+        rate, data = wavfile.read(datafile(filename), mmap=mmap)
 
         assert_equal(rate, 8000)
         assert_(np.issubdtype(data.dtype, np.int64))

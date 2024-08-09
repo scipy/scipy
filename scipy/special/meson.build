@@ -48,7 +48,7 @@ sf_error_state_dep = declare_dependency(
 
 ufuncs_sources = [
   '_cosine.c',
-  'special_wrappers.cpp',
+  'xsf_wrappers.cpp',
   'sf_error.cc',
   'dd_real_wrappers.cpp'
 ]
@@ -212,7 +212,7 @@ py3.extension_module('cython_special',
   [
     uf_cython_gen.process('cython_special.pyx'),
     '_cosine.c',
-    'special_wrappers.cpp',
+    'xsf_wrappers.cpp',
     'sf_error.cc',
     'dd_real_wrappers.cpp'
   ],
@@ -287,64 +287,64 @@ foreach npz_file: npz_files
 endforeach
 
 
-# Headers for special functions in `special` library (temporary name) are
-# included in both build and install dirs for development purposes. Not public!
-special_sources = [
-  'special/config.h',
-  'special/error.h',
-  'special/evalpoly.h',
-  'special/lambertw.h',
-  'special/binom.h',
-  'special/trig.h',
-  'special/zlog1.h',
-  'special/loggamma.h',
-  'special/digamma.h',
-  'special/wright_bessel.h',
-  'special/hyp2f1.h',
-  'special/tools.h',
-  'special/iv_ratio.h'
+# Headers for special functions in `xsf` library are included in
+# both build and install dirs for development purposes. Not public!
+xsf_sources = [
+  'xsf/config.h',
+  'xsf/error.h',
+  'xsf/evalpoly.h',
+  'xsf/lambertw.h',
+  'xsf/binom.h',
+  'xsf/trig.h',
+  'xsf/zlog1.h',
+  'xsf/loggamma.h',
+  'xsf/digamma.h',
+  'xsf/wright_bessel.h',
+  'xsf/hyp2f1.h',
+  'xsf/tools.h',
+  'xsf/iv_ratio.h'
 ]
 
-special_cephes_sources = [
-  'special/cephes/const.h',
-  'special/cephes/polevl.h',
-  'special/cephes/beta.h',
-  'special/cephes/gamma.h',
-  'special/cephes/trig.h',
-  'special/cephes/zeta.h',
-  'special/cephes/psi.h',
-  'special/cephes/lanczos.h',
-  'special/cephes/rgamma.h',
-  'special/cephes/chbevl.h',
-  'special/cephes/poch.h',
-  'special/cephes/hyp2f1.h',
-  'special/cephes/besselpoly.h',
-  'special/cephes/i0.h',
-  'special/cephes/i1.h',
-  'special/cephes/scipy_iv.h',
-  'special/cephes/j0.h',
-  'special/cephes/j1.h',
-  'special/cephes/jv.h',
-  'special/cephes/cbrt.h',
-  'special/cephes/airy.h',
-  'special/cephes/k0.h',
-  'special/cephes/k1.h',
-  'special/cephes/kn.h',
-  'special/cephes/ndtr.h',
-  'special/cephes/igam.h',
-  'special/cephes/unity.h',
-  'special/cephes/chdtr.h',
-  'special/cephes/igami.h',
-  'special/cephes/hyperg.h',
-  'special/cephes/expn.h',
-  'special/cephes/ellie.h',
-  'special/cephes/ellik.h',
-  'special/cephes/ellpe.h',
-  'special/cephes/ellpk.h'
+xsf_cephes_sources = [
+  'xsf/cephes/const.h',
+  'xsf/cephes/polevl.h',
+  'xsf/cephes/beta.h',
+  'xsf/cephes/gamma.h',
+  'xsf/cephes/trig.h',
+  'xsf/cephes/zeta.h',
+  'xsf/cephes/psi.h',
+  'xsf/cephes/lanczos.h',
+  'xsf/cephes/rgamma.h',
+  'xsf/cephes/chbevl.h',
+  'xsf/cephes/poch.h',
+  'xsf/cephes/hyp2f1.h',
+  'xsf/cephes/besselpoly.h',
+  'xsf/cephes/i0.h',
+  'xsf/cephes/i1.h',
+  'xsf/cephes/scipy_iv.h',
+  'xsf/cephes/j0.h',
+  'xsf/cephes/j1.h',
+  'xsf/cephes/jv.h',
+  'xsf/cephes/cbrt.h',
+  'xsf/cephes/airy.h',
+  'xsf/cephes/k0.h',
+  'xsf/cephes/k1.h',
+  'xsf/cephes/kn.h',
+  'xsf/cephes/ndtr.h',
+  'xsf/cephes/igam.h',
+  'xsf/cephes/unity.h',
+  'xsf/cephes/chdtr.h',
+  'xsf/cephes/igami.h',
+  'xsf/cephes/hyperg.h',
+  'xsf/cephes/expn.h',
+  'xsf/cephes/ellie.h',
+  'xsf/cephes/ellik.h',
+  'xsf/cephes/ellpe.h',
+  'xsf/cephes/ellpk.h'
 ]
 
-py3.install_sources(special_sources, subdir: 'scipy/special/special')
-py3.install_sources(special_cephes_sources, subdir: 'scipy/special/special/cephes')
+py3.install_sources(xsf_sources, subdir: 'scipy/special/xsf')
+py3.install_sources(xsf_cephes_sources, subdir: 'scipy/special/xsf/cephes')
 
 python_sources = [
   '__init__.py',

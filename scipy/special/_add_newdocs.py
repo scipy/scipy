@@ -11923,6 +11923,50 @@ add_newdoc(
     """)
 
 add_newdoc(
+    "_cauchy_ppf",
+    """
+    _cauchy_ppf(p, loc, scale)
+
+    Percent point function (i.e. quantile) of the Cauchy distribution.
+
+    Parameters
+    ----------
+    p : array_like
+        Probabilities
+    loc : array_like
+        Location parameter of the distribution.
+    scale : array_like
+        Scale parameter of the distribution.
+
+    Returns
+    -------
+    scalar or ndarray
+
+    """)
+
+add_newdoc(
+    "_cauchy_isf",
+    """
+    _cauchy_isf(p, loc, scale)
+
+    Inverse survival function of the Cauchy distribution.
+
+    Parameters
+    ----------
+    p : array_like
+        Probabilities
+    loc : array_like
+        Location parameter of the distribution.
+    scale : array_like
+        Scale parameter of the distribution.
+
+    Returns
+    -------
+    scalar or ndarray
+
+    """)
+
+add_newdoc(
     "_ncx2_pdf",
     """
     _ncx2_pdf(x, k, l)

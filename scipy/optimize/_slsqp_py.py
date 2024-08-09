@@ -24,7 +24,7 @@ from ._optimize import (OptimizeResult, _check_unknown_options,
                         _check_clip_x)
 from ._numdiff import approx_derivative
 from ._constraints import old_bound_to_new, _arr_to_scalar
-from scipy._lib._array_api import atleast_nd, array_namespace
+from scipy._lib._array_api import xp_atleast_nd, array_namespace
 
 
 __docformat__ = "restructuredtext en"
@@ -250,7 +250,7 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
 
     # Transform x0 into an array.
     xp = array_namespace(x0)
-    x0 = atleast_nd(x0, ndim=1, xp=xp)
+    x0 = xp_atleast_nd(x0, ndim=1, xp=xp)
     dtype = xp.float64
     if xp.isdtype(x0.dtype, "real floating"):
         dtype = x0.dtype

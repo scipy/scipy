@@ -507,6 +507,48 @@ class TestBradford:
         assert_allclose(x, xx)
 
 
+class TestCauchy:
+
+    # Reference values were computed with mpmath.
+    @pytest.mark.parametrize(
+        'x, ref',
+        [(-5e15, 6.366197723675814e-17),
+         (-5, 0.06283295818900118),
+         (-1, 0.25),
+         (0, 0.5),
+         (1, 0.75),
+         (5, 0.9371670418109989),
+         (5e15, 0.9999999999999999)]
+    )
+    @pytest.mark.parametrize(
+        'method, sgn',
+        [(stats.cauchy.cdf, 1),
+         (stats.cauchy.sf, -1)]
+    )
+    def test_cdf_sf(self, x, ref, method, sgn):
+        p = method(sgn*x)
+        assert_allclose(p, ref, rtol=1e-15)
+
+    # Reference values were computed with mpmath.
+    @pytest.mark.parametrize(
+        'p, ref',
+        [(1e-20, -3.1830988618379067e+19),
+         (1e-9, -318309886.1837906),
+         (0.25, -1.0),
+         (0.50, 0.0),
+         (0.75, 1.0),
+         (0.999999, 318309.88617359026),
+         (0.999999999999, 318316927901.77966)]
+    )
+    @pytest.mark.parametrize(
+        'method, sgn',
+        [(stats.cauchy.ppf, 1),
+         (stats.cauchy.isf, -1)])
+    def test_ppf_isf(self, p, ref, method, sgn):
+        x = sgn*method(p)
+        assert_allclose(x, ref, rtol=1e-15)
+
+
 class TestChi:
 
     # "Exact" value of chi.sf(10, 4), as computed by Wolfram Alpha with
@@ -4634,6 +4676,13 @@ class TestBetaPrime:
     @pytest.mark.parametrize('x, a, b, p', cdf_vals)
     def test_ppf_gh_17631(self, x, a, b, p):
         assert_allclose(stats.betaprime.ppf(p, a, b), x, rtol=2e-14)
+
+    def test__ppf(self):
+        # Verify that _ppf supports scalar arrays.
+        a = np.array(1.0)
+        b = np.array(1.0)
+        p = np.array(0.5)
+        assert_allclose(stats.betaprime._ppf(p, a, b), 1.0, rtol=5e-16)
 
     @pytest.mark.parametrize(
         'x, a, b, expected',
@@ -9234,6 +9283,17 @@ class TestArgus:
     def test_sf_small_chi(self, chi, expected):
         x = np.array([0.1, 0.5, 0.9])
         assert_allclose(stats.argus.sf(x, chi), expected, rtol=1e-14)
+
+    # Expected values were computed with mpmath.
+    @pytest.mark.parametrize(
+        'x, chi, expected',
+        [(0.9999999, 0.25, 9.113252974162428e-11),
+         (0.9999999, 3.0, 6.616650419714568e-10),
+         (0.999999999, 2.5, 4.130195911418939e-13),
+         (0.999999999, 10.0, 2.3788319094393724e-11)])
+    def test_sf_near_1(self, x, chi, expected):
+        sf = stats.argus.sf(x, chi)
+        assert_allclose(sf, expected, rtol=5e-15)
 
     # Expected values were computed with mpmath (code: see gh-13370).
     @pytest.mark.parametrize(

@@ -1035,16 +1035,20 @@ class betaprime_gen(rv_continuous):
 
     def _ppf(self, p, a, b):
         p, a, b = np.broadcast_arrays(p, a, b)
-        # by default, compute compute the ppf by solving the following:
+        # By default, compute the ppf by solving the following:
         # p = beta._cdf(x/(1+x), a, b). This implies x = r/(1-r) with
         # r = beta._ppf(p, a, b). This can cause numerical issues if r is
-        # very close to 1. in that case, invert the alternative expression of
+        # very close to 1. In that case, invert the alternative expression of
         # the cdf: p = beta._sf(1/(1+x), b, a).
         r = stats.beta._ppf(p, a, b)
         with np.errstate(divide='ignore'):
             out = r / (1 - r)
-        i = (r > 0.9999)
-        out[i] = 1/stats.beta._isf(p[i], b[i], a[i]) - 1
+        rnear1 = r > 0.9999
+        if np.isscalar(r):
+            if rnear1:
+                out = 1/stats.beta._isf(p, b, a) - 1
+        else:
+            out[rnear1] = 1/stats.beta._isf(p[rnear1], b[rnear1], a[rnear1]) - 1
         return out
 
     def _munp(self, n, a, b):
@@ -1450,16 +1454,16 @@ class cauchy_gen(rv_continuous):
         return 1.0/np.pi/(1.0+x*x)
 
     def _cdf(self, x):
-        return 0.5 + 1.0/np.pi*np.arctan(x)
+        return np.arctan2(1, -x)/np.pi
 
     def _ppf(self, q):
-        return np.tan(np.pi*q-np.pi/2.0)
+        return scu._cauchy_ppf(q, 0, 1)
 
     def _sf(self, x):
-        return 0.5 - 1.0/np.pi*np.arctan(x)
+        return np.arctan2(1, x)/np.pi
 
     def _isf(self, q):
-        return np.tan(np.pi/2.0-np.pi*q)
+        return scu._cauchy_isf(q, 0, 1)
 
     def _stats(self):
         return np.nan, np.nan, np.nan, np.nan
@@ -4880,7 +4884,7 @@ class invgauss_gen(rv_continuous):
     def fit(self, data, *args, **kwds):
         method = kwds.get('method', 'mle')
 
-        if (isinstance(data, CensoredData) or type(self) == wald_gen
+        if (isinstance(data, CensoredData) or isinstance(self, wald_gen)
                 or method.lower() == 'mm'):
             return super().fit(data, *args, **kwds)
 
@@ -11463,7 +11467,7 @@ class argus_gen(rv_continuous):
         return 1.0 - self._sf(x, chi)
 
     def _sf(self, x, chi):
-        return _argus_phi(chi * np.sqrt(1 - x**2)) / _argus_phi(chi)
+        return _argus_phi(chi * np.sqrt((1 - x)*(1 + x))) / _argus_phi(chi)
 
     def _rvs(self, chi, size=None, random_state=None):
         chi = np.asarray(chi)
