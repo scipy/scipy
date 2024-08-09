@@ -552,8 +552,8 @@ dqagie(double(*fcn)(double* x), const double bound, const int inf,
         // The smallest interval has the largest error. Before bisecting
         // decrease the sum of the errors over the larger intervals (erlarg)
         // and perform extrapolation.
-        jupbnd = (*last > 2 + (limit/2) ? limit + 2 - L : L);
-        for (k = nrmax; k <= jupbnd; k++) {
+        jupbnd = (*last > 2 + (limit/2) ? limit + 3 - *last : *last);
+        for (k = nrmax; k < jupbnd; k++) {
             maxerr = iord[nrmax];
             errmax = elist[maxerr];
             if (fabs(blist[maxerr] - alist[maxerr]) > small) { goto LINE90; }
@@ -1104,8 +1104,8 @@ dqagpe(double(*fcn)(double* x), const double a, const double b, int npts2,
             // The smallest interval has the largest error. Before bisecting
             // decrease the sum of the errors over the larger intervals (erlarg)
             // and perform extrapolation.
-            jupbnd = (*last > 2 + (limit/2) ? limit + 2 - L : L);
-            for (k = nrmax; k <= jupbnd; k++) {
+            jupbnd = (*last > 2 + (limit/2) ? limit + 3 - *last : *last);
+            for (k = nrmax; k < jupbnd; k++) {
                 maxerr = iord[nrmax];
                 errmax = elist[maxerr];
                 if (level[maxerr] +1 <= levmax) { goto LINE160; }  // break->continue
@@ -1531,8 +1531,8 @@ dqagse(double(*fcn)(double* x), const double a, const double b,
         // The smallest interval has the largest error. Before bisecting
         // decrease the sum of the errors over the larger intervals (erlarg)
         // and perform extrapolation.
-        jupbnd = (*last > 2 + (limit/2) ? limit + 2 - L : L);
-        for (k = nrmax; k <= jupbnd; k++) {
+        jupbnd = (*last > 2 + (limit/2) ? limit + 3 - *last : *last);
+        for (k = nrmax; k < jupbnd; k++) {
             maxerr = iord[nrmax];
             errmax = elist[maxerr];
             if (fabs(blist[maxerr] - alist[maxerr]) > small) { goto LINE90; } // break->continue
@@ -2715,9 +2715,9 @@ LINE70:
         // The smallest interval has the largest error. Before bisecting, decrease
         // the sum of the erorrs over the larger intervals (erlarg) and perform
         // extrapolation.
-        jupbnd = (*last > (limit/2 + 2) ? limit + 2 - *last : L);
+        jupbnd = (*last > 2 + (limit/2) ? limit + 3 - *last : *last);
 
-        for (k = nrmax; k <= jupbnd; k++) {
+        for (k = nrmax; k < jupbnd; k++) {
             maxerr = iord[nrmax];
             errmax = elist[maxerr];
             if (fabs(blist[maxerr] - alist[maxerr]) > small) { goto LINE140; }
