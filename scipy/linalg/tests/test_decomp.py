@@ -1,5 +1,6 @@
 import itertools
 import platform
+import sys
 
 import numpy as np
 from numpy.testing import (assert_equal, assert_almost_equal,
@@ -36,6 +37,8 @@ try:
     from scipy.__config__ import CONFIG
 except ImportError:
     CONFIG = None
+
+IS_WASM = (sys.platform == "emscripten" or platform.machine() in ["wasm32", "wasm64"])
 
 
 def _random_hermitian_matrix(n, posdef=False, dtype=float):
@@ -1179,6 +1182,9 @@ class TestSVD_GESVD(TestSVD_GESDD):
     lapack_driver = 'gesvd'
 
 
+# Allocating an array of such a size leads to _ArrayMemoryError(s)
+# since the maximum memory that can be in 32-bit (WASM) is 4GB
+@pytest.mark.skipif(IS_WASM, reason="out of memory in WASM")
 @pytest.mark.fail_slow(10)
 def test_svd_gesdd_nofegfault():
     # svd(a) with {U,VT}.size > INT_MAX does not segfault
