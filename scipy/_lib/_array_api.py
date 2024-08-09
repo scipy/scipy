@@ -239,6 +239,9 @@ def is_torch(xp: ModuleType) -> bool:
 def is_jax(xp):
     return xp.__name__ in ('jax.numpy', 'jax.experimental.array_api')
 
+def is_dask(xp):
+    return xp.__name__ in ('dask.array', 'scipy._lib.array_api_compat.dask')
+
 
 def is_array_api_strict(xp):
     return xp.__name__ == 'array_api_strict'
@@ -528,7 +531,7 @@ def xp_sign(x: Array, /, *, xp: ModuleType | None = None) -> Array:
     xp = array_namespace(x) if xp is None else xp
     if is_numpy(xp):  # only NumPy implements the special cases correctly
         return xp.sign(x)
-    sign = xp.full_like(x, xp.asarray(xp.nan))
+    sign = xp.full_like(x, xp.nan)
     one = xp.asarray(1, dtype=x.dtype)
     sign = xp.where(x > 0, one, sign)
     sign = xp.where(x < 0, -one, sign)

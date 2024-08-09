@@ -179,7 +179,9 @@ class TestNdimageFilters:
         output = ndimage.convolve1d(array, weights)
         assert_array_almost_equal(output, expected)
 
-    @skip_xp_backends("jax.numpy", reasons=["output array is read-only."],
+    @skip_xp_backends("jax.numpy", "dask.array",
+                      reasons=["output array is read-only.",
+                               "output array is read-only.",],
                       cpu_only=True, exceptions=['cupy', 'jax.numpy'])
     def test_correlate01_overlap(self, xp):
         if is_cupy(xp):
@@ -533,7 +535,9 @@ class TestNdimageFilters:
                            mode='wrap', output=output)
         assert_array_almost_equal(output, expected)
 
-    @skip_xp_backends("jax.numpy", reasons=["output array is read-only."],
+    @skip_xp_backends("jax.numpy", "dask.array",
+                      reasons=["output array is read-only.",
+                               "output array is read-only.",],
                       cpu_only=True, exceptions=['cupy', 'jax.numpy'],)
     @pytest.mark.parametrize('dtype_array', types)
     @pytest.mark.parametrize('dtype_output', types)
@@ -553,7 +557,9 @@ class TestNdimageFilters:
                            mode='nearest', output=output)
         assert_array_almost_equal(output, expected)
 
-    @skip_xp_backends("jax.numpy", reasons=["output array is read-only."],
+    @skip_xp_backends("jax.numpy", "dask.array",
+                      reasons=["output array is read-only.",
+                               "output array is read-only.",],
                       cpu_only=True, exceptions=['cupy', 'jax.numpy'],)
     @pytest.mark.parametrize('dtype_array', types)
     @pytest.mark.parametrize('dtype_output', types)
@@ -574,7 +580,9 @@ class TestNdimageFilters:
                            mode='nearest', output=output, origin=-1)
         assert_array_almost_equal(output, tcov)
 
-    @skip_xp_backends("jax.numpy", reasons=["output array is read-only."],
+    @skip_xp_backends("jax.numpy", "dask.array",
+                      reasons=["output array is read-only.",
+                               "output array is read-only.",],
                       cpu_only=True, exceptions=['cupy', 'jax.numpy'],)
     @pytest.mark.parametrize('dtype_array', types)
     @pytest.mark.parametrize('dtype_output', types)
@@ -873,7 +881,9 @@ class TestNdimageFilters:
         output2 = ndimage.gaussian_filter(input, 1.0, output=otype)
         assert_array_almost_equal(output1, output2)
 
-    @skip_xp_backends("jax.numpy", reasons=["output array is read-only."],
+    @skip_xp_backends("jax.numpy", "dask.array",
+                      reasons=["output array is read-only.",
+                               "output array is read-only.",],
                       cpu_only=True, exceptions=['cupy', 'jax.numpy'],)
     def test_gauss_memory_overlap(self, xp):
         input = xp.arange(100 * 100, dtype=xp.float32)
@@ -1099,7 +1109,9 @@ class TestNdimageFilters:
         output = ndimage.prewitt(array, 0)
         assert_array_almost_equal(t, output)
 
-    @skip_xp_backends("jax.numpy", reasons=["output array is read-only."],
+    @skip_xp_backends("jax.numpy", "dask.array",
+                      reasons=["output array is read-only.",
+                               "output array is read-only.",],
                       cpu_only=True, exceptions=['cupy', 'jax.numpy'],)
     @pytest.mark.parametrize('dtype', types + complex_types)
     def test_prewitt02(self, dtype, xp):
@@ -1162,7 +1174,9 @@ class TestNdimageFilters:
         output = ndimage.sobel(array, 0)
         assert_array_almost_equal(t, output)
 
-    @skip_xp_backends("jax.numpy", reasons=["output array is read-only."],
+    @skip_xp_backends("jax.numpy", "dask.array",
+                      reasons=["output array is read-only.",
+                               "output array is read-only.",],
                       cpu_only=True, exceptions=['cupy', 'jax.numpy'],)
     @pytest.mark.parametrize('dtype', types + complex_types)
     def test_sobel02(self, dtype, xp):
@@ -1223,7 +1237,9 @@ class TestNdimageFilters:
         output = ndimage.laplace(array)
         assert_array_almost_equal(tmp1 + tmp2, output)
 
-    @skip_xp_backends("jax.numpy", reasons=["output array is read-only"],
+    @skip_xp_backends("jax.numpy", "dask.array",
+                      reasons=["output array is read-only.",
+                               "output array is read-only.",],
                       cpu_only=True, exceptions=['cupy', 'jax.numpy'],)
     @pytest.mark.parametrize('dtype',
                              ["int32", "float32", "float64",
@@ -1254,7 +1270,9 @@ class TestNdimageFilters:
         output = ndimage.gaussian_laplace(array, 1.0)
         assert_array_almost_equal(tmp1 + tmp2, output)
 
-    @skip_xp_backends("jax.numpy", reasons=["output array is read-only"],
+    @skip_xp_backends("jax.numpy", "dask.array",
+                      reasons=["output array is read-only.",
+                               "output array is read-only.",],
                       cpu_only=True, exceptions=['cupy', 'jax.numpy'],)
     @pytest.mark.parametrize('dtype',
                              ["int32", "float32", "float64",
@@ -1271,7 +1289,9 @@ class TestNdimageFilters:
         ndimage.gaussian_laplace(array, 1.0, output)
         assert_array_almost_equal(tmp1 + tmp2, output)
 
-    @skip_xp_backends("jax.numpy", reasons=["output array is read-only."],
+    @skip_xp_backends("jax.numpy", "dask.array",
+                      reasons=["output array is read-only.",
+                               "output array is read-only.",],
                       cpu_only=True, exceptions=['cupy', 'jax.numpy'],)
     @pytest.mark.parametrize('dtype', types + complex_types)
     def test_generic_laplace01(self, dtype, xp):
@@ -1297,7 +1317,9 @@ class TestNdimageFilters:
         ndimage.gaussian_laplace(array, 1.0, output)
         assert_array_almost_equal(tmp, output)
 
-    @skip_xp_backends("jax.numpy", reasons=["output array is read-only"],
+    @skip_xp_backends("jax.numpy", "dask.array",
+                      reasons=["output array is read-only.",
+                               "output array is read-only.",],
                       cpu_only=True, exceptions=['cupy', 'jax.numpy'],)
     @pytest.mark.parametrize('dtype',
                              ["int32", "float32", "float64",
@@ -1319,7 +1341,9 @@ class TestNdimageFilters:
         expected = astype(xp.sqrt(expected_float), dtype)
         xp_assert_close(output, expected, rtol=1e-6, atol=1e-6)
 
-    @skip_xp_backends("jax.numpy", reasons=["output array is read-only"],
+    @skip_xp_backends("jax.numpy", "dask.array",
+                      reasons=["output array is read-only.",
+                               "output array is read-only.",],
                       cpu_only=True, exceptions=['cupy', 'jax.numpy'],)
     @pytest.mark.parametrize('dtype',
                              ["int32", "float32", "float64",
@@ -2502,7 +2526,9 @@ def test_gaussian_radius_invalid(xp):
         ndimage.gaussian_filter1d(xp.zeros(8), sigma=1, radius=1.1)
 
 
-@skip_xp_backends("jax.numpy", reasons=["output array is read-only"],
+@skip_xp_backends("jax.numpy", "dask.array",
+                  reasons=["output array is read-only.",
+                           "output array is read-only.",],
                   cpu_only=True, exceptions=['cupy', 'jax.numpy'],)
 class TestThreading:
     def check_func_thread(self, n, fun, args, out):

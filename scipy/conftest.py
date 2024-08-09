@@ -12,7 +12,7 @@ import hypothesis
 
 from scipy._lib._fpumode import get_fpu_mode
 from scipy._lib._testutils import FPUModeChangeWarning
-from scipy._lib._array_api import SCIPY_ARRAY_API, SCIPY_DEVICE
+from scipy._lib._array_api import SCIPY_ARRAY_API, SCIPY_DEVICE, xp_device
 from scipy._lib import _pep440
 
 try:
@@ -149,6 +149,12 @@ if SCIPY_ARRAY_API and isinstance(SCIPY_ARRAY_API, str):
     except ImportError:
         pass
 
+    try:
+        import dask.array  # type: ignore[import-not-found]
+        xp_available_backends.update({'dask.array': dask.array})
+    except ImportError:
+        pass
+
     # by default, use all available backends
     if SCIPY_ARRAY_API.lower() not in ("1", "true"):
         SCIPY_ARRAY_API_ = json.loads(SCIPY_ARRAY_API)
@@ -246,6 +252,9 @@ def skip_xp_backends(xp, request):
                 for d in xp.empty(0).devices():
                     if 'cpu' not in d.device_kind:
                         pytest.skip(reason=reason)
+            elif xp.__name__ == 'dask.array':
+                if xp_device(xp.empty(0)) != 'cpu':
+                    pytest.skip(reason=reason)
 
     if backends is not None:
         reasons = kwargs.get("reasons", False)
