@@ -401,6 +401,14 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
         def result_to_tuple(res):
             return res
 
+    # The only `result_to_tuple` that needs the second argument (number of
+    # outputs) is the one for `moment`, and this was realized very late.
+    # Rather than changing all `result_to_tuple` definitions, we wrap them
+    # here to accept a second argument if they don't already.
+    if len(inspect.signature(result_to_tuple).parameters) == 1:
+        def result_to_tuple(res, _, f=result_to_tuple):
+            return f(res)
+
     if not callable(too_small):
         def is_too_small(samples, *ts_args, axis=-1, **ts_kwargs):
             for sample in samples:
@@ -571,7 +579,7 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
                     return tuple_to_result(*res)
 
                 res = hypotest_fun_out(*samples, **kwds)
-                res = result_to_tuple(res)
+                res = result_to_tuple(res, n_out)
                 res = _add_reduced_axes(res, reduced_axes, keepdims)
                 return tuple_to_result(*res)
 
@@ -603,7 +611,7 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
 
             if vectorized and not contains_nan and not sentinel:
                 res = hypotest_fun_out(*samples, axis=axis, **kwds)
-                res = result_to_tuple(res)
+                res = result_to_tuple(res, n_out)
                 res = _add_reduced_axes(res, reduced_axes, keepdims)
                 return tuple_to_result(*res)
 
@@ -618,7 +626,7 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
                         warnings.warn(too_small_nd_omit, SmallSampleWarning,
                                       stacklevel=4)
                         return np.full(n_out, NaN)
-                    return result_to_tuple(hypotest_fun_out(*samples, **kwds))
+                    return result_to_tuple(hypotest_fun_out(*samples, **kwds), n_out)
 
             # Addresses nan_policy == "propagate"
             elif (contains_nan and nan_policy == 'propagate'
@@ -632,7 +640,7 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
                         samples = _remove_sentinel(samples, paired, sentinel)
                     if is_too_small(samples, kwds):
                         return np.full(n_out, NaN)
-                    return result_to_tuple(hypotest_fun_out(*samples, **kwds))
+                    return result_to_tuple(hypotest_fun_out(*samples, **kwds), n_out)
 
             else:
                 def hypotest_fun(x):
@@ -641,7 +649,7 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
                         samples = _remove_sentinel(samples, paired, sentinel)
                     if is_too_small(samples, kwds):
                         return np.full(n_out, NaN)
-                    return result_to_tuple(hypotest_fun_out(*samples, **kwds))
+                    return result_to_tuple(hypotest_fun_out(*samples, **kwds), n_out)
 
             x = np.moveaxis(x, axis, 0)
             res = np.apply_along_axis(hypotest_fun, axis=0, arr=x)
