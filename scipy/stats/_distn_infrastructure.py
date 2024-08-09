@@ -3822,6 +3822,8 @@ class rv_discrete(rv_generic):
         The function is not vectorized.
 
         """
+        # Although `args` is just the shape parameters, `poisson_binom` needs this
+        # to split the vector-valued shape into a tuple of separate shapes
         args, _, _ = self._parse_args(*args)
 
         if func is None:

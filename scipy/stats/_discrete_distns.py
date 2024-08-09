@@ -1664,6 +1664,12 @@ class poisson_binomial_frozen(rv_discrete_frozen):
         shapes, _, _ = self.dist._parse_args(*args, **kwds)
         self.a, self.b = self.dist._get_support(*shapes)
 
+    def expect(self, func=None, lb=None, ub=None, conditional=False, **kwds):
+        a, loc, scale = self.dist._parse_args(*self.args, **self.kwds)
+        # Here's the modification: we pass all args (including `loc`) into the `args`
+        # parameter of `expect` so the shape only goes through `_parse_args` once.
+        return self.dist.expect(func, self.args, loc, lb, ub, conditional, **kwds)
+
 
 class skellam_gen(rv_discrete):
     r"""A  Skellam discrete random variable.
