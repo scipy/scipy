@@ -260,12 +260,21 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             warn("Comparing sparse matrices using == is inefficient, try using"
                  " != instead.", SparseEfficiencyWarning, stacklevel=3)
             # TODO sparse broadcasting
-            if self.shape != other.shape:
-                return False
-            elif self.format != other.format:
+            if self.format != other.format:
                 other = other.asformat(self.format)
+            both_are_1d = self.ndim == 1 and other.ndim == 1
+            result_shape_if_1d = self.shape[0]
+            sM, sN = self._shape_as_2d
+            oM, oN = other._shape_as_2d
+            self = self.reshape(sM, sN).tocsr()
+            other = other.reshape(oM, oN).tocsr()
+            bshape = np.broadcast_shapes(self.shape, other.shape)
+            self = self.broadcast_to(bshape)
+            other = other.broadcast_to(bshape)
             res = self._binopt(other, '_ne_')
-            all_true = self.__class__(np.ones(self.shape, dtype=np.bool_))
+            if both_are_1d:
+                res = res.reshape(result_shape_if_1d).tocsr()
+            all_true = self.__class__(np.ones(res.shape, dtype=np.bool_))
             return all_true - res
         else:
             return NotImplemented
@@ -295,12 +304,23 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             return NotImplemented
         # Sparse other.
         elif issparse(other):
-            # TODO sparse broadcasting
-            if self.shape != other.shape:
-                return True
-            elif self.format != other.format:
+            if self.format != other.format:
                 other = other.asformat(self.format)
-            return self._binopt(other, '_ne_')
+
+            both_are_1d = self.ndim == 1 and other.ndim == 1
+            result_shape_if_1d = self.shape[0]
+            sM, sN = self._shape_as_2d
+            oM, oN = other._shape_as_2d
+            self = self.reshape(sM, sN).tocsr()
+            other = other.reshape(oM, oN).tocsr()
+            bshape = np.broadcast_shapes(self.shape, other.shape)
+            self = self.broadcast_to(bshape)
+            other = other.broadcast_to(bshape)
+
+            res = self._binopt(other, '_ne_')
+            if both_are_1d:
+                res = res.reshape(result_shape_if_1d).tocsr()
+            return res
         else:
             return NotImplemented
 
@@ -322,19 +342,29 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             return op(self.todense(), other)
         # Sparse other.
         elif issparse(other):
-            # TODO sparse broadcasting
-            if self.shape != other.shape:
-                raise ValueError("inconsistent shapes")
-            elif self.format != other.format:
+            if self.format != other.format:
                 other = other.asformat(self.format)
+            both_are_1d = self.ndim == 1 and other.ndim == 1
+            result_shape_if_1d = self.shape[0]
+            sM, sN = self._shape_as_2d
+            oM, oN = other._shape_as_2d
+            self = self.reshape(sM, sN).tocsr()
+            other = other.reshape(oM, oN).tocsr()
+            bshape = np.broadcast_shapes(self.shape, other.shape)
+            self = self.broadcast_to(bshape)
+            other = other.broadcast_to(bshape)
+
             if op_name not in ('_ge_', '_le_'):
                 return self._binopt(other, op_name)
 
             warn("Comparing sparse matrices using >= and <= is inefficient, "
                  "using <, >, or !=, instead.",
                  SparseEfficiencyWarning, stacklevel=3)
-            all_true = self.__class__(np.ones(self.shape, dtype=np.bool_))
+            
             res = self._binopt(other, '_gt_' if op_name == '_le_' else '_lt_')
+            if both_are_1d:
+                res = res.reshape(result_shape_if_1d).tocsr()
+            all_true = self.__class__(np.ones(res.shape, dtype=np.bool_))
             return all_true - res
         else:
             return NotImplemented
