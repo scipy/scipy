@@ -3,6 +3,7 @@ import itertools
 import numpy as np
 from numpy.testing import (assert_equal, assert_almost_equal, assert_array_equal,
         assert_array_almost_equal, assert_allclose, suppress_warnings)
+import pytest
 from pytest import raises as assert_raises
 
 from numpy import array, diff, linspace, meshgrid, ones, pi, shape
@@ -13,7 +14,7 @@ from scipy.interpolate._fitpack2 import (UnivariateSpline,
         LSQSphereBivariateSpline, SmoothSphereBivariateSpline,
         RectSphereBivariateSpline)
 
-from scipy._lib._testutils import _run_concurrent_barrier
+from scipy._lib._testutils import run_in_parallel
 
 
 class TestUnivariateSpline:
@@ -389,19 +390,21 @@ of squared residuals does not satisfy the condition abs\(fp-s\)/s < tol.""")
             UnivariateSpline(x, y, k=1)
             assert_equal(len(r), 1)
 
-    def test_concurrency(self):
-        # Check that no segfaults appear with concurrent access to
-        # UnivariateSpline
+    @pytest.fixture
+    def concurrent_spline(self):
         xx = np.arange(100, dtype=float)
         yy = xx**3
         x = np.arange(100, dtype=float)
         x[1] = x[0]
         spl = UnivariateSpline(xx, yy, check_finite=True)
+        return spl, x
 
-        def worker_fn(_, interp, x):
-            interp(x)
-
-        _run_concurrent_barrier(10, worker_fn, spl, x)
+    @run_in_parallel
+    def test_concurrency(self, concurrent_spline):
+        # Check that no segfaults appear with concurrent access to
+        # UnivariateSpline
+        interp, x = concurrent_spline
+        return interp(x)
 
 
 class TestLSQBivariateSpline:

@@ -1,12 +1,14 @@
 # Created by John Travers, Robert Hetland, 2007
 """ Test functions for rbf module """
 
+import pytest
+
 import numpy as np
 from numpy.testing import (assert_, assert_array_almost_equal,
                            assert_almost_equal)
 from numpy import linspace, sin, cos, random, exp, allclose
 from scipy.interpolate._rbf import Rbf
-from scipy._lib._testutils import _run_concurrent_barrier
+from scipy._lib._testutils import run_in_parallel
 
 
 FUNCTIONS = ('multiquadric', 'inverse multiquadric', 'gaussian',
@@ -223,15 +225,17 @@ def test_rbf_epsilon_none_collinear():
     rbf = Rbf(x, y, z, epsilon=None)
     assert_(rbf.epsilon > 0)
 
-
-def test_rbf_concurrency():
+@pytest.fixture
+def default_rbf():
     x = linspace(0, 10, 100)
     y0 = sin(x)
     y1 = cos(x)
     y = np.vstack([y0, y1]).T
     rbf = Rbf(x, y, mode='N-D')
+    return rbf, x
 
-    def worker_fn(_, interp, xp):
-        interp(xp)
 
-    _run_concurrent_barrier(10, worker_fn, rbf, x)
+@run_in_parallel
+def test_rbf_concurrency(default_rbf):
+    rbf, x = default_rbf
+    return rbf(x)

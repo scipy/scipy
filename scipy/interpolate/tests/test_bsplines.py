@@ -20,7 +20,7 @@ from scipy.interpolate._bsplines import (_not_a_knot, _augknt,
                                          _make_interp_per_full_matr)
 import scipy.interpolate._fitpack_impl as _impl
 from scipy._lib._util import AxisError
-from scipy._lib._testutils import _run_concurrent_barrier
+from scipy._lib._testutils import run_in_parallel
 
 # XXX: move to the interpolate namespace
 from scipy.interpolate._ndbspline import make_ndbspl
@@ -626,16 +626,21 @@ class TestBSpline:
         b = BSpline(t=t, c=c, k=0)
         assert_allclose(b(xx), 3)
 
-    def test_concurrency(self):
+    @pytest.fixture
+    def random_spline(self):
+        n = 35
+        k = 3
+        np.random.seed(123)
+        t = np.sort(np.random.random(n + k + 1))
+        c = np.random.random(n)
+        return BSpline.construct_fast(t, c, k)
+
+    @run_in_parallel
+    def test_concurrency(self, random_spline):
         # Check that no segfaults appear with concurrent access to BSpline
-        b = _make_random_spline()
-
-        def worker_fn(_, b):
-            t, _, k = b.tck
-            xx = np.linspace(t[k], t[-k-1], 10000)
-            b(xx)
-
-        _run_concurrent_barrier(10, worker_fn, b)
+        t, _, k = random_spline.tck
+        xx = np.linspace(t[k], t[-k-1], 10000)
+        return random_spline(xx)
 
 
 class TestInsert:
@@ -2421,7 +2426,8 @@ class TestNdBSpline:
         with assert_raises(ValueError, match="Data and knots*"):
             NdBSpline.design_matrix([[1, 2]], t3, [k]*3)
 
-    def test_concurrency(self):
+    @pytest.fixture
+    def random_3d_ndbspline(self):
         rng = np.random.default_rng(12345)
         k = 3
         tx = np.r_[0, 0, 0, 0, np.sort(rng.uniform(size=7)) * 3, 3, 3, 3, 3]
@@ -2430,14 +2436,14 @@ class TestNdBSpline:
         c = rng.uniform(size=(tx.size-k-1, ty.size-k-1, tz.size-k-1))
 
         spl = NdBSpline((tx, ty, tz), c, k=k)
+        return spl
 
-        def worker_fn(_, spl):
-            xi = np.c_[[1, 1.5, 2],
-                       [1.1, 1.6, 2.1],
-                       [0.9, 1.4, 1.9]]
-            spl(xi)
-
-        _run_concurrent_barrier(10, worker_fn, spl)
+    @run_in_parallel
+    def test_concurrency(self, random_3d_ndbspline):
+        xi = np.c_[[1, 1.5, 2],
+                   [1.1, 1.6, 2.1],
+                   [0.9, 1.4, 1.9]]
+        return random_3d_ndbspline(xi)
 
 
 class TestMakeND:

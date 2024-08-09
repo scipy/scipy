@@ -13,7 +13,7 @@ from scipy.interpolate import (RegularGridInterpolator, interpn,
 
 from scipy.sparse._sputils import matrix
 from scipy._lib._util import ComplexWarning
-from scipy._lib._testutils import _run_concurrent_barrier
+from scipy._lib._testutils import run_in_parallel
 
 
 parametrize_rgi_interp_methods = pytest.mark.parametrize(
@@ -689,24 +689,27 @@ class TestRegularGridInterpolator:
                 (x, y), data, method='slinear',  solver_args={'woof': 42}
             )
 
-    def test_concurrency(self):
+    @pytest.fixture
+    def rgi_4d(self):
         points, values = self._get_sample_4d()
         sample = np.array([[0.1 , 0.1 , 1.  , 0.9 ],
                            [0.2 , 0.1 , 0.45, 0.8 ],
                            [0.5 , 0.5 , 0.5 , 0.5 ],
                            [0.3 , 0.1 , 0.2 , 0.4 ]])
         interp = RegularGridInterpolator(points, values, method="slinear")
+        return interp, sample
 
+    @run_in_parallel(pass_thread_id=True, assert_all_equal=False)
+    def test_concurrency(self, rgi_4d, thread_id=0):
         # A call to RGI with a method different from the one specified on the
         # constructor, should not mutate it.
-        methods = ['slinear', 'nearest']
-        def worker_fn(tid, interp):
-            spline = interp._spline
-            method = methods[tid % 2]
-            interp(sample, method=method)
-            assert interp._spline is spline
+        interp, sample = rgi_4d
+        spline = interp._spline
 
-        _run_concurrent_barrier(10, worker_fn, interp)
+        methods = ['slinear', 'nearest']
+        method = methods[thread_id % 2]
+        interp(sample, method=method)
+        assert interp._spline is spline
 
 
 class MyValue:
