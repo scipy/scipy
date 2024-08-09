@@ -25,6 +25,9 @@ from scipy._lib._util import _asarray_validated
 from ._misc import LinAlgError, _datacopied, norm
 from .lapack import get_lapack_funcs, _compute_lwork
 
+from scipy._lib._array_api import (
+    array_namespace, is_numpy, _asarray, xp_unsupported_args
+)
 
 _I = np.array(1j, dtype='F')
 
@@ -445,6 +448,34 @@ def eigh(a, b=None, *, lower=True, eigvals_only=False, overwrite_a=False,
     (5, 1)
 
     """
+    xp = array_namespace(a)
+    if check_finite:
+        a = _asarray(a, check_finite=True, xp=xp)
+    if is_numpy(xp):
+        return _eigh(a, b=b, lower=lower, eigvals_only=eigvals_only,
+                     overwrite_a=overwrite_a, overwrite_b=overwrite_b,
+                     type=type, subset_by_index=subset_by_index,
+                     subset_by_value=subset_by_value, driver=driver)
+    unsupported_args = {
+        'b': b is not None,
+        'lower': not lower,
+        'eigvals_only': eigvals_only,
+        'type': type != 1,
+        'subset_by_index': subset_by_index is not None,
+        'subset_by_value': subset_by_value is not None,
+        'driver': driver is not None
+    }
+    if any(unsupported_args.values()):
+        xp_unsupported_args(unsupported_args)
+    if hasattr(xp, 'linalg'):
+        return xp.linalg.eigh(a)
+    a = np.asarray(a)
+    return xp.asarray(_eigh(a))
+
+
+def _eigh(a, b=None, *, lower=True, eigvals_only=False, overwrite_a=False,
+          overwrite_b=False, type=1, subset_by_index=None,
+          subset_by_value=None, driver=None):
     # set lower
     uplo = 'L' if lower else 'U'
     # Set job for Fortran routines
@@ -455,7 +486,7 @@ def eigh(a, b=None, *, lower=True, eigvals_only=False, overwrite_a=False,
         raise ValueError('"{}" is unknown. Possible values are "None", "{}".'
                          ''.format(driver, '", "'.join(drv_str[1:])))
 
-    a1 = _asarray_validated(a, check_finite=check_finite)
+    a1 = _asarray_validated(a, check_finite=False)
     if len(a1.shape) != 2 or a1.shape[0] != a1.shape[1]:
         raise ValueError('expected square "a" matrix')
 
@@ -476,7 +507,7 @@ def eigh(a, b=None, *, lower=True, eigvals_only=False, overwrite_a=False,
     drv_args = {'overwrite_a': overwrite_a}
 
     if b is not None:
-        b1 = _asarray_validated(b, check_finite=check_finite)
+        b1 = _asarray_validated(b, check_finite=False)
         overwrite_b = overwrite_b or _datacopied(b1, b)
         if len(b1.shape) != 2 or b1.shape[0] != b1.shape[1]:
             raise ValueError('expected square "b" matrix')
@@ -590,9 +621,9 @@ def eigh(a, b=None, *, lower=True, eigvals_only=False, overwrite_a=False,
                               f'{drv.typecode + pfx + driver}')
         elif info > n:
             raise LinAlgError(f'The leading minor of order {info-n} of B is not '
-                              'positive definite. The factorization of B '
-                              'could not be completed and no eigenvalues '
-                              'or eigenvectors were computed.')
+                              f'positive definite. The factorization of B '
+                              f'could not be completed and no eigenvalues '
+                              f'or eigenvectors were computed.')
         else:
             drv_err = {'ev': 'The algorithm failed to converge; {} '
                              'off-diagonal elements of an intermediate '
@@ -1022,10 +1053,28 @@ def eigvalsh(a, b=None, *, lower=True, overwrite_a=False,
     array([-3.74637491, -0.76263923,  6.08502336, 12.42399079])
 
     """
-    return eigh(a, b=b, lower=lower, eigvals_only=True, overwrite_a=overwrite_a,
-                overwrite_b=overwrite_b, type=type, check_finite=check_finite,
-                subset_by_index=subset_by_index, subset_by_value=subset_by_value,
-                driver=driver)
+    xp = array_namespace(a)
+    if check_finite:
+        a = _asarray(a, check_finite=True, xp=xp)
+    if is_numpy(xp):
+        return _eigh(a, b=b, lower=lower, eigvals_only=True,
+                     overwrite_a=overwrite_a, overwrite_b=overwrite_b,
+                     type=type, subset_by_index=subset_by_index,
+                     subset_by_value=subset_by_value, driver=driver)
+    unsupported_args = {
+        'b': b is not None,
+        'lower': not lower,
+        'type': type != 1,
+        'subset_by_index': subset_by_index is not None,
+        'subset_by_value': subset_by_value is not None,
+        'driver': driver is not None
+    }
+    if any(unsupported_args.values()):
+        xp_unsupported_args(unsupported_args)
+    if hasattr(xp, 'linalg'):
+        return xp.linalg.eigvalsh(a)
+    a = np.asarray(a)
+    return xp.asarray(_eigh(a, eigvals_only=True))
 
 
 def eigvals_banded(a_band, lower=False, overwrite_a_band=False,
