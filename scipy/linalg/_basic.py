@@ -15,6 +15,10 @@ from . import _decomp, _decomp_svd
 from ._solve_toeplitz import levinson
 from ._cythonized_array_utils import find_det_from_lu
 
+from scipy._lib._array_api import (
+    array_namespace, is_numpy, _asarray, xp_unsupported_args
+)
+
 __all__ = ['solve', 'solve_triangular', 'solveh_banded', 'solve_banded',
            'solve_toeplitz', 'solve_circulant', 'inv', 'det', 'lstsq',
            'pinv', 'pinvh', 'matrix_balance', 'matmul_toeplitz']
@@ -141,11 +145,37 @@ def solve(a, b, lower=False, overwrite_a=False,
     array([ True,  True,  True], dtype=bool)
 
     """
+    xp = array_namespace(a, b)
+    if check_finite:
+        a = _asarray(a, check_finite=True, xp=xp)
+        b = _asarray(b, check_finite=True, xp=xp)
+    if is_numpy(xp):
+        return _solve(a, b, lower=lower, overwrite_a=overwrite_a,
+                      overwrite_b=overwrite_b, assume_a=assume_a, transposed=transposed)
+    unsupported_args = {
+        'lower': lower,
+        'assume_a': assume_a != 'gen',
+        'transposed': transposed
+    }
+    if any(unsupported_args.values()):
+        xp_unsupported_args(unsupported_args)
+    if hasattr(xp, 'linalg'):
+        dtype = xp.result_type(a, b, xp.float32)
+        a = xp.astype(a, dtype)
+        b = xp.astype(b, dtype)
+        return xp.linalg.solve(a, b)
+    a = np.asarray(a)
+    b = np.asarray(b)
+    return xp.asarray(_solve(a, b))
+
+
+def _solve(a, b, lower=False, overwrite_a=False, overwrite_b=False,
+           assume_a='gen', transposed=False):
     # Flags for 1-D or N-D right-hand side
     b_is_1D = False
 
-    a1 = atleast_2d(_asarray_validated(a, check_finite=check_finite))
-    b1 = atleast_1d(_asarray_validated(b, check_finite=check_finite))
+    a1 = atleast_2d(_asarray_validated(a, check_finite=False))
+    b1 = atleast_1d(_asarray_validated(b, check_finite=False))
     n = a1.shape[0]
 
     overwrite_a = overwrite_a or _datacopied(a1, a)
@@ -970,7 +1000,21 @@ def inv(a, overwrite_a=False, check_finite=True):
            [ 0.,  1.]])
 
     """
-    a1 = _asarray_validated(a, check_finite=check_finite)
+    xp = array_namespace(a)
+    if check_finite:
+        a = _asarray(a, check_finite=True, xp=xp)
+    if is_numpy(xp):
+        return _inv(a, overwrite_a=overwrite_a)
+    if hasattr(xp, 'linalg'):
+        dtype = xp.result_type(a, xp.float32)
+        a = xp.astype(a, dtype)
+        return xp.linalg.inv(a)
+    a = np.asarray(a)
+    return xp.asarray(_inv(a))
+
+
+def _inv(a, overwrite_a=False):
+    a1 = _asarray_validated(a, check_finite=False)
     if len(a1.shape) != 2 or a1.shape[0] != a1.shape[1]:
         raise ValueError('expected square matrix')
 
@@ -1065,10 +1109,24 @@ def det(a, overwrite_a=False, check_finite=True):
     >>> linalg.det(c[0, 0])  # Confirm the (0, 0) slice, [[1, 2], [3, 4]]
     -2.0
     """
+    xp = array_namespace(a)
+    if check_finite:
+        a = _asarray(a, check_finite=True, xp=xp)
+    if is_numpy(xp):
+        return _det(a, overwrite_a=overwrite_a)
+    if hasattr(xp, 'linalg'):
+        dtype = xp.result_type(a, xp.float32)
+        a = xp.astype(a, dtype)
+        return xp.linalg.det(a)
+    a = np.asarray(a)
+    return xp.asarray(_det(a))
+
+
+def _det(a, overwrite_a=False):
     # The goal is to end up with a writable contiguous array to pass to Cython
 
     # First we check and make arrays.
-    a1 = np.asarray_chkfinite(a) if check_finite else np.asarray(a)
+    a1 = np.asarray(a)
     if a1.ndim < 2:
         raise ValueError('The input array must be at least two-dimensional.')
     if a1.shape[-1] != a1.shape[-2]:
@@ -1443,7 +1501,27 @@ def pinv(a, *, atol=None, rtol=None, return_rank=False, check_finite=True):
     True
 
     """
-    a = _asarray_validated(a, check_finite=check_finite)
+    xp = array_namespace(a)
+    if check_finite:
+        a = _asarray(a, check_finite=True, xp=xp)
+    if is_numpy(xp):
+        return _pinv(a, atol=atol, rtol=rtol, return_rank=return_rank)
+    unsupported_args = {
+        'atol': atol is not None,
+        'return_rank': return_rank,
+    }
+    if any(unsupported_args.values()):
+        xp_unsupported_args(unsupported_args)
+    if hasattr(xp, 'linalg'):
+        dtype = xp.result_type(a, xp.float32)
+        a = xp.astype(a, dtype)
+        return xp.linalg.pinv(a, rtol=rtol)
+    a = np.asarray(a)
+    return xp.asarray(_pinv(a, rtol=rtol))
+ 
+
+def _pinv(a, *, atol=None, rtol=None, return_rank=False):
+    a = _asarray_validated(a, check_finite=False)
     u, s, vh = _decomp_svd.svd(a, full_matrices=False, check_finite=False)
     t = u.dtype.char.lower()
     maxS = np.max(s, initial=0.)

@@ -7,6 +7,8 @@ from numpy import asarray_chkfinite, asarray, atleast_2d, empty_like
 from ._misc import LinAlgError, _datacopied
 from .lapack import get_lapack_funcs
 
+from scipy._lib._array_api import array_namespace, is_numpy, _asarray
+
 __all__ = ['cholesky', 'cho_factor', 'cho_solve', 'cholesky_banded',
            'cho_solve_banded']
 
@@ -87,9 +89,21 @@ def cholesky(a, lower=False, overwrite_a=False, check_finite=True):
            [ 0.+2.j,  5.+0.j]])
 
     """
-    c, lower = _cholesky(a, lower=lower, overwrite_a=overwrite_a, clean=True,
-                         check_finite=check_finite)
-    return c
+    xp = array_namespace(a)
+    if check_finite:
+        a = _asarray(a, check_finite=True, xp=xp)
+    if is_numpy(xp):
+        c, _ = _cholesky(a, lower=lower, overwrite_a=overwrite_a,
+                         clean=True, check_finite=False)
+        return c
+    if hasattr(xp, 'linalg'):
+        upper = not lower
+        dtype = xp.result_type(a, xp.float32)
+        a = xp.astype(a, dtype)
+        return xp.linalg.cholesky(a, upper=upper)
+    a = np.asarray(a)
+    c, _ = _cholesky(a, lower=lower, clean=True, check_finite=False)
+    return xp.asarray(c)
 
 
 def cho_factor(a, lower=False, overwrite_a=False, check_finite=True):

@@ -37,6 +37,13 @@ try:
 except ImportError:
     CONFIG = None
 
+from scipy.conftest import array_api_compatible
+from scipy._lib._array_api import (
+    size, array_namespace, xp_assert_close, xp_assert_equal, SCIPY_ARRAY_API
+)
+
+skip_xp_backends = pytest.mark.skip_xp_backends
+
 
 def _random_hermitian_matrix(n, posdef=False, dtype=float):
     "Generate random sym/hermitian array of the given size n"
@@ -898,8 +905,9 @@ class TestEigh:
         import scipy.sparse
         a = scipy.sparse.identity(2).tocsc()
         b = np.atleast_2d(a)
-        assert_raises(ValueError, eigh, a)
-        assert_raises(ValueError, eigh, b)
+        error_type = TypeError if SCIPY_ARRAY_API else ValueError
+        assert_raises(error_type, eigh, a)
+        assert_raises(error_type, eigh, b)
 
     @pytest.mark.parametrize('dtype_', DTYPES)
     @pytest.mark.parametrize('driver', ("ev", "evd", "evr", "evx"))
@@ -968,128 +976,169 @@ class TestEigh:
         assert w.shape == (0,)
         assert w.dtype == w_n.dtype
 
-class TestSVD_GESDD:
+
+@pytest.mark.usefixtures("skip_xp_backends")
+class _CheckSVD:
     lapack_driver = 'gesdd'
 
-    def test_degenerate(self):
+    @skip_xp_backends(np_only=True)
+    def test_degenerate(self, xp):
         assert_raises(TypeError, svd, [[1.]], lapack_driver=1.)
         assert_raises(ValueError, svd, [[1.]], lapack_driver='foo')
 
-    def test_simple(self):
-        a = [[1, 2, 3], [1, 20, 3], [2, 5, 6]]
+    @pytest.mark.parametrize("dtype", ["float32", "float64"])
+    def test_dtypes_standard(self, dtype, xp):
+        a = xp.asarray([[1, 2, 3], [1, 20, 3], [2, 5, 6]], dtype=getattr(xp, dtype))
+        atol = 1e-7 if dtype == "float64" else 1e-5
+        u, s, vh = svd(a, lapack_driver=self.lapack_driver)
+        xp_assert_close(u.T @ u, xp.eye(3, dtype=getattr(xp, dtype)), atol=atol)
+        xp_assert_close(vh.T @ vh, xp.eye(3, dtype=getattr(xp, dtype)), atol=atol)
+        sigma = xp.zeros((u.shape[0], vh.shape[0]), dtype=s.dtype)
+        for i in range(s.shape[0]):
+            sigma[i, i] = s[i]
+        xp_assert_close(u @ sigma @ vh, a, atol=atol)
+
+    @skip_xp_backends(np_only=True)
+    @pytest.mark.parametrize("dtype", [np.int32, np.int64])
+    def test_dtypes_nonstandard(self, dtype, xp):
+        a = np.asarray([[1, 2, 3], [1, 20, 3], [2, 5, 6]], dtype=dtype)
+        atol = 1e-7
+        u, s, vh = svd(a, lapack_driver=self.lapack_driver)
+        xp_assert_close(u.T @ u, np.eye(3), atol=atol)
+        xp_assert_close(vh.T @ vh, np.eye(3), atol=atol)
+        sigma = np.zeros((u.shape[0], vh.shape[0]), dtype=s.dtype)
+        for i in range(s.shape[0]):
+            sigma[i, i] = s[i]
+        xp_assert_close(u @ sigma @ vh, a.astype(np.float64))
+    
+    def test_simple(self, xp):
+        a = xp.asarray([[1., 2, 3], [1, 20, 3], [2, 5, 6]])
         for full_matrices in (True, False):
             u, s, vh = svd(a, full_matrices=full_matrices,
                            lapack_driver=self.lapack_driver)
-            assert_array_almost_equal(u.T @ u, eye(3))
-            assert_array_almost_equal(vh.T @ vh, eye(3))
-            sigma = zeros((u.shape[0], vh.shape[0]), s.dtype.char)
-            for i in range(len(s)):
+            xp_assert_close(u.T @ u, xp.eye(3), atol=1e-6)
+            xp_assert_close(vh.T @ vh, xp.eye(3), atol=1e-6)
+            sigma = xp.zeros((u.shape[0], vh.shape[0]), dtype=s.dtype)
+            for i in range(s.shape[0]):
                 sigma[i, i] = s[i]
-            assert_array_almost_equal(u @ sigma @ vh, a)
+            xp_assert_close(u @ sigma @ vh, a, rtol=1e-6)
 
-    def test_simple_singular(self):
-        a = [[1, 2, 3], [1, 2, 3], [2, 5, 6]]
+    def test_simple_singular(self, xp):
+        a = xp.asarray([[1., 2, 3], [1, 2, 3], [2, 5, 6]])
         for full_matrices in (True, False):
             u, s, vh = svd(a, full_matrices=full_matrices,
                            lapack_driver=self.lapack_driver)
-            assert_array_almost_equal(u.T @ u, eye(3))
-            assert_array_almost_equal(vh.T @ vh, eye(3))
-            sigma = zeros((u.shape[0], vh.shape[0]), s.dtype.char)
-            for i in range(len(s)):
+            xp_assert_close(u.T @ u, xp.eye(3), atol=1e-6)
+            xp_assert_close(vh.T @ vh, xp.eye(3), atol=1e-6)
+            sigma = xp.zeros((u.shape[0], vh.shape[0]), dtype=s.dtype)
+            for i in range(s.shape[0]):
                 sigma[i, i] = s[i]
-            assert_array_almost_equal(u @ sigma @ vh, a)
+            xp_assert_close(u @ sigma @ vh, a, rtol=1e-6)
 
-    def test_simple_underdet(self):
-        a = [[1, 2, 3], [4, 5, 6]]
+    def test_simple_underdet(self, xp):
+        a = xp.asarray([[1., 2, 3], [4, 5, 6]])
         for full_matrices in (True, False):
             u, s, vh = svd(a, full_matrices=full_matrices,
                            lapack_driver=self.lapack_driver)
-            assert_array_almost_equal(u.T @ u, eye(u.shape[0]))
-            sigma = zeros((u.shape[0], vh.shape[0]), s.dtype.char)
-            for i in range(len(s)):
+            xp_assert_close(u.T @ u, xp.eye(u.shape[0]), atol=1e-6)
+            sigma = xp.zeros((u.shape[0], vh.shape[0]), dtype=s.dtype)
+            for i in range(s.shape[0]):
                 sigma[i, i] = s[i]
-            assert_array_almost_equal(u @ sigma @ vh, a)
+            xp_assert_close(u @ sigma @ vh, a, rtol=1e-6)
 
-    def test_simple_overdet(self):
-        a = [[1, 2], [4, 5], [3, 4]]
+    def test_simple_overdet(self, xp):
+        a = xp.asarray([[1., 2], [4, 5], [3, 4]])
         for full_matrices in (True, False):
             u, s, vh = svd(a, full_matrices=full_matrices,
                            lapack_driver=self.lapack_driver)
-            assert_array_almost_equal(u.T @ u, eye(u.shape[1]))
-            assert_array_almost_equal(vh.T @ vh, eye(2))
-            sigma = zeros((u.shape[1], vh.shape[0]), s.dtype.char)
-            for i in range(len(s)):
+            xp_assert_close(u.T @ u, xp.eye(u.shape[1]), atol=1e-6)
+            xp_assert_close(vh.T @ vh, xp.eye(2), atol=1e-6)
+            sigma = xp.zeros((u.shape[1], vh.shape[0]), dtype=s.dtype)
+            for i in range(s.shape[0]):
                 sigma[i, i] = s[i]
-            assert_array_almost_equal(u @ sigma @ vh, a)
+            xp_assert_close(u @ sigma @ vh, a, rtol=1e-6)
 
-    def test_random(self):
+    def test_random(self, xp):
         rng = np.random.RandomState(1234)
         n = 20
         m = 15
         for i in range(3):
             for a in [rng.random([n, m]), rng.random([m, n])]:
+                a = xp.asarray(a)
                 for full_matrices in (True, False):
                     u, s, vh = svd(a, full_matrices=full_matrices,
                                    lapack_driver=self.lapack_driver)
-                    assert_array_almost_equal(u.T @ u, eye(u.shape[1]))
-                    assert_array_almost_equal(vh @ vh.T, eye(vh.shape[0]))
-                    sigma = zeros((u.shape[1], vh.shape[0]), s.dtype.char)
-                    for i in range(len(s)):
+                    xp_assert_close(u.T @ u, xp.eye(u.shape[1], dtype=xp.float64),
+                                    atol=1e-14)
+                    xp_assert_close(vh @ vh.T, xp.eye(vh.shape[0], dtype=xp.float64),
+                                    atol=1e-14)
+                    sigma = xp.zeros((u.shape[1], vh.shape[0]), dtype=s.dtype)
+                    for i in range(s.shape[0]):
                         sigma[i, i] = s[i]
-                    assert_array_almost_equal(u @ sigma @ vh, a)
+                    xp_assert_close(u @ sigma @ vh, a)
 
-    def test_simple_complex(self):
-        a = [[1, 2, 3], [1, 2j, 3], [2, 5, 6]]
+    def test_simple_complex(self, xp):
+        a = xp.asarray([[1, 2, 3], [1, 2j, 3], [2, 5, 6]], dtype=xp.complex128)
         for full_matrices in (True, False):
             u, s, vh = svd(a, full_matrices=full_matrices,
                            lapack_driver=self.lapack_driver)
-            assert_array_almost_equal(u.conj().T @ u, eye(u.shape[1]))
-            assert_array_almost_equal(vh.conj().T @ vh, eye(vh.shape[0]))
-            sigma = zeros((u.shape[0], vh.shape[0]), s.dtype.char)
-            for i in range(len(s)):
+            xp_assert_close(xp.conj(u).T @ u,
+                            xp.eye(u.shape[1], dtype=xp.complex128),
+                            atol=1e-14)
+            xp_assert_close(xp.conj(vh).T @ vh,
+                            xp.eye(vh.shape[0], dtype=xp.complex128),
+                            atol=1e-14)
+            sigma = xp.zeros((u.shape[0], vh.shape[0]), dtype=s.dtype)
+            for i in range(s.shape[0]):
                 sigma[i, i] = s[i]
-            assert_array_almost_equal(u @ sigma @ vh, a)
+            xp_test = array_namespace(sigma) # np<2.0 does not have `xp.astype`
+            sigma = xp_test.astype(sigma, u.dtype)
+            xp_assert_close(u @ sigma @ vh, a)
 
-    def test_random_complex(self):
+    def test_random_complex(self, xp):
         rng = np.random.RandomState(1234)
         n = 20
         m = 15
         for i in range(3):
             for full_matrices in (True, False):
                 for a in [rng.random([n, m]), rng.random([m, n])]:
-                    a = a + 1j*rng.random(list(a.shape))
+                    a = xp.asarray(a + 1j*rng.random(list(a.shape)))
                     u, s, vh = svd(a, full_matrices=full_matrices,
                                    lapack_driver=self.lapack_driver)
-                    assert_array_almost_equal(u.conj().T @ u,
-                                              eye(u.shape[1]))
+                    xp_assert_close(xp.conj(u).T @ u,
+                                    xp.eye(u.shape[1], dtype=xp.complex128),
+                                    atol=1e-14)
+                    # TODO: update comment
                     # This fails when [m,n]
                     # assert_array_almost_equal(vh.conj().T @ vh,
                     #                        eye(len(vh),dtype=vh.dtype.char))
-                    sigma = zeros((u.shape[1], vh.shape[0]), s.dtype.char)
-                    for i in range(len(s)):
+                    sigma = xp.zeros((u.shape[1], vh.shape[0]), dtype=s.dtype)
+                    for i in range(s.shape[0]):
                         sigma[i, i] = s[i]
-                    assert_array_almost_equal(u @ sigma @ vh, a)
+                    xp_test = array_namespace(sigma) # np<2.0 does not have `xp.astype`
+                    sigma = xp_test.astype(sigma, u.dtype)
+                    xp_assert_close(u @ sigma @ vh, a)
 
-    def test_crash_1580(self):
+    def test_crash_1580(self, xp):
         rng = np.random.RandomState(1234)
         sizes = [(13, 23), (30, 50), (60, 100)]
         for sz in sizes:
-            for dt in [np.float32, np.float64, np.complex64, np.complex128]:
-                a = rng.rand(*sz).astype(dt)
+            for dt in [xp.float32, xp.float64, xp.complex64, xp.complex128]:
+                a = xp.asarray(rng.rand(*sz), dtype=dt)
                 # should not crash
                 svd(a, lapack_driver=self.lapack_driver)
 
-    def test_check_finite(self):
-        a = [[1, 2, 3], [1, 20, 3], [2, 5, 6]]
+    def test_check_finite(self, xp):
+        a = xp.asarray([[1., 2, 3], [1, 20, 3], [2, 5, 6]])
         u, s, vh = svd(a, check_finite=False, lapack_driver=self.lapack_driver)
-        assert_array_almost_equal(u.T @ u, eye(3))
-        assert_array_almost_equal(vh.T @ vh, eye(3))
-        sigma = zeros((u.shape[0], vh.shape[0]), s.dtype.char)
-        for i in range(len(s)):
+        xp_assert_close(u.T @ u, xp.eye(3), atol=1e-6)
+        xp_assert_close(vh.T @ vh, xp.eye(3), atol=1e-6)
+        sigma = xp.zeros((u.shape[0], vh.shape[0]), dtype=s.dtype)
+        for i in range(s.shape[0]):
             sigma[i, i] = s[i]
-        assert_array_almost_equal(u @ sigma @ vh, a)
+        xp_assert_close(u @ sigma @ vh, a, rtol=1e-6)
 
-    def test_gh_5039(self):
+    def test_gh_5039(self, xp):
         # This is a smoke test for https://github.com/scipy/scipy/issues/5039
         #
         # The following is reported to raise "ValueError: On entry to DGESDD
@@ -1099,7 +1148,7 @@ class TestSVD_GESDD:
         #
         # The matrix below is taken from the call to
         # `B = _fitpack._bsplmat(order, xk)` in interpolate._find_smoothest
-        b = np.array(
+        b = xp.asarray(
             [[0.16666667, 0.66666667, 0.16666667, 0., 0., 0.],
              [0., 0.16666667, 0.66666667, 0.16666667, 0., 0.],
              [0., 0., 0.16666667, 0.66666667, 0.16666667, 0.],
@@ -1108,13 +1157,13 @@ class TestSVD_GESDD:
 
     @pytest.mark.skipif(not HAS_ILP64, reason="64-bit LAPACK required")
     @pytest.mark.slow
-    def test_large_matrix(self):
+    def test_large_matrix(self, xp):
         check_free_memory(free_mb=17000)
-        A = np.zeros([1, 2**31], dtype=np.float32)
+        A = xp.zeros([1, 2**31])
         A[0, -1] = 1
         u, s, vh = svd(A, full_matrices=False)
-        assert_allclose(s[0], 1.0)
-        assert_allclose(u[0, 0] * vh[0, -1], 1.0)
+        xp_assert_close(s[0], xp.asarray(1.0))
+        xp_assert_close(u[0, 0] * vh[0, -1], xp.asarray(1.0))
 
     @pytest.mark.parametrize("m", [0, 1, 2])
     @pytest.mark.parametrize("n", [0, 1, 2])
@@ -1175,7 +1224,15 @@ class TestSVD_GESDD:
 
         assert s.dtype == s0.dtype
 
-class TestSVD_GESVD(TestSVD_GESDD):
+@array_api_compatible
+class TestSVD_GESDD(_CheckSVD):
+    # uses the default LAPACK method, `gesdd`
+    pass
+
+@skip_xp_backends(np_only=True,
+                  reasons=["`'gesvd'` driver only supported for NumPy arrays"])
+@array_api_compatible
+class TestSVD_GESVD(_CheckSVD):
     lapack_driver = 'gesvd'
 
 
@@ -1188,66 +1245,86 @@ def test_svd_gesdd_nofegfault():
         svd(df)
 
 
+@pytest.mark.usefixtures("skip_xp_backends")
+@array_api_compatible
 class TestSVDVals:
 
+    # TODO: split into separate tests for standard and nonstandard dtypes
+    @skip_xp_backends(np_only=True,
+                      reasons=["Integer dtypes only supported for NumPy arrays"])
     @pytest.mark.parametrize('dt', [int, float, np.float32, complex, np.complex64])
-    def test_empty(self, dt):
-        for a in [[]], np.empty((2, 0)), np.ones((0, 3)):
-            a = np.array(a, dtype=dt)
+    def test_empty(self, dt, xp):
+        for a in xp.asarray([[]]), xp.empty((2, 0)), xp.ones((0, 3)):
+            a = xp.asarray(a, dtype=dt)
             s = svdvals(a)
-            assert_equal(s, np.empty(0))
-
-            s0 = svdvals(np.eye(2, dtype=dt))
+            assert size(s) == 0
+            s0 = svdvals(xp.eye(2, dtype=dt))
             assert s.dtype == s0.dtype
 
-    def test_simple(self):
-        a = [[1, 2, 3], [1, 2, 3], [2, 5, 6]]
+    def test_simple(self, xp):
+        a = xp.asarray([[1., 2, 3], [1, 2, 3], [2, 5, 6]])
         s = svdvals(a)
-        assert_(len(s) == 3)
-        assert_(s[0] >= s[1] >= s[2])
+        assert s.shape[0] == 3
+        assert s[0] >= s[1] >= s[2]
 
-    def test_simple_underdet(self):
-        a = [[1, 2, 3], [4, 5, 6]]
+    def test_simple_underdet(self, xp):
+        a = xp.asarray([[1., 2, 3], [4, 5, 6]])
         s = svdvals(a)
-        assert_(len(s) == 2)
-        assert_(s[0] >= s[1])
+        assert s.shape[0] == 2
+        assert s[0] >= s[1]
 
-    def test_simple_overdet(self):
-        a = [[1, 2], [4, 5], [3, 4]]
+    def test_simple_overdet(self, xp):
+        a = xp.asarray([[1., 2], [4, 5], [3, 4]])
         s = svdvals(a)
-        assert_(len(s) == 2)
-        assert_(s[0] >= s[1])
+        assert s.shape[0] == 2
+        assert s[0] >= s[1]
 
-    def test_simple_complex(self):
-        a = [[1, 2, 3], [1, 20, 3j], [2, 5, 6]]
+    def test_simple_complex(self, xp):
+        a = xp.asarray([[1, 2, 3], [1, 20, 3j], [2, 5, 6]], dtype=xp.complex128)
         s = svdvals(a)
-        assert_(len(s) == 3)
-        assert_(s[0] >= s[1] >= s[2])
+        assert s.shape[0] == 3
+        assert s[0] >= s[1] >= s[2]
 
-    def test_simple_underdet_complex(self):
-        a = [[1, 2, 3], [4, 5j, 6]]
+    def test_simple_underdet_complex(self, xp):
+        a = xp.asarray([[1, 2, 3], [4, 5j, 6]], dtype=xp.complex128)
         s = svdvals(a)
-        assert_(len(s) == 2)
-        assert_(s[0] >= s[1])
+        assert s.shape[0] == 2
+        assert s[0] >= s[1]
 
-    def test_simple_overdet_complex(self):
-        a = [[1, 2], [4, 5], [3j, 4]]
+    def test_simple_overdet_complex(self, xp):
+        a = xp.asarray([[1, 2], [4, 5], [3j, 4]], dtype=xp.complex128)
         s = svdvals(a)
-        assert_(len(s) == 2)
-        assert_(s[0] >= s[1])
+        assert s.shape[0] == 2
+        assert s[0] >= s[1]
 
-    def test_check_finite(self):
-        a = [[1, 2, 3], [1, 2, 3], [2, 5, 6]]
+    def test_check_finite(self, xp):
+        a = xp.asarray([[1., 2, 3], [1, 2, 3], [2, 5, 6]])
         s = svdvals(a, check_finite=False)
-        assert_(len(s) == 3)
-        assert_(s[0] >= s[1] >= s[2])
+        assert s.shape[0] == 3
+        assert s[0] >= s[1] >= s[2]
 
     @pytest.mark.slow
-    def test_crash_2609(self):
+    def test_crash_2609(self, xp):
         np.random.seed(1234)
-        a = np.random.rand(1500, 2800)
+        a = xp.asarray(np.random.rand(1500, 2800))
         # Shouldn't crash:
         svdvals(a)
+
+    @pytest.mark.parametrize("dtype", ["float32", "float64"])
+    def test_dtypes_standard(self, dtype, xp):
+        a = xp.asarray([[1, 2, 3], [1, 2, 3], [2, 5, 6]], dtype=getattr(xp, dtype))
+        s = svdvals(a)
+        assert s.shape[0] == 3
+        assert s[0] >= s[1] >= s[2]
+
+    @skip_xp_backends(np_only=True,
+                      reasons=["Integer dtypes only supported for NumPy arrays"])
+    @pytest.mark.parametrize("dtype", ["int32", "int64"])
+    def test_dtypes_nonstandard(self, dtype, xp):
+        a = np.asarray([[1, 2, 3], [1, 2, 3], [2, 5, 6]], dtype=getattr(xp, dtype))
+        s = svdvals(a)
+        assert s.shape[0] == 3
+        assert s[0] >= s[1] >= s[2]
 
 
 class TestDiagSVD:
@@ -1257,567 +1334,749 @@ class TestDiagSVD:
                                   [[1, 0, 0], [0, 0, 0], [0, 0, 0]])
 
 
+@pytest.mark.usefixtures("skip_xp_backends")
+@array_api_compatible
 class TestQR:
-    def test_simple(self):
-        a = [[8, 2, 3], [2, 9, 3], [5, 3, 6]]
+    
+    def test_simple(self, xp):
+        a = xp.asarray([[8., 2, 3], [2, 9, 3], [5, 3, 6]])
         q, r = qr(a)
-        assert_array_almost_equal(q.T @ q, eye(3))
-        assert_array_almost_equal(q @ r, a)
+        xp_assert_close(q.T @ q, xp.eye(3), atol=1e-6)
+        xp_assert_close(q @ r, a, rtol=1e-6)
 
-    def test_simple_left(self):
+    @skip_xp_backends(
+            np_only=True,
+            reasons=["only NumPy are arrays currently supported in `qr_multiply`"]
+    )
+    def test_simple_left(self, xp):
         a = [[8, 2, 3], [2, 9, 3], [5, 3, 6]]
         q, r = qr(a)
         c = [1, 2, 3]
         qc, r2 = qr_multiply(a, c, "left")
-        assert_array_almost_equal(q @ c, qc)
-        assert_array_almost_equal(r, r2)
-        qc, r2 = qr_multiply(a, eye(3), "left")
-        assert_array_almost_equal(q, qc)
+        xp_assert_close(q @ c, qc)
+        xp_assert_close(r, r2)
+        qc, r2 = qr_multiply(a, xp.eye(3), "left")
+        xp_assert_close(q, qc)
 
-    def test_simple_right(self):
-        a = [[8, 2, 3], [2, 9, 3], [5, 3, 6]]
+    @skip_xp_backends(
+            np_only=True,
+            reasons=["only NumPy are arrays currently supported in `qr_multiply`"]
+    )
+    def test_simple_right(self, xp):
+        a = xp.asarray([[8, 2, 3], [2, 9, 3], [5, 3, 6]])
         q, r = qr(a)
-        c = [1, 2, 3]
+        c = xp.asarray([1, 2, 3])
         qc, r2 = qr_multiply(a, c)
-        assert_array_almost_equal(c @ q, qc)
-        assert_array_almost_equal(r, r2)
-        qc, r = qr_multiply(a, eye(3))
-        assert_array_almost_equal(q, qc)
+        xp_assert_close(c @ q, qc)
+        xp_assert_close(r, r2)
+        qc, r = qr_multiply(a, xp.eye(3))
+        xp_assert_close(q, qc)
 
-    def test_simple_pivoting(self):
-        a = np.asarray([[8, 2, 3], [2, 9, 3], [5, 3, 6]])
+    @skip_xp_backends(
+            np_only=True,
+            reasons=["`pivoting` only supported for NumPy arrays"]
+    )
+    def test_simple_pivoting(self, xp):
+        a = xp.asarray([[8., 2, 3], [2, 9, 3], [5, 3, 6]])
         q, r, p = qr(a, pivoting=True)
         d = abs(diag(r))
-        assert_(np.all(d[1:] <= d[:-1]))
-        assert_array_almost_equal(q.T @ q, eye(3))
-        assert_array_almost_equal(q @ r, a[:, p])
+        assert xp.all(d[1:] <= d[:-1])
+        xp_assert_close(q.T @ q, eye(3), atol=1e-14)
+        xp_assert_close(q @ r, a[:, p])
         q2, r2 = qr(a[:, p])
-        assert_array_almost_equal(q, q2)
-        assert_array_almost_equal(r, r2)
+        xp_assert_close(q, q2)
+        xp_assert_close(r, r2)
 
-    def test_simple_left_pivoting(self):
-        a = [[8, 2, 3], [2, 9, 3], [5, 3, 6]]
-        q, r, jpvt = qr(a, pivoting=True)
-        c = [1, 2, 3]
-        qc, r, jpvt = qr_multiply(a, c, "left", True)
-        assert_array_almost_equal(q @ c, qc)
+    @skip_xp_backends(
+            np_only=True,
+            reasons=["only NumPy are arrays currently supported in `qr_multiply`"]
+    )
+    def test_simple_left_pivoting(self, xp):
+        a = xp.asarray([[8, 2, 3], [2, 9, 3], [5, 3, 6]])
+        q, _, _ = qr(a, pivoting=True)
+        c = xp.asarray([1, 2, 3])
+        qc, _, _ = qr_multiply(a, c, "left", True)
+        xp_assert_close(q @ c, qc)
 
-    def test_simple_right_pivoting(self):
-        a = [[8, 2, 3], [2, 9, 3], [5, 3, 6]]
-        q, r, jpvt = qr(a, pivoting=True)
-        c = [1, 2, 3]
-        qc, r, jpvt = qr_multiply(a, c, pivoting=True)
-        assert_array_almost_equal(c @ q, qc)
+    @skip_xp_backends(
+            np_only=True,
+            reasons=["only NumPy are arrays currently supported in `qr_multiply`"]
+    )
+    def test_simple_right_pivoting(self, xp):
+        a = xp.asarray([[8, 2, 3], [2, 9, 3], [5, 3, 6]])
+        q, _, _ = qr(a, pivoting=True)
+        c = xp.asarray([1, 2, 3])
+        qc, _, _ = qr_multiply(a, c, pivoting=True)
+        xp_assert_close(c @ q, qc)
 
-    def test_simple_trap(self):
-        a = [[8, 2, 3], [2, 9, 3]]
+    def test_simple_trap(self, xp):
+        a = xp.asarray([[8., 2, 3], [2, 9, 3]])
         q, r = qr(a)
-        assert_array_almost_equal(q.T @ q, eye(2))
-        assert_array_almost_equal(q @ r, a)
+        xp_assert_close(q.T @ q, xp.eye(2), atol=1e-6)
+        xp_assert_close(q @ r, a, rtol=1e-6)
 
-    def test_simple_trap_pivoting(self):
-        a = np.asarray([[8, 2, 3], [2, 9, 3]])
+    @skip_xp_backends(
+            np_only=True,
+            reasons=["`pivoting` only supported for NumPy arrays"]
+    )
+    def test_simple_trap_pivoting(self, xp):
+        a = xp.asarray([[8., 2, 3], [2, 9, 3]])
         q, r, p = qr(a, pivoting=True)
         d = abs(diag(r))
-        assert_(np.all(d[1:] <= d[:-1]))
-        assert_array_almost_equal(q.T @ q, eye(2))
-        assert_array_almost_equal(q @ r, a[:, p])
+        assert xp.all(d[1:] <= d[:-1])
+        xp_assert_close(q.T @ q, xp.eye(2), atol=1e-14)
+        xp_assert_close(q @ r, a[:, p])
         q2, r2 = qr(a[:, p])
-        assert_array_almost_equal(q, q2)
-        assert_array_almost_equal(r, r2)
+        xp_assert_close(q, q2)
+        xp_assert_close(r, r2)
 
-    def test_simple_tall(self):
+    def test_simple_tall(self, xp):
         # full version
-        a = [[8, 2], [2, 9], [5, 3]]
+        a = xp.asarray([[8., 2], [2, 9], [5, 3]])
         q, r = qr(a)
-        assert_array_almost_equal(q.T @ q, eye(3))
-        assert_array_almost_equal(q @ r, a)
+        xp_assert_close(q.T @ q, xp.eye(3), atol=1e-6)
+        xp_assert_close(q @ r, a, rtol=1e-6)
 
-    def test_simple_tall_pivoting(self):
+    @skip_xp_backends(
+            np_only=True,
+            reasons=["`pivoting` only supported for NumPy arrays"]
+    )
+    def test_simple_tall_pivoting(self, xp):
         # full version pivoting
-        a = np.asarray([[8, 2], [2, 9], [5, 3]])
+        a = xp.asarray([[8., 2], [2, 9], [5, 3]])
         q, r, p = qr(a, pivoting=True)
         d = abs(diag(r))
-        assert_(np.all(d[1:] <= d[:-1]))
-        assert_array_almost_equal(q.T @ q, eye(3))
-        assert_array_almost_equal(q @ r, a[:, p])
+        assert xp.all(d[1:] <= d[:-1])
+        xp_assert_close(q.T @ q, xp.eye(3), atol=1e-14)
+        xp_assert_close(q @ r, a[:, p])
         q2, r2 = qr(a[:, p])
-        assert_array_almost_equal(q, q2)
-        assert_array_almost_equal(r, r2)
+        xp_assert_close(q, q2)
+        xp_assert_close(r, r2)
 
-    def test_simple_tall_e(self):
+    def test_simple_tall_e(self, xp):
         # economy version
-        a = [[8, 2], [2, 9], [5, 3]]
+        a = xp.asarray([[8., 2], [2, 9], [5, 3]])
         q, r = qr(a, mode='economic')
-        assert_array_almost_equal(q.T @ q, eye(2))
-        assert_array_almost_equal(q @ r, a)
+        xp_assert_close(q.T @ q, xp.eye(2), atol=1e-6)
+        xp_assert_close(q @ r, a, rtol=1e-6)
         assert_equal(q.shape, (3, 2))
         assert_equal(r.shape, (2, 2))
 
-    def test_simple_tall_e_pivoting(self):
+    @skip_xp_backends(
+            np_only=True,
+            reasons=["`pivoting` only supported for NumPy arrays"]
+    )
+    def test_simple_tall_e_pivoting(self, xp):
         # economy version pivoting
-        a = np.asarray([[8, 2], [2, 9], [5, 3]])
+        a = xp.asarray([[8., 2], [2, 9], [5, 3]])
         q, r, p = qr(a, pivoting=True, mode='economic')
         d = abs(diag(r))
-        assert_(np.all(d[1:] <= d[:-1]))
-        assert_array_almost_equal(q.T @ q, eye(2))
-        assert_array_almost_equal(q @ r, a[:, p])
+        assert xp.all(d[1:] <= d[:-1])
+        xp_assert_close(q.T @ q, xp.eye(2), atol=1e-14)
+        xp_assert_close(q @ r, a[:, p])
         q2, r2 = qr(a[:, p], mode='economic')
-        assert_array_almost_equal(q, q2)
-        assert_array_almost_equal(r, r2)
+        xp_assert_close(q, q2)
+        xp_assert_close(r, r2)
 
-    def test_simple_tall_left(self):
-        a = [[8, 2], [2, 9], [5, 3]]
+    @skip_xp_backends(
+            np_only=True,
+            reasons=["only NumPy are arrays currently supported in `qr_multiply`"]
+    )
+    def test_simple_tall_left(self, xp):
+        a = xp.asarray([[8, 2], [2, 9], [5, 3]])
         q, r = qr(a, mode="economic")
-        c = [1, 2]
+        c = xp.asarray([1, 2])
         qc, r2 = qr_multiply(a, c, "left")
-        assert_array_almost_equal(q @ c, qc)
-        assert_array_almost_equal(r, r2)
+        xp_assert_close(q @ c, qc)
+        xp_assert_close(r, r2)
         c = array([1, 2, 0])
         qc, r2 = qr_multiply(a, c, "left", overwrite_c=True)
-        assert_array_almost_equal(q @ c[:2], qc)
-        qc, r = qr_multiply(a, eye(2), "left")
-        assert_array_almost_equal(qc, q)
+        xp_assert_close(q @ c[:2], qc)
+        qc, r = qr_multiply(a, xp.eye(2), "left")
+        xp_assert_close(qc, q)
 
-    def test_simple_tall_left_pivoting(self):
+    @skip_xp_backends(
+            np_only=True,
+            reasons=["only NumPy are arrays currently supported in `qr_multiply`"]
+    )
+    def test_simple_tall_left_pivoting(self, xp):
         a = [[8, 2], [2, 9], [5, 3]]
-        q, r, jpvt = qr(a, mode="economic", pivoting=True)
+        q, _, jpvt = qr(a, mode="economic", pivoting=True)
         c = [1, 2]
-        qc, r, kpvt = qr_multiply(a, c, "left", True)
-        assert_array_equal(jpvt, kpvt)
-        assert_array_almost_equal(q @ c, qc)
-        qc, r, jpvt = qr_multiply(a, eye(2), "left", True)
-        assert_array_almost_equal(qc, q)
+        qc, _, kpvt = qr_multiply(a, c, "left", True)
+        xp_assert_equal(jpvt, kpvt)
+        xp_assert_close(q @ c, qc)
+        qc, _, jpvt = qr_multiply(a, xp.eye(2), "left", True)
+        xp_assert_close(qc, q)
 
-    def test_simple_tall_right(self):
+    @skip_xp_backends(
+            np_only=True,
+            reasons=["only NumPy are arrays currently supported in `qr_multiply`"]
+    )
+    def test_simple_tall_right(self, xp):
         a = [[8, 2], [2, 9], [5, 3]]
         q, r = qr(a, mode="economic")
         c = [1, 2, 3]
         cq, r2 = qr_multiply(a, c)
-        assert_array_almost_equal(c @ q, cq)
-        assert_array_almost_equal(r, r2)
-        cq, r = qr_multiply(a, eye(3))
-        assert_array_almost_equal(cq, q)
+        xp_assert_close(c @ q, cq)
+        xp_assert_close(r, r2)
+        cq, r = qr_multiply(a, xp.eye(3))
+        xp_assert_close(cq, q)
 
-    def test_simple_tall_right_pivoting(self):
+    @skip_xp_backends(
+            np_only=True,
+            reasons=["only NumPy are arrays currently supported in `qr_multiply`"]
+    )
+    def test_simple_tall_right_pivoting(self, xp):
         a = [[8, 2], [2, 9], [5, 3]]
-        q, r, jpvt = qr(a, pivoting=True, mode="economic")
+        q, _, _ = qr(a, pivoting=True, mode="economic")
         c = [1, 2, 3]
-        cq, r, jpvt = qr_multiply(a, c, pivoting=True)
-        assert_array_almost_equal(c @ q, cq)
-        cq, r, jpvt = qr_multiply(a, eye(3), pivoting=True)
-        assert_array_almost_equal(cq, q)
+        cq, _, _ = qr_multiply(a, c, pivoting=True)
+        xp_assert_close(c @ q, cq)
+        cq, _, _ = qr_multiply(a, xp.eye(3), pivoting=True)
+        xp_assert_close(cq, q)
 
-    def test_simple_fat(self):
+    def test_simple_fat(self, xp):
         # full version
-        a = [[8, 2, 5], [2, 9, 3]]
+        a = xp.asarray([[8., 2, 5], [2, 9, 3]])
         q, r = qr(a)
-        assert_array_almost_equal(q.T @ q, eye(2))
-        assert_array_almost_equal(q @ r, a)
+        xp_assert_close(q.T @ q, xp.eye(2), atol=1e-6)
+        xp_assert_close(q @ r, a, rtol=1e-6)
         assert_equal(q.shape, (2, 2))
         assert_equal(r.shape, (2, 3))
 
-    def test_simple_fat_pivoting(self):
+    @skip_xp_backends(
+            np_only=True,
+            reasons=["`pivoting` only supported for NumPy arrays"]
+    )
+    def test_simple_fat_pivoting(self, xp):
         # full version pivoting
-        a = np.asarray([[8, 2, 5], [2, 9, 3]])
+        a = xp.asarray([[8., 2, 5], [2, 9, 3]])
         q, r, p = qr(a, pivoting=True)
         d = abs(diag(r))
-        assert_(np.all(d[1:] <= d[:-1]))
-        assert_array_almost_equal(q.T @ q, eye(2))
-        assert_array_almost_equal(q @ r, a[:, p])
+        assert xp.all(d[1:] <= d[:-1])
+        xp_assert_close(q.T @ q, xp.eye(2), atol=1e-14)
+        xp_assert_close(q @ r, a[:, p])
         assert_equal(q.shape, (2, 2))
         assert_equal(r.shape, (2, 3))
         q2, r2 = qr(a[:, p])
-        assert_array_almost_equal(q, q2)
-        assert_array_almost_equal(r, r2)
+        xp_assert_close(q, q2)
+        xp_assert_close(r, r2)
 
-    def test_simple_fat_e(self):
+    def test_simple_fat_e(self, xp):
         # economy version
-        a = [[8, 2, 3], [2, 9, 5]]
+        a = xp.asarray([[8., 2, 3], [2, 9, 5]])
         q, r = qr(a, mode='economic')
-        assert_array_almost_equal(q.T @ q, eye(2))
-        assert_array_almost_equal(q @ r, a)
+        xp_assert_close(q.T @ q, xp.eye(2), atol=1e-6)
+        xp_assert_close(q @ r, a, rtol=1e-6)
         assert_equal(q.shape, (2, 2))
         assert_equal(r.shape, (2, 3))
 
-    def test_simple_fat_e_pivoting(self):
+    @skip_xp_backends(
+            np_only=True,
+            reasons=["`pivoting` only supported for NumPy arrays"]
+    )
+    def test_simple_fat_e_pivoting(self, xp):
         # economy version pivoting
-        a = np.asarray([[8, 2, 3], [2, 9, 5]])
+        a = xp.asarray([[8., 2, 3], [2, 9, 5]])
         q, r, p = qr(a, pivoting=True, mode='economic')
         d = abs(diag(r))
-        assert_(np.all(d[1:] <= d[:-1]))
-        assert_array_almost_equal(q.T @ q, eye(2))
-        assert_array_almost_equal(q @ r, a[:, p])
+        assert xp.all(d[1:] <= d[:-1])
+        xp_assert_close(q.T @ q, xp.eye(2), atol=1e-14)
+        xp_assert_close(q @ r, a[:, p])
         assert_equal(q.shape, (2, 2))
         assert_equal(r.shape, (2, 3))
         q2, r2 = qr(a[:, p], mode='economic')
-        assert_array_almost_equal(q, q2)
-        assert_array_almost_equal(r, r2)
+        xp_assert_close(q, q2)
+        xp_assert_close(r, r2)
 
-    def test_simple_fat_left(self):
-        a = [[8, 2, 3], [2, 9, 5]]
+    @skip_xp_backends(
+            np_only=True,
+            reasons=["only NumPy are arrays currently supported in `qr_multiply`"]
+    )
+    def test_simple_fat_left(self, xp):
+        a = xp.asarray([[8, 2, 3], [2, 9, 5]])
         q, r = qr(a, mode="economic")
-        c = [1, 2]
+        c = xp.asarray([1, 2])
         qc, r2 = qr_multiply(a, c, "left")
-        assert_array_almost_equal(q @ c, qc)
-        assert_array_almost_equal(r, r2)
+        xp_assert_close(q @ c, qc)
+        xp_assert_close(r, r2)
         qc, r = qr_multiply(a, eye(2), "left")
-        assert_array_almost_equal(qc, q)
+        xp_assert_close(qc, q)
 
-    def test_simple_fat_left_pivoting(self):
-        a = [[8, 2, 3], [2, 9, 5]]
-        q, r, jpvt = qr(a, mode="economic", pivoting=True)
-        c = [1, 2]
-        qc, r, jpvt = qr_multiply(a, c, "left", True)
-        assert_array_almost_equal(q @ c, qc)
-        qc, r, jpvt = qr_multiply(a, eye(2), "left", True)
-        assert_array_almost_equal(qc, q)
+    @skip_xp_backends(
+            np_only=True,
+            reasons=["only NumPy are arrays currently supported in `qr_multiply`"]
+    )
+    def test_simple_fat_left_pivoting(self, xp):
+        a = xp.asarray([[8, 2, 3], [2, 9, 5]])
+        q, _, _ = qr(a, mode="economic", pivoting=True)
+        c = xp.asarray([1, 2])
+        qc, _, _ = qr_multiply(a, c, "left", True)
+        xp_assert_close(q @ c, qc)
+        qc, _, _ = qr_multiply(a, eye(2), "left", True)
+        xp_assert_close(qc, q)
 
-    def test_simple_fat_right(self):
-        a = [[8, 2, 3], [2, 9, 5]]
+    @skip_xp_backends(
+            np_only=True,
+            reasons=["only NumPy are arrays currently supported in `qr_multiply`"]
+    )
+    def test_simple_fat_right(self, xp):
+        a = xp.asarray([[8, 2, 3], [2, 9, 5]])
         q, r = qr(a, mode="economic")
-        c = [1, 2]
+        c = xp.asarray([1, 2])
         cq, r2 = qr_multiply(a, c)
-        assert_array_almost_equal(c @ q, cq)
-        assert_array_almost_equal(r, r2)
+        xp_assert_close(c @ q, cq)
+        xp_assert_close(r, r2)
         cq, r = qr_multiply(a, eye(2))
-        assert_array_almost_equal(cq, q)
+        xp_assert_close(cq, q)
 
-    def test_simple_fat_right_pivoting(self):
-        a = [[8, 2, 3], [2, 9, 5]]
-        q, r, jpvt = qr(a, pivoting=True, mode="economic")
-        c = [1, 2]
-        cq, r, jpvt = qr_multiply(a, c, pivoting=True)
-        assert_array_almost_equal(c @ q, cq)
-        cq, r, jpvt = qr_multiply(a, eye(2), pivoting=True)
-        assert_array_almost_equal(cq, q)
+    @skip_xp_backends(
+            np_only=True,
+            reasons=["only NumPy are arrays currently supported in `qr_multiply`"]
+    )
+    def test_simple_fat_right_pivoting(self, xp):
+        a = xp.asarray([[8, 2, 3], [2, 9, 5]])
+        q, _, _ = qr(a, pivoting=True, mode="economic")
+        c = xp.asarray([1, 2])
+        cq, _, _ = qr_multiply(a, c, pivoting=True)
+        xp_assert_close(c @ q, cq)
+        cq, _, _ = qr_multiply(a, eye(2), pivoting=True)
+        xp_assert_close(cq, q)
 
-    def test_simple_complex(self):
+    def test_simple_complex(self, xp):
         a = [[3, 3+4j, 5], [5, 2, 2+7j], [3, 2, 7]]
+        a = xp.asarray(a, dtype=xp.complex128)
         q, r = qr(a)
-        assert_array_almost_equal(q.conj().T @ q, eye(3))
-        assert_array_almost_equal(q @ r, a)
+        xp_assert_close(xp.conj(q).T @ q, xp.eye(3, dtype=xp.complex128), atol=1e-14)
+        xp_assert_close(q @ r, a)
 
-    def test_simple_complex_left(self):
+    @skip_xp_backends(
+            np_only=True,
+            reasons=["only NumPy are arrays currently supported in `qr_multiply`"]
+    )
+    def test_simple_complex_left(self, xp):
         a = [[3, 3+4j, 5], [5, 2, 2+7j], [3, 2, 7]]
-        q, r = qr(a)
+        q, _ = qr(a)
         c = [1, 2, 3+4j]
-        qc, r = qr_multiply(a, c, "left")
-        assert_array_almost_equal(q @ c, qc)
-        qc, r = qr_multiply(a, eye(3), "left")
-        assert_array_almost_equal(q, qc)
+        qc, _ = qr_multiply(a, c, "left")
+        xp_assert_close(q @ c, qc)
+        qc, _ = qr_multiply(a, xp.eye(3), "left")
+        xp_assert_close(q, qc)
 
-    def test_simple_complex_right(self):
+    @skip_xp_backends(
+            np_only=True,
+            reasons=["only NumPy are arrays currently supported in `qr_multiply`"]
+    )
+    def test_simple_complex_right(self, xp):
         a = [[3, 3+4j, 5], [5, 2, 2+7j], [3, 2, 7]]
-        q, r = qr(a)
+        q, _ = qr(a)
         c = [1, 2, 3+4j]
-        qc, r = qr_multiply(a, c)
-        assert_array_almost_equal(c @ q, qc)
-        qc, r = qr_multiply(a, eye(3))
-        assert_array_almost_equal(q, qc)
+        qc, _ = qr_multiply(a, c)
+        xp_assert_close(c @ q, qc)
+        qc, _ = qr_multiply(a, xp.eye(3))
+        xp_assert_close(q, qc)
 
-    def test_simple_tall_complex_left(self):
+    @skip_xp_backends(
+            np_only=True,
+            reasons=["only NumPy are arrays currently supported in `qr_multiply`"]
+    )
+    def test_simple_tall_complex_left(self, xp):
         a = [[8, 2+3j], [2, 9], [5+7j, 3]]
         q, r = qr(a, mode="economic")
         c = [1, 2+2j]
         qc, r2 = qr_multiply(a, c, "left")
-        assert_array_almost_equal(q @ c, qc)
-        assert_array_almost_equal(r, r2)
+        xp_assert_close(q @ c, qc)
+        xp_assert_close(r, r2)
         c = array([1, 2, 0])
         qc, r2 = qr_multiply(a, c, "left", overwrite_c=True)
-        assert_array_almost_equal(q @ c[:2], qc)
+        xp_assert_close(q @ c[:2], qc)
         qc, r = qr_multiply(a, eye(2), "left")
-        assert_array_almost_equal(qc, q)
+        xp_assert_close(qc, q)
 
-    def test_simple_complex_left_conjugate(self):
+    @skip_xp_backends(
+            np_only=True,
+            reasons=["only NumPy are arrays currently supported in `qr_multiply`"]
+    )
+    def test_simple_complex_left_conjugate(self, xp):
         a = [[3, 3+4j, 5], [5, 2, 2+7j], [3, 2, 7]]
         q, r = qr(a)
         c = [1, 2, 3+4j]
         qc, r = qr_multiply(a, c, "left", conjugate=True)
-        assert_array_almost_equal(q.conj() @ c, qc)
+        xp_assert_close(q.conj() @ c, qc)
 
-    def test_simple_complex_tall_left_conjugate(self):
+    @skip_xp_backends(
+            np_only=True,
+            reasons=["only NumPy are arrays currently supported in `qr_multiply`"]
+    )
+    def test_simple_complex_tall_left_conjugate(self, xp):
         a = [[3, 3+4j], [5, 2+2j], [3, 2]]
         q, r = qr(a, mode='economic')
         c = [1, 3+4j]
         qc, r = qr_multiply(a, c, "left", conjugate=True)
-        assert_array_almost_equal(q.conj() @ c, qc)
+        xp_assert_close(q.conj() @ c, qc)
 
-    def test_simple_complex_right_conjugate(self):
+    @skip_xp_backends(
+            np_only=True,
+            reasons=["only NumPy are arrays currently supported in `qr_multiply`"]
+    )
+    def test_simple_complex_right_conjugate(self, xp):
         a = [[3, 3+4j, 5], [5, 2, 2+7j], [3, 2, 7]]
         q, r = qr(a)
         c = np.array([1, 2, 3+4j])
         qc, r = qr_multiply(a, c, conjugate=True)
-        assert_array_almost_equal(c @ q.conj(), qc)
+        xp_assert_close(c @ q.conj(), qc)
 
-    def test_simple_complex_pivoting(self):
+    @skip_xp_backends(
+            np_only=True,
+            reasons=["`pivoting` only supported for NumPy arrays"]
+    )
+    def test_simple_complex_pivoting(self, xp):
         a = array([[3, 3+4j, 5], [5, 2, 2+7j], [3, 2, 7]])
         q, r, p = qr(a, pivoting=True)
         d = abs(diag(r))
-        assert_(np.all(d[1:] <= d[:-1]))
-        assert_array_almost_equal(q.conj().T @ q, eye(3))
-        assert_array_almost_equal(q @ r, a[:, p])
+        assert np.all(d[1:] <= d[:-1])
+        xp_assert_close(q.conj().T @ q, eye(3, dtype=xp.complex128), atol=1e-14)
+        xp_assert_close(q @ r, a[:, p])
         q2, r2 = qr(a[:, p])
-        assert_array_almost_equal(q, q2)
-        assert_array_almost_equal(r, r2)
+        xp_assert_close(q, q2)
+        xp_assert_close(r, r2)
 
-    def test_simple_complex_left_pivoting(self):
+    @skip_xp_backends(
+            np_only=True,
+            reasons=["only NumPy are arrays currently supported in `qr_multiply`"]
+    )
+    def test_simple_complex_left_pivoting(self, xp):
         a = array([[3, 3+4j, 5], [5, 2, 2+7j], [3, 2, 7]])
-        q, r, jpvt = qr(a, pivoting=True)
+        q, _, _ = qr(a, pivoting=True)
         c = [1, 2, 3+4j]
-        qc, r, jpvt = qr_multiply(a, c, "left", True)
-        assert_array_almost_equal(q @ c, qc)
+        qc, _, _ = qr_multiply(a, c, "left", True)
+        xp_assert_close(q @ c, qc)
 
-    def test_simple_complex_right_pivoting(self):
+    @skip_xp_backends(
+            np_only=True,
+            reasons=["only NumPy are arrays currently supported in `qr_multiply`"]
+    )
+    def test_simple_complex_right_pivoting(self, xp):
         a = array([[3, 3+4j, 5], [5, 2, 2+7j], [3, 2, 7]])
-        q, r, jpvt = qr(a, pivoting=True)
+        q, _, _ = qr(a, pivoting=True)
         c = [1, 2, 3+4j]
-        qc, r, jpvt = qr_multiply(a, c, pivoting=True)
-        assert_array_almost_equal(c @ q, qc)
+        qc, _, _ = qr_multiply(a, c, pivoting=True)
+        xp_assert_close(c @ q, qc)
 
-    def test_random(self):
+    def test_random(self, xp):
         rng = np.random.RandomState(1234)
         n = 20
-        for k in range(2):
-            a = rng.random([n, n])
+        for _ in range(2):
+            a = xp.asarray(rng.random([n, n]))
             q, r = qr(a)
-            assert_array_almost_equal(q.T @ q, eye(n))
-            assert_array_almost_equal(q @ r, a)
+            xp_assert_close(q.T @ q, xp.eye(n, dtype=xp.float64), atol=1e-14)
+            xp_assert_close(q @ r, a)
 
-    def test_random_left(self):
+    @skip_xp_backends(
+            np_only=True,
+            reasons=["only NumPy are arrays currently supported in `qr_multiply`"]
+    )
+    def test_random_left(self, xp):
         rng = np.random.RandomState(1234)
         n = 20
-        for k in range(2):
+        for _ in range(2):
             a = rng.random([n, n])
-            q, r = qr(a)
+            q, _ = qr(a)
             c = rng.random([n])
-            qc, r = qr_multiply(a, c, "left")
-            assert_array_almost_equal(q @ c, qc)
-            qc, r = qr_multiply(a, eye(n), "left")
-            assert_array_almost_equal(q, qc)
+            qc, _ = qr_multiply(a, c, "left")
+            xp_assert_close(q @ c, qc)
+            qc, _ = qr_multiply(a, xp.eye(n), "left")
+            xp_assert_close(q, qc)
 
-    def test_random_right(self):
+    @skip_xp_backends(
+            np_only=True,
+            reasons=["only NumPy are arrays currently supported in `qr_multiply`"]
+    )
+    def test_random_right(self, xp):
         rng = np.random.RandomState(1234)
         n = 20
         for k in range(2):
             a = rng.random([n, n])
-            q, r = qr(a)
+            q, _ = qr(a)
             c = rng.random([n])
-            cq, r = qr_multiply(a, c)
-            assert_array_almost_equal(c @ q, cq)
-            cq, r = qr_multiply(a, eye(n))
-            assert_array_almost_equal(q, cq)
+            cq, _ = qr_multiply(a, c)
+            xp_assert_close(c @ q, cq)
+            cq, _ = qr_multiply(a, xp.eye(n))
+            xp_assert_close(q, cq)
 
-    def test_random_pivoting(self):
+    @skip_xp_backends(
+            np_only=True,
+            reasons=["`pivoting` only supported for NumPy arrays"]
+    )
+    def test_random_pivoting(self, xp):
         rng = np.random.RandomState(1234)
         n = 20
-        for k in range(2):
+        for _ in range(2):
             a = rng.random([n, n])
             q, r, p = qr(a, pivoting=True)
             d = abs(diag(r))
-            assert_(np.all(d[1:] <= d[:-1]))
-            assert_array_almost_equal(q.T @ q, eye(n))
-            assert_array_almost_equal(q @ r, a[:, p])
+            assert xp.all(d[1:] <= d[:-1])
+            xp_assert_close(q.T @ q, xp.eye(n), atol=1e-14)
+            xp_assert_close(q @ r, a[:, p])
             q2, r2 = qr(a[:, p])
-            assert_array_almost_equal(q, q2)
-            assert_array_almost_equal(r, r2)
+            xp_assert_close(q, q2)
+            xp_assert_close(r, r2)
 
-    def test_random_tall(self):
+    def test_random_tall(self, xp):
         rng = np.random.RandomState(1234)
         # full version
         m = 200
         n = 100
-        for k in range(2):
-            a = rng.random([m, n])
+        for _ in range(2):
+            a = xp.asarray(rng.random([m, n]))
             q, r = qr(a)
-            assert_array_almost_equal(q.T @ q, eye(m))
-            assert_array_almost_equal(q @ r, a)
+            xp_assert_close(q.T @ q, xp.eye(m, dtype=xp.float64), atol=1e-14)
+            xp_assert_close(q @ r, a)
 
-    def test_random_tall_left(self):
+    @skip_xp_backends(
+            np_only=True,
+            reasons=["only NumPy are arrays currently supported in `qr_multiply`"]
+    )
+    def test_random_tall_left(self, xp):
         rng = np.random.RandomState(1234)
         # full version
         m = 200
         n = 100
-        for k in range(2):
+        for _ in range(2):
             a = rng.random([m, n])
-            q, r = qr(a, mode="economic")
+            q, _ = qr(a, mode="economic")
             c = rng.random([n])
-            qc, r = qr_multiply(a, c, "left")
-            assert_array_almost_equal(q @ c, qc)
-            qc, r = qr_multiply(a, eye(n), "left")
-            assert_array_almost_equal(qc, q)
+            qc, _ = qr_multiply(a, c, "left")
+            xp_assert_close(q @ c, qc)
+            qc, _ = qr_multiply(a, xp.eye(n), "left")
+            xp_assert_close(qc, q)
 
-    def test_random_tall_right(self):
+    @skip_xp_backends(
+            np_only=True,
+            reasons=["only NumPy are arrays currently supported in `qr_multiply`"]
+    )
+    def test_random_tall_right(self, xp):
         rng = np.random.RandomState(1234)
         # full version
         m = 200
         n = 100
         for k in range(2):
             a = rng.random([m, n])
-            q, r = qr(a, mode="economic")
+            q, _ = qr(a, mode="economic")
             c = rng.random([m])
-            cq, r = qr_multiply(a, c)
-            assert_array_almost_equal(c @ q, cq)
-            cq, r = qr_multiply(a, eye(m))
-            assert_array_almost_equal(cq, q)
+            cq, _ = qr_multiply(a, c)
+            xp_assert_close(c @ q, cq)
+            cq, _ = qr_multiply(a, xp.eye(m))
+            xp_assert_close(cq, q)
 
-    def test_random_tall_pivoting(self):
+    @skip_xp_backends(
+            np_only=True,
+            reasons=["`pivoting` only supported for NumPy arrays"]
+    )
+    def test_random_tall_pivoting(self, xp):
         rng = np.random.RandomState(1234)
         # full version pivoting
         m = 200
         n = 100
-        for k in range(2):
+        for _ in range(2):
             a = rng.random([m, n])
+            a = xp.asarray(a)
             q, r, p = qr(a, pivoting=True)
             d = abs(diag(r))
             assert_(np.all(d[1:] <= d[:-1]))
-            assert_array_almost_equal(q.T @ q, eye(m))
-            assert_array_almost_equal(q @ r, a[:, p])
+            xp_assert_close(q.T @ q, xp.eye(m), atol=1e-14)
+            xp_assert_close(q @ r, a[:, p])
             q2, r2 = qr(a[:, p])
-            assert_array_almost_equal(q, q2)
-            assert_array_almost_equal(r, r2)
+            xp_assert_close(q, q2)
+            xp_assert_close(r, r2)
 
-    def test_random_tall_e(self):
+    def test_random_tall_e(self, xp):
         rng = np.random.RandomState(1234)
         # economy version
         m = 200
         n = 100
-        for k in range(2):
-            a = rng.random([m, n])
+        for _ in range(2):
+            a = xp.asarray(rng.random([m, n]))
             q, r = qr(a, mode='economic')
-            assert_array_almost_equal(q.T @ q, eye(n))
-            assert_array_almost_equal(q @ r, a)
+            xp_assert_close(q.T @ q, xp.eye(n, dtype=xp.float64), atol=1e-14)
+            xp_assert_close(q @ r, a)
             assert_equal(q.shape, (m, n))
             assert_equal(r.shape, (n, n))
 
-    def test_random_tall_e_pivoting(self):
+    @skip_xp_backends(
+            np_only=True,
+            reasons=["`pivoting` only supported for NumPy arrays"]
+    )
+    def test_random_tall_e_pivoting(self, xp):
         rng = np.random.RandomState(1234)
         # economy version pivoting
         m = 200
         n = 100
-        for k in range(2):
+        for _ in range(2):
             a = rng.random([m, n])
+            a = xp.asarray(a)
             q, r, p = qr(a, pivoting=True, mode='economic')
             d = abs(diag(r))
-            assert_(np.all(d[1:] <= d[:-1]))
-            assert_array_almost_equal(q.T @ q, eye(n))
-            assert_array_almost_equal(q @ r, a[:, p])
+            assert np.all(d[1:] <= d[:-1])
+            xp_assert_close(q.T @ q, xp.eye(n), atol=1e-14)
+            xp_assert_close(q @ r, a[:, p])
             assert_equal(q.shape, (m, n))
             assert_equal(r.shape, (n, n))
             q2, r2 = qr(a[:, p], mode='economic')
-            assert_array_almost_equal(q, q2)
-            assert_array_almost_equal(r, r2)
+            xp_assert_close(q, q2)
+            xp_assert_close(r, r2)
 
-    def test_random_trap(self):
+    def test_random_trap(self, xp):
+        rng = np.random.RandomState(1234)
+        m = 100
+        n = 200
+        for _ in range(2):
+            a = xp.asarray(rng.random([m, n]))
+            q, r = qr(a)
+            xp_assert_close(q.T @ q, xp.eye(m, dtype=xp.float64), atol=1e-14)
+            xp_assert_close(q @ r, a)
+
+    @skip_xp_backends(
+            np_only=True,
+            reasons=["`pivoting` only supported for NumPy arrays"]
+    )
+    def test_random_trap_pivoting(self, xp):
         rng = np.random.RandomState(1234)
         m = 100
         n = 200
         for k in range(2):
             a = rng.random([m, n])
-            q, r = qr(a)
-            assert_array_almost_equal(q.T @ q, eye(m))
-            assert_array_almost_equal(q @ r, a)
-
-    def test_random_trap_pivoting(self):
-        rng = np.random.RandomState(1234)
-        m = 100
-        n = 200
-        for k in range(2):
-            a = rng.random([m, n])
+            a = xp.asarray(a)
             q, r, p = qr(a, pivoting=True)
             d = abs(diag(r))
-            assert_(np.all(d[1:] <= d[:-1]))
-            assert_array_almost_equal(q.T @ q, eye(m))
-            assert_array_almost_equal(q @ r, a[:, p])
+            assert np.all(d[1:] <= d[:-1])
+            xp_assert_close(q.T @ q, xp.eye(m), atol=1e-14)
+            xp_assert_close(q @ r, a[:, p])
             q2, r2 = qr(a[:, p])
-            assert_array_almost_equal(q, q2)
-            assert_array_almost_equal(r, r2)
+            xp_assert_close(q, q2)
+            xp_assert_close(r, r2)
 
-    def test_random_complex(self):
+    def test_random_complex(self, xp):
         rng = np.random.RandomState(1234)
         n = 20
-        for k in range(2):
-            a = rng.random([n, n]) + 1j*rng.random([n, n])
+        for _ in range(2):
+            a = xp.asarray(rng.random([n, n]) + 1j*rng.random([n, n]))
             q, r = qr(a)
-            assert_array_almost_equal(q.conj().T @ q, eye(n))
-            assert_array_almost_equal(q @ r, a)
+            xp_assert_close(xp.conj(q).T @ q, xp.eye(n, dtype=xp.complex128),
+                            atol=1e-14)
+            xp_assert_close(q @ r, a)
 
-    def test_random_complex_left(self):
+    @skip_xp_backends(
+            np_only=True,
+            reasons=["only NumPy are arrays currently supported in `qr_multiply`"]
+    )
+    def test_random_complex_left(self, xp):
         rng = np.random.RandomState(1234)
         n = 20
-        for k in range(2):
+        for _ in range(2):
             a = rng.random([n, n]) + 1j*rng.random([n, n])
-            q, r = qr(a)
+            a = xp.asarray(a)
+            q, _ = qr(a)
             c = rng.random([n]) + 1j*rng.random([n])
-            qc, r = qr_multiply(a, c, "left")
-            assert_array_almost_equal(q @ c, qc)
-            qc, r = qr_multiply(a, eye(n), "left")
-            assert_array_almost_equal(q, qc)
+            qc, _ = qr_multiply(a, c, "left")
+            xp_assert_close(q @ c, qc)
+            qc, _ = qr_multiply(a, xp.eye(n), "left")
+            xp_assert_close(q, qc)
 
-    def test_random_complex_right(self):
+    @skip_xp_backends(
+            np_only=True,
+            reasons=["only NumPy are arrays currently supported in `qr_multiply`"]
+    )
+    def test_random_complex_right(self, xp):
         rng = np.random.RandomState(1234)
         n = 20
-        for k in range(2):
+        for _ in range(2):
             a = rng.random([n, n]) + 1j*rng.random([n, n])
-            q, r = qr(a)
+            a = xp.asarray(a)
+            q, _ = qr(a)
             c = rng.random([n]) + 1j*rng.random([n])
-            cq, r = qr_multiply(a, c)
-            assert_array_almost_equal(c @ q, cq)
-            cq, r = qr_multiply(a, eye(n))
-            assert_array_almost_equal(q, cq)
+            cq, _ = qr_multiply(a, c)
+            xp_assert_close(c @ q, cq)
+            cq, _ = qr_multiply(a, xp.eye(n))
+            xp_assert_close(q, cq)
 
-    def test_random_complex_pivoting(self):
+    @skip_xp_backends(
+            np_only=True,
+            reasons=["`pivoting` only supported for NumPy arrays"]
+    )
+    def test_random_complex_pivoting(self, xp):
         rng = np.random.RandomState(1234)
         n = 20
-        for k in range(2):
+        for _ in range(2):
             a = rng.random([n, n]) + 1j*rng.random([n, n])
+            a = xp.asarray(a)
             q, r, p = qr(a, pivoting=True)
             d = abs(diag(r))
-            assert_(np.all(d[1:] <= d[:-1]))
-            assert_array_almost_equal(q.conj().T @ q, eye(n))
-            assert_array_almost_equal(q @ r, a[:, p])
+            assert np.all(d[1:] <= d[:-1])
+            xp_assert_close(q.conj().T @ q, xp.eye(n, dtype=xp.complex128), atol=1e-14)
+            xp_assert_close(q @ r, a[:, p])
             q2, r2 = qr(a[:, p])
-            assert_array_almost_equal(q, q2)
-            assert_array_almost_equal(r, r2)
+            xp_assert_close(q, q2)
+            xp_assert_close(r, r2)
 
-    def test_check_finite(self):
-        a = [[8, 2, 3], [2, 9, 3], [5, 3, 6]]
+    def test_check_finite(self, xp):
+        a = xp.asarray([[8., 2, 3], [2, 9, 3], [5, 3, 6]])
         q, r = qr(a, check_finite=False)
-        assert_array_almost_equal(q.T @ q, eye(3))
-        assert_array_almost_equal(q @ r, a)
+        xp_assert_close(q.T @ q, xp.eye(3), atol=1e-6)
+        xp_assert_close(q @ r, a, rtol=1e-6)
 
-    def test_lwork(self):
+    def test_lwork(self, xp):
         a = [[8, 2, 3], [2, 9, 3], [5, 3, 6]]
         # Get comparison values
         q, r = qr(a, lwork=None)
 
         # Test against minimum valid lwork
         q2, r2 = qr(a, lwork=3)
-        assert_array_almost_equal(q2, q)
-        assert_array_almost_equal(r2, r)
+        xp_assert_close(q2, q)
+        xp_assert_close(r2, r)
 
         # Test against larger lwork
         q3, r3 = qr(a, lwork=10)
-        assert_array_almost_equal(q3, q)
-        assert_array_almost_equal(r3, r)
+        xp_assert_close(q3, q)
+        xp_assert_close(r3, r)
 
         # Test against explicit lwork=-1
         q4, r4 = qr(a, lwork=-1)
-        assert_array_almost_equal(q4, q)
-        assert_array_almost_equal(r4, r)
+        xp_assert_close(q4, q)
+        xp_assert_close(r4, r)
 
         # Test against invalid lwork
         assert_raises(Exception, qr, (a,), {'lwork': 0})
         assert_raises(Exception, qr, (a,), {'lwork': 2})
 
+    @pytest.mark.parametrize("dtype", ["float32", "float64"])
+    def test_dtypes_standard(self, dtype, xp):
+        dtype = getattr(xp, dtype)
+        a = xp.asarray([[8, 2, 3], [2, 9, 3], [5, 3, 6]], dtype=dtype)
+        q, _ = qr(a)
+        atol = 1e-15 if dtype == "float64" else 1e-6
+        xp_assert_close(q.T @ q, xp.eye(3, dtype=dtype), atol=atol)
+
+    @skip_xp_backends(np_only=True,
+                      reasons=["Integer dtypes only supported for NumPy arrays"])
+    @pytest.mark.parametrize("dtype", ["int32", "int64"])
+    def test_dtypes_nonstandard(self, dtype, xp):
+        dtype = getattr(xp, dtype)
+        a = xp.asarray([[8, 2, 3], [2, 9, 3], [5, 3, 6]], dtype=dtype)
+        q, _ = qr(a)
+        xp_assert_close(q.T @ q, xp.eye(3), atol=1e-15)
+
+    # TODO: update for array API
+    @skip_xp_backends(np_only=True)
     @pytest.mark.parametrize("m", [0, 1, 2])
     @pytest.mark.parametrize("n", [0, 1, 2])
     @pytest.mark.parametrize("pivoting", [False, True])
     @pytest.mark.parametrize('dtype', DTYPES)
-    def test_shape_dtype(self, m, n, pivoting, dtype):
+    def test_shape_dtype(self, m, n, pivoting, dtype, xp):
         k = min(m, n)
 
-        a = np.zeros((m, n), dtype=dtype)
+        a = xp.zeros((m, n), dtype=dtype)
         q, r, *other = qr(a, pivoting=pivoting)
         assert_equal(q.shape, (m, m))
         assert_equal(q.dtype, dtype)
@@ -1827,7 +2086,7 @@ class TestQR:
         if pivoting:
             p, = other
             assert_equal(p.shape, (n,))
-            assert_equal(p.dtype, np.int32)
+            assert_equal(p.dtype, xp.int32)
 
         r, *other = qr(a, mode='r', pivoting=pivoting)
         assert_equal(r.shape, (m, n))
@@ -1836,7 +2095,7 @@ class TestQR:
         if pivoting:
             p, = other
             assert_equal(p.shape, (n,))
-            assert_equal(p.dtype, np.int32)
+            assert_equal(p.dtype, xp.int32)
 
         q, r, *other = qr(a, mode='economic', pivoting=pivoting)
         assert_equal(q.shape, (m, k))
@@ -1847,7 +2106,7 @@ class TestQR:
         if pivoting:
             p, = other
             assert_equal(p.shape, (n,))
-            assert_equal(p.dtype, np.int32)
+            assert_equal(p.dtype, xp.int32)
 
         (raw, tau), r, *other = qr(a, mode='raw', pivoting=pivoting)
         assert_equal(raw.shape, (m, n))
@@ -1862,47 +2121,56 @@ class TestQR:
             assert_equal(p.shape, (n,))
             assert_equal(p.dtype, np.int32)
 
+    @skip_xp_backends(
+            np_only=True,
+            reasons=["`pivoting` only supported for NumPy arrays"]
+    )
     @pytest.mark.parametrize(("m", "n"), [(0, 0), (0, 2), (2, 0)])
-    def test_empty(self, m, n):
+    def test_empty(self, m, n, xp):
         k = min(m, n)
 
         a = np.empty((m, n))
+        a = xp.asarray(a)
         q, r = qr(a)
-        assert_allclose(q, np.identity(m))
-        assert_allclose(r, np.empty((m, n)))
+        xp_assert_close(q, xp.eye(m))
+        xp_assert_close(r, xp.empty((m, n)))
 
         q, r, p = qr(a, pivoting=True)
-        assert_allclose(q, np.identity(m))
-        assert_allclose(r, np.empty((m, n)))
-        assert_allclose(p, np.arange(n))
+        xp_assert_close(q, xp.eye(m))
+        xp_assert_close(r, xp.empty((m, n)))
+        xp_assert_close(p, xp.arange(n, dtype=xp.int32))
 
         r, = qr(a, mode='r')
-        assert_allclose(r, np.empty((m, n)))
+        xp_assert_close(r, xp.empty((m, n)))
 
         q, r = qr(a, mode='economic')
-        assert_allclose(q, np.empty((m, k)))
-        assert_allclose(r, np.empty((k, n)))
+        xp_assert_close(q, xp.empty((m, k)))
+        xp_assert_close(r, xp.empty((k, n)))
 
         (raw, tau), r = qr(a, mode='raw')
-        assert_allclose(raw, np.empty((m, n)))
-        assert_allclose(tau, np.empty((k,)))
-        assert_allclose(r, np.empty((k, n)))
+        xp_assert_close(raw, xp.empty((m, n)))
+        xp_assert_close(tau, xp.empty((k,)))
+        xp_assert_close(r, xp.empty((k, n)))
 
-    def test_multiply_empty(self):
+    @skip_xp_backends(
+            np_only=True,
+            reasons=["only NumPy are arrays currently supported in `qr_multiply`"]
+    )
+    def test_multiply_empty(self, xp):
         a = np.empty((0, 0))
         c = np.empty((0, 0))
-        cq, r = qr_multiply(a, c)
-        assert_allclose(cq, np.empty((0, 0)))
+        cq, _ = qr_multiply(a, c)
+        xp_assert_close(cq, xp.empty((0, 0)))
 
         a = np.empty((0, 2))
         c = np.empty((2, 0))
-        cq, r = qr_multiply(a, c)
-        assert_allclose(cq, np.empty((2, 0)))
+        cq, _ = qr_multiply(a, c)
+        xp_assert_close(cq, xp.empty((2, 0)))
 
         a = np.empty((2, 0))
         c = np.empty((0, 2))
-        cq, r = qr_multiply(a, c)
-        assert_allclose(cq, np.empty((0, 2)))
+        cq, _ = qr_multiply(a, c)
+        xp_assert_close(cq, xp.empty((0, 2)))
 
 
 class TestRQ:
@@ -3088,3 +3356,58 @@ class TestCDF2RDF:
         ])
         w, v = np.linalg.eig(X)
         assert_raises(ValueError, cdf2rdf, w, v)
+
+
+@array_api_compatible
+class TestNonStandardParams:
+
+    def test_eigh(self, xp):
+        if xp.__name__ != 'numpy':
+            x = xp.asarray([[1, 2], [2, 7]], dtype=xp.float32)
+            # eigh(x) should not raise an exception
+            eigh(x)
+            assert_raises(ValueError, eigh, x,
+                          b=xp.asarray([[6, 3, 1, 5], [3, 0, 5, 1],
+                                        [1, 5, 6, 2], [5, 1, 2, 2]]))
+            assert_raises(ValueError, eigh, x, lower=False)
+            assert_raises(ValueError, eigh, x, eigvals_only=True)
+            assert_raises(ValueError, eigh, x, turbo=True)
+            assert_raises(ValueError, eigh, x, eigvals=(0, 1))
+            assert_raises(ValueError, eigh, x, type=2)
+            assert_raises(ValueError, eigh, x, subset_by_index=[0, 1])
+            assert_raises(ValueError, eigh, x, subset_by_value=True)
+            assert_raises(ValueError, eigh, x, driver='evd')
+
+    def test_eigvalsh(self, xp):
+        if xp.__name__ != 'numpy':
+            x = xp.asarray([[6, 3, 1, 5], [3, 0, 5, 1],
+                            [1, 5, 6, 2], [5, 1, 2, 2]], dtype=xp.float32)
+            # eigvalsh(x) should not raise an exception
+            eigvalsh(x)
+            assert_raises(ValueError, eigvalsh, x,
+                          b=xp.asarray([[6, 3, 1, 5], [3, 0, 5, 1],
+                                        [1, 5, 6, 2], [5, 1, 2, 2]]))
+            assert_raises(ValueError, eigvalsh, x, lower=False)
+            assert_raises(ValueError, eigvalsh, x, turbo=True)
+            assert_raises(ValueError, eigvalsh, x, eigvals=(0, 1))
+            assert_raises(ValueError, eigvalsh, x, type=2)
+            assert_raises(ValueError, eigvalsh, x, subset_by_index=[0, 1])
+            assert_raises(ValueError, eigvalsh, x, subset_by_value=True)
+            assert_raises(ValueError, eigvalsh, x, driver='evd')
+
+    def test_qr(self, xp):
+        if xp.__name__ != 'numpy':
+            x = xp.asarray([(3, 3)], dtype=xp.float32)
+            # qr(x) should not raise an exception
+            qr(x)
+            assert_raises(ValueError, qr, x, lwork=5)
+            assert_raises(ValueError, qr, x, mode='r')
+            assert_raises(ValueError, qr, x, pivoting=True)
+
+    def test_svd(self, xp):
+        if xp.__name__ != 'numpy':
+            x = xp.asarray([(3, 3)], dtype=xp.float32)
+            # svd(x) should not raise an exception
+            svd(x)
+            assert_raises(ValueError, svd, x, compute_uv=False)
+            assert_raises(ValueError, svd, x, lapack_driver='gesvd')
