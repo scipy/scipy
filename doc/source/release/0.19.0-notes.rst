@@ -114,7 +114,7 @@ original signal: `scipy.signal.stft` and `scipy.signal.istft`. This
 implementation also fixes the previously incorrect output of
 `scipy.signal.spectrogram` when complex output data were requested.
 
-The function `scipy.signal.sosfreqz` was added to compute the frequency
+The function ``scipy.signal.sosfreqz`` was added to compute the frequency
 response from second-order sections.
 
 The function `scipy.signal.unit_impulse` was added to conveniently
