@@ -124,6 +124,9 @@ jobs:
         python dev.py build --tags=runtime,python-runtime,devel,tests
         python tools/check_installation.py ${{ env.INSTALLDIR }}
 
+    - name: Check build-internal dependencies
+      run: ninja -C build -t missingdeps
+
     - name: Mypy
       if: matrix.python-version == '3.10'
       run: |
