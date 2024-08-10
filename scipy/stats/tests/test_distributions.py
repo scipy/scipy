@@ -1065,8 +1065,10 @@ class TestGeom:
 
     def test_rvs_gh18372(self):
         # gh-18372 reported that `geom.rvs` could produce negative numbers,
-        # but the support is positive integers. Check that this is resolved.
-        assert stats.geom.rvs(1e-30, random_state=1234) > 0
+        # with `RandomState` PRNG, but the support is positive integers.
+        # Check that this is resolved.
+        random_state = np.random.RandomState(294582935)
+        assert (stats.geom.rvs(1e-30, size=10, random_state=random_state) > 0).all()
 
 class TestPlanck:
     def setup_method(self):
