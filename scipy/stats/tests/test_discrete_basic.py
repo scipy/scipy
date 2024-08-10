@@ -559,5 +559,5 @@ def test__pmf_float_input():
             return (2/3)*3**(1 - i)
     
     rv = rv_exponential(a=0.0, b=float('inf'))
-    rvs = rv.rvs() # should not crash due to integer input to `_pmf`
+    rvs = rv.rvs(random_state=42)  # should not crash due to integer input to `_pmf`
     assert_allclose(rvs, 0)
