@@ -1209,7 +1209,7 @@ class randint_gen(rv_discrete):
 
     def _pmf(self, k, low, high):
         # randint.pmf(k) = 1./(high - low)
-        p = np.ones_like(k) / (high - low)
+        p = np.ones_like(k) / (np.asarray(high, dtype=np.int64) - low)
         return np.where((k >= low) & (k < high), p, 0.)
 
     def _cdf(self, x, low, high):
