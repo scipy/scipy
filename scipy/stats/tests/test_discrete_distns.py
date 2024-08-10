@@ -650,6 +650,8 @@ class TestZipf:
 
 
 def test_gh20048():
+    # gh-20048 reported an infinite loop in _drv2_ppfsingle
+    # check that the one identified is resolved
     class test_dist_gen(stats.rv_discrete):
         def _cdf(self, k):
             return min(k / 100, 0.99)
@@ -659,3 +661,15 @@ def test_gh20048():
     message = "Arguments that bracket..."
     with pytest.raises(RuntimeError, match=message):
         test_dist.ppf(0.999)
+
+        
+class TestRandInt:
+    def test_gh19759(self):
+        # test zero PMF values within the support reported by gh-19759
+        a = -354
+        max_range = abs(a)
+        all_b_1 = [a + 2 ** 31 + i for i in range(max_range)]
+        res = randint.pmf(325, a, all_b_1)
+        assert (res > 0).all()
+        ref = 1 / (np.asarray(all_b_1, dtype=np.float64) - a)
+        assert_allclose(res, ref)
