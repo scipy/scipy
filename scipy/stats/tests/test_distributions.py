@@ -2180,6 +2180,13 @@ class TestLogser:
         #   1.000000005
         assert_allclose(m, 1.000000005)
 
+    def test_gh20048(self):
+        # gh-20048 reported an infinite loop; see if we can reproduce it
+        p, q = 0.25739239425774363, 0.9999999999999999
+        res = stats.logser(p).ppf(q)
+        ref = 99
+        assert_equal(res, ref)
+
 
 class TestGumbel_r_l:
     @pytest.fixture(scope='function')
