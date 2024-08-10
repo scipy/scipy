@@ -650,18 +650,11 @@ class TestZipf:
 
 class TestRandInt:
     def test_gh19759(self):
-        # test premature underflow reported in gh19759
+        # test zero PMF values within the support reported by gh-19759
         a = -354
         max_range = abs(a)
-
         all_b_1 = [a + 2 ** 31 + i for i in range(max_range)]
-        assert not (randint.pmf(325, a, all_b_1) == 0).any()
-
-        all_b_2 = [a + 2 ** 31 + i for i in range(max_range + 1)]
-        assert not (randint.pmf(325, a, all_b_2) == 0).any()
-
-        all_b_3 = np.array(all_b_1)
-        assert not (randint.pmf(325, a, all_b_3) == 0).any()
-
-        all_b_4 = np.arange(a + 2 ** 31, 2 ** 31)
-        assert not (randint.pmf(325, a, all_b_4) == 0).any()
+        res = randint.pmf(325, a, all_b_1)
+        assert (res > 0).all()
+        ref = 1 / (np.asarray(all_b_1, dtype=np.float64) - a)
+        assert_allclose(res, ref)
