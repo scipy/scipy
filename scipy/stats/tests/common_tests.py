@@ -171,8 +171,7 @@ def check_named_args(distfn, x, shape_args, defaults, meths):
     else:
         shapes_ = ''
     npt.assert_(len(shapes_) == distfn.numargs)
-    if distfn.name != 'poisson_binom':
-        npt.assert_(len(shapes_) == len(shape_argnames))
+    npt.assert_(len(shapes_) == len(shape_argnames))
 
     # check calling w/ named arguments
     shape_args = list(shape_args)

@@ -650,7 +650,12 @@ class TestZipf:
 
 class TestPoissonBinomial:
     def test_pmf(self):
-        # Test pmf against R poisbinom. Other methods tested with generic tests.
+        # Test pmf against R `poisbinom` to confirm that this is indeed the Poisson
+        # binomial distribution. Consistency of other methods and all other behavior
+        # should be covered by generic tests. (If not, please add a generic test.)
+        # Like many other distributions, no special attempt is made to be more
+        # accurate than the usual formulas provide, so we use default tolerances.
+        #
         # library(poisbinom)
         # options(digits=16)
         # k = c(0, 1, 2, 3, 4)

@@ -1551,9 +1551,10 @@ class poisson_binom_gen(rv_discrete):
     and :math:`A^C` is the complement of a set :math:`A`.
 
     `poisson_binom` accepts a single array argument ``p`` for shape parameters
-    :math:`0 < p_i < 1`, where the last axis corresponds with the index :math:`i` and
+    :math:`0 ≤ p_i ≤ 1`, where the last axis corresponds with the index :math:`i` and
     any others are for batch dimensions. Broadcasting behaves according to the usual
-    rules except that the last axis of ``p`` is ignored.
+    rules except that the last axis of ``p`` is ignored. Instances of this class do
+    not support serialization/unserialization.
 
     %(after_notes)s
 
@@ -1571,7 +1572,7 @@ class poisson_binom_gen(rv_discrete):
 
     def _argcheck(self, *args):
         p = np.stack(args, axis=0)
-        conds = (0 < p) & (p < 1)
+        conds = (0 <= p) & (p <= 1)
         return np.all(conds, axis=0)
 
     def _rvs(self, *args, size=None, random_state=None):

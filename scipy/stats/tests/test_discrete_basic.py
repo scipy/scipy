@@ -118,21 +118,30 @@ def test_rvs_broadcast(dist, shape_args):
     # test might also have to be changed.
     shape_only = dist in ['betabinom', 'betanbinom', 'skellam', 'yulesimon',
                           'dlaplace', 'nchypergeom_fisher',
-                          'nchypergeom_wallenius']
-    if dist in {'poisson_binom'}:
-        pytest.skip("Distribution doesn't follow typical broadcasting rules")
-
+                          'nchypergeom_wallenius', 'poisson_binom']
     try:
         distfunc = getattr(stats, dist)
     except TypeError:
         distfunc = dist
         dist = f'rv_discrete(values=({dist.xk!r}, {dist.pk!r}))'
     loc = np.zeros(2)
+    nargs = distfunc.numargs
     allargs = []
     bshape = []
+
+    if dist == 'poisson_binom':
+        # normal rules apply except the last axis of `p` is ignored
+        p = np.full((3, 1, 10), 0.5)
+        allargs = (p, loc)
+        bshape = (3, 2)
+        check_rvs_broadcast(distfunc, dist, allargs,
+                            bshape, shape_only, [np.dtype(int)])
+        return
+
     # Generate shape parameter arguments...
-    for k, param_val in enumerate(shape_args):
+    for k in range(nargs):
         shp = (k + 3,) + (1,)*(k + 1)
+        param_val = shape_args[k]
         allargs.append(np.full(shp, param_val))
         bshape.insert(0, shp[0])
     allargs.append(loc)

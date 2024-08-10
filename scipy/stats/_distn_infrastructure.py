@@ -3837,6 +3837,7 @@ class rv_discrete(rv_generic):
         # used pmf because _pmf does not check support in randint and there
         # might be problems(?) with correct self.a, self.b at this stage maybe
         # not anymore, seems to work now with _pmf
+
         _a, _b = self._get_support(*args)
         if lb is None:
             lb = _a
