@@ -1,6 +1,7 @@
 import pytest
 import itertools
 
+from scipy import stats
 from scipy.stats import (betabinom, betanbinom, hypergeom, nhypergeom,
                          bernoulli, boltzmann, skellam, zipf, zipfian, binom,
                          nbinom, nchypergeom_fisher, nchypergeom_wallenius,
@@ -646,3 +647,15 @@ class TestZipf:
         pmf = dist.pmf(k)
         pmf_k_int32 = dist.pmf(k_int32)
         assert_equal(pmf, pmf_k_int32)
+
+
+def test_gh20048():
+    class test_dist_gen(stats.rv_discrete):
+        def _cdf(self, k):
+            return min(k / 100, 0.99)
+
+    test_dist = test_dist_gen(b=np.inf)
+
+    message = "Arguments that bracket..."
+    with pytest.raises(RuntimeError, match=message):
+        test_dist.ppf(0.999)
