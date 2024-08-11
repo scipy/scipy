@@ -298,8 +298,11 @@ def solve(a, b, lower=False, overwrite_a=False,
     # Triangular case
     elif assume_a in {'lower triangular', 'upper triangular'}:
         lower = assume_a == 'lower triangular'
-        x = _solve_triangular(a1, b1, lower=lower, overwrite_b=overwrite_b,
-                              trans=transposed)
+        x, info = _solve_triangular(a1, b1, lower=lower, overwrite_b=overwrite_b,
+                                    trans=transposed)
+        _solve_check(n, info)
+        _trcon = get_lapack_funcs(('trcon'), (a1, b1))
+        rcond, info = _trcon(a1)
     # Positive definite case 'posv'
     else:
         pocon, posv = get_lapack_funcs(('pocon', 'posv'),
@@ -448,7 +451,8 @@ def solve_triangular(a, b, trans=0, lower=False, unit_diagonal=False,
 
     overwrite_b = overwrite_b or _datacopied(b1, b)
 
-    return _solve_triangular(a1, b1, trans, lower, unit_diagonal, overwrite_b)
+    x, _ = _solve_triangular(a1, b1, trans, lower, unit_diagonal, overwrite_b)
+    return x
 
 
 # solve_triangular without the input validation
@@ -466,7 +470,7 @@ def _solve_triangular(a1, b1, trans=0, lower=False, unit_diagonal=False,
                         trans=not trans, unitdiag=unit_diagonal)
 
     if info == 0:
-        return x
+        return x, info
     if info > 0:
         raise LinAlgError("singular matrix: resolution failed at diagonal %d" %
                           (info-1))
