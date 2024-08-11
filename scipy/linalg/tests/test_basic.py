@@ -1,5 +1,4 @@
 import itertools
-import warnings
 
 import numpy as np
 from numpy import (arange, array, dot, zeros, identity, conjugate, transpose,
