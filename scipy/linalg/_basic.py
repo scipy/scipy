@@ -229,6 +229,8 @@ def solve(a, b, lower=False, overwrite_a=False,
         lange = _lange_diagonal
     elif assume_a == 'tridiagonal':
         lange = _lange_tridiagonal
+    elif assume_a in {'lower triangular', 'upper triangular'}:
+        lange = _lange_triangular(assume_a)
     else:
         lange = _lange_generic
 
@@ -346,6 +348,13 @@ def _lange_tridiagonal(norm, a, check_finite):
     d = np.asarray_chkfinite(d) if check_finite else d
     return d.max()
 
+def _lange_triangular(structure):
+    def fun(norm, a, check_finite):
+        a = np.asarray_chkfinite(a) if check_finite else a
+        lantr = get_lapack_funcs('lantr', (a,))
+
+        return lantr(norm, a, 'L' if structure == 'lower triangular' else 'U' )
+    return fun
 
 def _lange_generic(norm, a, check_finite):
     a = np.asarray_chkfinite(a) if check_finite else a
