@@ -599,6 +599,205 @@ class TestChi:
         assert_allclose(stats.chi(df).entropy(), ref, rtol=1e-15)
 
 
+class TestCrystalBall:
+
+    def test_pdf(self):
+        """
+        All values are calculated using the independent implementation of the
+        ROOT framework (see https://root.cern.ch/).
+        Corresponding ROOT code is given in the comments.
+        """
+        X = np.linspace(-5.0, 5.0, 21)[:-1]
+
+        # for (double x = -5.0; x < 5.0; x += 0.5) {
+        #     cout << setprecision(16)
+        #          << ROOT::Math::crystalball_pdf(x, 1.0, 2.0, 1.0)
+        #          << ", ";
+        # }
+        calculated = stats.crystalball.pdf(X, beta=1.0, m=2.0)
+        expected = np.array([0.02028666423671257, 0.02414280702550917,
+                             0.02921279650086611, 0.03606518086526679,
+                             0.04564499453260328, 0.05961795204258388,
+                             0.08114665694685029, 0.1168511860034644,
+                             0.1825799781304131, 0.2656523006609301,
+                             0.3010234935475763, 0.2656523006609301,
+                             0.1825799781304131, 0.09772801991305094,
+                             0.0407390997601359, 0.01322604925508607,
+                             0.003344068947749631, 0.0006584862184997063,
+                             0.0001009821322058648, 1.206059579124873e-05])
+        assert_allclose(expected, calculated, rtol=1e-14)
+
+        # for (double x = -5.0; x < 5.0; x += 0.5) {
+        #     cout << setprecision(16)
+        #          << ROOT::Math::crystalball_pdf(x, 2.0, 3.0, 1.0)
+        #          << ", ";
+        # }
+        calculated = stats.crystalball.pdf(X, beta=2.0, m=3.0)
+        expected = np.array([0.00196480373120913, 0.0027975428126005,
+                             0.004175923965164595, 0.006631212592830816,
+                             0.01145873536041165, 0.022380342500804,
+                             0.05304970074264653, 0.1272596164638828,
+                             0.237752264003024, 0.3459275029304401,
+                             0.3919872148188981, 0.3459275029304401,
+                             0.237752264003024, 0.1272596164638828,
+                             0.05304970074264653, 0.01722271623872227,
+                             0.004354584612458383, 0.0008574685508575863,
+                             0.000131497061187334, 1.570508433595375e-05])
+        assert_allclose(expected, calculated, rtol=1e-14)
+
+        # for (double x = -5.0; x < 5.0; x += 0.5) {
+        #   cout << setprecision(16)
+        #        << ROOT::Math::crystalball_pdf(x, 2.0, 3.0, 2.0, 0.5)
+        #        << ", ";
+        # }
+        calculated = stats.crystalball.pdf(X, beta=2.0, m=3.0, loc=0.5, scale=2.0)
+        expected = np.array([0.007859214924836521, 0.011190171250402,
+                             0.01670369586065838, 0.02652485037132326,
+                             0.04238659020399594, 0.06362980823194138,
+                             0.08973241216601403, 0.118876132001512,
+                             0.1479437366093383, 0.17296375146522,
+                             0.1899635180461471, 0.1959936074094491,
+                             0.1899635180461471, 0.17296375146522,
+                             0.1479437366093383, 0.118876132001512,
+                             0.08973241216601403, 0.06362980823194138,
+                             0.04238659020399594, 0.02652485037132326])
+        assert_allclose(expected, calculated, rtol=1e-14)
+
+    def test_cdf(self):
+        """
+        All values are calculated using the independent implementation of the
+        ROOT framework (see https://root.cern.ch/).
+        Corresponding ROOT code is given in the comments.
+        """
+        X = np.linspace(-5.0, 5.0, 21)[:-1]
+
+        # for (double x = -5.0; x < 5.0; x += 0.5) {
+        #     cout << setprecision(16)
+        #          << ROOT::Math::crystalball_cdf(x, 1.0, 2.0, 1.0)
+        #          << ", ";
+        # }
+        calculated = stats.crystalball.cdf(X, beta=1.0, m=2.0)
+        expected = np.array([0.1217199854202754, 0.1327854386403005,
+                             0.1460639825043305, 0.1622933138937006,
+                             0.1825799781304132, 0.2086628321490436,
+                             0.2434399708405509, 0.292127965008661,
+                             0.3651599562608263, 0.4782542338198316,
+                             0.6227229998727213, 0.7671917659256111,
+                             0.8802860434846165, 0.9495903590367718,
+                             0.9828337969321823, 0.9953144721881936,
+                             0.9989814290402977, 0.9998244687978383,
+                             0.9999761023377818, 0.9999974362721522])
+        assert_allclose(expected, calculated, rtol=1e-13)
+
+        # for (double x = -5.0; x < 5.0; x += 0.5) {
+        #     cout << setprecision(16)
+        #          << ROOT::Math::crystalball_cdf(x, 2.0, 3.0, 1.0)
+        #          << ", ";
+        # }
+        calculated = stats.crystalball.cdf(X, beta=2.0, m=3.0)
+        expected = np.array([0.004420808395220632, 0.005595085625200946,
+                             0.007307866939038177, 0.009946818889246312,
+                             0.01432341920051472, 0.02238034250080412,
+                             0.03978727555698502, 0.08307626432678494,
+                             0.1733230597116304, 0.3205923321191123,
+                             0.508716882020547, 0.6968414319219818,
+                             0.8441107043294638, 0.934357499714309,
+                             0.9776464884841091, 0.9938985925142876,
+                             0.9986736357721329, 0.9997714265214375,
+                             0.9999688809071239, 0.9999966615611068])
+        assert_allclose(expected, calculated, rtol=1e-13)
+
+        # for (double x = -5.0; x < 5.0; x += 0.5) {
+        #     cout << setprecision(16)
+        #          << ROOT::Math::crystalball_cdf(x, 2.0, 3.0, 2.0, 0.5);
+        #          << ", ";
+        # }
+        calculated = stats.crystalball.cdf(X, beta=2.0, m=3.0, loc=0.5, scale=2.0)
+        expected = np.array([0.0176832335808822, 0.02238034250080412,
+                             0.02923146775615237, 0.03978727555698502,
+                             0.05679453901646225, 0.08307626432678494,
+                             0.1212416644828466, 0.1733230597116304,
+                             0.2401101486313661, 0.3205923321191123,
+                             0.4117313791289429, 0.508716882020547,
+                             0.6057023849121512, 0.6968414319219818,
+                             0.7773236154097279, 0.8441107043294638,
+                             0.8961920995582476, 0.934357499714309,
+                             0.9606392250246318, 0.9776464884841091])
+        assert_allclose(expected, calculated, rtol=1e-13)
+
+    # Reference value computed with ROOT, e.g.
+    #     cout << setprecision(16)
+    #          << ROOT::Math::crystalball_cdf_c(12.0, 1.0, 2.0, 1.0)
+    #          << endl;
+    @pytest.mark.parametrize(
+        'x, beta, m, rootref',
+        [(12.0, 1.0, 2.0, 1.340451684048897e-33),
+         (9.0, 4.0, 1.25, 1.12843537145273e-19),
+         (20, 0.1, 1.001, 6.929038716892384e-93),
+         (-4.5, 2.0, 3.0, 0.9944049143747991),
+         (-30.0, 0.5, 5.0, 0.9976994814571858),
+         (-1e50, 1.5, 1.1, 0.9999951099570382)]
+    )
+    def test_sf(self, x, beta, m, rootref):
+        sf = stats.crystalball.sf(x, beta=beta, m=m)
+        assert_allclose(sf, rootref, rtol=1e-13)
+
+    def test_moments(self):
+        """
+        All values are calculated using the pdf formula and the integrate function
+        of Mathematica
+        """
+        # The Last two (alpha, n) pairs test the special case n == alpha**2
+        beta = np.array([2.0, 1.0, 3.0, 2.0, 3.0])
+        m = np.array([3.0, 3.0, 2.0, 4.0, 9.0])
+
+        # The distribution should be correctly normalised
+        expected_0th_moment = np.array([1.0, 1.0, 1.0, 1.0, 1.0])
+        calculated_0th_moment = stats.crystalball._munp(0, beta, m)
+        assert_allclose(expected_0th_moment, calculated_0th_moment, rtol=0.001)
+
+        # calculated using wolframalpha.com
+        # e.g. for beta = 2 and m = 3 we calculate the norm like this:
+        #   integrate exp(-x^2/2) from -2 to infinity +
+        #   integrate (3/2)^3*exp(-2^2/2)*(3/2-2-x)^(-3) from -infinity to -2
+        norm = np.array([2.5511, 3.01873, 2.51065, 2.53983, 2.507410455])
+
+        a = np.array([-0.21992, -3.03265, np.inf, -0.135335, -0.003174])
+        expected_1th_moment = a / norm
+        calculated_1th_moment = stats.crystalball._munp(1, beta, m)
+        assert_allclose(expected_1th_moment, calculated_1th_moment, rtol=0.001)
+
+        a = np.array([np.inf, np.inf, np.inf, 3.2616, 2.519908])
+        expected_2th_moment = a / norm
+        calculated_2th_moment = stats.crystalball._munp(2, beta, m)
+        assert_allclose(expected_2th_moment, calculated_2th_moment, rtol=0.001)
+
+        a = np.array([np.inf, np.inf, np.inf, np.inf, -0.0577668])
+        expected_3th_moment = a / norm
+        calculated_3th_moment = stats.crystalball._munp(3, beta, m)
+        assert_allclose(expected_3th_moment, calculated_3th_moment, rtol=0.001)
+
+        a = np.array([np.inf, np.inf, np.inf, np.inf, 7.78468])
+        expected_4th_moment = a / norm
+        calculated_4th_moment = stats.crystalball._munp(4, beta, m)
+        assert_allclose(expected_4th_moment, calculated_4th_moment, rtol=0.001)
+
+        a = np.array([np.inf, np.inf, np.inf, np.inf, -1.31086])
+        expected_5th_moment = a / norm
+        calculated_5th_moment = stats.crystalball._munp(5, beta, m)
+        assert_allclose(expected_5th_moment, calculated_5th_moment, rtol=0.001)
+
+    def test_entropy(self):
+        # regression test for gh-13602
+        cb = stats.crystalball(2, 3)
+        res1 = cb.entropy()
+        # -20000 and 30 are negative and positive infinity, respectively
+        lo, hi, N = -20000, 30, 200000
+        x = np.linspace(lo, hi, N)
+        res2 = trapezoid(entr(cb.pdf(x)), x)
+        assert_allclose(res1, res2, rtol=1e-7)
+
+
 class TestNBinom:
     def setup_method(self):
         np.random.seed(1234)
@@ -8787,134 +8986,6 @@ def test_burr12_ppf_small_arg():
     #   >>> float(((1-prob)**(-1/d) - 1)**(1/c))
     #   5.7735026918962575e-09
     assert_allclose(quantile, 5.7735026918962575e-09)
-
-
-def test_crystalball_function():
-    """
-    All values are calculated using the independent implementation of the
-    ROOT framework (see https://root.cern.ch/).
-    Corresponding ROOT code is given in the comments.
-    """
-    X = np.linspace(-5.0, 5.0, 21)[:-1]
-
-    # for(float x = -5.0; x < 5.0; x+=0.5)
-    #   std::cout << ROOT::Math::crystalball_pdf(x, 1.0, 2.0, 1.0) << ", ";
-    calculated = stats.crystalball.pdf(X, beta=1.0, m=2.0)
-    expected = np.array([0.0202867, 0.0241428, 0.0292128, 0.0360652, 0.045645,
-                         0.059618, 0.0811467, 0.116851, 0.18258, 0.265652,
-                         0.301023, 0.265652, 0.18258, 0.097728, 0.0407391,
-                         0.013226, 0.00334407, 0.000658486, 0.000100982,
-                         1.20606e-05])
-    assert_allclose(expected, calculated, rtol=0.001)
-
-    # for(float x = -5.0; x < 5.0; x+=0.5)
-    #   std::cout << ROOT::Math::crystalball_pdf(x, 2.0, 3.0, 1.0) << ", ";
-    calculated = stats.crystalball.pdf(X, beta=2.0, m=3.0)
-    expected = np.array([0.0019648, 0.00279754, 0.00417592, 0.00663121,
-                         0.0114587, 0.0223803, 0.0530497, 0.12726, 0.237752,
-                         0.345928, 0.391987, 0.345928, 0.237752, 0.12726,
-                         0.0530497, 0.0172227, 0.00435458, 0.000857469,
-                         0.000131497, 1.57051e-05])
-    assert_allclose(expected, calculated, rtol=0.001)
-
-    # for(float x = -5.0; x < 5.0; x+=0.5) {
-    #   std::cout << ROOT::Math::crystalball_pdf(x, 2.0, 3.0, 2.0, 0.5);
-    #   std::cout << ", ";
-    # }
-    calculated = stats.crystalball.pdf(X, beta=2.0, m=3.0, loc=0.5, scale=2.0)
-    expected = np.array([0.00785921, 0.0111902, 0.0167037, 0.0265249,
-                         0.0423866, 0.0636298, 0.0897324, 0.118876, 0.147944,
-                         0.172964, 0.189964, 0.195994, 0.189964, 0.172964,
-                         0.147944, 0.118876, 0.0897324, 0.0636298, 0.0423866,
-                         0.0265249])
-    assert_allclose(expected, calculated, rtol=0.001)
-
-    # for(float x = -5.0; x < 5.0; x+=0.5)
-    #   std::cout << ROOT::Math::crystalball_cdf(x, 1.0, 2.0, 1.0) << ", ";
-    calculated = stats.crystalball.cdf(X, beta=1.0, m=2.0)
-    expected = np.array([0.12172, 0.132785, 0.146064, 0.162293, 0.18258,
-                         0.208663, 0.24344, 0.292128, 0.36516, 0.478254,
-                         0.622723, 0.767192, 0.880286, 0.94959, 0.982834,
-                         0.995314, 0.998981, 0.999824, 0.999976, 0.999997])
-    assert_allclose(expected, calculated, rtol=0.001)
-
-    # for(float x = -5.0; x < 5.0; x+=0.5)
-    #   std::cout << ROOT::Math::crystalball_cdf(x, 2.0, 3.0, 1.0) << ", ";
-    calculated = stats.crystalball.cdf(X, beta=2.0, m=3.0)
-    expected = np.array([0.00442081, 0.00559509, 0.00730787, 0.00994682,
-                         0.0143234, 0.0223803, 0.0397873, 0.0830763, 0.173323,
-                         0.320592, 0.508717, 0.696841, 0.844111, 0.934357,
-                         0.977646, 0.993899, 0.998674, 0.999771, 0.999969,
-                         0.999997])
-    assert_allclose(expected, calculated, rtol=0.001)
-
-    # for(float x = -5.0; x < 5.0; x+=0.5) {
-    #   std::cout << ROOT::Math::crystalball_cdf(x, 2.0, 3.0, 2.0, 0.5);
-    #   std::cout << ", ";
-    # }
-    calculated = stats.crystalball.cdf(X, beta=2.0, m=3.0, loc=0.5, scale=2.0)
-    expected = np.array([0.0176832, 0.0223803, 0.0292315, 0.0397873, 0.0567945,
-                         0.0830763, 0.121242, 0.173323, 0.24011, 0.320592,
-                         0.411731, 0.508717, 0.605702, 0.696841, 0.777324,
-                         0.844111, 0.896192, 0.934357, 0.960639, 0.977646])
-    assert_allclose(expected, calculated, rtol=0.001)
-
-
-def test_crystalball_function_moments():
-    """
-    All values are calculated using the pdf formula and the integrate function
-    of Mathematica
-    """
-    # The Last two (alpha, n) pairs test the special case n == alpha**2
-    beta = np.array([2.0, 1.0, 3.0, 2.0, 3.0])
-    m = np.array([3.0, 3.0, 2.0, 4.0, 9.0])
-
-    # The distribution should be correctly normalised
-    expected_0th_moment = np.array([1.0, 1.0, 1.0, 1.0, 1.0])
-    calculated_0th_moment = stats.crystalball._munp(0, beta, m)
-    assert_allclose(expected_0th_moment, calculated_0th_moment, rtol=0.001)
-
-    # calculated using wolframalpha.com
-    # e.g. for beta = 2 and m = 3 we calculate the norm like this:
-    #   integrate exp(-x^2/2) from -2 to infinity +
-    #   integrate (3/2)^3*exp(-2^2/2)*(3/2-2-x)^(-3) from -infinity to -2
-    norm = np.array([2.5511, 3.01873, 2.51065, 2.53983, 2.507410455])
-
-    a = np.array([-0.21992, -3.03265, np.inf, -0.135335, -0.003174])
-    expected_1th_moment = a / norm
-    calculated_1th_moment = stats.crystalball._munp(1, beta, m)
-    assert_allclose(expected_1th_moment, calculated_1th_moment, rtol=0.001)
-
-    a = np.array([np.inf, np.inf, np.inf, 3.2616, 2.519908])
-    expected_2th_moment = a / norm
-    calculated_2th_moment = stats.crystalball._munp(2, beta, m)
-    assert_allclose(expected_2th_moment, calculated_2th_moment, rtol=0.001)
-
-    a = np.array([np.inf, np.inf, np.inf, np.inf, -0.0577668])
-    expected_3th_moment = a / norm
-    calculated_3th_moment = stats.crystalball._munp(3, beta, m)
-    assert_allclose(expected_3th_moment, calculated_3th_moment, rtol=0.001)
-
-    a = np.array([np.inf, np.inf, np.inf, np.inf, 7.78468])
-    expected_4th_moment = a / norm
-    calculated_4th_moment = stats.crystalball._munp(4, beta, m)
-    assert_allclose(expected_4th_moment, calculated_4th_moment, rtol=0.001)
-
-    a = np.array([np.inf, np.inf, np.inf, np.inf, -1.31086])
-    expected_5th_moment = a / norm
-    calculated_5th_moment = stats.crystalball._munp(5, beta, m)
-    assert_allclose(expected_5th_moment, calculated_5th_moment, rtol=0.001)
-
-
-def test_crystalball_entropy():
-    # regression test for gh-13602
-    cb = stats.crystalball(2, 3)
-    res1 = cb.entropy()
-    # -20000 and 30 are negative and positive infinity, respectively
-    lo, hi, N = -20000, 30, 200000
-    x = np.linspace(lo, hi, N)
-    res2 = trapezoid(entr(cb.pdf(x)), x)
-    assert_allclose(res1, res2, rtol=1e-7)
 
 
 def test_invweibull_fit():
