@@ -7,6 +7,7 @@ from . import _signaltools
 from .windows import get_window
 from ._arraytools import const_ext, even_ext, odd_ext, zero_ext
 import warnings
+from typing import Literal
 
 
 __all__ = ['periodogram', 'welch', 'lombscargle', 'csd', 'coherence',
@@ -18,7 +19,7 @@ def lombscargle(
     y: npt.NDArray,
     freqs: npt.NDArray,
     precenter: bool = False,
-    normalize: bool | str = False,
+    normalize: bool | Literal["amplitude", "power", "normalize"] = False,
     *, 
     weights: npt.NDArray | None = None,
 ) -> npt.NDArray:
@@ -177,23 +178,20 @@ def lombscargle(
         raise ValueError("Each weight must be >= 0.")
 
     # validate normalize parameter
-    OUTPUT_POWER = "power"
-    OUTPUT_NORMALIZE = "normalize"
-    OUTPUT_AMPLITUDE = "amplitude"
     if isinstance(normalize, bool):
         # if bool, convert to str
-        normalize = OUTPUT_NORMALIZE if normalize else OUTPUT_POWER
+        normalize = "normalize" if normalize else "power"
     else:
         # if neither a bool or str
         if not isinstance(normalize, str):
             raise TypeError("Normalize type must a bool or str.")
 
-    if normalize not in [OUTPUT_POWER, OUTPUT_NORMALIZE, OUTPUT_AMPLITUDE]:
+    if normalize not in ["power", "normalize", "amplitude"]:
         raise ValueError(
             "Normalize must be: "
-            f"False (or '{OUTPUT_POWER}'), "
-            f"True (or '{OUTPUT_NORMALIZE}'), "
-            f"or '{OUTPUT_AMPLITUDE}'."
+            "False (or 'power'), "
+            "True (or 'normalize'), "
+            "or 'amplitude'."
         )
 
     # convert inputs to contiguous arrays with high precision
@@ -248,14 +246,14 @@ def lombscargle(
         # store final value as power in (y units) ^ 2
         pgram[i] = 2.0 * (a[i] * YC + b[i] * YS)
 
-    if normalize == OUTPUT_NORMALIZE:
+    if normalize == "normalize":
         # return the normalized power (current frequency wrt the entire signal)
         YY_hat = (weights * y * y).sum()
         YY: float = YY_hat - Y_sum * Y_sum
         pgram /= 2.0 * YY
         return pgram
 
-    elif normalize == OUTPUT_AMPLITUDE:
+    elif normalize == "amplitude":
         # return the complex representation of the amplitude and phase
         phase = np.arctan2(b, a)  # radians
         pgram = np.sqrt(pgram) * (np.cos(phase) + 1j * np.sin(phase))
