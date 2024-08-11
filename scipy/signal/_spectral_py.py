@@ -19,7 +19,7 @@ def lombscargle(
     y: npt.NDArray,
     freqs: npt.NDArray,
     precenter: bool = False,
-    normalize: bool | Literal["amplitude", "power", "normalize"] = False,
+    normalize: bool | Literal["power", "normalize", "amplitude"] = False,
     *, 
     weights: npt.NDArray | None = None,
     ignore_offset: bool = False,
@@ -71,7 +71,9 @@ def lombscargle(
     Raises
     ------
     ValueError
-        If the input arrays `x`, `y`, and `weights` do not have the same shape.
+        If any of the input arrays x, y, freqs, or weights are not 1D.
+    ValueError
+        If the input arrays x, y, and weights do not have the same shape.
     ZeroDivisionError
         If the freqs array contains the value 0.
     ZeroDivisionError
@@ -277,7 +279,7 @@ def lombscargle(
         pgram = np.sqrt(pgram) * (np.cos(phase) + 1j * np.sin(phase))
         return pgram
     
-    # otherwise, the default, normalize == OUTPUT_POWER
+    # otherwise, the default, normalize == "power"
     # return the legacy power units
     pgram *= float(x.shape[0]) / 4.0
     return pgram
