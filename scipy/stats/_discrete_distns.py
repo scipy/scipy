@@ -494,6 +494,11 @@ class geom_gen(rv_discrete):
     where :math:`p` is the probability of a single success
     and :math:`1-p` is the probability of a single failure.
 
+    Note that when drawing random samples, the probability of observations that exceed
+    ``np.iinfo(np.int64).max`` increases rapidly as $p$ decreases below $10^{-17}$. For
+    $p < 10^{-20}$, almost all observations would exceed the maximum ``int64``; however,
+    the output dtype is always ``int64``, so these values are clipped to the maximum.
+
     %(after_notes)s
 
     See Also
