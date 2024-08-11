@@ -293,8 +293,12 @@ def solve(a, b, lower=False, overwrite_a=False,
     elif assume_a == 'tridiagonal':
         a1 = a1.T if transposed else a1
         dl, d, du = np.diag(a1, -1), np.diag(a1, 0), np.diag(a1, 1)
-        _gtsv = get_lapack_funcs('gtsv', (a1, b1))
-        x, info = _gtsv(dl, d, du, b1, False, False, False, overwrite_b)[3:]
+        _gttrf, _gttrs, _gtcon = get_lapack_funcs(('gttrf', 'gttrs', 'gtcon'), (a1, b1))
+        dl, d, du, du2, ipiv, info = _gttrf(dl, d, du)
+        _solve_check(n, info)
+        x, info = _gttrs(dl, d, du, du2, ipiv, b1, overwrite_b=overwrite_b)
+        _solve_check(n, info)
+        rcond, info = _gtcon(dl, d, du, du2, ipiv, anorm)
     # Triangular case
     elif assume_a in {'lower triangular', 'upper triangular'}:
         lower = assume_a == 'lower triangular'
