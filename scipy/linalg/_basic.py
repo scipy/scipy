@@ -226,13 +226,13 @@ def solve(a, b, lower=False, overwrite_a=False,
     #   lansy, lanpo, lanhe.
     # However, in any case they only reduce computations slightly...
     if assume_a == 'diagonal':
-        lange = _lange_diagonal
+        _matrix_norm = _matrix_norm_diagonal
     elif assume_a == 'tridiagonal':
-        lange = _lange_tridiagonal
+        _matrix_norm = _matrix_norm_tridiagonal
     elif assume_a in {'lower triangular', 'upper triangular'}:
-        lange = _lange_triangular(assume_a)
+        _matrix_norm = _matrix_norm_triangular(assume_a)
     else:
-        lange = _lange_generic
+        _matrix_norm = _matrix_norm_general
 
     # Since the I-norm and 1-norm are the same for symmetric matrices
     # we can collect them all in this one call
@@ -249,7 +249,7 @@ def solve(a, b, lower=False, overwrite_a=False,
         trans = 0
         norm = '1'
 
-    anorm = lange(norm, a1, check_finite)
+    anorm = _matrix_norm(norm, a1, check_finite)
 
     info, rcond = 0, np.inf
 
@@ -327,7 +327,7 @@ def solve(a, b, lower=False, overwrite_a=False,
     return x
 
 
-def _lange_diagonal(_, a, check_finite):
+def _matrix_norm_diagonal(_, a, check_finite):
     # Equivalent of dlange for diagonal matrix, assuming
     # norm is either 'I' or '1' (really just not the Frobenius norm)
     d = np.diag(a)
@@ -335,7 +335,7 @@ def _lange_diagonal(_, a, check_finite):
     return np.abs(d).max()
 
 
-def _lange_tridiagonal(norm, a, check_finite):
+def _matrix_norm_tridiagonal(norm, a, check_finite):
     # Equivalent of dlange for tridiagonal matrix, assuming
     # norm is either 'I' or '1'
     if norm == 'I':
@@ -348,7 +348,8 @@ def _lange_tridiagonal(norm, a, check_finite):
     d = np.asarray_chkfinite(d) if check_finite else d
     return d.max()
 
-def _lange_triangular(structure):
+
+def _matrix_norm_triangular(structure):
     def fun(norm, a, check_finite):
         a = np.asarray_chkfinite(a) if check_finite else a
         lantr = get_lapack_funcs('lantr', (a,))
@@ -356,7 +357,8 @@ def _lange_triangular(structure):
         return lantr(norm, a, 'L' if structure == 'lower triangular' else 'U' )
     return fun
 
-def _lange_generic(norm, a, check_finite):
+
+def _matrix_norm_general(norm, a, check_finite):
     a = np.asarray_chkfinite(a) if check_finite else a
     lange = get_lapack_funcs('lange', (a,))
     return lange(norm, a)
