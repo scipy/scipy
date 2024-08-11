@@ -22,6 +22,7 @@ def lombscargle(
     normalize: bool | Literal["amplitude", "power", "normalize"] = False,
     *, 
     weights: npt.NDArray | None = None,
+    ignore_offset: bool = False,
 ) -> npt.NDArray:
     """
     Compute the generalized Lomb-Scargle periodogram.
@@ -54,11 +55,13 @@ def lombscargle(
     freqs : array_like
         Angular frequencies for output periodogram. Frequencies must be nonzero.
     precenter : bool, optional
-        Legacy argument, that is now always handled by the algorithm.
+        Legacy argument, that is handled appropriately by the algorithm.
     normalize : bool | str, optional
         Compute normalized or complex (amplitude + phase) periodogram.
     weights : array_like, optional
         Weights for each sample. Weights must be nonnegative.
+    ignore_offset : bool, optional
+        Force offset = 0 for all frequencies.
 
     Returns
     -------
@@ -225,8 +228,6 @@ def lombscargle(
         sinwt[:] = np.sin(freqs[i] * x)
         wcoswt[:] = weights * coswt
         wsinwt[:] = weights * sinwt
-        C_sum = wcoswt.sum()
-        S_sum = wsinwt.sum()
 
         YC_hat = (y * wcoswt).sum()
         YS_hat = (y * wsinwt).sum()
@@ -234,11 +235,22 @@ def lombscargle(
         SS_hat = 1 - CC_hat  # trig identity: S^2 = 1 - C^2
         CS_hat = (wcoswt * sinwt).sum()
 
-        YC = YC_hat - Y_sum * C_sum
-        YS = YS_hat - Y_sum * S_sum
-        CC = CC_hat - C_sum * C_sum
-        SS = SS_hat - S_sum * S_sum
-        CS = CS_hat - C_sum * S_sum
+        if ignore_offset:
+            # assume offset=0
+            YC = YC_hat
+            YS = YS_hat
+            CC = CC_hat
+            SS = SS_hat
+            CS = CS_hat
+        else:
+            # calculate best fit given any unknown offset (default)
+            C_sum = wcoswt.sum()
+            S_sum = wsinwt.sum()
+            YC = YC_hat - Y_sum * C_sum
+            YS = YS_hat - Y_sum * S_sum
+            CC = CC_hat - C_sum * C_sum
+            SS = SS_hat - S_sum * S_sum
+            CS = CS_hat - C_sum * S_sum
         D = CC * SS - CS * CS
 
         # where: y(w) = a*cos(w) + b*sin(w) + offset
@@ -252,7 +264,10 @@ def lombscargle(
     if normalize == "normalize":
         # return the normalized power (current frequency wrt the entire signal)
         YY_hat = (weights * y * y).sum()
-        YY: float = YY_hat - Y_sum * Y_sum
+        if ignore_offset:
+            YY: float = YY_hat
+        else:
+            YY: float = YY_hat - Y_sum * Y_sum
         pgram /= 2.0 * YY
         return pgram
 
