@@ -1,7 +1,7 @@
 import re
 
 import scipy
-from numpy.testing import assert_
+import scipy.version
 
 
 def test_valid_scipy_version():
@@ -15,4 +15,14 @@ def test_valid_scipy_version():
     else:
         res = re.match(version_pattern + dev_suffix, scipy.__version__)
 
-    assert_(res is not None, scipy.__version__)
+    assert res is not None
+    assert scipy.__version__
+
+
+def test_version_submodule_members():
+    """`scipy.version` may not be quite public, but we install it.
+
+    So check that we don't silently change its contents.
+    """
+    for attr in ('version', 'full_version', 'git_revision', 'release'):
+        assert hasattr(scipy.version, attr)
