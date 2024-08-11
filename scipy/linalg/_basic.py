@@ -306,7 +306,7 @@ def solve(a, b, lower=False, overwrite_a=False,
                                     trans=transposed)
         _solve_check(n, info)
         _trcon = get_lapack_funcs(('trcon'), (a1, b1))
-        rcond, info = _trcon(a1)
+        rcond, info = _trcon(a1, uplo='L' if lower else 'U')
     # Positive definite case 'posv'
     else:
         pocon, posv = get_lapack_funcs(('pocon', 'posv'),
