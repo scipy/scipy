@@ -170,8 +170,9 @@ def solve(a, b, lower=False, overwrite_a=False,
     # Flags for 1-D or N-D right-hand side
     b_is_1D = False
 
-    a1 = atleast_2d(_asarray_validated(a, check_finite=check_finite))
-    b1 = atleast_1d(_asarray_validated(b, check_finite=check_finite))
+    # check finite after determining structure
+    a1 = atleast_2d(_asarray_validated(a, check_finite=False))
+    b1 = atleast_1d(_asarray_validated(b, check_finite=False))
     a1, b1 = _ensure_dtype_cdsz(a1, b1)
     n = a1.shape[0]
 
@@ -229,7 +230,7 @@ def solve(a, b, lower=False, overwrite_a=False,
     elif assume_a == 'tridiagonal':
         lange = _lange_tridiagonal
     else:
-        lange = get_lapack_funcs('lange', (a1,))
+        lange = _lange_generic
 
     # Since the I-norm and 1-norm are the same for symmetric matrices
     # we can collect them all in this one call
@@ -246,7 +247,7 @@ def solve(a, b, lower=False, overwrite_a=False,
         trans = 0
         norm = '1'
 
-    anorm = lange(norm, a1)
+    anorm = lange(norm, a1, check_finite)
 
     info, rcond = 0, np.inf
 
@@ -317,21 +318,32 @@ def solve(a, b, lower=False, overwrite_a=False,
     return x
 
 
-def _lange_diagonal(_, a):
+def _lange_diagonal(_, a, check_finite):
     # Equivalent of dlange for diagonal matrix, assuming
     # norm is either 'I' or '1' (really just not the Frobenius norm)
-    return np.abs(np.diag(a)).max()
+    d = np.diag(a)
+    d = np.asarray_chkfinite(d) if check_finite else d
+    return np.abs(d).max()
 
 
-def _lange_tridiagonal(norm, a):
+def _lange_tridiagonal(norm, a, check_finite):
     # Equivalent of dlange for tridiagonal matrix, assuming
     # norm is either 'I' or '1'
     if norm == 'I':
         a = a.T
-    d = np.abs(np.diag(a))
-    d[1:] += np.abs(np.diag(a, 1))
-    d[:-1] += np.abs(np.diag(a, -1))
+    # Context to avoid warning before error in cases like -inf + inf
+    with np.errstate(invalid='ignore'):
+        d = np.abs(np.diag(a))
+        d[1:] += np.abs(np.diag(a, 1))
+        d[:-1] += np.abs(np.diag(a, -1))
+    d = np.asarray_chkfinite(d) if check_finite else d
     return d.max()
+
+
+def _lange_generic(norm, a, check_finite):
+    a = np.asarray_chkfinite(a) if check_finite else a
+    lange = get_lapack_funcs('lange', (a,))
+    return lange(norm, a)
 
 
 def _ensure_dtype_cdsz(*arrays):
