@@ -87,7 +87,7 @@ jobs:
         - [macos-14, macosx, arm64, accelerate, "14.0"]
         - [windows-2019, win, AMD64, "", ""]
 
-        python: [["cp310", "3.10"], ["cp311", "3.11"], ["cp312", "3.12"]]
+        python: [["cp310", "3.10"], ["cp311", "3.11"], ["cp312", "3.12"], ["cp313", "3.13"]]
         # python[0] is used to specify the python versions made by cibuildwheel
 
     env:
@@ -173,7 +173,7 @@ jobs:
           echo "CIBW_REPAIR_WHEEL_COMMAND_MACOS=$CIBW" >> "$GITHUB_ENV"
 
       - name: Build wheels
-        uses: pypa/cibuildwheel@v2.17.0
+        uses: pypa/cibuildwheel@v2.20.0
         env:
           CIBW_BUILD: ${{ matrix.python[0] }}-${{ matrix.buildplat[1] }}*
           CIBW_ARCHS: ${{ matrix.buildplat[2] }}
