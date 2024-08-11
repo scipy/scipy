@@ -1213,7 +1213,7 @@ class TestLombscargle:
         # Input parameters
         ampl = 2.
         w = 1.
-        phi = 0.5 * np.pi
+        phi = 0.12
         nin = 100
         nout = 1000
         p = 0.7  # Fraction of points to select
@@ -1225,7 +1225,7 @@ class TestLombscargle:
         t = np.linspace(0.01*np.pi, 10.*np.pi, nin)[r >= p]
 
         # Plot a sine wave for the selected times
-        y = ampl * np.sin(w*t + phi) + offset
+        y = ampl * np.cos(w*t + phi) + offset
 
         # Define the array of frequencies for which to compute the periodogram
         f = np.linspace(0.01, 10., nout)
@@ -1236,11 +1236,12 @@ class TestLombscargle:
         # Calculate Lomb-Scargle periodogram (amplitude + phase)
         pgram = lombscargle(t, y, f, normalize='amplitude')
 
-        # Remove phase
-        pgram = np.abs(pgram)
-
         # Check if amplitude is correct
-        assert_approx_equal(pgram[f_indx], ampl, significant=2)
+        assert_approx_equal(np.abs(pgram[f_indx]), ampl, significant=2)
+
+        # Check if phase is correct 
+        # (phase angle is the negative of the phase offset)
+        assert_approx_equal(-np.angle(pgram[f_indx]), phi, significant=2)
 
     def test_negative_weight(self):
         # Test that a negative weight produces an error
