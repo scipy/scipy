@@ -156,12 +156,15 @@ def lombscargle(
     if weights is None:
         weights = np.ones_like(x, dtype=np.float64)
 
-    assert x.ndim == 1
-    assert y.ndim == 1
-    assert freqs.ndim == 1
-    assert weights.ndim == 1
-
-    # validate input sizes
+    # validate input shapes
+    if x.ndim != 1:
+        raise ValueError("x array is not 1D")
+    if y.ndim != 1:
+        raise ValueError("y array is not 1D")
+    if freqs.ndim != 1:
+        raise ValueError("freqs array is not 1D")
+    if weights.ndim != 1:
+        raise ValueError("weights array is not 1D")
     if x.shape != y.shape or x.shape != weights.shape:
         raise ValueError("Input arrays do not have the same shape.")
 
