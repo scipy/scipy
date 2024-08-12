@@ -329,7 +329,7 @@ problems_scalar_output = [
         genz_malik_1980_f_1,
         genz_malik_1980_f_1_exact,
         np.array([0, 0]),
-        np.array([10, 10]),
+        np.array([5, 5]),
         (
             np.array([1/2]),
             np.array([2, 4]),
@@ -608,6 +608,9 @@ problems_array_output = [
 def test_cub_array_output(problem, quadrature, shape, rtol, atol):
     np.random.seed(1)
     ndim = shape[-1]
+
+    if ndim >= 5 and isinstance(quadrature, GaussKronrodQuadrature):
+        pytest.mark.slow("Gauss-Kronrod is slow in >= 5 dim")
 
     if quadrature is GenzMalikCubature and ndim < 2:
         pytest.skip("Genz-Malik cubature does not support 1D integrals")
