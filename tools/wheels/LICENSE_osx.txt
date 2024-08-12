@@ -1,7 +1,8 @@
 
 ----
 
-This binary distribution of SciPy also bundles the following software:
+This binary distribution of SciPy can also bundle the following software
+(depending on the build):
 
 
 Name: OpenBLAS
