@@ -71,9 +71,8 @@ def lombscargle(
     Raises
     ------
     ValueError
-        If any of the input arrays x, y, freqs, or weights are not 1D.
-    ValueError
-        If the input arrays x, y, and weights do not have the same shape.
+        If any of the input arrays x, y, freqs, or weights are not 1D. Or, if the input 
+        arrays x, y, and weights do not have the same shape.
     ZeroDivisionError
         If the freqs array contains the value 0.
     ZeroDivisionError
