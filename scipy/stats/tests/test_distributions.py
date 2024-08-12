@@ -7870,6 +7870,22 @@ def test_regression_tukey_lambda():
     assert_((p[2] == 0.0).any())
 
 
+def test_tukeylambda_support():
+    lam = np.array([-1.75, -0.5, 0.0, 0.25, 0.5, 2.0])
+    a, b = stats.tukeylambda.support(lam)
+    expected_b = np.array([np.inf, np.inf, np.inf, 4, 2, 0.5])
+    assert_equal(b, expected_b)
+    assert_equal(a, -expected_b)
+
+
+def test_tukeylambda_pdf_support_boundary():
+    # Verify that tukeylambda.pdf() doesn't generate a
+    # warning when evaluated at the bounds of the support.
+    # For lam=0.5, the support is (-2, 2).
+    p = stats.tukeylambda.pdf([-2.0, 2.0], 0.5)
+    assert_equal(p, [0.0, 0.0])
+
+
 @pytest.mark.skipif(DOCSTRINGS_STRIPPED, reason="docstrings stripped")
 def test_regression_ticket_1421():
     assert_('pdf(x, mu, loc=0, scale=1)' not in stats.poisson.__doc__)
