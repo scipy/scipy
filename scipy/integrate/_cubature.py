@@ -1,6 +1,5 @@
 import heapq
 import itertools
-import concurrent.futures
 
 from dataclasses import dataclass
 
@@ -40,7 +39,7 @@ class CubatureResult:
 
 
 def cubature(f, a, b, rule="gk21", rtol=1e-05, atol=1e-08, max_subdivisions=10000,
-             args=(), kwargs=None):
+             args=(), kwargs=None, executor=None):
     r"""
     Adaptive cubature of multidimensional array-valued function.
 
@@ -88,6 +87,9 @@ def cubature(f, a, b, rule="gk21", rtol=1e-05, atol=1e-08, max_subdivisions=1000
         Additional positional args passed to `f`, if any.
     kwargs : tuple, optional
         Additional keyword args passed to `f`, if any.
+    executor : concurrent.futures.Executor, optional
+        Executor to use to process subregions. If ``None``, then subregions will be
+        processed sequentially. See Examples for usage.
 
     Returns
     -------
@@ -122,7 +124,9 @@ def cubature(f, a, b, rule="gk21", rtol=1e-05, atol=1e-08, max_subdivisions=1000
         f(x) = cos(2*pi*r + alphas @ x)
 
     for some ``r`` and ``alphas``, and the integral is performed over the unit
-    hybercube, ``[0, 1]^7``.
+    hybercube, :math:`[0, 1]^7`. Since the integral is in a moderate number of
+    dimensions, "genz-malik" is used rather than the default "gauss-kronrod" to avoid
+    constructing a product rule with :math:`21^7 \approx 2 \times 10^9` nodes.
 
     >>> import numpy as np
     >>> from scipy.integrate import cubature
@@ -134,16 +138,37 @@ def cubature(f, a, b, rule="gk21", rtol=1e-05, atol=1e-08, max_subdivisions=1000
     ...     x_reshaped = x.reshape(npoints, *([1]*(len(alphas.shape) - 1)), ndim)
     ...     return np.cos(2*np.pi*r + np.sum(alphas_reshaped * x_reshaped, axis=-1))
     >>> np.random.seed(1)
+    >>> r, alphas = np.random.rand(2, 3), np.random.rand(2, 3, 7)
     >>> res = cubature(
     ...     f=f,
     ...     a=np.array([0, 0, 0, 0, 0, 0, 0]),
     ...     b=np.array([1, 1, 1, 1, 1, 1, 1]),
     ...     rule="genz-malik",
     ...     kwargs={
-    ...         "r": np.random.rand(2, 3),
-    ...         "alphas": np.random.rand(2, 3, 7),
+    ...         "r": r,
+    ...         "alphas": alphas,
     ...     }
     ... )
+    >>> res.estimate
+     array([[-0.61336595,  0.88388877, -0.57997549],
+            [-0.86968418, -0.86877137, -0.64602074]])
+
+    To compute in parallel, it is possible to pass a ``concurrent.futures.Executor`` as
+    `executor`:
+
+    >>> from concurrent.futures import ThreadPoolExecutor
+    >>> with ThreadPoolExecutor() as executor:
+    ...     res = cubature(
+    ...         f=f,
+    ...         a=np.array([0, 0, 0, 0, 0, 0, 0]),
+    ...         b=np.array([1, 1, 1, 1, 1, 1, 1]),
+    ...         rule="genz-malik",
+    ...         kwargs={
+    ...             "r": r,
+    ...             "alphas": alphas,
+    ...         },
+    ...         executor=executor,
+    ...      )
     >>> res.estimate
      array([[-0.61336595,  0.88388877, -0.57997549],
             [-0.86968418, -0.86877137, -0.64602074]])
@@ -154,6 +179,7 @@ def cubature(f, a, b, rule="gk21", rtol=1e-05, atol=1e-08, max_subdivisions=1000
 
     kwargs = kwargs or {}
     max_subdivisions = np.inf if max_subdivisions is None else max_subdivisions
+    executor = _MockExecutor() if executor is None else executor
 
     # Convert a and b to arrays of at least 1D
     a = np.atleast_1d(a)
@@ -204,55 +230,53 @@ def cubature(f, a, b, rule="gk21", rtol=1e-05, atol=1e-08, max_subdivisions=1000
     subdivisions = 0
     success = True
 
-    with concurrent.futures.ThreadPoolExecutor() as executor:
-        while np.any(err > atol + rtol * np.abs(est)):
-            # region_k is the region with highest estimated error
-            region_k = heapq.heappop(regions)
+    while np.any(err > atol + rtol * np.abs(est)):
+        # region_k is the region with highest estimated error
+        region_k = heapq.heappop(regions)
 
-            est_k = region_k.estimate
-            err_k = region_k.error
+        est_k = region_k.estimate
+        err_k = region_k.error
 
-            a_k, b_k = region_k.a, region_k.b
+        a_k, b_k = region_k.a, region_k.b
 
-            # Subtract the estimate of the integral and its error over this region from
-            # the current global estimates, since these will be refined in the loop over
-            # all subregions.
-            est -= est_k
-            err -= err_k
+        # Subtract the estimate of the integral and its error over this region from
+        # the current global estimates, since these will be refined in the loop over
+        # all subregions.
+        est -= est_k
+        err -= err_k
 
-            # Find all 2^ndim subregions formed by splitting region_k along each axis,
-            # e.g. for 1D integrals this splits an estimate over an interval into an
-            # estimate over two subintervals, for 3D integrals this splits an estimate
-            # over a cube into 8 subcubes.
-            #
-            # For each of the new subregions, calculate an estimate for the integral and
-            # the error there, and push these regions onto the heap for potential
-            # further subdividing.
-            executor_args = zip(
-                itertools.repeat(f),
-                itertools.repeat(rule),
-                itertools.repeat(args),
-                itertools.repeat(kwargs),
-                _subregion_coordinates(a_k, b_k),
-            )
+        # Find all 2^ndim subregions formed by splitting region_k along each axis,
+        # e.g. for 1D integrals this splits an estimate over an interval into an
+        # estimate over two subintervals, for 3D integrals this splits an estimate
+        # over a cube into 8 subcubes.
+        #
+        # For each of the new subregions, calculate an estimate for the integral and
+        # the error there, and push these regions onto the heap for potential
+        # further subdividing.
 
-            # TODO: warn about top level func
+        executor_args = zip(
+            itertools.repeat(f),
+            itertools.repeat(rule),
+            itertools.repeat(args),
+            itertools.repeat(kwargs),
+            _subregion_coordinates(a_k, b_k),
+        )
 
-            for subdivision_result in executor.map(_process_subregion, executor_args):
-                a_k_sub, b_k_sub, est_sub, err_sub = subdivision_result
+        for subdivision_result in executor.map(_process_subregion, executor_args):
+            a_k_sub, b_k_sub, est_sub, err_sub = subdivision_result
 
-                est += est_sub
-                err += err_sub
+            est += est_sub
+            err += err_sub
 
-                new_region = CubatureRegion(est_sub, err_sub, a_k_sub, b_k_sub)
+            new_region = CubatureRegion(est_sub, err_sub, a_k_sub, b_k_sub)
 
-                heapq.heappush(regions, new_region)
+            heapq.heappush(regions, new_region)
 
-            subdivisions += 1
+        subdivisions += 1
 
-            if subdivisions >= max_subdivisions:
-                success = False
-                break
+        if subdivisions >= max_subdivisions:
+            success = False
+            break
 
     status = "converged" if success else "not_converged"
 
@@ -276,6 +300,13 @@ def _process_subregion(data):
     err_sub = rule.estimate_error(f, a_k_sub, b_k_sub, args, kwargs)
 
     return a_k_sub, b_k_sub, est_sub, err_sub
+
+
+class _MockExecutor:
+    # If None is passed to the ``executor`` argument of ``cubature``, this will be used
+    # to process the regions sequentially.
+    def map(self, func, *iterables):
+        return map(func, *iterables)
 
 
 def _subregion_coordinates(a, b):

@@ -1,7 +1,9 @@
 import numpy as np
 from .common import Benchmark, safe_import
 
-from scipy.integrate import quad, cumulative_simpson
+import concurrent.futures
+
+from scipy.integrate import quad, cumulative_simpson, cubature
 
 with safe_import():
     import ctypes
@@ -130,3 +132,122 @@ class CumulativeSimpson(Benchmark):
 
     def time_multid(self) -> None:
         cumulative_simpson(self.y2, dx=self.dx)
+
+
+class CubatureSphere(Benchmark):
+    params = [
+        "gk15",
+        "gk21",
+        "genz-malik",
+    ]
+
+    def setup(self, rule):
+        self.a = np.array([0, 0, 0])
+        self.b = np.array([1, 2*np.pi, np.pi])
+        self.rule = rule
+
+        self.thread_pool_executor = concurrent.futures.ThreadPoolExecutor()
+        # Can't bench ProcessPoolExecutor due to pickling issues with the benchmarks
+        # module.
+
+    def f(self, x):
+        r = x[:, 0]
+        phi = x[:, 2]
+
+        return r**2 * np.sin(phi)
+
+    def time_plain(self, rule):
+        cubature(
+            self.f,
+            self.a,
+            self.b,
+            self.rule,
+        )
+
+    def time_threads(self, rule):
+        cubature(
+            self.f,
+            self.a,
+            self.b,
+            self.rule,
+            executor=self.thread_pool_executor,
+        )
+
+    def track_subdivisions(self, rule):
+        res = cubature(
+            self.f,
+            self.a,
+            self.b,
+            self.rule,
+        )
+        return res.subdivisions
+
+
+class CubatureHighDimOscillatory(Benchmark):
+    params = [
+        "genz-malik",
+    ]
+
+    def setup(self, rule):
+        self.ndim = 7
+        self.fdim = 10
+
+        self.rtol = 1e-11
+        self.atol = 0
+
+        self.a = np.zeros(self.ndim)
+        self.b = np.ones(self.ndim)
+        self.rule = rule
+
+        self.thread_pool_executor = concurrent.futures.ThreadPoolExecutor()
+
+    def f(self, x):
+        npoints, ndim = x.shape[0], x.shape[-1]
+
+        r = np.repeat(0.5, self.fdim)
+        alphas = np.repeat(0.1, self.fdim * ndim).reshape(self.fdim, ndim)
+        x_reshaped = x.reshape(npoints, *([1]*(len(alphas.shape) - 1)), ndim)
+
+        return np.cos(2*np.pi*r + np.sum(alphas * x_reshaped, axis=-1))
+
+    def time_plain(self, rule):
+        cubature(
+            self.f,
+            self.a,
+            self.b,
+            self.rule,
+            rtol=self.rtol,
+            atol=self.atol,
+        )
+
+    def mem_plain(self, rule):
+        return cubature(
+            self.f,
+            self.a,
+            self.b,
+            self.rule,
+            rtol=self.rtol,
+            atol=self.atol,
+        )
+
+    def time_threads(self, rule):
+        cubature(
+            self.f,
+            self.a,
+            self.b,
+            self.rule,
+            rtol=self.rtol,
+            atol=self.atol,
+            executor=self.thread_pool_executor,
+        )
+
+    def track_subdivisions(self, rule):
+        res = cubature(
+            self.f,
+            self.a,
+            self.b,
+            self.rule,
+            rtol=self.rtol,
+            atol=self.atol,
+        )
+        return res.subdivisions
