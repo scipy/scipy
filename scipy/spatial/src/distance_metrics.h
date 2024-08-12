@@ -318,6 +318,13 @@ void transform_reduce_2d_(
 struct NormaliseInput {
 
     template <typename T>
+    struct Acc {
+        Acc(): w(0), norm(0) {}
+        T w;
+        T norm;
+    };
+
+    template <typename T>
     void operator()(StridedView2D<T> x) {
         std::vector<T> rownorms_(x.shape[0]);
         T* rownorms = rownorms_.data();
@@ -338,10 +345,19 @@ struct NormaliseInput {
         std::vector<T> rownorms_(x.shape[0]);
         T* rownorms = rownorms_.data();
         transform_reduce_2d_(rownorms, x, w, [](T x, T w) INLINE_LAMBDA {
-            return w*x*x;
+            Acc<T> acc;
+            acc.w = w;
+            acc.norm = w * x * x;
+            return acc;
         },
-        [](T x) INLINE_LAMBDA {
-            return std::sqrt(x);
+        [](const Acc<T>& acc) INLINE_LAMBDA {
+            return std::sqrt(acc.norm / acc.w);
+        },
+        [](const Acc<T>& a, const Acc<T>& b) INLINE_LAMBDA {
+            Acc<T> acc;
+            acc.w = a.w + b.w;
+            acc.norm = a.norm + b.norm;
+            return acc;
         });
 
         transform_reduce_2d_(x, rownorms, [](T x, T y) INLINE_LAMBDA {
@@ -352,6 +368,13 @@ struct NormaliseInput {
 };
 
 struct CentraliseInput {
+
+    template <typename T>
+    struct Acc {
+        Acc(): w(0), sum(0) {}
+        T w;
+        T sum;
+    };
 
     template <typename T>
     void operator()(StridedView2D<T> x) {
@@ -375,7 +398,19 @@ struct CentraliseInput {
         std::vector<T> rowmeans_(x.shape[0]);
         T* rowmeans = rowmeans_.data();
         transform_reduce_2d_(rowmeans, x, w, [](T x, T w) INLINE_LAMBDA {
-            return w*x;
+            Acc<T> acc;
+            acc.w = w;
+            acc.sum = w * x;
+            return acc;
+        },
+        [](const Acc<T>& acc) INLINE_LAMBDA {
+            return acc.sum / acc.w;
+        },
+        [](const Acc<T>& a, const Acc<T>& b) INLINE_LAMBDA {
+            Acc<T> acc;
+            acc.w = a.w + b.w;
+            acc.sum = a.sum + b.sum;
+            return acc;
         });
 
         transform_reduce_2d_(x, rowmeans, [](T x, T y) INLINE_LAMBDA {
@@ -386,6 +421,13 @@ struct CentraliseInput {
 };
 
 struct CosineDistance {
+
+    template <typename T>
+    struct Acc {
+        Acc(): w(0), dist(0) {}
+        T w;
+        T dist;
+    };
 
     template <typename T>
     void operator()(StridedView2D<T> out, StridedView2D<const T> x, StridedView2D<const T> y) const {
@@ -400,10 +442,19 @@ struct CosineDistance {
     template <typename T>
     void operator()(StridedView2D<T> out, StridedView2D<const T> x, StridedView2D<const T> y, StridedView2D<const T> w) const {
         transform_reduce_2d_(out, x, y, w, [](T x, T y, T w) INLINE_LAMBDA {
-            return (w * x) * y;
+            Acc<T> acc;
+            acc.w = w;
+            acc.dist = w * x * y;
+            return acc;
         },
-        [](T cosine) INLINE_LAMBDA {
-            return std::clamp((T) 1. - cosine, (T) 0., (T) 2.0);
+        [](const Acc<T>& acc) INLINE_LAMBDA {
+            return std::clamp((T) 1. - acc.dist/acc.w, (T) 0., (T) 2.0);
+        },
+        [](const Acc<T>& a, const Acc<T>& b) INLINE_LAMBDA {
+            Acc<T> acc;
+            acc.w = a.w + b.w;
+            acc.dist = a.dist + b.dist;
+            return acc;
         });
     }
 
@@ -495,6 +546,30 @@ struct EuclideanDistance {
         },
         [](T x) { return std::sqrt(x); });
     }
+};
+
+struct SeuclideanDistance {
+
+    template <typename T>
+    void operator()(StridedView2D<T> out, StridedView2D<const T> x, StridedView2D<const T> y) const {
+        transform_reduce_2d_(out, x, y, [](T x, T y) INLINE_LAMBDA {
+            auto diff = std::abs(x - y);
+            return diff * diff;
+        },
+        [](T x) { return std::sqrt(x); });
+    }
+
+    template <typename T>
+    void operator()(StridedView2D<T> out, StridedView2D<const T> x, StridedView2D<const T> y, StridedView2D<const T> w) const {
+        transform_reduce_2d_(out, x, y, w, [](T x, T y, T w) INLINE_LAMBDA {
+            auto diff = std::abs(x - y);
+            return (diff * diff)/w;
+        },
+        [](T x) INLINE_LAMBDA {
+            return std::sqrt(x);
+        });
+    }
+
 };
 
 struct ChebyshevDistance {

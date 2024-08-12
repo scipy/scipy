@@ -1379,15 +1379,15 @@ PYBIND11_MODULE(_distance_pybind, m, py::mod_gil_not_used()) {
           },
           "x"_a, "w"_a=py::none(), "out"_a=py::none());
     m.def("pdist_seuclidean",
-          [](py::object x, py::object w, py::object out) {
-              if( w.is_none() ) {
-                return pdist(out, x, w, EuclideanDistance{},
+          [](py::object x, py::object V, py::object out) {
+              if( V.is_none() ) {
+                return pdist(out, x, V, EuclideanDistance{},
                              PreprocessingType::ComputeVariance);
               } else {
-                return pdist(out, x, w, EuclideanDistance{});
+                return pdist(out, x, V, SeuclideanDistance{});
               }
           },
-          "x"_a, "w"_a, "out"_a=py::none());
+          "x"_a, "V"_a=py::none(), "out"_a=py::none());
     m.def("pdist_minkowski",
           [](py::object x, py::object w, py::object out, double p) {
               if (p == 1.0) {
@@ -1405,7 +1405,7 @@ PYBIND11_MODULE(_distance_pybind, m, py::mod_gil_not_used()) {
           [](py::object x, py::object vi, py::object out) {
               return pdist_mahalanobis(out, x, vi);
           },
-          "x"_a, "vi"_a=py::none(), "out"_a=py::none());
+          "x"_a, "VI"_a=py::none(), "out"_a=py::none());
     m.def("pdist_cosine",
           [](py::object x, py::object w, py::object out) {
               return pdist(out, x, w, CosineDistance{}, PreprocessingType::Normalise);
@@ -1499,20 +1499,20 @@ PYBIND11_MODULE(_distance_pybind, m, py::mod_gil_not_used()) {
           },
           "x"_a, "y"_a, "w"_a=py::none(), "out"_a=py::none());
     m.def("cdist_seuclidean",
-          [](py::object x, py::object y, py::object w, py::object out) {
-              if( w.is_none() ) {
-                  return cdist(out, x, y, w, EuclideanDistance{},
+          [](py::object x, py::object y, py::object V, py::object out) {
+              if( V.is_none() ) {
+                  return cdist(out, x, y, V, EuclideanDistance{},
                                PreprocessingType::ComputeVariance);
               } else {
-                  return cdist(out, x, y, w, EuclideanDistance{});
+                  return cdist(out, x, y, V, SeuclideanDistance{});
               }
           },
-          "x"_a, "y"_a, "w"_a, "out"_a=py::none());
+          "x"_a, "y"_a, "V"_a=py::none(), "out"_a=py::none());
     m.def("cdist_mahalanobis",
           [](py::object x, py::object y, py::object vi, py::object out) {
               return cdist_mahalanobis(out, x, y, vi);
           },
-          "x"_a, "y"_a, "vi"_a=py::none(), "out"_a=py::none());
+          "x"_a, "y"_a, "VI"_a=py::none(), "out"_a=py::none());
     m.def("cdist_cosine",
           [](py::object x, py::object y, py::object w, py::object out) {
               return cdist(out, x, y, w, CosineDistance{},

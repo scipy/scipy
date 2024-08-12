@@ -1628,58 +1628,6 @@ _convert_to_bool = partial(_convert_to_type, out_type=bool)
 _distance_wrap.pdist_correlation_double_wrap = _correlation_pdist_wrap
 _distance_wrap.cdist_correlation_double_wrap = _correlation_cdist_wrap
 
-def _distance_pybind_cdist_cosine(XA, XB, *, out=None, **kwargs):
-    w = kwargs.pop('w', None)
-    if w is not None:
-        w = w / w.sum()
-
-    return _distance_pybind.cdist_cosine(XA, XB, w, out, **kwargs)
-
-def _distance_pybind_pdist_cosine(XA, *, out=None, **kwargs):
-    w = kwargs.pop('w', None)
-    if w is not None:
-        w = w / w.sum()
-
-    return _distance_pybind.pdist_cosine(XA, w, out, **kwargs)
-
-def _distance_pybind_cdist_correlation(XA, XB, *, out=None, **kwargs):
-    w = kwargs.pop('w', None)
-    if w is not None:
-        w = w / w.sum()
-
-    return _distance_pybind.cdist_correlation(XA, XB, w, out, **kwargs)
-
-def _distance_pybind_pdist_correlation(XA, *, out=None, **kwargs):
-    w = kwargs.pop('w', None)
-    if w is not None:
-        w = w / w.sum()
-
-    return _distance_pybind.pdist_correlation(XA, w, out, **kwargs)
-
-def _distance_pybind_cdist_seuclidean(XA, XB, *, out=None, **kwargs):
-    V = kwargs.pop('V', None)
-    w = None
-    if V is not None:
-        w = np.reciprocal(V)
-
-    return _distance_pybind.cdist_seuclidean(XA, XB, w, out, **kwargs)
-
-def _distance_pybind_pdist_seuclidean(X, *, out=None, **kwargs):
-    V = kwargs.pop('V', None)
-    w = None
-    if V is not None:
-        w = np.reciprocal(V)
-
-    return _distance_pybind.pdist_seuclidean(X, w, out, **kwargs)
-
-def _distance_pybind_cdist_mahalanobis(XA, XB, *, out=None, **kwargs):
-    VI = kwargs.pop('VI', None)
-    return _distance_pybind.cdist_mahalanobis(XA, XB, VI, out, **kwargs)
-
-def _distance_pybind_pdist_mahalanobis(X, *, out=None, **kwargs):
-    VI = kwargs.pop('VI', None)
-    return _distance_pybind.pdist_mahalanobis(X, VI, out, **kwargs)
-
 @dataclasses.dataclass(frozen=True)
 class CDistMetricWrapper:
     metric_name: str
@@ -1789,15 +1737,15 @@ _METRIC_INFOS = [
         canonical_name='correlation',
         aka={'correlation', 'co'},
         dist_func=correlation,
-        cdist_func=_distance_pybind_cdist_correlation,
-        pdist_func=_distance_pybind_pdist_correlation,
+        cdist_func=_distance_pybind.cdist_correlation,
+        pdist_func=_distance_pybind.pdist_correlation,
     ),
     MetricInfo(
         canonical_name='cosine',
         aka={'cosine', 'cos'},
         dist_func=cosine,
-        cdist_func=_distance_pybind_cdist_cosine,
-        pdist_func=_distance_pybind_pdist_cosine,
+        cdist_func=_distance_pybind.cdist_cosine,
+        pdist_func=_distance_pybind.pdist_cosine,
     ),
     MetricInfo(
         canonical_name='dice',
@@ -1851,8 +1799,8 @@ _METRIC_INFOS = [
         aka={'mahalanobis', 'mahal', 'mah'},
         validator=_validate_mahalanobis_kwargs,
         dist_func=mahalanobis,
-        cdist_func=_distance_pybind_cdist_mahalanobis,
-        pdist_func=_distance_pybind_pdist_mahalanobis,
+        cdist_func=_distance_pybind.cdist_mahalanobis,
+        pdist_func=_distance_pybind.pdist_mahalanobis,
     ),
     MetricInfo(
         canonical_name='minkowski',
@@ -1883,8 +1831,8 @@ _METRIC_INFOS = [
         aka={'seuclidean', 'se', 's'},
         validator=_validate_seuclidean_kwargs,
         dist_func=seuclidean,
-        cdist_func=_distance_pybind_cdist_seuclidean,
-        pdist_func=_distance_pybind_pdist_seuclidean,
+        cdist_func=_distance_pybind.cdist_seuclidean,
+        pdist_func=_distance_pybind.pdist_seuclidean,
     ),
     MetricInfo(
         canonical_name='sokalmichener',
