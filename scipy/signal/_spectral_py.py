@@ -22,7 +22,7 @@ def lombscargle(
     normalize: bool | Literal["power", "normalize", "amplitude"] = False,
     *, 
     weights: npt.NDArray | None = None,
-    ignore_offset: bool = False,
+    floating_mean: bool = True,
 ) -> npt.NDArray:
     """
     Compute the generalized Lomb-Scargle periodogram.
@@ -60,8 +60,9 @@ def lombscargle(
         Compute normalized or complex (amplitude + phase) periodogram.
     weights : array_like, optional
         Weights for each sample. Weights must be nonnegative.
-    ignore_offset : bool, optional
-        Force offset = 0 for all frequencies.
+    floating_mean : bool, optional
+        Calculate the best-fit offset for each frequency independently (True), 
+        or assume offset=0 for all frequencies (False).
 
     Returns
     -------
@@ -236,15 +237,8 @@ def lombscargle(
         SS_hat = 1 - CC_hat  # trig identity: S^2 = 1 - C^2
         CS_hat = (wcoswt * sinwt).sum()
 
-        if ignore_offset:
-            # assume offset=0
-            YC = YC_hat
-            YS = YS_hat
-            CC = CC_hat
-            SS = SS_hat
-            CS = CS_hat
-        else:
-            # calculate best fit given any unknown offset (default)
+        if floating_mean:
+            # calculate best-fit offset for each frequency independently (default)
             C_sum = wcoswt.sum()
             S_sum = wsinwt.sum()
             YC = YC_hat - Y_sum * C_sum
@@ -252,6 +246,14 @@ def lombscargle(
             CC = CC_hat - C_sum * C_sum
             SS = SS_hat - S_sum * S_sum
             CS = CS_hat - C_sum * S_sum
+        else:
+            # assume offset=0 for all frequencies
+            YC = YC_hat
+            YS = YS_hat
+            CC = CC_hat
+            SS = SS_hat
+            CS = CS_hat
+            
         D = CC * SS - CS * CS
 
         # where: y(w) = a*cos(w) + b*sin(w) + offset
@@ -265,10 +267,10 @@ def lombscargle(
     if normalize == "normalize":
         # return the normalized power (current frequency wrt the entire signal)
         YY_hat = (weights * y * y).sum()
-        if ignore_offset:
-            YY: float = YY_hat
-        else:
+        if floating_mean:
             YY: float = YY_hat - Y_sum * Y_sum
+        else:
+            YY: float = YY_hat
         pgram /= 2.0 * YY
         return pgram
 
