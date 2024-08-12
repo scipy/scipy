@@ -57,6 +57,12 @@ class AAA:
     max_terms : int, optional
         Maximum number of terms in the barycentric representation, defaults to ``100``.
         Must be greater than or equal to one.
+    cleanup : bool, optional
+        Automatic removal of Froissart doublets, defaults to ``True``.
+    cleanup_tol : float, optional
+        Poles with residues less than this number times the geometric mean
+        of `values` times the minimum distance to `points` are deemed spurious by the
+        cleanup procedure, defaults to 1e-13.
 
     Attributes
     ----------
@@ -187,7 +193,8 @@ class AAA:
     >>> ax.legend()
     >>> plt.show()
     """
-    def __init__(self, points, values, *, rtol=None, max_terms=100):
+    def __init__(self, points, values, *, rtol=None, max_terms=100, cleanup=True,
+                 cleanup_tol=1e-13):
         # input validation
         z = np.asarray(points)
         f = np.asarray(values)
@@ -213,14 +220,17 @@ class AAA:
         z, uni = np.unique(z, return_index=True)
         f = f[uni]
 
-        self._compute_weights(f, z, rtol, max_terms)
+        self._compute_weights(z, f, rtol, max_terms)
 
         # only compute once
         self._poles = None
         self._residues = None
         self._roots = None
 
-    def _compute_weights(self, f, z, rtol, max_terms):
+        if cleanup:
+            self.clean_up(cleanup_tol)
+
+    def _compute_weights(self, z, f, rtol, max_terms):
         # Initialization for AAA iteration
         M = np.size(z)
         mask = np.ones(M, dtype=np.bool_)
@@ -309,6 +319,71 @@ class AAA:
         self.support_values = fj[i_non_zero]
         self.weights = wj[i_non_zero]
         self.errors = errors[: m + 1]
+        self._points = z
+        self._values = f
+
+    def clean_up(self, cleanup_tol=1e-13):
+        """Automatic removal of Froissart doublets.
+
+        Parameters
+        ----------
+        cleanup_tol : float, optional
+            Poles with residues less than this number times the geometric mean
+            of `values` times the minimum distance to `points` are deemed spurious by
+            the cleanup procedure, defaults to 1e-13.
+        """
+        # Find negligible residues
+        if any(self._values):
+            geom_mean_abs_f = scipy.stats.gmean(
+                np.abs(self._values[np.nonzero(self._values)])
+            )
+        else:
+            geom_mean_abs_f = 0
+
+        Z_distances = np.min(
+            np.abs(np.subtract.outer(self.poles(), self._points)), axis=1
+        )
+
+        ii = np.flatnonzero(
+            np.abs(self.residues()) / Z_distances < cleanup_tol * geom_mean_abs_f
+        )
+
+        ni = ii.size
+        if ni == 0:
+            return
+
+        warnings.warn(f"{ni} Froissart doublets detected.", RuntimeWarning,
+                        stacklevel=2)
+
+        # For each spurious pole find and remove closest support point:
+        closest_spt_point = np.argmin(
+            np.abs(np.subtract.outer(self.support_points, self.poles()[ii])), axis=0
+        )
+        self.support_points = np.delete(self.support_points, closest_spt_point)
+        self.support_values = np.delete(self.support_values, closest_spt_point)
+
+        # Remove support points z from sample set
+        mask = np.logical_and.reduce(
+            np.not_equal.outer(self._points, self.support_points), axis=1
+        )
+        f = self._values[mask]
+        z = self._points[mask]
+
+        m = self.support_points.size
+
+        # Cauchy matrix
+        C = 1 / np.subtract.outer(z, self.support_points)
+        # Loewner matrix
+        A = (C.T * f).T - C * self.support_values
+
+        # Solve least-squares problem to obtain weights
+        _, _, V = scipy.linalg.svd(A, check_finite=False)
+        self.weights = np.conj(V[m - 1,:])
+
+        # reset roots, poles, residues
+        self._poles = None
+        self._residues = None
+        self._roots = None
 
     def __call__(self, z):
         """Evaluate the rational approximation at given values.
