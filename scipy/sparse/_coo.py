@@ -1375,43 +1375,72 @@ class _coo_base(_data_matrix, _minmax_mixin):
         return result
 
 
-    elif isdense(other) or issparse(other):
-        if self.shape != other.shape:
-            try:
-                # This will raise an error if the shapes are not broadcastable
-                np.broadcast_shapes(self.shape, other.shape)
-            except ValueError:
-                raise ValueError("Batch dimensions are not broadcastable for comparison")
-            
-            # Broadcasting the arrays if they have different shapes
-            # that are compatible for broadcasting
-            broadcast_shape = np.broadcast_shapes(self.shape, other.shape)
-            self = self.broadcast_to(broadcast_shape)
-            if isdense(other):
-                other = np.broadcast_to(other, broadcast_shape)
-            else:
-                other = other.broadcast_to(broadcast_shape)
-
-        result_shape = self.shape
-
-        # reshaping n-D arrays to 2-D arrays
-        self = self.reshape(1,-1)
-        other = other.reshape(1,-1)
+    def _maximum_minimum_coo(self, other, op_name):
+        if self.ndim < 3 and ((issparse(other) and other.ndim < 3) \
+                          or (not issparse(other) and len(np.asarray(other).shape) < 3)):
+            return  getattr(_data_matrix, op_name)(self.tocsr(), other)
         
-        # routing via 2-D CSR
-        result = getattr(_data_matrix, op_name)(self.tocsr(), other)
+         # Scalar other
+        if isscalarlike(other):
+            result_shape = self.shape
+            self = self.reshape(1, -1)
+            result =  getattr(_data_matrix, op_name)(self.tocsr(), other)
+            # convert to COO
+            if isinstance(result, sparray):
+                result = result.tocoo()
+            # reshape back to n-D
+            if isinstance(result, (np.ndarray, sparray)):
+                result = result.reshape(result_shape)
+            return result
 
-        if isinstance(result, sparray):
-            result = result.tocoo()
+        elif isdense(other) or issparse(other):
+            if self.shape != other.shape:
+                try:
+                    # This will raise an error if the shapes are not broadcastable
+                    np.broadcast_shapes(self.shape, other.shape)
+                except ValueError:
+                    raise ValueError("inconsistent shapes")
+                
+                # Broadcasting the arrays if they have different shapes
+                # that are compatible for broadcasting
+                broadcast_shape = np.broadcast_shapes(self.shape, other.shape)
+                self = self.broadcast_to(broadcast_shape)
+                if isdense(other):
+                    other = np.broadcast_to(other, broadcast_shape)
+                else:
+                    other = other.broadcast_to(broadcast_shape)
+
+            result_shape = self.shape
+
+            # reshaping n-D arrays to 2-D arrays
+            self = self.reshape(1,-1)
+            other = other.reshape(1,-1)
             
-        # reshaping back to n-D if output is 2-D boolean array
-        if isinstance(result, (np.ndarray, sparray)):
-            result = result.reshape(result_shape)
+            # routing via 2-D CSR
+            result =  getattr(_data_matrix, op_name)(self.tocsr(), other)
 
-        return result
-    
-    else:
-        return NotImplemented
+            if isinstance(result, sparray):
+                result = result.tocoo()
+
+            # reshaping back to n-D if output is 2-D boolean array
+            if isinstance(result, (np.ndarray, sparray)):
+                result = result.reshape(result_shape)
+
+            return result
+        
+        else:
+            return NotImplemented
+
+
+    def maximum(self, other):
+        """Element-wise maximum between this and another array/matrix."""
+        return self._maximum_minimum_coo(other, 'maximum')
+       
+
+    def minimum(self, other):
+        """Element-wise minimum between this and another array/matrix."""
+        return self._maximum_minimum_coo(other, 'minimum')
+
 
 def _block_diag(self):
     """

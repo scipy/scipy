@@ -655,7 +655,20 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         elif isdense(other):
             return npop(self.todense(), other)
         elif issparse(other):
-            return self._binopt(other, op_name)
+            both_are_1d = self.ndim == 1 and other.ndim == 1
+            result_shape_if_1d = self.shape[0]
+            sM, sN = self._shape_as_2d
+            oM, oN = other._shape_as_2d
+            self = self.reshape(sM, sN).tocsr()
+            other = other.reshape(oM, oN).tocsr()
+            bshape = np.broadcast_shapes(self.shape, other.shape)
+            self = self.broadcast_to(bshape)
+            other = other.broadcast_to(bshape)
+
+            result = self._binopt(other, op_name)
+            if both_are_1d:
+                result = result.reshape(result_shape_if_1d).tocsr()
+            return result
         else:
             raise ValueError("Operands not compatible.")
 
