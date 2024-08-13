@@ -323,7 +323,7 @@ class AAA:
         self._values = f
 
     def clean_up(self, cleanup_tol=1e-13):
-        """Automatic removal of Froissart doublets.
+        """Automatic removal of Froissart doublets (spurious pole-zero pairs).
 
         Parameters
         ----------
