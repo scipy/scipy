@@ -448,6 +448,7 @@ jobs:
           python3.11 -m pytest --pyargs scipy.linalg
           popd
 
+  #################################################################################
   free-threaded:
     needs: get_commit_message
     runs-on: ubuntu-latest
@@ -494,6 +495,7 @@ jobs:
         PKG_CONFIG_PATH="$PWD" pip install . -vv --no-build-isolation
         pushd $RUNNER_TEMP
         PYTHON_GIL=0 python -m pytest --pyargs scipy -n2 --durations=10
+
   #################################################################################
   clang-17-build-only:
     # Purpose is to check for warnings in builds with latest clang.
@@ -531,3 +533,30 @@ jobs:
         run: |
           # specify which compilers to use using environment variables
           CC=clang-17 CXX=clang++-17 FC=gfortran python -m build -wnx -Csetup-args=--werror
+
+  #################################################################################
+  meson-open-blas:
+    name: OpenBLAS meson build
+    runs-on: ubuntu-22.04
+    steps:
+    - uses: actions/checkout@v4.1.1
+      with:
+        submodules: recursive
+    - name: Setup Conda
+      uses: conda-incubator/setup-miniconda@v3
+      with:
+        python-version: '3.10'
+        channels: conda-forge
+        activate-environment: scipy-dev
+        miniforge-variant: Mambaforge
+        miniforge-version: latest
+        use-mamba: true
+    - name: Update Conda Environment
+      run: |
+        mamba env update -n scipy-dev -f environment.yml
+    - name: Build and run tests
+      shell: bash -l {0}
+      run: |
+        conda activate scipy-dev
+        python dev.py build --with-meson-openblas
+        python dev.py test -j2

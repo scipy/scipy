@@ -26,3 +26,7 @@
 [submodule "scipy/_lib/cobyqa"]
 	path = scipy/_lib/cobyqa
 	url = https://github.com/cobyqa/cobyqa.git
+[submodule "scipy/_lib/OpenBLAS"]
+	path = scipy/_lib/OpenBLAS
+	url = https://github.com/HaoZeke/OpenBLAS.git
+	branch = mesonBasic

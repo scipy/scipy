@@ -433,6 +433,10 @@ class Build(Task):
         help=("If set, use `Accelerate` as the BLAS/LAPACK to build against."
               " Takes precedence over -with-scipy-openblas (macOS only)")
     )
+    with_meson_openblas = Option(
+        ['--with-meson-openblas'], default=False, is_flag=True,
+        help=("If set, build and use meson OpenBLAS submodule.")
+    )
     tags = Option(
         ['--tags'], default="runtime,python-runtime,tests,devel",
         show_default=True, help="Install tags to be used by meson."
@@ -508,9 +512,29 @@ class Build(Task):
             cmd += ['-Db_sanitize=address,undefined']
         if args.setup_args:
             cmd += [str(arg) for arg in args.setup_args]
+
         if args.with_accelerate:
             # on a mac you probably want to use accelerate over scipy_openblas
             cmd += ["-Dblas=accelerate"]
+        elif args.with_meson_openblas:
+            cmd += ["-Dblas=meson-openblas", "-Dlapack=meson-lapack"]
+            # build and install meson OpenBLAS
+            for stage, path, command in [
+                ("setup", "", ["meson", "setup", "build", "--reconfigure",
+                               "--buildtype", "release"]),
+                ("compile", "build", ["meson", "install", "--destdir",
+                                      "../build-install"]),
+            ]:
+                ret = subprocess.call(command, cwd=f"./scipy/_lib/OpenBLAS/{path}")
+                if ret == 0:
+                    print(f"OpenBLAS meson {stage} OK")
+                else:
+                    print(f"OpenBLAS meson {stage} failed!")
+                    sys.exit(1)
+            env['PKG_CONFIG_PATH'] = os.pathsep.join(
+                [os.getcwd() + '/scipy/_lib/OpenBLAS/build-install/pkgconfig',
+                 env.get('PKG_CONFIG_PATH', '')]
+            )
         elif args.with_scipy_openblas:
             cls.configure_scipy_openblas()
             env['PKG_CONFIG_PATH'] = os.pathsep.join([
