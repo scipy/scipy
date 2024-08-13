@@ -941,3 +941,36 @@ def test_boolean_comparisons_with_scalar():
         assert_array_equal((a<=1).toarray(), a.toarray()<=1)
         assert_array_equal((a>0).toarray(), a.toarray()>0)
         assert_array_equal((a<0).toarray(), a.toarray()<0)
+
+
+broadcast_add_sub_shapes = [
+    ((3,4), (3,4)), ((1,4), (2,1)), ((3,5), (1,)), ((1,), (7,8)),
+    ((3,4,6), (3,4,6)), ((4,3), (2,1,3)), ((2,1,3), (4,3)),
+    ((3,5,4), (1,)), ((1,), (7,8,4)), ((16,1,6), (2,6)), ((3,7,5), (3,7,5)),
+    ((16,2,6), (1,2,6)), ((7,8), (5,7,8)), ((4,5,1), (5,1)),
+    ((6,8,3), (4,1,1,3)), ((1,1,1), (3,4,2)), ((3,4,2), (1,1,1,1,1)),
+]
+@pytest.mark.parametrize(('a_shape', 'b_shape'), broadcast_add_sub_shapes)
+def test_add_broadcasting(a_shape, b_shape):
+    rng = np.random.default_rng(23409823)
+    a = random_array(a_shape, density=0.6, random_state=rng, dtype=int)
+    b = random_array(b_shape, density=0.6, random_state=rng, dtype=int)
+
+    res = a + b
+    exp = np.add(a.toarray(), b.toarray())
+    assert_equal(res.toarray(), exp)
+    # res = a + b.toarray()
+    # assert_equal(res, exp)
+
+@pytest.mark.parametrize(('a_shape', 'b_shape'), broadcast_add_sub_shapes)
+def test_sub_broadcasting(a_shape, b_shape):
+    rng = np.random.default_rng(23409823)
+    a = random_array(a_shape, density=0.6, random_state=rng, dtype=int)
+    b = random_array(b_shape, density=0.6, random_state=rng, dtype=int)
+
+    res = a - b
+    exp = np.subtract(a.toarray(), b.toarray())
+    assert_equal(res.toarray(), exp)
+
+    res = a - b.toarray()
+    assert_equal(res, exp)
