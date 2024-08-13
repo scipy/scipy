@@ -1236,10 +1236,10 @@ class TestLombscargle:
                                    floating_mean=False)
 
         # check if disabling floating_mean works as expected
-        # nearly-zero for no offset
-        assert_approx_equal(pgram[0], 0.0018, significant=2)
-        # significant value with offset
-        assert_approx_equal(pgram_offset[0], 0.68, significant=2)
+        # nearly-zero for no offset, exact value will change based on seed
+        assert_(pgram[0] < 0.01) 
+        # significant value with offset, exact value will change based on seed
+        assert_(pgram_offset[0] > 0.5)
     
     def test_amplitude_is_correct(self):
         # Verify that the amplitude is correct (when normalize='amplitude')
