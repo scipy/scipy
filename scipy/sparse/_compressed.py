@@ -262,6 +262,12 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             # TODO sparse broadcasting
             if self.format != other.format:
                 other = other.asformat(self.format)
+            
+            if self.shape == other.shape:
+                res = self._binopt(other, '_ne_')
+                all_true = self.__class__(np.ones(res.shape, dtype=np.bool_))
+                return all_true - res
+            
             both_are_1d = self.ndim == 1 and other.ndim == 1
             result_shape_if_1d = self.shape[0]
             sM, sN = self._shape_as_2d
@@ -306,7 +312,9 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         elif issparse(other):
             if self.format != other.format:
                 other = other.asformat(self.format)
-
+            if self.shape == other.shape:
+                res = self._binopt(other, '_ne_')
+                return res
             both_are_1d = self.ndim == 1 and other.ndim == 1
             result_shape_if_1d = self.shape[0]
             sM, sN = self._shape_as_2d
@@ -344,6 +352,19 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         elif issparse(other):
             if self.format != other.format:
                 other = other.asformat(self.format)
+
+            if self.shape == other.shape:
+                if op_name not in ('_ge_', '_le_'):
+                    return self._binopt(other, op_name)
+
+                warn("Comparing sparse matrices using >= and <= is inefficient, "
+                    "using <, >, or !=, instead.",
+                    SparseEfficiencyWarning, stacklevel=3)
+                
+                res = self._binopt(other, '_gt_' if op_name == '_le_' else '_lt_')
+                all_true = self.__class__(np.ones(res.shape, dtype=np.bool_))
+                return all_true - res
+            
             both_are_1d = self.ndim == 1 and other.ndim == 1
             result_shape_if_1d = self.shape[0]
             sM, sN = self._shape_as_2d
@@ -409,10 +430,41 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         return self._container(result, copy=False)
 
     def _add_sparse(self, other):
-        return self._binopt(other, '_plus_')
+        if self.shape == other.shape:
+            return self._binopt(other, '_plus_')
+        both_are_1d = self.ndim == 1 and other.ndim == 1
+        result_shape_if_1d = self.shape[0]
+        sM, sN = self._shape_as_2d
+        oM, oN = other._shape_as_2d
+        self = self.reshape(sM, sN).tocsr()
+        other = other.reshape(oM, oN).tocsr()
+        bshape = np.broadcast_shapes(self.shape, other.shape)
+        self = self.broadcast_to(bshape)
+        other = other.broadcast_to(bshape)
+
+        result = self._binopt(other, '_plus_')
+        if both_are_1d:
+            result = result.reshape(result_shape_if_1d).tocsr()
+        return result
 
     def _sub_sparse(self, other):
-        return self._binopt(other, '_minus_')
+        if self.shape == other.shape:
+            return self._binopt(other, '_minus_')
+        both_are_1d = self.ndim == 1 and other.ndim == 1
+        result_shape_if_1d = self.shape[0]
+        sM, sN = self._shape_as_2d
+        oM, oN = other._shape_as_2d
+        self = self.reshape(sM, sN).tocsr()
+        other = other.reshape(oM, oN).tocsr()
+        bshape = np.broadcast_shapes(self.shape, other.shape)
+        self = self.broadcast_to(bshape)
+        other = other.broadcast_to(bshape)
+
+        result = self._binopt(other, '_minus_')
+        if both_are_1d:
+            result = result.reshape(result_shape_if_1d).tocsr()
+        return result
+
 
     def multiply(self, other):
         """Point-wise multiplication by array/matrix, vector, or scalar."""
@@ -655,6 +707,9 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         elif isdense(other):
             return npop(self.todense(), other)
         elif issparse(other):
+            if self.shape == other.shape:
+                result = self._binopt(other, op_name)
+            
             both_are_1d = self.ndim == 1 and other.ndim == 1
             result_shape_if_1d = self.shape[0]
             sM, sN = self._shape_as_2d
@@ -1422,10 +1477,23 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         """
         Divide this matrix by a second sparse matrix.
         """
-        if other.shape != self.shape:
-            raise ValueError('inconsistent shapes')
+        if self.shape == other.shape:
+            r = self._binopt(other, '_eldiv_')
+        else:
+            both_are_1d = self.ndim == 1 and other.ndim == 1
+            result_shape_if_1d = self.shape[0]
+            sM, sN = self._shape_as_2d
+            oM, oN = other._shape_as_2d
+            self = self.reshape(sM, sN).tocsr()
+            other = other.reshape(oM, oN).tocsr()
+            bshape = np.broadcast_shapes(self.shape, other.shape)
+            self = self.broadcast_to(bshape)
+            other = other.broadcast_to(bshape)
+        
+            r = self._binopt(other, '_eldiv_')
 
-        r = self._binopt(other, '_eldiv_')
+            if both_are_1d:
+                r = r.reshape(result_shape_if_1d).tocsr()
 
         if np.issubdtype(r.dtype, np.inexact):
             # Eldiv leaves entries outside the combined sparsity
