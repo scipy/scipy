@@ -180,16 +180,33 @@ def siegelslopes(y, x, method):
     return medslope, medinter
 
 
-# pythran export _poisson_binom_pmfs(float64[:, :], int64, int64)
-def _poisson_binom_pmfs(args, n, m):
-    base_shape = (m,)
-    pmf = np.ones((1,) + base_shape, dtype=np.float64)
+# pythran export _poisson_binom_pmf(float64[:], int64)
+def _poisson_binom_pmf(p, n):
+    pmf = np.ones((1,), dtype=np.float64)
     for i in range(1, n + 1):
-        p_i = args[i - 1]
-        pmf_i = np.ones((i + 1,) + base_shape, dtype=np.float64)
+        p_i = p[i - 1]
+        pmf_i = np.ones((i + 1,), dtype=np.float64)
         pmf_i[0] = (1 - p_i) * pmf[0]
         pmf_i[i] = p_i * pmf[i - 1]
         for j in range(1, (i - 1) + 1):
             pmf_i[j] = p_i * pmf[j - 1] + (1 - p_i) * pmf[j]
         pmf = pmf_i
     return pmf
+
+
+# pythran export _poisson_binom(int64[:], float64[:, :], str)
+def _poisson_binom(k, args, tp):
+    # PDF/CDF of Poisson binomial distribution
+    # k - arguments, shape (m,)
+    # args - shape parameters, shape (n, m)
+    # kind - {'pdf', 'cdf'}
+    n, m = args.shape  # number of shapes, batch size
+    cache = {}
+    out = np.zeros(m, dtype=np.float64)
+    for i in range(m):
+        p = tuple(args[:, i])
+        if p not in cache:
+            pmf = _poisson_binom_pmf(p, n)
+            cache[p] = np.cumsum(pmf) if tp=='cdf' else pmf
+        out[i] = cache[p][k[i]]
+    return out

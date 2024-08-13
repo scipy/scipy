@@ -20,7 +20,7 @@ from ._distn_infrastructure import (rv_discrete, get_distribution_names,
 from ._biasedurn import (_PyFishersNCHypergeometric,
                          _PyWalleniusNCHypergeometric,
                          _PyStochasticLib3)
-from ._stats_pythran import _poisson_binom_pmfs
+from ._stats_pythran import _poisson_binom
 
 import scipy.special._ufuncs as scu
 
@@ -1600,17 +1600,16 @@ class poisson_binom_gen(rv_discrete):
         return 0, len(args)
 
     def _pmf(self, k, *args):
-        k = np.asarray(k, dtype=int)
-        args = np.stack(args).reshape(len(args), -1)
-        pmfs = _poisson_binom_pmfs(args, *args.shape)
-        return np.take_along_axis(pmfs, k[np.newaxis, :], axis=0)
+        k = np.atleast_1d(k).astype(np.int64)
+        k, *args = np.broadcast_arrays(k, *args)
+        args = np.stack(args, dtype=np.float64)
+        return _poisson_binom(k, args, 'pmf')
 
     def _cdf(self, k, *args):
-        k = np.atleast_1d(k).astype(int)
-        args = np.stack(args).reshape(len(args), -1)
-        pmfs = _poisson_binom_pmfs(args, *args.shape)
-        cdfs = np.cumsum(pmfs, axis=0)
-        return np.take_along_axis(cdfs, k[np.newaxis, ...], axis=0)
+        k = np.atleast_1d(k).astype(np.int64)
+        k, *args = np.broadcast_arrays(k, *args)
+        args = np.stack(args, dtype=np.float64)
+        return _poisson_binom(k, args, 'cdf')
 
     def _stats(self, *args, **kwds):
         p = np.stack(args, axis=0)
