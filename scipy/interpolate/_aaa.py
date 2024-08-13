@@ -344,9 +344,10 @@ class AAA:
             np.abs(np.subtract.outer(self.poles(), self._points)), axis=1
         )
 
-        ii = np.flatnonzero(
-            np.abs(self.residues()) / Z_distances < cleanup_tol * geom_mean_abs_f
-        )
+        with np.errstate(divide="ignore"):
+            ii = np.flatnonzero(
+                np.abs(self.residues()) / Z_distances < cleanup_tol * geom_mean_abs_f
+            )
 
         ni = ii.size
         if ni == 0:
