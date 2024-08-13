@@ -323,7 +323,7 @@ class AAA:
         self._values = f
 
     def clean_up(self, cleanup_tol=1e-13):
-        """Automatic removal of Froissart doublets (spurious pole-zero pairs).
+        """Automatic removal of Froissart doublets.
 
         Parameters
         ----------
@@ -375,7 +375,7 @@ class AAA:
         # Cauchy matrix
         C = 1 / np.subtract.outer(z, self.support_points)
         # Loewner matrix
-        A = (C.T * f).T - C * self.support_values
+        A = f[:, np.newaxis] * C - C * self.support_values
 
         # Solve least-squares problem to obtain weights
         _, _, V = scipy.linalg.svd(A, check_finite=False)
