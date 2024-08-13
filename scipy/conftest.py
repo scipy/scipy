@@ -435,5 +435,11 @@ if HAVE_SCPDT:
 
     # tutorials
     dt_config.pseudocode = set(['integrate.nquad(func,'])
-    dt_config.local_resources = {'io.rst': ["octave_a.mat", "octave_cells.mat", "octave_struct.mat"]}
+    dt_config.local_resources = {
+        'io.rst': [
+            "octave_a.mat",
+            "octave_cells.mat",
+            "octave_struct.mat"
+        ]
+    }
 ############################################################################
