@@ -52,7 +52,7 @@ tools/refguide_check.py  @ev-br
 tools/  @larsoner @rgommers
 pytest.ini  @larsoner
 .coveragerc  @larsoner
-benchmarks/asv.conf.json  @larsoner
+benchmarks/asv.conf.jsonc  @larsoner
 
 # CI config
 .circleci/  @larsoner
