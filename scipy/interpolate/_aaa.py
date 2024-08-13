@@ -28,6 +28,7 @@ import operator
 
 import numpy as np
 import scipy
+import scipy.integrate
 
 
 __all__ = ["AAA"]
@@ -416,3 +417,13 @@ class AAA:
             zer = scipy.linalg.eigvals(E, B)
             self._roots = zer[np.isfinite(zer)]
         return self._roots
+
+    def integrate(self, a, b):
+        def quad_weight_intergrand(x, weight, support_point):
+            return (weight/(x - support_point))/np.sum(self.weights/(x-self.support_points))
+        
+        weights = np.array(
+            [scipy.integrate.quad(quad_weight_intergrand, a, b, args=(i, j))[0]
+             for i, j in zip(self.weights, self.support_points)]
+        )
+        return  weights @ self.support_values
