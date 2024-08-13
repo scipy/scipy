@@ -180,9 +180,10 @@ def siegelslopes(y, x, method):
     return medslope, medinter
 
 
-# pythran export _poisson_binom_pmf(float64[:], int64)
-def _poisson_binom_pmf(p, n):
+# pythran export _poisson_binom_pmf(float64[:])
+def _poisson_binom_pmf(p):
     # implemented from poisson_binom [2] Equation 2
+    n = p.shape[0]
     pmf = np.zeros(n + 1, dtype=np.float64)
     pmf[:2] = 1 - p[0], p[0]
     for i in range(1, n):
@@ -204,7 +205,7 @@ def _poisson_binom(k, args, tp):
     for i in range(m):
         p = tuple(args[:, i])
         if p not in cache:
-            pmf = _poisson_binom_pmf(p, n)
+            pmf = _poisson_binom_pmf(p)
             cache[p] = np.cumsum(pmf) if tp=='cdf' else pmf
         out[i] = cache[p][k[i]]
     return out
