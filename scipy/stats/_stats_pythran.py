@@ -182,15 +182,13 @@ def siegelslopes(y, x, method):
 
 # pythran export _poisson_binom_pmf(float64[:], int64)
 def _poisson_binom_pmf(p, n):
-    pmf = np.ones((1,), dtype=np.float64)
-    for i in range(1, n + 1):
-        p_i = p[i - 1]
-        pmf_i = np.ones((i + 1,), dtype=np.float64)
-        pmf_i[0] = (1 - p_i) * pmf[0]
-        pmf_i[i] = p_i * pmf[i - 1]
-        for j in range(1, (i - 1) + 1):
-            pmf_i[j] = p_i * pmf[j - 1] + (1 - p_i) * pmf[j]
-        pmf = pmf_i
+    # implemented from poisson_binom [2] Equation 2
+    pmf = np.zeros(n + 1, dtype=np.float64)
+    pmf[:2] = 1 - p[0], p[0]
+    for i in range(1, n):
+        tmp = pmf[:i+1] * p[i]
+        pmf[:i+1] *= (1 - p[i])
+        pmf[1:i+2] += tmp
     return pmf
 
 
