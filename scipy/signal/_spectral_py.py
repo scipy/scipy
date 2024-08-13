@@ -119,7 +119,6 @@ def lombscargle(
     Examples
     --------
     >>> import numpy as np
-    >>> import matplotlib.pyplot as plt
     >>> rng = np.random.default_rng()
 
     First define some input parameters for the signal:
@@ -151,24 +150,26 @@ def lombscargle(
 
     Now make a plot of the input data:
 
-    >>> fig, (ax_t, ax_power, ax_norm, ax_amp) = plt.subplots(4, 1, constrained_layout=True)
+    >>> import matplotlib.pyplot as plt
+    >>> fig, (ax_t, ax_p, ax_n, ax_a) = plt.subplots(4, 1, figsize=(5, 5))
     >>> ax_t.plot(x, y, 'b+')
     >>> ax_t.set_xlabel('Time [s]')
 
     Then plot the periodogram for each of the normalize options:
 
-    >>> ax_power.plot(w, pgram_power)
-    >>> ax_power.set_xlabel('Angular frequency [rad/s]')
-    >>> ax_power.set_ylabel('Power')
+    >>> ax_p.plot(w, pgram_power)
+    >>> ax_p.set_xlabel('Angular frequency [rad/s]')
+    >>> ax_p.set_ylabel('Power')
 
-    >>> ax_norm.plot(w, pgram_norm)
-    >>> ax_norm.set_xlabel('Angular frequency [rad/s]')
-    >>> ax_norm.set_ylabel('Normalized')
+    >>> ax_n.plot(w, pgram_norm)
+    >>> ax_n.set_xlabel('Angular frequency [rad/s]')
+    >>> ax_n.set_ylabel('Normalized')
 
-    >>> ax_amp.plot(w, np.abs(pgram_amp))
-    >>> ax_amp.set_xlabel('Angular frequency [rad/s]')
-    >>> ax_amp.set_ylabel('Amplitude')
+    >>> ax_a.plot(w, np.abs(pgram_amp))
+    >>> ax_a.set_xlabel('Angular frequency [rad/s]')
+    >>> ax_a.set_ylabel('Amplitude')
 
+    >>> plt.tight_layout()
     >>> plt.show()
 
     """
