@@ -708,7 +708,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             return npop(self.todense(), other)
         elif issparse(other):
             if self.shape == other.shape:
-                result = self._binopt(other, op_name)
+                return self._binopt(other, op_name)
             
             both_are_1d = self.ndim == 1 and other.ndim == 1
             result_shape_if_1d = self.shape[0]
