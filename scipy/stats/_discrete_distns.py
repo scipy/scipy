@@ -1607,13 +1607,13 @@ class poisson_binom_gen(rv_discrete):
     def _pmf(self, k, *args):
         k = np.atleast_1d(k).astype(np.int64)
         k, *args = np.broadcast_arrays(k, *args)
-        args = np.asarray(args, dtype=np.float64, copy=True)
+        args = np.asarray(args, dtype=np.float64)
         return _poisson_binom(k, args, 'pmf')
 
     def _cdf(self, k, *args):
         k = np.atleast_1d(k).astype(np.int64)
         k, *args = np.broadcast_arrays(k, *args)
-        args = np.asarray(args, dtype=np.float64, copy=True)
+        args = np.asarray(args, dtype=np.float64)
         return _poisson_binom(k, args, 'cdf')
 
     def _stats(self, *args, **kwds):
