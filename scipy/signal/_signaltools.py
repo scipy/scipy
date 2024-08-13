@@ -2286,8 +2286,12 @@ def deconvolve(signal, divisor):
 
 def hilbert(x, N=None, axis=-1):
     """
-    Compute the analytic signal, using the Hilbert transform.
-
+    Compute the analytic signal, by filtering out the negative frequencies of
+    the input signal.
+    
+    See the Notes section for the derivation and
+    for obtaining the Hilbert transformed signal.
+    
     The transformation is done along the last axis by default.
 
     Parameters
