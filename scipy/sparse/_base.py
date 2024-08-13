@@ -499,6 +499,10 @@ class _spbase:
     def power(self, n, dtype=None):
         """Element-wise power."""
         return self.tocsr().power(n, dtype=dtype)
+    
+    def broadcast_to(self, shape):
+        res = self.tocsr().broadcast_to(shape)
+        return self.__class__(res)
 
     def _broadcast_to(self, shape, copy=False):
         if self.shape == shape:
@@ -556,9 +560,20 @@ class _spbase:
         elif issparse(other):
             # if other.shape != self.shape:
             #     raise ValueError("inconsistent shapes")
+            try:
+                np.broadcast_shapes(self.shape, other.shape)
+            except ValueError:
+                raise ValueError("inconsistent shapes")
             return self._add_sparse(other)
         elif isdense(other):
-            other = np.broadcast_to(other, self.shape)
+            if self.shape != other.shape:
+                try:
+                    np.broadcast_shapes(self.shape, other.shape)
+                except ValueError:
+                    raise ValueError("inconsistent shapes")
+                bshape = np.broadcast_shapes(self.shape, other.shape)
+                self = self.broadcast_to(bshape)
+                other = np.broadcast_to(other, bshape)
             return self._add_dense(other)
         else:
             return NotImplemented
@@ -575,9 +590,20 @@ class _spbase:
         elif issparse(other):
             # if other.shape != self.shape:
             #     raise ValueError("inconsistent shapes")
+            try:
+                np.broadcast_shapes(self.shape, other.shape)
+            except ValueError:
+                raise ValueError("inconsistent shapes")
             return self._sub_sparse(other)
         elif isdense(other):
-            other = np.broadcast_to(other, self.shape)
+            if self.shape != other.shape:
+                try:
+                    np.broadcast_shapes(self.shape, other.shape)
+                except ValueError:
+                    raise ValueError("inconsistent shapes")
+                bshape = np.broadcast_shapes(self.shape, other.shape)
+                self = self.broadcast_to(bshape)
+                other = np.broadcast_to(other, bshape)
             return self._sub_dense(other)
         else:
             return NotImplemented
