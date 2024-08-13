@@ -11,7 +11,7 @@ from scipy.integrate._rules import (
     Rule, FixedRule, ProductNestedFixed,
     NestedFixedRule, NestedRule,
     NewtonCotesQuadrature, GaussLegendreQuadrature, GaussKronrodQuadrature,
-    GenzMalikCubature
+    GenzMalikCubature,
 )
 
 from scipy.integrate import cubature
@@ -646,8 +646,11 @@ def test_cub_array_output(problem, quadrature, shape, rtol, atol):
         err_msg=f"estimate_error={res.error}, subdivisions={res.subdivisions}"
     )
 
-    assert res.status == "converged", f"estimate_error={res.error}, subdivisions=\
-{res.subdivisions}, true_error={np.abs(res.estimate - exact(a, b, *args))}"
+    err_msg = (f"estimate_error={res.error}, "
+               f"subdivisions= {res.subdivisions}, "
+               f"true_error={np.abs(res.estimate - exact(a, b, *args))}")
+    assert res.status == "converged", err_msg
+
     assert res.estimate.shape == shape[:-1]
 
 
@@ -812,7 +815,7 @@ def test_cub_with_kwargs(rule):
 
     res = cubature(f, a, b, rule, kwargs={
         "r": r,
-        "alphas": alphas
+        "alphas": alphas,
     })
     exact = genz_malik_1980_f_1_exact(a, b, r, alphas)
 
@@ -850,7 +853,7 @@ def test_stops_after_max_subdivisions():
         b,
         rule,
         max_subdivisions=10,
-        args=(np.arange(5),)
+        args=(np.arange(5),),
     )
 
     assert res.subdivisions == 10

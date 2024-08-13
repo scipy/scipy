@@ -3,7 +3,7 @@
 from ._base import (
     Rule, FixedRule,
     NestedFixedRule, NestedRule,
-    ProductFixed, ProductNestedFixed
+    ProductFixed, ProductNestedFixed,
 )
 from ._genz_malik import GenzMalikCubature
 from ._newton_cotes import NewtonCotesQuadrature

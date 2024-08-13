@@ -100,8 +100,9 @@ class GenzMalikCubature(NestedFixedRule):
         # (ndim, npoints)
         nodes = nodes.T
 
-        w_1 = (2**self.ndim) * (12824 - 9120 * self.ndim + (400 * self.ndim**2)) \
-            / 19683
+        w_1 = (
+            (2**self.ndim) * (12824 - 9120*self.ndim + (400 * self.ndim**2)) / 19683
+        )
         w_2 = (2**self.ndim) * 980/6561
         w_3 = (2**self.ndim) * (1820 - 400 * self.ndim) / 19683
         w_4 = (2**self.ndim) * (200 / 19683)
