@@ -145,9 +145,9 @@ def lombscargle(
     Calculate Lomb-Scargle periodogram for each of the normalize options:
 
     >>> import scipy.signal as signal
-    >>> pgram_power = lombscargle(x, y, w, normalize=False)
-    >>> pgram_norm = lombscargle(x, y, w, normalize=True)
-    >>> pgram_amp = lombscargle(x, y, w, normalize='amplitude')
+    >>> pgram_power = signal.lombscargle(x, y, w, normalize=False)
+    >>> pgram_norm = signal.lombscargle(x, y, w, normalize=True)
+    >>> pgram_amp = signal.lombscargle(x, y, w, normalize='amplitude')
 
     Now make a plot of the input data:
 
