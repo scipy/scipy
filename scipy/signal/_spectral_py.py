@@ -159,16 +159,16 @@ def lombscargle(
 
     >>> ax_power.plot(w, pgram_power)
     >>> ax_power.set_xlabel('Angular frequency [rad/s]')
-    >>> ax_power.set_ylabel('Default\npower')
-    >>> 
+    >>> ax_power.set_ylabel('Power')
+
     >>> ax_norm.plot(w, pgram_norm)
     >>> ax_norm.set_xlabel('Angular frequency [rad/s]')
-    >>> ax_norm.set_ylabel('Normalized\npower')
-    >>> 
+    >>> ax_norm.set_ylabel('Normalized')
+
     >>> ax_amp.plot(w, np.abs(pgram_amp))
     >>> ax_amp.set_xlabel('Angular frequency [rad/s]')
     >>> ax_amp.set_ylabel('Amplitude')
-    >>> 
+
     >>> plt.show()
 
     """
