@@ -1207,6 +1207,40 @@ class TestLombscargle:
         # check if offset removal works as expected
         assert_allclose(pgram, pgram_offset)
     
+    def test_floating_mean_false(self):
+        # Verify that when disabling the floating_mean, the calculations are correct
+
+        # Input parameters
+        ampl = 2.
+        w = 1.
+        phi = 0
+        nin = 1000
+        nout = 1000
+        p = 0.7  # Fraction of points to select
+        offset = 2  # Large offset
+
+        # Randomly select a fraction of an array with timesteps
+        np.random.seed(2353425)
+        r = np.random.rand(nin)
+        t = np.linspace(0.01*np.pi, 10.*np.pi, nin)[r >= p]
+
+        # Plot a cos wave for the selected times
+        y = ampl * np.cos(w*t + phi)
+
+        # Define the array of frequencies for which to compute the periodogram
+        f = np.linspace(0.01, 10., nout)
+
+        # Calculate Lomb-Scargle periodogram
+        pgram = lombscargle(t, y, f, normalize=True, floating_mean=False)
+        pgram_offset = lombscargle(t, y + offset, f, normalize=True, 
+                                   floating_mean=False)
+
+        # check if disabling floating_mean works as expected
+        # nearly-zero for no offset
+        assert_approx_equal(pgram[0], 0.0018, significant=2)
+        # significant value with offset
+        assert_approx_equal(pgram_offset[0], 0.68, significant=2)
+    
     def test_amplitude_is_correct(self):
         # Verify that the amplitude is correct (when normalize='amplitude')
 
