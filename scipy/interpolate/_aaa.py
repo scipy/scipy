@@ -344,7 +344,7 @@ class AAA:
             np.abs(np.subtract.outer(self.poles(), self._points)), axis=1
         )
 
-        with np.errstate(divide="ignore"):
+        with np.errstate(divide="ignore", invalid="ignore"):
             ii = np.flatnonzero(
                 np.abs(self.residues()) / Z_distances < cleanup_tol * geom_mean_abs_f
             )
