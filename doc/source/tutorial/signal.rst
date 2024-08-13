@@ -1379,41 +1379,9 @@ time offset :math:`\tau` is given by
     \tan 2\omega\tau = \frac{\sum_{j}^{N_{t}}\sin 2\omega t_{j}}{\sum_{j}^{N_{t}}\cos 2\omega t_{j}}.
 
 The :func:`lombscargle` function calculates the periodogram using a slightly
-modified algorithm due to Townsend [#Townsend2010]_, which allows the periodogram to be
-calculated using only a single pass through the input arrays for each
-frequency.
-
-The equation is refactored as:
-
-.. math::
-
-    P_{n}(f) = \frac{1}{2}\left[\frac{(c_{\tau}XC + s_{\tau}XS)^{2}}{c_{\tau}^{2}CC + 2c_{\tau}s_{\tau}CS + s_{\tau}^{2}SS} + \frac{(c_{\tau}XS - s_{\tau}XC)^{2}}{c_{\tau}^{2}SS - 2c_{\tau}s_{\tau}CS + s_{\tau}^{2}CC}\right]
-
-and
-
-.. math::
-
-    \tan 2\omega\tau = \frac{2CS}{CC-SS}.
-
-Here,
-
-.. math::
-
-    c_{\tau} = \cos\omega\tau,\qquad s_{\tau} = \sin\omega\tau,
-
-while the sums are
-
-.. math::
-
-    XC &= \sum_{j}^{N_{t}} X_{j}\cos\omega t_{j}\\
-    XS &= \sum_{j}^{N_{t}} X_{j}\sin\omega t_{j}\\
-    CC &= \sum_{j}^{N_{t}} \cos^{2}\omega t_{j}\\
-    SS &= \sum_{j}^{N_{t}} \sin^{2}\omega t_{j}\\
-    CS &= \sum_{j}^{N_{t}} \cos\omega t_{j}\sin\omega t_{j}.
-
-This requires :math:`N_{f}(2N_{t}+3)` trigonometric function evaluations
-giving a factor of :math:`\sim 2` speed increase over the straightforward
-implementation.
+modified algorithm created by Zechmeister and Kürster [#Zechmeister2009]_, which 
+allows for the weighting of individual samples and calculating an unknown offset 
+(also called a "floating-mean") for each frequency independently.
 
 
 
@@ -2123,9 +2091,9 @@ Some further reading and related software:
        Statistical aspects of spectral analysis of unevenly spaced data",
        The Astrophysical Journal, vol 263, pp. 835-853, 1982
 
-.. [#Townsend2010] R.H.D. Townsend, "Fast calculation of the Lomb-Scargle
-       periodogram using graphics processing units.", The Astrophysical
-       Journal Supplement Series, vol 191, pp. 247-253, 2010
+.. [#Zechmeister2009] M. Zechmeister and M. Kürster, "The generalised Lomb-Scargle 
+        periodogram. A new formalism for the floating-mean and Keplerian 
+        periodograms," Astronomy and Astrophysics, vol. 496, pp. 577-584, 2009
 
 .. [#Groechenig2001] Karlheinz Gröchenig: "Foundations of Time-Frequency Analysis",
        Birkhäuser Boston 2001, :doi:`10.1007/978-1-4612-0003-1`

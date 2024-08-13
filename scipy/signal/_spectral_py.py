@@ -30,16 +30,19 @@ def lombscargle(
     The Lomb-Scargle periodogram was developed by Lomb [1]_ and further
     extended by Scargle [2]_ to find, and test the significance of weak
     periodic signals with uneven temporal sampling. The algorithm used
-    here was developed by Zechmeister and Kürster which improves the 
-    Lomb-Scargle periodogram by enabling weighting of individual samples
-    and correctly removing any unknown y offset [3]_.
+    here is based on a weighted least-squares fit of the form
+    ``y(ω) = a*cos(ω*x) + b*sin(ω*x) + c``, where the fit is calculated for
+    each frequency independently. This algorithm was developed by Zechmeister
+    and Kürster which improves the Lomb-Scargle periodogram by enabling 
+    the weighting of individual samples and calculating an unknown offset 
+    (also called a "floating-mean") [3]_.
 
     When *normalize* is False (or "power") (default) the computed periodogram
     is unnormalized, it takes the value ``(A**2) * N/4`` for a harmonic
     signal with amplitude A for sufficiently large N.
 
-    When *normalize* is True (or "normalize") the computed periodogram is normalized by
-    the residuals of the data around a constant reference model (at zero).
+    When *normalize* is True (or "normalize") the computed periodogram is normalized
+    by the residuals of the data around a constant reference model (at zero).
 
     When *normalize* is "amplitude" the computed periodogram is the complex 
     representation of the amplitude and phase.
@@ -55,7 +58,7 @@ def lombscargle(
     freqs : array_like
         Angular frequencies for output periodogram. Frequencies must be nonzero.
     precenter : bool, optional
-        Legacy argument, that is handled appropriately by the algorithm.
+        Legacy argument, that is no longer necessary.
     normalize : bool | str, optional
         Compute normalized or complex (amplitude + phase) periodogram.
     weights : array_like, optional
@@ -96,8 +99,9 @@ def lombscargle(
     Notes
     -----
     The algorithm used will always account for any unknown c (offset), unless
-    floating_mean = False. Therefore, the `precenter` parameter is no longer necessary. 
-    However, it is retained to support backwards compatibility.
+    floating_mean = False. Therefore, the `precenter` parameter, which performed the 
+    operation ``y - y.mean()`` is no longer necessary. However, it is retained to 
+    support backwards compatibility.
     
     References
     ----------
@@ -120,10 +124,11 @@ def lombscargle(
 
     First define some input parameters for the signal:
 
-    >>> A = 2.
+    >>> A = 2.  # amplitude
+    >>> c = 2.  # offset
     >>> w0 = 1.  # rad/sec
     >>> nin = 150
-    >>> nout = 100000
+    >>> nout = 1000
 
     Randomly generate sample times:
 
@@ -131,28 +136,39 @@ def lombscargle(
 
     Plot a sine wave for the selected times:
 
-    >>> y = A * np.cos(w0*x)
+    >>> y = A * np.cos(w0*x) + c
 
     Define the array of frequencies for which to compute the periodogram:
 
     >>> w = np.linspace(0.01, 10, nout)
 
-    Calculate Lomb-Scargle periodogram:
+    Calculate Lomb-Scargle periodogram for each of the normalize options:
 
     >>> import scipy.signal as signal
-    >>> pgram = signal.lombscargle(x, y, w, normalize=True)
+    >>> pgram_power = lombscargle(x, y, w, normalize=False)
+    >>> pgram_norm = lombscargle(x, y, w, normalize=True)
+    >>> pgram_amp = lombscargle(x, y, w, normalize='amplitude')
 
     Now make a plot of the input data:
 
-    >>> fig, (ax_t, ax_w) = plt.subplots(2, 1, constrained_layout=True)
+    >>> fig, (ax_t, ax_power, ax_norm, ax_amp) = plt.subplots(4, 1, constrained_layout=True)
     >>> ax_t.plot(x, y, 'b+')
     >>> ax_t.set_xlabel('Time [s]')
 
-    Then plot the normalized periodogram:
+    Then plot the periodogram for each of the normalize options:
 
-    >>> ax_w.plot(w, pgram)
-    >>> ax_w.set_xlabel('Angular frequency [rad/s]')
-    >>> ax_w.set_ylabel('Normalized amplitude')
+    >>> ax_power.plot(w, pgram_power)
+    >>> ax_power.set_xlabel('Angular frequency [rad/s]')
+    >>> ax_power.set_ylabel('Default\npower')
+    >>> 
+    >>> ax_norm.plot(w, pgram_norm)
+    >>> ax_norm.set_xlabel('Angular frequency [rad/s]')
+    >>> ax_norm.set_ylabel('Normalized\npower')
+    >>> 
+    >>> ax_amp.plot(w, np.abs(pgram_amp))
+    >>> ax_amp.set_xlabel('Angular frequency [rad/s]')
+    >>> ax_amp.set_ylabel('Amplitude')
+    >>> 
     >>> plt.show()
 
     """
@@ -231,18 +247,13 @@ def lombscargle(
         wcoswt[:] = weights * coswt
         wsinwt[:] = weights * sinwt
 
-        YC_hat = (y * wcoswt).sum()
-        YS_hat = (y * wsinwt).sum()
-        CC_hat = (wcoswt * coswt).sum()
-        SS_hat = 1 - CC_hat  # trig identity: S^2 = 1 - C^2
-        CS_hat = (wcoswt * sinwt).sum()
-
-        # use the same variable name whether floating_mean is True or False
-        YC = YC_hat
-        YS = YS_hat
-        CC = CC_hat
-        SS = SS_hat
-        CS = CS_hat
+        # these variables names are of form XX_hat in paper, but dropping the suffix 
+        # to reuse variables later whether floating_mean is True or False
+        YC = (y * wcoswt).sum()
+        YS = (y * wsinwt).sum()
+        CC = (wcoswt * coswt).sum()
+        SS = 1 - CC  # trig identity: S^2 = 1 - C^2
+        CS = (wcoswt * sinwt).sum()
         
         if floating_mean:
             # calculate best-fit c (offset) for each frequency independently (default)
@@ -262,7 +273,7 @@ def lombscargle(
         b[i] = (YS * CC - YC * CS) / D
         #  c = Y_sum - a * C_sum - b * S_sum  # not useful to return
 
-        # store final value as power in (y units) ^ 2
+        # store final value as power in (y units)^2
         pgram[i] = 2.0 * (a[i] * YC + b[i] * YS)
 
     if normalize == "normalize":
