@@ -1,9 +1,9 @@
 import numpy as np
 from .common import Benchmark, safe_import
 
-import concurrent.futures
-
 from scipy.integrate import quad, cumulative_simpson, cubature
+
+from concurrent.futures import ThreadPoolExecutor
 
 with safe_import():
     import ctypes
@@ -145,10 +145,7 @@ class CubatureSphere(Benchmark):
         self.a = np.array([0, 0, 0])
         self.b = np.array([1, 2*np.pi, np.pi])
         self.rule = rule
-
-        self.thread_pool_executor = concurrent.futures.ThreadPoolExecutor()
-        # Can't bench ProcessPoolExecutor due to pickling issues with the benchmarks
-        # module.
+        self.pool = ThreadPoolExecutor(2)
 
     def f(self, x):
         r = x[:, 0]
@@ -170,7 +167,7 @@ class CubatureSphere(Benchmark):
             self.a,
             self.b,
             self.rule,
-            executor=self.thread_pool_executor,
+            workers=self.pool.map,
         )
 
     def track_subdivisions(self, rule):
@@ -199,7 +196,7 @@ class CubatureHighDimOscillatory(Benchmark):
         self.b = np.ones(self.ndim)
         self.rule = rule
 
-        self.thread_pool_executor = concurrent.futures.ThreadPoolExecutor()
+        self.pool = ThreadPoolExecutor(2)
 
     def f(self, x):
         npoints, ndim = x.shape[0], x.shape[-1]
@@ -238,7 +235,7 @@ class CubatureHighDimOscillatory(Benchmark):
             self.rule,
             rtol=self.rtol,
             atol=self.atol,
-            executor=self.thread_pool_executor,
+            workers=self.pool.map,
         )
 
     def track_subdivisions(self, rule):
