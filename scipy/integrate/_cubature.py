@@ -309,13 +309,6 @@ def _process_subregion(data):
     return a_k_sub, b_k_sub, est_sub, err_sub
 
 
-class _MockExecutor:
-    # If None is passed to the ``executor`` argument of ``cubature``, this will be used
-    # to process the regions sequentially.
-    def map(self, func, *iterables):
-        return map(func, *iterables)
-
-
 def _subregion_coordinates(a, b):
     """
     Given the coordinates of a region like a=[0, 0] and b=[1, 1], yield the coordinates
