@@ -1454,16 +1454,16 @@ class cauchy_gen(rv_continuous):
         return 1.0/np.pi/(1.0+x*x)
 
     def _cdf(self, x):
-        return 0.5 + 1.0/np.pi*np.arctan(x)
+        return np.arctan2(1, -x)/np.pi
 
     def _ppf(self, q):
-        return np.tan(np.pi*q-np.pi/2.0)
+        return scu._cauchy_ppf(q, 0, 1)
 
     def _sf(self, x):
-        return 0.5 - 1.0/np.pi*np.arctan(x)
+        return np.arctan2(1, x)/np.pi
 
     def _isf(self, q):
-        return np.tan(np.pi/2.0-np.pi*q)
+        return scu._cauchy_isf(q, 0, 1)
 
     def _stats(self):
         return np.nan, np.nan, np.nan, np.nan
