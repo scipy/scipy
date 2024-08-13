@@ -270,10 +270,9 @@ def lombscargle(
         # calculate the final necessary frequency-independent sum
         YY_hat = (weights * y * y).sum()
         if floating_mean:
-            YY: float = YY_hat - Y_sum * Y_sum
+            pgram /= 2.0 * (YY_hat - Y_sum * Y_sum)  # 2 * YY
         else:
-            YY: float = YY_hat
-        pgram /= 2.0 * YY
+            pgram /= 2.0 * YY_hat
         return pgram
 
     elif normalize == "amplitude":
