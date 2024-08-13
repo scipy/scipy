@@ -956,7 +956,7 @@ class TestAkima1DInterpolator:
         ak = Akima1DInterpolator(x, y, extrapolate=True)
         return ak, x_ext
 
-    @run_in_parallel
+    @run_in_parallel(assert_all_close=True)
     def test_concurrency(self, concurrent_akima):
         # Check that no segfaults appear with concurrent access to Akima1D
         ak, x_ext = concurrent_akima
@@ -1082,7 +1082,7 @@ class TestPPolyCommon:
 
     @pytest.mark.parametrize('concurrent_inputs', [PPoly, BPoly],
                              indirect=['concurrent_inputs'])
-    @run_in_parallel
+    @run_in_parallel(assert_all_close=True)
     def test_concurrency(self, concurrent_inputs):
         # Check that no segfaults appear with concurrent access to BPoly, PPoly
         interp, xp = concurrent_inputs
@@ -2389,7 +2389,7 @@ class TestNdPPoly:
         zi = rng.uniform(size=40)
         return p, (xi, yi, zi)
 
-    @run_in_parallel
+    @run_in_parallel(assert_all_close=True)
     def test_concurrency(self, random_ndppoly):
         spl, inputs = random_ndppoly
         return spl(inputs)

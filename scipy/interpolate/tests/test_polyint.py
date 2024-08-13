@@ -322,7 +322,7 @@ class TestKrogh:
     def default_krogh(self):
         return KroghInterpolator(self.xs, self.ys)
 
-    @run_in_parallel
+    @run_in_parallel(assert_all_close=True)
     def test_concurrency(self, default_krogh):
         return default_krogh(self.xs)
 
@@ -529,7 +529,7 @@ class TestBarycentric:
     def default_barycentric(self):
         return BarycentricInterpolator(self.xs, self.ys)
 
-    @run_in_parallel
+    @run_in_parallel(assert_all_close=True)
     def test_concurrency(self, default_barycentric):
         return default_barycentric(self.xs)
 

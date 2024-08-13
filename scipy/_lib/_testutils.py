@@ -329,15 +329,32 @@ def _test_cython_extension(tmp_path, srcdir):
 
 
 def run_in_parallel(
-        wrapped=None, n_workers=10, use_barrier=True, assert_all_equal=True,
-        pass_thread_id=False):
+        wrapped=None, n_workers=10, assert_all_close=False,
+        pass_thread_id=False, **allclose_kwargs):
     """
     Decorates a given function to execute it concurrently
     across a given number of threads.
 
-    Usually, this decorator is used to mark tests for concurrent execution of
-    functions or classes against a fixed set of inputs, whose results are
-    compared as well:
+    This decorator can be used to take an already existing serial test and
+    extend it to run in parallel across `n_workers` threads:
+
+    .. code-block:: python
+
+        from scipy._lib._testutils import run_in_parallel
+
+        @run_in_parallel
+        def test_serial_fn():
+            ...
+
+        # Use 20 threads to run the test in parallel
+        @run_in_parallel(n_workers=20)
+        def test_parallel_20():
+            ...
+
+
+    Additionally, this decorator can be used to mark tests for concurrent
+    execution of functions or classes against a fixed set of inputs,
+    whose results are compared as well, by setting `assert_all_close=True`:
 
     .. code-block:: python
 
@@ -354,7 +371,7 @@ def run_in_parallel(
             example_input = np.ones(4, 5)
             return ExampleClass(), example_input
 
-        @run_in_parallel
+        @run_in_parallel(assert_all_close=True)
         def test_concurrent(fixed_inputs):
             # Check that ExampleClass does not mutate under concurrency
             # and that concurrent calls yield the same return value
@@ -367,11 +384,16 @@ def run_in_parallel(
 
         @pytest.mark.parametrize('param', [0, 1])
         @run_in_parallel
+        def test_no_comparison(param):
+            ...
+
+        @pytest.mark.parametrize('param', [0, 1])
+        @run_in_parallel(assert_all_close=True)
         def test_concurrent(fixed_inputs, param):
             to_call, input = fixed_inputs
             return to_call(input)
 
-    Also, the thread number can be obtained by setting `pass_thread_id=True`
+    Finally, the thread number can be obtained by setting `pass_thread_id=True`
     and defining the `thread_id` kwarg in the target function:
 
     .. code-block:: python
@@ -381,32 +403,27 @@ def run_in_parallel(
             # thread_id has the thread number that is executing this function.
             pass
 
-    Finally, it is possible to opt-out from output comparison by setting
-    `assert_all_close=False`
-
     Arguments
     ---------
     n_workers: int
         Number of concurrent threads to spawn. Default: 10
-    use_barrier: bool
-        If `True`, then a barrier is set before all threads start executing the
-        target function. Default: `True`
-    assert_all_equal: bool
+    assert_all_close: bool
         If `True`, then the return value produced by the function will be
-        compared for equality across all executing threads. Default: `True`
+        compared for equality across all executing threads. Default: `False`
     pass_thread_id: bool
         If `True`, then the thread number identifier is passed down to the
         target function via the `thread_id` keyword argument.
+    **allclose_kwargs: dict
+        Extra keyword arguments to pass to `assert_allclose`.
     """
 
     def wrapped_parallel(fn):
-        barrier = threading.Barrier(n_workers) if use_barrier else None
+        barrier = threading.Barrier(n_workers)
         results = []
         @functools.wraps(fn)
         def inner(*args, **kwargs):
             def closure(*args, **kwargs):
-                if use_barrier:
-                    barrier.wait()
+                barrier.wait()
                 results.append(fn(*args, **kwargs))
 
             workers = []
@@ -424,8 +441,9 @@ def run_in_parallel(
             for worker in workers:
                 worker.join()
 
-            if assert_all_equal:
+            if assert_all_close:
                 for i in range(1, n_workers):
-                    assert_allclose(results[i - 1], results[i])
+                    assert_allclose(
+                        results[i - 1], results[i], **allclose_kwargs)
         return inner
     return wrapped_parallel if wrapped is None else wrapped_parallel(wrapped)

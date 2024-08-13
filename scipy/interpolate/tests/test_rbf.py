@@ -235,7 +235,7 @@ def default_rbf():
     return rbf, x
 
 
-@run_in_parallel
+@run_in_parallel(assert_all_close=True)
 def test_rbf_concurrency(default_rbf):
     rbf, x = default_rbf
     return rbf(x)

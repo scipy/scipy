@@ -399,7 +399,7 @@ of squared residuals does not satisfy the condition abs\(fp-s\)/s < tol.""")
         spl = UnivariateSpline(xx, yy, check_finite=True)
         return spl, x
 
-    @run_in_parallel
+    @run_in_parallel(assert_all_close=True)
     def test_concurrency(self, concurrent_spline):
         # Check that no segfaults appear with concurrent access to
         # UnivariateSpline

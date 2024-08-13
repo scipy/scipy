@@ -699,7 +699,7 @@ class TestRegularGridInterpolator:
         interp = RegularGridInterpolator(points, values, method="slinear")
         return interp, sample
 
-    @run_in_parallel(pass_thread_id=True, assert_all_equal=False)
+    @run_in_parallel(pass_thread_id=True)
     def test_concurrency(self, rgi_4d, thread_id=0):
         # A call to RGI with a method different from the one specified on the
         # constructor, should not mutate it.

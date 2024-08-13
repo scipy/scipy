@@ -242,7 +242,7 @@ class TestNearestNDInterpolator:
         nndi = NearestNDInterpolator(x, y)
         return nndi, x
 
-    @run_in_parallel
+    @run_in_parallel(assert_all_close=True)
     def test_concurrency(self, concurrent_interp):
         spl, x = concurrent_interp
         return spl(x)

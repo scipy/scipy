@@ -635,7 +635,7 @@ class TestBSpline:
         c = np.random.random(n)
         return BSpline.construct_fast(t, c, k)
 
-    @run_in_parallel
+    @run_in_parallel(assert_all_close=True)
     def test_concurrency(self, random_spline):
         # Check that no segfaults appear with concurrent access to BSpline
         t, _, k = random_spline.tck
@@ -2438,7 +2438,7 @@ class TestNdBSpline:
         spl = NdBSpline((tx, ty, tz), c, k=k)
         return spl
 
-    @run_in_parallel
+    @run_in_parallel(assert_all_close=True)
     def test_concurrency(self, random_3d_ndbspline):
         xi = np.c_[[1, 1.5, 2],
                    [1.1, 1.6, 2.1],

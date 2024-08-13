@@ -507,7 +507,7 @@ class TestRBFInterpolatorNeighbors20(_TestRBFInterpolator):
         interp = self.build(x, y)
         return interp, xitp
 
-    @run_in_parallel
+    @run_in_parallel(assert_all_close=True)
     def test_concurrency(self, random_rbf):
         # Check that no segfaults appear with concurrent access to
         # RbfInterpolator
