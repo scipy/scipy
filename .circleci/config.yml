@@ -150,12 +150,12 @@ jobs:
           command: |
             export PYTHONPATH=$PWD/build-install/lib/python3.11/site-packages
             cd benchmarks
-            asv machine --machine CircleCI
+            asv machine --machine CircleCI --config asv.conf.jsonc
             export SCIPY_GLOBAL_BENCH_NUMTRIALS=1
             export SCIPY_ALLOW_BENCH_IMPORT_ERRORS=0
             export OPENBLAS_NUM_THREADS=1
-            time asv --config asv.conf.json run -m CircleCI --quick --python=same --bench '^((?!BenchGlobal|QuadraticAssignment).)*$'
-            asv --config asv.conf.json publish
+            time asv --config asv.conf.jsonc run -m CircleCI --quick --python=same --bench '^((?!BenchGlobal|QuadraticAssignment).)*$'
+            asv --config asv.conf.jsonc publish
 
       - store_artifacts:
           path: benchmarks/html
