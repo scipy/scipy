@@ -187,7 +187,7 @@ def lombscargle(
 
     # validate normalize parameter
     if isinstance(normalize, bool):
-        # if bool, convert to str
+        # if bool, convert to str literal
         normalize = "normalize" if normalize else "power"
     else:
         # if neither a bool or str
@@ -265,7 +265,9 @@ def lombscargle(
         pgram[i] = 2.0 * (a[i] * YC + b[i] * YS)
 
     if normalize == "normalize":
-        # return the normalized power (current frequency wrt the entire signal)
+        # return the normalized power (power at current frequency wrt the entire signal)
+        
+        # calculate the final necessary frequency-independent sum
         YY_hat = (weights * y * y).sum()
         if floating_mean:
             YY: float = YY_hat - Y_sum * Y_sum
@@ -276,6 +278,7 @@ def lombscargle(
 
     elif normalize == "amplitude":
         # return the complex representation of the amplitude and phase
+        
         phase = np.arctan2(b, a)  # radians
         pgram = np.sqrt(pgram) * (np.cos(phase) + 1j * np.sin(phase))
         return pgram
