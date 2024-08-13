@@ -178,3 +178,18 @@ def siegelslopes(y, x, method):
         medinter = np.median(y - medslope*x)
 
     return medslope, medinter
+
+
+# pythran export _poisson_binom_pmfs(float64[:, :], int64, int64)
+def _poisson_binom_pmfs(args, n, m):
+    base_shape = (m,)
+    pmf = np.ones((1,) + base_shape, dtype=np.float64)
+    for i in range(1, n + 1):
+        p_i = args[i - 1]
+        pmf_i = np.ones((i + 1,) + base_shape, dtype=np.float64)
+        pmf_i[0] = (1 - p_i) * pmf[0]
+        pmf_i[i] = p_i * pmf[i - 1]
+        for j in range(1, (i - 1) + 1):
+            pmf_i[j] = p_i * pmf[j - 1] + (1 - p_i) * pmf[j]
+        pmf = pmf_i
+    return pmf

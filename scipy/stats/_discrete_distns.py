@@ -20,6 +20,8 @@ from ._distn_infrastructure import (rv_discrete, get_distribution_names,
 from ._biasedurn import (_PyFishersNCHypergeometric,
                          _PyWalleniusNCHypergeometric,
                          _PyStochasticLib3)
+from ._stats_pythran import _poisson_binom_pmfs
+
 import scipy.special._ufuncs as scu
 
 
@@ -1597,35 +1599,16 @@ class poisson_binom_gen(rv_discrete):
     def _get_support(self, *args):
         return 0, len(args)
 
-    def _pmfs(self, *args):
-        n = len(args)
-        # Apparently, the probabilities in `args` can be Python scalars,
-        # so make sure they are NumPy objects before getting shape/dtype.
-        arg0 = np.asarray(args[0])
-        base_shape = arg0.shape[0:]
-        dtype = arg0.dtype
-        pmf = np.ones((1,) + base_shape, dtype=dtype)
-        for i in range(1, n+1):
-            p_i = args[i - 1]
-            pmf_i = np.ones((i+1,) + base_shape, dtype=dtype)
-            pmf_i[0] = (1 - p_i) * pmf[0]
-            pmf_i[i] = p_i * pmf[i-1]
-            for j in range(1, (i-1) + 1):
-                pmf_i[j] = p_i * pmf[j-1] + (1 - p_i) * pmf[j]
-            pmf = pmf_i
-        return pmf
-
     def _pmf(self, k, *args):
         k = np.asarray(k, dtype=int)
-        pmfs = self._pmfs(*args)
-        if k.shape == pmfs.shape:
-            return pmfs[k]
-        else:
-            return np.take_along_axis(pmfs, k[np.newaxis, :], axis=0)
+        args = np.stack(args).reshape(len(args), -1)
+        pmfs = _poisson_binom_pmfs(args, *args.shape)
+        return np.take_along_axis(pmfs, k[np.newaxis, :], axis=0)
 
     def _cdf(self, k, *args):
-        k = np.asarray(k, dtype=int)
-        pmfs = self._pmfs(*args)
+        k = np.atleast_1d(k).astype(int)
+        args = np.stack(args).reshape(len(args), -1)
+        pmfs = _poisson_binom_pmfs(args, *args.shape)
         cdfs = np.cumsum(pmfs, axis=0)
         return np.take_along_axis(cdfs, k[np.newaxis, ...], axis=0)
 
