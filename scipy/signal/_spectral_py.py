@@ -61,8 +61,8 @@ def lombscargle(
     weights : array_like, optional
         Weights for each sample. Weights must be nonnegative.
     floating_mean : bool, optional
-        Calculate the best-fit offset for each frequency independently (True), 
-        or assume offset=0 for all frequencies (False).
+        Calculate the best-fit c (offset) for each frequency independently (True), 
+        or assume c = 0 for all frequencies (False).
 
     Returns
     -------
@@ -95,9 +95,9 @@ def lombscargle(
 
     Notes
     -----
-    The algorithm used will always account for any unknown y offset. Therefore,
-    the `precenter` parameter is no longer necessary. However, it is retained
-    to support backwards compatibility.
+    The algorithm used will always account for any unknown c (offset), unless
+    floating_mean = False. Therefore, the `precenter` parameter is no longer necessary. 
+    However, it is retained to support backwards compatibility.
     
     References
     ----------
@@ -237,29 +237,30 @@ def lombscargle(
         SS_hat = 1 - CC_hat  # trig identity: S^2 = 1 - C^2
         CS_hat = (wcoswt * sinwt).sum()
 
+        # use the same variable name whether floating_mean is True or False
+        YC = YC_hat
+        YS = YS_hat
+        CC = CC_hat
+        SS = SS_hat
+        CS = CS_hat
+        
         if floating_mean:
-            # calculate best-fit offset for each frequency independently (default)
+            # calculate best-fit c (offset) for each frequency independently (default)
             C_sum = wcoswt.sum()
             S_sum = wsinwt.sum()
-            YC = YC_hat - Y_sum * C_sum
-            YS = YS_hat - Y_sum * S_sum
-            CC = CC_hat - C_sum * C_sum
-            SS = SS_hat - S_sum * S_sum
-            CS = CS_hat - C_sum * S_sum
-        else:
-            # assume offset=0 for all frequencies
-            YC = YC_hat
-            YS = YS_hat
-            CC = CC_hat
-            SS = SS_hat
-            CS = CS_hat
-            
+            YC -= Y_sum * C_sum
+            YS -= Y_sum * S_sum
+            CC -= C_sum * C_sum
+            SS -= S_sum * S_sum
+            CS -= C_sum * S_sum
+        
+        # determinate of the system of linear equations
         D = CC * SS - CS * CS
 
-        # where: y(w) = a*cos(w) + b*sin(w) + offset
+        # where: y(w) = a*cos(w) + b*sin(w) + c
         a[i] = (YC * SS - YS * CS) / D
         b[i] = (YS * CC - YC * CS) / D
-        # offset = Y_sum - a * C_sum - b * S_sum  # not useful to return
+        #  c = Y_sum - a * C_sum - b * S_sum  # not useful to return
 
         # store final value as power in (y units) ^ 2
         pgram[i] = 2.0 * (a[i] * YC + b[i] * YS)
