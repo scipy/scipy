@@ -106,7 +106,7 @@ class TestCovariance:
 
         res = factory(preprocessing(A))
         ref = cov_type(preprocessing(A))
-        assert type(res) == type(ref)
+        assert type(res) is type(ref)
         assert_allclose(res.whiten(x), ref.whiten(x))
 
     @pytest.mark.parametrize("matrix_type", list(_matrices))
@@ -3895,7 +3895,8 @@ class TestNormalInverseGamma:
 
         # Test PDF
         s2 = np.linspace(0.1, 10, 10)
-        res = _tanhsinh(lambda x, s2: norm_inv_gamma.pdf(x, s2), -np.inf, np.inf, args=(s2,))
+        res = _tanhsinh(lambda x, s2: norm_inv_gamma.pdf(x, s2),
+                        -np.inf, np.inf, args=(s2,))
         ref = inv_gamma.pdf(s2)
         assert_allclose(res.integral, ref)
 
