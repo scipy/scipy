@@ -334,12 +334,7 @@ class AAA:
             the cleanup procedure, defaults to 1e-13.
         """
         # Find negligible residues
-        if any(self._values):
-            geom_mean_abs_f = scipy.stats.gmean(
-                np.abs(self._values[np.nonzero(self._values)])
-            )
-        else:
-            geom_mean_abs_f = 0
+        geom_mean_abs_f = scipy.stats.gmean(np.abs(self._values))
 
         Z_distances = np.min(
             np.abs(np.subtract.outer(self.poles(), self._points)), axis=1
