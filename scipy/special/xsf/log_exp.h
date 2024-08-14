@@ -27,7 +27,18 @@ inline float exprel(float x) { return exprel(static_cast<double>(x)); }
 
 template <typename T>
 T logit(T x) {
-    return std::log(x / (1 - x));
+    // The standard formula is log(x/(1 - x)), but this expression
+    // loses precision near x=0.5, as does log(x) - log1p(-x).
+    // We use the latter just for small x, and otherwise use
+    // log1p(2*(x - 0.5)) - log1p(-2*(x - 0.5)), which provides
+    // very good precision for all x outside of an interval near 0.
+    if (x < 0.25) {
+        return std::log(x) - std::log1p(-x);
+    }
+    else {
+        T s = 2*(x - 0.5);
+        return std::log1p(s) - std::log1p(-s);
+    }
 };
 
 //
