@@ -382,7 +382,7 @@ class AAA:
         _, _, V = scipy.linalg.svd(A, check_finite=False)
         self.weights = np.conj(V[m - 1,:])
 
-        # reset roots, poles, residues
+        # reset roots, poles, residues as cached values will be wrong with new weights
         self._poles = None
         self._residues = None
         self._roots = None
