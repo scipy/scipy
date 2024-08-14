@@ -260,7 +260,7 @@ class AAA:
             with np.errstate(divide="ignore", invalid="ignore"):
                 C[:, m] = 1 / (z - z[mask][jj])
             # Update mask
-            mask[np.flatnonzero(mask)[jj]] = False
+            mask[np.nonzero(mask)[0][jj]] = False
             # Update Loewner matrix
             # Ignore errors as inf values will be masked out in SVD call
             with np.errstate(invalid="ignore"):
@@ -345,11 +345,11 @@ class AAA:
         )
 
         with np.errstate(divide="ignore", invalid="ignore"):
-            ii = np.flatnonzero(
+            ii = np.nonzero(
                 np.abs(self.residues()) / Z_distances < cleanup_tol * geom_mean_abs_f
             )
 
-        ni = ii.size
+        ni = ii[0].size
         if ni == 0:
             return
 
@@ -411,7 +411,7 @@ class AAA:
                                / np.sum(self.weights))
 
         # Deal with NaN
-        ii = np.flatnonzero(np.isnan(r))
+        ii = np.nonzero(np.isnan(r))[0]
         for jj in ii:
             if np.isnan(zv[jj]) or not np.any(zv[jj] == self.support_points):
                 # r(NaN) = NaN is fine.
