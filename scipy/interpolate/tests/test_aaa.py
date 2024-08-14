@@ -227,7 +227,7 @@ class TestAAA:
         # here we set `rtol=0` to force froissart doublets, without cleanup there
         # are many spurious poles
         with pytest.warns(RuntimeWarning):
-            r = AAA(z, np.tan(np.pi*z/2), rtol=0, max_terms=40, cleanup=False)
+            r = AAA(z, np.tan(np.pi*z/2), rtol=0, max_terms=40, clean_up=False)
         n_spurious = np.sum(np.abs(r.residues()) < 1e-14)
         with pytest.warns(RuntimeWarning):
             r.clean_up()

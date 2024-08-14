@@ -193,8 +193,8 @@ class AAA:
     >>> ax.legend()
     >>> plt.show()
     """
-    def __init__(self, points, values, *, rtol=None, max_terms=100, cleanup=True,
-                 cleanup_tol=1e-13):
+    def __init__(self, points, values, *, rtol=None, max_terms=100, clean_up=True,
+                 clean_up_tol=1e-13):
         # input validation
         z = np.asarray(points)
         f = np.asarray(values)
@@ -227,8 +227,8 @@ class AAA:
         self._residues = None
         self._roots = None
 
-        if cleanup:
-            self.clean_up(cleanup_tol)
+        if clean_up:
+            self.clean_up(clean_up_tol)
 
     def _compute_weights(self, z, f, rtol, max_terms):
         # Initialization for AAA iteration
