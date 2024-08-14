@@ -66,7 +66,7 @@ from numpy import (
     float64,
     complex64,
     complex128,
-    _bool as bool
+    bool_ as bool
 )
 
 # From numpy
