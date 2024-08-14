@@ -289,11 +289,9 @@ def lombscargle(
         return pgram
 
     elif normalize == "amplitude":
-        # return the complex representation of the amplitude and phase
+        # return the complex representation of the best-fit amplitude and phase
         
-        phase = np.arctan2(b, a)  # radians
-        pgram = np.sqrt(pgram) * (np.cos(phase) + 1j * np.sin(phase))
-        return pgram
+        return a + 1j * b
     
     # otherwise, the default, normalize == "power"
     # return the legacy power units
