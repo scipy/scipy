@@ -29,11 +29,11 @@ template <typename T>
 T logit(T x) {
     // The standard formula is log(x/(1 - x)), but this expression
     // loses precision near x=0.5, as does log(x) - log1p(-x).
-    // We use the latter just for small x, and otherwise use
-    // log1p(2*(x - 0.5)) - log1p(-2*(x - 0.5)), which provides
-    // very good precision for all x outside of an interval near 0.
-    if (x < 0.25) {
-        return std::log(x) - std::log1p(-x);
+    // We use the standard formula away from p=0.5, and use
+    // log1p(2*(x - 0.5)) - log1p(-2*(x - 0.5)) around p=0.5, which
+    // provides very good precision in this interval.
+    if (x < 0.3 || x > 0.65) {
+        return std::log(x/(1 - x));
     }
     else {
         T s = 2*(x - 0.5);
