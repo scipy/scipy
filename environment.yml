@@ -17,7 +17,7 @@ dependencies:
   - openblas
   - pkg-config
   - libblas=*=*openblas  # helps avoid pulling in MKL
-  - pybind11
+  - pybind11==2.13.1
   # scipy.datasets dependency
   - pooch
   # ---
