@@ -420,11 +420,16 @@ def run_in_parallel(
     def wrapped_parallel(fn):
         barrier = threading.Barrier(n_workers)
         results = []
+        errors = []
         @functools.wraps(fn)
         def inner(*args, **kwargs):
             def closure(*args, **kwargs):
                 barrier.wait()
-                results.append(fn(*args, **kwargs))
+                try:
+                    results.append(fn(*args, **kwargs))
+                except Exception as e:
+                    # traceback.print_exception(e, limit=2)
+                    errors.append(e)
 
             workers = []
             for i in range(0, n_workers):
@@ -440,6 +445,9 @@ def run_in_parallel(
 
             for worker in workers:
                 worker.join()
+
+            if len(errors) > 0:
+                raise errors[0]
 
             if assert_all_close:
                 for i in range(1, n_workers):
