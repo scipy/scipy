@@ -14,7 +14,7 @@ from scipy._lib._util import _rename_parameter, _contains_nan, _get_nan
 
 from scipy._lib._array_api import (
     array_namespace,
-    size as xp_size,
+    xp_size,
     xp_moveaxis_to_end,
     xp_vector_norm,
 )
