@@ -53,7 +53,8 @@ class AAA:
     rtol : float, optional
         Relative tolerance, defaults to ``eps**0.75``. If a small subset of the entries
         in `values` are much larger than the rest the default tolerance may be too
-        loose.
+        loose. If the tolerance is too tight then the approximation may contain
+        Froissart doublets or the algorithm may fail to converge entirely.
     max_terms : int, optional
         Maximum number of terms in the barycentric representation, defaults to ``100``.
         Must be greater than or equal to one.
