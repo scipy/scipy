@@ -66,9 +66,8 @@ from numpy import (
     float64,
     complex64,
     complex128,
+    _bool as bool
 )
-# `np.bool` is depracated
-bool
 
 # From numpy
 __all__ = [
