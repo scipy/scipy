@@ -357,7 +357,7 @@ class AAA:
         warnings.warn(f"{ni} Froissart doublets detected.", RuntimeWarning,
                         stacklevel=2)
 
-        # For each spurious pole find and remove closest support point:
+        # For each spurious pole find and remove closest support point
         closest_spt_point = np.argmin(
             np.abs(np.subtract.outer(self.support_points, self.poles()[ii])), axis=0
         )
@@ -370,6 +370,9 @@ class AAA:
         )
         f = self._values[mask]
         z = self._points[mask]
+        
+        # recompute weights, we resolve the least squares problem for the remaining
+        # support points
 
         m = self.support_points.size
 
