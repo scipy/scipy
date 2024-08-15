@@ -396,6 +396,14 @@ def test_1d_diagonal():
         coo_array(den).diagonal()
 
 
+@pytest.mark.parametrize('shape', [(0,), (1,), (7,), (0,0), (2,0), (4,7),
+                                   (0,0,0), (3,6,2), (5,10,3,13), (1,0,3),])
+def test_nd_todense(shape):
+    np.random.seed(12)
+    arr = np.random.randint(low=0, high=5, size=shape)
+    assert_equal(coo_array(arr).todense(), arr)
+
+
 @pytest.mark.parametrize('shape', [(0,), (1,), (2,), (4,), (7,), (12,),
                                    (0,0), (2,0), (3,3), (4,7), (8,6),
                                    (0,0,0), (3,6,2), (3,9,4,5,2,1,6),
