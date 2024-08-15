@@ -436,8 +436,8 @@ def test_tuple_constructor_for_dim_size_zero():
     with pytest.raises(ValueError, match='exceeds matrix dimension'):
         coo_array(([9,8], ([1,2],[1,0])), shape=(4,0))
 
-    emptyarr = coo_array(([], ([],[])), shape=(4,0))
-    assert_equal(emptyarr.toarray(), np.empty((4,0)))
+    empty_arr = coo_array(([], ([],[])), shape=(4,0))
+    assert_equal(empty_arr.toarray(), np.empty((4,0)))
     
 
 @pytest.mark.parametrize(('shape', 'new_shape'), [((4,9,6,5), (3,6,15,4)),
@@ -481,7 +481,8 @@ def test_nd_transpose(shape):
     assert_equal(exp_arr, trans_arr.toarray())
 
 
-@pytest.mark.parametrize(('shape', 'axis_perm'), [((3,), (0,)), ((2,3), (0,1)),
+@pytest.mark.parametrize(('shape', 'axis_perm'), [((3,), (0,)),
+                                                  ((2,3), (0,1)),
                                                   ((2,4,3,6,5,3), (1,2,0,5,3,4)),])
 def test_nd_transpose_with_axis(shape, axis_perm):
     rng = np.random.default_rng(23409823)
@@ -560,7 +561,8 @@ def test_add_sparse_with_inf():
     assert_equal(dense_sum, sparse_sum.toarray())
 
 
-@pytest.mark.parametrize(('a_shape', 'b_shape'), [((7,), (12,)), ((6,4), (6,5)),
+@pytest.mark.parametrize(('a_shape', 'b_shape'), [((7,), (12,)),
+                                                  ((6,4), (6,5)),
                                                   ((5,9,3,2), (9,5,2,3)),])
 def test_nd_add_sparse_with_inconsistent_shapes(a_shape, b_shape): 
     rng = np.random.default_rng(23409823)
@@ -607,7 +609,8 @@ def test_nd_sub_sparse_with_nan():
     assert_equal(dense_sum, sparse_sum.toarray())
 
 
-@pytest.mark.parametrize(('a_shape', 'b_shape'), [((7,), (12,)), ((6,4), (6,5)),
+@pytest.mark.parametrize(('a_shape', 'b_shape'), [((7,), (12,)),
+                                                  ((6,4), (6,5)),
                                                   ((5,9,3,2), (9,5,2,3)),])
 def test_nd_sub_sparse_with_inconsistent_shapes(a_shape, b_shape): 
     rng = np.random.default_rng(23409823)
