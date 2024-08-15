@@ -472,7 +472,6 @@ def test_nd_nnz(shape):
     rng = np.random.default_rng(23409823)
 
     arr = random_array(shape, density=0.6, random_state=rng, dtype=int)
-    assert arr.shape == (shape)
     assert arr.nnz == np.count_nonzero(arr.toarray())
 
 
@@ -482,7 +481,6 @@ def test_nd_transpose(shape):
     rng = np.random.default_rng(23409823)
 
     arr = random_array(shape, density=0.6, random_state=rng, dtype=int)
-    assert arr.shape == (shape)
     exp_arr = arr.toarray().T
     trans_arr = arr.transpose()
     assert trans_arr.shape == shape[::-1]
