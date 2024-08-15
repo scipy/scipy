@@ -12,7 +12,7 @@ import numpy as np
 import sys
 from scipy.conftest import array_api_compatible
 from scipy._lib._array_api import (
-    xp_assert_close, get_xp_devices, device, array_namespace
+    xp_assert_close, get_xp_devices, xp_device, array_namespace
 )
 from scipy import fft
 
@@ -537,7 +537,7 @@ class TestFFTFreq:
         for d in devices:
             y = fft.fftfreq(9, xp=xp, device=d)
             x = xp_test.empty(0, device=d)
-            assert device(y) == device(x)
+            assert xp_device(y) == xp_device(x)
 
 
 @skip_xp_backends("cupy", "jax.numpy",
@@ -569,4 +569,4 @@ class TestRFFTFreq:
         for d in devices:
             y = fft.rfftfreq(9, xp=xp, device=d)
             x = xp_test.empty(0, device=d)
-            assert device(y) == device(x)
+            assert xp_device(y) == xp_device(x)

@@ -590,6 +590,46 @@ invgauss_isf_double(double x, double mu, double s)
 
 template<typename Real>
 Real
+cauchy_ppf_wrap(const Real p, const Real loc, const Real scale)
+{
+    return boost::math::quantile(
+        boost::math::cauchy_distribution<Real, StatsPolicy>(loc, scale), p);
+}
+
+float
+cauchy_ppf_float(float p, float loc, float scale)
+{
+    return cauchy_ppf_wrap(p, loc, scale);
+}
+
+double
+cauchy_ppf_double(double p, double loc, double scale)
+{
+    return cauchy_ppf_wrap(p, loc, scale);
+}
+
+template<typename Real>
+Real
+cauchy_isf_wrap(const Real p, const Real loc, const Real scale)
+{
+    return boost::math::quantile(boost::math::complement(
+        boost::math::cauchy_distribution<Real, StatsPolicy>(loc, scale), p));
+}
+
+float
+cauchy_isf_float(float p, float loc, float scale)
+{
+    return cauchy_isf_wrap(p, loc, scale);
+}
+
+double
+cauchy_isf_double(double p, double loc, double scale)
+{
+    return cauchy_isf_wrap(p, loc, scale);
+}
+
+template<typename Real>
+Real
 ncx2_pdf_wrap(const Real x, const Real k, const Real l)
 {
     if (std::isfinite(x)) {

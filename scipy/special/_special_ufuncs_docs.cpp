@@ -2636,7 +2636,6 @@ const char *loggamma_doc = R"(
     )";
 
 const char *logit_doc = R"(
-    """
     logit(x, out=None)
 
     Logit ufunc for ndarrays.
