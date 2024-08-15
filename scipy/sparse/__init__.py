@@ -214,7 +214,8 @@ Matrix vector product
 ---------------------
 
 To do a vector product between a 2D sparse array and a vector use
-the matmul operator which performs a dot product like the ``dot`` method.
+the matmul operator (i.e., ``@``) which performs a dot product (like the
+``dot`` method):
 
 >>> import numpy as np
 >>> from scipy.sparse import csr_array
@@ -222,10 +223,6 @@ the matmul operator which performs a dot product like the ``dot`` method.
 >>> v = np.array([1, 0, -1])
 >>> A @ v
 array([ 1, -3, -1], dtype=int64)
-
-.. warning:: As of NumPy 1.7, ``np.dot`` treats sparse arrays as
-  generic Python objects which leads to unexpected results or errors.
-  So either use the scipy.sparse ``A.dot(v)`` method or the ``@`` operator.
 
 The CSR format is especially suitable for fast matrix vector products.
 
