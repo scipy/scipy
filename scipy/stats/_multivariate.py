@@ -6983,9 +6983,9 @@ class vonmises_fisher_frozen(multi_rv_frozen):
 
 
 class normal_inverse_gamma_gen(multi_rv_generic):
-    r"""Normal inverse gamma distribution.
+    r"""Normal-inverse-gamma distribution.
 
-    The normal inverse gamma distribution is the conjugate prior of a normal
+    The normal-inverse-gamma distribution is the conjugate prior of a normal
     distribution with unknown mean and variance.
 
     Parameters
@@ -7032,13 +7032,13 @@ class normal_inverse_gamma_gen(multi_rv_generic):
 
     References
     ----------
-    .. [1] Normal inverse gamma distribution, Wikipedia,
+    .. [1] Normal-inverse-gamma distribution, Wikipedia,
            https://en.wikipedia.org/wiki/Normal-inverse-gamma_distribution
 
     Examples
     --------
-    Suppose we wish to investigate the relationship between the normal inverse
-    gamma distribution and the inverse gamma distribution.
+    Suppose we wish to investigate the relationship between the
+    normal-inverse-gamma distribution and the inverse gamma distribution.
 
     >>> import numpy as np
     >>> from scipy import stats
@@ -7250,7 +7250,9 @@ class normal_inverse_gamma_gen(multi_rv_generic):
     def __call__(self, mu=0, lmbda=1, a=1, b=1, seed=None):
         return normal_inverse_gamma_frozen(mu, lmbda, a, b, seed=seed)
 
+
 normal_inverse_gamma = normal_inverse_gamma_gen()
+
 
 class normal_inverse_gamma_frozen(multi_rv_frozen):
 

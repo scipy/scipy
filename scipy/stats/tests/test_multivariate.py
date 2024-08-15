@@ -3866,21 +3866,17 @@ class TestNormalInverseGamma:
         mu, lmbda, a, b = rng.random(4)
 
         norm_inv_gamma = stats.normal_inverse_gamma(mu, lmbda, a, b)
-        t = stats.t(2*a)
+        t = stats.t(2*a, loc=mu, scale=1/np.sqrt(a * lmbda / b))
 
         # Test PDF
         x = np.linspace(-5, 5, 11)
         res = _tanhsinh(lambda s2, x: norm_inv_gamma.pdf(x, s2), 0, np.inf, args=(x,))
-        ref = t.pdf(np.sqrt(a * lmbda / b) * (x - mu))
-        ratio = res.integral / ref
-        # We don't know the constant to normalize the marginal distribution,
-        # but it's enough to check that the ratios is constant (some finite nonzero)
-        assert_allclose(ratio[0], 0.6388078629606867)
-        assert_allclose(ratio, ratio[0])
+        ref = t.pdf(x)
+        assert_allclose(res.integral, ref)
 
         # Test RVS
         res = norm_inv_gamma.rvs(size=10000, random_state=rng)
-        _, pvalue = stats.ks_1samp(np.sqrt(a * lmbda / b) * (res[0] - mu), t.cdf)
+        _, pvalue = stats.ks_1samp(res[0], t.cdf)
         assert pvalue > 0.1
 
     def test_marginal_s2(self):
