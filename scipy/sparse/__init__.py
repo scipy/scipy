@@ -34,12 +34,21 @@ SciPy 2-D sparse array package for numeric data.
      E.g. ``A[:, i, None]`` or ``A[:, [i]]``.
 
    The construction utilities (``eye``, ``kron``, ``random``, ``diags``, etc.)
-   have appropriate replacement `construction functions`_.
+   have appropriate replacement :ref:`sparse-construction-functions`.
 
    For more information see
    :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
 
-====================
+
+Submodules
+==========
+
+.. autosummary::
+
+   csgraph - Compressed sparse graph routines
+   linalg - Sparse linear algebra routines
+
+
 Sparse array classes
 ====================
 
@@ -55,7 +64,7 @@ Sparse array classes
    lil_array - Row-based list of lists sparse array
    sparray - Sparse array base class
 
-.. _`construction functions`:
+.. _sparse-construction-functions:
 
 Building sparse arrays
 ----------------------
@@ -68,7 +77,7 @@ Building sparse arrays
    random_array - Random values in a given shape array
    block_array - Build a sparse array from sub-blocks
 
-.. _`stacking arrays`:
+.. _stacking-arrays:
 
 Stacking arrays
 ---------------
@@ -76,8 +85,8 @@ Stacking arrays
 .. autosummary::
    :toctree: generated/
 
-   kron - kronecker product of two sparse arrays
-   kronsum - kronecker sum of sparse arrays
+   kron - Kronecker product of two sparse arrays
+   kronsum - Kronecker sum of sparse arrays
    block_diag - Build a block diagonal sparse array
    tril - Lower triangular portion of a sparse array
    triu - Upper triangular portion of a sparse array
@@ -105,7 +114,7 @@ Identifying sparse arrays
 
    issparse - Check is the argument is a sparse object (array or matrix).
 
-=====================
+
 Sparse matrix classes
 =====================
 
@@ -153,18 +162,9 @@ Identifying sparse matrices
    isspmatrix_coo
    isspmatrix_dia
 
-==========
-Submodules
-==========
 
-.. autosummary::
-
-   csgraph - Compressed sparse graph routines
-   linalg - sparse linear algebra routines
-
-==========
-Exceptions
-==========
+Warnings
+========
 
 .. autosummary::
    :toctree: generated/
@@ -172,7 +172,7 @@ Exceptions
    SparseEfficiencyWarning
    SparseWarning
 
-=================
+
 Usage information
 =================
 
