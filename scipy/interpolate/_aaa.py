@@ -144,7 +144,7 @@ class AAA:
     ----------
     .. [1] Y. Nakatsukasa, O. Sete, and L. N. Trefethen, "The AAA algorithm for
             rational approximation", SIAM J. Sci. Comp. 40 (2018), A1494-A1522.
-            :doi:`10.1137/16M110612`
+            :doi:`10.1137/16M1106122`
     .. [2] J. Gilewicz and M. Pindor, Pade approximants and noise: rational functions,
            J. Comp. Appl. Math. 105 (1999), pp. 285-297.
            :doi:`10.1016/S0377-0427(02)00674-X`
