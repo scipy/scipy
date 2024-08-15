@@ -507,6 +507,48 @@ class TestBradford:
         assert_allclose(x, xx)
 
 
+class TestCauchy:
+
+    # Reference values were computed with mpmath.
+    @pytest.mark.parametrize(
+        'x, ref',
+        [(-5e15, 6.366197723675814e-17),
+         (-5, 0.06283295818900118),
+         (-1, 0.25),
+         (0, 0.5),
+         (1, 0.75),
+         (5, 0.9371670418109989),
+         (5e15, 0.9999999999999999)]
+    )
+    @pytest.mark.parametrize(
+        'method, sgn',
+        [(stats.cauchy.cdf, 1),
+         (stats.cauchy.sf, -1)]
+    )
+    def test_cdf_sf(self, x, ref, method, sgn):
+        p = method(sgn*x)
+        assert_allclose(p, ref, rtol=1e-15)
+
+    # Reference values were computed with mpmath.
+    @pytest.mark.parametrize(
+        'p, ref',
+        [(1e-20, -3.1830988618379067e+19),
+         (1e-9, -318309886.1837906),
+         (0.25, -1.0),
+         (0.50, 0.0),
+         (0.75, 1.0),
+         (0.999999, 318309.88617359026),
+         (0.999999999999, 318316927901.77966)]
+    )
+    @pytest.mark.parametrize(
+        'method, sgn',
+        [(stats.cauchy.ppf, 1),
+         (stats.cauchy.isf, -1)])
+    def test_ppf_isf(self, p, ref, method, sgn):
+        x = sgn*method(p)
+        assert_allclose(x, ref, rtol=1e-15)
+
+
 class TestChi:
 
     # "Exact" value of chi.sf(10, 4), as computed by Wolfram Alpha with
@@ -1021,6 +1063,12 @@ class TestGeom:
         h = stats.geom(0.0146).entropy()
         assert_allclose(h, 5.219397961962308, rtol=1e-15)
 
+    def test_rvs_gh18372(self):
+        # gh-18372 reported that `geom.rvs` could produce negative numbers,
+        # with `RandomState` PRNG, but the support is positive integers.
+        # Check that this is resolved.
+        random_state = np.random.RandomState(294582935)
+        assert (stats.geom.rvs(1e-30, size=10, random_state=random_state) > 0).all()
 
 class TestPlanck:
     def setup_method(self):
@@ -4635,6 +4683,13 @@ class TestBetaPrime:
     def test_ppf_gh_17631(self, x, a, b, p):
         assert_allclose(stats.betaprime.ppf(p, a, b), x, rtol=2e-14)
 
+    def test__ppf(self):
+        # Verify that _ppf supports scalar arrays.
+        a = np.array(1.0)
+        b = np.array(1.0)
+        p = np.array(0.5)
+        assert_allclose(stats.betaprime._ppf(p, a, b), 1.0, rtol=5e-16)
+
     @pytest.mark.parametrize(
         'x, a, b, expected',
         cdf_vals + [
@@ -5864,7 +5919,7 @@ class TestFitMethod:
     def test_fit_w_non_finite_data_values(self, dist, args):
         """gh-10300"""
         if dist in self.fitSkipNonFinite:
-            pytest.skip("%s fit known to fail or deprecated" % dist)
+            pytest.skip(f"{dist} fit known to fail or deprecated")
         x = np.array([1.6483, 2.7169, 2.4667, 1.1791, 3.5433, np.nan])
         y = np.array([1.6483, 2.7169, 2.4667, 1.1791, 3.5433, np.inf])
         distfunc = getattr(stats, dist)
@@ -6571,6 +6626,37 @@ class TestNct:
     def test_cdf_large_nc(self):
         # gh-17916 reported a crash with large `nc` values
         assert_allclose(stats.nct.cdf(2, 2, float(2**16)), 0)
+
+    # PDF reference values were computed with mpmath
+    # with 100 digits of precision
+
+    # def nct_pdf(x, df, nc):
+    #     x = mp.mpf(x)
+    #     n = mp.mpf(df)
+    #     nc = mp.mpf(nc)
+
+    #     x2 = x*x
+    #     ncx2 = nc*nc*x2
+    #     fac1 = n + x2
+    #     trm1 = (n/2.*mp.log(n) + mp.loggamma(n + mp.one)
+    #             - (n * mp.log(2.) + nc*nc/2 + (n/2)*mp.log(fac1)
+    #                 + mp.loggamma(n/2)))
+    #     Px = mp.exp(trm1)
+    #     valF = ncx2 / (2*fac1)
+    #     trm1 = (mp.sqrt(2)*nc*x*mp.hyp1f1(n/2+1, 1.5, valF)
+    #             / (fac1*mp.gamma((n+1)/2)))
+    #     trm2 = (mp.hyp1f1((n+1)/2, 0.5, valF)
+    #             / (mp.sqrt(fac1)*mp.gamma(n/2 + mp.one)))
+    #     Px *= trm1+trm2
+    #     return float(Px)
+
+    @pytest.mark.parametrize("x, df, nc, expected", [
+        (10000, 10, 16, 3.394646922945872e-30),
+        (-10, 8, 16, 4.282769500264159e-70)
+        ])
+    def test_pdf_large_nc(self, x, df, nc, expected):
+        # gh-#20693 reported zero values for large `nc` values
+        assert_allclose(stats.nct.pdf(x, df, nc), expected, rtol=1e-12)
 
 
 class TestRecipInvGauss:
@@ -9203,6 +9289,17 @@ class TestArgus:
     def test_sf_small_chi(self, chi, expected):
         x = np.array([0.1, 0.5, 0.9])
         assert_allclose(stats.argus.sf(x, chi), expected, rtol=1e-14)
+
+    # Expected values were computed with mpmath.
+    @pytest.mark.parametrize(
+        'x, chi, expected',
+        [(0.9999999, 0.25, 9.113252974162428e-11),
+         (0.9999999, 3.0, 6.616650419714568e-10),
+         (0.999999999, 2.5, 4.130195911418939e-13),
+         (0.999999999, 10.0, 2.3788319094393724e-11)])
+    def test_sf_near_1(self, x, chi, expected):
+        sf = stats.argus.sf(x, chi)
+        assert_allclose(sf, expected, rtol=5e-15)
 
     # Expected values were computed with mpmath (code: see gh-13370).
     @pytest.mark.parametrize(

@@ -60,30 +60,7 @@ at the top-level directory.
 	COLAMD is also available under alternate licenses, contact T. Davis
 	for details.
 
-	This library is free software; you can redistribute it and/or
-	modify it under the terms of the GNU Lesser General Public
-	License as published by the Free Software Foundation; either
-	version 2.1 of the License, or (at your option) any later version.
-
-	This library is distributed in the hope that it will be useful,
-	but WITHOUT ANY WARRANTY; without even the implied warranty of
-	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-	Lesser General Public License for more details.
-
-	You should have received a copy of the GNU Lesser General Public
-	License along with this library; if not, write to the Free Software
-	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301
-	USA
-
-	Permission is hereby granted to use or copy this program under the
-	terms of the GNU LGPL, provided that the Copyright, this License,
-	and the Availability of the original version is retained on all copies.
-	User documentation of any code that uses this code or any modified
-	version of this code must cite the Copyright, this License, the
-	Availability note, and "Used by permission." Permission to modify
-	the code and to distribute modified code is granted, provided the
-	Copyright, this License, and the Availability note are retained,
-	and a notice that the code was modified is included.
+        See COLAMD/Doc/License.txt for the license.
 
     Availability:
 
@@ -685,6 +662,37 @@ at the top-level directory.
 #define NULL ((void *) 0)
 #endif
 
+/* ========================================================================== */
+/* === int or SuiteSparse_long ============================================== */
+/* ========================================================================== */
+
+#ifdef DLONG
+
+#define Int SuiteSparse_long
+#define ID  SuiteSparse_long_id
+#define Int_MAX SuiteSparse_long_max
+
+#define COLAMD_recommended colamd_l_recommended
+#define COLAMD_set_defaults colamd_l_set_defaults
+#define COLAMD_MAIN colamd_l
+#define SYMAMD_MAIN symamd_l
+#define COLAMD_report colamd_l_report
+#define SYMAMD_report symamd_l_report
+
+#else
+
+#define Int int
+#define ID "%d"
+#define Int_MAX INT_MAX
+
+#define COLAMD_recommended colamd_recommended
+#define COLAMD_set_defaults colamd_set_defaults
+#define COLAMD_MAIN colamd
+#define SYMAMD_MAIN symamd
+#define COLAMD_report colamd_report
+#define SYMAMD_report symamd_report
+
+#endif
 
 /* ========================================================================== */
 /* === Row and Column structures ============================================ */
@@ -1597,7 +1605,6 @@ PUBLIC Int COLAMD_MAIN		/* returns TRUE if successful, FALSE otherwise*/
     return (TRUE) ;
 }
 
-#if 0
 
 /* ========================================================================== */
 /* === colamd_report ======================================================== */
@@ -1624,7 +1631,7 @@ PUBLIC void SYMAMD_report
     print_report ("symamd", stats) ;
 }
 
-#endif
+
 
 /* ========================================================================== */
 /* === NON-USER-CALLABLE ROUTINES: ========================================== */
@@ -3189,15 +3196,15 @@ PRIVATE void print_report
 
             SUITESPARSE_PRINTF(
                     "%s: number of duplicate or out-of-order row indices: %d\n",
-                    method, (int) i3) ;
+                    method, i3) ;
 
             SUITESPARSE_PRINTF(
                     "%s: last seen duplicate or out-of-order row index:   %d\n",
-                    method, (int) INDEX (i2)) ;
+                    method, INDEX (i2)) ;
 
             SUITESPARSE_PRINTF(
                     "%s: last seen in column:                             %d",
-                    method, (int) INDEX (i1)) ;
+                    method, INDEX (i1)) ;
 
 	    /* no break - fall through to next case instead */
 
@@ -3207,15 +3214,15 @@ PRIVATE void print_report
 
             SUITESPARSE_PRINTF(
                     "%s: number of dense or empty rows ignored:           %d\n",
-                    method, (int) stats [COLAMD_DENSE_ROW]) ;
+                    method, stats [COLAMD_DENSE_ROW]) ;
 
             SUITESPARSE_PRINTF(
                     "%s: number of dense or empty columns ignored:        %d\n",
-                    method, (int) stats [COLAMD_DENSE_COL]) ;
+                    method, stats [COLAMD_DENSE_COL]) ;
 
             SUITESPARSE_PRINTF(
                     "%s: number of garbage collections performed:         %d\n",
-                    method, (int) stats [COLAMD_DEFRAG_COUNT]) ;
+                    method, stats [COLAMD_DEFRAG_COUNT]) ;
 	    break ;
 
 	case COLAMD_ERROR_A_not_present:
@@ -3232,24 +3239,24 @@ PRIVATE void print_report
 
 	case COLAMD_ERROR_nrow_negative:
 
-            SUITESPARSE_PRINTF("Invalid number of rows (%d).\n", (int) i1) ;
+            SUITESPARSE_PRINTF("Invalid number of rows (%d).\n", i1) ;
 	    break ;
 
 	case COLAMD_ERROR_ncol_negative:
 
-            SUITESPARSE_PRINTF("Invalid number of columns (%d).\n", (int) i1) ;
+            SUITESPARSE_PRINTF("Invalid number of columns (%d).\n", i1) ;
 	    break ;
 
 	case COLAMD_ERROR_nnz_negative:
 
             SUITESPARSE_PRINTF(
-			       "Invalid number of nonzero entries (%d).\n", (int) i1) ;
+                    "Invalid number of nonzero entries (%d).\n", i1) ;
 	    break ;
 
 	case COLAMD_ERROR_p0_nonzero:
 
             SUITESPARSE_PRINTF(
-			       "Invalid column pointer, p [0] = %d, must be zero.\n", (int)i1);
+                    "Invalid column pointer, p [0] = %d, must be zero.\n", i1);
 	    break ;
 
 	case COLAMD_ERROR_A_too_small:
@@ -3257,21 +3264,21 @@ PRIVATE void print_report
             SUITESPARSE_PRINTF("Array A too small.\n") ;
             SUITESPARSE_PRINTF(
                     "        Need Alen >= %d, but given only Alen = %d.\n",
-                    (int) i1, (int) i2) ;
+                    i1, i2) ;
 	    break ;
 
 	case COLAMD_ERROR_col_length_negative:
 
             SUITESPARSE_PRINTF
             ("Column %d has a negative number of nonzero entries (%d).\n",
-	     (int) INDEX (i1), (int) i2) ;
+            INDEX (i1), i2) ;
 	    break ;
 
 	case COLAMD_ERROR_row_index_out_of_bounds:
 
             SUITESPARSE_PRINTF
             ("Row index (row %d) out of bounds (%d to %d) in column %d.\n",
-	     (int) INDEX (i2), (int) INDEX (0), (int) INDEX (i3-1), (int) INDEX (i1)) ;
+            INDEX (i2), INDEX (0), INDEX (i3-1), INDEX (i1)) ;
 	    break ;
 
 	case COLAMD_ERROR_out_of_memory:

@@ -125,18 +125,18 @@ your system.
 
         brew install gfortran openblas pkg-config
 
+    To allow the build tools to find OpenBLAS, you must run::
+
+        brew info openblas | grep PKG_CONFIG_PATH
+
+    This will give you a command starting with ``export PKG_CONFIG_PATH=``, which
+    you must run.
+
     .. note::
 
-        ``export PKG_CONFIG_PATH="/opt/homebrew/opt/openblas/lib/pkgconfig"``
-        may need to be used in order for the build system to detect OpenBlas.
-
-    .. note::
-
-        As of SciPy >=1.2.0, we do not support compiling against the system
-        Accelerate library for BLAS and LAPACK. It does not support a sufficiently
-        recent LAPACK interface. This is planned to change in 2023, because macOS
-        13.3 introduced a major upgrade to Accelerate which resolved all known
-        issues.
+        As of SciPy 1.14.0, we have added support for the Accelerate library
+        for BLAS and LAPACK. It requires macOS 13.3 or greater. To build with
+        Accelerate instead of OpenBLAS, see :ref:`blas-lapack-selection`.
 
   .. tab-item:: Windows
     :sync: windows

@@ -646,3 +646,15 @@ class TestZipf:
         pmf = dist.pmf(k)
         pmf_k_int32 = dist.pmf(k_int32)
         assert_equal(pmf, pmf_k_int32)
+
+
+class TestRandInt:
+    def test_gh19759(self):
+        # test zero PMF values within the support reported by gh-19759
+        a = -354
+        max_range = abs(a)
+        all_b_1 = [a + 2 ** 31 + i for i in range(max_range)]
+        res = randint.pmf(325, a, all_b_1)
+        assert (res > 0).all()
+        ref = 1 / (np.asarray(all_b_1, dtype=np.float64) - a)
+        assert_allclose(res, ref)

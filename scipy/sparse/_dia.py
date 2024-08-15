@@ -68,8 +68,8 @@ class _dia_base(_data_matrix):
             try:
                 arg1 = np.asarray(arg1)
             except Exception as e:
-                raise ValueError("unrecognized form for"
-                        " %s_matrix constructor" % self.format) from e
+                raise ValueError("unrecognized form for "
+                                 f"{self.format}_matrix constructor") from e
             if isinstance(self, sparray) and arg1.ndim != 2:
                 raise ValueError(f"DIA arrays don't support {arg1.ndim}D input. Use 2D")
             A = self._coo_container(arg1, dtype=dtype, shape=shape).todia()
@@ -481,6 +481,7 @@ class dia_array(_dia_base, sparray):
 
     Sparse arrays can be used in arithmetic operations: they support
     addition, subtraction, multiplication, division, and matrix power.
+    Sparse arrays with DIAgonal storage do not support slicing.
 
     Examples
     --------
@@ -556,6 +557,7 @@ class dia_matrix(spmatrix, _dia_base):
 
     Sparse matrices can be used in arithmetic operations: they support
     addition, subtraction, multiplication, division, and matrix power.
+    Sparse matrices with DIAgonal storage do not support slicing.
 
     Examples
     --------

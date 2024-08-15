@@ -36,7 +36,7 @@ from ._complexstuff cimport (
 from . cimport sf_error
 
 
-cdef extern from "special_wrappers.h" nogil:
+cdef extern from "xsf_wrappers.h" nogil:
     npy_cdouble hyp2f1_complex_wrap(double a, double b, double c, npy_cdouble zp)
     double binom_wrap(double n, double k)
     double cephes_hyp2f1_wrap(double a, double b, double c, double x)

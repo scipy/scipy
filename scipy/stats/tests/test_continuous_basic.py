@@ -75,7 +75,7 @@ skip_fit_mm = {'genexpon', 'genhyperbolic', 'ksone', 'kstwo', 'levy_stable',
 # Here 'fail' mean produce wrong results and/or raise exceptions, depending
 # on the implementation details of corresponding special functions.
 # cf https://github.com/scipy/scipy/pull/4979 for a discussion.
-fails_cmplx = {'argus', 'beta', 'betaprime', 'chi', 'chi2', 'cosine',
+fails_cmplx = {'argus', 'beta', 'betaprime', 'cauchy', 'chi', 'chi2', 'cosine',
                'dgamma', 'dweibull', 'erlang', 'f', 'foldcauchy', 'gamma',
                'gausshyper', 'gengamma', 'genhyperbolic',
                'geninvgauss', 'gennorm', 'genpareto',

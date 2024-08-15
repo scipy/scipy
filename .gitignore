@@ -107,6 +107,10 @@ doc/source/.jupyterlite.doit.db
 .cache/
 .pytest_cache/
 
+# github cache #
+################
+gh_cache.json
+
 # mypy cache #
 ##############
 .mypy_cache/
@@ -228,7 +232,6 @@ scipy/optimize/cobyla/_cobylamodule.c
 scipy/optimize/_group_columns.cpp
 scipy/optimize/lbfgsb_src/_lbfgsbmodule.c
 scipy/optimize/lbfgsb_src/_lbfgsb-f2pywrappers.f
-scipy/optimize/minpack2/_minpack2module.c
 scipy/optimize/__nnls/__nnlsmodule.c
 scipy/optimize/slsqp/_slsqpmodule.c
 scipy/optimize/_lsq/givens_elimination.c

@@ -25,18 +25,7 @@ cython_linalg = custom_target('cython_linalg',
   install_dir: py3.get_install_dir() / 'scipy/linalg',
   install_tag: 'devel'
 )
-
-# This dummy custom target is only needed to establish a dependency on
-# cython_linalg in a generator below. Adding that dependency directly yields
-# warnings about multiple outputs. And using `depends: cython_linalg[2]` does
-# not work, because that generator depends does not accept CustomTargetIndex,
-# only CustomTarget. See https://github.com/mesonbuild/meson/issues/9837
-_echo = find_program('../_build_utils/echo.py')
-cython_blas_pxd = custom_target(
-  output: '_dummy_cython_blas.pxd',
-  input: cython_linalg[2],
-  command: [_echo, '@INPUT@'],
-)
+cython_blas_pxd = cython_linalg[2]
 
 # pyx -> c, pyx -> cpp generators, depending on __init__.py here.
 linalg_init_cython_gen = generator(cython,
@@ -111,57 +100,13 @@ py3.extension_module('_flapack',
 
 # TODO: cblas/clapack are built *only* for ATLAS. Why? Is it still needed?
 
-# id_dist contains a copy of FFTPACK, which has type mismatch warnings
-# that are hard to fix. This code is terrible and noisy during the build,
-# silence it completely.
-_suppress_all_warnings = ff.get_supported_arguments('-w')
-
-py3.extension_module('_interpolative',
-  [
-    'src/id_dist/src/dfft.f',
-    'src/id_dist/src/id_rand.f',
-    'src/id_dist/src/id_rtrans.f',
-    'src/id_dist/src/idd_frm.f',
-    'src/id_dist/src/idd_house.f',
-    'src/id_dist/src/idd_id.f',
-    'src/id_dist/src/idd_id2svd.f',
-    'src/id_dist/src/idd_qrpiv.f',
-    'src/id_dist/src/idd_sfft.f',
-    'src/id_dist/src/idd_snorm.f',
-    'src/id_dist/src/idd_svd.f',
-    'src/id_dist/src/iddp_aid.f',
-    'src/id_dist/src/iddp_asvd.f',
-    'src/id_dist/src/iddp_rid.f',
-    'src/id_dist/src/iddp_rsvd.f',
-    'src/id_dist/src/iddr_aid.f',
-    'src/id_dist/src/iddr_asvd.f',
-    'src/id_dist/src/iddr_rid.f',
-    'src/id_dist/src/iddr_rsvd.f',
-    'src/id_dist/src/idz_frm.f',
-    'src/id_dist/src/idz_house.f',
-    'src/id_dist/src/idz_id.f',
-    'src/id_dist/src/idz_id2svd.f',
-    'src/id_dist/src/idz_qrpiv.f',
-    'src/id_dist/src/idz_sfft.f',
-    'src/id_dist/src/idz_snorm.f',
-    'src/id_dist/src/idz_svd.f',
-    'src/id_dist/src/idzp_aid.f',
-    'src/id_dist/src/idzp_asvd.f',
-    'src/id_dist/src/idzp_rid.f',
-    'src/id_dist/src/idzp_rsvd.f',
-    'src/id_dist/src/idzr_aid.f',
-    'src/id_dist/src/idzr_asvd.f',
-    'src/id_dist/src/idzr_rid.f',
-    'src/id_dist/src/idzr_rsvd.f',
-    'src/id_dist/src/prini.f',
-    f2py_gen.process('interpolative.pyf'),
-  ],
-  fortran_args: [fortran_ignore_warnings, _suppress_all_warnings],
+# _decomp_interpolative
+py3.extension_module('_decomp_interpolative',
+  linalg_init_cython_gen.process('_decomp_interpolative.pyx'),
+  c_args: cython_c_args,
+  dependencies: np_dep,
   link_args: version_link_args,
-  dependencies: [lapack_dep, fortranobject_dep],
-  override_options: ['b_lto=false'],
   install: true,
-  link_language: 'fortran',
   subdir: 'scipy/linalg'
 )
 
@@ -278,7 +223,6 @@ python_sources = [
   '_decomp_schur.py',
   '_decomp_svd.py',
   '_expm_frechet.py',
-  '_interpolative_backend.py',
   '_matfuncs.py',
   '_matfuncs_expm.pyi',
   '_matfuncs_inv_ssq.py',
@@ -329,6 +273,8 @@ py3.install_sources(
 #  cython_linalg[2],  # cython_blas.pxd
 #  cython_linalg[3],  # cython_lapack.pxd
 #]
+#py.install_sources(pxd_files)
+
 #custom_target('cython_blas_lapack_pxd',
 #  input : pxd_files,
 #  output : ['cython_blas2.pxd', 'cython_lapack2.pxd'],

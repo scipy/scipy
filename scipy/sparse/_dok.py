@@ -53,7 +53,7 @@ class _dok_base(_spbase, IndexMixin, dict):
                 self._dict = {i: v for i, v in enumerate(arg1) if v != 0}
                 self.dtype = getdtype(arg1.dtype)
             else:
-                d = self._coo_container(arg1, dtype=dtype).todok()
+                d = self._coo_container(arg1, shape=shape, dtype=dtype).todok()
                 self._dict = d._dict
                 self.dtype = getdtype(d.dtype)
             self._shape = check_shape(arg1.shape, allow_1d=is_array)
@@ -144,26 +144,33 @@ class _dok_base(_spbase, IndexMixin, dict):
             key = key[0]
         return self._dict.get(key, default)
 
-    # override IndexMixin.__getitem__ for 1d case until fully implemented
-    def __getitem__(self, key):
-        if self.ndim == 2:
-            return super().__getitem__(key)
-
-        if isinstance(key, tuple) and len(key) == 1:
-            key = key[0]
-        INT_TYPES = (int, np.integer)
-        if isinstance(key, INT_TYPES):
-            if key < 0:
-                key += self.shape[-1]
-            if key < 0 or key >= self.shape[-1]:
-                raise IndexError('index value out of bounds')
-            return self._get_int(key)
-        else:
-            raise IndexError('array/slice index for 1d dok_array not yet supported')
-
     # 1D get methods
     def _get_int(self, idx):
         return self._dict.get(idx, self.dtype.type(0))
+
+    def _get_slice(self, idx):
+        i_range = range(*idx.indices(self.shape[0]))
+        return self._get_array(list(i_range))
+
+    def _get_array(self, idx):
+        idx = np.asarray(idx)
+        if idx.ndim == 0:
+            val = self._dict.get(int(idx), self.dtype.type(0))
+            return np.array(val, stype=self.dtype)
+        new_dok = self._dok_container(idx.shape, dtype=self.dtype)
+        dok_vals = [self._dict.get(i, 0) for i in idx.ravel()]
+        if dok_vals:
+            if len(idx.shape) == 1:
+                for i, v in enumerate(dok_vals):
+                    if v:
+                        new_dok._dict[i] = v
+            else:
+                new_idx = np.unravel_index(np.arange(len(dok_vals)), idx.shape)
+                new_idx = new_idx[0] if len(new_idx) == 1 else zip(*new_idx)
+                for i, v in zip(new_idx, dok_vals, strict=True):
+                    if v:
+                        new_dok._dict[i] = v
+        return new_dok
 
     # 2D get methods
     def _get_intXint(self, row, col):
@@ -236,29 +243,26 @@ class _dok_base(_spbase, IndexMixin, dict):
                 newdok._dict[key] = v
         return newdok
 
-    # override IndexMixin.__setitem__ for 1d case until fully implemented
-    def __setitem__(self, key, value):
-        if self.ndim == 2:
-            return super().__setitem__(key, value)
-
-        if isinstance(key, tuple) and len(key) == 1:
-            key = key[0]
-        INT_TYPES = (int, np.integer)
-        if isinstance(key, INT_TYPES):
-            if key < 0:
-                key += self.shape[-1]
-            if key < 0 or key >= self.shape[-1]:
-                raise IndexError('index value out of bounds')
-            return self._set_int(key, value)
-        else:
-            raise IndexError('array index for 1d dok_array not yet provided')
-
     # 1D set methods
     def _set_int(self, idx, x):
         if x:
             self._dict[idx] = x
         elif idx in self._dict:
             del self._dict[idx]
+
+    def _set_array(self, idx, x):
+        idx_set = idx.ravel()
+        x_set = x.ravel()
+        if len(idx_set) != len(x_set):
+            if len(x_set) == 1:
+                x_set = np.full(len(idx_set), x_set[0], dtype=self.dtype)
+            else:
+              raise ValueError("Need len(index)==len(data) or len(data)==1")
+        for i, v in zip(idx_set, x_set):
+            if v:
+                self._dict[i] = v
+            elif i in self._dict:
+                del self._dict[i]
 
     # 2D set methods
     def _set_intXint(self, row, col, x):
@@ -422,7 +426,7 @@ class _dok_base(_spbase, IndexMixin, dict):
         .. deprecated:: 1.14.0
 
             `conjtransp` is deprecated and will be removed in v1.16.0.
-            Use `.T.conj()` instead.
+            Use ``.T.conj()`` instead.
         """
         msg = ("`conjtransp` is deprecated and will be removed in v1.16.0. "
                    "Use `.T.conj()` instead.")

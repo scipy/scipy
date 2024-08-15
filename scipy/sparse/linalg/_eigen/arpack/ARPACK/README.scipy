@@ -1,11 +1,12 @@
-This directory contains a bundled version of ARPACK-NG 3.3.0,
+This directory contains a bundled version of ARPACK-NG 3.9.1,
 https://github.com/opencollab/arpack-ng
 
 NOTE FOR VENDORS: it is in general safe to use a system version of ARPACK
 instead. Note, however, that ARPACK and early versions of ARPACK-NG have
 certain bugs, so using those over the bundled version is not recommended.
 
-The bundled version has the following patch applied:
+For versions of ARPACK-NG prior to 3.9.0, the bundled version has the 
+following patch applied:
 
 Replace calls to certain Fortran functions with wrapper
 functions, to avoid various ABI mismatches on OSX. These changes are
@@ -18,5 +19,10 @@ s@\bcdotu\b@wcdotu@g;
 s@\bzdotu\b@wzdotu@g;
 s@\bcladiv\b@wcladiv@g;
 s@\bzladiv\b@wzladiv@g;
-s@\bSLAMCH\b@slamch@g;' \
-SRC/*.f UTIL/*.f LAPACK/*.f
+s@\bslamch\b@slamch@g;' \
+SRC/*.f UTIL/*.f
+
+For versions 3.9.0+, this is not necessary anymore and the issue is resolved
+via vendoring the copies of ccdotc and zzdotc.
+
+See https://github.com/opencollab/arpack-ng/pull/346 for more details.

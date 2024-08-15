@@ -57,8 +57,8 @@ class Arithmetic(Benchmark):
     ]
 
     def setup(self, format, XY, op):
-        matrices = dict(A=poisson2d(250, format=format),
-                        B=poisson2d(250, format=format)**2)
+        matrices = dict(A=poisson2d(250, format=format))
+        matrices['B'] = (matrices['A']**2).asformat(format)
 
         x = matrices[XY[0]]
         self.y = matrices[XY[1]]
@@ -504,3 +504,18 @@ class Random(Benchmark):
     def time_rand(self, density):
         sparse.rand(self.nrows, self.ncols,
                     format=self.format, density=density)
+
+
+class Argmax(Benchmark):
+    params = [[0.01, 0.1, 0.5], ['csr', 'csc', 'coo'], [True, False]]
+    param_names = ['density', 'format', 'explicit']
+
+    def setup(self, density, format, explicit):
+        n = 1000
+
+        warnings.simplefilter('ignore', SparseEfficiencyWarning)
+
+        self.X = sparse.rand(n, n, format=format, density=density)
+
+    def time_argmax(self, density, format, explicit):
+        self.X.argmax(explicit=explicit)

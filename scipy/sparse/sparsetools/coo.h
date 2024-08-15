@@ -145,4 +145,44 @@ void coo_matvec(const npy_int64 nnz,
     }
 }
 
+
+
+/*
+ *
+ * Input Arguments:
+ *   npy_int64  nnz           - number of nonzeros in A
+ *   npy_int64  n_col_B       - number of columns in B
+ *   I  Ai[nnz]               - row indices
+ *   I  Aj[nnz]               - column indices
+ *   T  Ax[nnz]               - nonzero values
+ *   T  Bx[n_row_B * n_col_B] - input matrix flattened
+ *
+ * Output Arguments:
+ *   T  Yx[n_row_A * n_col_B] - output matrix flattened
+ *
+ * Notes:
+ *   Output array Yx must be preallocated
+ * 
+ */
+template <class I, class T>
+void coo_matmat_dense(const npy_int64 nnz,
+                const npy_int64 n_col_B,
+                const I Ai[],
+                const I Aj[],
+                const T Ax[],
+                const T Bx[],
+                      T Yx[])
+{
+    for (npy_int64 n = 0; n < nnz; n++) {
+        const T x = Ax[n];
+        if (x != 0) {
+            const npy_int64 dst_offset = Ai[n] * n_col_B;
+            const npy_int64 src_offset = Aj[n] * n_col_B;
+            for (npy_int64 i = 0; i < n_col_B; i++) {
+                Yx[dst_offset + i] += x * Bx[src_offset + i];
+            }
+        }
+    }
+}
+
 #endif
