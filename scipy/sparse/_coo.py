@@ -53,7 +53,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
                     shape = tuple(operator.index(np.max(idx)) + 1
                                   for idx in coords)
                 self._shape = check_shape(shape, allow_1d=is_array,
-                                          allow_nd=(is_array and len(shape)>=3))
+                                          allow_nd=(is_array))
                 idx_dtype = self._get_index_dtype(coords,
                                                   maxval=max(self.shape),
                                                   check_contents=True)
@@ -87,7 +87,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
                 self._shape = check_shape(M.shape, allow_1d=is_array, allow_nd=is_array)
                 if shape is not None:
                     if check_shape(shape, allow_1d=is_array,
-                        allow_nd=(is_array and len(self._shape)>=3)) != self._shape:
+                        allow_nd=(is_array)) != self._shape:
                         message = f'inconsistent shapes: {shape} != {self._shape}'
                         raise ValueError(message)
 
