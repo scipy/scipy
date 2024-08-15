@@ -1,14 +1,15 @@
 /* Translated into C++ by SciPy developers in 2024.
  *
- * Original author: Josh Wilson, 2020.
+ * Original author: Takuma Yoshimura, 2024.
  */
 
-/*
- * Implement sin(pi * x) and cos(pi * x) for real x. Since the periods
- * of these functions are integral (and thus representable in double
- * precision), it's possible to compute them with greater accuracy
- * than sin(x) and cos(x).
- */
+ /*
+  * Implement sin(pi * x), cos(pi * x), tan(pi * x) and cot(pi * x) for real x. 
+  * Return exactly 0 for integer or half-integer input values.
+  * sinpi and cospi conform to the IEEE754-2008 specification.
+  * tanpi and cotpi return sinpi/cospi and cospi/sinpi.
+  */
+
 #pragma once
 
 #include "../config.h"
@@ -19,40 +20,66 @@ namespace cephes {
     /* Compute sin(pi * x). */
     template <typename T>
     XSF_HOST_DEVICE T sinpi(T x) {
-        T s = 1.0;
+        T s = std::copysign(1.0, x);
+        x = std::abs(x);
 
-        if (x < 0.0) {
-            x = -x;
-            s = -1.0;
-        }
+        T r = x - std::ldexp(std::floor(std::ldexp(x, -1)), 1);
+        s = r <= 1.0 ? s : -s;
+        r = r - std::floor(r);
+        r = r <= 0.5 ? r : (1.0 - r);
 
-        T r = std::fmod(x, 2.0);
-        if (r < 0.5) {
-            return s * std::sin(M_PI * r);
-        } else if (r > 1.5) {
-            return s * std::sin(M_PI * (r - 2.0));
-        } else {
-            return -s * std::sin(M_PI * (r - 1.0));
-        }
+        T y = std::copysign(std::sin(M_PI * r), s);
+ 
+        return y;
     }
 
     /* Compute cos(pi * x) */
     template <typename T>
     XSF_HOST_DEVICE T cospi(T x) {
-        if (x < 0.0) {
-            x = -x;
-        }
+        x = std::abs(x);
 
-        T r = std::fmod(x, 2.0);
-        if (r == 0.5) {
-            // We don't want to return -0.0
-            return 0.0;
-        }
-        if (r < 1.0) {
-            return -std::sin(M_PI * (r - 0.5));
-        } else {
-            return std::sin(M_PI * (r - 1.5));
-        }
+        T r = x - std::ldexp(std::floor(std::ldexp(x, -1)), 1);
+        r = r <= 1.0 ? (0.5 - r) : (r - 1.5);
+
+        T y = std::sin(M_PI * r);
+
+        return y;
+    }
+
+    /* Compute tan(pi * x) */
+    template <typename T>
+    XSF_HOST_DEVICE T tanpi(T x) {
+        T s = std::copysign(1.0, x);
+        x = std::abs(x);
+
+        T r = x - std::ldexp(std::floor(std::ldexp(x, -1)), 1);
+        s = r <= 1.0 ? s : -s;
+
+        T rs = r - std::floor(r);
+        rs = rs <= 0.5 ? rs : (1.0 - rs);
+        T rc = r <= 1.0 ? (0.5 - r) : (r - 1.5);
+
+        T y = std::copysign(std::sin(M_PI * rs), s) / std::sin(M_PI * rc);
+
+        return y;
+    }
+
+    /* Compute cot(pi * x) */
+    template <typename T>
+    XSF_HOST_DEVICE T cotpi(T x) {
+        T s = std::copysign(1.0, x);
+        x = std::abs(x);
+
+        T r = x - std::ldexp(std::floor(std::ldexp(x, -1)), 1);
+        s = r <= 1.0 ? s : -s;
+
+        T rs = r - std::floor(r);
+        rs = rs <= 0.5 ? rs : (1.0 - rs);
+        T rc = r <= 1.0 ? (0.5 - r) : (r - 1.5);
+
+        T y = std::sin(M_PI * rc) / std::copysign(std::sin(M_PI * rs), s);
+
+        return y;
     }
 } // namespace cephes
 } // namespace xsf
