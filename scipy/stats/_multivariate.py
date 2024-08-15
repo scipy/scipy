@@ -6988,6 +6988,19 @@ class normal_inverse_gamma_gen(multi_rv_generic):
     The normal-inverse-gamma distribution is the conjugate prior of a normal
     distribution with unknown mean and variance.
 
+    Methods
+    -------
+    pdf(x, s2, mu=0, lmbda=1, a=1, b=1)
+        Probability density function.
+    logpdf(x, s2, mu=0, lmbda=1, a=1, b=1)
+        Log of the probability density function.
+    mean(mu=0, lmbda=1, a=1, b=1)
+        Distribution mean.
+    var(mu=0, lmbda=1, a=1, b=1)
+        Distribution variance.
+    rvs(mu=0, lmbda=1, a=1, b=1, size=None, random_state=None)
+        Draw random samples.
+
     Parameters
     ----------
     mu, lmbda, a, b  : array_like
@@ -7022,7 +7035,7 @@ class normal_inverse_gamma_gen(multi_rv_generic):
     where all parameters are real and finite, and :math:`\sigma^2 > 0`,
     :math:`\lambda > 0`, :math:`\alpha > 0`, and :math:`\beta > 0`.
 
-    Methods `normal_inverse_gamma.pdf` and `normal_inverse_gamma.logpdf`
+    Methods ``normal_inverse_gamma.pdf`` and ``normal_inverse_gamma.logpdf``
     accept `x` and `s2` for arguments :math:`x` and :math:`\sigma^2`.
     All methods accept `mu`, `lmbda`, `a`, and `b` for shape parameters
     :math:`\mu`, :math:`\lambda`, :math:`\alpha`, and :math:`\beta`,
@@ -7079,6 +7092,7 @@ class normal_inverse_gamma_gen(multi_rv_generic):
     (np.float64(0.0), np.float64(1.0526315789473684))
 
     Similarly, for the variance:
+
     >>> x.var(ddof=1), s2.var(ddof=1)
     (np.float64(1.0546150578185023), np.float64(0.061829865266330754))
     >>> norm_inv_gamma.var()
