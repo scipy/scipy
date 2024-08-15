@@ -262,7 +262,6 @@ def isshape(x, nonneg=False, *, allow_1d=False, allow_nd=False) -> bool:
     return True
 
 
-
 def issequence(t) -> bool:
     return ((isinstance(t, (list, tuple)) and
             (len(t) == 0 or np.isscalar(t[0]))) or
