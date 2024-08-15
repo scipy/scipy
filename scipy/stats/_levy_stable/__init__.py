@@ -816,7 +816,7 @@ class levy_stable_gen(rv_continuous):
     pdf_fft_interpolation_level = 3
     pdf_fft_interpolation_degree = 3
 
-    def freeze(self, *args, **params):
+    def __call__(self, *args, **params):
         dist = levy_stable_frozen(self, *args, **params)
         dist.parameterization = self.parameterization
         return dist
