@@ -959,8 +959,8 @@ def test_add_broadcasting(a_shape, b_shape):
     res = a + b
     exp = np.add(a.toarray(), b.toarray())
     assert_equal(res.toarray(), exp)
-    # res = a + b.toarray()
-    # assert_equal(res, exp)
+    res = a + b.toarray()
+    assert_equal(res, exp)
 
 @pytest.mark.parametrize(('a_shape', 'b_shape'), broadcast_add_sub_shapes)
 def test_sub_broadcasting(a_shape, b_shape):

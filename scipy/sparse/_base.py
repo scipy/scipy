@@ -570,7 +570,7 @@ class _spbase:
                 try:
                     np.broadcast_shapes(self.shape, other.shape)
                 except ValueError:
-                    raise ValueError(f'inconsistent shapes ({self.shape} and {other.shape}')
+                    raise ValueError(f'inconsistent shapes ({self.shape} and {other.shape})')
                 bshape = np.broadcast_shapes(self.shape, other.shape)
                 self = self.broadcast_to(bshape)
                 other = np.broadcast_to(other, bshape)
