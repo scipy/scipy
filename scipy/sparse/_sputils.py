@@ -377,10 +377,10 @@ def check_shape(args, current_shape=None, *, allow_1d=False,
 
     ndim_new = len(new_shape)
     if not allow_1d and ndim_new != 2:
-        raise ValueError('matrix shape must be two-dimensional')
+        raise ValueError('shape must be two-dimensional')
 
     if ndim_new >= 3 and allow_1d and not allow_nd:
-        raise ValueError('matrix shape must be one- or two-dimensional')
+        raise ValueError('shape must be one- or two-dimensional')
 
     return new_shape
 
