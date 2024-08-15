@@ -16,7 +16,7 @@ from scipy.conftest import array_api_compatible
 from scipy.sparse._sputils import matrix
 
 from scipy._lib._array_api import (
-    SCIPY_ARRAY_API, copy, cov, xp_assert_close, xp_assert_equal
+    SCIPY_ARRAY_API, xp_copy, xp_cov, xp_assert_close, xp_assert_equal
 )
 
 pytestmark = [array_api_compatible, pytest.mark.usefixtures("skip_xp_backends")]
@@ -307,7 +307,7 @@ class TestKMean:
         data1 = data[:, 0]
 
         initc = data1[:3]
-        code = copy(initc, xp=xp)
+        code = xp_copy(initc, xp=xp)
         kmeans2(data1, code, iter=1)[0]
         kmeans2(data1, code, iter=2)[0]
 
@@ -353,8 +353,8 @@ class TestKMean:
         for data in datas:
             rng = np.random.default_rng(1234)
             init = _krandinit(data, k, rng, xp)
-            orig_cov = cov(data.T)
-            init_cov = cov(init.T)
+            orig_cov = xp_cov(data.T)
+            init_cov = xp_cov(init.T)
             xp_assert_close(orig_cov, init_cov, atol=1.1e-2)
 
     def test_kmeans2_empty(self, xp):

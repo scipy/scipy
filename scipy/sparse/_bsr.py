@@ -47,7 +47,7 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
                     blocksize = (1,1)
                 else:
                     if not isshape(blocksize):
-                        raise ValueError('invalid blocksize=%s' % blocksize)
+                        raise ValueError(f'invalid blocksize={blocksize}')
                     blocksize = tuple(blocksize)
                 self.data = np.zeros((0,) + blocksize, getdtype(dtype, default=float))
 
@@ -106,8 +106,8 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
             try:
                 arg1 = np.asarray(arg1)
             except Exception as e:
-                raise ValueError("unrecognized form for"
-                        " %s_matrix constructor" % self.format) from e
+                raise ValueError("unrecognized form for "
+                                 f"{self.format}_matrix constructor") from e
             if isinstance(self, sparray) and arg1.ndim != 2:
                 raise ValueError(f"BSR arrays don't support {arg1.ndim}D input. Use 2D")
             arg1 = self._coo_container(arg1, dtype=dtype).tobsr(blocksize=blocksize)
@@ -215,8 +215,8 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
         if axis is not None:
             raise NotImplementedError("_getnnz over an axis is not implemented "
                                       "for BSR format")
-        R,C = self.blocksize
-        return int(self.indptr[-1] * R * C)
+        R, C = self.blocksize
+        return int(self.indptr[-1]) * R * C
 
     _getnnz.__doc__ = _spbase._getnnz.__doc__
 

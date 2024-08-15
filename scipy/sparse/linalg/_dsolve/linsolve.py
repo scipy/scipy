@@ -313,11 +313,7 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
             row_segs = []
             col_segs = []
             for j in range(b.shape[1]):
-                # TODO: replace this with
-                # bj = b[:, j].toarray().ravel()
-                # once 1D sparse arrays are supported.
-                # That is a slightly faster code path.
-                bj = b[:, [j]].toarray().ravel()
+                bj = b[:, j].toarray().ravel()
                 xj = Afactsolve(bj)
                 w = np.flatnonzero(xj)
                 segment_length = w.shape[0]
@@ -337,7 +333,7 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
 
 
 def splu(A, permc_spec=None, diag_pivot_thresh=None,
-         relax=None, panel_size=None, options=dict()):
+         relax=None, panel_size=None, options=None):
     """
     Compute the LU decomposition of a sparse, square matrix.
 
@@ -405,7 +401,8 @@ def splu(A, permc_spec=None, diag_pivot_thresh=None,
     """
 
     if is_pydata_spmatrix(A):
-        def csc_construct_func(*a, cls=type(A)):
+        A_cls = type(A)
+        def csc_construct_func(*a, cls=A_cls):
             return cls.from_scipy_sparse(csc_matrix(*a))
         A = A.to_scipy_sparse().tocsc()
     else:
@@ -500,7 +497,8 @@ def spilu(A, drop_tol=None, fill_factor=None, drop_rule=None, permc_spec=None,
     """
 
     if is_pydata_spmatrix(A):
-        def csc_construct_func(*a, cls=type(A)):
+        A_cls = type(A)
+        def csc_construct_func(*a, cls=A_cls):
             return cls.from_scipy_sparse(csc_matrix(*a))
         A = A.to_scipy_sparse().tocsc()
     else:

@@ -2292,10 +2292,10 @@ add_newdoc("ellipj",
 
     Parameters
     ----------
-    m : array_like
-        Parameter.
     u : array_like
         Argument.
+    m : array_like
+        Parameter.
     out : tuple of ndarray, optional
         Optional output arrays for the function values
 
@@ -2306,8 +2306,8 @@ add_newdoc("ellipj",
 
             sn(u|m), cn(u|m), dn(u|m)
 
-        The value `ph` is such that if `u = ellipkinc(ph, m)`,
-        then `sn(u|m) = sin(ph)` and `cn(u|m) = cos(ph)`.
+        The value `ph` is such that if ``u = ellipkinc(ph, m)``,
+        then ``sn(u|m) = sin(ph)`` and ``cn(u|m) = cos(ph)``.
 
     See Also
     --------
@@ -2316,18 +2316,18 @@ add_newdoc("ellipj",
 
     Notes
     -----
-    Wrapper for the Cephes [1]_ routine `ellpj`.
+    Wrapper for the Cephes [1]_ routine ``ellpj``.
 
     These functions are periodic, with quarter-period on the real axis
-    equal to the complete elliptic integral `ellipk(m)`.
+    equal to the complete elliptic integral ``ellipk(m)``.
 
-    Relation to incomplete elliptic integral: If `u = ellipkinc(phi,m)`, then
-    `sn(u|m) = sin(phi)`, and `cn(u|m) = cos(phi)`. The `phi` is called
+    Relation to incomplete elliptic integral: If ``u = ellipkinc(phi,m)``, then
+    ``sn(u|m) = sin(phi)``, and ``cn(u|m) = cos(phi)``. The ``phi`` is called
     the amplitude of `u`.
 
     Computation is by means of the arithmetic-geometric mean algorithm,
     except when `m` is within 1e-9 of 0 or 1. In the latter case with `m`
-    close to 1, the approximation applies only for `phi < pi/2`.
+    close to 1, the approximation applies only for ``phi < pi/2``.
 
     References
     ----------
@@ -11923,6 +11923,50 @@ add_newdoc(
     """)
 
 add_newdoc(
+    "_cauchy_ppf",
+    """
+    _cauchy_ppf(p, loc, scale)
+
+    Percent point function (i.e. quantile) of the Cauchy distribution.
+
+    Parameters
+    ----------
+    p : array_like
+        Probabilities
+    loc : array_like
+        Location parameter of the distribution.
+    scale : array_like
+        Scale parameter of the distribution.
+
+    Returns
+    -------
+    scalar or ndarray
+
+    """)
+
+add_newdoc(
+    "_cauchy_isf",
+    """
+    _cauchy_isf(p, loc, scale)
+
+    Inverse survival function of the Cauchy distribution.
+
+    Parameters
+    ----------
+    p : array_like
+        Probabilities
+    loc : array_like
+        Location parameter of the distribution.
+    scale : array_like
+        Scale parameter of the distribution.
+
+    Returns
+    -------
+    scalar or ndarray
+
+    """)
+
+add_newdoc(
     "_ncx2_pdf",
     """
     _ncx2_pdf(x, k, l)
@@ -12215,6 +12259,29 @@ add_newdoc(
     scalar or ndarray
 
     """)
+
+add_newdoc(
+    "_nct_pdf",
+    """
+    _nct_pdf(x, v, l)
+
+    Probability density function of noncentral t-distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Real-valued
+    v : array_like
+        Positive, real-valued parameters
+    l : array_like
+        Real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    """)
+
 
 add_newdoc(
     "_nct_ppf",

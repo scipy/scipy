@@ -373,8 +373,8 @@ def splev(x, tck, der=0, ext=0):
         try:
             extrapolate = {0: True, }[ext]
         except KeyError as e:
-            raise ValueError("Extrapolation mode %s is not supported "
-                             "by BSpline." % ext) from e
+            raise ValueError(f"Extrapolation mode {ext} is not supported "
+                             "by BSpline.") from e
 
         return tck(x, der, extrapolate=extrapolate)
     else:
@@ -438,8 +438,8 @@ def splint(a, b, tck, full_output=0):
             raise ValueError(mesg)
 
         if full_output != 0:
-            mesg = ("full_output = %s is not supported. Proceeding as if "
-                    "full_output = 0" % full_output)
+            mesg = (f"full_output = {full_output} is not supported. Proceeding as if "
+                    "full_output = 0")
 
         return tck.integrate(a, b, extrapolate=False)
     else:

@@ -2636,7 +2636,6 @@ const char *loggamma_doc = R"(
     )";
 
 const char *logit_doc = R"(
-    """
     logit(x, out=None)
 
     Logit ufunc for ndarrays.
@@ -3861,6 +3860,10 @@ const char *sph_harm_doc = R"(
           e^{i m \theta} P^m_n(\cos(\phi))
 
     where :math:`P_n^m` are the associated Legendre functions; see `lpmv`.
+
+    .. deprecated:: 1.15.0
+        This function is deprecated and will be removed in a future version.
+        Use `scipy.special.sph_harm_y` instead.
 
     Parameters
     ----------

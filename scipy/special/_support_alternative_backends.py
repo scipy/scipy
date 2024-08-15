@@ -38,14 +38,14 @@ def get_array_special_func(f_name, xp, n_array_args):
             return _f
 
     _f = getattr(_ufuncs, f_name, None)
-    def f(*args, _f=_f, _xp=xp, **kwargs):
+    def __f(*args, _f=_f, _xp=xp, **kwargs):
         array_args = args[:n_array_args]
         other_args = args[n_array_args:]
         array_args = [np.asarray(arg) for arg in array_args]
         out = _f(*array_args, *other_args, **kwargs)
         return _xp.asarray(out)
 
-    return f
+    return __f
 
 
 def _get_shape_dtype(*args, xp):
@@ -90,10 +90,12 @@ def _chdtr(xp, spx):
         return None
 
     def __chdtr(v, x):
-        res = xp.where(x >= 0, gammainc(v/2, x/2), 0)
-        i_nan = ((x == 0) & (v == 0)) | xp.isnan(x) | xp.isnan(v)
-        res = xp.where(i_nan, xp.nan, res)
-        return res
+        res = gammainc(v / 2, x / 2)  # this is almost all we need
+        # The rest can be removed when google/jax#20507 is resolved
+        mask = (v == 0) & (x > 0)  # JAX returns NaN
+        res = xp.where(mask, 1., res)
+        mask = xp.isinf(v) & xp.isinf(x)  # JAX returns 1.0
+        return xp.where(mask, xp.nan, res)
     return __chdtr
 
 
@@ -146,7 +148,7 @@ def _stdtr(xp, spx):
 
 _generic_implementations = {'rel_entr': _rel_entr,
                             'xlogy': _xlogy,
-                            'chdtr,': _chdtr,
+                            'chdtr': _chdtr,
                             'chdtrc': _chdtrc,
                             'betaincc': _betaincc,
                             'stdtr': _stdtr,
