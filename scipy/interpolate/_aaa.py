@@ -58,12 +58,13 @@ class AAA:
     max_terms : int, optional
         Maximum number of terms in the barycentric representation, defaults to ``100``.
         Must be greater than or equal to one.
-    cleanup : bool, optional
-        Automatic removal of Froissart doublets, defaults to ``True``.
-    cleanup_tol : float, optional
+    clean_up : bool, optional
+        Automatic removal of Froissart doublets, defaults to ``True``. See notes for
+        more details.
+    clean_up_tol : float, optional
         Poles with residues less than this number times the geometric mean
         of `values` times the minimum distance to `points` are deemed spurious by the
-        cleanup procedure, defaults to 1e-13.
+        cleanup procedure, defaults to 1e-13. See notes for more details.
 
     Attributes
     ----------
@@ -122,11 +123,31 @@ class AAA:
 
     over the unselected elements of `points`.
 
+    One of the challenges with working with rational approximations is the presence of
+    Froissart doublets, which are either poles with vanishingly small residues or
+    pole-zero pairs that are close enough together to nearly cancel, see [2]_. The
+    greedy nature of algorithm means Froissart doublets are rare. However, if `rtol` is
+    set too tight then then the approximation will stagnate and many Froissart doublets
+    will appear. Froissart doublets can usually be removed by removing support points
+    and then resolving the least squares problem. The support point :math:`z_j`, which
+    is the closest support point to the pole :math:`a` with residue :math:`\alpha`, is
+    removed if the following is satisfied
+    
+    .. math::
+
+        |\alpha| / |z_j - a| < \verb|clean_up_tol| \cdot \tilde{f},
+    
+    where :math:`\tilde{f}` is the geometric mean of `support_values`.
+
+
     References
     ----------
     .. [1] Y. Nakatsukasa, O. Sete, and L. N. Trefethen, "The AAA algorithm for
             rational approximation", SIAM J. Sci. Comp. 40 (2018), A1494-A1522.
             :doi:`10.1137/16M110612`
+    .. [2] J. Gilewicz and M. Pindor, Pade approximants and noise: rational functions,
+           J. Comp. Appl. Math. 105 (1999), pp. 285-297.
+           :doi:`10.1016/S0377-0427(02)00674-X`
 
     Examples
     --------
