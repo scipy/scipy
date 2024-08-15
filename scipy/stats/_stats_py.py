@@ -10175,7 +10175,7 @@ def lmoment_iv(sample, order, axis, sorted, standardize):
         raise ValueError(message)
 
     message = "`order` must be a scalar or a non-empty array of positive integers."
-    order = np.asarray(order)
+    order = np.arange(1, 5) if order is None else np.asarray(order)
     if not np.issubdtype(order.dtype, np.integer) or np.any(order <= 0):
         raise ValueError(message)
 
@@ -10219,7 +10219,7 @@ def _prk(r, k):
     _moment_result_object, n_samples=1, result_to_tuple=lambda x: (x,),
     n_outputs=lambda kwds: _moment_outputs(kwds, [1, 2, 3, 4])
 )
-def lmoment(sample, order=[1, 2, 3, 4], *, axis=0, sorted=False, standardize=True):
+def lmoment(sample, order=None, *, axis=0, sorted=False, standardize=True):
     r"""Compute L-moments of a sample from a continuous distribution
 
     The L-moments of a probability distribution are summary statistics with
