@@ -861,11 +861,11 @@ class ShortTimeFFT:
             -> np.ndarray:
         r"""Calculate spectrogram or cross-spectrogram.
 
-        The spectrogram is the absolute square of the STFT, i.e, it is
+        The spectrogram is the absolute square of the STFT, i.e., it is
         ``abs(S[q,p])**2`` for given ``S[q,p]``  and thus is always
         non-negative.
         For two STFTs ``Sx[q,p], Sy[q,p]``, the cross-spectrogram is defined
-        as ``Sx[q,p] * np.conj(Sx[q,p])`` and is complex-valued.
+        as ``Sx[q,p] * np.conj(Sy[q,p])`` and is complex-valued.
         This is a convenience function for calling `~ShortTimeFFT.stft` /
         `stft_detrend`, hence all parameters are discussed there. If `y` is not
         ``None`` it needs to have the same shape as `x`.

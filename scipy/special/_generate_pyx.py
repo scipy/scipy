@@ -8,8 +8,8 @@ files '_ufuncs.c' and '_ufuncs_cxx.c' by first producing Cython.
 This will generate both calls to PyUFunc_FromFuncAndData and the
 required ufunc inner loops.
 
-The functions signatures are contained in 'functions.json', the syntax
-for a function signature is
+The functions' signatures are contained in 'functions.json'.
+The syntax for a function signature is
 
     <function>:       <name> ':' <input> '*' <output>
                         '->' <retval> '*' <ignored_retval>

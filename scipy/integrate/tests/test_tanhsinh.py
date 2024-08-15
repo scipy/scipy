@@ -9,7 +9,7 @@ from numpy.testing import assert_allclose, assert_equal
 from scipy.conftest import array_api_compatible
 import scipy._lib._elementwise_iterative_method as eim
 from scipy._lib._array_api import (array_namespace, xp_assert_close, xp_assert_equal,
-                                   size as xp_size, xp_ravel, copy as xp_copy)
+                                   xp_size, xp_ravel, xp_copy)
 from scipy import special, stats
 from scipy.integrate import quad_vec, nsum
 from scipy.integrate._tanhsinh import _tanhsinh, _pair_cache
@@ -45,9 +45,11 @@ def _vectorize(xp):
 
 @array_api_compatible
 @pytest.mark.usefixtures("skip_xp_backends")
-@pytest.mark.skip_xp_backends('array_api_strict', 'jax.numpy',
+@pytest.mark.skip_xp_backends('array_api_strict', 'jax.numpy', 'cupy',
                               reasons=['Currently uses fancy indexing assignment.',
-                                       'JAX arrays do not support item assignment.'])
+                                       'JAX arrays do not support item assignment.',
+                                       'cupy/cupy#8391',],
+                              cpu_only=True,) # cpu only until gh-21149 merges
 class TestTanhSinh:
 
     # Test problems from [1] Section 6

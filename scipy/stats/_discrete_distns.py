@@ -494,6 +494,11 @@ class geom_gen(rv_discrete):
     where :math:`p` is the probability of a single success
     and :math:`1-p` is the probability of a single failure.
 
+    Note that when drawing random samples, the probability of observations that exceed
+    ``np.iinfo(np.int64).max`` increases rapidly as $p$ decreases below $10^{-17}$. For
+    $p < 10^{-20}$, almost all observations would exceed the maximum ``int64``; however,
+    the output dtype is always ``int64``, so these values are clipped to the maximum.
+
     %(after_notes)s
 
     See Also
@@ -508,7 +513,11 @@ class geom_gen(rv_discrete):
         return [_ShapeInfo("p", False, (0, 1), (True, True))]
 
     def _rvs(self, p, size=None, random_state=None):
-        return random_state.geometric(p, size=size)
+        res = random_state.geometric(p, size=size)
+        # RandomState.geometric can wrap around to negative values; make behavior
+        # consistent with Generator.geometric by replacing with maximum integer.
+        max_int = np.iinfo(res.dtype).max
+        return np.where(res < 0, max_int, res)
 
     def _argcheck(self, p):
         return (p <= 1) & (p > 0)
@@ -1209,7 +1218,7 @@ class randint_gen(rv_discrete):
 
     def _pmf(self, k, low, high):
         # randint.pmf(k) = 1./(high - low)
-        p = np.ones_like(k) / (high - low)
+        p = np.ones_like(k) / (np.asarray(high, dtype=np.int64) - low)
         return np.where((k >= low) & (k < high), p, 0.)
 
     def _cdf(self, x, low, high):
