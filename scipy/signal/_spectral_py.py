@@ -139,7 +139,7 @@ def lombscargle(
 
     Define the array of frequencies for which to compute the periodogram:
 
-    >>> w = np.linspace(0.01, 10, nout)
+    >>> w = np.linspace(0.25, 10, nout)
 
     Calculate Lomb-Scargle periodogram for each of the normalize options:
 
