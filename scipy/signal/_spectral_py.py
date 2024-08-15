@@ -218,6 +218,15 @@ def lombscargle(
             "True (or 'normalize'), "
             "or 'amplitude'."
         )
+    
+    # for normalize == 'amplitude', check if freq_min < freq_critical
+    if (normalize == 'amplitude'):
+        freq_critical = 2*np.pi/(x.max() - x.min())  # rad/sec
+        if (freqs.min() < freq_critical):
+            message = (f"Frequencies below {freq_critical:.3f} rad/sec are longer than "
+                       "the provided time range, therefore their estimated amplitudes "
+                       "will tend towards infinity.")
+            warnings.warn(message, stacklevel=2)
 
     # convert inputs to contiguous arrays with high precision
     x = np.ascontiguousarray(x, dtype=np.float64)
