@@ -98,11 +98,12 @@ def _reject_objects(arr, name):
     """
     dt = np.asarray(arr).dtype
     if not (np.issubdtype(dt, np.integer)
-            or dt in [np.bool_, np.float32, np.float64, np.complex64, np.complex128]
+            or dt in [np.bool_, np.float16, np.float32, np.float64,
+                      np.complex64, np.complex128]
     ):
         msg = (
             f"dtype={dt} is not supported by {name} and will raise an error in "
-            f"SciPy 1.17.0. Supported dtypes are: boolean, integer, "
+            f"SciPy 1.17.0. Supported dtypes are: boolean, integer, np.float16,"
             f"`np.float32`, `np.float64`, `np.complex64`, `np.complex128`."
         )
         warnings.warn(msg, category=DeprecationWarning, stacklevel=3)

@@ -185,7 +185,7 @@ class TestConvolve(_TestConvolve):
         # this types data structure was manually encoded instead of
         # using custom filters on the soon-to-be-removed np.sctypes
         types = {'uint16', 'uint64', 'int64', 'int32',
-                 'complex128', 'float64',
+                 'complex128', 'float64', 'float16',
                  'complex64', 'float32', 'int16',
                  'uint8', 'uint32', 'int8', 'bool'}
         args = [(t1, t2, mode) for t1 in types for t2 in types
@@ -200,7 +200,6 @@ class TestConvolve(_TestConvolve):
         array_types['c'] = array_types['f'] + 0.5j*array_types['f']
 
         for t1, t2, mode in args:
-
             x1 = array_types[np.dtype(t1).kind].astype(t1)
             x2 = array_types[np.dtype(t2).kind].astype(t2)
 
@@ -252,9 +251,9 @@ class TestConvolve(_TestConvolve):
 
     def test_dtype_deprecation(self):
         # gh-21211
-        a = np.asarray([1, 2, 3, 6, 5, 3], dtype=np.float16)
-        b = np.asarray([2, 3, 4, 5, 3, 4, 2, 2, 1], dtype=np.float16)
-        with pytest.deprecated_call(match="dtype=float16 is not supported"):
+        a = np.asarray([1, 2, 3, 6, 5, 3], dtype=object)
+        b = np.asarray([2, 3, 4, 5, 3, 4, 2, 2, 1], dtype=object)
+        with pytest.deprecated_call(match="dtype=object is not supported"):
             convolve(a, b)
 
 
@@ -1855,9 +1854,9 @@ class _TestLinearFilter:
 
     def test_dtype_deprecation(self):
         # gh-21211
-        a = np.asarray([1, 2, 3, 6, 5, 3], dtype=np.float16)
-        b = np.asarray([2, 3, 4, 5, 3, 4, 2, 2, 1], dtype=np.float16)
-        with pytest.deprecated_call(match="dtype=float16 is not supported"):
+        a = np.asarray([1, 2, 3, 6, 5, 3], dtype=object)
+        b = np.asarray([2, 3, 4, 5, 3, 4, 2, 2, 1], dtype=object)
+        with pytest.deprecated_call(match="dtype=object is not supported"):
             lfilter(a, b, [1, 2, 3, 4])
 
 
@@ -2093,9 +2092,9 @@ class TestCorrelate:
 
     def test_dtype_deprecation(self):
         # gh-21211
-        a = np.asarray([1, 2, 3, 6, 5, 3], dtype=np.float16)
-        b = np.asarray([2, 3, 4, 5, 3, 4, 2, 2, 1], dtype=np.float16)
-        with pytest.deprecated_call(match="dtype=float16 is not supported"):
+        a = np.asarray([1, 2, 3, 6, 5, 3], dtype=object)
+        b = np.asarray([2, 3, 4, 5, 3, 4, 2, 2, 1], dtype=object)
+        with pytest.deprecated_call(match="dtype=object is not supported"):
             correlate(a, b)
 
 
@@ -2497,9 +2496,9 @@ def test_choose_conv_method():
 
 def test_choose_conv_dtype_deprecation():
     # gh-21211
-    a = np.asarray([1, 2, 3, 6, 5, 3], dtype=np.float16)
-    b = np.asarray([2, 3, 4, 5, 3, 4, 2, 2, 1], dtype=np.float16)
-    with pytest.deprecated_call(match="dtype=float16 is not supported"):
+    a = np.asarray([1, 2, 3, 6, 5, 3], dtype=object)
+    b = np.asarray([2, 3, 4, 5, 3, 4, 2, 2, 1], dtype=object)
+    with pytest.deprecated_call(match="dtype=object is not supported"):
         choose_conv_method(a, b)
 
 
