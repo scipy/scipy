@@ -19,7 +19,7 @@ from scipy.special._mptestutils import (
     nonfunctional_tooslow, trace_args, time_limited, exception_to_nan,
     inf_to_nan)
 from scipy.special._ufuncs import (
-    _sinpi, _cospi, _lgam1p, _lanczos_sum_expg_scaled, _log1pmx,
+    _lgam1p, _lanczos_sum_expg_scaled, _log1pmx,
     _igam_fac)
 
 try:
@@ -542,7 +542,7 @@ def test_sinpi_zeros():
     z = (zeros + np.dstack((dz,)*zeros.size)).flatten()
     dataset = np.asarray([(z0, complex(mpmath.sinpi(z0)))
                           for z0 in z])
-    FuncData(_sinpi, dataset, 0, 1, rtol=2*eps).check()
+    FuncData(sc.sinpi, dataset, 0, 1, rtol=2*eps).check()
 
 
 @check_version(mpmath, '0.19')
@@ -557,7 +557,7 @@ def test_cospi_zeros():
     dataset = np.asarray([(z0, complex(mpmath.cospi(z0)))
                           for z0 in z])
 
-    FuncData(_cospi, dataset, 0, 1, rtol=2*eps).check()
+    FuncData(sc.cospi, dataset, 0, 1, rtol=2*eps).check()
 
 
 # ------------------------------------------------------------------------------
@@ -1933,7 +1933,7 @@ class TestSystematic:
     def test_sinpi(self):
         eps = np.finfo(float).eps
         assert_mpmath_equal(
-            _sinpi,
+            sc.sinpi,
             mpmath.sinpi,
             [Arg()],
             nan_ok=False,
@@ -1942,7 +1942,7 @@ class TestSystematic:
 
     def test_sinpi_complex(self):
         assert_mpmath_equal(
-            _sinpi,
+            sc.sinpi,
             mpmath.sinpi,
             [ComplexArg()],
             nan_ok=False,

@@ -2,8 +2,7 @@ import pytest
 import numpy as np
 from numpy.testing import assert_equal, assert_allclose, suppress_warnings
 
-from scipy.special._ufuncs import _sinpi as sinpi
-from scipy.special._ufuncs import _cospi as cospi
+from scipy.special._ufuncs import sinpi, cospi, tanpi, cotpi
 
 
 def test_integer_real_part():
@@ -57,8 +56,53 @@ def test_intermediate_overlow():
         assert_allclose(res.real, std.real)
         assert_allclose(res.imag, std.imag)
 
+def test_sinpi():
+    x = np.arange(-16, 16, 1 / 16)
 
-def test_zero_sign():
+    expected = np.sin(np.pi * x)
+    actual = sinpi(x)
+
+    assert_allclose(expected, actual, atol=1e-10)
+
+def test_cospi():
+    x = np.arange(-16, 16, 1 / 16)
+
+    expected = np.cos(np.pi * x)
+    actual = cospi(x)
+
+    assert_allclose(expected, actual, atol=1e-10)
+
+def test_tanpi():
+    x = np.arange(-16, 16, 1 / 16)
+    x = x[x % 0.5 != 0]
+
+    expected = np.tan(np.pi * x)
+    actual = tanpi(x)
+
+    assert_allclose(expected, actual, atol=1e-10)
+
+def test_cotpi():
+    x = np.arange(-16, 16, 1 / 16)
+    x = x[x % 0.5 != 0]
+
+    expected = 1 / np.tan(np.pi * x)
+    actual = cotpi(x)
+
+    assert_allclose(expected, actual, atol=1e-10)
+
+def test_sinpi_zero_sign_ieee754_2008():
+    y = sinpi(-3.0)
+    assert y == 0.0
+    assert np.signbit(y)
+    
+    y = sinpi(-2.0)
+    assert y == 0.0
+    assert np.signbit(y)
+    
+    y = sinpi(-1.0)
+    assert y == 0.0
+    assert np.signbit(y)
+    
     y = sinpi(-0.0)
     assert y == 0.0
     assert np.signbit(y)
@@ -67,6 +111,113 @@ def test_zero_sign():
     assert y == 0.0
     assert not np.signbit(y)
 
+    y = sinpi(1.0)
+    assert y == 0.0
+    assert not np.signbit(y)
+
+    y = sinpi(2.0)
+    assert y == 0.0
+    assert not np.signbit(y)
+
+    y = sinpi(3.0)
+    assert y == 0.0
+    assert not np.signbit(y)
+
+def test_cospi_zero_sign_ieee754_2008():
+    y = cospi(-2.5)
+    assert y == 0.0
+    assert not np.signbit(y)
+
+    y = cospi(-1.5)
+    assert y == 0.0
+    assert not np.signbit(y)
+
+    y = cospi(-0.5)
+    assert y == 0.0
+    assert not np.signbit(y)
+
     y = cospi(0.5)
     assert y == 0.0
     assert not np.signbit(y)
+
+    y = cospi(1.5)
+    assert y == 0.0
+    assert not np.signbit(y)
+
+    y = cospi(2.5)
+    assert y == 0.0
+    assert not np.signbit(y)
+
+def test_tanpi_zero_sign_ieee754_2019():
+    y = tanpi(-4.0)
+    assert y == 0.0
+    assert np.signbit(y)
+
+    y = tanpi(-3.0)
+    assert y == 0.0
+    assert not np.signbit(y)
+
+    y = tanpi(-2.0)
+    assert y == 0.0
+    assert np.signbit(y)
+    
+    y = tanpi(-1.0)
+    assert y == 0.0
+    assert not np.signbit(y)
+    
+    y = tanpi(-0.0)
+    assert y == 0.0
+    assert np.signbit(y)
+
+    y = tanpi(0.0)
+    assert y == 0.0
+    assert not np.signbit(y)
+
+    y = tanpi(1.0)
+    assert y == 0.0
+    assert np.signbit(y)
+
+    y = tanpi(2.0)
+    assert y == 0.0
+    assert not np.signbit(y)
+
+    y = tanpi(3.0)
+    assert y == 0.0
+    assert np.signbit(y)
+
+    y = tanpi(4.0)
+    assert y == 0.0
+    assert not np.signbit(y)
+
+def test_cotpi_zero_sign():
+    y = cotpi(-3.5)
+    assert y == 0.0
+    assert not np.signbit(y)
+
+    y = cotpi(-2.5)
+    assert y == 0.0
+    assert np.signbit(y)
+
+    y = cotpi(-1.5)
+    assert y == 0.0
+    assert not np.signbit(y)
+
+    y = cotpi(-0.5)
+    assert y == 0.0
+    assert np.signbit(y)
+
+    y = cotpi(0.5)
+    assert y == 0.0
+    assert not np.signbit(y)
+
+    y = cotpi(1.5)
+    assert y == 0.0
+    assert np.signbit(y)
+
+    y = cotpi(2.5)
+    assert y == 0.0
+    assert not np.signbit(y)
+
+    y = cotpi(3.5)
+    assert y == 0.0
+    assert np.signbit(y)
