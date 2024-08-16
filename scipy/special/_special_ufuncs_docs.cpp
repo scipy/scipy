@@ -403,11 +403,81 @@ const char *binom_doc = R"(
     )";
 
 const char *cospi_doc = R"(
-    TODO: make doc.
+    cospi(x, out=None)
+
+    Cosine with `x` multiplied by `pi`.
+    Conforms to IEEE754-2008 specification for the sign of 0.
+
+    Parameters
+    ----------
+    x : array_like, real or complex
+        Argument
+    out : ndarray, optional
+        Optional output array for the function results.
+
+    Returns
+    -------
+    scalar or ndarray
+        Cosine at the input.
+
+    See Also
+    --------
+    sinpi, tanpi, cotpi
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> import scipy.special as sc
+
+    >>> x = np.array([-2.5, -2, -1.5, -1, -0.5, -0.0, 
+                      0.0, 0.5, 1.0, 1.5, 2, 2.5], dtype=np.float64)
+    >>> sc.cospi(x)
+    array([  0.0000000e+00  1.0000000e+00  0.0000000e+00 -1.0000000e+00
+             0.0000000e+00  1.0000000e+00  1.0000000e+00  0.0000000e+00
+            -1.0000000e+00  0.0000000e+00  1.0000000e+00  0.0000000e+00 ])
+    >>> np.cos(x * np.pi)
+    array([ -0.0000000e+00  1.0000000e+00 -1.8369702e-16 -1.0000000e+00
+             6.1232340e-17  1.0000000e+00  1.0000000e+00  6.1232340e-17
+            -1.0000000e+00 -1.8369702e-16  1.0000000e+00  3.0616170e-16 ])
     )";
 
 const char *cotpi_doc = R"(
-    TODO: make doc.
+    cotpi(x, out=None)
+
+    Cotangent with `x` multiplied by `pi`.
+    Equivalent to cospi(x)/sinpi(x).
+
+    Parameters
+    ----------
+    x : array_like, real or complex
+        Argument
+    out : ndarray, optional
+        Optional output array for the function results.
+
+    Returns
+    -------
+    scalar or ndarray
+        Cotangent at the input.
+
+    See Also
+    --------
+    sinpi, cospi, tanpi
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> import scipy.special as sc
+
+    >>> x = np.array([-2.5, -2, -1.5, -1, -0.5, -0.0, 
+                      0.0, 0.5, 1.0, 1.5, 2, 2.5], dtype=np.float64)
+    >>> sc.cotpi(x)
+    array([ -0.0000000e+00           -inf  0.0000000e+00            inf
+            -0.0000000e+00           -inf            inf  0.0000000e+00
+                      -inf -0.0000000e+00            inf  0.0000000e+00 ])
+    >>> 1 / np.tan(x * np.pi)
+    array([ -3.06161700e-16  4.08280984e+15 -1.83697020e-16  8.16561968e+15
+            -6.12323400e-17            -inf             inf  6.12323400e-17
+            -8.16561968e+15  1.83697020e-16 -4.08280984e+15  3.06161700e-16 ])
     )";
 
 const char *exp1_doc = R"(
@@ -3816,7 +3886,42 @@ const char *scaled_exp1_doc = R"(
     )";
 
 const char *sinpi_doc = R"(
-    TODO: make doc.
+    sinpi(x, out=None)
+
+    Sine with `x` multiplied by `pi`.
+    Conforms to IEEE754-2008 specification for the sign of 0.
+
+    Parameters
+    ----------
+    x : array_like, real or complex
+        Argument
+    out : ndarray, optional
+        Optional output array for the function results.
+
+    Returns
+    -------
+    scalar or ndarray
+        Sine at the input.
+
+    See Also
+    --------
+    cospi, tanpi, cotpi
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> import scipy.special as sc
+
+    >>> x = np.array([-2.5, -2, -1.5, -1, -0.5, -0.0, 
+                      0.0, 0.5, 1.0, 1.5, 2, 2.5], dtype=np.float64)
+    >>> sc.sinpi(x)
+    array([ -1.0000000e+00 -0.0000000e+00  1.0000000e+00 -0.0000000e+00
+            -1.0000000e+00 -0.0000000e+00  0.0000000e+00  1.0000000e+00
+             0.0000000e+00 -1.0000000e+00  0.0000000e+00  1.0000000e+00 ])
+    >>> np.sin(x * np.pi)
+    array([ -1.0000000e+00  2.4492936e-16  1.0000000e+00 -1.2246468e-16
+            -1.0000000e+00 -0.0000000e+00  0.0000000e+00  1.0000000e+00
+             1.2246468e-16 -1.0000000e+00 -2.4492936e-16  1.0000000e+00 ])
     )";
 
 const char *spherical_jn_doc = R"(
@@ -3921,7 +4026,42 @@ const char *sph_harm_doc = R"(
     )";
 
 const char *tanpi_doc = R"(
-    TODO: make doc.
+    tanpi(x, out=None)
+
+    Tangent with `x` multiplied by `pi`.
+    Conforms to IEEE754-2019 specification for the sign of 0.
+
+    Parameters
+    ----------
+    x : array_like, real or complex
+        Argument
+    out : ndarray, optional
+        Optional output array for the function results.
+
+    Returns
+    -------
+    scalar or ndarray
+        Tangent at the input.
+
+    See Also
+    --------
+    sinpi, cospi, cotpi
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> import scipy.special as sc
+
+    >>> x = np.array([-2.5, -2, -1.5, -1, -0.5, -0.0, 
+                      0.0, 0.5, 1.0, 1.5, 2, 2.5], dtype=np.float64)
+    >>> sc.tanpi(x)
+    array([           -inf -0.0000000e+00            inf  0.0000000e+00
+                      -inf -0.0000000e+00  0.0000000e+00            inf
+            -0.0000000e+00           -inf  0.0000000e+00            inf ])
+    >>> np.tan(x * np.pi)
+    array([ -3.26624787e+15  2.44929360e-16 -5.44374645e+15  1.22464680e-16
+            -1.63312394e+16 -0.00000000e+00  0.00000000e+00  1.63312394e+16
+            -1.22464680e-16  5.44374645e+15 -2.44929360e-16  3.26624787e+15 ])
     )";
 
 const char *wright_bessel_doc = R"(
