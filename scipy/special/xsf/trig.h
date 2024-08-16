@@ -115,7 +115,7 @@ XSF_HOST_DEVICE T tanpi(T x) {
 
 template <typename T>
 XSF_HOST_DEVICE std::complex<T> tanpi(std::complex<T> z) {
-    return sinpi(z) / cospi(z)
+    return sinpi(z) / cospi(z);
 }
 
 template <typename T>
@@ -125,7 +125,7 @@ XSF_HOST_DEVICE T cotpi(T x) {
 
 template <typename T>
 XSF_HOST_DEVICE std::complex<T> cotpi(std::complex<T> z) {
-    return cospi(z) / sinpi(z)
+    return cospi(z) / sinpi(z);
 }
 
 } // namespace xsf
