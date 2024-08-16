@@ -77,10 +77,10 @@ Building sparse arrays
    random_array - Random values in a given shape array
    block_array - Build a sparse array from sub-blocks
 
-.. _stacking-arrays:
+.. _combining-arrays:
 
-Stacking arrays
----------------
+Combining arrays
+----------------
 
 .. autosummary::
    :toctree: generated/
@@ -106,13 +106,10 @@ Sparse tools
 Identifying sparse arrays
 -------------------------
 
-- use ``isinstance(A, sp.sparse.sparray)`` to check whether an array or matrix.
-- use ``A.format == 'csr'`` to check the sparse format
-
 .. autosummary::
    :toctree: generated/
 
-   issparse - Check is the argument is a sparse object (array or matrix).
+   issparse - Check if the argument is a sparse object (array or matrix).
 
 
 Sparse matrix classes
@@ -144,7 +141,7 @@ Building sparse matrices
    random - Random values in a given shape matrix
    rand - Random values in a given shape matrix (old interface)
 
-**Stacking matrices use the same functions as for** `stacking arrays`_
+**Combining matrices use the same functions as for** :ref:`combining-arrays`.
 
 Identifying sparse matrices
 ---------------------------
