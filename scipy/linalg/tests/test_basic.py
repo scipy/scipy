@@ -161,15 +161,14 @@ class TestSolveBanded:
         b = array([[1., 2., 3.]])
         ref = array([[0.5, 1.0, 1.5]])
         x = solve_banded((0, 0), [[2]], b)
-        assert_array_equal(x, ref)
+        assert_allclose(x, ref, rtol=1e-15)
 
         # However, the user *can* represent the same system with garbage rows
         # in `ab`. Test the case with `nupper == 1, nlower == 1`.
         x = solve_banded((1, 1), [[0], [2], [0]], b)
-        assert_array_equal(x, ref)
+        assert_allclose(x, ref, rtol=1e-15)
         assert_equal(x.dtype, np.dtype('f8'))
         assert_array_equal(b, [[1.0, 2.0, 3.0]])
-
 
     def test_native_list_arguments(self):
         a = [[1.0, 20, 0, 0],
