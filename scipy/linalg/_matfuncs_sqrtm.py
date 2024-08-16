@@ -184,12 +184,8 @@ def sqrtm(A, disp=True, blocksize=64):
         R = _sqrtm_triu(T, blocksize=blocksize)
         ZH = np.conjugate(Z).T
         X = Z.dot(R).dot(ZH)
-
-        if A.dtype == np.float32 and not np.iscomplexobj(X):
-            X = X.astype(np.float32, copy=False)
-        elif (A.dtype == np.float32 and np.iscomplexobj(X)) or \
-                (A.dtype == np.complex64):
-            X = X.astype(np.complex64, copy=False)
+        dtype = np.result_type(A.dtype, 1j if np.iscomplexobj(X) else 1)
+        X = X.astype(dtype, copy=False)
     except SqrtmError:
         failflag = True
         X = np.empty_like(A)
