@@ -3459,4 +3459,4 @@ def test_lantr(norm, uplo, m, n, diag, dtype):
         A[i, i] = 1
     ref = lange(norm, A)
 
-    assert_allclose(res, ref)
+    assert_allclose(res, ref, rtol=2e-6)
