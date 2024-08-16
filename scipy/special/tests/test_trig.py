@@ -221,3 +221,136 @@ def test_cotpi_zero_sign():
     y = cotpi(3.5)
     assert y == 0.0
     assert np.signbit(y)
+
+
+def test_sinpi_zero_sign_ieee754_2008_complex():
+    y = sinpi(-3.0+0.0j)
+    assert y.real == 0.0
+    assert np.signbit(y.real)
+    
+    y = sinpi(-2.0+0.0j)
+    assert y.real == 0.0
+    assert np.signbit(y.real)
+    
+    y = sinpi(-1.0+0.0j)
+    assert y.real == 0.0
+    assert np.signbit(y.real)
+    
+    y = sinpi(-0.0+0.0j)
+    assert y.real == 0.0
+    assert np.signbit(y.real)
+
+    y = sinpi(0.0+0.0j)
+    assert y.real == 0.0
+    assert not np.signbit(y.real)
+
+    y = sinpi(1.0+0.0j)
+    assert y.real == 0.0
+    assert not np.signbit(y.real)
+
+    y = sinpi(2.0+0.0j)
+    assert y.real == 0.0
+    assert not np.signbit(y.real)
+
+    y = sinpi(3.0+0.0j)
+    assert y.real == 0.0
+    assert not np.signbit(y.real)
+
+def test_cospi_zero_sign_ieee754_2008_complex():
+    y = cospi(-2.5+0.0j)
+    assert y.real == 0.0
+    assert not np.signbit(y.real)
+
+    y = cospi(-1.5+0.0j)
+    assert y.real == 0.0
+    assert not np.signbit(y.real)
+
+    y = cospi(-0.5+0.0j)
+    assert y.real == 0.0
+    assert not np.signbit(y.real)
+
+    y = cospi(0.5+0.0j)
+    assert y.real == 0.0
+    assert not np.signbit(y.real)
+
+    y = cospi(1.5+0.0j)
+    assert y.real == 0.0
+    assert not np.signbit(y.real)
+
+    y = cospi(2.5+0.0j)
+    assert y.real == 0.0
+    assert not np.signbit(y.real)
+
+def test_tanpi_zero_sign_ieee754_2019_complex():
+    y = tanpi(-4.0+0.0j)
+    assert y.real == 0.0
+    assert np.signbit(y.real)
+
+    y = tanpi(-3.0+0.0j)
+    assert y.real == 0.0
+    assert not np.signbit(y.real)
+
+    y = tanpi(-2.0+0.0j)
+    assert y.real == 0.0
+    assert np.signbit(y.real)
+    
+    y = tanpi(-1.0+0.0j)
+    assert y.real == 0.0
+    assert not np.signbit(y.real)
+    
+    y = tanpi(-0.0+0.0j)
+    assert y.real == 0.0
+    assert np.signbit(y.real)
+
+    y = tanpi(0.0+0.0j)
+    assert y.real == 0.0
+    assert not np.signbit(y.real)
+
+    y = tanpi(1.0+0.0j)
+    assert y.real == 0.0
+    assert np.signbit(y.real)
+
+    y = tanpi(2.0+0.0j)
+    assert y.real == 0.0
+    assert not np.signbit(y.real)
+
+    y = tanpi(3.0+0.0j)
+    assert y.real == 0.0
+    assert np.signbit(y.real)
+
+    y = tanpi(4.0+0.0j)
+    assert y.real == 0.0
+    assert not np.signbit(y.real)
+
+def test_cotpi_zero_sign_complex():
+    y = cotpi(-3.5+0.0j)
+    assert y.real == 0.0
+    assert not np.signbit(y.real)
+
+    y = cotpi(-2.5+0.0j)
+    assert y.real == 0.0
+    assert np.signbit(y.real)
+
+    y = cotpi(-1.5+0.0j)
+    assert y.real == 0.0
+    assert not np.signbit(y.real)
+
+    y = cotpi(-0.5+0.0j)
+    assert y.real == 0.0
+    assert np.signbit(y.real)
+
+    y = cotpi(0.5+0.0j)
+    assert y.real == 0.0
+    assert not np.signbit(y.real)
+
+    y = cotpi(1.5+0.0j)
+    assert y.real == 0.0
+    assert np.signbit(y.real)
+
+    y = cotpi(2.5+0.0j)
+    assert y.real == 0.0
+    assert not np.signbit(y.real)
+
+    y = cotpi(3.5+0.0j)
+    assert y.real == 0.0
+    assert np.signbit(y.real)
