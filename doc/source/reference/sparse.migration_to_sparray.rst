@@ -129,19 +129,17 @@ to a sparse array to get sparse arrays out.
 Functions that changed names for the migration
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-::
-
-   +=========+=============+
-   |Function | New function|
-   +=========+=============+
-   |eye      | eye_array   |
-   |identity | eye_array   |
-   |diags    | diags_array |
-   |spdiags  | diags_array |
-   |bmat     | block       |
-   |rand     | random_array|
-   |random   | random_array|
-   +=========+=============+
+   =========  =============
+   Function    New function
+   =========  =============
+   eye         eye_array
+   identity    eye_array
+   diags       diags_array
+   spdiags     diags_array
+   bmat        block
+   rand        random_array
+   random      random_array
+   =========  =============
 
 .. _sparse-migration-shapes-reductions:
 
@@ -171,20 +169,18 @@ Details: shape changes and reductions
    -  ``A.sum(axis=1)`` returns a 1D ``coo_array`` summing along axis 1.
       Some reductions return dense arrays/matrices instead of sparse ones:
 
-   ::
-
-      +-------------+--------+
-      |Method       | Result |
-      +=============|========+
-      |sum(axis)    | dense  |
-      |mean(axis)   | dense  |
-      |argmin(axis) | dense  |
-      |argmax(axis) | dense  |
-      |min(axis)    | sparse |
-      |max(axis)    | sparse |
-      |nanmin(axis) | sparse |
-      |nanmax(axis) | sparse |
-      +-------------|--------+
+      ============  =========
+      Method        Result
+      ============  =========
+      sum(axis)     dense
+      mean(axis)    dense
+      argmin(axis)  dense
+      argmax(axis)  dense
+      min(axis)     sparse
+      max(axis)     sparse
+      nanmin(axis)  sparse
+      nanmax(axis)  sparse
+      ============  =========
 
    Generally, 2D sparray inputs lead to 1D results. 2D spmatrix
    inputs lead to 2D results.
@@ -203,23 +199,21 @@ Removed methods and attributes
    not sparrays. It is recommended that you replace usage of them with
    alternatives before starting the shift to sparray.
 
-   ::
-
-       +---------------+---------------------+
-       |Function       |Alternative          |
-       +===============+=====================+
-       |M.get_shape()  |A.shape              |
-       |M.getformat()  |A.format             |
-       |M.asfptype(…)  |A.astype(…)          |
-       |M.getmaxprint()|A.maxprint           |
-       |M.getnnz()     |A.nnz                |
-       |M.getnnz(axis) |A.count_nonzero(axis)|
-       |M.getH()       |A.conj().T           |
-       |M.getrow(i)    |A[i, :]              |
-       |M.getcol(j)    |A[:, j]              |
-       |M.A            |A.toarray()          |
-       |M.H            |A.conj().T           |
-       +---------------+---------------------+
+       ===============  ====================
+       Function         Alternative
+       ===============  ====================
+       M.get_shape()    A.shape
+       M.getformat()    A.format
+       M.asfptype(…)    A.astype(…)
+       M.getmaxprint()  A.maxprint
+       M.getnnz()       A.nnz
+       M.getnnz(axis)   A.count_nonzero(axis)
+       M.getH()         A.conj().T
+       M.getrow(i)      A[i, :]
+       M.getcol(j)      A[:, j]
+       M.A              A.toarray()
+       M.H              A.conj().T
+       ===============  ====================
 
 -  Shape assignment (``M.shape = (2, 6)``) is not permitted for sparray.
    Instead you should use ``A.reshape``.
