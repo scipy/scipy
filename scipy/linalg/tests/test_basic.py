@@ -154,9 +154,19 @@ class TestSolveBanded:
         assert_raises(ValueError, solve_banded, (1, 1), ab, [1.0, 2.0])
 
     def test_1x1(self):
+        # gh-8906 noted that the case of A@x = b with 1x1 A was handled
+        # incorrectly; check that this is resolved. Typical case:
+        # nupper == nlower == 0
+        # A = [[2]]
         b = array([[1., 2., 3.]])
+        ref = array([[0.5, 1.0, 1.5]])
+        x = solve_banded((0, 0), [[2]], b)
+        assert_allclose(x, ref, rtol=1e-15)
+
+        # However, the user *can* represent the same system with garbage rows
+        # in `ab`. Test the case with `nupper == 1, nlower == 1`.
         x = solve_banded((1, 1), [[0], [2], [0]], b)
-        assert_array_equal(x, [[0.5, 1.0, 1.5]])
+        assert_allclose(x, ref, rtol=1e-15)
         assert_equal(x.dtype, np.dtype('f8'))
         assert_array_equal(b, [[1.0, 2.0, 3.0]])
 
