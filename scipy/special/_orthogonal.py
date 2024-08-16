@@ -1674,7 +1674,7 @@ def roots_chebyt(n, mu=False):
     m = int(n)
     if n < 1 or n != m:
         raise ValueError('n must be a positive integer.')
-    x = _ufuncs._sinpi(np.arange(-m + 1, m, 2) / (2*m))
+    x = _ufuncs.sinpi(np.arange(-m + 1, m, 2) / (2*m))
     w = np.full_like(x, pi/m)
     if mu:
         return x, w, pi

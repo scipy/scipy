@@ -257,7 +257,6 @@ class errstate:
 
 _cosine_cdf: np.ufunc
 _cosine_invcdf: np.ufunc
-_cospi: np.ufunc
 _ellip_harm: np.ufunc
 _factorial: np.ufunc
 _igam_fac: np.ufunc
@@ -271,7 +270,6 @@ _log1pmx: np.ufunc
 _riemann_zeta: np.ufunc
 _scaled_exp1: np.ufunc
 _sf_error_test_function: np.ufunc
-_sinpi: np.ufunc
 _smirnovc: np.ufunc
 _smirnovci: np.ufunc
 _smirnovp: np.ufunc
@@ -325,7 +323,9 @@ chndtrinc: np.ufunc
 chndtrix: np.ufunc
 cosdg: np.ufunc
 cosm1: np.ufunc
+cospi: np.ufunc
 cotdg: np.ufunc
+cotpi: np.ufunc
 dawsn: np.ufunc
 ellipe: np.ufunc
 ellipeinc: np.ufunc
@@ -500,6 +500,7 @@ round: np.ufunc
 shichi: np.ufunc
 sici: np.ufunc
 sindg: np.ufunc
+sinpi: np.ufunc
 smirnov: np.ufunc
 smirnovi: np.ufunc
 spence: np.ufunc
@@ -509,6 +510,7 @@ stdtridf: np.ufunc
 stdtrit: np.ufunc
 struve: np.ufunc
 tandg: np.ufunc
+tanpi: np.ufunc
 tklmbda: np.ufunc
 voigt_profile: np.ufunc
 wofz: np.ufunc
@@ -522,4 +524,3 @@ yn: np.ufunc
 yv: np.ufunc
 yve: np.ufunc
 zetac: np.ufunc
-

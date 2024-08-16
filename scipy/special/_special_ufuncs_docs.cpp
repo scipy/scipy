@@ -1,11 +1,3 @@
-const char *_cospi_doc = R"(
-    Internal function, do not use.
-    )";
-
-const char *_sinpi_doc = R"(
-    Internal function, do not use.
-    )";
-
 const char *_zeta_doc = R"(
     _zeta(x, q)
 
@@ -408,6 +400,14 @@ const char *binom_doc = R"(
     >>> x, y = 2.2, 3.1
     >>> (binom(x, y), comb(x, y))
     (0.037399983365134115, 0.0)
+    )";
+
+const char *cospi_doc = R"(
+    TODO: make doc.
+    )";
+
+const char *cotpi_doc = R"(
+    TODO: make doc.
     )";
 
 const char *exp1_doc = R"(
@@ -3815,6 +3815,10 @@ const char *scaled_exp1_doc = R"(
     >>> _scaled_exp1([0, 0.1, 1, 10, 100])
     )";
 
+const char *sinpi_doc = R"(
+    TODO: make doc.
+    )";
+
 const char *spherical_jn_doc = R"(
     Internal function, use `spherical_jn` instead.
     )";
@@ -3914,6 +3918,10 @@ const char *sph_harm_doc = R"(
     .. [1] Digital Library of Mathematical Functions, 14.30.
            https://dlmf.nist.gov/14.30
     .. [2] https://en.wikipedia.org/wiki/Spherical_harmonics#Condon.E2.80.93Shortley_phase
+    )";
+
+const char *tanpi_doc = R"(
+    TODO: make doc.
     )";
 
 const char *wright_bessel_doc = R"(
