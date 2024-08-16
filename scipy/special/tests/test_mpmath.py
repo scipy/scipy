@@ -1028,11 +1028,11 @@ class TestSystematic:
 
     def test_cospi(self):
         eps = np.finfo(float).eps
-        assert_mpmath_equal(_cospi, mpmath.cospi, [Arg()], nan_ok=False, rtol=2*eps)
+        assert_mpmath_equal(sc.cospi, mpmath.cospi, [Arg()], nan_ok=False, rtol=2*eps)
 
     def test_cospi_complex(self):
         assert_mpmath_equal(
-            _cospi,
+            sc.cospi,
             mpmath.cospi,
             [ComplexArg()],
             nan_ok=False,

@@ -80,9 +80,9 @@ special_ufuncs = [
     '_lambertw', '_scaled_exp1', '_spherical_jn', '_spherical_jn_d',
     '_spherical_yn', '_spherical_yn_d', '_spherical_in', '_spherical_in_d',
     '_spherical_kn', '_spherical_kn_d', 'airy', 'airye', 'bei', 'beip', 'ber', 'berp',
-    'binom', 'cospi', 'cotpi', 'exp1', 'expi', 'expit', 'exprel', 'gamma', 'gammaln', 'hankel1',
-    'hankel1e', 'hankel2', 'hankel2e', 'hyp2f1', 'it2i0k0', 'it2j0y0', 'it2struve0',
-    'itairy', 'iti0k0', 'itj0y0', 'itmodstruve0', 'itstruve0',
+    'binom', 'cospi', 'cotpi', 'exp1', 'expi', 'expit', 'exprel', 'gamma', 'gammaln', 
+    'hankel1', 'hankel1e', 'hankel2', 'hankel2e', 'hyp2f1', 'it2i0k0', 'it2j0y0', 
+    'it2struve0', 'itairy', 'iti0k0', 'itj0y0', 'itmodstruve0', 'itstruve0',
     'iv', '_iv_ratio', 'ive', 'jv',
     'jve', 'kei', 'keip', 'kelvin', 'ker', 'kerp', 'kv', 'kve', 'log_expit',
     'log_wright_bessel', 'loggamma', 'logit', 'mathieu_a', 'mathieu_b', 'mathieu_cem',
@@ -90,7 +90,8 @@ special_ufuncs = [
     'mathieu_sem', 'modfresnelm', 'modfresnelp', 'obl_ang1', 'obl_ang1_cv', 'obl_cv',
     'obl_rad1', 'obl_rad1_cv', 'obl_rad2', 'obl_rad2_cv', 'pbdv', 'pbvv', 'pbwa',
     'pro_ang1', 'pro_ang1_cv', 'pro_cv', 'pro_rad1', 'pro_rad1_cv', 'pro_rad2',
-    'pro_rad2_cv', 'psi', 'rgamma', 'sinpi', 'sph_harm', 'tanpi', 'wright_bessel', 'yv', 'yve', '_zeta'
+    'pro_rad2_cv', 'psi', 'rgamma', 'sinpi', 'sph_harm', 'tanpi', 'wright_bessel',
+    'yv', 'yve', '_zeta'
 ]
 
 # -----------------------------------------------------------------------------
