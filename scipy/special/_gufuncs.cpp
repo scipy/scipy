@@ -1,6 +1,6 @@
 #include "ufunc.h"
 
-#include "special.h"
+#include "xsf_special.h"
 
 using namespace std;
 
@@ -147,6 +147,11 @@ PyMODINIT_FUNC PyInit__gufuncs() {
         return NULL;
     }
 
+#if Py_GIL_DISABLED
+    PyUnstable_Module_SetGIL(_gufuncs, Py_MOD_GIL_NOT_USED);
+#endif
+
+
     PyObject *legendre_p_all = Py_BuildValue(
         "(N, N, N)",
         SpecFun_NewGUFunc({static_cast<func_d_d1_t>(::legendre_p_all), static_cast<func_f_f1_t>(::legendre_p_all),
@@ -268,16 +273,14 @@ PyMODINIT_FUNC PyInit__gufuncs() {
             "sph_legendre_p_all", nullptr, "()->(np1,mpmp1),(np1,mpmp1),(np1,mpmp1)", assoc_legendre_map_dims<3>));
     PyModule_AddObjectRef(_gufuncs, "sph_legendre_p_all", sph_legendre_p_all);
 
-    PyObject *_lqn =
-        SpecFun_NewGUFunc({static_cast<func_d_d1d1_t>(special::lqn), static_cast<func_f_f1f1_t>(special::lqn),
-                           static_cast<func_D_D1D1_t>(special::lqn), static_cast<func_F_F1F1_t>(special::lqn)},
-                          2, "_lqn", lqn_doc, "()->(np1),(np1)", legendre_map_dims<2>);
+    PyObject *_lqn = SpecFun_NewGUFunc({static_cast<func_d_d1d1_t>(xsf::lqn), static_cast<func_f_f1f1_t>(xsf::lqn),
+                                        static_cast<func_D_D1D1_t>(xsf::lqn), static_cast<func_F_F1F1_t>(xsf::lqn)},
+                                       2, "_lqn", lqn_doc, "()->(np1),(np1)", legendre_map_dims<2>);
     PyModule_AddObjectRef(_gufuncs, "_lqn", _lqn);
 
-    PyObject *_lqmn =
-        SpecFun_NewGUFunc({static_cast<func_d_d2d2_t>(special::lqmn), static_cast<func_f_f2f2_t>(special::lqmn),
-                           static_cast<func_D_D2D2_t>(special::lqmn), static_cast<func_F_F2F2_t>(special::lqmn)},
-                          2, "_lqmn", lqmn_doc, "()->(mp1,np1),(mp1,np1)", assoc_legendre_map_dims<2>);
+    PyObject *_lqmn = SpecFun_NewGUFunc({static_cast<func_d_d2d2_t>(xsf::lqmn), static_cast<func_f_f2f2_t>(xsf::lqmn),
+                                         static_cast<func_D_D2D2_t>(xsf::lqmn), static_cast<func_F_F2F2_t>(xsf::lqmn)},
+                                        2, "_lqmn", lqmn_doc, "()->(mp1,np1),(mp1,np1)", assoc_legendre_map_dims<2>);
     PyModule_AddObjectRef(_gufuncs, "_lqmn", _lqmn);
 
     PyObject *sph_harm_y_all = Py_BuildValue(
@@ -292,14 +295,12 @@ PyMODINIT_FUNC PyInit__gufuncs() {
             "sph_harm_y_all", nullptr, "(),()->(np1,mpmp1),(2,np1,mpmp1),(2,2,np1,mpmp1)", sph_harm_map_dims<3>));
     PyModule_AddObjectRef(_gufuncs, "sph_harm_y_all", sph_harm_y_all);
 
-    PyObject *_rctj =
-        SpecFun_NewGUFunc({static_cast<func_d_d1d1_t>(special::rctj), static_cast<func_f_f1f1_t>(special::rctj)}, 2,
-                          "_rctj", rctj_doc, "()->(np1),(np1)", legendre_map_dims<2>);
+    PyObject *_rctj = SpecFun_NewGUFunc({static_cast<func_d_d1d1_t>(xsf::rctj), static_cast<func_f_f1f1_t>(xsf::rctj)},
+                                        2, "_rctj", rctj_doc, "()->(np1),(np1)", legendre_map_dims<2>);
     PyModule_AddObjectRef(_gufuncs, "_rctj", _rctj);
 
-    PyObject *_rcty =
-        SpecFun_NewGUFunc({static_cast<func_d_d1d1_t>(special::rcty), static_cast<func_f_f1f1_t>(special::rcty)}, 2,
-                          "_rcty", rcty_doc, "()->(np1),(np1)", legendre_map_dims<2>);
+    PyObject *_rcty = SpecFun_NewGUFunc({static_cast<func_d_d1d1_t>(xsf::rcty), static_cast<func_f_f1f1_t>(xsf::rcty)},
+                                        2, "_rcty", rcty_doc, "()->(np1),(np1)", legendre_map_dims<2>);
     PyModule_AddObjectRef(_gufuncs, "_rcty", _rcty);
 
     return _gufuncs;

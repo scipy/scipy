@@ -10,7 +10,7 @@ Support for the array API standard
 This guide describes how to **use** and **add support for** the
 `Python array API standard <https://data-apis.org/array-api/latest/index.html>`_.
 This standard allows users to use any array API compatible array library
-with SciPy out of the box.
+with parts of SciPy out of the box.
 
 The `RFC`_ defines how SciPy implements support for the standard, with the main
 principle being *"array type in equals array type out"*. In addition, the
@@ -57,7 +57,7 @@ values:
 
 Note that the above example works for PyTorch CPU tensors. For GPU tensors or
 CuPy arrays, the expected result for ``vq`` is a ``TypeError``, because ``vq``
-is not a pure Python function and hence won't work on GPU.
+uses compiled code in its implementation, which won't work on GPU.
 
 More strict array input validation will reject ``np.matrix`` and
 ``np.ma.MaskedArray`` instances, as well as arrays with ``object`` dtype:
@@ -95,10 +95,12 @@ Currently supported functionality
 The following modules provide array API standard support when the environment
 variable is set:
 
-- `scipy.cluster.hierarchy`
-- `scipy.cluster.vq`
+- `scipy.cluster`
 - `scipy.constants`
+- `scipy.datasets`
 - `scipy.fft`
+- `scipy.io`
+- `scipy.ndimage`
 
 Support is provided in `scipy.special` for the following functions:
 `scipy.special.log_ndtr`, `scipy.special.ndtr`, `scipy.special.ndtri`,
@@ -119,6 +121,8 @@ Support is provided in `scipy.stats` for the following functions:
 `scipy.stats.jarque_bera`, `scipy.stats.bartlett`, `scipy.stats.power_divergence`,
 and `scipy.stats.monte_carlo_test`.
 
+Please see `the tracker issue`_ for updates.
+
 
 Implementation notes
 --------------------
@@ -126,22 +130,22 @@ Implementation notes
 A key part of the support for the array API standard and specific compatibility
 functions for Numpy, CuPy and PyTorch is provided through
 `array-api-compat <https://github.com/data-apis/array-api-compat>`_.
-This package is included in the SciPy code base via a git submodule (under
+This package is included in the SciPy codebase via a git submodule (under
 ``scipy/_lib``), so no new dependencies are introduced.
 
 ``array-api-compat`` provides generic utility functions and adds aliases such
-as ``xp.concat`` (which, for numpy, maps to ``np.concatenate``). This allows
-using a uniform API across NumPy, PyTorch, CuPy and JAX (with other libraries,
-such as Dask, coming in the future).
+as ``xp.concat`` (which, for numpy, mapped to ``np.concatenate`` before NumPy added
+``np.concat`` in NumPy 2.0). This allows using a uniform API across NumPy, PyTorch,
+CuPy and JAX (with other libraries, such as Dask, being worked on).
 
 When the environment variable isn't set and hence array API standard support in
-SciPy is disabled, we still use the "augmented" version of the NumPy namespace,
+SciPy is disabled, we still use the wrapped version of the NumPy namespace,
 which is ``array_api_compat.numpy``. That should not change behavior of SciPy
-functions, it's effectively the existing ``numpy`` namespace with a number of
+functions, as it's effectively the existing ``numpy`` namespace with a number of
 aliases added and a handful of functions amended/added for array API standard
-support. When support is enabled, depending on the type of arrays, ``xp`` will
-return the standard-compatible namespace matching the input array type to a
-function (e.g., if the input to `cluster.vq.kmeans` is a PyTorch array, then
+support. When support is enabled, ``xp = array_namespace(input)`` will
+be the standard-compatible namespace matching the input array type to a
+function (e.g., if the input to `cluster.vq.kmeans` is a PyTorch tensor, then
 ``xp`` is ``array_api_compat.torch``).
 
 
@@ -154,20 +158,9 @@ idioms for NumPy usage as well). By following the standard, effectively adding
 support for the array API standard is typically straightforward, and we ideally
 don't need to maintain any customization.
 
-Three helper functions are available:
-
-* ``array_namespace``: return the namespace based on input arrays and do some
-  input validation (like refusing to work with masked arrays, please see the
-  `RFC`_.)
-* ``_asarray``: a drop-in replacement for ``asarray`` with the additional
-  parameters ``check_finite`` and ``order``. As stated above, try to limit
-  the use of non-standard features. In the end we would want to upstream our
-  needs to the compatibility library. Passing ``xp=xp`` avoids duplicate calls
-  of ``array_namespace`` internally.
-* ``copy``: an alias for ``_asarray(x, copy=True)``.
-  The ``copy`` parameter was only introduced to ``np.asarray`` in NumPy 2.0,
-  so use of the helper is needed to support ``<2.0``. Passing ``xp=xp`` avoids
-  duplicate calls of ``array_namespace`` internally.
+Various helper functions are available in ``scipy._lib._array_api`` - please see
+the ``__all__`` in that module for a list of current helpers, and their docstrings
+for more information.
 
 To add support to a SciPy function which is defined in a ``.py`` file, what you
 have to change is:
@@ -183,11 +176,13 @@ Input array validation uses the following pattern::
    # alternatively, if there are multiple array inputs, include them all:
    xp = array_namespace(arr1, arr2)
 
+   # replace np.asarray with xp.asarray
+   arr = xp.asarray(arr)
    # uses of non-standard parameters of np.asarray can be replaced with _asarray
    arr = _asarray(arr, order='C', dtype=xp.float64, xp=xp)
 
-Note that if one input is a non-numpy array type, all array-like inputs have to
-be of that type; trying to mix non-numpy arrays with lists, Python scalars or
+Note that if one input is a non-NumPy array type, all array-like inputs have to
+be of that type; trying to mix non-NumPy arrays with lists, Python scalars or
 other arbitrary Python objects will raise an exception. For NumPy arrays, those
 types will continue to be accepted for backwards compatibility reasons.
 
@@ -218,7 +213,7 @@ You would convert this like so::
   def toto(a, b):
       xp = array_namespace(a, b)
       a = xp.asarray(a)
-      b = copy(b, xp=xp)  # our custom helper is needed for copy
+      b = xp_copy(b, xp=xp)  # our custom helper is needed for copy
 
       c = xp.sum(a) - xp.prod(b)
 
@@ -231,7 +226,7 @@ You would convert this like so::
 
 Going through compiled code requires going back to a NumPy array, because
 SciPy's extension modules only work with NumPy arrays (or memoryviews in the
-case of Cython), but not with other array types. For arrays on CPU, the
+case of Cython). For arrays on CPU, the
 conversions should be zero-copy, while on GPU and other devices the attempt at
 conversion will raise an exception. The reason for that is that silent data
 transfer between devices is considered bad practice, as it is likely to be a
@@ -245,13 +240,13 @@ The following pytest markers are available:
 
 * ``array_api_compatible -> xp``: use a parametrisation to run a test on
   multiple array backends.
-* ``skip_xp_backends(*backends, reasons=None, np_only=False, cpu_only=False)``:
-  skip certain backends and/or devices. ``np_only`` skips tests for all backends
-  other than the default NumPy backend.
+* ``skip_xp_backends(*backends, reasons=None, np_only=False, cpu_only=False, exceptions=None)``:
+  skip certain backends and/or devices.
   ``@pytest.mark.usefixtures("skip_xp_backends")`` must be used alongside this
-  marker for the skipping to apply.
+  marker for the skipping to apply. See the fixture's docstring in ``scipy.conftest``
+  for information on how use this marker to skip tests.
 * ``skip_xp_invalid_arg`` is used to skip tests that use arguments which
-  are invalid when ``SCIPY_ARRAY_API`` is used. For instance, some tests of
+  are invalid when ``SCIPY_ARRAY_API`` is enabled. For instance, some tests of
   `scipy.stats` functions pass masked arrays to the function being tested, but
   masked arrays are incompatible with the array API. Use of the
   ``skip_xp_invalid_arg`` decorator allows these tests to protect against
@@ -263,40 +258,57 @@ The following pytest markers are available:
   default and only behavior, these tests (and the decorator itself) will be
   removed.
 
-The following is an example using the markers::
+``scipy._lib._array_api`` contains array-agnostic assertions such as ``xp_assert_close``
+which can be used to replace assertions from `numpy.testing`.
+
+The following examples demonstrate how to use the markers::
 
   from scipy.conftest import array_api_compatible, skip_xp_invalid_arg
+  from scipy._lib._array_api import xp_assert_close
   ...
-  @pytest.mark.skip_xp_backends(np_only=True,
-                                 reasons=['skip reason'])
+  @pytest.mark.skip_xp_backends(np_only=True, reasons=['skip reason'])
   @pytest.mark.usefixtures("skip_xp_backends")
   @array_api_compatible
   def test_toto1(self, xp):
       a = xp.asarray([1, 2, 3])
       b = xp.asarray([0, 2, 5])
-      toto(a, b)
+      xp_assert_close(toto(a, b), a)
   ...
   @pytest.mark.skip_xp_backends('array_api_strict', 'cupy',
-                                 reasons=['skip reason 1',
-                                          'skip reason 2',])
+                                reasons=['skip reason 1',
+                                         'skip reason 2',],)
   @pytest.mark.usefixtures("skip_xp_backends")
   @array_api_compatible
   def test_toto2(self, xp):
-      a = xp.asarray([1, 2, 3])
-      b = xp.asarray([0, 2, 5])
-      toto(a, b)
+      ...
   ...
   # Do not run when SCIPY_ARRAY_API is used
   @skip_xp_invalid_arg
   def test_toto_masked_array(self):
-      a = np.ma.asarray([1, 2, 3])
-      b = np.ma.asarray([0, 2, 5])
-      toto(a, b)
+      ...
 
 Passing a custom reason to ``reasons`` when ``cpu_only=True`` is unsupported
 since ``cpu_only=True`` can be used alongside passing ``backends``. Also,
 the reason for using ``cpu_only`` is likely just that compiled code is used
 in the function(s) being tested.
+
+Passing names of backends into ``exceptions`` means that they will not be skipped
+by ``cpu_only=True``. This is useful when delegation is implemented for some,
+but not all, non-CPU backends, and the CPU code path requires conversion to NumPy
+for compiled code::
+
+  # array-api-strict and CuPy will always be skipped, for the given reasons.
+  # All libraries using a non-CPU device will also be skipped, apart from
+  # JAX, for which delegation is implemented (hence non-CPU execution is supported).
+  @pytest.mark.skip_xp_backends('array_api_strict', 'cupy',
+                                reasons=['skip reason 1',
+                                         'skip reason 2',],
+                                cpu_only=True,
+                                exceptions=['jax.numpy'],)
+  @pytest.mark.usefixtures("skip_xp_backends")
+  @array_api_compatible
+  def test_toto(self, xp):
+      ...
 
 When every test function in a file has been updated for array API
 compatibility, one can reduce verbosity by telling ``pytest`` to apply the
@@ -309,9 +321,7 @@ markers to every test function using ``pytestmark``::
     ...
     @skip_xp_backends(np_only=True, reasons=['skip reason'])
     def test_toto1(self, xp):
-        a = xp.asarray([1, 2, 3])
-        b = xp.asarray([0, 2, 5])
-        toto(a, b)
+        ...
 
 After applying these markers, ``dev.py test`` can be used with the new option
 ``-b`` or ``--array-api-backend``::
@@ -321,12 +331,12 @@ After applying these markers, ``dev.py test`` can be used with the new option
 This automatically sets ``SCIPY_ARRAY_API`` appropriately. To test a library
 that has multiple devices with a non-default device, a second environment
 variable (``SCIPY_DEVICE``, only used in the test suite) can be set. Valid
-values depend on the array library under test, e.g. for PyTorch (currently the
-only library with multi-device support that is known to work) valid values are
-``"cpu", "cuda", "mps"``. So to run the test suite with the PyTorch MPS
+values depend on the array library under test, e.g. for PyTorch, valid values are
+``"cpu", "cuda", "mps"``. To run the test suite with the PyTorch MPS
 backend, use: ``SCIPY_DEVICE=mps python dev.py test -b pytorch``.
 
-Note that there is a GitHub Actions workflow which runs ``pytorch-cpu``.
+Note that there is a GitHub Actions workflow which tests with array-api-strict,
+PyTorch, and JAX on CPU.
 
 
 Additional information
@@ -346,3 +356,4 @@ helped during the development phase:
   `#25956 <https://github.com/scikit-learn/scikit-learn/pull/25956>`__
 
 .. _RFC: https://github.com/scipy/scipy/issues/18286
+.. _the tracker issue: https://github.com/scipy/scipy/issues/18867

@@ -42,7 +42,6 @@ from scipy.optimize import milp, LinearConstraint
 from scipy._lib._util import (check_random_state, _get_nan,
                               _rename_parameter, _contains_nan,
                               AxisError, _lazywhere)
-from scipy._lib._array_api import _asarray as xp_asarray
 
 import scipy.special as special
 # Import unused here but needs to stay until end of deprecation periode
@@ -70,10 +69,16 @@ from scipy._lib._bunch import _make_tuple_bunch
 from scipy import stats
 from scipy.optimize import root_scalar
 from scipy._lib._util import normalize_axis_index
-from scipy._lib._array_api import (array_namespace, is_numpy, atleast_nd,
-                                   xp_clip, xp_moveaxis_to_end, xp_sign,
-                                   xp_minimum, xp_vector_norm)
-from scipy._lib.array_api_compat import size as xp_size
+from scipy._lib._array_api import (
+    _asarray,
+    array_namespace,
+    xp_atleast_nd,
+    is_numpy,
+    xp_size,
+    xp_moveaxis_to_end,
+    xp_sign,
+    xp_vector_norm,
+)
 from scipy._lib.deprecation import _deprecated
 
 
@@ -138,7 +143,7 @@ def _chk2_asarray(a, b, axis):
 
 def _convert_common_float(*arrays, xp=None):
     xp = array_namespace(*arrays) if xp is None else xp
-    arrays = [xp_asarray(array, subok=True) for array in arrays]
+    arrays = [_asarray(array, subok=True) for array in arrays]
     dtypes = [(xp.asarray(1.).dtype if xp.isdtype(array.dtype, 'integral')
                else array.dtype) for array in arrays]
     dtype = xp.result_type(*dtypes)
@@ -1523,9 +1528,8 @@ def _get_pvalue(statistic, distribution, alternative, symmetric=True, xp=None):
         pvalue = distribution.sf(statistic)
     elif alternative == 'two-sided':
         pvalue = 2 * (distribution.sf(xp.abs(statistic)) if symmetric
-                      else xp_minimum(distribution.cdf(statistic),
-                                      distribution.sf(statistic),
-                                      xp=xp))
+                      else xp.minimum(distribution.cdf(statistic),
+                                      distribution.sf(statistic)))
     else:
         message = "`alternative` must be 'less', 'greater', or 'two-sided'."
         raise ValueError(message)
@@ -2605,7 +2609,7 @@ def sem(a, axis=0, ddof=1, nan_policy='propagate'):
     if axis is None:
         a = xp.reshape(a, (-1,))
         axis = 0
-    a = atleast_nd(a, ndim=1, xp=xp)
+    a = xp_atleast_nd(a, ndim=1, xp=xp)
     n = a.shape[axis]
     s = xp.std(a, axis=axis, correction=ddof) / n**0.5
     return s
@@ -3687,7 +3691,7 @@ def _first(arr, axis):
     return np.take_along_axis(arr, np.array(0, ndmin=arr.ndim), axis)
 
 
-def _f_oneway_is_too_small(samples, kwargs={}, axis=-1):
+def _f_oneway_is_too_small(samples, kwargs=None, axis=-1):
     message = f"At least two samples are required; got {len(samples)}."
     if len(samples) < 2:
         raise TypeError(message)
@@ -3831,10 +3835,10 @@ def f_oneway(*samples, axis=0):
     ...               [7.48, 8.83, 8.91],
     ...               [8.59, 6.01, 6.07],
     ...               [3.07, 9.72, 7.48]])
-    >>> F, p = f_oneway(a, b, c)
-    >>> F
+    >>> F = f_oneway(a, b, c)
+    >>> F.statistic
     array([1.75676344, 0.03701228, 3.76439349])
-    >>> p
+    >>> F.pvalue
     array([0.20630784, 0.96375203, 0.04733157])
 
     """
@@ -3943,7 +3947,7 @@ class AlexanderGovernResult:
     result_to_tuple=lambda x: (x.statistic, x.pvalue),
     too_small=1
 )
-def alexandergovern(*samples, nan_policy='propagate'):
+def alexandergovern(*samples, nan_policy='propagate', axis=0):
     """Performs the Alexander Govern test.
 
     The Alexander-Govern approximation tests the equality of k independent
@@ -4031,12 +4035,7 @@ def alexandergovern(*samples, nan_policy='propagate'):
     the alternative.
 
     """
-    samples = _alexandergovern_input_validation(samples, nan_policy)
-
-    if np.any([(sample == sample[0]).all() for sample in samples]):
-        msg = "An input array is constant; the statistic is not defined."
-        warnings.warn(stats.ConstantInputWarning(msg), stacklevel=2)
-        return AlexanderGovernResult(np.nan, np.nan)
+    samples = _alexandergovern_input_validation(samples, nan_policy, axis)
 
     # The following formula numbers reference the equation described on
     # page 92 by Alexander, Govern. Formulas 5, 6, and 7 describe other
@@ -4044,25 +4043,35 @@ def alexandergovern(*samples, nan_policy='propagate'):
     # to perform the test.
 
     # precalculate mean and length of each sample
-    lengths = np.array([len(sample) for sample in samples])
-    means = np.array([np.mean(sample) for sample in samples])
+    lengths = [sample.shape[-1] for sample in samples]
+    means = np.asarray([_xp_mean(sample, axis=-1) for sample in samples])
 
     # (1) determine standard error of the mean for each sample
-    standard_errors = [np.std(sample, ddof=1) / np.sqrt(length)
-                       for sample, length in zip(samples, lengths)]
+    se2 = [(_xp_var(sample, correction=1, axis=-1) / length)
+           for sample, length in zip(samples, lengths)]
+    standard_errors_squared = np.asarray(se2)
+    standard_errors = standard_errors_squared**0.5
+
+    # Special case: statistic is NaN when variance is zero
+    eps = np.finfo(standard_errors.dtype).eps
+    zero = standard_errors <= np.abs(eps * means)
+    NaN = np.asarray(np.nan, dtype=standard_errors.dtype)
+    standard_errors = np.where(zero, NaN, standard_errors)
 
     # (2) define a weight for each sample
-    inv_sq_se = 1 / np.square(standard_errors)
-    weights = inv_sq_se / np.sum(inv_sq_se)
+    inv_sq_se = 1 / standard_errors_squared
+    weights = inv_sq_se / np.sum(inv_sq_se, axis=0, keepdims=True)
 
     # (3) determine variance-weighted estimate of the common mean
-    var_w = np.sum(weights * means)
+    var_w = np.sum(weights * means, axis=0, keepdims=True)
 
     # (4) determine one-sample t statistic for each group
-    t_stats = (means - var_w)/standard_errors
+    t_stats = _demean(means, var_w, axis=0, xp=np) / standard_errors
 
     # calculate parameters to be used in transformation
-    v = lengths - 1
+    v = np.asarray(lengths) - 1
+    # align along 0th axis, which corresponds with separate samples
+    v = np.reshape(v, (-1,) + (1,)*(t_stats.ndim-1))
     a = v - .5
     b = 48 * a**2
     c = (a * np.log(1 + (t_stats ** 2)/v))**.5
@@ -4073,7 +4082,7 @@ def alexandergovern(*samples, nan_policy='propagate'):
           (b**2*10 + 8*b*c**4 + 1000*b)))
 
     # (9) calculate statistic
-    A = np.sum(np.square(z))
+    A = np.sum(z**2, axis=0)
 
     # "[the p value is determined from] central chi-square random deviates
     # with k - 1 degrees of freedom". Alexander, Govern (94)
@@ -4083,15 +4092,15 @@ def alexandergovern(*samples, nan_policy='propagate'):
     return AlexanderGovernResult(A, p)
 
 
-def _alexandergovern_input_validation(samples, nan_policy):
+def _alexandergovern_input_validation(samples, nan_policy, axis):
     if len(samples) < 2:
         raise TypeError(f"2 or more inputs required, got {len(samples)}")
 
     for sample in samples:
-        if np.size(sample) <= 1:
+        if sample.shape[axis] <= 1:
             raise ValueError("Input sample size must be greater than one.")
-        if np.isinf(sample).any():
-            raise ValueError("Input samples must be finite.")
+
+    samples = [np.moveaxis(sample, axis, -1) for sample in samples]
 
     return samples
 
@@ -4641,9 +4650,7 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
     # Presumably, if abs(r) > 1, then it is only some small artifact of
     # floating point arithmetic.
     one = xp.asarray(1, dtype=dtype)
-    # `clip` only recently added to array API, so it's not yet available in
-    # array_api_strict. Replace with e.g. `xp.clip(r, -one, one)` when available.
-    r = xp.asarray(xp_clip(r, -one, one, xp=xp))
+    r = xp.asarray(xp.clip(r, -one, one))
     r[const_xy] = xp.nan
 
     # As explained in the docstring, the distribution of `r` under the null
@@ -7107,7 +7114,7 @@ def power_divergence(f_obs, f_exp=None, ddof=0, axis=0, lambda_=None):
             f_obs_sum = _m_sum(f_obs_float, axis=axis, preserve_mask=False, xp=xp)
             f_exp_sum = _m_sum(f_exp, axis=axis, preserve_mask=False, xp=xp)
             relative_diff = (xp.abs(f_obs_sum - f_exp_sum) /
-                             xp_minimum(f_obs_sum, f_exp_sum))
+                             xp.minimum(f_obs_sum, f_exp_sum))
             diff_gt_tol = xp.any(relative_diff > rtol, axis=None)
         if diff_gt_tol:
             msg = (f"For each axis slice, the sum of the observed "
@@ -10478,7 +10485,7 @@ def _xp_mean(x, /, *, axis=None, weights=None, keepdims=False, nan_policy='propa
     """
     # ensure that `x` and `weights` are array-API compatible arrays of identical shape
     xp = array_namespace(x) if xp is None else xp
-    x = xp.asarray(x, dtype=dtype)
+    x = _asarray(x, dtype=dtype, subok=True)
     weights = xp.asarray(weights, dtype=dtype) if weights is not None else weights
 
     # to ensure that this matches the behavior of decorated functions when one of the
@@ -10564,7 +10571,7 @@ def _xp_var(x, /, *, axis=None, correction=0, keepdims=False, nan_policy='propag
     # an array-api compatible function for variance with scipy.stats interface
     # and features (e.g. `nan_policy`).
     xp = array_namespace(x) if xp is None else xp
-    x = xp.asarray(x)
+    x = _asarray(x, subok=True)
 
     # use `_xp_mean` instead of `xp.var` for desired warning behavior
     # it would be nice to combine this with `_var`, which uses `_moment`
@@ -10574,7 +10581,7 @@ def _xp_var(x, /, *, axis=None, correction=0, keepdims=False, nan_policy='propag
     # be easy.
     kwargs = dict(axis=axis, nan_policy=nan_policy, dtype=dtype, xp=xp)
     mean = _xp_mean(x, keepdims=True, **kwargs)
-    x = xp.asarray(x, dtype=mean.dtype)
+    x = _asarray(x, dtype=mean.dtype, subok=True)
     x_mean = _demean(x, mean, axis, xp=xp)
     var = _xp_mean(x_mean**2, keepdims=keepdims, **kwargs)
 

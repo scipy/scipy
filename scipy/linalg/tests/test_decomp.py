@@ -1,5 +1,6 @@
 import itertools
 import platform
+import sys
 
 import numpy as np
 from numpy.testing import (assert_equal, assert_almost_equal,
@@ -36,6 +37,8 @@ try:
     from scipy.__config__ import CONFIG
 except ImportError:
     CONFIG = None
+
+IS_WASM = (sys.platform == "emscripten" or platform.machine() in ["wasm32", "wasm64"])
 
 
 def _random_hermitian_matrix(n, posdef=False, dtype=float):
@@ -742,7 +745,7 @@ class TestEigTridiagonal:
 
         for driver in ('sterf', 'stev'):
             assert_raises(ValueError, eigvalsh_tridiagonal, self.d, self.e,
-                          lapack_driver='stev', select='i',
+                          lapack_driver=driver, select='i',
                           select_range=(0, 1))
         for driver in ('stebz', 'stemr', 'auto'):
             # extracting eigenvalues with respect to the full index range
@@ -1179,6 +1182,9 @@ class TestSVD_GESVD(TestSVD_GESDD):
     lapack_driver = 'gesvd'
 
 
+# Allocating an array of such a size leads to _ArrayMemoryError(s)
+# since the maximum memory that can be in 32-bit (WASM) is 4GB
+@pytest.mark.skipif(IS_WASM, reason="out of memory in WASM")
 @pytest.mark.fail_slow(10)
 def test_svd_gesdd_nofegfault():
     # svd(a) with {U,VT}.size > INT_MAX does not segfault
@@ -2868,52 +2874,63 @@ def test_orth_empty(dt):
     assert oa.shape == (0, 0)
 
 
-def test_null_space():
-    np.random.seed(1)
+class TestNullSpace:
+    def test_null_space(self):
+        np.random.seed(1)
 
-    dtypes = [np.float32, np.float64, np.complex64, np.complex128]
-    sizes = [1, 2, 3, 10, 100]
+        dtypes = [np.float32, np.float64, np.complex64, np.complex128]
+        sizes = [1, 2, 3, 10, 100]
 
-    for dt, n in itertools.product(dtypes, sizes):
-        X = np.ones((2, n), dtype=dt)
+        for dt, n in itertools.product(dtypes, sizes):
+            X = np.ones((2, n), dtype=dt)
 
-        eps = np.finfo(dt).eps
-        tol = 1000 * eps
+            eps = np.finfo(dt).eps
+            tol = 1000 * eps
 
-        Y = null_space(X)
-        assert_equal(Y.shape, (n, n-1))
-        assert_allclose(X @ Y, 0, atol=tol)
+            Y = null_space(X)
+            assert_equal(Y.shape, (n, n-1))
+            assert_allclose(X @ Y, 0, atol=tol)
 
-        Y = null_space(X.T)
-        assert_equal(Y.shape, (2, 1))
-        assert_allclose(X.T @ Y, 0, atol=tol)
+            Y = null_space(X.T)
+            assert_equal(Y.shape, (2, 1))
+            assert_allclose(X.T @ Y, 0, atol=tol)
 
-        X = np.random.randn(1 + n//2, n)
-        Y = null_space(X)
-        assert_equal(Y.shape, (n, n - 1 - n//2))
-        assert_allclose(X @ Y, 0, atol=tol)
+            X = np.random.randn(1 + n//2, n)
+            Y = null_space(X)
+            assert_equal(Y.shape, (n, n - 1 - n//2))
+            assert_allclose(X @ Y, 0, atol=tol)
 
-        if n > 5:
-            np.random.seed(1)
-            X = np.random.rand(n, 5) @ np.random.rand(5, n)
-            X = X + 1e-4 * np.random.rand(n, 1) @ np.random.rand(1, n)
-            X = X.astype(dt)
+            if n > 5:
+                np.random.seed(1)
+                X = np.random.rand(n, 5) @ np.random.rand(5, n)
+                X = X + 1e-4 * np.random.rand(n, 1) @ np.random.rand(1, n)
+                X = X.astype(dt)
 
-            Y = null_space(X, rcond=1e-3)
-            assert_equal(Y.shape, (n, n - 5))
+                Y = null_space(X, rcond=1e-3)
+                assert_equal(Y.shape, (n, n - 5))
 
-            Y = null_space(X, rcond=1e-6)
-            assert_equal(Y.shape, (n, n - 6))
+                Y = null_space(X, rcond=1e-6)
+                assert_equal(Y.shape, (n, n - 6))
 
+    @pytest.mark.parametrize('dt', [int, float, np.float32, complex, np.complex64])
+    def test_null_space_empty(self, dt):
+        a = np.empty((0, 0), dtype=dt)
+        a0 = np.eye(2, dtype=dt)
+        nsa = null_space(a)
 
-@pytest.mark.parametrize('dt', [int, float, np.float32, complex, np.complex64])
-def test_null_space_empty(dt):
-    a = np.empty((0, 0), dtype=dt)
-    a0 = np.eye(2, dtype=dt)
-    nsa = null_space(a)
+        assert nsa.shape == (0, 0)
+        assert nsa.dtype == null_space(a0).dtype
 
-    assert nsa.shape == (0, 0)
-    assert nsa.dtype == null_space(a0).dtype
+    @pytest.mark.parametrize("overwrite_a", [True, False])
+    @pytest.mark.parametrize("check_finite", [True, False])
+    @pytest.mark.parametrize("lapack_driver", ["gesdd", "gesvd"])
+    def test_null_space_options(self, overwrite_a, check_finite, lapack_driver):
+        rng = np.random.default_rng(42887289350573064398746)
+        n = 10
+        X = rng.standard_normal((1 + n//2, n))
+        Y = null_space(X.copy(), overwrite_a=overwrite_a, check_finite=check_finite,
+                       lapack_driver=lapack_driver)
+        assert_allclose(X @ Y, 0, atol=np.finfo(X.dtype).eps*100)
 
 
 def test_subspace_angles():

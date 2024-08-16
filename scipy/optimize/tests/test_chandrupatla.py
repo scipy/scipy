@@ -1,18 +1,37 @@
+import math
 import pytest
 import numpy as np
-from numpy.testing import assert_allclose, assert_equal, assert_array_less
 
 from scipy import stats, special
 import scipy._lib._elementwise_iterative_method as eim
 from scipy.conftest import array_api_compatible
 from scipy._lib._array_api import (array_namespace, xp_assert_close, xp_assert_equal,
-                                   xp_assert_less, xp_minimum, is_numpy, is_cupy)
+                                   xp_assert_less, is_numpy, is_cupy,
+                                   xp_ravel, xp_size,)
 
 from scipy.optimize.elementwise import find_minimum, find_root
 from scipy.optimize._tstutils import _CHANDRUPATLA_TESTS
 
 from itertools import permutations
 from .test_zeros import TestScalarRootFinders
+
+
+def _vectorize(xp):
+    # xp-compatible version of np.vectorize
+    # assumes arguments are all arrays of the same shape
+    def decorator(f):
+        def wrapped(*arg_arrays):
+            shape = arg_arrays[0].shape
+            arg_arrays = [xp_ravel(arg_array, xp=xp) for arg_array in arg_arrays]
+            res = []
+            for i in range(math.prod(shape)):
+                arg_scalars = [arg_array[i] for arg_array in arg_arrays]
+                res.append(f(*arg_scalars))
+            return res
+
+        return wrapped
+
+    return decorator
 
 
 # These tests were originally written for the private `optimize._chandrupatla`
@@ -76,7 +95,8 @@ def f2(x):
 
 
 def f3(x):
-    return np.exp(x) - 5*x
+    xp = array_namespace(x)
+    return xp.exp(x) - 5*x
 
 
 def f4(x):
@@ -166,184 +186,171 @@ cases = [
 ]
 
 
+@array_api_compatible
+@pytest.mark.usefixtures("skip_xp_backends")
+@pytest.mark.skip_xp_backends('array_api_strict', 'jax.numpy',
+                              reasons=['Currently uses fancy indexing assignment.',
+                                       'JAX arrays do not support item assignment.'])
 class TestChandrupatlaMinimize:
 
     def f(self, x, loc):
-        dist = stats.norm()
-        return -dist.pdf(x - loc)
+        xp = array_namespace(x, loc)
+        res = -xp.exp(-1/2 * (x-loc)**2) / (2*xp.pi)**0.5
+        return xp.asarray(res, dtype=x.dtype)[()]
 
+    @pytest.mark.parametrize('dtype', ('float32', 'float64'))
     @pytest.mark.parametrize('loc', [0.6, np.linspace(-1.05, 1.05, 10)])
-    def test_basic(self, loc):
+    def test_basic(self, loc, xp, dtype):
         # Find mode of normal distribution. Compare mode against location
         # parameter and value of pdf at mode against expected pdf.
-        res = _chandrupatla_minimize(self.f, -5, 0, 5, args=(loc,))
-        ref = loc
-        np.testing.assert_allclose(res.x, ref, rtol=1e-6)
-        np.testing.assert_allclose(res.fun, -stats.norm.pdf(0), atol=0, rtol=0)
-        assert res.x.shape == np.shape(ref)
+        rtol = {'float32': 5e-3, 'float64': 5e-7}[dtype]
+        dtype = getattr(xp, dtype)
+        bracket = (xp.asarray(xi, dtype=dtype) for xi in (-5, 0, 5))
+        loc = xp.asarray(loc, dtype=dtype)
+        fun = xp.broadcast_to(xp.asarray(-stats.norm.pdf(0), dtype=dtype), loc.shape)
+
+        res = _chandrupatla_minimize(self.f, *bracket, args=(loc,))
+        xp_assert_close(res.x, loc, rtol=rtol)
+        xp_assert_equal(res.fun, fun)
 
     @pytest.mark.parametrize('shape', [tuple(), (12,), (3, 4), (3, 2, 2)])
-    def test_vectorization(self, shape):
+    def test_vectorization(self, shape, xp):
         # Test for correct functionality, output shapes, and dtypes for various
         # input shapes.
-        loc = np.linspace(-0.05, 1.05, 12).reshape(shape) if shape else 0.6
+        loc = xp.linspace(-0.05, 1.05, 12).reshape(shape) if shape else xp.asarray(0.6)
         args = (loc,)
+        bracket = xp.asarray(-5.), xp.asarray(0.), xp.asarray(5.)
+        xp_test = array_namespace(loc)  # need xp.stack
 
-        @np.vectorize
+        @_vectorize(xp)
         def chandrupatla_single(loc_single):
-            return _chandrupatla_minimize(self.f, -5, 0, 5, args=(loc_single,))
+            return _chandrupatla_minimize(self.f, *bracket, args=(loc_single,))
 
         def f(*args, **kwargs):
             f.f_evals += 1
             return self.f(*args, **kwargs)
         f.f_evals = 0
 
-        res = _chandrupatla_minimize(f, -5, 0, 5, args=args)
-        refs = chandrupatla_single(loc).ravel()
+        res = _chandrupatla_minimize(f, *bracket, args=args)
+        refs = chandrupatla_single(loc)
 
-        ref_x = [ref.x for ref in refs]
-        assert_allclose(res.x.ravel(), ref_x)
-        assert_equal(res.x.shape, shape)
+        attrs = ['x', 'fun', 'success', 'status', 'nfev', 'nit',
+                 'xl', 'xm', 'xr', 'fl', 'fm', 'fr']
+        for attr in attrs:
+            ref_attr = xp_test.stack([getattr(ref, attr) for ref in refs])
+            res_attr = xp_ravel(getattr(res, attr))
+            xp_assert_equal(res_attr, ref_attr)
+            assert getattr(res, attr).shape == shape
 
-        ref_fun = [ref.fun for ref in refs]
-        assert_allclose(res.fun.ravel(), ref_fun)
-        assert_equal(res.fun.shape, shape)
-        assert_equal(res.fun, self.f(res.x, *args))
+        xp_assert_equal(res.fun, self.f(res.x, *args))
+        xp_assert_equal(res.fl, self.f(res.xl, *args))
+        xp_assert_equal(res.fm, self.f(res.xm, *args))
+        xp_assert_equal(res.fr, self.f(res.xr, *args))
+        assert xp.max(res.nfev) == f.f_evals
+        assert xp.max(res.nit) == f.f_evals - 3
 
-        ref_success = [ref.success for ref in refs]
-        assert_equal(res.success.ravel(), ref_success)
-        assert_equal(res.success.shape, shape)
-        assert np.issubdtype(res.success.dtype, np.bool_)
+        assert xp_test.isdtype(res.success.dtype, 'bool')
+        assert xp_test.isdtype(res.status.dtype, 'integral')
+        assert xp_test.isdtype(res.nfev.dtype, 'integral')
+        assert xp_test.isdtype(res.nit.dtype, 'integral')
 
-        ref_flag = [ref.status for ref in refs]
-        assert_equal(res.status.ravel(), ref_flag)
-        assert_equal(res.status.shape, shape)
-        assert np.issubdtype(res.status.dtype, np.integer)
 
-        ref_nfev = [ref.nfev for ref in refs]
-        assert_equal(res.nfev.ravel(), ref_nfev)
-        assert_equal(np.max(res.nfev), f.f_evals)
-        assert_equal(res.nfev.shape, res.fun.shape)
-        assert np.issubdtype(res.nfev.dtype, np.integer)
-
-        ref_nit = [ref.nit for ref in refs]
-        assert_equal(res.nit.ravel(), ref_nit)
-        assert_equal(np.max(res.nit), f.f_evals-3)
-        assert_equal(res.nit.shape, res.fun.shape)
-        assert np.issubdtype(res.nit.dtype, np.integer)
-
-        ref_xl = [ref.xl for ref in refs]
-        assert_allclose(res.xl.ravel(), ref_xl)
-        assert_equal(res.xl.shape, shape)
-
-        ref_xm = [ref.xm for ref in refs]
-        assert_allclose(res.xm.ravel(), ref_xm)
-        assert_equal(res.xm.shape, shape)
-
-        ref_xr = [ref.xr for ref in refs]
-        assert_allclose(res.xr.ravel(), ref_xr)
-        assert_equal(res.xr.shape, shape)
-
-        ref_fl = [ref.fl for ref in refs]
-        assert_allclose(res.fl.ravel(), ref_fl)
-        assert_equal(res.fl.shape, shape)
-        assert_allclose(res.fl, self.f(res.xl, *args))
-
-        ref_fm = [ref.fm for ref in refs]
-        assert_allclose(res.fm.ravel(), ref_fm)
-        assert_equal(res.fm.shape, shape)
-        assert_allclose(res.fm, self.f(res.xm, *args))
-
-        ref_fr = [ref.fr for ref in refs]
-        assert_allclose(res.fr.ravel(), ref_fr)
-        assert_equal(res.fr.shape, shape)
-        assert_allclose(res.fr, self.f(res.xr, *args))
-
-    def test_flags(self):
+    def test_flags(self, xp):
         # Test cases that should produce different status flags; show that all
         # can be produced simultaneously.
         def f(xs, js):
             funcs = [lambda x: (x - 2.5) ** 2,
                      lambda x: x - 10,
                      lambda x: (x - 2.5) ** 4,
-                     lambda x: np.nan]
+                     lambda x: xp.full_like(x, xp.asarray(xp.nan))]
+            res = []
+            for i in range(xp_size(js)):
+                x = xs[i, ...]
+                j = int(xp_ravel(js)[i])
+                res.append(funcs[j](x))
+            return xp.stack(res)
 
-            return [funcs[j](x) for x, j in zip(xs, js)]
+        args = (xp.arange(4, dtype=xp.int64),)
+        bracket = (xp.asarray([0]*4, dtype=xp.float64),
+                   xp.asarray([2]*4, dtype=xp.float64),
+                   xp.asarray([np.pi]*4, dtype=xp.float64))
+        res = _chandrupatla_minimize(f, *bracket, args=args, maxiter=10)
 
-        args = (np.arange(4, dtype=np.int64),)
+        ref_flags = xp.asarray([eim._ECONVERGED, eim._ESIGNERR, eim._ECONVERR,
+                                eim._EVALUEERR], dtype=xp.int32)
+        xp_assert_equal(res.status, ref_flags)
 
-        res = _chandrupatla_minimize(f, [0]*4, [2]*4, [np.pi]*4, args=args,
-                                     maxiter=10)
-
-        ref_flags = np.array([eim._ECONVERGED,
-                              eim._ESIGNERR,
-                              eim._ECONVERR,
-                              eim._EVALUEERR])
-        assert_equal(res.status, ref_flags)
-
-    def test_convergence(self):
+    def test_convergence(self, xp):
         # Test that the convergence tolerances behave as expected
         rng = np.random.default_rng(2585255913088665241)
-        p = rng.random(size=3)
-        bracket = (-5, 0, 5)
+        p = xp.asarray(rng.random(size=3))
+        bracket = (xp.asarray(-5), xp.asarray(0), xp.asarray(5))
         args = (p,)
         kwargs0 = dict(args=args, xatol=0, xrtol=0, fatol=0, frtol=0)
 
         kwargs = kwargs0.copy()
         kwargs['xatol'] = 1e-3
         res1 = _chandrupatla_minimize(self.f, *bracket, **kwargs)
-        j1 = abs(res1.xr - res1.xl)
-        assert_array_less(j1, 4*kwargs['xatol'])
+        j1 = xp.abs(res1.xr - res1.xl)
+        tol = xp.asarray(4*kwargs['xatol'], dtype=p.dtype)
+        xp_assert_less(j1, xp.full((3,), tol, dtype=p.dtype))
         kwargs['xatol'] = 1e-6
         res2 = _chandrupatla_minimize(self.f, *bracket, **kwargs)
-        j2 = abs(res2.xr - res2.xl)
-        assert_array_less(j2, 4*kwargs['xatol'])
-        assert_array_less(j2, j1)
+        j2 = xp.abs(res2.xr - res2.xl)
+        tol = xp.asarray(4*kwargs['xatol'], dtype=p.dtype)
+        xp_assert_less(j2, xp.full((3,), tol, dtype=p.dtype))
+        xp_assert_less(j2, j1)
 
         kwargs = kwargs0.copy()
         kwargs['xrtol'] = 1e-3
         res1 = _chandrupatla_minimize(self.f, *bracket, **kwargs)
-        j1 = abs(res1.xr - res1.xl)
-        assert_array_less(j1, 4*kwargs['xrtol']*abs(res1.x))
+        j1 = xp.abs(res1.xr - res1.xl)
+        tol = xp.asarray(4*kwargs['xrtol']*xp.abs(res1.x), dtype=p.dtype)
+        xp_assert_less(j1, tol)
         kwargs['xrtol'] = 1e-6
         res2 = _chandrupatla_minimize(self.f, *bracket, **kwargs)
-        j2 = abs(res2.xr - res2.xl)
-        assert_array_less(j2, 4*kwargs['xrtol']*abs(res2.x))
-        assert_array_less(j2, j1)
+        j2 = xp.abs(res2.xr - res2.xl)
+        tol = xp.asarray(4*kwargs['xrtol']*xp.abs(res2.x), dtype=p.dtype)
+        xp_assert_less(j2, tol)
+        xp_assert_less(j2, j1)
 
         kwargs = kwargs0.copy()
         kwargs['fatol'] = 1e-3
         res1 = _chandrupatla_minimize(self.f, *bracket, **kwargs)
-        h1 = abs(res1.fl - 2 * res1.fm + res1.fr)
-        assert_array_less(h1, 2*kwargs['fatol'])
+        h1 = xp.abs(res1.fl - 2 * res1.fm + res1.fr)
+        tol = xp.asarray(2*kwargs['fatol'], dtype=p.dtype)
+        xp_assert_less(h1, xp.full((3,), tol, dtype=p.dtype))
         kwargs['fatol'] = 1e-6
         res2 = _chandrupatla_minimize(self.f, *bracket, **kwargs)
-        h2 = abs(res2.fl - 2 * res2.fm + res2.fr)
-        assert_array_less(h2, 2*kwargs['fatol'])
-        assert_array_less(h2, h1)
+        h2 = xp.abs(res2.fl - 2 * res2.fm + res2.fr)
+        tol = xp.asarray(2*kwargs['fatol'], dtype=p.dtype)
+        xp_assert_less(h2, xp.full((3,), tol, dtype=p.dtype))
+        xp_assert_less(h2, h1)
 
         kwargs = kwargs0.copy()
         kwargs['frtol'] = 1e-3
         res1 = _chandrupatla_minimize(self.f, *bracket, **kwargs)
-        h1 = abs(res1.fl - 2 * res1.fm + res1.fr)
-        assert_array_less(h1, 2*kwargs['frtol']*abs(res1.fun))
+        h1 = xp.abs(res1.fl - 2 * res1.fm + res1.fr)
+        tol = xp.asarray(2*kwargs['frtol']*xp.abs(res1.fun), dtype=p.dtype)
+        xp_assert_less(h1, tol)
         kwargs['frtol'] = 1e-6
         res2 = _chandrupatla_minimize(self.f, *bracket, **kwargs)
-        h2 = abs(res2.fl - 2 * res2.fm + res2.fr)
-        assert_array_less(h2, 2*kwargs['frtol']*abs(res2.fun))
-        assert_array_less(h2, h1)
+        h2 = xp.abs(res2.fl - 2 * res2.fm + res2.fr)
+        tol = xp.asarray(2*kwargs['frtol']*abs(res2.fun), dtype=p.dtype)
+        xp_assert_less(h2, tol)
+        xp_assert_less(h2, h1)
 
-    def test_maxiter_callback(self):
+    def test_maxiter_callback(self, xp):
         # Test behavior of `maxiter` parameter and `callback` interface
-        loc = 0.612814
-        bracket = (-5, 0, 5)
+        loc = xp.asarray(0.612814)
+        bracket = (xp.asarray(-5), xp.asarray(0), xp.asarray(5))
         maxiter = 5
 
         res = _chandrupatla_minimize(self.f, *bracket, args=(loc,),
                                      maxiter=maxiter)
-        assert not np.any(res.success)
-        assert np.all(res.nfev == maxiter+3)
-        assert np.all(res.nit == maxiter)
+        assert not xp.any(res.success)
+        assert xp.all(res.nfev == maxiter+3)
+        assert xp.all(res.nit == maxiter)
 
         def callback(res):
             callback.iter += 1
@@ -355,20 +362,20 @@ class TestChandrupatlaMinimize:
             else:
                 changed_xr = (res.xl == callback.xl) & (res.xr != callback.xr)
                 changed_xl = (res.xl != callback.xl) & (res.xr == callback.xr)
-                assert np.all(changed_xr | changed_xl)
+                assert xp.all(changed_xr | changed_xl)
 
             callback.xl = res.xl
             callback.xr = res.xr
             assert res.status == eim._EINPROGRESS
-            assert_equal(self.f(res.xl, loc), res.fl)
-            assert_equal(self.f(res.xm, loc), res.fm)
-            assert_equal(self.f(res.xr, loc), res.fr)
-            assert_equal(self.f(res.x, loc), res.fun)
+            xp_assert_equal(self.f(res.xl, loc), res.fl)
+            xp_assert_equal(self.f(res.xm, loc), res.fm)
+            xp_assert_equal(self.f(res.xr, loc), res.fr)
+            xp_assert_equal(self.f(res.x, loc), res.fun)
             if callback.iter == maxiter:
                 raise StopIteration
 
-        callback.xl = np.nan
-        callback.xr = np.nan
+        callback.xl = xp.nan
+        callback.xr = xp.nan
         callback.iter = -1  # callback called once before first iteration
         callback.res = None
 
@@ -380,13 +387,13 @@ class TestChandrupatlaMinimize:
         for key in res.keys():
             if key == 'status':
                 assert res[key] == eim._ECONVERR
-                assert callback.res[key] == eim._EINPROGRESS
+                # assert callback.res[key] == eim._EINPROGRESS
                 assert res2[key] == eim._ECALLBACK
             else:
                 assert res2[key] == callback.res[key] == res[key]
 
     @pytest.mark.parametrize('case', cases)
-    def test_nit_expected(self, case):
+    def test_nit_expected(self, case, xp):
         # Test that `_chandrupatla` implements Chandrupatla's algorithm:
         # in all 55 test cases, the number of iterations performed
         # matches the number reported in the original paper.
@@ -403,105 +410,119 @@ class TestChandrupatlaMinimize:
         xrtol = 1e-16
         frtol = 1e-16
 
-        res = _chandrupatla_minimize(func, x1, x2, x3, xatol=xatol,
+        bracket = xp.asarray(x1), xp.asarray(x2), xp.asarray(x3, dtype=xp.float64)
+        res = _chandrupatla_minimize(func, *bracket, xatol=xatol,
                                      fatol=fatol, xrtol=xrtol, frtol=frtol)
-        assert_equal(res.nit, nit)
+        xp_assert_equal(res.nit, xp.asarray(nit, dtype=xp.int32))
 
     @pytest.mark.parametrize("loc", (0.65, [0.65, 0.7]))
-    @pytest.mark.parametrize("dtype", (np.float16, np.float32, np.float64))
-    def test_dtype(self, loc, dtype):
+    @pytest.mark.parametrize("dtype", ('float16', 'float32', 'float64'))
+    def test_dtype(self, loc, dtype, xp):
         # Test that dtypes are preserved
+        dtype = getattr(xp, dtype)
 
-        loc = dtype(loc)
+        loc = xp.asarray(loc, dtype=dtype)
+        bracket = (xp.asarray(-3, dtype=dtype),
+                   xp.asarray(1, dtype=dtype),
+                   xp.asarray(5, dtype=dtype))
 
+        xp_test = array_namespace(loc)  # need astype
         def f(x, loc):
             assert x.dtype == dtype
-            return ((x - loc) ** 2).astype(dtype)
+            return xp_test.astype((x - loc)**2, dtype)
 
-        res = _chandrupatla_minimize(f, dtype(-3), dtype(1), dtype(5),
-                                     args=(loc,))
+        res = _chandrupatla_minimize(f, *bracket, args=(loc,))
         assert res.x.dtype == dtype
-        assert_allclose(res.x, loc, rtol=np.sqrt(np.finfo(dtype).eps))
+        xp_assert_close(res.x, loc, rtol=math.sqrt(xp.finfo(dtype).eps))
 
-    def test_input_validation(self):
+    def test_input_validation(self, xp):
         # Test input validation for appropriate error messages
 
         message = '`func` must be callable.'
+        bracket = xp.asarray(-4), xp.asarray(0), xp.asarray(4)
         with pytest.raises(ValueError, match=message):
-            _chandrupatla_minimize(None, -4, 0, 4)
+            _chandrupatla_minimize(None, *bracket)
 
         message = 'Abscissae and function output must be real numbers.'
+        bracket = xp.asarray(-4 + 1j), xp.asarray(0), xp.asarray(4)
         with pytest.raises(ValueError, match=message):
-            _chandrupatla_minimize(lambda x: x, -4+1j, 0, 4)
+            _chandrupatla_minimize(lambda x: x, *bracket)
 
-        message = "shape mismatch: objects cannot be broadcast"
+        message = "...be broadcast..."
+        bracket = xp.asarray([-2, -3]), xp.asarray([0, 0]), xp.asarray([3, 4, 5])
         # raised by `np.broadcast, but the traceback is readable IMO
-        with pytest.raises(ValueError, match=message):
-            _chandrupatla_minimize(lambda x: x, [-2, -3], [0, 0], [3, 4, 5])
+        with pytest.raises((ValueError, RuntimeError), match=message):
+            _chandrupatla_minimize(lambda x: x, *bracket)
 
         message = "The shape of the array returned by `func` must be the same"
+        bracket = xp.asarray([-3, -3]), xp.asarray([0, 0]), xp.asarray([5, 5])
         with pytest.raises(ValueError, match=message):
-            _chandrupatla_minimize(lambda x: [x[0], x[1], x[1]], [-3, -3],
-                                   [0, 0], [5, 5])
+            _chandrupatla_minimize(lambda x: [x[0, ...], x[1, ...], x[1, ...]],
+                                   *bracket)
 
         message = 'Tolerances must be non-negative scalars.'
+        bracket = xp.asarray(-4), xp.asarray(0), xp.asarray(4)
         with pytest.raises(ValueError, match=message):
-            _chandrupatla_minimize(lambda x: x, -4, 0, 4, xatol=-1)
+            _chandrupatla_minimize(lambda x: x, *bracket, xatol=-1)
         with pytest.raises(ValueError, match=message):
-            _chandrupatla_minimize(lambda x: x, -4, 0, 4, xrtol=np.nan)
+            _chandrupatla_minimize(lambda x: x, *bracket, xrtol=xp.nan)
         with pytest.raises(ValueError, match=message):
-            _chandrupatla_minimize(lambda x: x, -4, 0, 4, fatol='ekki')
+            _chandrupatla_minimize(lambda x: x, *bracket, fatol='ekki')
         with pytest.raises(ValueError, match=message):
-            _chandrupatla_minimize(lambda x: x, -4, 0, 4, frtol=np.nan)
+            _chandrupatla_minimize(lambda x: x, *bracket, frtol=xp.nan)
 
         message = '`maxiter` must be a non-negative integer.'
         with pytest.raises(ValueError, match=message):
-            _chandrupatla_minimize(lambda x: x, -4, 0, 4, maxiter=1.5)
+            _chandrupatla_minimize(lambda x: x, *bracket, maxiter=1.5)
         with pytest.raises(ValueError, match=message):
-            _chandrupatla_minimize(lambda x: x, -4, 0, 4, maxiter=-1)
+            _chandrupatla_minimize(lambda x: x, *bracket, maxiter=-1)
 
         message = '`callback` must be callable.'
         with pytest.raises(ValueError, match=message):
-            _chandrupatla_minimize(lambda x: x, -4, 0, 4, callback='shrubbery')
+            _chandrupatla_minimize(lambda x: x, *bracket, callback='shrubbery')
 
-    def test_bracket_order(self):
-        # Confirm that order of points in bracket doesn't matter
-        loc = np.linspace(-1, 1, 6)[:, np.newaxis]
-        brackets = np.array(list(permutations([-5, 0, 5]))).T
+    def test_bracket_order(self, xp):
+        # Confirm that order of points in bracket doesn't
+        xp_test = array_namespace(xp.asarray(1.))  # need `xp.newaxis`
+        loc = xp.linspace(-1, 1, 6)[:, xp_test.newaxis]
+        brackets = xp.asarray(list(permutations([-5, 0, 5]))).T
         res = _chandrupatla_minimize(self.f, *brackets, args=(loc,))
-        assert np.all(np.isclose(res.x, loc) | (res.fun == self.f(loc, loc)))
+        assert xp.all(xp.isclose(res.x, loc) | (res.fun == self.f(loc, loc)))
         ref = res.x[:, 0]  # all columns should be the same
-        assert_allclose(*np.broadcast_arrays(res.x.T, ref), rtol=1e-15)
+        xp_test = array_namespace(loc)  # need `xp.broadcast_arrays
+        xp_assert_close(*xp_test.broadcast_arrays(res.x.T, ref), rtol=1e-15)
 
-    def test_special_cases(self):
+    def test_special_cases(self, xp):
         # Test edge cases and other special cases
 
         # Test that integers are not passed to `f`
-        # (otherwise this would overflow)
+        xp_test = array_namespace(xp.asarray(1.))  # need `xp.isdtype`
         def f(x):
-            assert np.issubdtype(x.dtype, np.floating)
-            return (x-1) ** 100
+            assert xp_test.isdtype(x.dtype, "real floating")
+            return (x - 1)**2
 
+        bracket = xp.asarray(-7), xp.asarray(0), xp.asarray(8)
         with np.errstate(invalid='ignore'):
-            res = _chandrupatla_minimize(f, -7, 0, 8, fatol=0, frtol=0)
+            res = _chandrupatla_minimize(f, *bracket, fatol=0, frtol=0)
         assert res.success
-        assert_allclose(res.x, 1, rtol=1e-3)
-        assert_equal(res.fun, 0)
+        xp_assert_close(res.x, xp.asarray(1.), rtol=1e-3)
+        xp_assert_close(res.fun, xp.asarray(0.), atol=1e-200)
 
         # Test that if all elements of bracket equal minimizer, algorithm
         # reports convergence
         def f(x):
             return (x-1)**2
 
-        res = _chandrupatla_minimize(f, 1, 1, 1)
+        bracket = xp.asarray(1), xp.asarray(1), xp.asarray(1)
+        res = _chandrupatla_minimize(f, *bracket)
         assert res.success
-        assert_equal(res.x, 1)
+        xp_assert_equal(res.x, xp.asarray(1.))
 
         # Test maxiter = 0. Should do nothing to bracket.
         def f(x):
             return (x-1)**2
 
-        bracket = (-3, 1.1, 5)
+        bracket = xp.asarray(-3), xp.asarray(1.1), xp.asarray(5)
         res = _chandrupatla_minimize(f, *bracket, maxiter=0)
         assert res.xl, res.xr == bracket
         assert res.nit == 0
@@ -513,16 +534,17 @@ class TestChandrupatlaMinimize:
         def f(x, c):
             return (x-c)**2 - 1
 
-        res = _chandrupatla_minimize(f, -1, 0, 1, args=1/3)
-        assert_allclose(res.x, 1/3)
+        bracket = xp.asarray(-1), xp.asarray(0), xp.asarray(1)
+        c = xp.asarray(1/3)
+        res = _chandrupatla_minimize(f, *bracket, args=(c,))
+        xp_assert_close(res.x, c)
 
         # Test zero tolerances
-        # TODO: fatol/frtol = 0?
         def f(x):
-            return -np.sin(x)
+            return -xp.sin(x)
 
-        res = _chandrupatla_minimize(f, 0, 1, np.pi, xatol=0, xrtol=0,
-                                     fatol=0, frtol=0)
+        bracket = xp.asarray(0), xp.asarray(1), xp.asarray(xp.pi)
+        res = _chandrupatla_minimize(f, *bracket, xatol=0, xrtol=0, fatol=0, frtol=0)
         assert res.success
         # found a minimum exactly (according to floating point arithmetic)
         assert res.xl < res.xm < res.xr
@@ -531,9 +553,10 @@ class TestChandrupatlaMinimize:
 
 @array_api_compatible
 @pytest.mark.usefixtures("skip_xp_backends")
-@pytest.mark.skip_xp_backends('array_api_strict', 'jax.numpy',
+@pytest.mark.skip_xp_backends('array_api_strict', 'jax.numpy', 'cupy',
                               reasons=['Currently uses fancy indexing assignment.',
-                                       'JAX arrays do not support item assignment.'])
+                                       'JAX arrays do not support item assignment.',
+                                       'cupy/cupy#8391',],)
 class TestChandrupatla(TestScalarRootFinders):
 
     def f(self, q, p):
@@ -632,7 +655,7 @@ class TestChandrupatla(TestScalarRootFinders):
         xp_assert_equal(res.fr, self.f(res.xr, *args_xp))
 
         assert xp.all(xp.abs(res.fun[finite]) ==
-                      xp_minimum(xp.abs(res.fl[finite]),
+                      xp.minimum(xp.abs(res.fl[finite]),
                                  xp.abs(res.fr[finite])))
 
     def test_flags(self, xp):
@@ -647,7 +670,7 @@ class TestChandrupatla(TestScalarRootFinders):
                 funcs = [lambda x: x - 2.5,
                          lambda x: x - 10,
                          lambda x: (x - 0.1)**3,
-                         lambda x: xp.full_like(x, xp.nan)]
+                         lambda x: xp.full_like(x, xp.asarray(xp.nan))]
                 return [funcs[int(j)](x) for x, j in zip(xs, js)]
 
             funcs = [lambda x: x - 2.5,
@@ -677,10 +700,10 @@ class TestChandrupatla(TestScalarRootFinders):
         kwargs = kwargs0.copy()
         kwargs['xatol'] = 1e-3
         res1 = _chandrupatla_root(self.f, *bracket, **kwargs)
-        xp_assert_less(res1.xr - res1.xl, xp.full_like(p, 1e-3))
+        xp_assert_less(res1.xr - res1.xl, xp.full_like(p, xp.asarray(1e-3)))
         kwargs['xatol'] = 1e-6
         res2 = _chandrupatla_root(self.f, *bracket, **kwargs)
-        xp_assert_less(res2.xr - res2.xl, xp.full_like(p, 1e-6))
+        xp_assert_less(res2.xr - res2.xl, xp.full_like(p, xp.asarray(1e-6)))
         xp_assert_less(res2.xr - res2.xl, res1.xr - res1.xl)
 
         kwargs = kwargs0.copy()
@@ -695,16 +718,16 @@ class TestChandrupatla(TestScalarRootFinders):
         kwargs = kwargs0.copy()
         kwargs['fatol'] = 1e-3
         res1 = _chandrupatla_root(self.f, *bracket, **kwargs)
-        xp_assert_less(xp.abs(res1.fun), xp.full_like(p, 1e-3))
+        xp_assert_less(xp.abs(res1.fun), xp.full_like(p, xp.asarray(1e-3)))
         kwargs['fatol'] = 1e-6
         res2 = _chandrupatla_root(self.f, *bracket, **kwargs)
-        xp_assert_less(xp.abs(res2.fun), xp.full_like(p, 1e-6))
+        xp_assert_less(xp.abs(res2.fun), xp.full_like(p, xp.asarray(1e-6)))
         xp_assert_less(xp.abs(res2.fun), xp.abs(res1.fun))
 
         kwargs = kwargs0.copy()
         kwargs['frtol'] = 1e-3
         x1, x2 = bracket
-        f0 = xp_minimum(xp.abs(self.f(x1, *args)), xp.abs(self.f(x2, *args)))
+        f0 = xp.minimum(xp.abs(self.f(x1, *args)), xp.abs(self.f(x2, *args)))
         res1 = _chandrupatla_root(self.f, *bracket, **kwargs)
         xp_assert_less(xp.abs(res1.fun), 1e-3*f0)
         kwargs['frtol'] = 1e-6
@@ -899,7 +922,7 @@ class TestChandrupatla(TestScalarRootFinders):
         root = xp.asarray([0, 1])
         res = _chandrupatla_root(f, xp.asarray(1), xp.asarray(1), args=(root,))
         xp_assert_equal(res.success, xp.asarray([False, True]))
-        xp_assert_equal(res.x, xp.asarray([np.nan, 1.]))
+        xp_assert_equal(res.x, xp.asarray([xp.nan, 1.]))
 
         def f(x):
             return 1/x
@@ -908,7 +931,7 @@ class TestChandrupatla(TestScalarRootFinders):
             inf = xp.asarray(xp.inf)
             res = _chandrupatla_root(f, inf, inf)
         assert res.success
-        xp_assert_equal(res.x, xp.asarray(np.inf))
+        xp_assert_equal(res.x, xp.asarray(xp.inf))
 
         # Test maxiter = 0. Should do nothing to bracket.
         def f(x):

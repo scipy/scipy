@@ -29,7 +29,7 @@ def parse_txt_data(filename):
     return np.array(data)
 
 
-def run_test(filename, funcs, args=[0]):
+def run_test(filename, funcs, args=[0]):  # noqa: B006
     nargs = len(args)
     if len(funcs) > 1 and nargs > 1:
         raise ValueError("nargs > 1 and len(funcs) > 1 not supported")

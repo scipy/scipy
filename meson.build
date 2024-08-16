@@ -6,7 +6,7 @@ project(
   # tools/version_utils.py
   version: '1.15.0.dev0',
   license: 'BSD-3',
-  meson_version: '>= 1.1.0',
+  meson_version: '>= 1.5.0',
   default_options: [
     'buildtype=debugoptimized',
     'b_ndebug=if-release',
