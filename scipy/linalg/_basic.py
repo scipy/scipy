@@ -458,14 +458,11 @@ def solve_banded(l_and_u, ab, b, overwrite_ab=False, overwrite_b=False,
     overwrite_b = overwrite_b or _datacopied(b1, b)
     if a1.shape[-1] == 1:
         b2 = np.array(b1, copy=(not overwrite_b))
-        # Generally, m >= nlower + nupper + 1 (with m = a1.shape[-1])
-        # implies that nlower == nupper == 0 when m == 1,
-        # so that a1[0, 0] is the correct way to index the matrix.
-        # This may not always be the case (the GBSV documentation for Lapack
-        # https://netlib.org/lapack/explore-html/db/df8/group__gbsv_gaff55317eb
-        # 3aed2278a85919a488fec07.html#gaff55317eb3aed2278a85919a488fec07
-        # does not place a lower bound on the argument `N`),
-        # so we need to index the main diagonal by offsetting by nupper rows
+        # a1.shape[-1] == 1 -> original matrix is 1x1. Typically, the user
+        # will pass u = l = 0 and `a1` will be 1x1. However, the rest of the
+        # function works with unnecessary rows in `a1` as long as
+        # `a1[u + i - j, j] == a[i,j]`. In the 1x1 case, we want i = j = 0,
+        # so the diagonal is in row `u` of `a1`. See gh-8906.
         b2 /= a1[nupper, 0]
         return b2
     if nlower == nupper == 1:
