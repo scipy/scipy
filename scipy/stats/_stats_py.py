@@ -1689,18 +1689,13 @@ def kurtosistest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
     pvalue : float
         The p-value for the hypothesis test.
 
-    Raises
-    ------
-    ValueError
-        If shape of `a` along the given `axis` is less than 5.
+    See Also
+    --------
+    :ref:`hypothesis_kurtosistest` : Extended example
 
     Notes
     -----
     Valid only for n>20. This function uses the method described in [1]_.
-
-    See Also
-    --------
-    :ref:`hypothesis_kurtosistest` : Extended example
 
     References
     ----------
@@ -4978,9 +4973,9 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate',
     Raises
     ------
     ValueError
-        If `axis` is not 0, 1 or None, or if dimensions of `a` along the `axis`
-        is greater than 2, or if `b` is None and dimensions of `a` along the
-        `axis` is less than 2.
+        If `axis` is not 0, 1 or None, or if the number of dimensions of `a`
+        is greater than 2, or if `b` is None and the number of dimensions of
+        `a` is less than 2.
 
     Warns
     -----
@@ -5326,8 +5321,8 @@ def kendalltau(x, y, *, nan_policy='propagate',
     Raises
     ------
     ValueError
-        If `nan_policy` is `omit` and `variant` is not `b`.
-        If `method` is `exact` and there are ties in `x` and `y`.
+        If `nan_policy` is 'omit' and `variant` is not 'b' or
+        if `method` is 'exact' and there are ties between `x` and `y`.
 
     See Also
     --------
