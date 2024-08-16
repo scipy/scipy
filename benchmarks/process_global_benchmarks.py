@@ -17,7 +17,7 @@ def process_global_benchmarks(f):
         pd.DataFrame for the mean number of nfev, success_rate, mean_time
         for each optimisation problem.
     """
-    with open(f, 'r') as fi:
+    with open(f, "r") as fi:
         dct = json.load(fi)
 
     nfev = []
@@ -30,9 +30,9 @@ def process_global_benchmarks(f):
         _nsuccess = []
         _mean_time = []
         for solver, vals in results.items():
-            _nfev.append(vals['mean_nfev'])
-            _nsuccess.append(vals['nsuccess'] / vals['ntrials'] * 100)
-            _mean_time.append(vals['mean_time'])
+            _nfev.append(vals["mean_nfev"])
+            _nsuccess.append(vals["nsuccess"] / vals["ntrials"] * 100)
+            _mean_time.append(vals["mean_time"])
         nfev.append(_nfev)
         nsuccess.append(_nsuccess)
         mean_time.append(_mean_time)
