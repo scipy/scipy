@@ -1,25 +1,21 @@
-# distutils: language = c++
-
 from ._biasedurn cimport CFishersNCHypergeometric, StochasticLib3
 cimport numpy as np
 import numpy as np
+from libc.stdint cimport uint32_t, uint64_t
 from libcpp.memory cimport unique_ptr
 
 np.import_array()
 
-from numpy.random cimport bitgen_t
 from cpython.pycapsule cimport PyCapsule_GetPointer, PyCapsule_IsValid
 
-# If this were C code we could do this:
-#     from numpy.random.c_distributions cimport random_normal
-# But this is C++, so we need to wrap the include with an extern "C"
-# to prevent name-mangling -- this is probably a Cython bug.
-cdef extern from *:
-    """
-    extern "C" {
-      #include "numpy/random/distributions.h"
-    }
-    """
+cdef extern from "distributions.h":
+    ctypedef struct bitgen_t:
+        void *state
+        uint64_t (*next_uint64)(void *st) nogil
+        uint32_t (*next_uint32)(void *st) nogil
+        double (*next_double)(void *st) nogil
+        uint64_t (*next_raw)(void *st) nogil
+
     double random_normal(bitgen_t*, double, double) nogil
 
 cdef class _PyFishersNCHypergeometric:
@@ -71,10 +67,10 @@ cdef class _PyWalleniusNCHypergeometric:
 
 
 cdef bitgen_t* _glob_rng
-cdef double next_double() nogil:
+cdef double next_double() noexcept nogil:
     global _glob_rng
     return _glob_rng.next_double(_glob_rng.state)
-cdef double next_normal(const double m, const double s) nogil:
+cdef double next_normal(const double m, const double s) noexcept nogil:
     global _glob_rng
     return random_normal(_glob_rng, m, s)
 
@@ -108,7 +104,7 @@ cdef class _PyStochasticLib3:
     def SetAccuracy(self, double accur):
         return self.c_sl3.get().SetAccuracy(accur)
 
-    cdef void HandleRng(self, random_state=None):
+    cdef void HandleRng(self, random_state=None) noexcept:
         self.capsule = make_rng(random_state)
 
         # get the bitgen_t pointer

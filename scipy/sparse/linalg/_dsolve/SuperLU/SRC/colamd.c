@@ -1,4 +1,4 @@
-/*! \file
+/*
 Copyright (c) 2003, The Regents of the University of California, through
 Lawrence Berkeley National Laboratory (subject to receipt of any required 
 approvals from U.S. Dept. of Energy) 
@@ -8,14 +8,16 @@ All rights reserved.
 The source code is distributed under BSD license, see the file License.txt
 at the top-level directory.
 */
-/*! @file colamd.c
- *\brief A sparse matrix column ordering algorithm
- 
- <pre>
-    ========================================================================== 
-    === colamd/symamd - a sparse matrix column ordering algorithm ============ 
-    ========================================================================== 
+/*! \file
+ * \brief Approximate minimum degree column ordering algorithm
+ *
+ * \ingroup Common
+ */
+/* ========================================================================== */
+/* === colamd/symamd - a sparse matrix column ordering algorithm ============ */
+/* ========================================================================== */
 
+/* COLAMD / SYMAMD
 
     colamd:  an approximate minimum degree column ordering algorithm,
     	for LU factorization of symmetric or unsymmetric matrices,
@@ -35,7 +37,7 @@ at the top-level directory.
 	conventional partial pivoting with row interchanges.  Colamd is the
 	column ordering method used in SuperLU, part of the ScaLAPACK library.
 	It is also available as built-in function in MATLAB Version 6,
-	available from MathWorks, Inc. (https://www.mathworks.com).  This
+	available from MathWorks, Inc. (http://www.mathworks.com).  This
 	routine can be used in place of colmmd in MATLAB.
 
     	Symamd computes a permutation P of a symmetric matrix A such that the
@@ -48,13 +50,9 @@ at the top-level directory.
     Authors:
 
 	The authors of the code itself are Stefan I. Larimore and Timothy A.
-	Davis (davis@cise.ufl.edu), University of Florida.  The algorithm was
+	Davis (DrTimothyAldenDavis@gmail.com).  The algorithm was
 	developed in collaboration with John Gilbert, Xerox PARC, and Esmond
 	Ng, Oak Ridge National Laboratory.
-
-    Date:
-
-	September 8, 2003.  Version 2.3.
 
     Acknowledgements:
 
@@ -63,34 +61,40 @@ at the top-level directory.
 
     Copyright and License:
 
-	Copyright (c) 1998-2003 by the University of Florida.
-	All Rights Reserved.
+	Copyright (c) 1998-2007, Timothy A. Davis, All Rights Reserved.
+	COLAMD is also available under alternate licenses, contact T. Davis
+	for details.
 
-	THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY
-	EXPRESSED OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
-
-	Permission is hereby granted to use, copy, modify, and/or distribute
-	this program, provided that the Copyright, this License, and the
-	Availability of the original version is retained on all copies and made
-	accessible to the end-user of any code or package that includes COLAMD
-	or any modified version of COLAMD. 
+        See COLAMD/Doc/License.txt for the license.
 
     Availability:
 
-	The colamd/symamd library is available at
-
-	    https://web.archive.org/web/20141010162709/http://www.cise.ufl.edu/research/sparse/colamd/
-
-	This is the https://web.archive.org/web/20040113022019/http://www.cise.ufl.edu/research/sparse/colamd/colamd.c
-	file.  It requires the colamd.h file.  It is required by the colamdmex.c
-	and symamdmex.c files, for the MATLAB interface to colamd and symamd.
+	The colamd/symamd library is available at http://www.suitesparse.com
+	Appears as ACM Algorithm 836.
 
     See the ChangeLog file for changes since Version 1.0.
 
-    ========================================================================== 
-    === Description of user-callable routines ================================ 
-    ========================================================================== 
+    References:
 
+	T. A. Davis, J. R. Gilbert, S. Larimore, E. Ng, An approximate column
+	minimum degree ordering algorithm, ACM Transactions on Mathematical
+	Software, vol. 30, no. 3., pp. 353-376, 2004.
+
+	T. A. Davis, J. R. Gilbert, S. Larimore, E. Ng, Algorithm 836: COLAMD,
+	an approximate column minimum degree ordering algorithm, ACM
+	Transactions on Mathematical Software, vol. 30, no. 3., pp. 377-380,
+	2004.
+
+*/
+
+/* ========================================================================== */
+/* === Description of user-callable routines ================================ */
+/* ========================================================================== */
+
+/* COLAMD includes both int and SuiteSparse_long versions of all its routines.
+    The description below is for the int version.  For SuiteSparse_long, all
+    int arguments become SuiteSparse_long.  SuiteSparse_long is normally
+    defined as long, except for WIN64.
 
     ----------------------------------------------------------------------------
     colamd_recommended:
@@ -99,21 +103,19 @@ at the top-level directory.
 	C syntax:
 
 	    #include "colamd.h"
-	    int colamd_recommended (int nnz, int n_row, int n_col) ;
-
-	    or as a C macro
-
-	    #include "colamd.h"
-	    Alen = COLAMD_RECOMMENDED (int nnz, int n_row, int n_col) ;
+	    size_t colamd_recommended (int nnz, int n_row, int n_col) ;
+	    size_t colamd_l_recommended (SuiteSparse_long nnz,
+                SuiteSparse_long n_row, SuiteSparse_long n_col) ;
 
 	Purpose:
 
-	    Returns recommended value of Alen for use by colamd.  Returns -1
+	    Returns recommended value of Alen for use by colamd.  Returns 0
 	    if any input argument is negative.  The use of this routine
-	    or macro is optional.  Note that the macro uses its arguments
-	    more than once, so be careful for side effects, if you pass
-	    expressions as arguments to COLAMD_RECOMMENDED.  Not needed for
-	    symamd, which dynamically allocates its own memory.
+	    is optional.  Not needed for symamd, which dynamically allocates
+	    its own memory.
+
+	    Note that in v2.4 and earlier, these routines returned int or long.
+	    They now return a value of type size_t.
 
 	Arguments (all input arguments):
 
@@ -134,6 +136,7 @@ at the top-level directory.
 
 	    #include "colamd.h"
 	    colamd_set_defaults (double knobs [COLAMD_KNOBS]) ;
+	    colamd_l_set_defaults (double knobs [COLAMD_KNOBS]) ;
 
 	Purpose:
 
@@ -143,25 +146,38 @@ at the top-level directory.
 
 	    double knobs [COLAMD_KNOBS] ;	Output only.
 
-		Colamd: rows with more than (knobs [COLAMD_DENSE_ROW] * n_col)
+		NOTE: the meaning of the dense row/col knobs has changed in v2.4
+
+		knobs [0] and knobs [1] control dense row and col detection:
+
+		Colamd: rows with more than
+		max (16, knobs [COLAMD_DENSE_ROW] * sqrt (n_col))
 		entries are removed prior to ordering.  Columns with more than
-		(knobs [COLAMD_DENSE_COL] * n_row) entries are removed prior to
+		max (16, knobs [COLAMD_DENSE_COL] * sqrt (MIN (n_row,n_col)))
+		entries are removed prior to
 		ordering, and placed last in the output column ordering. 
 
 		Symamd: uses only knobs [COLAMD_DENSE_ROW], which is knobs [0].
-		Rows and columns with more than (knobs [COLAMD_DENSE_ROW] * n)
+		Rows and columns with more than
+		max (16, knobs [COLAMD_DENSE_ROW] * sqrt (n))
 		entries are removed prior to ordering, and placed last in the
 		output ordering.
 
 		COLAMD_DENSE_ROW and COLAMD_DENSE_COL are defined as 0 and 1,
 		respectively, in colamd.h.  Default values of these two knobs
-		are both 0.5.  Currently, only knobs [0] and knobs [1] are
+		are both 10.  Currently, only knobs [0] and knobs [1] are
 		used, but future versions may use more knobs.  If so, they will
 		be properly set to their defaults by the future version of
 		colamd_set_defaults, so that the code that calls colamd will
 		not need to change, assuming that you either use
 		colamd_set_defaults, or pass a (double *) NULL pointer as the
 		knobs array to colamd or symamd.
+
+	    knobs [2]: aggressive absorption
+
+	        knobs [COLAMD_AGGRESSIVE] controls whether or not to do
+	        aggressive absorption during the ordering.  Default is TRUE.
+
 
     ----------------------------------------------------------------------------
     colamd:
@@ -172,6 +188,10 @@ at the top-level directory.
 	    #include "colamd.h"
 	    int colamd (int n_row, int n_col, int Alen, int *A, int *p,
 	    	double knobs [COLAMD_KNOBS], int stats [COLAMD_STATS]) ;
+	    SuiteSparse_long colamd_l (SuiteSparse_long n_row,
+                SuiteSparse_long n_col, SuiteSparse_long Alen,
+                SuiteSparse_long *A, SuiteSparse_long *p, double knobs
+                [COLAMD_KNOBS], SuiteSparse_long stats [COLAMD_STATS]) ;
 
 	Purpose:
 
@@ -209,12 +229,10 @@ at the top-level directory.
 		We do, however, guarantee that
 
 			Alen >= colamd_recommended (nnz, n_row, n_col)
-		
-		or equivalently as a C preprocessor macro: 
 
-			Alen >= COLAMD_RECOMMENDED (nnz, n_row, n_col)
-
-		will be sufficient.
+		will be sufficient.  Note: the macro version does not check
+		for integer overflow, and thus is not recommended.  Use
+		the colamd_recommended routine instead.
 
 	    int A [Alen] ;	Input argument, undefined on output.
 
@@ -349,8 +367,7 @@ at the top-level directory.
 
 	Example:
 	
-	    See http://www.cise.ufl.edu/research/sparse/colamd/example.c
-	    for a complete example.
+	    See colamd_example.c for a complete example.
 
 	    To order the columns of a 5-by-4 matrix with 11 nonzero entries in
 	    the following nonzero pattern
@@ -364,8 +381,8 @@ at the top-level directory.
 	    with default knobs and no output statistics, do the following:
 
 		#include "colamd.h"
-		#define ALEN COLAMD_RECOMMENDED (11, 5, 4)
-		int A [ALEN] = {1, 2, 5, 3, 5, 1, 2, 3, 4, 2, 4} ;
+		#define ALEN 100
+		int A [ALEN] = {0, 1, 4, 2, 4, 0, 1, 2, 3, 1, 3} ;
 		int p [ ] = {0, 3, 5, 9, 11} ;
 		int stats [COLAMD_STATS] ;
 		colamd (5, 4, ALEN, A, p, (double *) NULL, stats) ;
@@ -382,6 +399,10 @@ at the top-level directory.
 	    int symamd (int n, int *A, int *p, int *perm,
 	    	double knobs [COLAMD_KNOBS], int stats [COLAMD_STATS],
 		void (*allocate) (size_t, size_t), void (*release) (void *)) ;
+	    SuiteSparse_long symamd_l (SuiteSparse_long n, SuiteSparse_long *A,
+                SuiteSparse_long *p, SuiteSparse_long *perm, double knobs
+                [COLAMD_KNOBS], SuiteSparse_long stats [COLAMD_STATS], void
+                (*allocate) (size_t, size_t), void (*release) (void *)) ;
 
 	Purpose:
 
@@ -522,13 +543,6 @@ at the top-level directory.
 				workspace for M or count arrays using the
 				"allocate" routine passed into symamd).
 
-			-999	internal error.  colamd failed to order the
-				matrix M, when it should have succeeded.  This
-				indicates a bug.  If this (and *only* this)
-				error code occurs, please contact the authors.
-				Don't contact the authors if you get any other
-				error code.
-
 		Future versions may return more statistics in the stats array.
 
 	    void * (*allocate) (size_t, size_t)
@@ -555,6 +569,7 @@ at the top-level directory.
 
 	    #include "colamd.h"
 	    colamd_report (int stats [COLAMD_STATS]) ;
+	    colamd_l_report (SuiteSparse_long stats [COLAMD_STATS]) ;
 
 	Purpose:
 
@@ -575,6 +590,7 @@ at the top-level directory.
 
 	    #include "colamd.h"
 	    symamd_report (int stats [COLAMD_STATS]) ;
+	    symamd_l_report (SuiteSparse_long stats [COLAMD_STATS]) ;
 
 	Purpose:
 
@@ -586,7 +602,7 @@ at the top-level directory.
 
 	    int stats [COLAMD_STATS] ;	Input only.  Statistics from symamd.
 
- </pre>
+
 */
 
 /* ========================================================================== */
@@ -596,7 +612,11 @@ at the top-level directory.
 /* Ensure that debugging is turned off: */
 #ifndef NDEBUG
 #define NDEBUG
-#endif /* NDEBUG */
+#endif
+
+/* turn on debugging by uncommenting the following line
+ #undef NDEBUG
+*/
 
 /*
    Our "scaffolding code" philosophy:  In our opinion, well-written library
@@ -615,9 +635,7 @@ at the top-level directory.
    (3) (gasp!) for actually finding bugs.  This code has been heavily tested
 	and "should" be fully functional and bug-free ... but you never know...
 
-    To enable debugging, comment out the "#define NDEBUG" above.  For a MATLAB
-    mexFunction, you will also need to modify mexopts.sh to remove the -DNDEBUG
-    definition.  The code will become outrageously slow when debugging is
+    The code will become outrageously slow when debugging is
     enabled.  To control the level of debugging output, set an environment
     variable D to 0 (little), 1 (some), 2, 3, or 4 (lots).  When debugging,
     you should see the following message on the standard output:
@@ -632,17 +650,111 @@ at the top-level directory.
 /* ========================================================================== */
 /* === Include files ======================================================== */
 /* ========================================================================== */
-
-#include "colamd.h"
 #include <limits.h>
+#include <math.h>
+#include "colamd.h"
 
 #ifdef MATLAB_MEX_FILE
 #include "mex.h"
 #include "matrix.h"
-#else
-#include <stdio.h>
-#include <assert.h>
 #endif /* MATLAB_MEX_FILE */
+
+#if !defined (NPRINT) || !defined (NDEBUG)
+#include <stdio.h>
+#endif
+
+#ifndef NULL
+#define NULL ((void *) 0)
+#endif
+
+/* ========================================================================== */
+/* === int or SuiteSparse_long ============================================== */
+/* ========================================================================== */
+
+#ifdef DLONG
+
+#define Int SuiteSparse_long
+#define ID  SuiteSparse_long_id
+#define Int_MAX SuiteSparse_long_max
+
+#define COLAMD_recommended colamd_l_recommended
+#define COLAMD_set_defaults colamd_l_set_defaults
+#define COLAMD_MAIN colamd_l
+#define SYMAMD_MAIN symamd_l
+#define COLAMD_report colamd_l_report
+#define SYMAMD_report symamd_l_report
+
+#else
+
+#define Int int
+#define ID "%d"
+#define Int_MAX INT_MAX
+
+#define COLAMD_recommended colamd_recommended
+#define COLAMD_set_defaults colamd_set_defaults
+#define COLAMD_MAIN colamd
+#define SYMAMD_MAIN symamd
+#define COLAMD_report colamd_report
+#define SYMAMD_report symamd_report
+
+#endif
+
+/* ========================================================================== */
+/* === Row and Column structures ============================================ */
+/* ========================================================================== */
+
+/* User code that makes use of the colamd/symamd routines need not directly */
+/* reference these structures.  They are used only for colamd_recommended. */
+
+typedef struct Colamd_Col_struct
+{
+    Int start ;		/* index for A of first row in this column, or DEAD */
+			/* if column is dead */
+    Int length ;	/* number of rows in this column */
+    union
+    {
+	Int thickness ;	/* number of original columns represented by this */
+			/* col, if the column is alive */
+	Int parent ;	/* parent in parent tree super-column structure, if */
+			/* the column is dead */
+    } shared1 ;
+    union
+    {
+	Int score ;	/* the score used to maintain heap, if col is alive */
+	Int order ;	/* pivot ordering of this column, if col is dead */
+    } shared2 ;
+    union
+    {
+	Int headhash ;	/* head of a hash bucket, if col is at the head of */
+			/* a degree list */
+	Int hash ;	/* hash value, if col is not in a degree list */
+	Int prev ;	/* previous column in degree list, if col is in a */
+			/* degree list (but not at the head of a degree list) */
+    } shared3 ;
+    union
+    {
+	Int degree_next ;	/* next column, if col is in a degree list */
+	Int hash_next ;		/* next column, if col is in a hash list */
+    } shared4 ;
+
+} Colamd_Col ;
+
+typedef struct Colamd_Row_struct
+{
+    Int start ;		/* index for A of first col in this row */
+    Int length ;	/* number of principal columns in this row */
+    union
+    {
+	Int degree ;	/* number of principal & non-principal columns in row */
+	Int p ;		/* used as a row pointer in init_rows_cols () */
+    } shared1 ;
+    union
+    {
+	Int mark ;	/* for computing set differences and marking dead rows*/
+	Int first_column ;/* first column in row (used in garbage collection) */
+    } shared2 ;
+
+} Colamd_Row ;
 
 /* ========================================================================== */
 /* === Definitions ========================================================== */
@@ -651,6 +763,9 @@ at the top-level directory.
 /* Routines are either PUBLIC (user-callable) or PRIVATE (not user-callable) */
 #define PUBLIC
 #define PRIVATE static
+
+#define DENSE_DEGREE(alpha,n) \
+    ((Int) MAX (16.0, (alpha) * sqrt ((double) (n))))
 
 #define MAX(a,b) (((a) > (b)) ? (a) : (b))
 #define MIN(a,b) (((a) < (b)) ? (a) : (b))
@@ -696,111 +811,102 @@ at the top-level directory.
 /* === Colamd reporting mechanism =========================================== */
 /* ========================================================================== */
 
-#ifdef MATLAB_MEX_FILE
-
-/* use mexPrintf in a MATLAB mexFunction, for debugging and statistics output */
-#define PRINTF mexPrintf
-
+#if defined (MATLAB_MEX_FILE) || defined (MATHWORKS)
 /* In MATLAB, matrices are 1-based to the user, but 0-based internally */
 #define INDEX(i) ((i)+1)
-
 #else
-
-/* Use printf in standard C environment, for debugging and statistics output. */
-/* Output is generated only if debugging is enabled at compile time, or if */
-/* the caller explicitly calls colamd_report or symamd_report. */
-#define PRINTF printf
-
 /* In C, matrices are 0-based and indices are reported as such in *_report */
 #define INDEX(i) (i)
-
-#endif /* MATLAB_MEX_FILE */
+#endif
 
 /* ========================================================================== */
 /* === Prototypes of PRIVATE routines ======================================= */
 /* ========================================================================== */
 
-PRIVATE int init_rows_cols
+PRIVATE Int init_rows_cols
 (
-    int n_row,
-    int n_col,
+    Int n_row,
+    Int n_col,
     Colamd_Row Row [],
     Colamd_Col Col [],
-    int A [],
-    int p [],
-    int stats [COLAMD_STATS]
+    Int A [],
+    Int p [],
+    Int stats [COLAMD_STATS]
 ) ;
 
 PRIVATE void init_scoring
 (
-    int n_row,
-    int n_col,
+    Int n_row,
+    Int n_col,
     Colamd_Row Row [],
     Colamd_Col Col [],
-    int A [],
-    int head [],
+    Int A [],
+    Int head [],
     double knobs [COLAMD_KNOBS],
-    int *p_n_row2,
-    int *p_n_col2,
-    int *p_max_deg
+    Int *p_n_row2,
+    Int *p_n_col2,
+    Int *p_max_deg
 ) ;
 
-PRIVATE int find_ordering
+PRIVATE Int find_ordering
 (
-    int n_row,
-    int n_col,
-    int Alen,
+    Int n_row,
+    Int n_col,
+    Int Alen,
     Colamd_Row Row [],
     Colamd_Col Col [],
-    int A [],
-    int head [],
-    int n_col2,
-    int max_deg,
-    int pfree
+    Int A [],
+    Int head [],
+    Int n_col2,
+    Int max_deg,
+    Int pfree,
+    Int aggressive
 ) ;
 
 PRIVATE void order_children
 (
-    int n_col,
+    Int n_col,
     Colamd_Col Col [],
-    int p []
+    Int p []
 ) ;
 
 PRIVATE void detect_super_cols
 (
 
 #ifndef NDEBUG
-    int n_col,
+    Int n_col,
     Colamd_Row Row [],
 #endif /* NDEBUG */
 
     Colamd_Col Col [],
-    int A [],
-    int head [],
-    int row_start,
-    int row_length
+    Int A [],
+    Int head [],
+    Int row_start,
+    Int row_length
 ) ;
 
-PRIVATE int garbage_collection
+PRIVATE Int garbage_collection
 (
-    int n_row,
-    int n_col,
+    Int n_row,
+    Int n_col,
     Colamd_Row Row [],
     Colamd_Col Col [],
-    int A [],
-    int *pfree
+    Int A [],
+    Int *pfree
 ) ;
 
-PRIVATE int clear_mark
+PRIVATE Int clear_mark
 (
-    int n_row,
+    Int tag_mark,
+    Int max_mark,
+    Int n_row,
     Colamd_Row Row []
 ) ;
 
 PRIVATE void print_report
 (
     char *method,
-    int stats [COLAMD_STATS]
+    Int stats [COLAMD_STATS]
 ) ;
 
 /* ========================================================================== */
@@ -809,16 +915,18 @@ PRIVATE void print_report
 
 #ifndef NDEBUG
 
+#include <assert.h>
+
 /* colamd_debug is the *ONLY* global variable, and is only */
 /* present when debugging */
 
-PRIVATE int colamd_debug ;	/* debug print level */
+PRIVATE Int colamd_debug = 0 ;	/* debug print level */
 
-#define DEBUG0(params) { (void) PRINTF params ; }
-#define DEBUG1(params) { if (colamd_debug >= 1) (void) PRINTF params ; }
-#define DEBUG2(params) { if (colamd_debug >= 2) (void) PRINTF params ; }
-#define DEBUG3(params) { if (colamd_debug >= 3) (void) PRINTF params ; }
-#define DEBUG4(params) { if (colamd_debug >= 4) (void) PRINTF params ; }
+#define DEBUG0(params) { SUITESPARSE_PRINTF (params) ; }
+#define DEBUG1(params) { if (colamd_debug >= 1) SUITESPARSE_PRINTF (params) ; }
+#define DEBUG2(params) { if (colamd_debug >= 2) SUITESPARSE_PRINTF (params) ; }
+#define DEBUG3(params) { if (colamd_debug >= 3) SUITESPARSE_PRINTF (params) ; }
+#define DEBUG4(params) { if (colamd_debug >= 4) SUITESPARSE_PRINTF (params) ; }
 
 #ifdef MATLAB_MEX_FILE
 #define ASSERT(expression) (mxAssert ((expression), ""))
@@ -833,41 +941,41 @@ PRIVATE void colamd_get_debug	/* gets the debug print level from getenv */
 
 PRIVATE void debug_deg_lists
 (
-    int n_row,
-    int n_col,
+    Int n_row,
+    Int n_col,
     Colamd_Row Row [],
     Colamd_Col Col [],
-    int head [],
-    int min_score,
-    int should,
-    int max_deg
+    Int head [],
+    Int min_score,
+    Int should,
+    Int max_deg
 ) ;
 
 PRIVATE void debug_mark
 (
-    int n_row,
+    Int n_row,
     Colamd_Row Row [],
-    int tag_mark,
-    int max_mark
+    Int tag_mark,
+    Int max_mark
 ) ;
 
 PRIVATE void debug_matrix
 (
-    int n_row,
-    int n_col,
+    Int n_row,
+    Int n_col,
     Colamd_Row Row [],
     Colamd_Col Col [],
-    int A []
+    Int A []
 ) ;
 
 PRIVATE void debug_structures
 (
-    int n_row,
-    int n_col,
+    Int n_row,
+    Int n_col,
     Colamd_Row Row [],
     Colamd_Col Col [],
-    int A [],
-    int n_col2
+    Int A [],
+    Int n_col2
 ) ;
 
 #else /* NDEBUG */
@@ -880,18 +988,13 @@ PRIVATE void debug_structures
 #define DEBUG3(params) ;
 #define DEBUG4(params) ;
 
-#define ASSERT(expression) ((void) 0)
+#define ASSERT(expression)
 
 #endif /* NDEBUG */
 
 /* ========================================================================== */
-
-
-
-/* ========================================================================== */
 /* === USER-CALLABLE ROUTINES: ============================================== */
 /* ========================================================================== */
-
 
 /* ========================================================================== */
 /* === colamd_recommended =================================================== */
@@ -901,21 +1004,69 @@ PRIVATE void debug_structures
     The colamd_recommended routine returns the suggested size for Alen.  This
     value has been determined to provide good balance between the number of
     garbage collections and the memory requirements for colamd.  If any
-    argument is negative, a -1 is returned as an error condition.  This
-    function is also available as a macro defined in colamd.h, so that you
-    can use it for a statically-allocated array size.
+    argument is negative, or if integer overflow occurs, a 0 is returned as an
+    error condition.  2*nnz space is required for the row and column
+    indices of the matrix. COLAMD_C (n_col) + COLAMD_R (n_row) space is
+    required for the Col and Row arrays, respectively, which are internal to
+    colamd (roughly 6*n_col + 4*n_row).  An additional n_col space is the
+    minimal amount of "elbow room", and nnz/5 more space is recommended for
+    run time efficiency.
+
+    Alen is approximately 2.2*nnz + 7*n_col + 4*n_row + 10.
+
+    This function is not needed when using symamd.
 */
 
-PUBLIC int colamd_recommended	/* returns recommended value of Alen. */
+/* add two values of type size_t, and check for integer overflow */
+static size_t t_add (size_t a, size_t b, int *ok)
+{
+    (*ok) = (*ok) && ((a + b) >= MAX (a,b)) ;
+    return ((*ok) ? (a + b) : 0) ;
+}
+
+/* compute a*k where k is a small integer, and check for integer overflow */
+static size_t t_mult (size_t a, size_t k, int *ok)
+{
+    size_t i, s = 0 ;
+    for (i = 0 ; i < k ; i++)
+    {
+	s = t_add (s, a, ok) ;
+    }
+    return (s) ;
+}
+
+/* size of the Col and Row structures */
+#define COLAMD_C(n_col,ok) \
+    ((t_mult (t_add (n_col, 1, ok), sizeof (Colamd_Col), ok) / sizeof (Int)))
+
+#define COLAMD_R(n_row,ok) \
+    ((t_mult (t_add (n_row, 1, ok), sizeof (Colamd_Row), ok) / sizeof (Int)))
+
+
+PUBLIC size_t COLAMD_recommended	/* returns recommended value of Alen. */
 (
     /* === Parameters ======================================================= */
 
-    int nnz,			/* number of nonzeros in A */
-    int n_row,			/* number of rows in A */
-    int n_col			/* number of columns in A */
+    Int nnz,			/* number of nonzeros in A */
+    Int n_row,			/* number of rows in A */
+    Int n_col			/* number of columns in A */
 )
 {
-    return (COLAMD_RECOMMENDED (nnz, n_row, n_col)) ; 
+    size_t s, c, r ;
+    int ok = TRUE ;
+    if (nnz < 0 || n_row < 0 || n_col < 0)
+    {
+	return (0) ;
+    }
+    s = t_mult (nnz, 2, &ok) ;	    /* 2*nnz */
+    c = COLAMD_C (n_col, &ok) ;	    /* size of column structures */
+    r = COLAMD_R (n_row, &ok) ;	    /* size of row structures */
+    s = t_add (s, c, &ok) ;
+    s = t_add (s, r, &ok) ;
+    s = t_add (s, n_col, &ok) ;	    /* elbow room */
+    s = t_add (s, nnz/5, &ok) ;	    /* elbow room */
+    ok = ok && (s < Int_MAX) ;
+    return (ok ? s : 0) ;
 }
 
 
@@ -925,22 +1076,28 @@ PUBLIC int colamd_recommended	/* returns recommended value of Alen. */
 
 /*
     The colamd_set_defaults routine sets the default values of the user-
-    controllable parameters for colamd:
+    controllable parameters for colamd and symamd:
 
-	knobs [0]	rows with knobs[0]*n_col entries or more are removed
-			prior to ordering in colamd.  Rows and columns with
-			knobs[0]*n_col entries or more are removed prior to
-			ordering in symamd and placed last in the output
-			ordering.
+	Colamd: rows with more than max (16, knobs [0] * sqrt (n_col))
+	entries are removed prior to ordering.  Columns with more than
+	max (16, knobs [1] * sqrt (MIN (n_row,n_col))) entries are removed
+	prior to ordering, and placed last in the output column ordering. 
 
-	knobs [1]	columns with knobs[1]*n_row entries or more are removed
-			prior to ordering in colamd, and placed last in the
-			column permutation.  Symamd ignores this knob.
+	Symamd: Rows and columns with more than max (16, knobs [0] * sqrt (n))
+	entries are removed prior to ordering, and placed last in the
+	output ordering.
 
-	knobs [2..19]	unused, but future versions might use this
+	knobs [0]	dense row control
+
+	knobs [1]	dense column control
+
+	knobs [2]	if nonzero, do aggresive absorption
+
+	knobs [3..19]	unused, but future versions might use this
+
 */
 
-PUBLIC void colamd_set_defaults
+PUBLIC void COLAMD_set_defaults
 (
     /* === Parameters ======================================================= */
 
@@ -949,7 +1106,7 @@ PUBLIC void colamd_set_defaults
 {
     /* === Local variables ================================================== */
 
-    int i ;
+    Int i ;
 
     if (!knobs)
     {
@@ -959,8 +1116,9 @@ PUBLIC void colamd_set_defaults
     {
 	knobs [i] = 0 ;
     }
-    knobs [COLAMD_DENSE_ROW] = 0.5 ;	/* ignore rows over 50% dense */
-    knobs [COLAMD_DENSE_COL] = 0.5 ;	/* ignore columns over 50% dense */
+    knobs [COLAMD_DENSE_ROW] = 10 ;
+    knobs [COLAMD_DENSE_COL] = 10 ;
+    knobs [COLAMD_AGGRESSIVE] = TRUE ;	/* default: do aggressive absorption*/
 }
 
 
@@ -968,16 +1126,16 @@ PUBLIC void colamd_set_defaults
 /* === symamd =============================================================== */
 /* ========================================================================== */
 
-PUBLIC int symamd			/* return TRUE if OK, FALSE otherwise */
+PUBLIC Int SYMAMD_MAIN			/* return TRUE if OK, FALSE otherwise */
 (
     /* === Parameters ======================================================= */
 
-    int n,				/* number of rows and columns of A */
-    int A [],				/* row indices of A */
-    int p [],				/* column pointers of A */
-    int perm [],			/* output permutation, size n+1 */
+    Int n,				/* number of rows and columns of A */
+    Int A [],				/* row indices of A */
+    Int p [],				/* column pointers of A */
+    Int perm [],			/* output permutation, size n+1 */
     double knobs [COLAMD_KNOBS],	/* parameters (uses defaults if NULL) */
-    int stats [COLAMD_STATS],		/* output statistics and error codes */
+    Int stats [COLAMD_STATS],		/* output statistics and error codes */
     void * (*allocate) (size_t, size_t),
     					/* pointer to calloc (ANSI C) or */
 					/* mxCalloc (for MATLAB mexFunction) */
@@ -988,23 +1146,22 @@ PUBLIC int symamd			/* return TRUE if OK, FALSE otherwise */
 {
     /* === Local variables ================================================== */
 
-    int *count ;		/* length of each column of M, and col pointer*/
-    int *mark ;			/* mark array for finding duplicate entries */
-    int *M ;			/* row indices of matrix M */
-    int Mlen ;			/* length of M */
-    int n_row ;			/* number of rows in M */
-    int nnz ;			/* number of entries in A */
-    int i ;			/* row index of A */
-    int j ;			/* column index of A */
-    int k ;			/* row index of M */ 
-    int mnz ;			/* number of nonzeros in M */
-    int pp ;			/* index into a column of A */
-    int last_row ;		/* last row seen in the current column */
-    int length ;		/* number of nonzeros in a column */
+    Int *count ;		/* length of each column of M, and col pointer*/
+    Int *mark ;			/* mark array for finding duplicate entries */
+    Int *M ;			/* row indices of matrix M */
+    size_t Mlen ;		/* length of M */
+    Int n_row ;			/* number of rows in M */
+    Int nnz ;			/* number of entries in A */
+    Int i ;			/* row index of A */
+    Int j ;			/* column index of A */
+    Int k ;			/* row index of M */ 
+    Int mnz ;			/* number of nonzeros in M */
+    Int pp ;			/* index into a column of A */
+    Int last_row ;		/* last row seen in the current column */
+    Int length ;		/* number of nonzeros in a column */
 
     double cknobs [COLAMD_KNOBS] ;		/* knobs for colamd */
     double default_knobs [COLAMD_KNOBS] ;	/* default knobs for colamd */
-    int cstats [COLAMD_STATS] ;			/* colamd stats */
 
 #ifndef NDEBUG
     colamd_get_debug ("symamd") ;
@@ -1068,13 +1225,13 @@ PUBLIC int symamd			/* return TRUE if OK, FALSE otherwise */
 
     if (!knobs)
     {
-	colamd_set_defaults (default_knobs) ;
+	COLAMD_set_defaults (default_knobs) ;
 	knobs = default_knobs ;
     }
 
     /* === Allocate count and mark ========================================== */
 
-    count = (int *) ((*allocate) (n+1, sizeof (int))) ;
+    count = (Int *) ((*allocate) (n+1, sizeof (Int))) ;
     if (!count)
     {
 	stats [COLAMD_STATUS] = COLAMD_ERROR_out_of_memory ;
@@ -1082,7 +1239,7 @@ PUBLIC int symamd			/* return TRUE if OK, FALSE otherwise */
 	return (FALSE) ;
     }
 
-    mark = (int *) ((*allocate) (n+1, sizeof (int))) ;
+    mark = (Int *) ((*allocate) (n+1, sizeof (Int))) ;
     if (!mark)
     {
 	stats [COLAMD_STATUS] = COLAMD_ERROR_out_of_memory ;
@@ -1158,11 +1315,7 @@ PUBLIC int symamd			/* return TRUE if OK, FALSE otherwise */
 	}
     }
 
-    if (stats [COLAMD_STATUS] == COLAMD_OK)
-    {
-	/* if there are no duplicate entries, then mark is no longer needed */
-	(*release) ((void *) mark) ;
-    }
+    /* v2.4: removed free(mark) */
 
     /* === Compute column pointers of M ===================================== */
 
@@ -1181,17 +1334,17 @@ PUBLIC int symamd			/* return TRUE if OK, FALSE otherwise */
 
     mnz = perm [n] ;
     n_row = mnz / 2 ;
-    Mlen = colamd_recommended (mnz, n_row, n) ;
-    M = (int *) ((*allocate) (Mlen, sizeof (int))) ;
-    DEBUG0 (("symamd: M is %d-by-%d with %d entries, Mlen = %d\n",
-    	n_row, n, mnz, Mlen)) ;
+    Mlen = COLAMD_recommended (mnz, n_row, n) ;
+    M = (Int *) ((*allocate) (Mlen, sizeof (Int))) ;
+    DEBUG0 (("symamd: M is %d-by-%d with %d entries, Mlen = %g\n",
+    	n_row, n, mnz, (double) Mlen)) ;
 
     if (!M)
     {
 	stats [COLAMD_STATUS] = COLAMD_ERROR_out_of_memory ;
 	(*release) ((void *) count) ;
 	(*release) ((void *) mark) ;
-	DEBUG0 (("symamd: allocate M (size %d) failed\n", Mlen)) ;
+	DEBUG0 (("symamd: allocate M (size %g) failed\n", (double) Mlen)) ;
 	return (FALSE) ;
     }
 
@@ -1242,11 +1395,12 @@ PUBLIC int symamd			/* return TRUE if OK, FALSE otherwise */
 		}
 	    }
 	}
-	(*release) ((void *) mark) ;
+	/* v2.4: free(mark) moved below */
     }
 
     /* count and mark no longer needed */
     (*release) ((void *) count) ;
+    (*release) ((void *) mark) ;	/* v2.4: free (mark) moved here */
     ASSERT (k == n_row) ;
 
     /* === Adjust the knobs for M =========================================== */
@@ -1257,41 +1411,20 @@ PUBLIC int symamd			/* return TRUE if OK, FALSE otherwise */
     }
 
     /* there are no dense rows in M */
-    cknobs [COLAMD_DENSE_ROW] = 1.0 ;
-
-    if (n_row != 0 && n < n_row)
-    {
-	/* On input, the knob is a fraction of 1..n, the number of rows of A. */
-	/* Convert it to a fraction of 1..n_row, of the number of rows of M. */
-    	cknobs [COLAMD_DENSE_COL] = (knobs [COLAMD_DENSE_ROW] * n) / n_row ;
-    }
-    else
-    {
-	/* no dense columns in M */
-    	cknobs [COLAMD_DENSE_COL] = 1.0 ;
-    }
-
-    DEBUG0 (("symamd: dense col knob for M: %g\n", cknobs [COLAMD_DENSE_COL])) ;
+    cknobs [COLAMD_DENSE_ROW] = -1 ;
+    cknobs [COLAMD_DENSE_COL] = knobs [COLAMD_DENSE_ROW] ;
 
     /* === Order the columns of M =========================================== */
 
-    if (!colamd (n_row, n, Mlen, M, perm, cknobs, cstats))
-    {
-	/* This "cannot" happen, unless there is a bug in the code. */
-	stats [COLAMD_STATUS] = COLAMD_ERROR_internal_error ;
-	(*release) ((void *) M) ;
-	DEBUG0 (("symamd: internal error!\n")) ;
-	return (FALSE) ;
-    }
+    /* v2.4: colamd cannot fail here, so the error check is removed */
+    (void) COLAMD_MAIN (n_row, n, (Int) Mlen, M, perm, cknobs, stats) ;
 
     /* Note that the output permutation is now in perm */
 
     /* === get the statistics for symamd from colamd ======================== */
 
-    /* note that a dense column in colamd means a dense row and col in symamd */
-    stats [COLAMD_DENSE_ROW]    = cstats [COLAMD_DENSE_COL] ;
-    stats [COLAMD_DENSE_COL]    = cstats [COLAMD_DENSE_COL] ;
-    stats [COLAMD_DEFRAG_COUNT] = cstats [COLAMD_DEFRAG_COUNT] ;
+    /* a dense column in colamd means a dense row and col in symamd */
+    stats [COLAMD_DENSE_ROW] = stats [COLAMD_DENSE_COL] ;
 
     /* === Free M =========================================================== */
 
@@ -1313,33 +1446,35 @@ PUBLIC int symamd			/* return TRUE if OK, FALSE otherwise */
     (AQ)'(AQ) = LL' remains sparse.
 */
 
-PUBLIC int colamd		/* returns TRUE if successful, FALSE otherwise*/
+PUBLIC Int COLAMD_MAIN		/* returns TRUE if successful, FALSE otherwise*/
 (
     /* === Parameters ======================================================= */
 
-    int n_row,			/* number of rows in A */
-    int n_col,			/* number of columns in A */
-    int Alen,			/* length of A */
-    int A [],			/* row indices of A */
-    int p [],			/* pointers to columns in A */
+    Int n_row,			/* number of rows in A */
+    Int n_col,			/* number of columns in A */
+    Int Alen,			/* length of A */
+    Int A [],			/* row indices of A */
+    Int p [],			/* pointers to columns in A */
     double knobs [COLAMD_KNOBS],/* parameters (uses defaults if NULL) */
-    int stats [COLAMD_STATS]	/* output statistics and error codes */
+    Int stats [COLAMD_STATS]	/* output statistics and error codes */
 )
 {
     /* === Local variables ================================================== */
 
-    int i ;			/* loop index */
-    int nnz ;			/* nonzeros in A */
-    int Row_size ;		/* size of Row [], in integers */
-    int Col_size ;		/* size of Col [], in integers */
-    int need ;			/* minimum required length of A */
+    Int i ;			/* loop index */
+    Int nnz ;			/* nonzeros in A */
+    size_t Row_size ;		/* size of Row [], in integers */
+    size_t Col_size ;		/* size of Col [], in integers */
+    size_t need ;		/* minimum required length of A */
     Colamd_Row *Row ;		/* pointer into A of Row [0..n_row] array */
     Colamd_Col *Col ;		/* pointer into A of Col [0..n_col] array */
-    int n_col2 ;		/* number of non-dense, non-empty columns */
-    int n_row2 ;		/* number of non-dense, non-empty rows */
-    int ngarbage ;		/* number of garbage collections performed */
-    int max_deg ;		/* maximum row degree */
+    Int n_col2 ;		/* number of non-dense, non-empty columns */
+    Int n_row2 ;		/* number of non-dense, non-empty rows */
+    Int ngarbage ;		/* number of garbage collections performed */
+    Int max_deg ;		/* maximum row degree */
     double default_knobs [COLAMD_KNOBS] ;	/* default knobs array */
+    Int aggressive ;		/* do aggressive absorption */
+    int ok ;
 
 #ifndef NDEBUG
     colamd_get_debug ("colamd") ;
@@ -1411,17 +1546,25 @@ PUBLIC int colamd		/* returns TRUE if successful, FALSE otherwise*/
 
     if (!knobs)
     {
-	colamd_set_defaults (default_knobs) ;
+	COLAMD_set_defaults (default_knobs) ;
 	knobs = default_knobs ;
     }
 
+    aggressive = (knobs [COLAMD_AGGRESSIVE] != FALSE) ;
+
     /* === Allocate the Row and Col arrays from array A ===================== */
 
-    Col_size = COLAMD_C (n_col) ;
-    Row_size = COLAMD_R (n_row) ;
-    need = 2*nnz + n_col + Col_size + Row_size ;
+    ok = TRUE ;
+    Col_size = COLAMD_C (n_col, &ok) ;	    /* size of Col array of structs */
+    Row_size = COLAMD_R (n_row, &ok) ;	    /* size of Row array of structs */
 
-    if (need > Alen)
+    /* need = 2*nnz + n_col + Col_size + Row_size ; */
+    need = t_mult (nnz, 2, &ok) ;
+    need = t_add (need, n_col, &ok) ;
+    need = t_add (need, Col_size, &ok) ;
+    need = t_add (need, Row_size, &ok) ;
+
+    if (!ok || need > (size_t) Alen || need > Int_MAX)
     {
 	/* not enough space in array A to perform the ordering */
 	stats [COLAMD_STATUS] = COLAMD_ERROR_A_too_small ;
@@ -1452,7 +1595,7 @@ PUBLIC int colamd		/* returns TRUE if successful, FALSE otherwise*/
     /* === Order the supercolumns =========================================== */
 
     ngarbage = find_ordering (n_row, n_col, Alen, Row, Col, A, p,
-	n_col2, max_deg, 2*nnz) ;
+	n_col2, max_deg, 2*nnz, aggressive) ;
 
     /* === Order the non-principal columns ================================== */
 
@@ -1472,9 +1615,9 @@ PUBLIC int colamd		/* returns TRUE if successful, FALSE otherwise*/
 /* === colamd_report ======================================================== */
 /* ========================================================================== */
 
-PUBLIC void colamd_report
+PUBLIC void COLAMD_report
 (
-    int stats [COLAMD_STATS]
+    Int stats [COLAMD_STATS]
 )
 {
     print_report ("colamd", stats) ;
@@ -1485,9 +1628,9 @@ PUBLIC void colamd_report
 /* === symamd_report ======================================================== */
 /* ========================================================================== */
 
-PUBLIC void symamd_report
+PUBLIC void SYMAMD_report
 (
-    int stats [COLAMD_STATS]
+    Int stats [COLAMD_STATS]
 )
 {
     print_report ("symamd", stats) ;
@@ -1515,28 +1658,28 @@ PUBLIC void symamd_report
     TRUE otherwise.  Not user-callable.
 */
 
-PRIVATE int init_rows_cols	/* returns TRUE if OK, or FALSE otherwise */
+PRIVATE Int init_rows_cols	/* returns TRUE if OK, or FALSE otherwise */
 (
     /* === Parameters ======================================================= */
 
-    int n_row,			/* number of rows of A */
-    int n_col,			/* number of columns of A */
+    Int n_row,			/* number of rows of A */
+    Int n_col,			/* number of columns of A */
     Colamd_Row Row [],		/* of size n_row+1 */
     Colamd_Col Col [],		/* of size n_col+1 */
-    int A [],			/* row indices of A, of size Alen */
-    int p [],			/* pointers to columns in A, of size n_col+1 */
-    int stats [COLAMD_STATS]	/* colamd statistics */ 
+    Int A [],			/* row indices of A, of size Alen */
+    Int p [],			/* pointers to columns in A, of size n_col+1 */
+    Int stats [COLAMD_STATS]	/* colamd statistics */ 
 )
 {
     /* === Local variables ================================================== */
 
-    int col ;			/* a column index */
-    int row ;			/* a row index */
-    int *cp ;			/* a column pointer */
-    int *cp_end ;		/* a pointer to the end of a column */
-    int *rp ;			/* a row pointer */
-    int *rp_end ;		/* a pointer to the end of a row */
-    int last_row ;		/* previous row */
+    Int col ;			/* a column index */
+    Int row ;			/* a row index */
+    Int *cp ;			/* a column pointer */
+    Int *cp_end ;		/* a pointer to the end of a column */
+    Int *rp ;			/* a row pointer */
+    Int *rp_end ;		/* a pointer to the end of a row */
+    Int last_row ;		/* previous row */
 
     /* === Initialize columns, and check column pointers ==================== */
 
@@ -1756,44 +1899,63 @@ PRIVATE void init_scoring
 (
     /* === Parameters ======================================================= */
 
-    int n_row,			/* number of rows of A */
-    int n_col,			/* number of columns of A */
+    Int n_row,			/* number of rows of A */
+    Int n_col,			/* number of columns of A */
     Colamd_Row Row [],		/* of size n_row+1 */
     Colamd_Col Col [],		/* of size n_col+1 */
-    int A [],			/* column form and row form of A */
-    int head [],		/* of size n_col+1 */
+    Int A [],			/* column form and row form of A */
+    Int head [],		/* of size n_col+1 */
     double knobs [COLAMD_KNOBS],/* parameters */
-    int *p_n_row2,		/* number of non-dense, non-empty rows */
-    int *p_n_col2,		/* number of non-dense, non-empty columns */
-    int *p_max_deg		/* maximum row degree */
+    Int *p_n_row2,		/* number of non-dense, non-empty rows */
+    Int *p_n_col2,		/* number of non-dense, non-empty columns */
+    Int *p_max_deg		/* maximum row degree */
 )
 {
     /* === Local variables ================================================== */
 
-    int c ;			/* a column index */
-    int r, row ;		/* a row index */
-    int *cp ;			/* a column pointer */
-    int deg ;			/* degree of a row or column */
-    int *cp_end ;		/* a pointer to the end of a column */
-    int *new_cp ;		/* new column pointer */
-    int col_length ;		/* length of pruned column */
-    int score ;			/* current column score */
-    int n_col2 ;		/* number of non-dense, non-empty columns */
-    int n_row2 ;		/* number of non-dense, non-empty rows */
-    int dense_row_count ;	/* remove rows with more entries than this */
-    int dense_col_count ;	/* remove cols with more entries than this */
-    int min_score ;		/* smallest column score */
-    int max_deg ;		/* maximum row degree */
-    int next_col ;		/* Used to add to degree list.*/
+    Int c ;			/* a column index */
+    Int r, row ;		/* a row index */
+    Int *cp ;			/* a column pointer */
+    Int deg ;			/* degree of a row or column */
+    Int *cp_end ;		/* a pointer to the end of a column */
+    Int *new_cp ;		/* new column pointer */
+    Int col_length ;		/* length of pruned column */
+    Int score ;			/* current column score */
+    Int n_col2 ;		/* number of non-dense, non-empty columns */
+    Int n_row2 ;		/* number of non-dense, non-empty rows */
+    Int dense_row_count ;	/* remove rows with more entries than this */
+    Int dense_col_count ;	/* remove cols with more entries than this */
+    Int min_score ;		/* smallest column score */
+    Int max_deg ;		/* maximum row degree */
+    Int next_col ;		/* Used to add to degree list.*/
 
 #ifndef NDEBUG
-    int debug_count ;		/* debug only. */
+    Int debug_count ;		/* debug only. */
 #endif /* NDEBUG */
 
     /* === Extract knobs ==================================================== */
 
-    dense_row_count = MAX (0, MIN (knobs [COLAMD_DENSE_ROW] * n_col, n_col)) ;
-    dense_col_count = MAX (0, MIN (knobs [COLAMD_DENSE_COL] * n_row, n_row)) ;
+    /* Note: if knobs contains a NaN, this is undefined: */
+    if (knobs [COLAMD_DENSE_ROW] < 0)
+    {
+	/* only remove completely dense rows */
+	dense_row_count = n_col-1 ;
+    }
+    else
+    {
+	dense_row_count = DENSE_DEGREE (knobs [COLAMD_DENSE_ROW], n_col) ;
+    }
+    if (knobs [COLAMD_DENSE_COL] < 0)
+    {
+	/* only remove completely dense columns */
+	dense_col_count = n_row-1 ;
+    }
+    else
+    {
+	dense_col_count =
+	    DENSE_DEGREE (knobs [COLAMD_DENSE_COL], MIN (n_row, n_col)) ;
+    }
+
     DEBUG1 (("colamd: densecount: %d %d\n", dense_row_count, dense_col_count)) ;
     max_deg = 0 ;
     n_col2 = n_col ;
@@ -1898,7 +2060,7 @@ PRIVATE void init_scoring
 	    score = MIN (score, n_col) ;
 	}
 	/* determine pruned column length */
-	col_length = (int) (new_cp - &A [Col [c].start]) ;
+	col_length = (Int) (new_cp - &A [Col [c].start]) ;
 	if (col_length == 0)
 	{
 	    /* a newly-made null column (all rows in this col are "dense" */
@@ -2008,65 +2170,66 @@ PRIVATE void init_scoring
     degree ordering method.  Not user-callable.
 */
 
-PRIVATE int find_ordering	/* return the number of garbage collections */
+PRIVATE Int find_ordering	/* return the number of garbage collections */
 (
     /* === Parameters ======================================================= */
 
-    int n_row,			/* number of rows of A */
-    int n_col,			/* number of columns of A */
-    int Alen,			/* size of A, 2*nnz + n_col or larger */
+    Int n_row,			/* number of rows of A */
+    Int n_col,			/* number of columns of A */
+    Int Alen,			/* size of A, 2*nnz + n_col or larger */
     Colamd_Row Row [],		/* of size n_row+1 */
     Colamd_Col Col [],		/* of size n_col+1 */
-    int A [],			/* column form and row form of A */
-    int head [],		/* of size n_col+1 */
-    int n_col2,			/* Remaining columns to order */
-    int max_deg,		/* Maximum row degree */
-    int pfree			/* index of first free slot (2*nnz on entry) */
+    Int A [],			/* column form and row form of A */
+    Int head [],		/* of size n_col+1 */
+    Int n_col2,			/* Remaining columns to order */
+    Int max_deg,		/* Maximum row degree */
+    Int pfree,			/* index of first free slot (2*nnz on entry) */
+    Int aggressive
 )
 {
     /* === Local variables ================================================== */
 
-    int k ;			/* current pivot ordering step */
-    int pivot_col ;		/* current pivot column */
-    int *cp ;			/* a column pointer */
-    int *rp ;			/* a row pointer */
-    int pivot_row ;		/* current pivot row */
-    int *new_cp ;		/* modified column pointer */
-    int *new_rp ;		/* modified row pointer */
-    int pivot_row_start ;	/* pointer to start of pivot row */
-    int pivot_row_degree ;	/* number of columns in pivot row */
-    int pivot_row_length ;	/* number of supercolumns in pivot row */
-    int pivot_col_score ;	/* score of pivot column */
-    int needed_memory ;		/* free space needed for pivot row */
-    int *cp_end ;		/* pointer to the end of a column */
-    int *rp_end ;		/* pointer to the end of a row */
-    int row ;			/* a row index */
-    int col ;			/* a column index */
-    int max_score ;		/* maximum possible score */
-    int cur_score ;		/* score of current column */
-    unsigned int hash ;		/* hash value for supernode detection */
-    int head_column ;		/* head of hash bucket */
-    int first_col ;		/* first column in hash bucket */
-    int tag_mark ;		/* marker value for mark array */
-    int row_mark ;		/* Row [row].shared2.mark */
-    int set_difference ;	/* set difference size of row with pivot row */
-    int min_score ;		/* smallest column score */
-    int col_thickness ;		/* "thickness" (no. of columns in a supercol) */
-    int max_mark ;		/* maximum value of tag_mark */
-    int pivot_col_thickness ;	/* number of columns represented by pivot col */
-    int prev_col ;		/* Used by Dlist operations. */
-    int next_col ;		/* Used by Dlist operations. */
-    int ngarbage ;		/* number of garbage collections performed */
+    Int k ;			/* current pivot ordering step */
+    Int pivot_col ;		/* current pivot column */
+    Int *cp ;			/* a column pointer */
+    Int *rp ;			/* a row pointer */
+    Int pivot_row ;		/* current pivot row */
+    Int *new_cp ;		/* modified column pointer */
+    Int *new_rp ;		/* modified row pointer */
+    Int pivot_row_start ;	/* pointer to start of pivot row */
+    Int pivot_row_degree ;	/* number of columns in pivot row */
+    Int pivot_row_length ;	/* number of supercolumns in pivot row */
+    Int pivot_col_score ;	/* score of pivot column */
+    Int needed_memory ;		/* free space needed for pivot row */
+    Int *cp_end ;		/* pointer to the end of a column */
+    Int *rp_end ;		/* pointer to the end of a row */
+    Int row ;			/* a row index */
+    Int col ;			/* a column index */
+    Int max_score ;		/* maximum possible score */
+    Int cur_score ;		/* score of current column */
+    unsigned Int hash ;		/* hash value for supernode detection */
+    Int head_column ;		/* head of hash bucket */
+    Int first_col ;		/* first column in hash bucket */
+    Int tag_mark ;		/* marker value for mark array */
+    Int row_mark ;		/* Row [row].shared2.mark */
+    Int set_difference ;	/* set difference size of row with pivot row */
+    Int min_score ;		/* smallest column score */
+    Int col_thickness ;		/* "thickness" (no. of columns in a supercol) */
+    Int max_mark ;		/* maximum value of tag_mark */
+    Int pivot_col_thickness ;	/* number of columns represented by pivot col */
+    Int prev_col ;		/* Used by Dlist operations. */
+    Int next_col ;		/* Used by Dlist operations. */
+    Int ngarbage ;		/* number of garbage collections performed */
 
 #ifndef NDEBUG
-    int debug_d ;		/* debug loop counter */
-    int debug_step = 0 ;	/* debug loop counter */
+    Int debug_d ;		/* debug loop counter */
+    Int debug_step = 0 ;	/* debug loop counter */
 #endif /* NDEBUG */
 
     /* === Initialization and clear mark ==================================== */
 
     max_mark = INT_MAX - n_col ;	/* INT_MAX defined in <limits.h> */
-    tag_mark = clear_mark (n_row, Row) ;
+    tag_mark = clear_mark (0, max_mark, n_row, Row) ;
     min_score = 0 ;
     ngarbage = 0 ;
     DEBUG1 (("colamd: Ordering, n_col2=%d\n", n_col2)) ;
@@ -2120,7 +2283,6 @@ PRIVATE int find_ordering	/* return the number of garbage collections */
 	}
 
 	ASSERT (COL_IS_ALIVE (pivot_col)) ;
-	DEBUG3 (("Pivot col: %d\n", pivot_col)) ;
 
 	/* remember score for defrag check */
 	pivot_col_score = Col [pivot_col].shared2.score ;
@@ -2132,6 +2294,7 @@ PRIVATE int find_ordering	/* return the number of garbage collections */
 	pivot_col_thickness = Col [pivot_col].shared1.thickness ;
 	k += pivot_col_thickness ;
 	ASSERT (pivot_col_thickness > 0) ;
+	DEBUG3 (("Pivot col: %d thick %d\n", pivot_col, pivot_col_thickness)) ;
 
 	/* === Garbage_collection, if necessary ============================= */
 
@@ -2143,7 +2306,7 @@ PRIVATE int find_ordering	/* return the number of garbage collections */
 	    /* after garbage collection we will have enough */
 	    ASSERT (pfree + needed_memory < Alen) ;
 	    /* garbage collection has wiped out the Row[].shared2.mark array */
-	    tag_mark = clear_mark (n_row, Row) ;
+	    tag_mark = clear_mark (0, max_mark, n_row, Row) ;
 
 #ifndef NDEBUG
 	    debug_matrix (n_row, n_col, Row, Col, A) ;
@@ -2171,26 +2334,25 @@ PRIVATE int find_ordering	/* return the number of garbage collections */
 	    row = *cp++ ;
 	    DEBUG4 (("Pivot col pattern %d %d\n", ROW_IS_ALIVE (row), row)) ;
 	    /* skip if row is dead */
-	    if (ROW_IS_DEAD (row))
+	    if (ROW_IS_ALIVE (row))
 	    {
-		continue ;
-	    }
-	    rp = &A [Row [row].start] ;
-	    rp_end = rp + Row [row].length ;
-	    while (rp < rp_end)
-	    {
-		/* get a column */
-		col = *rp++ ;
-		/* add the column, if alive and untagged */
-		col_thickness = Col [col].shared1.thickness ;
-		if (col_thickness > 0 && COL_IS_ALIVE (col))
+		rp = &A [Row [row].start] ;
+		rp_end = rp + Row [row].length ;
+		while (rp < rp_end)
 		{
-		    /* tag column in pivot row */
-		    Col [col].shared1.thickness = -col_thickness ;
-		    ASSERT (pfree < Alen) ;
-		    /* place column in pivot row */
-		    A [pfree++] = col ;
-		    pivot_row_degree += col_thickness ;
+		    /* get a column */
+		    col = *rp++ ;
+		    /* add the column, if alive and untagged */
+		    col_thickness = Col [col].shared1.thickness ;
+		    if (col_thickness > 0 && COL_IS_ALIVE (col))
+		    {
+			/* tag column in pivot row */
+			Col [col].shared1.thickness = -col_thickness ;
+			ASSERT (pfree < Alen) ;
+			/* place column in pivot row */
+			A [pfree++] = col ;
+			pivot_row_degree += col_thickness ;
+		    }
 		}
 	    }
 	}
@@ -2321,7 +2483,7 @@ PRIVATE int find_ordering	/* return the number of garbage collections */
 		set_difference -= col_thickness ;
 		ASSERT (set_difference >= 0) ;
 		/* absorb this row if the set difference becomes zero */
-		if (set_difference == 0)
+		if (set_difference == 0 && aggressive)
 		{
 		    DEBUG3 (("aggressive absorption. Row: %d\n", row)) ;
 		    KILL_ROW (row) ;
@@ -2369,9 +2531,11 @@ PRIVATE int find_ordering	/* return the number of garbage collections */
 		/* skip if dead */
 		if (ROW_IS_MARKED_DEAD (row_mark))
 		{
+		    DEBUG4 ((" Row %d, dead\n", row)) ;
 		    continue ;
 		}
-		ASSERT (row_mark > tag_mark) ;
+		DEBUG4 ((" Row %d, set diff %d\n", row, row_mark-tag_mark));
+		ASSERT (row_mark >= tag_mark) ;
 		/* compact the column */
 		*new_cp++ = row ;
 		/* compute hash function */
@@ -2383,7 +2547,7 @@ PRIVATE int find_ordering	/* return the number of garbage collections */
 	    }
 
 	    /* recompute the column's length */
-	    Col [col].length = (int) (new_cp - &A [Col [col].start]) ;
+	    Col [col].length = (Int) (new_cp - &A [Col [col].start]) ;
 
 	    /* === Further mass elimination ================================= */
 
@@ -2412,7 +2576,7 @@ PRIVATE int find_ordering	/* return the number of garbage collections */
 		hash %= n_col + 1 ;
 
 		DEBUG4 ((" Hash = %d, n_col = %d.\n", hash, n_col)) ;
-		ASSERT (hash <= n_col) ;
+		ASSERT (((Int) hash) <= n_col) ;
 
 		head_column = head [hash] ;
 		if (head_column > EMPTY)
@@ -2431,7 +2595,7 @@ PRIVATE int find_ordering	/* return the number of garbage collections */
 		Col [col].shared4.hash_next = first_col ;
 
 		/* save hash function in Col [col].shared3.hash */
-		Col [col].shared3.hash = (int) hash ;
+		Col [col].shared3.hash = (Int) hash ;
 		ASSERT (COL_IS_ALIVE (col)) ;
 	    }
 	}
@@ -2456,12 +2620,7 @@ PRIVATE int find_ordering	/* return the number of garbage collections */
 
 	/* === Clear mark =================================================== */
 
-	tag_mark += (max_deg + 1) ;
-	if (tag_mark >= max_mark)
-	{
-	    DEBUG2 (("clearing tag_mark\n")) ;
-	    tag_mark = clear_mark (n_row, Row) ;
-	}
+	tag_mark = clear_mark (tag_mark+max_deg+1, max_mark, n_row, Row) ;
 
 #ifndef NDEBUG
 	DEBUG3 (("check3\n")) ;
@@ -2542,10 +2701,14 @@ PRIVATE int find_ordering	/* return the number of garbage collections */
 	    /* update pivot row length to reflect any cols that were killed */
 	    /* during super-col detection and mass elimination */
 	    Row [pivot_row].start  = pivot_row_start ;
-	    Row [pivot_row].length = (int) (new_rp - &A[pivot_row_start]) ;
+	    Row [pivot_row].length = (Int) (new_rp - &A[pivot_row_start]) ;
+	    ASSERT (Row [pivot_row].length > 0) ;
 	    Row [pivot_row].shared1.degree = pivot_row_degree ;
 	    Row [pivot_row].shared2.mark = 0 ;
 	    /* pivot row is no longer dead */
+
+	    DEBUG1 (("Resurrect Pivot_row %d deg: %d\n",
+			pivot_row, pivot_row_degree)) ;
 	}
     }
 
@@ -2576,17 +2739,17 @@ PRIVATE void order_children
 (
     /* === Parameters ======================================================= */
 
-    int n_col,			/* number of columns of A */
+    Int n_col,			/* number of columns of A */
     Colamd_Col Col [],		/* of size n_col+1 */
-    int p []			/* p [0 ... n_col-1] is the column permutation*/
+    Int p []			/* p [0 ... n_col-1] is the column permutation*/
 )
 {
     /* === Local variables ================================================== */
 
-    int i ;			/* loop counter for all columns */
-    int c ;			/* column index */
-    int parent ;		/* index of column's parent */
-    int order ;			/* column's order */
+    Int i ;			/* loop counter for all columns */
+    Int c ;			/* column index */
+    Int parent ;		/* index of column's parent */
+    Int order ;			/* column's order */
 
     /* === Order each non-principal column ================================== */
 
@@ -2679,32 +2842,32 @@ PRIVATE void detect_super_cols
 
 #ifndef NDEBUG
     /* these two parameters are only needed when debugging is enabled: */
-    int n_col,			/* number of columns of A */
+    Int n_col,			/* number of columns of A */
     Colamd_Row Row [],		/* of size n_row+1 */
 #endif /* NDEBUG */
 
     Colamd_Col Col [],		/* of size n_col+1 */
-    int A [],			/* row indices of A */
-    int head [],		/* head of degree lists and hash buckets */
-    int row_start,		/* pointer to set of columns to check */
-    int row_length		/* number of columns to check */
+    Int A [],			/* row indices of A */
+    Int head [],		/* head of degree lists and hash buckets */
+    Int row_start,		/* pointer to set of columns to check */
+    Int row_length		/* number of columns to check */
 )
 {
     /* === Local variables ================================================== */
 
-    int hash ;			/* hash value for a column */
-    int *rp ;			/* pointer to a row */
-    int c ;			/* a column index */
-    int super_c ;		/* column index of the column to absorb into */
-    int *cp1 ;			/* column pointer for column super_c */
-    int *cp2 ;			/* column pointer for column c */
-    int length ;		/* length of column super_c */
-    int prev_c ;		/* column preceding c in hash bucket */
-    int i ;			/* loop counter */
-    int *rp_end ;		/* pointer to the end of the row */
-    int col ;			/* a column index in the row to check */
-    int head_column ;		/* first column in hash bucket or degree list */
-    int first_col ;		/* first column in hash bucket */
+    Int hash ;			/* hash value for a column */
+    Int *rp ;			/* pointer to a row */
+    Int c ;			/* a column index */
+    Int super_c ;		/* column index of the column to absorb into */
+    Int *cp1 ;			/* column pointer for column super_c */
+    Int *cp2 ;			/* column pointer for column c */
+    Int length ;		/* length of column super_c */
+    Int prev_c ;		/* column preceding c in hash bucket */
+    Int i ;			/* loop counter */
+    Int *rp_end ;		/* pointer to the end of the row */
+    Int col ;			/* a column index in the row to check */
+    Int head_column ;		/* first column in hash bucket or degree list */
+    Int first_col ;		/* first column in hash bucket */
 
     /* === Consider each column in the row ================================== */
 
@@ -2830,29 +2993,29 @@ PRIVATE void detect_super_cols
     Not user-callable.
 */
 
-PRIVATE int garbage_collection  /* returns the new value of pfree */
+PRIVATE Int garbage_collection  /* returns the new value of pfree */
 (
     /* === Parameters ======================================================= */
 
-    int n_row,			/* number of rows */
-    int n_col,			/* number of columns */
+    Int n_row,			/* number of rows */
+    Int n_col,			/* number of columns */
     Colamd_Row Row [],		/* row info */
     Colamd_Col Col [],		/* column info */
-    int A [],			/* A [0 ... Alen-1] holds the matrix */
-    int *pfree			/* &A [0] ... pfree is in use */
+    Int A [],			/* A [0 ... Alen-1] holds the matrix */
+    Int *pfree			/* &A [0] ... pfree is in use */
 )
 {
     /* === Local variables ================================================== */
 
-    int *psrc ;			/* source pointer */
-    int *pdest ;		/* destination pointer */
-    int j ;			/* counter */
-    int r ;			/* a row index */
-    int c ;			/* a column index */
-    int length ;		/* length of a row or column */
+    Int *psrc ;			/* source pointer */
+    Int *pdest ;		/* destination pointer */
+    Int j ;			/* counter */
+    Int r ;			/* a row index */
+    Int c ;			/* a column index */
+    Int length ;		/* length of a row or column */
 
 #ifndef NDEBUG
-    int debug_rows ;
+    Int debug_rows ;
     DEBUG2 (("Defrag..\n")) ;
     for (psrc = &A[0] ; psrc < pfree ; psrc++) ASSERT (*psrc >= 0) ;
     debug_rows = 0 ;
@@ -2869,7 +3032,7 @@ PRIVATE int garbage_collection  /* returns the new value of pfree */
 
 	    /* move and compact the column */
 	    ASSERT (pdest <= psrc) ;
-	    Col [c].start = (int) (pdest - &A [0]) ;
+	    Col [c].start = (Int) (pdest - &A [0]) ;
 	    length = Col [c].length ;
 	    for (j = 0 ; j < length ; j++)
 	    {
@@ -2879,7 +3042,7 @@ PRIVATE int garbage_collection  /* returns the new value of pfree */
 		    *pdest++ = r ;
 		}
 	    }
-	    Col [c].length = (int) (pdest - &A [Col [c].start]) ;
+	    Col [c].length = (Int) (pdest - &A [Col [c].start]) ;
 	}
     }
 
@@ -2887,28 +3050,25 @@ PRIVATE int garbage_collection  /* returns the new value of pfree */
 
     for (r = 0 ; r < n_row ; r++)
     {
-	if (ROW_IS_ALIVE (r))
+	if (ROW_IS_DEAD (r) || (Row [r].length == 0))
 	{
-	    if (Row [r].length == 0)
-	    {
-		/* this row is of zero length.  cannot compact it, so kill it */
-		DEBUG3 (("Defrag row kill\n")) ;
-		KILL_ROW (r) ;
-	    }
-	    else
-	    {
-		/* save first column index in Row [r].shared2.first_column */
-		psrc = &A [Row [r].start] ;
-		Row [r].shared2.first_column = *psrc ;
-		ASSERT (ROW_IS_ALIVE (r)) ;
-		/* flag the start of the row with the one's complement of row */
-		*psrc = ONES_COMPLEMENT (r) ;
-
+	    /* This row is already dead, or is of zero length.  Cannot compact
+	     * a row of zero length, so kill it.  NOTE: in the current version,
+	     * there are no zero-length live rows.  Kill the row (for the first
+	     * time, or again) just to be safe. */
+	    KILL_ROW (r) ;
+	}
+	else
+	{
+	    /* save first column index in Row [r].shared2.first_column */
+	    psrc = &A [Row [r].start] ;
+	    Row [r].shared2.first_column = *psrc ;
+	    ASSERT (ROW_IS_ALIVE (r)) ;
+	    /* flag the start of the row with the one's complement of row */
+	    *psrc = ONES_COMPLEMENT (r) ;
 #ifndef NDEBUG
-		debug_rows++ ;
+	    debug_rows++ ;
 #endif /* NDEBUG */
-
-	    }
 	}
     }
 
@@ -2927,10 +3087,10 @@ PRIVATE int garbage_collection  /* returns the new value of pfree */
 	    /* restore first column index */
 	    *psrc = Row [r].shared2.first_column ;
 	    ASSERT (ROW_IS_ALIVE (r)) ;
-
+	    ASSERT (Row [r].length > 0) ;
 	    /* move and compact the row */
 	    ASSERT (pdest <= psrc) ;
-	    Row [r].start = (int) (pdest - &A [0]) ;
+	    Row [r].start = (Int) (pdest - &A [0]) ;
 	    length = Row [r].length ;
 	    for (j = 0 ; j < length ; j++)
 	    {
@@ -2940,12 +3100,11 @@ PRIVATE int garbage_collection  /* returns the new value of pfree */
 		    *pdest++ = c ;
 		}
 	    }
-	    Row [r].length = (int) (pdest - &A [Row [r].start]) ;
-
+	    Row [r].length = (Int) (pdest - &A [Row [r].start]) ;
+	    ASSERT (Row [r].length > 0) ;
 #ifndef NDEBUG
 	    debug_rows-- ;
 #endif /* NDEBUG */
-
 	}
     }
     /* ensure we found all the rows */
@@ -2953,7 +3112,7 @@ PRIVATE int garbage_collection  /* returns the new value of pfree */
 
     /* === Return the new value of pfree ==================================== */
 
-    return ((int) (pdest - &A [0])) ;
+    return ((Int) (pdest - &A [0])) ;
 }
 
 
@@ -2966,26 +3125,34 @@ PRIVATE int garbage_collection  /* returns the new value of pfree */
     Return value is the new tag_mark.  Not user-callable.
 */
 
-PRIVATE int clear_mark	/* return the new value for tag_mark */
+PRIVATE Int clear_mark	/* return the new value for tag_mark */
 (
     /* === Parameters ======================================================= */
 
-    int n_row,		/* number of rows in A */
+    Int tag_mark,	/* new value of tag_mark */
+    Int max_mark,	/* max allowed value of tag_mark */
+
+    Int n_row,		/* number of rows in A */
     Colamd_Row Row []	/* Row [0 ... n_row-1].shared2.mark is set to zero */
 )
 {
     /* === Local variables ================================================== */
 
-    int r ;
+    Int r ;
 
-    for (r = 0 ; r < n_row ; r++)
+    if (tag_mark <= 0 || tag_mark >= max_mark)
     {
-	if (ROW_IS_ALIVE (r))
+	for (r = 0 ; r < n_row ; r++)
 	{
-	    Row [r].shared2.mark = 0 ;
+	    if (ROW_IS_ALIVE (r))
+	    {
+		Row [r].shared2.mark = 0 ;
+	    }
 	}
+	tag_mark = 1 ;
     }
-    return (1) ;
+
+    return (tag_mark) ;
 }
 
 
@@ -2996,15 +3163,18 @@ PRIVATE int clear_mark	/* return the new value for tag_mark */
 PRIVATE void print_report
 (
     char *method,
-    int stats [COLAMD_STATS]
+    Int stats [COLAMD_STATS]
 )
 {
 
-    int i1, i2, i3 ;
+    Int i1, i2, i3 ;
+
+    SUITESPARSE_PRINTF ("\n%s version %d.%d, %s: ", method,
+            COLAMD_MAIN_VERSION, COLAMD_SUB_VERSION, COLAMD_DATE) ;
 
     if (!stats)
     {
-    	PRINTF ("%s: No statistics available.\n", method) ;
+        SUITESPARSE_PRINTF ("No statistics available.\n") ;
 	return ;
     }
 
@@ -3014,11 +3184,11 @@ PRIVATE void print_report
 
     if (stats [COLAMD_STATUS] >= 0)
     {
-    	PRINTF ("%s: OK.  ", method) ;
+        SUITESPARSE_PRINTF ("OK.  ") ;
     }
     else
     {
-    	PRINTF ("%s: ERROR.  ", method) ;
+        SUITESPARSE_PRINTF ("ERROR.  ") ;
     }
 
     switch (stats [COLAMD_STATUS])
@@ -3026,95 +3196,102 @@ PRIVATE void print_report
 
 	case COLAMD_OK_BUT_JUMBLED:
 
-	    PRINTF ("Matrix has unsorted or duplicate row indices.\n") ;
+            SUITESPARSE_PRINTF(
+                    "Matrix has unsorted or duplicate row indices.\n") ;
 
-	    PRINTF ("%s: number of duplicate or out-of-order row indices: %d\n",
-	    method, i3) ;
+            SUITESPARSE_PRINTF(
+                    "%s: number of duplicate or out-of-order row indices: %d\n",
+                    method, i3) ;
 
-	    PRINTF ("%s: last seen duplicate or out-of-order row index:   %d\n",
-	    method, INDEX (i2)) ;
+            SUITESPARSE_PRINTF(
+                    "%s: last seen duplicate or out-of-order row index:   %d\n",
+                    method, INDEX (i2)) ;
 
-	    PRINTF ("%s: last seen in column:                             %d",
-	    method, INDEX (i1)) ;
+            SUITESPARSE_PRINTF(
+                    "%s: last seen in column:                             %d",
+                    method, INDEX (i1)) ;
 
 	    /* no break - fall through to next case instead */
 
 	case COLAMD_OK:
 
-	    PRINTF ("\n") ;
+            SUITESPARSE_PRINTF("\n") ;
 
- 	    PRINTF ("%s: number of dense or empty rows ignored:           %d\n",
-	    method, stats [COLAMD_DENSE_ROW]) ;
+            SUITESPARSE_PRINTF(
+                    "%s: number of dense or empty rows ignored:           %d\n",
+                    method, stats [COLAMD_DENSE_ROW]) ;
 
-	    PRINTF ("%s: number of dense or empty columns ignored:        %d\n",
-	    method, stats [COLAMD_DENSE_COL]) ;
+            SUITESPARSE_PRINTF(
+                    "%s: number of dense or empty columns ignored:        %d\n",
+                    method, stats [COLAMD_DENSE_COL]) ;
 
-	    PRINTF ("%s: number of garbage collections performed:         %d\n",
-	    method, stats [COLAMD_DEFRAG_COUNT]) ;
+            SUITESPARSE_PRINTF(
+                    "%s: number of garbage collections performed:         %d\n",
+                    method, stats [COLAMD_DEFRAG_COUNT]) ;
 	    break ;
 
 	case COLAMD_ERROR_A_not_present:
 
-	    PRINTF ("Array A (row indices of matrix) not present.\n") ;
+	    SUITESPARSE_PRINTF(
+                    "Array A (row indices of matrix) not present.\n") ;
 	    break ;
 
 	case COLAMD_ERROR_p_not_present:
 
-	    PRINTF ("Array p (column pointers for matrix) not present.\n") ;
+            SUITESPARSE_PRINTF(
+                    "Array p (column pointers for matrix) not present.\n") ;
 	    break ;
 
 	case COLAMD_ERROR_nrow_negative:
 
-	    PRINTF ("Invalid number of rows (%d).\n", i1) ;
+            SUITESPARSE_PRINTF("Invalid number of rows (%d).\n", i1) ;
 	    break ;
 
 	case COLAMD_ERROR_ncol_negative:
 
-	    PRINTF ("Invalid number of columns (%d).\n", i1) ;
+            SUITESPARSE_PRINTF("Invalid number of columns (%d).\n", i1) ;
 	    break ;
 
 	case COLAMD_ERROR_nnz_negative:
 
-	    PRINTF ("Invalid number of nonzero entries (%d).\n", i1) ;
+            SUITESPARSE_PRINTF(
+                    "Invalid number of nonzero entries (%d).\n", i1) ;
 	    break ;
 
 	case COLAMD_ERROR_p0_nonzero:
 
-	    PRINTF ("Invalid column pointer, p [0] = %d, must be zero.\n", i1) ;
+            SUITESPARSE_PRINTF(
+                    "Invalid column pointer, p [0] = %d, must be zero.\n", i1);
 	    break ;
 
 	case COLAMD_ERROR_A_too_small:
 
-	    PRINTF ("Array A too small.\n") ;
-	    PRINTF ("        Need Alen >= %d, but given only Alen = %d.\n",
-	    i1, i2) ;
+            SUITESPARSE_PRINTF("Array A too small.\n") ;
+            SUITESPARSE_PRINTF(
+                    "        Need Alen >= %d, but given only Alen = %d.\n",
+                    i1, i2) ;
 	    break ;
 
 	case COLAMD_ERROR_col_length_negative:
 
-	    PRINTF
-	    ("Column %d has a negative number of nonzero entries (%d).\n",
-	    INDEX (i1), i2) ;
+            SUITESPARSE_PRINTF
+            ("Column %d has a negative number of nonzero entries (%d).\n",
+            INDEX (i1), i2) ;
 	    break ;
 
 	case COLAMD_ERROR_row_index_out_of_bounds:
 
-	    PRINTF
-	    ("Row index (row %d) out of bounds (%d to %d) in column %d.\n",
-	    INDEX (i2), INDEX (0), INDEX (i3-1), INDEX (i1)) ;
+            SUITESPARSE_PRINTF
+            ("Row index (row %d) out of bounds (%d to %d) in column %d.\n",
+            INDEX (i2), INDEX (0), INDEX (i3-1), INDEX (i1)) ;
 	    break ;
 
 	case COLAMD_ERROR_out_of_memory:
 
-	    PRINTF ("Out of memory.\n") ;
+            SUITESPARSE_PRINTF("Out of memory.\n") ;
 	    break ;
 
-	case COLAMD_ERROR_internal_error:
-
-	    /* if this happens, there is a bug in the code */
-	    PRINTF
-	    ("Internal error! Please contact authors (davis@cise.ufl.edu).\n") ;
-	    break ;
+	/* v2.4: internal-error case deleted */
     }
 }
 
@@ -3145,26 +3322,26 @@ PRIVATE void debug_structures
 (
     /* === Parameters ======================================================= */
 
-    int n_row,
-    int n_col,
+    Int n_row,
+    Int n_col,
     Colamd_Row Row [],
     Colamd_Col Col [],
-    int A [],
-    int n_col2
+    Int A [],
+    Int n_col2
 )
 {
     /* === Local variables ================================================== */
 
-    int i ;
-    int c ;
-    int *cp ;
-    int *cp_end ;
-    int len ;
-    int score ;
-    int r ;
-    int *rp ;
-    int *rp_end ;
-    int deg ;
+    Int i ;
+    Int c ;
+    Int *cp ;
+    Int *cp_end ;
+    Int len ;
+    Int score ;
+    Int r ;
+    Int *rp ;
+    Int *rp_end ;
+    Int deg ;
 
     /* === Check A, Row, and Col ============================================ */
 
@@ -3232,22 +3409,22 @@ PRIVATE void debug_deg_lists
 (
     /* === Parameters ======================================================= */
 
-    int n_row,
-    int n_col,
+    Int n_row,
+    Int n_col,
     Colamd_Row Row [],
     Colamd_Col Col [],
-    int head [],
-    int min_score,
-    int should,
-    int max_deg
+    Int head [],
+    Int min_score,
+    Int should,
+    Int max_deg
 )
 {
     /* === Local variables ================================================== */
 
-    int deg ;
-    int col ;
-    int have ;
-    int row ;
+    Int deg ;
+    Int col ;
+    Int have ;
+    Int row ;
 
     /* === Check the degree lists =========================================== */
 
@@ -3306,15 +3483,15 @@ PRIVATE void debug_mark
 (
     /* === Parameters ======================================================= */
 
-    int n_row,
+    Int n_row,
     Colamd_Row Row [],
-    int tag_mark,
-    int max_mark
+    Int tag_mark,
+    Int max_mark
 )
 {
     /* === Local variables ================================================== */
 
-    int r ;
+    Int r ;
 
     /* === Check the Row marks ============================================== */
 
@@ -3342,21 +3519,21 @@ PRIVATE void debug_matrix
 (
     /* === Parameters ======================================================= */
 
-    int n_row,
-    int n_col,
+    Int n_row,
+    Int n_col,
     Colamd_Row Row [],
     Colamd_Col Col [],
-    int A []
+    Int A []
 )
 {
     /* === Local variables ================================================== */
 
-    int r ;
-    int c ;
-    int *rp ;
-    int *rp_end ;
-    int *cp ;
-    int *cp_end ;
+    Int r ;
+    Int c ;
+    Int *rp ;
+    Int *rp_end ;
+    Int *cp ;
+    Int *cp_end ;
 
     /* === Dump the rows and columns of the matrix ========================== */
 
@@ -3408,17 +3585,20 @@ PRIVATE void colamd_get_debug
     char *method
 )
 {
+    FILE *f ;
     colamd_debug = 0 ;		/* no debug printing */
-
-    /* get "D" environment variable, which gives the debug printing level */
-    if (getenv ("D"))
+    f = fopen ("debug", "r") ;
+    if (f == (FILE *) NULL)
     {
-    	colamd_debug = atoi (getenv ("D")) ;
+	colamd_debug = 0 ;
     }
-
+    else
+    {
+	fscanf (f, "%d", &colamd_debug) ;
+	fclose (f) ;
+    }
     DEBUG0 (("%s: debug version, D = %d (THIS WILL BE SLOW!)\n",
     	method, colamd_debug)) ;
 }
 
 #endif /* NDEBUG */
-

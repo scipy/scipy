@@ -45,11 +45,10 @@ from scipy._lib._util import _rename_parameter, _contains_nan
 from scipy._lib._bunch import _make_tuple_bunch
 import scipy.special as special
 import scipy.stats._stats_py
+import scipy.stats._stats_py as _stats_py
 
 from ._stats_mstats_common import (
         _find_repeats,
-        linregress as stats_linregress,
-        LinregressResult as stats_LinregressResult,
         theilslopes as stats_theilslopes,
         siegelslopes as stats_siegelslopes
         )
@@ -84,8 +83,30 @@ def _chk_size(a, b):
     (na, nb) = (a.size, b.size)
     if na != nb:
         raise ValueError("The size of the input array should match!"
-                         " ({} <> {})".format(na, nb))
+                         f" ({na} <> {nb})")
     return (a, b, na)
+
+
+def _ttest_finish(df, t, alternative):
+    """Common code between all 3 t-test functions."""
+    # We use ``stdtr`` directly here to preserve masked arrays
+
+    if alternative == 'less':
+        pval = special._ufuncs.stdtr(df, t)
+    elif alternative == 'greater':
+        pval = special._ufuncs.stdtr(df, -t)
+    elif alternative == 'two-sided':
+        pval = special._ufuncs.stdtr(df, -np.abs(t))*2
+    else:
+        raise ValueError("alternative must be "
+                         "'less', 'greater' or 'two-sided'")
+
+    if t.ndim == 0:
+        t = t[()]
+    if pval.ndim == 0:
+        pval = pval[()]
+
+    return t, pval
 
 
 def argstoarray(*args):
@@ -108,7 +129,7 @@ def argstoarray(*args):
 
     Notes
     -----
-    `numpy.ma.row_stack` has identical behavior, but is called with a sequence
+    `numpy.ma.vstack` has identical behavior, but is called with a sequence
     of sequences.
 
     Examples
@@ -407,11 +428,11 @@ def pearsonr(x, y):
 
     Warns
     -----
-    PearsonRConstantInputWarning
+    `~scipy.stats.ConstantInputWarning`
         Raised if an input is a constant array.  The correlation coefficient
         is not defined in this case, so ``np.nan`` is returned.
 
-    PearsonRNearConstantInputWarning
+    `~scipy.stats.NearConstantInputWarning`
         Raised if an input is "nearly" constant.  The array ``x`` is considered
         nearly constant if ``norm(x - mean(x)) < 1e-13 * abs(mean(x))``.
         Numerical errors in the calculation ``x - mean(x)`` in this case might
@@ -635,7 +656,7 @@ def spearmanr(x, y=None, use_ties=True, axis=None, nan_policy='propagate',
         if axisout == 0:
             x = ma.column_stack((x, y))
         else:
-            x = ma.row_stack((x, y))
+            x = ma.vstack((x, y))
 
     if axisout == 1:
         # To simplify the code that follow (always use `n_obs, n_vars` shape)
@@ -672,7 +693,7 @@ def spearmanr(x, y=None, use_ties=True, axis=None, nan_policy='propagate',
             # errors before taking the square root
             t = rs * np.sqrt((dof / ((rs+1.0) * (1.0-rs))).clip(0))
 
-        t, prob = scipy.stats._stats_py._ttest_finish(dof, t, alternative)
+        t, prob = _ttest_finish(dof, t, alternative)
 
         # For backwards compatibility, return scalars when comparing 2 columns
         if rs.shape == (2, 2):
@@ -890,12 +911,12 @@ def kendalltau(x, y, use_ties=True, use_missing=False, method='auto',
         var_s /= 18.
         var_s += (v1 + v2)
         z = (C-D)/np.sqrt(var_s)
-        _, prob = scipy.stats._stats_py._normtest_finish(z, alternative)
+        prob = scipy.stats._stats_py._get_pvalue(z, distributions.norm, alternative)
     else:
         raise ValueError("Unknown method "+str(method)+" specified, please "
                          "use auto, exact or asymptotic.")
 
-    res = scipy.stats._stats_py.SignificanceResult(tau, prob)
+    res = scipy.stats._stats_py.SignificanceResult(tau[()], prob[()])
     res.correlation = tau
     return res
 
@@ -946,7 +967,7 @@ def kendalltau_seasonal(x):
     z_tot_ind = msign(S_tot) * (abs(S_tot)-1) / ma.sqrt(var_szn.sum())
     z_tot_dep = msign(S_tot) * (abs(S_tot)-1) / ma.sqrt(covmat.sum())
 
-    prob_szn = special.erfc(abs(z_szn)/np.sqrt(2))
+    prob_szn = special.erfc(abs(z_szn.data)/np.sqrt(2))
     prob_tot_ind = special.erfc(abs(z_tot_ind)/np.sqrt(2))
     prob_tot_dep = special.erfc(abs(z_tot_dep)/np.sqrt(2))
 
@@ -1021,10 +1042,109 @@ def pointbiserialr(x, y):
 
 def linregress(x, y=None):
     r"""
-    Linear regression calculation
+    Calculate a linear least-squares regression for two sets of measurements.
 
-    Note that the non-masked version is used, and that this docstring is
-    replaced by the non-masked docstring + some info on missing data.
+    Parameters
+    ----------
+    x, y : array_like
+        Two sets of measurements.  Both arrays should have the same length N.  If
+        only `x` is given (and ``y=None``), then it must be a two-dimensional
+        array where one dimension has length 2.  The two sets of measurements
+        are then found by splitting the array along the length-2 dimension. In
+        the case where ``y=None`` and `x` is a 2xN array, ``linregress(x)`` is
+        equivalent to ``linregress(x[0], x[1])``.
+
+    Returns
+    -------
+    result : ``LinregressResult`` instance
+        The return value is an object with the following attributes:
+
+        slope : float
+            Slope of the regression line.
+        intercept : float
+            Intercept of the regression line.
+        rvalue : float
+            The Pearson correlation coefficient. The square of ``rvalue``
+            is equal to the coefficient of determination.
+        pvalue : float
+            The p-value for a hypothesis test whose null hypothesis is
+            that the slope is zero, using Wald Test with t-distribution of
+            the test statistic. See `alternative` above for alternative
+            hypotheses.
+        stderr : float
+            Standard error of the estimated slope (gradient), under the
+            assumption of residual normality.
+        intercept_stderr : float
+            Standard error of the estimated intercept, under the assumption
+            of residual normality.
+
+    See Also
+    --------
+    scipy.optimize.curve_fit :
+        Use non-linear least squares to fit a function to data.
+    scipy.optimize.leastsq :
+        Minimize the sum of squares of a set of equations.
+
+    Notes
+    -----
+    Missing values are considered pair-wise: if a value is missing in `x`,
+    the corresponding value in `y` is masked.
+
+    For compatibility with older versions of SciPy, the return value acts
+    like a ``namedtuple`` of length 5, with fields ``slope``, ``intercept``,
+    ``rvalue``, ``pvalue`` and ``stderr``, so one can continue to write::
+
+        slope, intercept, r, p, se = linregress(x, y)
+
+    With that style, however, the standard error of the intercept is not
+    available.  To have access to all the computed values, including the
+    standard error of the intercept, use the return value as an object
+    with attributes, e.g.::
+
+        result = linregress(x, y)
+        print(result.intercept, result.intercept_stderr)
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy import stats
+    >>> rng = np.random.default_rng()
+
+    Generate some data:
+
+    >>> x = rng.random(10)
+    >>> y = 1.6*x + rng.random(10)
+
+    Perform the linear regression:
+
+    >>> res = stats.mstats.linregress(x, y)
+
+    Coefficient of determination (R-squared):
+
+    >>> print(f"R-squared: {res.rvalue**2:.6f}")
+    R-squared: 0.717533
+
+    Plot the data along with the fitted line:
+
+    >>> plt.plot(x, y, 'o', label='original data')
+    >>> plt.plot(x, res.intercept + res.slope*x, 'r', label='fitted line')
+    >>> plt.legend()
+    >>> plt.show()
+
+    Calculate 95% confidence interval on slope and intercept:
+
+    >>> # Two-sided inverse Students t-distribution
+    >>> # p - probability, df - degrees of freedom
+    >>> from scipy.stats import t
+    >>> tinv = lambda p, df: abs(t.ppf(p/2, df))
+
+    >>> ts = tinv(0.05, len(x)-2)
+    >>> print(f"slope (95%): {res.slope:.6f} +/- {ts*res.stderr:.6f}")
+    slope (95%): 1.453392 +/- 0.743465
+    >>> print(f"intercept (95%): {res.intercept:.6f}"
+    ...       f" +/- {ts*res.intercept_stderr:.6f}")
+    intercept (95%): 0.616950 +/- 0.544475
 
     """
     if y is None:
@@ -1053,15 +1173,15 @@ def linregress(x, y=None):
         x = ma.array(x, mask=m)
         y = ma.array(y, mask=m)
         if np.any(~m):
-            result = stats_linregress(x.data[~m], y.data[~m])
+            result = _stats_py.linregress(x.data[~m], y.data[~m])
         else:
             # All data is masked
-            result = stats_LinregressResult(slope=None, intercept=None,
-                                            rvalue=None, pvalue=None,
-                                            stderr=None,
-                                            intercept_stderr=None)
+            result = _stats_py.LinregressResult(slope=None, intercept=None,
+                                                rvalue=None, pvalue=None,
+                                                stderr=None,
+                                                intercept_stderr=None)
     else:
-        result = stats_linregress(x.data, y.data)
+        result = _stats_py.linregress(x.data, y.data)
 
     return result
 
@@ -1368,7 +1488,7 @@ def ttest_1samp(a, popmean, axis=0, alternative='two-sided'):
     with np.errstate(divide='ignore', invalid='ignore'):
         t = (x - popmean) / ma.sqrt(svar / n)
 
-    t, prob = scipy.stats._stats_py._ttest_finish(df, t, alternative)
+    t, prob = _ttest_finish(df, t, alternative)
     return Ttest_1sampResult(t, prob)
 
 
@@ -1452,7 +1572,7 @@ def ttest_ind(a, b, axis=0, equal_var=True, alternative='two-sided'):
     with np.errstate(divide='ignore', invalid='ignore'):
         t = (x1-x2) / denom
 
-    t, prob = scipy.stats._stats_py._ttest_finish(df, t, alternative)
+    t, prob = _ttest_finish(df, t, alternative)
     return Ttest_indResult(t, prob)
 
 
@@ -1513,7 +1633,7 @@ def ttest_rel(a, b, axis=0, alternative='two-sided'):
     with np.errstate(divide='ignore', invalid='ignore'):
         t = dm / denom
 
-    t, prob = scipy.stats._stats_py._ttest_finish(df, t, alternative)
+    t, prob = _ttest_finish(df, t, alternative)
     return Ttest_relResult(t, prob)
 
 
@@ -1604,7 +1724,7 @@ def kruskal(*args):
     >>> b = [6.9, 7.0, 6.1, 7.9]
     >>> c = [7.2, 6.9, 6.1, 6.5]
 
-    Test the hypotesis that the distribution functions for all of the brands'
+    Test the hypothesis that the distribution functions for all of the brands'
     durations are identical. Use 5% level of significance.
 
     >>> kruskal(a, b, c)
@@ -1853,10 +1973,10 @@ def trimr(a, limits=None, inclusive=(True, True), axis=None):
     errmsg = "The proportion to cut from the %s should be between 0. and 1."
     if lolim is not None:
         if lolim > 1. or lolim < 0:
-            raise ValueError(errmsg % 'beginning' + "(got %s)" % lolim)
+            raise ValueError(errmsg % 'beginning' + f"(got {lolim})")
     if uplim is not None:
         if uplim > 1. or uplim < 0:
-            raise ValueError(errmsg % 'end' + "(got %s)" % uplim)
+            raise ValueError(errmsg % 'end' + f"(got {uplim})")
 
     (loinc, upinc) = inclusive
 
@@ -2133,10 +2253,10 @@ def trimmed_stde(a, limits=(0.1,0.1), inclusive=(1,1), axis=None):
     errmsg = "The proportion to cut from the %s should be between 0. and 1."
     if lolim is not None:
         if lolim > 1. or lolim < 0:
-            raise ValueError(errmsg % 'beginning' + "(got %s)" % lolim)
+            raise ValueError(errmsg % 'beginning' + f"(got {lolim})")
     if uplim is not None:
         if uplim > 1. or uplim < 0:
-            raise ValueError(errmsg % 'end' + "(got %s)" % uplim)
+            raise ValueError(errmsg % 'end' + f"(got {uplim})")
 
     (loinc, upinc) = inclusive
     if (axis is None):
@@ -2487,8 +2607,8 @@ def winsorize(a, limits=None, inclusive=(True, True), inplace=False,
 
     >>> a = np.array([10, 4, 9, 8, 5, 3, 7, 2, 1, 6])
 
-    The 10% of the lowest value (i.e., `1`) and the 20% of the highest
-    values (i.e., `9` and `10`) are replaced.
+    The 10% of the lowest value (i.e., ``1``) and the 20% of the highest
+    values (i.e., ``9`` and ``10``) are replaced.
 
     >>> winsorize(a, limits=[0.1, 0.2])
     masked_array(data=[8, 4, 8, 8, 5, 3, 7, 2, 2, 6],
@@ -2535,10 +2655,10 @@ def winsorize(a, limits=None, inclusive=(True, True), inplace=False,
     errmsg = "The proportion to cut from the %s should be between 0. and 1."
     if lolim is not None:
         if lolim > 1. or lolim < 0:
-            raise ValueError(errmsg % 'beginning' + "(got %s)" % lolim)
+            raise ValueError(errmsg % 'beginning' + f"(got {lolim})")
     if uplim is not None:
         if uplim > 1. or uplim < 0:
-            raise ValueError(errmsg % 'end' + "(got %s)" % uplim)
+            raise ValueError(errmsg % 'end' + f"(got {uplim})")
 
     (loinc, upinc) = inclusive
 
@@ -2850,13 +2970,14 @@ def describe(a, axis=0, ddof=0, bias=True):
     >>> from scipy.stats.mstats import describe
     >>> ma = np.ma.array(range(6), mask=[0, 0, 0, 1, 1, 1])
     >>> describe(ma)
-    DescribeResult(nobs=3, minmax=(masked_array(data=0,
+    DescribeResult(nobs=np.int64(3), minmax=(masked_array(data=0,
                  mask=False,
            fill_value=999999), masked_array(data=2,
                  mask=False,
-           fill_value=999999)), mean=1.0, variance=0.6666666666666666,
+           fill_value=999999)), mean=np.float64(1.0),
+           variance=np.float64(0.6666666666666666),
            skewness=masked_array(data=0., mask=False, fill_value=1e+20),
-            kurtosis=-1.5)
+            kurtosis=np.float64(-1.5))
 
     """
     a, axis = _chk_asarray(a, axis)
@@ -2957,8 +3078,9 @@ def skewtest(a, axis=0, alternative='two-sided'):
     alpha = ma.sqrt(2.0/(W2-1))
     y = ma.where(y == 0, 1, y)
     Z = delta*ma.log(y/alpha + ma.sqrt((y/alpha)**2+1))
+    pvalue = scipy.stats._stats_py._get_pvalue(Z, distributions.norm, alternative)
 
-    return SkewtestResult(*scipy.stats._stats_py._normtest_finish(Z, alternative))
+    return SkewtestResult(Z[()], pvalue[()])
 
 
 KurtosistestResult = namedtuple('KurtosistestResult', ('statistic', 'pvalue'))
@@ -3008,8 +3130,9 @@ def kurtosistest(a, axis=0, alternative='two-sided'):
             " were given." % np.min(n))
     if np.min(n) < 20:
         warnings.warn(
-            "kurtosistest only valid for n>=20 ... continuing anyway, n=%i" %
-            np.min(n))
+            "kurtosistest only valid for n>=20 ... continuing anyway, n=%i" % np.min(n),
+            stacklevel=2,
+        )
 
     b2 = kurtosis(a, axis, fisher=False)
     E = 3.0*(n-1) / (n+1)
@@ -3029,10 +3152,9 @@ def kurtosistest(a, axis=0, alternative='two-sided'):
     term2 = np.ma.where(denom > 0, ma.power((1-2.0/A)/denom, 1/3.0),
                         -ma.power(-(1-2.0/A)/denom, 1/3.0))
     Z = (term1 - term2) / np.sqrt(2/(9.0*A))
+    pvalue = scipy.stats._stats_py._get_pvalue(Z, distributions.norm, alternative)
 
-    return KurtosistestResult(
-        *scipy.stats._stats_py._normtest_finish(Z, alternative)
-    )
+    return KurtosistestResult(Z[()], pvalue[()])
 
 
 NormaltestResult = namedtuple('NormaltestResult', ('statistic', 'pvalue'))
@@ -3071,7 +3193,7 @@ def normaltest(a, axis=0):
     return NormaltestResult(k2, distributions.chi2.sf(k2, 2))
 
 
-def mquantiles(a, prob=list([.25,.5,.75]), alphap=.4, betap=.4, axis=None,
+def mquantiles(a, prob=(.25, .5, .75), alphap=.4, betap=.4, axis=None,
                limit=()):
     """
     Computes empirical quantiles for a data array.
@@ -3191,7 +3313,7 @@ def mquantiles(a, prob=list([.25,.5,.75]), alphap=.4, betap=.4, axis=None,
         condition = (limit[0] < data) & (data < limit[1])
         data[~condition.filled(True)] = masked
 
-    p = np.array(prob, copy=False, ndmin=1)
+    p = np.atleast_1d(np.asarray(prob))
     m = alphap + p*(1.-alphap-betap)
     # Computes quantiles along axis (or globally)
     if (axis is None):
@@ -3208,8 +3330,7 @@ def scoreatpercentile(data, per, limit=(), alphap=.4, betap=.4):
 
     """
     if (per < 0) or (per > 100.):
-        raise ValueError("The percentile should be between 0. and 100. !"
-                         " (got %s)" % per)
+        raise ValueError(f"The percentile should be between 0. and 100. ! (got {per})")
 
     return mquantiles(data, prob=[per/100.], alphap=alphap, betap=betap,
                       limit=limit, axis=0).squeeze()
@@ -3441,9 +3562,17 @@ BrunnerMunzelResult = namedtuple('BrunnerMunzelResult', ('statistic', 'pvalue'))
 
 def brunnermunzel(x, y, alternative="two-sided", distribution="t"):
     """
-    Computes the Brunner-Munzel test on samples x and y
+    Compute the Brunner-Munzel test on samples x and y.
 
-    Missing values in `x` and/or `y` are discarded.
+    Any missing values in `x` and/or `y` are discarded.
+
+    The Brunner-Munzel test is a nonparametric test of the null hypothesis that
+    when values are taken one by one from each group, the probabilities of
+    getting large values in both groups are equal.
+    Unlike the Wilcoxon-Mann-Whitney's U test, this does not require the
+    assumption of equivariance of two groups. Note that this does not assume
+    the distributions are same. This test works on two independent samples,
+    which may have different sizes.
 
     Parameters
     ----------
@@ -3474,7 +3603,16 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t"):
     -----
     For more details on `brunnermunzel`, see `scipy.stats.brunnermunzel`.
 
-    """
+    Examples
+    --------
+    >>> from scipy.stats.mstats import brunnermunzel
+    >>> import numpy as np
+    >>> x1 = [1, 2, np.nan, np.nan, 1, 1, 1, 1, 1, 1, 2, 4, 1, 1]
+    >>> x2 = [3, 3, 4, 3, 1, 2, 3, 1, 1, 5, 4]
+    >>> brunnermunzel(x1, x2)
+    BrunnerMunzelResult(statistic=1.4723186918922935, pvalue=0.15479415300426624)  # may vary
+
+    """  # noqa: E501
     x = ma.asarray(x).compressed().view(ndarray)
     y = ma.asarray(y).compressed().view(ndarray)
     nx = len(x)

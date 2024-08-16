@@ -5,7 +5,7 @@
 *~
 *$
 *.bak
-.idea/*
+.idea/
 *.kdev4
 *.org
 .project
@@ -19,6 +19,7 @@
 *.vim
 tags
 .venv/
+venv/
 .theia/
 .vscode/
 
@@ -55,13 +56,13 @@ _configtest.c
 
 # Python files #
 ################
-# setup.py working directory
+# build directory
 build
 # sphinx build directory
 doc/_build
 # cython files
 cythonize.dat
-# setup.py dist directory
+# sdist directory
 dist
 # Egg metadata
 *.egg-info
@@ -84,8 +85,8 @@ pip-wheel-metadata
 #########
 .mesonpy-native-file.ini
 installdir/
-build-install/*
-.mesonpy/*
+build-install/
+.mesonpy/
 
 # doit
 ######
@@ -93,6 +94,7 @@ build-install/*
 .doit.db.dir
 .doit.db.db
 .doit.db
+doc/source/.jupyterlite.doit.db
 
 # Logs and databases #
 ######################
@@ -102,17 +104,21 @@ build-install/*
 
 # pytest cache #
 ################
-.cache/*
-.pytest_cache/*
+.cache/
+.pytest_cache/
+
+# github cache #
+################
+gh_cache.json
 
 # mypy cache #
 ##############
-.mypy_cache/*
+.mypy_cache/
 
 # linter #
 ##########
-.ruff_cache/*
-.pre-commit-workdir/*
+.ruff_cache/
+.pre-commit-workdir/
 
 # Patches #
 ###########
@@ -136,6 +142,7 @@ Thumbs.db
 doc/frontpage/build
 doc/source/reference/generated
 **/.ipynb_checkpoints
+doc/source/_contents
 
 # Things specific to this project #
 ###################################
@@ -144,6 +151,8 @@ benchmarks/results
 benchmarks/scipy
 benchmarks/html
 benchmarks/scipy-benchmarks
+.openblas
+scipy/_distributor_init_local.py
 scipy/__config__.py
 scipy/_lib/_ccallback_c.c
 scipy/_lib/messagestream.c
@@ -223,7 +232,6 @@ scipy/optimize/cobyla/_cobylamodule.c
 scipy/optimize/_group_columns.cpp
 scipy/optimize/lbfgsb_src/_lbfgsbmodule.c
 scipy/optimize/lbfgsb_src/_lbfgsb-f2pywrappers.f
-scipy/optimize/minpack2/_minpack2module.c
 scipy/optimize/__nnls/__nnlsmodule.c
 scipy/optimize/slsqp/_slsqpmodule.c
 scipy/optimize/_lsq/givens_elimination.c
@@ -289,11 +297,8 @@ scipy/special/_ufuncs_cxx.pxd
 scipy/special/_ufuncs_cxx.pyx
 scipy/special/_ufuncs_cxx_defs.h
 scipy/special/_ufuncs_defs.h
-scipy/special/_ufuncs.pyi
 scipy/special/cython_special.c
 scipy/special/cython_special.h
-scipy/special/cython_special.pxd
-scipy/special/cython_special.pyx
 scipy/special/_specfunmodule.c
 scipy/special/tests/data/*.npz
 scipy/special/ellint_carlson_cpp_lite/Makefile

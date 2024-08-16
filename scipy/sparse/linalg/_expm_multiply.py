@@ -16,7 +16,7 @@ __all__ = ['expm_multiply']
 
 def _exact_inf_norm(A):
     # A compatibility function which should eventually disappear.
-    if scipy.sparse.isspmatrix(A):
+    if scipy.sparse.issparse(A):
         return max(abs(A).sum(axis=1).flat)
     elif is_pydata_spmatrix(A):
         return max(abs(A).sum(axis=1))
@@ -26,7 +26,7 @@ def _exact_inf_norm(A):
 
 def _exact_1_norm(A):
     # A compatibility function which should eventually disappear.
-    if scipy.sparse.isspmatrix(A):
+    if scipy.sparse.issparse(A):
         return max(abs(A).sum(axis=0).flat)
     elif is_pydata_spmatrix(A):
         return max(abs(A).sum(axis=0))
@@ -91,9 +91,12 @@ def traceest(A, m3, seed=None):
 
 def _ident_like(A):
     # A compatibility function which should eventually disappear.
-    if scipy.sparse.isspmatrix(A):
-        return scipy.sparse._construct.eye(A.shape[0], A.shape[1],
-                dtype=A.dtype, format=A.format)
+    if scipy.sparse.issparse(A):
+        # Creates a sparse matrix in dia format
+        out = scipy.sparse.eye(A.shape[0], A.shape[1], dtype=A.dtype)
+        if isinstance(A, scipy.sparse.spmatrix):
+            return out.asformat(A.format)
+        return scipy.sparse.dia_array(out).asformat(A.format)
     elif is_pydata_spmatrix(A):
         import sparse
         return sparse.eye(A.shape[0], A.shape[1], dtype=A.dtype)
@@ -242,8 +245,8 @@ def _expm_multiply_simple(A, B, t=1.0, traceA=None, balance=False):
     if len(A.shape) != 2 or A.shape[0] != A.shape[1]:
         raise ValueError('expected A to be like a square matrix')
     if A.shape[1] != B.shape[0]:
-        raise ValueError('shapes of matrices A {} and B {} are incompatible'
-                         .format(A.shape, B.shape))
+        raise ValueError(f'shapes of matrices A {A.shape} and B {B.shape}'
+                         ' are incompatible')
     ident = _ident_like(A)
     is_linear_operator = isinstance(A, scipy.sparse.linalg.LinearOperator)
     n = A.shape[0]
@@ -440,7 +443,8 @@ class LazyOperatorNormInfo:
 
     def d(self, p):
         """
-        Lazily estimate d_p(A) ~= || A^p ||^(1/p) where ||.|| is the 1-norm.
+        Lazily estimate :math:`d_p(A) ~= || A^p ||^(1/p)` 
+        where :math:`||.||` is the 1-norm.
         """
         if p not in self._d:
             est = _onenormest_matrix_power(self._A, p, self._ell)
@@ -642,8 +646,8 @@ def _expm_multiply_interval(A, B, start=None, stop=None, num=None,
     if len(A.shape) != 2 or A.shape[0] != A.shape[1]:
         raise ValueError('expected A to be like a square matrix')
     if A.shape[1] != B.shape[0]:
-        raise ValueError('shapes of matrices A {} and B {} are incompatible'
-                         .format(A.shape, B.shape))
+        raise ValueError(f'shapes of matrices A {A.shape} and B {B.shape}'
+                         ' are incompatible')
     ident = _ident_like(A)
     is_linear_operator = isinstance(A, scipy.sparse.linalg.LinearOperator)
     n = A.shape[0]

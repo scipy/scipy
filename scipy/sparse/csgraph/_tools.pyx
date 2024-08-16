@@ -8,8 +8,8 @@ Tools and utilities for working with compressed sparse graphs
 import numpy as np
 cimport numpy as np
 
-from scipy.sparse import csr_matrix, isspmatrix,\
-    isspmatrix_csr, isspmatrix_csc, isspmatrix_lil
+from scipy.sparse import csr_matrix, issparse
+from scipy.sparse._sputils import is_pydata_spmatrix
 
 np.import_array()
 
@@ -51,8 +51,8 @@ def csgraph_from_masked(graph):
     ... fill_value = 0)
 
     >>> csgraph_from_masked(graph_masked)
-    <4x4 sparse matrix of type '<class 'numpy.float64'>'
-        with 4 stored elements in Compressed Sparse Row format>
+    <Compressed Sparse Row sparse matrix of dtype 'float64'
+        with 4 stored elements and shape (4, 4)>
 
     """
     # check that graph is a square matrix
@@ -209,8 +209,8 @@ def csgraph_from_dense(graph,
     ... ]
 
     >>> csgraph_from_dense(graph)
-    <4x4 sparse matrix of type '<class 'numpy.float64'>'
-        with 4 stored elements in Compressed Sparse Row format>
+    <Compressed Sparse Row sparse matrix of dtype 'float64'
+        with 4 stored elements and shape (4, 4)>
 
     """
     return csgraph_from_masked(csgraph_masked_from_dense(graph,
@@ -303,8 +303,8 @@ def csgraph_to_dense(csgraph, null_value=0):
     ... [0, 0, 0, 0]
     ... ])
     >>> graph
-    <4x4 sparse matrix of type '<class 'numpy.int64'>'
-        with 4 stored elements in Compressed Sparse Row format>
+    <Compressed Sparse Row sparse matrix of dtype 'int64'
+        with 4 stored elements and shape (4, 4)>
 
     >>> csgraph_to_dense(graph)
     array([[0., 1., 2., 0.],
@@ -315,10 +315,11 @@ def csgraph_to_dense(csgraph, null_value=0):
     """
     # Allow only csr, lil and csc matrices: other formats when converted to csr
     # combine duplicated edges: we don't want this to happen in the background.
-    if isspmatrix_csc(csgraph) or isspmatrix_lil(csgraph):
-        csgraph = csgraph.tocsr()
-    elif not isspmatrix_csr(csgraph):
+    if not issparse(csgraph):
+        raise ValueError("csgraph must be sparse")
+    if csgraph.format not in ("lil", "csc", "csr"):
         raise ValueError("csgraph must be lil, csr, or csc format")
+    csgraph = csgraph.tocsr()
 
     N = csgraph.shape[0]
     if csgraph.shape[1] != N:
@@ -366,8 +367,8 @@ def csgraph_to_masked(csgraph):
     ... [0, 0, 0, 0]
     ... ])
     >>> graph
-    <4x4 sparse matrix of type '<class 'numpy.int64'>'
-        with 4 stored elements in Compressed Sparse Row format>
+    <Compressed Sparse Row sparse matrix of dtype 'int64'
+        with 4 stored elements and shape (4, 4)>
 
     >>> csgraph_to_masked(graph)
     masked_array(
@@ -389,7 +390,7 @@ cdef void _populate_graph(np.ndarray[DTYPE_t, ndim=1, mode='c'] data,
                           np.ndarray[ITYPE_t, ndim=1, mode='c'] indices,
                           np.ndarray[ITYPE_t, ndim=1, mode='c'] indptr,
                           np.ndarray[DTYPE_t, ndim=2, mode='c'] graph,
-                          DTYPE_t null_value):
+                          DTYPE_t null_value) noexcept:
     # data, indices, indptr are the csr attributes of the sparse input.
     # on input, graph should be filled with infinities, and should be
     # of size [N, N], which is also the size of the sparse matrix
@@ -452,10 +453,13 @@ def reconstruct_path(csgraph, predecessors, directed=True):
     ... ]
     >>> graph = csr_matrix(graph)
     >>> print(graph)
-      (0, 1)	1
-      (0, 2)	2
-      (1, 3)	1
-      (2, 3)	3
+    <Compressed Sparse Row sparse matrix of dtype 'int64'
+    	with 4 stored elements and shape (4, 4)>
+    	Coords	Values
+    	(0, 1)	1
+    	(0, 2)	2
+    	(1, 3)	1
+    	(2, 3)	3
 
     >>> pred = np.array([-9999, 0, 0, 1], dtype=np.int32)
 
@@ -468,6 +472,10 @@ def reconstruct_path(csgraph, predecessors, directed=True):
 
     """
     from ._validation import validate_graph
+    is_pydata_sparse = is_pydata_spmatrix(csgraph)
+    if is_pydata_sparse:
+        pydata_sparse_cls = csgraph.__class__
+        pydata_sparse_fill_value = csgraph.fill_value
     csgraph = validate_graph(csgraph, directed, dense_output=False)
 
     N = csgraph.shape[0]
@@ -483,20 +491,30 @@ def reconstruct_path(csgraph, predecessors, directed=True):
     # Fix issue #4018:
     # If `pind` and `indices` are empty arrays, `data` is a sparse matrix
     # (it is a numpy.matrix otherwise); handle this case separately.
-    if isspmatrix(data):
+    if issparse(data):
         data = data.todense()
     data = data.getA1()
 
     if not directed:
         data2 = csgraph[indices, pind]
-        if isspmatrix(data2):
+        if issparse(data2):
             data2 = data2.todense()
         data2 = data2.getA1()
         data[data == 0] = np.inf
         data2[data2 == 0] = np.inf
         data = np.minimum(data, data2)
 
-    return csr_matrix((data, indices, indptr), shape=(N, N))
+    sctree = csr_matrix((data, indices, indptr), shape=(N, N))
+    if is_pydata_sparse:
+        # The `fill_value` keyword is new in PyData Sparse 0.15.4 (May 2024),
+        # remove the `except` once the minimum supported version is >=0.15.4
+        try:
+            sctree = pydata_sparse_cls.from_scipy_sparse(
+                sctree, fill_value=pydata_sparse_fill_value
+            )
+        except TypeError:
+            sctree = pydata_sparse_cls.from_scipy_sparse(sctree)
+    return sctree
 
 
 def construct_dist_matrix(graph,
@@ -555,10 +573,13 @@ def construct_dist_matrix(graph,
     ... ]
     >>> graph = csr_matrix(graph)
     >>> print(graph)
-      (0, 1)	1
-      (0, 2)	2
-      (1, 3)	1
-      (2, 3)	3
+    <Compressed Sparse Row sparse matrix of dtype 'int64'
+    	with 4 stored elements and shape (4, 4)>
+    	Coords	Values
+    	(0, 1)	1
+    	(0, 2)	2
+    	(1, 3)	1
+    	(2, 3)	3
 
     >>> pred = np.array([[-9999, 0, 0, 2],
     ...                  [1, -9999, 0, 1],
@@ -592,7 +613,7 @@ cdef void _construct_dist_matrix(np.ndarray[DTYPE_t, ndim=2] graph,
                                  np.ndarray[ITYPE_t, ndim=2] pred,
                                  np.ndarray[DTYPE_t, ndim=2] dist,
                                  int directed,
-                                 DTYPE_t null_value):
+                                 DTYPE_t null_value) noexcept:
     # All matrices should be size N x N
     # note that graph will be modified if directed == False
     # dist should be all zero on entry

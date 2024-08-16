@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from numpy import abs, asarray, cos, exp, arange, pi, sin, sum, atleast_2d
 from .go_benchmark import Benchmark
 

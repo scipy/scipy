@@ -12,9 +12,12 @@ from scipy.interpolate import (RegularGridInterpolator, interpn,
                                NearestNDInterpolator, LinearNDInterpolator)
 
 from scipy.sparse._sputils import matrix
+from scipy._lib._util import ComplexWarning
+from scipy._lib._testutils import _run_concurrent_barrier
+
 
 parametrize_rgi_interp_methods = pytest.mark.parametrize(
-    "method", ['linear', 'nearest', 'slinear', 'cubic', 'quintic', 'pchip']
+    "method", RegularGridInterpolator._ALL_METHODS
 )
 
 class TestRegularGridInterpolator:
@@ -117,8 +120,30 @@ class TestRegularGridInterpolator:
         v2 = interp(sample)
         assert_allclose(v1, v2)
 
+    def test_derivatives(self):
+        points, values = self._get_sample_4d()
+        sample = np.array([[0.1 , 0.1 , 1.  , 0.9 ],
+                           [0.2 , 0.1 , 0.45, 0.8 ],
+                           [0.5 , 0.5 , 0.5 , 0.5 ]])
+        interp = RegularGridInterpolator(points, values, method="slinear")
+
+        with assert_raises(ValueError):
+            # wrong number of derivatives (need 4)
+            interp(sample, nu=1)
+
+        assert_allclose(interp(sample, nu=(1, 0, 0, 0)),
+                        [1, 1, 1], atol=1e-15)
+        assert_allclose(interp(sample, nu=(0, 1, 0, 0)),
+                        [10, 10, 10], atol=1e-15)
+
+        # 2nd derivatives of a linear function are zero
+        assert_allclose(interp(sample, nu=(0, 1, 1, 0)),
+                        [0, 0, 0], atol=2e-12)
+
     @parametrize_rgi_interp_methods
     def test_complex(self, method):
+        if method == "pchip":
+            pytest.skip("pchip does not make sense for complex data")
         points, values = self._get_sample_4d_3()
         values = values - 2j*values
         sample = np.asarray([[0.1, 0.1, 1., .9], [0.2, 0.1, .45, .8],
@@ -443,6 +468,7 @@ class TestRegularGridInterpolator:
         assert_equal(res[i], np.nan)
         assert_equal(res[~i], interp(z[~i]))
 
+    @pytest.mark.fail_slow(10)
     @parametrize_rgi_interp_methods
     @pytest.mark.parametrize(("ndims", "func"), [
         (2, lambda x, y: 2 * x ** 3 + 3 * y ** 2),
@@ -451,6 +477,10 @@ class TestRegularGridInterpolator:
         (5, lambda x, y, z, a, b: 2 * x ** 3 + 3 * y ** 2 - z + a * b),
     ])
     def test_descending_points_nd(self, method, ndims, func):
+
+        if ndims >= 4 and method in {"cubic", "quintic"}:
+            pytest.skip("too slow; OOM (quintic); or nearly so (cubic)")
+
         rng = np.random.default_rng(42)
         sample_low = 1
         sample_high = 5
@@ -498,8 +528,13 @@ class TestRegularGridInterpolator:
                                          method=method, bounds_error=False)
         assert np.isnan(interp([10]))
 
+    @pytest.mark.fail_slow(5)
     @parametrize_rgi_interp_methods
     def test_nonscalar_values(self, method):
+
+        if method == "quintic":
+            pytest.skip("Way too slow.")
+
         # Verify that non-scalar valued values also works
         points = [(0.0, 0.5, 1.0, 1.5, 2.0, 2.5)] * 2 + [
             (0.0, 5.0, 10.0, 15.0, 20, 25.0)
@@ -527,6 +562,10 @@ class TestRegularGridInterpolator:
     @parametrize_rgi_interp_methods
     @pytest.mark.parametrize("flip_points", [False, True])
     def test_nonscalar_values_2(self, method, flip_points):
+
+        if method in {"cubic", "quintic"}:
+            pytest.skip("Way too slow.")
+
         # Verify that non-scalar valued values also work : use different
         # lengths of axes to simplify tracing the internals
         points = [(0.0, 0.5, 1.0, 1.5, 2.0, 2.5),
@@ -622,6 +661,53 @@ class TestRegularGridInterpolator:
         # having a float32 kernel
         assert_allclose(interp(pts), [134.10469388, 153.40069388], atol=1e-7)
 
+    def test_bad_solver(self):
+        x = np.linspace(0, 3, 7)
+        y = np.linspace(0, 3, 7)
+        xg, yg = np.meshgrid(x, y, indexing='ij', sparse=True)
+        data = xg + yg
+
+        # default method 'linear' does not accept 'solver'
+        with assert_raises(ValueError):
+            RegularGridInterpolator((x, y), data, solver=lambda x: x)
+
+        with assert_raises(TypeError):
+            # wrong solver interface
+            RegularGridInterpolator(
+                (x, y), data, method='slinear', solver=lambda x: x
+            )
+
+        with assert_raises(TypeError):
+            # unknown argument
+            RegularGridInterpolator(
+                (x, y), data, method='slinear', solver=lambda x: x, woof='woof'
+            )
+
+        with assert_raises(TypeError):
+            # unknown argument
+            RegularGridInterpolator(
+                (x, y), data, method='slinear',  solver_args={'woof': 42}
+            )
+
+    def test_concurrency(self):
+        points, values = self._get_sample_4d()
+        sample = np.array([[0.1 , 0.1 , 1.  , 0.9 ],
+                           [0.2 , 0.1 , 0.45, 0.8 ],
+                           [0.5 , 0.5 , 0.5 , 0.5 ],
+                           [0.3 , 0.1 , 0.2 , 0.4 ]])
+        interp = RegularGridInterpolator(points, values, method="slinear")
+
+        # A call to RGI with a method different from the one specified on the
+        # constructor, should not mutate it.
+        methods = ['slinear', 'nearest']
+        def worker_fn(tid, interp):
+            spline = interp._spline
+            method = methods[tid % 2]
+            interp(sample, method=method)
+            assert interp._spline is spline
+
+        _run_concurrent_barrier(10, worker_fn, interp)
+
 
 class MyValue:
     """
@@ -639,7 +725,7 @@ class MyValue:
     def __array_interface__(self):
         return None
 
-    def __array__(self):
+    def __array__(self, dtype=None, copy=None):
         raise RuntimeError("No array representation")
 
 
@@ -673,7 +759,6 @@ class TestInterpN:
         x, y, z = self._sample_2d_data()
         xi = np.array([[1, 2.3, 5.3, 0.5, 3.3, 1.2, 3],
                        [1, 3.3, 1.2, 4.0, 5.0, 1.0, 3]]).T
-
         v1 = interpn((x, y), z, xi, method=method)
         v2 = interpn(
             (x.tolist(), y.tolist()), z.tolist(), xi.tolist(), method=method
@@ -786,8 +871,13 @@ class TestInterpN:
                      method=method, bounds_error=False)
         assert_allclose(v1, v2.reshape(v1.shape))
 
+    @pytest.mark.fail_slow(5)
     @parametrize_rgi_interp_methods
     def test_nonscalar_values(self, method):
+
+        if method == "quintic":
+            pytest.skip("Way too slow.")
+
         # Verify that non-scalar valued values also works
         points = [(0.0, 0.5, 1.0, 1.5, 2.0, 2.5)] * 2 + [
             (0.0, 5.0, 10.0, 15.0, 20, 25.0)
@@ -809,6 +899,10 @@ class TestInterpN:
 
     @parametrize_rgi_interp_methods
     def test_nonscalar_values_2(self, method):
+
+        if method in {"cubic", "quintic"}:
+            pytest.skip("Way too slow.")
+
         # Verify that non-scalar valued values also work : use different
         # lengths of axes to simplify tracing the internals
         points = [(0.0, 0.5, 1.0, 1.5, 2.0, 2.5),
@@ -848,6 +942,9 @@ class TestInterpN:
 
     @parametrize_rgi_interp_methods
     def test_complex(self, method):
+        if method == "pchip":
+            pytest.skip("pchip does not make sense for complex data")
+
         x, y, values = self._sample_2d_data()
         points = (x, y)
         values = values - 2j*values
@@ -859,7 +956,19 @@ class TestInterpN:
         v2r = interpn(points, values.real, sample, method=method)
         v2i = interpn(points, values.imag, sample, method=method)
         v2 = v2r + 1j*v2i
+
         assert_allclose(v1, v2)
+
+    def test_complex_pchip(self):
+        # Complex-valued data deprecated for pchip
+        x, y, values = self._sample_2d_data()
+        points = (x, y)
+        values = values - 2j*values
+
+        sample = np.array([[1, 2.3, 5.3, 0.5, 3.3, 1.2, 3],
+                           [1, 3.3, 1.2, 4.0, 5.0, 1.0, 3]]).T
+        with pytest.raises(ValueError, match='real'):
+            interpn(points, values, sample, method='pchip')
 
     def test_complex_spline2fd(self):
         # Complex-valued data not supported by spline2fd
@@ -869,7 +978,7 @@ class TestInterpN:
 
         sample = np.array([[1, 2.3, 5.3, 0.5, 3.3, 1.2, 3],
                            [1, 3.3, 1.2, 4.0, 5.0, 1.0, 3]]).T
-        with assert_warns(np.ComplexWarning):
+        with assert_warns(ComplexWarning):
             interpn(points, values, sample, method='splinef2d')
 
     @pytest.mark.parametrize(
@@ -897,7 +1006,11 @@ class TestInterpN:
 
         v1 = interpn((x, y), values, sample, method=method)
         v2 = interpn((x, y), np.asarray(values), sample, method=method)
-        assert_allclose(v1, v2)
+        if method == "quintic":
+            # https://github.com/scipy/scipy/issues/20472
+            assert_allclose(v1, v2, atol=5e-5, rtol=2e-6)
+        else:
+            assert_allclose(v1, v2)
 
     def test_length_one_axis(self):
         # gh-5890, gh-9524 : length-1 axis is legal for method='linear'.

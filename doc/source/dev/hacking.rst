@@ -17,8 +17,7 @@ There are a lot of ways you can contribute:
 - Reviewing open pull requests
 - Triaging issues
 - Working on the `scipy.org`_ website
-- Answering questions and participating on the scipy-dev and scipy-user
-  `mailing lists`_.
+- Answering questions and participating on the `forum`_.
 
 Contributing new code
 =====================
@@ -41,14 +40,14 @@ more domain-specific code than SciPy.
 Now if you have code that you would like to see included in SciPy, how do you
 go about it?  After checking that your code can be distributed in SciPy under a
 compatible license (see :ref:`license-considerations`), the first step is to
-discuss it on the scipy-dev mailing list.  All new features, as well as changes to
+discuss it on the scipy-dev `forum`_.  All new features, as well as changes to
 existing code, are discussed and decided on there. You can, and probably
 should already start this discussion before your code is finished. Remember
 that in order to be added to SciPy your code will need to be reviewed by
 someone else, so try to find someone willing to review your work while you're
 at it.
 
-Assuming the outcome of the discussion on the mailing list is positive and you
+Assuming the outcome of the discussion on the `forum`_ is positive and you
 have a function or piece of code that does what you need it to do, what next?
 Before code is added to SciPy, it at least has to have good documentation, unit
 tests, benchmarks, and correct code style.
@@ -83,7 +82,9 @@ tests, benchmarks, and correct code style.
 
 4. Code style
     Uniform code style makes it easier for others to read your code.
-    SciPy follows the standard Python style guideline, `PEP8`_.
+    SciPy follows the standard Python style guideline, `PEP8`_,
+    with the exception that the recommended maximum line length is 88 characters,
+    rather than PEP8's 79 characters.
 
     We provide a git pre-commit hook that can check each of your commits
     for proper style. Install it (once) by running the following from
@@ -118,13 +119,13 @@ Once you think your code is ready for inclusion in SciPy, you can send a pull
 request (PR) on Github.  We won't go into the details of how to work with git
 here, this is described well in :ref:`git-development`
 and on the `Github help pages`_.  When you send the PR for a new
-feature, be sure to also mention this on the scipy-dev mailing list.  This can
+feature, be sure to also mention this on the scipy-dev `forum`_.  This can
 prompt interested people to help review your PR.  Assuming that you already got
 positive feedback before on the general idea of your code/feature, the purpose
 of the code review is to ensure that the code is correct, efficient and meets
 the requirements outlined above.  In many cases, the code review happens
 relatively quickly, but it's possible that it stalls.  If you have addressed
-all feedback already given, it's perfectly fine to ask on the mailing list
+all feedback already given, it's perfectly fine to ask on the `forum`_
 again for review (after a reasonable amount of time, say a couple of weeks, has
 passed).  Once the review is completed, the PR is merged into the "main"
 branch of SciPy.
@@ -132,7 +133,7 @@ branch of SciPy.
 The above describes the requirements and process for adding code to SciPy.  It
 doesn't yet answer the question though how decisions are made exactly.  The
 basic answer is: decisions are made by consensus, by everyone who chooses to
-participate in the discussion on the mailing list.  This includes developers,
+participate in the discussion on the `forum`_.  This includes developers,
 other users and yourself.  Aiming for consensus in the discussion is important
 -- SciPy is a project by and for the scientific Python community.  In those
 rare cases that agreement cannot be reached, the maintainers of the module
@@ -151,12 +152,12 @@ MIT, PSF) then it's OK.  Code which is GPL or Apache licensed, has no
 clear license, requires citation or is free for academic use only can't be
 included in SciPy.  Therefore if you copied existing code with such a license
 or made a direct translation to Python of it, your code can't be included.
-If you're unsure, please ask on the scipy-dev `mailing list <mailing lists>`_.
+If you're unsure, please ask on the scipy-dev `forum`_.
 
 *Why is SciPy under the BSD license and not, say, the GPL?*
 
 Like Python, SciPy uses a "permissive" open source license, which allows
-proprietary re-use. While this allows companies to use and modify the software
+proprietary reuse. While this allows companies to use and modify the software
 without giving anything back, it is felt that the larger user base results in
 more contributions overall, and companies often publish their modifications
 anyway, without being required to.  See John Hunter's `BSD pitch`_.
@@ -181,7 +182,7 @@ The discussion on code style and unit testing above applies equally to bug
 fixes.  It is usually best to start by writing a unit test that shows the
 problem, i.e. it should pass but doesn't.  Once you have that, you can fix the
 code so that the test does pass.  That should be enough to send a PR for this
-issue.  Unlike when adding new code, discussing this on the mailing list may
+issue.  Unlike when adding new code, discussing this on the `forum`_ may
 not be necessary - if the old behavior of the code is clearly incorrect, no one
 will object to having it fixed.  It may be necessary to add some warning or
 deprecation message for the changed behavior.  This should be part of the
@@ -234,7 +235,7 @@ thoughts in a comment) allows prioritizing maintenance work and finding related
 issues easily when working on an existing function or subpackage. To read more
 about issue triage, see :ref:`triaging`.
 
-Participating in discussions on the scipy-user and scipy-dev `mailing lists`_ is
+Participating in discussions on the scipy-user and scipy-dev `forum`_ is
 a contribution in itself.  Everyone who writes to those lists with a problem or
 an idea would like to get responses, and writing such responses makes the
 project and community function better and appear more welcoming.
@@ -290,11 +291,11 @@ improvements, and submit your first PR!
 
 .. _virtualenvwrapper: https://bitbucket.org/dhellmann/virtualenvwrapper/
 
-.. _bsd pitch: http://nipy.sourceforge.net/nipy/stable/faq/johns_bsd_pitch.html
+.. _bsd pitch: https://web.archive.org/web/20130922065958/https://nipy.sourceforge.net/software/license/johns_bsd_pitch.html
 
 .. _Pytest: https://pytest.org/
 
-.. _mailing lists: https://scipy.org/community/#scipy-mailing-list
+.. _forum: https://discuss.scientific-python.org/c/contributor/scipy
 
 .. _Spyder: https://www.spyder-ide.org/
 

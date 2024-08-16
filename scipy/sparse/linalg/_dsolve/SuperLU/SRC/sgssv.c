@@ -1,23 +1,23 @@
 /*! \file
 Copyright (c) 2003, The Regents of the University of California, through
-Lawrence Berkeley National Laboratory (subject to receipt of any required
-approvals from U.S. Dept. of Energy)
+Lawrence Berkeley National Laboratory (subject to receipt of any required 
+approvals from U.S. Dept. of Energy) 
 
-All rights reserved.
+All rights reserved. 
 
 The source code is distributed under BSD license, see the file License.txt
 at the top-level directory.
 */
 
 /*! @file sgssv.c
- * \brief Solves the system of linear equations A*X=B
+ * \brief Solves the system of linear equations A*X=B 
  *
  * <pre>
  * -- SuperLU routine (version 3.0) --
  * Univ. of California Berkeley, Xerox Palo Alto Research Center,
  * and Lawrence Berkeley National Lab.
  * October 15, 2003
- * </pre>
+ * </pre>  
  */
 #include "slu_sdefs.h"
 
@@ -33,7 +33,7 @@ at the top-level directory.
  *   1. If A is stored column-wise (A->Stype = SLU_NC):
  *
  *      1.1. Permute the columns of A, forming A*Pc, where Pc
- *           is a permutation matrix. For more details of this step,
+ *           is a permutation matrix. For more details of this step, 
  *           see sp_preorder.c.
  *
  *      1.2. Factor A as Pr*A*Pc=L*U with the permutation Pr determined
@@ -48,7 +48,7 @@ at the top-level directory.
  *      above algorithm to the transpose of A:
  *
  *      2.1. Permute columns of transpose(A) (rows of A),
- *           forming transpose(A)*Pc, where Pc is a permutation matrix.
+ *           forming transpose(A)*Pc, where Pc is a permutation matrix. 
  *           For more details of this step, see sp_preorder.c.
  *
  *      2.2. Factor A as Pr*transpose(A)*Pc=L*U with the permutation Pr
@@ -60,7 +60,7 @@ at the top-level directory.
  *           form of A.
  *
  *   See supermatrix.h for the definition of 'SuperMatrix' structure.
- *
+ * 
  * Arguments
  * =========
  *
@@ -77,12 +77,12 @@ at the top-level directory.
  *
  * perm_c  (input/output) int*
  *         If A->Stype = SLU_NC, column permutation vector of size A->ncol
- *         which defines the permutation matrix Pc; perm_c[i] = j means
+ *         which defines the permutation matrix Pc; perm_c[i] = j means 
  *         column i of A is in position j in A*Pc.
  *         If A->Stype = SLU_NR, column permutation vector of size A->nrow
- *         which describes permutation of columns of transpose(A)
+ *         which describes permutation of columns of transpose(A) 
  *         (rows of A) as described above.
- *
+ * 
  *         If options->ColPerm = MY_PERMC or options->Fact = SamePattern or
  *            options->Fact = SamePattern_SameRowPerm, it is an input argument.
  *            On exit, perm_c may be overwritten by the product of the input
@@ -90,11 +90,11 @@ at the top-level directory.
  *            of Pc'*A'*A*Pc; perm_c is not changed if the elimination tree
  *            is already in postorder.
  *         Otherwise, it is an output argument.
- *
+ * 
  * perm_r  (input/output) int*
- *         If A->Stype = SLU_NC, row permutation vector of size A->nrow,
- *         which defines the permutation matrix Pr, and is determined
- *         by partial pivoting.  perm_r[i] = j means row i of A is in
+ *         If A->Stype = SLU_NC, row permutation vector of size A->nrow, 
+ *         which defines the permutation matrix Pr, and is determined 
+ *         by partial pivoting.  perm_r[i] = j means row i of A is in 
  *         position j in Pr*A.
  *         If A->Stype = SLU_NR, permutation vector of size A->ncol, which
  *         determines permutation of rows of transpose(A)
@@ -106,14 +106,14 @@ at the top-level directory.
  *         otherwise it is an output argument.
  *
  * L       (output) SuperMatrix*
- *         The factor L from the factorization
+ *         The factor L from the factorization 
  *             Pr*A*Pc=L*U              (if A->Stype = SLU_NC) or
  *             Pr*transpose(A)*Pc=L*U   (if A->Stype = SLU_NR).
  *         Uses compressed row subscripts storage for supernodes, i.e.,
  *         L has types: Stype = SLU_SC, Dtype = SLU_S, Mtype = SLU_TRLU.
- *
+ *         
  * U       (output) SuperMatrix*
- *	   The factor U from the factorization
+ *	   The factor U from the factorization 
  *             Pr*A*Pc=L*U              (if A->Stype = SLU_NC) or
  *             Pr*transpose(A)*Pc=L*U   (if A->Stype = SLU_NR).
  *         Uses column-wise storage scheme, i.e., U has types:
@@ -142,15 +142,15 @@ at the top-level directory.
 void
 sgssv(superlu_options_t *options, SuperMatrix *A, int *perm_c, int *perm_r,
       SuperMatrix *L, SuperMatrix *U, SuperMatrix *B,
-      SuperLUStat_t *stat, int *info )
+      SuperLUStat_t *stat, int_t *info )
 {
 
     DNformat *Bstore;
-    SuperMatrix *AA = NULL;/* A in SLU_NC format used by the factorization routine.*/
+    SuperMatrix *AA;/* A in SLU_NC format used by the factorization routine.*/
     SuperMatrix AC; /* Matrix postmultiplied by Pc */
     int      lwork = 0, *etree, i;
     GlobalLU_t Glu; /* Not needed on return. */
-
+    
     /* Set default values for some parameters */
     int      panel_size;     /* panel size */
     int      relax;          /* no of columns in a relaxed snodes */
@@ -182,18 +182,24 @@ sgssv(superlu_options_t *options, SuperMatrix *A, int *perm_c, int *perm_r,
     if ( A->Stype == SLU_NR ) {
 	NRformat *Astore = A->Store;
 	AA = (SuperMatrix *) SUPERLU_MALLOC( sizeof(SuperMatrix) );
-	sCreate_CompCol_Matrix(AA, A->ncol, A->nrow, Astore->nnz,
+	sCreate_CompCol_Matrix(AA, A->ncol, A->nrow, Astore->nnz, 
 			       Astore->nzval, Astore->colind, Astore->rowptr,
 			       SLU_NC, A->Dtype, A->Mtype);
 	trans = TRANS;
-    } else {
-        if ( A->Stype == SLU_NC ) AA = A;
+    } else if ( A->Stype == SLU_NC ) {
+        AA = A;
+    }
+    /* A is of unsupported matrix format. */
+    else {
+        AA = NULL;
+        *info = 1;
+        input_error("sgssv", &i);
     }
 
     t = SuperLU_timer_();
     /*
      * Get column permutation vector perm_c[], according to permc_spec:
-     *   permc_spec = NATURAL:  natural ordering
+     *   permc_spec = NATURAL:  natural ordering 
      *   permc_spec = MMD_AT_PLUS_A: minimum degree on structure of A'+A
      *   permc_spec = MMD_ATA:  minimum degree on structure of A'*A
      *   permc_spec = COLAMD:   approximate minimum degree column ordering
@@ -204,7 +210,7 @@ sgssv(superlu_options_t *options, SuperMatrix *A, int *perm_c, int *perm_r,
       get_perm_c(permc_spec, AA, perm_c);
     utime[COLPERM] = SuperLU_timer_() - t;
 
-    etree = intMalloc(A->ncol);
+    etree = int32Malloc(A->ncol);
 
     t = SuperLU_timer_();
     sp_preorder(options, AA, perm_c, etree, &AC);
@@ -213,9 +219,9 @@ sgssv(superlu_options_t *options, SuperMatrix *A, int *perm_c, int *perm_r,
     panel_size = sp_ienv(1);
     relax = sp_ienv(2);
 
-    /*printf("Factor PA = LU ... relax %d\tw %d\tmaxsuper %d\trowblk %d\n",
+    /*printf("Factor PA = LU ... relax %d\tw %d\tmaxsuper %d\trowblk %d\n", 
 	  relax, panel_size, sp_ienv(3), sp_ienv(4));*/
-    t = SuperLU_timer_();
+    t = SuperLU_timer_(); 
     /* Compute the LU factorization of A. */
     sgstrf(options, &AC, relax, panel_size, etree,
             NULL, lwork, perm_c, perm_r, L, U, &Glu, stat, info);
@@ -224,8 +230,15 @@ sgssv(superlu_options_t *options, SuperMatrix *A, int *perm_c, int *perm_r,
     t = SuperLU_timer_();
     if ( *info == 0 ) {
         /* Solve the system A*X=B, overwriting B with X. */
-        sgstrs (trans, L, U, perm_c, perm_r, B, stat, info);
+	int info1;
+        sgstrs (trans, L, U, perm_c, perm_r, B, stat, &info1);
     }
+#if ( PRNTlevel>=1 )
+     else {
+        printf("sgstrf info %lld\n", (long long) *info); fflush(stdout);
+    }
+#endif
+    
     utime[SOLVE] = SuperLU_timer_() - t;
 
     SUPERLU_FREE (etree);

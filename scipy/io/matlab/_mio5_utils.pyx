@@ -107,7 +107,7 @@ cdef cnp.dtype OPAQUE_DTYPE = mio5p.OPAQUE_DTYPE
 cdef cnp.dtype BOOL_DTYPE = np.dtype(np.bool_)
 
 
-cpdef cnp.uint32_t byteswap_u4(cnp.uint32_t u4):
+cpdef cnp.uint32_t byteswap_u4(cnp.uint32_t u4) noexcept:
     return ((u4 << 24) |
            ((u4 << 8) & 0xff0000U) |
            ((u4 >> 8 & 0xff00u)) |
@@ -452,7 +452,7 @@ cdef class VarReader5:
             el_count = byte_count // dt.itemsize
         cdef int flags = 0
         if copy:
-            flags = cnp.NPY_WRITEABLE
+            flags = cnp.NPY_ARRAY_WRITEABLE
         Py_INCREF(<object> dt)
         el = PyArray_NewFromDescr(&PyArray_Type,
                                    dt,
@@ -608,7 +608,7 @@ cdef class VarReader5:
         header.name = self.read_int8_string()
         return header
 
-    cdef inline size_t size_from_header(self, VarHeader5 header):
+    cdef inline size_t size_from_header(self, VarHeader5 header) noexcept:
         ''' Supporting routine for calculating array sizes from header
 
         Probably unnecessary optimization that uses integers stored in

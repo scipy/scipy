@@ -301,9 +301,9 @@ class gaussian_kde:
         cov = atleast_2d(cov)
 
         if mean.shape != (self.d,):
-            raise ValueError("mean does not have dimension %s" % self.d)
+            raise ValueError(f"mean does not have dimension {self.d}")
         if cov.shape != (self.d, self.d):
-            raise ValueError("covariance does not have dimension %s" % self.d)
+            raise ValueError(f"covariance does not have dimension {self.d}")
 
         # make mean a column vector
         mean = mean[:, newaxis]
@@ -388,9 +388,8 @@ class gaussian_kde:
                                             self.dataset, self.weights,
                                             self.covariance, **extra_kwds)
         if inform:
-            msg = ('An integral in _mvn.mvnun requires more points than %s' %
-                   (self.d * 1000))
-            warnings.warn(msg)
+            msg = f'An integral in _mvn.mvnun requires more points than {self.d * 1000}'
+            warnings.warn(msg, stacklevel=2)
 
         return value
 
@@ -466,7 +465,7 @@ class gaussian_kde:
         resample : (self.d, `size`) ndarray
             The sampled dataset.
 
-        """
+        """ # numpy/numpydoc#87  # noqa: E501
         if size is None:
             size = int(self.neff)
 

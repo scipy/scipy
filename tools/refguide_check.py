@@ -14,37 +14,23 @@ the output of this script does need to be checked manually.  In some cases
 objects are left out of the refguide for a good reason (it's an alias of
 another function, or deprecated, or ...)
 
-Another use of this helper script is to check validity of code samples
-in docstrings. This is different from doctesting [we do not aim to have
-scipy docstrings doctestable!], this is just to make sure that code in
-docstrings is valid python::
-
-    $ python3 refguide_check.py --doctests optimize
-
 """
 import copy
-import doctest
-import glob
 import inspect
 import io
 import os
 import re
-import shutil
 import sys
-import tempfile
 import warnings
 from argparse import ArgumentParser
-from contextlib import contextmanager, redirect_stderr
-from doctest import NORMALIZE_WHITESPACE, ELLIPSIS, IGNORE_EXCEPTION_DETAIL
 
 import docutils.core
-import numpy as np
 from docutils.parsers.rst import directives
 
 from numpydoc.docscrape_sphinx import get_doc_object
-from numpydoc.docscrape import NumpyDocString  # noqa
-from scipy.stats._distr_params import distcont, distdiscrete  # noqa
-from scipy import stats  # noqa
+from numpydoc.docscrape import NumpyDocString
+from scipy.stats._distr_params import distcont, distdiscrete
+from scipy import stats
 
 
 # Enable specific Sphinx directives
@@ -60,6 +46,7 @@ PUBLIC_SUBMODULES = [
     'cluster.vq',
     'constants',
     'datasets',
+    'differentiate',
     'fft',
     'fftpack',
     'fftpack.convolve',
@@ -100,25 +87,6 @@ OTHER_MODULE_DOCS = {
     'io.arff': 'io',
 }
 
-# these names are known to fail doctesting and we like to keep it that way
-# e.g. sometimes pseudocode is acceptable etc
-DOCTEST_SKIPLIST = set([
-    'scipy.stats.kstwobign',  # inaccurate cdf or ppf
-    'scipy.stats.levy_stable',
-    'scipy.special.sinc',  # comes from numpy
-    'scipy.fft.fftfreq',
-    'scipy.fft.rfftfreq',
-    'scipy.fft.fftshift',
-    'scipy.fft.ifftshift',
-    'scipy.fftpack.fftfreq',
-    'scipy.fftpack.fftshift',
-    'scipy.fftpack.ifftshift',
-    'scipy.integrate.trapezoid',
-    'scipy.linalg.LinAlgError',
-    'scipy.optimize.show_options',
-    'io.rst',   # XXX: need to figure out how to deal w/ mat files
-])
-
 # these names are not required to be present in ALL despite being in
 # autosummary:: listing
 REFGUIDE_ALL_SKIPLIST = [
@@ -134,20 +102,12 @@ REFGUIDE_AUTOSUMMARY_SKIPLIST = [
     r'scipy\.special\..*_roots',  # old aliases for scipy.special.*_roots
     r'scipy\.special\.jn',  # alias for jv
     r'scipy\.ndimage\.sum',   # alias for sum_labels
-    r'scipy\.integrate\.simps',   # alias for simpson
-    r'scipy\.integrate\.trapz',   # alias for trapezoid
-    r'scipy\.integrate\.cumtrapz',   # alias for cumulative_trapezoid
     r'scipy\.linalg\.solve_lyapunov',  # deprecated name
     r'scipy\.stats\.contingency\.chi2_contingency',
     r'scipy\.stats\.contingency\.expected_freq',
     r'scipy\.stats\.contingency\.margins',
     r'scipy\.stats\.reciprocal',  # alias for lognormal
     r'scipy\.stats\.trapz',   # alias for trapezoid
-    r'scipy\.stats\.F_onewayBadInputSizesWarning',  # shouldn't
-    r'scipy\.stats\.F_onewayConstantInputWarning',  # have
-    r'scipy\.stats\.PearsonRConstantInputWarning',  # been
-    r'scipy\.stats\.PearsonRNearConstantInputWarning',  # in
-    r'scipy\.stats\.SpearmanRConstantInputWarning',  # __all__
 ]
 # deprecated windows in scipy.signal namespace
 for name in ('barthann', 'bartlett', 'blackmanharris', 'blackman', 'bohman',
@@ -155,8 +115,6 @@ for name in ('barthann', 'bartlett', 'blackmanharris', 'blackman', 'bohman',
              'gaussian', 'general_gaussian', 'hamming', 'hann', 'hanning',
              'kaiser', 'nuttall', 'parzen', 'triang', 'tukey'):
     REFGUIDE_AUTOSUMMARY_SKIPLIST.append(r'scipy\.signal\.' + name)
-
-HAVE_MATPLOTLIB = False
 
 
 def short_path(path, cwd=None):
@@ -198,7 +156,10 @@ def find_names(module, names_dict):
     module_name = module.__name__
 
     for line in module.__doc__.splitlines():
-        res = re.search(r"^\s*\.\. (?:currentmodule|module):: ([a-z0-9A-Z_.]+)\s*$", line)
+        res = re.search(
+            r"^\s*\.\. (?:currentmodule|module):: ([a-z0-9A-Z_.]+)\s*$",
+            line
+        )
         if res:
             module_name = res.group(1)
             continue
@@ -207,7 +168,6 @@ def find_names(module, names_dict):
             res = re.match(pattern, line)
             if res is not None:
                 name = res.group(1)
-                entry = '.'.join([module_name, name])
                 names_dict.setdefault(module_name, set()).add(name)
                 break
 
@@ -240,7 +200,9 @@ def get_all_dict(module):
         else:
             not_deprecated.append(name)
 
-    others = set(dir(module)).difference(set(deprecated)).difference(set(not_deprecated))
+    others = (set(dir(module))
+              .difference(set(deprecated))
+              .difference(set(not_deprecated)))
 
     return not_deprecated, deprecated, others
 
@@ -272,7 +234,7 @@ def compare(all_dict, others, names, module_name):
 
 
 def is_deprecated(f):
-    with warnings.catch_warnings(record=True) as w:
+    with warnings.catch_warnings(record=True):
         warnings.simplefilter("error")
         try:
             f(**{"not a kwarg":None})
@@ -307,7 +269,9 @@ def check_items(all_dict, names, deprecated, others, module_name, dots=True):
         return [(None, True, output)]
     else:
         if len(only_all) > 0:
-            output += "ERROR: objects in %s.__all__ but not in refguide::\n\n" % module_name
+            output += (
+                f"ERROR: objects in {module_name}.__all__ but not in refguide::\n\n"
+            )
             for name in sorted(only_all):
                 output += "    " + name + "\n"
 
@@ -315,7 +279,9 @@ def check_items(all_dict, names, deprecated, others, module_name, dots=True):
             output += "the function listing in __init__.py for this module\n"
 
         if len(only_ref) > 0:
-            output += "ERROR: objects in refguide but not in %s.__all__::\n\n" % module_name
+            output += (
+                f"ERROR: objects in refguide but not in {module_name}.__all__::\n\n"
+            )
             for name in sorted(only_ref):
                 output += "    " + name + "\n"
 
@@ -337,13 +303,14 @@ def validate_rst_syntax(text, name, dots=True):
     if text is None:
         if dots:
             output_dot('E')
-        return False, "ERROR: %s: no documentation" % (name,)
+        return False, f"ERROR: {name}: no documentation"
 
     ok_unknown_items = set([
         'mod', 'currentmodule', 'autosummary', 'data', 'legacy',
         'obj', 'versionadded', 'versionchanged', 'module', 'class', 'meth',
         'ref', 'func', 'toctree', 'moduleauthor', 'deprecated',
-        'sectionauthor', 'codeauthor', 'eq', 'doi', 'DOI', 'arXiv', 'arxiv'
+        'sectionauthor', 'codeauthor', 'eq', 'doi', 'DOI', 'arXiv', 'arxiv',
+        'versionremoved',
     ])
 
     # Run through docutils
@@ -378,16 +345,24 @@ def validate_rst_syntax(text, name, dots=True):
         if not lines:
             continue
 
-        m = re.match(r'.*Unknown (?:interpreted text role|directive type) "(.*)".*$', lines[0])
+        m = re.match(
+            r'.*Unknown (?:interpreted text role|directive type) "(.*)".*$',
+            lines[0]
+        )
         if m:
             if m.group(1) in ok_unknown_items:
                 continue
 
-        m = re.match(r'.*Error in "math" directive:.*unknown option: "label"', " ".join(lines), re.S)
+        m = re.match(
+            r'.*Error in "math" directive:.*unknown option: "label"', " ".join(lines),
+            re.S
+        )
         if m:
             continue
 
-        output += name + lines[0] + "::\n    " + "\n    ".join(lines[1:]).rstrip() + "\n"
+        output += (
+            name + lines[0] + "::\n    " + "\n    ".join(lines[1:]).rstrip() + "\n"
+        )
         success = False
 
     if not success:
@@ -426,7 +401,7 @@ def check_rest(module, names, dots=True):
         obj = getattr(module, name, None)
 
         if obj is None:
-            results.append((full_name, False, "%s has no docstring" % (full_name,)))
+            results.append((full_name, False, f"{full_name} has no docstring"))
             continue
         elif isinstance(obj, skip_types):
             continue
@@ -461,408 +436,11 @@ def check_rest(module, names, dots=True):
         else:
             file_full_name = full_name
 
-        results.append((full_name,) + validate_rst_syntax(text, file_full_name, dots=dots))
+        results.append(
+            (full_name,) + validate_rst_syntax(text, file_full_name, dots=dots)
+        )
 
     return results
-
-
-### Doctest helpers ####
-
-# the namespace to run examples in
-DEFAULT_NAMESPACE = {}
-
-# the namespace to do checks in
-CHECK_NAMESPACE = {
-      'np': np,
-      'assert_allclose': np.testing.assert_allclose,
-      'assert_equal': np.testing.assert_equal,
-      # recognize numpy repr's
-      'array': np.array,
-      'matrix': np.matrix,
-      'masked_array': np.ma.masked_array,
-      'int64': np.int64,
-      'uint64': np.uint64,
-      'int8': np.int8,
-      'int32': np.int32,
-      'float32': np.float32,
-      'float64': np.float64,
-      'dtype': np.dtype,
-      'nan': np.nan,
-      'NaN': np.nan,
-      'inf': np.inf,
-      'Inf': np.inf,}
-
-
-def try_convert_namedtuple(got):
-    # suppose that "got" is smth like MoodResult(statistic=10, pvalue=0.1).
-    # Then convert it to the tuple (10, 0.1), so that can later compare tuples.
-    num = got.count('=')
-    if num == 0:
-        # not a nameduple, bail out
-        return got
-    regex = (r'[\w\d_]+\(' +
-             ', '.join([r'[\w\d_]+=(.+)']*num) +
-             r'\)')
-    grp = re.findall(regex, " ".join(got.split()))
-    # fold it back to a tuple
-    got_again = '(' + ', '.join(grp[0]) + ')'
-    return got_again
-
-
-class DTRunner(doctest.DocTestRunner):
-    DIVIDER = "\n"
-
-    def __init__(self, item_name, checker=None, verbose=None, optionflags=0):
-        self._item_name = item_name
-        self._had_unexpected_error = False
-        doctest.DocTestRunner.__init__(self, checker=checker, verbose=verbose,
-                                       optionflags=optionflags)
-
-    def _report_item_name(self, out, new_line=False):
-        if self._item_name is not None:
-            if new_line:
-                out("\n")
-            self._item_name = None
-
-    def report_start(self, out, test, example):
-        self._checker._source = example.source
-        return doctest.DocTestRunner.report_start(self, out, test, example)
-
-    def report_success(self, out, test, example, got):
-        if self._verbose:
-            self._report_item_name(out, new_line=True)
-        return doctest.DocTestRunner.report_success(self, out, test, example, got)
-
-    def report_unexpected_exception(self, out, test, example, exc_info):
-        # Ignore name errors after failing due to an unexpected exception
-        exception_type = exc_info[0]
-        if self._had_unexpected_error and exception_type is NameError:
-            return
-        self._had_unexpected_error = True
-
-        self._report_item_name(out)
-        return super().report_unexpected_exception(
-            out, test, example, exc_info)
-
-    def report_failure(self, out, test, example, got):
-        self._report_item_name(out)
-        return doctest.DocTestRunner.report_failure(self, out, test,
-                                                    example, got)
-
-
-class Checker(doctest.OutputChecker):
-    obj_pattern = re.compile(r'at 0x[0-9a-fA-F]+>')
-    vanilla = doctest.OutputChecker()
-    rndm_markers = {'# random', '# Random', '#random', '#Random', "# may vary"}
-    stopwords = {'plt.', '.hist', '.show', '.ylim', '.subplot(',
-                 'set_title', 'imshow', 'plt.show', '.axis(', '.plot(',
-                 '.bar(', '.title', '.ylabel', '.xlabel', 'set_ylim', 'set_xlim',
-                 '# reformatted', '.set_xlabel(', '.set_ylabel(', '.set_zlabel(',
-                 '.set(xlim=', '.set(ylim=', '.set(xlabel=', '.set(ylabel='}
-
-    def __init__(self, parse_namedtuples=True, ns=None, atol=1e-8, rtol=1e-2):
-        self.parse_namedtuples = parse_namedtuples
-        self.atol, self.rtol = atol, rtol
-        if ns is None:
-            self.ns = dict(CHECK_NAMESPACE)
-        else:
-            self.ns = ns
-
-    def check_output(self, want, got, optionflags):
-        # cut it short if they are equal
-        if want == got:
-            return True
-
-        # skip stopwords in source
-        if any(word in self._source for word in self.stopwords):
-            return True
-
-        # skip random stuff
-        if any(word in want for word in self.rndm_markers):
-            return True
-
-        # skip function/object addresses
-        if self.obj_pattern.search(got):
-            return True
-
-        # ignore comments (e.g. signal.freqresp)
-        if want.lstrip().startswith("#"):
-            return True
-
-        # try the standard doctest
-        try:
-            if self.vanilla.check_output(want, got, optionflags):
-                return True
-        except Exception:
-            pass
-
-        # OK then, convert strings to objects
-        try:
-            a_want = eval(want, dict(self.ns))
-            a_got = eval(got, dict(self.ns))
-        except Exception:
-            # Maybe we're printing a numpy array? This produces invalid python
-            # code: `print(np.arange(3))` produces "[0 1 2]" w/o commas between
-            # values. So, reinsert commas and retry.
-            # TODO: handle (1) abberivation (`print(np.arange(10000))`), and
-            #              (2) n-dim arrays with n > 1
-            s_want = want.strip()
-            s_got = got.strip()
-            cond = (s_want.startswith("[") and s_want.endswith("]") and
-                    s_got.startswith("[") and s_got.endswith("]"))
-            if cond:
-                s_want = ", ".join(s_want[1:-1].split())
-                s_got = ", ".join(s_got[1:-1].split())
-                return self.check_output(s_want, s_got, optionflags)
-
-            # maybe we are dealing with masked arrays?
-            # their repr uses '--' for masked values and this is invalid syntax
-            # If so, replace '--' by nans (they are masked anyway) and retry
-            if 'masked_array' in want or 'masked_array' in got:
-                s_want = want.replace('--', 'nan')
-                s_got = got.replace('--', 'nan')
-                return self.check_output(s_want, s_got, optionflags)
-
-            if "=" not in want and "=" not in got:
-                # if we're here, want and got cannot be eval-ed (hence cannot
-                # be converted to numpy objects), they are not namedtuples
-                # (those must have at least one '=' sign).
-                # Thus they should have compared equal with vanilla doctest.
-                # Since they did not, it's an error.
-                return False
-
-            if not self.parse_namedtuples:
-                return False
-            # suppose that "want"  is a tuple, and "got" is smth like
-            # MoodResult(statistic=10, pvalue=0.1).
-            # Then convert the latter to the tuple (10, 0.1),
-            # and then compare the tuples.
-            try:
-                got_again = try_convert_namedtuple(got)
-                want_again = try_convert_namedtuple(want)
-            except Exception:
-                return False
-            else:
-                return self.check_output(want_again, got_again, optionflags)
-
-        # ... and defer to numpy
-        try:
-            return self._do_check(a_want, a_got)
-        except Exception:
-            # heterog tuple, eg (1, np.array([1., 2.]))
-            try:
-                return all(self._do_check(w, g) for w, g in zip(a_want, a_got))
-            except (TypeError, ValueError):
-                return False
-
-    def _do_check(self, want, got):
-        # This should be done exactly as written to correctly handle all of
-        # numpy-comparable objects, strings, and heterogeneous tuples
-        try:
-            if want == got:
-                return True
-        except Exception:
-            pass
-        return np.allclose(want, got, atol=self.atol, rtol=self.rtol)
-
-
-def _run_doctests(tests, full_name, verbose, doctest_warnings):
-    """Run modified doctests for the set of `tests`.
-
-    Returns: list of [(success_flag, output), ...]
-    """
-    flags = NORMALIZE_WHITESPACE | ELLIPSIS | IGNORE_EXCEPTION_DETAIL
-    runner = DTRunner(full_name, checker=Checker(), optionflags=flags,
-                      verbose=verbose)
-
-    output = io.StringIO(newline='')
-    success = True
-    # Redirect stderr to the stdout or output
-    tmp_stderr = sys.stdout if doctest_warnings else output
-    from scipy._lib._util import _fixed_default_rng
-
-    @contextmanager
-    def temp_cwd():
-        cwd = os.getcwd()
-        tmpdir = tempfile.mkdtemp()
-        try:
-            os.chdir(tmpdir)
-            yield tmpdir
-        finally:
-            os.chdir(cwd)
-            shutil.rmtree(tmpdir)
-
-    # Run tests, trying to restore global state afterward
-    cwd = os.getcwd()
-    with np.errstate(), np.printoptions(), temp_cwd(), \
-            redirect_stderr(tmp_stderr), \
-            _fixed_default_rng():
-        # try to ensure random seed is NOT reproducible
-        np.random.seed(None)
-
-        for t in tests:
-            t.filename = short_path(t.filename, cwd)
-            fails, successes = runner.run(t, out=output.write)
-            if fails > 0:
-                success = False
-
-    output.seek(0)
-    return success, output.read()
-
-
-def check_doctests(module, verbose, ns=None,
-                   dots=True, doctest_warnings=False):
-    """Check code in docstrings of the module's public symbols.
-
-    Returns: list of [(item_name, success_flag, output), ...]
-    """
-    if ns is None:
-        ns = dict(DEFAULT_NAMESPACE)
-
-    # Loop over non-deprecated items
-    results = []
-
-    for name in get_all_dict(module)[0]:
-        full_name = module.__name__ + '.' + name
-
-        if full_name in DOCTEST_SKIPLIST:
-            continue
-
-        try:
-            obj = getattr(module, name)
-        except AttributeError:
-            import traceback
-            results.append((full_name, False,
-                            "Missing item!\n" +
-                            traceback.format_exc()))
-            continue
-
-        finder = doctest.DocTestFinder()
-        try:
-            tests = finder.find(obj, name, globs=dict(ns))
-        except Exception:
-            import traceback
-            results.append((full_name, False,
-                            "Failed to get doctests!\n" +
-                            traceback.format_exc()))
-            continue
-
-        success, output = _run_doctests(tests, full_name, verbose,
-                                        doctest_warnings)
-
-        if dots:
-            output_dot('.' if success else 'F')
-
-        results.append((full_name, success, output))
-
-        if HAVE_MATPLOTLIB:
-            import matplotlib.pyplot as plt
-            plt.close('all')
-
-    return results
-
-
-def check_doctests_testfile(fname, verbose, ns=None,
-                   dots=True, doctest_warnings=False):
-    """Check code in a text file.
-
-    Mimic `check_doctests` above, differing mostly in test discovery.
-    (which is borrowed from stdlib's doctest.testfile here,
-     https://github.com/python-git/python/blob/master/Lib/doctest.py)
-
-    Returns: list of [(item_name, success_flag, output), ...]
-
-    Notes
-    -----
-
-    refguide can be signalled to skip testing code by adding
-    ``#doctest: +SKIP`` to the end of the line. If the output varies or is
-    random, add ``# may vary`` or ``# random`` to the comment. for example
-
-    >>> plt.plot(...)  # doctest: +SKIP
-    >>> random.randint(0,10)
-    5 # random
-
-    We also try to weed out pseudocode:
-    * We maintain a list of exceptions which signal pseudocode,
-    * We split the text file into "blocks" of code separated by empty lines
-      and/or intervening text.
-    * If a block contains a marker, the whole block is then assumed to be
-      pseudocode. It is then not being doctested.
-
-    The rationale is that typically, the text looks like this:
-
-    blah
-    <BLANKLINE>
-    >>> from numpy import some_module   # pseudocode!
-    >>> func = some_module.some_function
-    >>> func(42)                  # still pseudocode
-    146
-    <BLANKLINE>
-    blah
-    <BLANKLINE>
-    >>> 2 + 3        # real code, doctest it
-    5
-
-    """
-    results = []
-
-    if ns is None:
-        ns = dict(DEFAULT_NAMESPACE)
-
-    _, short_name = os.path.split(fname)
-    if short_name in DOCTEST_SKIPLIST:
-        return results
-
-    full_name = fname
-    with open(fname, encoding='utf-8') as f:
-        text = f.read()
-
-    PSEUDOCODE = set(['some_function', 'some_module', 'import example',
-                      'ctypes.CDLL',     # likely need compiling, skip it
-                      'integrate.nquad(func,'  # ctypes integrate tutotial
-                      ])
-
-    # split the text into "blocks" and try to detect and omit pseudocode blocks.
-    parser = doctest.DocTestParser()
-    good_parts = []
-    for part in text.split('\n\n'):
-        tests = parser.get_doctest(part, ns, fname, fname, 0)
-        if any(word in ex.source for word in PSEUDOCODE
-                                 for ex in tests.examples):
-            # omit it
-            pass
-        else:
-            # `part` looks like a good code, let's doctest it
-            good_parts += [part]
-
-    # Reassemble the good bits and doctest them:
-    good_text = '\n\n'.join(good_parts)
-    tests = parser.get_doctest(good_text, ns, fname, fname, 0)
-    success, output = _run_doctests([tests], full_name, verbose,
-                                    doctest_warnings)
-
-    if dots:
-        output_dot('.' if success else 'F')
-
-    results.append((full_name, success, output))
-
-    if HAVE_MATPLOTLIB:
-        import matplotlib.pyplot as plt
-        plt.close('all')
-
-    return results
-
-
-def init_matplotlib():
-    global HAVE_MATPLOTLIB
-
-    try:
-        import matplotlib
-        matplotlib.use('Agg')
-        HAVE_MATPLOTLIB = True
-    except ImportError:
-        HAVE_MATPLOTLIB = False
 
 
 def check_dist_keyword_names():
@@ -921,20 +499,13 @@ def main(argv):
     parser = ArgumentParser(usage=__doc__.lstrip())
     parser.add_argument("module_names", metavar="SUBMODULES", default=[],
                         nargs='*', help="Submodules to check (default: all public)")
-    parser.add_argument("--doctests", action="store_true", help="Run also doctests")
     parser.add_argument("-v", "--verbose", action="count", default=0)
-    parser.add_argument("--doctest-warnings", action="store_true",
-                        help="Enforce warning checking for doctests")
-    parser.add_argument("--skip-tutorial", action="store_true",
-                        help="Skip running doctests in the tutorial.")
     args = parser.parse_args(argv)
 
     modules = []
     names_dict = {}
 
-    if args.module_names:
-        args.skip_tutorial = True
-    else:
+    if not args.module_names:
         args.module_names = list(PUBLIC_SUBMODULES)
 
     os.environ['SCIPY_PIL_IMAGE_VIEWER'] = 'true'
@@ -968,9 +539,6 @@ def main(argv):
 
     print("Running checks for %d modules:" % (len(modules),))
 
-    if args.doctests or not args.skip_tutorial:
-        init_matplotlib()
-
     for module in modules:
         if dots:
             if module is not modules[0]:
@@ -985,9 +553,6 @@ def main(argv):
         mod_results += check_items(all_dict, names, deprecated, others, module.__name__)
         mod_results += check_rest(module, set(names).difference(deprecated),
                                   dots=dots)
-        if args.doctests:
-            mod_results += check_doctests(module, (args.verbose >= 2), dots=dots,
-                                          doctest_warnings=args.doctest_warnings)
         if module.__name__ == 'scipy.stats':
             mod_results += check_dist_keyword_names()
 
@@ -999,28 +564,6 @@ def main(argv):
     if dots:
         sys.stderr.write("\n")
         sys.stderr.flush()
-
-    if not args.skip_tutorial:
-        base_dir = os.path.join(os.path.abspath(os.path.dirname(__file__)), '..')
-        tut_path = os.path.join(base_dir, 'doc', 'source', 'tutorial', '*.rst')
-        print('\nChecking tutorial files at %s:' % os.path.relpath(tut_path, os.getcwd()))
-        for filename in sorted(glob.glob(tut_path)):
-            if dots:
-                sys.stderr.write('\n')
-                sys.stderr.write(os.path.split(filename)[1] + ' ')
-                sys.stderr.flush()
-
-            tut_results = check_doctests_testfile(filename, (args.verbose >= 2),
-                    dots=dots, doctest_warnings=args.doctest_warnings)
-
-            def scratch():
-                pass        # stub out a "module", see below
-            scratch.__name__ = filename
-            results.append((scratch, tut_results))
-
-        if dots:
-            sys.stderr.write("\n")
-            sys.stderr.flush()
 
     # Report results
     all_success = True
@@ -1051,10 +594,10 @@ def main(argv):
                 print("")
 
     if all_success:
-        print("\nOK: refguide and doctests checks passed!")
+        print("\nOK: refguide checks passed!")
         sys.exit(0)
     else:
-        print("\nERROR: refguide or doctests have errors")
+        print("\nERROR: refguide have errors")
         sys.exit(1)
 
 

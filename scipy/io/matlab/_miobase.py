@@ -12,11 +12,7 @@ from scipy._lib import doccer
 from . import _byteordercodes as boc
 
 __all__ = [
-    'MatFileReader', 'MatReadError', 'MatReadWarning',
-    'MatVarReader', 'MatWriteError', 'arr_dtype_number',
-    'arr_to_chars', 'convert_dtypes', 'doc_dict',
-    'docfiller', 'get_matfile_version',
-    'matdims', 'read_dtype'
+    'MatReadError', 'MatReadWarning', 'MatWriteError',
 ]
 
 class MatReadError(Exception):
@@ -246,7 +242,7 @@ def _get_matfile_version(fileobj):
     ret = (maj_val, min_val)
     if maj_val in (1, 2):
         return ret
-    raise ValueError('Unknown mat file type, version %s, %s' % ret)
+    raise ValueError('Unknown mat file type, version {}, {}'.format(*ret))
 
 
 def matdims(arr, oned_as='column'):
@@ -278,6 +274,8 @@ def matdims(arr, oned_as='column'):
 
     Examples
     --------
+    >>> import numpy as np
+    >>> from scipy.io.matlab._miobase import matdims
     >>> matdims(np.array(1)) # NumPy scalar
     (1, 1)
     >>> matdims(np.array([1])) # 1-D array, 1 element
@@ -321,8 +319,7 @@ def matdims(arr, oned_as='column'):
         elif oned_as == 'row':
             return (1,) + shape
         else:
-            raise ValueError('1-D option "%s" is strange'
-                             % oned_as)
+            raise ValueError(f'1-D option "{oned_as}" is strange')
     return shape
 
 

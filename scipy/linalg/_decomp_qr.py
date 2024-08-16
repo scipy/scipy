@@ -1,5 +1,5 @@
 """QR decomposition functions."""
-import numpy
+import numpy as np
 
 # Local imports
 from .lapack import get_lapack_funcs
@@ -15,7 +15,7 @@ def safecall(f, name, *args, **kwargs):
     if lwork in (None, -1):
         kwargs['lwork'] = -1
         ret = f(*args, **kwargs)
-        kwargs['lwork'] = ret[-2][0].real.astype(numpy.int_)
+        kwargs['lwork'] = ret[-2][0].real.astype(np.int_)
     ret = f(*args, **kwargs)
     if ret[-1] < 0:
         raise ValueError("illegal value in %dth argument of internal %s"
@@ -51,8 +51,8 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False,
     pivoting : bool, optional
         Whether or not factorization should include pivoting for rank-revealing
         qr decomposition. If pivoting, compute the decomposition
-        ``A P = Q R`` as above, but where P is chosen such that the diagonal
-        of R is non-increasing.
+        ``A[:, P] = Q @ R`` as above, but where P is chosen such that the 
+        diagonal of R is non-increasing.
     check_finite : bool, optional
         Whether to check that the input matrix contains only finite numbers.
         Disabling may give a performance gain, but may result in problems
@@ -62,9 +62,10 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False,
     -------
     Q : float or complex ndarray
         Of shape (M, M), or (M, K) for ``mode='economic'``. Not returned
-        if ``mode='r'``.
+        if ``mode='r'``. Replaced by tuple ``(Q, TAU)`` if ``mode='raw'``.
     R : float or complex ndarray
-        Of shape (M, N), or (K, N) for ``mode='economic'``. ``K = min(M, N)``.
+        Of shape (M, N), or (K, N) for ``mode in ['economic', 'raw']``.
+        ``K = min(M, N)``.
     P : int ndarray
         Of shape (N,) for ``pivoting=True``. Not returned if
         ``pivoting=False``.
@@ -121,16 +122,43 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False,
     # 'qr' are used below.
     # 'raw' is used internally by qr_multiply
     if mode not in ['full', 'qr', 'r', 'economic', 'raw']:
-        raise ValueError("Mode argument should be one of ['full', 'r',"
+        raise ValueError("Mode argument should be one of ['full', 'r', "
                          "'economic', 'raw']")
 
     if check_finite:
-        a1 = numpy.asarray_chkfinite(a)
+        a1 = np.asarray_chkfinite(a)
     else:
-        a1 = numpy.asarray(a)
+        a1 = np.asarray(a)
     if len(a1.shape) != 2:
         raise ValueError("expected a 2-D array")
+
     M, N = a1.shape
+
+    # accommodate empty arrays
+    if a1.size == 0:
+        K = min(M, N)
+
+        if mode not in ['economic', 'raw']:
+            Q = np.empty_like(a1, shape=(M, M))
+            Q[...] = np.identity(M)
+            R = np.empty_like(a1)
+        else:
+            Q = np.empty_like(a1, shape=(M, K))
+            R = np.empty_like(a1, shape=(K, N))
+
+        if pivoting:
+            Rj = R, np.arange(N, dtype=np.int32)
+        else:
+            Rj = R,
+
+        if mode == 'r':
+            return Rj
+        elif mode == 'raw':
+            qr = np.empty_like(a1, shape=(M, N))
+            tau = np.zeros_like(a1, shape=(K,))
+            return ((qr, tau),) + Rj
+        return (Q,) + Rj
+
     overwrite_a = overwrite_a or (_datacopied(a1, a))
 
     if pivoting:
@@ -143,9 +171,9 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False,
                            overwrite_a=overwrite_a)
 
     if mode not in ['economic', 'raw'] or M < N:
-        R = numpy.triu(qr)
+        R = np.triu(qr)
     else:
-        R = numpy.triu(qr[:N, :])
+        R = np.triu(qr[:N, :])
 
     if pivoting:
         Rj = R, jpvt
@@ -167,7 +195,7 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False,
                       overwrite_a=1)
     else:
         t = qr.dtype.char
-        qqr = numpy.empty((M, M), dtype=t)
+        qqr = np.empty((M, M), dtype=t)
         qqr[:, :N] = qr
         Q, = safecall(gor_un_gqr, "gorgqr/gungqr", qqr, tau, lwork=lwork,
                       overwrite_a=1)
@@ -253,30 +281,34 @@ def qr_multiply(a, c, mode='right', pivoting=False, conjugate=False,
     """
     if mode not in ['left', 'right']:
         raise ValueError("Mode argument can only be 'left' or 'right' but "
-                         "not '{}'".format(mode))
-    c = numpy.asarray_chkfinite(c)
+                         f"not '{mode}'")
+    c = np.asarray_chkfinite(c)
     if c.ndim < 2:
         onedim = True
-        c = numpy.atleast_2d(c)
+        c = np.atleast_2d(c)
         if mode == "left":
             c = c.T
     else:
         onedim = False
 
-    a = numpy.atleast_2d(numpy.asarray(a))  # chkfinite done in qr
+    a = np.atleast_2d(np.asarray(a))  # chkfinite done in qr
     M, N = a.shape
 
     if mode == 'left':
         if c.shape[0] != min(M, N + overwrite_c*(M-N)):
             raise ValueError('Array shapes are not compatible for Q @ c'
-                             ' operation: {} vs {}'.format(a.shape, c.shape))
+                             f' operation: {a.shape} vs {c.shape}')
     else:
         if M != c.shape[1]:
             raise ValueError('Array shapes are not compatible for c @ Q'
-                             ' operation: {} vs {}'.format(c.shape, a.shape))
+                             f' operation: {c.shape} vs {a.shape}')
 
     raw = qr(a, overwrite_a, None, "raw", pivoting)
     Q, tau = raw[0]
+
+    # accommodate empty arrays
+    if c.size == 0:
+        return (np.empty_like(c),) + raw[1:]
 
     gor_un_mqr, = get_lapack_funcs(('ormqr',), (Q,))
     if gor_un_mqr.typecode in ('s', 'd'):
@@ -287,10 +319,10 @@ def qr_multiply(a, c, mode='right', pivoting=False, conjugate=False,
     Q = Q[:, :min(M, N)]
     if M > N and mode == "left" and not overwrite_c:
         if conjugate:
-            cc = numpy.zeros((c.shape[1], M), dtype=c.dtype, order="F")
+            cc = np.zeros((c.shape[1], M), dtype=c.dtype, order="F")
             cc[:, :N] = c.T
         else:
-            cc = numpy.zeros((M, c.shape[1]), dtype=c.dtype, order="F")
+            cc = np.zeros((M, c.shape[1]), dtype=c.dtype, order="F")
             cc[:N, :] = c
             trans = "N"
         if conjugate:
@@ -393,21 +425,39 @@ def rq(a, overwrite_a=False, lwork=None, mode='full', check_finite=True):
                  "Mode argument should be one of ['full', 'r', 'economic']")
 
     if check_finite:
-        a1 = numpy.asarray_chkfinite(a)
+        a1 = np.asarray_chkfinite(a)
     else:
-        a1 = numpy.asarray(a)
+        a1 = np.asarray(a)
     if len(a1.shape) != 2:
         raise ValueError('expected matrix')
+
     M, N = a1.shape
+
+    # accommodate empty arrays
+    if a1.size == 0:
+        K = min(M, N)
+
+        if not mode == 'economic':
+            R = np.empty_like(a1)
+            Q = np.empty_like(a1, shape=(N, N))
+            Q[...] = np.identity(N)
+        else:
+            R = np.empty_like(a1, shape=(M, K))
+            Q = np.empty_like(a1, shape=(K, N))
+
+        if mode == 'r':
+            return R
+        return R, Q
+
     overwrite_a = overwrite_a or (_datacopied(a1, a))
 
     gerqf, = get_lapack_funcs(('gerqf',), (a1,))
     rq, tau = safecall(gerqf, 'gerqf', a1, lwork=lwork,
                        overwrite_a=overwrite_a)
     if not mode == 'economic' or N < M:
-        R = numpy.triu(rq, N-M)
+        R = np.triu(rq, N-M)
     else:
-        R = numpy.triu(rq[-M:, -M:])
+        R = np.triu(rq[-M:, -M:])
 
     if mode == 'r':
         return R
@@ -421,7 +471,7 @@ def rq(a, overwrite_a=False, lwork=None, mode='full', check_finite=True):
         Q, = safecall(gor_un_grq, "gorgrq/gungrq", rq, tau, lwork=lwork,
                       overwrite_a=1)
     else:
-        rq1 = numpy.empty((N, N), dtype=rq.dtype)
+        rq1 = np.empty((N, N), dtype=rq.dtype)
         rq1[-M:] = rq
         Q, = safecall(gor_un_grq, "gorgrq/gungrq", rq1, tau, lwork=lwork,
                       overwrite_a=1)

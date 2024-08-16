@@ -1,12 +1,13 @@
 import numpy as np
+from .iterative import _get_atol_rtol
 from .utils import make_system
 
 
 __all__ = ['tfqmr']
 
 
-def tfqmr(A, b, x0=None, tol=1e-5, maxiter=None, M=None,
-          callback=None, atol=None, show=False):
+def tfqmr(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None,
+          callback=None, show=False):
     """
     Use Transpose-Free Quasi-Minimal Residual iteration to solve ``Ax = b``.
 
@@ -21,15 +22,10 @@ def tfqmr(A, b, x0=None, tol=1e-5, maxiter=None, M=None,
         Right hand side of the linear system. Has shape (N,) or (N,1).
     x0 : {ndarray}
         Starting guess for the solution.
-    tol, atol : float, optional
-        Tolerances for convergence, ``norm(residual) <= max(tol*norm(b-Ax0), atol)``.
-        The default for `tol` is 1.0e-5.
-        The default for `atol` is ``tol * norm(b-Ax0)``.
-
-        .. warning::
-
-           The default value for `atol` will be changed in a future release.
-           For future compatibility, specify `atol` explicitly.
+    rtol, atol : float, optional
+        Parameters for the convergence test. For convergence,
+        ``norm(b - A @ x) <= max(rtol*norm(b), atol)`` should be satisfied.
+        The default is ``rtol=1e-5``, the default for ``atol`` is ``0.0``.
     maxiter : int, optional
         Maximum number of iterations.  Iteration will stop after maxiter
         steps even if the specified tolerance has not been achieved.
@@ -42,7 +38,7 @@ def tfqmr(A, b, x0=None, tol=1e-5, maxiter=None, M=None,
         error tolerance.  By default, no preconditioner is used.
     callback : function, optional
         User-supplied function to call after each iteration.  It is called
-        as `callback(xk)`, where `xk` is the current solution vector.
+        as ``callback(xk)``, where ``xk`` is the current solution vector.
     show : bool, optional
         Specify ``show = True`` to show the convergence, ``show = False`` is
         to close the output of the convergence.
@@ -86,7 +82,7 @@ def tfqmr(A, b, x0=None, tol=1e-5, maxiter=None, M=None,
     >>> from scipy.sparse.linalg import tfqmr
     >>> A = csc_matrix([[3, 2, 0], [1, -1, 0], [0, 5, 1]], dtype=float)
     >>> b = np.array([2, 4, -1], dtype=float)
-    >>> x, exitCode = tfqmr(A, b)
+    >>> x, exitCode = tfqmr(A, b, atol=0.0)
     >>> print(exitCode)            # 0 indicates successful convergence
     0
     >>> np.allclose(A.dot(x), b)
@@ -123,17 +119,16 @@ def tfqmr(A, b, x0=None, tol=1e-5, maxiter=None, M=None,
     v = M.matvec(A.matvec(r))
     uhat = v
     d = theta = eta = 0.
-    rho = np.inner(rstar.conjugate(), r)
+    # at this point we know rstar == r, so rho is always real
+    rho = np.inner(rstar.conjugate(), r).real
     rhoLast = rho
     r0norm = np.sqrt(rho)
     tau = r0norm
     if r0norm == 0:
         return (postprocess(x), 0)
 
-    if atol is None:
-        atol = tol * r0norm
-    else:
-        atol = max(atol, tol * r0norm)
+    # we call this to get the right atol and raise errors as necessary
+    atol, _ = _get_atol_rtol('tfqmr', r0norm, atol, rtol)
 
     for iter in range(maxiter):
         even = iter % 2 == 0
@@ -158,11 +153,11 @@ def tfqmr(A, b, x0=None, tol=1e-5, maxiter=None, M=None,
         if callback is not None:
             callback(x)
 
-        # Convergence criteron
+        # Convergence criterion
         if tau * np.sqrt(iter+1) < atol:
             if (show):
                 print("TFQMR: Linear solve converged due to reach TOL "
-                      "iterations {}".format(iter+1))
+                      f"iterations {iter+1}")
             return (postprocess(x), 0)
 
         if (not even):
@@ -180,5 +175,5 @@ def tfqmr(A, b, x0=None, tol=1e-5, maxiter=None, M=None,
 
     if (show):
         print("TFQMR: Linear solve not converged due to reach MAXIT "
-              "iterations {}".format(iter+1))
+              f"iterations {iter+1}")
     return (postprocess(x), maxiter)

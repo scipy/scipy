@@ -155,6 +155,7 @@ class BaseMixin:
         result = lsq_linear(A, b, method=self.method)
         assert_(result.cost < 1.1e-8)
 
+    @pytest.mark.xslow
     def test_large_rank_deficient(self):
         np.random.seed(0)
         n, m = np.sort(np.random.randint(2, 1000, size=2))
@@ -206,6 +207,7 @@ class SparseMixin:
         res = lsq_linear(A, b)
         assert_allclose(res.optimality, 0, atol=1e-6)
 
+    @pytest.mark.fail_slow(10)
     def test_sparse_bounds(self):
         m = 5000
         n = 1000

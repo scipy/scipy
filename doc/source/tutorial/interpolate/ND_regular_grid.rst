@@ -20,6 +20,7 @@ using each method.
 
 .. plot::
 
+   >>> import numpy as np
    >>> import matplotlib.pyplot as plt
    >>> from scipy.interpolate import RegularGridInterpolator
 
@@ -62,7 +63,7 @@ using each method.
    interpolation.
 
 If your data is such that spline methods produce ringing, you may consider
-using `method="pchip"`, which uses the tensor product of PCHIP interpolators,
+using ``method="pchip"``, which uses the tensor product of PCHIP interpolators,
 a `PchipInterpolator` per dimension.
 
 If you prefer a functional interface opposed to explicitly creating a class instance,
@@ -87,14 +88,14 @@ controlled by the ``fill_value`` keyword parameter:
 
     >>> x = np.array([0, 5, 10])
     >>> y = np.array([0])
-    >>> data = array([[0], [5], [10]])
+    >>> data = np.array([[0], [5], [10]])
     >>> rgi = RegularGridInterpolator((x, y), data,
     ...                               bounds_error=False, fill_value=None)
-    >>> rgi([(2, 0), (2, 1), (2, -1)])
-    array([2., 2., 2.]))         # extrapolate the value on the axis
+    >>> rgi([(2, 0), (2, 1), (2, -1)])   # extrapolates the value on the axis
+    array([2., 2., 2.])
     >>> rgi.fill_value = -101
     >>> rgi([(2, 0), (2, 1), (2, -1)])
-    array([2., -101., -101.]))
+    array([2., -101., -101.])
 
 .. note::
 

@@ -22,8 +22,8 @@ from scipy.optimize._minimize import Bounds
 class ReturnShape:
     """This class exists to create a callable that does not have a '__name__' attribute.
 
-    __init__ takes the argument 'shape', which should be a tuple of ints. When an instance
-    is called with a single argument 'x', it returns numpy.ones(shape).
+    __init__ takes the argument 'shape', which should be a tuple of ints.
+    When an instance is called with a single argument 'x', it returns numpy.ones(shape).
     """
 
     def __init__(self, shape):
@@ -84,7 +84,7 @@ def pressure_network_jacobian(flow_rates, Qtot, k):
     """Return the jacobian of the equation system F(flow_rates)
     computed by `pressure_network` with respect to
     *flow_rates*. See `pressure_network` for the detailed
-    description of parrameters.
+    description of parameters.
 
     Returns
     -------
@@ -259,6 +259,27 @@ class TestRootLM:
         assert_array_almost_equal(final_flows, np.ones(4))
 
 
+class TestNfev:
+    def zero_f(self, y):
+        self.nfev += 1
+        return y**2-3
+
+    @pytest.mark.parametrize('method', ['hybr', 'lm', 'broyden1',
+                                        'broyden2', 'anderson',
+                                        'linearmixing', 'diagbroyden',
+                                        'excitingmixing', 'krylov',
+                                        'df-sane'])
+    def test_root_nfev(self, method):
+        self.nfev = 0
+        solution = optimize.root(self.zero_f, 100, method=method)
+        assert solution.nfev == self.nfev
+
+    def test_fsolve_nfev(self):
+        self.nfev = 0
+        x, info, ier, mesg = optimize.fsolve(self.zero_f, 100, full_output=True)
+        assert info['nfev'] == self.nfev
+
+
 class TestLeastSq:
     def setup_method(self):
         x = np.linspace(0, 10, 40)
@@ -300,7 +321,7 @@ class TestLeastSq:
                               args=(self.y_meas, self.x),
                               full_output=True)
         params_fit, cov_x, infodict, mesg, ier = full_output
-        assert_(ier in (1,2,3,4), 'solution not found: %s' % mesg)
+        assert_(ier in (1,2,3,4), f'solution not found: {mesg}')
 
     def test_input_untouched(self):
         p0 = array([0,0,0],dtype=float64)
@@ -309,7 +330,7 @@ class TestLeastSq:
                               args=(self.y_meas, self.x),
                               full_output=True)
         params_fit, cov_x, infodict, mesg, ier = full_output
-        assert_(ier in (1,2,3,4), 'solution not found: %s' % mesg)
+        assert_(ier in (1,2,3,4), f'solution not found: {mesg}')
         assert_array_equal(p0, p0_copy)
 
     def test_wrong_shape_func_callable(self):
@@ -581,8 +602,9 @@ class TestCurveFit:
         assert_allclose(result_with_nan, result_without_nan)
 
         # not valid policy test
-        error_msg = ("nan_policy must be one of "
-                     "{'None', 'raise', 'omit'}")
+        # check for argument names in any order
+        error_msg = (r"nan_policy must be one of \{(?:'raise'|'omit'|None)"
+                     r"(?:, ?(?:'raise'|'omit'|None))*\}")
         with assert_raises(ValueError, match=error_msg):
             curve_fit(**kwargs, nan_policy="hi")
 
@@ -812,11 +834,15 @@ class TestCurveFit:
     def test_curvefit_covariance(self):
 
         def funcp(x, a, b):
-            rotn = np.array([[1./np.sqrt(2), -1./np.sqrt(2), 0], [1./np.sqrt(2), 1./np.sqrt(2), 0], [0, 0, 1.0]])
+            rotn = np.array([[1./np.sqrt(2), -1./np.sqrt(2), 0],
+                             [1./np.sqrt(2), 1./np.sqrt(2), 0],
+                             [0, 0, 1.0]])
             return rotn.dot(a * np.exp(-b*x))
 
         def jacp(x, a, b):
-            rotn = np.array([[1./np.sqrt(2), -1./np.sqrt(2), 0], [1./np.sqrt(2), 1./np.sqrt(2), 0], [0, 0, 1.0]])
+            rotn = np.array([[1./np.sqrt(2), -1./np.sqrt(2), 0],
+                             [1./np.sqrt(2), 1./np.sqrt(2), 0],
+                             [0, 0, 1.0]])
             e = np.exp(-b*x)
             return rotn.dot(np.vstack((e, -a * x * e)).T)
 
@@ -839,7 +865,9 @@ class TestCurveFit:
         #       = ydatap^T Cp^{-1} ydatap
         # Cp^{-1} = R C^{-1} R^T
         # Cp      = R C R^T, since R^-1 = R^T
-        rotn = np.array([[1./np.sqrt(2), -1./np.sqrt(2), 0], [1./np.sqrt(2), 1./np.sqrt(2), 0], [0, 0, 1.0]])
+        rotn = np.array([[1./np.sqrt(2), -1./np.sqrt(2), 0],
+                         [1./np.sqrt(2), 1./np.sqrt(2), 0],
+                         [0, 0, 1.0]])
         ydatap = rotn.dot(ydata)
         covarp = rotn.dot(covar).dot(rotn.T)
 
@@ -852,6 +880,19 @@ class TestCurveFit:
 
                 assert_allclose(popt1, popt2, rtol=1.2e-7, atol=1e-14)
                 assert_allclose(pcov1, pcov2, rtol=1.2e-7, atol=1e-14)
+
+    @pytest.mark.parametrize("absolute_sigma", [False, True])
+    def test_curvefit_scalar_sigma(self, absolute_sigma):
+        def func(x, a, b):
+            return a * x + b
+
+        x, y = self.x, self.y
+        _, pcov1 = curve_fit(func, x, y, sigma=2, absolute_sigma=absolute_sigma)
+        # Explicitly building the sigma 1D array
+        _, pcov2 = curve_fit(
+                func, x, y, sigma=np.full_like(y, 2), absolute_sigma=absolute_sigma
+        )
+        assert np.all(pcov1 == pcov2)
 
     def test_dtypes(self):
         # regression test for gh-9581: curve_fit fails if x and y dtypes differ
@@ -1003,6 +1044,17 @@ class TestCurveFit:
         jac.last_p = None
         p0 = np.array([1.0, 5.0])
         curve_fit(line, x, y, p0, method='lm', jac=jac)
+
+    @pytest.mark.parametrize('method', ['trf', 'dogbox'])
+    def test_gh20155_error_mentions_x0(self, method):
+        # `curve_fit` produced an error message that refered to an undocumented
+        # variable `x0`, which was really `p0`. Check that this is resolved.
+        def func(x,a):
+            return x**a
+        message = "Initial guess is outside of provided bounds"
+        with pytest.raises(ValueError, match=message):
+            curve_fit(func, self.x, self.y, p0=[1], bounds=(1000, 1001),
+                      method=method)
 
 
 class TestFixedPoint:

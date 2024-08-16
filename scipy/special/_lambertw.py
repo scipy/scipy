@@ -1,5 +1,7 @@
 from ._ufuncs import _lambertw
 
+import numpy as np
+
 
 def lambertw(z, k=0, tol=1e-8):
     r"""
@@ -31,6 +33,10 @@ def lambertw(z, k=0, tol=1e-8):
     w : array
         `w` will have the same shape as `z`.
 
+    See Also
+    --------
+    wrightomega : the Wright Omega function
+
     Notes
     -----
     All branches are supported by `lambertw`:
@@ -55,10 +61,6 @@ def lambertw(z, k=0, tol=1e-8):
     asymptotic approximation (O(log(w)) or `O(w)`) as the initial estimate.
 
     The definition, implementation and choice of branches is based on [2]_.
-
-    See Also
-    --------
-    wrightomega : the Wright Omega function
 
     References
     ----------
@@ -141,4 +143,7 @@ def lambertw(z, k=0, tol=1e-8):
     >>> -lambertw(-np.log(0.5)) / np.log(0.5)
     (0.64118574450498589+0j)
     """
+    # TODO: special expert should inspect this
+    # interception; better place to do it?
+    k = np.asarray(k, dtype=np.dtype("long"))
     return _lambertw(z, k, tol)

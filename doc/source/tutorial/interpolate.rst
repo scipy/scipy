@@ -57,7 +57,7 @@ for 1- and 2-D data using cubic splines, based on the FORTRAN library FITPACK.
 Additionally, routines are provided for interpolation / smoothing using
 :ref:`radial basis functions <tutorial-interpolate_RBF>` with several kernels.
 
-Futher details are given in the links below. 
+Further details are given in the links below. 
 
 .. toctree::
    :maxdepth: 3
@@ -68,4 +68,4 @@ Futher details are given in the links below.
    interpolate/ND_regular_grid
    interpolate/ND_unstructured
    interpolate/extrapolation_examples
-
+   interpolate/interp_transition_guide.md

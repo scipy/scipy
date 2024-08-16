@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """
 python generate_sparsetools.py
 
@@ -18,7 +19,7 @@ Type codes used:
 See sparsetools.cxx for more details.
 
 """
-import optparse
+import argparse
 import os
 from stat import ST_MTIME
 
@@ -120,6 +121,7 @@ OTHER_ROUTINES = """
 coo_tocsr           v iiiIIT*I*I*T
 coo_todense         v iilIIT*Ti
 coo_matvec          v lIITT*T
+coo_matmat_dense    v llIITT*T
 dia_matvec          v iiiiITT*T
 cs_graph_components i iII*I
 """
@@ -175,7 +177,7 @@ static PY_LONG_LONG %(name)s_thunk(int I_typenum, int T_typenum, void **a)
 """
 
 METHOD_TEMPLATE = """
-NPY_VISIBILITY_HIDDEN PyObject *
+PyObject *
 %(name)s_method(PyObject *self, PyObject *args)
 {
     return call_thunk('%(ret_spec)s', "%(arg_spec)s", %(name)s_thunk, args);
@@ -203,7 +205,7 @@ def newer(source, target):
     both exist and 'target' is the same age or younger than 'source'.
     """
     if not os.path.exists(source):
-        raise ValueError("file '%s' does not exist" % os.path.abspath(source))
+        raise ValueError(f"file '{os.path.abspath(source)}' does not exist")
     if not os.path.exists(target):
         return 1
 
@@ -352,12 +354,13 @@ def parse_routine(name, args, types):
 
 
 def main():
-    p = optparse.OptionParser(usage=(__doc__ or '').strip())
-    p.add_option("--no-force", action="store_false",
-                 dest="force", default=True)
-    p.add_option("-o", "--outdir", type=str,
-                 help="Relative path to the output directory")
-    options, args = p.parse_args()
+    p = argparse.ArgumentParser(usage=(__doc__ or '').strip())
+
+    p.add_argument("--no-force", action="store_false",
+                   dest="force", default=True)
+    p.add_argument("-o", "--outdir", type=str,
+                   help="Relative path to the output directory")
+    options = p.parse_args()
 
     names = []
 
@@ -396,9 +399,6 @@ def main():
         if options.outdir:
             # Used by Meson (options.outdir == scipy/sparse/sparsetools)
             outdir = os.path.join(os.getcwd(), options.outdir)
-        else:
-            # Used by setup.py
-            outdir = os.path.join(os.path.dirname(__file__), 'sparsetools')
 
         dst = os.path.join(outdir,
                            unit_name + '_impl.h')
@@ -421,12 +421,15 @@ def main():
     # Generate code for method struct
     method_defs = ""
     for name in names:
-        method_defs += f"NPY_VISIBILITY_HIDDEN PyObject *{name}_method(PyObject *, PyObject *);\n"
+        method_defs += (f"PyObject *{name}"
+                        f"_method(PyObject *, PyObject *);\n")
 
     method_struct = """\nstatic struct PyMethodDef sparsetools_methods[] = {"""
     for name in names:
-        method_struct += """
-        {"%(name)s", (PyCFunction)%(name)s_method, METH_VARARGS, NULL},""" % dict(name=name)
+        method_struct += ("""
+            {{"{name}", (PyCFunction){name}_method, METH_VARARGS, NULL}},"""
+            .format(**dict(name=name))
+        )
     method_struct += """
         {NULL, NULL, 0, NULL}
     };"""

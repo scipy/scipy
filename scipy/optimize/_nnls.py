@@ -1,30 +1,41 @@
-from . import __nnls
-from numpy import asarray_chkfinite, zeros, double
+import numpy as np
+from ._cython_nnls import _nnls
+
 
 __all__ = ['nnls']
 
 
-def nnls(A, b, maxiter=None):
+def nnls(A, b, maxiter=None, *, atol=None):
     """
-    Solve ``argmin_x || Ax - b ||_2`` for ``x>=0``. This is a wrapper
-    for a FORTRAN non-negative least squares solver.
+    Solve ``argmin_x || Ax - b ||_2`` for ``x>=0``.
+
+    This problem, often called as NonNegative Least Squares, is a convex
+    optimization problem with convex constraints. It typically arises when
+    the ``x`` models quantities for which only nonnegative values are
+    attainable; weight of ingredients, component costs and so on.
 
     Parameters
     ----------
-    A : ndarray
-        Matrix ``A`` as shown above.
-    b : ndarray
+    A : (m, n) ndarray
+        Coefficient array
+    b : (m,) ndarray, float
         Right-hand side vector.
     maxiter: int, optional
-        Maximum number of iterations, optional.
-        Default is ``3 * A.shape[1]``.
+        Maximum number of iterations, optional. Default value is ``3 * n``.
+    atol: float
+        Tolerance value used in the algorithm to assess closeness to zero in
+        the projected residual ``(A.T @ (A x - b)`` entries. Increasing this
+        value relaxes the solution constraints. A typical relaxation value can
+        be selected as ``max(m, n) * np.linalg.norm(a, 1) * np.spacing(1.)``.
+        This value is not set as default since the norm operation becomes
+        expensive for large problems hence can be used only when necessary.
 
     Returns
     -------
     x : ndarray
         Solution vector.
     rnorm : float
-        The residual, ``|| Ax-b ||_2``.
+        The 2-norm of the residual, ``|| Ax-b ||_2``.
 
     See Also
     --------
@@ -32,13 +43,17 @@ def nnls(A, b, maxiter=None):
 
     Notes
     -----
-    The FORTRAN code was published in the book below. The algorithm
-    is an active set method. It solves the KKT (Karush-Kuhn-Tucker)
-    conditions for the non-negative least squares problem.
+    The code is based on [2]_ which is an improved version of the classical
+    algorithm of [1]_. It utilizes an active set method and solves the KKT
+    (Karush-Kuhn-Tucker) conditions for the non-negative least squares problem.
 
     References
     ----------
-    Lawson C., Hanson R.J., (1987) Solving Least Squares Problems, SIAM
+    .. [1] : Lawson C., Hanson R.J., "Solving Least Squares Problems", SIAM,
+       1995, :doi:`10.1137/1.9781611971217`
+    .. [2] : Bro, Rasmus and de Jong, Sijmen, "A Fast Non-Negativity-
+       Constrained Least Squares Algorithm", Journal Of Chemometrics, 1997,
+       :doi:`10.1002/(SICI)1099-128X(199709/10)11:5<393::AID-CEM483>3.0.CO;2-L`
 
      Examples
     --------
@@ -56,7 +71,8 @@ def nnls(A, b, maxiter=None):
 
     """
 
-    A, b = map(asarray_chkfinite, (A, b))
+    A = np.asarray_chkfinite(A, dtype=np.float64, order='C')
+    b = np.asarray_chkfinite(b, dtype=np.float64)
 
     if len(A.shape) != 2:
         raise ValueError("Expected a two-dimensional array (matrix)" +
@@ -72,14 +88,10 @@ def nnls(A, b, maxiter=None):
                 "Incompatible dimensions. The first dimension of " +
                 f"A is {m}, while the shape of b is {(b.shape[0], )}")
 
-    maxiter = -1 if maxiter is None else int(maxiter)
-
-    w = zeros((n,), dtype=double)
-    zz = zeros((m,), dtype=double)
-    index = zeros((n,), dtype=int)
-
-    x, rnorm, mode = __nnls.nnls(A, m, n, b, w, zz, index, maxiter)
-    if mode != 1:
-        raise RuntimeError("too many iterations")
+    if not maxiter:
+        maxiter = 3*n
+    x, rnorm, info = _nnls(A, b, maxiter)
+    if info == -1:
+        raise RuntimeError("Maximum number of iterations reached.")
 
     return x, rnorm

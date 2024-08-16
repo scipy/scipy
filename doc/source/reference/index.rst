@@ -41,25 +41,22 @@ to import modules/functions/objects from SciPy.
 Guidelines for importing functions from SciPy
 ---------------------------------------------
 
-The scipy namespace itself only contains functions imported from numpy.  These
-functions still exist for backwards compatibility, but should be imported from
-numpy directly.
-
-Everything in the namespaces of scipy submodules is public.  In general, it is
-recommended to import functions from submodule namespaces.  For example, the
-function ``curve_fit`` (defined in scipy/optimize/_minpack_py.py) should be
+Everything in the namespaces of SciPy submodules is public. In general in
+Python, it is recommended to make use of namespaces. For example, the
+function ``curve_fit`` (defined in ``scipy/optimize/_minpack_py.py``) should be
 imported like this::
+
+  import scipy
+  result = scipy.optimize.curve_fit(...)
+
+Or alternatively one could use the submodule as a namespace like so::
 
   from scipy import optimize
   result = optimize.curve_fit(...)
 
-This form of importing submodules is preferred for all submodules except
-``scipy.io`` (because ``io`` is also the name of a module in the Python
-stdlib)::
-
-  from scipy import interpolate
-  from scipy import integrate
-  import scipy.io as spio
+.. note:: For ``scipy.io`` prefer the use of  ``import scipy``
+          because ``io`` is also the name of a module in the Python
+          stdlib.
 
 In some cases, the public API is one level deeper.  For example, the
 ``scipy.sparse.linalg`` module is public, and the functions it contains are not
@@ -77,8 +74,15 @@ distribution if the second form is chosen::
   distributions.lomax(...)
 
 In that case, the second form can be chosen **if** it is documented in the next
-section that the submodule in question is public.
+section that the submodule in question is public. Of course you can still use::
 
+  import scipy
+  scipy.stats.lomax(...)
+  # or
+  scipy.stats.distributions.lomax(...)
+
+.. note:: SciPy is using a lazy loading mechanism which means that modules
+          are only loaded in memory when you first try to access them.
 
 API definition
 --------------
@@ -98,6 +102,8 @@ change is made.
 * `scipy.constants`
 
 * `scipy.datasets`
+
+* `scipy.differentiate`
 
 * `scipy.fft`
 
@@ -164,6 +170,7 @@ change is made.
    scipy.cluster <cluster>
    scipy.constants <constants>
    scipy.datasets <datasets>
+   scipy.differentiate <differentiate>
    scipy.fft <fft>
    scipy.fftpack <fftpack>
    scipy.integrate <integrate>

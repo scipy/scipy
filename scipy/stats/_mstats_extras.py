@@ -15,7 +15,7 @@ __all__ = ['compare_medians_ms',
 
 
 import numpy as np
-from numpy import float_, int_, ndarray
+from numpy import float64, ndarray
 
 import numpy.ma as ma
 from numpy.ma import MaskedArray
@@ -25,7 +25,7 @@ from . import _mstats_basic as mstats
 from scipy.stats.distributions import norm, beta, t, binom
 
 
-def hdquantiles(data, prob=list([.25,.5,.75]), axis=None, var=False,):
+def hdquantiles(data, prob=(.25, .5, .75), axis=None, var=False,):
     """
     Computes quantile estimates with the Harrell-Davis method.
 
@@ -37,7 +37,7 @@ def hdquantiles(data, prob=list([.25,.5,.75]), axis=None, var=False,):
     data : array_like
         Data array.
     prob : sequence, optional
-        Sequence of quantiles to compute.
+        Sequence of probabilities at which to compute the quantiles.
     axis : int or None, optional
         Axis along which to compute the quantiles. If None, use a flattened
         array.
@@ -55,6 +55,27 @@ def hdquantiles(data, prob=list([.25,.5,.75]), axis=None, var=False,):
     --------
     hdquantiles_sd
 
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.stats.mstats import hdquantiles
+    >>>
+    >>> # Sample data
+    >>> data = np.array([1.2, 2.5, 3.7, 4.0, 5.1, 6.3, 7.0, 8.2, 9.4])
+    >>>
+    >>> # Probabilities at which to compute quantiles
+    >>> probabilities = [0.25, 0.5, 0.75]
+    >>>
+    >>> # Compute Harrell-Davis quantile estimates
+    >>> quantile_estimates = hdquantiles(data, prob=probabilities)
+    >>>
+    >>> # Display the quantile estimates
+    >>> for i, quantile in enumerate(probabilities):
+    ...     print(f"{int(quantile * 100)}th percentile: {quantile_estimates[i]}")
+    25th percentile: 3.1505820231763066 # may vary
+    50th percentile: 5.194344084883956
+    75th percentile: 7.430626414674935
+
     """
     def _hd_1D(data,prob,var):
         "Computes the HD quantiles for a 1D array. Returns nan for invalid data."
@@ -62,7 +83,7 @@ def hdquantiles(data, prob=list([.25,.5,.75]), axis=None, var=False,):
         # Don't use length here, in case we have a numpy scalar
         n = xsorted.size
 
-        hd = np.empty((2,len(prob)), float_)
+        hd = np.empty((2,len(prob)), float64)
         if n < 2:
             hd.flat = np.nan
             if var:
@@ -86,8 +107,8 @@ def hdquantiles(data, prob=list([.25,.5,.75]), axis=None, var=False,):
             return hd
         return hd[0]
     # Initialization & checks
-    data = ma.array(data, copy=False, dtype=float_)
-    p = np.array(prob, copy=False, ndmin=1)
+    data = ma.array(data, copy=False, dtype=float64)
+    p = np.atleast_1d(np.asarray(prob))
     # Computes quantiles along axis (or globally)
     if (axis is None) or (data.ndim == 1):
         result = _hd_1D(data, p, var)
@@ -126,7 +147,7 @@ def hdmedian(data, axis=-1, var=False):
     return result.squeeze()
 
 
-def hdquantiles_sd(data, prob=list([.25,.5,.75]), axis=None):
+def hdquantiles_sd(data, prob=(.25, .5, .75), axis=None):
     """
     The standard error of the Harrell-Davis quantile estimates by jackknife.
 
@@ -155,7 +176,7 @@ def hdquantiles_sd(data, prob=list([.25,.5,.75]), axis=None):
         xsorted = np.sort(data.compressed())
         n = len(xsorted)
 
-        hdsd = np.empty(len(prob), float_)
+        hdsd = np.empty(len(prob), float64)
         if n < 2:
             hdsd.flat = np.nan
 
@@ -175,8 +196,8 @@ def hdquantiles_sd(data, prob=list([.25,.5,.75]), axis=None):
         return hdsd
 
     # Initialization & checks
-    data = ma.array(data, copy=False, dtype=float_)
-    p = np.array(prob, copy=False, ndmin=1)
+    data = ma.array(data, copy=False, dtype=float64)
+    p = np.atleast_1d(np.asarray(prob))
     # Computes quantiles along axis (or globally)
     if (axis is None):
         result = _hdsd_1D(data, p)
@@ -240,7 +261,7 @@ def trimmed_mean_ci(data, limits=(0.2,0.2), inclusive=(True,True),
     return np.array((tmean - tppf*tstde, tmean+tppf*tstde))
 
 
-def mjci(data, prob=[0.25,0.5,0.75], axis=None):
+def mjci(data, prob=(0.25, 0.5, 0.75), axis=None):
     """
     Returns the Maritz-Jarrett estimators of the standard error of selected
     experimental quantiles of the data.
@@ -259,11 +280,11 @@ def mjci(data, prob=[0.25,0.5,0.75], axis=None):
     def _mjci_1D(data, p):
         data = np.sort(data.compressed())
         n = data.size
-        prob = (np.array(p) * n + 0.5).astype(int_)
+        prob = (np.array(p) * n + 0.5).astype(int)
         betacdf = beta.cdf
 
-        mj = np.empty(len(prob), float_)
-        x = np.arange(1,n+1, dtype=float_) / n
+        mj = np.empty(len(prob), float64)
+        x = np.arange(1,n+1, dtype=float64) / n
         y = x - 1./n
         for (i,m) in enumerate(prob):
             W = betacdf(x,m-1,n-m) - betacdf(y,m-1,n-m)
@@ -277,7 +298,7 @@ def mjci(data, prob=[0.25,0.5,0.75], axis=None):
         raise ValueError("Array 'data' must be at most two dimensional, "
                          "but got data.ndim = %d" % data.ndim)
 
-    p = np.array(prob, copy=False, ndmin=1)
+    p = np.atleast_1d(np.asarray(prob))
     # Computes quantiles along axis (or globally)
     if (axis is None):
         return _mjci_1D(data, p)
@@ -285,7 +306,7 @@ def mjci(data, prob=[0.25,0.5,0.75], axis=None):
         return ma.apply_along_axis(_mjci_1D, axis, data, p)
 
 
-def mquantiles_cimj(data, prob=[0.25,0.50,0.75], alpha=0.05, axis=None):
+def mquantiles_cimj(data, prob=(0.25, 0.50, 0.75), alpha=0.05, axis=None):
     """
     Computes the alpha confidence interval for the selected quantiles of the
     data, with Maritz-Jarrett estimators.
@@ -487,7 +508,7 @@ def rsh(data, points=None):
     if points is None:
         points = data
     else:
-        points = np.array(points, copy=False, ndmin=1)
+        points = np.atleast_1d(np.asarray(points))
 
     if data.ndim != 1:
         raise AttributeError("The input array should be 1D only !")

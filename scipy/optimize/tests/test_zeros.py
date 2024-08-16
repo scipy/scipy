@@ -1,6 +1,5 @@
 import pytest
 
-from math import sqrt, exp, sin, cos
 from functools import lru_cache
 
 from numpy.testing import (assert_warns, assert_,
@@ -9,9 +8,9 @@ from numpy.testing import (assert_warns, assert_,
                            assert_array_equal,
                            suppress_warnings)
 import numpy as np
-from numpy import finfo, power, nan, isclose
+from numpy import finfo, power, nan, isclose, sqrt, exp, sin, cos
 
-
+from scipy import optimize
 from scipy.optimize import (_zeros_py as zeros, newton, root_scalar,
                             OptimizeResult)
 
@@ -27,7 +26,7 @@ _FLOAT_EPS = finfo(float).eps
 bracket_methods = [zeros.bisect, zeros.ridder, zeros.brentq, zeros.brenth,
                    zeros.toms748]
 gradient_methods = [zeros.newton]
-all_methods = bracket_methods + gradient_methods  # noqa
+all_methods = bracket_methods + gradient_methods
 
 # A few test functions used frequently:
 # # A simple quadratic, (x-1)^2 - 1
@@ -93,7 +92,7 @@ class TestScalarRootFinders:
             r, rr = method(*method_args, args=func_args, **method_kwargs)
             return root, rr, tc
         except Exception:
-            return root, zeros.RootResults(nan, -1, -1, zeros._EVALUEERR), tc
+            return root, zeros.RootResults(nan, -1, -1, zeros._EVALUEERR, method), tc
 
     def run_tests(self, tests, method, name, known_fail=None, **kwargs):
         r"""Run test-cases using the specified method and the supplied signature.
@@ -103,7 +102,9 @@ class TestScalarRootFinders:
         # The methods have one of two base signatures:
         # (f, a, b, **kwargs)  # newton
         # (func, x0, **kwargs)  # bisect/brentq/...
-        sig = _getfullargspec(method)  # FullArgSpec with args, varargs, varkw, defaults, ...
+
+        # FullArgSpec with args, varargs, varkw, defaults, ...
+        sig = _getfullargspec(method)
         assert_(not sig.kwonlyargs)
         nDefaults = len(sig.defaults)
         nRequired = len(sig.args) - nDefaults
@@ -148,6 +149,9 @@ class TestScalarRootFinders:
                for aroot, c, fullout, tc in notclose]
         notclose = [[fv] + elt for fv, elt in zip(fvs, notclose) if fv != 0]
         assert_equal([notclose, len(notclose)], [[], 0])
+        method_from_result = [result[1].method for result in results]
+        expected_method = [name for _ in results]
+        assert_equal(method_from_result, expected_method)
 
     def run_collection(self, collection, method, name, smoothness=None,
                        known_fail=None, **kwargs):
@@ -171,6 +175,7 @@ class TestBracketMethods(TestScalarRootFinders):
                         xtol=self.xtol, rtol=self.rtol)
         assert r.converged
         assert_allclose(r.root, 1.0, atol=self.xtol, rtol=self.rtol)
+        assert r.method == method.__name__
 
     @pytest.mark.parametrize('method', bracket_methods)
     @pytest.mark.parametrize('function', tstutils_functions)
@@ -184,6 +189,21 @@ class TestBracketMethods(TestScalarRootFinders):
 
         assert r.converged
         assert_allclose(root, 1.0, atol=self.xtol, rtol=self.rtol)
+
+    @pytest.mark.parametrize('method', bracket_methods)
+    @pytest.mark.parametrize('function', tstutils_functions)
+    def test_bracket_is_array(self, method, function):
+        # Test bracketing root finders called via `root_scalar` on a small set
+        # of simple problems, each of which has a root at `x=1`. Check that
+        # passing `bracket` as a `ndarray` is accepted and leads to finding the
+        # correct root.
+        a, b = .5, sqrt(3)
+        r = root_scalar(function, method=method.__name__,
+                        bracket=np.array([a, b]), x0=a, xtol=self.xtol,
+                        rtol=self.rtol)
+        assert r.converged
+        assert_allclose(r.root, 1.0, atol=self.xtol, rtol=self.rtol)
+        assert r.method == method.__name__
 
     @pytest.mark.parametrize('method', bracket_methods)
     def test_aps_collection(self, method):
@@ -375,7 +395,7 @@ class TestNewton(TestScalarRootFinders):
         assert_allclose(sol0.root, sol.root, atol=1e-8)
         assert_equal(3*sol.function_calls, sol0.function_calls)
 
-    def test_newton_full_output(self):
+    def test_newton_full_output(self, capsys):
         # Test the full_output capability, both when converging and not.
         # Use simple polynomials, to avoid hitting platform dependencies
         # (e.g., exp & trig) in number of iterations
@@ -407,9 +427,8 @@ class TestNewton(TestScalarRootFinders):
             if derivs == 1:
                 # Check that the correct Exception is raised and
                 # validate the start of the message.
-                with pytest.raises(
-                    RuntimeError,
-                    match='Failed to converge after %d iterations, value is .*' % (iters)):
+                msg = 'Failed to converge after %d iterations, value is .*' % (iters)
+                with pytest.raises(RuntimeError, match=msg):
                     x, r = zeros.newton(f1, x0, maxiter=iters, disp=True, **kwargs)
 
     def test_deriv_zero_warning(self):
@@ -433,16 +452,24 @@ class TestNewton(TestScalarRootFinders):
         # to secant. When x1 was not specified, secant failed.
         # Check that without fprime, the default is secant if x1 is specified
         # and newton otherwise.
-        res_newton_default = root_scalar(f1, method='newton', x0=3, xtol=1e-6)
-        res_secant_default = root_scalar(f1, method='secant', x0=3, x1=2,
+        # Also confirm that `x` is always a scalar (gh-21148)
+        def f(x):
+            assert np.isscalar(x)
+            return f1(x)
+
+        res_newton_default = root_scalar(f, method='newton', x0=3, xtol=1e-6)
+        res_secant_default = root_scalar(f, method='secant', x0=3, x1=2,
                                          xtol=1e-6)
         # `newton` uses the secant method when `x1` and `x2` are specified
-        res_secant = newton(f1, x0=3, x1=2, tol=1e-6, full_output=True)[1]
+        res_secant = newton(f, x0=3, x1=2, tol=1e-6, full_output=True)[1]
 
-        # all three foun a root
-        assert_allclose(f1(res_newton_default.root), 0, atol=1e-6)
-        assert_allclose(f1(res_secant_default.root), 0, atol=1e-6)
-        assert_allclose(f1(res_secant.root), 0, atol=1e-6)
+        # all three found a root
+        assert_allclose(f(res_newton_default.root), 0, atol=1e-6)
+        assert res_newton_default.root.shape == tuple()
+        assert_allclose(f(res_secant_default.root), 0, atol=1e-6)
+        assert res_secant_default.root.shape == tuple()
+        assert_allclose(f(res_secant.root), 0, atol=1e-6)
+        assert res_secant.root.shape == tuple()
 
         # Defaults are correct
         assert (res_secant_default.root
@@ -453,6 +480,31 @@ class TestNewton(TestScalarRootFinders):
                 == res_secant.iterations
                 != res_newton_default.iterations
                 == res_newton_default.function_calls/2)  # newton 2-point diff
+
+    @pytest.mark.parametrize('kwargs', [dict(), {'method': 'newton'}])
+    def test_args_gh19090(self, kwargs):
+        def f(x, a, b):
+            assert a == 3
+            assert b == 1
+            return (x ** a - b)
+
+        res = optimize.root_scalar(f, x0=3, args=(3, 1), **kwargs)
+        assert res.converged
+        assert_allclose(res.root, 1)
+
+    @pytest.mark.parametrize('method', ['secant', 'newton'])
+    def test_int_x0_gh19280(self, method):
+        # Originally, `newton` ensured that only floats were passed to the
+        # callable. This was indadvertently changed by gh-17669. Check that
+        # it has been changed back.
+        def f(x):
+            # an integer raised to a negative integer power would fail
+            return x**-2 - 2
+
+        res = optimize.root_scalar(f, x0=1, method=method)
+        assert res.converged
+        assert_allclose(abs(res.root), 2**-0.5)
+        assert res.root.dtype == np.dtype(np.float64)
 
 
 def test_gh_5555():
@@ -466,7 +518,7 @@ def test_gh_5555():
     for method in methods:
         res = method(f, -1e8, 1e7, xtol=xtol, rtol=rtol)
         assert_allclose(root, res, atol=xtol, rtol=rtol,
-                        err_msg='method %s' % method.__name__)
+                        err_msg=f'method {method.__name__}')
 
 
 def test_gh_5557():
@@ -494,7 +546,7 @@ def test_gh_5557():
 
 
 def test_brent_underflow_in_root_bracketing():
-    # Tetsing if an interval [a,b] brackets a zero of a function
+    # Testing if an interval [a,b] brackets a zero of a function
     # by checking f(a)*f(b) < 0 is not reliable when the product
     # underflows/overflows. (reported in issue# 13737)
 
@@ -509,12 +561,13 @@ def test_brent_underflow_in_root_bracketing():
 
 
 class TestRootResults:
-    r = zeros.RootResults(root=1.0, iterations=44, function_calls=46, flag=0)
+    r = zeros.RootResults(root=1.0, iterations=44, function_calls=46, flag=0,
+                          method="newton")
 
     def test_repr(self):
         expected_repr = ("      converged: True\n           flag: converged"
                          "\n function_calls: 46\n     iterations: 44\n"
-                         "           root: 1.0")
+                         "           root: 1.0\n         method: newton")
         assert_equal(repr(self.r), expected_repr)
 
     def test_type(self):
@@ -549,7 +602,7 @@ def test_complex_halley():
     assert_allclose(f(y, *coeffs), 0, atol=1e-6)
 
 
-def test_zero_der_nz_dp():
+def test_zero_der_nz_dp(capsys):
     """Test secant method with a non-zero dp, but an infinite newton step"""
     # pick a symmetrical functions and choose a point on the side that with dx
     # makes a secant that is a flat line with zero slope, EG: f = (x - 100)**2,
@@ -756,7 +809,8 @@ def test_gh9551_raise_error_if_disp_true():
     assert_warns(RuntimeWarning, zeros.newton, f, 1.0, f_p, disp=False)
     with pytest.raises(
             RuntimeError,
-            match=r'^Derivative was zero\. Failed to converge after \d+ iterations, value is [+-]?\d*\.\d+\.$'):
+            match=r'^Derivative was zero\. Failed to converge after \d+ iterations, '
+                  r'value is [+-]?\d*\.\d+\.$'):
         zeros.newton(f, 1.0, f_p)
     root = zeros.newton(f, complex(10.0, 10.0), f_p)
     assert_allclose(root, complex(0.0, 1.0))

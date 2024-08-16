@@ -266,7 +266,7 @@ class VertexCacheField(VertexCacheBase):
             constraint functions
         workers : int  optional
             Uses `multiprocessing.Pool <multiprocessing>`) to compute the field
-             functions in parrallel.
+             functions in parallel.
 
         """
         super().__init__()
@@ -274,16 +274,19 @@ class VertexCacheField(VertexCacheBase):
         self.Vertex = VertexScalarField
         self.field = field
         self.field_args = field_args
-        self.wfield = FieldWraper(field, field_args)  # if workers is not 1
+        self.wfield = FieldWrapper(field, field_args)  # if workers is not 1
 
         self.g_cons = g_cons
         self.g_cons_args = g_cons_args
-        self.wgcons = ConstraintWraper(g_cons, g_cons_args)
+        self.wgcons = ConstraintWrapper(g_cons, g_cons_args)
         self.gpool = set()  # A set of tuples to process for feasibility
 
         # Field processing objects
         self.fpool = set()  # A set of tuples to process for scalar function
         self.sfc_lock = False  # True if self.fpool is non-Empty
+
+        self.workers = workers
+        self._mapwrapper = MapWrapper(workers)
 
         if workers == 1:
             self.process_gpool = self.proc_gpool
@@ -292,9 +295,6 @@ class VertexCacheField(VertexCacheBase):
             else:
                 self.process_fpool = self.proc_fpool_g
         else:
-            self.workers = workers
-            self._mapwrapper = MapWrapper(workers)
-            self.pool = self._mapwrapper.pool
             self.process_gpool = self.pproc_gpool
             if g_cons is None:
                 self.process_fpool = self.pproc_fpool_nog
@@ -330,7 +330,8 @@ class VertexCacheField(VertexCacheBase):
     def feasibility_check(self, v):
         v.feasible = True
         for g, args in zip(self.g_cons, self.g_cons_args):
-            if g(v.x_a, *args) < 0.0:
+            # constraint may return more than 1 value.
+            if np.any(g(v.x_a, *args) < 0.0):
                 v.f = np.inf
                 v.feasible = False
                 break
@@ -365,7 +366,7 @@ class VertexCacheField(VertexCacheBase):
         for v in self.gpool:
             gpool_l.append(v.x_a)
 
-        G = self.pool.map(self.wgcons.gcons, gpool_l)
+        G = self._mapwrapper(self.wgcons.gcons, gpool_l)
         for v, g in zip(self.gpool, G):
             v.feasible = g  # set vertex object attribute v.feasible = g (bool)
 
@@ -395,7 +396,7 @@ class VertexCacheField(VertexCacheBase):
                 fpool_l.append(v.x_a)
             else:
                 v.f = np.inf
-        F = self.pool.map(self.wfield.func, fpool_l)
+        F = self._mapwrapper(self.wfield.func, fpool_l)
         for va, f in zip(fpool_l, F):
             vt = tuple(va)
             self[vt].f = f  # set vertex object attribute v.f = f
@@ -411,7 +412,7 @@ class VertexCacheField(VertexCacheBase):
         fpool_l = []
         for v in self.fpool:
             fpool_l.append(v.x_a)
-        F = self.pool.map(self.wfield.func, fpool_l)
+        F = self._mapwrapper(self.wfield.func, fpool_l)
         for va, f in zip(fpool_l, F):
             vt = tuple(va)
             self[vt].f = f  # set vertex object attribute v.f = f
@@ -426,7 +427,7 @@ class VertexCacheField(VertexCacheBase):
             v.maximiser()
 
 
-class ConstraintWraper:
+class ConstraintWrapper:
     """Object to wrap constraints to pass to `multiprocessing.Pool`."""
     def __init__(self, g_cons, g_cons_args):
         self.g_cons = g_cons
@@ -435,13 +436,14 @@ class ConstraintWraper:
     def gcons(self, v_x_a):
         vfeasible = True
         for g, args in zip(self.g_cons, self.g_cons_args):
-            if g(v_x_a, *args) < 0.0:
+            # constraint may return more than 1 value.
+            if np.any(g(v_x_a, *args) < 0.0):
                 vfeasible = False
                 break
         return vfeasible
 
 
-class FieldWraper:
+class FieldWrapper:
     """Object to wrap field to pass to `multiprocessing.Pool`."""
     def __init__(self, field, field_args):
         self.field = field

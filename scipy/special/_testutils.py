@@ -24,8 +24,10 @@ class MissingModule:
 def check_version(module, min_ver):
     if type(module) == MissingModule:
         return pytest.mark.skip(reason=f"{module.name} is not installed")
-    return pytest.mark.skipif(_pep440.parse(module.__version__) < _pep440.Version(min_ver),
-                              reason=f"{module.__name__} version >= {min_ver} required")
+    return pytest.mark.skipif(
+        _pep440.parse(module.__version__) < _pep440.Version(min_ver),
+        reason=f"{module.__name__} version >= {min_ver} required"
+    )
 
 
 #------------------------------------------------------------------------------
@@ -139,7 +141,8 @@ class FuncData:
                 result_columns = (result_columns,)
             self.result_columns = tuple(result_columns)
             if result_func is not None:
-                raise ValueError("Only result_func or result_columns should be provided")
+                message = "Only result_func or result_columns should be provided"
+                raise ValueError(message)
         elif result_func is not None:
             self.result_columns = None
         else:
@@ -289,9 +292,10 @@ class FuncData:
             if np.any(bad_j):
                 # Some bad results: inform what, where, and how bad
                 msg = [""]
-                msg.append("Max |adiff|: %g" % diff[bad_j].max())
-                msg.append("Max |rdiff|: %g" % rdiff[bad_j].max())
-                msg.append("Bad results (%d out of %d) for the following points (in output %d):"
+                msg.append(f"Max |adiff|: {diff[bad_j].max():g}")
+                msg.append(f"Max |rdiff|: {rdiff[bad_j].max():g}")
+                msg.append("Bad results (%d out of %d) for the following points "
+                           "(in output %d):"
                            % (np.sum(bad_j), point_count, output_num,))
                 for j in np.nonzero(bad_j)[0]:
                     j = int(j)
@@ -311,7 +315,7 @@ class FuncData:
         else:
             is_complex = ""
         if self.dataname:
-            return "<Data for {}{}: {}>".format(self.func.__name__, is_complex,
-                                            os.path.basename(self.dataname))
+            return (f"<Data for {self.func.__name__}{is_complex}: "
+                    f"{os.path.basename(self.dataname)}>")
         else:
             return f"<Data for {self.func.__name__}{is_complex}>"

@@ -16,10 +16,8 @@ __all__ = ['eig', 'eigvals', 'eigh', 'eigvalsh',
            'eig_banded', 'eigvals_banded',
            'eigh_tridiagonal', 'eigvalsh_tridiagonal', 'hessenberg', 'cdf2rdf']
 
-import warnings
-
-import numpy
-from numpy import (array, isfinite, inexact, nonzero, iscomplexobj, cast,
+import numpy as np
+from numpy import (array, isfinite, inexact, nonzero, iscomplexobj,
                    flatnonzero, conj, asarray, argsort, empty,
                    iscomplex, zeros, einsum, eye, inf)
 # Local imports
@@ -28,7 +26,7 @@ from ._misc import LinAlgError, _datacopied, norm
 from .lapack import get_lapack_funcs, _compute_lwork
 
 
-_I = cast['F'](1j)
+_I = np.array(1j, dtype='F')
 
 
 def _make_complex_eigvecs(w, vin, dtype):
@@ -36,7 +34,7 @@ def _make_complex_eigvecs(w, vin, dtype):
     Produce complex-valued eigenvectors from LAPACK DGGEV real-valued output
     """
     # - see LAPACK man page DGGEV at ALPHAI
-    v = numpy.array(vin, dtype=dtype)
+    v = np.array(vin, dtype=dtype)
     m = (w.imag > 0)
     m[:-1] |= (w.imag[1:] < 0)  # workaround for LAPACK bug, cf. ticket #709
     for i in flatnonzero(m):
@@ -48,26 +46,26 @@ def _make_complex_eigvecs(w, vin, dtype):
 def _make_eigvals(alpha, beta, homogeneous_eigvals):
     if homogeneous_eigvals:
         if beta is None:
-            return numpy.vstack((alpha, numpy.ones_like(alpha)))
+            return np.vstack((alpha, np.ones_like(alpha)))
         else:
-            return numpy.vstack((alpha, beta))
+            return np.vstack((alpha, beta))
     else:
         if beta is None:
             return alpha
         else:
-            w = numpy.empty_like(alpha)
+            w = np.empty_like(alpha)
             alpha_zero = (alpha == 0)
             beta_zero = (beta == 0)
             beta_nonzero = ~beta_zero
             w[beta_nonzero] = alpha[beta_nonzero]/beta[beta_nonzero]
-            # Use numpy.inf for complex values too since
-            # 1/numpy.inf = 0, i.e., it correctly behaves as projective
+            # Use np.inf for complex values too since
+            # 1/np.inf = 0, i.e., it correctly behaves as projective
             # infinity.
-            w[~alpha_zero & beta_zero] = numpy.inf
-            if numpy.all(alpha.imag == 0):
-                w[alpha_zero & beta_zero] = numpy.nan
+            w[~alpha_zero & beta_zero] = np.inf
+            if np.all(alpha.imag == 0):
+                w[alpha_zero & beta_zero] = np.nan
             else:
-                w[alpha_zero & beta_zero] = complex(numpy.nan, numpy.nan)
+                w[alpha_zero & beta_zero] = complex(np.nan, np.nan)
             return w
 
 
@@ -76,7 +74,7 @@ def _geneig(a1, b1, left, right, overwrite_a, overwrite_b,
     ggev, = get_lapack_funcs(('ggev',), (a1, b1))
     cvl, cvr = left, right
     res = ggev(a1, b1, lwork=-1)
-    lwork = res[-2][0].real.astype(numpy.int_)
+    lwork = res[-2][0].real.astype(np.int_)
     if ggev.typecode in 'cz':
         alpha, beta, vl, vr, work, info = ggev(a1, b1, cvl, cvr, lwork,
                                                overwrite_a, overwrite_b)
@@ -89,7 +87,7 @@ def _geneig(a1, b1, left, right, overwrite_a, overwrite_b,
         w = _make_eigvals(alpha, beta, homogeneous_eigvals)
     _check_info(info, 'generalized eig algorithm (ggev)')
 
-    only_real = numpy.all(w.imag == 0.0)
+    only_real = np.all(w.imag == 0.0)
     if not (ggev.typecode in 'cz' or only_real):
         t = w.dtype.char
         if left:
@@ -160,8 +158,9 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False,
         multiplicity. The shape is (M,) unless
         ``homogeneous_eigvals=True``.
     vl : (M, M) double or complex ndarray
-        The normalized left eigenvector corresponding to the eigenvalue
-        ``w[i]`` is the column vl[:,i]. Only returned if ``left=True``.
+        The left eigenvector corresponding to the eigenvalue
+        ``w[i]`` is the column ``vl[:,i]``. Only returned if ``left=True``.
+        The left eigenvector is not normalized.
     vr : (M, M) double or complex ndarray
         The normalized right eigenvector corresponding to the eigenvalue
         ``w[i]`` is the column ``vr[:,i]``.  Only returned if ``right=True``.
@@ -213,6 +212,22 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False,
     a1 = _asarray_validated(a, check_finite=check_finite)
     if len(a1.shape) != 2 or a1.shape[0] != a1.shape[1]:
         raise ValueError('expected square matrix')
+
+    # accommodate square empty matrices
+    if a1.size == 0:
+        w_n, vr_n = eig(np.eye(2, dtype=a1.dtype))
+        w = np.empty_like(a1, shape=(0,), dtype=w_n.dtype)
+        w = _make_eigvals(w, None, homogeneous_eigvals)
+        vl = np.empty_like(a1, shape=(0, 0), dtype=vr_n.dtype)
+        vr = np.empty_like(a1, shape=(0, 0), dtype=vr_n.dtype)
+        if not (left or right):
+            return w
+        if left:
+            if right:
+                return w, vl, vr
+            return w, vl
+        return w, vr
+
     overwrite_a = overwrite_a or (_datacopied(a1, a))
     if b is not None:
         b1 = _asarray_validated(b, check_finite=check_finite)
@@ -242,7 +257,6 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False,
                                     compute_vl=compute_vl,
                                     compute_vr=compute_vr,
                                     overwrite_a=overwrite_a)
-        t = {'f': 'F', 'd': 'D'}[wr.dtype.char]
         w = wr + _I * wi
         w = _make_eigvals(w, None, homogeneous_eigvals)
 
@@ -250,7 +264,7 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False,
                 positive='did not converge (only eigenvalues '
                          'with order >= %d have converged)')
 
-    only_real = numpy.all(w.imag == 0.0)
+    only_real = np.all(w.imag == 0.0)
     if not (geev.typecode in 'cz' or only_real):
         t = w.dtype.char
         if left:
@@ -266,10 +280,9 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False,
     return w, vr
 
 
-def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
-         overwrite_b=False, turbo=False, eigvals=None, type=1,
-         check_finite=True, subset_by_index=None, subset_by_value=None,
-         driver=None):
+def eigh(a, b=None, *, lower=True, eigvals_only=False, overwrite_a=False,
+         overwrite_b=False, type=1, check_finite=True, subset_by_index=None,
+         subset_by_value=None, driver=None):
     """
     Solve a standard or generalized eigenvalue problem for a complex
     Hermitian or real symmetric matrix.
@@ -337,24 +350,15 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
         Whether to check that the input matrices contain only finite numbers.
         Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
-    turbo : bool, optional, deprecated
-            .. deprecated:: 1.5.0
-                `eigh` keyword argument `turbo` is deprecated in favour of
-                ``driver=gvd`` keyword instead and will be removed in SciPy
-                1.12.0.
-    eigvals : tuple (lo, hi), optional, deprecated
-            .. deprecated:: 1.5.0
-                `eigh` keyword argument `eigvals` is deprecated in favour of
-                `subset_by_index` keyword instead and will be removed in SciPy
-                1.12.0.
 
     Returns
     -------
     w : (N,) ndarray
-        The N (1<=N<=M) selected eigenvalues, in ascending order, each
+        The N (N<=M) selected eigenvalues, in ascending order, each
         repeated according to its multiplicity.
     v : (M, N) ndarray
-        (if ``eigvals_only == False``)
+        The normalized eigenvector corresponding to the eigenvalue ``w[i]`` is
+        the column ``v[:,i]``. Only returned if ``eigvals_only=False``.
 
     Raises
     ------
@@ -393,6 +397,11 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
     often performs worse than the rest except when very few eigenvalues are
     requested for large arrays though there is still no performance guarantee.
 
+    Note that the underlying LAPACK algorithms are different depending on whether
+    `eigvals_only` is True or False --- thus the eigenvalues may differ
+    depending on whether eigenvectors are requested or not. The difference is
+    generally of the order of machine epsilon times the largest eigenvalue,
+    so is likely only visible for zero or nearly zero eigenvalues.
 
     For the generalized problem, normalization with respect to the given
     type argument::
@@ -436,17 +445,6 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
     (5, 1)
 
     """
-    if turbo:
-        warnings.warn("Keyword argument 'turbo' is deprecated in favour of '"
-                      "driver=gvd' keyword instead and will be removed in "
-                      "SciPy 1.12.0.",
-                      DeprecationWarning, stacklevel=2)
-    if eigvals:
-        warnings.warn("Keyword argument 'eigvals' is deprecated in favour of "
-                      "'subset_by_index' keyword instead and will be removed "
-                      "in SciPy 1.12.0.",
-                      DeprecationWarning, stacklevel=2)
-
     # set lower
     uplo = 'L' if lower else 'U'
     # Set job for Fortran routines
@@ -460,6 +458,18 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
     a1 = _asarray_validated(a, check_finite=check_finite)
     if len(a1.shape) != 2 or a1.shape[0] != a1.shape[1]:
         raise ValueError('expected square "a" matrix')
+
+    # accommodate square empty matrices
+    if a1.size == 0:
+        w_n, v_n = eigh(np.eye(2, dtype=a1.dtype))
+
+        w = np.empty_like(a1, shape=(0,), dtype=w_n.dtype)
+        v = np.empty_like(a1, shape=(0, 0), dtype=v_n.dtype)
+        if eigvals_only:
+            return w
+        else:
+            return w, v
+
     overwrite_a = overwrite_a or (_datacopied(a1, a))
     cplx = True if iscomplexobj(a1) else False
     n = a1.shape[0]
@@ -472,8 +482,7 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
             raise ValueError('expected square "b" matrix')
 
         if b1.shape != a1.shape:
-            raise ValueError("wrong b dimensions {}, should "
-                             "be {}".format(b1.shape, a1.shape))
+            raise ValueError(f"wrong b dimensions {b1.shape}, should be {a1.shape}")
 
         if type not in [1, 2, 3]:
             raise ValueError('"type" keyword only accepts 1, 2, and 3.')
@@ -481,26 +490,19 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
         cplx = True if iscomplexobj(b1) else (cplx or False)
         drv_args.update({'overwrite_b': overwrite_b, 'itype': type})
 
-    # backwards-compatibility handling
-    subset_by_index = subset_by_index if (eigvals is None) else eigvals
-
     subset = (subset_by_index is not None) or (subset_by_value is not None)
 
     # Both subsets can't be given
     if subset_by_index and subset_by_value:
         raise ValueError('Either index or value subset can be requested.')
 
-    # Take turbo into account if all conditions are met otherwise ignore
-    if turbo and b is not None:
-        driver = 'gvx' if subset else 'gvd'
-
     # Check indices if given
     if subset_by_index:
         lo, hi = (int(x) for x in subset_by_index)
         if not (0 <= lo <= hi < n):
             raise ValueError('Requested eigenvalue indices are not valid. '
-                             'Valid range is [0, {}] and start <= end, but '
-                             'start={}, end={} is given'.format(n-1, lo, hi))
+                             f'Valid range is [0, {n-1}] and start <= end, but '
+                             f'start={lo}, end={hi} is given')
         # fortran is 1-indexed
         drv_args.update({'range': 'I', 'il': lo + 1, 'iu': hi + 1})
 
@@ -509,7 +511,7 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
         if not (-inf <= lo < hi <= inf):
             raise ValueError('Requested eigenvalue bounds are not valid. '
                              'Valid range is (-inf, inf) and low < high, but '
-                             'low={}, high={} is given'.format(lo, hi))
+                             f'low={lo}, high={hi} is given')
 
         drv_args.update({'range': 'V', 'vl': lo, 'vu': hi})
 
@@ -520,16 +522,13 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
     # first early exit on incompatible choice
     if driver:
         if b is None and (driver in ["gv", "gvd", "gvx"]):
-            raise ValueError('{} requires input b array to be supplied '
-                             'for generalized eigenvalue problems.'
-                             ''.format(driver))
+            raise ValueError(f'{driver} requires input b array to be supplied '
+                             'for generalized eigenvalue problems.')
         if (b is not None) and (driver in ['ev', 'evd', 'evr', 'evx']):
-            raise ValueError('"{}" does not accept input b array '
-                             'for standard eigenvalue problems.'
-                             ''.format(driver))
+            raise ValueError(f'"{driver}" does not accept input b array '
+                             'for standard eigenvalue problems.')
         if subset and (driver in ["ev", "evd", "gv", "gvd"]):
-            raise ValueError('"{}" cannot compute subsets of eigenvalues'
-                             ''.format(driver))
+            raise ValueError(f'"{driver}" cannot compute subsets of eigenvalues')
 
     # Default driver is evr and gvd
     else:
@@ -587,13 +586,13 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
             return w, v
     else:
         if info < -1:
-            raise LinAlgError('Illegal value in argument {} of internal {}'
-                              ''.format(-info, drv.typecode + pfx + driver))
+            raise LinAlgError(f'Illegal value in argument {-info} of internal '
+                              f'{drv.typecode + pfx + driver}')
         elif info > n:
-            raise LinAlgError('The leading minor of order {} of B is not '
+            raise LinAlgError(f'The leading minor of order {info-n} of B is not '
                               'positive definite. The factorization of B '
                               'could not be completed and no eigenvalues '
-                              'or eigenvectors were computed.'.format(info-n))
+                              'or eigenvectors were computed.')
         else:
             drv_err = {'ev': 'The algorithm failed to converge; {} '
                              'off-diagonal elements of an intermediate '
@@ -645,9 +644,10 @@ def _check_select(select, select_range, max_ev, max_len):
                 max_ev = max_len
         else:  # 2 (index)
             if sr.dtype.char.lower() not in 'hilqp':
-                raise ValueError('when using select="i", select_range must '
-                                 'contain integers, got dtype %s (%s)'
-                                 % (sr.dtype, sr.dtype.char))
+                raise ValueError(
+                    f'when using select="i", select_range must '
+                    f'contain integers, got dtype {sr.dtype} ({sr.dtype.char})'
+                )
             # translate Python (0 ... N-1) into Fortran (1 ... N) with + 1
             il, iu = sr + 1
             if min(il, iu) < 1 or max(il, iu) > max_len:
@@ -729,7 +729,7 @@ def eig_banded(a_band, lower=False, eigvals_only=False, overwrite_a_band=False,
         multiplicity.
     v : (M, M) float or complex ndarray
         The normalized eigenvector corresponding to the eigenvalue w[i] is
-        the column v[:,i].
+        the column v[:,i]. Only returned if ``eigvals_only=False``.
 
     Raises
     ------
@@ -775,8 +775,21 @@ def eig_banded(a_band, lower=False, eigvals_only=False, overwrite_a_band=False,
 
     if len(a1.shape) != 2:
         raise ValueError('expected a 2-D array')
+
+    # accommodate square empty matrices
+    if a1.size == 0:
+        w_n, v_n = eig_banded(np.array([[0, 0], [1, 1]], dtype=a1.dtype))
+
+        w = np.empty_like(a1, shape=(0,), dtype=w_n.dtype)
+        v = np.empty_like(a1, shape=(0, 0), dtype=v_n.dtype)
+        if eigvals_only:
+            return w
+        else:
+            return w, v
+
     select, vl, vu, il, iu, max_ev = _check_select(
         select, select_range, max_ev, a1.shape[1])
+
     del select_range
     if select == 0:
         if a1.dtype.char in 'GFD':
@@ -897,10 +910,9 @@ def eigvals(a, b=None, overwrite_a=False, check_finite=True,
                homogeneous_eigvals=homogeneous_eigvals)
 
 
-def eigvalsh(a, b=None, lower=True, overwrite_a=False,
-             overwrite_b=False, turbo=False, eigvals=None, type=1,
-             check_finite=True, subset_by_index=None, subset_by_value=None,
-             driver=None):
+def eigvalsh(a, b=None, *, lower=True, overwrite_a=False,
+             overwrite_b=False, type=1, check_finite=True, subset_by_index=None,
+             subset_by_value=None, driver=None):
     """
     Solves a standard or generalized eigenvalue problem for a complex
     Hermitian or real symmetric matrix.
@@ -963,20 +975,11 @@ def eigvalsh(a, b=None, lower=True, overwrite_a=False,
         "evd", "evr", "evx" for standard problems and "gv", "gvd", "gvx" for
         generalized (where b is not None) problems. See the Notes section of
         `scipy.linalg.eigh`.
-    turbo : bool, optional, deprecated
-        .. deprecated:: 1.5.0
-            'eigvalsh' keyword argument `turbo` is deprecated in favor of
-            ``driver=gvd`` option and will be removed in SciPy 1.12.0.
-
-    eigvals : tuple (lo, hi), optional
-        .. deprecated:: 1.5.0
-            'eigvalsh' keyword argument `eigvals` is deprecated in favor of
-            `subset_by_index` option and will be removed in SciPy 1.12.0.
 
     Returns
     -------
     w : (N,) ndarray
-        The ``N`` (``1<=N<=M``) selected eigenvalues, in ascending order, each
+        The N (N<=M) selected eigenvalues, in ascending order, each
         repeated according to its multiplicity.
 
     Raises
@@ -1019,11 +1022,10 @@ def eigvalsh(a, b=None, lower=True, overwrite_a=False,
     array([-3.74637491, -0.76263923,  6.08502336, 12.42399079])
 
     """
-    return eigh(a, b=b, lower=lower, eigvals_only=True,
-                overwrite_a=overwrite_a, overwrite_b=overwrite_b,
-                turbo=turbo, eigvals=eigvals, type=type,
-                check_finite=check_finite, subset_by_index=subset_by_index,
-                subset_by_value=subset_by_value, driver=driver)
+    return eigh(a, b=b, lower=lower, eigvals_only=True, overwrite_a=overwrite_a,
+                overwrite_b=overwrite_b, type=type, check_finite=check_finite,
+                subset_by_index=subset_by_index, subset_by_value=subset_by_value,
+                driver=driver)
 
 
 def eigvals_banded(a_band, lower=False, overwrite_a_band=False,
@@ -1219,6 +1221,9 @@ def eigh_tridiagonal(d, e, eigvals_only=False, select='a', select_range=None,
         The diagonal elements of the array.
     e : ndarray, shape (ndim-1,)
         The off-diagonal elements of the array.
+    eigvals_only : bool, optional
+        Compute only the eigenvalues and no eigenvectors.
+        (Default: calculate also eigenvectors)
     select : {'a', 'v', 'i'}, optional
         Which eigenvalues to calculate
 
@@ -1258,7 +1263,7 @@ def eigh_tridiagonal(d, e, eigvals_only=False, select='a', select_range=None,
         multiplicity.
     v : (M, M) ndarray
         The normalized eigenvector corresponding to the eigenvalue ``w[i]`` is
-        the column ``v[:,i]``.
+        the column ``v[:,i]``. Only returned if ``eigvals_only=False``.
 
     Raises
     ------
@@ -1297,18 +1302,32 @@ def eigh_tridiagonal(d, e, eigvals_only=False, select='a', select_range=None,
         if check.dtype.char in 'GFD':  # complex
             raise TypeError('Only real arrays currently supported')
     if d.size != e.size + 1:
-        raise ValueError('d (%s) must have one more element than e (%s)'
-                         % (d.size, e.size))
+        raise ValueError(f'd ({d.size}) must have one more element than e ({e.size})')
     select, vl, vu, il, iu, _ = _check_select(
         select, select_range, 0, d.size)
     if not isinstance(lapack_driver, str):
         raise TypeError('lapack_driver must be str')
     drivers = ('auto', 'stemr', 'sterf', 'stebz', 'stev')
     if lapack_driver not in drivers:
-        raise ValueError('lapack_driver must be one of %s, got %s'
-                         % (drivers, lapack_driver))
+        raise ValueError(f'lapack_driver must be one of {drivers}, '
+                         f'got {lapack_driver}')
     if lapack_driver == 'auto':
         lapack_driver = 'stemr' if select == 0 else 'stebz'
+
+    # Quick exit for 1x1 case
+    if len(d) == 1:
+        if select == 1 and (not (vl < d[0] <= vu)):  # request by value
+            w = array([])
+            v = empty([1, 0], dtype=d.dtype)
+        else:  # all and request by index
+            w = array([d[0]], dtype=d.dtype)
+            v = array([[1.]], dtype=d.dtype)
+
+        if eigvals_only:
+            return w
+        else:
+            return w, v
+
     func, = get_lapack_funcs((lapack_driver,), (d, e))
     compute_v = not eigvals_only
     if lapack_driver == 'sterf':
@@ -1423,6 +1442,17 @@ def hessenberg(a, calc_q=False, overwrite_a=False, check_finite=True):
         raise ValueError('expected square matrix')
     overwrite_a = overwrite_a or (_datacopied(a1, a))
 
+    if a1.size == 0:
+        h3 = hessenberg(np.eye(3, dtype=a1.dtype))
+        h = np.empty(a1.shape, dtype=h3.dtype)
+        if not calc_q:
+            return h
+        else:
+            h3, q3 = hessenberg(np.eye(3, dtype=a1.dtype), calc_q=True)
+            q = np.empty(a1.shape, dtype=q3.dtype)
+            h = np.empty(a1.shape, dtype=h3.dtype)
+            return h, q
+
     # if 2x2 or smaller: already in Hessenberg
     if a1.shape[0] <= 2:
         if calc_q:
@@ -1439,7 +1469,7 @@ def hessenberg(a, calc_q=False, overwrite_a=False, check_finite=True):
 
     hq, tau, info = gehrd(ba, lo=lo, hi=hi, lwork=lwork, overwrite_a=1)
     _check_info(info, 'gehrd (hessenberg)', positive=False)
-    h = numpy.triu(hq, -1)
+    h = np.triu(hq, -1)
     if not calc_q:
         return h
 
@@ -1575,7 +1605,7 @@ def cdf2rdf(w, v):
     stack_ind = ()
     for i in idx_stack:
         # should never happen, assuming nonzero orders by the last axis
-        assert (i[0::2] == i[1::2]).all(),\
+        assert (i[0::2] == i[1::2]).all(), \
                 "Conjugate pair spanned different arrays!"
         stack_ind += (i[0::2],)
 
@@ -1589,14 +1619,14 @@ def cdf2rdf(w, v):
     wr[stack_ind + (k, j)] = w[stack_ind + (k,)].imag
 
     # compute real eigenvectors associated with real block diagonal eigenvalues
-    u = zeros(M + (n, n), dtype=numpy.cdouble)
+    u = zeros(M + (n, n), dtype=np.cdouble)
     u[..., di, di] = 1.0
     u[stack_ind + (j, j)] = 0.5j
     u[stack_ind + (j, k)] = 0.5
     u[stack_ind + (k, j)] = -0.5j
     u[stack_ind + (k, k)] = 0.5
 
-    # multipy matrices v and u (equivalent to v @ u)
+    # multiply matrices v and u (equivalent to v @ u)
     vr = einsum('...ij,...jk->...ik', v, u).real
 
     return wr, vr

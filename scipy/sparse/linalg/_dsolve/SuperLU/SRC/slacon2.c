@@ -16,7 +16,7 @@ at the top-level directory.
  * -- SuperLU routine (version 5.0) --
  * Univ. of California Berkeley, Xerox Palo Alto Research Center,
  * and Lawrence Berkeley National Lab.
- * July 25, 2015
+ * July 24, 2022
  * </pre>
  */
 #include <math.h>
@@ -31,7 +31,7 @@ at the top-level directory.
  *   SLACON2 estimates the 1-norm of a square matrix A.   
  *   Reverse communication is used for evaluating matrix-vector products. 
  * 
- *   This is a thread safe version of SLACON, which uses the array ISAVE
+ *   This is a thread safe version of CLACON, which uses the array ISAVE
  *   in place of a STATIC variables, as follows:
  *
  *     SLACON     SLACON2
@@ -128,7 +128,7 @@ slacon2_(int *n, float *v, float *x, int *isgn, float *est, int *kase, int isave
 	case 5:  goto L140;
     }
 
-    /*     ................ ENTRY   (isave[0] = 1)   
+    /*     ................ ENTRY   (isave[0] == 1)   
 	   FIRST ITERATION.  X HAS BEEN OVERWRITTEN BY A*X. */
   L20:
     if (*n == 1) {
@@ -151,16 +151,16 @@ slacon2_(int *n, float *v, float *x, int *isgn, float *est, int *kase, int isave
     isave[0] = 2;  /* jump = 2; */
     return 0;
 
-    /*     ................ ENTRY   (isave[0] = 2)
+    /*     ................ ENTRY   (isave[0] == 2)   
 	   FIRST ITERATION.  X HAS BEEN OVERWRITTEN BY TRANSPOSE(A)*X. */
 L40:
 #ifdef _CRAY
-    isave[1] = ISAMAX(n, &x[0], &c__1);   /* j */
+    isave[1] = ISAMAX(n, &x[0], &c__1);  /* j */
 #else
     isave[1] = isamax_(n, &x[0], &c__1);  /* j */
 #endif
     --isave[1];  /* --j; */
-    isave[2] = 2;  /* iter = 2; */
+    isave[2] = 2; /* iter = 2; */
 
     /*     MAIN LOOP - ITERATIONS 2,3,...,ITMAX. */
 L50:
@@ -170,7 +170,7 @@ L50:
     isave[0] = 3;  /* jump = 3; */
     return 0;
 
-    /*     ................ ENTRY   (isave[0] = 3)   
+    /*     ................ ENTRY   (isave[0] == 3)   
 	   X HAS BEEN OVERWRITTEN BY A*X. */
 L70:
 #ifdef _CRAY
@@ -204,12 +204,12 @@ L90:
     isave[0] = 4;  /* jump = 4; */
     return 0;
 
-    /*     ................ ENTRY   (isave[0] = 4)   
+    /*     ................ ENTRY   (isave[0] == 4)
 	   X HAS BEEN OVERWRITTEN BY TRANDPOSE(A)*X. */
 L110:
     jlast = isave[1];  /* j; */
 #ifdef _CRAY
-    isave[1] = ISAMAX(n, &x[0], &c__1);  /* j */
+    isave[1] = ISAMAX(n, &x[0], &c__1);/* j */
 #else
     isave[1] = isamax_(n, &x[0], &c__1);  /* j */
 #endif
@@ -251,4 +251,4 @@ L150:
     *kase = 0;
     return 0;
 
-} /* slacon_ */
+} /* slacon2_ */

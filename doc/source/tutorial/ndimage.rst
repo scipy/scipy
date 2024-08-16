@@ -809,7 +809,7 @@ parameter that determines how the boundaries are handled, and a *cval*
 parameter that gives a constant value in case that the 'constant' mode
 is used. The behavior of all modes, including at non-integer locations is
 illustrated below. Note the boundaries are not handled the same for all modes;
-`reflect` (aka `grid-mirror`) and `grid-wrap` involve symmetry or repetition
+`reflect` (aka ``grid-mirror``) and ``grid-wrap`` involve symmetry or repetition
 about a point that is half way between image samples (dashed vertical lines)
 while modes `mirror` and `wrap` treat the image as if it's extent ends exactly
 at the first and last sample point rather than 0.5 samples past it.
@@ -974,7 +974,7 @@ Binary morphology
 	    [ True,  True,  True],
             [ True,  True,  True]], dtype=bool)
 
-This is a viusal presentation of `generate_binary_structure` in 3D:
+This is a visual presentation of `generate_binary_structure` in 3D:
 
   .. plot:: tutorial/examples/ndimage/3D_binary_structure.py
       :align: center

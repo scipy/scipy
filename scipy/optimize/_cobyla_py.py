@@ -15,7 +15,8 @@ from threading import RLock
 
 import numpy as np
 from scipy.optimize import _cobyla as cobyla
-from ._optimize import OptimizeResult, _check_unknown_options
+from ._optimize import (OptimizeResult, _check_unknown_options,
+    _prepare_scalar_function)
 try:
     from itertools import izip
 except ImportError:
@@ -23,7 +24,7 @@ except ImportError:
 
 __all__ = ['fmin_cobyla']
 
-# Workarund as _cobyla.minimize is not threadsafe
+# Workaround as _cobyla.minimize is not threadsafe
 # due to an unknown f2py bug and can segfault,
 # see gh-9658.
 _module_lock = RLock()
@@ -184,6 +185,7 @@ def fmin_cobyla(func, x0, cons, args=(), consargs=None, rhobeg=1.0,
         print(f"COBYLA failed to find a solution: {sol.message}")
     return sol['x']
 
+
 @synchronized
 def _minimize_cobyla(fun, x0, args=(), constraints=(),
                      rhobeg=1.0, tol=1e-4, maxiter=1000,
@@ -246,8 +248,8 @@ def _minimize_cobyla(fun, x0, args=(), constraints=(),
             raise TypeError("Constraint's type must be a string.") from e
         else:
             if ctype != 'ineq':
-                raise ValueError("Constraints of type '%s' not handled by "
-                                 "COBYLA." % con['type'])
+                raise ValueError(f"Constraints of type '{con['type']}' not handled by "
+                                 "COBYLA.")
 
         # check function
         if 'fun' not in con:
@@ -269,8 +271,14 @@ def _minimize_cobyla(fun, x0, args=(), constraints=(),
         cons_lengths.append(cons_length)
     m = sum(cons_lengths)
 
+    # create the ScalarFunction, cobyla doesn't require derivative function
+    def _jac(x, *args):
+        return None
+
+    sf = _prepare_scalar_function(fun, x0, args=args, jac=_jac)
+
     def calcfc(x, con):
-        f = fun(np.copy(x), *args)
+        f = sf.fun(x)
         i = 0
         for size, c in izip(cons_lengths, constraints):
             con[i: i + size] = c['fun'](x, *c['args'])

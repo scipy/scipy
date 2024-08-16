@@ -1,5 +1,5 @@
 import numpy as np
-from numpy.testing import assert_allclose
+from scipy._lib._array_api import xp_assert_close
 
 from scipy import ndimage
 from scipy.ndimage import _ctest
@@ -9,23 +9,31 @@ from scipy._lib._ccallback import LowLevelCallable
 FILTER1D_FUNCTIONS = [
     lambda filter_size: _ctest.filter1d(filter_size),
     lambda filter_size: _cytest.filter1d(filter_size, with_signature=False),
-    lambda filter_size: LowLevelCallable(_cytest.filter1d(filter_size, with_signature=True)),
-    lambda filter_size: LowLevelCallable.from_cython(_cytest, "_filter1d",
-                                                     _cytest.filter1d_capsule(filter_size)),
+    lambda filter_size: LowLevelCallable(
+                            _cytest.filter1d(filter_size, with_signature=True)
+                        ),
+    lambda filter_size: LowLevelCallable.from_cython(
+                            _cytest, "_filter1d",
+                            _cytest.filter1d_capsule(filter_size),
+                        ),
 ]
 
 FILTER2D_FUNCTIONS = [
     lambda weights: _ctest.filter2d(weights),
     lambda weights: _cytest.filter2d(weights, with_signature=False),
     lambda weights: LowLevelCallable(_cytest.filter2d(weights, with_signature=True)),
-    lambda weights: LowLevelCallable.from_cython(_cytest, "_filter2d", _cytest.filter2d_capsule(weights)),
+    lambda weights: LowLevelCallable.from_cython(_cytest,
+                                                 "_filter2d",
+                                                 _cytest.filter2d_capsule(weights),),
 ]
 
 TRANSFORM_FUNCTIONS = [
     lambda shift: _ctest.transform(shift),
     lambda shift: _cytest.transform(shift, with_signature=False),
     lambda shift: LowLevelCallable(_cytest.transform(shift, with_signature=True)),
-    lambda shift: LowLevelCallable.from_cython(_cytest, "_transform", _cytest.transform_capsule(shift)),
+    lambda shift: LowLevelCallable.from_cython(_cytest,
+                                               "_transform",
+                                               _cytest.transform_capsule(shift),),
 ]
 
 
@@ -46,7 +54,7 @@ def test_generic_filter():
                                      footprint=footprint)
         std = ndimage.generic_filter(im, filter2d, footprint=footprint,
                                      extra_arguments=(weights,))
-        assert_allclose(res, std, err_msg=f"#{j} failed")
+        xp_assert_close(res, std, err_msg=f"#{j} failed")
 
     for j, func in enumerate(FILTER2D_FUNCTIONS):
         check(j)
@@ -70,7 +78,7 @@ def test_generic_filter1d():
                                        filter_size)
         std = ndimage.generic_filter1d(im, filter1d, filter_size,
                                        extra_arguments=(filter_size,))
-        assert_allclose(res, std, err_msg=f"#{j} failed")
+        xp_assert_close(res, std, err_msg=f"#{j} failed")
 
     for j, func in enumerate(FILTER1D_FUNCTIONS):
         check(j)
@@ -88,7 +96,7 @@ def test_geometric_transform():
 
         res = ndimage.geometric_transform(im, func(shift))
         std = ndimage.geometric_transform(im, transform, extra_arguments=(shift,))
-        assert_allclose(res, std, err_msg=f"#{j} failed")
+        xp_assert_close(res, std, err_msg=f"#{j} failed")
 
     for j, func in enumerate(TRANSFORM_FUNCTIONS):
         check(j)

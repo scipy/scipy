@@ -100,7 +100,7 @@ class NominalAttribute(Attribute):
         super().__init__(name)
         self.values = values
         self.range = values
-        self.dtype = (np.string_, max(len(i) for i in values))
+        self.dtype = (np.bytes_, max(len(i) for i in values))
 
     @staticmethod
     def _get_nom_val(atrv):
@@ -121,7 +121,8 @@ class NominalAttribute(Attribute):
 
         Examples
         --------
-        >>> get_nom_val("{floup, bouga, fl, ratata}")
+        >>> from scipy.io.arff._arffread import NominalAttribute
+        >>> NominalAttribute._get_nom_val("{floup, bouga, fl, ratata}")
         ('floup', 'bouga', 'fl', 'ratata')
         """
         m = r_nominal.match(atrv)
@@ -155,8 +156,7 @@ class NominalAttribute(Attribute):
         elif data_str == '?':
             return data_str
         else:
-            raise ValueError("{} value not in {}".format(str(data_str),
-                                                     str(self.values)))
+            raise ValueError(f"{str(data_str)} value not in {str(self.values)}")
 
     def __str__(self):
         msg = self.name + ",{"
@@ -172,7 +172,7 @@ class NumericAttribute(Attribute):
     def __init__(self, name):
         super().__init__(name)
         self.type_name = 'numeric'
-        self.dtype = np.float_
+        self.dtype = np.float64
 
     @classmethod
     def parse_attribute(cls, name, attr_string):
@@ -209,6 +209,7 @@ class NumericAttribute(Attribute):
 
         Examples
         --------
+        >>> from scipy.io.arff._arffread import NumericAttribute
         >>> atr = NumericAttribute('atr')
         >>> atr.parse_data('1')
         1.0
@@ -329,7 +330,7 @@ class DateAttribute(Attribute):
         else:
             dt = datetime.datetime.strptime(date_str, self.date_format)
             return np.datetime64(dt).astype(
-                "datetime64[%s]" % self.datetime_unit)
+                f"datetime64[{self.datetime_unit}]")
 
     def __str__(self):
         return super().__str__() + ',' + self.date_format
@@ -395,7 +396,7 @@ def to_attribute(name, attr_string):
         if attr is not None:
             return attr
 
-    raise ParseArffError("unknown attribute %s" % attr_string)
+    raise ParseArffError(f"unknown attribute {attr_string}")
 
 
 def csv_sniffer_has_bug_last_field():
@@ -420,18 +421,19 @@ def workaround_csv_sniffer_bug_last_field(sniff_line, dialect, delimiters):
     """
     if csv_sniffer_has_bug_last_field():
         # Reuses code from the csv module
-        right_regex = r'(?P<delim>[^\w\n"\'])(?P<space> ?)(?P<quote>["\']).*?(?P=quote)(?:$|\n)'
+        right_regex = r'(?P<delim>[^\w\n"\'])(?P<space> ?)(?P<quote>["\']).*?(?P=quote)(?:$|\n)'  # noqa: E501
 
-        for restr in (r'(?P<delim>[^\w\n"\'])(?P<space> ?)(?P<quote>["\']).*?(?P=quote)(?P=delim)',  # ,".*?",
-                      r'(?:^|\n)(?P<quote>["\']).*?(?P=quote)(?P<delim>[^\w\n"\'])(?P<space> ?)',  # .*?",
+        for restr in (r'(?P<delim>[^\w\n"\'])(?P<space> ?)(?P<quote>["\']).*?(?P=quote)(?P=delim)',  # ,".*?",  # noqa: E501
+                      r'(?:^|\n)(?P<quote>["\']).*?(?P=quote)(?P<delim>[^\w\n"\'])(?P<space> ?)',  # .*?",  # noqa: E501
                       right_regex,  # ,".*?"
-                      r'(?:^|\n)(?P<quote>["\']).*?(?P=quote)(?:$|\n)'):  # ".*?" (no delim, no space)
+                      r'(?:^|\n)(?P<quote>["\']).*?(?P=quote)(?:$|\n)'):  # ".*?" (no delim, no space)  # noqa: E501
             regexp = re.compile(restr, re.DOTALL | re.MULTILINE)
             matches = regexp.findall(sniff_line)
             if matches:
                 break
 
-        # If it does not match the expression that was bugged, then this bug does not apply
+        # If it does not match the expression that was bugged,
+        # then this bug does not apply
         if restr != right_regex:
             return
 
@@ -451,8 +453,7 @@ def workaround_csv_sniffer_bug_last_field(sniff_line, dialect, delimiters):
         space = bool(m[n])
 
         dq_regexp = re.compile(
-            r"((%(delim)s)|^)\W*%(quote)s[^%(delim)s\n]*%(quote)s[^%(delim)s\n]*%(quote)s\W*((%(delim)s)|$)" %
-            {'delim': re.escape(delim), 'quote': quote}, re.MULTILINE
+            rf"(({re.escape(delim)})|^)\W*{quote}[^{re.escape(delim)}\n]*{quote}[^{re.escape(delim)}\n]*{quote}\W*(({re.escape(delim)})|$)", re.MULTILINE  # noqa: E501
         )
 
         doublequote = bool(dq_regexp.search(sniff_line))
@@ -529,6 +530,7 @@ def tokenize_attribute(iterable, attribute):
     If attribute is a string defined in python as r"floupi real", will
     return floupi as name, and real as value.
 
+    >>> from scipy.io.arff._arffread import tokenize_attribute
     >>> iterable = iter([0] * 10) # dummy iterator
     >>> tokenize_attribute(iterable, r"@attribute floupi real")
     ('floupi', 'real', 0)
@@ -556,7 +558,7 @@ def tokenize_attribute(iterable, attribute):
             # weka.
             raise ValueError("multi line not supported yet")
     else:
-        raise ValueError("First line unparsable: %s" % sattr)
+        raise ValueError(f"First line unparsable: {sattr}")
 
     attribute = to_attribute(name, type)
 
@@ -578,7 +580,7 @@ def tokenize_single_comma(val):
         except IndexError as e:
             raise ValueError("Error while tokenizing attribute") from e
     else:
-        raise ValueError("Error while tokenizing single %s" % val)
+        raise ValueError(f"Error while tokenizing single {val}")
     return name, type
 
 
@@ -593,7 +595,7 @@ def tokenize_single_wcomma(val):
         except IndexError as e:
             raise ValueError("Error while tokenizing attribute") from e
     else:
-        raise ValueError("Error while tokenizing single %s" % val)
+        raise ValueError(f"Error while tokenizing single {val}")
     return name, type
 
 
@@ -611,7 +613,7 @@ def read_relational_attribute(ofile, relational_attribute, i):
                 attr, i = tokenize_attribute(ofile, i)
                 relational_attribute.attributes.append(attr)
             else:
-                raise ValueError("Error parsing line %s" % i)
+                raise ValueError(f"Error parsing line {i}")
         else:
             i = next(ofile)
 
@@ -642,7 +644,7 @@ def read_header(ofile):
                 if isrel:
                     relation = isrel.group(1)
                 else:
-                    raise ValueError("Error parsing line %s" % i)
+                    raise ValueError(f"Error parsing line {i}")
                 i = next(ofile)
         else:
             i = next(ofile)
@@ -685,11 +687,11 @@ class MetaData:
 
     def __repr__(self):
         msg = ""
-        msg += "Dataset: %s\n" % self.name
+        msg += f"Dataset: {self.name}\n"
         for i in self._attributes:
             msg += f"\t{i}'s type is {self._attributes[i].type_name}"
             if self._attributes[i].range:
-                msg += ", range is %s" % str(self._attributes[i].range)
+                msg += f", range is {str(self._attributes[i].range)}"
             msg += '\n'
         return msg
 
@@ -822,7 +824,7 @@ def _loadarff(ofile):
     meta = MetaData(rel, attr)
 
     # XXX The following code is not great
-    # Build the type descriptor descr and the list of convertors to convert
+    # Build the type descriptor descr and the list of converters to convert
     # each attribute to the suitable type (which should match the one in
     # descr).
 

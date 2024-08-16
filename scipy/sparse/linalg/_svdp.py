@@ -94,7 +94,7 @@ def _svdp(A, k, which='LM', irl_mode=True, kmax=None,
     k : int
         Number of singular values/vectors to compute
     which : {"LM", "SM"}
-        Which singluar triplets to compute:
+        Which singular triplets to compute:
         - 'LM': compute triplets corresponding to the `k` largest singular
                 values
         - 'SM': compute triplets corresponding to the `k` smallest singular
@@ -127,7 +127,7 @@ def _svdp(A, k, which='LM', irl_mode=True, kmax=None,
         component larger than `eta` along the Lanczos vector will be purged.
         Default is set based on machine precision.
     anorm : float, optional
-        Estimate of ``||A||``.  Default is `0`.
+        Estimate of ``||A||``.  Default is ``0``.
     cgs : bool, optional
         If `True`, reorthogonalization is done using classical Gram-Schmidt.
         If `False` (default), it is done using modified Gram-Schmidt.
@@ -136,14 +136,14 @@ def _svdp(A, k, which='LM', irl_mode=True, kmax=None,
         when obtaining singular vectors.
     min_relgap : float, optional
         The smallest relative gap allowed between any shift in IRL mode.
-        Default is `0.001`.  Accessed only if ``irl_mode=True``.
+        Default is ``0.001``.  Accessed only if ``irl_mode=True``.
     shifts : int, optional
         Number of shifts per restart in IRL mode.  Default is determined
         to satisfy ``k <= min(kmax-shifts, m, n)``.  Must be
-        >= 0, but choosing 0 might lead to performance degredation.
+        >= 0, but choosing 0 might lead to performance degradation.
         Accessed only if ``irl_mode=True``.
     maxiter : int, optional
-        Maximum number of restarts in IRL mode.  Default is `1000`.
+        Maximum number of restarts in IRL mode.  Default is ``1000``.
         Accessed only if ``irl_mode=True``.
     random_state : {None, int, `numpy.random.Generator`,
                     `numpy.random.RandomState`}, optional
@@ -174,12 +174,6 @@ def _svdp(A, k, which='LM', irl_mode=True, kmax=None,
         ``full_output=True``.
 
     """
-    # 32-bit complex PROPACK functions have Fortran LAPACK ABI
-    # incompatibility issues
-    if np.iscomplexobj(A) and (np.intp(0).itemsize < 8):
-        raise TypeError('PROPACK complex-valued SVD methods not available '
-                        'for 32-bit builds')
-
     random_state = check_random_state(random_state)
 
     which = which.upper()
@@ -316,6 +310,6 @@ def _svdp(A, k, which='LM', irl_mode=True, kmax=None,
             f"kmax={kmax} iterations")
 
     # info == 0: The K largest (or smallest) singular triplets were computed
-    # succesfully!
+    # successfully!
 
     return u[:, :k], sigma, v[:, :k].conj().T, bnd

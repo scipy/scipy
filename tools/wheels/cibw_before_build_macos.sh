@@ -1,7 +1,7 @@
 set -xe
 
 PROJECT_DIR="$1"
-PLATFORM=$(PYTHONPATH=tools python -c "import openblas_support; print(openblas_support.get_plat())")
+PLATFORM=$(uname -m)
 echo $PLATFORM
 
 # Update license
@@ -10,17 +10,11 @@ cat $PROJECT_DIR/tools/wheels/LICENSE_osx.txt >> $PROJECT_DIR/LICENSE.txt
 #########################################################################################
 # Install GFortran + OpenBLAS
 
-if [[ $PLATFORM == "macosx-x86_64" ]]; then
-  # Openblas
-  basedir=$(python tools/openblas_support.py)
-
-  # copy over the OpenBLAS library stuff first
-  cp -r $basedir/lib/* /usr/local/lib
-  cp $basedir/include/* /usr/local/include
-
+if [[ $PLATFORM == "x86_64" ]]; then
   #GFORTRAN=$(type -p gfortran-9)
   #sudo ln -s $GFORTRAN /usr/local/bin/gfortran
-  # same version of gfortran as the openblas-libs and scipy-wheel builds
+  # same version of gfortran as the openblas-libs
+  # https://github.com/MacPython/gfortran-install.git
   curl -L https://github.com/isuruf/gcc/releases/download/gcc-11.3.0-2/gfortran-darwin-x86_64-native.tar.gz -o gfortran.tar.gz
 
   GFORTRAN_SHA256=$(shasum -a 256 gfortran.tar.gz)
@@ -47,24 +41,10 @@ if [[ $PLATFORM == "macosx-x86_64" ]]; then
   # environment (so it mirrors what is done in the conda-forge compiler
   # activation scripts)
   export SDKROOT=${SDKROOT:-$(xcrun --show-sdk-path)}
-  gfortran tools/wheels/test.f
 fi
 
-if [[ $PLATFORM == "macosx-arm64" ]]; then
-  # OpenBLAS
-  # need a version of OpenBLAS that is suited for gcc >= 11
-  basedir=$(python tools/openblas_support.py)
 
-  # use /opt/arm64-builds as a prefix, because that's what the multibuild
-  # OpenBLAS pkgconfig files state
-  sudo mkdir -p /opt/arm64-builds/lib
-  sudo mkdir -p /opt/arm64-builds/include
-  sudo cp -r $basedir/lib/* /opt/arm64-builds/lib
-  sudo cp $basedir/include/* /opt/arm64-builds/include
-
-  # we want to force a dynamic linking
-  sudo rm /opt/arm64-builds/lib/*.a
-
+if [[ $PLATFORM == "arm64" ]]; then
   curl -L https://github.com/fxcoudert/gfortran-for-macOS/releases/download/12.1-monterey/gfortran-ARM-12.1-Monterey.dmg -o gfortran.dmg
   GFORTRAN_SHA256=$(shasum -a 256 gfortran.dmg)
   KNOWN_SHA256="e2e32f491303a00092921baebac7ffb7ae98de4ca82ebbe9e6a866dd8501acdf  gfortran.dmg"
@@ -78,3 +58,28 @@ if [[ $PLATFORM == "macosx-arm64" ]]; then
   sudo installer -pkg /Volumes/gfortran/gfortran.pkg -target /
   type -p gfortran
 fi
+
+# TODO: delete along with enabling build isolation by unsetting
+# CIBW_BUILD_FRONTEND when scipy is buildable under free-threaded
+# python with a released version of cython
+FREE_THREADED_BUILD="$(python -c"import sysconfig; print(bool(sysconfig.get_config_var('Py_GIL_DISABLED')))")"
+if [[ $FREE_THREADED_BUILD == "True" ]]; then
+    python -m pip install -U --pre pip
+    python -m pip install -i https://pypi.anaconda.org/scientific-python-nightly-wheels/simple numpy cython
+    # python -m pip install git+https://github.com/serge-sans-paille/pythran
+    python -m pip install ninja meson-python pybind11 pythran
+fi
+
+# Install Openblas
+python -m pip install -r requirements/openblas.txt
+python -c "import scipy_openblas32; print(scipy_openblas32.get_pkg_config())" > $PROJECT_DIR/scipy-openblas.pc
+
+lib_loc=$(python -c"import scipy_openblas32; print(scipy_openblas32.get_lib_dir())")
+# Use the libgfortran from gfortran rather than the one in the wheel
+# since delocate gets confused if there is more than one
+# https://github.com/scipy/scipy/issues/20852
+install_name_tool -change @loader_path/../.dylibs/libgfortran.5.dylib @rpath/libgfortran.5.dylib $lib_loc/libsci*
+install_name_tool -change @loader_path/../.dylibs/libgcc_s.1.1.dylib @rpath/libgcc_s.1.1.dylib $lib_loc/libsci*
+install_name_tool -change @loader_path/../.dylibs/libquadmath.0.dylib @rpath/libquadmath.0.dylib $lib_loc/libsci*
+
+codesign -s - -f $lib_loc/libsci*

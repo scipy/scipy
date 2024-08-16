@@ -238,10 +238,9 @@ class AdaptiveStepsize:
             # We're not accepting enough steps. Take smaller steps.
             self.takestep.stepsize *= self.factor
         if self.verbose:
-            print("adaptive stepsize: acceptance rate {:f} target {:f} new "
-                  "stepsize {:g} old stepsize {:g}".format(accept_rate,
-                  self.target_accept_rate, self.takestep.stepsize,
-                  old_stepsize))
+            print(f"adaptive stepsize: acceptance rate {accept_rate:f} target "
+                  f"{self.target_accept_rate:f} new stepsize "
+                  f"{self.takestep.stepsize:g} old stepsize {old_stepsize:g}")
 
     def take_step(self, x):
         self.nstep += 1
@@ -396,11 +395,11 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
         Extra keyword arguments to be passed to the local minimizer
         `scipy.optimize.minimize` Some important options could be:
 
-            method : str
-                The minimization method (e.g. ``"L-BFGS-B"``)
-            args : tuple
-                Extra arguments passed to the objective function (`func`) and
-                its derivatives (Jacobian, Hessian).
+        method : str
+            The minimization method (e.g. ``"L-BFGS-B"``)
+        args : tuple
+            Extra arguments passed to the objective function (`func`) and
+            its derivatives (Jacobian, Hessian).
 
     take_step : callable ``take_step(x)``, optional
         Replace the default step-taking routine with this routine. The default
@@ -434,7 +433,6 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
         Stop the run if the global minimum candidate remains the same for this
         number of iterations.
     seed : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
-
         If `seed` is None (or `np.random`), the `numpy.random.RandomState`
         singleton is used.
         If `seed` is an int, a new ``RandomState`` instance is used,
@@ -580,8 +578,9 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
     >>> minimizer_kwargs = {"method": "BFGS"}
     >>> ret = basinhopping(func, x0, minimizer_kwargs=minimizer_kwargs,
     ...                    niter=200)
-    >>> print("global minimum: x = %.4f, f(x) = %.4f" % (ret.x, ret.fun))
-    global minimum: x = -0.1951, f(x) = -1.0009
+    >>> # the global minimum is:
+    >>> ret.x, ret.fun
+    -0.1951, -1.0009
 
     Next consider a 2-D minimization problem. Also, this time, we
     will use gradient information to significantly speed up the search.
@@ -658,7 +657,7 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
     The minimum at -1.0109 is actually the global minimum, found already on the
     8th iteration.
 
-    """
+    """ # numpy/numpydoc#87  # noqa: E501
     if target_accept_rate <= 0. or target_accept_rate >= 1.:
         raise ValueError('target_accept_rate has to be in range (0, 1)')
     if stepwise_factor <= 0. or stepwise_factor >= 1.:

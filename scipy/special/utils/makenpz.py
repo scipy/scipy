@@ -18,7 +18,7 @@ def newer(source, target):
     both exist and 'target' is the same age or younger than 'source'.
     """
     if not os.path.exists(source):
-        raise ValueError("file '%s' does not exist" % os.path.abspath(source))
+        raise ValueError(f"file '{os.path.abspath(source)}' does not exist")
     if not os.path.exists(target):
         return 1
 
@@ -38,9 +38,7 @@ def main():
     args = p.parse_args()
 
     if not args.outdir:
-        # We're dealing with a distutils build here, write in-place:
-        inp = os.path.normpath(args.dirname)
-        outp = inp + ".npz"
+        raise ValueError("Missing `--outdir` argument to makenpz.py")
     else:
         inp = os.path.join(os.path.abspath(os.path.dirname(__file__)),
                            '..', 'tests', 'data', args.dirname)
@@ -54,6 +52,8 @@ def main():
     # Find source files
     files = []
     for dirpath, dirnames, filenames in os.walk(inp):
+        dirnames.sort()
+        filenames.sort()
         for fn in filenames:
             if fn.endswith('.txt'):
                 key = dirpath[len(inp)+1:] + '-' + fn[:-4]

@@ -58,25 +58,24 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
         Lower and upper bounds on parameters. Defaults to no bounds.
         There are two ways to specify the bounds:
 
-            - Instance of `Bounds` class.
-
-            - 2-tuple of array_like: Each element of the tuple must be either
-              an array with the length equal to the number of parameters, or a
-              scalar (in which case the bound is taken to be the same for all
-              parameters). Use ``np.inf`` with an appropriate sign to disable
-              bounds on all or some parameters.
+        - Instance of `Bounds` class.
+        - 2-tuple of array_like: Each element of the tuple must be either
+          an array with the length equal to the number of parameters, or a
+          scalar (in which case the bound is taken to be the same for all
+          parameters). Use ``np.inf`` with an appropriate sign to disable
+          bounds on all or some parameters.
 
     method : 'trf' or 'bvls', optional
         Method to perform minimization.
 
-            * 'trf' : Trust Region Reflective algorithm adapted for a linear
-              least-squares problem. This is an interior-point-like method
-              and the required number of iterations is weakly correlated with
-              the number of variables.
-            * 'bvls' : Bounded-variable least-squares algorithm. This is
-              an active set method, which requires the number of iterations
-              comparable to the number of variables. Can't be used when `A` is
-              sparse or LinearOperator.
+        * 'trf' : Trust Region Reflective algorithm adapted for a linear
+          least-squares problem. This is an interior-point-like method
+          and the required number of iterations is weakly correlated with
+          the number of variables.
+        * 'bvls' : Bounded-variable least-squares algorithm. This is
+          an active set method, which requires the number of iterations
+          comparable to the number of variables. Can't be used when `A` is
+          sparse or LinearOperator.
 
         Default is 'trf'.
     tol : float, optional
@@ -84,21 +83,21 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
         of the cost function is less than `tol` on the last iteration.
         Additionally, the first-order optimality measure is considered:
 
-            * ``method='trf'`` terminates if the uniform norm of the gradient,
-              scaled to account for the presence of the bounds, is less than
-              `tol`.
-            * ``method='bvls'`` terminates if Karush-Kuhn-Tucker conditions
-              are satisfied within `tol` tolerance.
+        * ``method='trf'`` terminates if the uniform norm of the gradient,
+          scaled to account for the presence of the bounds, is less than
+          `tol`.
+        * ``method='bvls'`` terminates if Karush-Kuhn-Tucker conditions
+          are satisfied within `tol` tolerance.
 
     lsq_solver : {None, 'exact', 'lsmr'}, optional
         Method of solving unbounded least-squares problems throughout
         iterations:
 
-            * 'exact' : Use dense QR or SVD decomposition approach. Can't be
-              used when `A` is sparse or LinearOperator.
-            * 'lsmr' : Use `scipy.sparse.linalg.lsmr` iterative procedure
-              which requires only matrix-vector product evaluations. Can't
-              be used with ``method='bvls'``.
+        * 'exact' : Use dense QR or SVD decomposition approach. Can't be
+          used when `A` is sparse or LinearOperator.
+        * 'lsmr' : Use `scipy.sparse.linalg.lsmr` iterative procedure
+          which requires only matrix-vector product evaluations. Can't
+          be used with ``method='bvls'``.
 
         If None (default), the solver is chosen based on type of `A`.
     lsmr_tol : None, float or 'auto', optional
@@ -114,9 +113,10 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
     verbose : {0, 1, 2}, optional
         Level of algorithm's verbosity:
 
-            * 0 : work silently (default).
-            * 1 : display a termination report.
-            * 2 : display progress during iterations.
+        * 0 : work silently (default).
+        * 1 : display a termination report.
+        * 2 : display progress during iterations.
+
     lsmr_maxiter : None or int, optional
         Maximum number of iterations for the lsmr least squares solver,
         if it is used (by setting ``lsq_solver='lsmr'``). If None (default), it
@@ -140,9 +140,9 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
         Each component shows whether a corresponding constraint is active
         (that is, whether a variable is at the bound):
 
-            *  0 : a constraint is not active.
-            * -1 : a lower bound is active.
-            *  1 : an upper bound is active.
+        *  0 : a constraint is not active.
+        * -1 : a lower bound is active.
+        *  1 : an upper bound is active.
 
         Might be somewhat arbitrary for the `trf` method as it generates a
         sequence of strictly feasible iterates and active_mask is determined
@@ -167,12 +167,12 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
     status : int
         Reason for algorithm termination:
 
-            * -1 : the algorithm was not able to make progress on the last
-              iteration.
-            *  0 : the maximum number of iterations is exceeded.
-            *  1 : the first-order optimality measure is less than `tol`.
-            *  2 : the relative change of the cost function is less than `tol`.
-            *  3 : the unconstrained solution is optimal.
+        * -1 : the algorithm was not able to make progress on the last
+          iteration.
+        *  0 : the maximum number of iterations is exceeded.
+        *  1 : the first-order optimality measure is less than `tol`.
+        *  2 : the relative change of the cost function is less than `tol`.
+        *  3 : the unconstrained solution is optimal.
 
     message : str
         Verbal description of the termination reason.
@@ -332,8 +332,7 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
 
         if verbose > 0:
             print(termination_message)
-            print("Final cost {:.4e}, first-order optimality {:.2e}"
-                  .format(cost, g_norm))
+            print(f"Final cost {cost:.4e}, first-order optimality {g_norm:.2e}")
 
         return OptimizeResult(
             x=x_lsq, fun=r, cost=cost, optimality=g_norm,
@@ -353,9 +352,10 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
 
     if verbose > 0:
         print(res.message)
-        print("Number of iterations {}, initial cost {:.4e}, "
-              "final cost {:.4e}, first-order optimality {:.2e}."
-              .format(res.nit, res.initial_cost, res.cost, res.optimality))
+        print(
+            f"Number of iterations {res.nit}, initial cost {res.initial_cost:.4e}, "
+            f"final cost {res.cost:.4e}, first-order optimality {res.optimality:.2e}."
+        )
 
     del res.initial_cost
 

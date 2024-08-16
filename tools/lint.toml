@@ -1,24 +1,47 @@
-[tool.ruff]
+exclude = [
+    "scipy/_build_utils/tempita/*",
+    "scipy/_lib/_docscrape.py",
+    "scipy/datasets/_registry.py",
+]
+
+force-exclude = true
+
 line-length = 88
-
-# Enable Pyflakes `E` and `F` codes by default.
-select = ["E", "F"]
-ignore = [
-  "E121", "E122", "E123", "E125", "E126", "E127", "E128", "E226",
-  "E251", "E265", "E266", "E302", "E402", "E712", "E721", "E731",
-  "E741", "W291", "W293", "W391", "W503", "W504"
-]
-excludes = [
-  'scipy/datasets/_registry.py'
-]
-per-file-ignores = {'**/__init.py', ['F401', 'F403']}
-
-# Allow unused variables when underscore-prefixed.
-dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 
 # Assume Python 3.9
 target-version = "py39"
 
-[tool.ruff.mccabe]
+[lint]
+# Enable Pyflakes `E` and `F` and PyUpgrade `UP` codes by default.
+# Also, `PGH004` which checks for blanket (non-specific) `noqa`s
+# and `B028` which checks that warnings include the `stacklevel` keyword.
+# `B006` and `B008` added in gh-21284 to forbid mutable defaults.
+# `B028` added in gh-19623.
+# `ICN001` added in gh-20382 to enforce common conventions for import.
+# `W292` added in gh-21023 to enforce newlines at end of files.
+select = ["E", "F", "PGH004", "UP", "B006", "B008", "B028", "ICN001", "W292"]
+ignore = ["E741"]
+
+# Allow unused variables when underscore-prefixed.
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+
+[lint.per-file-ignores]
+"**/__init__.py" = ["E402", "F401", "F403", "F405"]
+"scipy/linalg/lapack.py" = ["F405"]
+"scipy/stats/tests/data/_mvt.py" = ["E501", "E701", "E702"]
+# E501 (line length) ignores
+"scipy/constants/_codata.py" = ["E501"]
+"scipy/linalg/_cython_signature_generator.py" = ["E501"]
+"scipy/linalg/_generate_pyx.py" = ["E501"]
+"scipy/spatial/transform/_rotation.pyi" = ["E501"]
+"doc/source/doi_role.py" = ["B006"]
+
+[lint.flake8-import-conventions.aliases]
+numpy = "np"
+
+[lint.mccabe]
 # Unlike Flake8, default to a complexity level of 10.
 max-complexity = 10
+
+[lint.pydocstyle]
+convention = "numpy"

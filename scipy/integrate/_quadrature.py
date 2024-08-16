@@ -1,6 +1,7 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING, Callable, Any, cast
 import numpy as np
+import numpy.typing as npt
 import math
 import warnings
 from collections import namedtuple
@@ -10,10 +11,10 @@ from scipy.special import gammaln, logsumexp
 from scipy._lib._util import _rng_spawn
 
 
-__all__ = ['fixed_quad', 'quadrature', 'romberg', 'romb',
-           'trapezoid', 'trapz', 'simps', 'simpson',
-           'cumulative_trapezoid', 'cumtrapz', 'newton_cotes',
-           'qmc_quad', 'AccuracyWarning']
+__all__ = ['fixed_quad', 'romb',
+           'trapezoid', 'simpson',
+           'cumulative_trapezoid', 'newton_cotes',
+           'qmc_quad', 'cumulative_simpson']
 
 
 def trapezoid(y, x=None, dx=1.0, axis=-1):
@@ -118,27 +119,32 @@ def trapezoid(y, x=None, dx=1.0, axis=-1):
     >>> integrate.trapezoid(a, axis=1)
     array([2.,  8.])
     """
-    # Future-proofing, in case NumPy moves from trapz to trapezoid for the same
-    # reasons as SciPy
-    if hasattr(np, 'trapezoid'):
-        return np.trapezoid(y, x=x, dx=dx, axis=axis)
+    y = np.asanyarray(y)
+    if x is None:
+        d = dx
     else:
-        return np.trapz(y, x=x, dx=dx, axis=axis)
-
-
-# Note: alias kept for backwards compatibility. Rename was done
-# because trapz is a slur in colloquial English (see gh-12924).
-def trapz(y, x=None, dx=1.0, axis=-1):
-    """An alias of `trapezoid`.
-
-    `trapz` is kept for backwards compatibility. For new code, prefer
-    `trapezoid` instead.
-    """
-    return trapezoid(y, x=x, dx=dx, axis=axis)
-
-
-class AccuracyWarning(Warning):
-    pass
+        x = np.asanyarray(x)
+        if x.ndim == 1:
+            d = np.diff(x)
+            # reshape to correct shape
+            shape = [1]*y.ndim
+            shape[axis] = d.shape[0]
+            d = d.reshape(shape)
+        else:
+            d = np.diff(x, axis=axis)
+    nd = y.ndim
+    slice1 = [slice(None)]*nd
+    slice2 = [slice(None)]*nd
+    slice1[axis] = slice(1, None)
+    slice2[axis] = slice(None, -1)
+    try:
+        ret = (d * (y[tuple(slice1)] + y[tuple(slice2)]) / 2.0).sum(axis)
+    except ValueError:
+        # Operations didn't work, cast to ndarray
+        d = np.asarray(d)
+        y = np.asarray(y)
+        ret = np.add.reduce(d * (y[tuple(slice1)]+y[tuple(slice2)])/2.0, axis)
+    return ret
 
 
 if TYPE_CHECKING:
@@ -206,13 +212,9 @@ def fixed_quad(func, a, b, args=(), n=5):
     quad : adaptive quadrature using QUADPACK
     dblquad : double integrals
     tplquad : triple integrals
-    romberg : adaptive Romberg quadrature
-    quadrature : adaptive Gaussian quadrature
     romb : integrators for sampled data
     simpson : integrators for sampled data
     cumulative_trapezoid : cumulative integration for sampled data
-    ode : ODE integrator
-    odeint : ODE integrator
 
     Examples
     --------
@@ -243,151 +245,10 @@ def fixed_quad(func, a, b, args=(), n=5):
     return (b-a)/2.0 * np.sum(w*func(y, *args), axis=-1), None
 
 
-def vectorize1(func, args=(), vec_func=False):
-    """Vectorize the call to a function.
-
-    This is an internal utility function used by `romberg` and
-    `quadrature` to create a vectorized version of a function.
-
-    If `vec_func` is True, the function `func` is assumed to take vector
-    arguments.
-
-    Parameters
-    ----------
-    func : callable
-        User defined function.
-    args : tuple, optional
-        Extra arguments for the function.
-    vec_func : bool, optional
-        True if the function func takes vector arguments.
-
-    Returns
-    -------
-    vfunc : callable
-        A function that will take a vector argument and return the
-        result.
-
-    """
-    if vec_func:
-        def vfunc(x):
-            return func(x, *args)
-    else:
-        def vfunc(x):
-            if np.isscalar(x):
-                return func(x, *args)
-            x = np.asarray(x)
-            # call with first point to get output type
-            y0 = func(x[0], *args)
-            n = len(x)
-            dtype = getattr(y0, 'dtype', type(y0))
-            output = np.empty((n,), dtype=dtype)
-            output[0] = y0
-            for i in range(1, n):
-                output[i] = func(x[i], *args)
-            return output
-    return vfunc
-
-
-def quadrature(func, a, b, args=(), tol=1.49e-8, rtol=1.49e-8, maxiter=50,
-               vec_func=True, miniter=1):
-    """
-    Compute a definite integral using fixed-tolerance Gaussian quadrature.
-
-    Integrate `func` from `a` to `b` using Gaussian quadrature
-    with absolute tolerance `tol`.
-
-    Parameters
-    ----------
-    func : function
-        A Python function or method to integrate.
-    a : float
-        Lower limit of integration.
-    b : float
-        Upper limit of integration.
-    args : tuple, optional
-        Extra arguments to pass to function.
-    tol, rtol : float, optional
-        Iteration stops when error between last two iterates is less than
-        `tol` OR the relative change is less than `rtol`.
-    maxiter : int, optional
-        Maximum order of Gaussian quadrature.
-    vec_func : bool, optional
-        True or False if func handles arrays as arguments (is
-        a "vector" function). Default is True.
-    miniter : int, optional
-        Minimum order of Gaussian quadrature.
-
-    Returns
-    -------
-    val : float
-        Gaussian quadrature approximation (within tolerance) to integral.
-    err : float
-        Difference between last two estimates of the integral.
-
-    See Also
-    --------
-    romberg : adaptive Romberg quadrature
-    fixed_quad : fixed-order Gaussian quadrature
-    quad : adaptive quadrature using QUADPACK
-    dblquad : double integrals
-    tplquad : triple integrals
-    romb : integrator for sampled data
-    simpson : integrator for sampled data
-    cumulative_trapezoid : cumulative integration for sampled data
-    ode : ODE integrator
-    odeint : ODE integrator
-
-    Examples
-    --------
-    >>> from scipy import integrate
-    >>> import numpy as np
-    >>> f = lambda x: x**8
-    >>> integrate.quadrature(f, 0.0, 1.0)
-    (0.11111111111111106, 4.163336342344337e-17)
-    >>> print(1/9.0)  # analytical result
-    0.1111111111111111
-
-    >>> integrate.quadrature(np.cos, 0.0, np.pi/2)
-    (0.9999999999999536, 3.9611425250996035e-11)
-    >>> np.sin(np.pi/2)-np.sin(0)  # analytical result
-    1.0
-
-    """
-    if not isinstance(args, tuple):
-        args = (args,)
-    vfunc = vectorize1(func, args, vec_func=vec_func)
-    val = np.inf
-    err = np.inf
-    maxiter = max(miniter+1, maxiter)
-    for n in range(miniter, maxiter+1):
-        newval = fixed_quad(vfunc, a, b, (), n)[0]
-        err = abs(newval-val)
-        val = newval
-
-        if err < tol or err < rtol*abs(val):
-            break
-    else:
-        warnings.warn(
-            "maxiter (%d) exceeded. Latest difference = %e" % (maxiter, err),
-            AccuracyWarning)
-    return val, err
-
-
 def tupleset(t, i, value):
     l = list(t)
     l[i] = value
     return tuple(l)
-
-
-# Note: alias kept for backwards compatibility. Rename was done
-# because cumtrapz is a slur in colloquial English (see gh-12924).
-def cumtrapz(y, x=None, dx=1.0, axis=-1, initial=None):
-    """An alias of `cumulative_trapezoid`.
-
-    `cumtrapz` is kept for backwards compatibility. For new code, prefer
-    `cumulative_trapezoid` instead.
-    """
-    return cumulative_trapezoid(y, x=x, dx=dx, axis=axis, initial=initial)
 
 
 def cumulative_trapezoid(y, x=None, dx=1.0, axis=-1, initial=None):
@@ -407,9 +268,8 @@ def cumulative_trapezoid(y, x=None, dx=1.0, axis=-1, initial=None):
         Specifies the axis to cumulate. Default is -1 (last axis).
     initial : scalar, optional
         If given, insert this value at the beginning of the returned result.
-        Typically this value should be 0. Default is None, which means no
-        value at ``x[0]`` is returned and `res` has one element less than `y`
-        along the axis of integration.
+        0 or None are the only values accepted. Default is None, which means
+        `res` has one element less than `y` along the axis of integration.
 
     Returns
     -------
@@ -422,15 +282,12 @@ def cumulative_trapezoid(y, x=None, dx=1.0, axis=-1, initial=None):
     See Also
     --------
     numpy.cumsum, numpy.cumprod
+    cumulative_simpson : cumulative integration using Simpson's 1/3 rule
     quad : adaptive quadrature using QUADPACK
-    romberg : adaptive Romberg quadrature
-    quadrature : adaptive Gaussian quadrature
     fixed_quad : fixed-order Gaussian quadrature
     dblquad : double integrals
     tplquad : triple integrals
     romb : integrators for sampled data
-    ode : ODE integrators
-    odeint : ODE integrators
 
     Examples
     --------
@@ -446,6 +303,8 @@ def cumulative_trapezoid(y, x=None, dx=1.0, axis=-1, initial=None):
 
     """
     y = np.asarray(y)
+    if y.shape[axis] == 0:
+        raise ValueError("At least one point is required along `axis`.")
     if x is None:
         d = dx
     else:
@@ -472,6 +331,8 @@ def cumulative_trapezoid(y, x=None, dx=1.0, axis=-1, initial=None):
     res = np.cumsum(d * (y[slice1] + y[slice2]) / 2.0, axis=axis)
 
     if initial is not None:
+        if initial != 0:
+            raise ValueError("`initial` must be `None` or `0`.")
         if not np.isscalar(initial):
             raise ValueError("`initial` parameter should be a scalar.")
 
@@ -502,8 +363,8 @@ def _basic_simpson(y, start, stop, x, dx, axis):
         h = np.diff(x, axis=axis)
         sl0 = tupleset(slice_all, axis, slice(start, stop, step))
         sl1 = tupleset(slice_all, axis, slice(start+1, stop+1, step))
-        h0 = np.float64(h[sl0])
-        h1 = np.float64(h[sl1])
+        h0 = h[sl0].astype(float, copy=False)
+        h1 = h[sl1].astype(float, copy=False)
         hsum = h0 + h1
         hprod = h0 * h1
         h0divh1 = np.true_divide(h0, h1, out=np.zeros_like(h0), where=h1 != 0)
@@ -520,25 +381,10 @@ def _basic_simpson(y, start, stop, x, dx, axis):
     return result
 
 
-# Note: alias kept for backwards compatibility. simps was renamed to simpson
-# because the former is a slur in colloquial English (see gh-12924).
-def simps(y, x=None, dx=1.0, axis=-1, even='avg'):
-    """An alias of `simpson`.
-
-    `simps` is kept for backwards compatibility. For new code, prefer
-    `simpson` instead.
-    """
-    return simpson(y, x=x, dx=dx, axis=axis, even=even)
-
-
-def simpson(y, x=None, dx=1.0, axis=-1, even='avg'):
+def simpson(y, *, x=None, dx=1.0, axis=-1):
     """
     Integrate y(x) using samples along the given axis and the composite
     Simpson's rule. If x is None, spacing of dx is assumed.
-
-    If there are an even number of samples, N, then there are an odd
-    number of intervals (N-1), but Simpson's rule requires an even number
-    of intervals. The parameter 'even' controls how this is handled.
 
     Parameters
     ----------
@@ -551,16 +397,6 @@ def simpson(y, x=None, dx=1.0, axis=-1, even='avg'):
         `x` is None. Default is 1.
     axis : int, optional
         Axis along which to integrate. Default is the last axis.
-    even : str {'avg', 'first', 'last'}, optional
-        'avg' : Average two results:1) use the first N-2 intervals with
-                  a trapezoidal rule on the last interval and 2) use the last
-                  N-2 intervals with a trapezoidal rule on the first interval.
-
-        'first' : Use Simpson's rule for the first N-2 intervals with
-                a trapezoidal rule on the last interval.
-
-        'last' : Use Simpson's rule for the last N-2 intervals with a
-               trapezoidal rule on the first interval.
 
     Returns
     -------
@@ -570,15 +406,12 @@ def simpson(y, x=None, dx=1.0, axis=-1, even='avg'):
     See Also
     --------
     quad : adaptive quadrature using QUADPACK
-    romberg : adaptive Romberg quadrature
-    quadrature : adaptive Gaussian quadrature
     fixed_quad : fixed-order Gaussian quadrature
     dblquad : double integrals
     tplquad : triple integrals
     romb : integrators for sampled data
     cumulative_trapezoid : cumulative integration for sampled data
-    ode : ODE integrators
-    odeint : ODE integrators
+    cumulative_simpson : cumulative integration using Simpson's 1/3 rule
 
     Notes
     -----
@@ -587,6 +420,12 @@ def simpson(y, x=None, dx=1.0, axis=-1, even='avg'):
     the samples are not equally spaced, then the result is exact only
     if the function is a polynomial of order 2 or less.
 
+    References
+    ----------
+    .. [1] Cartwright, Kenneth V. Simpson's Rule Cumulative Integration with
+           MS Excel and Irregularly-spaced Data. Journal of Mathematical
+           Sciences and Mathematics Education. 12 (2): 1-9
+
     Examples
     --------
     >>> from scipy import integrate
@@ -594,24 +433,20 @@ def simpson(y, x=None, dx=1.0, axis=-1, even='avg'):
     >>> x = np.arange(0, 10)
     >>> y = np.arange(0, 10)
 
-    >>> integrate.simpson(y, x)
+    >>> integrate.simpson(y, x=x)
     40.5
 
     >>> y = np.power(x, 3)
-    >>> integrate.simpson(y, x)
-    1642.5
+    >>> integrate.simpson(y, x=x)
+    1640.5
     >>> integrate.quad(lambda x: x**3, 0, 9)[0]
     1640.25
-
-    >>> integrate.simpson(y, x, even='first')
-    1644.5
 
     """
     y = np.asarray(y)
     nd = len(y.shape)
     N = y.shape[axis]
     last_dx = dx
-    first_dx = dx
     returnshape = 0
     if x is not None:
         x = np.asarray(x)
@@ -627,39 +462,338 @@ def simpson(y, x=None, dx=1.0, axis=-1, even='avg'):
         if x.shape[axis] != N:
             raise ValueError("If given, length of x along axis must be the "
                              "same as y.")
+
     if N % 2 == 0:
         val = 0.0
         result = 0.0
-        slice1 = (slice(None),)*nd
-        slice2 = (slice(None),)*nd
-        if even not in ['avg', 'last', 'first']:
-            raise ValueError("Parameter 'even' must be "
-                             "'avg', 'last', or 'first'.")
-        # Compute using Simpson's rule on first intervals
-        if even in ['avg', 'first']:
-            slice1 = tupleset(slice1, axis, -1)
-            slice2 = tupleset(slice2, axis, -2)
+        slice_all = (slice(None),) * nd
+
+        if N == 2:
+            # need at least 3 points in integration axis to form parabolic
+            # segment. If there are two points then any of 'avg', 'first',
+            # 'last' should give the same result.
+            slice1 = tupleset(slice_all, axis, -1)
+            slice2 = tupleset(slice_all, axis, -2)
             if x is not None:
                 last_dx = x[slice1] - x[slice2]
-            val += 0.5*last_dx*(y[slice1]+y[slice2])
+            val += 0.5 * last_dx * (y[slice1] + y[slice2])
+        else:
+            # use Simpson's rule on first intervals
             result = _basic_simpson(y, 0, N-3, x, dx, axis)
-        # Compute using Simpson's rule on last set of intervals
-        if even in ['avg', 'last']:
-            slice1 = tupleset(slice1, axis, 0)
-            slice2 = tupleset(slice2, axis, 1)
+
+            slice1 = tupleset(slice_all, axis, -1)
+            slice2 = tupleset(slice_all, axis, -2)
+            slice3 = tupleset(slice_all, axis, -3)
+
+            h = np.asarray([dx, dx], dtype=np.float64)
             if x is not None:
-                first_dx = x[tuple(slice2)] - x[tuple(slice1)]
-            val += 0.5*first_dx*(y[slice2]+y[slice1])
-            result += _basic_simpson(y, 1, N-2, x, dx, axis)
-        if even == 'avg':
-            val /= 2.0
-            result /= 2.0
-        result = result + val
+                # grab the last two spacings from the appropriate axis
+                hm2 = tupleset(slice_all, axis, slice(-2, -1, 1))
+                hm1 = tupleset(slice_all, axis, slice(-1, None, 1))
+
+                diffs = np.float64(np.diff(x, axis=axis))
+                h = [np.squeeze(diffs[hm2], axis=axis),
+                     np.squeeze(diffs[hm1], axis=axis)]
+
+            # This is the correction for the last interval according to
+            # Cartwright.
+            # However, I used the equations given at
+            # https://en.wikipedia.org/wiki/Simpson%27s_rule#Composite_Simpson's_rule_for_irregularly_spaced_data
+            # A footnote on Wikipedia says:
+            # Cartwright 2017, Equation 8. The equation in Cartwright is
+            # calculating the first interval whereas the equations in the
+            # Wikipedia article are adjusting for the last integral. If the
+            # proper algebraic substitutions are made, the equation results in
+            # the values shown.
+            num = 2 * h[1] ** 2 + 3 * h[0] * h[1]
+            den = 6 * (h[1] + h[0])
+            alpha = np.true_divide(
+                num,
+                den,
+                out=np.zeros_like(den),
+                where=den != 0
+            )
+
+            num = h[1] ** 2 + 3.0 * h[0] * h[1]
+            den = 6 * h[0]
+            beta = np.true_divide(
+                num,
+                den,
+                out=np.zeros_like(den),
+                where=den != 0
+            )
+
+            num = 1 * h[1] ** 3
+            den = 6 * h[0] * (h[0] + h[1])
+            eta = np.true_divide(
+                num,
+                den,
+                out=np.zeros_like(den),
+                where=den != 0
+            )
+
+            result += alpha*y[slice1] + beta*y[slice2] - eta*y[slice3]
+
+        result += val
     else:
         result = _basic_simpson(y, 0, N-2, x, dx, axis)
     if returnshape:
         x = x.reshape(saveshape)
     return result
+
+
+def _cumulatively_sum_simpson_integrals(
+    y: np.ndarray, 
+    dx: np.ndarray, 
+    integration_func: Callable[[np.ndarray, np.ndarray], np.ndarray],
+) -> np.ndarray:
+    """Calculate cumulative sum of Simpson integrals.
+    Takes as input the integration function to be used. 
+    The integration_func is assumed to return the cumulative sum using
+    composite Simpson's rule. Assumes the axis of summation is -1.
+    """
+    sub_integrals_h1 = integration_func(y, dx)
+    sub_integrals_h2 = integration_func(y[..., ::-1], dx[..., ::-1])[..., ::-1]
+    
+    shape = list(sub_integrals_h1.shape)
+    shape[-1] += 1
+    sub_integrals = np.empty(shape)
+    sub_integrals[..., :-1:2] = sub_integrals_h1[..., ::2]
+    sub_integrals[..., 1::2] = sub_integrals_h2[..., ::2]
+    # Integral over last subinterval can only be calculated from 
+    # formula for h2
+    sub_integrals[..., -1] = sub_integrals_h2[..., -1]
+    res = np.cumsum(sub_integrals, axis=-1)
+    return res
+
+
+def _cumulative_simpson_equal_intervals(y: np.ndarray, dx: np.ndarray) -> np.ndarray:
+    """Calculate the Simpson integrals for all h1 intervals assuming equal interval
+    widths. The function can also be used to calculate the integral for all
+    h2 intervals by reversing the inputs, `y` and `dx`.
+    """
+    d = dx[..., :-1]
+    f1 = y[..., :-2]
+    f2 = y[..., 1:-1]
+    f3 = y[..., 2:]
+
+    # Calculate integral over the subintervals (eqn (10) of Reference [2])
+    return d / 3 * (5 * f1 / 4 + 2 * f2 - f3 / 4)
+
+
+def _cumulative_simpson_unequal_intervals(y: np.ndarray, dx: np.ndarray) -> np.ndarray:
+    """Calculate the Simpson integrals for all h1 intervals assuming unequal interval
+    widths. The function can also be used to calculate the integral for all
+    h2 intervals by reversing the inputs, `y` and `dx`.
+    """
+    x21 = dx[..., :-1]
+    x32 = dx[..., 1:]
+    f1 = y[..., :-2]
+    f2 = y[..., 1:-1]
+    f3 = y[..., 2:]
+
+    x31 = x21 + x32
+    x21_x31 = x21/x31
+    x21_x32 = x21/x32
+    x21x21_x31x32 = x21_x31 * x21_x32
+
+    # Calculate integral over the subintervals (eqn (8) of Reference [2])
+    coeff1 = 3 - x21_x31
+    coeff2 = 3 + x21x21_x31x32 + x21_x31
+    coeff3 = -x21x21_x31x32
+
+    return x21/6 * (coeff1*f1 + coeff2*f2 + coeff3*f3)
+
+
+def _ensure_float_array(arr: npt.ArrayLike) -> np.ndarray:
+    arr = np.asarray(arr)
+    if np.issubdtype(arr.dtype, np.integer):
+        arr = arr.astype(float, copy=False)
+    return arr
+
+
+def cumulative_simpson(y, *, x=None, dx=1.0, axis=-1, initial=None):
+    r"""
+    Cumulatively integrate y(x) using the composite Simpson's 1/3 rule.
+    The integral of the samples at every point is calculated by assuming a 
+    quadratic relationship between each point and the two adjacent points.
+
+    Parameters
+    ----------
+    y : array_like
+        Values to integrate. Requires at least one point along `axis`. If two or fewer
+        points are provided along `axis`, Simpson's integration is not possible and the
+        result is calculated with `cumulative_trapezoid`.
+    x : array_like, optional
+        The coordinate to integrate along. Must have the same shape as `y` or
+        must be 1D with the same length as `y` along `axis`. `x` must also be
+        strictly increasing along `axis`.
+        If `x` is None (default), integration is performed using spacing `dx`
+        between consecutive elements in `y`.
+    dx : scalar or array_like, optional
+        Spacing between elements of `y`. Only used if `x` is None. Can either 
+        be a float, or an array with the same shape as `y`, but of length one along
+        `axis`. Default is 1.0.
+    axis : int, optional
+        Specifies the axis to integrate along. Default is -1 (last axis).
+    initial : scalar or array_like, optional
+        If given, insert this value at the beginning of the returned result,
+        and add it to the rest of the result. Default is None, which means no
+        value at ``x[0]`` is returned and `res` has one element less than `y`
+        along the axis of integration. Can either be a float, or an array with
+        the same shape as `y`, but of length one along `axis`.
+
+    Returns
+    -------
+    res : ndarray
+        The result of cumulative integration of `y` along `axis`.
+        If `initial` is None, the shape is such that the axis of integration
+        has one less value than `y`. If `initial` is given, the shape is equal
+        to that of `y`.
+
+    See Also
+    --------
+    numpy.cumsum
+    cumulative_trapezoid : cumulative integration using the composite 
+        trapezoidal rule
+    simpson : integrator for sampled data using the Composite Simpson's Rule
+
+    Notes
+    -----
+
+    .. versionadded:: 1.12.0
+
+    The composite Simpson's 1/3 method can be used to approximate the definite 
+    integral of a sampled input function :math:`y(x)` [1]_. The method assumes 
+    a quadratic relationship over the interval containing any three consecutive
+    sampled points.
+
+    Consider three consecutive points: 
+    :math:`(x_1, y_1), (x_2, y_2), (x_3, y_3)`.
+
+    Assuming a quadratic relationship over the three points, the integral over
+    the subinterval between :math:`x_1` and :math:`x_2` is given by formula
+    (8) of [2]_:
+    
+    .. math::
+        \int_{x_1}^{x_2} y(x) dx\ &= \frac{x_2-x_1}{6}\left[\
+        \left\{3-\frac{x_2-x_1}{x_3-x_1}\right\} y_1 + \
+        \left\{3 + \frac{(x_2-x_1)^2}{(x_3-x_2)(x_3-x_1)} + \
+        \frac{x_2-x_1}{x_3-x_1}\right\} y_2\\
+        - \frac{(x_2-x_1)^2}{(x_3-x_2)(x_3-x_1)} y_3\right]
+
+    The integral between :math:`x_2` and :math:`x_3` is given by swapping
+    appearances of :math:`x_1` and :math:`x_3`. The integral is estimated
+    separately for each subinterval and then cumulatively summed to obtain
+    the final result.
+    
+    For samples that are equally spaced, the result is exact if the function
+    is a polynomial of order three or less [1]_ and the number of subintervals
+    is even. Otherwise, the integral is exact for polynomials of order two or
+    less. 
+
+    References
+    ----------
+    .. [1] Wikipedia page: https://en.wikipedia.org/wiki/Simpson's_rule
+    .. [2] Cartwright, Kenneth V. Simpson's Rule Cumulative Integration with
+            MS Excel and Irregularly-spaced Data. Journal of Mathematical
+            Sciences and Mathematics Education. 12 (2): 1-9
+
+    Examples
+    --------
+    >>> from scipy import integrate
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+    >>> x = np.linspace(-2, 2, num=20)
+    >>> y = x**2
+    >>> y_int = integrate.cumulative_simpson(y, x=x, initial=0)
+    >>> fig, ax = plt.subplots()
+    >>> ax.plot(x, y_int, 'ro', x, x**3/3 - (x[0])**3/3, 'b-')
+    >>> ax.grid()
+    >>> plt.show()
+
+    The output of `cumulative_simpson` is similar to that of iteratively
+    calling `simpson` with successively higher upper limits of integration, but
+    not identical.
+
+    >>> def cumulative_simpson_reference(y, x):
+    ...     return np.asarray([integrate.simpson(y[:i], x=x[:i])
+    ...                        for i in range(2, len(y) + 1)])
+    >>>
+    >>> rng = np.random.default_rng(354673834679465)
+    >>> x, y = rng.random(size=(2, 10))
+    >>> x.sort()
+    >>>
+    >>> res = integrate.cumulative_simpson(y, x=x)
+    >>> ref = cumulative_simpson_reference(y, x)
+    >>> equal = np.abs(res - ref) < 1e-15
+    >>> equal  # not equal when `simpson` has even number of subintervals
+    array([False,  True, False,  True, False,  True, False,  True,  True])
+
+    This is expected: because `cumulative_simpson` has access to more
+    information than `simpson`, it can typically produce more accurate
+    estimates of the underlying integral over subintervals.
+
+    """
+    y = _ensure_float_array(y)
+
+    # validate `axis` and standardize to work along the last axis
+    original_y = y
+    original_shape = y.shape
+    try:
+        y = np.swapaxes(y, axis, -1)
+    except IndexError as e:
+        message = f"`axis={axis}` is not valid for `y` with `y.ndim={y.ndim}`."
+        raise ValueError(message) from e
+    if y.shape[-1] < 3:
+        res = cumulative_trapezoid(original_y, x, dx=dx, axis=axis, initial=None)
+        res = np.swapaxes(res, axis, -1)
+
+    elif x is not None:
+        x = _ensure_float_array(x)
+        message = ("If given, shape of `x` must be the same as `y` or 1-D with "
+                   "the same length as `y` along `axis`.")
+        if not (x.shape == original_shape
+                or (x.ndim == 1 and len(x) == original_shape[axis])):
+            raise ValueError(message)
+
+        x = np.broadcast_to(x, y.shape) if x.ndim == 1 else np.swapaxes(x, axis, -1)
+        dx = np.diff(x, axis=-1)
+        if np.any(dx <= 0):
+            raise ValueError("Input x must be strictly increasing.")
+        res = _cumulatively_sum_simpson_integrals(
+            y, dx, _cumulative_simpson_unequal_intervals
+        )
+
+    else:
+        dx = _ensure_float_array(dx)
+        final_dx_shape = tupleset(original_shape, axis, original_shape[axis] - 1)
+        alt_input_dx_shape = tupleset(original_shape, axis, 1)
+        message = ("If provided, `dx` must either be a scalar or have the same "
+                   "shape as `y` but with only 1 point along `axis`.")
+        if not (dx.ndim == 0 or dx.shape == alt_input_dx_shape):
+            raise ValueError(message)
+        dx = np.broadcast_to(dx, final_dx_shape)
+        dx = np.swapaxes(dx, axis, -1)
+        res = _cumulatively_sum_simpson_integrals(
+            y, dx, _cumulative_simpson_equal_intervals
+        )
+
+    if initial is not None:
+        initial = _ensure_float_array(initial)
+        alt_initial_input_shape = tupleset(original_shape, axis, 1)
+        message = ("If provided, `initial` must either be a scalar or have the "
+                   "same shape as `y` but with only 1 point along `axis`.")
+        if not (initial.ndim == 0 or initial.shape == alt_initial_input_shape):
+            raise ValueError(message)
+        initial = np.broadcast_to(initial, alt_initial_input_shape)
+        initial = np.swapaxes(initial, axis, -1)
+
+        res += initial
+        res = np.concatenate((initial, res), axis=-1)
+
+    res = np.swapaxes(res, -1, axis)
+    return res
 
 
 def romb(y, dx=1.0, axis=-1, show=False):
@@ -687,15 +821,11 @@ def romb(y, dx=1.0, axis=-1, show=False):
     See Also
     --------
     quad : adaptive quadrature using QUADPACK
-    romberg : adaptive Romberg quadrature
-    quadrature : adaptive Gaussian quadrature
     fixed_quad : fixed-order Gaussian quadrature
     dblquad : double integrals
     tplquad : triple integrals
     simpson : integrators for sampled data
     cumulative_trapezoid : cumulative integration for sampled data
-    ode : ODE integrators
-    odeint : ODE integrators
 
     Examples
     --------
@@ -779,190 +909,6 @@ def romb(y, dx=1.0, axis=-1, show=False):
 
     return R[(k, k)]
 
-# Romberg quadratures for numeric integration.
-#
-# Written by Scott M. Ransom <ransom@cfa.harvard.edu>
-# last revision: 14 Nov 98
-#
-# Cosmetic changes by Konrad Hinsen <hinsen@cnrs-orleans.fr>
-# last revision: 1999-7-21
-#
-# Adapted to SciPy by Travis Oliphant <oliphant.travis@ieee.org>
-# last revision: Dec 2001
-
-
-def _difftrap(function, interval, numtraps):
-    """
-    Perform part of the trapezoidal rule to integrate a function.
-    Assume that we had called difftrap with all lower powers-of-2
-    starting with 1. Calling difftrap only returns the summation
-    of the new ordinates. It does _not_ multiply by the width
-    of the trapezoids. This must be performed by the caller.
-        'function' is the function to evaluate (must accept vector arguments).
-        'interval' is a sequence with lower and upper limits
-                   of integration.
-        'numtraps' is the number of trapezoids to use (must be a
-                   power-of-2).
-    """
-    if numtraps <= 0:
-        raise ValueError("numtraps must be > 0 in difftrap().")
-    elif numtraps == 1:
-        return 0.5*(function(interval[0])+function(interval[1]))
-    else:
-        numtosum = numtraps/2
-        h = float(interval[1]-interval[0])/numtosum
-        lox = interval[0] + 0.5 * h
-        points = lox + h * np.arange(numtosum)
-        s = np.sum(function(points), axis=0)
-        return s
-
-
-def _romberg_diff(b, c, k):
-    """
-    Compute the differences for the Romberg quadrature corrections.
-    See Forman Acton's "Real Computing Made Real," p 143.
-    """
-    tmp = 4.0**k
-    return (tmp * c - b)/(tmp - 1.0)
-
-
-def _printresmat(function, interval, resmat):
-    # Print the Romberg result matrix.
-    i = j = 0
-    print('Romberg integration of', repr(function), end=' ')
-    print('from', interval)
-    print('')
-    print('%6s %9s %9s' % ('Steps', 'StepSize', 'Results'))
-    for i in range(len(resmat)):
-        print('%6d %9f' % (2**i, (interval[1]-interval[0])/(2.**i)), end=' ')
-        for j in range(i+1):
-            print('%9f' % (resmat[i][j]), end=' ')
-        print('')
-    print('')
-    print('The final result is', resmat[i][j], end=' ')
-    print('after', 2**(len(resmat)-1)+1, 'function evaluations.')
-
-
-def romberg(function, a, b, args=(), tol=1.48e-8, rtol=1.48e-8, show=False,
-            divmax=10, vec_func=False):
-    """
-    Romberg integration of a callable function or method.
-
-    Returns the integral of `function` (a function of one variable)
-    over the interval (`a`, `b`).
-
-    If `show` is 1, the triangular array of the intermediate results
-    will be printed. If `vec_func` is True (default is False), then
-    `function` is assumed to support vector arguments.
-
-    Parameters
-    ----------
-    function : callable
-        Function to be integrated.
-    a : float
-        Lower limit of integration.
-    b : float
-        Upper limit of integration.
-
-    Returns
-    -------
-    results : float
-        Result of the integration.
-
-    Other Parameters
-    ----------------
-    args : tuple, optional
-        Extra arguments to pass to function. Each element of `args` will
-        be passed as a single argument to `func`. Default is to pass no
-        extra arguments.
-    tol, rtol : float, optional
-        The desired absolute and relative tolerances. Defaults are 1.48e-8.
-    show : bool, optional
-        Whether to print the results. Default is False.
-    divmax : int, optional
-        Maximum order of extrapolation. Default is 10.
-    vec_func : bool, optional
-        Whether `func` handles arrays as arguments (i.e., whether it is a
-        "vector" function). Default is False.
-
-    See Also
-    --------
-    fixed_quad : Fixed-order Gaussian quadrature.
-    quad : Adaptive quadrature using QUADPACK.
-    dblquad : Double integrals.
-    tplquad : Triple integrals.
-    romb : Integrators for sampled data.
-    simpson : Integrators for sampled data.
-    cumulative_trapezoid : Cumulative integration for sampled data.
-    ode : ODE integrator.
-    odeint : ODE integrator.
-
-    References
-    ----------
-    .. [1] 'Romberg's method' https://en.wikipedia.org/wiki/Romberg%27s_method
-
-    Examples
-    --------
-    Integrate a gaussian from 0 to 1 and compare to the error function.
-
-    >>> from scipy import integrate
-    >>> from scipy.special import erf
-    >>> import numpy as np
-    >>> gaussian = lambda x: 1/np.sqrt(np.pi) * np.exp(-x**2)
-    >>> result = integrate.romberg(gaussian, 0, 1, show=True)
-    Romberg integration of <function vfunc at ...> from [0, 1]
-
-    ::
-
-       Steps  StepSize  Results
-           1  1.000000  0.385872
-           2  0.500000  0.412631  0.421551
-           4  0.250000  0.419184  0.421368  0.421356
-           8  0.125000  0.420810  0.421352  0.421350  0.421350
-          16  0.062500  0.421215  0.421350  0.421350  0.421350  0.421350
-          32  0.031250  0.421317  0.421350  0.421350  0.421350  0.421350  0.421350
-
-    The final result is 0.421350396475 after 33 function evaluations.
-
-    >>> print("%g %g" % (2*result, erf(1)))
-    0.842701 0.842701
-
-    """
-    if np.isinf(a) or np.isinf(b):
-        raise ValueError("Romberg integration only available "
-                         "for finite limits.")
-    vfunc = vectorize1(function, args, vec_func=vec_func)
-    n = 1
-    interval = [a, b]
-    intrange = b - a
-    ordsum = _difftrap(vfunc, interval, n)
-    result = intrange * ordsum
-    resmat = [[result]]
-    err = np.inf
-    last_row = resmat[0]
-    for i in range(1, divmax+1):
-        n *= 2
-        ordsum += _difftrap(vfunc, interval, n)
-        row = [intrange * ordsum / n]
-        for k in range(i):
-            row.append(_romberg_diff(last_row[k], row[k], k+1))
-        result = row[i]
-        lastresult = last_row[i-1]
-        if show:
-            resmat.append(row)
-        err = abs(result - lastresult)
-        if err < tol or err < rtol * abs(result):
-            break
-        last_row = row
-    else:
-        warnings.warn(
-            "divmax (%d) exceeded. Latest difference = %e" % (divmax, err),
-            AccuracyWarning)
-
-    if show:
-        _printresmat(vfunc, interval, resmat)
-    return result
-
 
 # Coefficients for Newton-Cotes quadrature
 #
@@ -975,7 +921,8 @@ def romberg(function, a, b, args=(), tol=1.48e-8, rtol=1.48e-8, show=False,
 
 # You can use maxima to find these rational coefficients
 #  for equally spaced data using the commands
-#  a(i,N) := integrate(product(r-j,j,0,i-1) * product(r-j,j,i+1,N),r,0,N) / ((N-i)! * i!) * (-1)^(N-i);
+#  a(i,N) := (integrate(product(r-j,j,0,i-1) * product(r-j,j,i+1,N),r,0,N)
+#             / ((N-i)! * i!) * (-1)^(N-i));
 #  Be(N) := N^(N+2)/(N+2)! * (N/(N+3) - sum((i/N)^(N+2)*a(i,N),i,0,N));
 #  Bo(N) := N^(N+1)/(N+1)! * (N/(N+2) - sum((i/N)^(N+1)*a(i,N),i,0,N));
 #  B(N) := (if (mod(N,2)=0) then Be(N) else Bo(N));
@@ -1304,7 +1251,7 @@ def qmc_quad(func, a, b, *, n_estimates=8, n_points=1024, qrng=None,
     >>> n_estimates = 8
     >>> res = qmc_quad(func, a, b, n_estimates=n_estimates, qrng=qrng)
     >>> res.integral, res.standard_error
-    (0.00018443143881633162, 4.709434153066518e-08)
+    (0.00018429555666024108, 1.0389431116001344e-07)
 
     A two-sided, 99% confidence interval for the integral may be estimated
     as:
@@ -1312,7 +1259,7 @@ def qmc_quad(func, a, b, *, n_estimates=8, n_points=1024, qrng=None,
     >>> t = stats.t(df=n_estimates-1, loc=res.integral,
     ...             scale=res.standard_error)
     >>> t.interval(0.99)
-    (0.00018426663295474533, 0.0001845962446779179)
+    (0.0001839319802536469, 0.00018465913306683527)
 
     Indeed, the value reported by `scipy.stats.multivariate_normal` is
     within this range.

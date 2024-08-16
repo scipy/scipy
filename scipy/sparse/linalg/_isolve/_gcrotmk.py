@@ -1,10 +1,10 @@
 # Copyright (C) 2015, Pauli Virtanen <pav@iki.fi>
 # Distributed under the same license as SciPy.
 
-import warnings
 import numpy as np
 from numpy.linalg import LinAlgError
 from scipy.linalg import (get_blas_funcs, qr, solve, svd, qr_insert, lstsq)
+from .iterative import _get_atol_rtol
 from scipy.sparse.linalg._isolve.utils import make_system
 
 
@@ -181,9 +181,8 @@ def _fgmres(matvec, v0, m, atol, lpsolve=None, rpsolve=None, cs=(), outer_v=(),
     return Q, R, B, vs, zs, y, res
 
 
-def gcrotmk(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
-            m=20, k=None, CU=None, discard_C=False, truncate='oldest',
-            atol=None):
+def gcrotmk(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=1000, M=None, callback=None,
+            m=20, k=None, CU=None, discard_C=False, truncate='oldest'):
     """
     Solve a matrix equation using flexible GCROT(m,k) algorithm.
 
@@ -191,40 +190,37 @@ def gcrotmk(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
     ----------
     A : {sparse matrix, ndarray, LinearOperator}
         The real or complex N-by-N matrix of the linear system.
-        Alternatively, ``A`` can be a linear operator which can
+        Alternatively, `A` can be a linear operator which can
         produce ``Ax`` using, e.g.,
-        ``scipy.sparse.linalg.LinearOperator``.
+        `LinearOperator`.
     b : ndarray
         Right hand side of the linear system. Has shape (N,) or (N,1).
     x0 : ndarray
         Starting guess for the solution.
-    tol, atol : float, optional
-        Tolerances for convergence, ``norm(residual) <= max(tol*norm(b), atol)``.
-        The default for ``atol`` is `tol`.
-
-        .. warning::
-
-           The default value for `atol` will be changed in a future release.
-           For future compatibility, specify `atol` explicitly.
+    rtol, atol : float, optional
+        Parameters for the convergence test. For convergence,
+        ``norm(b - A @ x) <= max(rtol*norm(b), atol)`` should be satisfied.
+        The default is ``rtol=1e-5`` and ``atol=0.0``.
     maxiter : int, optional
         Maximum number of iterations.  Iteration will stop after maxiter
-        steps even if the specified tolerance has not been achieved.
+        steps even if the specified tolerance has not been achieved. The
+        default is ``1000``.
     M : {sparse matrix, ndarray, LinearOperator}, optional
-        Preconditioner for A.  The preconditioner should approximate the
-        inverse of A. gcrotmk is a 'flexible' algorithm and the preconditioner
+        Preconditioner for `A`.  The preconditioner should approximate the
+        inverse of `A`. gcrotmk is a 'flexible' algorithm and the preconditioner
         can vary from iteration to iteration. Effective preconditioning
         dramatically improves the rate of convergence, which implies that
         fewer iterations are needed to reach a given error tolerance.
     callback : function, optional
         User-supplied function to call after each iteration.  It is called
-        as callback(xk), where xk is the current solution vector.
+        as ``callback(xk)``, where ``xk`` is the current solution vector.
     m : int, optional
         Number of inner FGMRES iterations per each outer iteration.
         Default: 20
     k : int, optional
         Number of vectors to carry between inner FGMRES iterations.
-        According to [2]_, good values are around m.
-        Default: m
+        According to [2]_, good values are around `m`.
+        Default: `m`
     CU : list of tuples, optional
         List of tuples ``(c, u)`` which contain the columns of the matrices
         C and U in the GCROT(m,k) algorithm. For details, see [2]_.
@@ -251,20 +247,6 @@ def gcrotmk(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
         * 0  : successful exit
         * >0 : convergence to tolerance not achieved, number of iterations
 
-    Examples
-    --------
-    >>> import numpy as np
-    >>> from scipy.sparse import csc_matrix
-    >>> from scipy.sparse.linalg import gcrotmk
-    >>> R = np.random.randn(5, 5)
-    >>> A = csc_matrix(R)
-    >>> b = np.random.randn(5)
-    >>> x, exit_code = gcrotmk(A, b)
-    >>> print(exit_code)
-    0
-    >>> np.allclose(A.dot(x), b)
-    True
-
     References
     ----------
     .. [1] E. de Sturler, ''Truncation strategies for optimal Krylov subspace
@@ -276,6 +258,20 @@ def gcrotmk(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
            ''Recycling Krylov subspaces for sequences of linear systems'',
            SIAM J. Sci. Comput. 28, 1651 (2006).
 
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.sparse import csc_matrix
+    >>> from scipy.sparse.linalg import gcrotmk
+    >>> R = np.random.randn(5, 5)
+    >>> A = csc_matrix(R)
+    >>> b = np.random.randn(5)
+    >>> x, exit_code = gcrotmk(A, b, atol=1e-5)
+    >>> print(exit_code)
+    0
+    >>> np.allclose(A.dot(x), b)
+    True
+
     """
     A,M,x,b,postprocess = make_system(A,M,x0,b)
 
@@ -284,13 +280,6 @@ def gcrotmk(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
 
     if truncate not in ('oldest', 'smallest'):
         raise ValueError(f"Invalid value for 'truncate': {truncate!r}")
-
-    if atol is None:
-        warnings.warn("scipy.sparse.linalg.gcrotmk called without specifying `atol`. "
-                      "The default value will change in the future. To preserve "
-                      "current behavior, set ``atol=tol``.",
-                      category=DeprecationWarning, stacklevel=2)
-        atol = tol
 
     matvec = A.matvec
     psolve = M.matvec
@@ -311,6 +300,10 @@ def gcrotmk(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
     axpy, dot, scal, nrm2 = get_blas_funcs(['axpy', 'dot', 'scal', 'nrm2'], (x, r))
 
     b_norm = nrm2(b)
+
+    # we call this to get the right atol/rtol and raise errors as necessary
+    atol, rtol = _get_atol_rtol('gcrotmk', b_norm, atol, rtol)
+
     if b_norm == 0:
         x = b
         return (postprocess(x), 0)
@@ -383,7 +376,7 @@ def gcrotmk(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
         beta = nrm2(r)
 
         # -- check stopping condition
-        beta_tol = max(atol, tol * b_norm)
+        beta_tol = max(atol, rtol * b_norm)
 
         if beta <= beta_tol and (j_outer > 0 or CU):
             # recompute residual to avoid rounding error
@@ -403,7 +396,7 @@ def gcrotmk(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
                                                r/beta,
                                                ml,
                                                rpsolve=psolve,
-                                               atol=max(atol, tol*b_norm)/beta,
+                                               atol=max(atol, rtol*b_norm)/beta,
                                                cs=cs)
             y *= beta
         except LinAlgError:

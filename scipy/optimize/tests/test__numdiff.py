@@ -184,7 +184,25 @@ class TestApproxDerivativesDense:
             x[0] ** 3 * x[1] ** -0.5
         ])
 
+    def fun_vector_vector_with_arg(self, x, arg):
+        """Used to test passing custom arguments with check_derivative()"""
+        assert arg == 42
+        return np.array([
+            x[0] * np.sin(x[1]),
+            x[1] * np.cos(x[0]),
+            x[0] ** 3 * x[1] ** -0.5
+        ])
+
     def jac_vector_vector(self, x):
+        return np.array([
+            [np.sin(x[1]), x[0] * np.cos(x[1])],
+            [-x[1] * np.sin(x[0]), np.cos(x[0])],
+            [3 * x[0] ** 2 * x[1] ** -0.5, -0.5 * x[0] ** 3 * x[1] ** -1.5]
+        ])
+
+    def jac_vector_vector_with_arg(self, x, arg):
+        """Used to test passing custom arguments with check_derivative()"""
+        assert arg == 42
         return np.array([
             [np.sin(x[1]), x[0] * np.cos(x[1])],
             [-x[1] * np.sin(x[0]), np.cos(x[0])],
@@ -450,10 +468,11 @@ class TestApproxDerivativesDense:
 
         # parameter vector is float64, func output is float32
         def err_fp32(p):
+            assert p.dtype == np.float32
             return err(p, x, y).astype(np.float32)
-        jac_fp = approx_derivative(err_fp32, p0,
+
+        jac_fp = approx_derivative(err_fp32, p0.astype(np.float32),
                                    method='2-point')
-        assert err_fp32(p0).dtype == np.float32
         assert_allclose(jac_fp, jac_fp64, atol=1e-3)
 
         # check upper bound of error on the derivative for 2-point
@@ -498,6 +517,14 @@ class TestApproxDerivativesDense:
         accuracy = check_derivative(self.fun_zero_jacobian,
                                     self.jac_zero_jacobian, x0)
         assert_(accuracy == 0)
+
+    def test_check_derivative_with_kwargs(self):
+        x0 = np.array([-10.0, 10])
+        accuracy = check_derivative(self.fun_vector_vector_with_arg,
+                                    self.jac_vector_vector_with_arg,
+                                    x0,
+                                    kwargs={'arg': 42})
+        assert_(accuracy < 1e-9)
 
 
 class TestApproxDerivativeSparse:

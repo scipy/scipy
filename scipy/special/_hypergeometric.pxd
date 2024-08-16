@@ -3,17 +3,14 @@ from libc.math cimport fabs, exp, floor, isnan, M_PI, NAN, INFINITY
 import cython
 
 from . cimport sf_error
-from ._cephes cimport expm1, poch
 
-cdef extern from 'specfun_wrappers.h':
+cdef extern from 'xsf_wrappers.h':
     double hypU_wrap(double, double, double) nogil
-
-DEF EPS = 2.220446049250313e-16
-DEF ACCEPTABLE_RTOL = 1e-7
+    double cephes_poch_wrap(double x, double m) nogil
 
 
 @cython.cdivision(True)
-cdef inline double hyperu(double a, double b, double x) nogil:
+cdef inline double hyperu(double a, double b, double x) noexcept nogil:
     if isnan(a) or isnan(b) or isnan(x):
         return NAN
 
@@ -28,6 +25,6 @@ cdef inline double hyperu(double a, double b, double x) nogil:
             return INFINITY
         else:
             # DLMF 13.2.14-15 and 13.2.19-21
-            return poch(1.0 - b + a, -a)
+            return cephes_poch_wrap(1.0 - b + a, -a)
 
     return hypU_wrap(a, b, x)

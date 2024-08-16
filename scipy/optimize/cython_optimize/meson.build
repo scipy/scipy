@@ -8,7 +8,7 @@ _zeros_pyx = custom_target('_zeros_pyx',
   output: '_zeros.pyx',
   input: '_zeros.pyx.in',
   command: [
-    py3, tempita, '@INPUT@', '-o', '@OUTDIR@',
+    tempita, '@INPUT@', '-o', '@OUTDIR@',
     '--ignore', _dummy_init_cyoptimize[0]
   ]
 )
@@ -17,10 +17,11 @@ cy_opt_gen = generator(cython,
   arguments : cython_args,
   output : '@BASENAME@.c',
   depends : [_cython_tree,
+    cython_optimize_pxd,
     _dummy_init_optimize,
     _dummy_init_cyoptimize])
 
-_zeros = py3.extension_module('_zeros',
+py3.extension_module('_zeros',
   cy_opt_gen.process(_zeros_pyx),
   c_args: cython_c_args,
   dependencies: np_dep,

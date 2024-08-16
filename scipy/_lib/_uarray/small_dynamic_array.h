@@ -142,7 +142,7 @@ public:
 
     clear();
 
-    size_ = copy.size;
+    size_ = copy.size_;
     try {
       allocate();
     } catch (...) {
