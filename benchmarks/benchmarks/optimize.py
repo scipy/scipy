@@ -489,7 +489,7 @@ class BenchGlobal(Benchmark):
     Benchmark the global optimizers using the go_benchmark_functions
     suite
     """
-    timeout = 5
+    timeout = 180
 
     _functions = dict([
         item for item in inspect.getmembers(gbf, inspect.isclass)
