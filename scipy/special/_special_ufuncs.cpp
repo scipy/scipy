@@ -325,8 +325,8 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
                                         "cospi", cospi_doc);
     PyModule_AddObjectRef(_special_ufuncs, "cospi", cospi);
 
-    PyObject *cotpi = SpecFun_NewUFunc({static_cast<func_f_f_t>(xsf::cospi), static_cast<func_d_d_t>(xsf::cotpi),
-                                         static_cast<func_F_F_t>(xsf::cospi), static_cast<func_D_D_t>(xsf::cotpi)},
+    PyObject *cotpi = SpecFun_NewUFunc({static_cast<func_f_f_t>(xsf::cotpi), static_cast<func_d_d_t>(xsf::cotpi),
+                                         static_cast<func_F_F_t>(xsf::cotpi), static_cast<func_D_D_t>(xsf::cotpi)},
                                         "cotpi", cotpi_doc);
     PyModule_AddObjectRef(_special_ufuncs, "cotpi", cotpi);
 

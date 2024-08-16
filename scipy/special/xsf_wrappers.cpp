@@ -292,6 +292,10 @@ npy_cdouble special_csinpi(npy_cdouble z) { return to_ccomplex(xsf::sinpi(to_com
 
 double special_cospi(double x) { return xsf::cospi(x); }
 
+double special_tanpi(double x) { return xsf::tanpi(x); }
+
+double special_cotpi(double x) { return xsf::cotpi(x); }
+
 void special_airy(double x, double *ai, double *aip, double *bi, double *bip) { xsf::airy(x, *ai, *aip, *bi, *bip); }
 
 void special_cairy(npy_cdouble z, npy_cdouble *ai, npy_cdouble *aip, npy_cdouble *bi, npy_cdouble *bip) {
@@ -567,6 +571,10 @@ double cephes_lbeta(double a, double b) { return xsf::cephes::lbeta(a, b); }
 double cephes_sinpi(double x) { return xsf::cephes::sinpi(x); }
 
 double cephes_cospi(double x) { return xsf::cephes::cospi(x); }
+
+double cephes_tanpi(double x) { return xsf::cephes::tanpi(x); }
+
+double cephes_cotpi(double x) { return xsf::cephes::cotpi(x); }
 
 double cephes_cbrt(double x) { return xsf::cephes::detail::cbrt(x); }
 
