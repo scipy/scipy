@@ -479,6 +479,7 @@ class BenchLeastSquares(Benchmark):
 # `export SCIPY_GLOBAL_BENCH=AMGM,Adjiman,...` to run specific tests
 # `export SCIPY_GLOBAL_BENCH_NUMTRIALS=10` to specify n_iterations, default 100
 #
+# then run `python dev.py bench -S optimize.BenchGlobal`
 # Note that it can take several hours to run; intermediate output
 # can be found under benchmarks/global-bench-results.json
 
@@ -488,7 +489,7 @@ class BenchGlobal(Benchmark):
     Benchmark the global optimizers using the go_benchmark_functions
     suite
     """
-    timeout = 300
+    timeout = 5
 
     _functions = dict([
         item for item in inspect.getmembers(gbf, inspect.isclass)
@@ -506,7 +507,7 @@ class BenchGlobal(Benchmark):
         _enabled_functions = list(_functions.keys())
 
     params = [
-        list(_functions.keys()),
+        _enabled_functions,
         ["success%", "<nfev>", "average time"],
         ['DE', 'basinh.', 'DA', 'DIRECT', 'SHGO'],
     ]
@@ -588,6 +589,50 @@ class BenchGlobal(Benchmark):
         # create the logfile to start with
         with open(self.dump_fn, 'w') as f:
             json.dump({}, f, indent=2)
+
+
+def process_global_benchmarks(f):
+    """
+    Processes the global benchmarks results into pandas DataFrame.
+
+    Parameters
+    ----------
+    f: {str, file-like}
+        Global Benchmarks output
+
+    Returns
+    -------
+    nfev, success_rate, mean_time
+        pd.DataFrame for the mean number of nfev, success_rate, mean_time
+        for each optimisation problem.
+    """
+    import json
+
+    with open(f, 'r') as fi:
+        dct = json.load(fi)
+
+    nfev = []
+    nsuccess = []
+    mean_time = []
+
+    solvers = dct[list(dct.keys())[0]].keys()
+    for problem, results in dct.items():
+        _nfev = []
+        _nsuccess = []
+        _mean_time = []
+        for solver, vals in results.items():
+            _nfev.append(vals['mean_nfev'])
+            _nsuccess.append(vals['nsuccess'] / vals['ntrials'] * 100)
+            _mean_time.append(vals['mean_time'])
+        nfev.append(_nfev)
+        nsuccess.append(_nsuccess)
+        mean_time.append(_mean_time)
+
+    nfev = pd.DataFrame(data=nfev, index=dct.keys(), columns=solvers)
+    nsuccess = pd.DataFrame(data=nsuccess, index=dct.keys(), columns=solvers)
+    mean_time = pd.DataFrame(data=mean_time, index=dct.keys(), columns=solvers)
+
+    return nfev, nsuccess, mean_time
 
 
 class BenchDFO(Benchmark):
