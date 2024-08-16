@@ -9142,7 +9142,9 @@ class irwinhall_gen(rv_continuous):
 
         return n/2, n/12, 0, -6/(5*n)
 
-irwinhall = irwinhall_gen(name="irwinhall")    
+
+irwinhall = irwinhall_gen(name="irwinhall")
+
 
 class recipinvgauss_gen(rv_continuous):
     r"""A reciprocal inverse Gaussian continuous random variable.
@@ -9500,6 +9502,7 @@ class skewnorm_gen(rv_continuous):
         def skew_d(d):  # skewness in terms of delta
             return (4-np.pi)/2 * ((d * np.sqrt(2 / np.pi))**3
                                   / (1 - 2*d**2 / np.pi)**(3/2))
+
         def d_skew(skew):  # delta in terms of skewness
             s_23 = np.abs(skew)**(2/3)
             return np.sign(skew) * np.sqrt(
@@ -9699,7 +9702,7 @@ class _DeprecationWrapper:
                      "Please replace all uses of the distribution class "
                      "`trapz` with `trapezoid`. `trapz` will be removed in SciPy 1.16.")
         self.method = getattr(trapezoid, method)
-    
+
     def __call__(self, *args, **kwargs):
         warnings.warn(self.msg, DeprecationWarning, stacklevel=2)
         return self.method(*args, **kwargs)
@@ -11344,6 +11347,22 @@ class crystalball_gen(rv_continuous):
                     (m/beta - beta - x)**(-m+1) / (m-1))
 
         return N * _lazywhere(x > -beta, (x, beta, m), f=rhs, f2=lhs)
+
+    def _sf(self, x, beta, m):
+        """
+        Survival function of the crystalball distribution.
+        """
+
+        def rhs(x, beta, m):
+            # M is the same as 1/N used elsewhere.
+            M = m/beta/(m - 1)*np.exp(-beta**2/2) + _norm_pdf_C*_norm_cdf(beta)
+            return _norm_pdf_C*_norm_sf(x)/M
+
+        def lhs(x, beta, m):
+            # Default behavior is OK in the left tail of the SF.
+            return 1 - self._cdf(x, beta, m)
+
+        return _lazywhere(x > -beta, (x, beta, m), f=rhs, f2=lhs)
 
     def _ppf(self, p, beta, m):
         N = 1.0 / (m/beta / (m-1) * np.exp(-beta**2 / 2.0) +
