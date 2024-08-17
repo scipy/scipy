@@ -671,6 +671,36 @@
             "cephes_kolmogorov": "d->d"
         }
     },
+    "_landau_pdf": {
+        "boost_special_functions.h++": {
+            "landau_pdf_float": "fff->f",
+            "landau_pdf_double": "ddd->d"
+        }
+    },
+    "_landau_cdf": {
+        "boost_special_functions.h++": {
+            "landau_cdf_float": "fff->f",
+            "landau_cdf_double": "ddd->d"
+        }
+    },
+    "_landau_sf": {
+        "boost_special_functions.h++": {
+            "landau_sf_float": "fff->f",
+            "landau_sf_double": "ddd->d"
+        }
+    },
+    "_landau_ppf": {
+        "boost_special_functions.h++": {
+            "landau_ppf_float": "fff->f",
+            "landau_ppf_double": "ddd->d"
+        }
+    },
+    "_landau_isf": {
+        "boost_special_functions.h++": {
+            "landau_isf_float": "fff->f",
+            "landau_isf_double": "ddd->d"
+        }
+    },
     "log1p": {
         "_cunity.pxd": {
             "clog1p": "D->D"
