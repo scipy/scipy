@@ -10492,7 +10492,7 @@ class tukeylambda_gen(rv_continuous):
     def _get_support(self, lam):
         b = _lazywhere(lam > 0, (lam,),
                        f=lambda lam: 1/lam,
-                       f2=lambda lam: np.inf)
+                       fillvalue=np.inf)
         return -b, b
 
     def _pdf(self, x, lam):
