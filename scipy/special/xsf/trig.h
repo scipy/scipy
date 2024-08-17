@@ -1,12 +1,13 @@
 /* Translated from Cython into C++ by SciPy developers in 2023.
  *
  * Original author: Josh Wilson, 2016.
+ * Original author: Takuma Yoshimura, 2024.
  */
 
-/* Implement sin(pi*z) and cos(pi*z) for complex z. Since the periods
- * of these functions are integral (and thus better representable in
- * floating point), it's possible to compute them with greater accuracy
- * than sin(z), cos(z).
+/* Implement sin(pi*z), cos(pi*z), tan(pi*z) and cot(pi*z) for complex z.
+ * Since the periods of these functions are integral (and thus better
+ * representable in floating point), it's possible to compute them with
+ * greater accuracy than sin(z), cos(z), tan(z), cot(z).
  */
 
 #pragma once
@@ -115,7 +116,21 @@ XSF_HOST_DEVICE T tanpi(T x) {
 
 template <typename T>
 XSF_HOST_DEVICE std::complex<T> tanpi(std::complex<T> z) {
-    return sinpi(z) / cospi(z);
+    if (z.imag() == 0.0) {
+        return std::complex<T>(tanpi(z.real()), 0.0);
+    }
+
+    T u = std::exp(-std::abs(2.0 * z.imag() * M_PI));
+    T n = 1.0 + u * (2.0 * cospi(2.0 * z.real()) + u);
+
+    T r = 2.0 * u * sinpi(2.0 * z.real()) / n;
+    T i = (u + 1.0) * (u - 1.0) / n;
+
+    std::complex<T> y = (z.imag() > 0.0)
+        ? std::complex<T>(r, -i) 
+        : std::complex<T>(r, i);
+
+    return y;
 }
 
 template <typename T>
@@ -125,7 +140,21 @@ XSF_HOST_DEVICE T cotpi(T x) {
 
 template <typename T>
 XSF_HOST_DEVICE std::complex<T> cotpi(std::complex<T> z) {
-    return cospi(z) / sinpi(z);
+    if (z.imag() == 0.0) {
+        return std::complex<T>(cotpi(z.real()), 0.0);
+    }
+
+    T u = std::exp(-std::abs(2.0 * z.imag() * M_PI));
+    T n = 1.0 + u * (-2.0 * cospi(2.0 * z.real()) + u);
+
+    T r = 2.0 * u * sinpi(2.0 * z.real()) / n;
+    T i = (u + 1.0) * (u - 1.0) / n;
+
+    std::complex<T> y = (z.imag() > 0.0)
+        ? std::complex<T>(r, i) 
+        : std::complex<T>(r, -i);
+
+    return y;
 }
 
 } // namespace xsf
