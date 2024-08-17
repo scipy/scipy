@@ -768,7 +768,7 @@ Convenience functions
    tandg     -- Tangent of angle x given in degrees.
    tanpi     -- Tangent with `x` multiplied by `pi`.
    cotdg     -- Cotangent of the angle `x` given in degrees.
-   cotdg     -- Cotangent with `x` multiplied by `pi`.
+   cotpi     -- Cotangent with `x` multiplied by `pi`.
    log1p     -- Calculates log(1+x) for use when `x` is near zero.
    expm1     -- ``exp(x) - 1`` for use when `x` is near zero.
    cosm1     -- ``cos(x) - 1`` for use when `x` is near zero.
