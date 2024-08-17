@@ -10498,8 +10498,9 @@ class tukeylambda_gen(rv_continuous):
     def _pdf(self, x, lam):
         Fx = np.asarray(sc.tklmbda(x, lam))
         Px = Fx**(lam-1.0) + (np.asarray(1-Fx))**(lam-1.0)
-        Px = 1.0/np.asarray(Px)
-        return np.where((lam <= 0) | (abs(x) < 1.0/np.asarray(lam)), Px, 0.0)
+        with np.errstate(divide='ignore'):
+            Px = 1.0/np.asarray(Px)
+            return np.where((lam <= 0) | (abs(x) < 1.0/np.asarray(lam)), Px, 0.0)
 
     def _cdf(self, x, lam):
         return sc.tklmbda(x, lam)

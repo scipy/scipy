@@ -7832,6 +7832,52 @@ class TestStudentizedRange:
         assert p >= 0
 
 
+class TestTukeyLambda:
+
+    @pytest.mark.parametrize(
+        'lam',
+        [0.0, -1.0, -2.0, np.array([[-1.0], [0.0], [-2.0]])]
+    )
+    def test_pdf_nonpositive_lambda(self, lam):
+        # Make sure that Tukey-Lambda distribution correctly handles
+        # non-positive lambdas.
+        # This is a crude test--it just checks that all the PDF values
+        # are finite and greater than 0.
+        x = np.linspace(-5.0, 5.0, 101)
+        p = stats.tukeylambda.pdf(x, lam)
+        assert np.isfinite(p).all()
+        assert (p > 0.0).all()
+
+    def test_pdf_mixed_lambda(self):
+        # Another crude test of the behavior of the PDF method.
+        x = np.linspace(-5.0, 5.0, 101)
+        lam = np.array([[-1.0], [0.0], [2.0]])
+        p = stats.tukeylambda.pdf(x, lam)
+        assert np.isfinite(p).all()
+        # For p[0] and p[1], where lam <= 0, the support is (-inf, inf),
+        # so the PDF should be nonzero everywhere (assuming we aren't so
+        # far in the tails that we get underflow).
+        assert (p[:2] > 0.0).all()
+        # For p[2], where lam=2.0, the support is [-0.5, 0.5], so in pdf(x),
+        # some values should be positive and some should be 0.
+        assert (p[2] > 0.0).any()
+        assert (p[2] == 0.0).any()
+
+    def test_support(self):
+        lam = np.array([-1.75, -0.5, 0.0, 0.25, 0.5, 2.0])
+        a, b = stats.tukeylambda.support(lam)
+        expected_b = np.array([np.inf, np.inf, np.inf, 4, 2, 0.5])
+        assert_equal(b, expected_b)
+        assert_equal(a, -expected_b)
+
+    def test_pdf_support_boundary(self):
+        # Verify that tukeylambda.pdf() doesn't generate a
+        # warning when evaluated at the bounds of the support.
+        # For lam=0.5, the support is (-2, 2).
+        p = stats.tukeylambda.pdf([-2.0, 2.0], 0.5)
+        assert_equal(p, [0.0, 0.0])
+
+
 def test_540_567():
     # test for nan returned in tickets 540, 567
     assert_almost_equal(stats.norm.cdf(-1.7624320982), 0.03899815971089126,
@@ -7847,43 +7893,6 @@ def test_540_567():
 def test_regression_ticket_1326():
     # adjust to avoid nan with 0*log(0)
     assert_almost_equal(stats.chi2.pdf(0.0, 2), 0.5, 14)
-
-
-def test_regression_tukey_lambda():
-    # Make sure that Tukey-Lambda distribution correctly handles
-    # non-positive lambdas.
-    x = np.linspace(-5.0, 5.0, 101)
-
-    with np.errstate(divide='ignore'):
-        for lam in [0.0, -1.0, -2.0, np.array([[-1.0], [0.0], [-2.0]])]:
-            p = stats.tukeylambda.pdf(x, lam)
-            assert_((p != 0.0).all())
-            assert_(~np.isnan(p).all())
-
-        lam = np.array([[-1.0], [0.0], [2.0]])
-        p = stats.tukeylambda.pdf(x, lam)
-
-    assert_(~np.isnan(p).all())
-    assert_((p[0] != 0.0).all())
-    assert_((p[1] != 0.0).all())
-    assert_((p[2] != 0.0).any())
-    assert_((p[2] == 0.0).any())
-
-
-def test_tukeylambda_support():
-    lam = np.array([-1.75, -0.5, 0.0, 0.25, 0.5, 2.0])
-    a, b = stats.tukeylambda.support(lam)
-    expected_b = np.array([np.inf, np.inf, np.inf, 4, 2, 0.5])
-    assert_equal(b, expected_b)
-    assert_equal(a, -expected_b)
-
-
-def test_tukeylambda_pdf_support_boundary():
-    # Verify that tukeylambda.pdf() doesn't generate a
-    # warning when evaluated at the bounds of the support.
-    # For lam=0.5, the support is (-2, 2).
-    p = stats.tukeylambda.pdf([-2.0, 2.0], 0.5)
-    assert_equal(p, [0.0, 0.0])
 
 
 @pytest.mark.skipif(DOCSTRINGS_STRIPPED, reason="docstrings stripped")
