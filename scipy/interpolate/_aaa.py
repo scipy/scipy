@@ -158,6 +158,7 @@ class AAA:
     >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> from scipy.interpolate import AAA
+    >>> import warnings
 
     For the first example we approximate the gamma function on ``[-3.5, 4.5]`` by
     extrapolating from 100 samples in ``[-1.5, 1.5]``.
@@ -214,6 +215,37 @@ class AAA:
     >>> ax.set(xlim=[-3.5, 3.5], ylim=[-3.5, 3.5], aspect="equal")
     >>> ax.legend()
     >>> plt.show()
+
+    We now demonstrate the removal of Froissart doublets using the `clean_up` method
+    using an example from [1]_. Here we approximate the function
+    :math:`f(z)=\log(2 + z^4)/(1 + 16z^4)` by sampling it at 1000 roots of unity. The
+    algorithm is run with ``rtol=0`` and ``clean_up=False`` to deliberately cause
+    Froissart doublets to appear.
+
+    >>> z = np.exp(1j*2*np.pi*np.linspace(0,1, num=1000))
+    >>> def f(z):
+    ...     return np.log(2 + z**4)/(1 - 16*z**4)
+    >>> with warnings.catch_warnings():  # filter convergence warning due to rtol=0
+    ...     warnings.simplefilter('ignore', RuntimeWarning)
+    ...     r = AAA(z, f(z), rtol=0, max_terms=50, clean_up=False)
+    >>> mask = np.abs(r.residues()) < 1e-13
+    >>> fig, axs = plt.subplots(ncols=2)
+    >>> axs[0].plot(r.poles().real[~mask], r.poles().imag[~mask], '.')
+    >>> axs[0].plot(r.poles().real[mask], r.poles().imag[mask], 'r.')
+
+    Now we call the `clean_up` method to remove Froissart doublets.
+
+    >>> with warnings.catch_warnings():
+    ...     warnings.simplefilter('ignore', RuntimeWarning)
+    ...     r.clean_up()
+    >>> mask = np.abs(r.residues()) < 1e-13
+    >>> axs[1].plot(r.poles().real[~mask], r.poles().imag[~mask], '.')
+    >>> axs[1].plot(r.poles().real[mask], r.poles().imag[mask], 'r.')
+    >>> plt.show()
+
+    The left image shows the poles prior of the approximation ``clean_up=False`` with
+    poles with residue less than ``10^-13`` in absolute value shown in red. The right
+    image then shows the poles after the `clean_up` method has been called.
     """
     def __init__(self, points, values, *, rtol=None, max_terms=100, clean_up=True,
                  clean_up_tol=1e-13):
@@ -479,14 +511,15 @@ class AAA:
         """
         if self._residues is None:
             # Compute residues via formula for res of quotient of analytic functions
-            N = (1/(np.subtract.outer(self.poles(), self.support_points))) @ (
-                self.support_values * self.weights
-            )
-            Ddiff = (
-                -((1/np.subtract.outer(self.poles(), self.support_points))**2)
-                @ self.weights
-            )
-            self._residues = N / Ddiff
+            with np.errstate(divide="ignore", invalid="ignore"):
+                N = (1/(np.subtract.outer(self.poles(), self.support_points))) @ (
+                    self.support_values * self.weights
+                )
+                Ddiff = (
+                    -((1/np.subtract.outer(self.poles(), self.support_points))**2)
+                    @ self.weights
+                )
+                self._residues = N / Ddiff
         return self._residues
 
     def roots(self):
