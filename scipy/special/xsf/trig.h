@@ -119,12 +119,12 @@ XSF_HOST_DEVICE std::complex<T> tanpi(std::complex<T> z) {
     T u = std::exp(-std::abs(2.0 * M_PI * z.imag()));
 
     if (u == 1.0) {
-        return std::complex<T>(tanpi(z.real()), 0.0);
+        return std::complex<T>(cephes::tanpi(z.real()), 0.0);
     }
 
-    T n = 1.0 + u * (2.0 * cospi(2.0 * z.real()) + u);
+    T n = 1.0 + u * (2.0 * cephes::cospi(2.0 * z.real()) + u);
 
-    T r = 2.0 * u * sinpi(2.0 * z.real()) / n;
+    T r = 2.0 * u * cephes::sinpi(2.0 * z.real()) / n;
     T i = (u + 1.0) * (u - 1.0) / n;
 
     std::complex<T> y = (z.imag() > 0.0)
@@ -144,12 +144,12 @@ XSF_HOST_DEVICE std::complex<T> cotpi(std::complex<T> z) {
     T u = std::exp(-std::abs(2.0 * M_PI * z.imag()));
     
     if (u == 1.0) {
-        return std::complex<T>(cotpi(z.real()), 0.0);
+        return std::complex<T>(cephes::cotpi(z.real()), 0.0);
     }
 
-    T n = 1.0 + u * (-2.0 * cospi(2.0 * z.real()) + u);
+    T n = 1.0 + u * (-2.0 * cephes::cospi(2.0 * z.real()) + u);
 
-    T r = 2.0 * u * sinpi(2.0 * z.real()) / n;
+    T r = 2.0 * u * cephes::sinpi(2.0 * z.real()) / n;
     T i = (u + 1.0) * (u - 1.0) / n;
 
     std::complex<T> y = (z.imag() > 0.0)
