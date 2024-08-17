@@ -116,11 +116,12 @@ XSF_HOST_DEVICE T tanpi(T x) {
 
 template <typename T>
 XSF_HOST_DEVICE std::complex<T> tanpi(std::complex<T> z) {
-    if (z.imag() == 0.0) {
+    T u = std::exp(-std::abs(2.0 * z.imag() * M_PI));
+
+    if (u == 1.0) {
         return std::complex<T>(tanpi(z.real()), 0.0);
     }
 
-    T u = std::exp(-std::abs(2.0 * z.imag() * M_PI));
     T n = 1.0 + u * (2.0 * cospi(2.0 * z.real()) + u);
 
     T r = 2.0 * u * sinpi(2.0 * z.real()) / n;
@@ -140,11 +141,12 @@ XSF_HOST_DEVICE T cotpi(T x) {
 
 template <typename T>
 XSF_HOST_DEVICE std::complex<T> cotpi(std::complex<T> z) {
-    if (z.imag() == 0.0) {
+    T u = std::exp(-std::abs(2.0 * z.imag() * M_PI));
+    
+    if (u == 1.0) {
         return std::complex<T>(cotpi(z.real()), 0.0);
     }
 
-    T u = std::exp(-std::abs(2.0 * z.imag() * M_PI));
     T n = 1.0 + u * (-2.0 * cospi(2.0 * z.real()) + u);
 
     T r = 2.0 * u * sinpi(2.0 * z.real()) / n;
