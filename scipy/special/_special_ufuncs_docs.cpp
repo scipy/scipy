@@ -429,8 +429,7 @@ const char *cospi_doc = R"(
     >>> import numpy as np
     >>> import scipy.special as sc
 
-    >>> x = np.array([-2.5, -2, -1.5, -1, -0.5, -0.0, 
-                      0.0, 0.5, 1.0, 1.5, 2, 2.5], dtype=np.float64)
+    >>> x = np.array([-2.5, -2, -1.5, -1, -0.5, -0.0, 0.0, 0.5, 1.0, 1.5, 2, 2.5], dtype=np.float64)
     >>> sc.cospi(x)
     array([  0.0000000e+00  1.0000000e+00  0.0000000e+00 -1.0000000e+00
              0.0000000e+00  1.0000000e+00  1.0000000e+00  0.0000000e+00
@@ -468,8 +467,7 @@ const char *cotpi_doc = R"(
     >>> import numpy as np
     >>> import scipy.special as sc
 
-    >>> x = np.array([-2.5, -2, -1.5, -1, -0.5, -0.0, 
-                      0.0, 0.5, 1.0, 1.5, 2, 2.5], dtype=np.float64)
+    >>> x = np.array([-2.5, -2, -1.5, -1, -0.5, -0.0, 0.0, 0.5, 1.0, 1.5, 2, 2.5], dtype=np.float64)
     >>> sc.cotpi(x)
     array([ -0.0000000e+00           -inf  0.0000000e+00            inf
             -0.0000000e+00           -inf            inf  0.0000000e+00
@@ -3912,8 +3910,7 @@ const char *sinpi_doc = R"(
     >>> import numpy as np
     >>> import scipy.special as sc
 
-    >>> x = np.array([-2.5, -2, -1.5, -1, -0.5, -0.0, 
-                      0.0, 0.5, 1.0, 1.5, 2, 2.5], dtype=np.float64)
+    >>> x = np.array([-2.5, -2, -1.5, -1, -0.5, -0.0, 0.0, 0.5, 1.0, 1.5, 2, 2.5], dtype=np.float64)
     >>> sc.sinpi(x)
     array([ -1.0000000e+00 -0.0000000e+00  1.0000000e+00 -0.0000000e+00
             -1.0000000e+00 -0.0000000e+00  0.0000000e+00  1.0000000e+00
@@ -4052,8 +4049,7 @@ const char *tanpi_doc = R"(
     >>> import numpy as np
     >>> import scipy.special as sc
 
-    >>> x = np.array([-2.5, -2, -1.5, -1, -0.5, -0.0, 
-                      0.0, 0.5, 1.0, 1.5, 2, 2.5], dtype=np.float64)
+    >>> x = np.array([-2.5, -2, -1.5, -1, -0.5, -0.0, 0.0, 0.5, 1.0, 1.5, 2, 2.5], dtype=np.float64)
     >>> sc.tanpi(x)
     array([           -inf -0.0000000e+00            inf  0.0000000e+00
                       -inf -0.0000000e+00  0.0000000e+00            inf
