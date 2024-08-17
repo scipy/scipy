@@ -94,7 +94,7 @@ def _inputs_swap_needed(mode, shape1, shape2, axes=None):
 
 
 def _reject_objects(arr, name):
-    """Warn if arr.dtype is object or longdouble or float16.
+    """Warn if arr.dtype is object or longdouble.
     """
     dt = np.asarray(arr).dtype
     if not (np.issubdtype(dt, np.integer)
@@ -103,7 +103,7 @@ def _reject_objects(arr, name):
     ):
         msg = (
             f"dtype={dt} is not supported by {name} and will raise an error in "
-            f"SciPy 1.17.0. Supported dtypes are: boolean, integer, np.float16,"
+            f"SciPy 1.17.0. Supported dtypes are: boolean, integer, `np.float16`,"
             f"`np.float32`, `np.float64`, `np.complex64`, `np.complex128`."
         )
         warnings.warn(msg, category=DeprecationWarning, stacklevel=3)
