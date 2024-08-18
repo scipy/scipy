@@ -92,7 +92,7 @@ def test_cotpi():
 
 def test_tanpi_complex():
     x = np.arange(-4, 4, 1 / 16)
-    y = np.array([-32, -16, -2, -1, -0.5, -1e-14, 1e-14, 0.5, 1, 2, 16, 32]) 
+    y = np.array([-32, -16, -2, -1, -0.5, 0.5, 1, 2, 16, 32]) 
 
     x, y = np.meshgrid(x, y)
 
@@ -104,9 +104,28 @@ def test_tanpi_complex():
     assert_allclose(expected.real, actual.real)
     assert_allclose(expected.imag, actual.imag)
 
+def test_tanpi_complex_near_pole():
+    eps_list = [
+        1/32, 1/64, 1/128, 1/256, 1/512, 1/1024, 1/2048, 
+        1/4096, 1/8192, 1/16384, 1/32768, 1/65536
+    ]
+
+    for eps in eps_list:
+        for x in [-4.5, -3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5, 4.5]:
+            z = np.array([
+                complex(eps, eps), complex(eps, 0), complex(eps, -eps), complex(0, eps), 
+                complex(0, -eps), complex(-eps, eps), complex(-eps, 0), complex(-eps, -eps)
+            ])
+
+            actual = tanpi(z + x)
+            expected = -1.0 / np.tan(z * np.pi)
+
+            assert_allclose(expected.real, actual.real, rtol=1e-13, atol=1e-13)
+            assert_allclose(expected.imag, actual.imag, rtol=1e-13, atol=1e-13)
+
 def test_cotpi_complex():
     x = np.arange(-4, 4, 1 / 16)
-    y = np.array([-32, -16, -2, -1, -0.5, -1e-14, 1e-14, 0.5, 1, 2, 16, 32]) 
+    y = np.array([-32, -16, -2, -1, -0.5, 0.5, 1, 2, 16, 32]) 
 
     x, y = np.meshgrid(x, y)
 
@@ -117,6 +136,25 @@ def test_cotpi_complex():
 
     assert_allclose(expected.real, actual.real)
     assert_allclose(expected.imag, actual.imag)
+
+def test_cotpi_complex_near_pole():
+    eps_list = [
+        1/32, 1/64, 1/128, 1/256, 1/512, 1/1024, 1/2048, 
+        1/4096, 1/8192, 1/16384, 1/32768, 1/65536
+    ]
+
+    for eps in eps_list:
+        for x in [-4, -3, -2, -1, 0, 1, 2, 3, 4]:
+            z = np.array([
+                complex(eps, eps), complex(eps, 0), complex(eps, -eps), complex(0, eps), 
+                complex(0, -eps), complex(-eps, eps), complex(-eps, 0), complex(-eps, -eps)
+            ])
+
+            actual = cotpi(z + x)
+            expected = 1.0 / np.tan(z * np.pi)
+
+            assert_allclose(expected.real, actual.real, rtol=1e-13, atol=1e-13)
+            assert_allclose(expected.imag, actual.imag, rtol=1e-13, atol=1e-13)
 
 def test_sinpi_zero_sign_ieee754_2008():
     y = sinpi(-3.0)

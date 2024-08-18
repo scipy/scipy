@@ -124,14 +124,28 @@ XSF_HOST_DEVICE std::complex<T> tanpi(std::complex<T> z) {
 
     T n = 1.0 + u * (2.0 * cephes::cospi(2.0 * z.real()) + u);
 
-    T r = 2.0 * u * cephes::sinpi(2.0 * z.real()) / n;
-    T i = (u + 1.0) * (u - 1.0) / n;
+    if (std::abs(n) > 1e-3) {
+        T r = 2.0 * u * cephes::sinpi(2.0 * z.real()) / n;
+        T i = (u + 1.0) * (u - 1.0) / n;
 
-    std::complex<T> y = (z.imag() > 0.0)
-        ? std::complex<T>(r, -i) 
-        : std::complex<T>(r, i);
+        std::complex<T> y = (z.imag() > 0.0)
+            ? std::complex<T>(r, -i) 
+            : std::complex<T>(r, i);
 
-    return y;
+        return y;
+    }
+    else {
+        // near pole
+
+        z -= 0.5;
+        std::complex<T> z_pi = std::complex<T>(z.real() - std::round(z.real()), z.imag()) * M_PI;
+        std::complex<T> z_pi_sq = z_pi * z_pi;
+
+        std::complex<T> y = -155925.0 / (z_pi * (155925.0 + z_pi_sq * (51975.0
+            + z_pi_sq * (20790.0 + z_pi_sq * (8415.0 + z_pi_sq * (3410.0 + z_pi_sq * 1382.0))))));
+
+        return y;
+    }
 }
 
 template <typename T>
@@ -149,14 +163,27 @@ XSF_HOST_DEVICE std::complex<T> cotpi(std::complex<T> z) {
 
     T n = 1.0 + u * (-2.0 * cephes::cospi(2.0 * z.real()) + u);
 
-    T r = 2.0 * u * cephes::sinpi(2.0 * z.real()) / n;
-    T i = (u + 1.0) * (u - 1.0) / n;
+    if (std::abs(n) > 1e-3) {
+        T r = 2.0 * u * cephes::sinpi(2.0 * z.real()) / n;
+        T i = (u + 1.0) * (u - 1.0) / n;
 
-    std::complex<T> y = (z.imag() > 0.0)
-        ? std::complex<T>(r, i) 
-        : std::complex<T>(r, -i);
+        std::complex<T> y = (z.imag() > 0.0)
+            ? std::complex<T>(r, i) 
+            : std::complex<T>(r, -i);
 
-    return y;
+        return y;
+    }
+    else {
+        // near pole
+
+        std::complex<T> z_pi = std::complex<T>(z.real() - std::round(z.real()), z.imag()) * M_PI;
+        std::complex<T> z_pi_sq = z_pi * z_pi;
+
+        std::complex<T> y = 155925.0 / (z_pi * (155925.0 + z_pi_sq * (51975.0
+            + z_pi_sq * (20790.0 + z_pi_sq * (8415.0 + z_pi_sq * (3410.0 + z_pi_sq * 1382.0))))));
+
+        return y;
+    }
 }
 
 } // namespace xsf
