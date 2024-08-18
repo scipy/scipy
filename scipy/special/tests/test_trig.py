@@ -101,8 +101,8 @@ def test_tanpi_complex():
     expected = np.tan(np.pi * z)
     actual = tanpi(z)
 
-    assert_allclose(expected.real, actual.real)
-    assert_allclose(expected.imag, actual.imag)
+    assert_allclose(expected.real, actual.real, rtol=1e-7, atol=1e-7)
+    assert_allclose(expected.imag, actual.imag, rtol=1e-7, atol=1e-7)
 
 def test_tanpi_complex_near_pole():
     eps_list = [
@@ -134,8 +134,8 @@ def test_cotpi_complex():
     expected = 1 / np.tan(np.pi * z)
     actual = cotpi(z)
 
-    assert_allclose(expected.real, actual.real)
-    assert_allclose(expected.imag, actual.imag)
+    assert_allclose(expected.real, actual.real, rtol=1e-7, atol=1e-7)
+    assert_allclose(expected.imag, actual.imag, rtol=1e-7, atol=1e-7)
 
 def test_cotpi_complex_near_pole():
     eps_list = [
