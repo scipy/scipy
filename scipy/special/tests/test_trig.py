@@ -90,6 +90,34 @@ def test_cotpi():
 
     assert_allclose(expected, actual, atol=1e-10)
 
+def test_tanpi_complex():
+    x = np.arange(-4, 4, 1 / 16)
+    y = np.array([-32, -16, -2, -1, -0.5, -1e-14, 1e-14, 0.5, 1, 2, 16, 32]) 
+
+    x, y = np.meshgrid(x, y)
+
+    z = x + 1j*y
+
+    expected = np.tan(np.pi * z)
+    actual = tanpi(z)
+
+    assert_allclose(expected.real, actual.real)
+    assert_allclose(expected.imag, actual.imag)
+
+def test_cotpi_complex():
+    x = np.arange(-4, 4, 1 / 16)
+    y = np.array([-32, -16, -2, -1, -0.5, -1e-14, 1e-14, 0.5, 1, 2, 16, 32]) 
+
+    x, y = np.meshgrid(x, y)
+
+    z = x + 1j*y
+
+    expected = 1 / np.tan(np.pi * z)
+    actual = cotpi(z)
+
+    assert_allclose(expected.real, actual.real)
+    assert_allclose(expected.imag, actual.imag)
+
 def test_sinpi_zero_sign_ieee754_2008():
     y = sinpi(-3.0)
     assert y == 0.0
@@ -236,7 +264,7 @@ def test_sinpi_zero_sign_ieee754_2008_complex():
     assert y.real == 0.0
     assert np.signbit(y.real)
     
-    y = sinpi(-0.0+0.0j)
+    y = sinpi(complex(-0.0, 0.0))
     assert y.real == 0.0
     assert np.signbit(y.real)
 
@@ -298,7 +326,7 @@ def test_tanpi_zero_sign_ieee754_2019_complex():
     assert y.real == 0.0
     assert not np.signbit(y.real)
     
-    y = tanpi(-0.0+0.0j)
+    y = tanpi(complex(-0.0, 0.0))
     assert y.real == 0.0
     assert np.signbit(y.real)
 
