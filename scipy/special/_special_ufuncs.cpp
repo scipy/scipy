@@ -233,6 +233,7 @@ extern const char *_zeta_doc;
 extern const char *pbdv_doc;
 extern const char *pbvv_doc;
 extern const char *pbwa_doc;
+extern const char *pow1p_doc;
 extern const char *pro_ang1_doc;
 extern const char *pro_ang1_cv_doc;
 extern const char *pro_cv_doc;
@@ -706,6 +707,10 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
     PyObject *pbwa = SpecFun_NewUFunc({static_cast<func_ff_ff_t>(xsf::pbwa), static_cast<func_dd_dd_t>(xsf::pbwa)}, 2,
                                       "pbwa", pbwa_doc);
     PyModule_AddObjectRef(_special_ufuncs, "pbwa", pbwa);
+
+    PyObject *pow1p = SpecFun_NewUFunc({static_cast<func_dd_d_t>(xsf::pow1p), static_cast<func_ff_f_t>(xsf::pow1p)},
+                                        "pow1p", pow1p_doc);
+    PyModule_AddObjectRef(_special_ufuncs, "pow1p", pow1p);
 
     PyObject *pro_ang1 = SpecFun_NewUFunc(
         {static_cast<func_ffff_ff_t>(xsf::prolate_aswfa_nocv), static_cast<func_dddd_dd_t>(xsf::prolate_aswfa_nocv)}, 2,

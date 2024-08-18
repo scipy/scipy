@@ -3436,6 +3436,40 @@ const char *pbwa_doc = R"(
            https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
     )";
 
+const char *pow1p_doc = R"(
+    pow1p(x, y, out=None)
+
+    Compute ``(1+x)**y`` for real ``x`` and ``y``.
+
+    Parameters
+    ----------
+    x : ndarray of floats
+        Input array.
+    y : ndarray of floats
+        Input array.
+    out : ndarray, optional
+        Optional output array for the function values
+
+    Returns
+    -------
+    scalar or ndarray
+        ``(1+x)**y``, computed element-wise.
+
+    Notes
+    -----
+    .. versionadded:: 1.16.0
+
+    This function computes ``(1+x)**y`` more accurately than the direct formula.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.special import pow1p
+
+    >>> pow1p(0.01, 10)
+    np.float64(1.1046221254112045)
+    )";
+
 const char *pro_ang1_doc = R"(
     pro_ang1(m, n, c, x, out=None)
 
