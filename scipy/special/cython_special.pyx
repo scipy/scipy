@@ -876,6 +876,11 @@ Available functions
 
         double poch(double, double)
 
+- :py:func:`~scipy.special.pow1p`::
+
+        float pow1p(float, float)
+        double pow1p(double, double)
+
 - :py:func:`~scipy.special.powm1`::
 
         float powm1(float, float)
@@ -1232,6 +1237,9 @@ cdef extern from r"xsf_wrappers.h":
 
     npy_double special_hyp2f1(npy_double, npy_double, npy_double, npy_double) nogil
     npy_cdouble special_chyp2f1(npy_double, npy_double, npy_double, npy_cdouble) nogil
+
+    npy_float special_pow1pf(npy_float, npy_float) nogil
+    npy_double special_pow1p(npy_double, npy_double) nogil
 
     npy_double special_rgamma(npy_double) nogil
     npy_cdouble special_crgamma(npy_cdouble) nogil
@@ -3200,6 +3208,18 @@ cpdef double pdtrik(double x0, double x1) noexcept nogil:
 cpdef double poch(double x0, double x1) noexcept nogil:
     """See the documentation for scipy.special.poch"""
     return cephes_poch(x0, x1)
+
+cpdef df_number_t pow1p(df_number_t x0, df_number_t x1) noexcept nogil:
+    """See the documentation for scipy.special.pow1p"""
+    if df_number_t is float:
+        return special_pow1pf(x0, x1)
+    elif df_number_t is double:
+        return special_pow1p(x0, x1)
+    else:
+        if df_number_t is double:
+            return NAN
+        else:
+            return NAN
 
 cpdef df_number_t powm1(df_number_t x0, df_number_t x1) noexcept nogil:
     """See the documentation for scipy.special.powm1"""

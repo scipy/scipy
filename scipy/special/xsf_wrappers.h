@@ -166,6 +166,9 @@ npy_cdouble special_chyp2f1(double a, double b, double c, npy_cdouble z);
 
 npy_cdouble special_lambertw(npy_cdouble z, long k, double tol);
 
+float special_pow1pf(float x, float y);
+double special_pow1p(double x, double y);
+
 double special_rgamma(double x);
 npy_cdouble special_crgamma(npy_cdouble z);
 

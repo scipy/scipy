@@ -408,6 +408,9 @@ npy_cdouble special_lambertw(npy_cdouble z, long k, double tol) {
     return to_ccomplex(xsf::lambertw(to_complex(z), k, tol));
 }
 
+float special_pow1pf(float x, float y) { return xsf::pow1p(x, y); }
+double special_pow1p(double x, double y) { return xsf::pow1p(x, y); }
+
 npy_cdouble special_sph_harm(long m, long n, double theta, double phi) {
     return to_ccomplex(::sph_harm(m, n, theta, phi));
 }
