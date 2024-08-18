@@ -23,7 +23,7 @@ namespace cephes {
         T s = std::copysign(1.0, x);
         x = std::abs(x);
 
-        T r = x - std::ldexp(std::floor(std::ldexp(x, -1)), 1);
+        T r = std::fmod(x, 2.0);
         s = r <= 1.0 ? s : -s;
         r = r - std::floor(r);
         r = r <= 0.5 ? r : (1.0 - r);
@@ -38,7 +38,7 @@ namespace cephes {
     XSF_HOST_DEVICE T cospi(T x) {
         x = std::abs(x);
 
-        T r = x - std::ldexp(std::floor(std::ldexp(x, -1)), 1);
+        T r = std::fmod(x, 2.0);
         r = r <= 1.0 ? (0.5 - r) : (r - 1.5);
 
         T y = std::sin(M_PI * r);
@@ -52,7 +52,7 @@ namespace cephes {
         T s = std::copysign(1.0, x);
         x = std::abs(x);
 
-        T r = x - std::ldexp(std::floor(std::ldexp(x, -1)), 1);
+        T r = std::fmod(x, 2.0);
         s = r <= 1.0 ? s : -s;
 
         T rs = r - std::floor(r);
@@ -70,7 +70,7 @@ namespace cephes {
         T s = std::copysign(1.0, x);
         x = std::abs(x);
 
-        T r = x - std::ldexp(std::floor(std::ldexp(x, -1)), 1);
+        T r = std::fmod(x, 2.0);
         s = r <= 1.0 ? s : -s;
 
         T rs = r - std::floor(r);
