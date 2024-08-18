@@ -1,8 +1,10 @@
 import numpy as np
 from numpy.testing import assert_equal, assert_array_equal
-
-from scipy.stats import rankdata, tiecorrect
 import pytest
+
+from scipy.conftest import skip_xp_invalid_arg
+from scipy.stats import rankdata, tiecorrect
+from scipy._lib._util import np_long
 
 
 class TestTieCorrect:
@@ -81,6 +83,15 @@ class TestRankData:
         r = rankdata([])
         assert_array_equal(r, np.array([], dtype=np.float64))
 
+    @pytest.mark.parametrize("shape", [(0, 1, 2)])
+    @pytest.mark.parametrize("axis", [None, *range(3)])
+    def test_empty_multidim(self, shape, axis):
+        a = np.empty(shape, dtype=int)
+        r = rankdata(a, axis=axis)
+        expected_shape = (0,) if axis is None else shape
+        assert_equal(r.shape, expected_shape)
+        assert_equal(r.dtype, np.float64)
+
     def test_one(self):
         """Check stats.rankdata with an array of length 1."""
         data = [100]
@@ -120,10 +131,17 @@ class TestRankData:
         r = rankdata(a2d)
         assert_array_equal(r, expected)
 
+    @skip_xp_invalid_arg
     def test_rankdata_object_string(self):
-        min_rank = lambda a: [1 + sum(i < j for i in a) for j in a]
-        max_rank = lambda a: [sum(i <= j for i in a) for j in a]
-        ordinal_rank = lambda a: min_rank([(x, i) for i, x in enumerate(a)])
+
+        def min_rank(a):
+            return [1 + sum(i < j for i in a) for j in a]
+
+        def max_rank(a):
+            return [sum(i <= j for i in a) for j in a]
+
+        def ordinal_rank(a):
+            return min_rank([(x, i) for i, x in enumerate(a)])
 
         def average_rank(a):
             return [(i + j) / 2.0 for i, j in zip(min_rank(a), max_rank(a))]
@@ -181,7 +199,7 @@ class TestRankData:
         assert_array_equal(r1, expected1)
 
     methods = ["average", "min", "max", "dense", "ordinal"]
-    dtypes = [np.float64] + [np.int_]*4
+    dtypes = [np.float64] + [np_long]*4
 
     @pytest.mark.parametrize("axis", [0, 1])
     @pytest.mark.parametrize("method, dtype", zip(methods, dtypes))
@@ -196,7 +214,7 @@ class TestRankData:
     @pytest.mark.parametrize('method', methods)
     def test_nan_policy_omit_3d(self, axis, method):
         shape = (20, 21, 22)
-        rng = np.random.default_rng(abs(hash('falafel')))
+        rng = np.random.RandomState(23983242)
 
         a = rng.random(size=shape)
         i = rng.random(size=shape) < 0.4
@@ -223,6 +241,17 @@ class TestRankData:
         res0 = rank_omit(a, method, axis=axis)
 
         assert_array_equal(res, res0)
+
+    def test_nan_policy_2d_axis_none(self):
+        # 2 2d-array test with axis=None
+        data = [[0, np.nan, 3],
+                [4, 2, np.nan],
+                [1, 2, 2]]
+        assert_array_equal(rankdata(data, axis=None, nan_policy='omit'),
+                           [1., np.nan, 6., 7., 4., np.nan, 2., 4., 4.])
+        assert_array_equal(rankdata(data, axis=None, nan_policy='propagate'),
+                           [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan,
+                            np.nan, np.nan, np.nan])
 
     def test_nan_policy_raise(self):
         # 1 1d-array test

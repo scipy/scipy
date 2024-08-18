@@ -9,7 +9,7 @@ from ._miobase import _get_matfile_version, docfiller
 from ._mio4 import MatFile4Reader, MatFile4Writer
 from ._mio5 import MatFile5Reader, MatFile5Writer
 
-__all__ = ['mat_reader_factory', 'loadmat', 'savemat', 'whosmat']
+__all__ = ['loadmat', 'savemat', 'whosmat']
 
 
 @contextmanager
@@ -77,9 +77,10 @@ def mat_reader_factory(file_name, appendmat=True, **kwargs):
     elif mjv == 1:
         return MatFile5Reader(byte_stream, **kwargs), file_opened
     elif mjv == 2:
-        raise NotImplementedError('Please use HDF reader for matlab v7.3 files')
+        raise NotImplementedError('Please use HDF reader for matlab v7.3 '
+                                  'files, e.g. h5py')
     else:
-        raise TypeError('Did not recognize version %s' % mjv)
+        raise TypeError(f'Did not recognize version {mjv}')
 
 
 @docfiller
@@ -274,6 +275,7 @@ def savemat(file_name, mdict,
     Examples
     --------
     >>> from scipy.io import savemat
+    >>> import numpy as np
     >>> a = np.arange(20)
     >>> mdic = {"a": a, "label": "experiment"}
     >>> mdic
@@ -285,7 +287,8 @@ def savemat(file_name, mdict,
     with _open_file_context(file_name, appendmat, 'wb') as file_stream:
         if format == '4':
             if long_field_names:
-                raise ValueError("Long field names are not available for version 4 files")
+                message = "Long field names are not available for version 4 files"
+                raise ValueError(message)
             MW = MatFile4Writer(file_stream, oned_as)
         elif format == '5':
             MW = MatFile5Writer(file_stream,
@@ -324,10 +327,30 @@ def whosmat(file_name, appendmat=True, **kwargs):
     v4 (Level 1.0), v6 and v7 to 7.2 matfiles are supported.
 
     You will need an HDF5 python library to read matlab 7.3 format mat
-    files. Because SciPy does not supply one, we do not implement the
+    files (e.g. h5py). Because SciPy does not supply one, we do not implement the
     HDF5 / 7.3 interface here.
 
     .. versionadded:: 0.12.0
+
+    Examples
+    --------
+    >>> from io import BytesIO
+    >>> import numpy as np
+    >>> from scipy.io import savemat, whosmat
+
+    Create some arrays, and use `savemat` to write them to a ``BytesIO``
+    instance.
+
+    >>> a = np.array([[10, 20, 30], [11, 21, 31]], dtype=np.int32)
+    >>> b = np.geomspace(1, 10, 5)
+    >>> f = BytesIO()
+    >>> savemat(f, {'a': a, 'b': b})
+
+    Use `whosmat` to inspect ``f``.  Each tuple in the output list gives
+    the name, shape and data type of the array in ``f``.
+
+    >>> whosmat(f)
+    [('a', (2, 3), 'int32'), ('b', (1, 5), 'double')]
 
     """
     with _open_file_context(file_name, appendmat) as f:

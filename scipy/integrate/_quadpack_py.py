@@ -5,13 +5,10 @@ import warnings
 from functools import partial
 
 from . import _quadpack
-import numpy
-from numpy import Inf
+import numpy as np
 
 __all__ = ["quad", "dblquad", "tplquad", "nquad", "IntegrationWarning"]
 
-
-error = _quadpack.error
 
 class IntegrationWarning(UserWarning):
     """
@@ -22,7 +19,7 @@ class IntegrationWarning(UserWarning):
 
 def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
          limit=50, points=None, weight=None, wvar=None, wopts=None, maxp1=50,
-         limlst=50):
+         limlst=50, complex_func=False):
     """
     Compute a definite integral.
 
@@ -61,6 +58,13 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
         Non-zero to return a dictionary of integration information.
         If non-zero, warning messages are also suppressed and the
         message is appended to the output tuple.
+    complex_func : bool, optional
+        Indicate if the function's (`func`) return type is real
+        (``complex_func=False``: default) or complex (``complex_func=True``).
+        In both cases, the function's argument is real.
+        If full_output is also non-zero, the `infodict`, `message`, and
+        `explain` for the real and complex components are returned in
+        a dictionary with keys "real output" and "imag output".
 
     Returns
     -------
@@ -116,15 +120,14 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
     tplquad : triple integral
     nquad : n-dimensional integrals (uses `quad` recursively)
     fixed_quad : fixed-order Gaussian quadrature
-    quadrature : adaptive Gaussian quadrature
-    odeint : ODE integrator
-    ode : ODE integrator
     simpson : integrator for sampled data
     romb : integrator for sampled data
     scipy.special : for coefficients and roots of orthogonal polynomials
 
     Notes
     -----
+    For valid results, the integral must converge; behavior for divergent
+    integrals is not guaranteed.
 
     **Extra information for quad() inputs and outputs**
 
@@ -274,7 +277,7 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
     qawce             'cauchy'        No          No
     ================  ==============  ==========  =====================
 
-    The following provides a short desciption from [1]_ for each
+    The following provides a short description from [1]_ for each
     routine.
 
     qagse
@@ -330,6 +333,21 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
         Clenshaw-Curtis integration is used on those intervals containing the
         point :math:`x = c`.
 
+    **Integration of Complex Function of a Real Variable**
+
+    A complex valued function, :math:`f`, of a real variable can be written as
+    :math:`f = g + ih`.  Similarly, the integral of :math:`f` can be
+    written as
+
+    .. math::
+        \\int_a^b f(x) dx = \\int_a^b g(x) dx + i\\int_a^b h(x) dx
+
+    assuming that the integrals of :math:`g` and :math:`h` exist
+    over the interval :math:`[a,b]` [2]_. Therefore, ``quad`` integrates
+    complex-valued functions by integrating the real and imaginary components
+    separately.
+
+
     References
     ----------
 
@@ -339,11 +357,17 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
            Springer-Verlag.
            ISBN 978-3-540-12553-2.
 
+    .. [2] McCullough, Thomas; Phillips, Keith (1973).
+           Foundations of Analysis in the Complex Plane.
+           Holt Rinehart Winston.
+           ISBN 0-03-086370-8
+
     Examples
     --------
     Calculate :math:`\\int^4_0 x^2 dx` and compare with an analytic result
 
     >>> from scipy import integrate
+    >>> import numpy as np
     >>> x2 = lambda x: x**2
     >>> integrate.quad(x2, 0, 4)
     (21.333333333333332, 2.3684757858670003e-13)
@@ -407,6 +431,30 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
     # check the limits of integration: \int_a^b, expect a < b
     flip, a, b = b < a, min(a, b), max(a, b)
 
+    if complex_func:
+        def imfunc(x, *args):
+            return func(x, *args).imag
+
+        def refunc(x, *args):
+            return func(x, *args).real
+
+        re_retval = quad(refunc, a, b, args, full_output, epsabs,
+                         epsrel, limit, points, weight, wvar, wopts,
+                         maxp1, limlst, complex_func=False)
+        im_retval = quad(imfunc, a, b, args, full_output, epsabs,
+                         epsrel, limit, points, weight, wvar, wopts,
+                         maxp1, limlst, complex_func=False)
+        integral = re_retval[0] + 1j*im_retval[0]
+        error_estimate = re_retval[1] + 1j*im_retval[1]
+        retval = integral, error_estimate
+        if full_output:
+            msgexp = {}
+            msgexp["real"] = re_retval[2:]
+            msgexp["imag"] = im_retval[2:]
+            retval = retval + (msgexp,)
+
+        return retval
+
     if weight is None:
         retval = _quad(func, a, b, args, full_output, epsabs, epsrel, limit,
                        points)
@@ -426,24 +474,60 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
         return retval[:-1]
 
     msgs = {80: "A Python error occurred possibly while calling the function.",
-             1: "The maximum number of subdivisions (%d) has been achieved.\n  If increasing the limit yields no improvement it is advised to analyze \n  the integrand in order to determine the difficulties.  If the position of a \n  local difficulty can be determined (singularity, discontinuity) one will \n  probably gain from splitting up the interval and calling the integrator \n  on the subranges.  Perhaps a special-purpose integrator should be used." % limit,
-             2: "The occurrence of roundoff error is detected, which prevents \n  the requested tolerance from being achieved.  The error may be \n  underestimated.",
-             3: "Extremely bad integrand behavior occurs at some points of the\n  integration interval.",
-             4: "The algorithm does not converge.  Roundoff error is detected\n  in the extrapolation table.  It is assumed that the requested tolerance\n  cannot be achieved, and that the returned result (if full_output = 1) is \n  the best which can be obtained.",
+             1: f"The maximum number of subdivisions ({limit}) has been achieved.\n  "
+                f"If increasing the limit yields no improvement it is advised to "
+                f"analyze \n  the integrand in order to determine the difficulties.  "
+                f"If the position of a \n  local difficulty can be determined "
+                f"(singularity, discontinuity) one will \n  probably gain from "
+                f"splitting up the interval and calling the integrator \n  on the "
+                f"subranges.  Perhaps a special-purpose integrator should be used.",
+             2: "The occurrence of roundoff error is detected, which prevents \n  "
+                "the requested tolerance from being achieved.  "
+                "The error may be \n  underestimated.",
+             3: "Extremely bad integrand behavior occurs at some points of the\n  "
+                "integration interval.",
+             4: "The algorithm does not converge.  Roundoff error is detected\n  "
+                "in the extrapolation table.  It is assumed that the requested "
+                "tolerance\n  cannot be achieved, and that the returned result "
+                "(if full_output = 1) is \n  the best which can be obtained.",
              5: "The integral is probably divergent, or slowly convergent.",
              6: "The input is invalid.",
-             7: "Abnormal termination of the routine.  The estimates for result\n  and error are less reliable.  It is assumed that the requested accuracy\n  has not been achieved.",
+             7: "Abnormal termination of the routine.  The estimates for result\n  "
+                "and error are less reliable.  It is assumed that the requested "
+                "accuracy\n  has not been achieved.",
             'unknown': "Unknown error."}
 
-    if weight in ['cos','sin'] and (b == Inf or a == -Inf):
-        msgs[1] = "The maximum number of cycles allowed has been achieved., e.e.\n  of subintervals (a+(k-1)c, a+kc) where c = (2*int(abs(omega)+1))\n  *pi/abs(omega), for k = 1, 2, ..., lst.  One can allow more cycles by increasing the value of limlst.  Look at info['ierlst'] with full_output=1."
-        msgs[4] = "The extrapolation table constructed for convergence acceleration\n  of the series formed by the integral contributions over the cycles, \n  does not converge to within the requested accuracy.  Look at \n  info['ierlst'] with full_output=1."
-        msgs[7] = "Bad integrand behavior occurs within one or more of the cycles.\n  Location and type of the difficulty involved can be determined from \n  the vector info['ierlist'] obtained with full_output=1."
-        explain = {1: "The maximum number of subdivisions (= limit) has been \n  achieved on this cycle.",
-                   2: "The occurrence of roundoff error is detected and prevents\n  the tolerance imposed on this cycle from being achieved.",
-                   3: "Extremely bad integrand behavior occurs at some points of\n  this cycle.",
-                   4: "The integral over this cycle does not converge (to within the required accuracy) due to roundoff in the extrapolation procedure invoked on this cycle.  It is assumed that the result on this interval is the best which can be obtained.",
-                   5: "The integral over this cycle is probably divergent or slowly convergent."}
+    if weight in ['cos','sin'] and (b == np.inf or a == -np.inf):
+        msgs[1] = (
+            "The maximum number of cycles allowed has been achieved., e.e.\n  of "
+            "subintervals (a+(k-1)c, a+kc) where c = (2*int(abs(omega)+1))\n  "
+            "*pi/abs(omega), for k = 1, 2, ..., lst.  "
+            "One can allow more cycles by increasing the value of limlst.  "
+            "Look at info['ierlst'] with full_output=1."
+        )
+        msgs[4] = (
+            "The extrapolation table constructed for convergence acceleration\n  of "
+            "the series formed by the integral contributions over the cycles, \n  does "
+            "not converge to within the requested accuracy.  "
+            "Look at \n  info['ierlst'] with full_output=1."
+        )
+        msgs[7] = (
+            "Bad integrand behavior occurs within one or more of the cycles.\n  "
+            "Location and type of the difficulty involved can be determined from \n  "
+            "the vector info['ierlist'] obtained with full_output=1."
+        )
+        explain = {1: "The maximum number of subdivisions (= limit) has been \n  "
+                      "achieved on this cycle.",
+                   2: "The occurrence of roundoff error is detected and prevents\n  "
+                      "the tolerance imposed on this cycle from being achieved.",
+                   3: "Extremely bad integrand behavior occurs at some points of\n  "
+                      "this cycle.",
+                   4: "The integral over this cycle does not converge (to within the "
+                      "required accuracy) due to roundoff in the extrapolation "
+                      "procedure invoked on this cycle.  It is assumed that the result "
+                      "on this interval is the best which can be obtained.",
+                   5: "The integral over this cycle is probably divergent or "
+                      "slowly convergent."}
 
     try:
         msg = msgs[ier]
@@ -452,7 +536,7 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
 
     if ier in [1,2,3,4,5,7]:
         if full_output:
-            if weight in ['cos', 'sin'] and (b == Inf or a == -Inf):
+            if weight in ['cos', 'sin'] and (b == np.inf or a == -np.inf):
                 return retval[:-1] + (msg, explain)
             else:
                 return retval[:-1] + (msg,)
@@ -465,8 +549,8 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
             if epsrel < max(50 * sys.float_info.epsilon, 5e-29):
                 msg = ("If 'epsabs'<=0, 'epsrel' must be greater than both"
                        " 5e-29 and 50*(machine epsilon).")
-            elif weight in ['sin', 'cos'] and (abs(a) + abs(b) == Inf):
-                msg = ("Sine or cosine weighted intergals with infinite domain"
+            elif weight in ['sin', 'cos'] and (abs(a) + abs(b) == np.inf):
+                msg = ("Sine or cosine weighted integrals with infinite domain"
                        " must have 'epsabs'>0.")
 
         elif weight is None:
@@ -478,15 +562,14 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
                     msg = ("All break points in 'points' must lie within the"
                            " integration limits.")
                 elif len(points) >= limit:
-                    msg = ("Number of break points ({:d})"
-                           " must be less than subinterval"
-                           " limit ({:d})").format(len(points), limit)
+                    msg = (f"Number of break points ({len(points):d}) "
+                           f"must be less than subinterval limit ({limit:d})")
 
         else:
             if maxp1 < 1:
                 msg = "Chebyshev moment limit maxp1 must be >=1."
 
-            elif weight in ('cos', 'sin') and abs(a+b) == Inf:  # QAWFE
+            elif weight in ('cos', 'sin') and abs(a+b) == np.inf:  # QAWFE
                 msg = "Cycle limit limlst must be >=3."
 
             elif weight.startswith('alg'):  # QAWSE
@@ -504,15 +587,15 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
 
 def _quad(func,a,b,args,full_output,epsabs,epsrel,limit,points):
     infbounds = 0
-    if (b != Inf and a != -Inf):
+    if (b != np.inf and a != -np.inf):
         pass   # standard integration
-    elif (b == Inf and a != -Inf):
+    elif (b == np.inf and a != -np.inf):
         infbounds = 1
         bound = a
-    elif (b == Inf and a == -Inf):
+    elif (b == np.inf and a == -np.inf):
         infbounds = 2
         bound = 0     # ignored
-    elif (b != Inf and a == -Inf):
+    elif (b != np.inf and a == -np.inf):
         infbounds = -1
         bound = b
     else:
@@ -522,41 +605,45 @@ def _quad(func,a,b,args,full_output,epsabs,epsrel,limit,points):
         if infbounds == 0:
             return _quadpack._qagse(func,a,b,args,full_output,epsabs,epsrel,limit)
         else:
-            return _quadpack._qagie(func,bound,infbounds,args,full_output,epsabs,epsrel,limit)
+            return _quadpack._qagie(func, bound, infbounds, args, full_output, 
+                                    epsabs, epsrel, limit)
     else:
         if infbounds != 0:
             raise ValueError("Infinity inputs cannot be used with break points.")
         else:
             #Duplicates force function evaluation at singular points
-            the_points = numpy.unique(points)
+            the_points = np.unique(points)
             the_points = the_points[a < the_points]
             the_points = the_points[the_points < b]
-            the_points = numpy.concatenate((the_points, (0., 0.)))
-            return _quadpack._qagpe(func,a,b,the_points,args,full_output,epsabs,epsrel,limit)
+            the_points = np.concatenate((the_points, (0., 0.)))
+            return _quadpack._qagpe(func, a, b, the_points, args, full_output,
+                                    epsabs, epsrel, limit)
 
 
-def _quad_weight(func,a,b,args,full_output,epsabs,epsrel,limlst,limit,maxp1,weight,wvar,wopts):
+def _quad_weight(func, a, b, args, full_output, epsabs, epsrel,
+                 limlst, limit, maxp1,weight, wvar, wopts):
     if weight not in ['cos','sin','alg','alg-loga','alg-logb','alg-log','cauchy']:
-        raise ValueError("%s not a recognized weighting function." % weight)
+        raise ValueError(f"{weight} not a recognized weighting function.")
 
     strdict = {'cos':1,'sin':2,'alg':1,'alg-loga':2,'alg-logb':3,'alg-log':4}
 
     if weight in ['cos','sin']:
         integr = strdict[weight]
-        if (b != Inf and a != -Inf):  # finite limits
+        if (b != np.inf and a != -np.inf):  # finite limits
             if wopts is None:         # no precomputed Chebyshev moments
                 return _quadpack._qawoe(func, a, b, wvar, integr, args, full_output,
                                         epsabs, epsrel, limit, maxp1,1)
             else:                     # precomputed Chebyshev moments
                 momcom = wopts[0]
                 chebcom = wopts[1]
-                return _quadpack._qawoe(func, a, b, wvar, integr, args, full_output,
-                                        epsabs, epsrel, limit, maxp1, 2, momcom, chebcom)
+                return _quadpack._qawoe(func, a, b, wvar, integr, args,
+                                        full_output,epsabs, epsrel, limit, maxp1, 2,
+                                        momcom, chebcom)
 
-        elif (b == Inf and a != -Inf):
+        elif (b == np.inf and a != -np.inf):
             return _quadpack._qawfe(func, a, wvar, integr, args, full_output,
-                                    epsabs,limlst,limit,maxp1)
-        elif (b != Inf and a == -Inf):  # remap function and interval
+                                    epsabs, limlst, limit, maxp1)
+        elif (b != np.inf and a == -np.inf):  # remap function and interval
             if weight == 'cos':
                 def thefunc(x,*myargs):
                     y = -x
@@ -575,8 +662,9 @@ def _quad_weight(func,a,b,args,full_output,epsabs,epsrel,limlst,limit,maxp1,weig
         else:
             raise ValueError("Cannot integrate with this weight from -Inf to +Inf.")
     else:
-        if a in [-Inf,Inf] or b in [-Inf,Inf]:
-            raise ValueError("Cannot integrate with this weight over an infinite interval.")
+        if a in [-np.inf, np.inf] or b in [-np.inf, np.inf]:
+            message = "Cannot integrate with this weight over an infinite interval."
+            raise ValueError(message)
 
         if weight.startswith('alg'):
             integr = strdict[weight]
@@ -634,9 +722,6 @@ def dblquad(func, a, b, gfun, hfun, args=(), epsabs=1.49e-8, epsrel=1.49e-8):
     tplquad : triple integral
     nquad : N-dimensional integrals
     fixed_quad : fixed-order Gaussian quadrature
-    quadrature : adaptive Gaussian quadrature
-    odeint : ODE integrator
-    ode : ODE integrator
     simpson : integrator for sampled data
     romb : integrator for sampled data
     scipy.special : for coefficients and roots of orthogonal polynomials
@@ -644,6 +729,8 @@ def dblquad(func, a, b, gfun, hfun, args=(), epsabs=1.49e-8, epsrel=1.49e-8):
 
     Notes
     -----
+    For valid results, the integral must converge; behavior for divergent
+    integrals is not guaranteed.
 
     **Details of QUADPACK level routines**
 
@@ -679,6 +766,7 @@ def dblquad(func, a, b, gfun, hfun, args=(), epsabs=1.49e-8, epsrel=1.49e-8):
     ``x`` ranging from 0 to 2 and ``y`` ranging from 0 to 1.
     That is, :math:`\\int^{x=2}_{x=0} \\int^{y=1}_{y=0} x y^2 \\,dy \\,dx`.
 
+    >>> import numpy as np
     >>> from scipy import integrate
     >>> f = lambda y, x: x*y**2
     >>> integrate.dblquad(f, 0, 2, 0, 1)
@@ -691,7 +779,7 @@ def dblquad(func, a, b, gfun, hfun, args=(), epsabs=1.49e-8, epsrel=1.49e-8):
     >>> integrate.dblquad(f, 0, np.pi/4, np.sin, np.cos)
         (0.41421356237309503, 1.1083280054755938e-14)
 
-    Calculate :math:`\\int^{x=1}_{x=0} \\int^{y=x}_{y=2-x} a x y \\,dy \\,dx`
+    Calculate :math:`\\int^{x=1}_{x=0} \\int^{y=2-x}_{y=x} a x y \\,dy \\,dx`
     for :math:`a=1, 3`.
 
     >>> f = lambda y, x, a: a*x*y
@@ -699,6 +787,15 @@ def dblquad(func, a, b, gfun, hfun, args=(), epsabs=1.49e-8, epsrel=1.49e-8):
         (0.33333333333333337, 5.551115123125783e-15)
     >>> integrate.dblquad(f, 0, 1, lambda x: x, lambda x: 2-x, args=(3,))
         (0.9999999999999999, 1.6653345369377348e-14)
+
+    Compute the two-dimensional Gaussian Integral, which is the integral of the
+    Gaussian function :math:`f(x,y) = e^{-(x^{2} + y^{2})}`, over
+    :math:`(-\\infty,+\\infty)`. That is, compute the integral
+    :math:`\\iint^{+\\infty}_{-\\infty} e^{-(x^{2} + y^{2})} \\,dy\\,dx`.
+
+    >>> f = lambda x, y: np.exp(-(x ** 2 + y ** 2))
+    >>> integrate.dblquad(f, -np.inf, np.inf, -np.inf, np.inf)
+        (3.141592653589777, 2.5173086737433208e-08)
 
     """
 
@@ -755,18 +852,17 @@ def tplquad(func, a, b, gfun, hfun, qfun, rfun, args=(), epsabs=1.49e-8,
     See Also
     --------
     quad : Adaptive quadrature using QUADPACK
-    quadrature : Adaptive Gaussian quadrature
     fixed_quad : Fixed-order Gaussian quadrature
     dblquad : Double integrals
     nquad : N-dimensional integrals
     romb : Integrators for sampled data
     simpson : Integrators for sampled data
-    ode : ODE integrators
-    odeint : ODE integrators
     scipy.special : For coefficients and roots of orthogonal polynomials
 
     Notes
     -----
+    For valid results, the integral must converge; behavior for divergent
+    integrals is not guaranteed.
 
     **Details of QUADPACK level routines**
 
@@ -803,6 +899,7 @@ def tplquad(func, a, b, gfun, hfun, qfun, rfun, args=(), epsabs=1.49e-8,
     That is, :math:`\\int^{x=2}_{x=1} \\int^{y=3}_{y=2} \\int^{z=1}_{z=0} x y z
     \\,dz \\,dy \\,dx`.
 
+    >>> import numpy as np
     >>> from scipy import integrate
     >>> f = lambda z, y, x: x*y*z
     >>> integrate.tplquad(f, 1, 2, 2, 3, 0, 1)
@@ -825,6 +922,16 @@ def tplquad(func, a, b, gfun, hfun, qfun, rfun, args=(), epsabs=1.49e-8,
         (0.125, 5.527033708952211e-15)
     >>> integrate.tplquad(f, 0, 1, 0, 1, 0, 1, args=(3,))
         (0.375, 1.6581101126856635e-14)
+
+    Compute the three-dimensional Gaussian Integral, which is the integral of
+    the Gaussian function :math:`f(x,y,z) = e^{-(x^{2} + y^{2} + z^{2})}`, over
+    :math:`(-\\infty,+\\infty)`. That is, compute the integral
+    :math:`\\iiint^{+\\infty}_{-\\infty} e^{-(x^{2} + y^{2} + z^{2})} \\,dz
+    \\,dy\\,dx`.
+
+    >>> f = lambda x, y, z: np.exp(-(x ** 2 + y ** 2 + z ** 2))
+    >>> integrate.tplquad(f, -np.inf, np.inf, -np.inf, np.inf, -np.inf, np.inf)
+        (5.568327996830833, 4.4619078828029765e-08)
 
     """
     # f(z, y, x)
@@ -927,10 +1034,11 @@ def nquad(func, ranges, args=None, opts=None, full_output=False):
     quad : 1-D numerical integration
     dblquad, tplquad : double and triple integrals
     fixed_quad : fixed-order Gaussian quadrature
-    quadrature : adaptive Gaussian quadrature
 
     Notes
     -----
+    For valid results, the integral must converge; behavior for divergent
+    integrals is not guaranteed.
 
     **Details of QUADPACK level routines**
 
@@ -951,7 +1059,7 @@ def nquad(func, ranges, args=None, opts=None, full_output=False):
     qawce             'cauchy'        No          No
     ================  ==============  ==========  =====================
 
-    The following provides a short desciption from [1]_ for each
+    The following provides a short description from [1]_ for each
     routine.
 
     qagse
@@ -1034,6 +1142,7 @@ def nquad(func, ranges, args=None, opts=None, full_output=False):
           x_0^2+x_1 x_2-x_3^3+ \sin{x_0}+0 & (x_0-0.2 x_3-0.5-0.25 x_1 \leq 0)
         \end{cases} .
 
+    >>> import numpy as np
     >>> from scipy import integrate
     >>> func = lambda x0,x1,x2,x3 : x0**2 + x1*x2 - x3**3 + np.sin(x0) + (
     ...                                 1 if (x0-.2*x3-.5-.25*x1>0) else 0)

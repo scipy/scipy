@@ -69,7 +69,7 @@ _mode_reflect_doc = (
 
 _mode_interp_constant_doc = (
 """mode : {'reflect', 'grid-mirror', 'constant', 'grid-constant', 'nearest', \
-           'mirror', 'grid-wrap', 'wrap'}, optional
+'mirror', 'grid-wrap', 'wrap'}, optional
     The `mode` parameter determines how the input array is extended
     beyond its boundaries. Default is 'constant'. Behavior for each valid
     value is as follows (see additional plots and details on
@@ -183,9 +183,9 @@ _prefilter_doc = (
 """prefilter : bool, optional
     Determines if the input array is prefiltered with `spline_filter`
     before interpolation. The default is True, which will create a
-    temporary `float64` array of filtered values if `order > 1`. If
+    temporary `float64` array of filtered values if ``order > 1``. If
     setting this to False, the output will be slightly blurred if
-    `order > 1`, unless the input is prefiltered, i.e. it is the result
+    ``order > 1``, unless the input is prefiltered, i.e. it is the result
     of calling `spline_filter` on the original input.""")
 
 docdict = {

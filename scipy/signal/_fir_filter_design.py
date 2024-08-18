@@ -1,36 +1,21 @@
-# -*- coding: utf-8 -*-
 """Functions for FIR filter design."""
 
 from math import ceil, log
 import operator
 import warnings
+from typing import Literal, Optional
 
 import numpy as np
 from numpy.fft import irfft, fft, ifft
 from scipy.special import sinc
 from scipy.linalg import (toeplitz, hankel, solve, LinAlgError, LinAlgWarning,
                           lstsq)
+from scipy.signal._arraytools import _validate_fs
 
 from . import _sigtools
 
 __all__ = ['kaiser_beta', 'kaiser_atten', 'kaiserord',
            'firwin', 'firwin2', 'remez', 'firls', 'minimum_phase']
-
-
-def _get_fs(fs, nyq):
-    """
-    Utility for replacing the argument 'nyq' (with default 1) with 'fs'.
-    """
-    if nyq is None and fs is None:
-        fs = 2
-    elif nyq is not None:
-        if fs is not None:
-            raise ValueError("Values cannot be given for both 'nyq' and 'fs'.")
-        msg = ("Keyword argument 'nyq' is deprecated in favour of 'fs' and "
-               "will be removed in SciPy 1.12.0.")
-        warnings.warn(msg, DeprecationWarning, stacklevel=3)
-        fs = 2*nyq
-    return fs
 
 
 # Some notes on function parameters:
@@ -193,6 +178,7 @@ def kaiserord(ripple, width):
     the gain varies no more than 0.5%, and in the band [187, 500], the
     signal is attenuated by at least 65 dB.
 
+    >>> import numpy as np
     >>> from scipy.signal import kaiserord, firwin, freqz
     >>> import matplotlib.pyplot as plt
     >>> fs = 1000.0
@@ -251,8 +237,8 @@ def kaiserord(ripple, width):
     A = abs(ripple)  # in case somebody is confused as to what's meant
     if A < 8:
         # Formula for N is not valid in this range.
-        raise ValueError("Requested maximum ripple attentuation %f is too "
-                         "small for the Kaiser formula." % A)
+        raise ValueError("Requested maximum ripple attenuation "
+                         f"{A:f} is too small for the Kaiser formula.")
     beta = kaiser_beta(A)
 
     # Kaiser's formula (as given in Oppenheim and Schafer) is for the filter
@@ -262,8 +248,8 @@ def kaiserord(ripple, width):
     return int(ceil(numtaps)), beta
 
 
-def firwin(numtaps, cutoff, width=None, window='hamming', pass_zero=True,
-           scale=True, nyq=None, fs=None):
+def firwin(numtaps, cutoff, *, width=None, window='hamming', pass_zero=True,
+           scale=True, fs=None):
     """
     FIR filter design using the window method.
 
@@ -313,13 +299,6 @@ def firwin(numtaps, cutoff, width=None, window='hamming', pass_zero=True,
           `fs/2` (i.e the filter is a single band highpass filter);
           center of first passband otherwise
 
-    nyq : float, optional, deprecated
-        This is the Nyquist frequency. Each frequency in `cutoff` must be
-        between 0 and `nyq`. Default is 1.
-
-        .. deprecated:: 1.0.0
-           `firwin` keyword argument `nyq` is deprecated in favour of `fs` and
-           will be removed in SciPy 1.12.0.
     fs : float, optional
         The sampling frequency of the signal. Each frequency in `cutoff`
         must be between 0 and ``fs/2``.  Default is 2.
@@ -386,11 +365,13 @@ def firwin(numtaps, cutoff, width=None, window='hamming', pass_zero=True,
     >>> signal.firwin(numtaps, [f1, f2, f3, f4], pass_zero=False)
     array([ 0.04890915,  0.91284326,  0.04890915])
 
-    """  # noqa: E501
+    """
     # The major enhancements to this function added in November 2010 were
     # developed by Tom Krauss (see ticket #902).
+    fs = _validate_fs(fs, allow_none=True)
+    fs = 2 if fs is None else fs
 
-    nyq = 0.5 * _get_fs(fs, nyq)
+    nyq = 0.5 * fs
 
     cutoff = np.atleast_1d(cutoff) / float(nyq)
 
@@ -419,28 +400,24 @@ def firwin(numtaps, cutoff, width=None, window='hamming', pass_zero=True,
             if pass_zero == 'lowpass':
                 if cutoff.size != 1:
                     raise ValueError('cutoff must have one element if '
-                                     'pass_zero=="lowpass", got %s'
-                                     % (cutoff.shape,))
+                                     f'pass_zero=="lowpass", got {cutoff.shape}')
             elif cutoff.size <= 1:
                 raise ValueError('cutoff must have at least two elements if '
-                                 'pass_zero=="bandstop", got %s'
-                                 % (cutoff.shape,))
+                                 f'pass_zero=="bandstop", got {cutoff.shape}')
             pass_zero = True
         elif pass_zero in ('bandpass', 'highpass'):
             if pass_zero == 'highpass':
                 if cutoff.size != 1:
                     raise ValueError('cutoff must have one element if '
-                                     'pass_zero=="highpass", got %s'
-                                     % (cutoff.shape,))
+                                     f'pass_zero=="highpass", got {cutoff.shape}')
             elif cutoff.size <= 1:
                 raise ValueError('cutoff must have at least two elements if '
-                                 'pass_zero=="bandpass", got %s'
-                                 % (cutoff.shape,))
+                                 f'pass_zero=="bandpass", got {cutoff.shape}')
             pass_zero = False
         else:
             raise ValueError('pass_zero must be True, False, "bandpass", '
                              '"lowpass", "highpass", or "bandstop", got '
-                             '%s' % (pass_zero,))
+                             f'{pass_zero}')
     pass_zero = bool(operator.index(pass_zero))  # ensure bool-like
 
     pass_nyquist = bool(cutoff.size & 1) ^ pass_zero
@@ -489,8 +466,7 @@ def firwin(numtaps, cutoff, width=None, window='hamming', pass_zero=True,
 # Original version of firwin2 from scipy ticket #457, submitted by "tash".
 #
 # Rewritten by Warren Weckesser, 2010.
-
-def firwin2(numtaps, freq, gain, nfreqs=None, window='hamming', nyq=None,
+def firwin2(numtaps, freq, gain, *, nfreqs=None, window='hamming',
             antisymmetric=False, fs=None):
     """
     FIR filter design using the window method.
@@ -525,13 +501,6 @@ def firwin2(numtaps, freq, gain, nfreqs=None, window='hamming', nyq=None,
         Window function to use. Default is "hamming". See
         `scipy.signal.get_window` for the complete list of possible values.
         If None, no window function is applied.
-    nyq : float, optional, deprecated
-        This is the Nyquist frequency. Each frequency in `freq` must be
-        between 0 and `nyq`. Default is 1.
-
-        .. deprecated:: 1.0.0
-           `firwin2` keyword argument `nyq` is deprecated in favour of `fs` and
-           will be removed in SciPy 1.12.0.
     antisymmetric : bool, optional
         Whether resulting impulse response is symmetric/antisymmetric.
         See Notes for more details.
@@ -545,7 +514,7 @@ def firwin2(numtaps, freq, gain, nfreqs=None, window='hamming', nyq=None,
         The filter coefficients of the FIR filter, as a 1-D array of length
         `numtaps`.
 
-    See also
+    See Also
     --------
     firls
     firwin
@@ -598,7 +567,9 @@ def firwin2(numtaps, freq, gain, nfreqs=None, window='hamming', nyq=None,
     [-0.02286961 -0.06362756  0.57310236  0.57310236 -0.06362756 -0.02286961]
 
     """
-    nyq = 0.5 * _get_fs(fs, nyq)
+    fs = _validate_fs(fs, allow_none=True)
+    fs = 2 if fs is None else fs
+    nyq = 0.5 * fs
 
     if len(freq) != len(gain):
         raise ValueError('freq and gain must be of same length.')
@@ -658,7 +629,7 @@ def firwin2(numtaps, freq, gain, nfreqs=None, window='hamming', nyq=None,
         if (d <= 0).any():
             raise ValueError("freq cannot contain numbers that are too close "
                              "(within eps * (fs/2): "
-                             "{}) to a repeated value".format(eps))
+                             f"{eps}) to a repeated value")
 
     # Linearly interpolate the desired response on a uniform mesh `x`.
     x = np.linspace(0.0, nyq, nfreqs)
@@ -692,7 +663,7 @@ def firwin2(numtaps, freq, gain, nfreqs=None, window='hamming', nyq=None,
     return out
 
 
-def remez(numtaps, bands, desired, weight=None, Hz=None, type='bandpass',
+def remez(numtaps, bands, desired, *, weight=None, type='bandpass',
           maxiter=25, grid_density=16, fs=None):
     """
     Calculate the minimax optimal filter using the Remez exchange algorithm.
@@ -717,12 +688,6 @@ def remez(numtaps, bands, desired, weight=None, Hz=None, type='bandpass',
     weight : array_like, optional
         A relative weighting to give to each band region. The length of
         `weight` has to be half the length of `bands`.
-    Hz : scalar, optional, deprecated
-        The sampling frequency in Hz. Default is 1.
-
-        .. deprecated:: 1.0.0
-           `remez` keyword argument `Hz` is deprecated in favour of `fs` and
-           will be removed in SciPy 1.12.0.
     type : {'bandpass', 'differentiator', 'hilbert'}, optional
         The type of filter:
 
@@ -767,93 +732,91 @@ def remez(numtaps, bands, desired, weight=None, Hz=None, type='bandpass',
 
     Examples
     --------
-    In these examples `remez` gets used creating a bandpass, bandstop, lowpass
-    and highpass filter. The used parameters are the filter order, an array
-    with according frequency boundaries, the desired attenuation values and the
-    sampling frequency. Using `freqz` the corresponding frequency response
-    gets calculated and plotted.
+    In these examples, `remez` is used to design low-pass, high-pass,
+    band-pass and band-stop filters.  The parameters that define each filter
+    are the filter order, the band boundaries, the transition widths of the
+    boundaries, the desired gains in each band, and the sampling frequency.
 
+    We'll use a sample frequency of 22050 Hz in all the examples.  In each
+    example, the desired gain in each band is either 0 (for a stop band)
+    or 1 (for a pass band).
+
+    `freqz` is used to compute the frequency response of each filter, and
+    the utility function ``plot_response`` defined below is used to plot
+    the response.
+
+    >>> import numpy as np
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
 
-    >>> def plot_response(fs, w, h, title):
+    >>> fs = 22050   # Sample rate, Hz
+
+    >>> def plot_response(w, h, title):
     ...     "Utility function to plot response functions"
     ...     fig = plt.figure()
     ...     ax = fig.add_subplot(111)
-    ...     ax.plot(0.5*fs*w/np.pi, 20*np.log10(np.abs(h)))
+    ...     ax.plot(w, 20*np.log10(np.abs(h)))
     ...     ax.set_ylim(-40, 5)
-    ...     ax.set_xlim(0, 0.5*fs)
     ...     ax.grid(True)
     ...     ax.set_xlabel('Frequency (Hz)')
     ...     ax.set_ylabel('Gain (dB)')
     ...     ax.set_title(title)
 
-    This example shows a steep low pass transition according to the small
-    transition width and high filter order:
+    The first example is a low-pass filter, with cutoff frequency 8 kHz.
+    The filter length is 325, and the transition width from pass to stop
+    is 100 Hz.
 
-    >>> fs = 22050.0       # Sample rate, Hz
     >>> cutoff = 8000.0    # Desired cutoff frequency, Hz
-    >>> trans_width = 100  # Width of transition from pass band to stop band, Hz
-    >>> numtaps = 400      # Size of the FIR filter.
+    >>> trans_width = 100  # Width of transition from pass to stop, Hz
+    >>> numtaps = 325      # Size of the FIR filter.
     >>> taps = signal.remez(numtaps, [0, cutoff, cutoff + trans_width, 0.5*fs],
     ...                     [1, 0], fs=fs)
-    >>> w, h = signal.freqz(taps, [1], worN=2000)
-    >>> plot_response(fs, w, h, "Low-pass Filter")
+    >>> w, h = signal.freqz(taps, [1], worN=2000, fs=fs)
+    >>> plot_response(w, h, "Low-pass Filter")
+    >>> plt.show()
 
-    This example shows a high pass filter:
+    This example shows a high-pass filter:
 
-    >>> fs = 22050.0       # Sample rate, Hz
     >>> cutoff = 2000.0    # Desired cutoff frequency, Hz
-    >>> trans_width = 250  # Width of transition from pass band to stop band, Hz
+    >>> trans_width = 250  # Width of transition from pass to stop, Hz
     >>> numtaps = 125      # Size of the FIR filter.
     >>> taps = signal.remez(numtaps, [0, cutoff - trans_width, cutoff, 0.5*fs],
     ...                     [0, 1], fs=fs)
-    >>> w, h = signal.freqz(taps, [1], worN=2000)
-    >>> plot_response(fs, w, h, "High-pass Filter")
+    >>> w, h = signal.freqz(taps, [1], worN=2000, fs=fs)
+    >>> plot_response(w, h, "High-pass Filter")
+    >>> plt.show()
 
-    For a signal sampled with 22 kHz a bandpass filter with a pass band of 2-5
-    kHz gets calculated using the Remez algorithm. The transition width is 260
-    Hz and the filter order 10:
+    This example shows a band-pass filter with a pass-band from 2 kHz to
+    5 kHz.  The transition width is 260 Hz and the length of the filter
+    is 63, which is smaller than in the other examples:
 
-    >>> fs = 22000.0         # Sample rate, Hz
     >>> band = [2000, 5000]  # Desired pass band, Hz
-    >>> trans_width = 260    # Width of transition from pass band to stop band, Hz
-    >>> numtaps = 10        # Size of the FIR filter.
+    >>> trans_width = 260    # Width of transition from pass to stop, Hz
+    >>> numtaps = 63         # Size of the FIR filter.
     >>> edges = [0, band[0] - trans_width, band[0], band[1],
     ...          band[1] + trans_width, 0.5*fs]
     >>> taps = signal.remez(numtaps, edges, [0, 1, 0], fs=fs)
-    >>> w, h = signal.freqz(taps, [1], worN=2000)
-    >>> plot_response(fs, w, h, "Band-pass Filter")
+    >>> w, h = signal.freqz(taps, [1], worN=2000, fs=fs)
+    >>> plot_response(w, h, "Band-pass Filter")
+    >>> plt.show()
 
-    It can be seen that for this bandpass filter, the low order leads to higher
-    ripple and less steep transitions. There is very low attenuation in the
-    stop band and little overshoot in the pass band.  Of course the desired
-    gain can be better approximated with a higher filter order.
+    The low order leads to higher ripple and less steep transitions.
 
-    The next example shows a bandstop filter. Because of the high filter order
-    the transition is quite steep:
+    The next example shows a band-stop filter.
 
-    >>> fs = 20000.0         # Sample rate, Hz
     >>> band = [6000, 8000]  # Desired stop band, Hz
-    >>> trans_width = 200    # Width of transition from pass band to stop band, Hz
+    >>> trans_width = 200    # Width of transition from pass to stop, Hz
     >>> numtaps = 175        # Size of the FIR filter.
-    >>> edges = [0, band[0] - trans_width, band[0], band[1], band[1] + trans_width, 0.5*fs]
+    >>> edges = [0, band[0] - trans_width, band[0], band[1],
+    ...          band[1] + trans_width, 0.5*fs]
     >>> taps = signal.remez(numtaps, edges, [1, 0, 1], fs=fs)
-    >>> w, h = signal.freqz(taps, [1], worN=2000)
-    >>> plot_response(fs, w, h, "Band-stop Filter")
-
+    >>> w, h = signal.freqz(taps, [1], worN=2000, fs=fs)
+    >>> plot_response(w, h, "Band-stop Filter")
     >>> plt.show()
 
     """
-    if Hz is None and fs is None:
-        fs = 1.0
-    elif Hz is not None:
-        if fs is not None:
-            raise ValueError("Values cannot be given for both 'Hz' and 'fs'.")
-        msg = ("'remez' keyword argument 'Hz' is deprecated in favour of 'fs'"
-               " and will be removed in SciPy 1.12.0.")
-        warnings.warn(msg, DeprecationWarning, stacklevel=2)
-        fs = Hz
+    fs = _validate_fs(fs, allow_none=True)
+    fs = 1.0 if fs is None else fs
 
     # Convert type
     try:
@@ -868,10 +831,10 @@ def remez(numtaps, bands, desired, weight=None, Hz=None, type='bandpass',
 
     bands = np.asarray(bands).copy()
     return _sigtools._remez(numtaps, bands, desired, weight, tnum, fs,
-                           maxiter, grid_density)
+                            maxiter, grid_density)
 
 
-def firls(numtaps, bands, desired, weight=None, nyq=None, fs=None):
+def firls(numtaps, bands, desired, *, weight=None, fs=None):
     """
     FIR filter design using least-squares error minimization.
 
@@ -889,7 +852,11 @@ def firls(numtaps, bands, desired, weight=None, nyq=None, fs=None):
     bands : array_like
         A monotonic nondecreasing sequence containing the band edges in
         Hz. All elements must be non-negative and less than or equal to
-        the Nyquist frequency given by `nyq`.
+        the Nyquist frequency given by `nyq`. The bands are specified as
+        frequency pairs, thus, if using a 1D array, its length must be
+        even, e.g., `np.array([0, 1, 2, 3, 4, 5])`. Alternatively, the
+        bands can be specified as an nx2 sized 2D array, where n is the
+        number of bands, e.g, `np.array([[0, 1], [2, 3], [4, 5]])`.
     desired : array_like
         A sequence the same size as `bands` containing the desired gain
         at the start and end point of each band.
@@ -897,13 +864,6 @@ def firls(numtaps, bands, desired, weight=None, nyq=None, fs=None):
         A relative weighting to give to each band region when solving
         the least squares problem. `weight` has to be half the size of
         `bands`.
-    nyq : float, optional, deprecated
-        This is the Nyquist frequency. Each frequency in `bands` must be
-        between 0 and `nyq` (inclusive). Default is 1.
-
-        .. deprecated:: 1.0.0
-           `firls` keyword argument `nyq` is deprecated in favour of `fs` and
-           will be removed in SciPy 1.12.0.
     fs : float, optional
         The sampling frequency of the signal. Each frequency in `bands`
         must be between 0 and ``fs/2`` (inclusive). Default is 2.
@@ -913,7 +873,7 @@ def firls(numtaps, bands, desired, weight=None, nyq=None, fs=None):
     coeffs : ndarray
         Coefficients of the optimal (in a least squares sense) FIR filter.
 
-    See also
+    See Also
     --------
     firwin
     firwin2
@@ -954,6 +914,7 @@ def firls(numtaps, bands, desired, weight=None, nyq=None, fs=None):
     frequency ranges between our stop bands and pass bands is unspecified,
     and thus may overshoot depending on the parameters of our filter:
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
     >>> fig, axs = plt.subplots(2)
@@ -982,8 +943,10 @@ def firls(numtaps, bands, desired, weight=None, nyq=None, fs=None):
     >>> fig.tight_layout()
     >>> plt.show()
 
-    """  # noqa
-    nyq = 0.5 * _get_fs(fs, nyq)
+    """
+    fs = _validate_fs(fs, allow_none=True)
+    fs = 2 if fs is None else fs
+    nyq = 0.5 * fs
 
     numtaps = int(numtaps)
     if numtaps % 2 == 0 or numtaps < 1:
@@ -993,7 +956,7 @@ def firls(numtaps, bands, desired, weight=None, nyq=None, fs=None):
     # normalize bands 0->1 and make it 2 columns
     nyq = float(nyq)
     if nyq <= 0:
-        raise ValueError('nyq must be positive, got %s <= 0.' % nyq)
+        raise ValueError(f'nyq must be positive, got {nyq} <= 0.')
     bands = np.asarray(bands).flatten() / nyq
     if len(bands) % 2 != 0:
         raise ValueError("bands must contain frequency pairs.")
@@ -1004,9 +967,10 @@ def firls(numtaps, bands, desired, weight=None, nyq=None, fs=None):
     # check remaining params
     desired = np.asarray(desired).flatten()
     if bands.size != desired.size:
-        raise ValueError("desired must have one entry per frequency, got %s "
-                         "gains for %s frequencies."
-                         % (desired.size, bands.size))
+        raise ValueError(
+            f"desired must have one entry per frequency, got {desired.size} "
+            f"gains for {bands.size} frequencies."
+        )
     desired.shape = (-1, 2)
     if (np.diff(bands) <= 0).any() or (np.diff(bands[:, 0]) < 0).any():
         raise ValueError("bands must be monotonically nondecreasing and have "
@@ -1020,7 +984,7 @@ def firls(numtaps, bands, desired, weight=None, nyq=None, fs=None):
     weight = np.asarray(weight).flatten()
     if len(weight) != len(desired):
         raise ValueError("weight must be the same size as the number of "
-                         "band pairs (%s)." % (len(bands),))
+                         f"band pairs ({len(bands)}).")
     if (weight < 0).any():
         raise ValueError("weight must be non-negative.")
 
@@ -1037,7 +1001,7 @@ def firls(numtaps, bands, desired, weight=None, nyq=None, fs=None):
 
     # We have that:
     #     q(n) = 1/π ∫W(ω)cos(nω)dω (over 0->π)
-    # Using our nomalization ω=πf and with a constant weight W over each
+    # Using our normalization ω=πf and with a constant weight W over each
     # interval f1->f2 we get:
     #     q(n) = W∫cos(πnf)df (0->1) = Wf sin(πnf)/πnf
     # integrated over each f1->f2 pair (i.e., value at f2 - value at f1).
@@ -1108,7 +1072,9 @@ def _dhtm(mag):
     return recon
 
 
-def minimum_phase(h, method='homomorphic', n_fft=None):
+def minimum_phase(h: np.ndarray,
+                  method: Literal['homomorphic', 'hilbert'] = 'homomorphic',
+                  n_fft: Optional[int] = None, *, half: bool = True) -> np.ndarray:
     """Convert a linear-phase FIR filter to minimum phase
 
     Parameters
@@ -1116,13 +1082,16 @@ def minimum_phase(h, method='homomorphic', n_fft=None):
     h : array
         Linear-phase FIR filter coefficients.
     method : {'hilbert', 'homomorphic'}
-        The method to use:
+        The provided methods are:
 
             'homomorphic' (default)
                 This method [4]_ [5]_ works best with filters with an
                 odd number of taps, and the resulting minimum phase filter
                 will have a magnitude response that approximates the square
-                root of the the original filter's magnitude response.
+                root of the original filter's magnitude response using half
+                the number of taps when ``half=True`` (default), or the
+                original magnitude spectrum using the same number of taps
+                when ``half=False``.
 
             'hilbert'
                 This method [1]_ is designed to be used with equiripple
@@ -1132,12 +1101,20 @@ def minimum_phase(h, method='homomorphic', n_fft=None):
     n_fft : int
         The number of points to use for the FFT. Should be at least a
         few times larger than the signal length (see Notes).
+    half : bool
+        If ``True``, create a filter that is half the length of the original, with a
+        magnitude spectrum that is the square root of the original. If ``False``,
+        create a filter that is the same length as the original, with a magnitude
+        spectrum that is designed to match the original (only supported when
+        ``method='homomorphic'``).
+
+        .. versionadded:: 1.14.0
 
     Returns
     -------
     h_minimum : array
         The minimum-phase version of the filter, with length
-        ``(length(h) + 1) // 2``.
+        ``(len(h) + 1) // 2`` when ``half is True`` or ``len(h)`` otherwise.
 
     See Also
     --------
@@ -1168,48 +1145,8 @@ def minimum_phase(h, method='homomorphic', n_fft=None):
 
     Alternative implementations exist for creating minimum-phase filters,
     including zero inversion [2]_ and spectral factorization [3]_ [4]_.
-    For more information, see:
-
-        http://dspguru.com/dsp/howtos/how-to-design-minimum-phase-fir-filters
-
-    Examples
-    --------
-    Create an optimal linear-phase filter, then convert it to minimum phase:
-
-    >>> from scipy.signal import remez, minimum_phase, freqz, group_delay
-    >>> import matplotlib.pyplot as plt
-    >>> freq = [0, 0.2, 0.3, 1.0]
-    >>> desired = [1, 0]
-    >>> h_linear = remez(151, freq, desired, fs=2.)
-
-    Convert it to minimum phase:
-
-    >>> h_min_hom = minimum_phase(h_linear, method='homomorphic')
-    >>> h_min_hil = minimum_phase(h_linear, method='hilbert')
-
-    Compare the three filters:
-
-    >>> fig, axs = plt.subplots(4, figsize=(4, 8))
-    >>> for h, style, color in zip((h_linear, h_min_hom, h_min_hil),
-    ...                            ('-', '-', '--'), ('k', 'r', 'c')):
-    ...     w, H = freqz(h)
-    ...     w, gd = group_delay((h, 1))
-    ...     w /= np.pi
-    ...     axs[0].plot(h, color=color, linestyle=style)
-    ...     axs[1].plot(w, np.abs(H), color=color, linestyle=style)
-    ...     axs[2].plot(w, 20 * np.log10(np.abs(H)), color=color, linestyle=style)
-    ...     axs[3].plot(w, gd, color=color, linestyle=style)
-    >>> for ax in axs:
-    ...     ax.grid(True, color='0.5')
-    ...     ax.fill_between(freq[1:3], *ax.get_ylim(), color='#ffeeaa', zorder=1)
-    >>> axs[0].set(xlim=[0, len(h_linear) - 1], ylabel='Amplitude', xlabel='Samples')
-    >>> axs[1].legend(['Linear', 'Min-Hom', 'Min-Hil'], title='Phase')
-    >>> for ax, ylim in zip(axs[1:], ([0, 1.1], [-150, 10], [-60, 60])):
-    ...     ax.set(xlim=[0, 1], ylim=ylim, xlabel='Frequency')
-    >>> axs[1].set(ylabel='Magnitude')
-    >>> axs[2].set(ylabel='Magnitude (dB)')
-    >>> axs[3].set(ylabel='Group delay')
-    >>> plt.tight_layout()
+    For more information, see `this DSPGuru page
+    <http://dspguru.com/dsp/howtos/how-to-design-minimum-phase-fir-filters>`__.
 
     References
     ----------
@@ -1227,9 +1164,67 @@ def minimum_phase(h, method='homomorphic', n_fft=None):
     .. [4] J. S. Lim, Advanced Topics in Signal Processing.
            Englewood Cliffs, N.J.: Prentice Hall, 1988.
     .. [5] A. V. Oppenheim, R. W. Schafer, and J. R. Buck,
-           "Discrete-Time Signal Processing," 2nd edition.
-           Upper Saddle River, N.J.: Prentice Hall, 1999.
-    """  # noqa
+           "Discrete-Time Signal Processing," 3rd edition.
+           Upper Saddle River, N.J.: Pearson, 2009.
+
+    Examples
+    --------
+    Create an optimal linear-phase low-pass filter `h` with a transition band of
+    [0.2, 0.3] (assuming a Nyquist frequency of 1):
+
+    >>> import numpy as np
+    >>> from scipy.signal import remez, minimum_phase, freqz, group_delay
+    >>> import matplotlib.pyplot as plt
+    >>> freq = [0, 0.2, 0.3, 1.0]
+    >>> desired = [1, 0]
+    >>> h_linear = remez(151, freq, desired, fs=2)
+
+    Convert it to minimum phase:
+
+    >>> h_hil = minimum_phase(h_linear, method='hilbert')
+    >>> h_hom = minimum_phase(h_linear, method='homomorphic')
+    >>> h_hom_full = minimum_phase(h_linear, method='homomorphic', half=False)
+
+    Compare the impulse and frequency response of the four filters:
+
+    >>> fig0, ax0 = plt.subplots(figsize=(6, 3), tight_layout=True)
+    >>> fig1, axs = plt.subplots(3, sharex='all', figsize=(6, 6), tight_layout=True)
+    >>> ax0.set_title("Impulse response")
+    >>> ax0.set(xlabel='Samples', ylabel='Amplitude', xlim=(0, len(h_linear) - 1))
+    >>> axs[0].set_title("Frequency Response")
+    >>> axs[0].set(xlim=(0, .65), ylabel="Magnitude / dB")
+    >>> axs[1].set(ylabel="Phase / rad")
+    >>> axs[2].set(ylabel="Group Delay / samples", ylim=(-31, 81),
+    ...             xlabel='Normalized Frequency (Nyqist frequency: 1)')
+    >>> for h, lb in ((h_linear,   f'Linear ({len(h_linear)})'),
+    ...               (h_hil,      f'Min-Hilbert ({len(h_hil)})'),
+    ...               (h_hom,      f'Min-Homomorphic ({len(h_hom)})'),
+    ...               (h_hom_full, f'Min-Homom. Full ({len(h_hom_full)})')):
+    ...     w_H, H = freqz(h, fs=2)
+    ...     w_gd, gd = group_delay((h, 1), fs=2)
+    ...
+    ...     alpha = 1.0 if lb == 'linear' else 0.5  # full opacity for 'linear' line
+    ...     ax0.plot(h, '.-', alpha=alpha, label=lb)
+    ...     axs[0].plot(w_H, 20 * np.log10(np.abs(H)), alpha=alpha)
+    ...     axs[1].plot(w_H, np.unwrap(np.angle(H)), alpha=alpha, label=lb)
+    ...     axs[2].plot(w_gd, gd, alpha=alpha)
+    >>> ax0.grid(True)
+    >>> ax0.legend(title='Filter Phase (Order)')
+    >>> axs[1].legend(title='Filter Phase (Order)', loc='lower right')
+    >>> for ax_ in axs:  # shade transition band:
+    ...     ax_.axvspan(freq[1], freq[2], color='y', alpha=.25)
+    ...     ax_.grid(True)
+    >>> plt.show()
+
+    The impulse response and group delay plot depict the 75 sample delay of the linear
+    phase filter `h`. The phase should also be linear in the stop band--due to the small
+    magnitude, numeric noise dominates there. Furthermore, the plots show that the
+    minimum phase filters clearly show a reduced (negative) phase slope in the pass and
+    transition band. The plots also illustrate that the filter with parameters
+    ``method='homomorphic', half=False`` has same order and magnitude response as the
+    linear filter `h` whereas the other minimum phase filters have only half the order
+    and the square root  of the magnitude response.
+    """
     h = np.asarray(h)
     if np.iscomplexobj(h):
         raise ValueError('Complex filters not supported')
@@ -1237,17 +1232,18 @@ def minimum_phase(h, method='homomorphic', n_fft=None):
         raise ValueError('h must be 1-D and at least 2 samples long')
     n_half = len(h) // 2
     if not np.allclose(h[-n_half:][::-1], h[:n_half]):
-        warnings.warn('h does not appear to by symmetric, conversion may '
-                      'fail', RuntimeWarning)
+        warnings.warn('h does not appear to by symmetric, conversion may fail',
+                      RuntimeWarning, stacklevel=2)
     if not isinstance(method, str) or method not in \
             ('homomorphic', 'hilbert',):
-        raise ValueError('method must be "homomorphic" or "hilbert", got %r'
-                         % (method,))
+        raise ValueError(f'method must be "homomorphic" or "hilbert", got {method!r}')
+    if method == "hilbert" and not half:
+        raise ValueError("`half=False` is only supported when `method='homomorphic'`")
     if n_fft is None:
         n_fft = 2 ** int(np.ceil(np.log2(2 * (len(h) - 1) / 0.01)))
     n_fft = int(n_fft)
     if n_fft < len(h):
-        raise ValueError('n_fft must be at least len(h)==%s' % len(h))
+        raise ValueError(f'n_fft must be at least len(h)=={len(h)}')
     if method == 'hilbert':
         w = np.arange(n_fft) * (2 * np.pi / n_fft * n_half)
         H = np.real(fft(h, n_fft) * np.exp(1j * w))
@@ -1265,19 +1261,22 @@ def minimum_phase(h, method='homomorphic', n_fft=None):
         # take 0.25*log(|H|**2) = 0.5*log(|H|)
         h_temp += 1e-7 * h_temp[h_temp > 0].min()  # don't let log blow up
         np.log(h_temp, out=h_temp)
-        h_temp *= 0.5
+        if half:  # halving of magnitude spectrum optional
+            h_temp *= 0.5
         # IDFT
         h_temp = ifft(h_temp).real
         # multiply pointwise by the homomorphic filter
         # lmin[n] = 2u[n] - d[n]
+        # i.e., double the positive frequencies and zero out the negative ones;
+        # Oppenheim+Shafer 3rd ed p991 eq13.42b and p1004 fig13.7
         win = np.zeros(n_fft)
         win[0] = 1
-        stop = (len(h) + 1) // 2
+        stop = n_fft // 2
         win[1:stop] = 2
-        if len(h) % 2:
+        if n_fft % 2:
             win[stop] = 1
         h_temp *= win
         h_temp = ifft(np.exp(fft(h_temp)))
         h_minimum = h_temp.real
-    n_out = n_half + len(h) % 2
+    n_out = (n_half + len(h) % 2) if half else len(h)
     return h_minimum[:n_out]

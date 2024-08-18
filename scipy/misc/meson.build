@@ -7,7 +7,6 @@ python_sources = [
 
 py3.install_sources(
   python_sources,
-  pure: false,
   subdir: 'scipy/misc'
 )
 
@@ -16,7 +15,6 @@ py3.install_sources([
     'ecg.dat',
     'face.dat'
   ],
-  pure: false,
   subdir: 'scipy/misc'
 )
 

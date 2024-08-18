@@ -35,13 +35,13 @@ class CorrelationFunctions(Benchmark):
         self.a = a
 
     def time_fisher_exact(self, alternative):
-        oddsratio, pvalue = stats.fisher_exact(self.a, alternative=alternative)
+        stats.fisher_exact(self.a, alternative=alternative)
 
     def time_barnard_exact(self, alternative):
-        resBarnard = stats.barnard_exact(self.a, alternative=alternative)
+        stats.barnard_exact(self.a, alternative=alternative)
 
     def time_boschloo_exact(self, alternative):
-        resBoschloo = stats.boschloo_exact(self.a, alternative=alternative)
+        stats.boschloo_exact(self.a, alternative=alternative)
 
 
 class ANOVAFunction(Benchmark):
@@ -52,8 +52,8 @@ class ANOVAFunction(Benchmark):
         self.c = rng.random((6,3)) * 10
 
     def time_f_oneway(self):
-        statistic, pvalue = stats.f_oneway(self.a, self.b, self.c)
-        statistic, pvalue = stats.f_oneway(self.a, self.b, self.c, axis=1)
+        stats.f_oneway(self.a, self.b, self.c)
+        stats.f_oneway(self.a, self.b, self.c, axis=1)
 
 
 class Kendalltau(Benchmark):
@@ -162,6 +162,33 @@ class InferentialStats(Benchmark):
         stats.mstats.kruskal(self.a, self.b)
 
 
+# Benchmark data for the truncnorm stats() method.
+# The data in each row is:
+#   a, b, mean, variance, skewness, excess kurtosis. Generated using
+# https://gist.github.com/WarrenWeckesser/636b537ee889679227d53543d333a720
+truncnorm_cases = [[-20, -19, -19.052343945976656, 0.002725073018195613,
+                   -1.9838693623377885, 5.871801893091683],
+                   [-30, -29, -29.034401237736176, 0.0011806604886186853,
+                    -1.9929615171469608, 5.943905539773037],
+                   [-40, -39, -39.02560741993011, 0.0006548827702932775,
+                    -1.9960847672775606, 5.968744357649675],
+                   [39, 40, 39.02560741993011, 0.0006548827702932775,
+                    1.9960847672775606, 5.968744357649675]]
+truncnorm_cases = np.array(truncnorm_cases)
+
+
+class TruncnormStats(Benchmark):
+    param_names = ['case', 'moment']
+    params = [list(range(len(truncnorm_cases))), ['m', 'v', 's', 'k']]
+
+    def track_truncnorm_stats_error(self, case, moment):
+        result_indices = dict(zip(['m', 'v', 's', 'k'], range(2, 6)))
+        ref = truncnorm_cases[case, result_indices[moment]]
+        a, b = truncnorm_cases[case, 0:2]
+        res = stats.truncnorm(a, b).stats(moments=moment)
+        return np.abs((res - ref)/ref)
+
+
 class DistributionsAll(Benchmark):
     # all distributions are in this list. A conversion to a set is used to
     # remove duplicates that appear more than once in either `distcont` or
@@ -186,7 +213,8 @@ class DistributionsAll(Benchmark):
     slow_dists = ['nct', 'ncx2', 'argus', 'cosine', 'foldnorm', 'gausshyper',
                   'kappa4', 'invgauss', 'wald', 'vonmises_line', 'ksone',
                   'genexpon', 'exponnorm', 'recipinvgauss', 'vonmises',
-                  'foldcauchy', 'kstwo', 'levy_stable', 'skewnorm']
+                  'foldcauchy', 'kstwo', 'levy_stable', 'skewnorm',
+                  'studentized_range']
     slow_methods = ['moment']
 
     def setup(self, dist_name, method):
@@ -217,6 +245,8 @@ class DistributionsAll(Benchmark):
             if isinstance(self.dist, stats.rv_discrete):
                 raise NotImplementedError("This attribute is not a member "
                                           "of the distribution")
+            if self.dist.name in {'irwinhall'}:
+                raise NotImplementedError("Fit is unreliable.")
             # the only positional argument is the data to be fitted
             self.args = [self.dist.rvs(*dist_shapes, size=100, random_state=0, **kwds)]
         elif method == 'rvs':
@@ -324,9 +354,9 @@ class PDFPeakMemory(Benchmark):
     def setup(self, dist_name):
         # This benchmark is demanding. Skip it if the env isn't xslow.
         if not is_xslow():
-            raise NotImplementedError("skipped - enviroment is not xslow. "
-                                      "To enable this benchamark, set the "
-                                      "enviroment variable SCIPY_XSLOW=1")
+            raise NotImplementedError("skipped - environment is not xslow. "
+                                      "To enable this benchmark, set the "
+                                      "environment variable SCIPY_XSLOW=1")
 
         if dist_name in self.slow_dists:
             raise NotImplementedError("skipped - dist is too slow.")
@@ -384,7 +414,9 @@ class Distribution(Benchmark):
                 stats.beta.fit(self.x, loc=4, scale=10)
 
     # Retain old benchmark results (remove this if changing the benchmark)
-    time_distribution.version = "fb22ae5386501008d945783921fe44aef3f82c1dafc40cddfaccaeec38b792b0"
+    time_distribution.version = (
+        "fb22ae5386501008d945783921fe44aef3f82c1dafc40cddfaccaeec38b792b0"
+    )
 
 
 class DescriptiveStats(Benchmark):
@@ -402,7 +434,11 @@ class DescriptiveStats(Benchmark):
 
 
 class GaussianKDE(Benchmark):
-    def setup(self):
+    param_names = ['points']
+    params = [10, 6400]
+
+    def setup(self, points):
+        self.length = points
         rng = np.random.default_rng(12345678)
         n = 2000
         m1 = rng.normal(size=n)
@@ -413,18 +449,16 @@ class GaussianKDE(Benchmark):
         ymin = m2.min()
         ymax = m2.max()
 
-        X, Y = np.mgrid[xmin:xmax:200j, ymin:ymax:200j]
+        X, Y = np.mgrid[xmin:xmax:80j, ymin:ymax:80j]
         self.positions = np.vstack([X.ravel(), Y.ravel()])
         values = np.vstack([m1, m2])
         self.kernel = stats.gaussian_kde(values)
 
-    def time_gaussian_kde_evaluate_few_points(self):
-        # test gaussian_kde evaluate on a small number of points
-        self.kernel(self.positions[:, :10])
+    def time_gaussian_kde_evaluate(self, length):
+        self.kernel(self.positions[:, :self.length])
 
-    def time_gaussian_kde_evaluate_many_points(self):
-        # test gaussian_kde evaluate on many points
-        self.kernel(self.positions)
+    def time_gaussian_kde_logpdf(self, length):
+        self.kernel.logpdf(self.positions[:, :self.length])
 
 
 class GroupSampling(Benchmark):
@@ -470,29 +504,37 @@ class BinnedStatisticDD(Benchmark):
 
 class ContinuousFitAnalyticalMLEOverride(Benchmark):
     # list of distributions to time
-    dists = ["pareto", "laplace", "rayleigh",
-             "invgauss", "gumbel_r", "gumbel_l"]
+    dists = ["pareto", "laplace", "rayleigh", "invgauss", "gumbel_r",
+             "gumbel_l", "powerlaw", "lognorm"]
     # add custom values for rvs and fit, if desired, for any distribution:
     # key should match name in dists and value should be list of loc, scale,
     # and shapes
     custom_input = {}
     fnames = ['floc', 'fscale', 'f0', 'f1', 'f2']
     fixed = {}
-    distcont = dict(distcont)
 
-    param_names = ["distribution", "loc_fixed", "scale_fixed",
+    param_names = ["distribution", "case", "loc_fixed", "scale_fixed",
                    "shape1_fixed", "shape2_fixed", "shape3_fixed"]
-    params = [dists, * [[True, False]] * 5]
+    # in the `_distr_params.py` list, some distributions have multiple sets of
+    # "sane" shape combinations. `case` needs to be an enumeration of the
+    # maximum number of cases for a benchmarked distribution; the maximum is
+    # currently two. Should a benchmarked distribution have more cases in the
+    # `_distr_params.py` list, this will need to be increased.
+    params = [dists, range(2), * [[True, False]] * 5]
 
-    def setup(self, dist_name, loc_fixed, scale_fixed, shape1_fixed,
-              shape2_fixed, shape3_fixed):
+    def setup(self, dist_name, case, loc_fixed, scale_fixed,
+              shape1_fixed, shape2_fixed, shape3_fixed):
         self.distn = eval("stats." + dist_name)
 
         # default `loc` and `scale` are .834 and 4.342, and shapes are from
-        # `_distr_params.py`
-        default_shapes = self.distcont[dist_name]
-        param_values = self.custom_input.get(dist_name, [.834, 4.342,
-                                                         *default_shapes])
+        # `_distr_params.py`. If there are multiple cases of valid shapes in
+        # `distcont`, they are benchmarked separately.
+        default_shapes_n = [s[1] for s in distcont if s[0] == dist_name]
+        if case >= len(default_shapes_n):
+            raise NotImplementedError("no alternate case for this dist")
+        default_shapes = default_shapes_n[case]
+        param_values = self.custom_input.get(dist_name, [*default_shapes,
+                                                         .834, 4.342])
         # separate relevant and non-relevant parameters for this distribution
         # based on the number of shapes
         nparam = len(param_values)
@@ -506,14 +548,25 @@ class ContinuousFitAnalyticalMLEOverride(Benchmark):
         if True in nonrelevant_parameters or False not in relevant_parameters:
             raise NotImplementedError("skip non-relevant case")
 
-        # add fixed values if fixed in relevant_parameters to self.fixed
-        # with keys from self.fnames and values from parameter_values
-        self.fixed = dict(zip(compress(self.fnames, relevant_parameters),
-                          compress(param_values, relevant_parameters)))
-        self.data = self.distn.rvs(*param_values, size=1000)
+        # TODO: fix failing benchmarks (Aug. 2023), skipped for now
+        if ((dist_name == "pareto" and loc_fixed and scale_fixed)
+                or (dist_name == "invgauss" and loc_fixed)):
+            raise NotImplementedError("skip failing benchmark")
 
-    def time_fit(self, dist_name, loc_fixed, scale_fixed, shape1_fixed,
-                 shape2_fixed, shape3_fixed):
+        # add fixed values if fixed in relevant_parameters to self.fixed
+        # with keys from self.fnames and values in the same order as `fnames`.
+        fixed_vales = self.custom_input.get(dist_name, [.834, 4.342,
+                                                        *default_shapes])
+        self.fixed = dict(zip(compress(self.fnames, relevant_parameters),
+                          compress(fixed_vales, relevant_parameters)))
+        self.param_values = param_values
+        # shapes need to come before loc and scale
+        self.data = self.distn.rvs(*param_values[2:], *param_values[:2],
+                                   size=1000,
+                                   random_state=np.random.default_rng(4653465))
+
+    def time_fit(self, dist_name, case, loc_fixed, scale_fixed,
+                 shape1_fixed, shape2_fixed, shape3_fixed):
         self.distn.fit(self.data, **self.fixed)
 
 
@@ -563,7 +616,7 @@ class BenchQMCDiscrepancy(Benchmark):
         self.sample = sample
 
     def time_discrepancy(self, method):
-        disc = stats.qmc.discrepancy(self.sample, method=method)
+        stats.qmc.discrepancy(self.sample, method=method)
 
 
 class BenchQMCHalton(Benchmark):
@@ -599,6 +652,22 @@ class BenchQMCSobol(Benchmark):
         seq = stats.qmc.Sobol(d, scramble=False, bits=32, seed=self.rng)
         seq.random_base2(base2)
 
+class BenchPoissonDisk(Benchmark):
+    param_names = ['d', 'radius', 'ncandidates', 'n']
+    params = [
+        [1, 3, 5],
+        [0.2, 0.1, 0.05],
+        [30, 60, 120],
+        [30, 100, 300]
+    ]
+
+    def setup(self, d, radius, ncandidates, n):
+        self.rng = np.random.default_rng(168525179735951991038384544)
+
+    def time_poisson_disk(self, d, radius, ncandidates, n):
+        seq = stats.qmc.PoissonDisk(d, radius=radius, ncandidates=ncandidates,
+                                    seed=self.rng)
+        seq.random(n)
 
 class DistanceFunctions(Benchmark):
     param_names = ['n_size']
@@ -614,14 +683,12 @@ class DistanceFunctions(Benchmark):
         self.v_weights = rng.random(n_size // 2) * 10
 
     def time_energy_distance(self, n_size):
-        distance = stats.energy_distance(
-                 self.u_values, self.v_values,
-                 self.u_weights, self.v_weights)
+        stats.energy_distance(self.u_values, self.v_values,
+                              self.u_weights, self.v_weights)
 
     def time_wasserstein_distance(self, n_size):
-        distance = stats.wasserstein_distance(
-                 self.u_values, self.v_values,
-                 self.u_weights, self.v_weights)
+        stats.wasserstein_distance(self.u_values, self.v_values,
+                                   self.u_weights, self.v_weights)
 
 
 class Somersd(Benchmark):
@@ -636,4 +703,64 @@ class Somersd(Benchmark):
         self.y = rng.choice(n_size, size=n_size)
 
     def time_somersd(self, n_size):
-        res = stats.somersd(self.x, self.y)
+        stats.somersd(self.x, self.y)
+
+
+class KolmogorovSmirnov(Benchmark):
+    param_names = ['alternative', 'mode', 'size']
+    # No auto since it defaults to exact for 20 samples
+    params = [
+        ['two-sided', 'less', 'greater'],
+        ['exact', 'approx', 'asymp'],
+        [19, 20, 21]
+    ]
+
+    def setup(self, alternative, mode, size):
+        np.random.seed(12345678)
+        a = stats.norm.rvs(size=20)
+        self.a = a
+
+    def time_ks(self, alternative, mode, size):
+        stats.kstest(self.a, 'norm', alternative=alternative,
+                     mode=mode, N=size)
+
+
+class KolmogorovSmirnovTwoSamples(Benchmark):
+    param_names = ['alternative', 'mode', 'size']
+    # No auto since it defaults to exact for 20 samples
+    params = [
+        ['two-sided', 'less', 'greater'],
+        ['exact', 'asymp'],
+        [(21, 20), (20, 20)]
+    ]
+
+    def setup(self, alternative, mode, size):
+        np.random.seed(12345678)
+        a = stats.norm.rvs(size=size[0])
+        b = stats.norm.rvs(size=size[1])
+        self.a = a
+        self.b = b
+
+    def time_ks2(self, alternative, mode, size):
+        stats.ks_2samp(self.a, self.b, alternative=alternative, mode=mode)
+
+
+class RandomTable(Benchmark):
+    param_names = ["method", "ntot", "ncell"]
+    params = [
+        ["boyett", "patefield"],
+        [10, 100, 1000, 10000],
+        [4, 64, 256, 1024]
+    ]
+
+    def setup(self, method, ntot, ncell):
+        self.rng = np.random.default_rng(12345678)
+        k = int(ncell ** 0.5)
+        assert k ** 2 == ncell
+        p = np.ones(k) / k
+        row = self.rng.multinomial(ntot, p)
+        col = self.rng.multinomial(ntot, p)
+        self.dist = stats.random_table(row, col)
+
+    def time_method(self, method, ntot, ncell):
+        self.dist.rvs(1000, method=method, random_state=self.rng)

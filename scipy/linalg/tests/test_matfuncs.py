@@ -17,6 +17,7 @@ import scipy.linalg
 from scipy.linalg import (funm, signm, logm, sqrtm, fractional_matrix_power,
                           expm, expm_frechet, expm_cond, norm, khatri_rao)
 from scipy.linalg import _matfuncs_inv_ssq
+from scipy.linalg._matfuncs import pick_pade_structure
 import scipy.linalg._expm_frechet
 
 from scipy.optimize import minimize
@@ -125,7 +126,7 @@ class TestLogM:
 
                 # Eigenvalues are related to the branch cut.
                 W = np.linalg.eigvals(M)
-                err_msg = 'M:{0} eivals:{1}'.format(M, W)
+                err_msg = f'M:{M} eivals:{W}'
 
                 # Check sqrtm round trip because it is used within logm.
                 M_sqrtm, info = sqrtm(M, disp=False)
@@ -230,6 +231,23 @@ class TestLogM:
         L = [[1j*np.pi*0.5, 0], [0, -1j*np.pi*0.5]]
         assert_allclose(expm(L), E, atol=1e-14)
         assert_allclose(logm(E), L, atol=1e-14)
+
+    def test_readonly(self):
+        n = 5
+        a = np.ones((n, n)) + np.identity(n)
+        a.flags.writeable = False
+        logm(a)
+
+    @pytest.mark.xfail(reason="ValueError: attempt to get argmax of an empty sequence")
+    @pytest.mark.parametrize('dt', [int, float, np.float32, complex, np.complex64])
+    def test_empty(self, dt):
+        a = np.empty((0, 0), dtype=dt)
+        log_a = logm(a)
+        a0 = np.eye(2, dtype=dt)
+        log_a0 = logm(a0)
+
+        assert log_a.shape == (0, 0)
+        assert log_a.dtype == log_a0.dtype
 
 
 class TestSqrtM:
@@ -410,6 +428,89 @@ class TestSqrtM:
         assert_allclose(np.dot(R, R), M, atol=1e-14)
         assert_allclose(sqrtm(M), R, atol=1e-14)
 
+    @pytest.mark.xfail(reason="failing on macOS after gh-20212")
+    def test_gh17918(self):
+        M = np.empty((19, 19))
+        M.fill(0.94)
+        np.fill_diagonal(M, 1)
+        assert np.isrealobj(sqrtm(M))
+
+    def test_data_size_preservation_uint_in_float_out(self):
+        M = np.zeros((10, 10), dtype=np.uint8)
+        # input bit size is 8, but minimum float bit size is 16
+        assert sqrtm(M).dtype == np.float16
+        M = np.zeros((10, 10), dtype=np.uint16)
+        assert sqrtm(M).dtype == np.float16
+        M = np.zeros((10, 10), dtype=np.uint32)
+        assert sqrtm(M).dtype == np.float32
+        M = np.zeros((10, 10), dtype=np.uint64)
+        assert sqrtm(M).dtype == np.float64
+
+    def test_data_size_preservation_int_in_float_out(self):
+        M = np.zeros((10, 10), dtype=np.int8)
+        # input bit size is 8, but minimum float bit size is 16
+        assert sqrtm(M).dtype == np.float16
+        M = np.zeros((10, 10), dtype=np.int16)
+        assert sqrtm(M).dtype == np.float16
+        M = np.zeros((10, 10), dtype=np.int32)
+        assert sqrtm(M).dtype == np.float32
+        M = np.zeros((10, 10), dtype=np.int64)
+        assert sqrtm(M).dtype == np.float64
+
+    def test_data_size_preservation_int_in_comp_out(self):
+        M = np.array([[2, 4], [0, -2]], dtype=np.int8)
+        # input bit size is 8, but minimum complex bit size is 64
+        assert sqrtm(M).dtype == np.complex64
+        M = np.array([[2, 4], [0, -2]], dtype=np.int16)
+        # input bit size is 16, but minimum complex bit size is 64
+        assert sqrtm(M).dtype == np.complex64
+        M = np.array([[2, 4], [0, -2]], dtype=np.int32)
+        assert sqrtm(M).dtype == np.complex64
+        M = np.array([[2, 4], [0, -2]], dtype=np.int64)
+        assert sqrtm(M).dtype == np.complex128
+
+    def test_data_size_preservation_float_in_float_out(self):
+        M = np.zeros((10, 10), dtype=np.float16)
+        assert sqrtm(M).dtype == np.float16
+        M = np.zeros((10, 10), dtype=np.float32)
+        assert sqrtm(M).dtype == np.float32
+        M = np.zeros((10, 10), dtype=np.float64)
+        assert sqrtm(M).dtype == np.float64
+        if hasattr(np, 'float128'):
+            M = np.zeros((10, 10), dtype=np.float128)
+            assert sqrtm(M).dtype == np.float128
+
+    def test_data_size_preservation_float_in_comp_out(self):
+        M = np.array([[2, 4], [0, -2]], dtype=np.float16)
+        # input bit size is 16, but minimum complex bit size is 64
+        assert sqrtm(M).dtype == np.complex64
+        M = np.array([[2, 4], [0, -2]], dtype=np.float32)
+        assert sqrtm(M).dtype == np.complex64
+        M = np.array([[2, 4], [0, -2]], dtype=np.float64)
+        assert sqrtm(M).dtype == np.complex128
+        if hasattr(np, 'float128') and hasattr(np, 'complex256'):
+            M = np.array([[2, 4], [0, -2]], dtype=np.float128)
+            assert sqrtm(M).dtype == np.complex256
+
+    def test_data_size_preservation_comp_in_comp_out(self):
+        M = np.array([[2j, 4], [0, -2j]], dtype=np.complex64)
+        assert sqrtm(M).dtype == np.complex128
+        if hasattr(np, 'complex256'):
+            M = np.array([[2j, 4], [0, -2j]], dtype=np.complex128)
+            assert sqrtm(M).dtype == np.complex256
+            M = np.array([[2j, 4], [0, -2j]], dtype=np.complex256)
+            assert sqrtm(M).dtype == np.complex256
+
+    @pytest.mark.parametrize('dt', [int, float, np.float32, complex, np.complex64])
+    def test_empty(self, dt):
+        a = np.empty((0, 0), dtype=dt)
+        s = sqrtm(a)
+        a0 = np.eye(2, dtype=dt)
+        s0 = sqrtm(a0)
+
+        assert s.shape == (0, 0)
+        assert s.dtype == s0.dtype
+
 
 class TestFractionalMatrixPower:
     def test_round_trip_random_complex(self):
@@ -490,7 +591,7 @@ class TestFractionalMatrixPower:
         A_sqrtm, info = sqrtm(A, disp=False)
         A_rem_power = _matfuncs_inv_ssq._remainder_matrix_power(A, 0.5)
         A_power = fractional_matrix_power(A, 0.5)
-        assert_array_equal(A_rem_power, A_power)
+        assert_allclose(A_rem_power, A_power, rtol=1e-11)
         assert_allclose(A_sqrtm, A_power)
         assert_allclose(A_sqrtm, A_funm_sqrt)
 
@@ -605,11 +706,13 @@ class TestExpM:
         elt = expm(1)
         assert_allclose(elt, np.array([[np.e]]))
 
-    def test_empty_matrix_input(self):
+    @pytest.mark.parametrize('dt', [int, float, np.float32, complex, np.complex64])
+    def test_empty_matrix_input(self, dt):
         # handle gh-11082
-        A = np.zeros((0, 0))
+        A = np.zeros((0, 0), dtype=dt)
         result = expm(A)
         assert result.size == 0
+        assert result.dtype == A.dtype
 
     def test_2x2_input(self):
         E = np.e
@@ -642,6 +745,32 @@ class TestExpM:
                            [3/(2*E)-(3*E)/2, 5/(2*E)-(3*E)/2]]
                          ])
         assert_allclose(expm(a), a_res)
+
+    def test_readonly(self):
+        n = 7
+        a = np.ones((n, n))
+        a.flags.writeable = False
+        expm(a)
+
+    @pytest.mark.fail_slow(5)
+    def test_gh18086(self):
+        A = np.zeros((400, 400), dtype=float)
+        rng = np.random.default_rng(100)
+        i = rng.integers(0, 399, 500)
+        j = rng.integers(0, 399, 500)
+        A[i, j] = rng.random(500)
+        # Problem appears when m = 9
+        Am = np.empty((5, 400, 400), dtype=float)
+        Am[0] = A.copy()
+        m, s = pick_pade_structure(Am)
+        assert m == 9
+        # Check that result is accurate
+        first_res = expm(A)
+        np.testing.assert_array_almost_equal(logm(first_res), A)
+        # Check that result is consistent
+        for i in range(5):
+            next_res = expm(A)
+            np.testing.assert_array_almost_equal(first_res, next_res)
 
 
 class TestExpmFrechet:
@@ -906,3 +1035,14 @@ class TestKhatriRao:
                           for k in range(b.shape[1])]).T
 
         assert_array_equal(res1, res2)
+
+    def test_empty(self):
+        a = np.empty((0, 2))
+        b = np.empty((3, 2))
+        res = khatri_rao(a, b)
+        assert_allclose(res, np.empty((0, 2)))
+
+        a = np.empty((3, 0))
+        b = np.empty((5, 0))
+        res = khatri_rao(a, b)
+        assert_allclose(res, np.empty((15, 0)))

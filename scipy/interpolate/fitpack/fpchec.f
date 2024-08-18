@@ -29,34 +29,58 @@ c  ..
       nk2 = nk1+1
       ier = 10
 c  check condition no 1
-      if(nk1.lt.k1 .or. nk1.gt.m) go to 80
+      if (nk1.lt.k1 .or. nk1.gt.m) then
+          ier = 10
+          go to 80
+      endif
 c  check condition no 2
       j = n
       do 20 i=1,k
-        if(t(i).gt.t(i+1)) go to 80
-        if(t(j).lt.t(j-1)) go to 80
+        if (t(i) .gt. t(i+1)) then
+            ier = 20
+            go to 80
+        endif
+        if (t(j) .lt. t(j-1)) then
+            ier = 20
+            go to 80
+        endif
         j = j-1
   20  continue
 c  check condition no 3
       do 30 i=k2,nk2
-        if(t(i).le.t(i-1)) go to 80
+        if (t(i) .le. t(i-1)) then
+            ier = 30
+            go to 80
+        endif
   30  continue
 c  check condition no 4
-      if(x(1).lt.t(k1) .or. x(m).gt.t(nk2)) go to 80
+      if (x(1).lt.t(k1) .or. x(m).gt.t(nk2)) then
+          ier = 40
+          go to 80
+      endif
 c  check condition no 5
-      if(x(1).ge.t(k2) .or. x(m).le.t(nk1)) go to 80
+      if (x(1).ge.t(k2) .or. x(m).le.t(nk1)) then
+          ier = 50
+          go to 80
+      endif
       i = 1
       l = k2
       nk3 = nk1-1
-      if(nk3.lt.2) go to 70
+      if (nk3 .lt. 2) go to 70
       do 60 j=2,nk3
         tj = t(j)
         l = l+1
         tl = t(l)
   40    i = i+1
-        if(i.ge.m) go to 80
-        if(x(i).le.tj) go to 40
-        if(x(i).ge.tl) go to 80
+        if (i .ge. m) then
+            ier = 50
+            go to 80
+        endif
+        if (x(i) .le. tj) go to 40
+        if (x(i) .ge. tl) then
+            ier = 50
+            go to 80
+        endif
   60  continue
   70  ier = 0
   80  return

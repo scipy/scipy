@@ -1,23 +1,17 @@
 __all__ = ['interp1d', 'interp2d', 'lagrange', 'PPoly', 'BPoly', 'NdPPoly']
 
-
-import itertools
-import warnings
+from math import prod
 
 import numpy as np
-from numpy import (array, transpose, searchsorted, atleast_1d, atleast_2d,
-                   ravel, poly1d, asarray, intp)
+from numpy import array, asarray, intp, poly1d, searchsorted
 
 import scipy.special as spec
+from scipy._lib._util import copy_if_needed
 from scipy.special import comb
-from scipy._lib._util import prod
 
 from . import _fitpack_py
-from . import dfitpack
-from . import _fitpack
 from ._polyint import _Interpolator1D
 from . import _ppoly
-from ._fitpack2 import RectBivariateSpline
 from .interpnd import _ndim_coords_from_arrays
 from ._bsplines import make_interp_spline, BSpline
 
@@ -48,6 +42,7 @@ def lagrange(x, w):
     --------
     Interpolate :math:`f(x) = x^3` by 3 points.
 
+    >>> import numpy as np
     >>> from scipy.interpolate import lagrange
     >>> x = np.array([0, 1, 2])
     >>> y = x**3
@@ -95,224 +90,43 @@ def lagrange(x, w):
 # !! found, get rid of it!
 
 
+err_mesg = """\
+`interp2d` has been removed in SciPy 1.14.0.
+
+For legacy code, nearly bug-for-bug compatible replacements are
+`RectBivariateSpline` on regular grids, and `bisplrep`/`bisplev` for
+scattered 2D data.
+
+In new code, for regular grids use `RegularGridInterpolator` instead.
+For scattered data, prefer `LinearNDInterpolator` or
+`CloughTocher2DInterpolator`.
+
+For more details see
+https://scipy.github.io/devdocs/tutorial/interpolate/interp_transition_guide.html
+"""
+
 class interp2d:
     """
     interp2d(x, y, z, kind='linear', copy=True, bounds_error=False,
              fill_value=None)
 
-    Interpolate over a 2-D grid.
+    .. versionremoved:: 1.14.0
 
-    `x`, `y` and `z` are arrays of values used to approximate some function
-    f: ``z = f(x, y)`` which returns a scalar value `z`. This class returns a
-    function whose call method uses spline interpolation to find the value
-    of new points.
+        `interp2d` has been removed in SciPy 1.14.0.
 
-    If `x` and `y` represent a regular grid, consider using
-    `RectBivariateSpline`.
+        For legacy code, nearly bug-for-bug compatible replacements are
+        `RectBivariateSpline` on regular grids, and `bisplrep`/`bisplev` for
+        scattered 2D data.
 
-    If `z` is a vector value, consider using `interpn`.
+        In new code, for regular grids use `RegularGridInterpolator` instead.
+        For scattered data, prefer `LinearNDInterpolator` or
+        `CloughTocher2DInterpolator`.
 
-    Note that calling `interp2d` with NaNs present in input values results in
-    undefined behaviour.
-
-    Methods
-    -------
-    __call__
-
-    Parameters
-    ----------
-    x, y : array_like
-        Arrays defining the data point coordinates.
-
-        If the points lie on a regular grid, `x` can specify the column
-        coordinates and `y` the row coordinates, for example::
-
-          >>> x = [0,1,2];  y = [0,3]; z = [[1,2,3], [4,5,6]]
-
-        Otherwise, `x` and `y` must specify the full coordinates for each
-        point, for example::
-
-          >>> x = [0,1,2,0,1,2];  y = [0,0,0,3,3,3]; z = [1,4,2,5,3,6]
-
-        If `x` and `y` are multidimensional, they are flattened before use.
-    z : array_like
-        The values of the function to interpolate at the data points. If
-        `z` is a multidimensional array, it is flattened before use assuming
-        Fortran-ordering (order='F').  The length of a flattened `z` array
-        is either len(`x`)*len(`y`) if `x` and `y` specify the column and
-        row coordinates or ``len(z) == len(x) == len(y)`` if `x` and `y`
-        specify coordinates for each point.
-    kind : {'linear', 'cubic', 'quintic'}, optional
-        The kind of spline interpolation to use. Default is 'linear'.
-    copy : bool, optional
-        If True, the class makes internal copies of x, y and z.
-        If False, references may be used. The default is to copy.
-    bounds_error : bool, optional
-        If True, when interpolated values are requested outside of the
-        domain of the input data (x,y), a ValueError is raised.
-        If False, then `fill_value` is used.
-    fill_value : number, optional
-        If provided, the value to use for points outside of the
-        interpolation domain. If omitted (None), values outside
-        the domain are extrapolated via nearest-neighbor extrapolation.
-
-    See Also
-    --------
-    RectBivariateSpline :
-        Much faster 2-D interpolation if your input data is on a grid
-    bisplrep, bisplev :
-        Spline interpolation based on FITPACK
-    BivariateSpline : a more recent wrapper of the FITPACK routines
-    interp1d : 1-D version of this function
-
-    Notes
-    -----
-    The minimum number of data points required along the interpolation
-    axis is ``(k+1)**2``, with k=1 for linear, k=3 for cubic and k=5 for
-    quintic interpolation.
-
-    The interpolator is constructed by `bisplrep`, with a smoothing factor
-    of 0. If more control over smoothing is needed, `bisplrep` should be
-    used directly.
-
-    Examples
-    --------
-    Construct a 2-D grid and interpolate on it:
-
-    >>> from scipy import interpolate
-    >>> x = np.arange(-5.01, 5.01, 0.25)
-    >>> y = np.arange(-5.01, 5.01, 0.25)
-    >>> xx, yy = np.meshgrid(x, y)
-    >>> z = np.sin(xx**2+yy**2)
-    >>> f = interpolate.interp2d(x, y, z, kind='cubic')
-
-    Now use the obtained interpolation function and plot the result:
-
-    >>> import matplotlib.pyplot as plt
-    >>> xnew = np.arange(-5.01, 5.01, 1e-2)
-    >>> ynew = np.arange(-5.01, 5.01, 1e-2)
-    >>> znew = f(xnew, ynew)
-    >>> plt.plot(x, z[0, :], 'ro-', xnew, znew[0, :], 'b-')
-    >>> plt.show()
+        For more details see :ref:`interp-transition-guide`.
     """
-
     def __init__(self, x, y, z, kind='linear', copy=True, bounds_error=False,
                  fill_value=None):
-        x = ravel(x)
-        y = ravel(y)
-        z = asarray(z)
-
-        rectangular_grid = (z.size == len(x) * len(y))
-        if rectangular_grid:
-            if z.ndim == 2:
-                if z.shape != (len(y), len(x)):
-                    raise ValueError("When on a regular grid with x.size = m "
-                                     "and y.size = n, if z.ndim == 2, then z "
-                                     "must have shape (n, m)")
-            if not np.all(x[1:] >= x[:-1]):
-                j = np.argsort(x)
-                x = x[j]
-                z = z[:, j]
-            if not np.all(y[1:] >= y[:-1]):
-                j = np.argsort(y)
-                y = y[j]
-                z = z[j, :]
-            z = ravel(z.T)
-        else:
-            z = ravel(z)
-            if len(x) != len(y):
-                raise ValueError(
-                    "x and y must have equal lengths for non rectangular grid")
-            if len(z) != len(x):
-                raise ValueError(
-                    "Invalid length for input z for non rectangular grid")
-
-        interpolation_types = {'linear': 1, 'cubic': 3, 'quintic': 5}
-        try:
-            kx = ky = interpolation_types[kind]
-        except KeyError as e:
-            raise ValueError(
-                f"Unsupported interpolation type {repr(kind)}, must be "
-                f"either of {', '.join(map(repr, interpolation_types))}."
-            ) from e
-
-        if not rectangular_grid:
-            # TODO: surfit is really not meant for interpolation!
-            self.tck = _fitpack_py.bisplrep(x, y, z, kx=kx, ky=ky, s=0.0)
-        else:
-            nx, tx, ny, ty, c, fp, ier = dfitpack.regrid_smth(
-                x, y, z, None, None, None, None,
-                kx=kx, ky=ky, s=0.0)
-            self.tck = (tx[:nx], ty[:ny], c[:(nx - kx - 1) * (ny - ky - 1)],
-                        kx, ky)
-
-        self.bounds_error = bounds_error
-        self.fill_value = fill_value
-        self.x, self.y, self.z = [array(a, copy=copy) for a in (x, y, z)]
-
-        self.x_min, self.x_max = np.amin(x), np.amax(x)
-        self.y_min, self.y_max = np.amin(y), np.amax(y)
-
-    def __call__(self, x, y, dx=0, dy=0, assume_sorted=False):
-        """Interpolate the function.
-
-        Parameters
-        ----------
-        x : 1-D array
-            x-coordinates of the mesh on which to interpolate.
-        y : 1-D array
-            y-coordinates of the mesh on which to interpolate.
-        dx : int >= 0, < kx
-            Order of partial derivatives in x.
-        dy : int >= 0, < ky
-            Order of partial derivatives in y.
-        assume_sorted : bool, optional
-            If False, values of `x` and `y` can be in any order and they are
-            sorted first.
-            If True, `x` and `y` have to be arrays of monotonically
-            increasing values.
-
-        Returns
-        -------
-        z : 2-D array with shape (len(y), len(x))
-            The interpolated values.
-        """
-
-        x = atleast_1d(x)
-        y = atleast_1d(y)
-
-        if x.ndim != 1 or y.ndim != 1:
-            raise ValueError("x and y should both be 1-D arrays")
-
-        if not assume_sorted:
-            x = np.sort(x, kind="mergesort")
-            y = np.sort(y, kind="mergesort")
-
-        if self.bounds_error or self.fill_value is not None:
-            out_of_bounds_x = (x < self.x_min) | (x > self.x_max)
-            out_of_bounds_y = (y < self.y_min) | (y > self.y_max)
-
-            any_out_of_bounds_x = np.any(out_of_bounds_x)
-            any_out_of_bounds_y = np.any(out_of_bounds_y)
-
-        if self.bounds_error and (any_out_of_bounds_x or any_out_of_bounds_y):
-            raise ValueError("Values out of range; x must be in %r, y in %r"
-                             % ((self.x_min, self.x_max),
-                                (self.y_min, self.y_max)))
-
-        z = _fitpack_py.bisplev(x, y, self.tck, dx, dy)
-        z = atleast_2d(z)
-        z = transpose(z)
-
-        if self.fill_value is not None:
-            if any_out_of_bounds_x:
-                z[:, out_of_bounds_x] = self.fill_value
-            if any_out_of_bounds_y:
-                z[out_of_bounds_y, :] = self.fill_value
-
-        if len(z) == 1:
-            z = z[0]
-        return array(z)
+        raise NotImplementedError(err_mesg)
 
 
 def _check_broadcast_up_to(arr_from, shape_to, name):
@@ -327,9 +141,8 @@ def _check_broadcast_up_to(arr_from, shape_to, name):
                 arr_from = np.ones(shape_to, arr_from.dtype) * arr_from
             return arr_from.ravel()
     # at least one check failed
-    raise ValueError('%s argument must be able to broadcast up '
-                     'to shape %s but had shape %s'
-                     % (name, shape_to, shape_from))
+    raise ValueError(f'{name} argument must be able to broadcast up '
+                     f'to shape {shape_to} but had shape {shape_from}')
 
 
 def _do_extrapolate(fill_value):
@@ -342,17 +155,24 @@ class interp1d(_Interpolator1D):
     """
     Interpolate a 1-D function.
 
+    .. legacy:: class
+
+        For a guide to the intended replacements for `interp1d` see
+        :ref:`tutorial-interpolate_1Dsection`.
+
     `x` and `y` are arrays of values used to approximate some function f:
     ``y = f(x)``. This class returns a function whose call method uses
     interpolation to find the value of new points.
 
     Parameters
     ----------
-    x : (N,) array_like
+    x : (npoints, ) array_like
         A 1-D array of real values.
-    y : (...,N,...) array_like
+    y : (..., npoints, ...) array_like
         A N-D array of real values. The length of `y` along the interpolation
-        axis must be equal to the length of `x`.
+        axis must be equal to the length of `x`. Use the ``axis`` parameter
+        to select correct axis. Unlike other interpolators, the default
+        interpolation axis is the last axis of `y`.
     kind : str or int, optional
         Specifies the kind of interpolation as a string or as an integer
         specifying the order of the spline interpolator to use.
@@ -365,11 +185,11 @@ class interp1d(_Interpolator1D):
         in that 'nearest-up' rounds up and 'nearest' rounds down. Default
         is 'linear'.
     axis : int, optional
-        Specifies the axis of `y` along which to interpolate.
-        Interpolation defaults to the last axis of `y`.
+        Axis in the ``y`` array corresponding to the x-coordinate values. Unlike
+        other interpolators, defaults to ``axis=-1``.
     copy : bool, optional
-        If True, the class makes internal copies of x and y.
-        If False, references to `x` and `y` are used. The default is to copy.
+        If ``True``, the class makes internal copies of x and y. If ``False``,
+        references to ``x`` and ``y`` are used if possible. The default is to copy.
     bounds_error : bool, optional
         If True, a ValueError is raised any time interpolation is attempted on
         a value outside of the range of x (where extrapolation is
@@ -427,6 +247,7 @@ class interp1d(_Interpolator1D):
 
     Examples
     --------
+    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> from scipy import interpolate
     >>> x = np.arange(0, 10)
@@ -446,7 +267,12 @@ class interp1d(_Interpolator1D):
         _Interpolator1D.__init__(self, x, y, axis=axis)
 
         self.bounds_error = bounds_error  # used by fill_value setter
+
+        # `copy` keyword semantics changed in NumPy 2.0, once that is
+        # the minimum version this can use `copy=None`.
         self.copy = copy
+        if not copy:
+            self.copy = copy_if_needed
 
         if kind in ['zero', 'slinear', 'quadratic', 'cubic']:
             order = {'zero': 0, 'slinear': 1,
@@ -457,8 +283,8 @@ class interp1d(_Interpolator1D):
             kind = 'spline'
         elif kind not in ('linear', 'nearest', 'nearest-up', 'previous',
                           'next'):
-            raise NotImplementedError("%s is unsupported: Use fitpack "
-                                      "routines for other types." % kind)
+            raise NotImplementedError(f"{kind} is unsupported: Use fitpack "
+                                      "routines for other types.")
         x = array(x, copy=self.copy)
         y = array(y, copy=self.copy)
 
@@ -474,7 +300,7 @@ class interp1d(_Interpolator1D):
 
         # Force-cast y to a floating-point type, if it's not yet one
         if not issubclass(y.dtype.type, np.inexact):
-            y = y.astype(np.float_)
+            y = y.astype(np.float64)
 
         # Backward compatibility
         self.axis = axis % y.ndim
@@ -493,7 +319,7 @@ class interp1d(_Interpolator1D):
         if kind in ('linear', 'nearest', 'nearest-up', 'previous', 'next'):
             # Make a "view" of the y array that is rotated to the interpolation
             # axis.
-            minval = 2
+            minval = 1
             if kind == 'nearest':
                 # Do division before addition to prevent possible integer
                 # overflow
@@ -519,7 +345,8 @@ class interp1d(_Interpolator1D):
                 self._call = self.__class__._call_previousnext
                 if _do_extrapolate(fill_value):
                     self._check_and_update_bounds_error_for_extrapolation()
-                    fill_value = (np.nan, self.y.max(axis=axis))
+                    # assume y is sorted by x ascending order here.
+                    fill_value = (np.nan, np.take(self.y, -1, axis))
             elif kind == 'next':
                 self._side = 'right'
                 self._ind = 1
@@ -528,11 +355,12 @@ class interp1d(_Interpolator1D):
                 self._call = self.__class__._call_previousnext
                 if _do_extrapolate(fill_value):
                     self._check_and_update_bounds_error_for_extrapolation()
-                    fill_value = (self.y.min(axis=axis), np.nan)
+                    # assume y is sorted by x ascending order here.
+                    fill_value = (np.take(self.y, 0, axis), np.nan)
             else:
                 # Check if we can delegate to numpy.interp (2x-10x faster).
-                np_types = (np.float_, np.int_)
-                cond = self.x.dtype in np_types and self.y.dtype in np_types
+                np_dtypes = (np.dtype(np.float64), np.dtype(int))
+                cond = self.x.dtype in np_dtypes and self.y.dtype in np_dtypes
                 cond = cond and self.y.ndim == 1
                 cond = cond and not _do_extrapolate(fill_value)
 
@@ -731,14 +559,12 @@ class interp1d(_Interpolator1D):
 
         if self.bounds_error and below_bounds.any():
             below_bounds_value = x_new[np.argmax(below_bounds)]
-            raise ValueError("A value ({}) in x_new is below "
-                             "the interpolation range's minimum value ({})."
-                             .format(below_bounds_value, self.x[0]))
+            raise ValueError(f"A value ({below_bounds_value}) in x_new is below "
+                             f"the interpolation range's minimum value ({self.x[0]}).")
         if self.bounds_error and above_bounds.any():
             above_bounds_value = x_new[np.argmax(above_bounds)]
-            raise ValueError("A value ({}) in x_new is above "
-                             "the interpolation range's maximum value ({})."
-                             .format(above_bounds_value, self.x[-1]))
+            raise ValueError(f"A value ({above_bounds_value}) in x_new is above "
+                             f"the interpolation range's maximum value ({self.x[-1]}).")
 
         # !! Should we emit a warning if some values are out of bounds?
         # !! matlab does not.
@@ -764,8 +590,7 @@ class _PPolyBase:
                              "2-dimensional.")
 
         if not (0 <= axis < self.c.ndim - 1):
-            raise ValueError("axis=%s must be between 0 and %s" %
-                             (axis, self.c.ndim-1))
+            raise ValueError(f"axis={axis} must be between 0 and {self.c.ndim-1}")
 
         self.axis = axis
         if axis != 0:
@@ -798,9 +623,9 @@ class _PPolyBase:
     def _get_dtype(self, dtype):
         if np.issubdtype(dtype, np.complexfloating) \
                or np.issubdtype(self.c.dtype, np.complexfloating):
-            return np.complex_
+            return np.complex128
         else:
-            return np.float_
+            return np.float64
 
     @classmethod
     def construct_fast(cls, c, x, extrapolate=None, axis=0):
@@ -845,6 +670,12 @@ class _PPolyBase:
             Additional breakpoints. Must be sorted in the same order as
             ``self.x`` and either to the right or to the left of the current
             breakpoints.
+
+        Notes
+        -----
+        This method is not thread safe and must not be executed concurrently
+        with other methods available in this class. Doing so may cause
+        unexpected errors or numerical output mismatches.
         """
 
         c = np.asarray(c)
@@ -855,11 +686,11 @@ class _PPolyBase:
         if x.ndim != 1:
             raise ValueError("invalid dimensions for x")
         if x.shape[0] != c.shape[1]:
-            raise ValueError("Shapes of x {} and c {} are incompatible"
-                             .format(x.shape, c.shape))
+            raise ValueError(f"Shapes of x {x.shape} and c {c.shape} are incompatible")
         if c.shape[2:] != self.c.shape[2:] or c.ndim != self.c.ndim:
-            raise ValueError("Shapes of c {} and self.c {} are incompatible"
-                             .format(c.shape, self.c.shape))
+            raise ValueError(
+                f"Shapes of c {c.shape} and self.c {self.c.shape} are incompatible"
+            )
 
         if c.size == 0:
             return
@@ -871,7 +702,7 @@ class _PPolyBase:
         if self.x[-1] >= self.x[0]:
             if not x[-1] >= x[0]:
                 raise ValueError("`x` is in the different order "
-                                 "than `self.x`.")
+                                "than `self.x`.")
 
             if x[0] >= self.x[-1]:
                 action = 'append'
@@ -879,11 +710,11 @@ class _PPolyBase:
                 action = 'prepend'
             else:
                 raise ValueError("`x` is neither on the left or on the right "
-                                 "from `self.x`.")
+                                "from `self.x`.")
         else:
             if not x[-1] <= x[0]:
                 raise ValueError("`x` is in the different order "
-                                 "than `self.x`.")
+                                "than `self.x`.")
 
             if x[0] <= self.x[-1]:
                 action = 'append'
@@ -891,13 +722,13 @@ class _PPolyBase:
                 action = 'prepend'
             else:
                 raise ValueError("`x` is neither on the left or on the right "
-                                 "from `self.x`.")
+                                "from `self.x`.")
 
         dtype = self._get_dtype(c.dtype)
 
         k2 = max(c.shape[0], self.c.shape[0])
         c2 = np.zeros((k2, self.c.shape[1] + c.shape[1]) + self.c.shape[2:],
-                      dtype=dtype)
+                    dtype=dtype)
 
         if action == 'append':
             c2[k2-self.c.shape[0]:, :self.c.shape[1]] = self.c
@@ -944,7 +775,7 @@ class _PPolyBase:
             extrapolate = self.extrapolate
         x = np.asarray(x)
         x_shape, x_ndim = x.shape, x.ndim
-        x = np.ascontiguousarray(x.ravel(), dtype=np.float_)
+        x = np.ascontiguousarray(x.ravel(), dtype=np.float64)
 
         # With periodic extrapolation we map x to the segment
         # [self.x[0], self.x[-1]].
@@ -1251,6 +1082,7 @@ class PPoly(_PPolyBase):
         Finding roots of ``[x**2 - 1, (x - 1)**2]`` defined on intervals
         ``[-2, 1], [1, 2]``:
 
+        >>> import numpy as np
         >>> from scipy.interpolate import PPoly
         >>> pp = PPoly(np.array([[1, -4, 3], [1, 0, 0]]).T, [-2, 1, 2])
         >>> pp.solve()
@@ -1322,6 +1154,59 @@ class PPoly(_PPolyBase):
             If bool, determines whether to extrapolate to out-of-bounds points
             based on first and last intervals, or to return NaNs.
             If 'periodic', periodic extrapolation is used. Default is True.
+
+        Examples
+        --------
+        Construct an interpolating spline and convert it to a `PPoly` instance
+
+        >>> import numpy as np
+        >>> from scipy.interpolate import splrep, PPoly
+        >>> x = np.linspace(0, 1, 11)
+        >>> y = np.sin(2*np.pi*x)
+        >>> tck = splrep(x, y, s=0)
+        >>> p = PPoly.from_spline(tck)
+        >>> isinstance(p, PPoly)
+        True
+
+        Note that this function only supports 1D splines out of the box.
+
+        If the ``tck`` object represents a parametric spline (e.g. constructed
+        by `splprep` or a `BSpline` with ``c.ndim > 1``), you will need to loop
+        over the dimensions manually.
+
+        >>> from scipy.interpolate import splprep, splev
+        >>> t = np.linspace(0, 1, 11)
+        >>> x = np.sin(2*np.pi*t)
+        >>> y = np.cos(2*np.pi*t)
+        >>> (t, c, k), u = splprep([x, y], s=0)
+
+        Note that ``c`` is a list of two arrays of length 11.
+
+        >>> unew = np.arange(0, 1.01, 0.01)
+        >>> out = splev(unew, (t, c, k))
+
+        To convert this spline to the power basis, we convert each
+        component of the list of b-spline coefficients, ``c``, into the
+        corresponding cubic polynomial.
+
+        >>> polys = [PPoly.from_spline((t, cj, k)) for cj in c]
+        >>> polys[0].c.shape
+        (4, 14)
+
+        Note that the coefficients of the polynomials `polys` are in the
+        power basis and their dimensions reflect just that: here 4 is the order
+        (degree+1), and 14 is the number of intervals---which is nothing but
+        the length of the knot array of the original `tck` minus one.
+
+        Optionally, we can stack the components into a single `PPoly` along
+        the third dimension:
+
+        >>> cc = np.dstack([p.c for p in polys])    # has shape = (4, 14, 2)
+        >>> poly = PPoly(cc, polys[0].x)
+        >>> np.allclose(poly(unew).T,     # note the transpose to match `splev`
+        ...             out, atol=1e-15)
+        True
+
         """
         if isinstance(tck, BSpline):
             t, c, k = tck.tck
@@ -1353,8 +1238,8 @@ class PPoly(_PPolyBase):
             If 'periodic', periodic extrapolation is used. Default is True.
         """
         if not isinstance(bp, BPoly):
-            raise TypeError(".from_bernstein_basis only accepts BPoly instances. "
-                            "Got %s instead." % type(bp))
+            raise TypeError(f".from_bernstein_basis only accepts BPoly instances. "
+                            f"Got {type(bp)} instead.")
 
         dx = np.diff(bp.x)
         k = bp.c.shape[0] - 1  # polynomial order
@@ -1455,10 +1340,11 @@ class BPoly(_PPolyBase):
 
     .. math::
 
-        B(x) = 1 \\times b_{0, 2}(x) + 2 \\times b_{1, 2}(x) + 3 \\times b_{2, 2}(x) \\\\
+        B(x) = 1 \\times b_{0, 2}(x) + 2 \\times b_{1, 2}(x) + 3
+               \\times b_{2, 2}(x) \\\\
              = 1 \\times (1-x)^2 + 2 \\times 2 x (1 - x) + 3 \\times x^2
 
-    """
+    """  # noqa: E501
 
     def _evaluate(self, x, nu, extrapolate, out):
         _ppoly.evaluate_bernstein(
@@ -1661,8 +1547,8 @@ class BPoly(_PPolyBase):
             If 'periodic', periodic extrapolation is used. Default is True.
         """
         if not isinstance(pp, PPoly):
-            raise TypeError(".from_power_basis only accepts PPoly instances. "
-                            "Got %s instead." % type(pp))
+            raise TypeError(f".from_power_basis only accepts PPoly instances. "
+                            f"Got {type(pp)} instead.")
 
         dx = np.diff(pp.x)
         k = pp.c.shape[0] - 1   # polynomial order
@@ -1690,7 +1576,7 @@ class BPoly(_PPolyBase):
         xi : array_like
             sorted 1-D array of x-coordinates
         yi : array_like or list of array_likes
-            ``yi[i][j]`` is the ``j``th derivative known at ``xi[i]``
+            ``yi[i][j]`` is the ``j``\\ th derivative known at ``xi[i]``
         orders : None or int or array_like of ints. Default: None.
             Specifies the degree of local polynomials. If not None, some
             derivatives are ignored.
@@ -1724,7 +1610,7 @@ class BPoly(_PPolyBase):
         >>> from scipy.interpolate import BPoly
         >>> BPoly.from_derivatives([0, 1], [[1, 2], [3, 4]])
 
-        Creates a polynomial `f(x)` of degree 3, defined on `[0, 1]`
+        Creates a polynomial `f(x)` of degree 3, defined on ``[0, 1]``
         such that `f(0) = 1, df/dx(0) = 2, f(1) = 3, df/dx(1) = 4`
 
         >>> BPoly.from_derivatives([0, 1, 2], [[0, 1], [0], [2]])
@@ -1732,7 +1618,7 @@ class BPoly(_PPolyBase):
         Creates a piecewise polynomial `f(x)`, such that
         `f(0) = f(1) = 0`, `f(2) = 2`, and `df/dx(0) = 1`.
         Based on the number of derivatives provided, the order of the
-        local polynomials is 2 on `[0, 1]` and 1 on `[1, 2]`.
+        local polynomials is 2 on ``[0, 1]`` and 1 on ``[1, 2]``.
         Notice that no restriction is imposed on the derivatives at
         ``x = 1`` and ``x = 2``.
 
@@ -1807,7 +1693,7 @@ class BPoly(_PPolyBase):
 
         Return the coefficients of a polynomial in the Bernstein basis
         defined on ``[xa, xb]`` and having the values and derivatives at the
-        endpoints `xa` and `xb` as specified by `ya`` and `yb`.
+        endpoints `xa` and `xb` as specified by `ya` and `yb`.
         The polynomial constructed is of the minimal possible degree, i.e.,
         if the lengths of `ya` and `yb` are `na` and `nb`, the degree
         of the polynomial is ``na + nb - 1``.
@@ -1819,8 +1705,8 @@ class BPoly(_PPolyBase):
         xb : float
             Right-hand end point of the interval
         ya : array_like
-            Derivatives at `xa`. `ya[0]` is the value of the function, and
-            `ya[i]` for ``i > 0`` is the value of the ``i``th derivative.
+            Derivatives at `xa`. ``ya[0]`` is the value of the function, and
+            ``ya[i]`` for ``i > 0`` is the value of the ``i``\ th derivative.
         yb : array_like
             Derivatives at `xb`.
 
@@ -1857,15 +1743,16 @@ class BPoly(_PPolyBase):
         """
         ya, yb = np.asarray(ya), np.asarray(yb)
         if ya.shape[1:] != yb.shape[1:]:
-            raise ValueError('Shapes of ya {} and yb {} are incompatible'
-                             .format(ya.shape, yb.shape))
+            raise ValueError(
+                f"Shapes of ya {ya.shape} and yb {yb.shape} are incompatible"
+            )
 
         dta, dtb = ya.dtype, yb.dtype
         if (np.issubdtype(dta, np.complexfloating) or
                np.issubdtype(dtb, np.complexfloating)):
-            dt = np.complex_
+            dt = np.complex128
         else:
-            dt = np.float_
+            dt = np.float64
 
         na, nb = len(ya), len(yb)
         n = na + nb
@@ -2035,9 +1922,9 @@ class NdPPoly:
     def _get_dtype(self, dtype):
         if np.issubdtype(dtype, np.complexfloating) \
                or np.issubdtype(self.c.dtype, np.complexfloating):
-            return np.complex_
+            return np.complex128
         else:
-            return np.float_
+            return np.float64
 
     def _ensure_c_contiguous(self):
         if not self.c.flags.c_contiguous:
@@ -2083,7 +1970,7 @@ class NdPPoly:
 
         x = _ndim_coords_from_arrays(x)
         x_shape = x.shape
-        x = np.ascontiguousarray(x.reshape(-1, x.shape[-1]), dtype=np.float_)
+        x = np.ascontiguousarray(x.reshape(-1, x.shape[-1]), dtype=np.float64)
 
         if nu is None:
             nu = np.zeros((ndim,), dtype=np.intc)
@@ -2359,4 +2246,3 @@ class NdPPoly:
             c = out.reshape(c.shape[2:])
 
         return c
-

@@ -1,7 +1,6 @@
 # Copyright Anne M. Archibald 2008
 # Released under the scipy license
 import numpy as np
-import warnings
 from ._ckdtree import cKDTree, cKDTreeNode
 
 __all__ = ['minkowski_distance_p', 'minkowski_distance',
@@ -16,28 +15,38 @@ def minkowski_distance_p(x, y, p=2):
     not extract the pth root. If `p` is 1 or infinity, this is equal to
     the actual L**p distance.
 
+    The last dimensions of `x` and `y` must be the same length.  Any
+    other dimensions must be compatible for broadcasting.
+
     Parameters
     ----------
-    x : (M, K) array_like
+    x : (..., K) array_like
         Input array.
-    y : (N, K) array_like
+    y : (..., K) array_like
         Input array.
     p : float, 1 <= p <= infinity
         Which Minkowski p-norm to use.
 
+    Returns
+    -------
+    dist : ndarray
+        pth power of the distance between the input arrays.
+
     Examples
     --------
     >>> from scipy.spatial import minkowski_distance_p
-    >>> minkowski_distance_p([[0,0],[0,0]], [[1,1],[0,1]])
+    >>> minkowski_distance_p([[0, 0], [0, 0]], [[1, 1], [0, 1]])
     array([2, 1])
 
     """
     x = np.asarray(x)
     y = np.asarray(y)
 
-    # Find smallest common datatype with float64 (return type of this function) - addresses #10262.
+    # Find smallest common datatype with float64 (return type of this
+    # function) - addresses #10262.
     # Don't just cast to float64 for complex input case.
-    common_datatype = np.promote_types(np.promote_types(x.dtype, y.dtype), 'float64')
+    common_datatype = np.promote_types(np.promote_types(x.dtype, y.dtype),
+                                       'float64')
 
     # Make sure x and y are NumPy arrays of correct datatype.
     x = x.astype(common_datatype)
@@ -54,19 +63,27 @@ def minkowski_distance_p(x, y, p=2):
 def minkowski_distance(x, y, p=2):
     """Compute the L**p distance between two arrays.
 
+    The last dimensions of `x` and `y` must be the same length.  Any
+    other dimensions must be compatible for broadcasting.
+
     Parameters
     ----------
-    x : (M, K) array_like
+    x : (..., K) array_like
         Input array.
-    y : (N, K) array_like
+    y : (..., K) array_like
         Input array.
     p : float, 1 <= p <= infinity
         Which Minkowski p-norm to use.
 
+    Returns
+    -------
+    dist : ndarray
+        Distance between the input arrays.
+
     Examples
     --------
     >>> from scipy.spatial import minkowski_distance
-    >>> minkowski_distance([[0,0],[0,0]], [[1,1],[0,1]])
+    >>> minkowski_distance([[0, 0], [0, 0]], [[1, 1], [0, 1]])
     array([ 1.41421356,  1.        ])
 
     """
@@ -90,7 +107,7 @@ class Rectangle:
         self.m, = self.maxes.shape
 
     def __repr__(self):
-        return "<Rectangle %s>" % list(zip(self.mins, self.maxes))
+        return f"<Rectangle {list(zip(self.mins, self.maxes))}>"
 
     def volume(self):
         """Total volume."""
@@ -250,7 +267,7 @@ class KDTree(cKDTree):
         The n data points of dimension m to be indexed. This array is
         not copied unless this is necessary to produce a contiguous
         array of doubles. The data are also copied if the kd-tree is built
-        with `copy_data=True`.
+        with ``copy_data=True``.
     leafsize : positive int
         The number of points at which the algorithm switches over to
         brute-force.
@@ -484,7 +501,7 @@ class KDTree(cKDTree):
 
             .. versionadded:: 1.6.0
         return_sorted : bool, optional
-            Sorts returned indicies if True and does not sort them if False. If
+            Sorts returned indices if True and does not sort them if False. If
             None, does not sort single point queries, but does sort
             multi-point queries which was the behavior before this option
             was added.
@@ -511,6 +528,7 @@ class KDTree(cKDTree):
 
         Examples
         --------
+        >>> import numpy as np
         >>> from scipy import spatial
         >>> x, y = np.mgrid[0:5, 0:5]
         >>> points = np.c_[x.ravel(), y.ravel()]
@@ -886,7 +904,8 @@ def distance_matrix(x, y, p=2, threshold=1000000):
     n, kk = y.shape
 
     if k != kk:
-        raise ValueError("x contains %d-dimensional vectors but y contains %d-dimensional vectors" % (k, kk))
+        raise ValueError(f"x contains {k}-dimensional vectors but y contains "
+                         f"{kk}-dimensional vectors")
 
     if m*n*k <= threshold:
         return minkowski_distance(x[:,np.newaxis,:],y[np.newaxis,:,:],p)

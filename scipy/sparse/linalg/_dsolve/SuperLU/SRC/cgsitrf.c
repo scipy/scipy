@@ -185,10 +185,10 @@ int num_drop_L;
 
 void
 cgsitrf(superlu_options_t *options, SuperMatrix *A, int relax, int panel_size,
-	int *etree, void *work, int lwork, int *perm_c, int *perm_r,
+	int *etree, void *work, int_t lwork, int *perm_c, int *perm_r,
 	SuperMatrix *L, SuperMatrix *U, 
     	GlobalLU_t *Glu, /* persistent to facilitate multiple factorizations */
-	SuperLUStat_t *stat, int *info)
+	SuperLUStat_t *stat, int_t *info)
 {
     /* Local working arrays */
     NCPformat *Astore;
@@ -201,21 +201,23 @@ cgsitrf(superlu_options_t *options, SuperMatrix *A, int relax, int panel_size,
 				iswap is the inverse of swap. After the
 				factorization, it is equal to perm_r. */
     int       *iwork;
-    complex   *cwork;
-    int       *segrep, *repfnz, *parent, *xplore;
+    singlecomplex   *cwork;
+    int       *segrep, *repfnz, *parent;
+    int_t     *xplore;
     int       *panel_lsub; /* dense[]/panel_lsub[] pair forms a w-wide SPA */
-    int       *marker, *marker_relax;
-    complex    *dense, *tempv;
+    int       *marker;
+    int       *marker_relax;
+    singlecomplex    *dense, *tempv;
     float *stempv;
     int       *relax_end, *relax_fsupc;
-    complex    *a;
-    int       *asub;
-    int       *xa_begin, *xa_end;
+    singlecomplex    *a;
+    int_t     *asub;
+    int_t     *xa_begin, *xa_end;
     int       *xsup, *supno;
-    int       *xlsub, *xlusup, *xusub;
-    int       nzlumax;
+    int_t     *xlsub, *xlusup, *xusub;
+    int_t     nzlumax;
     float    *amax; 
-    complex    drop_sum;
+    singlecomplex    drop_sum;
     float alpha, omega;  /* used in MILU, mimicing DRIC */
     float    *swork2;	   /* used by the second dropping rule */
 
@@ -231,14 +233,15 @@ cgsitrf(superlu_options_t *options, SuperMatrix *A, int relax, int panel_size,
     int       pivrow;	/* pivotal row number in the original matrix A */
     int       nseg1;	/* no of segments in U-column above panel row jcol */
     int       nseg;	/* no of segments in each U-column */
-    register int jcol;
+    register int jcol, jj;
     register int kcol;	/* end column of a relaxed snode */
     register int icol;
-    register int i, k, jj, new_next, iinfo;
-    int       m, n, min_mn, jsupno, fsupc, nextlu, nextu;
+    int_t     i, k, iinfo;
+    int       m, n, min_mn, jsupno, fsupc;
+    int_t     new_next, nextlu, nextu;
     int       w_def;	/* upper bound on panel width */
     int       usepr, iperm_r_allocated = 0;
-    int       nnzL, nnzU;
+    int_t     nnzL, nnzU;
     int       *panel_histo = stat->panel_histo;
     flops_t   *ops = stat->ops;
 
@@ -247,7 +250,7 @@ cgsitrf(superlu_options_t *options, SuperMatrix *A, int relax, int panel_size,
     int       nnzAj;	/* number of nonzeros in A(:,1:j) */
     int       nnzLj, nnzUj;
     double    tol_L = drop_tol, tol_U = drop_tol;
-    complex zero = {0.0, 0.0};
+    singlecomplex zero = {0.0, 0.0};
     float one = 1.0;
 
     /* Executable */	   
@@ -272,19 +275,23 @@ cgsitrf(superlu_options_t *options, SuperMatrix *A, int relax, int panel_size,
     xlusup  = Glu->xlusup;
     xusub   = Glu->xusub;
 
+    int_t *xprune;
     SetIWork(m, n, panel_size, iwork, &segrep, &parent, &xplore,
-	     &repfnz, &panel_lsub, &marker_relax, &marker);
+	     &repfnz, &panel_lsub, &xprune, &marker);
+    marker_relax = int32Malloc(m);
+    SUPERLU_FREE(xprune); /* not used in ILU */
+    
     cSetRWork(m, panel_size, cwork, &dense, &tempv);
 
     usepr = (fact == SamePattern_SameRowPerm);
     if ( usepr ) {
 	/* Compute the inverse of perm_r */
-	iperm_r = (int *) intMalloc(m);
+	iperm_r = (int *) int32Malloc(m);
 	for (k = 0; k < m; ++k) iperm_r[perm_r[k]] = k;
 	iperm_r_allocated = 1;
     }
 
-    iperm_c = (int *) intMalloc(n);
+    iperm_c = (int *) int32Malloc(n);
     for (k = 0; k < n; ++k) iperm_c[perm_c[k]] = k;
     swap = (int *)intMalloc(n);
     for (k = 0; k < n; k++) swap[k] = iperm_c[k];
@@ -321,7 +328,7 @@ cgsitrf(superlu_options_t *options, SuperMatrix *A, int relax, int panel_size,
     i = mark_relax(m, relax_end, relax_fsupc, xa_begin, xa_end,
 	         asub, marker_relax);
 #if ( PRNTlevel >= 1)
-    printf("%d relaxed supernodes.\n", i);
+    printf("%d relaxed supernodes.\n", (int)i);
 #endif
 
     /*
@@ -477,9 +484,9 @@ cgsitrf(superlu_options_t *options, SuperMatrix *A, int relax, int panel_size,
 		/* Make a fill-in position if the column is entirely zero */
 		if (xlsub[jj + 1] == xlsub[jj]) {
 		    register int i, row;
-		    int nextl;
-		    int nzlmax = Glu->nzlmax;
-		    int *lsub = Glu->lsub;
+		    int_t nextl;
+		    int_t nzlmax = Glu->nzlmax;
+		    int_t *lsub = Glu->lsub;
 		    int *marker2 = marker + 2 * m;
 
 		    /* Allocate memory */
@@ -492,7 +499,7 @@ cgsitrf(superlu_options_t *options, SuperMatrix *A, int relax, int panel_size,
 		    xlsub[jj + 1]++;
 		    assert(xlusup[jj]==xlusup[jj+1]);
 		    xlusup[jj + 1]++;
-		    ((complex *) Glu->lusup)[xlusup[jj]] = zero;
+		    ((singlecomplex *) Glu->lusup)[xlusup[jj]] = zero;
 
 		    /* Choose a row index (pivrow) for fill-in */
 		    for (i = jj; i < n; i++)
@@ -501,7 +508,7 @@ cgsitrf(superlu_options_t *options, SuperMatrix *A, int relax, int panel_size,
 		    marker2[row] = jj;
 		    lsub[xlsub[jj]] = row;
 #ifdef DEBUG
-		    printf("Fill col %d.\n", jj);
+		    printf("Fill col %d.\n", (int)jj);
 		    fflush(stdout);
 #endif
 		}
@@ -533,7 +540,7 @@ cgsitrf(superlu_options_t *options, SuperMatrix *A, int relax, int panel_size,
 			tol_U = SUPERLU_MAX(drop_tol, tol_U * 0.5);
 		}
 
-		if (drop_sum.r != 0.0 && drop_sum.i != 0.0)
+		if (drop_sum.r != 0.0 || drop_sum.i != 0.0)
 		{
                     omega = SUPERLU_MIN(2.0*(1.0-alpha)/c_abs1(&drop_sum), 1.0);
                     cs_mult(&drop_sum, &drop_sum, omega);
@@ -620,6 +627,8 @@ cgsitrf(superlu_options_t *options, SuperMatrix *A, int relax, int panel_size,
     fixupL(min_mn, perm_r, Glu);
 
     cLUWorkFree(iwork, cwork, Glu); /* Free work space and compress storage */
+    SUPERLU_FREE (xplore);
+    SUPERLU_FREE (marker_relax);
 
     if ( fact == SamePattern_SameRowPerm ) {
 	/* L and U structures may have changed due to possibly different
@@ -628,21 +637,21 @@ cgsitrf(superlu_options_t *options, SuperMatrix *A, int relax, int panel_size,
 	   may have changed, */
 	((SCformat *)L->Store)->nnz = nnzL;
 	((SCformat *)L->Store)->nsuper = Glu->supno[n];
-	((SCformat *)L->Store)->nzval = (complex *) Glu->lusup;
+	((SCformat *)L->Store)->nzval = (singlecomplex *) Glu->lusup;
 	((SCformat *)L->Store)->nzval_colptr = Glu->xlusup;
 	((SCformat *)L->Store)->rowind = Glu->lsub;
 	((SCformat *)L->Store)->rowind_colptr = Glu->xlsub;
 	((NCformat *)U->Store)->nnz = nnzU;
-	((NCformat *)U->Store)->nzval = (complex *) Glu->ucol;
+	((NCformat *)U->Store)->nzval = (singlecomplex *) Glu->ucol;
 	((NCformat *)U->Store)->rowind = Glu->usub;
 	((NCformat *)U->Store)->colptr = Glu->xusub;
     } else {
 	cCreate_SuperNode_Matrix(L, A->nrow, min_mn, nnzL,
-              (complex *) Glu->lusup, Glu->xlusup,
+              (singlecomplex *) Glu->lusup, Glu->xlusup,
               Glu->lsub, Glu->xlsub, Glu->supno, Glu->xsup,
 	      SLU_SC, SLU_C, SLU_TRLU);
 	cCreate_CompCol_Matrix(U, min_mn, min_mn, nnzU,
-	      (complex *) Glu->ucol, Glu->usub, Glu->xusub,
+	      (singlecomplex *) Glu->ucol, Glu->usub, Glu->xusub,
 	      SLU_NC, SLU_C, SLU_TRU);
     }
 

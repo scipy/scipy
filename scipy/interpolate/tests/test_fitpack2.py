@@ -6,12 +6,14 @@ from numpy.testing import (assert_equal, assert_almost_equal, assert_array_equal
 from pytest import raises as assert_raises
 
 from numpy import array, diff, linspace, meshgrid, ones, pi, shape
-from scipy.interpolate._fitpack_py import bisplrep, bisplev
+from scipy.interpolate._fitpack_py import bisplrep, bisplev, splrep, spalde
 from scipy.interpolate._fitpack2 import (UnivariateSpline,
         LSQUnivariateSpline, InterpolatedUnivariateSpline,
         LSQBivariateSpline, SmoothBivariateSpline, RectBivariateSpline,
         LSQSphereBivariateSpline, SmoothSphereBivariateSpline,
         RectSphereBivariateSpline)
+
+from scipy._lib._testutils import _run_concurrent_barrier
 
 
 class TestUnivariateSpline:
@@ -61,6 +63,41 @@ class TestUnivariateSpline:
         spl = UnivariateSpline(x, y, k=3)
         assert_array_equal(spl([]), array([]))
 
+    def test_roots(self):
+        x = [1, 3, 5, 7, 9]
+        y = [0, 4, 9, 12, 21]
+        spl = UnivariateSpline(x, y, k=3)
+        assert_almost_equal(spl.roots()[0], 1.050290639101332)
+
+    def test_roots_length(self): # for gh18335
+        x = np.linspace(0, 50 * np.pi, 1000)
+        y = np.cos(x)
+        spl = UnivariateSpline(x, y, s=0)
+        assert_equal(len(spl.roots()), 50)
+
+    def test_derivatives(self):
+        x = [1, 3, 5, 7, 9]
+        y = [0, 4, 9, 12, 21]
+        spl = UnivariateSpline(x, y, k=3)
+        assert_almost_equal(spl.derivatives(3.5),
+                            [5.5152902, 1.7146577, -0.1830357, 0.3125])
+
+    def test_derivatives_2(self):
+        x = np.arange(8)
+        y = x**3 + 2.*x**2
+
+        tck = splrep(x, y, s=0)
+        ders = spalde(3, tck)
+        assert_allclose(ders, [45.,   # 3**3 + 2*(3)**2
+                               39.,   # 3*(3)**2 + 4*(3)
+                               22.,   # 6*(3) + 4
+                               6.],   # 6*3**0
+                        atol=1e-15)
+        spl = UnivariateSpline(x, y, s=0, k=3)
+        assert_allclose(spl.derivatives(3),
+                        ders,
+                        atol=1e-15)
+
     def test_resize_regression(self):
         """Regression test for #1375."""
         x = [-1., -0.65016502, -0.58856235, -0.26903553, -0.17370892,
@@ -100,8 +137,8 @@ class TestUnivariateSpline:
             for ext in [2, 'raise']:
                 assert_raises(ValueError, spl, xp, **dict(ext=ext))
             for ext in [3, 'const']:
-                assert_allclose(spl(xp, ext=ext), xp_clip**3, atol=1e-16)
-                assert_allclose(cls(x, y, ext=ext)(xp), xp_clip**3, atol=1e-16)
+                assert_allclose(spl(xp, ext=ext), xp_clip**3, atol=2e-16)
+                assert_allclose(cls(x, y, ext=ext)(xp), xp_clip**3, atol=2e-16)
 
         # also test LSQUnivariateSpline [which needs explicit knots]
         t = spl.get_knots()[3:4]  # interior knots w/ default k=3
@@ -296,10 +333,10 @@ class TestUnivariateSpline:
             LSQUnivariateSpline(x_values, y_values, t_values, w=w_values)
         assert "x, y, and w should have a same length" in str(info.value)
 
-        with assert_raises(ValueError) as info:
+        message = "Interior knots t must satisfy Schoenberg-Whitney conditions"
+        with assert_raises(ValueError, match=message) as info:
             bbox = (100, -100)
             LSQUnivariateSpline(x_values, y_values, t_values, bbox=bbox)
-        assert "Interior knots t must satisfy Schoenberg-Whitney conditions" in str(info.value)
 
         with assert_raises(ValueError) as info:
             bbox = (-1)
@@ -324,6 +361,47 @@ class TestUnivariateSpline:
 
         assert_allclose(spl1([0.1, 0.5, 0.9, 0.99]),
                         spl2([0.1, 0.5, 0.9, 0.99]))
+
+    def test_fpknot_oob_crash(self):
+        # https://github.com/scipy/scipy/issues/3691
+        x = range(109)
+        y = [0., 0., 0., 0., 0., 10.9, 0., 11., 0.,
+             0., 0., 10.9, 0., 0., 0., 0., 0., 0.,
+             10.9, 0., 0., 0., 11., 0., 0., 0., 10.9,
+             0., 0., 0., 10.5, 0., 0., 0., 10.7, 0.,
+             0., 0., 11., 0., 0., 0., 0., 0., 0.,
+             10.9, 0., 0., 10.7, 0., 0., 0., 10.6, 0.,
+             0., 0., 10.5, 0., 0., 10.7, 0., 0., 10.5,
+             0., 0., 11.5, 0., 0., 0., 10.7, 0., 0.,
+             10.7, 0., 0., 10.9, 0., 0., 10.8, 0., 0.,
+             0., 10.7, 0., 0., 10.6, 0., 0., 0., 10.4,
+             0., 0., 10.6, 0., 0., 10.5, 0., 0., 0.,
+             10.7, 0., 0., 0., 10.4, 0., 0., 0., 10.8, 0.]
+        with suppress_warnings() as sup:
+            r = sup.record(
+                UserWarning,
+                r"""
+The maximal number of iterations maxit \(set to 20 by the program\)
+allowed for finding a smoothing spline with fp=s has been reached: s
+too small.
+There is an approximation returned but the corresponding weighted sum
+of squared residuals does not satisfy the condition abs\(fp-s\)/s < tol.""")
+            UnivariateSpline(x, y, k=1)
+            assert_equal(len(r), 1)
+
+    def test_concurrency(self):
+        # Check that no segfaults appear with concurrent access to
+        # UnivariateSpline
+        xx = np.arange(100, dtype=float)
+        yy = xx**3
+        x = np.arange(100, dtype=float)
+        x[1] = x[0]
+        spl = UnivariateSpline(xx, yy, check_finite=True)
+
+        def worker_fn(_, interp, x):
+            interp(x)
+
+        _run_concurrent_barrier(10, worker_fn, spl, x)
 
 
 class TestLSQBivariateSpline:
@@ -730,7 +808,7 @@ class TestLSQSphereBivariateSpline:
         # define knots and extract data values at the knots
         knotst = theta[::5]
         knotsp = phi[::5]
-        w = ones((lats.ravel().shape[0]))
+        w = ones(lats.ravel().shape[0])
 
         # np.array input
         spl1 = LSQSphereBivariateSpline(lats.ravel(), lons.ravel(),
@@ -1106,7 +1184,8 @@ class TestRectSphereBivariateSpline:
                         rtol=1e-4, atol=1e-4)
         assert_allclose(lut(x, y, dphi=1), _numdiff_2d(lut, x, y, dy=1),
                         rtol=1e-4, atol=1e-4)
-        assert_allclose(lut(x, y, dtheta=1, dphi=1), _numdiff_2d(lut, x, y, dx=1, dy=1, eps=1e-6),
+        assert_allclose(lut(x, y, dtheta=1, dphi=1),
+                        _numdiff_2d(lut, x, y, dx=1, dy=1, eps=1e-6),
                         rtol=1e-3, atol=1e-3)
 
         assert_array_equal(lut(x, y, dtheta=1),
@@ -1143,7 +1222,8 @@ class TestRectSphereBivariateSpline:
                         _numdiff_2d(lambda x,y: lut(x,y,grid=False), x, y, dy=1),
                         rtol=1e-4, atol=1e-4)
         assert_allclose(lut(x, y, dtheta=1, dphi=1, grid=False),
-                        _numdiff_2d(lambda x,y: lut(x,y,grid=False), x, y, dx=1, dy=1, eps=1e-6),
+                        _numdiff_2d(lambda x,y: lut(x,y,grid=False),
+                                    x, y, dx=1, dy=1, eps=1e-6),
                         rtol=1e-3, atol=1e-3)
 
     def test_invalid_input_2(self):
@@ -1209,6 +1289,20 @@ class TestRectSphereBivariateSpline:
                         [-49.0625, -46.54315]])
         assert_array_almost_equal(data_interp, ans)
 
+    def test_pole_continuity_gh_14591(self):
+        # regression test for https://github.com/scipy/scipy/issues/14591
+        # with pole_continuty=(True, True), the internal work array size
+        # was too small, leading to a FITPACK data validation error.
+
+        # The reproducer in gh-14591 was using a NetCDF4 file with
+        # 361x507 arrays, so here we trivialize array sizes to a minimum
+        # which still demonstrates the issue.
+        u = np.arange(1, 10) * np.pi / 10
+        v = np.arange(1, 10) * np.pi / 10
+        r = np.zeros((9, 9))
+        for p in [(True, True), (True, False), (False, False)]:
+            RectSphereBivariateSpline(u, v, r, s=0, pole_continuity=p)
+
 
 def _numdiff_2d(func, x, y, dx=0, dy=0, eps=1e-8):
     if dx == 0 and dy == 0:
@@ -1224,7 +1318,7 @@ def _numdiff_2d(func, x, y, dx=0, dy=0, eps=1e-8):
         raise ValueError("invalid derivative order")
 
 
-class Test_DerivedBivariateSpline(object):
+class Test_DerivedBivariateSpline:
     """Test the creation, usage, and attribute access of the (private)
     _DerivedBivariateSpline class.
     """

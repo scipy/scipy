@@ -116,6 +116,23 @@ class TestDIRECT:
         assert res.status == 5
         assert res.success
         assert_allclose(res.x, np.zeros((4, )))
+        message = ("The side length measure of the hyperrectangle containing "
+                   "the lowest function value found is below "
+                   f"len_tol={len_tol}")
+        assert res.message == message
+
+    @pytest.mark.parametrize("vol_tol", [1e-6, 1e-8])
+    @pytest.mark.parametrize("locally_biased", [True, False])
+    def test_vol_tol(self, vol_tol, locally_biased):
+        bounds = 4*[(-10., 10.)]
+        res = direct(self.sphere, bounds=bounds, vol_tol=vol_tol,
+                     len_tol=0., locally_biased=locally_biased)
+        assert res.status == 4
+        assert res.success
+        assert_allclose(res.x, np.zeros((4, )))
+        message = ("The volume of the hyperrectangle containing the lowest "
+                   f"function value found is below vol_tol={vol_tol}")
+        assert res.message == message
 
     @pytest.mark.parametrize("f_min_rtol", [1e-3, 1e-5, 1e-7])
     @pytest.mark.parametrize("locally_biased", [True, False])
@@ -130,6 +147,9 @@ class TestDIRECT:
         assert res.status == 3
         assert res.success
         assert res.fun < f_min * (1. + f_min_rtol)
+        message = ("The best function value found is within a relative "
+                   f"error={f_min_rtol} of the (known) global optimum f_min")
+        assert res.message == message
 
     def circle_with_args(self, x, a, b):
         return np.square(x[0] - a) + np.square(x[1] - b).sum()
@@ -153,6 +173,9 @@ class TestDIRECT:
         assert result.success is False
         assert result.status == 1
         assert result.nfev >= maxfun
+        message = ("Number of function evaluations done is "
+                   f"larger than maxfun={maxfun}")
+        assert result.message == message
 
     @pytest.mark.parametrize("locally_biased", [True, False])
     def test_failure_maxiter(self, locally_biased):
@@ -165,6 +188,8 @@ class TestDIRECT:
         assert result.success is False
         assert result.status == 2
         assert result.nit >= maxiter
+        message = f"Number of iterations is larger than maxiter={maxiter}"
+        assert result.message == message
 
     @pytest.mark.parametrize("locally_biased", [True, False])
     def test_bounds_variants(self, locally_biased):
@@ -197,8 +222,9 @@ class TestDIRECT:
         assert result.status == 4
         assert result.success
 
+    @pytest.mark.xslow
     @pytest.mark.parametrize("locally_biased", [True, False])
-    def test_segmentation_fault(self, locally_biased):
+    def test_no_segmentation_fault(self, locally_biased):
         # test that an excessive number of function evaluations
         # does not result in segmentation fault
         bounds = [(-5., 20.)] * 100
@@ -213,3 +239,80 @@ class TestDIRECT:
         result = direct(self.inf_fun, bounds,
                         locally_biased=locally_biased)
         assert result is not None
+
+    @pytest.mark.parametrize("len_tol", [-1, 2])
+    def test_len_tol_validation(self, len_tol):
+        error_msg = "len_tol must be between 0 and 1."
+        with pytest.raises(ValueError, match=error_msg):
+            direct(self.styblinski_tang, self.bounds_stylinski_tang,
+                   len_tol=len_tol)
+
+    @pytest.mark.parametrize("vol_tol", [-1, 2])
+    def test_vol_tol_validation(self, vol_tol):
+        error_msg = "vol_tol must be between 0 and 1."
+        with pytest.raises(ValueError, match=error_msg):
+            direct(self.styblinski_tang, self.bounds_stylinski_tang,
+                   vol_tol=vol_tol)
+
+    @pytest.mark.parametrize("f_min_rtol", [-1, 2])
+    def test_fmin_rtol_validation(self, f_min_rtol):
+        error_msg = "f_min_rtol must be between 0 and 1."
+        with pytest.raises(ValueError, match=error_msg):
+            direct(self.styblinski_tang, self.bounds_stylinski_tang,
+                   f_min_rtol=f_min_rtol, f_min=0.)
+
+    @pytest.mark.parametrize("maxfun", [1.5, "string", (1, 2)])
+    def test_maxfun_wrong_type(self, maxfun):
+        error_msg = "maxfun must be of type int."
+        with pytest.raises(ValueError, match=error_msg):
+            direct(self.styblinski_tang, self.bounds_stylinski_tang,
+                   maxfun=maxfun)
+
+    @pytest.mark.parametrize("maxiter", [1.5, "string", (1, 2)])
+    def test_maxiter_wrong_type(self, maxiter):
+        error_msg = "maxiter must be of type int."
+        with pytest.raises(ValueError, match=error_msg):
+            direct(self.styblinski_tang, self.bounds_stylinski_tang,
+                   maxiter=maxiter)
+
+    def test_negative_maxiter(self):
+        error_msg = "maxiter must be > 0."
+        with pytest.raises(ValueError, match=error_msg):
+            direct(self.styblinski_tang, self.bounds_stylinski_tang,
+                   maxiter=-1)
+
+    def test_negative_maxfun(self):
+        error_msg = "maxfun must be > 0."
+        with pytest.raises(ValueError, match=error_msg):
+            direct(self.styblinski_tang, self.bounds_stylinski_tang,
+                   maxfun=-1)
+
+    @pytest.mark.parametrize("bounds", ["bounds", 2., 0])
+    def test_invalid_bounds_type(self, bounds):
+        error_msg = ("bounds must be a sequence or "
+                     "instance of Bounds class")
+        with pytest.raises(ValueError, match=error_msg):
+            direct(self.styblinski_tang, bounds)
+
+    @pytest.mark.parametrize("bounds",
+                             [Bounds([-1., -1], [-2, 1]),
+                              Bounds([-np.nan, -1], [-2, np.nan]),
+                              ]
+                             )
+    def test_incorrect_bounds(self, bounds):
+        error_msg = 'Bounds are not consistent min < max'
+        with pytest.raises(ValueError, match=error_msg):
+            direct(self.styblinski_tang, bounds)
+
+    def test_inf_bounds(self):
+        error_msg = 'Bounds must not be inf.'
+        bounds = Bounds([-np.inf, -1], [-2, np.inf])
+        with pytest.raises(ValueError, match=error_msg):
+            direct(self.styblinski_tang, bounds)
+
+    @pytest.mark.parametrize("locally_biased", ["bias", [0, 0], 2.])
+    def test_locally_biased_validation(self, locally_biased):
+        error_msg = 'locally_biased must be True or False.'
+        with pytest.raises(ValueError, match=error_msg):
+            direct(self.styblinski_tang, self.bounds_stylinski_tang,
+                   locally_biased=locally_biased)

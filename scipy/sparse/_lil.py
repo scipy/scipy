@@ -3,97 +3,37 @@
 
 __docformat__ = "restructuredtext en"
 
-__all__ = ['lil_matrix', 'isspmatrix_lil']
+__all__ = ['lil_array', 'lil_matrix', 'isspmatrix_lil']
 
 from bisect import bisect_left
 
 import numpy as np
 
-from ._base import spmatrix, isspmatrix
+from ._matrix import spmatrix
+from ._base import _spbase, sparray, issparse
 from ._index import IndexMixin, INT_TYPES, _broadcast_arrays
 from ._sputils import (getdtype, isshape, isscalarlike, upcast_scalar,
-                       get_index_dtype, check_shape, check_reshape_kwargs)
+                       check_shape, check_reshape_kwargs)
 from . import _csparsetools
 
 
-class lil_matrix(spmatrix, IndexMixin):
-    """Row-based list of lists sparse matrix
+class _lil_base(_spbase, IndexMixin):
+    _format = 'lil'
 
-    This is a structure for constructing sparse matrices incrementally.
-    Note that inserting a single item can take linear time in the worst case;
-    to construct a matrix efficiently, make sure the items are pre-sorted by
-    index, per row.
-
-    This can be instantiated in several ways:
-        lil_matrix(D)
-            with a dense matrix or rank-2 ndarray D
-
-        lil_matrix(S)
-            with another sparse matrix S (equivalent to S.tolil())
-
-        lil_matrix((M, N), [dtype])
-            to construct an empty matrix with shape (M, N)
-            dtype is optional, defaulting to dtype='d'.
-
-    Attributes
-    ----------
-    dtype : dtype
-        Data type of the matrix
-    shape : 2-tuple
-        Shape of the matrix
-    ndim : int
-        Number of dimensions (this is always 2)
-    nnz
-        Number of stored values, including explicit zeros
-    data
-        LIL format data array of the matrix
-    rows
-        LIL format row index array of the matrix
-
-    Notes
-    -----
-
-    Sparse matrices can be used in arithmetic operations: they support
-    addition, subtraction, multiplication, division, and matrix power.
-
-    Advantages of the LIL format
-        - supports flexible slicing
-        - changes to the matrix sparsity structure are efficient
-
-    Disadvantages of the LIL format
-        - arithmetic operations LIL + LIL are slow (consider CSR or CSC)
-        - slow column slicing (consider CSC)
-        - slow matrix vector products (consider CSR or CSC)
-
-    Intended Usage
-        - LIL is a convenient format for constructing sparse matrices
-        - once a matrix has been constructed, convert to CSR or
-          CSC format for fast arithmetic and matrix vector operations
-        - consider using the COO format when constructing large matrices
-
-    Data Structure
-        - An array (``self.rows``) of rows, each of which is a sorted
-          list of column indices of non-zero elements.
-        - The corresponding nonzero values are stored in similar
-          fashion in ``self.data``.
-
-
-    """
-    format = 'lil'
-
-    def __init__(self, arg1, shape=None, dtype=None, copy=False):
-        spmatrix.__init__(self)
+    def __init__(self, arg1, shape=None, dtype=None, copy=False, *, maxprint=None):
+        _spbase.__init__(self, arg1, maxprint=maxprint)
         self.dtype = getdtype(dtype, arg1, default=float)
 
         # First get the shape
-        if isspmatrix(arg1):
-            if isspmatrix_lil(arg1) and copy:
+        if issparse(arg1):
+            if arg1.format == "lil" and copy:
                 A = arg1.copy()
             else:
                 A = arg1.tolil()
 
             if dtype is not None:
-                A = A.astype(dtype, copy=False)
+                newdtype = getdtype(dtype)
+                A = A.astype(newdtype, copy=False)
 
             self._shape = check_shape(A.shape)
             self.dtype = A.dtype
@@ -111,20 +51,21 @@ class lil_matrix(spmatrix, IndexMixin):
                     self.rows[i] = []
                     self.data[i] = []
             else:
-                raise TypeError('unrecognized lil_matrix constructor usage')
+                raise TypeError('unrecognized lil_array constructor usage')
         else:
             # assume A is dense
             try:
                 A = self._ascontainer(arg1)
             except TypeError as e:
                 raise TypeError('unsupported matrix type') from e
-            else:
-                A = self._csr_container(A, dtype=dtype).tolil()
+            if isinstance(self, sparray) and A.ndim != 2:
+                raise ValueError(f"LIL arrays don't support {A.ndim}D input. Use 2D")
+            A = self._csr_container(A, dtype=dtype).tolil()
 
-                self._shape = check_shape(A.shape)
-                self.dtype = A.dtype
-                self.rows = A.rows
-                self.data = A.data
+            self._shape = check_shape(A.shape)
+            self.dtype = getdtype(A.dtype)
+            self.rows = A.rows
+            self.data = A.data
 
     def __iadd__(self,other):
         self[:,:] = self + other
@@ -151,7 +92,7 @@ class lil_matrix(spmatrix, IndexMixin):
     # Whenever the dimensions change, empty lists should be created for each
     # row
 
-    def getnnz(self, axis=None):
+    def _getnnz(self, axis=None):
         if axis is None:
             return sum([len(rowvals) for rowvals in self.data])
         if axis < 0:
@@ -166,18 +107,28 @@ class lil_matrix(spmatrix, IndexMixin):
         else:
             raise ValueError('axis out of bounds')
 
-    def count_nonzero(self):
-        return sum(np.count_nonzero(rowvals) for rowvals in self.data)
+    _getnnz.__doc__ = _spbase._getnnz.__doc__
 
-    getnnz.__doc__ = spmatrix.getnnz.__doc__
-    count_nonzero.__doc__ = spmatrix.count_nonzero.__doc__
+    def count_nonzero(self, axis=None):
+        if axis is None:
+            return sum(np.count_nonzero(rowvals) for rowvals in self.data)
 
-    def __str__(self):
-        val = ''
-        for i, row in enumerate(self.rows):
-            for pos, j in enumerate(row):
-                val += "  %s\t%s\n" % (str((i, j)), str(self.data[i][pos]))
-        return val[:-1]
+        if axis < 0:
+            axis += 2
+        if axis == 0:
+            out = np.zeros(self.shape[1], dtype=np.intp)
+            for row, data in zip(self.rows, self.data):
+                mask = [c for c, d in zip(row, data) if d != 0]
+                out[mask] += 1
+            return out
+        elif axis == 1:
+            return np.array(
+                [np.count_nonzero(rowvals) for rowvals in self.data], dtype=np.intp,
+            )
+        else:
+            raise ValueError('axis out of bounds')
+
+    count_nonzero.__doc__ = _spbase.count_nonzero.__doc__
 
     def getrowview(self, i):
         """Returns a view of the 'i'th row (without copying).
@@ -306,28 +257,28 @@ class lil_matrix(spmatrix, IndexMixin):
                                     i, j, x)
 
     def _set_arrayXarray_sparse(self, row, col, x):
-        # Special case: full matrix assignment
-        if (x.shape == self.shape and
-                isinstance(row, slice) and row == slice(None) and
-                isinstance(col, slice) and col == slice(None)):
-            x = self._lil_container(x, dtype=self.dtype)
-            self.rows = x.rows
-            self.data = x.data
-            return
         # Fall back to densifying x
         x = np.asarray(x.toarray(), dtype=self.dtype)
         x, _ = _broadcast_arrays(x, row)
         self._set_arrayXarray(row, col, x)
 
     def __setitem__(self, key, x):
-        # Fast path for simple (int, int) indexing.
-        if (isinstance(key, tuple) and len(key) == 2 and
-                isinstance(key[0], INT_TYPES) and
-                isinstance(key[1], INT_TYPES)):
-            x = self.dtype.type(x)
-            if x.size > 1:
-                raise ValueError("Trying to assign a sequence to an item")
-            return self._set_intXint(key[0], key[1], x)
+        if isinstance(key, tuple) and len(key) == 2:
+            row, col = key
+            # Fast path for simple (int, int) indexing.
+            if isinstance(row, INT_TYPES) and isinstance(col, INT_TYPES):
+                x = self.dtype.type(x)
+                if x.size > 1:
+                    raise ValueError("Trying to assign a sequence to an item")
+                return self._set_intXint(row, col, x)
+            # Fast path for full-matrix sparse assignment.
+            if (isinstance(row, slice) and isinstance(col, slice) and
+                    row == slice(None) and col == slice(None) and
+                    issparse(x) and x.shape == self.shape):
+                x = self._lil_container(x, dtype=self.dtype)
+                self.rows = x.rows
+                self.data = x.data
+                return
         # Everything else takes the normal path.
         IndexMixin.__setitem__(self, key, x)
 
@@ -348,6 +299,7 @@ class lil_matrix(spmatrix, IndexMixin):
     def __truediv__(self, other):           # self / other
         if isscalarlike(other):
             new = self.copy()
+            new.dtype = np.result_type(self, other)
             # Divide every element by this scalar
             for j, rowvals in enumerate(new.data):
                 new.data[j] = [val/other for val in rowvals]
@@ -364,7 +316,7 @@ class lil_matrix(spmatrix, IndexMixin):
                                          0, N, 1, N)
         return new
 
-    copy.__doc__ = spmatrix.copy.__doc__
+    copy.__doc__ = _spbase.copy.__doc__
 
     def reshape(self, *args, **kwargs):
         shape = check_shape(args, self.shape)
@@ -396,7 +348,7 @@ class lil_matrix(spmatrix, IndexMixin):
 
         return new
 
-    reshape.__doc__ = spmatrix.reshape.__doc__
+    reshape.__doc__ = _spbase.reshape.__doc__
 
     def resize(self, *shape):
         shape = check_shape(shape)
@@ -421,7 +373,7 @@ class lil_matrix(spmatrix, IndexMixin):
 
         self._shape = shape
 
-    resize.__doc__ = spmatrix.resize.__doc__
+    resize.__doc__ = _spbase.resize.__doc__
 
     def toarray(self, order=None, out=None):
         d = self._process_toarray_args(order, out)
@@ -430,12 +382,12 @@ class lil_matrix(spmatrix, IndexMixin):
                 d[i, j] = self.data[i][pos]
         return d
 
-    toarray.__doc__ = spmatrix.toarray.__doc__
+    toarray.__doc__ = _spbase.toarray.__doc__
 
     def transpose(self, axes=None, copy=False):
         return self.tocsr(copy=copy).transpose(axes=axes, copy=False).tolil(copy=False)
 
-    transpose.__doc__ = spmatrix.transpose.__doc__
+    transpose.__doc__ = _spbase.transpose.__doc__
 
     def tolil(self, copy=False):
         if copy:
@@ -443,7 +395,7 @@ class lil_matrix(spmatrix, IndexMixin):
         else:
             return self
 
-    tolil.__doc__ = spmatrix.tolil.__doc__
+    tolil.__doc__ = _spbase.tolil.__doc__
 
     def tocsr(self, copy=False):
         M, N = self.shape
@@ -460,11 +412,11 @@ class lil_matrix(spmatrix, IndexMixin):
             np.cumsum(indptr, out=indptr)
             nnz = indptr[-1]
         else:
-            idx_dtype = get_index_dtype(maxval=N)
+            idx_dtype = self._get_index_dtype(maxval=N)
             lengths = np.empty(M, dtype=idx_dtype)
             _csparsetools.lil_get_lengths(self.rows, lengths)
             nnz = lengths.sum(dtype=np.int64)
-            idx_dtype = get_index_dtype(maxval=max(N, nnz))
+            idx_dtype = self._get_index_dtype(maxval=max(N, nnz))
             indptr = np.empty(M + 1, dtype=idx_dtype)
             indptr[0] = 0
             np.cumsum(lengths, dtype=idx_dtype, out=indptr[1:])
@@ -477,7 +429,7 @@ class lil_matrix(spmatrix, IndexMixin):
         # init csr matrix
         return self._csr_container((data, indices, indptr), shape=self.shape)
 
-    tocsr.__doc__ = spmatrix.tocsr.__doc__
+    tocsr.__doc__ = _spbase.tocsr.__doc__
 
 
 def _prepare_index_for_memoryview(i, j, x=None):
@@ -522,7 +474,7 @@ def _prepare_index_for_memoryview(i, j, x=None):
 
 
 def isspmatrix_lil(x):
-    """Is x of lil_matrix type?
+    """Is `x` of lil_matrix type?
 
     Parameters
     ----------
@@ -532,17 +484,147 @@ def isspmatrix_lil(x):
     Returns
     -------
     bool
-        True if x is a lil matrix, False otherwise
+        True if `x` is a lil matrix, False otherwise
 
     Examples
     --------
-    >>> from scipy.sparse import lil_matrix, isspmatrix_lil
+    >>> from scipy.sparse import lil_array, lil_matrix, coo_matrix, isspmatrix_lil
     >>> isspmatrix_lil(lil_matrix([[5]]))
     True
-
-    >>> from scipy.sparse import lil_matrix, csr_matrix, isspmatrix_lil
-    >>> isspmatrix_lil(csr_matrix([[5]]))
+    >>> isspmatrix_lil(lil_array([[5]]))
+    False
+    >>> isspmatrix_lil(coo_matrix([[5]]))
     False
     """
-    from ._arrays import lil_array
-    return isinstance(x, lil_matrix) or isinstance(x, lil_array)
+    return isinstance(x, lil_matrix)
+
+
+# This namespace class separates array from matrix with isinstance
+class lil_array(_lil_base, sparray):
+    """
+    Row-based LIst of Lists sparse array.
+
+    This is a structure for constructing sparse arrays incrementally.
+    Note that inserting a single item can take linear time in the worst case;
+    to construct the array efficiently, make sure the items are pre-sorted by
+    index, per row.
+
+    This can be instantiated in several ways:
+        lil_array(D)
+            where D is a 2-D ndarray
+
+        lil_array(S)
+            with another sparse array or matrix S (equivalent to S.tolil())
+
+        lil_array((M, N), [dtype])
+            to construct an empty array with shape (M, N)
+            dtype is optional, defaulting to dtype='d'.
+
+    Attributes
+    ----------
+    dtype : dtype
+        Data type of the array
+    shape : 2-tuple
+        Shape of the array
+    ndim : int
+        Number of dimensions (this is always 2)
+    nnz
+    size
+    data
+        LIL format data array of the array
+    rows
+        LIL format row index array of the array
+    T
+
+    Notes
+    -----
+    Sparse arrays can be used in arithmetic operations: they support
+    addition, subtraction, multiplication, division, and matrix power.
+
+    Advantages of the LIL format
+        - supports flexible slicing
+        - changes to the array sparsity structure are efficient
+
+    Disadvantages of the LIL format
+        - arithmetic operations LIL + LIL are slow (consider CSR or CSC)
+        - slow column slicing (consider CSC)
+        - slow matrix vector products (consider CSR or CSC)
+
+    Intended Usage
+        - LIL is a convenient format for constructing sparse arrays
+        - once an array has been constructed, convert to CSR or
+          CSC format for fast arithmetic and matrix vector operations
+        - consider using the COO format when constructing large arrays
+
+    Data Structure
+        - An array (``self.rows``) of rows, each of which is a sorted
+          list of column indices of non-zero elements.
+        - The corresponding nonzero values are stored in similar
+          fashion in ``self.data``.
+
+    """
+
+
+class lil_matrix(spmatrix, _lil_base):
+    """
+    Row-based LIst of Lists sparse matrix.
+
+    This is a structure for constructing sparse matrices incrementally.
+    Note that inserting a single item can take linear time in the worst case;
+    to construct the matrix efficiently, make sure the items are pre-sorted by
+    index, per row.
+
+    This can be instantiated in several ways:
+        lil_matrix(D)
+            where D is a 2-D ndarray
+
+        lil_matrix(S)
+            with another sparse array or matrix S (equivalent to S.tolil())
+
+        lil_matrix((M, N), [dtype])
+            to construct an empty matrix with shape (M, N)
+            dtype is optional, defaulting to dtype='d'.
+
+    Attributes
+    ----------
+    dtype : dtype
+        Data type of the matrix
+    shape : 2-tuple
+        Shape of the matrix
+    ndim : int
+        Number of dimensions (this is always 2)
+    nnz
+    size
+    data
+        LIL format data array of the matrix
+    rows
+        LIL format row index array of the matrix
+    T
+
+    Notes
+    -----
+    Sparse matrices can be used in arithmetic operations: they support
+    addition, subtraction, multiplication, division, and matrix power.
+
+    Advantages of the LIL format
+        - supports flexible slicing
+        - changes to the matrix sparsity structure are efficient
+
+    Disadvantages of the LIL format
+        - arithmetic operations LIL + LIL are slow (consider CSR or CSC)
+        - slow column slicing (consider CSC)
+        - slow matrix vector products (consider CSR or CSC)
+
+    Intended Usage
+        - LIL is a convenient format for constructing sparse matrices
+        - once a matrix has been constructed, convert to CSR or
+          CSC format for fast arithmetic and matrix vector operations
+        - consider using the COO format when constructing large matrices
+
+    Data Structure
+        - An array (``self.rows``) of rows, each of which is a sorted
+          list of column indices of non-zero elements.
+        - The corresponding nonzero values are stored in similar
+          fashion in ``self.data``.
+
+    """

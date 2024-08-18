@@ -1,18 +1,17 @@
-
 import numpy as np
 import pytest
 from scipy.linalg import block_diag
 from scipy.sparse import csc_matrix
-from numpy.testing import (TestCase, assert_array_almost_equal,
-                           assert_array_less, assert_,
+from numpy.testing import (assert_array_almost_equal,
+                           assert_array_less, assert_, assert_allclose,
                            suppress_warnings)
-from pytest import raises
 from scipy.optimize import (NonlinearConstraint,
                             LinearConstraint,
                             Bounds,
                             minimize,
                             BFGS,
-                            SR1)
+                            SR1,
+                            rosen)
 
 
 class Maratos:
@@ -445,67 +444,70 @@ class Elec:
         return NonlinearConstraint(fun, -np.inf, 0, jac, hess)
 
 
-class TestTrustRegionConstr(TestCase):
+class TestTrustRegionConstr:
+    list_of_problems = [Maratos(),
+                        Maratos(constr_hess='2-point'),
+                        Maratos(constr_hess=SR1()),
+                        Maratos(constr_jac='2-point', constr_hess=SR1()),
+                        MaratosGradInFunc(),
+                        HyperbolicIneq(),
+                        HyperbolicIneq(constr_hess='3-point'),
+                        HyperbolicIneq(constr_hess=BFGS()),
+                        HyperbolicIneq(constr_jac='3-point',
+                                       constr_hess=BFGS()),
+                        Rosenbrock(),
+                        IneqRosenbrock(),
+                        EqIneqRosenbrock(),
+                        BoundedRosenbrock(),
+                        Elec(n_electrons=2),
+                        Elec(n_electrons=2, constr_hess='2-point'),
+                        Elec(n_electrons=2, constr_hess=SR1()),
+                        Elec(n_electrons=2, constr_jac='3-point',
+                             constr_hess=SR1())]
 
-    @pytest.mark.slow
-    def test_list_of_problems(self):
-        list_of_problems = [Maratos(),
-                            Maratos(constr_hess='2-point'),
-                            Maratos(constr_hess=SR1()),
-                            Maratos(constr_jac='2-point', constr_hess=SR1()),
-                            MaratosGradInFunc(),
-                            HyperbolicIneq(),
-                            HyperbolicIneq(constr_hess='3-point'),
-                            HyperbolicIneq(constr_hess=BFGS()),
-                            HyperbolicIneq(constr_jac='3-point',
-                                           constr_hess=BFGS()),
-                            Rosenbrock(),
-                            IneqRosenbrock(),
-                            EqIneqRosenbrock(),
-                            BoundedRosenbrock(),
-                            Elec(n_electrons=2),
-                            Elec(n_electrons=2, constr_hess='2-point'),
-                            Elec(n_electrons=2, constr_hess=SR1()),
-                            Elec(n_electrons=2, constr_jac='3-point',
-                                 constr_hess=SR1())]
+    @pytest.mark.parametrize('prob', list_of_problems)
+    @pytest.mark.parametrize('grad', ('prob.grad', '3-point', False))
+    @pytest.mark.parametrize('hess', ("prob.hess", '3-point', SR1(),
+                                      BFGS(exception_strategy='damp_update'),
+                                      BFGS(exception_strategy='skip_update')))
+    def test_list_of_problems(self, prob, grad, hess):
+        grad = prob.grad if grad == "prob.grad" else grad
+        hess = prob.hess if hess == "prob.hess" else hess
+        # Remove exceptions
+        if (grad in {'2-point', '3-point', 'cs', False} and
+                hess in {'2-point', '3-point', 'cs'}):
+            pytest.skip("Numerical Hessian needs analytical gradient")
+        if prob.grad is True and grad in {'3-point', False}:
+            pytest.skip("prob.grad incompatible with grad in {'3-point', False}")
+        sensitive = (isinstance(prob, BoundedRosenbrock) and grad == '3-point'
+                     and isinstance(hess, BFGS))
+        if sensitive:
+            pytest.xfail("Seems sensitive to initial conditions w/ Accelerate")
+        with suppress_warnings() as sup:
+            sup.filter(UserWarning, "delta_grad == 0.0")
+            result = minimize(prob.fun, prob.x0,
+                              method='trust-constr',
+                              jac=grad, hess=hess,
+                              bounds=prob.bounds,
+                              constraints=prob.constr)
 
-        for prob in list_of_problems:
-            for grad in (prob.grad, '3-point', False):
-                for hess in (prob.hess,
-                             '3-point',
-                             SR1(),
-                             BFGS(exception_strategy='damp_update'),
-                             BFGS(exception_strategy='skip_update')):
+        if prob.x_opt is not None:
+            assert_array_almost_equal(result.x, prob.x_opt,
+                                      decimal=5)
+            # gtol
+            if result.status == 1:
+                assert_array_less(result.optimality, 1e-8)
+        # xtol
+        if result.status == 2:
+            assert_array_less(result.tr_radius, 1e-8)
 
-                    # Remove exceptions
-                    if grad in ('2-point', '3-point', 'cs', False) and \
-                       hess in ('2-point', '3-point', 'cs'):
-                        continue
-                    if prob.grad is True and grad in ('3-point', False):
-                        continue
-                    with suppress_warnings() as sup:
-                        sup.filter(UserWarning, "delta_grad == 0.0")
-                        result = minimize(prob.fun, prob.x0,
-                                          method='trust-constr',
-                                          jac=grad, hess=hess,
-                                          bounds=prob.bounds,
-                                          constraints=prob.constr)
+            if result.method == "tr_interior_point":
+                assert_array_less(result.barrier_parameter, 1e-8)
 
-                    if prob.x_opt is not None:
-                        assert_array_almost_equal(result.x, prob.x_opt,
-                                                  decimal=5)
-                        # gtol
-                        if result.status == 1:
-                            assert_array_less(result.optimality, 1e-8)
-                    # xtol
-                    if result.status == 2:
-                        assert_array_less(result.tr_radius, 1e-8)
+        # check for max iter
+        message = f"Invalid termination condition: {result.status}."
+        assert result.status not in {0, 3}, message
 
-                        if result.method == "tr_interior_point":
-                            assert_array_less(result.barrier_parameter, 1e-8)
-                    # max iter
-                    if result.status in (0, 3):
-                        raise RuntimeError("Invalid termination condition.")
 
     def test_default_jac_and_hess(self):
         def fun(x):
@@ -593,9 +595,10 @@ class TestTrustRegionConstr(TestCase):
 
     def test_raise_exception(self):
         prob = Maratos()
-
-        raises(ValueError, minimize, prob.fun, prob.x0, method='trust-constr',
-               jac='2-point', hess='2-point', constraints=prob.constr)
+        message = "Whenever the gradient is estimated via finite-differences"
+        with pytest.raises(ValueError, match=message):
+            minimize(prob.fun, prob.x0, method='trust-constr', jac='2-point',
+                     hess='2-point', constraints=prob.constr)
 
     def test_issue_9044(self):
         # https://github.com/scipy/scipy/issues/9044
@@ -616,7 +619,33 @@ class TestTrustRegionConstr(TestCase):
         # compatibility
         assert_(result.get('niter', -1) == 1)
 
-class TestEmptyConstraint(TestCase):
+    def test_issue_15093(self):
+        # scipy docs define bounds as inclusive, so it shouldn't be
+        # an issue to set x0 on the bounds even if keep_feasible is
+        # True. Previously, trust-constr would treat bounds as
+        # exclusive.
+
+        x0 = np.array([0., 0.5])
+
+        def obj(x):
+            x1 = x[0]
+            x2 = x[1]
+            return x1 ** 2 + x2 ** 2
+
+        bounds = Bounds(np.array([0., 0.]), np.array([1., 1.]),
+                        keep_feasible=True)
+
+        with suppress_warnings() as sup:
+            sup.filter(UserWarning, "delta_grad == 0.0")
+            result = minimize(
+                method='trust-constr',
+                fun=obj,
+                x0=x0,
+                bounds=bounds)
+
+        assert result['success']
+
+class TestEmptyConstraint:
     """
     Here we minimize x^2+y^2 subject to x^2-y^2>1.
     The actual minimum is at (0, 0) which fails the constraint.
@@ -649,7 +678,8 @@ class TestEmptyConstraint(TestCase):
         def constraintlcoh(x, v):
             return np.array([[2., 0.], [0., -2.]]) * v[0]
 
-        constraint = NonlinearConstraint(constraint, 1., np.inf, constraintjacobian, constraintlcoh)
+        constraint = NonlinearConstraint(constraint, 1., np.inf,
+                                         constraintjacobian, constraintlcoh)
 
         startpoint = [1., 2.]
 
@@ -676,7 +706,62 @@ def test_bug_11886():
         sup.filter(PendingDeprecationWarning)
         A = np.matrix(np.diag([1, 1]))
     lin_cons = LinearConstraint(A, -1, np.inf)
-    minimize(opt, 2*[1], constraints = lin_cons)  # just checking that there are no errors
+    # just checking that there are no errors
+    minimize(opt, 2*[1], constraints = lin_cons)
+
+
+# Remove xfail when gh-11649 is resolved
+@pytest.mark.xfail(reason="Known bug in trust-constr; see gh-11649.",
+                   strict=True)
+def test_gh11649():
+    bnds = Bounds(lb=[-1, -1], ub=[1, 1], keep_feasible=True)
+
+    def assert_inbounds(x):
+        assert np.all(x >= bnds.lb)
+        assert np.all(x <= bnds.ub)
+
+    def obj(x):
+        assert_inbounds(x)
+        return np.exp(x[0])*(4*x[0]**2 + 2*x[1]**2 + 4*x[0]*x[1] + 2*x[1] + 1)
+
+    def nce(x):
+        assert_inbounds(x)
+        return x[0]**2 + x[1]
+
+    def nci(x):
+        assert_inbounds(x)
+        return x[0]*x[1]
+
+    x0 = np.array((0.99, -0.99))
+    nlcs = [NonlinearConstraint(nci, -10, np.inf),
+            NonlinearConstraint(nce, 1, 1)]
+
+    res = minimize(fun=obj, x0=x0, method='trust-constr',
+                   bounds=bnds, constraints=nlcs)
+    assert res.success
+    assert_inbounds(res.x)
+    assert nlcs[0].lb < nlcs[0].fun(res.x) < nlcs[0].ub
+    assert_allclose(nce(res.x), nlcs[1].ub)
+
+    ref = minimize(fun=obj, x0=x0, method='slsqp',
+                   bounds=bnds, constraints=nlcs)
+    assert_allclose(res.fun, ref.fun)
+
+
+def test_gh20665_too_many_constraints():
+    # gh-20665 reports a confusing error message when there are more equality
+    # constraints than variables. Check that the error message is improved.
+    message = "...more equality constraints than independent variables..."
+    with pytest.raises(ValueError, match=message):
+        x0 = np.ones((2,))
+        A_eq, b_eq = np.arange(6).reshape((3, 2)), np.ones((3,))
+        g = NonlinearConstraint(lambda x:  A_eq @ x, lb=b_eq, ub=b_eq)
+        minimize(rosen, x0, method='trust-constr', constraints=[g])
+    # no error with `SVDFactorization`
+    with np.testing.suppress_warnings() as sup:
+        sup.filter(UserWarning)
+        minimize(rosen, x0, method='trust-constr', constraints=[g],
+                 options={'factorization_method': 'SVDFactorization'})
 
 
 class TestBoundedNelderMead:
@@ -724,8 +809,8 @@ class TestBoundedNelderMead:
 
     def test_invalid_bounds(self):
         prob = Rosenbrock()
-        with raises(ValueError, match=r"one of the lower bounds is greater "
-                                      r"than an upper bound."):
+        message = 'An upper bound is less than the corresponding lower bound.'
+        with pytest.raises(ValueError, match=message):
             bounds = Bounds([-np.inf, 1.0], [4.0, -5.0])
             minimize(prob.fun, [-10, 3],
                      method='Nelder-Mead',
@@ -735,8 +820,8 @@ class TestBoundedNelderMead:
                               "see gh-13846")
     def test_outside_bounds_warning(self):
         prob = Rosenbrock()
-        with raises(UserWarning, match=r"Initial guess is not within "
-                                       r"the specified bounds"):
+        message = "Initial guess is not within the specified bounds"
+        with pytest.warns(UserWarning, match=message):
             bounds = Bounds([-np.inf, 1.0], [4.0, 5.0])
             minimize(prob.fun, [-10, 8],
                      method='Nelder-Mead',

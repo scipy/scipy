@@ -78,10 +78,17 @@ linear_sum_assignment(PyObject* self, PyObject* args, PyObject* kwargs)
     if (!b)
         goto cleanup;
 
-    int ret = solve_rectangular_linear_sum_assignment(
-      num_rows, num_cols, cost_matrix, maximize,
-      PyArray_DATA((PyArrayObject*)a),
-      PyArray_DATA((PyArrayObject*)b));
+    int64_t* a_ptr = PyArray_DATA((PyArrayObject*)a);
+    int64_t* b_ptr = PyArray_DATA((PyArrayObject*)b);
+    int ret;
+
+    Py_BEGIN_ALLOW_THREADS
+
+    ret = solve_rectangular_linear_sum_assignment(
+      num_rows, num_cols, cost_matrix, maximize, a_ptr, b_ptr);
+
+    Py_END_ALLOW_THREADS
+
     if (ret == RECTANGULAR_LSAP_INFEASIBLE) {
         PyErr_SetString(PyExc_ValueError, "cost matrix is infeasible");
         goto cleanup;
@@ -103,7 +110,7 @@ cleanup:
 
 static PyMethodDef lsap_methods[] = {
     { "linear_sum_assignment",
-      linear_sum_assignment,
+      (PyCFunction)linear_sum_assignment,
       METH_VARARGS | METH_KEYWORDS,
 "Solve the linear sum assignment problem.\n"
 "\n"
@@ -167,6 +174,7 @@ static PyMethodDef lsap_methods[] = {
 "\n"
 "Examples\n"
 "--------\n"
+">>> import numpy as np\n"
 ">>> cost = np.array([[4, 1, 3], [2, 0, 5], [3, 2, 2]])\n"
 ">>> from scipy.optimize import linear_sum_assignment\n"
 ">>> row_ind, col_ind = linear_sum_assignment(cost)\n"
@@ -189,9 +197,20 @@ static struct PyModuleDef moduledef = {
     NULL,
 };
 
-PyObject*
+PyMODINIT_FUNC
 PyInit__lsap(void)
 {
+    PyObject *module;
+
     import_array();
-    return PyModule_Create(&moduledef);
+    module = PyModule_Create(&moduledef);
+    if (module == NULL) {
+        return module;
+    }
+
+#if Py_GIL_DISABLED
+    PyUnstable_Module_SetGIL(module, Py_MOD_GIL_NOT_USED);
+#endif
+
+    return module;
 }
