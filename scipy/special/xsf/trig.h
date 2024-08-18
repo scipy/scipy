@@ -138,11 +138,13 @@ XSF_HOST_DEVICE std::complex<T> tanpi(std::complex<T> z) {
         // near pole
 
         z -= 0.5;
-        std::complex<T> z_pi = std::complex<T>(z.real() - std::round(z.real()), z.imag()) * M_PI;
+        std::complex<T> z_pi = std::complex<T>(z.real() - std::round(z.real()), z.imag()) * static_cast<T>(M_PI);
         std::complex<T> z_pi_sq = z_pi * z_pi;
 
-        std::complex<T> y = -155925.0 / (z_pi * (155925.0 + z_pi_sq * (51975.0
-            + z_pi_sq * (20790.0 + z_pi_sq * (8415.0 + z_pi_sq * (3410.0 + z_pi_sq * 1382.0))))));
+        std::complex<T> y = static_cast<T>(-155925.0) / 
+            (z_pi * (static_cast<T>(155925.0) + z_pi_sq * (static_cast<T>(51975.0)
+            + z_pi_sq * (static_cast<T>(20790.0) + z_pi_sq * (static_cast<T>(8415.0)
+            + z_pi_sq * (static_cast<T>(3410.0) + z_pi_sq * static_cast<T>(1382.0)))))));
 
         return y;
     }
@@ -176,11 +178,13 @@ XSF_HOST_DEVICE std::complex<T> cotpi(std::complex<T> z) {
     else {
         // near pole
 
-        std::complex<T> z_pi = std::complex<T>(z.real() - std::round(z.real()), z.imag()) * M_PI;
+        std::complex<T> z_pi = std::complex<T>(z.real() - std::round(z.real()), z.imag()) * static_cast<T>(M_PI);
         std::complex<T> z_pi_sq = z_pi * z_pi;
 
-        std::complex<T> y = 155925.0 / (z_pi * (155925.0 + z_pi_sq * (51975.0
-            + z_pi_sq * (20790.0 + z_pi_sq * (8415.0 + z_pi_sq * (3410.0 + z_pi_sq * 1382.0))))));
+        std::complex<T> y = static_cast<T>(155925.0) / 
+            (z_pi * (static_cast<T>(155925.0) + z_pi_sq * (static_cast<T>(51975.0)
+            + z_pi_sq * (static_cast<T>(20790.0) + z_pi_sq * (static_cast<T>(8415.0)
+            + z_pi_sq * (static_cast<T>(3410.0) + z_pi_sq * static_cast<T>(1382.0)))))));
 
         return y;
     }
