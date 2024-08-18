@@ -35,14 +35,6 @@ class MaximumFlowResult:
     def __repr__(self):
         return 'MaximumFlowResult with value of %d' % self.flow_value
 
-    @property
-    def residual(self):
-        warnings.warn(
-            "The attribute `residual` has been renamed to `flow`"
-            " and will be removed in SciPy 1.11.",
-            DeprecationWarning, stacklevel=2
-        )
-        return self.flow
 
 ctypedef struct edge_result:
     # A structure to store edges found out
