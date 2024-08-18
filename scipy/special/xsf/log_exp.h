@@ -170,8 +170,7 @@ inline double pow1p(double x, double y) {
 }
 
 inline float pow1p(float x, float y) {
-    // Direct formula in double should be accurate for float.
-    return std::pow(static_cast<double>(x), static_cast<double>(y));
+    return pow1p_impl(static_cast<double>(x), static_cast<double>(y));
 }
 
 } // namespace xsf
