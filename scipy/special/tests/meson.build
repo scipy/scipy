@@ -36,6 +36,7 @@ python_sources = [
   'test_owens_t.py',
   'test_pcf.py',
   'test_pdtr.py',
+  'test_pow1p.py',
   'test_powm1.py',
   'test_precompute_expn_asy.py',
   'test_precompute_gammainc.py',
