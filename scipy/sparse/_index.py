@@ -178,7 +178,7 @@ class IndexMixin:
                 # Inner indexing, so treat them like row vectors.
                 i = i[None]
                 j = j[None]
-            x = x.tocoo(copy=True).reshape(x._shape_as_2d)
+            x = x.tocoo(copy=False).reshape(x._shape_as_2d, copy=True)
             broadcast_row = x.shape[0] == 1 and i.shape[0] != 1
             broadcast_col = x.shape[1] == 1 and i.shape[1] != 1
             if not ((broadcast_row or x.shape[0] == i.shape[0]) and
