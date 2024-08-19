@@ -14,6 +14,7 @@
 #include "xsf/loggamma.h"
 #include "xsf/mathieu.h"
 #include "xsf/par_cyl.h"
+#include "xsf/sici.h"
 #include "xsf/specfun.h"
 #include "xsf/sph_bessel.h"
 #include "xsf/sph_harm.h"
@@ -99,8 +100,6 @@
 #include "xsf/cephes/ndtr.h"
 #include "xsf/cephes/ndtri.h"
 #include "xsf/cephes/pdtr.h"
-#include "xsf/cephes/shichi.h"
-#include "xsf/cephes/sici.h"
 
 using namespace std;
 
@@ -472,9 +471,21 @@ double cephes_pdtri_wrap(int k, double y) { return xsf::cephes::pdtri(k, y); }
 
 double cephes_poch_wrap(double x, double m) { return xsf::cephes::poch(x, m); }
 
-int cephes_sici_wrap(double x, double *si, double *ci) { return xsf::cephes::sici(x, si, ci); }
+int sici_wrap(double x, double *si, double *ci) { return xsf::sici(x, si, ci); }
 
-int cephes_shichi_wrap(double x, double *si, double *ci) { return xsf::cephes::shichi(x, si, ci); }
+int shichi_wrap(double x, double *shi, double *chi) { return xsf::shichi(x, shi, chi); }
+
+int csici_wrap(npy_cdouble x, npy_cdouble *si, npy_cdouble *ci) {
+    return xsf::sici(to_complex(x),
+		     reinterpret_cast<complex<double> *>(si),
+		     reinterpret_cast<complex<double> *>(ci));
+}
+
+int cshichi_wrap(npy_cdouble x, npy_cdouble *shi, npy_cdouble *chi) {
+    return xsf::shichi(to_complex(x),
+		       reinterpret_cast<complex<double> *>(shi),
+		       reinterpret_cast<complex<double> *>(chi));
+}
 
 double cephes_smirnov_wrap(int n, double x) { return xsf::cephes::smirnov(n, x); }
 

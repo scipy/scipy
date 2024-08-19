@@ -19,7 +19,7 @@
 namespace xsf {
 
 
-SPECFUN_HOST_DEVICE inline double exp1(double x) {
+XSF_HOST_DEVICE inline double exp1(double x) {
     // ============================================
     // Purpose: Compute exponential integral E1(x)
     // Input :  x  --- Argument of E1(x)
@@ -51,9 +51,9 @@ SPECFUN_HOST_DEVICE inline double exp1(double x) {
     return std::exp(-x)*t;
 }
 
-SPECFUN_HOST_DEVICE inline float exp1(float x) { return exp1(static_cast<double>(x)); }
+XSF_HOST_DEVICE inline float exp1(float x) { return exp1(static_cast<double>(x)); }
 
-SPECFUN_HOST_DEVICE inline std::complex<double> exp1(std::complex<double> z) {
+XSF_HOST_DEVICE inline std::complex<double> exp1(std::complex<double> z) {
     // ====================================================
     // Purpose: Compute complex exponential integral E1(z)
     // Input :  z   --- Argument of E1(z)
@@ -112,11 +112,11 @@ SPECFUN_HOST_DEVICE inline std::complex<double> exp1(std::complex<double> z) {
     return ce1;
 }
 
-SPECFUN_HOST_DEVICE inline std::complex<float> exp1(std::complex<float> z) {
+XSF_HOST_DEVICE inline std::complex<float> exp1(std::complex<float> z) {
     return static_cast<std::complex<float>>(exp1(static_cast<std::complex<double>>(z)));
 }
 
-SPECFUN_HOST_DEVICE inline double expi(double x) {
+XSF_HOST_DEVICE inline double expi(double x) {
     // ============================================
     // Purpose: Compute exponential integral Ei(x)
     // Input :  x  --- Argument of Ei(x)
@@ -154,7 +154,7 @@ SPECFUN_HOST_DEVICE inline double expi(double x) {
     return ei;
 }
 
-SPECFUN_HOST_DEVICE inline float expi(float x) { return expi(static_cast<double>(x)); }
+XSF_HOST_DEVICE inline float expi(float x) { return expi(static_cast<double>(x)); }
     
 std::complex<double> expi(std::complex<double> z) {
     // ============================================
@@ -178,7 +178,7 @@ std::complex<double> expi(std::complex<double> z) {
 }
 
 
-SPECFUN_HOST_DEVICE inline std::complex<float> expi(std::complex<float> z) {
+XSF_HOST_DEVICE inline std::complex<float> expi(std::complex<float> z) {
     return static_cast<std::complex<float>>(expi(static_cast<std::complex<double>>(z)));
 }
 
@@ -210,7 +210,7 @@ namespace detail {
     //    F(x) = ---  ---  ---  ---  ---  ---  ---  ...
     //           1 +  x +  1 +  x +  1 +  x +  1 +
     //
-    SPECFUN_HOST_DEVICE inline double expint1_factor_cont_frac(double x) {
+    XSF_HOST_DEVICE inline double expint1_factor_cont_frac(double x) {
         // The number of terms to use in the truncated continued fraction
         // depends on x.  Larger values of x require fewer terms.
         int m = 20 + (int) (80.0 / x);
@@ -237,7 +237,7 @@ namespace detail {
 //  * F is increasing on [0, inf)
 //  * lim_{x->inf} F(x) = 1.
 //
-SPECFUN_HOST_DEVICE inline double scaled_exp1(double x) {
+XSF_HOST_DEVICE inline double scaled_exp1(double x) {
     if (x < 0) {
         return std::numeric_limits<double>::quiet_NaN();
     }
@@ -261,6 +261,6 @@ SPECFUN_HOST_DEVICE inline double scaled_exp1(double x) {
     return 1 + (-1 + (2 + (-6 + (24 - 120 / x) / x) / x) / x) / x;
 }
 
-SPECFUN_HOST_DEVICE inline float scaled_exp1(float x) { return scaled_exp1(static_cast<double>(x)); }
+XSF_HOST_DEVICE inline float scaled_exp1(float x) { return scaled_exp1(static_cast<double>(x)); }
 
 } // namespace xsf

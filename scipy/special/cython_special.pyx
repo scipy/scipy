@@ -1268,8 +1268,8 @@ cdef extern from r"xsf_wrappers.h":
     npy_double special_log_wright_bessel(npy_double, npy_double, npy_double) nogil
     double special_ellipk(double m) nogil
 
-    npy_int special_csici(npy_cdouble, npy_cdouble *, npy_cdouble *)nogil
-    npy_int special_cshichi(npy_cdouble, npy_cdouble *, npy_cdouble *)nogil
+    npy_int csici_wrap(npy_cdouble, npy_cdouble *, npy_cdouble *)nogil
+    npy_int cshichi_wrap(npy_cdouble, npy_cdouble *, npy_cdouble *)nogil
 
     double cephes_besselpoly(double a, double lmbda, double nu) nogil
     double cephes_beta(double a, double b) nogil
@@ -1364,8 +1364,8 @@ cdef extern from r"xsf_wrappers.h":
     double cephes_struve_h(double v, double z) nogil
     double cephes_struve_l(double v, double z) nogil
 
-    npy_int special_sici(npy_double, npy_double *, npy_double *)nogil
-    npy_int special_shichi(npy_double, npy_double *, npy_double *)nogil
+    npy_int sici_wrap(npy_double, npy_double *, npy_double *)nogil
+    npy_int shichi_wrap(npy_double, npy_double *, npy_double *)nogil
 
 from ._agm cimport agm as _func_agm
 ctypedef double _proto_agm_t(double, double) noexcept nogil
@@ -3318,11 +3318,11 @@ cdef void shichi(Dd_number_t x0, Dd_number_t *y0, Dd_number_t *y1) noexcept nogi
     cdef npy_cdouble tmp0
     cdef npy_cdouble tmp1
     if Dd_number_t is double_complex:
-        special_cshichi(_complexstuff.npy_cdouble_from_double_complex(x0), &tmp0, &tmp1)
+        cshichi_wrap(_complexstuff.npy_cdouble_from_double_complex(x0), &tmp0, &tmp1)
         y0[0] = _complexstuff.double_complex_from_npy_cdouble(tmp0)
         y1[0] = _complexstuff.double_complex_from_npy_cdouble(tmp1)
     elif Dd_number_t is double:
-        special_shichi(x0, y0, y1)
+        shichi_wrap(x0, y0, y1)
     else:
         if Dd_number_t is double_complex:
             y0[0] = NAN
@@ -3342,11 +3342,11 @@ cdef void sici(Dd_number_t x0, Dd_number_t *y0, Dd_number_t *y1) noexcept nogil:
     cdef npy_cdouble tmp0
     cdef npy_cdouble tmp1
     if Dd_number_t is double_complex:
-        special_csici(_complexstuff.npy_cdouble_from_double_complex(x0), &tmp0, &tmp1)
+        csici_wrap(_complexstuff.npy_cdouble_from_double_complex(x0), &tmp0, &tmp1)
         y0[0] = _complexstuff.double_complex_from_npy_cdouble(tmp0)
         y1[0] = _complexstuff.double_complex_from_npy_cdouble(tmp1)
     elif Dd_number_t is double:
-        special_sici(x0, y0, y1)
+        sici_wrap(x0, y0, y1)
     else:
         if Dd_number_t is double_complex:
             y0[0] = NAN

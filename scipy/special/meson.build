@@ -1,3 +1,4 @@
+
 # TODO: 64-bit BLAS and LAPACK
 
 _ufuncs_pxi_pxd_sources = [
@@ -286,8 +287,6 @@ foreach npz_file: npz_files
   )
 endforeach
 
-
-<<<<<<< HEAD
 # Headers for special functions in `xsf` library are included in
 # both build and install dirs for development purposes. Not public!
 

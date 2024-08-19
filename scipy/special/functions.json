@@ -852,14 +852,14 @@
     },
     "shichi": {
         "xsf_wrappers.h": {
-            "special_cshichi": "D*DD->*i",
-            "special_shichi": "d*dd->*i"
+            "cshichi_wrap": "D*DD->*i",
+            "shichi_wrap": "d*dd->*i"
         }
     },
     "sici": {
         "xsf_wrappers.h": {
-            "special_csici": "D*DD->*i",
-            "special_sici": "d*dd->*i"
+            "csici_wrap": "D*DD->*i",
+            "sici_wrap": "d*dd->*i"
         }
     },
     "sindg": {

@@ -22,10 +22,10 @@
 #include "cephes/sici.h"
 #include "cephes/shichi.h"
 
-namespace special {
+namespace xsf {
 namespace detail {
     
-    SPECFUN_HOST_DEVICE inline void sici_power_series(int sgn, std::complex<double> z,
+    XSF_HOST_DEVICE inline void sici_power_series(int sgn, std::complex<double> z,
 						       std::complex<double> *s, std::complex<double> *c) {
 	/* DLMF 6.6.5 and 6.6.6. If sgn = -1 computes si/ci, and if sgn = 1
 	 * computes shi/chi.
@@ -51,13 +51,13 @@ namespace detail {
 }
 
     
-SPECFUN_HOST_DEVICE inline int sici(std::complex<double> z,
+XSF_HOST_DEVICE inline int sici(std::complex<double> z,
 				    std::complex<double> *si, std::complex<double> *ci) {
     /* Compute sin/cos integrals at complex arguments. The algorithm
      * largely follows that of [1].
      */
 
-    constexpr double EULER = special::cephes::detail::SCIPY_EULER;
+    constexpr double EULER = xsf::cephes::detail::SCIPY_EULER;
 
     if (z == std::numeric_limits<double>::infinity()) {
         *si = M_PI_2;
@@ -108,7 +108,7 @@ SPECFUN_HOST_DEVICE inline int sici(std::complex<double> z,
     return 0;
 }
 
-SPECFUN_HOST_DEVICE inline int sici(std::complex<float> z,
+XSF_HOST_DEVICE inline int sici(std::complex<float> z,
 				    std::complex<float> *si_f, std::complex<float> *ci_f) {
     std::complex<double> si;
     std::complex<double> ci;
@@ -118,12 +118,12 @@ SPECFUN_HOST_DEVICE inline int sici(std::complex<float> z,
     return res;
 }
 
-SPECFUN_HOST_DEVICE inline int shichi(std::complex<double> z,
+XSF_HOST_DEVICE inline int shichi(std::complex<double> z,
 				       std::complex<double> *shi, std::complex<double> *chi) {
     /* Compute sinh/cosh integrals at complex arguments. The algorithm
      * largely follows that of [1].
      */
-    constexpr double EULER = special::cephes::detail::SCIPY_EULER;
+    constexpr double EULER = xsf::cephes::detail::SCIPY_EULER;
     if (z == std::numeric_limits<double>::infinity()) {
         *shi = std::numeric_limits<double>::infinity();
         *chi = std::numeric_limits<double>::infinity();
@@ -162,7 +162,7 @@ SPECFUN_HOST_DEVICE inline int shichi(std::complex<double> z,
     return 0;
 }
 
-SPECFUN_HOST_DEVICE inline int shichi(std::complex<float> z,
+XSF_HOST_DEVICE inline int shichi(std::complex<float> z,
 				    std::complex<float> *shi_f, std::complex<float> *chi_f) {
     std::complex<double> shi;
     std::complex<double> chi;
@@ -172,15 +172,15 @@ SPECFUN_HOST_DEVICE inline int shichi(std::complex<float> z,
     return res;
 }
 
-SPECFUN_HOST_DEVICE inline int sici(double x, double *si, double *ci) {
+XSF_HOST_DEVICE inline int sici(double x, double *si, double *ci) {
     return cephes::sici(x, si, ci);
 }
 
-SPECFUN_HOST_DEVICE inline int shichi(double x, double *shi, double *chi) {
+XSF_HOST_DEVICE inline int shichi(double x, double *shi, double *chi) {
     return cephes::shichi(x, shi, chi);
 }
 
-SPECFUN_HOST_DEVICE inline int sici(float x, float *si_f, float *ci_f) {
+XSF_HOST_DEVICE inline int sici(float x, float *si_f, float *ci_f) {
     double si;
     double ci;
     int res = cephes::sici(x, &si, &ci);
@@ -189,7 +189,7 @@ SPECFUN_HOST_DEVICE inline int sici(float x, float *si_f, float *ci_f) {
     return res;
 }
 
-SPECFUN_HOST_DEVICE inline int shichi(float x, float *shi_f, float *chi_f) {
+XSF_HOST_DEVICE inline int shichi(float x, float *shi_f, float *chi_f) {
     double shi;
     double chi;
     int res = cephes::shichi(x, &shi, &chi);
