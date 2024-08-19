@@ -190,7 +190,7 @@ jobs:
           # When the python version is released please comment out this section, but do not remove
           # (there will soon be another dev version to target).
           DEPS0="pip install -U --pre numpy>=2.1.0rc1"
-          DEPS1="pip install ninja meson-python pybind11 pythran cython setuptools<73.0.0"
+          DEPS1="pip install ninja meson-python pybind11 pythran cython"
           
           CIBW="$DEPS0;$DEPS1;bash {project}/tools/wheels/cibw_before_build_linux.sh {project}"
           echo "CIBW_BEFORE_BUILD_LINUX=$CIBW" >> "$GITHUB_ENV"
