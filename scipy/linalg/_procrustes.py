@@ -85,7 +85,7 @@ def orthogonal_procrustes(A, B, check_finite=True):
     >>> B = A @ Q
 
     `orthogonal_procrustes` recovers the unitary matrix ``Q``
-    from ``A` and ``B``.
+    from ``A`` and ``B``.
 
     >>> R, _ = orthogonal_procrustes(A, B)
     >>> np.allclose(R, Q)
