@@ -125,7 +125,7 @@ jobs:
       - save_cache:
           key: -{{ checksum "doc/Makefile" }}-{{ .Branch }}
           paths:
-            - doc/build/source/_contents
+            - doc/source/_contents
 
       - run:
           name: Check sphinx log for warnings (which are treated as errors)
