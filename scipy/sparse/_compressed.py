@@ -1570,7 +1570,8 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
         # Ensure the old shape can be broadcast to the new shape
         if any((o != 1 and o != n) for o, n in zip(old_shape, shape)):
-            raise ValueError(f"current shape {old_shape} cannot be broadcast to new shape {shape}")
+            raise ValueError(f'current shape {old_shape} cannot be'
+                             f' broadcast to new shape {shape}')
 
         if self.nnz == 0: # array has no non zero elements
             return  self.__class__(np.zeros(shape, dtype=self.dtype))
