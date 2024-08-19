@@ -113,7 +113,7 @@ jobs:
 
       - restore_cache:
           keys:
-            - -{{ checksum "doc/Makefile" }}-{{ .Branch }}-
+            - -{{ checksum "dev.py" }}-{{ .Branch }}-
 
       - run:
           name: build docs
@@ -121,11 +121,6 @@ jobs:
           command: |
             export PYTHONPATH=$PWD/build-install/lib/python3.11/site-packages
             python dev.py --no-build doc 2>&1 | tee sphinx_log.txt
-
-      - save_cache:
-          key: -{{ checksum "doc/Makefile" }}-{{ .Branch }}-
-          paths:
-            - $PWD/doc/source/_contents
 
       - run:
           name: Check sphinx log for warnings (which are treated as errors)
@@ -141,6 +136,11 @@ jobs:
           root: doc/build
           paths:
             - html
+
+      - save_cache:
+          key: -{{ checksum "dev.py" }}-{{ .Branch }}-
+          paths:
+            - doc/source
 
 # Run benchmarks
 
