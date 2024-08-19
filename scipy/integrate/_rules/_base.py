@@ -46,25 +46,20 @@ class Rule:
     >>> # Gauss-Legendre is 1D, so we find the 3D product rule:
     >>> gauss_3d = ProductFixed([gauss, gauss, gauss])
     >>> class CustomRule(Rule):
-    ...     def estimate(self, f, a, b, args=(), kwargs=None):
-    ...         kwargs = kwargs or {}
-    ...         return genz.estimate(f, a, b, args, kwargs)
-    ...     def estimate_error(self, f, a, b, args=(), kwargs=None):
-    ...         kwargs = kwargs or {}
+    ...     def estimate(self, f, a, b, args=()):
+    ...         return genz.estimate(f, a, b, args)
+    ...     def estimate_error(self, f, a, b, args=()):
     ...         return np.abs(
-    ...             genz.estimate(f, a, b, args, kwargs)
-    ...             - gauss_3d.estimate(f, a, b, args, kwargs)
+    ...             genz.estimate(f, a, b, args)
+    ...             - gauss_3d.estimate(f, a, b, args)
     ...         )
-    >>> np.random.seed(1)
+    >>> rng = np.random.default_rng()
     >>> res = cubature(
     ...     f=f,
     ...     a=np.array([0, 0, 0]),
     ...     b=np.array([1, 1, 1]),
     ...     rule=CustomRule(),
-    ...     kwargs={
-    ...         "r": np.random.rand(2),
-    ...         "alphas": np.random.rand(3, 2, 3),
-    ...     }
+    ...     args=(rng.random((2,)), rng.random((3, 2, 3)))
     ... )
     >>> res.estimate
      array([[-0.95179502,  0.12444608],
@@ -82,7 +77,7 @@ class Rule:
     ... ) # Equivalent to CustomRule()
     """
 
-    def estimate(self, f, a, b, args=(), kwargs=None):
+    def estimate(self, f, a, b, args=()):
         r"""
         Calculate estimate of integral of `f` in rectangular region described by
         corners `a` and ``b``.
@@ -91,7 +86,7 @@ class Rule:
         ----------
         f : callable
             Function to integrate. `f` must have the signature::
-                f(x : ndarray, \*args, \*\*kwargs) -> ndarray
+                f(x : ndarray, \*args) -> ndarray
 
             `f` should accept arrays ``x`` of shape::
                 (npoints, ndim)
@@ -107,8 +102,6 @@ class Rule:
             are currently not supported.
         args : tuple, optional
             Additional positional args passed to ``f``, if any.
-        kwargs : tuple, optional
-            Additional keyword args passed to ``f``, if any.
 
         Returns
         -------
@@ -119,7 +112,7 @@ class Rule:
         """
         raise NotImplementedError
 
-    def estimate_error(self, f, a, b, args=(), kwargs=None):
+    def estimate_error(self, f, a, b, args=()):
         r"""
         Estimate the error of the approximation for the integral of `f` in rectangular
         region described by corners `a` and `b`.
@@ -137,7 +130,7 @@ class Rule:
         ----------
         f : callable
             Function to estimate error for. `f` must have the signature::
-                f(x : ndarray, \*args, \*\*kwargs) -> ndarray
+                f(x : ndarray, \*args) -> ndarray
 
             `f` should accept arrays `x` of shape::
                 (npoints, ndim)
@@ -153,8 +146,6 @@ class Rule:
             are currently not supported.
         args : tuple, optional
             Additional positional args passed to `f`, if any.
-        kwargs : tuple, optional
-            Additional keyword args passed to `f`, if any.
 
         Returns
         -------
@@ -164,11 +155,11 @@ class Rule:
             of shape ``(output_dim_1, ..., output_dim_n)``.
         """
 
-        est = self.estimate(f, a, b, args, kwargs)
+        est = self.estimate(f, a, b, args)
         refined_est = 0
 
         for a_k, b_k in _subregion_coordinates(a, b):
-            refined_est += self.estimate(f, a_k, b_k, args, kwargs)
+            refined_est += self.estimate(f, a_k, b_k, args)
 
         return np.abs(est - refined_est)
 
@@ -218,7 +209,7 @@ class FixedRule(Rule):
     def nodes_and_weights(self):
         raise NotImplementedError
 
-    def estimate(self, f, a, b, args=(), kwargs=None):
+    def estimate(self, f, a, b, args=()):
         r"""
         Calculate estimate of integral of `f` in rectangular region described by
         corners `a` and `b` as ``sum(weights * f(nodes))``.
@@ -230,7 +221,7 @@ class FixedRule(Rule):
         ----------
         f : callable
             Function to integrate. `f` must have the signature::
-                f(x : ndarray, \*args, \*\*kwargs) -> ndarray
+                f(x : ndarray, \*args) -> ndarray
 
             `f` should accept arrays `x` of shape::
                 (npoints, ndim)
@@ -246,8 +237,6 @@ class FixedRule(Rule):
             are currently not supported.
         args : tuple, optional
             Additional positional args passed to `f`, if any.
-        kwargs : tuple, optional
-            Additional keyword args passed to `f`, if any.
 
         Returns
         -------
@@ -258,7 +247,7 @@ class FixedRule(Rule):
         """
         nodes, weights = self.nodes_and_weights
 
-        return _apply_fixed_rule(f, a, b, nodes, weights, args, kwargs)
+        return _apply_fixed_rule(f, a, b, nodes, weights, args)
 
 
 class NestedRule(Rule):
@@ -331,13 +320,13 @@ class NestedRule(Rule):
         self.higher = higher
         self.lower = lower
 
-    def estimate(self, f, a, b, args, kwargs):
-        return self.higher.estimate(f, a, b, args, kwargs)
+    def estimate(self, f, a, b, args=()):
+        return self.higher.estimate(f, a, b, args)
 
-    def estimate_error(self, f, a, b, args, kwargs):
+    def estimate_error(self, f, a, b, args=()):
         return np.abs(
-            self.higher.estimate(f, a, b, args, kwargs)
-            - self.lower.estimate(f, a, b, args, kwargs)
+            self.higher.estimate(f, a, b, args)
+            - self.lower.estimate(f, a, b, args)
         )
 
 
@@ -399,7 +388,7 @@ class NestedFixedRule(FixedRule):
         else:
             raise NotImplementedError
 
-    def estimate_error(self, f, a, b, args=(), kwargs=None):
+    def estimate_error(self, f, a, b, args=()):
         r"""
         Estimate the error of the approximation for the integral of `f` in rectangular
         region described by corners `a` and `b`.
@@ -408,7 +397,7 @@ class NestedFixedRule(FixedRule):
         ----------
         f : callable
             Function to estimate error for. `f` must have the signature::
-                f(x : ndarray, \*args, \*\*kwargs) -> ndarray
+                f(x : ndarray, \*args) -> ndarray
 
             `f` should accept arrays `x` of shape::
                 (npoints, ndim)
@@ -424,8 +413,6 @@ class NestedFixedRule(FixedRule):
             are currently not supported.
         args : tuple, optional
             Additional positional args passed to `f`, if any.
-        kwargs : tuple, optional
-            Additional keyword args passed to `f`, if any.
 
         Returns
         -------
@@ -442,7 +429,7 @@ class NestedFixedRule(FixedRule):
         error_weights = np.concatenate([weights, -lower_weights], axis=0)
 
         return np.abs(
-            _apply_fixed_rule(f, a, b, error_nodes, error_weights, args, kwargs)
+            _apply_fixed_rule(f, a, b, error_nodes, error_weights, args)
         )
 
 
@@ -621,9 +608,7 @@ def _subregion_coordinates(a, b):
         yield np.array(a_sub), np.array(b_sub)
 
 
-def _apply_fixed_rule(f, a, b, orig_nodes, orig_weights, args=(), kwargs=None):
-    kwargs = kwargs or {}
-
+def _apply_fixed_rule(f, a, b, orig_nodes, orig_weights, args=()):
     # Ensure orig_nodes are at least 2D, since 1D cubature methods can return arrays of
     # shape (npoints,) rather than (npoints, 1)
     if orig_nodes.ndim == 1:
@@ -652,7 +637,7 @@ def _apply_fixed_rule(f, a, b, orig_nodes, orig_weights, args=(), kwargs=None):
     weight_scale_factor = math.prod(lengths) / 2**rule_ndim
     weights = orig_weights * weight_scale_factor
 
-    f_nodes = f(nodes, *args, **kwargs)
+    f_nodes = f(nodes, *args)
     weights_reshaped = weights.reshape(-1, *([1] * (f_nodes.ndim - 1)))
 
     # f(nodes) will have shape (num_nodes, output_dim_1, ..., output_dim_n)
