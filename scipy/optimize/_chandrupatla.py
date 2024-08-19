@@ -2,8 +2,7 @@ import math
 import numpy as np
 import scipy._lib._elementwise_iterative_method as eim
 from scipy._lib._util import _RichResult
-from scipy._lib._array_api import (xp_clip, xp_minimum, xp_sign, copy as xp_copy,
-                                   xp_take_along_axis)
+from scipy._lib._array_api import xp_sign, xp_copy, xp_take_along_axis
 
 # TODO:
 # - (maybe?) don't use fancy indexing assignment
@@ -142,7 +141,7 @@ def _chandrupatla(func, a, b, *, args=(), xatol=None, xrtol=None,
     xatol = 4*finfo.smallest_normal if xatol is None else xatol
     xrtol = 4*finfo.eps if xrtol is None else xrtol
     fatol = finfo.smallest_normal if fatol is None else fatol
-    frtol = frtol * xp_minimum(xp.abs(f1), xp.abs(f2))
+    frtol = frtol * xp.minimum(xp.abs(f1), xp.abs(f2))
     maxiter = (math.log2(finfo.max) - math.log2(finfo.smallest_normal)
                if maxiter is None else maxiter)
     work = _RichResult(x1=x1, f1=f1, x2=x2, f2=f2, x3=None, f3=None, t=0.5,
@@ -226,7 +225,7 @@ def _chandrupatla(func, a, b, *, args=(), xatol=None, xrtol=None,
         # [1] Figure 1 (last box; see also BASIC in appendix with comment
         # "Adjust T Away from the Interval Boundary")
         tl = 0.5 * work.tol / work.dx
-        work.t = xp_clip(t, tl, 1 - tl)
+        work.t = xp.clip(t, tl, 1 - tl)
 
     def customize_result(res, shape):
         xl, xr, fl, fr = res['xl'], res['xr'], res['fl'], res['fr']
