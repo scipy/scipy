@@ -124,7 +124,7 @@ XSF_HOST_DEVICE std::complex<T> tanpi(std::complex<T> z) {
 
     T n = 1.0 + u * (2.0 * cephes::cospi(2.0 * z.real()) + u);
 
-    if (std::abs(n) > 1e-3) {
+    if (std::abs(n) > 0.025) {
         T r = 2.0 * u * cephes::sinpi(2.0 * z.real()) / n;
         T i = (u + 1.0) * (u - 1.0) / n;
 
@@ -165,7 +165,7 @@ XSF_HOST_DEVICE std::complex<T> cotpi(std::complex<T> z) {
 
     T n = 1.0 + u * (-2.0 * cephes::cospi(2.0 * z.real()) + u);
 
-    if (std::abs(n) > 1e-3) {
+    if (std::abs(n) > 0.025) {
         T r = 2.0 * u * cephes::sinpi(2.0 * z.real()) / n;
         T i = (u + 1.0) * (u - 1.0) / n;
 
