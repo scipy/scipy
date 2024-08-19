@@ -81,8 +81,8 @@ cdef inline number_t eval_jacobi(double n, double alpha, double beta, number_t x
     return d * hyp2f1(a, b, c, g)
 
 @cython.cdivision(True)
-cdef inline double eval_jacobi_l(long n, double alpha, double beta, double x) noexcept nogil:
-    cdef long kk
+cdef inline double eval_jacobi_l(Py_ssize_t n, double alpha, double beta, double x) noexcept nogil:
+    cdef Py_ssize_t kk
     cdef double p, d
     cdef double k, t
 
@@ -111,7 +111,7 @@ cdef inline number_t eval_sh_jacobi(double n, double p, double q, number_t x) no
     return eval_jacobi(n, p-q, q-1, 2*x-1) / binom_wrap(2*n + p - 1, n)
 
 @cython.cdivision(True)
-cdef inline double eval_sh_jacobi_l(long n, double p, double q, double x) noexcept nogil:
+cdef inline double eval_sh_jacobi_l(Py_ssize_t n, double p, double q, double x) noexcept nogil:
     return eval_jacobi_l(n, p-q, q-1, 2*x-1) / binom_wrap(2*n + p - 1, n)
 
 #-----------------------------------------------------------------------------
@@ -131,9 +131,9 @@ cdef inline number_t eval_gegenbauer(double n, double alpha, number_t x) noexcep
     return d * hyp2f1(a, b, c, g)
 
 @cython.cdivision(True)
-cdef inline double eval_gegenbauer_l(long n, double alpha, double x) noexcept nogil:
-    cdef long kk
-    cdef long a, b
+cdef inline double eval_gegenbauer_l(Py_ssize_t n, double alpha, double x) noexcept nogil:
+    cdef Py_ssize_t kk
+    cdef Py_ssize_t a, b
     cdef double p, d
     cdef double k
 
@@ -198,9 +198,9 @@ cdef inline number_t eval_chebyt(double n, number_t x) noexcept nogil:
     g = 0.5*(1-x)
     return hyp2f1(a, b, c, g)
 
-cdef inline double eval_chebyt_l(long k, double x) noexcept nogil:
+cdef inline double eval_chebyt_l(Py_ssize_t k, double x) noexcept nogil:
     # Use Chebyshev T recurrence directly, see [MH]
-    cdef long m
+    cdef Py_ssize_t m
     cdef double b2, b1, b0
 
     if k < 0:
@@ -232,8 +232,8 @@ cdef inline number_t eval_chebyu(double n, number_t x) noexcept nogil:
     g = 0.5*(1-x)
     return d*hyp2f1(a, b, c, g)
 
-cdef inline double eval_chebyu_l(long k, double x) noexcept nogil:
-    cdef long m
+cdef inline double eval_chebyu_l(Py_ssize_t k, double x) noexcept nogil:
+    cdef Py_ssize_t m
     cdef int sign
     cdef double b2, b1, b0
 
@@ -263,7 +263,7 @@ cdef inline double eval_chebyu_l(long k, double x) noexcept nogil:
 cdef inline number_t eval_chebys(double n, number_t x) noexcept nogil:
     return eval_chebyu(n, 0.5*x)
 
-cdef inline double eval_chebys_l(long n, double x) noexcept nogil:
+cdef inline double eval_chebys_l(Py_ssize_t n, double x) noexcept nogil:
     return eval_chebyu_l(n, 0.5*x)
 
 #-----------------------------------------------------------------------------
@@ -273,7 +273,7 @@ cdef inline double eval_chebys_l(long n, double x) noexcept nogil:
 cdef inline number_t eval_chebyc(double n, number_t x) noexcept nogil:
     return 2*eval_chebyt(n, 0.5*x)
 
-cdef inline double eval_chebyc_l(long n, double x) noexcept nogil:
+cdef inline double eval_chebyc_l(Py_ssize_t n, double x) noexcept nogil:
     return 2*eval_chebyt_l(n, 0.5*x)
 
 #-----------------------------------------------------------------------------
@@ -283,7 +283,7 @@ cdef inline double eval_chebyc_l(long n, double x) noexcept nogil:
 cdef inline number_t eval_sh_chebyt(double n, number_t x) noexcept nogil:
     return eval_chebyt(n, 2*x-1)
 
-cdef inline double eval_sh_chebyt_l(long n, double x) noexcept nogil:
+cdef inline double eval_sh_chebyt_l(Py_ssize_t n, double x) noexcept nogil:
     return eval_chebyt_l(n, 2*x-1)
 
 #-----------------------------------------------------------------------------
@@ -293,7 +293,7 @@ cdef inline double eval_sh_chebyt_l(long n, double x) noexcept nogil:
 cdef inline number_t eval_sh_chebyu(double n, number_t x) noexcept nogil:
     return eval_chebyu(n, 2*x-1)
 
-cdef inline double eval_sh_chebyu_l(long n, double x) noexcept nogil:
+cdef inline double eval_sh_chebyu_l(Py_ssize_t n, double x) noexcept nogil:
     return eval_chebyu_l(n, 2*x-1)
 
 #-----------------------------------------------------------------------------
@@ -312,8 +312,8 @@ cdef inline number_t eval_legendre(double n, number_t x) noexcept nogil:
     return d*hyp2f1(a, b, c, g)
 
 @cython.cdivision(True)
-cdef inline double eval_legendre_l(long n, double x) noexcept nogil:
-    cdef long kk, a
+cdef inline double eval_legendre_l(Py_ssize_t n, double x) noexcept nogil:
+    cdef Py_ssize_t kk, a
     cdef double p, d
     cdef double k
 
@@ -361,7 +361,7 @@ cdef inline double eval_legendre_l(long n, double x) noexcept nogil:
 cdef inline number_t eval_sh_legendre(double n, number_t x) noexcept nogil:
     return eval_legendre(n, 2*x-1)
 
-cdef inline double eval_sh_legendre_l(long n, double x) noexcept nogil:
+cdef inline double eval_sh_legendre_l(Py_ssize_t n, double x) noexcept nogil:
     return eval_legendre_l(n, 2*x-1)
 
 #-----------------------------------------------------------------------------
@@ -384,8 +384,8 @@ cdef inline number_t eval_genlaguerre(double n, double alpha, number_t x) noexce
     return d * hyp1f1(a, b, g)
 
 @cython.cdivision(True)
-cdef inline double eval_genlaguerre_l(long n, double alpha, double x) noexcept nogil:
-    cdef long kk
+cdef inline double eval_genlaguerre_l(Py_ssize_t n, double alpha, double x) noexcept nogil:
+    cdef Py_ssize_t kk
     cdef double p, d
     cdef double k
 
@@ -419,15 +419,15 @@ cdef inline double eval_genlaguerre_l(long n, double alpha, double x) noexcept n
 cdef inline number_t eval_laguerre(double n, number_t x) noexcept nogil:
     return eval_genlaguerre(n, 0., x)
 
-cdef inline double eval_laguerre_l(long n, double x) noexcept nogil:
+cdef inline double eval_laguerre_l(Py_ssize_t n, double x) noexcept nogil:
     return eval_genlaguerre_l(n, 0., x)
 
 #-----------------------------------------------------------------------------
 # Hermite (statistician's)
 #-----------------------------------------------------------------------------
 
-cdef inline double eval_hermitenorm(long n, double x) noexcept nogil:
-    cdef long k
+cdef inline double eval_hermitenorm(Py_ssize_t n, double x) noexcept nogil:
+    cdef Py_ssize_t k
     cdef double y1, y2, y3
 
     if isnan(x):
@@ -458,7 +458,7 @@ cdef inline double eval_hermitenorm(long n, double x) noexcept nogil:
 #-----------------------------------------------------------------------------
 
 @cython.cdivision(True)
-cdef inline double eval_hermite(long n, double x) noexcept nogil:
+cdef inline double eval_hermite(Py_ssize_t n, double x) noexcept nogil:
     if n < 0:
         sf_error.error(
             "eval_hermite",
