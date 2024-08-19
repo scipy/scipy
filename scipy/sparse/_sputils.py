@@ -302,7 +302,7 @@ def validateaxis(axis) -> None:
 
 
 def check_shape(args, current_shape=None, *, allow_1d=False,
-                allow_nd=False)
+                allow_nd=False):
     """Imitate numpy.matrix handling of shape arguments
 
     Parameters
