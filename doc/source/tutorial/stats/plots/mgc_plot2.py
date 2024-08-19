@@ -39,10 +39,10 @@ def mgc_plot(x, y, mgc_dict):
     ax.set_ylim(0, 100)
 
 
-np.random.seed(12345678)
+rng = np.random.default_rng()
 x = np.linspace(-1, 1, num=100)
-y = x + 0.3 * np.random.random(x.size)
+y = x + 0.3 * rng.random(x.size)
 
 
-_, _, mgc_dict = multiscale_graphcorr(x, y)
+_, _, mgc_dict = multiscale_graphcorr(x, y, random_state=rng)
 mgc_plot(x, y, mgc_dict)

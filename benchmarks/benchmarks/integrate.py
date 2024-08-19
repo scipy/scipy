@@ -1,31 +1,30 @@
 import numpy as np
-from .common import Benchmark
+from .common import Benchmark, safe_import
 
-from scipy.integrate import quad
+from scipy.integrate import quad, cumulative_simpson
 
-try:
+with safe_import():
     import ctypes
     import scipy.integrate._test_multivariate as clib_test
     from scipy._lib import _ccallback_c
-except ImportError:
-    _ccallback_c = None
 
-try:
+with safe_import() as exc:
     from scipy import LowLevelCallable
     from_cython = LowLevelCallable.from_cython
-except ImportError:
-    LowLevelCallable = lambda func, data: (func, data)
-    from_cython = lambda *a: a
+if exc.error:
+    def LowLevelCallable(func, data):
+        return (func, data)
 
-try:
+    def from_cython(*a):
+        return a
+
+with safe_import() as exc:
     import cffi
-except ImportError:
-    cffi = None
+if exc.error:
+    cffi = None  # noqa: F811
 
-try:
+with safe_import():
     from scipy.integrate import solve_bvp
-except ImportError:
-    pass
 
 
 class SolveBVP(Benchmark):
@@ -103,7 +102,8 @@ class Quad(Benchmark):
             voidp = ctypes.cast(self.f_ctypes, ctypes.c_void_p)
             address = voidp.value
             ffi = cffi.FFI()
-            self.f_cffi = LowLevelCallable(ffi.cast("double (*)(int, double *)", address))
+            self.f_cffi = LowLevelCallable(ffi.cast("double (*)(int, double *)",
+                                                    address))
 
     def time_quad_python(self):
         quad(self.f_python, 0, np.pi)
@@ -116,3 +116,17 @@ class Quad(Benchmark):
 
     def time_quad_cffi(self):
         quad(self.f_cffi, 0, np.pi)
+
+
+class CumulativeSimpson(Benchmark):
+
+    def setup(self) -> None:
+        x, self.dx = np.linspace(0, 5, 1000, retstep=True)
+        self.y = np.sin(2*np.pi*x)
+        self.y2 = np.tile(self.y, (100, 100, 1))
+
+    def time_1d(self) -> None:
+        cumulative_simpson(self.y, dx=self.dx)
+
+    def time_multid(self) -> None:
+        cumulative_simpson(self.y2, dx=self.dx)

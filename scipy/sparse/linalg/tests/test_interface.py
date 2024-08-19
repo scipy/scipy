@@ -1,25 +1,20 @@
-"""Test functions for the sparse.linalg.interface module
+"""Test functions for the sparse.linalg._interface module
 """
 
 from functools import partial
 from itertools import product
 import operator
-import pytest
 from pytest import raises as assert_raises, warns
 from numpy.testing import assert_, assert_equal
 
 import numpy as np
 import scipy.sparse as sparse
 
-from scipy.sparse.linalg import interface
-from scipy.sparse.sputils import matrix
+import scipy.sparse.linalg._interface as interface
+from scipy.sparse._sputils import matrix
 
 
-# Only test matmul operator (A @ B) when available (Python 3.5+)
-TEST_MATMUL = hasattr(operator, 'matmul')
-
-
-class TestLinearOperator(object):
+class TestLinearOperator:
     def setup_method(self):
         self.A = np.array([[1,2,3],
                            [4,5,6]])
@@ -118,8 +113,23 @@ class TestLinearOperator(object):
             assert_(isinstance(A+A, interface._SumLinearOperator))
             assert_(isinstance(-A, interface._ScaledLinearOperator))
             assert_(isinstance(A-A, interface._SumLinearOperator))
+            assert_(isinstance(A/2, interface._ScaledLinearOperator))
+            assert_(isinstance(A/2j, interface._ScaledLinearOperator))
+            assert_(((A * 3) / 3).args[0] is A)  # check for simplification
 
-            assert_((2j*A).dtype == np.complex_)
+            # Test that prefactor is of _ScaledLinearOperator is not mutated
+            # when the operator is multiplied by a number
+            result = A @ np.array([1, 2, 3])
+            B = A * 3
+            C = A / 5
+            assert_equal(A @ np.array([1, 2, 3]), result)
+
+            assert_((2j*A).dtype == np.complex128)
+
+            # Test division by non-scalar
+            msg = "Can only divide a linear operator by a scalar."
+            with assert_raises(ValueError, match=msg):
+                A / np.array([1, 2])
 
             assert_raises(ValueError, A.matvec, np.array([1,2]))
             assert_raises(ValueError, A.matvec, np.array([1,2,3,4]))
@@ -172,9 +182,6 @@ class TestLinearOperator(object):
             assert_(isinstance(C**2, interface._PowerLinearOperator))
 
     def test_matmul(self):
-        if not TEST_MATMUL:
-            pytest.skip("matmul is only tested in Python 3.5+")
-
         D = {'shape': self.A.shape,
              'matvec': lambda x: np.dot(self.A, x).reshape(self.A.shape[0]),
              'rmatvec': lambda x: np.dot(self.A.T.conj(),
@@ -182,18 +189,22 @@ class TestLinearOperator(object):
              'rmatmat': lambda x: np.dot(self.A.T.conj(), x),
              'matmat': lambda x: np.dot(self.A, x)}
         A = interface.LinearOperator(**D)
-        B = np.array([[1, 2, 3],
+        B = np.array([[1 + 1j, 2, 3],
                       [4, 5, 6],
                       [7, 8, 9]])
         b = B[0]
 
         assert_equal(operator.matmul(A, b), A * b)
+        assert_equal(operator.matmul(A, b.reshape(-1, 1)), A * b.reshape(-1, 1))
         assert_equal(operator.matmul(A, B), A * B)
+        assert_equal(operator.matmul(b, A.H), b * A.H)
+        assert_equal(operator.matmul(b.reshape(1, -1), A.H), b.reshape(1, -1) * A.H)
+        assert_equal(operator.matmul(B, A.H), B * A.H)
         assert_raises(ValueError, operator.matmul, A, 2)
         assert_raises(ValueError, operator.matmul, 2, A)
 
 
-class TestAsLinearOperator(object):
+class TestAsLinearOperator:
     def setup_method(self):
         self.cases = []
 
@@ -265,11 +276,11 @@ class TestAsLinearOperator(object):
                        for M, A in make_cases(original.T, np.float64)]
 
         original = np.array([[1, 2j, 3j], [4j, 5j, 6]])
-        self.cases += make_cases(original, np.complex_)
+        self.cases += make_cases(original, np.complex128)
         self.cases += [(interface.aslinearoperator(M).T, A.T)
-                       for M, A in make_cases(original.T, np.complex_)]
+                       for M, A in make_cases(original.T, np.complex128)]
         self.cases += [(interface.aslinearoperator(M).H, A.T.conj())
-                       for M, A in make_cases(original.T, np.complex_)]
+                       for M, A in make_cases(original.T, np.complex128)]
 
     def test_basic(self):
 
@@ -281,7 +292,7 @@ class TestAsLinearOperator(object):
                   np.array([[1], [2], [3]])]
             ys = [np.array([1, 2]), np.array([[1], [2]])]
 
-            if A.dtype == np.complex_:
+            if A.dtype == np.complex128:
                 xs += [np.array([1, 2j, 3j]),
                        np.array([[1], [2j], [3j]])]
                 ys += [np.array([1, 2j]), np.array([[1], [2j]])]
@@ -380,7 +391,7 @@ def test_inheritance():
 
     class Identity(interface.LinearOperator):
         def __init__(self, n):
-            super(Identity, self).__init__(dtype=None, shape=(n, n))
+            super().__init__(dtype=None, shape=(n, n))
 
         def _matvec(self, x):
             return x
@@ -391,7 +402,7 @@ def test_inheritance():
 
     class MatmatOnly(interface.LinearOperator):
         def __init__(self, A):
-            super(MatmatOnly, self).__init__(A.dtype, A.shape)
+            super().__init__(A.dtype, A.shape)
             self.A = A
 
         def _matmat(self, x):
@@ -455,3 +466,16 @@ def test_transpose_noconjugate():
 
     assert_equal(B.dot(v), Y.dot(v))
     assert_equal(B.T.dot(v), Y.T.dot(v))
+
+def test_sparse_matmat_exception():
+    A = interface.LinearOperator((2, 2), matvec=lambda x: x)
+    B = sparse.identity(2)
+    msg = "Unable to multiply a LinearOperator with a sparse matrix."
+    with assert_raises(TypeError, match=msg):
+        A @ B
+    with assert_raises(TypeError, match=msg):
+        B @ A
+    with assert_raises(ValueError):
+        A @ np.identity(4)
+    with assert_raises(ValueError):
+        np.identity(4) @ A

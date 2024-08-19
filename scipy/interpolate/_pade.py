@@ -15,7 +15,7 @@ def pade(an, m, n=None):
         The order of the returned approximating polynomial `q`.
     n : int, optional
         The order of the returned approximating polynomial `p`. By default,
-        the order is ``len(an)-m``.
+        the order is ``len(an)-1-m``.
 
     Returns
     -------
@@ -25,6 +25,7 @@ def pade(an, m, n=None):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.interpolate import pade
     >>> e_exp = [1.0, 1.0, 1.0/2.0, 1.0/6.0, 1.0/24.0, 1.0/120.0]
     >>> p, q = pade(e_exp, 2)

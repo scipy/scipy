@@ -9,18 +9,22 @@ __all__ = ['root']
 
 import numpy as np
 
-
 from warnings import warn
 
-from .optimize import MemoizeJac, OptimizeResult, _check_unknown_options
-from .minpack import _root_hybr, leastsq
+from ._optimize import MemoizeJac, OptimizeResult, _check_unknown_options
+from ._minpack_py import _root_hybr, leastsq
 from ._spectral import _root_df_sane
-from . import nonlin
+from . import _nonlin as nonlin
+
+
+ROOT_METHODS = ['hybr', 'lm', 'broyden1', 'broyden2', 'anderson',
+                'linearmixing', 'diagbroyden', 'excitingmixing', 'krylov',
+                'df-sane']
 
 
 def root(fun, x0, args=(), method='hybr', jac=None, tol=None, callback=None,
          options=None):
-    """
+    r"""
     Find a root of a vector function.
 
     Parameters
@@ -34,16 +38,16 @@ def root(fun, x0, args=(), method='hybr', jac=None, tol=None, callback=None,
     method : str, optional
         Type of solver. Should be one of
 
-            - 'hybr'             :ref:`(see here) <optimize.root-hybr>`
-            - 'lm'               :ref:`(see here) <optimize.root-lm>`
-            - 'broyden1'         :ref:`(see here) <optimize.root-broyden1>`
-            - 'broyden2'         :ref:`(see here) <optimize.root-broyden2>`
-            - 'anderson'         :ref:`(see here) <optimize.root-anderson>`
-            - 'linearmixing'     :ref:`(see here) <optimize.root-linearmixing>`
-            - 'diagbroyden'      :ref:`(see here) <optimize.root-diagbroyden>`
-            - 'excitingmixing'   :ref:`(see here) <optimize.root-excitingmixing>`
-            - 'krylov'           :ref:`(see here) <optimize.root-krylov>`
-            - 'df-sane'          :ref:`(see here) <optimize.root-dfsane>`
+        - 'hybr'             :ref:`(see here) <optimize.root-hybr>`
+        - 'lm'               :ref:`(see here) <optimize.root-lm>`
+        - 'broyden1'         :ref:`(see here) <optimize.root-broyden1>`
+        - 'broyden2'         :ref:`(see here) <optimize.root-broyden2>`
+        - 'anderson'         :ref:`(see here) <optimize.root-anderson>`
+        - 'linearmixing'     :ref:`(see here) <optimize.root-linearmixing>`
+        - 'diagbroyden'      :ref:`(see here) <optimize.root-diagbroyden>`
+        - 'excitingmixing'   :ref:`(see here) <optimize.root-excitingmixing>`
+        - 'krylov'           :ref:`(see here) <optimize.root-krylov>`
+        - 'df-sane'          :ref:`(see here) <optimize.root-dfsane>`
 
     jac : bool or callable, optional
         If `jac` is a Boolean and is True, `fun` is assumed to return the
@@ -92,7 +96,7 @@ def root(fun, x0, args=(), method='hybr', jac=None, tol=None, callback=None,
     Methods *broyden1*, *broyden2*, *anderson*, *linearmixing*,
     *diagbroyden*, *excitingmixing*, *krylov* are inexact Newton methods,
     with backtracking or full line searches [2]_. Each method corresponds
-    to a particular Jacobian approximations. See `nonlin` for details.
+    to a particular Jacobian approximations.
 
     - Method *broyden1* uses Broyden's first Jacobian approximation, it is
       known as Broyden's good method.
@@ -129,6 +133,7 @@ def root(fun, x0, args=(), method='hybr', jac=None, tol=None, callback=None,
     The following functions define a system of nonlinear equations and its
     jacobian.
 
+    >>> import numpy as np
     >>> def fun(x):
     ...     return [x[0]  + 0.5 * (x[0] - x[1])**3 - 1.0,
     ...             0.5 * (x[1] - x[0])**3 + x[1]]
@@ -146,7 +151,64 @@ def root(fun, x0, args=(), method='hybr', jac=None, tol=None, callback=None,
     >>> sol.x
     array([ 0.8411639,  0.1588361])
 
+    **Large problem**
+
+    Suppose that we needed to solve the following integrodifferential
+    equation on the square :math:`[0,1]\times[0,1]`:
+
+    .. math::
+
+       \nabla^2 P = 10 \left(\int_0^1\int_0^1\cosh(P)\,dx\,dy\right)^2
+
+    with :math:`P(x,1) = 1` and :math:`P=0` elsewhere on the boundary of
+    the square.
+
+    The solution can be found using the ``method='krylov'`` solver:
+
+    >>> from scipy import optimize
+    >>> # parameters
+    >>> nx, ny = 75, 75
+    >>> hx, hy = 1./(nx-1), 1./(ny-1)
+
+    >>> P_left, P_right = 0, 0
+    >>> P_top, P_bottom = 1, 0
+
+    >>> def residual(P):
+    ...    d2x = np.zeros_like(P)
+    ...    d2y = np.zeros_like(P)
+    ...
+    ...    d2x[1:-1] = (P[2:]   - 2*P[1:-1] + P[:-2]) / hx/hx
+    ...    d2x[0]    = (P[1]    - 2*P[0]    + P_left)/hx/hx
+    ...    d2x[-1]   = (P_right - 2*P[-1]   + P[-2])/hx/hx
+    ...
+    ...    d2y[:,1:-1] = (P[:,2:] - 2*P[:,1:-1] + P[:,:-2])/hy/hy
+    ...    d2y[:,0]    = (P[:,1]  - 2*P[:,0]    + P_bottom)/hy/hy
+    ...    d2y[:,-1]   = (P_top   - 2*P[:,-1]   + P[:,-2])/hy/hy
+    ...
+    ...    return d2x + d2y - 10*np.cosh(P).mean()**2
+
+    >>> guess = np.zeros((nx, ny), float)
+    >>> sol = optimize.root(residual, guess, method='krylov')
+    >>> print('Residual: %g' % abs(residual(sol.x)).max())
+    Residual: 5.7972e-06  # may vary
+
+    >>> import matplotlib.pyplot as plt
+    >>> x, y = np.mgrid[0:1:(nx*1j), 0:1:(ny*1j)]
+    >>> plt.pcolormesh(x, y, sol.x, shading='gouraud')
+    >>> plt.colorbar()
+    >>> plt.show()
+
     """
+    def _wrapped_fun(*fargs):
+        """
+        Wrapped `func` to track the number of times
+        the function has been called.
+        """
+        _wrapped_fun.nfev += 1
+        return fun(*fargs)
+
+    _wrapped_fun.nfev = 0
+
     if not isinstance(args, tuple):
         args = (args,)
 
@@ -155,8 +217,8 @@ def root(fun, x0, args=(), method='hybr', jac=None, tol=None, callback=None,
         options = {}
 
     if callback is not None and meth in ('hybr', 'lm'):
-        warn('Method %s does not accept callback.' % method,
-             RuntimeWarning)
+        warn(f'Method {method} does not accept callback.',
+             RuntimeWarning, stacklevel=2)
 
     # fun also returns the Jacobian
     if not callable(jac) and meth in ('hybr', 'lm'):
@@ -181,29 +243,30 @@ def root(fun, x0, args=(), method='hybr', jac=None, tol=None, callback=None,
             options.setdefault('fatol', np.inf)
 
     if meth == 'hybr':
-        sol = _root_hybr(fun, x0, args=args, jac=jac, **options)
+        sol = _root_hybr(_wrapped_fun, x0, args=args, jac=jac, **options)
     elif meth == 'lm':
-        sol = _root_leastsq(fun, x0, args=args, jac=jac, **options)
+        sol = _root_leastsq(_wrapped_fun, x0, args=args, jac=jac, **options)
     elif meth == 'df-sane':
         _warn_jac_unused(jac, method)
-        sol = _root_df_sane(fun, x0, args=args, callback=callback,
+        sol = _root_df_sane(_wrapped_fun, x0, args=args, callback=callback,
                             **options)
     elif meth in ('broyden1', 'broyden2', 'anderson', 'linearmixing',
                   'diagbroyden', 'excitingmixing', 'krylov'):
         _warn_jac_unused(jac, method)
-        sol = _root_nonlin_solve(fun, x0, args=args, jac=jac,
+        sol = _root_nonlin_solve(_wrapped_fun, x0, args=args, jac=jac,
                                  _method=meth, _callback=callback,
                                  **options)
     else:
-        raise ValueError('Unknown solver %s' % method)
+        raise ValueError(f'Unknown solver {method}')
 
+    sol.nfev = _wrapped_fun.nfev
     return sol
 
 
 def _warn_jac_unused(jac, method):
     if jac is not None:
-        warn('Method %s does not use the jacobian (jac).' % (method,),
-             RuntimeWarning)
+        warn(f'Method {method} does not use the jacobian (jac).',
+             RuntimeWarning, stacklevel=2)
 
 
 def _root_leastsq(fun, x0, args=(), jac=None,
@@ -228,9 +291,9 @@ def _root_leastsq(fun, x0, args=(), jac=None,
     maxiter : int
         The maximum number of calls to the function. If zero, then
         100*(N+1) is the maximum where N is the number of elements in x0.
-    epsfcn : float
+    eps : float
         A suitable step length for the forward-difference approximation of
-        the Jacobian (for Dfun=None). If epsfcn is less than the machine
+        the Jacobian (for Dfun=None). If `eps` is less than the machine
         precision, it is assumed that the relative errors in the functions
         are of the order of the machine precision.
     factor : float
@@ -239,18 +302,28 @@ def _root_leastsq(fun, x0, args=(), jac=None,
     diag : sequence
         N positive entries that serve as a scale factors for the variables.
     """
+    nfev = 0
+    def _wrapped_fun(*fargs):
+        """
+        Wrapped `func` to track the number of times
+        the function has been called.
+        """
+        nonlocal nfev
+        nfev += 1
+        return fun(*fargs)
 
     _check_unknown_options(unknown_options)
-    x, cov_x, info, msg, ier = leastsq(fun, x0, args=args, Dfun=jac,
-                                       full_output=True,
+    x, cov_x, info, msg, ier = leastsq(_wrapped_fun, x0, args=args,
+                                       Dfun=jac, full_output=True,
                                        col_deriv=col_deriv, xtol=xtol,
                                        ftol=ftol, gtol=gtol,
                                        maxfev=maxiter, epsfcn=eps,
                                        factor=factor, diag=diag)
     sol = OptimizeResult(x=x, message=msg, status=ier,
                          success=ier in (1, 2, 3, 4), cov_x=cov_x,
-                         fun=info.pop('fvec'))
+                         fun=info.pop('fvec'), method="lm")
     sol.update(info)
+    sol.nfev = nfev
     return sol
 
 
@@ -280,7 +353,7 @@ def _root_nonlin_solve(fun, x0, args=(), jac=None,
                 }[_method]
 
     if args:
-        if jac:
+        if jac is True:
             def f(x):
                 return fun(x, *args)[0]
         else:
@@ -297,7 +370,7 @@ def _root_nonlin_solve(fun, x0, args=(), jac=None,
                                   line_search=line_search,
                                   callback=_callback, full_output=True,
                                   raise_exception=False)
-    sol = OptimizeResult(x=x)
+    sol = OptimizeResult(x=x, method=_method)
     sol.update(info)
     return sol
 
@@ -311,72 +384,7 @@ def _root_broyden1_doc():
     disp : bool, optional
         Print status to stdout on every iteration.
     maxiter : int, optional
-        Maximum number of iterations to make. If more are needed to
-        meet convergence, `NoConvergence` is raised.
-    ftol : float, optional
-        Relative tolerance for the residual. If omitted, not used.
-    fatol : float, optional
-        Absolute tolerance (in max-norm) for the residual.
-        If omitted, default is 6e-6.
-    xtol : float, optional
-        Relative minimum step size. If omitted, not used.
-    xatol : float, optional
-        Absolute minimum step size, as determined from the Jacobian
-        approximation. If the step size is smaller than this, optimization
-        is terminated as successful. If omitted, not used.
-    tol_norm : function(vector) -> scalar, optional
-        Norm to use in convergence check. Default is the maximum norm.
-    line_search : {None, 'armijo' (default), 'wolfe'}, optional
-        Which type of a line search to use to determine the step size in
-        the direction given by the Jacobian approximation. Defaults to
-        'armijo'.
-    jac_options : dict, optional
-        Options for the respective Jacobian approximation.
-            alpha : float, optional
-                Initial guess for the Jacobian is (-1/alpha).
-            reduction_method : str or tuple, optional
-                Method used in ensuring that the rank of the Broyden
-                matrix stays low. Can either be a string giving the
-                name of the method, or a tuple of the form ``(method,
-                param1, param2, ...)`` that gives the name of the
-                method and values for additional parameters.
-
-                Methods available:
-
-                    - ``restart``
-                        Drop all matrix columns. Has no
-                        extra parameters.
-                    - ``simple``
-                        Drop oldest matrix column. Has no
-                        extra parameters.
-                    - ``svd``
-                        Keep only the most significant SVD
-                        components.
-
-                        Extra parameters:
-
-                            - ``to_retain``
-                                Number of SVD components to
-                                retain when rank reduction is done.
-                                Default is ``max_rank - 2``.
-            max_rank : int, optional
-                Maximum rank for the Broyden matrix.
-                Default is infinity (i.e., no rank reduction).
-    """
-    pass
-
-def _root_broyden2_doc():
-    """
-    Options
-    -------
-    nit : int, optional
-        Number of iterations to make. If omitted (default), make as many
-        as required to meet tolerances.
-    disp : bool, optional
-        Print status to stdout on every iteration.
-    maxiter : int, optional
-        Maximum number of iterations to make. If more are needed to
-        meet convergence, `NoConvergence` is raised.
+        Maximum number of iterations to make.
     ftol : float, optional
         Relative tolerance for the residual. If omitted, not used.
     fatol : float, optional
@@ -408,27 +416,89 @@ def _root_broyden2_doc():
 
             Methods available:
 
-                - ``restart``
-                    Drop all matrix columns. Has no
-                    extra parameters.
-                - ``simple``
-                    Drop oldest matrix column. Has no
-                    extra parameters.
-                - ``svd``
-                    Keep only the most significant SVD
-                    components.
+            - ``restart``: drop all matrix columns. Has no extra parameters.
+            - ``simple``: drop oldest matrix column. Has no extra parameters.
+            - ``svd``: keep only the most significant SVD components.
+              Takes an extra parameter, ``to_retain``, which determines the
+              number of SVD components to retain when rank reduction is done.
+              Default is ``max_rank - 2``.
 
-                    Extra parameters:
+        max_rank : int, optional
+            Maximum rank for the Broyden matrix.
+            Default is infinity (i.e., no rank reduction).
 
-                        - ``to_retain``
-                            Number of SVD components to
-                            retain when rank reduction is done.
-                            Default is ``max_rank - 2``.
+    Examples
+    --------
+    >>> def func(x):
+    ...     return np.cos(x) + x[::-1] - [1, 2, 3, 4]
+    ...
+    >>> from scipy import optimize
+    >>> res = optimize.root(func, [1, 1, 1, 1], method='broyden1', tol=1e-14)
+    >>> x = res.x
+    >>> x
+    array([4.04674914, 3.91158389, 2.71791677, 1.61756251])
+    >>> np.cos(x) + x[::-1]
+    array([1., 2., 3., 4.])
+
+    """
+    pass
+
+
+def _root_broyden2_doc():
+    """
+    Options
+    -------
+    nit : int, optional
+        Number of iterations to make. If omitted (default), make as many
+        as required to meet tolerances.
+    disp : bool, optional
+        Print status to stdout on every iteration.
+    maxiter : int, optional
+        Maximum number of iterations to make.
+    ftol : float, optional
+        Relative tolerance for the residual. If omitted, not used.
+    fatol : float, optional
+        Absolute tolerance (in max-norm) for the residual.
+        If omitted, default is 6e-6.
+    xtol : float, optional
+        Relative minimum step size. If omitted, not used.
+    xatol : float, optional
+        Absolute minimum step size, as determined from the Jacobian
+        approximation. If the step size is smaller than this, optimization
+        is terminated as successful. If omitted, not used.
+    tol_norm : function(vector) -> scalar, optional
+        Norm to use in convergence check. Default is the maximum norm.
+    line_search : {None, 'armijo' (default), 'wolfe'}, optional
+        Which type of a line search to use to determine the step size in
+        the direction given by the Jacobian approximation. Defaults to
+        'armijo'.
+    jac_options : dict, optional
+        Options for the respective Jacobian approximation.
+
+        alpha : float, optional
+            Initial guess for the Jacobian is (-1/alpha).
+        reduction_method : str or tuple, optional
+            Method used in ensuring that the rank of the Broyden
+            matrix stays low. Can either be a string giving the
+            name of the method, or a tuple of the form ``(method,
+            param1, param2, ...)`` that gives the name of the
+            method and values for additional parameters.
+
+            Methods available:
+
+            - ``restart``: drop all matrix columns. Has no extra parameters.
+            - ``simple``: drop oldest matrix column. Has no extra parameters.
+            - ``svd``: keep only the most significant SVD components.
+              Takes an extra parameter, ``to_retain``, which determines the
+              number of SVD components to retain when rank reduction is done.
+              Default is ``max_rank - 2``.
+
         max_rank : int, optional
             Maximum rank for the Broyden matrix.
             Default is infinity (i.e., no rank reduction).
     """
     pass
+
 
 def _root_anderson_doc():
     """
@@ -440,8 +510,7 @@ def _root_anderson_doc():
     disp : bool, optional
         Print status to stdout on every iteration.
     maxiter : int, optional
-        Maximum number of iterations to make. If more are needed to
-        meet convergence, `NoConvergence` is raised.
+        Maximum number of iterations to make.
     ftol : float, optional
         Relative tolerance for the residual. If omitted, not used.
     fatol : float, optional
@@ -482,8 +551,7 @@ def _root_linearmixing_doc():
     disp : bool, optional
         Print status to stdout on every iteration.
     maxiter : int, optional
-        Maximum number of iterations to make. If more are needed to
-        meet convergence, ``NoConvergence`` is raised.
+        Maximum number of iterations to make.
     ftol : float, optional
         Relative tolerance for the residual. If omitted, not used.
     fatol : float, optional
@@ -519,8 +587,7 @@ def _root_diagbroyden_doc():
     disp : bool, optional
         Print status to stdout on every iteration.
     maxiter : int, optional
-        Maximum number of iterations to make. If more are needed to
-        meet convergence, `NoConvergence` is raised.
+        Maximum number of iterations to make.
     ftol : float, optional
         Relative tolerance for the residual. If omitted, not used.
     fatol : float, optional
@@ -556,8 +623,7 @@ def _root_excitingmixing_doc():
     disp : bool, optional
         Print status to stdout on every iteration.
     maxiter : int, optional
-        Maximum number of iterations to make. If more are needed to
-        meet convergence, `NoConvergence` is raised.
+        Maximum number of iterations to make.
     ftol : float, optional
         Relative tolerance for the residual. If omitted, not used.
     fatol : float, optional
@@ -596,8 +662,7 @@ def _root_krylov_doc():
     disp : bool, optional
         Print status to stdout on every iteration.
     maxiter : int, optional
-        Maximum number of iterations to make. If more are needed to
-        meet convergence, `NoConvergence` is raised.
+        Maximum number of iterations to make.
     ftol : float, optional
         Relative tolerance for the residual. If omitted, not used.
     fatol : float, optional
@@ -620,11 +685,12 @@ def _root_krylov_doc():
 
         rdiff : float, optional
             Relative step size to use in numerical differentiation.
-        method : {'lgmres', 'gmres', 'bicgstab', 'cgs', 'minres'} or function
-            Krylov method to use to approximate the Jacobian.
-            Can be a string, or a function implementing the same
-            interface as the iterative solvers in
-            `scipy.sparse.linalg`.
+        method : str or callable, optional
+            Krylov method to use to approximate the Jacobian.  Can be a string,
+            or a function implementing the same interface as the iterative
+            solvers in `scipy.sparse.linalg`. If a string, needs to be one of:
+            ``'lgmres'``, ``'gmres'``, ``'bicgstab'``, ``'cgs'``, ``'minres'``,
+            ``'tfqmr'``.
 
             The default is `scipy.sparse.linalg.lgmres`.
         inner_M : LinearOperator or InverseJacobian

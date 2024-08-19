@@ -2,10 +2,8 @@
 # Created by: Pearu Peterson, September 2002
 #
 
-import sys
-import subprocess
-import time
 from functools import reduce
+import random
 
 from numpy.testing import (assert_equal, assert_array_almost_equal, assert_,
                            assert_allclose, assert_almost_equal,
@@ -19,14 +17,17 @@ from numpy import (eye, ones, zeros, zeros_like, triu, tril, tril_indices,
 
 from numpy.random import rand, randint, seed
 
-from scipy.linalg import _flapack as flapack, lapack
-from scipy.linalg import inv, svd, cholesky, solve, ldl, norm, block_diag, qr
-from scipy.linalg import eigh
+from scipy.linalg import (_flapack as flapack, lapack, inv, svd, cholesky,
+                          solve, ldl, norm, block_diag, qr, eigh, qz)
+
 from scipy.linalg.lapack import _compute_lwork
 from scipy.stats import ortho_group, unitary_group
 
-
 import scipy.sparse as sps
+try:
+    from scipy.__config__ import CONFIG
+except ImportError:
+    CONFIG = None
 
 try:
     from scipy.linalg import _clapack as clapack
@@ -38,6 +39,11 @@ from scipy.linalg.blas import get_blas_funcs
 REAL_DTYPES = [np.float32, np.float64]
 COMPLEX_DTYPES = [np.complex64, np.complex128]
 DTYPES = REAL_DTYPES + COMPLEX_DTYPES
+
+blas_provider = blas_version = None
+if CONFIG is not None:
+    blas_provider = CONFIG['Build Dependencies']['blas']['name']
+    blas_version = CONFIG['Build Dependencies']['blas']['version']
 
 
 def generate_random_dtype_array(shape, dtype):
@@ -53,10 +59,16 @@ def test_lapack_documented():
     if lapack.__doc__ is None:  # just in case there is a python -OO
         pytest.skip('lapack.__doc__ is None')
     names = set(lapack.__doc__.split())
-    ignore_list = set([
-        'absolute_import', 'clapack', 'division', 'find_best_lapack_type',
-        'flapack', 'print_function',
-    ])
+    ignore_list = {
+        "absolute_import",
+        "clapack",
+        "division",
+        "find_best_lapack_type",
+        "flapack",
+        "print_function",
+        "HAS_ILP64",
+        "np",
+    }
     missing = list()
     for name in dir(lapack):
         if (not name.startswith('_') and name not in ignore_list and
@@ -65,7 +77,7 @@ def test_lapack_documented():
     assert missing == [], 'Name(s) missing from lapack.__doc__ or ignore_list'
 
 
-class TestFlapackSimple(object):
+class TestFlapackSimple:
 
     def test_gebal(self):
         a = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
@@ -161,7 +173,7 @@ class TestFlapackSimple(object):
                     assert_equal(value, ref)
 
 
-class TestLapack(object):
+class TestLapack:
 
     def test_flapack(self):
         if hasattr(flapack, 'empty_module'):
@@ -174,7 +186,7 @@ class TestLapack(object):
             pass
 
 
-class TestLeastSquaresSolvers(object):
+class TestLeastSquaresSolvers:
 
     def test_gels(self):
         seed(1234)
@@ -426,7 +438,7 @@ def test_geqrf_lwork(dtype, shape):
     assert_equal(info, 0)
 
 
-class TestRegression(object):
+class TestRegression:
 
     def test_ticket_1645(self):
         # Check that RQ routines have correct lwork
@@ -447,7 +459,7 @@ class TestRegression(object):
                 ungrq(rq[-2:], tau, lwork=2)
 
 
-class TestDpotr(object):
+class TestDpotr:
     def test_gh_2691(self):
         # 'lower' argument of dportf/dpotri
         for lower in [True, False]:
@@ -467,7 +479,7 @@ class TestDpotr(object):
                     assert_allclose(np.triu(dpt), np.triu(inv(a)))
 
 
-class TestDlasd4(object):
+class TestDlasd4:
     def test_sing_val_update(self):
 
         sigmas = np.array([4., 3., 2., 0])
@@ -499,7 +511,7 @@ class TestDlasd4(object):
                         rtol=100*np.finfo(np.float64).eps)
 
 
-class TestTbtrs(object):
+class TestTbtrs:
 
     @pytest.mark.parametrize('dtype', DTYPES)
     def test_nag_example_f07vef_f07vsf(self, dtype):
@@ -555,32 +567,37 @@ class TestTbtrs(object):
     @pytest.mark.parametrize('diag', ['N', 'U'])
     def test_random_matrices(self, dtype, trans, uplo, diag):
         seed(1724)
-        # lda, ldb, nrhs, kd are used to specify A and b.
-        # A is of shape lda x ldb with kd super/sub-diagonals
-        # b is of shape ldb x nrhs matrix
-        lda, ldb, nrhs, kd = 4, 4, 3, 2
-        ldab = kd + 1
+        # n, nrhs, kd are used to specify A and b.
+        # A is of shape n x n with kd super/sub-diagonals
+        # b is of shape n x nrhs matrix
+        n, nrhs, kd = 4, 3, 2
+        tbtrs = get_lapack_funcs('tbtrs', dtype=dtype)
+
+        is_upper = (uplo == 'U')
+        ku = kd * is_upper
+        kl = kd - ku
 
         # Construct the diagonal and kd super/sub diagonals of A with
         # the corresponding offsets.
-        band_widths = range(lda, lda - kd - 1, -1)
-        band_offsets = np.arange(ldab) if uplo == 'U' else np.arange(ldab) * -1
-        if dtype in REAL_DTYPES:
-            b = rand(ldb, nrhs).astype(dtype)
-            bands = [rand(width).astype(dtype) for width in band_widths]
-        elif dtype in COMPLEX_DTYPES:
-            b = (rand(ldb, nrhs) + rand(ldb, nrhs) * 1j).astype(dtype)
-            bands = [(rand(width) + rand(width) * 1j).astype(dtype)
-                     for width in band_widths]
+        band_offsets = range(ku, -kl - 1, -1)
+        band_widths = [n - abs(x) for x in band_offsets]
+        bands = [generate_random_dtype_array((width,), dtype)
+                 for width in band_widths]
 
         if diag == 'U':  # A must be unit triangular
-            bands[0] = np.ones(lda, dtype=dtype)
+            bands[ku] = np.ones(n, dtype=dtype)
 
         # Construct the diagonal banded matrix A from the bands and offsets.
         a = sps.diags(bands, band_offsets, format='dia')
-        ab = np.flipud(a.data) if uplo == 'U' else a.data
 
-        tbtrs = get_lapack_funcs('tbtrs', dtype=dtype)
+        # Convert A into banded storage form
+        ab = np.zeros((kd + 1, n), dtype)
+        for row, k in enumerate(band_offsets):
+            ab[row, max(k, 0):min(n+k, n)] = a.diagonal(k)
+
+        # The RHS values.
+        b = generate_random_dtype_array((n, nrhs), dtype)
+
         x, info = tbtrs(ab=ab, b=b, uplo=uplo, trans=trans, diag=diag)
         assert_equal(info, 0)
 
@@ -589,7 +606,7 @@ class TestTbtrs(object):
         elif trans == 'T':
             assert_allclose(a.T @ x, b, rtol=5e-5)
         elif trans == 'C':
-            assert_allclose(a.H @ x, b, rtol=5e-5)
+            assert_allclose(a.T.conjugate() @ x, b, rtol=5e-5)
         else:
             raise ValueError('Invalid trans argument')
 
@@ -601,7 +618,7 @@ class TestTbtrs(object):
         """Test if invalid values of uplo, trans and diag raise exceptions"""
         # Argument checks occur independently of used datatype.
         # This mean we must not parameterize all available datatypes.
-        tbtrs = get_lapack_funcs('tbtrs', dtype=np.float)
+        tbtrs = get_lapack_funcs('tbtrs', dtype=np.float64)
         ab = rand(4, 2)
         b = rand(2, 4)
         assert_raises(Exception, tbtrs, ab, b, uplo, trans, diag)
@@ -634,6 +651,47 @@ class TestTbtrs(object):
         assert_raises(Exception, tbtrs, ab, b)
 
 
+
+@pytest.mark.parametrize('dtype', DTYPES)
+@pytest.mark.parametrize('norm', ['I', '1', 'O'])
+@pytest.mark.parametrize('uplo', ['U', 'L'])
+@pytest.mark.parametrize('diag', ['N', 'U'])
+@pytest.mark.parametrize('n', [3, 10])
+def test_trcon(dtype, norm, uplo, diag, n):
+    # Simple way to get deterministic (unlike `hash`) integer seed based on arguments
+    random.seed(f"{dtype}{norm}{uplo}{diag}{n}")
+    rng = np.random.default_rng(random.randint(0, 9999999999999))
+
+    A = rng.random(size=(n, n)) + rng.random(size=(n, n))*1j
+    # make the condition numbers more interesting
+    offset = rng.permuted(np.logspace(0, rng.integers(0, 10), n))
+    A += offset
+    A = A.real if np.issubdtype(dtype, np.floating) else A
+    A = np.triu(A) if uplo == 'U' else np.tril(A)
+    if diag == 'U':
+        A /= np.diag(A)[:, np.newaxis]
+    A = A.astype(dtype)
+
+    trcon = get_lapack_funcs('trcon', (A,))
+    res, _ = trcon(A, norm=norm, uplo=uplo, diag=diag)
+
+    if norm == 'I':
+        norm_A = np.linalg.norm(A, ord=np.inf)
+        norm_inv_A = np.linalg.norm(np.linalg.inv(A), ord=np.inf)
+        ref = 1 / (norm_A * norm_inv_A)
+    else:
+        anorm = np.abs(A).sum(axis=0).max()
+        gecon, getrf = get_lapack_funcs(('gecon', 'getrf'), (A,))
+        lu, ipvt, info = getrf(A)
+        ref, _ = gecon(lu, anorm, norm=norm)
+
+    # This is an estimate of reciprocal condition number; we just need order of
+    # magnitude. In testing, we observed that much smaller rtol is OK in almost
+    # all cases... but sometimes it isn't.
+    rtol = 1  # np.finfo(dtype).eps**0.75
+    assert_allclose(res, ref, rtol=rtol)
+
+
 def test_lartg():
     for dtype in 'fdFD':
         lartg = get_lapack_funcs('lartg', dtype=dtype)
@@ -651,8 +709,8 @@ def test_lartg():
 
         if np.iscomplexobj(g):
             assert_allclose(sn, -4.0j/5.0)
-            assert_(type(r) == complex)
-            assert_(type(cs) == float)
+            assert_(isinstance(r, complex))
+            assert_(isinstance(cs, float))
         else:
             assert_allclose(sn, 4.0/5.0)
 
@@ -741,42 +799,35 @@ def test_larfg_larf():
         assert_allclose(a[0, :], expected, atol=1e-5)
 
 
-@pytest.mark.xslow
 def test_sgesdd_lwork_bug_workaround():
     # Test that SGESDD lwork is sufficiently large for LAPACK.
     #
-    # This checks that workaround around an apparent LAPACK bug
-    # actually works. cf. gh-5401
-    #
-    # xslow: requires 1GB+ of memory
+    # This checks that _compute_lwork() correctly works around a bug in
+    # LAPACK versions older than 3.10.1.
 
-    p = subprocess.Popen([sys.executable, '-c',
-                          'import numpy as np; '
-                          'from scipy.linalg import svd; '
-                          'a = np.zeros([9537, 9537], dtype=np.float32); '
-                          'svd(a)'],
-                         stdout=subprocess.PIPE,
-                         stderr=subprocess.STDOUT)
-
-    # Check if it an error occurred within 5 sec; the computation can
-    # take substantially longer, and we will not wait for it to finish
-    for j in range(50):
-        time.sleep(0.1)
-        if p.poll() is not None:
-            returncode = p.returncode
-            break
-    else:
-        # Didn't exit in time -- probably entered computation.  The
-        # error is raised before entering computation, so things are
-        # probably OK.
-        returncode = 0
-        p.terminate()
-
-    assert_equal(returncode, 0,
-                 "Code apparently failed: " + p.stdout.read())
+    sgesdd_lwork = get_lapack_funcs('gesdd_lwork', dtype=np.float32,
+                                    ilp64='preferred')
+    n = 9537
+    lwork = _compute_lwork(sgesdd_lwork, n, n,
+                           compute_uv=True, full_matrices=True)
+    # If we called the Fortran function SGESDD directly with IWORK=-1, the
+    # LAPACK bug would result in lwork being 272929856, which was too small.
+    # (The result was returned in a single precision float, which does not
+    # have sufficient precision to represent the exact integer value that it
+    # computed internally.)  The work-around implemented in _compute_lwork()
+    # will convert that to 272929888.  If we are using LAPACK 3.10.1 or later
+    # (such as in OpenBLAS 0.3.21 or later), the work-around will return
+    # 272929920, because it does not know which version of LAPACK is being
+    # used, so it always applies the correction to whatever it is given.  We
+    # will accept either 272929888 or 272929920.
+    # Note that the acceptable values are a LAPACK implementation detail.
+    # If a future version of LAPACK changes how SGESDD works, and therefore
+    # changes the required LWORK size, the acceptable values might have to
+    # be updated.
+    assert lwork == 272929888 or lwork == 272929920
 
 
-class TestSytrd(object):
+class TestSytrd:
     @pytest.mark.parametrize('dtype', REAL_DTYPES)
     def test_sytrd_with_zero_dim_array(self, dtype):
         # Assert that a 0x0 matrix raises an error
@@ -844,7 +895,7 @@ class TestSytrd(object):
         assert_allclose(QTAQ, T, atol=5*np.finfo(dtype).eps, rtol=1.0)
 
 
-class TestHetrd(object):
+class TestHetrd:
     @pytest.mark.parametrize('complex_dtype', COMPLEX_DTYPES)
     def test_hetrd_with_zero_dim_array(self, complex_dtype):
         # Assert that a 0x0 matrix raises an error
@@ -1027,7 +1078,7 @@ def test_sygst():
 
         eig, _, info = syevd(a)
         assert_(info == 0)
-        assert_allclose(eig, eig_gvd, rtol=1e-4)
+        assert_allclose(eig, eig_gvd, rtol=1.2e-4)
 
 
 def test_hegst():
@@ -1138,7 +1189,7 @@ def test_tfsm():
 
 def test_ormrz_unmrz():
     """
-    This test performs a matrix multiplication with an arbitrary m x n matric C
+    This test performs a matrix multiplication with an arbitrary m x n matrix C
     and a unitary matrix Q without explicitly forming the array. The array data
     is encoded in the rectangular part of A which is obtained from ?TZRZF. Q
     size is inferred by m, n, side keywords.
@@ -1404,8 +1455,7 @@ def test_sfrk_hfrk():
             A = A + A.T + n*eye(n)
 
         prefix = 's'if ind < 2 else 'h'
-        trttf, tfttr, shfrk = get_lapack_funcs(('trttf', 'tfttr', '{}frk'
-                                                ''.format(prefix)),
+        trttf, tfttr, shfrk = get_lapack_funcs(('trttf', 'tfttr', f'{prefix}frk'),
                                                dtype=dtype)
 
         Afp, _ = trttf(A)
@@ -1451,7 +1501,7 @@ def test_syconv():
         assert_allclose(triu(a, 1), triu(U[perm, :], 1), atol=tol, rtol=0.)
 
 
-class TestBlockedQR(object):
+class TestBlockedQR:
     """
     Tests for the blocked QR factorization, namely through geqrt, gemqrt, tpqrt
     and tpmqr.
@@ -1471,7 +1521,7 @@ class TestBlockedQR(object):
             geqrt, gemqrt = get_lapack_funcs(('geqrt', 'gemqrt'), dtype=dtype)
 
             a, t, info = geqrt(n, A)
-            assert(info == 0)
+            assert info == 0
 
             # Extract elementary reflectors from lower triangle, adding the
             # main diagonal of ones.
@@ -1495,7 +1545,7 @@ class TestBlockedQR(object):
             for side in ('L', 'R'):
                 for trans in ('N', transpose):
                     c, info = gemqrt(a, t, C, side=side, trans=trans)
-                    assert(info == 0)
+                    assert info == 0
 
                     if trans == transpose:
                         q = Q.T.conj()
@@ -1512,7 +1562,7 @@ class TestBlockedQR(object):
                     # Test default arguments
                     if (side, trans) == ('L', 'N'):
                         c_default, info = gemqrt(a, t, C)
-                        assert(info == 0)
+                        assert info == 0
                         assert_equal(c_default, c)
 
             # Test invalid side/trans
@@ -1538,7 +1588,7 @@ class TestBlockedQR(object):
             # triangular
             for l in (0, n // 2, n):
                 a, b, t, info = tpqrt(l, n, A, B)
-                assert(info == 0)
+                assert info == 0
 
                 # Check that lower triangular part of A has not been modified
                 assert_equal(np.tril(a, -1), np.tril(A, -1))
@@ -1574,7 +1624,7 @@ class TestBlockedQR(object):
                     for trans in ('N', transpose):
                         c, d, info = tpmqrt(l, b, t, C, D, side=side,
                                             trans=trans)
-                        assert(info == 0)
+                        assert info == 0
 
                         if trans == transpose:
                             q = Q.T.conj()
@@ -1594,7 +1644,7 @@ class TestBlockedQR(object):
 
                         if (side, trans) == ('L', 'N'):
                             c_default, d_default, info = tpmqrt(l, b, t, C, D)
-                            assert(info == 0)
+                            assert info == 0
                             assert_equal(c_default, c)
                             assert_equal(d_default, d)
 
@@ -1743,6 +1793,8 @@ def test_syequb():
         assert_equal(np.log2(s).astype(int), desired_log2s)
 
 
+@pytest.mark.skipif(True,
+                    reason="Failing on some OpenBLAS version, see gh-12276")
 def test_heequb():
     # zheequb has a bug for versions =< LAPACK 3.9.0
     # See Reference-LAPACK gh-61 and gh-408
@@ -1928,6 +1980,13 @@ def test_gejsv_edge_arguments(dtype):
     assert_equal(v.shape, (1, 0))
     assert_equal(sva, np.array([], dtype=dtype))
 
+    # make sure "overwrite_a" is respected - user reported in gh-13191
+    A = np.sin(np.arange(100).reshape(10, 10)).astype(dtype)
+    A = np.asfortranarray(A + A.T)  # make it symmetric and column major
+    Ac = A.copy('A')
+    _ = gejsv(A)
+    assert_allclose(A, Ac)
+
 
 @pytest.mark.parametrize(('kwargs'),
                          ({'joba': 9},
@@ -1981,7 +2040,7 @@ def test_gejsv_NAG(A, sva_expect, u_expect, v_expect):
 @pytest.mark.parametrize("dtype", DTYPES)
 def test_gttrf_gttrs(dtype):
     # The test uses ?gttrf and ?gttrs to solve a random system for each dtype,
-    # tests that the output of ?gttrf define LU matricies, that input
+    # tests that the output of ?gttrf define LU matrices, that input
     # parameters are unmodified, transposal options function correctly, that
     # incompatible matrix shapes raise an error, and singular matrices return
     # non zero info.
@@ -2059,16 +2118,15 @@ def test_gttrf_gttrs(dtype):
         gttrf(dl, d, du[:-1])
 
     # test that matrix of size n=2 raises exception
-    with assert_raises(Exception):
+    with assert_raises(ValueError):
         gttrf(dl[0], d[:1], du[0])
 
     # test that singular (row of all zeroes) matrix fails via info
     du[0] = 0
     d[0] = 0
     __dl, __d, __du, _du2, _ipiv, _info = gttrf(dl, d, du)
-    np.testing.assert_(__d[info - 1] == 0,
-                       "?gttrf: _d[info-1] is {}, not the illegal value :0."
-                       .format(__d[info - 1]))
+    np.testing.assert_(__d[info - 1] == 0, (f"?gttrf: _d[info-1] is {__d[info - 1]},"
+                                            " not the illegal value :0."))
 
 
 @pytest.mark.parametrize("du, d, dl, du_exp, d_exp, du2_exp, ipiv_exp, b, x",
@@ -2135,6 +2193,34 @@ def test_gttrf_gttrs_NAG_f07cdf_f07cef_f07crf_f07csf(du, d, dl, du_exp, d_exp,
 
 
 @pytest.mark.parametrize('dtype', DTYPES)
+@pytest.mark.parametrize('norm', ['1', 'I', 'O'])
+@pytest.mark.parametrize('n', [3, 10])
+def test_gtcon(dtype, norm, n):
+    rng = np.random.default_rng(23498324)
+
+    d = rng.random(n) + rng.random(n)*1j
+    dl = rng.random(n - 1) + rng.random(n - 1)*1j
+    du = rng.random(n - 1) + rng.random(n - 1)*1j
+    A = np.diag(d) + np.diag(dl, -1) + np.diag(du, 1)
+    if np.issubdtype(dtype, np.floating):
+        A, d, dl, du = A.real, d.real, dl.real, du.real
+    A, d, dl, du = A.astype(dtype), d.astype(dtype), dl.astype(dtype), du.astype(dtype)
+
+    anorm = np.abs(A).sum(axis=0).max()
+
+    gttrf, gtcon = get_lapack_funcs(('gttrf', 'gtcon'), (A,))
+    dl, d, du, du2, ipiv, info = gttrf(dl, d, du)
+    res, _ = gtcon(dl, d, du, du2, ipiv, anorm, norm=norm)
+
+    gecon, getrf = get_lapack_funcs(('gecon', 'getrf'), (A,))
+    lu, ipvt, info = getrf(A)
+    ref, _ = gecon(lu, anorm, norm=norm)
+
+    rtol = np.finfo(dtype).eps**0.75
+    assert_allclose(res, ref, rtol=rtol)
+
+
+@pytest.mark.parametrize('dtype', DTYPES)
 @pytest.mark.parametrize('shape', [(3, 7), (7, 3), (2**18, 2**18)])
 def test_geqrfp_lwork(dtype, shape):
     geqrfp_lwork = get_lapack_funcs(('geqrfp_lwork'), dtype=dtype)
@@ -2170,7 +2256,7 @@ def test_pttrf_pttrs(ddtype, dtype):
     # test to assure that the inputs of ?pttrf are unmodified
     assert_array_equal(d, diag_cpy[0])
     assert_array_equal(e, diag_cpy[1])
-    assert_equal(info, 0, err_msg="pttrf: info = {}, should be 0".format(info))
+    assert_equal(info, 0, err_msg=f"pttrf: info = {info}, should be 0")
 
     # test that the factors from pttrf can be recombined to make A
     L = np.diag(_e, -1) + np.diag(np.ones(n))
@@ -2186,7 +2272,7 @@ def test_pttrf_pttrs(ddtype, dtype):
     # determine _x from pttrs
     pttrs = get_lapack_funcs('pttrs', dtype=dtype)
     _x, info = pttrs(_d, _e.conj(), b)
-    assert_equal(info, 0, err_msg="pttrs: info = {}, should be 0".format(info))
+    assert_equal(info, 0, err_msg=f"pttrs: info = {info}, should be 0")
 
     # test that _x from pttrs matches the expected x
     assert_allclose(x, _x, atol=atol)
@@ -2216,8 +2302,7 @@ def test_pttrf_pttrs_errors_singular_nonSPD(ddtype, dtype):
     e[0] = 0
     _d, _e, info = pttrf(d, e)
     assert_equal(_d[info - 1], 0,
-                 "?pttrf: _d[info-1] is {}, not the illegal value :0."
-                 .format(_d[info - 1]))
+                 f"?pttrf: _d[info-1] is {_d[info - 1]}, not the illegal value :0.")
 
     # test with non-spd matrix
     d = generate_random_dtype_array((n,), ddtype)
@@ -2317,7 +2402,7 @@ def test_pteqr(dtype, realtype, compute_z):
     d, e, A, z = pteqr_get_d_e_A_z(dtype, realtype, n, compute_z)
 
     d_pteqr, e_pteqr, z_pteqr, info = pteqr(d=d, e=e, z=z, compute_z=compute_z)
-    assert_equal(info, 0, "info = {}, should be 0.".format(info))
+    assert_equal(info, 0, f"info = {info}, should be 0.")
 
     # compare the routine's eigenvalues with scipy.linalg.eig's.
     assert_allclose(np.sort(eigh(A)[0]), np.sort(d_pteqr), atol=atol)
@@ -2407,7 +2492,7 @@ def test_geqrfp(dtype, matrix_size):
     # Tests for all dytpes, tall, wide, and square matrices.
     # Using the routine with random matrix A, Q and R are obtained and then
     # tested such that R is upper triangular and non-negative on the diagonal,
-    # and Q is an orthagonal matrix. Verifies that A=Q@R. It also
+    # and Q is an orthogonal matrix. Verifies that A=Q@R. It also
     # tests against a matrix that for which the  linalg.qr method returns
     # negative diagonals, and for error messaging.
 
@@ -2421,7 +2506,7 @@ def test_geqrfp(dtype, matrix_size):
 
     m, n = matrix_size
 
-    # create random matrix of dimentions m x n
+    # create random matrix of dimensions m x n
     A = generate_random_dtype_array((m, n), dtype=dtype)
     # create qr matrix using geqrfp
     qr_A, tau, info = geqrfp(A)
@@ -2485,8 +2570,7 @@ def test_standard_eigh_lworks(pfx, driver):
         _compute_lwork(sc_dlw, n, lower=1)
         _compute_lwork(dz_dlw, n, lower=1)
     except Exception as e:
-        pytest.fail("{}_lwork raised unexpected exception: {}"
-                    "".format(pfx+driver, e))
+        pytest.fail(f"{pfx+driver}_lwork raised unexpected exception: {e}")
 
 
 @pytest.mark.parametrize("driver", ['gv', 'gvx'])
@@ -2501,8 +2585,7 @@ def test_generalized_eigh_lworks(pfx, driver):
         _compute_lwork(sc_dlw, n, uplo="L")
         _compute_lwork(dz_dlw, n, uplo="L")
     except Exception as e:
-        pytest.fail("{}_lwork raised unexpected exception: {}"
-                    "".format(pfx+driver, e))
+        pytest.fail(f"{pfx+driver}_lwork raised unexpected exception: {e}")
 
 
 @pytest.mark.parametrize("dtype_", DTYPES)
@@ -2604,7 +2687,7 @@ def test_gtsvx(dtype, trans_bool, fact):
     gtsvx_out = gtsvx(dl, d, du, b, fact=fact, trans=trans, dlf=dlf_, df=df_,
                       duf=duf_, du2=du2f_, ipiv=ipiv_)
     dlf, df, duf, du2f, ipiv, x_soln, rcond, ferr, berr, info = gtsvx_out
-    assert_(info == 0, "?gtsvx info = {}, should be zero".format(info))
+    assert_(info == 0, f"?gtsvx info = {info}, should be zero")
 
     # assure that inputs are unmodified
     assert_array_equal(dl, inputs_cpy[0])
@@ -2618,13 +2701,13 @@ def test_gtsvx(dtype, trans_bool, fact):
     # assert that the outputs are of correct type or shape
     # rcond should be a scalar
     assert_(hasattr(rcond, "__len__") is not True,
-            "rcond should be scalar but is {}".format(rcond))
+            f"rcond should be scalar but is {rcond}")
     # ferr should be length of # of cols in x
-    assert_(ferr.shape[0] == b.shape[1], "ferr.shape is {} but shoud be {},"
-            .format(ferr.shape[0], b.shape[1]))
+    assert_(ferr.shape[0] == b.shape[1], (f"ferr.shape is {ferr.shape[0]} but should"
+                                          f" be {b.shape[1]}"))
     # berr should be length of # of cols in x
-    assert_(berr.shape[0] == b.shape[1], "berr.shape is {} but shoud be {},"
-            .format(berr.shape[0], b.shape[1]))
+    assert_(berr.shape[0] == b.shape[1], (f"berr.shape is {berr.shape[0]} but should"
+                                          f" be {b.shape[1]}"))
 
 
 @pytest.mark.parametrize("dtype", DTYPES)
@@ -2764,8 +2847,8 @@ def test_gtsvx_NAG(du, d, dl, b, x):
                                                + REAL_DTYPES))
 @pytest.mark.parametrize("fact,df_de_lambda",
                          [("F",
-                           lambda d, e:get_lapack_funcs('pttrf',
-                                                        dtype=e.dtype)(d, e)),
+                           lambda d, e: get_lapack_funcs('pttrf',
+                                                         dtype=e.dtype)(d, e)),
                           ("N", lambda d, e: (None, None, None))])
 def test_ptsvx(dtype, realtype, fact, df_de_lambda):
     '''
@@ -2799,7 +2882,7 @@ def test_ptsvx(dtype, realtype, fact, df_de_lambda):
     assert_array_equal(d, diag_cpy[0])
     assert_array_equal(e, diag_cpy[1])
     assert_array_equal(b, diag_cpy[2])
-    assert_(info == 0, "info should be 0 but is {}.".format(info))
+    assert_(info == 0, f"info should be 0 but is {info}.")
     assert_array_almost_equal(x_soln, x)
 
     # test that the factors from ptsvx can be recombined to make A
@@ -2810,20 +2893,21 @@ def test_ptsvx(dtype, realtype, fact, df_de_lambda):
     # assert that the outputs are of correct type or shape
     # rcond should be a scalar
     assert not hasattr(rcond, "__len__"), \
-        "rcond should be scalar but is {}".format(rcond)
+        f"rcond should be scalar but is {rcond}"
     # ferr should be length of # of cols in x
-    assert_(ferr.shape == (2,), "ferr.shape is {} but shoud be ({},)"
-            .format(ferr.shape, x_soln.shape[1]))
+    assert_(ferr.shape == (2,), (f"ferr.shape is {ferr.shape} but should be "
+                                 "({x_soln.shape[1]},)"))
     # berr should be length of # of cols in x
-    assert_(berr.shape == (2,), "berr.shape is {} but shoud be ({},)"
-            .format(berr.shape, x_soln.shape[1]))
+    assert_(berr.shape == (2,), (f"berr.shape is {berr.shape} but should be "
+                                 "({x_soln.shape[1]},)"))
+
 
 @pytest.mark.parametrize("dtype,realtype", zip(DTYPES, REAL_DTYPES
                                                + REAL_DTYPES))
 @pytest.mark.parametrize("fact,df_de_lambda",
                          [("F",
-                           lambda d, e:get_lapack_funcs('pttrf',
-                                                        dtype=e.dtype)(d, e)),
+                           lambda d, e: get_lapack_funcs('pttrf',
+                                                         dtype=e.dtype)(d, e)),
                           ("N", lambda d, e: (None, None, None))])
 def test_ptsvx_error_raise_errors(dtype, realtype, fact, df_de_lambda):
     seed(42)
@@ -2849,8 +2933,8 @@ def test_ptsvx_error_raise_errors(dtype, realtype, fact, df_de_lambda):
                                                + REAL_DTYPES))
 @pytest.mark.parametrize("fact,df_de_lambda",
                          [("F",
-                           lambda d, e:get_lapack_funcs('pttrf',
-                                                        dtype=e.dtype)(d, e)),
+                           lambda d, e: get_lapack_funcs('pttrf',
+                                                         dtype=e.dtype)(d, e)),
                           ("N", lambda d, e: (None, None, None))])
 def test_ptsvx_non_SPD_singular(dtype, realtype, fact, df_de_lambda):
     seed(42)
@@ -2917,3 +3001,504 @@ def test_ptsvx_NAG(d, e, b, x):
     df, ef, x_ptsvx, rcond, ferr, berr, info = ptsvx(d, e, b)
     # determine ptsvx's solution and x are the same.
     assert_array_almost_equal(x, x_ptsvx)
+
+
+@pytest.mark.parametrize('lower', [False, True])
+@pytest.mark.parametrize('dtype', DTYPES)
+def test_pptrs_pptri_pptrf_ppsv_ppcon(dtype, lower):
+    seed(1234)
+    atol = np.finfo(dtype).eps*100
+    # Manual conversion to/from packed format is feasible here.
+    n, nrhs = 10, 4
+    a = generate_random_dtype_array([n, n], dtype=dtype)
+    b = generate_random_dtype_array([n, nrhs], dtype=dtype)
+
+    a = a.conj().T + a + np.eye(n, dtype=dtype) * dtype(5.)
+    if lower:
+        inds = ([x for y in range(n) for x in range(y, n)],
+                [y for y in range(n) for x in range(y, n)])
+    else:
+        inds = ([x for y in range(1, n+1) for x in range(y)],
+                [y-1 for y in range(1, n+1) for x in range(y)])
+    ap = a[inds]
+    ppsv, pptrf, pptrs, pptri, ppcon = get_lapack_funcs(
+        ('ppsv', 'pptrf', 'pptrs', 'pptri', 'ppcon'),
+        dtype=dtype,
+        ilp64="preferred")
+
+    ul, info = pptrf(n, ap, lower=lower)
+    assert_equal(info, 0)
+    aul = cholesky(a, lower=lower)[inds]
+    assert_allclose(ul, aul, rtol=0, atol=atol)
+
+    uli, info = pptri(n, ul, lower=lower)
+    assert_equal(info, 0)
+    auli = inv(a)[inds]
+    assert_allclose(uli, auli, rtol=0, atol=atol)
+
+    x, info = pptrs(n, ul, b, lower=lower)
+    assert_equal(info, 0)
+    bx = solve(a, b)
+    assert_allclose(x, bx, rtol=0, atol=atol)
+
+    xv, info = ppsv(n, ap, b, lower=lower)
+    assert_equal(info, 0)
+    assert_allclose(xv, bx, rtol=0, atol=atol)
+
+    anorm = np.linalg.norm(a, 1)
+    rcond, info = ppcon(n, ap, anorm=anorm, lower=lower)
+    assert_equal(info, 0)
+    assert_(abs(1/rcond - np.linalg.cond(a, p=1))*rcond < 1)
+
+
+@pytest.mark.parametrize('dtype', DTYPES)
+def test_gees_trexc(dtype):
+    seed(1234)
+    atol = np.finfo(dtype).eps*100
+
+    n = 10
+    a = generate_random_dtype_array([n, n], dtype=dtype)
+
+    gees, trexc = get_lapack_funcs(('gees', 'trexc'), dtype=dtype)
+
+    result = gees(lambda x: None, a, overwrite_a=False)
+    assert_equal(result[-1], 0)
+
+    t = result[0]
+    z = result[-3]
+
+    d2 = t[6, 6]
+
+    if dtype in COMPLEX_DTYPES:
+        assert_allclose(t, np.triu(t), rtol=0, atol=atol)
+
+    assert_allclose(z @ t @ z.conj().T, a, rtol=0, atol=atol)
+
+    result = trexc(t, z, 7, 1)
+    assert_equal(result[-1], 0)
+
+    t = result[0]
+    z = result[-2]
+
+    if dtype in COMPLEX_DTYPES:
+        assert_allclose(t, np.triu(t), rtol=0, atol=atol)
+
+    assert_allclose(z @ t @ z.conj().T, a, rtol=0, atol=atol)
+
+    assert_allclose(t[0, 0], d2, rtol=0, atol=atol)
+
+
+@pytest.mark.parametrize(
+    "t, expect, ifst, ilst",
+    [(np.array([[0.80, -0.11, 0.01, 0.03],
+                [0.00, -0.10, 0.25, 0.35],
+                [0.00, -0.65, -0.10, 0.20],
+                [0.00, 0.00, 0.00, -0.10]]),
+      np.array([[-0.1000, -0.6463, 0.0874, 0.2010],
+                [0.2514, -0.1000, 0.0927, 0.3505],
+                [0.0000, 0.0000, 0.8000, -0.0117],
+                [0.0000, 0.0000, 0.0000, -0.1000]]),
+      2, 1),
+     (np.array([[-6.00 - 7.00j, 0.36 - 0.36j, -0.19 + 0.48j, 0.88 - 0.25j],
+                [0.00 + 0.00j, -5.00 + 2.00j, -0.03 - 0.72j, -0.23 + 0.13j],
+                [0.00 + 0.00j, 0.00 + 0.00j, 8.00 - 1.00j, 0.94 + 0.53j],
+                [0.00 + 0.00j, 0.00 + 0.00j, 0.00 + 0.00j, 3.00 - 4.00j]]),
+      np.array([[-5.0000 + 2.0000j, -0.1574 + 0.7143j,
+                 0.1781 - 0.1913j, 0.3950 + 0.3861j],
+                [0.0000 + 0.0000j, 8.0000 - 1.0000j,
+                 1.0742 + 0.1447j, 0.2515 - 0.3397j],
+                [0.0000 + 0.0000j, 0.0000 + 0.0000j,
+                 3.0000 - 4.0000j, 0.2264 + 0.8962j],
+                [0.0000 + 0.0000j, 0.0000 + 0.0000j,
+                 0.0000 + 0.0000j, -6.0000 - 7.0000j]]),
+      1, 4)])
+def test_trexc_NAG(t, ifst, ilst, expect):
+    """
+    This test implements the example found in the NAG manual,
+    f08qfc, f08qtc, f08qgc, f08quc.
+    """
+    # NAG manual provides accuracy up to 4 decimals
+    atol = 1e-4
+    trexc = get_lapack_funcs('trexc', dtype=t.dtype)
+
+    result = trexc(t, t, ifst, ilst, wantq=0)
+    assert_equal(result[-1], 0)
+
+    t = result[0]
+    assert_allclose(expect, t, atol=atol)
+
+
+@pytest.mark.parametrize('dtype', DTYPES)
+def test_gges_tgexc(dtype):
+    seed(1234)
+    atol = np.finfo(dtype).eps*100
+
+    n = 10
+    a = generate_random_dtype_array([n, n], dtype=dtype)
+    b = generate_random_dtype_array([n, n], dtype=dtype)
+
+    gges, tgexc = get_lapack_funcs(('gges', 'tgexc'), dtype=dtype)
+
+    result = gges(lambda x: None, a, b, overwrite_a=False, overwrite_b=False)
+    assert_equal(result[-1], 0)
+
+    s = result[0]
+    t = result[1]
+    q = result[-4]
+    z = result[-3]
+
+    d1 = s[0, 0] / t[0, 0]
+    d2 = s[6, 6] / t[6, 6]
+
+    if dtype in COMPLEX_DTYPES:
+        assert_allclose(s, np.triu(s), rtol=0, atol=atol)
+        assert_allclose(t, np.triu(t), rtol=0, atol=atol)
+
+    assert_allclose(q @ s @ z.conj().T, a, rtol=0, atol=atol)
+    assert_allclose(q @ t @ z.conj().T, b, rtol=0, atol=atol)
+
+    result = tgexc(s, t, q, z, 7, 1)
+    assert_equal(result[-1], 0)
+
+    s = result[0]
+    t = result[1]
+    q = result[2]
+    z = result[3]
+
+    if dtype in COMPLEX_DTYPES:
+        assert_allclose(s, np.triu(s), rtol=0, atol=atol)
+        assert_allclose(t, np.triu(t), rtol=0, atol=atol)
+
+    assert_allclose(q @ s @ z.conj().T, a, rtol=0, atol=atol)
+    assert_allclose(q @ t @ z.conj().T, b, rtol=0, atol=atol)
+
+    assert_allclose(s[0, 0] / t[0, 0], d2, rtol=0, atol=atol)
+    assert_allclose(s[1, 1] / t[1, 1], d1, rtol=0, atol=atol)
+
+
+@pytest.mark.parametrize('dtype', DTYPES)
+def test_gees_trsen(dtype):
+    seed(1234)
+    atol = np.finfo(dtype).eps*100
+
+    n = 10
+    a = generate_random_dtype_array([n, n], dtype=dtype)
+
+    gees, trsen, trsen_lwork = get_lapack_funcs(
+        ('gees', 'trsen', 'trsen_lwork'), dtype=dtype)
+
+    result = gees(lambda x: None, a, overwrite_a=False)
+    assert_equal(result[-1], 0)
+
+    t = result[0]
+    z = result[-3]
+
+    d2 = t[6, 6]
+
+    if dtype in COMPLEX_DTYPES:
+        assert_allclose(t, np.triu(t), rtol=0, atol=atol)
+
+    assert_allclose(z @ t @ z.conj().T, a, rtol=0, atol=atol)
+
+    select = np.zeros(n)
+    select[6] = 1
+
+    lwork = _compute_lwork(trsen_lwork, select, t)
+
+    if dtype in COMPLEX_DTYPES:
+        result = trsen(select, t, z, lwork=lwork)
+    else:
+        result = trsen(select, t, z, lwork=lwork, liwork=lwork[1])
+    assert_equal(result[-1], 0)
+
+    t = result[0]
+    z = result[1]
+
+    if dtype in COMPLEX_DTYPES:
+        assert_allclose(t, np.triu(t), rtol=0, atol=atol)
+
+    assert_allclose(z @ t @ z.conj().T, a, rtol=0, atol=atol)
+
+    assert_allclose(t[0, 0], d2, rtol=0, atol=atol)
+
+
+@pytest.mark.parametrize(
+    "t, q, expect, select, expect_s, expect_sep",
+    [(np.array([[0.7995, -0.1144, 0.0060, 0.0336],
+                [0.0000, -0.0994, 0.2478, 0.3474],
+                [0.0000, -0.6483, -0.0994, 0.2026],
+                [0.0000, 0.0000, 0.0000, -0.1007]]),
+      np.array([[0.6551, 0.1037, 0.3450, 0.6641],
+                [0.5236, -0.5807, -0.6141, -0.1068],
+                [-0.5362, -0.3073, -0.2935, 0.7293],
+                [0.0956, 0.7467, -0.6463, 0.1249]]),
+      np.array([[0.3500, 0.4500, -0.1400, -0.1700],
+                [0.0900, 0.0700, -0.5399, 0.3500],
+                [-0.4400, -0.3300, -0.0300, 0.1700],
+                [0.2500, -0.3200, -0.1300, 0.1100]]),
+      np.array([1, 0, 0, 1]),
+      1.75e+00, 3.22e+00),
+     (np.array([[-6.0004 - 6.9999j, 0.3637 - 0.3656j,
+                 -0.1880 + 0.4787j, 0.8785 - 0.2539j],
+                [0.0000 + 0.0000j, -5.0000 + 2.0060j,
+                 -0.0307 - 0.7217j, -0.2290 + 0.1313j],
+                [0.0000 + 0.0000j, 0.0000 + 0.0000j,
+                 7.9982 - 0.9964j, 0.9357 + 0.5359j],
+                [0.0000 + 0.0000j, 0.0000 + 0.0000j,
+                 0.0000 + 0.0000j, 3.0023 - 3.9998j]]),
+      np.array([[-0.8347 - 0.1364j, -0.0628 + 0.3806j,
+                 0.2765 - 0.0846j, 0.0633 - 0.2199j],
+                [0.0664 - 0.2968j, 0.2365 + 0.5240j,
+                 -0.5877 - 0.4208j, 0.0835 + 0.2183j],
+                [-0.0362 - 0.3215j, 0.3143 - 0.5473j,
+                 0.0576 - 0.5736j, 0.0057 - 0.4058j],
+                [0.0086 + 0.2958j, -0.3416 - 0.0757j,
+                 -0.1900 - 0.1600j, 0.8327 - 0.1868j]]),
+      np.array([[-3.9702 - 5.0406j, -4.1108 + 3.7002j,
+                 -0.3403 + 1.0098j, 1.2899 - 0.8590j],
+                [0.3397 - 1.5006j, 1.5201 - 0.4301j,
+                 1.8797 - 5.3804j, 3.3606 + 0.6498j],
+                [3.3101 - 3.8506j, 2.4996 + 3.4504j,
+                 0.8802 - 1.0802j, 0.6401 - 1.4800j],
+                [-1.0999 + 0.8199j, 1.8103 - 1.5905j,
+                 3.2502 + 1.3297j, 1.5701 - 3.4397j]]),
+      np.array([1, 0, 0, 1]),
+      1.02e+00, 1.82e-01)])
+def test_trsen_NAG(t, q, select, expect, expect_s, expect_sep):
+    """
+    This test implements the example found in the NAG manual,
+    f08qgc, f08quc.
+    """
+    # NAG manual provides accuracy up to 4 and 2 decimals
+    atol = 1e-4
+    atol2 = 1e-2
+    trsen, trsen_lwork = get_lapack_funcs(
+        ('trsen', 'trsen_lwork'), dtype=t.dtype)
+
+    lwork = _compute_lwork(trsen_lwork, select, t)
+
+    if t.dtype in COMPLEX_DTYPES:
+        result = trsen(select, t, q, lwork=lwork)
+    else:
+        result = trsen(select, t, q, lwork=lwork, liwork=lwork[1])
+    assert_equal(result[-1], 0)
+
+    t = result[0]
+    q = result[1]
+    if t.dtype in COMPLEX_DTYPES:
+        s = result[4]
+        sep = result[5]
+    else:
+        s = result[5]
+        sep = result[6]
+
+    assert_allclose(expect, q @ t @ q.conj().T, atol=atol)
+    assert_allclose(expect_s, 1 / s, atol=atol2)
+    assert_allclose(expect_sep, 1 / sep, atol=atol2)
+
+
+@pytest.mark.parametrize('dtype', DTYPES)
+def test_gges_tgsen(dtype):
+    seed(1234)
+    atol = np.finfo(dtype).eps*100
+
+    n = 10
+    a = generate_random_dtype_array([n, n], dtype=dtype)
+    b = generate_random_dtype_array([n, n], dtype=dtype)
+
+    gges, tgsen, tgsen_lwork = get_lapack_funcs(
+        ('gges', 'tgsen', 'tgsen_lwork'), dtype=dtype)
+
+    result = gges(lambda x: None, a, b, overwrite_a=False, overwrite_b=False)
+    assert_equal(result[-1], 0)
+
+    s = result[0]
+    t = result[1]
+    q = result[-4]
+    z = result[-3]
+
+    d1 = s[0, 0] / t[0, 0]
+    d2 = s[6, 6] / t[6, 6]
+
+    if dtype in COMPLEX_DTYPES:
+        assert_allclose(s, np.triu(s), rtol=0, atol=atol)
+        assert_allclose(t, np.triu(t), rtol=0, atol=atol)
+
+    assert_allclose(q @ s @ z.conj().T, a, rtol=0, atol=atol)
+    assert_allclose(q @ t @ z.conj().T, b, rtol=0, atol=atol)
+
+    select = np.zeros(n)
+    select[6] = 1
+
+    lwork = _compute_lwork(tgsen_lwork, select, s, t)
+
+    # off-by-one error in LAPACK, see gh-issue #13397
+    lwork = (lwork[0]+1, lwork[1])
+
+    result = tgsen(select, s, t, q, z, lwork=lwork)
+    assert_equal(result[-1], 0)
+
+    s = result[0]
+    t = result[1]
+    q = result[-7]
+    z = result[-6]
+
+    if dtype in COMPLEX_DTYPES:
+        assert_allclose(s, np.triu(s), rtol=0, atol=atol)
+        assert_allclose(t, np.triu(t), rtol=0, atol=atol)
+
+    assert_allclose(q @ s @ z.conj().T, a, rtol=0, atol=atol)
+    assert_allclose(q @ t @ z.conj().T, b, rtol=0, atol=atol)
+
+    assert_allclose(s[0, 0] / t[0, 0], d2, rtol=0, atol=atol)
+    assert_allclose(s[1, 1] / t[1, 1], d1, rtol=0, atol=atol)
+
+
+@pytest.mark.parametrize(
+    "a, b, c, d, e, f, rans, lans",
+    [(np.array([[4.0,   1.0,  1.0,  2.0],
+                [0.0,   3.0,  4.0,  1.0],
+                [0.0,   1.0,  3.0,  1.0],
+                [0.0,   0.0,  0.0,  6.0]]),
+      np.array([[1.0,   1.0,  1.0,  1.0],
+                [0.0,   3.0,  4.0,  1.0],
+                [0.0,   1.0,  3.0,  1.0],
+                [0.0,   0.0,  0.0,  4.0]]),
+      np.array([[-4.0,  7.0,  1.0, 12.0],
+                [-9.0,  2.0, -2.0, -2.0],
+                [-4.0,  2.0, -2.0,  8.0],
+                [-7.0,  7.0, -6.0, 19.0]]),
+      np.array([[2.0,   1.0,  1.0,  3.0],
+                [0.0,   1.0,  2.0,  1.0],
+                [0.0,   0.0,  1.0,  1.0],
+                [0.0,   0.0,  0.0,  2.0]]),
+      np.array([[1.0,   1.0,  1.0,  2.0],
+                [0.0,   1.0,  4.0,  1.0],
+                [0.0,   0.0,  1.0,  1.0],
+                [0.0,   0.0,  0.0,  1.0]]),
+      np.array([[-7.0,  5.0,  0.0,  7.0],
+                [-5.0,  1.0, -8.0,  0.0],
+                [-1.0,  2.0, -3.0,  5.0],
+                [-3.0,  2.0,  0.0,  5.0]]),
+      np.array([[1.0,   1.0,  1.0,  1.0],
+                [-1.0,  2.0, -1.0, -1.0],
+                [-1.0,  1.0,  3.0,  1.0],
+                [-1.0,  1.0, -1.0,  4.0]]),
+      np.array([[4.0,  -1.0,  1.0, -1.0],
+                [1.0,   3.0, -1.0,  1.0],
+                [-1.0,  1.0,  2.0, -1.0],
+                [1.0,  -1.0,  1.0,  1.0]]))])
+@pytest.mark.parametrize('dtype', REAL_DTYPES)
+def test_tgsyl_NAG(a, b, c, d, e, f, rans, lans, dtype):
+    atol = 1e-4
+
+    tgsyl = get_lapack_funcs(('tgsyl'), dtype=dtype)
+    rout, lout, scale, dif, info = tgsyl(a, b, c, d, e, f)
+
+    assert_equal(info, 0)
+    assert_allclose(scale, 1.0, rtol=0, atol=np.finfo(dtype).eps*100,
+                    err_msg="SCALE must be 1.0")
+    assert_allclose(dif, 0.0, rtol=0, atol=np.finfo(dtype).eps*100,
+                    err_msg="DIF must be nearly 0")
+    assert_allclose(rout, rans, atol=atol,
+                    err_msg="Solution for R is incorrect")
+    assert_allclose(lout, lans, atol=atol,
+                    err_msg="Solution for L is incorrect")
+
+
+@pytest.mark.parametrize('dtype', REAL_DTYPES)
+@pytest.mark.parametrize('trans', ('N', 'T'))
+@pytest.mark.parametrize('ijob', [0, 1, 2, 3, 4])
+def test_tgsyl(dtype, trans, ijob):
+
+    atol = 1e-3 if dtype == np.float32 else 1e-10
+    rng = np.random.default_rng(1685779866898198)
+    m, n = 10, 15
+
+    a, d, *_ = qz(rng.uniform(-10, 10, [m, m]).astype(dtype),
+                  rng.uniform(-10, 10, [m, m]).astype(dtype),
+                  output='real')
+
+    b, e, *_ = qz(rng.uniform(-10, 10, [n, n]).astype(dtype),
+                  rng.uniform(-10, 10, [n, n]).astype(dtype),
+                  output='real')
+
+    c = rng.uniform(-2, 2, [m, n]).astype(dtype)
+    f = rng.uniform(-2, 2, [m, n]).astype(dtype)
+
+    tgsyl = get_lapack_funcs(('tgsyl'), dtype=dtype)
+    rout, lout, scale, dif, info = tgsyl(a, b, c, d, e, f,
+                                         trans=trans, ijob=ijob)
+
+    assert info == 0, "INFO is non-zero"
+    assert scale >= 0.0, "SCALE must be non-negative"
+    if ijob == 0:
+        assert_allclose(dif, 0.0, rtol=0, atol=np.finfo(dtype).eps*100,
+                        err_msg="DIF must be 0 for ijob =0")
+    else:
+        assert dif >= 0.0, "DIF must be non-negative"
+
+    # Only DIF is calculated for ijob = 3/4
+    if ijob <= 2:
+        if trans == 'N':
+            lhs1 = a @ rout - lout @ b
+            rhs1 = scale*c
+            lhs2 = d @ rout - lout @ e
+            rhs2 = scale*f
+        elif trans == 'T':
+            lhs1 = np.transpose(a) @ rout + np.transpose(d) @ lout
+            rhs1 = scale*c
+            lhs2 = rout @ np.transpose(b) + lout @ np.transpose(e)
+            rhs2 = -1.0*scale*f
+
+        assert_allclose(lhs1, rhs1, atol=atol, rtol=0.,
+                        err_msg='lhs1 and rhs1 do not match')
+        assert_allclose(lhs2, rhs2, atol=atol, rtol=0.,
+                        err_msg='lhs2 and rhs2 do not match')
+
+
+@pytest.mark.parametrize('mtype', ['sy', 'he'])  # matrix type
+@pytest.mark.parametrize('dtype', DTYPES)
+@pytest.mark.parametrize('lower', (0, 1))
+def test_sy_hetrs(mtype, dtype, lower):
+    if mtype == 'he' and dtype in REAL_DTYPES:
+        pytest.skip("hetrs not for real dtypes.")
+    rng = np.random.default_rng(1723059677121834)
+    n, nrhs = 20, 5
+    if dtype in COMPLEX_DTYPES:
+        A = (rng.uniform(size=(n, n)) + rng.uniform(size=(n, n))*1j).astype(dtype)
+    else:
+        A = rng.uniform(size=(n, n)).astype(dtype)
+
+    A = A + A.T if mtype == 'sy' else A + A.conj().T
+    b = rng.uniform(size=(n, nrhs)).astype(dtype)
+    names = f'{mtype}trf', f'{mtype}trf_lwork', f'{mtype}trs'
+    trf, trf_lwork, trs = get_lapack_funcs(names, dtype=dtype)
+    lwork = trf_lwork(n, lower=lower)
+    ldu, ipiv, info = trf(A, lwork=lwork)
+    assert info == 0
+    x, info = trs(a=ldu, ipiv=ipiv, b=b)
+    assert info == 0
+    eps = np.finfo(dtype).eps
+    assert_allclose(A@x, b, atol=100*n*eps)
+
+
+@pytest.mark.parametrize('norm', list('Mm1OoIiFfEe'))
+@pytest.mark.parametrize('uplo, m, n', [('U', 5, 10), ('U', 10, 10),
+                                        ('L', 10, 5), ('L', 10, 10)])
+@pytest.mark.parametrize('diag', ['N', 'U'])
+@pytest.mark.parametrize('dtype', DTYPES)
+def test_lantr(norm, uplo, m, n, diag, dtype):
+    rng = np.random.default_rng(98426598246982456)
+    A = rng.random(size=(m, n)).astype(dtype)
+    lantr, lange = get_lapack_funcs(('lantr', 'lange'), (A,))
+    res = lantr(norm, A, uplo=uplo, diag=diag)
+
+    # now modify the matrix according to assumptions made by `lantr`
+    A = np.triu(A) if uplo == 'U' else np.tril(A)
+    if diag == 'U':
+        i = np.arange(min(m, n))
+        A[i, i] = 1
+    ref = lange(norm, A)
+
+    assert_allclose(res, ref, rtol=2e-6)

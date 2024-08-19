@@ -959,7 +959,7 @@ c note..  vmnorm, fnorm, bnorm, idamax, ddot, and d1mach are function
 c routines.  all the others are subroutines.
 c
 c the intrinsic and external routines used by lsoda are..
-c dabs, dmax1, dmin1, dfloat, max0, min0, mod, dsign, dsqrt, and write.
+c dabs, dmax1, dmin1, dble, max0, min0, mod, dsign, dsqrt, and write.
 c
 c a block data subprogram is also included with the package,
 c for loading some of the variables in internal common.

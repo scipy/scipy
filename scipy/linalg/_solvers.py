@@ -12,14 +12,14 @@ import warnings
 import numpy as np
 from numpy.linalg import inv, LinAlgError, norm, cond, svd
 
-from .basic import solve, solve_triangular, matrix_balance
+from ._basic import solve, solve_triangular, matrix_balance
 from .lapack import get_lapack_funcs
-from .decomp_schur import schur
-from .decomp_lu import lu
-from .decomp_qr import qr
+from ._decomp_schur import schur
+from ._decomp_lu import lu
+from ._decomp_qr import qr
 from ._decomp_qz import ordqz
-from .decomp import _asarray_validated
-from .special_matrices import kron, block_diag
+from ._decomp import _asarray_validated
+from ._special_matrices import kron, block_diag
 
 __all__ = ['solve_sylvester',
            'solve_continuous_lyapunov', 'solve_discrete_lyapunov',
@@ -66,6 +66,7 @@ def solve_sylvester(a, b, q):
     --------
     Given `a`, `b`, and `q` solve for `x`:
 
+    >>> import numpy as np
     >>> from scipy import linalg
     >>> a = np.array([[-3, -2, 0], [-1, -1, 3], [3, -5, -1]])
     >>> b = np.array([[1]])
@@ -141,6 +142,7 @@ def solve_continuous_lyapunov(a, q):
     --------
     Given `a` and `q` solve for `x`:
 
+    >>> import numpy as np
     >>> from scipy import linalg
     >>> a = np.array([[-3, -2, 0], [-1, -1, 0], [0, -5, -1]])
     >>> b = np.array([2, 4, -1])
@@ -164,7 +166,7 @@ def solve_continuous_lyapunov(a, q):
             r_or_c = complex
 
         if not np.equal(*_.shape):
-            raise ValueError("Matrix {} should be square.".format("aq"[ind]))
+            raise ValueError(f"Matrix {'aq'[ind]} should be square.")
 
     # Shape consistency check
     if a.shape != q.shape:
@@ -179,19 +181,18 @@ def solve_continuous_lyapunov(a, q):
     # Call the Sylvester equation solver
     trsyl = get_lapack_funcs('trsyl', (r, f))
 
-    dtype_string = 'T' if r_or_c == float else 'C'
+    dtype_string = 'T' if r_or_c is float else 'C'
     y, scale, info = trsyl(r, r, f, tranb=dtype_string)
 
     if info < 0:
         raise ValueError('?TRSYL exited with the internal error '
-                         '"illegal value in argument number {}.". See '
-                         'LAPACK documentation for the ?TRSYL error codes.'
-                         ''.format(-info))
+                         f'"illegal value in argument number {-info}.". See '
+                         'LAPACK documentation for the ?TRSYL error codes.')
     elif info == 1:
         warnings.warn('Input "a" has an eigenvalue pair whose sum is '
                       'very close to or exactly zero. The solution is '
                       'obtained via perturbing the coefficients.',
-                      RuntimeWarning)
+                      RuntimeWarning, stacklevel=2)
     y *= scale
 
     return u.dot(y).dot(u.conj().T)
@@ -279,9 +280,8 @@ def solve_discrete_lyapunov(a, q, method=None):
 
     References
     ----------
-    .. [1] Hamilton, James D. Time Series Analysis, Princeton: Princeton
-       University Press, 1994.  265.  Print.
-       http://doc1.lbfl.li/aca/FLMF037168.pdf
+    .. [1] "Lyapunov equation", Wikipedia,
+       https://en.wikipedia.org/wiki/Lyapunov_equation#Discrete_time
     .. [2] Gajic, Z., and M.T.J. Qureshi. 2008.
        Lyapunov Matrix Equation in System Stability and Control.
        Dover Books on Engineering Series. Dover Publications.
@@ -290,6 +290,7 @@ def solve_discrete_lyapunov(a, q, method=None):
     --------
     Given `a` and `q` solve for `x`:
 
+    >>> import numpy as np
     >>> from scipy import linalg
     >>> a = np.array([[0.2, 0.5],[0.7, -0.9]])
     >>> q = np.eye(2)
@@ -317,7 +318,7 @@ def solve_discrete_lyapunov(a, q, method=None):
     elif meth == 'bilinear':
         x = _solve_discrete_lyapunov_bilinear(a, q)
     else:
-        raise ValueError('Unknown solver %s' % method)
+        raise ValueError(f'Unknown solver {method}')
 
     return x
 
@@ -412,7 +413,7 @@ def solve_continuous_are(a, b, q, r, e=None, s=None, balanced=True):
     ----------
     .. [1]  P. van Dooren , "A Generalized Eigenvalue Approach For Solving
        Riccati Equations.", SIAM Journal on Scientific and Statistical
-       Computing, Vol.2(2), DOI: 10.1137/0902010
+       Computing, Vol.2(2), :doi:`10.1137/0902010`
 
     .. [2] A.J. Laub, "A Schur Method for Solving Algebraic Riccati
        Equations.", Massachusetts Institute of Technology. Laboratory for
@@ -420,12 +421,13 @@ def solve_continuous_are(a, b, q, r, e=None, s=None, balanced=True):
        http://hdl.handle.net/1721.1/1301
 
     .. [3] P. Benner, "Symplectic Balancing of Hamiltonian Matrices", 2001,
-       SIAM J. Sci. Comput., 2001, Vol.22(5), DOI: 10.1137/S1064827500367993
+       SIAM J. Sci. Comput., 2001, Vol.22(5), :doi:`10.1137/S1064827500367993`
 
     Examples
     --------
     Given `a`, `b`, `q`, and `r` solve for `x`:
 
+    >>> import numpy as np
     >>> from scipy import linalg
     >>> a = np.array([[4, 3], [-4.5, -3.5]])
     >>> b = np.array([[1], [-1]])
@@ -464,7 +466,7 @@ def solve_continuous_are(a, b, q, r, e=None, s=None, balanced=True):
         # xGEBAL does not remove the diagonals before scaling. Also
         # to avoid destroying the Symplectic structure, we follow Ref.3
         M = np.abs(H) + np.abs(J)
-        M[np.diag_indices_from(M)] = 0.
+        np.fill_diagonal(M, 0.)
         _, (sca, _) = matrix_balance(M, separate=1, permute=0)
         # do we need to bother?
         if not np.allclose(sca, np.ones_like(sca)):
@@ -485,7 +487,7 @@ def solve_continuous_are(a, b, q, r, e=None, s=None, balanced=True):
     J = q[:2*m, n:].conj().T.dot(J[:2*m, :2*m])
 
     # Decide on which output type is needed for QZ
-    out_str = 'real' if r_or_c == float else 'complex'
+    out_str = 'real' if r_or_c is float else 'complex'
 
     _, _, _, _, _, u = ordqz(H, J, sort='lhp', overwrite_a=True,
                              overwrite_b=True, check_finite=False,
@@ -617,7 +619,7 @@ def solve_discrete_are(a, b, q, r, e=None, s=None, balanced=True):
     ----------
     .. [1]  P. van Dooren , "A Generalized Eigenvalue Approach For Solving
        Riccati Equations.", SIAM Journal on Scientific and Statistical
-       Computing, Vol.2(2), DOI: 10.1137/0902010
+       Computing, Vol.2(2), :doi:`10.1137/0902010`
 
     .. [2] A.J. Laub, "A Schur Method for Solving Algebraic Riccati
        Equations.", Massachusetts Institute of Technology. Laboratory for
@@ -625,12 +627,13 @@ def solve_discrete_are(a, b, q, r, e=None, s=None, balanced=True):
        http://hdl.handle.net/1721.1/1301
 
     .. [3] P. Benner, "Symplectic Balancing of Hamiltonian Matrices", 2001,
-       SIAM J. Sci. Comput., 2001, Vol.22(5), DOI: 10.1137/S1064827500367993
+       SIAM J. Sci. Comput., 2001, Vol.22(5), :doi:`10.1137/S1064827500367993`
 
     Examples
     --------
     Given `a`, `b`, `q`, and `r` solve for `x`:
 
+    >>> import numpy as np
     >>> from scipy import linalg as la
     >>> a = np.array([[0, 1], [0, -1]])
     >>> b = np.array([[1, 0], [2, 1]])
@@ -669,7 +672,7 @@ def solve_discrete_are(a, b, q, r, e=None, s=None, balanced=True):
         # xGEBAL does not remove the diagonals before scaling. Also
         # to avoid destroying the Symplectic structure, we follow Ref.3
         M = np.abs(H) + np.abs(J)
-        M[np.diag_indices_from(M)] = 0.
+        np.fill_diagonal(M, 0.)
         _, (sca, _) = matrix_balance(M, separate=1, permute=0)
         # do we need to bother?
         if not np.allclose(sca, np.ones_like(sca)):
@@ -690,7 +693,7 @@ def solve_discrete_are(a, b, q, r, e=None, s=None, balanced=True):
     J = q_of_qr[:, n:].conj().T.dot(J[:, :2*m])
 
     # Decide on which output type is needed for QZ
-    out_str = 'real' if r_or_c == float else 'complex'
+    out_str = 'real' if r_or_c is float else 'complex'
 
     _, _, _, _, _, u = ordqz(H, J, sort='iuc',
                              overwrite_a=True,
@@ -728,7 +731,7 @@ def solve_discrete_are(a, b, q, r, e=None, s=None, balanced=True):
     sym_threshold = np.max([np.spacing(1000.), 0.1*n_u_sym])
 
     if norm(u_sym, 1) > sym_threshold:
-        raise LinAlgError('The associated symplectic pencil has eigenvalues'
+        raise LinAlgError('The associated symplectic pencil has eigenvalues '
                           'too close to the unit circle')
 
     return (x + x.conj().T)/2
@@ -773,7 +776,7 @@ def _are_validate_args(a, b, q, r, e, s, eq_type='care'):
 
     """
 
-    if not eq_type.lower() in ('dare', 'care'):
+    if eq_type.lower() not in ("dare", "care"):
         raise ValueError("Equation type unknown. "
                          "Only 'care' and 'dare' is understood")
 
@@ -791,7 +794,7 @@ def _are_validate_args(a, b, q, r, e, s, eq_type='care'):
             r_or_c = complex
 
         if not np.equal(*mat.shape):
-            raise ValueError("Matrix {} should be square.".format("aqr"[ind]))
+            raise ValueError(f"Matrix {'aqr'[ind]} should be square.")
 
     # Shape consistency checks
     m, n = b.shape
@@ -805,8 +808,7 @@ def _are_validate_args(a, b, q, r, e, s, eq_type='care'):
     # Check if the data matrices q, r are (sufficiently) hermitian
     for ind, mat in enumerate((q, r)):
         if norm(mat - mat.conj().T, 1) > np.spacing(norm(mat, 1))*100:
-            raise ValueError("Matrix {} should be symmetric/hermitian."
-                             "".format("qr"[ind]))
+            raise ValueError(f"Matrix {'qr'[ind]} should be symmetric/hermitian.")
 
     # Continuous time ARE should have a nonsingular r matrix.
     if eq_type == 'care':

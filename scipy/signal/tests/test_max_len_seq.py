@@ -7,7 +7,7 @@ from numpy.fft import fft, ifft
 from scipy.signal import max_len_seq
 
 
-class TestMLS(object):
+class TestMLS:
 
     def test_mls_inputs(self):
         # can't all be zero state

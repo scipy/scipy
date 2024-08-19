@@ -4,7 +4,9 @@
 Gauss Hypergeometric Distribution
 =================================
 
-The two shape parameters are :math:`\alpha>0,\,\beta>0`.  The support is :math:`x\in\left[0,1\right]`.
+The four shape parameters are :math:`\alpha>0`, :math:`\beta>0`,
+:math:`-\infty < \gamma < \infty`, and :math:`z > -1`.
+The support is :math:`x\in\left[0,1\right]`.
 
 .. math::
 

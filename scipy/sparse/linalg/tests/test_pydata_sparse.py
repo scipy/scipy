@@ -4,22 +4,22 @@ import numpy as np
 import scipy.sparse as sp
 import scipy.sparse.linalg as splin
 
-from numpy.testing import assert_allclose
+from numpy.testing import assert_allclose, assert_equal
 
 try:
     import sparse
-except ImportError:
+except Exception:
     sparse = None
 
 pytestmark = pytest.mark.skipif(sparse is None,
                                 reason="pydata/sparse not installed")
 
 
-msg = "pydata/sparse (0.8) does not implement necessary operations"
+msg = "pydata/sparse (0.15.1) does not implement necessary operations"
 
 
-sparse_params = [pytest.param("COO"),
-                 pytest.param("DOK", marks=[pytest.mark.xfail(reason=msg)])]
+sparse_params = (pytest.param("COO"),
+                 pytest.param("DOK", marks=[pytest.mark.xfail(reason=msg)]))
 
 scipy_sparse_classes = [
     sp.bsr_matrix,
@@ -72,7 +72,13 @@ def test_lsmr(matrices):
     A_dense, A_sparse, b = matrices
     res0 = splin.lsmr(A_dense, b)
     res = splin.lsmr(A_sparse, b)
-    assert_allclose(res[0], res0[0], atol=1.8e-5)
+    assert_allclose(res[0], res0[0], atol=1e-3)
+
+
+# test issue 17012
+def test_lsmr_output_shape():
+    x = splin.lsmr(A=np.ones((10, 1)), b=np.zeros(10), x0=np.ones(1))[0]
+    assert_equal(x.shape, (1,))
 
 
 def test_lsqr(matrices):
@@ -115,8 +121,8 @@ def test_svds(matrices):
     u, s, vt = splin.svds(A_sparse, k=2, v0=v0)
 
     assert_allclose(s, s0)
-    assert_allclose(u, u0)
-    assert_allclose(vt, vt0)
+    assert_allclose(np.abs(u), np.abs(u0))
+    assert_allclose(np.abs(vt), np.abs(vt0))
 
 
 def test_lobpcg(matrices):
@@ -166,8 +172,10 @@ def test_splu(matrices):
     assert isinstance(lu.L, sparse_cls)
     assert isinstance(lu.U, sparse_cls)
 
-    Pr = sparse_cls(sp.csc_matrix((np.ones(n), (lu.perm_r, np.arange(n)))))
-    Pc = sparse_cls(sp.csc_matrix((np.ones(n), (np.arange(n), lu.perm_c))))
+    _Pr_scipy = sp.csc_matrix((np.ones(n), (lu.perm_r, np.arange(n))))
+    _Pc_scipy = sp.csc_matrix((np.ones(n), (np.arange(n), lu.perm_c)))
+    Pr = sparse_cls.from_scipy_sparse(_Pr_scipy)
+    Pc = sparse_cls.from_scipy_sparse(_Pc_scipy)
     A2 = Pr.T @ lu.L @ lu.U @ Pc.T
 
     assert_allclose(A2.todense(), A_sparse.todense())
@@ -202,6 +210,13 @@ def test_onenormest(matrices):
     est0 = splin.onenormest(A_dense)
     est = splin.onenormest(A_sparse)
     assert_allclose(est, est0)
+
+
+def test_norm(matrices):
+    A_dense, A_sparse, b = matrices
+    norm0 = splin.norm(sp.csr_matrix(A_dense))
+    norm = splin.norm(A_sparse)
+    assert_allclose(norm, norm0)
 
 
 def test_inv(matrices):

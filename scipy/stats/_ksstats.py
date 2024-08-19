@@ -68,7 +68,7 @@
 import numpy as np
 import scipy.special
 import scipy.special._ufuncs as scu
-import scipy.misc
+from scipy._lib._finite_differences import _derivative
 
 _E128 = 128
 _EP128 = np.ldexp(np.longdouble(1), _E128)
@@ -89,6 +89,7 @@ _STIRLING_COEFFS = [-2.955065359477124183e-2, 6.4102564102564102564e-3,
                     -5.952380952380952381e-4, 7.9365079365079365079e-4,
                     -2.7777777777777777778e-3, 8.3333333333333333333e-2]
 
+
 def _log_nfactorial_div_n_pow_n(n):
     # Computes n! / n**n
     #    = (n-1)! / n**(n-1)
@@ -106,7 +107,7 @@ def _clip_prob(p):
 
 def _select_and_clip_prob(cdfprob, sfprob, cdf=True):
     """Selects either the CDF or SF, and then clips to range 0<=p<=1."""
-    p = (cdfprob if cdf else sfprob)
+    p = np.where(cdf, cdfprob, sfprob)
     return _clip_prob(p)
 
 
@@ -139,7 +140,7 @@ def _kolmogn_DMTW(n, d, cdf=True):
     # q = k-th row of H (actually i!/n^i*H^i)
     intm = np.arange(1, m + 1)
     v = 1.0 - h ** intm
-    w = np.zeros(m)
+    w = np.empty(m)
     fac = 1.0
     for j in intm:
         w[j - 1] = fac
@@ -228,9 +229,9 @@ def _kolmogn_Pomeranz(n, x, cdf=True):
     ceilf = (1 if f > 0 else 0)
     roundf = (1 if f > 0.5 else 0)
     npwrs = 2 * (ll + 1)    # Maximum number of powers needed in convolutions
-    gpower = np.zeros(npwrs)  # gpower = (g/n)^m/m!
-    twogpower = np.zeros(npwrs)  # twogpower = (2g/n)^m/m!
-    onem2gpower = np.zeros(npwrs)  # onem2gpower = ((1-2g)/n)^m/m!
+    gpower = np.empty(npwrs)  # gpower = (g/n)^m/m!
+    twogpower = np.empty(npwrs)  # twogpower = (2g/n)^m/m!
+    onem2gpower = np.empty(npwrs)  # onem2gpower = ((1-2g)/n)^m/m!
     # gpower etc are *almost* Poisson probs, just missing normalizing factor.
 
     gpower[0] = 1.0
@@ -414,25 +415,20 @@ def _kolmogn(n, x, cdf=True):
         return _select_and_clip_prob(1.0 - prob, prob, cdf=cdf)
 
     # Split CDF and SF as they have different cutoffs on nxsquared.
-    if cdf:
-        if nxsquared >= 18.0:
-            return 1.0
-        if n <= 100000:
-            if n * x**1.5 <= 1.4:
-                prob = _kolmogn_DMTW(n, x, cdf=True)
-                return _clip_prob(prob)
-        # n > 1e5 or  n * x**1.5 > 1.4
-        prob = _kolmogn_PelzGood(n, x, cdf=True)
-        return _clip_prob(prob)
-    # compute the SF
-    if nxsquared >= 370.0:
-        return 0.0
-    if nxsquared >= 2.2:
-        prob = 2 * scipy.special.smirnov(n, x)
-        return _clip_prob(prob)
-    # Compute the CDF and take its complement
-    cdfprob = _kolmogn(n, x, cdf=True)
-    return _clip_prob(1.0 - cdfprob)
+    if not cdf:
+        if nxsquared >= 370.0:
+            return 0.0
+        if nxsquared >= 2.2:
+            prob = 2 * scipy.special.smirnov(n, x)
+            return _clip_prob(prob)
+        # Fall through and compute the SF as 1.0-CDF
+    if nxsquared >= 18.0:
+        cdfprob = 1.0
+    elif n <= 100000 and n * x**1.5 <= 1.4:
+        cdfprob = _kolmogn_DMTW(n, x, cdf=True)
+    else:
+        cdfprob = _kolmogn_PelzGood(n, x, cdf=True)
+    return _select_and_clip_prob(cdfprob, 1.0 - cdfprob, cdf=cdf)
 
 
 def _kolmogn_p(n, x):
@@ -474,7 +470,7 @@ def _kolmogn_p(n, x):
     def _kk(_x):
         return kolmogn(n, _x)
 
-    return scipy.misc.derivative(_kk, x, dx=delta, order=5)
+    return _derivative(_kk, x, dx=delta, order=5)
 
 
 def _kolmogni(n, p, q):
@@ -499,7 +495,10 @@ def _kolmogni(n, p, q):
         return x
     x1 = scu._kolmogci(p)/np.sqrt(n)
     x1 = min(x1, 1.0 - 1.0/n)
-    _f = lambda x: _kolmogn(n, x) - p
+
+    def _f(x):
+        return _kolmogn(n, x) - p
+
     return scipy.optimize.brentq(_f, 1.0/n, x1, xtol=1e-14)
 
 
@@ -508,8 +507,8 @@ def kolmogn(n, x, cdf=True):
 
     The two-sided Kolmogorov-Smirnov distribution has as its CDF Pr(D_n <= x),
     for a sample of size n drawn from a distribution with CDF F(t), where
-    D_n &= sup_t |F_n(t) - F(t)|, and
-    F_n(t) is the Empirical Cumulative Distribution Function of the sample.
+    :math:`D_n &= sup_t |F_n(t) - F(t)|`, and
+    :math:`F_n(t)` is the Empirical Cumulative Distribution Function of the sample.
 
     Parameters
     ----------
@@ -527,10 +526,16 @@ def kolmogn(n, x, cdf=True):
 
     The return value has shape the result of numpy broadcasting n and x.
     """
-    it = np.nditer([n, x, None])
-    for _n, _x, z in it:
-        z[...] = _kolmogn(int(_n), _x, cdf=cdf)
-    result = it.operands[2]
+    it = np.nditer([n, x, cdf, None],
+                   op_dtypes=[None, np.float64, np.bool_, np.float64])
+    for _n, _x, _cdf, z in it:
+        if np.isnan(_n):
+            z[...] = _n
+            continue
+        if int(_n) != _n:
+            raise ValueError(f'n is not integral: {_n}')
+        z[...] = _kolmogn(int(_n), _x, cdf=_cdf)
+    result = it.operands[-1]
     return result
 
 
@@ -553,8 +558,13 @@ def kolmognp(n, x):
     """
     it = np.nditer([n, x, None])
     for _n, _x, z in it:
+        if np.isnan(_n):
+            z[...] = _n
+            continue
+        if int(_n) != _n:
+            raise ValueError(f'n is not integral: {_n}')
         z[...] = _kolmogn_p(int(_n), _x)
-    result = it.operands[2]
+    result = it.operands[-1]
     return result
 
 
@@ -577,8 +587,14 @@ def kolmogni(n, q, cdf=True):
 
     The return value has shape the result of numpy broadcasting n and x.
     """
-    it = np.nditer([n, q, None])
-    for _n, _q, z in it:
-        z[...] = _kolmogni(int(_n), _q if cdf else 1.0-_q, 1.0-_q if cdf else _q)
-    result = it.operands[2]
+    it = np.nditer([n, q, cdf, None])
+    for _n, _q, _cdf, z in it:
+        if np.isnan(_n):
+            z[...] = _n
+            continue
+        if int(_n) != _n:
+            raise ValueError(f'n is not integral: {_n}')
+        _pcdf, _psf = (_q, 1-_q) if _cdf else (1-_q, _q)
+        z[...] = _kolmogni(int(_n), _pcdf, _psf)
+    result = it.operands[-1]
     return result

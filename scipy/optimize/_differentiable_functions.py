@@ -3,16 +3,153 @@ import scipy.sparse as sps
 from ._numdiff import approx_derivative, group_columns
 from ._hessian_update_strategy import HessianUpdateStrategy
 from scipy.sparse.linalg import LinearOperator
+from scipy._lib._array_api import xp_atleast_nd, array_namespace
 
 
 FD_METHODS = ('2-point', '3-point', 'cs')
 
 
-class ScalarFunction(object):
+def _wrapper_fun(fun, args=()):
+    ncalls = [0]
+
+    def wrapped(x):
+        ncalls[0] += 1
+        # Send a copy because the user may overwrite it.
+        # Overwriting results in undefined behaviour because
+        # fun(self.x) will change self.x, with the two no longer linked.
+        fx = fun(np.copy(x), *args)
+        # Make sure the function returns a true scalar
+        if not np.isscalar(fx):
+            try:
+                fx = np.asarray(fx).item()
+            except (TypeError, ValueError) as e:
+                raise ValueError(
+                    "The user-provided objective function "
+                    "must return a scalar value."
+                ) from e
+        return fx
+    return wrapped, ncalls
+
+
+def _wrapper_grad(grad, fun=None, args=(), finite_diff_options=None):
+    ncalls = [0]
+
+    if callable(grad):
+        def wrapped(x, **kwds):
+            # kwds present to give function same signature as numdiff variant
+            ncalls[0] += 1
+            return np.atleast_1d(grad(np.copy(x), *args))
+        return wrapped, ncalls
+
+    elif grad in FD_METHODS:
+        def wrapped1(x, f0=None):
+            ncalls[0] += 1
+            return approx_derivative(
+                fun, x, f0=f0, **finite_diff_options
+            )
+
+        return wrapped1, ncalls
+
+
+def _wrapper_hess(hess, grad=None, x0=None, args=(), finite_diff_options=None):
+    if callable(hess):
+        H = hess(np.copy(x0), *args)
+        ncalls = [1]
+
+        if sps.issparse(H):
+            def wrapped(x, **kwds):
+                ncalls[0] += 1
+                return sps.csr_matrix(hess(np.copy(x), *args))
+
+            H = sps.csr_matrix(H)
+
+        elif isinstance(H, LinearOperator):
+            def wrapped(x, **kwds):
+                ncalls[0] += 1
+                return hess(np.copy(x), *args)
+
+        else:  # dense
+            def wrapped(x, **kwds):
+                ncalls[0] += 1
+                return np.atleast_2d(np.asarray(hess(np.copy(x), *args)))
+
+            H = np.atleast_2d(np.asarray(H))
+
+        return wrapped, ncalls, H
+    elif hess in FD_METHODS:
+        ncalls = [0]
+
+        def wrapped1(x, f0=None):
+            return approx_derivative(
+                grad, x, f0=f0, **finite_diff_options
+            )
+
+        return wrapped1, ncalls, None
+
+
+class ScalarFunction:
     """Scalar function and its derivatives.
 
     This class defines a scalar function F: R^n->R and methods for
     computing or approximating its first and second derivatives.
+
+    Parameters
+    ----------
+    fun : callable
+        evaluates the scalar function. Must be of the form ``fun(x, *args)``,
+        where ``x`` is the argument in the form of a 1-D array and ``args`` is
+        a tuple of any additional fixed parameters needed to completely specify
+        the function. Should return a scalar.
+    x0 : array-like
+        Provides an initial set of variables for evaluating fun. Array of real
+        elements of size (n,), where 'n' is the number of independent
+        variables.
+    args : tuple, optional
+        Any additional fixed parameters needed to completely specify the scalar
+        function.
+    grad : {callable, '2-point', '3-point', 'cs'}
+        Method for computing the gradient vector.
+        If it is a callable, it should be a function that returns the gradient
+        vector:
+
+            ``grad(x, *args) -> array_like, shape (n,)``
+
+        where ``x`` is an array with shape (n,) and ``args`` is a tuple with
+        the fixed parameters.
+        Alternatively, the keywords  {'2-point', '3-point', 'cs'} can be used
+        to select a finite difference scheme for numerical estimation of the
+        gradient with a relative step size. These finite difference schemes
+        obey any specified `bounds`.
+    hess : {callable, '2-point', '3-point', 'cs', HessianUpdateStrategy}
+        Method for computing the Hessian matrix. If it is callable, it should
+        return the  Hessian matrix:
+
+            ``hess(x, *args) -> {LinearOperator, spmatrix, array}, (n, n)``
+
+        where x is a (n,) ndarray and `args` is a tuple with the fixed
+        parameters. Alternatively, the keywords {'2-point', '3-point', 'cs'}
+        select a finite difference scheme for numerical estimation. Or, objects
+        implementing `HessianUpdateStrategy` interface can be used to
+        approximate the Hessian.
+        Whenever the gradient is estimated via finite-differences, the Hessian
+        cannot be estimated with options {'2-point', '3-point', 'cs'} and needs
+        to be estimated using one of the quasi-Newton strategies.
+    finite_diff_rel_step : None or array_like
+        Relative step size to use. The absolute step size is computed as
+        ``h = finite_diff_rel_step * sign(x0) * max(1, abs(x0))``, possibly
+        adjusted to fit into the bounds. For ``method='3-point'`` the sign
+        of `h` is ignored. If None then finite_diff_rel_step is selected
+        automatically,
+    finite_diff_bounds : tuple of array_like
+        Lower and upper bounds on independent variables. Defaults to no bounds,
+        (-np.inf, np.inf). Each bound must match the size of `x0` or be a
+        scalar, in the latter case the bound will be the same for all
+        variables. Use it to limit the range of function evaluation.
+    epsilon : None or array_like, optional
+        Absolute step size to use, possibly adjusted to fit into the bounds.
+        For ``method='3-point'`` the sign of `epsilon` is ignored. By default
+        relative steps are used, only if ``epsilon is not None`` are absolute
+        steps used.
 
     Notes
     -----
@@ -28,14 +165,16 @@ class ScalarFunction(object):
     def __init__(self, fun, x0, args, grad, hess, finite_diff_rel_step,
                  finite_diff_bounds, epsilon=None):
         if not callable(grad) and grad not in FD_METHODS:
-            raise ValueError("`grad` must be either callable or one of {}."
-                             .format(FD_METHODS))
+            raise ValueError(
+                f"`grad` must be either callable or one of {FD_METHODS}."
+            )
 
         if not (callable(hess) or hess in FD_METHODS
                 or isinstance(hess, HessianUpdateStrategy)):
-            raise ValueError("`hess` must be either callable,"
-                             "HessianUpdateStrategy or one of {}."
-                             .format(FD_METHODS))
+            raise ValueError(
+                f"`hess` must be either callable, HessianUpdateStrategy"
+                f" or one of {FD_METHODS}."
+            )
 
         if grad in FD_METHODS and hess in FD_METHODS:
             raise ValueError("Whenever the gradient is estimated via "
@@ -43,14 +182,29 @@ class ScalarFunction(object):
                              "to be estimated using one of the "
                              "quasi-Newton strategies.")
 
-        self.x = np.atleast_1d(x0).astype(float)
+        self.xp = xp = array_namespace(x0)
+        _x = xp_atleast_nd(x0, ndim=1, xp=xp)
+        _dtype = xp.float64
+        if xp.isdtype(_x.dtype, "real floating"):
+            _dtype = _x.dtype
+
+        # original arguments
+        self._wrapped_fun, self._nfev = _wrapper_fun(fun, args=args)
+        self._orig_fun = fun
+        self._orig_grad = grad
+        self._orig_hess = hess
+        self._args = args
+
+        # promotes to floating
+        self.x = xp.astype(_x, _dtype)
+        self.x_dtype = _dtype
         self.n = self.x.size
-        self.nfev = 0
-        self.ngev = 0
-        self.nhev = 0
         self.f_updated = False
         self.g_updated = False
         self.H_updated = False
+
+        self._lowest_x = None
+        self._lowest_f = np.inf
 
         finite_diff_options = {}
         if grad in FD_METHODS:
@@ -64,70 +218,33 @@ class ScalarFunction(object):
             finite_diff_options["abs_step"] = epsilon
             finite_diff_options["as_linear_operator"] = True
 
-        # Function evaluation
-        def fun_wrapped(x):
-            self.nfev += 1
-            return fun(x, *args)
-
-        def update_fun():
-            self.f = fun_wrapped(self.x)
-
-        self._update_fun_impl = update_fun
+        # Initial function evaluation
         self._update_fun()
 
-        # Gradient evaluation
-        if callable(grad):
-            def grad_wrapped(x):
-                self.ngev += 1
-                return np.atleast_1d(grad(x, *args))
-
-            def update_grad():
-                self.g = grad_wrapped(self.x)
-
-        elif grad in FD_METHODS:
-            def update_grad():
-                self._update_fun()
-                self.ngev += 1
-                self.g = approx_derivative(fun_wrapped, self.x, f0=self.f,
-                                           **finite_diff_options)
-
-        self._update_grad_impl = update_grad
+        # Initial gradient evaluation
+        self._wrapped_grad, self._ngev = _wrapper_grad(
+            grad,
+            fun=self._wrapped_fun,
+            args=args,
+            finite_diff_options=finite_diff_options
+        )
         self._update_grad()
 
-        # Hessian Evaluation
+        # Hessian evaluation
         if callable(hess):
-            self.H = hess(x0, *args)
+            self._wrapped_hess, self._nhev, self.H = _wrapper_hess(
+                hess, x0=x0, args=args
+            )
             self.H_updated = True
-            self.nhev += 1
-
-            if sps.issparse(self.H):
-                def hess_wrapped(x):
-                    self.nhev += 1
-                    return sps.csr_matrix(hess(x, *args))
-                self.H = sps.csr_matrix(self.H)
-
-            elif isinstance(self.H, LinearOperator):
-                def hess_wrapped(x):
-                    self.nhev += 1
-                    return hess(x, *args)
-
-            else:
-                def hess_wrapped(x):
-                    self.nhev += 1
-                    return np.atleast_2d(np.asarray(hess(x, *args)))
-                self.H = np.atleast_2d(np.asarray(self.H))
-
-            def update_hess():
-                self.H = hess_wrapped(self.x)
-
         elif hess in FD_METHODS:
-            def update_hess():
-                self._update_grad()
-                self.H = approx_derivative(grad_wrapped, self.x, f0=self.g,
-                                           **finite_diff_options)
-                return self.H
-
-            update_hess()
+            self._wrapped_hess, self._nhev, self.H = _wrapper_hess(
+                hess,
+                grad=self._wrapped_grad,
+                x0=x0,
+                finite_diff_options=finite_diff_options
+            )
+            self._update_grad()
+            self.H = self._wrapped_hess(self.x, f0=self.g)
             self.H_updated = True
         elif isinstance(hess, HessianUpdateStrategy):
             self.H = hess
@@ -135,74 +252,100 @@ class ScalarFunction(object):
             self.H_updated = True
             self.x_prev = None
             self.g_prev = None
+            self._nhev = [0]
 
-            def update_hess():
-                self._update_grad()
-                self.H.update(self.x - self.x_prev, self.g - self.g_prev)
+    @property
+    def nfev(self):
+        return self._nfev[0]
 
-        self._update_hess_impl = update_hess
+    @property
+    def ngev(self):
+        return self._ngev[0]
 
-        if isinstance(hess, HessianUpdateStrategy):
-            def update_x(x):
-                self._update_grad()
-                self.x_prev = self.x
-                self.g_prev = self.g
+    @property
+    def nhev(self):
+        return self._nhev[0]
 
-                self.x = np.atleast_1d(x).astype(float)
-                self.f_updated = False
-                self.g_updated = False
-                self.H_updated = False
-                self._update_hess()
+    def _update_x(self, x):
+        if isinstance(self._orig_hess, HessianUpdateStrategy):
+            self._update_grad()
+            self.x_prev = self.x
+            self.g_prev = self.g
+            # ensure that self.x is a copy of x. Don't store a reference
+            # otherwise the memoization doesn't work properly.
+
+            _x = xp_atleast_nd(x, ndim=1, xp=self.xp)
+            self.x = self.xp.astype(_x, self.x_dtype)
+            self.f_updated = False
+            self.g_updated = False
+            self.H_updated = False
+            self._update_hess()
         else:
-            def update_x(x):
-                self.x = np.atleast_1d(x).astype(float)
-                self.f_updated = False
-                self.g_updated = False
-                self.H_updated = False
-        self._update_x_impl = update_x
+            # ensure that self.x is a copy of x. Don't store a reference
+            # otherwise the memoization doesn't work properly.
+            _x = xp_atleast_nd(x, ndim=1, xp=self.xp)
+            self.x = self.xp.astype(_x, self.x_dtype)
+            self.f_updated = False
+            self.g_updated = False
+            self.H_updated = False
 
     def _update_fun(self):
         if not self.f_updated:
-            self._update_fun_impl()
+            fx = self._wrapped_fun(self.x)
+            if fx < self._lowest_f:
+                self._lowest_x = self.x
+                self._lowest_f = fx
+
+            self.f = fx
             self.f_updated = True
 
     def _update_grad(self):
         if not self.g_updated:
-            self._update_grad_impl()
+            if self._orig_grad in FD_METHODS:
+                self._update_fun()
+            self.g = self._wrapped_grad(self.x, f0=self.f)
             self.g_updated = True
 
     def _update_hess(self):
         if not self.H_updated:
-            self._update_hess_impl()
+            if self._orig_hess in FD_METHODS:
+                self._update_grad()
+                self.H = self._wrapped_hess(self.x, f0=self.g)
+            elif isinstance(self._orig_hess, HessianUpdateStrategy):
+                self._update_grad()
+                self.H.update(self.x - self.x_prev, self.g - self.g_prev)
+            else:       # should be callable(hess)
+                self.H = self._wrapped_hess(self.x)
+
             self.H_updated = True
 
     def fun(self, x):
         if not np.array_equal(x, self.x):
-            self._update_x_impl(x)
+            self._update_x(x)
         self._update_fun()
         return self.f
 
     def grad(self, x):
         if not np.array_equal(x, self.x):
-            self._update_x_impl(x)
+            self._update_x(x)
         self._update_grad()
         return self.g
 
     def hess(self, x):
         if not np.array_equal(x, self.x):
-            self._update_x_impl(x)
+            self._update_x(x)
         self._update_hess()
         return self.H
 
     def fun_and_grad(self, x):
         if not np.array_equal(x, self.x):
-            self._update_x_impl(x)
+            self._update_x(x)
         self._update_fun()
         self._update_grad()
         return self.f, self.g
 
 
-class VectorFunction(object):
+class VectorFunction:
     """Vector function and its derivatives.
 
     This class defines a vector function F: R^n->R^m and methods for
@@ -223,14 +366,12 @@ class VectorFunction(object):
                  finite_diff_rel_step, finite_diff_jac_sparsity,
                  finite_diff_bounds, sparse_jacobian):
         if not callable(jac) and jac not in FD_METHODS:
-            raise ValueError("`jac` must be either callable or one of {}."
-                             .format(FD_METHODS))
+            raise ValueError(f"`jac` must be either callable or one of {FD_METHODS}.")
 
         if not (callable(hess) or hess in FD_METHODS
                 or isinstance(hess, HessianUpdateStrategy)):
             raise ValueError("`hess` must be either callable,"
-                             "HessianUpdateStrategy or one of {}."
-                             .format(FD_METHODS))
+                             f"HessianUpdateStrategy or one of {FD_METHODS}.")
 
         if jac in FD_METHODS and hess in FD_METHODS:
             raise ValueError("Whenever the Jacobian is estimated via "
@@ -238,7 +379,16 @@ class VectorFunction(object):
                              "be estimated using one of the quasi-Newton "
                              "strategies.")
 
-        self.x = np.atleast_1d(x0).astype(float)
+        self.xp = xp = array_namespace(x0)
+        _x = xp_atleast_nd(x0, ndim=1, xp=xp)
+        _dtype = xp.float64
+        if xp.isdtype(_x.dtype, "real floating"):
+            _dtype = _x.dtype
+
+        # promotes to floating
+        self.x = xp.astype(_x, _dtype)
+        self.x_dtype = _dtype
+
         self.n = self.x.size
         self.nfev = 0
         self.njev = 0
@@ -407,14 +557,16 @@ class VectorFunction(object):
                 self._update_jac()
                 self.x_prev = self.x
                 self.J_prev = self.J
-                self.x = np.atleast_1d(x).astype(float)
+                _x = xp_atleast_nd(x, ndim=1, xp=self.xp)
+                self.x = self.xp.astype(_x, self.x_dtype)
                 self.f_updated = False
                 self.J_updated = False
                 self.H_updated = False
                 self._update_hess()
         else:
             def update_x(x):
-                self.x = np.atleast_1d(x).astype(float)
+                _x = xp_atleast_nd(x, ndim=1, xp=self.xp)
+                self.x = self.xp.astype(_x, self.x_dtype)
                 self.f_updated = False
                 self.J_updated = False
                 self.H_updated = False
@@ -463,7 +615,7 @@ class VectorFunction(object):
         return self.H
 
 
-class LinearVectorFunction(object):
+class LinearVectorFunction:
     """Linear vector function and its derivatives.
 
     Defines a linear function F = A x, where x is N-D vector and
@@ -484,7 +636,16 @@ class LinearVectorFunction(object):
 
         self.m, self.n = self.J.shape
 
-        self.x = np.atleast_1d(x0).astype(float)
+        self.xp = xp = array_namespace(x0)
+        _x = xp_atleast_nd(x0, ndim=1, xp=xp)
+        _dtype = xp.float64
+        if xp.isdtype(_x.dtype, "real floating"):
+            _dtype = _x.dtype
+
+        # promotes to floating
+        self.x = xp.astype(_x, _dtype)
+        self.x_dtype = _dtype
+
         self.f = self.J.dot(self.x)
         self.f_updated = True
 
@@ -493,7 +654,8 @@ class LinearVectorFunction(object):
 
     def _update_x(self, x):
         if not np.array_equal(x, self.x):
-            self.x = np.atleast_1d(x).astype(float)
+            _x = xp_atleast_nd(x, ndim=1, xp=self.xp)
+            self.x = self.xp.astype(_x, self.x_dtype)
             self.f_updated = False
 
     def fun(self, x):
@@ -528,4 +690,4 @@ class IdentityVectorFunction(LinearVectorFunction):
         else:
             A = np.eye(n)
             sparse_jacobian = False
-        super(IdentityVectorFunction, self).__init__(A, x0, sparse_jacobian)
+        super().__init__(A, x0, sparse_jacobian)

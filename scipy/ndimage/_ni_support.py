@@ -29,7 +29,9 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from collections.abc import Iterable
-import numpy
+import operator
+import warnings
+import numpy as np
 
 
 def _extend_mode_to_code(mode):
@@ -39,12 +41,16 @@ def _extend_mode_to_code(mode):
         return 0
     elif mode == 'wrap':
         return 1
-    elif mode == 'reflect':
+    elif mode in ['reflect', 'grid-mirror']:
         return 2
     elif mode == 'mirror':
         return 3
     elif mode == 'constant':
         return 4
+    elif mode == 'grid-wrap':
+        return 5
+    elif mode == 'grid-constant':
+        return 6
     else:
         raise RuntimeError('boundary mode not supported')
 
@@ -65,17 +71,71 @@ def _normalize_sequence(input, rank):
     return normalized
 
 
-def _get_output(output, input, shape=None):
+def _get_output(output, input, shape=None, complex_output=False):
     if shape is None:
         shape = input.shape
     if output is None:
-        output = numpy.zeros(shape, dtype=input.dtype.name)
-    elif isinstance(output, (type, numpy.dtype)):
+        if not complex_output:
+            output = np.zeros(shape, dtype=input.dtype.name)
+        else:
+            complex_type = np.promote_types(input.dtype, np.complex64)
+            output = np.zeros(shape, dtype=complex_type)
+    elif isinstance(output, (type, np.dtype)):
         # Classes (like `np.float32`) and dtypes are interpreted as dtype
-        output = numpy.zeros(shape, dtype=output)
+        if complex_output and np.dtype(output).kind != 'c':
+            warnings.warn("promoting specified output dtype to complex", stacklevel=3)
+            output = np.promote_types(output, np.complex64)
+        output = np.zeros(shape, dtype=output)
     elif isinstance(output, str):
-        output = numpy.typeDict[output]
-        output = numpy.zeros(shape, dtype=output)
-    elif output.shape != shape:
-        raise RuntimeError("output shape not correct")
+        output = np.dtype(output)
+        if complex_output and output.kind != 'c':
+            raise RuntimeError("output must have complex dtype")
+        elif not issubclass(output.type, np.number):
+            raise RuntimeError("output must have numeric dtype")
+        output = np.zeros(shape, dtype=output)
+    else:
+        # output was supplied as an array
+        output = np.asarray(output)
+        if output.shape != shape:
+            raise RuntimeError("output shape not correct")
+        elif complex_output and output.dtype.kind != 'c':
+            raise RuntimeError("output must have complex dtype")
     return output
+
+
+def _check_axes(axes, ndim):
+    if axes is None:
+        return tuple(range(ndim))
+    elif np.isscalar(axes):
+        axes = (operator.index(axes),)
+    elif isinstance(axes, Iterable):
+        for ax in axes:
+            axes = tuple(operator.index(ax) for ax in axes)
+            if ax < -ndim or ax > ndim - 1:
+                raise ValueError(f"specified axis: {ax} is out of range")
+        axes = tuple(ax % ndim if ax < 0 else ax for ax in axes)
+    else:
+        message = "axes must be an integer, iterable of integers, or None"
+        raise ValueError(message)
+    if len(tuple(set(axes))) != len(axes):
+        raise ValueError("axes must be unique")
+    return axes
+
+
+def _skip_if_dtype(arg):
+    """'array or dtype' polymorphism.
+
+    Return None for np.int8, dtype('float32') or 'f' etc
+           arg for np.empty(3) etc
+    """
+    if isinstance(arg, str):
+        return None
+    if type(arg) is type:
+        return None if issubclass(arg, np.generic) else arg
+    else:
+        return None if isinstance(arg, np.dtype) else arg
+
+
+def _skip_if_int(arg):
+    return None if (arg is None or isinstance(arg, int)) else arg
+

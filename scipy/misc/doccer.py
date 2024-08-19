@@ -1,51 +1,45 @@
-''' Utilities to allow inserting docstring fragments for common
-parameters into function and method docstrings'''
+# This file is not meant for public use and will be removed in SciPy v2.0.0.
 
-import numpy as np
-from .._lib import doccer as _ld
+from importlib import import_module
+import warnings
 
-__all__ = ['docformat', 'inherit_docstring_from', 'indentcount_lines',
-           'filldoc', 'unindent_dict', 'unindent_string']
-
-@np.deprecate(message="scipy.misc.docformat is deprecated in Scipy 1.3.0")
-def docformat(docstring, docdict=None):
-    return _ld.docformat(docstring, docdict)
+__all__ = [  # noqa: F822
+    'docformat', 'inherit_docstring_from', 'indentcount_lines',
+    'filldoc', 'unindent_dict', 'unindent_string', 'extend_notes_in_docstring',
+    'replace_notes_in_docstring'
+]
 
 
-@np.deprecate(message="scipy.misc.inherit_docstring_from is deprecated "
-                      "in SciPy 1.3.0")
-def inherit_docstring_from(cls):
-    return _ld.inherit_docstring_from(cls)
+def __dir__():
+    return __all__
 
 
-@np.deprecate(message="scipy.misc.extend_notes_in_docstring is deprecated "
-                      "in SciPy 1.3.0")
-def extend_notes_in_docstring(cls, notes):
-    return _ld.extend_notes_in_docstring(cls, notes)
+def __getattr__(name):
+    if name not in __all__:
+        raise AttributeError(
+            f"`scipy.misc.doccer` has no attribute `{name}`; furthermore, "
+            f"`scipy.misc.doccer` is deprecated and will be removed in SciPy 2.0.0."
+        )
 
+    attr = getattr(import_module("scipy._lib.doccer"), name, None)
 
-@np.deprecate(message="scipy.misc.replace_notes_in_docstring is deprecated "
-                      "in SciPy 1.3.0")
-def replace_notes_in_docstring(cls, notes):
-    return _ld.replace_notes_in_docstring(cls, notes)
+    if attr is not None:
+        message = (
+            f"Please import `{name}` from the `scipy._lib.doccer` namespace; "
+            f"the `scipy.misc.doccer` namespace is deprecated and "
+            f"will be removed in SciPy 2.0.0."
+        )
+    else:
+        message = (
+            f"`scipy.misc.doccer.{name}` is deprecated along with "
+            f"the `scipy.misc.doccer` namespace. "
+            f"`scipy.misc.doccer.{name}` will be removed in SciPy 1.13.0, and "
+            f"the `scipy.misc.doccer` namespace will be removed in SciPy 2.0.0."
+        )
 
+    warnings.warn(message, category=DeprecationWarning, stacklevel=2)
 
-@np.deprecate(message="scipy.misc.indentcount_lines is deprecated "
-                      "in SciPy 1.3.0")
-def indentcount_lines(lines):
-    return _ld.indentcount_lines(lines)
-
-
-@np.deprecate(message="scipy.misc.filldoc is deprecated in SciPy 1.3.0")
-def filldoc(docdict, unindent_params=True):
-    return _ld.filldoc(docdict, unindent_params)
-
-
-@np.deprecate(message="scipy.misc.unindent_dict is deprecated in SciPy 1.3.0")
-def unindent_dict(docdict):
-    return _ld.unindent_dict(docdict)
-
-
-@np.deprecate(message="scipy.misc.unindent_string is deprecated in SciPy 1.3.0")
-def unindent_string(docstring):
-    return _ld.unindent_string(docstring)
+    try:
+        return getattr(import_module("scipy._lib.doccer"), name)
+    except AttributeError as e:
+        raise e

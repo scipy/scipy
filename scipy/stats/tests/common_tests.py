@@ -2,19 +2,24 @@ import pickle
 
 import numpy as np
 import numpy.testing as npt
-from numpy.testing import assert_allclose, assert_equal, suppress_warnings
+from numpy.testing import assert_allclose, assert_equal
 from pytest import raises as assert_raises
 
 import numpy.ma.testutils as ma_npt
 
-from scipy._lib._util import getfullargspec_no_self as _getfullargspec
+from scipy._lib._util import (
+    getfullargspec_no_self as _getfullargspec, np_long
+)
+from scipy._lib._array_api import xp_assert_equal
 from scipy import stats
 
 
-def check_named_results(res, attributes, ma=False):
+def check_named_results(res, attributes, ma=False, xp=None):
     for i, attr in enumerate(attributes):
         if ma:
             ma_npt.assert_equal(res[i], getattr(res, attr))
+        elif xp is not None:
+            xp_assert_equal(res[i], getattr(res, attr))
         else:
             npt.assert_equal(res[i], getattr(res, attr))
 
@@ -23,16 +28,14 @@ def check_normalization(distfn, args, distname):
     norm_moment = distfn.moment(0, *args)
     npt.assert_allclose(norm_moment, 1.0)
 
-    # this is a temporary plug: either ncf or expect is problematic;
-    # best be marked as a knownfail, but I've no clue how to do it.
-    if distname == "ncf":
+    if distname == "rv_histogram_instance":
         atol, rtol = 1e-5, 0
     else:
         atol, rtol = 1e-7, 1e-7
 
     normalization_expect = distfn.expect(lambda x: 1, args=args)
     npt.assert_allclose(normalization_expect, 1.0, atol=atol, rtol=rtol,
-            err_msg=distname, verbose=True)
+                        err_msg=distname, verbose=True)
 
     _a, _b = distfn.support(*args)
     normalization_cdf = distfn.cdf(_b, *args)
@@ -43,39 +46,39 @@ def check_moment(distfn, arg, m, v, msg):
     m1 = distfn.moment(1, *arg)
     m2 = distfn.moment(2, *arg)
     if not np.isinf(m):
-        npt.assert_almost_equal(m1, m, decimal=10, err_msg=msg +
-                            ' - 1st moment')
+        npt.assert_almost_equal(m1, m, decimal=10,
+                                err_msg=msg + ' - 1st moment')
     else:                     # or np.isnan(m1),
         npt.assert_(np.isinf(m1),
-               msg + ' - 1st moment -infinite, m1=%s' % str(m1))
+                    msg + f' - 1st moment -infinite, m1={str(m1)}')
 
     if not np.isinf(v):
-        npt.assert_almost_equal(m2 - m1 * m1, v, decimal=10, err_msg=msg +
-                            ' - 2ndt moment')
+        npt.assert_almost_equal(m2 - m1 * m1, v, decimal=10,
+                                err_msg=msg + ' - 2ndt moment')
     else:                     # or np.isnan(m2),
-        npt.assert_(np.isinf(m2),
-               msg + ' - 2nd moment -infinite, m2=%s' % str(m2))
+        npt.assert_(np.isinf(m2), msg + f' - 2nd moment -infinite, {m2=}')
 
 
 def check_mean_expect(distfn, arg, m, msg):
     if np.isfinite(m):
         m1 = distfn.expect(lambda x: x, arg)
-        npt.assert_almost_equal(m1, m, decimal=5, err_msg=msg +
-                            ' - 1st moment (expect)')
+        npt.assert_almost_equal(m1, m, decimal=5,
+                                err_msg=msg + ' - 1st moment (expect)')
 
 
 def check_var_expect(distfn, arg, m, v, msg):
+    dist_looser_tolerances = {"rv_histogram_instance" , "ksone"}
+    kwargs = {'rtol': 5e-6} if msg in dist_looser_tolerances else {}
     if np.isfinite(v):
         m2 = distfn.expect(lambda x: x*x, arg)
-        npt.assert_almost_equal(m2, v + m*m, decimal=5, err_msg=msg +
-                            ' - 2st moment (expect)')
+        npt.assert_allclose(m2, v + m*m, **kwargs)
 
 
 def check_skew_expect(distfn, arg, m, v, s, msg):
     if np.isfinite(s):
         m3e = distfn.expect(lambda x: np.power(x-m, 3), arg)
         npt.assert_almost_equal(m3e, s * np.power(v, 1.5),
-                decimal=5, err_msg=msg + ' - skew')
+                                decimal=5, err_msg=msg + ' - skew')
     else:
         npt.assert_(np.isnan(s))
 
@@ -83,10 +86,24 @@ def check_skew_expect(distfn, arg, m, v, s, msg):
 def check_kurt_expect(distfn, arg, m, v, k, msg):
     if np.isfinite(k):
         m4e = distfn.expect(lambda x: np.power(x-m, 4), arg)
-        npt.assert_allclose(m4e, (k + 3.) * np.power(v, 2), atol=1e-5, rtol=1e-5,
-                err_msg=msg + ' - kurtosis')
+        npt.assert_allclose(m4e, (k + 3.) * np.power(v, 2),
+                            atol=1e-5, rtol=1e-5,
+                            err_msg=msg + ' - kurtosis')
     elif not np.isposinf(k):
         npt.assert_(np.isnan(k))
+
+
+def check_munp_expect(dist, args, msg):
+    # If _munp is overridden, test a higher moment. (Before gh-18634, some
+    # distributions had issues with moments 5 and higher.)
+    if dist._munp.__func__ != stats.rv_continuous._munp:
+        res = dist.moment(5, *args)  # shouldn't raise an error
+        ref = dist.expect(lambda x: x ** 5, args, lb=-np.inf, ub=np.inf)
+        if not np.isfinite(res):  # could be valid; automated test can't know
+            return
+        # loose tolerance, mostly to see whether _munp returns *something*
+        assert_allclose(res, ref, atol=1e-10, rtol=1e-4,
+                        err_msg=msg + ' - higher moment / _munp')
 
 
 def check_entropy(distfn, arg, msg):
@@ -221,8 +238,8 @@ def check_random_state_property(distfn, args):
 def check_meth_dtype(distfn, arg, meths):
     q0 = [0.25, 0.5, 0.75]
     x0 = distfn.ppf(q0, *arg)
-    x_cast = [x0.astype(tp) for tp in
-                        (np.int_, np.float16, np.float32, np.float64)]
+    x_cast = [x0.astype(tp) for tp in (np_long, np.float16, np.float32,
+                                       np.float64)]
 
     for x in x_cast:
         # casting may have clipped the values, exclude those
@@ -230,7 +247,7 @@ def check_meth_dtype(distfn, arg, meths):
         x = x[(distfn.a < x) & (x < distfn.b)]
         for meth in meths:
             val = meth(x, *arg)
-            npt.assert_(val.dtype == np.float_)
+            npt.assert_(val.dtype == np.float64)
 
 
 def check_ppf_dtype(distfn, arg):
@@ -239,7 +256,7 @@ def check_ppf_dtype(distfn, arg):
     for q in q_cast:
         for meth in [distfn.ppf, distfn.isf]:
             val = meth(q, *arg)
-            npt.assert_(val.dtype == np.float_)
+            npt.assert_(val.dtype == np.float64)
 
 
 def check_cmplx_deriv(distfn, arg):
@@ -250,8 +267,8 @@ def check_cmplx_deriv(distfn, arg):
         return (f(x + h*1j, *arg)/h).imag
 
     x0 = distfn.ppf([0.25, 0.51, 0.75], *arg)
-    x_cast = [x0.astype(tp) for tp in
-                        (np.int_, np.float16, np.float32, np.float64)]
+    x_cast = [x0.astype(tp) for tp in (np_long, np.float16, np.float32,
+                                       np.float64)]
 
     for x in x_cast:
         # casting may have clipped the values, exclude those
@@ -265,7 +282,7 @@ def check_cmplx_deriv(distfn, arg):
         assert_allclose(deriv(distfn.sf, x, *arg), -pdf, rtol=1e-5)
         assert_allclose(deriv(distfn.logsf, x, *arg), -pdf/sf, rtol=1e-5)
 
-        assert_allclose(deriv(distfn.logpdf, x, *arg), 
+        assert_allclose(deriv(distfn.logpdf, x, *arg),
                         deriv(distfn.pdf, x, *arg) / distfn.pdf(x, *arg),
                         rtol=1e-5)
 
@@ -277,6 +294,7 @@ def check_pickling(distfn, args):
     # save the random_state (restore later)
     rndm = distfn.random_state
 
+    # check unfrozen
     distfn.random_state = 1234
     distfn.rvs(*args, size=8)
     s = pickle.dumps(distfn)
@@ -291,6 +309,22 @@ def check_pickling(distfn, args):
     npt.assert_equal(medians[0], medians[1])
     npt.assert_equal(distfn.cdf(medians[0], *args),
                      unpickled.cdf(medians[1], *args))
+
+    # check frozen pickling/unpickling with rvs
+    frozen_dist = distfn(*args)
+    pkl = pickle.dumps(frozen_dist)
+    unpickled = pickle.loads(pkl)
+
+    r0 = frozen_dist.rvs(size=8)
+    r1 = unpickled.rvs(size=8)
+    npt.assert_equal(r0, r1)
+
+    # check pickling/unpickling of .fit method
+    if hasattr(distfn, "fit"):
+        fit_function = distfn.fit
+        pickled_fit_function = pickle.dumps(fit_function)
+        unpickled_fit_function = pickle.loads(pickled_fit_function)
+        assert fit_function.__name__ == unpickled_fit_function.__name__ == "fit"
 
     # restore the random_state
     distfn.random_state = rndm
@@ -311,14 +345,10 @@ def check_freezing(distfn, args):
 
 def check_rvs_broadcast(distfunc, distname, allargs, shape, shape_only, otype):
     np.random.seed(123)
-    with suppress_warnings() as sup:
-        # frechet_l and frechet_r are deprecated, so all their
-        # methods generate DeprecationWarnings.
-        sup.filter(category=DeprecationWarning, message=".*frechet_")
-        sample = distfunc.rvs(*allargs)
-        assert_equal(sample.shape, shape, "%s: rvs failed to broadcast" % distname)
-        if not shape_only:
-            rvs = np.vectorize(lambda *allargs: distfunc.rvs(*allargs), otypes=otype)
-            np.random.seed(123)
-            expected = rvs(*allargs)
-            assert_allclose(sample, expected, rtol=1e-15)
+    sample = distfunc.rvs(*allargs)
+    assert_equal(sample.shape, shape, f"{distname}: rvs failed to broadcast")
+    if not shape_only:
+        rvs = np.vectorize(lambda *allargs: distfunc.rvs(*allargs), otypes=otype)
+        np.random.seed(123)
+        expected = rvs(*allargs)
+        assert_allclose(sample, expected, rtol=1e-13)

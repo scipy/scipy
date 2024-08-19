@@ -30,7 +30,7 @@ References
 
 import numpy as np
 from warnings import warn
-from .optimize import OptimizeResult, OptimizeWarning, _check_unknown_options
+from ._optimize import OptimizeResult, OptimizeWarning, _check_unknown_options
 from ._linprog_util import _postsolve
 
 
@@ -219,13 +219,13 @@ def _apply_pivot(T, basis, pivrow, pivcol, tol=1e-9):
     # The selected pivot should never lead to a pivot value less than the tol.
     if np.isclose(pivval, tol, atol=0, rtol=1e4):
         message = (
-            "The pivot operation produces a pivot value of:{0: .1e}, "
+            f"The pivot operation produces a pivot value of:{pivval: .1e}, "
             "which is only slightly greater than the specified "
-            "tolerance{1: .1e}. This may lead to issues regarding the "
+            f"tolerance{tol: .1e}. This may lead to issues regarding the "
             "numerical stability of the simplex method. "
             "Removing redundant constraints, changing the pivot strategy "
             "via Bland's rule or increasing the tolerance may "
-            "help reduce the issue.".format(pivval, tol))
+            "help reduce the issue.")
         warn(message, OptimizeWarning, stacklevel=5)
 
 
@@ -383,9 +383,9 @@ def _solve_simplex(T, n, basis, callback, postsolve_args,
                 nit += 1
 
     if len(basis[:m]) == 0:
-        solution = np.zeros(T.shape[1] - 1, dtype=np.float64)
+        solution = np.empty(T.shape[1] - 1, dtype=np.float64)
     else:
-        solution = np.zeros(max(T.shape[1] - 1, max(basis[:m]) + 1),
+        solution = np.empty(max(T.shape[1] - 1, max(basis[:m]) + 1),
                             dtype=np.float64)
 
     while not complete:
@@ -407,8 +407,8 @@ def _solve_simplex(T, n, basis, callback, postsolve_args,
             solution[:] = 0
             solution[basis[:n]] = T[:n, -1]
             x = solution[:m]
-            x, fun, slack, con, _ = _postsolve(
-                x, postsolve_args, tol=tol
+            x, fun, slack, con = _postsolve(
+                x, postsolve_args
             )
             res = OptimizeResult({
                 'x': x,
@@ -451,6 +451,8 @@ def _linprog_simplex(c, c0, A, b, callback, postsolve_args,
 
         A @ x == b
             x >= 0
+
+    User-facing documentation is in _linprog_doc.py.
 
     Parameters
     ----------
@@ -636,12 +638,14 @@ def _linprog_simplex(c, c0, A, b, callback, postsolve_args,
         status = 2
         messages[status] = (
             "Phase 1 of the simplex method failed to find a feasible "
-            "solution. The pseudo-objective function evaluates to {0:.1e} "
-            "which exceeds the required tolerance of {1} for a solution to be "
+            "solution. The pseudo-objective function evaluates to "
+            f"{abs(T[-1, -1]):.1e} "
+            f"which exceeds the required tolerance of {tol} for a solution to be "
             "considered 'close enough' to zero to be a basic solution. "
-            "Consider increasing the tolerance to be greater than {0:.1e}. "
-            "If this tolerance is unacceptably  large the problem may be "
-            "infeasible.".format(abs(T[-1, -1]), tol)
+            "Consider increasing the tolerance to be greater than "
+            f"{abs(T[-1, -1]):.1e}. "
+            "If this tolerance is unacceptably large the problem may be "
+            "infeasible."
         )
 
     if status == 0:
