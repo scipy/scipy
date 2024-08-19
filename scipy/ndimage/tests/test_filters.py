@@ -1085,6 +1085,10 @@ class TestNdimageFilters:
 
         array = xp.arange(6 * 8 * 12, dtype=xp.float64)
         array = xp.reshape(array, (6, 8, 12))
+        args = [
+            xp.asarray(arg) if isinstance(arg, np.ndarray) else arg
+            for arg in args
+        ]
         if any(isinstance(ax, float) for ax in axes):
             error_class = TypeError
             match = "cannot be interpreted as an integer"
