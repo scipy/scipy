@@ -413,8 +413,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
 
     def todia(self, copy=False):
         if self.ndim != 2:
-            raise ValueError('Cannot convert.'
-                             f"dia format sparse arrays must be 2D. Got {self.ndim}D")
+            raise ValueError(f'Cannot convert. DIA format must be 2D. Got {self.ndim}D')
         self.sum_duplicates()
         ks = self.col - self.row  # the diagonal for each nonzero
         diags, diag_idx = np.unique(ks, return_inverse=True)
