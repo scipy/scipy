@@ -1,3 +1,5 @@
+# cython: cpow=True
+
 # Implement Spence's function, a.k.a. the dilogarithm, for complex
 # arguments. Note that our definition differs from that in the sources
 # by the mapping z -> 1 - z.
@@ -12,7 +14,7 @@
 # Released under the same license as Scipy.
 
 import cython
-from ._complexstuff cimport zlog1, zabs, zdiv
+from ._complexstuff cimport zlog1, zabs
 
 # Relative tolerance for the series
 DEF TOL = 2.220446092504131e-16
@@ -20,7 +22,7 @@ DEF PISQ_6 = 1.6449340668482264365
 
 
 @cython.cdivision(True)
-cdef inline double complex cspence(double complex z) nogil:
+cdef inline double complex cspence(double complex z) noexcept nogil:
     """
     Compute Spence's function for complex arguments. The strategy is:
     - If z is close to 0, use a series centered at 0.
@@ -36,14 +38,13 @@ cdef inline double complex cspence(double complex z) nogil:
         # This step isn't necessary, but this series converges faster.
         return cspence_series0(z)
     elif zabs(1 - z) > 1:
-        # Use of zdiv is an UGLY HACK.
-        return -cspence_series1(zdiv(z, z - 1)) - PISQ_6 - 0.5*zlog1(z - 1)**2
+        return -cspence_series1(z/(z - 1)) - PISQ_6 - 0.5*zlog1(z - 1)**2
     else:
         return cspence_series1(z)
 
 
 @cython.cdivision(True)
-cdef inline double complex cspence_series0(double complex z) nogil:
+cdef inline double complex cspence_series0(double complex z) noexcept nogil:
     """
     A series centered at z = 0; see
 
@@ -72,7 +73,7 @@ cdef inline double complex cspence_series0(double complex z) nogil:
 
 
 @cython.cdivision(True)
-cdef inline double complex cspence_series1(double complex z) nogil:
+cdef inline double complex cspence_series1(double complex z) noexcept nogil:
     """
     A series centered at z = 1 which enjoys faster convergence than
     the Taylor series. See [3]. The number of terms used comes from

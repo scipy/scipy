@@ -1,26 +1,17 @@
-"""
-sparsetools is not a public module in scipy.sparse, but this file is
-for backward compatibility if someone happens to use it.
-"""
-from numpy import deprecate
+# This file is not meant for public use and will be removed in SciPy v2.0.0.
+# Use the `scipy.sparse` namespace for importing the functions
+# included below.
 
-# This file shouldn't be imported by scipy --- Scipy code should use
-# internally scipy.sparse._sparsetools
+from scipy._lib.deprecation import _sub_module_deprecation
+
+__all__: list[str] = []
 
 
-@deprecate(old_name="scipy.sparse.sparsetools",
-           message=("scipy.sparse.sparsetools is a private module for scipy.sparse, "
-                    "and should not be used."))
-def _deprecated():
-    pass
+def __dir__():
+    return __all__
 
-del deprecate
 
-try:
-    _deprecated()
-except DeprecationWarning as e:
-    # don't fail import if DeprecationWarnings raise error -- works around
-    # the situation with Numpy's test framework
-    pass
-
-from ._sparsetools import *
+def __getattr__(name):
+    return _sub_module_deprecation(sub_package="sparse", module="sparsetools",
+                                   private_modules=["_sparsetools"], all=__all__,
+                                   attribute=name)

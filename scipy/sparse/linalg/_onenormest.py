@@ -1,8 +1,6 @@
 """Sparse block 1-norm estimator.
 """
 
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 from scipy.sparse.linalg import aslinearoperator
 
@@ -69,16 +67,17 @@ def onenormest(A, t=2, itmax=5, compute_v=False, compute_w=False):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.sparse import csc_matrix
     >>> from scipy.sparse.linalg import onenormest
     >>> A = csc_matrix([[1., 0., 0.], [5., 8., 2.], [0., -1., 0.]], dtype=float)
-    >>> A.todense()
-    matrix([[ 1.,  0.,  0.],
-            [ 5.,  8.,  2.],
-            [ 0., -1.,  0.]])
+    >>> A.toarray()
+    array([[ 1.,  0.,  0.],
+           [ 5.,  8.,  2.],
+           [ 0., -1.,  0.]])
     >>> onenormest(A)
     9.0
-    >>> np.linalg.norm(A.todense(), ord=1)
+    >>> np.linalg.norm(A.toarray(), ord=1)
     9.0
     """
 
@@ -253,7 +252,7 @@ def _algorithm_2_2(A, AT, t):
     -----
     This algorithm is mainly for testing.
     It uses the 'ind' array in a way that is similar to
-    its usage in algorithm 2.4.  This algorithm 2.2 may be easier to test,
+    its usage in algorithm 2.4. This algorithm 2.2 may be easier to test,
     so it gives a chance of uncovering bugs related to indexing
     which could have propagated less noticeably to algorithm 2.4.
 
@@ -451,17 +450,17 @@ def _onenormest_core(A, AT, t, itmax):
         if t > 1:
             # (5)
             # Break if the most promising t vectors have been visited already.
-            if np.in1d(ind[:t], ind_hist).all():
+            if np.isin(ind[:t], ind_hist).all():
                 break
             # Put the most promising unvisited vectors at the front of the list
             # and put the visited vectors at the end of the list.
             # Preserve the order of the indices induced by the ordering of h.
-            seen = np.in1d(ind, ind_hist)
+            seen = np.isin(ind, ind_hist)
             ind = np.concatenate((ind[~seen], ind[seen]))
         for j in range(t):
             X[:, j] = elementary_vector(n, ind[j])
 
-        new_ind = ind[:t][~np.in1d(ind[:t], ind_hist)]
+        new_ind = ind[:t][~np.isin(ind[:t], ind_hist)]
         ind_hist = np.concatenate((ind_hist, new_ind))
         k += 1
     v = elementary_vector(n, ind_best)

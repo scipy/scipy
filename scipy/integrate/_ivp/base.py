@@ -1,4 +1,3 @@
-from __future__ import division, print_function, absolute_import
 import numpy as np
 
 
@@ -17,13 +16,16 @@ def check_arguments(fun, y0, support_complex):
     if y0.ndim != 1:
         raise ValueError("`y0` must be 1-dimensional.")
 
+    if not np.isfinite(y0).all():
+        raise ValueError("All components of the initial state `y0` must be finite.")
+
     def fun_wrapped(t, y):
         return np.asarray(fun(t, y), dtype=dtype)
 
     return fun_wrapped, y0
 
 
-class OdeSolver(object):
+class OdeSolver:
     """Base class for ODE solvers.
 
     In order to implement a new solver you need to follow the guidelines:
@@ -40,15 +42,15 @@ class OdeSolver(object):
            whether a step was successful, and ``message`` is a string
            containing description of a failure if a step failed or None
            otherwise.
-        4. A solver must implement a private method `_dense_output_impl(self)`
+        4. A solver must implement a private method `_dense_output_impl(self)`,
            which returns a `DenseOutput` object covering the last successful
            step.
         5. A solver must have attributes listed below in Attributes section.
-           Note that `t_old` and `step_size` are updated automatically.
+           Note that ``t_old`` and ``step_size`` are updated automatically.
         6. Use `fun(self, t, y)` method for the system rhs evaluation, this
            way the number of function evaluations (`nfev`) will be tracked
            automatically.
-        7. For convenience a base class provides `fun_single(self, t, y)` and
+        7. For convenience, a base class provides `fun_single(self, t, y)` and
            `fun_vectorized(self, t, y)` for evaluating the rhs in
            non-vectorized and vectorized fashions respectively (regardless of
            how `fun` from the constructor is implemented). These calls don't
@@ -56,7 +58,7 @@ class OdeSolver(object):
         8. If a solver uses a Jacobian matrix and LU decompositions, it should
            track the number of Jacobian evaluations (`njev`) and the number of
            LU decompositions (`nlu`).
-        9. By convention the function evaluations used to compute a finite
+        9. By convention, the function evaluations used to compute a finite
            difference approximation of the Jacobian should not be counted in
            `nfev`, thus use `fun_single(self, t, y)` or
            `fun_vectorized(self, t, y)` when computing a finite difference
@@ -65,13 +67,11 @@ class OdeSolver(object):
     Parameters
     ----------
     fun : callable
-        Right-hand side of the system. The calling signature is ``fun(t, y)``.
-        Here ``t`` is a scalar and there are two options for ndarray ``y``.
-        It can either have shape (n,), then ``fun`` must return array_like with
-        shape (n,). Or alternatively it can have shape (n, n_points), then
-        ``fun`` must return array_like with shape (n, n_points) (each column
-        corresponds to a single column in ``y``). The choice between the two
-        options is determined by `vectorized` argument (see below).
+        Right-hand side of the system: the time derivative of the state ``y``
+        at time ``t``. The calling signature is ``fun(t, y)``, where ``t`` is a
+        scalar and ``y`` is an ndarray with ``len(y) = len(y0)``. ``fun`` must
+        return an array of the same shape as ``y``. See `vectorized` for more
+        information.
     t0 : float
         Initial time.
     y0 : array_like, shape (n,)
@@ -80,7 +80,22 @@ class OdeSolver(object):
         Boundary time --- the integration won't continue beyond it. It also
         determines the direction of the integration.
     vectorized : bool
-        Whether `fun` is implemented in a vectorized fashion.
+        Whether `fun` can be called in a vectorized fashion. Default is False.
+
+        If ``vectorized`` is False, `fun` will always be called with ``y`` of
+        shape ``(n,)``, where ``n = len(y0)``.
+
+        If ``vectorized`` is True, `fun` may be called with ``y`` of shape
+        ``(n, k)``, where ``k`` is an integer. In this case, `fun` must behave
+        such that ``fun(t, y)[:, i] == fun(t, y[:, i])`` (i.e. each column of
+        the returned array is the time derivative of the state corresponding
+        with a column of ``y``).
+
+        Setting ``vectorized=True`` allows for faster finite difference
+        approximation of the Jacobian by methods 'Radau' and 'BDF', but
+        will result in slower execution for other methods. It can also
+        result in slower overall execution for 'Radau' and 'BDF' in some
+        circumstances (e.g. small ``len(y0)``).
     support_complex : bool, optional
         Whether integration in a complex domain should be supported.
         Generally determined by a derived solver class capabilities.
@@ -215,7 +230,7 @@ class OdeSolver(object):
         raise NotImplementedError
 
 
-class DenseOutput(object):
+class DenseOutput:
     """Base class for local interpolant over step made by an ODE solver.
 
     It interpolates between `t_min` and `t_max` (see Attributes below).
@@ -245,11 +260,11 @@ class DenseOutput(object):
         -------
         y : ndarray, shape (n,) or (n, n_points)
             Computed values. Shape depends on whether `t` was a scalar or a
-            1-d array.
+            1-D array.
         """
         t = np.asarray(t)
         if t.ndim > 1:
-            raise ValueError("`t` must be float or 1-d array.")
+            raise ValueError("`t` must be a float or a 1-D array.")
         return self._call_impl(t)
 
     def _call_impl(self, t):
@@ -263,7 +278,7 @@ class ConstantDenseOutput(DenseOutput):
     or a system with 0 equations.
     """
     def __init__(self, t_old, t, value):
-        super(ConstantDenseOutput, self).__init__(t_old, t)
+        super().__init__(t_old, t)
         self.value = value
 
     def _call_impl(self, t):

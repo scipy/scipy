@@ -1,6 +1,4 @@
 """Dog-leg trust-region optimization."""
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 import scipy.linalg
 from ._trustregion import (_minimize_trust_region, BaseQuadraticSubproblem)
@@ -30,7 +28,7 @@ def _minimize_dogleg(fun, x0, args=(), jac=None, hess=None,
     """
     if jac is None:
         raise ValueError('Jacobian is required for dogleg minimization')
-    if hess is None:
+    if not callable(hess):
         raise ValueError('Hessian is required for dogleg minimization')
     return _minimize_trust_region(fun, x0, args=args, jac=jac, hess=hess,
                                   subproblem=DoglegSubproblem,

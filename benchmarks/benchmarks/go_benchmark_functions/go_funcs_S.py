@@ -1,9 +1,5 @@
-# -*- coding: utf-8 -*-
-from __future__ import division, print_function, absolute_import
-
-from numpy import (abs, arctan2, asarray, cos, exp, floor, log, log10,
-                   arange, pi, prod, roll, sign, sin, sqrt, sum,
-                   tan, tanh, dot, repeat, atleast_2d, tril)
+from numpy import (abs, asarray, cos, floor, arange, pi, prod, roll, sin,
+                   sqrt, sum, repeat, atleast_2d, tril)
 from numpy.random import uniform
 from .go_benchmark import Benchmark
 
@@ -171,7 +167,7 @@ class Schaffer02(Benchmark):
     def fun(self, x, *args):
         self.nfev += 1
 
-        num = sin((x[0] ** 2 - x[1] ** 2)) ** 2 - 0.5
+        num = sin(x[0] ** 2 - x[1] ** 2) ** 2 - 0.5
         den = (1 + 0.001 * (x[0] ** 2 + x[1] ** 2)) ** 2
         return 0.5 + num / den
 

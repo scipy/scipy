@@ -5,12 +5,11 @@ To run it in its simplest form::
   nosetests test_optimize.py
 
 """
-from __future__ import division, print_function, absolute_import
-
+import pytest
 import numpy as np
+from numpy.testing import assert_, assert_equal, assert_allclose
 from scipy.optimize import (minimize, rosen, rosen_der, rosen_hess,
                             rosen_hess_prod)
-from numpy.testing import assert_, assert_equal, assert_allclose
 
 
 class Accumulator:
@@ -27,7 +26,7 @@ class Accumulator:
             self.accum += x
 
 
-class TestTrustRegionSolvers(object):
+class TestTrustRegionSolvers:
 
     def setup_method(self):
         self.x_opt = [1.0, 1.0]
@@ -54,6 +53,13 @@ class TestTrustRegionSolvers(object):
         assert_equal(len(r['allvecs']), maxiter+1)
         assert_allclose(r['x'], r['allvecs'][-1])
         assert_allclose(sum(r['allvecs'][1:]), accumulator.accum)
+
+    def test_dogleg_user_warning(self):
+        with pytest.warns(RuntimeWarning,
+                          match=r'Maximum number of iterations'):
+            minimize(rosen, self.hard_guess, jac=rosen_der,
+                     hess=rosen_hess, method='dogleg',
+                     options={'disp': True, 'maxiter': 1}, )
 
     def test_solver_concordance(self):
         # Assert that dogleg uses fewer iterations than ncg on the Rosenbrock
@@ -85,8 +91,22 @@ class TestTrustRegionSolvers(object):
             assert_(len(r_dogleg['allvecs']) < len(r_ncg['allvecs']))
 
     def test_trust_ncg_hessp(self):
-        for x0 in (self.easy_guess, self.hard_guess):
+        for x0 in (self.easy_guess, self.hard_guess, self.x_opt):
             r = minimize(rosen, x0, jac=rosen_der, hessp=rosen_hess_prod,
                          tol=1e-8, method='trust-ncg')
             assert_allclose(self.x_opt, r['x'])
 
+    def test_trust_ncg_start_in_optimum(self):
+        r = minimize(rosen, x0=self.x_opt, jac=rosen_der, hess=rosen_hess,
+                     tol=1e-8, method='trust-ncg')
+        assert_allclose(self.x_opt, r['x'])
+
+    def test_trust_krylov_start_in_optimum(self):
+        r = minimize(rosen, x0=self.x_opt, jac=rosen_der, hess=rosen_hess,
+                     tol=1e-8, method='trust-krylov')
+        assert_allclose(self.x_opt, r['x'])
+
+    def test_trust_exact_start_in_optimum(self):
+        r = minimize(rosen, x0=self.x_opt, jac=rosen_der, hess=rosen_hess,
+                     tol=1e-8, method='trust-exact')
+        assert_allclose(self.x_opt, r['x'])

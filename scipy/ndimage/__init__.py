@@ -1,11 +1,11 @@
 """
 =========================================================
-Multi-dimensional image processing (:mod:`scipy.ndimage`)
+Multidimensional image processing (:mod:`scipy.ndimage`)
 =========================================================
 
 .. currentmodule:: scipy.ndimage
 
-This package contains various functions for multi-dimensional image
+This package contains various functions for multidimensional image
 processing.
 
 
@@ -15,29 +15,29 @@ Filters
 .. autosummary::
    :toctree: generated/
 
-   convolve - Multi-dimensional convolution
+   convolve - Multidimensional convolution
    convolve1d - 1-D convolution along the given axis
-   correlate - Multi-dimensional correlation
+   correlate - Multidimensional correlation
    correlate1d - 1-D correlation along the given axis
    gaussian_filter
    gaussian_filter1d
    gaussian_gradient_magnitude
    gaussian_laplace
-   generic_filter - Multi-dimensional filter using a given function
+   generic_filter - Multidimensional filter using a given function
    generic_filter1d - 1-D generic filter along the given axis
    generic_gradient_magnitude
    generic_laplace
-   laplace - n-D Laplace filter based on approximate second derivatives
+   laplace - N-D Laplace filter based on approximate second derivatives
    maximum_filter
    maximum_filter1d
-   median_filter - Calculates a multi-dimensional median filter
+   median_filter - Calculates a multidimensional median filter
    minimum_filter
    minimum_filter1d
-   percentile_filter - Calculates a multi-dimensional percentile filter
+   percentile_filter - Calculates a multidimensional percentile filter
    prewitt
-   rank_filter - Calculates a multi-dimensional rank filter
+   rank_filter - Calculates a multidimensional rank filter
    sobel
-   uniform_filter - Multi-dimensional uniform filter
+   uniform_filter - Multidimensional uniform filter
    uniform_filter1d - 1-D uniform filter along the given axis
 
 Fourier filters
@@ -58,7 +58,7 @@ Interpolation
    :toctree: generated/
 
    affine_transform - Apply an affine transformation
-   geometric_transform - Apply an arbritrary geometric transform
+   geometric_transform - Apply an arbitrary geometric transform
    map_coordinates - Map input array to new coordinates by interpolation
    rotate - Rotate an array
    shift - Shift an array
@@ -84,9 +84,10 @@ Measurements
    median
    minimum
    minimum_position
-   standard_deviation - Standard deviation of an n-D image array
-   sum - Sum of the values of the array
-   variance - Variance of the values of an n-D image array
+   standard_deviation - Standard deviation of an N-D image array
+   sum_labels - Sum of the values of the array
+   value_indices - Find indices of each distinct value in given array
+   variance - Variance of the values of an N-D image array
    watershed_ift
 
 Morphology
@@ -115,14 +116,6 @@ Morphology
    morphological_gradient
    morphological_laplace
    white_tophat
-
-Utility
-=======
-
-.. autosummary::
-   :toctree: generated/
-
-   imread - Load an image from a file
 
 """
 
@@ -156,18 +149,24 @@ Utility
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from __future__ import division, print_function, absolute_import
+# bring in the public functionality from private namespaces
 
-from .filters import *
-from .fourier import *
-from .interpolation import *
-from .measurements import *
-from .morphology import *
-from .io import *
+# mypy: ignore-errors
 
-__version__ = '2.0'
+from ._support_alternative_backends import *
 
-__all__ = [s for s in dir() if not s.startswith('_')]
+# adjust __all__ and do not leak implementation details
+from . import _support_alternative_backends
+__all__ = _support_alternative_backends.__all__
+del _support_alternative_backends, _ndimage_api, _dispatchers  # noqa: F821
+
+
+# Deprecated namespaces, to be removed in v2.0.0
+from . import filters
+from . import fourier
+from . import interpolation
+from . import measurements
+from . import morphology
 
 from scipy._lib._testutils import PytestTester
 test = PytestTester(__name__)

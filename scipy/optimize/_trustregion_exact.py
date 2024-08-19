@@ -1,6 +1,4 @@
 """Nearly exact trust-region optimization subproblem."""
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 from scipy.linalg import (norm, get_lapack_funcs, solve_triangular,
                           cho_solve)
@@ -20,9 +18,9 @@ def _minimize_trustregion_exact(fun, x0, args=(), jac=None, hess=None,
 
     Options
     -------
-    initial_tr_radius : float
+    initial_trust_radius : float
         Initial trust-region radius.
-    max_tr_radius : float
+    max_trust_radius : float
         Maximum value of the trust-region radius. No steps that are longer
         than this value will be proposed.
     eta : float
@@ -35,7 +33,7 @@ def _minimize_trustregion_exact(fun, x0, args=(), jac=None, hess=None,
     if jac is None:
         raise ValueError('Jacobian is required for trust region '
                          'exact minimization.')
-    if hess is None:
+    if not callable(hess):
         raise ValueError('Hessian matrix is required for trust region '
                          'exact minimization.')
     return _minimize_trust_region(fun, x0, args=args, jac=jac, hess=hess,
@@ -61,7 +59,7 @@ def estimate_smallest_singular_value(U):
 
     Notes
     -----
-    The procedure is based on [1]_ and is done in two steps. First it finds
+    The procedure is based on [1]_ and is done in two steps. First, it finds
     a vector ``e`` with components selected from {+1, -1} such that the
     solution ``w`` from the system ``U.T w = e`` is as large as possible.
     Next it estimate ``U v = w``. The smallest singular value is close
@@ -162,7 +160,7 @@ def singular_leading_submatrix(A, U, k):
     Returns
     -------
     delta : float
-        Amout that should be added to the element (k, k) of the
+        Amount that should be added to the element (k, k) of the
         leading k by k submatrix of ``A`` to make it singular.
     v : ndarray
         A vector such that ``v.T B v = 0``. Where B is the matrix A after
@@ -215,12 +213,12 @@ class IterativeSubproblem(BaseQuadraticSubproblem):
     def __init__(self, x, fun, jac, hess, hessp=None,
                  k_easy=0.1, k_hard=0.2):
 
-        super(IterativeSubproblem, self).__init__(x, fun, jac, hess)
+        super().__init__(x, fun, jac, hess)
 
         # When the trust-region shrinks in two consecutive
         # calculations (``tr_radius < previous_tr_radius``)
         # the lower bound ``lambda_lb`` may be reused,
-        # facilitating  the convergence.  To indicate no
+        # facilitating  the convergence. To indicate no
         # previous value is known at first ``previous_tr_radius``
         # is set to -1  and ``lambda_lb`` to None.
         self.previous_tr_radius = -1
@@ -229,14 +227,14 @@ class IterativeSubproblem(BaseQuadraticSubproblem):
         self.niter = 0
 
         # ``k_easy`` and ``k_hard`` are parameters used
-        # to detemine the stop criteria to the iterative
+        # to determine the stop criteria to the iterative
         # subproblem solver. Take a look at pp. 194-197
         # from reference _[1] for a more detailed description.
         self.k_easy = k_easy
         self.k_hard = k_hard
 
         # Get Lapack function for cholesky decomposition.
-        # The implemented Scipy wrapper does not return
+        # The implemented SciPy wrapper does not return
         # the incomplete factorization needed by the method.
         self.cholesky, = get_lapack_funcs(('potrf',), (self.hess,))
 
@@ -244,10 +242,10 @@ class IterativeSubproblem(BaseQuadraticSubproblem):
         self.dimension = len(self.hess)
         self.hess_gershgorin_lb,\
             self.hess_gershgorin_ub = gershgorin_bounds(self.hess)
-        self.hess_inf = norm(self.hess, np.Inf)
+        self.hess_inf = norm(self.hess, np.inf)
         self.hess_fro = norm(self.hess, 'fro')
 
-        # A constant such that for vectors smaler than that
+        # A constant such that for vectors smaller than that
         # backward substituition is not reliable. It was stabilished
         # based on Golub, G. H., Van Loan, C. F. (2013).
         # "Matrix computations". Forth Edition. JHU press., p.165.
@@ -306,9 +304,9 @@ class IterativeSubproblem(BaseQuadraticSubproblem):
 
             self.niter += 1
 
-            # Check if factorization succeded
+            # Check if factorization succeeded
             if info == 0 and self.jac_mag > self.CLOSE_TO_ZERO:
-                # Successfull factorization
+                # Successful factorization
 
                 # Solve `U.T U p = s`
                 p = cho_solve((U, False), -self.jac)
@@ -346,7 +344,8 @@ class IterativeSubproblem(BaseQuadraticSubproblem):
                     quadratic_term = np.dot(p, np.dot(H, p))
 
                     # Check stop criteria
-                    relative_error = (step_len**2 * s_min**2) / (quadratic_term + lambda_current*tr_radius**2)
+                    relative_error = ((step_len**2 * s_min**2)
+                                      / (quadratic_term + lambda_current*tr_radius**2))
                     if relative_error <= self.k_hard:
                         p += step_len * z_min
                         break
@@ -361,19 +360,21 @@ class IterativeSubproblem(BaseQuadraticSubproblem):
                                             overwrite_a=False,
                                             clean=True)
 
-                    # Check if the factorization have succeded
+                    # Check if the factorization have succeeded
                     #
-                    if info == 0:  # Successfull factorization
+                    if info == 0:  # Successful factorization
                         # Update damping factor
                         lambda_current = lambda_new
                         already_factorized = True
-                    else:  # Unsuccessfull factorization
+                    else:  # Unsuccessful factorization
                         # Update uncertanty bounds
                         lambda_lb = max(lambda_lb, lambda_new)
 
                         # Update damping factor
-                        lambda_current = max(np.sqrt(lambda_lb * lambda_ub),
-                                             lambda_lb + self.UPDATE_COEFF*(lambda_ub-lambda_lb))
+                        lambda_current = max(
+                            np.sqrt(lambda_lb * lambda_ub),
+                            lambda_lb + self.UPDATE_COEFF*(lambda_ub-lambda_lb)
+                        )
 
                 else:  # Outside boundary
                     # Check stop criteria
@@ -400,7 +401,8 @@ class IterativeSubproblem(BaseQuadraticSubproblem):
                 step_len = tr_radius
 
                 # Check stop criteria
-                if step_len**2 * s_min**2 <= self.k_hard * lambda_current * tr_radius**2:
+                if (step_len**2 * s_min**2
+                    <= self.k_hard * lambda_current * tr_radius**2):
                     p = step_len * z_min
                     break
 
@@ -409,12 +411,14 @@ class IterativeSubproblem(BaseQuadraticSubproblem):
                 lambda_lb = max(lambda_lb, lambda_current - s_min**2)
 
                 # Update damping factor
-                lambda_current = max(np.sqrt(lambda_lb * lambda_ub),
-                                     lambda_lb + self.UPDATE_COEFF*(lambda_ub-lambda_lb))
+                lambda_current = max(
+                    np.sqrt(lambda_lb * lambda_ub),
+                    lambda_lb + self.UPDATE_COEFF*(lambda_ub-lambda_lb)
+                )
 
-            else:  # Unsuccessfull factorization
+            else:  # Unsuccessful factorization
 
-                # Compute auxiliar terms
+                # Compute auxiliary terms
                 delta, v = singular_leading_submatrix(H, U, info)
                 v_norm = norm(v)
 
@@ -422,8 +426,10 @@ class IterativeSubproblem(BaseQuadraticSubproblem):
                 lambda_lb = max(lambda_lb, lambda_current + delta/v_norm**2)
 
                 # Update damping factor
-                lambda_current = max(np.sqrt(lambda_lb * lambda_ub),
-                                     lambda_lb + self.UPDATE_COEFF*(lambda_ub-lambda_lb))
+                lambda_current = max(
+                    np.sqrt(lambda_lb * lambda_ub),
+                    lambda_lb + self.UPDATE_COEFF*(lambda_ub-lambda_lb)
+                )
 
         self.lambda_lb = lambda_lb
         self.lambda_current = lambda_current

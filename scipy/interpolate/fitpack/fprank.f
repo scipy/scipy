@@ -1,4 +1,5 @@
-      subroutine fprank(a,f,n,m,na,tol,c,sq,rank,aa,ff,h)
+      recursive subroutine fprank(a,f,n,m,na,tol,c,sq,rank,aa,ff,h)
+      implicit none
 c  subroutine fprank finds the minimum norm solution of a least-
 c  squares problem in case of rank deficiency.
 c
@@ -6,7 +7,7 @@ c  input parameters:
 c    a : array, which contains the non-zero elements of the observation
 c        matrix after triangularization by givens transformations.
 c    f : array, which contains the transformed right hand side.
-c    n : integer,wich contains the dimension of a.
+c    n : integer,which contains the dimension of a.
 c    m : integer, which denotes the bandwidth of a.
 c  tol : real value, giving a threshold to determine the rank of a.
 c

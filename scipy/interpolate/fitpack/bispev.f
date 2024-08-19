@@ -1,5 +1,6 @@
-      subroutine bispev(tx,nx,ty,ny,c,kx,ky,x,mx,y,my,z,wrk,lwrk,
-     * iwrk,kwrk,ier)
+      recursive subroutine bispev(tx,nx,ty,ny,c,kx,ky,x,mx,y,my,z,
+     *    wrk,lwrk,iwrk,kwrk,ier)
+      implicit none
 c  subroutine bispev evaluates on a grid (x(i),y(j)),i=1,...,mx; j=1,...
 c  ,my a bivariate spline s(x,y) of degrees kx and ky, given in the
 c  b-spline representation.
@@ -38,7 +39,7 @@ c   kwrk  : integer, specifying the dimension of iwrk. kwrk >= mx+my.
 c
 c  output parameters:
 c   z     : real array of dimension (mx*my).
-c           on succesful exit z(my*(i-1)+j) contains the value of s(x,y)
+c           on successful exit z(my*(i-1)+j) contains the value of s(x,y)
 c           at the point (x(i),y(j)),i=1,...,mx;j=1,...,my.
 c   ier   : integer error flag
 c    ier=0 : normal return

@@ -5,8 +5,6 @@ This code was originally written by Justin Kucynski and ported over from
 scikit-bio by Yoshiki Vazquez-Baeza.
 """
 
-from __future__ import absolute_import, division, print_function
-
 import numpy as np
 from scipy.linalg import orthogonal_procrustes
 
@@ -86,6 +84,7 @@ def procrustes(data1, data2):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.spatial import procrustes
 
     The matrix ``b`` is a rotated, shifted, scaled and mirrored version of
@@ -98,8 +97,8 @@ def procrustes(data1, data2):
     0.0
 
     """
-    mtx1 = np.array(data1, dtype=np.double, copy=True)
-    mtx2 = np.array(data2, dtype=np.double, copy=True)
+    mtx1 = np.array(data1, dtype=np.float64, copy=True)
+    mtx2 = np.array(data2, dtype=np.float64, copy=True)
 
     if mtx1.ndim != 2 or mtx2.ndim != 2:
         raise ValueError("Input matrices must be two-dimensional")

@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 from numpy.testing import assert_allclose, assert_equal
 
@@ -85,4 +83,3 @@ def test_tukeylambda_stats_invalid():
     lam = [-1.0, -0.25]
     kurt = tukeylambda_kurtosis(lam)
     assert_equal(kurt, np.array([np.nan, np.inf]))
-

@@ -1,5 +1,6 @@
-      subroutine regrid(iopt,mx,x,my,y,z,xb,xe,yb,ye,kx,ky,s,
+      recursive subroutine regrid(iopt,mx,x,my,y,z,xb,xe,yb,ye,kx,ky,s,
      * nxest,nyest,nx,tx,ny,ty,c,fp,wrk,lwrk,iwrk,kwrk,ier)
+      implicit none
 c given the set of values z(i,j) on the rectangular grid (x(i),y(j)),
 c i=1,...,mx;j=1,...,my, subroutine regrid determines a smooth bivar-
 c iate spline approximation s(x,y) of degrees kx and ky on the rect-
@@ -78,7 +79,7 @@ c          used, the value of nx should be left unchanged between sub-
 c          sequent calls.
 c          in case iopt=-1, the value of nx should be specified on entry
 c  tx    : real array of dimension nmax.
-c          on succesful exit, this array will contain the knots of the
+c          on successful exit, this array will contain the knots of the
 c          spline with respect to the x-variable, i.e. the position of
 c          the interior knots tx(kx+2),...,tx(nx-kx-1) as well as the
 c          position of the additional knots tx(1)=...=tx(kx+1)=xb and
@@ -96,7 +97,7 @@ c          used, the value of ny should be left unchanged between sub-
 c          sequent calls.
 c          in case iopt=-1, the value of ny should be specified on entry
 c  ty    : real array of dimension nmax.
-c          on succesful exit, this array will contain the knots of the
+c          on successful exit, this array will contain the knots of the
 c          spline with respect to the y-variable, i.e. the position of
 c          the interior knots ty(ky+2),...,ty(ny-ky-1) as well as the
 c          position of the additional knots ty(1)=...=ty(ky+1)=yb and
@@ -107,7 +108,7 @@ c          if the computation mode iopt=-1 is used, the values ty(ky+2),
 c          ...ty(ny-ky-1) must be supplied by the user, before entry.
 c          see also the restrictions (ier=10).
 c  c     : real array of dimension at least (nxest-kx-1)*(nyest-ky-1).
-c          on succesful exit, c contains the coefficients of the spline
+c          on successful exit, c contains the coefficients of the spline
 c          approximation s(x,y)
 c  fp    : real. unless ier=10, fp contains the sum of squared
 c          residuals of the spline approximation returned.
@@ -146,7 +147,7 @@ c            the approximation returned is the least-squares spline
 c            according to the current set of knots. the parameter fp
 c            gives the corresponding sum of squared residuals (fp>s).
 c   ier=2  : error. a theoretically impossible result was found during
-c            the iteration proces for finding a smoothing spline with
+c            the iteration process for finding a smoothing spline with
 c            fp = s. probably causes : s too small.
 c            there is an approximation returned but the corresponding
 c            sum of squared residuals does not satisfy the condition

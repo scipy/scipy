@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import division, print_function, absolute_import
-
 from numpy import (abs, sum, sin, cos, sqrt, log, prod, where, pi, exp, arange,
                    floor, log10, atleast_2d, zeros)
 from .go_benchmark import Benchmark
@@ -347,7 +344,7 @@ class PermFunction01(Benchmark):
         k = atleast_2d(arange(self.N) + 1).T
         j = atleast_2d(arange(self.N) + 1)
         s = (j ** k + b) * ((x / j) ** k - 1)
-        return sum((sum(s, axis=1) ** 2))
+        return sum(sum(s, axis=1) ** 2)
 
 
 class PermFunction02(Benchmark):
@@ -396,7 +393,7 @@ class PermFunction02(Benchmark):
         k = atleast_2d(arange(self.N) + 1).T
         j = atleast_2d(arange(self.N) + 1)
         s = (j + b) * (x ** k - (1. / j) ** k)
-        return sum((sum(s, axis=1) ** 2))
+        return sum(sum(s, axis=1) ** 2)
 
 
 class Pinter(Benchmark):

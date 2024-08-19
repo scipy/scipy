@@ -4,7 +4,7 @@
 Uniform Distribution
 ====================
 
-Standard form :math:`x\in\left(0,1\right).` In general form, the lower limit is :math:`L,` the upper limit is :math:`S+L.`
+Standard form :math:`x\in\left[0,1\right].` In general form, the lower limit is :math:`L,` the upper limit is :math:`S+L.`
 
 .. math::
    :nowrap:

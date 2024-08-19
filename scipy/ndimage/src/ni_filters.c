@@ -156,6 +156,12 @@ case _TYPE:                                      \
     *(_type *)_po = (_type)_tmp;                 \
     break
 
+/* Avoid undefined behaviour of float -> unsigned conversions. */
+#define CASE_FILTER_OUT_SAFE(_TYPE, _type, _po, _tmp)                  \
+case _TYPE:                                                            \
+    *(_type *)_po = (_tmp) > -1. ? (_type)(_tmp) : -(_type)(-_tmp);    \
+    break
+
 int NI_Correlate(PyArrayObject* input, PyArrayObject* weights,
                  PyArrayObject* output, NI_ExtendMode mode,
                  double cvalue, npy_intp *origins)
@@ -171,7 +177,7 @@ int NI_Correlate(PyArrayObject* input, PyArrayObject* weights,
     int err = 0;
     NPY_BEGIN_THREADS_DEF;
 
-    /* get the the footprint: */
+    /* get the footprint: */
     fsize = PyArray_SIZE(weights);
     pw = (npy_double*)PyArray_DATA(weights);
     pf = malloc(fsize * sizeof(npy_bool));
@@ -271,12 +277,12 @@ int NI_Correlate(PyArrayObject* input, PyArrayObject* weights,
                 goto exit;
         }
         switch (PyArray_TYPE(output)) {
-            CASE_FILTER_OUT(NPY_BOOL, npy_bool, po, tmp);
-            CASE_FILTER_OUT(NPY_UBYTE, npy_ubyte, po, tmp);
-            CASE_FILTER_OUT(NPY_USHORT, npy_ushort, po, tmp);
-            CASE_FILTER_OUT(NPY_UINT, npy_uint, po, tmp);
-            CASE_FILTER_OUT(NPY_ULONG, npy_ulong, po, tmp);
-            CASE_FILTER_OUT(NPY_ULONGLONG, npy_ulonglong, po, tmp);
+            CASE_FILTER_OUT_SAFE(NPY_BOOL, npy_bool, po, tmp);
+            CASE_FILTER_OUT_SAFE(NPY_UBYTE, npy_ubyte, po, tmp);
+            CASE_FILTER_OUT_SAFE(NPY_USHORT, npy_ushort, po, tmp);
+            CASE_FILTER_OUT_SAFE(NPY_UINT, npy_uint, po, tmp);
+            CASE_FILTER_OUT_SAFE(NPY_ULONG, npy_ulong, po, tmp);
+            CASE_FILTER_OUT_SAFE(NPY_ULONGLONG, npy_ulonglong, po, tmp);
             CASE_FILTER_OUT(NPY_BYTE, npy_byte, po, tmp);
             CASE_FILTER_OUT(NPY_SHORT, npy_short, po, tmp);
             CASE_FILTER_OUT(NPY_INT, npy_int, po, tmp);
@@ -510,7 +516,7 @@ case _TYPE:                                                              \
         _oo = _offsets[_ii];                                             \
         _tmp = _oo == _mv ? _cv : *(_type *)(_pi + _oo);                 \
         if (_ss != NULL) {                                               \
-            _tmp += _ss[_ii];                                            \
+            _tmp += (_type) _ss[_ii];                                    \
         }                                                                \
         if (_minimum) {                                                  \
             if (_tmp < _res) {                                           \
@@ -542,7 +548,7 @@ int NI_MinOrMaxFilter(PyArrayObject* input, PyArrayObject* footprint,
     npy_double *ps;
     NPY_BEGIN_THREADS_DEF;
 
-    /* get the the footprint: */
+    /* get the footprint: */
     fsize = PyArray_SIZE(footprint);
     pf = (npy_bool*)PyArray_DATA(footprint);
     for(jj = 0; jj < fsize; jj++) {
@@ -637,12 +643,12 @@ int NI_MinOrMaxFilter(PyArrayObject* input, PyArrayObject* footprint,
                 goto exit;
         }
         switch (PyArray_TYPE(output)) {
-            CASE_FILTER_OUT(NPY_BOOL, npy_bool, po, tmp);
-            CASE_FILTER_OUT(NPY_UBYTE, npy_ubyte, po, tmp);
-            CASE_FILTER_OUT(NPY_USHORT, npy_ushort, po, tmp);
-            CASE_FILTER_OUT(NPY_UINT, npy_uint, po, tmp);
-            CASE_FILTER_OUT(NPY_ULONG, npy_ulong, po, tmp);
-            CASE_FILTER_OUT(NPY_ULONGLONG, npy_ulonglong, po, tmp);
+            CASE_FILTER_OUT_SAFE(NPY_BOOL, npy_bool, po, tmp);
+            CASE_FILTER_OUT_SAFE(NPY_UBYTE, npy_ubyte, po, tmp);
+            CASE_FILTER_OUT_SAFE(NPY_USHORT, npy_ushort, po, tmp);
+            CASE_FILTER_OUT_SAFE(NPY_UINT, npy_uint, po, tmp);
+            CASE_FILTER_OUT_SAFE(NPY_ULONG, npy_ulong, po, tmp);
+            CASE_FILTER_OUT_SAFE(NPY_ULONGLONG, npy_ulonglong, po, tmp);
             CASE_FILTER_OUT(NPY_BYTE, npy_byte, po, tmp);
             CASE_FILTER_OUT(NPY_SHORT, npy_short, po, tmp);
             CASE_FILTER_OUT(NPY_INT, npy_int, po, tmp);
@@ -735,7 +741,7 @@ int NI_RankFilter(PyArrayObject* input, int rank,
     int err = 0;
     NPY_BEGIN_THREADS_DEF;
 
-    /* get the the footprint: */
+    /* get the footprint: */
     fsize = PyArray_SIZE(footprint);
     pf = (npy_bool*)PyArray_DATA(footprint);
     for(jj = 0; jj < fsize; jj++) {
@@ -823,12 +829,12 @@ int NI_RankFilter(PyArrayObject* input, int rank,
                 goto exit;
         }
         switch (PyArray_TYPE(output)) {
-            CASE_FILTER_OUT(NPY_BOOL, npy_bool, po, tmp);
-            CASE_FILTER_OUT(NPY_UBYTE, npy_ubyte, po, tmp);
-            CASE_FILTER_OUT(NPY_USHORT, npy_ushort, po, tmp);
-            CASE_FILTER_OUT(NPY_UINT, npy_uint, po, tmp);
-            CASE_FILTER_OUT(NPY_ULONG, npy_ulong, po, tmp);
-            CASE_FILTER_OUT(NPY_ULONGLONG, npy_ulonglong, po, tmp);
+            CASE_FILTER_OUT_SAFE(NPY_BOOL, npy_bool, po, tmp);
+            CASE_FILTER_OUT_SAFE(NPY_UBYTE, npy_ubyte, po, tmp);
+            CASE_FILTER_OUT_SAFE(NPY_USHORT, npy_ushort, po, tmp);
+            CASE_FILTER_OUT_SAFE(NPY_UINT, npy_uint, po, tmp);
+            CASE_FILTER_OUT_SAFE(NPY_ULONG, npy_ulong, po, tmp);
+            CASE_FILTER_OUT_SAFE(NPY_ULONGLONG, npy_ulonglong, po, tmp);
             CASE_FILTER_OUT(NPY_BYTE, npy_byte, po, tmp);
             CASE_FILTER_OUT(NPY_SHORT, npy_short, po, tmp);
             CASE_FILTER_OUT(NPY_INT, npy_int, po, tmp);
@@ -947,7 +953,7 @@ int NI_GenericFilter(PyArrayObject* input,
     char *pi, *po;
     double *buffer = NULL;
 
-    /* get the the footprint: */
+    /* get the footprint: */
     fsize = PyArray_SIZE(footprint);
     pf = (npy_bool*)PyArray_DATA(footprint);
     for(jj = 0; jj < fsize; jj++) {
@@ -1031,12 +1037,12 @@ int NI_GenericFilter(PyArrayObject* input,
                 goto exit;
         }
         switch (PyArray_TYPE(output)) {
-            CASE_FILTER_OUT(NPY_BOOL, npy_bool, po, tmp);
-            CASE_FILTER_OUT(NPY_UBYTE, npy_ubyte, po, tmp);
-            CASE_FILTER_OUT(NPY_USHORT, npy_ushort, po, tmp);
-            CASE_FILTER_OUT(NPY_UINT, npy_uint, po, tmp);
-            CASE_FILTER_OUT(NPY_ULONG, npy_ulong, po, tmp);
-            CASE_FILTER_OUT(NPY_ULONGLONG, npy_ulonglong, po, tmp);
+            CASE_FILTER_OUT_SAFE(NPY_BOOL, npy_bool, po, tmp);
+            CASE_FILTER_OUT_SAFE(NPY_UBYTE, npy_ubyte, po, tmp);
+            CASE_FILTER_OUT_SAFE(NPY_USHORT, npy_ushort, po, tmp);
+            CASE_FILTER_OUT_SAFE(NPY_UINT, npy_uint, po, tmp);
+            CASE_FILTER_OUT_SAFE(NPY_ULONG, npy_ulong, po, tmp);
+            CASE_FILTER_OUT_SAFE(NPY_ULONGLONG, npy_ulonglong, po, tmp);
             CASE_FILTER_OUT(NPY_BYTE, npy_byte, po, tmp);
             CASE_FILTER_OUT(NPY_SHORT, npy_short, po, tmp);
             CASE_FILTER_OUT(NPY_INT, npy_int, po, tmp);

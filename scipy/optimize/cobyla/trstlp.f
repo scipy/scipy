@@ -467,6 +467,12 @@ C     Otherwise switch to stage two or end the calculation.
 C
       IF (ICON .GT. 0) GOTO 70
       IF (STEP .EQ. STPFUL) GOTO 500
+      IF (STEP .NE. STEP) THEN
+C        Nan encountered, propagate it (avoid infinite loop)
+         DO 475 I=1,N
+  475       DX(I)=STEP
+         GOTO 500
+      END IF
   480 MCON=M+1
       ICON=MCON
       IACT(MCON)=MCON

@@ -1,13 +1,13 @@
-from __future__ import division, absolute_import, print_function
-
 import numpy as np
+import timeit
+from concurrent.futures import ThreadPoolExecutor, wait
 
-try:
-    from scipy.signal import lfilter, firwin, decimate
-except ImportError:
-    pass
+from .common import Benchmark, safe_import
 
-from .common import Benchmark
+with safe_import():
+    from scipy.signal import (lfilter, firwin, decimate, butter, sosfilt,
+                              medfilt2d, freqz)
+
 
 class Decimate(Benchmark):
     param_names = ['q', 'ftype', 'zero_phase']
@@ -45,3 +45,76 @@ class Lfilter(Benchmark):
 
     def time_lfilter(self, n_samples, numtaps):
         lfilter(self.coeff, 1.0, self.sig)
+
+class ParallelSosfilt(Benchmark):
+    timeout = 100
+    timer = timeit.default_timer
+
+    param_names = ['n_samples', 'threads']
+    params = [
+        [1e3, 10e3],
+        [1, 2, 4]
+    ]
+
+    def setup(self, n_samples, threads):
+        self.filt = butter(8, 8e-6, "lowpass", output="sos")
+        self.data = np.arange(int(n_samples) * 3000).reshape(int(n_samples), 3000)
+        self.chunks = np.array_split(self.data, threads)
+
+    def time_sosfilt(self, n_samples, threads):
+        with ThreadPoolExecutor(max_workers=threads) as pool:
+            futures = []
+            for i in range(threads):
+                futures.append(pool.submit(sosfilt, self.filt, self.chunks[i]))
+
+            wait(futures)
+
+
+class Sosfilt(Benchmark):
+    param_names = ['n_samples', 'order']
+    params = [
+        [1000, 1000000],
+        [6, 20]
+    ]
+
+    def setup(self, n_samples, order):
+        self.sos = butter(order, [0.1575, 0.1625], 'band', output='sos')
+        self.y = np.random.RandomState(0).randn(n_samples)
+
+    def time_sosfilt_basic(self, n_samples, order):
+        sosfilt(self.sos, self.y)
+
+
+class MedFilt2D(Benchmark):
+    param_names = ['threads']
+    params = [[1, 2, 4]]
+
+    def setup(self, threads):
+        rng = np.random.default_rng(8176)
+        self.chunks = np.array_split(rng.standard_normal((250, 349)), threads)
+
+    def _medfilt2d(self, threads):
+        with ThreadPoolExecutor(max_workers=threads) as pool:
+            wait({pool.submit(medfilt2d, chunk, 5) for chunk in self.chunks})
+
+    def time_medfilt2d(self, threads):
+        self._medfilt2d(threads)
+
+    def peakmem_medfilt2d(self, threads):
+        self._medfilt2d(threads)
+
+
+class FreqzRfft(Benchmark):
+    param_names = ['whole', 'nyquist', 'worN']
+    params = [
+        [False, True],
+        [False, True],
+        [64, 65, 128, 129, 256, 257, 258, 512, 513, 65536, 65537, 65538],
+    ]
+
+    def setup(self, whole, nyquist, worN):
+        self.y = np.zeros(worN)
+        self.y[worN//2] = 1.0
+
+    def time_freqz(self, whole, nyquist, worN):
+        freqz(self.y, whole=whole, include_nyquist=nyquist, worN=worN)

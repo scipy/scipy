@@ -1,16 +1,21 @@
-#include <complex>
-
 #include "_wright.h"
+
+#include <complex>
 
 using namespace std;
 
-EXTERN_C_START
+extern "C" {
 
 npy_cdouble wrightomega(npy_cdouble zp)
 {
-    complex<double> z(zp.real, zp.imag);
+    complex<double> z(npy_creal(zp), npy_cimag(zp));
     complex<double> w = wright::wrightomega(z);
     return npy_cpack(real(w), imag(w));
 }
 
-EXTERN_C_END
+double wrightomega_real(double x)
+{
+    return wright::wrightomega_real(x);
+}
+
+}  // extern "C"

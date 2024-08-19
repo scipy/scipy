@@ -1,26 +1,25 @@
-from __future__ import division, print_function, absolute_import
-
 import os
 import time
 import inspect
 import json
 import traceback
-from collections import defaultdict, OrderedDict
+from collections import defaultdict
 
 import numpy as np
 
-try:
+from . import test_functions as funcs
+from . import go_benchmark_functions as gbf
+from .common import Benchmark, is_xslow, safe_import
+from .lsq_problems import extract_lsq_problems
+
+with safe_import():
     import scipy.optimize
     from scipy.optimize.optimize import rosen, rosen_der, rosen_hess
     from scipy.optimize import (leastsq, basinhopping, differential_evolution,
-                                OptimizeResult)
-except ImportError:
-    pass
-
-from . import test_functions as funcs
-from . import go_benchmark_functions as gbf
-from .common import Benchmark
-from .lsq_problems import extract_lsq_problems
+                                dual_annealing, shgo, direct)
+    from scipy.optimize._minimize import MINIMIZE_METHODS
+    from .cutest.calfun import calfun
+    from .cutest.dfoxs import dfoxs
 
 
 class _BenchOptimizers(Benchmark):
@@ -89,14 +88,16 @@ class _BenchOptimizers(Benchmark):
             return
         print("")
         print("=========================================================")
-        print("Optimizer benchmark: %s" % (self.function_name))
-        print("dimensions: %d, extra kwargs: %s" % (results[0].ndim, str(self.minimizer_kwargs)))
+        print(f"Optimizer benchmark: {self.function_name}")
+        print("dimensions: %d, extra kwargs: %s" %
+              (results[0].ndim, str(self.minimizer_kwargs)))
         print("averaged over %d starting configurations" % (results[0].ntrials))
         print("  Optimizer    nfail   nfev    njev    nhev    time")
         print("---------------------------------------------------------")
         for res in results:
             print("%11s  | %4d  | %4d  | %4d  | %4d  | %.6g" %
-                  (res.name, res.nfail, res.mean_nfev, res.mean_njev, res.mean_nhev, res.mean_time))
+                  (res.name, res.nfail, res.mean_nfev,
+                   res.mean_njev, res.mean_nhev, res.mean_time))
 
     def average_results(self):
         """group the results by minimizer and average over the runs"""
@@ -112,6 +113,11 @@ class _BenchOptimizers(Benchmark):
             newres.mean_njev = np.mean([r.njev for r in result_list])
             newres.mean_nhev = np.mean([r.nhev for r in result_list])
             newres.mean_time = np.mean([r.time for r in result_list])
+            funs = [r.fun for r in result_list]
+            newres.max_obj = np.max(funs)
+            newres.min_obj = np.min(funs)
+            newres.mean_obj = np.mean(funs)
+
             newres.ntrials = len(result_list)
             newres.nfail = len([r for r in result_list if not r.success])
             newres.nsuccess = len([r for r in result_list if r.success])
@@ -125,12 +131,12 @@ class _BenchOptimizers(Benchmark):
     # for basinhopping
     def accept_test(self, x_new=None, *args, **kwargs):
         """
-        Does the new candidate vector lie inbetween the bounds?
+        Does the new candidate vector lie in between the bounds?
 
         Returns
         -------
         accept_test : bool
-            The candidate vector lies inbetween the bounds
+            The candidate vector lies in between the bounds
         """
         if not hasattr(self.function, "xmin"):
             return True
@@ -170,6 +176,38 @@ class _BenchOptimizers(Benchmark):
         res.nfev = self.function.nfev
         self.add_result(res, t1 - t0, 'basinh.')
 
+    def run_direct(self):
+        """
+        Do an optimization run for direct
+        """
+        self.function.nfev = 0
+
+        t0 = time.time()
+
+        res = direct(self.fun,
+                     self.bounds)
+
+        t1 = time.time()
+        res.success = self.function.success(res.x)
+        res.nfev = self.function.nfev
+        self.add_result(res, t1 - t0, 'DIRECT')
+
+    def run_shgo(self):
+        """
+        Do an optimization run for shgo
+        """
+        self.function.nfev = 0
+
+        t0 = time.time()
+
+        res = shgo(self.fun,
+                   self.bounds)
+
+        t1 = time.time()
+        res.success = self.function.success(res.x)
+        res.nfev = self.function.nfev
+        self.add_result(res, t1 - t0, 'SHGO')
+
     def run_differentialevolution(self):
         """
         Do an optimization run for differential_evolution
@@ -187,19 +225,43 @@ class _BenchOptimizers(Benchmark):
         res.nfev = self.function.nfev
         self.add_result(res, t1 - t0, 'DE')
 
+    def run_dualannealing(self):
+        """
+        Do an optimization run for dual_annealing
+        """
+        self.function.nfev = 0
+
+        t0 = time.time()
+
+        res = dual_annealing(self.fun,
+                             self.bounds)
+
+        t1 = time.time()
+        res.success = self.function.success(res.x)
+        res.nfev = self.function.nfev
+        self.add_result(res, t1 - t0, 'DA')
+
     def bench_run_global(self, numtrials=50, methods=None):
         """
         Run the optimization tests for the required minimizers.
         """
 
         if methods is None:
-            methods = ['DE', 'basinh.']
+            methods = ['DE', 'basinh.', 'DA', 'DIRECT', 'SHGO']
+
+        stochastic_methods = ['DE', 'basinh.', 'DA']
 
         method_fun = {'DE': self.run_differentialevolution,
-                      'basinh.': self.run_basinhopping}
+                      'basinh.': self.run_basinhopping,
+                      'DA': self.run_dualannealing,
+                      'DIRECT': self.run_direct,
+                      'SHGO': self.run_shgo, }
 
-        for i in range(numtrials):
-            for m in methods:
+        for m in methods:
+            if m in stochastic_methods:
+                for i in range(numtrials):
+                    method_fun[m]()
+            else:
                 method_fun[m]()
 
     def bench_run(self, x0, methods=None, **minimizer_kwargs):
@@ -207,12 +269,12 @@ class _BenchOptimizers(Benchmark):
         kwargs = self.minimizer_kwargs
 
         if methods is None:
-            methods = ["COBYLA", 'Powell',
-                       'L-BFGS-B', 'BFGS', 'CG', 'TNC', 'SLSQP',
-                       "Newton-CG", 'dogleg', 'trust-ncg', 'trust-exact',
-                       'trust-krylov']
+            methods = MINIMIZE_METHODS
 
-        fonly_methods = ["COBYLA", 'Powell']
+        # L-BFGS-B, BFGS, trust-constr, SLSQP can use gradients, but examine
+        # performance when numerical differentiation is used.
+        fonly_methods = ["COBYLA", 'COBYQA', 'Powell', 'nelder-mead',
+                         'L-BFGS-B', 'BFGS', 'trust-constr', 'SLSQP']
         for method in fonly_methods:
             if method not in methods:
                 continue
@@ -222,7 +284,8 @@ class _BenchOptimizers(Benchmark):
             t1 = time.time()
             self.add_result(res, t1-t0, method)
 
-        gradient_methods = ['L-BFGS-B', 'BFGS', 'CG', 'TNC', 'SLSQP']
+        gradient_methods = ['L-BFGS-B', 'BFGS', 'CG', 'TNC', 'SLSQP',
+                            'trust-constr']
         if self.der is not None:
             for method in gradient_methods:
                 if method not in methods:
@@ -234,7 +297,7 @@ class _BenchOptimizers(Benchmark):
                 self.add_result(res, t1-t0, method)
 
         hessian_methods = ["Newton-CG", 'dogleg', 'trust-ncg',
-                           'trust-exact', 'trust-krylov']
+                           'trust-exact', 'trust-krylov', 'trust-constr']
         if self.hess is not None:
             for method in hessian_methods:
                 if method not in methods:
@@ -250,13 +313,13 @@ class _BenchOptimizers(Benchmark):
 class BenchSmoothUnbounded(Benchmark):
     """Benchmark the optimizers with smooth, unbounded, functions"""
     params = [
-        ['rosenbrock', 'rosenbrock_tight',
+        ['rosenbrock_slow', 'rosenbrock_nograd', 'rosenbrock', 'rosenbrock_tight',
          'simple_quadratic', 'asymmetric_quadratic',
          'sin_1d', 'booth', 'beale', 'LJ'],
-        ["COBYLA", 'Powell',
+        ["COBYLA", 'COBYQA', 'Powell', 'nelder-mead',
          'L-BFGS-B', 'BFGS', 'CG', 'TNC', 'SLSQP',
          "Newton-CG", 'dogleg', 'trust-ncg', 'trust-exact',
-         'trust-krylov'],
+         'trust-krylov', 'trust-constr'],
         ["mean_nfev", "mean_time"]
     ]
     param_names = ["test function", "solver", "result type"]
@@ -270,6 +333,27 @@ class BenchSmoothUnbounded(Benchmark):
 
     def track_all(self, func_name, method_name, ret_val):
         return self.result
+
+    # SlowRosen has a 50us delay on each function evaluation. By comparing to
+    # rosenbrock_nograd it should be possible to figure out how much time a
+    # minimizer uses internally, compared to the time required for function
+    # evaluation.
+    def run_rosenbrock_slow(self, methods=None):
+        s = funcs.SlowRosen()
+        b = _BenchOptimizers("Rosenbrock function",
+                             fun=s.fun)
+        for i in range(10):
+            b.bench_run(np.random.uniform(-3, 3, 3), methods=methods)
+        return b
+
+    # see what the performance of the solvers are if numerical differentiation
+    # has to be used.
+    def run_rosenbrock_nograd(self, methods=None):
+        b = _BenchOptimizers("Rosenbrock function",
+                             fun=rosen)
+        for i in range(10):
+            b.bench_run(np.random.uniform(-3, 3, 3), methods=methods)
+        return b
 
     def run_rosenbrock(self, methods=None):
         b = _BenchOptimizers("Rosenbrock function",
@@ -288,7 +372,8 @@ class BenchSmoothUnbounded(Benchmark):
 
     def run_simple_quadratic(self, methods=None):
         s = funcs.SimpleQuadratic()
-        #    print "checking gradient", scipy.optimize.check_grad(s.fun, s.der, np.array([1.1, -2.3]))
+        #    print "checking gradient",
+        #    scipy.optimize.check_grad(s.fun, s.der, np.array([1.1, -2.3]))
         b = _BenchOptimizers("simple quadratic function",
                              fun=s.fun, der=s.der, hess=s.hess)
         for i in range(10):
@@ -297,7 +382,8 @@ class BenchSmoothUnbounded(Benchmark):
 
     def run_asymmetric_quadratic(self, methods=None):
         s = funcs.AsymmetricQuadratic()
-        #    print "checking gradient", scipy.optimize.check_grad(s.fun, s.der, np.array([1.1, -2.3]))
+        #    print "checking gradient",
+        #    scipy.optimize.check_grad(s.fun, s.der, np.array([1.1, -2.3]))
         b = _BenchOptimizers("function sum(x**2) + x[0]",
                              fun=s.fun, der=s.der, hess=s.hess)
         for i in range(10):
@@ -305,8 +391,12 @@ class BenchSmoothUnbounded(Benchmark):
         return b
 
     def run_sin_1d(self, methods=None):
-        fun = lambda x: np.sin(x[0])
-        der = lambda x: np.array([np.cos(x[0])])
+        def fun(x):
+            return np.sin(x[0])
+
+        def der(x):
+            return np.array([np.cos(x[0])])
+
         b = _BenchOptimizers("1d sin function",
                              fun=fun, der=der, hess=None)
         for i in range(10):
@@ -315,7 +405,8 @@ class BenchSmoothUnbounded(Benchmark):
 
     def run_booth(self, methods=None):
         s = funcs.Booth()
-        #    print "checking gradient", scipy.optimize.check_grad(s.fun, s.der, np.array([1.1, -2.3]))
+        #    print "checking gradient",
+        #    scipy.optimize.check_grad(s.fun, s.der, np.array([1.1, -2.3]))
         b = _BenchOptimizers("Booth's function",
                              fun=s.fun, der=s.der, hess=None)
         for i in range(10):
@@ -324,7 +415,8 @@ class BenchSmoothUnbounded(Benchmark):
 
     def run_beale(self, methods=None):
         s = funcs.Beale()
-        #    print "checking gradient", scipy.optimize.check_grad(s.fun, s.der, np.array([1.1, -2.3]))
+        #    print "checking gradient",
+        #    scipy.optimize.check_grad(s.fun, s.der, np.array([1.1, -2.3]))
         b = _BenchOptimizers("Beale's function",
                              fun=s.fun, der=s.der, hess=None)
         for i in range(10):
@@ -333,8 +425,9 @@ class BenchSmoothUnbounded(Benchmark):
 
     def run_LJ(self, methods=None):
         s = funcs.LJ()
-        # print "checking gradient", scipy.optimize.check_grad(s.get_energy, s.get_gradient,
-        # np.random.uniform(-2,2,3*4))
+        # print "checking gradient",
+        # scipy.optimize.check_grad(s.get_energy, s.get_gradient,
+        #                           np.random.uniform(-2,2,3*4))
         natoms = 4
         b = _BenchOptimizers("%d atom Lennard Jones potential" % (natoms),
                              fun=s.fun, der=s.der, hess=None)
@@ -382,19 +475,12 @@ class BenchLeastSquares(Benchmark):
             raise NotImplementedError
 
 
-try:
-    # the value of SCIPY_XSLOW is used to control how many repeats of each
-    # function
-    slow = int(os.environ.get('SCIPY_XSLOW', 0))
-except ValueError:
-    pass
-
-
-_func_names = os.environ.get('SCIPY_GLOBAL_BENCH', [])
-if _func_names:
-    if not slow:
-        slow = 100
-    _func_names = [x.strip() for x in _func_names.split(',')]
+# `export SCIPY_XSLOW=1` to enable BenchGlobal.track_all
+# `export SCIPY_GLOBAL_BENCH=AMGM,Adjiman,...` to run specific tests
+# `export SCIPY_GLOBAL_BENCH_NUMTRIALS=10` to specify n_iterations, default 100
+#
+# Note that it can take several hours to run; intermediate output
+# can be found under benchmarks/global-bench-results.json
 
 
 class BenchGlobal(Benchmark):
@@ -404,50 +490,52 @@ class BenchGlobal(Benchmark):
     """
     timeout = 300
 
-    _functions = OrderedDict([
+    _functions = dict([
         item for item in inspect.getmembers(gbf, inspect.isclass)
         if (issubclass(item[1], gbf.Benchmark) and
             item[0] not in ('Benchmark') and
             not item[0].startswith('Problem'))
     ])
 
-    if _func_names:
-        _filtered_funcs = OrderedDict()
-        for name in _func_names:
-            if name in _functions:
-                _filtered_funcs[name] = _functions.get(name)
-        _functions = _filtered_funcs
-
-    if not slow:
-        _functions = {'AMGM': None}
+    if not is_xslow():
+        _enabled_functions = []
+    elif 'SCIPY_GLOBAL_BENCH' in os.environ:
+        _enabled_functions = [x.strip() for x in
+                              os.environ['SCIPY_GLOBAL_BENCH'].split(',')]
+    else:
+        _enabled_functions = list(_functions.keys())
 
     params = [
         list(_functions.keys()),
-        ["success%", "<nfev>"],
-        ['DE', 'basinh.'],
+        ["success%", "<nfev>", "average time"],
+        ['DE', 'basinh.', 'DA', 'DIRECT', 'SHGO'],
     ]
     param_names = ["test function", "result type", "solver"]
 
     def __init__(self):
-        self.enabled = bool(slow)
-        self.numtrials = slow
+        self.enabled = is_xslow()
+        try:
+            self.numtrials = int(os.environ['SCIPY_GLOBAL_BENCH_NUMTRIALS'])
+        except (KeyError, ValueError):
+            self.numtrials = 100
 
-        self.dump_fn = os.path.join(os.path.dirname(__file__), '..', 'global-bench-results.json')
+        self.dump_fn = os.path.join(os.path.dirname(__file__),
+                                    '..',
+                                    'global-bench-results.json',)
         self.results = {}
 
     def setup(self, name, ret_value, solver):
-        if not self.enabled:
-            print("BenchGlobal.track_all not enabled --- export SCIPY_XSLOW=slow to enable,\n"
-                  "'slow' iterations of each benchmark will be run.\n"
-                  "Note that it can take several hours to run; intermediate output\n"
-                  "can be found under benchmarks/global-bench-results.json\n"
-                  "You can specify functions to benchmark via SCIPY_GLOBAL_BENCH=AMGM,Adjiman,...")
-            raise NotImplementedError()
+        if name not in self._enabled_functions:
+            raise NotImplementedError("skipped")
+
         # load json backing file
-        with open(self.dump_fn, 'r') as f:
+        with open(self.dump_fn) as f:
             self.results = json.load(f)
 
     def teardown(self, name, ret_value, solver):
+        if not self.enabled:
+            return
+
         with open(self.dump_fn, 'w') as f:
             json.dump(self.results, f, indent=2, sort_keys=True)
 
@@ -457,9 +545,12 @@ class BenchGlobal(Benchmark):
             # if so, then just return the ret_value
             av_results = self.results[name]
             if ret_value == 'success%':
-                return 100 * av_results[solver]['nsuccess'] / av_results[solver]['ntrials']
+                return (100 * av_results[solver]['nsuccess']
+                        / av_results[solver]['ntrials'])
             elif ret_value == '<nfev>':
                 return av_results[solver]['mean_nfev']
+            elif ret_value == 'average time':
+                return av_results[solver]['mean_time']
             else:
                 raise ValueError()
 
@@ -478,12 +569,15 @@ class BenchGlobal(Benchmark):
             self.results[name][solver] = av_results[solver]
 
             if ret_value == 'success%':
-                return 100 * av_results[solver]['nsuccess'] / av_results[solver]['ntrials']
+                return (100 * av_results[solver]['nsuccess']
+                        / av_results[solver]['ntrials'])
             elif ret_value == '<nfev>':
                 return av_results[solver]['mean_nfev']
+            elif ret_value == 'average time':
+                return av_results[solver]['mean_time']
             else:
                 raise ValueError()
-        except:
+        except Exception:
             print("".join(traceback.format_exc()))
             self.results[name] = "".join(traceback.format_exc())
 
@@ -494,3 +588,52 @@ class BenchGlobal(Benchmark):
         # create the logfile to start with
         with open(self.dump_fn, 'w') as f:
             json.dump({}, f, indent=2)
+
+
+class BenchDFO(Benchmark):
+    """
+    Benchmark the optimizers with the CUTEST DFO benchmark of Moré and Wild.
+    The original benchmark suite is available at
+    https://github.com/POptUS/BenDFO
+    """
+
+    params = [
+        list(range(53)),  # adjust which problems to solve
+        ["COBYLA", "COBYQA", "SLSQP", "Powell", "nelder-mead", "L-BFGS-B",
+         "BFGS",
+         "trust-constr"],  # note: methods must also be listed in bench_run
+        ["mean_nfev", "min_obj"],  # defined in average_results
+    ]
+    param_names = ["DFO benchmark problem number", "solver", "result type"]
+
+    def setup(self, prob_number, method_name, ret_val):
+        probs = np.loadtxt(os.path.join(os.path.dirname(__file__),
+                                        "cutest", "dfo.txt"))
+        params = probs[prob_number]
+        nprob = int(params[0])
+        n = int(params[1])
+        m = int(params[2])
+        s = params[3]
+        factor = 10 ** s
+
+        def func(x):
+            return calfun(x, m, nprob)
+
+        x0 = dfoxs(n, nprob, factor)
+        b = getattr(self, "run_cutest")(
+            func, x0, prob_number=prob_number, methods=[method_name]
+        )
+        r = b.average_results().get(method_name)
+        if r is None:
+            raise NotImplementedError()
+        self.result = getattr(r, ret_val)
+
+    def track_all(self, prob_number, method_name, ret_val):
+        return self.result
+
+    def run_cutest(self, func, x0, prob_number, methods=None):
+        if methods is None:
+            methods = MINIMIZE_METHODS
+        b = _BenchOptimizers(f"DFO benchmark problem {prob_number}", fun=func)
+        b.bench_run(x0, methods=methods)
+        return b

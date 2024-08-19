@@ -65,7 +65,7 @@ def geterr():
     singular: ignore
     slow: ignore
     underflow: ignore
-    
+
     """
     err = {}
     for key, code in _sf_error_code_map.items():
@@ -164,7 +164,7 @@ def seterr(**kwargs):
     return olderr
 
 
-class errstate(object):
+class errstate:
     """Context manager for special-function error handling.
 
     Using an instance of `errstate` as a context manager allows
@@ -177,7 +177,7 @@ class errstate(object):
     kwargs : {all, singular, underflow, overflow, slow, loss, no_result, domain, arg, other}
         Keyword arguments. The valid keywords are possible
         special-function errors. Each keyword should have a string
-        value that defines the treatement for the particular type of
+        value that defines the treatment for the particular type of
         error. Values must be 'ignore', 'warn', or 'other'. See
         `seterr` for details.
 
@@ -212,58 +212,9 @@ class errstate(object):
     """
     def __init__(self, **kwargs):
         self.kwargs = kwargs
-    
+
     def __enter__(self):
         self.oldstate = seterr(**self.kwargs)
 
     def __exit__(self, exc_type, exc_value, traceback):
         seterr(**self.oldstate)
-
-
-@np.deprecate(message=("`errprint` is deprecated in SciPy 0.19."
-                       " Use `errstate` instead."))
-def errprint(inflag=None):
-    """
-    errprint(inflag=None)
-
-    Set or return the error printing flag for special functions.
-
-    Parameters
-    ----------
-    inflag : bool, optional
-        Whether warnings concerning evaluation of special functions in
-        ``scipy.special`` are shown. If omitted, no change is made to
-        the current setting.
-
-    Returns
-    -------
-    old_flag : bool
-        Previous value of the error flag
-
-    Examples
-    --------
-    Turn on error printing.
-
-    >>> import warnings
-    >>> import scipy.special as sc
-    >>> sc.bdtr(-1, 10, 0.3)
-    nan
-    >>> sc.errprint(True)
-    False
-    >>> with warnings.catch_warnings(record=True) as w:
-    ...     sc.bdtr(-1, 10, 0.3)
-    ...
-    nan
-    >>> len(w)
-    1
-    >>> w[0].message
-    SpecialFunctionWarning('scipy.special/bdtr: domain error',)
-
-    """
-    allwarn = all([val == 'warn' for val in geterr().values()])
-    if inflag is not None:
-        if bool(inflag):
-            seterr(all='warn')
-        else:
-            seterr(all='ignore')
-    return allwarn

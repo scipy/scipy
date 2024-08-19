@@ -1,9 +1,8 @@
 cimport cython
 from libc cimport stdio, stdlib
-from cpython cimport PyBytes_FromStringAndSize, PY_VERSION_HEX
+from cpython cimport PyBytes_FromStringAndSize
 
 import os
-import sys
 import tempfile
 
 cdef extern from "messagestream.h":
@@ -13,11 +12,11 @@ cdef extern from "messagestream.h":
 @cython.final
 cdef class MessageStream:
     """
-    Capture messages emitted to FILE* streams. Do this by directing them 
+    Capture messages emitted to FILE* streams. Do this by directing them
     to a temporary file, residing in memory (if possible) or on disk.
     """
 
-    def __init__(self):
+    def __cinit__(self):
         # Try first in-memory files, if available
         self._memstream_ptr = NULL
         self.handle = messagestream_open_memstream(&self._memstream_ptr,
@@ -27,20 +26,23 @@ cdef class MessageStream:
             return
 
         # Fall back to temporary files
-        fd, filename = tempfile.mkstemp(prefix='scipy-')
-        os.close(fd)
-        self._filename = filename.encode(sys.getfilesystemencoding())
-        self.handle = stdio.fopen(self._filename, "wb+")
-        if self.handle == NULL:
-            stdio.remove(self._filename)
-            raise IOError("Failed to open file {0}".format(self._filename))
-        self._removed = 0
+        fd, self._filename = tempfile.mkstemp(prefix=b'scipy-')
 
         # Use a posix-style deleted file, if possible
-        if stdio.remove(self._filename) == 0:
+        try:
+            os.remove(self._filename)
             self._removed = 1
+        except PermissionError:
+            self._removed = 0
 
-    def __del__(self):
+        self.handle = stdio.fdopen(fd, 'wb+')
+        if self.handle == NULL:
+            os.close(fd)
+            if not self._removed:
+                os.remove(self._filename)
+            raise OSError(f"Failed to open file {self._filename}")
+
+    def __dealloc__(self):
         self.close()
 
     def get(self):
@@ -64,22 +66,19 @@ cdef class MessageStream:
             try:
                 stdio.rewind(self.handle)
                 nread = stdio.fread(buf, 1, pos, self.handle)
-                if nread != pos:
-                    raise IOError("failed to read messages from buffer")
+                if nread != <size_t>pos:
+                    raise OSError("failed to read messages from buffer")
 
                 obj = PyBytes_FromStringAndSize(buf, nread)
             finally:
                 stdlib.free(buf)
 
-        if PY_VERSION_HEX >= 0x03000000:
-            return obj.decode('latin1')
-        else:
-            return obj
+        return obj.decode('latin1')
 
     def clear(self):
         stdio.rewind(self.handle)
 
-    def close(self):
+    cpdef close(self):
         if self.handle != NULL:
             stdio.fclose(self.handle)
             self.handle = NULL
@@ -89,5 +88,5 @@ cdef class MessageStream:
             self._memstream_ptr = NULL
 
         if not self._removed:
-            stdio.remove(self._filename)
+            os.remove(self._filename)
             self._removed = 1

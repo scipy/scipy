@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import division, print_function, absolute_import
-
 from numpy import abs, asarray, cos, exp, arange, pi, sin, sqrt, sum
 from .go_benchmark import Benchmark
 
@@ -30,7 +27,8 @@ class Easom(Benchmark):
     For Global Optimization Problems Int. Journal of Mathematical Modelling
     and Numerical Optimisation, 2013, 4, 150-194.
 
-    TODO Gavana website disagrees with Jamil, etc. Gavana equation in docstring is totally wrong.
+    TODO Gavana website disagrees with Jamil, etc.
+    Gavana equation in docstring is totally wrong.
     """
 
     def __init__(self, dimensions=2):
@@ -54,7 +52,7 @@ class Eckerle4(Benchmark):
     Eckerle, K., NIST (1979).
     Circular Interference Transmittance Study.
 
-    ..[1] http://www.itl.nist.gov/div898/strd/nls/data/eckerle4.shtml
+    ..[1] https://www.itl.nist.gov/div898/strd/nls/data/eckerle4.shtml
 
     #TODO, this is a NIST regression standard dataset, docstring needs
     improving

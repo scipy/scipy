@@ -1,16 +1,20 @@
-from __future__ import division, print_function, absolute_import
-
 import os
+import sys
 
 import numpy as np
-from numpy.testing import assert_equal, assert_allclose, assert_almost_equal
+from numpy.testing import (assert_equal, assert_allclose, assert_almost_equal,
+                           suppress_warnings)
 from pytest import raises as assert_raises
-from scipy._lib._numpy_compat import suppress_warnings
+import pytest
 
+from scipy._lib._testutils import check_free_memory
 import scipy.interpolate.interpnd as interpnd
-import scipy.spatial.qhull as qhull
+import scipy.spatial._qhull as qhull
 
 import pickle
+import threading
+
+_IS_32BIT = (sys.maxsize < 2**32)
 
 
 def data_file(basename):
@@ -18,12 +22,12 @@ def data_file(basename):
                         'data', basename)
 
 
-class TestLinearNDInterpolation(object):
+class TestLinearNDInterpolation:
     def test_smoketest(self):
         # Test at single points
         x = np.array([(0,0), (-0.5,-0.5), (-0.5,0.5), (0.5, 0.5), (0.25, 0.3)],
-                     dtype=np.double)
-        y = np.arange(x.shape[0], dtype=np.double)
+                     dtype=np.float64)
+        y = np.arange(x.shape[0], dtype=np.float64)
 
         yi = interpnd.LinearNDInterpolator(x, y)(x)
         assert_almost_equal(y, yi)
@@ -31,8 +35,8 @@ class TestLinearNDInterpolation(object):
     def test_smoketest_alternate(self):
         # Test at single points, alternate calling convention
         x = np.array([(0,0), (-0.5,-0.5), (-0.5,0.5), (0.5, 0.5), (0.25, 0.3)],
-                     dtype=np.double)
-        y = np.arange(x.shape[0], dtype=np.double)
+                     dtype=np.float64)
+        y = np.arange(x.shape[0], dtype=np.float64)
 
         yi = interpnd.LinearNDInterpolator((x[:,0], x[:,1]), y)(x[:,0], x[:,1])
         assert_almost_equal(y, yi)
@@ -40,8 +44,8 @@ class TestLinearNDInterpolation(object):
     def test_complex_smoketest(self):
         # Test at single points
         x = np.array([(0,0), (-0.5,-0.5), (-0.5,0.5), (0.5, 0.5), (0.25, 0.3)],
-                     dtype=np.double)
-        y = np.arange(x.shape[0], dtype=np.double)
+                     dtype=np.float64)
+        y = np.arange(x.shape[0], dtype=np.float64)
         y = y - 3j*y
 
         yi = interpnd.LinearNDInterpolator(x, y)(x)
@@ -50,20 +54,22 @@ class TestLinearNDInterpolation(object):
     def test_tri_input(self):
         # Test at single points
         x = np.array([(0,0), (-0.5,-0.5), (-0.5,0.5), (0.5, 0.5), (0.25, 0.3)],
-                     dtype=np.double)
-        y = np.arange(x.shape[0], dtype=np.double)
+                     dtype=np.float64)
+        y = np.arange(x.shape[0], dtype=np.float64)
         y = y - 3j*y
 
         tri = qhull.Delaunay(x)
-        yi = interpnd.LinearNDInterpolator(tri, y)(x)
+        interpolator = interpnd.LinearNDInterpolator(tri, y)
+        yi = interpolator(x)
         assert_almost_equal(y, yi)
+        assert interpolator.tri is tri
 
     def test_square(self):
         # Test barycentric interpolation on a square against a manual
         # implementation
 
-        points = np.array([(0,0), (0,1), (1,1), (1,0)], dtype=np.double)
-        values = np.array([1., 2., -3., 5.], dtype=np.double)
+        points = np.array([(0,0), (0,1), (1,1), (1,0)], dtype=np.float64)
+        values = np.array([1., 2., -3., 5.], dtype=np.float64)
 
         # NB: assume triangles (0, 1, 3) and (1, 2, 3)
         #
@@ -106,8 +112,8 @@ class TestLinearNDInterpolation(object):
     def test_smoketest_rescale(self):
         # Test at single points
         x = np.array([(0, 0), (-5, -5), (-5, 5), (5, 5), (2.5, 3)],
-                     dtype=np.double)
-        y = np.arange(x.shape[0], dtype=np.double)
+                     dtype=np.float64)
+        y = np.arange(x.shape[0], dtype=np.float64)
 
         yi = interpnd.LinearNDInterpolator(x, y, rescale=True)(x)
         assert_almost_equal(y, yi)
@@ -116,8 +122,8 @@ class TestLinearNDInterpolation(object):
         # Test barycentric interpolation on a rectangle with rescaling
         # agaings the same implementation without rescaling
 
-        points = np.array([(0,0), (0,100), (10,100), (10,0)], dtype=np.double)
-        values = np.array([1., 2., -3., 5.], dtype=np.double)
+        points = np.array([(0,0), (0,100), (10,100), (10,0)], dtype=np.float64)
+        values = np.array([1., 2., -3., 5.], dtype=np.float64)
 
         xx, yy = np.broadcast_arrays(np.linspace(0, 10, 14)[:,None],
                                      np.linspace(0, 100, 14)[None,:])
@@ -133,8 +139,8 @@ class TestLinearNDInterpolation(object):
     def test_tripoints_input_rescale(self):
         # Test at single points
         x = np.array([(0,0), (-5,-5), (-5,5), (5, 5), (2.5, 3)],
-                     dtype=np.double)
-        y = np.arange(x.shape[0], dtype=np.double)
+                     dtype=np.float64)
+        y = np.arange(x.shape[0], dtype=np.float64)
         y = y - 3j*y
 
         tri = qhull.Delaunay(x)
@@ -146,19 +152,15 @@ class TestLinearNDInterpolation(object):
     def test_tri_input_rescale(self):
         # Test at single points
         x = np.array([(0,0), (-5,-5), (-5,5), (5, 5), (2.5, 3)],
-                     dtype=np.double)
-        y = np.arange(x.shape[0], dtype=np.double)
+                     dtype=np.float64)
+        y = np.arange(x.shape[0], dtype=np.float64)
         y = y - 3j*y
 
         tri = qhull.Delaunay(x)
-        try:
+        match = ("Rescaling is not supported when passing a "
+                 "Delaunay triangulation as ``points``.")
+        with pytest.raises(ValueError, match=match):
             interpnd.LinearNDInterpolator(tri, y, rescale=True)(x)
-        except ValueError as e:
-            if str(e) != ("Rescaling is not supported when passing a "
-                          "Delaunay triangulation as ``points``."):
-                raise
-        except:
-            raise
 
     def test_pickle(self):
         # Test at single points
@@ -171,8 +173,51 @@ class TestLinearNDInterpolation(object):
 
         assert_almost_equal(ip(0.5, 0.5), ip2(0.5, 0.5))
 
+    @pytest.mark.slow
+    @pytest.mark.skipif(_IS_32BIT, reason='it fails on 32-bit')
+    def test_threading(self):
+        # This test was taken from issue 8856
+        # https://github.com/scipy/scipy/issues/8856
+        check_free_memory(10000)
 
-class TestEstimateGradients2DGlobal(object):
+        r_ticks = np.arange(0, 4200, 10)
+        phi_ticks = np.arange(0, 4200, 10)
+        r_grid, phi_grid = np.meshgrid(r_ticks, phi_ticks)
+
+        def do_interp(interpolator, slice_rows, slice_cols):
+            grid_x, grid_y = np.mgrid[slice_rows, slice_cols]
+            res = interpolator((grid_x, grid_y))
+            return res
+
+        points = np.vstack((r_grid.ravel(), phi_grid.ravel())).T
+        values = (r_grid * phi_grid).ravel()
+        interpolator = interpnd.LinearNDInterpolator(points, values)
+
+        worker_thread_1 = threading.Thread(
+            target=do_interp,
+            args=(interpolator, slice(0, 2100), slice(0, 2100)))
+        worker_thread_2 = threading.Thread(
+            target=do_interp,
+            args=(interpolator, slice(2100, 4200), slice(0, 2100)))
+        worker_thread_3 = threading.Thread(
+            target=do_interp,
+            args=(interpolator, slice(0, 2100), slice(2100, 4200)))
+        worker_thread_4 = threading.Thread(
+            target=do_interp,
+            args=(interpolator, slice(2100, 4200), slice(2100, 4200)))
+
+        worker_thread_1.start()
+        worker_thread_2.start()
+        worker_thread_3.start()
+        worker_thread_4.start()
+
+        worker_thread_1.join()
+        worker_thread_2.join()
+        worker_thread_3.join()
+        worker_thread_4.join()
+
+
+class TestEstimateGradients2DGlobal:
     def test_smoketest(self):
         x = np.array([(0, 0), (0, 2),
                       (1, 0), (1, 2), (0.25, 0.75), (0.6, 0.8)], dtype=float)
@@ -209,9 +254,10 @@ class TestEstimateGradients2DGlobal(object):
             interpnd.estimate_gradients_2d_global(tri, values, maxiter=1)
 
 
-class TestCloughTocher2DInterpolator(object):
+class TestCloughTocher2DInterpolator:
 
-    def _check_accuracy(self, func, x=None, tol=1e-6, alternate=False, rescale=False, **kw):
+    def _check_accuracy(self, func, x=None, tol=1e-6, alternate=False,
+                        rescale=False, **kw):
         np.random.seed(1234)
         if x is None:
             x = np.array([(0, 0), (0, 1),
@@ -238,8 +284,8 @@ class TestCloughTocher2DInterpolator(object):
         try:
             assert_allclose(a, b, **kw)
         except AssertionError:
-            print(abs(a - b))
-            print(ip.grad)
+            print("_check_accuracy: abs(a-b):", abs(a - b))
+            print("ip.grad:", ip.grad)
             raise
 
     def test_linear_smoketest(self):
@@ -282,8 +328,8 @@ class TestCloughTocher2DInterpolator(object):
     def test_tri_input(self):
         # Test at single points
         x = np.array([(0,0), (-0.5,-0.5), (-0.5,0.5), (0.5, 0.5), (0.25, 0.3)],
-                     dtype=np.double)
-        y = np.arange(x.shape[0], dtype=np.double)
+                     dtype=np.float64)
+        y = np.arange(x.shape[0], dtype=np.float64)
         y = y - 3j*y
 
         tri = qhull.Delaunay(x)
@@ -293,25 +339,21 @@ class TestCloughTocher2DInterpolator(object):
     def test_tri_input_rescale(self):
         # Test at single points
         x = np.array([(0,0), (-5,-5), (-5,5), (5, 5), (2.5, 3)],
-                     dtype=np.double)
-        y = np.arange(x.shape[0], dtype=np.double)
+                     dtype=np.float64)
+        y = np.arange(x.shape[0], dtype=np.float64)
         y = y - 3j*y
 
         tri = qhull.Delaunay(x)
-        try:
+        match = ("Rescaling is not supported when passing a "
+                 "Delaunay triangulation as ``points``.")
+        with pytest.raises(ValueError, match=match):
             interpnd.CloughTocher2DInterpolator(tri, y, rescale=True)(x)
-        except ValueError as a:
-            if str(a) != ("Rescaling is not supported when passing a "
-                          "Delaunay triangulation as ``points``."):
-                raise
-        except:
-            raise
 
     def test_tripoints_input_rescale(self):
         # Test at single points
         x = np.array([(0,0), (-5,-5), (-5,5), (5, 5), (2.5, 3)],
-                     dtype=np.double)
-        y = np.arange(x.shape[0], dtype=np.double)
+                     dtype=np.float64)
+        y = np.arange(x.shape[0], dtype=np.float64)
         y = y - 3j*y
 
         tri = qhull.Delaunay(x)
@@ -319,6 +361,7 @@ class TestCloughTocher2DInterpolator(object):
         yi_rescale = interpnd.CloughTocher2DInterpolator(tri.points, y, rescale=True)(x)
         assert_almost_equal(yi, yi_rescale)
 
+    @pytest.mark.fail_slow(5)
     def test_dense(self):
         # Should be more accurate for dense meshes
         funcs = [
@@ -354,3 +397,42 @@ class TestCloughTocher2DInterpolator(object):
         ip2 = pickle.loads(pickle.dumps(ip))
 
         assert_almost_equal(ip(0.5, 0.5), ip2(0.5, 0.5))
+
+    def test_boundary_tri_symmetry(self):
+        # Interpolation at neighbourless triangles should retain
+        # symmetry with mirroring the triangle.
+
+        # Equilateral triangle
+        points = np.array([(0, 0), (1, 0), (0.5, np.sqrt(3)/2)])
+        values = np.array([1, 0, 0])
+
+        ip = interpnd.CloughTocher2DInterpolator(points, values)
+
+        # Set gradient to zero at vertices
+        ip.grad[...] = 0
+
+        # Interpolation should be symmetric vs. bisector
+        alpha = 0.3
+        p1 = np.array([0.5 * np.cos(alpha), 0.5 * np.sin(alpha)])
+        p2 = np.array([0.5 * np.cos(np.pi/3 - alpha), 0.5 * np.sin(np.pi/3 - alpha)])
+
+        v1 = ip(p1)
+        v2 = ip(p2)
+        assert_allclose(v1, v2)
+
+        # ... and affine invariant
+        np.random.seed(1)
+        A = np.random.randn(2, 2)
+        b = np.random.randn(2)
+
+        points = A.dot(points.T).T + b[None,:]
+        p1 = A.dot(p1) + b
+        p2 = A.dot(p2) + b
+
+        ip = interpnd.CloughTocher2DInterpolator(points, values)
+        ip.grad[...] = 0
+
+        w1 = ip(p1)
+        w2 = ip(p2)
+        assert_allclose(w1, v1)
+        assert_allclose(w2, v2)

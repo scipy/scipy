@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 from numpy.linalg import norm
 from numpy.testing import (assert_, assert_allclose, assert_equal)
@@ -31,6 +29,9 @@ verify_cases = [
     [[1, 2, 3+2j], [3, 4-1j, -4j]],
     [[1, 2], [3-2j, 4+0.5j], [5, 5]],
     [[10000, 10, 1], [-1, 2, 3j], [0, 1, 2]],
+    np.empty((0, 0)),
+    np.empty((0, 2)),
+    np.empty((2, 0)),
 ]
 
 

@@ -4,12 +4,14 @@
 Power Normal Distribution
 =========================
 
-A generalization of the normal distribution, :math:`c>0` for
+A generalization of the normal distribution, with one shape parameter :math:`c>0` and support :math:`x\geq0`.
 
 .. math::
    :nowrap:
 
-    \begin{eqnarray*} f\left(x;c\right) & = & c\phi\left(x\right)\left(\Phi\left(-x\right)\right)^{c-1}\\ F\left(x;c\right) & = & 1-\left(\Phi\left(-x\right)\right)^{c}\\ G\left(q;c\right) & = & -\Phi^{-1}\left[\left(1-q\right)^{1/c}\right]\end{eqnarray*}
+    \begin{eqnarray*} f\left(x;c\right) & = & c\phi\left(x\right)\left(\Phi\left(-x\right)\right)^{c-1}\\
+    F\left(x;c\right) & = & 1-\left(\Phi\left(-x\right)\right)^{c}\\
+    G\left(q;c\right) & = & -\Phi^{-1}\left(\left(1-q\right)^{1/c}\right)\end{eqnarray*}
 
 .. math::
 

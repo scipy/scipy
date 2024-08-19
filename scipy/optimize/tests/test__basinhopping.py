@@ -1,10 +1,11 @@
 """
 Unit tests for the basin hopping global minimization algorithm.
 """
-from __future__ import division, print_function, absolute_import
 import copy
 
-from numpy.testing import assert_almost_equal, assert_equal, assert_
+from numpy.testing import (assert_almost_equal, assert_equal, assert_,
+                           assert_allclose)
+import pytest
 from pytest import raises as assert_raises
 import numpy as np
 from numpy import cos, sin
@@ -15,12 +16,6 @@ from scipy.optimize._basinhopping import (
 
 
 def func1d(x):
-    f = cos(14.5 * x - 0.3) + (x + 0.2) * x
-    df = np.array(-14.5 * sin(14.5 * x - 0.3) + 2. * x + 0.2)
-    return f, df
-
-
-def func1d_nograd(x):
     f = cos(14.5 * x - 0.3) + (x + 0.2) * x
     df = np.array(-14.5 * sin(14.5 * x - 0.3) + 2. * x + 0.2)
     return f, df
@@ -38,6 +33,7 @@ def func2d(x):
     df[1] = 2. * x[1] + 0.2
     return f, df
 
+
 def func2d_easyderiv(x):
     f = 2.0*x[0]**2 + 2.0*x[0]*x[1] + 2.0*x[1]**2 - 6.0*x[0]
     df = np.zeros(2)
@@ -46,28 +42,29 @@ def func2d_easyderiv(x):
 
     return f, df
 
+
 class MyTakeStep1(RandomDisplacement):
     """use a copy of displace, but have it set a special parameter to
     make sure it's actually being used."""
     def __init__(self):
         self.been_called = False
-        super(MyTakeStep1, self).__init__()
+        super().__init__()
 
     def __call__(self, x):
         self.been_called = True
-        return super(MyTakeStep1, self).__call__(x)
+        return super().__call__(x)
 
 
 def myTakeStep2(x):
     """redo RandomDisplacement in function form without the attribute stepsize
-    to make sure still everything works ok
+    to make sure everything still works ok
     """
     s = 0.5
     x += np.random.uniform(-s, s, np.shape(x))
     return x
 
 
-class MyAcceptTest(object):
+class MyAcceptTest:
     """pass a custom accept test
 
     This does nothing but make sure it's being used and ensure all the
@@ -88,10 +85,10 @@ class MyAcceptTest(object):
             return True
 
 
-class MyCallBack(object):
+class MyCallBack:
     """pass a custom callback function
 
-    This makes sure it's being used.  It also returns True after 10
+    This makes sure it's being used. It also returns True after 10
     steps to ensure that it's stopping early.
 
     """
@@ -106,7 +103,7 @@ class MyCallBack(object):
             return True
 
 
-class TestBasinHopping(object):
+class TestBasinHopping:
 
     def setup_method(self):
         """ Tests setup.
@@ -115,7 +112,7 @@ class TestBasinHopping(object):
         """
         self.x0 = (1.0, [1.0, 1.0])
         self.sol = (-0.195, np.array([-0.195, -0.1]))
-        
+
         self.tol = 3  # number of decimal places
 
         self.niter = 100
@@ -132,13 +129,26 @@ class TestBasinHopping(object):
         i = 1
         # if take_step is passed, it must be callable
         assert_raises(TypeError, basinhopping, func2d, self.x0[i],
-                          take_step=1)
+                      take_step=1)
         # if accept_test is passed, it must be callable
         assert_raises(TypeError, basinhopping, func2d, self.x0[i],
-                          accept_test=1)
+                      accept_test=1)
+
+    def test_input_validation(self):
+        msg = 'target_accept_rate has to be in range \\(0, 1\\)'
+        with assert_raises(ValueError, match=msg):
+            basinhopping(func1d, self.x0[0], target_accept_rate=0.)
+        with assert_raises(ValueError, match=msg):
+            basinhopping(func1d, self.x0[0], target_accept_rate=1.)
+
+        msg = 'stepwise_factor has to be in range \\(0, 1\\)'
+        with assert_raises(ValueError, match=msg):
+            basinhopping(func1d, self.x0[0], stepwise_factor=0.)
+        with assert_raises(ValueError, match=msg):
+            basinhopping(func1d, self.x0[0], stepwise_factor=1.)
 
     def test_1d_grad(self):
-        # test 1d minimizations with gradient
+        # test 1-D minimizations with gradient
         i = 0
         res = basinhopping(func1d, self.x0[i], minimizer_kwargs=self.kwargs,
                            niter=self.niter, disp=self.disp)
@@ -165,7 +175,7 @@ class TestBasinHopping(object):
         assert_equal(res.nfev, res.njev)
 
     def test_jac(self):
-        # test jacobian returned
+        # test Jacobian returned
         minimizer_kwargs = self.kwargs.copy()
         # BFGS returns a Jacobian
         minimizer_kwargs["method"] = "BFGS"
@@ -176,21 +186,23 @@ class TestBasinHopping(object):
 
         assert_(hasattr(res.lowest_optimization_result, "jac"))
 
-        #in this case, the jacobian is just [df/dx, df/dy]
+        # in this case, the Jacobian is just [df/dx, df/dy]
         _, jacobian = func2d_easyderiv(res.x)
-        assert_almost_equal(res.lowest_optimization_result.jac, jacobian, self.tol)
+        assert_almost_equal(res.lowest_optimization_result.jac, jacobian,
+                            self.tol)
 
     def test_2d_nograd(self):
-        # test 2d minimizations without gradient
+        # test 2-D minimizations without gradient
         i = 1
         res = basinhopping(func2d_nograd, self.x0[i],
                            minimizer_kwargs=self.kwargs_nograd,
                            niter=self.niter, disp=self.disp)
         assert_almost_equal(res.x, self.sol[i], self.tol)
 
+    @pytest.mark.fail_slow(10)
     def test_all_minimizers(self):
-        # test 2d minimizations with gradient.  Nelder-Mead, Powell and COBYLA
-        # don't accept jac=True, so aren't included here.
+        # Test 2-D minimizations with gradient. Nelder-Mead, Powell, COBYLA, and
+        # COBYQA don't accept jac=True, so aren't included here.
         i = 1
         methods = ['CG', 'BFGS', 'Newton-CG', 'L-BFGS-B', 'TNC', 'SLSQP']
         minimizer_kwargs = copy.copy(self.kwargs)
@@ -201,18 +213,21 @@ class TestBasinHopping(object):
                                niter=self.niter, disp=self.disp)
             assert_almost_equal(res.x, self.sol[i], self.tol)
 
+    @pytest.mark.fail_slow(20)
     def test_all_nograd_minimizers(self):
-        # test 2d minimizations without gradient.  Newton-CG requires jac=True,
+        # Test 2-D minimizations without gradient. Newton-CG requires jac=True,
         # so not included here.
         i = 1
         methods = ['CG', 'BFGS', 'L-BFGS-B', 'TNC', 'SLSQP',
-                   'Nelder-Mead', 'Powell', 'COBYLA']
+                   'Nelder-Mead', 'Powell', 'COBYLA', 'COBYQA']
         minimizer_kwargs = copy.copy(self.kwargs_nograd)
         for method in methods:
+            # COBYQA takes extensive amount of time on this problem
+            niter = 10 if method == 'COBYQA' else self.niter
             minimizer_kwargs["method"] = method
             res = basinhopping(func2d_nograd, self.x0[i],
                                minimizer_kwargs=minimizer_kwargs,
-                               niter=self.niter, disp=self.disp)
+                               niter=niter, disp=self.disp)
             tol = self.tol
             if method == 'COBYLA':
                 tol = 2
@@ -229,7 +244,7 @@ class TestBasinHopping(object):
                            take_step=takestep)
         assert_almost_equal(res.x, self.sol[i], self.tol)
         assert_(takestep.been_called)
-        # make sure that the built in adaptive step size has been used
+        # make sure that the build in adaptive step size has been used
         assert_(initial_step_size != takestep.stepsize)
 
     def test_pass_simple_takestep(self):
@@ -255,7 +270,7 @@ class TestBasinHopping(object):
 
     def test_pass_callback(self):
         # test passing a custom callback function
-        # This makes sure it's being used.  It also returns True after 10 steps
+        # This makes sure it's being used. It also returns True after 10 steps
         # to ensure that it's stopping early.
         callback = MyCallBack()
         i = 1
@@ -264,7 +279,10 @@ class TestBasinHopping(object):
                            niter=30, disp=self.disp, callback=callback)
         assert_(callback.been_called)
         assert_("callback" in res.message[0])
-        assert_equal(res.nit, 10)
+        # One of the calls of MyCallBack is during BasinHoppingRunner
+        # construction, so there are only 9 remaining before MyCallBack stops
+        # the minimization.
+        assert_equal(res.nit, 9)
 
     def test_minimizer_fail(self):
         # test if a minimizer fails
@@ -280,8 +298,8 @@ class TestBasinHopping(object):
     def test_niter_zero(self):
         # gh5915, what happens if you call basinhopping with niter=0
         i = 0
-        res = basinhopping(func1d, self.x0[i], minimizer_kwargs=self.kwargs,
-                           niter=0, disp=self.disp)
+        basinhopping(func1d, self.x0[i], minimizer_kwargs=self.kwargs,
+                     niter=0, disp=self.disp)
 
     def test_seed_reproducibility(self):
         # seed should ensure reproducibility between runs
@@ -304,20 +322,43 @@ class TestBasinHopping(object):
                      niter=10, callback=callback2, seed=10)
         assert_equal(np.array(f_1), np.array(f_2))
 
+    def test_random_gen(self):
+        # check that np.random.Generator can be used (numpy >= 1.17)
+        rng = np.random.default_rng(1)
 
-class Test_Storage(object):
+        minimizer_kwargs = {"method": "L-BFGS-B", "jac": True}
+
+        res1 = basinhopping(func2d, [1.0, 1.0],
+                            minimizer_kwargs=minimizer_kwargs,
+                            niter=10, seed=rng)
+
+        rng = np.random.default_rng(1)
+        res2 = basinhopping(func2d, [1.0, 1.0],
+                            minimizer_kwargs=minimizer_kwargs,
+                            niter=10, seed=rng)
+        assert_equal(res1.x, res2.x)
+
+    def test_monotonic_basin_hopping(self):
+        # test 1-D minimizations with gradient and T=0
+        i = 0
+        res = basinhopping(func1d, self.x0[i], minimizer_kwargs=self.kwargs,
+                           niter=self.niter, disp=self.disp, T=0)
+        assert_almost_equal(res.x, self.sol[i], self.tol)
+
+
+class Test_Storage:
     def setup_method(self):
         self.x0 = np.array(1)
         self.f0 = 0
 
-        minres = OptimizeResult()
+        minres = OptimizeResult(success=True)
         minres.x = self.x0
         minres.fun = self.f0
 
         self.storage = Storage(minres)
 
     def test_higher_f_rejected(self):
-        new_minres = OptimizeResult()
+        new_minres = OptimizeResult(success=True)
         new_minres.x = self.x0 + 1
         new_minres.fun = self.f0 + 1
 
@@ -327,19 +368,20 @@ class Test_Storage(object):
         assert_equal(self.f0, minres.fun)
         assert_(not ret)
 
-    def test_lower_f_accepted(self):
-        new_minres = OptimizeResult()
+    @pytest.mark.parametrize('success', [True, False])
+    def test_lower_f_accepted(self, success):
+        new_minres = OptimizeResult(success=success)
         new_minres.x = self.x0 + 1
         new_minres.fun = self.f0 - 1
 
         ret = self.storage.update(new_minres)
         minres = self.storage.get_lowest()
-        assert_(self.x0 != minres.x)
-        assert_(self.f0 != minres.fun)
-        assert_(ret)
+        assert (self.x0 != minres.x) == success  # can't use `is`
+        assert (self.f0 != minres.fun) == success  # left side is NumPy bool
+        assert ret is success
 
 
-class Test_RandomDisplacement(object):
+class Test_RandomDisplacement:
     def setup_method(self):
         self.stepsize = 1.0
         self.displace = RandomDisplacement(stepsize=self.stepsize)
@@ -356,24 +398,21 @@ class Test_RandomDisplacement(object):
         assert_almost_equal(np.var(x), v, 1)
 
 
-class Test_Metropolis(object):
+class Test_Metropolis:
     def setup_method(self):
         self.T = 2.
         self.met = Metropolis(self.T)
+        self.res_new = OptimizeResult(success=True, fun=0.)
+        self.res_old = OptimizeResult(success=True, fun=1.)
 
     def test_boolean_return(self):
-        # the return must be a bool.  else an error will be raised in
+        # the return must be a bool, else an error will be raised in
         # basinhopping
-        ret = self.met(f_new=0., f_old=1.)
+        ret = self.met(res_new=self.res_new, res_old=self.res_old)
         assert isinstance(ret, bool)
 
     def test_lower_f_accepted(self):
-        assert_(self.met(f_new=0., f_old=1.))
-
-    def test_KeyError(self):
-        # should raise KeyError if kwargs f_old or f_new is not passed
-        assert_raises(KeyError, self.met, f_old=1.)
-        assert_raises(KeyError, self.met, f_new=1.)
+        assert_(self.met(res_new=self.res_new, res_old=self.res_old))
 
     def test_accept(self):
         # test that steps are randomly accepted for f_new > f_old
@@ -382,7 +421,9 @@ class Test_Metropolis(object):
         for i in range(1000):
             if one_accept and one_reject:
                 break
-            ret = self.met(f_new=1., f_old=0.5)
+            res_new = OptimizeResult(success=True, fun=1.)
+            res_old = OptimizeResult(success=True, fun=0.5)
+            ret = self.met(res_new=res_new, res_old=res_old)
             if ret:
                 one_accept = True
             else:
@@ -394,17 +435,62 @@ class Test_Metropolis(object):
         # an overflow in exp was producing a RuntimeWarning
         # create own object here in case someone changes self.T
         met = Metropolis(2)
+        res_new = OptimizeResult(success=True, fun=0.)
+        res_old = OptimizeResult(success=True, fun=2000)
         with np.errstate(over='raise'):
-            met.accept_reject(0, 2000)
+            met.accept_reject(res_new=res_new, res_old=res_old)
+
+    def test_gh7799(self):
+        # gh-7799 reported a problem in which local search was successful but
+        # basinhopping returned an invalid solution. Show that this is fixed.
+        def func(x):
+            return (x**2-8)**2+(x+2)**2
+
+        x0 = -4
+        limit = 50  # Constrain to func value >= 50
+        con = {'type': 'ineq', 'fun': lambda x: func(x) - limit},
+        res = basinhopping(func, x0, 30, minimizer_kwargs={'constraints': con})
+        assert res.success
+        assert_allclose(res.fun, limit, rtol=1e-6)
+
+    def test_accept_gh7799(self):
+        # Metropolis should not accept the result of an unsuccessful new local
+        # search if the old local search was successful
+
+        met = Metropolis(0)  # monotonic basin hopping
+        res_new = OptimizeResult(success=True, fun=0.)
+        res_old = OptimizeResult(success=True, fun=1.)
+
+        # if new local search was successful and energy is lower, accept
+        assert met(res_new=res_new, res_old=res_old)
+        # if new res is unsuccessful, don't accept - even if energy is lower
+        res_new.success = False
+        assert not met(res_new=res_new, res_old=res_old)
+        # ...unless the old res was unsuccessful, too. In that case, why not?
+        res_old.success = False
+        assert met(res_new=res_new, res_old=res_old)
+
+    def test_reject_all_gh7799(self):
+        # Test the behavior when there is no feasible solution
+        def fun(x):
+            return x@x
+
+        def constraint(x):
+            return x + 1
+
+        kwargs = {'constraints': {'type': 'eq', 'fun': constraint},
+                  'bounds': [(0, 1), (0, 1)], 'method': 'slsqp'}
+        res = basinhopping(fun, x0=[2, 3], niter=10, minimizer_kwargs=kwargs)
+        assert not res.success
 
 
-class Test_AdaptiveStepsize(object):
+class Test_AdaptiveStepsize:
     def setup_method(self):
         self.stepsize = 1.
         self.ts = RandomDisplacement(stepsize=self.stepsize)
         self.target_accept_rate = 0.5
         self.takestep = AdaptiveStepsize(takestep=self.ts, verbose=False,
-                                          accept_rate=self.target_accept_rate)
+                                         accept_rate=self.target_accept_rate)
 
     def test_adaptive_increase(self):
         # if few steps are rejected, the stepsize should increase
@@ -441,4 +527,3 @@ class Test_AdaptiveStepsize(object):
             self.takestep(x)
             self.takestep.report(False)
         assert_(self.ts.stepsize < self.stepsize)
-

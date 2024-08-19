@@ -1,4 +1,3 @@
-
 import numpy as np
 from numpy.testing import assert_equal, assert_allclose
 from scipy.integrate import odeint
@@ -39,7 +38,7 @@ def check_odeint(jactype):
         mu = 1
         jacobian = bjac
     else:
-        raise ValueError("invalid jactype: %r" % (jactype,))
+        raise ValueError(f"invalid jactype: {jactype!r}")
 
     y0 = np.arange(1.0, 6.0)
     # These tolerances must match the tolerances used in banded5x5.f.
@@ -58,7 +57,7 @@ def check_odeint(jactype):
     odeint_nje = info['nje'][-1]
 
     y1 = y0.copy()
-    # Pure Fortran solution.  y1 is modified in-place.
+    # Pure Fortran solution. y1 is modified in-place.
     nst, nfe, nje = banded5x5.banded5x5_solve(y1, nsteps, dt, jactype)
 
     # It is likely that yfinal and y1 are *exactly* the same, but

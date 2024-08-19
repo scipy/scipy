@@ -1,5 +1,6 @@
-      subroutine surev(idim,tu,nu,tv,nv,c,u,mu,v,mv,f,mf,wrk,lwrk,
-     * iwrk,kwrk,ier)
+      recursive subroutine surev(idim,tu,nu,tv,nv,c,u,mu,v,mv,f,mf,
+     * wrk,lwrk,iwrk,kwrk,ier)
+      implicit none
 c  subroutine surev evaluates on a grid (u(i),v(j)),i=1,...,mu; j=1,...
 c  ,mv a bicubic spline surface of dimension idim, given in the
 c  b-spline representation.
@@ -40,7 +41,7 @@ c   kwrk  : integer, specifying the dimension of iwrk. kwrk >= mu+mv.
 c
 c  output parameters:
 c   f     : real array of dimension (mf).
-c           on succesful exit f(mu*mv*(l-1)+mv*(i-1)+j) contains the
+c           on successful exit f(mu*mv*(l-1)+mv*(i-1)+j) contains the
 c           l-th co-ordinate of the bicubic spline surface at the
 c           point (u(i),v(j)),l=1,...,idim,i=1,...,mu;j=1,...,mv.
 c   ier   : integer error flag

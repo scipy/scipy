@@ -1,8 +1,0 @@
-from bento.commands import hooks
-
-@hooks.pre_build
-def pre_build(context):
-    context.tweak_extension("_ctest_oldapi", features="c cshlib pyext bento",
-                            defines=('OLDAPI', ))
-
-    context.tweak_extension("_nd_image", includes='../_lib/src')

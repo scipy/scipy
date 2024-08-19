@@ -1,5 +1,6 @@
-      subroutine concon(iopt,m,x,y,w,v,s,nest,maxtr,maxbin,n,t,c,sq,
-     * sx,bind,wrk,lwrk,iwrk,kwrk,ier)
+      recursive subroutine concon(iopt,m,x,y,w,v,s,nest,maxtr,maxbin,
+     * n,t,c,sq,sx,bind,wrk,lwrk,iwrk,kwrk,ier)
+      implicit none
 c  given the set of data points (x(i),y(i)) and the set of positive
 c  numbers w(i), i=1,2,...,m,subroutine concon determines a cubic spline
 c  approximation s(x) which satisfies the following local convexity
@@ -73,12 +74,12 @@ c          on exit with ier<=0, this array will contain the knots of the
 c          spline,i.e. the position of the interior knots t(5),t(6),...,
 c          t(n-4) as well as the position of the additional knots
 c          t(1)=t(2)=t(3)=t(4)=x(1) and t(n-3)=t(n-2)=t(n-1)=t(n)=x(m)
-c          needed for the the b-spline representation.
+c          needed for the b-spline representation.
 c          if the computation mode iopt=1 is used, the values of t(1),
 c          t(2),...,t(n) should be left unchanged between subsequent
 c          calls.
 c    c   : real array of dimension at least (nest).
-c          on succesful exit, this array will contain the coefficients
+c          on successful exit, this array will contain the coefficients
 c          c(1),c(2),..,c(n-4) in the b-spline representation of s(x)
 c    sq  : real. unless ier>0 , sq contains the weighted sum of
 c          squared residuals of the spline approximation returned.
@@ -129,7 +130,7 @@ c                 probably causes : maxbin too small.
 c        ier=2  : the number of records in the tree structure exceeds
 c                 maxtr.
 c                 probably causes : maxtr too small.
-c        ier=3  : the algoritm finds no solution to the posed quadratic
+c        ier=3  : the algorithm finds no solution to the posed quadratic
 c                 programming problem.
 c                 probably causes : rounding errors.
 c        ier=4  : the minimum number of knots (given by n) to guarantee

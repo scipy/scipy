@@ -13,8 +13,12 @@ import weakref
 import gc
 
 from contextlib import contextmanager
+from platform import python_implementation
 
 __all__ = ['set_gc_state', 'gc_state', 'assert_deallocated']
+
+
+IS_PYPY = python_implementation() == 'PyPy'
 
 
 class ReferenceError(AssertionError):
@@ -61,6 +65,8 @@ def assert_deallocated(func, *args, **kwargs):
     reference counting, without requiring gc to break reference cycles.
     GC is disabled inside the context manager.
 
+    This check is not available on PyPy.
+
     Parameters
     ----------
     func : callable
@@ -72,12 +78,12 @@ def assert_deallocated(func, *args, **kwargs):
 
     Examples
     --------
-    >>> class C(object): pass
+    >>> class C: pass
     >>> with assert_deallocated(C) as c:
     ...     # do something
     ...     del c
 
-    >>> class C(object):
+    >>> class C:
     ...     def __init__(self):
     ...         self._circular = self # Make circular reference
     >>> with assert_deallocated(C) as c: #doctest: +IGNORE_EXCEPTION_DETAIL
@@ -87,6 +93,9 @@ def assert_deallocated(func, *args, **kwargs):
         ...
     ReferenceError: Remaining reference(s) to object
     """
+    if IS_PYPY:
+        raise RuntimeError("assert_deallocated is unavailable on PyPy")
+
     with gc_state(False):
         obj = func(*args, **kwargs)
         ref = weakref.ref(obj)

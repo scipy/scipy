@@ -1,4 +1,3 @@
-import numpy as np
 from scipy.optimize import root
 from scipy.sparse import spdiags, kron
 from scipy.sparse.linalg import spilu, LinearOperator
@@ -88,6 +87,7 @@ def main():
     plt.clim(0, 1)
     plt.colorbar()
     plt.show()
+
 
 if __name__ == "__main__":
     main()

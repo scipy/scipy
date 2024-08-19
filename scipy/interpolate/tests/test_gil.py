@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 import itertools
 import threading
 import time
@@ -10,7 +8,7 @@ import pytest
 import scipy.interpolate
 
 
-class TestGIL(object):
+class TestGIL:
     """Check if the GIL is properly released by scipy.interpolate functions."""
 
     def setup_method(self):
@@ -30,7 +28,7 @@ class TestGIL(object):
 
         return WorkerThread()
 
-    @pytest.mark.slow
+    @pytest.mark.xslow
     @pytest.mark.xfail(reason='race conditions, may depend on system load')
     def test_rectbivariatespline(self):
         def generate_params(n_points):

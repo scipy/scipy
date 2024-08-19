@@ -17,8 +17,6 @@ Sources:
     December 2013. http://mpmath.org/.
 
 """
-from __future__ import division, print_function, absolute_import
-
 import os
 from time import time
 import numpy as np
@@ -37,7 +35,7 @@ def gammainc(a, x, dps=50, maxterms=10**8):
     summands in hypercomb. See
 
     mpmath/functions/expintegrals.py#L134
-    
+
     in the mpmath github repository.
 
     """
@@ -65,7 +63,7 @@ def gammaincc(a, x, dps=50, maxterms=10**8):
     """
     with mp.workdps(dps):
         z, a = a, x
-        
+
         if mp.isint(z):
             try:
                 # mpmath has a fast integer path
@@ -100,7 +98,7 @@ def main():
     r = np.logspace(4, 14, 30)
     ltheta = np.logspace(np.log10(pi/4), np.log10(np.arctan(0.6)), 30)
     utheta = np.logspace(np.log10(pi/4), np.log10(np.arctan(1.4)), 30)
-    
+
     regimes = [(gammainc, ltheta), (gammaincc, utheta)]
     for func, theta in regimes:
         rg, thetag = np.meshgrid(r, theta)
@@ -116,10 +114,10 @@ def main():
             dataset.append((a0, x0, func(a0, x0)))
         dataset = np.array(dataset)
         filename = os.path.join(pwd, '..', 'tests', 'data', 'local',
-                                '{}.txt'.format(func.__name__))
+                                f'{func.__name__}.txt')
         np.savetxt(filename, dataset)
 
-    print("{} minutes elapsed".format((time() - t0)/60))
+    print(f"{(time() - t0)/60} minutes elapsed")
 
 
 if __name__ == "__main__":

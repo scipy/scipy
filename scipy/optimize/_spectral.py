@@ -1,14 +1,12 @@
 """
 Spectral Algorithm for Nonlinear Equations
 """
-from __future__ import division, absolute_import, print_function
-
 import collections
 
 import numpy as np
 from scipy.optimize import OptimizeResult
-from scipy.optimize.optimize import _check_unknown_options
-from .linesearch import _nonmonotone_line_search_cruz, _nonmonotone_line_search_cheng
+from scipy.optimize._optimize import _check_unknown_options
+from ._linesearch import _nonmonotone_line_search_cruz, _nonmonotone_line_search_cheng
 
 class _NoConvergence(Exception):
     pass
@@ -66,7 +64,7 @@ def _root_df_sane(func, x0, args=(), ftol=1e-8, fatol=1e-300, maxfev=1000,
     _check_unknown_options(unknown_options)
 
     if line_search not in ('cheng', 'cruz'):
-        raise ValueError("Invalid value %r for 'line_search'" % (line_search,))
+        raise ValueError(f"Invalid value {line_search!r} for 'line_search'")
 
     nexp = 2
 
@@ -86,7 +84,8 @@ def _root_df_sane(func, x0, args=(), ftol=1e-8, fatol=1e-300, maxfev=1000,
         return np.linalg.norm(F)**nexp
 
     nfev = [0]
-    f, x_k, x_shape, f_k, F_k, is_complex = _wrap_func(func, x0, fmerit, nfev, maxfev, args)
+    f, x_k, x_shape, f_k, F_k, is_complex = _wrap_func(func, x0, fmerit,
+                                                       nfev, maxfev, args)
 
     k = 0
     f_0 = f_k
@@ -132,9 +131,11 @@ def _root_df_sane(func, x0, args=(), ftol=1e-8, fatol=1e-300, maxfev=1000,
         eta = eta_strategy(k, x_k, F_k)
         try:
             if line_search == 'cruz':
-                alpha, xp, fp, Fp = _nonmonotone_line_search_cruz(f, x_k, d, prev_fs, eta=eta)
+                alpha, xp, fp, Fp = _nonmonotone_line_search_cruz(f, x_k, d, prev_fs,
+                                                                  eta=eta)
             elif line_search == 'cheng':
-                alpha, xp, fp, Fp, C, Q = _nonmonotone_line_search_cheng(f, x_k, d, f_k, C, Q, eta=eta)
+                alpha, xp, fp, Fp, C, Q = _nonmonotone_line_search_cheng(f, x_k, d, f_k,
+                                                                         C, Q, eta=eta)
         except _NoConvergence:
             break
 
@@ -159,7 +160,7 @@ def _root_df_sane(func, x0, args=(), ftol=1e-8, fatol=1e-300, maxfev=1000,
 
     result = OptimizeResult(x=x, success=converged,
                             message=message,
-                            fun=F, nfev=nfev[0], nit=k)
+                            fun=F, nfev=nfev[0], nit=k, method="df-sane")
 
     return result
 
@@ -192,7 +193,7 @@ def _wrap_func(func, x0, fmerit, nfev_list, maxfev, args=()):
         Wrapped function, to be called as
         ``F, fp = wrap_func(x0)``
     x0_wrap : ndarray of float
-        Wrapped initial value; raveled to 1D and complex
+        Wrapped initial value; raveled to 1-D and complex
         values mapped to reals.
     x0_shape : tuple
         Shape of the initial value array

@@ -1,0 +1,36 @@
+! Shorthand Notations:
+! --------------------
+! <prefix=s,d,c,z>
+! <prefix2=s,d>
+! <prefix2c=c,z>
+! <ftype=real,double precision,complex,double complex>
+! <ftype2=real,double precision>
+! <ftype2c=complex,double complex>
+! <ftypereal=real,double precision,real,double precision>
+! <ftypecomplex=complex,double complex,\0,\1>
+! <ctype=float,double,complex_float,complex_double>
+! <ctype2=float,double>
+! <ctype2c=complex_float,complex_double>
+! <ctypereal=float,double,float,double>
+! <ctypecomplex=complex_float,complex_double,\0,\1>
+
+python module _flapack_64
+    usercode '''
+#if defined(BLAS_SYMBOL_PREFIX) || defined(BLAS_SYMBOL_SUFFIX)
+#include "blas64-prefix-defines.h"
+#endif
+#define F_INT npy_int64
+'''
+
+interface
+    include 'flapack_user.pyf.src'
+    include 'flapack_gen.pyf.src'
+    include 'flapack_gen_banded.pyf.src'
+    include 'flapack_gen_tri.pyf.src'
+    include 'flapack_sym_herm.pyf.src'
+    include 'flapack_pos_def.pyf.src'
+    include 'flapack_pos_def_tri.pyf.src'
+    include 'flapack_other.pyf.src'
+end interface
+
+end python module _flapack_64

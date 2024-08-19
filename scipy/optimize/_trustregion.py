@@ -1,22 +1,38 @@
 """Trust-region optimization."""
-from __future__ import division, print_function, absolute_import
-
 import math
+import warnings
 
 import numpy as np
 import scipy.linalg
-from .optimize import (_check_unknown_options, wrap_function, _status_message,
-                       OptimizeResult)
-
+from ._optimize import (_check_unknown_options, _status_message,
+                        OptimizeResult, _prepare_scalar_function,
+                        _call_callback_maybe_halt)
+from scipy.optimize._hessian_update_strategy import HessianUpdateStrategy
+from scipy.optimize._differentiable_functions import FD_METHODS
 __all__ = []
 
 
-class BaseQuadraticSubproblem(object):
+def _wrap_function(function, args):
+    # wraps a minimizer function to count number of evaluations
+    # and to easily provide an args kwd.
+    ncalls = [0]
+    if function is None:
+        return ncalls, None
+
+    def function_wrapper(x, *wrapper_args):
+        ncalls[0] += 1
+        # A copy of x is sent to the user function (gh13740)
+        return function(np.copy(x), *(wrapper_args + args))
+
+    return ncalls, function_wrapper
+
+
+class BaseQuadraticSubproblem:
     """
     Base/abstract class defining the quadratic model for trust-region
     minimization. Child classes must implement the ``solve`` method.
 
-    Values of the objective function, jacobian and hessian (if provided) at
+    Values of the objective function, Jacobian and Hessian (if provided) at
     the current iterate ``x`` are evaluated on demand and then stored as
     attributes ``fun``, ``jac``, ``hess``.
     """
@@ -46,14 +62,14 @@ class BaseQuadraticSubproblem(object):
 
     @property
     def jac(self):
-        """Value of jacobian of objective function at current iteration."""
+        """Value of Jacobian of objective function at current iteration."""
         if self._g is None:
             self._g = self._jac(self._x)
         return self._g
 
     @property
     def hess(self):
-        """Value of hessian of objective function at current iteration."""
+        """Value of Hessian of objective function at current iteration."""
         if self._h is None:
             self._h = self._hess(self._x)
         return self._h
@@ -66,14 +82,14 @@ class BaseQuadraticSubproblem(object):
 
     @property
     def jac_mag(self):
-        """Magniture of jacobian of objective function at current iteration."""
+        """Magnitude of jacobian of objective function at current iteration."""
         if self._g_mag is None:
             self._g_mag = scipy.linalg.norm(self.jac)
         return self._g_mag
 
     def get_boundaries_intersections(self, z, d, trust_radius):
         """
-        Solve the scalar quadratic equation ||z + t d|| == trust_radius.
+        Solve the scalar quadratic equation ``||z + t d|| == trust_radius``.
         This is like a line-sphere intersection.
         Return the two values of t, sorted from low to high.
         """
@@ -154,13 +170,33 @@ def _minimize_trust_region(fun, x0, args=(), jac=None, hess=None, hessp=None,
     # force the initial guess into a nice format
     x0 = np.asarray(x0).flatten()
 
-    # Wrap the functions, for a couple reasons.
-    # This tracks how many times they have been called
-    # and it automatically passes the args.
-    nfun, fun = wrap_function(fun, args)
-    njac, jac = wrap_function(jac, args)
-    nhess, hess = wrap_function(hess, args)
-    nhessp, hessp = wrap_function(hessp, args)
+    # A ScalarFunction representing the problem. This caches calls to fun, jac,
+    # hess.
+    sf = _prepare_scalar_function(fun, x0, jac=jac, hess=hess, args=args)
+    fun = sf.fun
+    jac = sf.grad
+    if callable(hess):
+        hess = sf.hess
+    elif callable(hessp):
+        # this elif statement must come before examining whether hess
+        # is estimated by FD methods or a HessianUpdateStrategy
+        pass
+    elif (hess in FD_METHODS or isinstance(hess, HessianUpdateStrategy)):
+        # If the Hessian is being estimated by finite differences or a
+        # Hessian update strategy then ScalarFunction.hess returns a
+        # LinearOperator or a HessianUpdateStrategy. This enables the
+        # calculation/creation of a hessp. BUT you only want to do this
+        # if the user *hasn't* provided a callable(hessp) function.
+        hess = None
+
+        def hessp(x, p, *args):
+            return sf.hess(x).dot(p)
+    else:
+        raise ValueError('Either the Hessian or the Hessian-vector product '
+                         'is currently required for trust-region methods')
+
+    # ScalarFunction doesn't represent hessp
+    nhessp, hessp = _wrap_function(hessp, args)
 
     # limit the number of iterations
     if maxiter is None:
@@ -178,7 +214,8 @@ def _minimize_trust_region(fun, x0, args=(), jac=None, hess=None, hessp=None,
     k = 0
 
     # search for the function min
-    while True:
+    # do not even start if the gradient is small enough
+    while m.jac_mag >= gtol:
 
         # Solve the sub-problem.
         # This gives us the proposed step relative to the current position
@@ -186,7 +223,7 @@ def _minimize_trust_region(fun, x0, args=(), jac=None, hess=None, hessp=None,
         # has reached the trust region boundary or not.
         try:
             p, hits_boundary = m.solve(trust_radius)
-        except np.linalg.linalg.LinAlgError as e:
+        except np.linalg.LinAlgError:
             warnflag = 3
             break
 
@@ -218,10 +255,12 @@ def _minimize_trust_region(fun, x0, args=(), jac=None, hess=None, hessp=None,
 
         # append the best guess, call back, increment the iteration count
         if return_all:
-            allvecs.append(x)
-        if callback is not None:
-            callback(x)
+            allvecs.append(np.copy(x))
         k += 1
+
+        intermediate_result = OptimizeResult(x=x, fun=m.fun)
+        if _call_callback_maybe_halt(callback, intermediate_result):
+            break
 
         # check if the gradient is small enough to stop
         if m.jac_mag < gtol:
@@ -244,16 +283,16 @@ def _minimize_trust_region(fun, x0, args=(), jac=None, hess=None, hessp=None,
         if warnflag == 0:
             print(status_messages[warnflag])
         else:
-            print('Warning: ' + status_messages[warnflag])
-        print("         Current function value: %f" % m.fun)
+            warnings.warn(status_messages[warnflag], RuntimeWarning, stacklevel=3)
+        print(f"         Current function value: {m.fun:f}")
         print("         Iterations: %d" % k)
-        print("         Function evaluations: %d" % nfun[0])
-        print("         Gradient evaluations: %d" % njac[0])
-        print("         Hessian evaluations: %d" % nhess[0])
+        print("         Function evaluations: %d" % sf.nfev)
+        print("         Gradient evaluations: %d" % sf.ngev)
+        print("         Hessian evaluations: %d" % (sf.nhev + nhessp[0]))
 
     result = OptimizeResult(x=x, success=(warnflag == 0), status=warnflag,
-                            fun=m.fun, jac=m.jac, nfev=nfun[0], njev=njac[0],
-                            nhev=nhess[0], nit=k,
+                            fun=m.fun, jac=m.jac, nfev=sf.nfev, njev=sf.ngev,
+                            nhev=sf.nhev + nhessp[0], nit=k,
                             message=status_messages[warnflag])
 
     if hess is not None:

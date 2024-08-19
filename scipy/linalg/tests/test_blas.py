@@ -1,18 +1,9 @@
 #
 # Created by: Pearu Peterson, April 2002
 #
-from __future__ import division, print_function, absolute_import
-
-
-__usage__ = """
-Build linalg:
-  python setup.py build
-Run tests if scipy is installed:
-  python -c 'import scipy;scipy.linalg.test()'
-"""
 
 import math
-
+import pytest
 import numpy as np
 from numpy.testing import (assert_equal, assert_almost_equal, assert_,
                            assert_array_almost_equal, assert_allclose)
@@ -23,6 +14,7 @@ from numpy import float32, float64, complex64, complex128, arange, triu, \
                   nonzero
 
 from numpy.random import rand, seed
+import scipy
 from scipy.linalg import _fblas as fblas, get_blas_funcs, toeplitz, solve
 
 try:
@@ -63,7 +55,7 @@ def test_get_blas_funcs():
     assert_equal(f1.typecode, 'c')
 
     # extended precision complex
-    f1 = get_blas_funcs('gemm', dtype=np.longcomplex)
+    f1 = get_blas_funcs('gemm', dtype=np.clongdouble)
     assert_equal(f1.typecode, 'z')
 
     # check safe complex upcasting
@@ -85,7 +77,7 @@ def test_get_blas_funcs_alias():
     assert f is h
 
 
-class TestCBLAS1Simple(object):
+class TestCBLAS1Simple:
 
     def test_axpy(self):
         for p in 'sd':
@@ -102,7 +94,7 @@ class TestCBLAS1Simple(object):
                                       [7, 10j-1, 18])
 
 
-class TestFBLAS1Simple(object):
+class TestFBLAS1Simple:
 
     def test_axpy(self):
         for p in 'sd':
@@ -220,7 +212,7 @@ class TestFBLAS1Simple(object):
     # XXX: need tests for rot,rotm,rotg,rotmg
 
 
-class TestFBLAS2Simple(object):
+class TestFBLAS2Simple:
 
     def test_gemv(self):
         for p in 'sd':
@@ -487,6 +479,11 @@ class TestFBLAS2Simple(object):
             y1 = func(m=m, n=n, ku=ku, kl=kl, alpha=alpha, a=Ab,
                       x=x, y=y, beta=beta)
             y2 = alpha * A.dot(x) + beta * y
+            assert_array_almost_equal(y1, y2)
+
+            y1 = func(m=m, n=n, ku=ku, kl=kl, alpha=alpha, a=Ab,
+                      x=y, y=x, beta=beta, trans=1)
+            y2 = alpha * A.T.dot(y) + beta * x
             assert_array_almost_equal(y1, y2)
 
     def test_sbmv_hbmv(self):
@@ -795,7 +792,7 @@ class TestFBLAS2Simple(object):
             assert_array_almost_equal(y1, y2)
 
 
-class TestFBLAS3Simple(object):
+class TestFBLAS3Simple:
 
     def test_gemm(self):
         for p in 'sd':
@@ -821,7 +818,7 @@ def _get_func(func, ps='sdzc'):
         yield f
 
 
-class TestBLAS3Symm(object):
+class TestBLAS3Symm:
 
     def setup_method(self):
         self.a = np.array([[1., 2.],
@@ -866,7 +863,7 @@ class TestBLAS3Symm(object):
             assert not np.allclose(res, self.t)
 
 
-class TestBLAS3Syrk(object):
+class TestBLAS3Syrk:
     def setup_method(self):
         self.a = np.array([[1., 0.],
                            [0., -2.],
@@ -903,7 +900,7 @@ class TestBLAS3Syrk(object):
         # if C is supplied, it must have compatible dimensions
 
 
-class TestBLAS3Syr2k(object):
+class TestBLAS3Syr2k:
     def setup_method(self):
         self.a = np.array([[1., 0.],
                            [0., -2.],
@@ -943,8 +940,9 @@ class TestBLAS3Syr2k(object):
         # if C is supplied, it must have compatible dimensions
 
 
-class TestSyHe(object):
+class TestSyHe:
     """Quick and simple tests for (zc)-symm, syrk, syr2k."""
+
     def setup_method(self):
         self.sigma_y = np.array([[0., -1.j],
                                  [1.j, 0.]])
@@ -982,13 +980,32 @@ class TestSyHe(object):
             assert_array_almost_equal(np.triu(res), 2.*np.diag([1, 1]))
 
 
-class TestTRMM(object):
+class TestTRMM:
     """Quick and simple tests for dtrmm."""
+
     def setup_method(self):
         self.a = np.array([[1., 2., ],
                            [-2., 1.]])
         self.b = np.array([[3., 4., -1.],
                            [5., 6., -2.]])
+
+        self.a2 = np.array([[1, 1, 2, 3],
+                            [0, 1, 4, 5],
+                            [0, 0, 1, 6],
+                            [0, 0, 0, 1]], order="f")
+        self.b2 = np.array([[1, 4], [2, 5], [3, 6], [7, 8], [9, 10]],
+                           order="f")
+
+    @pytest.mark.parametrize("dtype_", DTYPES)
+    def test_side(self, dtype_):
+        trmm = get_blas_funcs("trmm", dtype=dtype_)
+        # Provide large A array that works for side=1 but not 0 (see gh-10841)
+        assert_raises(Exception, trmm, 1.0, self.a2, self.b2)
+        res = trmm(1.0, self.a2.astype(dtype_), self.b2.astype(dtype_),
+                   side=1)
+        k = self.b2.shape[1]
+        assert_allclose(res, self.b2 @ self.a2[:k, :k], rtol=0.,
+                        atol=100*np.finfo(dtype_).eps)
 
     def test_ab(self):
         f = getattr(fblas, 'dtrmm', None)
@@ -1030,6 +1047,7 @@ class TestTRMM(object):
 def test_trsm():
     seed(1234)
     for ind, dtype in enumerate(DTYPES):
+        tol = np.finfo(dtype).eps*1000
         func, = get_blas_funcs(('trsm',), dtype=dtype)
 
         # Test protection against size mismatches
@@ -1052,26 +1070,45 @@ def test_trsm():
         x1 = func(alpha=alpha, a=A, b=B1)
         assert_equal(B1.shape, x1.shape)
         x2 = solve(Au, alpha*B1)
-        assert_array_almost_equal(x1, x2)
+        assert_allclose(x1, x2, atol=tol)
 
         x1 = func(alpha=alpha, a=A, b=B1, trans_a=1)
         x2 = solve(Au.T, alpha*B1)
-        assert_array_almost_equal(x1, x2)
+        assert_allclose(x1, x2, atol=tol)
 
         x1 = func(alpha=alpha, a=A, b=B1, trans_a=2)
         x2 = solve(Au.conj().T, alpha*B1)
-        assert_array_almost_equal(x1, x2)
+        assert_allclose(x1, x2, atol=tol)
 
         x1 = func(alpha=alpha, a=A, b=B1, diag=1)
         Au[arange(m), arange(m)] = dtype(1)
         x2 = solve(Au, alpha*B1)
-        assert_array_almost_equal(x1, x2)
+        assert_allclose(x1, x2, atol=tol)
 
         x1 = func(alpha=alpha, a=A, b=B2, diag=1, side=1)
         x2 = solve(Au.conj().T, alpha*B2.conj().T)
-        assert_array_almost_equal(x1, x2.conj().T)
+        assert_allclose(x1, x2.conj().T, atol=tol)
 
         x1 = func(alpha=alpha, a=A, b=B2, diag=1, side=1, lower=1)
         Al[arange(m), arange(m)] = dtype(1)
         x2 = solve(Al.conj().T, alpha*B2.conj().T)
-        assert_array_almost_equal(x1, x2.conj().T)
+        assert_allclose(x1, x2.conj().T, atol=tol)
+
+
+@pytest.mark.xfail(run=False,
+                   reason="gh-16930")
+def test_gh_169309():
+    x = np.repeat(10, 9)
+    actual = scipy.linalg.blas.dnrm2(x, 5, 3, -1)
+    expected = math.sqrt(500)
+    assert_allclose(actual, expected)
+
+
+def test_dnrm2_neg_incx():
+    # check that dnrm2(..., incx < 0) raises
+    # XXX: remove the test after the lowest supported BLAS implements
+    # negative incx (new in LAPACK 3.10)
+    x = np.repeat(10, 9)
+    incx = -1
+    with assert_raises(fblas.__fblas_error):
+        scipy.linalg.blas.dnrm2(x, 5, 3, incx)

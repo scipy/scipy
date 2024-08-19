@@ -1,5 +1,3 @@
-from __future__ import division, absolute_import, print_function
-
 from numpy.testing import assert_, assert_allclose, assert_equal
 from pytest import raises as assert_raises
 import numpy as np
@@ -7,10 +5,11 @@ import numpy as np
 from scipy.optimize._lsq.common import (
     step_size_to_bound, find_active_constraints, make_strictly_feasible,
     CL_scaling_vector, intersect_trust_region, build_quadratic_1d,
-    minimize_quadratic_1d, evaluate_quadratic, reflective_transformation)
+    minimize_quadratic_1d, evaluate_quadratic, reflective_transformation,
+    left_multiplied_operator, right_multiplied_operator)
 
 
-class TestBounds(object):
+class TestBounds:
     def test_step_size_to_bounds(self):
         lb = np.array([-1.0, 2.5, 10.0])
         ub = np.array([1.0, 5.0, 100.0])
@@ -114,7 +113,7 @@ class TestBounds(object):
         assert_equal(dv, [0.0, 1.0, -1.0, 0.0])
 
 
-class TestQuadraticFunction(object):
+class TestQuadraticFunction:
     def setup_method(self):
         self.J = np.array([
             [0.1, 0.2],
@@ -154,20 +153,45 @@ class TestQuadraticFunction(object):
 
         t, y = minimize_quadratic_1d(a, b, 1, 2)
         assert_equal(t, 1)
-        assert_equal(y, a * t**2 + b * t)
+        assert_allclose(y, a * t**2 + b * t, rtol=1e-15)
 
         t, y = minimize_quadratic_1d(a, b, -2, -1)
         assert_equal(t, -1)
-        assert_equal(y, a * t**2 + b * t)
+        assert_allclose(y, a * t**2 + b * t, rtol=1e-15)
 
         t, y = minimize_quadratic_1d(a, b, -1, 1)
         assert_equal(t, 0.1)
-        assert_equal(y, a * t**2 + b * t)
+        assert_allclose(y, a * t**2 + b * t, rtol=1e-15)
 
         c = 10
         t, y = minimize_quadratic_1d(a, b, -1, 1, c=c)
         assert_equal(t, 0.1)
-        assert_equal(y, a * t**2 + b * t + c)
+        assert_allclose(y, a * t**2 + b * t + c, rtol=1e-15)
+
+        t, y = minimize_quadratic_1d(a, b, -np.inf, np.inf, c=c)
+        assert_equal(t, 0.1)
+        assert_allclose(y, a * t ** 2 + b * t + c, rtol=1e-15)
+
+        t, y = minimize_quadratic_1d(a, b, 0, np.inf, c=c)
+        assert_equal(t, 0.1)
+        assert_allclose(y, a * t ** 2 + b * t + c, rtol=1e-15)
+
+        t, y = minimize_quadratic_1d(a, b, -np.inf, 0, c=c)
+        assert_equal(t, 0)
+        assert_allclose(y, a * t ** 2 + b * t + c, rtol=1e-15)
+
+        a = -1
+        b = 0.2
+        t, y = minimize_quadratic_1d(a, b, -np.inf, np.inf)
+        assert_equal(y, -np.inf)
+
+        t, y = minimize_quadratic_1d(a, b, 0, np.inf)
+        assert_equal(t, np.inf)
+        assert_equal(y, -np.inf)
+
+        t, y = minimize_quadratic_1d(a, b, -np.inf, 0)
+        assert_equal(t, -np.inf)
+        assert_equal(y, -np.inf)
 
     def test_evaluate_quadratic(self):
         s = np.array([1.0, -1.0])
@@ -189,7 +213,7 @@ class TestQuadraticFunction(object):
         assert_allclose(values, [6.35, 0.59, 0.0])
 
 
-class TestTrustRegion(object):
+class TestTrustRegion:
     def test_intersect(self):
         Delta = 1.0
 
@@ -248,3 +272,26 @@ def test_reflective_transformation():
     assert_equal(x, [0, 10])
     assert_equal(g, [-1, 1])
 
+
+def test_linear_operators():
+    A = np.arange(6).reshape((3, 2))
+
+    d_left = np.array([-1, 2, 5])
+    DA = np.diag(d_left).dot(A)
+    J_left = left_multiplied_operator(A, d_left)
+
+    d_right = np.array([5, 10])
+    AD = A.dot(np.diag(d_right))
+    J_right = right_multiplied_operator(A, d_right)
+
+    x = np.array([-2, 3])
+    X = -2 * np.arange(2, 8).reshape((2, 3))
+    xt = np.array([0, -2, 15])
+
+    assert_allclose(DA.dot(x), J_left.matvec(x))
+    assert_allclose(DA.dot(X), J_left.matmat(X))
+    assert_allclose(DA.T.dot(xt), J_left.rmatvec(xt))
+
+    assert_allclose(AD.dot(x), J_right.matvec(x))
+    assert_allclose(AD.dot(X), J_right.matmat(X))
+    assert_allclose(AD.T.dot(xt), J_right.rmatvec(xt))

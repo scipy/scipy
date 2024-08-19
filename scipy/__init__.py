@@ -5,119 +5,139 @@ SciPy: A scientific computing package for Python
 Documentation is available in the docstrings and
 online at https://docs.scipy.org.
 
-Contents
---------
-SciPy imports all the functions from the NumPy namespace, and in
-addition provides:
-
 Subpackages
 -----------
-Using any of these subpackages requires an explicit import.  For example,
+Using any of these subpackages requires an explicit import. For example,
 ``import scipy.cluster``.
 
 ::
 
  cluster                      --- Vector Quantization / Kmeans
- fftpack                      --- Discrete Fourier Transform algorithms
+ constants                    --- Physical and mathematical constants and units
+ datasets                     --- Dataset methods
+ differentiate                --- Finite difference differentiation tools
+ fft                          --- Discrete Fourier transforms
+ fftpack                      --- Legacy discrete Fourier transforms
  integrate                    --- Integration routines
  interpolate                  --- Interpolation Tools
  io                           --- Data input and output
  linalg                       --- Linear algebra routines
- linalg.blas                  --- Wrappers to BLAS library
- linalg.lapack                --- Wrappers to LAPACK library
- misc                         --- Various utilities that don't have
-                                  another home.
- ndimage                      --- n-dimensional image package
+ misc                         --- Utilities that don't have another home.
+ ndimage                      --- N-D image package
  odr                          --- Orthogonal Distance Regression
  optimize                     --- Optimization Tools
  signal                       --- Signal Processing Tools
- signal.windows               --- Window functions
  sparse                       --- Sparse Matrices
- sparse.linalg                --- Sparse Linear Algebra
- sparse.linalg.dsolve         --- Linear Solvers
- sparse.linalg.dsolve.umfpack --- :Interface to the UMFPACK library:
-                                  Conjugate Gradient Method (LOBPCG)
- sparse.linalg.eigen          --- Sparse Eigenvalue Solvers
- sparse.linalg.eigen.lobpcg   --- Locally Optimal Block Preconditioned
-                                  Conjugate Gradient Method (LOBPCG)
  spatial                      --- Spatial data structures and algorithms
  special                      --- Special functions
  stats                        --- Statistical Functions
 
-Utility tools
--------------
+Public API in the main SciPy namespace
+--------------------------------------
 ::
 
- test              --- Run scipy unittests
+ __version__       --- SciPy version string
+ LowLevelCallable  --- Low-level callback function
  show_config       --- Show scipy build configuration
- show_numpy_config --- Show numpy build configuration
- __version__       --- Scipy version string
- __numpy_version__ --- Numpy version string
+ test              --- Run scipy unittests
 
 """
-from __future__ import division, print_function, absolute_import
 
-__all__ = ['test']
+import importlib as _importlib
 
-from numpy import show_config as show_numpy_config
-if show_numpy_config is None:
-    raise ImportError(
-        "Cannot import scipy when running from numpy source directory.")
 from numpy import __version__ as __numpy_version__
 
-# Import numpy symbols to scipy name space
-import numpy as _num
-linalg = None
-from numpy import *
-from numpy.random import rand, randn
-from numpy.fft import fft, ifft
-from numpy.lib.scimath import *
+
+try:
+    from scipy.__config__ import show as show_config
+except ImportError as e:
+    msg = """Error importing SciPy: you cannot import SciPy while
+    being in scipy source directory; please exit the SciPy source
+    tree first and relaunch your Python interpreter."""
+    raise ImportError(msg) from e
+
+
+from scipy.version import version as __version__
+
 
 # Allow distributors to run custom init code
 from . import _distributor_init
+del _distributor_init
 
-__all__ += _num.__all__
-__all__ += ['randn', 'rand', 'fft', 'ifft']
 
-del _num
-# Remove the linalg imported from numpy so that the scipy.linalg package can be
-# imported.
-del linalg
-__all__.remove('linalg')
+from scipy._lib import _pep440
+# In maintenance branch, change to np_maxversion N+3 if numpy is at N
+np_minversion = '1.23.5'
+np_maxversion = '9.9.99'
+if (_pep440.parse(__numpy_version__) < _pep440.Version(np_minversion) or
+        _pep440.parse(__numpy_version__) >= _pep440.Version(np_maxversion)):
+    import warnings
+    warnings.warn(f"A NumPy version >={np_minversion} and <{np_maxversion}"
+                  f" is required for this version of SciPy (detected "
+                  f"version {__numpy_version__})",
+                  UserWarning, stacklevel=2)
+del _pep440
 
-# We first need to detect if we're being called as part of the scipy
-# setup procedure itself in a reliable manner.
+
+# This is the first import of an extension module within SciPy. If there's
+# a general issue with the install, such that extension modules are missing
+# or cannot be imported, this is where we'll get a failure - so give an
+# informative error message.
 try:
-    __SCIPY_SETUP__
-except NameError:
-    __SCIPY_SETUP__ = False
-
-
-if __SCIPY_SETUP__:
-    import sys as _sys
-    _sys.stderr.write('Running from scipy source directory.\n')
-    del _sys
-else:
-    try:
-        from scipy.__config__ import show as show_config
-    except ImportError:
-        msg = """Error importing scipy: you cannot import scipy while
-        being in scipy source directory; please exit the scipy source
-        tree first, and relaunch your python intepreter."""
-        raise ImportError(msg)
-
-    from scipy.version import version as __version__
-    from scipy._lib._version import NumpyVersion as _NumpyVersion
-    if _NumpyVersion(__numpy_version__) < '1.8.2':
-        import warnings
-        warnings.warn("Numpy 1.8.2 or above is recommended for this version of "
-                      "scipy (detected version %s)" % __numpy_version__,
-                      UserWarning)
-
-    del _NumpyVersion
-
     from scipy._lib._ccallback import LowLevelCallable
+except ImportError as e:
+    msg = "The `scipy` install you are using seems to be broken, " + \
+          "(extension modules cannot be imported), " + \
+          "please try reinstalling."
+    raise ImportError(msg) from e
 
-    from scipy._lib._testutils import PytestTester
-    test = PytestTester(__name__)
-    del PytestTester
+
+from scipy._lib._testutils import PytestTester
+test = PytestTester(__name__)
+del PytestTester
+
+
+submodules = [
+    'cluster',
+    'constants',
+    'datasets',
+    'differentiate',
+    'fft',
+    'fftpack',
+    'integrate',
+    'interpolate',
+    'io',
+    'linalg',
+    'misc',
+    'ndimage',
+    'odr',
+    'optimize',
+    'signal',
+    'sparse',
+    'spatial',
+    'special',
+    'stats'
+]
+
+__all__ = submodules + [
+    'LowLevelCallable',
+    'test',
+    'show_config',
+    '__version__',
+]
+
+
+def __dir__():
+    return __all__
+
+
+def __getattr__(name):
+    if name in submodules:
+        return _importlib.import_module(f'scipy.{name}')
+    else:
+        try:
+            return globals()[name]
+        except KeyError:
+            raise AttributeError(
+                f"Module 'scipy' has no attribute '{name}'"
+            )

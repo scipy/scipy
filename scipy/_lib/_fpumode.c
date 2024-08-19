@@ -4,6 +4,8 @@
 
 
 #ifdef _MSC_VER
+#include <float.h>
+#pragma float_control(precise, on)
 #pragma fenv_access (on)
 #endif
 
@@ -46,8 +48,6 @@ static struct PyMethodDef methods[] = {
 };
 
 
-#if PY_MAJOR_VERSION >= 3
-
 static struct PyModuleDef moduledef = {
     PyModuleDef_HEAD_INIT,
     "_fpumode",
@@ -60,16 +60,19 @@ static struct PyModuleDef moduledef = {
     NULL
 };
 
-PyObject *PyInit__fpumode(void)
+PyMODINIT_FUNC
+PyInit__fpumode(void)
 {
-    return PyModule_Create(&moduledef);
-}
+    PyObject *module;
 
-#else
+    module = PyModule_Create(&moduledef);
+    if (module == NULL) {
+        return module;
+    }
 
-PyMODINIT_FUNC init_fpumode(void)
-{
-    Py_InitModule("_fpumode", methods);
-}
-
+#if Py_GIL_DISABLED
+    PyUnstable_Module_SetGIL(module, Py_MOD_GIL_NOT_USED);
 #endif
+
+    return module;
+}

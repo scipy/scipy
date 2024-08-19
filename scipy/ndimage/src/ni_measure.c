@@ -203,9 +203,9 @@ break
 
 typedef struct {
     npy_intp index;
-    npy_uint8 cost;
     void *next, *prev;
-    npy_uint16 done;
+    npy_uint32 cost;
+    npy_uint8 done;
 } NI_WatershedElement;
 
 int NI_WatershedIFT(PyArrayObject* input, PyArrayObject* markers,
@@ -586,7 +586,7 @@ int NI_WatershedIFT(PyArrayObject* input, PyArrayObject* markers,
                                 if (next)
                                     next->prev = prev;
                             }
-                            /* Insert the neighbor in the appropiate queue: */
+                            /* Insert the neighbor in the appropriate queue: */
                             if (label < 0) {
                                 p->prev = last[max];
                                 p->next = NULL;

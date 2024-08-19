@@ -1,4 +1,3 @@
-from __future__ import division, print_function, absolute_import
 from itertools import groupby
 from warnings import warn
 import numpy as np
@@ -6,6 +5,15 @@ from scipy.sparse import find, coo_matrix
 
 
 EPS = np.finfo(float).eps
+
+
+def validate_first_step(first_step, t0, t_bound):
+    """Assert that first_step is valid and return it."""
+    if first_step <= 0:
+        raise ValueError("`first_step` must be positive.")
+    if first_step > np.abs(t_bound - t0):
+        raise ValueError("`first_step` exceeds bounds.")
+    return first_step
 
 
 def validate_max_step(max_step):
@@ -28,15 +36,19 @@ def warn_extraneous(extraneous):
         Extraneous keyword arguments
     """
     if extraneous:
-        warn("The following arguments have no effect for a chosen solver: {}."
-             .format(", ".join("`{}`".format(x) for x in extraneous)))
+        warn("The following arguments have no effect for a chosen solver: "
+             f"{', '.join(f'`{x}`' for x in extraneous)}.",
+             stacklevel=3)
 
 
 def validate_tol(rtol, atol, n):
     """Validate tolerance values."""
-    if rtol < 100 * EPS:
-        warn("`rtol` is too low, setting to {}".format(100 * EPS))
-        rtol = 100 * EPS
+
+    if np.any(rtol < 100 * EPS):
+        warn("At least one element of `rtol` is too small. "
+             f"Setting `rtol = np.maximum(rtol, {100 * EPS})`.",
+             stacklevel=3)
+        rtol = np.maximum(rtol, 100 * EPS)
 
     atol = np.asarray(atol)
     if atol.ndim > 0 and atol.shape != (n,):
@@ -53,7 +65,8 @@ def norm(x):
     return np.linalg.norm(x) / x.size ** 0.5
 
 
-def select_initial_step(fun, t0, y0, f0, direction, order, rtol, atol):
+def select_initial_step(fun, t0, y0, t_bound, 
+                        max_step, f0, direction, order, rtol, atol):
     """Empirically select a good initial step.
 
     The algorithm is described in [1]_.
@@ -66,12 +79,18 @@ def select_initial_step(fun, t0, y0, f0, direction, order, rtol, atol):
         Initial value of the independent variable.
     y0 : ndarray, shape (n,)
         Initial value of the dependent variable.
+    t_bound : float
+        End-point of integration interval; used to ensure that t0+step<=tbound 
+        and that fun is only evaluated in the interval [t0,tbound]
+    max_step : float
+        Maximum allowable step size.
     f0 : ndarray, shape (n,)
-        Initial value of the derivative, i. e. ``fun(t0, y0)``.
+        Initial value of the derivative, i.e., ``fun(t0, y0)``.
     direction : float
         Integration direction.
     order : float
-        Method order.
+        Error estimator order. It means that the error controlled by the
+        algorithm is proportional to ``step_size ** (order + 1)`.
     rtol : float
         Desired relative tolerance.
     atol : float
@@ -90,6 +109,10 @@ def select_initial_step(fun, t0, y0, f0, direction, order, rtol, atol):
     if y0.size == 0:
         return np.inf
 
+    interval_length = abs(t_bound - t0)
+    if interval_length == 0.0:
+        return 0.0
+    
     scale = atol + np.abs(y0) * rtol
     d0 = norm(y0 / scale)
     d1 = norm(f0 / scale)
@@ -97,7 +120,8 @@ def select_initial_step(fun, t0, y0, f0, direction, order, rtol, atol):
         h0 = 1e-6
     else:
         h0 = 0.01 * d0 / d1
-
+    # Check t0+h0*direction doesn't take us beyond t_bound
+    h0 = min(h0, interval_length)
     y1 = y0 + h0 * direction * f0
     f1 = fun(t0 + h0 * direction, y1)
     d2 = norm((f1 - f0) / scale) / h0
@@ -107,10 +131,10 @@ def select_initial_step(fun, t0, y0, f0, direction, order, rtol, atol):
     else:
         h1 = (0.01 / max(d1, d2)) ** (1 / (order + 1))
 
-    return min(100 * h0, h1)
+    return min(100 * h0, h1, interval_length, max_step)
 
 
-class OdeSolution(object):
+class OdeSolution:
     """Continuous ODE solution.
 
     It is organized as a collection of `DenseOutput` objects which represent
@@ -133,13 +157,21 @@ class OdeSolution(object):
     interpolants : list of DenseOutput with n_segments elements
         Local interpolants. An i-th interpolant is assumed to be defined
         between ``ts[i]`` and ``ts[i + 1]``.
+    alt_segment : boolean
+        Requests the alternative interpolant segment selection scheme. At each
+        solver integration point, two interpolant segments are available. The
+        default (False) and alternative (True) behaviours select the segment
+        for which the requested time corresponded to ``t`` and ``t_old``,
+        respectively. This functionality is only relevant for testing the
+        interpolants' accuracy: different integrators use different
+        construction strategies.
 
     Attributes
     ----------
     t_min, t_max : float
         Time range of the interpolation.
     """
-    def __init__(self, ts, interpolants):
+    def __init__(self, ts, interpolants, alt_segment=False):
         ts = np.asarray(ts)
         d = np.diff(ts)
         # The first case covers integration on zero segment.
@@ -158,20 +190,20 @@ class OdeSolution(object):
             self.t_min = ts[0]
             self.t_max = ts[-1]
             self.ascending = True
+            self.side = "right" if alt_segment else "left"
             self.ts_sorted = ts
         else:
             self.t_min = ts[-1]
             self.t_max = ts[0]
             self.ascending = False
+            self.side = "left" if alt_segment else "right"
             self.ts_sorted = ts[::-1]
 
     def _call_single(self, t):
         # Here we preserve a certain symmetry that when t is in self.ts,
-        # then we prioritize a segment with a lower index.
-        if self.ascending:
-            ind = np.searchsorted(self.ts_sorted, t, side='left')
-        else:
-            ind = np.searchsorted(self.ts_sorted, t, side='right')
+        # if alt_segment=False, then we prioritize a segment with a lower
+        # index.
+        ind = np.searchsorted(self.ts_sorted, t, side=self.side)
 
         segment = min(max(ind - 1, 0), self.n_segments - 1)
         if not self.ascending:
@@ -191,7 +223,7 @@ class OdeSolution(object):
         -------
         y : ndarray, shape (n_states,) or (n_states, n_points)
             Computed values. Shape depends on whether `t` is a scalar or a
-            1-d array.
+            1-D array.
         """
         t = np.asarray(t)
 
@@ -204,10 +236,7 @@ class OdeSolution(object):
         t_sorted = t[order]
 
         # See comment in self._call_single.
-        if self.ascending:
-            segments = np.searchsorted(self.ts_sorted, t_sorted, side='left')
-        else:
-            segments = np.searchsorted(self.ts_sorted, t_sorted, side='right')
+        segments = np.searchsorted(self.ts_sorted, t_sorted, side=self.side)
         segments -= 1
         segments[segments < 0] = 0
         segments[segments > self.n_segments - 1] = self.n_segments - 1
@@ -249,7 +278,7 @@ def num_jac(fun, t, y, f, threshold, factor, sparsity=None):
     difference significantly separated from its round-off error which
     approximately equals ``EPS * np.abs(f)``. It reduces a possibility of a
     huge error and assures that the estimated derivative are reasonably close
-    to the true values (i.e. the finite difference approximation is at least
+    to the true values (i.e., the finite difference approximation is at least
     qualitatively reflects the structure of the true Jacobian).
 
     Parameters
@@ -264,7 +293,7 @@ def num_jac(fun, t, y, f, threshold, factor, sparsity=None):
         Value of the right hand side at (t, y).
     threshold : float
         Threshold for `y` value used for computing the step size as
-        ``factor * np.maximum(np.abs(y), threshold)``. Typically the value of
+        ``factor * np.maximum(np.abs(y), threshold)``. Typically, the value of
         absolute tolerance (atol) for a solver should be passed as `threshold`.
     factor : ndarray with shape (n,) or None
         Factor to use for computing the step size. Pass None for the very
@@ -285,7 +314,7 @@ def num_jac(fun, t, y, f, threshold, factor, sparsity=None):
         return np.empty((0, 0)), factor
 
     if factor is None:
-        factor = np.ones(n) * EPS ** 0.5
+        factor = np.full(n, EPS ** 0.5)
     else:
         factor = factor.copy()
 
@@ -336,7 +365,7 @@ def _dense_num_jac(fun, t, y, f, h, factor, y_scale):
 
         update = max_diff[ind] * scale_new < max_diff_new * scale[ind]
         if np.any(update):
-            update, = np.where(update)
+            update, = np.nonzero(update)
             update_ind = ind[update]
             factor[update_ind] = new_factor[update]
             h[update_ind] = h_new[update]
@@ -405,7 +434,7 @@ def _sparse_num_jac(fun, t, y, f, h, factor, y_scale, structure, groups):
 
         update = max_diff[ind] * scale_new < max_diff_new * scale[ind]
         if np.any(update):
-            update, = np.where(update)
+            update, = np.nonzero(update)
             update_ind = ind[update]
             factor[update_ind] = new_factor[update]
             h[update_ind] = h_new[update]

@@ -1,16 +1,13 @@
-from __future__ import division, print_function, absolute_import
-
 import sys
 import math
 import numpy as np
-from numpy import sqrt, cos, sin, arctan, exp, log, pi, Inf
+from numpy import sqrt, cos, sin, arctan, exp, log, pi
 from numpy.testing import (assert_,
         assert_allclose, assert_array_less, assert_almost_equal)
 import pytest
-from pytest import raises as assert_raises
 
 from scipy.integrate import quad, dblquad, tplquad, nquad
-from scipy._lib.six import xrange
+from scipy.special import erf, erfc
 from scipy._lib._ccallback import LowLevelCallable
 
 import ctypes
@@ -20,20 +17,22 @@ from scipy._lib._ccallback_c import sine_ctypes
 import scipy.integrate._test_multivariate as clib_test
 
 
-def assert_quad(value_and_err, tabled_value, errTol=1.5e-8):
+def assert_quad(value_and_err, tabled_value, error_tolerance=1.5e-8):
     value, err = value_and_err
     assert_allclose(value, tabled_value, atol=err, rtol=0)
-    if errTol is not None:
-        assert_array_less(err, errTol)
+    if error_tolerance is not None:
+        assert_array_less(err, error_tolerance)
 
 
-class TestCtypesQuad(object):
+def get_clib_test_routine(name, restype, *argtypes):
+    ptr = getattr(clib_test, name)
+    return ctypes.cast(ptr, ctypes.CFUNCTYPE(restype, *argtypes))
+
+
+class TestCtypesQuad:
     def setup_method(self):
         if sys.platform == 'win32':
-            if sys.version_info < (3, 5):
-                files = [ctypes.util.find_msvcrt()]
-            else:
-                files = ['api-ms-win-crt-math-l1-1-0.dll']
+            files = ['api-ms-win-crt-math-l1-1-0.dll']
         elif sys.platform == 'darwin':
             files = ['libm.dylib']
         else:
@@ -48,7 +47,7 @@ class TestCtypesQuad(object):
         else:
             # This test doesn't work on some Linux platforms (Fedora for
             # example) that put an ld script in libm.so - see gh-5370
-            self.skipTest("Ctypes can't import libm.so")
+            pytest.skip("Ctypes can't import libm.so")
 
         restype = ctypes.c_double
         argtypes = (ctypes.c_double,)
@@ -66,27 +65,21 @@ class TestCtypesQuad(object):
         quad(LowLevelCallable(sine_ctypes), 0, 1)
 
     def test_ctypes_variants(self):
-        lib = ctypes.CDLL(clib_test.__file__)
+        sin_0 = get_clib_test_routine('_sin_0', ctypes.c_double,
+                                      ctypes.c_double, ctypes.c_void_p)
 
-        sin_0 = lib._sin_0
-        sin_0.restype = ctypes.c_double
-        sin_0.argtypes = [ctypes.c_double, ctypes.c_void_p]
+        sin_1 = get_clib_test_routine('_sin_1', ctypes.c_double,
+                                      ctypes.c_int, ctypes.POINTER(ctypes.c_double),
+                                      ctypes.c_void_p)
 
-        sin_1 = lib._sin_1
-        sin_1.restype = ctypes.c_double
-        sin_1.argtypes = [ctypes.c_int, ctypes.POINTER(ctypes.c_double), ctypes.c_void_p]
+        sin_2 = get_clib_test_routine('_sin_2', ctypes.c_double,
+                                      ctypes.c_double)
 
-        sin_2 = lib._sin_2
-        sin_2.restype = ctypes.c_double
-        sin_2.argtypes = [ctypes.c_double]
+        sin_3 = get_clib_test_routine('_sin_3', ctypes.c_double,
+                                      ctypes.c_int, ctypes.POINTER(ctypes.c_double))
 
-        sin_3 = lib._sin_3
-        sin_3.restype = ctypes.c_double
-        sin_3.argtypes = [ctypes.c_int, ctypes.POINTER(ctypes.c_double)]
-
-        sin_4 = lib._sin_3
-        sin_4.restype = ctypes.c_double
-        sin_4.argtypes = [ctypes.c_int, ctypes.c_double]
+        sin_4 = get_clib_test_routine('_sin_3', ctypes.c_double,
+                                      ctypes.c_int, ctypes.c_double)
 
         all_sigs = [sin_0, sin_1, sin_2, sin_3, sin_4]
         legacy_sigs = [sin_2, sin_4]
@@ -96,7 +89,7 @@ class TestCtypesQuad(object):
         for j, func in enumerate(all_sigs):
             callback = LowLevelCallable(func)
             if func in legacy_only_sigs:
-                assert_raises(ValueError, quad, callback, 0, pi)
+                pytest.raises(ValueError, quad, callback, 0, pi)
             else:
                 assert_allclose(quad(callback, 0, pi)[0], 2.0)
 
@@ -105,38 +98,36 @@ class TestCtypesQuad(object):
             if func in legacy_sigs:
                 assert_allclose(quad(func, 0, pi)[0], 2.0)
             else:
-                assert_raises(ValueError, quad, func, 0, pi)
+                pytest.raises(ValueError, quad, func, 0, pi)
 
 
-class TestMultivariateCtypesQuad(object):
+class TestMultivariateCtypesQuad:
     def setup_method(self):
-        self.lib = ctypes.CDLL(clib_test.__file__)
         restype = ctypes.c_double
         argtypes = (ctypes.c_int, ctypes.c_double)
         for name in ['_multivariate_typical', '_multivariate_indefinite',
                      '_multivariate_sin']:
-            func = getattr(self.lib, name)
-            func.restype = restype
-            func.argtypes = argtypes
+            func = get_clib_test_routine(name, restype, *argtypes)
+            setattr(self, name, func)
 
     def test_typical(self):
         # 1) Typical function with two extra arguments:
-        assert_quad(quad(self.lib._multivariate_typical, 0, pi, (2, 1.8)),
+        assert_quad(quad(self._multivariate_typical, 0, pi, (2, 1.8)),
                     0.30614353532540296487)
 
     def test_indefinite(self):
         # 2) Infinite integration limits --- Euler's constant
-        assert_quad(quad(self.lib._multivariate_indefinite, 0, Inf),
+        assert_quad(quad(self._multivariate_indefinite, 0, np.inf),
                     0.577215664901532860606512)
 
     def test_threadsafety(self):
         # Ensure multivariate ctypes are threadsafe
         def threadsafety(y):
-            return y + quad(self.lib._multivariate_sin, 0, 1)[0]
+            return y + quad(self._multivariate_sin, 0, 1)[0]
         assert_quad(quad(threadsafety, 0, 1), 0.9596976941318602)
 
 
-class TestQuad(object):
+class TestQuad:
     def test_typical(self):
         # 1) Typical function with two extra arguments:
         def myfunc(x, n, z):       # Bessel function integrand
@@ -147,7 +138,7 @@ class TestQuad(object):
         # 2) Infinite integration limits --- Euler's constant
         def myfunc(x):           # Euler's constant integrand
             return -exp(-x)*log(x)
-        assert_quad(quad(myfunc, 0, Inf), 0.577215664901532860606512)
+        assert_quad(quad(myfunc, 0, np.inf), 0.577215664901532860606512)
 
     def test_singular(self):
         # 3) Singular points in region of integration.
@@ -178,7 +169,7 @@ class TestQuad(object):
 
         a = 4.0
         ome = 3.0
-        assert_quad(quad(myfunc, 0, Inf, args=a, weight='sin', wvar=ome),
+        assert_quad(quad(myfunc, 0, np.inf, args=a, weight='sin', wvar=ome),
                     ome/(a**2 + ome**2))
 
     def test_cosine_weighted_infinite(self):
@@ -188,7 +179,7 @@ class TestQuad(object):
 
         a = 2.5
         ome = 2.3
-        assert_quad(quad(myfunc, -Inf, 0, args=a, weight='cos', wvar=ome),
+        assert_quad(quad(myfunc, -np.inf, 0, args=a, weight='cos', wvar=ome),
                     a/(a**2 + ome**2))
 
     def test_algebraic_log_weight(self):
@@ -213,7 +204,40 @@ class TestQuad(object):
                         arctan(2.0**a)) /
                        (4.0**(-a) + 1))
         assert_quad(quad(myfunc, 0, 5, args=0.4, weight='cauchy', wvar=2.0),
-                    tabledValue, errTol=1.9e-8)
+                    tabledValue, error_tolerance=1.9e-8)
+
+    def test_b_less_than_a(self):
+        def f(x, p, q):
+            return p * np.exp(-q*x)
+
+        val_1, err_1 = quad(f, 0, np.inf, args=(2, 3))
+        val_2, err_2 = quad(f, np.inf, 0, args=(2, 3))
+        assert_allclose(val_1, -val_2, atol=max(err_1, err_2))
+
+    def test_b_less_than_a_2(self):
+        def f(x, s):
+            return np.exp(-x**2 / 2 / s) / np.sqrt(2.*s)
+
+        val_1, err_1 = quad(f, -np.inf, np.inf, args=(2,))
+        val_2, err_2 = quad(f, np.inf, -np.inf, args=(2,))
+        assert_allclose(val_1, -val_2, atol=max(err_1, err_2))
+
+    def test_b_less_than_a_3(self):
+        def f(x):
+            return 1.0
+
+        val_1, err_1 = quad(f, 0, 1, weight='alg', wvar=(0, 0))
+        val_2, err_2 = quad(f, 1, 0, weight='alg', wvar=(0, 0))
+        assert_allclose(val_1, -val_2, atol=max(err_1, err_2))
+
+    def test_b_less_than_a_full_output(self):
+        def f(x):
+            return 1.0
+
+        res_1 = quad(f, 0, 1, weight='alg', wvar=(0, 0), full_output=True)
+        res_2 = quad(f, 1, 0, weight='alg', wvar=(0, 0), full_output=True)
+        err = max(res_1[1], res_2[1])
+        assert_allclose(res_1[0], -res_2[0], atol=err)
 
     def test_double_integral(self):
         # 8) Double Integral test
@@ -227,10 +251,84 @@ class TestQuad(object):
     def test_double_integral2(self):
         def func(x0, x1, t0, t1):
             return x0 + x1 + t0 + t1
-        g = lambda x: x
-        h = lambda x: 2 * x
+        def g(x):
+            return x
+        def h(x):
+            return 2 * x
         args = 1, 2
         assert_quad(dblquad(func, 1, 2, g, h, args=args),35./6 + 9*.5)
+
+    def test_double_integral3(self):
+        def func(x0, x1):
+            return x0 + x1 + 1 + 2
+        assert_quad(dblquad(func, 1, 2, 1, 2),6.)
+
+    @pytest.mark.parametrize(
+        "x_lower, x_upper, y_lower, y_upper, expected",
+        [
+            # Multiple integration of a function in n = 2 variables: f(x, y, z)
+            # over domain D = [-inf, 0] for all n.
+            (-np.inf, 0, -np.inf, 0, np.pi / 4),
+            # Multiple integration of a function in n = 2 variables: f(x, y, z)
+            # over domain D = [-inf, -1] for each n (one at a time).
+            (-np.inf, -1, -np.inf, 0, np.pi / 4 * erfc(1)),
+            (-np.inf, 0, -np.inf, -1, np.pi / 4 * erfc(1)),
+            # Multiple integration of a function in n = 2 variables: f(x, y, z)
+            # over domain D = [-inf, -1] for all n.
+            (-np.inf, -1, -np.inf, -1, np.pi / 4 * (erfc(1) ** 2)),
+            # Multiple integration of a function in n = 2 variables: f(x, y, z)
+            # over domain D = [-inf, 1] for each n (one at a time).
+            (-np.inf, 1, -np.inf, 0, np.pi / 4 * (erf(1) + 1)),
+            (-np.inf, 0, -np.inf, 1, np.pi / 4 * (erf(1) + 1)),
+            # Multiple integration of a function in n = 2 variables: f(x, y, z)
+            # over domain D = [-inf, 1] for all n.
+            (-np.inf, 1, -np.inf, 1, np.pi / 4 * ((erf(1) + 1) ** 2)),
+            # Multiple integration of a function in n = 2 variables: f(x, y, z)
+            # over domain Dx = [-inf, -1] and Dy = [-inf, 1].
+            (-np.inf, -1, -np.inf, 1, np.pi / 4 * ((erf(1) + 1) * erfc(1))),
+            # Multiple integration of a function in n = 2 variables: f(x, y, z)
+            # over domain Dx = [-inf, 1] and Dy = [-inf, -1].
+            (-np.inf, 1, -np.inf, -1, np.pi / 4 * ((erf(1) + 1) * erfc(1))),
+            # Multiple integration of a function in n = 2 variables: f(x, y, z)
+            # over domain D = [0, inf] for all n.
+            (0, np.inf, 0, np.inf, np.pi / 4),
+            # Multiple integration of a function in n = 2 variables: f(x, y, z)
+            # over domain D = [1, inf] for each n (one at a time).
+            (1, np.inf, 0, np.inf, np.pi / 4 * erfc(1)),
+            (0, np.inf, 1, np.inf, np.pi / 4 * erfc(1)),
+            # Multiple integration of a function in n = 2 variables: f(x, y, z)
+            # over domain D = [1, inf] for all n.
+            (1, np.inf, 1, np.inf, np.pi / 4 * (erfc(1) ** 2)),
+            # Multiple integration of a function in n = 2 variables: f(x, y, z)
+            # over domain D = [-1, inf] for each n (one at a time).
+            (-1, np.inf, 0, np.inf, np.pi / 4 * (erf(1) + 1)),
+            (0, np.inf, -1, np.inf, np.pi / 4 * (erf(1) + 1)),
+            # Multiple integration of a function in n = 2 variables: f(x, y, z)
+            # over domain D = [-1, inf] for all n.
+            (-1, np.inf, -1, np.inf, np.pi / 4 * ((erf(1) + 1) ** 2)),
+            # Multiple integration of a function in n = 2 variables: f(x, y, z)
+            # over domain Dx = [-1, inf] and Dy = [1, inf].
+            (-1, np.inf, 1, np.inf, np.pi / 4 * ((erf(1) + 1) * erfc(1))),
+            # Multiple integration of a function in n = 2 variables: f(x, y, z)
+            # over domain Dx = [1, inf] and Dy = [-1, inf].
+            (1, np.inf, -1, np.inf, np.pi / 4 * ((erf(1) + 1) * erfc(1))),
+            # Multiple integration of a function in n = 2 variables: f(x, y, z)
+            # over domain D = [-inf, inf] for all n.
+            (-np.inf, np.inf, -np.inf, np.inf, np.pi)
+        ]
+    )
+    def test_double_integral_improper(
+            self, x_lower, x_upper, y_lower, y_upper, expected
+    ):
+        # The Gaussian Integral.
+        def f(x, y):
+            return np.exp(-x ** 2 - y ** 2)
+
+        assert_quad(
+            dblquad(f, x_lower, x_upper, y_lower, y_upper),
+            expected,
+            error_tolerance=3e-8
+        )
 
     def test_triple_integral(self):
         # 9) Triple Integral test
@@ -244,8 +342,206 @@ class TestQuad(object):
                             (2.,)),
                      2*8/3.0 * (b**4.0 - a**4.0))
 
+    @pytest.mark.xslow
+    @pytest.mark.parametrize(
+        "x_lower, x_upper, y_lower, y_upper, z_lower, z_upper, expected",
+        [
+            # Multiple integration of a function in n = 3 variables: f(x, y, z)
+            # over domain D = [-inf, 0] for all n.
+            (-np.inf, 0, -np.inf, 0, -np.inf, 0, (np.pi ** (3 / 2)) / 8),
+            # Multiple integration of a function in n = 3 variables: f(x, y, z)
+            # over domain D = [-inf, -1] for each n (one at a time).
+            (-np.inf, -1, -np.inf, 0, -np.inf, 0,
+             (np.pi ** (3 / 2)) / 8 * erfc(1)),
+            (-np.inf, 0, -np.inf, -1, -np.inf, 0,
+             (np.pi ** (3 / 2)) / 8 * erfc(1)),
+            (-np.inf, 0, -np.inf, 0, -np.inf, -1,
+             (np.pi ** (3 / 2)) / 8 * erfc(1)),
+            # Multiple integration of a function in n = 3 variables: f(x, y, z)
+            # over domain D = [-inf, -1] for each n (two at a time).
+            (-np.inf, -1, -np.inf, -1, -np.inf, 0,
+             (np.pi ** (3 / 2)) / 8 * (erfc(1) ** 2)),
+            (-np.inf, -1, -np.inf, 0, -np.inf, -1,
+             (np.pi ** (3 / 2)) / 8 * (erfc(1) ** 2)),
+            (-np.inf, 0, -np.inf, -1, -np.inf, -1,
+             (np.pi ** (3 / 2)) / 8 * (erfc(1) ** 2)),
+            # Multiple integration of a function in n = 3 variables: f(x, y, z)
+            # over domain D = [-inf, -1] for all n.
+            (-np.inf, -1, -np.inf, -1, -np.inf, -1,
+             (np.pi ** (3 / 2)) / 8 * (erfc(1) ** 3)),
+            # Multiple integration of a function in n = 3 variables: f(x, y, z)
+            # over domain Dx = [-inf, -1] and Dy = Dz = [-inf, 1].
+            (-np.inf, -1, -np.inf, 1, -np.inf, 1,
+             (np.pi ** (3 / 2)) / 8 * (((erf(1) + 1) ** 2) * erfc(1))),
+            # Multiple integration of a function in n = 3 variables: f(x, y, z)
+            # over domain Dx = Dy = [-inf, -1] and Dz = [-inf, 1].
+            (-np.inf, -1, -np.inf, -1, -np.inf, 1,
+             (np.pi ** (3 / 2)) / 8 * ((erf(1) + 1) * (erfc(1) ** 2))),
+            # Multiple integration of a function in n = 3 variables: f(x, y, z)
+            # over domain Dx = Dz = [-inf, -1] and Dy = [-inf, 1].
+            (-np.inf, -1, -np.inf, 1, -np.inf, -1,
+             (np.pi ** (3 / 2)) / 8 * ((erf(1) + 1) * (erfc(1) ** 2))),
+            # Multiple integration of a function in n = 3 variables: f(x, y, z)
+            # over domain Dx = [-inf, 1] and Dy = Dz = [-inf, -1].
+            (-np.inf, 1, -np.inf, -1, -np.inf, -1,
+             (np.pi ** (3 / 2)) / 8 * ((erf(1) + 1) * (erfc(1) ** 2))),
+            # Multiple integration of a function in n = 3 variables: f(x, y, z)
+            # over domain Dx = Dy = [-inf, 1] and Dz = [-inf, -1].
+            (-np.inf, 1, -np.inf, 1, -np.inf, -1,
+             (np.pi ** (3 / 2)) / 8 * (((erf(1) + 1) ** 2) * erfc(1))),
+            # Multiple integration of a function in n = 3 variables: f(x, y, z)
+            # over domain Dx = Dz = [-inf, 1] and Dy = [-inf, -1].
+            (-np.inf, 1, -np.inf, -1, -np.inf, 1,
+             (np.pi ** (3 / 2)) / 8 * (((erf(1) + 1) ** 2) * erfc(1))),
+            # Multiple integration of a function in n = 3 variables: f(x, y, z)
+            # over domain D = [-inf, 1] for each n (one at a time).
+            (-np.inf, 1, -np.inf, 0, -np.inf, 0,
+             (np.pi ** (3 / 2)) / 8 * (erf(1) + 1)),
+            (-np.inf, 0, -np.inf, 1, -np.inf, 0,
+             (np.pi ** (3 / 2)) / 8 * (erf(1) + 1)),
+            (-np.inf, 0, -np.inf, 0, -np.inf, 1,
+             (np.pi ** (3 / 2)) / 8 * (erf(1) + 1)),
+            # Multiple integration of a function in n = 3 variables: f(x, y, z)
+            # over domain D = [-inf, 1] for each n (two at a time).
+            (-np.inf, 1, -np.inf, 1, -np.inf, 0,
+             (np.pi ** (3 / 2)) / 8 * ((erf(1) + 1) ** 2)),
+            (-np.inf, 1, -np.inf, 0, -np.inf, 1,
+             (np.pi ** (3 / 2)) / 8 * ((erf(1) + 1) ** 2)),
+            (-np.inf, 0, -np.inf, 1, -np.inf, 1,
+             (np.pi ** (3 / 2)) / 8 * ((erf(1) + 1) ** 2)),
+            # Multiple integration of a function in n = 3 variables: f(x, y, z)
+            # over domain D = [-inf, 1] for all n.
+            (-np.inf, 1, -np.inf, 1, -np.inf, 1,
+             (np.pi ** (3 / 2)) / 8 * ((erf(1) + 1) ** 3)),
+            # Multiple integration of a function in n = 3 variables: f(x, y, z)
+            # over domain D = [0, inf] for all n.
+            (0, np.inf, 0, np.inf, 0, np.inf, (np.pi ** (3 / 2)) / 8),
+            # Multiple integration of a function in n = 3 variables: f(x, y, z)
+            # over domain D = [1, inf] for each n (one at a time).
+            (1, np.inf, 0, np.inf, 0, np.inf,
+             (np.pi ** (3 / 2)) / 8 * erfc(1)),
+            (0, np.inf, 1, np.inf, 0, np.inf,
+             (np.pi ** (3 / 2)) / 8 * erfc(1)),
+            (0, np.inf, 0, np.inf, 1, np.inf,
+             (np.pi ** (3 / 2)) / 8 * erfc(1)),
+            # Multiple integration of a function in n = 3 variables: f(x, y, z)
+            # over domain D = [1, inf] for each n (two at a time).
+            (1, np.inf, 1, np.inf, 0, np.inf,
+             (np.pi ** (3 / 2)) / 8 * (erfc(1) ** 2)),
+            (1, np.inf, 0, np.inf, 1, np.inf,
+             (np.pi ** (3 / 2)) / 8 * (erfc(1) ** 2)),
+            (0, np.inf, 1, np.inf, 1, np.inf,
+             (np.pi ** (3 / 2)) / 8 * (erfc(1) ** 2)),
+            # Multiple integration of a function in n = 3 variables: f(x, y, z)
+            # over domain D = [1, inf] for all n.
+            (1, np.inf, 1, np.inf, 1, np.inf,
+             (np.pi ** (3 / 2)) / 8 * (erfc(1) ** 3)),
+            # Multiple integration of a function in n = 3 variables: f(x, y, z)
+            # over domain D = [-1, inf] for each n (one at a time).
+            (-1, np.inf, 0, np.inf, 0, np.inf,
+             (np.pi ** (3 / 2)) / 8 * (erf(1) + 1)),
+            (0, np.inf, -1, np.inf, 0, np.inf,
+             (np.pi ** (3 / 2)) / 8 * (erf(1) + 1)),
+            (0, np.inf, 0, np.inf, -1, np.inf,
+             (np.pi ** (3 / 2)) / 8 * (erf(1) + 1)),
+            # Multiple integration of a function in n = 3 variables: f(x, y, z)
+            # over domain D = [-1, inf] for each n (two at a time).
+            (-1, np.inf, -1, np.inf, 0, np.inf,
+             (np.pi ** (3 / 2)) / 8 * ((erf(1) + 1) ** 2)),
+            (-1, np.inf, 0, np.inf, -1, np.inf,
+             (np.pi ** (3 / 2)) / 8 * ((erf(1) + 1) ** 2)),
+            (0, np.inf, -1, np.inf, -1, np.inf,
+             (np.pi ** (3 / 2)) / 8 * ((erf(1) + 1) ** 2)),
+            # Multiple integration of a function in n = 3 variables: f(x, y, z)
+            # over domain D = [-1, inf] for all n.
+            (-1, np.inf, -1, np.inf, -1, np.inf,
+             (np.pi ** (3 / 2)) / 8 * ((erf(1) + 1) ** 3)),
+            # Multiple integration of a function in n = 3 variables: f(x, y, z)
+            # over domain Dx = [1, inf] and Dy = Dz = [-1, inf].
+            (1, np.inf, -1, np.inf, -1, np.inf,
+             (np.pi ** (3 / 2)) / 8 * (((erf(1) + 1) ** 2) * erfc(1))),
+            # Multiple integration of a function in n = 3 variables: f(x, y, z)
+            # over domain Dx = Dy = [1, inf] and Dz = [-1, inf].
+            (1, np.inf, 1, np.inf, -1, np.inf,
+             (np.pi ** (3 / 2)) / 8 * ((erf(1) + 1) * (erfc(1) ** 2))),
+            # Multiple integration of a function in n = 3 variables: f(x, y, z)
+            # over domain Dx = Dz = [1, inf] and Dy = [-1, inf].
+            (1, np.inf, -1, np.inf, 1, np.inf,
+             (np.pi ** (3 / 2)) / 8 * ((erf(1) + 1) * (erfc(1) ** 2))),
+            # Multiple integration of a function in n = 3 variables: f(x, y, z)
+            # over domain Dx = [-1, inf] and Dy = Dz = [1, inf].
+            (-1, np.inf, 1, np.inf, 1, np.inf,
+             (np.pi ** (3 / 2)) / 8 * ((erf(1) + 1) * (erfc(1) ** 2))),
+            # Multiple integration of a function in n = 3 variables: f(x, y, z)
+            # over domain Dx = Dy = [-1, inf] and Dz = [1, inf].
+            (-1, np.inf, -1, np.inf, 1, np.inf,
+             (np.pi ** (3 / 2)) / 8 * (((erf(1) + 1) ** 2) * erfc(1))),
+            # Multiple integration of a function in n = 3 variables: f(x, y, z)
+            # over domain Dx = Dz = [-1, inf] and Dy = [1, inf].
+            (-1, np.inf, 1, np.inf, -1, np.inf,
+             (np.pi ** (3 / 2)) / 8 * (((erf(1) + 1) ** 2) * erfc(1))),
+            # Multiple integration of a function in n = 3 variables: f(x, y, z)
+            # over domain D = [-inf, inf] for all n.
+            (-np.inf, np.inf, -np.inf, np.inf, -np.inf, np.inf,
+             np.pi ** (3 / 2)),
+        ],
+    )
+    def test_triple_integral_improper(
+            self,
+            x_lower,
+            x_upper,
+            y_lower,
+            y_upper,
+            z_lower,
+            z_upper,
+            expected
+    ):
+        # The Gaussian Integral.
+        def f(x, y, z):
+            return np.exp(-x ** 2 - y ** 2 - z ** 2)
 
-class TestNQuad(object):
+        assert_quad(
+            tplquad(f, x_lower, x_upper, y_lower, y_upper, z_lower, z_upper),
+            expected,
+            error_tolerance=6e-8
+        )
+
+    def test_complex(self):
+        def tfunc(x):
+            return np.exp(1j*x)
+
+        assert np.allclose(
+                    quad(tfunc, 0, np.pi/2, complex_func=True)[0],
+                    1+1j)
+
+        # We consider a divergent case in order to force quadpack
+        # to return an error message.  The output is compared
+        # against what is returned by explicit integration
+        # of the parts.
+        kwargs = {'a': 0, 'b': np.inf, 'full_output': True,
+                  'weight': 'cos', 'wvar': 1}
+        res_c = quad(tfunc, complex_func=True, **kwargs)
+        res_r = quad(lambda x: np.real(np.exp(1j*x)),
+                     complex_func=False,
+                     **kwargs)
+        res_i = quad(lambda x: np.imag(np.exp(1j*x)),
+                     complex_func=False,
+                     **kwargs)
+
+        np.testing.assert_equal(res_c[0], res_r[0] + 1j*res_i[0])
+        np.testing.assert_equal(res_c[1], res_r[1] + 1j*res_i[1])
+
+        assert len(res_c[2]['real']) == len(res_r[2:]) == 3
+        assert res_c[2]['real'][2] == res_r[4]
+        assert res_c[2]['real'][1] == res_r[3]
+        assert res_c[2]['real'][0]['lst'] == res_r[2]['lst']
+
+        assert len(res_c[2]['imag']) == len(res_i[2:]) == 1
+        assert res_c[2]['imag'][0]['lst'] == res_i[2]['lst']
+
+
+class TestNQuad:
+    @pytest.mark.fail_slow(5)
     def test_fixed_limits(self):
         def func1(x0, x1, x2, x3):
             val = (x0**2 + x1*x2 - x3**3 + np.sin(x0) +
@@ -258,8 +554,9 @@ class TestNQuad(object):
         res = nquad(func1, [[0, 1], [-1, 1], [.13, .8], [-.15, 1]],
                     opts=[opts_basic, {}, {}, {}], full_output=True)
         assert_quad(res[:-1], 1.5267454070738635)
-        assert_(res[-1]['neval'] > 0 and res[-1]['neval'] < 4e5) 
-        
+        assert_(res[-1]['neval'] > 0 and res[-1]['neval'] < 4e5)
+
+    @pytest.mark.fail_slow(5)
     def test_variable_limits(self):
         scale = .1
 
@@ -377,7 +674,7 @@ class TestNQuad(object):
 
     def test_dict_as_opts(self):
         try:
-            out = nquad(lambda x, y: x * y, [[0, 1], [0, 1]], opts={'epsrel': 0.0001})
-        except(TypeError):
+            nquad(lambda x, y: x * y, [[0, 1], [0, 1]], opts={'epsrel': 0.0001})
+        except TypeError:
             assert False
 

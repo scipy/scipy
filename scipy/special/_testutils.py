@@ -1,10 +1,7 @@
-from __future__ import division, print_function, absolute_import
-
 import os
-
-from distutils.version import LooseVersion
-
 import functools
+import operator
+from scipy._lib import _pep440
 
 import numpy as np
 from numpy.testing import assert_
@@ -12,24 +9,25 @@ import pytest
 
 import scipy.special as sc
 
-__all__ = ['with_special_errors', 'assert_tol_equal', 'assert_func_equal',
-           'FuncData']
+__all__ = ['with_special_errors', 'assert_func_equal', 'FuncData']
 
 
 #------------------------------------------------------------------------------
 # Check if a module is present to be used in tests
 #------------------------------------------------------------------------------
 
-class MissingModule(object):
+class MissingModule:
     def __init__(self, name):
         self.name = name
 
 
 def check_version(module, min_ver):
     if type(module) == MissingModule:
-        return pytest.mark.skip(reason="{} is not installed".format(module.name))
-    return pytest.mark.skipif(LooseVersion(module.__version__) < LooseVersion(min_ver),
-                              reason="{} version >= {} required".format(module.__name__, min_ver))
+        return pytest.mark.skip(reason=f"{module.name} is not installed")
+    return pytest.mark.skipif(
+        _pep440.parse(module.__version__) < _pep440.Version(min_ver),
+        reason=f"{module.__name__} version >= {min_ver} required"
+    )
 
 
 #------------------------------------------------------------------------------
@@ -47,20 +45,6 @@ def with_special_errors(func):
             res = func(*a, **kw)
         return res
     return wrapper
-
-
-#------------------------------------------------------------------------------
-# Comparing function values at many data points at once, with helpful
-#------------------------------------------------------------------------------
-
-def assert_tol_equal(a, b, rtol=1e-7, atol=0, err_msg='', verbose=True):
-    """Assert that `a` and `b` are equal to tolerance ``atol + rtol*abs(b)``"""
-    def compare(x, y):
-        return np.allclose(x, y, rtol=rtol, atol=atol)
-    a, b = np.asanyarray(a), np.asanyarray(b)
-    header = 'Not equal to tolerance rtol=%g, atol=%g' % (rtol, atol)
-    np.testing.utils.assert_array_compare(compare, a, b, err_msg=str(err_msg),
-                                          verbose=verbose, header=header)
 
 
 #------------------------------------------------------------------------------
@@ -101,7 +85,7 @@ def assert_func_equal(func, results, points, rtol=None, atol=None,
     fdata.check()
 
 
-class FuncData(object):
+class FuncData:
     """
     Data set for checking a special function.
 
@@ -109,8 +93,8 @@ class FuncData(object):
     ----------
     func : function
         Function to test
-    filename : str
-        Input file name
+    data : numpy array
+        columnar data to use for testing
     param_columns : int or tuple of ints
         Columns indices in which the parameters to `func` lie.
         Can be imaginary integers to indicate that the parameter
@@ -137,7 +121,7 @@ class FuncData(object):
         Whether to ignore signs of infinities.
         (Doesn't matter for complex-valued functions.)
     distinguish_nan_and_inf : bool, optional
-        If True, treat numbers which contain nans or infs as as
+        If True, treat numbers which contain nans or infs as
         equal. Sets ignore_inf_sign to be True.
 
     """
@@ -157,7 +141,8 @@ class FuncData(object):
                 result_columns = (result_columns,)
             self.result_columns = tuple(result_columns)
             if result_func is not None:
-                raise ValueError("Only result_func or result_columns should be provided")
+                message = "Only result_func or result_columns should be provided"
+                raise ValueError(message)
         elif result_func is not None:
             self.result_columns = None
         else:
@@ -187,8 +172,11 @@ class FuncData(object):
             atol = 5*info.tiny
         return rtol, atol
 
-    def check(self, data=None, dtype=None):
+    def check(self, data=None, dtype=None, dtypes=None):
         """Check the special function against the data."""
+        __tracebackhide__ = operator.methodcaller(
+            'errisinstance', AssertionError
+        )
 
         if self.knownfailure:
             pytest.xfail(reason=self.knownfailure)
@@ -213,10 +201,12 @@ class FuncData(object):
 
         # Pick parameters from the correct columns
         params = []
-        for j in self.param_columns:
+        for idx, j in enumerate(self.param_columns):
             if np.iscomplexobj(j):
                 j = int(j.imag)
                 params.append(data[:,j].astype(complex))
+            elif dtypes and idx < len(dtypes):
+                params.append(data[:, j].astype(dtypes[idx]))
             else:
                 params.append(data[:,j])
 
@@ -268,8 +258,7 @@ class FuncData(object):
             nan_x = np.isnan(x)
             nan_y = np.isnan(y)
 
-            olderr = np.seterr(all='ignore')
-            try:
+            with np.errstate(all='ignore'):
                 abs_y = np.absolute(y)
                 abs_y[~np.isfinite(abs_y)] = 0
                 diff = np.absolute(x - y)
@@ -277,8 +266,6 @@ class FuncData(object):
 
                 rdiff = diff / np.absolute(y)
                 rdiff[~np.isfinite(rdiff)] = 0
-            finally:
-                np.seterr(**olderr)
 
             tol_mask = (diff <= atol + rtol*abs_y)
             pinf_mask = (pinf_x == pinf_y)
@@ -305,18 +292,20 @@ class FuncData(object):
             if np.any(bad_j):
                 # Some bad results: inform what, where, and how bad
                 msg = [""]
-                msg.append("Max |adiff|: %g" % diff.max())
-                msg.append("Max |rdiff|: %g" % rdiff.max())
-                msg.append("Bad results (%d out of %d) for the following points (in output %d):"
+                msg.append(f"Max |adiff|: {diff[bad_j].max():g}")
+                msg.append(f"Max |rdiff|: {rdiff[bad_j].max():g}")
+                msg.append("Bad results (%d out of %d) for the following points "
+                           "(in output %d):"
                            % (np.sum(bad_j), point_count, output_num,))
-                for j in np.where(bad_j)[0]:
+                for j in np.nonzero(bad_j)[0]:
                     j = int(j)
-                    fmt = lambda x: "%30s" % np.array2string(x[j], precision=18)
+                    def fmt(x):
+                        return '%30s' % np.array2string(x[j], precision=18)
                     a = "  ".join(map(fmt, params))
                     b = "  ".join(map(fmt, got))
                     c = "  ".join(map(fmt, wanted))
                     d = fmt(rdiff)
-                    msg.append("%s => %s != %s  (rdiff %s)" % (a, b, c, d))
+                    msg.append(f"{a} => {b} != {c}  (rdiff {d})")
                 assert_(False, "\n".join(msg))
 
     def __repr__(self):
@@ -326,7 +315,7 @@ class FuncData(object):
         else:
             is_complex = ""
         if self.dataname:
-            return "<Data for %s%s: %s>" % (self.func.__name__, is_complex,
-                                            os.path.basename(self.dataname))
+            return (f"<Data for {self.func.__name__}{is_complex}: "
+                    f"{os.path.basename(self.dataname)}>")
         else:
-            return "<Data for %s%s>" % (self.func.__name__, is_complex)
+            return f"<Data for {self.func.__name__}{is_complex}>"

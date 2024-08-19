@@ -111,30 +111,28 @@ void csc_tocsr(const I n_row,
                      T Bx[])
 { csr_tocsc<I,T>(n_col, n_row, Ap, Ai, Ax, Bp, Bj, Bx); }
 
-
 template <class I>
-void csc_matmat_pass1(const I n_row,
-                      const I n_col,
-                      const I Ap[],
-                      const I Ai[],
-                      const I Bp[],
-                      const I Bi[],
-                            I Cp[])
-{ csr_matmat_pass1(n_col, n_row, Bp, Bi, Ap, Ai, Cp); }
+npy_intp csc_matmat_maxnnz(const I n_row,
+                           const I n_col,
+                           const I Ap[],
+                           const I Ai[],
+                           const I Bp[],
+                           const I Bi[])
+{ return csr_matmat_maxnnz(n_col, n_row, Bp, Bi, Ap, Ai); }
 
 template <class I, class T>
-void csc_matmat_pass2(const I n_row,
-                      const I n_col,
-                      const I Ap[],
-                      const I Ai[],
-                      const T Ax[],
-                      const I Bp[],
-                      const I Bi[],
-                      const T Bx[],
-                            I Cp[],
-                            I Ci[],
-                            T Cx[])
-{ csr_matmat_pass2(n_col, n_row, Bp, Bi, Bx, Ap, Ai, Ax, Cp, Ci, Cx); }
+void csc_matmat(const I n_row,
+                const I n_col,
+                const I Ap[],
+                const I Ai[],
+                const T Ax[],
+                const I Bp[],
+                const I Bi[],
+                const T Bx[],
+                      I Cp[],
+                      I Ci[],
+                      T Cx[])
+{ csr_matmat(n_col, n_row, Bp, Bi, Bx, Ap, Ai, Ax, Cp, Ci, Cx); }
 
 template <class I, class T, class T2>
 void csc_ne_csc(const I n_row, const I n_col,

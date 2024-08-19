@@ -5,7 +5,7 @@ File IO (:mod:`scipy.io`)
 
 .. currentmodule:: scipy.io
 
-.. seealso:: :ref:`numpy-reference.routines.io` (in numpy)
+.. seealso:: `NumPy IO routines <https://www.numpy.org/devdocs/reference/routines.io.html>`__
 
 MATLAB files
 ------------
@@ -24,7 +24,7 @@ convenience:
 
    >>> import scipy.io as sio
 
-If you are using IPython, try tab completing on ``sio``.  Among the many
+If you are using IPython, try tab-completing on ``sio``. Among the many
 options, you will find::
 
    sio.loadmat
@@ -32,23 +32,23 @@ options, you will find::
    sio.whosmat
 
 These are the high-level functions you will most likely use when working
-with MATLAB files.  You'll also find::
+with MATLAB files. You'll also find::
 
    sio.matlab
 
-This is the package from which ``loadmat``, ``savemat`` and ``whosmat``
-are imported.  Within ``sio.matlab``, you will find the ``mio`` module
+This is the package from which ``loadmat``, ``savemat``, and ``whosmat``
+are imported. Within ``sio.matlab``, you will find the ``mio`` module
 This module contains the machinery that ``loadmat`` and ``savemat`` use.
 From time to time you may find yourself re-using this machinery.
 
 How do I start?
 ```````````````
 
-You may have a ``.mat`` file that you want to read into Scipy.  Or, you
-want to pass some variables from Scipy / Numpy into MATLAB.
+You may have a ``.mat`` file that you want to read into SciPy. Or, you
+want to pass some variables from SciPy / NumPy into MATLAB.
 
-To save us using a MATLAB license, let's start in Octave_.  Octave has
-MATLAB-compatible save and load functions.  Start Octave (``octave`` at
+To save us using a MATLAB license, let's start in Octave_. Octave has
+MATLAB-compatible save and load functions. Start Octave (``octave`` at
 the command line for me):
 
 .. sourcecode:: octave
@@ -85,13 +85,13 @@ Now, to Python:
 
   >>> mat_contents = sio.loadmat('octave_a.mat')
   >>> mat_contents
-  {'a': array([[[  1.,   4.,   7.,  10.],
-          [  2.,   5.,   8.,  11.],
-          [  3.,   6.,   9.,  12.]]]),
+  {'__header__': b'MATLAB 5.0 MAT-file, written
+   by Octave 3.2.3, 2010-05-30 02:13:40 UTC',
    '__version__': '1.0',
-   '__header__': 'MATLAB 5.0 MAT-file, written by
-   Octave 3.6.3, 2013-02-17 21:02:11 UTC',
-   '__globals__': []}
+   '__globals__': [],
+   'a': array([[[ 1.,  4.,  7., 10.],
+                [ 2.,  5.,  8., 11.],
+                [ 3.,  6.,  9., 12.]]])}
   >>> oct_a = mat_contents['a']
   >>> oct_a
   array([[[  1.,   4.,   7.,  10.],
@@ -130,15 +130,15 @@ data into memory, use the ``whosmat`` command:
    [('a', (1, 3, 4), 'double')]
 
 ``whosmat`` returns a list of tuples, one for each array (or other object)
-in the file.  Each tuple contains the name, shape and data type of the
+in the file. Each tuple contains the name, shape and data type of the
 array.
 
 MATLAB structs
 ``````````````
 
 MATLAB structs are a little bit like Python dicts, except the field
-names must be strings.  Any MATLAB object can be a value of a field.  As
-for all objects in MATLAB, structs are in fact arrays of structs, where
+names must be strings. Any MATLAB object can be a value of a field. As
+for all objects in MATLAB, structs are, in fact, arrays of structs, where
 a single struct is an array of shape (1, 1).
 
 .. sourcecode:: octave
@@ -156,8 +156,12 @@ We can load this in Python:
 
    >>> mat_contents = sio.loadmat('octave_struct.mat')
    >>> mat_contents
-   {'my_struct': array([[([[1.0]], [[2.0]])]],
-         dtype=[('field1', 'O'), ('field2', 'O')]), '__version__': '1.0', '__header__': 'MATLAB 5.0 MAT-file, written by Octave 3.6.3, 2013-02-17 21:23:14 UTC', '__globals__': []}
+    {'__header__': b'MATLAB 5.0 MAT-file, written by Octave 3.2.3, 2010-05-30 02:00:26 UTC',
+     '__version__': '1.0',
+     '__globals__': [],
+     'my_struct': array([[(array([[1.]]), array([[2.]]))]], dtype=[('field1', 'O'), ('field2', 'O')])
+    }
+
    >>> oct_struct = mat_contents['my_struct']
    >>> oct_struct.shape
    (1, 1)
@@ -171,9 +175,9 @@ We can load this in Python:
    >>> val.dtype
    dtype([('field1', 'O'), ('field2', 'O')])
 
-In versions of Scipy from 0.12.0, MATLAB structs come back as numpy
-structured arrays, with fields named for the struct fields.  You can see
-the field names in the ``dtype`` output above.  Note also:
+In the SciPy versions from 0.12.0, MATLAB structs come back as NumPy
+structured arrays, with fields named for the struct fields. You can see
+the field names in the ``dtype`` output above. Note also:
 
    >>> val = oct_struct[0,0]
 
@@ -186,8 +190,8 @@ and:
 
      1   1
 
-So, in MATLAB, the struct array must be at least 2D, and we replicate
-that when we read into Scipy.  If you want all length 1 dimensions
+So, in MATLAB, the struct array must be at least 2-D, and we replicate
+that when we read into SciPy. If you want all length 1 dimensions
 squeezed out, try this:
 
    >>> mat_contents = sio.loadmat('octave_struct.mat', squeeze_me=True)
@@ -195,9 +199,9 @@ squeezed out, try this:
    >>> oct_struct.shape
    ()
 
-Sometimes, it's more convenient to load the MATLAB structs as python
-objects rather than numpy structured arrays - it can make the access
-syntax in python a bit more similar to that in MATLAB.  In order to do
+Sometimes, it's more convenient to load the MATLAB structs as Python
+objects rather than NumPy structured arrays - it can make the access
+syntax in Python a bit more similar to that in MATLAB.  In order to do
 this, use the ``struct_as_record=False`` parameter setting to ``loadmat``.
 
    >>> mat_contents = sio.loadmat('octave_struct.mat', struct_as_record=False)
@@ -214,11 +218,11 @@ this, use the ``struct_as_record=False`` parameter setting to ``loadmat``.
      File "<stdin>", line 1, in <module>
    AttributeError: 'mat_struct' object has no attribute 'shape'
    >>> type(oct_struct)
-   <class 'scipy.io.matlab.mio5_params.mat_struct'>
+   <class 'scipy.io.matlab._mio5_params.mat_struct'>
    >>> oct_struct.field1
    1.0
 
-Saving struct arrays can be done in various ways.  One simple method is
+Saving struct arrays can be done in various ways. One simple method is
 to use dicts:
 
    >>> a_dict = {'field1': 0.5, 'field2': 'a string'}
@@ -243,7 +247,7 @@ like this:
    >>> dt = [('f1', 'f8'), ('f2', 'S10')]
    >>> arr = np.zeros((2,), dtype=dt)
    >>> arr
-   array([(0.0, ''), (0.0, '')], 
+   array([(0.0, ''), (0.0, '')],
          dtype=[('f1', '<f8'), ('f2', 'S10')])
    >>> arr[0]['f1'] = 0.5
    >>> arr[0]['f2'] = 'python'
@@ -254,10 +258,10 @@ like this:
 MATLAB cell arrays
 ``````````````````
 
-Cell arrays in MATLAB are rather like python lists, in the sense that
-the elements in the arrays can contain any type of MATLAB object.  In
-fact they are most similar to numpy object arrays, and that is how we
-load them into numpy.
+Cell arrays in MATLAB are rather like Python lists, in the sense that
+the elements in the arrays can contain any type of MATLAB object. In
+fact, they are most similar to NumPy object arrays, and that is how we
+load them into NumPy.
 
 .. sourcecode:: octave
 
@@ -285,14 +289,14 @@ Back to Python:
    >>> print(val.dtype)
    float64
 
-Saving to a MATLAB cell array just involves making a numpy object array:
+Saving to a MATLAB cell array just involves making a NumPy object array:
 
-   >>> obj_arr = np.zeros((2,), dtype=np.object)
+   >>> obj_arr = np.zeros((2,), dtype=object)
    >>> obj_arr[0] = 1
    >>> obj_arr[1] = 'a string'
    >>> obj_arr
    array([1, 'a string'], dtype=object)
-   >>> sio.savemat('np_cells.mat', {'obj_arr':obj_arr})
+   >>> sio.savemat('np_cells.mat', {'obj_arr': obj_arr})
 
 .. sourcecode:: octave
 
@@ -323,7 +327,7 @@ Matrix Market files
 Wav sound files (:mod:`scipy.io.wavfile`)
 -----------------------------------------
 
-.. module:: scipy.io.wavfile
+.. currentmodule:: scipy.io.wavfile
 
 .. autosummary::
 
@@ -333,16 +337,16 @@ Wav sound files (:mod:`scipy.io.wavfile`)
 Arff files (:mod:`scipy.io.arff`)
 ---------------------------------
 
-.. automodule:: scipy.io.arff
+.. currentmodule:: scipy.io.arff
 
 .. autosummary::
 
    loadarff
 
-Netcdf (:mod:`scipy.io.netcdf`)
--------------------------------
+Netcdf
+------
 
-.. module:: scipy.io.netcdf
+.. currentmodule:: scipy.io
 
 .. autosummary::
 
@@ -350,6 +354,6 @@ Netcdf (:mod:`scipy.io.netcdf`)
 
 Allows reading of  NetCDF files (version of pupynere_ package)
 
-.. _pupynere: http://pypi.python.org/pypi/pupynere/
-.. _octave: http://www.gnu.org/software/octave
-.. _matlab: http://www.mathworks.com/
+.. _pupynere: https://pypi.org/project/pupynere/
+.. _octave: https://www.gnu.org/software/octave
+.. _matlab: https://www.mathworks.com/

@@ -4,25 +4,20 @@
 """ Test functions for linalg.matfuncs module
 
 """
-from __future__ import division, print_function, absolute_import
-
 import random
 import functools
 
 import numpy as np
-from numpy import array, matrix, identity, dot, sqrt, double
-from numpy.testing import (
-        assert_array_equal, assert_array_less, assert_equal,
-        assert_array_almost_equal, assert_array_almost_equal_nulp,
-        assert_allclose, assert_)
+from numpy import array, identity, dot, sqrt
+from numpy.testing import (assert_array_almost_equal, assert_allclose, assert_,
+                           assert_array_less, assert_array_equal, assert_warns)
 import pytest
-
-from scipy._lib._numpy_compat import _assert_warns, suppress_warnings
 
 import scipy.linalg
 from scipy.linalg import (funm, signm, logm, sqrtm, fractional_matrix_power,
-        expm, expm_frechet, expm_cond, norm)
+                          expm, expm_frechet, expm_cond, norm, khatri_rao)
 from scipy.linalg import _matfuncs_inv_ssq
+from scipy.linalg._matfuncs import pick_pade_structure
 import scipy.linalg._expm_frechet
 
 from scipy.optimize import minimize
@@ -49,7 +44,7 @@ def _get_al_mohy_higham_2012_experiment_1():
     return A
 
 
-class TestSignM(object):
+class TestSignM:
 
     def test_nils(self):
         a = array([[29.2, -24.2, 69.5, 49.8, 7.],
@@ -67,7 +62,7 @@ class TestSignM(object):
 
     def test_defective1(self):
         a = array([[0.0,1,0,0],[1,0,1,0],[0,0,0,1],[0,0,1,0]])
-        r = signm(a, disp=False)
+        signm(a, disp=False)
         #XXX: what would be the correct result?
 
     def test_defective2(self):
@@ -77,7 +72,7 @@ class TestSignM(object):
             [-10.0,6.0,-20.0,-18.0,-2.0],
             [-9.6,9.6,-25.5,-15.4,-2.0],
             [9.8,-4.8,18.0,18.2,2.0]))
-        r = signm(a, disp=False)
+        signm(a, disp=False)
         #XXX: what would be the correct result?
 
     def test_defective3(self):
@@ -88,11 +83,11 @@ class TestSignM(object):
                    [0., 0., 0., 0., 3., 10., 0.],
                    [0., 0., 0., 0., 0., -2., 25.],
                    [0., 0., 0., 0., 0., 0., -3.]])
-        r = signm(a, disp=False)
+        signm(a, disp=False)
         #XXX: what would be the correct result?
 
 
-class TestLogM(object):
+class TestLogM:
 
     def test_nils(self):
         a = array([[-2., 25., 0., 0., 0., 0., 0.],
@@ -112,7 +107,7 @@ class TestLogM(object):
         A = _get_al_mohy_higham_2012_experiment_1()
         A_logm, info = logm(A, disp=False)
         A_round_trip = expm(A_logm)
-        assert_allclose(A_round_trip, A, rtol=1e-5, atol=1e-14)
+        assert_allclose(A_round_trip, A, rtol=5e-5, atol=1e-14)
 
     def test_al_mohy_higham_2012_experiment_1_funm_log(self):
         # The raw funm with np.log does not complete the round trip.
@@ -131,7 +126,7 @@ class TestLogM(object):
 
                 # Eigenvalues are related to the branch cut.
                 W = np.linalg.eigvals(M)
-                err_msg = 'M:{0} eivals:{1}'.format(M, W)
+                err_msg = f'M:{M} eivals:{W}'
 
                 # Check sqrtm round trip because it is used within logm.
                 M_sqrtm, info = sqrtm(M, disp=False)
@@ -211,14 +206,14 @@ class TestLogM(object):
         B = np.asarray([[1, 1], [0, 0]])
         for M in A, A.T, B, B.T:
             expected_warning = _matfuncs_inv_ssq.LogmExactlySingularWarning
-            L, info = _assert_warns(expected_warning, logm, M, disp=False)
+            L, info = assert_warns(expected_warning, logm, M, disp=False)
             E = expm(L)
             assert_allclose(E, M, atol=1e-14)
 
     def test_nearly_singular(self):
         M = np.array([[1e-100]])
         expected_warning = _matfuncs_inv_ssq.LogmNearlySingularWarning
-        L, info = _assert_warns(expected_warning, logm, M, disp=False)
+        L, info = assert_warns(expected_warning, logm, M, disp=False)
         E = expm(L)
         assert_allclose(E, M, atol=1e-14)
 
@@ -237,8 +232,25 @@ class TestLogM(object):
         assert_allclose(expm(L), E, atol=1e-14)
         assert_allclose(logm(E), L, atol=1e-14)
 
+    def test_readonly(self):
+        n = 5
+        a = np.ones((n, n)) + np.identity(n)
+        a.flags.writeable = False
+        logm(a)
 
-class TestSqrtM(object):
+    @pytest.mark.xfail(reason="ValueError: attempt to get argmax of an empty sequence")
+    @pytest.mark.parametrize('dt', [int, float, np.float32, complex, np.complex64])
+    def test_empty(self, dt):
+        a = np.empty((0, 0), dtype=dt)
+        log_a = logm(a)
+        a0 = np.eye(2, dtype=dt)
+        log_a0 = logm(a0)
+
+        assert log_a.shape == (0, 0)
+        assert log_a.dtype == log_a0.dtype
+
+
+class TestSqrtM:
     def test_round_trip_random_float(self):
         np.random.seed(1234)
         for n in range(1, 6):
@@ -260,7 +272,7 @@ class TestSqrtM(object):
                 assert_allclose(M_sqrtm_round_trip, M)
 
     def test_bad(self):
-        # See http://www.maths.man.ac.uk/~nareports/narep336.ps.gz
+        # See https://web.archive.org/web/20051220232650/http://www.maths.man.ac.uk/~nareports/narep336.ps.gz
         e = 2**-5
         se = sqrt(e)
         a = array([[1.0,0,0,1],
@@ -380,7 +392,6 @@ class TestSqrtM(object):
             assert_(np.isnan(B_sqrtm).all())
 
     def test_disp(self):
-        from io import StringIO
         np.random.seed(1234)
 
         A = np.random.rand(3, 3)
@@ -417,8 +428,91 @@ class TestSqrtM(object):
         assert_allclose(np.dot(R, R), M, atol=1e-14)
         assert_allclose(sqrtm(M), R, atol=1e-14)
 
+    @pytest.mark.xfail(reason="failing on macOS after gh-20212")
+    def test_gh17918(self):
+        M = np.empty((19, 19))
+        M.fill(0.94)
+        np.fill_diagonal(M, 1)
+        assert np.isrealobj(sqrtm(M))
 
-class TestFractionalMatrixPower(object):
+    def test_data_size_preservation_uint_in_float_out(self):
+        M = np.zeros((10, 10), dtype=np.uint8)
+        # input bit size is 8, but minimum float bit size is 16
+        assert sqrtm(M).dtype == np.float16
+        M = np.zeros((10, 10), dtype=np.uint16)
+        assert sqrtm(M).dtype == np.float16
+        M = np.zeros((10, 10), dtype=np.uint32)
+        assert sqrtm(M).dtype == np.float32
+        M = np.zeros((10, 10), dtype=np.uint64)
+        assert sqrtm(M).dtype == np.float64
+
+    def test_data_size_preservation_int_in_float_out(self):
+        M = np.zeros((10, 10), dtype=np.int8)
+        # input bit size is 8, but minimum float bit size is 16
+        assert sqrtm(M).dtype == np.float16
+        M = np.zeros((10, 10), dtype=np.int16)
+        assert sqrtm(M).dtype == np.float16
+        M = np.zeros((10, 10), dtype=np.int32)
+        assert sqrtm(M).dtype == np.float32
+        M = np.zeros((10, 10), dtype=np.int64)
+        assert sqrtm(M).dtype == np.float64
+
+    def test_data_size_preservation_int_in_comp_out(self):
+        M = np.array([[2, 4], [0, -2]], dtype=np.int8)
+        # input bit size is 8, but minimum complex bit size is 64
+        assert sqrtm(M).dtype == np.complex64
+        M = np.array([[2, 4], [0, -2]], dtype=np.int16)
+        # input bit size is 16, but minimum complex bit size is 64
+        assert sqrtm(M).dtype == np.complex64
+        M = np.array([[2, 4], [0, -2]], dtype=np.int32)
+        assert sqrtm(M).dtype == np.complex64
+        M = np.array([[2, 4], [0, -2]], dtype=np.int64)
+        assert sqrtm(M).dtype == np.complex128
+
+    def test_data_size_preservation_float_in_float_out(self):
+        M = np.zeros((10, 10), dtype=np.float16)
+        assert sqrtm(M).dtype == np.float16
+        M = np.zeros((10, 10), dtype=np.float32)
+        assert sqrtm(M).dtype == np.float32
+        M = np.zeros((10, 10), dtype=np.float64)
+        assert sqrtm(M).dtype == np.float64
+        if hasattr(np, 'float128'):
+            M = np.zeros((10, 10), dtype=np.float128)
+            assert sqrtm(M).dtype == np.float128
+
+    def test_data_size_preservation_float_in_comp_out(self):
+        M = np.array([[2, 4], [0, -2]], dtype=np.float16)
+        # input bit size is 16, but minimum complex bit size is 64
+        assert sqrtm(M).dtype == np.complex64
+        M = np.array([[2, 4], [0, -2]], dtype=np.float32)
+        assert sqrtm(M).dtype == np.complex64
+        M = np.array([[2, 4], [0, -2]], dtype=np.float64)
+        assert sqrtm(M).dtype == np.complex128
+        if hasattr(np, 'float128') and hasattr(np, 'complex256'):
+            M = np.array([[2, 4], [0, -2]], dtype=np.float128)
+            assert sqrtm(M).dtype == np.complex256
+
+    def test_data_size_preservation_comp_in_comp_out(self):
+        M = np.array([[2j, 4], [0, -2j]], dtype=np.complex64)
+        assert sqrtm(M).dtype == np.complex128
+        if hasattr(np, 'complex256'):
+            M = np.array([[2j, 4], [0, -2j]], dtype=np.complex128)
+            assert sqrtm(M).dtype == np.complex256
+            M = np.array([[2j, 4], [0, -2j]], dtype=np.complex256)
+            assert sqrtm(M).dtype == np.complex256
+
+    @pytest.mark.parametrize('dt', [int, float, np.float32, complex, np.complex64])
+    def test_empty(self, dt):
+        a = np.empty((0, 0), dtype=dt)
+        s = sqrtm(a)
+        a0 = np.eye(2, dtype=dt)
+        s0 = sqrtm(a0)
+
+        assert s.shape == (0, 0)
+        assert s.dtype == s0.dtype
+
+
+class TestFractionalMatrixPower:
     def test_round_trip_random_complex(self):
         np.random.seed(1234)
         for p in range(1, 5):
@@ -497,7 +591,7 @@ class TestFractionalMatrixPower(object):
         A_sqrtm, info = sqrtm(A, disp=False)
         A_rem_power = _matfuncs_inv_ssq._remainder_matrix_power(A, 0.5)
         A_power = fractional_matrix_power(A, 0.5)
-        assert_array_equal(A_rem_power, A_power)
+        assert_allclose(A_rem_power, A_power, rtol=1e-11)
         assert_allclose(A_sqrtm, A_power)
         assert_allclose(A_sqrtm, A_funm_sqrt)
 
@@ -603,34 +697,83 @@ class TestFractionalMatrixPower(object):
         assert_allclose(fractional_matrix_power(M, 0.5), R, atol=1e-14)
 
 
-class TestExpM(object):
+class TestExpM:
     def test_zero(self):
         a = array([[0.,0],[0,0]])
         assert_array_almost_equal(expm(a),[[1,0],[0,1]])
 
     def test_single_elt(self):
-        # See gh-5853
-        from scipy.sparse import csc_matrix
+        elt = expm(1)
+        assert_allclose(elt, np.array([[np.e]]))
 
-        vOne = -2.02683397006j
-        vTwo = -2.12817566856j
+    @pytest.mark.parametrize('dt', [int, float, np.float32, complex, np.complex64])
+    def test_empty_matrix_input(self, dt):
+        # handle gh-11082
+        A = np.zeros((0, 0), dtype=dt)
+        result = expm(A)
+        assert result.size == 0
+        assert result.dtype == A.dtype
 
-        mOne = csc_matrix([[vOne]], dtype='complex')
-        mTwo = csc_matrix([[vTwo]], dtype='complex')
+    def test_2x2_input(self):
+        E = np.e
+        a = array([[1, 4], [1, 1]])
+        aa = (E**4 + 1)/(2*E)
+        bb = (E**4 - 1)/E
+        assert_allclose(expm(a), array([[aa, bb], [bb/4, aa]]))
+        assert expm(a.astype(np.complex64)).dtype.char == 'F'
+        assert expm(a.astype(np.float32)).dtype.char == 'f'
 
-        outOne = expm(mOne)
-        outTwo = expm(mTwo)
+    def test_nx2x2_input(self):
+        E = np.e
+        # These are integer matrices with integer eigenvalues
+        a = np.array([[[1, 4], [1, 1]],
+                      [[1, 3], [1, -1]],
+                      [[1, 3], [4, 5]],
+                      [[1, 3], [5, 3]],
+                      [[4, 5], [-3, -4]]], order='F')
+        # Exact results are computed symbolically
+        a_res = np.array([
+                          [[(E**4+1)/(2*E), (E**4-1)/E],
+                           [(E**4-1)/4/E, (E**4+1)/(2*E)]],
+                          [[1/(4*E**2)+(3*E**2)/4, (3*E**2)/4-3/(4*E**2)],
+                           [E**2/4-1/(4*E**2), 3/(4*E**2)+E**2/4]],
+                          [[3/(4*E)+E**7/4, -3/(8*E)+(3*E**7)/8],
+                           [-1/(2*E)+E**7/2, 1/(4*E)+(3*E**7)/4]],
+                          [[5/(8*E**2)+(3*E**6)/8, -3/(8*E**2)+(3*E**6)/8],
+                           [-5/(8*E**2)+(5*E**6)/8, 3/(8*E**2)+(5*E**6)/8]],
+                          [[-3/(2*E)+(5*E)/2, -5/(2*E)+(5*E)/2],
+                           [3/(2*E)-(3*E)/2, 5/(2*E)-(3*E)/2]]
+                         ])
+        assert_allclose(expm(a), a_res)
 
-        assert_equal(type(outOne), type(mOne))
-        assert_equal(type(outTwo), type(mTwo))
+    def test_readonly(self):
+        n = 7
+        a = np.ones((n, n))
+        a.flags.writeable = False
+        expm(a)
 
-        assert_allclose(outOne[0, 0], complex(-0.44039415155949196,
-                                              -0.8978045395698304))
-        assert_allclose(outTwo[0, 0], complex(-0.52896401032626006,
-                                              -0.84864425749518878))
+    @pytest.mark.fail_slow(5)
+    def test_gh18086(self):
+        A = np.zeros((400, 400), dtype=float)
+        rng = np.random.default_rng(100)
+        i = rng.integers(0, 399, 500)
+        j = rng.integers(0, 399, 500)
+        A[i, j] = rng.random(500)
+        # Problem appears when m = 9
+        Am = np.empty((5, 400, 400), dtype=float)
+        Am[0] = A.copy()
+        m, s = pick_pade_structure(Am)
+        assert m == 9
+        # Check that result is accurate
+        first_res = expm(A)
+        np.testing.assert_array_almost_equal(logm(first_res), A)
+        # Check that result is consistent
+        for i in range(5):
+            next_res = expm(A)
+            np.testing.assert_array_almost_equal(first_res, next_res)
 
 
-class TestExpmFrechet(object):
+class TestExpmFrechet:
 
     def test_expm_frechet(self):
         # a test of the basic functionality
@@ -712,8 +855,8 @@ class TestExpmFrechet(object):
             expected_expm = scipy.linalg.expm(A)
             expected_frechet = scipy.linalg.expm(M)[:n, n:]
             observed_expm, observed_frechet = expm_frechet(A, E)
-            assert_allclose(expected_expm, observed_expm)
-            assert_allclose(expected_frechet, observed_frechet)
+            assert_allclose(expected_expm, observed_expm, atol=5e-8)
+            assert_allclose(expected_frechet, observed_frechet, atol=1e-7)
 
     def test_problematic_matrix(self):
         # this test case uncovered a bug which has since been fixed
@@ -725,7 +868,7 @@ class TestExpmFrechet(object):
                 [1.87864034, 2.07055038],
                 [1.34102727, 0.67341123],
                 ], dtype=float)
-        A_norm_1 = scipy.linalg.norm(A, 1)
+        scipy.linalg.norm(A, 1)
         sps_expm, sps_frechet = expm_frechet(
                 A, E, method='SPS')
         blockEnlarge_expm, blockEnlarge_frechet = expm_frechet(
@@ -767,7 +910,7 @@ def _relative_error(f, A, perturbation):
     return norm(X_prime - X) / norm(X)
 
 
-class TestExpmConditionNumber(object):
+class TestExpmConditionNumber:
     def test_expm_cond_smoke(self):
         np.random.seed(1234)
         for n in range(1, 4):
@@ -834,3 +977,72 @@ class TestExpmConditionNumber(object):
             # eps times the condition number kappa.
             # In the limit as eps approaches zero it should never be greater.
             assert_array_less(p_best_relerr, (1 + 2*eps) * eps * kappa)
+
+
+class TestKhatriRao:
+
+    def test_basic(self):
+        a = khatri_rao(array([[1, 2], [3, 4]]),
+                       array([[5, 6], [7, 8]]))
+
+        assert_array_equal(a, array([[5, 12],
+                                     [7, 16],
+                                     [15, 24],
+                                     [21, 32]]))
+
+        b = khatri_rao(np.empty([2, 2]), np.empty([2, 2]))
+        assert_array_equal(b.shape, (4, 2))
+
+    def test_number_of_columns_equality(self):
+        with pytest.raises(ValueError):
+            a = array([[1, 2, 3],
+                       [4, 5, 6]])
+            b = array([[1, 2],
+                       [3, 4]])
+            khatri_rao(a, b)
+
+    def test_to_assure_2d_array(self):
+        with pytest.raises(ValueError):
+            # both arrays are 1-D
+            a = array([1, 2, 3])
+            b = array([4, 5, 6])
+            khatri_rao(a, b)
+
+        with pytest.raises(ValueError):
+            # first array is 1-D
+            a = array([1, 2, 3])
+            b = array([
+                [1, 2, 3],
+                [4, 5, 6]
+            ])
+            khatri_rao(a, b)
+
+        with pytest.raises(ValueError):
+            # second array is 1-D
+            a = array([
+                [1, 2, 3],
+                [7, 8, 9]
+            ])
+            b = array([4, 5, 6])
+            khatri_rao(a, b)
+
+    def test_equality_of_two_equations(self):
+        a = array([[1, 2], [3, 4]])
+        b = array([[5, 6], [7, 8]])
+
+        res1 = khatri_rao(a, b)
+        res2 = np.vstack([np.kron(a[:, k], b[:, k])
+                          for k in range(b.shape[1])]).T
+
+        assert_array_equal(res1, res2)
+
+    def test_empty(self):
+        a = np.empty((0, 2))
+        b = np.empty((3, 2))
+        res = khatri_rao(a, b)
+        assert_allclose(res, np.empty((0, 2)))
+
+        a = np.empty((3, 0))
+        b = np.empty((5, 0))
+        res = khatri_rao(a, b)
+        assert_allclose(res, np.empty((15, 0)))

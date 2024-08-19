@@ -1,11 +1,11 @@
-from __future__ import division, print_function, absolute_import
 import numpy as np
 from scipy.linalg import lu_factor, lu_solve
 from scipy.sparse import issparse, csc_matrix, eye
 from scipy.sparse.linalg import splu
 from scipy.optimize._numdiff import group_columns
 from .common import (validate_max_step, validate_tol, select_initial_step,
-                     norm, EPS, num_jac, warn_extraneous)
+                     norm, EPS, num_jac, validate_first_step,
+                     warn_extraneous)
 from .base import OdeSolver, DenseOutput
 
 
@@ -70,74 +70,91 @@ def solve_bdf_system(fun, t_new, y_predict, c, psi, LU, solve_lu, scale, tol):
 
 
 class BDF(OdeSolver):
-    """Implicit method based on Backward Differentiation Formulas.
+    """Implicit method based on backward-differentiation formulas.
 
     This is a variable order method with the order varying automatically from
     1 to 5. The general framework of the BDF algorithm is described in [1]_.
-    This class implements a quasi-constant step size approach as explained
-    in [2]_. The error estimation strategy for the constant step BDF is derived
-    in [3]_. An accuracy enhancement using modified formulas (NDF) [2]_ is also
-    implemented.
+    This class implements a quasi-constant step size as explained in [2]_.
+    The error estimation strategy for the constant-step BDF is derived in [3]_.
+    An accuracy enhancement using modified formulas (NDF) [2]_ is also implemented.
 
-    Can be applied in a complex domain.
+    Can be applied in the complex domain.
 
     Parameters
     ----------
     fun : callable
-        Right-hand side of the system. The calling signature is ``fun(t, y)``.
-        Here ``t`` is a scalar and there are two options for ndarray ``y``.
-        It can either have shape (n,), then ``fun`` must return array_like with
-        shape (n,). Or alternatively it can have shape (n, k), then ``fun``
-        must return array_like with shape (n, k), i.e. each column
-        corresponds to a single column in ``y``. The choice between the two
-        options is determined by `vectorized` argument (see below). The
-        vectorized implementation allows faster approximation of the Jacobian
-        by finite differences.
+        Right-hand side of the system: the time derivative of the state ``y``
+        at time ``t``. The calling signature is ``fun(t, y)``, where ``t`` is a
+        scalar and ``y`` is an ndarray with ``len(y) = len(y0)``. ``fun`` must
+        return an array of the same shape as ``y``. See `vectorized` for more
+        information.
     t0 : float
         Initial time.
     y0 : array_like, shape (n,)
         Initial state.
     t_bound : float
-        Boundary time --- the integration won't continue beyond it. It also
+        Boundary time - the integration won't continue beyond it. It also
         determines the direction of the integration.
+    first_step : float or None, optional
+        Initial step size. Default is ``None`` which means that the algorithm
+        should choose.
     max_step : float, optional
-        Maximum allowed step size. Default is np.inf, i.e. the step is not
+        Maximum allowed step size. Default is np.inf, i.e., the step size is not
         bounded and determined solely by the solver.
     rtol, atol : float and array_like, optional
         Relative and absolute tolerances. The solver keeps the local error
         estimates less than ``atol + rtol * abs(y)``. Here `rtol` controls a
-        relative accuracy (number of correct digits). But if a component of `y`
-        is approximately below `atol` then the error only needs to fall within
-        the same `atol` threshold, and the number of correct digits is not
-        guaranteed. If components of y have different scales, it might be
+        relative accuracy (number of correct digits), while `atol` controls
+        absolute accuracy (number of correct decimal places). To achieve the
+        desired `rtol`, set `atol` to be smaller than the smallest value that
+        can be expected from ``rtol * abs(y)`` so that `rtol` dominates the
+        allowable error. If `atol` is larger than ``rtol * abs(y)`` the
+        number of correct digits is not guaranteed. Conversely, to achieve the
+        desired `atol` set `rtol` such that ``rtol * abs(y)`` is always smaller
+        than `atol`. If components of y have different scales, it might be
         beneficial to set different `atol` values for different components by
         passing array_like with shape (n,) for `atol`. Default values are
         1e-3 for `rtol` and 1e-6 for `atol`.
     jac : {None, array_like, sparse_matrix, callable}, optional
-        Jacobian matrix of the right-hand side of the system with respect to
-        y, required only by 'Radau' and 'BDF' methods. The Jacobian matrix
-        has shape (n, n) and its element (i, j) is equal to ``d f_i / d y_j``.
-        There are 3 ways to define the Jacobian:
+        Jacobian matrix of the right-hand side of the system with respect to y,
+        required by this method. The Jacobian matrix has shape (n, n) and its
+        element (i, j) is equal to ``d f_i / d y_j``.
+        There are three ways to define the Jacobian:
 
-            * If array_like or sparse_matrix, then the Jacobian is assumed to
+            * If array_like or sparse_matrix, the Jacobian is assumed to
               be constant.
-            * If callable, then the Jacobian is assumed to depend on both
-              t and y, and will be called as ``jac(t, y)`` as necessary. The
-              return value might be a sparse matrix.
-            * If None (default), then the Jacobian will be approximated by
+            * If callable, the Jacobian is assumed to depend on both
+              t and y; it will be called as ``jac(t, y)`` as necessary.
+              For the 'Radau' and 'BDF' methods, the return value might be a
+              sparse matrix.
+            * If None (default), the Jacobian will be approximated by
               finite differences.
 
         It is generally recommended to provide the Jacobian rather than
-        relying on a finite difference approximation.
+        relying on a finite-difference approximation.
     jac_sparsity : {None, array_like, sparse matrix}, optional
-        Defines a sparsity structure of the Jacobian matrix for a finite
-        difference approximation, its shape must be (n, n). If the Jacobian has
-        only few non-zero elements in *each* row, providing the sparsity
-        structure will greatly speed up the computations [4]_. A zero
-        entry means that a corresponding element in the Jacobian is identically
-        zero. If None (default), the Jacobian is assumed to be dense.
+        Defines a sparsity structure of the Jacobian matrix for a
+        finite-difference approximation. Its shape must be (n, n). This argument
+        is ignored if `jac` is not `None`. If the Jacobian has only few non-zero
+        elements in *each* row, providing the sparsity structure will greatly
+        speed up the computations [4]_. A zero entry means that a corresponding
+        element in the Jacobian is always zero. If None (default), the Jacobian
+        is assumed to be dense.
     vectorized : bool, optional
-        Whether `fun` is implemented in a vectorized fashion. Default is False.
+        Whether `fun` can be called in a vectorized fashion. Default is False.
+
+        If ``vectorized`` is False, `fun` will always be called with ``y`` of
+        shape ``(n,)``, where ``n = len(y0)``.
+
+        If ``vectorized`` is True, `fun` may be called with ``y`` of shape
+        ``(n, k)``, where ``k`` is an integer. In this case, `fun` must behave
+        such that ``fun(t, y)[:, i] == fun(t, y[:, i])`` (i.e. each column of
+        the returned array is the time derivative of the state corresponding
+        with a column of ``y``).
+
+        Setting ``vectorized=True`` allows for faster finite difference
+        approximation of the Jacobian by this method, but may result in slower
+        execution overall in some circumstances (e.g. small ``len(y0)``).
 
     Attributes
     ----------
@@ -158,9 +175,9 @@ class BDF(OdeSolver):
     step_size : float
         Size of the last successful step. None if no steps were made yet.
     nfev : int
-        Number of the system's rhs evaluations.
+        Number of evaluations of the right-hand side.
     njev : int
-        Number of the Jacobian evaluations.
+        Number of evaluations of the Jacobian.
     nlu : int
         Number of LU decompositions.
 
@@ -179,16 +196,20 @@ class BDF(OdeSolver):
     """
     def __init__(self, fun, t0, y0, t_bound, max_step=np.inf,
                  rtol=1e-3, atol=1e-6, jac=None, jac_sparsity=None,
-                 vectorized=False, **extraneous):
+                 vectorized=False, first_step=None, **extraneous):
         warn_extraneous(extraneous)
-        super(BDF, self).__init__(fun, t0, y0, t_bound, vectorized,
-                                  support_complex=True)
+        super().__init__(fun, t0, y0, t_bound, vectorized,
+                         support_complex=True)
         self.max_step = validate_max_step(max_step)
         self.rtol, self.atol = validate_tol(rtol, atol, self.n)
         f = self.fun(self.t, self.y)
-        self.h_abs = select_initial_step(self.fun, self.t, self.y, f,
-                                         self.direction, 1,
-                                         self.rtol, self.atol)
+        if first_step is None:
+            self.h_abs = select_initial_step(self.fun, self.t, self.y, 
+                                             t_bound, max_step, f,
+                                             self.direction, 1,
+                                             self.rtol, self.atol)
+        else:
+            self.h_abs = validate_first_step(first_step, t0, t_bound)
         self.h_abs_old = None
         self.error_norm_old = None
 
@@ -269,9 +290,8 @@ class BDF(OdeSolver):
                     return np.asarray(jac(t, y), dtype=y0.dtype)
 
             if J.shape != (self.n, self.n):
-                raise ValueError("`jac` is expected to have shape {}, but "
-                                 "actually has {}."
-                                 .format((self.n, self.n), J.shape))
+                raise ValueError(f"`jac` is expected to have shape {(self.n, self.n)},"
+                                 f" but actually has {J.shape}.")
         else:
             if issparse(jac):
                 J = csc_matrix(jac, dtype=y0.dtype)
@@ -279,9 +299,8 @@ class BDF(OdeSolver):
                 J = np.asarray(jac, dtype=y0.dtype)
 
             if J.shape != (self.n, self.n):
-                raise ValueError("`jac` is expected to have shape {}, but "
-                                 "actually has {}."
-                                 .format((self.n, self.n), J.shape))
+                raise ValueError(f"`jac` is expected to have shape {(self.n, self.n)},"
+                                 f" but actually has {J.shape}.")
             jac_wrapped = None
 
         return jac_wrapped, J
@@ -414,7 +433,8 @@ class BDF(OdeSolver):
             error_p_norm = np.inf
 
         error_norms = np.array([error_m_norm, error_norm, error_p_norm])
-        factors = error_norms ** (-1 / np.arange(order, order + 3))
+        with np.errstate(divide='ignore'):
+            factors = error_norms ** (-1 / np.arange(order, order + 3))
 
         delta_order = np.argmax(factors) - 1
         order += delta_order
@@ -435,7 +455,7 @@ class BDF(OdeSolver):
 
 class BdfDenseOutput(DenseOutput):
     def __init__(self, t_old, t, h, order, D):
-        super(BdfDenseOutput, self).__init__(t_old, t)
+        super().__init__(t_old, t)
         self.order = order
         self.t_shift = self.t - h * np.arange(self.order)
         self.denom = h * (1 + np.arange(self.order))

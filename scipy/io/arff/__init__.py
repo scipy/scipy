@@ -1,7 +1,8 @@
 """
-Module to read ARFF files, which are the standard data format for WEKA.
-
-ARFF is a text file format which support numerical, string and data values.
+Module to read ARFF files
+=========================
+ARFF is the standard data format for WEKA.
+It is a text file format which support numerical, string and data values.
 The format can also represent missing data and sparse data.
 
 Notes
@@ -14,12 +15,13 @@ See the `WEKA website <http://weka.wikispaces.com/ARFF>`_
 for more details about the ARFF format and available datasets.
 
 """
-from __future__ import division, print_function, absolute_import
+from ._arffread import *
+from . import _arffread
 
-from .arffread import *
-from . import arffread
+# Deprecated namespaces, to be removed in v2.0.0
+from .import arffread
 
-__all__ = arffread.__all__
+__all__ = _arffread.__all__ + ['arffread']
 
 from scipy._lib._testutils import PytestTester
 test = PytestTester(__name__)

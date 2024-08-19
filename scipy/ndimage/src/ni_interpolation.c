@@ -31,84 +31,10 @@
 
 #include "ni_support.h"
 #include "ni_interpolation.h"
+#include "ni_splines.h"
 #include <stdlib.h>
 #include <math.h>
 
-/* calculate the B-spline interpolation coefficients for given x: */
-static void
-spline_coefficients(double x, int order, double *result)
-{
-    int hh;
-    double y, start;
-
-    if (order & 1) {
-        start = (int)floor(x) - order / 2;
-    } else {
-        start = (int)floor(x + 0.5) - order / 2;
-    }
-
-    for(hh = 0; hh <= order; hh++)  {
-        y = fabs(start - x + hh);
-
-        switch(order) {
-        case 1:
-            result[hh] = y > 1.0 ? 0.0 : 1.0 - y;
-            break;
-        case 2:
-            if (y < 0.5) {
-                result[hh] = 0.75 - y * y;
-            } else if (y < 1.5) {
-                y = 1.5 - y;
-                result[hh] = 0.5 * y * y;
-            } else {
-                result[hh] = 0.0;
-            }
-            break;
-        case 3:
-            if (y < 1.0) {
-                result[hh] =
-                    (y * y * (y - 2.0) * 3.0 + 4.0) / 6.0;
-            } else if (y < 2.0) {
-                y = 2.0 - y;
-                result[hh] = y * y * y / 6.0;
-            } else {
-                result[hh] = 0.0;
-            }
-            break;
-        case 4:
-            if (y < 0.5) {
-                y *= y;
-                result[hh] = y * (y * 0.25 - 0.625) + 115.0 / 192.0;
-            } else if (y < 1.5) {
-                result[hh] = y * (y * (y * (5.0 / 6.0 - y / 6.0) - 1.25) +
-                                                    5.0 / 24.0) + 55.0 / 96.0;
-            } else if (y < 2.5) {
-                y -= 2.5;
-                y *= y;
-                result[hh] = y * y / 24.0;
-            } else {
-                result[hh] = 0.0;
-            }
-            break;
-        case 5:
-            if (y < 1.0) {
-                double f = y * y;
-                result[hh] =
-                    f * (f * (0.25 - y / 12.0) - 0.5) + 0.55;
-            } else if (y < 2.0) {
-                result[hh] = y * (y * (y * (y * (y / 24.0 - 0.375)
-                                                                        + 1.25) -  1.75) + 0.625) + 0.425;
-            } else if (y < 3.0) {
-                double f = 3.0 - y;
-                y = f * f;
-                result[hh] = f * y * y / 120.0;
-            } else {
-                result[hh] = 0.0;
-            }
-            break;
-        }
-    }
-}
 
 /* map a coordinate outside the borders, according to the requested
      boundary condition: */
@@ -133,7 +59,8 @@ map_coordinate(double in, npy_intp len, int mode)
                 npy_intp sz2 = 2 * len;
                 if (in < -sz2)
                     in = sz2 * (npy_intp)(-in / sz2) + in;
-                in = in < -len ? in + sz2 : -in - 1;
+                // -1e-15 check to avoid possibility that: (-in - 1) == -1
+                in = in < -len ? in + sz2 : (in > -1e-15 ? 1e-15 : -in) - 1;
             }
             break;
         case NI_EXTEND_WRAP:
@@ -144,6 +71,14 @@ map_coordinate(double in, npy_intp len, int mode)
                 // Integer division of -in/sz gives (-in mod sz)
                 // Note that 'in' is negative
                 in += sz * ((npy_intp)(-in / sz) + 1);
+            }
+            break;
+        case NI_EXTEND_GRID_WRAP:
+            if (len <= 1) {
+                in = 0;
+            } else {
+                // in = len - 1 + fmod(in + 1, len);
+                in += len * ((npy_intp)((-1 - in) / len) + 1);
             }
             break;
         case NI_EXTEND_NEAREST:
@@ -183,6 +118,13 @@ map_coordinate(double in, npy_intp len, int mode)
                 in -= sz * (npy_intp)(in / sz);
             }
             break;
+        case NI_EXTEND_GRID_WRAP:
+            if (len <= 1) {
+                in = 0;
+            } else {
+                in -= len * (npy_intp)(in / len);
+            }
+            break;
         case NI_EXTEND_NEAREST:
             in = len - 1;
             break;
@@ -198,13 +140,14 @@ map_coordinate(double in, npy_intp len, int mode)
 #define BUFFER_SIZE 256000
 #define TOLERANCE 1e-15
 
+
 /* one-dimensional spline filter: */
 int NI_SplineFilter1D(PyArrayObject *input, int order, int axis,
-                                            PyArrayObject *output)
+                      NI_ExtendMode mode, PyArrayObject *output)
 {
-    int hh, npoles = 0, more;
-    npy_intp kk, ll, lines, len;
-    double *buffer = NULL, weight, pole[2];
+    int npoles = 0, more;
+    npy_intp kk, lines, len;
+    double *buffer = NULL, poles[MAX_SPLINE_FILTER_POLES];
     NI_LineBuffer iline_buffer, oline_buffer;
     NPY_BEGIN_THREADS_DEF;
 
@@ -213,46 +156,25 @@ int NI_SplineFilter1D(PyArrayObject *input, int order, int axis,
         goto exit;
 
     /* these are used in the spline filter calculation below: */
-    switch (order) {
-    case 2:
-        npoles = 1;
-        pole[0] = sqrt(8.0) - 3.0;
-        break;
-    case 3:
-        npoles = 1;
-        pole[0] = sqrt(3.0) - 2.0;
-        break;
-    case 4:
-        npoles = 2;
-        pole[0] = sqrt(664.0 - sqrt(438976.0)) + sqrt(304.0) - 19.0;
-        pole[1] = sqrt(664.0 + sqrt(438976.0)) - sqrt(304.0) - 19.0;
-        break;
-    case 5:
-        npoles = 2;
-        pole[0] = sqrt(67.5 - sqrt(4436.25)) + sqrt(26.25) - 6.5;
-        pole[1] = sqrt(67.5 + sqrt(4436.25)) - sqrt(26.25) - 6.5;
-        break;
-    default:
-        break;
+    if (get_filter_poles(order, &npoles, poles)) {
+        goto exit;
     }
-
-    weight = 1.0;
-    for(hh = 0; hh < npoles; hh++)
-        weight *= (1.0 - pole[hh]) * (1.0 - 1.0 / pole[hh]);
 
     /* allocate an initialize the line buffer, only a single one is used,
          because the calculation is in-place: */
     lines = -1;
     if (!NI_AllocateLineBuffer(input, axis, 0, 0, &lines, BUFFER_SIZE,
-                                                         &buffer))
+                               &buffer)) {
         goto exit;
+    }
     if (!NI_InitLineBuffer(input, axis, 0, 0, lines, buffer,
-                                                 NI_EXTEND_DEFAULT, 0.0, &iline_buffer))
+                           NI_EXTEND_DEFAULT, 0.0, &iline_buffer)) {
         goto exit;
+    }
     if (!NI_InitLineBuffer(output, axis, 0, 0, lines, buffer,
-                                                 NI_EXTEND_DEFAULT, 0.0, &oline_buffer))
+                           NI_EXTEND_DEFAULT, 0.0, &oline_buffer)) {
         goto exit;
-
+    }
     NPY_BEGIN_THREADS;
 
     /* iterate over all the array lines: */
@@ -267,40 +189,10 @@ int NI_SplineFilter1D(PyArrayObject *input, int order, int axis,
             double *ln = NI_GET_LINE(iline_buffer, kk);
             /* spline filter: */
             if (len > 1) {
-                for(ll = 0; ll < len; ll++)
-                    ln[ll] *= weight;
-                for(hh = 0; hh < npoles; hh++) {
-                    double p = pole[hh];
-                    int max = (int)ceil(log(TOLERANCE) / log(fabs(p)));
-                    if (max < len) {
-                        double zn = p;
-                        double sum = ln[0];
-                        for(ll = 1; ll < max; ll++) {
-                            sum += zn * ln[ll];
-                            zn *= p;
-                        }
-                        ln[0] = sum;
-                    } else {
-                        double zn = p;
-                        double iz = 1.0 / p;
-                        double z2n = pow(p, (double)(len - 1));
-                        double sum = ln[0] + z2n * ln[len - 1];
-                        z2n *= z2n * iz;
-                        for(ll = 1; ll <= len - 2; ll++) {
-                            sum += (zn + z2n) * ln[ll];
-                            zn *= p;
-                            z2n *= iz;
-                        }
-                        ln[0] = sum / (1.0 - zn * zn);
-                    }
-                    for(ll = 1; ll < len; ll++)
-                        ln[ll] += p * ln[ll - 1];
-                    ln[len-1] = (p / (p * p - 1.0)) * (ln[len-1] + p * ln[len-2]);
-                    for(ll = len - 2; ll >= 0; ll--)
-                        ln[ll] = p * (ln[ll + 1] - ln[ll]);
-                }
+                apply_filter(ln, len, poles, npoles, mode);
             }
         }
+
         /* copy lines from buffer to array: */
         if (!NI_LineBufferToArray(&oline_buffer)) {
             goto exit;
@@ -351,14 +243,25 @@ case NPY_##_TYPE:                                    \
     *(_type *)_po = (_type)_t;                       \
     break
 
+int _get_spline_boundary_mode(int mode)
+{
+    if ((mode == NI_EXTEND_CONSTANT) || (mode == NI_EXTEND_WRAP))
+        // Modes without an anlaytic prefilter or explicit prepadding use
+        // mirror extension.
+        return NI_EXTEND_MIRROR;
+    return mode;
+}
+
 int
 NI_GeometricTransform(PyArrayObject *input, int (*map)(npy_intp*, double*,
                 int, int, void*), void* map_data, PyArrayObject* matrix_ar,
                 PyArrayObject* shift_ar, PyArrayObject *coordinates,
-                PyArrayObject *output, int order, int mode, double cval)
+                PyArrayObject *output, int order, int mode, double cval,
+                int nprepad)
 {
     char *po, *pi, *pc = NULL;
     npy_intp **edge_offsets = NULL, **data_offsets = NULL, filter_size;
+    char **edge_grid_const = NULL;
     npy_intp ftmp[NPY_MAXDIMS], *fcoordinates = NULL, *foffsets = NULL;
     npy_intp cstride = 0, kk, hh, ll, jj;
     npy_intp size;
@@ -367,7 +270,7 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(npy_intp*, double*,
     NI_Iterator io, ic;
     npy_double *matrix = matrix_ar ? (npy_double*)PyArray_DATA(matrix_ar) : NULL;
     npy_double *shift = shift_ar ? (npy_double*)PyArray_DATA(shift_ar) : NULL;
-    int irank = 0, orank;
+    int irank = 0, orank, spline_mode;
     NPY_BEGIN_THREADS_DEF;
 
     NPY_BEGIN_THREADS;
@@ -381,7 +284,7 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(npy_intp*, double*,
 
     /* if the mapping is from array coordinates: */
     if (coordinates) {
-        /* initialze a line iterator along the first axis: */
+        /* initialize a line iterator along the first axis: */
         if (!NI_InitPointIterator(coordinates, &ic))
             goto exit;
         cstride = ic.strides[0];
@@ -398,6 +301,28 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(npy_intp*, double*,
         PyErr_NoMemory();
         goto exit;
     }
+
+    if (mode == NI_EXTEND_GRID_CONSTANT) {
+        // boolean indicating if the current point in the filter footprint is
+        // outside the bounds
+        edge_grid_const = malloc(irank * sizeof(char*));
+        if (NPY_UNLIKELY(!edge_grid_const)) {
+            NPY_END_THREADS;
+            PyErr_NoMemory();
+            goto exit;
+        }
+        for(jj = 0; jj < irank; jj++)
+            edge_grid_const[jj] = NULL;
+        for(jj = 0; jj < irank; jj++) {
+            edge_grid_const[jj] = malloc((order + 1) * sizeof(char));
+            if (NPY_UNLIKELY(!edge_grid_const[jj])) {
+                NPY_END_THREADS;
+                PyErr_NoMemory();
+                goto exit;
+            }
+        }
+    }
+
     for(jj = 0; jj < irank; jj++)
         data_offsets[jj] = NULL;
     for(jj = 0; jj < irank; jj++) {
@@ -466,18 +391,28 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(npy_intp*, double*,
         }
     }
 
+    spline_mode = _get_spline_boundary_mode(mode);
+
     size = PyArray_SIZE(output);
     for(kk = 0; kk < size; kk++) {
         double t = 0.0;
         int constant = 0, edge = 0;
         npy_intp offset = 0;
+        if (mode == NI_EXTEND_GRID_CONSTANT) {
+            // reset edge flags for each location in the filter footprint
+            for (hh = 0; hh < irank; hh++) {
+                for(ll = 0; ll <= order; ll++) {
+                    edge_grid_const[hh][ll] = 0;
+                }
+            }
+        }
         if (map) {
             NPY_END_THREADS;
             /* call mappint functions: */
             if (!map(io.coordinates, icoor, orank, irank, map_data)) {
                 if (!PyErr_Occurred())
                     PyErr_SetString(PyExc_RuntimeError,
-                                                    "unknown error in mapping function");
+                                    "unknown error in mapping function");
                 goto exit;
             }
             NPY_BEGIN_THREADS;
@@ -527,11 +462,15 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(npy_intp*, double*,
                 goto exit;
             }
         }
+
         /* iterate over axes: */
         for(hh = 0; hh < irank; hh++) {
-            /* if the input coordinate is outside the borders, map it: */
-            double cc = map_coordinate(icoor[hh], idimensions[hh], mode);
-            if (cc > -1.0) {
+            double cc = icoor[hh] + nprepad;
+            if ((mode != NI_EXTEND_GRID_CONSTANT) && (mode != NI_EXTEND_NEAREST)) {
+                /* if the input coordinate is outside the borders, map it: */
+                cc = map_coordinate(cc, idimensions[hh], mode);
+            }
+            if (cc > -1.0 || mode == NI_EXTEND_GRID_CONSTANT || mode == NI_EXTEND_NEAREST) {
                 /* find the filter location along this axis: */
                 npy_intp start;
                 if (order & 1) {
@@ -541,34 +480,35 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(npy_intp*, double*,
                 }
                 /* get the offset to the start of the filter: */
                 offset += istrides[hh] * start;
-                if (start < 0 || start + order >= idimensions[hh]) {
-                    /* implement border mapping, if outside border: */
-                    edge = 1;
-                    edge_offsets[hh] = data_offsets[hh];
+                npy_intp idx = 0;
+
+                if (mode == NI_EXTEND_GRID_CONSTANT) {
+                    // Determine locations in the filter footprint that are
+                    // outside the range.
                     for(ll = 0; ll <= order; ll++) {
-                        npy_intp idx = start + ll;
-                        npy_intp len = idimensions[hh];
-                        if (len <= 1) {
-                            idx = 0;
-                        } else {
-                            npy_intp s2 = 2 * len - 2;
-                            if (idx < 0) {
-                                idx = s2 * (int)(-idx / s2) + idx;
-                                idx = idx <= 1 - len ? idx + s2 : -idx;
-                            } else if (idx >= len) {
-                                idx -= s2 * (int)(idx / s2);
-                                if (idx >= len)
-                                    idx = s2 - idx;
-                            }
-                        }
-                        /* calculate and store the offests at this edge: */
-                        edge_offsets[hh][ll] = istrides[hh] * (idx - start);
+                        idx = start + ll;
+                        edge_grid_const[hh][ll] = (idx < 0 || idx >= idimensions[hh]);
                     }
                 } else {
-                    /* we are not at the border, use precalculated offsets: */
-                    edge_offsets[hh] = NULL;
+
+                    if (start < 0 || start + order >= idimensions[hh]) {
+                        /* implement border mapping, if outside border: */
+                        edge = 1;
+                        edge_offsets[hh] = data_offsets[hh];
+
+                        for(ll = 0; ll <= order; ll++) {
+                            idx = start + ll;
+                            idx = (npy_intp)map_coordinate(idx, idimensions[hh], spline_mode);
+
+                            /* calculate and store the offsets at this edge: */
+                            edge_offsets[hh][ll] = istrides[hh] * (idx - start);
+                        }
+                    } else {
+                        /* we are not at the border, use precalculated offsets: */
+                        edge_offsets[hh] = NULL;
+                    }
                 }
-                spline_coefficients(cc, order, splvals[hh]);
+                get_spline_interpolation_weights(cc, order, splvals[hh]);
             } else {
                 /* we use the constant border condition: */
                 constant = 1;
@@ -583,50 +523,61 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(npy_intp*, double*,
             for(hh = 0; hh < filter_size; hh++) {
                 double coeff = 0.0;
                 npy_intp idx = 0;
-
-                if (NPY_UNLIKELY(edge)) {
+                char is_cval = 0;
+                if (mode == NI_EXTEND_GRID_CONSTANT) {
                     for(ll = 0; ll < irank; ll++) {
-                        if (edge_offsets[ll])
-                            idx += edge_offsets[ll][ff[ll]];
-                        else
-                            idx += ff[ll] * istrides[ll];
+                        if (edge_grid_const[ll][ff[ll]]) {
+                            is_cval = 1;
+                        }
                     }
-                } else {
-                    idx = foffsets[hh];
                 }
-                idx += offset;
-                switch (type_num) {
-                    CASE_INTERP_COEFF(NPY_BOOL, npy_bool,
-                                      coeff, pi, idx);
-                    CASE_INTERP_COEFF(NPY_UBYTE, npy_ubyte,
-                                      coeff, pi, idx);
-                    CASE_INTERP_COEFF(NPY_USHORT, npy_ushort,
-                                      coeff, pi, idx);
-                    CASE_INTERP_COEFF(NPY_UINT, npy_uint,
-                                      coeff, pi, idx);
-                    CASE_INTERP_COEFF(NPY_ULONG, npy_ulong,
-                                      coeff, pi, idx);
-                    CASE_INTERP_COEFF(NPY_ULONGLONG, npy_ulonglong,
-                                      coeff, pi, idx);
-                    CASE_INTERP_COEFF(NPY_BYTE, npy_byte,
-                                      coeff, pi, idx);
-                    CASE_INTERP_COEFF(NPY_SHORT, npy_short,
-                                      coeff, pi, idx);
-                    CASE_INTERP_COEFF(NPY_INT, npy_int,
-                                      coeff, pi, idx);
-                    CASE_INTERP_COEFF(NPY_LONG, npy_long,
-                                      coeff, pi, idx);
-                    CASE_INTERP_COEFF(NPY_LONGLONG, npy_longlong,
-                                      coeff, pi, idx);
-                    CASE_INTERP_COEFF(NPY_FLOAT, npy_float,
-                                      coeff, pi, idx);
-                    CASE_INTERP_COEFF(NPY_DOUBLE, npy_double,
-                                      coeff, pi, idx);
-                default:
-                    NPY_END_THREADS;
-                    PyErr_SetString(PyExc_RuntimeError,
-                                    "data type not supported");
-                    goto exit;
+                if (is_cval) {
+                    coeff = cval;
+                } else {
+                    if (NPY_UNLIKELY(edge)) {
+                        for(ll = 0; ll < irank; ll++) {
+                            if (edge_offsets[ll])
+                                idx += edge_offsets[ll][ff[ll]];
+                            else
+                                idx += ff[ll] * istrides[ll];
+                        }
+                    } else {
+                        idx = foffsets[hh];
+                    }
+                    idx += offset;
+                    switch (type_num) {
+                        CASE_INTERP_COEFF(NPY_BOOL, npy_bool,
+                                          coeff, pi, idx);
+                        CASE_INTERP_COEFF(NPY_UBYTE, npy_ubyte,
+                                          coeff, pi, idx);
+                        CASE_INTERP_COEFF(NPY_USHORT, npy_ushort,
+                                          coeff, pi, idx);
+                        CASE_INTERP_COEFF(NPY_UINT, npy_uint,
+                                          coeff, pi, idx);
+                        CASE_INTERP_COEFF(NPY_ULONG, npy_ulong,
+                                          coeff, pi, idx);
+                        CASE_INTERP_COEFF(NPY_ULONGLONG, npy_ulonglong,
+                                          coeff, pi, idx);
+                        CASE_INTERP_COEFF(NPY_BYTE, npy_byte,
+                                          coeff, pi, idx);
+                        CASE_INTERP_COEFF(NPY_SHORT, npy_short,
+                                          coeff, pi, idx);
+                        CASE_INTERP_COEFF(NPY_INT, npy_int,
+                                          coeff, pi, idx);
+                        CASE_INTERP_COEFF(NPY_LONG, npy_long,
+                                          coeff, pi, idx);
+                        CASE_INTERP_COEFF(NPY_LONGLONG, npy_longlong,
+                                          coeff, pi, idx);
+                        CASE_INTERP_COEFF(NPY_FLOAT, npy_float,
+                                          coeff, pi, idx);
+                        CASE_INTERP_COEFF(NPY_DOUBLE, npy_double,
+                                          coeff, pi, idx);
+                    default:
+                        NPY_END_THREADS;
+                        PyErr_SetString(PyExc_RuntimeError,
+                                        "data type not supported");
+                        goto exit;
+                    }
                 }
                 /* calculate the interpolated value: */
                 for(ll = 0; ll < irank; ll++)
@@ -668,6 +619,11 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(npy_intp*, double*,
  exit:
     NPY_END_THREADS;
     free(edge_offsets);
+    if (edge_grid_const) {
+        for(jj = 0; jj < irank; jj++)
+            free(edge_grid_const[jj]);
+        free(edge_grid_const);
+    }
     if (data_offsets) {
         for(jj = 0; jj < irank; jj++)
             free(data_offsets[jj]);
@@ -684,8 +640,8 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(npy_intp*, double*,
 }
 
 int NI_ZoomShift(PyArrayObject *input, PyArrayObject* zoom_ar,
-                                 PyArrayObject* shift_ar, PyArrayObject *output,
-                                 int order, int mode, double cval)
+                 PyArrayObject* shift_ar, PyArrayObject *output,
+                 int order, int mode, double cval, int nprepad, int grid_mode)
 {
     char *po, *pi;
     npy_intp **zeros = NULL, **offsets = NULL, ***edge_offsets = NULL;
@@ -693,6 +649,7 @@ int NI_ZoomShift(PyArrayObject *input, PyArrayObject* zoom_ar,
     npy_intp jj, hh, kk, filter_size, odimensions[NPY_MAXDIMS];
     npy_intp idimensions[NPY_MAXDIMS], istrides[NPY_MAXDIMS];
     npy_intp size;
+    char ***edge_grid_const = NULL;
     double ***splvals = NULL;
     NI_Iterator io;
     npy_double *zooms = zoom_ar ? (npy_double*)PyArray_DATA(zoom_ar) : NULL;
@@ -727,15 +684,36 @@ int NI_ZoomShift(PyArrayObject *input, PyArrayObject* zoom_ar,
                 goto exit;
             }
         }
+    } else if (mode == NI_EXTEND_GRID_CONSTANT) {
+        // boolean indicating if the current point in the filter footprint is
+        // outside the bounds
+        edge_grid_const = malloc(rank * sizeof(char*));
+        if (NPY_UNLIKELY(!edge_grid_const)) {
+            NPY_END_THREADS;
+            PyErr_NoMemory();
+            goto exit;
+        }
+        for(jj = 0; jj < rank; jj++)
+            edge_grid_const[jj] = NULL;
+        for(jj = 0; jj < rank; jj++) {
+            edge_grid_const[jj] = malloc(odimensions[jj] * sizeof(char*));
+            if (NPY_UNLIKELY(!edge_grid_const[jj])) {
+                NPY_END_THREADS;
+                PyErr_NoMemory();
+                goto exit;
+            }
+            for(hh = 0; hh < odimensions[jj]; hh++) {
+                edge_grid_const[jj][hh] = NULL;
+            }
+        }
     }
-
     /* store offsets, along each axis: */
     offsets = malloc(rank * sizeof(npy_intp*));
     /* store spline coefficients, along each axis: */
     splvals = malloc(rank * sizeof(double**));
     /* store offsets at all edges: */
-    edge_offsets = malloc(rank * sizeof(npy_intp**));
-    if (NPY_UNLIKELY(!offsets || !splvals || !edge_offsets)) {
+
+    if (NPY_UNLIKELY(!offsets || !splvals)) {
         NPY_END_THREADS;
         PyErr_NoMemory();
         goto exit;
@@ -743,24 +721,45 @@ int NI_ZoomShift(PyArrayObject *input, PyArrayObject* zoom_ar,
     for(jj = 0; jj < rank; jj++) {
         offsets[jj] = NULL;
         splvals[jj] = NULL;
-        edge_offsets[jj] = NULL;
     }
     for(jj = 0; jj < rank; jj++) {
         offsets[jj] = malloc(odimensions[jj] * sizeof(npy_intp));
         splvals[jj] = malloc(odimensions[jj] * sizeof(double*));
-        edge_offsets[jj] = malloc(odimensions[jj] * sizeof(npy_intp*));
-        if (NPY_UNLIKELY(!offsets[jj] || !splvals[jj] || !edge_offsets[jj])) {
+        if (NPY_UNLIKELY(!offsets[jj] || !splvals[jj])) {
             NPY_END_THREADS;
             PyErr_NoMemory();
             goto exit;
         }
         for(hh = 0; hh < odimensions[jj]; hh++) {
             splvals[jj][hh] = NULL;
-            edge_offsets[jj][hh] = NULL;
         }
     }
 
-    /* precalculate offsets, and offsets at the edge: */
+    if (mode != NI_EXTEND_GRID_CONSTANT){
+        edge_offsets = malloc(rank * sizeof(npy_intp**));
+        if (NPY_UNLIKELY(!edge_offsets)) {
+            NPY_END_THREADS;
+            PyErr_NoMemory();
+            goto exit;
+        }
+        for(jj = 0; jj < rank; jj++) {
+            edge_offsets[jj] = NULL;
+        }
+        for(jj = 0; jj < rank; jj++) {
+            edge_offsets[jj] = malloc(odimensions[jj] * sizeof(npy_intp*));
+            if (NPY_UNLIKELY(!edge_offsets[jj])) {
+                NPY_END_THREADS;
+                PyErr_NoMemory();
+                goto exit;
+            }
+            for(hh = 0; hh < odimensions[jj]; hh++) {
+                edge_offsets[jj][hh] = NULL;
+            }
+        }
+    }
+
+    int spline_mode = _get_spline_boundary_mode(mode);
+
     for(jj = 0; jj < rank; jj++) {
         double shift = 0.0, zoom = 0.0;
         if (shifts)
@@ -772,9 +771,22 @@ int NI_ZoomShift(PyArrayObject *input, PyArrayObject* zoom_ar,
             if (shifts)
                 cc += shift;
             if (zooms)
-                cc *= zoom;
-            cc = map_coordinate(cc, idimensions[jj], mode);
-            if (cc > -1.0) {
+            {
+                if (grid_mode)
+                {
+                    cc += 0.5;
+                    cc *= zoom;
+                    cc -= 0.5;
+                } else {
+                    cc *= zoom;
+                }
+            }
+            cc += (double)nprepad;
+            if ((mode != NI_EXTEND_GRID_CONSTANT) && (mode != NI_EXTEND_NEAREST)) {
+                /* if the input coordinate is outside the borders, map it: */
+                cc = map_coordinate(cc, idimensions[jj], mode);
+            }
+            if (cc > -1.0 || mode == NI_EXTEND_GRID_CONSTANT || mode == NI_EXTEND_NEAREST) {
                 npy_intp start;
                 if (zeros && zeros[jj])
                     zeros[jj][kk] = 0;
@@ -785,30 +797,33 @@ int NI_ZoomShift(PyArrayObject *input, PyArrayObject* zoom_ar,
                 }
                 offsets[jj][kk] = istrides[jj] * start;
                 if (start < 0 || start + order >= idimensions[jj]) {
-                    edge_offsets[jj][kk] = malloc((order + 1) * sizeof(npy_intp));
-                    if (NPY_UNLIKELY(!edge_offsets[jj][kk])) {
-                        NPY_END_THREADS;
-                        PyErr_NoMemory();
-                        goto exit;
-                    }
-                    for(hh = 0; hh <= order; hh++) {
-                        npy_intp idx = start + hh;
-                        npy_intp len = idimensions[jj];
-                        if (len <= 1) {
-                            idx = 0;
-                        } else {
-                            npy_intp s2 = 2 * len - 2;
-                            if (idx < 0) {
-                                idx = s2 * (npy_intp)(-idx / s2) + idx;
-                                idx = idx <= 1 - len ? idx + s2 : -idx;
-                            } else if (idx >= len) {
-                                idx -= s2 * (npy_intp)(idx / s2);
-                                if (idx >= len)
-                                    idx = s2 - idx;
-                            }
+                    npy_intp idx = 0;
+
+                    if (mode == NI_EXTEND_GRID_CONSTANT) {
+                        edge_grid_const[jj][kk] = malloc((order + 1) * sizeof(char));
+                        if (NPY_UNLIKELY(!edge_grid_const[jj][kk])) {
+                            NPY_END_THREADS;
+                            PyErr_NoMemory();
+                            goto exit;
                         }
-                        edge_offsets[jj][kk][hh] = istrides[jj] * (idx - start);
+                        for(hh = 0; hh <= order; hh++) {
+                            idx = start + hh;
+                            edge_grid_const[jj][kk][hh] = (idx < 0 || idx >= idimensions[jj]);
+                        }
+                    } else {
+                        edge_offsets[jj][kk] = malloc((order + 1) * sizeof(npy_intp));
+                        if (NPY_UNLIKELY(!edge_offsets[jj][kk])) {
+                            NPY_END_THREADS;
+                            PyErr_NoMemory();
+                            goto exit;
+                        }
+                        for(hh = 0; hh <= order; hh++) {
+                            idx = start + hh;
+                            idx = (npy_intp)map_coordinate(idx, idimensions[jj], spline_mode);
+                            edge_offsets[jj][kk][hh] = istrides[jj] * (idx - start);
+                        }
                     }
+
                 }
                 if (order > 0) {
                     splvals[jj][kk] = malloc((order + 1) * sizeof(double));
@@ -817,7 +832,7 @@ int NI_ZoomShift(PyArrayObject *input, PyArrayObject* zoom_ar,
                         PyErr_NoMemory();
                         goto exit;
                     }
-                    spline_coefficients(cc, order, splvals[jj][kk]);
+                    get_spline_interpolation_weights(cc, order, splvals[jj][kk]);
                 }
             } else {
                 zeros[jj][kk] = 1;
@@ -874,9 +889,10 @@ int NI_ZoomShift(PyArrayObject *input, PyArrayObject* zoom_ar,
                 break;
             }
             oo += offsets[hh][io.coordinates[hh]];
-            if (edge_offsets[hh][io.coordinates[hh]])
-                edge = 1;
-        }
+            if (mode != NI_EXTEND_GRID_CONSTANT) {
+                if (edge_offsets[hh][io.coordinates[hh]])
+                    edge = 1;
+            }         }
 
         if (!zero) {
             npy_intp *ff = fcoordinates;
@@ -885,52 +901,66 @@ int NI_ZoomShift(PyArrayObject *input, PyArrayObject* zoom_ar,
             for(hh = 0; hh < filter_size; hh++) {
                 npy_intp idx = 0;
                 double coeff = 0.0;
-
-                if (NPY_UNLIKELY(edge)) {
-                    /* use precalculated edge offsets: */
+                int is_cval = 0;
+                if (mode == NI_EXTEND_GRID_CONSTANT)
+                {
                     for(jj = 0; jj < rank; jj++) {
-                        if (edge_offsets[jj][io.coordinates[jj]])
-                            idx += edge_offsets[jj][io.coordinates[jj]][ff[jj]];
-                        else
-                            idx += ff[jj] * istrides[jj];
+                        if (edge_grid_const[jj][io.coordinates[jj]])
+                        {
+                            if (edge_grid_const[jj][io.coordinates[jj]][ff[jj]])
+                                is_cval = 1;
+                        }
                     }
-                    idx += oo;
-                } else {
-                    /* use normal offsets: */
-                    idx += oo + foffsets[hh];
                 }
-                switch (type_num) {
-                    CASE_INTERP_COEFF(NPY_BOOL, npy_bool,
-                                      coeff, pi, idx);
-                    CASE_INTERP_COEFF(NPY_UBYTE, npy_ubyte,
-                                      coeff, pi, idx);
-                    CASE_INTERP_COEFF(NPY_USHORT, npy_ushort,
-                                      coeff, pi, idx);
-                    CASE_INTERP_COEFF(NPY_UINT, npy_uint,
-                                      coeff, pi, idx);
-                    CASE_INTERP_COEFF(NPY_ULONG, npy_ulong,
-                                      coeff, pi, idx);
-                    CASE_INTERP_COEFF(NPY_ULONGLONG, npy_ulonglong,
-                                      coeff, pi, idx);
-                    CASE_INTERP_COEFF(NPY_BYTE, npy_byte,
-                                      coeff, pi, idx);
-                    CASE_INTERP_COEFF(NPY_SHORT, npy_short,
-                                      coeff, pi, idx);
-                    CASE_INTERP_COEFF(NPY_INT, npy_int,
-                                      coeff, pi, idx);
-                    CASE_INTERP_COEFF(NPY_LONG, npy_long,
-                                      coeff, pi, idx);
-                    CASE_INTERP_COEFF(NPY_LONGLONG, npy_longlong,
-                                      coeff, pi, idx);
-                    CASE_INTERP_COEFF(NPY_FLOAT, npy_float,
-                                      coeff, pi, idx);
-                    CASE_INTERP_COEFF(NPY_DOUBLE, npy_double,
-                                      coeff, pi, idx);
-                default:
-                    NPY_END_THREADS;
-                    PyErr_SetString(PyExc_RuntimeError,
-                                    "data type not supported");
-                    goto exit;
+                if (is_cval) {
+                    coeff = cval;
+                } else {
+                    if (NPY_UNLIKELY(edge)) {
+                        /* use precalculated edge offsets: */
+                        for(jj = 0; jj < rank; jj++) {
+                            if (edge_offsets[jj][io.coordinates[jj]])
+                                idx += edge_offsets[jj][io.coordinates[jj]][ff[jj]];
+                            else
+                                idx += ff[jj] * istrides[jj];
+                        }
+                        idx += oo;
+                    } else {
+                        /* use normal offsets: */
+                        idx += oo + foffsets[hh];
+                    }
+                    switch (type_num) {
+                        CASE_INTERP_COEFF(NPY_BOOL, npy_bool,
+                                          coeff, pi, idx);
+                        CASE_INTERP_COEFF(NPY_UBYTE, npy_ubyte,
+                                          coeff, pi, idx);
+                        CASE_INTERP_COEFF(NPY_USHORT, npy_ushort,
+                                          coeff, pi, idx);
+                        CASE_INTERP_COEFF(NPY_UINT, npy_uint,
+                                          coeff, pi, idx);
+                        CASE_INTERP_COEFF(NPY_ULONG, npy_ulong,
+                                          coeff, pi, idx);
+                        CASE_INTERP_COEFF(NPY_ULONGLONG, npy_ulonglong,
+                                          coeff, pi, idx);
+                        CASE_INTERP_COEFF(NPY_BYTE, npy_byte,
+                                          coeff, pi, idx);
+                        CASE_INTERP_COEFF(NPY_SHORT, npy_short,
+                                          coeff, pi, idx);
+                        CASE_INTERP_COEFF(NPY_INT, npy_int,
+                                          coeff, pi, idx);
+                        CASE_INTERP_COEFF(NPY_LONG, npy_long,
+                                          coeff, pi, idx);
+                        CASE_INTERP_COEFF(NPY_LONGLONG, npy_longlong,
+                                          coeff, pi, idx);
+                        CASE_INTERP_COEFF(NPY_FLOAT, npy_float,
+                                          coeff, pi, idx);
+                        CASE_INTERP_COEFF(NPY_DOUBLE, npy_double,
+                                          coeff, pi, idx);
+                    default:
+                        NPY_END_THREADS;
+                        PyErr_SetString(PyExc_RuntimeError,
+                                        "data type not supported");
+                        goto exit;
+                    }
                 }
                 /* calculate interpolated value: */
                 for(jj = 0; jj < rank; jj++)
@@ -996,6 +1026,16 @@ int NI_ZoomShift(PyArrayObject *input, PyArrayObject* zoom_ar,
             }
         }
         free(edge_offsets);
+    }
+    if (edge_grid_const) {
+        for(jj = 0; jj < rank; jj++) {
+            if (edge_grid_const[jj]) {
+                for(hh = 0; hh < odimensions[jj]; hh++)
+                    free(edge_grid_const[jj][hh]);
+                free(edge_grid_const[jj]);
+            }
+        }
+        free(edge_grid_const);
     }
     free(foffsets);
     free(fcoordinates);

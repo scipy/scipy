@@ -7,12 +7,10 @@ Original C version by Damian Eads.
 Translated to Cython by David Warde-Farley, October 2009.
 """
 
-from __future__ import absolute_import
-
 cimport cython
 import numpy as np
 cimport numpy as np
-from .cluster_blas cimport f_dgemm, f_sgemm
+from scipy.linalg.cython_blas cimport dgemm, sgemm
 
 from libc.math cimport sqrt
 
@@ -26,15 +24,11 @@ ctypedef fused vq_type:
     float32_t
     float64_t
 
-# When the number of features is less than this number,
-# switch back to the naive algorithm to avoid high overhead.
-DEF NFEATURES_CUTOFF=5
-
 # Initialize the NumPy C API
 np.import_array()
 
 
-cdef inline vq_type vec_sqr(int n, vq_type *p):
+cdef inline vq_type vec_sqr(int n, vq_type *p) noexcept:
     cdef vq_type result = 0.0
     cdef int i
     for i in range(n):
@@ -43,7 +37,7 @@ cdef inline vq_type vec_sqr(int n, vq_type *p):
 
 
 cdef inline void cal_M(int nobs, int ncodes, int nfeat, vq_type *obs,
-                       vq_type *code_book, vq_type *M):
+                       vq_type *code_book, vq_type *M) noexcept:
     """
     Calculate M = obs * code_book.T
     """
@@ -52,11 +46,11 @@ cdef inline void cal_M(int nobs, int ncodes, int nfeat, vq_type *obs,
     # Call BLAS functions with Fortran ABI
     # Note that BLAS Fortran ABI uses column-major order
     if vq_type is float32_t:
-        f_sgemm("T", "N", &ncodes, &nobs, &nfeat,
-                &alpha, code_book, &nfeat, obs, &nfeat, &beta, M, &ncodes)
+        sgemm("T", "N", &ncodes, &nobs, &nfeat,
+               &alpha, code_book, &nfeat, obs, &nfeat, &beta, M, &ncodes)
     else:
-        f_dgemm("T", "N", &ncodes, &nobs, &nfeat,
-                &alpha, code_book, &nfeat, obs, &nfeat, &beta, M, &ncodes)
+        dgemm("T", "N", &ncodes, &nobs, &nfeat,
+              &alpha, code_book, &nfeat, obs, &nfeat, &beta, M, &ncodes)
 
 
 cdef int _vq(vq_type *obs, vq_type *code_book,
@@ -77,14 +71,15 @@ cdef int _vq(vq_type *obs, vq_type *code_book,
         The number of features of each observation.
     nobs : int
         The number of observations.
-    codes : vq_type*
+    codes : int32_t*
         The pointer to the new codes array.
     low_dist : vq_type*
         low_dist[i] is the Euclidean distance from obs[i] to the corresponding
         centroid.
     """
-    # Naive algorithm is prefered when nfeat is small
-    if nfeat < NFEATURES_CUTOFF:
+    # When the number of features is less than this number,
+    # switch back to the naive algorithm to avoid high overhead.
+    if nfeat < 5:
         _vq_small_nf(obs, code_book, ncodes, nfeat, nobs, codes, low_dist)
         return 0
 
@@ -139,10 +134,10 @@ cdef int _vq(vq_type *obs, vq_type *code_book,
 
 cdef void _vq_small_nf(vq_type *obs, vq_type *code_book,
                        int ncodes, int nfeat, int nobs,
-                       int32_t *codes, vq_type *low_dist):
+                       int32_t *codes, vq_type *low_dist) noexcept:
     """
     Vector quantization using naive algorithm.
-    This is prefered when nfeat is small.
+    This is preferred when nfeat is small.
     The parameters are the same as those of _vq.
     """
     # Temporary variables
@@ -327,7 +322,7 @@ def update_cluster_means(np.ndarray obs, np.ndarray labels, int nc):
 
     Notes
     -----
-    The empty clusters will be set to all zeros and the curresponding elements
+    The empty clusters will be set to all zeros and the corresponding elements
     in `has_members` will be `False`. The upper level function should decide
     how to deal with them.
     """

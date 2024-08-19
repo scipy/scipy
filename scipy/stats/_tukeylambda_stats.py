@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 from numpy import poly1d
 from scipy.special import beta
@@ -60,7 +58,7 @@ def tukeylambda_variance(lam):
     -----
     In an interval around lambda=0, this function uses the [4,4] Pade
     approximation to compute the variance.  Otherwise it uses the standard
-    formula (http://en.wikipedia.org/wiki/Tukey_lambda_distribution).  The
+    formula (https://en.wikipedia.org/wiki/Tukey_lambda_distribution).  The
     Pade approximation is used because the standard formula has a removable
     discontinuity at lambda = 0, and does not produce accurate numerical
     results near lambda = 0.
@@ -97,7 +95,7 @@ def tukeylambda_variance(lam):
         v[small_mask] = _tukeylambda_var_p(small) / _tukeylambda_var_q(small)
     if reg.size > 0:
         v[reg_mask] = (2.0 / reg**2) * (1.0 / (1.0 + 2 * reg) -
-                                      beta(reg + 1, reg + 1))
+                                        beta(reg + 1, reg + 1))
     v.shape = shp
     return v
 

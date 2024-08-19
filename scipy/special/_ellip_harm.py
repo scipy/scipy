@@ -1,6 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
-import threading
 import numpy as np
 
 from ._ufuncs import _ellip_harm
@@ -14,7 +11,8 @@ def ellip_harm(h2, k2, n, p, s, signm=1, signn=1):
     These are also known as Lame functions of the first kind, and are
     solutions to the Lame equation:
 
-    .. math:: (s^2 - h^2)(s^2 - k^2)E''(s) + s(2s^2 - h^2 - k^2)E'(s) + (a - q s^2)E(s) = 0
+    .. math:: (s^2 - h^2)(s^2 - k^2)E''(s)
+              + s(2s^2 - h^2 - k^2)E'(s) + (a - q s^2)E(s) = 0
 
     where :math:`q = (n+1)n` and :math:`a` is the eigenvalue (not
     returned) corresponding to the solutions.
@@ -47,8 +45,8 @@ def ellip_harm(h2, k2, n, p, s, signm=1, signn=1):
 
     Notes
     -----
-    The geometric intepretation of the ellipsoidal functions is
-    explained in [2]_, [3]_, [4]_.  The `signm` and `signn` arguments control the
+    The geometric interpretation of the ellipsoidal functions is
+    explained in [2]_, [3]_, [4]_. The `signm` and `signn` arguments control the
     sign of prefactors for functions according to their type::
 
         K : +1
@@ -60,8 +58,8 @@ def ellip_harm(h2, k2, n, p, s, signm=1, signn=1):
 
     References
     ----------
-    .. [1] Digital Libary of Mathematical Functions 29.12
-       http://dlmf.nist.gov/29.12
+    .. [1] Digital Library of Mathematical Functions 29.12
+       https://dlmf.nist.gov/29.12
     .. [2] Bardhan and Knepley, "Computational science and
        re-discovery: open-source implementations of
        ellipsoidal harmonics for problems in potential theory",
@@ -82,9 +80,12 @@ def ellip_harm(h2, k2, n, p, s, signm=1, signn=1):
 
     Check that the functions indeed are solutions to the Lame equation:
 
+    >>> import numpy as np
     >>> from scipy.interpolate import UnivariateSpline
     >>> def eigenvalue(f, df, ddf):
-    ...     r = ((s**2 - h**2)*(s**2 - k**2)*ddf + s*(2*s**2 - h**2 - k**2)*df - n*(n+1)*s**2*f)/f
+    ...     r = (((s**2 - h**2) * (s**2 - k**2) * ddf
+    ...           + s * (2*s**2 - h**2 - k**2) * df
+    ...           - n * (n + 1)*s**2*f) / f)
     ...     return -r.mean(), r.std()
     >>> s = np.linspace(0.1, 10, 200)
     >>> k, h, n, p = 8.0, 2.2, 3, 2
@@ -94,7 +95,7 @@ def ellip_harm(h2, k2, n, p, s, signm=1, signn=1):
     >>> a, a_err
     (583.44366156701483, 6.4580890640310646e-11)
 
-    """
+    """  # noqa: E501
     return _ellip_harm(h2, k2, n, p, s, signm, signn)
 
 
@@ -108,7 +109,8 @@ def ellip_harm_2(h2, k2, n, p, s):
     These are also known as Lame functions of the second kind, and are
     solutions to the Lame equation:
 
-    .. math:: (s^2 - h^2)(s^2 - k^2)F''(s) + s(2s^2 - h^2 - k^2)F'(s) + (a - q s^2)F(s) = 0
+    .. math:: (s^2 - h^2)(s^2 - k^2)F''(s)
+              + s(2s^2 - h^2 - k^2)F'(s) + (a - q s^2)F(s) = 0
 
     where :math:`q = (n+1)n` and :math:`a` is the eigenvalue (not
     returned) corresponding to the solutions.
@@ -131,19 +133,20 @@ def ellip_harm_2(h2, k2, n, p, s):
     F : float
         The harmonic :math:`F^p_n(s)`
 
+    See Also
+    --------
+    ellip_harm, ellip_normal
+
     Notes
     -----
     Lame functions of the second kind are related to the functions of the first kind:
 
     .. math::
 
-       F^p_n(s)=(2n + 1)E^p_n(s)\int_{0}^{1/s}\frac{du}{(E^p_n(1/u))^2\sqrt{(1-u^2k^2)(1-u^2h^2)}}
+       F^p_n(s)=(2n + 1)E^p_n(s)\int_{0}^{1/s}
+       \frac{du}{(E^p_n(1/u))^2\sqrt{(1-u^2k^2)(1-u^2h^2)}}
 
     .. versionadded:: 0.15.0
-
-    See Also
-    --------
-    ellip_harm, ellip_normal
 
     Examples
     --------
@@ -160,6 +163,7 @@ def ellip_harm_2(h2, k2, n, p, s):
 def _ellip_normal_vec(h2, k2, n, p):
     return _ellipsoid_norm(h2, k2, n, p)
 
+
 _ellip_normal_vec = np.vectorize(_ellip_normal_vec, otypes='d')
 
 
@@ -171,7 +175,8 @@ def ellip_normal(h2, k2, n, p):
 
     .. math::
 
-       \gamma^p_n=8\int_{0}^{h}dx\int_{h}^{k}dy\frac{(y^2-x^2)(E^p_n(y)E^p_n(x))^2}{\sqrt((k^2-y^2)(y^2-h^2)(h^2-x^2)(k^2-x^2)}
+       \gamma^p_n=8\int_{0}^{h}dx\int_{h}^{k}dy
+       \frac{(y^2-x^2)(E^p_n(y)E^p_n(x))^2}{\sqrt((k^2-y^2)(y^2-h^2)(h^2-x^2)(k^2-x^2)}
 
     Parameters
     ----------

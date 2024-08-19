@@ -25,7 +25,7 @@
  * Note: 
  *   Input:  row and column indices *are not* assumed to be ordered
  *           
- *   Note: duplicate entries are carried over to the CSR represention
+ *   Note: duplicate entries are carried over to the CSR representation
  *
  *   Complexity: Linear.  Specifically O(nnz(A) + max(n_row,n_col))
  * 
@@ -82,7 +82,7 @@ void coo_tocsr(const I n_row,
  * Input Arguments:
  *   I  n_row           - number of rows in A
  *   I  n_col           - number of columns in A
- *   I  nnz             - number of nonzeros in A
+ *   npy_int64  nnz     - number of nonzeros in A
  *   I  Ai[nnz(A)]      - row indices
  *   I  Aj[nnz(A)]      - column indices
  *   T  Ax[nnz(A)]      - nonzeros 
@@ -92,20 +92,20 @@ void coo_tocsr(const I n_row,
 template <class I, class T>
 void coo_todense(const I n_row,
                  const I n_col,
-                 const I nnz,
+                 const npy_int64 nnz,
                  const I Ai[],
                  const I Aj[],
                  const T Ax[],
                        T Bx[],
-		 int fortran)
+                 const int fortran)
 {
     if (!fortran) {
-        for(I n = 0; n < nnz; n++){
+        for(npy_int64 n = 0; n < nnz; n++){
             Bx[ (npy_intp)n_col * Ai[n] + Aj[n] ] += Ax[n];
         }
     }
     else {
-        for(I n = 0; n < nnz; n++){
+        for(npy_int64 n = 0; n < nnz; n++){
             Bx[ (npy_intp)n_row * Aj[n] + Ai[n] ] += Ax[n];
         }
     }
@@ -117,7 +117,7 @@ void coo_todense(const I n_row,
  *
  *
  * Input Arguments:
- *   I  nnz           - number of nonzeros in A
+ *   npy_int64  nnz   - number of nonzeros in A
  *   I  Ai[nnz]       - row indices
  *   I  Aj[nnz]       - column indices
  *   T  Ax[nnz]       - nonzero values
@@ -133,15 +133,55 @@ void coo_todense(const I n_row,
  * 
  */
 template <class I, class T>
-void coo_matvec(const I nnz,
-	            const I Ai[], 
-	            const I Aj[], 
-	            const T Ax[],
-	            const T Xx[],
-	                  T Yx[])
+void coo_matvec(const npy_int64 nnz,
+                const I Ai[],
+                const I Aj[],
+                const T Ax[],
+                const T Xx[],
+                      T Yx[])
 {
-    for(I n = 0; n < nnz; n++){
+    for(npy_int64 n = 0; n < nnz; n++){
         Yx[Ai[n]] += Ax[n] * Xx[Aj[n]];
+    }
+}
+
+
+
+/*
+ *
+ * Input Arguments:
+ *   npy_int64  nnz           - number of nonzeros in A
+ *   npy_int64  n_col_B       - number of columns in B
+ *   I  Ai[nnz]               - row indices
+ *   I  Aj[nnz]               - column indices
+ *   T  Ax[nnz]               - nonzero values
+ *   T  Bx[n_row_B * n_col_B] - input matrix flattened
+ *
+ * Output Arguments:
+ *   T  Yx[n_row_A * n_col_B] - output matrix flattened
+ *
+ * Notes:
+ *   Output array Yx must be preallocated
+ * 
+ */
+template <class I, class T>
+void coo_matmat_dense(const npy_int64 nnz,
+                const npy_int64 n_col_B,
+                const I Ai[],
+                const I Aj[],
+                const T Ax[],
+                const T Bx[],
+                      T Yx[])
+{
+    for (npy_int64 n = 0; n < nnz; n++) {
+        const T x = Ax[n];
+        if (x != 0) {
+            const npy_int64 dst_offset = Ai[n] * n_col_B;
+            const npy_int64 src_offset = Aj[n] * n_col_B;
+            for (npy_int64 i = 0; i < n_col_B; i++) {
+                Yx[dst_offset + i] += x * Bx[src_offset + i];
+            }
+        }
     }
 }
 

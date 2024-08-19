@@ -1,14 +1,12 @@
-from __future__ import division, print_function, absolute_import
-
 import os
 import sys
 import time
+from itertools import zip_longest
 
 import numpy as np
 from numpy.testing import assert_
 import pytest
 
-from scipy._lib.six import reraise
 from scipy.special._testutils import assert_func_equal
 
 try:
@@ -21,70 +19,118 @@ except ImportError:
 # Machinery for systematic tests with mpmath
 # ------------------------------------------------------------------------------
 
-class Arg(object):
-    """
-    Generate a set of numbers on the real axis, concentrating on
+class Arg:
+    """Generate a set of numbers on the real axis, concentrating on
     'interesting' regions and covering all orders of magnitude.
+
     """
 
     def __init__(self, a=-np.inf, b=np.inf, inclusive_a=True, inclusive_b=True):
-        self.a = a
-        self.b = b
-        self.inclusive_a = inclusive_a
-        self.inclusive_b = inclusive_b
-        if self.a == -np.inf:
-            self.a = -np.finfo(float).max/2
-        if self.b == np.inf:
-            self.b = np.finfo(float).max/2
+        if a > b:
+            raise ValueError("a should be less than or equal to b")
+        if a == -np.inf:
+            a = -0.5*np.finfo(float).max
+        if b == np.inf:
+            b = 0.5*np.finfo(float).max
+        self.a, self.b = a, b
+
+        self.inclusive_a, self.inclusive_b = inclusive_a, inclusive_b
+
+    def _positive_values(self, a, b, n):
+        if a < 0:
+            raise ValueError("a should be positive")
+
+        # Try to put half of the points into a linspace between a and
+        # 10 the other half in a logspace.
+        if n % 2 == 0:
+            nlogpts = n//2
+            nlinpts = nlogpts
+        else:
+            nlogpts = n//2
+            nlinpts = nlogpts + 1
+
+        if a >= 10:
+            # Outside of linspace range; just return a logspace.
+            pts = np.logspace(np.log10(a), np.log10(b), n)
+        elif a > 0 and b < 10:
+            # Outside of logspace range; just return a linspace
+            pts = np.linspace(a, b, n)
+        elif a > 0:
+            # Linspace between a and 10 and a logspace between 10 and
+            # b.
+            linpts = np.linspace(a, 10, nlinpts, endpoint=False)
+            logpts = np.logspace(1, np.log10(b), nlogpts)
+            pts = np.hstack((linpts, logpts))
+        elif a == 0 and b <= 10:
+            # Linspace between 0 and b and a logspace between 0 and
+            # the smallest positive point of the linspace
+            linpts = np.linspace(0, b, nlinpts)
+            if linpts.size > 1:
+                right = np.log10(linpts[1])
+            else:
+                right = -30
+            logpts = np.logspace(-30, right, nlogpts, endpoint=False)
+            pts = np.hstack((logpts, linpts))
+        else:
+            # Linspace between 0 and 10, logspace between 0 and the
+            # smallest positive point of the linspace, and a logspace
+            # between 10 and b.
+            if nlogpts % 2 == 0:
+                nlogpts1 = nlogpts//2
+                nlogpts2 = nlogpts1
+            else:
+                nlogpts1 = nlogpts//2
+                nlogpts2 = nlogpts1 + 1
+            linpts = np.linspace(0, 10, nlinpts, endpoint=False)
+            if linpts.size > 1:
+                right = np.log10(linpts[1])
+            else:
+                right = -30
+            logpts1 = np.logspace(-30, right, nlogpts1, endpoint=False)
+            logpts2 = np.logspace(1, np.log10(b), nlogpts2)
+            pts = np.hstack((logpts1, linpts, logpts2))
+
+        return np.sort(pts)
 
     def values(self, n):
-        """Return an array containing approximatively `n` numbers."""
-        n1 = max(2, int(0.3*n))
-        n2 = max(2, int(0.2*n))
-        n3 = max(8, n - n1 - n2)
+        """Return an array containing n numbers."""
+        a, b = self.a, self.b
+        if a == b:
+            return np.zeros(n)
 
-        v1 = np.linspace(-1, 1, n1)
-        v2 = np.r_[np.linspace(-10, 10, max(0, n2-4)),
-                   -9, -5.5, 5.5, 9]
-        if self.a >= 0 and self.b > 0:
-            v3 = np.r_[
-                np.logspace(-30, -1, 2 + n3//4),
-                np.logspace(5, np.log10(self.b), 1 + n3//4),
-                ]
-            v4 = np.logspace(1, 5, 1 + n3//2)
-        elif self.a < 0 < self.b:
-            v3 = np.r_[
-                np.logspace(-30, -1, 2 + n3//8),
-                np.logspace(5, np.log10(self.b), 1 + n3//8),
-                -np.logspace(-30, -1, 2 + n3//8),
-                -np.logspace(5, np.log10(-self.a), 1 + n3//8)
-                ]
-            v4 = np.r_[
-                np.logspace(1, 5, 1 + n3//4),
-                -np.logspace(1, 5, 1 + n3//4)
-                ]
-        elif self.b < 0:
-            v3 = np.r_[
-                -np.logspace(-30, -1, 2 + n3//4),
-                -np.logspace(5, np.log10(-self.b), 1 + n3//4),
-                ]
-            v4 = -np.logspace(1, 5, 1 + n3//2)
+        if not self.inclusive_a:
+            n += 1
+        if not self.inclusive_b:
+            n += 1
+
+        if n % 2 == 0:
+            n1 = n//2
+            n2 = n1
         else:
-            v3 = []
-            v4 = []
-        v = np.r_[v1, v2, v3, v4, 0]
-        if self.inclusive_a:
-            v = v[v >= self.a]
+            n1 = n//2
+            n2 = n1 + 1
+
+        if a >= 0:
+            pospts = self._positive_values(a, b, n)
+            negpts = []
+        elif b <= 0:
+            pospts = []
+            negpts = -self._positive_values(-b, -a, n)
         else:
-            v = v[v > self.a]
-        if self.inclusive_b:
-            v = v[v <= self.b]
-        else:
-            v = v[v < self.b]
-        return np.unique(v)
+            pospts = self._positive_values(0, b, n1)
+            negpts = -self._positive_values(0, -a, n2 + 1)
+            # Don't want to get zero twice
+            negpts = negpts[1:]
+        pts = np.hstack((negpts[::-1], pospts))
+
+        if not self.inclusive_a:
+            pts = pts[1:]
+        if not self.inclusive_b:
+            pts = pts[:-1]
+        return pts
 
 
-class FixedArg(object):
+class FixedArg:
     def __init__(self, values):
         self._values = np.asarray(values)
 
@@ -92,19 +138,19 @@ class FixedArg(object):
         return self._values
 
 
-class ComplexArg(object):
+class ComplexArg:
     def __init__(self, a=complex(-np.inf, -np.inf), b=complex(np.inf, np.inf)):
         self.real = Arg(a.real, b.real)
         self.imag = Arg(a.imag, b.imag)
 
     def values(self, n):
-        m = max(2, int(np.sqrt(n)))
+        m = int(np.floor(np.sqrt(n)))
         x = self.real.values(m)
-        y = self.imag.values(m)
+        y = self.imag.values(m + 1)
         return (x[:,None] + 1j*y[None,:]).ravel()
 
 
-class IntArg(object):
+class IntArg:
     def __init__(self, a=-1000, b=1000):
         self.a = a
         self.b = b
@@ -122,18 +168,18 @@ def get_args(argspec, n):
         args = argspec.copy()
     else:
         nargs = len(argspec)
-        ms = np.asarray([1.5 if isinstance(spec, ComplexArg) else 1.0 for spec in argspec])
+        ms = np.asarray(
+            [1.5 if isinstance(spec, ComplexArg) else 1.0 for spec in argspec]
+        )
         ms = (n**(ms/sum(ms))).astype(int) + 1
 
-        args = []
-        for spec, m in zip(argspec, ms):
-            args.append(spec.values(m))
+        args = [spec.values(m) for spec, m in zip(argspec, ms)]
         args = np.array(np.broadcast_arrays(*np.ix_(*args))).reshape(nargs, -1).T
 
     return args
 
 
-class MpmathData(object):
+class MpmathData:
     def __init__(self, scipy_func, mpmath_func, arg_spec, name=None,
                  dps=None, prec=None, n=None, rtol=1e-7, atol=1e-300,
                  ignore_inf_sign=False, distinguish_nan_and_inf=True,
@@ -163,7 +209,9 @@ class MpmathData(object):
         if isinstance(self.arg_spec, np.ndarray):
             self.is_complex = np.issubdtype(self.arg_spec.dtype, np.complexfloating)
         else:
-            self.is_complex = any([isinstance(arg, ComplexArg) for arg in self.arg_spec])
+            self.is_complex = any(
+                [isinstance(arg, ComplexArg) for arg in self.arg_spec]
+            )
         self.ignore_inf_sign = ignore_inf_sign
         self.distinguish_nan_and_inf = distinguish_nan_and_inf
         if not name or name == '<lambda>':
@@ -212,27 +260,34 @@ class MpmathData(object):
                 mpmath.mp.dps = dps
 
                 try:
-                    assert_func_equal(self.scipy_func,
-                                      lambda *a: pytype(self.mpmath_func(*map(mptype, a))),
-                                      argarr,
-                                      vectorized=False,
-                                      rtol=self.rtol, atol=self.atol,
-                                      ignore_inf_sign=self.ignore_inf_sign,
-                                      distinguish_nan_and_inf=self.distinguish_nan_and_inf,
-                                      nan_ok=self.nan_ok,
-                                      param_filter=self.param_filter)
+                    assert_func_equal(
+                        self.scipy_func,
+                        lambda *a: pytype(self.mpmath_func(*map(mptype, a))),
+                        argarr,
+                        vectorized=False,
+                        rtol=self.rtol,
+                        atol=self.atol,
+                        ignore_inf_sign=self.ignore_inf_sign,
+                        distinguish_nan_and_inf=self.distinguish_nan_and_inf,
+                        nan_ok=self.nan_ok,
+                        param_filter=self.param_filter
+                    )
                     break
                 except AssertionError:
                     if j >= len(dps_list)-1:
-                        reraise(*sys.exc_info())
+                        # reraise the Exception
+                        tp, value, tb = sys.exc_info()
+                        if value.__traceback__ is not tb:
+                            raise value.with_traceback(tb)
+                        raise value
         finally:
             mpmath.mp.dps, mpmath.mp.prec = old_dps, old_prec
 
     def __repr__(self):
         if self.is_complex:
-            return "<MpmathData: %s (complex)>" % (self.name,)
+            return f"<MpmathData: {self.name} (complex)>"
         else:
-            return "<MpmathData: %s>" % (self.name,)
+            return f"<MpmathData: {self.name}>"
 
 
 def assert_mpmath_equal(*a, **kw):
@@ -241,7 +296,9 @@ def assert_mpmath_equal(*a, **kw):
 
 
 def nonfunctional_tooslow(func):
-    return pytest.mark.skip(reason="    Test not yet functional (too slow), needs more work.")(func)
+    return pytest.mark.skip(
+        reason="    Test not yet functional (too slow), needs more work."
+    )(func)
 
 
 # ------------------------------------------------------------------------------
@@ -272,19 +329,19 @@ def trace_args(func):
             return float(x)
 
     def wrap(*a, **kw):
-        sys.stderr.write("%r: " % (tuple(map(tofloat, a)),))
+        sys.stderr.write(f"{tuple(map(tofloat, a))!r}: ")
         sys.stderr.flush()
         try:
             r = func(*a, **kw)
-            sys.stderr.write("-> %r" % r)
+            sys.stderr.write(f"-> {r!r}")
         finally:
             sys.stderr.write("\n")
             sys.stderr.flush()
         return r
     return wrap
 
+
 try:
-    import posix
     import signal
     POSIX = ('setitimer' in dir(signal))
 except ImportError:
@@ -371,36 +428,26 @@ def mp_assert_allclose(res, std, atol=0, rtol=1e-17):
     """
     Compare lists of mpmath.mpf's or mpmath.mpc's directly so that it
     can be done to higher precision than double.
-
     """
-    try:
-        len(res)
-    except TypeError:
-        res = list(res)
-
-    n = len(std)
-    if len(res) != n:
-        raise AssertionError("Lengths of inputs not equal.")
-
     failures = []
-    for k in range(n):
-        try:
-            assert_(mpmath.fabs(res[k] - std[k]) <= atol + rtol*mpmath.fabs(std[k]))
-        except AssertionError:
-            failures.append(k)
+    for k, (resval, stdval) in enumerate(zip_longest(res, std)):
+        if resval is None or stdval is None:
+            raise ValueError('Lengths of inputs res and std are not equal.')
+        if mpmath.fabs(resval - stdval) > atol + rtol*mpmath.fabs(stdval):
+            failures.append((k, resval, stdval))
 
-    ndigits = int(abs(np.log10(rtol)))
-    msg = [""]
-    msg.append("Bad results ({} out of {}) for the following points:"
-               .format(len(failures), n))
-    for k in failures:
-        resrep = mpmath.nstr(res[k], ndigits, min_fixed=0, max_fixed=0)
-        stdrep = mpmath.nstr(std[k], ndigits, min_fixed=0, max_fixed=0)
-        if std[k] == 0:
-            rdiff = "inf"
-        else:
-            rdiff = mpmath.fabs((res[k] - std[k])/std[k])
-            rdiff = mpmath.nstr(rdiff, 3)
-        msg.append("{}: {} != {} (rdiff {})".format(k, resrep, stdrep, rdiff))
-    if failures:
+    nfail = len(failures)
+    if nfail > 0:
+        ndigits = int(abs(np.log10(rtol)))
+        msg = [""]
+        msg.append(f"Bad results ({nfail} out of {k + 1}) for the following points:")
+        for k, resval, stdval in failures:
+            resrep = mpmath.nstr(resval, ndigits, min_fixed=0, max_fixed=0)
+            stdrep = mpmath.nstr(stdval, ndigits, min_fixed=0, max_fixed=0)
+            if stdval == 0:
+                rdiff = "inf"
+            else:
+                rdiff = mpmath.fabs((resval - stdval)/stdval)
+                rdiff = mpmath.nstr(rdiff, 3)
+            msg.append(f"{k}: {resrep} != {stdrep} (rdiff {rdiff})")
         assert_(False, "\n".join(msg))

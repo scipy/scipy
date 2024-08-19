@@ -1,14 +1,10 @@
-# -*- coding: utf-8 -*-
-from __future__ import division, print_function, absolute_import
-
 from numpy import abs, sum, arange, sqrt
 
 from .go_benchmark import Benchmark
 
 
 class Qing(Benchmark):
-
-    """
+    r"""
     Qing objective function.
 
     This class defines the Qing [1]_ global optimization problem. This is a
@@ -48,8 +44,7 @@ class Qing(Benchmark):
 
 
 class Quadratic(Benchmark):
-
-    """
+    r"""
     Quadratic objective function.
 
     This class defines the Quadratic [1]_ global optimization problem. This
@@ -89,8 +84,7 @@ class Quadratic(Benchmark):
 
 
 class Quintic(Benchmark):
-
-    """
+    r"""
     Quintic objective function.
 
     This class defines the Quintic [1]_ global optimization problem. This is a

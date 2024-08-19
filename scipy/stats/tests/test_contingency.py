@@ -1,12 +1,12 @@
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 from numpy.testing import (assert_equal, assert_array_equal,
-         assert_array_almost_equal, assert_approx_equal, assert_allclose)
+                           assert_array_almost_equal, assert_approx_equal,
+                           assert_allclose)
+import pytest
 from pytest import raises as assert_raises
-
 from scipy.special import xlogy
-from scipy.stats.contingency import margins, expected_freq, chi2_contingency
+from scipy.stats.contingency import (margins, expected_freq,
+                                     chi2_contingency, association)
 
 
 def test_margins():
@@ -76,33 +76,33 @@ def test_chi2_contingency_trivial():
 def test_chi2_contingency_R():
     # Some test cases that were computed independently, using R.
 
-    Rcode = \
-    """
-    # Data vector.
-    data <- c(
-      12, 34, 23,     4,  47,  11,
-      35, 31, 11,    34,  10,  18,
-      12, 32,  9,    18,  13,  19,
-      12, 12, 14,     9,  33,  25
-      )
-
-    # Create factor tags:r=rows, c=columns, t=tiers
-    r <- factor(gl(4, 2*3, 2*3*4, labels=c("r1", "r2", "r3", "r4")))
-    c <- factor(gl(3, 1,   2*3*4, labels=c("c1", "c2", "c3")))
-    t <- factor(gl(2, 3,   2*3*4, labels=c("t1", "t2")))
-
-    # 3-way Chi squared test of independence
-    s = summary(xtabs(data~r+c+t))
-    print(s)
-    """
-    Routput = \
-    """
-    Call: xtabs(formula = data ~ r + c + t)
-    Number of cases in table: 478
-    Number of factors: 3
-    Test for independence of all factors:
-            Chisq = 102.17, df = 17, p-value = 3.514e-14
-    """
+    # Rcode = \
+    # """
+    # # Data vector.
+    # data <- c(
+    #   12, 34, 23,     4,  47,  11,
+    #   35, 31, 11,    34,  10,  18,
+    #   12, 32,  9,    18,  13,  19,
+    #   12, 12, 14,     9,  33,  25
+    #   )
+    #
+    # # Create factor tags:r=rows, c=columns, t=tiers
+    # r <- factor(gl(4, 2*3, 2*3*4, labels=c("r1", "r2", "r3", "r4")))
+    # c <- factor(gl(3, 1,   2*3*4, labels=c("c1", "c2", "c3")))
+    # t <- factor(gl(2, 3,   2*3*4, labels=c("t1", "t2")))
+    #
+    # # 3-way Chi squared test of independence
+    # s = summary(xtabs(data~r+c+t))
+    # print(s)
+    # """
+    # Routput = \
+    # """
+    # Call: xtabs(formula = data ~ r + c + t)
+    # Number of cases in table: 478
+    # Number of factors: 3
+    # Test for independence of all factors:
+    #         Chisq = 102.17, df = 17, p-value = 3.514e-14
+    # """
     obs = np.array(
         [[[12, 34, 23],
           [35, 31, 11],
@@ -117,42 +117,42 @@ def test_chi2_contingency_R():
     assert_approx_equal(p, 3.514e-14, significant=4)
     assert_equal(dof, 17)
 
-    Rcode = \
-    """
-    # Data vector.
-    data <- c(
-        #
-        12, 17,
-        11, 16,
-        #
-        11, 12,
-        15, 16,
-        #
-        23, 15,
-        30, 22,
-        #
-        14, 17,
-        15, 16
-        )
-
-    # Create factor tags:r=rows, c=columns, d=depths(?), t=tiers
-    r <- factor(gl(2, 2,  2*2*2*2, labels=c("r1", "r2")))
-    c <- factor(gl(2, 1,  2*2*2*2, labels=c("c1", "c2")))
-    d <- factor(gl(2, 4,  2*2*2*2, labels=c("d1", "d2")))
-    t <- factor(gl(2, 8,  2*2*2*2, labels=c("t1", "t2")))
-
-    # 4-way Chi squared test of independence
-    s = summary(xtabs(data~r+c+d+t))
-    print(s)
-    """
-    Routput = \
-    """
-    Call: xtabs(formula = data ~ r + c + d + t)
-    Number of cases in table: 262
-    Number of factors: 4
-    Test for independence of all factors:
-            Chisq = 8.758, df = 11, p-value = 0.6442
-    """
+    # Rcode = \
+    # """
+    # # Data vector.
+    # data <- c(
+    #     #
+    #     12, 17,
+    #     11, 16,
+    #     #
+    #     11, 12,
+    #     15, 16,
+    #     #
+    #     23, 15,
+    #     30, 22,
+    #     #
+    #     14, 17,
+    #     15, 16
+    #     )
+    #
+    # # Create factor tags:r=rows, c=columns, d=depths(?), t=tiers
+    # r <- factor(gl(2, 2,  2*2*2*2, labels=c("r1", "r2")))
+    # c <- factor(gl(2, 1,  2*2*2*2, labels=c("c1", "c2")))
+    # d <- factor(gl(2, 4,  2*2*2*2, labels=c("d1", "d2")))
+    # t <- factor(gl(2, 8,  2*2*2*2, labels=c("t1", "t2")))
+    #
+    # # 4-way Chi squared test of independence
+    # s = summary(xtabs(data~r+c+d+t))
+    # print(s)
+    # """
+    # Routput = \
+    # """
+    # Call: xtabs(formula = data ~ r + c + d + t)
+    # Number of cases in table: 262
+    # Number of factors: 4
+    # Test for independence of all factors:
+    #         Chisq = 8.758, df = 11, p-value = 0.6442
+    # """
     obs = np.array(
         [[[[12, 17],
            [11, 16]],
@@ -170,10 +170,12 @@ def test_chi2_contingency_R():
 
 def test_chi2_contingency_g():
     c = np.array([[15, 60], [15, 90]])
-    g, p, dof, e = chi2_contingency(c, lambda_='log-likelihood', correction=False)
+    g, p, dof, e = chi2_contingency(c, lambda_='log-likelihood',
+                                    correction=False)
     assert_allclose(g, 2*xlogy(c, c/e).sum())
 
-    g, p, dof, e = chi2_contingency(c, lambda_='log-likelihood', correction=True)
+    g, p, dof, e = chi2_contingency(c, lambda_='log-likelihood',
+                                    correction=True)
     c_corr = c + np.array([[-0.5, 0.5], [0.5, -0.5]])
     assert_allclose(g, 2*xlogy(c_corr, c_corr/e).sum())
 
@@ -198,3 +200,42 @@ def test_chi2_contingency_bad_args():
     obs = np.empty((0, 8))
     assert_raises(ValueError, chi2_contingency, obs)
 
+
+def test_chi2_contingency_yates_gh13875():
+    # Magnitude of Yates' continuity correction should not exceed difference
+    # between expected and observed value of the statistic; see gh-13875
+    observed = np.array([[1573, 3], [4, 0]])
+    p = chi2_contingency(observed)[1]
+    assert_allclose(p, 1, rtol=1e-12)
+
+
+@pytest.mark.parametrize("correction", [False, True])
+def test_result(correction):
+    obs = np.array([[1, 2], [1, 2]])
+    res = chi2_contingency(obs, correction=correction)
+    assert_equal((res.statistic, res.pvalue, res.dof, res.expected_freq), res)
+
+
+def test_bad_association_args():
+    # Invalid Test Statistic
+    assert_raises(ValueError, association, [[1, 2], [3, 4]], "X")
+    # Invalid array shape
+    assert_raises(ValueError, association, [[[1, 2]], [[3, 4]]], "cramer")
+    # chi2_contingency exception
+    assert_raises(ValueError, association, [[-1, 10], [1, 2]], 'cramer')
+    # Invalid Array Item Data Type
+    assert_raises(ValueError, association,
+                  np.array([[1, 2], ["dd", 4]], dtype=object), 'cramer')
+
+
+@pytest.mark.parametrize('stat, expected',
+                         [('cramer', 0.09222412010290792),
+                          ('tschuprow', 0.0775509319944633),
+                          ('pearson', 0.12932925727138758)])
+def test_assoc(stat, expected):
+    # 2d Array
+    obs1 = np.array([[12, 13, 14, 15, 16],
+                     [17, 16, 18, 19, 11],
+                     [9, 15, 14, 12, 11]])
+    a = association(observed=obs1, method=stat)
+    assert_allclose(a, expected)

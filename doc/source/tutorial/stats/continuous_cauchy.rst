@@ -4,12 +4,18 @@
 Cauchy Distribution
 ===================
 
+The support is :math:`x\in\mathbb{R}`.
+
 .. math::
    :nowrap:
 
-    \begin{eqnarray*} f\left(x\right) & = & \frac{1}{\pi\left(1+x^{2}\right)}\\ F\left(x\right) & = & \frac{1}{2}+\frac{1}{\pi}\tan^{-1}x\\ G\left(\alpha\right) & = & \tan\left(\pi\alpha-\frac{\pi}{2}\right)\\ m_{d} & = & 0\\ m_{n} & = & 0\end{eqnarray*}
+    \begin{eqnarray*} f\left(x\right) & = & \frac{1}{\pi\left(1+x^{2}\right)}\\
+    F\left(x\right) & = & \frac{1}{2}+\frac{1}{\pi}\tan^{-1}x\\
+    G\left(q\right) & = & \tan\left(\pi q-\frac{\pi}{2}\right)\\
+    m_{d} & = & 0\\
+    m_{n} & = & 0\end{eqnarray*}
 
-No finite moments. This is the t distribution with one degree of
+No finite moments. This is the :math:`t` distribution with one degree of
 freedom.
 
 .. math::

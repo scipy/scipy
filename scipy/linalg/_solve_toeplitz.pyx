@@ -1,8 +1,6 @@
 # Author: Robert T. McGibbon, December 2014
 #
 # cython: boundscheck=False, wraparound=False, cdivision=True
-from __future__ import absolute_import
-
 from numpy import zeros, asarray, complex128, float64
 from numpy.linalg import LinAlgError
 from numpy cimport complex128_t, float64_t
@@ -13,7 +11,7 @@ cdef fused dz:
     complex128_t
 
 
-def levinson(dz[::1] a, dz[::1] b):
+def levinson(const dz[::1] a, const dz[::1] b):
     """Solve a linear Toeplitz system using Levinson recursion.
 
     Parameters
@@ -38,7 +36,7 @@ def levinson(dz[::1] a, dz[::1] b):
 
     Returns
     -------
-    x : arrray, shape=(n,)
+    x : array, shape=(n,)
         The solution vector
     reflection_coeff : array, shape=(n+1,)
         Toeplitz reflection coefficients. When a is symmetric Toeplitz and

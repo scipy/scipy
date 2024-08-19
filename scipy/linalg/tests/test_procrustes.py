@@ -6,6 +6,7 @@ from pytest import raises as assert_raises
 
 from scipy.linalg import inv, eigh, norm
 from scipy.linalg import orthogonal_procrustes
+from scipy.sparse._sputils import matrix
 
 
 def test_orthogonal_procrustes_ndim_too_large():
@@ -63,8 +64,8 @@ def test_orthogonal_procrustes_array_conversion():
     for m, n in ((6, 4), (4, 4), (4, 6)):
         A_arr = np.random.randn(m, n)
         B_arr = np.random.randn(m, n)
-        As = (A_arr, A_arr.tolist(), np.matrix(A_arr))
-        Bs = (B_arr, B_arr.tolist(), np.matrix(B_arr))
+        As = (A_arr, A_arr.tolist(), matrix(A_arr))
+        Bs = (B_arr, B_arr.tolist(), matrix(B_arr))
         R_arr, s = orthogonal_procrustes(A_arr, B_arr)
         AR_arr = A_arr.dot(R_arr)
         for A, B in product(As, Bs):
@@ -188,3 +189,13 @@ def test_orthogonal_procrustes_skbio_example():
     B_approx = scale * np.dot(A, R) + B_mu
     assert_allclose(B_approx, B_orig)
     assert_allclose(B / norm(B), B_standardized)
+
+
+def test_empty():
+    a = np.empty((0, 0))
+    r, s = orthogonal_procrustes(a, a)
+    assert_allclose(r, np.empty((0, 0)))
+
+    a = np.empty((0, 3))
+    r, s = orthogonal_procrustes(a, a)
+    assert_allclose(r, np.identity(3))

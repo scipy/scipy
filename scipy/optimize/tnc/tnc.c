@@ -216,7 +216,7 @@ static void daxpy1(int n, double da, const double dx[], double dy[]);
 static void dcopy1(int n, const double dx[], double dy[]);
 static double dnrm21(int n, const double dx[]);
 
-/* additionnal blas-like functions */
+/* additional blas-like functions */
 static void dneg1(int n, double v[]);
 
 /*
@@ -476,7 +476,7 @@ static void scaleg(int n, double g[], const double xscale[], double fscale)
     }
 }
 
-/* Caculate the pivot vector */
+/* Calculate the pivot vector */
 static void setConstraints(int n, double x[], int pivot[], double xscale[],
                            double xoffset[], double low[], double up[])
 {
@@ -584,7 +584,7 @@ static tnc_rc tnc_minimize(int n, double x[],
     icycle = n - 1;
     newcon = TNC_TRUE;
 
-    /* Uneeded initialisations */
+    /* Unneeded initialisations */
     lreset = TNC_FALSE;
     yrsr = 0.0;
     yksk = 0.0;
@@ -799,9 +799,9 @@ static tnc_rc tnc_minimize(int n, double x[],
 
         /* Invoke the callback function */
         if (callback) {
-            unscalex(n, x, xscale, xoffset);
-            callback(x, state);
-            scalex(n, x, xscale, xoffset);
+            dcopy1(n, x, temp);
+            unscalex(n, temp, xscale, xoffset);
+            callback(temp, state);
         }
 
         /* Set up parameters used in convergence and resetting tests */
@@ -1110,7 +1110,7 @@ static int tnc_direction(double *zsol, double *diagb,
     rhsnrm = gnorm;
     tol = 1e-12;
     qold = 0.0;
-    rzold = 0.0;                /* Uneeded */
+    rzold = 0.0;                /* Unneeded */
 
     frc = -1;                   /* ENOMEM here */
     r = malloc(sizeof(*r) * n); /* Residual */

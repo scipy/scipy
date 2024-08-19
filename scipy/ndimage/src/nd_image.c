@@ -43,7 +43,7 @@
 #include "ni_measure.h"
 
 #include "ccallback.h"
-#include "numpy/npy_3kcompat.h"
+
 
 typedef struct {
     PyObject *extra_arguments;
@@ -106,7 +106,7 @@ NI_ObjectToOptionalInputArray(PyObject *object, PyArrayObject **array)
 static int
 NI_ObjectToOutputArray(PyObject *object, PyArrayObject **array)
 {
-    int flags = NPY_ARRAY_BEHAVED_NS | NPY_ARRAY_UPDATEIFCOPY;
+    int flags = NPY_ARRAY_BEHAVED_NS | NPY_ARRAY_WRITEBACKIFCOPY;
     /*
      * This would also be caught by the PyArray_CheckFromAny call, but
      * we check it explicitly here to provide a saner error message.
@@ -190,6 +190,7 @@ static PyObject *Py_Correlate1D(PyObject *obj, PyObject *args)
 
     NI_Correlate1D(input, weights, axis, output, (NI_ExtendMode)mode, cval,
                    origin);
+    PyArray_ResolveWritebackIfCopy(output);
 
 exit:
     Py_XDECREF(input);
@@ -201,7 +202,7 @@ exit:
 static PyObject *Py_Correlate(PyObject *obj, PyObject *args)
 {
     PyArrayObject *input = NULL, *output = NULL, *weights = NULL;
-    PyArray_Dims origin;
+    PyArray_Dims origin = {NULL, 0};
     int mode;
     double cval;
 
@@ -218,6 +219,7 @@ static PyObject *Py_Correlate(PyObject *obj, PyObject *args)
 
     NI_Correlate(input, weights, output, (NI_ExtendMode)mode, cval,
                  origin.ptr);
+    PyArray_ResolveWritebackIfCopy(output);
 
 exit:
     Py_XDECREF(input);
@@ -243,6 +245,7 @@ static PyObject *Py_UniformFilter1D(PyObject *obj, PyObject *args)
 
     NI_UniformFilter1D(input, filter_size, axis, output, (NI_ExtendMode)mode,
                        cval, origin);
+    PyArray_ResolveWritebackIfCopy(output);
 
 exit:
     Py_XDECREF(input);
@@ -266,6 +269,7 @@ static PyObject *Py_MinOrMaxFilter1D(PyObject *obj, PyObject *args)
 
     NI_MinOrMaxFilter1D(input, filter_size, axis, output, (NI_ExtendMode)mode,
                         cval, origin, minimum);
+    PyArray_ResolveWritebackIfCopy(output);
 
 exit:
     Py_XDECREF(input);
@@ -277,7 +281,7 @@ static PyObject *Py_MinOrMaxFilter(PyObject *obj, PyObject *args)
 {
     PyArrayObject *input = NULL, *output = NULL, *footprint = NULL;
     PyArrayObject *structure = NULL;
-    PyArray_Dims origin;
+    PyArray_Dims origin = {NULL, 0};
     int mode, minimum;
     double cval;
 
@@ -297,6 +301,7 @@ static PyObject *Py_MinOrMaxFilter(PyObject *obj, PyObject *args)
 
     NI_MinOrMaxFilter(input, footprint, structure, output, (NI_ExtendMode)mode,
                       cval, origin.ptr, minimum);
+    PyArray_ResolveWritebackIfCopy(output);
 
 exit:
     Py_XDECREF(input);
@@ -310,7 +315,7 @@ exit:
 static PyObject *Py_RankFilter(PyObject *obj, PyObject *args)
 {
     PyArrayObject *input = NULL, *output = NULL, *footprint = NULL;
-    PyArray_Dims origin;
+    PyArray_Dims origin = {NULL, 0};
     int mode, rank;
     double cval;
 
@@ -328,6 +333,7 @@ static PyObject *Py_RankFilter(PyObject *obj, PyObject *args)
 
     NI_RankFilter(input, rank, footprint, output, (NI_ExtendMode)mode, cval,
                   origin.ptr);
+    PyArray_ResolveWritebackIfCopy(output);
 
 exit:
     Py_XDECREF(input);
@@ -424,12 +430,6 @@ static PyObject *Py_GenericFilter1D(PyObject *obj, PyObject *args)
         /* 'Legacy' low-level callable */
         func = PyCapsule_GetPointer(fnc, NULL);
         data = PyCapsule_GetContext(fnc);
-#if PY_VERSION_HEX < 0x03000000
-    } else if (PyCObject_Check(fnc)) {
-        /* 'Legacy' low-level callable on Py2 */
-        func = PyCObject_AsVoidPtr(fnc);
-        data = PyCObject_GetDesc(fnc);
-#endif
     } else {
         int ret;
 
@@ -453,6 +453,7 @@ static PyObject *Py_GenericFilter1D(PyObject *obj, PyObject *args)
 
     NI_GenericFilter1D(input, func, data, filter_size, axis, output,
                        (NI_ExtendMode)mode, cval, origin);
+    PyArray_ResolveWritebackIfCopy(output);
 
 exit:
     if (callback.py_function != NULL || callback.c_function != NULL) {
@@ -499,7 +500,7 @@ static PyObject *Py_GenericFilter(PyObject *obj, PyObject *args)
     void *func = NULL, *data = NULL;
     NI_PythonCallbackData cbdata;
     int mode;
-    PyArray_Dims origin;
+    PyArray_Dims origin = {NULL, 0};
     double cval;
     ccallback_t callback;
     static ccallback_signature_t callback_signatures[] = {
@@ -548,12 +549,6 @@ static PyObject *Py_GenericFilter(PyObject *obj, PyObject *args)
     if (PyCapsule_CheckExact(fnc) && PyCapsule_GetName(fnc) == NULL) {
         func = PyCapsule_GetPointer(fnc, NULL);
         data = PyCapsule_GetContext(fnc);
-#if PY_VERSION_HEX < 0x03000000
-    } else if (PyCObject_Check(fnc)) {
-        /* 'Legacy' low-level callable on Py2 */
-        func = PyCObject_AsVoidPtr(fnc);
-        data = PyCObject_GetDesc(fnc);
-#endif
     } else {
         int ret;
 
@@ -577,6 +572,7 @@ static PyObject *Py_GenericFilter(PyObject *obj, PyObject *args)
 
     NI_GenericFilter(input, func, data, footprint, output, (NI_ExtendMode)mode,
                      cval, origin.ptr);
+    PyArray_ResolveWritebackIfCopy(output);
 
 exit:
     if (callback.py_function != NULL || callback.c_function != NULL) {
@@ -604,6 +600,7 @@ static PyObject *Py_FourierFilter(PyObject *obj, PyObject *args)
         goto exit;
 
     NI_FourierFilter(input, parameters, n, axis, output, filter_type);
+    PyArray_ResolveWritebackIfCopy(output);
 
 exit:
     Py_XDECREF(input);
@@ -626,6 +623,7 @@ static PyObject *Py_FourierShift(PyObject *obj, PyObject *args)
         goto exit;
 
     NI_FourierShift(input, shifts, n, axis, output);
+    PyArray_ResolveWritebackIfCopy(output);
 
 exit:
     Py_XDECREF(input);
@@ -637,15 +635,15 @@ exit:
 static PyObject *Py_SplineFilter1D(PyObject *obj, PyObject *args)
 {
     PyArrayObject *input = NULL, *output = NULL;
-    int axis, order;
+    int axis, order, mode;
 
-    if (!PyArg_ParseTuple(args, "O&iiO&",
-                          NI_ObjectToInputArray, &input,
-                          &order, &axis,
-                          NI_ObjectToOutputArray, &output))
+    if (!PyArg_ParseTuple(args, "O&iiO&i",
+                          NI_ObjectToInputArray, &input, &order, &axis,
+                          NI_ObjectToOutputArray, &output, &mode))
         goto exit;
 
-    NI_SplineFilter1D(input, order, axis, output);
+    NI_SplineFilter1D(input, order, axis, mode, output);
+    PyArray_ResolveWritebackIfCopy(output);
 
 exit:
     Py_XDECREF(input);
@@ -697,7 +695,7 @@ static PyObject *Py_GeometricTransform(PyObject *obj, PyObject *args)
     PyArrayObject *input = NULL, *output = NULL;
     PyArrayObject *coordinates = NULL, *matrix = NULL, *shift = NULL;
     PyObject *fnc = NULL, *extra_arguments = NULL, *extra_keywords = NULL;
-    int mode, order;
+    int mode, order, nprepad;
     double cval;
     void *func = NULL, *data = NULL;
     NI_PythonCallbackData cbdata;
@@ -723,14 +721,14 @@ static PyObject *Py_GeometricTransform(PyObject *obj, PyObject *args)
     callback.py_function = NULL;
     callback.c_function = NULL;
 
-    if (!PyArg_ParseTuple(args, "O&OO&O&O&O&iidOO",
+    if (!PyArg_ParseTuple(args, "O&OO&O&O&O&iidiOO",
                           NI_ObjectToInputArray, &input,
                           &fnc,
                           NI_ObjectToOptionalInputArray, &coordinates,
                           NI_ObjectToOptionalInputArray, &matrix,
                           NI_ObjectToOptionalInputArray, &shift,
                           NI_ObjectToOutputArray, &output,
-                          &order, &mode, &cval,
+                          &order, &mode, &cval, &nprepad,
                           &extra_arguments, &extra_keywords))
         goto exit;
 
@@ -748,12 +746,6 @@ static PyObject *Py_GeometricTransform(PyObject *obj, PyObject *args)
         if (PyCapsule_CheckExact(fnc) && PyCapsule_GetName(fnc) == NULL) {
             func = PyCapsule_GetPointer(fnc, NULL);
             data = PyCapsule_GetContext(fnc);
-#if PY_VERSION_HEX < 0x03000000
-        } else if (PyCObject_Check(fnc)) {
-            /* 'Legacy' low-level callable on Py2 */
-            func = PyCObject_AsVoidPtr(fnc);
-            data = PyCObject_GetDesc(fnc);
-#endif
         } else {
             int ret;
 
@@ -777,7 +769,8 @@ static PyObject *Py_GeometricTransform(PyObject *obj, PyObject *args)
     }
 
     NI_GeometricTransform(input, func, data, matrix, shift, coordinates,
-                          output, order, (NI_ExtendMode)mode, cval);
+                          output, order, (NI_ExtendMode)mode, cval, nprepad);
+    PyArray_ResolveWritebackIfCopy(output);
 
 exit:
     if (callback.py_function != NULL || callback.c_function != NULL) {
@@ -795,18 +788,20 @@ static PyObject *Py_ZoomShift(PyObject *obj, PyObject *args)
 {
     PyArrayObject *input = NULL, *output = NULL, *shift = NULL;
     PyArrayObject *zoom = NULL;
-    int mode, order;
+    int mode, order, nprepad, grid_mode;
     double cval;
 
-    if (!PyArg_ParseTuple(args, "O&O&O&O&iid",
+    if (!PyArg_ParseTuple(args, "O&O&O&O&iidii",
                           NI_ObjectToInputArray, &input,
                           NI_ObjectToOptionalInputArray, &zoom,
                           NI_ObjectToOptionalInputArray, &shift,
                           NI_ObjectToOutputArray, &output,
-                          &order, &mode, &cval))
+                          &order, &mode, &cval, &nprepad, &grid_mode))
         goto exit;
 
-    NI_ZoomShift(input, zoom, shift, output, order, (NI_ExtendMode)mode, cval);
+    NI_ZoomShift(input, zoom, shift, output, order, (NI_ExtendMode)mode, cval,
+                 nprepad, grid_mode);
+    PyArray_ResolveWritebackIfCopy(output);
 
 exit:
     Py_XDECREF(input);
@@ -857,7 +852,7 @@ static PyObject *Py_FindObjects(PyObject *obj, PyObject *args)
         npy_intp idx =
                 PyArray_NDIM(input) > 0 ? 2 * PyArray_NDIM(input) * ii : ii;
         if (regions[idx] >= 0) {
-            PyObject *tuple = PyTuple_New(PyArray_NDIM(input));
+            tuple = PyTuple_New(PyArray_NDIM(input));
             if (!tuple) {
                 PyErr_NoMemory();
                 goto exit;
@@ -875,8 +870,8 @@ static PyObject *Py_FindObjects(PyObject *obj, PyObject *args)
                     PyErr_NoMemory();
                     goto exit;
                 }
-                Py_XDECREF(start);
-                Py_XDECREF(end);
+                Py_DECREF(start);
+                Py_DECREF(end);
                 start = end = NULL;
                 PyTuple_SetItem(tuple, jj, slc);
                 slc = NULL;
@@ -900,11 +895,252 @@ static PyObject *Py_FindObjects(PyObject *obj, PyObject *args)
     Py_XDECREF(slc);
     free(regions);
     if (PyErr_Occurred()) {
-        Py_XDECREF(result);
         return NULL;
     } else {
         return result;
     }
+}
+
+/*
+   Implement the ndimage.value_indices() function.
+   Makes 3 passes through the array data. We use ndimage's NI_Iterator to
+   iterate through all elements of the input array.
+
+   To support all numpy datatypes, we define several macros which take a
+   parameter for the array datatype in question. By using these, all comparisons
+   are carried out using the same datatype as the input array.
+*/
+#define VALUEINDICES_MINVAL(valType) (*((valType *)PyArray_GETPTR1(minMaxArr, 0)))
+#define VALUEINDICES_MAXVAL(valType) (*((valType *)PyArray_GETPTR1(minMaxArr, 1)))
+#define VALUEINDICES_IGNOREVAL(valType) (*((valType *)PyArray_GETPTR1(ignorevalArr, 0)))
+#define CASE_VALUEINDICES_SET_MINMAX(valType) {\
+    valType val = *((valType*)arrData); \
+    if (ignoreValIsNone || (val != VALUEINDICES_IGNOREVAL(valType))) {\
+        if (minMaxUnset) { \
+            VALUEINDICES_MINVAL(valType) = val;  \
+            VALUEINDICES_MAXVAL(valType) = val; \
+            minMaxUnset = 0; \
+        } else { \
+            if (val < VALUEINDICES_MINVAL(valType)) VALUEINDICES_MINVAL(valType) = val; \
+            if (val > VALUEINDICES_MAXVAL(valType)) VALUEINDICES_MAXVAL(valType) = val; \
+        } \
+    }\
+}
+#define CASE_VALUEINDICES_MAKEHISTOGRAM(valType) {\
+    numPossibleVals = (VALUEINDICES_MAXVAL(valType) - VALUEINDICES_MINVAL(valType) + 1); \
+    hist = (npy_intp *)calloc(numPossibleVals, sizeof(npy_intp)); \
+    if (hist != NULL) { \
+        NI_InitPointIterator(arr, &ndiIter); \
+        arrData = (char *)PyArray_DATA(arr); \
+        for (iterIndex=0; iterIndex<arrSize; iterIndex++) { \
+            valType val = *((valType*)arrData); \
+            if (ignoreValIsNone || (val != VALUEINDICES_IGNOREVAL(valType))) { \
+                ii = val - VALUEINDICES_MINVAL(valType); \
+                hist[ii] += 1; \
+            } \
+            NI_ITERATOR_NEXT(ndiIter, arrData); \
+        } \
+    } else { \
+        PyErr_SetString(PyExc_MemoryError, "Couldn't allocate hist"); \
+    } \
+}
+#define CASE_VALUEINDICES_GET_VALUEOFFSET(valType) { \
+    valType val = *((valType*)arrData); \
+    ii = val - VALUEINDICES_MINVAL(valType); \
+    valueIsIgnore = (val == VALUEINDICES_IGNOREVAL(valType)); \
+}
+#define CASE_VALUEINDICES_MAKE_VALUEOBJ_FROMOFFSET(valType, ii) { \
+    valType val = ii + VALUEINDICES_MINVAL(valType); \
+    valObj = PyArray_ToScalar(&val, minMaxArr); \
+}
+static PyObject *NI_ValueIndices(PyObject *self, PyObject *args)
+{
+    PyArrayObject *arr, *ndxArr, *minMaxArr, *ignorevalArr;
+    PyObject *t=NULL, *valObj=NULL, **ndxPtr=NULL, *ndxTuple, *valDict;
+    int ignoreValIsNone, valueIsIgnore=0, ndim, j, arrType, minMaxUnset=1;
+    NI_Iterator ndiIter;
+    char *arrData;
+    npy_intp *hist=NULL, *valCtr=NULL, ii, numPossibleVals=0;
+    npy_intp arrSize, iterIndex, dims[1];
+
+    /* Get arguments passed in */
+    if (!PyArg_ParseTuple(args, "O!iO!", &PyArray_Type, &arr, &ignoreValIsNone,
+            &PyArray_Type, &ignorevalArr))
+        return NULL;
+
+    arrSize = PyArray_SIZE(arr);
+    arrType = PyArray_TYPE(arr);
+    arrData = (char *)PyArray_DATA(arr);
+    ndim = PyArray_NDIM(arr);
+    if (!PyTypeNum_ISINTEGER(arrType)) {
+        PyErr_SetString(PyExc_ValueError, "Parameter 'arr' must be an integer array");
+        return NULL;
+    }
+
+    /* This dictionary is the final return value */
+    valDict = PyDict_New();
+    if (valDict == NULL) return PyErr_NoMemory();
+
+    /* We use a small numpy array for the min and max values, as this will
+       take the same datatype as the input array */
+    dims[0] = 2;
+    minMaxArr = (PyArrayObject *)PyArray_SimpleNew(1, dims, arrType);
+    if (minMaxArr == NULL) return PyErr_NoMemory();
+
+    /* First pass. Just set the min & max */
+    NI_InitPointIterator(arr, &ndiIter);
+    for (iterIndex=0; iterIndex<arrSize; iterIndex++) {
+        switch(arrType) {
+        case NPY_INT8:   CASE_VALUEINDICES_SET_MINMAX(npy_int8); break;
+        case NPY_UINT8:  CASE_VALUEINDICES_SET_MINMAX(npy_uint8); break;
+        case NPY_INT16:  CASE_VALUEINDICES_SET_MINMAX(npy_int16); break;
+        case NPY_UINT16: CASE_VALUEINDICES_SET_MINMAX(npy_uint16); break;
+        case NPY_INT32:  CASE_VALUEINDICES_SET_MINMAX(npy_int32); break;
+        case NPY_UINT32: CASE_VALUEINDICES_SET_MINMAX(npy_uint32); break;
+        case NPY_INT64:  CASE_VALUEINDICES_SET_MINMAX(npy_int64); break;
+        case NPY_UINT64: CASE_VALUEINDICES_SET_MINMAX(npy_uint64); break;
+        default:
+            switch(arrType) {
+            case NPY_UINT: CASE_VALUEINDICES_SET_MINMAX(npy_uint); break;
+            case NPY_INT: CASE_VALUEINDICES_SET_MINMAX(npy_int); break;
+            }
+        }
+        NI_ITERATOR_NEXT(ndiIter, arrData);
+    }
+
+    /* Second pass, creates a histogram of all the possible values between
+       min and max. If min/max were not set, then the array was all ignore
+       values. */
+    if (!minMaxUnset) {
+        switch(arrType) {
+        case NPY_INT8:   CASE_VALUEINDICES_MAKEHISTOGRAM(npy_int8); break;
+        case NPY_UINT8:  CASE_VALUEINDICES_MAKEHISTOGRAM(npy_uint8); break;
+        case NPY_INT16:  CASE_VALUEINDICES_MAKEHISTOGRAM(npy_int16); break;
+        case NPY_UINT16: CASE_VALUEINDICES_MAKEHISTOGRAM(npy_uint16); break;
+        case NPY_INT32:  CASE_VALUEINDICES_MAKEHISTOGRAM(npy_int32); break;
+        case NPY_UINT32: CASE_VALUEINDICES_MAKEHISTOGRAM(npy_uint32); break;
+        case NPY_INT64:  CASE_VALUEINDICES_MAKEHISTOGRAM(npy_int64); break;
+        case NPY_UINT64: CASE_VALUEINDICES_MAKEHISTOGRAM(npy_uint64); break;
+        default:
+            switch(arrType) {
+            case NPY_INT:  CASE_VALUEINDICES_MAKEHISTOGRAM(npy_int); break;
+            case NPY_UINT: CASE_VALUEINDICES_MAKEHISTOGRAM(npy_uint); break;
+            }
+        }
+    }
+
+    if (hist != NULL) {
+        /* Allocate local data structures to track where we are up to while
+           assigning index values */
+        valCtr = (npy_intp *)calloc(numPossibleVals, sizeof(npy_intp));
+        ndxPtr = (PyObject **)calloc(numPossibleVals, sizeof(PyObject  *));
+        if (valCtr == NULL)
+            PyErr_SetString(PyExc_MemoryError, "Couldn't allocate valCtr");
+        else if (ndxPtr == NULL)
+            PyErr_SetString(PyExc_MemoryError, "Couldn't allocate ndxPtr");
+    }
+
+    if ((valCtr != NULL) && (ndxPtr != NULL)) {
+        /* For each value with non-zero histogram count, allocate an array index
+           tuple of arrays of shape (count,), in the corresponding entry of
+           the dictionary */
+        for (ii=0; ii<numPossibleVals; ii++) {
+            if (hist[ii] > 0) {
+                /* Create a numpy scalar <valObj> for the value corresponding to
+                   offset <ii> */
+                switch(arrType) {
+                case NPY_INT8:   CASE_VALUEINDICES_MAKE_VALUEOBJ_FROMOFFSET(npy_int8, ii); break;
+                case NPY_UINT8:  CASE_VALUEINDICES_MAKE_VALUEOBJ_FROMOFFSET(npy_uint8, ii); break;
+                case NPY_INT16:  CASE_VALUEINDICES_MAKE_VALUEOBJ_FROMOFFSET(npy_int16, ii); break;
+                case NPY_UINT16: CASE_VALUEINDICES_MAKE_VALUEOBJ_FROMOFFSET(npy_uint16, ii); break;
+                case NPY_INT32:  CASE_VALUEINDICES_MAKE_VALUEOBJ_FROMOFFSET(npy_int32, ii); break;
+                case NPY_UINT32: CASE_VALUEINDICES_MAKE_VALUEOBJ_FROMOFFSET(npy_uint32, ii); break;
+                case NPY_INT64:  CASE_VALUEINDICES_MAKE_VALUEOBJ_FROMOFFSET(npy_int64, ii); break;
+                case NPY_UINT64: CASE_VALUEINDICES_MAKE_VALUEOBJ_FROMOFFSET(npy_uint64, ii); break;
+                default:
+                    switch(arrType) {
+                    case NPY_INT:  CASE_VALUEINDICES_MAKE_VALUEOBJ_FROMOFFSET(npy_int, ii); break;
+                    case NPY_UINT: CASE_VALUEINDICES_MAKE_VALUEOBJ_FROMOFFSET(npy_uint, ii); break;
+                    }
+                }
+                /* Create a tuple of <ndim> index arrays */
+                t = PyTuple_New(ndim);
+                if ((t != NULL) && (valObj != NULL)) {
+                    for (j=0; j<ndim; j++) {
+                        dims[0] = hist[ii];
+                        ndxArr = (PyArrayObject *)PyArray_SimpleNew(1, dims, NPY_INTP);
+                        if (ndxArr == NULL) {
+                            PyErr_SetString(PyExc_MemoryError, "Couldn't allocate ndxArr");
+                        } else {
+                            PyTuple_SetItem(t, j, (PyObject *)ndxArr);
+                        }
+                    }
+                    /* Set the tuple as the dict entry for the value */
+                    PyDict_SetItem(valDict, valObj, t);
+                }
+                if (valObj != NULL) Py_DECREF(valObj);
+                if (t != NULL) Py_DECREF(t);
+                /* Save a pointer to the tuple, to avoid later dict lookups */
+                ndxPtr[ii] = t;
+
+                if ((t == NULL) || (valObj == NULL)) {
+                    PyErr_SetString(PyExc_MemoryError, "Couldn't allocate dict entry");
+                    break;
+                }
+            }
+        }
+
+        if (!PyErr_Occurred()) {
+            /* Third pass. Loop over all array elements, adding indices in the
+               right place. */
+            NI_InitPointIterator(arr, &ndiIter);
+            arrData = (char *)PyArray_DATA(arr);
+
+            for (iterIndex=0; iterIndex<arrSize; iterIndex++) {
+                /* Get the offset <ii> for the current array value. Also
+                   set valueIsIgnore flag. */
+                switch(arrType) {
+                case NPY_INT8:   CASE_VALUEINDICES_GET_VALUEOFFSET(npy_int8); break;
+                case NPY_UINT8:  CASE_VALUEINDICES_GET_VALUEOFFSET(npy_uint8); break;
+                case NPY_INT16:  CASE_VALUEINDICES_GET_VALUEOFFSET(npy_int16); break;
+                case NPY_UINT16: CASE_VALUEINDICES_GET_VALUEOFFSET(npy_uint16); break;
+                case NPY_INT32:  CASE_VALUEINDICES_GET_VALUEOFFSET(npy_int32); break;
+                case NPY_UINT32: CASE_VALUEINDICES_GET_VALUEOFFSET(npy_uint32); break;
+                case NPY_INT64:  CASE_VALUEINDICES_GET_VALUEOFFSET(npy_int64); break;
+                case NPY_UINT64: CASE_VALUEINDICES_GET_VALUEOFFSET(npy_uint64); break;
+                default:
+                    switch(arrType) {
+                    case NPY_INT:  CASE_VALUEINDICES_GET_VALUEOFFSET(npy_int); break;
+                    case NPY_UINT: CASE_VALUEINDICES_GET_VALUEOFFSET(npy_uint); break;
+                    }
+                }
+
+                if (ignoreValIsNone || (!valueIsIgnore)) {
+                    ndxTuple = ndxPtr[ii];
+                    for (j=0; j<ndim; j++) {
+                        ndxArr = (PyArrayObject *)PyTuple_GetItem(ndxTuple, j);
+                        *(npy_intp *)PyArray_GETPTR1(ndxArr, (npy_intp)valCtr[ii]) =
+                            ndiIter.coordinates[j];
+                    }
+                    valCtr[ii] += 1;
+                }
+
+                NI_ITERATOR_NEXT(ndiIter, arrData);
+            }
+        }
+    }
+
+    /* Clean up everything */
+    if (hist != NULL) free(hist);
+    if (valCtr != NULL) free(valCtr);
+    if (ndxPtr != NULL) free(ndxPtr);
+    Py_DECREF(minMaxArr);
+
+    if (PyErr_Occurred()) {
+        Py_DECREF(valDict);
+        return NULL;
+    } else
+        return valDict;
 }
 
 static PyObject *Py_WatershedIFT(PyObject *obj, PyObject *args)
@@ -918,6 +1154,7 @@ static PyObject *Py_WatershedIFT(PyObject *obj, PyObject *args)
         goto exit;
 
     NI_WatershedIFT(input, markers, strct, output);
+    PyArray_ResolveWritebackIfCopy(output);
 
 exit:
     Py_XDECREF(input);
@@ -943,6 +1180,7 @@ static PyObject *Py_DistanceTransformBruteForce(PyObject *obj,
         goto exit;
 
     NI_DistanceTransformBruteForce(input, metric, sampling, output, features);
+    PyArray_ResolveWritebackIfCopy(output);
 
 exit:
     Py_XDECREF(input);
@@ -991,17 +1229,10 @@ exit:
     return PyErr_Occurred() ? NULL : Py_BuildValue("");
 }
 
-#ifdef NPY_PY3K
 static void _FreeCoordinateList(PyObject *obj)
 {
     NI_FreeCoordinateList((NI_CoordinateList*)PyCapsule_GetPointer(obj, NULL));
 }
-#else
-static void _FreeCoordinateList(void* ptr)
-{
-    NI_FreeCoordinateList((NI_CoordinateList*)ptr);
-}
-#endif
 
 static PyObject *Py_BinaryErosion(PyObject *obj, PyObject *args)
 {
@@ -1011,7 +1242,7 @@ static PyObject *Py_BinaryErosion(PyObject *obj, PyObject *args)
     int border_value, invert, center_is_true;
     int changed = 0, return_coordinates;
     NI_CoordinateList *coordinate_list = NULL;
-    PyArray_Dims origin;
+    PyArray_Dims origin = {NULL, 0};
 
     if (!PyArg_ParseTuple(args, "O&O&O&O&iO&iii",
                           NI_ObjectToInputArray, &input,
@@ -1032,8 +1263,10 @@ static PyObject *Py_BinaryErosion(PyObject *obj, PyObject *args)
         goto exit;
     }
     if (return_coordinates) {
-        cobj = NpyCapsule_FromVoidPtr(coordinate_list, _FreeCoordinateList);
+        cobj = PyCapsule_New(coordinate_list, NULL, _FreeCoordinateList);
     }
+    PyArray_ResolveWritebackIfCopy(output);
+
 exit:
     Py_XDECREF(input);
     Py_XDECREF(strct);
@@ -1057,7 +1290,7 @@ static PyObject *Py_BinaryErosion2(PyObject *obj, PyObject *args)
     PyArrayObject *array = NULL, *strct = NULL, *mask = NULL;
     PyObject *cobj = NULL;
     int invert, niter;
-    PyArray_Dims origin;
+    PyArray_Dims origin = {NULL, 0};
 
     if (!PyArg_ParseTuple(args, "O&O&O&iO&iO",
                           NI_ObjectToInputOutputArray, &array,
@@ -1071,8 +1304,8 @@ static PyObject *Py_BinaryErosion2(PyObject *obj, PyObject *args)
     if (!_validate_origin(array, origin)) {
         goto exit;
     }
-    if (NpyCapsule_Check(cobj)) {
-        NI_CoordinateList *cobj_data = NpyCapsule_AsVoidPtr(cobj);
+    if (PyCapsule_CheckExact(cobj)) {
+        NI_CoordinateList *cobj_data = PyCapsule_GetPointer(cobj, NULL);
         if (!NI_BinaryErosion2(array, strct, mask, niter, origin.ptr, invert,
                                &cobj_data)) {
             goto exit;
@@ -1118,6 +1351,8 @@ static PyMethodDef methods[] = {
      METH_VARARGS, NULL},
     {"find_objects",          (PyCFunction)Py_FindObjects,
      METH_VARARGS, NULL},
+    {"value_indices",         (PyCFunction)NI_ValueIndices,
+     METH_VARARGS, NULL},
     {"watershed_ift",         (PyCFunction)Py_WatershedIFT,
      METH_VARARGS, NULL},
     {"distance_transform_bf", (PyCFunction)Py_DistanceTransformBruteForce,
@@ -1134,7 +1369,6 @@ static PyMethodDef methods[] = {
     {NULL, NULL, 0, NULL}
 };
 
-#ifdef NPY_PY3K
 static struct PyModuleDef moduledef = {
     PyModuleDef_HEAD_INIT,
     "_nd_image",
@@ -1147,19 +1381,20 @@ static struct PyModuleDef moduledef = {
     NULL
 };
 
-PyObject *PyInit__nd_image(void)
+PyMODINIT_FUNC
+PyInit__nd_image(void)
 {
-    PyObject *m;
+    PyObject *module;
 
-    m = PyModule_Create(&moduledef);
     import_array();
+    module = PyModule_Create(&moduledef);
+    if (module == NULL) {
+        return module;
+    }
 
-    return m;
-}
-#else
-PyMODINIT_FUNC init_nd_image(void)
-{
-    Py_InitModule("_nd_image", methods);
-    import_array();
-}
+#if Py_GIL_DISABLED
+    PyUnstable_Module_SetGIL(module, Py_MOD_GIL_NOT_USED);
 #endif
+
+    return module;
+}

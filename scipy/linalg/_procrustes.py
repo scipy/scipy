@@ -2,10 +2,8 @@
 Solve the orthogonal Procrustes problem.
 
 """
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
-from .decomp_svd import svd
+from ._decomp_svd import svd
 
 
 __all__ = ['orthogonal_procrustes']
@@ -16,10 +14,7 @@ def orthogonal_procrustes(A, B, check_finite=True):
     Compute the matrix solution of the orthogonal Procrustes problem.
 
     Given matrices A and B of equal shape, find an orthogonal matrix R
-    that most closely maps A to B [1]_.
-    Note that unlike higher level Procrustes analyses of spatial data,
-    this function only uses orthogonal transformations like rotations
-    and reflections, and it does not use scaling or translation.
+    that most closely maps A to B using the algorithm given in [1]_.
 
     Parameters
     ----------
@@ -36,27 +31,46 @@ def orthogonal_procrustes(A, B, check_finite=True):
     -------
     R : (N, N) ndarray
         The matrix solution of the orthogonal Procrustes problem.
-        Minimizes the Frobenius norm of dot(A, R) - B, subject to
-        dot(R.T, R) == I.
+        Minimizes the Frobenius norm of ``(A @ R) - B``, subject to
+        ``R.T @ R = I``.
     scale : float
-        Sum of the singular values of ``dot(A.T, B)``.
+        Sum of the singular values of ``A.T @ B``.
 
     Raises
     ------
     ValueError
-        If the input arrays are incompatibly shaped.
-        This may also be raised if matrix A or B contains an inf or nan
-        and check_finite is True, or if the matrix product AB contains
-        an inf or nan.
+        If the input array shapes don't match or if check_finite is True and
+        the arrays contain Inf or NaN.
 
     Notes
     -----
+    Note that unlike higher level Procrustes analyses of spatial data, this
+    function only uses orthogonal transformations like rotations and
+    reflections, and it does not use scaling or translation.
+
     .. versionadded:: 0.15.0
 
     References
     ----------
     .. [1] Peter H. Schonemann, "A generalized solution of the orthogonal
-           Procrustes problem", Psychometrica -- Vol. 31, No. 1, March, 1996.
+           Procrustes problem", Psychometrica -- Vol. 31, No. 1, March, 1966.
+           :doi:`10.1007/BF02289451`
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.linalg import orthogonal_procrustes
+    >>> A = np.array([[ 2,  0,  1], [-2,  0,  0]])
+
+    Flip the order of columns and check for the anti-diagonal mapping
+
+    >>> R, sca = orthogonal_procrustes(A, np.fliplr(A))
+    >>> R
+    array([[-5.34384992e-17,  0.00000000e+00,  1.00000000e+00],
+           [ 0.00000000e+00,  1.00000000e+00,  0.00000000e+00],
+           [ 1.00000000e+00,  0.00000000e+00, -7.85941422e-17]])
+    >>> sca
+    9.0
 
     """
     if check_finite:
@@ -66,10 +80,9 @@ def orthogonal_procrustes(A, B, check_finite=True):
         A = np.asanyarray(A)
         B = np.asanyarray(B)
     if A.ndim != 2:
-        raise ValueError('expected ndim to be 2, but observed %s' % A.ndim)
+        raise ValueError(f'expected ndim to be 2, but observed {A.ndim}')
     if A.shape != B.shape:
-        raise ValueError('the shapes of A and B differ (%s vs %s)' % (
-            A.shape, B.shape))
+        raise ValueError(f'the shapes of A and B differ ({A.shape} vs {B.shape})')
     # Be clever with transposes, with the intention to save memory.
     u, w, vt = svd(B.T.dot(A).T)
     R = u.dot(vt)
