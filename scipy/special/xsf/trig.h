@@ -124,7 +124,7 @@ XSF_HOST_DEVICE std::complex<T> tanpi(std::complex<T> z) {
 
     T n = 1.0 + u * (2.0 * cephes::cospi(2.0 * z.real()) + u);
 
-    if (std::abs(n) > 0.025) {
+    if (std::abs(n) > 0.125) {
         T r = 2.0 * u * cephes::sinpi(2.0 * z.real()) / n;
         T i = (u + 1.0) * (u - 1.0) / n;
 
@@ -141,10 +141,12 @@ XSF_HOST_DEVICE std::complex<T> tanpi(std::complex<T> z) {
         std::complex<T> z_pi = std::complex<T>(z.real() - std::round(z.real()), z.imag()) * static_cast<T>(M_PI);
         std::complex<T> z_pi_sq = z_pi * z_pi;
 
-        std::complex<T> y = static_cast<T>(-155925.0) / 
-            (z_pi * (static_cast<T>(155925.0) + z_pi_sq * (static_cast<T>(51975.0)
-            + z_pi_sq * (static_cast<T>(20790.0) + z_pi_sq * (static_cast<T>(8415.0)
-            + z_pi_sq * (static_cast<T>(3410.0) + z_pi_sq * static_cast<T>(1382.0)))))));
+        std::complex<T> y = static_cast<T>(-1856156927625.0) /
+            (z_pi * (static_cast<T>(1856156927625.0) + z_pi_sq * (static_cast<T>(618718975875.0)
+            + z_pi_sq * (static_cast<T>(247487590350.0) + z_pi_sq * (static_cast<T>(100173548475.0)
+            + z_pi_sq * (static_cast<T>(40593202650.0) + z_pi_sq * (static_cast<T>(16451556030.0)
+            + z_pi_sq * (static_cast<T>(6667553340.0) + z_pi_sq * (static_cast<T>(2702257083.0)
+            + z_pi_sq * (static_cast<T>(1095183522.0) + z_pi_sq * static_cast<T>(443861162.0)))))))))));
 
         return y;
     }
@@ -165,7 +167,7 @@ XSF_HOST_DEVICE std::complex<T> cotpi(std::complex<T> z) {
 
     T n = 1.0 + u * (-2.0 * cephes::cospi(2.0 * z.real()) + u);
 
-    if (std::abs(n) > 0.025) {
+    if (std::abs(n) > 0.125) {
         T r = 2.0 * u * cephes::sinpi(2.0 * z.real()) / n;
         T i = (u + 1.0) * (u - 1.0) / n;
 
@@ -181,10 +183,12 @@ XSF_HOST_DEVICE std::complex<T> cotpi(std::complex<T> z) {
         std::complex<T> z_pi = std::complex<T>(z.real() - std::round(z.real()), z.imag()) * static_cast<T>(M_PI);
         std::complex<T> z_pi_sq = z_pi * z_pi;
 
-        std::complex<T> y = static_cast<T>(155925.0) / 
-            (z_pi * (static_cast<T>(155925.0) + z_pi_sq * (static_cast<T>(51975.0)
-            + z_pi_sq * (static_cast<T>(20790.0) + z_pi_sq * (static_cast<T>(8415.0)
-            + z_pi_sq * (static_cast<T>(3410.0) + z_pi_sq * static_cast<T>(1382.0)))))));
+        std::complex<T> y = static_cast<T>(1856156927625.0) /
+            (z_pi * (static_cast<T>(1856156927625.0) + z_pi_sq * (static_cast<T>(618718975875.0)
+            + z_pi_sq * (static_cast<T>(247487590350.0) + z_pi_sq * (static_cast<T>(100173548475.0)
+            + z_pi_sq * (static_cast<T>(40593202650.0) + z_pi_sq * (static_cast<T>(16451556030.0)
+            + z_pi_sq * (static_cast<T>(6667553340.0) + z_pi_sq * (static_cast<T>(2702257083.0)
+            + z_pi_sq * (static_cast<T>(1095183522.0) + z_pi_sq * static_cast<T>(443861162.0)))))))))));
 
         return y;
     }
