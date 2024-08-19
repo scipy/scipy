@@ -5,10 +5,17 @@ jobs:
   circleci_artifacts_redirector_job:
     runs-on: ubuntu-22.04
     if: >
-      github.repository == 'scipy/scipy'
+      github.repository == 'czgdp1807/scipy'
       && github.event.context == 'ci/circleci: build_docs'
     name: Run CircleCI artifacts redirector
     steps:
+      - restore_cache:
+          keys:
+            - -{{ checksum "doc/Makefile" }}-
+      - save_cache:
+          key: -{{ checksum "doc/Makefile" }}-
+          paths:
+            - source/_contents
       - name: GitHub Action step
         uses: larsoner/circleci-artifacts-redirector-action@master
         with:
