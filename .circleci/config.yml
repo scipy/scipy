@@ -113,7 +113,7 @@ jobs:
 
       - restore_cache:
           keys:
-            - -{{ checksum "doc/Makefile" }}-{{ .Branch }}
+            - -{{ checksum "doc/Makefile" }}-{{ .Branch }}-
 
       - run:
           name: build docs
@@ -123,7 +123,7 @@ jobs:
             python dev.py --no-build doc 2>&1 | tee sphinx_log.txt
 
       - save_cache:
-          key: -{{ checksum "doc/Makefile" }}-{{ .Branch }}
+          key: -{{ checksum "doc/Makefile" }}-{{ .Branch }}-
           paths:
             - $PWD/doc/source/_contents
 
