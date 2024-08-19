@@ -934,8 +934,9 @@ class TestNdimageFilters:
     )
     @pytest.mark.parametrize('origin', [(0, 0), (-1, 1)])
     def test_correlate_convolve_axes(self, xp, func, dtype, axes, origin):
-        array = xp.arange(6 * 8 * 12, dtype=dtype).reshape(6, 8, 12)
-        weights = xp.arange(3 * 5).reshape(3, 5)
+        array = xp.asarray(np.arange(6 * 8 * 12, dtype=dtype).reshape(6, 8, 12))
+        weights = xp.arange(3 * 5)
+        weights = xp.reshape(weights, (3, 5))
         axes = tuple(ax % array.ndim for ax in axes)
         if len(tuple(set(axes))) != len(axes):
             # parametrized cases with duplicate axes raise an error
@@ -1144,7 +1145,7 @@ class TestNdimageFilters:
         kwargs = dict(**kwargs, axes=axes)
         kwargs[key] = (val,) * n_mismatch
         if filter_func in [ndimage.convolve, ndimage.correlate]:
-            kwargs["weights"] = xp.asarray(np.ones((5,) * len(axes)))
+            kwargs["weights"] = xp.ones((5,) * len(axes))
         err_msg = "sequence argument must have length equal to input rank"
         with pytest.raises(RuntimeError, match=err_msg):
             filter_func(array, **kwargs)
