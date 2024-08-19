@@ -113,8 +113,9 @@ def test_tanpi_complex_near_pole():
     for eps in eps_list:
         for x in [-4.5, -3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5, 4.5]:
             z = np.array([
-                complex(eps, eps), complex(eps, 0), complex(eps, -eps), complex(0, eps), 
-                complex(0, -eps), complex(-eps, eps), complex(-eps, 0), complex(-eps, -eps)
+                complex(eps, eps), complex(eps, 0), complex(eps, -eps),
+                complex(0, eps), complex(0, -eps),
+                complex(-eps, eps), complex(-eps, 0), complex(-eps, -eps)
             ])
 
             actual = tanpi(z + x)
@@ -146,8 +147,9 @@ def test_cotpi_complex_near_pole():
     for eps in eps_list:
         for x in [-4, -3, -2, -1, 0, 1, 2, 3, 4]:
             z = np.array([
-                complex(eps, eps), complex(eps, 0), complex(eps, -eps), complex(0, eps), 
-                complex(0, -eps), complex(-eps, eps), complex(-eps, 0), complex(-eps, -eps)
+                complex(eps, eps), complex(eps, 0), complex(eps, -eps),
+                complex(0, eps), complex(0, -eps),
+                complex(-eps, eps), complex(-eps, 0), complex(-eps, -eps)
             ])
 
             actual = cotpi(z + x)
