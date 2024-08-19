@@ -82,9 +82,9 @@ def cubature(f, a, b, rule="gk21", rtol=1e-8, atol=0, max_subdivisions=10000,
         "gk21", "gk15" and "trapezoid" are also supported for compatibility with
         `quad_vec`.
     rtol : float, optional
-        Relative tolerance. Default is 1e-05.
+        Relative tolerance. Default is 1e-08.
     atol : float, optional
-        Absolute tolerance. Default is 1e-08.
+        Absolute tolerance.
     max_subdivisions : int, optional
         Upper bound on the number of subdivisions to perform to improve the estimate
         over a subregion. Default is 10,000.
