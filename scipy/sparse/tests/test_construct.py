@@ -478,10 +478,20 @@ class TestConstructUtils:
     def test_vstack_1d_with_2d(self):
         # fixes gh-21064
         arr = csr_array([[1, 0, 0], [0, 1, 0]])
-        arr1d = arr[0]
+        arr1d = csr_array([1, 0, 0])
+        arr1dcoo = coo_array([1, 0, 0])
         assert construct.vstack([arr, np.array([0, 0, 0])]).shape == (3, 3)
         assert construct.hstack([arr1d, np.array([[0]])]).shape == (1, 4)
+        assert construct.hstack([arr1d, arr1d]).shape == (1, 6)
         assert construct.vstack([arr1d, arr1d]).shape == (2, 3)
+
+        # check csr specialty stacking code like _stack_along_minor_axis
+        assert construct.hstack([arr, arr]).shape == (2, 6)
+        assert construct.hstack([arr1d, arr1d]).shape == (1, 6)
+
+        assert construct.hstack([arr1d, arr1dcoo]).shape == (1, 6)
+        assert construct.vstack([arr, arr1dcoo]).shape == (3, 3)
+        assert construct.vstack([arr1d, arr1dcoo]).shape == (2, 3)
 
         with pytest.raises(ValueError, match="incompatible row dimensions"):
             construct.hstack([arr, np.array([0, 0])])

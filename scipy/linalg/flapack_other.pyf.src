@@ -2332,7 +2332,6 @@ function <prefix2c>lange(norm,m,n,a,lda,work) result(n2)
     <ftype2> dimension(m+1),intent(cache,hide) :: work
 end function <prefix2c>lange
 
-
 function <prefix>lantr(norm, uplo, diag, m, n, a, lda, work) result(n2)
 
     ! ?LANTR  returns the value of the one norm,  or the Frobenius norm, or
