@@ -330,8 +330,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
 
         """
         if self.ndim != 2:
-            raise ValueError('Cannot convert.'
-                             f"csc format sparse arrays must be 2D. Got {self.ndim}D")
+            raise ValueError(f'Cannot convert. CSC format must be 2D. Got {self.ndim}D')
         if self.nnz == 0:
             return self._csc_container(self.shape, dtype=self.dtype)
         else:
