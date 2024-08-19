@@ -1399,7 +1399,7 @@ def issparse(x):
     Notes
     -----
     Use `isinstance(x, sp.sparse.sparray)` to check between an array or matrix.
-    Use `a.format to check the sparse format, e.g. `a.format == 'csr'`.
+    Use `a.format` to check the sparse format, e.g. `a.format == 'csr'`.
 
     Examples
     --------
