@@ -111,12 +111,21 @@ jobs:
       - check-skip
       - apt-install
 
+      - restore_cache:
+          keys:
+            - -{{ checksum "doc/Makefile" }}-{{ .Branch }}
+
       - run:
           name: build docs
           no_output_timeout: 25m
           command: |
             export PYTHONPATH=$PWD/build-install/lib/python3.11/site-packages
             python dev.py --no-build doc 2>&1 | tee sphinx_log.txt
+
+      - save_cache:
+          key: -{{ checksum "doc/Makefile" }}-{{ .Branch }}
+          paths:
+            - doc/build/source/_contents
 
       - run:
           name: Check sphinx log for warnings (which are treated as errors)

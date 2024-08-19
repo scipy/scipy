@@ -9,13 +9,6 @@ jobs:
       && github.event.context == 'ci/circleci: build_docs'
     name: Run CircleCI artifacts redirector
     steps:
-      - restore_cache:
-          keys:
-            - -{{ checksum "doc/Makefile" }}-
-      - save_cache:
-          key: -{{ checksum "doc/Makefile" }}-
-          paths:
-            - source/_contents
       - name: GitHub Action step
         uses: larsoner/circleci-artifacts-redirector-action@master
         with:
