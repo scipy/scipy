@@ -1556,6 +1556,10 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
 
     def broadcast_to(self, shape):
+        if self.format != 'csr':
+            raise NotImplementedError('broadcasting not implemented for'
+                                      'CSC format.')
+        
         old_shape = self.shape
         
         if old_shape == shape:
