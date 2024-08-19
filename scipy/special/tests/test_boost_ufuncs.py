@@ -46,8 +46,8 @@ def test_stats_boost_ufunc(func, args, expected):
 
 
 def test_landau():
-    # Test landau distribution ufuncs.
-    # Not sure where to put this; please advise!
+    # Test that Landau distribution ufuncs are wrapped as expected;
+    # accuracy is tested by Boost.
     x = np.linspace(-3, 10, 10)
     args = (0, 1)
     res = _tanhsinh(lambda x: scu._landau_pdf(x, *args), -np.inf, x)
