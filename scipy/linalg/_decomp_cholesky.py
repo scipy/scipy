@@ -378,42 +378,42 @@ def cho_solve_banded(cb_and_lower, b, overwrite_b=False, check_finite=True):
     return x
 
 
-def cholesky_update(R, z, downdate=False, lower=False, overwrite_R=False,
-               overwrite_z=False, eps=None, check_finite=True):
+def cholesky_update(R, z, *, downdate=False, lower=False, overwrite_R=False,
+                    overwrite_z=False, eps=None, check_finite=True):
     """
     Performs a rank-1 update or downdate of Cholesky factors.
 
-    Cholesky rank-1 update and downdate algorithm taken from [1]_ such that
-    an update results in ``D'D = R'R + zz'`` and a downdate results in ``D'D =
-    R'R - zz'``
+    Cholesky rank-1 update according to [1]_: given a 2-D Cholesky factor `R`
+    of a matrix ``A = R.T @ R`` and a 1-D update vector `z`, this function returns a
+    matrix `D` that is the Cholesky factor of ``A + np.outer(z, z)`` (assuming the
+    latter is positive definite).
 
     Parameters
     ----------
-    R : (N, N) array_like
-        The 2D input data from which the triangular part will be used to
-        read the Cholesky factor.The remaining parts are ignored.
-    z : (N,) array_like
-        A 1D update/downdate vector
-    downdate: bool, optional
+    R : (N, N) real array_like
+        A 2-D Cholesky factor.
+    z : (N,) real array_like
+        A 1-D update/downdate vector.
+    downdate: bool, default: False
         The type of rank-1 modification desired. False indicates an update
-        while True indicates a downdate. Default is False.
-    lower: bool, optional
+        while True indicates a downdate; i.e., the function returns the
+        Cholesky factor of ``A - np.outer(z, z)``.
+    lower: bool, default: False
         Whether input array is upper or lower triangular Cholesky
-        factorization. Default is upper-triangular.
-    overwrite_R: bool, optional
-        If set to True the entries of the Cholesky factor array will be
-        modified during the computations instead of creating a new array.
-        Default is False.
-    overwrite_z : bool, optional
-        If set to True the entries of the update array will be modified during
-        the computations instead of creating a new array. Default is False.
-    eps : float, optional
-        This determines the tolerance below which we consider ``alpha`` values
-        to be effectively zero. Nominally this value should be zero, but
-        numerical issues cause a tolerance about zero to be necessary.
-        If the default value is unchanged then it is set to
-        ``R.shape[1] * numpy.spacing(1.).`` during runtime. Default is None.
-    check_finite : bool, optional
+        factorization.
+    overwrite_R: bool, default: False
+        If set to True, the provided Cholesky factor array will be modified in-place.
+        in-place instead of creating a new array.
+    overwrite_z : bool, default: False
+        If set to True, the provided update array will be modified will be
+        modified in-place.
+    eps : non-negative float, optional
+        A tolerance for a check that the updated matrix is positive definite.
+        With exact arithmetic this value would be zero, but with finite arithmetic,
+        the value must be positive for a conservative check.
+        The default is `np.finfo(dtype).eps`, where `dtype` is the result type
+        of `R` and `Z`.
+    check_finite : bool, default: False
         Whether to check that the input matrix contains only finite numbers.
         Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
@@ -430,49 +430,53 @@ def cholesky_update(R, z, downdate=False, lower=False, overwrite_R=False,
        BIT Numerical Mathematics, Vol.30(4), 1990, :doi:`10.1007/BF01933218`
 
     """
-    # Input validation
+    # Input validation and standardization
     R1 = _asarray_validated(R, check_finite=check_finite)
     z1 = _asarray_validated(z, check_finite=check_finite)
 
-    overwrite_R = overwrite_R or _datacopied(R1, R)
-    overwrite_z = overwrite_z or _datacopied(z1, z)
+    if R1.dtype != z1.dtype:
+        dtype = np.result_type(R1.dtype, z1.dtype)
+        R1 = R1.astype(dtype)
+        z1 = z1.astype(dtype)
 
-    # Dimension check
-    if len(R1.shape) != 2:
-        raise ValueError("Expected 2D array to be updated.")
-    if len(z1.squeeze().shape) != 1:
-        raise ValueError("Expected 1D update vector.")
+    R = R1 if overwrite_R or _datacopied(R1, R) else R1.copy()
+    z = z1 if overwrite_z or _datacopied(z1, z) else z1.copy()
 
-    # Square matrix check
-    m, n = R1.shape
+    if R.ndim != 2:
+        raise ValueError("The Cholesky factor `R` must have two dimensions.")
+    if z.ndim != 1:
+        raise ValueError("The update vector `z` must have one dimension.")
+
+    m, n = R.shape
     if m != n:
-        raise ValueError('Input needs to be a square matrix.')
+        raise ValueError('The Cholesky factor `R` must be square.')
+    if m != z1.size:
+        raise ValueError('The size of update vector `z` must equal the number '
+                         'of rows of Cholesky factor `R`.')
 
-    # Compatible dimensions check
-    if m != len(z1):
-            raise ValueError('Input z has to have same length as the number '
-                             'of rows as input R.')
-    # Copy or not
-    R = R1 if overwrite_R else R1.copy()
-    z = z1 if overwrite_z else z1.copy()
+    if np.iscomplexobj(R):
+        raise ValueError("Complex input is not supported.")
 
-    # Initializations
     if eps is None:
-        eps = n * np.spacing(1.)  # For complex this needs modification
+        eps = n * np.finfo(R1.dtype).eps
+    if eps < 0:
+        raise ValueError("`eps` must be non-negative.")
+
+    R = R.T if lower else R
+
+    # Initialization
     alpha, beta = empty_like(z), empty_like(z)
     alpha[-1], beta[-1] = 1., 1.
     sign = -1 if downdate else 1
-    R = R.T if lower else R
 
+    # Main algorithm
     for r in range(n):
         a = z[r] / R[r, r]
-        alpha[r] = alpha[r - 1] + sign * a ** 2
-        # Numerically zero or negative
-        if alpha[r] < eps:
-            # Error msg.
+        alpha[r] = alpha[r - 1] + sign * a**2
+        if alpha[r] < eps:  # numerically zero or negative
             raise LinAlgError('The Cholesky factor becomes nonpositive'
-                              'with this downdate at the step {}'.format(r))
-        beta[r] = np.sqrt(alpha[r])
+                              f'with this downdate at step {r}')
+        beta[r] = alpha[r]**0.5
         z[r + 1:] -= a * R[r, r + 1:]
         R[r, r:] *= beta[r] / beta[r - 1]
         R[r, r + 1:] += sign * a / (beta[r] * beta[r - 1]) * z[r + 1:]

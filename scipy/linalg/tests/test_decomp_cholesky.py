@@ -9,6 +9,7 @@ from scipy.linalg import (cholesky, cholesky_banded, cho_solve_banded,
      cho_factor, cho_solve, cholesky_update)
 
 from scipy.linalg._testutils import assert_no_overwrite
+from scipy.linalg._misc import LinAlgError
 
 
 class TestCholesky:
@@ -268,48 +269,38 @@ class TestChoFactor:
         assert x.dtype == xx.dtype
 
 
-def gen_input(n=1000, seed=72479):
-    rng = np.random.default_rng(seed)
-    A = rng.random((n, n))
-    A = A + A.T + n * np.eye(n)
-    R = cholesky(A)
-    z = rng.random(n)
-    # Uncomment the following to make it occasionally trip up
-    #z *= 0.95 * np.sqrt(n)
-    return R, z
-
-
 class TestCholeskyUpdate:
-    def test_update(self):
-        # Test rank-1 update
-        n = 1000
-        R, z = gen_input(n)
-        U = cholesky_update(R, z)
-        tol = n * np.spacing(100.)
-        assert_allclose(U.T.dot(U) - (R.T.dot(R) + np.outer(z, z)),
-                        np.zeros([n, n]), atol=tol)
+    def gen_input(self, n=100, seed=72479):
+        rng = np.random.default_rng(seed)
+        A = rng.random((n, n))
+        A = A + A.T + n * np.eye(n)
+        R = cholesky(A)
+        z = rng.random(n)
+        # Uncomment the following to make it occasionally trip up
+        # z *= 0.95 * np.sqrt(n)
+        return R, z
 
-    def test_downdate(self):
-        # Test rank-1 downdate
-        n = 1000
-        R, z = gen_input(n)
-        D = cholesky_update(R, z, downdate=True)
-        tol = n * np.spacing(100.)
-        assert_allclose(D.T.dot(D) - (R.T.dot(R) - np.outer(z, z)),
-                        np.zeros([n, n]), atol=tol)
+    @pytest.mark.parametrize('downdate', [False, True])
+    def test_update_downdate(self, downdate):
+        # Test rank-1 update
+        R, z = self.gen_input()
+        res = cholesky_update(R, z, downdate=downdate)
+        A = R.T @ R
+        A += -np.outer(z, z) if downdate else np.outer(z, z)
+        ref = cholesky(A)
+        assert_allclose(res, ref)
 
     def test_list_input(self):
         # Test list as input
-        n = 1000
-        R, z = gen_input(n)
-        D = cholesky_update(list(R), list(z))
-        assert_allclose(D.T.dot(D), (R.T.dot(R) + np.outer(z, z)))
+        R, z = self.gen_input()
+        res = cholesky_update(R.tolist(), z.tolist())
+        ref = cholesky_update(R, z)
+        assert_allclose(res, ref)
 
     @pytest.mark.parametrize('bad_value', [np.nan, np.inf])
     def test_finite(self, bad_value):
         # Test with nan and inf in the input
-        n = 10
-        R0, z = gen_input(n)
+        R0, z = self.gen_input()
         message = 'array must not contain infs or NaNs'
 
         R = R0.copy()
@@ -323,59 +314,90 @@ class TestCholeskyUpdate:
 
     def test_dimensions(self):
         # Tests related to dimension of both array and vector
-        n = 10
-        R, z = gen_input(n)
+        R, z = self.gen_input()
 
-        message = "Expected 2D array to be updated."
+        message = "The Cholesky factor `R` must have two dimensions."
         with pytest.raises(ValueError, match=message):  # too many dims in R
             cholesky_update(np.expand_dims(R, 0), z)
         with pytest.raises(ValueError, match=message):  # too few dims in R
             cholesky_update(z, z)
 
-        message = "Expected 1D update vector."
+        message = "The update vector `z` must have one dimension."
         with pytest.raises(ValueError, match=message):
             cholesky_update(R, R)
 
-        message = "Input needs to be a square matrix."
+        message = "The Cholesky factor `R` must be square."
         with pytest.raises(ValueError, match=message):
             cholesky_update(R[:, :-1], z)
 
-        message = "Input z has to have same length as the number of rows as input R."
+        message = "The size of update vector `z`..."
         with pytest.raises(ValueError, match=message):
             cholesky_update(R[:-1, :-1], z)
 
+    def test_other_input_validation(self):
+        R, z = self.gen_input()
+
+        message = "Complex input is not supported."
+        with pytest.raises(ValueError, match=message):
+            cholesky_update(R, z-1j)
+
+        message = "`eps` must be non-negative."
+        with pytest.raises(ValueError, match=message):
+            cholesky_update(R, z, eps=-1)
+
     def test_param_overwrite(self):
         # Test param overwrite
-        n = 100
-
-        # Test with overwrite_R=False and overwrite_z=False
-        R, z = gen_input(n)
+        R, z = self.gen_input()
         R_copy = R.copy()
         z_copy = z.copy()
-        cholesky_update(R, z)
+
+        # Test with overwrite_R=False and overwrite_z=False
+        R_out = cholesky_update(R, z)
+        assert R_out is not R
         assert_equal(R, R_copy)
         assert_equal(z, z_copy)
 
         # Test with overwrite_R=True and overwrite_z=True
-        R, z = gen_input(n)
-        R_copy = R.copy()
-        z_copy = z.copy()
-        cholesky_update(R, z, overwrite_R=True, overwrite_z=True)
-        assert_raises(AssertionError, assert_equal, R, R_copy)
-        assert_raises(AssertionError, assert_equal, z, z_copy)
+        R_out = cholesky_update(R, z, overwrite_R=True, overwrite_z=True)
+        assert R_out is R
+        assert (R != R_copy).any()
+        assert (z != z_copy).any()
 
     def test_param_lower(self):
         # Test the 'lower' parameter
-        n = 100
-        R, z = gen_input(n)
-        L = R.T
-        assert_allclose(cholesky_update(R, z),
-                        cholesky_update(L, z, lower=True).T)
+        U, z = self.gen_input()
+        res = cholesky_update(U.T, z, lower=True)
+        ref = cholesky_update(U, z)
+        assert_allclose(res, ref.T)
 
     def test_param_eps(self):
         # Test the 'eps' parameter
-        n = 100
-        R, z = gen_input(n)
-        eps_val = n * np.spacing(1.)
-        assert_allclose(cholesky_update(R, z),
-                        cholesky_update(R, z, eps=eps_val))
+        R, z0 = self.gen_input(10)
+        A = R.T @ R
+        message = "The Cholesky factor becomes nonpositive..."
+
+        # with default eps, downdated matrix is not positive definite
+        z = z0 * 2.581
+        with pytest.raises(LinAlgError):
+            cholesky(A - np.outer(z, z))
+        with pytest.raises(LinAlgError, match=message):
+            cholesky_update(R, z, downdate=True)
+
+        # with default eps, downdated matrix is deemed positive definite
+        z = z0 * 2.580
+        cholesky(A - np.outer(z, z))
+        cholesky_update(R, z, downdate=True)
+
+        # but with looser eps, downdated matrix does not look pos. def.
+        with pytest.raises(LinAlgError, match=message):
+            cholesky_update(R, z, downdate=True, eps=1e-3)
+
+    @pytest.mark.parametrize('dtype', [np.float32, np.float64])
+    def test_dtype(self, dtype):
+        R, z = self.gen_input()
+        R = R.astype(dtype)
+        z = z.astype(dtype)
+        res = cholesky_update(R, z)
+        ref = cholesky(R.T @ R + np.outer(z, z))
+        assert_allclose(res, ref, rtol=1e-4)
+        assert res.dtype == ref.dtype
