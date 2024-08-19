@@ -438,8 +438,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
 
     def todok(self, copy=False):
         if self.ndim > 2:
-            raise ValueError('Cannot convert. dok format sparse arrays must be'
-                             f" 2D or 1D. Got {self.ndim}D")
+            raise ValueError(f'Cannot convert. DOK must be 1D or 2D. Got {self.ndim}D')
         self.sum_duplicates()
         dok = self._dok_container(self.shape, dtype=self.dtype)
         # ensure that 1d coordinates are not tuples
