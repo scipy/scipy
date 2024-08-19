@@ -1144,7 +1144,7 @@ class TestNdimageFilters:
         kwargs = dict(**kwargs, axes=axes)
         kwargs[key] = (val,) * n_mismatch
         if filter_func in [ndimage.convolve, ndimage.correlate]:
-            kwargs["weights"] = np.ones((5,) * len(axes))
+            kwargs["weights"] = xp.ones((5,) * len(axes))
         err_msg = "sequence argument must have length equal to input rank"
         with pytest.raises(RuntimeError, match=err_msg):
             filter_func(array, **kwargs)
@@ -2718,7 +2718,7 @@ def test_rank_filter_noninteger_rank(xp):
     # regression test for issue 9388: ValueError for
     # non integer rank when performing rank_filter
     arr = xp.asarray(np.random.random((10, 20, 30)))
-    footprint = xp.asarray(np.ones((1, 1, 10), dtype=bool))
+    footprint = xp.ones((1, 1, 10), dtype=bool)
     assert_raises(TypeError, ndimage.rank_filter, arr, 0.5,
                   footprint=footprint)
 
@@ -2730,7 +2730,7 @@ def test_size_footprint_both_set(xp):
         sup.filter(UserWarning,
                    "ignoring size because footprint is set")
         arr = xp.asarray(np.random.random((10, 20, 30)))
-        footprint = xp.asarray(np.ones((1, 1, 10), dtype=bool))
+        footprint = xp.ones((1, 1, 10), dtype=bool)
         ndimage.rank_filter(
             arr, 5, size=2, footprint=footprint
         )
