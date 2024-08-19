@@ -77,7 +77,7 @@ def cubature(f, a, b, rule="gk21", rtol=1e-8, atol=0, max_subdivisions=10000,
         Rule used to estimate the integral. If passing a string, the options are
         "gauss-kronrod" (21 node), "newton-cotes" (5 node) or "genz-malik" (degree 7).
         If a rule like "gauss-kronrod" or "newton-cotes" is specified for an ``n``-dim
-        integrand, the corresponding Cartesian product rule is used.
+        integrand, the corresponding Cartesian product rule is used. See Notes.
 
         "gk21", "gk15" and "trapezoid" are also supported for compatibility with
         `quad_vec`.
@@ -177,6 +177,24 @@ def cubature(f, a, b, rule="gk21", rtol=1e-8, atol=0, max_subdivisions=10000,
 
     When this is done with process-based parallelization (as would be the case passing
     `workers` as an integer) you should ensure the main module is import-safe.
+
+    Notes
+    -----
+
+    The rules currently supported via the `rule` argument are:
+
+    - ``"gauss-kronrod"``, 21-node Gauss-Kronrod
+    - ``"newton-cotes"``, 5-node Newton-Cotes
+    - ``"genz-malik"``, n-node Genz-Malik
+
+    If using Gauss-Kronrod or Newton-Cotes for an ``n``-dim integrand where ``n > 2``,
+    then the corresponding Cartesian product rule will be found by taking the Cartesian
+    product of the nodes in the 1D case. This means that the number of nodes scales
+    exponentially as ``21^n`` in the Gauss-Kronrod case, which may be problematic in a
+    moderate number of dimensions.
+
+    Genz-Malik is typically less accurate than Gauss-Kronrod but has much fewer nodes,
+    so in this situation using "genz-malik" might be preferable.
     """
 
     # It is also possible to use a custom rule, but this is not yet part of the public
