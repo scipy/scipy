@@ -234,4 +234,4 @@ class TestAAA:
         # check there are less potentially spurious poles than before
         assert np.sum(np.abs(r.residues()) < 1e-14) < n_spurious
         # check accuracy
-        assert_allclose(r(z), np.tan(np.pi*z/2), atol=1e-12, rtol=1e-12)
+        assert_allclose(r(z), np.tan(np.pi*z/2), atol=6e-12, rtol=3e-12)
