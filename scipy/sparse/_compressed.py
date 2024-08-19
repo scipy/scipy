@@ -1559,7 +1559,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         old_shape = self.shape
         
         if old_shape == shape:
-            return self
+            return self.copy()
         
         if len(shape) != 2:
             raise ValueError("Target shape must be a tuple of length 2.")
