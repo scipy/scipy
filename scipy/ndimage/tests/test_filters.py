@@ -946,7 +946,12 @@ class TestNdimageFilters:
         output = func(array, weights=weights, axes=axes, origin=origin)
 
         missing_axis = tuple(set(range(3)) - set(axes))[0]
-        weights_3d = xp.expand_dims(weights, axis=missing_axis)
+        # module 'torch' has no attribute 'expand_dims' so use reshape instead
+        #    weights_3d = xp.expand_dims(weights, axis=missing_axis)
+        shape_3d = (
+            weights.shape[:missing_axis] + (1,) + weights.shape[missing_axis:]
+        )
+        weights_3d = xp.reshape(weights, shape_3d)
         origin_3d = [0, 0, 0]
         for i, ax in enumerate(axes):
             origin_3d[ax] = origin[i]
