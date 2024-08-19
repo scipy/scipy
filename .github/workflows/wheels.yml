@@ -189,22 +189,22 @@ jobs:
           # For dev versions of python need to use wheels from scientific-python-nightly-wheels
           # When the python version is released please comment out this section, but do not remove
           # (there will soon be another dev version to target).
-          DEPS0="pip install -U --pre numpy>=2.1.0rc1"
-          DEPS1="pip install ninja meson-python pybind11 pythran cython"
+          #DEPS0="pip install -U --pre numpy>=2.1.0rc1"
+          #DEPS1="pip install ninja meson-python pybind11 pythran cython"
           
-          CIBW="$DEPS0;$DEPS1;bash {project}/tools/wheels/cibw_before_build_linux.sh {project}"
-          echo "CIBW_BEFORE_BUILD_LINUX=$CIBW" >> "$GITHUB_ENV"
+          #CIBW="$DEPS0;$DEPS1;bash {project}/tools/wheels/cibw_before_build_linux.sh {project}"
+          #echo "CIBW_BEFORE_BUILD_LINUX=$CIBW" >> "$GITHUB_ENV"
           
-          CIBW="$DEPS0 && $DEPS1 && bash {project}/tools/wheels/cibw_before_build_win.sh {project}"
-          echo "CIBW_BEFORE_BUILD_WINDOWS=$CIBW" >> "$GITHUB_ENV"
+          #CIBW="$DEPS0 && $DEPS1 && bash {project}/tools/wheels/cibw_before_build_win.sh {project}"
+          #echo "CIBW_BEFORE_BUILD_WINDOWS=$CIBW" >> "$GITHUB_ENV"
           
-          CIBW="$DEPS0;$DEPS1;bash {project}/tools/wheels/cibw_before_build_macos.sh {project}"
-          echo "CIBW_BEFORE_BUILD_MACOS=$CIBW" >> "$GITHUB_ENV"
+          #CIBW="$DEPS0;$DEPS1;bash {project}/tools/wheels/cibw_before_build_macos.sh {project}"
+          #echo "CIBW_BEFORE_BUILD_MACOS=$CIBW" >> "$GITHUB_ENV"
 
-          echo "CIBW_BEFORE_TEST=$DEPS0" >> "$GITHUB_ENV"
+          #echo "CIBW_BEFORE_TEST=$DEPS0" >> "$GITHUB_ENV"
           
-          CIBW="pip; args: --no-build-isolation"
-          echo "CIBW_BUILD_FRONTEND=$CIBW" >> "$GITHUB_ENV" 
+          #CIBW="pip; args: --no-build-isolation"
+          #echo "CIBW_BUILD_FRONTEND=$CIBW" >> "$GITHUB_ENV" 
 
       - name: Build wheels
         uses: pypa/cibuildwheel@v2.20.0
