@@ -126,12 +126,12 @@ class AAA:
     One of the challenges with working with rational approximations is the presence of
     Froissart doublets, which are either poles with vanishingly small residues or
     pole-zero pairs that are close enough together to nearly cancel, see [2]_. The
-    greedy nature of algorithm means Froissart doublets are rare. However, if `rtol` is
-    set too tight then then the approximation will stagnate and many Froissart doublets
-    will appear. Froissart doublets can usually be removed by removing support points
-    and then resolving the least squares problem. The support point :math:`z_j`, which
-    is the closest support point to the pole :math:`a` with residue :math:`\alpha`, is
-    removed if the following is satisfied
+    greedy nature of the AAA algorithm means Froissart doublets are rare. However, if
+    `rtol` is set too tight then the approximation will stagnate and many Froissart
+    doublets will appear. Froissart doublets can usually be removed by removing support
+    points and then resolving the least squares problem. The support point :math:`z_j`,
+    which is the closest support point to the pole :math:`a` with residue
+    :math:`\alpha`, is removed if the following is satisfied
     
     .. math::
 
