@@ -20,11 +20,12 @@ from scipy.interpolate._bsplines import (_not_a_knot, _augknt,
                                          _make_interp_per_full_matr)
 import scipy.interpolate._fitpack_impl as _impl
 from scipy._lib._util import AxisError
+from scipy._lib._testutils import _run_concurrent_barrier
 
 # XXX: move to the interpolate namespace
 from scipy.interpolate._ndbspline import make_ndbspl
 
-from scipy.interpolate import dfitpack
+from scipy.interpolate import _dfitpack as dfitpack
 from scipy.interpolate import _bsplines as _b
 
 
@@ -390,6 +391,14 @@ class TestBSpline:
             assert_allclose(b.integrate(x0, x1),
                             p.integrate(x0, x1))
 
+    def test_integrate_0D_always(self):
+        # make sure the result is always a 0D array (not a python scalar)
+        b = BSpline.basis_element([0, 1, 2])
+        for extrapolate in (True, False):
+            res = b.integrate(0, 1, extrapolate=extrapolate)
+            assert isinstance(res, np.ndarray)
+            assert res.ndim == 0
+
     def test_subclassing(self):
         # classmethods should not decay to the base class
         class B(BSpline):
@@ -617,6 +626,17 @@ class TestBSpline:
         b = BSpline(t=t, c=c, k=0)
         assert_allclose(b(xx), 3)
 
+    def test_concurrency(self):
+        # Check that no segfaults appear with concurrent access to BSpline
+        b = _make_random_spline()
+
+        def worker_fn(_, b):
+            t, _, k = b.tck
+            xx = np.linspace(t[k], t[-k-1], 10000)
+            b(xx)
+
+        _run_concurrent_barrier(10, worker_fn, b)
+
 
 class TestInsert:
 
@@ -703,10 +723,33 @@ class TestInsert:
         xx = np.random.default_rng(1234).uniform(low=0, high=7, size=41)
         assert_allclose(spl_1(xx), splev(xx, (tf, cf, k)), atol=1e-15)
 
+    @pytest.mark.parametrize('extrapolate', [None, 'periodic'])
+    def test_complex(self, extrapolate):
+        x = np.arange(8)*2*np.pi
+        y_re, y_im = np.sin(x), np.cos(x)
+
+        spl = make_interp_spline(x, y_re + 1j*y_im, k=3)
+        spl.extrapolate = extrapolate
+
+        spl_re = make_interp_spline(x, y_re, k=3)
+        spl_re.extrapolate = extrapolate
+
+        spl_im = make_interp_spline(x, y_im, k=3)
+        spl_im.extrapolate = extrapolate
+
+        xv = 3.5
+        spl_1 = spl.insert_knot(xv)
+        spl_1re = spl_re.insert_knot(xv)
+        spl_1im = spl_im.insert_knot(xv)
+
+        assert_allclose(spl_1.t, spl_1re.t, atol=1e-15)
+        assert_allclose(spl_1.t, spl_1im.t, atol=1e-15)
+        assert_allclose(spl_1.c, spl_1re.c + 1j*spl_1im.c, atol=1e-15)
+
     def test_insert_periodic_too_few_internal_knots(self):
         # both FITPACK and spl.insert_knot raise when there's not enough
         # internal knots to make a periodic extension.
-        # Below the internal knots are 2, 3,    , 4, 5 
+        # Below the internal knots are 2, 3,    , 4, 5
         #                                     ^
         #                              2, 3, 3.5, 4, 5
         #   so two knots from each side from the new one, while need at least
@@ -836,7 +879,7 @@ def B_0123(x, der=0):
                  lambda x: -2.,
                  lambda x: 1.]
     else:
-        raise ValueError('never be here: der=%s' % der)
+        raise ValueError(f'never be here: der={der}')
     pieces = np.piecewise(x, conds, funcs)
     return pieces
 
@@ -1346,6 +1389,19 @@ class TestInterp:
         with assert_raises(ValueError):
             make_interp_spline(x, y, bc_type=(l, r))
 
+    def test_deriv_order_too_large(self):
+        x = np.arange(7)
+        y = x**2
+        l, r = [(6, 0)], [(1, 0)]    # 6th derivative = 0 at x[0] for k=3
+        with assert_raises(ValueError, match="Bad boundary conditions at 0."):
+            # cannot fix 6th derivative at x[0]: does not segfault
+            make_interp_spline(x, y, bc_type=(l, r))
+
+        l, r = [(1, 0)], [(-6, 0)]    # derivative order < 0 at x[-1]
+        with assert_raises(ValueError, match="Bad boundary conditions at 6."):
+            # does not segfault
+            make_interp_spline(x, y, bc_type=(l, r))
+
     def test_complex(self):
         k = 3
         xx = self.xx
@@ -1586,6 +1642,7 @@ class TestLSQ:
         x, y, t, k = self.x, self.y, self.t, self.k
 
         c0, AY = make_lsq_full_matrix(x, y, t, k)
+
         b = make_lsq_spline(x, y, t, k)
 
         assert_allclose(b.c, c0)
@@ -1611,14 +1668,47 @@ class TestLSQ:
     def test_multiple_rhs(self):
         x, t, k, n = self.x, self.t, self.k, self.n
         y = np.random.random(size=(n, 5, 6, 7))
-
         b = make_lsq_spline(x, y, t, k)
         assert_equal(b.c.shape, (t.size-k-1, 5, 6, 7))
+
+    def test_multiple_rhs_2(self):
+        x, t, k, n = self.x, self.t, self.k, self.n
+        nrhs = 3
+        y = np.random.random(size=(n, nrhs))
+        b = make_lsq_spline(x, y, t, k)
+
+        bb = [make_lsq_spline(x, y[:, i], t, k)
+              for i in range(nrhs)]
+        coefs = np.vstack([bb[i].c for i in range(nrhs)]).T
+
+        assert_allclose(coefs, b.c, atol=1e-15)
 
     def test_complex(self):
         # cmplx-valued `y`
         x, t, k = self.x, self.t, self.k
         yc = self.y * (1. + 2.j)
+
+        b = make_lsq_spline(x, yc, t, k)
+        b_re = make_lsq_spline(x, yc.real, t, k)
+        b_im = make_lsq_spline(x, yc.imag, t, k)
+
+        assert_allclose(b(x), b_re(x) + 1.j*b_im(x), atol=1e-15, rtol=1e-15)
+
+    def test_complex_2(self):
+        # test complex-valued y with y.ndim > 1
+
+        x, t, k = self.x, self.t, self.k
+        yc = self.y * (1. + 2.j)
+        yc = np.stack((yc, yc), axis=1)
+
+        b = make_lsq_spline(x, yc, t, k)
+        b_re = make_lsq_spline(x, yc.real, t, k)
+        b_im = make_lsq_spline(x, yc.imag, t, k)
+
+        assert_allclose(b(x), b_re(x) + 1.j*b_im(x), atol=1e-15, rtol=1e-15)
+
+        # repeat with num_trailing_dims > 1 : yc.shape[1:] = (2, 2)
+        yc = np.stack((yc, yc), axis=1)
 
         b = make_lsq_spline(x, yc, t, k)
         b_re = make_lsq_spline(x, yc.real, t, k)
@@ -1774,6 +1864,7 @@ class TestSmoothingSpline:
                         spline_interp(grid),
                         atol=1e-15)
 
+    @pytest.mark.fail_slow(2)
     def test_weighted_smoothing_spline(self):
         # create data sample
         np.random.seed(1234)
@@ -2009,6 +2100,26 @@ class TestNdBSpline:
                 np.shape(xi)[:-1] + bspl2_22.c.shape[ndim:])
         assert_allclose(bspl2_22(xi) - np.asarray(target)[:, None, None],
                         0, atol=5e-14)
+
+
+    def test_2D_separable_2_complex(self):
+        # test `c` with c.dtype == complex, with and w/o trailing dims
+        xi = [(1.5, 2.5), (2.5, 1), (0.5, 1.5)]
+        target = [x**3 * (y**3 + 2*y) for (x, y) in xi]
+
+        target = [t + 2j*t for t in target]
+
+        t2, c2, k = self.make_2d_case()
+        c2 = c2 * (1 + 2j)
+        c2_4 = np.dstack((c2, c2, c2, c2))   # c2_4.shape = (6, 6, 4)
+
+        xy = (1.5, 2.5)
+        bspl2_4 = NdBSpline(t2, c2_4, k=3)
+        result = bspl2_4(xy)
+        val_single = NdBSpline(t2, c2, k)(xy)
+        assert result.shape == (4,)
+        assert_allclose(result,
+                        [val_single, ]*4, atol=1e-14)
 
     def test_2D_random(self):
         rng = np.random.default_rng(12345)
@@ -2309,6 +2420,24 @@ class TestNdBSpline:
 
         with assert_raises(ValueError, match="Data and knots*"):
             NdBSpline.design_matrix([[1, 2]], t3, [k]*3)
+
+    def test_concurrency(self):
+        rng = np.random.default_rng(12345)
+        k = 3
+        tx = np.r_[0, 0, 0, 0, np.sort(rng.uniform(size=7)) * 3, 3, 3, 3, 3]
+        ty = np.r_[0, 0, 0, 0, np.sort(rng.uniform(size=8)) * 4, 4, 4, 4, 4]
+        tz = np.r_[0, 0, 0, 0, np.sort(rng.uniform(size=8)) * 4, 4, 4, 4, 4]
+        c = rng.uniform(size=(tx.size-k-1, ty.size-k-1, tz.size-k-1))
+
+        spl = NdBSpline((tx, ty, tz), c, k=k)
+
+        def worker_fn(_, spl):
+            xi = np.c_[[1, 1.5, 2],
+                       [1.1, 1.6, 2.1],
+                       [0.9, 1.4, 1.9]]
+            spl(xi)
+
+        _run_concurrent_barrier(10, worker_fn, spl)
 
 
 class TestMakeND:

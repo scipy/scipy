@@ -419,8 +419,8 @@ def block_diag(*arrs):
 
     bad_args = [k for k in range(len(arrs)) if arrs[k].ndim > 2]
     if bad_args:
-        raise ValueError("arguments in the following positions have dimension "
-                         "greater than 2: %s" % bad_args)
+        raise ValueError("arguments in the following positions "
+                         f"have dimension greater than 2: {bad_args}")
 
     shapes = np.array([a.shape for a in arrs])
     out_dtype = np.result_type(*[arr.dtype for arr in arrs])
@@ -677,9 +677,9 @@ def pascal(n, kind='symmetric', exact=True):
         If `exact` is True, the result is either an array of type
         numpy.uint64 (if n < 35) or an object array of Python long integers.
         If `exact` is False, the coefficients in the matrix are computed using
-        `scipy.special.comb` with `exact=False`. The result will be a floating
+        `scipy.special.comb` with ``exact=False``. The result will be a floating
         point array, and the values in the array will not be the exact
-        coefficients, but this version is much faster than `exact=True`.
+        coefficients, but this version is much faster than ``exact=True``.
 
     Returns
     -------

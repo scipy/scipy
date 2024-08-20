@@ -1081,21 +1081,21 @@ For real-valued signals the so-called "onesided" spectral representation is ofte
 It only uses the non-negative frequencies (due to :math:`X(-f)= \conj{X}(f)` if
 :math:`x(t)\in\IR`). Sometimes the values of the negative frequencies are added to their
 positive counterparts. Then the amplitude spectrum allows to read off the full (not
-half) amplitude sine  of :math:`x(t)` at :math:`f_z` and the area of an interval in
+half) amplitude sine  of :math:`x(t)` at :math:`f_x` and the area of an interval in
 the PSD represents its full (not half) power. Note that for amplitude spectral
 densities the positive values are not doubled but multiplied by :math:`\sqrt{2}`, since
 it is the square root of the PSD. Furthermore, there is no canonical way for naming a
 doubled spectrum.
 
 The following plot shows three different spectral representations of four sine signals
-:math:`x(t)` of Eq. :math:numref:`eq_SpectA_sine` with different amplitudes durations
-:math:`a` and durations :math:`\tau`. For less clutter, the spectra are centered at
-:math:`f_z` and being are plotted next to each other:
+:math:`x(t)` of Eq. :math:numref:`eq_SpectA_sine` with different amplitudes :math:`a`
+and durations :math:`\tau`. For less clutter, the spectra are centered at :math:`f_x`
+and being are plotted next to each other:
 
 .. plot:: tutorial/examples/signal_SpectralAnalysis_ContinuousSpectralRepresentations.py
 
 Note that depending on the representation, the height of the peaks vary. Only the
-interpretation of the magnitude spectrum is straightforward: The peak at :math:`f_z` in
+interpretation of the magnitude spectrum is straightforward: The peak at :math:`f_x` in
 the second plot represents half the magnitude :math:`|a|` of the sine signal. For all other
 representations the duration :math:`\tau` needs to be taken into account to extract
 information about the signal's amplitude.
@@ -1478,7 +1478,7 @@ reformulate Eq. :math:numref:`eq_dSTFT` as a two-step process:
        x_p[m] = x\!\big[m - \lfloor M/2\rfloor + h p\big]\, \conj{w[m]}\ ,
                 \quad m = 0, \ldots M-1\ ,
 
-   where the integer :math:`\lfloor M/2\rfloor` represents ``M//2``, i.e, it is
+   where the integer :math:`\lfloor M/2\rfloor` represents ``M//2``, i.e., it is
    the mid point of the window (`m_num_mid`). For notational convenience,
    :math:`x[k]:=0` for :math:`k\not\in\{0, 1, \ldots, N-1\}` is assumed. In the
    subsection :ref:`tutorial_stft_sliding_win` the indexing of the slices is
@@ -1719,7 +1719,7 @@ due to :math:`\vb{F}` being unitary. Furthermore
 
 shows that :math:`\vb{D}_p` is a diagonal matrix with non-negative entries.
 Hence, summing :math:`\vb{D}_p` preserves that property. This allows to
-simplify Eq. :math:numref:`eq_STFT_MoorePenrose` further, i.e,
+simplify Eq. :math:numref:`eq_STFT_MoorePenrose` further, i.e.,
 
 .. math::
     :label: eq_STFT_istftM
@@ -1989,38 +1989,6 @@ a :exc:`TypeError`, since the utilized `~scipy.fft.rfft` function only accepts
 real-valued inputs. Consult the :ref:`tutorial_SpectralAnalysis` section above for a
 discussion on the various spectral representations which are induced by the various
 parameterizations.
-
-
-
-Detrend
--------
-.. currentmodule:: scipy.signal
-
-SciPy provides the function :func:`detrend` to remove a constant or linear
-trend in a data series in order to see effect of higher order.
-
-The example below removes the constant and linear trend of a second-order
-polynomial time series and plots the remaining signal components.
-
-.. plot::
-   :alt: "This code generates an X-Y plot with no units. A red trace corresponding to the original signal curves from the bottom left to the top right. A blue trace has the constant detrend applied and is below the red trace with zero Y offset. The last black trace has the linear detrend applied and is almost flat from left to right highlighting the curve of the original signal. This last trace has an average slope of zero and looks very different."
-
-   >>> import numpy as np
-   >>> import scipy.signal as signal
-   >>> import matplotlib.pyplot as plt
-
-   >>> t = np.linspace(-10, 10, 20)
-   >>> y = 1 + t + 0.01*t**2
-   >>> yconst = signal.detrend(y, type='constant')
-   >>> ylin = signal.detrend(y, type='linear')
-
-   >>> plt.plot(t, y, '-rx')
-   >>> plt.plot(t, yconst, '-bo')
-   >>> plt.plot(t, ylin, '-k+')
-   >>> plt.grid()
-   >>> plt.legend(['signal', 'const. detrend', 'linear detrend'])
-   >>> plt.show()
-
 
 
 

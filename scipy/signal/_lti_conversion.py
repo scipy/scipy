@@ -2,7 +2,7 @@
 ltisys -- a collection of functions to convert linear time invariant systems
 from one representation to another.
 """
-import numpy
+
 import numpy as np
 from numpy import (r_, eye, atleast_2d, poly, dot,
                    asarray, zeros, array, outer)
@@ -267,14 +267,14 @@ def ss2tf(A, B, C, D, input=0):
         den = 1
 
     if (B.size == 0) and (C.size == 0):
-        num = numpy.ravel(D)
+        num = np.ravel(D)
         if (D.size == 0) and (A.size == 0):
             den = []
         return num, den
 
     num_states = A.shape[0]
     type_test = A[:, 0] + B[:, 0] + C[0, :] + D + 0.0
-    num = numpy.empty((nout, num_states + 1), type_test.dtype)
+    num = np.empty((nout, num_states + 1), type_test.dtype)
     for k in range(nout):
         Ck = atleast_2d(C[k, :])
         num[k] = poly(A - dot(B, Ck)) + (D[k] - 1) * den
@@ -519,7 +519,7 @@ def cont2discrete(system, dt, method="zoh", alpha=None):
 
     elif method == 'impulse':
         if not np.allclose(d, 0):
-            raise ValueError("Impulse method is only applicable"
+            raise ValueError("Impulse method is only applicable "
                              "to strictly proper systems")
 
         ad = linalg.expm(a * dt)
@@ -528,6 +528,6 @@ def cont2discrete(system, dt, method="zoh", alpha=None):
         dd = c @ b * dt
 
     else:
-        raise ValueError("Unknown transformation method '%s'" % method)
+        raise ValueError(f"Unknown transformation method '{method}'")
 
     return ad, bd, cd, dd, dt

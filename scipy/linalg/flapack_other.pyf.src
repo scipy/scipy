@@ -389,7 +389,7 @@ end subroutine <prefix2c>tgsen_lwork
 subroutine <prefix2>tgsyl(trans,ijob,m,n,a,lda,b,ldb,c,ldc,d,ldd,e,lde,f,ldf,scale,dif,work,lwork,iwork,info)
 
     ! Solves the generalized Sylvester equation:
-    ! A * R - L * B = scale * C                
+    ! A * R - L * B = scale * C
     ! D * R - L * E = scale * F
     ! where R and L are unknown m-by-n matrices, (A, D), (B, E) and
     ! (C, F) are given matrix pairs of size m-by-m, n-by-n and m-by-n,
@@ -398,7 +398,7 @@ subroutine <prefix2>tgsyl(trans,ijob,m,n,a,lda,b,ldb,c,ldc,d,ldd,e,lde,f,ldf,sca
     ! triangular and D, E are upper triangular.
     ! The solution (R, L) overwrites (C, F). 0 <= SCALE <= 1 is an output
     ! scaling factor chosen to avoid overflow.
-    
+
     callstatement (*f2py_func)(trans,&ijob,&m,&n,a,&lda,b,&ldb,c,&ldc,d,&ldd,e,&lde,f,&ldf,&scale,&dif,work,&lwork,iwork,&info)
     callprotoargument char*,F_INT*,F_INT*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,<ctype2>*,<ctype2>*,F_INT*,F_INT*,F_INT*
 
@@ -406,10 +406,10 @@ subroutine <prefix2>tgsyl(trans,ijob,m,n,a,lda,b,ldb,c,ldc,d,ldd,e,lde,f,ldf,sca
     integer optional,intent(in),check(ijob>=0 && ijob<=4):: ijob = 0
     integer intent(hide),depend(a):: m = shape(a,1)
     integer intent(hide),depend(b):: n = shape(b,1)
-     
+
     <ftype2> intent(in),dimension(m,m):: a
     integer intent(hide),depend(a):: lda = max(shape(a,0),1)
-     
+
     <ftype2> intent(in),dimension(n,n):: b
     integer intent(hide),depend(b):: ldb = max(shape(b,0),1)
 
@@ -418,16 +418,16 @@ subroutine <prefix2>tgsyl(trans,ijob,m,n,a,lda,b,ldb,c,ldc,d,ldd,e,lde,f,ldf,sca
 
     <ftype2> intent(in),dimension(m,m):: d
     integer intent(hide),depend(d):: ldd = max(shape(d,0),1)
-     
+
     <ftype2> intent(in),dimension(n,n):: e
     integer intent(hide),depend(e):: lde = max(shape(e,0),1)
 
     <ftype2> intent(in,copy,out,out=l),dimension(m,n):: f
     integer intent(hide),depend(f):: ldf = max(shape(f,0),1)
-    
+
     <ftype2> intent(out):: scale
     <ftype2> intent(out):: dif
-    <ftype2> intent(hide),depend(lwork),dimension(max(1,lwork)):: work 
+    <ftype2> intent(hide),depend(lwork),dimension(max(1,lwork)):: work
     integer optional,intent(in),depend(ijob,trans,m,n),check ( ((ijob==1||ijob==2) && (*trans=='N')) ? lwork>=max(1,2*m*n):(lwork>=n||lwork==-1)):: lwork = max(1,2*m*n)
     integer intent(hide),depend(m,n),dimension(m+n+6):: iwork
     integer intent(out):: info
@@ -544,6 +544,28 @@ subroutine <prefix>trtrs(lower, trans, unitdiag, n, nrhs, a, lda, b, ldb, info)
     integer intent(out) :: info
 
 end subroutine <prefix>trtrs
+
+
+subroutine <prefix>trcon(norm, uplo, diag, n, a, lda, rcond, work, irwork, info)
+
+    ! ?TRCON estimates the reciprocal of the condition number of a
+    ! triangular matrix A, in either the 1-norm or the infinity-norm.
+
+    callstatement (*f2py_func)(norm,uplo,diag,&n,a,&lda,&rcond,work,irwork,&info);
+    callprotoargument char*,char*,char*,F_INT*,<ctype>*,F_INT*,<ctypereal>*,<ctype>*,<F_INT,F_INT,float,double>*,F_INT*
+
+    character optional intent(in), check(*norm=='1'||*norm=='I'||*norm=='O') :: norm = '1'
+    character optional intent(in), check(*uplo=='U'||*uplo=='L') :: uplo = 'U'
+    character optional intent(in), check(*diag=='N'||*diag=='U') :: diag = 'N'
+    <ftype> intent(in), dimension(lda, n) :: a
+    integer intent(hide), depend(a) :: n = shape(a, 1)
+    integer intent(hide), depend(n) :: lda = MAX(1, n)
+    <ftype> intent(hide), dimension(3*n), depend(n) :: work
+    <integer, integer, real, double precision> intent(hide), dimension(n), depend(n) :: irwork
+    <ftypereal> intent(out) :: rcond
+    integer intent(out) :: info
+
+end subroutine <prefix>trcon
 
 
 subroutine <prefix>tbtrs(uplo,trans,diag,n,kd,nrhs,ab,ldab,b,ldb,info)
@@ -762,7 +784,7 @@ subroutine <prefix2c>uncsd(compute_u1,compute_u2,compute_v1t,compute_v2t,trans,s
     !  Moreover, the rank of the identity matrices are min(p, q) - r,
     !  min(p, m - q) - r, min(m - p, q) - r, and min(m - p, m - q) - r
     !  respectively.
-    
+
 
     callstatement (*f2py_func)((compute_u1?"Y":"N"),(compute_u2?"Y":"N"),(compute_v1t?"Y":"N"),(compute_v2t?"Y":"N"),(trans?"T":"N"),(signs?"O":"D"),&m,&p,&q,x11,&ldx11,x12,&ldx12,x21,&ldx21,x22,&ldx22,theta,u1,&ldu1,u2,&ldu2,v1t,&ldv1t,v2t,&ldv2t,work,&lwork,rwork,&lrwork,iwork,&info)
     callprotoargument char*,char*,char*,char*,char*,char*,F_INT*,F_INT*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2>*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2>*,F_INT*,F_INT*,F_INT*
@@ -1510,7 +1532,7 @@ subroutine <prefix>ppcon(lower,n,ap,anorm,rcond,work,irwork,info,L)
     threadsafe
     callstatement (*f2py_func)((lower?"L":"U"),&n,ap,&anorm,&rcond,work,irwork,&info)
     callprotoargument char*,F_INT*,<ctype>*,<ctypereal>*,<ctypereal>*,<ctype>*,<F_INT,F_INT,float,double>*,F_INT*
- 
+
     integer optional,intent(in),check(lower==0||lower==1) :: lower = 0
     integer intent(in),check(n>=0) :: n
     <ftype> dimension(L),intent(in) :: ap
@@ -1520,7 +1542,7 @@ subroutine <prefix>ppcon(lower,n,ap,anorm,rcond,work,irwork,info,L)
     <ftype> depend(n),dimension(<3*n,3*n,2*n,2*n>),intent(hide,cache):: work
     <integer,integer,real, double precision> dimension(n), intent(hide,cache),depend(n) :: irwork
     integer intent(out):: info
- 
+
 end subroutine <prefix>ppcon
 
 subroutine <prefix>ppsv(lower,n,nrhs,ap,b,ldb,info,L)
@@ -1538,7 +1560,7 @@ subroutine <prefix>ppsv(lower,n,nrhs,ap,b,ldb,info,L)
     threadsafe
     callstatement (*f2py_func)((lower?"L":"U"),&n,&nrhs,ap,b,&ldb,&info)
     callprotoargument char*,F_INT*,F_INT*,<ctype>*,<ctype>*,F_INT*,F_INT*
-    
+
     integer optional,intent(in),check(lower==0||lower==1) :: lower = 0
     integer intent(in),check(n>=0) :: n
     integer intent(hide),depend(b) :: ldb = max(1, shape(b,0))
@@ -1553,7 +1575,7 @@ end subroutine <prefix>ppsv
 subroutine <prefix>pptrf(lower,n,ap,info,L)
     ! ?PPTRF computes the Cholesky factorization of a symmetric/hermitian
     ! positive definite matrix A stored in packed format.
-    ! 
+    !
     ! The factorization has the form
     !    A = U**T * U,  if UPLO = 'U', or
     !    A = L  * L**T,  if UPLO = 'L',
@@ -1561,7 +1583,7 @@ subroutine <prefix>pptrf(lower,n,ap,info,L)
     threadsafe
     callstatement (*f2py_func)((lower?"L":"U"),&n,ap,&info)
     callprotoargument char*,F_INT*,<ctype>*,F_INT*
-    
+
     integer optional,intent(in),check(lower==0||lower==1) :: lower = 0
     integer intent(in),check(n>=0) :: n
     <ftype> dimension(L),intent(in,out,copy,out=ul) :: ap
@@ -1577,7 +1599,7 @@ subroutine <prefix>pptri(lower,n,ap,info,L)
     threadsafe
     callstatement (*f2py_func)((lower?"L":"U"),&n,ap,&info)
     callprotoargument char*,F_INT*,<ctype>*,F_INT*
-    
+
     integer optional,intent(in),check(lower==0||lower==1) :: lower = 0
     integer intent(in),check(n>=0) :: n
     <ftype> dimension(L),intent(in,out,copy,out=uli) :: ap
@@ -1593,7 +1615,7 @@ subroutine <prefix>pptrs(lower,n,nrhs,ap,b,ldb,info,L)
     threadsafe
     callstatement (*f2py_func)((lower?"L":"U"),&n,&nrhs,ap,b,&ldb,&info)
     callprotoargument char*,F_INT*,F_INT*,<ctype>*,<ctype>*,F_INT*,F_INT*
-    
+
     integer optional,intent(in),check(lower==0||lower==1) :: lower = 0
     integer intent(in),check(n>=0) :: n
     integer intent(hide),depend(b) :: ldb = max(1, shape(b,0))
@@ -2309,6 +2331,29 @@ function <prefix2c>lange(norm,m,n,a,lda,work) result(n2)
     <ftype2c> dimension(m,n),intent(in) :: a
     <ftype2> dimension(m+1),intent(cache,hide) :: work
 end function <prefix2c>lange
+
+function <prefix>lantr(norm, uplo, diag, m, n, a, lda, work) result(n2)
+
+    ! ?LANTR  returns the value of the one norm,  or the Frobenius norm, or
+    ! the  infinity norm,  or the  element of  largest absolute value  of a
+    ! trapezoidal or triangular matrix A.
+
+    <ftypereal> <prefix>lantr, n2
+    callstatement <prefix>lantr_return_value = (*f2py_func)(norm, uplo, diag, &m, &n, a, &lda, work);
+    callprotoargument char*, char*, char*, F_INT*, F_INT*, <ctype>*, F_INT*, <ctypereal>*
+    intent(c) <prefix>lantr
+    fortranname F_FUNC(<prefix>lantr,<S,C,D,Z>LANTR)
+
+    character intent(in), check(*norm=='M'||*norm=='m'||*norm=='1'||*norm=='O'||*norm=='o'||*norm=='I'||*norm=='i'||*norm=='F'||*norm=='f'||*norm=='E'||*norm=='e') :: norm
+    character optional intent(in), check(*uplo=='U'||*uplo=='L') :: uplo = 'U'
+    character optional intent(in), check(*diag=='N'||*diag=='U') :: diag = 'N'
+    <ftype> intent(in), dimension(lda, n) :: a
+    integer intent(hide), depend(a) :: m = shape(a, 0)
+    integer intent(hide), depend(a) :: n = shape(a, 1)
+    integer intent(hide), depend(m) :: lda = MAX(1, m)
+    <ftypereal> intent(cache,hide), dimension(lda) :: work
+
+end subroutine <prefix>lantr
 
 subroutine <prefix>larfg(n, alpha, x, incx, tau, lx)
     integer intent(in), check(n>=1) :: n

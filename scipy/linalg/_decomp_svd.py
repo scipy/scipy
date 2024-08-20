@@ -1,5 +1,5 @@
 """SVD decomposition functions."""
-import numpy
+import numpy as np
 from numpy import zeros, r_, diag, dot, arccos, arcsin, where, clip
 
 # Local imports.
@@ -43,8 +43,6 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
         (``'gesdd'``) or general rectangular approach (``'gesvd'``)
         to compute the SVD. MATLAB and Octave use the ``'gesvd'`` approach.
         Default is ``'gesdd'``.
-
-        .. versionadded:: 0.18
 
     Returns
     -------
@@ -112,17 +110,17 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
 
     # accommodate empty matrix
     if a1.size == 0:
-        u0, s0, v0 = svd(numpy.eye(2, dtype=a1.dtype))
+        u0, s0, v0 = svd(np.eye(2, dtype=a1.dtype))
 
-        s = numpy.empty_like(a1, shape=(0,), dtype=s0.dtype)
+        s = np.empty_like(a1, shape=(0,), dtype=s0.dtype)
         if full_matrices:
-            u = numpy.empty_like(a1, shape=(m, m), dtype=u0.dtype)
-            u[...] = numpy.identity(m)
-            v = numpy.empty_like(a1, shape=(n, n), dtype=v0.dtype)
-            v[...] = numpy.identity(n)
+            u = np.empty_like(a1, shape=(m, m), dtype=u0.dtype)
+            u[...] = np.identity(m)
+            v = np.empty_like(a1, shape=(n, n), dtype=v0.dtype)
+            v[...] = np.identity(n)
         else:
-            u = numpy.empty_like(a1, shape=(m, 0), dtype=u0.dtype)
-            v = numpy.empty_like(a1, shape=(0, n), dtype=v0.dtype)
+            u = np.empty_like(a1, shape=(m, 0), dtype=u0.dtype)
+            v = np.empty_like(a1, shape=(0, n), dtype=v0.dtype)
         if compute_uv:
             return u, s, v
         else:
@@ -140,12 +138,12 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
         # XXX: revisit int32 when ILP64 lapack becomes a thing
         max_mn, min_mn = (m, n) if m > n else (n, m)
         if full_matrices:
-            if max_mn*max_mn > numpy.iinfo(numpy.int32).max:
+            if max_mn*max_mn > np.iinfo(np.int32).max:
                 raise ValueError(f"Indexing a matrix size {max_mn} x {max_mn} "
                                   " would incur integer overflow in LAPACK.")
         else:
             sz = max(m * min_mn, n * min_mn)
-            if max(m * min_mn, n * min_mn) > numpy.iinfo(numpy.int32).max:
+            if max(m * min_mn, n * min_mn) > np.iinfo(np.int32).max:
                 raise ValueError(f"Indexing a matrix of {sz} elements would "
                                   "incur an in integer overflow in LAPACK.")
 
@@ -290,7 +288,7 @@ def diagsvd(s, M, N):
     typ = part.dtype.char
     MorN = len(s)
     if MorN == M:
-        return numpy.hstack((part, zeros((M, N - M), dtype=typ)))
+        return np.hstack((part, zeros((M, N - M), dtype=typ)))
     elif MorN == N:
         return r_[part, zeros((M - N, N), dtype=typ)]
     else:
@@ -340,14 +338,15 @@ def orth(A, rcond=None):
     u, s, vh = svd(A, full_matrices=False)
     M, N = u.shape[0], vh.shape[1]
     if rcond is None:
-        rcond = numpy.finfo(s.dtype).eps * max(M, N)
-    tol = numpy.amax(s, initial=0.) * rcond
-    num = numpy.sum(s > tol, dtype=int)
+        rcond = np.finfo(s.dtype).eps * max(M, N)
+    tol = np.amax(s, initial=0.) * rcond
+    num = np.sum(s > tol, dtype=int)
     Q = u[:, :num]
     return Q
 
 
-def null_space(A, rcond=None):
+def null_space(A, rcond=None, *, overwrite_a=False, check_finite=True,
+               lapack_driver='gesdd'):
     """
     Construct an orthonormal basis for the null space of A using SVD
 
@@ -359,6 +358,18 @@ def null_space(A, rcond=None):
         Relative condition number. Singular values ``s`` smaller than
         ``rcond * max(s)`` are considered zero.
         Default: floating point eps * max(M,N).
+    overwrite_a : bool, optional
+        Whether to overwrite `a`; may improve performance.
+        Default is False.
+    check_finite : bool, optional
+        Whether to check that the input matrix contains only finite numbers.
+        Disabling may give a performance gain, but may result in problems
+        (crashes, non-termination) if the inputs do contain infinities or NaNs.
+    lapack_driver : {'gesdd', 'gesvd'}, optional
+        Whether to use the more efficient divide-and-conquer approach
+        (``'gesdd'``) or general rectangular approach (``'gesvd'``)
+        to compute the SVD. MATLAB and Octave use the ``'gesvd'`` approach.
+        Default is ``'gesdd'``.
 
     Returns
     -------
@@ -401,12 +412,13 @@ def null_space(A, rcond=None):
            [  6.92087741e-17,   1.00000000e+00]])
 
     """
-    u, s, vh = svd(A, full_matrices=True)
+    u, s, vh = svd(A, full_matrices=True, overwrite_a=overwrite_a,
+                   check_finite=check_finite, lapack_driver=lapack_driver)
     M, N = u.shape[0], vh.shape[1]
     if rcond is None:
-        rcond = numpy.finfo(s.dtype).eps * max(M, N)
-    tol = numpy.amax(s, initial=0.) * rcond
-    num = numpy.sum(s > tol, dtype=int)
+        rcond = np.finfo(s.dtype).eps * max(M, N)
+    tol = np.amax(s, initial=0.) * rcond
+    num = np.sum(s > tol, dtype=int)
     Q = vh[num:,:].T.conj()
     return Q
 

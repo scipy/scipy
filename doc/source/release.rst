@@ -8,7 +8,9 @@ see the `commit logs <https://github.com/scipy/scipy/commits/>`_.
 .. toctree::
    :maxdepth: 1
 
+   release/1.15.0-notes
    release/1.14.0-notes
+   release/1.13.1-notes
    release/1.13.0-notes
    release/1.12.0-notes
    release/1.11.4-notes

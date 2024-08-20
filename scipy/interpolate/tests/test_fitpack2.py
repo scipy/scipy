@@ -13,6 +13,8 @@ from scipy.interpolate._fitpack2 import (UnivariateSpline,
         LSQSphereBivariateSpline, SmoothSphereBivariateSpline,
         RectSphereBivariateSpline)
 
+from scipy._lib._testutils import _run_concurrent_barrier
+
 
 class TestUnivariateSpline:
     def test_linear_constant(self):
@@ -135,8 +137,8 @@ class TestUnivariateSpline:
             for ext in [2, 'raise']:
                 assert_raises(ValueError, spl, xp, **dict(ext=ext))
             for ext in [3, 'const']:
-                assert_allclose(spl(xp, ext=ext), xp_clip**3, atol=1e-16)
-                assert_allclose(cls(x, y, ext=ext)(xp), xp_clip**3, atol=1e-16)
+                assert_allclose(spl(xp, ext=ext), xp_clip**3, atol=2e-16)
+                assert_allclose(cls(x, y, ext=ext)(xp), xp_clip**3, atol=2e-16)
 
         # also test LSQUnivariateSpline [which needs explicit knots]
         t = spl.get_knots()[3:4]  # interior knots w/ default k=3
@@ -386,6 +388,20 @@ There is an approximation returned but the corresponding weighted sum
 of squared residuals does not satisfy the condition abs\(fp-s\)/s < tol.""")
             UnivariateSpline(x, y, k=1)
             assert_equal(len(r), 1)
+
+    def test_concurrency(self):
+        # Check that no segfaults appear with concurrent access to
+        # UnivariateSpline
+        xx = np.arange(100, dtype=float)
+        yy = xx**3
+        x = np.arange(100, dtype=float)
+        x[1] = x[0]
+        spl = UnivariateSpline(xx, yy, check_finite=True)
+
+        def worker_fn(_, interp, x):
+            interp(x)
+
+        _run_concurrent_barrier(10, worker_fn, spl, x)
 
 
 class TestLSQBivariateSpline:

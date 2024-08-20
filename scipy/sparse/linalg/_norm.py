@@ -4,6 +4,7 @@
 import numpy as np
 from scipy.sparse import issparse
 from scipy.sparse.linalg import svds
+from scipy.sparse._sputils import convert_pydata_sparse_to_scipy
 import scipy.sparse as sp
 
 from numpy import sqrt, abs
@@ -110,6 +111,7 @@ def norm(x, ord=None, axis=None):
     >>> norm(b, 2)
     1.9753...
     """
+    x = convert_pydata_sparse_to_scipy(x, target_format="csr")
     if not issparse(x):
         raise TypeError("input is not sparse. use numpy.linalg.norm")
 

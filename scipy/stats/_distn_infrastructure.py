@@ -410,12 +410,49 @@ def _skew(data):
 
 
 def _kurtosis(data):
-    """kurtosis is fourth central moment / variance**2 - 3."""
+    """Fisher's excess kurtosis is fourth central moment / variance**2 - 3."""
     data = np.ravel(data)
     mu = data.mean()
     m2 = ((data - mu)**2).mean()
     m4 = ((data - mu)**4).mean()
     return m4 / m2**2 - 3
+
+def _vectorize_rvs_over_shapes(_rvs1):
+    """Decorator that vectorizes _rvs method to work on ndarray shapes"""
+    # _rvs1 must be a _function_ that accepts _scalar_ args as positional
+    # arguments, `size` and `random_state` as keyword arguments.
+    # _rvs1 must return a random variate array with shape `size`. If `size` is
+    # None, _rvs1 must return a scalar.
+    # When applied to _rvs1, this decorator broadcasts ndarray args
+    # and loops over them, calling _rvs1 for each set of scalar args.
+    # For usage example, see _nchypergeom_gen
+    def _rvs(*args, size, random_state):
+        _rvs1_size, _rvs1_indices = _check_shape(args[0].shape, size)
+
+        size = np.array(size)
+        _rvs1_size = np.array(_rvs1_size)
+        _rvs1_indices = np.array(_rvs1_indices)
+
+        if np.all(_rvs1_indices):  # all args are scalars
+            return _rvs1(*args, size, random_state)
+
+        out = np.empty(size)
+
+        # out.shape can mix dimensions associated with arg_shape and _rvs1_size
+        # Sort them to arg_shape + _rvs1_size for easy indexing of dimensions
+        # corresponding with the different sets of scalar args
+        j0 = np.arange(out.ndim)
+        j1 = np.hstack((j0[~_rvs1_indices], j0[_rvs1_indices]))
+        out = np.moveaxis(out, j1, j0)
+
+        for i in np.ndindex(*size[~_rvs1_indices]):
+            # arg can be squeezed because singleton dimensions will be
+            # associated with _rvs1_size, not arg_shape per _check_shape
+            out[i] = _rvs1(*[np.squeeze(arg)[i] for arg in args],
+                           _rvs1_size, random_state)
+
+        return np.moveaxis(out, j0, j1)  # move axes back before returning
+    return _rvs
 
 
 def _fit_determine_optimizer(optimizer):
@@ -427,9 +464,11 @@ def _fit_determine_optimizer(optimizer):
         try:
             optimizer = getattr(optimize, optimizer)
         except AttributeError as e:
-            raise ValueError("%s is not a valid optimizer" % optimizer) from e
+            raise ValueError(f"{optimizer} is not a valid optimizer") from e
     return optimizer
 
+def _isintegral(x):
+    return x == np.round(x)
 
 def _sum_finite(x):
     """
@@ -787,7 +826,7 @@ class rv_generic:
 
         if shapes_vals is None:
             shapes_vals = ()
-        vals = ', '.join('%.3g' % val for val in shapes_vals)
+        vals = ', '.join(f'{val:.3g}' for val in shapes_vals)
         tempdict['vals'] = vals
 
         tempdict['shapes_'] = self.shapes or ''
@@ -1577,7 +1616,7 @@ class _ShapeInfo:
 
 def _get_fixed_fit_value(kwds, names):
     """
-    Given names such as `['f0', 'fa', 'fix_a']`, check that there is
+    Given names such as ``['f0', 'fa', 'fix_a']``, check that there is
     at most one non-None value in `kwds` associaed with those names.
     Return that value, or None if none of the names occur in `kwds`.
     As a side effect, all occurrences of those names in `kwds` are
@@ -2502,7 +2541,7 @@ class rv_continuous(rv_generic):
             - optimizer : The optimizer to use.  The optimizer must take
               ``func`` and starting position as the first two arguments,
               plus ``args`` (for extra arguments to pass to the
-              function to be optimized) and ``disp``. 
+              function to be optimized) and ``disp``.
               The ``fit`` method calls the optimizer with ``disp=0`` to suppress output.
               The optimizer must return the estimated parameters.
 
@@ -2563,7 +2602,7 @@ class rv_continuous(rv_generic):
                                     \log(f(k_u; \pmb{\theta}))
                                 + \sum
                                     \log(F(k_l; \pmb{\theta})) \\
-                                & + \sum 
+                                & + \sum
                                     \log(1 - F(k_r; \pmb{\theta})) \\
                                 & + \sum
                                     \log(F(k_{\text{high}, i}; \pmb{\theta})
@@ -2673,7 +2712,7 @@ class rv_continuous(rv_generic):
         optimizer = _fit_determine_optimizer(optimizer)
         # by now kwds must be empty, since everybody took what they needed
         if kwds:
-            raise TypeError("Unknown arguments: %s." % kwds)
+            raise TypeError(f"Unknown arguments: {kwds}.")
 
         # In some cases, method of moments can be done with fsolve/root
         # instead of an optimizer, but sometimes no solution exists,
@@ -3330,7 +3369,8 @@ class rv_discrete(rv_generic):
         return self._cdf(k, *args) - self._cdf(k-1, *args)
 
     def _logpmf(self, k, *args):
-        return log(self._pmf(k, *args))
+        with np.errstate(divide='ignore'):
+            return log(self._pmf(k, *args))
 
     def _logpxf(self, k, *args):
         # continuous distributions have PDF, discrete have PMF, but sometimes
@@ -3353,7 +3393,7 @@ class rv_discrete(rv_generic):
         return np.sum(self._pmf(m, *args), axis=0)
 
     def _cdf(self, x, *args):
-        k = floor(x)
+        k = floor(x).astype(np.float64)
         return self._cdfvec(k, *args)
 
     # generic _logcdf, _sf, _logsf, _ppf, _isf, _rvs defined in rv_generic
@@ -3886,7 +3926,7 @@ def _iter_chunked(x0, x1, chunksize=4, inc=1):
     if inc == 0:
         raise ValueError('Cannot increment by zero.')
     if chunksize <= 0:
-        raise ValueError('Chunk size must be positive; got %s.' % chunksize)
+        raise ValueError(f'Chunk size must be positive; got {chunksize}.')
 
     s = 1 if inc > 0 else -1
     stepsize = abs(chunksize * inc)
