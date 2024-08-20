@@ -974,3 +974,33 @@ def test_sub_broadcasting(a_shape, b_shape):
 
     res = a - b.toarray()
     assert_equal(res, exp)
+
+argmax_argmin_shapes_axis = [
+    ((3,), None), ((3,), 0),
+    ((4,6), 1), ((7,3), 0), ((3,5), None),
+    ((2,8,7), 2), ((2,8,7), 0),
+    ((3,2,4,7), None), ((3,2,4,7), 1), ((3,2,4,7), 0), ((3,2,4,7), 2),
+    ((4,5,7,8,2), 4),
+]
+@pytest.mark.parametrize(('shape', 'axis'), argmax_argmin_shapes_axis)
+def test_argmax(shape, axis):
+    rng = np.random.default_rng(23409823)
+    a = random_array(shape, density=0.6, random_state=rng, dtype=int)
+
+    res = a.argmax(axis=axis)
+    print(res)
+    exp = np.argmax(a.toarray(), axis=axis)
+    print(exp)
+    assert_equal(res, exp)
+
+    
+@pytest.mark.parametrize(('shape', 'axis'), argmax_argmin_shapes_axis)
+def test_argmin(shape, axis):
+    rng = np.random.default_rng(23409823)
+    a = random_array(shape, density=0.6, random_state=rng, dtype=int)
+
+    res = a.argmin(axis=axis)
+    print(res)
+    exp = np.argmin(a.toarray(), axis=axis)
+    print(exp)
+    assert_equal(res, exp)
