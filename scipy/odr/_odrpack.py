@@ -286,7 +286,7 @@ class Data:
     def __getattr__(self, attr):
         """ Dispatch attribute access to the metadata dictionary.
         """
-        if attr in self.meta:
+        if attr != "meta" and attr in self.meta:
             return self.meta[attr]
         else:
             raise AttributeError("'%s' not in metadata" % attr)
@@ -408,17 +408,18 @@ class RealData(Data):
             return weights
 
     def __getattr__(self, attr):
-        lookup_tbl = {('wd', 'sx'): (self._sd2wt, self.sx),
-                      ('wd', 'covx'): (self._cov2wt, self.covx),
-                      ('we', 'sy'): (self._sd2wt, self.sy),
-                      ('we', 'covy'): (self._cov2wt, self.covy)}
-
+    
         if attr not in ('wd', 'we'):
-            if attr in self.meta:
+            if attr != "meta" and attr in self.meta:
                 return self.meta[attr]
             else:
                 raise AttributeError("'%s' not in metadata" % attr)
         else:
+            lookup_tbl = {('wd', 'sx'): (self._sd2wt, self.sx),
+                      ('wd', 'covx'): (self._cov2wt, self.covx),
+                      ('we', 'sy'): (self._sd2wt, self.sy),
+                      ('we', 'covy'): (self._cov2wt, self.covy)}
+            
             func, arg = lookup_tbl[(attr, self._ga_flags[attr])]
 
             if arg is not None:
@@ -533,7 +534,7 @@ class Model:
         """ Dispatch attribute access to the metadata.
         """
 
-        if attr in self.meta:
+        if attr != "meta" and attr in self.meta:
             return self.meta[attr]
         else:
             raise AttributeError("'%s' not in metadata" % attr)

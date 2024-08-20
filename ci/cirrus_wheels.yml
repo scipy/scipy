@@ -1,6 +1,6 @@
 build_and_store_wheels: &BUILD_AND_STORE_WHEELS
   install_cibuildwheel_script:
-    - python -m pip install cibuildwheel==2.17.0
+    - python -m pip install cibuildwheel==2.20.0
   cibuildwheel_script:
     - cibuildwheel
   wheels_artifacts:
@@ -24,13 +24,17 @@ cirrus_wheels_linux_aarch64_task:
     # single task takes longer than 60 mins (the default time limit for a
     # cirrus-ci task).
     - env:
-        CIBW_BUILD: cp310-manylinux*
+        CIBW_BUILD: cp313-manylinux* cp310-manylinux*
     - env:
         CIBW_BUILD: cp311-manylinux* cp312-manylinux*
   env:
-    CIBW_PRERELEASE_PYTHONS: False
-    CIBW_ENVIRONMENT: >
-      PKG_CONFIG_PATH=/project
+    CIBW_PRERELEASE_PYTHONS: True
+    # The following settings are useful when targetting an unreleased Python version.
+    #CIBW_BEFORE_BUILD_LINUX: "pip install numpy>=2.0.0.dev0 meson-python cython pythran pybind11 ninja;bash {project}/tools/wheels/cibw_before_build_linux.sh {project}"
+    #CIBW_ENVIRONMENT: >
+    #  PIP_PRE=1
+    #  PIP_EXTRA_INDEX_URL=https://pypi.anaconda.org/scientific-python-nightly-wheels/simple
+    #  PIP_NO_BUILD_ISOLATION=false
 
   build_script: |
     apt install -y python3-venv python-is-python3

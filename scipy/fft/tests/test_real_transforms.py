@@ -238,3 +238,12 @@ def test_orthogonalize_dcst3(func, norm, xp):
     y1 = func(x, type=3, norm=norm, orthogonalize=True)
     y2 = func(x2, type=3, norm=norm, orthogonalize=False)
     xp_assert_close(y1, y2)
+
+@skip_xp_backends(np_only=True,
+                  reasons=['array-likes only supported for NumPy backend'])
+@pytest.mark.parametrize("func", [dct, idct, dctn, idctn, dst, idst, dstn, idstn])
+def test_array_like(xp, func):
+    x = [[[1.0, 1.0], [1.0, 1.0]],
+         [[1.0, 1.0], [1.0, 1.0]],
+         [[1.0, 1.0], [1.0, 1.0]]]
+    xp_assert_close(func(x), func(xp.asarray(x)))

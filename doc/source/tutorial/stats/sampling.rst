@@ -249,7 +249,7 @@ by visualizing the histogram of the samples:
           >>> rng.rvs()
           -1.526829048388144
           >>> norm.rvs(random_state=urng1_copy)
-          1.3194816698862635
+          1.3194816698862635 # may vary
 
 We can pass a ``domain`` parameter to truncate the distribution:
 

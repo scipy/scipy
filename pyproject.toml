@@ -36,6 +36,7 @@ requires = [
     # redistributors can do this by installing the numpy version they like and
     # disabling build isolation.
     "numpy>=2.0.0rc1,<2.3",
+    "numpy>=2.1.0rc1; python_version>='3.13'",
 ]
 
 [project]
@@ -87,13 +88,13 @@ test = [
     "scikit-umfpack",
     "pooch",
     "hypothesis>=6.30",
-    "array-api-strict",
+    "array-api-strict>=2.0",
     "Cython",
     "meson",
     'ninja; sys_platform != "emscripten"',
 ]
 doc = [
-    "sphinx>=5.0.0",
+    "sphinx>=5.0.0,<=7.3.7",
     "pydata-sphinx-theme>=0.15.2",
     "sphinx-design>=0.4.0",
     "matplotlib>=3.5",
@@ -149,13 +150,13 @@ before-build = "bash {project}/tools/wheels/cibw_before_build_linux.sh {project}
 
 [tool.cibuildwheel.linux.environment]
 # /project will be the $PWD equivalent inside the docker used to build the wheel
-PKG_CONFIG_PATH="/project/"
+PKG_CONFIG_PATH = "/project/"
 
 [tool.cibuildwheel.macos]
 before-build = "bash {project}/tools/wheels/cibw_before_build_macos.sh {project}"
 
 [tool.cibuildwheel.macos.environment]
-PKG_CONFIG_PATH="{project}"
+PKG_CONFIG_PATH = "{project}"
 
 [tool.cibuildwheel.windows]
 before-build = "bash {project}/tools/wheels/cibw_before_build_win.sh {project}"
@@ -163,6 +164,6 @@ repair-wheel-command = "bash ./tools/wheels/repair_windows.sh {wheel} {dest_dir}
 
 [tool.cibuildwheel.windows.environment]
 # This does not work because pkg-config does not like backslashes,
-PKG_CONFIG_PATH="{project}"
+PKG_CONFIG_PATH = "{project}"
 # do this instead (which will override this setting)
 # set CIBW_ENVIRONMENT_WINDOWS=PKG_CONFIG_PATH=PWD.replace('\\', '/')
