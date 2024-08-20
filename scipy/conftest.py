@@ -426,7 +426,6 @@ if HAVE_SCPDT:
 
     dt_config.pytest_extra_xfail = {
         # name: reason
-        "io.rst": "",
         "ND_regular_grid.rst": "ReST parser limitation",
         "extrapolation_examples.rst": "ReST parser limitation",
         "sampling_pinv.rst": "__cinit__ unexpected argument",
@@ -436,5 +435,11 @@ if HAVE_SCPDT:
 
     # tutorials
     dt_config.pseudocode = set(['integrate.nquad(func,'])
-    dt_config.local_resources = {'io.rst': ["octave_a.mat"]}
+    dt_config.local_resources = {
+        'io.rst': [
+            "octave_a.mat",
+            "octave_cells.mat",
+            "octave_struct.mat"
+        ]
+    }
 ############################################################################

@@ -29,7 +29,7 @@ from ._distn_infrastructure import (_vectorize_rvs_over_shapes,
     rv_continuous, _skew, _get_fixed_fit_value, _check_shape, _ShapeInfo)
 from ._ksstats import kolmogn, kolmognp, kolmogni
 from ._constants import (_XMIN, _LOGXMIN, _EULER, _ZETA3, _SQRT_PI,
-                         _SQRT_2_OVER_PI, _LOG_SQRT_2_OVER_PI)
+                         _SQRT_2_OVER_PI, _LOG_PI, _LOG_SQRT_2_OVER_PI)
 from ._censored_data import CensoredData
 from scipy.optimize import root_scalar
 from scipy.stats._warnings_errors import FitError
@@ -1451,7 +1451,24 @@ class cauchy_gen(rv_continuous):
 
     def _pdf(self, x):
         # cauchy.pdf(x) = 1 / (pi * (1 + x**2))
-        return 1.0/np.pi/(1.0+x*x)
+        with np.errstate(over='ignore'):
+            return 1.0/np.pi/(1.0+x*x)
+
+    def _logpdf(self, x):
+        # The formulas
+        #     log(1/(pi*(1 + x**2))) = -log(pi) - log(1 + x**2)
+        #                            = -log(pi) - log(x**2*(1 + 1/x**2))
+        #                            = -log(pi) - (2log(|x|) + log1p(1/x**2))
+        # are used here.
+        absx = np.abs(x)
+        # In the following _lazywhere, `f` provides better precision than `f2`
+        # for small and moderate x, while `f2` avoids the overflow that can
+        # occur with absx**2.
+        y = _lazywhere(absx < 1, (absx,),
+                       f=lambda absx: -_LOG_PI - np.log1p(absx**2),
+                       f2=lambda absx: (-_LOG_PI -
+                                        (2*np.log(absx) + np.log1p((1/absx)**2))))
+        return y
 
     def _cdf(self, x):
         return np.arctan2(1, -x)/np.pi
@@ -9142,7 +9159,9 @@ class irwinhall_gen(rv_continuous):
 
         return n/2, n/12, 0, -6/(5*n)
 
-irwinhall = irwinhall_gen(name="irwinhall")    
+
+irwinhall = irwinhall_gen(name="irwinhall")
+
 
 class recipinvgauss_gen(rv_continuous):
     r"""A reciprocal inverse Gaussian continuous random variable.
@@ -9500,6 +9519,7 @@ class skewnorm_gen(rv_continuous):
         def skew_d(d):  # skewness in terms of delta
             return (4-np.pi)/2 * ((d * np.sqrt(2 / np.pi))**3
                                   / (1 - 2*d**2 / np.pi)**(3/2))
+
         def d_skew(skew):  # delta in terms of skewness
             s_23 = np.abs(skew)**(2/3)
             return np.sign(skew) * np.sqrt(
@@ -9699,7 +9719,7 @@ class _DeprecationWrapper:
                      "Please replace all uses of the distribution class "
                      "`trapz` with `trapezoid`. `trapz` will be removed in SciPy 1.16.")
         self.method = getattr(trapezoid, method)
-    
+
     def __call__(self, *args, **kwargs):
         warnings.warn(self.msg, DeprecationWarning, stacklevel=2)
         return self.method(*args, **kwargs)
@@ -10481,17 +10501,26 @@ class tukeylambda_gen(rv_continuous):
     %(example)s
 
     """
+    _support_mask = rv_continuous._open_support_mask
+
     def _argcheck(self, lam):
         return np.isfinite(lam)
 
     def _shape_info(self):
         return [_ShapeInfo("lam", False, (-np.inf, np.inf), (False, False))]
 
+    def _get_support(self, lam):
+        b = _lazywhere(lam > 0, (lam,),
+                       f=lambda lam: 1/lam,
+                       fillvalue=np.inf)
+        return -b, b
+
     def _pdf(self, x, lam):
         Fx = np.asarray(sc.tklmbda(x, lam))
         Px = Fx**(lam-1.0) + (np.asarray(1-Fx))**(lam-1.0)
-        Px = 1.0/np.asarray(Px)
-        return np.where((lam <= 0) | (abs(x) < 1.0/np.asarray(lam)), Px, 0.0)
+        with np.errstate(divide='ignore'):
+            Px = 1.0/np.asarray(Px)
+            return np.where((lam <= 0) | (abs(x) < 1.0/np.asarray(lam)), Px, 0.0)
 
     def _cdf(self, x, lam):
         return sc.tklmbda(x, lam)
@@ -11344,6 +11373,22 @@ class crystalball_gen(rv_continuous):
                     (m/beta - beta - x)**(-m+1) / (m-1))
 
         return N * _lazywhere(x > -beta, (x, beta, m), f=rhs, f2=lhs)
+
+    def _sf(self, x, beta, m):
+        """
+        Survival function of the crystalball distribution.
+        """
+
+        def rhs(x, beta, m):
+            # M is the same as 1/N used elsewhere.
+            M = m/beta/(m - 1)*np.exp(-beta**2/2) + _norm_pdf_C*_norm_cdf(beta)
+            return _norm_pdf_C*_norm_sf(x)/M
+
+        def lhs(x, beta, m):
+            # Default behavior is OK in the left tail of the SF.
+            return 1 - self._cdf(x, beta, m)
+
+        return _lazywhere(x > -beta, (x, beta, m), f=rhs, f2=lhs)
 
     def _ppf(self, p, beta, m):
         N = 1.0 / (m/beta / (m-1) * np.exp(-beta**2 / 2.0) +
