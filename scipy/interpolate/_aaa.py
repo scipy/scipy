@@ -405,7 +405,7 @@ class AAA:
 
         ni = ii[0].size
         if ni == 0:
-            return
+            return ni
 
         warnings.warn(f"{ni} Froissart doublets detected.", RuntimeWarning,
                         stacklevel=2)
