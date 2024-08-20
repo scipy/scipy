@@ -44,17 +44,17 @@
     },
     "_struve_asymp_large_z": {
         "xsf_wrappers.h": {
-            "cephes__struve_asymp_large_z": "ddi*d->d"
+            "cephes__struve_asymp_large_z": "ddp*d->d"
         }
     },
     "_struve_bessel_series": {
         "xsf_wrappers.h": {
-            "cephes__struve_bessel_series": "ddi*d->d"
+            "cephes__struve_bessel_series": "ddp*d->d"
         }
     },
     "_struve_power_series": {
         "xsf_wrappers.h": {
-            "cephes__struve_power_series": "ddi*d->d"
+            "cephes__struve_power_series": "ddp*d->d"
         }
     },
     "voigt_profile" : {
@@ -77,7 +77,7 @@
             "bdtr_unsafe": "ddd->d"
         },
         "xsf_wrappers.h": {
-            "cephes_bdtr": "did->d"
+            "cephes_bdtr_wrap": "dpd->d"
         }
     },
     "bdtrc": {
@@ -85,7 +85,7 @@
             "bdtrc_unsafe": "ddd->d"
         },
         "xsf_wrappers.h": {
-            "cephes_bdtrc": "did->d"
+            "cephes_bdtrc_wrap": "dpd->d"
         }
     },
     "bdtri": {
@@ -93,7 +93,7 @@
             "bdtri_unsafe": "ddd->d"
         },
         "xsf_wrappers.h": {
-            "cephes_bdtri": "did->d"
+            "cephes_bdtri_wrap": "dpd->d"
         }
     },
     "bdtrik": {
@@ -348,101 +348,101 @@
         "orthogonal_eval.pxd": {
             "eval_chebyc[double complex]": "dD->D",
             "eval_chebyc[double]": "dd->d",
-            "eval_chebyc_l": "ld->d"
+            "eval_chebyc_l": "pd->d"
         }
     },
     "eval_chebys": {
         "orthogonal_eval.pxd": {
             "eval_chebys[double complex]": "dD->D",
             "eval_chebys[double]": "dd->d",
-            "eval_chebys_l": "ld->d"
+            "eval_chebys_l": "pd->d"
         }
     },
     "eval_chebyt": {
         "orthogonal_eval.pxd": {
             "eval_chebyt[double complex]": "dD->D",
             "eval_chebyt[double]": "dd->d",
-            "eval_chebyt_l": "ld->d"
+            "eval_chebyt_l": "pd->d"
         }
     },
     "eval_chebyu": {
         "orthogonal_eval.pxd": {
             "eval_chebyu[double complex]": "dD->D",
             "eval_chebyu[double]": "dd->d",
-            "eval_chebyu_l": "ld->d"
+            "eval_chebyu_l": "pd->d"
         }
     },
     "eval_gegenbauer": {
         "orthogonal_eval.pxd": {
             "eval_gegenbauer[double complex]": "ddD->D",
             "eval_gegenbauer[double]": "ddd->d",
-            "eval_gegenbauer_l": "ldd->d"
+            "eval_gegenbauer_l": "pdd->d"
         }
     },
     "eval_genlaguerre": {
         "orthogonal_eval.pxd": {
             "eval_genlaguerre[double complex]": "ddD->D",
             "eval_genlaguerre[double]": "ddd->d",
-            "eval_genlaguerre_l": "ldd->d"
+            "eval_genlaguerre_l": "pdd->d"
         }
     },
     "eval_hermite": {
         "orthogonal_eval.pxd": {
-            "eval_hermite": "ld->d"
+            "eval_hermite": "pd->d"
         }
     },
     "eval_hermitenorm": {
         "orthogonal_eval.pxd": {
-            "eval_hermitenorm": "ld->d"
+            "eval_hermitenorm": "pd->d"
         }
     },
     "eval_jacobi": {
         "orthogonal_eval.pxd": {
             "eval_jacobi[double complex]": "dddD->D",
             "eval_jacobi[double]": "dddd->d",
-            "eval_jacobi_l": "lddd->d"
+            "eval_jacobi_l": "pddd->d"
         }
     },
     "eval_laguerre": {
         "orthogonal_eval.pxd": {
             "eval_laguerre[double complex]": "dD->D",
             "eval_laguerre[double]": "dd->d",
-            "eval_laguerre_l": "ld->d"
+            "eval_laguerre_l": "pd->d"
         }
     },
     "eval_legendre": {
         "orthogonal_eval.pxd": {
             "eval_legendre[double complex]": "dD->D",
             "eval_legendre[double]": "dd->d",
-            "eval_legendre_l": "ld->d"
+            "eval_legendre_l": "pd->d"
         }
     },
     "eval_sh_chebyt": {
         "orthogonal_eval.pxd": {
             "eval_sh_chebyt[double complex]": "dD->D",
             "eval_sh_chebyt[double]": "dd->d",
-            "eval_sh_chebyt_l": "ld->d"
+            "eval_sh_chebyt_l": "pd->d"
         }
     },
     "eval_sh_chebyu": {
         "orthogonal_eval.pxd": {
             "eval_sh_chebyu[double complex]": "dD->D",
             "eval_sh_chebyu[double]": "dd->d",
-            "eval_sh_chebyu_l": "ld->d"
+            "eval_sh_chebyu_l": "pd->d"
         }
     },
     "eval_sh_jacobi": {
         "orthogonal_eval.pxd": {
             "eval_sh_jacobi[double complex]": "dddD->D",
             "eval_sh_jacobi[double]": "dddd->d",
-            "eval_sh_jacobi_l": "lddd->d"
+            "eval_sh_jacobi_l": "pddd->d"
         }
     },
     "eval_sh_legendre": {
         "orthogonal_eval.pxd": {
             "eval_sh_legendre[double complex]": "dD->D",
             "eval_sh_legendre[double]": "dd->d",
-            "eval_sh_legendre_l": "ld->d"
+            "eval_sh_legendre_l": "pd->d"
         }
     },
     "exp10": {
@@ -468,7 +468,7 @@
             "expn_unsafe": "dd->d"
         },
         "xsf_wrappers.h": {
-            "cephes_expn": "id->d"
+            "cephes_expn_wrap": "pd->d"
         }
     },
     "fdtr": {
@@ -643,7 +643,7 @@
             "kn_unsafe": "dd->d"
         },
         "xsf_wrappers.h": {
-            "special_cyl_bessel_k_int": "id->d"
+            "special_cyl_bessel_k_int": "pd->d"
         }
     },
     "_kolmogc": {
@@ -700,7 +700,7 @@
             "nbdtr_unsafe": "ddd->d"
         },
         "xsf_wrappers.h": {
-            "cephes_nbdtr": "iid->d"
+            "cephes_nbdtr_wrap": "ppd->d"
         }
     },
     "nbdtrc": {
@@ -708,7 +708,7 @@
             "nbdtrc_unsafe": "ddd->d"
         },
         "xsf_wrappers.h": {
-            "cephes_nbdtrc": "iid->d"
+            "cephes_nbdtrc_wrap": "ppd->d"
         }
     },
     "nbdtri": {
@@ -716,7 +716,7 @@
             "nbdtri_unsafe": "ddd->d"
         },
         "xsf_wrappers.h": {
-            "cephes_nbdtri": "iid->d"
+            "cephes_nbdtri_wrap": "ppd->d"
         }
     },
     "nbdtrik": {
@@ -812,7 +812,7 @@
             "pdtri_unsafe": "dd->d"
         },
         "xsf_wrappers.h": {
-            "cephes_pdtri": "id->d"
+            "cephes_pdtri_wrap": "pd->d"
         }
     },
     "pdtrik": {
@@ -876,7 +876,7 @@
             "smirnov_unsafe": "dd->d"
         },
         "xsf_wrappers.h": {
-            "cephes_smirnov": "id->d"
+            "cephes_smirnov_wrap": "pd->d"
         }
     },
     "_smirnovc": {
@@ -884,7 +884,7 @@
             "smirnovc_unsafe": "dd->d"
         },
         "xsf_wrappers.h": {
-            "cephes_smirnovc": "id->d"
+            "cephes_smirnovc_wrap": "pd->d"
         }
     },
     "_smirnovci": {
@@ -892,7 +892,7 @@
             "smirnovci_unsafe": "dd->d"
         },
         "xsf_wrappers.h": {
-            "cephes_smirnovci": "id->d"
+            "cephes_smirnovci_wrap": "pd->d"
         }
     },
     "smirnovi": {
@@ -900,7 +900,7 @@
             "smirnovi_unsafe": "dd->d"
         },
         "xsf_wrappers.h": {
-            "cephes_smirnovi": "id->d"
+            "cephes_smirnovi_wrap": "pd->d"
         }
     },
     "_smirnovp": {
@@ -908,7 +908,7 @@
             "smirnovp_unsafe": "dd->d"
         },
         "xsf_wrappers.h": {
-            "cephes_smirnovp": "id->d"
+            "cephes_smirnovp_wrap": "pd->d"
         }
     },
     "spence": {
@@ -991,7 +991,7 @@
             "yn_unsafe": "dd->d"
         },
         "xsf_wrappers.h": {
-            "cephes_yn": "id->d"
+            "cephes_yn_wrap": "pd->d"
         }
     },
     "zetac": {
