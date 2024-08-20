@@ -5743,343 +5743,6 @@ class johnsonsu_gen(rv_continuous):
 johnsonsu = johnsonsu_gen(name='johnsonsu')
 
 
-def _landau_pdf(x):
-    """Fast calculation of Landau probability distribution function.
-
-    Calculation formula from K.S. Kölbig, B. Schorr, A program package for
-    the Landau distribution, Computer Physics Communications, Volume 31,
-    Issue 1, 1984, Pages 97-111, ISSN 0010-4655, https://doi.org/10.1016/0010-4655(84)90085-7.
-    Public preprint freely accessible in CERN Document Server, https://cds.cern.ch/record/145105
-
-    Parameters
-    ----------
-    x: float, numpy array
-        Point in which to calculate the Landau distribution.
-
-    Returns
-    -------
-    landau_pdf: float, numpy array
-        The value of the Landau distribution.
-    """
-    def phi_0(x):
-        """Calculates phi when x < -5. If x is outside this range, NaN value is returned."""
-        an = (
-            +1.000000000000000E+00,
-            +4.166666666666667E-02,
-            -1.996527777777778E-02,
-            +2.709538966049383E-02,
-            -6.235158158918467E-02,
-            +2.039184652541914E-01,
-            -8.670031318838562E-01,
-            +4.542651684388753E+00,
-        )
-        sigma = np.exp(-x-1)
-        phi = np.exp(-sigma)*sigma**.5*sum([a*sigma**-n for n, a in enumerate(an)])
-        phi[(x >= -5.5)] = float('NaN')
-        return phi
-
-    def phi_1(x):
-        """Calculates phi when -5 <= x < -1. If x is outside this range, NaN value is returned."""
-        an = (
-            0.40285195093443,
-            0.00553078642063,
-            0.00235570058057,
-            0.00065890697452,
-            0.00011909321317,
-            0.00001059570453,
-            -0.00000080815164,
-            -0.00000034539628,
-            -0.00000001117949,
-            0.00000001143304,
-            0.00000000185562,
-            -0.0000000002267,
-            -0.00000000010069,
-            -0.00000000000154,
-            0.00000000000411,
-            0.00000000000047,
-            -0.00000000000014,
-            -0.00000000000003,
-        )
-        sigma = np.exp(-x-1)
-        phi = np.exp(-sigma)*sigma**.5*np.polynomial.chebyshev.Chebyshev(an, domain=(-5.5, -1))(x)
-        phi[(x >= -1) | (x < -5.5)] = float('NaN')
-        return phi
-
-    def phi_2(x):
-        """Calculates phi when -1 <= x < 1. If x is outside this range,
-        NaN value is returned."""
-        bn = (
-            +0.16360143920269,
-            -0.00599908169949,
-            -0.01529769013466,
-            +0.00300278767293,
-            -0.00002447041734,
-            -0.00009497949355,
-            +0.00002025952531,
-            -0.00000145451216,
-            -0.00000025149321,
-            +0.00000009042638,
-            -0.00000001258009,
-            +0.00000000044507,
-            +0.00000000020004,
-            -0.00000000005155,
-            +0.00000000000629,
-            -0.00000000000020,
-            -0.00000000000009,
-            +0.00000000000002,
-        )
-        phi = np.polynomial.chebyshev.Chebyshev(bn, domain=(-1, 1))(x)
-        phi[(x >= 1) | (x < -1)] = float('NaN')
-        return phi
-
-    def phi_3(x):
-        """Calculates phi when 1 <= x < 4. If x is outside this range,
-        NaN value is returned."""
-        cn = (
-            +0.093910553905040,
-            -0.046051135650639,
-            +0.005514491616154,
-            +0.000033846759482,
-            -0.000179611135166,
-            +0.000047499284920,
-            -0.000007772699014,
-            +0.000000815142983,
-            -0.000000018823117,
-            -0.000000014734204,
-            +0.000000004204788,
-            -0.000000000732265,
-            +0.000000000091386,
-            -0.000000000007034,
-            -0.000000000000183,
-            +0.000000000000190,
-            -0.000000000000043,
-            +0.000000000000007,
-            -0.000000000000001,
-        )
-        phi = np.polynomial.chebyshev.Chebyshev(cn, domain=(1, 4))(x)
-        phi[(x >= 4) | (x < 1)] = float('NaN')
-        return phi
-
-    def phi_4(x):
-        """Calculates phi when 4 < x. If x is outside this range,
-        NaN value is returned."""
-        dn = (
-            +0.70366178131816,
-            -0.27450971486614,
-            +0.02625538561233,
-            +0.00204063338947,
-            -0.00173032587110,
-            +0.00052204968816,
-            -0.00011383083318,
-            +0.00001872991034,
-            -0.00000178872991,
-            -0.00000021703167,
-            +0.00000017781207,
-            -0.00000006150638,
-            +0.00000001614242,
-            -0.00000000348239,
-            +0.00000000060008,
-            -0.00000000006514,
-            -0.00000000000536,
-            +0.00000000000603,
-            -0.00000000000233,
-            +0.00000000000069,
-            -0.00000000000018,
-            +0.00000000000003,
-        )
-        w0 = np.real(sc.lambertw(np.exp(x)))
-        # For "very large values of x", sc.lambertw fails, instead the
-        # equation provided in the paper (see docstring) works better.
-        LIMIT_WHERE_TO_STOP_USING_LAMBERT_EQUATION_SOLVER = 400
-        large_x = x[x>LIMIT_WHERE_TO_STOP_USING_LAMBERT_EQUATION_SOLVER]
-        w0[x>LIMIT_WHERE_TO_STOP_USING_LAMBERT_EQUATION_SOLVER] = large_x-large_x*np.log(large_x)/(large_x+1)
-
-        w4 = 2.9262710624435
-        phi = np.polynomial.chebyshev.Chebyshev(dn)(2*w4/w0-1)/w0**2
-        phi[(x < 4)] = float('NaN')
-        return phi
-
-    x_is_iterable = hasattr(x, '__iter__')
-    if not x_is_iterable:
-        x = [x]
-    x = np.asarray(x)
-
-    with np.errstate(over='ignore', invalid='ignore', divide='ignore'):
-        phi = np.nansum(np.stack([f(x) for f in (phi_0, phi_1, phi_2, phi_3, phi_4)]), axis=0)
-
-    if x_is_iterable:
-        return phi
-    else:
-        return phi[0]
-
-
-def _landau_cdf(x):
-    """Fast calculation of Landau cumulative distribution function.
-
-    Calculation formula from K.S. Kölbig, B. Schorr, A program package for
-    the Landau distribution, Computer Physics Communications, Volume 31,
-    Issue 1, 1984, Pages 97-111, ISSN 0010-4655, https://doi.org/10.1016/0010-4655(84)90085-7.
-    Public preprint freely accessible in CERN Document Server, https://cds.cern.ch/record/145105
-
-    Parameters
-    ----------
-    x: float, numpy array
-        Point in which to calculate the Landau distribution.
-
-    Returns
-    -------
-    landau_pdf: float, numpy array
-        The value of the Landau distribution.
-    """
-    def Phi_0(x:np.array):
-        """Calculates Phi when x < -5. If x is outside this range, NaN value is returned."""
-        An = (
-            +1.000000000000000E+00,
-            -4.583333333333333E-01,
-            +6.675347222222222E-01,
-            -1.641741415895062E+00,
-            +5.683743374043531E+00,
-            -2.537292671794170E+01,
-            +1.386840938167955E+02,
-            -8.969039581247819E+02,
-        )
-        sigma = np.exp(-x-1)
-        Phi = 1/(2*np.pi)**.5*np.exp(-sigma)*sigma**-.5*sum([A*sigma**-n for n, A in enumerate(An)])
-        Phi[(x >= -5.5)] = float('NaN')
-        return Phi
-
-    def Phi_1(x):
-        """Calculates Phi when -5 <= x < -1. If x is outside this range, NaN value is returned."""
-        an = (
-            +0.36736553957243,
-            -0.04173575343454,
-            -0.01460535584187,
-            -0.00245951617233,
-            +0.00010914065045,
-            +0.00014574140694,
-            +0.00002214254514,
-            -0.00000361245594,
-            -0.00000172885087,
-            -0.00000007401332,
-            +0.00000007965008,
-            +0.00000001450126,
-            -0.00000000235673,
-            -0.00000000104219,
-            +0.00000000000739,
-            +0.00000000005577,
-            +0.00000000000519,
-            -0.00000000000245,
-            -0.00000000000049,
-            +0.00000000000009,
-            +0.00000000000003,
-        )
-        sigma = np.exp(-x-1)
-        Phi = np.exp(-sigma)*sigma**-.5*np.polynomial.chebyshev.Chebyshev(an, domain=(-5.5, -1))(x)
-        Phi[(x >= -1) | (x < -5.5)] = float('NaN')
-        return Phi
-
-    def Phi_2(x):
-        """Calculates Phi when -1 <= x < 1. If x is outside this range,
-        NaN value is returned."""
-        bn = (
-            +0.28418749917326,
-            +0.17125028427002,
-            -0.00225046734310,
-            -0.00254553661955,
-            +0.00038722089581,
-            -0.00000447299427,
-            -0.00000779374845,
-            +0.00000146507275,
-            -0.00000009655866,
-            -0.00000001327295,
-            +0.00000000449907,
-            -0.00000000058092,
-            +0.00000000002069,
-            +0.00000000000745,
-            -0.00000000000183,
-            +0.00000000000021,
-            -0.00000000000001,
-        )
-        Phi = np.polynomial.chebyshev.Chebyshev(bn, domain=(-1, 1))(x)
-        Phi[(x >= 1) | (x < -1)] = float('NaN')
-        return Phi
-
-    def Phi_3(x):
-        """Calculates Phi when 1 <= x < 4. If x is outside this range,
-        NaN value is returned."""
-        cn = (
-            +0.60642348851113,
-            +0.13672996214544,
-            -0.01728186840380,
-            +0.00142352568783,
-            -0.00000255984852,
-            -0.00002577576542,
-            +0.00000583551774,
-            -0.00000083077242,
-            +0.00000007780099,
-            -0.00000000191899,
-            -0.00000000105015,
-            +0.00000000028046,
-            -0.00000000004533,
-            +0.00000000000528,
-            -0.00000000000039,
-            -0.00000000000001,
-        )
-        Phi = np.polynomial.chebyshev.Chebyshev(cn, domain=(1, 4))(x)
-        Phi[(x >= 4) | (x < 1)] = float('NaN')
-        return Phi
-
-    def Phi_4(x):
-        """Calculates Phi when 4 < x. If x is outside this range,
-        NaN value is returned."""
-        dn = (
-            +0.85503889038432,
-            -0.13613051508198,
-            +0.00868954587167,
-            -0.00026400886380,
-            -0.00008609203582,
-            +0.00002938828486,
-            -0.00000628851988,
-            +0.00000105653097,
-            -0.00000013289345,
-            +0.00000000661774,
-            +0.00000000287306,
-            -0.00000000132848,
-            +0.00000000037590,
-            -0.00000000008510,
-            +0.00000000001599,
-            -0.00000000000234,
-            +0.00000000000017,
-            +0.00000000000005,
-            -0.00000000000003,
-            +0.00000000000001,
-        )
-        w0 = np.real(sc.lambertw(np.exp(x)))
-        # For "very large values of x", sc.lambertw fails, instead the
-        # equation provided in the paper (see docstring) works better.
-        LIMIT_WHERE_TO_STOP_USING_LAMBERT_EQUATION_SOLVER = 400
-        large_x = x[x>LIMIT_WHERE_TO_STOP_USING_LAMBERT_EQUATION_SOLVER]
-        w0[x>LIMIT_WHERE_TO_STOP_USING_LAMBERT_EQUATION_SOLVER] = large_x-large_x*np.log(large_x)/(large_x+1)
-        
-        w4 = 2.9262710624435
-        Phi = np.polynomial.chebyshev.Chebyshev(dn)(2*w4/w0-1)
-        Phi[(x < 4)] = float('NaN')
-        return Phi
-
-    x_is_iterable = hasattr(x, '__iter__')
-    if not x_is_iterable:
-        x = [x]
-    x = np.asarray(x)
-
-    with np.errstate(over='ignore', invalid='ignore', divide='ignore'):
-        Phi = np.nansum(np.stack([f(x) for f in (Phi_0, Phi_1, Phi_2, Phi_3, Phi_4)]), axis=0)
-
-    if x_is_iterable:
-        return Phi
-    else:
-        return Phi[0]
-
-
 class landau_gen(rv_continuous):
     r"""A Landau continuous random variable.
 
@@ -6087,7 +5750,7 @@ class landau_gen(rv_continuous):
 
     Notes
     -----
-    The probability density function for `landau` (_[1], _[2]) is:
+    The probability density function for `landau` ([1]_, [2]_) is:
 
     .. math::
 
@@ -6097,12 +5760,21 @@ class landau_gen(rv_continuous):
 
     %(after_notes)s
 
+    Often (e.g. [2]_), the Landau distribution is parameterized in terms of a
+    location parameter :math:`\mu` and scale parameter :math:`\c`, the latter of
+    which *also* introduces a location shift. If ``mu`` and ``c`` are used to
+    represent these parameters, this corresponds with SciPy's parameterization
+    with ``loc = mu + 2*c / np.pi * np.log(c)`` and ``scale = c``.
+
     References
     ----------
     .. [1] Landau, L. (1944). "On the energy loss of fast particles by
            ionization". J. Phys. (USSR). 8: 201.
     .. [2] "Landau Distribution", Wikipedia,
            https://en.wikipedia.org/wiki/Landau_distribution
+    .. [3] Chambers, J. M., Mallows, C. L., & Stuck, B. (1976).
+           "A method for simulating stable random variables."
+           Journal of the American Statistical Association, 71(354), 340-344.
 
     %(example)s
 
@@ -6111,82 +5783,46 @@ class landau_gen(rv_continuous):
     def _shape_info(self):
         return []
 
+    def _entropy(self):
+        # Computed with mpmath - see gh-19145
+        return 2.37263644000448182
+
     def _pdf(self, x):
-        s = (np.pi/2)**-1
-        x0 = 0.14182804795804668-0.42931453806624986
-        return _landau_pdf((x-x0)/s)/s
-    
+        return scu._landau_pdf(x, 0, 1)
+
     def _cdf(self, x):
-        s = (np.pi/2)**-1
-        x0 = 0.14182804795804668-0.42931453806624986
-        return _landau_cdf((x-x0)/s)
-    
+        return scu._landau_cdf(x, 0, 1)
+
+    def _sf(self, x):
+        return scu._landau_sf(x, 0, 1)
+
+    def _ppf(self, p):
+        return scu._landau_ppf(p, 0, 1)
+
+    def _isf(self, p):
+        return scu._landau_isf(p, 0, 1)
+
     def _stats(self):
         return np.nan, np.nan, np.nan, np.nan
-    
+
     def _munp(self, n):
         return np.nan
-    
+
     def _fitstart(self, data, args=None):
         # Initialize ML guesses using quartiles instead of moments.
         if isinstance(data, CensoredData):
             data = data._uncensor()
         p25, p50, p75 = np.percentile(data, [25, 50, 75])
         return p50, (p75 - p25)/2
-    
+
     def _rvs(self, size=None, random_state=None):
-        def sample_distribution_given_cdf(x: np.array, cdf: np.array, rng:np.random.Generator, n_samples:int):
-            """Generate random samples following a particular distribution
-            given samples of the CDF.
-
-            Parameters
-            ----------
-            x: numpy array
-                Points where the CDF was calculated. `len(x)` must be the same
-                than `len(cdf)`.
-            cdf: numpy array
-                Value of the CDF at each `x`. `len(x)` must be the same than
-                `len(cdf)`.
-            rng: np.random.Generator
-                A random number generator, for example `numpy.random.default_rng()`.
-            n_samples: int
-                Number of samples to produce.
-
-            Returns
-            -------
-            samples: float, numpy array
-                Samples produced from the distribution.
-            """
-            if any(not isinstance(arg, np.ndarray) for arg in [x, cdf]):
-                raise TypeError(f'`x` and `cdf` must be numpy arrays.')
-            if not isinstance(n_samples, int):
-                raise TypeError(f'`n_samples` must be an integer number.')
-            if len(x) != len(cdf):
-                raise ValueError(f'`len(x)` must be equal to `len(cdf)`.')
-            if n_samples < 1:
-                raise ValueError(f'`n_samples` must be > 0, received {n_samples}.')
-            
-            inverse_cdf = interp1d(x=cdf, y=x, bounds_error=False)
-            samples = np.array([])
-            while len(samples)<n_samples:
-                samples = np.append(samples, inverse_cdf(rng.random(n_samples)))
-                samples = samples[~np.isnan(samples)]
-            return np.squeeze(samples[:n_samples])
-        
-        # The random samples are produced using a sampled version of the
-        # inverse cumulative distribution function obtained by interpolating
-        # in a dense-enough and wide-enough range for, I would say, most
-        # applications.
-        
-        n_samples = int(np.prod(size))
-        x_axis = np.linspace(-5,999,9999)
-        samples = sample_distribution_given_cdf(
-            x=x_axis,
-            cdf=self._cdf(x_axis),
-            n_samples=n_samples,
-            rng=random_state if random_state is not None else np.random.default_rng(),
-        )
-        return np.reshape(samples, size)
+        # Method from https://www.jstor.org/stable/2285309 Eq. 2.4
+        pi_2 = np.pi / 2
+        U = random_state.uniform(-np.pi / 2, np.pi / 2, size=size)
+        W = random_state.standard_exponential(size=size)
+        S = 2 / np.pi * ((pi_2 + U) * np.tan(U)
+                         - np.log((pi_2 * W * np.cos(U)) / (pi_2 + U)))
+        return S
 
 
 landau = landau_gen(name='landau')
@@ -9551,10 +9187,10 @@ class irwinhall_gen(rv_continuous):
 
     def _argcheck(self, n):
         return (n > 0) & _isintegral(n) & np.isrealobj(n)
-    
+
     def _get_support(self, n):
-        return 0, n 
-    
+        return 0, n
+
     def _shape_info(self):
         return [_ShapeInfo("n", True, (1, np.inf), (True, False))]
 
@@ -9562,7 +9198,7 @@ class irwinhall_gen(rv_continuous):
         # see https://link.springer.com/content/pdf/10.1007/s10959-020-01050-9.pdf
         # page 640, with m=n, j=n+order
         def vmunp(order, n):
-            return (sc.stirling2(n+order, n, exact=True) 
+            return (sc.stirling2(n+order, n, exact=True)
                     / sc.comb(n+order, n, exact=True))
 
         # exact rationals, but we convert to float anyway
@@ -9570,14 +9206,14 @@ class irwinhall_gen(rv_continuous):
 
     @staticmethod
     def _cardbspl(n):
-        t = np.arange(n+1) 
+        t = np.arange(n+1)
         return BSpline.basis_element(t)
 
     def _pdf(self, x, n):
         def vpdf(x, n):
             return self._cardbspl(n)(x)
         return np.vectorize(vpdf, otypes=[np.float64])(x, n)
-    
+
     def _cdf(self, x, n):
         def vcdf(x, n):
             return self._cardbspl(n).antiderivative()(x)
@@ -9595,7 +9231,7 @@ class irwinhall_gen(rv_continuous):
             usize = (n,) if size is None else (n, *size)
             return random_state.uniform(size=usize).sum(axis=0)
         return _rvs1(n, size=size, random_state=random_state)
-    
+
     def _stats(self, n):
         # mgf = ((exp(t) - 1)/t)**n
         # m'th derivative follows from the generalized Leibniz rule
