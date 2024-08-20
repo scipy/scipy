@@ -28,7 +28,6 @@ requires = [
     # The upper bound on pythran is pre-emptive only; 0.16.1
     # is released/working at time of writing.
     "pythran>=0.14.0,<0.17.0",
-    "setuptools<73.0.0", # hack to work around gh-21416
 
     # numpy requirement for wheel builds for distribution on PyPI - building
     # against 2.x yields wheels that are also compatible with numpy 1.x at
