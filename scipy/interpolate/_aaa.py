@@ -385,6 +385,11 @@ class AAA:
             Poles with residues less than this number times the geometric mean
             of `values` times the minimum distance to `points` are deemed spurious by
             the cleanup procedure, defaults to 1e-13.
+
+        Returns
+        -------
+        int
+            Number of Froissart doublets detected
         """
         # Find negligible residues
         geom_mean_abs_f = scipy.stats.gmean(np.abs(self._values))
@@ -437,6 +442,8 @@ class AAA:
         self._poles = None
         self._residues = None
         self._roots = None
+        
+        return ni
 
     def __call__(self, z):
         """Evaluate the rational approximation at given values.

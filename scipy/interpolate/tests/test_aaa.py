@@ -230,7 +230,7 @@ class TestAAA:
             r = AAA(z, np.tan(np.pi*z/2), rtol=0, max_terms=60, clean_up=False)
         n_spurious = np.sum(np.abs(r.residues()) < 1e-14)
         with pytest.warns(RuntimeWarning):
-            r.clean_up()
+            assert r.clean_up() >= 1
         # check there are less potentially spurious poles than before
         assert np.sum(np.abs(r.residues()) < 1e-14) < n_spurious
         # check accuracy
