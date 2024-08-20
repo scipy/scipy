@@ -71,10 +71,34 @@ class TestHankel:
 
 
 class TestCirculant:
-    def test_basic(self):
+    def test_basic_0d(self):
+        y = circulant(1)
+        assert_array_equal(y, [[1]])
+
+    def test_basic_1d(self):
         y = circulant([1, 2, 3])
         assert_array_equal(y, [[1, 3, 2], [2, 1, 3], [3, 2, 1]])
 
+    @pytest.mark.parametrize('preprocess', [lambda x: x, np.asarray, np.asfortranarray])
+    def test_basic_2d(self, preprocess):
+        y = circulant(preprocess([[1, 2, 3], [4, 5, 6]]))
+        assert_array_equal(y, [[[1, 3, 2], [2, 1, 3], [3, 2, 1]],
+                                  [[4, 6, 5], [5, 4, 6], [6, 5, 4]]])
+
+    def test_basic_3d(self):
+        message = 'Argument must have either 1 or 2 dimensions.'
+        with pytest.raises(ValueError, match=message):
+            circulant([[[1, 2, 3]]])
+
+    @pytest.mark.parametrize('shape', [(0,), (5, 0), (0, 5)])
+    @pytest.mark.parametrize('dtype', [np.int32, np.float64])
+    def test_empty(self, shape, dtype):
+        y = circulant(np.zeros(shape, dtype=dtype))
+        if len(shape) == 1:
+            assert_array_equal(y, np.empty((0, 0), dtype=dtype))
+        else:
+            m, n = shape
+            assert_array_equal(y, np.empty((m, n, n), dtype=dtype))
 
 class TestHadamard:
 
