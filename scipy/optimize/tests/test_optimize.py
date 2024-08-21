@@ -3177,7 +3177,7 @@ def test_gh12594():
 
 def test_gh12513_trustregion_exact_infinite_loop():
     # gh-12513 reported that optimize.minimize might hang when
-    # method='trust-exact', using a new option ``subproblem_maxiter``,
+    # method='trust-exact', using the option ``subproblem_maxiter``,
     # this can be avoided.
     H = np.array(
         [[3.67335930e01, -2.52334820e02, 1.15477558e01, -1.19933725e-03,
@@ -3295,7 +3295,7 @@ def test_gh12513_trustregion_exact_infinite_loop():
 
     x0 = np.zeros(19)
 
-    optimize.minimize(
+    res = optimize.minimize(
         fun,
         x0,
         jac=jac,
@@ -3303,6 +3303,8 @@ def test_gh12513_trustregion_exact_infinite_loop():
         method="trust-exact",
         options={"gtol": 1e-6, "subproblem_maxiter": 10},
     )
+    assert res.success
+    assert abs(fun(res.x)) < 1e-5
 
 
 @pytest.mark.parametrize('method', ['Newton-CG', 'trust-constr'])
