@@ -207,7 +207,7 @@ def logm(A, disp=True):
     if disp:
         if not isfinite(errest) or errest >= errtol:
             message = f"logm result may be inaccurate, approximate err = {errest}"
-            warnings.warn(message, RuntimeWarning)
+            warnings.warn(message, RuntimeWarning, stacklevel=2)
         return F
     else:
         return F, errest
