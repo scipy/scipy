@@ -123,8 +123,11 @@ def hankel(c, r=None):
     Construct a Hankel matrix.
 
     The Hankel matrix has constant anti-diagonals, with `c` as its
-    first column and `r` as its last row. If `r` is not given, then
-    `r = zeros_like(c)` is assumed.
+    first column and `r` as its last row. If the first element of `r`
+    differs from the last element of `c`, the first element of `r` is
+    replaced by the last element of `c` to ensure that anti-diagonals
+    remain constant. If `r` is not given, then `r = zeros_like(c)` is
+    assumed.
 
     Parameters
     ----------
