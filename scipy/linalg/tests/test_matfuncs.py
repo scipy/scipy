@@ -18,6 +18,7 @@ from scipy.linalg import (funm, signm, logm, sqrtm, fractional_matrix_power,
                           expm, expm_frechet, expm_cond, norm, khatri_rao)
 from scipy.linalg import _matfuncs_inv_ssq
 from scipy.linalg._matfuncs import pick_pade_structure
+from scipy.linalg._matfuncs_inv_ssq import LogmExactlySingularWarning
 import scipy.linalg._expm_frechet
 
 from scipy.optimize import minimize
@@ -248,6 +249,15 @@ class TestLogM:
 
         assert log_a.shape == (0, 0)
         assert log_a.dtype == log_a0.dtype
+
+    @pytest.mark.parametrize('dtype', [int, float, np.float32, complex, np.complex64])
+    def test_no_ZeroDivisionError(self, dtype):
+        # gh-17136 reported inconsistent behavior in `logm` depending on input dtype:
+        # sometimes it raised an error, and sometimes it printed a warning message.
+        # check that this is resolved and that the warning is emitted properly.
+        with (pytest.warns(RuntimeWarning, match="logm result may be inaccurate"),
+              pytest.warns(LogmExactlySingularWarning)):
+            logm(np.zeros((2, 2), dtype=dtype))
 
 
 class TestSqrtM:
