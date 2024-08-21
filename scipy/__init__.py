@@ -15,6 +15,7 @@ Using any of these subpackages requires an explicit import. For example,
  cluster                      --- Vector Quantization / Kmeans
  constants                    --- Physical and mathematical constants and units
  datasets                     --- Dataset methods
+ differentiate                --- Finite difference differentiation tools
  fft                          --- Discrete Fourier transforms
  fftpack                      --- Legacy discrete Fourier transforms
  integrate                    --- Integration routines
@@ -66,7 +67,7 @@ del _distributor_init
 
 from scipy._lib import _pep440
 # In maintenance branch, change to np_maxversion N+3 if numpy is at N
-np_minversion = '1.22.4'
+np_minversion = '1.23.5'
 np_maxversion = '9.9.99'
 if (_pep440.parse(__numpy_version__) < _pep440.Version(np_minversion) or
         _pep440.parse(__numpy_version__) >= _pep440.Version(np_maxversion)):
@@ -100,6 +101,7 @@ submodules = [
     'cluster',
     'constants',
     'datasets',
+    'differentiate',
     'fft',
     'fftpack',
     'integrate',

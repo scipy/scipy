@@ -199,9 +199,16 @@ static struct PyModuleDef moduledef = {
 PyMODINIT_FUNC
 PyInit__zeros(void)
 {
-    PyObject *m;
+    PyObject *module;
 
-    m = PyModule_Create(&moduledef);
+    module = PyModule_Create(&moduledef);
+    if (module == NULL) {
+        return module;
+    }
 
-    return m;
+#if Py_GIL_DISABLED
+    PyUnstable_Module_SetGIL(module, Py_MOD_GIL_NOT_USED);
+#endif
+
+    return module;
 }

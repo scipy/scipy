@@ -101,7 +101,7 @@ def _cbc_lattice(n_dim, n_qmc_samples):
     -------
     q : float array : shape=(n_dim,)
         The lattice generator vector. All values are in the open interval
-        `(0, 1)`.
+        ``(0, 1)``.
     actual_n_qmc_samples : int
         The prime number of QMC samples that must be used with this lattice,
         no more, no less.

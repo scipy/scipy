@@ -19,11 +19,11 @@ development version of SciPy to your current Python environment.
 Run a benchmark against currently checked-out SciPy version (don't record the
 result)::
 
-    python dev.py bench sparse.Arithmetic
+    python dev.py bench --submodule sparse.Arithmetic
 
 Compare change in benchmark results with another branch::
 
-    python dev.py bench-compare main sparse.Arithmetic
+    python dev.py bench --compare main --submodule sparse.Arithmetic
 
 Run ASV commands directly (note, this will not set env vars for ``ccache``
 and disabling BLAS/LAPACK multi-threading, as ``dev.py`` does)::

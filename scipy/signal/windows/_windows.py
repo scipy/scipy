@@ -2355,8 +2355,8 @@ def get_window(window, Nx, fftbins=True):
             else:
                 winstr = window
         else:
-            raise ValueError("%s as window type is not supported." %
-                             str(type(window))) from e
+            raise ValueError(
+                f"{str(type(window))} as window type is not supported.") from e
 
         try:
             winfunc = _win_equiv[winstr]

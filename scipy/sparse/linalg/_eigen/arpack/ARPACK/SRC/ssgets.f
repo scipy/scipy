@@ -3,13 +3,13 @@ c\BeginDoc
 c
 c\Name: ssgets
 c
-c\Description: 
+c\Description:
 c  Given the eigenvalues of the symmetric tridiagonal matrix H,
-c  computes the NP shifts AMU that are zeros of the polynomial of 
-c  degree NP which filters out components of the unwanted eigenvectors 
+c  computes the NP shifts AMU that are zeros of the polynomial of
+c  degree NP which filters out components of the unwanted eigenvectors
 c  corresponding to the AMU's based on some given criteria.
 c
-c  NOTE: This is called even in the case of user specified shifts in 
+c  NOTE: This is called even in the case of user specified shifts in
 c  order to sort the eigenvalues, and error bounds of H for later use.
 c
 c\Usage:
@@ -39,8 +39,8 @@ c          Number of implicit shifts to be computed.
 c
 c  RITZ    Real array of length KEV+NP.  (INPUT/OUTPUT)
 c          On INPUT, RITZ contains the eigenvalues of H.
-c          On OUTPUT, RITZ are sorted so that the unwanted eigenvalues 
-c          are in the first NP locations and the wanted part is in 
+c          On OUTPUT, RITZ are sorted so that the unwanted eigenvalues
+c          are in the first NP locations and the wanted part is in
 c          the last KEV locations.  When exact shifts are selected, the
 c          unwanted part corresponds to the shifts to be applied.
 c
@@ -49,7 +49,7 @@ c          Error bounds corresponding to the ordering in RITZ.
 c
 c  SHIFTS  Real array of length NP.  (INPUT/OUTPUT)
 c          On INPUT:  contains the user specified shifts if ISHIFT = 0.
-c          On OUTPUT: contains the shifts sorted into decreasing order 
+c          On OUTPUT: contains the shifts sorted into decreasing order
 c          of magnitude with respect to the Ritz estimates contained in
 c          BOUNDS. If ISHIFT = 0, SHIFTS is not modified on exit.
 c
@@ -75,13 +75,13 @@ c     Danny Sorensen               Phuong Vu
 c     Richard Lehoucq              CRPC / Rice University
 c     Dept. of Computational &     Houston, Texas
 c     Applied Mathematics
-c     Rice University           
-c     Houston, Texas            
+c     Rice University
+c     Houston, Texas
 c
 c\Revision history:
 c     xx/xx/93: Version ' 2.1'
 c
-c\SCCS Information: @(#) 
+c\SCCS Information: @(#)
 c FILE: sgets.F   SID: 2.4   DATE OF SID: 4/19/96   RELEASE: 2
 c
 c\Remarks
@@ -142,7 +142,7 @@ c
 c     %-----------------------%
 c     | Executable Statements |
 c     %-----------------------%
-c 
+c
 c     %-------------------------------%
 c     | Initialize timing statistics  |
 c     | & message level for debugging |
@@ -150,7 +150,7 @@ c     %-------------------------------%
 c
       call arscnd (t0)
       msglvl = msgets
-c 
+c
       if (which .eq. 'BE') then
 c
 c        %-----------------------------------------------------%
@@ -163,11 +163,11 @@ c        | overlapping locations.                              |
 c        %-----------------------------------------------------%
 c
          call ssortr ('LA', .true., kev+np, ritz, bounds)
-         kevd2 = kev / 2 
+         kevd2 = kev / 2
          if ( kev .gt. 1 ) then
-            call sswap ( min(kevd2,np), ritz, 1, 
+            call sswap ( min(kevd2,np), ritz, 1,
      &                   ritz( max(kevd2,np)+1 ), 1)
-            call sswap ( min(kevd2,np), bounds, 1, 
+            call sswap ( min(kevd2,np), bounds, 1,
      &                   bounds( max(kevd2,np)+1 ), 1)
          end if
 c
@@ -185,7 +185,7 @@ c
       end if
 c
       if (ishift .eq. 1 .and. np .gt. 0) then
-c     
+c
 c        %-------------------------------------------------------%
 c        | Sort the unwanted Ritz values used as shifts so that  |
 c        | the ones with largest Ritz estimates are first.       |
@@ -193,23 +193,23 @@ c        | This will tend to minimize the effects of the         |
 c        | forward instability of the iteration when the shifts  |
 c        | are applied in subroutine ssapps.                     |
 c        %-------------------------------------------------------%
-c     
+c
          call ssortr ('SM', .true., np, bounds, ritz)
          call scopy (np, ritz, 1, shifts, 1)
       end if
-c 
+c
       call arscnd (t1)
       tsgets = tsgets + (t1 - t0)
 c
       if (msglvl .gt. 0) then
-         call ivout (logfil, 1, kev, ndigit, '_sgets: KEV is')
-         call ivout (logfil, 1, np, ndigit, '_sgets: NP is')
+         call ivout (logfil, 1, [kev], ndigit, '_sgets: KEV is')
+         call ivout (logfil, 1, [np], ndigit, '_sgets: NP is')
          call svout (logfil, kev+np, ritz, ndigit,
      &        '_sgets: Eigenvalues of current H matrix')
-         call svout (logfil, kev+np, bounds, ndigit, 
+         call svout (logfil, kev+np, bounds, ndigit,
      &        '_sgets: Associated Ritz estimates')
       end if
-c 
+c
       return
 c
 c     %---------------%

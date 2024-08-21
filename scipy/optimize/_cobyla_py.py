@@ -248,8 +248,8 @@ def _minimize_cobyla(fun, x0, args=(), constraints=(),
             raise TypeError("Constraint's type must be a string.") from e
         else:
             if ctype != 'ineq':
-                raise ValueError("Constraints of type '%s' not handled by "
-                                 "COBYLA." % con['type'])
+                raise ValueError(f"Constraints of type '{con['type']}' not handled by "
+                                 "COBYLA.")
 
         # check function
         if 'fun' not in con:

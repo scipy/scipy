@@ -305,7 +305,7 @@ class Radau(OdeSolver):
         # the error.
         if first_step is None:
             self.h_abs = select_initial_step(
-                self.fun, self.t, self.y, self.f, self.direction,
+                self.fun, self.t, self.y, t_bound, max_step, self.f, self.direction,
                 3, self.rtol, self.atol)
         else:
             self.h_abs = validate_first_step(first_step, t0, t_bound)
@@ -381,9 +381,8 @@ class Radau(OdeSolver):
                     return np.asarray(jac(t, y), dtype=float)
 
             if J.shape != (self.n, self.n):
-                raise ValueError("`jac` is expected to have shape {}, but "
-                                 "actually has {}."
-                                 .format((self.n, self.n), J.shape))
+                raise ValueError(f"`jac` is expected to have shape {(self.n, self.n)},"
+                                 f" but actually has {J.shape}.")
         else:
             if issparse(jac):
                 J = csc_matrix(jac)
@@ -391,9 +390,8 @@ class Radau(OdeSolver):
                 J = np.asarray(jac, dtype=float)
 
             if J.shape != (self.n, self.n):
-                raise ValueError("`jac` is expected to have shape {}, but "
-                                 "actually has {}."
-                                 .format((self.n, self.n), J.shape))
+                raise ValueError(f"`jac` is expected to have shape {(self.n, self.n)},"
+                                 f" but actually has {J.shape}.")
             jac_wrapped = None
 
         return jac_wrapped, J

@@ -199,7 +199,7 @@ cdef np.uintp_t label_line_with_neighbor(np.uintp_t *line,
 ######################################################################
 cpdef _label(np.ndarray input,
              np.ndarray structure,
-             np.ndarray output) noexcept:
+             np.ndarray output):
     # check dimensions
     # To understand the need for the casts to object in order to use
     # tuple.__eq__, see https://github.com/cython/cython/issues/863

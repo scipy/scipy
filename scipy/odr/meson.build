@@ -7,13 +7,14 @@ odrpack = static_library('odrpack',
   ],
   fortran_args: _fflag_Wno_conversion,  # silence "conversion from REAL(8) to INTEGER(4)"
   override_options: ['b_lto=false'],
+  gnu_symbol_visibility: 'hidden',
 )
 
 py3.extension_module('__odrpack',
   '__odrpack.c',
   link_with: odrpack,
   link_args: version_link_args,
-  dependencies: [blas, np_dep],
+  dependencies: [blas_dep, np_dep],
   install: true,
   link_language: 'fortran',
   subdir: 'scipy/odr'

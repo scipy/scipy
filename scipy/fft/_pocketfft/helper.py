@@ -5,10 +5,14 @@ import threading
 import contextlib
 
 import numpy as np
-# good_size is exposed (and used) from this import
-from .pypocketfft import good_size
 
-__all__ = ['good_size', 'set_workers', 'get_workers']
+from scipy._lib._util import copy_if_needed
+
+# good_size is exposed (and used) from this import
+from .pypocketfft import good_size, prev_good_size
+
+
+__all__ = ['good_size', 'prev_good_size', 'set_workers', 'get_workers']
 
 _config = threading.local()
 _cpu_count = os.cpu_count()
@@ -95,7 +99,7 @@ def _asfarray(x):
     # Require native byte order
     dtype = x.dtype.newbyteorder('=')
     # Always align input
-    copy = not x.flags['ALIGNED']
+    copy = True if not x.flags['ALIGNED'] else copy_if_needed
     return np.array(x, dtype=dtype, copy=copy)
 
 def _datacopied(arr, original):

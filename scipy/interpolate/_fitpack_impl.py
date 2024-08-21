@@ -32,7 +32,7 @@ from numpy import (atleast_1d, array, ones, zeros, sqrt, ravel, transpose,
 
 # Try to replace _fitpack interface with
 #  f2py-generated version
-from . import dfitpack
+from . import _dfitpack as dfitpack
 
 
 dfitpack_int = dfitpack.types.intvar.dtype
@@ -314,7 +314,7 @@ def splev(x, tck, der=0, ext=0):
         if not (0 <= der <= k):
             raise ValueError("0<=der=%d<=k=%d must hold" % (der, k))
         if ext not in (0, 1, 2, 3):
-            raise ValueError("ext = %s not in (0, 1, 2, 3) " % ext)
+            raise ValueError(f"ext = {ext} not in (0, 1, 2, 3) ")
 
         x = asarray(x)
         shape = x.shape
@@ -368,7 +368,7 @@ def sproot(tck, mest=10):
                         sproot([t, c, k], mest), c))
     else:
         if len(t) < 8:
-            raise TypeError("The number of knots %d>=8" % len(t))
+            raise TypeError(f"The number of knots {len(t)}>=8")
         z, m, ier = dfitpack.sproot(t, c, mest)
         if ier == 10:
             raise TypeError("Invalid input data. "

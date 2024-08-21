@@ -830,7 +830,7 @@ class TestFindPeaksCwt:
         diffs = np.abs(found_locs - act_locs)
         max_diffs = np.array(sigmas) / 5
         np.testing.assert_array_less(diffs, max_diffs, 'Maximum location differed' +
-                                     'by more than %s' % (max_diffs))
+                                     f'by more than {max_diffs}')
 
     def test_find_peaks_nopeak(self):
         """

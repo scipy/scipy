@@ -137,9 +137,9 @@ cgstrs (trans_t trans, SuperMatrix *L, SuperMatrix *U,
     }
 
     n = L->nrow;
-    work = complexCalloc((size_t) n * (size_t) nrhs);
+    work = singlecomplexCalloc((size_t) n * (size_t) nrhs);
     if ( !work ) ABORT("Malloc fails for local work[].");
-    soln = complexMalloc((size_t) n);
+    soln = singlecomplexMalloc((size_t) n);
     if ( !soln ) ABORT("Malloc fails for local soln[].");
 
     Bmat = Bstore->nzval;

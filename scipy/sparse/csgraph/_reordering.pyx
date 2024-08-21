@@ -59,11 +59,14 @@ def reverse_cuthill_mckee(graph, symmetric_mode=False):
     ... ]
     >>> graph = csr_matrix(graph)
     >>> print(graph)
-      (0, 1)	1
-      (0, 2)	2
-      (1, 3)	1
-      (2, 0)	2
-      (2, 3)	3
+    <Compressed Sparse Row sparse matrix of dtype 'int64'
+        with 5 stored elements and shape (4, 4)>
+        Coords	Values
+        (0, 1)	1
+        (0, 2)	2
+        (1, 3)	1
+        (2, 0)	2
+        (2, 3)	3
 
     >>> reverse_cuthill_mckee(graph)
     array([3, 2, 1, 0], dtype=int32)
@@ -215,14 +218,17 @@ def structural_rank(graph):
     ... ]
     >>> graph = csr_matrix(graph)
     >>> print(graph)
-      (0, 1)	1
-      (0, 2)	2
-      (1, 0)	1
-      (1, 3)	1
-      (2, 0)	2
-      (2, 3)	3
-      (3, 1)	1
-      (3, 2)	3
+    <Compressed Sparse Row sparse matrix of dtype 'int64'
+        with 8 stored elements and shape (4, 4)>
+        Coords	Values
+        (0, 1)	1
+        (0, 2)	2
+        (1, 0)	1
+        (1, 3)	1
+        (2, 0)	2
+        (2, 3)	3
+        (3, 1)	1
+        (3, 2)	3
 
     >>> structural_rank(graph)
     4

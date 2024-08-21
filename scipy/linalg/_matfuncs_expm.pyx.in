@@ -1,5 +1,10 @@
 # cython: language_level=3
+# cython: boundscheck=False
+# cython: initializedcheck=False
+# cython: wraparound=False
+# cython: cdivision=True
 # cython: cpow=True
+
 cimport cython
 import math
 import random
@@ -18,6 +23,16 @@ from scipy.linalg.cython_blas cimport (sgemm, saxpy, sscal, scopy, sgemv,
 from ._cythonized_array_utils cimport (lapack_t, lapack_cz_t,
         lapack_sd_t, swap_c_and_f_layout)
 
+ctypedef fused numpy_lapack_t:
+    cnp.float32_t
+    cnp.float64_t
+    cnp.complex64_t
+    cnp.complex128_t
+
+ctypedef fused numpy_lapack_sc_t:
+    cnp.float32_t
+    cnp.complex64_t
+
 __all__ = ['pick_pade_structure', 'pade_UV_calc']
 
 # See GH-14813
@@ -33,11 +48,10 @@ prefixes = ['s', 'd', 'c', 'z']
 
 
 # ========================= norm1 : s, d, c, z ===============================
-# The generic abs() function is made nogil friendly in Cython 3.x (unreleased)
 @cython.wraparound(False)
 @cython.boundscheck(False)
 @cython.initializedcheck(False)
-cdef double norm1(lapack_t[:, ::1] A) noexcept:
+cdef double norm1(lapack_t[:, ::1] A):
     """
     Fast 1-norm computation for C-contiguous square arrays.
     Regardless of the dtype we work in double precision to prevent overflows
@@ -74,50 +88,34 @@ cdef double norm1(lapack_t[:, ::1] A) noexcept:
         return temp
     finally:
         free(work)
-# ============================================================================
 
-# ========================= kth power norm : d ===============================
-@cython.wraparound(False)
-@cython.boundscheck(False)
-@cython.initializedcheck(False)
-cdef double kth_power_norm_d(double* A, double* v1, double* v2, Py_ssize_t n, int spins) noexcept:
-    cdef int k, int_one = 1, intn = <int>n
-    cdef double one =1., zero = 0.
-    for k in range(spins):
-        dgemv(<char*>'C', &intn, &intn, &one, &A[0], &intn, &v1[0], &int_one, &zero, &v2[0], &int_one)
-        dcopy(&intn, &v2[0], &int_one, &v1[0], &int_one)
-    k = idamax(&intn, &v1[0], &int_one)
-    return v1[k-1]
-# ============================================================================
 
 # ====================== pick_pade_structure : s, d, c, z ====================
-{{for tname, pfx, dchar, dt in zip(typenames, prefixes, ['f', 'd', 'F', 'D'],
-                                   ['float32', 'float64', 'complex64', 'complex128'],
-                                  )}}
-@cython.cdivision(True)
-@cython.wraparound(False)
-@cython.boundscheck(False)
-@cython.initializedcheck(False)
-cdef pick_pade_structure_{{ pfx }}({{ tname }}[:, :, ::1] Am) noexcept:
-    cdef Py_ssize_t n = Am.shape[1], i, j, k
-    cdef int lm = 0, s = 0, intn = <int>n, n2= intn*intn, int_one = 1
-    cdef {{ tname }}[:, :, ::1] Amv = Am
+def pick_pade_structure(cnp.ndarray[ndim=3, dtype=numpy_lapack_t] Am):
     cdef:
-        {{ tname }} one = 1.0, zero = 0.0
+        cnp.npy_intp n = Am.shape[1]
+        cnp.npy_intp i
+        cnp.npy_intp [2] dims
+        int lm = 0
+        int s = 0
         double normA
         double d4, d6, d8, d10
         double eta0, eta1, eta2, eta3, eta4
-        double u = (2.)**({{if pfx in ['s', 'c']}}-24.{{else}}-53{{endif}})
+        double u = (2.)**(-53)
         double two_pow_s
         double temp
-    cdef double *absA = <double*>malloc(n*n*sizeof(double))
-    cdef double *work = <double*>malloc(n*sizeof(double))
-    cdef double *work2 = <double*>malloc(n*sizeof(double))
-    if not work or not work2 or not absA:
-        raise MemoryError('Internal function "pick_pade_structure" failed to allocate memory.')
-    cdef double [5] theta
-    cdef double [5] coeff
-    cdef char* cN = 'N'
+        double [5] theta
+        double [5] coeff
+        numpy_lapack_t [:, :, ::1] Amv = Am
+
+    dims[0] = n
+    dims[1] = n
+
+    if numpy_lapack_t in numpy_lapack_sc_t:
+        u = (2.)**(-24)
+        work_arr = cnp.PyArray_ZEROS(1, dims, cnp.NPY_FLOAT32, 0)
+    else:
+        work_arr = cnp.PyArray_ZEROS(1, dims, cnp.NPY_FLOAT64, 0)
 
     theta[0] = 1.495585217958292e-002
     theta[1] = 2.539398330063230e-001
@@ -129,85 +127,103 @@ cdef pick_pade_structure_{{ pfx }}({{ tname }}[:, :, ::1] Am) noexcept:
     coeff[2] = u*4487938430976000.
     coeff[3] = u*5914384781877411840000.
     coeff[4] = u*113250775606021113483283660800000000.
-    try:
-        for j in range(n):
-            work[j] = 1.
-
-        # {{ pfx }}copy(&n2, &A[0, 0], &int_one, &Amv[0, 0, 0], &int_one)
-        for i in range(n):
-            for j in range(n):
-                absA[i*n + j] = abs(Am[0, i, j])
-
-        # First spin = normest(|A|, 1), increase m when spun more
-        normA = kth_power_norm_d(absA, work, work2, n, 1)
-        {{ pfx }}gemm(cN, cN, &intn, &intn, &intn, &one, &Amv[0, 0, 0], &intn, &Amv[0, 0, 0], &intn, &zero, &Amv[1, 0, 0], &intn)
-        {{ pfx }}gemm(cN, cN, &intn, &intn, &intn, &one, &Amv[1, 0, 0], &intn, &Amv[1, 0, 0], &intn, &zero, &Amv[2, 0, 0], &intn)
-        {{ pfx }}gemm(cN, cN, &intn, &intn, &intn, &one, &Amv[2, 0, 0], &intn, &Amv[1, 0, 0], &intn, &zero, &Amv[3, 0, 0], &intn)
-        d4 = norm1(Amv[2]) ** (1./4.)
-        d6 = norm1(Amv[3]) ** (1./6.)
-        eta0 = max(d4, d6)
-        eta1 = eta0
-
-        # m = 3
-        temp = kth_power_norm_d(absA, work, work2, n, 6)
-        lm = max(<int>ceil(log2(temp/normA/coeff[0])/6), 0)
-        if eta0 < theta[0] and lm == 0:
-            return 3, s
-
-        # m = 5
-        temp = kth_power_norm_d(absA, work, work2, n, 4)
-        lm = max(<int>ceil(log2(temp/normA/coeff[1])/10), 0)
-        if eta1 < theta[1] and lm == 0:
-            return 5, s
-
-        # m = 7
-        if n < 400:
-            {{ pfx }}gemm(cN, cN, &intn, &intn, &intn, &one, &Amv[2, 0, 0], &intn, &Amv[2, 0, 0], &intn, &zero, &Amv[4, 0, 0], &intn)
-            d8 = norm1(Amv[4, :, :]) ** (1./8.)
-        else:
-            d8  = _norm1est(np.asarray(Am[0]), m=8) ** (1./8.)
-
-        eta2 = max(d6, d8)
-        temp = kth_power_norm_d(absA, work, work2, n, 4)
-        lm = max(<int>ceil(log2(temp/normA/coeff[2])/14), 0)
-        if eta2 < theta[2] and lm == 0:
-            return 7, s
-
-        # m = 9
-        temp = kth_power_norm_d(absA, work, work2, n, 4)
-        lm = max(<int>ceil(log2(temp/normA/coeff[3])/18), 0)
-        if eta2 < theta[3] and lm == 0:
-            return 9, s
-
-        # m = 13
-        # Scale-square
-        if n < 400:
-            {{ pfx }}gemm(cN, cN, &intn, &intn, &intn, &one, &Amv[3, 0, 0], &intn, &Amv[2, 0, 0], &intn, &zero, &Amv[4, 0, 0], &intn)
-            d10 = norm1(Amv[4, :, :]) ** (1./10.)
-        else:
-            d10  = _norm1est(np.asarray(Am[0]), m=10) ** (1./10.)
-
-        eta3 = max(d8, d10)
-        eta4 = min(eta2, eta3)
-        s = max(<int>ceil(log2(eta4/theta[4])), 0)
-        if s != 0:
-            two_pow_s = 2.** (-s)
-            dscal(&n2, &two_pow_s, absA, &int_one)
-            # kth_power_norm has spun 19 times already
-            two_pow_s = 2.** ((-s)*19.)
-            for i in range(n):
-                work[i] *= two_pow_s
-            normA *= 2.**(-s)
-        temp = kth_power_norm_d(absA, work, work2, n, 8)
-        s += max(<int>ceil(log2(temp/normA/coeff[4])/26), 0)
-        return 13, s
-    finally:
-        free(work)
-        free(work2)
-        free(absA)
 
 
-{{endfor}}
+    absA = np.abs(Am[0, :, :])
+
+    # First spin = normest(|A|, m=1), increase m when spun more
+    np.matmul(absA, work_arr, out=work_arr)
+    normA = np.max(work_arr)
+
+    np.matmul(Am[0, :, :], Am[0, :, :], out=Am[1, :, :])
+    np.matmul(Am[1, :, :], Am[1, :, :], out=Am[2, :, :])
+    np.matmul(Am[2, :, :], Am[1, :, :], out=Am[3, :, :])
+    d4 = norm1(Amv[2]) ** (1./4.)
+    d6 = norm1(Amv[3]) ** (1./6.)
+    eta0 = max(d4, d6)
+    eta1 = eta0
+
+    # m = 3
+    # -------
+    # 1-norm of A ** 7
+    for i in range(6):
+        np.matmul(absA, work_arr, out=work_arr)
+    temp = np.max(work_arr)
+
+    lm = max(<int>ceil(log2(temp/normA/coeff[0])/6), 0)
+    if eta0 < theta[0] and lm == 0:
+        return 3, s
+
+    # m = 5
+    # -------
+    # 1-norm of A ** 11
+    for i in range(4):
+        np.matmul(absA, work_arr, out=work_arr)
+    temp = np.max(work_arr)
+
+    lm = max(<int>ceil(log2(temp/normA/coeff[1])/10), 0)
+    if eta1 < theta[1] and lm == 0:
+        return 5, s
+
+    # m = 7
+    # -------
+    if n < 400:
+        np.matmul(Am[2, :, :], Am[2, :, :], out=Am[4, :, :])
+        d8 = norm1(Amv[4, :, :]) ** (1./8.)
+    else:
+        d8  = _norm1est(Am[0], m=8) ** (1./8.)
+
+    eta2 = max(d6, d8)
+
+    # 1-norm of A ** 15
+    for i in range(4):
+        np.matmul(absA, work_arr, out=work_arr)
+    temp = np.max(work_arr)
+
+    lm = max(<int>ceil(log2(temp/normA/coeff[2])/14), 0)
+    if eta2 < theta[2] and lm == 0:
+        return 7, s
+
+    # m = 9
+    # -------
+    # 1-norm of A ** 19
+    for i in range(4):
+        np.matmul(absA, work_arr, out=work_arr)
+    temp = np.max(work_arr)
+
+    lm = max(<int>ceil(log2(temp/normA/coeff[3])/18), 0)
+    if eta2 < theta[3] and lm == 0:
+        return 9, s
+
+    # m = 13
+    # -------
+    # Scale-square
+    if n < 400:
+        np.matmul(Am[3, :, :], Am[2, :, :], out=Am[4, :, :])
+        d10 = norm1(Amv[4, :, :]) ** (1./10.)
+    else:
+        d10  = _norm1est(Am[0], m=10) ** (1./10.)
+
+    eta3 = max(d8, d10)
+    eta4 = min(eta2, eta3)
+    s = max(<int>ceil(log2(eta4/theta[4])), 0)
+    if s != 0:
+        two_pow_s = 2.** (-s)
+        absA *= two_pow_s
+
+        # work_arr has spun 19 times already
+        two_pow_s = 2.** ((-s)*19.)
+        work_arr *= two_pow_s
+        normA *= 2.**(-s)
+
+    # 1-norm of A ** 27
+    for i in range(8):
+        np.matmul(absA, work_arr, out=work_arr)
+    temp = np.max(work_arr)
+
+    s += max(<int>ceil(log2(temp/normA/coeff[4])/26), 0)
+    return 13, s
+
 # ============================================================================
 
 # ====================== pade_m_UV_calc : s, d, c, z =========================
@@ -325,6 +341,7 @@ cdef void pade_9_UV_calc_{{ pfx }}({{ tname }}[:, :, ::]Am, int n) noexcept nogi
     cdef int i, info, n2 = n*n, int_one = 1
     cdef {{ tname }} one = 1.0, zero = 0.0, neg_one = -1.0
     cdef {{if pfx in ['s', 'c']}}float{{else}}double{{endif}} two = 2.0
+    cdef char* cN = 'N'
 
     if not (work and ipiv):
         raise MemoryError('Internal function "pade_9_UV_calc" failed to allocate memory.')
@@ -339,6 +356,11 @@ cdef void pade_9_UV_calc_{{ pfx }}({{ tname }}[:, :, ::]Am, int n) noexcept nogi
         b[6] = 110880.
         b[7] = 3960.
         b[8] = 90.
+
+        # Compute this in case we skipped it before
+        if n >= 400:
+            {{ pfx }}gemm(cN, cN, &n, &n, &n, &one, &Am[2, 0, 0], &n,
+                &Am[2, 0, 0], &n, &zero, &Am[4, 0, 0], &n)
 
         # Utilize the unused powers of Am as scratch memory
         # U = Am[0] @ (b[9]*Am[4] + b[7]*Am[3] + b[5]*Am[2] + b[3]*Am[1] + b[1]*I_n)
@@ -614,43 +636,28 @@ def pade_UV_calc(lapack_t[:, :, ::1]Am, int n, int m):
             pade_357_UV_calc_s(Am, n, m)
         elif m == 9:
             pade_9_UV_calc_s(Am, n)
-        else: 
+        else:
             pade_13_UV_calc_s(Am, n)
     elif lapack_t is double:
         if m in [3, 5, 7]:
             pade_357_UV_calc_d(Am, n, m)
         elif m == 9:
             pade_9_UV_calc_d(Am, n)
-        else: 
+        else:
             pade_13_UV_calc_d(Am, n)
     elif lapack_t is floatcomplex:
         if m in [3, 5, 7]:
             pade_357_UV_calc_c(Am, n, m)
         elif m == 9:
             pade_9_UV_calc_c(Am, n)
-        else: 
+        else:
             pade_13_UV_calc_c(Am, n)
     elif lapack_t is doublecomplex:
         if m in [3, 5, 7]:
             pade_357_UV_calc_z(Am, n, m)
         elif m == 9:
             pade_9_UV_calc_z(Am, n)
-        else: 
+        else:
             pade_13_UV_calc_z(Am, n)
     else:
         raise ValueError('Internal function "pade_UV_calc" received an unsupported dtype')
-
-
-@cython.initializedcheck(False)
-def pick_pade_structure(lapack_t[:, :, ::1]A):
-    """Helper functions for expm to choose Pade approximation order"""
-    if lapack_t is float:
-        return pick_pade_structure_s(A)
-    elif lapack_t is double:
-        return pick_pade_structure_d(A)
-    elif lapack_t is floatcomplex:
-        return pick_pade_structure_c(A)
-    elif lapack_t is doublecomplex:
-        return pick_pade_structure_z(A)
-    else:
-        raise ValueError('Internal function "pick_pade_structure" received an unsupported dtype.')

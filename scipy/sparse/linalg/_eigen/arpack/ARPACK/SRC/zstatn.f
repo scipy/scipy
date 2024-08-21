@@ -14,7 +14,7 @@ c     | See stat.doc for documentation |
 c     %--------------------------------%
 c
       include   'stat.h'
- 
+
 c     %-----------------------%
 c     | Executable Statements |
 c     %-----------------------%
@@ -24,7 +24,7 @@ c     %-----------------------%
       nrorth = 0
       nitref = 0
       nrstrt = 0
- 
+
       tcaupd = 0.0D+0
       tcaup2 = 0.0D+0
       tcaitr = 0.0D+0
@@ -35,13 +35,13 @@ c     %-----------------------%
       titref = 0.0D+0
       tgetv0 = 0.0D+0
       trvec  = 0.0D+0
- 
+
 c     %----------------------------------------------------%
 c     | User time including reverse communication overhead |
 c     %----------------------------------------------------%
       tmvopx = 0.0D+0
       tmvbx  = 0.0D+0
- 
+
       return
 c
 c     %---------------%

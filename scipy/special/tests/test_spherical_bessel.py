@@ -286,9 +286,10 @@ class TestSphericalInDerivatives(SphericalDerivativesTestCase):
         return spherical_in(n, z, derivative=True)
 
     def test_spherical_in_d_zero(self):
-        n = np.array([1, 2, 3, 7, 15])
+        n = np.array([0, 1, 2, 3, 7, 15])
+        spherical_in(n, 0, derivative=False)
         assert_allclose(spherical_in(n, 0, derivative=True),
-                        np.zeros(5))
+                        np.array([0, 1/3, 0, 0, 0, 0]))
 
 
 class TestSphericalKnDerivatives(SphericalDerivativesTestCase):

@@ -1,7 +1,7 @@
 """Hessian update strategies for quasi-Newton optimization methods."""
 import numpy as np
 from numpy.linalg import norm
-from scipy.linalg import get_blas_funcs
+from scipy.linalg import get_blas_funcs, issymmetric
 from warnings import warn
 
 
@@ -188,15 +188,56 @@ class FullHessianUpdateStrategy(HessianUpdateStrategy):
             return
         if self.first_iteration:
             # Get user specific scale
-            if self.init_scale == "auto":
+            if isinstance(self.init_scale, str) and self.init_scale == "auto":
                 scale = self._auto_scale(delta_x, delta_grad)
             else:
-                scale = float(self.init_scale)
-            # Scale initial matrix with ``scale * np.eye(n)``
+                scale = self.init_scale
+
+            # Check for complex: numpy will silently cast a complex array to
+            # a real one but not so for scalar as it raises a TypeError.
+            # Checking here brings a consistent behavior.
+            replace = False
+            if np.size(scale) == 1:
+                # to account for the legacy behavior having the exact same cast
+                scale = float(scale)
+            elif np.iscomplexobj(scale):
+                raise TypeError("init_scale contains complex elements, "
+                                "must be real.")
+            else:  # test explicitly for allowed shapes and values
+                replace = True
+                if self.approx_type == 'hess':
+                    shape = np.shape(self.B)
+                    dtype = self.B.dtype
+                else:
+                    shape = np.shape(self.H)
+                    dtype = self.H.dtype
+                # copy, will replace the original
+                scale = np.array(scale, dtype=dtype, copy=True)
+
+                # it has to match the shape of the matrix for the multiplication,
+                # no implicit broadcasting is allowed
+                if shape != (init_shape := np.shape(scale)):
+                    raise ValueError("If init_scale is an array, it must have the "
+                                     f"dimensions of the hess/inv_hess: {shape}."
+                                     f" Got {init_shape}.")
+                if not issymmetric(scale):
+                    raise ValueError("If init_scale is an array, it must be"
+                                     " symmetric (passing scipy.linalg.issymmetric)"
+                                     " to be an approximation of a hess/inv_hess.")
+
+            # Scale initial matrix with ``scale * np.eye(n)`` or replace
+            # This is not ideal, we could assign the scale directly in
+            # initialize, but we would need to
             if self.approx_type == 'hess':
-                self.B *= scale
+                if replace:
+                    self.B = scale
+                else:
+                    self.B *= scale
             else:
-                self.H *= scale
+                if replace:
+                    self.H = scale
+                else:
+                    self.H *= scale
             self.first_iteration = False
         self._update_implementation(delta_x, delta_grad)
 
@@ -254,13 +295,15 @@ class BFGS(FullHessianUpdateStrategy):
         unaffected by the exception strategy. By default is equal to
         1e-8 when ``exception_strategy = 'skip_update'`` and equal
         to 0.2 when ``exception_strategy = 'damp_update'``.
-    init_scale : {float, 'auto'}
-        Matrix scale at first iteration. At the first
-        iteration the Hessian matrix or its inverse will be initialized
-        with ``init_scale*np.eye(n)``, where ``n`` is the problem dimension.
+    init_scale : {float, np.array, 'auto'}
+        This parameter can be used to initialize the Hessian or its
+        inverse. When a float is given, the relevant array is initialized
+        to ``np.eye(n) * init_scale``, where ``n`` is the problem dimension.
+        Alternatively, if a precisely ``(n, n)`` shaped, symmetric array is given,
+        this array will be used. Otherwise an error is generated.
         Set it to 'auto' in order to use an automatic heuristic for choosing
         the initial scale. The heuristic is described in [1]_, p.143.
-        By default uses 'auto'.
+        The default is 'auto'.
 
     Notes
     -----
@@ -309,7 +352,7 @@ class BFGS(FullHessianUpdateStrategy):
                Second Edition (2006).
         """
         self.H = self._syr2(-1.0 / ys, s, Hy, a=self.H)
-        self.H = self._syr((ys+yHy)/ys**2, s, a=self.H)
+        self.H = self._syr((ys + yHy) / ys ** 2, s, a=self.H)
 
     def _update_hessian(self, ys, Bs, sBs, y):
         """Update the Hessian matrix.
@@ -385,13 +428,15 @@ class SR1(FullHessianUpdateStrategy):
         defines the minimum denominator magnitude allowed
         in the update. When the condition is violated we skip
         the update. By default uses ``1e-8``.
-    init_scale : {float, 'auto'}, optional
-        Matrix scale at first iteration. At the first
-        iteration the Hessian matrix or its inverse will be initialized
-        with ``init_scale*np.eye(n)``, where ``n`` is the problem dimension.
+    init_scale : {float, np.array, 'auto'}, optional
+        This parameter can be used to initialize the Hessian or its
+        inverse. When a float is given, the relevant array is initialized
+        to ``np.eye(n) * init_scale``, where ``n`` is the problem dimension.
+        Alternatively, if a precisely ``(n, n)`` shaped, symmetric array is given,
+        this array will be used. Otherwise an error is generated.
         Set it to 'auto' in order to use an automatic heuristic for choosing
         the initial scale. The heuristic is described in [1]_, p.143.
-        By default uses 'auto'.
+        The default is 'auto'.
 
     Notes
     -----

@@ -20,6 +20,14 @@ linters = [
 
 linter = [f for f in linters if os.path.exists(f)][0]
 
+unicode_checks = [
+    '../../tools/unicode-check.py',
+    'tools/unicode-check.py',
+    'unicode-check.py'  # in case pre-commit hook is run from tools dir
+]
+
+unicode_check = [f for f in unicode_checks if os.path.exists(f)][0]
+
 
 # names of files that were staged
 # add  '*.pxd', '*.pxi' once cython-lint supports it
@@ -85,4 +93,9 @@ if p.returncode != 0:
     print()
     print('  ./tools/pre-commit-hook.py --fix')
 
+    sys.exit(p.returncode)
+
+p = subprocess.run(unicode_check, cwd=work_dir)
+
+if p.returncode != 0:
     sys.exit(p.returncode)

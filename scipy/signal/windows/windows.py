@@ -10,7 +10,6 @@ __all__ = [  # noqa: F822
     'hamming', 'kaiser', 'gaussian', 'general_cosine',
     'general_gaussian', 'general_hamming', 'chebwin', 'cosine',
     'hann', 'exponential', 'tukey', 'taylor', 'dpss', 'get_window',
-    'linalg', 'sp_fft', 'k', 'v', 'key'
 ]
 
 

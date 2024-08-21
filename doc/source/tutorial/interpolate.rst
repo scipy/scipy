@@ -68,4 +68,4 @@ Further details are given in the links below.
    interpolate/ND_regular_grid
    interpolate/ND_unstructured
    interpolate/extrapolation_examples
-
+   interpolate/interp_transition_guide.md

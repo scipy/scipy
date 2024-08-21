@@ -194,8 +194,17 @@ class NdBSpline:
         indices = np.unravel_index(np.arange(prod(shape)), shape)
         _indices_k1d = np.asarray(indices, dtype=np.intp).T
 
+        # complex -> double
+        was_complex = self.c.dtype.kind == 'c'
+        cc = self.c
+        if was_complex and self.c.ndim == ndim:
+            # make sure that core dimensions are intact, and complex->float
+            # size doubling only adds a trailing dimension
+            cc = self.c[..., None]
+        cc = cc.view(float)
+
         # prepare the coefficients: flatten the trailing dimensions
-        c1 = self.c.reshape(self.c.shape[:ndim] + (-1,))
+        c1 = cc.reshape(cc.shape[:ndim] + (-1,))
         c1r = c1.ravel()
 
         # replacement for np.ravel_multi_index for indexing of `c1`:
@@ -216,7 +225,7 @@ class NdBSpline:
                                  _strides_c1,
                                  _indices_k1d,
                                  out,)
-
+        out = out.view(self.c.dtype)
         return out.reshape(xi_shape[:-1] + self.c.shape[ndim:])
 
     @classmethod

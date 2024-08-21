@@ -51,11 +51,15 @@ basiclu_lib = static_library('basiclu',
     '../../_lib/highs/src',
     '../../_lib/highs/src/ipm/basiclu/include'
   ],
-  c_args: [Wno_unused_variable, highs_define_macros]
+  c_args: [Wno_unused_variable, highs_define_macros],
+  gnu_symbol_visibility: 'inlineshidden',
 )
 
 highs_flags = [
+  _cpp_Wno_bitwise_instead_of_logical,
   _cpp_Wno_class_memaccess,
+  _cpp_Wno_deprecated_builtins,
+  _cpp_Wno_deprecated_declarations,
   _cpp_Wno_format_truncation,
   _cpp_Wno_non_virtual_dtor,
   _cpp_Wno_sign_compare,
@@ -106,7 +110,8 @@ ipx_lib = static_library('ipx',
     'cython/src/'
   ],
   dependencies: thread_dep,
-  cpp_args: [highs_flags, highs_define_macros]
+  cpp_args: [highs_flags, highs_define_macros],
+  gnu_symbol_visibility: 'inlineshidden',
 )
 
 highs_lib = static_library('highs',
@@ -223,7 +228,8 @@ highs_lib = static_library('highs',
     '../../_lib/highs/src/util/',
   ],
   dependencies: thread_dep,
-  cpp_args: [highs_flags, highs_define_macros]
+  cpp_args: [highs_flags, highs_define_macros],
+  gnu_symbol_visibility: 'inlineshidden',
 )
 
 _highs_wrapper = py3.extension_module('_highs_wrapper',

@@ -15,7 +15,7 @@ __all__ = ['upcast', 'getdtype', 'getdata', 'isscalarlike', 'isintlike',
 
 supported_dtypes = [np.bool_, np.byte, np.ubyte, np.short, np.ushort, np.intc,
                     np.uintc, np_long, np_ulong, np.longlong, np.ulonglong,
-                    np.float32, np.float64, np.longdouble, 
+                    np.float32, np.float64, np.longdouble,
                     np.complex64, np.complex128, np.clongdouble]
 
 _upcast_memo = {}
@@ -109,13 +109,17 @@ def to_native(A):
 
 
 def getdtype(dtype, a=None, default=None):
-    """Function used to simplify argument processing. If 'dtype' is not
-    specified (is None), returns a.dtype; otherwise returns a np.dtype
-    object created from the specified dtype argument. If 'dtype' and 'a'
-    are both None, construct a data type out of the 'default' parameter.
-    Furthermore, 'dtype' must be in 'allowed' set.
+    """Form a supported numpy dtype based on input arguments.
+
+    Returns a valid ``numpy.dtype`` from `dtype` if not None,
+    or else ``a.dtype`` if possible, or else the given `default`
+    if not None, or else raise a ``TypeError``.
+
+    The resulting ``dtype`` must be in ``supported_dtypes``:
+        bool_, int8, uint8, int16, uint16, int32, uint32,
+        int64, uint64, longlong, ulonglong, float32, float64,
+        longdouble, complex64, complex128, clongdouble
     """
-    # TODO is this really what we want?
     if dtype is None:
         try:
             newdtype = a.dtype
@@ -126,11 +130,11 @@ def getdtype(dtype, a=None, default=None):
                 raise TypeError("could not interpret data type") from e
     else:
         newdtype = np.dtype(dtype)
-        if newdtype == np.object_:
-            raise ValueError(
-                "object dtype is not supported by sparse matrices"
-            )
 
+    if newdtype not in supported_dtypes:
+        supported_dtypes_fmt = ", ".join(t.__name__ for t in supported_dtypes)
+        raise ValueError(f"scipy.sparse does not support dtype {newdtype.name}. "
+                         f"The only supported types are: {supported_dtypes_fmt}.")
     return newdtype
 
 
@@ -279,7 +283,7 @@ def validateaxis(axis) -> None:
     # not very useful for sparse matrices given their limited
     # dimensions, so let's make it explicit that they are not
     # allowed to be passed in
-    if axis_type == tuple:
+    if isinstance(axis, tuple):
         raise TypeError("Tuples are not accepted for the 'axis' parameter. "
                         "Please pass in one of the following: "
                         "{-2, -1, 0, 1, None}.")
@@ -344,16 +348,16 @@ def check_shape(args, current_shape=None, *, allow_1d=False) -> tuple[int, ...]:
         if not negative_indexes:
             new_size = prod(new_shape)
             if new_size != current_size:
-                raise ValueError('cannot reshape array of size {} into shape {}'
-                                 .format(current_size, new_shape))
+                raise ValueError(f'cannot reshape array of size {current_size}'
+                                 f' into shape {new_shape}')
         elif len(negative_indexes) == 1:
             skip = negative_indexes[0]
             specified = prod(new_shape[:skip] + new_shape[skip+1:])
             unspecified, remainder = divmod(current_size, specified)
             if remainder != 0:
                 err_shape = tuple('newshape' if x < 0 else x for x in new_shape)
-                raise ValueError('cannot reshape array of size {} into shape {}'
-                                 ''.format(current_size, err_shape))
+                raise ValueError(f'cannot reshape array of size {current_size}'
+                                 f' into shape {err_shape}')
             new_shape = new_shape[:skip] + (unspecified,) + new_shape[skip+1:]
         else:
             raise ValueError('can only specify one unknown dimension')
@@ -376,8 +380,8 @@ def check_reshape_kwargs(kwargs):
     order = kwargs.pop('order', 'C')
     copy = kwargs.pop('copy', False)
     if kwargs:  # Some unused kwargs remain
-        raise TypeError('reshape() got unexpected keywords arguments: {}'
-                        .format(', '.join(kwargs.keys())))
+        raise TypeError("reshape() got unexpected keywords arguments: "
+                        f"{', '.join(kwargs.keys())}")
     return order, copy
 
 
@@ -390,14 +394,21 @@ def is_pydata_spmatrix(m) -> bool:
 
 
 def convert_pydata_sparse_to_scipy(
-    arg: Any, target_format: Optional[Literal["csc", "csr"]] = None
+    arg: Any,
+    target_format: Optional[Literal["csc", "csr"]] = None,
+    accept_fv: Any = None,
 ) -> Union[Any, "sp.spmatrix"]:
     """
     Convert a pydata/sparse array to scipy sparse matrix,
     pass through anything else.
     """
     if is_pydata_spmatrix(arg):
-        arg = arg.to_scipy_sparse()
+        # The `accept_fv` keyword is new in PyData Sparse 0.15.4 (May 2024),
+        # remove the `except` once the minimum supported version is >=0.15.4
+        try:
+            arg = arg.to_scipy_sparse(accept_fv=accept_fv)
+        except TypeError:
+            arg = arg.to_scipy_sparse()
         if target_format is not None:
             arg = arg.asformat(target_format)
         elif arg.format not in ("csc", "csr"):

@@ -21,8 +21,8 @@ cdef extern from "sf_error.h":
     char **sf_error_messages
     void error "sf_error" (char *func_name, sf_error_t code, char *fmt, ...) nogil
     void check_fpe "sf_error_check_fpe" (char *func_name) nogil
-    void set_action "sf_error_set_action" (sf_error_t code, sf_action_t action) nogil
-    sf_action_t get_action "sf_error_get_action" (sf_error_t code) nogil
+    void set_action "scipy_sf_error_set_action" (sf_error_t code, sf_action_t action) nogil
+    sf_action_t get_action "scipy_sf_error_get_action" (sf_error_t code) nogil
 
 
 cdef inline int _sf_error_test_function(int code) noexcept nogil:

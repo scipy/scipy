@@ -3,7 +3,7 @@ from warnings import warn
 from ._basic import rfft, irfft
 from ..special import loggamma, poch
 
-from scipy._lib._array_api import array_namespace, copy
+from scipy._lib._array_api import array_namespace
 
 __all__ = ['fht', 'ifht', 'fhtoffset']
 
@@ -13,6 +13,7 @@ LN_2 = np.log(2)
 
 def fht(a, dln, mu, offset=0.0, bias=0.0):
     xp = array_namespace(a)
+    a = xp.asarray(a)
 
     # size of transform
     n = a.shape[-1]
@@ -40,6 +41,7 @@ def fht(a, dln, mu, offset=0.0, bias=0.0):
 
 def ifht(A, dln, mu, offset=0.0, bias=0.0):
     xp = array_namespace(A)
+    A = xp.asarray(A)
 
     # size of transform
     n = A.shape[-1]
@@ -104,12 +106,12 @@ def fhtcoeff(n, dln, mu, offset=0.0, bias=0.0, inverse=False):
     if np.isinf(u[0]) and not inverse:
         warn('singular transform; consider changing the bias', stacklevel=3)
         # fix coefficient to obtain (potentially correct) transform anyway
-        u = copy(u)
+        u = np.copy(u)
         u[0] = 0
     elif u[0] == 0 and inverse:
         warn('singular inverse transform; consider changing the bias', stacklevel=3)
         # fix coefficient to obtain (potentially correct) inverse anyway
-        u = copy(u)
+        u = np.copy(u)
         u[0] = np.inf
 
     return u

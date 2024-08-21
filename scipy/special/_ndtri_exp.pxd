@@ -102,11 +102,11 @@ import cython
 from libc.float cimport DBL_MAX
 from libc.math cimport exp, expm1, log, log1p, sqrt, M_SQRT2, INFINITY
 
-cdef extern from "cephes/polevl.h":
-    double polevl(double x, const double coef[], int N) nogil
-    double p1evl(double x, const double coef[], int N) nogil
 
-from ._cephes cimport ndtri
+cdef extern from "xsf_wrappers.h" nogil:
+    double cephes_ndtri_wrap(double x)
+    double cephes_polevl_wrap(double x, const double coef[], int N)
+    double cephes_p1evl_wrap(double x, const double coef[], int N)
 
 @cython.cdivision(True)
 cdef inline double _ndtri_exp_small_y(double y) noexcept nogil:
@@ -154,9 +154,9 @@ cdef inline double _ndtri_exp_small_y(double y) noexcept nogil:
     x0 = x - log(x) / x
     z = 1 / x
     if x < 8.0:
-        x1 = z * polevl(z, P1, 8) / p1evl(z, Q1, 8)
+        x1 = z * cephes_polevl_wrap(z, P1, 8) / cephes_p1evl_wrap(z, Q1, 8)
     else:
-        x1 = z * polevl(z, P2, 8) / p1evl(z, Q2, 8)
+        x1 = z * cephes_polevl_wrap(z, P2, 8) / cephes_p1evl_wrap(z, Q2, 8)
     return x1 - x0
 
 
@@ -167,6 +167,6 @@ cdef inline double ndtri_exp(double y) noexcept nogil:
     elif y < - 2.0:
         return _ndtri_exp_small_y(y)
     elif y > -0.14541345786885906: # log1p(-exp(-2))
-        return -ndtri(-expm1(y))
+        return -cephes_ndtri_wrap(-expm1(y))
     else:
-        return ndtri(exp(y))
+        return cephes_ndtri_wrap(exp(y))

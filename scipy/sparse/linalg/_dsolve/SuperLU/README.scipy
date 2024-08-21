@@ -1,0 +1,6 @@
+This directory contains a bundled version of SuperLU from
+https://github.com/xiaoyeli/superlu at
+commit 18958c35006c63071813df6808d7809247caac89.
+We use all .c and .h files except `mc64ad.c` which is license
+incompatible from the SRC folder and applied
+the patches from `scipychanges.patch`.

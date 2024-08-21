@@ -368,7 +368,7 @@ def _inverse_squaring_helper(T0, theta):
     tmp_diag = np.diag(T)
     if np.count_nonzero(tmp_diag) != n:
         raise Exception('Diagonal entries of T must be nonzero')
-    while np.max(np.absolute(tmp_diag - 1)) > theta[7]:
+    while np.max(np.absolute(tmp_diag - 1), initial=0.) > theta[7]:
         tmp_diag = np.sqrt(tmp_diag)
         s0 += 1
 
@@ -761,7 +761,7 @@ def _logm_triu(T):
     # Construct T0 with the appropriate type,
     # depending on the dtype and the spectrum of T.
     T_diag = np.diag(T)
-    keep_it_real = np.isrealobj(T) and np.min(T_diag) >= 0
+    keep_it_real = np.isrealobj(T) and np.min(T_diag, initial=0.) >= 0
     if keep_it_real:
         T0 = T
     else:
@@ -866,7 +866,7 @@ def _logm(A):
     try:
         if np.array_equal(A, np.triu(A)):
             A = _logm_force_nonsingular_triangular_matrix(A)
-            if np.min(np.diag(A)) < 0:
+            if np.min(np.diag(A), initial=0.) < 0:
                 A = A.astype(complex)
             return _logm_triu(A)
         else:

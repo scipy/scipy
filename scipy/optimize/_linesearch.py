@@ -13,7 +13,6 @@ Functions
 """
 from warnings import warn
 
-from scipy.optimize import _minpack2 as minpack2    # noqa: F401
 from ._dcsrch import DCSRCH
 import numpy as np
 
@@ -414,7 +413,7 @@ def scalar_search_wolfe2(phi, derphi, phi0=None,
             return True
 
     for i in range(maxiter):
-        if alpha1 == 0 or (amax is not None and alpha0 == amax):
+        if alpha1 == 0 or (amax is not None and alpha0 > amax):
             # alpha1 == 0: This shouldn't happen. Perhaps the increment has
             # slipped below machine precision?
             alpha_star = None
@@ -426,7 +425,7 @@ def scalar_search_wolfe2(phi, derphi, phi0=None,
                 msg = 'Rounding errors prevent the line search from converging'
             else:
                 msg = "The line search algorithm could not find a solution " + \
-                      "less than or equal to amax: %s" % amax
+                      f"less than or equal to amax: {amax}"
 
             warn(msg, LineSearchWarning, stacklevel=2)
             break

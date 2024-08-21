@@ -16,11 +16,6 @@ cnp.import_array()
 cdef extern from "src/__fitpack.h":
     void _deBoor_D(const double *t, double x, int k, int ell, int m, double *result) nogil
 
-ctypedef double complex double_complex
-
-ctypedef fused double_or_complex:
-    double
-    double complex
 
 ctypedef fused int32_or_int64:
     cnp.npy_int32
@@ -89,16 +84,28 @@ cdef inline int find_interval(const double[::1] t,
     return l-1
 
 
+# NB: a python wrapper for find_interval. The leading underscore signals
+# it's not meant to be user-visible outside of _bsplines.py
+@cython.wraparound(False)
+@cython.boundscheck(False)
+def _find_interval(const double[::1] t,
+                   int k,
+                   double xval,
+                   int prev_l,
+                   bint extrapolate):
+    return find_interval(t, k, xval, prev_l, extrapolate)
+
+
 @cython.wraparound(False)
 @cython.boundscheck(False)
 @cython.cdivision(True)
 def evaluate_spline(const double[::1] t,
-             const double_or_complex[:, ::1] c,
+             const double[:, ::1] c,
              int k,
              const double[::1] xp,
              int nu,
              bint extrapolate,
-             double_or_complex[:, ::1] out):
+             double[:, ::1] out):
     """
     Evaluate a spline in the B-spline basis.
 
@@ -340,10 +347,10 @@ def _handle_lhs_derivatives(const double[::1]t, int k, double xval,
 def _norm_eq_lsq(const double[::1] x,
                  const double[::1] t,
                  int k,
-                 const double_or_complex[:, ::1] y,
+                 const double[:, ::1] y,
                  const double[::1] w,
                  double[::1, :] ab,
-                 double_or_complex[::1, :] rhs):
+                 double[:, ::1] rhs):
     """Construct the normal equations for the B-spline LSQ problem.
 
     The observation equations are ``A @ c = y``, and the normal equations are
@@ -378,7 +385,7 @@ def _norm_eq_lsq(const double[::1] x,
         This parameter is modified in-place.
         On entry: should be zeroed out.
         On exit: LHS of the normal equations.
-    rhs : ndarray, shape (n, s), in Fortran order.
+    rhs : ndarray, shape (n, s), in C order.
         This parameter is modified in-place.
         On entry: should be zeroed out.
         On exit: RHS of the normal equations.
@@ -487,11 +494,11 @@ def evaluate_ndbspline(const double[:, ::1] xi,
                        long[::1] k,
                        int[::1] nu,
                        bint extrapolate,
-                       const double_or_complex[::1] c1r,
+                       const double[::1] c1r,
                        npy_intp num_c_tr,
                        const npy_intp[::1] strides_c1,
                        const npy_intp[:, ::] indices_k1d,
-                       double_or_complex[:, ::1] out,
+                       double[:, ::1] out,
                       ):
         """Evaluate an N-dim tensor product spline or its derivative.
 
@@ -545,7 +552,7 @@ def evaluate_ndbspline(const double[:, ::1] xi,
         N-dimensional vector ``x = (x1, x2, ..., xN)``, iterate over the
         dimensions, form linear combinations of products,
         B(x1) * B(x2) * ... B(xN) of (k+1)**N b-splines which are non-zero
-        at ``x``. 
+        at ``x``.
 
         Since b-splines are localized, the sum has (k+1)**N non-zero elements.
 
@@ -646,9 +653,9 @@ def evaluate_ndbspline(const double[:, ::1] xi,
                 # iterate over the direct products of non-zero b-splines
                 for iflat in range(volume):
                     idx_b = indices_k1d[iflat, :]
-                    # The line above is equivalent to 
+                    # The line above is equivalent to
                     # idx_b = np.unravel_index(iflat, (k+1,)*ndim)
-                    
+
                     # From the indices in ``idx_b``, we prepare to index into
                     # c1.ravel() : for each dimension d, need to shift the index
                     # by ``i[d] - k[d]`` (see the docstring above).
@@ -676,7 +683,7 @@ def evaluate_ndbspline(const double[:, ::1] xi,
 @cython.wraparound(False)
 @cython.nonecheck(False)
 @cython.boundscheck(False)
-def _colloc_nd(double[:, ::1] xvals, tuple t not None, npy_int32[::1] k):
+def _colloc_nd(const double[:, ::1] xvals, tuple t not None, const npy_int32[::1] k):
     """Construct the N-D tensor product collocation matrix as a CSR array.
 
     In the dense representation, each row of the collocation matrix corresponds
@@ -711,7 +718,7 @@ def _colloc_nd(double[:, ::1] xvals, tuple t not None, npy_int32[::1] k):
 
     Since ``B`` functions are localized, for each point `(x1, ..., xN)` we
     loop over the dimensions, and
-    - find the the location in the knot array, `t[i] <= x < t[i+1]`,
+    - find the location in the knot array, `t[i] <= x < t[i+1]`,
     - compute all non-zero `B` values
     - place these values into the relevant row
 
@@ -785,7 +792,7 @@ def _colloc_nd(double[:, ::1] xvals, tuple t not None, npy_int32[::1] k):
     csr_data = np.empty(shape=(size*volume,), dtype=float)
     csr_indptr = np.arange(0, volume*size + 1, volume, dtype=np.int64)
 
-    # ### Iterate over the the data points ###
+    # ### Iterate over the data points ###
     for j in range(size):
         xv = xvals[j, :]
 

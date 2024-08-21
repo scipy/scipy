@@ -1357,7 +1357,7 @@ c
 c     info is an integer variable.
 c       On entry info is 0.
 c       On exit info = 0       for normal return,
-c                    = nonzero for abnormal return when the the system
+c                    = nonzero for abnormal return when the system
 c                              used in routine bmv is singular.
 c
 c     Subprograms called:
@@ -3742,7 +3742,7 @@ c         On entry fp is the function at stp
 c         On exit fp is unchanged.
 c
 c       dp is a double precision variable.
-c         On entry dp is the the derivative of the function at stp.
+c         On entry dp is the derivative of the function at stp.
 c         On exit dp is unchanged.
 c
 c       brackt is an logical variable.

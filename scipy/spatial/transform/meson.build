@@ -1,4 +1,4 @@
-rotation = py3.extension_module('_rotation',
+py3.extension_module('_rotation',
   [cython_gen.process('_rotation.pyx')],
   c_args: [cython_c_args, Wno_maybe_uninitialized],
   dependencies: np_dep,

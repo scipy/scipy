@@ -330,7 +330,7 @@ class DateAttribute(Attribute):
         else:
             dt = datetime.datetime.strptime(date_str, self.date_format)
             return np.datetime64(dt).astype(
-                "datetime64[%s]" % self.datetime_unit)
+                f"datetime64[{self.datetime_unit}]")
 
     def __str__(self):
         return super().__str__() + ',' + self.date_format
@@ -396,7 +396,7 @@ def to_attribute(name, attr_string):
         if attr is not None:
             return attr
 
-    raise ParseArffError("unknown attribute %s" % attr_string)
+    raise ParseArffError(f"unknown attribute {attr_string}")
 
 
 def csv_sniffer_has_bug_last_field():
@@ -558,7 +558,7 @@ def tokenize_attribute(iterable, attribute):
             # weka.
             raise ValueError("multi line not supported yet")
     else:
-        raise ValueError("First line unparsable: %s" % sattr)
+        raise ValueError(f"First line unparsable: {sattr}")
 
     attribute = to_attribute(name, type)
 
@@ -580,7 +580,7 @@ def tokenize_single_comma(val):
         except IndexError as e:
             raise ValueError("Error while tokenizing attribute") from e
     else:
-        raise ValueError("Error while tokenizing single %s" % val)
+        raise ValueError(f"Error while tokenizing single {val}")
     return name, type
 
 
@@ -595,7 +595,7 @@ def tokenize_single_wcomma(val):
         except IndexError as e:
             raise ValueError("Error while tokenizing attribute") from e
     else:
-        raise ValueError("Error while tokenizing single %s" % val)
+        raise ValueError(f"Error while tokenizing single {val}")
     return name, type
 
 
@@ -613,7 +613,7 @@ def read_relational_attribute(ofile, relational_attribute, i):
                 attr, i = tokenize_attribute(ofile, i)
                 relational_attribute.attributes.append(attr)
             else:
-                raise ValueError("Error parsing line %s" % i)
+                raise ValueError(f"Error parsing line {i}")
         else:
             i = next(ofile)
 
@@ -644,7 +644,7 @@ def read_header(ofile):
                 if isrel:
                     relation = isrel.group(1)
                 else:
-                    raise ValueError("Error parsing line %s" % i)
+                    raise ValueError(f"Error parsing line {i}")
                 i = next(ofile)
         else:
             i = next(ofile)
@@ -687,11 +687,11 @@ class MetaData:
 
     def __repr__(self):
         msg = ""
-        msg += "Dataset: %s\n" % self.name
+        msg += f"Dataset: {self.name}\n"
         for i in self._attributes:
             msg += f"\t{i}'s type is {self._attributes[i].type_name}"
             if self._attributes[i].range:
-                msg += ", range is %s" % str(self._attributes[i].range)
+                msg += f", range is {str(self._attributes[i].range)}"
             msg += '\n'
         return msg
 

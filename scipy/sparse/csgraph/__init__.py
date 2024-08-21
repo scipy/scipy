@@ -19,6 +19,7 @@ Contents
    floyd_warshall -- use the Floyd-Warshall algorithm for shortest path
    bellman_ford -- use the Bellman-Ford algorithm for shortest path
    johnson -- use Johnson's algorithm for shortest path
+   yen -- use Yen's algorithm for K-shortest paths between to nodes.
    breadth_first_order -- compute a breadth-first order of nodes
    depth_first_order -- compute a depth-first order of nodes
    breadth_first_tree -- construct the breadth-first tree from a given node
@@ -163,6 +164,7 @@ __all__ = ['connected_components',
            'dijkstra',
            'bellman_ford',
            'johnson',
+           'yen',
            'breadth_first_order',
            'depth_first_order',
            'breadth_first_tree',
@@ -184,7 +186,7 @@ __all__ = ['connected_components',
 
 from ._laplacian import laplacian
 from ._shortest_path import (
-    shortest_path, floyd_warshall, dijkstra, bellman_ford, johnson,
+    shortest_path, floyd_warshall, dijkstra, bellman_ford, johnson, yen,
     NegativeCycleError
 )
 from ._traversal import (

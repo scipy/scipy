@@ -71,7 +71,7 @@ following commands at the terminal from the base directory of your
             # Activate the environment
             source $HOME/.venvs/scipy-dev/bin/activate
             # Install python-level dependencies
-            python -m pip install numpy pytest cython pythran pybind11 meson ninja pydevtool rich-click hypothesis
+            python -m pip install numpy pytest cython pythran pybind11 meson ninja pydevtool rich-click hypothesis pooch
 
 Your command prompt now lists the name of your new environment, like so:
 ``(scipy-dev)$``.

@@ -17,8 +17,8 @@ def assert_wolfe(s, phi, derphi, c1=1e-4, c2=0.9, err_msg=""):
     phi0 = phi(0)
     derphi0 = derphi(0)
     derphi1 = derphi(s)
-    msg = "s = {}; phi(0) = {}; phi(s) = {}; phi'(0) = {}; phi'(s) = {}; {}".format(
-        s, phi0, phi1, derphi0, derphi1, err_msg)
+    msg = (f"s = {s}; phi(0) = {phi0}; phi(s) = {phi1}; phi'(0) = {derphi0};"
+           f" phi'(s) = {derphi1}; {err_msg}")
 
     assert phi1 <= phi0 + c1*s*derphi0, "Wolfe 1 failed: " + msg
     assert abs(derphi1) <= abs(c2*derphi0), "Wolfe 2 failed: " + msg
@@ -159,9 +159,9 @@ class TestLineSearch:
         def derphi(alpha):
             return 2 * (alpha - 5)
 
-        s, _, _, _ = assert_warns(LineSearchWarning,
-                                  ls.scalar_search_wolfe2, phi, derphi, amax=0.001)
-        assert s is None
+        alpha_star, _, _, derphi_star = ls.scalar_search_wolfe2(phi, derphi, amax=0.001)
+        assert alpha_star is None  # Not converged
+        assert derphi_star is None  # Not converged
 
     def test_scalar_search_wolfe2_regression(self):
         # Regression test for gh-12157

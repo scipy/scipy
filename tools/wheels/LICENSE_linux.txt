@@ -1,11 +1,12 @@
 
 ----
 
-This binary distribution of SciPy also bundles the following software:
+This binary distribution of SciPy can also bundle the following software
+(depending on the build):
 
 
 Name: OpenBLAS
-Files: scipy.libs/libopenblas*.so
+Files: scipy.libs/libscipy_openblas*.so
 Description: bundled as a dynamically linked library
 Availability: https://github.com/OpenMathLib/OpenBLAS/
 License: BSD-3-Clause-Attribution
@@ -41,7 +42,7 @@ License: BSD-3-Clause-Attribution
 
 
 Name: LAPACK
-Files: scipy.libs/libopenblas*.so
+Files: scipy.libs/libscipy_openblas*.so
 Description: bundled in OpenBLAS
 Availability: https://github.com/OpenMathLib/OpenBLAS/
 License: BSD-3-Clause-Attribution

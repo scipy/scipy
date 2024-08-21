@@ -1,4 +1,4 @@
-_lsq = py3.extension_module('givens_elimination',
+py3.extension_module('givens_elimination',
   linalg_cython_gen.process('givens_elimination.pyx'),
   c_args: cython_c_args,
   dependencies: np_dep,

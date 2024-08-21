@@ -7,11 +7,6 @@ from numpy.testing import assert_allclose
 from scipy import special
 
 
-def test_cchg_branches():
-    res = special.hyp1f1(0.1, 1, 7.0-24.0j)
-    assert_allclose(res, (-3.7659844658568016+4.970311359851648j))
-
-
 def test_cva2_cv0_branches():
     res, resp = special.mathieu_cem([40, 129], [13, 14], [30, 45])
     assert_allclose(res, np.array([-0.3741211, 0.74441928]))
@@ -34,3 +29,12 @@ def test_hygfz_branches():
     """(cabs(z+1) < eps) && (fabs(c-a+b - 1.0) < eps)"""
     res = special.hyp2f1(5+5e-16, 2, 2, -1.0 + 5e-16j)
     assert_allclose(res, 0.031249999999999986+3.9062499999999994e-17j)
+
+
+def test_pro_rad1():
+    # https://github.com/scipy/scipy/issues/21058
+    # Reference values taken from WolframAlpha
+    # SpheroidalS1(1, 1, 30, 1.1)
+    # SpheroidalS1Prime(1, 1, 30, 1.1)
+    res = special.pro_rad1(1, 1, 30, 1.1)
+    assert_allclose(res, (0.009657872296166435, 3.253369651472877), rtol=2e-5)

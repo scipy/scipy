@@ -10,8 +10,6 @@ The following functions still need tests:
 - ncfdtrinc
 - nbdtrik
 - nbdtrin
-- nrdtrimn
-- nrdtrisd
 - pdtrik
 - nctdtr
 - nctdtrit
@@ -281,6 +279,32 @@ class TestCDFlib:
             rtol=1e-7,
             endpt_atol=[None, 1e-7, 1e-10])
 
+    # Overall nrdtrimn and nrdtrisd are not performing well with infeasible/edge
+    # combinations of sigma and x, hence restricted the domains to still use the
+    # testing machinery, also see gh-20069
+
+    # nrdtrimn signature: p, sd, x
+    # nrdtrisd signature: mn, p, x
+    def test_nrdtrimn(self):
+        _assert_inverts(
+            sp.nrdtrimn,
+            lambda x, y, z: mpmath.ncdf(z, x, y),
+            0,
+            [ProbArg(),  # CDF value p
+             Arg(0.1, np.inf, inclusive_a=False, inclusive_b=False),  # sigma
+             Arg(-1e10, 1e10)],  # x
+            rtol=1e-5)
+
+    def test_nrdtrisd(self):
+        _assert_inverts(
+            sp.nrdtrisd,
+            lambda x, y, z: mpmath.ncdf(z, x, y),
+            1,
+            [Arg(-np.inf, 10, inclusive_a=False, inclusive_b=False),  # mn
+             ProbArg(),  # CDF value p
+             Arg(10, 1e100)],  # x
+            rtol=1e-5)
+
     def test_stdtr(self):
         # Ideally the left endpoint for Arg() should be 0.
         assert_mpmath_equal(
@@ -470,7 +494,7 @@ def test_nctdtr_gh19896():
     for df, p, t in itertools.product(dfarr, pnoncarr, tarr):
         actarr += [sp.nctdtr(df, p, t)]
     # The rtol is kept high on purpose to make it pass on 32bit systems
-    assert_allclose(actarr, resarr, rtol=1e-12, atol=0.0)
+    assert_allclose(actarr, resarr, rtol=1e-6, atol=0.0)
 
 
 def test_nctdtrinc_gh19896():
@@ -484,7 +508,7 @@ def test_nctdtrinc_gh19896():
                1.4312427877936222, 2.014225177124157, 3.712743137978295,
                -3.086951096691082]
     actual = sp.nctdtrinc(dfarr, parr, tarr)
-    assert_allclose(actual, desired, rtol=2e-12, atol=0.0)
+    assert_allclose(actual, desired, rtol=5e-12, atol=0.0)
 
 
 def test_stdtr_stdtrit_neg_inf():

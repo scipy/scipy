@@ -87,6 +87,9 @@ Other useful options include:
 
 -  ``-v`` or ``--verbose``, which activates the verbose option for more
    detailed output. 
+-  ``-b`` or ``--array-api-backend`` *backend* to include alternative
+   array backends in array-api-compatible tests. See :ref:`dev-arrayapi`
+   for details.
 -  ``--coverage`` to generate a test coverage report in
    ``scipy/build/coverage/index.html``. *Note:* |pytest-cov|_ *must be
    installed.*
@@ -95,14 +98,23 @@ Other useful options include:
 -  ``-j`` or ``--parallel`` *n* to engage *n* cores when building SciPy;
    e.g. \ ``python dev.py test -j 4`` engages four cores. As of `#10172`_
    this also runs the tests on four cores if |pytest-xdist|_ is installed.
--  ``-m`` or ``--mode`` ``full`` to run the full test suite, including slow
-   tests. For example, ``python dev.py test -m full``.
+-  ``-m full`` or ``--mode full`` to run the "full" test suite, including
+   tests marked ``slow`` (e.g. with ``@pytest.mark.slow``). Note that this
+   does not *run* tests marked ``xslow``; see Tips below.
 -  ``--`` to send remaining command line arguments to ``pytest`` instead of
    ``dev.py test``. For instance, while ``-n`` sent to ``pytest.py`` activates
    the ``--no-build`` option, ``-n`` sent to ``pytest`` runs the tests on
    multiple cores; e.g. \ ``python dev.py test -- -n 4`` runs tests using
    four cores. *Note:* |pytest-xdist|_ *must be installed for testing on
-   multiple cores.*
+   multiple cores.* Common command line arguments for ``pytest`` include:
+
+   - ``--durations=m`` to display durations of the slowest ``m`` tests. Use
+     ``--durations=0`` together with ``--durations-min=x`` to display
+     durations of all tests with durations that exceed ``x`` seconds.
+   - ``--fail-slow=x`` to cause test to fail if they exceed ``x`` seconds.
+     (*Note*: |pytest-fail-slow|_ must be installed.)
+   - ``--timeout=x`` to halt all test execution if any test time exceeds
+     ``x`` seconds. (*Note*: |pytest-timeout|_ must be installed.)
 
 For much more information about ``pytest``, see the ``pytest``
 `documentation <https://docs.pytest.org/en/latest/usage.html>`_.
@@ -137,6 +149,12 @@ configuration, e.g. adding ``max_examples=100_000``.
 
 .. |pytest-xdist| replace:: ``pytest-xdist``
 .. _pytest-xdist: https://pypi.org/project/pytest-xdist/
+
+.. |pytest-fail-slow| replace:: ``pytest-fail-slow``
+.. _pytest-fail-slow: https://github.com/jwodder/pytest-fail-slow
+
+.. |pytest-timeout| replace:: ``pytest-timeout``
+.. _pytest-timeout: https://github.com/pytest-dev/pytest-timeout
 
 .. |pytest| replace:: ``pytest``
 .. _pytest: https://docs.pytest.org/en/latest/

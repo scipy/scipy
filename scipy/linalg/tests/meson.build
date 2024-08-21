@@ -12,12 +12,12 @@ python_sources = [
   'test_decomp_lu.py',
   'test_decomp_polar.py',
   'test_decomp_update.py',
+  'test_extending.py',
   'test_fblas.py',
   'test_interpolative.py',
   'test_lapack.py',
   'test_matfuncs.py',
   'test_matmul_toeplitz.py',
-  'test_misc.py',
   'test_procrustes.py',
   'test_sketches.py',
   'test_solve_toeplitz.py',
@@ -28,7 +28,14 @@ python_sources = [
 
 py3.install_sources(
   python_sources,
-  subdir: 'scipy/linalg/tests'
+  subdir: 'scipy/linalg/tests',
+  install_tag: 'tests'
+)
+
+py3.install_sources(
+  ['_cython_examples/extending.pyx', '_cython_examples/meson.build'],
+  subdir: 'scipy/linalg/tests/_cython_examples',
+  install_tag: 'tests'
 )
 
 subdir('data')

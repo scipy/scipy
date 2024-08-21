@@ -204,7 +204,8 @@ class BDF(OdeSolver):
         self.rtol, self.atol = validate_tol(rtol, atol, self.n)
         f = self.fun(self.t, self.y)
         if first_step is None:
-            self.h_abs = select_initial_step(self.fun, self.t, self.y, f,
+            self.h_abs = select_initial_step(self.fun, self.t, self.y, 
+                                             t_bound, max_step, f,
                                              self.direction, 1,
                                              self.rtol, self.atol)
         else:
@@ -289,9 +290,8 @@ class BDF(OdeSolver):
                     return np.asarray(jac(t, y), dtype=y0.dtype)
 
             if J.shape != (self.n, self.n):
-                raise ValueError("`jac` is expected to have shape {}, but "
-                                 "actually has {}."
-                                 .format((self.n, self.n), J.shape))
+                raise ValueError(f"`jac` is expected to have shape {(self.n, self.n)},"
+                                 f" but actually has {J.shape}.")
         else:
             if issparse(jac):
                 J = csc_matrix(jac, dtype=y0.dtype)
@@ -299,9 +299,8 @@ class BDF(OdeSolver):
                 J = np.asarray(jac, dtype=y0.dtype)
 
             if J.shape != (self.n, self.n):
-                raise ValueError("`jac` is expected to have shape {}, but "
-                                 "actually has {}."
-                                 .format((self.n, self.n), J.shape))
+                raise ValueError(f"`jac` is expected to have shape {(self.n, self.n)},"
+                                 f" but actually has {J.shape}.")
             jac_wrapped = None
 
         return jac_wrapped, J

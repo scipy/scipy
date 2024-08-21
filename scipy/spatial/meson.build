@@ -30,7 +30,7 @@ qhull_src = [
   'qhull_src/src/userprintf_rbox_r.c'
 ]
 
-qhull = py3.extension_module('_qhull',
+py3.extension_module('_qhull',
   [spt_cython_gen.process('_qhull.pyx'),
     'qhull_misc.h', 'qhull_misc.c'] + qhull_src,
   c_args: cython_c_args,
@@ -40,7 +40,7 @@ qhull = py3.extension_module('_qhull',
     'qhull_src/src'
   ],
   link_args: version_link_args,
-  dependencies: [lapack, np_dep],
+  dependencies: [np_dep],
   install: true,
   subdir: 'scipy/spatial'
 )
@@ -55,7 +55,7 @@ ckdtree_src = [
   'ckdtree/src/sparse_distances.cxx'
 ]
 
-ckdtree = py3.extension_module('_ckdtree',
+py3.extension_module('_ckdtree',
   ckdtree_src + [cython_gen_cpp.process('_ckdtree.pyx')],
   cpp_args: cython_cpp_args,
   include_directories: [
@@ -69,7 +69,7 @@ ckdtree = py3.extension_module('_ckdtree',
   subdir: 'scipy/spatial'
 )
 
-_distance_wrap = py3.extension_module('_distance_wrap',
+py3.extension_module('_distance_wrap',
   'src/distance_wrap.c',
   include_directories: '../_lib',
   dependencies: np_dep,
@@ -78,16 +78,16 @@ _distance_wrap = py3.extension_module('_distance_wrap',
   subdir: 'scipy/spatial'
 )
 
-_distance_pybind = py3.extension_module('_distance_pybind',
+py3.extension_module('_distance_pybind',
   ['src/distance_pybind.cpp'],
-  include_directories: 'src/',
+  include_directories: ['src/'],
   dependencies: [np_dep, pybind11_dep],
   link_args: version_link_args,
   install: true,
   subdir: 'scipy/spatial'
 )
 
-_voronoi = py3.extension_module('_voronoi',
+py3.extension_module('_voronoi',
   [cython_gen.process('_voronoi.pyx')],
   c_args: [cython_c_args, Wno_maybe_uninitialized],
   dependencies: np_dep,
@@ -96,7 +96,7 @@ _voronoi = py3.extension_module('_voronoi',
   subdir: 'scipy/spatial'
 )
 
-_hausdorff = py3.extension_module('_hausdorff',
+py3.extension_module('_hausdorff',
   [cython_gen.process('_hausdorff.pyx')],
   c_args: cython_c_args,
   dependencies: np_dep,

@@ -91,7 +91,7 @@ static PyObject *c_array_from_object(PyObject *obj, int typenum, int is_output);
  *     The Python return value
  *
  */
-NPY_VISIBILITY_HIDDEN PyObject *
+PyObject *
 call_thunk(char ret_spec, const char *spec, thunk_t *thunk, PyObject *args)
 {
     void *arg_list[MAX_ARGS];
@@ -556,8 +556,19 @@ static struct PyModuleDef moduledef = {
 PyMODINIT_FUNC
 PyInit__sparsetools(void)
 {
+    PyObject *module;
+
     import_array();
-    return PyModule_Create(&moduledef);
+    module = PyModule_Create(&moduledef);
+    if (module == NULL) {
+        return module;
+    }
+
+#if Py_GIL_DISABLED
+    PyUnstable_Module_SetGIL(module, Py_MOD_GIL_NOT_USED);
+#endif
+
+    return module;
 }
 
 } /* extern "C" */

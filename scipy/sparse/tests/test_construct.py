@@ -11,7 +11,11 @@ from scipy._lib._util import check_random_state
 
 from scipy.sparse import (csr_matrix, coo_matrix,
                           csr_array, coo_array,
-                          sparray, spmatrix,
+                          csc_array, bsr_array,
+                          dia_array, dok_array,
+                          lil_array, csc_matrix,
+                          bsr_matrix, dia_matrix,
+                          lil_matrix, sparray, spmatrix,
                           _construct as construct)
 from scipy.sparse._construct import rand as sprand
 
@@ -37,6 +41,35 @@ def _sprandn_array(m, n, density=0.01, format="coo", dtype=None, random_state=No
 
 
 class TestConstructUtils:
+
+    @pytest.mark.parametrize("cls", [
+        csc_array, csr_array, coo_array, bsr_array,
+        dia_array, dok_array, lil_array
+    ])
+    def test_singleton_array_constructor(self, cls):
+        with pytest.raises(
+            ValueError,
+            match=(
+                'scipy sparse array classes do not support '
+                'instantiation from a scalar'
+            )
+        ):
+            cls(0)
+    
+    @pytest.mark.parametrize("cls", [
+        csc_matrix, csr_matrix, coo_matrix,
+        bsr_matrix, dia_matrix, lil_matrix
+    ])
+    def test_singleton_matrix_constructor(self, cls):
+        """
+        This test is for backwards compatibility post scipy 1.13.
+        The behavior observed here is what is to be expected
+        with the older matrix classes. This test comes with the
+        exception of dok_matrix, which was not working pre scipy1.12
+        (unlike the rest of these).
+        """
+        assert cls(0).shape == (1, 1)
+
     def test_spdiags(self):
         diags1 = array([[1, 2, 3, 4, 5]])
         diags2 = array([[1, 2, 3, 4, 5],
@@ -356,6 +389,14 @@ class TestConstructUtils:
         assert_array_equal(result.toarray(), expected)
         assert isinstance(result, spmatrix)
 
+    def test_kron_ndim_exceptions(self):
+        with pytest.raises(ValueError, match='requires 2D input'):
+            construct.kron([[0], [1]], csr_array([0, 1]))
+        with pytest.raises(ValueError, match='requires 2D input'):
+            construct.kron(csr_array([0, 1]), [[0], [1]])
+        # no exception if sparse arrays are not input (spmatrix inferred)
+        construct.kron([[0], [1]], [0, 1])
+
     def test_kron_large(self):
         n = 2**16
         a = construct.diags_array([1], shape=(1, n), offsets=n-1)
@@ -387,6 +428,14 @@ class TestConstructUtils:
         # check that spmatrix returned when both inputs are spmatrix
         result = construct.kronsum(csr_matrix(a), csr_matrix(b)).toarray()
         assert_array_equal(result, expected)
+
+    def test_kronsum_ndim_exceptions(self):
+        with pytest.raises(ValueError, match='requires 2D input'):
+            construct.kronsum([[0], [1]], csr_array([0, 1]))
+        with pytest.raises(ValueError, match='requires 2D input'):
+            construct.kronsum(csr_array([0, 1]), [[0], [1]])
+        # no exception if sparse arrays are not input (spmatrix inferred)
+        construct.kronsum([[0, 1], [1, 0]], [2])
 
     @pytest.mark.parametrize("coo_cls", [coo_matrix, coo_array])
     def test_vstack(self, coo_cls):
@@ -425,6 +474,29 @@ class TestConstructUtils:
         assert isinstance(construct.vstack([coo_array(A), coo_matrix(B)]), sparray)
         assert isinstance(construct.vstack([coo_matrix(A), coo_array(B)]), sparray)
         assert isinstance(construct.vstack([coo_matrix(A), coo_matrix(B)]), spmatrix)
+
+    def test_vstack_1d_with_2d(self):
+        # fixes gh-21064
+        arr = csr_array([[1, 0, 0], [0, 1, 0]])
+        arr1d = csr_array([1, 0, 0])
+        arr1dcoo = coo_array([1, 0, 0])
+        assert construct.vstack([arr, np.array([0, 0, 0])]).shape == (3, 3)
+        assert construct.hstack([arr1d, np.array([[0]])]).shape == (1, 4)
+        assert construct.hstack([arr1d, arr1d]).shape == (1, 6)
+        assert construct.vstack([arr1d, arr1d]).shape == (2, 3)
+
+        # check csr specialty stacking code like _stack_along_minor_axis
+        assert construct.hstack([arr, arr]).shape == (2, 6)
+        assert construct.hstack([arr1d, arr1d]).shape == (1, 6)
+
+        assert construct.hstack([arr1d, arr1dcoo]).shape == (1, 6)
+        assert construct.vstack([arr, arr1dcoo]).shape == (3, 3)
+        assert construct.vstack([arr1d, arr1dcoo]).shape == (2, 3)
+
+        with pytest.raises(ValueError, match="incompatible row dimensions"):
+            construct.hstack([arr, np.array([0, 0])])
+        with pytest.raises(ValueError, match="incompatible column dimensions"):
+            construct.vstack([arr, np.array([0, 0])])
 
     @pytest.mark.parametrize("coo_cls", [coo_matrix, coo_array])
     def test_hstack(self, coo_cls):

@@ -204,7 +204,8 @@ Symbol                                                           Description    
 
 
 Continuous Distributions in `scipy.stats`
------------------------------------------
+=========================================
+
 .. toctree::
    :maxdepth: 1
 
