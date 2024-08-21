@@ -175,7 +175,8 @@ def sqrtm(A, disp=True, blocksize=64):
         d0 = np.diagonal(T)
         d1 = np.diagonal(T, -1)
         eps = np.finfo(T.dtype).eps
-        needs_conversion = abs(d1) > eps * (abs(d0[1:]) + abs(d0[:-1]))
+        # factor of 10 introduced to resolve gh-19816
+        needs_conversion = abs(d1) > 10 * eps * (abs(d0[1:]) + abs(d0[:-1]))
         if needs_conversion.any():
             T, Z = rsf2csf(T, Z)
     else:
