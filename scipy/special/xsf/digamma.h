@@ -168,7 +168,7 @@ XSF_HOST_DEVICE inline std::complex<double> digamma(std::complex<double> z) {
          *
          *https://dlmf.nist.gov/5.5#E4
          */
-        res = -M_PI * cospi(z) / sinpi(z);
+        res = -M_PI * cotpi(z);
         z = 1.0 - z;
         absz = std::abs(z);
     }
