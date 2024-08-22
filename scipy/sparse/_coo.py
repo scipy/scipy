@@ -1388,7 +1388,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
             return self.toarray()
         
         if self.ndim < 3:
-            result = _spbase.mean(self, axis, dtype, out)
+            result = _spbase.mean(self, axis, dtype, out) 
             return result
         zero = self.dtype.type(0)
 
@@ -1445,7 +1445,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
         shape_2d = (math.prod(result_shape), math.prod([self.shape[ax] for ax in axis]))
 
         self = coo_array((self.data, coords_2d), shape_2d)
-        res_flattened = _spbase.mean(self, axis=1)
+        res_flattened = _spbase.mean(self, axis=1, dtype=dtype, out=out)
         res = res_flattened.reshape(result_shape)      
         return res
     def sum(self, axis=None, dtype=None, out=None):
@@ -1483,22 +1483,37 @@ class _coo_base(_data_matrix, _minmax_mixin):
             if len(axis) == self.ndim:
                 axis = None
         
+        if out is not None:
+            out_shape = out.shape
+        
         if axis is None:
             self = self.reshape(-1)
-            return _spbase.sum(self)
+            ret = _spbase.sum(self, axis, dtype, out)
+            result_shape = ret.shape
+        else:
+            result_shape = tuple(self.shape[ax] for ax in range(self.ndim) if ax not in axis)
+
+        if out is not None and out_shape != result_shape:
+            raise ValueError("dimensions do not match")
         
-        non_axis_coords = _ravel_non_reduced_axes(self.coords, self.shape, axis)
-        axis_coords = np.ravel_multi_index(np.array(self.coords)[axis, :], [self.shape[ax] for ax in axis])
-        coords_2d = np.vstack((non_axis_coords, axis_coords))
+        if axis is not None:
+            non_axis_coords = _ravel_non_reduced_axes(self.coords, self.shape, axis)
+            axis_coords = np.ravel_multi_index(np.array(self.coords)[axis, :], [self.shape[ax] for ax in axis])
+            coords_2d = np.vstack((non_axis_coords, axis_coords))
 
-       
-        result_shape = tuple(self.shape[ax] for ax in range(self.ndim) if ax not in axis)
-        shape_2d = (math.prod(result_shape), math.prod([self.shape[ax] for ax in axis]))
+            shape_2d = (math.prod(result_shape), math.prod([self.shape[ax] for ax in axis]))
+            
+            if out is not None:
+                out = out.reshape(math.prod(result_shape))
 
-        self = coo_array((self.data, coords_2d), shape_2d)
-        res_flattened = _spbase.sum(self, axis=1)
-        res = res_flattened.reshape(result_shape)      
-        return res
+            self = coo_array((self.data, coords_2d), shape_2d)
+            ret_flattened = _spbase.sum(self, axis=1, dtype=dtype, out=out)
+            ret = ret_flattened.reshape(result_shape)
+
+            if out is not None:
+                out = out.reshape(result_shape)      
+        
+        return ret
 
 
     def _maximum_minimum_coo(self, other, op_name):
