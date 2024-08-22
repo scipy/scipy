@@ -1383,6 +1383,123 @@ class _coo_base(_data_matrix, _minmax_mixin):
             result = result.reshape(bshape)
         return result
 
+    def mean(self, axis=None, dtype=None, out=None):
+        if axis == ():
+            return self.toarray()
+        
+        if self.ndim < 3:
+            result = _spbase.mean(self, axis, dtype, out)
+            return result
+        zero = self.dtype.type(0)
+
+        if axis is not None:
+            if not isinstance(axis, (int, tuple)):
+                raise ValueError("'axis' should be int/tuple of ints")
+            
+            if type(axis) is int:
+                axis = [axis]
+                
+            if len(axis)>self.ndim:
+                raise ValueError("axis tuple has too many elements")
+            
+            if any(ax >= self.ndim or ax < -self.ndim for ax in axis):
+                raise ValueError("axis out of range")
+            
+            axis = [ax if ax>=0 else ax+self.ndim for ax in axis]
+
+            if any(self.shape[d] == 0 for d in axis):
+                raise ValueError("zero-size array to reduction operation")
+
+            # Check for duplicates
+            if len(axis) != len(set(axis)):
+                raise ValueError("duplicate value in 'axis'")
+
+            if len(axis) == self.ndim:
+                axis = None
+        
+        if axis is None:
+            res_dtype = self.dtype.type
+            integral = (np.issubdtype(self.dtype, np.integer) or
+                        np.issubdtype(self.dtype, np.bool_))
+
+            # output dtype
+            if dtype is None:
+                if integral:
+                    res_dtype = np.float64
+            else:
+                res_dtype = np.dtype(dtype).type
+
+            # intermediate dtype for summation
+            inter_dtype = np.float64 if integral else res_dtype
+            inter_self = self.astype(inter_dtype)
+
+            if 0 in self.shape:
+                raise ValueError("zero-size array to reduction operation")
+            return (inter_self / math.prod(self.shape)).sum(dtype=res_dtype, out=out)
+        
+        non_axis_coords = _ravel_non_reduced_axes(self.coords, self.shape, axis)
+        axis_coords = np.ravel_multi_index(np.array(self.coords)[axis, :], [self.shape[ax] for ax in axis])
+        coords_2d = np.vstack((non_axis_coords, axis_coords))
+
+        result_shape = tuple(self.shape[ax] for ax in range(self.ndim) if ax not in axis)
+        shape_2d = (math.prod(result_shape), math.prod([self.shape[ax] for ax in axis]))
+
+        self = coo_array((self.data, coords_2d), shape_2d)
+        res_flattened = _spbase.mean(self, axis=1)
+        res = res_flattened.reshape(result_shape)      
+        return res
+    def sum(self, axis=None, dtype=None, out=None):
+        if axis == ():
+            return self.toarray()
+        
+        if self.ndim < 3:
+            result = _spbase.sum(self, axis, dtype, out)
+            return result
+        
+        zero = self.dtype.type(0)
+
+        if axis is not None:
+            if not isinstance(axis, (int, tuple)):
+                raise ValueError("'axis' should be int/tuple of ints")
+            
+            if type(axis) is int:
+                axis = [axis]
+                
+            if len(axis)>self.ndim:
+                raise ValueError("axis tuple has too many elements")
+            
+            if any(ax >= self.ndim or ax < -self.ndim for ax in axis):
+                raise ValueError("axis out of range")
+            
+            axis = [ax if ax>=0 else ax+self.ndim for ax in axis]
+
+            if any(self.shape[d] == 0 for d in axis):
+                raise ValueError("zero-size array to reduction operation")
+
+            # Check for duplicates
+            if len(axis) != len(set(axis)):
+                raise ValueError("duplicate value in 'axis'")
+
+            if len(axis) == self.ndim:
+                axis = None
+        
+        if axis is None:
+            self = self.reshape(-1)
+            return _spbase.sum(self)
+        
+        non_axis_coords = _ravel_non_reduced_axes(self.coords, self.shape, axis)
+        axis_coords = np.ravel_multi_index(np.array(self.coords)[axis, :], [self.shape[ax] for ax in axis])
+        coords_2d = np.vstack((non_axis_coords, axis_coords))
+
+       
+        result_shape = tuple(self.shape[ax] for ax in range(self.ndim) if ax not in axis)
+        shape_2d = (math.prod(result_shape), math.prod([self.shape[ax] for ax in axis]))
+
+        self = coo_array((self.data, coords_2d), shape_2d)
+        res_flattened = _spbase.sum(self, axis=1)
+        res = res_flattened.reshape(result_shape)      
+        return res
+
 
     def _maximum_minimum_coo(self, other, op_name):
         if self.ndim < 3 and ((issparse(other) and other.ndim < 3) \
