@@ -33,7 +33,10 @@ def schur(a, output='real', lwork=None, overwrite_a=False, sort=None,
     a : (M, M) array_like
         Matrix to decompose
     output : {'real', 'complex'}, optional
-        Construct the real or complex Schur decomposition (for real matrices).
+        When the dtype of `a` is real, this specifies whether to compute
+        the real or complex Schur decomposition.
+        When the dtype of `a` is complex, this argument is ignored, and the
+        complex Schur decomposition is computed.
     lwork : int, optional
         Work array size. If None or -1, it is automatically computed.
     overwrite_a : bool, optional
