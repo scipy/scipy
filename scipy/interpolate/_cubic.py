@@ -1,11 +1,18 @@
 """Interpolation algorithms using piecewise cubic polynomials."""
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import numpy as np
+
+from scipy.linalg import solve, solve_banded
 
 from . import PPoly
 from ._polyint import _isscalar
-from scipy.linalg import solve_banded, solve
 
+if TYPE_CHECKING:
+    from typing import Literal
 
 __all__ = ["CubicHermiteSpline", "PchipInterpolator", "pchip_interpolate",
            "Akima1DInterpolator", "CubicSpline"]
@@ -45,8 +52,8 @@ def prepare_input(x, y, axis, dydx=None):
     if x.shape[0] < 2:
         raise ValueError("`x` must contain at least 2 elements.")
     if x.shape[0] != y.shape[axis]:
-        raise ValueError("The length of `y` along `axis`={0} doesn't "
-                         "match the length of `x`".format(axis))
+        raise ValueError(f"The length of `y` along `axis`={axis} doesn't "
+                         "match the length of `x`")
 
     if not np.all(np.isfinite(x)):
         raise ValueError("`x` must contain only finite values.")
@@ -133,6 +140,7 @@ class CubicHermiteSpline(PPoly):
             <https://en.wikipedia.org/wiki/Cubic_Hermite_spline>`_
             on Wikipedia.
     """
+
     def __init__(self, x, y, dydx, axis=0, extrapolate=None):
         if extrapolate is None:
             extrapolate = True
@@ -163,15 +171,16 @@ class PchipInterpolator(CubicHermiteSpline):
 
     Parameters
     ----------
-    x : ndarray
+    x : ndarray, shape (npoints, )
         A 1-D array of monotonically increasing real values. ``x`` cannot
         include duplicate values (otherwise f is overspecified)
-    y : ndarray
-        A 1-D array of real values. ``y``'s length along the interpolation
-        axis must be equal to the length of ``x``. If N-D array, use ``axis``
-        parameter to select correct axis.
+    y : ndarray, shape (..., npoints, ...)
+        A N-D array of real values. ``y``'s length along the interpolation
+        axis must be equal to the length of ``x``. Use the ``axis``
+        parameter to select the interpolation axis.
     axis : int, optional
-        Axis in the y array corresponding to the x-coordinate values.
+        Axis in the ``y`` array corresponding to the x-coordinate values. Defaults
+        to ``axis=0``.
     extrapolate : bool, optional
         Whether to extrapolate to out-of-bounds points based on first
         and last intervals, or to return NaNs.
@@ -226,10 +235,15 @@ class PchipInterpolator(CubicHermiteSpline):
     .. [2] see, e.g., C. Moler, Numerical Computing with Matlab, 2004.
            :doi:`10.1137/1.9780898717952`
 
-
     """
+
     def __init__(self, x, y, axis=0, extrapolate=None):
         x, _, y, axis, _ = prepare_input(x, y, axis)
+        if np.iscomplexobj(y):
+            msg = ("`PchipInterpolator` only works with real values for `y`. "
+                   "If you are trying to use the real components of the passed array, "
+                   "use `np.real` on the array before passing to `PchipInterpolator`.")
+            raise ValueError(msg)
         xp = x.reshape((x.shape[0],) + (1,)*(y.ndim-1))
         dk = self._find_derivatives(xp, y)
         super().__init__(x, y, dk, axis=0, extrapolate=extrapolate)
@@ -318,6 +332,12 @@ def pchip_interpolate(xi, yi, x, der=0, axis=0):
         A 1-D array of real values. `yi`'s length along the interpolation
         axis must be equal to the length of `xi`. If N-D array, use axis
         parameter to select correct axis.
+
+        .. deprecated:: 1.13.0
+            Complex data is deprecated and will raise an error in
+            SciPy 1.15.0. If you are trying to use the real components of
+            the passed array, use ``np.real`` on `yi`.
+
     x : scalar or array_like
         Of length M.
     der : int or list, optional
@@ -326,19 +346,20 @@ def pchip_interpolate(xi, yi, x, der=0, axis=0):
     axis : int, optional
         Axis in the yi array corresponding to the x-coordinate values.
 
-    See Also
-    --------
-    PchipInterpolator : PCHIP 1-D monotonic cubic interpolator.
-
     Returns
     -------
     y : scalar or array_like
-        The result, of length R or length M or M by R,
+        The result, of length R or length M or M by R.
+
+    See Also
+    --------
+    PchipInterpolator : PCHIP 1-D monotonic cubic interpolator.
 
     Examples
     --------
     We can interpolate 2D observed data using pchip interpolation:
 
+    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> from scipy.interpolate import pchip_interpolate
     >>> x_observed = np.linspace(0.0, 10.0, 11)
@@ -362,7 +383,7 @@ def pchip_interpolate(xi, yi, x, der=0, axis=0):
 
 
 class Akima1DInterpolator(CubicHermiteSpline):
-    """
+    r"""
     Akima interpolator
 
     Fit piecewise cubic polynomials, given vectors x and y. The interpolation
@@ -372,15 +393,26 @@ class Akima1DInterpolator(CubicHermiteSpline):
 
     Parameters
     ----------
-    x : ndarray, shape (m, )
+    x : ndarray, shape (npoints, )
         1-D array of monotonically increasing real values.
-    y : ndarray, shape (m, ...)
-        N-D array of real values. The length of ``y`` along the first axis
-        must be equal to the length of ``x``.
+    y : ndarray, shape (..., npoints, ...)
+        N-D array of real values. The length of ``y`` along the interpolation axis
+        must be equal to the length of ``x``. Use the ``axis`` parameter to
+        select the interpolation axis.
     axis : int, optional
-        Specifies the axis of ``y`` along which to interpolate. Interpolation
-        defaults to the first axis of ``y``.
+        Axis in the ``y`` array corresponding to the x-coordinate values. Defaults
+        to ``axis=0``.
+    method : {'akima', 'makima'}, optional
+        If ``"makima"``, use the modified Akima interpolation [2]_.
+        Defaults to ``"akima"``, use the Akima interpolation [1]_.
 
+        .. versionadded:: 1.13.0
+
+    extrapolate : {bool, None}, optional
+        If bool, determines whether to extrapolate to out-of-bounds points 
+        based on first and last intervals, or to return NaNs. If None, 
+        ``extrapolate`` is set to False.
+        
     Methods
     -------
     __call__
@@ -402,18 +434,84 @@ class Akima1DInterpolator(CubicHermiteSpline):
     points exactly. This routine is useful for plotting a pleasingly smooth
     curve through a few given points for purposes of plotting.
 
+    Let :math:`\delta_i = (y_{i+1} - y_i) / (x_{i+1} - x_i)` be the slopes of
+    the interval :math:`\left[x_i, x_{i+1}\right)`. Akima's derivative at
+    :math:`x_i` is defined as:
+
+    .. math::
+
+        d_i = \frac{w_1}{w_1 + w_2}\delta_{i-1} + \frac{w_2}{w_1 + w_2}\delta_i
+
+    In the Akima interpolation [1]_ (``method="akima"``), the weights are:
+
+    .. math::
+
+        \begin{aligned}
+        w_1 &= |\delta_{i+1} - \delta_i| \\
+        w_2 &= |\delta_{i-1} - \delta_{i-2}|
+        \end{aligned}
+
+    In the modified Akima interpolation [2]_ (``method="makima"``),
+    to eliminate overshoot and avoid edge cases of both numerator and
+    denominator being equal to 0, the weights are modified as follows:
+
+    .. math::
+
+        \begin{align*}
+        w_1 &= |\delta_{i+1} - \delta_i| + |\delta_{i+1} + \delta_i| / 2 \\
+        w_2 &= |\delta_{i-1} - \delta_{i-2}| + |\delta_{i-1} + \delta_{i-2}| / 2
+        \end{align*}
+
+    Examples
+    --------
+    Comparison of ``method="akima"`` and ``method="makima"``:
+
+    >>> import numpy as np
+    >>> from scipy.interpolate import Akima1DInterpolator
+    >>> import matplotlib.pyplot as plt
+    >>> x = np.linspace(1, 7, 7)
+    >>> y = np.array([-1, -1, -1, 0, 1, 1, 1])
+    >>> xs = np.linspace(min(x), max(x), num=100)
+    >>> y_akima = Akima1DInterpolator(x, y, method="akima")(xs)
+    >>> y_makima = Akima1DInterpolator(x, y, method="makima")(xs)
+
+    >>> fig, ax = plt.subplots()
+    >>> ax.plot(x, y, "o", label="data")
+    >>> ax.plot(xs, y_akima, label="akima")
+    >>> ax.plot(xs, y_makima, label="makima")
+    >>> ax.legend()
+    >>> fig.show()
+
+    The overshoot that occurred in ``"akima"`` has been avoided in ``"makima"``.
+
     References
     ----------
-    [1] A new method of interpolation and smooth curve fitting based
-        on local procedures. Hiroshi Akima, J. ACM, October 1970, 17(4),
-        589-602.
+    .. [1] A new method of interpolation and smooth curve fitting based
+           on local procedures. Hiroshi Akima, J. ACM, October 1970, 17(4),
+           589-602. :doi:`10.1145/321607.321609`
+    .. [2] Makima Piecewise Cubic Interpolation. Cleve Moler and Cosmin Ionita, 2019.
+           https://blogs.mathworks.com/cleve/2019/04/29/makima-piecewise-cubic-interpolation/
 
     """
 
-    def __init__(self, x, y, axis=0):
+    def __init__(self, x, y, axis=0, *, method: Literal["akima", "makima"]="akima", 
+                 extrapolate:bool | None = None):
+        if method not in {"akima", "makima"}:
+            raise NotImplementedError(f"`method`={method} is unsupported.")
         # Original implementation in MATLAB by N. Shamsundar (BSD licensed), see
         # https://www.mathworks.com/matlabcentral/fileexchange/1814-akima-interpolation
         x, dx, y, axis, _ = prepare_input(x, y, axis)
+
+        if np.iscomplexobj(y):
+            msg = ("`Akima1DInterpolator` only works with real values for `y`. "
+                   "If you are trying to use the real components of the passed array, "
+                   "use `np.real` on the array before passing to "
+                   "`Akima1DInterpolator`.")
+            raise ValueError(msg)
+
+        # Akima extrapolation historically False; parent class defaults to True.
+        extrapolate = False if extrapolate is None else extrapolate
+
         # determine slopes between breakpoints
         m = np.empty((x.size + 3, ) + y.shape[1:])
         dx = dx[(slice(None), ) + (None, ) * (y.ndim - 1)]
@@ -426,22 +524,27 @@ class Akima1DInterpolator(CubicHermiteSpline):
         m[-2] = 2. * m[-3] - m[-4]
         m[-1] = 2. * m[-2] - m[-3]
 
-        # if m1 == m2 != m3 == m4, the slope at the breakpoint is not defined.
-        # This is the fill value:
+        # if m1 == m2 != m3 == m4, the slope at the breakpoint is not
+        # defined. This is the fill value:
         t = .5 * (m[3:] + m[:-3])
         # get the denominator of the slope t
         dm = np.abs(np.diff(m, axis=0))
-        f1 = dm[2:]
-        f2 = dm[:-2]
+        if method == "makima":
+            pm = np.abs(m[1:] + m[:-1])
+            f1 = dm[2:] + 0.5 * pm[2:]
+            f2 = dm[:-2] + 0.5 * pm[:-2]
+        else:
+            f1 = dm[2:]
+            f2 = dm[:-2]
         f12 = f1 + f2
-        # These are the mask of where the the slope at breakpoint is defined:
-        ind = np.nonzero(f12 > 1e-9 * np.max(f12))
+        # These are the mask of where the slope at breakpoint is defined:
+        ind = np.nonzero(f12 > 1e-9 * np.max(f12, initial=-np.inf))
         x_ind, y_ind = ind[0], ind[1:]
         # Set the slope at breakpoint
         t[ind] = (f1[ind] * m[(x_ind + 1,) + y_ind] +
                   f2[ind] * m[(x_ind + 2,) + y_ind]) / f12[ind]
 
-        super().__init__(x, y, t, axis=0, extrapolate=False)
+        super().__init__(x, y, t, axis=0, extrapolate=extrapolate)
         self.axis = axis
 
     def extend(self, c, x, right=True):
@@ -504,7 +607,7 @@ class CubicSpline(CubicHermiteSpline):
         If `bc_type` is a 2-tuple, the first and the second value will be
         applied at the curve start and end respectively. The tuple values can
         be one of the previously mentioned strings (except 'periodic') or a
-        tuple `(order, deriv_values)` allowing to specify arbitrary
+        tuple ``(order, deriv_values)`` allowing to specify arbitrary
         derivatives at curve ends:
 
         * `order`: the derivative order, 1 or 2.
@@ -570,6 +673,7 @@ class CubicSpline(CubicHermiteSpline):
     You can see that the spline continuity property holds for the first and
     second derivatives and violates only for the third derivative.
 
+    >>> import numpy as np
     >>> from scipy.interpolate import CubicSpline
     >>> import matplotlib.pyplot as plt
     >>> x = np.arange(10)
@@ -625,6 +729,7 @@ class CubicSpline(CubicHermiteSpline):
             on Wikiversity.
     .. [2] Carl de Boor, "A Practical Guide to Splines", Springer-Verlag, 1978.
     """
+
     def __init__(self, x, y, axis=0, bc_type='not-a-knot', extrapolate=None):
         x, dx, y, axis, _ = prepare_input(x, y, axis)
         n = len(x)
@@ -637,149 +742,152 @@ class CubicSpline(CubicHermiteSpline):
             else:
                 extrapolate = True
 
-        dxr = dx.reshape([dx.shape[0]] + [1] * (y.ndim - 1))
-        slope = np.diff(y, axis=0) / dxr
-
-        # If bc is 'not-a-knot' this change is just a convention.
-        # If bc is 'periodic' then we already checked that y[0] == y[-1],
-        # and the spline is just a constant, we handle this case in the same
-        # way by setting the first derivatives to slope, which is 0.
-        if n == 2:
-            if bc[0] in ['not-a-knot', 'periodic']:
-                bc[0] = (1, slope[0])
-            if bc[1] in ['not-a-knot', 'periodic']:
-                bc[1] = (1, slope[0])
-
-        # This is a very special case, when both conditions are 'not-a-knot'
-        # and n == 3. In this case 'not-a-knot' can't be handled regularly
-        # as the both conditions are identical. We handle this case by
-        # constructing a parabola passing through given points.
-        if n == 3 and bc[0] == 'not-a-knot' and bc[1] == 'not-a-knot':
-            A = np.zeros((3, 3))  # This is a standard matrix.
-            b = np.empty((3,) + y.shape[1:], dtype=y.dtype)
-
-            A[0, 0] = 1
-            A[0, 1] = 1
-            A[1, 0] = dx[1]
-            A[1, 1] = 2 * (dx[0] + dx[1])
-            A[1, 2] = dx[0]
-            A[2, 1] = 1
-            A[2, 2] = 1
-
-            b[0] = 2 * slope[0]
-            b[1] = 3 * (dxr[0] * slope[1] + dxr[1] * slope[0])
-            b[2] = 2 * slope[1]
-
-            s = solve(A, b, overwrite_a=True, overwrite_b=True,
-                      check_finite=False)
-        elif n == 3 and bc[0] == 'periodic':
-            # In case when number of points is 3 we should count derivatives
-            # manually
-            s = np.empty((n,) + y.shape[1:], dtype=y.dtype)
-            t = (slope / dxr).sum() / (1. / dxr).sum()
-            s.fill(t)
+        if y.size == 0:
+            # bail out early for zero-sized arrays
+            s = np.zeros_like(y)
         else:
-            # Find derivative values at each x[i] by solving a tridiagonal
-            # system.
-            A = np.zeros((3, n))  # This is a banded matrix representation.
-            b = np.empty((n,) + y.shape[1:], dtype=y.dtype)
+            dxr = dx.reshape([dx.shape[0]] + [1] * (y.ndim - 1))
+            slope = np.diff(y, axis=0) / dxr
 
-            # Filling the system for i=1..n-2
-            #                         (x[i-1] - x[i]) * s[i-1] +\
-            # 2 * ((x[i] - x[i-1]) + (x[i+1] - x[i])) * s[i]   +\
-            #                         (x[i] - x[i-1]) * s[i+1] =\
-            #       3 * ((x[i+1] - x[i])*(y[i] - y[i-1])/(x[i] - x[i-1]) +\
-            #           (x[i] - x[i-1])*(y[i+1] - y[i])/(x[i+1] - x[i]))
+            # If bc is 'not-a-knot' this change is just a convention.
+            # If bc is 'periodic' then we already checked that y[0] == y[-1],
+            # and the spline is just a constant, we handle this case in the
+            # same way by setting the first derivatives to slope, which is 0.
+            if n == 2:
+                if bc[0] in ['not-a-knot', 'periodic']:
+                    bc[0] = (1, slope[0])
+                if bc[1] in ['not-a-knot', 'periodic']:
+                    bc[1] = (1, slope[0])
 
-            A[1, 1:-1] = 2 * (dx[:-1] + dx[1:])  # The diagonal
-            A[0, 2:] = dx[:-1]                   # The upper diagonal
-            A[-1, :-2] = dx[1:]                  # The lower diagonal
+            # This is a special case, when both conditions are 'not-a-knot'
+            # and n == 3. In this case 'not-a-knot' can't be handled regularly
+            # as the both conditions are identical. We handle this case by
+            # constructing a parabola passing through given points.
+            if n == 3 and bc[0] == 'not-a-knot' and bc[1] == 'not-a-knot':
+                A = np.zeros((3, 3))  # This is a standard matrix.
+                b = np.empty((3,) + y.shape[1:], dtype=y.dtype)
 
-            b[1:-1] = 3 * (dxr[1:] * slope[:-1] + dxr[:-1] * slope[1:])
+                A[0, 0] = 1
+                A[0, 1] = 1
+                A[1, 0] = dx[1]
+                A[1, 1] = 2 * (dx[0] + dx[1])
+                A[1, 2] = dx[0]
+                A[2, 1] = 1
+                A[2, 2] = 1
 
-            bc_start, bc_end = bc
+                b[0] = 2 * slope[0]
+                b[1] = 3 * (dxr[0] * slope[1] + dxr[1] * slope[0])
+                b[2] = 2 * slope[1]
 
-            if bc_start == 'periodic':
-                # Due to the periodicity, and because y[-1] = y[0], the linear
-                # system has (n-1) unknowns/equations instead of n:
-                A = A[:, 0:-1]
-                A[1, 0] = 2 * (dx[-1] + dx[0])
-                A[0, 1] = dx[-1]
-
-                b = b[:-1]
-
-                # Also, due to the periodicity, the system is not tri-diagonal.
-                # We need to compute a "condensed" matrix of shape (n-2, n-2).
-                # See https://web.archive.org/web/20151220180652/http://www.cfm.brown.edu/people/gk/chap6/node14.html
-                # for more explanations.
-                # The condensed matrix is obtained by removing the last column
-                # and last row of the (n-1, n-1) system matrix. The removed
-                # values are saved in scalar variables with the (n-1, n-1)
-                # system matrix indices forming their names:
-                a_m1_0 = dx[-2]  # lower left corner value: A[-1, 0]
-                a_m1_m2 = dx[-1]
-                a_m1_m1 = 2 * (dx[-1] + dx[-2])
-                a_m2_m1 = dx[-3]
-                a_0_m1 = dx[0]
-
-                b[0] = 3 * (dxr[0] * slope[-1] + dxr[-1] * slope[0])
-                b[-1] = 3 * (dxr[-1] * slope[-2] + dxr[-2] * slope[-1])
-
-                Ac = A[:, :-1]
-                b1 = b[:-1]
-                b2 = np.zeros_like(b1)
-                b2[0] = -a_0_m1
-                b2[-1] = -a_m2_m1
-
-                # s1 and s2 are the solutions of (n-2, n-2) system
-                s1 = solve_banded((1, 1), Ac, b1, overwrite_ab=False,
-                                  overwrite_b=False, check_finite=False)
-
-                s2 = solve_banded((1, 1), Ac, b2, overwrite_ab=False,
-                                  overwrite_b=False, check_finite=False)
-
-                # computing the s[n-2] solution:
-                s_m1 = ((b[-1] - a_m1_0 * s1[0] - a_m1_m2 * s1[-1]) /
-                        (a_m1_m1 + a_m1_0 * s2[0] + a_m1_m2 * s2[-1]))
-
-                # s is the solution of the (n, n) system:
-                s = np.empty((n,) + y.shape[1:], dtype=y.dtype)
-                s[:-2] = s1 + s_m1 * s2
-                s[-2] = s_m1
-                s[-1] = s[0]
+                s = solve(A, b, overwrite_a=True, overwrite_b=True,
+                          check_finite=False)
+            elif n == 3 and bc[0] == 'periodic':
+                # In case when number of points is 3 we compute the derivatives
+                # manually
+                t = (slope / dxr).sum(0) / (1. / dxr).sum(0)
+                s = np.broadcast_to(t, (n,) + y.shape[1:])
             else:
-                if bc_start == 'not-a-knot':
-                    A[1, 0] = dx[1]
-                    A[0, 1] = x[2] - x[0]
-                    d = x[2] - x[0]
-                    b[0] = ((dxr[0] + 2*d) * dxr[1] * slope[0] +
-                            dxr[0]**2 * slope[1]) / d
-                elif bc_start[0] == 1:
-                    A[1, 0] = 1
-                    A[0, 1] = 0
-                    b[0] = bc_start[1]
-                elif bc_start[0] == 2:
-                    A[1, 0] = 2 * dx[0]
-                    A[0, 1] = dx[0]
-                    b[0] = -0.5 * bc_start[1] * dx[0]**2 + 3 * (y[1] - y[0])
+                # Find derivative values at each x[i] by solving a tridiagonal
+                # system.
+                A = np.zeros((3, n))  # This is a banded matrix representation.
+                b = np.empty((n,) + y.shape[1:], dtype=y.dtype)
 
-                if bc_end == 'not-a-knot':
-                    A[1, -1] = dx[-2]
-                    A[-1, -2] = x[-1] - x[-3]
-                    d = x[-1] - x[-3]
-                    b[-1] = ((dxr[-1]**2*slope[-2] +
-                             (2*d + dxr[-1])*dxr[-2]*slope[-1]) / d)
-                elif bc_end[0] == 1:
-                    A[1, -1] = 1
-                    A[-1, -2] = 0
-                    b[-1] = bc_end[1]
-                elif bc_end[0] == 2:
-                    A[1, -1] = 2 * dx[-1]
-                    A[-1, -2] = dx[-1]
-                    b[-1] = 0.5 * bc_end[1] * dx[-1]**2 + 3 * (y[-1] - y[-2])
+                # Filling the system for i=1..n-2
+                #                         (x[i-1] - x[i]) * s[i-1] +\
+                # 2 * ((x[i] - x[i-1]) + (x[i+1] - x[i])) * s[i]   +\
+                #                         (x[i] - x[i-1]) * s[i+1] =\
+                #       3 * ((x[i+1] - x[i])*(y[i] - y[i-1])/(x[i] - x[i-1]) +\
+                #           (x[i] - x[i-1])*(y[i+1] - y[i])/(x[i+1] - x[i]))
 
-                s = solve_banded((1, 1), A, b, overwrite_ab=True,
-                                 overwrite_b=True, check_finite=False)
+                A[1, 1:-1] = 2 * (dx[:-1] + dx[1:])  # The diagonal
+                A[0, 2:] = dx[:-1]                   # The upper diagonal
+                A[-1, :-2] = dx[1:]                  # The lower diagonal
+
+                b[1:-1] = 3 * (dxr[1:] * slope[:-1] + dxr[:-1] * slope[1:])
+
+                bc_start, bc_end = bc
+
+                if bc_start == 'periodic':
+                    # Due to the periodicity, and because y[-1] = y[0], the
+                    # linear system has (n-1) unknowns/equations instead of n:
+                    A = A[:, 0:-1]
+                    A[1, 0] = 2 * (dx[-1] + dx[0])
+                    A[0, 1] = dx[-1]
+
+                    b = b[:-1]
+
+                    # Also, due to the periodicity, the system is not tri-diagonal.
+                    # We need to compute a "condensed" matrix of shape (n-2, n-2).
+                    # See https://web.archive.org/web/20151220180652/http://www.cfm.brown.edu/people/gk/chap6/node14.html
+                    # for more explanations.
+                    # The condensed matrix is obtained by removing the last column
+                    # and last row of the (n-1, n-1) system matrix. The removed
+                    # values are saved in scalar variables with the (n-1, n-1)
+                    # system matrix indices forming their names:
+                    a_m1_0 = dx[-2]  # lower left corner value: A[-1, 0]
+                    a_m1_m2 = dx[-1]
+                    a_m1_m1 = 2 * (dx[-1] + dx[-2])
+                    a_m2_m1 = dx[-3]
+                    a_0_m1 = dx[0]
+
+                    b[0] = 3 * (dxr[0] * slope[-1] + dxr[-1] * slope[0])
+                    b[-1] = 3 * (dxr[-1] * slope[-2] + dxr[-2] * slope[-1])
+
+                    Ac = A[:, :-1]
+                    b1 = b[:-1]
+                    b2 = np.zeros_like(b1)
+                    b2[0] = -a_0_m1
+                    b2[-1] = -a_m2_m1
+
+                    # s1 and s2 are the solutions of (n-2, n-2) system
+                    s1 = solve_banded((1, 1), Ac, b1, overwrite_ab=False,
+                                      overwrite_b=False, check_finite=False)
+
+                    s2 = solve_banded((1, 1), Ac, b2, overwrite_ab=False,
+                                      overwrite_b=False, check_finite=False)
+
+                    # computing the s[n-2] solution:
+                    s_m1 = ((b[-1] - a_m1_0 * s1[0] - a_m1_m2 * s1[-1]) /
+                            (a_m1_m1 + a_m1_0 * s2[0] + a_m1_m2 * s2[-1]))
+
+                    # s is the solution of the (n, n) system:
+                    s = np.empty((n,) + y.shape[1:], dtype=y.dtype)
+                    s[:-2] = s1 + s_m1 * s2
+                    s[-2] = s_m1
+                    s[-1] = s[0]
+                else:
+                    if bc_start == 'not-a-knot':
+                        A[1, 0] = dx[1]
+                        A[0, 1] = x[2] - x[0]
+                        d = x[2] - x[0]
+                        b[0] = ((dxr[0] + 2*d) * dxr[1] * slope[0] +
+                                dxr[0]**2 * slope[1]) / d
+                    elif bc_start[0] == 1:
+                        A[1, 0] = 1
+                        A[0, 1] = 0
+                        b[0] = bc_start[1]
+                    elif bc_start[0] == 2:
+                        A[1, 0] = 2 * dx[0]
+                        A[0, 1] = dx[0]
+                        b[0] = -0.5 * bc_start[1] * dx[0]**2 + 3 * (y[1] - y[0])
+
+                    if bc_end == 'not-a-knot':
+                        A[1, -1] = dx[-2]
+                        A[-1, -2] = x[-1] - x[-3]
+                        d = x[-1] - x[-3]
+                        b[-1] = ((dxr[-1]**2*slope[-2] +
+                                 (2*d + dxr[-1])*dxr[-2]*slope[-1]) / d)
+                    elif bc_end[0] == 1:
+                        A[1, -1] = 1
+                        A[-1, -2] = 0
+                        b[-1] = bc_end[1]
+                    elif bc_end[0] == 2:
+                        A[1, -1] = 2 * dx[-1]
+                        A[-1, -2] = dx[-1]
+                        b[-1] = 0.5 * bc_end[1] * dx[-1]**2 + 3 * (y[-1] - y[-2])
+
+                    s = solve_banded((1, 1), A, b, overwrite_ab=True,
+                                     overwrite_b=True, check_finite=False)
 
         super().__init__(x, y, s, axis=0, extrapolate=extrapolate)
         self.axis = axis
@@ -800,9 +908,9 @@ class CubicSpline(CubicHermiteSpline):
             if bc_type == 'periodic':
                 if not np.allclose(y[0], y[-1], rtol=1e-15, atol=1e-15):
                     raise ValueError(
-                        "The first and last `y` point along axis {} must "
+                        f"The first and last `y` point along axis {axis} must "
                         "be identical (within machine precision) when "
-                        "bc_type='periodic'.".format(axis))
+                        "bc_type='periodic'.")
 
             bc_type = (bc_type, bc_type)
 
@@ -826,7 +934,7 @@ class CubicSpline(CubicHermiteSpline):
                 elif bc in ['not-a-knot', 'periodic']:
                     validated_bc.append(bc)
                 else:
-                    raise ValueError("bc_type={} is not allowed.".format(bc))
+                    raise ValueError(f"bc_type={bc} is not allowed.")
             else:
                 try:
                     deriv_order, deriv_value = bc
@@ -843,8 +951,9 @@ class CubicSpline(CubicHermiteSpline):
                 deriv_value = np.asarray(deriv_value)
                 if deriv_value.shape != expected_deriv_shape:
                     raise ValueError(
-                        "`deriv_value` shape {} is not the expected one {}."
-                        .format(deriv_value.shape, expected_deriv_shape))
+                        f"`deriv_value` shape {deriv_value.shape} is not "
+                        f"the expected one {expected_deriv_shape}."
+                    )
 
                 if np.issubdtype(deriv_value.dtype, np.complexfloating):
                     y = y.astype(complex, copy=False)

@@ -148,16 +148,16 @@ cgsrfs(trans_t trans, SuperMatrix *A, SuperMatrix *L, SuperMatrix *U,
 #define ITMAX 5
     
     /* Table of constant values */
-    int    ione = 1;
-    complex ndone = {-1., 0.};
-    complex done = {1., 0.};
+    int    ione = 1, nrow = A->nrow;
+    singlecomplex ndone = {-1., 0.};
+    singlecomplex done = {1., 0.};
     
     /* Local variables */
     NCformat *Astore;
-    complex   *Aval;
+    singlecomplex   *Aval;
     SuperMatrix Bjcol;
     DNformat *Bstore, *Xstore, *Bjcol_store;
-    complex   *Bmat, *Xmat, *Bptr, *Xptr;
+    singlecomplex   *Bmat, *Xmat, *Bptr, *Xptr;
     int      kase;
     float   safe1, safe2;
     int      i, j, k, irow, nz, count, notran, rowequ, colequ;
@@ -165,18 +165,18 @@ cgsrfs(trans_t trans, SuperMatrix *A, SuperMatrix *L, SuperMatrix *U,
     float   s, xk, lstres, eps, safmin;
     char     transc[1];
     trans_t  transt;
-    complex   *work;
+    singlecomplex   *work;
     float   *rwork;
     int      *iwork;
     int      isave[3];
 
-    extern int clacon2_(int *, complex *, complex *, float *, int *, int []);
+    extern int clacon2_(int *, singlecomplex *, singlecomplex *, float *, int *, int []);
 #ifdef _CRAY
-    extern int CCOPY(int *, complex *, int *, complex *, int *);
-    extern int CSAXPY(int *, complex *, complex *, int *, complex *, int *);
+    extern int CCOPY(int *, singlecomplex *, int *, singlecomplex *, int *);
+    extern int CSAXPY(int *, singlecomplex *, singlecomplex *, int *, singlecomplex *, int *);
 #else
-    extern int ccopy_(int *, complex *, int *, complex *, int *);
-    extern int caxpy_(int *, complex *, complex *, int *, complex *, int *);
+    extern int ccopy_(int *, singlecomplex *, int *, singlecomplex *, int *);
+    extern int caxpy_(int *, singlecomplex *, singlecomplex *, int *, singlecomplex *, int *);
 #endif
 
     Astore = A->Store;
@@ -227,9 +227,9 @@ cgsrfs(trans_t trans, SuperMatrix *A, SuperMatrix *L, SuperMatrix *U,
     colequ = strncmp(equed, "C", 1)==0 || strncmp(equed, "B", 1)==0;
     
     /* Allocate working space */
-    work = complexMalloc(2*A->nrow);
+    work = singlecomplexMalloc(2*A->nrow);
     rwork = (float *) SUPERLU_MALLOC( A->nrow * sizeof(float) );
-    iwork = intMalloc(A->nrow);
+    iwork = int32Malloc(A->nrow);
     if ( !work || !rwork || !iwork ) 
         ABORT("Malloc fails for work/rwork/iwork.");
     
@@ -290,9 +290,9 @@ cgsrfs(trans_t trans, SuperMatrix *A, SuperMatrix *L, SuperMatrix *U,
 	       where op(A) = A, A**T, or A**H, depending on TRANS. */
 	    
 #ifdef _CRAY
-	    CCOPY(&A->nrow, Bptr, &ione, work, &ione);
+	    CCOPY(&nrow, Bptr, &ione, work, &ione);
 #else
-	    ccopy_(&A->nrow, Bptr, &ione, work, &ione);
+	    ccopy_(&nrow, Bptr, &ione, work, &ione);
 #endif
 	    sp_cgemv(transc, ndone, A, Xptr, ione, done, work, ione);
 
@@ -345,10 +345,10 @@ cgsrfs(trans_t trans, SuperMatrix *A, SuperMatrix *L, SuperMatrix *U,
 		cgstrs (trans, L, U, perm_c, perm_r, &Bjcol, stat, info);
 		
 #ifdef _CRAY
-		CAXPY(&A->nrow, &done, work, &ione,
+		CAXPY(&nrow, &done, work, &ione,
 		       &Xmat[j*ldx], &ione);
 #else
-		caxpy_(&A->nrow, &done, work, &ione,
+		caxpy_(&nrow, &done, work, &ione,
 		       &Xmat[j*ldx], &ione);
 #endif
 		lstres = berr[j];
@@ -409,7 +409,7 @@ cgsrfs(trans_t trans, SuperMatrix *A, SuperMatrix *L, SuperMatrix *U,
 	kase = 0;
 
 	do {
-	    clacon2_(&A->nrow, &work[A->nrow], work, &ferr[j], &kase, isave);
+	    clacon2_(&nrow, &work[A->nrow], work, &ferr[j], &kase, isave);
 	    if (kase == 0) break;
 
 	    if (kase == 1) {

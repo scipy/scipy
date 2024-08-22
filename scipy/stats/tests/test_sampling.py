@@ -4,18 +4,20 @@ import pytest
 from copy import deepcopy
 import platform
 import sys
+import math
 import numpy as np
 from numpy.testing import assert_allclose, assert_equal, suppress_warnings
-from numpy.lib import NumpyVersion
 from scipy.stats.sampling import (
     TransformedDensityRejection,
     DiscreteAliasUrn,
     DiscreteGuideTable,
     NumericalInversePolynomial,
     NumericalInverseHermite,
+    RatioUniforms,
     SimpleRatioUniforms,
     UNURANError
 )
+from pytest import raises as assert_raises
 from scipy import stats
 from scipy import special
 from scipy.stats import chisquare, cramervonmises
@@ -48,6 +50,12 @@ all_methods = [
     ("SimpleRatioUniforms", {"dist": StandardNormal(), "mode": 0})
 ]
 
+if (sys.implementation.name == 'pypy'
+        and sys.implementation.version < (7, 3, 10)):
+    # changed in PyPy for v7.3.10
+    floaterr = r"unsupported operand type for float\(\): 'list'"
+else:
+    floaterr = r"must be real number, not list"
 # Make sure an internal error occurs in UNU.RAN when invalid callbacks are
 # passed. Moreover, different generators throw different error messages.
 # So, in case of an `UNURANError`, we do not validate the error message.
@@ -55,9 +63,9 @@ bad_pdfs_common = [
     # Negative PDF
     (lambda x: -x, UNURANError, r"..."),
     # Returning wrong type
-    (lambda x: [], TypeError, r"must be real number, not list"),
+    (lambda x: [], TypeError, floaterr),
     # Undefined name inside the function
-    (lambda x: foo, NameError, r"name 'foo' is not defined"),  # type: ignore[name-defined]  # noqa
+    (lambda x: foo, NameError, r"name 'foo' is not defined"),  # type: ignore[name-defined]  # noqa: F821, E501
     # Infinite value returned => Overflow error.
     (lambda x: np.inf, UNURANError, r"..."),
     # NaN value => internal error in UNU.RAN
@@ -66,19 +74,33 @@ bad_pdfs_common = [
     (lambda: 1.0, TypeError, r"takes 0 positional arguments but 1 was given")
 ]
 
-# Make sure an internal error occurs in UNU.RAN when invalid callbacks are
-# passed. Moreover, different generators throw different error messages.
-# So, in case of an `UNURANError`, we do not validate the messages.
+
+# same approach for dpdf
 bad_dpdf_common = [
     # Infinite value returned.
     (lambda x: np.inf, UNURANError, r"..."),
     # NaN value => internal error in UNU.RAN
     (lambda x: np.nan, UNURANError, r"..."),
     # Returning wrong type
-    (lambda x: [], TypeError, r"must be real number, not list"),
+    (lambda x: [], TypeError, floaterr),
     # Undefined name inside the function
-    (lambda x: foo, NameError, r"name 'foo' is not defined"),  # type: ignore[name-defined]  # noqa
+    (lambda x: foo, NameError, r"name 'foo' is not defined"),  # type: ignore[name-defined]  # noqa: F821, E501
     # signature of dPDF wrong
+    (lambda: 1.0, TypeError, r"takes 0 positional arguments but 1 was given")
+]
+
+
+# same approach for logpdf
+bad_logpdfs_common = [
+    # Returning wrong type
+    (lambda x: [], TypeError, floaterr),
+    # Undefined name inside the function
+    (lambda x: foo, NameError, r"name 'foo' is not defined"),  # type: ignore[name-defined]  # noqa: F821, E501
+    # Infinite value returned => Overflow error.
+    (lambda x: np.inf, UNURANError, r"..."),
+    # NaN value => internal error in UNU.RAN
+    (lambda x: np.nan, UNURANError, r"..."),
+    # signature of logpdf wrong
     (lambda: 1.0, TypeError, r"takes 0 positional arguments but 1 was given")
 ]
 
@@ -157,26 +179,14 @@ def test_random_state(method, kwargs):
     rvs2 = rng2.rvs(100)
     assert_equal(rvs1, rvs2)
 
-    # RandomState seed for old numpy
-    if NumpyVersion(np.__version__) < '1.19.0':
-        seed1 = np.random.RandomState(123)
-        seed2 = 123
-        rng1 = Method(**kwargs, random_state=seed1)
-        rng2 = Method(**kwargs, random_state=seed2)
-        assert_equal(rng1.rvs(100), rng2.rvs(100))
-        rvs11 = rng1.rvs(550)
-        rvs12 = rng1.rvs(50)
-        rvs2 = rng2.rvs(600)
-        assert_equal(rvs11, rvs2[:550])
-        assert_equal(rvs12, rvs2[550:])
-    else:  # Generator seed for new NumPy
-        # when a RandomState is given, it should take the bitgen_t
-        # member of the class and create a Generator instance.
-        seed1 = np.random.RandomState(np.random.MT19937(123))
-        seed2 = np.random.Generator(np.random.MT19937(123))
-        rng1 = Method(**kwargs, random_state=seed1)
-        rng2 = Method(**kwargs, random_state=seed2)
-        assert_equal(rng1.rvs(100), rng2.rvs(100))
+    # Generator seed for new NumPy
+    # when a RandomState is given, it should take the bitgen_t
+    # member of the class and create a Generator instance.
+    seed1 = np.random.RandomState(np.random.MT19937(123))
+    seed2 = np.random.Generator(np.random.MT19937(123))
+    rng1 = Method(**kwargs, random_state=seed1)
+    rng2 = Method(**kwargs, random_state=seed2)
+    assert_equal(rng1.rvs(100), rng2.rvs(100))
 
 
 def test_set_random_state():
@@ -284,12 +294,12 @@ def test_with_scipy_distribution():
     check_discr_samples(rng, pv, dist.stats())
 
 
-def check_cont_samples(rng, dist, mv_ex):
+def check_cont_samples(rng, dist, mv_ex, rtol=1e-7, atol=1e-1):
     rvs = rng.rvs(100000)
     mv = rvs.mean(), rvs.var()
     # test the moments only if the variance is finite
     if np.isfinite(mv_ex[1]):
-        assert_allclose(mv, mv_ex, rtol=1e-7, atol=1e-1)
+        assert_allclose(mv, mv_ex, rtol=rtol, atol=atol)
     # Cramer Von Mises test for goodness-of-fit
     rvs = rng.rvs(500)
     dist.cdf = np.vectorize(dist.cdf)
@@ -297,11 +307,11 @@ def check_cont_samples(rng, dist, mv_ex):
     assert pval > 0.1
 
 
-def check_discr_samples(rng, pv, mv_ex):
+def check_discr_samples(rng, pv, mv_ex, rtol=1e-3, atol=1e-1):
     rvs = rng.rvs(100000)
     # test if the first few moments match
     mv = rvs.mean(), rvs.var()
-    assert_allclose(mv, mv_ex, rtol=1e-3, atol=1e-1)
+    assert_allclose(mv, mv_ex, rtol=rtol, atol=atol)
     # normalize
     pv = pv / pv.sum()
     # chi-squared test for goodness-of-fit
@@ -311,6 +321,30 @@ def check_discr_samples(rng, pv, mv_ex):
     obs_freqs[:freqs.size] = freqs
     pval = chisquare(obs_freqs, pv).pvalue
     assert pval > 0.1
+
+
+def test_warning_center_not_in_domain():
+    # UNURAN will warn if the center provided or the one computed w/o the
+    # domain is outside of the domain
+    msg = "102 : center moved into domain of distribution"
+    with pytest.warns(RuntimeWarning, match=msg):
+        NumericalInversePolynomial(StandardNormal(), center=0, domain=(3, 5))
+    with pytest.warns(RuntimeWarning, match=msg):
+        NumericalInversePolynomial(StandardNormal(), domain=(3, 5))
+
+
+@pytest.mark.parametrize('method', ["SimpleRatioUniforms",
+                                    "NumericalInversePolynomial",
+                                    "TransformedDensityRejection"])
+def test_error_mode_not_in_domain(method):
+    # UNURAN raises an error if the mode is not in the domain
+    # the behavior is different compared to the case that center is not in the
+    # domain. mode is supposed to be the exact value, center can be an
+    # approximate value
+    Method = getattr(stats.sampling, method)
+    msg = "17 : mode not in domain"
+    with pytest.raises(UNURANError, match=msg):
+        Method(StandardNormal(), mode=0, domain=(3, 5))
 
 
 @pytest.mark.parametrize('method', ["NumericalInverseHermite",
@@ -368,7 +402,7 @@ class TestQRVS:
         qrng2 = deepcopy(qrng)
         qrvs = gen.qrvs(size=size_in, d=d_in, qmc_engine=qrng)
         if size_in is not None:
-            assert(qrvs.shape == shape_expected)
+            assert qrvs.shape == shape_expected
 
         if qrng2 is not None:
             uniform = qrng2.random(np.prod(size_in) or 1)
@@ -600,8 +634,8 @@ class TestDiscreteAliasUrn:
     # DAU fails on these probably because of large domains and small
     # computation errors in PMF. Mean/SD match but chi-squared test fails.
     basic_fail_dists = {
-        'nchypergeom_fisher',  # numerical erros on tails
-        'nchypergeom_wallenius',  # numerical erros on tails
+        'nchypergeom_fisher',  # numerical errors on tails
+        'nchypergeom_wallenius',  # numerical errors on tails
         'randint'  # fails on 32-bit ubuntu
     }
 
@@ -640,7 +674,7 @@ class TestDiscreteAliasUrn:
         (lambda x: 0.0, ValueError,
          r"must contain at least one non-zero value"),
         # Undefined name inside the function
-        (lambda x: foo, NameError,  # type: ignore[name-defined]  # noqa
+        (lambda x: foo, NameError,  # type: ignore[name-defined]  # noqa: F821
          r"name 'foo' is not defined"),
         # Returning wrong type.
         (lambda x: [], ValueError,
@@ -666,7 +700,7 @@ class TestDiscreteAliasUrn:
     def test_sampling_with_pv(self, pv):
         pv = np.asarray(pv, dtype=np.float64)
         rng = DiscreteAliasUrn(pv, random_state=123)
-        rvs = rng.rvs(100_000)
+        rng.rvs(100_000)
         pv = pv / pv.sum()
         variates = np.arange(0, len(pv))
         # test if the first few moments match
@@ -704,6 +738,13 @@ class TestDiscreteAliasUrn:
 
         with pytest.raises(ValueError, match=msg):
             DiscreteAliasUrn(dist)
+
+    def test_gh19359(self):
+        pv = special.softmax(np.ones((1533,)))
+        rng = DiscreteAliasUrn(pv, random_state=42)
+        # check the correctness
+        check_discr_samples(rng, pv, (1532 / 2, (1532**2 - 1) / 12),
+                            rtol=5e-3)
 
 
 class TestNumericalInversePolynomial:
@@ -774,21 +815,28 @@ class TestNumericalInversePolynomial:
         rng = NumericalInversePolynomial(dist, random_state=42)
         check_cont_samples(rng, dist, mv_ex)
 
-    very_slow_dists = ['studentized_range', 'trapezoid', 'triang', 'vonmises',
-                       'levy_stable', 'kappa4', 'ksone', 'kstwo', 'levy_l',
-                       'gausshyper', 'anglit']
-    # for these distributions, some assertions fail due to minor
-    # numerical differences. They can be avoided either by changing
-    # the seed or by increasing the u_resolution.
-    fail_dists = ['ncf', 'pareto', 'chi2', 'fatiguelife', 'halfgennorm',
-                  'gibrat', 'lognorm', 'ncx2', 't']
-
     @pytest.mark.xslow
     @pytest.mark.parametrize("distname, params", distcont)
     def test_basic_all_scipy_dists(self, distname, params):
-        if distname in self.very_slow_dists:
+
+        very_slow_dists = ['anglit', 'gausshyper', 'kappa4',
+                           'ksone', 'kstwo', 'levy_l',
+                           'levy_stable', 'studentized_range',
+                           'trapezoid', 'triang', 'vonmises']
+        # for these distributions, some assertions fail due to minor
+        # numerical differences. They can be avoided either by changing
+        # the seed or by increasing the u_resolution.
+        fail_dists = ['chi2', 'fatiguelife', 'gibrat',
+                      'halfgennorm', 'lognorm', 'ncf',
+                      'ncx2', 'pareto', 't']
+        # for these distributions, skip the check for agreement between sample
+        # moments and true moments. We cannot expect them to pass due to the
+        # high variance of sample moments.
+        skip_sample_moment_check = ['rel_breitwigner']
+
+        if distname in very_slow_dists:
             pytest.skip(f"PINV too slow for {distname}")
-        if distname in self.fail_dists:
+        if distname in fail_dists:
             pytest.skip(f"PINV fails for {distname}")
         dist = (getattr(stats, distname)
                 if isinstance(distname, str)
@@ -797,6 +845,8 @@ class TestNumericalInversePolynomial:
         with suppress_warnings() as sup:
             sup.filter(RuntimeWarning)
             rng = NumericalInversePolynomial(dist, random_state=42)
+        if distname in skip_sample_moment_check:
+            return
         check_cont_samples(rng, dist, [dist.mean(), dist.var()])
 
     @pytest.mark.parametrize("pdf, err, msg", bad_pdfs_common)
@@ -804,6 +854,14 @@ class TestNumericalInversePolynomial:
         class dist:
             pass
         dist.pdf = pdf
+        with pytest.raises(err, match=msg):
+            NumericalInversePolynomial(dist, domain=[0, 5])
+
+    @pytest.mark.parametrize("logpdf, err, msg", bad_logpdfs_common)
+    def test_bad_logpdf(self, logpdf, err, msg):
+        class dist:
+            pass
+        dist.logpdf = logpdf
         with pytest.raises(err, match=msg):
             NumericalInversePolynomial(dist, domain=[0, 5])
 
@@ -869,6 +927,7 @@ class TestNumericalInversePolynomial:
         assert_allclose(res, expected, rtol=1e-11, atol=1e-11)
         assert res.shape == expected.shape
 
+    @pytest.mark.slow
     def test_u_error(self):
         dist = StandardNormal()
         rng = NumericalInversePolynomial(dist, u_resolution=1e-10)
@@ -899,6 +958,16 @@ class TestNumericalInversePolynomial:
                                        u_resolution=u_resolution)
 
     def test_bad_args(self):
+
+        class BadDist:
+            def cdf(self, x):
+                return stats.norm._cdf(x)
+
+        dist = BadDist()
+        msg = r"Either of the methods `pdf` or `logpdf` must be specified"
+        with pytest.raises(ValueError, match=msg):
+            rng = NumericalInversePolynomial(dist)
+
         dist = StandardNormal()
         rng = NumericalInversePolynomial(dist)
         msg = r"`sample_size` must be greater than or equal to 1000."
@@ -914,6 +983,26 @@ class TestNumericalInversePolynomial:
         msg = r"Exact CDF required but not found."
         with pytest.raises(ValueError, match=msg):
             rng.u_error()
+
+    def test_logpdf_pdf_consistency(self):
+        # 1. check that PINV works with pdf and logpdf only
+        # 2. check that generated ppf is the same (up to a small tolerance)
+
+        class MyDist:
+            pass
+
+        # create generator from dist with only pdf
+        dist_pdf = MyDist()
+        dist_pdf.pdf = lambda x: math.exp(-x*x/2)
+        rng1 = NumericalInversePolynomial(dist_pdf)
+
+        # create dist with only logpdf
+        dist_logpdf = MyDist()
+        dist_logpdf.logpdf = lambda x: -x*x/2
+        rng2 = NumericalInversePolynomial(dist_logpdf)
+
+        q = np.linspace(1e-5, 1-1e-5, num=100)
+        assert_allclose(rng1.ppf(q), rng2.ppf(q))
 
 
 class TestNumericalInverseHermite:
@@ -987,9 +1076,7 @@ class TestNumericalInverseHermite:
         with pytest.raises(err, match=msg):
             NumericalInverseHermite(StandardNormal(), domain=domain)
 
-    @pytest.mark.xslow
-    @pytest.mark.parametrize(("distname", "shapes"), distcont)
-    def test_basic_all_scipy_dists(self, distname, shapes):
+    def basic_test_all_scipy_dists(self, distname, shapes):
         slow_dists = {'ksone', 'kstwo', 'levy_stable', 'skewnorm'}
         fail_dists = {'beta', 'gausshyper', 'geninvgauss', 'ncf', 'nct',
                       'norminvgauss', 'genhyperbolic', 'studentized_range',
@@ -1005,12 +1092,7 @@ class TestNumericalInverseHermite:
         np.random.seed(0)
 
         dist = getattr(stats, distname)(*shapes)
-
-        with np.testing.suppress_warnings() as sup:
-            sup.filter(RuntimeWarning, "overflow encountered")
-            sup.filter(RuntimeWarning, "divide by zero")
-            sup.filter(RuntimeWarning, "invalid value encountered")
-            fni = NumericalInverseHermite(dist)
+        fni = NumericalInverseHermite(dist)
 
         x = np.random.rand(10)
         p_tol = np.max(np.abs(dist.ppf(x)-fni.ppf(x))/np.abs(dist.ppf(x)))
@@ -1018,6 +1100,18 @@ class TestNumericalInverseHermite:
 
         assert p_tol < 1e-8
         assert u_tol < 1e-12
+
+    @pytest.mark.filterwarnings('ignore::RuntimeWarning')
+    @pytest.mark.xslow
+    @pytest.mark.parametrize(("distname", "shapes"), distcont)
+    def test_basic_all_scipy_dists(self, distname, shapes):
+        # if distname == "truncnorm":
+        #     pytest.skip("Tested separately")
+        self.basic_test_all_scipy_dists(distname, shapes)
+
+    @pytest.mark.filterwarnings('ignore::RuntimeWarning')
+    def test_basic_truncnorm_gh17155(self):
+        self.basic_test_all_scipy_dists("truncnorm", (0.1, 2))
 
     def test_input_validation(self):
         match = r"`order` must be either 1, 3, or 5."
@@ -1033,13 +1127,8 @@ class TestNumericalInverseHermite:
             NumericalInverseHermite(StandardNormal(),
                                     u_resolution='ekki')
 
-        match = "`max_intervals' must be..."
-        with pytest.raises(ValueError, match=match):
-            NumericalInverseHermite(StandardNormal(), max_intervals=-1)
-
     rngs = [None, 0, np.random.RandomState(0)]
-    if NumpyVersion(np.__version__) >= '1.18.0':
-        rngs.append(np.random.default_rng(0))  # type: ignore
+    rngs.append(np.random.default_rng(0))  # type: ignore
     sizes = [(None, tuple()), (8, (8,)), ((4, 5, 6), (4, 5, 6))]
 
     @pytest.mark.parametrize('rng', rngs)
@@ -1051,7 +1140,7 @@ class TestNumericalInverseHermite:
         rng2 = deepcopy(rng)
         rvs = fni.rvs(size=size_in, random_state=rng)
         if size_in is not None:
-            assert(rvs.shape == size_out)
+            assert rvs.shape == size_out
 
         if rng2 is not None:
             rng2 = check_random_state(rng2)
@@ -1115,6 +1204,7 @@ class TestNumericalInverseHermite:
         assert_allclose(res, expected, rtol=1e-9, atol=3e-10)
         assert res.shape == expected.shape
 
+    @pytest.mark.slow
     def test_u_error(self):
         dist = StandardNormal()
         rng = NumericalInverseHermite(dist, u_resolution=1e-10)
@@ -1128,12 +1218,6 @@ class TestNumericalInverseHermite:
         max_error, mae = rng.u_error()
         assert max_error < 1e-14
         assert mae <= max_error
-
-    def test_deprecations(self):
-        msg = ("`tol` has been deprecated and replaced with `u_resolution`. "
-               "It will be completely removed in a future release.")
-        with pytest.warns(DeprecationWarning, match=msg):
-            NumericalInverseHermite(StandardNormal(), tol=1e-12)
 
 
 class TestDiscreteGuideTable:
@@ -1290,3 +1374,71 @@ class TestSimpleRatioUniforms:
         # pdf_area < 0
         with pytest.raises(ValueError, match=r"`pdf_area` must be > 0"):
             SimpleRatioUniforms(StandardNormal(), mode=0, pdf_area=-1)
+
+
+class TestRatioUniforms:
+    def test_rv_generation(self):
+        # use KS test to check distribution of rvs
+        # normal distribution
+        f = stats.norm.pdf
+        v = np.sqrt(f(np.sqrt(2))) * np.sqrt(2)
+        u = np.sqrt(f(0))
+        gen = RatioUniforms(f, umax=u, vmin=-v, vmax=v, random_state=12345)
+        assert_equal(stats.kstest(gen.rvs(2500), 'norm')[1] > 0.25, True)
+
+        # exponential distribution
+        gen = RatioUniforms(lambda x: np.exp(-x), umax=1,
+                            vmin=0, vmax=2*np.exp(-1), random_state=12345)
+        assert_equal(stats.kstest(gen.rvs(1000), 'expon')[1] > 0.25, True)
+
+    def test_shape(self):
+        # test shape of return value depending on size parameter
+        f = stats.norm.pdf
+        v = np.sqrt(f(np.sqrt(2))) * np.sqrt(2)
+        u = np.sqrt(f(0))
+
+        gen1 = RatioUniforms(f, umax=u, vmin=-v, vmax=v, random_state=1234)
+        gen2 = RatioUniforms(f, umax=u, vmin=-v, vmax=v, random_state=1234)
+        gen3 = RatioUniforms(f, umax=u, vmin=-v, vmax=v, random_state=1234)
+        r1, r2, r3 = gen1.rvs(3), gen2.rvs((3,)), gen3.rvs((3, 1))
+        assert_equal(r1, r2)
+        assert_equal(r2, r3.flatten())
+        assert_equal(r1.shape, (3,))
+        assert_equal(r3.shape, (3, 1))
+
+        gen4 = RatioUniforms(f, umax=u, vmin=-v, vmax=v, random_state=12)
+        gen5 = RatioUniforms(f, umax=u, vmin=-v, vmax=v, random_state=12)
+        r4, r5 = gen4.rvs(size=(3, 3, 3)), gen5.rvs(size=27)
+        assert_equal(r4.flatten(), r5)
+        assert_equal(r4.shape, (3, 3, 3))
+
+        gen6 = RatioUniforms(f, umax=u, vmin=-v, vmax=v, random_state=1234)
+        gen7 = RatioUniforms(f, umax=u, vmin=-v, vmax=v, random_state=1234)
+        gen8 = RatioUniforms(f, umax=u, vmin=-v, vmax=v, random_state=1234)
+        r6, r7, r8 = gen6.rvs(), gen7.rvs(1), gen8.rvs((1,))
+        assert_equal(r6, r7)
+        assert_equal(r7, r8)
+
+    def test_random_state(self):
+        f = stats.norm.pdf
+        v = np.sqrt(f(np.sqrt(2))) * np.sqrt(2)
+        umax = np.sqrt(f(0))
+        gen1 = RatioUniforms(f, umax=umax, vmin=-v, vmax=v, random_state=1234)
+        r1 = gen1.rvs(10)
+        np.random.seed(1234)
+        gen2 = RatioUniforms(f, umax=umax, vmin=-v, vmax=v)
+        r2 = gen2.rvs(10)
+        assert_equal(r1, r2)
+
+    def test_exceptions(self):
+        f = stats.norm.pdf
+        # need vmin < vmax
+        with assert_raises(ValueError, match="vmin must be smaller than vmax"):
+            RatioUniforms(pdf=f, umax=1, vmin=3, vmax=1)
+        with assert_raises(ValueError, match="vmin must be smaller than vmax"):
+            RatioUniforms(pdf=f, umax=1, vmin=1, vmax=1)
+        # need umax > 0
+        with assert_raises(ValueError, match="umax must be positive"):
+            RatioUniforms(pdf=f, umax=-1, vmin=1, vmax=3)
+        with assert_raises(ValueError, match="umax must be positive"):
+            RatioUniforms(pdf=f, umax=0, vmin=1, vmax=3)

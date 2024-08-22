@@ -17,10 +17,6 @@ def sorted_tuple(x):
     return tuple(sorted(x))
 
 
-def sorted_unique_tuple(x):
-    return tuple(np.unique(x))
-
-
 def assert_unordered_tuple_list_equal(a, b, tpl=tuple):
     if isinstance(a, np.ndarray):
         a = a.tolist()
@@ -63,7 +59,7 @@ pathological_data_1 = np.array([
 pathological_data_2 = np.array([
     [-1, -1], [-1, 0], [-1, 1],
     [0, -1], [0, 0], [0, 1],
-    [1, -1 - np.finfo(np.float_).eps], [1, 0], [1, 1],
+    [1, -1 - np.finfo(np.float64).eps], [1, 0], [1, 1],
 ])
 
 bug_2850_chunks = [np.random.rand(10, 2),
@@ -165,7 +161,9 @@ class Test_Qhull:
         assert_raises(RuntimeError, y.get_voronoi_diagram)
 
     def test_issue_8051(self):
-        points = np.array([[0, 0], [0, 1], [0, 2], [1, 0], [1, 1], [1, 2],[2, 0], [2, 1], [2, 2]])
+        points = np.array(
+            [[0, 0], [0, 1], [0, 2], [1, 0], [1, 1], [1, 2],[2, 0], [2, 1], [2, 2]]
+        )
         Voronoi(points)
 
 
@@ -177,7 +175,7 @@ class TestUtilities:
 
     def test_find_simplex(self):
         # Simple check that simplex finding works
-        points = np.array([(0,0), (0,1), (1,1), (1,0)], dtype=np.double)
+        points = np.array([(0,0), (0,1), (1,1), (1,0)], dtype=np.float64)
         tri = qhull.Delaunay(points)
 
         # +---+
@@ -186,13 +184,13 @@ class TestUtilities:
         # |1 \|
         # +---+
 
-        assert_equal(tri.vertices, [[1, 3, 2], [3, 1, 0]])
+        assert_equal(tri.simplices, [[1, 3, 2], [3, 1, 0]])
 
         for p in [(0.25, 0.25, 1),
                   (0.75, 0.75, 0),
                   (0.3, 0.2, 1)]:
             i = tri.find_simplex(p[:2])
-            assert_equal(i, p[2], err_msg='%r' % (p,))
+            assert_equal(i, p[2], err_msg=f'{p!r}')
             j = qhull.tsearch(tri, p[:2])
             assert_equal(i, j)
 
@@ -200,8 +198,8 @@ class TestUtilities:
         # Compare plane distance from hyperplane equations obtained from Qhull
         # to manually computed plane equations
         x = np.array([(0,0), (1, 1), (1, 0), (0.99189033, 0.37674127),
-                      (0.99440079, 0.45182168)], dtype=np.double)
-        p = np.array([0.99966555, 0.15685619], dtype=np.double)
+                      (0.99440079, 0.45182168)], dtype=np.float64)
+        p = np.array([0.99966555, 0.15685619], dtype=np.float64)
 
         tri = qhull.Delaunay(x)
 
@@ -210,7 +208,7 @@ class TestUtilities:
 
         dist = tri.plane_distance(p)
 
-        for j, v in enumerate(tri.vertices):
+        for j, v in enumerate(tri.simplices):
             x1 = z[v[0]]
             x2 = z[v[1]]
             x3 = z[v[2]]
@@ -225,7 +223,7 @@ class TestUtilities:
 
     def test_convex_hull(self):
         # Simple check that the convex hull seems to works
-        points = np.array([(0,0), (0,1), (1,1), (1,0)], dtype=np.double)
+        points = np.array([(0,0), (0,1), (1,1), (1,0)], dtype=np.float64)
         tri = qhull.Delaunay(points)
 
         # +---+
@@ -288,7 +286,7 @@ class TestUtilities:
                                       unit_cube=False,
                                       unit_cube_tol=0):
         """Check that a triangulation has reasonable barycentric transforms"""
-        vertices = tri.points[tri.vertices]
+        vertices = tri.points[tri.simplices]
         sc = 1/(tri.ndim + 1.0)
         centroids = vertices.sum(axis=1) * sc
 
@@ -306,20 +304,20 @@ class TestUtilities:
         with np.errstate(invalid="ignore"):
             ok = np.isnan(c).all(axis=1) | (abs(c - sc)/sc < 0.1).all(axis=1)
 
-        assert_(ok.all(), "%s %s" % (err_msg, np.nonzero(~ok)))
+        assert_(ok.all(), f"{err_msg} {np.nonzero(~ok)}")
 
         # Invalid simplices must be (nearly) zero volume
         q = vertices[:,:-1,:] - vertices[:,-1,None,:]
         volume = np.array([np.linalg.det(q[k,:,:])
                            for k in range(tri.nsimplex)])
         ok = np.isfinite(tri.transform[:,0,0]) | (volume < np.sqrt(eps))
-        assert_(ok.all(), "%s %s" % (err_msg, np.nonzero(~ok)))
+        assert_(ok.all(), f"{err_msg} {np.nonzero(~ok)}")
 
         # Also, find_simplex for the centroid should end up in some
         # simplex for the non-degenerate cases
         j = tri.find_simplex(centroids)
         ok = (j != -1) | np.isnan(tri.transform[:,0,0])
-        assert_(ok.all(), "%s %s" % (err_msg, np.nonzero(~ok)))
+        assert_(ok.all(), f"{err_msg} {np.nonzero(~ok)}")
 
         if unit_cube:
             # If in unit cube, no interior point should be marked out of hull
@@ -327,8 +325,9 @@ class TestUtilities:
             at_boundary |= (centroids >= 1 - unit_cube_tol).any(axis=1)
 
             ok = (j != -1) | at_boundary
-            assert_(ok.all(), "%s %s" % (err_msg, np.nonzero(~ok)))
+            assert_(ok.all(), f"{err_msg} {np.nonzero(~ok)}")
 
+    @pytest.mark.fail_slow(10)
     def test_degenerate_barycentric_transforms(self):
         # The triangulation should not produce invalid barycentric
         # transforms that stump the simplex finding
@@ -347,6 +346,8 @@ class TestUtilities:
         self._check_barycentric_transforms(tri)
 
     @pytest.mark.slow
+    @pytest.mark.fail_slow(20)
+    # OK per https://github.com/scipy/scipy/pull/20487#discussion_r1572684869
     def test_more_barycentric_transforms(self):
         # Triangulate some "nasty" grids
 
@@ -357,7 +358,9 @@ class TestUtilities:
         for ndim in range(2, 6):
             # Generate an uniform grid in n-d unit cube
             x = np.linspace(0, 1, npoints[ndim])
-            grid = np.c_[list(map(np.ravel, np.broadcast_arrays(*np.ix_(*([x]*ndim)))))].T
+            grid = np.c_[
+                list(map(np.ravel, np.broadcast_arrays(*np.ix_(*([x]*ndim)))))
+            ].T
 
             err_msg = "ndim=%d" % ndim
 
@@ -397,21 +400,21 @@ class TestVertexNeighborVertices:
         got = [set(map(int, indices[indptr[j]:indptr[j+1]]))
                for j in range(tri.points.shape[0])]
 
-        assert_equal(got, expected, err_msg="%r != %r" % (got, expected))
+        assert_equal(got, expected, err_msg=f"{got!r} != {expected!r}")
 
     def test_triangle(self):
-        points = np.array([(0,0), (0,1), (1,0)], dtype=np.double)
+        points = np.array([(0,0), (0,1), (1,0)], dtype=np.float64)
         tri = qhull.Delaunay(points)
         self._check(tri)
 
     def test_rectangle(self):
-        points = np.array([(0,0), (0,1), (1,1), (1,0)], dtype=np.double)
+        points = np.array([(0,0), (0,1), (1,1), (1,0)], dtype=np.float64)
         tri = qhull.Delaunay(points)
         self._check(tri)
 
     def test_complicated(self):
         points = np.array([(0,0), (0,1), (1,1), (1,0),
-                           (0.5, 0.5), (0.9, 0.5)], dtype=np.double)
+                           (0.5, 0.5), (0.9, 0.5)], dtype=np.float64)
         tri = qhull.Delaunay(points)
         self._check(tri)
 
@@ -426,7 +429,7 @@ class TestDelaunay:
         assert_raises(ValueError, qhull.Delaunay, masked_array)
 
     def test_array_with_nans_fails(self):
-        points_with_nan = np.array([(0,0), (0,1), (1,1), (1,np.nan)], dtype=np.double)
+        points_with_nan = np.array([(0,0), (0,1), (1,1), (1,np.nan)], dtype=np.float64)
         assert_raises(ValueError, qhull.Delaunay, points_with_nan)
 
     def test_nd_simplex(self):
@@ -439,17 +442,17 @@ class TestDelaunay:
 
             tri = qhull.Delaunay(points)
 
-            tri.vertices.sort()
+            tri.simplices.sort()
 
-            assert_equal(tri.vertices, np.arange(nd+1, dtype=int)[None,:])
+            assert_equal(tri.simplices, np.arange(nd+1, dtype=int)[None, :])
             assert_equal(tri.neighbors, -1 + np.zeros((nd+1), dtype=int)[None,:])
 
     def test_2d_square(self):
         # simple smoke test: 2d square
-        points = np.array([(0,0), (0,1), (1,1), (1,0)], dtype=np.double)
+        points = np.array([(0,0), (0,1), (1,1), (1,0)], dtype=np.float64)
         tri = qhull.Delaunay(points)
 
-        assert_equal(tri.vertices, [[1, 3, 2], [3, 1, 0]])
+        assert_equal(tri.simplices, [[1, 3, 2], [3, 1, 0]])
         assert_equal(tri.neighbors, [[-1, -1, 1], [-1, -1, 0]])
 
     def test_duplicate_points(self):
@@ -467,13 +470,13 @@ class TestDelaunay:
         # both should succeed
         points = DATASETS['pathological-1']
         tri = qhull.Delaunay(points)
-        assert_equal(tri.points[tri.vertices].max(), points.max())
-        assert_equal(tri.points[tri.vertices].min(), points.min())
+        assert_equal(tri.points[tri.simplices].max(), points.max())
+        assert_equal(tri.points[tri.simplices].min(), points.min())
 
         points = DATASETS['pathological-2']
         tri = qhull.Delaunay(points)
-        assert_equal(tri.points[tri.vertices].max(), points.max())
-        assert_equal(tri.points[tri.vertices].min(), points.min())
+        assert_equal(tri.points[tri.simplices].max(), points.max())
+        assert_equal(tri.points[tri.simplices].min(), points.min())
 
     def test_joggle(self):
         # Check that the option QJ indeed guarantees that all input points
@@ -605,7 +608,7 @@ class TestConvexHull:
         assert_raises(ValueError, qhull.ConvexHull, masked_array)
 
     def test_array_with_nans_fails(self):
-        points_with_nan = np.array([(0,0), (1,1), (2,np.nan)], dtype=np.double)
+        points_with_nan = np.array([(0,0), (1,1), (2,np.nan)], dtype=np.float64)
         assert_raises(ValueError, qhull.ConvexHull, points_with_nan)
 
     @pytest.mark.parametrize("name", sorted(DATASETS))
@@ -738,7 +741,7 @@ class TestConvexHull:
 
     @pytest.mark.parametrize("incremental", [False, True])
     def test_good2d_no_option(self, incremental):
-        # handle case where good attribue doesn't exist
+        # handle case where good attribute doesn't exist
         # because Qgn or Qg-n wasn't specified
         points = np.array([[0.2, 0.2],
                            [0.2, 0.4],
@@ -788,6 +791,41 @@ class TestConvexHull:
         assert_equal(hull.good, expected)
 
 class TestVoronoi:
+
+    @pytest.mark.parametrize("qhull_opts, extra_pts", [
+        # option Qz (default for SciPy) will add
+        # an extra point at infinity
+        ("Qbb Qc Qz", 1),
+        ("Qbb Qc", 0),
+    ])
+    @pytest.mark.parametrize("n_pts", [50, 100])
+    @pytest.mark.parametrize("ndim", [2, 3])
+    def test_point_region_structure(self,
+                                    qhull_opts,
+                                    n_pts,
+                                    extra_pts,
+                                    ndim):
+        # see gh-16773
+        rng = np.random.default_rng(7790)
+        points = rng.random((n_pts, ndim))
+        vor = Voronoi(points, qhull_options=qhull_opts)
+        pt_region = vor.point_region
+        assert pt_region.max() == n_pts - 1 + extra_pts
+        assert pt_region.size == len(vor.regions) - extra_pts
+        assert len(vor.regions) == n_pts + extra_pts
+        assert vor.points.shape[0] == n_pts
+        # if there is an empty sublist in the Voronoi
+        # regions data structure, it should never be
+        # indexed because it corresponds to an internally
+        # added point at infinity and is not a member of the
+        # generators (input points)
+        if extra_pts:
+            sublens = [len(x) for x in vor.regions]
+            # only one point at infinity (empty region)
+            # is allowed
+            assert sublens.count(0) == 1
+            assert sublens.index(0) not in pt_region
+
     def test_masked_array_fails(self):
         masked_array = np.ma.masked_all(1)
         assert_raises(ValueError, qhull.Voronoi, masked_array)
@@ -858,9 +896,10 @@ class TestVoronoi:
         assert_equal(set(map(tuple, vor.regions)),
                      set(map(tuple, regions)))
 
-        p1 = list(zip(list(map(sorttuple, ridge_points)), list(map(sorttuple, ridge_vertices))))
+        p1 = list(zip(list(map(sorttuple, ridge_points)),
+                      list(map(sorttuple, ridge_vertices))))
         p2 = list(zip(list(map(sorttuple, vor.ridge_points.tolist())),
-                 list(map(sorttuple, vor.ridge_vertices))))
+                      list(map(sorttuple, vor.ridge_vertices))))
         p1.sort()
         p2.sort()
 
@@ -923,6 +962,7 @@ class TestVoronoi:
         vor = Voronoi(points,furthest_site=True)
         assert_equal(vor.furthest_site,True)
 
+    @pytest.mark.fail_slow(10)
     @pytest.mark.parametrize("name", sorted(INCREMENTAL_DATASETS))
     def test_incremental(self, name):
         # Test incremental construction of the triangulation
@@ -962,12 +1002,13 @@ class TestVoronoi:
 
             def remap(x):
                 if hasattr(x, '__len__'):
-                    return tuple(set([remap(y) for y in x]))
+                    return tuple({remap(y) for y in x})
                 try:
                     return vertex_map[x]
                 except KeyError as e:
-                    raise AssertionError("incremental result has spurious vertex at %r"
-                                         % (objx.vertices[x],)) from e
+                    message = (f"incremental result has spurious vertex "
+                               f"at {objx.vertices[x]!r}")
+                    raise AssertionError(message) from e
 
             def simplified(x):
                 items = set(map(sorted_tuple, x))
@@ -1001,14 +1042,15 @@ class Test_HalfspaceIntersection:
             truths[indexes[0]] = True
         assert_(truths.all())
 
-    def test_cube_halfspace_intersection(self):
-        halfspaces = np.array([[-1.0, 0.0, 0.0],
-                               [0.0, -1.0, 0.0],
-                               [1.0, 0.0, -1.0],
-                               [0.0, 1.0, -1.0]])
-        feasible_point = np.array([0.5, 0.5])
+    @pytest.mark.parametrize("dt", [np.float64, int])
+    def test_cube_halfspace_intersection(self, dt):
+        halfspaces = np.array([[-1, 0, 0],
+                               [0, -1, 0],
+                               [1, 0, -2],
+                               [0, 1, -2]], dtype=dt)
+        feasible_point = np.array([1, 1], dtype=dt)
 
-        points = np.array([[0.0, 0.0], [1.0, 0.0], [0.0, 1.0], [1.0, 1.0]])
+        points = np.array([[0.0, 0.0], [2.0, 0.0], [0.0, 2.0], [2.0, 2.0]])
 
         hull = qhull.HalfspaceIntersection(halfspaces, feasible_point)
 
@@ -1044,17 +1086,21 @@ class Test_HalfspaceIntersection:
                                [0.0, 1.0, -1.0]])
         feasible_point = np.array([0.5, 0.5, 0.5])
         #Feasible point is (ndim,) instead of (ndim-1,)
-        assert_raises(ValueError, qhull.HalfspaceIntersection, halfspaces, feasible_point)
+        assert_raises(ValueError,
+                      qhull.HalfspaceIntersection, halfspaces, feasible_point)
         feasible_point = np.array([[0.5], [0.5]])
         #Feasible point is (ndim-1, 1) instead of (ndim-1,)
-        assert_raises(ValueError, qhull.HalfspaceIntersection, halfspaces, feasible_point)
+        assert_raises(ValueError,
+                      qhull.HalfspaceIntersection, halfspaces, feasible_point)
         feasible_point = np.array([[0.5, 0.5]])
         #Feasible point is (1, ndim-1) instead of (ndim-1,)
-        assert_raises(ValueError, qhull.HalfspaceIntersection, halfspaces, feasible_point)
+        assert_raises(ValueError,
+                      qhull.HalfspaceIntersection, halfspaces, feasible_point)
 
         feasible_point = np.array([-0.5, -0.5])
         #Feasible point is outside feasible region
-        assert_raises(qhull.QhullError, qhull.HalfspaceIntersection, halfspaces, feasible_point)
+        assert_raises(qhull.QhullError,
+                      qhull.HalfspaceIntersection, halfspaces, feasible_point)
 
     def test_incremental(self):
         #Cube
@@ -1077,7 +1123,8 @@ class Test_HalfspaceIntersection:
 
         inc_hs = qhull.HalfspaceIntersection(halfspaces, feas_point, incremental=True)
 
-        inc_res_hs = qhull.HalfspaceIntersection(halfspaces, feas_point, incremental=True)
+        inc_res_hs = qhull.HalfspaceIntersection(halfspaces, feas_point,
+                                                 incremental=True)
 
         for i, ehs in enumerate(extra_halfspaces):
             inc_hs.add_halfspaces(ehs[np.newaxis, :])
@@ -1133,3 +1180,30 @@ class Test_HalfspaceIntersection:
             assert set(a) == set(b)  # facet orientation can differ
 
         assert_allclose(hs.dual_points, qhalf_points)
+
+
+@pytest.mark.parametrize("diagram_type", [Voronoi, qhull.Delaunay])
+def test_gh_20623(diagram_type):
+    rng = np.random.default_rng(123)
+    invalid_data = rng.random((4, 10, 3))
+    with pytest.raises(ValueError, match="dimensions"):
+        diagram_type(invalid_data)
+
+
+def test_gh_21286():
+    generators = np.array([[0, 0], [0, 1.1], [1, 0], [1, 1]])
+    tri = qhull.Delaunay(generators)
+    # verify absence of segfault reported in ticket:
+    with pytest.raises(IndexError):
+        tri.find_simplex(1)
+    with pytest.raises(IndexError):
+        # strikingly, Delaunay object has shape
+        # () just like np.asanyarray(1) above
+        tri.find_simplex(tri)
+
+
+def test_find_simplex_ndim_err():
+    generators = np.array([[0, 0], [0, 1.1], [1, 0], [1, 1]])
+    tri = qhull.Delaunay(generators)
+    with pytest.raises(ValueError):
+        tri.find_simplex([2, 2, 2])

@@ -2,15 +2,10 @@
 # Use the `scipy.sparse.linalg` namespace for importing the functions
 # included below.
 
-import warnings
-from . import _matfuncs
+from scipy._lib.deprecation import _sub_module_deprecation
 
 
-__all__ = [  # noqa: F822
-    'expm', 'inv', 'solve', 'solve_triangular',
-    'isspmatrix', 'spsolve', 'is_pydata_spmatrix', 'LinearOperator',
-    'UPPER_TRIANGULAR', 'MatrixPowerOperator', 'ProductOperator'
-]
+__all__ = ["expm", "inv", "spsolve", "LinearOperator"]  # noqa: F822
 
 
 def __dir__():
@@ -18,13 +13,6 @@ def __dir__():
 
 
 def __getattr__(name):
-    if name not in __all__:
-        raise AttributeError(
-            "scipy.sparse.linalg.matfuncs is deprecated and has no attribute "
-            f"{name}. Try looking in scipy.sparse.linalg instead.")
-
-    warnings.warn(f"Please use `{name}` from the `scipy.sparse.linalg` namespace, "
-                  "the `scipy.sparse.linalg.matfuncs` namespace is deprecated.",
-                  category=DeprecationWarning, stacklevel=2)
-
-    return getattr(_matfuncs, name)
+    return _sub_module_deprecation(sub_package="sparse.linalg", module="matfuncs",
+                                   private_modules=["_matfuncs"], all=__all__,
+                                   attribute=name)

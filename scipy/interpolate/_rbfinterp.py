@@ -65,7 +65,7 @@ def _monomial_powers(ndim, degree):
 
     """
     nmonos = comb(degree + ndim, ndim, exact=True)
-    out = np.zeros((nmonos, ndim), dtype=int)
+    out = np.zeros((nmonos, ndim), dtype=np.dtype("long"))
     count = 0
     for deg in range(degree + 1):
         for mono in combinations_with_replacement(range(ndim), deg):
@@ -136,15 +136,17 @@ class RBFInterpolator:
 
     Parameters
     ----------
-    y : (P, N) array_like
-        Data point coordinates.
-    d : (P, ...) array_like
-        Data values at `y`.
+    y : (npoints, ndims) array_like
+        2-D array of data point coordinates.
+    d : (npoints, ...) array_like
+        N-D array of data values at `y`. The length of `d` along the first
+        axis must be equal to the length of `y`. Unlike some interpolators, the
+        interpolation axis cannot be changed.
     neighbors : int, optional
         If specified, the value of the interpolant at each evaluation point
         will be computed using only this many nearest data points. All the data
         points are used by default.
-    smoothing : float or (P,) array_like, optional
+    smoothing : float or (npoints, ) array_like, optional
         Smoothing parameter. The interpolant perfectly fits the data when this
         is set to 0. For large values, the interpolant approaches a least
         squares fit of a polynomial with the specified degree. Default is 0.
@@ -260,6 +262,7 @@ class RBFInterpolator:
     --------
     Demonstrate interpolating scattered data to a grid in 2-D.
 
+    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> from scipy.interpolate import RBFInterpolator
     >>> from scipy.stats.qmc import Halton
@@ -339,14 +342,15 @@ class RBFInterpolator:
             degree = int(degree)
             if degree < -1:
                 raise ValueError("`degree` must be at least -1.")
-            elif degree < min_degree:
+            elif -1 < degree < min_degree:
                 warnings.warn(
-                    f"`degree` should not be below {min_degree} when `kernel` "
-                    f"is '{kernel}'. The interpolant may not be uniquely "
-                    "solvable, and the smoothing parameter may have an "
-                    "unintuitive effect.",
-                    UserWarning
-                    )
+                    f"`degree` should not be below {min_degree} except -1 "
+                    f"when `kernel` is '{kernel}'."
+                    f"The interpolant may not be uniquely "
+                    f"solvable, and the smoothing parameter may have an "
+                    f"unintuitive effect.",
+                    UserWarning, stacklevel=2
+                )
 
         if neighbors is None:
             nobs = ny
@@ -431,7 +435,7 @@ class RBFInterpolator:
         else:
             nnei = self.neighbors
         # in each chunk we consume the same space we already occupy
-        chunksize = memory_budget // ((self.powers.shape[0] + nnei)) + 1
+        chunksize = memory_budget // (self.powers.shape[0] + nnei) + 1
         if chunksize <= nx:
             out = np.empty((nx, self.d.shape[1]), dtype=float)
             for i in range(0, nx, chunksize):
@@ -508,6 +512,7 @@ class RBFInterpolator:
             # neighborhood.
             yindices = np.sort(yindices, axis=1)
             yindices, inv = np.unique(yindices, return_inverse=True, axis=0)
+            inv = np.reshape(inv, (-1,))  # flatten, we need 1-D indices
             # `inv` tells us which neighborhood will be used by each evaluation
             # point. Now we find which evaluation points will be using each
             # neighborhood.

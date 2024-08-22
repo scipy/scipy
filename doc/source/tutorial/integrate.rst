@@ -48,8 +48,8 @@ function, method, or class instance). Notice the use of a lambda-
 function in this case as the argument. The next two arguments are the
 limits of integration. The return value is a tuple, with the first
 element holding the estimated value of the integral and the second
-element holding an upper bound on the error. Notice, that in this
-case, the true value of this integral is
+element holding an estimate of the absolute integration error. 
+Notice, that in this case, the true value of this integral is
 
 .. math::
 
@@ -63,7 +63,7 @@ where
 
 is the Fresnel sine integral. Note that the numerically-computed integral is
 within :math:`1.04\times10^{-11}` of the exact result --- well below the
-reported error bound.
+reported error estimate.
 
 
 If the function to integrate takes additional parameters, they can be provided
@@ -101,6 +101,7 @@ is desired (and the fact that this integral can be computed as
 ``vec_expint`` based on the routine :obj:`quad`:
 
     >>> from scipy.integrate import quad
+    >>> import numpy as np
     >>> def integrand(t, n, x):
     ...     return np.exp(-x*t) / t**n
     ...
@@ -139,6 +140,36 @@ integrand from the use of :obj:`quad` ). The integral in this case is
 This last example shows that multiple integration can be handled using
 repeated calls to :func:`quad`.
 
+.. warning::
+
+    Numerical integration algorithms sample the integrand at a finite number of points.
+    Consequently, they cannot guarantee accurate results (or accuracy estimates) for
+    arbitrary integrands and limits of integration. Consider the Gaussian integral,
+    for example:
+
+    >>> def gaussian(x):
+    ...     return np.exp(-x**2)
+    >>> res = integrate.quad(gaussian, -np.inf, np.inf)
+    >>> res
+    (1.7724538509055159, 1.4202636756659625e-08)
+    >>> np.allclose(res[0], np.sqrt(np.pi))  # compare against theoretical result
+    True
+
+    Since the integrand is nearly zero except near the origin, we would expect
+    large but finite limits of integration to yield the same result. However:
+
+    >>> integrate.quad(gaussian, -10000, 10000)
+    (1.975190562208035e-203, 0.0)
+
+    This happens because the adaptive quadrature routine implemented in :func:`quad`,
+    while working as designed, does not notice the small, important part of the function
+    within such a large, finite interval. For best results, consider using integration
+    limits that tightly surround the important part of the integrand.
+
+    >>> integrate.quad(gaussian, -15, 15)
+    (1.772453850905516, 8.476526631214648e-11)
+
+    Integrands with several important regions can be broken into pieces as necessary.
 
 General multiple integration (:func:`dblquad`, :func:`tplquad`, :func:`nquad`)
 ------------------------------------------------------------------------------
@@ -234,23 +265,12 @@ which is the same result as before.
 Gaussian quadrature
 -------------------
 
-A few functions are also provided in order to perform simple Gaussian
-quadrature over a fixed interval. The first is :obj:`fixed_quad`, which
-performs fixed-order Gaussian quadrature. The second function is
-:obj:`quadrature`, which performs Gaussian quadrature of multiple
-orders until the difference in the integral estimate is beneath some
-tolerance supplied by the user. These functions both use the module
-``scipy.special.orthogonal``, which can calculate the roots and quadrature
-weights of a large variety of orthogonal polynomials (the polynomials
-themselves are available as special functions returning instances of
-the polynomial class --- e.g., :obj:`special.legendre <scipy.special.legendre>`).
-
-
-Romberg Integration
--------------------
-
-Romberg's method [WPR]_ is another method for numerically evaluating an
-integral. See the help function for :func:`romberg` for further details.
+:obj:`fixed_quad` performs fixed-order Gaussian quadrature over a fixed interval. This
+function uses the collection of orthogonal polynomials provided by ``scipy.special``,
+which can calculate the roots and quadrature weights of a large variety of orthogonal
+polynomials (the polynomials themselves are available as special functions returning
+instances of the polynomial class --- e.g.,
+:obj:`special.legendre <scipy.special.legendre>`).
 
 
 Integrating using Samples
@@ -286,7 +306,7 @@ of order 2 or less.
 >>> x = np.array([1,3,4])
 >>> y1 = f1(x)
 >>> from scipy import integrate
->>> I1 = integrate.simpson(y1, x)
+>>> I1 = integrate.simpson(y1, x=x)
 >>> print(I1)
 21.0
 
@@ -300,7 +320,7 @@ This corresponds exactly to
 whereas integrating the second function
 
 >>> y2 = f2(x)
->>> I2 = integrate.simpson(y2, x)
+>>> I2 = integrate.simpson(y2, x=x)
 >>> print(I2)
 61.5
 
@@ -446,7 +466,7 @@ has an exact solution using the matrix exponential:
 However, in this case, :math:`\mathbf{A}\left(t\right)` and its integral do not commute.
 
 This differential equation can be solved using the function :obj:`solve_ivp`.
-It requires the derivative, *fprime*, the time span `[t_start, t_end]`
+It requires the derivative, *fprime*, the time span ``[t_start, t_end]``
 and the initial conditions vector, *y0*, as input arguments and returns
 an object whose *y* field is an array with consecutive solution values as
 columns. The initial conditions are therefore given in the first output column.
@@ -755,7 +775,5 @@ Let's ensure that they have computed the same result::
 
 References
 ~~~~~~~~~~
-
-.. [WPR] https://en.wikipedia.org/wiki/Romberg's_method
 
 .. [MOL] https://en.wikipedia.org/wiki/Method_of_lines

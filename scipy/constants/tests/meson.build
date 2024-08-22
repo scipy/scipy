@@ -6,6 +6,6 @@ python_sources = [
 
 py3.install_sources(
   python_sources,
-  pure: false,
-  subdir: 'scipy/constants/tests'
+  subdir: 'scipy/constants/tests',
+  install_tag: 'tests'
 )

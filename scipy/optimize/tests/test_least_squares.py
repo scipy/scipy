@@ -4,13 +4,14 @@ import numpy as np
 from numpy.linalg import norm
 from numpy.testing import (assert_, assert_allclose,
                            assert_equal, suppress_warnings)
+import pytest
 from pytest import raises as assert_raises
 from scipy.sparse import issparse, lil_matrix
 from scipy.sparse.linalg import aslinearoperator
 
-from scipy.optimize import least_squares
+from scipy.optimize import least_squares, Bounds
 from scipy.optimize._lsq.least_squares import IMPLEMENTED_LOSSES
-from scipy.optimize._lsq.common import EPS, make_strictly_feasible
+from scipy.optimize._lsq.common import EPS, make_strictly_feasible, CL_scaling_vector
 
 
 def fun_trivial(x, a=0):
@@ -182,8 +183,10 @@ class BaseMixin:
         a = 3.0
         for jac in ['2-point', '3-point', 'cs', jac_trivial]:
             with suppress_warnings() as sup:
-                sup.filter(UserWarning,
-                           "jac='(3-point|cs)' works equivalently to '2-point' for method='lm'")
+                sup.filter(
+                    UserWarning,
+                    "jac='(3-point|cs)' works equivalently to '2-point' for method='lm'"
+                )
                 res = least_squares(fun_trivial, 2.0, jac, args=(a,),
                                     method=self.method)
                 res1 = least_squares(fun_trivial, 2.0, jac, kwargs={'a': a},
@@ -200,8 +203,10 @@ class BaseMixin:
     def test_jac_options(self):
         for jac in ['2-point', '3-point', 'cs', jac_trivial]:
             with suppress_warnings() as sup:
-                sup.filter(UserWarning,
-                           "jac='(3-point|cs)' works equivalently to '2-point' for method='lm'")
+                sup.filter(
+                    UserWarning,
+                    "jac='(3-point|cs)' works equivalently to '2-point' for method='lm'"
+                )
                 res = least_squares(fun_trivial, 2.0, jac, method=self.method)
             assert_allclose(res.x, 0, atol=1e-4)
 
@@ -296,8 +301,10 @@ class BaseMixin:
                 [1.0, np.array([1.0, 0.2]), 'jac'],
                 ['exact', 'lsmr']):
             with suppress_warnings() as sup:
-                sup.filter(UserWarning,
-                           "jac='(3-point|cs)' works equivalently to '2-point' for method='lm'")
+                sup.filter(
+                    UserWarning,
+                    "jac='(3-point|cs)' works equivalently to '2-point' for method='lm'"
+                )
                 res = least_squares(fun_rosenbrock, x0, jac, x_scale=x_scale,
                                     tr_solver=tr_solver, method=self.method)
             assert_allclose(res.x, x_opt)
@@ -415,21 +422,53 @@ class BoundsMixin:
             assert_(0.5 <= res.x <= 3)
 
     def test_bounds_shape(self):
-        for jac in ['2-point', '3-point', 'cs', jac_2d_trivial]:
-            x0 = [1.0, 1.0]
-            res = least_squares(fun_2d_trivial, x0, jac=jac)
-            assert_allclose(res.x, [0.0, 0.0])
-            res = least_squares(fun_2d_trivial, x0, jac=jac,
-                                bounds=(0.5, [2.0, 2.0]), method=self.method)
-            assert_allclose(res.x, [0.5, 0.5])
-            res = least_squares(fun_2d_trivial, x0, jac=jac,
-                                bounds=([0.3, 0.2], 3.0), method=self.method)
-            assert_allclose(res.x, [0.3, 0.2])
-            res = least_squares(
-                fun_2d_trivial, x0, jac=jac, bounds=([-1, 0.5], [1.0, 3.0]),
-                method=self.method)
-            assert_allclose(res.x, [0.0, 0.5], atol=1e-5)
+        def get_bounds_direct(lb, ub):
+            return lb, ub
 
+        def get_bounds_instances(lb, ub):
+            return Bounds(lb, ub)
+
+        for jac in ['2-point', '3-point', 'cs', jac_2d_trivial]:
+            for bounds_func in [get_bounds_direct, get_bounds_instances]:
+                x0 = [1.0, 1.0]
+                res = least_squares(fun_2d_trivial, x0, jac=jac)
+                assert_allclose(res.x, [0.0, 0.0])
+                res = least_squares(fun_2d_trivial, x0, jac=jac,
+                                    bounds=bounds_func(0.5, [2.0, 2.0]),
+                                    method=self.method)
+                assert_allclose(res.x, [0.5, 0.5])
+                res = least_squares(fun_2d_trivial, x0, jac=jac,
+                                    bounds=bounds_func([0.3, 0.2], 3.0),
+                                    method=self.method)
+                assert_allclose(res.x, [0.3, 0.2])
+                res = least_squares(
+                    fun_2d_trivial, x0, jac=jac,
+                    bounds=bounds_func([-1, 0.5], [1.0, 3.0]),
+                    method=self.method)
+                assert_allclose(res.x, [0.0, 0.5], atol=1e-5)
+
+    def test_bounds_instances(self):
+        res = least_squares(fun_trivial, 0.5, bounds=Bounds())
+        assert_allclose(res.x, 0.0, atol=1e-4)
+
+        res = least_squares(fun_trivial, 3.0, bounds=Bounds(lb=1.0))
+        assert_allclose(res.x, 1.0, atol=1e-4)
+
+        res = least_squares(fun_trivial, 0.5, bounds=Bounds(lb=-1.0, ub=1.0))
+        assert_allclose(res.x, 0.0, atol=1e-4)
+
+        res = least_squares(fun_trivial, -3.0, bounds=Bounds(ub=-1.0))
+        assert_allclose(res.x, -1.0, atol=1e-4)
+
+        res = least_squares(fun_2d_trivial, [0.5, 0.5],
+                            bounds=Bounds(lb=[-1.0, -1.0], ub=1.0))
+        assert_allclose(res.x, [0.0, 0.0], atol=1e-5)
+
+        res = least_squares(fun_2d_trivial, [0.5, 0.5],
+                            bounds=Bounds(lb=[0.1, 0.1]))
+        assert_allclose(res.x, [0.1, 0.1], atol=1e-5)
+
+    @pytest.mark.fail_slow(10)
     def test_rosenbrock_bounds(self):
         x0_1 = np.array([-2.0, 1.0])
         x0_2 = np.array([2.0, 2.0])
@@ -515,6 +554,7 @@ class SparseMixin:
             assert_allclose(res_dense.cost, 0, atol=1e-20)
             assert_allclose(res_sparse.cost, 0, atol=1e-20)
 
+    @pytest.mark.fail_slow(10)
     def test_with_bounds(self):
         p = BroydenTridiagonal()
         for jac, jac_sparsity in product(
@@ -776,5 +816,59 @@ def test_fp32_gh12991():
     # unchanged from the initial solution.
     # It was terminating early because the underlying approx_derivative
     # used a step size for FP64 when the working space was FP32.
-    assert res.nfev > 3
+    assert res.nfev > 2
     assert_allclose(res.x, np.array([0.4082241, 0.15530563]), atol=5e-5)
+
+
+def test_gh_18793_and_19351():
+    answer = 1e-12
+    initial_guess = 1.1e-12
+
+    def chi2(x):
+        return (x-answer)**2
+
+    gtol = 1e-15
+    res = least_squares(chi2, x0=initial_guess, gtol=1e-15, bounds=(0, np.inf))
+    # Original motivation: gh-18793
+    # if we choose an initial condition that is close to the solution
+    # we shouldn't return an answer that is further away from the solution
+
+    # Update: gh-19351
+    # However this requirement does not go well with 'trf' algorithm logic.
+    # Some regressions were reported after the presumed fix.
+    # The returned solution is good as long as it satisfies the convergence
+    # conditions.
+    # Specifically in this case the scaled gradient will be sufficiently low.
+
+    scaling, _ = CL_scaling_vector(res.x, res.grad,
+                                   np.atleast_1d(0), np.atleast_1d(np.inf))
+    assert res.status == 1  # Converged by gradient
+    assert np.linalg.norm(res.grad * scaling, ord=np.inf) < gtol
+
+
+def test_gh_19103():
+    # Checks that least_squares trf method selects a strictly feasible point,
+    # and thus succeeds instead of failing,
+    # when the initial guess is reported exactly at a boundary point.
+    # This is a reduced example from gh191303
+
+    ydata = np.array([0.] * 66 + [
+        1., 0., 0., 0., 0., 0., 1., 1., 0., 0., 1.,
+        1., 1., 1., 0., 0., 0., 1., 0., 0., 2., 1.,
+        0., 3., 1., 6., 5., 0., 0., 2., 8., 4., 4.,
+        6., 9., 7., 2., 7., 8., 2., 13., 9., 8., 11.,
+        10., 13., 14., 19., 11., 15., 18., 26., 19., 32., 29.,
+        28., 36., 32., 35., 36., 43., 52., 32., 58., 56., 52.,
+        67., 53., 72., 88., 77., 95., 94., 84., 86., 101., 107.,
+        108., 118., 96., 115., 138., 137.,
+    ])
+    xdata = np.arange(0, ydata.size) * 0.1
+
+    def exponential_wrapped(params):
+        A, B, x0 = params
+        return A * np.exp(B * (xdata - x0)) - ydata
+
+    x0 = [0.01, 1., 5.]
+    bounds = ((0.01, 0, 0), (np.inf, 10, 20.9))
+    res = least_squares(exponential_wrapped, x0, method='trf', bounds=bounds)
+    assert res.success

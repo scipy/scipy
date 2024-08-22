@@ -1,5 +1,6 @@
-      subroutine clocur(iopt,ipar,idim,m,u,mx,x,w,k,s,nest,n,t,nc,c,fp,
-     * wrk,lwrk,iwrk,ier)
+      recursive subroutine clocur(iopt,ipar,idim,m,u,mx,x,w,k,s,nest,
+     * n,t,nc,c,fp,wrk,lwrk,iwrk,ier)
+      implicit none
 c  given the ordered set of m points x(i) in the idim-dimensional space
 c  with x(1)=x(m), and given also a corresponding set of strictly in-
 c  creasing values u(i) and the set of positive numbers w(i),i=1,2,...,m

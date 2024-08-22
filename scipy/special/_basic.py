@@ -2,18 +2,25 @@
 # Author:  Travis Oliphant, 2002
 #
 
-import operator
 import numpy as np
 import math
 import warnings
-from numpy import (pi, asarray, floor, isscalar, iscomplex, real,
-                   imag, sqrt, where, mgrid, sin, place, issubdtype,
-                   extract, inexact, nan, zeros, sinc)
+from collections import defaultdict
+from heapq import heapify, heappop
+from numpy import (pi, asarray, floor, isscalar, sqrt, where,
+                   sin, place, issubdtype, extract, inexact, nan, zeros, sinc)
+
 from . import _ufuncs
 from ._ufuncs import (mathieu_a, mathieu_b, iv, jv, gamma,
-                      psi, hankel1, hankel2, yv, kv, poch, binom)
+                      psi, hankel1, hankel2, yv, kv, poch, binom,
+                      _stirling2_inexact)
+
+from ._gufuncs import _lqn, _lqmn, _rctj, _rcty
+from ._input_validation import _nonneg_int_or_fail
 from . import _specfun
 from ._comb import _comb_int
+from ._multiufuncs import (assoc_legendre_p_all,
+                           legendre_p_all)
 
 
 __all__ = [
@@ -68,6 +75,7 @@ __all__ = [
     'riccati_jn',
     'riccati_yn',
     'sinc',
+    'stirling2',
     'y0_zeros',
     'y1_zeros',
     'y1p_zeros',
@@ -78,20 +86,12 @@ __all__ = [
 ]
 
 
-def _nonneg_int_or_fail(n, var_name, strict=True):
-    try:
-        if strict:
-            # Raises an exception if float
-            n = operator.index(n)
-        elif n == floor(n):
-            n = int(n)
-        else:
-            raise ValueError()
-        if n < 0:
-            raise ValueError()
-    except (ValueError, TypeError) as err:
-        raise err.__class__("{} must be a non-negative integer".format(var_name)) from err
-    return n
+# mapping k to last n such that factorialk(n, k) < np.iinfo(np.int64).max
+_FACTORIALK_LIMITS_64BITS = {1: 20, 2: 33, 3: 44, 4: 54, 5: 65,
+                             6: 74, 7: 84, 8: 93, 9: 101}
+# mapping k to last n such that factorialk(n, k) < np.iinfo(np.int32).max
+_FACTORIALK_LIMITS_32BITS = {1: 12, 2: 19, 3: 25, 4: 31, 5: 37,
+                             6: 43, 7: 47, 8: 51, 9: 56}
 
 
 def diric(x, n):
@@ -116,6 +116,7 @@ def diric(x, n):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import special
     >>> import matplotlib.pyplot as plt
 
@@ -271,6 +272,46 @@ def jnyn_zeros(n, nt):
            Functions", John Wiley and Sons, 1996, chapter 5.
            https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
 
+    Examples
+    --------
+    Compute the first three roots of :math:`J_1`, :math:`J_1'`,
+    :math:`Y_1` and :math:`Y_1'`.
+
+    >>> from scipy.special import jnyn_zeros
+    >>> jn_roots, jnp_roots, yn_roots, ynp_roots = jnyn_zeros(1, 3)
+    >>> jn_roots, yn_roots
+    (array([ 3.83170597,  7.01558667, 10.17346814]),
+     array([2.19714133, 5.42968104, 8.59600587]))
+
+    Plot :math:`J_1`, :math:`J_1'`, :math:`Y_1`, :math:`Y_1'` and their roots.
+
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.special import jnyn_zeros, jvp, jn, yvp, yn
+    >>> jn_roots, jnp_roots, yn_roots, ynp_roots = jnyn_zeros(1, 3)
+    >>> fig, ax = plt.subplots()
+    >>> xmax= 11
+    >>> x = np.linspace(0, xmax)
+    >>> x[0] += 1e-15
+    >>> ax.plot(x, jn(1, x), label=r"$J_1$", c='r')
+    >>> ax.plot(x, jvp(1, x, 1), label=r"$J_1'$", c='b')
+    >>> ax.plot(x, yn(1, x), label=r"$Y_1$", c='y')
+    >>> ax.plot(x, yvp(1, x, 1), label=r"$Y_1'$", c='c')
+    >>> zeros = np.zeros((3, ))
+    >>> ax.scatter(jn_roots, zeros, s=30, c='r', zorder=5,
+    ...            label=r"$J_1$ roots")
+    >>> ax.scatter(jnp_roots, zeros, s=30, c='b', zorder=5,
+    ...            label=r"$J_1'$ roots")
+    >>> ax.scatter(yn_roots, zeros, s=30, c='y', zorder=5,
+    ...            label=r"$Y_1$ roots")
+    >>> ax.scatter(ynp_roots, zeros, s=30, c='c', zorder=5,
+    ...            label=r"$Y_1'$ roots")
+    >>> ax.hlines(0, 0, xmax, color='k')
+    >>> ax.set_ylim(-0.6, 0.6)
+    >>> ax.set_xlim(0, xmax)
+    >>> ax.legend(ncol=2, bbox_to_anchor=(1., 0.75))
+    >>> plt.tight_layout()
+    >>> plt.show()
     """
     if not (isscalar(nt) and isscalar(n)):
         raise ValueError("Arguments must be scalars.")
@@ -303,7 +344,8 @@ def jn_zeros(n, nt):
 
     See Also
     --------
-    jv
+    jv: Real-order Bessel functions of the first kind
+    jnp_zeros: Zeros of :math:`Jn'`
 
     References
     ----------
@@ -313,23 +355,32 @@ def jn_zeros(n, nt):
 
     Examples
     --------
-    >>> import scipy.special as sc
+    Compute the first four positive roots of :math:`J_3`.
 
-    We can check that we are getting approximations of the zeros by
-    evaluating them with `jv`.
+    >>> from scipy.special import jn_zeros
+    >>> jn_zeros(3, 4)
+    array([ 6.3801619 ,  9.76102313, 13.01520072, 16.22346616])
 
-    >>> n = 1
-    >>> x = sc.jn_zeros(n, 3)
-    >>> x
-    array([ 3.83170597,  7.01558667, 10.17346814])
-    >>> sc.jv(n, x)
-    array([-0.00000000e+00,  1.72975330e-16,  2.89157291e-16])
+    Plot :math:`J_3` and its first four positive roots. Note
+    that the root located at 0 is not returned by `jn_zeros`.
 
-    Note that the zero at ``x = 0`` for ``n > 0`` is not included.
-
-    >>> sc.jv(1, 0)
-    0.0
-
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.special import jn, jn_zeros
+    >>> j3_roots = jn_zeros(3, 4)
+    >>> xmax = 18
+    >>> xmin = -1
+    >>> x = np.linspace(xmin, xmax, 500)
+    >>> fig, ax = plt.subplots()
+    >>> ax.plot(x, jn(3, x), label=r'$J_3$')
+    >>> ax.scatter(j3_roots, np.zeros((4, )), s=30, c='r',
+    ...            label=r"$J_3$_Zeros", zorder=5)
+    >>> ax.scatter(0, 0, s=30, c='k',
+    ...            label=r"Root at 0", zorder=5)
+    >>> ax.hlines(0, 0, xmax, color='k')
+    >>> ax.set_xlim(xmin, xmax)
+    >>> plt.legend()
+    >>> plt.show()
     """
     return jnyn_zeros(n, nt)[0]
 
@@ -356,7 +407,8 @@ def jnp_zeros(n, nt):
 
     See Also
     --------
-    jvp, jv
+    jvp: Derivatives of integer-order Bessel functions of the first kind
+    jv: Float-order Bessel functions of the first kind
 
     References
     ----------
@@ -366,23 +418,32 @@ def jnp_zeros(n, nt):
 
     Examples
     --------
-    >>> import scipy.special as sc
+    Compute the first four roots of :math:`J_2'`.
 
-    We can check that we are getting approximations of the zeros by
-    evaluating them with `jvp`.
+    >>> from scipy.special import jnp_zeros
+    >>> jnp_zeros(2, 4)
+    array([ 3.05423693,  6.70613319,  9.96946782, 13.17037086])
 
-    >>> n = 2
-    >>> x = sc.jnp_zeros(n, 3)
-    >>> x
-    array([3.05423693, 6.70613319, 9.96946782])
-    >>> sc.jvp(n, x)
-    array([ 2.77555756e-17,  2.08166817e-16, -3.01841885e-16])
+    As `jnp_zeros` yields the roots of :math:`J_n'`, it can be used to
+    compute the locations of the peaks of :math:`J_n`. Plot
+    :math:`J_2`, :math:`J_2'` and the locations of the roots of :math:`J_2'`.
 
-    Note that the zero at ``x = 0`` for ``n > 1`` is not included.
-
-    >>> sc.jvp(n, 0)
-    0.0
-
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.special import jn, jnp_zeros, jvp
+    >>> j2_roots = jnp_zeros(2, 4)
+    >>> xmax = 15
+    >>> x = np.linspace(0, xmax, 500)
+    >>> fig, ax = plt.subplots()
+    >>> ax.plot(x, jn(2, x), label=r'$J_2$')
+    >>> ax.plot(x, jvp(2, x, 1), label=r"$J_2'$")
+    >>> ax.hlines(0, 0, xmax, color='k')
+    >>> ax.scatter(j2_roots, np.zeros((4, )), s=30, c='r',
+    ...            label=r"Roots of $J_2'$", zorder=5)
+    >>> ax.set_ylim(-0.4, 0.8)
+    >>> ax.set_xlim(0, xmax)
+    >>> plt.legend()
+    >>> plt.show()
     """
     return jnyn_zeros(n, nt)[1]
 
@@ -407,7 +468,8 @@ def yn_zeros(n, nt):
 
     See Also
     --------
-    yn, yv
+    yn: Bessel function of the second kind for integer order
+    yv: Bessel function of the second kind for real order
 
     References
     ----------
@@ -417,18 +479,29 @@ def yn_zeros(n, nt):
 
     Examples
     --------
-    >>> import scipy.special as sc
+    Compute the first four roots of :math:`Y_2`.
 
-    We can check that we are getting approximations of the zeros by
-    evaluating them with `yn`.
+    >>> from scipy.special import yn_zeros
+    >>> yn_zeros(2, 4)
+    array([ 3.38424177,  6.79380751, 10.02347798, 13.20998671])
 
-    >>> n = 2
-    >>> x = sc.yn_zeros(n, 3)
-    >>> x
-    array([ 3.38424177,  6.79380751, 10.02347798])
-    >>> sc.yn(n, x)
-    array([-1.94289029e-16,  8.32667268e-17, -1.52655666e-16])
+    Plot :math:`Y_2` and its first four roots.
 
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.special import yn, yn_zeros
+    >>> xmin = 2
+    >>> xmax = 15
+    >>> x = np.linspace(xmin, xmax, 500)
+    >>> fig, ax = plt.subplots()
+    >>> ax.hlines(0, xmin, xmax, color='k')
+    >>> ax.plot(x, yn(2, x), label=r'$Y_2$')
+    >>> ax.scatter(yn_zeros(2, 4), np.zeros((4, )), s=30, c='r',
+    ...            label='Roots', zorder=5)
+    >>> ax.set_ylim(-0.4, 0.4)
+    >>> ax.set_xlim(xmin, xmax)
+    >>> plt.legend()
+    >>> plt.show()
     """
     return jnyn_zeros(n, nt)[2]
 
@@ -465,18 +538,37 @@ def ynp_zeros(n, nt):
 
     Examples
     --------
-    >>> import scipy.special as sc
+    Compute the first four roots of the first derivative of the
+    Bessel function of second kind for order 0 :math:`Y_0'`.
 
-    We can check that we are getting approximations of the zeros by
-    evaluating them with `yvp`.
+    >>> from scipy.special import ynp_zeros
+    >>> ynp_zeros(0, 4)
+    array([ 2.19714133,  5.42968104,  8.59600587, 11.74915483])
 
-    >>> n = 2
-    >>> x = sc.ynp_zeros(n, 3)
-    >>> x
-    array([ 5.00258293,  8.3507247 , 11.57419547])
-    >>> sc.yvp(n, x)
-    array([ 2.22044605e-16, -3.33066907e-16,  2.94902991e-16])
+    Plot :math:`Y_0`, :math:`Y_0'` and confirm visually that the roots of
+    :math:`Y_0'` are located at local extrema of :math:`Y_0`.
 
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.special import yn, ynp_zeros, yvp
+    >>> zeros = ynp_zeros(0, 4)
+    >>> xmax = 13
+    >>> x = np.linspace(0, xmax, 500)
+    >>> fig, ax = plt.subplots()
+    >>> ax.plot(x, yn(0, x), label=r'$Y_0$')
+    >>> ax.plot(x, yvp(0, x, 1), label=r"$Y_0'$")
+    >>> ax.scatter(zeros, np.zeros((4, )), s=30, c='r',
+    ...            label=r"Roots of $Y_0'$", zorder=5)
+    >>> for root in zeros:
+    ...     y0_extremum =  yn(0, root)
+    ...     lower = min(0, y0_extremum)
+    ...     upper = max(0, y0_extremum)
+    ...     ax.vlines(root, lower, upper, color='r')
+    >>> ax.hlines(0, 0, xmax, color='k')
+    >>> ax.set_ylim(-0.6, 0.6)
+    >>> ax.set_xlim(0, xmax)
+    >>> plt.legend()
+    >>> plt.show()
     """
     return jnyn_zeros(n, nt)[3]
 
@@ -509,6 +601,46 @@ def y0_zeros(nt, complex=False):
            Functions", John Wiley and Sons, 1996, chapter 5.
            https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
 
+    Examples
+    --------
+    Compute the first 4 real roots and the derivatives at the roots of
+    :math:`Y_0`:
+
+    >>> import numpy as np
+    >>> from scipy.special import y0_zeros
+    >>> zeros, grads = y0_zeros(4)
+    >>> with np.printoptions(precision=5):
+    ...     print(f"Roots: {zeros}")
+    ...     print(f"Gradients: {grads}")
+    Roots: [ 0.89358+0.j  3.95768+0.j  7.08605+0.j 10.22235+0.j]
+    Gradients: [-0.87942+0.j  0.40254+0.j -0.3001 +0.j  0.2497 +0.j]
+
+    Plot the real part of :math:`Y_0` and the first four computed roots.
+
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.special import y0
+    >>> xmin = 0
+    >>> xmax = 11
+    >>> x = np.linspace(xmin, xmax, 500)
+    >>> fig, ax = plt.subplots()
+    >>> ax.hlines(0, xmin, xmax, color='k')
+    >>> ax.plot(x, y0(x), label=r'$Y_0$')
+    >>> zeros, grads = y0_zeros(4)
+    >>> ax.scatter(zeros.real, np.zeros((4, )), s=30, c='r',
+    ...            label=r'$Y_0$_zeros', zorder=5)
+    >>> ax.set_ylim(-0.5, 0.6)
+    >>> ax.set_xlim(xmin, xmax)
+    >>> plt.legend(ncol=2)
+    >>> plt.show()
+
+    Compute the first 4 complex roots and the derivatives at the roots of
+    :math:`Y_0` by setting ``complex=True``:
+
+    >>> y0_zeros(4, True)
+    (array([ -2.40301663+0.53988231j,  -5.5198767 +0.54718001j,
+             -8.6536724 +0.54841207j, -11.79151203+0.54881912j]),
+     array([ 0.10074769-0.88196771j, -0.02924642+0.5871695j ,
+             0.01490806-0.46945875j, -0.00937368+0.40230454j]))
     """
     if not isscalar(nt) or (floor(nt) != nt) or (nt <= 0):
         raise ValueError("Arguments must be scalar positive integer.")
@@ -545,6 +677,52 @@ def y1_zeros(nt, complex=False):
            Functions", John Wiley and Sons, 1996, chapter 5.
            https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
 
+    Examples
+    --------
+    Compute the first 4 real roots and the derivatives at the roots of
+    :math:`Y_1`:
+
+    >>> import numpy as np
+    >>> from scipy.special import y1_zeros
+    >>> zeros, grads = y1_zeros(4)
+    >>> with np.printoptions(precision=5):
+    ...     print(f"Roots: {zeros}")
+    ...     print(f"Gradients: {grads}")
+    Roots: [ 2.19714+0.j  5.42968+0.j  8.59601+0.j 11.74915+0.j]
+    Gradients: [ 0.52079+0.j -0.34032+0.j  0.27146+0.j -0.23246+0.j]
+
+    Extract the real parts:
+
+    >>> realzeros = zeros.real
+    >>> realzeros
+    array([ 2.19714133,  5.42968104,  8.59600587, 11.74915483])
+
+    Plot :math:`Y_1` and the first four computed roots.
+
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.special import y1
+    >>> xmin = 0
+    >>> xmax = 13
+    >>> x = np.linspace(xmin, xmax, 500)
+    >>> zeros, grads = y1_zeros(4)
+    >>> fig, ax = plt.subplots()
+    >>> ax.hlines(0, xmin, xmax, color='k')
+    >>> ax.plot(x, y1(x), label=r'$Y_1$')
+    >>> ax.scatter(zeros.real, np.zeros((4, )), s=30, c='r',
+    ...            label=r'$Y_1$_zeros', zorder=5)
+    >>> ax.set_ylim(-0.5, 0.5)
+    >>> ax.set_xlim(xmin, xmax)
+    >>> plt.legend()
+    >>> plt.show()
+
+    Compute the first 4 complex roots and the derivatives at the roots of
+    :math:`Y_1` by setting ``complex=True``:
+
+    >>> y1_zeros(4, True)
+    (array([ -0.50274327+0.78624371j,  -3.83353519+0.56235654j,
+             -7.01590368+0.55339305j, -10.17357383+0.55127339j]),
+     array([-0.45952768+1.31710194j,  0.04830191-0.69251288j,
+            -0.02012695+0.51864253j,  0.011614  -0.43203296j]))
     """
     if not isscalar(nt) or (floor(nt) != nt) or (nt <= 0):
         raise ValueError("Arguments must be scalar positive integer.")
@@ -581,6 +759,43 @@ def y1p_zeros(nt, complex=False):
            Functions", John Wiley and Sons, 1996, chapter 5.
            https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
 
+    Examples
+    --------
+    Compute the first four roots of :math:`Y_1'` and the values of
+    :math:`Y_1` at these roots.
+
+    >>> import numpy as np
+    >>> from scipy.special import y1p_zeros
+    >>> y1grad_roots, y1_values = y1p_zeros(4)
+    >>> with np.printoptions(precision=5):
+    ...     print(f"Y1' Roots: {y1grad_roots.real}")
+    ...     print(f"Y1 values: {y1_values.real}")
+    Y1' Roots: [ 3.68302  6.9415  10.1234  13.28576]
+    Y1 values: [ 0.41673 -0.30317  0.25091 -0.21897]
+
+    `y1p_zeros` can be used to calculate the extremal points of :math:`Y_1`
+    directly. Here we plot :math:`Y_1` and the first four extrema.
+
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.special import y1, yvp
+    >>> y1_roots, y1_values_at_roots = y1p_zeros(4)
+    >>> real_roots = y1_roots.real
+    >>> xmax = 15
+    >>> x = np.linspace(0, xmax, 500)
+    >>> x[0] += 1e-15
+    >>> fig, ax = plt.subplots()
+    >>> ax.plot(x, y1(x), label=r'$Y_1$')
+    >>> ax.plot(x, yvp(1, x, 1), label=r"$Y_1'$")
+    >>> ax.scatter(real_roots, np.zeros((4, )), s=30, c='r',
+    ...            label=r"Roots of $Y_1'$", zorder=5)
+    >>> ax.scatter(real_roots, y1_values_at_roots.real, s=30, c='k',
+    ...            label=r"Extrema of $Y_1$", zorder=5)
+    >>> ax.hlines(0, 0, xmax, color='k')
+    >>> ax.set_ylim(-0.5, 0.5)
+    >>> ax.set_xlim(0, xmax)
+    >>> ax.legend(ncol=2, bbox_to_anchor=(1., 0.75))
+    >>> plt.tight_layout()
+    >>> plt.show()
     """
     if not isscalar(nt) or (floor(nt) != nt) or (nt <= 0):
         raise ValueError("Arguments must be scalar positive integer.")
@@ -611,13 +826,13 @@ def jvp(v, z, n=1):
 
     Parameters
     ----------
-    v : float
+    v : array_like or float
         Order of Bessel function
     z : complex
         Argument at which to evaluate the derivative; can be real or
         complex.
     n : int, default 1
-        Order of derivative
+        Order of derivative. For 0 returns the Bessel function `jv` itself.
 
     Returns
     -------
@@ -633,9 +848,46 @@ def jvp(v, z, n=1):
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996, chapter 5.
            https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
+
     .. [2] NIST Digital Library of Mathematical Functions.
            https://dlmf.nist.gov/10.6.E7
 
+    Examples
+    --------
+
+    Compute the Bessel function of the first kind of order 0 and
+    its first two derivatives at 1.
+
+    >>> from scipy.special import jvp
+    >>> jvp(0, 1, 0), jvp(0, 1, 1), jvp(0, 1, 2)
+    (0.7651976865579666, -0.44005058574493355, -0.3251471008130331)
+
+    Compute the first derivative of the Bessel function of the first
+    kind for several orders at 1 by providing an array for `v`.
+
+    >>> jvp([0, 1, 2], 1, 1)
+    array([-0.44005059,  0.3251471 ,  0.21024362])
+
+    Compute the first derivative of the Bessel function of the first
+    kind of order 0 at several points by providing an array for `z`.
+
+    >>> import numpy as np
+    >>> points = np.array([0., 1.5, 3.])
+    >>> jvp(0, points, 1)
+    array([-0.        , -0.55793651, -0.33905896])
+
+    Plot the Bessel function of the first kind of order 1 and its
+    first three derivatives.
+
+    >>> import matplotlib.pyplot as plt
+    >>> x = np.linspace(-10, 10, 1000)
+    >>> fig, ax = plt.subplots()
+    >>> ax.plot(x, jvp(1, x, 0), label=r"$J_1$")
+    >>> ax.plot(x, jvp(1, x, 1), label=r"$J_1'$")
+    >>> ax.plot(x, jvp(1, x, 2), label=r"$J_1''$")
+    >>> ax.plot(x, jvp(1, x, 3), label=r"$J_1'''$")
+    >>> plt.legend()
+    >>> plt.show()
     """
     n = _nonneg_int_or_fail(n, 'n')
     if n == 0:
@@ -652,17 +904,21 @@ def yvp(v, z, n=1):
 
     Parameters
     ----------
-    v : float
+    v : array_like of float
         Order of Bessel function
     z : complex
         Argument at which to evaluate the derivative
     n : int, default 1
-        Order of derivative
+        Order of derivative. For 0 returns the BEssel function `yv`
 
     Returns
     -------
     scalar or ndarray
         nth derivative of the Bessel function.
+
+    See Also
+    --------
+    yv : Bessel functions of the second kind
 
     Notes
     -----
@@ -673,9 +929,47 @@ def yvp(v, z, n=1):
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996, chapter 5.
            https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
+
     .. [2] NIST Digital Library of Mathematical Functions.
            https://dlmf.nist.gov/10.6.E7
 
+    Examples
+    --------
+    Compute the Bessel function of the second kind of order 0 and
+    its first two derivatives at 1.
+
+    >>> from scipy.special import yvp
+    >>> yvp(0, 1, 0), yvp(0, 1, 1), yvp(0, 1, 2)
+    (0.088256964215677, 0.7812128213002889, -0.8694697855159659)
+
+    Compute the first derivative of the Bessel function of the second
+    kind for several orders at 1 by providing an array for `v`.
+
+    >>> yvp([0, 1, 2], 1, 1)
+    array([0.78121282, 0.86946979, 2.52015239])
+
+    Compute the first derivative of the Bessel function of the
+    second kind of order 0 at several points by providing an array for `z`.
+
+    >>> import numpy as np
+    >>> points = np.array([0.5, 1.5, 3.])
+    >>> yvp(0, points, 1)
+    array([ 1.47147239,  0.41230863, -0.32467442])
+
+    Plot the Bessel function of the second kind of order 1 and its
+    first three derivatives.
+
+    >>> import matplotlib.pyplot as plt
+    >>> x = np.linspace(0, 5, 1000)
+    >>> x[0] += 1e-15
+    >>> fig, ax = plt.subplots()
+    >>> ax.plot(x, yvp(1, x, 0), label=r"$Y_1$")
+    >>> ax.plot(x, yvp(1, x, 1), label=r"$Y_1'$")
+    >>> ax.plot(x, yvp(1, x, 2), label=r"$Y_1''$")
+    >>> ax.plot(x, yvp(1, x, 3), label=r"$Y_1'''$")
+    >>> ax.set_ylim(-10, 10)
+    >>> plt.legend()
+    >>> plt.show()
     """
     n = _nonneg_int_or_fail(n, 'n')
     if n == 0:
@@ -685,7 +979,7 @@ def yvp(v, z, n=1):
 
 
 def kvp(v, z, n=1):
-    """Compute nth derivative of real-order modified Bessel function Kv(z)
+    """Compute derivatives of real-order modified Bessel function Kv(z)
 
     Kv(z) is the modified Bessel function of the second kind.
     Derivative is calculated with respect to `z`.
@@ -696,28 +990,17 @@ def kvp(v, z, n=1):
         Order of Bessel function
     z : array_like of complex
         Argument at which to evaluate the derivative
-    n : int
-        Order of derivative.  Default is first derivative.
+    n : int, default 1
+        Order of derivative. For 0 returns the Bessel function `kv` itself.
 
     Returns
     -------
     out : ndarray
         The results
 
-    Examples
+    See Also
     --------
-    Calculate multiple values at order 5:
-
-    >>> from scipy.special import kvp
-    >>> kvp(5, (1, 2, 3+5j))
-    array([-1.84903536e+03+0.j        , -2.57735387e+01+0.j        ,
-           -3.06627741e-02+0.08750845j])
-
-
-    Calculate for a single value at multiple orders:
-
-    >>> kvp((4, 4.5, 5), 1)
-    array([ -184.0309,  -568.9585, -1849.0354])
+    kv
 
     Notes
     -----
@@ -728,9 +1011,46 @@ def kvp(v, z, n=1):
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996, chapter 6.
            https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
+
     .. [2] NIST Digital Library of Mathematical Functions.
            https://dlmf.nist.gov/10.29.E5
 
+    Examples
+    --------
+    Compute the modified bessel function of the second kind of order 0 and
+    its first two derivatives at 1.
+
+    >>> from scipy.special import kvp
+    >>> kvp(0, 1, 0), kvp(0, 1, 1), kvp(0, 1, 2)
+    (0.42102443824070834, -0.6019072301972346, 1.0229316684379428)
+
+    Compute the first derivative of the modified Bessel function of the second
+    kind for several orders at 1 by providing an array for `v`.
+
+    >>> kvp([0, 1, 2], 1, 1)
+    array([-0.60190723, -1.02293167, -3.85158503])
+
+    Compute the first derivative of the modified Bessel function of the
+    second kind of order 0 at several points by providing an array for `z`.
+
+    >>> import numpy as np
+    >>> points = np.array([0.5, 1.5, 3.])
+    >>> kvp(0, points, 1)
+    array([-1.65644112, -0.2773878 , -0.04015643])
+
+    Plot the modified bessel function of the second kind and its
+    first three derivatives.
+
+    >>> import matplotlib.pyplot as plt
+    >>> x = np.linspace(0, 5, 1000)
+    >>> fig, ax = plt.subplots()
+    >>> ax.plot(x, kvp(1, x, 0), label=r"$K_1$")
+    >>> ax.plot(x, kvp(1, x, 1), label=r"$K_1'$")
+    >>> ax.plot(x, kvp(1, x, 2), label=r"$K_1''$")
+    >>> ax.plot(x, kvp(1, x, 3), label=r"$K_1'''$")
+    >>> ax.set_ylim(-2.5, 2.5)
+    >>> plt.legend()
+    >>> plt.show()
     """
     n = _nonneg_int_or_fail(n, 'n')
     if n == 0:
@@ -747,13 +1067,13 @@ def ivp(v, z, n=1):
 
     Parameters
     ----------
-    v : array_like
+    v : array_like or float
         Order of Bessel function
     z : array_like
         Argument at which to evaluate the derivative; can be real or
         complex.
     n : int, default 1
-        Order of derivative
+        Order of derivative. For 0, returns the Bessel function `iv` itself.
 
     Returns
     -------
@@ -773,9 +1093,45 @@ def ivp(v, z, n=1):
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996, chapter 6.
            https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
+
     .. [2] NIST Digital Library of Mathematical Functions.
            https://dlmf.nist.gov/10.29.E5
 
+    Examples
+    --------
+    Compute the modified Bessel function of the first kind of order 0 and
+    its first two derivatives at 1.
+
+    >>> from scipy.special import ivp
+    >>> ivp(0, 1, 0), ivp(0, 1, 1), ivp(0, 1, 2)
+    (1.2660658777520084, 0.565159103992485, 0.7009067737595233)
+
+    Compute the first derivative of the modified Bessel function of the first
+    kind for several orders at 1 by providing an array for `v`.
+
+    >>> ivp([0, 1, 2], 1, 1)
+    array([0.5651591 , 0.70090677, 0.29366376])
+
+    Compute the first derivative of the modified Bessel function of the
+    first kind of order 0 at several points by providing an array for `z`.
+
+    >>> import numpy as np
+    >>> points = np.array([0., 1.5, 3.])
+    >>> ivp(0, points, 1)
+    array([0.        , 0.98166643, 3.95337022])
+
+    Plot the modified Bessel function of the first kind of order 1 and its
+    first three derivatives.
+
+    >>> import matplotlib.pyplot as plt
+    >>> x = np.linspace(-5, 5, 1000)
+    >>> fig, ax = plt.subplots()
+    >>> ax.plot(x, ivp(1, x, 0), label=r"$I_1$")
+    >>> ax.plot(x, ivp(1, x, 1), label=r"$I_1'$")
+    >>> ax.plot(x, ivp(1, x, 2), label=r"$I_1''$")
+    >>> ax.plot(x, ivp(1, x, 3), label=r"$I_1'''$")
+    >>> plt.legend()
+    >>> plt.show()
     """
     n = _nonneg_int_or_fail(n, 'n')
     if n == 0:
@@ -785,7 +1141,7 @@ def ivp(v, z, n=1):
 
 
 def h1vp(v, z, n=1):
-    """Compute nth derivative of Hankel function H1v(z) with respect to `z`.
+    """Compute derivatives of Hankel function H1v(z) with respect to `z`.
 
     Parameters
     ----------
@@ -795,12 +1151,16 @@ def h1vp(v, z, n=1):
         Argument at which to evaluate the derivative. Can be real or
         complex.
     n : int, default 1
-        Order of derivative
+        Order of derivative. For 0 returns the Hankel function `h1v` itself.
 
     Returns
     -------
     scalar or ndarray
         Values of the derivative of the Hankel function.
+
+    See Also
+    --------
+    hankel1
 
     Notes
     -----
@@ -811,9 +1171,36 @@ def h1vp(v, z, n=1):
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996, chapter 5.
            https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
+
     .. [2] NIST Digital Library of Mathematical Functions.
            https://dlmf.nist.gov/10.6.E7
 
+    Examples
+    --------
+    Compute the Hankel function of the first kind of order 0 and
+    its first two derivatives at 1.
+
+    >>> from scipy.special import h1vp
+    >>> h1vp(0, 1, 0), h1vp(0, 1, 1), h1vp(0, 1, 2)
+    ((0.7651976865579664+0.088256964215677j),
+     (-0.44005058574493355+0.7812128213002889j),
+     (-0.3251471008130329-0.8694697855159659j))
+
+    Compute the first derivative of the Hankel function of the first kind
+    for several orders at 1 by providing an array for `v`.
+
+    >>> h1vp([0, 1, 2], 1, 1)
+    array([-0.44005059+0.78121282j,  0.3251471 +0.86946979j,
+           0.21024362+2.52015239j])
+
+    Compute the first derivative of the Hankel function of the first kind
+    of order 0 at several points by providing an array for `z`.
+
+    >>> import numpy as np
+    >>> points = np.array([0.5, 1.5, 3.])
+    >>> h1vp(0, points, 1)
+    array([-0.24226846+1.47147239j, -0.55793651+0.41230863j,
+           -0.33905896-0.32467442j])
     """
     n = _nonneg_int_or_fail(n, 'n')
     if n == 0:
@@ -823,7 +1210,7 @@ def h1vp(v, z, n=1):
 
 
 def h2vp(v, z, n=1):
-    """Compute nth derivative of Hankel function H2v(z) with respect to `z`.
+    """Compute derivatives of Hankel function H2v(z) with respect to `z`.
 
     Parameters
     ----------
@@ -833,12 +1220,16 @@ def h2vp(v, z, n=1):
         Argument at which to evaluate the derivative. Can be real or
         complex.
     n : int, default 1
-        Order of derivative
+        Order of derivative. For 0 returns the Hankel function `h2v` itself.
 
     Returns
     -------
     scalar or ndarray
         Values of the derivative of the Hankel function.
+
+    See Also
+    --------
+    hankel2
 
     Notes
     -----
@@ -849,9 +1240,36 @@ def h2vp(v, z, n=1):
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996, chapter 5.
            https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
+
     .. [2] NIST Digital Library of Mathematical Functions.
            https://dlmf.nist.gov/10.6.E7
 
+    Examples
+    --------
+    Compute the Hankel function of the second kind of order 0 and
+    its first two derivatives at 1.
+
+    >>> from scipy.special import h2vp
+    >>> h2vp(0, 1, 0), h2vp(0, 1, 1), h2vp(0, 1, 2)
+    ((0.7651976865579664-0.088256964215677j),
+     (-0.44005058574493355-0.7812128213002889j),
+     (-0.3251471008130329+0.8694697855159659j))
+
+    Compute the first derivative of the Hankel function of the second kind
+    for several orders at 1 by providing an array for `v`.
+
+    >>> h2vp([0, 1, 2], 1, 1)
+    array([-0.44005059-0.78121282j,  0.3251471 -0.86946979j,
+           0.21024362-2.52015239j])
+
+    Compute the first derivative of the Hankel function of the second kind
+    of order 0 at several points by providing an array for `z`.
+
+    >>> import numpy as np
+    >>> points = np.array([0.5, 1.5, 3.])
+    >>> h2vp(0, points, 1)
+    array([-0.24226846-1.47147239j, -0.55793651-0.41230863j,
+           -0.33905896+0.32467442j])
     """
     n = _nonneg_int_or_fail(n, 'n')
     if n == 0:
@@ -908,7 +1326,11 @@ def riccati_jn(n, x):
         n1 = 1
     else:
         n1 = n
-    nm, jn, jnp = _specfun.rctj(n1, x)
+
+    jn = np.empty((n1 + 1,), dtype=np.float64)
+    jnp = np.empty_like(jn)
+
+    _rctj(x, out=(jn, jnp))
     return jn[:(n+1)], jnp[:(n+1)]
 
 
@@ -960,15 +1382,19 @@ def riccati_yn(n, x):
         n1 = 1
     else:
         n1 = n
-    nm, jn, jnp = _specfun.rcty(n1, x)
-    return jn[:(n+1)], jnp[:(n+1)]
+
+    yn = np.empty((n1 + 1,), dtype=np.float64)
+    ynp = np.empty_like(yn)
+    _rcty(x, out=(yn, ynp))
+
+    return yn[:(n+1)], ynp[:(n+1)]
 
 
 def erf_zeros(nt):
     """Compute the first nt zero in the first quadrant, ordered by absolute value.
 
-    Zeros in the other quadrants can be obtained by using the symmetries erf(-z) = erf(z) and
-    erf(conj(z)) = conj(erf(z)).
+    Zeros in the other quadrants can be obtained by using the symmetries
+    erf(-z) = erf(z) and erf(conj(z)) = conj(erf(z)).
 
 
     Parameters
@@ -981,6 +1407,12 @@ def erf_zeros(nt):
     The locations of the zeros of erf : ndarray (complex)
         Complex values at which zeros of erf(z)
 
+    References
+    ----------
+    .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
+           Functions", John Wiley and Sons, 1996.
+           https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
+
     Examples
     --------
     >>> from scipy import special
@@ -992,12 +1424,6 @@ def erf_zeros(nt):
     >>> special.erf(special.erf_zeros(1))
     array([4.95159469e-14-1.16407394e-16j])
 
-    References
-    ----------
-    .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
-           Functions", John Wiley and Sons, 1996.
-           https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
-
     """
     if (floor(nt) != nt) or (nt <= 0) or not isscalar(nt):
         raise ValueError("Argument must be positive scalar integer.")
@@ -1006,6 +1432,16 @@ def erf_zeros(nt):
 
 def fresnelc_zeros(nt):
     """Compute nt complex zeros of cosine Fresnel integral C(z).
+
+    Parameters
+    ----------
+    nt : int
+        Number of zeros to compute
+
+    Returns
+    -------
+    fresnelc_zeros: ndarray
+        Zeros of the cosine Fresnel integral
 
     References
     ----------
@@ -1022,6 +1458,16 @@ def fresnelc_zeros(nt):
 def fresnels_zeros(nt):
     """Compute nt complex zeros of sine Fresnel integral S(z).
 
+    Parameters
+    ----------
+    nt : int
+        Number of zeros to compute
+
+    Returns
+    -------
+    fresnels_zeros: ndarray
+        Zeros of the sine Fresnel integral
+
     References
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
@@ -1036,6 +1482,18 @@ def fresnels_zeros(nt):
 
 def fresnel_zeros(nt):
     """Compute nt complex zeros of sine and cosine Fresnel integrals S(z) and C(z).
+
+    Parameters
+    ----------
+    nt : int
+        Number of zeros to compute
+
+    Returns
+    -------
+    zeros_sine: ndarray
+        Zeros of the sine Fresnel integral
+    zeros_cosine : ndarray
+        Zeros of the cosine Fresnel integral
 
     References
     ----------
@@ -1054,6 +1512,20 @@ def assoc_laguerre(x, n, k=0.0):
 
     The polynomial :math:`L^{(k)}_n(x)` is orthogonal over ``[0, inf)``,
     with weighting function ``exp(-x) * x**k`` with ``k > -1``.
+
+    Parameters
+    ----------
+    x : float or ndarray
+        Points where to evaluate the Laguerre polynomial
+    n : int
+        Degree of the Laguerre polynomial
+    k : int
+        Order of the Laguerre polynomial
+
+    Returns
+    -------
+    assoc_laguerre: float or ndarray
+        Associated laguerre polynomial values
 
     Notes
     -----
@@ -1118,7 +1590,8 @@ def mathieu_even_coef(m, q):
 
     .. math:: \mathrm{ce}_{2n}(z, q) = \sum_{k=0}^{\infty} A_{(2n)}^{(2k)} \cos 2kz
 
-    .. math:: \mathrm{ce}_{2n+1}(z, q) = \sum_{k=0}^{\infty} A_{(2n+1)}^{(2k+1)} \cos (2k+1)z
+    .. math:: \mathrm{ce}_{2n+1}(z, q) =
+              \sum_{k=0}^{\infty} A_{(2n+1)}^{(2k+1)} \cos (2k+1)z
 
     This function returns the coefficients :math:`A_{(2n)}^{(2k)}` for even
     input m=2n, and the coefficients :math:`A_{(2n+1)}^{(2k+1)}` for odd input
@@ -1158,7 +1631,7 @@ def mathieu_even_coef(m, q):
         qm = 17.0 + 3.1*sqrt(q) - .126*q + .0037*sqrt(q)*q
     km = int(qm + 0.5*m)
     if km > 251:
-        warnings.warn("Too many predicted coefficients.", RuntimeWarning, 2)
+        warnings.warn("Too many predicted coefficients.", RuntimeWarning, stacklevel=2)
     kd = 1
     m = int(floor(m))
     if m % 2:
@@ -1175,9 +1648,11 @@ def mathieu_odd_coef(m, q):
     The Fourier series of the odd solutions of the Mathieu differential
     equation are of the form
 
-    .. math:: \mathrm{se}_{2n+1}(z, q) = \sum_{k=0}^{\infty} B_{(2n+1)}^{(2k+1)} \sin (2k+1)z
+    .. math:: \mathrm{se}_{2n+1}(z, q) =
+              \sum_{k=0}^{\infty} B_{(2n+1)}^{(2k+1)} \sin (2k+1)z
 
-    .. math:: \mathrm{se}_{2n+2}(z, q) = \sum_{k=0}^{\infty} B_{(2n+2)}^{(2k+2)} \sin (2k+2)z
+    .. math:: \mathrm{se}_{2n+2}(z, q) =
+              \sum_{k=0}^{\infty} B_{(2n+2)}^{(2k+2)} \sin (2k+2)z
 
     This function returns the coefficients :math:`B_{(2n+2)}^{(2k+2)}` for even
     input m=2n+2, and the coefficients :math:`B_{(2n+1)}^{(2k+1)}` for odd
@@ -1215,7 +1690,7 @@ def mathieu_odd_coef(m, q):
         qm = 17.0 + 3.1*sqrt(q) - .126*q + .0037*sqrt(q)*q
     km = int(qm + 0.5*m)
     if km > 251:
-        warnings.warn("Too many predicted coefficients.", RuntimeWarning, 2)
+        warnings.warn("Too many predicted coefficients.", RuntimeWarning, stacklevel=2)
     kd = 4
     m = int(floor(m))
     if m % 2:
@@ -1237,6 +1712,10 @@ def lpmn(m, n, z):
     This function takes a real argument ``z``. For complex arguments ``z``
     use clpmn instead.
 
+    .. deprecated:: 1.15.0
+        This function is deprecated and will be removed in a future version.
+        Use `scipy.special.assoc_legendre_p_all` instead.
+
     Parameters
     ----------
     m : int
@@ -1245,7 +1724,7 @@ def lpmn(m, n, z):
        where ``n >= 0``; the degree of the Legendre function.  Often
        called ``l`` (lower case L) in descriptions of the associated
        Legendre function
-    z : float
+    z : array_like
         Input value.
 
     Returns
@@ -1274,31 +1753,30 @@ def lpmn(m, n, z):
            https://dlmf.nist.gov/14.3
 
     """
-    if not isscalar(m) or (abs(m) > n):
+
+    n = _nonneg_int_or_fail(n, 'n', strict=False)
+
+    if (abs(m) > n):
         raise ValueError("m must be <= n.")
-    if not isscalar(n) or (n < 0):
-        raise ValueError("n must be a non-negative integer.")
-    if not isscalar(z):
-        raise ValueError("z must be scalar.")
-    if iscomplex(z):
+
+    if np.iscomplexobj(z):
         raise ValueError("Argument must be real. Use clpmn instead.")
-    if (m < 0):
-        mp = -m
-        mf, nf = mgrid[0:mp+1, 0:n+1]
-        with _ufuncs.errstate(all='ignore'):
-            if abs(z) < 1:
-                # Ferrer function; DLMF 14.9.3
-                fixarr = where(mf > nf, 0.0,
-                               (-1)**mf * gamma(nf-mf+1) / gamma(nf+mf+1))
-            else:
-                # Match to clpmn; DLMF 14.9.13
-                fixarr = where(mf > nf, 0.0, gamma(nf-mf+1) / gamma(nf+mf+1))
+
+    m, n = int(m), int(n)  # Convert to int to maintain backwards compatibility.
+
+    branch_cut = np.where(np.abs(z) <= 1, 2, 3)
+
+    p, pd = assoc_legendre_p_all(n, abs(m), z, branch_cut=branch_cut, diff_n=1)
+    p = np.swapaxes(p, 0, 1)
+    pd = np.swapaxes(pd, 0, 1)
+
+    if (m >= 0):
+        p = p[:(m + 1)]
+        pd = pd[:(m + 1)]
     else:
-        mp = m
-    p, pd = _specfun.lpmn(mp, n, z)
-    if (m < 0):
-        p = p * fixarr
-        pd = pd * fixarr
+        p = np.insert(p[:(m - 1):-1], 0, p[0], axis=0)
+        pd = np.insert(pd[:(m - 1):-1], 0, pd[0], axis=0)
+
     return p, pd
 
 
@@ -1310,6 +1788,10 @@ def clpmn(m, n, z, type=3):
     Returns two arrays of size ``(m+1, n+1)`` containing ``Pmn(z)`` and
     ``Pmn'(z)`` for all orders from ``0..m`` and degrees from ``0..n``.
 
+    .. deprecated:: 1.15.0
+        This function is deprecated and will be removed in a future version.
+        Use `scipy.special.assoc_legendre_p_all` instead.
+
     Parameters
     ----------
     m : int
@@ -1318,7 +1800,7 @@ def clpmn(m, n, z, type=3):
        where ``n >= 0``; the degree of the Legendre function.  Often
        called ``l`` (lower case L) in descriptions of the associated
        Legendre function
-    z : float or complex
+    z : array_like, float or complex
         Input value.
     type : int, optional
        takes values 2 or 3
@@ -1357,30 +1839,30 @@ def clpmn(m, n, z, type=3):
            https://dlmf.nist.gov/14.21
 
     """
-    if not isscalar(m) or (abs(m) > n):
+
+    if (abs(m) > n):
         raise ValueError("m must be <= n.")
-    if not isscalar(n) or (n < 0):
-        raise ValueError("n must be a non-negative integer.")
-    if not isscalar(z):
-        raise ValueError("z must be scalar.")
-    if not(type == 2 or type == 3):
+
+    if not (type == 2 or type == 3):
         raise ValueError("type must be either 2 or 3.")
-    if (m < 0):
-        mp = -m
-        mf, nf = mgrid[0:mp+1, 0:n+1]
-        with _ufuncs.errstate(all='ignore'):
-            if type == 2:
-                fixarr = where(mf > nf, 0.0,
-                               (-1)**mf * gamma(nf-mf+1) / gamma(nf+mf+1))
-            else:
-                fixarr = where(mf > nf, 0.0, gamma(nf-mf+1) / gamma(nf+mf+1))
+
+    m, n = int(m), int(n)  # Convert to int to maintain backwards compatibility.
+
+    if not np.iscomplexobj(z):
+        z = np.asarray(z, dtype=complex)
+
+    out, out_jac = assoc_legendre_p_all(n, abs(m), z, branch_cut=type, diff_n=1)
+    out = np.swapaxes(out, 0, 1)
+    out_jac = np.swapaxes(out_jac, 0, 1)
+
+    if (m >= 0):
+        out = out[:(m + 1)]
+        out_jac = out_jac[:(m + 1)]
     else:
-        mp = m
-    p, pd = _specfun.clpmn(mp, n, real(z), imag(z), type)
-    if (m < 0):
-        p = p * fixarr
-        pd = pd * fixarr
-    return p, pd
+        out = np.insert(out[:(m - 1):-1], 0, out[0], axis=0)
+        out_jac = np.insert(out_jac[:(m - 1):-1], 0, out_jac[0], axis=0)
+
+    return out, out_jac
 
 
 def lqmn(m, n, z):
@@ -1399,7 +1881,7 @@ def lqmn(m, n, z):
        where ``n >= 0``; the degree of the Legendre function.  Often
        called ``l`` (lower case L) in descriptions of the associated
        Legendre function
-    z : complex
+    z : array_like, complex
         Input value.
 
     Returns
@@ -1420,19 +1902,29 @@ def lqmn(m, n, z):
         raise ValueError("m must be a non-negative integer.")
     if not isscalar(n) or (n < 0):
         raise ValueError("n must be a non-negative integer.")
-    if not isscalar(z):
-        raise ValueError("z must be scalar.")
-    m = int(m)
-    n = int(n)
 
+    m, n = int(m), int(n)  # Convert to int to maintain backwards compatibility.
     # Ensure neither m nor n == 0
     mm = max(1, m)
     nn = max(1, n)
 
-    if iscomplex(z):
-        q, qd = _specfun.clqmn(mm, nn, z)
+    z = np.asarray(z)
+    if (not np.issubdtype(z.dtype, np.inexact)):
+        z = z.astype(np.float64)
+
+    if np.iscomplexobj(z):
+        q = np.empty((mm + 1, nn + 1) + z.shape, dtype=np.complex128)
     else:
-        q, qd = _specfun.lqmn(mm, nn, z)
+        q = np.empty((mm + 1, nn + 1) + z.shape, dtype=np.float64)
+    qd = np.empty_like(q)
+    if (z.ndim == 0):
+        _lqmn(z, out=(q, qd))
+    else:
+        # new axes must be last for the ufunc
+        _lqmn(z,
+              out=(np.moveaxis(q, (0, 1), (-2, -1)),
+                   np.moveaxis(qd, (0, 1), (-2, -1))))
+
     return q[:(m+1), :(n+1)], qd[:(m+1), :(n+1)]
 
 
@@ -1458,6 +1950,7 @@ def bernoulli(n):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.special import bernoulli, zeta
     >>> bernoulli(4)
     array([ 1.        , -0.5       ,  0.16666667,  0.        , -0.03333333])
@@ -1515,6 +2008,7 @@ def euler(n):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.special import euler
     >>> euler(6)
     array([  1.,   0.,  -1.,   0.,   5.,   0., -61.])
@@ -1545,25 +2039,18 @@ def lpn(n, z):
 
     See also special.legendre for polynomial class.
 
+    .. deprecated:: 1.15.0
+        This function is deprecated and will be removed in a future version.
+        Use `scipy.special.legendre_p_all` instead.
+
     References
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
            https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
-
     """
-    if not (isscalar(n) and isscalar(z)):
-        raise ValueError("arguments must be scalars.")
-    n = _nonneg_int_or_fail(n, 'n', strict=False)
-    if (n < 1):
-        n1 = 1
-    else:
-        n1 = n
-    if iscomplex(z):
-        pn, pd = _specfun.clpn(n1, z)
-    else:
-        pn, pd = _specfun.lpn(n1, z)
-    return pn[:(n+1)], pd[:(n+1)]
+
+    return legendre_p_all(n, z, diff_n=1)
 
 
 def lqn(n, z):
@@ -1579,17 +2066,29 @@ def lqn(n, z):
            https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
 
     """
-    if not (isscalar(n) and isscalar(z)):
-        raise ValueError("arguments must be scalars.")
     n = _nonneg_int_or_fail(n, 'n', strict=False)
     if (n < 1):
         n1 = 1
     else:
         n1 = n
-    if iscomplex(z):
-        qn, qd = _specfun.clqn(n1, z)
+
+    z = np.asarray(z)
+    if (not np.issubdtype(z.dtype, np.inexact)):
+        z = z.astype(float)
+
+    if np.iscomplexobj(z):
+        qn = np.empty((n1 + 1,) + z.shape, dtype=np.complex128)
     else:
-        qn, qd = _specfun.lqnb(n1, z)
+        qn = np.empty((n1 + 1,) + z.shape, dtype=np.float64)
+    qd = np.empty_like(qn)
+    if (z.ndim == 0):
+        _lqn(z, out=(qn, qd))
+    else:
+          # new axes must be last for the ufunc
+        _lqn(z,
+             out=(np.moveaxis(qn, 0, -1),
+                  np.moveaxis(qd, 0, -1)))
+
     return qn[:(n+1)], qd[:(n+1)]
 
 
@@ -1618,6 +2117,12 @@ def ai_zeros(nt):
     aip : ndarray
         Values of Ai'(x) evaluated at first `nt` zeros of Ai(x)
 
+    References
+    ----------
+    .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
+           Functions", John Wiley and Sons, 1996.
+           https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
+
     Examples
     --------
     >>> from scipy import special
@@ -1630,12 +2135,6 @@ def ai_zeros(nt):
     array([ 0.53565666, -0.41901548,  0.38040647])
     >>> aip
     array([ 0.70121082, -0.80311137,  0.86520403])
-
-    References
-    ----------
-    .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
-           Functions", John Wiley and Sons, 1996.
-           https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
 
     """
     kf = 1
@@ -1669,6 +2168,12 @@ def bi_zeros(nt):
     bip : ndarray
         Values of Bi'(x) evaluated at first `nt` zeros of Bi(x)
 
+    References
+    ----------
+    .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
+           Functions", John Wiley and Sons, 1996.
+           https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
+
     Examples
     --------
     >>> from scipy import special
@@ -1681,12 +2186,6 @@ def bi_zeros(nt):
     array([-0.45494438,  0.39652284, -0.36796916])
     >>> bip
     array([ 0.60195789, -0.76031014,  0.83699101])
-
-    References
-    ----------
-    .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
-           Functions", John Wiley and Sons, 1996.
-           https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
 
     """
     kf = 2
@@ -2160,7 +2659,7 @@ def obl_cv_seq(m, n, c):
     return _specfun.segv(m, n, c, -1)[1][:maxL]
 
 
-def comb(N, k, exact=False, repetition=False, legacy=True):
+def comb(N, k, *, exact=False, repetition=False):
     """The number of combinations of N things taken k at a time.
 
     This is often expressed as "N choose k".
@@ -2173,24 +2672,14 @@ def comb(N, k, exact=False, repetition=False, legacy=True):
         Number of elements taken.
     exact : bool, optional
         For integers, if `exact` is False, then floating point precision is
-        used, otherwise the result is computed exactly. For non-integers, if
-        `exact` is True, the inputs are currently cast to integers, though
-        this behavior is deprecated (see below).
+        used, otherwise the result is computed exactly.
+
+        .. deprecated:: 1.14.0
+            ``exact=True`` is deprecated for non-integer `N` and `k` and will raise an
+            error in SciPy 1.16.0
     repetition : bool, optional
         If `repetition` is True, then the number of combinations with
         repetition is computed.
-    legacy : bool, optional
-        If `legacy` is True and `exact` is True, then non-integral arguments
-        are cast to ints; if `legacy` is False, the result for non-integral
-        arguments is unaffected by the value of `exact`.
-
-        .. deprecated:: 1.9.0
-            Non-integer arguments are currently being cast to integers when
-            `exact=True`. This behaviour is deprecated and the default will
-            change to avoid the cast in SciPy 1.11.0. To opt into the future
-            behavior set `legacy=False`. If you want to keep the
-            argument-casting but silence this warning, cast your inputs
-            directly, e.g. ``comb(int(your_N), int(your_k), exact=True)``.
 
     Returns
     -------
@@ -2210,6 +2699,7 @@ def comb(N, k, exact=False, repetition=False, legacy=True):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.special import comb
     >>> k = np.array([3, 4])
     >>> n = np.array([10, 10])
@@ -2222,24 +2712,17 @@ def comb(N, k, exact=False, repetition=False, legacy=True):
 
     """
     if repetition:
-        return comb(N + k - 1, k, exact, legacy=legacy)
+        return comb(N + k - 1, k, exact=exact)
     if exact:
-        if int(N) != N or int(k) != k:
-            if legacy:
-                warnings.warn(
-                    "Non-integer arguments are currently being cast to "
-                    "integers when exact=True. This behaviour is "
-                    "deprecated and the default will change to avoid the cast "
-                    "in SciPy 1.11.0. To opt into the future behavior set "
-                    "legacy=False. If you want to keep the argument-casting "
-                    "but silence this warning, cast your inputs directly, "
-                    "e.g. comb(int(your_N), int(your_k), exact=True).",
-                    DeprecationWarning, stacklevel=2
-                )
-            else:
-                return comb(N, k)
-        # _comb_int casts inputs to integers
-        return _comb_int(N, k)
+        if int(N) == N and int(k) == k:
+            # _comb_int casts inputs to integers, which is safe & intended here
+            return _comb_int(N, k)
+        # otherwise, we disregard `exact=True`; it makes no sense for
+        # non-integral arguments
+        msg = ("`exact=True` is deprecated for non-integer `N` and `k` and will raise "
+               "an error in SciPy 1.16.0")
+        warnings.warn(msg, DeprecationWarning, stacklevel=2)
+        return comb(N, k)
     else:
         k, N = asarray(k), asarray(N)
         cond = (k <= N) & (N >= 0) & (k >= 0)
@@ -2263,8 +2746,9 @@ def perm(N, k, exact=False):
     k : int, ndarray
         Number of elements taken.
     exact : bool, optional
-        If `exact` is False, then floating point precision is used, otherwise
-        exact long integer is computed.
+        If ``True``, calculate the answer exactly using long integer arithmetic (`N`
+        and `k` must be scalar integers). If ``False``, a floating point approximation
+        is calculated (more rapidly) using `poch`. Default is ``False``.
 
     Returns
     -------
@@ -2278,6 +2762,7 @@ def perm(N, k, exact=False):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.special import perm
     >>> k = np.array([3, 4])
     >>> n = np.array([10, 10])
@@ -2288,10 +2773,24 @@ def perm(N, k, exact=False):
 
     """
     if exact:
+        N = np.squeeze(N)[()]  # for backward compatibility (accepted size 1 arrays)
+        k = np.squeeze(k)[()]
+        if not (isscalar(N) and isscalar(k)):
+            raise ValueError("`N` and `k` must scalar integers be with `exact=True`.")
+
+        floor_N, floor_k = int(N), int(k)
+        non_integral = not (floor_N == N and floor_k == k)
         if (k > N) or (N < 0) or (k < 0):
+            if non_integral:
+                msg = ("Non-integer `N` and `k` with `exact=True` is deprecated and "
+                       "will raise an error in SciPy 1.16.0.")
+                warnings.warn(msg, DeprecationWarning, stacklevel=2)
             return 0
+        if non_integral:
+            raise ValueError("Non-integer `N` and `k` with `exact=True` is not "
+                             "supported.")
         val = 1
-        for i in range(N - k + 1, N + 1):
+        for i in range(floor_N - floor_k + 1, floor_N + 1):
             val *= i
         return val
     else:
@@ -2306,23 +2805,150 @@ def perm(N, k, exact=False):
 
 
 # https://stackoverflow.com/a/16327037
-def _range_prod(lo, hi):
+def _range_prod(lo, hi, k=1):
     """
-    Product of a range of numbers.
+    Product of a range of numbers spaced k apart (from hi).
 
-    Returns the product of
+    For k=1, this returns the product of
     lo * (lo+1) * (lo+2) * ... * (hi-2) * (hi-1) * hi
     = hi! / (lo-1)!
+
+    For k>1, it correspond to taking only every k'th number when
+    counting down from hi - e.g. 18!!!! = _range_prod(1, 18, 4).
 
     Breaks into smaller products first for speed:
     _range_prod(2, 9) = ((2*3)*(4*5))*((6*7)*(8*9))
     """
-    if lo + 1 < hi:
+    if lo + k < hi:
         mid = (hi + lo) // 2
-        return _range_prod(lo, mid) * _range_prod(mid + 1, hi)
-    if lo == hi:
-        return lo
-    return lo * hi
+        if k > 1:
+            # make sure mid is a multiple of k away from hi
+            mid = mid - ((mid - hi) % k)
+        return _range_prod(lo, mid, k) * _range_prod(mid + k, hi, k)
+    elif lo + k == hi:
+        return lo * hi
+    else:
+        return hi
+
+
+def _factorialx_array_exact(n, k=1):
+    """
+    Exact computation of factorial for an array.
+
+    The factorials are computed in incremental fashion, by taking
+    the sorted unique values of n and multiplying the intervening
+    numbers between the different unique values.
+
+    In other words, the factorial for the largest input is only
+    computed once, with each other result computed in the process.
+
+    k > 1 corresponds to the multifactorial.
+    """
+    un = np.unique(n)
+    # numpy changed nan-sorting behaviour with 1.21, see numpy/numpy#18070;
+    # to unify the behaviour, we remove the nan's here; the respective
+    # values will be set separately at the end
+    un = un[~np.isnan(un)]
+
+    # Convert to object array if np.int64 can't handle size
+    if np.isnan(n).any():
+        dt = float
+    elif k in _FACTORIALK_LIMITS_64BITS.keys():
+        if un[-1] > _FACTORIALK_LIMITS_64BITS[k]:
+            # e.g. k=1: 21! > np.iinfo(np.int64).max
+            dt = object
+        elif un[-1] > _FACTORIALK_LIMITS_32BITS[k]:
+            # e.g. k=3: 26!!! > np.iinfo(np.int32).max
+            dt = np.int64
+        else:
+            dt = np.dtype("long")
+    else:
+        # for k >= 10, we always use object
+        dt = object
+
+    out = np.empty_like(n, dtype=dt)
+
+    # Handle invalid/trivial values
+    un = un[un > 1]
+    out[n < 2] = 1
+    out[n < 0] = 0
+
+    # Calculate products of each range of numbers
+    # we can only multiply incrementally if the values are k apart;
+    # therefore we partition `un` into "lanes", i.e. its residues modulo k
+    for lane in range(0, k):
+        ul = un[(un % k) == lane] if k > 1 else un
+        if ul.size:
+            # after np.unique, un resp. ul are sorted, ul[0] is the smallest;
+            # cast to python ints to avoid overflow with np.int-types
+            val = _range_prod(1, int(ul[0]), k=k)
+            out[n == ul[0]] = val
+            for i in range(len(ul) - 1):
+                # by the filtering above, we have ensured that prev & current
+                # are a multiple of k apart
+                prev = ul[i]
+                current = ul[i + 1]
+                # we already multiplied all factors until prev; continue
+                # building the full factorial from the following (`prev + 1`);
+                # use int() for the same reason as above
+                val *= _range_prod(int(prev + 1), int(current), k=k)
+                out[n == current] = val
+
+    if np.isnan(n).any():
+        out = out.astype(np.float64)
+        out[np.isnan(n)] = np.nan
+    return out
+
+
+def _factorialx_array_approx(n, k):
+    """
+    Calculate approximation to multifactorial for array n and integer k.
+
+    Ensure we only call _factorialx_approx_core where necessary/required.
+    """
+    result = zeros(n.shape)
+    # keep nans as nans
+    place(result, np.isnan(n), np.nan)
+    # only compute where n >= 0 (excludes nans), everything else is 0
+    cond = (n >= 0)
+    n_to_compute = extract(cond, n)
+    place(result, cond, _factorialx_approx_core(n_to_compute, k=k))
+    return result
+
+
+def _factorialx_approx_core(n, k):
+    """
+    Core approximation to multifactorial for array n and integer k.
+    """
+    if k == 1:
+        # shortcut for k=1
+        result = gamma(n + 1)
+        if isinstance(n, np.ndarray):
+            # gamma does not maintain 0-dim arrays
+            result = np.array(result)
+        return result
+
+    n_mod_k = n % k
+    # scalar case separately, unified handling would be inefficient for arrays;
+    # don't use isscalar due to numpy/numpy#23574; 0-dim arrays treated below
+    if not isinstance(n, np.ndarray):
+        return (
+            np.power(k, (n - n_mod_k) / k)
+            * gamma(n / k + 1) / gamma(n_mod_k / k + 1)
+            * max(n_mod_k, 1)
+        )
+
+    # factor that's independent of the residue class (see factorialk docstring)
+    result = np.power(k, n / k) * gamma(n / k + 1)
+    # factor dependent on residue r (for `r=0` it's 1, so we skip `r=0`
+    # below and thus also avoid evaluating `max(r, 1)`)
+    def corr(k, r): return np.power(k, -r / k) / gamma(r / k + 1) * r
+    for r in np.unique(n_mod_k):
+        if r == 0:
+            continue
+        # cast to int because uint types break on `-r`
+        result[n_mod_k == r] *= corr(k, int(r))
+    return result
 
 
 def factorial(n, exact=False):
@@ -2362,6 +2988,7 @@ def factorial(n, exact=False):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.special import factorial
     >>> arr = np.array([3, 4, 5])
     >>> factorial(arr, exact=False)
@@ -2372,51 +2999,46 @@ def factorial(n, exact=False):
     120
 
     """
+    # don't use isscalar due to numpy/numpy#23574; 0-dim arrays treated below
+    if np.ndim(n) == 0 and not isinstance(n, np.ndarray):
+        # scalar cases
+        if n is None or np.isnan(n):
+            return np.nan
+        elif not (np.issubdtype(type(n), np.integer)
+                  or np.issubdtype(type(n), np.floating)):
+            raise ValueError(
+                f"Unsupported datatype for factorial: {type(n)}\n"
+                "Permitted data types are integers and floating point numbers"
+            )
+        elif n < 0:
+            return 0
+        elif exact and np.issubdtype(type(n), np.integer):
+            return math.factorial(n)
+        elif exact:
+            msg = ("Non-integer values of `n` together with `exact=True` are "
+                   "not supported. Either ensure integer `n` or use `exact=False`.")
+            raise ValueError(msg)
+        return _factorialx_approx_core(n, k=1)
+
+    # arrays & array-likes
+    n = asarray(n)
+    if n.size == 0:
+        # return empty arrays unchanged
+        return n
+    if not (np.issubdtype(n.dtype, np.integer)
+            or np.issubdtype(n.dtype, np.floating)):
+        raise ValueError(
+            f"Unsupported datatype for factorial: {n.dtype}\n"
+            "Permitted data types are integers and floating point numbers"
+        )
+    if exact and not np.issubdtype(n.dtype, np.integer):
+        msg = ("factorial with `exact=True` does not "
+               "support non-integral arrays")
+        raise ValueError(msg)
+
     if exact:
-        if np.ndim(n) == 0:
-            if np.isnan(n):
-                return n
-            return 0 if n < 0 else math.factorial(n)
-        else:
-            n = asarray(n)
-            un = np.unique(n).astype(object)
-
-            # Convert to object array of long ints if np.int_ can't handle size
-            if np.isnan(n).any():
-                dt = float
-            elif un[-1] > 20:
-                dt = object
-            elif un[-1] > 12:
-                dt = np.int64
-            else:
-                dt = np.int_
-
-            out = np.empty_like(n, dtype=dt)
-
-            # Handle invalid/trivial values
-            # Ignore runtime warning when less operator used w/np.nan
-            with np.errstate(all='ignore'):
-                un = un[un > 1]
-                out[n < 2] = 1
-                out[n < 0] = 0
-
-            # Calculate products of each range of numbers
-            if un.size:
-                val = math.factorial(un[0])
-                out[n == un[0]] = val
-                for i in range(len(un) - 1):
-                    prev = un[i] + 1
-                    current = un[i + 1]
-                    val *= _range_prod(prev, current)
-                    out[n == current] = val
-
-            if np.isnan(n).any():
-                out = out.astype(np.float64)
-                out[np.isnan(n)] = n[np.isnan(n)]
-            return out
-    else:
-        out = _ufuncs._factorial(n)
-        return out
+        return _factorialx_array_exact(n, k=1)
+    return _factorialx_array_approx(n, k=1)
 
 
 def factorial2(n, exact=False):
@@ -2425,15 +3047,14 @@ def factorial2(n, exact=False):
     This is the factorial with every second value skipped.  E.g., ``7!! = 7 * 5
     * 3 * 1``.  It can be approximated numerically as::
 
-      n!! = special.gamma(n/2+1)*2**((m+1)/2)/sqrt(pi)  n odd
-          = 2**(n/2) * (n/2)!                           n even
+      n!! = 2 ** (n / 2) * gamma(n / 2 + 1) * sqrt(2 / pi)  n odd
+          = 2 ** (n / 2) * gamma(n / 2 + 1)                 n even
+          = 2 ** (n / 2) * (n / 2)!                         n even
 
     Parameters
     ----------
     n : int or array_like
-        Calculate ``n!!``.  Arrays are only supported with `exact` set
-        to False. If ``n < -1``, the return value is 0.
-        Otherwise if ``n <= 0``, the return value is 1.
+        Calculate ``n!!``.  If ``n < 0``, the return value is 0.
     exact : bool, optional
         The result can be approximated rapidly using the gamma-formula
         above (default).  If `exact` is set to True, calculate the
@@ -2454,30 +3075,36 @@ def factorial2(n, exact=False):
     105
 
     """
-    if exact:
-        if n < -1:
+
+    # don't use isscalar due to numpy/numpy#23574; 0-dim arrays treated below
+    if np.ndim(n) == 0 and not isinstance(n, np.ndarray):
+        # scalar cases
+        if n is None or np.isnan(n):
+            return np.nan
+        elif not np.issubdtype(type(n), np.integer):
+            msg = "factorial2 does not support non-integral scalar arguments"
+            raise ValueError(msg)
+        elif n < 0:
             return 0
-        if n <= 0:
+        elif n in {0, 1}:
             return 1
-        val = 1
-        for k in range(n, 0, -2):
-            val *= k
-        return val
-    else:
-        n = asarray(n)
-        vals = zeros(n.shape, 'd')
-        cond1 = (n % 2) & (n >= -1)
-        cond2 = (1-(n % 2)) & (n >= -1)
-        oddn = extract(cond1, n)
-        evenn = extract(cond2, n)
-        nd2o = oddn / 2.0
-        nd2e = evenn / 2.0
-        place(vals, cond1, gamma(nd2o + 1) / sqrt(pi) * pow(2.0, nd2o + 0.5))
-        place(vals, cond2, gamma(nd2e + 1) * pow(2.0, nd2e))
-        return vals
+        # general integer case
+        if exact:
+            return _range_prod(1, n, k=2)
+        return _factorialx_approx_core(n, k=2)
+    # arrays & array-likes
+    n = asarray(n)
+    if n.size == 0:
+        # return empty arrays unchanged
+        return n
+    if not np.issubdtype(n.dtype, np.integer):
+        raise ValueError("factorial2 does not support non-integral arrays")
+    if exact:
+        return _factorialx_array_exact(n, k=2)
+    return _factorialx_array_approx(n, k=2)
 
 
-def factorialk(n, k, exact=True):
+def factorialk(n, k, exact=None):
     """Multifactorial of n of order k, n(!!...!).
 
     This is the multifactorial of n skipping k values.  For example,
@@ -2492,45 +3119,232 @@ def factorialk(n, k, exact=True):
 
     Parameters
     ----------
-    n : int
-        Calculate multifactorial. If ``n < 1 - k``, the return value is 0.
-        Otherwise if ``n <= 0``, the return value is 1.
+    n : int or array_like
+        Calculate multifactorial. If ``n < 0``, the return value is 0.
     k : int
         Order of multifactorial.
     exact : bool, optional
         If exact is set to True, calculate the answer exactly using
-        integer arithmetic.
+        integer arithmetic, otherwise use an approximation (faster,
+        but yields floats instead of integers)
+
+        .. warning::
+           The default value for ``exact`` will be changed to
+           ``False`` in SciPy 1.15.0.
 
     Returns
     -------
     val : int
         Multifactorial of `n`.
 
-    Raises
-    ------
-    NotImplementedError
-        Raises when exact is False
-
     Examples
     --------
     >>> from scipy.special import factorialk
-    >>> factorialk(5, 1, exact=True)
+    >>> factorialk(5, k=1, exact=True)
     120
-    >>> factorialk(5, 3, exact=True)
+    >>> factorialk(5, k=3, exact=True)
     10
+    >>> factorialk([5, 7, 9], k=3, exact=True)
+    array([ 10,  28, 162])
+    >>> factorialk([5, 7, 9], k=3, exact=False)
+    array([ 10.,  28., 162.])
+
+    Notes
+    -----
+    While less straight-forward than for the double-factorial, it's possible to
+    calculate a general approximation formula of n!(k) by studying ``n`` for a given
+    remainder ``r < k`` (thus ``n = m * k + r``, resp. ``r = n % k``), which can be
+    put together into something valid for all integer values ``n >= 0`` & ``k > 0``::
+
+      n!(k) = k ** ((n - r)/k) * gamma(n/k + 1) / gamma(r/k + 1) * max(r, 1)
+
+    This is the basis of the approximation when ``exact=False``. Compare also [1].
+
+    References
+    ----------
+    .. [1] Complex extension to multifactorial
+            https://en.wikipedia.org/wiki/Double_factorial#Alternative_extension_of_the_multifactorial
+    """
+    if not np.issubdtype(type(k), np.integer) or k < 1:
+        raise ValueError(f"k must be a positive integer, received: {k}")
+    if exact is None:
+        msg = (
+            "factorialk will default to `exact=False` starting from SciPy "
+            "1.15.0. To avoid behaviour changes due to this, explicitly "
+            "specify either `exact=False` (faster, returns floats), or the "
+            "past default `exact=True` (slower, lossless result as integer)."
+        )
+        warnings.warn(msg, DeprecationWarning, stacklevel=2)
+        exact = True
+
+    helpmsg = ""
+    if k in {1, 2}:
+        func = "factorial" if k == 1 else "factorial2"
+        helpmsg = f"\nYou can try to use {func} instead"
+
+    # don't use isscalar due to numpy/numpy#23574; 0-dim arrays treated below
+    if np.ndim(n) == 0 and not isinstance(n, np.ndarray):
+        # scalar cases
+        if n is None or np.isnan(n):
+            return np.nan
+        elif not np.issubdtype(type(n), np.integer):
+            msg = "factorialk does not support non-integral scalar arguments!"
+            raise ValueError(msg + helpmsg)
+        elif n < 0:
+            return 0
+        elif n in {0, 1}:
+            return 1
+        # general integer case
+        if exact:
+            return _range_prod(1, n, k=k)
+        return _factorialx_approx_core(n, k=k)
+    # arrays & array-likes
+    n = asarray(n)
+    if n.size == 0:
+        # return empty arrays unchanged
+        return n
+    if not np.issubdtype(n.dtype, np.integer):
+        msg = "factorialk does not support non-integral arrays!"
+        raise ValueError(msg + helpmsg)
+    if exact:
+        return _factorialx_array_exact(n, k=k)
+    return _factorialx_array_approx(n, k=k)
+
+
+def stirling2(N, K, *, exact=False):
+    r"""Generate Stirling number(s) of the second kind.
+
+    Stirling numbers of the second kind count the number of ways to
+    partition a set with N elements into K non-empty subsets.
+
+    The values this function returns are calculated using a dynamic
+    program which avoids redundant computation across the subproblems
+    in the solution. For array-like input, this implementation also
+    avoids redundant computation across the different Stirling number
+    calculations.
+
+    The numbers are sometimes denoted
+
+    .. math::
+
+        {N \brace{K}}
+
+    see [1]_ for details. This is often expressed-verbally-as
+    "N subset K".
+
+    Parameters
+    ----------
+    N : int, ndarray
+        Number of things.
+    K : int, ndarray
+        Number of non-empty subsets taken.
+    exact : bool, optional
+        Uses dynamic programming (DP) with floating point
+        numbers for smaller arrays and uses a second order approximation due to
+        Temme for larger entries  of `N` and `K` that allows trading speed for
+        accuracy. See [2]_ for a description. Temme approximation is used for
+        values ``n>50``. The max error from the DP has max relative error
+        ``4.5*10^-16`` for ``n<=50`` and the max error from the Temme approximation
+        has max relative error ``5*10^-5`` for ``51 <= n < 70`` and
+        ``9*10^-6`` for ``70 <= n < 101``. Note that these max relative errors will
+        decrease further as `n` increases.
+
+    Returns
+    -------
+    val : int, float, ndarray
+        The number of partitions.
+
+    See Also
+    --------
+    comb : The number of combinations of N things taken k at a time.
+
+    Notes
+    -----
+    - If N < 0, or K < 0, then 0 is returned.
+    - If K > N, then 0 is returned.
+
+    The output type will always be `int` or ndarray of `object`.
+    The input must contain either numpy or python integers otherwise a
+    TypeError is raised.
+
+    References
+    ----------
+    .. [1] R. L. Graham, D. E. Knuth and O. Patashnik, "Concrete
+        Mathematics: A Foundation for Computer Science," Addison-Wesley
+        Publishing Company, Boston, 1989. Chapter 6, page 258.
+
+    .. [2] Temme, Nico M. "Asymptotic estimates of Stirling numbers."
+        Studies in Applied Mathematics 89.3 (1993): 233-243.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.special import stirling2
+    >>> k = np.array([3, -1, 3])
+    >>> n = np.array([10, 10, 9])
+    >>> stirling2(n, k)
+    array([9330, 0, 3025], dtype=object)
 
     """
-    if exact:
-        if n < 1-k:
-            return 0
-        if n <= 0:
-            return 1
-        val = 1
-        for j in range(n, 0, -k):
-            val = val*j
-        return val
-    else:
-        raise NotImplementedError
+    output_is_scalar = np.isscalar(N) and np.isscalar(K)
+    # make a min-heap of unique (n,k) pairs
+    N, K = asarray(N), asarray(K)
+    if not np.issubdtype(N.dtype, np.integer):
+        raise TypeError("Argument `N` must contain only integers")
+    if not np.issubdtype(K.dtype, np.integer):
+        raise TypeError("Argument `K` must contain only integers")
+    if not exact:
+        # NOTE: here we allow np.uint via casting to double types prior to
+        # passing to private ufunc dispatcher. All dispatched functions
+        # take double type for (n,k) arguments and return double.
+        return _stirling2_inexact(N.astype(float), K.astype(float))
+    nk_pairs = list(
+        set([(n.take(0), k.take(0))
+             for n, k in np.nditer([N, K], ['refs_ok'])])
+    )
+    heapify(nk_pairs)
+    # base mapping for small values
+    snsk_vals = defaultdict(int)
+    for pair in [(0, 0), (1, 1), (2, 1), (2, 2)]:
+        snsk_vals[pair] = 1
+    # for each pair in the min-heap, calculate the value, store for later
+    n_old, n_row = 2, [0, 1, 1]
+    while nk_pairs:
+        n, k = heappop(nk_pairs)
+        if n < 2 or k > n or k <= 0:
+            continue
+        elif k == n or k == 1:
+            snsk_vals[(n, k)] = 1
+            continue
+        elif n != n_old:
+            num_iters = n - n_old
+            while num_iters > 0:
+                n_row.append(1)
+                # traverse from back to remove second row
+                for j in range(len(n_row)-2, 1, -1):
+                    n_row[j] = n_row[j]*j + n_row[j-1]
+                num_iters -= 1
+            snsk_vals[(n, k)] = n_row[k]
+        else:
+            snsk_vals[(n, k)] = n_row[k]
+        n_old, n_row = n, n_row
+    out_types = [object, object, object] if exact else [float, float, float]
+    # for each pair in the map, fetch the value, and populate the array
+    it = np.nditer(
+        [N, K, None],
+        ['buffered', 'refs_ok'],
+        [['readonly'], ['readonly'], ['writeonly', 'allocate']],
+        op_dtypes=out_types,
+    )
+    with it:
+        while not it.finished:
+            it[2] = snsk_vals[(int(it[0]), int(it[1]))]
+            it.iternext()
+        output = it.operands[2]
+        # If N and K were both scalars, convert output to scalar.
+        if output_is_scalar:
+            output = output.take(0)
+    return output
 
 
 def zeta(x, q=None, out=None):
@@ -2551,6 +3365,10 @@ def zeta(x, q=None, out=None):
     out : array_like
         Values of zeta(x).
 
+    See Also
+    --------
+    zetac
+
     Notes
     -----
     The two-argument version is the Hurwitz zeta function
@@ -2562,10 +3380,6 @@ def zeta(x, q=None, out=None):
     see [dlmf]_ for details. The Riemann zeta function corresponds to
     the case when ``q = 1``.
 
-    See Also
-    --------
-    zetac
-
     References
     ----------
     .. [dlmf] NIST, Digital Library of Mathematical Functions,
@@ -2573,6 +3387,7 @@ def zeta(x, q=None, out=None):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.special import zeta, polygamma, factorial
 
     Some specific values:

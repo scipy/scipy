@@ -68,7 +68,7 @@
 import numpy as np
 import scipy.special
 import scipy.special._ufuncs as scu
-import scipy.misc
+from scipy._lib._finite_differences import _derivative
 
 _E128 = 128
 _EP128 = np.ldexp(np.longdouble(1), _E128)
@@ -88,6 +88,7 @@ _STIRLING_COEFFS = [-2.955065359477124183e-2, 6.4102564102564102564e-3,
                     -1.9175269175269175269e-3, 8.4175084175084175084e-4,
                     -5.952380952380952381e-4, 7.9365079365079365079e-4,
                     -2.7777777777777777778e-3, 8.3333333333333333333e-2]
+
 
 def _log_nfactorial_div_n_pow_n(n):
     # Computes n! / n**n
@@ -469,7 +470,7 @@ def _kolmogn_p(n, x):
     def _kk(_x):
         return kolmogn(n, _x)
 
-    return scipy.misc.derivative(_kk, x, dx=delta, order=5)
+    return _derivative(_kk, x, dx=delta, order=5)
 
 
 def _kolmogni(n, p, q):
@@ -494,7 +495,10 @@ def _kolmogni(n, p, q):
         return x
     x1 = scu._kolmogci(p)/np.sqrt(n)
     x1 = min(x1, 1.0 - 1.0/n)
-    _f = lambda x: _kolmogn(n, x) - p
+
+    def _f(x):
+        return _kolmogn(n, x) - p
+
     return scipy.optimize.brentq(_f, 1.0/n, x1, xtol=1e-14)
 
 
@@ -503,8 +507,8 @@ def kolmogn(n, x, cdf=True):
 
     The two-sided Kolmogorov-Smirnov distribution has as its CDF Pr(D_n <= x),
     for a sample of size n drawn from a distribution with CDF F(t), where
-    D_n &= sup_t |F_n(t) - F(t)|, and
-    F_n(t) is the Empirical Cumulative Distribution Function of the sample.
+    :math:`D_n &= sup_t |F_n(t) - F(t)|`, and
+    :math:`F_n(t)` is the Empirical Cumulative Distribution Function of the sample.
 
     Parameters
     ----------

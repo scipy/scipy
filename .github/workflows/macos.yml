@@ -1,88 +1,226 @@
-name: macOS tests (setup.py)
+name: macOS tests
 
 on:
   push:
     branches:
-      - main
       - maintenance/**
   pull_request:
     branches:
       - main
       - maintenance/**
 
+permissions:
+   contents: read  # to fetch code (actions/checkout)
+
+env:
+  INSTALLDIR: "build-install"
+  CCACHE_DIR: "${{ github.workspace }}/.ccache"
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
 
 jobs:
-  test_macos:
-    name: macOS Test Matrix
-    if: "github.repository == 'scipy/scipy' || github.repository == ''"
+  get_commit_message:
+    name: Get commit message
+    uses: ./.github/workflows/commit_message.yml
+
+  test_meson:
+    name: Conda & umfpack/scikit-sparse, fast, py3.11/npAny, dev.py
+    needs: get_commit_message
+    # If using act to run CI locally the github object does not exist and
+    # the usual skipping should not be enforced
+    if: >
+      needs.get_commit_message.outputs.message == 1
+      && (github.repository == 'scipy/scipy' || github.repository == '')
     runs-on: macos-latest
     strategy:
-      max-parallel: 3
       matrix:
-        python-version: ["3.8"]
-        numpy-version: ['--upgrade numpy']
+        python-version: ["3.11"]
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4.1.1
       with:
         submodules: recursive
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v3
+
+    - name: Install Ccache
+      run: |
+        brew install ccache
+
+    - name:  Prepare compiler cache
+      id:    prep-ccache
+      shell: bash -l {0}
+      run: |
+        mkdir -p "${CCACHE_DIR}"
+        echo "dir=$CCACHE_DIR" >> $GITHUB_OUTPUT
+        NOW=$(date -u +"%F-%T")
+        echo "timestamp=${NOW}" >> $GITHUB_OUTPUT
+
+    - name: Setup compiler cache
+      uses:  actions/cache@v4
+      id:    cache-ccache
+      # Reference: https://docs.github.com/en/actions/guides/caching-dependencies-to-speed-up-workflows#matching-a-cache-key
+      # NOTE: The caching strategy is modeled in a way that it will always have
+      # a unique cache key for each workflow run (even if the same workflow is
+      # run multiple times). The restore keys are not unique and for a partial
+      # match, they will return the most recently created cache entry,
+      # according to the GitHub Action Docs.
+      with:
+        path: ${{ steps.prep-ccache.outputs.dir }}
+        key:  ${{ github.workflow }}-${{ matrix.python-version }}-ccache-macos-${{ steps.prep-ccache.outputs.timestamp }}
+        # This evaluates to `macOS Tests-3.10-ccache-macos-` which is not
+        # unique. As the CI matrix is expanded, this will need to be updated to
+        # be unique so that the cache is not restored from a different job altogether.
+        restore-keys: |
+          ${{ github.workflow }}-${{ matrix.python-version }}-ccache-macos-
+
+    - name: Setup Conda
+      uses: conda-incubator/setup-miniconda@v3
       with:
         python-version: ${{ matrix.python-version }}
+        channels: conda-forge
+        channel-priority: true
+        activate-environment: scipy-dev
+        use-only-tar-bz2: false
+        miniforge-variant: Mambaforge
+        miniforge-version: latest
+        use-mamba: true
 
-    - name: Setup gfortran
+    - name: Get Date
+      id: get-date
+      run: echo "today=$(/bin/date -u '+%Y%m%d')" >> $GITHUB_OUTPUT
+      shell: bash
+
+    - name: Cache conda
+      uses: actions/cache@v4
+      env:
+        # Increase this value to reset cache if environment.yml has not changed
+        CACHE_NUMBER: 1
+      with:
+        path: ${{ env.CONDA }}/envs/scipy-dev
+        key:
+          ${{ runner.os }}--${{ steps.get-date.outputs.today }}-conda-${{ env.CACHE_NUMBER }}-${{ hashFiles('environment.yml') }}
+      id: envcache
+
+    - name: Update Conda Environment
+      run: mamba env update -n scipy-dev -f environment.yml
+      if: steps.envcache.outputs.cache-hit != 'true'
+
+    - name: Build and Install SciPy
+      shell: bash -l {0}
       run: |
-        # this is taken verbatim from the numpy azure pipeline setup.
-        set -xe
-        # same version of gfortran as the open-libs and numpy-wheel builds
-        curl -L https://github.com/MacPython/gfortran-install/raw/master/archives/gfortran-4.9.0-Mavericks.dmg -o gfortran.dmg
-        GFORTRAN_SHA256=$(shasum -a 256 gfortran.dmg)
-        KNOWN_SHA256="d2d5ca5ba8332d63bbe23a07201c4a0a5d7e09ee56f0298a96775f928c3c4b30  gfortran.dmg"
-        if [ "$GFORTRAN_SHA256" != "$KNOWN_SHA256" ]; then
-            echo sha256 mismatch
-            exit 1
-        fi
-        hdiutil attach -mountpoint /Volumes/gfortran gfortran.dmg
-        sudo installer -pkg /Volumes/gfortran/gfortran.pkg -target /
-        otool -L /usr/local/gfortran/lib/libgfortran.3.dylib
-        # Manually symlink gfortran-4.9 to plain gfortran for f2py.
-        # No longer needed after Feb 13 2020 as gfortran is already present
-        # and the attempted link errors. Keep this for future reference.
-        # ln -s /usr/local/bin/gfortran-4.9 /usr/local/bin/gfortran
+        conda activate scipy-dev
+        mamba install python=${{ matrix.python-version}}
 
-    - name: Setup openblas
-      run: |
-        # this is taken verbatim from the numpy azure pipeline setup.
-        set -xe
-        target=$(python tools/openblas_support.py)
-        ls -lR $target
-        # manually link to appropriate system paths
-        cp $target/lib/lib* /usr/local/lib/
-        cp $target/include/* /usr/local/include/
+        # optional test dependencies
+        mamba install scikit-umfpack scikit-sparse
 
-        # otool -L /usr/local/lib/libopenblas*
-
-        echo "[openblas]" > site.cfg
-        echo "libraries = openblas" >> site.cfg
-        echo "library_dirs = /usr/local/lib" >> site.cfg
-        echo "include_dirs = /usr/local/include" >> site.cfg
-        echo "runtime_library_dirs = /usr/local/lib" >> site.cfg
-
-    - name: A few other packages
-      continue-on-error: true
-      run: |
-        brew install libmpc suitesparse swig
-
-    - name: Install packages
-      run: |
-        pip install ${{ matrix.numpy-version }}
-        pip install setuptools==59.8.0 wheel cython pytest pytest-xdist pybind11 pytest-xdist mpmath gmpy2 pythran
+        # Python.org installers still use 10.9, so let's use that too. Note
+        # that scikit-learn already changed to 10.13 in Jan 2021, so increasing
+        # this number in the future (if needed) should not be a problem.
+        # Conda-forge is still at 10.9, see:
+        # https://conda-forge.org/docs/maintainer/knowledge_base.html#requiring-newer-macos-sdks
+        export MACOSX_DEPLOYMENT_TARGET=10.9
+        export MACOSX_SDK_VERSION=10.9
+        CC="ccache $CC" python dev.py build
 
     - name: Test SciPy
+      shell: bash -l {0}
       run: |
-        export LIBRARY_PATH="$LIBRARY_PATH:/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib"
-        SCIPY_USE_PYTHRAN=`test ${{ matrix.python-version }} != 3.9; echo $?` python -u runtests.py
+        conda activate scipy-dev
+        export OMP_NUM_THREADS=2
+        python dev.py -n test -j2
+
+    - name: Ccache statistics
+      shell: bash -l {0}
+      run: |
+        ccache -s
+
+
+  test_scipy_openblas:
+    name: M1 & OpenBLAS, fast, py3.11/npAny, dev.py
+    needs: get_commit_message
+    # If using act to run CI locally the github object does not exist and
+    # the usual skipping should not be enforced
+    if: >
+      needs.get_commit_message.outputs.message == 1
+      && (github.repository == 'scipy/scipy' || github.repository == '')
+    runs-on: macos-14
+    strategy:
+      matrix:
+        python-version: ["3.11"]
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+        cache: 'pip'
+
+    - name: Build and Install SciPy
+      run: |
+        sudo xcode-select -s /Applications/Xcode_15.2.app
+        
+        git submodule update --init
+        GFORTRAN_LOC=$(which gfortran-13)
+        ln -s $GFORTRAN_LOC gfortran
+        export PATH=$PWD:$PATH
+
+        # Ensure we have gfortran dylib
+        GFORTRAN_LIB=$(dirname `gfortran --print-file-name libgfortran.dylib`)
+        export DYLD_LIBRARY_PATH=$GFORTRAN_LIB
+    
+        pip install click doit pydevtool rich_click meson cython pythran pybind11 ninja numpy
+        pip install -r requirements/openblas.txt
+        python dev.py build --with-scipy-openblas
+
+        pip install pooch pytest hypothesis
+        python dev.py -n test 
+
+
+  test_meson_accelerate:
+    name: Accelerate, fast, py3.11/npAny, dev.py
+    needs: get_commit_message
+    # If using act to run CI locally the github object does not exist and
+    # the usual skipping should not be enforced
+    if: >
+      needs.get_commit_message.outputs.message == 1
+      && (github.repository == 'scipy/scipy' || github.repository == '')
+    runs-on: macos-14
+    strategy:
+      matrix:
+        python-version: ["3.11"]
+
+    steps:
+    - uses: actions/checkout@v4.1.1
+      with:
+        submodules: recursive
+
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+        cache: 'pip'
+
+    - name: Build and Install SciPy
+      run: |
+        sudo xcode-select -s /Applications/Xcode_15.2.app
+
+        git submodule update --init
+        GFORTRAN_LOC=$(which gfortran-13)
+        ln -s $GFORTRAN_LOC gfortran
+        export PATH=$PWD:$PATH
+
+        # Ensure we have gfortran dylib
+        GFORTRAN_LIB=$(dirname `gfortran --print-file-name libgfortran.dylib`)
+        export DYLD_LIBRARY_PATH=$GFORTRAN_LIB
+
+        pip install click doit pydevtool rich_click meson cython pythran pybind11 ninja numpy
+        python dev.py build --with-accelerate
+
+        pip install pooch pytest hypothesis
+        python dev.py -n test

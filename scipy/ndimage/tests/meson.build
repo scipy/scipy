@@ -8,13 +8,14 @@ python_sources = [
   'test_interpolation.py',
   'test_measurements.py',
   'test_morphology.py',
+  'test_ni_support.py',
   'test_splines.py'
 ]
 
 py3.install_sources(
   python_sources,
-  pure: false,
-  subdir: 'scipy/ndimage/tests'
+  subdir: 'scipy/ndimage/tests',
+  install_tag: 'tests'
 )
 
 py3.install_sources([
@@ -22,6 +23,6 @@ py3.install_sources([
     'data/label_results.txt',
     'data/label_strels.txt',
   ],
-  pure: false,
-  subdir: 'scipy/ndimage/tests/data'
+  subdir: 'scipy/ndimage/tests/data',
+  install_tag: 'tests'
 )

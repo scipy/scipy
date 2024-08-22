@@ -50,7 +50,7 @@ class KMeans2(Benchmark):
 
 
 class VQ(Benchmark):
-    params = [[2, 10, 50], ['float32', 'float64', 'float128']]
+    params = [[2, 10, 50], ['float32', 'float64']]
     param_names = ['k', 'dtype']
 
     def __init__(self):

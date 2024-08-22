@@ -97,6 +97,7 @@ Following four steps are carried out by the algorithm during setup:
 
 To initialize the generator to sample from a standard normal distribution, do:
 
+    >>> import numpy as np
     >>> from scipy.stats.sampling import NumericalInversePolynomial
     >>> class StandardNormal:
     ...     def pdf(self, x):
@@ -119,6 +120,7 @@ We can look at the histogram of the random variates to check how well they fit
 our distribution:
 
 .. plot::
+    :alt: " "
 
     >>> import matplotlib.pyplot as plt
     >>> from scipy.stats import norm
@@ -172,7 +174,7 @@ PDF evaluations increase during setup for small values of ``u_resolution``.
     >>> rng = NumericalInversePolynomial(dist, u_resolution=1e-8,
     ...                                  random_state=urng)
     >>> dist.callbacks
-    4095
+    4095        # may vary
     >>> dist.callbacks = 0  # reset the number of callbacks
     >>> # u_resolution = 10^-10 (default)
     >>> # => more PDF evaluations required
@@ -180,14 +182,14 @@ PDF evaluations increase during setup for small values of ``u_resolution``.
     >>> rng = NumericalInversePolynomial(dist, u_resolution=1e-10,
     ...                                  random_state=urng)
     >>> dist.callbacks
-    11454
+    11454       # may vary
     >>> dist.callbacks = 0  # reset the number of callbacks
     >>> # u_resolution = 10^-12
     >>> # => lots of PDF evaluations required
     >>> # => very slow setup
     >>> rng = NumericalInversePolynomial(dist, u_resolution=1e-12,
     ...                                  random_state=urng)
-    13902
+    13902     # may vary
 
 As we can see, the number of PDF evaluations required is very high and a
 fast PDF is critical to the algorithm. Though, this helps reduce the number

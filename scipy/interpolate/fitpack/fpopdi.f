@@ -1,6 +1,7 @@
-      subroutine fpopdi(ifsu,ifsv,ifbu,ifbv,u,mu,v,mv,z,mz,z0,dz,
-     * iopt,ider,tu,nu,tv,nv,nuest,nvest,p,step,c,nc,fp,fpu,fpv,
-     * nru,nrv,wrk,lwrk)
+      recursive subroutine fpopdi(ifsu,ifsv,ifbu,ifbv,u,mu,v,mv,z,
+     * mz,z0,dz,iopt,ider,tu,nu,tv,nv,nuest,nvest,p,step,c,nc,fp,
+     * fpu,fpv,nru,nrv,wrk,lwrk)
+      implicit none
 c  given the set of function values z(i,j) defined on the rectangular
 c  grid (u(i),v(j)),i=1,2,...,mu;j=1,2,...,mv, fpopdi determines a
 c  smooth bicubic spline approximation with given knots tu(i),i=1,..,nu

@@ -129,7 +129,7 @@ subroutine <prefix2>potrf(n,a,lda,info,lower,clean)
     ! C is triangular matrix of the corresponding Cholesky decomposition.
     ! clean==1 zeros strictly lower or upper parts of U or L, respectively
  
-    callstatement (*f2py_func)((lower?"L":"U"),&n,a,&lda,&info); if(clean){F_INT i,j;if(lower){for(i=0;i\<n;++i) for(j=i+1;j\<n;++j) *(a+j*n+i)=0.0;} else {for(i=0;i\<n;++i) for(j=i+1;j<n;++j) *(a+i*n+j)=0.0;}}
+    callstatement (*f2py_func)((lower?"L":"U"),&n,a,&lda,&info); if(clean){Py_ssize_t i,j;if(lower){for(i=0;i\<n;++i) for(j=i+1;j\<n;++j) *(a+j*n+i)=0.0;} else {for(i=0;i\<n;++i) for(j=i+1;j<n;++j) *(a+i*n+j)=0.0;}}
     callprotoargument char*,F_INT*,<ctype2>*,F_INT*,F_INT*
  
     integer optional,intent(in),check(lower==0||lower==1) :: lower = 0
