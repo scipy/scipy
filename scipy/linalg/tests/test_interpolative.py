@@ -1,4 +1,4 @@
-#******************************************************************************
+#  ******************************************************************************
 #   Copyright (C) 2013 Kenneth L. Ho
 #   Redistribution and use in source and binary forms, with or without
 #   modification, are permitted provided that the following conditions are met:
@@ -24,7 +24,7 @@
 #   CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 #   ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 #   POSSIBILITY OF SUCH DAMAGE.
-#******************************************************************************
+#  ******************************************************************************
 
 import scipy.linalg.interpolative as pymatrixid
 import numpy as np
@@ -36,13 +36,17 @@ from numpy.testing import (assert_, assert_allclose, assert_equal,
                            assert_array_equal)
 import pytest
 from pytest import raises as assert_raises
-import sys
-_IS_32BIT = (sys.maxsize < 2**32)
 
 
 @pytest.fixture()
 def eps():
     yield 1e-12
+
+
+@pytest.fixture()
+def rng():
+    rng = np.random.default_rng(1718313768084012)
+    yield rng
 
 
 @pytest.fixture(params=[np.float64, np.complex128])
@@ -73,36 +77,32 @@ class TestInterpolativeDecomposition:
     @pytest.mark.parametrize(
         "rand,lin_op",
         [(False, False), (True, False), (True, True)])
-    def test_real_id_fixed_precision(self, A, L, eps, rand, lin_op):
-        if _IS_32BIT and A.dtype == np.complex128 and rand:
-            pytest.xfail("bug in external fortran code")
+    def test_real_id_fixed_precision(self, A, L, eps, rand, lin_op, rng):
         # Test ID routines on a Hilbert matrix.
         A_or_L = A if not lin_op else L
 
-        k, idx, proj = pymatrixid.interp_decomp(A_or_L, eps, rand=rand)
+        k, idx, proj = pymatrixid.interp_decomp(A_or_L, eps, rand=rand, rng=rng)
         B = pymatrixid.reconstruct_matrix_from_id(A[:, idx[:k]], idx, proj)
         assert_allclose(A, B, rtol=eps, atol=1e-08)
 
     @pytest.mark.parametrize(
         "rand,lin_op",
         [(False, False), (True, False), (True, True)])
-    def test_real_id_fixed_rank(self, A, L, eps, rank, rand, lin_op):
-        if _IS_32BIT and A.dtype == np.complex128 and rand:
-            pytest.xfail("bug in external fortran code")
+    def test_real_id_fixed_rank(self, A, L, eps, rank, rand, lin_op, rng):
         k = rank
         A_or_L = A if not lin_op else L
 
-        idx, proj = pymatrixid.interp_decomp(A_or_L, k, rand=rand)
+        idx, proj = pymatrixid.interp_decomp(A_or_L, k, rand=rand, rng=rng)
         B = pymatrixid.reconstruct_matrix_from_id(A[:, idx[:k]], idx, proj)
         assert_allclose(A, B, rtol=eps, atol=1e-08)
 
     @pytest.mark.parametrize("rand,lin_op", [(False, False)])
     def test_real_id_skel_and_interp_matrices(
-            self, A, L, eps, rank, rand, lin_op):
+            self, A, L, eps, rank, rand, lin_op, rng):
         k = rank
         A_or_L = A if not lin_op else L
 
-        idx, proj = pymatrixid.interp_decomp(A_or_L, k, rand=rand)
+        idx, proj = pymatrixid.interp_decomp(A_or_L, k, rand=rand, rng=rng)
         P = pymatrixid.reconstruct_interp_matrix(idx, proj)
         B = pymatrixid.reconstruct_skel_matrix(A, k, idx)
         assert_allclose(B, A[:, idx[:k]], rtol=eps, atol=1e-08)
@@ -111,25 +111,21 @@ class TestInterpolativeDecomposition:
     @pytest.mark.parametrize(
         "rand,lin_op",
         [(False, False), (True, False), (True, True)])
-    def test_svd_fixed_precison(self, A, L, eps, rand, lin_op):
-        if _IS_32BIT and A.dtype == np.complex128 and rand:
-            pytest.xfail("bug in external fortran code")
+    def test_svd_fixed_precision(self, A, L, eps, rand, lin_op, rng):
         A_or_L = A if not lin_op else L
 
-        U, S, V = pymatrixid.svd(A_or_L, eps, rand=rand)
+        U, S, V = pymatrixid.svd(A_or_L, eps, rand=rand, rng=rng)
         B = U * S @ V.T.conj()
         assert_allclose(A, B, rtol=eps, atol=1e-08)
 
     @pytest.mark.parametrize(
         "rand,lin_op",
         [(False, False), (True, False), (True, True)])
-    def test_svd_fixed_rank(self, A, L, eps, rank, rand, lin_op):
-        if _IS_32BIT and A.dtype == np.complex128 and rand:
-            pytest.xfail("bug in external fortran code")
+    def test_svd_fixed_rank(self, A, L, eps, rank, rand, lin_op, rng):
         k = rank
         A_or_L = A if not lin_op else L
 
-        U, S, V = pymatrixid.svd(A_or_L, k, rand=rand)
+        U, S, V = pymatrixid.svd(A_or_L, k, rand=rand, rng=rng)
         B = U * S @ V.T.conj()
         assert_allclose(A, B, rtol=eps, atol=1e-08)
 
@@ -141,58 +137,38 @@ class TestInterpolativeDecomposition:
         B = U * S @ V.T.conj()
         assert_allclose(A, B, rtol=eps, atol=1e-08)
 
-    def test_estimate_spectral_norm(self, A):
+    def test_estimate_spectral_norm(self, A, rng):
         s = svdvals(A)
-        norm_2_est = pymatrixid.estimate_spectral_norm(A)
+        norm_2_est = pymatrixid.estimate_spectral_norm(A, rng=rng)
         assert_allclose(norm_2_est, s[0], rtol=1e-6, atol=1e-8)
 
-    def test_estimate_spectral_norm_diff(self, A):
+    def test_estimate_spectral_norm_diff(self, A, rng):
         B = A.copy()
         B[:, 0] *= 1.2
         s = svdvals(A - B)
-        norm_2_est = pymatrixid.estimate_spectral_norm_diff(A, B)
+        norm_2_est = pymatrixid.estimate_spectral_norm_diff(A, B, rng=rng)
         assert_allclose(norm_2_est, s[0], rtol=1e-6, atol=1e-8)
 
-    def test_rank_estimates_array(self, A):
+    def test_rank_estimates_array(self, A, rng):
         B = np.array([[1, 1, 0], [0, 0, 1], [0, 0, 1]], dtype=A.dtype)
 
         for M in [A, B]:
             rank_tol = 1e-9
             rank_np = np.linalg.matrix_rank(M, norm(M, 2) * rank_tol)
-            rank_est = pymatrixid.estimate_rank(M, rank_tol)
+            rank_est = pymatrixid.estimate_rank(M, rank_tol, rng=rng)
             assert_(rank_est >= rank_np)
             assert_(rank_est <= rank_np + 10)
 
-    def test_rank_estimates_lin_op(self, A):
+    def test_rank_estimates_lin_op(self, A, rng):
         B = np.array([[1, 1, 0], [0, 0, 1], [0, 0, 1]], dtype=A.dtype)
 
         for M in [A, B]:
             ML = aslinearoperator(M)
             rank_tol = 1e-9
             rank_np = np.linalg.matrix_rank(M, norm(M, 2) * rank_tol)
-            rank_est = pymatrixid.estimate_rank(ML, rank_tol)
+            rank_est = pymatrixid.estimate_rank(ML, rank_tol, rng=rng)
             assert_(rank_est >= rank_np - 4)
             assert_(rank_est <= rank_np + 4)
-
-    def test_rand(self):
-        pymatrixid.seed('default')
-        assert_allclose(pymatrixid.rand(2), [0.8932059, 0.64500803],
-                        rtol=1e-4, atol=1e-8)
-
-        pymatrixid.seed(1234)
-        x1 = pymatrixid.rand(2)
-        assert_allclose(x1, [0.7513823, 0.06861718], rtol=1e-4, atol=1e-8)
-
-        np.random.seed(1234)
-        pymatrixid.seed()
-        x2 = pymatrixid.rand(2)
-
-        np.random.seed(1234)
-        pymatrixid.seed(np.random.rand(55))
-        x3 = pymatrixid.rand(2)
-
-        assert_allclose(x1, x2)
-        assert_allclose(x1, x3)
 
     def test_badcall(self):
         A = hilbert(5).astype(np.float32)
@@ -228,8 +204,6 @@ class TestInterpolativeDecomposition:
     @pytest.mark.parametrize("rand", [True, False])
     @pytest.mark.parametrize("eps", [1, 0.1])
     def test_bug_9793(self, dtype, rand, eps):
-        if _IS_32BIT and dtype == np.complex128 and rand:
-            pytest.xfail("bug in external fortran code")
         A = np.array([[-1, -1, -1, 0, 0, 0],
                       [0, 0, 0, 1, 1, 1],
                       [1, 0, 0, 1, 0, 0],

@@ -10,15 +10,19 @@ import pytest
 from pytest import raises as assert_raises
 import hypothesis.extra.numpy as npst
 from hypothesis import given, strategies, reproduce_failure  # noqa: F401
-from scipy.conftest import array_api_compatible
+from scipy.conftest import array_api_compatible, skip_xp_invalid_arg
 
-from scipy._lib._array_api import xp_assert_equal, xp_assert_close
+from scipy._lib._array_api import (xp_assert_equal, xp_assert_close, is_numpy,
+                                   xp_copy, is_array_api_strict)
 from scipy._lib._util import (_aligned_zeros, check_random_state, MapWrapper,
                               getfullargspec_no_self, FullArgSpec,
                               rng_integers, _validate_int, _rename_parameter,
                               _contains_nan, _rng_html_rewrite, _lazywhere)
 
+skip_xp_backends = pytest.mark.skip_xp_backends
 
+
+@pytest.mark.slow
 def test__aligned_zeros():
     niter = 10
 
@@ -302,7 +306,7 @@ class TestContainsNaNTest:
         with pytest.raises(ValueError, match=msg):
             _contains_nan(data, nan_policy="nan")
 
-    def test_contains_nan_1d(self):
+    def test_contains_nan(self):
         data1 = np.array([1, 2, 3])
         assert not _contains_nan(data1)[0]
 
@@ -312,17 +316,18 @@ class TestContainsNaNTest:
         data3 = np.array([np.nan, 2, 3, np.nan])
         assert _contains_nan(data3)[0]
 
-        data4 = np.array([1, 2, "3", np.nan])  # converted to string "nan"
+        data4 = np.array([[1, 2], [3, 4]])
         assert not _contains_nan(data4)[0]
 
-        data5 = np.array([1, 2, "3", np.nan], dtype='object')
+        data5 = np.array([[1, 2], [3, np.nan]])
         assert _contains_nan(data5)[0]
 
-    def test_contains_nan_2d(self):
-        data1 = np.array([[1, 2], [3, 4]])
+    @skip_xp_invalid_arg
+    def test_contains_nan_with_strings(self):
+        data1 = np.array([1, 2, "3", np.nan])  # converted to string "nan"
         assert not _contains_nan(data1)[0]
 
-        data2 = np.array([[1, 2], [3, np.nan]])
+        data2 = np.array([1, 2, "3", np.nan], dtype='object')
         assert _contains_nan(data2)[0]
 
         data3 = np.array([["1", 2], [3, np.nan]])  # converted to string "nan"
@@ -330,6 +335,36 @@ class TestContainsNaNTest:
 
         data4 = np.array([["1", 2], [3, np.nan]], dtype='object')
         assert _contains_nan(data4)[0]
+
+    @skip_xp_backends('jax.numpy',
+                      reasons=["JAX arrays do not support item assignment"])
+    @pytest.mark.usefixtures("skip_xp_backends")
+    @array_api_compatible
+    @pytest.mark.parametrize("nan_policy", ['propagate', 'omit', 'raise'])
+    def test_array_api(self, xp, nan_policy):
+        rng = np.random.default_rng(932347235892482)
+        x0 = rng.random(size=(2, 3, 4))
+        x = xp.asarray(x0)
+        x_nan = xp_copy(x, xp=xp)
+        x_nan[1, 2, 1] = np.nan
+
+        contains_nan, nan_policy_out = _contains_nan(x, nan_policy=nan_policy)
+        assert not contains_nan
+        assert nan_policy_out == nan_policy
+
+        if nan_policy == 'raise':
+            message = 'The input contains...'
+            with pytest.raises(ValueError, match=message):
+                _contains_nan(x_nan, nan_policy=nan_policy)
+        elif nan_policy == 'omit' and not is_numpy(xp):
+            message = "`nan_policy='omit' is incompatible..."
+            with pytest.raises(ValueError, match=message):
+                _contains_nan(x_nan, nan_policy=nan_policy)
+        elif nan_policy == 'propagate':
+            contains_nan, nan_policy_out = _contains_nan(
+                x_nan, nan_policy=nan_policy)
+            assert contains_nan
+            assert nan_policy_out == nan_policy
 
 
 def test__rng_html_rewrite():
@@ -360,7 +395,11 @@ class TestLazywhere:
     p = strategies.floats(min_value=0, max_value=1)
     data = strategies.data()
 
+    @pytest.mark.fail_slow(10)
     @pytest.mark.filterwarnings('ignore::RuntimeWarning')  # overflows, etc.
+    @skip_xp_backends('jax.numpy',
+                      reasons=["JAX arrays do not support item assignment"])
+    @pytest.mark.usefixtures("skip_xp_backends")
     @array_api_compatible
     @given(n_arrays=n_arrays, rng_seed=rng_seed, dtype=dtype, p=p, data=data)
     def test_basic(self, n_arrays, rng_seed, dtype, p, data, xp):
@@ -368,7 +407,10 @@ class TestLazywhere:
                                                  min_side=0)
         input_shapes, result_shape = data.draw(mbs)
         cond_shape, *shapes = input_shapes
-        fillvalue = xp.asarray(data.draw(npst.arrays(dtype=dtype, shape=tuple())))
+        elements = {'allow_subnormal': False}  # cupy/cupy#8382
+        fillvalue = xp.asarray(data.draw(npst.arrays(dtype=dtype, shape=tuple(),
+                                                     elements=elements)))
+        float_fillvalue = float(fillvalue)
         arrays = [xp.asarray(data.draw(npst.arrays(dtype=dtype, shape=shape)))
                   for shape in shapes]
 
@@ -383,26 +425,27 @@ class TestLazywhere:
 
         res1 = _lazywhere(cond, arrays, f, fillvalue)
         res2 = _lazywhere(cond, arrays, f, f2=f2)
+        if not is_array_api_strict(xp):
+            res3 = _lazywhere(cond, arrays, f, float_fillvalue)
 
         # Ensure arrays are at least 1d to follow sane type promotion rules.
+        # This can be removed when minimum supported NumPy is 2.0
         if xp == np:
             cond, fillvalue, *arrays = np.atleast_1d(cond, fillvalue, *arrays)
 
         ref1 = xp.where(cond, f(*arrays), fillvalue)
         ref2 = xp.where(cond, f(*arrays), f2(*arrays))
+        if not is_array_api_strict(xp):
+            # Array API standard doesn't currently define behavior when fillvalue is a
+            # Python scalar. When it does, test can be run with array_api_strict, too.
+            ref3 = xp.where(cond, f(*arrays), float_fillvalue)
 
-        if xp == np:
+        if xp == np:  # because we ensured arrays are at least 1d
             ref1 = ref1.reshape(result_shape)
             ref2 = ref2.reshape(result_shape)
-            res1 = xp.asarray(res1)[()]
-            res2 = xp.asarray(res2)[()]
+            ref3 = ref3.reshape(result_shape)
 
-        isinstance(res1, type(xp.asarray([])))
-        xp_assert_close(res1, ref1, rtol=2e-16)
-        assert_equal(res1.shape, ref1.shape)
-        assert_equal(res1.dtype, ref1.dtype)
-
-        isinstance(res2, type(xp.asarray([])))
-        xp_assert_equal(res2, ref2)
-        assert_equal(res2.shape, ref2.shape)
-        assert_equal(res2.dtype, ref2.dtype)
+        xp_assert_close(res1, ref1, rtol=2e-16, allow_0d=True)
+        xp_assert_equal(res2, ref2, allow_0d=True)
+        if not is_array_api_strict(xp):
+            xp_assert_equal(res3, ref3, allow_0d=True)

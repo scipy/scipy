@@ -212,6 +212,13 @@ def test_onenormest(matrices):
     assert_allclose(est, est0)
 
 
+def test_norm(matrices):
+    A_dense, A_sparse, b = matrices
+    norm0 = splin.norm(sp.csr_matrix(A_dense))
+    norm = splin.norm(A_sparse)
+    assert_allclose(norm, norm0)
+
+
 def test_inv(matrices):
     A_dense, A_sparse, b = matrices
     x0 = splin.inv(sp.csc_matrix(A_dense))

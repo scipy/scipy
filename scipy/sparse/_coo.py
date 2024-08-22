@@ -11,7 +11,7 @@ import numpy as np
 
 from .._lib._util import copy_if_needed
 from ._matrix import spmatrix
-from ._sparsetools import coo_tocsr, coo_todense, coo_matvec
+from ._sparsetools import coo_tocsr, coo_todense, coo_matvec, coo_matmat_dense
 from ._base import issparse, SparseEfficiencyWarning, _spbase, sparray
 from ._data import _data_matrix, _minmax_mixin
 from ._sputils import (upcast_char, to_native, isshape, getdtype,
@@ -24,8 +24,8 @@ import operator
 class _coo_base(_data_matrix, _minmax_mixin):
     _format = 'coo'
 
-    def __init__(self, arg1, shape=None, dtype=None, copy=False):
-        _data_matrix.__init__(self)
+    def __init__(self, arg1, shape=None, dtype=None, copy=False, *, maxprint=None):
+        _data_matrix.__init__(self, arg1, maxprint=maxprint)
         is_array = isinstance(self, sparray)
         if not copy:
             copy = copy_if_needed
@@ -79,7 +79,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
                 if not is_array:
                     M = np.atleast_2d(M)
                     if M.ndim != 2:
-                        raise TypeError('expected dimension <= 2 array or matrix')
+                        raise TypeError(f'expected 2D array or matrix, not {M.ndim}D')
 
                 self._shape = check_shape(M.shape, allow_1d=is_array)
                 if shape is not None:
@@ -94,7 +94,8 @@ class _coo_base(_data_matrix, _minmax_mixin):
                 self.has_canonical_format = True
 
         if dtype is not None:
-            self.data = self.data.astype(dtype, copy=False)
+            newdtype = getdtype(dtype)
+            self.data = self.data.astype(newdtype, copy=False)
 
         self._check()
 
@@ -182,6 +183,21 @@ class _coo_base(_data_matrix, _minmax_mixin):
 
     _getnnz.__doc__ = _spbase._getnnz.__doc__
 
+    def count_nonzero(self, axis=None):
+        self.sum_duplicates()
+        if axis is None:
+            return np.count_nonzero(self.data)
+
+        if axis < 0:
+            axis += self.ndim
+        if axis < 0 or axis >= self.ndim:
+            raise ValueError('axis out of bounds')
+        mask = self.data != 0
+        coord = self.coords[1 - axis][mask]
+        return np.bincount(downcast_intp_index(coord), minlength=self.shape[1 - axis])
+
+    count_nonzero.__doc__ = _spbase.count_nonzero.__doc__
+
     def _check(self):
         """ Checks data structure for consistency """
         if self.ndim != len(self.coords):
@@ -211,7 +227,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
         if axes is None:
             axes = range(self.ndim)[::-1]
         elif isinstance(self, sparray):
-            if len(axes) != self.ndim:
+            if not hasattr(axes, "__len__") or len(axes) != self.ndim:
                 raise ValueError("axes don't match matrix dimensions")
             if len(set(axes)) != self.ndim:
                 raise ValueError("repeated axis in transpose")
@@ -335,27 +351,35 @@ class _coo_base(_data_matrix, _minmax_mixin):
                [0, 0, 0, 1]])
 
         """
-        if self.ndim != 2:
-            raise ValueError("Cannot convert a 1d sparse array to csr format")
         if self.nnz == 0:
             return self._csr_container(self.shape, dtype=self.dtype)
         else:
             from ._csr import csr_array
-            indptr, indices, data, shape = self._coo_to_compressed(csr_array._swap)
+            arrays = self._coo_to_compressed(csr_array._swap, copy=copy)
+            indptr, indices, data, shape = arrays
 
             x = self._csr_container((data, indices, indptr), shape=self.shape)
             if not self.has_canonical_format:
                 x.sum_duplicates()
             return x
 
-    def _coo_to_compressed(self, swap):
+    def _coo_to_compressed(self, swap, copy=False):
         """convert (shape, coords, data) to (indptr, indices, data, shape)"""
-        M, N = swap(self.shape)
-        major, minor = swap(self.coords)
-        nnz = len(major)
+        M, N = swap(self._shape_as_2d)
         # convert idx_dtype intc to int32 for pythran.
         # tested in scipy/optimize/tests/test__numdiff.py::test_group_columns
         idx_dtype = self._get_index_dtype(self.coords, maxval=max(self.nnz, N))
+
+        if self.ndim == 1:
+            indices = self.coords[0].copy() if copy else self.coords[0]
+            nnz = len(indices)
+            indptr = np.array([0, nnz], dtype=idx_dtype)
+            data = self.data.copy() if copy else self.data
+            return indptr, indices, data, self.shape
+
+        # ndim == 2
+        major, minor = swap(self.coords)
+        nnz = len(major)
         major = major.astype(idx_dtype, copy=False)
         minor = minor.astype(idx_dtype, copy=False)
 
@@ -383,8 +407,8 @@ class _coo_base(_data_matrix, _minmax_mixin):
 
         if len(diags) > 100:
             # probably undesired, should todia() have a maxdiags parameter?
-            warn("Constructing a DIA matrix with %d diagonals "
-                 "is inefficient" % len(diags),
+            warn(f"Constructing a DIA matrix with {len(diags)} diagonals "
+                 "is inefficient",
                  SparseEfficiencyWarning, stacklevel=2)
 
         #initialize and fill in data array
@@ -561,7 +585,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
     def _matmul_multivector(self, other):
         result_dtype = upcast_char(self.dtype.char, other.dtype.char)
         if self.ndim == 2:
-            result_shape = (other.shape[1], self.shape[0])
+            result_shape = (self.shape[0], other.shape[1])
             col = self.col
             row = self.row
         elif self.ndim == 1:
@@ -570,13 +594,13 @@ class _coo_base(_data_matrix, _minmax_mixin):
             row = np.zeros_like(col)
         else:
             raise NotImplementedError(
-                f"coo_matvec not implemented for ndim={self.ndim}")
-
+                f"coo_matmat_dense not implemented for ndim={self.ndim}")
+  
         result = np.zeros(result_shape, dtype=result_dtype)
-        for i, other_col in enumerate(other.T):
-            coo_matvec(self.nnz, row, col, self.data, other_col, result[i:i + 1])
-        return result.T.view(type=type(other))
-
+        coo_matmat_dense(self.nnz, other.shape[-1], row, col,
+                         self.data, other.ravel('C'), result)
+        return result.view(type=type(other))
+    
 
 def _ravel_coords(coords, shape, order='C'):
     """Like np.ravel_multi_index, but avoids some overflow issues."""

@@ -35,6 +35,7 @@ PUBLIC_MODULES = ["scipy." + s for s in [
     "cluster.hierarchy",
     "constants",
     "datasets",
+    "differentiate",
     "fft",
     "fftpack",
     "integrate",
@@ -53,6 +54,7 @@ PUBLIC_MODULES = ["scipy." + s for s in [
     "ndimage",
     "odr",
     "optimize",
+    "optimize.elementwise",
     "signal",
     "signal.windows",
     "sparse",
@@ -448,14 +450,15 @@ def test_private_but_present_deprecation(module_name, correct_module):
     correct_import = import_module(import_name)
 
     # Attributes that were formerly in `module_name` can still be imported from
-    # `module_name`, albeit with a deprecation warning. The specific message
-    # depends on whether the attribute is public in `scipy.xxx` or not.
+    # `module_name`, albeit with a deprecation warning.
     for attr_name in module.__all__:
-        attr = getattr(correct_import, attr_name, None)
-        if attr is None:
-            message = f"`{module_name}.{attr_name}` is deprecated..."
-        else:
-            message = f"Please import `{attr_name}` from the `{import_name}`..."
+        if attr_name == "varmats_from_mat":
+            # defer handling this case, see
+            # https://github.com/scipy/scipy/issues/19223
+            continue
+        # ensure attribute is present where the warning is pointing
+        assert getattr(correct_import, attr_name, None) is not None
+        message = f"Please import `{attr_name}` from the `{import_name}`..."
         with pytest.deprecated_call(match=message):
             getattr(module, attr_name)
 
@@ -488,7 +491,7 @@ def test_misc_doccer_deprecation():
             getattr(module, attr_name)
 
     # Attributes that were not in `scipy.misc.doccer` get an error
-    # notifying the user that the attribute is not in `scipy.misc.doccer` 
+    # notifying the user that the attribute is not in `scipy.misc.doccer`
     # and that `scipy.misc.doccer` is deprecated.
     message = "`scipy.misc.doccer` is deprecated..."
     with pytest.raises(AttributeError, match=message):

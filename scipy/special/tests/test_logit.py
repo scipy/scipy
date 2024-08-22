@@ -5,31 +5,48 @@ from scipy.special import logit, expit, log_expit
 
 
 class TestLogit:
-    def check_logit_out(self, dtype, expected):
-        a = np.linspace(0, 1, 10)
-        a = np.array(a, dtype=dtype)
-        with np.errstate(divide='ignore'):
-            actual = logit(a)
 
-        assert_almost_equal(actual, expected)
-
-        assert_equal(actual.dtype, np.dtype(dtype))
+    def check_logit_out(self, a, expected):
+        actual = logit(a)
+        assert_equal(actual.dtype, a.dtype)
+        rtol = 16*np.finfo(a.dtype).eps
+        assert_allclose(actual, expected, rtol=rtol)
 
     def test_float32(self):
-        expected = np.array([-np.inf, -2.07944155,
-                            -1.25276291, -0.69314718,
-                            -0.22314353, 0.22314365,
-                            0.6931473, 1.25276303,
-                            2.07944155, np.inf], dtype=np.float32)
-        self.check_logit_out('f4', expected)
+        a = np.concatenate((np.linspace(0, 1, 10, dtype=np.float32),
+                            [np.float32(0.0001), np.float32(0.49999),
+                             np.float32(0.50001)]))
+        # Expected values computed with mpmath from float32 inputs, e.g.
+        #   from mpmath import mp
+        #   mp.dps = 200
+        #   a = np.float32(1/9)
+        #   print(np.float32(mp.log(a) - mp.log1p(-a)))
+        # prints `-2.0794415`.
+        expected = np.array([-np.inf, -2.0794415, -1.2527629, -6.9314712e-01,
+                             -2.2314353e-01,  2.2314365e-01,  6.9314724e-01,
+                             1.2527630, 2.0794415, np.inf,
+                             -9.2102404, -4.0054321e-05, 4.0054321e-05],
+                            dtype=np.float32)
+        self.check_logit_out(a, expected)
 
     def test_float64(self):
-        expected = np.array([-np.inf, -2.07944154,
-                            -1.25276297, -0.69314718,
-                            -0.22314355, 0.22314355,
-                            0.69314718, 1.25276297,
-                            2.07944154, np.inf])
-        self.check_logit_out('f8', expected)
+        a = np.concatenate((np.linspace(0, 1, 10, dtype=np.float64),
+                            [1e-8, 0.4999999999999, 0.50000000001]))
+        # Expected values computed with mpmath.
+        expected = np.array([-np.inf,
+                             -2.079441541679836,
+                             -1.252762968495368,
+                             -0.6931471805599454,
+                             -0.22314355131420985,
+                             0.22314355131420985,
+                             0.6931471805599452,
+                             1.2527629684953674,
+                             2.0794415416798353,
+                             np.inf,
+                             -18.420680733952366,
+                             -3.999023334699814e-13,
+                             4.000000330961484e-11])
+        self.check_logit_out(a, expected)
 
     def test_nan(self):
         expected = np.array([np.nan]*4)

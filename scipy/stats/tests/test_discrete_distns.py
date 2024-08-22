@@ -351,6 +351,14 @@ class TestZipfian:
         assert_allclose(zipfian.stats(a, n, moments="mvsk"),
                         [mean, var, skew, kurtosis])
 
+    def test_pmf_integer_k(self):
+        k = np.arange(0, 1000)
+        k_int32 = k.astype(np.int32)
+        dist = zipfian(111, 22)
+        pmf = dist.pmf(k)
+        pmf_k_int32 = dist.pmf(k_int32)
+        assert_equal(pmf, pmf_k_int32)
+
 
 class TestNCH:
     np.random.seed(2)  # seeds 0 and 1 had some xl = xu; randint failed
@@ -627,3 +635,26 @@ class TestBetaNBinom:
         #      return float(fourth_moment/var**2 - 3.)
         assert_allclose(betanbinom.stats(n, a, b, moments="k"),
                         ref, rtol=3e-15)
+
+
+class TestZipf:
+    def test_gh20692(self):
+        # test that int32 data for k generates same output as double
+        k = np.arange(0, 1000)
+        k_int32 = k.astype(np.int32)
+        dist = zipf(9)
+        pmf = dist.pmf(k)
+        pmf_k_int32 = dist.pmf(k_int32)
+        assert_equal(pmf, pmf_k_int32)
+
+
+class TestRandInt:
+    def test_gh19759(self):
+        # test zero PMF values within the support reported by gh-19759
+        a = -354
+        max_range = abs(a)
+        all_b_1 = [a + 2 ** 31 + i for i in range(max_range)]
+        res = randint.pmf(325, a, all_b_1)
+        assert (res > 0).all()
+        ref = 1 / (np.asarray(all_b_1, dtype=np.float64) - a)
+        assert_allclose(res, ref)

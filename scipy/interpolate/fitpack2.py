@@ -15,16 +15,7 @@ __all__ = [  # noqa: F822
     'RectSphereBivariateSpline',
     'SmoothBivariateSpline',
     'SmoothSphereBivariateSpline',
-    'SphereBivariateSpline',
     'UnivariateSpline',
-    'array',
-    'concatenate',
-    'dfitpack',
-    'dfitpack_int',
-    'diff',
-    'ones',
-    'ravel',
-    'zeros',
 ]
 
 

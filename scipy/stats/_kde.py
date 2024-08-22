@@ -33,9 +33,6 @@ import numpy as np
 from . import _mvn
 from ._stats import gaussian_kernel_estimate, gaussian_kernel_estimate_log
 
-# deprecated import to be removed in SciPy 1.13.0
-from scipy.special import logsumexp  # noqa: F401
-
 
 __all__ = ['gaussian_kde']
 
@@ -304,9 +301,9 @@ class gaussian_kde:
         cov = atleast_2d(cov)
 
         if mean.shape != (self.d,):
-            raise ValueError("mean does not have dimension %s" % self.d)
+            raise ValueError(f"mean does not have dimension {self.d}")
         if cov.shape != (self.d, self.d):
-            raise ValueError("covariance does not have dimension %s" % self.d)
+            raise ValueError(f"covariance does not have dimension {self.d}")
 
         # make mean a column vector
         mean = mean[:, newaxis]
@@ -391,8 +388,7 @@ class gaussian_kde:
                                             self.dataset, self.weights,
                                             self.covariance, **extra_kwds)
         if inform:
-            msg = ('An integral in _mvn.mvnun requires more points than %s' %
-                   (self.d * 1000))
+            msg = f'An integral in _mvn.mvnun requires more points than {self.d * 1000}'
             warnings.warn(msg, stacklevel=2)
 
         return value
