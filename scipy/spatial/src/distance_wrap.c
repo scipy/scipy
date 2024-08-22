@@ -844,6 +844,17 @@ static struct PyModuleDef moduledef = {
 PyMODINIT_FUNC
 PyInit__distance_wrap(void)
 {
+    PyObject *module;
+
     import_array();
-    return PyModule_Create(&moduledef);
+    module = PyModule_Create(&moduledef);
+    if (module == NULL) {
+        return module;
+    }
+
+#if Py_GIL_DISABLED
+    PyUnstable_Module_SetGIL(module, Py_MOD_GIL_NOT_USED);
+#endif
+
+    return module;
 }

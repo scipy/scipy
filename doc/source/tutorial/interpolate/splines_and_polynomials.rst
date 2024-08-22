@@ -51,6 +51,7 @@ Manipulating `PPoly` objects
 and antiderivatives, computing integrals and root-finding. For example, we
 tabulate the sine function and find the roots of its derivative.
 
+    >>> import numpy as np
     >>> from scipy.interpolate import CubicSpline
     >>> x = np.linspace(0, 10, 71)
     >>> y = np.sin(x)
@@ -109,7 +110,7 @@ PCHIP interpolant (we could as well used a `CubicSpline`):
 
     >>> from scipy.interpolate import PchipInterpolator
     >>> x = np.linspace(0, np.pi/2, 70)
-    >>> y = (1 - m*np.sin(x)**2))**(-1/2)
+    >>> y = (1 - m*np.sin(x)**2)**(-1/2)
     >>> spl = PchipInterpolator(x, y)
 
 and integrate
@@ -259,7 +260,7 @@ at a given evaluation point, thus a design matrix built on b-splines has at most
 As an illustration, we consider a toy example. Suppose our data are
 one-dimensional and are confined to an interval :math:`[0, 6]`.
 We construct a 4-regular knot vector which corresponds to 7 data points and
-cubic, `k=3`, splines:
+cubic, ``k=3``, splines:
 
 >>> t = [0., 0., 0., 0., 2., 3., 4., 6., 6., 6., 6.]
 
@@ -272,8 +273,8 @@ and construct the design matrix in the sparse CSR format
 >>> from scipy.interpolate import BSpline
 >>> mat = BSpline.design_matrix(xnew, t, k=3)
 >>> mat
-<3x7 sparse array of type '<class 'numpy.float64'>'
-	with 12 stored elements in Compressed Sparse Row format>
+<Compressed Sparse Row sparse array of dtype 'float64'
+	with 12 stored elements and shape (3, 7)>
 
 Here each row of the design matrix corresponds to a value in the ``xnew`` array,
 and a row has no more than ``k+1 = 4`` non-zero elements; row ``j``

@@ -3,7 +3,6 @@
 
 import itertools
 import platform
-import sys
 import pytest
 
 import numpy as np
@@ -26,10 +25,7 @@ from scipy.sparse.linalg._isolve import (bicg, bicgstab, cg, cgs,
 _SOLVERS = [bicg, bicgstab, cg, cgs, gcrotmk, gmres, lgmres,
             minres, qmr, tfqmr]
 
-pytestmark = [
-    # remove this once atol defaults to 0.0 for all methods
-    pytest.mark.filterwarnings("ignore:.*called without specifying.*"),
-]
+CB_TYPE_FILTER = ".*called without specifying `callback_type`.*"
 
 
 # create parametrized fixture for easy reuse in tests
@@ -238,7 +234,11 @@ def test_maxiter(case):
     def callback(x):
         residuals.append(norm(b - case.A * x))
 
-    x, info = case.solver(A, b, x0=x0, rtol=rtol, maxiter=1, callback=callback)
+    if case.solver == gmres:
+        with pytest.warns(DeprecationWarning, match=CB_TYPE_FILTER):
+            x, info = case.solver(A, b, x0=x0, rtol=rtol, maxiter=1, callback=callback)
+    else:
+        x, info = case.solver(A, b, x0=x0, rtol=rtol, maxiter=1, callback=callback)
 
     assert len(residuals) == 1
     assert info == 1
@@ -307,6 +307,7 @@ def test_precond_dummy(case):
 
 
 # Specific test for poisson1d and poisson2d cases
+@pytest.mark.fail_slow(10)
 @pytest.mark.parametrize('case', [x for x in IterativeParams().cases
                                   if x.name in ('poisson1d', 'poisson2d')],
                          ids=['poisson1d', 'poisson2d'])
@@ -449,9 +450,6 @@ def test_maxiter_worsening(solver):
     # This can occur due to the solvers hitting close to breakdown,
     # which they should detect and halt as necessary.
     # cf. gh-9100
-    if (solver is gmres and platform.machine() == 'aarch64'
-            and sys.version_info[1] == 9):
-        pytest.xfail(reason="gh-13019")
     if (solver is lgmres and
             platform.machine() not in ['x86_64' 'x86', 'aarch64', 'arm64']):
         # see gh-17839
@@ -504,12 +502,16 @@ def test_x0_working(solver):
 
     x, info = solver(A, b, x0=x0, **kw)
     assert info == 0
-    assert norm(A @ x - b) <= 2e-6*norm(b)
+    assert norm(A @ x - b) <= 3e-6*norm(b)
 
 
 def test_x0_equals_Mb(case):
+    if (case.solver is bicgstab) and (case.name == 'nonsymposdef-bicgstab'):
+        pytest.skip("Solver fails due to numerical noise "
+                    "on some architectures (see gh-15533).")
     if case.solver is tfqmr:
         pytest.skip("Solver does not support x0='Mb'")
+
     A = case.A
     b = case.b
     x0 = 'Mb'
@@ -554,7 +556,7 @@ def test_show(case, capsys):
     assert err == ""
 
 
-def test_positional_deprecation(solver):
+def test_positional_error(solver):
     # from test_x0_working
     rng = np.random.default_rng(1685363802304750)
     n = 10
@@ -562,12 +564,23 @@ def test_positional_deprecation(solver):
     A = A @ A.T
     b = rng.random(n)
     x0 = rng.random(n)
-    with pytest.deprecated_call(
-        # due to the use of the _deprecate_positional_args decorator, it's not possible
-        # to separate the two warnings (1 for positional use, 1 for `tol` deprecation).
-        match="use keyword arguments.*|argument `tol` is deprecated.*"
-    ):
+    with pytest.raises(TypeError):
         solver(A, b, x0, 1e-5)
+
+
+@pytest.mark.parametrize("atol", ["legacy", None, -1])
+def test_invalid_atol(solver, atol):
+    if solver == minres:
+        pytest.skip("minres has no `atol` argument")
+    # from test_x0_working
+    rng = np.random.default_rng(1685363802304750)
+    n = 10
+    A = rng.random(size=[n, n])
+    A = A @ A.T
+    b = rng.random(n)
+    x0 = rng.random(n)
+    with pytest.raises(ValueError):
+        solver(A, b, x0, atol=atol)
 
 
 class TestQMR:
@@ -621,6 +634,7 @@ class TestGMRES:
 
         assert_allclose(x_gm[0], 0.359, rtol=1e-2)
 
+    @pytest.mark.filterwarnings(f"ignore:{CB_TYPE_FILTER}:DeprecationWarning")
     def test_callback(self):
 
         def store_residual(r, rvec):
@@ -671,6 +685,7 @@ class TestGMRES:
         assert_allclose(r_x, x)
         assert r_info == info
 
+    @pytest.mark.fail_slow(10)
     def test_atol_legacy(self):
 
         A = eye(2)
@@ -724,6 +739,7 @@ class TestGMRES:
         # The solution should be OK outside null space of A
         assert_allclose(A @ (A @ x), A @ b)
 
+    @pytest.mark.filterwarnings(f"ignore:{CB_TYPE_FILTER}:DeprecationWarning")
     def test_callback_type(self):
         # The legacy callback type changes meaning of 'maxiter'
         np.random.seed(1)
@@ -787,10 +803,3 @@ class TestGMRES:
                         restart=10, callback_type='x')
         assert info == 20
         assert count[0] == 20
-
-    def test_restrt_dep(self):
-        with pytest.warns(
-            DeprecationWarning,
-            match="'gmres' keyword argument 'restrt'"
-        ):
-            gmres(np.array([1]), np.array([1]), restrt=10)

@@ -172,12 +172,12 @@ def _toint64(x):
 
 @cython.wraparound(False)
 @cython.boundscheck(False)
-def _weightedrankedtau(ordered[:] x, ordered[:] y, intp_t[:] rank, weigher, bool additive):
+def _weightedrankedtau(const ordered[:] x, const ordered[:] y, intp_t[:] rank, weigher, bool additive):
     # y_local and rank_local (declared below) are a work-around for a Cython
     # bug; see gh-16718.  When we can require Cython 3.0, y_local and
     # rank_local can be removed, and the closure weigh() can refer directly
     # to y and rank.
-    cdef ordered[:] y_local = y
+    cdef const ordered[:] y_local = y
     cdef intp_t i, first
     cdef float64_t t, u, v, w, s, sq
     cdef int64_t n = np.int64(len(x))
@@ -377,8 +377,8 @@ def _transform_distance_matrix(distx, disty, global_corr='mgc', is_ranked=True):
 # MGC specific functions
 @cython.wraparound(False)
 @cython.boundscheck(False)
-cdef _expected_covar(float64_t[:, :] distx, float64_t[:, :] disty,
-                     int64_t[:, :] rank_distx, int64_t[:, :] rank_disty,
+cdef _expected_covar(const float64_t[:, :] distx, const float64_t[:, :] disty,
+                     const int64_t[:, :] rank_distx, const int64_t[:, :] rank_disty,
                      float64_t[:, :] cov_xy, float64_t[:] expectx,
                      float64_t[:] expecty):
     # summing up the element-wise product of A and B based on the ranks,
@@ -509,7 +509,7 @@ cdef double _geninvgauss_logpdf_kernel(double x, double p, double b) noexcept no
     return c + (p - 1)*math.log(x) - b*(x + 1/x)/2
 
 
-cdef double _geninvgauss_pdf(double x, void *user_data) except * nogil:
+cdef double _geninvgauss_pdf(double x, void *user_data) noexcept nogil:
     # destined to be used in a LowLevelCallable
     cdef double p, b
 
@@ -645,7 +645,7 @@ cpdef double genhyperbolic_pdf(double x, double p, double a, double b) noexcept 
     return math.exp(_genhyperbolic_logpdf_kernel(x, p, a, b))
 
 
-cdef double _genhyperbolic_pdf(double x, void *user_data) except * nogil:
+cdef double _genhyperbolic_pdf(double x, void *user_data) noexcept nogil:
     # destined to be used in a LowLevelCallable
     cdef double p, a, b
 
@@ -662,7 +662,8 @@ cpdef double genhyperbolic_logpdf(
     return _genhyperbolic_logpdf_kernel(x, p, a, b)
 
 
-cdef double _genhyperbolic_logpdf(double x, void *user_data) except * nogil:
+# logpdf is always negative, so use positive exception value
+cdef double _genhyperbolic_logpdf(double x, void *user_data) noexcept nogil:
     # destined to be used in a LowLevelCallable
     cdef double p, a, b
 
@@ -711,8 +712,8 @@ ctypedef fused real:
 @cython.cdivision(True)
 @cython.boundscheck(False)
 cdef inline int gaussian_kernel_estimate_inner(
-    real[:, :] points_,  real[:, :] values_, real[:, :] xi_,
-    real[:, :] estimate, real[:, :] cho_cov,
+    const real[:, :] points_,  const real[:, :] values_, const real[:, :] xi_,
+    real[:, :] estimate, const real[:, :] cho_cov,
     int n, int m, int d, int p,
 ) noexcept nogil:
     cdef:

@@ -42,6 +42,9 @@ def schur(a, output='real', lwork=None, overwrite_a=False, sort=None,
         Specifies whether the upper eigenvalues should be sorted. A callable
         may be passed that, given a eigenvalue, returns a boolean denoting
         whether the eigenvalue should be sorted to the top-left (True).
+        If output='real', the callable should have two arguments, the first
+        one being the real part of the eigenvalue, the second one being
+        the imaginary part.
         Alternatively, string parameters may be used::
 
             'lhp'   Left-hand plane (x.real < 0.0)
@@ -104,7 +107,7 @@ def schur(a, output='real', lwork=None, overwrite_a=False, sort=None,
            [ 0.        , -0.32948354+0.80225456j, -0.59877807+0.56192146j],
            [ 0.        ,  0.                    , -0.32948354-0.80225456j]])
     >>> eigvals(T2)
-    array([2.65896708, -0.32948354+0.80225456j, -0.32948354-0.80225456j])
+    array([2.65896708, -0.32948354+0.80225456j, -0.32948354-0.80225456j])   # may vary
 
     An arbitrary custom eig-sorting condition, having positive imaginary part,
     which is satisfied by only one eigenvalue
@@ -285,7 +288,7 @@ def rsf2csf(T, Z, check_finite=True):
 
     for ind, X in enumerate([Z, T]):
         if X.ndim != 2 or X.shape[0] != X.shape[1]:
-            raise ValueError("Input '{}' must be square.".format('ZT'[ind]))
+            raise ValueError(f"Input '{'ZT'[ind]}' must be square.")
 
     if T.shape[0] != Z.shape[0]:
         message = f"Input array shapes must match: Z: {Z.shape} vs. T: {T.shape}"

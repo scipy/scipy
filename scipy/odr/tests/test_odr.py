@@ -1,3 +1,4 @@
+import pickle
 import tempfile
 import shutil
 import os
@@ -563,3 +564,43 @@ class TestODR:
             odr_obj.set_job(fit_type=0, del_init=1)
             # Just make sure that it runs without raising an exception.
             odr_obj.run()
+
+    def test_pickling_data(self):
+        x = np.linspace(0.0, 5.0)
+        y = 1.0 * x + 2.0
+        data = Data(x, y)
+
+        obj_pickle = pickle.dumps(data)
+        del data
+        pickle.loads(obj_pickle)
+
+    def test_pickling_real_data(self):
+        x = np.linspace(0.0, 5.0)
+        y = 1.0 * x + 2.0
+        data = RealData(x, y)
+
+        obj_pickle = pickle.dumps(data)
+        del data
+        pickle.loads(obj_pickle)
+
+    def test_pickling_model(self):
+        obj_pickle = pickle.dumps(unilinear)
+        pickle.loads(obj_pickle)
+
+    def test_pickling_odr(self):
+        x = np.linspace(0.0, 5.0)
+        y = 1.0 * x + 2.0
+        odr_obj = ODR(Data(x, y), unilinear)
+
+        obj_pickle = pickle.dumps(odr_obj)
+        del odr_obj
+        pickle.loads(obj_pickle)
+
+    def test_pickling_output(self):
+        x = np.linspace(0.0, 5.0)
+        y = 1.0 * x + 2.0
+        output = ODR(Data(x, y), unilinear).run
+
+        obj_pickle = pickle.dumps(output)
+        del output
+        pickle.loads(obj_pickle)

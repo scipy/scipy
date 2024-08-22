@@ -38,8 +38,8 @@ WRAPPED_FUNCS = ['cdotc', 'cdotu', 'zdotc', 'zdotu', 'cladiv', 'zladiv']
 USE_OLD_ACCELERATE = ['lsame', 'dcabs1']
 
 C_PREAMBLE = """
-#include "fortran_defs.h"
 #include "npy_cblas.h"
+#include "fortran_defs.h"
 """
 
 LAPACK_DECLS = """
@@ -103,7 +103,7 @@ def newer(dst, src):
     both exist and 'dst' is the same age or younger than 'src'.
     """
     if not os.path.exists(dst):
-        raise ValueError("file '%s' does not exist" % os.path.abspath(dst))
+        raise ValueError(f"file '{os.path.abspath(dst)}' does not exist")
     if not os.path.exists(src):
         return 1
 
@@ -128,7 +128,8 @@ def get_blas_macro_and_name(name, accelerate):
         elif name == 'xerbla_array':
             return '', name + '__'
     if name in WRAPPED_FUNCS:
-        return '', name + 'wrp_'
+        name = name + 'wrp'
+        return 'F_FUNC', f'{name},{name.upper()}'
     return 'BLAS_FUNC', name
 
 
