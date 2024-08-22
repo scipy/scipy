@@ -1,5 +1,6 @@
 import numpy as np
-from numpy.testing import assert_equal, assert_array_equal, suppress_warnings
+from numpy.testing import (assert_equal, assert_array_equal,
+                           assert_allclose, suppress_warnings)
 import pytest
 from scipy.linalg import block_diag
 from scipy.sparse import coo_array, random_array, SparseEfficiencyWarning
@@ -979,28 +980,84 @@ argmax_argmin_shapes_axis = [
     ((3,), None), ((3,), 0),
     ((4,6), 1), ((7,3), 0), ((3,5), None),
     ((2,8,7), 2), ((2,8,7), 0),
+    ((2,0), 0), ((3,0,0,2), 0),
     ((3,2,4,7), None), ((3,2,4,7), 1), ((3,2,4,7), 0), ((3,2,4,7), 2),
-    ((4,5,7,8,2), 4),
+    ((3,2,4,7), -2), ((4,5,7,8,2), 4), ((4,5,7,8,2), -3),
 ]
 @pytest.mark.parametrize(('shape', 'axis'), argmax_argmin_shapes_axis)
-def test_argmax(shape, axis):
+def test_argmax_argmin(shape, axis):
     rng = np.random.default_rng(23409823)
     a = random_array(shape, density=0.6, random_state=rng, dtype=int)
 
     res = a.argmax(axis=axis)
-    print(res)
     exp = np.argmax(a.toarray(), axis=axis)
-    print(exp)
     assert_equal(res, exp)
 
-    
-@pytest.mark.parametrize(('shape', 'axis'), argmax_argmin_shapes_axis)
-def test_argmin(shape, axis):
+    res = a.argmin(axis=axis)
+    exp = np.argmin(a.toarray(), axis=axis)
+    assert_equal(res, exp)
+
+
+max_min_shapes_axis = [
+    ((3,), None), ((3,), 0),
+    ((4,6), 1), ((7,3), 0), ((3,5), None),
+    ((2,8,7), 2), ((2,8,7), 0),
+    ((3,2,4,7), None), ((3,2,4,7), 1), ((3,2,4,7), 0), ((3,2,4,7), 2),
+    ((4,5,7,8,2), 4), ((4,5,8,1), 3), ((4,6), (0,)), ((4,6), (0,1)),
+    ((3,0,2), 2), ((3,0,2), (0,2)), ((3,0), 0),
+    ((3,7,8,5), (0,1)), ((3,7,8,5), (2,1)), ((3,7,8,5), (2,0)),
+    ((3,7,8,5), (0,-2)), ((3,7,8,5), (-1,2)), ((3,7,8,5), (3)),
+    ((3,7,8,5), (0,1,2)), ((3,7,8,5), (0,1,2,3)), ((3,7,8,5), ()),
+]
+@pytest.mark.parametrize(('shape', 'axis'), max_min_shapes_axis)
+def test_min_max(shape, axis):
     rng = np.random.default_rng(23409823)
     a = random_array(shape, density=0.6, random_state=rng, dtype=int)
 
-    res = a.argmin(axis=axis)
-    print(res)
-    exp = np.argmin(a.toarray(), axis=axis)
-    print(exp)
+    res = a.min(axis=axis)
+    exp = np.min(a.toarray(), axis=axis)
+    if type(res) is np.int64:
+        assert_equal(res, exp)
+    else:
+        assert_equal(res.toarray(), exp)
+
+    res = a.max(axis=axis)
+    exp = np.max(a.toarray(), axis=axis)
+    if type(res) is np.int64:
+        assert_equal(res, exp)
+    else:
+        assert_equal(res.toarray(), exp)
+
+    res = a.nanmin(axis=axis)
+    exp = np.nanmin(a.toarray(), axis=axis)
+    if type(res) is np.int64:
+        assert_equal(res, exp)
+    else:
+        assert_equal(res.toarray(), exp)
+
+    res = a.nanmax(axis=axis)
+    exp = np.nanmax(a.toarray(), axis=axis)
+    if type(res) is np.int64:
+        assert_equal(res, exp)
+    else:
+        assert_equal(res.toarray(), exp)
+
+
+@pytest.mark.parametrize(('shape', 'axis'), max_min_shapes_axis)
+def test_sum(shape, axis):
+    rng = np.random.default_rng(23409823)
+    a = random_array(shape, density=0.6, random_state=rng, dtype=int)
+
+    res = a.sum(axis=axis)
+    exp = np.sum(a.toarray(), axis=axis)
     assert_equal(res, exp)
+
+
+@pytest.mark.parametrize(('shape', 'axis'), max_min_shapes_axis)
+def test_mean(shape, axis):
+    rng = np.random.default_rng(23409823)
+    a = random_array(shape, density=0.6, random_state=rng, dtype=int)
+
+    res = a.mean(axis=axis)
+    exp = np.mean(a.toarray(), axis=axis)
+    assert_allclose(res, exp)

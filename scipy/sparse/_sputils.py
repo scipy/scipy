@@ -280,21 +280,16 @@ def validateaxis(axis) -> None:
         return
     axis_type = type(axis)
 
-    # In NumPy, you can pass in tuples for 'axis', but they are
-    # not very useful for sparse matrices given their limited
-    # dimensions, so let's make it explicit that they are not
-    # allowed to be passed in
-    if isinstance(axis, tuple):
-        raise TypeError("Tuples are not accepted for the 'axis' parameter. "
-                        "Please pass in one of the following: "
-                        "{-2, -1, 0, 1, None}.")
+    if not isinstance(axis, tuple) and not np.issubdtype(np.dtype(axis_type), np.integer):
+        raise TypeError(f"axis must be an integer/tuple of ints, not {axis_type.__name__}")
 
-    # If not a tuple, check that the provided axis is actually
-    # an integer and raise a TypeError similar to NumPy's
-    if not np.issubdtype(np.dtype(axis_type), np.integer):
-        raise TypeError(f"axis must be an integer, not {axis_type.__name__}")
-
-    if not (-2 <= axis <= 1):
+    if type(axis) is not tuple:
+        axis = [axis]
+    
+    if len(axis)>2:
+        raise ValueError("axis tuple has too many elements")
+    
+    if any(ax >= 2 or ax < -2 for ax in axis):
         raise ValueError("axis out of range")
 
 

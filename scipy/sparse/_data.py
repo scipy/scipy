@@ -209,8 +209,24 @@ class _minmax_mixin:
     def _min_or_max(self, axis, out, min_or_max, explicit):
         if out is not None:
             raise ValueError("Sparse arrays do not support an 'out' parameter.")
+        
+        if axis == ():
+            return self.copy()
+        
+        
 
         validateaxis(axis)
+        
+        if type(axis) is tuple and len(axis) == 1:
+            axis = axis[0]
+
+        if self.ndim == 2 and type(axis) is tuple:
+            if len(axis) == 2:
+                axis = [ax if ax>=0 else ax+2 for ax in axis]
+                if len(axis) != len(set(axis)):
+                    raise ValueError("duplicate value in 'axis'")
+                axis = None
+
         if self.ndim == 1:
             if axis not in (None, 0, -1):
                 raise ValueError("axis out of range")

@@ -1442,12 +1442,13 @@ class _coo_base(_data_matrix, _minmax_mixin):
 
     def _find_max_or_min(self, axis, out, _max_or_min, _max_or_min_axis):
         zero = self.dtype.type(0)
+        
         if axis is None:
             return _max_or_min((*self.data, zero))
         
         if not isinstance(axis, (int, tuple)):
             raise ValueError("'axis' should be int/tuple of ints")
-        
+
         if axis == ():
             return self.copy()
         
@@ -1458,6 +1459,9 @@ class _coo_base(_data_matrix, _minmax_mixin):
             raise ValueError("axis out of range")
         
         axis = [ax if ax>=0 else ax+self.ndim for ax in axis]
+
+        if any(self.shape[d] == 0 for d in axis):
+            raise ValueError("zero-size array to reduction operation")
 
         # Check for duplicates
         if len(axis) != len(set(axis)):
@@ -1478,6 +1482,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
         unraveled_coords = np.concatenate(np.unravel_index(res.coords, result_shape))
         
         return (coo_array((res.data, unraveled_coords), result_shape))
+
 
     def max(self, axis=None, out=None):
         if self.ndim<3:
