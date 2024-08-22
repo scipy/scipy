@@ -70,15 +70,17 @@ def make_system(A, M, x0, b):
     N = A.shape[0]
 
     b = asanyarray(b)
+    bshape = b.shape
 
-    if not (b.shape == (N,1) or b.shape == (N,)):
-        raise ValueError(f'shapes of A {A.shape} and b {b.shape} are '
+    if not (bshape == (N,1) or bshape == (N,)):
+        raise ValueError(f'shapes of A {A.shape} and b {bshape} are '
                          'incompatible')
 
     if b.dtype.char not in 'fdFD':
         b = b.astype('d')  # upcast non-FP types to double
 
     def postprocess(x):
+        x = x.reshape(bshape)
         return x
 
     if hasattr(A,'dtype'):
