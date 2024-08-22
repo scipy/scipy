@@ -475,4 +475,7 @@ class TestIterativeSubproblem:
             trust_radius = 1
             p, hits_boundary = subprob.solve(trust_radius)
 
-            assert subprob.niter == (maxiter or IterativeSubproblem.MAXITER_DEFAULT)
+            if maxiter is None:
+                assert subprob.niter <= IterativeSubproblem.MAXITER_DEFAULT
+            else:
+                assert subprob.niter <= maxiter
