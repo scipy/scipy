@@ -80,16 +80,10 @@ def solve_sylvester(a, b, q):
     True
 
     """
-    for ind, _ in enumerate((a, b)):
-        if not np.equal(*_.shape):
-            raise ValueError("Matrix {} should be square.".format("ab"[ind]))
-    # Shape consistency check
-    if a.shape[0] != q.shape[0] or b.shape[0] != q.shape[1]:
-        raise ValueError("Matrix q should have shape (a.shape[0], b.shape[0])")
-
     # Accomodate empty a
     if a.size == 0 or b.size == 0:
-        tdict = {'s': np.float32, 'd': np.float64, 'c': np.complex64, 'z': np.complex128}
+        tdict = {'s': np.float32, 'd': np.float64,
+                 'c': np.complex64, 'z': np.complex128}
         func, = get_lapack_funcs(('trsyl',), arrays=(a, b, q))
         return np.empty(q.shape, dtype=tdict[func.typecode])
 
@@ -183,10 +177,11 @@ def solve_continuous_lyapunov(a, q):
     # Shape consistency check
     if a.shape != q.shape:
         raise ValueError("Matrix a and q should have the same shape.")
-    
+
     # Accomodate empty array
     if a.size == 0:
-        tdict = {'s': np.float32, 'd': np.float64, 'c': np.complex64, 'z': np.complex128}
+        tdict = {'s': np.float32, 'd': np.float64,
+                 'c': np.complex64, 'z': np.complex128}
         func, = get_lapack_funcs(('trsyl',), arrays=(a, q))
         return np.empty(a.shape, dtype=tdict[func.typecode])
 
