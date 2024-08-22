@@ -478,18 +478,19 @@ def companion(a):
 
     """
     a = np.atleast_1d(a)
+    n = a.shape[-1]
 
-    if a.size < 2:
-        raise ValueError("The length of `a` must be at least 2.")
+    if n < 2:
+        raise ValueError("The length of `a` along the last axis must be at least 2.")
 
     if np.any(a[..., 0] == 0):
-        raise ValueError("The first coefficient in `a` must not be zero.")
+        raise ValueError("The first coefficient(s) of `a` (i.e. elements "
+                         "of `a[..., 0]`) must not be zero.")
 
     first_row = -a[..., 1:] / (1.0 * a[..., 0:1])
-    n = a.shape[-1]
     c = np.zeros(a.shape[:-1] + (n - 1, n - 1), dtype=first_row.dtype)
     c[..., 0, :] = first_row
-    c[..., list(range(1, n - 1)), list(range(0, n - 2))] = 1
+    c[..., np.arange(1, n - 1), np.arange(0, n - 2)] = 1
     return c
 
 

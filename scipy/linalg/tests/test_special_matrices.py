@@ -115,7 +115,6 @@ class TestLeslie:
 class TestCompanion:
 
     def test_bad_shapes(self):
-        assert_raises(ValueError, companion, [[1, 1], [2, 2]])
         assert_raises(ValueError, companion, [0, 4, 5])
         assert_raises(ValueError, companion, [1])
         assert_raises(ValueError, companion, [])
