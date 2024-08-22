@@ -1382,6 +1382,30 @@ class _coo_base(_data_matrix, _minmax_mixin):
         if isinstance(result, (np.ndarray, sparray)):
             result = result.reshape(bshape)
         return result
+    
+    def _divide(self, other, true_divide=False, rdivide=False):
+        """Point-wise division by another array/matrix."""
+
+        if self.ndim < 3 and ((issparse(other) and other.ndim < 3) \
+                          or (not issparse(other) and len(np.asarray(other).shape) < 3)):
+            result = _data_matrix._divide(self.tocsr(), other, true_divide, rdivide)
+            # if isinstance(result, sparray):
+            #     result = result.tocoo()
+            return result
+        
+        # Scalar other.
+        if isscalarlike(other):
+            if rdivide:
+                if true_divide:
+                    return np.true_divide(other, self.todense())
+                else:
+                    return np.divide(other, self.todense())
+
+            if true_divide and np.can_cast(self.dtype, np.float64):
+                return self.astype(np.float64)._mul_scalar(1./other)
+
+        else:
+            return NotImplemented
 
     def mean(self, axis=None, dtype=None, out=None):
         if axis == ():

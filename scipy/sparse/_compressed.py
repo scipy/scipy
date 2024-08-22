@@ -1480,6 +1480,9 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             except ValueError:
                 raise ValueError("inconsistent shapes")
 
+            bshape = np.broadcast_shapes(self.shape, other.shape)
+            self = self.broadcast_to(bshape)
+            other  = other.broadcast_to(bshape)
             r = self._binopt(other, '_eldiv_')
 
         if np.issubdtype(r.dtype, np.inexact):
