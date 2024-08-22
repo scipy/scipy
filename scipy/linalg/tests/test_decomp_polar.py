@@ -93,28 +93,18 @@ def test_verify_cases():
         verify_polar(a)
 
 @pytest.mark.parametrize('dt', [int, float, np.float32, complex, np.complex64])
-def test_empty(dt):
-    empty_cases = [
-    np.empty((0, 0), dt),
-    np.empty((0, 2), dt),
-    np.empty((2, 0), dt),
-    ]
+@pytest.mark.parametrize('shape',  [(0, 0), (0, 2), (2, 0)])
+@pytest.mark.parametrize('side', ['left', 'right'])
+def test_empty(dt, shape, side):
+    a = np.empty(shape, dtype=dt)
+    m, n = shape
+    p_shape = (m, m) if side == 'left' else (n, n)
 
-    for a in empty_cases:
-        # a = up 
-        u, p = polar(a, side='right')
-        u_n, p_n = polar(np.eye(2, dtype=dt))
+    u, p = polar(a, side=side)
+    u_n, p_n = polar(np.eye(5, dtype=dt))
 
-        assert_equal(u.dtype, u_n.dtype)
-        assert_equal(p.dtype, p_n.dtype)
-        assert_(u.size == 0)
-        assert_((p == 0).all())
-
-        # a = pu
-        u, p = polar(a, side='left')
-        u_n, p_n = polar(np.eye(2, dtype=dt))
-
-        assert_equal(u.dtype, u_n.dtype)
-        assert_equal(p.dtype, p_n.dtype)
-        assert_(u.size == 0)
-        assert_((p == 0).all())
+    assert_equal(u.dtype, u_n.dtype)
+    assert_equal(p.dtype, p_n.dtype)
+    assert u.shape == shape
+    assert p.shape == p_shape
+    assert np.all(p == 0)
