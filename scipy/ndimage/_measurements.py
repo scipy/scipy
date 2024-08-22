@@ -387,7 +387,7 @@ def value_indices(arr, *, ignore_value=None):
     value in the input array.
 
     >>> val_indices.keys()
-    dict_keys([0, 1, 2, 3])
+    dict_keys([np.int64(0), np.int64(1), np.int64(2), np.int64(3)])
 
     The entry for each value is an index tuple, locating the elements
     with that value.
@@ -407,12 +407,13 @@ def value_indices(arr, *, ignore_value=None):
 
     >>> val_indices = ndimage.value_indices(a, ignore_value=0)
     >>> val_indices.keys()
-    dict_keys([1, 2, 3])
+    dict_keys([np.int64(1), np.int64(2), np.int64(3)])
 
     """
     # Cope with ignore_value being None, without too much extra complexity
     # in the C code. If not None, the value is passed in as a numpy array
     # with the same dtype as arr.
+    arr = np.asarray(arr)
     ignore_value_arr = np.zeros((1,), dtype=arr.dtype)
     ignoreIsNone = (ignore_value is None)
     if not ignoreIsNone:
@@ -506,6 +507,8 @@ def labeled_comprehension(input, labels, index, func, out_dtype, default,
             return func(input.ravel())
         else:
             return func(input.ravel(), positions.ravel())
+
+    labels = np.asarray(labels)
 
     try:
         input, labels = np.broadcast_arrays(input, labels)
@@ -623,6 +626,7 @@ def _stats(input, labels=None, index=None, centered=False):
         else:
             return vals.size, vals.sum()
 
+    input = np.asarray(input)
     if labels is None:
         return single_group(input)
 
@@ -956,6 +960,8 @@ def _select(input, labels=None, index=None, find_min=False, find_max=False,
         if find_positions:
             masked_positions = positions[mask]
         return single_group(input[mask], masked_positions)
+
+    index = np.asarray(index)
 
     # remap labels to unique integers if necessary, or if the largest
     # label is larger than the number of values.
@@ -1535,10 +1541,11 @@ def center_of_mass(input, labels=None, index=None):
     >>> ndimage.center_of_mass(d)
     (inf,)
     """
-    normalizer = sum(input, labels, index)
+    input = np.asarray(input)
+    normalizer = sum_labels(input, labels, index)
     grids = np.ogrid[[slice(0, i) for i in input.shape]]
 
-    results = [sum(input * grids[dir].astype(float), labels, index) / normalizer
+    results = [sum_labels(input * grids[dir].astype(float), labels, index) / normalizer
                for dir in range(input.ndim)]
 
     if np.isscalar(results[0]):

@@ -560,9 +560,7 @@ def print_iteration_nonlinear(iteration, nfev, cost, cost_reduction,
     else:
         step_norm = f"{step_norm:^15.2e}"
 
-    print("{:^15}{:^15}{:^15.4e}{}{}{:^15.2e}"
-          .format(iteration, nfev, cost, cost_reduction,
-                  step_norm, optimality))
+    print(f"{iteration:^15}{nfev:^15}{cost:^15.4e}{cost_reduction}{step_norm}{optimality:^15.2e}")
 
 
 def print_header_linear():

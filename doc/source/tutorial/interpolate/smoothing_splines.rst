@@ -231,9 +231,9 @@ example that follows.
 
    Notice that `sproot` may fail to find an obvious solution at the edge of the
    approximation interval, :math:`x = 0`. If we define the spline on a slightly
-   larger interval, we recover both roots :math:`x = 0` and :math:`x = 2\pi`:
+   larger interval, we recover both roots :math:`x = 0` and :math:`x = \pi`:
 
-   >>> x = np.linspace(-np.pi/4, 2.*np.pi + np.pi/4, 21)
+   >>> x = np.linspace(-np.pi/4, np.pi + np.pi/4, 51)
    >>> y = np.sin(x)
    >>> tck = interpolate.splrep(x, y, s=0)
    >>> interpolate.sproot(tck)

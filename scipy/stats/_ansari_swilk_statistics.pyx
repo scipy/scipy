@@ -150,7 +150,7 @@ cdef inline void _start2(float[::1] a, int n) noexcept nogil:
         a[(ndo*2)-1] = 2
 
 
-cdef inline int _frqadd(float[::1] a, float[::1] b, int lenb,
+cdef inline int _frqadd(float[::1] a, const float[::1] b, int lenb,
                         int offset) noexcept nogil:
     """
     Helper function for gscale function, see gscale docstring.
@@ -206,7 +206,7 @@ cdef int _imply(float[::1] a, int curlen, int reslen, float[::1] b,
     return nextlenb
 
 
-def swilk(double[::1] x, double[::1] a, bint init=False, int n1=-1):
+def swilk(const double[::1] x, double[::1] a, bint init=False, int n1=-1):
     """
     Calculates the Shapiro-Wilk W test and its significance level
 
@@ -521,7 +521,7 @@ cdef double _ppnd(double p) noexcept:
     return (-temp if q < 0 else temp)  #, 0
 
 
-cdef double _poly(double[::1]c, int nord, double x) noexcept nogil:
+cdef double _poly(const double[::1] c, int nord, double x) noexcept nogil:
     """
     Helper function for swilk function that evaluates polynomials.
     For some reason, the coefficients are given as

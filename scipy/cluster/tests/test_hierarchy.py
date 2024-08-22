@@ -32,7 +32,8 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 import numpy as np
-from numpy.testing import assert_allclose, assert_equal, assert_, assert_warns
+from numpy.testing import (assert_allclose, assert_equal, assert_array_equal, assert_,
+                           assert_warns)
 import pytest
 from pytest import raises as assert_raises
 
@@ -76,8 +77,7 @@ class TestLinkage:
     def test_linkage_non_finite_elements_in_distance_matrix(self, xp):
         # Tests linkage(Y) where Y contains a non-finite element (e.g. NaN or Inf).
         # Exception expected.
-        y = xp.zeros((6,))
-        y[0] = xp.nan
+        y = xp.asarray([xp.nan] + [0.0]*5)
         assert_raises(ValueError, linkage, y)
 
     @skip_xp_backends(cpu_only=True)
@@ -284,6 +284,18 @@ class TestFcluster:
         T = fcluster(Z, t, criterion='maxclust_monocrit', monocrit=maxdists(Z))
         assert_(is_isomorphic(T, expectedT))
 
+    def test_fcluster_maxclust_gh_12651(self, xp):
+        y = xp.asarray([[1], [4], [5]])
+        Z = single(y)
+        assert_array_equal(fcluster(Z, t=1, criterion="maxclust"),
+                           xp.asarray([1, 1, 1]))
+        assert_array_equal(fcluster(Z, t=2, criterion="maxclust"),
+                           xp.asarray([2, 1, 1]))
+        assert_array_equal(fcluster(Z, t=3, criterion="maxclust"),
+                           xp.asarray([1, 2, 3]))
+        assert_array_equal(fcluster(Z, t=5, criterion="maxclust"),
+                           xp.asarray([1, 2, 3]))
+
 
 @skip_xp_backends(cpu_only=True)
 class TestLeaders:
@@ -431,6 +443,9 @@ class TestIsValidLinkage:
             Z = linkage(y)
             assert_(is_valid_linkage(Z) is True)
 
+    @skip_xp_backends('jax.numpy',
+                      reasons=['jax arrays do not support item assignment'],
+                      cpu_only=True)
     def test_is_valid_linkage_4_and_up_neg_index_left(self, xp):
         # Tests is_valid_linkage(Z) on linkage on observation sets between
         # sizes 4 and 15 (step size 3) with negative indices (left).
@@ -442,6 +457,9 @@ class TestIsValidLinkage:
             assert_(is_valid_linkage(Z) is False)
             assert_raises(ValueError, is_valid_linkage, Z, throw=True)
 
+    @skip_xp_backends('jax.numpy',
+                      reasons=['jax arrays do not support item assignment'],
+                      cpu_only=True)
     def test_is_valid_linkage_4_and_up_neg_index_right(self, xp):
         # Tests is_valid_linkage(Z) on linkage on observation sets between
         # sizes 4 and 15 (step size 3) with negative indices (right).
@@ -453,6 +471,9 @@ class TestIsValidLinkage:
             assert_(is_valid_linkage(Z) is False)
             assert_raises(ValueError, is_valid_linkage, Z, throw=True)
 
+    @skip_xp_backends('jax.numpy',
+                      reasons=['jax arrays do not support item assignment'],
+                      cpu_only=True)
     def test_is_valid_linkage_4_and_up_neg_dist(self, xp):
         # Tests is_valid_linkage(Z) on linkage on observation sets between
         # sizes 4 and 15 (step size 3) with negative distances.
@@ -464,6 +485,9 @@ class TestIsValidLinkage:
             assert_(is_valid_linkage(Z) is False)
             assert_raises(ValueError, is_valid_linkage, Z, throw=True)
 
+    @skip_xp_backends('jax.numpy',
+                      reasons=['jax arrays do not support item assignment'],
+                      cpu_only=True)
     def test_is_valid_linkage_4_and_up_neg_counts(self, xp):
         # Tests is_valid_linkage(Z) on linkage on observation sets between
         # sizes 4 and 15 (step size 3) with negative counts.
@@ -516,6 +540,9 @@ class TestIsValidInconsistent:
             R = inconsistent(Z)
             assert_(is_valid_im(R) is True)
 
+    @skip_xp_backends('jax.numpy',
+                      reasons=['jax arrays do not support item assignment'],
+                      cpu_only=True)
     def test_is_valid_im_4_and_up_neg_index_left(self, xp):
         # Tests is_valid_im(R) on im on observation sets between sizes 4 and 15
         # (step size 3) with negative link height means.
@@ -528,6 +555,9 @@ class TestIsValidInconsistent:
             assert_(is_valid_im(R) is False)
             assert_raises(ValueError, is_valid_im, R, throw=True)
 
+    @skip_xp_backends('jax.numpy',
+                      reasons=['jax arrays do not support item assignment'],
+                      cpu_only=True)
     def test_is_valid_im_4_and_up_neg_index_right(self, xp):
         # Tests is_valid_im(R) on im on observation sets between sizes 4 and 15
         # (step size 3) with negative link height standard deviations.
@@ -540,6 +570,9 @@ class TestIsValidInconsistent:
             assert_(is_valid_im(R) is False)
             assert_raises(ValueError, is_valid_im, R, throw=True)
 
+    @skip_xp_backends('jax.numpy',
+                      reasons=['jax arrays do not support item assignment'],
+                      cpu_only=True)
     def test_is_valid_im_4_and_up_neg_dist(self, xp):
         # Tests is_valid_im(R) on im on observation sets between sizes 4 and 15
         # (step size 3) with negative link counts.
@@ -741,6 +774,9 @@ class TestIsMonotonic:
         Z = linkage(xp.asarray(hierarchy_test_data.ytdist), 'single')
         assert is_monotonic(Z)
 
+    @skip_xp_backends('jax.numpy',
+                      reasons=['jax arrays do not support item assignment'],
+                      cpu_only=True)
     def test_is_monotonic_tdist_linkage2(self, xp):
         # Tests is_monotonic(Z) on clustering generated by single linkage on
         # tdist data set. Perturbing. Expecting False.
@@ -764,6 +800,9 @@ class TestMaxDists:
         Z = xp.zeros((0, 4), dtype=xp.float64)
         assert_raises(ValueError, maxdists, Z)
 
+    @skip_xp_backends('jax.numpy',
+                      reasons=['jax arrays do not support item assignment'],
+                      cpu_only=True)
     def test_maxdists_one_cluster_linkage(self, xp):
         # Tests maxdists(Z) on linkage with one cluster.
         Z = xp.asarray([[0, 1, 0.3, 4]], dtype=xp.float64)
@@ -771,6 +810,9 @@ class TestMaxDists:
         expectedMD = calculate_maximum_distances(Z, xp)
         xp_assert_close(MD, expectedMD, atol=1e-15)
 
+    @skip_xp_backends('jax.numpy',
+                      reasons=['jax arrays do not support item assignment'],
+                      cpu_only=True)
     def test_maxdists_Q_linkage(self, xp):
         for method in ['single', 'complete', 'ward', 'centroid', 'median']:
             self.check_maxdists_Q_linkage(method, xp)
@@ -801,7 +843,9 @@ class TestMaxInconsts:
         R = xp.asarray(R)
         assert_raises(ValueError, maxinconsts, Z, R)
 
-    @skip_xp_backends(cpu_only=True)
+    @skip_xp_backends('jax.numpy',
+                      reasons=['jax arrays do not support item assignment'],
+                      cpu_only=True)
     def test_maxinconsts_one_cluster_linkage(self, xp):
         # Tests maxinconsts(Z, R) on linkage with one cluster.
         Z = xp.asarray([[0, 1, 0.3, 4]], dtype=xp.float64)
@@ -810,7 +854,9 @@ class TestMaxInconsts:
         expectedMD = calculate_maximum_inconsistencies(Z, R, xp=xp)
         xp_assert_close(MD, expectedMD, atol=1e-15)
 
-    @skip_xp_backends(cpu_only=True)
+    @skip_xp_backends('jax.numpy',
+                      reasons=['jax arrays do not support item assignment'],
+                      cpu_only=True)
     def test_maxinconsts_Q_linkage(self, xp):
         for method in ['single', 'complete', 'ward', 'centroid', 'median']:
             self.check_maxinconsts_Q_linkage(method, xp)
@@ -863,7 +909,9 @@ class TestMaxRStat:
         R = xp.asarray(R)
         assert_raises(ValueError, maxRstat, Z, R, i)
 
-    @skip_xp_backends(cpu_only=True)
+    @skip_xp_backends('jax.numpy',
+                      reasons=['jax arrays do not support item assignment'],
+                      cpu_only=True)
     def test_maxRstat_one_cluster_linkage(self, xp):
         for i in range(4):
             self.check_maxRstat_one_cluster_linkage(i, xp)
@@ -876,7 +924,9 @@ class TestMaxRStat:
         expectedMD = calculate_maximum_inconsistencies(Z, R, 1, xp)
         xp_assert_close(MD, expectedMD, atol=1e-15)
 
-    @skip_xp_backends(cpu_only=True)
+    @skip_xp_backends('jax.numpy',
+                      reasons=['jax arrays do not support item assignment'],
+                      cpu_only=True)
     def test_maxRstat_Q_linkage(self, xp):
         for method in ['single', 'complete', 'ward', 'centroid', 'median']:
             for i in range(4):
@@ -909,9 +959,9 @@ class TestDendrogram:
     def test_labels_as_array_or_list(self, xp):
         # test for gh-12418
         Z = linkage(xp.asarray(hierarchy_test_data.ytdist), 'single')
-        labels = xp.asarray([1, 3, 2, 6, 4, 5])
-        result1 = dendrogram(Z, labels=labels, no_plot=True)
-        result2 = dendrogram(Z, labels=list(labels), no_plot=True)
+        labels = [1, 3, 2, 6, 4, 5]
+        result1 = dendrogram(Z, labels=xp.asarray(labels), no_plot=True)
+        result2 = dendrogram(Z, labels=labels, no_plot=True)
         assert result1 == result2
 
     @pytest.mark.skipif(not have_matplotlib, reason="no matplotlib")
@@ -1223,3 +1273,12 @@ def test_Heap(xp):
     pair = heap.get_min()
     assert_equal(pair['key'], 1)
     assert_equal(pair['value'], 10)
+
+
+@skip_xp_backends(cpu_only=True)
+def test_centroid_neg_distance(xp):
+    # gh-21011
+    values = xp.asarray([0, 0, -1])
+    with pytest.raises(ValueError):
+        # This is just checking that this doesn't crash
+        linkage(values, method='centroid')

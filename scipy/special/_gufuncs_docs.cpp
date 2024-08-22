@@ -1,4 +1,4 @@
-const char *lpn_doc = R"(
+const char *lpn_all_doc = R"(
     Legendre function of the first kind.
 
     Compute sequence of Legendre functions of the first kind (polynomials),
@@ -11,7 +11,6 @@ const char *lpn_doc = R"(
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
            https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
-
     )";
 
 const char *lpmn_doc = R"(
@@ -231,8 +230,4 @@ const char *rcty_doc = R"(
     .. [2] NIST Digital Library of Mathematical Functions.
            https://dlmf.nist.gov/10.51.E1
 
-    )";
-
-const char *sph_harm_all_doc = R"(
-    Private function. This may be removed or modified at any time.
     )";

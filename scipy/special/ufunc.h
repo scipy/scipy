@@ -1,36 +1,23 @@
+#pragma once
+
+#define PY_SSIZE_T_CLEAN
+#include <Python.h>
+
+#include <array>
 #include <cassert>
 #include <cstring>
+#include <iostream>
 #include <memory>
 #include <type_traits>
 #include <utility>
 #include <vector>
-
-#define PY_SSIZE_T_CLEAN
-#include <Python.h>
 
 #include <numpy/arrayobject.h>
 #include <numpy/npy_3kcompat.h>
 #include <numpy/ufuncobject.h>
 
 #include "sf_error.h"
-#include "special/mdspan.h"
-
-// Initializes Python and NumPy.
-inline bool SpecFun_Initialize() {
-    Py_Initialize();
-
-    import_array();
-    if (PyErr_Occurred() != nullptr) {
-        return false; // import array failed
-    }
-
-    import_umath();
-    if (PyErr_Occurred() != nullptr) {
-        return false; // import umath failed
-    }
-
-    return true;
-}
+#include "xsf/third_party/kokkos/mdspan.hpp"
 
 // This is std::accumulate, but that is not constexpr until C++20
 template <typename InputIt, typename T>
@@ -42,12 +29,42 @@ constexpr T initializer_accumulate(InputIt first, InputIt last, T init) {
     return init;
 }
 
-// Deduces the number of arguments of a callable F.
 template <typename Func>
-struct arity_of;
+struct signature_of {
+    using type = typename signature_of<decltype(&Func::operator())>::type;
+};
 
 template <typename Res, typename... Args>
-struct arity_of<Res (*)(Args...)> {
+struct signature_of<Res(Args...)> {
+    using type = Res(Args...);
+};
+
+template <typename Res, typename... Args>
+struct signature_of<Res (*)(Args...)> {
+    using type = Res(Args...);
+};
+
+template <typename T, typename Res, typename... Args>
+struct signature_of<Res (T::*)(Args...)> {
+    using type = Res(Args...);
+};
+
+template <typename T, typename Res, typename... Args>
+struct signature_of<Res (T::*)(Args...) const> {
+    using type = Res(Args...);
+};
+
+template <typename Func>
+using signature_of_t = typename signature_of<Func>::type;
+
+// Deduces the number of arguments of a callable F.
+template <typename Func>
+struct arity_of {
+    static constexpr size_t value = arity_of<signature_of_t<Func>>::value;
+};
+
+template <typename Res, typename... Args>
+struct arity_of<Res(Args...)> {
     static constexpr size_t value = sizeof...(Args);
 };
 
@@ -55,15 +72,17 @@ template <typename Func>
 constexpr size_t arity_of_v = arity_of<Func>::value;
 
 template <typename Func>
-struct has_return;
+struct has_return {
+    static constexpr bool value = has_return<signature_of_t<Func>>::value;
+};
 
 template <typename Res, typename... Args>
-struct has_return<Res (*)(Args...)> {
+struct has_return<Res(Args...)> {
     static constexpr bool value = true;
 };
 
 template <typename... Args>
-struct has_return<void (*)(Args...)> {
+struct has_return<void(Args...)> {
     static constexpr bool value = false;
 };
 
@@ -276,6 +295,16 @@ struct npy_typenum<T *> {
     static constexpr NPY_TYPES value = npy_typenum<T>::value;
 };
 
+template <typename T>
+struct npy_typenum<T &> {
+    static constexpr NPY_TYPES value = npy_typenum<T>::value;
+};
+
+template <typename T, size_t N>
+struct npy_typenum<T[N]> {
+    static constexpr NPY_TYPES value = npy_typenum<T>::value;
+};
+
 template <typename T, typename Extents, typename LayoutPolicy, typename AccessorPolicy>
 struct npy_typenum<std::mdspan<T, Extents, LayoutPolicy, AccessorPolicy>> {
     static constexpr NPY_TYPES value = npy_typenum<T>::value;
@@ -284,67 +313,90 @@ struct npy_typenum<std::mdspan<T, Extents, LayoutPolicy, AccessorPolicy>> {
 template <typename T>
 inline constexpr NPY_TYPES npy_typenum_v = npy_typenum<T>::value;
 
-// Sets the value dst to be the value of type T at src
 template <typename T>
-void npy_get(char *src, T &dst, const npy_intp *dimensions, const npy_intp *steps) {
-    dst = *reinterpret_cast<npy_type_t<T> *>(src);
-}
+struct npy_traits {
+    static T get(char *src, const npy_intp *dimensions, const npy_intp *steps) { return *reinterpret_cast<T *>(src); }
+
+    static void set(char *dst, const T &src) { *reinterpret_cast<npy_type_t<T> *>(dst) = src; }
+};
 
 template <typename T>
-void npy_get(char *src, std::complex<T> &dst, const npy_intp *dimensions, const npy_intp *steps) {
-    dst.real(*reinterpret_cast<npy_type_t<T> *>(src));
-    dst.imag(*reinterpret_cast<npy_type_t<T> *>(src + sizeof(T)));
-}
+struct npy_traits<std::complex<T>> {
+    static std::complex<T> get(char *src, const npy_intp *dimensions, const npy_intp *steps) {
+        return *reinterpret_cast<std::complex<T> *>(src);
+    }
 
-// Sets the pointer dst to be the pointer of type T at src (helps for out arguments)
+    static void set(char *dst, const std::complex<T> &src) {
+        *reinterpret_cast<npy_type_t<T> *>(dst) = std::real(src);
+        *reinterpret_cast<npy_type_t<T> *>(dst + sizeof(T)) = std::imag(src);
+    }
+};
+
 template <typename T>
-void npy_get(char *src, T *&dst, const npy_intp *dimensions, const npy_intp *steps) {
-    static_assert(sizeof(T) == sizeof(npy_type_t<T>), "NumPy type has different size than argument type");
+struct npy_traits<T *> {
+    static T *get(char *src, const npy_intp *dimensions, const npy_intp *steps) {
+        static_assert(sizeof(T) == sizeof(npy_type_t<T>), "NumPy type has different size than argument type");
 
-    dst = reinterpret_cast<T *>(src);
-}
+        return reinterpret_cast<T *>(src);
+    }
+};
+
+template <typename T>
+struct npy_traits<T &> {
+    static T &get(char *src, const npy_intp *dimensions, const npy_intp *steps) {
+        static_assert(sizeof(T) == sizeof(npy_type_t<T>), "NumPy type has different size than argument type");
+
+        return *reinterpret_cast<T *>(src);
+    }
+};
+
+template <typename T, size_t N>
+struct npy_traits<T (&)[N]> {
+    using dst_type = T (&)[N];
+
+    static dst_type get(char *src, const npy_intp *dimensions, const npy_intp *steps) {
+        static_assert(sizeof(T) == sizeof(npy_type_t<T>), "NumPy type has different size than argument type");
+
+        return *reinterpret_cast<T(*)[N]>(src);
+    }
+};
+
+template <typename T, size_t N>
+struct npy_traits<T (&)[N][N]> {
+    using dst_type = T (&)[N][N];
+
+    static dst_type get(char *src, const npy_intp *dimensions, const npy_intp *steps) {
+        static_assert(sizeof(T) == sizeof(npy_type_t<T>), "NumPy type has different size than argument type");
+
+        return *reinterpret_cast<T(*)[N][N]>(src);
+    }
+};
 
 template <typename T, typename Extents, typename AccessorPolicy>
-void npy_get(
-    char *src, std::mdspan<T, Extents, std::layout_stride, AccessorPolicy> &dst, const npy_intp *dimensions,
-    const npy_intp *steps
-) {
-    static_assert(sizeof(T) == sizeof(npy_type_t<T>), "NumPy type has different size than argument type");
+struct npy_traits<std::mdspan<T, Extents, std::layout_stride, AccessorPolicy>> {
+    static std::mdspan<T, Extents, std::layout_stride, AccessorPolicy> get(char *src, const npy_intp *dimensions,
+                                                                           const npy_intp *steps) {
+        static_assert(sizeof(T) == sizeof(npy_type_t<T>), "NumPy type has different size than argument type");
 
-    std::array<ptrdiff_t, Extents::rank()> strides;
-    for (npy_uintp i = 0; i < strides.size(); ++i) {
-        strides[i] = steps[i] / sizeof(T);
+        std::array<ptrdiff_t, Extents::rank()> strides;
+        for (npy_uintp i = 0; i < strides.size(); ++i) {
+            strides[i] = steps[i] / sizeof(T);
+        }
+
+        std::array<ptrdiff_t, Extents::rank()> exts;
+        for (npy_uintp i = 0; i < exts.size(); ++i) {
+            exts[i] = dimensions[i];
+        }
+
+        return {reinterpret_cast<T *>(src), {exts, strides}};
     }
+};
 
-    std::array<ptrdiff_t, Extents::rank()> exts;
-    for (npy_uintp i = 0; i < exts.size(); ++i) {
-        exts[i] = dimensions[i];
-    }
-
-    dst = {reinterpret_cast<T *>(src), {exts, strides}};
-}
-
-template <typename T>
-T npy_get(char *src, const npy_intp *dimensions, const npy_intp *steps) {
-    T dst;
-    npy_get(src, dst, dimensions, steps);
-
-    return dst;
-}
-
-template <typename T>
-void npy_set(char *dst, const T &src) {
-    *reinterpret_cast<npy_type_t<T> *>(dst) = src;
-}
-
-template <typename T>
-void npy_set(char *dst, const std::complex<T> &src) {
-    *reinterpret_cast<npy_type_t<T> *>(dst) = src.real();
-    *reinterpret_cast<npy_type_t<T> *>(dst + sizeof(T)) = src.imag();
-}
+using map_dims_type = void (*)(const npy_intp *, npy_intp *);
 
 struct base_ufunc_data {
     const char *name;
+    map_dims_type map_dims;
 };
 
 template <typename Func>
@@ -352,57 +404,68 @@ struct ufunc_data : base_ufunc_data {
     Func func;
 };
 
-template <typename Func, typename Indices = std::make_index_sequence<arity_of_v<Func>>>
+template <typename Func, typename Signature = signature_of_t<Func>,
+          typename Indices = std::make_index_sequence<arity_of_v<Signature>>>
 struct ufunc_traits;
 
-template <typename Res, typename... Args, size_t... I>
-struct ufunc_traits<Res (*)(Args...), std::index_sequence<I...>> {
+template <typename Func, typename Res, typename... Args, size_t... I>
+struct ufunc_traits<Func, Res(Args...), std::index_sequence<I...>> {
     static constexpr char types[sizeof...(Args) + 1] = {npy_typenum_v<Args>..., npy_typenum_v<Res>};
 
     static constexpr size_t ranks[sizeof...(Args) + 1] = {rank_of_v<Args>..., rank_of_v<Res>};
 
-    static constexpr size_t steps_offsets[sizeof...(Args) + 1] = {
-        initializer_accumulate(ranks, ranks + I, sizeof...(Args) + 1)...,
-        initializer_accumulate(ranks, ranks + sizeof...(Args) + 1, sizeof...(Args) + 1)
-    };
+    static constexpr size_t ranks_scan[sizeof...(Args) + 2] = {
+        initializer_accumulate(ranks, ranks + I, 0)..., initializer_accumulate(ranks, ranks + sizeof...(Args), 0),
+        initializer_accumulate(ranks, ranks + sizeof...(Args) + 1, 0)};
 
-    static void loop(char **args, const npy_intp *dimensions, const npy_intp *steps, void *data) {
-        Res (*func)(Args...) = static_cast<ufunc_data<Res (*)(Args...)> *>(data)->func;
-        for (npy_intp i = 0; i < dimensions[0]; ++i) {
-            Res res = func(npy_get<Args>(args[I], dimensions + 1, steps + steps_offsets[I])...);
-            npy_set(args[sizeof...(Args)], res); // assign to the output pointer
+    static void loop(char **args, const npy_intp *dims, const npy_intp *steps, void *data) {
+        std::array<npy_intp, ranks_scan[sizeof...(Args) + 1]> new_dims;
+
+        map_dims_type map_dims = static_cast<ufunc_data<Func> *>(data)->map_dims;
+        map_dims(dims + 1, new_dims.data());
+
+        Func func = static_cast<ufunc_data<Func> *>(data)->func;
+        for (npy_intp i = 0; i < dims[0]; ++i) {
+            Res res = func(npy_traits<Args>::get(args[I], new_dims.data() + ranks_scan[I],
+                                                 steps + ranks_scan[I] + sizeof...(Args) + 1)...);
+            npy_traits<Res>::set(args[sizeof...(Args)], res); // assign to the output pointer
 
             for (npy_uintp j = 0; j <= sizeof...(Args); ++j) {
                 args[j] += steps[j];
             }
         }
 
-        const char *name = static_cast<ufunc_data<Res (*)(Args...)> *>(data)->name;
+        const char *name = static_cast<ufunc_data<Func> *>(data)->name;
         sf_error_check_fpe(name);
     }
 };
 
-template <typename... Args, size_t... I>
-struct ufunc_traits<void (*)(Args...), std::index_sequence<I...>> {
+template <typename Func, typename... Args, size_t... I>
+struct ufunc_traits<Func, void(Args...), std::index_sequence<I...>> {
     static constexpr char types[sizeof...(Args)] = {npy_typenum_v<Args>...};
 
     static constexpr size_t ranks[sizeof...(Args)] = {rank_of_v<Args>...};
 
-    static constexpr size_t steps_offsets[sizeof...(Args)] = {
-        initializer_accumulate(ranks, ranks + I, sizeof...(Args))...
-    };
+    static constexpr size_t ranks_scan[sizeof...(Args) + 1] = {
+        initializer_accumulate(ranks, ranks + I, 0)..., initializer_accumulate(ranks, ranks + sizeof...(Args), 0)};
 
-    static void loop(char **args, const npy_intp *dimensions, const npy_intp *steps, void *data) {
-        void (*func)(Args...) = static_cast<ufunc_data<void (*)(Args...)> *>(data)->func;
-        for (npy_intp i = 0; i < dimensions[0]; ++i) {
-            func(npy_get<Args>(args[I], dimensions + 1, steps + steps_offsets[I])...);
+    static void loop(char **args, const npy_intp *dims, const npy_intp *steps, void *data) {
+        std::array<npy_intp, ranks_scan[sizeof...(Args)]> new_dims;
+
+        map_dims_type map_dims = static_cast<ufunc_data<Func> *>(data)->map_dims;
+        map_dims(dims + 1, new_dims.data());
+
+        Func func = static_cast<ufunc_data<Func> *>(data)->func;
+        for (npy_intp i = 0; i < dims[0]; ++i) {
+            func(npy_traits<Args>::get(args[I], new_dims.data() + ranks_scan[I],
+                                       steps + ranks_scan[I] + sizeof...(Args))...);
 
             for (npy_uintp j = 0; j < sizeof...(Args); ++j) {
                 args[j] += steps[j];
             }
         }
 
-        const char *name = static_cast<ufunc_data<void (*)(Args...)> *>(data)->name;
+        const char *name = static_cast<ufunc_data<Func> *>(data)->name;
         sf_error_check_fpe(name);
     }
 };
@@ -450,7 +513,7 @@ class SpecFun_UFunc {
             if (it->has_return != m_has_return) {
                 PyErr_SetString(PyExc_RuntimeError, "all functions must be void if any function is");
             }
- 
+
             size_t i = it - func.begin();
             m_func[i] = it->func;
             m_data[i] = it->data;
@@ -487,6 +550,12 @@ class SpecFun_UFunc {
             static_cast<base_ufunc_data *>(m_data[i])->name = name;
         }
     }
+
+    void set_map_dims(map_dims_type map_dims) {
+        for (int i = 0; i < m_ntypes; ++i) {
+            static_cast<base_ufunc_data *>(m_data[i])->map_dims = map_dims;
+        }
+    }
 };
 
 PyObject *SpecFun_NewUFunc(SpecFun_UFunc func, int nout, const char *name, const char *doc) {
@@ -498,11 +567,10 @@ PyObject *SpecFun_NewUFunc(SpecFun_UFunc func, int nout, const char *name, const
 
     SpecFun_UFunc &ufunc = ufuncs.emplace_back(std::move(func));
     ufunc.set_name(name);
+    ufunc.set_map_dims([](const npy_intp *dims, npy_intp *new_dims) {});
 
-    return PyUFunc_FromFuncAndData(
-        ufunc.func(), ufunc.data(), ufunc.types(), ufunc.ntypes(), ufunc.nin_and_nout() - nout, nout, PyUFunc_None,
-        name, doc, 0
-    );
+    return PyUFunc_FromFuncAndData(ufunc.func(), ufunc.data(), ufunc.types(), ufunc.ntypes(),
+                                   ufunc.nin_and_nout() - nout, nout, PyUFunc_None, name, doc, 0);
 }
 
 PyObject *SpecFun_NewUFunc(SpecFun_UFunc func, const char *name, const char *doc) {
@@ -511,7 +579,8 @@ PyObject *SpecFun_NewUFunc(SpecFun_UFunc func, const char *name, const char *doc
     return SpecFun_NewUFunc(std::move(func), nout, name, doc);
 }
 
-PyObject *SpecFun_NewGUFunc(SpecFun_UFunc func, int nout, const char *name, const char *doc, const char *signature) {
+PyObject *SpecFun_NewGUFunc(SpecFun_UFunc func, int nout, const char *name, const char *doc, const char *signature,
+                            map_dims_type map_dims) {
     static std::vector<SpecFun_UFunc> ufuncs;
 
     if (PyErr_Occurred()) {
@@ -520,15 +589,16 @@ PyObject *SpecFun_NewGUFunc(SpecFun_UFunc func, int nout, const char *name, cons
 
     SpecFun_UFunc &ufunc = ufuncs.emplace_back(std::move(func));
     ufunc.set_name(name);
+    ufunc.set_map_dims(map_dims);
 
-    return PyUFunc_FromFuncAndDataAndSignature(
-        ufunc.func(), ufunc.data(), ufunc.types(), ufunc.ntypes(), ufunc.nin_and_nout() - nout, nout, PyUFunc_None,
-        name, doc, 0, signature
-    );
+    return PyUFunc_FromFuncAndDataAndSignature(ufunc.func(), ufunc.data(), ufunc.types(), ufunc.ntypes(),
+                                               ufunc.nin_and_nout() - nout, nout, PyUFunc_None, name, doc, 0,
+                                               signature);
 }
 
-PyObject *SpecFun_NewGUFunc(SpecFun_UFunc func, const char *name, const char *doc, const char *signature) {
+PyObject *SpecFun_NewGUFunc(SpecFun_UFunc func, const char *name, const char *doc, const char *signature,
+                            map_dims_type map_dims) {
     int nout = func.has_return();
 
-    return SpecFun_NewGUFunc(std::move(func), nout, name, doc, signature);
+    return SpecFun_NewGUFunc(std::move(func), nout, name, doc, signature, map_dims);
 }

@@ -4,9 +4,7 @@
 
 from scipy._lib.deprecation import _sub_module_deprecation
 
-__all__ = [  # noqa: F822
-    'BLOCK_SIZE', 'GenericStream', 'ZlibInputStream', 'make_stream'
-]
+__all__: list[str] = []
 
 def __dir__():
     return __all__

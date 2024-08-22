@@ -398,16 +398,16 @@ const char *binom_doc = R"(
     ``y`` is negative or ``x`` is less than ``y``.
 
     >>> x, y = -3, 2
-    >>> (binom(x, y), comb(x, y), comb(x, y, exact=True))
-    (nan, 0.0, 0)
+    >>> (binom(x, y), comb(x, y))
+    (nan, 0.0)
 
     >>> x, y = -3.1, 2.2
-    >>> (binom(x, y), comb(x, y), comb(x, y, exact=True))
-    (18.714147876804432, 0.0, 0)
+    >>> (binom(x, y), comb(x, y))
+    (18.714147876804432, 0.0)
 
     >>> x, y = 2.2, 3.1
-    >>> (binom(x, y), comb(x, y), comb(x, y, exact=True))
-    (0.037399983365134115, 0.0, 0)
+    >>> (binom(x, y), comb(x, y))
+    (0.037399983365134115, 0.0)
     )";
 
 const char *exp1_doc = R"(
@@ -1760,6 +1760,14 @@ const char *iv_doc = R"(
 
     )";
 
+const char *iv_ratio_doc = R"(
+    _iv_ratio(v, x, out=None)
+
+    Internal function, do not use.
+
+    Return `iv(v, x) / iv(v-1, x)` for `v >= 1` and `x >= 0`.
+    )";
+
 const char *ive_doc = R"(
     ive(v, z, out=None)
 
@@ -2628,7 +2636,6 @@ const char *loggamma_doc = R"(
     )";
 
 const char *logit_doc = R"(
-    """
     logit(x, out=None)
 
     Logit ufunc for ndarrays.
@@ -2752,6 +2759,43 @@ const char *log_expit_doc = R"(
 
     The first value is accurate to only 3 digits, and the larger inputs
     lose all precision and return 0.
+    )";
+
+const char *log_wright_bessel_doc = R"(
+    log_wright_bessel(a, b, x, out=None)
+
+    Natural logarithm of Wright's generalized Bessel function, see `wright_bessel`.
+    This function comes in handy in particular for large values of x.
+
+    Parameters
+    ----------
+    a : array_like of float
+        a >= 0
+    b : array_like of float
+        b >= 0
+    x : array_like of float
+        x >= 0
+    out : ndarray, optional
+        Optional output array for the function results
+
+    Returns
+    -------
+    scalar or ndarray
+        Value of the logarithm of Wright's generalized Bessel function
+
+    Notes
+    -----
+    Due to the complexity of the function with its three parameters, only
+    non-negative arguments are implemented.
+
+    .. versionadded:: 1.14.0
+
+    Examples
+    --------
+    >>> from scipy.special import log_wright_bessel
+    >>> a, b, x = 1.5, 1.1, 2.5
+    >>> log_wright_bessel(a, b, x)
+    1.1947654935299217
     )";
 
 const char *mathieu_a_doc = R"(
@@ -3722,6 +3766,87 @@ const char *rgamma_doc = R"(
     array([2.75573192e-006, 1.07151029e-156, 0.00000000e+000])
     )";
 
+const char *scaled_exp1_doc = R"(
+    _scaled_exp1(x, out=None):
+
+    Compute the scaled exponential integral.
+
+    This is a private function, subject to change or removal with no
+    deprecation.
+
+    This function computes F(x), where F is the factor remaining in E_1(x)
+    when exp(-x)/x is factored out.  That is,::
+
+        E_1(x) = exp(-x)/x * F(x)
+
+    or
+
+        F(x) = x * exp(x) * E_1(x)
+
+    The function is defined for real x >= 0.  For x < 0, nan is returned.
+
+    F has the properties:
+
+    * F(0) = 0
+    * F(x) is increasing on [0, inf).
+    * The limit as x goes to infinity of F(x) is 1.
+
+    Parameters
+    ----------
+    x: array_like
+        The input values. Must be real.  The implementation is limited to
+        double precision floating point, so other types will be cast to
+        to double precision.
+    out : ndarray, optional
+        Optional output array for the function results
+
+    Returns
+    -------
+    scalar or ndarray
+        Values of the scaled exponential integral.
+
+    See Also
+    --------
+    exp1 : exponential integral E_1
+
+    Examples
+    --------
+    >>> from scipy.special import _scaled_exp1
+    >>> _scaled_exp1([0, 0.1, 1, 10, 100])
+    )";
+
+const char *spherical_jn_doc = R"(
+    Internal function, use `spherical_jn` instead.
+    )";
+
+const char *spherical_jn_d_doc = R"(
+    Internal function, use `spherical_jn` instead.
+    )";
+
+const char *spherical_yn_doc = R"(
+    Internal function, use `spherical_yn` instead.
+    )";
+
+const char *spherical_yn_d_doc = R"(
+    Internal function, use `spherical_yn` instead.
+    )";
+
+const char *spherical_in_doc = R"(
+    Internal function, use `spherical_in` instead.
+    )";
+
+const char *spherical_in_d_doc = R"(
+    Internal function, use `spherical_in` instead.
+    )";
+
+const char *spherical_kn_doc = R"(
+    Internal function, use `spherical_kn` instead.
+    )";
+
+const char *spherical_kn_d_doc = R"(
+    Internal function, use `spherical_kn` instead.
+    )";
+
 const char *sph_harm_doc = R"(
     sph_harm(m, n, theta, phi, out=None)
 
@@ -3735,6 +3860,10 @@ const char *sph_harm_doc = R"(
           e^{i m \theta} P^m_n(\cos(\phi))
 
     where :math:`P_n^m` are the associated Legendre functions; see `lpmv`.
+
+    .. deprecated:: 1.15.0
+        This function is deprecated and will be removed in a future version.
+        Use `scipy.special.sph_harm_y` instead.
 
     Parameters
     ----------
@@ -3818,6 +3947,8 @@ const char *wright_bessel_doc = R"(
     -----
     Due to the complexity of the function with its three parameters, only
     non-negative arguments are implemented.
+
+    .. versionadded:: 1.7.0
 
     References
     ----------
