@@ -12,6 +12,7 @@ build_and_store_wheels: &BUILD_AND_STORE_WHEELS
 ######################################################################
 
 cirrus_wheels_linux_aarch64_task:
+  timeout_in: 119m
   compute_engine_instance:
     image_project: cirrus-images
     image: family/docker-builder-arm64
