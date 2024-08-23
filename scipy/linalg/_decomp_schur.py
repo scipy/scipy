@@ -173,7 +173,7 @@ def schur(a, output='real', lwork=None, overwrite_a=False, sort=None,
 
     if sort is None:
         sort_t = 0
-        def sfunction(x):
+        def sfunction(x, y=None):
             return None
     else:
         sort_t = 1
