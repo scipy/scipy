@@ -967,10 +967,8 @@ class TestNdimageFilters:
     def test_generic_filter_axes(self, xp, axes):
         array = xp.arange(6 * 8 * 12, dtype=xp.float64)
         array = xp.reshape(array, (6, 8, 12))
-        axes = xp.asarray(axes)
         size = 3
-
-        if len(set(axes % array.ndim)) != len(axes):
+        if len(set(ax % array.ndim for ax in axes)) != len(axes):
             # parametrized cases with duplicate axes raise an error
             with pytest.raises(ValueError, match="axes must be unique"):
                 ndimage.generic_filter(array, np.amax, size=size, axes=axes)
