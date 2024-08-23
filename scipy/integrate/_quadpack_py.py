@@ -10,8 +10,6 @@ import numpy as np
 __all__ = ["quad", "dblquad", "tplquad", "nquad", "IntegrationWarning"]
 
 
-error = _quadpack.error
-
 class IntegrationWarning(UserWarning):
     """
     Warning on issues during integration.
@@ -625,7 +623,7 @@ def _quad(func,a,b,args,full_output,epsabs,epsrel,limit,points):
 def _quad_weight(func, a, b, args, full_output, epsabs, epsrel,
                  limlst, limit, maxp1,weight, wvar, wopts):
     if weight not in ['cos','sin','alg','alg-loga','alg-logb','alg-log','cauchy']:
-        raise ValueError("%s not a recognized weighting function." % weight)
+        raise ValueError(f"{weight} not a recognized weighting function.")
 
     strdict = {'cos':1,'sin':2,'alg':1,'alg-loga':2,'alg-logb':3,'alg-log':4}
 

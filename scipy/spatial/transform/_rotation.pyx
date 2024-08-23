@@ -63,7 +63,7 @@ cdef inline double _normalize4(double[:] elems) noexcept nogil:
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef inline int _argmax4(double[:] a) noexcept nogil:
+cdef inline int _argmax4(const double[:] a) noexcept nogil:
     cdef int imax = 0
     cdef double vmax = a[0]
 
@@ -86,7 +86,7 @@ cdef inline const double[:] _elementary_basis_vector(uchar axis) noexcept:
     if axis == b'x': return _ex
     elif axis == b'y': return _ey
     elif axis == b'z': return _ez
-    
+
 @cython.boundscheck(False)
 @cython.wraparound(False)
 cdef inline int _elementary_basis_index(uchar axis) noexcept:
@@ -118,9 +118,9 @@ cdef inline void _quat_canonical(double[:, :] q) noexcept:
 @cython.boundscheck(False)
 @cython.wraparound(False)
 cdef inline void _get_angles(
-    double[:] angles, bint extrinsic, bint symmetric, bint sign, 
+    double[:] angles, bint extrinsic, bint symmetric, bint sign,
     double lamb, double a, double b, double c, double d):
-    
+
     # intrinsic/extrinsic conversion helpers
     cdef int angle_first, angle_third
     if extrinsic:
@@ -149,18 +149,18 @@ cdef inline void _get_angles(
     # compute first and third angles, according to case
     half_sum = atan2(b, a)
     half_diff = atan2(d, c)
-    
+
     if case == 0:  # no singularities
         angles[angle_first] = half_sum - half_diff
         angles[angle_third] = half_sum + half_diff
-    
+
     else:  # any degenerate case
         angles[2] = 0
         if case == 1:
             angles[0] = 2 * half_sum
         else:
             angles[0] = 2 * half_diff * (-1 if extrinsic else 1)
-            
+
     # for Tait-Bryan/asymmetric sequences
     if not symmetric:
         angles[angle_third] *= sign
@@ -328,12 +328,12 @@ cdef double[:, :] _compute_euler_from_quat(
     # The algorithm assumes extrinsic frame transformations. The algorithm
     # in the paper is formulated for rotation quaternions, which are stored
     # directly by Rotation.
-    # Adapt the algorithm for our case by reversing both axis sequence and 
+    # Adapt the algorithm for our case by reversing both axis sequence and
     # angles for intrinsic rotations when needed
-    
+
     if not extrinsic:
         seq = seq[::-1]
-        
+
     cdef int i = _elementary_basis_index(seq[0])
     cdef int j = _elementary_basis_index(seq[1])
     cdef int k = _elementary_basis_index(seq[2])
@@ -341,9 +341,9 @@ cdef double[:, :] _compute_euler_from_quat(
     cdef bint symmetric = i == k
     if symmetric:
         k = 3 - i - j # get third axis
-        
+
     # Step 0
-    # Check if permutation is even (+1) or odd (-1)     
+    # Check if permutation is even (+1) or odd (-1)
     cdef int sign = (i - j) * (j - k) * (k - i) // 2
 
     cdef Py_ssize_t num_rotations = quat.shape[0]
@@ -355,7 +355,7 @@ cdef double[:, :] _compute_euler_from_quat(
     for ind in range(num_rotations):
 
         # Step 1
-        # Permutate quaternion elements            
+        # Permutate quaternion elements
         if symmetric:
             a = quat[ind, 3]
             b = quat[ind, i]
@@ -1392,9 +1392,9 @@ cdef class Rotation:
         (extrinsic) or in a body centred frame of reference (intrinsic), which
         is attached to, and moves with, the object under rotation [1]_.
 
-        For both Euler angles and Davenport angles, consecutive axes must 
-        be are orthogonal (``axis2`` is orthogonal to both ``axis1`` and 
-        ``axis3``). For Euler angles, there is an additional relationship 
+        For both Euler angles and Davenport angles, consecutive axes must
+        be are orthogonal (``axis2`` is orthogonal to both ``axis1`` and
+        ``axis3``). For Euler angles, there is an additional relationship
         between ``axis1`` or ``axis3``, with two possibilities:
 
             - ``axis1`` and ``axis3`` are also orthogonal (asymmetric sequence)
@@ -1406,13 +1406,13 @@ cdef class Rotation:
         Parameters
         ----------
         axes : array_like, shape (3,) or ([1 or 2 or 3], 3)
-            Axis of rotation, if one dimensional. If two dimensional, describes the 
+            Axis of rotation, if one dimensional. If two dimensional, describes the
             sequence of axes for rotations, where each axes[i, :] is the ith
             axis. If more than one axis is given, then the second axis must be
             orthogonal to both the first and third axes.
         order : string
-            If it is equal to 'e' or 'extrinsic', the sequence will be 
-            extrinsic. If it is equal to 'i' or 'intrinsic', sequence 
+            If it is equal to 'e' or 'extrinsic', the sequence will be
+            extrinsic. If it is equal to 'i' or 'intrinsic', sequence
             will be treated as intrinsic.
         angles : float or array_like, shape (N,) or (N, [1 or 2 or 3])
             Euler angles specified in radians (`degrees` is False) or degrees
@@ -1430,11 +1430,11 @@ cdef class Rotation:
             - array_like with shape (W,) where `W` is the number of rows of
               `axes`, which corresponds to a single rotation with `W` axes
             - array_like with shape (N, W) where each `angle[i]`
-              corresponds to a sequence of Davenport angles describing a 
+              corresponds to a sequence of Davenport angles describing a
               single rotation
 
         degrees : bool, optional
-            If True, then the given angles are assumed to be in degrees. 
+            If True, then the given angles are assumed to be in degrees.
             Default is False.
 
         Returns
@@ -1520,10 +1520,10 @@ cdef class Rotation:
         norm = np.repeat(np.linalg.norm(axes, axis=1), 3)
         axes = axes / norm.reshape(num_axes, 3)
 
-        if (num_axes > 1 and abs(np.dot(axes[0], axes[1])) >= 1e-7 or 
+        if (num_axes > 1 and abs(np.dot(axes[0], axes[1])) >= 1e-7 or
             num_axes > 2 and abs(np.dot(axes[1], axes[2])) >= 1e-7):
             raise ValueError("Consecutive axes must be orthogonal.")
-            
+
         angles, is_single = _format_angles(angles, degrees, num_axes)
 
         q = Rotation.identity(len(angles))
@@ -1665,7 +1665,7 @@ cdef class Rotation:
         The mapping from quaternions to rotations is
         two-to-one, i.e. quaternions ``q`` and ``-q``, where ``-q`` simply
         reverses the sign of each component, represent the same spatial
-        rotation. 
+        rotation.
 
         Parameters
         ----------
@@ -1937,7 +1937,7 @@ cdef class Rotation:
     @cython.embedsignature(True)
     def _compute_euler(self, seq, degrees, algorithm):
         # Prepare axis sequence to call Euler angles conversion algorithm.
-        
+
         if len(seq) != 3:
             raise ValueError("Expected 3 axes, got {}.".format(seq))
 
@@ -1953,7 +1953,7 @@ cdef class Rotation:
                              "got {}".format(seq))
 
         seq = seq.lower()
-            
+
         if algorithm == 'from_matrix':
             matrix = self.as_matrix()
             if matrix.ndim == 2:
@@ -1969,7 +1969,7 @@ cdef class Rotation:
         else:
             # algorithm can only be 'from_quat' or 'from_matrix'
             assert False
-            
+
         if degrees:
             angles = np.rad2deg(angles)
 
@@ -2037,7 +2037,7 @@ cdef class Rotation:
         rotations. Once the axis sequence has been chosen, Euler angles define
         the angle of rotation around each respective axis [1]_.
 
-        The algorithm from [2]_ has been used to calculate Euler angles for the 
+        The algorithm from [2]_ has been used to calculate Euler angles for the
         rotation about a given sequence of axes.
 
         Euler angles suffer from the problem of gimbal lock [3]_, where the
@@ -2075,9 +2075,9 @@ cdef class Rotation:
         References
         ----------
         .. [1] https://en.wikipedia.org/wiki/Euler_angles#Definition_by_intrinsic_rotations
-        .. [2] Bernardes E, Viollet S (2022) Quaternion to Euler angles 
-               conversion: A direct, general and computationally efficient 
-               method. PLoS ONE 17(11): e0276302. 
+        .. [2] Bernardes E, Viollet S (2022) Quaternion to Euler angles
+               conversion: A direct, general and computationally efficient
+               method. PLoS ONE 17(11): e0276302.
                https://doi.org/10.1371/journal.pone.0276302
         .. [3] https://en.wikipedia.org/wiki/Gimbal_lock#In_applied_mathematics
 
@@ -2125,9 +2125,9 @@ cdef class Rotation:
         Any orientation can be expressed as a composition of 3 elementary
         rotations.
 
-        For both Euler angles and Davenport angles, consecutive axes must 
-        be are orthogonal (``axis2`` is orthogonal to both ``axis1`` and 
-        ``axis3``). For Euler angles, there is an additional relationship 
+        For both Euler angles and Davenport angles, consecutive axes must
+        be are orthogonal (``axis2`` is orthogonal to both ``axis1`` and
+        ``axis3``). For Euler angles, there is an additional relationship
         between ``axis1`` or ``axis3``, with two possibilities:
 
             - ``axis1`` and ``axis3`` are also orthogonal (asymmetric sequence)
@@ -2150,13 +2150,13 @@ cdef class Rotation:
         Parameters
         ----------
         axes : array_like, shape (3,) or ([1 or 2 or 3], 3)
-            Axis of rotation, if one dimensional. If two dimensional, describes the 
+            Axis of rotation, if one dimensional. If two dimensional, describes the
             sequence of axes for rotations, where each axes[i, :] is the ith
             axis. If more than one axis is given, then the second axis must be
             orthogonal to both the first and third axes.
         order : string
-            If it belongs to the set {'e', 'extrinsic'}, the sequence will be 
-            extrinsic. If if belongs to the set {'i', 'intrinsic'}, sequence 
+            If it belongs to the set {'e', 'extrinsic'}, the sequence will be
+            extrinsic. If if belongs to the set {'i', 'intrinsic'}, sequence
             will be treated as intrinsic.
         degrees : boolean, optional
             Returned angles are in degrees if this flag is True, else they are
@@ -2170,7 +2170,7 @@ cdef class Rotation:
 
             - First angle belongs to [-180, 180] degrees (both inclusive)
             - Third angle belongs to [-180, 180] degrees (both inclusive)
-            - Second angle belongs to a set of size 180 degrees, 
+            - Second angle belongs to a set of size 180 degrees,
               given by: ``[-abs(lambda), 180 - abs(lambda)]``, where ``lambda``
               is the angle between the first and third axes.
 
@@ -2699,9 +2699,9 @@ cdef class Rotation:
             return self.inv()
         elif n == 1:
             if self._single:
-                return self.__class__(self._quat[0], copy=True)
+                return self.__class__(self._quat[0], normalize=False, copy=True)
             else:
-                return self.__class__(self._quat, copy=True)
+                return self.__class__(self._quat, normalize=False, copy=True)
         else:  # general scaling of rotation angle
             return Rotation.from_rotvec(n * self.as_rotvec())
 
@@ -2744,7 +2744,7 @@ cdef class Rotation:
         quat[:, 2] *= -1
         if self._single:
             quat = quat[0]
-        return self.__class__(quat, copy=False)
+        return self.__class__(quat, normalize=False, copy=False)
 
     @cython.embedsignature(True)
     @cython.boundscheck(False)

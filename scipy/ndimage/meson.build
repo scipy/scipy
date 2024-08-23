@@ -30,7 +30,8 @@ py3.extension_module('_ctest',
   dependencies: np_dep,
   link_args: version_link_args,
   install: true,
-  subdir: 'scipy/ndimage'
+  subdir: 'scipy/ndimage',
+  install_tag: 'tests'
 )
 
 py3.extension_module('_cytest',
@@ -39,12 +40,16 @@ py3.extension_module('_cytest',
   dependencies: np_dep,
   link_args: version_link_args,
   install: true,
-  subdir: 'scipy/ndimage'
+  subdir: 'scipy/ndimage',
+  install_tag: 'tests'
 )
 
 
 python_sources = [
   '__init__.py',
+  '_ndimage_api.py',
+  '_dispatchers.py',
+  '_support_alternative_backends.py',
   '_filters.py',
   '_fourier.py',
   '_interpolation.py',

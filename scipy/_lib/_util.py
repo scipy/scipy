@@ -15,7 +15,7 @@ from typing import (
 )
 
 import numpy as np
-from scipy._lib._array_api import array_namespace, is_numpy
+from scipy._lib._array_api import array_namespace, is_numpy, xp_size
 
 
 AxisError: type[Exception]
@@ -28,7 +28,7 @@ if np.lib.NumpyVersion(np.__version__) >= '1.25.0':
         DTypePromotionError
     )
 else:
-    from numpy import (
+    from numpy import (  # type: ignore[attr-defined, no-redef]
         AxisError, ComplexWarning, VisibleDeprecationWarning  # noqa: F401
     )
     DTypePromotionError = TypeError  # type: ignore
@@ -141,9 +141,17 @@ def _lazywhere(cond, arrays, f, fillvalue=None, f2=None):
     temp1 = xp.asarray(f(*(arr[cond] for arr in arrays)))
 
     if f2 is None:
-        fillvalue = xp.asarray(fillvalue)
-        dtype = xp.result_type(temp1.dtype, fillvalue.dtype)
-        out = xp.full(cond.shape, fill_value=fillvalue, dtype=dtype)
+        # If `fillvalue` is a Python scalar and we convert to `xp.asarray`, it gets the
+        # default `int` or `float` type of `xp`, so `result_type` could be wrong.
+        # `result_type` should/will handle mixed array/Python scalars;
+        # remove this special logic when it does.
+        if type(fillvalue) in {bool, int, float, complex}:
+            with np.errstate(invalid='ignore'):
+                dtype = (temp1 * fillvalue).dtype
+        else:
+           dtype = xp.result_type(temp1.dtype, fillvalue)
+        out = xp.full(cond.shape, dtype=dtype,
+                      fill_value=xp.asarray(fillvalue, dtype=dtype))
     else:
         ncond = ~cond
         temp2 = xp.asarray(f2(*(arr[ncond] for arr in arrays)))
@@ -707,14 +715,17 @@ def _nan_allsame(a, axis, keepdims=False):
     return ((a0 == a) | np.isnan(a)).all(axis=axis, keepdims=keepdims)
 
 
-def _contains_nan(a, nan_policy='propagate', use_summation=True,
-                  policies=None, *, xp=None):
+def _contains_nan(a, nan_policy='propagate', policies=None, *,
+                  xp_omit_okay=False, xp=None):
+    # Regarding `xp_omit_okay`: Temporarily, while `_axis_nan_policy` does not
+    # handle non-NumPy arrays, most functions that call `_contains_nan` want
+    # it to raise an error if `nan_policy='omit'` and `xp` is not `np`.
+    # Some functions support `nan_policy='omit'` natively, so setting this to
+    # `True` prevents the error from being raised.
     if xp is None:
         xp = array_namespace(a)
     not_numpy = not is_numpy(xp)
 
-    if not_numpy:
-        use_summation = False  # some array_likes ignore nans (e.g. pandas)
     if policies is None:
         policies = {'propagate', 'raise', 'omit'}
     if nan_policy not in policies:
@@ -722,13 +733,11 @@ def _contains_nan(a, nan_policy='propagate', use_summation=True,
 
     inexact = (xp.isdtype(a.dtype, "real floating")
                or xp.isdtype(a.dtype, "complex floating"))
-    if inexact:
-        # The summation method avoids creating another (potentially huge) array
-        if use_summation:
-            with np.errstate(invalid='ignore', over='ignore'):
-                contains_nan = xp.isnan(xp.sum(a))
-        else:
-            contains_nan = xp.any(xp.isnan(a))
+    if xp_size(a) == 0:
+        contains_nan = False
+    elif inexact:
+        # Faster and less memory-intensive than xp.any(xp.isnan(a))
+        contains_nan = xp.isnan(xp.max(a))
     elif is_numpy(xp) and np.issubdtype(a.dtype, object):
         contains_nan = False
         for el in a.ravel():
@@ -743,7 +752,7 @@ def _contains_nan(a, nan_policy='propagate', use_summation=True,
     if contains_nan and nan_policy == 'raise':
         raise ValueError("The input contains nan values")
 
-    if not_numpy and contains_nan and nan_policy=='omit':
+    if not xp_omit_okay and not_numpy and contains_nan and nan_policy=='omit':
         message = "`nan_policy='omit' is incompatible with non-NumPy arrays."
         raise ValueError(message)
 

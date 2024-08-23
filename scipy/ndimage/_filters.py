@@ -172,11 +172,11 @@ def convolve1d(input, weights, axis=-1, output=None, mode="reflect",
     >>> convolve1d([2, 8, 0, 4, 1, 9, 9, 0], weights=[1, 3])
     array([14, 24,  4, 13, 12, 36, 27,  0])
     """
+    weights = np.asarray(weights)
     weights = weights[::-1]
     origin = -origin
-    if not len(weights) & 1:
+    if not weights.shape[0] & 1:
         origin -= 1
-    weights = np.asarray(weights)
     if weights.dtype.kind == 'c':
         # pre-conjugate here to counteract the conjugation in correlate1d
         weights = weights.conj()
@@ -883,11 +883,13 @@ def convolve(input, weights, output=None, mode='reflect', cval=0.0,
     cval : scalar, optional
         Value to fill past edges of input if `mode` is 'constant'. Default
         is 0.0
-    origin : int, optional
-        Controls the origin of the input signal, which is where the
-        filter is centered to produce the first element of the output.
-        Positive values shift the filter to the right, and negative values
-        shift the filter to the left. Default is 0.
+    origin : int or sequence, optional
+        Controls the placement of the filter on the input array's pixels.
+        A value of 0 (the default) centers the filter over the pixel, with
+        positive values shifting the filter to the right, and negative ones
+        to the left. By passing a sequence of origins with length equal to
+        the number of dimensions of the input array, different shifts can
+        be specified along each axis.
 
     Returns
     -------

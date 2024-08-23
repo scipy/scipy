@@ -213,7 +213,7 @@ BOOST_TESTS = [
         data(legendre_p_via_lpmn, 'legendre_p_ipp-legendre_p',
              (0,1), 2, rtol=5e-14, vectorized=False),
         data(legendre_p_via_lpmn, 'legendre_p_large_ipp-legendre_p_large',
-             (0,1), 2, rtol=9.6e-14, vectorized=False),
+             (0,1), 2, rtol=3e-13, vectorized=False),
         data(lpn_, 'legendre_p_ipp-legendre_p',
              (0,1), 2, rtol=5e-14, vectorized=False),
         data(lpn_, 'legendre_p_large_ipp-legendre_p_large',

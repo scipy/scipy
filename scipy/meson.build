@@ -83,7 +83,7 @@ fortranobject_c = incdir_f2py / 'fortranobject.c'
 npymath_path = _incdir_numpy_abs / '..' / 'lib'
 npymath_lib = cc.find_library('npymath', dirs: npymath_path)
 
-pybind11_dep = dependency('pybind11', version: '>=2.12.0')
+pybind11_dep = dependency('pybind11', version: '>=2.13.1')
 
 # Pythran include directory and build flags
 if use_pythran
@@ -162,6 +162,8 @@ endif
 # 1. `.pyf.src` files, because `@BASENAME@` will still include .pyf
 # 2. targets with #include's (due to no `depend_files` - see feature request
 #    at meson#8295)
+# TODO: add argument to mark extension modules as safe to run without the GIL,
+#       once f2py supports that (see numpy#26157).
 f2py_gen = generator(generate_f2pymod,
   arguments : ['@INPUT@', '-o', '@BUILD_DIR@'],
   output : ['_@BASENAME@module.c', '_@BASENAME@-f2pywrappers.f'],
@@ -206,6 +208,7 @@ if blas_name == 'openblas' or blas_name == 'auto'
   blas = dependency('scipy-openblas', method: 'pkg-config', required: false)
   if blas.found()
     blas_name = 'scipy-openblas'
+    generate_blas_wrappers = true
   endif
 endif
 
@@ -298,7 +301,8 @@ python_sources = [
   'special.pxd',
 ]
 
-if blas_name == 'scipy-openblas'
+fs = import('fs')
+if fs.exists('_distributor_init_local.py')
   python_sources += ['_distributor_init_local.py']
 endif
 
@@ -309,7 +313,6 @@ py3.install_sources(
 
 # Copy the main __init__.py and pxd files to the build dir.
 # Needed to trick Cython, it won't do a relative import outside a package
-fs = import('fs')
 #_cython_tree = declare_dependency(sources: [
 _cython_tree = [
   fs.copyfile('__init__.py'),
@@ -319,6 +322,9 @@ _cython_tree = [
 ]
 
 cython_args = ['-3', '--fast-fail', '--output-file', '@OUTPUT@', '--include-dir', '@BUILD_ROOT@', '@INPUT@']
+if cy.version().version_compare('>=3.1.0')
+  cython_args += ['-Xfreethreading_compatible=True']
+endif
 cython_cplus_args = ['--cplus'] + cython_args
 
 cython_gen = generator(cython,
@@ -332,6 +338,8 @@ cython_gen_cpp = generator(cython,
   depends : [_cython_tree])
 
 if use_pythran
+  # TODO: add argument to mark extension modules as safe to run without the GIL,
+  #       once pythran supports that.
   pythran_gen = generator(pythran,
     arguments : ['-E', '@INPUT@', '-o', '@OUTPUT@'],
     output : '@BASENAME@.cpp',
@@ -369,9 +377,11 @@ Wno_unused_result = cc.get_supported_arguments('-Wno-unused-result')
 Wno_unused_variable = cc.get_supported_arguments('-Wno-unused-variable')
 
 # C++ warning flags
+_cpp_Wno_bitwise_instead_of_logical = cpp.get_supported_arguments('-Wno-bitwise-instead-of-logical')
 _cpp_Wno_cpp = cpp.get_supported_arguments('-Wno-cpp')
-_cpp_Wno_deprecated_declarations = cpp.get_supported_arguments('-Wno-deprecated-declarations')
 _cpp_Wno_class_memaccess = cpp.get_supported_arguments('-Wno-class-memaccess')
+_cpp_Wno_deprecated_declarations = cpp.get_supported_arguments('-Wno-deprecated-declarations')
+_cpp_Wno_deprecated_builtins = cpp.get_supported_arguments('-Wno-deprecated-builtins')
 _cpp_Wno_format_truncation = cpp.get_supported_arguments('-Wno-format-truncation')
 _cpp_Wno_non_virtual_dtor = cpp.get_supported_arguments('-Wno-non-virtual-dtor')
 _cpp_Wno_sign_compare = cpp.get_supported_arguments('-Wno-sign-compare')
@@ -419,7 +429,7 @@ fortran_ignore_warnings = ff.get_supported_arguments(
 # Intel Fortran (ifort) does not run the preprocessor by default, if Fortran
 # code uses preprocessor statements, add this compile flag to it.
 _fflag_fpp = []
-if ff.get_id() == 'intel-cl'
+if ff.get_id() in ['intel-cl', 'intel-llvm-cl']
   if is_windows
     _fflag_fpp = ff.get_supported_arguments('/fpp')
   else
@@ -563,6 +573,7 @@ lapack_dep = declare_dependency(
   dependencies: lapack_dep,
   link_with: [g77_abi_wrappers, blas_lapack_wrapper_lib]
 )
+
 subdir('_lib')
 subdir('special')
 subdir('linalg')
@@ -575,6 +586,7 @@ subdir('cluster')
 subdir('constants')
 subdir('fftpack')
 subdir('integrate')
+subdir('differentiate')
 subdir('signal')
 subdir('interpolate')
 subdir('ndimage')

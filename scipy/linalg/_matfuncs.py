@@ -17,9 +17,6 @@ from ._expm_frechet import expm_frechet, expm_cond
 from ._matfuncs_sqrtm import sqrtm
 from ._matfuncs_expm import pick_pade_structure, pade_UV_calc
 
-# deprecated imports to be removed in SciPy 1.13.0
-from numpy import single  # noqa: F401
-
 __all__ = ['expm', 'cosm', 'sinm', 'tanm', 'coshm', 'sinhm', 'tanhm', 'logm',
            'funm', 'signm', 'sqrtm', 'fractional_matrix_power', 'expm_frechet',
            'expm_cond', 'khatri_rao']
@@ -288,10 +285,11 @@ def expm(A):
         raise LinAlgError('The input array must be at least two-dimensional')
     if a.shape[-1] != a.shape[-2]:
         raise LinAlgError('Last 2 dimensions of the array must be square')
-    n = a.shape[-1]
+
     # Empty array
     if min(*a.shape) == 0:
-        return np.empty_like(a)
+        dtype = expm(np.eye(2, dtype=a.dtype)).dtype
+        return np.empty_like(a, dtype=dtype)
 
     # Scalar case
     if a.shape[-2:] == (1, 1):
