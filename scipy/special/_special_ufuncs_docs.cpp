@@ -3542,7 +3542,7 @@ const char *pro_rad1_doc = R"(
     c : array_like
         Spheroidal parameter
     x : array_like
-        Real parameter (``|x| < 1.0``)
+        Real parameter (``x > 1.0``)
     out : ndarray, optional
         Optional output array for the function results
 
@@ -3575,7 +3575,7 @@ const char *pro_rad1_cv_doc = R"(
     cv : array_like
         Characteristic value
     x : array_like
-        Real parameter (``|x| < 1.0``)
+        Real parameter (``x > 1.0``)
     out : ndarray, optional
         Optional output array for the function results
 
@@ -3604,10 +3604,8 @@ const char *pro_rad2_doc = R"(
         Mode parameter n (>= m)
     c : array_like
         Spheroidal parameter
-    cv : array_like
-        Characteristic value
     x : array_like
-        Real parameter (``|x| < 1.0``)
+        Real parameter (``x > 1.0``)
     out : ndarray, optional
         Optional output array for the function results
 
@@ -3640,7 +3638,7 @@ const char *pro_rad2_cv_doc = R"(
     cv : array_like
         Characteristic value
     x : array_like
-        Real parameter (``|x| < 1.0``)
+        Real parameter (``x > 1.0``)
     out : ndarray, optional
         Optional output array for the function results
 
