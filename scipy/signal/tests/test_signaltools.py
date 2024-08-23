@@ -249,6 +249,13 @@ class TestConvolve(_TestConvolve):
         assert_raises(ValueError, convolve, [1], [[2]])
         assert_raises(ValueError, convolve, [3], 2)
 
+    def test_dtype_deprecation(self):
+        # gh-21211
+        a = np.asarray([1, 2, 3, 6, 5, 3], dtype=object)
+        b = np.asarray([2, 3, 4, 5, 3, 4, 2, 2, 1], dtype=object)
+        with pytest.deprecated_call(match="dtype=object is not supported"):
+            convolve(a, b)
+
 
 class _TestConvolve2d:
 
@@ -1039,6 +1046,7 @@ class TestAllFreqConvolves:
                            match="all axes must be unique"):
             convapproach([1], [2], axes=[0, 0])
 
+    @pytest.mark.filterwarnings('ignore::DeprecationWarning')
     @pytest.mark.parametrize('dtype', [np.longdouble, np.clongdouble])
     def test_longdtype_input(self, dtype):
         x = np.random.random((27, 27)).astype(dtype)
@@ -1093,19 +1101,16 @@ class TestMedFilt:
         assert_equal(signal.medfilt(in_typed).dtype, dtype)
         assert_equal(signal.medfilt2d(in_typed).dtype, dtype)
 
-    def test_types_deprecated(self):
-        dtype = np.longdouble
-        in_typed = np.array(self.IN, dtype=dtype)
-        msg = "Using medfilt with arrays of dtype"
-        with pytest.deprecated_call(match=msg):
-            assert_equal(signal.medfilt(in_typed).dtype, dtype)
-        with pytest.deprecated_call(match=msg):
-            assert_equal(signal.medfilt2d(in_typed).dtype, dtype)
-
-
     @pytest.mark.parametrize('dtype', [np.bool_, np.complex64, np.complex128,
-                                       np.clongdouble, np.float16,])
+                                       np.clongdouble, np.float16, np.object_,
+                                       "float96", "float128"])
     def test_invalid_dtypes(self, dtype):
+        # We can only test this on platforms that support a native type of float96 or
+        # float128; comparing to np.longdouble allows us to filter out non-native types
+        if (dtype in ["float96", "float128"]
+                and np.finfo(np.longdouble).dtype != dtype):
+            pytest.skip(f"Platform does not support {dtype}")
+        
         in_typed = np.array(self.IN, dtype=dtype)
         with pytest.raises(ValueError, match="not supported"):
             signal.medfilt(in_typed)
@@ -1115,9 +1120,9 @@ class TestMedFilt:
 
     def test_none(self):
         # gh-1651, trac #1124. Ensure this does not segfault.
-        msg = "kernel_size exceeds volume.*|Using medfilt with arrays of dtype.*"
-        with pytest.warns((UserWarning, DeprecationWarning), match=msg):
-            assert_raises(TypeError, signal.medfilt, None)
+        msg = "dtype=object is not supported by medfilt"
+        with assert_raises(ValueError, match=msg):
+            signal.medfilt(None)
 
     def test_odd_strides(self):
         # Avoid a regression with possible contiguous
@@ -1127,31 +1132,6 @@ class TestMedFilt:
         a = dummy[5:6]
         a.strides = 16
         assert_(signal.medfilt(a, 1) == 5.)
-
-    def test_refcounting(self):
-        # Check a refcounting-related crash
-        a = Decimal(123)
-        x = np.array([a, a], dtype=object)
-        if hasattr(sys, 'getrefcount'):
-            n = 2 * sys.getrefcount(a)
-        else:
-            n = 10
-        # Shouldn't segfault:
-        msg = "kernel_size exceeds volume.*|Using medfilt with arrays of dtype.*"
-        with pytest.warns((UserWarning, DeprecationWarning), match=msg):
-            for j in range(n):
-                signal.medfilt(x)
-        if hasattr(sys, 'getrefcount'):
-            assert_(sys.getrefcount(a) < n)
-        assert_equal(x, [a, a])
-
-    def test_object(self,):
-        msg = "Using medfilt with arrays of dtype"
-        with pytest.deprecated_call(match=msg):
-            in_object = np.array(self.IN, dtype=object)
-            out_object = np.array(self.OUT, dtype=object)
-            assert_array_equal(signal.medfilt(in_object, self.KERNEL_SIZE),
-                               out_object)
 
     @pytest.mark.parametrize("dtype", [np.ubyte, np.float32, np.float64])
     def test_medfilt2d_parallel(self, dtype):
@@ -1864,6 +1844,21 @@ class _TestLinearFilter:
         assert_equal(b, b0)
         assert_equal(a, a0)
 
+    @pytest.mark.parametrize("a", [1.0, [1.0], np.array(1.0)])
+    @pytest.mark.parametrize("b", [1.0, [1.0], np.array(1.0)])
+    def test_scalar_input(self, a, b):
+        data = np.random.randn(10)
+        assert_allclose(
+            lfilter(np.array([1.0]), np.array([1.0]), data),
+            lfilter(b, a, data))
+
+    def test_dtype_deprecation(self):
+        # gh-21211
+        a = np.asarray([1, 2, 3, 6, 5, 3], dtype=object)
+        b = np.asarray([2, 3, 4, 5, 3, 4, 2, 2, 1], dtype=object)
+        with pytest.deprecated_call(match="dtype=object is not supported"):
+            lfilter(a, b, [1, 2, 3, 4])
+
 
 class TestLinearFilterFloat32(_TestLinearFilter):
     dtype = np.dtype('f')
@@ -1873,6 +1868,7 @@ class TestLinearFilterFloat64(_TestLinearFilter):
     dtype = np.dtype('d')
 
 
+@pytest.mark.filterwarnings('ignore::DeprecationWarning')
 class TestLinearFilterFloatExtended(_TestLinearFilter):
     dtype = np.dtype('g')
 
@@ -1885,9 +1881,12 @@ class TestLinearFilterComplex128(_TestLinearFilter):
     dtype = np.dtype('D')
 
 
+@pytest.mark.filterwarnings('ignore::DeprecationWarning')
 class TestLinearFilterComplexExtended(_TestLinearFilter):
     dtype = np.dtype('G')
 
+
+@pytest.mark.filterwarnings('ignore::DeprecationWarning')
 class TestLinearFilterDecimal(_TestLinearFilter):
     dtype = np.dtype('O')
 
@@ -1895,11 +1894,13 @@ class TestLinearFilterDecimal(_TestLinearFilter):
         return Decimal(str(x))
 
 
+@pytest.mark.filterwarnings('ignore::DeprecationWarning')
 class TestLinearFilterObject(_TestLinearFilter):
     dtype = np.dtype('O')
     type = float
 
 
+@pytest.mark.filterwarnings('ignore::DeprecationWarning')
 def test_lfilter_bad_object():
     # lfilter: object arrays with non-numeric objects raise TypeError.
     # Regression test for ticket #1452.
@@ -1910,6 +1911,8 @@ def test_lfilter_bad_object():
     assert_raises(TypeError, lfilter, [None], [1.0], [1.0, 2.0, 3.0])
 
 
+_pmf = pytest.mark.filterwarnings('ignore::DeprecationWarning')
+
 def test_lfilter_notimplemented_input():
     # Should not crash, gh-7991
     assert_raises(NotImplementedError, lfilter, [2,3], [4,5], [1,2,3,4,5])
@@ -1917,8 +1920,10 @@ def test_lfilter_notimplemented_input():
 
 @pytest.mark.parametrize('dt', [np.ubyte, np.byte, np.ushort, np.short,
                                 np_ulong, np_long, np.ulonglong, np.ulonglong,
-                                np.float32, np.float64, np.longdouble,
-                                Decimal])
+                                np.float32, np.float64,
+                                pytest.param(np.longdouble, marks=_pmf),
+                                pytest.param(Decimal, marks=_pmf)]
+)
 class TestCorrelateReal:
     def _setup_rank1(self, dt):
         a = np.linspace(0, 3, 4).astype(dt)
@@ -2085,6 +2090,13 @@ class TestCorrelate:
         assert_allclose(correlate(a, b, mode='full'), [6, 17, 32, 23, 12])
         assert_allclose(correlate(a, b, mode='valid'), [32])
 
+    def test_dtype_deprecation(self):
+        # gh-21211
+        a = np.asarray([1, 2, 3, 6, 5, 3], dtype=object)
+        b = np.asarray([2, 3, 4, 5, 3, 4, 2, 2, 1], dtype=object)
+        with pytest.deprecated_call(match="dtype=object is not supported"):
+            correlate(a, b)
+
 
 @pytest.mark.parametrize("mode", ["valid", "same", "full"])
 @pytest.mark.parametrize("behind", [True, False])
@@ -2114,7 +2126,8 @@ def test_correlation_lags(mode, behind, input_size):
     assert_equal(lags.shape, correlation.shape)
 
 
-@pytest.mark.parametrize('dt', [np.csingle, np.cdouble, np.clongdouble])
+@pytest.mark.parametrize('dt', [np.csingle, np.cdouble,
+                                pytest.param(np.clongdouble, marks=_pmf)])
 class TestCorrelateComplex:
     # The decimal precision to be used for comparing results.
     # This value will be passed as the 'decimal' keyword argument of
@@ -2382,7 +2395,7 @@ class TestSOSFiltFilt(TestFiltFilt):
             sos = zpk2sos(*zpk)
             y = filtfilt(b, a, x)
             y_sos = sosfiltfilt(sos, x)
-            assert_allclose(y, y_sos, atol=1e-12, err_msg='order=%s' % order)
+            assert_allclose(y, y_sos, atol=1e-12, err_msg=f'order={order}')
 
 
 def filtfilt_gust_opt(b, a, x):
@@ -2461,6 +2474,7 @@ def check_filtfilt_gust(b, a, shape, axis, irlen=None):
     assert_allclose(zg2, zo2, rtol=1e-8, atol=1e-9)
 
 
+@pytest.mark.fail_slow(10)
 def test_choose_conv_method():
     for mode in ['valid', 'same', 'full']:
         for ndim in [1, 2]:
@@ -2476,6 +2490,25 @@ def test_choose_conv_method():
             assert_(isinstance(times, dict))
             assert_('fft' in times.keys() and 'direct' in times.keys())
 
+        x = np.array([2**51], dtype=np.int64)
+        h = x.copy()
+        assert_equal(choose_conv_method(x, h, mode=mode), 'direct')
+
+def test_choose_conv_dtype_deprecation():
+    # gh-21211
+    a = np.asarray([1, 2, 3, 6, 5, 3], dtype=object)
+    b = np.asarray([2, 3, 4, 5, 3, 4, 2, 2, 1], dtype=object)
+    with pytest.deprecated_call(match="dtype=object is not supported"):
+        choose_conv_method(a, b)
+
+
+@pytest.mark.filterwarnings('ignore::DeprecationWarning')
+def test_choose_conv_method_2():
+    for mode in ['valid', 'same', 'full']:
+        x = [Decimal(3), Decimal(2)]
+        h = [Decimal(1), Decimal(4)]
+        assert_equal(choose_conv_method(x, h, mode=mode), 'direct')
+
         n = 10
         for not_fft_conv_supp in ["complex256", "complex192"]:
             if hasattr(np, not_fft_conv_supp):
@@ -2483,15 +2516,8 @@ def test_choose_conv_method():
                 h = x.copy()
                 assert_equal(choose_conv_method(x, h, mode=mode), 'direct')
 
-        x = np.array([2**51], dtype=np.int64)
-        h = x.copy()
-        assert_equal(choose_conv_method(x, h, mode=mode), 'direct')
 
-        x = [Decimal(3), Decimal(2)]
-        h = [Decimal(1), Decimal(4)]
-        assert_equal(choose_conv_method(x, h, mode=mode), 'direct')
-
-
+@pytest.mark.fail_slow(10)
 def test_filtfilt_gust():
     # Design a filter.
     z, p, k = signal.ellip(3, 0.01, 120, 0.0875, output='zpk')
@@ -3341,6 +3367,7 @@ def assert_allclose_cast(actual, desired, rtol=1e-7, atol=0):
     assert_allclose(actual, desired, rtol, atol)
 
 
+@pytest.mark.filterwarnings('ignore::DeprecationWarning')
 @pytest.mark.parametrize('func', (sosfilt, lfilter))
 def test_nonnumeric_dtypes(func):
     x = [Decimal(1), Decimal(2), Decimal(3)]

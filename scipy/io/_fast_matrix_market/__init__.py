@@ -332,9 +332,9 @@ def mmread(source):
 
     >>> m = mmread(StringIO(text))
     >>> m
-    <5x5 sparse matrix of type '<class 'numpy.float64'>'
-    with 7 stored elements in COOrdinate format>
-    >>> m.A
+    <COOrdinate sparse matrix of dtype 'float64'
+        with 7 stored elements and shape (5, 5)>
+    >>> m.toarray()
     array([[0., 0., 0., 0., 0.],
            [0., 0., 1., 0., 0.],
            [0., 0., 0., 2., 3.],
@@ -530,7 +530,7 @@ def mmwrite(target, a, comment=None, field=None, precision=None, symmetry="AUTO"
         _fmm_core.write_body_coo(cursor, a.shape, a.row, a.col, data)
 
     else:
-        raise ValueError("unknown matrix type: %s" % type(a))
+        raise ValueError(f"unknown matrix type: {type(a)}")
 
 
 def mminfo(source):

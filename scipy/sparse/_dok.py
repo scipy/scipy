@@ -5,6 +5,7 @@ __docformat__ = "restructuredtext en"
 __all__ = ['dok_array', 'dok_matrix', 'isspmatrix_dok']
 
 import itertools
+from warnings import warn
 import numpy as np
 
 from ._matrix import spmatrix
@@ -17,8 +18,8 @@ from ._sputils import (isdense, getdtype, isshape, isintlike, isscalarlike,
 class _dok_base(_spbase, IndexMixin, dict):
     _format = 'dok'
 
-    def __init__(self, arg1, shape=None, dtype=None, copy=False):
-        _spbase.__init__(self)
+    def __init__(self, arg1, shape=None, dtype=None, copy=False, *, maxprint=None):
+        _spbase.__init__(self, arg1, maxprint=maxprint)
 
         is_array = isinstance(self, sparray)
         if isinstance(arg1, tuple) and isshape(arg1, allow_1d=is_array):
@@ -36,7 +37,7 @@ class _dok_base(_spbase, IndexMixin, dict):
 
             self._dict = arg1._dict
             self._shape = check_shape(arg1.shape, allow_1d=is_array)
-            self.dtype = arg1.dtype
+            self.dtype = getdtype(arg1.dtype)
         else:  # Dense ctor
             try:
                 arg1 = np.asarray(arg1)
@@ -50,11 +51,11 @@ class _dok_base(_spbase, IndexMixin, dict):
                 if dtype is not None:
                     arg1 = arg1.astype(dtype)
                 self._dict = {i: v for i, v in enumerate(arg1) if v != 0}
-                self.dtype = arg1.dtype
+                self.dtype = getdtype(arg1.dtype)
             else:
-                d = self._coo_container(arg1, dtype=dtype).todok()
+                d = self._coo_container(arg1, shape=shape, dtype=dtype).todok()
                 self._dict = d._dict
-                self.dtype = d.dtype
+                self.dtype = getdtype(d.dtype)
             self._shape = check_shape(arg1.shape, allow_1d=is_array)
 
     def update(self, val):
@@ -68,7 +69,11 @@ class _dok_base(_spbase, IndexMixin, dict):
             )
         return len(self._dict)
 
-    def count_nonzero(self):
+    def count_nonzero(self, axis=None):
+        if axis is not None:
+            raise NotImplementedError(
+                "count_nonzero over an axis is not implemented for DOK format."
+            )
         return sum(x != 0 for x in self.values())
 
     _getnnz.__doc__ = _spbase._getnnz.__doc__
@@ -88,6 +93,24 @@ class _dok_base(_spbase, IndexMixin, dict):
 
     def clear(self):
         return self._dict.clear()
+
+    def pop(self, /, *args):
+        return self._dict.pop(*args)
+
+    def __reversed__(self):
+        raise TypeError("reversed is not defined for dok_array type")
+
+    def __or__(self, other):
+        type_names = f"{type(self).__name__} and {type(other).__name__}"
+        raise TypeError(f"unsupported operand type for |: {type_names}")
+
+    def __ror__(self, other):
+        type_names = f"{type(self).__name__} and {type(other).__name__}"
+        raise TypeError(f"unsupported operand type for |: {type_names}")
+
+    def __ior__(self, other):
+        type_names = f"{type(self).__name__} and {type(other).__name__}"
+        raise TypeError(f"unsupported operand type for |: {type_names}")
 
     def popitem(self):
         return self._dict.popitem()
@@ -121,26 +144,33 @@ class _dok_base(_spbase, IndexMixin, dict):
             key = key[0]
         return self._dict.get(key, default)
 
-    # override IndexMixin.__getitem__ for 1d case until fully implemented
-    def __getitem__(self, key):
-        if self.ndim == 2:
-            return super().__getitem__(key)
-
-        if isinstance(key, tuple) and len(key) == 1:
-            key = key[0]
-        INT_TYPES = (int, np.integer)
-        if isinstance(key, INT_TYPES):
-            if key < 0:
-                key += self.shape[-1]
-            if key < 0 or key >= self.shape[-1]:
-                raise IndexError('index value out of bounds')
-            return self._get_int(key)
-        else:
-            raise IndexError('array/slice index for 1d dok_array not yet supported')
-
     # 1D get methods
     def _get_int(self, idx):
         return self._dict.get(idx, self.dtype.type(0))
+
+    def _get_slice(self, idx):
+        i_range = range(*idx.indices(self.shape[0]))
+        return self._get_array(list(i_range))
+
+    def _get_array(self, idx):
+        idx = np.asarray(idx)
+        if idx.ndim == 0:
+            val = self._dict.get(int(idx), self.dtype.type(0))
+            return np.array(val, stype=self.dtype)
+        new_dok = self._dok_container(idx.shape, dtype=self.dtype)
+        dok_vals = [self._dict.get(i, 0) for i in idx.ravel()]
+        if dok_vals:
+            if len(idx.shape) == 1:
+                for i, v in enumerate(dok_vals):
+                    if v:
+                        new_dok._dict[i] = v
+            else:
+                new_idx = np.unravel_index(np.arange(len(dok_vals)), idx.shape)
+                new_idx = new_idx[0] if len(new_idx) == 1 else zip(*new_idx)
+                for i, v in zip(new_idx, dok_vals, strict=True):
+                    if v:
+                        new_dok._dict[i] = v
+        return new_dok
 
     # 2D get methods
     def _get_intXint(self, row, col):
@@ -213,29 +243,26 @@ class _dok_base(_spbase, IndexMixin, dict):
                 newdok._dict[key] = v
         return newdok
 
-    # override IndexMixin.__setitem__ for 1d case until fully implemented
-    def __setitem__(self, key, value):
-        if self.ndim == 2:
-            return super().__setitem__(key, value)
-
-        if isinstance(key, tuple) and len(key) == 1:
-            key = key[0]
-        INT_TYPES = (int, np.integer)
-        if isinstance(key, INT_TYPES):
-            if key < 0:
-                key += self.shape[-1]
-            if key < 0 or key >= self.shape[-1]:
-                raise IndexError('index value out of bounds')
-            return self._set_int(key, value)
-        else:
-            raise IndexError('array index for 1d dok_array not yet provided')
-
     # 1D set methods
     def _set_int(self, idx, x):
         if x:
             self._dict[idx] = x
         elif idx in self._dict:
             del self._dict[idx]
+
+    def _set_array(self, idx, x):
+        idx_set = idx.ravel()
+        x_set = x.ravel()
+        if len(idx_set) != len(x_set):
+            if len(x_set) == 1:
+                x_set = np.full(len(idx_set), x_set[0], dtype=self.dtype)
+            else:
+              raise ValueError("Need len(index)==len(data) or len(data)==1")
+        for i, v in zip(idx_set, x_set):
+            if v:
+                self._dict[i] = v
+            elif i in self._dict:
+                del self._dict[i]
 
     # 2D set methods
     def _set_intXint(self, row, col, x):
@@ -394,11 +421,22 @@ class _dok_base(_spbase, IndexMixin, dict):
     transpose.__doc__ = _spbase.transpose.__doc__
 
     def conjtransp(self):
-        """Return the conjugate transpose."""
+        """DEPRECATED: Return the conjugate transpose.
+
+        .. deprecated:: 1.14.0
+
+            `conjtransp` is deprecated and will be removed in v1.16.0.
+            Use ``.T.conj()`` instead.
+        """
+        msg = ("`conjtransp` is deprecated and will be removed in v1.16.0. "
+                   "Use `.T.conj()` instead.")
+        warn(msg, DeprecationWarning, stacklevel=2)
+
         if self.ndim == 1:
             new = self.tocoo()
             new.data = new.data.conjugate()
             return new
+
         M, N = self.shape
         new = self._dok_container((N, M), dtype=self.dtype)
         new._dict = {(right, left): np.conj(val) for (left, right), val in self.items()}
@@ -414,11 +452,10 @@ class _dok_base(_spbase, IndexMixin, dict):
     @classmethod
     def fromkeys(cls, iterable, value=1, /):
         tmp = dict.fromkeys(iterable, value)
-        keys = tmp.keys()
-        if isinstance(next(iter(keys)), tuple):
-            shape = tuple(max(idx) + 1 for idx in zip(*keys))
+        if isinstance(next(iter(tmp)), tuple):
+            shape = tuple(max(idx) + 1 for idx in zip(*tmp))
         else:
-            shape = (max(keys) + 1,)
+            shape = (max(tmp) + 1,)
         result = cls(shape, dtype=type(value))
         result._dict = tmp
         return result
@@ -633,3 +670,23 @@ class dok_matrix(spmatrix, _dok_base):
         return self._shape
 
     shape = property(fget=get_shape, fset=set_shape)
+
+    def __reversed__(self):
+        return self._dict.__reversed__()
+
+    def __or__(self, other):
+        if isinstance(other, _dok_base):
+            return self._dict | other._dict
+        return self._dict | other
+
+    def __ror__(self, other):
+        if isinstance(other, _dok_base):
+            return self._dict | other._dict
+        return self._dict | other
+
+    def __ior__(self, other):
+        if isinstance(other, _dok_base):
+            self._dict |= other._dict
+        else:
+            self._dict |= other
+        return self

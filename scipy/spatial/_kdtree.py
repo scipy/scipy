@@ -107,7 +107,7 @@ class Rectangle:
         self.m, = self.maxes.shape
 
     def __repr__(self):
-        return "<Rectangle %s>" % list(zip(self.mins, self.maxes))
+        return f"<Rectangle {list(zip(self.mins, self.maxes))}>"
 
     def volume(self):
         """Total volume."""
@@ -267,7 +267,7 @@ class KDTree(cKDTree):
         The n data points of dimension m to be indexed. This array is
         not copied unless this is necessary to produce a contiguous
         array of doubles. The data are also copied if the kd-tree is built
-        with `copy_data=True`.
+        with ``copy_data=True``.
     leafsize : positive int
         The number of points at which the algorithm switches over to
         brute-force.

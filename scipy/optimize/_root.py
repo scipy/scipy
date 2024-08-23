@@ -38,16 +38,16 @@ def root(fun, x0, args=(), method='hybr', jac=None, tol=None, callback=None,
     method : str, optional
         Type of solver. Should be one of
 
-            - 'hybr'             :ref:`(see here) <optimize.root-hybr>`
-            - 'lm'               :ref:`(see here) <optimize.root-lm>`
-            - 'broyden1'         :ref:`(see here) <optimize.root-broyden1>`
-            - 'broyden2'         :ref:`(see here) <optimize.root-broyden2>`
-            - 'anderson'         :ref:`(see here) <optimize.root-anderson>`
-            - 'linearmixing'     :ref:`(see here) <optimize.root-linearmixing>`
-            - 'diagbroyden'      :ref:`(see here) <optimize.root-diagbroyden>`
-            - 'excitingmixing'   :ref:`(see here) <optimize.root-excitingmixing>`
-            - 'krylov'           :ref:`(see here) <optimize.root-krylov>`
-            - 'df-sane'          :ref:`(see here) <optimize.root-dfsane>`
+        - 'hybr'             :ref:`(see here) <optimize.root-hybr>`
+        - 'lm'               :ref:`(see here) <optimize.root-lm>`
+        - 'broyden1'         :ref:`(see here) <optimize.root-broyden1>`
+        - 'broyden2'         :ref:`(see here) <optimize.root-broyden2>`
+        - 'anderson'         :ref:`(see here) <optimize.root-anderson>`
+        - 'linearmixing'     :ref:`(see here) <optimize.root-linearmixing>`
+        - 'diagbroyden'      :ref:`(see here) <optimize.root-diagbroyden>`
+        - 'excitingmixing'   :ref:`(see here) <optimize.root-excitingmixing>`
+        - 'krylov'           :ref:`(see here) <optimize.root-krylov>`
+        - 'df-sane'          :ref:`(see here) <optimize.root-dfsane>`
 
     jac : bool or callable, optional
         If `jac` is a Boolean and is True, `fun` is assumed to return the
@@ -199,6 +199,16 @@ def root(fun, x0, args=(), method='hybr', jac=None, tol=None, callback=None,
     >>> plt.show()
 
     """
+    def _wrapped_fun(*fargs):
+        """
+        Wrapped `func` to track the number of times
+        the function has been called.
+        """
+        _wrapped_fun.nfev += 1
+        return fun(*fargs)
+
+    _wrapped_fun.nfev = 0
+
     if not isinstance(args, tuple):
         args = (args,)
 
@@ -207,7 +217,7 @@ def root(fun, x0, args=(), method='hybr', jac=None, tol=None, callback=None,
         options = {}
 
     if callback is not None and meth in ('hybr', 'lm'):
-        warn('Method %s does not accept callback.' % method,
+        warn(f'Method {method} does not accept callback.',
              RuntimeWarning, stacklevel=2)
 
     # fun also returns the Jacobian
@@ -233,22 +243,23 @@ def root(fun, x0, args=(), method='hybr', jac=None, tol=None, callback=None,
             options.setdefault('fatol', np.inf)
 
     if meth == 'hybr':
-        sol = _root_hybr(fun, x0, args=args, jac=jac, **options)
+        sol = _root_hybr(_wrapped_fun, x0, args=args, jac=jac, **options)
     elif meth == 'lm':
-        sol = _root_leastsq(fun, x0, args=args, jac=jac, **options)
+        sol = _root_leastsq(_wrapped_fun, x0, args=args, jac=jac, **options)
     elif meth == 'df-sane':
         _warn_jac_unused(jac, method)
-        sol = _root_df_sane(fun, x0, args=args, callback=callback,
+        sol = _root_df_sane(_wrapped_fun, x0, args=args, callback=callback,
                             **options)
     elif meth in ('broyden1', 'broyden2', 'anderson', 'linearmixing',
                   'diagbroyden', 'excitingmixing', 'krylov'):
         _warn_jac_unused(jac, method)
-        sol = _root_nonlin_solve(fun, x0, args=args, jac=jac,
+        sol = _root_nonlin_solve(_wrapped_fun, x0, args=args, jac=jac,
                                  _method=meth, _callback=callback,
                                  **options)
     else:
-        raise ValueError('Unknown solver %s' % method)
+        raise ValueError(f'Unknown solver {method}')
 
+    sol.nfev = _wrapped_fun.nfev
     return sol
 
 
@@ -280,9 +291,9 @@ def _root_leastsq(fun, x0, args=(), jac=None,
     maxiter : int
         The maximum number of calls to the function. If zero, then
         100*(N+1) is the maximum where N is the number of elements in x0.
-    epsfcn : float
+    eps : float
         A suitable step length for the forward-difference approximation of
-        the Jacobian (for Dfun=None). If epsfcn is less than the machine
+        the Jacobian (for Dfun=None). If `eps` is less than the machine
         precision, it is assumed that the relative errors in the functions
         are of the order of the machine precision.
     factor : float
@@ -291,10 +302,19 @@ def _root_leastsq(fun, x0, args=(), jac=None,
     diag : sequence
         N positive entries that serve as a scale factors for the variables.
     """
+    nfev = 0
+    def _wrapped_fun(*fargs):
+        """
+        Wrapped `func` to track the number of times
+        the function has been called.
+        """
+        nonlocal nfev
+        nfev += 1
+        return fun(*fargs)
 
     _check_unknown_options(unknown_options)
-    x, cov_x, info, msg, ier = leastsq(fun, x0, args=args, Dfun=jac,
-                                       full_output=True,
+    x, cov_x, info, msg, ier = leastsq(_wrapped_fun, x0, args=args,
+                                       Dfun=jac, full_output=True,
                                        col_deriv=col_deriv, xtol=xtol,
                                        ftol=ftol, gtol=gtol,
                                        maxfev=maxiter, epsfcn=eps,
@@ -303,6 +323,7 @@ def _root_leastsq(fun, x0, args=(), jac=None,
                          success=ier in (1, 2, 3, 4), cov_x=cov_x,
                          fun=info.pop('fvec'), method="lm")
     sol.update(info)
+    sol.nfev = nfev
     return sol
 
 
@@ -383,36 +404,28 @@ def _root_broyden1_doc():
         'armijo'.
     jac_options : dict, optional
         Options for the respective Jacobian approximation.
-            alpha : float, optional
-                Initial guess for the Jacobian is (-1/alpha).
-            reduction_method : str or tuple, optional
-                Method used in ensuring that the rank of the Broyden
-                matrix stays low. Can either be a string giving the
-                name of the method, or a tuple of the form ``(method,
-                param1, param2, ...)`` that gives the name of the
-                method and values for additional parameters.
 
-                Methods available:
+        alpha : float, optional
+            Initial guess for the Jacobian is (-1/alpha).
+        reduction_method : str or tuple, optional
+            Method used in ensuring that the rank of the Broyden
+            matrix stays low. Can either be a string giving the
+            name of the method, or a tuple of the form ``(method,
+            param1, param2, ...)`` that gives the name of the
+            method and values for additional parameters.
 
-                    - ``restart``
-                        Drop all matrix columns. Has no
-                        extra parameters.
-                    - ``simple``
-                        Drop oldest matrix column. Has no
-                        extra parameters.
-                    - ``svd``
-                        Keep only the most significant SVD
-                        components.
+            Methods available:
 
-                        Extra parameters:
+            - ``restart``: drop all matrix columns. Has no extra parameters.
+            - ``simple``: drop oldest matrix column. Has no extra parameters.
+            - ``svd``: keep only the most significant SVD components.
+              Takes an extra parameter, ``to_retain``, which determines the
+              number of SVD components to retain when rank reduction is done.
+              Default is ``max_rank - 2``.
 
-                            - ``to_retain``
-                                Number of SVD components to
-                                retain when rank reduction is done.
-                                Default is ``max_rank - 2``.
-            max_rank : int, optional
-                Maximum rank for the Broyden matrix.
-                Default is infinity (i.e., no rank reduction).
+        max_rank : int, optional
+            Maximum rank for the Broyden matrix.
+            Default is infinity (i.e., no rank reduction).
 
     Examples
     --------
@@ -429,6 +442,7 @@ def _root_broyden1_doc():
 
     """
     pass
+
 
 def _root_broyden2_doc():
     """
@@ -472,27 +486,19 @@ def _root_broyden2_doc():
 
             Methods available:
 
-                - ``restart``
-                    Drop all matrix columns. Has no
-                    extra parameters.
-                - ``simple``
-                    Drop oldest matrix column. Has no
-                    extra parameters.
-                - ``svd``
-                    Keep only the most significant SVD
-                    components.
+            - ``restart``: drop all matrix columns. Has no extra parameters.
+            - ``simple``: drop oldest matrix column. Has no extra parameters.
+            - ``svd``: keep only the most significant SVD components.
+              Takes an extra parameter, ``to_retain``, which determines the
+              number of SVD components to retain when rank reduction is done.
+              Default is ``max_rank - 2``.
 
-                    Extra parameters:
-
-                        - ``to_retain``
-                            Number of SVD components to
-                            retain when rank reduction is done.
-                            Default is ``max_rank - 2``.
         max_rank : int, optional
             Maximum rank for the Broyden matrix.
             Default is infinity (i.e., no rank reduction).
     """
     pass
+
 
 def _root_anderson_doc():
     """

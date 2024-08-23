@@ -1,10 +1,11 @@
 from itertools import product, permutations
 
 import numpy as np
+import pytest
 from numpy.testing import assert_array_less, assert_allclose
 from pytest import raises as assert_raises
 
-from scipy.linalg import inv, eigh, norm
+from scipy.linalg import inv, eigh, norm, svd
 from scipy.linalg import orthogonal_procrustes
 from scipy.sparse._sputils import matrix
 
@@ -189,3 +190,32 @@ def test_orthogonal_procrustes_skbio_example():
     B_approx = scale * np.dot(A, R) + B_mu
     assert_allclose(B_approx, B_orig)
     assert_allclose(B / norm(B), B_standardized)
+
+
+def test_empty():
+    a = np.empty((0, 0))
+    r, s = orthogonal_procrustes(a, a)
+    assert_allclose(r, np.empty((0, 0)))
+
+    a = np.empty((0, 3))
+    r, s = orthogonal_procrustes(a, a)
+    assert_allclose(r, np.identity(3))
+
+
+@pytest.mark.parametrize('shape', [(4, 5), (5, 5), (5, 4)])
+def test_unitary(shape):
+    # gh-12071 added support for unitary matrices; check that it
+    # works as intended.
+    m, n = shape
+    rng = np.random.default_rng(589234981235)
+    A = rng.random(shape) + rng.random(shape) * 1j
+    Q = rng.random((n, n)) + rng.random((n, n)) * 1j
+    Q, _ = np.linalg.qr(Q)
+    B = A @ Q
+    R, scale = orthogonal_procrustes(A, B)
+    assert_allclose(R @ R.conj().T, np.eye(n), atol=1e-14)
+    assert_allclose(A @ Q, B)
+    if shape != (4, 5):  # solution is unique
+        assert_allclose(R, Q)
+    _, s, _ = svd(A.conj().T @ B)
+    assert_allclose(scale, np.sum(s))

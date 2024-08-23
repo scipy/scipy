@@ -140,7 +140,7 @@ def splprep(x, w=None, u=None, ub=None, ue=None, k=3, task=0, s=None, t=None,
     >>> tck, u = splprep([x, y], s=0)
     >>> new_points = splev(u, tck)
 
-    Notice that (i) we force interpolation by using `s=0`,
+    Notice that (i) we force interpolation by using ``s=0``,
     (ii) the parameterization, ``u``, is generated automatically.
     Now plot the result:
 
@@ -310,7 +310,7 @@ def splev(x, tck, der=0, ext=0):
         An array of points at which to return the value of the smoothed
         spline or its derivatives. If `tck` was returned from `splprep`,
         then the parameter values, u should be given.
-    tck : 3-tuple or a BSpline object
+    tck : BSpline instance or tuple
         If a tuple, then it should be a sequence of length 3 returned by
         `splrep` or `splprep` containing the knots, coefficients, and degree
         of the spline. (Also see Notes.)
@@ -359,6 +359,9 @@ def splev(x, tck, der=0, ext=0):
     --------
     Examples are given :ref:`in the tutorial <tutorial-interpolate_splXXX>`.
 
+    A comparison between `splev`, `splder` and `spalde` to compute the derivatives of a 
+    B-spline can be found in the `spalde` examples section.
+
     """
     if isinstance(tck, BSpline):
         if tck.c.ndim > 1:
@@ -370,8 +373,8 @@ def splev(x, tck, der=0, ext=0):
         try:
             extrapolate = {0: True, }[ext]
         except KeyError as e:
-            raise ValueError("Extrapolation mode %s is not supported "
-                             "by BSpline." % ext) from e
+            raise ValueError(f"Extrapolation mode {ext} is not supported "
+                             "by BSpline.") from e
 
         return tck(x, der, extrapolate=extrapolate)
     else:
@@ -435,8 +438,8 @@ def splint(a, b, tck, full_output=0):
             raise ValueError(mesg)
 
         if full_output != 0:
-            mesg = ("full_output = %s is not supported. Proceeding as if "
-                    "full_output = 0" % full_output)
+            mesg = (f"full_output = {full_output} is not supported. Proceeding as if "
+                    "full_output = 0")
 
         return tck.integrate(a, b, extrapolate=False)
     else:
@@ -505,7 +508,7 @@ def sproot(tck, mest=10):
     >>> sproot(tck)
     array([], dtype=float64)
 
-    Converting to a PPoly object does find the roots at `x=2`:
+    Converting to a PPoly object does find the roots at ``x=2``:
 
     >>> ppoly = PPoly.from_spline(tck)
     >>> ppoly.roots(extrapolate=False)
@@ -535,10 +538,8 @@ def sproot(tck, mest=10):
 
 def spalde(x, tck):
     """
-    Evaluate all derivatives of a B-spline.
-
-    Given the knots and coefficients of a cubic B-spline compute all
-    derivatives up to order k at a point (or set of points).
+    Evaluate a B-spline and all its derivatives at one point (or set of points) up
+    to order k (the degree of the spline), being 0 the spline itself.
 
     Parameters
     ----------
@@ -547,13 +548,15 @@ def spalde(x, tck):
         Note that ``t(k) <= x <= t(n-k+1)`` must hold for each `x`.
     tck : tuple
         A tuple (t,c,k) containing the vector of knots,
-        the B-spline coefficients, and the degree of the spline.
+        the B-spline coefficients, and the degree of the spline whose 
+        derivatives to compute.
 
     Returns
     -------
     results : {ndarray, list of ndarrays}
         An array (or a list of arrays) containing all derivatives
-        up to order k inclusive for each point `x`.
+        up to order k inclusive for each point `x`, being the first element the 
+        spline itself.
 
     See Also
     --------
@@ -568,6 +571,56 @@ def spalde(x, tck):
        applics 10 (1972) 134-149.
     .. [3] Dierckx P. : Curve and surface fitting with splines, Monographs on
        Numerical Analysis, Oxford University Press, 1993.
+
+    Examples
+    --------
+    To calculate the derivatives of a B-spline there are several aproaches. 
+    In this example, we will demonstrate that `spalde` is equivalent to
+    calling `splev` and `splder`.
+    
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.interpolate import BSpline, spalde, splder, splev
+    
+    >>> # Store characteristic parameters of a B-spline
+    >>> tck = ((-2, -2, -2, -2, -1, 0, 1, 2, 2, 2, 2),  # knots
+    ...        (0, 0, 0, 6, 0, 0, 0),  # coefficients
+    ...        3)  # degree (cubic)
+    >>> # Instance a B-spline object
+    >>> # `BSpline` objects are preferred, except for spalde()
+    >>> bspl = BSpline(tck[0], tck[1], tck[2])
+    >>> # Generate extra points to get a smooth curve
+    >>> x = np.linspace(min(tck[0]), max(tck[0]), 100)
+    
+    Evaluate the curve and all derivatives
+    
+    >>> # The order of derivative must be less or equal to k, the degree of the spline
+    >>> # Method 1: spalde()
+    >>> f1_y_bsplin = [spalde(i, tck)[0] for i in x ]  # The B-spline itself
+    >>> f1_y_deriv1 = [spalde(i, tck)[1] for i in x ]  # 1st derivative
+    >>> f1_y_deriv2 = [spalde(i, tck)[2] for i in x ]  # 2nd derivative
+    >>> f1_y_deriv3 = [spalde(i, tck)[3] for i in x ]  # 3rd derivative
+    >>> # You can reach the same result by using `splev`and `splder`
+    >>> f2_y_deriv3 = splev(x, bspl, der=3)
+    >>> f3_y_deriv3 = splder(bspl, n=3)(x)
+    
+    >>> # Generate a figure with three axes for graphic comparison
+    >>> fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(16, 5))
+    >>> suptitle = fig.suptitle(f'Evaluate a B-spline and all derivatives')
+    >>> # Plot B-spline and all derivatives using the three methods
+    >>> orders = range(4)
+    >>> linetypes = ['-', '--', '-.', ':']
+    >>> labels = ['B-Spline', '1st deriv.', '2nd deriv.', '3rd deriv.']
+    >>> functions = ['splev()', 'splder()', 'spalde()']
+    >>> for order, linetype, label in zip(orders, linetypes, labels):
+    ...     ax1.plot(x, splev(x, bspl, der=order), linetype, label=label)
+    ...     ax2.plot(x, splder(bspl, n=order)(x), linetype, label=label)
+    ...     ax3.plot(x, [spalde(i, tck)[order] for i in x], linetype, label=label)
+    >>> for ax, function in zip((ax1, ax2, ax3), functions):
+    ...     ax.set_title(function)
+    ...     ax.legend()
+    >>> plt.tight_layout()
+    >>> plt.show()
 
     """
     if isinstance(tck, BSpline):
@@ -586,8 +639,8 @@ def insert(x, tck, m=1, per=0):
 
     Parameters
     ----------
-    x (u) : array_like
-        A 1-D point at which to insert a new knot(s).  If `tck` was returned
+    x (u) : float
+        A knot value at which to insert a new knot.  If `tck` was returned
         from ``splprep``, then the parameter values, u should be given.
     tck : a `BSpline` instance or a tuple
         If tuple, then it is expected to be a tuple (t,c,k) containing
@@ -615,7 +668,12 @@ def insert(x, tck, m=1, per=0):
     Based on algorithms from [1]_ and [2]_.
 
     Manipulating the tck-tuples directly is not recommended. In new code,
-    prefer using the `BSpline` objects.
+    prefer using the `BSpline` objects, in particular `BSpline.insert_knot`
+    method.
+
+    See Also
+    --------
+    BSpline.insert_knot
 
     References
     ----------
@@ -673,8 +731,10 @@ def splder(tck, n=1):
 
     Parameters
     ----------
-    tck : BSpline instance or a tuple of (t, c, k)
-        Spline whose derivative to compute
+    tck : BSpline instance or tuple
+        BSpline instance or a tuple (t,c,k) containing the vector of knots,
+        the B-spline coefficients, and the degree of the spline whose 
+        derivative to compute
     n : int, optional
         Order of derivative to evaluate. Default: 1
 
@@ -683,7 +743,7 @@ def splder(tck, n=1):
     `BSpline` instance or tuple
         Spline of order k2=k-n representing the derivative
         of the input spline.
-        A tuple is returned iff the input argument `tck` is a tuple, otherwise
+        A tuple is returned if the input argument `tck` is a tuple, otherwise
         a BSpline object is constructed and returned.
 
     See Also
@@ -716,6 +776,9 @@ def splder(tck, n=1):
 
     This agrees well with roots :math:`\\pi/2 + n\\pi` of
     :math:`\\cos(x) = \\sin'(x)`.
+
+    A comparison between `splev`, `splder` and `spalde` to compute the derivatives of a 
+    B-spline can be found in the `spalde` examples section.
 
     """
     if isinstance(tck, BSpline):

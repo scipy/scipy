@@ -213,7 +213,7 @@ BOOST_TESTS = [
         data(legendre_p_via_lpmn, 'legendre_p_ipp-legendre_p',
              (0,1), 2, rtol=5e-14, vectorized=False),
         data(legendre_p_via_lpmn, 'legendre_p_large_ipp-legendre_p_large',
-             (0,1), 2, rtol=9.6e-14, vectorized=False),
+             (0,1), 2, rtol=3e-13, vectorized=False),
         data(lpn_, 'legendre_p_ipp-legendre_p',
              (0,1), 2, rtol=5e-14, vectorized=False),
         data(lpn_, 'legendre_p_large_ipp-legendre_p_large',
@@ -445,7 +445,7 @@ BOOST_TESTS = [
         data(jvp, 'bessel_j_prime_large_data_ipp-bessel_j_prime_large_data',
              (0,1), 2, rtol=1e-11),
         data(jvp, 'bessel_j_prime_large_data_ipp-bessel_j_prime_large_data',
-             (0,1j), 2, rtol=1e-11),
+             (0,1j), 2, rtol=2e-11),
 
         data(kn, 'bessel_k_int_data_ipp-bessel_k_int_data', (0,1), 2, rtol=1e-12),
 

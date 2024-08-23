@@ -72,4 +72,4 @@ def to_numpy_code(code):
         return swapped_code
     else:
         raise ValueError(
-            'We cannot handle byte order %s' % code)
+            f'We cannot handle byte order {code}')

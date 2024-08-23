@@ -2,8 +2,8 @@
 # Created by: Pearu Peterson, September 2002
 #
 
-import sys
 from functools import reduce
+import random
 
 from numpy.testing import (assert_equal, assert_array_almost_equal, assert_,
                            assert_allclose, assert_almost_equal,
@@ -60,8 +60,14 @@ def test_lapack_documented():
         pytest.skip('lapack.__doc__ is None')
     names = set(lapack.__doc__.split())
     ignore_list = {
-        'absolute_import', 'clapack', 'division', 'find_best_lapack_type',
-        'flapack', 'print_function', 'HAS_ILP64',
+        "absolute_import",
+        "clapack",
+        "division",
+        "find_best_lapack_type",
+        "flapack",
+        "print_function",
+        "HAS_ILP64",
+        "np",
     }
     missing = list()
     for name in dir(lapack):
@@ -600,7 +606,7 @@ class TestTbtrs:
         elif trans == 'T':
             assert_allclose(a.T @ x, b, rtol=5e-5)
         elif trans == 'C':
-            assert_allclose(a.H @ x, b, rtol=5e-5)
+            assert_allclose(a.T.conjugate() @ x, b, rtol=5e-5)
         else:
             raise ValueError('Invalid trans argument')
 
@@ -643,6 +649,47 @@ class TestTbtrs:
         b = np.ones((ldb, nrhs), dtype=float)
         tbtrs = get_lapack_funcs('tbtrs', dtype=float)
         assert_raises(Exception, tbtrs, ab, b)
+
+
+
+@pytest.mark.parametrize('dtype', DTYPES)
+@pytest.mark.parametrize('norm', ['I', '1', 'O'])
+@pytest.mark.parametrize('uplo', ['U', 'L'])
+@pytest.mark.parametrize('diag', ['N', 'U'])
+@pytest.mark.parametrize('n', [3, 10])
+def test_trcon(dtype, norm, uplo, diag, n):
+    # Simple way to get deterministic (unlike `hash`) integer seed based on arguments
+    random.seed(f"{dtype}{norm}{uplo}{diag}{n}")
+    rng = np.random.default_rng(random.randint(0, 9999999999999))
+
+    A = rng.random(size=(n, n)) + rng.random(size=(n, n))*1j
+    # make the condition numbers more interesting
+    offset = rng.permuted(np.logspace(0, rng.integers(0, 10), n))
+    A += offset
+    A = A.real if np.issubdtype(dtype, np.floating) else A
+    A = np.triu(A) if uplo == 'U' else np.tril(A)
+    if diag == 'U':
+        A /= np.diag(A)[:, np.newaxis]
+    A = A.astype(dtype)
+
+    trcon = get_lapack_funcs('trcon', (A,))
+    res, _ = trcon(A, norm=norm, uplo=uplo, diag=diag)
+
+    if norm == 'I':
+        norm_A = np.linalg.norm(A, ord=np.inf)
+        norm_inv_A = np.linalg.norm(np.linalg.inv(A), ord=np.inf)
+        ref = 1 / (norm_A * norm_inv_A)
+    else:
+        anorm = np.abs(A).sum(axis=0).max()
+        gecon, getrf = get_lapack_funcs(('gecon', 'getrf'), (A,))
+        lu, ipvt, info = getrf(A)
+        ref, _ = gecon(lu, anorm, norm=norm)
+
+    # This is an estimate of reciprocal condition number; we just need order of
+    # magnitude. In testing, we observed that much smaller rtol is OK in almost
+    # all cases... but sometimes it isn't.
+    rtol = 1  # np.finfo(dtype).eps**0.75
+    assert_allclose(res, ref, rtol=rtol)
 
 
 def test_lartg():
@@ -2071,16 +2118,15 @@ def test_gttrf_gttrs(dtype):
         gttrf(dl, d, du[:-1])
 
     # test that matrix of size n=2 raises exception
-    with assert_raises(Exception):
+    with assert_raises(ValueError):
         gttrf(dl[0], d[:1], du[0])
 
     # test that singular (row of all zeroes) matrix fails via info
     du[0] = 0
     d[0] = 0
     __dl, __d, __du, _du2, _ipiv, _info = gttrf(dl, d, du)
-    np.testing.assert_(__d[info - 1] == 0,
-                       "?gttrf: _d[info-1] is {}, not the illegal value :0."
-                       .format(__d[info - 1]))
+    np.testing.assert_(__d[info - 1] == 0, (f"?gttrf: _d[info-1] is {__d[info - 1]},"
+                                            " not the illegal value :0."))
 
 
 @pytest.mark.parametrize("du, d, dl, du_exp, d_exp, du2_exp, ipiv_exp, b, x",
@@ -2144,6 +2190,34 @@ def test_gttrf_gttrs_NAG_f07cdf_f07cef_f07crf_f07csf(du, d, dl, du_exp, d_exp,
     x_gttrs, info = gttrs(_dl, _d, _du, du2, ipiv, b)
 
     assert_allclose(x_gttrs, x)
+
+
+@pytest.mark.parametrize('dtype', DTYPES)
+@pytest.mark.parametrize('norm', ['1', 'I', 'O'])
+@pytest.mark.parametrize('n', [3, 10])
+def test_gtcon(dtype, norm, n):
+    rng = np.random.default_rng(23498324)
+
+    d = rng.random(n) + rng.random(n)*1j
+    dl = rng.random(n - 1) + rng.random(n - 1)*1j
+    du = rng.random(n - 1) + rng.random(n - 1)*1j
+    A = np.diag(d) + np.diag(dl, -1) + np.diag(du, 1)
+    if np.issubdtype(dtype, np.floating):
+        A, d, dl, du = A.real, d.real, dl.real, du.real
+    A, d, dl, du = A.astype(dtype), d.astype(dtype), dl.astype(dtype), du.astype(dtype)
+
+    anorm = np.abs(A).sum(axis=0).max()
+
+    gttrf, gtcon = get_lapack_funcs(('gttrf', 'gtcon'), (A,))
+    dl, d, du, du2, ipiv, info = gttrf(dl, d, du)
+    res, _ = gtcon(dl, d, du, du2, ipiv, anorm, norm=norm)
+
+    gecon, getrf = get_lapack_funcs(('gecon', 'getrf'), (A,))
+    lu, ipvt, info = getrf(A)
+    ref, _ = gecon(lu, anorm, norm=norm)
+
+    rtol = np.finfo(dtype).eps**0.75
+    assert_allclose(res, ref, rtol=rtol)
 
 
 @pytest.mark.parametrize('dtype', DTYPES)
@@ -2629,11 +2703,11 @@ def test_gtsvx(dtype, trans_bool, fact):
     assert_(hasattr(rcond, "__len__") is not True,
             f"rcond should be scalar but is {rcond}")
     # ferr should be length of # of cols in x
-    assert_(ferr.shape[0] == b.shape[1], "ferr.shape is {} but should be {},"
-            .format(ferr.shape[0], b.shape[1]))
+    assert_(ferr.shape[0] == b.shape[1], (f"ferr.shape is {ferr.shape[0]} but should"
+                                          f" be {b.shape[1]}"))
     # berr should be length of # of cols in x
-    assert_(berr.shape[0] == b.shape[1], "berr.shape is {} but should be {},"
-            .format(berr.shape[0], b.shape[1]))
+    assert_(berr.shape[0] == b.shape[1], (f"berr.shape is {berr.shape[0]} but should"
+                                          f" be {b.shape[1]}"))
 
 
 @pytest.mark.parametrize("dtype", DTYPES)
@@ -2773,8 +2847,8 @@ def test_gtsvx_NAG(du, d, dl, b, x):
                                                + REAL_DTYPES))
 @pytest.mark.parametrize("fact,df_de_lambda",
                          [("F",
-                           lambda d, e:get_lapack_funcs('pttrf',
-                                                        dtype=e.dtype)(d, e)),
+                           lambda d, e: get_lapack_funcs('pttrf',
+                                                         dtype=e.dtype)(d, e)),
                           ("N", lambda d, e: (None, None, None))])
 def test_ptsvx(dtype, realtype, fact, df_de_lambda):
     '''
@@ -2821,19 +2895,19 @@ def test_ptsvx(dtype, realtype, fact, df_de_lambda):
     assert not hasattr(rcond, "__len__"), \
         f"rcond should be scalar but is {rcond}"
     # ferr should be length of # of cols in x
-    assert_(ferr.shape == (2,), "ferr.shape is {} but should be ({},)"
-            .format(ferr.shape, x_soln.shape[1]))
+    assert_(ferr.shape == (2,), (f"ferr.shape is {ferr.shape} but should be "
+                                 "({x_soln.shape[1]},)"))
     # berr should be length of # of cols in x
-    assert_(berr.shape == (2,), "berr.shape is {} but should be ({},)"
-            .format(berr.shape, x_soln.shape[1]))
+    assert_(berr.shape == (2,), (f"berr.shape is {berr.shape} but should be "
+                                 "({x_soln.shape[1]},)"))
 
 
 @pytest.mark.parametrize("dtype,realtype", zip(DTYPES, REAL_DTYPES
                                                + REAL_DTYPES))
 @pytest.mark.parametrize("fact,df_de_lambda",
                          [("F",
-                           lambda d, e:get_lapack_funcs('pttrf',
-                                                        dtype=e.dtype)(d, e)),
+                           lambda d, e: get_lapack_funcs('pttrf',
+                                                         dtype=e.dtype)(d, e)),
                           ("N", lambda d, e: (None, None, None))])
 def test_ptsvx_error_raise_errors(dtype, realtype, fact, df_de_lambda):
     seed(42)
@@ -2859,8 +2933,8 @@ def test_ptsvx_error_raise_errors(dtype, realtype, fact, df_de_lambda):
                                                + REAL_DTYPES))
 @pytest.mark.parametrize("fact,df_de_lambda",
                          [("F",
-                           lambda d, e:get_lapack_funcs('pttrf',
-                                                        dtype=e.dtype)(d, e)),
+                           lambda d, e: get_lapack_funcs('pttrf',
+                                                         dtype=e.dtype)(d, e)),
                           ("N", lambda d, e: (None, None, None))])
 def test_ptsvx_non_SPD_singular(dtype, realtype, fact, df_de_lambda):
     seed(42)
@@ -3056,14 +3130,6 @@ def test_trexc_NAG(t, ifst, ilst, expect):
 
 @pytest.mark.parametrize('dtype', DTYPES)
 def test_gges_tgexc(dtype):
-    if (
-        dtype == np.float32 and
-        sys.platform == 'darwin' and
-        blas_provider == 'openblas' and
-        blas_version < '0.3.21.dev'
-    ):
-        pytest.xfail("gges[float32] broken for OpenBLAS on macOS, see gh-16949")
-
     seed(1234)
     atol = np.finfo(dtype).eps*100
 
@@ -3233,14 +3299,6 @@ def test_trsen_NAG(t, q, select, expect, expect_s, expect_sep):
 
 @pytest.mark.parametrize('dtype', DTYPES)
 def test_gges_tgsen(dtype):
-    if (
-        dtype == np.float32 and
-        sys.platform == 'darwin' and
-        blas_provider == 'openblas' and
-        blas_version < '0.3.21.dev'
-    ):
-        pytest.xfail("gges[float32] broken for OpenBLAS on macOS, see gh-16949")
-
     seed(1234)
     atol = np.finfo(dtype).eps*100
 
@@ -3397,3 +3455,50 @@ def test_tgsyl(dtype, trans, ijob):
                         err_msg='lhs1 and rhs1 do not match')
         assert_allclose(lhs2, rhs2, atol=atol, rtol=0.,
                         err_msg='lhs2 and rhs2 do not match')
+
+
+@pytest.mark.parametrize('mtype', ['sy', 'he'])  # matrix type
+@pytest.mark.parametrize('dtype', DTYPES)
+@pytest.mark.parametrize('lower', (0, 1))
+def test_sy_hetrs(mtype, dtype, lower):
+    if mtype == 'he' and dtype in REAL_DTYPES:
+        pytest.skip("hetrs not for real dtypes.")
+    rng = np.random.default_rng(1723059677121834)
+    n, nrhs = 20, 5
+    if dtype in COMPLEX_DTYPES:
+        A = (rng.uniform(size=(n, n)) + rng.uniform(size=(n, n))*1j).astype(dtype)
+    else:
+        A = rng.uniform(size=(n, n)).astype(dtype)
+
+    A = A + A.T if mtype == 'sy' else A + A.conj().T
+    b = rng.uniform(size=(n, nrhs)).astype(dtype)
+    names = f'{mtype}trf', f'{mtype}trf_lwork', f'{mtype}trs'
+    trf, trf_lwork, trs = get_lapack_funcs(names, dtype=dtype)
+    lwork = trf_lwork(n, lower=lower)
+    ldu, ipiv, info = trf(A, lwork=lwork)
+    assert info == 0
+    x, info = trs(a=ldu, ipiv=ipiv, b=b)
+    assert info == 0
+    eps = np.finfo(dtype).eps
+    assert_allclose(A@x, b, atol=100*n*eps)
+
+
+@pytest.mark.parametrize('norm', list('Mm1OoIiFfEe'))
+@pytest.mark.parametrize('uplo, m, n', [('U', 5, 10), ('U', 10, 10),
+                                        ('L', 10, 5), ('L', 10, 10)])
+@pytest.mark.parametrize('diag', ['N', 'U'])
+@pytest.mark.parametrize('dtype', DTYPES)
+def test_lantr(norm, uplo, m, n, diag, dtype):
+    rng = np.random.default_rng(98426598246982456)
+    A = rng.random(size=(m, n)).astype(dtype)
+    lantr, lange = get_lapack_funcs(('lantr', 'lange'), (A,))
+    res = lantr(norm, A, uplo=uplo, diag=diag)
+
+    # now modify the matrix according to assumptions made by `lantr`
+    A = np.triu(A) if uplo == 'U' else np.tril(A)
+    if diag == 'U':
+        i = np.arange(min(m, n))
+        A[i, i] = 1
+    ref = lange(norm, A)
+
+    assert_allclose(res, ref, rtol=2e-6)

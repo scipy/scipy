@@ -14,42 +14,14 @@ py3.extension_module('_direct',
   subdir: 'scipy/optimize'
 )
 
-minpack_lib = static_library('minpack',
-  [
-    'minpack/chkder.f',
-    'minpack/dogleg.f',
-    'minpack/dpmpar.f',
-    'minpack/enorm.f',
-    'minpack/fdjac1.f',
-    'minpack/fdjac2.f',
-    'minpack/hybrd.f',
-    'minpack/hybrd1.f',
-    'minpack/hybrj.f',
-    'minpack/hybrj1.f',
-    'minpack/lmder.f',
-    'minpack/lmder1.f',
-    'minpack/lmdif.f',
-    'minpack/lmdif1.f',
-    'minpack/lmpar.f',
-    'minpack/lmstr.f',
-    'minpack/lmstr1.f',
-    'minpack/qform.f',
-    'minpack/qrfac.f',
-    'minpack/qrsolv.f',
-    'minpack/r1mpyq.f',
-    'minpack/r1updt.f',
-    'minpack/rwupdt.f'
-  ]
-)
-
 py3.extension_module('_minpack',
-  ['minpack.h', '__minpack.h', '_minpackmodule.c'],
-  link_with: minpack_lib,
+  [
+    '__minpack.h',
+    '__minpack.c',
+  ],
   include_directories: '../_lib/src',
   dependencies: np_dep,
-  link_args: version_link_args,
   install: true,
-  link_language: 'fortran',
   subdir: 'scipy/optimize'
 )
 
@@ -58,6 +30,7 @@ rectangular_lsap = static_library('rectangular_lsap',
     'rectangular_lsap/rectangular_lsap.h',
     'rectangular_lsap/rectangular_lsap.cpp'
   ],
+  gnu_symbol_visibility: 'hidden',
 )
 
 py3.extension_module('_lsap',
@@ -77,7 +50,8 @@ rootfind_lib = static_library('rootfind',
     'Zeros/brentq.c',
     'Zeros/ridder.c',
     'Zeros/zeros.h'
-  ]
+  ],
+  gnu_symbol_visibility: 'hidden',
 )
 
 py3.extension_module('_zeros',
@@ -89,22 +63,16 @@ py3.extension_module('_zeros',
   subdir: 'scipy/optimize'
 )
 
-lbfgsb_module = custom_target('lbfgsb_module',
-  output: ['_lbfgsb-f2pywrappers.f', '_lbfgsbmodule.c'],
-  input: 'lbfgsb_src/lbfgsb.pyf',
-  command: [generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
-)
-
 py3.extension_module('_lbfgsb',
   [
     'lbfgsb_src/lbfgsb.f',
     'lbfgsb_src/linpack.f',
     'lbfgsb_src/timer.f',
-    lbfgsb_module,
+    f2py_gen.process('lbfgsb_src/lbfgsb.pyf'),
   ],
   fortran_args: fortran_ignore_warnings,
   link_args: version_link_args,
-  dependencies: [lapack, blas, fortranobject_dep],
+  dependencies: [lapack_dep, blas_dep, fortranobject_dep],
   override_options: ['b_lto=false'],
   install: true,
   link_language: 'fortran',
@@ -123,14 +91,8 @@ py3.extension_module('_moduleTNC',
   subdir: 'scipy/optimize'
 )
 
-cobyla_module = custom_target('cobyla_module',
-  output: ['_cobylamodule.c'],
-  input: 'cobyla/cobyla.pyf',
-  command: [generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
-)
-
 py3.extension_module('_cobyla',
-  [cobyla_module, 'cobyla/cobyla2.f', 'cobyla/trstlp.f'],
+  [f2py_gen.process('cobyla/cobyla.pyf'), 'cobyla/cobyla2.f', 'cobyla/trstlp.f'],
   c_args: [Wno_unused_variable],
   fortran_args: fortran_ignore_warnings,
   link_args: version_link_args,
@@ -140,31 +102,8 @@ py3.extension_module('_cobyla',
   subdir: 'scipy/optimize'
 )
 
-minpack2_module = custom_target('minpack2_module',
-  output: ['_minpack2module.c'],
-  input: 'minpack2/minpack2.pyf',
-  command: [generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
-)
-
-py3.extension_module('_minpack2',
-  [minpack2_module, 'minpack2/dcsrch.f', 'minpack2/dcstep.f'],
-  fortran_args: fortran_ignore_warnings,
-  link_args: version_link_args,
-  dependencies: [fortranobject_dep],
-  override_options: ['b_lto=false'],
-  install: true,
-  link_language: 'fortran',
-  subdir: 'scipy/optimize'
-)
-
-slsqp_module = custom_target('slsqp_module',
-  output: ['_slsqpmodule.c'],
-  input: 'slsqp/slsqp.pyf',
-  command: [generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
-)
-
 py3.extension_module('_slsqp',
-  [slsqp_module, 'slsqp/slsqp_optmz.f'],
+  [f2py_gen.process('slsqp/slsqp.pyf'), 'slsqp/slsqp_optmz.f'],
   fortran_args: fortran_ignore_warnings,
   link_args: version_link_args,
   dependencies: [fortranobject_dep],
@@ -224,6 +163,15 @@ py3.extension_module('_bglu_dense',
   subdir: 'scipy/optimize'
 )
 
+py3.extension_module('_cython_nnls',
+  opt_gen.process('_cython_nnls.pyx'),
+  c_args: cython_c_args,
+  dependencies: np_dep,
+  link_args: version_link_args,
+  install: true,
+  subdir: 'scipy/optimize'
+)
+
 subdir('_lsq')
 subdir('_trlib')
 subdir('_trustregion_constr')
@@ -243,13 +191,14 @@ py3.install_sources([
   '_bracket.py',
   '_chandrupatla.py',
   '_cobyla_py.py',
+  '_cobyqa_py.py',
   '_constraints.py',
   '_differentiable_functions.py',
   '_differentialevolution.py',
-  '_differentiate.py',
   '_direct_py.py',
   '_dcsrch.py',
   '_dual_annealing.py',
+  '_elementwise.py',
   '_hessian_update_strategy.py',
   '_isotonic.py',
   '_lbfgsb_py.py',
@@ -285,6 +234,7 @@ py3.install_sources([
   '_zeros_py.py',
   'cobyla.py',
   'cython_optimize.pxd',
+  'elementwise.py',
   'lbfgsb.py',
   'linesearch.py',
   'minpack.py',

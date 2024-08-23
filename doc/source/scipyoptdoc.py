@@ -30,7 +30,7 @@ if sphinx.__version__ < '1.0.1':
     raise RuntimeError("Sphinx 1.0.1 or newer is required")
 
 from numpydoc.numpydoc import mangle_docstrings
-from docutils.statemachine import ViewList
+from docutils.statemachine import StringList
 from sphinx.domains.python import PythonDomain
 from scipy._lib._util import getfullargspec_no_self
 
@@ -149,7 +149,8 @@ def wrap_mangling_directive(base_directive):
                     new_lines.append(':Options:')
                 else:
                     new_lines.append(line)
-            self.content = ViewList(new_lines, self.content.parent)
+
+            self.content = StringList(new_lines, parent=self.content.parent)
             return base_directive.run(self)
 
         option_spec = dict(base_directive.option_spec)
