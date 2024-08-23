@@ -39,7 +39,7 @@ def lombscargle(
 
     When *normalize* is False (or "power") (default) the computed periodogram
     is unnormalized, it takes the value ``(A**2) * N/4`` for a harmonic
-    signal with amplitude A for sufficiently large N.
+    signal with amplitude A for sufficiently large N. Where N is the length of x or y.
 
     When *normalize* is True (or "normalize") the computed periodogram is normalized
     by the residuals of the data around a constant reference model (at zero).
@@ -56,16 +56,20 @@ def lombscargle(
     y : array_like
         Measurement values.
     freqs : array_like
-        Angular frequencies for output periodogram. Frequencies must be nonzero.
+        Angular frequencies for output periodogram. Frequencies must be nonzero. In
+        general, frequencies should be greater than or equal to the minimum length
+        necessary to represent a full cycle in the given sample times.
     precenter : bool, optional
-        Legacy argument, that is no longer necessary.
+        Pre-center measurement values by subtracting the mean. Ignored if
+        `floating_mean` is True.
     normalize : bool | str, optional
         Compute normalized or complex (amplitude + phase) periodogram.
+        Valid options are: False/"power", True/"normalize", or "amplitude".
     weights : array_like, optional
         Weights for each sample. Weights must be nonnegative.
     floating_mean : bool, optional
-        Calculate the best-fit c (offset) for each frequency independently (True), 
-        or assume c = 0 for all frequencies (False).
+        Determines internally an offset or each frequency independently, if set.
+        Else an offset of `0` is assumed.
 
     Returns
     -------
@@ -77,6 +81,8 @@ def lombscargle(
     ValueError
         If any of the input arrays x, y, freqs, or weights are not 1D. Or, if the input 
         arrays x, y, and weights do not have the same shape.
+    TypeError
+        If any of the input arrays x, y, freqs, or weights are a complex dtype.
     ZeroDivisionError
         If the freqs array contains the value 0.
     ZeroDivisionError
@@ -90,18 +96,18 @@ def lombscargle(
 
     See Also
     --------
-    istft: Inverse Short Time Fourier Transform
-    check_COLA: Check whether the Constant OverLap Add (COLA) constraint is met
+    periodogram: Power spectral density using a periodogram
     welch: Power spectral density by Welch's method
-    spectrogram: Spectrogram by Welch's method
     csd: Cross spectral density by Welch's method
 
     Notes
     -----
-    The algorithm used will always account for any unknown c (offset), unless
-    floating_mean = False. Therefore, the `precenter` parameter, which performed the 
-    operation ``y - y.mean()`` is no longer necessary. However, it is retained to 
-    support backwards compatibility.
+    The algorithm used will account for any unknown offset by default, unless
+    `floating_mean` is False. The `precenter` parameter is ignored if `floating_mean`
+    is True (default), but otherwise performs the operation ``y -= y.mean()``. In 
+    general, for any frequency in `freqs` that is sufficiently below 
+    ``(2*pi)/(x.max() - x.min())``, the predicted amplitude (when the `normalize`
+    parameter is "amplitude") will tend towards infinity.
     
     References
     ----------
@@ -154,6 +160,7 @@ def lombscargle(
     >>> fig, (ax_t, ax_p, ax_n, ax_a) = plt.subplots(4, 1, figsize=(5, 5))
     >>> ax_t.plot(x, y, 'b+')
     >>> ax_t.set_xlabel('Time [s]')
+    >>> ax_t.set_ylabel('Amplitude')
 
     Then plot the periodogram for each of the normalize options:
 
@@ -178,7 +185,7 @@ def lombscargle(
     if weights is None:
         weights = np.ones_like(x, dtype=np.float64)
 
-    # validate input shapes
+    # validate input shapes and if they are real dtypes
     if x.ndim != 1:
         raise ValueError("x array is not 1D")
     if y.ndim != 1:
@@ -189,6 +196,14 @@ def lombscargle(
         raise ValueError("weights array is not 1D")
     if x.shape != y.shape or x.shape != weights.shape:
         raise ValueError("Input arrays do not have the same shape.")
+    if not np.isrealobj(x):
+        raise TypeError("x array is a complex dtype")
+    if not np.isrealobj(y):
+        raise TypeError("y array is a complex dtype")
+    if not np.isrealobj(freqs):
+        raise TypeError("freqs array is a complex dtype")
+    if not np.isrealobj(weights):
+        raise TypeError("weights array is a complex dtype")
 
     # check for any freq == 0
     if np.any(freqs == 0):
@@ -218,15 +233,6 @@ def lombscargle(
             "True (or 'normalize'), "
             "or 'amplitude'."
         )
-    
-    # for normalize == 'amplitude', check if freq_min < freq_critical
-    if (normalize == 'amplitude'):
-        freq_critical = 2*np.pi/(x.max() - x.min())  # rad/sec
-        if (freqs.min() < freq_critical):
-            message = (f"Frequencies below {freq_critical:.3f} rad/sec are longer than "
-                       "the provided time range, therefore their estimated amplitudes "
-                       "will tend towards infinity.")
-            warnings.warn(message, stacklevel=2)
 
     # convert inputs to contiguous arrays with high precision
     x = np.ascontiguousarray(x, dtype=np.float64)
@@ -247,6 +253,10 @@ def lombscargle(
     a = np.empty_like(freqs)
     b = np.empty_like(freqs)
 
+    # perform precenter, only when called for and floating_mean is False
+    if precenter and (not floating_mean):
+        y -= y.mean()
+
     # calculate the single sum that does not depend on the frequency
     Y_sum = (weights * y).sum()
 
@@ -266,7 +276,7 @@ def lombscargle(
         CS = (wcoswt * sinwt).sum()
         
         if floating_mean:
-            # calculate best-fit c (offset) for each frequency independently (default)
+            # calculate best-fit offset for each frequency independently (default)
             C_sum = wcoswt.sum()
             S_sum = wsinwt.sum()
             YC -= Y_sum * C_sum
@@ -281,7 +291,7 @@ def lombscargle(
         # where: y(w) = a*cos(w) + b*sin(w) + c
         a[i] = (YC * SS - YS * CS) / D
         b[i] = (YS * CC - YC * CS) / D
-        #  c = Y_sum - a * C_sum - b * S_sum  # not useful to return
+        #  c = Y_sum - a * C_sum - b * S_sum  # offset is not useful to return
 
         # store final value as power in (y units)^2
         pgram[i] = 2.0 * (a[i] * YC + b[i] * YS)
