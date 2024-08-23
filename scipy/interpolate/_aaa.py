@@ -238,6 +238,7 @@ class AAA:
     >>> with warnings.catch_warnings():
     ...     warnings.simplefilter('ignore', RuntimeWarning)
     ...     r.clean_up()
+    4
     >>> mask = np.abs(r.residues()) < 1e-13
     >>> axs[1].plot(r.poles().real[~mask], r.poles().imag[~mask], '.')
     >>> axs[1].plot(r.poles().real[mask], r.poles().imag[mask], 'r.')
