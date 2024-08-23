@@ -27,6 +27,7 @@ from scipy.integrate import (IntegrationWarning, quad, trapezoid,
                              cumulative_trapezoid)
 import scipy.stats as stats
 from scipy.stats._distn_infrastructure import argsreduce
+from scipy.stats._constants import _XMAX
 import scipy.stats.distributions
 
 from scipy.special import xlogy, polygamma, entr
@@ -508,6 +509,31 @@ class TestBradford:
 
 
 class TestCauchy:
+
+    def test_pdf_no_overflow_warning(self):
+        # The argument is large enough that x**2 will overflow to
+        # infinity and 1/(1 + x**2) will be 0.  This should not
+        # trigger a warning.
+        p = stats.cauchy.pdf(1e200)
+        assert p == 0.0
+
+    # Reference values were computed with mpmath.
+    @pytest.mark.parametrize(
+        'x, ref',
+        [(0.0, -1.1447298858494002),
+         (5e-324, -1.1447298858494002),
+         (1e-34, -1.1447298858494002),
+         (2.2e-16, -1.1447298858494002),
+         (2e-8, -1.1447298858494006),
+         (5e-4, -1.144730135849369),
+         (0.1, -1.1546802167025683),
+         (1.5, -2.3233848821910463),
+         (2e18, -85.42408759475494),
+         (1e200, -922.1787670834676),
+         (_XMAX, -1420.7101556726175)])
+    def test_logpdf(self, x, ref):
+        logp = stats.cauchy.logpdf([x, -x])
+        assert_allclose(logp, [ref, ref], rtol=1e-15)
 
     # Reference values were computed with mpmath.
     @pytest.mark.parametrize(
@@ -8031,6 +8057,71 @@ class TestStudentizedRange:
         assert p >= 0
 
 
+class TestTukeyLambda:
+
+    @pytest.mark.parametrize(
+        'lam',
+        [0.0, -1.0, -2.0, np.array([[-1.0], [0.0], [-2.0]])]
+    )
+    def test_pdf_nonpositive_lambda(self, lam):
+        # Make sure that Tukey-Lambda distribution correctly handles
+        # non-positive lambdas.
+        # This is a crude test--it just checks that all the PDF values
+        # are finite and greater than 0.
+        x = np.linspace(-5.0, 5.0, 101)
+        p = stats.tukeylambda.pdf(x, lam)
+        assert np.isfinite(p).all()
+        assert (p > 0.0).all()
+
+    def test_pdf_mixed_lambda(self):
+        # Another crude test of the behavior of the PDF method.
+        x = np.linspace(-5.0, 5.0, 101)
+        lam = np.array([[-1.0], [0.0], [2.0]])
+        p = stats.tukeylambda.pdf(x, lam)
+        assert np.isfinite(p).all()
+        # For p[0] and p[1], where lam <= 0, the support is (-inf, inf),
+        # so the PDF should be nonzero everywhere (assuming we aren't so
+        # far in the tails that we get underflow).
+        assert (p[:2] > 0.0).all()
+        # For p[2], where lam=2.0, the support is [-0.5, 0.5], so in pdf(x),
+        # some values should be positive and some should be 0.
+        assert (p[2] > 0.0).any()
+        assert (p[2] == 0.0).any()
+
+    def test_support(self):
+        lam = np.array([-1.75, -0.5, 0.0, 0.25, 0.5, 2.0])
+        a, b = stats.tukeylambda.support(lam)
+        expected_b = np.array([np.inf, np.inf, np.inf, 4, 2, 0.5])
+        assert_equal(b, expected_b)
+        assert_equal(a, -expected_b)
+
+    def test_pdf_support_boundary(self):
+        # Verify that tukeylambda.pdf() doesn't generate a
+        # warning when evaluated at the bounds of the support.
+        # For lam=0.5, the support is (-2, 2).
+        p = stats.tukeylambda.pdf([-2.0, 2.0], 0.5)
+        assert_equal(p, [0.0, 0.0])
+
+    def test_tukeylambda_stats_ticket_1545(self):
+        # Some test for the variance and kurtosis of the Tukey Lambda distr.
+        # See test_tukeylamdba_stats.py for more tests.
+
+        mv = stats.tukeylambda.stats(0, moments='mvsk')
+        # Known exact values:
+        expected = [0, np.pi**2/3, 0, 1.2]
+        assert_almost_equal(mv, expected, decimal=10)
+
+        mv = stats.tukeylambda.stats(3.13, moments='mvsk')
+        # 'expected' computed with mpmath.
+        expected = [0, 0.0269220858861465102, 0, -0.898062386219224104]
+        assert_almost_equal(mv, expected, decimal=10)
+
+        mv = stats.tukeylambda.stats(0.14, moments='mvsk')
+        # 'expected' computed with mpmath.
+        expected = [0, 2.11029702221450250, 0, -0.02708377353223019456]
+        assert_almost_equal(mv, expected, decimal=10)
+
+
 def test_540_567():
     # test for nan returned in tickets 540, 567
     assert_almost_equal(stats.norm.cdf(-1.7624320982), 0.03899815971089126,
@@ -8046,27 +8137,6 @@ def test_540_567():
 def test_regression_ticket_1326():
     # adjust to avoid nan with 0*log(0)
     assert_almost_equal(stats.chi2.pdf(0.0, 2), 0.5, 14)
-
-
-def test_regression_tukey_lambda():
-    # Make sure that Tukey-Lambda distribution correctly handles
-    # non-positive lambdas.
-    x = np.linspace(-5.0, 5.0, 101)
-
-    with np.errstate(divide='ignore'):
-        for lam in [0.0, -1.0, -2.0, np.array([[-1.0], [0.0], [-2.0]])]:
-            p = stats.tukeylambda.pdf(x, lam)
-            assert_((p != 0.0).all())
-            assert_(~np.isnan(p).all())
-
-        lam = np.array([[-1.0], [0.0], [2.0]])
-        p = stats.tukeylambda.pdf(x, lam)
-
-    assert_(~np.isnan(p).all())
-    assert_((p[0] != 0.0).all())
-    assert_((p[1] != 0.0).all())
-    assert_((p[2] != 0.0).any())
-    assert_((p[2] == 0.0).any())
 
 
 @pytest.mark.skipif(DOCSTRINGS_STRIPPED, reason="docstrings stripped")
@@ -8141,26 +8211,6 @@ def test_gh_pr_4806():
         loc, scale = stats.cauchy.fit(x + offset)
         assert_allclose(loc, offset, atol=1.0)
         assert_allclose(scale, 0.6, atol=1.0)
-
-
-def test_tukeylambda_stats_ticket_1545():
-    # Some test for the variance and kurtosis of the Tukey Lambda distr.
-    # See test_tukeylamdba_stats.py for more tests.
-
-    mv = stats.tukeylambda.stats(0, moments='mvsk')
-    # Known exact values:
-    expected = [0, np.pi**2/3, 0, 1.2]
-    assert_almost_equal(mv, expected, decimal=10)
-
-    mv = stats.tukeylambda.stats(3.13, moments='mvsk')
-    # 'expected' computed with mpmath.
-    expected = [0, 0.0269220858861465102, 0, -0.898062386219224104]
-    assert_almost_equal(mv, expected, decimal=10)
-
-    mv = stats.tukeylambda.stats(0.14, moments='mvsk')
-    # 'expected' computed with mpmath.
-    expected = [0, 2.11029702221450250, 0, -0.02708377353223019456]
-    assert_almost_equal(mv, expected, decimal=10)
 
 
 def test_poisson_logpmf_ticket_1436():

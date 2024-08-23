@@ -1466,6 +1466,11 @@ def describe(a, axis=0, ddof=1, bias=True, nan_policy='propagate'):
         normalized so that it is zero for the normal distribution.  No
         degrees of freedom are used.
 
+    Raises
+    ------
+    ValueError
+        If size of `a` is 0.
+
     See Also
     --------
     skew, kurtosis
@@ -2472,6 +2477,12 @@ def obrientransform(*samples):
         arrays.  If the arrays given are all 1-D of the same length,
         the return value is a 2-D array; otherwise it is a 1-D array
         of type object, with each element being an ndarray.
+
+    Raises
+    ------
+    ValueError
+        If the mean of the transformed data is not equal to the original
+        variance, indicating a lack of convergence in the O'Brien transform.
 
     References
     ----------
@@ -4321,6 +4332,11 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
             resample, and this is typical for very small samples (~6
             observations).
 
+    Raises
+    ------
+    ValueError
+        If `x` and `y` do not have length at least 2.
+
     Warns
     -----
     `~scipy.stats.ConstantInputWarning`
@@ -4684,6 +4700,11 @@ def fisher_exact(table, alternative='two-sided'):
             The probability under the null hypothesis of obtaining a
             table at least as extreme as the one that was actually observed.
 
+    Raises
+    ------
+    ValueError
+        If `table` is not a 2x2 contingency table with non-negative entries.
+
     See Also
     --------
     chi2_contingency : Chi-square test of independence of variables in a
@@ -4948,6 +4969,13 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate',
             is that two samples have no ordinal correlation. See
             `alternative` above for alternative hypotheses. `pvalue` has the
             same shape as `statistic`.
+
+    Raises
+    ------
+    ValueError
+        If `axis` is not 0, 1 or None, or if the number of dimensions of `a`
+        is greater than 2, or if `b` is None and the number of dimensions of
+        `a` is less than 2.
 
     Warns
     -----
@@ -5289,6 +5317,12 @@ def kendalltau(x, y, *, nan_policy='propagate',
         pvalue : float
            The p-value for a hypothesis test whose null hypothesis is
            an absence of association, tau = 0.
+
+    Raises
+    ------
+    ValueError
+        If `nan_policy` is 'omit' and `variant` is not 'b' or
+        if `method` is 'exact' and there are ties between `x` and `y`.
 
     See Also
     --------

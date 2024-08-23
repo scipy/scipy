@@ -221,3 +221,17 @@ class TestAAA:
         z = np.exp(np.linspace(-0.5, 0.5 + 15j*np.pi, num=1000))
         r = AAA(z, np.tan(np.pi*z/2))
         assert_allclose(np.sort(np.abs(r.poles()))[:4], [1, 1, 3, 3], rtol=9e-7)
+    
+    def test_spiral_cleanup(self):
+        z = np.exp(np.linspace(-0.5, 0.5 + 15j*np.pi, num=1000))
+        # here we set `rtol=0` to force froissart doublets, without cleanup there
+        # are many spurious poles
+        with pytest.warns(RuntimeWarning):
+            r = AAA(z, np.tan(np.pi*z/2), rtol=0, max_terms=60, clean_up=False)
+        n_spurious = np.sum(np.abs(r.residues()) < 1e-14)
+        with pytest.warns(RuntimeWarning):
+            assert r.clean_up() >= 1
+        # check there are less potentially spurious poles than before
+        assert np.sum(np.abs(r.residues()) < 1e-14) < n_spurious
+        # check accuracy
+        assert_allclose(r(z), np.tan(np.pi*z/2), atol=6e-12, rtol=3e-12)
