@@ -2,7 +2,7 @@ import pytest
 
 import scipy.constants as sc
 from scipy.conftest import array_api_compatible
-from scipy._lib._array_api import xp_assert_equal, xp_assert_close
+from scipy._lib._array_api_no_0d import xp_assert_equal, xp_assert_close
 from numpy.testing import assert_allclose
 
 
@@ -13,7 +13,7 @@ skip_xp_backends = pytest.mark.skip_xp_backends
 class TestConvertTemperature:
     def test_convert_temperature(self, xp):
         xp_assert_equal(sc.convert_temperature(xp.asarray(32.), 'f', 'Celsius'),
-                        xp.asarray(0.0)[()])
+                        xp.asarray(0.0))
         xp_assert_equal(sc.convert_temperature(xp.asarray([0., 0.]),
                                                'celsius', 'Kelvin'),
                         xp.asarray([273.15, 273.15]))

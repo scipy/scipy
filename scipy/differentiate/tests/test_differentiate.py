@@ -5,8 +5,8 @@ from numpy.testing import assert_allclose
 
 from scipy.conftest import array_api_compatible
 import scipy._lib._elementwise_iterative_method as eim
-from scipy._lib._array_api import (xp_assert_close, xp_assert_equal, xp_assert_less,
-                                   is_numpy, is_torch, array_namespace)
+from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal, xp_assert_less
+from scipy._lib._array_api import is_numpy, is_torch, array_namespace
 
 from scipy import stats, optimize, special
 from scipy.differentiate import differentiate, jacobian
@@ -30,7 +30,7 @@ class TestDifferentiate:
         default_dtype = xp.asarray(1.).dtype
         res = differentiate(self.f, xp.asarray(x, dtype=default_dtype))
         ref = xp.asarray(stats.norm().pdf(x), dtype=default_dtype)
-        xp_assert_close(res.df, ref[()])
+        xp_assert_close(res.df, ref)
         # This would be nice, but doesn't always work out. `error` is an
         # estimate, not a bound.
         if not is_torch(xp):
@@ -103,7 +103,7 @@ class TestDifferentiate:
             funcs = [lambda x: x - 2.5,  # converges
                      lambda x: xp.exp(x)*rng.random(),  # error increases
                      lambda x: xp.exp(x),  # reaches maxiter due to order=2
-                     lambda x: xp.full_like(x, xp.nan)[()]]  # stops due to NaN
+                     lambda x: xp.full_like(x, xp.nan)]  # stops due to NaN
             res = [funcs[int(j)](x) for x, j in zip(xs, xp.reshape(js, (-1,)))]
             return xp.stack(res)
         f.nit = 0
@@ -126,7 +126,7 @@ class TestDifferentiate:
             out = [x - 2.5,  # converges
                    xp.exp(x)*rng.random(),  # error increases
                    xp.exp(x),  # reaches maxiter due to order=2
-                   xp.full_like(x, xp.nan)[()]]  # stops due to NaN
+                   xp.full_like(x, xp.nan)]  # stops due to NaN
             return xp.stack(out)
 
         res = differentiate(f, xp.asarray(1, dtype=xp.float64),
@@ -286,7 +286,7 @@ class TestDifferentiate:
 
         # Test that dtypes are preserved
         dtype = getattr(xp, dtype)
-        x = xp.asarray(x, dtype=dtype)[()]
+        x = xp.asarray(x, dtype=dtype)
 
         def f(x):
             assert x.dtype == dtype
@@ -366,7 +366,7 @@ class TestDifferentiate:
         if not is_torch(xp):  # torch defaults to float32
             res = differentiate(f, xp.asarray(7), tolerances=dict(rtol=1e-10))
             assert res.success
-            xp_assert_close(res.df, xp.asarray(99*7.**98)[()])
+            xp_assert_close(res.df, xp.asarray(99*7.**98))
 
         # Test that if success is achieved in the correct number
         # of iterations if function is a polynomial. Ideally, all polynomials
@@ -384,7 +384,7 @@ class TestDifferentiate:
 
             res = differentiate(f, x, maxiter=1, order=max(1, n))
             xp_assert_close(res.df, ref, rtol=1e-15)
-            xp_assert_equal(res.error, xp.asarray(xp.nan, dtype=xp.float64)[()])
+            xp_assert_equal(res.error, xp.asarray(xp.nan, dtype=xp.float64))
 
             res = differentiate(f, x, order=max(1, n))
             assert res.success
@@ -396,7 +396,7 @@ class TestDifferentiate:
             return c*x - 1
 
         res = differentiate(f, xp.asarray(2), args=xp.asarray(3))
-        xp_assert_close(res.df, xp.asarray(3.)[()])
+        xp_assert_close(res.df, xp.asarray(3.))
 
     # no need to run a test on multiple backends if it's xfailed
     @pytest.mark.skip_xp_backends(np_only=True)

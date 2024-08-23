@@ -8,8 +8,8 @@ from numpy.testing import assert_allclose, assert_equal
 
 from scipy.conftest import array_api_compatible
 import scipy._lib._elementwise_iterative_method as eim
-from scipy._lib._array_api import (array_namespace, xp_assert_close, xp_assert_equal,
-                                   xp_size, xp_ravel, xp_copy)
+from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal
+from scipy._lib._array_api import array_namespace, xp_size, xp_ravel, xp_copy
 from scipy import special, stats
 from scipy.integrate import quad_vec, nsum
 from scipy.integrate._tanhsinh import _tanhsinh, _pair_cache
@@ -227,10 +227,10 @@ class TestTanhSinh:
         ref = xp.asarray(ref, dtype=dtype)
 
         res = _tanhsinh(norm_pdf, *limits)
-        xp_assert_close(res.integral, ref[()])
+        xp_assert_close(res.integral, ref)
 
         logres = _tanhsinh(norm_logpdf, *limits, log=True)
-        xp_assert_close(xp.exp(logres.integral), ref[()], check_dtype=False)
+        xp_assert_close(xp.exp(logres.integral), ref, check_dtype=False)
         # Transformation should not make the result complex unnecessarily
         xp_test = array_namespace(*limits)  # we need xp.isdtype
         assert (xp_test.isdtype(logres.integral.dtype, "real floating") if ref > 0
@@ -322,7 +322,7 @@ class TestTanhSinh:
             f.nit += 1
             funcs = [lambda x: xp.exp(-x**2),  # converges
                      lambda x: xp.exp(x),  # reaches maxiter due to order=2
-                     lambda x: xp.full_like(x, xp.nan)[()]]  # stops due to NaN
+                     lambda x: xp.full_like(x, xp.nan)]  # stops due to NaN
             res = []
             for i in range(xp_size(js)):
                 x = xs[i, ...]
@@ -343,7 +343,7 @@ class TestTanhSinh:
         def f(x):
             res = [xp.exp(-x[0]**2),  # converges
                    xp.exp(x[1]),  # reaches maxiter due to order=2
-                   xp.full_like(x[2], xp.nan)[()]]  # stops due to NaN
+                   xp.full_like(x[2], xp.nan)]  # stops due to NaN
             return xp.stack(res)
 
         a = xp.asarray([xp.inf] * 3)
@@ -396,8 +396,8 @@ class TestTanhSinh:
 
         # Keep things simpler by leaving tolerances fixed rather than
         # having to make them dtype-dependent
-        a = xp.asarray(0., dtype=xp.float64)[()]
-        b = xp.asarray(1., dtype=xp.float64)[()]
+        a = xp.asarray(0., dtype=xp.float64)
+        b = xp.asarray(1., dtype=xp.float64)
 
         # Test default options
         f.feval, f.calls = 0, 0
@@ -517,8 +517,8 @@ class TestTanhSinh:
         def logf(x):
             return xp.log(norm_logpdf(x) + 0j) + norm_logpdf(x) + xp.pi * 1j
 
-        a = xp.asarray(-xp.inf, dtype=xp.float64)[()]
-        b = xp.asarray(xp.inf, dtype=xp.float64)[()]
+        a = xp.asarray(-xp.inf, dtype=xp.float64)
+        b = xp.asarray(xp.inf, dtype=xp.float64)
         res = _tanhsinh(logf, a, b, log=True)
         ref = _tanhsinh(f, a, b)
         # In gh-19173, we saw `invalid` warnings on one CI platform.
@@ -540,7 +540,7 @@ class TestTanhSinh:
         a, b = xp.asarray(0.), xp.asarray(xp.pi/4)
         res = _tanhsinh(f, a, b)
         ref = math.sqrt(2)/2 + (1-math.sqrt(2)/2)*1j
-        xp_assert_close(res.integral, xp.asarray(ref)[()])
+        xp_assert_close(res.integral, xp.asarray(ref))
 
         # Infinite limits
         def f(x):
@@ -548,7 +548,7 @@ class TestTanhSinh:
 
         a, b = xp.asarray(xp.inf), xp.asarray(-xp.inf)
         res = _tanhsinh(f, a, b)
-        xp_assert_close(res.integral, xp.asarray(-(1+1j))[()])
+        xp_assert_close(res.integral, xp.asarray(-(1+1j)))
 
     @pytest.mark.parametrize("maxlevel", range(4))
     def test_minlevel(self, maxlevel, xp):
@@ -602,7 +602,7 @@ class TestTanhSinh:
     def test_dtype(self, limits, dtype, xp):
         # Test that dtypes are preserved
         dtype = getattr(xp, dtype)
-        a, b = xp.asarray(limits, dtype=dtype)[()]
+        a, b = xp.asarray(limits, dtype=dtype)
 
         def f(x):
             assert x.dtype == dtype
@@ -683,28 +683,28 @@ class TestTanhSinh:
 
         res = _tanhsinh(f, a, b)
         assert res.success
-        xp_assert_close(res.integral, xp.asarray(0.5)[()])
+        xp_assert_close(res.integral, xp.asarray(0.5))
 
         # Test levels 0 and 1; error is NaN
         res = _tanhsinh(f, a, b, maxlevel=0)
         assert res.integral > 0
-        xp_assert_equal(res.error, xp.asarray(xp.nan)[()])
+        xp_assert_equal(res.error, xp.asarray(xp.nan))
         res = _tanhsinh(f, a, b, maxlevel=1)
         assert res.integral > 0
-        xp_assert_equal(res.error, xp.asarray(xp.nan)[()])
+        xp_assert_equal(res.error, xp.asarray(xp.nan))
 
         # Test equal left and right integration limits
         res = _tanhsinh(f, b, b)
         assert res.success
         assert res.maxlevel == -1
-        xp_assert_close(res.integral, xp.asarray(0.)[()])
+        xp_assert_close(res.integral, xp.asarray(0.))
 
         # Test scalar `args` (not in tuple)
         def f(x, c):
             return x**c
 
         res = _tanhsinh(f, a, b, args=29)
-        xp_assert_close(res.integral, xp.asarray(1/30)[()])
+        xp_assert_close(res.integral, xp.asarray(1/30))
 
         # Test NaNs
         a = xp.asarray([xp.nan, 0, 0, 0])
@@ -728,9 +728,9 @@ class TestTanhSinh:
         _pair_cache.h0 = None
         a, b = xp.asarray(0), xp.asarray(1)
         res = _tanhsinh(lambda x: xp.asarray(x*1j), a, b)
-        xp_assert_close(res.integral, xp.asarray(0.5*1j)[()])
+        xp_assert_close(res.integral, xp.asarray(0.5*1j))
         res = _tanhsinh(lambda x: x, a, b)
-        xp_assert_close(res.integral, xp.asarray(0.5)[()])
+        xp_assert_close(res.integral, xp.asarray(0.5))
 
         # Test zero-size
         shape = (0, 3)
@@ -1017,7 +1017,7 @@ class TestNSum:
     def test_dtype(self, dtype):
         def f(k):
             assert k.dtype == dtype
-            return 1 / k ** np.asarray(2, dtype=dtype)[()]
+            return 1 / k ** np.asarray(2, dtype=dtype)
 
         a = np.asarray(1, dtype=dtype)
         b = np.asarray([10, np.inf], dtype=dtype)

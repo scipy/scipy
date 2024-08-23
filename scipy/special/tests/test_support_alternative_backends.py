@@ -4,7 +4,8 @@ from scipy.special._support_alternative_backends import (get_array_special_func,
                                                          array_special_func_map)
 from scipy.conftest import array_api_compatible
 from scipy import special
-from scipy._lib._array_api import xp_assert_close, is_jax, is_torch, SCIPY_DEVICE
+from scipy._lib._array_api_no_0d import xp_assert_close
+from scipy._lib._array_api import is_jax, is_torch, SCIPY_DEVICE
 from scipy._lib.array_api_compat import numpy as np
 
 try:
@@ -97,7 +98,6 @@ def test_support_alternative_backends(xp, f_name_n_args, dtype, shapes):
     ref = xp.asarray(f(*args_np), dtype=dtype_xp)
 
     eps = np.finfo(dtype_np).eps
-    ref = ref[()] if ref.ndim == 0 else ref
     xp_assert_close(res, ref, atol=10*eps)
 
 
