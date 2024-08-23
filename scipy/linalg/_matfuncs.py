@@ -686,7 +686,7 @@ def funm(A, func, disp=True):
 
     # implement Algorithm 11.1.1 from Golub and Van Loan
     #                 "matrix Computations."
-    F, minden = _funm_loops(F, T, n)
+    F, minden = _funm_loops(F, T, n, minden)
 
     F = dot(dot(Z, F), transpose(conjugate(Z)))
     F = _maybe_real(A, F)
