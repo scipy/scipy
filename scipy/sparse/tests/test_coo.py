@@ -4,7 +4,7 @@ from numpy.testing import (assert_equal, assert_array_equal,
 import pytest
 from scipy.linalg import block_diag
 from scipy.sparse import coo_array, random_array, SparseEfficiencyWarning
-from .._coo import _block_diag, _extract_block_diag
+from .._coo import _block_diag, _extract_block_diag, hstack, vstack
 from .._base import sparray
 
 def test_shape_constructor():
@@ -1074,3 +1074,65 @@ def test_mean(shape, axis, out):
     res = a.mean(axis=axis, out=out)
     exp = np.mean(a.toarray(), axis=axis, out=out)
     assert_allclose(res, exp)
+
+
+hstack_shapes = [
+    # 2 tuples
+    ((2,4), (2,3)), ((3,4,3), (3,6,3)), ((4,9,8,7), (4,3,8,7)),
+    ((1,2,1), (1,4,1)), ((1,0), (1,2)), ((1,0,3), (1,0,3)),
+    # 3 tuples
+    ((3,4,3), (3,6,3), (3,1,3)), ((1,0), (1,2), (1,3)),
+    ((4,9,8,7,2), (4,3,8,7,2), (4,5,8,7,2)),
+    ((1,2,1), (1,4,1), (1,3,1)),
+]
+@pytest.mark.parametrize('shapes', hstack_shapes)
+def test_hstack(shapes):
+    rng = np.random.default_rng(23409823)
+
+    if len(shapes) == 2:
+        shape_a, shape_b = shapes
+        a = random_array(shape_a, density=0.6, random_state=rng, dtype=int)
+        b = random_array(shape_b, density=0.6, random_state=rng, dtype=int)
+        res = hstack((a,b))
+        exp = np.hstack((a.toarray(), b.toarray()))
+        assert_equal(res.toarray(), exp)
+    
+    elif len(shapes) == 3:
+        shape_a, shape_b, shape_c = shapes
+        a = random_array(shape_a, density=0.6, random_state=rng, dtype=int)
+        b = random_array(shape_b, density=0.6, random_state=rng, dtype=int)
+        c = random_array(shape_c, density=0.6, random_state=rng, dtype=int)
+        res = hstack((a,b,c))
+        exp = np.hstack((a.toarray(), b.toarray(), c.toarray()))
+        assert_equal(res.toarray(), exp)
+
+
+vstack_shapes = [
+    # 2 tuples
+    ((2,4), (3,4)), ((4,6,3), (3,6,3)), ((9,3,8,7), (4,3,8,7)),
+    ((1,2,1), (3,2,1)), ((0,2), (1,2)), ((1,0,3), (1,0,3)),
+    # 3 tuples 
+    ((3,4,3), (6,4,3), (1,4,3)), ((0,1), (2,1), (3,1)),
+    ((4,9,8,7,2), (3,9,8,7,2), (5,9,8,7,2)),
+    ((2,1,1), (4,1,1), (3,1,1)),
+]
+@pytest.mark.parametrize('shapes', vstack_shapes)
+def test_vstack(shapes):
+    rng = np.random.default_rng(23409823)
+
+    if len(shapes) == 2:
+        shape_a, shape_b = shapes
+        a = random_array(shape_a, density=0.6, random_state=rng, dtype=int)
+        b = random_array(shape_b, density=0.6, random_state=rng, dtype=int)
+        res = vstack((a,b))
+        exp = np.vstack((a.toarray(), b.toarray()))
+        assert_equal(res.toarray(), exp)
+    
+    elif len(shapes) == 3:
+        shape_a, shape_b, shape_c = shapes
+        a = random_array(shape_a, density=0.6, random_state=rng, dtype=int)
+        b = random_array(shape_b, density=0.6, random_state=rng, dtype=int)
+        c = random_array(shape_c, density=0.6, random_state=rng, dtype=int)
+        res = vstack((a,b,c))
+        exp = np.vstack((a.toarray(), b.toarray(), c.toarray()))
+        assert_equal(res.toarray(), exp)

@@ -1734,6 +1734,77 @@ class _coo_base(_data_matrix, _minmax_mixin):
         return self._maximum_minimum_coo(other, 'minimum')
 
 
+def vstack(arrays):
+    # Ensure the input is a tuple of COO arrays
+    if not isinstance(arrays, tuple):
+        raise TypeError("Input must be a tuple of COO arrays.")
+    if not all(isinstance(a, coo_array) for a in arrays):
+        raise TypeError("All elements of the tuple must be instances of coo_array.")
+
+    # Ensure there is at least one array
+    if len(arrays) == 0:
+        raise ValueError("Input tuple must contain at least one array.")
+    
+    # Get the shape of the first array
+    first_shape = arrays[0].shape
+    
+    # Ensure all arrays have the same shape along all but the first axis
+    for a in arrays:
+        if a.shape[1:] != first_shape[1:]:
+            raise ValueError("All arrays must have the same shape along all but the first axis.")
+
+    # Concatenate data from all arrays
+    data = np.concatenate([a.data for a in arrays])
+    
+    # Concatenating coordinates
+    coords = np.concatenate([a.coords for a in arrays], axis=1)
+    first_dim_sizes = [a.shape[0] for a in arrays]
+    first_dim_offsets = np.cumsum([0] + first_dim_sizes[:-1])
+    
+    # Adjust the first coordinate
+    coords[0] += np.repeat(first_dim_offsets, [a.nnz for a in arrays])
+
+    # New shape after stacking
+    new_shape = (sum(first_dim_sizes),) + first_shape[1:]
+
+    return coo_array((data, coords), shape=new_shape)
+
+
+def hstack(arrays):
+    # Ensure the input is a tuple of COO arrays
+    if not isinstance(arrays, tuple):
+        raise TypeError("Input must be a tuple of COO arrays.")
+    if not all(isinstance(a, coo_array) for a in arrays):
+        raise TypeError("All elements of the tuple must be instances of coo_array.")
+
+    # Ensure there is at least one array
+    if len(arrays) == 0:
+        raise ValueError("Input tuple must contain at least one array.")
+
+    # Get the shape of the first array
+    first_shape = arrays[0].shape
+
+    # Ensure all arrays have the same shape along all but the second axis
+    for a in arrays:
+        if a.shape[0] != first_shape[0] or a.shape[2:] != first_shape[2:]:
+            raise ValueError("All arrays must have the same shape along all but the second axis.")
+    
+    # Concatenate data from all arrays
+    data = np.concatenate([a.data for a in arrays])
+
+    # Concatenating coordinates
+    coords = np.concatenate([a.coords for a in arrays], axis=1)
+    second_dim_sizes = [a.shape[1] for a in arrays]
+    second_dim_offsets = np.cumsum([0] + second_dim_sizes[:-1])
+
+    # Adjust the second coordinate
+    coords[1] += np.repeat(second_dim_offsets, [a.nnz for a in arrays])
+
+    # New shape after stacking
+    new_shape = (first_shape[0], sum(second_dim_sizes)) + first_shape[2:]
+
+    return coo_array((data, coords), shape=new_shape)
+
 def _block_diag(self):
     """
     Converts an N-D COO array into a 2-D COO array in block diagonal form.
