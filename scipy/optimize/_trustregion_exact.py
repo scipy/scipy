@@ -385,7 +385,7 @@ class IterativeSubproblem(BaseQuadraticSubproblem):
 
                         # Update damping factor
                         lambda_current = max(
-                            np.sqrt(lambda_lb * lambda_ub),
+                            np.sqrt(np.abs(lambda_lb * lambda_ub)),
                             lambda_lb + self.UPDATE_COEFF*(lambda_ub-lambda_lb)
                         )
 
@@ -440,7 +440,7 @@ class IterativeSubproblem(BaseQuadraticSubproblem):
 
                 # Update damping factor
                 lambda_current = max(
-                    np.sqrt(lambda_lb * lambda_ub),
+                    np.sqrt(np.abs(lambda_lb * lambda_ub)),
                     lambda_lb + self.UPDATE_COEFF*(lambda_ub-lambda_lb)
                 )
 
