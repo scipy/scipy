@@ -285,10 +285,11 @@ def expm(A):
         raise LinAlgError('The input array must be at least two-dimensional')
     if a.shape[-1] != a.shape[-2]:
         raise LinAlgError('Last 2 dimensions of the array must be square')
-    n = a.shape[-1]
+
     # Empty array
     if min(*a.shape) == 0:
-        return np.empty_like(a)
+        dtype = expm(np.eye(2, dtype=a.dtype)).dtype
+        return np.empty_like(a, dtype=dtype)
 
     # Scalar case
     if a.shape[-2:] == (1, 1):
