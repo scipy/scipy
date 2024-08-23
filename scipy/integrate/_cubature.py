@@ -67,7 +67,7 @@ def cubature(f, a, b, rule="gk21", rtol=1e-8, atol=0, max_subdivisions=10000,
         and output arrays of shape::
             (npoints, output_dim_1, ..., output_dim_n)
 
-        In this case, `cub` will return arrays of shape::
+        In this case, `cubature` will return arrays of shape::
             (output_dim_1, ..., output_dim_n)
     a, b : array_like
         Lower and upper limits of integration as 1D arrays specifying the left and right
