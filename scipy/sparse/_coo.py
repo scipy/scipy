@@ -1491,7 +1491,12 @@ class _coo_base(_data_matrix, _minmax_mixin):
         return ret
     def sum(self, axis=None, dtype=None, out=None):
         if axis == ():
-            return self.toarray()
+            ret = self.todense()
+            if out is not None:
+                if out.shape != self.shape:
+                    raise ValueError("dimensions do not match")
+                out[...] = ret
+            return ret
         
         if self.ndim < 3:
             result = _spbase.sum(self, axis, dtype, out)

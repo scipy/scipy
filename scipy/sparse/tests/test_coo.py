@@ -1043,21 +1043,34 @@ def test_min_max(shape, axis):
         assert_equal(res.toarray(), exp)
 
 
-@pytest.mark.parametrize(('shape', 'axis'), max_min_shapes_axis)
-def test_sum(shape, axis):
+sum_mean_params = [
+    ((3,), None, None), ((3,), 0, None),
+    ((4,6), 1, None), ((7,3), 0, None), ((3,5), None, None),
+    ((2,8,7), 2, None), ((2,8,7), 0, np.zeros((8,7))),
+    ((3,2,4,7), None, None), ((3,2,4,7), 1, np.zeros((3,4,7))),
+    ((3,2,4,7), 0, None), ((4,5,7,8,2), 4, None),
+    ((4,5,8,1), 3, None), ((4,6), (0,), None), ((4,6), (0,1), None),
+    ((3,0,2), 2, None), ((3,0,2), (0,2), None), ((3,0), 0, None),
+    ((3,7,8,5), (0,1), np.zeros((8,5))), ((3,7,8,5), (2,1), None),
+    ((3,7,8,5), (0,-2), None), ((3,7,8,5), (-1,2), np.zeros((3,7))),
+    ((3,7,8,5), (3), None), ((3,7,8,5), (0,1,2), np.zeros((5,))),
+    ((3,7,8,5), (0,1,2,3), None), ((3,7,8,5), (), None),
+]
+@pytest.mark.parametrize(('shape', 'axis', 'out'), sum_mean_params)
+def test_sum(shape, axis, out):
     rng = np.random.default_rng(23409823)
     a = random_array(shape, density=0.6, random_state=rng, dtype=int)
 
-    res = a.sum(axis=axis)
-    exp = np.sum(a.toarray(), axis=axis)
+    res = a.sum(axis=axis, out=out)
+    exp = np.sum(a.toarray(), axis=axis, out=out)
     assert_equal(res, exp)
 
 
-@pytest.mark.parametrize(('shape', 'axis'), max_min_shapes_axis)
-def test_mean(shape, axis):
+@pytest.mark.parametrize(('shape', 'axis', 'out'), sum_mean_params)
+def test_mean(shape, axis, out):
     rng = np.random.default_rng(23409823)
     a = random_array(shape, density=0.6, random_state=rng, dtype=int)
 
-    res = a.mean(axis=axis)
-    exp = np.mean(a.toarray(), axis=axis)
+    res = a.mean(axis=axis, out=out)
+    exp = np.mean(a.toarray(), axis=axis, out=out)
     assert_allclose(res, exp)
