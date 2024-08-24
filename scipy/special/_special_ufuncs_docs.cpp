@@ -3215,7 +3215,7 @@ const char *obl_rad1_doc = R"(
     c : array_like
         Spheroidal parameter
     x : array_like
-        Parameter x (``|x| < 1.0``)
+        Parameter x (``x >= 0.0``)
     out : ndarray, optional
         Optional output array for the function results
 
@@ -3253,7 +3253,7 @@ const char *obl_rad1_cv_doc = R"(
     cv : array_like
         Characteristic value
     x : array_like
-        Parameter x (``|x| < 1.0``)
+        Parameter x (``x >= 0.0``)
     out : ndarray, optional
         Optional output array for the function results
 
@@ -3288,7 +3288,7 @@ const char *obl_rad2_doc = R"(
     c : array_like
         Spheroidal parameter
     x : array_like
-        Parameter x (``|x| < 1.0``)
+        Parameter x (``x >= 0.0``)
     out : ndarray, optional
         Optional output array for the function results
 
@@ -3326,7 +3326,7 @@ const char *obl_rad2_cv_doc = R"(
     cv : array_like
         Characteristic value
     x : array_like
-        Parameter x (``|x| < 1.0``)
+        Parameter x (``x >= 0.0``)
     out : ndarray, optional
         Optional output array for the function results
 
