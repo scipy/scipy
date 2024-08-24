@@ -936,12 +936,16 @@ def fiedler(a):
 
     Parameters
     ----------
-    a : (n,) array_like
-        coefficient array
+    a : (..., n,) array_like
+        Coefficient array. N-dimensional arrays are treated as a batch:
+        each slice along the last axis is a 1-D coefficient array.
 
     Returns
     -------
-    F : (n, n) ndarray
+    F : (..., n, n) ndarray
+        Fiedler matrix. For batch input, each slice of shape ``(n, n)``
+        along the last two dimensions of the output corresponds with a
+        slice of shape ``(n,)`` along the last dimension of the input.
 
     See Also
     --------
@@ -991,8 +995,8 @@ def fiedler(a):
     """
     a = np.atleast_1d(a)
 
-    if a.ndim != 1:
-        raise ValueError("Input 'a' must be a 1D array.")
+    if a.ndim > 1:
+        return np.apply_along_axis(lambda a: fiedler(a), -1, a)
 
     if a.size == 0:
         return np.array([], dtype=float)
