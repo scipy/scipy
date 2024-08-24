@@ -599,7 +599,9 @@ class TestConvolutionMatrix:
 
 
 @pytest.mark.parametrize('f, args', [(convolution_matrix, (5, 'same')),
-                                     (fiedler, ())])
+                                     (fiedler, ()),
+                                     (fiedler_companion, ()),
+                                     ])
 def test_batch(f, args):
     rng = np.random.default_rng(283592436523456)
     batch_shape = (2, 3)

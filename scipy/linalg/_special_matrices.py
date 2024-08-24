@@ -1015,14 +1015,18 @@ def fiedler_companion(a):
 
     Parameters
     ----------
-    a : (N,) array_like
+    a : (..., N) array_like
         1-D array of polynomial coefficients in descending order with a nonzero
         leading coefficient. For ``N < 2``, an empty array is returned.
+        M-dimensional arrays are treated as a batch: each slice along the last
+        axis is a 1-D array of polynomial coefficients.
 
     Returns
     -------
-    c : (N-1, N-1) ndarray
-        Resulting companion matrix
+    c : (..., N-1, N-1) ndarray
+        Resulting companion matrix. For batch input, each slice of shape
+        ``(N-1, N-1)`` along the last two dimensions of the output corresponds
+        with a slice of shape ``(N,)`` along the last dimension of the input.
 
     See Also
     --------
@@ -1030,8 +1034,9 @@ def fiedler_companion(a):
 
     Notes
     -----
-    Similar to `companion` the leading coefficient should be nonzero. In the case
-    the leading coefficient is not 1, other coefficients are rescaled before
+    Similar to `companion`, each leading coefficient along the last axis of the
+    input should be nonzero.
+    If the leading coefficient is not 1, other coefficients are rescaled before
     the array generation. To avoid numerical issues, it is best to provide a
     monic polynomial.
 
@@ -1059,8 +1064,8 @@ def fiedler_companion(a):
     """
     a = np.atleast_1d(a)
 
-    if a.ndim != 1:
-        raise ValueError("Input 'a' must be a 1-D array.")
+    if a.ndim > 1:
+        return np.apply_along_axis(lambda a: fiedler_companion(a), -1, a)
 
     if a.size <= 2:
         if a.size == 2:
