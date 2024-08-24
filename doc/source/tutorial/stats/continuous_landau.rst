@@ -9,7 +9,6 @@ and :math:`\beta=1` and support :math:`-\infty < x < \infty`. The probability
 density function is given by
 
 .. math::
-   :nowrap:
 
     f(x) = \frac{1}{\pi}\int_0^\infty \exp(-t \log t - xt)\sin(\pi t) dt
 

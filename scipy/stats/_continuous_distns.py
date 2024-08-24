@@ -5759,7 +5759,7 @@ class landau_gen(rv_continuous):
     %(after_notes)s
 
     Often (e.g. [2]_), the Landau distribution is parameterized in terms of a
-    location parameter :math:`\mu` and scale parameter :math:`\c`, the latter of
+    location parameter :math:`\mu` and scale parameter :math:`c`, the latter of
     which *also* introduces a location shift. If ``mu`` and ``c`` are used to
     represent these parameters, this corresponds with SciPy's parameterization
     with ``loc = mu + 2*c / np.pi * np.log(c)`` and ``scale = c``.
