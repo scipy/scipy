@@ -3264,6 +3264,7 @@ class TestInvgauss:
 
 
 class TestLandau:
+    @pytest.mark.fail_slow(60)
     def test_precision_pdf(self):
         # Compare the Landau distribution against the more general
         # Levy stable distribution, which should be exactly the same.
@@ -3292,6 +3293,7 @@ class TestLandau:
                                              scale=scale).pdf(x_values)
                 assert_almost_equal(landau, expected, decimal=5, err_msg=err_msg)
 
+    @pytest.mark.fail_slow(60)
     def test_precision_cdf(self):
         # Compare the Landau distribution against the more general
         # Levy stable distribution, which should be exactly the same.
