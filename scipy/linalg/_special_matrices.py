@@ -446,18 +446,23 @@ def companion(a):
     a : (..., N) array_like
         1-D array of polynomial coefficients. The length of `a` must be
         at least two, and ``a[0]`` must not be zero.
+        M-dimensional arrays are treated as a batch: each slice along the last
+        axis is a 1-D array of polynomial coefficients.
 
     Returns
     -------
     c : (..., N-1, N-1) ndarray
-        The first row of `c` is ``-a[1:]/a[0]``, and the first
+        For 1-D input, the first row of `c` is ``-a[1:]/a[0]``, and the first
         sub-diagonal is all ones.  The data-type of the array is the same
         as the data-type of ``1.0*a[0]``.
+        For batch input, each slice of shape ``(N-1, N-1)`` along the last two
+        dimensions of the output corresponds with a slice of shape ``(N,)``
+        along the last dimension of the input.
 
     Raises
     ------
     ValueError
-        If any of the following are true: a) ``a.size < 2``; b) ``a[0] == 0``.
+        If any of the following are true: a) ``a.shape[-1] < 2``; b) ``a[..., 0] == 0``.
 
     Notes
     -----
