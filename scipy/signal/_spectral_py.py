@@ -267,7 +267,7 @@ def lombscargle(
         sinwt[:] = np.sin(freqs[i] * x)
         
         # calculate CC, SS, and CS first
-        # these variable names are of form XX_hat in paper, but dropping the suffix 
+        # these variable names are of form XX_hat in the paper, but dropping the suffix 
         # to reuse variables later whether floating_mean is True or False
         CC = (weights * coswt * coswt).sum()
         SS = 1 - CC  # trig identity: S^2 = 1 - C^2
@@ -277,7 +277,7 @@ def lombscargle(
         coswt[:] = weights * coswt
         sinwt[:] = weights * sinwt
 
-        # these are also are of the form XX_hat in the paper
+        # these are also of the form XX_hat in the paper
         YC = (y * coswt).sum()
         YS = (y * sinwt).sum()
         
