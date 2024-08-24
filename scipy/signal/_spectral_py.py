@@ -60,7 +60,7 @@ def lombscargle(
         general, frequencies should be greater than or equal to the minimum length
         necessary to represent a full cycle in the given sample times.
     precenter : bool, optional
-        Pre-center measurement values by subtracting the mean. Ignored if
+        Pre-center measurement values by subtracting the mean, if True. Ignored if
         `floating_mean` is True.
     normalize : bool | str, optional
         Compute normalized or complex (amplitude + phase) periodogram.
@@ -68,7 +68,7 @@ def lombscargle(
     weights : array_like, optional
         Weights for each sample. Weights must be nonnegative.
     floating_mean : bool, optional
-        Determines internally an offset or each frequency independently, if set.
+        Determines an offset or each frequency independently, if True.
         Else an offset of `0` is assumed.
 
     Returns
@@ -103,11 +103,11 @@ def lombscargle(
     Notes
     -----
     The algorithm used will account for any unknown offset by default, unless
-    `floating_mean` is False. The `precenter` parameter is ignored if `floating_mean`
-    is True (default), but otherwise performs the operation ``y -= y.mean()``. In 
-    general, for any frequency in `freqs` that is sufficiently below 
-    ``(2*pi)/(x.max() - x.min())``, the predicted amplitude (when the `normalize`
-    parameter is "amplitude") will tend towards infinity.
+    floating_mean is False. The precenter parameter is ignored if floating_mean
+    is True (default). But otherwise, if precenter is True, performs the operation
+    ``y -= y.mean()``. When the normalize parameter is "amplitude", for any frequency
+    in freqs that is sufficiently below ``(2*pi)/(x.max() - x.min())``, the predicted
+    amplitude will tend towards infinity.
     
     References
     ----------
@@ -196,13 +196,13 @@ def lombscargle(
         raise ValueError("weights array is not 1D")
     if x.shape != y.shape or x.shape != weights.shape:
         raise ValueError("Input arrays do not have the same shape.")
-    if not np.isrealobj(x):
+    if np.iscomplexobj(x):
         raise TypeError("x array is a complex dtype")
-    if not np.isrealobj(y):
+    if np.iscomplexobj(y):
         raise TypeError("y array is a complex dtype")
-    if not np.isrealobj(freqs):
+    if np.iscomplexobj(freqs):
         raise TypeError("freqs array is a complex dtype")
-    if not np.isrealobj(weights):
+    if np.iscomplexobj(weights):
         raise TypeError("weights array is a complex dtype")
 
     # check for any freq == 0
@@ -234,11 +234,15 @@ def lombscargle(
             "or 'amplitude'."
         )
 
-    # convert inputs to contiguous arrays with high precision
-    x = np.ascontiguousarray(x, dtype=np.float64)
-    y = np.ascontiguousarray(y, dtype=np.float64)
-    freqs = np.ascontiguousarray(freqs, dtype=np.float64)
-    weights = np.ascontiguousarray(weights, dtype=np.float64)
+    # if input arrays are not float64, convert them
+    if x.dtype != np.float64:
+        x = x.astype(np.float64)
+    if y.dtype != np.float64:
+        y = y.astype(np.float64)
+    if freqs.dtype != np.float64:
+        freqs = freqs.astype(np.float64)
+    if weights.dtype != np.float64:
+        weights = weights.astype(np.float64)
 
     # weight vector must sum to 1
     weights = weights / weights.sum()
@@ -246,8 +250,6 @@ def lombscargle(
     # pre-allocate arrays for intermediate and final calculations
     coswt = np.empty_like(x)
     sinwt = np.empty_like(x)
-    wcoswt = np.empty_like(x)
-    wsinwt = np.empty_like(x)
     pgram = np.empty_like(freqs)
     # store a and b so that phase can be calculated outside loop, if necessary
     a = np.empty_like(freqs)
@@ -264,21 +266,26 @@ def lombscargle(
     for i in range(freqs.shape[0]):
         coswt[:] = np.cos(freqs[i] * x)
         sinwt[:] = np.sin(freqs[i] * x)
-        wcoswt[:] = weights * coswt
-        wsinwt[:] = weights * sinwt
-
-        # these variables names are of form XX_hat in paper, but dropping the suffix 
+        
+        # calculate CC, SS, and CS first
+        # these variable names are of form XX_hat in paper, but dropping the suffix 
         # to reuse variables later whether floating_mean is True or False
-        YC = (y * wcoswt).sum()
-        YS = (y * wsinwt).sum()
-        CC = (wcoswt * coswt).sum()
+        CC = (weights * coswt * coswt).sum()
         SS = 1 - CC  # trig identity: S^2 = 1 - C^2
-        CS = (wcoswt * sinwt).sum()
+        CS = (weights * coswt * sinwt).sum()
+        
+        # now, redefine trig arrays to use weights
+        coswt[:] = weights * coswt
+        sinwt[:] = weights * sinwt
+
+        # these are also are of the form XX_hat in the paper
+        YC = (y * coswt).sum()
+        YS = (y * sinwt).sum()
         
         if floating_mean:
             # calculate best-fit offset for each frequency independently (default)
-            C_sum = wcoswt.sum()
-            S_sum = wsinwt.sum()
+            C_sum = coswt.sum()
+            S_sum = sinwt.sum()
             YC -= Y_sum * C_sum
             YS -= Y_sum * S_sum
             CC -= C_sum * C_sum
