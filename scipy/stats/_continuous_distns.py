@@ -5752,7 +5752,7 @@ class landau_gen(rv_continuous):
 
     .. math::
 
-        f(x) = \frac{1}{2\pi i}\int_{a-i\infty}^{a+i\infty}e^{s\log(s)+xs}\ ds
+        f(x) = \frac{1}{\pi}\int_0^\infty \exp(-t \log t - xt)\sin(\pi t) dt
 
     for a real number :math:`x`.
 
@@ -5773,6 +5773,10 @@ class landau_gen(rv_continuous):
     .. [3] Chambers, J. M., Mallows, C. L., & Stuck, B. (1976).
            "A method for simulating stable random variables."
            Journal of the American Statistical Association, 71(354), 340-344.
+    .. [4] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
+    .. [5] Yoshimura, T. "Numerical Evaluation and High Precision Approximation
+           Formula for Landau Distribution".
+           :doi:`10.36227/techrxiv.171822215.53612870/v2`
 
     %(example)s
 
