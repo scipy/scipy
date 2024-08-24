@@ -442,4 +442,6 @@ if HAVE_SCPDT:
             "octave_struct.mat"
         ]
     }
+
+    dt_config.strict_check = True
 ############################################################################

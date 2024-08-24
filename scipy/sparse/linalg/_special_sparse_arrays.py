@@ -226,7 +226,7 @@ of_the_second_derivative
            [ 0,  1, -2,  0,  0,  1],
            [ 1,  0,  0, -2,  1,  0],
            [ 0,  1,  0,  1, -3,  1],
-           [ 0,  0,  1,  0,  1, -2]])
+           [ 0,  0,  1,  0,  1, -2]], dtype=int8)
     >>> np.array_equal(lap.matmat(np.eye(n)), lap.toarray())
     True
     >>> np.array_equal(lap.tosparse().toarray(), lap.toarray())
