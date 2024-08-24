@@ -35,8 +35,6 @@ from scipy.optimize import root_scalar
 from scipy.stats._warnings_errors import FitError
 import scipy.stats as stats
 
-from scipy.interpolate import interp1d
-
 def _remove_optimizer_parameters(kwds):
     """
     Remove the optimizer-related keyword arguments 'loc', 'scale' and
