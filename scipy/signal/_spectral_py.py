@@ -57,9 +57,8 @@ def lombscargle(
     y : array_like
         Measurement values.
     freqs : array_like
-        Angular frequencies for output periodogram. Frequencies must be nonzero. In
-        general, frequencies should be greater than or equal to the minimum length
-        necessary to represent a full cycle in the given sample times.
+        Angular frequencies for output periodogram. Frequencies are normally >= 0.
+        Any peak at -freq will also exist at +freq.
     precenter : bool, optional
         Pre-center measurement values by subtracting the mean, if True. Ignored if
         `floating_mean` is True.
@@ -85,8 +84,6 @@ def lombscargle(
     TypeError
         If any of the input arrays x, y, freqs, or weights are a complex dtype.
     ZeroDivisionError
-        If the freqs array contains the value 0.
-    ZeroDivisionError
         If the the sum of the weights array is 0.
     ValueError
         If any weight is < 0.
@@ -107,8 +104,8 @@ def lombscargle(
     floating_mean is False. The precenter parameter is ignored if floating_mean
     is True (default). But otherwise, if precenter is True, performs the operation
     ``y -= y.mean()``. When the normalize parameter is "amplitude", for any frequency
-    in freqs that is sufficiently below ``(2*pi)/(x.max() - x.min())``, the predicted
-    amplitude will tend towards infinity.
+    in freqs that is below ``(2*pi)/(x.max() - x.min())``, the predicted amplitude will 
+    tend towards infinity.
     
     References
     ----------
@@ -210,10 +207,6 @@ def lombscargle(
         raise TypeError("freqs array is a complex dtype")
     if np.iscomplexobj(weights):
         raise TypeError("weights array is a complex dtype")
-
-    # check for any freq == 0
-    if np.any(freqs == 0):
-        raise ZeroDivisionError("Freqs array contains a 0.")
     
     # check for weights summing to 0
     if weights.sum() == 0:

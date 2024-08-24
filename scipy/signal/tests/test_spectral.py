@@ -1107,20 +1107,14 @@ class TestLombscargle:
     def test_wrong_shape(self):
         t = np.linspace(0, 1, 1)
         x = np.linspace(0, 1, 2)
-        f = np.linspace(0, 1, 3) + 0.1  # will raise 2 errors if f contains 0
+        f = np.linspace(0, 1, 3) + 0.1
         assert_raises(ValueError, lombscargle, t, x, f)
     
     def test_wrong_dtype(self):
         t = np.linspace(0, 1, 2, dtype=np.complex64)
         x = np.linspace(0, 1, 2)
-        f = np.linspace(0, 1, 3) + 0.1  # will raise 2 errors if f contains 0
+        f = np.linspace(0, 1, 3) + 0.1
         assert_raises(TypeError, lombscargle, t, x, f)
-
-    def test_zero_division(self):
-        t = np.zeros(1)
-        x = np.zeros(1)
-        f = np.zeros(1)
-        assert_raises(ZeroDivisionError, lombscargle, t, x, f)
 
     def test_lombscargle_atan_vs_atan2(self):
         # https://github.com/scipy/scipy/issues/3787
@@ -1135,7 +1129,7 @@ class TestLombscargle:
 
         t = np.linspace(0, 1, 1)
         x = np.linspace(0, 1, 1)
-        f = np.linspace(0, 1, 3) + 0.1  # will raise 2 errors if f contains 0
+        f = np.linspace(0, 1, 3) + 0.1
         weights = np.linspace(1, 2, 2)
         assert_raises(ValueError, lombscargle, t, x, f, weights=weights)
 
