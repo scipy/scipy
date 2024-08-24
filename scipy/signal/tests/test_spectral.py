@@ -1003,6 +1003,42 @@ class TestLombscargle:
         delta = f[1] - f[0]
         assert_(w - f[np.argmax(P)] < (delta/2.))
 
+        # do this again, for each input array being float32
+        # this is to exercise the float64 dtype conversions
+        
+        # first, t
+        P = lombscargle(t.astype(np.float32), x, f)
+
+        # Check if difference between found frequency maximum and input
+        # frequency is less than accuracy
+        delta = f[1] - f[0]
+        assert_(w - f[np.argmax(P)] < (delta/2.))
+
+        # then, x
+        P = lombscargle(t, x.astype(np.float32), f)
+
+        # Check if difference between found frequency maximum and input
+        # frequency is less than accuracy
+        delta = f[1] - f[0]
+        assert_(w - f[np.argmax(P)] < (delta/2.))
+
+        # then, f
+        P = lombscargle(t, x, f.astype(np.float32))
+
+        # Check if difference between found frequency maximum and input
+        # frequency is less than accuracy
+        delta = f[1] - f[0]
+        assert_(w - f[np.argmax(P)] < (delta/2.))
+
+        # finally, add weights
+        P = lombscargle(t, x, f, weights=np.ones_like(t, dtype=np.float32))
+
+        # Check if difference between found frequency maximum and input
+        # frequency is less than accuracy
+        delta = f[1] - f[0]
+        assert_(w - f[np.argmax(P)] < (delta/2.))
+
+
     def test_amplitude(self):
         # Test if height of peak in normalized Lomb-Scargle periodogram
         # corresponds to amplitude of the generated input signal.
@@ -1038,7 +1074,6 @@ class TestLombscargle:
 
     def test_precenter(self):
         # Test if precenter gives the same result as manually precentering.
-        # Precenter is now a non-functional parameter, but the test should still pass.
 
         # Input parameters
         ampl = 2.
@@ -1063,6 +1098,15 @@ class TestLombscargle:
         # Calculate Lomb-Scargle periodogram
         pgram = lombscargle(t, x, f, precenter=True)
         pgram2 = lombscargle(t, x - x.mean(), f, precenter=False)
+
+        # check if centering worked
+        assert_allclose(pgram, pgram2)
+
+        # do this again, but with floating_mean=False
+
+        # Calculate Lomb-Scargle periodogram
+        pgram = lombscargle(t, x, f, precenter=True, floating_mean=False)
+        pgram2 = lombscargle(t, x - x.mean(), f, precenter=False, floating_mean=False)
 
         # check if centering worked
         assert_allclose(pgram, pgram2)
@@ -1105,16 +1149,59 @@ class TestLombscargle:
         assert_approx_equal(np.max(pgram2), 1.0, significant=2)
 
     def test_wrong_shape(self):
+
+        # different length t and x
         t = np.linspace(0, 1, 1)
         x = np.linspace(0, 1, 2)
         f = np.linspace(0, 1, 3) + 0.1
         assert_raises(ValueError, lombscargle, t, x, f)
+
+        # t is 2D
+        t = np.expand_dims(np.linspace(0, 1, 1), 1)
+        x = np.linspace(0, 1, 2)
+        f = np.linspace(0, 1, 3) + 0.1
+        assert_raises(ValueError, lombscargle, t, x, f)
+
+        # x is 2D
+        t = np.linspace(0, 1, 1)
+        x = np.expand_dims(np.linspace(0, 1, 2), 1)
+        f = np.linspace(0, 1, 3) + 0.1
+        assert_raises(ValueError, lombscargle, t, x, f)
+
+        # f is 2D
+        t = np.linspace(0, 1, 1)
+        x = np.linspace(0, 1, 2)
+        f = np.expand_dims(np.linspace(0, 1, 3) + 0.1, 1)
+        assert_raises(ValueError, lombscargle, t, x, f)
+
+        # weights is 2D
+        t = np.linspace(0, 1, 1)
+        x = np.linspace(0, 1, 2)
+        f = np.linspace(0, 1, 3) + 0.1
+        weights = np.expand_dims(np.linspace(0, 1, 3), 1)
+        assert_raises(ValueError, lombscargle, t, x, f, weights=weights)
     
     def test_wrong_dtype(self):
         t = np.linspace(0, 1, 2, dtype=np.complex64)
         x = np.linspace(0, 1, 2)
         f = np.linspace(0, 1, 3) + 0.1
         assert_raises(TypeError, lombscargle, t, x, f)
+
+        t = np.linspace(0, 1, 2)
+        x = np.linspace(0, 1, 2, dtype=np.complex64)
+        f = np.linspace(0, 1, 3) + 0.1
+        assert_raises(TypeError, lombscargle, t, x, f)
+
+        t = np.linspace(0, 1, 2)
+        x = np.linspace(0, 1, 2)
+        f = np.linspace(0, 1, 3, dtype=np.complex64) + 0.1
+        assert_raises(TypeError, lombscargle, t, x, f)
+
+        t = np.linspace(0, 1, 2)
+        x = np.linspace(0, 1, 2)
+        f = np.linspace(0, 1, 3) + 0.1
+        weights = np.ones_like(t, dtype=np.complex64)
+        assert_raises(TypeError, lombscargle, t, x, f, weights=weights)
 
     def test_lombscargle_atan_vs_atan2(self):
         # https://github.com/scipy/scipy/issues/3787
