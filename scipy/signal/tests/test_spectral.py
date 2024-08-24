@@ -1109,6 +1109,12 @@ class TestLombscargle:
         x = np.linspace(0, 1, 2)
         f = np.linspace(0, 1, 3) + 0.1  # will raise 2 errors if f contains 0
         assert_raises(ValueError, lombscargle, t, x, f)
+    
+    def test_wrong_dtype(self):
+        t = np.linspace(0, 1, 2, dtype=np.complex64)
+        x = np.linspace(0, 1, 2)
+        f = np.linspace(0, 1, 3) + 0.1  # will raise 2 errors if f contains 0
+        assert_raises(TypeError, lombscargle, t, x, f)
 
     def test_zero_division(self):
         t = np.zeros(1)

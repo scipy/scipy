@@ -35,7 +35,8 @@ def lombscargle(
     each frequency independently. This algorithm was developed by Zechmeister
     and Kürster which improves the Lomb-Scargle periodogram by enabling 
     the weighting of individual samples and calculating an unknown offset 
-    (also called a "floating-mean") [3]_.
+    (also called a "floating-mean") [3]_. For more details, and practical 
+    considerations, see the excellent reference on the Lomb-Scargle periodogram [4]_.
 
     When *normalize* is False (or "power") (default) the computed periodogram
     is unnormalized, it takes the value ``(A**2) * N/4`` for a harmonic
@@ -47,7 +48,7 @@ def lombscargle(
     When *normalize* is "amplitude" the computed periodogram is the complex 
     representation of the amplitude and phase.
 
-    Input arrays should be 1-D and will be cast to float64.
+    Input arrays should be 1-D and, if necessary, will be cast to float64.
 
     Parameters
     ----------
@@ -121,6 +122,11 @@ def lombscargle(
     .. [3] M. Zechmeister and M. Kürster, "The generalised Lomb-Scargle periodogram. 
            A new formalism for the floating-mean and Keplerian periodograms,"
            Astronomy and Astrophysics, vol. 496, pp. 577-584, 2009
+    
+    .. [4] J.T. VanderPlas, “Understanding the Lomb-Scargle Periodogram,” 
+           The Astrophysical Journal Supplement Series, vol. 236, no. 1, p. 16, 
+           May 2018, doi: 10.3847/1538-4365/aab766.
+
     
     Examples
     --------
