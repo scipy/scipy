@@ -5781,7 +5781,6 @@ class landau_gen(rv_continuous):
     %(example)s
 
     """
-
     def _shape_info(self):
         return []
 
