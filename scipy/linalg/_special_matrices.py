@@ -1089,8 +1089,9 @@ def convolution_matrix(a, n, mode='full'):
 
     Parameters
     ----------
-    a : (m,) array_like
-        The 1-D array to convolve.
+    a : (..., m) array_like
+        The 1-D array to convolve. N-dimensional arrays are treated as a
+        batch: each slice along the last axis is a 1-D array to convolve.
     n : int
         The number of columns in the resulting matrix.  It gives the length
         of the input to be convolved with `a`.  This is analogous to the
@@ -1102,7 +1103,7 @@ def convolution_matrix(a, n, mode='full'):
 
     Returns
     -------
-    A : (k, n) ndarray
+    A : (..., k, n) ndarray
         The convolution matrix whose row count `k` depends on `mode`::
 
             =======  =========================
@@ -1112,6 +1113,10 @@ def convolution_matrix(a, n, mode='full'):
             'same'   max(m, n)
             'valid'  max(m, n) - min(m, n) + 1
             =======  =========================
+
+        For batch input, each slice of shape ``(k, n)`` along the last two
+        dimensions of the output corresponds with a slice of shape ``(m,)``
+        along the last dimension of the input.
 
     See Also
     --------
@@ -1232,15 +1237,16 @@ def convolution_matrix(a, n, mode='full'):
         raise ValueError('n must be a positive integer.')
 
     a = np.asarray(a)
-    if a.ndim != 1:
-        raise ValueError('convolution_matrix expects a one-dimensional '
-                         'array as input')
+
     if a.size == 0:
         raise ValueError('len(a) must be at least 1.')
 
     if mode not in ('full', 'valid', 'same'):
         raise ValueError(
             "'mode' argument must be one of ('full', 'valid', 'same')")
+
+    if a.ndim > 1:
+        return np.apply_along_axis(lambda a: convolution_matrix(a, n, mode), -1, a)
 
     # create zero padded versions of the array
     az = np.pad(a, (0, n-1), 'constant')

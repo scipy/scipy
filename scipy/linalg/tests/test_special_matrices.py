@@ -571,11 +571,6 @@ class TestConvolutionMatrix:
         with pytest.raises(ValueError, match='n must be a positive integer'):
             convolution_matrix([1, 2, 3], 0)
 
-    def test_bad_first_arg(self):
-        # first arg must be a 1d array, otherwise ValueError
-        with pytest.raises(ValueError, match='one-dimensional'):
-            convolution_matrix(1, 4)
-
     def test_empty_first_arg(self):
         # first arg must have at least one value
         with pytest.raises(ValueError, match=r'len\(a\)'):
@@ -601,3 +596,16 @@ class TestConvolutionMatrix:
             A = convolution_matrix(a, nv, mode)
         y2 = A @ v
         assert_array_almost_equal(y1, y2)
+
+
+@pytest.mark.parametrize('f, args', [(convolution_matrix, (5, 'same'))])
+def test_batch(f, args):
+    rng = np.random.default_rng(283592436523456)
+    batch_shape = (2, 3)
+    m = 10
+    A = rng.random(batch_shape + (m,))
+    res = f(A, *args)
+
+    ref = np.asarray([f(a, *args) for a in A.reshape(-1, m)])
+    ref = ref.reshape(A.shape[:-1] + ref.shape[-2:])
+    assert_allclose(res, ref)
