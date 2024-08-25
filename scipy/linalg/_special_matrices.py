@@ -3,6 +3,7 @@ import math
 import numpy as np
 from numpy.lib.stride_tricks import as_strided
 
+
 __all__ = ['toeplitz', 'circulant', 'hankel',
            'hadamard', 'leslie', 'kron', 'block_diag', 'companion',
            'helmert', 'hilbert', 'invhilbert', 'pascal', 'invpascal', 'dft',
@@ -242,18 +243,19 @@ def leslie(f, s):
 
     Parameters
     ----------
-    f : (N,) array_like
+    f : (..., N,) array_like
         The "fecundity" coefficients.
-    s : (N-1,) array_like
-        The "survival" coefficients, has to be 1-D.  The length of `s`
-        must be one less than the length of `f`, and it must be at least 1.
+    s : (..., N-1,) array_like
+        The "survival" coefficients. The length of each slice of `s` (along the last
+        axis) must be one less than the length of `f`, and it must be at least 1.
 
     Returns
     -------
-    L : (N, N) ndarray
+    L : (..., N, N) ndarray
         The array is zero except for the first row,
         which is `f`, and the first sub-diagonal, which is `s`.
-        The data-type of the array will be the data-type of ``f[0]+s[0]``.
+        For 1-D input, the data-type of the array will be the data-type of
+        ``f[0]+s[0]``.
 
     Notes
     -----
@@ -265,6 +267,11 @@ def leslie(f, s):
     which give the number of offspring per-capita produced by each age
     class, and the `n` - 1 "survival coefficients", which give the
     per-capita survival rate of each age class.
+
+    N-dimensional input are treated as a batches of coefficient arrays: each
+    slice along the last axis of the input arrays is a 1-D coefficient array,
+    and each slice along the last two dimensions of the output is the
+    corresponding Leslie matrix.
 
     References
     ----------
@@ -286,18 +293,21 @@ def leslie(f, s):
     """
     f = np.atleast_1d(f)
     s = np.atleast_1d(s)
-    if f.ndim != 1:
-        raise ValueError("Incorrect shape for f.  f must be 1D")
-    if s.ndim != 1:
-        raise ValueError("Incorrect shape for s.  s must be 1D")
-    if f.size != s.size + 1:
-        raise ValueError("Incorrect lengths for f and s.  The length"
-                         " of s must be one less than the length of f.")
-    if s.size == 0:
+
+    if f.shape[-1] != s.shape[-1] + 1:
+        raise ValueError("Incorrect lengths for f and s. The length of s along "
+                         "the last axis must be one less than the length of f.")
+    if s.shape[-1] == 0:
         raise ValueError("The length of s must be at least 1.")
 
+    n = f.shape[-1]
+
+    if f.ndim > 1 or s.ndim > 1:
+        from scipy.stats._resampling import _vectorize_statistic
+        _leslie_nd = _vectorize_statistic(leslie)
+        return np.moveaxis(_leslie_nd(f, s, axis=-1), [0, 1], [-2, -1])
+
     tmp = f[0] + s[0]
-    n = f.size
     a = np.zeros((n, n), dtype=tmp.dtype)
     a[0] = f
     a[list(range(1, n)), list(range(0, n - 1))] = s
