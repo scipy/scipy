@@ -532,7 +532,7 @@ def xp_sign(x: Array, /, *, xp: ModuleType | None = None) -> Array:
     one = xp.asarray(1, dtype=x.dtype)
     sign = xp.where(x > 0, one, sign)
     sign = xp.where(x < 0, -one, sign)
-    sign = xp.where(~xp.isfinite(x), xp.nan*one, sign)
+    sign = xp.where(xp.isnan(x), xp.nan*one, sign)
     return sign
 
 # maybe use `scipy.linalg` if/when array API support is added
