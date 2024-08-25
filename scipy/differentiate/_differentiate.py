@@ -2,7 +2,7 @@
 import numpy as np
 import scipy._lib._elementwise_iterative_method as eim
 from scipy._lib._util import _RichResult
-from scipy._lib._array_api import array_namespace
+from scipy._lib._array_api import array_namespace, xp_sign
 
 _EERRORINCREASE = -1  # used in differentiate
 
@@ -365,7 +365,6 @@ def differentiate(f, x, *, args=(), tolerances=None, maxiter=10,
     """
     # TODO (followup):
     #  - investigate behavior at saddle points
-    #  - array initial_step / step_factor?
     #  - multivariate functions?
 
     res = _differentiate_iv(f, x, args, tolerances, maxiter, order, initial_step,
@@ -394,7 +393,7 @@ def differentiate(f, x, *, args=(), tolerances=None, maxiter=10,
     # that `hdir` can be broadcasted to the final shape. Same with `h0`.
     hdir = xp.broadcast_to(hdir, shape)
     hdir = xp.reshape(hdir, (-1,))
-    hdir = xp.astype(xp.sign(hdir), dtype)
+    hdir = xp.astype(xp_sign(hdir), dtype)
     h0 = xp.broadcast_to(h0, shape)
     h0 = xp.reshape(h0, (-1,))
     h0 = xp.astype(h0, dtype)

@@ -389,11 +389,11 @@ class TestDifferentiate:
             xp_assert_close(res.df, xp.asarray(99*7.**98))
 
         # Test invalid step size and direction
-        res = differentiate(xp.exp, 1, step_direction=xp.nan)
+        res = differentiate(xp.exp, xp.asarray(1), step_direction=xp.nan)
         xp_assert_equal(res.df, xp.asarray(xp.nan))
         xp_assert_equal(res.status, xp.asarray(-3, dtype=xp.int32))
 
-        res = differentiate(xp.exp, 1, initial_step=0)
+        res = differentiate(xp.exp, xp.asarray(1), initial_step=0)
         xp_assert_equal(res.df, xp.asarray(xp.nan))
         xp_assert_equal(res.status, xp.asarray(-3, dtype=xp.int32))
 
