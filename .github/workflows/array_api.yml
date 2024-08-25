@@ -23,7 +23,10 @@ env:
     -t scipy._lib.tests.test_array_api
     -t scipy._lib.tests.test__util
     -t scipy.differentiate.tests.test_differentiate
+    -t scipy.integrate.tests.test_tanhsinh
+    -t scipy.optimize.tests.test_chandrupatla
     -t scipy.stats
+    -t scipy.ndimage
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}

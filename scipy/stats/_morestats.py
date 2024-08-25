@@ -14,8 +14,7 @@ from scipy._lib._util import _rename_parameter, _contains_nan, _get_nan
 
 from scipy._lib._array_api import (
     array_namespace,
-    size as xp_size,
-    xp_minimum,
+    xp_size,
     xp_moveaxis_to_end,
     xp_vector_norm,
 )
@@ -1170,8 +1169,11 @@ class _BigFloat:
         return "BIG_FLOAT"
 
 
+_BigFloat_singleton = _BigFloat()
+
+
 def boxcox_normmax(
-    x, brack=None, method='pearsonr', optimizer=None, *, ymax=_BigFloat()
+    x, brack=None, method='pearsonr', optimizer=None, *, ymax=_BigFloat_singleton
 ):
     """Compute optimal Box-Cox transform parameter for input data.
 
@@ -1288,7 +1290,7 @@ def boxcox_normmax(
         raise ValueError(message)
 
     end_msg = "exceed specified `ymax`."
-    if isinstance(ymax, _BigFloat):
+    if ymax is _BigFloat_singleton:
         dtype = x.dtype if np.issubdtype(x.dtype, np.floating) else np.float64
         # 10000 is a safety factor because `special.boxcox` overflows prematurely.
         ymax = np.finfo(dtype).max / 10000
@@ -2882,15 +2884,20 @@ def bartlett(*samples, axis=0):
     ssq = [arr[xp.newaxis, ...] for arr in ssq]
     Ni = xp.concat(Ni, axis=0)
     ssq = xp.concat(ssq, axis=0)
-    Ntot = xp.sum(Ni, axis=0)
-    spsq = xp.sum((Ni - 1)*ssq, axis=0) / (Ntot - k)
-    numer = (Ntot - k) * xp.log(spsq) - xp.sum((Ni - 1)*xp.log(ssq), axis=0)
-    denom = 1 + 1/(3*(k - 1)) * ((xp.sum(1/(Ni - 1), axis=0)) - 1/(Ntot - k))
+    # sum dtype can be removed when 2023.12 rules kick in
+    dtype = Ni.dtype
+    Ntot = xp.sum(Ni, axis=0, dtype=dtype)
+    spsq = xp.sum((Ni - 1)*ssq, axis=0, dtype=dtype) / (Ntot - k)
+    numer = ((Ntot - k) * xp.log(spsq)
+             - xp.sum((Ni - 1)*xp.log(ssq), axis=0, dtype=dtype))
+    denom = (1 + 1/(3*(k - 1))
+             * ((xp.sum(1/(Ni - 1), axis=0, dtype=dtype)) - 1/(Ntot - k)))
     T = numer / denom
 
     chi2 = _SimpleChi2(xp.asarray(k-1))
     pvalue = _get_pvalue(T, chi2, alternative='greater', symmetric=False, xp=xp)
 
+    T = xp.clip(T, min=0., max=xp.inf)
     T = T[()] if T.ndim == 0 else T
     pvalue = pvalue[()] if pvalue.ndim == 0 else pvalue
 
@@ -4094,7 +4101,7 @@ def circvar(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     cos_mean = xp.mean(cos_samp, axis=axis)
     hypotenuse = (sin_mean**2. + cos_mean**2.)**0.5
     # hypotenuse can go slightly above 1 due to rounding errors
-    R = xp_minimum(xp.asarray(1.), hypotenuse)
+    R = xp.clip(hypotenuse, max=1.)
 
     res = 1. - R
     return res
@@ -4198,7 +4205,7 @@ def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate', *,
     cos_mean = xp.mean(cos_samp, axis=axis)  # [1] (2.2.3)
     hypotenuse = (sin_mean**2. + cos_mean**2.)**0.5
     # hypotenuse can go slightly above 1 due to rounding errors
-    R = xp_minimum(xp.asarray(1.), hypotenuse)  # [1] (2.2.4)
+    R = xp.clip(hypotenuse, max=1.)  # [1] (2.2.4)
 
     res = (-2*xp.log(R))**0.5+0.0  # torch.pow returns -0.0 if R==1
     if not normalize:

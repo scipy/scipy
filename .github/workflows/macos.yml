@@ -82,7 +82,7 @@ jobs:
         channel-priority: true
         activate-environment: scipy-dev
         use-only-tar-bz2: false
-        miniforge-variant: Mambaforge
+        miniforge-variant: Miniforge3
         miniforge-version: latest
         use-mamba: true
 

@@ -1,5 +1,6 @@
 py3.install_sources([
     '__init__.py',
+    'test_aaa.py',
     'test_bsplines.py',
     'test_fitpack.py',
     'test_fitpack2.py',

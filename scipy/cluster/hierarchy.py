@@ -134,7 +134,7 @@ from collections import deque
 import numpy as np
 from . import _hierarchy, _optimal_leaf_ordering
 import scipy.spatial.distance as distance
-from scipy._lib._array_api import array_namespace, _asarray, copy, is_jax
+from scipy._lib._array_api import array_namespace, _asarray, xp_copy, is_jax
 from scipy._lib._disjoint_set import DisjointSet
 
 
@@ -1358,7 +1358,7 @@ def cut_tree(Z, n_clusters=None, height=None):
 
     for i, node in enumerate(nodes):
         idx = node.pre_order()
-        this_group = copy(last_group, xp=xp)
+        this_group = xp_copy(last_group, xp=xp)
         # TODO ARRAY_API complex indexing not supported
         this_group[idx] = xp.min(last_group[idx])
         this_group[this_group > xp.max(last_group[idx])] -= 1
@@ -1822,14 +1822,14 @@ def from_mlab_linkage(Z):
 
     # If it's empty, return it.
     if len(Zs) == 0 or (len(Zs) == 1 and Zs[0] == 0):
-        return copy(Z, xp=xp)
+        return xp_copy(Z, xp=xp)
 
     if len(Zs) != 2:
         raise ValueError("The linkage array must be rectangular.")
 
     # If it contains no rows, return it.
     if Zs[0] == 0:
-        return copy(Z, xp=xp)
+        return xp_copy(Z, xp=xp)
 
     if xp.min(Z[:, 0:2]) != 1.0 and xp.max(Z[:, 0:2]) != 2 * Zs[0]:
         raise ValueError('The format of the indices is not 1..N')
@@ -1925,7 +1925,7 @@ def to_mlab_linkage(Z):
     Z = _asarray(Z, order='C', dtype=xp.float64, xp=xp)
     Zs = Z.shape
     if len(Zs) == 0 or (len(Zs) == 1 and Zs[0] == 0):
-        return copy(Z, xp=xp)
+        return xp_copy(Z, xp=xp)
     is_valid_linkage(Z, throw=True, name='Z')
 
     return xp.concat((Z[:, :2] + 1.0, Z[:, 2:3]), axis=1)
@@ -3446,10 +3446,10 @@ def _dendrogram_calculate_info(Z, p, truncate_mode,
                                orientation='top', labels=None,
                                count_sort=False, distance_sort=False,
                                show_leaf_counts=False, i=-1, iv=0.0,
-                               ivl=[], n=0, icoord_list=[], dcoord_list=[],
+                               ivl=None, n=0, icoord_list=None, dcoord_list=None,
                                lvs=None, mhr=False,
-                               current_color=[], color_list=[],
-                               currently_below_threshold=[],
+                               current_color=None, color_list=None,
+                               currently_below_threshold=None,
                                leaf_label_func=None, level=0,
                                contraction_marks=None,
                                link_color_func=None,

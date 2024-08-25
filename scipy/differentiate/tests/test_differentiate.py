@@ -15,9 +15,10 @@ from scipy.differentiate._differentiate import _EERRORINCREASE
 
 @array_api_compatible
 @pytest.mark.usefixtures("skip_xp_backends")
-@pytest.mark.skip_xp_backends('array_api_strict', 'jax.numpy',
+@pytest.mark.skip_xp_backends('array_api_strict', 'jax.numpy', 'cupy',
                               reasons=['Currently uses fancy indexing assignment.',
-                                       'JAX arrays do not support item assignment.'])
+                                       'JAX arrays do not support item assignment.',
+                                       'cupy/cupy#8391',],)
 class TestDifferentiate:
 
     def f(self, x):
@@ -85,13 +86,13 @@ class TestDifferentiate:
 
         ref_nfev = [np.int32(ref.nfev) for ref in refs]
         xp_assert_equal(xp.reshape(res.nfev, (-1,)), xp.asarray(ref_nfev))
-        if not is_numpy(xp):  # can't expect other backends to be exactly the same
-            xp.max(res.nfev) == f.feval
+        if is_numpy(xp):  # can't expect other backends to be exactly the same
+            assert xp.max(res.nfev) == f.feval
 
         ref_nit = [np.int32(ref.nit) for ref in refs]
         xp_assert_equal(xp.reshape(res.nit, (-1,)), xp.asarray(ref_nit))
-        if not is_numpy(xp):  # can't expect other backends to be exactly the same
-            xp.max(res.nit) == f.nit
+        if is_numpy(xp):  # can't expect other backends to be exactly the same
+            assert xp.max(res.nit) == f.nit
 
     def test_flags(self, xp):
         # Test cases that should produce different status flags; show that all

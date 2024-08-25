@@ -20,12 +20,21 @@ import numpy.typing as npt
 from scipy._lib import array_api_compat
 from scipy._lib.array_api_compat import (
     is_array_api_obj,
-    size,
+    size as xp_size,
     numpy as np_compat,
-    device
+    device as xp_device
 )
 
-__all__ = ['array_namespace', '_asarray', 'size', 'device']
+__all__ = [
+    '_asarray', 'array_namespace', 'assert_almost_equal', 'assert_array_almost_equal',
+    'get_xp_devices',
+    'is_array_api_strict', 'is_complex', 'is_cupy', 'is_jax', 'is_numpy', 'is_torch', 
+    'SCIPY_ARRAY_API', 'SCIPY_DEVICE', 'scipy_namespace_for',
+    'xp_assert_close', 'xp_assert_equal', 'xp_assert_less',
+    'xp_atleast_nd', 'xp_copy', 'xp_copysign', 'xp_device',
+    'xp_moveaxis_to_end', 'xp_ravel', 'xp_real', 'xp_sign', 'xp_size',
+    'xp_take_along_axis', 'xp_unsupported_param_msg', 'xp_vector_norm',
+]
 
 
 # To enable array API and strict array-like input validation
@@ -44,7 +53,7 @@ if TYPE_CHECKING:
     ArrayLike = Array | npt.ArrayLike
 
 
-def compliance_scipy(arrays: list[ArrayLike]) -> list[Array]:
+def _compliance_scipy(arrays: list[ArrayLike]) -> list[Array]:
     """Raise exceptions on known-bad subclasses.
 
     The following subclasses are not supported and raise and error:
@@ -111,7 +120,7 @@ def array_namespace(*arrays: Array) -> ModuleType:
 
     1. Check for the global switch: SCIPY_ARRAY_API. This can also be accessed
        dynamically through ``_GLOBAL_CONFIG['SCIPY_ARRAY_API']``.
-    2. `compliance_scipy` raise exceptions on known-bad subclasses. See
+    2. `_compliance_scipy` raise exceptions on known-bad subclasses. See
        its definition for more details.
 
     When the global switch is False, it defaults to the `numpy` namespace.
@@ -124,7 +133,7 @@ def array_namespace(*arrays: Array) -> ModuleType:
 
     _arrays = [array for array in arrays if array is not None]
 
-    _arrays = compliance_scipy(_arrays)
+    _arrays = _compliance_scipy(_arrays)
 
     return array_api_compat.array_namespace(*_arrays)
 
@@ -155,7 +164,7 @@ def _asarray(
     """
     if xp is None:
         xp = array_namespace(array)
-    if xp.__name__ in {"numpy", "scipy._lib.array_api_compat.numpy"}:
+    if is_numpy(xp):
         # Use NumPy API to support order
         if copy is True:
             array = np.array(array, order=order, dtype=dtype, subok=subok)
@@ -163,10 +172,6 @@ def _asarray(
             array = np.asanyarray(array, order=order, dtype=dtype)
         else:
             array = np.asarray(array, order=order, dtype=dtype)
-
-        # At this point array is a NumPy ndarray. We convert it to an array
-        # container that is consistent with the input's namespace.
-        array = xp.asarray(array)
     else:
         try:
             array = xp.asarray(array, dtype=dtype, copy=copy)
@@ -180,18 +185,18 @@ def _asarray(
     return array
 
 
-def atleast_nd(x: Array, *, ndim: int, xp: ModuleType | None = None) -> Array:
+def xp_atleast_nd(x: Array, *, ndim: int, xp: ModuleType | None = None) -> Array:
     """Recursively expand the dimension to have at least `ndim`."""
     if xp is None:
         xp = array_namespace(x)
     x = xp.asarray(x)
     if x.ndim < ndim:
         x = xp.expand_dims(x, axis=0)
-        x = atleast_nd(x, ndim=ndim, xp=xp)
+        x = xp_atleast_nd(x, ndim=ndim, xp=xp)
     return x
 
 
-def copy(x: Array, *, xp: ModuleType | None = None) -> Array:
+def xp_copy(x: Array, *, xp: ModuleType | None = None) -> Array:
     """
     Copies an array.
 
@@ -211,7 +216,8 @@ def copy(x: Array, *, xp: ModuleType | None = None) -> Array:
     This copy function does not offer all the semantics of `np.copy`, i.e. the
     `subok` and `order` keywords are not used.
     """
-    # Note: xp.asarray fails if xp is numpy.
+    # Note: for older NumPy versions, `np.asarray` did not support the `copy` kwarg,
+    # so this uses our other helper `_asarray`.
     if xp is None:
         xp = array_namespace(x)
 
@@ -381,14 +387,32 @@ def xp_assert_less(actual, desired, check_namespace=True, check_dtype=True,
                                         err_msg=err_msg, verbose=verbose)
 
 
-def cov(x: Array, *, xp: ModuleType | None = None) -> Array:
+def assert_array_almost_equal(actual, desired, decimal=6, *args, **kwds):
+    """Backwards compatible replacement. In new code, use xp_assert_close instead.
+    """
+    rtol, atol = 0, 1.5*10**(-decimal)
+    return xp_assert_close(actual, desired,
+                           atol=atol, rtol=rtol, check_dtype=False, check_shape=False,
+                           *args, **kwds)
+
+
+def assert_almost_equal(actual, desired, decimal=7, *args, **kwds):
+    """Backwards compatible replacement. In new code, use xp_assert_close instead.
+    """
+    rtol, atol = 0, 1.5*10**(-decimal)
+    return xp_assert_close(actual, desired,
+                           atol=atol, rtol=rtol, check_dtype=False, check_shape=False,
+                           *args, **kwds)
+
+
+def xp_cov(x: Array, *, xp: ModuleType | None = None) -> Array:
     if xp is None:
         xp = array_namespace(x)
 
-    X = copy(x, xp=xp)
+    X = xp_copy(x, xp=xp)
     dtype = xp.result_type(X, xp.float64)
 
-    X = atleast_nd(X, ndim=2, xp=xp)
+    X = xp_atleast_nd(X, ndim=2, xp=xp)
     X = xp.asarray(X, dtype=dtype)
 
     avg = xp.mean(X, axis=1)
@@ -475,41 +499,6 @@ def scipy_namespace_for(xp: ModuleType) -> ModuleType | None:
     return None
 
 
-# temporary substitute for xp.minimum, which is not yet in all backends
-# or covered by array_api_compat.
-def xp_minimum(x1: Array, x2: Array, /) -> Array:
-    # xp won't be passed in because it doesn't need to be passed in to xp.minimum
-    xp = array_namespace(x1, x2)
-    if hasattr(xp, 'minimum'):
-        return xp.minimum(x1, x2)
-    x1, x2 = xp.broadcast_arrays(x1, x2)
-    i = (x2 < x1) | xp.isnan(x2)
-    res = xp.where(i, x2, x1)
-    return res[()] if res.ndim == 0 else res
-
-
-# temporary substitute for xp.clip, which is not yet in all backends
-# or covered by array_api_compat.
-def xp_clip(
-        x: Array,
-        /,
-        min: int | float | Array | None = None,
-        max: int | float | Array | None = None,
-        *,
-        xp: ModuleType | None = None) -> Array:
-    xp = array_namespace(x) if xp is None else xp
-    a, b = xp.asarray(min, dtype=x.dtype), xp.asarray(max, dtype=x.dtype)
-    if hasattr(xp, 'clip'):
-        return xp.clip(x, a, b)
-    x, a, b = xp.broadcast_arrays(x, a, b)
-    y = xp.asarray(x, copy=True)
-    ia = y < a
-    y[ia] = a[ia]
-    ib = y > b
-    y[ib] = b[ib]
-    return y[()] if y.ndim == 0 else y
-
-
 # temporary substitute for xp.moveaxis, which is not yet in all backends
 # or covered by array_api_compat.
 def xp_moveaxis_to_end(
@@ -539,7 +528,7 @@ def xp_sign(x: Array, /, *, xp: ModuleType | None = None) -> Array:
     xp = array_namespace(x) if xp is None else xp
     if is_numpy(xp):  # only NumPy implements the special cases correctly
         return xp.sign(x)
-    sign = xp.full_like(x, xp.nan)
+    sign = xp.full_like(x, xp.asarray(xp.nan))
     one = xp.asarray(1, dtype=x.dtype)
     sign = xp.where(x > 0, one, sign)
     sign = xp.where(x < 0, -one, sign)
@@ -547,7 +536,7 @@ def xp_sign(x: Array, /, *, xp: ModuleType | None = None) -> Array:
     return sign
 
 # maybe use `scipy.linalg` if/when array API support is added
-def xp_vector_norm(x: Array, /, *, 
+def xp_vector_norm(x: Array, /, *,
                    axis: int | tuple[int] | None = None,
                    keepdims: bool = False,
                    ord: int | float = 2,
@@ -571,3 +560,33 @@ def xp_vector_norm(x: Array, /, *,
     else:
         # to maintain backwards compatibility
         return np.linalg.norm(x, ord=ord, axis=axis, keepdims=keepdims)
+
+
+def xp_ravel(x: Array, /, *, xp: ModuleType | None = None) -> Array:
+    # Equivalent of np.ravel written in terms of array API
+    # Even though it's one line, it comes up so often that it's worth having
+    # this function for readability
+    xp = array_namespace(x) if xp is None else xp
+    return xp.reshape(x, (-1,))
+
+
+def xp_real(x: Array, /, *, xp: ModuleType | None = None) -> Array:
+    # Convenience wrapper of xp.real that allows non-complex input;
+    # see data-apis/array-api#824
+    xp = array_namespace(x) if xp is None else xp
+    return xp.real(x) if xp.isdtype(x.dtype, 'complex floating') else x
+
+
+def xp_take_along_axis(arr: Array,
+                       indices: Array, /, *,
+                       axis: int = -1,
+                       xp: ModuleType | None = None) -> Array:
+    # Dispatcher for np.take_along_axis for backends that support it;
+    # see data-apis/array-api/pull#816
+    xp = array_namespace(arr) if xp is None else xp
+    if is_torch(xp):
+        return xp.take_along_dim(arr, indices, dim=axis)
+    elif is_array_api_strict(xp):
+        raise NotImplementedError("Array API standard does not define take_along_axis")
+    else:
+        return xp.take_along_axis(arr, indices, axis)

@@ -654,7 +654,9 @@ class AttrDict(dict):
         AttributeError: 'AttrDict' object has no attribute 'missing'
     '''
 
-    def __init__(self, init={}):
+    def __init__(self, init=None):
+        if init is None:
+            init = {}
         dict.__init__(self, init)
 
     def __getitem__(self, name):
