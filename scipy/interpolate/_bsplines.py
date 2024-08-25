@@ -2020,14 +2020,13 @@ def _coeff_of_divided_diff(x):
     No checks are performed.
 
     """
-    n = x.shape[0]
-    res = np.zeros(n)
-    for i in range(n):
-        pp = 1.
-        for k in range(n):
-            if k != i:
-                pp *= (x[i] - x[k])
-        res[i] = 1. / pp
+    # x.reshape((-1, 1)) Convert to column vector
+    res = x.reshape((-1, 1)) - x
+
+    # ~np.eye(res.shape[0], dtype=bool) mask of non-diagonal elements
+    res = res[~np.eye(res.shape[0], dtype=bool)].reshape(res.shape[0], -1)
+    res = 1. / np.prod(res, axis=1)
+
     return res
 
 
