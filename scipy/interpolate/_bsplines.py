@@ -2020,11 +2020,8 @@ def _coeff_of_divided_diff(x):
     No checks are performed.
 
     """
-    # x.reshape((-1, 1)) Convert to column vector
-    res = x.reshape((-1, 1)) - x
-
-    # ~np.eye(res.shape[0], dtype=bool) mask of non-diagonal elements
-    res = res[~np.eye(res.shape[0], dtype=bool)].reshape(res.shape[0], -1)
+    res = np.subtract.outer(x, x)
+    np.fill_diagonal(res, 1)
     res = 1. / np.prod(res, axis=1)
 
     return res
