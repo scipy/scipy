@@ -353,7 +353,6 @@ def _matrix_norm_triangular(structure):
     def fun(norm, a, check_finite):
         a = np.asarray_chkfinite(a) if check_finite else a
         lantr = get_lapack_funcs('lantr', (a,))
-
         return lantr(norm, a, 'L' if structure == 'lower triangular' else 'U' )
     return fun
 
