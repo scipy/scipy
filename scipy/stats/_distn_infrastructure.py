@@ -3085,7 +3085,7 @@ def _drv2_ppfsingle(self, q, *args):  # Use basic bisection algorithm
         message = "Arguments that bracket the requested quantile could not be found."
         raise RuntimeError(message)
 
-    # maximum number of bisections within the normal numbers
+    # maximum number of bisections within the normal float64s
     # maxiter = int(np.log2(finfo.max) - np.log2(finfo.smallest_normal))
     maxiter = 2046
     for i in range(maxiter):
