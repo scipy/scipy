@@ -1,0 +1,182 @@
+#ifndef _ARPACK_H
+#define _ARPACK_H
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif /* __cplusplus */
+#include <math.h>
+
+#if defined(_MSC_VER)
+    // MSVC definitions
+    #include <complex.h>  // MSVC C++ header
+    typedef _Dcomplex ARPACK_CPLX_TYPE;
+    typedef _Fcomplex ARPACK_CPLXF_TYPE;
+    #define ARPACK_cplx(real, imag) ((_Dcomplex){real, imag})
+    #define ARPACK_cplxf(real, imag) ((_Fcomplex){real, imag})
+
+#else
+    // C99 compliant compilers
+    #include <complex.h>
+    typedef double complex ARPACK_CPLX_TYPE;
+    typedef float complex ARPACK_CPLXF_TYPE;
+    #define ARPACK_cplx(real, imag) ((real) + (imag)*I)
+    #define ARPACK_cplxf(real, imag) ((real) + (imag)*I)
+
+#endif
+
+
+
+/*
+ * ARPACK uses the so-called reverse-communication style that typically exits
+ * the program with its in/out arguments to signal, in what stage the algorithm
+ * is and what it needs. Then user modifies the arguments and calls again with
+ * the necessary information. Thus the state of the whole program is sent back
+ * and forth through in-place modified arguments. On top of this, ARPACK also
+ * uses lots of variables through the Fortran's dreadful SAVE attribute that
+ * persists the variable values across runs. Instead we move all those variables
+ * into the reverse communication layer.
+ *
+ * For scalar arguments we use a C struct <-> Python dict bridge and for array
+ * arguments we use NumPy array pointers that are originated from the user side
+ * to modify things in-place and not to deal with ref counting or alloc/free.
+ *
+ * To generate random vectors that are used in ARPACK algorithm, we also expect
+ * a NumPy generator object from the user for reproducible runs. However this
+ * can be replaced with a different number generation routine.
+*/
+
+enum ARPACK_which {
+    which_LM = 0,    // want the NEV eigenvalues of largest magnitude.
+    which_SM = 1,    // want the NEV eigenvalues of smallest magnitude.
+    which_LR = 2,    // want the NEV eigenvalues of largest real part.
+    which_SR = 3,    // want the NEV eigenvalues of smallest real part.
+    which_LI = 4,    // want the NEV eigenvalues of largest imaginary part.
+    which_SI = 5,    // want the NEV eigenvalues of smallest imaginary part.
+    which_LA = 6,    // compute the NEV largest (algebraic) eigenvalues. (sym)
+    which_SA = 7,    // compute the NEV smallest (algebraic) eigenvalues. (sym)
+    which_BE = 8     // compute NEV eigenvalues, half from each end of the spectrum. (sym)
+};
+
+enum ARPACK_ido {
+    ido_FIRST      = 0,  // First call
+    ido_OPX        = 1,  // OP*x needed
+    ido_BX         = 2,  // B*x needed
+    ido_USER_SHIFT = 3,  // User shifts are needed
+    ido_OPX_V0     = 4,  // A random vector is needed, This option is not in the original ARPACK
+    ido_DONE       = 99  // Done
+};
+
+/**
+ * With the following structs, we collect all "SAVE"d Fortran variables to track
+ * the problem and avoid reentry issues. It is not the cleanest and is laborious
+ * but otherwise reentrancy is compromised. There are additional variables in the
+ * original Fortran code that are also "SAVE"d however upon inspection, they
+ * are assigned and then used in the same call and thus used without saving.
+**/
+
+struct ARPACK_arnoldi_update_vars_s {
+    float tol;               // problem parameter
+    float getv0_rnorm0;      // getv0 internal compute
+    float aitr_betaj;        // naitr internal compute
+    float aitr_rnorm1;       // naitr internal compute
+    float aitr_wnorm;        // naitr internal compute
+    float aup2_rnorm;        // naup2 internal compute
+    enum ARPACK_ido ido;     // naupd flow control
+    enum ARPACK_which which; // naupd flow control
+    int bmat;                // problem parameter,          boolean
+    int info;                // problem outcome,            integer
+    int iter;                // problem intermediate,       integer
+    int maxiter;             // problem parameter,          integer
+    int mode;                // problem parameter,          integer
+    int n;                   // problem parameter,          integer
+    int nconv;               // problem outcome,            integer
+    int ncv;                 // problem parameter,          integer
+    int nev;                 // problem parameter,          integer
+    int np;                  // problem intermediate,       integer
+    int numop;               // problem intermediate,       integer
+    int numpb;               // problem intermediate,       integer
+    int numreo;              // problem intermediate,       integer
+    int shift;               // problem parameter,          boolean
+    int getv0_first;         // getv0 flow control
+    int getv0_iter;          // getv0 flow control
+    int getv0_itry;          // getv0 flow control
+    int getv0_orth;          // getv0 flow control
+    int aitr_iter;           // naitr flow control
+    int aitr_j;              // naitr flow control
+    int aitr_orth1;          // naitr flow control
+    int aitr_orth2;          // naitr flow control
+    int aitr_restart;        // naitr flow control
+    int aitr_step3;          // naitr flow control
+    int aitr_step4;          // naitr flow control
+    int aitr_ierr;           // naitr flow control
+    int aup2_initv;          // naupd2 flow control
+    int aup2_iter;           // naupd2 flow control
+    int aup2_getv0;          // naupd2 flow control
+    int aup2_cnorm;          // naupd2 flow control
+    int aup2_kplusp;         // naupd2 flow control
+    int aup2_nev0;           // naupd2 internal compute
+    int aup2_np0;            // naupd2 internal compute
+    int aup2_numcnv;         // naupd2 internal compute
+    int aup2_update;         // naupd2 flow control
+    int aup2_ushift;         // naupd2 flow control
+};
+
+
+struct ARPACK_arnoldi_update_vars_d {
+    double tol;              // problem parameter
+    double getv0_rnorm0;     // getv0 internal compute
+    double aitr_betaj;       // naitr internal compute
+    double aitr_rnorm1;      // naitr internal compute
+    double aitr_wnorm;       // naitr internal compute
+    double aup2_rnorm;       // naup2 internal compute
+    enum ARPACK_ido ido;     // naupd flow control
+    enum ARPACK_which which; // naupd flow control
+    int bmat;                // problem parameter,    boolean
+    int info;                // problem outcome,      integer
+    int iter;                // problem intermediate, integer
+    int maxiter;             // problem parameter,    integer
+    int mode;                // problem parameter,    integer
+    int n;                   // problem parameter,    integer
+    int nconv;               // problem outcome,      integer
+    int ncv;                 // problem parameter,    integer
+    int nev;                 // problem parameter,    integer
+    int np;                  // problem intermediate, integer
+    int numop;               // problem intermediate, integer
+    int numpb;               // problem intermediate, integer
+    int numreo;              // problem intermediate, integer
+    int shift;               // problem parameter,    boolean
+    int getv0_first;         // getv0 flow control
+    int getv0_iter;          // getv0 flow control
+    int getv0_itry;          // getv0 flow control
+    int getv0_orth;          // getv0 flow control
+    int aitr_iter;           // naitr flow control
+    int aitr_j;              // naitr flow control
+    int aitr_orth1;          // naitr flow control
+    int aitr_orth2;          // naitr flow control
+    int aitr_restart;        // naitr flow control
+    int aitr_step3;          // naitr flow control
+    int aitr_step4;          // naitr flow control
+    int aitr_ierr;           // naitr flow control
+    int aup2_initv;          // naupd2 flow control
+    int aup2_iter;           // naupd2 flow control
+    int aup2_getv0;          // naupd2 flow control
+    int aup2_cnorm;          // naupd2 flow control
+    int aup2_kplusp;         // naupd2 flow control
+    int aup2_nev0;           // naupd2 internal compute
+    int aup2_np0;            // naupd2 internal compute
+    int aup2_numcnv;         // naupd2 internal compute
+    int aup2_update;         // naupd2 flow control
+    int aup2_ushift;         // naupd2 flow control
+};
+
+
+void snaupd(struct ARPACK_arnoldi_update_vars_s *V, float* resid, float* v, int ldv, int* ipntr, float* workd, float* workl);
+void dnaupd(struct ARPACK_arnoldi_update_vars_d *V, double* resid, double* v, int ldv, int* ipntr, double* workd, double* workl);
+
+
+#ifdef __cplusplus
+}  /* extern "C" */
+#endif /* __cplusplus */
+
+#endif /* ifndef */
