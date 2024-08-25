@@ -7828,6 +7828,111 @@ add_newdoc("_lanczos_sum_expg_scaled",
     Internal function, do not use.
     """)
 
+add_newdoc(
+    "_landau_pdf",
+    """
+    _landau_pdf(x, loc, scale)
+
+    Probability density function of the Landau distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Real-valued argument
+    loc : array_like
+        Real-valued distribution location
+    scale : array_like
+        Positive, real-valued distribution scale
+
+    Returns
+    -------
+    scalar or ndarray
+    """)
+
+add_newdoc(
+    "_landau_cdf",
+    """
+    _landau_cdf(x, loc, scale)
+
+    Cumulative distribution function of the Landau distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Real-valued argument
+    loc : array_like
+        Real-valued distribution location
+    scale : array_like
+        Positive, real-valued distribution scale
+
+    Returns
+    -------
+    scalar or ndarray
+    """)
+
+add_newdoc(
+    "_landau_sf",
+    """
+    _landau_sf(x, loc, scale)
+
+    Survival function of the Landau distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Real-valued argument
+    loc : array_like
+        Real-valued distribution location
+    scale : array_like
+        Positive, real-valued distribution scale
+
+    Returns
+    -------
+    scalar or ndarray
+    """)
+
+add_newdoc(
+    "_landau_ppf",
+    """
+    _landau_ppf(p, loc, scale)
+
+    Percent point function of the Landau distribution.
+
+    Parameters
+    ----------
+    p : array_like
+        Real-valued argument between 0 and 1
+    loc : array_like
+        Real-valued distribution location
+    scale : array_like
+        Positive, real-valued distribution scale
+
+    Returns
+    -------
+    scalar or ndarray
+    """)
+
+add_newdoc(
+    "_landau_isf",
+    """
+    _landau_isf(p, loc, scale)
+
+    Inverse survival function of the Landau distribution.
+
+    Parameters
+    ----------
+    p : array_like
+        Real-valued argument between 0 and 1
+    loc : array_like
+        Real-valued distribution location
+    scale : array_like
+        Positive, real-valued distribution scale
+
+    Returns
+    -------
+    scalar or ndarray
+    """)
+
 add_newdoc("_lgam1p",
     """
     Internal function, do not use.

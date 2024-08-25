@@ -77,21 +77,21 @@ def tril(A, k=0, format=None):
     >>> A.toarray()
     array([[1, 2, 0, 0, 3],
            [4, 5, 0, 6, 7],
-           [0, 0, 8, 9, 0]])
+           [0, 0, 8, 9, 0]], dtype=int32)
     >>> tril(A).toarray()
     array([[1, 0, 0, 0, 0],
            [4, 5, 0, 0, 0],
-           [0, 0, 8, 0, 0]])
+           [0, 0, 8, 0, 0]], dtype=int32)
     >>> tril(A).nnz
     4
     >>> tril(A, k=1).toarray()
     array([[1, 2, 0, 0, 0],
            [4, 5, 0, 0, 0],
-           [0, 0, 8, 9, 0]])
+           [0, 0, 8, 9, 0]], dtype=int32)
     >>> tril(A, k=-1).toarray()
     array([[0, 0, 0, 0, 0],
            [4, 0, 0, 0, 0],
-           [0, 0, 0, 0, 0]])
+           [0, 0, 0, 0, 0]], dtype=int32)
     >>> tril(A, format='csc')
     <Compressed Sparse Column sparse array of dtype 'int32'
         with 4 stored elements and shape (3, 5)>
@@ -145,21 +145,21 @@ def triu(A, k=0, format=None):
     >>> A.toarray()
     array([[1, 2, 0, 0, 3],
            [4, 5, 0, 6, 7],
-           [0, 0, 8, 9, 0]])
+           [0, 0, 8, 9, 0]], dtype=int32)
     >>> triu(A).toarray()
     array([[1, 2, 0, 0, 3],
            [0, 5, 0, 6, 7],
-           [0, 0, 8, 9, 0]])
+           [0, 0, 8, 9, 0]], dtype=int32)
     >>> triu(A).nnz
     8
     >>> triu(A, k=1).toarray()
     array([[0, 2, 0, 0, 3],
            [0, 0, 0, 6, 7],
-           [0, 0, 0, 9, 0]])
+           [0, 0, 0, 9, 0]], dtype=int32)
     >>> triu(A, k=-1).toarray()
     array([[1, 2, 0, 0, 3],
            [4, 5, 0, 6, 7],
-           [0, 0, 8, 9, 0]])
+           [0, 0, 8, 9, 0]], dtype=int32)
     >>> triu(A, format='csc')
     <Compressed Sparse Column sparse array of dtype 'int32'
         with 8 stored elements and shape (3, 5)>

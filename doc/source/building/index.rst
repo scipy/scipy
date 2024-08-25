@@ -230,7 +230,7 @@ Otherwise, conda is recommended.
 .. note::
 
     If you don't have a conda installation yet, we recommend using
-    Mambaforge_; any conda flavor will work though.
+    Miniforge_; any conda flavor will work though.
 
 Building from source to use SciPy
 `````````````````````````````````
@@ -442,5 +442,5 @@ Background information
    distutils_equivalents
 
 
-.. _Mambaforge: https://github.com/conda-forge/miniforge#mambaforge
+.. _Miniforge: https://github.com/conda-forge/miniforge#miniforge
 .. _meson-python: https://mesonbuild.com/meson-python/

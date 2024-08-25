@@ -30,6 +30,7 @@ codes, according to
    'G': 'long double complex'
    'i': 'int'
    'l': 'long'
+   'p': 'npy_intp', 'Py_ssize_t'
    'v': 'void'
 
 If multiple kernel functions are given for a single ufunc, the one
@@ -170,6 +171,7 @@ CY_TYPES = {
     'G': 'long double complex',
     'i': 'int',
     'l': 'long',
+    'p': 'Py_ssize_t',
     'v': 'void',
 }
 
@@ -182,6 +184,7 @@ C_TYPES = {
     'G': 'npy_clongdouble',
     'i': 'npy_int',
     'l': 'npy_long',
+    'p': 'npy_intp',
     'v': 'void',
 }
 
@@ -194,6 +197,7 @@ TYPE_NAMES = {
     'G': 'NPY_CLONGDOUBLE',
     'i': 'NPY_INT',
     'l': 'NPY_LONG',
+    'p': 'NPY_INTP',
 }
 
 
@@ -202,18 +206,19 @@ def underscore(arg):
 
 
 def cast_order(c):
-    return ['ilfdgFDG'.index(x) for x in c]
+    return ['ilpfdgFDG'.index(x) for x in c]
 
 
 # These downcasts will cause the function to return NaNs, unless the
 # values happen to coincide exactly.
 DANGEROUS_DOWNCAST = {
-    ('F', 'i'), ('F', 'l'), ('F', 'f'), ('F', 'd'), ('F', 'g'),
-    ('D', 'i'), ('D', 'l'), ('D', 'f'), ('D', 'd'), ('D', 'g'),
-    ('G', 'i'), ('G', 'l'), ('G', 'f'), ('G', 'd'), ('G', 'g'),
-    ('f', 'i'), ('f', 'l'),
-    ('d', 'i'), ('d', 'l'),
-    ('g', 'i'), ('g', 'l'),
+    ('F', 'i'), ('F', 'l'), ('F', 'p'), ('F', 'f'), ('F', 'd'), ('F', 'g'),
+    ('D', 'i'), ('D', 'l'), ('D', 'p'), ('D', 'f'), ('D', 'd'), ('D', 'g'),
+    ('G', 'i'), ('G', 'l'), ('G', 'p'), ('G', 'f'), ('G', 'd'), ('G', 'g'),
+    ('f', 'i'), ('f', 'l'), ('f', 'p'),
+    ('d', 'i'), ('d', 'l'), ('d', 'p'),
+    ('g', 'i'), ('g', 'l'), ('g', 'p'),
+    ('p', 'l'), ('p', 'i'),
     ('l', 'i'),
 }
 
@@ -226,6 +231,7 @@ NAN_VALUE = {
     'G': 'NAN',
     'i': '0xbad0bad0',
     'l': '0xbad0bad0',
+    'p': '0xbad0bad0',
 }
 
 
@@ -393,7 +399,8 @@ def iter_variants(inputs, outputs):
     ]
 
     # float32-preserving signatures
-    if not ('i' in inputs or 'l' in inputs):
+    if not ('i' in inputs or 'l' in inputs or 'q' in inputs
+             or 'p' in inputs):
         # Don't add float32 versions of ufuncs with integer arguments, as this
         # can lead to incorrect dtype selection if the integer arguments are
         # arrays, but float arguments are scalars.
@@ -428,14 +435,15 @@ class Func:
                 self.signatures.append((name, inarg, outarg, ret, header))
 
     def _parse_signature(self, sig):
-        m = re.match(r"\s*([fdgFDGil]*)\s*\*\s*([fdgFDGil]*)\s*->\s*([*fdgFDGil]*)\s*$",
+        T = 'fdgFDGilp'
+        m = re.match(rf"\s*([{T}]*)\s*\*\s*([{T}]*)\s*->\s*([*{T}]*)\s*$",
                      sig)
         if m:
             inarg, outarg, ret = (x.strip() for x in m.groups())
             if ret.count('*') > 1:
                 raise ValueError(f"{self.name}: Invalid signature: {sig}")
             return inarg, outarg, ret
-        m = re.match(r"\s*([fdgFDGil]*)\s*->\s*([fdgFDGil]?)\s*$", sig)
+        m = re.match(rf"\s*([{T}]*)\s*->\s*([{T}]?)\s*$", sig)
         if m:
             inarg, ret = (x.strip() for x in m.groups())
             return inarg, "", ret
