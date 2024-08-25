@@ -4,6 +4,7 @@
 #include "xsf/amos.h"
 #include "xsf/bessel.h"
 #include "xsf/binom.h"
+#include "xsf/cdflib.h"
 #include "xsf/expint.h"
 #include "xsf/fresnel.h"
 #include "xsf/gamma.h"
@@ -763,3 +764,5 @@ double cephes_tukeylambdacdf(double x, double lmbda) { return xsf::cephes::tukey
 double cephes_struve_h(double v, double z) { return xsf::cephes::struve_h(v, z); }
 
 double cephes_struve_l(double v, double z) { return xsf::cephes::struve_l(v, z); }
+
+double special_gdtrib(double a, double p, double x) { return xsf::gdtrib(a, p, x); }

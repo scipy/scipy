@@ -426,6 +426,8 @@ double cephes_struve_h(double v, double z);
 
 double cephes_struve_l(double v, double z);
 
+double special_gdtrib(double a, double p, double x);
+
 #ifdef __cplusplus
 } /* extern "C" */
 #endif /* __cplusplus */
