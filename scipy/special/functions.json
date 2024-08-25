@@ -542,8 +542,8 @@
         }
     },
     "gdtrib": {
-        "_cdflib_wrappers.pxd": {
-            "gdtrib": "ddd->d"        }
+        "xsf_wrappers.h": {
+            "special_gdtrib": "ddd->d"        }
     },
     "gdtrix": {
         "_cdflib_wrappers.pxd": {
