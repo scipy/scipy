@@ -25,12 +25,11 @@ def _differentiate_iv(func, x, args, tolerances, maxiter, order, initial_step,
     message = 'Tolerances and step parameters must be non-negative scalars.'
     tols = np.asarray([atol if atol is not None else 1,
                        rtol if rtol is not None else 1,
-                       xp.min(xp.asarray(initial_step), axis=None),
                        step_factor])
     if (not np.issubdtype(tols.dtype, np.number) or np.any(tols < 0)
-            or np.any(np.isnan(tols)) or tols.shape != (4,)):
+            or np.any(np.isnan(tols)) or tols.shape != (3,)):
         raise ValueError(message)
-    step_factor = float(tols[3])
+    step_factor = float(tols[2])
 
     maxiter_int = int(maxiter)
     if maxiter != maxiter_int or maxiter <= 0:
@@ -399,6 +398,7 @@ def differentiate(f, x, *, args=(), tolerances=None, maxiter=10,
     h0 = xp.broadcast_to(h0, shape)
     h0 = xp.reshape(h0, (-1,))
     h0 = xp.astype(h0, dtype)
+    h0[h0 <= 0] = xp.asarray(xp.nan)
 
     status = xp.full_like(x, eim._EINPROGRESS, dtype=xp.int32)  # in progress
     nit, nfev = 0, 1  # one function evaluations performed above

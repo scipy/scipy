@@ -351,8 +351,6 @@ class TestDifferentiate:
         with pytest.raises(ValueError, match=message):
             differentiate(lambda x: x, one, tolerances=dict(rtol='ekki'))
         with pytest.raises(ValueError, match=message):
-            differentiate(lambda x: x, one, initial_step=xp.nan)
-        with pytest.raises(ValueError, match=message):
             differentiate(lambda x: x, one, step_factor=object())
 
         message = '`maxiter` must be a positive integer.'
@@ -389,6 +387,15 @@ class TestDifferentiate:
             res = differentiate(f, xp.asarray(7), tolerances=dict(rtol=1e-10))
             assert res.success
             xp_assert_close(res.df, xp.asarray(99*7.**98))
+
+        # Test invalid step size and direction
+        res = differentiate(xp.exp, 1, step_direction=xp.nan)
+        xp_assert_equal(res.df, xp.asarray(xp.nan))
+        xp_assert_equal(res.status, xp.asarray(-3, dtype=xp.int32))
+
+        res = differentiate(xp.exp, 1, initial_step=0)
+        xp_assert_equal(res.df, xp.asarray(xp.nan))
+        xp_assert_equal(res.status, xp.asarray(-3, dtype=xp.int32))
 
         # Test that if success is achieved in the correct number
         # of iterations if function is a polynomial. Ideally, all polynomials
@@ -539,8 +546,6 @@ class TestJacobian:
             jacobian(func, x, tolerances=dict(atol=-1))
         with pytest.raises(ValueError, match=message):
             jacobian(func, x, tolerances=dict(rtol=-1))
-        with pytest.raises(ValueError, match=message):
-            jacobian(func, x, initial_step=-1)
         with pytest.raises(ValueError, match=message):
             jacobian(func, x, step_factor=-1)
 
