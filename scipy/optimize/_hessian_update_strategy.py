@@ -23,7 +23,8 @@ class HessianUpdateStrategy:
     in different quasi-Newton strategies.
 
     Four methods should be implemented in derived classes: ``initialize``,
-    ``update``, ``dot`` and ``get_matrix``.
+    ``update``, ``dot`` and ``get_matrix``. The matrix multiplication
+    operator ``@`` is also defined to call the ``dot`` method.
 
     Notes
     -----
@@ -98,6 +99,9 @@ class HessianUpdateStrategy:
         """
         raise NotImplementedError("The method ``get_matrix(p)``"
                                   " is not implemented.")
+
+    def __matmul__(self, p):
+        return self.dot(p)
 
 
 class FullHessianUpdateStrategy(HessianUpdateStrategy):
@@ -382,7 +386,7 @@ class BFGS(FullHessianUpdateStrategy):
             z = delta_x
         # Do some common operations
         wz = np.dot(w, z)
-        Mw = self.dot(w)
+        Mw = self @ w
         wMw = Mw.dot(w)
         # Guarantee that wMw > 0 by reinitializing matrix.
         # While this is always true in exact arithmetic,
@@ -395,7 +399,7 @@ class BFGS(FullHessianUpdateStrategy):
             else:
                 self.H = scale * np.eye(self.n, dtype=float)
             # Do common operations for new matrix
-            Mw = self.dot(w)
+            Mw = self @ w
             wMw = Mw.dot(w)
         # Check if curvature condition is violated
         if wz <= self.min_curvature * wMw:
@@ -461,7 +465,7 @@ class SR1(FullHessianUpdateStrategy):
             w = delta_grad
             z = delta_x
         # Do some common operations
-        Mw = self.dot(w)
+        Mw = self @ w
         z_minus_Mw = z - Mw
         denominator = np.dot(w, z_minus_Mw)
         # If the denominator is too small
