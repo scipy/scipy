@@ -22,7 +22,7 @@ class TestPow1p:
         assert isinstance(res64, np.float64)
         assert_equal(res32, np.float32(res64))
 
-    @pytest.mark.parametrize('rule, x, y, out', [
+    @pytest.mark.parametrize('rule, x, y, expected', [
         (
             "pow(anything, +0) is 1",
             [1.5, -1.0, -np.inf, np.inf, np.nan], 0.0, 1.0
@@ -112,6 +112,21 @@ class TestPow1p:
             -2.5, [1.5, -2.5], np.nan,
         )
     ])
-    def test_ieee754_special_values(self, rule, x, y, out):
+    def test_ieee754_special_values(self, rule, x, y, expected):
         # Special value inputs should conform to IEEE-754 spec of pow().
-        assert_equal(pow1p(x, y), out, rule)
+        assert_equal(pow1p(x, y), expected, err_msg=rule)
+
+    @pytest.mark.parametrize('rule, x, y, expected', [
+        ("spurious underflow", -1e-16, 7e18, 9.859676543759570e-305),
+        ("spurious underflow & overflow 1", -1e-16, 1e20, 0.0),
+        ("spurious underflow & overflow 2", 1e-16, 1e20, np.inf),
+    ])
+    def test_decomposition(self, rule, x, y, expected):
+        # Test that the decomposition 1+x == s+t is done properly to avoid
+        # spurious underflow and overflow.  This amounts to ensuring that
+        # t has the same sign as x.  The 'expected' value is computed using
+        # mpmath.
+        if expected == 0 or expected == np.inf:
+            assert_equal(pow1p(x, y), expected, err_msg=rule)
+        else:
+            assert_allclose(pow1p(x, y), expected, rtol=1e-15, err_msg=rule)
