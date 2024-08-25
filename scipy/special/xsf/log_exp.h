@@ -146,22 +146,45 @@ T pow1p_impl(T x, T y) {
     }
 
     // Because x > -1 and s is rounded toward 1, s is guaranteed to be > 0.
-    // Then (1+x)^y == (s+t)^y == (s^y)*((1+u)^y), where u := t / s.
-    // It can be shown that either both terms <= 1 or both >= 1, so
+
+    // Write (1+x)^y == (s+t)^y == (s^y)*((1+t/s)^y) == term1*term2.
+    // It can be shown that either both terms <= 1 or both >= 1; so
     // if the first term over/underflows, then the result over/underflows.
-    T u = t / s;
+    // And of course, term2 == 1 if t == 0.
     T term1 = std::pow(s, y);
-    if (term1 == T(0) || std::isinf(term1)) {
+    if (t == T(0) || term1 == T(0) || std::isinf(term1)) {
         return term1;
     }
 
-    // (1+u)^y == exp(y*log(1+u)).  Since u is close to machine epsilon,
-    // log(1+u) ~= u.  Let y*u == z+w, where z is the rounded result and
-    // w is the rounding error.  This improves accuracy when y is large.
-    // Then exp(y*u) == exp(z)*exp(w).
-    T z = y * u;
-    T w = std::fma(y, u, -z);
-    T term2 = std::exp(z) * std::exp(w);
+    // (1+t/s)^y == exp(y*log(1+t/s)).  The relative error of the result is
+    // equal to the absolute error of the exponent (plus the relative error
+    // of 'exp').  Therefore, when the exponent is small, it is accurately
+    // evaluated to machine epsilon using T arithmetic.  In addition, since
+    // t/s <= epsilon, log(1+t/s) is well approximated by t/s to first order.
+    T u = t / s;
+    T w = y * u;
+    if (std::abs(w) <= 0.5) {
+        T term2 = std::exp(w);
+        return term1 * term2;
+    }
+
+    // Now y*log(1+t/s) is large, and its relative error is "magnified" by
+    // the exponent.  To reduce the error, we use double-T arithmetic, and
+    // expand log(1+t/s) to second order.
+
+    // (u + uu) ~= t/s.
+    T r1 = std::fma(-u, s, t);
+    T uu = r1 / s;
+
+    // (u + vv) ~= log(1+(u+uu)) ~= log(1+t/s).
+    T vv = std::fma(-0.5*u, u, uu);
+
+    // (w + ww) ~= y*(u+vv) ~= y*log(1+t/s).
+    T r2 = std::fma(y, u, -w);
+    T ww = std::fma(y, vv, r2);
+
+    // TODO: maybe ww is small enough such that exp(ww) ~= 1+ww.
+    T term2 = std::exp(w) * std::exp(ww);
     return term1 * term2;
 }
 
