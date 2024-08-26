@@ -1737,9 +1737,9 @@ class _coo_base(_data_matrix, _minmax_mixin):
 def vstack(arrays):
     # Ensure the input is a tuple of COO arrays
     if not isinstance(arrays, tuple):
-        raise TypeError("Input must be a tuple of COO arrays.")
-    if not all(isinstance(a, coo_array) for a in arrays):
-        raise TypeError("All elements of the tuple must be instances of coo_array.")
+        raise TypeError("Input must be a tuple of COO arrays/matrices.")
+    if not all(isinstance(a, (coo_array, coo_matrix)) for a in arrays):
+        raise TypeError("All elements of the tuple must be in COO format")
 
     # Ensure there is at least one array
     if len(arrays) == 0:
@@ -1773,9 +1773,9 @@ def vstack(arrays):
 def hstack(arrays):
     # Ensure the input is a tuple of COO arrays
     if not isinstance(arrays, tuple):
-        raise TypeError("Input must be a tuple of COO arrays.")
-    if not all(isinstance(a, coo_array) for a in arrays):
-        raise TypeError("All elements of the tuple must be instances of coo_array.")
+        raise TypeError("Input must be a tuple of COO arrays/matrices.")
+    if not all(isinstance(a, (coo_array, coo_matrix)) for a in arrays):
+        raise TypeError("All elements of the tuple must be in COO format")
 
     # Ensure there is at least one array
     if len(arrays) == 0:
@@ -1804,6 +1804,58 @@ def hstack(arrays):
     new_shape = (first_shape[0], sum(second_dim_sizes)) + first_shape[2:]
 
     return coo_array((data, coords), shape=new_shape)
+
+
+def block_diag(arrays):
+    # Ensure the input is a tuple of COO arrays
+    if not isinstance(arrays, tuple):
+        raise TypeError("Input must be a tuple of COO arrays/matrices.")
+    if not all(isinstance(a, (coo_array, coo_matrix)) for a in arrays):
+        raise TypeError("All elements of the tuple must be in COO format")
+    
+    # Ensure there is at least one array
+    if len(arrays) == 0:
+        raise ValueError("Input tuple must contain at least one array.")
+    
+    # Get the number of dimensions from the first array
+    num_dims = arrays[0].ndim
+    
+    # Ensure all arrays have the same number of dimensions
+    for a in arrays:
+        if a.ndim != num_dims:
+            raise ValueError("All arrays must have the same number of dimensions.")
+    
+    # Calculate the total nnz and result shape
+    total_nnz = sum(a.nnz for a in arrays)
+    result_shape = np.zeros(num_dims, dtype=int)
+
+    for a in arrays:
+        result_shape += np.array(a.shape)
+    
+    # Preallocate arrays for data and coordinates
+    result_data = np.empty(total_nnz, dtype=arrays[0].data.dtype)
+    result_coords = np.empty((num_dims, total_nnz), dtype=int)
+    
+    # Offset trackers for each dimension
+    dim_offsets = np.zeros(num_dims, dtype=int)
+    current_nnz = 0
+    
+    for a in arrays:
+        nnz = a.nnz
+        # Populate the result array
+        result_data[current_nnz:current_nnz + nnz] = a.data
+        
+        # Calculate new coordinates with offsets
+        for dim in range(num_dims):
+            result_coords[dim, current_nnz:current_nnz + nnz] = a.coords[dim] + dim_offsets[dim]
+        
+        # Update offsets
+        dim_offsets += np.array(a.shape)
+        current_nnz += nnz
+    
+    # Return the block diagonal coo_array
+    return coo_array((result_data, tuple(result_coords)), shape=tuple(result_shape))
+
 
 def _block_diag(self):
     """
