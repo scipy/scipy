@@ -238,7 +238,7 @@ jobs:
           # build and test the wheel
           auto-update-conda: true
           python-version: "3.10"
-          miniconda-version: "latest"
+          miniforge-version: latest
 
       - name: Upload wheels
         if: success()
