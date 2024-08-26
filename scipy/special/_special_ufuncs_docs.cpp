@@ -3204,7 +3204,7 @@ const char *obl_rad1_doc = R"(
 
     Computes the oblate spheroidal radial function of the first kind
     and its derivative (with respect to `x`) for mode parameters m>=0
-    and n>=m, spheroidal parameter `c` and ``|x| < 1.0``.
+    and n>=m, spheroidal parameter `c` and ``x >= 0.0``.
 
     Parameters
     ----------
@@ -3215,7 +3215,7 @@ const char *obl_rad1_doc = R"(
     c : array_like
         Spheroidal parameter
     x : array_like
-        Parameter x (``|x| < 1.0``)
+        Parameter x (``x >= 0.0``)
     out : ndarray, optional
         Optional output array for the function results
 
@@ -3239,7 +3239,7 @@ const char *obl_rad1_cv_doc = R"(
 
     Computes the oblate spheroidal radial function of the first kind
     and its derivative (with respect to `x`) for mode parameters m>=0
-    and n>=m, spheroidal parameter `c` and ``|x| < 1.0``. Requires
+    and n>=m, spheroidal parameter `c` and ``x >= 0.0``. Requires
     pre-computed characteristic value.
 
     Parameters
@@ -3253,7 +3253,7 @@ const char *obl_rad1_cv_doc = R"(
     cv : array_like
         Characteristic value
     x : array_like
-        Parameter x (``|x| < 1.0``)
+        Parameter x (``x >= 0.0``)
     out : ndarray, optional
         Optional output array for the function results
 
@@ -3277,7 +3277,7 @@ const char *obl_rad2_doc = R"(
 
     Computes the oblate spheroidal radial function of the second kind
     and its derivative (with respect to `x`) for mode parameters m>=0
-    and n>=m, spheroidal parameter `c` and ``|x| < 1.0``.
+    and n>=m, spheroidal parameter `c` and ``x >= 0.0``.
 
     Parameters
     ----------
@@ -3288,7 +3288,7 @@ const char *obl_rad2_doc = R"(
     c : array_like
         Spheroidal parameter
     x : array_like
-        Parameter x (``|x| < 1.0``)
+        Parameter x (``x >= 0.0``)
     out : ndarray, optional
         Optional output array for the function results
 
@@ -3312,7 +3312,7 @@ const char *obl_rad2_cv_doc = R"(
 
     Computes the oblate spheroidal radial function of the second kind
     and its derivative (with respect to `x`) for mode parameters m>=0
-    and n>=m, spheroidal parameter `c` and ``|x| < 1.0``. Requires
+    and n>=m, spheroidal parameter `c` and ``x >= 0.0``. Requires
     pre-computed characteristic value.
 
     Parameters
@@ -3326,7 +3326,7 @@ const char *obl_rad2_cv_doc = R"(
     cv : array_like
         Characteristic value
     x : array_like
-        Parameter x (``|x| < 1.0``)
+        Parameter x (``x >= 0.0``)
     out : ndarray, optional
         Optional output array for the function results
 
@@ -3531,7 +3531,7 @@ const char *pro_rad1_doc = R"(
 
     Computes the prolate spheroidal radial function of the first kind
     and its derivative (with respect to `x`) for mode parameters m>=0
-    and n>=m, spheroidal parameter `c` and ``|x| < 1.0``.
+    and n>=m, spheroidal parameter `c` and ``x > 1.0``.
 
     Parameters
     ----------
@@ -3542,7 +3542,7 @@ const char *pro_rad1_doc = R"(
     c : array_like
         Spheroidal parameter
     x : array_like
-        Real parameter (``|x| < 1.0``)
+        Real parameter (``x > 1.0``)
     out : ndarray, optional
         Optional output array for the function results
 
@@ -3561,7 +3561,7 @@ const char *pro_rad1_cv_doc = R"(
 
     Computes the prolate spheroidal radial function of the first kind
     and its derivative (with respect to `x`) for mode parameters m>=0
-    and n>=m, spheroidal parameter `c` and ``|x| < 1.0``. Requires
+    and n>=m, spheroidal parameter `c` and ``x > 1.0``. Requires
     pre-computed characteristic value.
 
     Parameters
@@ -3575,7 +3575,7 @@ const char *pro_rad1_cv_doc = R"(
     cv : array_like
         Characteristic value
     x : array_like
-        Real parameter (``|x| < 1.0``)
+        Real parameter (``x > 1.0``)
     out : ndarray, optional
         Optional output array for the function results
 
@@ -3594,7 +3594,7 @@ const char *pro_rad2_doc = R"(
 
     Computes the prolate spheroidal radial function of the second kind
     and its derivative (with respect to `x`) for mode parameters m>=0
-    and n>=m, spheroidal parameter `c` and ``|x| < 1.0``.
+    and n>=m, spheroidal parameter `c` and ``x > 1.0``.
 
     Parameters
     ----------
@@ -3604,10 +3604,8 @@ const char *pro_rad2_doc = R"(
         Mode parameter n (>= m)
     c : array_like
         Spheroidal parameter
-    cv : array_like
-        Characteristic value
     x : array_like
-        Real parameter (``|x| < 1.0``)
+        Real parameter (``x > 1.0``)
     out : ndarray, optional
         Optional output array for the function results
 
@@ -3626,7 +3624,7 @@ const char *pro_rad2_cv_doc = R"(
 
     Computes the prolate spheroidal radial function of the second kind
     and its derivative (with respect to `x`) for mode parameters m>=0
-    and n>=m, spheroidal parameter `c` and ``|x| < 1.0``. Requires
+    and n>=m, spheroidal parameter `c` and ``x > 1.0``. Requires
     pre-computed characteristic value.
 
     Parameters
@@ -3640,7 +3638,7 @@ const char *pro_rad2_cv_doc = R"(
     cv : array_like
         Characteristic value
     x : array_like
-        Real parameter (``|x| < 1.0``)
+        Real parameter (``x > 1.0``)
     out : ndarray, optional
         Optional output array for the function results
 

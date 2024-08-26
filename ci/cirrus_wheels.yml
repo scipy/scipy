@@ -86,14 +86,14 @@ cirrus_wheels_upload_task:
         apt-get update
         apt-get install -y curl wget
 
-        # install miniconda in the home directory. For some reason HOME isn't set by Cirrus
+        # install miniforge in the home directory. For some reason HOME isn't set by Cirrus
         export HOME=$PWD
         
-        # install miniconda for uploading to anaconda
-        wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
-        bash miniconda.sh -b -p $HOME/miniconda3
-        $HOME/miniconda3/bin/conda init bash
-        source $HOME/miniconda3/bin/activate
+        # install miniforge for uploading to anaconda
+        wget -O Miniforge3.sh "https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname)-$(uname -m).sh"
+        bash Miniforge3.sh -b -p "${HOME}/miniforge"
+        $HOME/miniforge/bin/conda init bash
+        source $HOME/miniforge/bin/activate
         conda install -y anaconda-client
         
         # The name of the zip file is derived from the `wheels_artifact` line.

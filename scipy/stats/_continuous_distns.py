@@ -35,7 +35,6 @@ from scipy.optimize import root_scalar
 from scipy.stats._warnings_errors import FitError
 import scipy.stats as stats
 
-
 def _remove_optimizer_parameters(kwds):
     """
     Remove the optimizer-related keyword arguments 'loc', 'scale' and
@@ -5742,6 +5741,94 @@ class johnsonsu_gen(rv_continuous):
 johnsonsu = johnsonsu_gen(name='johnsonsu')
 
 
+class landau_gen(rv_continuous):
+    r"""A Landau continuous random variable.
+
+    %(before_notes)s
+
+    Notes
+    -----
+    The probability density function for `landau` ([1]_, [2]_) is:
+
+    .. math::
+
+        f(x) = \frac{1}{\pi}\int_0^\infty \exp(-t \log t - xt)\sin(\pi t) dt
+
+    for a real number :math:`x`.
+
+    %(after_notes)s
+
+    Often (e.g. [2]_), the Landau distribution is parameterized in terms of a
+    location parameter :math:`\mu` and scale parameter :math:`c`, the latter of
+    which *also* introduces a location shift. If ``mu`` and ``c`` are used to
+    represent these parameters, this corresponds with SciPy's parameterization
+    with ``loc = mu + 2*c / np.pi * np.log(c)`` and ``scale = c``.
+
+    References
+    ----------
+    .. [1] Landau, L. (1944). "On the energy loss of fast particles by
+           ionization". J. Phys. (USSR). 8: 201.
+    .. [2] "Landau Distribution", Wikipedia,
+           https://en.wikipedia.org/wiki/Landau_distribution
+    .. [3] Chambers, J. M., Mallows, C. L., & Stuck, B. (1976).
+           "A method for simulating stable random variables."
+           Journal of the American Statistical Association, 71(354), 340-344.
+    .. [4] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
+    .. [5] Yoshimura, T. "Numerical Evaluation and High Precision Approximation
+           Formula for Landau Distribution".
+           :doi:`10.36227/techrxiv.171822215.53612870/v2`
+
+    %(example)s
+
+    """
+    def _shape_info(self):
+        return []
+
+    def _entropy(self):
+        # Computed with mpmath - see gh-19145
+        return 2.37263644000448182
+
+    def _pdf(self, x):
+        return scu._landau_pdf(x, 0, 1)
+
+    def _cdf(self, x):
+        return scu._landau_cdf(x, 0, 1)
+
+    def _sf(self, x):
+        return scu._landau_sf(x, 0, 1)
+
+    def _ppf(self, p):
+        return scu._landau_ppf(p, 0, 1)
+
+    def _isf(self, p):
+        return scu._landau_isf(p, 0, 1)
+
+    def _stats(self):
+        return np.nan, np.nan, np.nan, np.nan
+
+    def _munp(self, n):
+        return np.nan
+
+    def _fitstart(self, data, args=None):
+        # Initialize ML guesses using quartiles instead of moments.
+        if isinstance(data, CensoredData):
+            data = data._uncensor()
+        p25, p50, p75 = np.percentile(data, [25, 50, 75])
+        return p50, (p75 - p25)/2
+
+    def _rvs(self, size=None, random_state=None):
+        # Method from https://www.jstor.org/stable/2285309 Eq. 2.4
+        pi_2 = np.pi / 2
+        U = random_state.uniform(-np.pi / 2, np.pi / 2, size=size)
+        W = random_state.standard_exponential(size=size)
+        S = 2 / np.pi * ((pi_2 + U) * np.tan(U)
+                         - np.log((pi_2 * W * np.cos(U)) / (pi_2 + U)))
+        return S
+
+
+landau = landau_gen(name='landau')
+
+
 class laplace_gen(rv_continuous):
     r"""A Laplace continuous random variable.
 
@@ -9101,10 +9188,10 @@ class irwinhall_gen(rv_continuous):
 
     def _argcheck(self, n):
         return (n > 0) & _isintegral(n) & np.isrealobj(n)
-    
+
     def _get_support(self, n):
-        return 0, n 
-    
+        return 0, n
+
     def _shape_info(self):
         return [_ShapeInfo("n", True, (1, np.inf), (True, False))]
 
@@ -9112,7 +9199,7 @@ class irwinhall_gen(rv_continuous):
         # see https://link.springer.com/content/pdf/10.1007/s10959-020-01050-9.pdf
         # page 640, with m=n, j=n+order
         def vmunp(order, n):
-            return (sc.stirling2(n+order, n, exact=True) 
+            return (sc.stirling2(n+order, n, exact=True)
                     / sc.comb(n+order, n, exact=True))
 
         # exact rationals, but we convert to float anyway
@@ -9120,14 +9207,14 @@ class irwinhall_gen(rv_continuous):
 
     @staticmethod
     def _cardbspl(n):
-        t = np.arange(n+1) 
+        t = np.arange(n+1)
         return BSpline.basis_element(t)
 
     def _pdf(self, x, n):
         def vpdf(x, n):
             return self._cardbspl(n)(x)
         return np.vectorize(vpdf, otypes=[np.float64])(x, n)
-    
+
     def _cdf(self, x, n):
         def vcdf(x, n):
             return self._cardbspl(n).antiderivative()(x)
@@ -9145,7 +9232,7 @@ class irwinhall_gen(rv_continuous):
             usize = (n,) if size is None else (n, *size)
             return random_state.uniform(size=usize).sum(axis=0)
         return _rvs1(n, size=size, random_state=random_state)
-    
+
     def _stats(self, n):
         # mgf = ((exp(t) - 1)/t)**n
         # m'th derivative follows from the generalized Leibniz rule
