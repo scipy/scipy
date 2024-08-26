@@ -939,19 +939,19 @@ class TestNdimageFilters:
 
         # compare results to manually looping over the non-filtered axes
         output = filter_func(array, axes=(1, 2), **kwargs)
-        expected = np.empty_like(output)
+        expected = xp.empty_like(output)
         for i in range(array.shape[0]):
             expected[i, ...] = filter_func(array[i, ...], **kwargs)
         xp_assert_close(output, expected)
 
         output = filter_func(array, axes=(0, -1), **kwargs)
-        expected = np.empty_like(output)
+        expected = xp.empty_like(output)
         for i in range(array.shape[1]):
             expected[:, i, :] = filter_func(array[:, i, :], **kwargs)
         xp_assert_close(output, expected)
 
         output = filter_func(array, axes=(1), **kwargs)
-        expected = np.empty_like(output)
+        expected = xp.empty_like(output)
         for i in range(array.shape[0]):
             for j in range(array.shape[2]):
                 expected[i, :, j] = filter_func(array[i, :, j], **kwargs)
