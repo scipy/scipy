@@ -265,7 +265,13 @@ namespace detail {
     /* Find initial bracket for a bracketing scalar root finder. A valid bracket is a pair of points a < b for
      * which the signs of f(a) and f(b) differ. Assumes function is monotonic and it is known
      * whether the function is increasing or decreasing. Passing in whether the function is
-     * increasing or not allows for simplication of logic and avoidance of some branches. */
+     * increasing or not allows for simplication of logic and avoidance of some branches. 
+     *
+     * Note that this takes a pointer to a function taking a tuple of args along with a scalar
+     * double argument. A tuple of args for specializing func is also passed as the final argument.
+     * It would be much cleaner to use std::function and capturing lambda's to specialize the
+     * function we are finding a root for, but this was found unworkable in CuPy using NVRTC.
+     * This should be revisited in the future in order to allow simplifying this code. */
     template <typename... Args>
     XSF_HOST_DEVICE inline std::tuple<double, double, int> bracket_root(
 									double(*func)(double, std::tuple<Args...>), double x_left, double x_right, double x_min, double x_max, double factor,
@@ -365,6 +371,12 @@ namespace detail {
      *
      * The algorithm is similar to Brent's method, and uses a mix of linear interpolation,
      * (secant method), rational interpolation, and bisection.
+     *
+     * Note that this takes a pointer to a function taking a tuple of args along with a scalar
+     * double argument. A tuple of args for specializing func is also passed as the final argument.
+     * It would be much cleaner to use std::function and capturing lambda's to specialize the
+     * function we are finding a root for, but this was found unworkable in CuPy using NVRTC.
+     * This should be revisited in the future in order to allow simplifying this code. */
      */
     template <typename... Args>
     XSF_HOST_DEVICE inline std::pair<double, int>
