@@ -5564,7 +5564,7 @@ add_newdoc("gdtrib",
     Verify the inverse.
 
     >>> gdtrib(1.2, p, 5.6)
-    3.3999999999723882
+    3.3999999999999995
     """)
 
 
