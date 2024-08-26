@@ -5,7 +5,8 @@ import itertools
 import pytest
 import numpy as np
 
-from numpy.testing import assert_allclose
+from scipy._lib._array_api import array_namespace, xp_assert_close
+from scipy.conftest import array_api_compatible
 
 from scipy.integrate import cubature
 
@@ -24,18 +25,23 @@ from scipy.integrate._rules import (
 
 
 def basic_1d_integrand(x, n):
-    x_reshaped = x.reshape(-1, 1, 1)
-    n_reshaped = n.reshape(1, -1, 1)
+    xp = array_namespace(x, n)
 
-    return np.power(x_reshaped, n_reshaped)
+    x_reshaped = xp.reshape(x, (-1, 1, 1))
+    n_reshaped = xp.reshape(n, (1, -1, 1))
+
+    return xp.pow(x_reshaped, n_reshaped)
 
 
 def basic_1d_integrand_exact(n):
-    return (2**(n+1)/(n+1)).reshape(-1, 1)
+    xp = array_namespace(n)
+    return xp.reshape(2**(n+1)/(n+1), (-1, 1))
 
 
 def basic_nd_integrand(x, n):
-    return np.power(np.sum(x, axis=-1).reshape(-1, 1), n.reshape(1, -1))
+    xp = array_namespace(x, n)
+
+    return xp.pow(xp.reshape(xp.sum(x, axis=-1), (-1, 1)), xp.reshape(n, (1, -1)))
 
 
 def basic_nd_integrand_exact(n):
@@ -60,12 +66,12 @@ def genz_malik_1980_f_1(x, r, alphas):
 
 
 def genz_malik_1980_f_1_exact(a, b, r, alphas):
-    ndim = len(a)
-    a = a.reshape(*([1]*(len(alphas.shape) - 1)), ndim)
-    b = b.reshape(*([1]*(len(alphas.shape) - 1)), ndim)
+    ndim = a.size
+    a = np.reshape(a, (*([1]*(len(alphas.shape) - 1)), ndim))
+    b = np.reshape(b, (*([1]*(len(alphas.shape) - 1)), ndim))
 
     return (-2)**ndim * 1/np.prod(alphas, axis=-1) \
-        * np.cos(2*np.pi*r + np.sum(alphas * (a+b)/2, axis=-1)) \
+        * np.cos(2*math.pi*r + np.sum(alphas * (a+b) * 0.5, axis=-1)) \
         * np.prod(np.sin(alphas * (a-b)/2), axis=-1)
 
 
@@ -100,9 +106,9 @@ def genz_malik_1980_f_2(x, alphas, betas):
 
 
 def genz_malik_1980_f_2_exact(a, b, alphas, betas):
-    ndim = len(a)
-    a = a.reshape(*([1]*(len(alphas.shape) - 1)), ndim)
-    b = b.reshape(*([1]*(len(alphas.shape) - 1)), ndim)
+    ndim = a.size
+    a = np.reshape(a, (*([1]*(len(alphas.shape) - 1)), ndim))
+    b = np.reshape(b, (*([1]*(len(alphas.shape) - 1)), ndim))
 
     return (-1)**ndim * 1/np.prod(alphas, axis=-1) \
         * np.prod(
@@ -116,14 +122,19 @@ def genz_malik_1980_f_2_random_args(shape):
     alphas = np.random.rand(*shape)
     betas = np.random.rand(*shape)
 
-    difficulty = 25
+    difficulty = 25.0
     products = np.prod(np.power(alphas, -2), axis=-1)
     normalisation_factors = np.expand_dims(np.power(products, 1 / (2*ndim)), axis=-1)
     alphas = alphas \
         * normalisation_factors \
         / np.power(difficulty, 1 / (2*ndim))
 
-    assert_allclose(np.prod(np.power(alphas, -2), axis=-1), difficulty)
+    xp_assert_close(
+        np.prod(np.power(alphas, -2), axis=-1),
+        difficulty,
+        check_shape=False,
+        check_0d=False,
+    )
 
     # Adjust alphas from distribution used in Genz and Malik 1980 since denominator
     # is very small for high dimensions.
@@ -288,12 +299,12 @@ class TestCubature:
     ])
     def test_pass_str(self, rule_str):
         n = np.arange(5)
-        a = np.array([0, 0])
-        b = np.array([2, 2])
+        a = np.asarray([0, 0])
+        b = np.asarray([2, 2])
 
         res = cubature(basic_nd_integrand, a, b, rule_str, args=(n,))
 
-        assert_allclose(
+        xp_assert_close(
             res.estimate,
             basic_nd_integrand_exact(n),
             rtol=1e-1,
@@ -313,7 +324,7 @@ class TestCubature:
             args=(n,)
         )
 
-        assert_allclose(
+        xp_assert_close(
             res.estimate,
             basic_1d_integrand_exact(n),
             rtol=1e-1,
@@ -374,7 +385,7 @@ class TestCubatureProblems:
 
             # Arguments to pass to `f` and `exact`
             (
-                np.array([1/4]),
+                1/4,
                 np.array([5]),
             )
         ),
@@ -384,7 +395,7 @@ class TestCubatureProblems:
             np.array([0, 0]),
             np.array([1, 1]),
             (
-                np.array([1/4]),
+                1/4,
                 np.array([2, 4]),
             ),
         ),
@@ -394,7 +405,7 @@ class TestCubatureProblems:
             np.array([0, 0]),
             np.array([5, 5]),
             (
-                np.array([1/2]),
+                1/2,
                 np.array([2, 4]),
             )
         ),
@@ -404,7 +415,7 @@ class TestCubatureProblems:
             np.array([0, 0, 0]),
             np.array([10, 10, 10]),
             (
-                np.array([1/2]),
+                1/2,
                 np.array([1, 1, 1]),
             )
         ),
@@ -623,12 +634,15 @@ class TestCubatureProblems:
 
         assert res.status == "converged"
 
-        assert_allclose(
-            res.estimate,
-            exact(a, b, *args),
+        est = res.estimate
+        exact_sol = exact(a, b, *args)
+
+        xp_assert_close(
+            est,
+            exact_sol,
             rtol=rtol,
             atol=atol,
-            err_msg=f"estimate_error={res.error}, subdivisions={res.subdivisions}"
+            err_msg=f"estimate_error={res.error}, subdivisions={res.subdivisions}",
         )
 
     @pytest.mark.parametrize("problem", problem_array_output)
@@ -669,12 +683,15 @@ class TestCubatureProblems:
             args=args,
         )
 
-        assert_allclose(
-            res.estimate,
-            exact(a, b, *args),
+        est = res.estimate
+        exact_sol = exact(a, b, *args)
+
+        xp_assert_close(
+            est,
+            exact_sol,
             rtol=rtol,
             atol=atol,
-            err_msg=f"estimate_error={res.error}, subdivisions={res.subdivisions}"
+            err_msg=f"estimate_error={res.error}, subdivisions={res.subdivisions}",
         )
 
         err_msg = (f"estimate_error={res.error}, "
@@ -685,6 +702,7 @@ class TestCubatureProblems:
         assert res.estimate.shape == shape[:-1]
 
 
+@array_api_compatible
 class TestRules:
     """
     Tests related to the general Rule interface (currently private).
@@ -710,71 +728,80 @@ class TestRules:
             GenzMalikCubature(2),
         ),
     ])
-    def test_incompatible_dimension_raises_error(self, problem):
+    def test_incompatible_dimension_raises_error(self, problem, xp):
         a, b, rule = problem
 
         with pytest.raises(Exception, match="incompatible dimension"):
             rule.estimate(basic_1d_integrand, a, b)
 
-    def test_estimate_with_base_classes_raise_error(self):
-        a = np.array([0])
-        b = np.array([1])
+    def test_estimate_with_base_classes_raise_error(self, xp):
+        a = xp.asarray([0])
+        b = xp.asarray([1])
 
         for base_class in [Rule(), FixedRule()]:
             with pytest.raises(Exception):
                 base_class.estimate(basic_1d_integrand, a, b)
 
 
+@array_api_compatible
 class TestRulesQuadrature:
     """
     Tests underlying quadrature rules (ndim == 1).
     """
 
-    @pytest.mark.parametrize("quadrature", [
-        GaussLegendreQuadrature(3),
-        GaussLegendreQuadrature(5),
-        GaussLegendreQuadrature(10),
-        GaussKronrodQuadrature(15),
-        GaussKronrodQuadrature(21),
+    @pytest.mark.parametrize(("rule", "rule_args"), [
+        (GaussLegendreQuadrature, (3,)),
+        (GaussLegendreQuadrature, (5,)),
+        (GaussLegendreQuadrature, (10,)),
+        (GaussKronrodQuadrature, (15,)),
+        (GaussKronrodQuadrature, (21,)),
     ])
-    def test_base_1d_quadratures_simple(self, quadrature):
-        n = np.arange(5)
+    def test_base_1d_quadratures_simple(self, rule, rule_args, xp):
+        quadrature = rule(*rule_args, xp=xp)
+
+        n = xp.arange(5, dtype=xp.float64)
 
         def f(x):
-            x_reshaped = x.reshape(-1, 1, 1)
-            n_reshaped = n.reshape(1, -1, 1)
+            x_reshaped = xp.reshape(x, (-1, 1, 1))
+            n_reshaped = xp.reshape(n, (1, -1, 1))
 
-            return np.power(x_reshaped, n_reshaped)
+            return xp.pow(x_reshaped, n_reshaped)
 
-        a = np.array([0])
-        b = np.array([2])
+        a = xp.asarray([0])
+        b = xp.asarray([2])
 
-        exact = (2**(n+1)/(n+1)).reshape(-1, 1)
+        exact = xp.reshape(2**(n+1)/(n+1), (-1, 1))
         estimate = quadrature.estimate(f, a, b)
 
-        assert_allclose(
+        xp_assert_close(
             estimate,
             exact,
             rtol=1e-1,
             atol=0,
         )
 
-    @pytest.mark.parametrize("quadrature_pair", [
-        (GaussLegendreQuadrature(10), GaussLegendreQuadrature(5))
+    @pytest.mark.parametrize(("rule_pair", "rule_pair_args"), [
+        ((GaussLegendreQuadrature, GaussLegendreQuadrature), (10, 5)),
     ])
-    def test_base_1d_quadratures_error_from_difference(self, quadrature_pair):
-        n = np.arange(5)
-        a = np.array([0])
-        b = np.array([2])
+    def test_base_1d_quadratures_error_from_difference(self, rule_pair, rule_pair_args,
+                                                       xp):
+        n = xp.arange(5, dtype=xp.float64)
+        a = xp.asarray([0])
+        b = xp.asarray([2])
 
-        rule = NestedFixedRule(
-            higher=quadrature_pair[0],
-            lower=quadrature_pair[1]
+        higher = rule_pair[0](rule_pair_args[0], xp=xp)
+        lower = rule_pair[1](rule_pair_args[1], xp=xp)
+
+        rule = NestedFixedRule(higher, lower)
+        res = cubature(
+            basic_1d_integrand,
+            a, b,
+            rule,
+            rtol=1e-1,
+            args=(n,),
         )
 
-        res = cubature(basic_1d_integrand, a, b, rule, rtol=1e-1, args=(np.arange(5),))
-
-        assert_allclose(
+        xp_assert_close(
             res.estimate,
             basic_1d_integrand_exact(n),
             rtol=1e-1,
@@ -784,9 +811,9 @@ class TestRulesQuadrature:
     @pytest.mark.parametrize("quadrature", [
         GaussLegendreQuadrature
     ])
-    def test_one_point_fixed_quad_impossible(self, quadrature):
+    def test_one_point_fixed_quad_impossible(self, quadrature, xp):
         with pytest.raises(Exception):
-            quadrature(1)
+            quadrature(1, xp=xp)
 
 
 class TestRulesCubature:
@@ -815,10 +842,11 @@ class BadErrorRule(Rule):
     A rule with fake high error so that cubature will keep on subdividing.
     """
 
-    underlying = GaussLegendreQuadrature(10)
-
     def estimate(self, f, a, b, args=()):
-        return self.underlying.estimate(f, a, b, args)
+        xp = array_namespace(a, b)
+        underlying = GaussLegendreQuadrature(10, xp=xp)
+
+        return underlying.estimate(f, a, b, args)
 
     def estimate_error(self, f, a, b, args=()):
         return 1e6

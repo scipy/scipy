@@ -1,5 +1,7 @@
 import itertools
 
+from scipy._lib._array_api import array_namespace
+
 import numpy as np
 import math
 
@@ -151,7 +153,7 @@ class Rule:
         for a_k, b_k in _subregion_coordinates(a, b):
             refined_est += self.estimate(f, a_k, b_k, args)
 
-        return np.abs(est - refined_est)
+        return self.xp.abs(est - refined_est)
 
 
 class FixedRule(Rule):
@@ -282,6 +284,7 @@ class NestedFixedRule(FixedRule):
     def __init__(self, higher, lower):
         self.higher = higher
         self.lower = lower
+        self.xp = higher.xp
 
     @property
     def nodes_and_weights(self):
@@ -334,10 +337,10 @@ class NestedFixedRule(FixedRule):
         nodes, weights = self.nodes_and_weights
         lower_nodes, lower_weights = self.lower_nodes_and_weights
 
-        error_nodes = np.concatenate([nodes, lower_nodes], axis=0)
-        error_weights = np.concatenate([weights, -lower_weights], axis=0)
+        error_nodes = self.xp.concat([nodes, lower_nodes], axis=0)
+        error_weights = self.xp.concat([weights, -lower_weights], axis=0)
 
-        return np.abs(
+        return self.xp.abs(
             _apply_fixed_rule(f, a, b, error_nodes, error_weights, args)
         )
 
@@ -392,6 +395,7 @@ class ProductNestedFixed(NestedFixedRule):
                 raise ValueError("base rules for product need to be instance of"
                                  "NestedFixedRule")
 
+        self.xp = base_rules[0].xp
         self.base_rules = base_rules
 
     @cached_property
@@ -400,7 +404,7 @@ class ProductNestedFixed(NestedFixedRule):
             [rule.nodes_and_weights[0] for rule in self.base_rules]
         )
 
-        weights = np.prod(
+        weights = self.xp.prod(
             _cartesian_product(
                 [rule.nodes_and_weights[1] for rule in self.base_rules]
             ),
@@ -426,14 +430,18 @@ class ProductNestedFixed(NestedFixedRule):
 
 
 def _cartesian_product(arrays):
-    la = len(arrays)
-    dtype = np.result_type(*arrays)
-    arr = np.empty([la] + [len(a) for a in arrays], dtype=dtype)
+    xp = array_namespace(*arrays)
 
-    for i, a in enumerate(np.ix_(*arrays)):
+    la = len(arrays)
+    dtype = xp.result_type(*arrays)
+    arr = xp.empty([la] + [a.size for a in arrays], dtype=dtype)
+
+    arrays_ix = xp.meshgrid(*arrays, indexing='ij')
+
+    for i, a in enumerate(arrays_ix):
         arr[i, ...] = a
 
-    return arr.reshape(la, -1).T
+    return xp.reshape(arr, (la, -1)).T
 
 
 def _subregion_coordinates(a, b):
@@ -447,16 +455,19 @@ def _subregion_coordinates(a, b):
         ([1/2, 1/2], [1, 1])
     """
 
+    xp = array_namespace(a, b)
     m = (a + b)/2
 
     for a_sub, b_sub in zip(
-        itertools.product(*np.array([a, m]).T),
-        itertools.product(*np.array([m, b]).T)
+        itertools.product(*xp.array([a, m]).T),
+        itertools.product(*xp.array([m, b]).T)
     ):
-        yield np.array(a_sub), np.array(b_sub)
+        yield xp.array(a_sub), xp.array(b_sub)
 
 
 def _apply_fixed_rule(f, a, b, orig_nodes, orig_weights, args=()):
+    xp = array_namespace(a, b, orig_nodes, orig_weights)
+
     # Ensure orig_nodes are at least 2D, since 1D cubature methods can return arrays of
     # shape (npoints,) rather than (npoints, 1)
     if orig_nodes.ndim == 1:
@@ -464,21 +475,23 @@ def _apply_fixed_rule(f, a, b, orig_nodes, orig_weights, args=()):
 
     rule_ndim = orig_nodes.shape[-1]
 
-    a_ndim = len(a)
-    b_ndim = len(b)
+    a_ndim = a.size
+    b_ndim = b.size
 
     if rule_ndim != a_ndim or rule_ndim != b_ndim:
         raise ValueError(f"rule and function are of incompatible dimension, nodes have"
                          f"ndim {rule_ndim}, while limit of integration has ndim"
                          f"a_ndim={a_ndim}, b_ndim={b_ndim}")
 
+    a = xp.astype(a, xp.float64)
+    b = xp.astype(b, xp.float64)
     lengths = b - a
 
     # The underlying rule is for the hypercube [-1, 1]^n.
     #
     # To handle arbitrary regions of integration, it's necessary to apply a linear
     # change of coordinates to map each interval [a[i], b[i]] to [-1, 1].
-    nodes = (orig_nodes + 1) * (lengths / 2) + a
+    nodes = (orig_nodes + 1) * (lengths * 0.5) + a
 
     # Also need to multiply the weights by a scale factor equal to the determinant
     # of the Jacobian for this coordinate change.
@@ -486,11 +499,11 @@ def _apply_fixed_rule(f, a, b, orig_nodes, orig_weights, args=()):
     weights = orig_weights * weight_scale_factor
 
     f_nodes = f(nodes, *args)
-    weights_reshaped = weights.reshape(-1, *([1] * (f_nodes.ndim - 1)))
+    weights_reshaped = xp.reshape(weights, (-1, *([1] * (f_nodes.ndim - 1))))
 
     # f(nodes) will have shape (num_nodes, output_dim_1, ..., output_dim_n)
     # Summing along the first axis means estimate will shape (output_dim_1, ...,
     # output_dim_n)
-    est = np.sum(weights_reshaped * f_nodes, axis=0)
+    est = xp.sum(weights_reshaped * f_nodes, axis=0)
 
     return est

@@ -1,8 +1,9 @@
 import math
 import itertools
-import numpy as np
 
 from functools import cached_property
+
+import numpy as np
 
 from scipy.integrate._rules import NestedFixedRule
 
@@ -51,7 +52,7 @@ class GenzMalikCubature(NestedFixedRule):
      np.float64(1.378269656626685e-06)
     """
 
-    def __init__(self, ndim, degree=7, lower_degree=5):
+    def __init__(self, ndim, degree=7, lower_degree=5, xp=None):
         if ndim < 2:
             raise ValueError("Genz-Malik cubature is only defined for ndim >= 2")
 
@@ -62,6 +63,11 @@ class GenzMalikCubature(NestedFixedRule):
         self.ndim = ndim
         self.degree = degree
         self.lower_degree = lower_degree
+
+        if xp is None:
+            xp = np
+
+        self.xp = xp
 
     @cached_property
     def nodes_and_weights(self):
@@ -85,12 +91,10 @@ class GenzMalikCubature(NestedFixedRule):
         )
 
         nodes_size = 1 + (2 * (self.ndim + 1) * self.ndim) + 2**self.ndim
-        count = nodes_size * self.ndim
 
-        nodes = np.fromiter(
-            itertools.chain.from_iterable(zip(*its)),
+        nodes = self.xp.asarray(
+            list(zip(*its)),
             dtype=float,
-            count=count,
         )
 
         nodes.shape = (self.ndim, nodes_size)
@@ -108,7 +112,7 @@ class GenzMalikCubature(NestedFixedRule):
         w_4 = (2**self.ndim) * (200 / 19683)
         w_5 = 6859 / 19683
 
-        weights = np.repeat(
+        weights = self.xp.repeat(
             [w_1, w_2, w_3, w_4, w_5],
             [
                 1,
@@ -144,12 +148,10 @@ class GenzMalikCubature(NestedFixedRule):
         )
 
         nodes_size = 1 + (2 * (self.ndim + 1) * self.ndim)
-        count = nodes_size * self.ndim
 
-        nodes = np.fromiter(
-            itertools.chain.from_iterable(zip(*its)),
+        nodes = self.xp.asarray(
+            list(zip(*its)),
             dtype=float,
-            count=count,
         )
 
         nodes.shape = (self.ndim, nodes_size)
@@ -161,7 +163,7 @@ class GenzMalikCubature(NestedFixedRule):
         w_3 = (2**self.ndim) * (265 - 100*self.ndim) / 1458
         w_4 = (2**self.ndim) * (25 / 729)
 
-        weights = np.repeat(
+        weights = self.xp.repeat(
             [w_1, w_2, w_3, w_4],
             [1, 2 * self.ndim, 2*self.ndim, 2*(self.ndim - 1)*self.ndim],
         )
