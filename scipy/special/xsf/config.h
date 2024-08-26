@@ -56,16 +56,13 @@
 #ifdef __CUDACC__
 #define XSF_HOST_DEVICE __host__ __device__
 
-
-
 #include <cuda/std/cmath>
-#include <cuda/std/cstdint>
 #include <cuda/std/cstddef>
+#include <cuda/std/cstdint>
 #include <cuda/std/limits>
 #include <cuda/std/tuple>
 #include <cuda/std/type_traits>
 #include <cuda/std/utility>
-
 
 // Fallback to global namespace for functions unsupported on NVRTC Jit
 #ifdef _LIBCUDACXX_COMPILER_NVRTC
@@ -108,7 +105,6 @@ XSF_HOST_DEVICE inline double asinh(double x) { return cuda::std::asinh(x); }
 
 XSF_HOST_DEVICE inline bool signbit(double x) { return cuda::std::signbit(x); }
 
-
 // Fallback to global namespace for functions unsupported on NVRTC
 #ifndef _LIBCUDACXX_COMPILER_NVRTC
 XSF_HOST_DEVICE inline double ceil(double x) { return cuda::std::ceil(x); }
@@ -150,7 +146,7 @@ XSF_HOST_DEVICE void swap(T &a, T &b) {
 }
 
 // Reimplement std::clamp until it's available in CuPy
-template<typename T>
+template <typename T>
 XSF_HOST_DEVICE constexpr T clamp(T &v, T &lo, T &hi) {
     return v < lo ? lo : (v > hi ? lo : v);
 }
@@ -221,9 +217,9 @@ using pair = cuda::std::pair<T1, T2>;
 template <typename... Types>
 using tuple = cuda::std::tuple<Types...>;
 
-using cuda::std::uint64_t;
-using cuda::std::size_t;
 using cuda::std::ptrdiff_t;
+using cuda::std::size_t;
+using cuda::std::uint64_t;
 
 #define XSF_ASSERT(a)
 

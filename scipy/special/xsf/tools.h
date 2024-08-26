@@ -265,7 +265,7 @@ namespace detail {
     /* Find initial bracket for a bracketing scalar root finder. A valid bracket is a pair of points a < b for
      * which the signs of f(a) and f(b) differ. Assumes function is monotonic and it is known
      * whether the function is increasing or decreasing. Passing in whether the function is
-     * increasing or not allows for simplication of logic and avoidance of some branches. 
+     * increasing or not allows for simplication of logic and avoidance of some branches.
      *
      * Note that this takes a pointer to a function taking a tuple of args along with a scalar
      * double argument. A tuple of args for specializing func is also passed as the final argument.
@@ -274,16 +274,16 @@ namespace detail {
      * This should be revisited in the future in order to allow simplifying this code. */
     template <typename... Args>
     XSF_HOST_DEVICE inline std::tuple<double, double, int> bracket_root(
-									double(*func)(double, std::tuple<Args...>), double x_left, double x_right, double x_min, double x_max, double factor,
-									bool increasing, std::tuple<Args...> args)
-    {
-	double y_left = func(x_left, args), y_right = func(x_right, args);
+        double (*func)(double, std::tuple<Args...>), double x_left, double x_right, double x_min, double x_max,
+        double factor, bool increasing, std::tuple<Args...> args
+    ) {
+        double y_left = func(x_left, args), y_right = func(x_right, args);
         double y_left_sgn = std::signbit(y_left), y_right_sgn = std::signbit(y_right);
 
         if (y_left_sgn != y_right_sgn || (y_left == 0 || y_right == 0)) {
             /* Check if the initial bracket is valid. */
-	    std::tuple<double, double, int> result(x_left, x_right, 0);
-	    return result;
+            std::tuple<double, double, int> result(x_left, x_right, 0);
+            return result;
         }
         bool search_left;
         /* The frontier is the new leading endpoint of the expanding bracket. The
@@ -293,7 +293,7 @@ namespace detail {
         double interior, frontier, y_interior, y_frontier, boundary;
         if ((increasing && y_right < 0) || (!increasing && y_right > 0)) {
             /* If func is increasing  and func(x_right) < 0 or if func is decreasing and
-	     *  f(y_right) > 0, we should expand the bracket to the right. */
+             *  f(y_right) > 0, we should expand the bracket to the right. */
             interior = x_left, frontier = x_right, y_interior = y_left, y_frontier = y_right;
             search_left = false;
             boundary = x_max;
@@ -333,34 +333,35 @@ namespace detail {
             }
             if (y_frontier_sgn != y_interior_sgn || (y_frontier == 0.0)) {
                 /* Stopping condition, func evaluated at endpoints of bracket has opposing signs,
-		 * meeting requirement for bracketing root finder. (Or endpoint has reached a 
-		 * zero.) */
+                 * meeting requirement for bracketing root finder. (Or endpoint has reached a
+                 * zero.) */
                 if (search_left) {
                     /* Ensure we return an interval (a, b) with a < b. */
                     std::swap(interior, frontier);
                 }
-		std::tuple<double, double, int> result(interior, frontier, 0);
-		return result;
+                std::tuple<double, double, int> result(interior, frontier, 0);
+                return result;
             }
 
             if (stop) {
                 /* We have reached the boundary and must stop the search. If f evaluated at the boundary is
                  * a zero, then we consider this a valid bracket because we have found a root, otherwise we
-		 have not found a valid bracket. */
+                 have not found a valid bracket. */
                 if (y_frontier == 0.0) {
                     if (search_left) {
                         std::swap(interior, frontier);
                     }
-		    std::tuple<double, double, int> result(interior, frontier, 0);
-		    return result;
+                    std::tuple<double, double, int> result(interior, frontier, 0);
+                    return result;
                 }
-		std::tuple<double, double, int> result(std::numeric_limits<double>::quiet_NaN(),
-						       std::numeric_limits<double>::quiet_NaN(),
-						       search_left ? 1 : 2);
+                std::tuple<double, double, int> result(
+                    std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN(),
+                    search_left ? 1 : 2
+                );
                 return result;
             }
         }
-	}
+    }
 
     /* Find root of a real valued continuous function of a single variable
      *
@@ -377,11 +378,10 @@ namespace detail {
      * It would be much cleaner to use std::function and capturing lambda's to specialize the
      * function we are finding a root for, but this was found unworkable in CuPy using NVRTC.
      * This should be revisited in the future in order to allow simplifying this code. */
-     */
     template <typename... Args>
     XSF_HOST_DEVICE inline std::pair<double, int>
-    find_root_bus_dekker_r(double(*func)(double, std::tuple<Args...>), double a, double b, std::tuple<Args...> args) {
-	double fa = func(a, args), fb = func(b, args);
+    find_root_bus_dekker_r(double (*func)(double, std::tuple<Args...>), double a, double b, std::tuple<Args...> args) {
+        double fa = func(a, args), fb = func(b, args);
         // Handle cases where zero is on endpoint of initial bracket.
         if (fa == 0) {
             return {a, 0};

@@ -25,41 +25,42 @@ XSF_HOST_DEVICE inline double gdtrib(double a, double p, double x) {
     }
     if (x == 0.0) {
         if (p == 0.0) {
-	    set_error("gdtrib", SF_ERROR_DOMAIN, "Indeterminate result for (x, p) == (0, 0).");
-	    return std::numeric_limits<double>::quiet_NaN();
+            set_error("gdtrib", SF_ERROR_DOMAIN, "Indeterminate result for (x, p) == (0, 0).");
+            return std::numeric_limits<double>::quiet_NaN();
         }
-	/* gdtrib(a, p, x) tends to 0 as x -> 0 when p > 0 */
-	return 0.0;
+        /* gdtrib(a, p, x) tends to 0 as x -> 0 when p > 0 */
+        return 0.0;
     }
     if (p == 0.0) {
-	/* gdtrib(a, p, x) tends to infinity as p -> 0 from the right when x > 0. */
-	set_error("gdtrib", SF_ERROR_SINGULAR, NULL);
-	return std::numeric_limits<double>::infinity();
+        /* gdtrib(a, p, x) tends to infinity as p -> 0 from the right when x > 0. */
+        set_error("gdtrib", SF_ERROR_SINGULAR, NULL);
+        return std::numeric_limits<double>::infinity();
     }
     if (p == 1.0) {
-	/* gdtrib(a, p, x) tends to 0 as p -> 1.0 from the left when x > 0. */
-	return 0.0;
+        /* gdtrib(a, p, x) tends to 0 as p -> 1.0 from the left when x > 0. */
+        return 0.0;
     }
 
     double q = 1.0 - p;
-    double(*func)(double, std::tuple<double, double, double>);
+    double (*func)(double, std::tuple<double, double, double>);
     std::tuple<double, double, double> args;
     if (p <= q) {
-	args = {a, p, x};
+        args = {a, p, x};
         func = +[](double b, std::tuple<double, double, double> args) -> double {
-	    auto [a, p, x] = args;
-	    return cephes::igam(b, a * x) - p;
-	};
+            auto [a, p, x] = args;
+            return cephes::igam(b, a * x) - p;
+        };
     } else {
-	args = {a, q, x};
-	func = +[](double b, std::tuple<double, double, double> args) -> double {
-	    auto [a, q, x] = args;
-	    return q - cephes::igamc(b, a * x);
-	};
+        args = {a, q, x};
+        func = +[](double b, std::tuple<double, double, double> args) -> double {
+            auto [a, q, x] = args;
+            return q - cephes::igamc(b, a * x);
+        };
     }
     double lower_bound = std::numeric_limits<double>::min();
     double upper_bound = std::numeric_limits<double>::max();
-    auto [x_left, x_right, bracket_status] = detail::bracket_root(func, 1.0, 5.0, lower_bound, upper_bound, 8.0, false, args);
+    auto [x_left, x_right, bracket_status] =
+        detail::bracket_root(func, 1.0, 5.0, lower_bound, upper_bound, 8.0, false, args);
     if (bracket_status == 1) {
         set_error("gdtrib", SF_ERROR_UNDERFLOW, NULL);
         return 0.0;
