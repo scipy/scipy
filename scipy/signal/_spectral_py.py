@@ -48,7 +48,7 @@ def lombscargle(
     When *normalize* is "amplitude" the computed periodogram is the complex 
     representation of the amplitude and phase.
 
-    Input arrays should be 1-D and, if necessary, will be cast to float64.
+    Input arrays should be 1-D with a real floating dtype.
 
     Parameters
     ----------
@@ -60,11 +60,12 @@ def lombscargle(
         Angular frequencies for output periodogram. Frequencies are normally >= 0.
         Any peak at -freq will also exist at +freq.
     precenter : bool, optional
-        Pre-center measurement values by subtracting the mean, if True. Ignored if
-        `floating_mean` is True.
+        Pre-center measurement values by subtracting the mean, if True. This is
+        unnecessary if `floating_mean` is True (default).
     normalize : bool | str, optional
         Compute normalized or complex (amplitude + phase) periodogram.
-        Valid options are: False/"power", True/"normalize", or "amplitude".
+        Valid options are: ``False``/``"power"``, ``True``/``"normalize"``, or 
+        ``"amplitude"``.
     weights : array_like, optional
         Weights for each sample. Weights must be nonnegative.
     floating_mean : bool, optional
@@ -79,14 +80,14 @@ def lombscargle(
     Raises
     ------
     ValueError
-        If any of the input arrays x, y, freqs, or weights are not 1D. Or, if the input 
-        arrays x, y, and weights do not have the same shape.
+        If any of the input arrays x, y, freqs, or weights are not 1D, or if any are 
+        zero length. Or, if the input arrays x, y, and weights do not have the same
+        shape as each other.
     TypeError
-        If any of the input arrays x, y, freqs, or weights are a complex dtype.
-    ZeroDivisionError
-        If the the sum of the weights array is 0.
+        If any of the input arrays x, y, freqs, or weights are not a real floating
+        dtype. Or, if any of the arrays are a different dtype.
     ValueError
-        If any weight is < 0.
+        If any weight is < 0, or the sum of the weights is <= 0.
     TypeError
         If the normalize parameter is not a bool or str.
     ValueError
@@ -101,11 +102,12 @@ def lombscargle(
     Notes
     -----
     The algorithm used will account for any unknown offset by default, unless
-    floating_mean is False. The precenter parameter is ignored if floating_mean
-    is True (default). But otherwise, if precenter is True, performs the operation
-    ``y -= y.mean()``. When the normalize parameter is "amplitude", for any frequency
-    in freqs that is below ``(2*pi)/(x.max() - x.min())``, the predicted amplitude will 
-    tend towards infinity.
+    floating_mean is False. If precenter is True, it performs the operation
+    ``y -= y.mean()``. However, precenter is a legacy parameter, and unnecessary 
+    when floating_mean is True. Furthermore, the mean removed by precenter does not
+    account for sample weights. When the normalize parameter is "amplitude", for any
+    frequency in freqs that is below ``(2*pi)/(x.max() - x.min())``, the predicted 
+    amplitude will tend towards infinity.
     
     References
     ----------
@@ -186,35 +188,25 @@ def lombscargle(
 
     # if no weights are provided, assume all data points are equally important
     if weights is None:
-        weights = np.ones_like(x, dtype=np.float64)
+        weights = np.ones_like(x, dtype=x.dtype)
 
-    # validate input shapes and if they are real dtypes
-    if x.ndim != 1:
-        raise ValueError("x array is not 1D")
-    if y.ndim != 1:
-        raise ValueError("y array is not 1D")
-    if freqs.ndim != 1:
-        raise ValueError("freqs array is not 1D")
-    if weights.ndim != 1:
-        raise ValueError("weights array is not 1D")
-    if x.shape != y.shape or x.shape != weights.shape:
-        raise ValueError("Input arrays do not have the same shape.")
-    if np.iscomplexobj(x):
-        raise TypeError("x array is a complex dtype")
-    if np.iscomplexobj(y):
-        raise TypeError("y array is a complex dtype")
-    if np.iscomplexobj(freqs):
-        raise TypeError("freqs array is a complex dtype")
-    if np.iscomplexobj(weights):
-        raise TypeError("weights array is a complex dtype")
+    # validate input shapes
+    if not (x.ndim == 1 and x.size > 0 and x.shape == y.shape == weights.shape):
+        raise ValueError("Parameters x, y, weights must be 1-D arrays of " +             
+                         "equal non-zero length!")
+    if not (freqs.ndim == 1 and freqs.size > 0):
+        raise ValueError("Parameter freqs must be a 1-D array of non-zero length!")
     
-    # check for weights summing to 0
-    if weights.sum() == 0:
-        raise ZeroDivisionError("Weights sum to 0.")
+    # validate input dtypes
+    if not np.issubdtype(x.dtype, np.floating) or (
+        not (x.dtype == y.dtype == freqs.dtype == weights.dtype)):
+        raise TypeError("Parameters x, y, freqs, and weights must be arrays of same " +
+                         "floating dtype (int and complex dtypes are not allowed)!")
     
-    # check for any negative weights
-    if np.any(weights < 0):
-        raise ValueError("Each weight must be >= 0.")
+    # validate weights
+    if not (np.all(weights >= 0) and np.sum(weights) > 0):
+        raise ValueError("Parameter weights must have only non-negative entries " +
+                         "which sum to a positive value!")
 
     # validate normalize parameter
     if isinstance(normalize, bool):
@@ -233,16 +225,6 @@ def lombscargle(
             "or 'amplitude'."
         )
 
-    # if input arrays are not float64, convert them
-    if x.dtype != np.float64:
-        x = x.astype(np.float64)
-    if y.dtype != np.float64:
-        y = y.astype(np.float64)
-    if freqs.dtype != np.float64:
-        freqs = freqs.astype(np.float64)
-    if weights.dtype != np.float64:
-        weights = weights.astype(np.float64)
-
     # weight vector must sum to 1
     weights = weights / weights.sum()
 
@@ -254,8 +236,8 @@ def lombscargle(
     a = np.empty_like(freqs)
     b = np.empty_like(freqs)
 
-    # perform precenter, only when called for and floating_mean is False
-    if precenter and (not floating_mean):
+    # if requested, perform precenter
+    if precenter:
         y -= y.mean()
 
     # calculate the single sum that does not depend on the frequency
@@ -273,7 +255,7 @@ def lombscargle(
         SS = 1 - CC  # trig identity: S^2 = 1 - C^2
         CS = (weights * coswt * sinwt).sum()
         
-        # now, redefine trig arrays to use weights
+        # now, redefine trig arrays to always be multiplied by the weights
         coswt[:] = weights * coswt
         sinwt[:] = weights * sinwt
 
