@@ -5537,22 +5537,21 @@ add_newdoc("gdtrib",
 
     Notes
     -----
-    Wrapper for the CDFLIB [1]_ Fortran routine `cdfgam`.
 
-    The cumulative distribution function `p` is computed using a routine by
-    DiDinato and Morris [2]_. Computation of `b` involves a search for a value
-    that produces the desired value of `p`. The search relies on the
-    monotonicity of `p` with `b`.
+    The cumulative distribution function `p` is computed using the Cephes [1]_
+    routines `igam` and `igamc`. Computation of `b` involves a search for a value
+    that produces the desired value of `p` using a bracketing root finding method
+    developed by Bus & Dekker [2]_. The search relies on the monotonicity of `p`
+    with `b`.
 
     References
     ----------
-    .. [1] Barry Brown, James Lovato, and Kathy Russell,
-           CDFLIB: Library of Fortran Routines for Cumulative Distribution
-           Functions, Inverses, and Other Parameters.
-    .. [2] DiDinato, A. R. and Morris, A. H.,
-           Computation of the incomplete gamma function ratios and their
-           inverse.  ACM Trans. Math. Softw. 12 (1986), 377-393.
-
+    .. [1] Cephes Mathematical Functions Library,
+           http://www.netlib.org/cephes/
+    .. [2] J. C. P. Bus and T. J. Dekker. 1975. Two Efficient Algorithms with
+           Guaranteed Convergence for Finding a Zero of a Function. ACM Trans.
+           Math. Softw. 1, 4 (Dec. 1975), 330-345.
+           https://doi.org/10.1145/355656.355659
     Examples
     --------
     First evaluate `gdtr`.
