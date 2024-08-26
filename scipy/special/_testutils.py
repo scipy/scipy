@@ -309,7 +309,7 @@ class FuncData:
                 assert_(False, "\n".join(msg))
 
     def __repr__(self):
-        """Pretty-printing, esp. for Nose output"""
+        """Pretty-printing"""
         if np.any(list(map(np.iscomplexobj, self.param_columns))):
             is_complex = " (complex)"
         else:

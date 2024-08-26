@@ -5,9 +5,6 @@ Authors:
    Ed Schofield, Nov 2005
    Andrew Straw, April 2008
 
-To run it in its simplest form::
-  nosetests test_optimize.py
-
 """
 import itertools
 import platform

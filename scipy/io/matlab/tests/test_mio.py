@@ -1,8 +1,3 @@
-''' Nose test generators
-
-Need function load / save / roundtrip tests
-
-'''
 import os
 from collections import OrderedDict
 from os.path import join as pjoin, dirname
