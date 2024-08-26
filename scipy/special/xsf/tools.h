@@ -265,10 +265,7 @@ namespace detail {
     /* Find initial bracket for a bracketing scalar root finder. A valid bracket is a pair of points a < b for
      * which the signs of f(a) and f(b) differ. Assumes function is monotonic and it is known
      * whether the function is increasing or decreasing. Passing in whether the function is
-     * increasing or not allows for simplication of logic and avoidance of some branches.
-     * If there is an interval over which the function, func, is zero, attempts to find a bracket
-     [a, b], with f(a) != 0 and f(b) == 0, so that the function find_closest_root below can then be
-     used to find the closest root to a.*/
+     * increasing or not allows for simplication of logic and avoidance of some branches. */
     XSF_HOST_DEVICE inline std::tuple<double, double, int> bracket_root(
         std::function<double(double)> func, double x_left, double x_right, double x_min, double x_max, double factor,
         bool increasing
@@ -276,10 +273,8 @@ namespace detail {
         double y_left = func(x_left), y_right = func(x_right);
         double y_left_sgn = std::signbit(y_left), y_right_sgn = std::signbit(y_right);
 
-        if (y_left_sgn != y_right_sgn || (y_left != 0 && y_right == 0)) {
-            /* Check if the initial bracket is valid. Since our aim is to return the the
-             * left-most root when there is an interval [c, d] over which f(x) == 0, we
-             * don't consider a bracket [a, b] valid if f(a) == 0 and f(b) != 0. */
+        if (y_left_sgn != y_right_sgn || (y_left == 0 || y_right == 0)) {
+            /* Check if the initial bracket is valid. */
             return std::make_tuple(x_left, x_right, 0);
         }
         bool search_left;
@@ -288,13 +283,9 @@ namespace detail {
          * a special circumstance, the old frontier endpoint becomes the new interior
          * endpoint. */
         double interior, frontier, y_interior, y_frontier, boundary;
-        if ((y_left != 0 && increasing && y_right < 0) || (!increasing && y_right > 0)) {
-            /* If function is increasing  and f(x_right) < 0, then we need to move and
-             * expand the bracket to the right, unless f(x_left) == 0.0, in which case we need to
-             * move to the left to catch situations where there are points < x_left for
-             * which f(x_left) == 0.0. When there are multiple such points, our convention
-             * is to take the smallest. If f is decreasing and f(y_right) > 0, we must also
-             * expand the bracket to the right. */
+        if ((increasing && y_right < 0) || (!increasing && y_right > 0)) {
+            /* If func is increasing  and func(x_right) < 0 or if func is decreasing and
+	     *  f(y_right) > 0, we should expand the bracket to the right. */
             interior = x_left, frontier = x_right, y_interior = y_left, y_frontier = y_right;
             search_left = false;
             boundary = x_max;
@@ -332,11 +323,10 @@ namespace detail {
             if (y_frontier == y_interior) {
                 plateau = true;
             }
-            if (y_frontier_sgn != y_interior_sgn || (y_interior == 0.0 && search_left && y_frontier != 0.0) ||
-                (y_frontier == 0.0 && !search_left && y_interior != 0.0)) {
-                /* Stopping condition, f evaluated at endpoints of brackets have opposing signs so we
-                 * can pass to a bracketing root finder, or f evaluated at the left endpoint is nonzero
-                 * and f evaluated at the right endpoint is zero so we can pass to find_closest_root. */
+            if (y_frontier_sgn != y_interior_sgn || (y_frontier == 0.0)) {
+                /* Stopping condition, func evaluated at endpoints of bracket has opposing signs,
+		 * meeting requirement for bracketing root finder. (Or endpoint has reached a 
+		 * zero.) */
                 if (search_left) {
                     /* Ensure we return an interval (a, b) with a < b. */
                     std::swap(interior, frontier);
@@ -346,8 +336,8 @@ namespace detail {
 
             if (stop) {
                 /* We have reached the boundary and must stop the search. If f evaluated at the boundary is
-                 * a zero, then we consider this a valid bracket because we have found a root, and there
-                 * cannot be a smaller root. Otherwise we have not found a valid bracket. */
+                 * a zero, then we consider this a valid bracket because we have found a root, otherwise we
+		 have not found a valid bracket. */
                 if (y_frontier == 0.0) {
                     if (search_left) {
                         std::swap(interior, frontier);
@@ -360,30 +350,7 @@ namespace detail {
                 );
             }
         }
-    }
-
-    /* Given a monotonic function func and an interval [a, b] such that func(a) != 0 and func(b) == 0
-     * find the c closest to a such that func(c) == 0. There is no requirement that a be less than b.
-     * This function is intended to be used in order to allow for a standard convention for the value
-     * returned as the root when there is an interval [c, d] for which f(x) == 0 for all x \in (c, d). */
-    XSF_HOST_DEVICE inline double find_closest_root(std::function<double(double)> func, double a, double b) {
-        double step;
-        /* Do bisection until the endpoints are within machine precision and then search
-         * one step at a time until we find the closest root to the original a. */
-        while ((step = (b - a) / 2.0) >= std::abs(b) * std::numeric_limits<double>::epsilon()) {
-            double m = a + step;
-            if (func(m) == 0.0) {
-                b = m;
-            } else {
-                a = m;
-            }
-        }
-        double direction = std::copysign(std::numeric_limits<double>::infinity(), (a < b) ? 1 : -1);
-        while (func(a) != 0.0) {
-            a = std::nextafter(a, direction);
-        }
-        return a;
-    }
+	}
 
     /* Find root of a real valued continuous function of a single variable
      *

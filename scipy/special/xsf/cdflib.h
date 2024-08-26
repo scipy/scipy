@@ -25,17 +25,20 @@ XSF_HOST_DEVICE inline double gdtrib(double a, double p, double x) {
     }
     if (x == 0.0) {
         if (p == 0.0) {
-            /* CDF evaluated at x = 0 will be zero except for degenerate b = 0
-             * case. Following our convention, we take the smallest normalized value
-             * for b. */
-            return std::numeric_limits<double>::min();
-        } else if (p == 1.0) {
-            /* The CDF evaluated at x = 0 will be one for the degenerate b = 0
-             * case, where we get a point distribution at zero. */
-            return 0.0;
+	    set_error("gdtrib", SF_ERROR_DOMAIN, "Indeterminate result for (x, p) == (0, 0).");
+	    return std::numeric_limits<double>::quiet_NaN();
         }
-        // When x = 0, there can be no b for which 0 < p < 1.
-        return std::numeric_limits<double>::quiet_NaN();
+	/* gdtrib(a, p, x) tends to 0 as x -> 0 when p > 0 */
+	return 0.0;
+    }
+    if (p == 0.0) {
+	/* gdtrib(a, p, x) tends to infinity as p -> 0 from the right when x > 0. */
+	set_error("gdtrib", SF_ERROR_SINGULAR, NULL);
+	return std::numeric_limits<double>::infinity();
+    }
+    if (p == 1.0) {
+	/* gdtrib(a, p, x) tends to 0 as p -> 1.0 from the left when x > 0. */
+	return 0.0;
     }
 
     double q = 1.0 - p;
@@ -60,9 +63,6 @@ XSF_HOST_DEVICE inline double gdtrib(double a, double p, double x) {
         set_error("gdtrib", SF_ERROR_OTHER, "Computational Error");
         ;
         return std::numeric_limits<double>::quiet_NaN();
-    }
-    if (func(x_right) == 0.0) {
-        return detail::find_closest_root(func, x_left, x_right);
     }
     auto [result, root_status] = detail::find_root_bus_dekker_r(func, x_left, x_right);
     if (root_status) {
