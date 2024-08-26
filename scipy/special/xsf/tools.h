@@ -266,16 +266,18 @@ namespace detail {
      * which the signs of f(a) and f(b) differ. Assumes function is monotonic and it is known
      * whether the function is increasing or decreasing. Passing in whether the function is
      * increasing or not allows for simplication of logic and avoidance of some branches. */
+    template <typename... Args>
     XSF_HOST_DEVICE inline std::tuple<double, double, int> bracket_root(
-        std::function<double(double)> func, double x_left, double x_right, double x_min, double x_max, double factor,
-        bool increasing
-    ) {
-        double y_left = func(x_left), y_right = func(x_right);
+									double(*func)(double, std::tuple<Args...>), double x_left, double x_right, double x_min, double x_max, double factor,
+									bool increasing, std::tuple<Args...> args)
+    {
+	double y_left = func(x_left, args), y_right = func(x_right, args);
         double y_left_sgn = std::signbit(y_left), y_right_sgn = std::signbit(y_right);
 
         if (y_left_sgn != y_right_sgn || (y_left == 0 || y_right == 0)) {
             /* Check if the initial bracket is valid. */
-            return std::make_tuple(x_left, x_right, 0);
+	    std::tuple<double, double, int> result(x_left, x_right, 0);
+	    return result;
         }
         bool search_left;
         /* The frontier is the new leading endpoint of the expanding bracket. The
@@ -318,7 +320,7 @@ namespace detail {
                 frontier = boundary;
                 stop = true;
             }
-            y_frontier = func(frontier);
+            y_frontier = func(frontier, args);
             y_frontier_sgn = std::signbit(y_frontier);
             if (y_frontier == y_interior) {
                 plateau = true;
@@ -331,7 +333,8 @@ namespace detail {
                     /* Ensure we return an interval (a, b) with a < b. */
                     std::swap(interior, frontier);
                 }
-                return std::make_tuple(interior, frontier, 0);
+		std::tuple<double, double, int> result(interior, frontier, 0);
+		return result;
             }
 
             if (stop) {
@@ -342,12 +345,13 @@ namespace detail {
                     if (search_left) {
                         std::swap(interior, frontier);
                     }
-                    return std::make_tuple(interior, frontier, 0);
+		    std::tuple<double, double, int> result(interior, frontier, 0);
+		    return result;
                 }
-                return std::make_tuple(
-                    std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN(),
-                    search_left ? 1 : 2
-                );
+		std::tuple<double, double, int> result(std::numeric_limits<double>::quiet_NaN(),
+						       std::numeric_limits<double>::quiet_NaN(),
+						       search_left ? 1 : 2);
+                return result;
             }
         }
 	}
@@ -362,9 +366,10 @@ namespace detail {
      * The algorithm is similar to Brent's method, and uses a mix of linear interpolation,
      * (secant method), rational interpolation, and bisection.
      */
+    template <typename... Args>
     XSF_HOST_DEVICE inline std::pair<double, int>
-    find_root_bus_dekker_r(std::function<double(double)> func, double a, double b) {
-        double fa = func(a), fb = func(b);
+    find_root_bus_dekker_r(double(*func)(double, std::tuple<Args...>), double a, double b, std::tuple<Args...> args) {
+	double fa = func(a, args), fb = func(b, args);
         // Handle cases where zero is on endpoint of initial bracket.
         if (fa == 0) {
             return {a, 0};
@@ -414,12 +419,12 @@ namespace detail {
                 double best_val = std::abs(fb);
                 double b_r = b + eps;
                 double b_l = std::nextafter(b, -std::numeric_limits<double>::infinity());
-                double candidate_val = std::abs(func(b_l));
+                double candidate_val = std::abs(func(b_l, args));
                 if (candidate_val <= best_val) {
                     b = b_l, best_val = candidate_val;
                 }
                 if (best_val > 0.0) {
-                    candidate_val = std::abs(func(b_r));
+                    candidate_val = std::abs(func(b_r, args));
                     if (candidate_val < best_val) {
                         b = b_r;
                     }
@@ -474,7 +479,7 @@ namespace detail {
             a = b;
             fa = fb;
             b += w;
-            fb = func(b);
+            fb = func(b, args);
             if (std::signbit(fb) == std::signbit(fc)) {
                 /* If f(b) and f(c) have the same sign, next step is intrapolation.
                  * Set c to a and reset extrapolation count. */

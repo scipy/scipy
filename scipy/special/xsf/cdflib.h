@@ -42,15 +42,24 @@ XSF_HOST_DEVICE inline double gdtrib(double a, double p, double x) {
     }
 
     double q = 1.0 - p;
-    std::function<double(double)> func;
+    double(*func)(double, std::tuple<double, double, double>);
+    std::tuple<double, double, double> args;
     if (p <= q) {
-        func = [p, a, x](double b) { return cephes::igam(b, a * x) - p; };
+	args = {a, p, x};
+        func = +[](double b, std::tuple<double, double, double> args) -> double {
+	    auto [a, p, x] = args;
+	    return cephes::igam(b, a * x) - p;
+	};
     } else {
-        func = [q, a, x](double b) { return q - cephes::igamc(b, a * x); };
+	args = {a, q, x};
+	func = +[](double b, std::tuple<double, double, double> args) -> double {
+	    auto [a, q, x] = args;
+	    return q - cephes::igamc(b, a * x);
+	};
     }
     double lower_bound = std::numeric_limits<double>::min();
     double upper_bound = std::numeric_limits<double>::max();
-    auto [x_left, x_right, bracket_status] = detail::bracket_root(func, 1.0, 5.0, lower_bound, upper_bound, 8.0, false);
+    auto [x_left, x_right, bracket_status] = detail::bracket_root(func, 1.0, 5.0, lower_bound, upper_bound, 8.0, false, args);
     if (bracket_status == 1) {
         set_error("gdtrib", SF_ERROR_UNDERFLOW, NULL);
         return 0.0;
@@ -64,7 +73,7 @@ XSF_HOST_DEVICE inline double gdtrib(double a, double p, double x) {
         ;
         return std::numeric_limits<double>::quiet_NaN();
     }
-    auto [result, root_status] = detail::find_root_bus_dekker_r(func, x_left, x_right);
+    auto [result, root_status] = detail::find_root_bus_dekker_r(func, x_left, x_right, args);
     if (root_status) {
         set_error("gdtrib", SF_ERROR_OTHER, "Computational Error");
         ;

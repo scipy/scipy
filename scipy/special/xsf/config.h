@@ -57,12 +57,15 @@
 #define XSF_HOST_DEVICE __host__ __device__
 
 
+
 #include <cuda/std/cmath>
 #include <cuda/std/cstdint>
 #include <cuda/std/cstddef>
 #include <cuda/std/limits>
+#include <cuda/std/tuple>
 #include <cuda/std/type_traits>
 #include <cuda/std/utility>
+
 
 // Fallback to global namespace for functions unsupported on NVRTC Jit
 #ifdef _LIBCUDACXX_COMPILER_NVRTC
@@ -105,6 +108,7 @@ XSF_HOST_DEVICE inline double asinh(double x) { return cuda::std::asinh(x); }
 
 XSF_HOST_DEVICE inline bool signbit(double x) { return cuda::std::signbit(x); }
 
+
 // Fallback to global namespace for functions unsupported on NVRTC
 #ifndef _LIBCUDACXX_COMPILER_NVRTC
 XSF_HOST_DEVICE inline double ceil(double x) { return cuda::std::ceil(x); }
@@ -121,6 +125,7 @@ XSF_HOST_DEVICE inline double log1p(double num) { return cuda::std::log1p(num); 
 XSF_HOST_DEVICE inline double frexp(double num, int *exp) { return cuda::std::frexp(num, exp); }
 XSF_HOST_DEVICE inline double ldexp(double num, int exp) { return cuda::std::ldexp(num, exp); }
 XSF_HOST_DEVICE inline double fmod(double x, double y) { return cuda::std::fmod(x, y); }
+XSF_HOST_DEVICE inline double nextafter(double from, double to) { return cuda::std::nextafter(from, to); }
 #else
 XSF_HOST_DEVICE inline double ceil(double x) { return ::ceil(x); }
 XSF_HOST_DEVICE inline double floor(double x) { return ::floor(x); }
@@ -136,6 +141,7 @@ XSF_HOST_DEVICE inline double log1p(double num) { return ::log1p(num); }
 XSF_HOST_DEVICE inline double frexp(double num, int *exp) { return ::frexp(num, exp); }
 XSF_HOST_DEVICE inline double ldexp(double num, int exp) { return ::ldexp(num, exp); }
 XSF_HOST_DEVICE inline double fmod(double x, double y) { return ::fmod(x, y); }
+XSF_HOST_DEVICE inline double nextafter(double from, double to) { return ::nextafter(from, to); }
 #endif
 
 template <typename T>
@@ -212,6 +218,9 @@ using invoke_result = cuda::std::invoke_result<T>;
 template <typename T1, typename T2>
 using pair = cuda::std::pair<T1, T2>;
 
+template <typename... Types>
+using tuple = cuda::std::tuple<Types...>;
+
 using cuda::std::uint64_t;
 using cuda::std::size_t;
 using cuda::std::ptrdiff_t;
@@ -232,6 +241,7 @@ using cuda::std::ptrdiff_t;
 #include <iterator>
 #include <limits>
 #include <math.h>
+#include <tuple>
 #include <type_traits>
 #include <utility>
 
