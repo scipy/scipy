@@ -990,13 +990,13 @@ class TestLombscargle:
         t = np.linspace(0.01*np.pi, 10.*np.pi, nin)[r >= p]
 
         # Plot a sine wave for the selected times
-        x = ampl * np.sin(w*t + phi)
+        y = ampl * np.sin(w*t + phi)
 
         # Define the array of frequencies for which to compute the periodogram
         f = np.linspace(0.01, 10., nout)
 
         # Calculate Lomb-Scargle periodogram
-        P = lombscargle(t, x, f)
+        P = lombscargle(t, y, f)
 
         # Check if difference between found frequency maximum and input
         # frequency is less than accuracy
@@ -1007,15 +1007,15 @@ class TestLombscargle:
         # this is to exercise the float64 dtype conversions
         
         # first, t
-        P = lombscargle(t.astype(np.float32), x, f)
+        P = lombscargle(t.astype(y.dtype), y, f)
 
         # Check if difference between found frequency maximum and input
         # frequency is less than accuracy
         delta = f[1] - f[0]
         assert_(w - f[np.argmax(P)] < (delta/2.))
 
-        # then, x
-        P = lombscargle(t, x.astype(np.float32), f)
+        # then, y
+        P = lombscargle(t, y.astype(t.dtype), f)
 
         # Check if difference between found frequency maximum and input
         # frequency is less than accuracy
@@ -1023,7 +1023,7 @@ class TestLombscargle:
         assert_(w - f[np.argmax(P)] < (delta/2.))
 
         # then, f
-        P = lombscargle(t, x, f.astype(np.float32))
+        P = lombscargle(t, y, f.astype(t.dtype))
 
         # Check if difference between found frequency maximum and input
         # frequency is less than accuracy
@@ -1031,7 +1031,7 @@ class TestLombscargle:
         assert_(w - f[np.argmax(P)] < (delta/2.))
 
         # finally, add weights
-        P = lombscargle(t, x, f, weights=np.ones_like(t, dtype=np.float32))
+        P = lombscargle(t, y, f, weights=np.ones_like(t, dtype=f.dtype))
 
         # Check if difference between found frequency maximum and input
         # frequency is less than accuracy
@@ -1057,13 +1057,13 @@ class TestLombscargle:
         t = np.linspace(0.01*np.pi, 10.*np.pi, nin)[r >= p]
 
         # Plot a sine wave for the selected times
-        x = ampl * np.sin(w*t + phi)
+        y = ampl * np.sin(w*t + phi)
 
         # Define the array of frequencies for which to compute the periodogram
         f = np.linspace(0.01, 10., nout)
 
         # Calculate Lomb-Scargle periodogram
-        pgram = lombscargle(t, x, f)
+        pgram = lombscargle(t, y, f)
 
         # Normalize
         pgram = np.sqrt(4 * pgram / t.shape[0])
@@ -1090,14 +1090,14 @@ class TestLombscargle:
         t = np.linspace(0.01*np.pi, 10.*np.pi, nin)[r >= p]
 
         # Plot a sine wave for the selected times
-        x = ampl * np.sin(w*t + phi) + offset
+        y = ampl * np.sin(w*t + phi) + offset
 
         # Define the array of frequencies for which to compute the periodogram
         f = np.linspace(0.01, 10., nout)
 
         # Calculate Lomb-Scargle periodogram
-        pgram = lombscargle(t, x, f, precenter=True)
-        pgram2 = lombscargle(t, x - x.mean(), f, precenter=False)
+        pgram = lombscargle(t, y, f, precenter=True)
+        pgram2 = lombscargle(t, y - y.mean(), f, precenter=False)
 
         # check if centering worked
         assert_allclose(pgram, pgram2)
@@ -1105,8 +1105,8 @@ class TestLombscargle:
         # do this again, but with floating_mean=False
 
         # Calculate Lomb-Scargle periodogram
-        pgram = lombscargle(t, x, f, precenter=True, floating_mean=False)
-        pgram2 = lombscargle(t, x - x.mean(), f, precenter=False, floating_mean=False)
+        pgram = lombscargle(t, y, f, precenter=True, floating_mean=False)
+        pgram2 = lombscargle(t, y - y.mean(), f, precenter=False, floating_mean=False)
 
         # check if centering worked
         assert_allclose(pgram, pgram2)
@@ -1128,19 +1128,19 @@ class TestLombscargle:
         t = np.linspace(0.01*np.pi, 10.*np.pi, nin)[r >= p]
 
         # Plot a sine wave for the selected times
-        x = ampl * np.sin(w*t + phi)
+        y = ampl * np.sin(w*t + phi)
 
         # Define the array of frequencies for which to compute the periodogram
         f = np.linspace(0.01, 10., nout)
 
         # Calculate Lomb-Scargle periodogram
-        pgram = lombscargle(t, x, f)
-        pgram2 = lombscargle(t, x, f, normalize=True)
+        pgram = lombscargle(t, y, f)
+        pgram2 = lombscargle(t, y, f, normalize=True)
 
         # Calculate the scale to convert from unnormalized to normalized
         weights = np.ones_like(t)/float(t.shape[0])
-        Y_sum = (weights * x).sum()
-        YY_hat = (weights * x * x).sum()
+        Y_sum = (weights * y).sum()
+        YY_hat = (weights * y * y).sum()
         YY = YY_hat - Y_sum * Y_sum
         scale_to_use = 2/(YY*t.shape[0])
 
@@ -1150,84 +1150,89 @@ class TestLombscargle:
 
     def test_wrong_shape(self):
 
-        # different length t and x
+        # different length t and y
         t = np.linspace(0, 1, 1)
-        x = np.linspace(0, 1, 2)
+        y = np.linspace(0, 1, 2)
         f = np.linspace(0, 1, 3) + 0.1
-        assert_raises(ValueError, lombscargle, t, x, f)
+        assert_raises(ValueError, lombscargle, t, y, f)
 
         # t is 2D
-        t = np.expand_dims(np.linspace(0, 1, 1), 1)
-        x = np.linspace(0, 1, 2)
+        t = np.expand_dims(np.linspace(0, 1, 2), 1)
+        y = np.linspace(0, 1, 2)
         f = np.linspace(0, 1, 3) + 0.1
-        assert_raises(ValueError, lombscargle, t, x, f)
+        assert_raises(ValueError, lombscargle, t, y, f)
 
-        # x is 2D
-        t = np.linspace(0, 1, 1)
-        x = np.expand_dims(np.linspace(0, 1, 2), 1)
+        # y is 2D
+        t = np.linspace(0, 1, 2)
+        y = np.expand_dims(np.linspace(0, 1, 2), 1)
         f = np.linspace(0, 1, 3) + 0.1
-        assert_raises(ValueError, lombscargle, t, x, f)
+        assert_raises(ValueError, lombscargle, t, y, f)
 
         # f is 2D
-        t = np.linspace(0, 1, 1)
-        x = np.linspace(0, 1, 2)
+        t = np.linspace(0, 1, 2)
+        y = np.linspace(0, 1, 2)
         f = np.expand_dims(np.linspace(0, 1, 3) + 0.1, 1)
-        assert_raises(ValueError, lombscargle, t, x, f)
+        assert_raises(ValueError, lombscargle, t, y, f)
 
         # weights is 2D
-        t = np.linspace(0, 1, 1)
-        x = np.linspace(0, 1, 2)
+        t = np.linspace(0, 1, 2)
+        y = np.linspace(0, 1, 2)
         f = np.linspace(0, 1, 3) + 0.1
-        weights = np.expand_dims(np.linspace(0, 1, 3), 1)
-        assert_raises(ValueError, lombscargle, t, x, f, weights=weights)
+        weights = np.expand_dims(np.linspace(0, 1, 2), 1)
+        assert_raises(ValueError, lombscargle, t, y, f, weights=weights)
     
     def test_wrong_dtype(self):
         t = np.linspace(0, 1, 2, dtype=np.complex64)
-        x = np.linspace(0, 1, 2)
+        y = np.linspace(0, 1, 2)
         f = np.linspace(0, 1, 3) + 0.1
-        assert_raises(TypeError, lombscargle, t, x, f)
+        assert_raises(TypeError, lombscargle, t, y, f)
+
+        t = np.linspace(0, 1, 2, dtype=np.int64)
+        y = np.linspace(0, 1, 2)
+        f = np.linspace(0, 1, 3) + 0.1
+        assert_raises(TypeError, lombscargle, t, y, f)
 
         t = np.linspace(0, 1, 2)
-        x = np.linspace(0, 1, 2, dtype=np.complex64)
+        y = np.linspace(0, 1, 2, dtype=np.complex64)
         f = np.linspace(0, 1, 3) + 0.1
-        assert_raises(TypeError, lombscargle, t, x, f)
+        assert_raises(TypeError, lombscargle, t, y, f)
 
         t = np.linspace(0, 1, 2)
-        x = np.linspace(0, 1, 2)
+        y = np.linspace(0, 1, 2)
         f = np.linspace(0, 1, 3, dtype=np.complex64) + 0.1
-        assert_raises(TypeError, lombscargle, t, x, f)
+        assert_raises(TypeError, lombscargle, t, y, f)
 
         t = np.linspace(0, 1, 2)
-        x = np.linspace(0, 1, 2)
+        y = np.linspace(0, 1, 2)
         f = np.linspace(0, 1, 3) + 0.1
         weights = np.ones_like(t, dtype=np.complex64)
-        assert_raises(TypeError, lombscargle, t, x, f, weights=weights)
+        assert_raises(TypeError, lombscargle, t, y, f, weights=weights)
 
     def test_lombscargle_atan_vs_atan2(self):
         # https://github.com/scipy/scipy/issues/3787
         # This raised a ZeroDivisionError.
         t = np.linspace(0, 10, 1000, endpoint=False)
-        x = np.sin(4*t)
+        y = np.sin(4*t)
         f = np.linspace(0, 50, 500, endpoint=False) + 0.1
-        lombscargle(t, x, f*2*np.pi)
+        lombscargle(t, y, f*2*np.pi)
     
     def test_wrong_shape_weights(self):
         # Weights must be the same shape as t
 
         t = np.linspace(0, 1, 1)
-        x = np.linspace(0, 1, 1)
+        y = np.linspace(0, 1, 1)
         f = np.linspace(0, 1, 3) + 0.1
         weights = np.linspace(1, 2, 2)
-        assert_raises(ValueError, lombscargle, t, x, f, weights=weights)
+        assert_raises(ValueError, lombscargle, t, y, f, weights=weights)
 
     def test_zero_division_weights(self):
         # Weights cannot sum to 0
         
         t = np.zeros(1)
-        x = np.zeros(1)
+        y = np.zeros(1)
         f = np.ones(1)
         weights = np.zeros(1)
-        assert_raises(ZeroDivisionError, lombscargle, t, x, f, weights=weights)
+        assert_raises(ValueError, lombscargle, t, y, f, weights=weights)
     
     def test_normalize_parameter(self):
         # Test the validity of the normalize parameter input
@@ -1235,7 +1240,7 @@ class TestLombscargle:
         # Input parameters
         ampl = 2.
         w = 1.
-        phi = 0.5 * np.pi
+        phi = 0
         nin = 100
         nout = 1000
         p = 0.7  # Fraction of points to select
@@ -1246,23 +1251,38 @@ class TestLombscargle:
         t = np.linspace(0.01*np.pi, 10.*np.pi, nin)[r >= p]
 
         # Plot a sine wave for the selected times
-        x = ampl * np.sin(w*t + phi)
+        y = ampl * np.sin(w*t + phi)
 
         # Define the array of frequencies for which to compute the periodogram
         f = np.linspace(0.01, 10., nout)
         
         # check each of the valid inputs
-        lombscargle(t, x, f, normalize=False)
-        lombscargle(t, x, f, normalize=True)
-        lombscargle(t, x, f, normalize='power')
-        lombscargle(t, x, f, normalize='normalize')
-        lombscargle(t, x, f, normalize='amplitude')
+        pgram_false = lombscargle(t, y, f, normalize=False)
+        pgram_true = lombscargle(t, y, f, normalize=True)
+        pgram_power = lombscargle(t, y, f, normalize='power')
+        pgram_norm = lombscargle(t, y, f, normalize='normalize')
+        pgram_amp = lombscargle(t, y, f, normalize='amplitude')
+
+        # validate the results that should be the same
+        assert_allclose(pgram_false, pgram_power)
+        assert_allclose(pgram_true, pgram_norm)
+
+        # validate that the power and norm outputs are proper wrt each other
+        weights = np.ones_like(y)/float(y.shape[0])
+        Y_sum = (weights * y).sum()
+        YY_hat = (weights * y * y).sum()
+        YY = YY_hat - Y_sum * Y_sum
+        assert_allclose(pgram_power * 2.0 / (float(t.shape[0]) * YY), pgram_norm)
+
+        # validate that the amp output is correct for the given input
+        f_i = np.where(f==w)[0][0]
+        assert_approx_equal(np.abs(pgram_amp[f_i]), ampl, significant=2)
 
         # check invalid inputs
         #  1) a string that is not allowed
-        assert_raises(ValueError, lombscargle, t, x, f, normalize='lomb')
+        assert_raises(ValueError, lombscargle, t, y, f, normalize='lomb')
         #  2) something besides a bool or str
-        assert_raises(TypeError, lombscargle, t, x, f, normalize=2)
+        assert_raises(TypeError, lombscargle, t, y, f, normalize=2)
     
     def test_offset_removal(self):
         # Verify that the amplitude is the same, even with an offset (not removed)
@@ -1368,10 +1388,10 @@ class TestLombscargle:
         # Test that a negative weight produces an error
 
         t = np.zeros(1)
-        x = np.zeros(1)
+        y = np.zeros(1)
         f = np.ones(1)
         weights = -np.ones(1)
-        assert_raises(ValueError, lombscargle, t, x, f, weights=weights)
+        assert_raises(ValueError, lombscargle, t, y, f, weights=weights)
 
 
 class TestSTFT:
