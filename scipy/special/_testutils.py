@@ -22,7 +22,7 @@ class MissingModule:
 
 
 def check_version(module, min_ver):
-    if type(module) == MissingModule:
+    if type(module) is MissingModule:
         return pytest.mark.skip(reason=f"{module.name} is not installed")
     return pytest.mark.skipif(
         _pep440.parse(module.__version__) < _pep440.Version(min_ver),
