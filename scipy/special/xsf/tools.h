@@ -275,7 +275,7 @@ namespace detail {
     template <typename... Args>
     XSF_HOST_DEVICE inline std::tuple<double, double, int> bracket_root(
         double (*func)(double, std::tuple<Args...>), double x_left, double x_right, double x_min, double x_max,
-        double factor, bool increasing, std::tuple<Args...> args
+        double factor, bool increasing, std::uint64_t maxiter, std::tuple<Args...> args
     ) {
         double y_left = func(x_left, args), y_right = func(x_right, args);
         double y_left_sgn = std::signbit(y_left), y_right_sgn = std::signbit(y_right);
@@ -312,7 +312,7 @@ namespace detail {
          * avoid moving into a new plateau. */
         bool plateau = (y_left == y_right);
         bool stop = false;
-        while (true) {
+        for (std::uint64_t i = 0; i < maxiter; i++) {
             double step = (frontier - interior) * factor;
             if (!plateau) {
                 interior = frontier;
@@ -361,6 +361,11 @@ namespace detail {
                 return result;
             }
         }
+        // Failed to converge. This should never happen.
+        std::tuple<double, double, int> result(
+            std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN(), 3
+        );
+        return result;
     }
 
     /* Find root of a real valued continuous function of a single variable
@@ -379,8 +384,9 @@ namespace detail {
      * function we are finding a root for, but this was found unworkable in CuPy using NVRTC.
      * This should be revisited in the future in order to allow simplifying this code. */
     template <typename... Args>
-    XSF_HOST_DEVICE inline std::pair<double, int>
-    find_root_bus_dekker_r(double (*func)(double, std::tuple<Args...>), double a, double b, std::tuple<Args...> args) {
+    XSF_HOST_DEVICE inline std::pair<double, int> find_root_bus_dekker_r(
+        double (*func)(double, std::tuple<Args...>), double a, double b, std::uint64_t maxiter, std::tuple<Args...> args
+    ) {
         double fa = func(a, args), fb = func(b, args);
         // Handle cases where zero is on endpoint of initial bracket.
         if (fa == 0) {
@@ -409,7 +415,7 @@ namespace detail {
         /* d stores the previous value of a. We initialize to avoid compiler warnings,
          * but the initial values here don't actually matter. */
         double d = 0, fd = 0;
-        while (true) {
+        for (std::uint64_t i = 0; i < maxiter; i++) {
             if (std::abs(fc) < std::abs(fb)) {
                 // interchange to ensure f(b) is the smallest value seen so far.
                 if (c != a) {
@@ -425,11 +431,14 @@ namespace detail {
             }
             double m = 0.5 * (b + c);
             double mb = m - b;
-            double eps = std::nextafter(b, std::numeric_limits<double>::infinity()) - b;
-            if (std::abs(mb) <= eps) {
-                /* If we've converged, check doubles one step in each direction */
+            if (std::abs(mb) <= 2.0 * std::numeric_limits<double>::epsilon() * std::abs(b)) {
+                /* Stop when the next bisection step cannot move more than 2 ulps, but then
+                 * also check 1 ulp in each direction. This prevents unfortunate cases where the
+                 * algorithm can get stuck loop in a loop where m reaches 2 ulps from b but never
+                 * gets closer, while still allowing us to search within machine precision.
+                 */
                 double best_val = std::abs(fb);
-                double b_r = b + eps;
+                double b_r = std::nextafter(b, -std::numeric_limits<double>::infinity());
                 double b_l = std::nextafter(b, -std::numeric_limits<double>::infinity());
                 double candidate_val = std::abs(func(b_l, args));
                 if (candidate_val <= best_val) {
@@ -474,6 +483,8 @@ namespace detail {
                      * asymptotic behavior. See Bus and Dekker, Section 4.2. */
                     p *= 2.0;
                 }
+                double eps =
+                    std::abs(std::nextafter(b, std::copysign(std::numeric_limits<double>::infinity(), mb)) - b);
                 if (p < std::abs(q) * eps) {
                     /* If step size p / q is too small for b + p / q to be
                      * different from b, choose minimal step size that will make them different. */
@@ -509,6 +520,8 @@ namespace detail {
                 }
             }
         }
+        // Failed to converge. This should never happen.
+        return {std::numeric_limits<double>::quiet_NaN(), 4};
     }
 
 } // namespace detail

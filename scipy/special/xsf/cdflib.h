@@ -60,7 +60,7 @@ XSF_HOST_DEVICE inline double gdtrib(double a, double p, double x) {
     double lower_bound = std::numeric_limits<double>::min();
     double upper_bound = std::numeric_limits<double>::max();
     auto [x_left, x_right, bracket_status] =
-        detail::bracket_root(func, 1.0, 5.0, lower_bound, upper_bound, 8.0, false, args);
+        detail::bracket_root(func, 1.0, 5.0, lower_bound, upper_bound, 8.0, false, 1000, args);
     if (bracket_status == 1) {
         set_error("gdtrib", SF_ERROR_UNDERFLOW, NULL);
         return 0.0;
@@ -69,14 +69,15 @@ XSF_HOST_DEVICE inline double gdtrib(double a, double p, double x) {
         set_error("gdtrib", SF_ERROR_OVERFLOW, NULL);
         return std::numeric_limits<double>::infinity();
     }
-    if (bracket_status == 3) {
+    if (bracket_status >= 3) {
         set_error("gdtrib", SF_ERROR_OTHER, "Computational Error");
         ;
         return std::numeric_limits<double>::quiet_NaN();
     }
-    auto [result, root_status] = detail::find_root_bus_dekker_r(func, x_left, x_right, args);
+    auto [result, root_status] = detail::find_root_bus_dekker_r(func, x_left, x_right, 1000, args);
     if (root_status) {
-        set_error("gdtrib", SF_ERROR_OTHER, "Computational Error");
+        /* The root finding return should only fail if there's a bug in our code. */
+        set_error("gdtrib", SF_ERROR_OTHER, "Computational Error, (%.17g, %.17g, %.17g)", a, p, x);
         ;
         return std::numeric_limits<double>::quiet_NaN();
     }
