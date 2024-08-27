@@ -36,11 +36,11 @@ def toeplitz(c, r=None):
         ``[c[0], r[1:]]``.  Whatever the actual shape of `r`, it will be
         converted to a 1-D array.
 
-    .. warning::
+        .. warning::
 
-        Beginning in SciPy 1.17, multidimensional input will be treated as a batch, not
-        ``ravel``\ ed. To preserve the existing behavior, ``ravel`` aruments before
-        passing them to `toeplitz`.
+            Beginning in SciPy 1.17, multidimensional input will be treated as a batch,
+            not ``ravel``\ ed. To preserve the existing behavior, ``ravel`` aruments
+            before passing them to `toeplitz`.
 
     Returns
     -------
