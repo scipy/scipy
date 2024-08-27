@@ -53,8 +53,7 @@ clean:
 UPLOAD_DIR=/srv/docs_scipy_org/doc/scipy-$(RELEASE)
 
 SCIPYVER:=$(shell $(PYTHON) -c "import scipy; print(scipy.version.git_revision[:10])" 2>/dev/null)
-GITVER ?= $(shell cd ../tools; $(PYTHON) -c "from version_utils import git_version; \
-				print(git_version('..')[0][:10])")
+GITVER ?= $(shell (cd ..; set -o pipefail && git rev-parse HEAD 2>/dev/null | cut -c1-7) || echo Unknown)
 
 version-check:
 ifeq "$(GITVER)" "Unknown"
