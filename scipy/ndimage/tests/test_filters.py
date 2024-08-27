@@ -940,21 +940,27 @@ class TestNdimageFilters:
         # compare results to manually looping over the non-filtered axes
         output = filter_func(array, axes=(1, 2), **kwargs)
         expected = xp.empty_like(output)
+        expected = []
         for i in range(array.shape[0]):
-            expected[i, ...] = filter_func(array[i, ...], **kwargs)
+            expected.append(filter_func(array[i, ...], **kwargs))
+        expected = xp.stack(expected, axis=0)
         xp_assert_close(output, expected)
 
         output = filter_func(array, axes=(0, -1), **kwargs)
-        expected = xp.empty_like(output)
+        expected = []
         for i in range(array.shape[1]):
-            expected[:, i, :] = filter_func(array[:, i, :], **kwargs)
+            expected.append(filter_func(array[:, i, :], **kwargs))
+        expected = xp.stack(expected, axis=1)
         xp_assert_close(output, expected)
 
         output = filter_func(array, axes=(1), **kwargs)
-        expected = xp.empty_like(output)
+        expected = []
         for i in range(array.shape[0]):
+            exp_inner = []
             for j in range(array.shape[2]):
-                expected[i, :, j] = filter_func(array[i, :, j], **kwargs)
+                exp_inner.append(filter_func(array[i, :, j], **kwargs))
+            expected.append(xp.stack(exp_inner, axis=-1))
+        expected = xp.stack(expected, axis=0)
         xp_assert_close(output, expected)
 
     @skip_xp_backends("cupy",
