@@ -626,10 +626,11 @@ def test_keepdims(hypotest, args, kwds, n_samples, n_outputs, paired, unpacker,
                                           nan_res_base):
             assert r.shape == expected_shape
             r = np.squeeze(r, axis=axis)
-            assert_equal(r, r_base)
+            assert_allclose(r, r_base, atol=1e-16)
             assert rn.shape == expected_shape
             rn = np.squeeze(rn, axis=axis)
-            assert_equal(rn, rn_base)
+            # ideally assert_equal, but `combine_pvalues` failed on 32-bit build
+            assert_allclose(rn, rn_base, atol=1e-16)
 
 
 @pytest.mark.parametrize(("fun", "nsamp"),
