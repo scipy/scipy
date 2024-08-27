@@ -114,16 +114,18 @@ void coo_todense(const I n_row,
 
 /*
  * Input Arguments:
- *   I  shape[num_dims]  - shape of A
- *   npy_int64  nnz      - number of nonzeros in A
- *   npy_int64  num_dims - number of dimensions of A
- *   I  Aijk[nnz(A)]     - coords for nonzeros in A
- *   T  Ax[nnz(A)]       - nonzeros in A
- *   T  Bx[]             - dense array
+ *   I  strides_C[num_dims] - C strides
+ *   I  strides_F[num_dims] - fortran strides
+ *   npy_int64  nnz         - number of nonzeros in A
+ *   npy_int64  num_dims    - number of dimensions of A
+ *   I  Aijk[nnz(A)]        - coords for nonzeros in A
+ *   T  Ax[nnz(A)]          - nonzeros in A
+ *   T  Bx[]                - dense array
  *
  */
 template <class I, class T>
-void coo_todense_nd(const I shape[],
+void coo_todense_nd(const I strides_C[],
+                    const I strides_F[],
                     const npy_int64 nnz,
                     const npy_int64 num_dims,
                     const I Aijk[],
@@ -135,11 +137,8 @@ void coo_todense_nd(const I shape[],
     if (!fortran) {
         for(npy_int64 n = 0; n < nnz; n++) {
             npy_intp index = 0;
-            npy_intp stride = 1;
-            
             for(npy_int64 d = num_dims - 1; d >= 0; d--) {
-                index += Aijk[d * nnz + n] * stride;
-                stride *= shape[d];
+                index += Aijk[d * nnz + n] * strides_C[d];
             }
             Bx[index] += Ax[n];
         }
@@ -147,11 +146,8 @@ void coo_todense_nd(const I shape[],
     else {
         for(npy_int64 n = 0; n < nnz; n++) {
             npy_intp index = 0;
-            npy_intp stride = 1;
-            
             for(npy_int64 d = 0; d < num_dims; d++) {
-                index += Aijk[d * nnz + n] * stride;
-                stride *= shape[d];
+                index += Aijk[d * nnz + n] * strides_F[d];
             }
             Bx[index] += Ax[n];
         }
