@@ -1,8 +1,3 @@
-''' Nose test generators
-
-Need function load / save / roundtrip tests
-
-'''
 import os
 from collections import OrderedDict
 from os.path import join as pjoin, dirname
@@ -263,8 +258,7 @@ def _check_level(label, expected, actual):
             f"Expected type {type(expected)}, got {type(actual)} at {label}")
     # A field in a record array may not be an ndarray
     # A scalar from a record array will be type np.void
-    if not isinstance(expected,
-                      (np.void, np.ndarray, MatlabObject)):
+    if not isinstance(expected, np.void | np.ndarray | MatlabObject):
         assert_equal(expected, actual)
         return
     # This is an ndarray-like thing
