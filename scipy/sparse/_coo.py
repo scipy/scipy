@@ -648,22 +648,33 @@ class _coo_base(_data_matrix, _minmax_mixin):
 
 
     def _matmul_dispatch(self, other):
-        if self.ndim < 3:
+        if self.ndim < 3 and ((issparse(other) and other.ndim < 3) \
+                              or (not issparse(other) and len(np.asarray(other).shape) < 3)):
             return _spbase._matmul_dispatch(self, other)
         
         N = self.shape[-1]
-        if other.shape == (N,):
-            return self._matmul_vector(other)
-        if other.shape == (N, 1):
-            result = self._matmul_vector(other.ravel())
-            return result.reshape(*self.shape[:-1], 1)
+        if other.__class__ is np.ndarray:
+            if other.shape == (N,):
+                return self._matmul_vector(other)
+            if other.shape == (N, 1):
+                result = self._matmul_vector(other.ravel())
+                return result.reshape(*self.shape[:-1], 1)
+            
+            err_prefix = "matmul: dimension mismatch with signature"
+            if other.ndim == 1:
+                msg = f"{err_prefix} (n,k={N}),(k={other.shape[0]},)->(n,)"
+                raise ValueError(msg)
+            msg = "n-D matrix-matrix multiplication not implemented for ndim>2"
+            raise NotImplementedError(msg)
         
-        err_prefix = "matmul: dimension mismatch with signature"
-        if other.ndim == 1:
-            msg = f"{err_prefix} (n,k={N}),(k={other.shape[0]},)->(n,)"
-            raise ValueError(msg)
-        msg = "n-D matrix-matrix multiplication not implemented for ndim>2"
-        raise NotImplementedError(msg)
+        if isscalarlike(other):
+            # scalar value
+            return self._mul_scalar(other)
+        
+        if issparse(other):
+            raise NotImplementedError("sparse-sparse matmul not implemented for ndim>2")
+        
+        return NotImplemented
 
 
     def _matmul_multivector(self, other):
