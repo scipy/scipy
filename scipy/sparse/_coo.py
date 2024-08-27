@@ -590,7 +590,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
 
     def _add_sparse(self, other):
         if self.ndim < 3:
-            return _data_matrix._add_sparse(self, other)
+            return _spbase._add_sparse(self.tocsr(), other)
 
         if other.shape != self.shape:
             raise ValueError(f'Incompatible shapes ({self.shape} and {other.shape})')
@@ -603,7 +603,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
     
     def _sub_sparse(self, other):
         if self.ndim < 3:
-            return _data_matrix._sub_sparse(self, other)
+            return _spbase._sub_sparse(self.tocsr(), other)
 
         if other.shape != self.shape:
             raise ValueError(f'Incompatible shapes ({self.shape} and {other.shape})')
