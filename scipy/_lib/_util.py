@@ -1013,13 +1013,15 @@ def _apply_over_batch(*argdefs):
                     else:
                         arrays.append(kwargs.pop(name))
 
-            # Determine batch shapes
+            # Determine core and batch shapes
             batch_shapes = []
+            core_shapes = []
             for i, (array, ndim) in enumerate(zip(arrays, ndims)):
                 array = None if array is None else np.asarray(array)
                 shape = () if array is None else array.shape
                 arrays[i] = array
                 batch_shapes.append(shape[:-ndim] if ndim > 0 else shape)
+                core_shapes.append(shape[-ndim:] if ndim > 0 else shape)
 
             # Early exit if call is not batched
             if not any(batch_shapes):
@@ -1027,6 +1029,12 @@ def _apply_over_batch(*argdefs):
 
             # Determine broadcasted batch shape
             batch_shape = np.broadcast_shapes(*batch_shapes)  # Gives OK error message
+
+            # Broadcast arrays to appropriate shape
+            for i, (array, core_shape) in enumerate(zip(arrays, core_shapes)):
+                if array is None:
+                    continue
+                arrays[i] = np.broadcast_to(array, batch_shape + core_shape)
 
             # Main loop
             results = []
