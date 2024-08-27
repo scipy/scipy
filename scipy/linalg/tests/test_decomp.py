@@ -2127,6 +2127,62 @@ class TestSchur:
         assert t.dtype == t0.dtype
         assert z.dtype == z0.dtype
 
+    @pytest.mark.parametrize('sort', ['iuc', 'ouc'])
+    @pytest.mark.parametrize('output', ['real', 'complex'])
+    @pytest.mark.parametrize('dtype', [np.float32, np.float64,
+                                       np.complex64, np.complex128])
+    def test_gh_13137_sort_str(self, sort, output, dtype):
+        # gh-13137 reported that sort values 'iuc' and 'ouc' were not
+        # correct because the callables assumed that the eigenvalues would
+        # always be expressed as a single complex number.
+        # In fact, when `output='real'` and the dtype is real, the
+        # eigenvalues are passed as separate real and imaginary components
+        # (yet no error is raised if the callable accepts only one argument).
+        #
+        # This tests these sort values by counting the number of eigenvalues
+        # `schur` reports as being inside/outside the unit circle.
+
+        # Real matrix with eigenvalues 0.1 +- 2j
+        A = np.asarray([[0.1, -2], [2, 0.1]])
+
+        # Previously, this would fail for `output='real'` with real dtypes
+        sdim = schur(A.astype(dtype), sort=sort, output=output)[-1]
+        assert sdim == 0 if sort == 'iuc' else sdim == 2
+
+    @pytest.mark.parametrize('output', ['real', 'complex'])
+    @pytest.mark.parametrize('dtype', [np.float32, np.float64,
+                                       np.complex64, np.complex128])
+    def test_gh_13137_sort_custom(self, output, dtype):
+        # This simply tests our understanding of how eigenvalues are
+        # passed to a sort callable. If `output='real'` and the dtype is real,
+        # real and imaginary parts are passed as separate real arguments;
+        # otherwise, they are passed a single complex argument.
+        # Also, if `output='real'` and the dtype is real, when either
+        # eigenvalue in a complex conjugate pair satisfies the sort condition,
+        # `sdim` is incremented by TWO.
+
+        # Real matrix with eigenvalues 0.1 +- 2j
+        A = np.asarray([[0.1, -2], [2, 0.1]])
+
+        all_real = output=='real' and dtype in {np.float32, np.float64}
+
+        def sort(x, y=None):
+            if all_real:
+                assert not np.iscomplexobj(x)
+                assert y is not None and np.isreal(y)
+                z = x + y*1j
+            else:
+                assert np.iscomplexobj(x)
+                assert y is None
+                z = x
+            return z.imag > 1e-15
+
+        # Only one complex eigenvalue satisfies the condition, but when
+        # `all_real` applies, both eigenvalues in the complex conjugate pair
+        # are counted.
+        sdim = schur(A.astype(dtype), sort=sort, output=output)[-1]
+        assert sdim == 2 if all_real else sdim == 1
+
 
 class TestHessenberg:
 

@@ -67,6 +67,7 @@ distcont = [
     ['ksone', (1000,)],  # replace 22 by 100 to avoid failing range, ticket 956
     ['kstwo', (10,)],
     ['kstwobign', ()],
+    ['landau', ()],
     ['laplace', ()],
     ['laplace_asymmetric', (2,)],
     ['levy', ()],
@@ -238,6 +239,7 @@ invdistcont = [
     ['ksone', (-1, )],
     ['kstwo', (-1, )],
     ['kstwobign', ()],
+    ['landau', ()],
     ['laplace', ()],
     ['laplace_asymmetric', (-1, )],
     ['levy', ()],

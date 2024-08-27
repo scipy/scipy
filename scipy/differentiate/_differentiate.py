@@ -318,7 +318,7 @@ def differentiate(f, x, *, args=(), tolerances=None, maxiter=10,
     accuracy:
 
     >>> res.nfev
-    array([11, 13, 15, 17])
+    array([11, 13, 15, 17], dtype=int32)
 
     The initial ``shape``, ``(4,)``, corresponds with evaluating the
     function at a single abscissa and all four frequencies; this is used

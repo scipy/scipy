@@ -172,8 +172,7 @@ class EnergyState:
             self.current_energy = func_wrapper.fun(self.current_location)
             if self.current_energy is None:
                 raise ValueError('Objective function is returning None')
-            if (not np.isfinite(self.current_energy) or np.isnan(
-                    self.current_energy)):
+            if not np.isfinite(self.current_energy):
                 if reinit_counter >= EnergyState.MAX_REINIT_COUNT:
                     init_error = False
                     message = (

@@ -106,6 +106,7 @@ Continuous distributions
    ksone             -- Distribution of Kolmogorov-Smirnov one-sided test statistic
    kstwo             -- Distribution of Kolmogorov-Smirnov two-sided test statistic
    kstwobign         -- Limiting Distribution of scaled Kolmogorov-Smirnov two-sided test statistic.
+   landau            -- Landau
    laplace           -- Laplace
    laplace_asymmetric    -- Asymmetric Laplace
    levy              -- Levy

@@ -3481,3 +3481,24 @@ def test_sy_hetrs(mtype, dtype, lower):
     assert info == 0
     eps = np.finfo(dtype).eps
     assert_allclose(A@x, b, atol=100*n*eps)
+
+
+@pytest.mark.parametrize('norm', list('Mm1OoIiFfEe'))
+@pytest.mark.parametrize('uplo, m, n', [('U', 5, 10), ('U', 10, 10),
+                                        ('L', 10, 5), ('L', 10, 10)])
+@pytest.mark.parametrize('diag', ['N', 'U'])
+@pytest.mark.parametrize('dtype', DTYPES)
+def test_lantr(norm, uplo, m, n, diag, dtype):
+    rng = np.random.default_rng(98426598246982456)
+    A = rng.random(size=(m, n)).astype(dtype)
+    lantr, lange = get_lapack_funcs(('lantr', 'lange'), (A,))
+    res = lantr(norm, A, uplo=uplo, diag=diag)
+
+    # now modify the matrix according to assumptions made by `lantr`
+    A = np.triu(A) if uplo == 'U' else np.tril(A)
+    if diag == 'U':
+        i = np.arange(min(m, n))
+        A[i, i] = 1
+    ref = lange(norm, A)
+
+    assert_allclose(res, ref, rtol=2e-6)
