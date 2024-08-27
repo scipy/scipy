@@ -143,6 +143,7 @@ class _csr_base(_cs_matrix):
         if self.nnz == 0: # array has no non zero elements
             return self.__class__(np.zeros(shape, dtype=self.dtype))
         
+        self.sum_duplicates()
         if old_shape[0] == 1 and old_shape[1] == 1:
             # Broadcast a single element to the entire shape
             data = np.full(shape[0] * shape[1], self.data[0])
