@@ -615,27 +615,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
     
 
     def _matmul_vector(self, other):
-        if self.ndim < 3:
-            result_shape = self.shape[0] if self.ndim > 1 else 1
-            result = np.zeros(result_shape,
-                              dtype=upcast_char(self.dtype.char, other.dtype.char))
-            if self.ndim == 2:
-                col = self.col
-                row = self.row
-            elif self.ndim == 1:
-                col = self.coords[0]
-                row = np.zeros_like(col)
-            else:
-                raise NotImplementedError(
-                    f"coo_matvec not implemented for ndim={self.ndim}")
-
-            coo_matvec(self.nnz, row, col, self.data, other, result)
-            # Array semantics return a scalar here, not a single-element array.
-            if isinstance(self, sparray) and result_shape == 1:
-                return result[0]
-            return result
-        
-        else: # if dim >= 3
+        if self.ndim > 2:
             result = np.zeros(math.prod(self.shape[:-1]),
                               dtype=upcast_char(self.dtype.char, other.dtype.char))
             shape = np.array(self.shape)
@@ -645,6 +625,26 @@ class _coo_base(_data_matrix, _minmax_mixin):
             
             result = result.reshape(self.shape[:-1])
             return result
+        
+        # self.ndim <= 2
+        result_shape = self.shape[0] if self.ndim > 1 else 1
+        result = np.zeros(result_shape,
+                            dtype=upcast_char(self.dtype.char, other.dtype.char))
+        if self.ndim == 2:
+            col = self.col
+            row = self.row
+        elif self.ndim == 1:
+            col = self.coords[0]
+            row = np.zeros_like(col)
+        else:
+            raise NotImplementedError(
+                f"coo_matvec not implemented for ndim={self.ndim}")
+
+        coo_matvec(self.nnz, row, col, self.data, other, result)
+        # Array semantics return a scalar here, not a single-element array.
+        if isinstance(self, sparray) and result_shape == 1:
+            return result[0]
+        return result
 
 
     def _matmul_dispatch(self, other):
