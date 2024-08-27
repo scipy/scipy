@@ -128,7 +128,7 @@ class _csr_base(_cs_matrix):
         old_shape = self.shape
         
         if old_shape == shape:
-            return self.copy()
+            return self
         
         if len(shape) != 2:
             raise ValueError("Target shape must be a tuple of length 2.")
@@ -141,7 +141,7 @@ class _csr_base(_cs_matrix):
                              f' broadcast to new shape {shape}')
         
         if self.nnz == 0: # array has no non zero elements
-            return self.__class__(np.zeros(shape, dtype=self.dtype))
+            return self.__class__(np.zeros(shape, dtype=self.dtype), copy=False)
         
         self.sum_duplicates()
         if old_shape[0] == 1 and old_shape[1] == 1:
@@ -162,7 +162,7 @@ class _csr_base(_cs_matrix):
             indices = np.tile(np.arange(shape[1]), len(self.data))
             indptr = self.indptr * shape[1]
 
-        return self.__class__((data, indices, indptr), shape=shape)
+        return self.__class__((data, indices, indptr), shape=shape, copy=False)
     
 
     # these functions are used by the parent class (_cs_matrix)
