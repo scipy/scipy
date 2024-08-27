@@ -124,11 +124,10 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False,
 
     where ``.H`` is the Hermitian conjugation.
 
-    .. note::
-
-        The documentation is written assuming array arguments of are of specified
-        shapes. However, array argument(s) of this function may be N-dimensional, in
-        which case they follow  *standard rules for batched linear algebra operations*.
+    The documentation is written assuming array arguments of are of specified
+    shapes. However, array argument(s) of this function may be N-dimensional, in
+    which case they follow standard rules for batched linear algebra operations;
+    see :ref:`linalg-batch` for details.
 
     Parameters
     ----------

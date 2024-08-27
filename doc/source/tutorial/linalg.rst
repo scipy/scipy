@@ -956,3 +956,11 @@ Van der Monde         `numpy.vander`                     Create a Van der Monde 
 
 
 For examples of the use of these functions, see their respective docstrings.
+
+Advanced Features
+-----------------
+
+.. _linalg-batch:
+
+Batch Support
+^^^^^^^^^^^^^
