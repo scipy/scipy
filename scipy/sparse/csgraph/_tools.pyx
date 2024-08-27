@@ -281,8 +281,8 @@ def csgraph_to_dense(csgraph, null_value=0):
     >>> indptr = np.array([0, 1, 1])
     >>> M = csr_matrix((data, indices, indptr), shape=(2, 2))
     >>> M.toarray()
-    array([[0, 0],
-           [0, 0]])
+    array([[0., 0.],
+           [0., 0.]])
     >>> csgraph.csgraph_to_dense(M, np.inf)
     array([[inf,  0.],
            [inf, inf]])

@@ -136,7 +136,7 @@ def test_dunder_reversed(d, Asp):
         with pytest.raises(TypeError):
             list(reversed(Asp))
     else:
-        list(reversed(Asp)) == list(reversed(d))
+        assert list(reversed(Asp)) == list(reversed(d))
 
 def test_dunder_ior(d, Asp):
     if isinstance(Asp, dok_array):
