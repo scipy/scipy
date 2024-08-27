@@ -5346,9 +5346,12 @@ class Test64Bit:
 
             a = csr_matrix([[1, 2, 3], [3, 4, 6]])
             assert_raises(AssertionError, a.count_nonzero, axis=0)
+            assert_raises(AssertionError, a.sum, axis=1)
 
             a = coo_matrix([[1, 2, 3], [3, 4, 5]])
             assert_raises(AssertionError, a.count_nonzero, axis=0)
+            a.has_canonical_format = False
+            assert_raises(AssertionError, a.sum_duplicates)
 
         @with_64bit_maxval_limit(fixed_dtype=np.int64)
         def check_unlimited():
@@ -5359,9 +5362,12 @@ class Test64Bit:
 
             a = csr_matrix([[1, 2, 3], [3, 4, 6]])
             a.count_nonzero(axis=0)
+            a.sum(axis=1)
 
             a = coo_matrix([[1, 2, 3], [3, 4, 5]])
             a.count_nonzero(axis=0)
+            a.has_canonical_format = False
+            a.sum_duplicates()
 
         check_limited()
         check_unlimited()
