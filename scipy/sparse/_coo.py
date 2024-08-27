@@ -251,7 +251,6 @@ class _coo_base(_data_matrix, _minmax_mixin):
         is_array = isinstance(self, sparray)
         allowed_ndims = (1,2) if is_array else (2,)
         shape = check_shape(shape, allowed_ndims=allowed_ndims)
-        # allow_nd defaults to False as resize not implemented for ndim>2
 
         # Check for added dimensions.
         if len(shape) > self.ndim:
@@ -655,7 +654,8 @@ class _coo_base(_data_matrix, _minmax_mixin):
 
     def _matmul_dispatch(self, other):
         if self.ndim < 3 and ((issparse(other) and other.ndim < 3) \
-                              or (not issparse(other) and len(np.asarray(other).shape) < 3)):
+                              or (not issparse(other) and
+                                  len(np.asarray(other).shape) < 3)):
             return _spbase._matmul_dispatch(self, other)
         
         N = self.shape[-1]

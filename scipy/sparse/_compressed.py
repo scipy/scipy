@@ -106,7 +106,8 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             except Exception as e:
                 raise ValueError('unable to infer matrix dimensions') from e
 
-            self._shape = check_shape(self._swap((major_d, minor_d)), allowed_ndims=allowed_ndims)
+            self._shape = check_shape(self._swap((major_d, minor_d)),
+                                      allowed_ndims=allowed_ndims)
 
         if dtype is not None:
             newdtype = getdtype(dtype)
