@@ -1031,7 +1031,7 @@ def _apply_over_batch(*argdefs):
             # Main loop
             results = []
             for index in np.ndindex(batch_shape):
-                result = f(*(array[*index] for array in arrays), *other_args, **kwargs)
+                result = f(*(array[index] for array in arrays), *other_args, **kwargs)
                 # Distinguish between single output and multiple outputs
                 # Could improve that are define the wrapper with that information
                 result = (result,) if not isinstance(result, tuple) else result
