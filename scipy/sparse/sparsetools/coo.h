@@ -193,7 +193,7 @@ void coo_matvec(const npy_int64 nnz,
  * Input Arguments:
  *   npy_int64  nnz         - number of nonzeros in A
  *   npy_int64 num_dims     - number of dimensions
- *   I  shape[num_dims]     - shape of A
+ *   I  strides[num_dims-1] - strides array
  *   I  Aijk[nnz * num_dims]- coords for nonzeros in A
  *   T  Ax[nnz]             - nonzero values in A
  *   T  Xx[n_col]           - input vector
@@ -205,7 +205,7 @@ void coo_matvec(const npy_int64 nnz,
 template <class I, class T>
 void coo_matvec_nd(const npy_int64 nnz,
                 const npy_int64 num_dims,
-                const I shape[],
+                const I strides[],
                 const I Aijk[],
                 const T Ax[],
                 const T Xx[],
@@ -213,10 +213,8 @@ void coo_matvec_nd(const npy_int64 nnz,
 {
     for(npy_int64 n = 0; n < nnz; n++){
         npy_intp index = 0;
-        npy_intp stride = 1;
         for(npy_int64 d = num_dims - 2; d >= 0; d--) {
-            index += Aijk[d * nnz + n] * stride;
-            stride *= shape[d];
+            index += Aijk[d * nnz + n] * strides[d];
         }
         Yx[index] += Ax[n] * Xx[Aijk[nnz * (num_dims - 1) + n]];
     }

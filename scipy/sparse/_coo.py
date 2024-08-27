@@ -625,8 +625,9 @@ class _coo_base(_data_matrix, _minmax_mixin):
             result = np.zeros(math.prod(self.shape[:-1]),
                               dtype=upcast_char(self.dtype.char, other.dtype.char))
             shape = np.array(self.shape)
+            strides = np.append(np.cumprod(shape[:-1][::-1])[::-1][1:], 1)
             coords = np.concatenate(self.coords)
-            coo_matvec_nd(self.nnz, len(self.shape), shape, coords, self.data,
+            coo_matvec_nd(self.nnz, len(self.shape), strides, coords, self.data,
                           other, result)
             
             result = result.reshape(self.shape[:-1])
