@@ -1404,48 +1404,6 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             return out
 
 
-    def broadcast_to(self, shape):
-        if self.format != 'csr':
-            raise NotImplementedError('broadcasting not implemented for'
-                                      'CSC format.')
-        
-        old_shape = self.shape
-        
-        if old_shape == shape:
-            return self.copy()
-        
-        if len(shape) != 2:
-            raise ValueError("Target shape must be a tuple of length 2.")
-
-        # Ensure the old shape can be broadcast to the new shape
-        if any((o != 1 and o != n) for o, n in zip(old_shape, shape)):
-            raise ValueError(f'current shape {old_shape} cannot be'
-                             f' broadcast to new shape {shape}')
-
-        if self.nnz == 0: # array has no non zero elements
-            return  self.__class__(np.zeros(shape, dtype=self.dtype))
-        
-        if old_shape[0] == 1 and old_shape[1] == 1:
-            # Broadcast a single element to the entire shape
-            data = np.full(shape[0] * shape[1], self.data[0])
-            indices = np.tile(np.arange(shape[1]), shape[0])
-            indptr = np.arange(0, len(data) + 1, shape[1])
-        
-        elif old_shape[0] == 1 and old_shape[1] == shape[1]:
-            # Broadcast row-wise
-            data = np.tile(self.data, shape[0])
-            indices = np.tile(self.indices, shape[0])
-            indptr = np.arange(0, len(data) + 1, len(self.data))
-
-        elif old_shape[1] == 1 and old_shape[0] == shape[0]:
-            # Broadcast column-wise
-            data = np.repeat(self.data, shape[1])
-            indices = np.tile(np.arange(shape[1]), len(self.data))
-            indptr = self.indptr * shape[1]
-
-        return self.__class__((data, indices, indptr), shape=shape)
-
-
 def _make_diagonal_csr(data, is_array=False):
     """build diagonal csc_array/csr_array => self._csr_container
 
