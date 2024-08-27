@@ -21,7 +21,7 @@ from numpy import (array, isfinite, inexact, nonzero, iscomplexobj,
                    flatnonzero, conj, asarray, argsort, empty,
                    iscomplex, zeros, einsum, eye, inf)
 # Local imports
-from scipy._lib._util import _asarray_validated
+from scipy._lib._util import _asarray_validated, _apply_over_batch
 from ._misc import LinAlgError, _datacopied, norm
 from .lapack import get_lapack_funcs, _compute_lwork
 
@@ -111,6 +111,7 @@ def _geneig(a1, b1, left, right, overwrite_a, overwrite_b,
     return w, vr
 
 
+@_apply_over_batch(('a', 2), ('b', 2))
 def eig(a, b=None, left=False, right=True, overwrite_a=False,
         overwrite_b=False, check_finite=True, homogeneous_eigvals=False):
     """
@@ -122,6 +123,12 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False,
         a.H vl[:,i] = w[i].conj() b.H vl[:,i]
 
     where ``.H`` is the Hermitian conjugation.
+
+    .. note::
+
+        The documentation is written assuming array arguments of are of specified
+        shapes. However, array argument(s) of this function may be N-dimensional, in
+        which case they follow  *standard rules for batched linear algebra operations*.
 
     Parameters
     ----------

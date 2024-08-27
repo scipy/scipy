@@ -966,3 +966,85 @@ def _dict_formatter(d, n=0, mplus=1, sorter=None):
                              formatter={'float_kind': _float_formatter_10}):
             s = str(d)
     return s
+
+
+def _apply_over_batch(*argdefs):
+    """
+    Factory for decorator that applies a function over batched arguments.
+
+    Array arguments may have any number of core dimensions (typically 0,
+    1, or 2) and any broadcastable batch shapes. There may be any
+    number of array outputs of any number of dimensions. Assumptions
+    right now - which are satisfied by all functions of interest in `linalg` -
+    are that all array inputs are consecutive keyword or positional arguments,
+    and that the wrapped function returns either a single array or a tuple of
+    arrays. It's only as general as it needs to be right now - it can be extended.
+
+    Parameters
+    ----------
+    *argdefs : tuple of (str, int)
+        Definitions of array arguments: the keyword name of the argument, and
+        the number of core dimensions.
+
+    Example:
+    --------
+    `linalg.eig` accepts two matrices as the first two arguments `a` and `b` and
+    returns one array or a tuple of arrays  depending on the values of other
+    positional or keyword arguments. To generate a wrapper that applies the function
+    over batches of matrices:
+
+    >>> _apply_over_batch(('a', 2), ('b', 2))
+    """
+    names, ndims = list(zip(*argdefs))
+    n_arrays = len(names)
+
+    def decorator(f):
+        @functools.wraps(f)
+        def wrapper(*args, **kwargs):
+            args = list(args)
+
+            # Ensure all arrays in `arrays`, other arguments in `other_args`/`kwargs`
+            arrays, other_args = args[:n_arrays], args[n_arrays:]
+            for i, name in enumerate(names):
+                if name in kwargs:
+                    if i + 1 <= len(args):
+                        raise ValueError(f'{f.__name__}() got multiple values '
+                                         f'for argument `{name}`.')
+                    else:
+                        arrays.append(kwargs.pop(name))
+
+            # Determine batch shapes
+            batch_shapes = []
+            for i, (array, ndim) in enumerate(zip(arrays, ndims)):
+                array = None if array is None else np.asarray(array)
+                shape = () if array is None else array.shape
+                arrays[i] = array
+                batch_shapes.append(shape[:-ndim] if ndim > 0 else shape)
+
+            # Early exit if call is not batched
+            if not any(batch_shapes):
+                return f(*arrays, *other_args, **kwargs)
+
+            # Determine broadcasted batch shape
+            batch_shape = np.broadcast_shapes(*batch_shapes)  # Gives OK error message
+
+            # Main loop
+            results = []
+            for index in np.ndindex(batch_shape):
+                result = f(*(array[*index] for array in arrays), *other_args, **kwargs)
+                # Distinguish between single output and multiple outputs
+                # Could improve that are define the wrapper with that information
+                result = (result,) if not isinstance(result, tuple) else result
+                results.append(result)
+            results = list(zip(*results))
+
+            # Reshape results
+            for i, result in enumerate(results):
+                result = np.stack(result)
+                core_shape = result.shape[1:]
+                results[i] = np.reshape(result, batch_shape + core_shape)
+
+            return results[0] if len(results) == 1 else results
+
+        return wrapper
+    return decorator
