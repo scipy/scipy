@@ -1,3 +1,4 @@
+import warnings
 import math
 
 import numpy as np
@@ -16,7 +17,7 @@ __all__ = ['toeplitz', 'circulant', 'hankel',
 
 
 def toeplitz(c, r=None):
-    """
+    r"""
     Construct a Toeplitz matrix.
 
     The Toeplitz matrix has constant diagonals, with c as its first column
@@ -34,6 +35,12 @@ def toeplitz(c, r=None):
         r[0] is ignored; the first row of the returned matrix is
         ``[c[0], r[1:]]``.  Whatever the actual shape of `r`, it will be
         converted to a 1-D array.
+
+    .. warning::
+
+        Beginning in SciPy 1.17, multidimensional input will be treated as a batch, not
+        ``ravel``\ ed. To preserve the existing behavior, ``ravel`` aruments before
+        passing them to `toeplitz`.
 
     Returns
     -------
@@ -65,11 +72,19 @@ def toeplitz(c, r=None):
            [ 4.-1.j,  2.+3.j,  1.+0.j]])
 
     """
-    c = np.asarray(c).ravel()
+    c = np.asarray(c)
     if r is None:
         r = c.conjugate()
     else:
-        r = np.asarray(r).ravel()
+        r = np.asarray(r)
+
+    if c.ndim > 1 or r.ndim > 1:
+        msg = ("Beginning in SciPy 1.17, multidimensional input will be treated as a "
+               "batch, not `ravel`ed. To preserve the existing behavior and silence "
+               "this warning, `ravel` aruments before passing them to `toeplitz`.")
+        warnings.warn(msg, FutureWarning, stacklevel=2)
+
+    c, r = c.ravel(), r.ravel()
     # Form a 1-D array containing a reversed c followed by r[1:] that could be
     # strided to give us toeplitz matrix.
     vals = np.concatenate((c[::-1], r[1:]))

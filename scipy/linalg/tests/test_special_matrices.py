@@ -611,14 +611,21 @@ class TestConvolutionMatrix:
                                      (fiedler, ()),
                                      (fiedler_companion, ()),
                                      (leslie, (np.arange(9),)),
+                                     (toeplitz, (np.arange(9),)),
                                      ])
 def test_batch(f, args):
     rng = np.random.default_rng(283592436523456)
     batch_shape = (2, 3)
     m = 10
     A = rng.random(batch_shape + (m,))
-    res = f(A, *args)
 
+    if f in {toeplitz}:
+        message = "Beginning in SciPy 1.17, multidimensional input will be..."
+        with pytest.warns(FutureWarning, match=message):
+            f(A, *args)
+        return
+
+    res = f(A, *args)
     ref = np.asarray([f(a, *args) for a in A.reshape(-1, m)])
     ref = ref.reshape(A.shape[:-1] + ref.shape[-2:])
     assert_allclose(res, ref)
