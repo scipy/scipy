@@ -13017,3 +13017,7 @@ add_newdoc(
     scalar or ndarray
 
     """)
+
+add_newdoc("_abs_sq", r"""
+    Internal function, use `abs_sq` instead.
+    """)
