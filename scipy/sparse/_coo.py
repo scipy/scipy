@@ -28,12 +28,13 @@ class _coo_base(_data_matrix, _minmax_mixin):
     def __init__(self, arg1, shape=None, dtype=None, copy=False, *, maxprint=None):
         _data_matrix.__init__(self, arg1, maxprint=maxprint)
         is_array = isinstance(self, sparray)
+        allowed_ndims = range(1,65) if is_array else (2,)
         if not copy:
             copy = copy_if_needed
 
         if isinstance(arg1, tuple):
-            if isshape(arg1, allow_1d=is_array, allow_nd=is_array):
-                self._shape = check_shape(arg1, allow_1d=is_array, allow_nd=is_array)
+            if isshape(arg1, allowed_ndims=allowed_ndims):
+                self._shape = check_shape(arg1, allowed_ndims=allowed_ndims)
                 idx_dtype = self._get_index_dtype(maxval=max(self._shape))
                 data_dtype = getdtype(dtype, default=float)
                 self.coords = tuple(np.array([], dtype=idx_dtype)
@@ -52,8 +53,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
                                          'sized index arrays')
                     shape = tuple(operator.index(np.max(idx)) + 1
                                   for idx in coords)
-                self._shape = check_shape(shape, allow_1d=is_array,
-                                          allow_nd=is_array)
+                self._shape = check_shape(shape, allowed_ndims=allowed_ndims)
                 idx_dtype = self._get_index_dtype(coords,
                                                   maxval=max(self.shape),
                                                   check_contents=True)
@@ -66,15 +66,13 @@ class _coo_base(_data_matrix, _minmax_mixin):
                 if arg1.format == self.format and copy:
                     self.coords = tuple(idx.copy() for idx in arg1.coords)
                     self.data = arg1.data.copy()
-                    self._shape = check_shape(arg1.shape, allow_1d=is_array,
-                                              allow_nd=is_array)
+                    self._shape = check_shape(arg1.shape, allowed_ndims=allowed_ndims)
                     self.has_canonical_format = arg1.has_canonical_format
                 else:
                     coo = arg1.tocoo()
                     self.coords = tuple(coo.coords)
                     self.data = coo.data
-                    self._shape = check_shape(coo.shape, allow_1d=is_array,
-                                              allow_nd=is_array)
+                    self._shape = check_shape(coo.shape, allowed_ndims=allowed_ndims)
                     self.has_canonical_format = False
             else:
                 # dense argument
@@ -84,10 +82,9 @@ class _coo_base(_data_matrix, _minmax_mixin):
                     if M.ndim != 2:
                         raise TypeError(f'expected 2D array or matrix, not {M.ndim}D')
 
-                self._shape = check_shape(M.shape, allow_1d=is_array, allow_nd=is_array)
+                self._shape = check_shape(M.shape, allowed_ndims=allowed_ndims)
                 if shape is not None:
-                    if check_shape(shape, allow_1d=is_array,
-                        allow_nd=is_array) != self._shape:
+                    if check_shape(shape, allowed_ndims=allowed_ndims) != self._shape:
                         message = f'inconsistent shapes: {shape} != {self._shape}'
                         raise ValueError(message)
 
@@ -134,7 +131,8 @@ class _coo_base(_data_matrix, _minmax_mixin):
 
     def reshape(self, *args, **kwargs):
         is_array = isinstance(self, sparray)
-        shape = check_shape(args, self.shape, allow_1d=is_array, allow_nd=is_array)
+        allowed_ndims = range(1,65) if is_array else (2,)
+        shape = check_shape(args, self.shape, allowed_ndims=allowed_ndims)
         order, copy = check_reshape_kwargs(kwargs)
 
         # Return early if reshape is not required
@@ -251,7 +249,8 @@ class _coo_base(_data_matrix, _minmax_mixin):
 
     def resize(self, *shape) -> None:
         is_array = isinstance(self, sparray)
-        shape = check_shape(shape, allow_1d=is_array)
+        allowed_ndims = (1,2) if is_array else (2,)
+        shape = check_shape(shape, allowed_ndims=allowed_ndims)
         # allow_nd defaults to False as resize not implemented for ndim>2
 
         # Check for added dimensions.

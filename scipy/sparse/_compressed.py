@@ -28,6 +28,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
     def __init__(self, arg1, shape=None, dtype=None, copy=False, *, maxprint=None):
         _data_matrix.__init__(self, arg1, maxprint=maxprint)
         is_array = isinstance(self, sparray)
+        allowed_ndims = (1,2) if is_array else (2,)
 
         if issparse(arg1):
             if arg1.format == self.format and copy:
@@ -39,10 +40,10 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             )
 
         elif isinstance(arg1, tuple):
-            if isshape(arg1, allow_1d=is_array):
+            if isshape(arg1, allowed_ndims=allowed_ndims):
                 # It's a tuple of matrix dimensions (M, N)
                 # create empty matrix
-                self._shape = check_shape(arg1, allow_1d=is_array)
+                self._shape = check_shape(arg1, allowed_ndims=allowed_ndims)
                 M, N = self._swap(self._shape_as_2d)
                 # Select index dtype large enough to pass array and
                 # scalar parameters to sparsetools
@@ -96,7 +97,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
         # Read matrix dimensions given, if any
         if shape is not None:
-            self._shape = check_shape(shape, allow_1d=is_array)
+            self._shape = check_shape(shape, allowed_ndims=allowed_ndims)
         elif self.shape is None:
             # shape not already set, try to infer dimensions
             try:
@@ -105,7 +106,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             except Exception as e:
                 raise ValueError('unable to infer matrix dimensions') from e
 
-            self._shape = check_shape(self._swap((major_d, minor_d)), allow_1d=is_array)
+            self._shape = check_shape(self._swap((major_d, minor_d)), allowed_ndims=allowed_ndims)
 
         if dtype is not None:
             newdtype = getdtype(dtype)
@@ -1288,7 +1289,8 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         self.data = _prune_array(self.data[:self.nnz])
 
     def resize(self, *shape):
-        shape = check_shape(shape, allow_1d=isinstance(self, sparray))
+        allowed_ndims = (1,2) if isinstance(self, sparray) else (2,)
+        shape = check_shape(shape, allowed_ndims=allowed_ndims)
 
         if hasattr(self, 'blocksize'):
             bm, bn = self.blocksize

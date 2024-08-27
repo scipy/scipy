@@ -158,7 +158,8 @@ class _spbase:
         # If the shape already matches, don't bother doing an actual reshape
         # Otherwise, the default is to convert to COO and use its reshape
         is_array = isinstance(self, sparray)
-        shape = check_shape(args, self.shape, allow_1d=is_array)
+        allowed_ndims = (1,2) if is_array else (2,)
+        shape = check_shape(args, self.shape, allowed_ndims=allowed_ndims)
         order, copy = check_reshape_kwargs(kwargs)
         if shape == self.shape:
             if copy:
