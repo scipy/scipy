@@ -649,7 +649,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
 
     def _matmul_dispatch(self, other):
         if self.ndim < 3:
-            return _data_matrix._matmul_dispatch(self, other)
+            return _spbase._matmul_dispatch(self, other)
         
         N = self.shape[-1]
         if other.shape == (N,):
