@@ -134,12 +134,14 @@ class _csr_base(_cs_matrix):
             raise ValueError("Target shape must be a tuple of length 2.")
 
         # Ensure the old shape can be broadcast to the new shape
-        if any((o != 1 and o != n) for o, n in zip(old_shape, shape)):
+        try:
+            np.broadcast_shapes(old_shape, shape)
+        except ValueError:
             raise ValueError(f'current shape {old_shape} cannot be'
                              f' broadcast to new shape {shape}')
-
+        
         if self.nnz == 0: # array has no non zero elements
-            return  self.__class__(np.zeros(shape, dtype=self.dtype))
+            return self.__class__(np.zeros(shape, dtype=self.dtype))
         
         if old_shape[0] == 1 and old_shape[1] == 1:
             # Broadcast a single element to the entire shape
