@@ -245,8 +245,10 @@ def isshape(x, nonneg=False, *, allowed_ndims=(2,)) -> bool:
     """Is x a valid tuple of dimensions?
 
     If nonneg, also checks that the dimensions are non-negative.
-    If allow_1d, shapes of length 1 or 2 are allowed.
-    If allow_nd, shapes of all lengths >= 1 are allowed.
+    If allowed_ndims is provided, shapes of lengths belonging in
+    allowed_ndims are allowed.
+    If allowed_ndims is not provided, only shapes of length 2 are
+    allowed.
     """
     ndim = len(x)
     if ndim not in allowed_ndims:
@@ -309,15 +311,12 @@ def check_shape(args, current_shape=None, *, allowed_ndims=(2,)):
     current_shape : tuple, optional
         The current shape of the sparse array or matrix.
         If None (default), the current shape will be inferred from args.
-    allow_1d : bool, optional
-        If True, then 1-D or 2-D arrays are accepted.
-        If False (default), then only 2-D arrays are accepted and an error is
-        raised otherwise.
-    allow_nd : bool, optional
-        If True, then all n-D arrays are accepted.
-        If False (default), then only 2-D arrays (and 1-D arrays, depending
-        on the value of allow_1d) are accepted and an error is
-        raised otherwise.
+    allowed_ndims : tuple, optional
+        Tuple representing the set of valid dimensionalities.
+        If (1,2), then only 1-D or 2-D arrays are accepted.
+        If (2,), then only 2-D arrays are accepted.
+        Otherwise, n-D arrays are accepted.
+        Defaults to (2,).
 
     Returns
     -------
