@@ -10199,7 +10199,7 @@ def expectile(a, alpha=0.5, *, weights=None):
     return res.root
 
 
-def lmoment_iv(sample, order, axis, sorted, standardize):
+def _lmoment_iv(sample, order, axis, sorted, standardize):
     # input validation/standardization for `lmoment`
     sample = np.asarray(sample)
     message = "`sample` must be an array of real numbers."
@@ -10246,6 +10246,9 @@ def _br(x, *, r=0):
 
 
 def _prk(r, k):
+    # Writen to match [1] Equation 27 closely to facilitate review.
+    # This does not protect against overflow, so improvements to
+    # robustness would be a welcome follow-up.
     return (-1)**(r-k)*special.binom(r, k)*special.binom(r+k, k)
 
 
@@ -10270,8 +10273,11 @@ def lmoment(sample, order=None, *, axis=0, sorted=False, standardize=True):
     order : array_like, optional
         The (positive integer) orders of the desired L-moments.
         Must be a scalar or non-empty 1D array. Default is [1, 2, 3, 4].
-    axis : int, default=0
-        The axis along which to compute L-moments.
+    axis : int or None, default=0
+        If an int, the axis of the input along which to compute the statistic.
+        The statistic of each axis-slice (e.g. row) of the input will appear
+        in a corresponding element of the output. If None, the input will be
+        raveled before computing the statistic.
     sorted : bool, default=False
         Whether `sample` is already sorted in increasing order along `axis`.
         If False (default), `sample` will be sorted.
@@ -10295,6 +10301,10 @@ def lmoment(sample, order=None, *, axis=0, sorted=False, standardize=True):
     .. [1] D. Bilkova. "L-Moments and TL-Moments as an Alternative Tool of
            Statistical Data Analysis". Journal of Applied Mathematics and
            Physics. 2014. :doi:`10.4236/jamp.2014.210104`
+    .. [2] J. R. M. Hosking. "L-Moments: Analysis and Estimation of Distributions
+           Using Linear Combinations of Order Statistics". Journal of the Royal
+           Statistical Society. 1990. :doi:`10.1111/j.2517-6161.1990.tb01775.x`
+    .. [3] "L-moment". *Wikipedia*. https://en.wikipedia.org/wiki/L-moment.
 
     Examples
     --------
@@ -10310,12 +10320,12 @@ def lmoment(sample, order=None, *, axis=0, sorted=False, standardize=True):
     provide reasonable estimates.
 
     """
-    args = lmoment_iv(sample, order, axis, sorted, standardize)
+    args = _lmoment_iv(sample, order, axis, sorted, standardize)
     sample, order, axis, sorted, standardize = args
 
     n_moments = np.max(order)
     k = np.arange(n_moments, dtype=sample.dtype)
-    prk = _prk(np.expand_dims(k, list(range(1, sample.ndim+1))), k)
+    prk = _prk(np.expand_dims(k, tuple(range(1, sample.ndim+1))), k)
     bk = _br(sample, r=k)
 
     n = sample.shape[-1]
