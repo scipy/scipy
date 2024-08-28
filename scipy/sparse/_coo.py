@@ -638,7 +638,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
         # self.ndim <= 2
         result_shape = self.shape[0] if self.ndim > 1 else 1
         result = np.zeros(result_shape,
-                            dtype=upcast_char(self.dtype.char, other.dtype.char))
+                          dtype=upcast_char(self.dtype.char, other.dtype.char))
         if self.ndim == 2:
             col = self.col
             row = self.row
