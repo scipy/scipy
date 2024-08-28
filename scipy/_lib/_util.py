@@ -1040,9 +1040,15 @@ def _apply_over_batch(*argdefs):
             results = []
             for index in np.ndindex(batch_shape):
                 result = f(*(array[index] for array in arrays), *other_args, **kwargs)
-                # Distinguish between single output and multiple outputs
-                # Could improve that are define the wrapper with that information
+                # Assume `result` is either a tuple or single array. This is easily
+                # generalized by allowing the contributor to pass an `unpack_result`
+                # callable to the decorator factory.
                 result = (result,) if not isinstance(result, tuple) else result
+                if not results:
+                    core_shapes = [array.shape for array in result]
+
+                    results = [np.empty(batch_shape)]
+
                 results.append(result)
             results = list(zip(*results))
 
@@ -1052,6 +1058,9 @@ def _apply_over_batch(*argdefs):
                 core_shape = result.shape[1:]
                 results[i] = np.reshape(result, batch_shape + core_shape)
 
+            # Assume `result` should be a single array if there is only one element or
+            # a `tuple` otherwise. This is easily generalized by allowing the
+            # contributor to pass an `pack_result` callable to the decorator factory.
             return results[0] if len(results) == 1 else results
 
         return wrapper
