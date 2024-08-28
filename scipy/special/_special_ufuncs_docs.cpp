@@ -2,8 +2,78 @@ const char *_cospi_doc = R"(
     Internal function, do not use.
     )";
 
+const char *cosdg_doc = R"(
+    cosdg(x, out=None)
+
+    Cosine of the angle `x` given in degrees.
+
+    Parameters
+    ----------
+    x : array_like
+        Angle, given in degrees.
+    out : ndarray, optional
+        Optional output array for the function results.
+
+    Returns
+    -------
+    scalar or ndarray
+        Cosine of the input.
+
+    See Also
+    --------
+    sindg, tandg, cotdg
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> import scipy.special as sc
+
+    It is more accurate than using cosine directly.
+
+    >>> x = 90 + 180 * np.arange(3)
+    >>> sc.cosdg(x)
+    array([-0.,  0., -0.])
+    >>> np.cos(x * np.pi / 180)
+    array([ 6.1232340e-17, -1.8369702e-16,  3.0616170e-16])
+    )";
+
 const char *_sinpi_doc = R"(
     Internal function, do not use.
+    )";
+
+const char *sindg_doc = R"(
+    sindg(x, out=None)
+
+    Sine of the angle `x` given in degrees.
+
+    Parameters
+    ----------
+    x : array_like
+        Angle, given in degrees.
+    out : ndarray, optional
+        Optional output array for the function results.
+
+    Returns
+    -------
+    scalar or ndarray
+        Sine at the input.
+
+    See Also
+    --------
+    cosdg, tandg, cotdg
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> import scipy.special as sc
+
+    It is more accurate than using sine directly.
+
+    >>> x = 180 * np.arange(3)
+    >>> sc.sindg(x)
+    array([ 0., -0.,  0.])
+    >>> np.sin(x * np.pi / 180)
+    array([ 0.0000000e+00,  1.2246468e-16, -2.4492936e-16])
     )";
 
 const char *_zeta_doc = R"(
@@ -11,6 +81,59 @@ const char *_zeta_doc = R"(
 
     Internal function, Hurwitz zeta.
 
+    )";
+
+const char *zetac_doc = R"(
+    zetac(x, out=None)
+
+    Riemann zeta function minus 1.
+
+    This function is defined as
+
+    .. math:: \\zeta(x) = \\sum_{k=2}^{\\infty} 1 / k^x,
+
+    where ``x > 1``.  For ``x < 1`` the analytic continuation is
+    computed. For more information on the Riemann zeta function, see
+    [dlmf]_.
+
+    Parameters
+    ----------
+    x : array_like of float
+        Values at which to compute zeta(x) - 1 (must be real).
+    out : ndarray, optional
+        Optional output array for the function results
+
+    Returns
+    -------
+    scalar or ndarray
+        Values of zeta(x) - 1.
+
+    See Also
+    --------
+    zeta
+
+    References
+    ----------
+    .. [dlmf] NIST Digital Library of Mathematical Functions
+              https://dlmf.nist.gov/25
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.special import zetac, zeta
+
+    Some special values:
+
+    >>> zetac(2), np.pi**2/6 - 1
+    (0.64493406684822641, 0.6449340668482264)
+
+    >>> zetac(-1), -1.0/12 - 1
+    (-1.0833333333333333, -1.0833333333333333)
+
+    Compare ``zetac(x)`` to ``zeta(x) - 1`` for large `x`:
+
+    >>> zetac(60), zeta(60) - 1
+    (8.673617380119933e-19, 0.0)
     )";
 
 const char *airy_doc = R"(
@@ -408,6 +531,41 @@ const char *binom_doc = R"(
     >>> x, y = 2.2, 3.1
     >>> (binom(x, y), comb(x, y))
     (0.037399983365134115, 0.0)
+    )";
+
+const char *cotdg_doc = R"(
+    cotdg(x, out=None)
+
+    Cotangent of the angle `x` given in degrees.
+
+    Parameters
+    ----------
+    x : array_like
+        Angle, given in degrees.
+    out : ndarray, optional
+        Optional output array for the function results.
+
+    Returns
+    -------
+    scalar or ndarray
+        Cotangent at the input.
+
+    See Also
+    --------
+    sindg, cosdg, tandg
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> import scipy.special as sc
+
+    It is more accurate than using cotangent directly.
+
+    >>> x = 90 + 180 * np.arange(3)
+    >>> sc.cotdg(x)
+    array([0., 0., 0.])
+    >>> 1 / np.tan(x * np.pi / 180)
+    array([6.1232340e-17, 1.8369702e-16, 3.0616170e-16])
     )";
 
 const char *exp1_doc = R"(
@@ -1649,6 +1807,273 @@ const char *itstruve0_doc = R"(
     >>> plt.show()
     )";
 
+const char *i0_doc = R"(
+    i0(x, out=None)
+
+    Modified Bessel function of order 0.
+
+    Defined as,
+
+    .. math::
+        I_0(x) = \sum_{k=0}^\infty \frac{(x^2/4)^k}{(k!)^2} = J_0(\imath x),
+
+    where :math:`J_0` is the Bessel function of the first kind of order 0.
+
+    Parameters
+    ----------
+    x : array_like
+        Argument (float)
+    out : ndarray, optional
+        Optional output array for the function values
+
+    Returns
+    -------
+    I : scalar or ndarray
+        Value of the modified Bessel function of order 0 at `x`.
+
+    See Also
+    --------
+    iv: Modified Bessel function of any order
+    i0e: Exponentially scaled modified Bessel function of order 0
+
+    Notes
+    -----
+    The range is partitioned into the two intervals [0, 8] and (8, infinity).
+    Chebyshev polynomial expansions are employed in each interval.
+
+    This function is a wrapper for the Cephes [1]_ routine `i0`.
+
+    References
+    ----------
+    .. [1] Cephes Mathematical Functions Library,
+           http://www.netlib.org/cephes/
+
+    Examples
+    --------
+    Calculate the function at one point:
+
+    >>> from scipy.special import i0
+    >>> i0(1.)
+    1.2660658777520082
+
+    Calculate at several points:
+
+    >>> import numpy as np
+    >>> i0(np.array([-2., 0., 3.5]))
+    array([2.2795853 , 1.        , 7.37820343])
+
+    Plot the function from -10 to 10.
+
+    >>> import matplotlib.pyplot as plt
+    >>> fig, ax = plt.subplots()
+    >>> x = np.linspace(-10., 10., 1000)
+    >>> y = i0(x)
+    >>> ax.plot(x, y)
+    >>> plt.show()
+    )";
+
+const char *i0e_doc = R"(
+    i0e(x, out=None)
+
+    Exponentially scaled modified Bessel function of order 0.
+
+    Defined as::
+
+        i0e(x) = exp(-abs(x)) * i0(x).
+
+    Parameters
+    ----------
+    x : array_like
+        Argument (float)
+    out : ndarray, optional
+        Optional output array for the function values
+
+    Returns
+    -------
+    I : scalar or ndarray
+        Value of the exponentially scaled modified Bessel function of order 0
+        at `x`.
+
+    See Also
+    --------
+    iv: Modified Bessel function of the first kind
+    i0: Modified Bessel function of order 0
+
+    Notes
+    -----
+    The range is partitioned into the two intervals [0, 8] and (8, infinity).
+    Chebyshev polynomial expansions are employed in each interval. The
+    polynomial expansions used are the same as those in `i0`, but
+    they are not multiplied by the dominant exponential factor.
+
+    This function is a wrapper for the Cephes [1]_ routine `i0e`. `i0e`
+    is useful for large arguments `x`: for these, `i0` quickly overflows.
+
+    References
+    ----------
+    .. [1] Cephes Mathematical Functions Library,
+           http://www.netlib.org/cephes/
+
+    Examples
+    --------
+    In the following example `i0` returns infinity whereas `i0e` still returns
+    a finite number.
+
+    >>> from scipy.special import i0, i0e
+    >>> i0(1000.), i0e(1000.)
+    (inf, 0.012617240455891257)
+
+    Calculate the function at several points by providing a NumPy array or
+    list for `x`:
+
+    >>> import numpy as np
+    >>> i0e(np.array([-2., 0., 3.]))
+    array([0.30850832, 1.        , 0.24300035])
+
+    Plot the function from -10 to 10.
+
+    >>> import matplotlib.pyplot as plt
+    >>> fig, ax = plt.subplots()
+    >>> x = np.linspace(-10., 10., 1000)
+    >>> y = i0e(x)
+    >>> ax.plot(x, y)
+    >>> plt.show()
+    )";
+
+const char *i1_doc = R"(
+    i1(x, out=None)
+
+    Modified Bessel function of order 1.
+
+    Defined as,
+
+    .. math::
+        I_1(x) = \frac{1}{2}x \sum_{k=0}^\infty \frac{(x^2/4)^k}{k! (k + 1)!}
+               = -\imath J_1(\imath x),
+
+    where :math:`J_1` is the Bessel function of the first kind of order 1.
+
+    Parameters
+    ----------
+    x : array_like
+        Argument (float)
+    out : ndarray, optional
+        Optional output array for the function values
+
+    Returns
+    -------
+    I : scalar or ndarray
+        Value of the modified Bessel function of order 1 at `x`.
+
+    See Also
+    --------
+    iv: Modified Bessel function of the first kind
+    i1e: Exponentially scaled modified Bessel function of order 1
+
+    Notes
+    -----
+    The range is partitioned into the two intervals [0, 8] and (8, infinity).
+    Chebyshev polynomial expansions are employed in each interval.
+
+    This function is a wrapper for the Cephes [1]_ routine `i1`.
+
+    References
+    ----------
+    .. [1] Cephes Mathematical Functions Library,
+           http://www.netlib.org/cephes/
+
+    Examples
+    --------
+    Calculate the function at one point:
+
+    >>> from scipy.special import i1
+    >>> i1(1.)
+    0.5651591039924851
+
+    Calculate the function at several points:
+
+    >>> import numpy as np
+    >>> i1(np.array([-2., 0., 6.]))
+    array([-1.59063685,  0.        , 61.34193678])
+
+    Plot the function between -10 and 10.
+
+    >>> import matplotlib.pyplot as plt
+    >>> fig, ax = plt.subplots()
+    >>> x = np.linspace(-10., 10., 1000)
+    >>> y = i1(x)
+    >>> ax.plot(x, y)
+    >>> plt.show()
+    )";
+
+const char *i1e_doc = R"(
+    i1e(x, out=None)
+
+    Exponentially scaled modified Bessel function of order 1.
+
+    Defined as::
+
+        i1e(x) = exp(-abs(x)) * i1(x)
+
+    Parameters
+    ----------
+    x : array_like
+        Argument (float)
+    out : ndarray, optional
+        Optional output array for the function values
+
+    Returns
+    -------
+    I : scalar or ndarray
+        Value of the exponentially scaled modified Bessel function of order 1
+        at `x`.
+
+    See Also
+    --------
+    iv: Modified Bessel function of the first kind
+    i1: Modified Bessel function of order 1
+
+    Notes
+    -----
+    The range is partitioned into the two intervals [0, 8] and (8, infinity).
+    Chebyshev polynomial expansions are employed in each interval. The
+    polynomial expansions used are the same as those in `i1`, but
+    they are not multiplied by the dominant exponential factor.
+
+    This function is a wrapper for the Cephes [1]_ routine `i1e`. `i1e`
+    is useful for large arguments `x`: for these, `i1` quickly overflows.
+
+    References
+    ----------
+    .. [1] Cephes Mathematical Functions Library,
+           http://www.netlib.org/cephes/
+
+    Examples
+    --------
+    In the following example `i1` returns infinity whereas `i1e` still returns
+    a finite number.
+
+    >>> from scipy.special import i1, i1e
+    >>> i1(1000.), i1e(1000.)
+    (inf, 0.01261093025692863)
+
+    Calculate the function at several points by providing a NumPy array or
+    list for `x`:
+
+    >>> import numpy as np
+    >>> i1e(np.array([-2., 0., 6.]))
+    array([-0.21526929,  0.        ,  0.15205146])
+
+    Plot the function between -10 and 10.
+
+    >>> import matplotlib.pyplot as plt
+    >>> fig, ax = plt.subplots()
+    >>> x = np.linspace(-10., 10., 1000)
+    >>> y = i1e(x)
+    >>> ax.plot(x, y)
+    >>> plt.show()
+    )";
+
 const char *iv_doc = R"(
     iv(v, z, out=None)
 
@@ -1757,7 +2182,6 @@ const char *iv_doc = R"(
     ...     ax.plot(x, iv(i, x), label=f'$I_{i!r}$')
     >>> ax.legend()
     >>> plt.show()
-
     )";
 
 const char *iv_ratio_doc = R"(
@@ -1874,6 +2298,139 @@ const char *ive_doc = R"(
     ...     ax.plot(x, ive(i, x), label=fr'$I_{i!r}(z)\cdot e^{{-|z|}}$')
     >>> ax.legend()
     >>> ax.set_xlabel(r"$z$")
+    >>> plt.show()
+    )";
+
+const char *j0_doc = R"(
+    j0(x, out=None)
+
+    Bessel function of the first kind of order 0.
+
+    Parameters
+    ----------
+    x : array_like
+        Argument (float).
+    out : ndarray, optional
+        Optional output array for the function values
+
+    Returns
+    -------
+    J : scalar or ndarray
+        Value of the Bessel function of the first kind of order 0 at `x`.
+
+    See Also
+    --------
+    jv : Bessel function of real order and complex argument.
+    spherical_jn : spherical Bessel functions.
+
+    Notes
+    -----
+    The domain is divided into the intervals [0, 5] and (5, infinity). In the
+    first interval the following rational approximation is used:
+
+    .. math::
+
+        J_0(x) \approx (w - r_1^2)(w - r_2^2) \frac{P_3(w)}{Q_8(w)},
+
+    where :math:`w = x^2` and :math:`r_1`, :math:`r_2` are the zeros of
+    :math:`J_0`, and :math:`P_3` and :math:`Q_8` are polynomials of degrees 3
+    and 8, respectively.
+
+    In the second interval, the Hankel asymptotic expansion is employed with
+    two rational functions of degree 6/6 and 7/7.
+
+    This function is a wrapper for the Cephes [1]_ routine `j0`.
+    It should not be confused with the spherical Bessel functions (see
+    `spherical_jn`).
+
+    References
+    ----------
+    .. [1] Cephes Mathematical Functions Library,
+           http://www.netlib.org/cephes/
+
+    Examples
+    --------
+    Calculate the function at one point:
+
+    >>> from scipy.special import j0
+    >>> j0(1.)
+    0.7651976865579665
+
+    Calculate the function at several points:
+
+    >>> import numpy as np
+    >>> j0(np.array([-2., 0., 4.]))
+    array([ 0.22389078,  1.        , -0.39714981])
+
+    Plot the function from -20 to 20.
+
+    >>> import matplotlib.pyplot as plt
+    >>> fig, ax = plt.subplots()
+    >>> x = np.linspace(-20., 20., 1000)
+    >>> y = j0(x)
+    >>> ax.plot(x, y)
+    >>> plt.show()
+    )";
+
+const char *j1_doc = R"(
+    j1(x, out=None)
+
+    Bessel function of the first kind of order 1.
+
+    Parameters
+    ----------
+    x : array_like
+        Argument (float).
+    out : ndarray, optional
+        Optional output array for the function values
+
+    Returns
+    -------
+    J : scalar or ndarray
+        Value of the Bessel function of the first kind of order 1 at `x`.
+
+    See Also
+    --------
+    jv: Bessel function of the first kind
+    spherical_jn: spherical Bessel functions.
+
+    Notes
+    -----
+    The domain is divided into the intervals [0, 8] and (8, infinity). In the
+    first interval a 24 term Chebyshev expansion is used. In the second, the
+    asymptotic trigonometric representation is employed using two rational
+    functions of degree 5/5.
+
+    This function is a wrapper for the Cephes [1]_ routine `j1`.
+    It should not be confused with the spherical Bessel functions (see
+    `spherical_jn`).
+
+    References
+    ----------
+    .. [1] Cephes Mathematical Functions Library,
+           http://www.netlib.org/cephes/
+
+    Examples
+    --------
+    Calculate the function at one point:
+
+    >>> from scipy.special import j1
+    >>> j1(1.)
+    0.44005058574493355
+
+    Calculate the function at several points:
+
+    >>> import numpy as np
+    >>> j1(np.array([-2., 0., 4.]))
+    array([-0.57672481,  0.        , -0.06604333])
+
+    Plot the function from -20 to 20.
+
+    >>> import matplotlib.pyplot as plt
+    >>> fig, ax = plt.subplots()
+    >>> x = np.linspace(-20., 20., 1000)
+    >>> y = j1(x)
+    >>> ax.plot(x, y)
     >>> plt.show()
     )";
 
@@ -2268,6 +2825,256 @@ const char *kerp_doc = R"(
     .. [dlmf] NIST, Digital Library of Mathematical Functions,
         https://dlmf.nist.gov/10#PT5
 
+    )";
+
+const char *k0_doc = R"(
+    k0(x, out=None)
+
+    Modified Bessel function of the second kind of order 0, :math:`K_0`.
+
+    This function is also sometimes referred to as the modified Bessel
+    function of the third kind of order 0.
+
+    Parameters
+    ----------
+    x : array_like
+        Argument (float).
+    out : ndarray, optional
+        Optional output array for the function values
+
+    Returns
+    -------
+    K : scalar or ndarray
+        Value of the modified Bessel function :math:`K_0` at `x`.
+
+    See Also
+    --------
+    kv: Modified Bessel function of the second kind of any order
+    k0e: Exponentially scaled modified Bessel function of the second kind
+
+    Notes
+    -----
+    The range is partitioned into the two intervals [0, 2] and (2, infinity).
+    Chebyshev polynomial expansions are employed in each interval.
+
+    This function is a wrapper for the Cephes [1]_ routine `k0`.
+
+    References
+    ----------
+    .. [1] Cephes Mathematical Functions Library,
+           http://www.netlib.org/cephes/
+
+    Examples
+    --------
+    Calculate the function at one point:
+
+    >>> from scipy.special import k0
+    >>> k0(1.)
+    0.42102443824070823
+
+    Calculate the function at several points:
+
+    >>> import numpy as np
+    >>> k0(np.array([0.5, 2., 3.]))
+    array([0.92441907, 0.11389387, 0.0347395 ])
+
+    Plot the function from 0 to 10.
+
+    >>> import matplotlib.pyplot as plt
+    >>> fig, ax = plt.subplots()
+    >>> x = np.linspace(0., 10., 1000)
+    >>> y = k0(x)
+    >>> ax.plot(x, y)
+    >>> plt.show()
+    )";
+
+const char *k0e_doc = R"(
+    k0e(x, out=None)
+
+    Exponentially scaled modified Bessel function K of order 0
+
+    Defined as::
+
+        k0e(x) = exp(x) * k0(x).
+
+    Parameters
+    ----------
+    x : array_like
+        Argument (float)
+    out : ndarray, optional
+        Optional output array for the function values
+
+    Returns
+    -------
+    K : scalar or ndarray
+        Value of the exponentially scaled modified Bessel function K of order
+        0 at `x`.
+
+    See Also
+    --------
+    kv: Modified Bessel function of the second kind of any order
+    k0: Modified Bessel function of the second kind
+
+    Notes
+    -----
+    The range is partitioned into the two intervals [0, 2] and (2, infinity).
+    Chebyshev polynomial expansions are employed in each interval.
+
+    This function is a wrapper for the Cephes [1]_ routine `k0e`. `k0e` is
+    useful for large arguments: for these, `k0` easily underflows.
+
+    References
+    ----------
+    .. [1] Cephes Mathematical Functions Library,
+           http://www.netlib.org/cephes/
+
+    Examples
+    --------
+    In the following example `k0` returns 0 whereas `k0e` still returns a
+    useful finite number:
+
+    >>> from scipy.special import k0, k0e
+    >>> k0(1000.), k0e(1000)
+    (0., 0.03962832160075422)
+
+    Calculate the function at several points by providing a NumPy array or
+    list for `x`:
+
+    >>> import numpy as np
+    >>> k0e(np.array([0.5, 2., 3.]))
+    array([1.52410939, 0.84156822, 0.6977616 ])
+
+    Plot the function from 0 to 10.
+
+    >>> import matplotlib.pyplot as plt
+    >>> fig, ax = plt.subplots()
+    >>> x = np.linspace(0., 10., 1000)
+    >>> y = k0e(x)
+    >>> ax.plot(x, y)
+    >>> plt.show()
+    )";
+
+const char *k1_doc = R"(
+    k1(x, out=None)
+
+    Modified Bessel function of the second kind of order 1, :math:`K_1(x)`.
+
+    Parameters
+    ----------
+    x : array_like
+        Argument (float)
+    out : ndarray, optional
+        Optional output array for the function values
+
+    Returns
+    -------
+    K : scalar or ndarray
+        Value of the modified Bessel function K of order 1 at `x`.
+
+    See Also
+    --------
+    kv: Modified Bessel function of the second kind of any order
+    k1e: Exponentially scaled modified Bessel function K of order 1
+
+    Notes
+    -----
+    The range is partitioned into the two intervals [0, 2] and (2, infinity).
+    Chebyshev polynomial expansions are employed in each interval.
+
+    This function is a wrapper for the Cephes [1]_ routine `k1`.
+
+    References
+    ----------
+    .. [1] Cephes Mathematical Functions Library,
+           http://www.netlib.org/cephes/
+
+    Examples
+    --------
+    Calculate the function at one point:
+
+    >>> from scipy.special import k1
+    >>> k1(1.)
+    0.6019072301972346
+
+    Calculate the function at several points:
+
+    >>> import numpy as np
+    >>> k1(np.array([0.5, 2., 3.]))
+    array([1.65644112, 0.13986588, 0.04015643])
+
+    Plot the function from 0 to 10.
+
+    >>> import matplotlib.pyplot as plt
+    >>> fig, ax = plt.subplots()
+    >>> x = np.linspace(0., 10., 1000)
+    >>> y = k1(x)
+    >>> ax.plot(x, y)
+    >>> plt.show()
+    )";
+
+const char *k1e_doc = R"(
+    k1e(x, out=None)
+
+    Exponentially scaled modified Bessel function K of order 1
+
+    Defined as::
+
+        k1e(x) = exp(x) * k1(x)
+
+    Parameters
+    ----------
+    x : array_like
+        Argument (float)
+    out : ndarray, optional
+        Optional output array for the function values
+
+    Returns
+    -------
+    K : scalar or ndarray
+        Value of the exponentially scaled modified Bessel function K of order
+        1 at `x`.
+
+    See Also
+    --------
+    kv: Modified Bessel function of the second kind of any order
+    k1: Modified Bessel function of the second kind of order 1
+
+    Notes
+    -----
+    The range is partitioned into the two intervals [0, 2] and (2, infinity).
+    Chebyshev polynomial expansions are employed in each interval.
+
+    This function is a wrapper for the Cephes [1]_ routine `k1e`.
+
+    References
+    ----------
+    .. [1] Cephes Mathematical Functions Library,
+           http://www.netlib.org/cephes/
+
+    Examples
+    --------
+    In the following example `k1` returns 0 whereas `k1e` still returns a
+    useful floating point number.
+
+    >>> from scipy.special import k1, k1e
+    >>> k1(1000.), k1e(1000.)
+    (0., 0.03964813081296021)
+
+    Calculate the function at several points by providing a NumPy array or
+    list for `x`:
+
+    >>> import numpy as np
+    >>> k1e(np.array([0.5, 2., 3.]))
+    array([2.73100971, 1.03347685, 0.80656348])
+
+    Plot the function from 0 to 10.
+
+    >>> import matplotlib.pyplot as plt
+    >>> fig, ax = plt.subplots()
+    >>> x = np.linspace(0., 10., 1000)
+    >>> y = k1e(x)
+    >>> ax.plot(x, y)
+    >>> plt.show()
     )";
 
 const char *kv_doc = R"(
@@ -3914,6 +4721,41 @@ const char *sph_harm_doc = R"(
     .. [2] https://en.wikipedia.org/wiki/Spherical_harmonics#Condon.E2.80.93Shortley_phase
     )";
 
+const char *tandg_doc = R"(
+    tandg(x, out=None)
+
+    Tangent of angle `x` given in degrees.
+
+    Parameters
+    ----------
+    x : array_like
+        Angle, given in degrees.
+    out : ndarray, optional
+        Optional output array for the function results.
+
+    Returns
+    -------
+    scalar or ndarray
+        Tangent at the input.
+
+    See Also
+    --------
+    sindg, cosdg, cotdg
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> import scipy.special as sc
+
+    It is more accurate than using tangent directly.
+
+    >>> x = 180 * np.arange(3)
+    >>> sc.tandg(x)
+    array([0., 0., 0.])
+    >>> np.tan(x * np.pi / 180)
+    array([ 0.0000000e+00, -1.2246468e-16, -2.4492936e-16])
+    )";
+
 const char *wright_bessel_doc = R"(
     wright_bessel(a, b, x, out=None)
 
@@ -3966,6 +4808,136 @@ const char *wright_bessel_doc = R"(
 
     >>> a * x * wright_bessel(a, b+a, x) + (b-1) * wright_bessel(a, b, x)
     4.5314465939443025
+    )";
+
+const char *y0_doc = R"(
+    y0(x, out=None)
+
+    Bessel function of the second kind of order 0.
+
+    Parameters
+    ----------
+    x : array_like
+        Argument (float).
+    out : ndarray, optional
+        Optional output array for the function results
+
+    Returns
+    -------
+    Y : scalar or ndarray
+        Value of the Bessel function of the second kind of order 0 at `x`.
+
+    See Also
+    --------
+    j0: Bessel function of the first kind of order 0
+    yv: Bessel function of the first kind
+
+    Notes
+    -----
+    The domain is divided into the intervals [0, 5] and (5, infinity). In the
+    first interval a rational approximation :math:`R(x)` is employed to
+    compute,
+
+    .. math::
+
+        Y_0(x) = R(x) + \frac{2 \log(x) J_0(x)}{\pi},
+
+    where :math:`J_0` is the Bessel function of the first kind of order 0.
+
+    In the second interval, the Hankel asymptotic expansion is employed with
+    two rational functions of degree 6/6 and 7/7.
+
+    This function is a wrapper for the Cephes [1]_ routine `y0`.
+
+    References
+    ----------
+    .. [1] Cephes Mathematical Functions Library,
+           http://www.netlib.org/cephes/
+
+    Examples
+    --------
+    Calculate the function at one point:
+
+    >>> from scipy.special import y0
+    >>> y0(1.)
+    0.08825696421567697
+
+    Calculate at several points:
+
+    >>> import numpy as np
+    >>> y0(np.array([0.5, 2., 3.]))
+    array([-0.44451873,  0.51037567,  0.37685001])
+
+    Plot the function from 0 to 10.
+
+    >>> import matplotlib.pyplot as plt
+    >>> fig, ax = plt.subplots()
+    >>> x = np.linspace(0., 10., 1000)
+    >>> y = y0(x)
+    >>> ax.plot(x, y)
+    >>> plt.show()
+    )";
+
+const char *y1_doc = R"(
+    y1(x, out=None)
+
+    Bessel function of the second kind of order 1.
+
+    Parameters
+    ----------
+    x : array_like
+        Argument (float).
+    out : ndarray, optional
+        Optional output array for the function results
+
+    Returns
+    -------
+    Y : scalar or ndarray
+        Value of the Bessel function of the second kind of order 1 at `x`.
+
+    See Also
+    --------
+    j1: Bessel function of the first kind of order 1
+    yn: Bessel function of the second kind
+    yv: Bessel function of the second kind
+
+    Notes
+    -----
+    The domain is divided into the intervals [0, 8] and (8, infinity). In the
+    first interval a 25 term Chebyshev expansion is used, and computing
+    :math:`J_1` (the Bessel function of the first kind) is required. In the
+    second, the asymptotic trigonometric representation is employed using two
+    rational functions of degree 5/5.
+
+    This function is a wrapper for the Cephes [1]_ routine `y1`.
+
+    References
+    ----------
+    .. [1] Cephes Mathematical Functions Library,
+           http://www.netlib.org/cephes/
+
+    Examples
+    --------
+    Calculate the function at one point:
+
+    >>> from scipy.special import y1
+    >>> y1(1.)
+    -0.7812128213002888
+
+    Calculate at several points:
+
+    >>> import numpy as np
+    >>> y1(np.array([0.5, 2., 3.]))
+    array([-1.47147239, -0.10703243,  0.32467442])
+
+    Plot the function from 0 to 10.
+
+    >>> import matplotlib.pyplot as plt
+    >>> fig, ax = plt.subplots()
+    >>> x = np.linspace(0., 10., 1000)
+    >>> y = y1(x)
+    >>> ax.plot(x, y)
+    >>> plt.show()
     )";
 
 const char *yv_doc = R"(

@@ -11,6 +11,8 @@
 
 #pragma once
 
+#include "cephes/sindg.h"
+#include "cephes/tandg.h"
 #include "cephes/trig.h"
 #include "config.h"
 #include "evalpoly.h"
@@ -106,6 +108,46 @@ XSF_HOST_DEVICE std::complex<T> cospi(std::complex<T> z) {
     coshfac = 0.5 * cospix * exphpiy;
     sinhfac = 0.5 * sinpix * exphpiy;
     return {coshfac * exphpiy, sinhfac * exphpiy};
+}
+
+template <typename T>
+XSF_HOST_DEVICE T sindg(T x) {
+    return cephes::sindg(x);
+}
+
+template <>
+XSF_HOST_DEVICE inline float sindg(float x) {
+    return sindg(static_cast<double>(x));
+}
+
+template <typename T>
+XSF_HOST_DEVICE T cosdg(T x) {
+    return cephes::cosdg(x);
+}
+
+template <>
+XSF_HOST_DEVICE inline float cosdg(float x) {
+    return cosdg(static_cast<double>(x));
+}
+
+template <typename T>
+XSF_HOST_DEVICE T tandg(T x) {
+    return cephes::tandg(x);
+}
+
+template <>
+XSF_HOST_DEVICE inline float tandg(float x) {
+    return tandg(static_cast<double>(x));
+}
+
+template <typename T>
+XSF_HOST_DEVICE T cotdg(T x) {
+    return cephes::cotdg(x);
+}
+
+template <>
+XSF_HOST_DEVICE inline float cotdg(float x) {
+    return cotdg(static_cast<double>(x));
 }
 
 } // namespace xsf

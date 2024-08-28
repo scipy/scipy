@@ -214,19 +214,9 @@
         "_cdflib_wrappers.pxd": {
             "chndtrix": "ddd->d"        }
     },
-    "cosdg": {
-        "xsf_wrappers.h": {
-            "cephes_cosdg": "d->d"
-        }
-    },
     "cosm1": {
         "xsf_wrappers.h": {
             "cephes_cosm1": "d->d"
-        }
-    },
-    "cotdg": {
-        "xsf_wrappers.h": {
-            "cephes_cotdg": "d->d"
         }
     },
     "dawsn": {
@@ -573,26 +563,6 @@
             "hyperu": "ddd->d"
         }
     },
-    "i0": {
-        "xsf_wrappers.h": {
-            "cephes_i0": "d->d"
-        }
-    },
-    "i0e": {
-        "xsf_wrappers.h": {
-            "cephes_i0e": "d->d"
-        }
-    },
-    "i1": {
-        "xsf_wrappers.h": {
-            "cephes_i1": "d->d"
-        }
-    },
-    "i1e": {
-        "xsf_wrappers.h": {
-            "cephes_i1e": "d->d"
-        }
-    },
     "inv_boxcox": {
         "_boxcox.pxd": {
             "inv_boxcox": "dd->d"
@@ -601,36 +571,6 @@
     "inv_boxcox1p": {
         "_boxcox.pxd": {
             "inv_boxcox1p": "dd->d"
-        }
-    },
-    "j0": {
-        "xsf_wrappers.h": {
-            "cephes_j0": "d->d"
-        }
-    },
-    "j1": {
-        "xsf_wrappers.h": {
-            "cephes_j1": "d->d"
-        }
-    },
-    "k0": {
-        "xsf_wrappers.h": {
-            "cephes_k0": "d->d"
-        }
-    },
-    "k0e": {
-        "xsf_wrappers.h": {
-            "cephes_k0e": "d->d"
-        }
-    },
-    "k1": {
-        "xsf_wrappers.h": {
-            "cephes_k1": "d->d"
-        }
-    },
-    "k1e": {
-        "xsf_wrappers.h": {
-            "cephes_k1e": "d->d"
         }
     },
     "kl_div": {
@@ -896,11 +836,6 @@
             "cephes_sici_wrap": "d*dd->*i"
         }
     },
-    "sindg": {
-        "xsf_wrappers.h": {
-            "cephes_sindg": "d->d"
-        }
-    },
     "smirnov": {
         "_legacy.pxd": {
             "smirnov_unsafe": "dd->d"
@@ -973,11 +908,6 @@
             "cephes_struve_h": "dd->d"
         }
     },
-    "tandg": {
-        "xsf_wrappers.h": {
-            "cephes_tandg": "d->d"
-        }
-    },
     "tklmbda": {
         "xsf_wrappers.h": {
             "cephes_tukeylambdacdf": "dd->d"
@@ -1006,27 +936,12 @@
             "xlogy[double_complex]": "DD->D"
         }
     },
-    "y0": {
-        "xsf_wrappers.h": {
-            "cephes_y0": "d->d"
-        }
-    },
-    "y1": {
-        "xsf_wrappers.h": {
-            "cephes_y1": "d->d"
-        }
-    },
     "yn": {
         "_legacy.pxd": {
             "yn_unsafe": "dd->d"
         },
         "xsf_wrappers.h": {
             "cephes_yn_wrap": "pd->d"
-        }
-    },
-    "zetac": {
-        "xsf_wrappers.h": {
-            "cephes_zetac": "d->d"
         }
     },
     "_riemann_zeta": {
