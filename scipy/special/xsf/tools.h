@@ -263,9 +263,10 @@ namespace detail {
     }
 
     /* Find initial bracket for a bracketing scalar root finder. A valid bracket is a pair of points a < b for
-     * which the signs of f(a) and f(b) differ. Assumes function is monotonic and it is known
-     * whether the function is increasing or decreasing. Passing in whether the function is
-     * increasing or not allows for simplication of logic and avoidance of some branches.
+     * which the signs of f(a) and f(b) differ. x_left and x_right give the initial bracket, and x_min and
+     * x_max define the search space. This is a private function intended specifically for the situation where
+     * the goal is to invert a CDF function F for a parametrized family of distributions with respect to one
+     * parameter, when the other parameters are known, and where F is monotonic with respect to the unknown parameter.
      *
      * Note that this takes a pointer to a function taking a tuple of args along with a scalar
      * double argument. A tuple of args for specializing func is also passed as the final argument.
@@ -273,52 +274,46 @@ namespace detail {
      * function we are finding a root for, but this was found unworkable in CuPy using NVRTC.
      * This should be revisited in the future in order to allow simplifying this code. */
     template <typename... Args>
-    XSF_HOST_DEVICE inline std::tuple<double, double, int> bracket_root(
-        double (*func)(double, std::tuple<Args...>), double x_left, double x_right, double x_min, double x_max,
+    XSF_HOST_DEVICE inline std::tuple<double, double, double, double, int> bracket_root_for_cdf_inversion(
+        double (*func)(double, std::tuple<Args...>), double x_left, double x_right, double xmin, double xmax,
         double factor, bool increasing, std::uint64_t maxiter, std::tuple<Args...> args
     ) {
         double y_left = func(x_left, args), y_right = func(x_right, args);
         double y_left_sgn = std::signbit(y_left), y_right_sgn = std::signbit(y_right);
 
         if (y_left_sgn != y_right_sgn || (y_left == 0 || y_right == 0)) {
-            /* Check if the initial bracket is valid. */
-            std::tuple<double, double, int> result(x_left, x_right, 0);
+            /* The initial bracket is valid. */
+            std::tuple<double, double, double, double, int> result(x_left, x_right, y_left, y_right, 0);
             return result;
         }
         bool search_left;
         /* The frontier is the new leading endpoint of the expanding bracket. The
-         * interior endpoint trails behind the frontier. In each step, except in
-         * a special circumstance, the old frontier endpoint becomes the new interior
-         * endpoint. */
-        double interior, frontier, y_interior, y_frontier, boundary;
+         * interior endpoint trails behind the frontier. In each step, the old frontier
+         * endpoint becomes the new interior endpoint. */
+        double interior, frontier, y_interior, y_frontier, y_interior_sgn, y_frontier_sgn, boundary;
         if ((increasing && y_right < 0) || (!increasing && y_right > 0)) {
             /* If func is increasing  and func(x_right) < 0 or if func is decreasing and
              *  f(y_right) > 0, we should expand the bracket to the right. */
             interior = x_left, frontier = x_right, y_interior = y_left, y_frontier = y_right;
+            y_interior_sgn = y_left_sgn;
+            y_frontier_sgn = y_right_sgn;
             search_left = false;
-            boundary = x_max;
+            boundary = xmax;
         } else {
             /* Otherwise we move and expand the bracket to the left. */
             interior = x_right, frontier = x_left, y_interior = y_right, y_frontier = y_left;
+            y_interior_sgn = y_right_sgn;
+            y_frontier_sgn = y_left_sgn;
             search_left = true;
-            boundary = x_min;
+            boundary = xmin;
         }
-        bool y_interior_sgn = std::signbit(y_interior);
-        bool y_frontier_sgn = std::signbit(y_frontier);
 
-        /* If f(x_left) = f(x_right), we say we are in a plateau. In this case, only
-         * move the frontier endpoint while keeping the interior endpoint the same (in
-         * contrast to setting the interior endpoint to the old frontier). This helps
-         * avoid moving into a new plateau. */
-        bool plateau = (y_left == y_right);
         bool stop = false;
         for (std::uint64_t i = 0; i < maxiter; i++) {
             double step = (frontier - interior) * factor;
-            if (!plateau) {
-                interior = frontier;
-                y_interior = y_frontier;
-                y_interior_sgn = y_frontier_sgn;
-            }
+            interior = frontier;
+            y_interior = y_frontier;
+            y_interior_sgn = y_frontier_sgn;
             frontier += step;
             if ((search_left && frontier <= boundary) || (!search_left && frontier >= boundary)) {
                 /* If the frontier has reached the boundary, set it to the boundary and signal
@@ -328,9 +323,6 @@ namespace detail {
             }
             y_frontier = func(frontier, args);
             y_frontier_sgn = std::signbit(y_frontier);
-            if (y_frontier == y_interior) {
-                plateau = true;
-            }
             if (y_frontier_sgn != y_interior_sgn || (y_frontier == 0.0)) {
                 /* Stopping condition, func evaluated at endpoints of bracket has opposing signs,
                  * meeting requirement for bracketing root finder. (Or endpoint has reached a
@@ -338,190 +330,88 @@ namespace detail {
                 if (search_left) {
                     /* Ensure we return an interval (a, b) with a < b. */
                     std::swap(interior, frontier);
+                    std::swap(y_interior, y_frontier);
                 }
-                std::tuple<double, double, int> result(interior, frontier, 0);
+                std::tuple<double, double, double, double, int> result(interior, frontier, y_interior, y_frontier, 0);
                 return result;
             }
 
             if (stop) {
-                /* We have reached the boundary and must stop the search. If f evaluated at the boundary is
-                 * a zero, then we consider this a valid bracket because we have found a root, otherwise we
-                 have not found a valid bracket. */
-                if (y_frontier == 0.0) {
-                    if (search_left) {
-                        std::swap(interior, frontier);
-                    }
-                    std::tuple<double, double, int> result(interior, frontier, 0);
-                    return result;
-                }
-                std::tuple<double, double, int> result(
+                /* We've reached a boundary point without finding a root . */
+                std::tuple<double, double, double, double, int> result(
+                    std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN(),
                     std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN(),
                     search_left ? 1 : 2
                 );
                 return result;
             }
         }
-        // Failed to converge. This should never happen.
-        std::tuple<double, double, int> result(
+        /* Failed to converge within maxiter iterations. If maxiter is sufficiently high and
+         * factor1 and factor2 are set appropriately, this should only happen due to a bug
+         * in this function. Limiting the number of iterations is a defensive programming
+         * measure. */
+        std::tuple<double, double, double, double, int> result(
+            std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN(),
             std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN(), 3
         );
         return result;
     }
 
-    /* Find root of a real valued continuous function of a single variable
-     *
-     * This is algorithm R from the paper "Two Efficient Algorithms with Guaranteed Convergence
-     * for Finding a Zero of a Function" by Bus and Dekker. This algorithm used Barry Brown,
-     * James Lovato, and Kathy Russell's cdflib library available at https://www.netlib.org/random/,
-     * but it was translated from the Algol code in Bus & Dekker, not the Fortran from cdflib.
-     *
-     * The algorithm is similar to Brent's method, and uses a mix of linear interpolation,
-     * (secant method), rational interpolation, and bisection.
-     *
-     * Note that this takes a pointer to a function taking a tuple of args along with a scalar
-     * double argument. A tuple of args for specializing func is also passed as the final argument.
-     * It would be much cleaner to use std::function and capturing lambda's to specialize the
-     * function we are finding a root for, but this was found unworkable in CuPy using NVRTC.
-     * This should be revisited in the future in order to allow simplifying this code. */
+    /* Find root of a scalar function using Chandrupatla's algorithm */
     template <typename... Args>
-    XSF_HOST_DEVICE inline std::pair<double, int> find_root_bus_dekker_r(
-        double (*func)(double, std::tuple<Args...>), double a, double b, std::uint64_t maxiter, std::tuple<Args...> args
+    XSF_HOST_DEVICE inline std::pair<double, int> find_root_chandrupatla(
+        double (*func)(double, std::tuple<Args...>), double x1, double x2, double f1, double f2, double rtol,
+        double atol, std::uint64_t maxiter, std::tuple<Args...> args
     ) {
-        double fa = func(a, args), fb = func(b, args);
-        // Handle cases where zero is on endpoint of initial bracket.
-        if (fa == 0) {
-            return {a, 0};
+        if (f1 == 0) {
+            return {x1, 0};
         }
-        if (fb == 0) {
-            return {b, 0};
+        if (f2 == 0) {
+            return {x2, 0};
         }
-        if (std::signbit(fa) == std::signbit(fb)) {
-            // Initial bracket is invalid.
-            if (std::abs(fa) == std::abs(fb)) {
-                return {std::numeric_limits<double>::quiet_NaN(), 3};
-            } else if (std::abs(fa) > std::abs(fb)) {
-                // Answer is likely beyond upper bound
-                return {b, 2};
-            }
-            // Answer is likely before lower bound.
-            return {a, 1};
-        }
-        bool first = true;
-        /* Bus and Dekker distinguish between what they call intrapolation steps
-         *  when a == c and extrapolation steps when a != c. For first iteration attempt
-         * an intrapolation step. */
-        int ext = 0;
-        double c = a, fc = fa;
-        /* d stores the previous value of a. We initialize to avoid compiler warnings,
-         * but the initial values here don't actually matter. */
-        double d = 0, fd = 0;
-        for (std::uint64_t i = 0; i < maxiter; i++) {
-            if (std::abs(fc) < std::abs(fb)) {
-                // interchange to ensure f(b) is the smallest value seen so far.
-                if (c != a) {
-                    d = a;
-                    fd = fa;
-                }
-                a = b;
-                fa = fb;
-                b = c;
-                fb = fc;
-                c = a;
-                fc = fa;
-            }
-            double m = 0.5 * (b + c);
-            double mb = m - b;
-            if (std::abs(mb) <= 2.0 * std::numeric_limits<double>::epsilon() * std::abs(b)) {
-                /* Stop when the next bisection step cannot move more than 2 ulps, but then
-                 * also check 1 ulp in each direction. This prevents unfortunate cases where the
-                 * algorithm can get stuck loop in a loop where m reaches 2 ulps from b but never
-                 * gets closer, while still allowing us to search within machine precision.
-                 */
-                double best_val = std::abs(fb);
-                double b_r = std::nextafter(b, -std::numeric_limits<double>::infinity());
-                double b_l = std::nextafter(b, -std::numeric_limits<double>::infinity());
-                double candidate_val = std::abs(func(b_l, args));
-                if (candidate_val <= best_val) {
-                    b = b_l, best_val = candidate_val;
-                }
-                if (best_val > 0.0) {
-                    candidate_val = std::abs(func(b_r, args));
-                    if (candidate_val < best_val) {
-                        b = b_r;
-                    }
-                }
-                return {b, 0};
-            }
-            // w is the step used to update b
-            double w;
-            if (ext > 3) {
-                /* w = mb corresponds to bisection. After 3 successive extrapolations, run
-                 * a bisection step. This ensures desired asymptotic behavior. See
-                 * Bus and Dekker Section 4.2.*/
-                w = mb;
+        double t = 0.5, x3, f3;
+        for (uint64_t i = 0; i < maxiter; i++) {
+            double x = x1 + t * (x2 - x1);
+            double f = func(x, args);
+            if (std::signbit(f) == std::signbit(f1)) {
+                x3 = x1;
+                x1 = x;
+                f3 = f1;
+                f1 = f;
             } else {
-                //
-                double p = (b - a) * fb;
-                double q;
-                if (first) {
-                    // Only on first iteration use a linear interpolation step.
-                    q = fa - fb;
-                    first = false;
-                } else {
-                    // Otherwise, perform three point rational interpolation.
-                    double fdb = (fd - fb) / (d - b);
-                    double fda = (fd - fa) / (d - a);
-                    p = fda * p;
-                    q = fdb * fa - fda * fb;
-                }
-                if (p < 0) {
-                    p = -p;
-                    q = -q;
-                }
-                if (ext == 3) {
-                    /* On attempt at 3rd extrapolation, step is doubled. This is to ensure desired
-                     * asymptotic behavior. See Bus and Dekker, Section 4.2. */
-                    p *= 2.0;
-                }
-                double eps =
-                    std::abs(std::nextafter(b, std::copysign(std::numeric_limits<double>::infinity(), mb)) - b);
-                if (p < std::abs(q) * eps) {
-                    /* If step size p / q is too small for b + p / q to be
-                     * different from b, choose minimal step size that will make them different. */
-                    w = std::signbit(mb) * eps;
-                } else if (p < mb * q) {
-                    // Use the calculated step size if it will keep b within the current interval.
-                    w = p / q;
-                } else {
-                    // Otherwise bisection.
-                    w = mb;
-                }
+                x3 = x2;
+                x2 = x1;
+                x1 = x;
+                f3 = f2;
+                f2 = f1;
+                f1 = f;
             }
-            d = a;
-            fd = fa;
-            a = b;
-            fa = fb;
-            b += w;
-            fb = func(b, args);
-            if (std::signbit(fb) == std::signbit(fc)) {
-                /* If f(b) and f(c) have the same sign, next step is intrapolation.
-                 * Set c to a and reset extrapolation count. */
-                c = a;
-                fc = fa;
-                ext = 0;
+            double xm, fm;
+            if (std::abs(f2) < std::abs(f1)) {
+                xm = x2;
+                fm = f2;
             } else {
-                if (w == mb) {
-                    // Reset extrapolation count if bisection was performed.
-                    ext = 0;
-                } else {
-                    /* Otherwise, increment extrapolation count. Bisection will be used after 4
-                     * successive extrapolations */
-                    ext += 1;
-                }
+                xm = x1;
+                fm = f1;
             }
+            double tol = 2.0 * rtol * std::abs(xm) + 0.5 * atol;
+            double tl = tol / std::abs(x2 - x1);
+            if (tl > 0.5 || fm == 0) {
+                return {xm, 0};
+            }
+            double xi = (x1 - x2) / (x3 - x2);
+            double phi = (f1 - f2) / (f3 - f2);
+            double fl = 1.0 - std::sqrt(1.0 - xi);
+            double fh = std::sqrt(xi);
+
+            if ((fl < phi) && (phi < fh)) {
+                t = (f1 / (f2 - f1)) * (f3 / (f2 - f3)) + (f1 / (f3 - f1)) * (f2 / (f3 - f2)) * ((x3 - x1) / (x2 - x1));
+            } else {
+                t = 0.5;
+            }
+            t = std::fmin(std::fmax(t, tl), 1.0 - tl);
         }
-        // Failed to converge. This should never happen.
-        return {std::numeric_limits<double>::quiet_NaN(), 4};
+        return {std::numeric_limits<double>::quiet_NaN(), 1};
     }
 
 } // namespace detail
