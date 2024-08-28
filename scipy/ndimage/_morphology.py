@@ -2445,7 +2445,7 @@ def distance_transform_edt(input, sampling=None, return_distances=True,
             [0, 1, 1, 1, 4],
             [0, 0, 1, 4, 4],
             [0, 0, 3, 3, 4],
-            [0, 0, 3, 3, 4]]])
+            [0, 0, 3, 3, 4]]], dtype=int32)
 
     With arrays provided for inplace outputs:
 
@@ -2466,7 +2466,7 @@ def distance_transform_edt(input, sampling=None, return_distances=True,
             [0, 1, 1, 1, 4],
             [0, 0, 1, 4, 4],
             [0, 0, 3, 3, 4],
-            [0, 0, 3, 3, 4]]])
+            [0, 0, 3, 3, 4]]], dtype=int32)
 
     """
     ft_inplace = isinstance(indices, np.ndarray)
