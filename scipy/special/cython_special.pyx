@@ -1277,6 +1277,8 @@ cdef extern from r"xsf_wrappers.h":
     double cephes_lbeta(double a, double b) nogil
     double cephes_sinpi(double x) nogil
     double cephes_cospi(double x) nogil
+    double cephes_tanpi(double x) nogil
+    double cephes_cotpi(double x) nogil
     double cephes_cbrt(double x) nogil
     double cephes_Gamma(double x) nogil
     double cephes_gammasgn(double x) nogil

@@ -167,8 +167,6 @@ using func_g_g_t = long double (*)(long double);
 using func_gg_g_t = long double (*)(long double);
 #endif
 
-extern const char *_cospi_doc;
-extern const char *_sinpi_doc;
 extern const char *airy_doc;
 extern const char *airye_doc;
 extern const char *bei_doc;
@@ -176,6 +174,8 @@ extern const char *beip_doc;
 extern const char *ber_doc;
 extern const char *berp_doc;
 extern const char *binom_doc;
+extern const char *cospi_doc;
+extern const char *cotpi_doc;
 extern const char *exp1_doc;
 extern const char *expi_doc;
 extern const char *expit_doc;
@@ -243,6 +243,7 @@ extern const char *pro_rad2_cv_doc;
 extern const char *psi_doc;
 extern const char *rgamma_doc;
 extern const char *scaled_exp1_doc;
+extern const char *sinpi_doc;
 extern const char *spherical_jn_doc;
 extern const char *spherical_jn_d_doc;
 extern const char *spherical_yn_doc;
@@ -252,6 +253,7 @@ extern const char *spherical_in_d_doc;
 extern const char *spherical_kn_doc;
 extern const char *spherical_kn_d_doc;
 extern const char *sph_harm_doc;
+extern const char *tanpi_doc;
 extern const char *wright_bessel_doc;
 extern const char *yv_doc;
 extern const char *yve_doc;
@@ -280,11 +282,6 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
     PyUnstable_Module_SetGIL(_special_ufuncs, Py_MOD_GIL_NOT_USED);
 #endif
 
-    PyObject *_cospi = SpecFun_NewUFunc({static_cast<func_f_f_t>(xsf::cospi), static_cast<func_d_d_t>(xsf::cospi),
-                                         static_cast<func_F_F_t>(xsf::cospi), static_cast<func_D_D_t>(xsf::cospi)},
-                                        "_cospi", _cospi_doc);
-
-    PyModule_AddObjectRef(_special_ufuncs, "_cospi", _cospi);
 
     PyObject *_lambertw =
         SpecFun_NewUFunc({static_cast<func_Dld_D_t>(xsf::lambertw), static_cast<func_Flf_F_t>(xsf::lambertw)},
@@ -296,10 +293,6 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
                          "_scaled_exp1", scaled_exp1_doc);
     PyModule_AddObjectRef(_special_ufuncs, "_scaled_exp1", _scaled_exp1);
 
-    PyObject *_sinpi = SpecFun_NewUFunc({static_cast<func_f_f_t>(xsf::sinpi), static_cast<func_d_d_t>(xsf::sinpi),
-                                         static_cast<func_F_F_t>(xsf::sinpi), static_cast<func_D_D_t>(xsf::sinpi)},
-                                        "_sinpi", _sinpi_doc);
-    PyModule_AddObjectRef(_special_ufuncs, "_sinpi", _sinpi);
 
     PyObject *_zeta = SpecFun_NewUFunc({static_cast<func_ff_f_t>(xsf::zeta), static_cast<func_dd_d_t>(xsf::zeta)},
                                        "_zeta", _zeta_doc);
@@ -326,6 +319,16 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
     PyObject *ber =
         SpecFun_NewUFunc({static_cast<func_f_f_t>(xsf::ber), static_cast<func_d_d_t>(xsf::ber)}, "ber", ber_doc);
     PyModule_AddObjectRef(_special_ufuncs, "ber", ber);
+
+    PyObject *cospi = SpecFun_NewUFunc({static_cast<func_f_f_t>(xsf::cospi), static_cast<func_d_d_t>(xsf::cospi),
+                                         static_cast<func_F_F_t>(xsf::cospi), static_cast<func_D_D_t>(xsf::cospi)},
+                                        "cospi", cospi_doc);
+    PyModule_AddObjectRef(_special_ufuncs, "cospi", cospi);
+
+    PyObject *cotpi = SpecFun_NewUFunc({static_cast<func_f_f_t>(xsf::cotpi), static_cast<func_d_d_t>(xsf::cotpi),
+                                         static_cast<func_F_F_t>(xsf::cotpi), static_cast<func_D_D_t>(xsf::cotpi)},
+                                        "cotpi", cotpi_doc);
+    PyModule_AddObjectRef(_special_ufuncs, "cotpi", cotpi);
 
     PyObject *berp =
         SpecFun_NewUFunc({static_cast<func_f_f_t>(xsf::berp), static_cast<func_d_d_t>(xsf::berp)}, "berp", berp_doc);
@@ -752,6 +755,11 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
                                         "rgamma", rgamma_doc);
     PyModule_AddObjectRef(_special_ufuncs, "rgamma", rgamma);
 
+    PyObject *sinpi = SpecFun_NewUFunc({static_cast<func_f_f_t>(xsf::sinpi), static_cast<func_d_d_t>(xsf::sinpi),
+                                         static_cast<func_F_F_t>(xsf::sinpi), static_cast<func_D_D_t>(xsf::sinpi)},
+                                        "sinpi", sinpi_doc);
+    PyModule_AddObjectRef(_special_ufuncs, "sinpi", sinpi);
+
     PyObject *_spherical_jn =
         SpecFun_NewUFunc({static_cast<func_ld_d_t>(xsf::sph_bessel_j), static_cast<func_lD_D_t>(xsf::sph_bessel_j),
                           static_cast<func_lf_f_t>(xsf::sph_bessel_j), static_cast<func_lF_F_t>(xsf::sph_bessel_j)},
@@ -832,6 +840,11 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
                 new_dims[2] = 2;
             }));
     PyModule_AddObjectRef(_special_ufuncs, "sph_harm_y", sph_harm_y);
+
+    PyObject *tanpi = SpecFun_NewUFunc({static_cast<func_f_f_t>(xsf::tanpi), static_cast<func_d_d_t>(xsf::tanpi),
+                                         static_cast<func_F_F_t>(xsf::tanpi), static_cast<func_D_D_t>(xsf::tanpi)},
+                                        "tanpi", tanpi_doc);
+    PyModule_AddObjectRef(_special_ufuncs, "tanpi", tanpi);
 
     PyObject *wright_bessel =
         SpecFun_NewUFunc({static_cast<func_ddd_d_t>(xsf::wright_bessel), static_cast<func_fff_f_t>(xsf::wright_bessel)},

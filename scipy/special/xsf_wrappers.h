@@ -133,10 +133,14 @@ double binom_wrap(double n, double k);
 
 double special_binom(double n, double k);
 
-double special_cospi(double x);
-
 double special_sinpi(double x);
 npy_cdouble special_csinpi(npy_cdouble z);
+
+double special_cospi(double x);
+
+double special_tanpi(double x);
+
+double special_cotpi(double x);
 
 double special_digamma(double z);
 npy_cdouble special_cdigamma(npy_cdouble z);
@@ -260,6 +264,10 @@ double cephes_lbeta(double a, double b);
 double cephes_sinpi(double x);
 
 double cephes_cospi(double x);
+
+double cephes_tanpi(double x);
+
+double cephes_cotpi(double x);
 
 double cephes_cbrt(double x);
 

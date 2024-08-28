@@ -762,9 +762,13 @@ Convenience functions
    exp2      -- 2**x.
    radian    -- Convert from degrees to radians.
    cosdg     -- Cosine of the angle `x` given in degrees.
+   cospi     -- Cosine with `x` multiplied by `pi`.
    sindg     -- Sine of angle given in degrees.
+   sinpi     -- Sine with `x` multiplied by `pi`.
    tandg     -- Tangent of angle x given in degrees.
+   tanpi     -- Tangent with `x` multiplied by `pi`.
    cotdg     -- Cotangent of the angle `x` given in degrees.
+   cotpi     -- Cotangent with `x` multiplied by `pi`.
    log1p     -- Calculates log(1+x) for use when `x` is near zero.
    expm1     -- ``exp(x) - 1`` for use when `x` is near zero.
    cosm1     -- ``cos(x) - 1`` for use when `x` is near zero.
@@ -905,4 +909,3 @@ def _get_include():
     """
     import os
     return os.path.dirname(__file__)
-
