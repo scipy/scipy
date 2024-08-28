@@ -331,7 +331,7 @@ def higher_order_svd(
         documentation of `full_tensor`.
     S : ndarray
         The core tensor with shapes as described in the documentation of
-        `full_tensor`..
+        `full_tensor`.
 
     Raises
     ------
@@ -380,13 +380,11 @@ def higher_order_svd(
     left_singular_basis = []
 
     for k in range(a.ndim):
-
         newshape = (a.shape[k], math.prod(a.shape[:k]) * math.prod(a.shape[k + 1:]))
-        unfold = np.reshape(np.moveaxis(a, k, 0), newshape=newshape)
+        unfold = np.reshape(np.moveaxis(a, k, 0), newshape)
         U, _, _ = svd(unfold, full_matrices=full_tensor, check_finite=False)
         left_singular_basis.append(U)
-        U_c = U.T.conj()
-        core_tensor = np.tensordot(core_tensor, U_c, (0, 1))
+        core_tensor = np.tensordot(core_tensor, U.T.conj(), (0, 1))
 
     return left_singular_basis, core_tensor
 
