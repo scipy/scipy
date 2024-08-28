@@ -205,7 +205,7 @@ def _poisson_binom(k, args, tp):
     for i in range(m):
         p = tuple(args[:, i])
         if p not in cache:
-            pmf = _poisson_binom_pmf(p)
+            pmf = _poisson_binom_pmf(args[:, i])
             cache[p] = np.cumsum(pmf) if tp=='cdf' else pmf
         out[i] = cache[p][k[i]]
     return out
