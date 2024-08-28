@@ -12,6 +12,10 @@ from scipy.linalg import block_diag, solve, LinAlgError
 from scipy.sparse._sputils import matrix
 
 
+# dtypes for testing size-0 case following precedent set in gh-20295
+dtypes = [int, float, np.float32, complex, np.complex64]
+
+
 def _load_data(name):
     """
     Load npz data file under data/
@@ -26,6 +30,9 @@ def _load_data(name):
 class TestSolveLyapunov:
 
     cases = [
+        # empty case
+        (np.empty((0, 0)),
+         np.empty((0, 0))),
         (np.array([[1, 2], [3, 4]]),
          np.array([[9, 10], [11, 12]])),
         # a, q all complex.
@@ -108,6 +115,22 @@ class TestSolveLyapunov:
             self.check_discrete_case(case[0], case[1])
             self.check_discrete_case(case[0], case[1], method='direct')
             self.check_discrete_case(case[0], case[1], method='bilinear')
+
+    @pytest.mark.parametrize("dtype_a", dtypes)
+    @pytest.mark.parametrize("dtype_q", dtypes)
+    def test_size_0(self, dtype_a, dtype_q):
+        rng = np.random.default_rng(234598235)
+
+        a = np.zeros((0, 0), dtype=dtype_a)
+        q = np.zeros((0, 0), dtype=dtype_q)
+        res = solve_continuous_lyapunov(a, q)
+
+        a = (rng.random((5, 5))*100).astype(dtype_a)
+        q = (rng.random((5, 5))*100).astype(dtype_q)
+        ref = solve_continuous_lyapunov(a, q)
+
+        assert res.shape == (0, 0)
+        assert res.dtype == ref.dtype
 
 
 class TestSolveContinuousAre:
@@ -723,8 +746,17 @@ def test_are_validate_args():
 
 
 class TestSolveSylvester:
-
     cases = [
+        # empty cases
+        (np.empty((0, 0)),
+         np.empty((0, 0)),
+         np.empty((0, 0))),
+         (np.empty((0, 0)),
+         np.empty((2, 2)),
+         np.empty((0, 2))),
+         (np.empty((2, 2)),
+         np.empty((0, 0)),
+         np.empty((2, 0))),
         # a, b, c all real.
         (np.array([[1, 2], [0, 4]]),
          np.array([[5, 6], [0, 8]]),
@@ -783,3 +815,30 @@ class TestSolveSylvester:
         c = np.array([2.0, 2.0]).reshape(-1, 1)
         x = solve_sylvester(a, b, c)
         assert_array_almost_equal(x, np.array([1.0, 1.0]).reshape(-1, 1))
+
+    # Feel free to adjust this to test fewer dtypes or random selections rather than
+    # the Cartesian product. It doesn't take very long to test all combinations,
+    # though, so we'll start there and trim it down as we see fit.
+    @pytest.mark.parametrize("dtype_a", dtypes)
+    @pytest.mark.parametrize("dtype_b", dtypes)
+    @pytest.mark.parametrize("dtype_q", dtypes)
+    @pytest.mark.parametrize("m", [0, 3])
+    @pytest.mark.parametrize("n", [0, 3])
+    def test_size_0(self, m, n, dtype_a, dtype_b, dtype_q):
+        if m == n != 0:
+            pytest.skip('m = n != 0 is not a case that needs to be tested here.')
+
+        rng = np.random.default_rng(598435298262546)
+
+        a = np.zeros((m, m), dtype=dtype_a)
+        b = np.zeros((n, n), dtype=dtype_b)
+        q = np.zeros((m, n), dtype=dtype_q)
+        res = solve_sylvester(a, b, q)
+
+        a = (rng.random((5, 5))*100).astype(dtype_a)
+        b = (rng.random((6, 6))*100).astype(dtype_b)
+        q = (rng.random((5, 6))*100).astype(dtype_q)
+        ref = solve_sylvester(a, b, q)
+
+        assert res.shape == (m, n)
+        assert res.dtype == ref.dtype

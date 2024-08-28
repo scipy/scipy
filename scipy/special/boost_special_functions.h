@@ -1495,3 +1495,118 @@ hypergeom_skewness_double(double n, double N, double M)
 }
 
 #endif
+
+template<typename Real>
+Real
+landau_pdf_wrap(const Real x, const Real loc, const Real scale)
+{
+    if (std::isfinite(x)) {
+        return boost::math::pdf(
+            boost::math::landau_distribution<Real, StatsPolicy>(loc, scale), x);
+    }
+    return NAN;
+}
+
+float
+landau_pdf_float(float x, float loc, float scale)
+{
+    return landau_pdf_wrap(x, loc, scale);
+}
+
+double
+landau_pdf_double(double x, double loc, double scale)
+{
+    return landau_pdf_wrap(x, loc, scale);
+}
+
+template<typename Real>
+Real
+landau_cdf_wrap(const Real x, const Real loc, const Real scale)
+{
+    if (std::isfinite(x)) {
+        return boost::math::cdf(
+            boost::math::landau_distribution<Real, StatsPolicy>(loc, scale), x);
+    }
+    return NAN;
+}
+
+float
+landau_cdf_float(float x, float loc, float scale)
+{
+    return landau_cdf_wrap(x, loc, scale);
+}
+
+double
+landau_cdf_double(double x, double loc, double scale)
+{
+    return landau_cdf_wrap(x, loc, scale);
+}
+
+template<typename Real>
+Real
+landau_sf_wrap(const Real x, const Real loc, const Real scale)
+{
+    if (std::isfinite(x)) {
+        return boost::math::cdf(boost::math::complement(
+            boost::math::landau_distribution<Real, StatsPolicy>(loc, scale), x));
+    }
+    return NAN;
+}
+
+float
+landau_sf_float(float x, float loc, float scale)
+{
+    return landau_sf_wrap(x, loc, scale);
+}
+
+double
+landau_sf_double(double x, double loc, double scale)
+{
+    return landau_sf_wrap(x, loc, scale);
+}
+
+template<typename Real>
+Real
+landau_ppf_wrap(const Real p, const Real loc, const Real scale)
+{
+    if (std::isfinite(p)) {
+        return boost::math::quantile(
+            boost::math::landau_distribution<Real, StatsPolicy>(loc, scale), p);
+    }
+    return NAN;
+}
+
+float
+landau_ppf_float(float p, float loc, float scale)
+{
+    return landau_ppf_wrap(p, loc, scale);
+}
+
+double
+landau_ppf_double(double p, double loc, double scale)
+{
+    return landau_ppf_wrap(p, loc, scale);
+}
+
+template<typename Real>
+Real
+landau_isf_wrap(const Real p, const Real loc, const Real scale)
+{
+    if (std::isfinite(p)) {
+        return boost::math::quantile(boost::math::complement(
+            boost::math::landau_distribution<Real, StatsPolicy>(loc, scale), p));
+    }
+    return NAN;
+}
+
+float
+landau_isf_float(float p, float loc, float scale)
+{
+    return landau_isf_wrap(p, loc, scale);
+}
+
+double
+landau_isf_double(double p, double loc, double scale)
+{
+    return landau_isf_wrap(p, loc, scale);
+}
