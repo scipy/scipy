@@ -1,6 +1,8 @@
 import heapq
 import itertools
 
+import numpy as np
+
 from dataclasses import dataclass
 
 from scipy._lib._array_api import array_namespace
@@ -211,12 +213,17 @@ def cubature(f, a, b, rule="gk21", rtol=1e-8, atol=0, max_subdivisions=10000,
     # It is also possible to use a custom rule, but this is not yet part of the public
     # API. An example of this can be found in the class scipy.integrate._rules.Rule.
 
+    # If a and b are ordinary Python lists, default to NumPy
+    if isinstance(a, list) and isinstance(b, list):
+        a = np.array(a)
+        b = np.array(b)
+
     xp = array_namespace(a, b)
     max_subdivisions = float("inf") if max_subdivisions is None else max_subdivisions
 
     # Convert a and b to arrays
-    a = xp.asarray(a)
-    b = xp.asarray(b)
+    a = xp.asarray(a, dtype=xp.float64)
+    b = xp.asarray(b, dtype=xp.float64)
 
     if a.ndim != 1 or b.ndim != 1:
         raise ValueError("`a` and `b` must be 1D arrays")

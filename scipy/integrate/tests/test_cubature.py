@@ -57,30 +57,33 @@ def genz_malik_1980_f_1(x, r, alphas):
         genzMalik1980f1[x_List, r_, alphas_List] := Cos[2*Pi*r + Total[x*alphas]]
     """
 
+    xp = array_namespace(x, r, alphas)
     npoints, ndim = x.shape[0], x.shape[-1]
 
-    alphas_reshaped = alphas[np.newaxis, :]
-    x_reshaped = x.reshape(npoints, *([1]*(len(alphas.shape) - 1)), ndim)
+    alphas_reshaped = alphas[xp.newaxis, ...]
+    x_reshaped = xp.reshape(x, (npoints, *([1]*(len(alphas.shape) - 1)), ndim))
 
-    return np.cos(2*np.pi*r + np.sum(alphas_reshaped * x_reshaped, axis=-1))
+    return xp.cos(2*math.pi*r + xp.sum(alphas_reshaped * x_reshaped, axis=-1))
 
 
 def genz_malik_1980_f_1_exact(a, b, r, alphas):
+    xp = array_namespace(a, b, r, alphas)
+
     ndim = a.size
-    a = np.reshape(a, (*([1]*(len(alphas.shape) - 1)), ndim))
-    b = np.reshape(b, (*([1]*(len(alphas.shape) - 1)), ndim))
+    a = xp.reshape(a, (*([1]*(len(alphas.shape) - 1)), ndim))
+    b = xp.reshape(b, (*([1]*(len(alphas.shape) - 1)), ndim))
 
-    return (-2)**ndim * 1/np.prod(alphas, axis=-1) \
-        * np.cos(2*math.pi*r + np.sum(alphas * (a+b) * 0.5, axis=-1)) \
-        * np.prod(np.sin(alphas * (a-b)/2), axis=-1)
+    return (-2)**ndim * 1/xp.prod(alphas, axis=-1) \
+        * xp.cos(2*math.pi*r + xp.sum(alphas * (a+b) * 0.5, axis=-1)) \
+        * xp.prod(xp.sin(alphas * (a-b)/2), axis=-1)
 
 
-def genz_malik_1980_f_1_random_args(shape):
-    r = np.random.rand(*shape[:-1])
-    alphas = np.random.rand(*shape)
+def genz_malik_1980_f_1_random_args(rng, shape, xp):
+    r = xp.asarray(rng.random(shape[:-1]))
+    alphas = xp.asarray(rng.random(shape))
 
     difficulty = 9
-    normalisation_factors = np.expand_dims(np.sum(alphas, axis=-1), -1)
+    normalisation_factors = xp.expand_dims(xp.sum(alphas, axis=-1), axis=-1)
     alphas = difficulty * alphas / normalisation_factors
 
     return (r, alphas)
@@ -95,46 +98,44 @@ def genz_malik_1980_f_2(x, alphas, betas):
         genzMalik1980f2[x_List, alphas_List, betas_List] :=
             1/Times @@ ((alphas^2 + (x - betas)^2))
     """
+    xp = array_namespace(x, alphas, betas)
     npoints, ndim = x.shape[0], x.shape[-1]
 
-    alphas_reshaped = alphas[np.newaxis, :]
-    betas_reshaped = betas[np.newaxis, :]
+    alphas_reshaped = alphas[xp.newaxis, ...]
+    betas_reshaped = betas[xp.newaxis, ...]
 
-    x_reshaped = x.reshape(npoints, *([1]*(len(alphas.shape) - 1)), ndim)
+    x_reshaped = xp.reshape(x, (npoints, *([1]*(len(alphas.shape) - 1)), ndim))
 
-    return 1/np.prod(alphas_reshaped**2 + (x_reshaped-betas_reshaped)**2, axis=-1)
+    return 1/xp.prod(alphas_reshaped**2 + (x_reshaped-betas_reshaped)**2, axis=-1)
 
 
 def genz_malik_1980_f_2_exact(a, b, alphas, betas):
-    ndim = a.size
-    a = np.reshape(a, (*([1]*(len(alphas.shape) - 1)), ndim))
-    b = np.reshape(b, (*([1]*(len(alphas.shape) - 1)), ndim))
+    xp = array_namespace(a, b, alphas, betas)
 
-    return (-1)**ndim * 1/np.prod(alphas, axis=-1) \
-        * np.prod(
-            np.arctan((a - betas)/alphas) - np.arctan((b - betas)/alphas),
+    ndim = a.size
+    a = xp.reshape(a, (*([1]*(len(alphas.shape) - 1)), ndim))
+    b = xp.reshape(b, (*([1]*(len(alphas.shape) - 1)), ndim))
+
+    return (-1)**ndim * 1/xp.prod(alphas, axis=-1) \
+        * xp.prod(
+            xp.atan((a - betas)/alphas) - xp.atan((b - betas)/alphas),
             axis=-1
         )
 
 
-def genz_malik_1980_f_2_random_args(shape):
+def genz_malik_1980_f_2_random_args(rng, shape, xp):
     ndim = shape[-1]
-    alphas = np.random.rand(*shape)
-    betas = np.random.rand(*shape)
+    alphas = xp.asarray(rng.random(shape))
+    betas = xp.asarray(rng.random(shape))
 
     difficulty = 25.0
-    products = np.prod(np.power(alphas, -2), axis=-1)
-    normalisation_factors = np.expand_dims(np.power(products, 1 / (2*ndim)), axis=-1)
+    products = xp.prod(xp.pow(alphas, xp.asarray(-2.0)), axis=-1)
+    normalisation_factors = xp.expand_dims(
+        xp.pow(products, xp.asarray(1 / (2*ndim))), axis=-1
+    )
     alphas = alphas \
         * normalisation_factors \
-        / np.power(difficulty, 1 / (2*ndim))
-
-    xp_assert_close(
-        np.prod(np.power(alphas, -2), axis=-1),
-        difficulty,
-        check_shape=False,
-        check_0d=False,
-    )
+        / math.pow(difficulty, 1 / (2*ndim))
 
     # Adjust alphas from distribution used in Genz and Malik 1980 since denominator
     # is very small for high dimensions.
@@ -152,27 +153,30 @@ def genz_malik_1980_f_3(x, alphas):
         genzMalik1980f3[x_List, alphas_List] := Exp[Dot[x, alphas]]
     """
 
+    xp = array_namespace(x, alphas)
     npoints, ndim = x.shape[0], x.shape[-1]
 
-    alphas_reshaped = alphas[np.newaxis, :]
-    x_reshaped = x.reshape(npoints, *([1]*(len(alphas.shape) - 1)), ndim)
+    alphas_reshaped = alphas[xp.newaxis, ...]
+    x_reshaped = xp.reshape(x, (npoints, *([1]*(len(alphas.shape) - 1)), ndim))
 
-    return np.exp(np.sum(alphas_reshaped * x_reshaped, axis=-1))
+    return xp.exp(xp.sum(alphas_reshaped * x_reshaped, axis=-1))
 
 
 def genz_malik_1980_f_3_exact(a, b, alphas):
-    ndim = len(a)
-    a = a.reshape(*([1]*(len(alphas.shape) - 1)), ndim)
-    b = b.reshape(*([1]*(len(alphas.shape) - 1)), ndim)
+    xp = array_namespace(a, b, alphas)
 
-    return (-1)**ndim * 1/np.prod(alphas, axis=-1) \
-        * np.prod(np.exp(alphas * a) - np.exp(alphas * b), axis=-1)
+    ndim = a.size
+    a = xp.reshape(a, (*([1]*(len(alphas.shape) - 1)), ndim))
+    b = xp.reshape(b, (*([1]*(len(alphas.shape) - 1)), ndim))
+
+    return (-1)**ndim * 1/xp.prod(alphas, axis=-1) \
+        * xp.prod(xp.exp(alphas * a) - xp.exp(alphas * b), axis=-1)
 
 
-def genz_malik_1980_f_3_random_args(shape):
-    alphas = np.random.rand(*shape)
-    normalisation_factors = np.expand_dims(np.sum(alphas, axis=-1), -1)
-    difficulty = 12
+def genz_malik_1980_f_3_random_args(rng, shape, xp):
+    alphas = xp.asarray(rng.random(shape))
+    normalisation_factors = xp.expand_dims(xp.sum(alphas, axis=-1), axis=-1)
+    difficulty = 12.0
     alphas = difficulty * alphas / normalisation_factors
 
     return (alphas,)
@@ -187,22 +191,24 @@ def genz_malik_1980_f_4(x, alphas):
             (1 + Dot[x, alphas])^(-Length[alphas] - 1)
     """
 
+    xp = array_namespace(x, alphas)
     npoints, ndim = x.shape[0], x.shape[-1]
 
-    alphas_reshaped = alphas[np.newaxis, :]
-    x_reshaped = x.reshape(npoints, *([1]*(len(alphas.shape) - 1)), ndim)
+    alphas_reshaped = alphas[xp.newaxis, ...]
+    x_reshaped = xp.reshape(x, (npoints, *([1]*(len(alphas.shape) - 1)), ndim))
 
-    return ((1 + np.sum(alphas_reshaped * x_reshaped, axis=-1))**(-ndim-1))
+    return ((1 + xp.sum(alphas_reshaped * x_reshaped, axis=-1))**(-ndim-1))
 
 
 def genz_malik_1980_f_4_exact(a, b, alphas):
-    ndim = len(a)
+    xp = array_namespace(a, b, alphas)
+    ndim = a.size
 
     def F(x):
-        x_reshaped = x.reshape(*([1]*(len(alphas.shape) - 1)), ndim)
+        x_reshaped = xp.reshape(x, (*([1]*(len(alphas.shape) - 1)), ndim))
 
-        return (-1)**ndim/np.prod(alphas, axis=-1) / (
-            math.factorial(ndim) * (1 + np.sum(alphas * x_reshaped, axis=-1))
+        return (-1)**ndim/xp.prod(alphas, axis=-1) / (
+            math.factorial(ndim) * (1 + xp.sum(alphas * x_reshaped, axis=-1))
         )
 
     return _eval_indefinite_integral(F, a, b)
@@ -214,23 +220,25 @@ def _eval_indefinite_integral(F, a, b):
     of the corresponding hyperrectangle.
     """
 
-    ndim = len(a)
-    points = np.stack([a, b], axis=0)
+    xp = array_namespace(a, b)
+    ndim = a.size
+    points = xp.stack([a, b], axis=0)
 
     out = 0
     for ind in itertools.product(range(2), repeat=ndim):
-        out += pow(-1, sum(ind) + ndim) * F(points[ind, tuple(range(ndim))])
+        selected_points = xp.asarray([points[i, j] for i, j in zip(ind, range(ndim))])
+        out += pow(-1, sum(ind) + ndim) * F(selected_points)
 
     return out
 
 
-def genz_malik_1980_f_4_random_args(shape):
+def genz_malik_1980_f_4_random_args(rng, shape, xp):
     ndim = shape[-1]
 
-    alphas = np.random.rand(*shape)
-    normalisation_factors = np.expand_dims(np.sum(alphas, axis=-1), -1)
-    difficulty = 14
-    alphas = (difficulty/ndim) * alphas / normalisation_factors
+    alphas = xp.asarray(rng.random(shape))
+    normalisation_factors = xp.expand_dims(xp.sum(alphas, axis=-1), axis=-1)
+    difficulty = 14.0
+    alphas = (difficulty / ndim) * alphas / normalisation_factors
 
     return (alphas,)
 
@@ -247,45 +255,49 @@ def genz_malik_1980_f_5(x, alphas, betas):
             Exp[-Total[alphas^2 * (x - betas)^2]]
     """
 
+    xp = array_namespace(x, alphas, betas)
     npoints, ndim = x.shape[0], x.shape[-1]
 
-    alphas_reshaped = alphas[np.newaxis, :]
-    betas_reshaped = betas[np.newaxis, :]
+    alphas_reshaped = alphas[xp.newaxis, ...]
+    betas_reshaped = betas[xp.newaxis, ...]
 
-    x_reshaped = x.reshape(npoints, *([1]*(len(alphas.shape) - 1)), ndim)
+    x_reshaped = xp.reshape(x, (npoints, *([1]*(len(alphas.shape) - 1)), ndim))
 
-    return np.exp(
-        -np.sum(alphas_reshaped**2 * (x_reshaped - betas_reshaped)**2, axis=-1)
+    return xp.exp(
+        -xp.sum(alphas_reshaped**2 * (x_reshaped - betas_reshaped)**2, axis=-1)
     )
 
 
 def genz_malik_1980_f_5_exact(a, b, alphas, betas):
-    ndim = len(a)
-    a = a.reshape(*([1]*(len(alphas.shape) - 1)), ndim)
-    b = b.reshape(*([1]*(len(alphas.shape) - 1)), ndim)
+    xp = array_namespace(a, b, alphas, betas)
+    ndim = a.size
+    a = xp.reshape(a, (*([1]*(len(alphas.shape) - 1)), ndim))
+    b = xp.reshape(b, (*([1]*(len(alphas.shape) - 1)), ndim))
 
-    return (1/2)**ndim * 1/np.prod(alphas, axis=-1) \
-        * np.power(np.pi, ndim/2) \
-        * np.prod(
+    return (1/2)**ndim * 1/xp.prod(alphas, axis=-1) \
+        * (math.pi**(ndim/2)) \
+        * xp.prod(
             scipy.special.erf(alphas * (betas - a))
             + scipy.special.erf(alphas * (b - betas)),
-            axis=-1
+            axis=-1,
         )
 
 
-def genz_malik_1980_f_5_random_args(shape):
-    alphas = np.random.rand(*shape)
-    betas = np.random.rand(*shape)
+def genz_malik_1980_f_5_random_args(rng, shape, xp):
+    alphas = xp.asarray(rng.random(shape))
+    betas = xp.asarray(rng.random(shape))
 
-    difficulty = 21
-    normalisation_factors = np.expand_dims(
-        np.sqrt(np.sum(np.power(alphas, 2), axis=-1)), -1
+    difficulty = 21.0
+    normalisation_factors = xp.expand_dims(
+        xp.sqrt(xp.sum(xp.pow(alphas, xp.asarray(2.0)), axis=-1)),
+        axis=-1,
     )
-    alphas = alphas / normalisation_factors * np.sqrt(difficulty)
+    alphas = alphas / normalisation_factors * math.sqrt(difficulty)
 
     return alphas, betas
 
 
+@array_api_compatible
 class TestCubature:
     """
     Tests related to the interface of `cubature`.
@@ -297,10 +309,10 @@ class TestCubature:
         "gk21",
         "gk15",
     ])
-    def test_pass_str(self, rule_str):
-        n = np.arange(5)
-        a = np.asarray([0, 0])
-        b = np.asarray([2, 2])
+    def test_pass_str(self, rule_str, xp):
+        n = xp.arange(5, dtype=xp.float64)
+        a = xp.asarray([0, 0], dtype=xp.float64)
+        b = xp.asarray([2, 2], dtype=xp.float64)
 
         res = cubature(basic_nd_integrand, a, b, rule_str, args=(n,))
 
@@ -311,7 +323,9 @@ class TestCubature:
             atol=0,
         )
 
-    def test_pass_list_not_array(self):
+    def test_pass_list_not_array(self, xp):
+        # By default, cubature will default to using NumPy arrays if ordinary lists are
+        # passed.
         n = np.arange(5)
 
         a = [0]
@@ -331,9 +345,9 @@ class TestCubature:
             atol=0,
         )
 
-    def test_stops_after_max_subdivisions(self):
-        a = np.array([0])
-        b = np.array([1])
+    def test_stops_after_max_subdivisions(self, xp):
+        a = xp.asarray([0])
+        b = xp.asarray([1])
         rule = BadErrorRule()
 
         res = cubature(
@@ -342,15 +356,15 @@ class TestCubature:
             b,
             rule,
             max_subdivisions=10,
-            args=(np.arange(5),),
+            args=(xp.arange(5, dtype=xp.float64),),
         )
 
         assert res.subdivisions == 10
         assert res.status == "not_converged"
 
-    def test_a_and_b_must_be_1d(self):
-        a = np.array([[0]])
-        b = np.array([[1]])
+    def test_a_and_b_must_be_1d(self, xp):
+        a = xp.asarray([[0]], dtype=xp.float64)
+        b = xp.asarray([[1]], dtype=xp.float64)
 
         with pytest.raises(Exception, match="`a` and `b` must be 1D arrays"):
             cubature(basic_1d_integrand, a, b)
@@ -363,6 +377,7 @@ class TestCubature:
     "gk21",
     "genz-malik",
 ])
+@array_api_compatible
 class TestCubatureProblems:
     """
     Tests that `cubature` gives the correct answer.
@@ -378,45 +393,45 @@ class TestCubatureProblems:
             genz_malik_1980_f_1_exact,
 
             # Coordinates of `a`
-            np.array([0]),
+            [0],
 
             # Coordinates of `b`
-            np.array([10]),
+            [10],
 
             # Arguments to pass to `f` and `exact`
             (
                 1/4,
-                np.array([5]),
+                [5],
             )
         ),
         (
             genz_malik_1980_f_1,
             genz_malik_1980_f_1_exact,
-            np.array([0, 0]),
-            np.array([1, 1]),
+            [0, 0],
+            [1, 1],
             (
                 1/4,
-                np.array([2, 4]),
+                [2, 4],
             ),
         ),
         (
             genz_malik_1980_f_1,
             genz_malik_1980_f_1_exact,
-            np.array([0, 0]),
-            np.array([5, 5]),
+            [0, 0],
+            [5, 5],
             (
                 1/2,
-                np.array([2, 4]),
+                [2, 4],
             )
         ),
         (
             genz_malik_1980_f_1,
             genz_malik_1980_f_1_exact,
-            np.array([0, 0, 0]),
-            np.array([10, 10, 10]),
+            [0, 0, 0],
+            [10, 10, 10],
             (
                 1/2,
-                np.array([1, 1, 1]),
+                [1, 1, 1],
             )
         ),
 
@@ -424,62 +439,62 @@ class TestCubatureProblems:
         (
             genz_malik_1980_f_2,
             genz_malik_1980_f_2_exact,
-            np.array([-1]),
-            np.array([1]),
+            [-1],
+            [1],
             (
-                np.array([5]),
-                np.array([4]),
+                [5],
+                [4],
             )
         ),
         (
             genz_malik_1980_f_2,
             genz_malik_1980_f_2_exact,
 
-            np.array([10, 50]),
-            np.array([10, 50]),
+            [10, 50],
+            [10, 50],
             (
-                np.array([-3, 3]),
-                np.array([-2, 2])
+                [-3, 3],
+                [-2, 2],
             ),
         ),
         (
             genz_malik_1980_f_2,
             genz_malik_1980_f_2_exact,
-            np.array([0, 0, 0]),
-            np.array([1, 1, 1]),
+            [0, 0, 0],
+            [1, 1, 1],
             (
-                np.array([1, 1, 1]),
-                np.array([1, 1, 1]),
+                [1, 1, 1],
+                [1, 1, 1],
             )
         ),
         (
             genz_malik_1980_f_2,
             genz_malik_1980_f_2_exact,
-            np.array([0, 0, 0]),
-            np.array([1, 1, 1]),
+            [0, 0, 0],
+            [1, 1, 1],
             (
-                np.array([2, 3, 4]),
-                np.array([2, 3, 4]),
+                [2, 3, 4],
+                [2, 3, 4],
             )
         ),
         (
             genz_malik_1980_f_2,
             genz_malik_1980_f_2_exact,
-            np.array([-1, -1, -1]),
-            np.array([1, 1, 1]),
+            [-1, -1, -1],
+            [1, 1, 1],
             (
-                np.array([1, 1, 1]),
-                np.array([2, 2, 2]),
+                [1, 1, 1],
+                [2, 2, 2],
             )
         ),
         (
             genz_malik_1980_f_2,
             genz_malik_1980_f_2_exact,
-            np.array([-1, -1, -1, -1]),
-            np.array([1, 1, 1, 1]),
+            [-1, -1, -1, -1],
+            [1, 1, 1, 1],
             (
-                np.array([1, 1, 1, 1]),
-                np.array([1, 1, 1, 1]),
+                [1, 1, 1, 1],
+                [1, 1, 1, 1],
             )
         ),
 
@@ -487,28 +502,28 @@ class TestCubatureProblems:
         (
             genz_malik_1980_f_3,
             genz_malik_1980_f_3_exact,
-            np.array([-1]),
-            np.array([1]),
+            [-1],
+            [1],
             (
-                np.array([1/2]),
+                [1/2],
             ),
         ),
         (
             genz_malik_1980_f_3,
             genz_malik_1980_f_3_exact,
-            np.array([0, -1]),
-            np.array([1, 1]),
+            [0, -1],
+            [1, 1],
             (
-                np.array([5, 5]),
+                [5, 5],
             ),
         ),
         (
             genz_malik_1980_f_3,
             genz_malik_1980_f_3_exact,
-            np.array([-1, -1, -1]),
-            np.array([1, 1, 1]),
+            [-1, -1, -1],
+            [1, 1, 1],
             (
-                np.array([1, 1, 1]),
+                [1, 1, 1],
             ),
         ),
 
@@ -516,66 +531,66 @@ class TestCubatureProblems:
         (
             genz_malik_1980_f_4,
             genz_malik_1980_f_4_exact,
-            np.array([0]),
-            np.array([2]),
+            [0],
+            [2],
             (
-                np.array([1]),
+                [1],
             ),
         ),
         (
             genz_malik_1980_f_4,
             genz_malik_1980_f_4_exact,
-            np.array([0, 0]),
-            np.array([2, 1]),
-            (np.array([1, 1]),),
+            [0, 0],
+            [2, 1],
+            ([1, 1],),
         ),
         (
             genz_malik_1980_f_4,
             genz_malik_1980_f_4_exact,
-            np.array([0, 0, 0]),
-            np.array([1, 1, 1]),
-            (np.array([1, 1, 1]),),
+            [0, 0, 0],
+            [1, 1, 1],
+            ([1, 1, 1],),
         ),
 
         # -- f5 --
         (
             genz_malik_1980_f_5,
             genz_malik_1980_f_5_exact,
-            np.array([-1]),
-            np.array([1]),
+            [-1],
+            [1],
             (
-                np.array([-2]),
-                np.array([2]),
+                [-2],
+                [2],
             ),
         ),
         (
             genz_malik_1980_f_5,
             genz_malik_1980_f_5_exact,
-            np.array([-1, -1]),
-            np.array([1, 1]),
+            [-1, -1],
+            [1, 1],
             (
-                np.array([2, 3]),
-                np.array([4, 5]),
+                [2, 3],
+                [4, 5],
             ),
         ),
         (
             genz_malik_1980_f_5,
             genz_malik_1980_f_5_exact,
-            np.array([-1, -1]),
-            np.array([1, 1]),
+            [-1, -1],
+            [1, 1],
             (
-                np.array([-1, 1]),
-                np.array([0, 0]),
+                [-1, 1],
+                [0, 0],
             ),
         ),
         (
             genz_malik_1980_f_5,
             genz_malik_1980_f_5_exact,
-            np.array([-1, -1, -1]),
-            np.array([1, 1, 1]),
+            [-1, -1, -1],
+            [1, 1, 1],
             (
-                np.array([1, 1, 1]),
-                np.array([1, 1, 1]),
+                [1, 1, 1],
+                [1, 1, 1],
             ),
         ),
     ]
@@ -614,10 +629,14 @@ class TestCubatureProblems:
     ]
 
     @pytest.mark.parametrize("problem", problems_scalar_output)
-    def test_scalar_output(self, problem, rule, rtol, atol):
+    def test_scalar_output(self, problem, rule, rtol, atol, xp):
         f, exact, a, b, args = problem
 
-        ndim = len(a)
+        a = xp.asarray(a, dtype=xp.float64)
+        b = xp.asarray(b, dtype=xp.float64)
+        args = tuple(xp.asarray(arg, dtype=xp.float64) for arg in args)
+
+        ndim = a.size
 
         if rule == "genz-malik" and ndim < 2:
             pytest.skip("Genz-Malik cubature does not support 1D integrals")
@@ -657,8 +676,8 @@ class TestCubatureProblems:
         (3, 4, 2),
         (2, 1, 3),
     ])
-    def test_array_output(self, problem, rule, shape, rtol, atol):
-        np.random.seed(1)
+    def test_array_output(self, problem, rule, shape, rtol, atol, xp):
+        rng = np.random.default_rng(1)
         ndim = shape[-1]
 
         if rule == "genz-malik" and ndim < 2:
@@ -668,10 +687,10 @@ class TestCubatureProblems:
             pytest.mark.slow("Gauss-Kronrod is slow in >= 5 dim")
 
         f, exact, random_args = problem
-        args = random_args(shape)
+        args = random_args(rng, shape, xp)
 
-        a = np.array([0] * ndim)
-        b = np.array([1] * ndim)
+        a = xp.asarray([0] * ndim, dtype=xp.float64)
+        b = xp.asarray([1] * ndim, dtype=xp.float64)
 
         res = cubature(
             f,
@@ -696,7 +715,7 @@ class TestCubatureProblems:
 
         err_msg = (f"estimate_error={res.error}, "
                    f"subdivisions= {res.subdivisions}, "
-                   f"true_error={np.abs(res.estimate - exact(a, b, *args))}")
+                   f"true_error={xp.abs(res.estimate - exact(a, b, *args))}")
         assert res.status == "converged", err_msg
 
         assert res.estimate.shape == shape[:-1]
@@ -711,25 +730,18 @@ class TestRules:
     @pytest.mark.parametrize("problem", [
         (
             # 2D problem, 1D rule
-            np.array([0, 0]),
-            np.array([1, 1]),
-            GaussKronrodQuadrature(21),
-        ),
-        (
-            # 2D problem, 1D rule
-            np.array([0, 0]),
-            np.array([1, 1]),
-            NestedFixedRule(GaussKronrodQuadrature(21), GaussKronrodQuadrature(21)),
-        ),
-        (
-            # 1D problem, 2D rule
-            np.array([0]),
-            np.array([1]),
-            GenzMalikCubature(2),
+            [0, 0],
+            [1, 1],
+            GaussKronrodQuadrature,
+            (21,),
         ),
     ])
     def test_incompatible_dimension_raises_error(self, problem, xp):
-        a, b, rule = problem
+        a, b, quadrature, quadrature_args = problem
+        rule = quadrature(*quadrature_args, xp=xp)
+
+        a = xp.asarray(a, dtype=xp.float64)
+        b = xp.asarray(b, dtype=xp.float64)
 
         with pytest.raises(Exception, match="incompatible dimension"):
             rule.estimate(basic_1d_integrand, a, b)
@@ -786,8 +798,8 @@ class TestRulesQuadrature:
     def test_base_1d_quadratures_error_from_difference(self, rule_pair, rule_pair_args,
                                                        xp):
         n = xp.arange(5, dtype=xp.float64)
-        a = xp.asarray([0])
-        b = xp.asarray([2])
+        a = xp.asarray([0], dtype=xp.float64)
+        b = xp.asarray([2], dtype=xp.float64)
 
         higher = rule_pair[0](rule_pair_args[0], xp=xp)
         lower = rule_pair[1](rule_pair_args[1], xp=xp)
@@ -849,4 +861,5 @@ class BadErrorRule(Rule):
         return underlying.estimate(f, a, b, args)
 
     def estimate_error(self, f, a, b, args=()):
-        return 1e6
+        xp = array_namespace(a, b)
+        return xp.asarray(1e6, dtype=xp.float64)

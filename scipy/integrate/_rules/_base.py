@@ -419,7 +419,7 @@ class ProductNestedFixed(NestedFixedRule):
             [cubature.lower_nodes_and_weights[0] for cubature in self.base_rules]
         )
 
-        weights = np.prod(
+        weights = self.xp.prod(
             _cartesian_product(
                 [cubature.lower_nodes_and_weights[1] for cubature in self.base_rules]
             ),
@@ -456,13 +456,14 @@ def _subregion_coordinates(a, b):
     """
 
     xp = array_namespace(a, b)
-    m = (a + b)/2
+    m = (a + b) * 0.5
 
+    # TODO: still relying on np
     for a_sub, b_sub in zip(
-        itertools.product(*xp.array([a, m]).T),
-        itertools.product(*xp.array([m, b]).T)
+        itertools.product(*np.asarray([a, m]).T),
+        itertools.product(*np.asarray([m, b]).T),
     ):
-        yield xp.array(a_sub), xp.array(b_sub)
+        yield xp.asarray(a_sub), xp.asarray(b_sub)
 
 
 def _apply_fixed_rule(f, a, b, orig_nodes, orig_weights, args=()):
@@ -471,7 +472,7 @@ def _apply_fixed_rule(f, a, b, orig_nodes, orig_weights, args=()):
     # Ensure orig_nodes are at least 2D, since 1D cubature methods can return arrays of
     # shape (npoints,) rather than (npoints, 1)
     if orig_nodes.ndim == 1:
-        orig_nodes = orig_nodes[:, np.newaxis]
+        orig_nodes = orig_nodes[:, xp.newaxis]
 
     rule_ndim = orig_nodes.shape[-1]
 

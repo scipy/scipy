@@ -94,10 +94,10 @@ class GenzMalikCubature(NestedFixedRule):
 
         nodes = self.xp.asarray(
             list(zip(*its)),
-            dtype=float,
+            dtype=self.xp.float64,
         )
 
-        nodes.shape = (self.ndim, nodes_size)
+        nodes = self.xp.reshape(nodes, (self.ndim, nodes_size))
 
         # It's convenient to generate the nodes as a sequence of evaluation points
         # as an array of shape (npoints, ndim), but nodes needs to have shape
@@ -113,14 +113,14 @@ class GenzMalikCubature(NestedFixedRule):
         w_5 = 6859 / 19683
 
         weights = self.xp.repeat(
-            [w_1, w_2, w_3, w_4, w_5],
-            [
+            self.xp.asarray([w_1, w_2, w_3, w_4, w_5]),
+            self.xp.asarray([
                 1,
                 2 * self.ndim,
                 2*self.ndim,
                 2*(self.ndim - 1)*self.ndim,
                 2**self.ndim,
-            ]
+            ]),
         )
 
         return nodes, weights
@@ -151,10 +151,10 @@ class GenzMalikCubature(NestedFixedRule):
 
         nodes = self.xp.asarray(
             list(zip(*its)),
-            dtype=float,
+            dtype=self.xp.float64,
         )
 
-        nodes.shape = (self.ndim, nodes_size)
+        nodes = self.xp.reshape(nodes, (self.ndim, nodes_size))
         nodes = nodes.T
 
         # Weights are different from those in the full rule.
@@ -164,8 +164,13 @@ class GenzMalikCubature(NestedFixedRule):
         w_4 = (2**self.ndim) * (25 / 729)
 
         weights = self.xp.repeat(
-            [w_1, w_2, w_3, w_4],
-            [1, 2 * self.ndim, 2*self.ndim, 2*(self.ndim - 1)*self.ndim],
+            self.xp.asarray([w_1, w_2, w_3, w_4]),
+            self.xp.asarray([
+                1,
+                2 * self.ndim,
+                2*self.ndim,
+                2*(self.ndim - 1)*self.ndim,
+            ]),
         )
 
         return nodes, weights
