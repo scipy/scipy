@@ -10,10 +10,13 @@ XSF_HOST_DEVICE T gamma(T x) {
     return cephes::Gamma(x);
 }
 
-template <typename T>
-XSF_HOST_DEVICE T gammaln(T x) {
-    return cephes::lgam(x);
-}
+XSF_HOST_DEVICE inline double gammaln(double x) { return cephes::lgam(x); }
+
+XSF_HOST_DEVICE inline float gammaln(float x) { return gammaln(static_cast<double>(x)); }
+
+XSF_HOST_DEVICE inline double gammasgn(double x) { return cephes::gammasgn(x); }
+
+XSF_HOST_DEVICE inline float gammasgn(float x) { return gammasgn(static_cast<double>(x)); }
 
 XSF_HOST_DEVICE inline std::complex<double> gamma(std::complex<double> z) {
     // Compute Gamma(z) using loggamma.

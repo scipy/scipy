@@ -1,6 +1,7 @@
 #pragma once
 
 #include "amos.h"
+#include "cephes/besselpoly.h"
 #include "cephes/i0.h"
 #include "cephes/i1.h"
 #include "cephes/jv.h"
@@ -1185,6 +1186,12 @@ inline std::complex<double> cyl_hankel_2(double v, std::complex<double> z) {
 
 inline std::complex<float> cyl_hankel_2(float v, std::complex<float> z) {
     return static_cast<std::complex<float>>(cyl_hankel_2(static_cast<double>(v), static_cast<std::complex<double>>(z)));
+}
+
+inline double besselpoly(double a, double lambda, double nu) { return cephes::besselpoly(a, lambda, nu); }
+
+inline float besselpoly(float a, float lambda, float nu) {
+    return besselpoly(static_cast<double>(a), static_cast<double>(lambda), static_cast<double>(nu));
 }
 
 } // namespace xsf

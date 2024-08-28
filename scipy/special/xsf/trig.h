@@ -14,6 +14,7 @@
 #include "cephes/sindg.h"
 #include "cephes/tandg.h"
 #include "cephes/trig.h"
+#include "cephes/unity.h"
 #include "config.h"
 #include "evalpoly.h"
 
@@ -149,5 +150,15 @@ template <>
 XSF_HOST_DEVICE inline float cotdg(float x) {
     return cotdg(static_cast<double>(x));
 }
+
+inline double radian(double d, double m, double s) { return cephes::radian(d, m, s); }
+
+inline float radian(float d, float m, float s) {
+    return radian(static_cast<double>(d), static_cast<double>(m), static_cast<double>(s));
+}
+
+inline double cosm1(double x) { return cephes::cosm1(x); }
+
+inline float cosm1(float x) { return cosm1(static_cast<double>(x)); }
 
 } // namespace xsf

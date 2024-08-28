@@ -105,16 +105,6 @@
         "_cdflib_wrappers.pxd": {
             "bdtrin": "ddd->d"        }
     },
-    "besselpoly": {
-        "xsf_wrappers.h": {
-            "cephes_besselpoly": "ddd->d"
-        }
-    },
-    "beta": {
-        "xsf_wrappers.h": {
-            "cephes_beta": "dd->d"
-        }
-    },
     "betainc": {
         "boost_special_functions.h++": {
             "ibeta_float": "fff->f",
@@ -137,11 +127,6 @@
         "boost_special_functions.h++": {
             "ibetac_inv_float": "fff->f",
             "ibetac_inv_double": "ddd->d"
-        }
-    },
-    "betaln": {
-        "xsf_wrappers.h": {
-            "cephes_lbeta": "dd->d"
         }
     },
     "boxcox": {
@@ -172,11 +157,6 @@
     "btdtrib": {
         "_cdflib_wrappers.pxd": {
             "btdtrib": "ddd->d"
-        }
-    },
-    "cbrt": {
-        "xsf_wrappers.h": {
-            "cephes_cbrt": "d->d"
         }
     },
     "chdtr": {
@@ -213,11 +193,6 @@
     "chndtrix": {
         "_cdflib_wrappers.pxd": {
             "chndtrix": "ddd->d"        }
-    },
-    "cosm1": {
-        "xsf_wrappers.h": {
-            "cephes_cosm1": "d->d"
-        }
     },
     "dawsn": {
         "_faddeeva.h++": {
@@ -506,16 +481,6 @@
             "cephes_igami": "dd->d"
         }
     },
-    "gammaln": {
-        "xsf_wrappers.h": {
-            "gammaln": "d->d"
-        }
-    },
-    "gammasgn": {
-        "xsf_wrappers.h": {
-            "cephes_gammasgn": "d->d"
-        }
-    },
     "gdtr": {
         "xsf_wrappers.h": {
             "cephes_gdtr": "ddd->d"
@@ -798,11 +763,6 @@
     "pseudo_huber": {
         "_convex_analysis.pxd": {
             "pseudo_huber": "dd->d"
-        }
-    },
-    "radian": {
-        "xsf_wrappers.h": {
-            "cephes_radian": "ddd->d"
         }
     },
     "rel_entr": {

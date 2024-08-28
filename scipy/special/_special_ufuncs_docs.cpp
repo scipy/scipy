@@ -2,6 +2,218 @@ const char *_cospi_doc = R"(
     Internal function, do not use.
     )";
 
+const char *besselpoly_doc = R"(
+    besselpoly(a, lmb, nu, out=None)
+
+    Weighted integral of the Bessel function of the first kind.
+
+    Computes
+
+    .. math::
+
+       \int_0^1 x^\lambda J_\nu(2 a x) \, dx
+
+    where :math:`J_\nu` is a Bessel function and :math:`\lambda=lmb`,
+    :math:`\nu=nu`.
+
+    Parameters
+    ----------
+    a : array_like
+        Scale factor inside the Bessel function.
+    lmb : array_like
+        Power of `x`
+    nu : array_like
+        Order of the Bessel function.
+    out : ndarray, optional
+        Optional output array for the function results.
+
+    Returns
+    -------
+    scalar or ndarray
+        Value of the integral.
+
+    References
+    ----------
+    .. [1] Cephes Mathematical Functions Library,
+           http://www.netlib.org/cephes/
+
+    Examples
+    --------
+    Evaluate the function for one parameter set.
+
+    >>> from scipy.special import besselpoly
+    >>> besselpoly(1, 1, 1)
+    0.24449718372863877
+
+    Evaluate the function for different scale factors.
+
+    >>> import numpy as np
+    >>> factors = np.array([0., 3., 6.])
+    >>> besselpoly(factors, 1, 1)
+    array([ 0.        , -0.00549029,  0.00140174])
+
+    Plot the function for varying powers, orders and scales.
+
+    >>> import matplotlib.pyplot as plt
+    >>> fig, ax = plt.subplots()
+    >>> powers = np.linspace(0, 10, 100)
+    >>> orders = [1, 2, 3]
+    >>> scales = [1, 2]
+    >>> all_combinations = [(order, scale) for order in orders
+    ...                     for scale in scales]
+    >>> for order, scale in all_combinations:
+    ...     ax.plot(powers, besselpoly(scale, powers, order),
+    ...             label=rf"$\nu={order}, a={scale}$")
+    >>> ax.legend()
+    >>> ax.set_xlabel(r"$\lambda$")
+    >>> ax.set_ylabel(r"$\int_0^1 x^{\lambda} J_{\nu}(2ax)\,dx$")
+    >>> plt.show()
+    )";
+
+const char *beta_doc = R"(
+    beta(a, b, out=None)
+
+    Beta function.
+
+    This function is defined in [1]_ as
+
+    .. math::
+
+        B(a, b) = \int_0^1 t^{a-1}(1-t)^{b-1}dt
+                = \frac{\Gamma(a)\Gamma(b)}{\Gamma(a+b)},
+
+    where :math:`\Gamma` is the gamma function.
+
+    Parameters
+    ----------
+    a, b : array_like
+        Real-valued arguments
+    out : ndarray, optional
+        Optional output array for the function result
+
+    Returns
+    -------
+    scalar or ndarray
+        Value of the beta function
+
+    See Also
+    --------
+    gamma : the gamma function
+    betainc :  the regularized incomplete beta function
+    betaln : the natural logarithm of the absolute
+             value of the beta function
+
+    References
+    ----------
+    .. [1] NIST Digital Library of Mathematical Functions,
+           Eq. 5.12.1. https://dlmf.nist.gov/5.12
+
+    Examples
+    --------
+    >>> import scipy.special as sc
+
+    The beta function relates to the gamma function by the
+    definition given above:
+
+    >>> sc.beta(2, 3)
+    0.08333333333333333
+    >>> sc.gamma(2)*sc.gamma(3)/sc.gamma(2 + 3)
+    0.08333333333333333
+
+    As this relationship demonstrates, the beta function
+    is symmetric:
+
+    >>> sc.beta(1.7, 2.4)
+    0.16567527689031739
+    >>> sc.beta(2.4, 1.7)
+    0.16567527689031739
+
+    This function satisfies :math:`B(1, b) = 1/b`:
+
+    >>> sc.beta(1, 4)
+    0.25
+    )";
+
+const char *betaln_doc = R"(
+    betaln(a, b, out=None)
+
+    Natural logarithm of absolute value of beta function.
+
+    Computes ``ln(abs(beta(a, b)))``.
+
+    Parameters
+    ----------
+    a, b : array_like
+        Positive, real-valued parameters
+    out : ndarray, optional
+        Optional output array for function values
+
+    Returns
+    -------
+    scalar or ndarray
+        Value of the betaln function
+
+    See Also
+    --------
+    gamma : the gamma function
+    betainc :  the regularized incomplete beta function
+    beta : the beta function
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.special import betaln, beta
+
+    Verify that, for moderate values of ``a`` and ``b``, ``betaln(a, b)``
+    is the same as ``log(beta(a, b))``:
+
+    >>> betaln(3, 4)
+    -4.0943445622221
+
+    >>> np.log(beta(3, 4))
+    -4.0943445622221
+
+    In the following ``beta(a, b)`` underflows to 0, so we can't compute
+    the logarithm of the actual value.
+
+    >>> a = 400
+    >>> b = 900
+    >>> beta(a, b)
+    0.0
+
+    We can compute the logarithm of ``beta(a, b)`` by using `betaln`:
+
+    >>> betaln(a, b)
+    -804.3069951764146
+    )";
+
+const char *cbrt_doc = R"(
+    cbrt(x, out=None)
+
+    Element-wise cube root of `x`.
+
+    Parameters
+    ----------
+    x : array_like
+        `x` must contain real numbers.
+    out : ndarray, optional
+        Optional output array for the function values
+
+    Returns
+    -------
+    scalar or ndarray
+        The cube root of each value in `x`.
+
+    Examples
+    --------
+    >>> from scipy.special import cbrt
+
+    >>> cbrt(8)
+    2.0
+    >>> cbrt([-8, -3, 0.125, 1.331])
+    array([-2.        , -1.44224957,  0.5       ,  1.1       ])
+    )";
+
 const char *cosdg_doc = R"(
     cosdg(x, out=None)
 
@@ -35,6 +247,42 @@ const char *cosdg_doc = R"(
     array([-0.,  0., -0.])
     >>> np.cos(x * np.pi / 180)
     array([ 6.1232340e-17, -1.8369702e-16,  3.0616170e-16])
+    )";
+
+const char *cosm1_doc = R"(
+    cosm1(x, out=None)
+
+    cos(x) - 1 for use when `x` is near zero.
+
+    Parameters
+    ----------
+    x : array_like
+        Real valued argument.
+    out : ndarray, optional
+        Optional output array for the function results.
+
+    Returns
+    -------
+    scalar or ndarray
+        Values of ``cos(x) - 1``.
+
+    See Also
+    --------
+    expm1, log1p
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> import scipy.special as sc
+
+    It is more accurate than computing ``cos(x) - 1`` directly for
+    ``x`` around 0.
+
+    >>> x = 1e-30
+    >>> np.cos(x) - 1
+    0.0
+    >>> sc.cosm1(x)
+    -5.0000000000000005e-61
     )";
 
 const char *_sinpi_doc = R"(
@@ -919,7 +1167,6 @@ const char *gamma_doc = R"(
     >>> plt.xlabel('x')
     >>> plt.legend(loc='lower right')
     >>> plt.show()
-
     )";
 
 const char *gammaln_doc = R"(
@@ -992,7 +1239,77 @@ const char *gammaln_doc = R"(
     array([2.20258509e+11, 4.50517019e+21, 9.11034037e+41, 1.83206807e+82])
     >>> x * np.log(x)
     array([2.30258509e+11, 4.60517019e+21, 9.21034037e+41, 1.84206807e+82])
+    )";
 
+const char *gammasgn_doc = R"(
+    gammasgn(x, out=None)
+
+    Sign of the gamma function.
+
+    It is defined as
+
+    .. math::
+
+       \text{gammasgn}(x) =
+       \begin{cases}
+         +1 & \Gamma(x) > 0 \\
+         -1 & \Gamma(x) < 0
+       \end{cases}
+
+    where :math:`\Gamma` is the gamma function; see `gamma`. This
+    definition is complete since the gamma function is never zero;
+    see the discussion after [dlmf]_.
+
+    Parameters
+    ----------
+    x : array_like
+        Real argument
+    out : ndarray, optional
+        Optional output array for the function values
+
+    Returns
+    -------
+    scalar or ndarray
+        Sign of the gamma function
+
+    See Also
+    --------
+    gamma : the gamma function
+    gammaln : log of the absolute value of the gamma function
+    loggamma : analytic continuation of the log of the gamma function
+
+    Notes
+    -----
+    The gamma function can be computed as ``gammasgn(x) *
+    np.exp(gammaln(x))``.
+
+    References
+    ----------
+    .. [dlmf] NIST Digital Library of Mathematical Functions
+              https://dlmf.nist.gov/5.2#E1
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> import scipy.special as sc
+
+    It is 1 for ``x > 0``.
+
+    >>> sc.gammasgn([1, 2, 3, 4])
+    array([1., 1., 1., 1.])
+
+    It alternates between -1 and 1 for negative integers.
+
+    >>> sc.gammasgn([-0.5, -1.5, -2.5, -3.5])
+    array([-1.,  1., -1.,  1.])
+
+    It can be used to compute the gamma function.
+
+    >>> x = [1.5, 0.5, -0.5, -1.5]
+    >>> sc.gammasgn(x) * np.exp(sc.gammaln(x))
+    array([ 0.88622693,  1.77245385, -3.5449077 ,  2.3632718 ])
+    >>> sc.gamma(x)
+    array([ 0.88622693,  1.77245385, -3.5449077 ,  2.3632718 ])
     )";
 
 const char *hankel1_doc = R"(
@@ -4511,6 +4828,51 @@ const char *psi_doc = R"(
 
     >>> psi(z + 1) - 1/z
     (1.55035981733341+1.0105022091860445j)
+    )";
+
+const char *radian_doc = R"(
+    radian(d, m, s, out=None)
+
+    Convert from degrees to radians.
+
+    Returns the angle given in (d)egrees, (m)inutes, and (s)econds in
+    radians.
+
+    Parameters
+    ----------
+    d : array_like
+        Degrees, can be real-valued.
+    m : array_like
+        Minutes, can be real-valued.
+    s : array_like
+        Seconds, can be real-valued.
+    out : ndarray, optional
+        Optional output array for the function results.
+
+    Returns
+    -------
+    scalar or ndarray
+        Values of the inputs in radians.
+
+    Examples
+    --------
+    >>> import scipy.special as sc
+
+    There are many ways to specify an angle.
+
+    >>> sc.radian(90, 0, 0)
+    1.5707963267948966
+    >>> sc.radian(0, 60 * 90, 0)
+    1.5707963267948966
+    >>> sc.radian(0, 0, 60**2 * 90)
+    1.5707963267948966
+
+    The inputs can be real-valued.
+
+    >>> sc.radian(1.5, 0, 0)
+    0.02617993877991494
+    >>> sc.radian(1, 30, 0)
+    0.02617993877991494
     )";
 
 const char *rgamma_doc = R"(

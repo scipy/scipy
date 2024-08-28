@@ -5,8 +5,10 @@
 
 #include "sf_error.h"
 #include "xsf/airy.h"
+#include "xsf/alg.h"
 #include "xsf/amos.h"
 #include "xsf/bessel.h"
+#include "xsf/beta.h"
 #include "xsf/binom.h"
 #include "xsf/digamma.h"
 #include "xsf/expint.h"
@@ -175,8 +177,13 @@ extern const char *bei_doc;
 extern const char *beip_doc;
 extern const char *ber_doc;
 extern const char *berp_doc;
+extern const char *besselpoly_doc;
+extern const char *beta_doc;
+extern const char *betaln_doc;
 extern const char *binom_doc;
+extern const char *cbrt_doc;
 extern const char *cosdg_doc;
+extern const char *cosm1_doc;
 extern const char *cotdg_doc;
 extern const char *exp1_doc;
 extern const char *expi_doc;
@@ -184,6 +191,7 @@ extern const char *expit_doc;
 extern const char *exprel_doc;
 extern const char *gamma_doc;
 extern const char *gammaln_doc;
+extern const char *gammasgn_doc;
 extern const char *it2i0k0_doc;
 extern const char *it2j0y0_doc;
 extern const char *it2struve0_doc;
@@ -253,6 +261,7 @@ extern const char *pro_rad1_cv_doc;
 extern const char *pro_rad2_doc;
 extern const char *pro_rad2_cv_doc;
 extern const char *psi_doc;
+extern const char *radian_doc;
 extern const char *rgamma_doc;
 extern const char *scaled_exp1_doc;
 extern const char *sindg_doc;
@@ -350,13 +359,34 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
         SpecFun_NewUFunc({static_cast<func_f_f_t>(xsf::berp), static_cast<func_d_d_t>(xsf::berp)}, "berp", berp_doc);
     PyModule_AddObjectRef(_special_ufuncs, "berp", berp);
 
+    PyObject *besselpoly =
+        SpecFun_NewUFunc({static_cast<func_ddd_d_t>(xsf::besselpoly), static_cast<func_fff_f_t>(xsf::besselpoly)},
+                         "besselpoly", besselpoly_doc);
+    PyModule_AddObjectRef(_special_ufuncs, "besselpoly", besselpoly);
+
+    PyObject *beta =
+        SpecFun_NewUFunc({static_cast<func_dd_d_t>(xsf::beta), static_cast<func_ff_f_t>(xsf::beta)}, "beta", beta_doc);
+    PyModule_AddObjectRef(_special_ufuncs, "beta", beta);
+
+    PyObject *betaln = SpecFun_NewUFunc({static_cast<func_dd_d_t>(xsf::betaln), static_cast<func_ff_f_t>(xsf::betaln)},
+                                        "betaln", betaln_doc);
+    PyModule_AddObjectRef(_special_ufuncs, "betaln", betaln);
+
     PyObject *binom = SpecFun_NewUFunc({static_cast<func_ff_f_t>(xsf::binom), static_cast<func_dd_d_t>(xsf::binom)},
                                        "binom", binom_doc);
     PyModule_AddObjectRef(_special_ufuncs, "binom", binom);
 
+    PyObject *cbrt =
+        SpecFun_NewUFunc({static_cast<func_d_d_t>(xsf::cbrt), static_cast<func_f_f_t>(xsf::cbrt)}, "cbrt", cbrt_doc);
+    PyModule_AddObjectRef(_special_ufuncs, "cbrt", cbrt);
+
     PyObject *cosdg = SpecFun_NewUFunc({static_cast<func_d_d_t>(xsf::cosdg), static_cast<func_f_f_t>(xsf::cosdg)},
                                        "cosdg", cosdg_doc);
     PyModule_AddObjectRef(_special_ufuncs, "cosdg", cosdg);
+
+    PyObject *cosm1 = SpecFun_NewUFunc({static_cast<func_d_d_t>(xsf::cosm1), static_cast<func_f_f_t>(xsf::cosm1)},
+                                       "cosm1", cosm1_doc);
+    PyModule_AddObjectRef(_special_ufuncs, "cosm1", cosm1);
 
     PyObject *cotdg = SpecFun_NewUFunc({static_cast<func_d_d_t>(xsf::cotdg), static_cast<func_f_f_t>(xsf::cotdg)},
                                        "cotdg", cotdg_doc);
@@ -386,9 +416,13 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
                                        "gamma", gamma_doc);
     PyModule_AddObjectRef(_special_ufuncs, "gamma", gamma);
 
-    PyObject *gammaln = SpecFun_NewUFunc({static_cast<func_f_f_t>(xsf::gammaln), static_cast<func_d_d_t>(xsf::gammaln)},
+    PyObject *gammaln = SpecFun_NewUFunc({static_cast<func_d_d_t>(xsf::gammaln), static_cast<func_f_f_t>(xsf::gammaln)},
                                          "gammaln", gammaln_doc);
     PyModule_AddObjectRef(_special_ufuncs, "gammaln", gammaln);
+
+    PyObject *gammasgn = SpecFun_NewUFunc(
+        {static_cast<func_d_d_t>(xsf::gammasgn), static_cast<func_f_f_t>(xsf::gammasgn)}, "gammasgn", gammasgn_doc);
+    PyModule_AddObjectRef(_special_ufuncs, "gammasgn", gammasgn);
 
     PyObject *hyp2f1 =
         SpecFun_NewUFunc({static_cast<func_dddd_d_t>(xsf::hyp2f1), static_cast<func_dddD_D_t>(xsf::hyp2f1),
@@ -817,6 +851,10 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
                                       static_cast<func_f_f_t>(xsf::digamma), static_cast<func_F_F_t>(xsf::digamma)},
                                      "psi", psi_doc);
     PyModule_AddObjectRef(_special_ufuncs, "psi", psi);
+
+    PyObject *radian = SpecFun_NewUFunc(
+        {static_cast<func_ddd_d_t>(xsf::radian), static_cast<func_fff_f_t>(xsf::radian)}, "radian", radian_doc);
+    PyModule_AddObjectRef(_special_ufuncs, "radian", radian);
 
     PyObject *rgamma = SpecFun_NewUFunc({static_cast<func_d_d_t>(xsf::rgamma), static_cast<func_D_D_t>(xsf::rgamma),
                                          static_cast<func_f_f_t>(xsf::rgamma), static_cast<func_F_F_t>(xsf::rgamma)},
