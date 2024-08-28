@@ -714,7 +714,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
 
         else:
             # dense nD array or matrix ("multivector") not implemented
-            raise NotImplemented
+            return NotImplemented
 
 
     def _matmul_multivector(self, other):
