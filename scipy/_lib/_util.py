@@ -15,10 +15,9 @@ from typing import (
     Callable,
     cast,
 )
-if TYPE_CHECKING:
-    import numpy.typing as npt
 
 import numpy as np
+import numpy.typing as npt
 from scipy._lib._array_api import array_namespace, is_numpy, xp_size
 
 

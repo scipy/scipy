@@ -1,4 +1,5 @@
 """SVD decomposition functions."""
+import math
 from typing import Tuple, List
 
 import numpy as np
@@ -315,12 +316,10 @@ def higher_order_svd(
         Tensor to decompose
     full_tensor : bool,  default: True
         If True (default), ``S`` is of the same shape as the input tensor `a`
-        and all ``U_k`` are of the shape ``(n, n)`` with ``n`` corresponding to
-        the ``k``\\ th axis of ``S``.
-        If False, the shapes of the ``U_k`` are ``(n, m)`` with ``n``
-        corresponding to the size of the ``k``\\ th axis of the input `a` and
-        ``m`` to the maybe reduced size of the ``k``\\ th axis of the core
-        tensor.
+        and all ``U_k`` are of the shape ``(n_k, n_k)``, where ``n_k = a.shape[k]``.
+        If False, ``S`` has shape ``m_1, ..., m_k, ... m_M`` and the shapes of
+        the ``U_k`` are ``(n_k, m_k)`` with ``n_k`` as before and ``m_k`` is
+        such that ``U_k`` is full column rank.
     check_finite : bool, default: True
         Whether to check that the input matrix contains only finite numbers.
         Disabling may give a performance gain, but may result in problems
@@ -329,20 +328,18 @@ def higher_order_svd(
     Returns
     -------
     U : list of ndarray
-        List of the unitary matrices ``U_k`` with left singular vectors of the
-        tensor unfolding corresponding to the ``k``\\ th axis.
-        Of shape ``(M, M)`` or ``(M, K)``, depending on `full_tensor`.
+        List of the unitary matrices ``U_k`` with shapes as described in
+        documentation of `full_tensor`.
     S : ndarray
-        The core tensor.
-        Of same or reduced shape compared to the input `a`, depending on
-        `full_tensor`.
+        The core tensor with shapes as described in the documentation of
+        `full_tensor`..
 
     Raises
     ------
     LinAlgError
         If SVD computation does not converge.
 
-    .. versionadded:: 1.8.0
+    .. versionadded:: 1.15.0
 
     See Also
     --------
@@ -358,6 +355,7 @@ def higher_order_svd(
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import linalg
     >>> rng = np.random.default_rng()
     >>> a = rng.random((2, 3, 4, 5))
@@ -376,22 +374,23 @@ def higher_order_svd(
     True
     """
     a = _asarray_validated(a, check_finite=check_finite)
+    if full_tensor not in {True, False}:
+        raise ValueError("`full_tensor` must be either `True` or `False`.")
 
     core_tensor = a
     left_singular_basis = []
 
     for k in range(a.ndim):
-        unfold = np.reshape(np.moveaxis(a, k, 0), (a.shape[k], -1))
-        U, _, _ = svd(
-            unfold,
-            full_matrices=full_tensor,
-            check_finite=False,
-        )
+
+        newshape = (a.shape[k], math.prod(a.shape[:k]) * math.prod(a.shape[k + 1:]))
+        unfold = np.reshape(np.moveaxis(a, k, 0), newshape=newshape)
+        U, _, _ = svd(unfold, full_matrices=full_tensor, check_finite=False)
         left_singular_basis.append(U)
         U_c = U.T.conj()
         core_tensor = np.tensordot(core_tensor, U_c, (0, 1))
 
     return left_singular_basis, core_tensor
+
 
 # Orthonormal decomposition
 

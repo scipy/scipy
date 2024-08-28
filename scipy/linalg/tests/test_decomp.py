@@ -1,6 +1,7 @@
 import itertools
 import platform
 import sys
+from functools import reduce
 
 import numpy as np
 from numpy.testing import (assert_equal, assert_almost_equal,
@@ -1265,52 +1266,45 @@ class TestDiagSVD:
 
 
 class TestHigherOrderSVD:
-    def setup_method(self):
-        seed(1234)
+    @pytest.mark.parametrize('dtype', DTYPES)
+    @pytest.mark.parametrize('full_tensor', [False, True])
+    @pytest.mark.parametrize('shape', [(5, 5, 5, 5), (2, 3, 4, 5), (5, 3, 4, 2)])
+    def test_properties(self, dtype, full_tensor, shape):
+        rng = np.random.default_rng(3598235982549)
+        A0 = rng.random(shape)
+        A0 = A0 + rng.random(shape)*1j if dtype in COMPLEX_DTYPES else A0
+        A0 = A0.astype(dtype)
+        U, S = higher_order_svd(A0, full_tensor=full_tensor)
 
-    def test_simple(self):
-        A_exact = np.array(
-            [
-                [[0.5, 1, 3], [2, 4, 1.7]],
-                [[3.5, -3, 0.8], [0.3, -23, 337]],
-                [[4.4, 31.23, 11.223], [1, 2, 3]],
-            ]
-        )
+        # Check decomposition
+        A = reduce(lambda x, y: np.tensordot(x, y, axes=(0, 1)), [S] + U)
+        eps = np.finfo(dtype).eps
+        assert_allclose(A, A0, rtol=eps**0.5)
 
-        for full_tensor in (True, False):
-            U, S = higher_order_svd(A_exact, full_tensor=full_tensor)
+        # Check shape and dtype of S
+        assert (S.shape == A0.shape) if full_tensor else True
+        assert S.dtype == A0.dtype
 
-            A = S
-            for i in range(len(U)):
-                A = np.tensordot(A, U[i], (0, 1))
+        # Check that Ui are unitary and of correct shape/type
+        for Ui, m0 in zip(U, A0.shape):
+            m, n = Ui.shape
+            assert_allclose(Ui @ Ui.conj().T, np.eye(m), atol=eps**0.75)
+            assert Ui.dtype == dtype
+            assert (m, n) == (m0, m0)
 
-            assert_allclose(A, A_exact)
+    def test_input_validation(self):
+        rng = np.random.default_rng(3598235982549)
+        shape = (2, 3, 4)
+        A = rng.random(shape)
 
-    def test_random(self):
-        n = 5
-        for _ in range(5):
-            A_exact = random((n, n, n, n))
+        message = '`full_tensor` must be...'
+        with pytest.raises(ValueError, match=message):
+            higher_order_svd(A, full_tensor="ekki")
 
-            U, S = higher_order_svd(A_exact)
-
-            A = S
-            for i in range(len(U)):
-                A = np.tensordot(A, U[i], (0, 1))
-
-            assert_allclose(A, A_exact)
-
-    def test_random_no_full_tensor(self):
-        n = 5
-        for _ in range(5):
-            A_exact = random((n, n, n, n))
-
-            U, S = higher_order_svd(A_exact, full_tensor=False)
-
-            A = S
-            for i in range(len(U)):
-                A = np.tensordot(A, U[i], (0, 1))
-
-            assert_allclose(A, A_exact)
+        message = 'array must not contain...'
+        A[0, 0, 0] = np.nan
+        with pytest.raises(ValueError, match=message):
+            higher_order_svd(A, check_finite=True)
 
 
 class TestQR:
