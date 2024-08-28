@@ -44,6 +44,10 @@ class binom_gen(rv_discrete):
 
     %(after_notes)s
 
+    References
+    ----------
+    .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
+
     %(example)s
 
     See Also
@@ -310,6 +314,10 @@ class nbinom_gen(rv_discrete):
        n &= \frac{\mu^2}{\sigma^2 - \mu}
 
     %(after_notes)s
+
+    References
+    ----------
+    .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
 
     %(example)s
 
@@ -586,6 +594,10 @@ class hypergeom_gen(rv_discrete):
     .. math:: \binom{n}{k} \equiv \frac{n!}{k! (n - k)!}.
 
     %(after_notes)s
+
+    References
+    ----------
+    .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
 
     Examples
     --------

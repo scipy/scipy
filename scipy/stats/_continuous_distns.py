@@ -721,6 +721,10 @@ class beta_gen(rv_continuous):
 
     %(after_notes)s
 
+    References
+    ----------
+    .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
+
     %(example)s
 
     """
@@ -1441,6 +1445,10 @@ class cauchy_gen(rv_continuous):
     for a real number :math:`x`.
 
     %(after_notes)s
+
+    References
+    ----------
+    .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
 
     %(example)s
 
@@ -4832,6 +4840,10 @@ class invgauss_gen(rv_continuous):
     parameterization is equivalent to the one above with ``mu = nu/lam``,
     ``loc = 0``, and ``scale = lam``.
 
+    References
+    ----------
+    .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
+
     %(example)s
 
     """
@@ -7592,6 +7604,10 @@ class ncx2_gen(rv_continuous):
 
     %(after_notes)s
 
+    References
+    ----------
+    .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
+
     %(example)s
 
     """
@@ -7698,6 +7714,10 @@ class ncf_gen(rv_continuous):
     the distribution becomes equivalent to the Fisher distribution.
 
     %(after_notes)s
+
+    References
+    ----------
+    .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
 
     %(example)s
 
@@ -7892,6 +7912,10 @@ class nct_gen(rv_continuous):
     :math:`c` (denoted ``nc`` in the implementation) is a real number.
 
     %(after_notes)s
+
+        References
+    ----------
+    .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
 
     %(example)s
 
@@ -9456,13 +9480,14 @@ class skewnorm_gen(rv_continuous):
 
     %(after_notes)s
 
-    %(example)s
-
     References
     ----------
     .. [1] A. Azzalini and A. Capitanio (1999). Statistical applications of
         the multivariate skew-normal distribution. J. Roy. Statist. Soc.,
         B 61, 579-602. :arxiv:`0911.2093`
+    .. [2] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
+
+    %(example)s
 
     """
     def _argcheck(self, a):
