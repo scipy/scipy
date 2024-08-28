@@ -24,7 +24,7 @@ from scipy.linalg.lapack import (dgbtrf, dgbtrs, zgbtrf, zgbtrs, dsbev,
 
 from scipy.linalg._misc import norm
 from scipy.linalg._decomp_qz import _select_function
-from scipy.stats import ortho_group
+from scipy.stats import ortho_group, unitary_group
 
 from numpy import (array, diag, full, linalg, argsort, zeros, arange,
                    float32, complex64, ravel, sqrt, iscomplex, shape, sort,
@@ -1266,15 +1266,10 @@ class TestDiagSVD:
 
 
 class TestHigherOrderSVD:
-    @pytest.mark.parametrize('dtype', DTYPES)
-    @pytest.mark.parametrize('full_tensor', [False, True])
-    @pytest.mark.parametrize('shape', [(5, 5, 5, 5), (2, 3, 4, 5), (5, 3, 4, 2)])
-    def test_properties(self, dtype, full_tensor, shape):
-        rng = np.random.default_rng(3598235982549)
-        A0 = rng.random(shape)
-        A0 = A0 + rng.random(shape)*1j if dtype in COMPLEX_DTYPES else A0
-        A0 = A0.astype(dtype)
-        U, S = higher_order_svd(A0, full_tensor=full_tensor)
+
+    def check_properties(self, A0, U, S, compact, ml_rank=None):
+        ml_rank = A0.shape if ml_rank is None else ml_rank
+        dtype = A0.dtype
 
         # Check decomposition
         A = reduce(lambda x, y: np.tensordot(x, y, axes=(0, 1)), [S] + U)
@@ -1282,29 +1277,58 @@ class TestHigherOrderSVD:
         assert_allclose(A, A0, rtol=eps**0.5)
 
         # Check shape and dtype of S
-        assert (S.shape == A0.shape) if full_tensor else True
+        assert S.shape == (ml_rank if compact else A0.shape)
         assert S.dtype == A0.dtype
 
         # Check that Ui are unitary and of correct shape/type
-        for Ui, m0 in zip(U, A0.shape):
-            m, n = Ui.shape
-            assert_allclose(Ui @ Ui.conj().T, np.eye(m), atol=eps**0.75)
+        for Ui, m0, rank in zip(U, A0.shape, ml_rank):
+            correct_shape = (m0, rank) if compact else (m0, m0)
+            assert Ui.shape == correct_shape
+            eye = np.eye(rank) if compact else np.eye(m0)
+            assert_allclose(Ui.conj().T @ Ui, eye, atol=eps**0.75)
             assert Ui.dtype == dtype
-            assert (m, n) == (m0, m0)
+
+    @pytest.mark.parametrize('dtype', DTYPES)
+    @pytest.mark.parametrize('compact', [False, True])
+    @pytest.mark.parametrize('shape', [(5, 5, 5, 5), (2, 3, 4, 5), (5, 3, 4),
+                                       (1, 1), (1,), (), (0,)])
+    def test_properties(self, dtype, compact, shape):
+        rng = np.random.default_rng(3598235982549)
+        A0 = rng.random(shape)
+        A0 = A0 + rng.random(shape)*1j if dtype in COMPLEX_DTYPES else A0
+        A0 = A0.astype(dtype)
+        U, S = higher_order_svd(A0, compact=compact)
+        self.check_properties(A0, U, S, compact=compact)
 
     def test_input_validation(self):
         rng = np.random.default_rng(3598235982549)
         shape = (2, 3, 4)
         A = rng.random(shape)
 
-        message = '`full_tensor` must be...'
+        message = '`compact` must be...'
         with pytest.raises(ValueError, match=message):
-            higher_order_svd(A, full_tensor="ekki")
+            higher_order_svd(A, compact="ekki")
 
         message = 'array must not contain...'
         A[0, 0, 0] = np.nan
         with pytest.raises(ValueError, match=message):
             higher_order_svd(A, check_finite=True)
+
+    @pytest.mark.parametrize('dtype', DTYPES)
+    @pytest.mark.parametrize('compact', [False, True])
+    def test_low_rank(self, dtype, compact):
+        rng = np.random.default_rng(23593450934)
+        full_shape = (5, 6, 7)
+        ml_rank = (2, 5, 5)  # multilinear rank
+
+        S0 = rng.random(ml_rank)
+        U0 = [unitary_group.rvs(dim, random_state=rng) for dim in full_shape]
+        U0 = [Ui[:, :dim] for Ui, dim in zip(U0, ml_rank)]
+        A0 = reduce(lambda x, y: np.tensordot(x, y, axes=(0, 1)), [S0] + U0)
+        assert A0.shape == full_shape
+
+        U, S = higher_order_svd(A0, compact=compact)
+        self.check_properties(A0, U, S, compact=compact, ml_rank=ml_rank)
 
 
 class TestQR:
