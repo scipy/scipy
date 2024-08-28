@@ -11,6 +11,7 @@
 #include "xsf/beta.h"
 #include "xsf/binom.h"
 #include "xsf/digamma.h"
+#include "xsf/ellip.h"
 #include "xsf/expint.h"
 #include "xsf/fresnel.h"
 #include "xsf/gamma.h"
@@ -101,6 +102,10 @@ using func_ld_dd_t = void (*)(long int, double, double &, double &);
 using func_lf_fff_t = void (*)(long int, float, float &, float &, float &);
 using func_ld_ddd_t = void (*)(long int, double, double &, double &, double &);
 
+// 2 inputs, 4 outputs
+using func_ff_ffff_t = void (*)(float, float, float &, float &, float &, float &);
+using func_dd_dddd_t = void (*)(double, double, double &, double &, double &, double &);
+
 // 3 inputs, 1 output
 using func_fff_f_t = float (*)(float, float, float);
 using func_ddd_d_t = double (*)(double, double, double);
@@ -187,6 +192,12 @@ extern const char *cbrt_doc;
 extern const char *cosdg_doc;
 extern const char *cosm1_doc;
 extern const char *cotdg_doc;
+extern const char *ellipe_doc;
+extern const char *ellipeinc_doc;
+extern const char *ellipj_doc;
+extern const char *ellipk_doc;
+extern const char *ellipkm1_doc;
+extern const char *ellipkinc_doc;
 extern const char *exp1_doc;
 extern const char *expi_doc;
 extern const char *expit_doc;
@@ -398,6 +409,32 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
     PyObject *cotdg = SpecFun_NewUFunc({static_cast<func_d_d_t>(xsf::cotdg), static_cast<func_f_f_t>(xsf::cotdg)},
                                        "cotdg", cotdg_doc);
     PyModule_AddObjectRef(_special_ufuncs, "cotdg", cotdg);
+
+    PyObject *ellipj = SpecFun_NewUFunc(
+        {static_cast<func_dd_dddd_t>(xsf::ellipj), static_cast<func_ff_ffff_t>(xsf::ellipj)}, 4, "ellipj", ellipj_doc);
+    PyModule_AddObjectRef(_special_ufuncs, "ellipj", ellipj);
+
+    PyObject *ellipe = SpecFun_NewUFunc({static_cast<func_d_d_t>(xsf::ellipe), static_cast<func_f_f_t>(xsf::ellipe)},
+                                        "ellipe", ellipe_doc);
+    PyModule_AddObjectRef(_special_ufuncs, "ellipe", ellipe);
+
+    PyObject *ellipeinc =
+        SpecFun_NewUFunc({static_cast<func_dd_d_t>(xsf::ellipeinc), static_cast<func_ff_f_t>(xsf::ellipeinc)},
+                         "ellipeinc", ellipeinc_doc);
+    PyModule_AddObjectRef(_special_ufuncs, "ellipeinc", ellipeinc);
+
+    PyObject *ellipk = SpecFun_NewUFunc({static_cast<func_d_d_t>(xsf::ellipk), static_cast<func_f_f_t>(xsf::ellipk)},
+                                        "ellipk", ellipk_doc);
+    PyModule_AddObjectRef(_special_ufuncs, "ellipk", ellipk);
+
+    PyObject *ellipkinc =
+        SpecFun_NewUFunc({static_cast<func_dd_d_t>(xsf::ellipkinc), static_cast<func_ff_f_t>(xsf::ellipkinc)},
+                         "ellipkinc", ellipkinc_doc);
+    PyModule_AddObjectRef(_special_ufuncs, "ellipkinc", ellipkinc);
+
+    PyObject *ellipkm1 = SpecFun_NewUFunc(
+        {static_cast<func_d_d_t>(xsf::ellipkm1), static_cast<func_f_f_t>(xsf::ellipkm1)}, "ellipkm1", ellipkm1_doc);
+    PyModule_AddObjectRef(_special_ufuncs, "ellipkm1", ellipkm1);
 
     PyObject *exp1 = SpecFun_NewUFunc({static_cast<func_f_f_t>(xsf::exp1), static_cast<func_d_d_t>(xsf::exp1),
                                        static_cast<func_F_F_t>(xsf::exp1), static_cast<func_D_D_t>(xsf::exp1)},

@@ -24,7 +24,7 @@
 
 #include "xsf/binom.h"
 #include "xsf/digamma.h"
-#include "xsf/ellipk.h"
+#include "xsf/ellip.h"
 #include "xsf/gamma.h"
 #include "xsf/hyp2f1.h"
 #include "xsf/lambertw.h"

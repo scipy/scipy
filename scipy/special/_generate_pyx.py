@@ -95,7 +95,8 @@ special_ufuncs = [
     '_zeta', 'sindg', 'cosdg', 'tandg', 'cotdg', 'i0', 'i0e', 'i1', 'i1e',
     'k0', 'k0e', 'k1', 'k1e', 'y0', 'y1', 'j0', 'j1', 'struve', 'modstruve',
     'beta', 'betaln', 'besselpoly', 'gammaln', 'gammasgn', 'cbrt', 'radian', 'cosm1',
-    'gammainc', 'gammaincinv', 'gammaincc', 'gammainccinv', 'fresnel'
+    'gammainc', 'gammaincinv', 'gammaincc', 'gammainccinv', 'fresnel', 'ellipe',
+    'ellipeinc', 'ellipk', 'ellipkinc', 'ellipkm1', 'ellipj'
 ]
 
 # -----------------------------------------------------------------------------

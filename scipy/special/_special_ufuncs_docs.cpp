@@ -816,6 +816,389 @@ const char *cotdg_doc = R"(
     array([6.1232340e-17, 1.8369702e-16, 3.0616170e-16])
     )";
 
+const char *ellipe_doc = R"(
+    ellipe(m, out=None)
+
+    Complete elliptic integral of the second kind
+
+    This function is defined as
+
+    .. math:: E(m) = \int_0^{\pi/2} [1 - m \sin(t)^2]^{1/2} dt
+
+    Parameters
+    ----------
+    m : array_like
+        Defines the parameter of the elliptic integral.
+    out : ndarray, optional
+        Optional output array for the function values
+
+    Returns
+    -------
+    E : scalar or ndarray
+        Value of the elliptic integral.
+
+    See Also
+    --------
+    ellipkm1 : Complete elliptic integral of the first kind, near `m` = 1
+    ellipk : Complete elliptic integral of the first kind
+    ellipkinc : Incomplete elliptic integral of the first kind
+    ellipeinc : Incomplete elliptic integral of the second kind
+    elliprd : Symmetric elliptic integral of the second kind.
+    elliprg : Completely-symmetric elliptic integral of the second kind.
+
+    Notes
+    -----
+    Wrapper for the Cephes [1]_ routine `ellpe`.
+
+    For ``m > 0`` the computation uses the approximation,
+
+    .. math:: E(m) \approx P(1-m) - (1-m) \log(1-m) Q(1-m),
+
+    where :math:`P` and :math:`Q` are tenth-order polynomials.  For
+    ``m < 0``, the relation
+
+    .. math:: E(m) = E(m/(m - 1)) \sqrt(1-m)
+
+    is used.
+
+    The parameterization in terms of :math:`m` follows that of section
+    17.2 in [2]_. Other parameterizations in terms of the
+    complementary parameter :math:`1 - m`, modular angle
+    :math:`\sin^2(\alpha) = m`, or modulus :math:`k^2 = m` are also
+    used, so be careful that you choose the correct parameter.
+
+    The Legendre E integral is related to Carlson's symmetric R_D or R_G
+    functions in multiple ways [3]_. For example,
+
+    .. math:: E(m) = 2 R_G(0, 1-k^2, 1) .
+
+    References
+    ----------
+    .. [1] Cephes Mathematical Functions Library,
+           http://www.netlib.org/cephes/
+    .. [2] Milton Abramowitz and Irene A. Stegun, eds.
+           Handbook of Mathematical Functions with Formulas,
+           Graphs, and Mathematical Tables. New York: Dover, 1972.
+    .. [3] NIST Digital Library of Mathematical
+           Functions. http://dlmf.nist.gov/, Release 1.0.28 of
+           2020-09-15. See Sec. 19.25(i) https://dlmf.nist.gov/19.25#i
+
+    Examples
+    --------
+    This function is used in finding the circumference of an
+    ellipse with semi-major axis `a` and semi-minor axis `b`.
+
+    >>> import numpy as np
+    >>> from scipy import special
+
+    >>> a = 3.5
+    >>> b = 2.1
+    >>> e_sq = 1.0 - b**2/a**2  # eccentricity squared
+
+    Then the circumference is found using the following:
+
+    >>> C = 4*a*special.ellipe(e_sq)  # circumference formula
+    >>> C
+    17.868899204378693
+
+    When `a` and `b` are the same (meaning eccentricity is 0),
+    this reduces to the circumference of a circle.
+
+    >>> 4*a*special.ellipe(0.0)  # formula for ellipse with a = b
+    21.991148575128552
+    >>> 2*np.pi*a  # formula for circle of radius a
+    21.991148575128552
+    )";
+
+const char *ellipeinc_doc = R"(
+    ellipeinc(phi, m, out=None)
+
+    Incomplete elliptic integral of the second kind
+
+    This function is defined as
+
+    .. math:: E(\phi, m) = \int_0^{\phi} [1 - m \sin(t)^2]^{1/2} dt
+
+    Parameters
+    ----------
+    phi : array_like
+        amplitude of the elliptic integral.
+    m : array_like
+        parameter of the elliptic integral.
+    out : ndarray, optional
+        Optional output array for the function values
+
+    Returns
+    -------
+    E : scalar or ndarray
+        Value of the elliptic integral.
+
+    See Also
+    --------
+    ellipkm1 : Complete elliptic integral of the first kind, near `m` = 1
+    ellipk : Complete elliptic integral of the first kind
+    ellipkinc : Incomplete elliptic integral of the first kind
+    ellipe : Complete elliptic integral of the second kind
+    elliprd : Symmetric elliptic integral of the second kind.
+    elliprf : Completely-symmetric elliptic integral of the first kind.
+    elliprg : Completely-symmetric elliptic integral of the second kind.
+
+    Notes
+    -----
+    Wrapper for the Cephes [1]_ routine `ellie`.
+
+    Computation uses arithmetic-geometric means algorithm.
+
+    The parameterization in terms of :math:`m` follows that of section
+    17.2 in [2]_. Other parameterizations in terms of the
+    complementary parameter :math:`1 - m`, modular angle
+    :math:`\sin^2(\alpha) = m`, or modulus :math:`k^2 = m` are also
+    used, so be careful that you choose the correct parameter.
+
+    The Legendre E incomplete integral can be related to combinations
+    of Carlson's symmetric integrals R_D, R_F, and R_G in multiple
+    ways [3]_. For example, with :math:`c = \csc^2\phi`,
+
+    .. math::
+      E(\phi, m) = R_F(c-1, c-k^2, c)
+        - \frac{1}{3} k^2 R_D(c-1, c-k^2, c) .
+
+    References
+    ----------
+    .. [1] Cephes Mathematical Functions Library,
+           http://www.netlib.org/cephes/
+    .. [2] Milton Abramowitz and Irene A. Stegun, eds.
+           Handbook of Mathematical Functions with Formulas,
+           Graphs, and Mathematical Tables. New York: Dover, 1972.
+    .. [3] NIST Digital Library of Mathematical
+           Functions. http://dlmf.nist.gov/, Release 1.0.28 of
+           2020-09-15. See Sec. 19.25(i) https://dlmf.nist.gov/19.25#i
+    )";
+
+const char *ellipj_doc = R"(
+    ellipj(u, m, out=None)
+
+    Jacobian elliptic functions
+
+    Calculates the Jacobian elliptic functions of parameter `m` between
+    0 and 1, and real argument `u`.
+
+    Parameters
+    ----------
+    u : array_like
+        Argument.
+    m : array_like
+        Parameter.
+    out : tuple of ndarray, optional
+        Optional output arrays for the function values
+
+    Returns
+    -------
+    sn, cn, dn, ph : 4-tuple of scalar or ndarray
+        The returned functions::
+
+            sn(u|m), cn(u|m), dn(u|m)
+
+        The value `ph` is such that if ``u = ellipkinc(ph, m)``,
+        then ``sn(u|m) = sin(ph)`` and ``cn(u|m) = cos(ph)``.
+
+    See Also
+    --------
+    ellipk : Complete elliptic integral of the first kind
+    ellipkinc : Incomplete elliptic integral of the first kind
+
+    Notes
+    -----
+    Wrapper for the Cephes [1]_ routine ``ellpj``.
+
+    These functions are periodic, with quarter-period on the real axis
+    equal to the complete elliptic integral ``ellipk(m)``.
+
+    Relation to incomplete elliptic integral: If ``u = ellipkinc(phi,m)``, then
+    ``sn(u|m) = sin(phi)``, and ``cn(u|m) = cos(phi)``. The ``phi`` is called
+    the amplitude of `u`.
+
+    Computation is by means of the arithmetic-geometric mean algorithm,
+    except when `m` is within 1e-9 of 0 or 1. In the latter case with `m`
+    close to 1, the approximation applies only for ``phi < pi/2``.
+
+    References
+    ----------
+    .. [1] Cephes Mathematical Functions Library,
+           http://www.netlib.org/cephes/
+    )";
+
+const char *ellipkm1_doc = R"(
+    ellipkm1(p, out=None)
+
+    Complete elliptic integral of the first kind around `m` = 1
+
+    This function is defined as
+
+    .. math:: K(p) = \\int_0^{\\pi/2} [1 - m \\sin(t)^2]^{-1/2} dt
+
+    where `m = 1 - p`.
+
+    Parameters
+    ----------
+    p : array_like
+        Defines the parameter of the elliptic integral as `m = 1 - p`.
+    out : ndarray, optional
+        Optional output array for the function values
+
+    Returns
+    -------
+    K : scalar or ndarray
+        Value of the elliptic integral.
+
+    See Also
+    --------
+    ellipk : Complete elliptic integral of the first kind
+    ellipkinc : Incomplete elliptic integral of the first kind
+    ellipe : Complete elliptic integral of the second kind
+    ellipeinc : Incomplete elliptic integral of the second kind
+    elliprf : Completely-symmetric elliptic integral of the first kind.
+
+    Notes
+    -----
+    Wrapper for the Cephes [1]_ routine `ellpk`.
+
+    For ``p <= 1``, computation uses the approximation,
+
+    .. math:: K(p) \\approx P(p) - \\log(p) Q(p),
+
+    where :math:`P` and :math:`Q` are tenth-order polynomials.  The
+    argument `p` is used internally rather than `m` so that the logarithmic
+    singularity at ``m = 1`` will be shifted to the origin; this preserves
+    maximum accuracy.  For ``p > 1``, the identity
+
+    .. math:: K(p) = K(1/p)/\\sqrt(p)
+
+    is used.
+
+    References
+    ----------
+    .. [1] Cephes Mathematical Functions Library,
+           http://www.netlib.org/cephes/
+    )";
+
+const char *ellipk_doc = R"(
+    ellipk(m, out=None)
+
+    Complete elliptic integral of the first kind.
+
+    This function is defined as
+
+    .. math:: K(m) = \int_0^{\pi/2} [1 - m \sin(t)^2]^{-1/2} dt
+
+    Parameters
+    ----------
+    m : array_like
+        The parameter of the elliptic integral.
+    out : ndarray, optional
+        Optional output array for the function values
+
+    Returns
+    -------
+    K : scalar or ndarray
+        Value of the elliptic integral.
+
+    See Also
+    --------
+    ellipkm1 : Complete elliptic integral of the first kind around m = 1
+    ellipkinc : Incomplete elliptic integral of the first kind
+    ellipe : Complete elliptic integral of the second kind
+    ellipeinc : Incomplete elliptic integral of the second kind
+    elliprf : Completely-symmetric elliptic integral of the first kind.
+
+    Notes
+    -----
+    For more precision around point m = 1, use `ellipkm1`, which this
+    function calls.
+
+    The parameterization in terms of :math:`m` follows that of section
+    17.2 in [1]_. Other parameterizations in terms of the
+    complementary parameter :math:`1 - m`, modular angle
+    :math:`\sin^2(\alpha) = m`, or modulus :math:`k^2 = m` are also
+    used, so be careful that you choose the correct parameter.
+
+    The Legendre K integral is related to Carlson's symmetric R_F
+    function by [2]_:
+
+    .. math:: K(m) = R_F(0, 1-k^2, 1) .
+
+    References
+    ----------
+    .. [1] Milton Abramowitz and Irene A. Stegun, eds.
+           Handbook of Mathematical Functions with Formulas,
+           Graphs, and Mathematical Tables. New York: Dover, 1972.
+    .. [2] NIST Digital Library of Mathematical
+           Functions. http://dlmf.nist.gov/, Release 1.0.28 of
+           2020-09-15. See Sec. 19.25(i) https://dlmf.nist.gov/19.25#i
+    )";
+
+const char *ellipkinc_doc = R"(
+    ellipkinc(phi, m, out=None)
+
+    Incomplete elliptic integral of the first kind
+
+    This function is defined as
+
+    .. math:: K(\phi, m) = \int_0^{\phi} [1 - m \sin(t)^2]^{-1/2} dt
+
+    This function is also called :math:`F(\phi, m)`.
+
+    Parameters
+    ----------
+    phi : array_like
+        amplitude of the elliptic integral
+    m : array_like
+        parameter of the elliptic integral
+    out : ndarray, optional
+        Optional output array for the function values
+
+    Returns
+    -------
+    K : scalar or ndarray
+        Value of the elliptic integral
+
+    See Also
+    --------
+    ellipkm1 : Complete elliptic integral of the first kind, near `m` = 1
+    ellipk : Complete elliptic integral of the first kind
+    ellipe : Complete elliptic integral of the second kind
+    ellipeinc : Incomplete elliptic integral of the second kind
+    elliprf : Completely-symmetric elliptic integral of the first kind.
+
+    Notes
+    -----
+    Wrapper for the Cephes [1]_ routine `ellik`.  The computation is
+    carried out using the arithmetic-geometric mean algorithm.
+
+    The parameterization in terms of :math:`m` follows that of section
+    17.2 in [2]_. Other parameterizations in terms of the
+    complementary parameter :math:`1 - m`, modular angle
+    :math:`\sin^2(\alpha) = m`, or modulus :math:`k^2 = m` are also
+    used, so be careful that you choose the correct parameter.
+
+    The Legendre K incomplete integral (or F integral) is related to
+    Carlson's symmetric R_F function [3]_.
+    Setting :math:`c = \csc^2\phi`,
+
+    .. math:: F(\phi, m) = R_F(c-1, c-k^2, c) .
+
+    References
+    ----------
+    .. [1] Cephes Mathematical Functions Library,
+           http://www.netlib.org/cephes/
+    .. [2] Milton Abramowitz and Irene A. Stegun, eds.
+           Handbook of Mathematical Functions with Formulas,
+           Graphs, and Mathematical Tables. New York: Dover, 1972.
+    .. [3] NIST Digital Library of Mathematical
+           Functions. http://dlmf.nist.gov/, Release 1.0.28 of
+           2020-09-15. See Sec. 19.25(i) https://dlmf.nist.gov/19.25#i
+    )";
+
 const char *exp1_doc = R"(
     exp1(z, out=None)
 

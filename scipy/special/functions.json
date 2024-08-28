@@ -200,36 +200,6 @@
             "faddeeva_dawsn_complex": "D->D"
         }
     },
-    "ellipe": {
-        "xsf_wrappers.h": {
-            "cephes_ellpe": "d->d"
-        }
-    },
-    "ellipeinc": {
-        "xsf_wrappers.h": {
-            "cephes_ellie": "dd->d"
-        }
-    },
-    "ellipj": {
-        "xsf_wrappers.h": {
-            "cephes_ellpj_wrap": "dd*dddd->*i"
-        }
-    },
-    "ellipkinc": {
-        "xsf_wrappers.h": {
-            "cephes_ellik": "dd->d"
-        }
-    },
-    "ellipkm1": {
-        "xsf_wrappers.h": {
-            "cephes_ellpk": "d->d"
-         }
-    },
-    "ellipk": {
-    	"xsf_wrappers.h": {
-	        "special_ellipk": "d->d"
-    	}
-    },
     "_factorial": {
 	"_factorial.pxd": {
 	    "_factorial": "d->d"
