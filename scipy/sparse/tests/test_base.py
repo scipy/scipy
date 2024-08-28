@@ -4218,6 +4218,12 @@ class TestCSR(sparse_test_class()):
         assert_array_equal(res_d.toarray(), np.broadcast_to(d, (4,4)))
         assert_array_equal(res_e.toarray(), np.broadcast_to(e, (5,6)))
         assert_array_equal(res_f.toarray(), np.broadcast_to(f, (2,4)))
+        
+        with pytest.raises(ValueError, match="cannot be broadcast"):
+            csr_matrix([[1, 2, 0], [3, 0, 1]]).broadcast_to(shape=(2, 1))
+
+        with pytest.raises(ValueError, match="cannot be broadcast"):
+            csr_matrix([[0, 1, 2]]).broadcast_to(shape=(3, 2))
 
 TestCSR.init_class()
 
