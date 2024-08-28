@@ -289,7 +289,6 @@ def test_2d_matmul_multivector():
     exp = den_a @ den_b
     res = coo_array(den_a) @ den_b
     assert_equal(res, exp)
-    exp = den_a @ den_b
     res = coo_array(den_a) @ list(den_b)
     assert_equal(res, exp)
 
