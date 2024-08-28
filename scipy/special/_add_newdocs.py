@@ -5541,8 +5541,7 @@ add_newdoc("gdtrib",
     The cumulative distribution function `p` is computed using the Cephes [1]_
     routines `igam` and `igamc`. Computation of `b` involves a search for a value
     that produces the desired value of `p` using a bracketing root finding method
-    developed by Bus & Dekker [2]_. The search relies on the monotonicity of `p`
-    with `b`.
+    developed by Bus & Dekker [2]_.
 
     References
     ----------
@@ -5552,6 +5551,7 @@ add_newdoc("gdtrib",
            Guaranteed Convergence for Finding a Zero of a Function. ACM Trans.
            Math. Softw. 1, 4 (Dec. 1975), 330-345.
            https://doi.org/10.1145/355656.355659
+
     Examples
     --------
     First evaluate `gdtr`.
@@ -5633,7 +5633,7 @@ add_newdoc("gdtrib_old",
 
     Verify the inverse.
 
-    >>> gdtrib(1.2, p, 5.6)
+    >>> gdtrib_old(1.2, p, 5.6)
     3.3999999999723882
     """)
 
