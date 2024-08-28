@@ -22,7 +22,10 @@ def call_jupytext(md_files, _contents_path, _contents_cache_path):
             os.system(f"python3 -m jupytext --output {output_path} {md_file}")
             is_dirty = True
         else:
-            shutil.copyfile(cached_output_path, os.path.join(_contents_path, f"{basename}.ipynb"))
+            shutil.copyfile(
+                cached_output_path,
+                os.path.join(_contents_path, f"{basename}.ipynb")
+            )
 
     return is_dirty
 
