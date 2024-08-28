@@ -43,6 +43,10 @@ class TestAAA:
             AAA([[0], [0]], [[1], [1]])
         with pytest.raises(ValueError, match="finite"):
             AAA([np.inf], [1])
+        with pytest.raises(TypeError):
+            AAA([1], [1], max_terms=1.0)
+        with pytest.raises(ValueError, match="greater"):
+            AAA([1], [1], max_terms=-1)
     
     def test_convergence_error(self):
         with pytest.warns(RuntimeWarning, match="AAA failed"):
@@ -217,3 +221,17 @@ class TestAAA:
         z = np.exp(np.linspace(-0.5, 0.5 + 15j*np.pi, num=1000))
         r = AAA(z, np.tan(np.pi*z/2))
         assert_allclose(np.sort(np.abs(r.poles()))[:4], [1, 1, 3, 3], rtol=9e-7)
+    
+    def test_spiral_cleanup(self):
+        z = np.exp(np.linspace(-0.5, 0.5 + 15j*np.pi, num=1000))
+        # here we set `rtol=0` to force froissart doublets, without cleanup there
+        # are many spurious poles
+        with pytest.warns(RuntimeWarning):
+            r = AAA(z, np.tan(np.pi*z/2), rtol=0, max_terms=60, clean_up=False)
+        n_spurious = np.sum(np.abs(r.residues()) < 1e-14)
+        with pytest.warns(RuntimeWarning):
+            assert r.clean_up() >= 1
+        # check there are less potentially spurious poles than before
+        assert np.sum(np.abs(r.residues()) < 1e-14) < n_spurious
+        # check accuracy
+        assert_allclose(r(z), np.tan(np.pi*z/2), atol=6e-12, rtol=3e-12)

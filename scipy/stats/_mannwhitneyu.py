@@ -241,28 +241,20 @@ def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
             otherwise.
     alternative : {'two-sided', 'less', 'greater'}, optional
         Defines the alternative hypothesis. Default is 'two-sided'.
-        Let *F(u)* and *G(u)* be the cumulative distribution functions of the
+        Let *SX(u)* and *SY(u)* be the survival functions of the
         distributions underlying `x` and `y`, respectively. Then the following
         alternative hypotheses are available:
 
-        * 'two-sided': the distributions are not equal, i.e. *F(u) ≠ G(u)* for
+        * 'two-sided': the distributions are not equal, i.e. *SX(u) ≠ SY(u)* for
           at least one *u*.
         * 'less': the distribution underlying `x` is stochastically less
-          than the distribution underlying `y`, i.e. *F(u) > G(u)* for all *u*.
+          than the distribution underlying `y`, i.e. *SX(u) < SY(u)* for all *u*.
         * 'greater': the distribution underlying `x` is stochastically greater
-          than the distribution underlying `y`, i.e. *F(u) < G(u)* for all *u*.
-
-        Note that the mathematical expressions in the alternative hypotheses
-        above describe the CDFs of the underlying distributions. The directions
-        of the inequalities appear inconsistent with the natural language
-        description at first glance, but they are not. For example, suppose
-        *X* and *Y* are random variables that follow distributions with CDFs
-        *F* and *G*, respectively. If *F(u) > G(u)* for all *u*, samples drawn
-        from *X* tend to be less than those drawn from *Y*.
+          than the distribution underlying `y`, i.e. *SX(u) > SY(u)* for all *u*.
 
         Under a more restrictive set of assumptions, the alternative hypotheses
         can be expressed in terms of the locations of the distributions;
-        see [5] section 5.1.
+        see [5]_ section 5.1.
     axis : int, optional
         Axis along which to perform the test. Default is 0.
     method : {'auto', 'asymptotic', 'exact'} or `PermutationMethod` instance, optional
