@@ -137,27 +137,34 @@ T pow1p_impl(T x, T y) {
     T s, t;
     if (x < -1) {
         s = std::nextafter(-x, T(0));
-        t = (-x - s) - T(1);
+        t = (-x - s);
+        t = t - T(1);
     } else if (x < 0) {
         s = T(1) + x;
-        t = x - (s - T(1));
+        t = s - T(1);
+        t = x - t;
         if (t > 0) {
             s = std::nextafter(s, T(1));
-            t = x - (s - T(1));
+            t = s - T(1);
+            t = x - t;
         }
     } else if (x < 1) {
         s = T(1) + x;
-        t = x - (s - T(1));
+        t = s - T(1);
+        t = x - t;
         if (t < 0) {
             s = std::nextafter(s, T(0));
-            t = x - (s - T(1));
+            t = s - T(1);
+            t = x - t;
         }
     } else {
         s = x + T(1);
-        t = T(1) - (s - x);
+        t = s - x;
+        t = T(1) - t;
         if (t < 0) {
             s = std::nextafter(s, T(0));
-            t = T(1) - (s - x);
+            t = s - x;
+            t = T(1) - t;
         }
     }
     fprintf(out, "[pow1p] s=%.16e t=%.16e\n", s, t);
@@ -182,9 +189,9 @@ T pow1p_impl(T x, T y) {
     // t/s <= epsilon, log(1+t/s) is well approximated by t/s to first order.
     T u = t / s;
     T w = y * u;
+    T term2 = std::exp(w);
+    fprintf(out, "[pow1p] term2=%.16e\n", term2);
     if (std::abs(w) <= 0.5) {
-        T term2 = std::exp(w);
-        fprintf(out, "[pow1p] term2/short-path=%.16e\n", term2);
         return term1 * term2;
     }
 
@@ -204,9 +211,9 @@ T pow1p_impl(T x, T y) {
     T ww = std::fma(y, vv, r2);
 
     // TODO: maybe ww is small enough such that exp(ww) ~= 1+ww.
-    T term2 = std::exp(w) * std::exp(ww);
-    fprintf(out, "[pow1p] term2/long-path=%.16e\n", term2);
-    return term1 * term2;
+    T term3 = std::exp(ww);
+    fprintf(out, "[pow1p] term3=%.16e\n", term3);
+    return term1 * term2 * term3;
 }
 
 inline double pow1p(double x, double y) {
