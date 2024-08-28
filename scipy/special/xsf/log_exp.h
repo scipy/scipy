@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cmath>
+#include <cstdio>
 
 #include "config.h"
 
@@ -68,6 +69,10 @@ T log_expit(T x) {
 // Compute pow(1+x,y) accurately for real x and y.
 template <typename T>
 T pow1p_impl(T x, T y) {
+    auto out = stderr;
+    fprintf(out, "[pow1p] ========\n");
+    fprintf(out, "[pow1p] x=%.16e y=%.16e\n", x, y);
+
     // The special values follow the spec of the pow() function defined in
     // IEEE-754, Section 9.2.1.  The order of the `if` statements matters.
     if (y == T(0)) { // pow(x, +/-0)
@@ -155,6 +160,7 @@ T pow1p_impl(T x, T y) {
             t = T(1) - (s - x);
         }
     }
+    fprintf(out, "[pow1p] s=%.16e t=%.16e\n", s, t);
 
     // Because x > -1 and s is rounded toward 1, s is guaranteed to be > 0.
 
@@ -163,6 +169,8 @@ T pow1p_impl(T x, T y) {
     // if the first term over/underflows, then the result over/underflows.
     // And of course, term2 == 1 if t == 0.
     T term1 = sign * std::pow(s, y);
+    fprintf(out, "[pow1p] term1=%.16e\n", term1);
+
     if (t == T(0) || term1 == T(0) || std::isinf(term1)) {
         return term1;
     }
@@ -176,6 +184,7 @@ T pow1p_impl(T x, T y) {
     T w = y * u;
     if (std::abs(w) <= 0.5) {
         T term2 = std::exp(w);
+        fprintf(out, "[pow1p] term2/short-path=%.16e\n", term2);
         return term1 * term2;
     }
 
@@ -196,6 +205,7 @@ T pow1p_impl(T x, T y) {
 
     // TODO: maybe ww is small enough such that exp(ww) ~= 1+ww.
     T term2 = std::exp(w) * std::exp(ww);
+    fprintf(out, "[pow1p] term2/long-path=%.16e\n", term2);
     return term1 * term2;
 }
 
