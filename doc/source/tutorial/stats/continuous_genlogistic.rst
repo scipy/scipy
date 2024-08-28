@@ -5,7 +5,7 @@ Generalized Logistic Distribution
 =================================
 
 Has been used in the analysis of extreme values. There is one shape
-parameter :math:`c>0.` The support is :math:`x\geq0`.
+parameter :math:`c>0`. The support is :math:`x \in \mathcal{R}`.
 
 .. math::
    :nowrap:

@@ -40,7 +40,7 @@ Enabling the use of an accelerator like Pythran, possibly via Transonic, and
 making it easier for users to use Numba's ``@njit`` in their code that relies
 on SciPy functionality would unlock a lot of performance gain.  That needs a
 strategy though, all solutions are still maturing (see for example
-`this overview <https://fluiddyn.bitbucket.io/transonic-vision.html>`__).
+`this overview <https://fluiddyn.netlify.app/transonic-vision.html>`__).
 
 Finally, many individual functions can be optimized for performance.
 ``scipy.optimize`` and ``scipy.interpolate`` functions are particularly often
@@ -50,13 +50,14 @@ requested in this respect.
 Statistics enhancements
 -----------------------
 
-The `scipy.stats` enhancements listed in the :ref:`scipy-roadmap-detailed` are of
-particularly high importance to the project.
+The following `scipy.stats` enhancements and those listed in the
+:ref:`scipy-roadmap-detailed` are of particularly high importance to the
+project.
 
-- Improve the options for fitting a probability distribution to data.
-- Expand the set of hypothesis tests.  In particular, include all the basic
-  variations of analysis of variance.
-- Add confidence intervals for all statistical tests.
+- Overhaul the univariate distribution infrastructure to address longstanding
+  issues (e.g. see `gh-15928 <https://github.com/scipy/scipy/issues/15928>`_.)
+- Consistently handle ``nan_policy``, ``axis`` arguments, and masked
+  arrays in ``stats`` functions (where appropriate).
 
 
 Support for more hardware platforms
@@ -78,13 +79,17 @@ Implement sparse arrays in addition to sparse matrices
 
 The sparse matrix formats are mostly feature-complete, however the main issue
 is that they act like ``numpy.matrix`` (which will be deprecated in NumPy at
-some point).  What we want is sparse *arrays* that act like ``numpy.ndarray``.
-This is being worked on in https://github.com/pydata/sparse, which is quite far
-along.  The tentative plan is:
+some point). What we want is sparse *arrays* that act like ``numpy.ndarray``
+(See discussion at `gh-18915 <https://github.com/scipy/scipy/issues/18915>`_).
+Sparse arrays have largely been implemented in ``scipy.sparse`` at this time.
+Some functionality is still being completed. The future plan is:
 
-- Start depending on ``pydata/sparse`` once it's feature-complete enough (it
-  still needs a CSC/CSR equivalent) and okay performance-wise.
-- Indicate in the documentation that for new code users should prefer
-  ``pydata/sparse`` over sparse matrices.
-- When NumPy deprecates ``numpy.matrix``, vendor that or maintain it as a
-  stand-alone package.
+- Provide a feature-complete sparse array API (including 1D-array).
+    - Extend sparse array API to 1D arrays:
+        - COO, CSR and DOK formats.
+        - The CSR 1D format uses 2D CSR code to do 1D things like
+          indexing/min-max/arithmetic.
+- Help other libraries convert to sparse arrays from sparse matrices.
+  Create transition guide and helpful scripts to flag code that needs changing.
+- Deprecate and then remove "sparse matrix" in favor of "sparse array".
+- Work with NumPy on deprecation/removal of ``numpy.matrix``.

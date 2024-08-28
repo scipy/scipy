@@ -92,8 +92,6 @@ class FFTConvolve(Benchmark):
 
     def setup(self, mode, size):
         rng = np.random.default_rng(1234)
-        # sample a bunch of pairs of 2d arrays
-        pairs = []
         self.a = rng.standard_normal(size[0])
         self.b = rng.standard_normal(size[1])
 
@@ -111,8 +109,6 @@ class OAConvolve(Benchmark):
 
     def setup(self, mode, size):
         rng = np.random.default_rng(1234)
-        # sample a bunch of pairs of 2d arrays
-        pairs = []
         self.a = rng.standard_normal(size[0])
         self.b = rng.standard_normal(size[1])
 
@@ -178,9 +174,6 @@ class LTI(Benchmark):
 
     def time_lsim(self):
         signal.lsim(self.system, self.u, self.t)
-
-    def time_lsim2(self):
-        signal.lsim2(self.system, self.u, self.t)
 
     def time_step(self):
         signal.step(self.system, T=self.t)

@@ -4,10 +4,6 @@ Low-level LAPACK functions (:mod:`scipy.linalg.lapack`)
 
 This module contains low-level functions from the LAPACK library.
 
-The `*gegv` family of routines have been removed from LAPACK 3.6.0
-and have been deprecated in SciPy 0.17.0. They will be removed in
-a future release.
-
 .. versionadded:: 0.12.0
 
 .. note::
@@ -97,11 +93,6 @@ All functions
    dgeev_lwork
    cgeev_lwork
    zgeev_lwork
-
-   sgegv
-   dgegv
-   cgegv
-   zgegv
 
    sgehrd
    dgehrd
@@ -354,6 +345,9 @@ All functions
    chetrf_lwork
    zhetrf_lwork
 
+   chetrs
+   zhetrs
+
    chfrk
    zhfrk
 
@@ -364,6 +358,11 @@ All functions
    dlange
    clange
    zlange
+
+   slantr
+   dlantr
+   clantr
+   zlantr
 
    slarf
    dlarf
@@ -669,6 +668,11 @@ All functions
    csytrf_lwork
    zsytrf_lwork
 
+   ssytrs
+   dsytrs
+   csytrs
+   zsytrs
+
    stbtrs
    dtbtrs
    ctbtrs
@@ -704,6 +708,9 @@ All functions
    ctgsen_lwork
    ztgsen_lwork
 
+   stgsyl
+   dtgsyl
+
    stpttf
    dtpttf
    ctpttf
@@ -713,6 +720,26 @@ All functions
    dtpttr
    ctpttr
    ztpttr
+
+   strcon
+   dtrcon
+   ctrcon
+   ztrcon
+
+   strexc
+   dtrexc
+   ctrexc
+   ztrexc
+
+   strsen
+   dtrsen
+   ctrsen
+   ztrsen
+
+   strsen_lwork
+   dtrsen_lwork
+   ctrsen_lwork
+   ztrsen_lwork
 
    strsyl
    dtrsyl
@@ -784,6 +811,11 @@ All functions
    cgttrs
    zgttrs
 
+   sgtcon
+   dgtcon
+   cgtcon
+   zgtcon
+
    stpqrt
    dtpqrt
    ctpqrt
@@ -813,7 +845,7 @@ All functions
 # Author: Pearu Peterson, March 2002
 #
 
-import numpy as _np
+import numpy as np
 from .blas import _get_funcs, _memoize_get_funcs
 from scipy.linalg import _flapack
 from re import compile as regex_compile
@@ -829,34 +861,13 @@ except ImportError:
     HAS_ILP64 = False
     _flapack_64 = None
 
-# Backward compatibility
-from scipy._lib._util import DeprecatedImport as _DeprecatedImport
-clapack = _DeprecatedImport("scipy.linalg.blas.clapack", "scipy.linalg.lapack")
-flapack = _DeprecatedImport("scipy.linalg.blas.flapack", "scipy.linalg.lapack")
 
 # Expose all functions (only flapack --- clapack is an implementation detail)
 empty_module = None
-from scipy.linalg._flapack import *
+from scipy.linalg._flapack import *  # noqa: E402, F403
 del empty_module
 
 __all__ = ['get_lapack_funcs']
-
-_dep_message = """The `*gegv` family of routines has been deprecated in
-LAPACK 3.6.0 in favor of the `*ggev` family of routines.
-The corresponding wrappers will be removed from SciPy in
-a future release."""
-
-cgegv = _np.deprecate(cgegv, old_name='cgegv', message=_dep_message)
-dgegv = _np.deprecate(dgegv, old_name='dgegv', message=_dep_message)
-sgegv = _np.deprecate(sgegv, old_name='sgegv', message=_dep_message)
-zgegv = _np.deprecate(zgegv, old_name='zgegv', message=_dep_message)
-
-# Modify _flapack in this scope so the deprecation warnings apply to
-# functions returned by get_lapack_funcs.
-_flapack.cgegv = cgegv
-_flapack.dgegv = dgegv
-_flapack.sgegv = sgegv
-_flapack.zgegv = zgegv
 
 # some convenience alias for complex functions
 _lapack_alias = {
@@ -875,10 +886,9 @@ p2 = regex_compile(r'Default: (?P<d>.*?)\n')
 
 def backtickrepl(m):
     if m.group('s'):
-        return ('with bounds ``{}`` with ``{}`` storage\n'
-                ''.format(m.group('b'), m.group('s')))
+        return (f"with bounds ``{m.group('b')}`` with ``{m.group('s')}`` storage\n")
     else:
-        return 'with bounds ``{}``\n'.format(m.group('b'))
+        return f"with bounds ``{m.group('b')}``\n"
 
 
 for routine in [ssyevr, dsyevr, cheevr, zheevr,
@@ -940,8 +950,10 @@ def get_lapack_funcs(names, arrays=(), dtype=None, ilp64=False):
     norm of an array. We pass our array in order to get the correct 'lange'
     flavor.
 
+    >>> import numpy as np
     >>> import scipy.linalg as LA
     >>> rng = np.random.default_rng()
+
     >>> a = rng.random((3,2))
     >>> x_lange = LA.get_lapack_funcs('lange', (a,))
     >>> x_lange.typecode
@@ -956,8 +968,6 @@ def get_lapack_funcs(names, arrays=(), dtype=None, ilp64=False):
     to the function which is often wrapped as a standalone function and
     commonly denoted as ``###_lwork``. Below is an example for ``?sysv``
 
-    >>> import scipy.linalg as LA
-    >>> rng = np.random.default_rng()
     >>> a = rng.random((1000, 1000))
     >>> b = rng.random((1000, 1)) * 1j
     >>> # We pick up zsysv and zsysv_lwork due to b array
@@ -987,8 +997,8 @@ def get_lapack_funcs(names, arrays=(), dtype=None, ilp64=False):
                           ilp64=True)
 
 
-_int32_max = _np.iinfo(_np.int32).max
-_int64_max = _np.iinfo(_np.int64).max
+_int32_max = np.iinfo(np.int32).max
+_int64_max = np.iinfo(np.int64).max
 
 
 def _compute_lwork(routine, *args, **kwargs):
@@ -1032,10 +1042,10 @@ def _check_work_float(value, dtype, int_dtype):
     carefully for single-precision types.
     """
 
-    if dtype == _np.float32 or dtype == _np.complex64:
+    if dtype == np.float32 or dtype == np.complex64:
         # Single-precision routine -- take next fp value to work
         # around possible truncation in LAPACK code
-        value = _np.nextafter(value, _np.inf, dtype=_np.float32)
+        value = np.nextafter(value, np.inf, dtype=np.float32)
 
     value = int(value)
     if int_dtype.itemsize == 4:

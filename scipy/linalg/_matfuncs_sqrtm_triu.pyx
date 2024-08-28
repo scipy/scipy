@@ -1,5 +1,4 @@
 # cython: boundscheck=False, wraparound=False, cdivision=True
-import numpy as np
 from ._matfuncs_sqrtm import SqrtmError
 
 from numpy cimport complex128_t, float64_t, intp_t
@@ -10,7 +9,7 @@ cdef fused floating:
     complex128_t
 
 
-def within_block_loop(floating[:,::1] R, floating[:,::1] T, start_stop_pairs, intp_t nblocks):
+def within_block_loop(floating[:,::1] R, const floating[:,::1] T, start_stop_pairs, intp_t nblocks):
     cdef intp_t start, stop, i, j, k
     cdef floating s, denom, num
 

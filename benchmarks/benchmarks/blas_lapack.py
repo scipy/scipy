@@ -2,7 +2,6 @@ import numpy as np
 from .common import Benchmark, safe_import
 
 with safe_import():
-    import scipy.linalg.lapack as la
     import scipy.linalg.blas as bla
 
 

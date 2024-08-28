@@ -3,7 +3,7 @@ from numpy.testing import (assert_almost_equal, assert_equal,
                            assert_, assert_allclose, assert_array_equal)
 from pytest import raises as assert_raises
 
-import scipy.signal.waveforms as waveforms
+import scipy.signal._waveforms as waveforms
 
 
 # These chirp_* functions are the instantaneous frequencies of the signals

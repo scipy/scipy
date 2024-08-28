@@ -54,9 +54,9 @@ Implementation
 #. Find an already existing distribution similar to ``Squirrel``.
    Use its code as a template for ``Squirrel``.
 #. Read the docstring for class ``rv_continuous`` in
-   `scipy/stats/_distn_infrastructure.py <https://github.com/scipy/scipy/blob/master/scipy/stats/_distn_infrastructure.py#L1378>`_.
+   `scipy/stats/_distn_infrastructure.py <https://github.com/scipy/scipy/blob/main/scipy/stats/_distn_infrastructure.py#L1378>`_.
 #. Write the new code for class ``squirrel_gen`` and insert it into
-   `scipy/stats/_continuous_distns.py <https://github.com/scipy/scipy/blob/master/scipy/stats/_continuous_distns.py>`_,
+   `scipy/stats/_continuous_distns.py <https://github.com/scipy/scipy/blob/main/scipy/stats/_continuous_distns.py>`_,
    which is in (mostly) alphabetical order by distribution name.
 #. Does the distribution have infinite support? If not, left and/or right
    endpoints ``a``, ``b`` need to be specified in the call to ``squirrel_gen(name='squirrel', a=?, b=?)``.
@@ -70,17 +70,17 @@ Implementation
 #. If ``squirrel_gen.rvs()`` is expensive to compute, consider implementing a
    specific ``squirrel_gen._rvs()``.
 #. Add the name to the listing in the docstring of
-   `scipy/stats/__init__.py <https://github.com/scipy/scipy/blob/master/scipy/stats/__init__.py>`_.
+   `scipy/stats/__init__.py <https://github.com/scipy/scipy/blob/main/scipy/stats/__init__.py>`_.
 #. Add the name and a good set of example shape parameters to the ``distcont``
    list in
-   `scipy/stats/_distr_params.py <https://github.com/scipy/scipy/blob/master/scipy/stats/_distr_params.py#L5>`_.
+   `scipy/stats/_distr_params.py <https://github.com/scipy/scipy/blob/main/scipy/stats/_distr_params.py#L5>`_.
    These shape parameters are used both for testing and automatic documentation generation.
 #. Add the name and an _invalid_ set of example shape parameters to the
    list in ``invdistcont``, also in
-   `_distr_params.py <https://github.com/scipy/scipy/blob/master/scipy/stats/_distr_params.py>`_.
+   `_distr_params.py <https://github.com/scipy/scipy/blob/main/scipy/stats/_distr_params.py>`_.
    These shape parameters are also used for testing.
 #. Add a ``TestSquirrel`` class and any specific tests to
-   `scipy/stats/tests/test_distributions.py <https://github.com/scipy/scipy/blob/master/scipy/stats/tests/test_distributions.py>`_.
+   `scipy/stats/tests/test_distributions.py <https://github.com/scipy/scipy/blob/main/scipy/stats/tests/test_distributions.py>`_.
 #. Run and pass(!) the tests.
 
 After Implementation
@@ -88,9 +88,9 @@ After Implementation
 
 #. Add a tutorial ``doc/source/tutorial/stats/continuous_squirrel.rst``
 #. Add it to the listing of continuous distributions in
-   `doc/source/tutorial/stats/continuous.rst <https://github.com/scipy/scipy/blob/master/doc/source/tutorial/stats/continuous.rst>`_.
+   `doc/source/tutorial/stats/continuous.rst <https://github.com/scipy/scipy/blob/main/doc/source/tutorial/stats/continuous.rst>`_.
 #. Update the ``number of continuous distributions`` in the example code in
-   `doc/source/tutorial/stats.rst <https://github.com/scipy/scipy/blob/master/doc/source/tutorial/stats.rst>`_.
+   `doc/source/tutorial/stats.rst <https://github.com/scipy/scipy/blob/main/doc/source/tutorial/stats.rst>`_.
 #. Build the documentation successfully.
 #. Submit a PR.
 

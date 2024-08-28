@@ -1,4 +1,5 @@
-      subroutine fpcsin(a,b,par,sia,coa,sib,cob,ress,resc)
+      recursive subroutine fpcsin(a,b,par,sia,coa,sib,cob,ress,resc)
+      implicit none
 c  fpcsin calculates the integrals ress=integral((b-x)**3*sin(par*x))
 c  and resc=integral((b-x)**3*cos(par*x)) over the interval (a,b),
 c  given sia=sin(par*a),coa=cos(par*a),sib=sin(par*b) and cob=cos(par*b)

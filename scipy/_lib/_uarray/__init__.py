@@ -1,5 +1,5 @@
 """
-.. note::
+.. note:
     If you are looking for overrides for NumPy-specific methods, see the
     documentation for :obj:`unumpy`. This page explains how to write
     back-ends and multimethods.
@@ -107,11 +107,10 @@ Traceback (most recent call last):
     ...
 uarray.BackendNotImplementedError: ...
 
-The last possibility is if we don't have ``__ua_convert__``, in which case the job is left
-up to ``__ua_function__``, but putting things back into arrays after conversion will not be
-possible.
+The last possibility is if we don't have ``__ua_convert__``, in which case the job is
+left up to ``__ua_function__``, but putting things back into arrays after conversion
+will not be possible.
 """
 
 from ._backend import *
-
-__version__ = '0.8.2+14.gaf53966.scipy'
+__version__ = '0.8.8.dev0+aa94c5a4.scipy'

@@ -1,9 +1,10 @@
 from warnings import warn
 
 import numpy as np
-from numpy import (atleast_2d, ComplexWarning, arange, zeros_like, imag, diag,
+from numpy import (atleast_2d, arange, zeros_like, imag, diag,
                    iscomplexobj, tril, triu, argsort, empty_like)
-from .decomp import _asarray_validated
+from scipy._lib._util import ComplexWarning
+from ._decomp import _asarray_validated
 from .lapack import get_lapack_funcs, _compute_lwork
 
 __all__ = ['ldl']
@@ -67,6 +68,28 @@ def ldl(A, lower=True, hermitian=True, overwrite_a=False, check_finite=True):
         If a complex-valued array with nonzero imaginary parts on the
         diagonal is given and hermitian is set to True.
 
+    See Also
+    --------
+    cholesky, lu
+
+    Notes
+    -----
+    This function uses ``?SYTRF`` routines for symmetric matrices and
+    ``?HETRF`` routines for Hermitian matrices from LAPACK. See [1]_ for
+    the algorithm details.
+
+    Depending on the `lower` keyword value, only lower or upper triangular
+    part of the input array is referenced. Moreover, this keyword also defines
+    the structure of the outer factors of the factorization.
+
+    .. versionadded:: 1.1.0
+
+    References
+    ----------
+    .. [1] J.R. Bunch, L. Kaufman, Some stable methods for calculating
+       inertia and solving symmetric linear systems, Math. Comput. Vol.31,
+       1977. :doi:`10.2307/2005787`
+
     Examples
     --------
     Given an upper triangular array ``a`` that represents the full symmetric
@@ -95,28 +118,6 @@ def ldl(A, lower=True, hermitian=True, overwrite_a=False, check_finite=True):
            [-1.,  2.,  0.],
            [ 3.,  0.,  1.]])
 
-    Notes
-    -----
-    This function uses ``?SYTRF`` routines for symmetric matrices and
-    ``?HETRF`` routines for Hermitian matrices from LAPACK. See [1]_ for
-    the algorithm details.
-
-    Depending on the `lower` keyword value, only lower or upper triangular
-    part of the input array is referenced. Moreover, this keyword also defines
-    the structure of the outer factors of the factorization.
-
-    .. versionadded:: 1.1.0
-
-    See Also
-    --------
-    cholesky, lu
-
-    References
-    ----------
-    .. [1] J.R. Bunch, L. Kaufman, Some stable methods for calculating
-       inertia and solving symmetric linear systems, Math. Comput. Vol.31,
-       1977. :doi:`10.2307/2005787`
-
     """
     a = atleast_2d(_asarray_validated(A, check_finite=check_finite))
     if a.shape[0] != a.shape[1]:
@@ -143,9 +144,9 @@ def ldl(A, lower=True, hermitian=True, overwrite_a=False, check_finite=True):
     ldu, piv, info = solver(a, lwork=lwork, lower=lower,
                             overwrite_a=overwrite_a)
     if info < 0:
-        raise ValueError('{} exited with the internal error "illegal value '
-                         'in argument number {}". See LAPACK documentation '
-                         'for the error codes.'.format(s.upper(), -info))
+        raise ValueError(f'{s.upper()} exited with the internal error "illegal value '
+                         f'in argument number {-info}". See LAPACK documentation '
+                         'for the error codes.')
 
     swap_arr, pivot_arr = _ldl_sanitize_ipiv(piv, lower=lower)
     d, lu = _ldl_get_d_and_l(ldu, pivot_arr, lower=lower, hermitian=hermitian)

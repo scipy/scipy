@@ -127,7 +127,7 @@ with smallest magnitude:
    >>> evals_small, evecs_small = eigsh(X, 3, which='SM')
    Traceback (most recent call last):       # may vary (convergence)
    ...
-   scipy.sparse.linalg.eigen.arpack.arpack.ArpackNoConvergence:
+   scipy.sparse.linalg._eigen.arpack.arpack.ArpackNoConvergence:
    ARPACK error -1: No convergence (1001 iterations, 0/3 eigenvectors converged)
 
 Oops. We see that, as mentioned above, ``ARPACK`` is not quite as adept at
@@ -292,7 +292,7 @@ same first derivative to an input signal:
     >>> evals_all_imag[-4:]
     array([-0.95105652, 0.95105652, -0.98768834, 0.98768834])
     >>> evals_large_imag
-    array([0.95105652, -0.95105652, 0.98768834, -0.98768834])
+    array([0.95105652, -0.95105652, 0.98768834, -0.98768834]) # may vary
 
 Note that the eigenvalues of this operator are all imaginary. Moreover,
 the keyword ``which='LI'`` of :func:`scipy.sparse.linalg.eigs` produces
@@ -307,4 +307,4 @@ operator.
 
 References
 ----------
-.. [1] http://www.caam.rice.edu/software/ARPACK/
+.. [1] https://github.com/opencollab/arpack-ng

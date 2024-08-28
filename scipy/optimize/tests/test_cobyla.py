@@ -1,9 +1,10 @@
 import math
+
 import numpy as np
+from numpy.testing import assert_allclose, assert_, assert_array_equal
+import pytest
 
-from numpy.testing import assert_allclose, assert_
-
-from scipy.optimize import fmin_cobyla, minimize
+from scipy.optimize import fmin_cobyla, minimize, Bounds
 
 
 class TestCobyla:
@@ -22,23 +23,42 @@ class TestCobyla:
     def con2(self, x):
         return -self.con1(x)
 
-    def test_simple(self):
+    @pytest.mark.xslow(True, reason='not slow, but noisy so only run rarely')
+    def test_simple(self, capfd):
         # use disp=True as smoke test for gh-8118
         x = fmin_cobyla(self.fun, self.x0, [self.con1, self.con2], rhobeg=1,
                         rhoend=1e-5, maxfun=100, disp=True)
         assert_allclose(x, self.solution, atol=1e-4)
 
     def test_minimize_simple(self):
+        class Callback:
+            def __init__(self):
+                self.n_calls = 0
+                self.last_x = None
+
+            def __call__(self, x):
+                self.n_calls += 1
+                self.last_x = x
+
+        callback = Callback()
+
         # Minimize with method='COBYLA'
         cons = ({'type': 'ineq', 'fun': self.con1},
                 {'type': 'ineq', 'fun': self.con2})
         sol = minimize(self.fun, self.x0, method='cobyla', constraints=cons,
-                       options=self.opts)
+                       callback=callback, options=self.opts)
         assert_allclose(sol.x, self.solution, atol=1e-4)
         assert_(sol.success, sol.message)
         assert_(sol.maxcv < 1e-5, sol)
         assert_(sol.nfev < 70, sol)
         assert_(sol.fun < self.fun(self.solution) + 1e-3, sol)
+        assert_(sol.nfev == callback.n_calls,
+                "Callback is not called exactly once for every function eval.")
+        assert_array_equal(
+            sol.x,
+            callback.last_x,
+            "Last design vector sent to the callback is not equal to returned value.",
+        )
 
     def test_minimize_constraint_violation(self):
         np.random.seed(1234)
@@ -63,7 +83,7 @@ class TestCobyla:
         cons = ({'type': 'ineq', 'fun': c1},
                 {'type': 'ineq', 'fun': c2},
                 {'type': 'ineq', 'fun': c3})
-        w0 = np.zeros((10, 1))
+        w0 = np.zeros((10,))
         sol = minimize(f, w0, method='cobyla', constraints=cons,
                        options={'catol': 1e-6})
         assert_(sol.maxcv > 1e-6)
@@ -111,3 +131,36 @@ def test_vector_constraints():
     sol = minimize(fun, x0, constraints=constraints, tol=1e-5)
     assert_allclose(sol.fun, 1, atol=1e-4)
 
+
+class TestBounds:
+    # Test cobyla support for bounds (only when used via `minimize`)
+    # Invalid bounds is tested in
+    # test_optimize.TestOptimizeSimple.test_minimize_invalid_bounds
+
+    def test_basic(self):
+        def f(x):
+            return np.sum(x**2)
+
+        lb = [-1, None, 1, None, -0.5]
+        ub = [-0.5, -0.5, None, None, -0.5]
+        bounds = [(a, b) for a, b in zip(lb, ub)]
+        # these are converted to Bounds internally
+
+        res = minimize(f, x0=[1, 2, 3, 4, 5], method='cobyla', bounds=bounds)
+        ref = [-0.5, -0.5, 1, 0, -0.5]
+        assert res.success
+        assert_allclose(res.x, ref, atol=1e-3)
+
+    def test_unbounded(self):
+        def f(x):
+            return np.sum(x**2)
+
+        bounds = Bounds([-np.inf, -np.inf], [np.inf, np.inf])
+        res = minimize(f, x0=[1, 2], method='cobyla', bounds=bounds)
+        assert res.success
+        assert_allclose(res.x, 0, atol=1e-3)
+
+        bounds = Bounds([1, -np.inf], [np.inf, np.inf])
+        res = minimize(f, x0=[1, 2], method='cobyla', bounds=bounds)
+        assert res.success
+        assert_allclose(res.x, [1, 0], atol=1e-3)

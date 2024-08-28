@@ -1,4 +1,3 @@
-
 import operator
 from dataclasses import dataclass
 import numpy as np
@@ -159,6 +158,10 @@ def relative_risk(exposed_cases, exposed_total, control_cases, control_total):
         The object also has the method ``confidence_interval`` to compute
         the confidence interval of the relative risk for a given confidence
         level.
+
+    See Also
+    --------
+    odds_ratio
 
     Notes
     -----

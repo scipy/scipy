@@ -1,6 +1,6 @@
 """
-Cython optimize zeros API
-=========================
+Cython optimize root finding API
+================================
 The underlying C functions for the following root finders can be accessed
 directly using Cython:
 
@@ -9,8 +9,8 @@ directly using Cython:
 - `~scipy.optimize.brenth`
 - `~scipy.optimize.brentq`
 
-The Cython API for the zeros functions is similar except there is no ``disp``
-argument. Import the zeros functions using ``cimport`` from
+The Cython API for the root finding functions is similar except there is no
+``disp`` argument. Import the root finding functions using ``cimport`` from
 `scipy.optimize.cython_optimize`. ::
 
     from scipy.optimize.cython_optimize cimport bisect, ridder, brentq, brenth
@@ -22,7 +22,7 @@ The zeros functions in `~scipy.optimize.cython_optimize` expect a callback that
 takes a double for the scalar independent variable as the 1st argument and a
 user defined ``struct`` with any extra parameters as the 2nd argument. ::
 
-    double (*callback_type)(double, void*)
+    double (*callback_type)(double, void*) noexcept
 
 
 Examples
@@ -35,8 +35,9 @@ These are the basic steps:
 
 1. Create a Cython ``.pyx`` file, for example: ``myexample.pyx``.
 2. Import the desired root finder from `~scipy.optimize.cython_optimize`.
-3. Write the callback function, and call the selected zeros function passing
-   the callback, any extra arguments, and the other solver parameters. ::
+3. Write the callback function, and call the selected root finding function
+   passing the callback, any extra arguments, and the other solver
+   parameters. ::
 
        from scipy.optimize.cython_optimize cimport brentq
 
@@ -54,7 +55,7 @@ These are the basic steps:
 
 
        # user-defined callback
-       cdef double f(double x, void *args):
+       cdef double f(double x, void *args) noexcept:
            cdef test_params *myargs = <test_params *> args
            return myargs.C0 - math.exp(-(x - myargs.C1))
 
@@ -107,7 +108,7 @@ error, and 0 means the solver converged. Continuing from the previous example::
 
 
     # cython brentq solver with full output
-    cdef brent_full_output brentq_full_output_wrapper_example(
+    cdef zeros_full_output brentq_full_output_wrapper_example(
             dict args, double xa, double xb, double xtol, double rtol,
             int mitr):
         cdef test_params myargs = args
