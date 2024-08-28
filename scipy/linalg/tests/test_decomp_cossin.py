@@ -175,9 +175,9 @@ def test_properties(m, p, q, swap_sign):
     np.testing.assert_allclose(X @ X.conj().T, np.eye(m), atol=1e-15)
 
     # Perform the decomposition
-    u, cs, vh = linalg.cossin(X, p=p, q=q, separate=True, swap_sign=swap_sign)
-    u1, u2 = u
-    v1, v2 = vh
+    u0, cs0, vh0 = linalg.cossin(X, p=p, q=q, separate=True, swap_sign=swap_sign)
+    u1, u2 = u0
+    v1, v2 = vh0
     v1, v2 = v1.conj().T, v2.conj().T
 
     # "U1, U2, V1, V2 are square orthogonal/unitary matrices
@@ -188,8 +188,8 @@ def test_properties(m, p, q, swap_sign):
     np.testing.assert_allclose(v2 @ v2.conj().T, np.eye(m-q), atol=1e-13)
 
     # "and C and S are (r, r) nonnegative diagonal matrices..."
-    C = np.diag(np.cos(cs))
-    S = np.diag(np.sin(cs))
+    C = np.diag(np.cos(cs0))
+    S = np.diag(np.sin(cs0))
     # "...satisfying C^2 + S^2 = I where r = min(p, m-p, q, m-q)."
     r = min(p, m-p, q, m-q)
     np.testing.assert_allclose(C**2 + S**2, np.eye(r))
@@ -244,6 +244,49 @@ def test_properties(m, p, q, swap_sign):
     np.testing.assert_allclose(U, U0)
     np.testing.assert_allclose(Q, CS0)
     np.testing.assert_allclose(V, Vh0.conj().T)
+
+    # Confirm that `compute_u`/`compute_vh` don't affect the results
+    kwargs = dict(p=p, q=q, swap_sign=swap_sign)
+
+    # `compute_u=False`
+    u, cs, vh = linalg.cossin(X, separate=True, compute_u=False, **kwargs)
+    assert u[0].shape == (0, 0)  # probably not ideal, but this is what it does
+    assert u[1].shape == (0, 0)
+    assert_allclose(cs, cs0, rtol=1e-15)
+    assert_allclose(vh[0], vh0[0], rtol=1e-15)
+    assert_allclose(vh[1], vh0[1], rtol=1e-15)
+
+    U, CS, Vh = linalg.cossin(X, compute_u=False, **kwargs)
+    assert U.shape == (0, 0)
+    assert_allclose(CS, CS0, rtol=1e-15)
+    assert_allclose(Vh, Vh0, rtol=1e-15)
+
+    # `compute_vh=False`
+    u, cs, vh = linalg.cossin(X, separate=True, compute_vh=False, **kwargs)
+    assert_allclose(u[0], u[0], rtol=1e-15)
+    assert_allclose(u[1], u[1], rtol=1e-15)
+    assert_allclose(cs, cs0, rtol=1e-15)
+    assert vh[0].shape == (0, 0)
+    assert vh[1].shape == (0, 0)
+
+    U, CS, Vh = linalg.cossin(X, compute_vh=False, **kwargs)
+    assert_allclose(U, U0, rtol=1e-15)
+    assert_allclose(CS, CS0, rtol=1e-15)
+    assert Vh.shape == (0, 0)
+
+    # `compute_u=False, compute_vh=False`
+    u, cs, vh = linalg.cossin(X, separate=True, compute_u=False,
+                              compute_vh=False, **kwargs)
+    assert u[0].shape == (0, 0)
+    assert u[1].shape == (0, 0)
+    assert_allclose(cs, cs0, rtol=1e-15)
+    assert vh[0].shape == (0, 0)
+    assert vh[1].shape == (0, 0)
+
+    U, CS, Vh = linalg.cossin(X, compute_u=False, compute_vh=False, **kwargs)
+    assert U.shape == (0, 0)
+    assert_allclose(CS, CS0, rtol=1e-15)
+    assert Vh.shape == (0, 0)
 
 
 def test_indexing_bug_gh19365():
