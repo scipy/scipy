@@ -347,9 +347,8 @@ namespace detail {
             }
         }
         /* Failed to converge within maxiter iterations. If maxiter is sufficiently high and
-         * factor1 and factor2 are set appropriately, this should only happen due to a bug
-         * in this function. Limiting the number of iterations is a defensive programming
-         * measure. */
+         * factor > 1, this should only happen due to a bug in this function. Limiting the number
+	 * of iterations is a defensive programming measure. */
         std::tuple<double, double, double, double, int> result(
             std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN(),
             std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN(), 3
