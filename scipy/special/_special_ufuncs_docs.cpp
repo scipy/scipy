@@ -5624,6 +5624,10 @@ const char *rgamma_doc = R"(
     array([2.75573192e-006, 1.07151029e-156, 0.00000000e+000])
     )";
 
+const char *_riemann_zeta_doc = R"(
+    Internal function, use `zeta` instead.
+    )";
+
 const char *scaled_exp1_doc = R"(
     _scaled_exp1(x, out=None):
 

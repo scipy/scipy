@@ -9471,11 +9471,6 @@ add_newdoc("yve",
             2.27727687e-05-1.17951906e-01j]])
     """)
 
-add_newdoc("_riemann_zeta",
-    """
-    Internal function, use `zeta` instead.
-    """)
-
 add_newdoc("_struve_asymp_large_z",
     """
     _struve_asymp_large_z(v, z, is_h)

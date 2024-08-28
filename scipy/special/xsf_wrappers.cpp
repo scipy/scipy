@@ -1,5 +1,4 @@
 #include "xsf_wrappers.h"
-#include "xsf_special.h"
 #include "xsf/airy.h"
 #include "xsf/amos.h"
 #include "xsf/bessel.h"
@@ -21,6 +20,8 @@
 #include "xsf/struve.h"
 #include "xsf/trig.h"
 #include "xsf/wright_bessel.h"
+#include "xsf/zeta.h"
+#include "xsf_special.h"
 
 #include "xsf/binom.h"
 #include "xsf/digamma.h"
@@ -336,9 +337,7 @@ npy_cdouble special_ccyl_bessel_ie(double v, npy_cdouble z) {
     return to_ccomplex(xsf::cyl_bessel_ie(v, to_complex(z)));
 }
 
-double special_cyl_bessel_k_int(Py_ssize_t n, double z) {
-    return xsf::cyl_bessel_k(static_cast<double>(n), z);
-}
+double special_cyl_bessel_k_int(Py_ssize_t n, double z) { return xsf::cyl_bessel_k(static_cast<double>(n), z); }
 
 double special_cyl_bessel_k(double v, double z) { return xsf::cyl_bessel_k(v, z); }
 
@@ -428,25 +427,17 @@ double cephes_beta_wrap(double a, double b) { return xsf::cephes::beta(a, b); }
 
 double cephes_lbeta_wrap(double a, double b) { return xsf::cephes::lbeta(a, b); }
 
-double cephes_bdtr_wrap(double k, Py_ssize_t n, double p) {
-    return xsf::cephes::bdtr(k, static_cast<int>(n), p);
-}
+double cephes_bdtr_wrap(double k, Py_ssize_t n, double p) { return xsf::cephes::bdtr(k, static_cast<int>(n), p); }
 
-double cephes_bdtri_wrap(double k, Py_ssize_t n, double y) {
-    return xsf::cephes::bdtri(k, static_cast<int>(n), y);
-}
+double cephes_bdtri_wrap(double k, Py_ssize_t n, double y) { return xsf::cephes::bdtri(k, static_cast<int>(n), y); }
 
-double cephes_bdtrc_wrap(double k, Py_ssize_t n, double p) {
-    return xsf::cephes::bdtrc(k, static_cast<int>(n), p);
-}
+double cephes_bdtrc_wrap(double k, Py_ssize_t n, double p) { return xsf::cephes::bdtrc(k, static_cast<int>(n), p); }
 
 double cephes_cosm1_wrap(double x) { return xsf::cephes::cosm1(x); }
 
 double cephes_expm1_wrap(double x) { return xsf::cephes::expm1(x); }
 
-double cephes_expn_wrap(Py_ssize_t n, double x) {
-    return xsf::cephes::expn(static_cast<int>(n), x);
-}
+double cephes_expn_wrap(Py_ssize_t n, double x) { return xsf::cephes::expn(static_cast<int>(n), x); }
 
 double cephes_log1p_wrap(double x) { return xsf::cephes::log1p(x); }
 
@@ -484,9 +475,7 @@ double cephes_ndtr_wrap(double x) { return xsf::cephes::ndtr(x); }
 
 double cephes_ndtri_wrap(double x) { return xsf::cephes::ndtri(x); }
 
-double cephes_pdtri_wrap(Py_ssize_t k, double y) {
-    return xsf::cephes::pdtri(static_cast<int>(k), y);
-}
+double cephes_pdtri_wrap(Py_ssize_t k, double y) { return xsf::cephes::pdtri(static_cast<int>(k), y); }
 
 double cephes_poch_wrap(double x, double m) { return xsf::cephes::poch(x, m); }
 
@@ -494,25 +483,15 @@ int cephes_sici_wrap(double x, double *si, double *ci) { return xsf::cephes::sic
 
 int cephes_shichi_wrap(double x, double *si, double *ci) { return xsf::cephes::shichi(x, si, ci); }
 
-double cephes_smirnov_wrap(Py_ssize_t n, double x) {
-    return xsf::cephes::smirnov(static_cast<int>(n), x);
-}
+double cephes_smirnov_wrap(Py_ssize_t n, double x) { return xsf::cephes::smirnov(static_cast<int>(n), x); }
 
-double cephes_smirnovc_wrap(Py_ssize_t n, double x) {
-    return xsf::cephes::smirnovc(static_cast<int>(n), x);
-}
+double cephes_smirnovc_wrap(Py_ssize_t n, double x) { return xsf::cephes::smirnovc(static_cast<int>(n), x); }
 
-double cephes_smirnovi_wrap(Py_ssize_t n, double x) {
-    return xsf::cephes::smirnovi(static_cast<int>(n), x);
-}
+double cephes_smirnovi_wrap(Py_ssize_t n, double x) { return xsf::cephes::smirnovi(static_cast<int>(n), x); }
 
-double cephes_smirnovci_wrap(Py_ssize_t n, double x) {
-    return xsf::cephes::smirnovci(static_cast<int>(n), x);
-}
+double cephes_smirnovci_wrap(Py_ssize_t n, double x) { return xsf::cephes::smirnovci(static_cast<int>(n), x); }
 
-double cephes_smirnovp_wrap(Py_ssize_t n, double x) {
-    return xsf::cephes::smirnovp(static_cast<int>(n), x);
-}
+double cephes_smirnovp_wrap(Py_ssize_t n, double x) { return xsf::cephes::smirnovp(static_cast<int>(n), x); }
 
 double cephes__struve_asymp_large_z(double v, double z, Py_ssize_t is_h, double *err) {
     return xsf::cephes::detail::struve_asymp_large_z(v, z, static_cast<int>(is_h), err);
@@ -526,9 +505,7 @@ double cephes__struve_power_series(double v, double z, Py_ssize_t is_h, double *
     return xsf::cephes::detail::struve_power_series(v, z, static_cast<int>(is_h), err);
 }
 
-double cephes_yn_wrap(Py_ssize_t n, double x) {
-    return xsf::cephes::yn(static_cast<int>(n), x);
-}
+double cephes_yn_wrap(Py_ssize_t n, double x) { return xsf::cephes::yn(static_cast<int>(n), x); }
 
 double cephes_polevl_wrap(double x, const double coef[], int N) { return xsf::cephes::polevl(x, coef, N); }
 
@@ -676,11 +653,11 @@ double cephes_poch(double x, double m) { return xsf::cephes::poch(x, m); }
 
 double cephes_rgamma(double x) { return xsf::cephes::rgamma(x); }
 
-double cephes_zeta(double x, double q) { return xsf::cephes::zeta(x, q); }
+double cephes_zeta(double x, double q) { return xsf::zeta(x, q); }
 
-double cephes_zetac(double x) { return xsf::cephes::zetac(x); }
+double cephes_zetac(double x) { return xsf::zetac(x); }
 
-double cephes_riemann_zeta(double x) { return xsf::cephes::riemann_zeta(x); }
+double cephes_riemann_zeta(double x) { return xsf::riemann_zeta(x); }
 
 double cephes_log1p(double x) { return xsf::cephes::log1p(x); }
 

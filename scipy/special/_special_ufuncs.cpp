@@ -281,6 +281,7 @@ extern const char *pro_rad2_cv_doc;
 extern const char *psi_doc;
 extern const char *radian_doc;
 extern const char *rgamma_doc;
+extern const char *_riemann_zeta_doc;
 extern const char *scaled_exp1_doc;
 extern const char *sindg_doc;
 extern const char *spherical_jn_doc;
@@ -929,6 +930,11 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
                                          static_cast<func_f_f_t>(xsf::rgamma), static_cast<func_F_F_t>(xsf::rgamma)},
                                         "rgamma", rgamma_doc);
     PyModule_AddObjectRef(_special_ufuncs, "rgamma", rgamma);
+
+    PyObject *_riemann_zeta =
+        SpecFun_NewUFunc({static_cast<func_d_d_t>(xsf::riemann_zeta), static_cast<func_f_f_t>(xsf::riemann_zeta)},
+                         "_riemann_zeta", _riemann_zeta_doc);
+    PyModule_AddObjectRef(_special_ufuncs, "_riemann_zeta", _riemann_zeta);
 
     PyObject *sindg = SpecFun_NewUFunc({static_cast<func_d_d_t>(xsf::sindg), static_cast<func_f_f_t>(xsf::sindg)},
                                        "sindg", sindg_doc);

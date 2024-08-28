@@ -62,11 +62,6 @@
             "faddeeva_voigt_profile": "ddd->d"
         }
     },
-    "_zeta": {
-        "xsf_wrappers.h": {
-            "cephes_zeta": "dd->d"
-        }
-    },
     "agm": {
         "_agm.pxd": {
             "agm": "dd->d"
@@ -836,11 +831,6 @@
         },
         "xsf_wrappers.h": {
             "cephes_yn_wrap": "pd->d"
-        }
-    },
-    "_riemann_zeta": {
-        "xsf_wrappers.h": {
-            "cephes_riemann_zeta": "d->d"
         }
     },
     "ndtri_exp": {
