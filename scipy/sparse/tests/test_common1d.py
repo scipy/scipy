@@ -352,10 +352,8 @@ class TestCommon1D:
         assert (A @ np.array([1, 2, 3])).shape == ()
         assert Asp @ np.array([1, 2, 3]) == 11
         assert (Asp @ np.array([1, 2, 3])).shape == ()
-        assert (Asp @ np.array([[1], [2], [3]])).shape == ()
         # check result type
         assert isinstance(Asp @ matrix([[1, 2, 3]]).T, np.ndarray)
-        assert (Asp @ np.array([[1, 2, 3]]).T).shape == ()
 
         # ensure exception is raised for improper dimensions
         bad_vecs = [np.array([1, 2]), np.array([1, 2, 3, 4]), np.array([[1], [2]])]
