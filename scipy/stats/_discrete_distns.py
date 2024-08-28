@@ -1557,8 +1557,8 @@ class poisson_binom_gen(rv_discrete):
 
      f(k; p_1, p_2, ..., p_n) = \sum_{A \in F_k} \prod_{i \in A} p_i \prod_{j \in A^C} 1 - p_j
 
-    where :math:`k \in \{1, 2, \dots, n-1, n\}`, :math:`F_k` is the set of all
-    subsets of :math:`k` integers that can be selected :math:`\{1, 2, \dots, n-1, n\}`,
+    where :math:`k \in \{0, 1, \dots, n-1, n\}`, :math:`F_k` is the set of all
+    subsets of :math:`k` integers that can be selected :math:`\{0, 1, \dots, n-1, n\}`,
     and :math:`A^C` is the complement of a set :math:`A`.
 
     `poisson_binom` accepts a single array argument ``p`` for shape parameters
