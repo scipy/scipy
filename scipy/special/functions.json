@@ -461,26 +461,6 @@
             "cfresnl_wrap": "D*DD->*i"
         }
     },
-    "gammainc": {
-        "xsf_wrappers.h": {
-            "cephes_igam": "dd->d"
-        }
-    },
-    "gammaincc": {
-        "xsf_wrappers.h": {
-            "cephes_igamc": "dd->d"
-        }
-    },
-    "gammainccinv": {
-        "xsf_wrappers.h": {
-            "cephes_igamci": "dd->d"
-        }
-    },
-    "gammaincinv": {
-        "xsf_wrappers.h": {
-            "cephes_igami": "dd->d"
-        }
-    },
     "gdtr": {
         "xsf_wrappers.h": {
             "cephes_gdtr": "ddd->d"

@@ -190,6 +190,10 @@ extern const char *expi_doc;
 extern const char *expit_doc;
 extern const char *exprel_doc;
 extern const char *gamma_doc;
+extern const char *gammainc_doc;
+extern const char *gammaincinv_doc;
+extern const char *gammaincc_doc;
+extern const char *gammainccinv_doc;
 extern const char *gammaln_doc;
 extern const char *gammasgn_doc;
 extern const char *it2i0k0_doc;
@@ -415,6 +419,25 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
                                         static_cast<func_f_f_t>(xsf::gamma), static_cast<func_F_F_t>(xsf::gamma)},
                                        "gamma", gamma_doc);
     PyModule_AddObjectRef(_special_ufuncs, "gamma", gamma);
+
+    PyObject *gammainc = SpecFun_NewUFunc(
+        {static_cast<func_dd_d_t>(xsf::gammainc), static_cast<func_ff_f_t>(xsf::gammainc)}, "gammainc", gammainc_doc);
+    PyModule_AddObjectRef(_special_ufuncs, "gammainc", gammainc);
+
+    PyObject *gammaincinv =
+        SpecFun_NewUFunc({static_cast<func_dd_d_t>(xsf::gammaincinv), static_cast<func_ff_f_t>(xsf::gammaincinv)},
+                         "gammaincinv", gammaincinv_doc);
+    PyModule_AddObjectRef(_special_ufuncs, "gammaincinv", gammaincinv);
+
+    PyObject *gammaincc =
+        SpecFun_NewUFunc({static_cast<func_dd_d_t>(xsf::gammaincc), static_cast<func_ff_f_t>(xsf::gammaincc)},
+                         "gammaincc", gammaincc_doc);
+    PyModule_AddObjectRef(_special_ufuncs, "gammaincc", gammaincc);
+
+    PyObject *gammainccinv =
+        SpecFun_NewUFunc({static_cast<func_dd_d_t>(xsf::gammainccinv), static_cast<func_ff_f_t>(xsf::gammainccinv)},
+                         "gammainccinv", gammainccinv_doc);
+    PyModule_AddObjectRef(_special_ufuncs, "gammainccinv", gammainccinv);
 
     PyObject *gammaln = SpecFun_NewUFunc({static_cast<func_d_d_t>(xsf::gammaln), static_cast<func_f_f_t>(xsf::gammaln)},
                                          "gammaln", gammaln_doc);
