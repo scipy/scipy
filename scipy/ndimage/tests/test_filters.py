@@ -21,7 +21,9 @@ from . import types, float_types, complex_types
 
 from scipy.conftest import array_api_compatible
 skip_xp_backends = pytest.mark.skip_xp_backends
+xfail_xp_backends = pytest.mark.xfail_xp_backends
 pytestmark = [array_api_compatible, pytest.mark.usefixtures("skip_xp_backends"),
+              pytest.mark.usefixtures("xfail_xp_backends"),
               skip_xp_backends(cpu_only=True, exceptions=['cupy', 'jax.numpy']),]
 
 
@@ -179,12 +181,10 @@ class TestNdimageFilters:
         output = ndimage.convolve1d(array, weights)
         assert_array_almost_equal(output, expected)
 
+    @xfail_xp_backends('cupy', reason="Differs by a factor of two?")
     @skip_xp_backends("jax.numpy", reasons=["output array is read-only."],
                       cpu_only=True, exceptions=['cupy', 'jax.numpy'])
     def test_correlate01_overlap(self, xp):
-        if is_cupy(xp):
-            pytest.xfail("Differs by a factor of two?")
-
         array = xp.reshape(xp.arange(256), (16, 16))
         weights = xp.asarray([2])
         expected = 2 * array
@@ -334,12 +334,12 @@ class TestNdimageFilters:
         output = ndimage.convolve(array, kernel)
         assert_array_almost_equal(xp.asarray([[6, 8, 9], [9, 11, 12]]), output)
 
+    @xfail_xp_backends(np_only=True,
+                       reasons=["output=dtype is numpy-specific"],
+                       exceptions=['cupy'],)
     @pytest.mark.parametrize('dtype_array', types)
     @pytest.mark.parametrize('dtype_kernel', types)
     def test_correlate13(self, dtype_array, dtype_kernel, xp):
-        if not (is_numpy(xp) or is_cupy(xp)):
-            pytest.xfail("output=dtype is numpy-specific")
-
         dtype_array = getattr(xp, dtype_array)
         dtype_kernel = getattr(xp, dtype_kernel)
 
@@ -356,12 +356,12 @@ class TestNdimageFilters:
         assert_array_almost_equal(xp.asarray([[6, 8, 9], [9, 11, 12]]), output)
         assert output.dtype.type == dtype_kernel
 
+    @xfail_xp_backends(np_only=True,
+                       reasons=["output=dtype is numpy-specific"],
+                       exceptions=['cupy'],)
     @pytest.mark.parametrize('dtype_array', types)
     @pytest.mark.parametrize('dtype_output', types)
     def test_correlate14(self, dtype_array, dtype_output, xp):
-        if not (is_numpy(xp) or is_cupy(xp)):
-            pytest.xfail("output=dtype is numpy-specific")
-
         dtype_array = getattr(xp, dtype_array)
         dtype_output = getattr(xp, dtype_output)
 
@@ -378,11 +378,11 @@ class TestNdimageFilters:
         assert_array_almost_equal(xp.asarray([[6, 8, 9], [9, 11, 12]]), output)
         assert output.dtype.type == dtype_output
 
+    @xfail_xp_backends(np_only=True,
+                       reasons=["output=dtype is numpy-specific"],
+                       exceptions=['cupy'],)
     @pytest.mark.parametrize('dtype_array', types)
     def test_correlate15(self, dtype_array, xp):
-        if not (is_numpy(xp) or is_cupy(xp)):
-            pytest.xfail("output=dtype is numpy-specific")
-
         dtype_array = getattr(xp, dtype_array)
 
         kernel = xp.asarray([[1, 0],
@@ -397,11 +397,11 @@ class TestNdimageFilters:
         assert_array_almost_equal(xp.asarray([[6, 8, 9], [9, 11, 12]]), output)
         assert output.dtype.type == xp.float32
 
+    @xfail_xp_backends(np_only=True,
+                       reasons=["output=dtype is numpy-specific"],
+                       exceptions=['cupy'],)
     @pytest.mark.parametrize('dtype_array', types)
     def test_correlate16(self, dtype_array, xp):
-        if not (is_numpy(xp) or is_cupy(xp)):
-            pytest.xfail("output=dtype is numpy-specific")
-
         dtype_array = getattr(xp, dtype_array)
 
         kernel = xp.asarray([[0.5, 0],
@@ -429,11 +429,11 @@ class TestNdimageFilters:
         output = ndimage.convolve1d(array, kernel, origin=-1)
         assert_array_almost_equal(tcov, output)
 
+    @xfail_xp_backends(np_only=True,
+                       reasons=["output=dtype is numpy-specific"],
+                       exceptions=['cupy'],)
     @pytest.mark.parametrize('dtype_array', types)
     def test_correlate18(self, dtype_array, xp):
-        if not (is_numpy(xp) or is_cupy(xp)):
-            pytest.xfail("output=dtype is numpy-specific")
-
         dtype_array = getattr(xp, dtype_array)
 
         kernel = xp.asarray([[1, 0],
@@ -460,11 +460,11 @@ class TestNdimageFilters:
         with assert_raises(RuntimeError):
             ndimage.convolve(array, kernel, mode=['nearest', 'reflect'])
 
+    @xfail_xp_backends(np_only=True,
+                       reasons=["output=dtype is numpy-specific"],
+                       exceptions=['cupy'],)
     @pytest.mark.parametrize('dtype_array', types)
     def test_correlate19(self, dtype_array, xp):
-        if not (is_numpy(xp) or is_cupy(xp)):
-            pytest.xfail("output=dtype is numpy-specific")
-
         dtype_array = getattr(xp, dtype_array)
 
         kernel = xp.asarray([[1, 0],
@@ -483,12 +483,12 @@ class TestNdimageFilters:
         assert_array_almost_equal(xp.asarray([[3, 5, 6], [6, 8, 9]]), output)
         assert output.dtype.type == xp.float32
 
+    @xfail_xp_backends(np_only=True,
+                       reasons=["output=dtype is numpy-specific"],
+                       exceptions=['cupy'],)
     @pytest.mark.parametrize('dtype_array', types)
     @pytest.mark.parametrize('dtype_output', types)
     def test_correlate20(self, dtype_array, dtype_output, xp):
-        if not (is_numpy(xp) or is_cupy(xp)):
-            pytest.xfail("output=dtype is numpy-specific")
-
         dtype_array = getattr(xp, dtype_array)
         dtype_output = getattr(xp, dtype_output)
 
@@ -512,12 +512,12 @@ class TestNdimageFilters:
         output = ndimage.convolve1d(array, weights, axis=0)
         assert_array_almost_equal(output, expected)
 
+    @xfail_xp_backends(np_only=True,
+                       reasons=["output=dtype is numpy-specific"],
+                       exceptions=['cupy'],)
     @pytest.mark.parametrize('dtype_array', types)
     @pytest.mark.parametrize('dtype_output', types)
     def test_correlate22(self, dtype_array, dtype_output, xp):
-        if not (is_numpy(xp) or is_cupy(xp)):
-            pytest.xfail("output=dtype is numpy-specific")
-
         dtype_array = getattr(xp, dtype_array)
         dtype_output = getattr(xp, dtype_output)
 
@@ -603,15 +603,14 @@ class TestNdimageFilters:
         y = ndimage.correlate1d(xp.ones(1), xp.ones(5), mode='mirror')
         xp_assert_equal(y, xp.asarray([5.]))
 
+    @xfail_xp_backends(np_only=True,
+                       reasons=["output=dtype is numpy-specific"],
+                       exceptions=['cupy'],)
     @pytest.mark.parametrize('dtype_kernel', complex_types)
     @pytest.mark.parametrize('dtype_input', types)
     @pytest.mark.parametrize('dtype_output', complex_types)
     def test_correlate_complex_kernel(self, dtype_input, dtype_kernel,
                                       dtype_output, xp):
-        if not (is_numpy(xp) or is_cupy(xp)):
-            # XXX: the issue is in _validate_complex, _correlate_complex
-            pytest.xfail("output=dtype are numpy-specific")
-
         dtype_input = getattr(xp, dtype_input)
         dtype_kernel = getattr(xp, dtype_kernel)
         dtype_output = getattr(xp, dtype_output)
@@ -622,6 +621,9 @@ class TestNdimageFilters:
                             [4, 5, 6]], dtype=dtype_input)
         self._validate_complex(xp, array, kernel, dtype_output)
 
+    @xfail_xp_backends(np_only=True,
+                       reasons=["output=dtype is numpy-specific"],
+                       exceptions=['cupy'],)
     @pytest.mark.parametrize('dtype_kernel', complex_types)
     @pytest.mark.parametrize('dtype_input', types)
     @pytest.mark.parametrize('dtype_output', complex_types)
@@ -634,8 +636,6 @@ class TestNdimageFilters:
 
         if is_cupy(xp) and mode == 'grid-constant':
             pytest.xfail('https://github.com/cupy/cupy/issues/8404')
-        elif not is_numpy(xp):
-            pytest.xfail("output= arrays are numpy-specific")
 
         # test use of non-zero cval with complex inputs
         # also verifies that mode 'grid-constant' does not segfault
@@ -646,15 +646,13 @@ class TestNdimageFilters:
         self._validate_complex(xp, array, kernel, dtype_output, mode=mode,
                                cval=5.0)
 
+    @xfail_xp_backends('cupy', reasons=["cupy/cupy#8405"])
     @pytest.mark.parametrize('dtype_kernel', complex_types)
     @pytest.mark.parametrize('dtype_input', types)
     def test_correlate_complex_kernel_invalid_cval(self, dtype_input,
                                                    dtype_kernel, xp):
         dtype_input = getattr(xp, dtype_input)
         dtype_kernel = getattr(xp, dtype_kernel)
-
-        if is_cupy(xp):
-            pytest.xfail("https://github.com/cupy/cupy/issues/8405")
 
         # cannot give complex cval with a real image
         kernel = xp.asarray([[1, 0],
@@ -726,7 +724,10 @@ class TestNdimageFilters:
         array = xp.asarray([1, 2j, 3, 1 + 4j, 5, 6j], dtype=dtype_input)
         self._validate_complex(xp, array, kernel, dtype_output)
 
-    @skip_xp_backends(np_only=True, reasons=['output=dtype is numpy-specific'])
+    @xfail_xp_backends('cupy', reasons=["cupy/cupy#8405"])
+    @skip_xp_backends(np_only=True,
+                      reasons=['output=dtype is numpy-specific'],
+                      exceptions=['cupy'])
     @pytest.mark.parametrize('dtype_kernel', types)
     @pytest.mark.parametrize('dtype_input', complex_types)
     @pytest.mark.parametrize('dtype_output', complex_types)
@@ -735,9 +736,6 @@ class TestNdimageFilters:
         dtype_input = getattr(xp, dtype_input)
         dtype_kernel = getattr(xp, dtype_kernel)
         dtype_output = getattr(xp, dtype_output)
-
-        if is_cupy(xp):
-            pytest.xfail("https://github.com/cupy/cupy/issues/8405")
 
         kernel = xp.asarray([1, 0, 1], dtype=dtype_kernel)
         array = xp.asarray([1, 2j, 3, 1 + 4j, 5, 6j], dtype=dtype_input)
@@ -757,15 +755,14 @@ class TestNdimageFilters:
                             [1 + 4j, 5, 6j]], dtype=dtype)
         self._validate_complex(xp, array, kernel, dtype_output)
 
+    @xfail_xp_backends('cupy', reasons=["cupy/cupy#8405"])
+    @skip_xp_backends(np_only=True,
+                      reasons=["output=dtype is numpy-specific"],
+                      exceptions=['cupy'],)
     @pytest.mark.parametrize('dtype', complex_types)
     @pytest.mark.parametrize('dtype_output', complex_types)
     def test_correlate_complex_input_and_kernel_cval(self, dtype,
                                                      dtype_output, xp):
-        if not is_numpy(xp):
-            pytest.xfail("output=dtype is numpy-specific")
-        elif is_cupy(xp):
-            pytest.xfail("https://github.com/cupy/cupy/issues/8405")
-
         dtype = getattr(xp, dtype)
         dtype_output = getattr(xp, dtype_output)
 
