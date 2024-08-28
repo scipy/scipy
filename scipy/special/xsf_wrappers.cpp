@@ -178,7 +178,7 @@ void it1i0k0_wrap(double x, double *i0int, double *k0int) { xsf::it1i0k0(x, *i0i
 void it2i0k0_wrap(double x, double *i0int, double *k0int) { xsf::it2i0k0(x, *i0int, *k0int); }
 
 int cfresnl_wrap(npy_cdouble z, npy_cdouble *zfs, npy_cdouble *zfc) {
-    xsf::cfresnl(to_complex(z), reinterpret_cast<complex<double> *>(zfs), reinterpret_cast<complex<double> *>(zfc));
+    xsf::fresnel(to_complex(z), *reinterpret_cast<complex<double> *>(zfs), *reinterpret_cast<complex<double> *>(zfc));
     return 0;
 }
 

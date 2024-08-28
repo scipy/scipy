@@ -58,6 +58,8 @@ using func_f_ff_t = void (*)(float, float &, float &);
 using func_d_dd_t = void (*)(double, double &, double &);
 using func_f_FF_t = void (*)(float, cfloat &, cfloat &);
 using func_d_DD_t = void (*)(double, cdouble &, cdouble &);
+using func_F_FF_t = void (*)(cfloat, cfloat &, cfloat &);
+using func_D_DD_t = void (*)(cdouble, cdouble &, cdouble &);
 
 // 1 input, 4 outputs
 using func_f_ffff_t = void (*)(float, float &, float &, float &, float &);
@@ -189,6 +191,7 @@ extern const char *exp1_doc;
 extern const char *expi_doc;
 extern const char *expit_doc;
 extern const char *exprel_doc;
+extern const char *fresnel_doc;
 extern const char *gamma_doc;
 extern const char *gammainc_doc;
 extern const char *gammaincinv_doc;
@@ -414,6 +417,12 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
     PyObject *exprel = SpecFun_NewUFunc({static_cast<func_d_d_t>(xsf::exprel), static_cast<func_f_f_t>(xsf::exprel)},
                                         "exprel", exprel_doc);
     PyModule_AddObjectRef(_special_ufuncs, "exprel", exprel);
+
+    PyObject *fresnel =
+        SpecFun_NewUFunc({static_cast<func_d_dd_t>(xsf::fresnel), static_cast<func_f_ff_t>(xsf::fresnel),
+                          static_cast<func_D_DD_t>(xsf::fresnel), static_cast<func_F_FF_t>(xsf::fresnel)},
+                         2, "fresnel", fresnel_doc);
+    PyModule_AddObjectRef(_special_ufuncs, "fresnel", fresnel);
 
     PyObject *gamma = SpecFun_NewUFunc({static_cast<func_d_d_t>(xsf::gamma), static_cast<func_D_D_t>(xsf::gamma),
                                         static_cast<func_f_f_t>(xsf::gamma), static_cast<func_F_F_t>(xsf::gamma)},

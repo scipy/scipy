@@ -455,12 +455,6 @@
         "_cdflib_wrappers.pxd": {
             "fdtridfd": "ddd->d"        }
     },
-    "fresnel": {
-        "xsf_wrappers.h": {
-            "cephes_fresnl_wrap": "d*dd->*i",
-            "cfresnl_wrap": "D*DD->*i"
-        }
-    },
     "gdtr": {
         "xsf_wrappers.h": {
             "cephes_gdtr": "ddd->d"
