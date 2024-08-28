@@ -3,7 +3,7 @@
 from math import ceil, log
 import operator
 import warnings
-from typing import Literal, Optional
+from typing import Literal
 
 import numpy as np
 from numpy.fft import irfft, fft, ifft
@@ -1074,7 +1074,7 @@ def _dhtm(mag):
 
 def minimum_phase(h: np.ndarray,
                   method: Literal['homomorphic', 'hilbert'] = 'homomorphic',
-                  n_fft: Optional[int] = None, *, half: bool = True) -> np.ndarray:
+                  n_fft: int | None = None, *, half: bool = True) -> np.ndarray:
     """Convert a linear-phase FIR filter to minimum phase
 
     Parameters
