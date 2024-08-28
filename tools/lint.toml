@@ -8,8 +8,8 @@ force-exclude = true
 
 line-length = 88
 
-# Assume Python 3.9
-target-version = "py39"
+# Assume Python 3.10
+target-version = "py310"
 
 [lint]
 # Enable Pyflakes `E` and `F` and PyUpgrade `UP` codes by default.
