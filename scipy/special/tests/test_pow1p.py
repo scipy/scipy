@@ -129,4 +129,14 @@ class TestPow1p:
         if expected == 0 or expected == np.inf:
             assert_equal(pow1p(x, y), expected, err_msg=rule)
         else:
-            assert_allclose(pow1p(x, y), expected, rtol=1e-15, err_msg=rule)
+            assert_allclose(pow1p(x, y), expected, rtol=5e-16, err_msg=rule)
+
+    @pytest.mark.parametrize('x, y, expected', [
+        (-5e-17, 9e18, 3.6938830684872494e-196),
+        (-1.674682175362519e+16, 19.0, -1.7976931348623155e+308),
+    ])
+    def test_extreme_values(self, x, y, expected):
+        if expected == 0 or expected == np.inf:
+            assert_equal(pow1p(x, y), expected)
+        else:
+            assert_allclose(pow1p(x, y), expected, rtol=5e-16)

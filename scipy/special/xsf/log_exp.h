@@ -109,20 +109,31 @@ T pow1p_impl(T x, T y) {
     }
 
     // Handle (1+x) < 0
+    T sign = T(1);
     if (x < -1) {
         if (std::fmod(y, T(1)) != T(0)) { // y is not an integer
             // TODO: signal invalid operation exception
             return std::numeric_limits<T>::quiet_NaN();
         }
-        // TODO: maybe use (1+x)^y == [(1+x)^2]^(y/2)
-        return std::pow(1+x, y);
+        constexpr T two_over_eps = T(2) / std::numeric_limits<T>::epsilon();
+        // For 1 < (-x) <= 2^p = 2/eps, (1+x) is exact;
+        // For (-x) > 2^(2p) = (2/eps)^2, (1+x)^y ~= x^y.
+        // In both cases, we may delegate to pow() without loss of accuracy.
+        if (x >= -two_over_eps || x < -two_over_eps*two_over_eps) {
+            return std::pow(1+x, y);
+        }
+        // Otherwise, we take the "slow path" as in the case (1+x) > 0.
+        sign = (std::fmod(y, T(2)) == T(0)) ? T(1) : T(-1);
     }
 
-    // Now x, y are finite and not equal to 0 or +/-1, and x > -1.
-    // To compute (1+x)^y, write (1+x) == (s+t) where s is equal to (1+x)
+    // Now x, y are finite and not equal to 0 or +/-1.
+    // To compute (1+x)^y, write |1+x| == (s+t) where s is equal to |1+x|
     // rounded toward 1, and t is the (exact) rounding error.
     T s, t;
-    if (x < 0) {
+    if (x < -1) {
+        s = std::nextafter(-x, T(0));
+        t = (-x - s) - T(1);
+    } else if (x < 0) {
         s = T(1) + x;
         t = x - (s - T(1));
         if (t > 0) {
@@ -151,7 +162,7 @@ T pow1p_impl(T x, T y) {
     // It can be shown that either both terms <= 1 or both >= 1; so
     // if the first term over/underflows, then the result over/underflows.
     // And of course, term2 == 1 if t == 0.
-    T term1 = std::pow(s, y);
+    T term1 = sign * std::pow(s, y);
     if (t == T(0) || term1 == T(0) || std::isinf(term1)) {
         return term1;
     }
