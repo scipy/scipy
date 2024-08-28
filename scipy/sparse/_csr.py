@@ -123,12 +123,12 @@ class _csr_base(_cs_matrix):
     tobsr.__doc__ = _spbase.tobsr.__doc__
 
 
-    def broadcast_to(self, shape):
+    def broadcast_to(self, shape, copy=False):
 
         old_shape = self.shape
         
         if old_shape == shape:
-            return self
+            return self.copy() if copy else self
         
         if len(shape) != 2:
             raise ValueError("Target shape must be a tuple of length 2.")
