@@ -1269,31 +1269,31 @@ cdef extern from r"xsf_wrappers.h":
     npy_double special_log_wright_bessel(npy_double, npy_double, npy_double) nogil
     double special_ellipk(double m) nogil
 
-    double cephes_besselpoly(double a, double lmbda, double nu) nogil
-    double cephes_beta(double a, double b) nogil
+    double xsf_besselpoly(double a, double lmbda, double nu) nogil
+    double xsf_beta(double a, double b) nogil
     double cephes_chdtr(double df, double x) nogil
     double cephes_chdtrc(double df, double x) nogil
     double cephes_chdtri(double df, double y) nogil
-    double cephes_lbeta(double a, double b) nogil
-    double cephes_sinpi(double x) nogil
-    double cephes_cospi(double x) nogil
-    double cephes_cbrt(double x) nogil
+    double xsf_betaln(double a, double b) nogil
+    double xsf_sinpi(double x) nogil
+    double xsf_cospi(double x) nogil
+    double xsf_cbrt(double x) nogil
     double cephes_Gamma(double x) nogil
     double cephes_gammasgn(double x) nogil
     double cephes_hyp2f1(double a, double b, double c, double x) nogil
-    double cephes_i0(double x) nogil
-    double cephes_i0e(double x) nogil
-    double cephes_i1(double x) nogil
-    double cephes_i1e(double x) nogil
+    double xsf_i0(double x) nogil
+    double xsf_i0e(double x) nogil
+    double xsf_i1(double x) nogil
+    double xsf_i1e(double x) nogil
     double cephes_iv(double v, double x) nogil
-    double cephes_j0(double x) nogil
-    double cephes_j1(double x) nogil
-    double cephes_k0(double x) nogil
-    double cephes_k0e(double x) nogil
-    double cephes_k1(double x) nogil
-    double cephes_k1e(double x) nogil
-    double cephes_y0(double x) nogil
-    double cephes_y1(double x) nogil
+    double xsf_j0(double x) nogil
+    double xsf_j1(double x) nogil
+    double xsf_k0(double x) nogil
+    double xsf_k0e(double x) nogil
+    double xsf_k1(double x) nogil
+    double xsf_k1e(double x) nogil
+    double xsf_y0(double x) nogil
+    double xsf_y1(double x) nogil
     double cephes_yn(int n, double x) nogil
     double cephes_igam(double a, double x) nogil
     double cephes_igamc(double a, double x) nogil
@@ -1316,24 +1316,22 @@ cdef extern from r"xsf_wrappers.h":
     double cephes_erfc(double x) nogil
     double cephes_poch(double x, double m) nogil
     double cephes_rgamma(double x) nogil
-    double cephes_zeta(double x, double q) nogil
-    double cephes_zetac(double x) nogil
-    double cephes_riemann_zeta(double x) nogil
+    double xsf_zetac(double x) nogil
     double cephes_log1p(double x) nogil
     double cephes_log1pmx(double x) nogil
     double cephes_lgam1p(double x) nogil
     double cephes_expm1(double x) nogil
-    double cephes_cosm1(double x) nogil
+    double xsf_cosm1(double x) nogil
     double cephes_expn(int n, double x) nogil
     double cephes_ellpe(double x) nogil
     double cephes_ellpk(double x) nogil
     double cephes_ellie(double phi, double m) nogil
     double cephes_ellik(double phi, double m) nogil
-    double cephes_sindg(double x) nogil
-    double cephes_cosdg(double x) nogil
-    double cephes_tandg(double x) nogil
-    double cephes_cotdg(double x) nogil
-    double cephes_radian(double d, double m, double s) nogil
+    double xsf_sindg(double x) nogil
+    double xsf_cosdg(double x) nogil
+    double xsf_tandg(double x) nogil
+    double xsf_cotdg(double x) nogil
+    double xsf_radian(double d, double m, double s) nogil
     double cephes_ndtri(double x) nogil
     double cephes_bdtr(double k, int n, double p) nogil
     double cephes_bdtri(double k, int n, double y) nogil
@@ -1359,8 +1357,8 @@ cdef extern from r"xsf_wrappers.h":
     double cephes_spence(double x) nogil
 
     double cephes_tukeylambdacdf(double x, double lmbda) nogil
-    double cephes_struve_h(double v, double z) nogil
-    double cephes_struve_l(double v, double z) nogil
+    double xsf_struve_h(double v, double z) nogil
+    double xsf_struve_l(double v, double z) nogil
 
 from ._agm cimport agm as _func_agm
 ctypedef double _proto_agm_t(double, double) noexcept nogil
@@ -1969,10 +1967,10 @@ cpdef double berp(double x0) noexcept nogil:
 
 cpdef double besselpoly(double x0, double x1, double x2) noexcept nogil:
     """See the documentation for scipy.special.besselpoly"""
-    return cephes_besselpoly(x0, x1, x2)
+    return xsf_besselpoly(x0, x1, x2)
 
 cpdef double beta(double x0, double x1) noexcept nogil:
-    return cephes_beta(x0, x1)
+    return xsf_beta(x0, x1)
 
 cpdef df_number_t betainc(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil:
     """See the documentation for scipy.special.betainc"""
@@ -2024,7 +2022,7 @@ cpdef df_number_t betainccinv(df_number_t x0, df_number_t x1, df_number_t x2) no
 
 cpdef double betaln(double x0, double x1) noexcept nogil:
     """See the documentation for scipy.special.betaln"""
-    return cephes_lbeta(x0, x1)
+    return xsf_betaln(x0, x1)
 
 cpdef double binom(double x0, double x1) noexcept nogil:
     """See the documentation for scipy.special.binom"""
@@ -2056,7 +2054,7 @@ cpdef double btdtrib(double x0, double x1, double x2) noexcept nogil:
 
 cpdef double cbrt(double x0) noexcept nogil:
     """See the documentation for scipy.special.cbrt"""
-    return cephes_cbrt(x0)
+    return xsf_cbrt(x0)
 
 cpdef double chdtr(double x0, double x1) noexcept nogil:
     """See the documentation for scipy.special.chdtr"""
@@ -2092,15 +2090,15 @@ cpdef double chndtrix(double x0, double x1, double x2) noexcept nogil:
 
 cpdef double cosdg(double x0) noexcept nogil:
     """See the documentation for scipy.special.cosdg"""
-    return cephes_cosdg(x0)
+    return xsf_cosdg(x0)
 
 cpdef double cosm1(double x0) noexcept nogil:
     """See the documentation for scipy.special.cosm1"""
-    return cephes_cosm1(x0)
+    return xsf_cosm1(x0)
 
 cpdef double cotdg(double x0) noexcept nogil:
     """See the documentation for scipy.special.cotdg"""
-    return cephes_cotdg(x0)
+    return xsf_cotdg(x0)
 
 cpdef Dd_number_t dawsn(Dd_number_t x0) noexcept nogil:
     """See the documentation for scipy.special.dawsn"""
@@ -2723,19 +2721,19 @@ cpdef double hyperu(double x0, double x1, double x2) noexcept nogil:
 
 cpdef double i0(double x0) noexcept nogil:
     """See the documentation for scipy.special.i0"""
-    return cephes_i0(x0)
+    return xsf_i0(x0)
 
 cpdef double i0e(double x0) noexcept nogil:
     """See the documentation for scipy.special.i0e"""
-    return cephes_i0e(x0)
+    return xsf_i0e(x0)
 
 cpdef double i1(double x0) noexcept nogil:
     """See the documentation for scipy.special.i1"""
-    return cephes_i1(x0)
+    return xsf_i1(x0)
 
 cpdef double i1e(double x0) noexcept nogil:
     """See the documentation for scipy.special.i1e"""
-    return cephes_i1e(x0)
+    return xsf_i1e(x0)
 
 cpdef double inv_boxcox(double x0, double x1) noexcept nogil:
     """See the documentation for scipy.special.inv_boxcox"""
@@ -2835,11 +2833,11 @@ cpdef Dd_number_t ive(double x0, Dd_number_t x1) noexcept nogil:
 
 cpdef double j0(double x0) noexcept nogil:
     """See the documentation for scipy.special.j0"""
-    return cephes_j0(x0)
+    return xsf_j0(x0)
 
 cpdef double j1(double x0) noexcept nogil:
     """See the documentation for scipy.special.j1"""
-    return cephes_j1(x0)
+    return xsf_j1(x0)
 
 cpdef Dd_number_t jv(double x0, Dd_number_t x1) noexcept nogil:
     """See the documentation for scipy.special.jv"""
@@ -2867,19 +2865,19 @@ cpdef Dd_number_t jve(double x0, Dd_number_t x1) noexcept nogil:
 
 cpdef double k0(double x0) noexcept nogil:
     """See the documentation for scipy.special.k0"""
-    return cephes_k0(x0)
+    return xsf_k0(x0)
 
 cpdef double k0e(double x0) noexcept nogil:
     """See the documentation for scipy.special.k0e"""
-    return cephes_k0e(x0)
+    return xsf_k0e(x0)
 
 cpdef double k1(double x0) noexcept nogil:
     """See the documentation for scipy.special.k1"""
-    return cephes_k1(x0)
+    return xsf_k1(x0)
 
 cpdef double k1e(double x0) noexcept nogil:
     """See the documentation for scipy.special.k1e"""
-    return cephes_k1e(x0)
+    return xsf_k1e(x0)
 
 cpdef double kei(double x0) noexcept nogil:
     """See the documentation for scipy.special.kei"""
@@ -3134,7 +3132,7 @@ def _modfresnelp_pywrap(double x0):
 
 cpdef double modstruve(double x0, double x1) noexcept nogil:
     """See the documentation for scipy.special.modstruve"""
-    return cephes_struve_l(x0, x1)
+    return xsf_struve_l(x0, x1)
 
 cpdef double nbdtr(dlp_number_t x0, dlp_number_t x1, double x2) noexcept nogil:
     """See the documentation for scipy.special.nbdtr"""
@@ -3456,7 +3454,7 @@ cpdef Dd_number_t psi(Dd_number_t x0) noexcept nogil:
 
 cpdef double radian(double x0, double x1, double x2) noexcept nogil:
     """See the documentation for scipy.special.radian"""
-    return cephes_radian(x0, x1, x2)
+    return xsf_radian(x0, x1, x2)
 
 cpdef double rel_entr(double x0, double x1) noexcept nogil:
     """See the documentation for scipy.special.rel_entr"""
@@ -3520,7 +3518,7 @@ def _sici_pywrap(Dd_number_t x0):
 
 cpdef double sindg(double x0) noexcept nogil:
     """See the documentation for scipy.special.sindg"""
-    return cephes_sindg(x0)
+    return xsf_sindg(x0)
 
 cpdef double smirnov(dlp_number_t x0, double x1) noexcept nogil:
     """See the documentation for scipy.special.smirnov"""
@@ -3581,11 +3579,11 @@ cpdef double stdtrit(double x0, double x1) noexcept nogil:
 
 cpdef double struve(double x0, double x1) noexcept nogil:
     """See the documentation for scipy.special.struve"""
-    return cephes_struve_h(x0, x1)
+    return xsf_struve_h(x0, x1)
 
 cpdef double tandg(double x0) noexcept nogil:
     """See the documentation for scipy.special.tandg"""
-    return cephes_tandg(x0)
+    return xsf_tandg(x0)
 
 cpdef double tklmbda(double x0, double x1) noexcept nogil:
     """See the documentation for scipy.special.tklmbda"""
@@ -3633,11 +3631,11 @@ cpdef Dd_number_t xlogy(Dd_number_t x0, Dd_number_t x1) noexcept nogil:
 
 cpdef double y0(double x0) noexcept nogil:
     """See the documentation for scipy.special.y0"""
-    return cephes_y0(x0)
+    return xsf_y0(x0)
 
 cpdef double y1(double x0) noexcept nogil:
     """See the documentation for scipy.special.y1"""
-    return cephes_y1(x0)
+    return xsf_y1(x0)
 
 cpdef double yn(dlp_number_t x0, double x1) noexcept nogil:
     """See the documentation for scipy.special.yn"""
@@ -3676,7 +3674,7 @@ cpdef Dd_number_t yve(double x0, Dd_number_t x1) noexcept nogil:
 
 cpdef double zetac(double x0) noexcept nogil:
     """See the documentation for scipy.special.zetac"""
-    return cephes_zetac(x0)
+    return xsf_zetac(x0)
 
 cpdef double wright_bessel(double x0, double x1, double x2) noexcept nogil:
     """See the documentation for scipy.special.wright_bessel"""

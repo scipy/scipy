@@ -41,7 +41,7 @@ cdef extern from "xsf_wrappers.h" nogil:
     double binom_wrap(double n, double k)
     double cephes_hyp2f1_wrap(double a, double b, double c, double x)
     double cephes_gamma_wrap(double x)
-    double cephes_beta_wrap(double a, double b)
+    double xsf_beta(double a, double b)
     double hyp1f1_wrap(double a, double b, double x) nogil
     npy_cdouble chyp1f1_wrap( double a, double b, npy_cdouble z) nogil
 
@@ -154,7 +154,7 @@ cdef inline double eval_gegenbauer_l(Py_ssize_t n, double alpha, double x) noexc
         a = n//2
 
         d = 1 if a % 2 == 0 else -1
-        d /= cephes_beta_wrap(alpha, 1 + a)
+        d /= xsf_beta(alpha, 1 + a)
         if n == 2*a:
             d /= (a + alpha)
         else:
@@ -332,9 +332,9 @@ cdef inline double eval_legendre_l(Py_ssize_t n, double x) noexcept nogil:
 
         d = 1 if a % 2 == 0 else -1
         if n == 2*a:
-            d *= -2 / cephes_beta_wrap(a + 1, -0.5)
+            d *= -2 / xsf_beta(a + 1, -0.5)
         else:
-            d *= 2 * x / cephes_beta_wrap(a + 1, 0.5)
+            d *= 2 * x / xsf_beta(a + 1, 0.5)
 
         p = 0
         for kk in range(a+1):
