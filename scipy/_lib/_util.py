@@ -5,14 +5,12 @@ import operator
 import warnings
 import numbers
 from collections import namedtuple
+from collections.abc import Callable
 import inspect
 import math
 from typing import (
-    Optional,
-    Union,
     TYPE_CHECKING,
     TypeVar,
-    Callable,
     cast,
 )
 
@@ -56,10 +54,9 @@ else:
     np_long = np.int_
     np_ulong = np.uint
 
-IntNumber = Union[int, np.integer]
-DecimalNumber = Union[float, np.floating, np.integer]
-
-copy_if_needed: Optional[bool]
+IntNumber = int | np.integer
+DecimalNumber = float | np.floating | np.integer
+copy_if_needed: bool | None
 
 if np.lib.NumpyVersion(np.__version__) >= "2.0.0":
     copy_if_needed = None
@@ -76,11 +73,9 @@ else:
 # Since Generator was introduced in numpy 1.17, the following condition is needed for
 # backward compatibility
 if TYPE_CHECKING:
-    SeedType = Optional[Union[IntNumber, np.random.Generator,
-                              np.random.RandomState]]
-    GeneratorType = TypeVar("GeneratorType", bound=Union[np.random.Generator,
-                                                         np.random.RandomState])
-
+    SeedType = IntNumber | np.random.Generator | np.random.RandomState | None
+    GeneratorType = TypeVar("GeneratorType",
+                            bound=np.random.Generator | np.random.RandomState)
 try:
     from numpy.random import Generator as Generator
 except ImportError:
@@ -274,9 +269,9 @@ def check_random_state(seed):
     """
     if seed is None or seed is np.random:
         return np.random.mtrand._rand
-    if isinstance(seed, (numbers.Integral, np.integer)):
+    if isinstance(seed, numbers.Integral | np.integer):
         return np.random.RandomState(seed)
-    if isinstance(seed, (np.random.RandomState, np.random.Generator)):
+    if isinstance(seed, np.random.RandomState | np.random.Generator):
         return seed
 
     raise ValueError(f"'{seed}' cannot be used to seed a numpy.random.RandomState"

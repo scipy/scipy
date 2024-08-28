@@ -1,6 +1,5 @@
 """SVD decomposition functions."""
 import math
-from typing import Tuple, List
 
 import numpy as np
 import numpy.typing as npt
@@ -302,7 +301,7 @@ def diagsvd(s, M, N):
 
 def higher_order_svd(
     a: npt.ArrayLike, *, full_tensor: bool = True, check_finite: bool = True
-) -> Tuple[List[np.ndarray], np.ndarray]:
+) -> tuple[list[np.ndarray], np.ndarray]:
     """Higher-order SVD (HOSVD)
 
     Factorizes the M-D tensor `a` into a list of M matrices ``U_k`` containing
