@@ -389,6 +389,15 @@ def test_2d_matmul_multivector():
     res = arr1d @ den_a.T
     assert_equal(res, exp)
 
+    # sparse-dense matmul for self.ndim = 1 and other.ndim = 2
+    den_a = np.array([1, 0, 2])
+    den_b = np.array([[3], [4], [0]])
+    exp = den_a @ den_b
+    res = coo_array(den_a) @ den_b
+    assert_equal(res, exp)
+    res = coo_array(den_a) @ list(den_b)
+    assert_equal(res, exp)
+
 
 def test_1d_diagonal():
     den = np.array([0, -2, -3, 0])
@@ -632,9 +641,11 @@ mat_vec_shapes = [
     ((0, 0), (0,)), 
     ((2, 3, 4, 7, 8), (8,)),
     ((4, 4, 2, 0), (0,)),
-    ((6, 5, 3, 2, 4), (4, 1)), 
+    ((6, 5, 3, 2, 4), (4, 1)),
+    ((2,5), (5,)),
     ((2, 5), (5, 1)),
     ((3,), (3, 1)),
+    ((4,), (4,))
 ]
 @pytest.mark.parametrize(('mat_shape', 'vec_shape'), mat_vec_shapes)
 def test_nd_matmul_vector(mat_shape, vec_shape):
@@ -645,4 +656,6 @@ def test_nd_matmul_vector(mat_shape, vec_shape):
     den_x, den_y = sp_x.toarray(), sp_y.toarray()
     exp = den_x @ den_y
     res = sp_x @ den_y
+    assert_equal(res,exp)
+    res = sp_x @ list(den_y)
     assert_equal(res,exp)

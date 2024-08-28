@@ -657,20 +657,17 @@ class _coo_base(_data_matrix, _minmax_mixin):
 
 
     def _matmul_dispatch(self, other):
-        if self.ndim < 3 and ((issparse(other) and other.ndim < 3) \
-                              or (not issparse(other) and
-                                  len(np.asarray(other).shape) < 3)):
+        if self.ndim < 3:
             return _spbase._matmul_dispatch(self, other)
         
         N = self.shape[-1]
+        err_prefix = "matmul: dimension mismatch with signature"
         if other.__class__ is np.ndarray:
             if other.shape == (N,):
                 return self._matmul_vector(other)
             if other.shape == (N, 1):
                 result = self._matmul_vector(other.ravel())
                 return result.reshape(*self.shape[:-1], 1)
-            
-            err_prefix = "matmul: dimension mismatch with signature"
             if other.ndim == 1:
                 msg = f"{err_prefix} (n,k={N}),(k={other.shape[0]},)->(n,)"
                 raise ValueError(msg)
@@ -684,7 +681,40 @@ class _coo_base(_data_matrix, _minmax_mixin):
         if issparse(other):
             raise NotImplementedError("sparse-sparse matmul not implemented for ndim>2")
         
-        return NotImplemented
+        # If it's a list or whatever, treat it like an array
+        other_a = np.asanyarray(other)
+
+        if other_a.ndim == 0 and other_a.dtype == np.object_:
+            # Not interpretable as an array; return NotImplemented so that
+            # other's __rmatmul__ can kick in if that's implemented.
+            return NotImplemented
+
+        try:
+            other.shape
+        except AttributeError:
+            other = other_a
+
+        if other.ndim == 1 or other.ndim == 2 and other.shape[1] == 1:
+            # dense row or column vector
+            if other.shape[0] != N:
+                raise ValueError(
+                    f"{err_prefix} (n,k={N}),(k={other.shape[0]},1?)->(n,1?)"
+                )
+
+            result = self._matmul_vector(np.ravel(other))
+
+            if isinstance(other, np.matrix):
+                result = self._ascontainer(result)
+
+            if other.ndim == 2 and other.shape[1] == 1:
+                # If 'other' was an (nx1) column vector, reshape the result
+                result = result.reshape((*self.shape[:-1], 1))
+
+            return result
+
+        else:
+            # dense nD array or matrix ("multivector") not implemented
+            raise NotImplemented
 
 
     def _matmul_multivector(self, other):
