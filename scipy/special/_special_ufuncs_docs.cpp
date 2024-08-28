@@ -4756,6 +4756,199 @@ const char *tandg_doc = R"(
     array([ 0.0000000e+00, -1.2246468e-16, -2.4492936e-16])
     )";
 
+const char *struve_h_doc = R"(
+    struve(v, x, out=None)
+
+    Struve function.
+
+    Return the value of the Struve function of order `v` at `x`.  The Struve
+    function is defined as,
+
+    .. math::
+        H_v(x) = (z/2)^{v + 1} \sum_{n=0}^\infty
+        \frac{(-1)^n (z/2)^{2n}}{\Gamma(n + \frac{3}{2}) \Gamma(n + v + \frac{3}{2})},
+
+    where :math:`\Gamma` is the gamma function.
+
+    Parameters
+    ----------
+    v : array_like
+        Order of the Struve function (float).
+    x : array_like
+        Argument of the Struve function (float; must be positive unless `v` is
+        an integer).
+    out : ndarray, optional
+        Optional output array for the function results
+
+    Returns
+    -------
+    H : scalar or ndarray
+        Value of the Struve function of order `v` at `x`.
+
+    See Also
+    --------
+    modstruve: Modified Struve function
+
+    Notes
+    -----
+    Three methods discussed in [1]_ are used to evaluate the Struve function:
+
+    - power series
+    - expansion in Bessel functions (if :math:`|z| < |v| + 20`)
+    - asymptotic large-z expansion (if :math:`z \geq 0.7v + 12`)
+
+    Rounding errors are estimated based on the largest terms in the sums, and
+    the result associated with the smallest error is returned.
+
+    References
+    ----------
+    .. [1] NIST Digital Library of Mathematical Functions
+           https://dlmf.nist.gov/11
+
+    Examples
+    --------
+    Calculate the Struve function of order 1 at 2.
+
+    >>> import numpy as np
+    >>> from scipy.special import struve
+    >>> import matplotlib.pyplot as plt
+    >>> struve(1, 2.)
+    0.6467637282835622
+
+    Calculate the Struve function at 2 for orders 1, 2 and 3 by providing
+    a list for the order parameter `v`.
+
+    >>> struve([1, 2, 3], 2.)
+    array([0.64676373, 0.28031806, 0.08363767])
+
+    Calculate the Struve function of order 1 for several points by providing
+    an array for `x`.
+
+    >>> points = np.array([2., 5., 8.])
+    >>> struve(1, points)
+    array([0.64676373, 0.80781195, 0.48811605])
+
+    Compute the Struve function for several orders at several points by
+    providing arrays for `v` and `z`. The arrays have to be broadcastable
+    to the correct shapes.
+
+    >>> orders = np.array([[1], [2], [3]])
+    >>> points.shape, orders.shape
+    ((3,), (3, 1))
+
+    >>> struve(orders, points)
+    array([[0.64676373, 0.80781195, 0.48811605],
+           [0.28031806, 1.56937455, 1.51769363],
+           [0.08363767, 1.50872065, 2.98697513]])
+
+    Plot the Struve functions of order 0 to 3 from -10 to 10.
+
+    >>> fig, ax = plt.subplots()
+    >>> x = np.linspace(-10., 10., 1000)
+    >>> for i in range(4):
+    ...     ax.plot(x, struve(i, x), label=f'$H_{i!r}$')
+    >>> ax.legend(ncol=2)
+    >>> ax.set_xlim(-10, 10)
+    >>> ax.set_title(r"Struve functions $H_{\nu}$")
+    >>> plt.show()
+    )";
+
+const char *struve_l_doc = R"(
+    modstruve(v, x, out=None)
+
+    Modified Struve function.
+
+    Return the value of the modified Struve function of order `v` at `x`.  The
+    modified Struve function is defined as,
+
+    .. math::
+        L_v(x) = -\imath \exp(-\pi\imath v/2) H_v(\imath x),
+
+    where :math:`H_v` is the Struve function.
+
+    Parameters
+    ----------
+    v : array_like
+        Order of the modified Struve function (float).
+    x : array_like
+        Argument of the Struve function (float; must be positive unless `v` is
+        an integer).
+    out : ndarray, optional
+        Optional output array for the function results
+
+    Returns
+    -------
+    L : scalar or ndarray
+        Value of the modified Struve function of order `v` at `x`.
+
+    See Also
+    --------
+    struve
+
+    Notes
+    -----
+    Three methods discussed in [1]_ are used to evaluate the function:
+
+    - power series
+    - expansion in Bessel functions (if :math:`|x| < |v| + 20`)
+    - asymptotic large-x expansion (if :math:`x \geq 0.7v + 12`)
+
+    Rounding errors are estimated based on the largest terms in the sums, and
+    the result associated with the smallest error is returned.
+
+    References
+    ----------
+    .. [1] NIST Digital Library of Mathematical Functions
+           https://dlmf.nist.gov/11
+
+    Examples
+    --------
+    Calculate the modified Struve function of order 1 at 2.
+
+    >>> import numpy as np
+    >>> from scipy.special import modstruve
+    >>> import matplotlib.pyplot as plt
+    >>> modstruve(1, 2.)
+    1.102759787367716
+
+    Calculate the modified Struve function at 2 for orders 1, 2 and 3 by
+    providing a list for the order parameter `v`.
+
+    >>> modstruve([1, 2, 3], 2.)
+    array([1.10275979, 0.41026079, 0.11247294])
+
+    Calculate the modified Struve function of order 1 for several points
+    by providing an array for `x`.
+
+    >>> points = np.array([2., 5., 8.])
+    >>> modstruve(1, points)
+    array([  1.10275979,  23.72821578, 399.24709139])
+
+    Compute the modified Struve function for several orders at several
+    points by providing arrays for `v` and `z`. The arrays have to be
+    broadcastable to the correct shapes.
+
+    >>> orders = np.array([[1], [2], [3]])
+    >>> points.shape, orders.shape
+    ((3,), (3, 1))
+
+    >>> modstruve(orders, points)
+    array([[1.10275979e+00, 2.37282158e+01, 3.99247091e+02],
+           [4.10260789e-01, 1.65535979e+01, 3.25973609e+02],
+           [1.12472937e-01, 9.42430454e+00, 2.33544042e+02]])
+
+    Plot the modified Struve functions of order 0 to 3 from -5 to 5.
+
+    >>> fig, ax = plt.subplots()
+    >>> x = np.linspace(-5., 5., 1000)
+    >>> for i in range(4):
+    ...     ax.plot(x, modstruve(i, x), label=f'$L_{i!r}$')
+    >>> ax.legend(ncol=2)
+    >>> ax.set_xlim(-5, 5)
+    >>> ax.set_title(r"Modified Struve functions $L_{\nu}$")
+    >>> plt.show()
+    )";
+
 const char *wright_bessel_doc = R"(
     wright_bessel(a, b, x, out=None)
 

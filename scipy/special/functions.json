@@ -660,11 +660,6 @@
             "pmv_wrap": "ddd->d"
         }
     },
-    "modstruve": {
-        "xsf_wrappers.h": {
-            "cephes_struve_l": "dd->d"
-        }
-    },
     "nbdtr": {
         "_legacy.pxd": {
             "nbdtr_unsafe": "ddd->d"
@@ -901,11 +896,6 @@
     "_stirling2_inexact": {
         "stirling2.h++": {
             "_stirling2_inexact": "dd->d"
-        }
-    },
-    "struve": {
-        "xsf_wrappers.h": {
-            "cephes_struve_h": "dd->d"
         }
     },
     "tklmbda": {

@@ -265,6 +265,8 @@ extern const char *spherical_in_d_doc;
 extern const char *spherical_kn_doc;
 extern const char *spherical_kn_d_doc;
 extern const char *sph_harm_doc;
+extern const char *struve_h_doc;
+extern const char *struve_l_doc;
 extern const char *tandg_doc;
 extern const char *wright_bessel_doc;
 extern const char *y0_doc;
@@ -725,6 +727,10 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
         "modfresnelp", modfresnelp_doc);
     PyModule_AddObjectRef(_special_ufuncs, "modfresnelp", modfresnelp);
 
+    PyObject *modstruve = SpecFun_NewUFunc(
+        {static_cast<func_dd_d_t>(xsf::struve_l), static_cast<func_ff_f_t>(xsf::struve_l)}, "modstruve", struve_l_doc);
+    PyModule_AddObjectRef(_special_ufuncs, "modstruve", modstruve);
+
     PyObject *obl_ang1 = SpecFun_NewUFunc(
         {static_cast<func_ffff_ff_t>(xsf::oblate_aswfa_nocv), static_cast<func_dddd_dd_t>(xsf::oblate_aswfa_nocv)}, 2,
         "obl_ang1", obl_ang1_doc);
@@ -901,6 +907,10 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
                 new_dims[2] = 2;
             }));
     PyModule_AddObjectRef(_special_ufuncs, "sph_harm_y", sph_harm_y);
+
+    PyObject *struve = SpecFun_NewUFunc(
+        {static_cast<func_dd_d_t>(xsf::struve_h), static_cast<func_ff_f_t>(xsf::struve_h)}, "struve", struve_h_doc);
+    PyModule_AddObjectRef(_special_ufuncs, "struve", struve);
 
     PyObject *tandg = SpecFun_NewUFunc({static_cast<func_d_d_t>(xsf::tandg), static_cast<func_f_f_t>(xsf::tandg)},
                                        "tandg", tandg_doc);

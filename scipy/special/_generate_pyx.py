@@ -93,7 +93,7 @@ special_ufuncs = [
     'pro_ang1', 'pro_ang1_cv', 'pro_cv', 'pro_rad1', 'pro_rad1_cv', 'pro_rad2',
     'pro_rad2_cv', 'psi', 'rgamma', 'sph_harm', 'wright_bessel', 'yv', 'yve', 'zetac',
     '_zeta', 'sindg', 'cosdg', 'tandg', 'cotdg', 'i0', 'i0e', 'i1', 'i1e',
-    'k0', 'k0e', 'k1', 'k1e', 'y0', 'y1', 'j0', 'j1'
+    'k0', 'k0e', 'k1', 'k1e', 'y0', 'y1', 'j0', 'j1', 'struve', 'modstruve'
 ]
 
 # -----------------------------------------------------------------------------
