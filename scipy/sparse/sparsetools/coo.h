@@ -114,8 +114,7 @@ void coo_todense(const I n_row,
 
 /*
  * Input Arguments:
- *   I  strides_C[num_dims] - C strides
- *   I  strides_F[num_dims] - fortran strides
+ *   I  strides[num_dims]   - strides array
  *   npy_int64  nnz         - number of nonzeros in A
  *   npy_int64  num_dims    - number of dimensions of A
  *   I  Aijk[nnz(A)]        - coords for nonzeros in A
@@ -124,8 +123,7 @@ void coo_todense(const I n_row,
  *
  */
 template <class I, class T>
-void coo_todense_nd(const I strides_C[],
-                    const I strides_F[],
+void coo_todense_nd(const I strides[],
                     const npy_int64 nnz,
                     const npy_int64 num_dims,
                     const I Aijk[],
@@ -138,7 +136,7 @@ void coo_todense_nd(const I strides_C[],
         for(npy_int64 n = 0; n < nnz; n++) {
             npy_intp index = 0;
             for(npy_int64 d = num_dims - 1; d >= 0; d--) {
-                index += Aijk[d * nnz + n] * strides_C[d];
+                index += Aijk[d * nnz + n] * strides[d];
             }
             Bx[index] += Ax[n];
         }
@@ -147,7 +145,7 @@ void coo_todense_nd(const I strides_C[],
         for(npy_int64 n = 0; n < nnz; n++) {
             npy_intp index = 0;
             for(npy_int64 d = 0; d < num_dims; d++) {
-                index += Aijk[d * nnz + n] * strides_F[d];
+                index += Aijk[d * nnz + n] * strides[d];
             }
             Bx[index] += Ax[n];
         }

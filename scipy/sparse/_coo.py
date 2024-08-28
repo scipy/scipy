@@ -294,7 +294,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
         # This handles both 0D and 1D cases correctly regardless of the
         # original shape.
         if self.ndim == 1:
-            coo_todense_nd(np.array([1]), np.array([1]), self.nnz, self.ndim,
+            coo_todense_nd(np.array([1]), self.nnz, self.ndim,
                            self.coords[0], self.data, B.ravel('A'), fortran)
         elif self.ndim == 2:
             M, N = self._shape_as_2d
@@ -303,10 +303,12 @@ class _coo_base(_data_matrix, _minmax_mixin):
             
         else:
             shape = np.array(self.shape)
-            strides_C = np.append(np.cumprod(shape[1:][::-1])[::-1], 1)
-            strides_F = np.append(1, np.cumprod(shape[:-1]))
+            if fortran:
+                strides = np.append(1, np.cumprod(shape[:-1]))
+            else:
+                strides = np.append(np.cumprod(shape[1:][::-1])[::-1], 1)
             coords = np.concatenate(self.coords)
-            coo_todense_nd(strides_C, strides_F, self.nnz, self.ndim,
+            coo_todense_nd(strides, self.nnz, self.ndim,
                            coords, self.data, B.ravel('A'), fortran)
         # Note: reshape() doesn't copy here, but does return a new array (view).
         return B.reshape(self.shape)
@@ -576,7 +578,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
         result = np.array(other, dtype=dtype, copy=True)
         fortran = int(result.flags.f_contiguous)
         if self.ndim == 1:
-            coo_todense_nd(np.array([1]), np.array([1]), self.nnz, self.ndim,
+            coo_todense_nd(np.array([1]), self.nnz, self.ndim,
                            self.coords[0], self.data, result.ravel('A'), fortran)
         elif self.ndim == 2:
             M, N = self._shape_as_2d
@@ -584,10 +586,12 @@ class _coo_base(_data_matrix, _minmax_mixin):
                         result.ravel('A'), fortran)
         else:
             shape = np.array(self.shape)
-            strides_C = np.append(np.cumprod(shape[1:][::-1])[::-1], 1)
-            strides_F = np.append(1, np.cumprod(shape[:-1]))
+            if fortran:
+                strides = np.append(1, np.cumprod(shape[:-1]))
+            else:
+                strides = np.append(np.cumprod(shape[1:][::-1])[::-1], 1)
             coords = np.concatenate(self.coords)
-            coo_todense_nd(strides_C, strides_F, self.nnz, self.ndim,
+            coo_todense_nd(strides, self.nnz, self.ndim,
                            coords, self.data, result.ravel('A'), fortran)
         return self._container(result, copy=False)
     
