@@ -1119,8 +1119,6 @@ ctypedef double complex double_complex
 ctypedef long double complex long_double_complex
 
 cdef extern from r"xsf_wrappers.h":
-    double _func_gammaln_wrap "gammaln_wrap"(double) nogil
-
     double special_bei(double) nogil
     double special_beip(double) nogil
     double special_ber(double) nogil
@@ -1154,10 +1152,10 @@ cdef extern from r"xsf_wrappers.h":
     void _func_prolate_radial1_wrap "prolate_radial1_wrap"(npy_double, npy_double, npy_double, npy_double, npy_double, npy_double *, npy_double *) nogil
     npy_double _func_prolate_radial2_nocv_wrap "prolate_radial2_nocv_wrap"(npy_double, npy_double, npy_double, npy_double, npy_double *) nogil
     void _func_prolate_radial2_wrap "prolate_radial2_wrap"(npy_double, npy_double, npy_double, npy_double, npy_double, npy_double *, npy_double *) nogil
-    npy_cdouble special_cexp1(npy_cdouble) nogil
-    npy_double special_exp1(npy_double) nogil
-    npy_cdouble special_cexpi(npy_cdouble) nogil
-    npy_double special_expi(npy_double) nogil
+    npy_cdouble xsf_cexp1(npy_cdouble) nogil
+    npy_double xsf_exp1(npy_double) nogil
+    npy_cdouble xsf_cexpi(npy_cdouble) nogil
+    npy_double xsf_expi(npy_double) nogil
     void _func_it2i0k0_wrap "it2i0k0_wrap"(npy_double, npy_double *, npy_double *) nogil
     void _func_it2j0y0_wrap "it2j0y0_wrap"(npy_double, npy_double *, npy_double *) nogil
     npy_double special_it2struve0(npy_double) nogil
@@ -1169,7 +1167,7 @@ cdef extern from r"xsf_wrappers.h":
     void _func_pbdv_wrap "pbdv_wrap"(npy_double, npy_double, npy_double *, npy_double *) nogil
     void _func_pbvv_wrap "pbvv_wrap"(npy_double, npy_double, npy_double *, npy_double *) nogil
     void _func_pbwa_wrap "pbwa_wrap"(npy_double, npy_double, npy_double *, npy_double *) nogil
-    npy_int _func_cfresnl_wrap "cfresnl_wrap"(npy_cdouble, npy_cdouble *, npy_cdouble *) nogil
+    void xsf_cfresnel(npy_cdouble, npy_cdouble *, npy_cdouble *) nogil
 
     void special_airy(npy_double, npy_double *, npy_double *, npy_double *, npy_double *) nogil
     void special_cairy(npy_cdouble, npy_cdouble *, npy_cdouble *, npy_cdouble *, npy_cdouble *) nogil
@@ -1181,7 +1179,7 @@ cdef extern from r"xsf_wrappers.h":
     npy_cdouble special_ccyl_hankel_2(npy_double, npy_cdouble) nogil
     npy_cdouble special_ccyl_hankel_2e(npy_double, npy_cdouble) nogil
 
-    npy_double special_binom(npy_double, npy_double) nogil
+    npy_double xsf_binom(npy_double, npy_double) nogil
 
     npy_double special_digamma(npy_double) nogil
     npy_cdouble special_cdigamma(npy_cdouble) nogil
@@ -1213,8 +1211,7 @@ cdef extern from r"xsf_wrappers.h":
 
     npy_double special_exprel(npy_double) nogil
 
-    npy_double special_gamma(npy_double) nogil
-    npy_cdouble special_cgamma(npy_cdouble) nogil
+    npy_cdouble xsf_cgamma(npy_cdouble) nogil
 
     npy_float special_expitf(npy_float) nogil
     npy_double special_expit(npy_double) nogil
@@ -1263,7 +1260,6 @@ cdef extern from r"xsf_wrappers.h":
 
     npy_cdouble special_sph_harm(npy_long, npy_long, npy_double, npy_double) nogil
     npy_cdouble special_sph_harm_unsafe(npy_double, npy_double, npy_double, npy_double) nogil
-    double _func_cephes_iv_wrap "cephes_iv_wrap"(double, double) nogil
 
     npy_double special_wright_bessel(npy_double, npy_double, npy_double) nogil
     npy_double special_log_wright_bessel(npy_double, npy_double, npy_double) nogil
@@ -1275,12 +1271,12 @@ cdef extern from r"xsf_wrappers.h":
     double cephes_chdtrc(double df, double x) nogil
     double cephes_chdtri(double df, double y) nogil
     double xsf_betaln(double a, double b) nogil
-    double xsf_sinpi(double x) nogil
-    double xsf_cospi(double x) nogil
     double xsf_cbrt(double x) nogil
-    double cephes_Gamma(double x) nogil
-    double cephes_gammasgn(double x) nogil
+    double xsf_gamma(double x) nogil
+    double xsf_gammasgn(double x) nogil
+    double xsf_gammaln(double x) nogil
     double cephes_hyp2f1(double a, double b, double c, double x) nogil
+    double xsf_iv(double v, double x) nogil
     double xsf_i0(double x) nogil
     double xsf_i0e(double x) nogil
     double xsf_i1(double x) nogil
@@ -1323,10 +1319,10 @@ cdef extern from r"xsf_wrappers.h":
     double cephes_expm1(double x) nogil
     double xsf_cosm1(double x) nogil
     double cephes_expn(int n, double x) nogil
-    double cephes_ellpe(double x) nogil
+    double xsf_ellipe(double x) nogil
     double cephes_ellpk(double x) nogil
     double cephes_ellie(double phi, double m) nogil
-    double cephes_ellik(double phi, double m) nogil
+    double xsf_ellipkinc(double phi, double m) nogil
     double xsf_sindg(double x) nogil
     double xsf_cosdg(double x) nogil
     double xsf_tandg(double x) nogil
@@ -2026,7 +2022,7 @@ cpdef double betaln(double x0, double x1) noexcept nogil:
 
 cpdef double binom(double x0, double x1) noexcept nogil:
     """See the documentation for scipy.special.binom"""
-    return special_binom(x0, x1)
+    return xsf_binom(x0, x1)
 
 cpdef double boxcox(double x0, double x1) noexcept nogil:
     """See the documentation for scipy.special.boxcox"""
@@ -2114,7 +2110,7 @@ cpdef Dd_number_t dawsn(Dd_number_t x0) noexcept nogil:
 
 cpdef double ellipe(double x0) noexcept nogil:
     """See the documentation for scipy.special.ellipe"""
-    return cephes_ellpe(x0)
+    return xsf_ellipe(x0)
 
 cpdef double ellipeinc(double x0, double x1) noexcept nogil:
     """See the documentation for scipy.special.ellipeinc"""
@@ -2134,7 +2130,7 @@ def _ellipj_pywrap(double x0, double x1):
 
 cpdef double ellipkinc(double x0, double x1) noexcept nogil:
     """See the documentation for scipy.special.ellipkinc"""
-    return cephes_ellik(x0, x1)
+    return xsf_ellipkinc(x0, x1)
 
 cpdef double ellipkm1(double x0) noexcept nogil:
     """See the documentation for scipy.special.ellipkm1"""
@@ -2491,9 +2487,9 @@ cpdef Dd_number_t eval_sh_legendre(dlp_number_t x0, Dd_number_t x1) noexcept nog
 cpdef Dd_number_t exp1(Dd_number_t x0) noexcept nogil:
     """See the documentation for scipy.special.exp1"""
     if Dd_number_t is double_complex:
-        return _complexstuff.double_complex_from_npy_cdouble(special_cexp1(_complexstuff.npy_cdouble_from_double_complex(x0)))
+        return _complexstuff.double_complex_from_npy_cdouble(xsf_cexp1(_complexstuff.npy_cdouble_from_double_complex(x0)))
     elif Dd_number_t is double:
-        return special_exp1(x0)
+        return xsf_exp1(x0)
     else:
         if Dd_number_t is double_complex:
             return NAN
@@ -2511,9 +2507,9 @@ cpdef double exp2(double x0) noexcept nogil:
 cpdef Dd_number_t expi(Dd_number_t x0) noexcept nogil:
     """See the documentation for scipy.special.expi"""
     if Dd_number_t is double_complex:
-        return _complexstuff.double_complex_from_npy_cdouble(special_cexpi(_complexstuff.npy_cdouble_from_double_complex(x0)))
+        return _complexstuff.double_complex_from_npy_cdouble(xsf_cexpi(_complexstuff.npy_cdouble_from_double_complex(x0)))
     elif Dd_number_t is double:
-        return special_expi(x0)
+        return xsf_expi(x0)
     else:
         if Dd_number_t is double_complex:
             return NAN
@@ -2586,7 +2582,7 @@ cdef void fresnel(Dd_number_t x0, Dd_number_t *y0, Dd_number_t *y1) noexcept nog
     if Dd_number_t is double:
         _func_cephes_fresnl_wrap(x0, y0, y1)
     elif Dd_number_t is double_complex:
-        _func_cfresnl_wrap(_complexstuff.npy_cdouble_from_double_complex(x0), &tmp0, &tmp1)
+        xsf_cfresnel(_complexstuff.npy_cdouble_from_double_complex(x0), &tmp0, &tmp1)
         y0[0] = _complexstuff.double_complex_from_npy_cdouble(tmp0)
         y1[0] = _complexstuff.double_complex_from_npy_cdouble(tmp1)
     else:
@@ -2606,9 +2602,9 @@ def _fresnel_pywrap(Dd_number_t x0):
 cpdef Dd_number_t gamma(Dd_number_t x0) noexcept nogil:
     """See the documentation for scipy.special.gamma"""
     if Dd_number_t is double_complex:
-        return _complexstuff.double_complex_from_npy_cdouble(special_cgamma(_complexstuff.npy_cdouble_from_double_complex(x0)))
+        return _complexstuff.double_complex_from_npy_cdouble(xsf_cgamma(_complexstuff.npy_cdouble_from_double_complex(x0)))
     elif Dd_number_t is double:
-        return special_gamma(x0)
+        return xsf_gamma(x0)
     else:
         if Dd_number_t is double_complex:
             return NAN
@@ -2633,11 +2629,11 @@ cpdef double gammaincinv(double x0, double x1) noexcept nogil:
 
 cpdef double gammaln(double x0) noexcept nogil:
     """See the documentation for scipy.special.gammaln"""
-    return _func_gammaln_wrap(x0)
+    return xsf_gammaln(x0)
 
 cpdef double gammasgn(double x0) noexcept nogil:
     """See the documentation for scipy.special.gammasgn"""
-    return cephes_gammasgn(x0)
+    return xsf_gammasgn(x0)
 
 cpdef double gdtr(double x0, double x1, double x2) noexcept nogil:
     """See the documentation for scipy.special.gdtr"""

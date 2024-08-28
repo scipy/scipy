@@ -26,17 +26,15 @@ double hyp1f1_wrap(double a, double b, double x);
 double hypU_wrap(double a, double b, double x);
 npy_cdouble cerf_wrap(npy_cdouble z);
 
-double special_exp1(double x);
-npy_cdouble special_cexp1(npy_cdouble z);
+double xsf_exp1(double x);
+npy_cdouble xsf_cexp1(npy_cdouble z);
 
-double special_expi(double x);
-npy_cdouble special_cexpi(npy_cdouble z);
+double xsf_expi(double x);
+npy_cdouble xsf_cexpi(npy_cdouble z);
 
-double struve_wrap(double v, double x);
 double special_itstruve0(double x);
 double special_it2struve0(double x);
 
-double modstruve_wrap(double v, double x);
 double special_itmodstruve0(double x);
 
 double special_ber(double x);
@@ -55,7 +53,7 @@ void it2j0y0_wrap(double x, double *, double *);
 void it1i0k0_wrap(double x, double *, double *);
 void it2i0k0_wrap(double x, double *, double *);
 
-int cfresnl_wrap(npy_cdouble x, npy_cdouble *sf, npy_cdouble *cf);
+void xsf_cfresnel(npy_cdouble x, npy_cdouble *sf, npy_cdouble *cf);
 double cem_cva_wrap(double m, double q);
 double sem_cva_wrap(double m, double q);
 void cem_wrap(double m, double q, double x, double *csf, double *csd);
@@ -127,16 +125,12 @@ npy_cdouble special_ccyl_hankel_2e(double v, npy_cdouble z);
 
 npy_cdouble hyp2f1_complex_wrap(double a, double b, double c, npy_cdouble zp);
 double sin_pi(double x);
-double gammaln_wrap(double x);
 
-double binom_wrap(double n, double k);
+double xsf_binom(double n, double k);
 
-double special_binom(double n, double k);
-
-double special_cospi(double x);
-
-double special_sinpi(double x);
-npy_cdouble special_csinpi(npy_cdouble z);
+double xsf_sinpi(double x);
+npy_cdouble xsf_csinpi(npy_cdouble z);
+double xsf_cospi(double x);
 
 double special_digamma(double z);
 npy_cdouble special_cdigamma(npy_cdouble z);
@@ -158,8 +152,7 @@ npy_longdouble special_logitl(npy_longdouble x);
 double special_loggamma(double x);
 npy_cdouble special_cloggamma(npy_cdouble z);
 
-double special_gamma(double x);
-npy_cdouble special_cgamma(npy_cdouble z);
+npy_cdouble xsf_cgamma(npy_cdouble z);
 
 double special_hyp2f1(double a, double b, double c, double z);
 npy_cdouble special_chyp2f1(double a, double b, double c, npy_cdouble z);
@@ -174,7 +167,6 @@ npy_cdouble special_sph_harm_unsafe(double m, double n, double theta, double phi
 
 double special_ellipk(double m);
 
-double binom_wrap(double n, double k);
 npy_cdouble hyp2f1_complex_wrap(double a, double b, double c, npy_cdouble zp);
 double cephes_hyp2f1_wrap(double a, double b, double c, double x);
 double cephes_airy_wrap(double x, double *ai, double *aip, double *bi, double *bip);
@@ -185,10 +177,7 @@ double cephes_cosm1_wrap(double x);
 double cephes_expm1_wrap(double x);
 double cephes_expn_wrap(Py_ssize_t n, double x);
 double cephes_log1p_wrap(double x);
-double cephes_gamma_wrap(double x);
-double cephes_gammasgn_wrap(double x);
-double cephes_lgam_wrap(double x);
-double cephes_iv_wrap(double v, double x);
+double xsf_iv(double v, double x);
 double cephes_jv_wrap(double v, double x);
 double cephes_ellpk_wrap(double x);
 int cephes_ellpj_wrap(double u, double m, double *sn, double *cn, double *dn, double *ph);
@@ -259,9 +248,9 @@ double xsf_cospi(double x);
 
 double xsf_cbrt(double x);
 
-double cephes_Gamma(double x);
-
-double cephes_gammasgn(double x);
+double xsf_gamma(double x);
+double xsf_gammasgn(double x);
+double xsf_gammaln(double x);
 
 double cephes_hyp2f1(double a, double b, double c, double x);
 
@@ -341,13 +330,13 @@ double xsf_cosm1(double x);
 
 double cephes_expn(int n, double x);
 
-double cephes_ellpe(double x);
+double xsf_ellipe(double x);
 
 double cephes_ellpk(double x);
 
 double cephes_ellie(double phi, double m);
 
-double cephes_ellik(double phi, double m);
+double xsf_ellipkinc(double phi, double m);
 
 double xsf_sindg(double x);
 
