@@ -1,4 +1,4 @@
-import numpy as np
+from scipy._lib.array_api_compat import numpy as np
 
 from functools import cached_property
 

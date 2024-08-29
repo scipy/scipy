@@ -30,7 +30,7 @@ def basic_1d_integrand(x, n):
     x_reshaped = xp.reshape(x, (-1, 1, 1))
     n_reshaped = xp.reshape(n, (1, -1, 1))
 
-    return xp.pow(x_reshaped, n_reshaped)
+    return x_reshaped**n_reshaped
 
 
 def basic_1d_integrand_exact(n):
@@ -41,7 +41,7 @@ def basic_1d_integrand_exact(n):
 def basic_nd_integrand(x, n):
     xp = array_namespace(x, n)
 
-    return xp.pow(xp.reshape(xp.sum(x, axis=-1), (-1, 1)), xp.reshape(n, (1, -1)))
+    return xp.reshape(xp.sum(x, axis=-1), (-1, 1))**xp.reshape(n, (1, -1))
 
 
 def basic_nd_integrand_exact(n):
@@ -129,8 +129,8 @@ def genz_malik_1980_f_2_random_args(rng, shape, xp):
     betas = xp.asarray(rng.random(shape))
 
     difficulty = 25.0
-    products = xp.prod(xp.pow(alphas, xp.asarray(-2.0)), axis=-1)
-    normalisation_factors = xp.pow(products, xp.asarray(1 / (2*ndim)))[..., xp.newaxis]
+    products = xp.prod(alphas**xp.asarray(-2.0), axis=-1)
+    normalisation_factors = (products**xp.asarray(1 / (2*ndim)))[..., xp.newaxis]
     alphas = alphas \
         * normalisation_factors \
         / math.pow(difficulty, 1 / (2*ndim))
@@ -287,7 +287,7 @@ def genz_malik_1980_f_5_random_args(rng, shape, xp):
 
     difficulty = 21.0
     normalisation_factors = xp.sqrt(
-        xp.sum(xp.pow(alphas, xp.asarray(2.0)), axis=-1)
+        xp.sum(alphas**xp.asarray(2.0), axis=-1)
     )[..., xp.newaxis]
     alphas = alphas / normalisation_factors * math.sqrt(difficulty)
 
@@ -774,7 +774,7 @@ class TestRulesQuadrature:
             x_reshaped = xp.reshape(x, (-1, 1, 1))
             n_reshaped = xp.reshape(n, (1, -1, 1))
 
-            return xp.pow(x_reshaped, n_reshaped)
+            return x_reshaped**n_reshaped
 
         a = xp.asarray([0])
         b = xp.asarray([2])

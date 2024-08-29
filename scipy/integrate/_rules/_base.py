@@ -1,8 +1,8 @@
 import itertools
 
 from scipy._lib._array_api import array_namespace, xp_size
+from scipy._lib.array_api_compat import numpy as np
 
-import numpy as np
 import math
 
 from functools import cached_property
@@ -432,16 +432,10 @@ class ProductNestedFixed(NestedFixedRule):
 def _cartesian_product(arrays):
     xp = array_namespace(*arrays)
 
-    la = len(arrays)
-    dtype = xp.result_type(*arrays)
-    arr = xp.empty([la] + [xp_size(a) for a in arrays], dtype=dtype)
-
     arrays_ix = xp.meshgrid(*arrays, indexing='ij')
+    result = xp.stack(arrays_ix, axis=-1).reshape(-1, len(arrays))
 
-    for i, a in enumerate(arrays_ix):
-        arr[i, ...] = a
-
-    return xp.reshape(arr, (la, -1)).T
+    return result
 
 
 def _subregion_coordinates(a, b):
@@ -472,7 +466,7 @@ def _apply_fixed_rule(f, a, b, orig_nodes, orig_weights, args=()):
     # Ensure orig_nodes are at least 2D, since 1D cubature methods can return arrays of
     # shape (npoints,) rather than (npoints, 1)
     if orig_nodes.ndim == 1:
-        orig_nodes = orig_nodes[:, xp.newaxis]
+        orig_nodes = orig_nodes[:, None]
 
     rule_ndim = orig_nodes.shape[-1]
 

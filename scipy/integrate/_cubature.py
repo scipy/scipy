@@ -1,10 +1,9 @@
 import heapq
 import itertools
 
-import numpy as np
-
 from dataclasses import dataclass
 
+from scipy._lib.array_api_compat import numpy as np
 from scipy._lib._array_api import array_namespace, xp_size
 from scipy._lib._util import MapWrapper
 

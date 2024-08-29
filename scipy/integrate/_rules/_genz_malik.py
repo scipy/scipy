@@ -3,7 +3,7 @@ import itertools
 
 from functools import cached_property
 
-import numpy as np
+from scipy._lib.array_api_compat import numpy as np
 
 from scipy.integrate._rules import NestedFixedRule
 
