@@ -4,12 +4,14 @@
 #include <complex>
 
 #include "sf_error.h"
-#include "xsf_special.h"
 #include "xsf/airy.h"
+#include "xsf/alg.h"
 #include "xsf/amos.h"
 #include "xsf/bessel.h"
+#include "xsf/beta.h"
 #include "xsf/binom.h"
 #include "xsf/digamma.h"
+#include "xsf/ellip.h"
 #include "xsf/expint.h"
 #include "xsf/fresnel.h"
 #include "xsf/gamma.h"
@@ -29,6 +31,7 @@
 #include "xsf/trig.h"
 #include "xsf/wright_bessel.h"
 #include "xsf/zeta.h"
+#include "xsf_special.h"
 
 // This is the extension module for the NumPy ufuncs in SciPy's special module. To create such a ufunc, call
 // "SpecFun_NewUFunc" with a braced list of kernel functions that will become the ufunc overloads. There are
@@ -56,6 +59,8 @@ using func_f_ff_t = void (*)(float, float &, float &);
 using func_d_dd_t = void (*)(double, double &, double &);
 using func_f_FF_t = void (*)(float, cfloat &, cfloat &);
 using func_d_DD_t = void (*)(double, cdouble &, cdouble &);
+using func_F_FF_t = void (*)(cfloat, cfloat &, cfloat &);
+using func_D_DD_t = void (*)(cdouble, cdouble &, cdouble &);
 
 // 1 input, 4 outputs
 using func_f_ffff_t = void (*)(float, float &, float &, float &, float &);
@@ -96,6 +101,10 @@ using func_ld_dd_t = void (*)(long int, double, double &, double &);
 // 2 inputs, 3 outputs
 using func_lf_fff_t = void (*)(long int, float, float &, float &, float &);
 using func_ld_ddd_t = void (*)(long int, double, double &, double &, double &);
+
+// 2 inputs, 4 outputs
+using func_ff_ffff_t = void (*)(float, float, float &, float &, float &, float &);
+using func_dd_dddd_t = void (*)(double, double, double &, double &, double &, double &);
 
 // 3 inputs, 1 output
 using func_fff_f_t = float (*)(float, float, float);
@@ -175,13 +184,32 @@ extern const char *bei_doc;
 extern const char *beip_doc;
 extern const char *ber_doc;
 extern const char *berp_doc;
+extern const char *besselpoly_doc;
+extern const char *beta_doc;
+extern const char *betaln_doc;
 extern const char *binom_doc;
+extern const char *cbrt_doc;
+extern const char *cosdg_doc;
+extern const char *cosm1_doc;
+extern const char *cotdg_doc;
+extern const char *ellipe_doc;
+extern const char *ellipeinc_doc;
+extern const char *ellipj_doc;
+extern const char *ellipk_doc;
+extern const char *ellipkm1_doc;
+extern const char *ellipkinc_doc;
 extern const char *exp1_doc;
 extern const char *expi_doc;
 extern const char *expit_doc;
 extern const char *exprel_doc;
+extern const char *fresnel_doc;
 extern const char *gamma_doc;
+extern const char *gammainc_doc;
+extern const char *gammaincinv_doc;
+extern const char *gammaincc_doc;
+extern const char *gammainccinv_doc;
 extern const char *gammaln_doc;
+extern const char *gammasgn_doc;
 extern const char *it2i0k0_doc;
 extern const char *it2j0y0_doc;
 extern const char *it2struve0_doc;
@@ -195,9 +223,15 @@ extern const char *hankel1e_doc;
 extern const char *hankel2_doc;
 extern const char *hankel2e_doc;
 extern const char *hyp2f1_doc;
+extern const char *i0_doc;
+extern const char *i0e_doc;
+extern const char *i1_doc;
+extern const char *i1e_doc;
 extern const char *iv_doc;
 extern const char *iv_ratio_doc;
 extern const char *ive_doc;
+extern const char *j0_doc;
+extern const char *j1_doc;
 extern const char *jv_doc;
 extern const char *jve_doc;
 extern const char *kei_doc;
@@ -205,6 +239,10 @@ extern const char *keip_doc;
 extern const char *kelvin_doc;
 extern const char *ker_doc;
 extern const char *kerp_doc;
+extern const char *k0_doc;
+extern const char *k0e_doc;
+extern const char *k1_doc;
+extern const char *k1e_doc;
 extern const char *kv_doc;
 extern const char *kve_doc;
 extern const char *lambertw_doc;
@@ -242,8 +280,11 @@ extern const char *pro_rad1_cv_doc;
 extern const char *pro_rad2_doc;
 extern const char *pro_rad2_cv_doc;
 extern const char *psi_doc;
+extern const char *radian_doc;
 extern const char *rgamma_doc;
+extern const char *_riemann_zeta_doc;
 extern const char *scaled_exp1_doc;
+extern const char *sindg_doc;
 extern const char *spherical_jn_doc;
 extern const char *spherical_jn_d_doc;
 extern const char *spherical_yn_doc;
@@ -253,9 +294,15 @@ extern const char *spherical_in_d_doc;
 extern const char *spherical_kn_doc;
 extern const char *spherical_kn_d_doc;
 extern const char *sph_harm_doc;
+extern const char *struve_h_doc;
+extern const char *struve_l_doc;
+extern const char *tandg_doc;
 extern const char *wright_bessel_doc;
+extern const char *y0_doc;
+extern const char *y1_doc;
 extern const char *yv_doc;
 extern const char *yve_doc;
+extern const char *zetac_doc;
 
 // This is needed by sf_error, it is defined in the Cython "_ufuncs_extra_code_common.pxi" for "_generate_pyx.py".
 // It exists to "call PyUFunc_getfperr in a context where PyUFunc_API array is initialized", but here we are
@@ -332,9 +379,64 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
         SpecFun_NewUFunc({static_cast<func_f_f_t>(xsf::berp), static_cast<func_d_d_t>(xsf::berp)}, "berp", berp_doc);
     PyModule_AddObjectRef(_special_ufuncs, "berp", berp);
 
+    PyObject *besselpoly =
+        SpecFun_NewUFunc({static_cast<func_ddd_d_t>(xsf::besselpoly), static_cast<func_fff_f_t>(xsf::besselpoly)},
+                         "besselpoly", besselpoly_doc);
+    PyModule_AddObjectRef(_special_ufuncs, "besselpoly", besselpoly);
+
+    PyObject *beta =
+        SpecFun_NewUFunc({static_cast<func_dd_d_t>(xsf::beta), static_cast<func_ff_f_t>(xsf::beta)}, "beta", beta_doc);
+    PyModule_AddObjectRef(_special_ufuncs, "beta", beta);
+
+    PyObject *betaln = SpecFun_NewUFunc({static_cast<func_dd_d_t>(xsf::betaln), static_cast<func_ff_f_t>(xsf::betaln)},
+                                        "betaln", betaln_doc);
+    PyModule_AddObjectRef(_special_ufuncs, "betaln", betaln);
+
     PyObject *binom = SpecFun_NewUFunc({static_cast<func_ff_f_t>(xsf::binom), static_cast<func_dd_d_t>(xsf::binom)},
                                        "binom", binom_doc);
     PyModule_AddObjectRef(_special_ufuncs, "binom", binom);
+
+    PyObject *cbrt =
+        SpecFun_NewUFunc({static_cast<func_d_d_t>(xsf::cbrt), static_cast<func_f_f_t>(xsf::cbrt)}, "cbrt", cbrt_doc);
+    PyModule_AddObjectRef(_special_ufuncs, "cbrt", cbrt);
+
+    PyObject *cosdg = SpecFun_NewUFunc({static_cast<func_d_d_t>(xsf::cosdg), static_cast<func_f_f_t>(xsf::cosdg)},
+                                       "cosdg", cosdg_doc);
+    PyModule_AddObjectRef(_special_ufuncs, "cosdg", cosdg);
+
+    PyObject *cosm1 = SpecFun_NewUFunc({static_cast<func_d_d_t>(xsf::cosm1), static_cast<func_f_f_t>(xsf::cosm1)},
+                                       "cosm1", cosm1_doc);
+    PyModule_AddObjectRef(_special_ufuncs, "cosm1", cosm1);
+
+    PyObject *cotdg = SpecFun_NewUFunc({static_cast<func_d_d_t>(xsf::cotdg), static_cast<func_f_f_t>(xsf::cotdg)},
+                                       "cotdg", cotdg_doc);
+    PyModule_AddObjectRef(_special_ufuncs, "cotdg", cotdg);
+
+    PyObject *ellipj = SpecFun_NewUFunc(
+        {static_cast<func_dd_dddd_t>(xsf::ellipj), static_cast<func_ff_ffff_t>(xsf::ellipj)}, 4, "ellipj", ellipj_doc);
+    PyModule_AddObjectRef(_special_ufuncs, "ellipj", ellipj);
+
+    PyObject *ellipe = SpecFun_NewUFunc({static_cast<func_d_d_t>(xsf::ellipe), static_cast<func_f_f_t>(xsf::ellipe)},
+                                        "ellipe", ellipe_doc);
+    PyModule_AddObjectRef(_special_ufuncs, "ellipe", ellipe);
+
+    PyObject *ellipeinc =
+        SpecFun_NewUFunc({static_cast<func_dd_d_t>(xsf::ellipeinc), static_cast<func_ff_f_t>(xsf::ellipeinc)},
+                         "ellipeinc", ellipeinc_doc);
+    PyModule_AddObjectRef(_special_ufuncs, "ellipeinc", ellipeinc);
+
+    PyObject *ellipk = SpecFun_NewUFunc({static_cast<func_d_d_t>(xsf::ellipk), static_cast<func_f_f_t>(xsf::ellipk)},
+                                        "ellipk", ellipk_doc);
+    PyModule_AddObjectRef(_special_ufuncs, "ellipk", ellipk);
+
+    PyObject *ellipkinc =
+        SpecFun_NewUFunc({static_cast<func_dd_d_t>(xsf::ellipkinc), static_cast<func_ff_f_t>(xsf::ellipkinc)},
+                         "ellipkinc", ellipkinc_doc);
+    PyModule_AddObjectRef(_special_ufuncs, "ellipkinc", ellipkinc);
+
+    PyObject *ellipkm1 = SpecFun_NewUFunc(
+        {static_cast<func_d_d_t>(xsf::ellipkm1), static_cast<func_f_f_t>(xsf::ellipkm1)}, "ellipkm1", ellipkm1_doc);
+    PyModule_AddObjectRef(_special_ufuncs, "ellipkm1", ellipkm1);
 
     PyObject *exp1 = SpecFun_NewUFunc({static_cast<func_f_f_t>(xsf::exp1), static_cast<func_d_d_t>(xsf::exp1),
                                        static_cast<func_F_F_t>(xsf::exp1), static_cast<func_D_D_t>(xsf::exp1)},
@@ -355,14 +457,43 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
                                         "exprel", exprel_doc);
     PyModule_AddObjectRef(_special_ufuncs, "exprel", exprel);
 
+    PyObject *fresnel =
+        SpecFun_NewUFunc({static_cast<func_d_dd_t>(xsf::fresnel), static_cast<func_f_ff_t>(xsf::fresnel),
+                          static_cast<func_D_DD_t>(xsf::fresnel), static_cast<func_F_FF_t>(xsf::fresnel)},
+                         2, "fresnel", fresnel_doc);
+    PyModule_AddObjectRef(_special_ufuncs, "fresnel", fresnel);
+
     PyObject *gamma = SpecFun_NewUFunc({static_cast<func_d_d_t>(xsf::gamma), static_cast<func_D_D_t>(xsf::gamma),
                                         static_cast<func_f_f_t>(xsf::gamma), static_cast<func_F_F_t>(xsf::gamma)},
                                        "gamma", gamma_doc);
     PyModule_AddObjectRef(_special_ufuncs, "gamma", gamma);
 
-    PyObject *gammaln = SpecFun_NewUFunc({static_cast<func_f_f_t>(xsf::gammaln), static_cast<func_d_d_t>(xsf::gammaln)},
+    PyObject *gammainc = SpecFun_NewUFunc(
+        {static_cast<func_dd_d_t>(xsf::gammainc), static_cast<func_ff_f_t>(xsf::gammainc)}, "gammainc", gammainc_doc);
+    PyModule_AddObjectRef(_special_ufuncs, "gammainc", gammainc);
+
+    PyObject *gammaincinv =
+        SpecFun_NewUFunc({static_cast<func_dd_d_t>(xsf::gammaincinv), static_cast<func_ff_f_t>(xsf::gammaincinv)},
+                         "gammaincinv", gammaincinv_doc);
+    PyModule_AddObjectRef(_special_ufuncs, "gammaincinv", gammaincinv);
+
+    PyObject *gammaincc =
+        SpecFun_NewUFunc({static_cast<func_dd_d_t>(xsf::gammaincc), static_cast<func_ff_f_t>(xsf::gammaincc)},
+                         "gammaincc", gammaincc_doc);
+    PyModule_AddObjectRef(_special_ufuncs, "gammaincc", gammaincc);
+
+    PyObject *gammainccinv =
+        SpecFun_NewUFunc({static_cast<func_dd_d_t>(xsf::gammainccinv), static_cast<func_ff_f_t>(xsf::gammainccinv)},
+                         "gammainccinv", gammainccinv_doc);
+    PyModule_AddObjectRef(_special_ufuncs, "gammainccinv", gammainccinv);
+
+    PyObject *gammaln = SpecFun_NewUFunc({static_cast<func_d_d_t>(xsf::gammaln), static_cast<func_f_f_t>(xsf::gammaln)},
                                          "gammaln", gammaln_doc);
     PyModule_AddObjectRef(_special_ufuncs, "gammaln", gammaln);
+
+    PyObject *gammasgn = SpecFun_NewUFunc(
+        {static_cast<func_d_d_t>(xsf::gammasgn), static_cast<func_f_f_t>(xsf::gammasgn)}, "gammasgn", gammasgn_doc);
+    PyModule_AddObjectRef(_special_ufuncs, "gammasgn", gammasgn);
 
     PyObject *hyp2f1 =
         SpecFun_NewUFunc({static_cast<func_dddd_d_t>(xsf::hyp2f1), static_cast<func_dddD_D_t>(xsf::hyp2f1),
@@ -424,6 +555,22 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
         {static_cast<func_f_f_t>(xsf::itstruve0), static_cast<func_d_d_t>(xsf::itstruve0)}, "itstruve0", itstruve0_doc);
     PyModule_AddObjectRef(_special_ufuncs, "itstruve0", itstruve0);
 
+    PyObject *i0 = SpecFun_NewUFunc(
+        {static_cast<func_d_d_t>(xsf::cyl_bessel_i0), static_cast<func_f_f_t>(xsf::cyl_bessel_i0)}, "i0", i0_doc);
+    PyModule_AddObjectRef(_special_ufuncs, "i0", i0);
+
+    PyObject *i0e = SpecFun_NewUFunc(
+        {static_cast<func_d_d_t>(xsf::cyl_bessel_i0e), static_cast<func_f_f_t>(xsf::cyl_bessel_i0e)}, "i0e", i0e_doc);
+    PyModule_AddObjectRef(_special_ufuncs, "i0e", i0e);
+
+    PyObject *i1 = SpecFun_NewUFunc(
+        {static_cast<func_d_d_t>(xsf::cyl_bessel_i1), static_cast<func_f_f_t>(xsf::cyl_bessel_i1)}, "i1", i1_doc);
+    PyModule_AddObjectRef(_special_ufuncs, "i1", i1);
+
+    PyObject *i1e = SpecFun_NewUFunc(
+        {static_cast<func_d_d_t>(xsf::cyl_bessel_i1e), static_cast<func_f_f_t>(xsf::cyl_bessel_i1e)}, "i1e", i1e_doc);
+    PyModule_AddObjectRef(_special_ufuncs, "i1e", i1e);
+
     PyObject *iv =
         SpecFun_NewUFunc({static_cast<func_ff_f_t>(xsf::cyl_bessel_i), static_cast<func_dd_d_t>(xsf::cyl_bessel_i),
                           static_cast<func_fF_F_t>(xsf::cyl_bessel_i), static_cast<func_dD_D_t>(xsf::cyl_bessel_i)},
@@ -439,6 +586,14 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
                           static_cast<func_fF_F_t>(xsf::cyl_bessel_ie), static_cast<func_dD_D_t>(xsf::cyl_bessel_ie)},
                          "ive", ive_doc);
     PyModule_AddObjectRef(_special_ufuncs, "ive", ive);
+
+    PyObject *j0 = SpecFun_NewUFunc(
+        {static_cast<func_d_d_t>(xsf::cyl_bessel_j0), static_cast<func_f_f_t>(xsf::cyl_bessel_j0)}, "j0", j0_doc);
+    PyModule_AddObjectRef(_special_ufuncs, "j0", j0);
+
+    PyObject *j1 = SpecFun_NewUFunc(
+        {static_cast<func_d_d_t>(xsf::cyl_bessel_j1), static_cast<func_f_f_t>(xsf::cyl_bessel_j1)}, "j1", j1_doc);
+    PyModule_AddObjectRef(_special_ufuncs, "j1", j1);
 
     PyObject *jv =
         SpecFun_NewUFunc({static_cast<func_ff_f_t>(xsf::cyl_bessel_j), static_cast<func_dd_d_t>(xsf::cyl_bessel_j),
@@ -471,6 +626,22 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
     PyObject *kerp =
         SpecFun_NewUFunc({static_cast<func_f_f_t>(xsf::kerp), static_cast<func_d_d_t>(xsf::kerp)}, "kerp", kerp_doc);
     PyModule_AddObjectRef(_special_ufuncs, "kerp", kerp);
+
+    PyObject *k0 = SpecFun_NewUFunc(
+        {static_cast<func_d_d_t>(xsf::cyl_bessel_k0), static_cast<func_f_f_t>(xsf::cyl_bessel_k0)}, "k0", k0_doc);
+    PyModule_AddObjectRef(_special_ufuncs, "k0", k0);
+
+    PyObject *k0e = SpecFun_NewUFunc(
+        {static_cast<func_d_d_t>(xsf::cyl_bessel_k0e), static_cast<func_f_f_t>(xsf::cyl_bessel_k0e)}, "k0e", k0e_doc);
+    PyModule_AddObjectRef(_special_ufuncs, "k0e", k0e);
+
+    PyObject *k1 = SpecFun_NewUFunc(
+        {static_cast<func_d_d_t>(xsf::cyl_bessel_k1), static_cast<func_f_f_t>(xsf::cyl_bessel_k1)}, "k1", k1_doc);
+    PyModule_AddObjectRef(_special_ufuncs, "k1", k1);
+
+    PyObject *k1e = SpecFun_NewUFunc(
+        {static_cast<func_d_d_t>(xsf::cyl_bessel_k1e), static_cast<func_f_f_t>(xsf::cyl_bessel_k1e)}, "k1e", k1e_doc);
+    PyModule_AddObjectRef(_special_ufuncs, "k1e", k1e);
 
     PyObject *kv =
         SpecFun_NewUFunc({static_cast<func_ff_f_t>(xsf::cyl_bessel_k), static_cast<func_dd_d_t>(xsf::cyl_bessel_k),
@@ -661,6 +832,10 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
         "modfresnelp", modfresnelp_doc);
     PyModule_AddObjectRef(_special_ufuncs, "modfresnelp", modfresnelp);
 
+    PyObject *modstruve = SpecFun_NewUFunc(
+        {static_cast<func_dd_d_t>(xsf::struve_l), static_cast<func_ff_f_t>(xsf::struve_l)}, "modstruve", struve_l_doc);
+    PyModule_AddObjectRef(_special_ufuncs, "modstruve", modstruve);
+
     PyObject *obl_ang1 = SpecFun_NewUFunc(
         {static_cast<func_ffff_ff_t>(xsf::oblate_aswfa_nocv), static_cast<func_dddd_dd_t>(xsf::oblate_aswfa_nocv)}, 2,
         "obl_ang1", obl_ang1_doc);
@@ -752,10 +927,23 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
                                      "psi", psi_doc);
     PyModule_AddObjectRef(_special_ufuncs, "psi", psi);
 
+    PyObject *radian = SpecFun_NewUFunc(
+        {static_cast<func_ddd_d_t>(xsf::radian), static_cast<func_fff_f_t>(xsf::radian)}, "radian", radian_doc);
+    PyModule_AddObjectRef(_special_ufuncs, "radian", radian);
+
     PyObject *rgamma = SpecFun_NewUFunc({static_cast<func_d_d_t>(xsf::rgamma), static_cast<func_D_D_t>(xsf::rgamma),
                                          static_cast<func_f_f_t>(xsf::rgamma), static_cast<func_F_F_t>(xsf::rgamma)},
                                         "rgamma", rgamma_doc);
     PyModule_AddObjectRef(_special_ufuncs, "rgamma", rgamma);
+
+    PyObject *_riemann_zeta =
+        SpecFun_NewUFunc({static_cast<func_d_d_t>(xsf::riemann_zeta), static_cast<func_f_f_t>(xsf::riemann_zeta)},
+                         "_riemann_zeta", _riemann_zeta_doc);
+    PyModule_AddObjectRef(_special_ufuncs, "_riemann_zeta", _riemann_zeta);
+
+    PyObject *sindg = SpecFun_NewUFunc({static_cast<func_d_d_t>(xsf::sindg), static_cast<func_f_f_t>(xsf::sindg)},
+                                       "sindg", sindg_doc);
+    PyModule_AddObjectRef(_special_ufuncs, "sindg", sindg);
 
     PyObject *_spherical_jn =
         SpecFun_NewUFunc({static_cast<func_ld_d_t>(xsf::sph_bessel_j), static_cast<func_lD_D_t>(xsf::sph_bessel_j),
@@ -838,10 +1026,26 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
             }));
     PyModule_AddObjectRef(_special_ufuncs, "sph_harm_y", sph_harm_y);
 
+    PyObject *struve = SpecFun_NewUFunc(
+        {static_cast<func_dd_d_t>(xsf::struve_h), static_cast<func_ff_f_t>(xsf::struve_h)}, "struve", struve_h_doc);
+    PyModule_AddObjectRef(_special_ufuncs, "struve", struve);
+
+    PyObject *tandg = SpecFun_NewUFunc({static_cast<func_d_d_t>(xsf::tandg), static_cast<func_f_f_t>(xsf::tandg)},
+                                       "tandg", tandg_doc);
+    PyModule_AddObjectRef(_special_ufuncs, "tandg", tandg);
+
     PyObject *wright_bessel =
         SpecFun_NewUFunc({static_cast<func_ddd_d_t>(xsf::wright_bessel), static_cast<func_fff_f_t>(xsf::wright_bessel)},
                          "wright_bessel", wright_bessel_doc);
     PyModule_AddObjectRef(_special_ufuncs, "wright_bessel", wright_bessel);
+
+    PyObject *y0 = SpecFun_NewUFunc(
+        {static_cast<func_d_d_t>(xsf::cyl_bessel_y0), static_cast<func_f_f_t>(xsf::cyl_bessel_y0)}, "y0", y0_doc);
+    PyModule_AddObjectRef(_special_ufuncs, "y0", y0);
+
+    PyObject *y1 = SpecFun_NewUFunc(
+        {static_cast<func_d_d_t>(xsf::cyl_bessel_y1), static_cast<func_f_f_t>(xsf::cyl_bessel_y1)}, "y1", y1_doc);
+    PyModule_AddObjectRef(_special_ufuncs, "y1", y1);
 
     PyObject *yv =
         SpecFun_NewUFunc({static_cast<func_ff_f_t>(xsf::cyl_bessel_y), static_cast<func_dd_d_t>(xsf::cyl_bessel_y),
@@ -854,6 +1058,10 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
                           static_cast<func_fF_F_t>(xsf::cyl_bessel_ye), static_cast<func_dD_D_t>(xsf::cyl_bessel_ye)},
                          "yve", yve_doc);
     PyModule_AddObjectRef(_special_ufuncs, "yve", yve);
+
+    PyObject *zetac = SpecFun_NewUFunc({static_cast<func_d_d_t>(xsf::zetac), static_cast<func_f_f_t>(xsf::zetac)},
+                                       "zetac", zetac_doc);
+    PyModule_AddObjectRef(_special_ufuncs, "zetac", zetac);
 
     return _special_ufuncs;
 }

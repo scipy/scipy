@@ -1,5 +1,6 @@
 #pragma once
 
+#include "cephes/fresnl.h"
 #include "config.h"
 
 namespace xsf {
@@ -305,11 +306,30 @@ namespace detail {
 
 /* Fresnel integrals of complex numbers */
 
-inline void cfresnl(std::complex<double> z, std::complex<double> *zfs, std::complex<double> *zfc) {
-    std::complex<double> zfd;
+inline void fresnel(double z, double &fs, double &fc) { cephes::fresnl(z, &fs, &fc); }
 
-    detail::cfs(z, zfs, &zfd);
-    detail::cfc(z, zfc, &zfd);
+inline void fresnel(float z, float &fs, float &fc) {
+    double fs_double;
+    double fc_double;
+    fresnel(static_cast<double>(z), fs_double, fc_double);
+
+    fs = fs_double;
+    fc = fc_double;
+}
+
+inline void fresnel(std::complex<double> z, std::complex<double> &fs, std::complex<double> &fc) {
+    std::complex<double> fd;
+    detail::cfs(z, &fs, &fd);
+    detail::cfc(z, &fc, &fd);
+}
+
+inline void fresnel(std::complex<float> z, std::complex<float> &fs, std::complex<float> &fc) {
+    std::complex<double> fs_cdouble;
+    std::complex<double> fc_cdouble;
+    fresnel(static_cast<std::complex<double>>(z), fs_cdouble, fc_cdouble);
+
+    fs = fs_cdouble;
+    fc = fc_cdouble;
 }
 
 template <typename T>
