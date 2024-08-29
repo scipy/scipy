@@ -161,25 +161,25 @@ def closest_STFT_dual_window(win: np.ndarray, hop: int, desired_dual: np.ndarray
         >>> hops, deviations, alphas = np.arange(1, 16), [], []
         >>> for h_ in hops:
         ...     w_cola, alpha = closest_STFT_dual_window(w_rect, h_, win, scaled=True)
-        ...     deviations.append(np.std(w_cola - win*alpha))
+        ...     deviations.append(np.linalg.norm(w_cola - win*alpha))
         ...     alphas.append(alpha)
         ...
         >>> fg0, (ax0, ax1) = plt.subplots(2, 1, sharex='all', tight_layout=True)
         >>> ax0.set_title(f"COLA Window closest to a {m}-Sample Bartlett Window")
-        >>> ax0.set(ylabel="Standard Dev.", xlim=(0, hops[-1]-.5))
+        >>> ax0.set(ylabel=r"$||w_\text{cola}-\alpha w||$", xlim=(0, hops[-1]-.5))
         >>> ax1.set(xlabel="Hop Interval", ylabel=r"Scaling factor $\alpha$",
         ...         ylim=(0, 1.25))
-        >>> ax0.plot(hops, deviations, 'C0.-', label="Std. Dev.")
-        >>> ax1.plot(hops, alphas, 'C1.-', label=r"$\alpha$")
+        >>> ax0.plot(hops, deviations, 'C0.-')
+        >>> ax1.plot(hops, alphas, 'C1.-')
         >>> for ax_ in (ax0, ax1):
         ...     ax_.grid()
         >>> plt.show()
 
         The lower plot shows the calculated scaling factor :math:`\alpha` for different
-        `hops` whereas the upper displays the standard deviation between the scaled
-        Bartlett window and the calculated window. Since for `hops` 1 to 4 as well as
-        for 6 and 12 the standard deviation is practically zero, the COLA condition is
-        fulfilled for those.
+        `hops` whereas the upper displays the  :math:`L_2`-norm of the difference
+        between the scaled Bartlett window and the calculated window. Since for `hops`
+        1 to 4 as well as for 6 and 12 the :math:`L_2`-norm of the difference is
+        practically zero, the COLA condition is fulfilled for those.
 
         See Also
         --------
@@ -248,9 +248,9 @@ class ShortTimeFFT:
     `from_dual` can be used to instantiate this class.
 
     By default, the so-called canonical dual window is used. It is the window with
-    minimal energy among all possible dual windows. `closest_STFT_dual_window` and
-    `from_win_equals_dual` provide means for utilizing alterantive dual windows.
-    Note that `win` is also always a dual window of `dual_win`.
+    minimal energy among all possible dual windows. `from_win_equals_dual` and
+    `~scipy.signal.closest_STFT_dual_window` provide means for utilizing alterantive
+    dual windows. Note that `win` is also always a dual window of `dual_win`.
 
     Due to the convention of time t = 0 being at the first sample of the input
     signal, the STFT values typically have negative time slots. Hence,
@@ -258,8 +258,8 @@ class ShortTimeFFT:
     backwards from an array's end like in standard Python indexing but being
     left of t = 0.
 
-    More detailed information can be found in the :ref:`tutorial_stft` section
-    of the :ref:`user_guide`.
+    More detailed information can be found in the :ref:`tutorial_stft_sliding_win`
+    section of the :ref:`user_guide`.
 
     Note that all parameters of the initializer, except `scale_to` (which uses
     `scaling`) have identical named attributes.
@@ -296,9 +296,9 @@ class ShortTimeFFT:
     Notes
     -----
     A typical STFT application is the creation of various types of time-frequency
-    plots, often subsumed under the term "spectrogram". Note this term is also
-    used to refer to the absolute square of a STFT [11]_ as distinction of
-    representations, as done in `~ShortTimeFFT.spectrogram`.
+    plots, often subsumed under the term "spectrogram". Note that this term is also
+    used to explecitly refer to the absolute square of a STFT [11]_, as done in
+    `~ShortTimeFFT.spectrogram`.
 
     The STFT can also be used for filtering and filter banks as discussed in [12]_.
 
@@ -368,7 +368,7 @@ class ShortTimeFFT:
 
     Reconstructing the signal with the `~ShortTimeFFT.istft` is
     straightforward, but note that the length of `x1` should be specified,
-    since the SFT length increases in `hop` steps:
+    since the STFT length increases in `hop` steps:
 
     >>> SFT.invertible  # check if invertible
     True
@@ -376,7 +376,7 @@ class ShortTimeFFT:
     >>> np.allclose(x, x1)
     True
 
-    It is possible to calculate the SFT of signal parts:
+    It is possible to calculate the STFT of signal parts:
 
     >>> p_q = SFT.nearest_k_p(N // 2)
     >>> Sx0 = SFT.stft(x[:p_q])
@@ -1226,7 +1226,7 @@ class ShortTimeFFT:
         (-7.105427357601002e-15+0j)  # may vary
 
         Note that the summation needs to be carried out over the complete
-        time-frequency plane. Hence, a `onesided_fft` cannot be used.
+        time-frequency plane. Hence, a `twosided` FFT is used here.
 
 
         See Also
