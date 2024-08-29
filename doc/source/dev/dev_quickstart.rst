@@ -16,8 +16,9 @@ steps to start contributing:
 2. **Build SciPy**
 
    SciPy uses compiled code for speed, which means you might need extra
-   dependencies to complete this step depending on your system - see
-   :ref:`building-from-source`.
+   dependencies to complete this step depending on your system. For detailed
+   instructions on building SciPy from source, please refer to the 
+   `Building From Source for SciPy Development <https://scipy.github.io/devdocs/building/index.html#building-from-source-for-scipy-development>`_ guide.
 
 3. **Perform development tasks**
 
