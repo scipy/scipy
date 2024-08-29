@@ -1267,9 +1267,6 @@ cdef extern from r"xsf_wrappers.h":
 
     double xsf_besselpoly(double a, double lmbda, double nu) nogil
     double xsf_beta(double a, double b) nogil
-    double cephes_chdtr(double df, double x) nogil
-    double cephes_chdtrc(double df, double x) nogil
-    double cephes_chdtri(double df, double y) nogil
     double xsf_betaln(double a, double b) nogil
     double xsf_cbrt(double x) nogil
     double xsf_gamma(double x) nogil
@@ -1297,17 +1294,6 @@ cdef extern from r"xsf_wrappers.h":
     double cephes_igamci(double a, double p) nogil
     double cephes_igam_fac(double a, double x) nogil
     double cephes_lanczos_sum_expg_scaled(double x) nogil
-    double cephes_kolmogorov(double x) nogil
-    double cephes_kolmogc(double x) nogil
-    double cephes_kolmogi(double x) nogil
-    double cephes_kolmogci(double x) nogil
-    double cephes_kolmogp(double x) nogil
-    double cephes_smirnov(int n, double x) nogil
-    double cephes_smirnovc(int n, double x) nogil
-    double cephes_smirnovi(int n, double x) nogil
-    double cephes_smirnovci(int n, double x) nogil
-    double cephes_smirnovp(int n, double x) nogil
-    double cephes_ndtr(double x) nogil
     double cephes_erf(double x) nogil
     double cephes_erfc(double x) nogil
     double cephes_poch(double x, double m) nogil
@@ -1328,33 +1314,51 @@ cdef extern from r"xsf_wrappers.h":
     double xsf_tandg(double x) nogil
     double xsf_cotdg(double x) nogil
     double xsf_radian(double d, double m, double s) nogil
-    double cephes_ndtri(double x) nogil
-    double cephes_bdtr(double k, int n, double p) nogil
-    double cephes_bdtri(double k, int n, double y) nogil
-    double cephes_bdtrc(double k, int n, double p) nogil
-    double cephes_btdtri(double aa, double bb, double yy0) nogil
-    double cephes_btdtr(double a, double b, double x) nogil
     double cephes_erfcinv(double y) nogil
     double cephes_exp10(double x) nogil
     double cephes_exp2(double x) nogil
-    double cephes_fdtr(double a, double b, double x) nogil
-    double cephes_fdtrc(double a, double b, double x) nogil
-    double cephes_fdtri(double a, double b, double y) nogil
-    double cephes_gdtr(double a, double b, double x) nogil
-    double cephes_gdtrc(double a, double b, double x) nogil
-    double cephes_owens_t(double h, double a) nogil
-    double cephes_nbdtr(int k, int n, double p) nogil
-    double cephes_nbdtrc(int k, int n, double p) nogil
-    double cephes_nbdtri(int k, int n, double p) nogil
-    double cephes_pdtr(double k, double m) nogil
-    double cephes_pdtrc(double k, double m) nogil
-    double cephes_pdtri(int k, double y) nogil
+
     double cephes_round(double x) nogil
     double cephes_spence(double x) nogil
 
-    double cephes_tukeylambdacdf(double x, double lmbda) nogil
     double xsf_struve_h(double v, double z) nogil
     double xsf_struve_l(double v, double z) nogil
+
+    # Stats
+
+    double xsf_bdtr(double k, int n, double p) nogil
+    double xsf_bdtri(double k, int n, double y) nogil
+    double xsf_bdtrc(double k, int n, double p) nogil
+    double xsf_btdtri(double aa, double bb, double yy0) nogil
+    double xsf_btdtr(double a, double b, double x) nogil
+    double xsf_chdtr(double df, double x) nogil
+    double xsf_chdtrc(double df, double x) nogil
+    double xsf_chdtri(double df, double y) nogil
+    double xsf_fdtr(double a, double b, double x) nogil
+    double xsf_fdtrc(double a, double b, double x) nogil
+    double xsf_fdtri(double a, double b, double y) nogil
+    double xsf_gdtr(double a, double b, double x) nogil
+    double xsf_gdtrc(double a, double b, double x) nogil
+    double xsf_kolmogorov(double x) nogil
+    double xsf_kolmogc(double x) nogil
+    double xsf_kolmogi(double x) nogil
+    double xsf_kolmogci(double x) nogil
+    double xsf_kolmogp(double x) nogil
+    double xsf_nbdtr(int k, int n, double p) nogil
+    double xsf_nbdtrc(int k, int n, double p) nogil
+    double xsf_nbdtri(int k, int n, double p) nogil
+    double xsf_ndtr(double x) nogil
+    double xsf_ndtri(double x) nogil
+    double xsf_owens_t(double h, double a) nogil
+    double xsf_pdtr(double k, double m) nogil
+    double xsf_pdtrc(double k, double m) nogil
+    double xsf_pdtri(int k, double y) nogil
+    double xsf_smirnov(int n, double x) nogil
+    double xsf_smirnovc(int n, double x) nogil
+    double xsf_smirnovi(int n, double x) nogil
+    double xsf_smirnovci(int n, double x) nogil
+    double xsf_smirnovp(int n, double x) nogil
+    double xsf_tukeylambdacdf(double x, double lmbda) nogil
 
 from ._agm cimport agm as _func_agm
 ctypedef double _proto_agm_t(double, double) noexcept nogil
@@ -1909,9 +1913,9 @@ cpdef double bdtr(double x0, dlp_number_t x1, double x2) noexcept nogil:
     if dlp_number_t is double:
         return _func_bdtr_unsafe(x0, x1, x2)
     elif dlp_number_t is long:
-        return cephes_bdtr(x0, x1, x2)
+        return xsf_bdtr(x0, x1, x2)
     elif dlp_number_t is Py_ssize_t:
-        return cephes_bdtr(x0, x1, x2)
+        return xsf_bdtr(x0, x1, x2)
     else:
         return NAN
 
@@ -1920,9 +1924,9 @@ cpdef double bdtrc(double x0, dlp_number_t x1, double x2) noexcept nogil:
     if dlp_number_t is double:
         return _func_bdtrc_unsafe(x0, x1, x2)
     elif dlp_number_t is long:
-        return cephes_bdtrc(x0, x1, x2)
+        return xsf_bdtrc(x0, x1, x2)
     elif dlp_number_t is Py_ssize_t:
-        return cephes_bdtrc(x0, x1, x2)
+        return xsf_bdtrc(x0, x1, x2)
     else:
         return NAN
 
@@ -1931,9 +1935,9 @@ cpdef double bdtri(double x0, dlp_number_t x1, double x2) noexcept nogil:
     if dlp_number_t is double:
         return _func_bdtri_unsafe(x0, x1, x2)
     elif dlp_number_t is long:
-        return cephes_bdtri(x0, x1, x2)
+        return xsf_bdtri(x0, x1, x2)
     elif dlp_number_t is Py_ssize_t:
-        return cephes_bdtri(x0, x1, x2)
+        return xsf_bdtri(x0, x1, x2)
     else:
         return NAN
 
@@ -2034,11 +2038,11 @@ cpdef double boxcox1p(double x0, double x1) noexcept nogil:
 
 cpdef double btdtr(double x0, double x1, double x2) noexcept nogil:
     """See the documentation for scipy.special.btdtr"""
-    return cephes_btdtr(x0, x1, x2)
+    return xsf_btdtr(x0, x1, x2)
 
 cpdef double btdtri(double x0, double x1, double x2) noexcept nogil:
     """See the documentation for scipy.special.btdtri"""
-    return cephes_btdtri(x0, x1, x2)
+    return xsf_btdtri(x0, x1, x2)
 
 cpdef double btdtria(double x0, double x1, double x2) noexcept nogil:
     """See the documentation for scipy.special.btdtria"""
@@ -2054,15 +2058,15 @@ cpdef double cbrt(double x0) noexcept nogil:
 
 cpdef double chdtr(double x0, double x1) noexcept nogil:
     """See the documentation for scipy.special.chdtr"""
-    return cephes_chdtr(x0, x1)
+    return xsf_chdtr(x0, x1)
 
 cpdef double chdtrc(double x0, double x1) noexcept nogil:
     """See the documentation for scipy.special.chdtrc"""
-    return cephes_chdtrc(x0, x1)
+    return xsf_chdtrc(x0, x1)
 
 cpdef double chdtri(double x0, double x1) noexcept nogil:
     """See the documentation for scipy.special.chdtri"""
-    return cephes_chdtri(x0, x1)
+    return xsf_chdtri(x0, x1)
 
 cpdef double chdtriv(double x0, double x1) noexcept nogil:
     """See the documentation for scipy.special.chdtriv"""
@@ -2561,15 +2565,15 @@ cpdef double exprel(double x0) noexcept nogil:
 
 cpdef double fdtr(double x0, double x1, double x2) noexcept nogil:
     """See the documentation for scipy.special.fdtr"""
-    return cephes_fdtr(x0, x1, x2)
+    return xsf_fdtr(x0, x1, x2)
 
 cpdef double fdtrc(double x0, double x1, double x2) noexcept nogil:
     """See the documentation for scipy.special.fdtrc"""
-    return cephes_fdtrc(x0, x1, x2)
+    return xsf_fdtrc(x0, x1, x2)
 
 cpdef double fdtri(double x0, double x1, double x2) noexcept nogil:
     """See the documentation for scipy.special.fdtri"""
-    return cephes_fdtri(x0, x1, x2)
+    return xsf_fdtri(x0, x1, x2)
 
 cpdef double fdtridfd(double x0, double x1, double x2) noexcept nogil:
     """See the documentation for scipy.special.fdtridfd"""
@@ -2637,11 +2641,11 @@ cpdef double gammasgn(double x0) noexcept nogil:
 
 cpdef double gdtr(double x0, double x1, double x2) noexcept nogil:
     """See the documentation for scipy.special.gdtr"""
-    return cephes_gdtr(x0, x1, x2)
+    return xsf_gdtr(x0, x1, x2)
 
 cpdef double gdtrc(double x0, double x1, double x2) noexcept nogil:
     """See the documentation for scipy.special.gdtrc"""
-    return cephes_gdtrc(x0, x1, x2)
+    return xsf_gdtrc(x0, x1, x2)
 
 cpdef double gdtria(double x0, double x1, double x2) noexcept nogil:
     """See the documentation for scipy.special.gdtria"""
@@ -2928,11 +2932,11 @@ cpdef double kn(dlp_number_t x0, double x1) noexcept nogil:
 
 cpdef double kolmogi(double x0) noexcept nogil:
     """See the documentation for scipy.special.kolmogi"""
-    return cephes_kolmogi(x0)
+    return xsf_kolmogi(x0)
 
 cpdef double kolmogorov(double x0) noexcept nogil:
     """See the documentation for scipy.special.kolmogorov"""
-    return cephes_kolmogorov(x0)
+    return xsf_kolmogorov(x0)
 
 cpdef Dd_number_t kv(double x0, Dd_number_t x1) noexcept nogil:
     """See the documentation for scipy.special.kv"""
@@ -3135,9 +3139,9 @@ cpdef double nbdtr(dlp_number_t x0, dlp_number_t x1, double x2) noexcept nogil:
     if dlp_number_t is double:
         return _func_nbdtr_unsafe(x0, x1, x2)
     elif dlp_number_t is long:
-        return cephes_nbdtr(x0, x1, x2)
+        return xsf_nbdtr(x0, x1, x2)
     elif dlp_number_t is Py_ssize_t:
-        return cephes_nbdtr(x0, x1, x2)
+        return xsf_nbdtr(x0, x1, x2)
     else:
         return NAN
 
@@ -3146,9 +3150,9 @@ cpdef double nbdtrc(dlp_number_t x0, dlp_number_t x1, double x2) noexcept nogil:
     if dlp_number_t is double:
         return _func_nbdtrc_unsafe(x0, x1, x2)
     elif dlp_number_t is long:
-        return cephes_nbdtrc(x0, x1, x2)
+        return xsf_nbdtrc(x0, x1, x2)
     elif dlp_number_t is Py_ssize_t:
-        return cephes_nbdtrc(x0, x1, x2)
+        return xsf_nbdtrc(x0, x1, x2)
     else:
         return NAN
 
@@ -3157,9 +3161,9 @@ cpdef double nbdtri(dlp_number_t x0, dlp_number_t x1, double x2) noexcept nogil:
     if dlp_number_t is double:
         return _func_nbdtri_unsafe(x0, x1, x2)
     elif dlp_number_t is long:
-        return cephes_nbdtri(x0, x1, x2)
+        return xsf_nbdtri(x0, x1, x2)
     elif dlp_number_t is Py_ssize_t:
-        return cephes_nbdtri(x0, x1, x2)
+        return xsf_nbdtri(x0, x1, x2)
     else:
         return NAN
 
@@ -3212,7 +3216,7 @@ cpdef Dd_number_t ndtr(Dd_number_t x0) noexcept nogil:
     if Dd_number_t is double_complex:
         return (<double complex(*)(double complex) noexcept nogil>scipy.special._ufuncs_cxx._export_faddeeva_ndtr)(x0)
     elif Dd_number_t is double:
-        return cephes_ndtr(x0)
+        return xsf_ndtr(x0)
     else:
         if Dd_number_t is double_complex:
             return NAN
@@ -3221,7 +3225,7 @@ cpdef Dd_number_t ndtr(Dd_number_t x0) noexcept nogil:
 
 cpdef double ndtri(double x0) noexcept nogil:
     """See the documentation for scipy.special.ndtri"""
-    return cephes_ndtri(x0)
+    return xsf_ndtri(x0)
 
 cpdef double nrdtrimn(double x0, double x1, double x2) noexcept nogil:
     """See the documentation for scipy.special.nrdtrimn"""
@@ -3297,7 +3301,7 @@ def _obl_rad2_cv_pywrap(double x0, double x1, double x2, double x3, double x4):
 
 cpdef double owens_t(double x0, double x1) noexcept nogil:
     """See the documentation for scipy.special.owens_t"""
-    return cephes_owens_t(x0, x1)
+    return xsf_owens_t(x0, x1)
 
 cdef void pbdv(double x0, double x1, double *y0, double *y1) noexcept nogil:
     """See the documentation for scipy.special.pbdv"""
@@ -3331,20 +3335,20 @@ def _pbwa_pywrap(double x0, double x1):
 
 cpdef double pdtr(double x0, double x1) noexcept nogil:
     """See the documentation for scipy.special.pdtr"""
-    return cephes_pdtr(x0, x1)
+    return xsf_pdtr(x0, x1)
 
 cpdef double pdtrc(double x0, double x1) noexcept nogil:
     """See the documentation for scipy.special.pdtrc"""
-    return cephes_pdtrc(x0, x1)
+    return xsf_pdtrc(x0, x1)
 
 cpdef double pdtri(dlp_number_t x0, double x1) noexcept nogil:
     """See the documentation for scipy.special.pdtri"""
     if dlp_number_t is double:
         return _func_pdtri_unsafe(x0, x1)
     elif dlp_number_t is long:
-        return cephes_pdtri(x0, x1)
+        return xsf_pdtri(x0, x1)
     elif dlp_number_t is Py_ssize_t:
-        return cephes_pdtri(x0, x1)
+        return xsf_pdtri(x0, x1)
     else:
         return NAN
 
@@ -3521,9 +3525,9 @@ cpdef double smirnov(dlp_number_t x0, double x1) noexcept nogil:
     if dlp_number_t is double:
         return _func_smirnov_unsafe(x0, x1)
     elif dlp_number_t is long:
-        return cephes_smirnov(x0, x1)
+        return xsf_smirnov(x0, x1)
     elif dlp_number_t is Py_ssize_t:
-        return cephes_smirnov(x0, x1)
+        return xsf_smirnov(x0, x1)
     else:
         return NAN
 
@@ -3532,9 +3536,9 @@ cpdef double smirnovi(dlp_number_t x0, double x1) noexcept nogil:
     if dlp_number_t is double:
         return _func_smirnovi_unsafe(x0, x1)
     elif dlp_number_t is long:
-        return cephes_smirnovi(x0, x1)
+        return xsf_smirnovi(x0, x1)
     elif dlp_number_t is Py_ssize_t:
-        return cephes_smirnovi(x0, x1)
+        return xsf_smirnovi(x0, x1)
     else:
         return NAN
 
@@ -3583,7 +3587,7 @@ cpdef double tandg(double x0) noexcept nogil:
 
 cpdef double tklmbda(double x0, double x1) noexcept nogil:
     """See the documentation for scipy.special.tklmbda"""
-    return cephes_tukeylambdacdf(x0, x1)
+    return xsf_tukeylambdacdf(x0, x1)
 
 cpdef double complex wofz(double complex x0) noexcept nogil:
     """See the documentation for scipy.special.wofz"""

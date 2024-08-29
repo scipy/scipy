@@ -230,11 +230,9 @@ npy_cdouble special_csph_bessel_k_jac(long n, npy_cdouble z);
 double xsf_beta(double a, double b);
 double xsf_betaln(double a, double b);
 
-double cephes_chdtr(double df, double x);
-
-double cephes_chdtrc(double df, double x);
-
-double cephes_chdtri(double df, double y);
+double xsf_chdtr(double df, double x);
+double xsf_chdtrc(double df, double x);
+double xsf_chdtri(double df, double y);
 
 double xsf_sinpi(double x);
 
@@ -281,28 +279,6 @@ double cephes_igam_fac(double a, double x);
 
 double cephes_lanczos_sum_expg_scaled(double x);
 
-double cephes_kolmogorov(double x);
-
-double cephes_kolmogc(double x);
-
-double cephes_kolmogi(double x);
-
-double cephes_kolmogci(double x);
-
-double cephes_kolmogp(double x);
-
-double cephes_smirnov(int n, double x);
-
-double cephes_smirnovc(int n, double x);
-
-double cephes_smirnovi(int n, double x);
-
-double cephes_smirnovci(int n, double x);
-
-double cephes_smirnovp(int n, double x);
-
-double cephes_ndtr(double x);
-
 double cephes_erf(double x);
 
 double cephes_erfc(double x);
@@ -343,57 +319,53 @@ double xsf_cotdg(double x);
 
 double xsf_radian(double d, double m, double s);
 
-double cephes_ndtri(double x);
-
-double cephes_bdtr(double k, int n, double p);
-
-double cephes_bdtri(double k, int n, double y);
-
-double cephes_bdtrc(double k, int n, double p);
-
-double cephes_btdtri(double aa, double bb, double yy0);
-
-double cephes_btdtr(double a, double b, double x);
-
 double cephes_erfcinv(double y);
 
 double cephes_exp10(double x);
 
 double cephes_exp2(double x);
 
-double cephes_fdtr(double a, double b, double x);
-
-double cephes_fdtrc(double a, double b, double x);
-
-double cephes_fdtri(double a, double b, double y);
-
-double cephes_gdtr(double a, double b, double x);
-
-double cephes_gdtrc(double a, double b, double x);
-
-double cephes_owens_t(double h, double a);
-
-double cephes_nbdtr(int k, int n, double p);
-
-double cephes_nbdtrc(int k, int n, double p);
-
-double cephes_nbdtri(int k, int n, double p);
-
-double cephes_pdtr(double k, double m);
-
-double cephes_pdtrc(double k, double m);
-
-double cephes_pdtri(int k, double y);
-
 double cephes_round(double x);
 
 double cephes_spence(double x);
 
-double cephes_tukeylambdacdf(double x, double lmbda);
-
 double xsf_struve_h(double v, double z);
 
 double xsf_struve_l(double v, double z);
+
+
+// Stats
+
+double xsf_bdtr(double k, int n, double p);
+double xsf_bdtri(double k, int n, double y);
+double xsf_bdtrc(double k, int n, double p);
+double xsf_btdtri(double aa, double bb, double yy0);
+double xsf_btdtr(double a, double b, double x);
+double xsf_fdtr(double a, double b, double x);
+double xsf_fdtrc(double a, double b, double x);
+double xsf_fdtri(double a, double b, double y);
+double xsf_gdtr(double a, double b, double x);
+double xsf_gdtrc(double a, double b, double x);
+double xsf_kolmogorov(double x);
+double xsf_kolmogc(double x);
+double xsf_kolmogi(double x);
+double xsf_kolmogci(double x);
+double xsf_kolmogp(double x);
+double xsf_nbdtr(int k, int n, double p);
+double xsf_nbdtrc(int k, int n, double p);
+double xsf_nbdtri(int k, int n, double p);
+double xsf_ndtr(double x);
+double xsf_ndtri(double x);
+double xsf_owens_t(double h, double a);
+double xsf_pdtr(double k, double m);
+double xsf_pdtrc(double k, double m);
+double xsf_pdtri(int k, double y);
+double xsf_smirnov(int n, double x);
+double xsf_smirnovc(int n, double x);
+double xsf_smirnovi(int n, double x);
+double xsf_smirnovci(int n, double x);
+double xsf_smirnovp(int n, double x);
+double xsf_tukeylambdacdf(double x, double lmbda);
 
 #ifdef __cplusplus
 } /* extern "C" */

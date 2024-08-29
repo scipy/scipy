@@ -136,12 +136,12 @@
     },
     "btdtr": {
         "xsf_wrappers.h": {
-            "cephes_btdtr": "ddd->d"
+            "xsf_btdtr": "ddd->d"
         }
     },
     "btdtri": {
         "xsf_wrappers.h": {
-            "cephes_btdtri": "ddd->d"
+            "xsf_btdtri": "ddd->d"
         }
     },
     "btdtria": {
@@ -156,17 +156,17 @@
     },
     "chdtr": {
         "xsf_wrappers.h": {
-            "cephes_chdtr": "dd->d"
+            "xsf_chdtr": "dd->d"
         }
     },
     "chdtrc": {
         "xsf_wrappers.h": {
-            "cephes_chdtrc": "dd->d"
+            "xsf_chdtrc": "dd->d"
         }
     },
     "chdtri": {
         "xsf_wrappers.h": {
-            "cephes_chdtri": "dd->d"
+            "xsf_chdtri": "dd->d"
         }
     },
     "chdtriv": {
@@ -403,17 +403,17 @@
     },
     "fdtr": {
         "xsf_wrappers.h": {
-            "cephes_fdtr": "ddd->d"
+            "xsf_fdtr": "ddd->d"
         }
     },
     "fdtrc": {
         "xsf_wrappers.h": {
-            "cephes_fdtrc": "ddd->d"
+            "xsf_fdtrc": "ddd->d"
         }
     },
     "fdtri": {
         "xsf_wrappers.h": {
-            "cephes_fdtri": "ddd->d"
+            "xsf_fdtri": "ddd->d"
         }
     },
     "fdtridfd": {
@@ -422,12 +422,12 @@
     },
     "gdtr": {
         "xsf_wrappers.h": {
-            "cephes_gdtr": "ddd->d"
+            "xsf_gdtr": "ddd->d"
         }
     },
     "gdtrc": {
         "xsf_wrappers.h": {
-            "cephes_gdtrc": "ddd->d"
+            "xsf_gdtrc": "ddd->d"
         }
     },
     "gdtria": {
@@ -492,27 +492,27 @@
     },
     "_kolmogc": {
         "xsf_wrappers.h": {
-            "cephes_kolmogc": "d->d"
+            "xsf_kolmogc": "d->d"
         }
     },
     "_kolmogci": {
         "xsf_wrappers.h": {
-            "cephes_kolmogci": "d->d"
+            "xsf_kolmogci": "d->d"
         }
     },
     "kolmogi": {
         "xsf_wrappers.h": {
-            "cephes_kolmogi": "d->d"
+            "xsf_kolmogi": "d->d"
         }
     },
     "_kolmogp": {
         "xsf_wrappers.h": {
-            "cephes_kolmogp": "d->d"
+            "xsf_kolmogp": "d->d"
         }
     },
     "kolmogorov": {
         "xsf_wrappers.h": {
-            "cephes_kolmogorov": "d->d"
+            "xsf_kolmogorov": "d->d"
         }
     },
     "_landau_pdf": {
@@ -644,12 +644,12 @@
             "faddeeva_ndtr": "D->D"
         },
         "xsf_wrappers.h": {
-            "cephes_ndtr": "d->d"
+            "xsf_ndtr": "d->d"
         }
     },
     "ndtri": {
         "xsf_wrappers.h": {
-            "cephes_ndtri": "d->d"
+            "xsf_ndtri": "d->d"
         }
     },
     "nrdtrimn": {
@@ -663,17 +663,17 @@
     },
     "owens_t": {
         "xsf_wrappers.h": {
-            "cephes_owens_t": "dd->d"
+            "xsf_owens_t": "dd->d"
         }
     },
     "pdtr": {
         "xsf_wrappers.h": {
-            "cephes_pdtr": "dd->d"
+            "xsf_pdtr": "dd->d"
         }
     },
     "pdtrc": {
         "xsf_wrappers.h": {
-            "cephes_pdtrc": "dd->d"
+            "xsf_pdtrc": "dd->d"
         }
     },
     "pdtri": {
@@ -799,7 +799,7 @@
     },
     "tklmbda": {
         "xsf_wrappers.h": {
-            "cephes_tukeylambdacdf": "dd->d"
+            "xsf_tukeylambdacdf": "dd->d"
         }
     },
     "wofz": {

@@ -21,35 +21,24 @@
 #include "xsf/sph_bessel.h"
 #include "xsf/sph_harm.h"
 #include "xsf/sphd_wave.h"
+#include "xsf/stats.h"
 #include "xsf/struve.h"
 #include "xsf/trig.h"
 #include "xsf/wright_bessel.h"
 #include "xsf/zeta.h"
 #include "xsf_special.h"
 
-#include "xsf/cephes/bdtr.h"
 #include "xsf/cephes/cbrt.h"
-#include "xsf/cephes/chdtr.h"
 #include "xsf/cephes/erfinv.h"
 #include "xsf/cephes/exp10.h"
 #include "xsf/cephes/exp2.h"
 #include "xsf/cephes/expn.h"
-#include "xsf/cephes/fdtr.h"
 #include "xsf/cephes/fresnl.h"
-#include "xsf/cephes/gdtr.h"
 #include "xsf/cephes/hyperg.h"
 #include "xsf/cephes/igam.h"
 #include "xsf/cephes/igami.h"
-#include "xsf/cephes/incbet.h"
-#include "xsf/cephes/incbi.h"
 #include "xsf/cephes/jv.h"
-#include "xsf/cephes/kolmogorov.h"
 #include "xsf/cephes/lanczos.h"
-#include "xsf/cephes/nbdtr.h"
-#include "xsf/cephes/ndtr.h"
-#include "xsf/cephes/ndtri.h"
-#include "xsf/cephes/owens_t.h"
-#include "xsf/cephes/pdtr.h"
 #include "xsf/cephes/poch.h"
 #include "xsf/cephes/rgamma.h"
 #include "xsf/cephes/round.h"
@@ -58,7 +47,6 @@
 #include "xsf/cephes/sici.h"
 #include "xsf/cephes/spence.h"
 #include "xsf/cephes/trig.h"
-#include "xsf/cephes/tukey.h"
 #include "xsf/cephes/unity.h"
 #include "xsf/cephes/yn.h"
 
@@ -309,6 +297,10 @@ npy_cdouble special_ccyl_hankel_1e(double v, npy_cdouble z) {
     return to_ccomplex(xsf::cyl_hankel_1e(v, to_complex(z)));
 }
 
+double cephes_ellpk_wrap(double x) { return xsf::cephes::ellpk(x); }
+
+int cephes_fresnl_wrap(double xxa, double *ssa, double *cca) { return xsf::cephes::fresnl(xxa, ssa, cca); }
+
 npy_cdouble special_ccyl_hankel_2(double v, npy_cdouble z) { return to_ccomplex(xsf::cyl_hankel_2(v, to_complex(z))); }
 
 npy_cdouble special_ccyl_hankel_2e(double v, npy_cdouble z) {
@@ -359,12 +351,6 @@ npy_cdouble special_sph_harm_unsafe(double m, double n, double theta, double phi
     return to_ccomplex(::sph_harm(static_cast<long>(m), static_cast<long>(n), theta, phi));
 }
 
-double cephes_bdtr_wrap(double k, Py_ssize_t n, double p) { return xsf::cephes::bdtr(k, static_cast<int>(n), p); }
-
-double cephes_bdtri_wrap(double k, Py_ssize_t n, double y) { return xsf::cephes::bdtri(k, static_cast<int>(n), y); }
-
-double cephes_bdtrc_wrap(double k, Py_ssize_t n, double p) { return xsf::cephes::bdtrc(k, static_cast<int>(n), p); }
-
 double cephes_expm1_wrap(double x) { return xsf::cephes::expm1(x); }
 
 double cephes_expn_wrap(Py_ssize_t n, double x) { return xsf::cephes::expn(static_cast<int>(n), x); }
@@ -377,43 +363,9 @@ int cephes_ellpj_wrap(double u, double m, double *sn, double *cn, double *dn, do
     return xsf::cephes::ellpj(u, m, sn, cn, dn, ph);
 }
 
-double cephes_ellpk_wrap(double x) { return xsf::cephes::ellpk(x); }
-
-int cephes_fresnl_wrap(double xxa, double *ssa, double *cca) { return xsf::cephes::fresnl(xxa, ssa, cca); }
-
-double cephes_nbdtr_wrap(Py_ssize_t k, Py_ssize_t n, double p) {
-    return xsf::cephes::nbdtr(static_cast<int>(k), static_cast<int>(n), p);
-}
-
-double cephes_nbdtrc_wrap(Py_ssize_t k, Py_ssize_t n, double p) {
-    return xsf::cephes::nbdtrc(static_cast<int>(k), static_cast<int>(n), p);
-}
-
-double cephes_nbdtri_wrap(Py_ssize_t k, Py_ssize_t n, double p) {
-    return xsf::cephes::nbdtri(static_cast<int>(k), static_cast<int>(n), p);
-}
-
-double cephes_ndtr_wrap(double x) { return xsf::cephes::ndtr(x); }
-
-double cephes_ndtri_wrap(double x) { return xsf::cephes::ndtri(x); }
-
-double cephes_pdtri_wrap(Py_ssize_t k, double y) { return xsf::cephes::pdtri(static_cast<int>(k), y); }
-
-double cephes_poch_wrap(double x, double m) { return xsf::cephes::poch(x, m); }
-
 int cephes_sici_wrap(double x, double *si, double *ci) { return xsf::cephes::sici(x, si, ci); }
 
 int cephes_shichi_wrap(double x, double *si, double *ci) { return xsf::cephes::shichi(x, si, ci); }
-
-double cephes_smirnov_wrap(Py_ssize_t n, double x) { return xsf::cephes::smirnov(static_cast<int>(n), x); }
-
-double cephes_smirnovc_wrap(Py_ssize_t n, double x) { return xsf::cephes::smirnovc(static_cast<int>(n), x); }
-
-double cephes_smirnovi_wrap(Py_ssize_t n, double x) { return xsf::cephes::smirnovi(static_cast<int>(n), x); }
-
-double cephes_smirnovci_wrap(Py_ssize_t n, double x) { return xsf::cephes::smirnovci(static_cast<int>(n), x); }
-
-double cephes_smirnovp_wrap(Py_ssize_t n, double x) { return xsf::cephes::smirnovp(static_cast<int>(n), x); }
 
 double cephes__struve_asymp_large_z(double v, double z, Py_ssize_t is_h, double *err) {
     return xsf::cephes::detail::struve_asymp_large_z(v, z, static_cast<int>(is_h), err);
@@ -486,12 +438,6 @@ double xsf_beta(double a, double b) { return xsf::beta(a, b); }
 
 double xsf_betaln(double a, double b) { return xsf::betaln(a, b); }
 
-double cephes_chdtr(double df, double x) { return xsf::cephes::chdtr(df, x); }
-
-double cephes_chdtrc(double df, double x) { return xsf::cephes::chdtrc(df, x); }
-
-double cephes_chdtri(double df, double y) { return xsf::cephes::chdtri(df, y); }
-
 double xsf_cbrt(double x) { return xsf::cbrt(x); }
 
 double xsf_gamma(double x) { return xsf::gamma(x); }
@@ -548,28 +494,6 @@ double cephes_igam_fac(double a, double x) { return xsf::cephes::detail::igam_fa
 
 double cephes_lanczos_sum_expg_scaled(double x) { return xsf::cephes::lanczos_sum_expg_scaled(x); }
 
-double cephes_kolmogorov(double x) { return xsf::cephes::kolmogorov(x); }
-
-double cephes_kolmogc(double x) { return xsf::cephes::kolmogc(x); }
-
-double cephes_kolmogi(double x) { return xsf::cephes::kolmogi(x); }
-
-double cephes_kolmogci(double x) { return xsf::cephes::kolmogci(x); }
-
-double cephes_kolmogp(double x) { return xsf::cephes::kolmogp(x); }
-
-double cephes_smirnov(int n, double x) { return xsf::cephes::smirnov(n, x); }
-
-double cephes_smirnovc(int n, double x) { return xsf::cephes::smirnovc(n, x); }
-
-double cephes_smirnovi(int n, double x) { return xsf::cephes::smirnovi(n, x); }
-
-double cephes_smirnovci(int n, double x) { return xsf::cephes::smirnovci(n, x); }
-
-double cephes_smirnovp(int n, double x) { return xsf::cephes::smirnovp(n, x); }
-
-double cephes_ndtr(double x) { return xsf::cephes::ndtr(x); }
-
 double cephes_erf(double x) { return xsf::cephes::erf(x); }
 
 double cephes_erfc(double x) { return xsf::cephes::erfc(x); }
@@ -606,21 +530,11 @@ double xsf_cosdg(double x) { return xsf::cosdg(x); }
 
 double xsf_tandg(double x) { return xsf::tandg(x); }
 
+double cephes_poch_wrap(double x, double m) { return xsf::cephes::poch(x, m); }
+
 double xsf_cotdg(double x) { return xsf::cotdg(x); }
 
 double xsf_radian(double d, double m, double s) { return xsf::radian(d, m, s); }
-
-double cephes_ndtri(double x) { return xsf::cephes::ndtri(x); }
-
-double cephes_bdtr(double k, int n, double p) { return xsf::cephes::bdtr(k, n, p); }
-
-double cephes_bdtri(double k, int n, double y) { return xsf::cephes::bdtri(k, n, y); }
-
-double cephes_bdtrc(double k, int n, double p) { return xsf::cephes::bdtrc(k, n, p); }
-
-double cephes_btdtri(double aa, double bb, double yy0) { return xsf::cephes::incbi(aa, bb, yy0); }
-
-double cephes_btdtr(double a, double b, double x) { return xsf::cephes::incbet(a, b, x); }
 
 double cephes_erfcinv(double y) { return xsf::cephes::erfcinv(y); }
 
@@ -628,36 +542,114 @@ double cephes_exp10(double x) { return xsf::cephes::exp10(x); }
 
 double cephes_exp2(double x) { return xsf::cephes::exp2(x); }
 
-double cephes_fdtr(double a, double b, double x) { return xsf::cephes::fdtr(a, b, x); }
-
-double cephes_fdtrc(double a, double b, double x) { return xsf::cephes::fdtrc(a, b, x); }
-
-double cephes_fdtri(double a, double b, double y) { return xsf::cephes::fdtri(a, b, y); }
-
-double cephes_gdtr(double a, double b, double x) { return xsf::cephes::gdtr(a, b, x); }
-
-double cephes_gdtrc(double a, double b, double x) { return xsf::cephes::gdtrc(a, b, x); }
-
-double cephes_owens_t(double h, double a) { return xsf::cephes::owens_t(h, a); }
-
-double cephes_nbdtr(int k, int n, double p) { return xsf::cephes::nbdtr(k, n, p); }
-
-double cephes_nbdtrc(int k, int n, double p) { return xsf::cephes::nbdtrc(k, n, p); }
-
-double cephes_nbdtri(int k, int n, double p) { return xsf::cephes::nbdtri(k, n, p); }
-
-double cephes_pdtr(double k, double m) { return xsf::cephes::pdtr(k, m); }
-
-double cephes_pdtrc(double k, double m) { return xsf::cephes::pdtrc(k, m); }
-
-double cephes_pdtri(int k, double y) { return xsf::cephes::pdtri(k, y); }
-
 double cephes_round(double x) { return xsf::cephes::round(x); }
 
 double cephes_spence(double x) { return xsf::cephes::spence(x); }
 
-double cephes_tukeylambdacdf(double x, double lmbda) { return xsf::cephes::tukeylambdacdf(x, lmbda); }
-
 double xsf_struve_h(double v, double z) { return xsf::struve_h(v, z); }
 
 double xsf_struve_l(double v, double z) { return xsf::struve_l(v, z); }
+
+// Stats
+
+double xsf_bdtr(double k, int n, double p) { return xsf::bdtr(k, n, p); }
+
+double xsf_bdtri(double k, int n, double y) { return xsf::bdtri(k, n, y); }
+
+double xsf_bdtrc(double k, int n, double p) { return xsf::bdtrc(k, n, p); }
+
+double xsf_btdtri(double aa, double bb, double yy0) { return xsf::btdtri(aa, bb, yy0); }
+
+double xsf_btdtr(double a, double b, double x) { return xsf::btdtr(a, b, x); }
+
+double xsf_chdtr(double df, double x) { return xsf::chdtr(df, x); }
+
+double xsf_chdtrc(double df, double x) { return xsf::chdtrc(df, x); }
+
+double xsf_chdtri(double df, double y) { return xsf::chdtri(df, y); }
+
+double xsf_fdtr(double a, double b, double x) { return xsf::fdtr(a, b, x); }
+
+double xsf_fdtrc(double a, double b, double x) { return xsf::fdtrc(a, b, x); }
+
+double xsf_fdtri(double a, double b, double y) { return xsf::fdtri(a, b, y); }
+
+double xsf_gdtr(double a, double b, double x) { return xsf::gdtr(a, b, x); }
+
+double xsf_gdtrc(double a, double b, double x) { return xsf::gdtrc(a, b, x); }
+
+double xsf_kolmogorov(double x) { return xsf::kolmogorov(x); }
+
+double xsf_kolmogc(double x) { return xsf::kolmogc(x); }
+
+double xsf_kolmogi(double x) { return xsf::kolmogi(x); }
+
+double xsf_kolmogci(double x) { return xsf::kolmogci(x); }
+
+double xsf_kolmogp(double x) { return xsf::kolmogp(x); }
+
+double xsf_nbdtr(int k, int n, double p) { return xsf::nbdtr(k, n, p); }
+
+double xsf_nbdtrc(int k, int n, double p) { return xsf::nbdtrc(k, n, p); }
+
+double xsf_nbdtri(int k, int n, double p) { return xsf::nbdtri(k, n, p); }
+
+double xsf_ndtr(double x) { return xsf::ndtr(x); }
+
+double xsf_ndtri(double x) { return xsf::ndtri(x); }
+
+double xsf_owens_t(double h, double a) { return xsf::owens_t(h, a); }
+
+double xsf_pdtr(double k, double m) { return xsf::pdtr(k, m); }
+
+double xsf_pdtrc(double k, double m) { return xsf::pdtrc(k, m); }
+
+double xsf_pdtri(int k, double y) { return xsf::pdtri(k, y); }
+
+double xsf_smirnov(int n, double x) { return xsf::smirnov(n, x); }
+
+double xsf_smirnovc(int n, double x) { return xsf::smirnovc(n, x); }
+
+double xsf_smirnovi(int n, double x) { return xsf::smirnovi(n, x); }
+
+double xsf_smirnovci(int n, double x) { return xsf::smirnovci(n, x); }
+
+double xsf_smirnovp(int n, double x) { return xsf::smirnovp(n, x); }
+
+double xsf_tukeylambdacdf(double x, double lmbda) { return xsf::tukeylambdacdf(x, lmbda); }
+
+
+
+double cephes_bdtr_wrap(double k, Py_ssize_t n, double p) { return xsf::bdtr(k, static_cast<int>(n), p); }
+
+double cephes_bdtri_wrap(double k, Py_ssize_t n, double y) { return xsf::bdtri(k, static_cast<int>(n), y); }
+
+double cephes_bdtrc_wrap(double k, Py_ssize_t n, double p) { return xsf::bdtrc(k, static_cast<int>(n), p); }
+
+double cephes_nbdtr_wrap(Py_ssize_t k, Py_ssize_t n, double p) {
+    return xsf::cephes::nbdtr(static_cast<int>(k), static_cast<int>(n), p);
+}
+
+double cephes_nbdtrc_wrap(Py_ssize_t k, Py_ssize_t n, double p) {
+    return xsf::cephes::nbdtrc(static_cast<int>(k), static_cast<int>(n), p);
+}
+
+double cephes_nbdtri_wrap(Py_ssize_t k, Py_ssize_t n, double p) {
+    return xsf::cephes::nbdtri(static_cast<int>(k), static_cast<int>(n), p);
+}
+
+double cephes_ndtr_wrap(double x) { return xsf::cephes::ndtr(x); }
+
+double cephes_ndtri_wrap(double x) { return xsf::cephes::ndtri(x); }
+
+double cephes_pdtri_wrap(Py_ssize_t k, double y) { return xsf::cephes::pdtri(static_cast<int>(k), y); }
+
+double cephes_smirnov_wrap(Py_ssize_t n, double x) { return xsf::cephes::smirnov(static_cast<int>(n), x); }
+
+double cephes_smirnovc_wrap(Py_ssize_t n, double x) { return xsf::cephes::smirnovc(static_cast<int>(n), x); }
+
+double cephes_smirnovi_wrap(Py_ssize_t n, double x) { return xsf::cephes::smirnovi(static_cast<int>(n), x); }
+
+double cephes_smirnovci_wrap(Py_ssize_t n, double x) { return xsf::cephes::smirnovci(static_cast<int>(n), x); }
+
+double cephes_smirnovp_wrap(Py_ssize_t n, double x) { return xsf::cephes::smirnovp(static_cast<int>(n), x); }
