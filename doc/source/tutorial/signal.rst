@@ -1858,8 +1858,8 @@ can be achieved by introducing a scaling factor :math:`\alpha\in\IC` to minimize
 .. math::
 
     \alpha_{\min} &= \min_{\alpha}{
-         \frac{1}{2}\big\lVert\alpha\vb{d} - \vb{u}(\alpha)\big\rVert^2 }\ ,\qquad
-   \vb{u}(\alpha) = \vb{w}_d + \alpha\vb{d} - \alpha\vb{q}_d
+         \frac{1}{2}\big\lVert\alpha\vb{d} - \vb{u}_d(\alpha)\big\rVert^2 }\ ,\qquad
+   \vb{u}_d(\alpha) = \vb{w}_d + \alpha\vb{d} - \alpha\vb{q}_d
    \qquad\Leftrightarrow\\
    \alpha_{\min} &= \conjT{\vb{q}_d}\vb{w}_d \big/\,
                     \conjT{\vb{q}_d}\vb{q}_d \ .
