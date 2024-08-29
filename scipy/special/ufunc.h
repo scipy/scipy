@@ -473,10 +473,27 @@ struct ufunc_traits<Func, void(Args...), std::index_sequence<I...>> {
 namespace xsf {
 namespace numpy {
 
-    // The following are based off NumPy's dtype type codes and functions like PyUFunc_dd_d
-
     using cfloat = std::complex<float>;
     using cdouble = std::complex<double>;
+
+    using float_1d = std::mdspan<float, std::dextents<ptrdiff_t, 1>, std::layout_stride>;
+    using float_2d = std::mdspan<float, std::dextents<ptrdiff_t, 2>, std::layout_stride>;
+    using float_3d = std::mdspan<float, std::dextents<ptrdiff_t, 3>, std::layout_stride>;
+    using float_4d = std::mdspan<float, std::dextents<ptrdiff_t, 4>, std::layout_stride>;
+    using double_1d = std::mdspan<double, std::dextents<ptrdiff_t, 1>, std::layout_stride>;
+    using double_2d = std::mdspan<double, std::dextents<ptrdiff_t, 2>, std::layout_stride>;
+    using double_3d = std::mdspan<double, std::dextents<ptrdiff_t, 3>, std::layout_stride>;
+    using double_4d = std::mdspan<double, std::dextents<ptrdiff_t, 4>, std::layout_stride>;
+    using cfloat_1d = std::mdspan<cfloat, std::dextents<ptrdiff_t, 1>, std::layout_stride>;
+    using cfloat_2d = std::mdspan<cfloat, std::dextents<ptrdiff_t, 2>, std::layout_stride>;
+    using cfloat_3d = std::mdspan<cfloat, std::dextents<ptrdiff_t, 3>, std::layout_stride>;
+    using cfloat_4d = std::mdspan<cfloat, std::dextents<ptrdiff_t, 4>, std::layout_stride>;
+    using cdouble_1d = std::mdspan<cdouble, std::dextents<ptrdiff_t, 1>, std::layout_stride>;
+    using cdouble_2d = std::mdspan<cdouble, std::dextents<ptrdiff_t, 2>, std::layout_stride>;
+    using cdouble_3d = std::mdspan<cdouble, std::dextents<ptrdiff_t, 3>, std::layout_stride>;
+    using cdouble_4d = std::mdspan<cdouble, std::dextents<ptrdiff_t, 4>, std::layout_stride>;
+
+    // The following are based off NumPy's dtype type codes and functions like PyUFunc_dd_d
 
     // 1 input, 1 output
     using f_f = float (*)(float);
@@ -579,8 +596,8 @@ namespace numpy {
     using qqqD_DD = void (*)(long long int, long long int, long long int, cdouble, cdouble &, cdouble &);
     using qqff_FF = void (*)(long long int, long long int, float, float, cfloat &, cfloat &);
     using qqdd_DD = void (*)(long long int, long long int, double, double, cdouble &, cdouble &);
-    using qqff_FF2 = void (*)(long long int, long long int, float, float, cfloat &, cfloat (&)[2]);
-    using qqdd_DD2 = void (*)(long long int, long long int, double, double, cdouble &, cdouble (&)[2]);
+    using qqff_FF2_old = void (*)(long long int, long long int, float, float, cfloat &, cfloat (&)[2]);
+    using qqdd_DD2_old = void (*)(long long int, long long int, double, double, cdouble &, cdouble (&)[2]);
 
     // 4 inputs, 3 outputs
     using qqqf_fff = void (*)(long long int, long long int, long long int, float, float &, float &, float &);
@@ -589,9 +606,10 @@ namespace numpy {
     using qqqD_DDD = void (*)(long long int, long long int, long long int, cdouble, cdouble &, cdouble &, cdouble &);
     using qqff_FFF = void (*)(long long int, long long int, float, float, cfloat &, cfloat &, cfloat &);
     using qqdd_DDD = void (*)(long long int, long long int, double, double, cdouble &, cdouble &, cdouble &);
-    using qqff_FF2F22 = void (*)(long long int, long long int, float, float, cfloat &, cfloat (&)[2], cfloat (&)[2][2]);
-    using qqdd_DD2D22 = void (*)(long long int, long long int, double, double, cdouble &, cdouble (&)[2],
-                                 cdouble (&)[2][2]);
+    using qqff_FF2F22_old = void (*)(long long int, long long int, float, float, cfloat &, cfloat (&)[2],
+                                     cfloat (&)[2][2]);
+    using qqdd_DD2D22_old = void (*)(long long int, long long int, double, double, cdouble &, cdouble (&)[2],
+                                     cdouble (&)[2][2]);
 
     // 5 inputs, 2 outputs
     using fffff_ff = void (*)(float, float, float, float, float, float &, float &);
@@ -604,6 +622,52 @@ namespace numpy {
     using g_g = long double (*)(long double);
     using gg_g = long double (*)(long double);
 #endif
+
+    // 1 input, 1 output
+    using f_f1 = void (*)(float, float_1d);
+    using f_f2 = void (*)(float, float_2d);
+    using d_d1 = void (*)(double, double_1d);
+    using d_d2 = void (*)(double, double_2d);
+    using F_F1 = void (*)(cfloat, cfloat_1d);
+    using D_D1 = void (*)(cdouble, cdouble_1d);
+
+    // 1 input, 2 outputs
+    using f_f1f1 = void (*)(float, float_1d, float_1d);
+    using f_f2f2 = void (*)(float, float_2d, float_2d);
+    using d_d1d1 = void (*)(double, double_1d, double_1d);
+    using d_d2d2 = void (*)(double, double_2d, double_2d);
+    using F_F1F1 = void (*)(cfloat, cfloat_1d, cfloat_1d);
+    using F_F2F2 = void (*)(cfloat, cfloat_2d, cfloat_2d);
+    using D_D1D1 = void (*)(cdouble, cdouble_1d, cdouble_1d);
+    using D_D2D2 = void (*)(cdouble, cdouble_2d, cdouble_2d);
+
+    // 1 input, 3 outputs
+    using f_f1f1f1 = void (*)(float, float_1d, float_1d, float_1d);
+    using f_f2f2f2 = void (*)(float, float_2d, float_2d, float_2d);
+    using d_d1d1d1 = void (*)(double, double_1d, double_1d, double_1d);
+    using d_d2d2d2 = void (*)(double, double_2d, double_2d, double_2d);
+    using F_F1F1F1 = void (*)(cfloat, cfloat_1d, cfloat_1d, cfloat_1d);
+    using D_D1D1D1 = void (*)(cdouble, cdouble_1d, cdouble_1d, cdouble_1d);
+
+    // 2 inputs, 1 output
+    using ff_F2 = void (*)(float, float, cfloat_2d);
+    using dd_D2 = void (*)(double, double, cdouble_2d);
+    using qF_F2 = void (*)(long long int, cfloat, cfloat_2d);
+    using qD_D2 = void (*)(long long int, cdouble, cdouble_2d);
+
+    // 2 inputs, 2 outputs
+    using qF_F2F2 = void (*)(long long int, cfloat, cfloat_2d, cfloat_2d);
+    using qD_D2D2 = void (*)(long long int, cdouble, cdouble_2d, cdouble_2d);
+    using ff_F2F3 = void (*)(float, float, cfloat_2d, cfloat_3d);
+    using dd_D2D3 = void (*)(double, double, cdouble_2d, cdouble_3d);
+
+    // 2 inputs, 3 outputs
+    using qF_F2F2F2 = void (*)(long long int, cfloat, cfloat_2d, cfloat_2d, cfloat_2d);
+    using qD_D2D2D2 = void (*)(long long int, cdouble, cdouble_2d, cdouble_2d, cdouble_2d);
+
+    // 2 inputs, 4 outputs
+    using ff_F2F3F4 = void (*)(float, float, cfloat_2d, cfloat_3d, cfloat_4d);
+    using dd_D2D3D4 = void (*)(double, double, cdouble_2d, cdouble_3d, cdouble_4d);
 
     class SpecFun_UFunc {
       public:

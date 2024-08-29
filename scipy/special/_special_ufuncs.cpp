@@ -41,10 +41,8 @@
 // If you are adding a ufunc, you will also need to add the appropriate entry to scipy/special/functions.json.
 // This allows the build process to generate a corresponding entry for scipy.special.cython_special.
 
-using namespace std;
-
-using cfloat = xsf::numpy::cfloat;
-using cdouble = xsf::numpy::cdouble;
+using xsf::numpy::cdouble;
+using xsf::numpy::cfloat;
 
 extern const char *_cospi_doc;
 extern const char *_sinpi_doc;
@@ -914,23 +912,24 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
                           "sph_harm", sph_harm_doc);
     PyModule_AddObjectRef(_special_ufuncs, "sph_harm", sph_harm);
 
-    PyObject *sph_harm_y = Py_BuildValue(
-        "(N,N,N)",
-        xsf::numpy::ufunc(
-            {static_cast<xsf::numpy::qqdd_D>(::sph_harm_y), static_cast<xsf::numpy::qqff_F>(::sph_harm_y)},
-            "sph_harm_y", nullptr),
-        xsf::numpy::gufunc(
-            {static_cast<xsf::numpy::qqdd_DD2>(::sph_harm_y), static_cast<xsf::numpy::qqff_FF2>(::sph_harm_y)}, 2,
-            "sph_harm_y", nullptr, "(),(),(),()->(),(2)",
-            [](const npy_intp *dims, npy_intp *new_dims) { new_dims[0] = 2; }),
-        xsf::numpy::gufunc(
-            {static_cast<xsf::numpy::qqdd_DD2D22>(::sph_harm_y), static_cast<xsf::numpy::qqff_FF2F22>(::sph_harm_y)}, 3,
-            "sph_harm_y", nullptr, "(),(),(),()->(),(2),(2,2)", [](const npy_intp *dims, npy_intp *new_dims) {
-                new_dims[0] = 2;
+    PyObject *sph_harm_y =
+        Py_BuildValue("(N,N,N)",
+                      xsf::numpy::ufunc({static_cast<xsf::numpy::qqdd_D>(::sph_harm_y),
+                                         static_cast<xsf::numpy::qqff_F>(::sph_harm_y)},
+                                        "sph_harm_y", nullptr),
+                      xsf::numpy::gufunc({static_cast<xsf::numpy::qqdd_DD2_old>(::sph_harm_y),
+                                          static_cast<xsf::numpy::qqff_FF2_old>(::sph_harm_y)},
+                                         2, "sph_harm_y", nullptr, "(),(),(),()->(),(2)",
+                                         [](const npy_intp *dims, npy_intp *new_dims) { new_dims[0] = 2; }),
+                      xsf::numpy::gufunc({static_cast<xsf::numpy::qqdd_DD2D22_old>(::sph_harm_y),
+                                          static_cast<xsf::numpy::qqff_FF2F22_old>(::sph_harm_y)},
+                                         3, "sph_harm_y", nullptr, "(),(),(),()->(),(2),(2,2)",
+                                         [](const npy_intp *dims, npy_intp *new_dims) {
+                                             new_dims[0] = 2;
 
-                new_dims[1] = 2;
-                new_dims[2] = 2;
-            }));
+                                             new_dims[1] = 2;
+                                             new_dims[2] = 2;
+                                         }));
     PyModule_AddObjectRef(_special_ufuncs, "sph_harm_y", sph_harm_y);
 
     PyObject *struve =
