@@ -352,6 +352,7 @@ class TestCommon1D:
         assert (A @ np.array([1, 2, 3])).shape == ()
         assert Asp @ np.array([1, 2, 3]) == 11
         assert (Asp @ np.array([1, 2, 3])).shape == ()
+        assert (Asp @ np.array([[1], [2], [3]])).shape == (1,)
         # check result type
         assert isinstance(Asp @ matrix([[1, 2, 3]]).T, np.ndarray)
 
