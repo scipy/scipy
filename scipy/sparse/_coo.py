@@ -300,13 +300,11 @@ class _coo_base(_data_matrix, _minmax_mixin):
             M, N = self._shape_as_2d
             coo_todense(M, N, self.nnz, self.row, self.col, self.data,
                         B.ravel('A'), fortran)
-            
         else:
-            shape = np.array(self.shape)
             if fortran:
-                strides = np.append(1, np.cumprod(shape[:-1]))
+                strides = np.append(1, np.cumprod(self.shape[:-1]))
             else:
-                strides = np.append(np.cumprod(shape[1:][::-1])[::-1], 1)
+                strides = np.append(np.cumprod(self.shape[1:][::-1])[::-1], 1)
             coords = np.concatenate(self.coords)
             coo_todense_nd(strides, self.nnz, self.ndim,
                            coords, self.data, B.ravel('A'), fortran)
