@@ -5540,17 +5540,18 @@ add_newdoc("gdtrib",
 
     The cumulative distribution function `p` is computed using the Cephes [1]_
     routines `igam` and `igamc`. Computation of `b` involves a search for a value
-    that produces the desired value of `p` using a bracketing root finding method
-    developed by Bus & Dekker [2]_.
+    that produces the desired value of `p` using Chandrupatla's bracketing
+    root finding algorithm [2]_.
 
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
-    .. [2] J. C. P. Bus and T. J. Dekker. 1975. Two Efficient Algorithms with
-           Guaranteed Convergence for Finding a Zero of a Function. ACM Trans.
-           Math. Softw. 1, 4 (Dec. 1975), 330-345.
-           https://doi.org/10.1145/355656.355659
+    .. [2] Chandrupatla, Tirupathi R.
+        "A new hybrid quadratic/bisection algorithm for finding the zero of a
+        nonlinear function without using derivatives".
+        Advances in Engineering Software, 28(3), 145-149.
+        https://doi.org/10.1016/s0965-9978(96)00051-8
 
     Examples
     --------
