@@ -37,9 +37,9 @@ from . cimport sf_error
 
 
 cdef extern from "xsf_wrappers.h" nogil:
-    npy_cdouble hyp2f1_complex_wrap(double a, double b, double c, npy_cdouble zp)
+    npy_cdouble xsf_chyp2f1(double a, double b, double c, npy_cdouble zp)
     double xsf_binom(double n, double k)
-    double cephes_hyp2f1_wrap(double a, double b, double c, double x)
+    double xsf_hyp2f1(double a, double b, double c, double x)
     double xsf_gamma(double x)
     double xsf_beta(double a, double b)
     double hyp1f1_wrap(double a, double b, double x) nogil
@@ -51,9 +51,9 @@ cdef extern from "xsf_wrappers.h" nogil:
 cdef inline number_t hyp2f1(double a, double b, double c, number_t z) noexcept nogil:
     cdef npy_cdouble r
     if number_t is double:
-        return cephes_hyp2f1_wrap(a, b, c, z)
+        return xsf_hyp2f1(a, b, c, z)
     else:
-        r = hyp2f1_complex_wrap(a, b, c, npy_cdouble_from_double_complex(z))
+        r = xsf_chyp2f1(a, b, c, npy_cdouble_from_double_complex(z))
         return double_complex_from_npy_cdouble(r)
 
 cdef inline number_t hyp1f1(double a, double b, number_t z) noexcept nogil:

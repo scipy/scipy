@@ -37,7 +37,6 @@
 #include "xsf/cephes/fdtr.h"
 #include "xsf/cephes/fresnl.h"
 #include "xsf/cephes/gdtr.h"
-#include "xsf/cephes/hyp2f1.h"
 #include "xsf/cephes/hyperg.h"
 #include "xsf/cephes/igam.h"
 #include "xsf/cephes/igami.h"
@@ -72,10 +71,6 @@ complex<double> to_complex(npy_cdouble z) { return {npy_creal(z), npy_cimag(z)};
 npy_cdouble to_ccomplex(complex<double> z) { return {z.real(), z.imag()}; }
 
 } // namespace
-
-npy_cdouble chyp2f1_wrap(double a, double b, double c, npy_cdouble z) {
-    return to_ccomplex(xsf::chyp2f1(a, b, c, to_complex(z)));
-}
 
 npy_cdouble chyp1f1_wrap(double a, double b, npy_cdouble z) { return to_ccomplex(xsf::chyp1f1(a, b, to_complex(z))); }
 
@@ -352,12 +347,6 @@ double special_loggamma(double x) { return xsf::loggamma(x); }
 
 npy_cdouble special_cloggamma(npy_cdouble z) { return to_ccomplex(xsf::loggamma(to_complex(z))); }
 
-double special_hyp2f1(double a, double b, double c, double z) { return xsf::hyp2f1(a, b, c, z); }
-
-npy_cdouble special_chyp2f1(double a, double b, double c, npy_cdouble z) {
-    return to_ccomplex(xsf::hyp2f1(a, b, c, to_complex(z)));
-}
-
 npy_cdouble special_lambertw(npy_cdouble z, long k, double tol) {
     return to_ccomplex(xsf::lambertw(to_complex(z), k, tol));
 }
@@ -369,8 +358,6 @@ npy_cdouble special_sph_harm(long m, long n, double theta, double phi) {
 npy_cdouble special_sph_harm_unsafe(double m, double n, double theta, double phi) {
     return to_ccomplex(::sph_harm(static_cast<long>(m), static_cast<long>(n), theta, phi));
 }
-
-double cephes_hyp2f1_wrap(double a, double b, double c, double x) { return xsf::cephes::hyp2f1(a, b, c, x); }
 
 double cephes_bdtr_wrap(double k, Py_ssize_t n, double p) { return xsf::cephes::bdtr(k, static_cast<int>(n), p); }
 
@@ -515,7 +502,11 @@ double xsf_gammaln(double x) { return xsf::gammaln(x); }
 
 double xsf_gammasgn(double x) { return xsf::gammasgn(x); }
 
-double cephes_hyp2f1(double a, double b, double c, double x) { return xsf::cephes::hyp2f1(a, b, c, x); }
+double xsf_hyp2f1(double a, double b, double c, double x) { return xsf::hyp2f1(a, b, c, x); }
+
+npy_cdouble xsf_chyp2f1(double a, double b, double c, npy_cdouble z) {
+    return to_ccomplex(xsf::hyp2f1(a, b, c, to_complex(z)));
+}
 
 double xsf_i0(double x) { return xsf::cyl_bessel_i0(x); }
 

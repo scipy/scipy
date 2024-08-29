@@ -1228,8 +1228,8 @@ cdef extern from r"xsf_wrappers.h":
     npy_double special_loggamma(npy_double) nogil
     npy_cdouble special_cloggamma(npy_cdouble) nogil
 
-    npy_double special_hyp2f1(npy_double, npy_double, npy_double, npy_double) nogil
-    npy_cdouble special_chyp2f1(npy_double, npy_double, npy_double, npy_cdouble) nogil
+    npy_double xsf_hyp2f1(npy_double, npy_double, npy_double, npy_double) nogil
+    npy_cdouble xsf_chyp2f1(npy_double, npy_double, npy_double, npy_cdouble) nogil
 
     npy_double special_rgamma(npy_double) nogil
     npy_cdouble special_crgamma(npy_cdouble) nogil
@@ -1275,7 +1275,7 @@ cdef extern from r"xsf_wrappers.h":
     double xsf_gamma(double x) nogil
     double xsf_gammasgn(double x) nogil
     double xsf_gammaln(double x) nogil
-    double cephes_hyp2f1(double a, double b, double c, double x) nogil
+    double xsf_hyp2f1(double a, double b, double c, double x) nogil
     double xsf_iv(double v, double x) nogil
     double xsf_i0(double x) nogil
     double xsf_i0e(double x) nogil
@@ -2702,9 +2702,9 @@ cpdef Dd_number_t hyp1f1(double x0, double x1, Dd_number_t x2) noexcept nogil:
 cpdef Dd_number_t hyp2f1(double x0, double x1, double x2, Dd_number_t x3) noexcept nogil:
     """See the documentation for scipy.special.hyp2f1"""
     if Dd_number_t is double:
-        return special_hyp2f1(x0, x1, x2, x3)
+        return xsf_hyp2f1(x0, x1, x2, x3)
     elif Dd_number_t is double_complex:
-        return _complexstuff.double_complex_from_npy_cdouble(special_chyp2f1(x0, x1, x2, _complexstuff.npy_cdouble_from_double_complex(x3)))
+        return _complexstuff.double_complex_from_npy_cdouble(xsf_chyp2f1(x0, x1, x2, _complexstuff.npy_cdouble_from_double_complex(x3)))
     else:
         if Dd_number_t is double_complex:
             return NAN

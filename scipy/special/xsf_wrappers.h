@@ -20,7 +20,6 @@ extern "C" {
 #endif /* __cplusplus */
 
 npy_cdouble clngamma_wrap(npy_cdouble z);
-npy_cdouble chyp2f1_wrap(double a, double b, double c, npy_cdouble z);
 npy_cdouble chyp1f1_wrap(double a, double b, npy_cdouble z);
 double hyp1f1_wrap(double a, double b, double x);
 double hypU_wrap(double a, double b, double x);
@@ -154,9 +153,6 @@ npy_cdouble special_cloggamma(npy_cdouble z);
 
 npy_cdouble xsf_cgamma(npy_cdouble z);
 
-double special_hyp2f1(double a, double b, double c, double z);
-npy_cdouble special_chyp2f1(double a, double b, double c, npy_cdouble z);
-
 npy_cdouble special_lambertw(npy_cdouble z, long k, double tol);
 
 double special_rgamma(double x);
@@ -167,8 +163,6 @@ npy_cdouble special_sph_harm_unsafe(double m, double n, double theta, double phi
 
 double special_ellipk(double m);
 
-npy_cdouble hyp2f1_complex_wrap(double a, double b, double c, npy_cdouble zp);
-double cephes_hyp2f1_wrap(double a, double b, double c, double x);
 double cephes_airy_wrap(double x, double *ai, double *aip, double *bi, double *bip);
 double cephes_bdtr_wrap(double k, Py_ssize_t n, double p);
 double cephes_bdtri_wrap(double k, Py_ssize_t n, double y);
@@ -252,7 +246,8 @@ double xsf_gamma(double x);
 double xsf_gammasgn(double x);
 double xsf_gammaln(double x);
 
-double cephes_hyp2f1(double a, double b, double c, double x);
+double xsf_hyp2f1(double a, double b, double c, double x);
+npy_cdouble xsf_chyp2f1(double a, double b, double c, npy_cdouble z);
 
 double xsf_i0(double x);
 double xsf_i0e(double x);
