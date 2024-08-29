@@ -5,7 +5,7 @@ import itertools
 import pytest
 import numpy as np
 
-from scipy._lib._array_api import array_namespace, xp_assert_close
+from scipy._lib._array_api import array_namespace, xp_assert_close, xp_size
 from scipy.conftest import array_api_compatible
 
 from scipy.integrate import cubature
@@ -69,7 +69,7 @@ def genz_malik_1980_f_1(x, r, alphas):
 def genz_malik_1980_f_1_exact(a, b, r, alphas):
     xp = array_namespace(a, b, r, alphas)
 
-    ndim = a.size
+    ndim = xp_size(a)
     a = xp.reshape(a, (*([1]*(len(alphas.shape) - 1)), ndim))
     b = xp.reshape(b, (*([1]*(len(alphas.shape) - 1)), ndim))
 
@@ -83,7 +83,7 @@ def genz_malik_1980_f_1_random_args(rng, shape, xp):
     alphas = xp.asarray(rng.random(shape))
 
     difficulty = 9
-    normalisation_factors = xp.expand_dims(xp.sum(alphas, axis=-1), axis=-1)
+    normalisation_factors = xp.sum(alphas, axis=-1)[..., xp.newaxis]
     alphas = difficulty * alphas / normalisation_factors
 
     return (r, alphas)
@@ -112,7 +112,7 @@ def genz_malik_1980_f_2(x, alphas, betas):
 def genz_malik_1980_f_2_exact(a, b, alphas, betas):
     xp = array_namespace(a, b, alphas, betas)
 
-    ndim = a.size
+    ndim = xp_size(a)
     a = xp.reshape(a, (*([1]*(len(alphas.shape) - 1)), ndim))
     b = xp.reshape(b, (*([1]*(len(alphas.shape) - 1)), ndim))
 
@@ -130,9 +130,7 @@ def genz_malik_1980_f_2_random_args(rng, shape, xp):
 
     difficulty = 25.0
     products = xp.prod(xp.pow(alphas, xp.asarray(-2.0)), axis=-1)
-    normalisation_factors = xp.expand_dims(
-        xp.pow(products, xp.asarray(1 / (2*ndim))), axis=-1
-    )
+    normalisation_factors = xp.pow(products, xp.asarray(1 / (2*ndim)))[..., xp.newaxis]
     alphas = alphas \
         * normalisation_factors \
         / math.pow(difficulty, 1 / (2*ndim))
@@ -165,7 +163,7 @@ def genz_malik_1980_f_3(x, alphas):
 def genz_malik_1980_f_3_exact(a, b, alphas):
     xp = array_namespace(a, b, alphas)
 
-    ndim = a.size
+    ndim = xp_size(a)
     a = xp.reshape(a, (*([1]*(len(alphas.shape) - 1)), ndim))
     b = xp.reshape(b, (*([1]*(len(alphas.shape) - 1)), ndim))
 
@@ -175,7 +173,7 @@ def genz_malik_1980_f_3_exact(a, b, alphas):
 
 def genz_malik_1980_f_3_random_args(rng, shape, xp):
     alphas = xp.asarray(rng.random(shape))
-    normalisation_factors = xp.expand_dims(xp.sum(alphas, axis=-1), axis=-1)
+    normalisation_factors = xp.sum(alphas, axis=-1)[..., xp.newaxis]
     difficulty = 12.0
     alphas = difficulty * alphas / normalisation_factors
 
@@ -202,7 +200,7 @@ def genz_malik_1980_f_4(x, alphas):
 
 def genz_malik_1980_f_4_exact(a, b, alphas):
     xp = array_namespace(a, b, alphas)
-    ndim = a.size
+    ndim = xp_size(a)
 
     def F(x):
         x_reshaped = xp.reshape(x, (*([1]*(len(alphas.shape) - 1)), ndim))
@@ -221,7 +219,7 @@ def _eval_indefinite_integral(F, a, b):
     """
 
     xp = array_namespace(a, b)
-    ndim = a.size
+    ndim = xp_size(a)
     points = xp.stack([a, b], axis=0)
 
     out = 0
@@ -236,7 +234,7 @@ def genz_malik_1980_f_4_random_args(rng, shape, xp):
     ndim = shape[-1]
 
     alphas = xp.asarray(rng.random(shape))
-    normalisation_factors = xp.expand_dims(xp.sum(alphas, axis=-1), axis=-1)
+    normalisation_factors = xp.sum(alphas, axis=-1)[..., xp.newaxis]
     difficulty = 14.0
     alphas = (difficulty / ndim) * alphas / normalisation_factors
 
@@ -270,7 +268,7 @@ def genz_malik_1980_f_5(x, alphas, betas):
 
 def genz_malik_1980_f_5_exact(a, b, alphas, betas):
     xp = array_namespace(a, b, alphas, betas)
-    ndim = a.size
+    ndim = xp_size(a)
     a = xp.reshape(a, (*([1]*(len(alphas.shape) - 1)), ndim))
     b = xp.reshape(b, (*([1]*(len(alphas.shape) - 1)), ndim))
 
@@ -288,10 +286,9 @@ def genz_malik_1980_f_5_random_args(rng, shape, xp):
     betas = xp.asarray(rng.random(shape))
 
     difficulty = 21.0
-    normalisation_factors = xp.expand_dims(
-        xp.sqrt(xp.sum(xp.pow(alphas, xp.asarray(2.0)), axis=-1)),
-        axis=-1,
-    )
+    normalisation_factors = xp.sqrt(
+        xp.sum(xp.pow(alphas, xp.asarray(2.0)), axis=-1)
+    )[..., xp.newaxis]
     alphas = alphas / normalisation_factors * math.sqrt(difficulty)
 
     return alphas, betas
@@ -636,7 +633,7 @@ class TestCubatureProblems:
         b = xp.asarray(b, dtype=xp.float64)
         args = tuple(xp.asarray(arg, dtype=xp.float64) for arg in args)
 
-        ndim = a.size
+        ndim = xp_size(a)
 
         if rule == "genz-malik" and ndim < 2:
             pytest.skip("Genz-Malik cubature does not support 1D integrals")

@@ -5,7 +5,7 @@ import numpy as np
 
 from dataclasses import dataclass
 
-from scipy._lib._array_api import array_namespace
+from scipy._lib._array_api import array_namespace, xp_size
 from scipy._lib._util import MapWrapper
 
 from scipy.integrate._rules import (
@@ -230,7 +230,7 @@ def cubature(f, a, b, rule="gk21", rtol=1e-8, atol=0, max_subdivisions=10000,
 
     # If the rule is a string, convert to a corresponding product rule
     if isinstance(rule, str):
-        ndim = a.size
+        ndim = xp_size(a)
 
         if rule == "genz-malik":
             rule = GenzMalikCubature(ndim, xp=xp)

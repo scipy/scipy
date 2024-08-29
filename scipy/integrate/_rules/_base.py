@@ -1,6 +1,6 @@
 import itertools
 
-from scipy._lib._array_api import array_namespace
+from scipy._lib._array_api import array_namespace, xp_size
 
 import numpy as np
 import math
@@ -434,7 +434,7 @@ def _cartesian_product(arrays):
 
     la = len(arrays)
     dtype = xp.result_type(*arrays)
-    arr = xp.empty([la] + [a.size for a in arrays], dtype=dtype)
+    arr = xp.empty([la] + [xp_size(a) for a in arrays], dtype=dtype)
 
     arrays_ix = xp.meshgrid(*arrays, indexing='ij')
 
@@ -476,8 +476,8 @@ def _apply_fixed_rule(f, a, b, orig_nodes, orig_weights, args=()):
 
     rule_ndim = orig_nodes.shape[-1]
 
-    a_ndim = a.size
-    b_ndim = b.size
+    a_ndim = xp_size(a)
+    b_ndim = xp_size(b)
 
     if rule_ndim != a_ndim or rule_ndim != b_ndim:
         raise ValueError(f"rule and function are of incompatible dimension, nodes have"
