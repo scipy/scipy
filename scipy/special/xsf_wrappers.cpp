@@ -229,12 +229,6 @@ void modified_fresnel_minus_wrap(double x, npy_cdouble *Fminus, npy_cdouble *Kmi
                                 *reinterpret_cast<complex<double> *>(Kminus));
 }
 
-double xsf_sinpi(double x) { return xsf::sinpi(x); }
-
-npy_cdouble xsf_csinpi(npy_cdouble z) { return to_ccomplex(xsf::sinpi(to_complex(z))); }
-
-double xsf_cospi(double x) { return xsf::cospi(x); }
-
 void special_airy(double x, double *ai, double *aip, double *bi, double *bip) { xsf::airy(x, *ai, *aip, *bi, *bip); }
 
 void special_cairy(npy_cdouble z, npy_cdouble *ai, npy_cdouble *aip, npy_cdouble *bi, npy_cdouble *bip) {
@@ -247,54 +241,6 @@ void special_airye(double z, double *ai, double *aip, double *bi, double *bip) {
 void special_cairye(npy_cdouble z, npy_cdouble *ai, npy_cdouble *aip, npy_cdouble *bi, npy_cdouble *bip) {
     xsf::airye(to_complex(z), *reinterpret_cast<complex<double> *>(ai), *reinterpret_cast<complex<double> *>(aip),
                *reinterpret_cast<complex<double> *>(bi), *reinterpret_cast<complex<double> *>(bip));
-}
-
-double special_cyl_bessel_j(double v, double x) { return xsf::cyl_bessel_j(v, x); }
-
-npy_cdouble special_ccyl_bessel_j(double v, npy_cdouble z) { return to_ccomplex(xsf::cyl_bessel_j(v, to_complex(z))); }
-
-double special_cyl_bessel_je(double v, double z) { return xsf::cyl_bessel_je(v, z); }
-
-npy_cdouble special_ccyl_bessel_je(double v, npy_cdouble z) {
-    return to_ccomplex(xsf::cyl_bessel_je(v, to_complex(z)));
-}
-
-double special_cyl_bessel_y(double v, double x) { return xsf::cyl_bessel_y(v, x); }
-
-npy_cdouble special_ccyl_bessel_y(double v, npy_cdouble z) { return to_ccomplex(xsf::cyl_bessel_y(v, to_complex(z))); }
-
-double special_cyl_bessel_ye(double v, double z) { return xsf::cyl_bessel_ye(v, z); }
-
-npy_cdouble special_ccyl_bessel_ye(double v, npy_cdouble z) {
-    return to_ccomplex(xsf::cyl_bessel_ye(v, to_complex(z)));
-}
-
-double special_cyl_bessel_i(double v, double z) { return xsf::cyl_bessel_i(v, z); }
-
-npy_cdouble special_ccyl_bessel_i(double v, npy_cdouble z) { return to_ccomplex(xsf::cyl_bessel_i(v, to_complex(z))); }
-
-double special_cyl_bessel_ie(double v, double z) { return xsf::cyl_bessel_ie(v, z); }
-
-npy_cdouble special_ccyl_bessel_ie(double v, npy_cdouble z) {
-    return to_ccomplex(xsf::cyl_bessel_ie(v, to_complex(z)));
-}
-
-double special_cyl_bessel_k_int(Py_ssize_t n, double z) { return xsf::cyl_bessel_k(static_cast<double>(n), z); }
-
-double special_cyl_bessel_k(double v, double z) { return xsf::cyl_bessel_k(v, z); }
-
-npy_cdouble special_ccyl_bessel_k(double v, npy_cdouble z) { return to_ccomplex(xsf::cyl_bessel_k(v, to_complex(z))); }
-
-double special_cyl_bessel_ke(double v, double z) { return xsf::cyl_bessel_ke(v, z); }
-
-npy_cdouble special_ccyl_bessel_ke(double v, npy_cdouble z) {
-    return to_ccomplex(xsf::cyl_bessel_ke(v, to_complex(z)));
-}
-
-npy_cdouble special_ccyl_hankel_1(double v, npy_cdouble z) { return to_ccomplex(xsf::cyl_hankel_1(v, to_complex(z))); }
-
-npy_cdouble special_ccyl_hankel_1e(double v, npy_cdouble z) {
-    return to_ccomplex(xsf::cyl_hankel_1e(v, to_complex(z)));
 }
 
 double cephes_ellpk_wrap(double x) { return xsf::cephes::ellpk(x); }
@@ -390,6 +336,166 @@ double special_log_wright_bessel(double a, double b, double x) { return xsf::log
 
 double special_scaled_exp1(double x) { return xsf::scaled_exp1(x); }
 
+double special_ellipk(double m) { return xsf::ellipk(m); }
+
+double xsf_beta(double a, double b) { return xsf::beta(a, b); }
+
+double xsf_betaln(double a, double b) { return xsf::betaln(a, b); }
+
+double xsf_cbrt(double x) { return xsf::cbrt(x); }
+
+double xsf_gamma(double x) { return xsf::gamma(x); }
+
+npy_cdouble xsf_cgamma(npy_cdouble z) { return to_ccomplex(xsf::gamma(to_complex(z))); }
+
+double xsf_gammaln(double x) { return xsf::gammaln(x); }
+
+double xsf_gammasgn(double x) { return xsf::gammasgn(x); }
+
+double xsf_hyp2f1(double a, double b, double c, double x) { return xsf::hyp2f1(a, b, c, x); }
+
+npy_cdouble xsf_chyp2f1(double a, double b, double c, npy_cdouble z) {
+    return to_ccomplex(xsf::hyp2f1(a, b, c, to_complex(z)));
+}
+
+double cephes_igam(double a, double x) { return xsf::cephes::igam(a, x); }
+
+double cephes_igamc(double a, double x) { return xsf::cephes::igamc(a, x); }
+
+double cephes_igami(double a, double p) { return xsf::cephes::igami(a, p); }
+
+double cephes_igamci(double a, double p) { return xsf::cephes::igamci(a, p); }
+
+double cephes_igam_fac(double a, double x) { return xsf::cephes::detail::igam_fac(a, x); }
+
+double cephes_lanczos_sum_expg_scaled(double x) { return xsf::cephes::lanczos_sum_expg_scaled(x); }
+
+double cephes_erf(double x) { return xsf::cephes::erf(x); }
+
+double cephes_erfc(double x) { return xsf::cephes::erfc(x); }
+
+double cephes_poch(double x, double m) { return xsf::cephes::poch(x, m); }
+
+double cephes_rgamma(double x) { return xsf::cephes::rgamma(x); }
+
+double xsf_zetac(double x) { return xsf::zetac(x); }
+
+double cephes_log1p(double x) { return xsf::cephes::log1p(x); }
+
+double cephes_log1pmx(double x) { return xsf::cephes::log1pmx(x); }
+
+double cephes_lgam1p(double x) { return xsf::cephes::lgam1p(x); }
+
+double cephes_expm1(double x) { return xsf::cephes::expm1(x); }
+
+double cephes_expn(int n, double x) { return xsf::cephes::expn(n, x); }
+
+double xsf_ellipe(double x) { return xsf::ellipe(x); }
+
+double cephes_ellpk(double x) { return xsf::ellipkm1(x); }
+
+double cephes_ellie(double phi, double m) { return xsf::ellipeinc(phi, m); }
+
+double xsf_ellipkinc(double phi, double m) { return xsf::ellipkinc(phi, m); }
+
+double cephes_poch_wrap(double x, double m) { return xsf::cephes::poch(x, m); }
+
+double cephes_erfcinv(double y) { return xsf::cephes::erfcinv(y); }
+
+double cephes_exp10(double x) { return xsf::cephes::exp10(x); }
+
+double cephes_exp2(double x) { return xsf::cephes::exp2(x); }
+
+double cephes_round(double x) { return xsf::cephes::round(x); }
+
+double cephes_spence(double x) { return xsf::cephes::spence(x); }
+
+double xsf_struve_h(double v, double z) { return xsf::struve_h(v, z); }
+
+double xsf_struve_l(double v, double z) { return xsf::struve_l(v, z); }
+
+// Cylindrical Bessel
+
+double xsf_i0(double x) { return xsf::cyl_bessel_i0(x); }
+
+double xsf_i0e(double x) { return xsf::cyl_bessel_i0e(x); }
+
+double xsf_i1(double x) { return xsf::cyl_bessel_i1(x); }
+
+double xsf_i1e(double x) { return xsf::cyl_bessel_i1e(x); }
+
+double xsf_iv(double v, double x) { return xsf::cyl_bessel_i(v, x); }
+
+double xsf_j0(double x) { return xsf::cyl_bessel_j0(x); }
+
+double xsf_j1(double x) { return xsf::cyl_bessel_j1(x); }
+
+double xsf_k0(double x) { return xsf::cyl_bessel_k0(x); }
+
+double xsf_k0e(double x) { return xsf::cyl_bessel_k0e(x); }
+
+double xsf_k1(double x) { return xsf::cyl_bessel_k1(x); }
+
+double xsf_k1e(double x) { return xsf::cyl_bessel_k1e(x); }
+
+double xsf_y0(double x) { return xsf::cyl_bessel_y0(x); }
+
+double xsf_y1(double x) { return xsf::cyl_bessel_y1(x); }
+
+double cephes_yn(int n, double x) { return xsf::cephes::yn(n, x); }
+
+double special_cyl_bessel_j(double v, double x) { return xsf::cyl_bessel_j(v, x); }
+
+npy_cdouble special_ccyl_bessel_j(double v, npy_cdouble z) { return to_ccomplex(xsf::cyl_bessel_j(v, to_complex(z))); }
+
+double special_cyl_bessel_je(double v, double z) { return xsf::cyl_bessel_je(v, z); }
+
+npy_cdouble special_ccyl_bessel_je(double v, npy_cdouble z) {
+    return to_ccomplex(xsf::cyl_bessel_je(v, to_complex(z)));
+}
+
+double special_cyl_bessel_y(double v, double x) { return xsf::cyl_bessel_y(v, x); }
+
+npy_cdouble special_ccyl_bessel_y(double v, npy_cdouble z) { return to_ccomplex(xsf::cyl_bessel_y(v, to_complex(z))); }
+
+double special_cyl_bessel_ye(double v, double z) { return xsf::cyl_bessel_ye(v, z); }
+
+npy_cdouble special_ccyl_bessel_ye(double v, npy_cdouble z) {
+    return to_ccomplex(xsf::cyl_bessel_ye(v, to_complex(z)));
+}
+
+double special_cyl_bessel_i(double v, double z) { return xsf::cyl_bessel_i(v, z); }
+
+npy_cdouble special_ccyl_bessel_i(double v, npy_cdouble z) { return to_ccomplex(xsf::cyl_bessel_i(v, to_complex(z))); }
+
+double special_cyl_bessel_ie(double v, double z) { return xsf::cyl_bessel_ie(v, z); }
+
+npy_cdouble special_ccyl_bessel_ie(double v, npy_cdouble z) {
+    return to_ccomplex(xsf::cyl_bessel_ie(v, to_complex(z)));
+}
+
+double special_cyl_bessel_k_int(Py_ssize_t n, double z) { return xsf::cyl_bessel_k(static_cast<double>(n), z); }
+
+double special_cyl_bessel_k(double v, double z) { return xsf::cyl_bessel_k(v, z); }
+
+npy_cdouble special_ccyl_bessel_k(double v, npy_cdouble z) { return to_ccomplex(xsf::cyl_bessel_k(v, to_complex(z))); }
+
+double special_cyl_bessel_ke(double v, double z) { return xsf::cyl_bessel_ke(v, z); }
+
+npy_cdouble special_ccyl_bessel_ke(double v, npy_cdouble z) {
+    return to_ccomplex(xsf::cyl_bessel_ke(v, to_complex(z)));
+}
+
+npy_cdouble special_ccyl_hankel_1(double v, npy_cdouble z) { return to_ccomplex(xsf::cyl_hankel_1(v, to_complex(z))); }
+
+npy_cdouble special_ccyl_hankel_1e(double v, npy_cdouble z) {
+    return to_ccomplex(xsf::cyl_hankel_1e(v, to_complex(z)));
+}
+
+double xsf_besselpoly(double a, double lambda, double nu) { return xsf::besselpoly(a, lambda, nu); }
+
+// Spherical Bessel
+
 double special_sph_bessel_j(long n, double x) { return xsf::sph_bessel_j(n, x); }
 
 npy_cdouble special_csph_bessel_j(long n, npy_cdouble z) { return to_ccomplex(xsf::sph_bessel_j(n, to_complex(z))); }
@@ -429,126 +535,6 @@ double special_sph_bessel_k_jac(long n, double x) { return xsf::sph_bessel_k_jac
 npy_cdouble special_csph_bessel_k_jac(long n, npy_cdouble z) {
     return to_ccomplex(xsf::sph_bessel_k_jac(n, to_complex(z)));
 }
-
-double special_ellipk(double m) { return xsf::ellipk(m); }
-
-double xsf_besselpoly(double a, double lambda, double nu) { return xsf::besselpoly(a, lambda, nu); }
-
-double xsf_beta(double a, double b) { return xsf::beta(a, b); }
-
-double xsf_betaln(double a, double b) { return xsf::betaln(a, b); }
-
-double xsf_cbrt(double x) { return xsf::cbrt(x); }
-
-double xsf_gamma(double x) { return xsf::gamma(x); }
-
-npy_cdouble xsf_cgamma(npy_cdouble z) { return to_ccomplex(xsf::gamma(to_complex(z))); }
-
-double xsf_gammaln(double x) { return xsf::gammaln(x); }
-
-double xsf_gammasgn(double x) { return xsf::gammasgn(x); }
-
-double xsf_hyp2f1(double a, double b, double c, double x) { return xsf::hyp2f1(a, b, c, x); }
-
-npy_cdouble xsf_chyp2f1(double a, double b, double c, npy_cdouble z) {
-    return to_ccomplex(xsf::hyp2f1(a, b, c, to_complex(z)));
-}
-
-double xsf_i0(double x) { return xsf::cyl_bessel_i0(x); }
-
-double xsf_i0e(double x) { return xsf::cyl_bessel_i0e(x); }
-
-double xsf_i1(double x) { return xsf::cyl_bessel_i1(x); }
-
-double xsf_i1e(double x) { return xsf::cyl_bessel_i1e(x); }
-
-double xsf_iv(double v, double x) { return xsf::cyl_bessel_i(v, x); }
-
-double xsf_j0(double x) { return xsf::cyl_bessel_j0(x); }
-
-double xsf_j1(double x) { return xsf::cyl_bessel_j1(x); }
-
-double xsf_k0(double x) { return xsf::cyl_bessel_k0(x); }
-
-double xsf_k0e(double x) { return xsf::cyl_bessel_k0e(x); }
-
-double xsf_k1(double x) { return xsf::cyl_bessel_k1(x); }
-
-double xsf_k1e(double x) { return xsf::cyl_bessel_k1e(x); }
-
-double xsf_y0(double x) { return xsf::cyl_bessel_y0(x); }
-
-double xsf_y1(double x) { return xsf::cyl_bessel_y1(x); }
-
-double cephes_yn(int n, double x) { return xsf::cephes::yn(n, x); }
-
-double cephes_igam(double a, double x) { return xsf::cephes::igam(a, x); }
-
-double cephes_igamc(double a, double x) { return xsf::cephes::igamc(a, x); }
-
-double cephes_igami(double a, double p) { return xsf::cephes::igami(a, p); }
-
-double cephes_igamci(double a, double p) { return xsf::cephes::igamci(a, p); }
-
-double cephes_igam_fac(double a, double x) { return xsf::cephes::detail::igam_fac(a, x); }
-
-double cephes_lanczos_sum_expg_scaled(double x) { return xsf::cephes::lanczos_sum_expg_scaled(x); }
-
-double cephes_erf(double x) { return xsf::cephes::erf(x); }
-
-double cephes_erfc(double x) { return xsf::cephes::erfc(x); }
-
-double cephes_poch(double x, double m) { return xsf::cephes::poch(x, m); }
-
-double cephes_rgamma(double x) { return xsf::cephes::rgamma(x); }
-
-double xsf_zetac(double x) { return xsf::zetac(x); }
-
-double cephes_log1p(double x) { return xsf::cephes::log1p(x); }
-
-double cephes_log1pmx(double x) { return xsf::cephes::log1pmx(x); }
-
-double cephes_lgam1p(double x) { return xsf::cephes::lgam1p(x); }
-
-double cephes_expm1(double x) { return xsf::cephes::expm1(x); }
-
-double xsf_cosm1(double x) { return xsf::cosm1(x); }
-
-double cephes_expn(int n, double x) { return xsf::cephes::expn(n, x); }
-
-double xsf_ellipe(double x) { return xsf::ellipe(x); }
-
-double cephes_ellpk(double x) { return xsf::ellipkm1(x); }
-
-double cephes_ellie(double phi, double m) { return xsf::ellipeinc(phi, m); }
-
-double xsf_ellipkinc(double phi, double m) { return xsf::ellipkinc(phi, m); }
-
-double xsf_sindg(double x) { return xsf::sindg(x); }
-
-double xsf_cosdg(double x) { return xsf::cosdg(x); }
-
-double xsf_tandg(double x) { return xsf::tandg(x); }
-
-double cephes_poch_wrap(double x, double m) { return xsf::cephes::poch(x, m); }
-
-double xsf_cotdg(double x) { return xsf::cotdg(x); }
-
-double xsf_radian(double d, double m, double s) { return xsf::radian(d, m, s); }
-
-double cephes_erfcinv(double y) { return xsf::cephes::erfcinv(y); }
-
-double cephes_exp10(double x) { return xsf::cephes::exp10(x); }
-
-double cephes_exp2(double x) { return xsf::cephes::exp2(x); }
-
-double cephes_round(double x) { return xsf::cephes::round(x); }
-
-double cephes_spence(double x) { return xsf::cephes::spence(x); }
-
-double xsf_struve_h(double v, double z) { return xsf::struve_h(v, z); }
-
-double xsf_struve_l(double v, double z) { return xsf::struve_l(v, z); }
 
 // Stats
 
@@ -618,8 +604,6 @@ double xsf_smirnovp(int n, double x) { return xsf::smirnovp(n, x); }
 
 double xsf_tukeylambdacdf(double x, double lmbda) { return xsf::tukeylambdacdf(x, lmbda); }
 
-
-
 double cephes_bdtr_wrap(double k, Py_ssize_t n, double p) { return xsf::bdtr(k, static_cast<int>(n), p); }
 
 double cephes_bdtri_wrap(double k, Py_ssize_t n, double y) { return xsf::bdtri(k, static_cast<int>(n), y); }
@@ -653,3 +637,23 @@ double cephes_smirnovi_wrap(Py_ssize_t n, double x) { return xsf::cephes::smirno
 double cephes_smirnovci_wrap(Py_ssize_t n, double x) { return xsf::cephes::smirnovci(static_cast<int>(n), x); }
 
 double cephes_smirnovp_wrap(Py_ssize_t n, double x) { return xsf::cephes::smirnovp(static_cast<int>(n), x); }
+
+// Trig
+
+double xsf_sinpi(double x) { return xsf::sinpi(x); }
+
+npy_cdouble xsf_csinpi(npy_cdouble z) { return to_ccomplex(xsf::sinpi(to_complex(z))); }
+
+double xsf_cospi(double x) { return xsf::cospi(x); }
+
+double xsf_cosm1(double x) { return xsf::cosm1(x); }
+
+double xsf_sindg(double x) { return xsf::sindg(x); }
+
+double xsf_cosdg(double x) { return xsf::cosdg(x); }
+
+double xsf_tandg(double x) { return xsf::tandg(x); }
+
+double xsf_cotdg(double x) { return xsf::cotdg(x); }
+
+double xsf_radian(double d, double m, double s) { return xsf::radian(d, m, s); }
