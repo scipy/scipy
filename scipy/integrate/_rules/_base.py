@@ -1,7 +1,7 @@
 import itertools
 
 from scipy._lib._array_api import array_namespace, xp_size
-from scipy._lib.array_api_compat import numpy as np
+from scipy._lib._array_api import np_compat
 
 import math
 
@@ -284,7 +284,7 @@ class NestedFixedRule(FixedRule):
     def __init__(self, higher, lower):
         self.higher = higher
         self.lower = lower
-        self.xp = higher.xp
+        self.xp = None
 
     @property
     def nodes_and_weights(self):
@@ -336,6 +336,9 @@ class NestedFixedRule(FixedRule):
 
         nodes, weights = self.nodes_and_weights
         lower_nodes, lower_weights = self.lower_nodes_and_weights
+
+        if self.xp is None:
+            self.xp = array_namespace(nodes)
 
         error_nodes = self.xp.concat([nodes, lower_nodes], axis=0)
         error_weights = self.xp.concat([weights, -lower_weights], axis=0)
@@ -395,14 +398,17 @@ class ProductNestedFixed(NestedFixedRule):
                 raise ValueError("base rules for product need to be instance of"
                                  "NestedFixedRule")
 
-        self.xp = base_rules[0].xp
         self.base_rules = base_rules
+        self.xp = None
 
     @cached_property
     def nodes_and_weights(self):
         nodes = _cartesian_product(
             [rule.nodes_and_weights[0] for rule in self.base_rules]
         )
+
+        if self.xp is None:
+            self.xp = array_namespace(nodes)
 
         weights = self.xp.prod(
             _cartesian_product(
@@ -419,6 +425,9 @@ class ProductNestedFixed(NestedFixedRule):
             [cubature.lower_nodes_and_weights[0] for cubature in self.base_rules]
         )
 
+        if self.xp is None:
+            self.xp = array_namespace(nodes)
+
         weights = self.xp.prod(
             _cartesian_product(
                 [cubature.lower_nodes_and_weights[1] for cubature in self.base_rules]
@@ -433,7 +442,7 @@ def _cartesian_product(arrays):
     xp = array_namespace(*arrays)
 
     arrays_ix = xp.meshgrid(*arrays, indexing='ij')
-    result = xp.stack(arrays_ix, axis=-1).reshape(-1, len(arrays))
+    result = xp.reshape(xp.stack(arrays_ix, axis=-1), (-1, len(arrays)))
 
     return result
 
@@ -454,8 +463,8 @@ def _subregion_coordinates(a, b):
 
     # TODO: still relying on np
     for a_sub, b_sub in zip(
-        itertools.product(*np.asarray([a, m]).T),
-        itertools.product(*np.asarray([m, b]).T),
+        itertools.product(*np_compat.asarray([a, m]).T),
+        itertools.product(*np_compat.asarray([m, b]).T),
     ):
         yield xp.asarray(a_sub), xp.asarray(b_sub)
 

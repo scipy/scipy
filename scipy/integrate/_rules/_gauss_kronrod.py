@@ -1,4 +1,4 @@
-from scipy._lib.array_api_compat import numpy as np
+from scipy._lib._array_api import np_compat
 
 from functools import cached_property
 
@@ -84,7 +84,7 @@ class GaussKronrodQuadrature(NestedFixedRule):
         self.npoints = npoints
 
         if xp is None:
-            xp = np
+            xp = np_compat
 
         self.xp = xp
 

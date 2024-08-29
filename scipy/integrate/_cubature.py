@@ -2,8 +2,10 @@ import heapq
 import itertools
 
 from dataclasses import dataclass
+from types import ModuleType
+from typing import Any, TYPE_CHECKING
 
-from scipy._lib.array_api_compat import numpy as np
+from scipy._lib._array_api import np_compat
 from scipy._lib._array_api import array_namespace, xp_size
 from scipy._lib._util import MapWrapper
 
@@ -14,17 +16,21 @@ from scipy.integrate._rules import (
 )
 from scipy.integrate._rules._base import _subregion_coordinates
 
-
 __all__ = ['cubature']
+
+if TYPE_CHECKING:
+    Array = Any  # To be changed to a Protocol later (see array-api#589)
+else:
+    Array = object
 
 
 @dataclass
 class CubatureRegion:
-    estimate: object
-    error: object
-    a: object
-    b: object
-    _xp: object
+    estimate: Array
+    error: Array
+    a: Array
+    b: Array
+    _xp: ModuleType
 
     def __lt__(self, other):
         # Consider regions with higher error estimates as being "less than" regions with
@@ -39,8 +45,8 @@ class CubatureRegion:
 
 @dataclass
 class CubatureResult:
-    estimate: object
-    error: object
+    estimate: Array
+    error: Array
     status: str
     regions: list[CubatureRegion]
     subdivisions: int
@@ -214,8 +220,8 @@ def cubature(f, a, b, rule="gk21", rtol=1e-8, atol=0, max_subdivisions=10000,
 
     # If a and b are ordinary Python lists, default to NumPy
     if isinstance(a, list) and isinstance(b, list):
-        a = np.array(a)
-        b = np.array(b)
+        a = np_compat.array(a)
+        b = np_compat.array(b)
 
     xp = array_namespace(a, b)
     max_subdivisions = float("inf") if max_subdivisions is None else max_subdivisions

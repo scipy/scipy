@@ -3,9 +3,8 @@ import scipy
 import itertools
 
 import pytest
-import numpy as np
 
-from scipy._lib._array_api import array_namespace, xp_assert_close, xp_size
+from scipy._lib._array_api import array_namespace, xp_assert_close, xp_size, np_compat
 from scipy.conftest import array_api_compatible
 
 from scipy.integrate import cubature
@@ -17,6 +16,9 @@ from scipy.integrate._rules import (
     GenzMalikCubature,
 )
 
+pytestmark = [pytest.mark.usefixtures("skip_xp_backends"),]
+skip_xp_backends = pytest.mark.skip_xp_backends
+
 # The integrands ``genz_malik_1980_*`` come from the paper:
 #   A.C. Genz, A.A. Malik, Remarks on algorithm 006: An adaptive algorithm for
 #   numerical integration over an N-dimensional rectangular region, Journal of
@@ -24,31 +26,26 @@ from scipy.integrate._rules import (
 #   ISSN 0377-0427, https://doi.org/10.1016/0771-050X(80)90039-X.
 
 
-def basic_1d_integrand(x, n):
-    xp = array_namespace(x, n)
-
+def basic_1d_integrand(x, n, xp):
     x_reshaped = xp.reshape(x, (-1, 1, 1))
     n_reshaped = xp.reshape(n, (1, -1, 1))
 
     return x_reshaped**n_reshaped
 
 
-def basic_1d_integrand_exact(n):
-    xp = array_namespace(n)
+def basic_1d_integrand_exact(n, xp):
     return xp.reshape(2**(n+1)/(n+1), (-1, 1))
 
 
-def basic_nd_integrand(x, n):
-    xp = array_namespace(x, n)
-
+def basic_nd_integrand(x, n, xp):
     return xp.reshape(xp.sum(x, axis=-1), (-1, 1))**xp.reshape(n, (1, -1))
 
 
-def basic_nd_integrand_exact(n):
+def basic_nd_integrand_exact(n, xp):
     return (-2**(3+n) + 4**(2+n))/((1+n)*(2+n))
 
 
-def genz_malik_1980_f_1(x, r, alphas):
+def genz_malik_1980_f_1(x, r, alphas, xp):
     r"""
     .. math:: f_1(\mathbf x) = \cos\left(2\pi r + \sum^n_{i = 1}\alpha_i x_i\right)
 
@@ -57,18 +54,15 @@ def genz_malik_1980_f_1(x, r, alphas):
         genzMalik1980f1[x_List, r_, alphas_List] := Cos[2*Pi*r + Total[x*alphas]]
     """
 
-    xp = array_namespace(x, r, alphas)
     npoints, ndim = x.shape[0], x.shape[-1]
 
-    alphas_reshaped = alphas[xp.newaxis, ...]
+    alphas_reshaped = alphas[None, ...]
     x_reshaped = xp.reshape(x, (npoints, *([1]*(len(alphas.shape) - 1)), ndim))
 
     return xp.cos(2*math.pi*r + xp.sum(alphas_reshaped * x_reshaped, axis=-1))
 
 
-def genz_malik_1980_f_1_exact(a, b, r, alphas):
-    xp = array_namespace(a, b, r, alphas)
-
+def genz_malik_1980_f_1_exact(a, b, r, alphas, xp):
     ndim = xp_size(a)
     a = xp.reshape(a, (*([1]*(len(alphas.shape) - 1)), ndim))
     b = xp.reshape(b, (*([1]*(len(alphas.shape) - 1)), ndim))
@@ -83,13 +77,13 @@ def genz_malik_1980_f_1_random_args(rng, shape, xp):
     alphas = xp.asarray(rng.random(shape))
 
     difficulty = 9
-    normalisation_factors = xp.sum(alphas, axis=-1)[..., xp.newaxis]
+    normalisation_factors = xp.sum(alphas, axis=-1)[..., None]
     alphas = difficulty * alphas / normalisation_factors
 
     return (r, alphas)
 
 
-def genz_malik_1980_f_2(x, alphas, betas):
+def genz_malik_1980_f_2(x, alphas, betas, xp):
     r"""
     .. math:: f_2(\mathbf x) = \prod^n_{i = 1} (\alpha_i^2 + (x_i - \beta_i)^2)^{-1}
 
@@ -98,20 +92,17 @@ def genz_malik_1980_f_2(x, alphas, betas):
         genzMalik1980f2[x_List, alphas_List, betas_List] :=
             1/Times @@ ((alphas^2 + (x - betas)^2))
     """
-    xp = array_namespace(x, alphas, betas)
     npoints, ndim = x.shape[0], x.shape[-1]
 
-    alphas_reshaped = alphas[xp.newaxis, ...]
-    betas_reshaped = betas[xp.newaxis, ...]
+    alphas_reshaped = alphas[None, ...]
+    betas_reshaped = betas[None, ...]
 
     x_reshaped = xp.reshape(x, (npoints, *([1]*(len(alphas.shape) - 1)), ndim))
 
     return 1/xp.prod(alphas_reshaped**2 + (x_reshaped-betas_reshaped)**2, axis=-1)
 
 
-def genz_malik_1980_f_2_exact(a, b, alphas, betas):
-    xp = array_namespace(a, b, alphas, betas)
-
+def genz_malik_1980_f_2_exact(a, b, alphas, betas, xp):
     ndim = xp_size(a)
     a = xp.reshape(a, (*([1]*(len(alphas.shape) - 1)), ndim))
     b = xp.reshape(b, (*([1]*(len(alphas.shape) - 1)), ndim))
@@ -130,7 +121,7 @@ def genz_malik_1980_f_2_random_args(rng, shape, xp):
 
     difficulty = 25.0
     products = xp.prod(alphas**xp.asarray(-2.0), axis=-1)
-    normalisation_factors = (products**xp.asarray(1 / (2*ndim)))[..., xp.newaxis]
+    normalisation_factors = (products**xp.asarray(1 / (2*ndim)))[..., None]
     alphas = alphas \
         * normalisation_factors \
         / math.pow(difficulty, 1 / (2*ndim))
@@ -142,7 +133,7 @@ def genz_malik_1980_f_2_random_args(rng, shape, xp):
     return alphas, betas
 
 
-def genz_malik_1980_f_3(x, alphas):
+def genz_malik_1980_f_3(x, alphas, xp):
     r"""
     .. math:: f_3(\mathbf x) = \exp\left(\sum^n_{i = 1} \alpha_i x_i\right)
 
@@ -151,18 +142,15 @@ def genz_malik_1980_f_3(x, alphas):
         genzMalik1980f3[x_List, alphas_List] := Exp[Dot[x, alphas]]
     """
 
-    xp = array_namespace(x, alphas)
     npoints, ndim = x.shape[0], x.shape[-1]
 
-    alphas_reshaped = alphas[xp.newaxis, ...]
+    alphas_reshaped = alphas[None, ...]
     x_reshaped = xp.reshape(x, (npoints, *([1]*(len(alphas.shape) - 1)), ndim))
 
     return xp.exp(xp.sum(alphas_reshaped * x_reshaped, axis=-1))
 
 
-def genz_malik_1980_f_3_exact(a, b, alphas):
-    xp = array_namespace(a, b, alphas)
-
+def genz_malik_1980_f_3_exact(a, b, alphas, xp):
     ndim = xp_size(a)
     a = xp.reshape(a, (*([1]*(len(alphas.shape) - 1)), ndim))
     b = xp.reshape(b, (*([1]*(len(alphas.shape) - 1)), ndim))
@@ -173,14 +161,14 @@ def genz_malik_1980_f_3_exact(a, b, alphas):
 
 def genz_malik_1980_f_3_random_args(rng, shape, xp):
     alphas = xp.asarray(rng.random(shape))
-    normalisation_factors = xp.sum(alphas, axis=-1)[..., xp.newaxis]
+    normalisation_factors = xp.sum(alphas, axis=-1)[..., None]
     difficulty = 12.0
     alphas = difficulty * alphas / normalisation_factors
 
     return (alphas,)
 
 
-def genz_malik_1980_f_4(x, alphas):
+def genz_malik_1980_f_4(x, alphas, xp):
     r"""
     .. math:: f_4(\mathbf x) = \left(1 + \sum^n_{i = 1} \alpha_i x_i\right)^{-n-1}
 
@@ -189,17 +177,15 @@ def genz_malik_1980_f_4(x, alphas):
             (1 + Dot[x, alphas])^(-Length[alphas] - 1)
     """
 
-    xp = array_namespace(x, alphas)
     npoints, ndim = x.shape[0], x.shape[-1]
 
-    alphas_reshaped = alphas[xp.newaxis, ...]
+    alphas_reshaped = alphas[None, ...]
     x_reshaped = xp.reshape(x, (npoints, *([1]*(len(alphas.shape) - 1)), ndim))
 
     return ((1 + xp.sum(alphas_reshaped * x_reshaped, axis=-1))**(-ndim-1))
 
 
-def genz_malik_1980_f_4_exact(a, b, alphas):
-    xp = array_namespace(a, b, alphas)
+def genz_malik_1980_f_4_exact(a, b, alphas, xp):
     ndim = xp_size(a)
 
     def F(x):
@@ -209,16 +195,15 @@ def genz_malik_1980_f_4_exact(a, b, alphas):
             math.factorial(ndim) * (1 + xp.sum(alphas * x_reshaped, axis=-1))
         )
 
-    return _eval_indefinite_integral(F, a, b)
+    return _eval_indefinite_integral(F, a, b, xp)
 
 
-def _eval_indefinite_integral(F, a, b):
+def _eval_indefinite_integral(F, a, b, xp):
     """
     Calculates a definite integral from points `a` to `b` by summing up over the corners
     of the corresponding hyperrectangle.
     """
 
-    xp = array_namespace(a, b)
     ndim = xp_size(a)
     points = xp.stack([a, b], axis=0)
 
@@ -234,14 +219,14 @@ def genz_malik_1980_f_4_random_args(rng, shape, xp):
     ndim = shape[-1]
 
     alphas = xp.asarray(rng.random(shape))
-    normalisation_factors = xp.sum(alphas, axis=-1)[..., xp.newaxis]
+    normalisation_factors = xp.sum(alphas, axis=-1)[..., None]
     difficulty = 14.0
     alphas = (difficulty / ndim) * alphas / normalisation_factors
 
     return (alphas,)
 
 
-def genz_malik_1980_f_5(x, alphas, betas):
+def genz_malik_1980_f_5(x, alphas, betas, xp):
     r"""
     .. math::
 
@@ -253,11 +238,10 @@ def genz_malik_1980_f_5(x, alphas, betas):
             Exp[-Total[alphas^2 * (x - betas)^2]]
     """
 
-    xp = array_namespace(x, alphas, betas)
     npoints, ndim = x.shape[0], x.shape[-1]
 
-    alphas_reshaped = alphas[xp.newaxis, ...]
-    betas_reshaped = betas[xp.newaxis, ...]
+    alphas_reshaped = alphas[None, ...]
+    betas_reshaped = betas[None, ...]
 
     x_reshaped = xp.reshape(x, (npoints, *([1]*(len(alphas.shape) - 1)), ndim))
 
@@ -266,8 +250,7 @@ def genz_malik_1980_f_5(x, alphas, betas):
     )
 
 
-def genz_malik_1980_f_5_exact(a, b, alphas, betas):
-    xp = array_namespace(a, b, alphas, betas)
+def genz_malik_1980_f_5_exact(a, b, alphas, betas, xp):
     ndim = xp_size(a)
     a = xp.reshape(a, (*([1]*(len(alphas.shape) - 1)), ndim))
     b = xp.reshape(b, (*([1]*(len(alphas.shape) - 1)), ndim))
@@ -288,7 +271,7 @@ def genz_malik_1980_f_5_random_args(rng, shape, xp):
     difficulty = 21.0
     normalisation_factors = xp.sqrt(
         xp.sum(alphas**xp.asarray(2.0), axis=-1)
-    )[..., xp.newaxis]
+    )[..., None]
     alphas = alphas / normalisation_factors * math.sqrt(difficulty)
 
     return alphas, betas
@@ -311,20 +294,19 @@ class TestCubature:
         a = xp.asarray([0, 0], dtype=xp.float64)
         b = xp.asarray([2, 2], dtype=xp.float64)
 
-        res = cubature(basic_nd_integrand, a, b, rule_str, args=(n,))
+        res = cubature(basic_nd_integrand, a, b, rule_str, args=(n, xp))
 
         xp_assert_close(
             res.estimate,
-            basic_nd_integrand_exact(n),
+            basic_nd_integrand_exact(n, xp),
             rtol=1e-1,
             atol=0,
         )
 
-    def test_pass_list_not_array(self, xp):
-        # By default, cubature will default to using NumPy arrays if ordinary lists are
-        # passed.
-        n = np.arange(5)
-
+    @skip_xp_backends(np_only=True,
+                      reasons=['array-likes only supported for NumPy backend'])
+    def test_pass_array_like_not_array(self, xp):
+        n = np_compat.arange(5, dtype=np_compat.float64)
         a = [0]
         b = [2]
 
@@ -332,12 +314,12 @@ class TestCubature:
             basic_1d_integrand,
             a,
             b,
-            args=(n,)
+            args=(n, xp)
         )
 
         xp_assert_close(
             res.estimate,
-            basic_1d_integrand_exact(n),
+            basic_1d_integrand_exact(n, xp),
             rtol=1e-1,
             atol=0,
         )
@@ -353,7 +335,7 @@ class TestCubature:
             b,
             rule,
             max_subdivisions=10,
-            args=(xp.arange(5, dtype=xp.float64),),
+            args=(xp.arange(5, dtype=xp.float64), xp),
         )
 
         assert res.subdivisions == 10
@@ -364,7 +346,7 @@ class TestCubature:
         b = xp.asarray([[1]], dtype=xp.float64)
 
         with pytest.raises(Exception, match="`a` and `b` must be 1D arrays"):
-            cubature(basic_1d_integrand, a, b)
+            cubature(basic_1d_integrand, a, b, args=(xp,))
 
 
 @pytest.mark.parametrize("rtol", [1e-4])
@@ -645,13 +627,13 @@ class TestCubatureProblems:
             rule,
             rtol,
             atol,
-            args=args,
+            args=(*args, xp),
         )
 
         assert res.status == "converged"
 
         est = res.estimate
-        exact_sol = exact(a, b, *args)
+        exact_sol = exact(a, b, *args, xp)
 
         xp_assert_close(
             est,
@@ -674,7 +656,7 @@ class TestCubatureProblems:
         (2, 1, 3),
     ])
     def test_array_output(self, problem, rule, shape, rtol, atol, xp):
-        rng = np.random.default_rng(1)
+        rng = np_compat.random.default_rng(1)
         ndim = shape[-1]
 
         if rule == "genz-malik" and ndim < 2:
@@ -696,11 +678,11 @@ class TestCubatureProblems:
             rule,
             rtol,
             atol,
-            args=args,
+            args=(*args, xp),
         )
 
         est = res.estimate
-        exact_sol = exact(a, b, *args)
+        exact_sol = exact(a, b, *args, xp)
 
         xp_assert_close(
             est,
@@ -712,7 +694,7 @@ class TestCubatureProblems:
 
         err_msg = (f"estimate_error={res.error}, "
                    f"subdivisions= {res.subdivisions}, "
-                   f"true_error={xp.abs(res.estimate - exact(a, b, *args))}")
+                   f"true_error={xp.abs(res.estimate - exact_sol)}")
         assert res.status == "converged", err_msg
 
         assert res.estimate.shape == shape[:-1]
@@ -741,7 +723,7 @@ class TestRules:
         b = xp.asarray(b, dtype=xp.float64)
 
         with pytest.raises(Exception, match="incompatible dimension"):
-            rule.estimate(basic_1d_integrand, a, b)
+            rule.estimate(basic_1d_integrand, a, b, args=(xp,))
 
     def test_estimate_with_base_classes_raise_error(self, xp):
         a = xp.asarray([0])
@@ -749,7 +731,7 @@ class TestRules:
 
         for base_class in [Rule(), FixedRule()]:
             with pytest.raises(Exception):
-                base_class.estimate(basic_1d_integrand, a, b)
+                base_class.estimate(basic_1d_integrand, a, b, args=(xp,))
 
 
 @array_api_compatible
@@ -807,12 +789,12 @@ class TestRulesQuadrature:
             a, b,
             rule,
             rtol=1e-1,
-            args=(n,),
+            args=(n, xp),
         )
 
         xp_assert_close(
             res.estimate,
-            basic_1d_integrand_exact(n),
+            basic_1d_integrand_exact(n, xp),
             rtol=1e-1,
             atol=0,
         )
@@ -825,25 +807,26 @@ class TestRulesQuadrature:
             quadrature(1, xp=xp)
 
 
+@array_api_compatible
 class TestRulesCubature:
     """
     Tests underlying cubature rules (ndim >= 2).
     """
 
     @pytest.mark.parametrize("ndim", range(2, 11))
-    def test_genz_malik_func_evaluations(self, ndim):
+    def test_genz_malik_func_evaluations(self, ndim, xp):
         """
         Tests that the number of function evaluations required for Genz-Malik cubature
         matches the number in Genz and Malik 1980.
         """
 
-        nodes, _ = GenzMalikCubature(ndim).nodes_and_weights
+        nodes, _ = GenzMalikCubature(ndim, xp=xp).nodes_and_weights
 
         assert nodes.shape[0] == (2**ndim) + 2*ndim**2 + 2*ndim + 1
 
-    def test_genz_malik_1d_raises_error(self):
+    def test_genz_malik_1d_raises_error(self, xp):
         with pytest.raises(Exception, match="only defined for ndim >= 2"):
-            GenzMalikCubature(1)
+            GenzMalikCubature(1, xp=xp)
 
 
 class BadErrorRule(Rule):
