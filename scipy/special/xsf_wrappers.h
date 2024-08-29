@@ -20,23 +20,20 @@ extern "C" {
 #endif /* __cplusplus */
 
 npy_cdouble clngamma_wrap(npy_cdouble z);
-npy_cdouble chyp2f1_wrap(double a, double b, double c, npy_cdouble z);
 npy_cdouble chyp1f1_wrap(double a, double b, npy_cdouble z);
 double hyp1f1_wrap(double a, double b, double x);
 double hypU_wrap(double a, double b, double x);
 npy_cdouble cerf_wrap(npy_cdouble z);
 
-double special_exp1(double x);
-npy_cdouble special_cexp1(npy_cdouble z);
+double xsf_exp1(double x);
+npy_cdouble xsf_cexp1(npy_cdouble z);
 
-double special_expi(double x);
-npy_cdouble special_cexpi(npy_cdouble z);
+double xsf_expi(double x);
+npy_cdouble xsf_cexpi(npy_cdouble z);
 
-double struve_wrap(double v, double x);
 double special_itstruve0(double x);
 double special_it2struve0(double x);
 
-double modstruve_wrap(double v, double x);
 double special_itmodstruve0(double x);
 
 double special_ber(double x);
@@ -55,7 +52,7 @@ void it2j0y0_wrap(double x, double *, double *);
 void it1i0k0_wrap(double x, double *, double *);
 void it2i0k0_wrap(double x, double *, double *);
 
-int cfresnl_wrap(npy_cdouble x, npy_cdouble *sf, npy_cdouble *cf);
+void xsf_cfresnel(npy_cdouble x, npy_cdouble *sf, npy_cdouble *cf);
 double cem_cva_wrap(double m, double q);
 double sem_cva_wrap(double m, double q);
 void cem_wrap(double m, double q, double x, double *csf, double *csd);
@@ -95,6 +92,135 @@ void special_cairye(npy_cdouble z, npy_cdouble *ai, npy_cdouble *aip, npy_cdoubl
 
 void special_itairy(double x, double *apt, double *bpt, double *ant, double *bnt);
 
+npy_cdouble hyp2f1_complex_wrap(double a, double b, double c, npy_cdouble zp);
+double sin_pi(double x);
+
+double xsf_binom(double n, double k);
+
+double special_digamma(double z);
+npy_cdouble special_cdigamma(npy_cdouble z);
+
+float special_expitf(float x);
+double special_expit(double x);
+npy_longdouble special_expitl(npy_longdouble x);
+
+npy_double special_exprel(npy_double x);
+
+float special_log_expitf(float x);
+double special_log_expit(double x);
+npy_longdouble special_log_expitl(npy_longdouble x);
+
+float special_logitf(float x);
+double special_logit(double x);
+npy_longdouble special_logitl(npy_longdouble x);
+
+double special_loggamma(double x);
+npy_cdouble special_cloggamma(npy_cdouble z);
+
+npy_cdouble xsf_cgamma(npy_cdouble z);
+
+npy_cdouble special_lambertw(npy_cdouble z, long k, double tol);
+
+double special_rgamma(double x);
+npy_cdouble special_crgamma(npy_cdouble z);
+
+npy_cdouble special_sph_harm(long m, long n, double theta, double phi);
+npy_cdouble special_sph_harm_unsafe(double m, double n, double theta, double phi);
+
+double special_ellipk(double m);
+
+double cephes_airy_wrap(double x, double *ai, double *aip, double *bi, double *bip);
+double cephes_expm1_wrap(double x);
+double cephes_expn_wrap(Py_ssize_t n, double x);
+double cephes_log1p_wrap(double x);
+double xsf_iv(double v, double x);
+double cephes_jv_wrap(double v, double x);
+double cephes_ellpk_wrap(double x);
+int cephes_ellpj_wrap(double u, double m, double *sn, double *cn, double *dn, double *ph);
+int cephes_fresnl_wrap(double xxa, double *ssa, double *cca);
+double cephes_poch_wrap(double x, double m);
+int cephes_sici_wrap(double x, double *si, double *ci);
+int cephes_shichi_wrap(double x, double *si, double *ci);
+double cephes__struve_asymp_large_z(double v, double z, Py_ssize_t is_h, double *err);
+double cephes__struve_bessel_series(double v, double z, Py_ssize_t is_h, double *err);
+double cephes__struve_power_series(double v, double z, Py_ssize_t is_h, double *err);
+double cephes_yn_wrap(Py_ssize_t n, double x);
+double cephes_polevl_wrap(double x, const double coef[], int N);
+double cephes_p1evl_wrap(double x, const double coef[], int N);
+double special_wright_bessel(double a, double b, double x);
+double special_log_wright_bessel(double a, double b, double x);
+
+double special_scaled_exp1(double x);
+
+double xsf_beta(double a, double b);
+double xsf_betaln(double a, double b);
+
+double xsf_cbrt(double x);
+
+double xsf_gamma(double x);
+double xsf_gammasgn(double x);
+double xsf_gammaln(double x);
+
+double xsf_hyp2f1(double a, double b, double c, double x);
+npy_cdouble xsf_chyp2f1(double a, double b, double c, npy_cdouble z);
+
+double cephes_igam(double a, double x);
+
+double cephes_igamc(double a, double x);
+
+double cephes_igami(double a, double p);
+
+double cephes_igamci(double a, double p);
+
+double cephes_igam_fac(double a, double x);
+
+double cephes_lanczos_sum_expg_scaled(double x);
+
+double cephes_erf(double x);
+
+double cephes_erfc(double x);
+
+double cephes_poch(double x, double m);
+
+double cephes_rgamma(double x);
+
+double xsf_zetac(double x);
+
+double cephes_log1p(double x);
+
+double cephes_log1pmx(double x);
+
+double cephes_lgam1p(double x);
+
+double cephes_expm1(double x);
+
+double cephes_expn(int n, double x);
+
+double xsf_ellipe(double x);
+
+double cephes_ellpk(double x);
+
+double cephes_ellie(double phi, double m);
+
+double xsf_ellipkinc(double phi, double m);
+
+double cephes_erfcinv(double y);
+
+double cephes_exp10(double x);
+
+double cephes_exp2(double x);
+
+double cephes_round(double x);
+
+double cephes_spence(double x);
+
+double xsf_struve_h(double v, double z);
+
+double xsf_struve_l(double v, double z);
+
+
+// Cylindrical Bessel
+
 double special_cyl_bessel_j(double v, double z);
 npy_cdouble special_ccyl_bessel_j(double v, npy_cdouble z);
 
@@ -125,103 +251,29 @@ npy_cdouble special_ccyl_hankel_2(double v, npy_cdouble z);
 npy_cdouble special_ccyl_hankel_1e(double v, npy_cdouble z);
 npy_cdouble special_ccyl_hankel_2e(double v, npy_cdouble z);
 
-npy_cdouble hyp2f1_complex_wrap(double a, double b, double c, npy_cdouble zp);
-double sin_pi(double x);
-double gammaln_wrap(double x);
+double xsf_besselpoly(double a, double lambda, double nu);
 
-double binom_wrap(double n, double k);
+double xsf_i0(double x);
+double xsf_i0e(double x);
+double xsf_i1(double x);
+double xsf_i1e(double x);
 
-double special_binom(double n, double k);
+double cephes_iv(double v, double x);
 
-double special_cospi(double x);
+double xsf_j0(double x);
+double xsf_j1(double x);
 
-double special_sinpi(double x);
-npy_cdouble special_csinpi(npy_cdouble z);
+double xsf_k0(double x);
+double xsf_k0e(double x);
+double xsf_k1(double x);
+double xsf_k1e(double x);
 
-double special_digamma(double z);
-npy_cdouble special_cdigamma(npy_cdouble z);
+double xsf_y0(double x);
+double xsf_y1(double x);
 
-float special_expitf(float x);
-double special_expit(double x);
-npy_longdouble special_expitl(npy_longdouble x);
+double cephes_yn(int n, double x);
 
-npy_double special_exprel(npy_double x);
-
-float special_log_expitf(float x);
-double special_log_expit(double x);
-npy_longdouble special_log_expitl(npy_longdouble x);
-
-float special_logitf(float x);
-double special_logit(double x);
-npy_longdouble special_logitl(npy_longdouble x);
-
-double special_loggamma(double x);
-npy_cdouble special_cloggamma(npy_cdouble z);
-
-double special_gamma(double x);
-npy_cdouble special_cgamma(npy_cdouble z);
-
-double special_hyp2f1(double a, double b, double c, double z);
-npy_cdouble special_chyp2f1(double a, double b, double c, npy_cdouble z);
-
-npy_cdouble special_lambertw(npy_cdouble z, long k, double tol);
-
-double special_rgamma(double x);
-npy_cdouble special_crgamma(npy_cdouble z);
-
-npy_cdouble special_sph_harm(long m, long n, double theta, double phi);
-npy_cdouble special_sph_harm_unsafe(double m, double n, double theta, double phi);
-
-double special_ellipk(double m);
-
-double binom_wrap(double n, double k);
-npy_cdouble hyp2f1_complex_wrap(double a, double b, double c, npy_cdouble zp);
-double cephes_hyp2f1_wrap(double a, double b, double c, double x);
-double cephes_airy_wrap(double x, double *ai, double *aip, double *bi, double *bip);
-double cephes_beta_wrap(double a, double b);
-double cephes_lbeta_wrap(double a, double b);
-double cephes_bdtr_wrap(double k, Py_ssize_t n, double p);
-double cephes_bdtri_wrap(double k, Py_ssize_t n, double y);
-double cephes_bdtrc_wrap(double k, Py_ssize_t n, double p);
-double cephes_cosm1_wrap(double x);
-double cephes_expm1_wrap(double x);
-double cephes_expn_wrap(Py_ssize_t n, double x);
-double cephes_log1p_wrap(double x);
-double cephes_gamma_wrap(double x);
-double cephes_gammasgn_wrap(double x);
-double cephes_lgam_wrap(double x);
-double cephes_iv_wrap(double v, double x);
-double cephes_jv_wrap(double v, double x);
-double cephes_ellpk_wrap(double x);
-int cephes_ellpj_wrap(double u, double m, double *sn, double *cn, double *dn, double *ph);
-int cephes_fresnl_wrap(double xxa, double *ssa, double *cca);
-double cephes_nbdtr_wrap(Py_ssize_t k, Py_ssize_t n, double p);
-double cephes_nbdtrc_wrap(Py_ssize_t k, Py_ssize_t n, double p);
-double cephes_nbdtri_wrap(Py_ssize_t k, Py_ssize_t n, double p);
-double cephes_ndtr_wrap(double x);
-double cephes_ndtri_wrap(double x);
-double cephes_pdtri_wrap(Py_ssize_t k, double y);
-double cephes_poch_wrap(double x, double m);
-int cephes_sici_wrap(double x, double *si, double *ci);
-int cephes_shichi_wrap(double x, double *si, double *ci);
-double cephes__struve_asymp_large_z(double v, double z, Py_ssize_t is_h, double *err);
-double cephes__struve_bessel_series(double v, double z, Py_ssize_t is_h, double *err);
-double cephes__struve_power_series(double v, double z, Py_ssize_t is_h, double *err);
-double cephes_smirnov_wrap(Py_ssize_t n, double x);
-double cephes_smirnovc_wrap(Py_ssize_t n, double x);
-double cephes_smirnovi_wrap(Py_ssize_t n, double x);
-double cephes_smirnovci_wrap(Py_ssize_t n, double x);
-double cephes_smirnovp_wrap(Py_ssize_t n, double x);
-double cephes_yn_wrap(Py_ssize_t n, double x);
-double cephes_polevl_wrap(double x, const double coef[], int N);
-double cephes_p1evl_wrap(double x, const double coef[], int N);
-double special_wright_bessel(double a, double b, double x);
-double special_log_wright_bessel(double a, double b, double x);
-
-double special_scaled_exp1(double x);
-
-
-double cephes_besselpoly(double a, double lambda, double nu);
+// Spherical Bessel
 
 double special_sph_bessel_j(long n, double x);
 npy_cdouble special_csph_bessel_j(long n, npy_cdouble z);
@@ -247,184 +299,68 @@ npy_cdouble special_csph_bessel_k(long n, npy_cdouble z);
 double special_sph_bessel_k_jac(long n, double x);
 npy_cdouble special_csph_bessel_k_jac(long n, npy_cdouble z);
 
-double cephes_beta(double a, double b);
-
-double cephes_chdtr(double df, double x);
-
-double cephes_chdtrc(double df, double x);
-
-double cephes_chdtri(double df, double y);
-
-double cephes_lbeta(double a, double b);
-
-double cephes_sinpi(double x);
-
-double cephes_cospi(double x);
-
-double cephes_cbrt(double x);
-
-double cephes_Gamma(double x);
-
-double cephes_gammasgn(double x);
-
-double cephes_hyp2f1(double a, double b, double c, double x);
-
-double cephes_i0(double x);
-
-double cephes_i0e(double x);
-
-double cephes_i1(double x);
-
-double cephes_i1e(double x);
-
-double cephes_iv(double v, double x);
-double cephes_j0(double x);
-
-double cephes_j1(double x);
-
-double cephes_k0(double x);
-
-double cephes_k0e(double x);
-
-double cephes_k1(double x);
-
-double cephes_k1e(double x);
-
-double cephes_y0(double x);
-
-double cephes_y1(double x);
-
-double cephes_yn(int n, double x);
-
-double cephes_igam(double a, double x);
-
-double cephes_igamc(double a, double x);
-
-double cephes_igami(double a, double p);
-
-double cephes_igamci(double a, double p);
-
-double cephes_igam_fac(double a, double x);
-
-double cephes_lanczos_sum_expg_scaled(double x);
-
-double cephes_kolmogorov(double x);
-
-double cephes_kolmogc(double x);
-
-double cephes_kolmogi(double x);
-
-double cephes_kolmogci(double x);
-
-double cephes_kolmogp(double x);
-
-double cephes_smirnov(int n, double x);
-
-double cephes_smirnovc(int n, double x);
-
-double cephes_smirnovi(int n, double x);
-
-double cephes_smirnovci(int n, double x);
-
-double cephes_smirnovp(int n, double x);
-
-double cephes_ndtr(double x);
-
-double cephes_erf(double x);
-
-double cephes_erfc(double x);
-
-double cephes_poch(double x, double m);
-
-double cephes_rgamma(double x);
-
-double cephes_zeta(double x, double q);
-
-double cephes_zetac(double x);
-
-double cephes_riemann_zeta(double x);
-
-double cephes_log1p(double x);
-
-double cephes_log1pmx(double x);
-
-double cephes_lgam1p(double x);
-
-double cephes_expm1(double x);
-
-double cephes_cosm1(double x);
-
-double cephes_expn(int n, double x);
-
-double cephes_ellpe(double x);
-
-double cephes_ellpk(double x);
-
-double cephes_ellie(double phi, double m);
-
-double cephes_ellik(double phi, double m);
-
-double cephes_sindg(double x);
-
-double cephes_cosdg(double x);
-
-double cephes_tandg(double x);
-
-double cephes_cotdg(double x);
-
-double cephes_radian(double d, double m, double s);
-
-double cephes_ndtri(double x);
-
-double cephes_bdtr(double k, int n, double p);
-
-double cephes_bdtri(double k, int n, double y);
-
-double cephes_bdtrc(double k, int n, double p);
-
-double cephes_btdtri(double aa, double bb, double yy0);
-
-double cephes_btdtr(double a, double b, double x);
-
-double cephes_erfcinv(double y);
-
-double cephes_exp10(double x);
-
-double cephes_exp2(double x);
-
-double cephes_fdtr(double a, double b, double x);
-
-double cephes_fdtrc(double a, double b, double x);
-
-double cephes_fdtri(double a, double b, double y);
-
-double cephes_gdtr(double a, double b, double x);
-
-double cephes_gdtrc(double a, double b, double x);
-
-double cephes_owens_t(double h, double a);
-
-double cephes_nbdtr(int k, int n, double p);
-
-double cephes_nbdtrc(int k, int n, double p);
-
-double cephes_nbdtri(int k, int n, double p);
-
-double cephes_pdtr(double k, double m);
-
-double cephes_pdtrc(double k, double m);
-
-double cephes_pdtri(int k, double y);
-
-double cephes_round(double x);
-
-double cephes_spence(double x);
-
-double cephes_tukeylambdacdf(double x, double lmbda);
-
-double cephes_struve_h(double v, double z);
-
-double cephes_struve_l(double v, double z);
+// Stats
+
+double xsf_bdtr(double k, int n, double p);
+double xsf_bdtri(double k, int n, double y);
+double xsf_bdtrc(double k, int n, double p);
+double xsf_btdtri(double aa, double bb, double yy0);
+double xsf_btdtr(double a, double b, double x);
+double xsf_chdtr(double df, double x);
+double xsf_chdtrc(double df, double x);
+double xsf_chdtri(double df, double y);
+double xsf_fdtr(double a, double b, double x);
+double xsf_fdtrc(double a, double b, double x);
+double xsf_fdtri(double a, double b, double y);
+double xsf_gdtr(double a, double b, double x);
+double xsf_gdtrc(double a, double b, double x);
+double xsf_kolmogorov(double x);
+double xsf_kolmogc(double x);
+double xsf_kolmogi(double x);
+double xsf_kolmogci(double x);
+double xsf_kolmogp(double x);
+double xsf_nbdtr(int k, int n, double p);
+double xsf_nbdtrc(int k, int n, double p);
+double xsf_nbdtri(int k, int n, double p);
+double xsf_ndtr(double x);
+double xsf_ndtri(double x);
+double xsf_owens_t(double h, double a);
+double xsf_pdtr(double k, double m);
+double xsf_pdtrc(double k, double m);
+double xsf_pdtri(int k, double y);
+double xsf_smirnov(int n, double x);
+double xsf_smirnovc(int n, double x);
+double xsf_smirnovi(int n, double x);
+double xsf_smirnovci(int n, double x);
+double xsf_smirnovp(int n, double x);
+double xsf_tukeylambdacdf(double x, double lmbda);
+
+double cephes_bdtr_wrap(double k, Py_ssize_t n, double p);
+double cephes_bdtri_wrap(double k, Py_ssize_t n, double y);
+double cephes_bdtrc_wrap(double k, Py_ssize_t n, double p);
+double cephes_nbdtr_wrap(Py_ssize_t k, Py_ssize_t n, double p);
+double cephes_nbdtrc_wrap(Py_ssize_t k, Py_ssize_t n, double p);
+double cephes_nbdtri_wrap(Py_ssize_t k, Py_ssize_t n, double p);
+double cephes_ndtr_wrap(double x);
+double cephes_ndtri_wrap(double x);
+double cephes_pdtri_wrap(Py_ssize_t k, double y);
+double cephes_smirnov_wrap(Py_ssize_t n, double x);
+double cephes_smirnovc_wrap(Py_ssize_t n, double x);
+double cephes_smirnovi_wrap(Py_ssize_t n, double x);
+double cephes_smirnovci_wrap(Py_ssize_t n, double x);
+double cephes_smirnovp_wrap(Py_ssize_t n, double x);
+
+// Trig
+
+double xsf_sinpi(double x);
+npy_cdouble xsf_csinpi(npy_cdouble z);
+double xsf_cospi(double x);
+double xsf_cosm1(double x);
+double xsf_sindg(double x);
+double xsf_cosdg(double x);
+double xsf_tandg(double x);
+double xsf_cotdg(double x);
+double xsf_radian(double d, double m, double s);
 
 #ifdef __cplusplus
 } /* extern "C" */

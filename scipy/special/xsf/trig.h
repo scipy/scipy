@@ -11,7 +11,10 @@
 
 #pragma once
 
+#include "cephes/sindg.h"
+#include "cephes/tandg.h"
 #include "cephes/trig.h"
+#include "cephes/unity.h"
 #include "config.h"
 #include "evalpoly.h"
 
@@ -107,5 +110,55 @@ XSF_HOST_DEVICE std::complex<T> cospi(std::complex<T> z) {
     sinhfac = 0.5 * sinpix * exphpiy;
     return {coshfac * exphpiy, sinhfac * exphpiy};
 }
+
+template <typename T>
+XSF_HOST_DEVICE T sindg(T x) {
+    return cephes::sindg(x);
+}
+
+template <>
+XSF_HOST_DEVICE inline float sindg(float x) {
+    return sindg(static_cast<double>(x));
+}
+
+template <typename T>
+XSF_HOST_DEVICE T cosdg(T x) {
+    return cephes::cosdg(x);
+}
+
+template <>
+XSF_HOST_DEVICE inline float cosdg(float x) {
+    return cosdg(static_cast<double>(x));
+}
+
+template <typename T>
+XSF_HOST_DEVICE T tandg(T x) {
+    return cephes::tandg(x);
+}
+
+template <>
+XSF_HOST_DEVICE inline float tandg(float x) {
+    return tandg(static_cast<double>(x));
+}
+
+template <typename T>
+XSF_HOST_DEVICE T cotdg(T x) {
+    return cephes::cotdg(x);
+}
+
+template <>
+XSF_HOST_DEVICE inline float cotdg(float x) {
+    return cotdg(static_cast<double>(x));
+}
+
+inline double radian(double d, double m, double s) { return cephes::radian(d, m, s); }
+
+inline float radian(float d, float m, float s) {
+    return radian(static_cast<double>(d), static_cast<double>(m), static_cast<double>(s));
+}
+
+inline double cosm1(double x) { return cephes::cosm1(x); }
+
+inline float cosm1(float x) { return cosm1(static_cast<double>(x)); }
 
 } // namespace xsf
