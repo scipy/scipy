@@ -197,7 +197,7 @@ def closest_STFT_dual_window(win: np.ndarray, hop: int, desired_dual: np.ndarray
         raise ValueError("Parameter win must have finite entries!")
     if not all(np.isfinite(desired_dual)):
         raise ValueError("Parameter desired_dual must have finite entries!")
-    if not (1 <= hop <= len(win) and isinstance(hop, (int, np.integer))):
+    if not (1 <= hop <= len(win) and isinstance(hop, int | np.integer)):
         raise ValueError(f"Parameter {hop=} is not an integer between 1 and " +
                          f"{len(win)=}!")
 
@@ -427,7 +427,7 @@ class ShortTimeFFT:
             raise ValueError(f"Parameter win must be 1d, but {win.shape=}!")
         if not all(np.isfinite(win)):
             raise ValueError("Parameter win must have finite entries!")
-        if not (hop >= 1 and isinstance(hop, (int, np.integer))):
+        if not (hop >= 1 and isinstance(hop, int | np.integer)):
             raise ValueError(f"Parameter {hop=} is not an integer >= 1!")
         self._win, self._hop, self.fs = win, hop, fs
 
@@ -679,7 +679,7 @@ class ShortTimeFFT:
                              f"but {desired_win.dtype=} => cast to float | complex ")
         if not all(np.isfinite(desired_win)):
             raise ValueError("Parameter desired_win must have finite entries!")
-        if not (1 <= hop <= len(desired_win) and isinstance(hop, (int, np.integer))):
+        if not (1 <= hop <= len(desired_win) and isinstance(hop, int | np.integer)):
             raise ValueError(f"Parameter {hop=} is not an integer between 1 and " +
                              f"{len(desired_win)=}!")
 
@@ -966,7 +966,7 @@ class ShortTimeFFT:
         if v is None:
             self._phase_shift = v
             return
-        if not isinstance(v, (int, np.integer)):
+        if not isinstance(v, int | np.integer):
             raise ValueError(f"phase_shift={v} has the unit samples. Hence " +
                              "it needs to be an int or it may be None!")
         if not (-self.mfft < v < self.mfft):
