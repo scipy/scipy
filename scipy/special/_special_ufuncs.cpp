@@ -1,4 +1,4 @@
-#include "ufunc.h"
+#include "xsf/numpy.h"
 
 #include <cmath>
 #include <complex>
