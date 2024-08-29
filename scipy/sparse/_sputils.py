@@ -2,7 +2,7 @@
 """
 
 import sys
-from typing import Any, Literal, Optional, Union
+from typing import Any, Literal
 import operator
 import numpy as np
 from math import prod
@@ -263,13 +263,13 @@ def isshape(x, nonneg=False, *, allowed_ndims=(2,)) -> bool:
 
 
 def issequence(t) -> bool:
-    return ((isinstance(t, (list, tuple)) and
+    return ((isinstance(t, list | tuple) and
             (len(t) == 0 or np.isscalar(t[0]))) or
             (isinstance(t, np.ndarray) and (t.ndim == 1)))
 
 
 def ismatrix(t) -> bool:
-    return ((isinstance(t, (list, tuple)) and
+    return ((isinstance(t, list | tuple) and
              len(t) > 0 and issequence(t[0])) or
             (isinstance(t, np.ndarray) and t.ndim == 2))
 
@@ -405,9 +405,9 @@ def is_pydata_spmatrix(m) -> bool:
 
 def convert_pydata_sparse_to_scipy(
     arg: Any,
-    target_format: Optional[Literal["csc", "csr"]] = None,
+    target_format: None | Literal["csc", "csr"] = None,
     accept_fv: Any = None,
-) -> Union[Any, "sp.spmatrix"]:
+) -> Any | "sp.spmatrix":
     """
     Convert a pydata/sparse array to scipy sparse matrix,
     pass through anything else.
