@@ -470,135 +470,273 @@ struct ufunc_traits<Func, void(Args...), std::index_sequence<I...>> {
     }
 };
 
-class SpecFun_UFunc {
-  public:
-    using data_handle_type = void *;
-    using data_deleter_type = void (*)(void *);
+namespace xsf {
+namespace numpy {
 
-  private:
-    // This is an internal class designed only to help construction from an initializer list of functions
-    struct SpecFun_Func {
-        bool has_return;
-        int nin_and_nout;
-        PyUFuncGenericFunction func;
-        data_handle_type data;
-        data_deleter_type data_deleter;
-        const char *types;
+    // The following are based off NumPy's dtype type codes and functions like PyUFunc_dd_d
 
-        template <typename Func>
-        SpecFun_Func(Func func)
-            : has_return(has_return_v<Func>), nin_and_nout(arity_of_v<Func> + has_return),
-              func(ufunc_traits<Func>::loop), data(new ufunc_data<Func>{{nullptr}, func}),
-              data_deleter([](void *ptr) { delete static_cast<ufunc_data<Func> *>(ptr); }),
-              types(ufunc_traits<Func>::types) {}
+    using cfloat = std::complex<float>;
+    using cdouble = std::complex<double>;
+
+    // 1 input, 1 output
+    using f_f = float (*)(float);
+    using d_d = double (*)(double);
+    using F_F = cfloat (*)(cfloat);
+    using D_D = cdouble (*)(cdouble);
+
+    // 1 input, 2 outputs
+    using f_ff = void (*)(float, float &, float &);
+    using d_dd = void (*)(double, double &, double &);
+    using f_FF = void (*)(float, cfloat &, cfloat &);
+    using d_DD = void (*)(double, cdouble &, cdouble &);
+    using F_FF = void (*)(cfloat, cfloat &, cfloat &);
+    using D_DD = void (*)(cdouble, cdouble &, cdouble &);
+
+    // 1 input, 4 outputs
+    using f_ffff = void (*)(float, float &, float &, float &, float &);
+    using d_dddd = void (*)(double, double &, double &, double &, double &);
+    using f_FFFF = void (*)(float, cfloat &, cfloat &, cfloat &, cfloat &);
+    using d_DDDD = void (*)(double, cdouble &, cdouble &, cdouble &, cdouble &);
+    using F_FFFF = void (*)(cfloat, cfloat &, cfloat &, cfloat &, cfloat &);
+    using D_DDDD = void (*)(cdouble, cdouble &, cdouble &, cdouble &, cdouble &);
+
+    // 2 inputs, 1 output
+    using qf_f = float (*)(long long int, float);
+    using qd_d = double (*)(long long int, double);
+    using ff_f = float (*)(float, float);
+    using dd_d = double (*)(double, double);
+    using FF_F = cfloat (*)(cfloat, cfloat);
+    using DD_D = cdouble (*)(cdouble, cdouble);
+    using fF_F = cfloat (*)(float, cfloat);
+    using dD_D = cdouble (*)(double, cdouble);
+    using lf_f = float (*)(long int, float);
+    using ld_d = double (*)(long int, double);
+    using lF_F = cfloat (*)(long int, cfloat);
+    using lD_D = cdouble (*)(long int, cdouble);
+
+    // 2 inputs, 2 outputs
+    using qf_ff = void (*)(long long int, float, float &, float &);
+    using qd_dd = void (*)(long long int, double, double &, double &);
+
+    // 2 inputs, 3 outputs
+    using qf_fff = void (*)(long long int, float, float &, float &, float &);
+    using qd_ddd = void (*)(long long int, double, double &, double &, double &);
+
+    // 2 inputs, 2 outputs
+    using ff_ff = void (*)(float, float, float &, float &);
+    using dd_dd = void (*)(double, double, double &, double &);
+    using lf_ff = void (*)(long int, float, float &, float &);
+    using ld_dd = void (*)(long int, double, double &, double &);
+
+    // 2 inputs, 3 outputs
+    using lf_fff = void (*)(long int, float, float &, float &, float &);
+    using ld_ddd = void (*)(long int, double, double &, double &, double &);
+
+    // 2 inputs, 4 outputs
+    using ff_ffff = void (*)(float, float, float &, float &, float &, float &);
+    using dd_dddd = void (*)(double, double, double &, double &, double &, double &);
+
+    // 3 inputs, 1 output
+    using fff_f = float (*)(float, float, float);
+    using ddd_d = double (*)(double, double, double);
+    using Flf_F = cfloat (*)(cfloat, long int, float);
+    using Dld_D = cdouble (*)(cdouble, long int, double);
+
+    // 3 inputs, 2 outputs
+    using fff_ff = void (*)(float, float, float, float &, float &);
+    using ddd_dd = void (*)(double, double, double, double &, double &);
+
+    // 3 inputs, 1 output
+    using qqf_f = float (*)(long long int, long long int, float);
+    using qqd_d = double (*)(long long int, long long int, double);
+
+    // 3 inputs, 2 outputs
+    using qqf_ff = void (*)(long long int, long long int, float, float &, float &);
+    using qqd_dd = void (*)(long long int, long long int, double, double &, double &);
+
+    // 3 inputs, 3 outputs
+    using qqf_fff = void (*)(long long int, long long int, float, float &, float &, float &);
+    using qqd_ddd = void (*)(long long int, long long int, double, double &, double &, double &);
+
+    // 4 inputs, 1 outputs
+    using qqqF_F = cfloat (*)(long long int, long long int, long long int, cfloat);
+    using qqqD_D = cdouble (*)(long long int, long long int, long long int, cdouble);
+    using qqff_F = cfloat (*)(long long int, long long int, float, float);
+    using qqdd_D = cdouble (*)(long long int, long long int, double, double);
+    using ffff_f = float (*)(float, float, float, float);
+    using dddd_d = double (*)(double, double, double, double);
+    using fffF_F = cfloat (*)(float, float, float, cfloat);
+    using dddD_D = cdouble (*)(double, double, double, cdouble);
+    using ffff_F = cfloat (*)(float, float, float, float);
+    using dddd_D = cdouble (*)(double, double, double, double);
+
+    // 4 inputs, 2 outputs
+    using qqqf_ff = void (*)(long long int, long long int, long long int, float, float &, float &);
+    using ffff_ff = void (*)(float, float, float, float, float &, float &);
+    using qqqd_dd = void (*)(long long int, long long int, long long int, double, double &, double &);
+    using dddd_dd = void (*)(double, double, double, double, double &, double &);
+    using qqqF_FF = void (*)(long long int, long long int, long long int, cfloat, cfloat &, cfloat &);
+    using qqqD_DD = void (*)(long long int, long long int, long long int, cdouble, cdouble &, cdouble &);
+    using qqff_FF = void (*)(long long int, long long int, float, float, cfloat &, cfloat &);
+    using qqdd_DD = void (*)(long long int, long long int, double, double, cdouble &, cdouble &);
+    using qqff_FF2 = void (*)(long long int, long long int, float, float, cfloat &, cfloat (&)[2]);
+    using qqdd_DD2 = void (*)(long long int, long long int, double, double, cdouble &, cdouble (&)[2]);
+
+    // 4 inputs, 3 outputs
+    using qqqf_fff = void (*)(long long int, long long int, long long int, float, float &, float &, float &);
+    using qqqd_ddd = void (*)(long long int, long long int, long long int, double, double &, double &, double &);
+    using qqqF_FFF = void (*)(long long int, long long int, long long int, cfloat, cfloat &, cfloat &, cfloat &);
+    using qqqD_DDD = void (*)(long long int, long long int, long long int, cdouble, cdouble &, cdouble &, cdouble &);
+    using qqff_FFF = void (*)(long long int, long long int, float, float, cfloat &, cfloat &, cfloat &);
+    using qqdd_DDD = void (*)(long long int, long long int, double, double, cdouble &, cdouble &, cdouble &);
+    using qqff_FF2F22 = void (*)(long long int, long long int, float, float, cfloat &, cfloat (&)[2], cfloat (&)[2][2]);
+    using qqdd_DD2D22 = void (*)(long long int, long long int, double, double, cdouble &, cdouble (&)[2],
+                                 cdouble (&)[2][2]);
+
+    // 5 inputs, 2 outputs
+    using fffff_ff = void (*)(float, float, float, float, float, float &, float &);
+    using ddddd_dd = void (*)(double, double, double, double, double, double &, double &);
+
+#if (NPY_SIZEOF_LONGDOUBLE == NPY_SIZEOF_DOUBLE)
+    using g_g = double (*)(double);
+    using gg_g = double (*)(double);
+#else
+    using g_g = long double (*)(long double);
+    using gg_g = long double (*)(long double);
+#endif
+
+    class SpecFun_UFunc {
+      public:
+        using data_handle_type = void *;
+        using data_deleter_type = void (*)(void *);
+
+      private:
+        // This is an internal class designed only to help construction from an initializer list of functions
+        struct SpecFun_Func {
+            bool has_return;
+            int nin_and_nout;
+            PyUFuncGenericFunction func;
+            data_handle_type data;
+            data_deleter_type data_deleter;
+            const char *types;
+
+            template <typename Func>
+            SpecFun_Func(Func func)
+                : has_return(has_return_v<Func>), nin_and_nout(arity_of_v<Func> + has_return),
+                  func(ufunc_traits<Func>::loop), data(new ufunc_data<Func>{{nullptr}, func}),
+                  data_deleter([](void *ptr) { delete static_cast<ufunc_data<Func> *>(ptr); }),
+                  types(ufunc_traits<Func>::types) {}
+        };
+
+        int m_ntypes;
+        bool m_has_return;
+        int m_nin_and_nout;
+        std::unique_ptr<PyUFuncGenericFunction[]> m_func;
+        std::unique_ptr<data_handle_type[]> m_data;
+        std::unique_ptr<data_deleter_type[]> m_data_deleters;
+        std::unique_ptr<char[]> m_types;
+
+      public:
+        SpecFun_UFunc(std::initializer_list<SpecFun_Func> func)
+            : m_ntypes(func.size()), m_has_return(func.begin()->has_return), m_nin_and_nout(func.begin()->nin_and_nout),
+              m_func(new PyUFuncGenericFunction[m_ntypes]), m_data(new data_handle_type[m_ntypes]),
+              m_data_deleters(new data_deleter_type[m_ntypes]), m_types(new char[m_ntypes * m_nin_and_nout]) {
+            for (auto it = func.begin(); it != func.end(); ++it) {
+                if (it->nin_and_nout != m_nin_and_nout) {
+                    PyErr_SetString(PyExc_RuntimeError, "all functions must have the same number of arguments");
+                }
+                if (it->has_return != m_has_return) {
+                    PyErr_SetString(PyExc_RuntimeError, "all functions must be void if any function is");
+                }
+
+                size_t i = it - func.begin();
+                m_func[i] = it->func;
+                m_data[i] = it->data;
+                m_data_deleters[i] = it->data_deleter;
+                std::memcpy(m_types.get() + i * m_nin_and_nout, it->types, m_nin_and_nout);
+            }
+        }
+
+        SpecFun_UFunc(SpecFun_UFunc &&other) = default;
+
+        ~SpecFun_UFunc() {
+            if (m_data) {
+                for (int i = 0; i < m_ntypes; ++i) {
+                    data_deleter_type data_deleter = m_data_deleters[i];
+                    data_deleter(m_data[i]);
+                }
+            }
+        }
+
+        int ntypes() const { return m_ntypes; }
+
+        bool has_return() const { return m_has_return; }
+
+        int nin_and_nout() const { return m_nin_and_nout; }
+
+        PyUFuncGenericFunction *func() const { return m_func.get(); }
+
+        data_handle_type *data() const { return m_data.get(); }
+
+        char *types() const { return m_types.get(); }
+
+        void set_name(const char *name) {
+            for (int i = 0; i < m_ntypes; ++i) {
+                static_cast<base_ufunc_data *>(m_data[i])->name = name;
+            }
+        }
+
+        void set_map_dims(map_dims_type map_dims) {
+            for (int i = 0; i < m_ntypes; ++i) {
+                static_cast<base_ufunc_data *>(m_data[i])->map_dims = map_dims;
+            }
+        }
     };
 
-    int m_ntypes;
-    bool m_has_return;
-    int m_nin_and_nout;
-    std::unique_ptr<PyUFuncGenericFunction[]> m_func;
-    std::unique_ptr<data_handle_type[]> m_data;
-    std::unique_ptr<data_deleter_type[]> m_data_deleters;
-    std::unique_ptr<char[]> m_types;
+    PyObject *ufunc(SpecFun_UFunc func, int nout, const char *name, const char *doc) {
+        static std::vector<SpecFun_UFunc> ufuncs;
 
-  public:
-    SpecFun_UFunc(std::initializer_list<SpecFun_Func> func)
-        : m_ntypes(func.size()), m_has_return(func.begin()->has_return), m_nin_and_nout(func.begin()->nin_and_nout),
-          m_func(new PyUFuncGenericFunction[m_ntypes]), m_data(new data_handle_type[m_ntypes]),
-          m_data_deleters(new data_deleter_type[m_ntypes]), m_types(new char[m_ntypes * m_nin_and_nout]) {
-        for (auto it = func.begin(); it != func.end(); ++it) {
-            if (it->nin_and_nout != m_nin_and_nout) {
-                PyErr_SetString(PyExc_RuntimeError, "all functions must have the same number of arguments");
-            }
-            if (it->has_return != m_has_return) {
-                PyErr_SetString(PyExc_RuntimeError, "all functions must be void if any function is");
-            }
-
-            size_t i = it - func.begin();
-            m_func[i] = it->func;
-            m_data[i] = it->data;
-            m_data_deleters[i] = it->data_deleter;
-            std::memcpy(m_types.get() + i * m_nin_and_nout, it->types, m_nin_and_nout);
+        if (PyErr_Occurred()) {
+            return nullptr;
         }
+
+        SpecFun_UFunc &ufunc = ufuncs.emplace_back(std::move(func));
+        ufunc.set_name(name);
+        ufunc.set_map_dims([](const npy_intp *dims, npy_intp *new_dims) {});
+
+        return PyUFunc_FromFuncAndData(ufunc.func(), ufunc.data(), ufunc.types(), ufunc.ntypes(),
+                                       ufunc.nin_and_nout() - nout, nout, PyUFunc_None, name, doc, 0);
     }
 
-    SpecFun_UFunc(SpecFun_UFunc &&other) = default;
+    PyObject *ufunc(SpecFun_UFunc func, const char *name, const char *doc) {
+        int nout = func.has_return();
 
-    ~SpecFun_UFunc() {
-        if (m_data) {
-            for (int i = 0; i < m_ntypes; ++i) {
-                data_deleter_type data_deleter = m_data_deleters[i];
-                data_deleter(m_data[i]);
-            }
+        return ufunc(std::move(func), nout, name, doc);
+    }
+
+    PyObject *gufunc(SpecFun_UFunc func, int nout, const char *name, const char *doc, const char *signature,
+                     map_dims_type map_dims) {
+        static std::vector<SpecFun_UFunc> ufuncs;
+
+        if (PyErr_Occurred()) {
+            return nullptr;
         }
+
+        SpecFun_UFunc &ufunc = ufuncs.emplace_back(std::move(func));
+        ufunc.set_name(name);
+        ufunc.set_map_dims(map_dims);
+
+        return PyUFunc_FromFuncAndDataAndSignature(ufunc.func(), ufunc.data(), ufunc.types(), ufunc.ntypes(),
+                                                   ufunc.nin_and_nout() - nout, nout, PyUFunc_None, name, doc, 0,
+                                                   signature);
     }
 
-    int ntypes() const { return m_ntypes; }
+    PyObject *gufunc(SpecFun_UFunc func, const char *name, const char *doc, const char *signature,
+                     map_dims_type map_dims) {
+        int nout = func.has_return();
 
-    bool has_return() const { return m_has_return; }
-
-    int nin_and_nout() const { return m_nin_and_nout; }
-
-    PyUFuncGenericFunction *func() const { return m_func.get(); }
-
-    data_handle_type *data() const { return m_data.get(); }
-
-    char *types() const { return m_types.get(); }
-
-    void set_name(const char *name) {
-        for (int i = 0; i < m_ntypes; ++i) {
-            static_cast<base_ufunc_data *>(m_data[i])->name = name;
-        }
+        return gufunc(std::move(func), nout, name, doc, signature, map_dims);
     }
 
-    void set_map_dims(map_dims_type map_dims) {
-        for (int i = 0; i < m_ntypes; ++i) {
-            static_cast<base_ufunc_data *>(m_data[i])->map_dims = map_dims;
-        }
-    }
-};
-
-PyObject *SpecFun_NewUFunc(SpecFun_UFunc func, int nout, const char *name, const char *doc) {
-    static std::vector<SpecFun_UFunc> ufuncs;
-
-    if (PyErr_Occurred()) {
-        return nullptr;
-    }
-
-    SpecFun_UFunc &ufunc = ufuncs.emplace_back(std::move(func));
-    ufunc.set_name(name);
-    ufunc.set_map_dims([](const npy_intp *dims, npy_intp *new_dims) {});
-
-    return PyUFunc_FromFuncAndData(ufunc.func(), ufunc.data(), ufunc.types(), ufunc.ntypes(),
-                                   ufunc.nin_and_nout() - nout, nout, PyUFunc_None, name, doc, 0);
-}
-
-PyObject *SpecFun_NewUFunc(SpecFun_UFunc func, const char *name, const char *doc) {
-    int nout = func.has_return();
-
-    return SpecFun_NewUFunc(std::move(func), nout, name, doc);
-}
-
-PyObject *SpecFun_NewGUFunc(SpecFun_UFunc func, int nout, const char *name, const char *doc, const char *signature,
-                            map_dims_type map_dims) {
-    static std::vector<SpecFun_UFunc> ufuncs;
-
-    if (PyErr_Occurred()) {
-        return nullptr;
-    }
-
-    SpecFun_UFunc &ufunc = ufuncs.emplace_back(std::move(func));
-    ufunc.set_name(name);
-    ufunc.set_map_dims(map_dims);
-
-    return PyUFunc_FromFuncAndDataAndSignature(ufunc.func(), ufunc.data(), ufunc.types(), ufunc.ntypes(),
-                                               ufunc.nin_and_nout() - nout, nout, PyUFunc_None, name, doc, 0,
-                                               signature);
-}
-
-PyObject *SpecFun_NewGUFunc(SpecFun_UFunc func, const char *name, const char *doc, const char *signature,
-                            map_dims_type map_dims) {
-    int nout = func.has_return();
-
-    return SpecFun_NewGUFunc(std::move(func), nout, name, doc, signature, map_dims);
-}
+} // namespace numpy
+} // namespace xsf
