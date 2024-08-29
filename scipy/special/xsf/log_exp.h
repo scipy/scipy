@@ -134,7 +134,7 @@ T pow1p_impl(T x, T y) {
     // Now x, y are finite and not equal to 0 or +/-1.
     // To compute (1+x)^y, write |1+x| == (s+t) where s is equal to |1+x|
     // rounded toward 1, and t is the (exact) rounding error.
-    T s, t;
+    volatile T s, t;
     if (x < -1) {
         s = std::nextafter(-x, T(0));
         t = (-x - s);
