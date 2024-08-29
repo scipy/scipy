@@ -1,5 +1,6 @@
 #pragma once
 
+#include "dual.h"
 #include "error.h"
 #include "recur.h"
 
@@ -9,12 +10,9 @@ template <typename T>
 struct legendre_p_initializer_n {
     T z;
 
-    void operator()(std::tuple<T (&)[2]> res) const { tuples::assign(res, {{1, z}}); }
-
-    void operator()(std::tuple<T (&)[2], T (&)[2]> res) const { tuples::assign(res, {{1, z}, {0, 1}}); }
-
-    void operator()(std::tuple<T (&)[2], T (&)[2], T (&)[2]> res) const {
-        tuples::assign(res, {{1, z}, {0, 1}, {0, 0}});
+    void operator()(T (&res)[2]) const {
+        res[0] = T(1);
+        res[1] = z;
     }
 };
 
@@ -22,25 +20,12 @@ template <typename T>
 struct legendre_p_recurrence_n {
     T z;
 
-    void operator()(int n, std::tuple<T (&)[2]> res) const {
+    void operator()(int n, T (&res)[2]) const {
         T fac0 = -T(n - 1) / T(n);
         T fac1 = T(2 * n - 1) / T(n);
 
-        tuples::assign(res, {{fac0, fac1 * z}});
-    }
-
-    void operator()(int n, std::tuple<T (&)[2], T (&)[2]> res) const {
-        T fac0 = -T(n - 1) / T(n);
-        T fac1 = T(2 * n - 1) / T(n);
-
-        tuples::assign(res, {{fac0, fac1 * z}, {0, fac1}});
-    }
-
-    void operator()(int n, std::tuple<T (&)[2], T (&)[2], T (&)[2]> res) const {
-        T fac0 = -T(n - 1) / T(n);
-        T fac1 = T(2 * n - 1) / T(n);
-
-        tuples::assign(res, {{fac0, fac1 * z}, {0, fac1}, {0, 0}});
+        res[0] = fac0;
+        res[1] = fac1 * z;
     }
 };
 
@@ -52,8 +37,8 @@ struct legendre_p_recurrence_n {
  * @param f a function to be called as callback(j, res) for 0 <= j <= n
  * @param res value and derivatives of the polynomial
  */
-template <typename T, typename... OutputVals, typename Func>
-void legendre_p_for_each_n(int n, T z, std::tuple<OutputVals (&)[2]...> res, Func f) {
+template <typename T, typename Func>
+void legendre_p_for_each_n(int n, T z, T (&res)[2], Func f) {
     legendre_p_initializer_n<T> init_n{z};
     init_n(res);
 
@@ -72,10 +57,10 @@ template <typename T, typename... OutputVals>
 void legendre_p(int n, T z, std::tuple<OutputVals &...> res) {
     static constexpr size_t N = sizeof...(OutputVals) - 1;
 
-    grad_tuple_t<T[2], N> res_n;
-    legendre_p_for_each_n(n, z, tuples::ref(res_n), [](int n, grad_tuple_t<T(&)[2], N> res_n) {});
+    dual<T, N> res_n[2];
+    legendre_p_for_each_n(n, make_dual<N>(z), res_n, [](int n, const dual<T, N>(&res_n)[2]) {});
 
-    res = tuples::access(res_n, 1);
+    res = res_n[1].derivatives();
 }
 
 /**
@@ -88,10 +73,10 @@ void legendre_p(int n, T z, std::tuple<OutputVals &...> res) {
  */
 template <typename T>
 T legendre_p(int n, T z) {
-    T res;
-    legendre_p(n, z, std::tie(res));
+    T res_n[2];
+    legendre_p_for_each_n(n, z, res_n, [](int n, const T(&res_n)[2]) {});
 
-    return res;
+    return res_n[1];
 }
 
 /**
@@ -108,9 +93,9 @@ void legendre_p_all(T z, std::tuple<OutputVecs &...> res) {
     auto &res0 = std::get<0>(res);
     int n = res0.extent(0) - 1;
 
-    grad_tuple_t<T[2], N> res_n;
-    legendre_p_for_each_n(n, z, tuples::ref(res_n), [&res](int n, grad_tuple_t<T(&)[2], N> res_n) {
-        tuples::call(res, n) = tuples::access(res_n, 1);
+    dual<T, N> res_n[2];
+    legendre_p_for_each_n(n, make_dual<N>(z), res_n, [&res](int n, dual<T, N>(&res_n)[2]) {
+        tuples::call(res, n) = res_n[1].derivatives();
     });
 }
 

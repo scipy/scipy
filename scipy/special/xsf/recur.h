@@ -6,7 +6,7 @@ namespace xsf {
 
 template <typename T, size_t N>
 T dot(const T (&x)[N], const T (&y)[N]) {
-    T res = 0;
+    T res = T(0);
     for (size_t i = 0; i < N; ++i) {
         res += x[i] * y[i];
     }
@@ -105,6 +105,31 @@ void forward_recur(InputIt first, InputIt last, Recurrence r, std::tuple<T (&)[K
 
             forward_recur_shift_left(res);
             tuples::access(res, K - 1) = tmp;
+
+            f(it, res);
+            ++it;
+        }
+    }
+}
+
+template <typename InputIt, typename Recurrence, typename T, ptrdiff_t K, typename Func>
+void forward_recur(InputIt first, InputIt last, Recurrence r, T (&res)[K], Func f) {
+    InputIt it = first;
+    while (it - first != K && it != last) {
+        forward_recur_rotate_left(res);
+
+        f(it, res);
+        ++it;
+    }
+
+    if (last - first > K) {
+        while (it != last) {
+            T coef[K];
+            r(it, coef);
+
+            T tmp = dot(coef, res);
+            forward_recur_shift_left(res);
+            res[K - 1] = tmp;
 
             f(it, res);
             ++it;

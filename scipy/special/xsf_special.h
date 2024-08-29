@@ -3,6 +3,7 @@
 #include "Python.h"
 
 #include "xsf/bessel.h"
+#include "xsf/dual.h"
 #include "xsf/legendre.h"
 #include "xsf/specfun.h"
 #include "xsf/sph_harm.h"
@@ -20,12 +21,12 @@ T legendre_p(long long int n, T z) {
 
 template <typename T>
 void legendre_p(long long int n, T z, T &res, T &res_jac) {
-    xsf::legendre_p(n, z, std::tie(res, res_jac));
+    std::tie(res, res_jac) = xsf::legendre_p(n, xsf::make_dual<1>(z)).derivatives();
 }
 
 template <typename T>
 void legendre_p(long long int n, T z, T &res, T &res_jac, T &res_hess) {
-    xsf::legendre_p(n, z, std::tie(res, res_jac, res_hess));
+    std::tie(res, res_jac, res_hess) = xsf::legendre_p(n, xsf::make_dual<2>(z)).derivatives();
 }
 
 template <typename T, typename OutputVec1>
