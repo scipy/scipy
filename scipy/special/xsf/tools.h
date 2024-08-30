@@ -299,9 +299,7 @@ namespace detail {
              *  f(y_right) > 0, we should expand the bracket to the right. */
             interior = x0, y_interior = y0;
 	    frontier = x0 + step0_right;
-	    y_frontier = func(frontier, args);
             y_interior_sgn = y0_sgn;
-            y_frontier_sgn = std::signbit(y_frontier);
             search_left = false;
             boundary = xmax;
 	    factor = factor_right;
@@ -309,9 +307,7 @@ namespace detail {
 	    /* Otherwise we move and expand the bracket to the left. */
 	    interior = x0, y_interior = y0;
 	    frontier = x0 + step0_left;
-	    y_frontier = func(frontier, args);
             y_interior_sgn = y0_sgn;
-            y_frontier_sgn = std::signbit(y_frontier);
             search_left = true;
             boundary = xmin;
 	    factor = factor_left;
@@ -319,6 +315,8 @@ namespace detail {
 
         bool reached_boundary = false;
         for (std::uint64_t i = 0; i < maxiter; i++) {
+	    y_frontier = func(frontier, args);
+	    y_frontier_sgn = std::signbit(y_frontier);
 	    if (y_frontier_sgn != y_interior_sgn || (y_frontier == 0.0)) {
                 /* Stopping condition, func evaluated at endpoints of bracket has opposing signs,
                  * meeting requirement for bracketing root finder. (Or endpoint has reached a
@@ -351,9 +349,6 @@ namespace detail {
                 frontier = boundary;
                 reached_boundary = true;
             }
-            y_frontier = func(frontier, args);
-            y_frontier_sgn = std::signbit(y_frontier);
-
         }
         /* Failed to converge within maxiter iterations. If maxiter is sufficiently high and
          * factor_left and factor_right are set appropriately, this should only happen due to
