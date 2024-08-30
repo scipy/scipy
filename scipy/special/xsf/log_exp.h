@@ -2,6 +2,15 @@
 
 #include <cmath>
 #include <cstdio>
+#include <cfloat>
+
+#ifndef FLT_EVAL_METHOD
+#error FLT_EVAL_METHOD not defined; too old compiler?
+#endif
+
+#if FLT_EVAL_METHOD != 0
+#error The pow1p function requires FLT_EVAL_METHOD to be zero
+#endif
 
 #include "config.h"
 
@@ -134,7 +143,7 @@ T pow1p_impl(T x, T y) {
     // Now x, y are finite and not equal to 0 or +/-1.
     // To compute (1+x)^y, write |1+x| == (s+t) where s is equal to |1+x|
     // rounded toward 1, and t is the (exact) rounding error.
-    volatile T s, t;
+    T s, t;
     if (x < -1) {
         s = std::nextafter(-x, T(0));
         t = (-x - s);
