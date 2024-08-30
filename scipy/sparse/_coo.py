@@ -667,7 +667,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
             except AttributeError:
                 other = other_a
 
-        if self.ndim < 3 and other.ndim < 3:
+        if self.ndim < 3 and (np.isscalar(other) or other.ndim < 3):
             return _spbase._matmul_dispatch(self, other)
 
         N = self.shape[-1]
@@ -776,7 +776,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
             row = np.zeros_like(col)
         result = np.zeros(result_shape, dtype=result_dtype)
         coo_matmat_dense(self.nnz, other.shape[-1], row, col,
-                        self.data, other.ravel('C'), result)
+                         self.data, other.ravel('C'), result)
         return result.view(type=type(other))
 
 
