@@ -47,14 +47,17 @@ account and then create your local repository via::
     git remote add upstream https://github.com/scipy/scipy.git
 
 Next, set up your development environment. **With**
-:ref:`system-level dependencies <system-level>` **installed**, then execute the
-instructions indicated on the `Building From Source for SciPy Development <https://scipy.github.io/devdocs/building/index.html#building-from-source-for-scipy-development>`_ guide.
+:ref:`system-level dependencies <system-level>` **installed**, execute the
+instructions in :ref:`building-from-source`.
+
+For details on how to test your changes, see the more complete setup
+walkthrough in :ref:`development-workflow`.
 
 Other workflows
 ===============
 
-This is only one possible way to set up your development environment out of
-many. For more detailed instructions, see the :ref:`contributor-toc`.
+There are many possible ways to set up your development environment.
+For more detailed instructions, see the :ref:`contributor-toc`.
 
 .. note::
 
