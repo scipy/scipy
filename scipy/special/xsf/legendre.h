@@ -121,14 +121,14 @@ struct assoc_legendre_p_initializer_m_abs_m<T, assoc_legendre_unnorm_policy> {
     assoc_legendre_p_initializer_m_abs_m(bool m_signbit, T z, int branch_cut)
         : m_signbit(m_signbit), z(z), branch_cut(branch_cut) {
         if (branch_cut == 3) {
-            branch_cut_sign = -1;
+            branch_cut_sign = T(-1);
 
             w = std::sqrt(z * z - T(1)); // do not modify, see function comment
             if (std::real(z) < 0) {
                 w = -w;
             }
         } else {
-            branch_cut_sign = 1;
+            branch_cut_sign = T(1);
 
             w = -std::sqrt(T(1) - z * z); // do not modify, see function comment
             if (m_signbit) {
@@ -138,7 +138,7 @@ struct assoc_legendre_p_initializer_m_abs_m<T, assoc_legendre_unnorm_policy> {
     }
 
     void operator()(std::tuple<T (&)[2]> res) const {
-        tuples::assign(res, {{1, w}});
+        tuples::assign(res, {{T(1), w}});
 
         if (m_signbit) {
             std::get<0>(res)[1] /= 2;
@@ -146,7 +146,7 @@ struct assoc_legendre_p_initializer_m_abs_m<T, assoc_legendre_unnorm_policy> {
     }
 
     void operator()(std::tuple<T (&)[2], T (&)[2]> res) const {
-        tuples::assign(res, {{1, w}, {0, -branch_cut_sign * z / w}});
+        tuples::assign(res, {{T(1), w}, {T(0), -branch_cut_sign * z / w}});
 
         if (m_signbit) {
             std::get<0>(res)[1] /= 2;
@@ -155,7 +155,7 @@ struct assoc_legendre_p_initializer_m_abs_m<T, assoc_legendre_unnorm_policy> {
     }
 
     void operator()(std::tuple<T (&)[2], T (&)[2], T (&)[2]> res) const {
-        tuples::assign(res, {{1, w}, {0, -branch_cut_sign * z / w}, {0, T(1) / ((z * z - T(1)) * w)}});
+        tuples::assign(res, {{T(1), w}, {T(0), -branch_cut_sign * z / w}, {T(0), T(1) / ((z * z - T(1)) * w)}});
 
         if (m_signbit) {
             std::get<0>(res)[1] /= 2;
@@ -176,14 +176,14 @@ struct assoc_legendre_p_initializer_m_abs_m<T, assoc_legendre_norm_policy> {
     assoc_legendre_p_initializer_m_abs_m(bool m_signbit, T z, int branch_cut)
         : m_signbit(m_signbit), z(z), branch_cut(branch_cut) {
         if (branch_cut == 3) {
-            branch_cut_sign = -1;
+            branch_cut_sign = T(-1);
 
             w = std::sqrt(z * z - T(1)); // do not modify, see function comment
             if (std::real(z) < 0) {
                 w = -w;
             }
         } else {
-            branch_cut_sign = 1;
+            branch_cut_sign = T(1);
 
             w = -std::sqrt(T(1) - z * z); // do not modify, see function comment
             if (m_signbit) {
@@ -223,9 +223,9 @@ struct assoc_legendre_p_recurrence_m_abs_m<T, assoc_legendre_unnorm_policy> {
 
     assoc_legendre_p_recurrence_m_abs_m(T z, int branch_cut) : z(z), branch_cut(branch_cut) {
         if (branch_cut == 3) {
-            branch_cut_sign = -1;
+            branch_cut_sign = T(-1);
         } else {
-            branch_cut_sign = 1;
+            branch_cut_sign = T(1);
         }
     }
 
@@ -241,7 +241,7 @@ struct assoc_legendre_p_recurrence_m_abs_m<T, assoc_legendre_unnorm_policy> {
             fac = branch_cut_sign * T((2 * m_abs - 1) * (2 * m_abs - 3));
         }
 
-        tuples::assign(res, {{fac * (T(1) - z * z), 0}});
+        tuples::assign(res, {{fac * (T(1) - z * z), T(0)}});
     }
 
     void operator()(int m, std::tuple<T (&)[2], T (&)[2]> res) const {
@@ -279,9 +279,9 @@ struct assoc_legendre_p_recurrence_m_abs_m<T, assoc_legendre_norm_policy> {
 
     assoc_legendre_p_recurrence_m_abs_m(T z, int branch_cut) : z(z), branch_cut(branch_cut) {
         if (branch_cut == 3) {
-            branch_cut_sign = -1;
+            branch_cut_sign = T(-1);
         } else {
-            branch_cut_sign = 1;
+            branch_cut_sign = T(1);
         }
     }
 
@@ -290,7 +290,7 @@ struct assoc_legendre_p_recurrence_m_abs_m<T, assoc_legendre_norm_policy> {
 
         T fac = branch_cut_sign * std::sqrt(T((2 * m_abs + 1) * (2 * m_abs - 1)) / T(4 * m_abs * (m_abs - 1)));
 
-        tuples::assign(res, {{fac * (T(1) - z * z), 0}});
+        tuples::assign(res, {{fac * (T(1) - z * z), T(0)}});
     }
 
     void operator()(int m, std::tuple<T (&)[2], T (&)[2]> res) const {
@@ -462,23 +462,23 @@ struct assoc_legendre_p_recurrence_n<T, assoc_legendre_norm_policy> {
         T fac0 = -std::sqrt(T((2 * n + 1) * ((n - 1) * (n - 1) - m * m)) / T((2 * n - 3) * (n * n - m * m)));
         T fac1 = std::sqrt(T((2 * n + 1) * (4 * (n - 1) * (n - 1) - 1)) / T((2 * n - 3) * (n * n - m * m)));
 
-        tuples::assign(res, {{fac0, fac1 * z}, {0, fac1}});
+        tuples::assign(res, {{fac0, fac1 * z}, {T(0), fac1}});
     }
 
     void operator()(int n, std::tuple<T (&)[2], T (&)[2], T (&)[2]> res) const {
         T fac0 = -std::sqrt(T((2 * n + 1) * ((n - 1) * (n - 1) - m * m)) / T((2 * n - 3) * (n * n - m * m)));
         T fac1 = std::sqrt(T((2 * n + 1) * (4 * (n - 1) * (n - 1) - 1)) / T((2 * n - 3) * (n * n - m * m)));
 
-        tuples::assign(res, {{fac0, fac1 * z}, {0, fac1}, {0, 0}});
+        tuples::assign(res, {{fac0, fac1 * z}, {T(0), fac1}, {T(0), T(0)}});
     }
 };
 
 template <typename NormPolicy, typename T>
 void assoc_legendre_p_pm1(NormPolicy norm, int n, int m, T z, int branch_cut, std::tuple<T &> res) {
     if (m == 0) {
-        std::get<0>(res) = 1;
+        std::get<0>(res) = T(1);
     } else {
-        std::get<0>(res) = 0;
+        std::get<0>(res) = T(0);
     }
 }
 

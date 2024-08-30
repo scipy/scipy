@@ -49,19 +49,20 @@ using xsf::assoc_legendre_unnorm;
 
 template <typename NormPolicy, typename T>
 T assoc_legendre_p(NormPolicy norm, long long int n, long long int m, T z, long long int branch_cut) {
-    return xsf::assoc_legendre_p(norm, n, m, z, branch_cut);
+    return xsf::assoc_legendre_p(norm, n, m, xsf::make_dual<0>(z), branch_cut).value();
 }
 
 template <typename NormPolicy, typename T>
 void assoc_legendre_p(NormPolicy norm, long long int n, long long int m, T z, long long int branch_cut, T &res,
                       T &res_jac) {
-    xsf::assoc_legendre_p(norm, n, m, z, branch_cut, std::tie(res, res_jac));
+    std::tie(res, res_jac) = xsf::assoc_legendre_p(norm, n, m, xsf::make_dual<1>(z), branch_cut).derivatives();
 }
 
 template <typename NormPolicy, typename T>
 void assoc_legendre_p(NormPolicy norm, long long int n, long long int m, T z, long long int branch_cut, T &res,
                       T &res_jac, T &res_hess) {
-    xsf::assoc_legendre_p(norm, n, m, z, branch_cut, std::tie(res, res_jac, res_hess));
+    std::tie(res, res_jac, res_hess) =
+        xsf::assoc_legendre_p(norm, n, m, xsf::make_dual<2>(z), branch_cut).derivatives();
 }
 
 template <typename NormPolicy, typename T, typename OutputMat1>
