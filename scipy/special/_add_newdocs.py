@@ -2765,9 +2765,9 @@ add_newdoc("eval_sh_jacobi",
         Degree of the polynomial. If not an integer, the result is
         determined via the relation to `binom` and `eval_jacobi`.
     p : float
-        Parameter
+        Parameter, must have :math:`p > q - 1`.
     q : float
-        Parameter
+        Parameter, must be greater than 0.
     out : ndarray, optional
         Optional output array for the function values
 
