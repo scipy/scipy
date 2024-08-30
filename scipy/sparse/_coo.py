@@ -719,7 +719,8 @@ class _coo_base(_data_matrix, _minmax_mixin):
                     f"{err_prefix} (n,..,k={N}),(k={other.shape[-2]},..,m)->(n,..,m)"
                 )
             
-            # If A or B has more than 2 dimensions, check for batch dimensions compatibility
+            # If A or B has more than 2 dimensions, check for
+            # batch dimensions compatibility
             if self.ndim > 2 or other.ndim > 2:
                 batch_shape_A = self.shape[:-2]
                 batch_shape_B = other.shape[:-2]
@@ -735,7 +736,8 @@ class _coo_base(_data_matrix, _minmax_mixin):
             # reshape back if a or b were originally 1-D
             if self_is_1d:
                 # if self was originally 1-D, reshape result accordingly
-                result = result.reshape(tuple(result.shape[:-2]) + tuple(result.shape[-1:]))
+                result = result.reshape(tuple(result.shape[:-2]) +
+                                        tuple(result.shape[-1:]))
             if other_is_1d:
                 result = result.reshape(result.shape[:-1])
             return result
@@ -764,7 +766,8 @@ class _coo_base(_data_matrix, _minmax_mixin):
             
             # if self was originally 1-D, reshape result accordingly
             if self_is_1d:
-                result = result.reshape(tuple(result_shape[:-2]) + tuple(result_shape[-1:]))
+                result = result.reshape(tuple(result_shape[:-2]) +
+                                        tuple(result_shape[-1:]))
             return result
         
         if self.ndim == 2:
@@ -961,16 +964,20 @@ class _coo_base(_data_matrix, _minmax_mixin):
         # Prepare the tensors for tensordot operation       
         # Ravel non-reduced axes coordinates
         a_non_red_coords = _ravel_non_reduced_axes(a.coords, a.shape, axes_a)
-        a_reduced_coords = np.ravel_multi_index(np.array(a.coords)[axes_a, :], [a.shape[ax] for ax in axes_a])
+        a_reduced_coords = np.ravel_multi_index(np.array(a.coords)[axes_a, :],
+                                                [a.shape[ax] for ax in axes_a])
         b_non_red_coords = _ravel_non_reduced_axes(b.coords, b.shape, axes_b)
-        b_reduced_coords = np.ravel_multi_index(np.array(b.coords)[axes_b, :], tuple([b.shape[ax] for ax in axes_b]))
+        b_reduced_coords = np.ravel_multi_index(np.array(b.coords)[axes_b, :],
+                                                tuple([b.shape[ax] for ax in axes_b]))
         # Get the shape of the non-reduced axes
         og_shape_a = tuple(a.shape[ax] for ax in range(ndim_a) if ax not in axes_a)
         og_shape_b = tuple(b.shape[ax] for ax in range(ndim_b) if ax not in axes_b)
         
         # Create 2D coords arrays
-        ravel_coords_shape_a = (math.prod(og_shape_a), math.prod([a.shape[ax] for ax in axes_a]))
-        ravel_coords_shape_b = (math.prod([b.shape[ax] for ax in axes_b]), math.prod(og_shape_b))
+        ravel_coords_shape_a = (math.prod(og_shape_a),
+                                math.prod([a.shape[ax] for ax in axes_a]))
+        ravel_coords_shape_b = (math.prod([b.shape[ax] for ax in axes_b]),
+                                math.prod(og_shape_b))
         
         a_2d_coords = np.vstack((a_non_red_coords, a_reduced_coords))
         b_2d_coords = np.vstack((b_reduced_coords, b_non_red_coords))
@@ -1025,7 +1032,8 @@ class _coo_base(_data_matrix, _minmax_mixin):
         b = np.transpose(b, permute_b)
 
         reshape_a = (*non_reduced_shape_a, math.prod(reduced_shape_a))
-        reshape_b = (*non_reduced_shape_b[:-1], math.prod(reduced_shape_b), *non_reduced_shape_b[-1:])
+        reshape_b = (*non_reduced_shape_b[:-1], math.prod(reduced_shape_b),
+                     *non_reduced_shape_b[-1:])
 
         prod_arr = a.reshape(reshape_a).dot(b.reshape(reshape_b))
         return prod_arr
@@ -1068,7 +1076,8 @@ class _coo_base(_data_matrix, _minmax_mixin):
         C_block_diag = (A_block_diag @ B_block_diag).tocoo()
         
         # Convert the 2-D block diagonal array back to n-D
-        C = _extract_block_diag(C_block_diag, shape=(*broadcast_shape, A.shape[-2], B.shape[-1]))
+        C = _extract_block_diag(C_block_diag, shape=(*broadcast_shape,
+                                                     A.shape[-2], B.shape[-1]))
         
         return C
 
@@ -1078,7 +1087,8 @@ class _coo_base(_data_matrix, _minmax_mixin):
 
         # Check if the new shape is compatible for broadcasting
         if len(new_shape) < len(old_shape):
-            raise ValueError("New shape must have at least as many dimensions as the current shape")
+            raise ValueError("New shape must have at least as many dimensions"
+                             " as the current shape")
         
         # Add leading ones to the old shape if necessary
         shape = (1,) * (len(new_shape) - len(old_shape)) + tuple(old_shape)
@@ -1142,7 +1152,8 @@ def _block_diag(self):
     res_arr = self.reshape((num_blocks, n_row, n_col))
     new_coords = np.empty((2, self.nnz), dtype = int)
     for axis in [1, 2]:
-        new_coords[axis - 1] = res_arr.coords[axis] + res_arr.coords[0] * res_arr.shape[axis]
+        new_coords[axis - 1] = res_arr.coords[axis] +\
+            (res_arr.coords[0] * res_arr.shape[axis])
 
     new_shape = (num_blocks * n_row, num_blocks * n_col)
     return coo_array((self.data, tuple(new_coords)), shape=new_shape)
