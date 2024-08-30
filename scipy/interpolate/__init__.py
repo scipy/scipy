@@ -145,6 +145,7 @@ Rational Approximation
 
    pade
    AAA
+   FloaterHormann
 
 Additional tools
 ================

@@ -30,10 +30,10 @@ import numpy as np
 import scipy
 
 
-__all__ = ["AAA"]
+__all__ = ["AAA", "FloaterHormann"]
 
 
-class _Barycentric_Rational:
+class _BarycentricRational:
     """Base class for Barycentric representation of a rational function."""
     def __init__(self, points, values, **kwargs):
         # input validation
@@ -48,7 +48,7 @@ class _Barycentric_Rational:
 
         if not np.all(np.isfinite(z)):
             raise ValueError("`points` must be finite.")
-        
+
         # Remove infinite or NaN function values and repeated entries
         to_keep = (np.isfinite(f)) & (~np.isnan(f))
         f = f[to_keep]
@@ -59,15 +59,15 @@ class _Barycentric_Rational:
         self.support_points, self.support_values, self.weights = self._compute_weights(
             z, f, **kwargs
         )
-        
+
         # only compute once
         self._poles = None
         self._residues = None
         self._roots = None
-    
+
     def _compute_weights(z, f, **kwargs):
         raise NotImplementedError
-    
+
     def __call__(self, z):
         """Evaluate the rational approximation at given values.
 
@@ -177,7 +177,7 @@ class _Barycentric_Rational:
         return self._roots
 
 
-class AAA(_Barycentric_Rational):
+class AAA(_BarycentricRational):
     r"""
     AAA real or complex rational approximation.
 
@@ -231,7 +231,8 @@ class AAA(_Barycentric_Rational):
 
     See Also
     --------
-    pade : Padé approximation
+    FloaterHormann : Floater-Hormann weights for barycentric rational interpolation.
+    pade : Padé approximation.
 
     Notes
     -----
@@ -276,11 +277,11 @@ class AAA(_Barycentric_Rational):
     points and then resolving the least squares problem. The support point :math:`z_j`,
     which is the closest support point to the pole :math:`a` with residue
     :math:`\alpha`, is removed if the following is satisfied
-    
+
     .. math::
 
         |\alpha| / |z_j - a| < \verb|clean_up_tol| \cdot \tilde{f},
-    
+
     where :math:`\tilde{f}` is the geometric mean of `support_values`.
 
 
@@ -400,7 +401,7 @@ class AAA(_Barycentric_Rational):
                              "equal to one.")
 
         super().__init__(points, values, rtol=rtol, max_terms=max_terms)
-        
+
         if clean_up:
             self.clean_up(clean_up_tol)
 
@@ -541,7 +542,7 @@ class AAA(_Barycentric_Rational):
         )
         f = self._values[mask]
         z = self._points[mask]
-        
+
         # recompute weights, we resolve the least squares problem for the remaining
         # support points
 
@@ -560,5 +561,115 @@ class AAA(_Barycentric_Rational):
         self._poles = None
         self._residues = None
         self._roots = None
-        
+
         return ni
+
+
+class FloaterHormann(_BarycentricRational):
+    r"""
+    Floater-Hormann barycentric rational interpolation.
+
+    As described in [1]_, the method of Floater and Hormann computes weights for a
+    Barycentric rational interpolant with no poles on the real axis.
+
+    Parameters
+    ----------
+    points : 1D array_like, shape (n,)
+        1-D array containing values of the independent variable. Values may be real or
+        complex but must be finite.
+    values : 1D array_like, shape (n,)
+        Function values ``f(z)`` at `points`. Infinite and NaN values of `values` and
+        corresponding values of `points` will be discarded.
+    d : int, optional
+        Blending parameter which controls the blending of interpolating polynomials, see
+        notes for more details. For ``d=n-1`` it is equivalent to polynomial
+        interpolation. Must satisfy ``0 <= d < n``, defaults to 3.
+
+    Attributes
+    ----------
+    support_points : array
+        Support points of the interpolant. These are the provided `points`.
+    support_values : array
+        Value of the `interpolant` at the `support_points`.
+    weights : array
+        Weights of the barycentric approximation.
+
+    See Also
+    --------
+    AAA : Barycentric rational approximation of real and complex functions.
+    pade : Padé approximation.
+
+    Notes
+    -----
+    The Floater-Hormann interpolant is a rational function that interpolates the data
+    with approximation order :math:`O(h^{d+1})`. The rational function contains no poles
+    on the real axis, unlike `AAA`. The interpolant is given
+    by
+
+    .. math::
+
+        r(z) = \frac{\sum_{i=0}^{n-d} \lambda_i(z) p_i(z)}
+        {\sum_{i=0}^{n-d} \lambda_i(z)},
+
+    where :math:`p_i(z)` are unique interpolating polynomials of at most degree `d` of
+    the `points` and `values` :math:`(x_i,f_i),\dots,(x_{i+d},f_{i+d}), and
+    :math:`\lambda_i(z)` are blending functions. When ``d = n - 1`` this reduces to
+    polynomial interpolation.
+
+    In practice, the following barycentric representation is used instead
+
+    .. math::
+
+        r(z) = \frac{\sum_{k=1}^m\ w_k f_k / (z - z_k)}{\sum_{k=1}^m w_k / (z - z_k)},
+
+    where the weights :math:`w_j` are computed as
+
+    .. math::
+
+        w_k &= (-1)^{k - d} \sum_{i \in J_k} \prod_{j = i, j \neq k}^{i + d}
+        1/|x_k - x_j|, \\
+        J_k &= \{ i \in I: k - d \leq i \leq k\},\\
+        I &= \{0, 1, \dots, n - d\}.
+
+    References
+    ----------
+    .. [1] M.S. Floater and K. Hormann, "Barycentric rational interpolation with no
+           poles and high rates of approximation", Numer. Math. 107, 315 (2007).
+           :doi:`10.1007/s00211-007-0093-y`
+
+    Examples
+    --------
+
+    Here we compare the method against polynomial interpolation for an example where
+    the polynomial interpolation fails due to Runge's phenomenon.
+
+    >>> import numpy as np
+    >>> from scipy.interpolate import FloaterHormann, BarycentricInterpolator
+    >>> def f(z):
+    ...     return 1/(1 + z**2)
+    >>> z = np.linspace(-5, 5, num=15)
+    >>> r = FloaterHormann(z, f(z))
+    >>> p = BarycentricInterpolator(z, f(z))
+    >>> zz = np.linspace(-5, 5, num=1000)
+    >>> import matplotlib.pyplot as plt
+    >>> fig, ax = plt.subplots()
+    >>> ax.plot(zz, r(zz), label="Floater=Hormann")
+    >>> ax.plot(zz, p(zz), label="Polynomial")
+    >>> ax.legend()
+    >>> plt.show()
+    """
+    def __init__(self, points, values, *, d=3):
+        if not (0 <= d < len(points)):
+            raise ValueError("`d` must satisfy 0 <= d < n")
+
+        super().__init__(points, values, d=d)
+
+    def _compute_weights(self, z, f, d):
+        # Floater and Hormann 2007 Eqn. (18) 3 equations later
+        w = np.zeros_like(z, dtype=np.result_type(z, 1.0))
+        n = w.size
+        for k in range(n):
+            for i in range(max(k-d, 0), min(k+1, n-d)):
+                w[k] += 1/np.prod(np.abs(np.delete(z[k] - z[i : i + d + 1], k - i)))
+        w *= (-1.)**(np.arange(n) - d)
+        return z, f, w
