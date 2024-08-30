@@ -2,7 +2,6 @@
 #define _ARPACK_N_DOUBLE_COMPLEX_H
 
 #include "_arpack.h"
-#include "_arpack_complexdefs.h"
 
 // BLAS Routines used
 void zaxpy_(int* n, ARPACK_CPLX_TYPE* alpha, ARPACK_CPLX_TYPE* x, int* incx, ARPACK_CPLX_TYPE* y, int* incy);
