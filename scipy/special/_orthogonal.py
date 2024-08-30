@@ -389,13 +389,19 @@ def jacobi(n, alpha, beta, monic=False):
 
 
 def roots_sh_jacobi(n, p1, q1, mu=False):
-    """Gauss-Jacobi (shifted) quadrature.
+    r"""Gauss-Jacobi (shifted) quadrature.
 
     Compute the sample points and weights for Gauss-Jacobi (shifted)
     quadrature. The sample points are the roots of the nth degree
-    shifted Jacobi polynomial, :math:`G^{p,q}_n(x)`. These sample
-    points and weights correctly integrate polynomials of degree
-    :math:`2n - 1` or less over the interval :math:`[0, 1]` with
+    shifted Jacobi polynomial
+
+    .. math::
+
+        G_n^{(p, q)}(x)
+          = \binom{2n + p - 1}{n}^{-1}P_n^{(p - q, q - 1)}(2x - 1).
+
+    These sample points and weights correctly integrate polynomials of
+    degree :math:`2n - 1` or less over the interval :math:`[0, 1]` with
     weight function :math:`w(x) = (1 - x)^{p-q} x^{q-1}`. See 22.2.2
     in [AS]_ for details.
 
