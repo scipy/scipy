@@ -2757,7 +2757,9 @@ add_newdoc("eval_sh_jacobi",
           = \binom{2n + p - 1}{n}^{-1} P_n^{(p - q, q - 1)}(2x - 1),
 
     where :math:`P_n^{(\cdot, \cdot)}` is the n-th Jacobi
-    polynomial. See 22.5.2 in [AS]_ for details.
+    polynomial. See 22.5.2 in [AS]_ for details. Note that here,
+    in contrast to `eval_sh_legendre`, `eval_sh_chebyt`, and 
+    `eval_sh_chebyu`, not only the argument is shifted.
 
     Parameters
     ----------
