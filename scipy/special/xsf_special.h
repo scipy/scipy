@@ -49,7 +49,7 @@ using xsf::assoc_legendre_unnorm;
 
 template <typename NormPolicy, typename T>
 T assoc_legendre_p(NormPolicy norm, long long int n, long long int m, T z, long long int branch_cut) {
-    return xsf::assoc_legendre_p(norm, n, m, xsf::make_dual<0>(z), branch_cut).value();
+    return xsf::assoc_legendre_p(norm, n, m, z, branch_cut);
 }
 
 template <typename NormPolicy, typename T>
@@ -83,32 +83,32 @@ void assoc_legendre_p_all(NormPolicy norm, T z, long long int branch_cut, Output
 
 template <typename T>
 T sph_legendre_p(long long int n, long long int m, T theta) {
-    return xsf::sph_legendre_p(n, m, theta);
+    return xsf::sph_legendre_p(n, m, xsf::make_dual<0>(theta)).value();
 }
 
 template <typename T>
 void sph_legendre_p(long long int n, long long int m, T theta, T &res, T &res_jac) {
-    xsf::sph_legendre_p(n, m, theta, std::tie(res, res_jac));
+    std::tie(res, res_jac) = xsf::sph_legendre_p(n, m, xsf::make_dual<1>(theta)).derivatives();
 }
 
 template <typename T>
 void sph_legendre_p(long long int n, long long int m, T theta, T &res, T &res_jac, T &res_hess) {
-    xsf::sph_legendre_p(n, m, theta, std::tie(res, res_jac, res_hess));
+    std::tie(res, res_jac, res_hess) = xsf::sph_legendre_p(n, m, xsf::make_dual<2>(theta)).derivatives();
 }
 
 template <typename T, typename OutputMat1>
 void sph_legendre_p_all(T theta, OutputMat1 res) {
-    xsf::sph_legendre_p_all(theta, std::tie(res));
+    xsf::sph_legendre_p_all(xsf::make_dual<0>(theta), std::tie(res));
 }
 
 template <typename T, typename OutputMat1, typename OutputMat2>
 void sph_legendre_p_all(T theta, OutputMat1 res, OutputMat2 res_jac) {
-    xsf::sph_legendre_p_all(theta, std::tie(res, res_jac));
+    xsf::sph_legendre_p_all(xsf::make_dual<1>(theta), std::tie(res, res_jac));
 }
 
 template <typename T, typename OutputMat1, typename OutputMat2, typename OutputMat3>
 void sph_legendre_p_all(T theta, OutputMat1 res, OutputMat2 res_jac, OutputMat3 res_hess) {
-    xsf::sph_legendre_p_all(theta, std::tie(res, res_jac, res_hess));
+    xsf::sph_legendre_p_all(xsf::make_dual<2>(theta), std::tie(res, res_jac, res_hess));
 }
 
 template <typename T>

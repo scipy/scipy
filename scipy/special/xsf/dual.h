@@ -292,6 +292,52 @@ dual<T, 2> sqrt(const dual<T, 2> &z) {
 namespace std {
 
 template <typename T>
+xsf::dual<T, 0> sin(const xsf::dual<T, 0> &z) {
+    T z0_sin = std::sin(z[0]);
+
+    return z.apply({z0_sin});
+}
+
+template <typename T>
+xsf::dual<T, 1> sin(const xsf::dual<T, 1> &z) {
+    T z0_sin = std::sin(z[0]);
+    T z0_cos = std::cos(z[0]);
+
+    return z.apply({z0_sin, z0_cos});
+}
+
+template <typename T>
+xsf::dual<T, 2> sin(const xsf::dual<T, 2> &z) {
+    T z0_sin = std::sin(z[0]);
+    T z0_cos = std::cos(z[0]);
+
+    return z.apply({z0_sin, z0_cos, -z0_sin});
+}
+
+template <typename T>
+xsf::dual<T, 0> cos(const xsf::dual<T, 0> &z) {
+    T z0_cos = std::cos(z[0]);
+
+    return z.apply({z0_cos});
+}
+
+template <typename T>
+xsf::dual<T, 1> cos(const xsf::dual<T, 1> &z) {
+    T z0_cos = std::cos(z[0]);
+    T z0_sin = std::sin(z[0]);
+
+    return z.apply({z0_cos, -z0_sin});
+}
+
+template <typename T>
+xsf::dual<T, 2> cos(const xsf::dual<T, 2> &z) {
+    T z0_cos = std::cos(z[0]);
+    T z0_sin = std::sin(z[0]);
+
+    return z.apply({z0_cos, -z0_sin, -z0_cos});
+}
+
+template <typename T>
 xsf::dual<T, 0> abs(xsf::dual<T, 0> z) {
     return z.apply({std::abs(z[0])});
 }
