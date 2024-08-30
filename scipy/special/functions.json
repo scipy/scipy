@@ -437,11 +437,13 @@
     },
     "gdtrib": {
         "xsf_wrappers.h": {
-            "special_gdtrib": "ddd->d"        }
+            "xsf_gdtrib": "ddd->d"
+        }
     },
     "gdtrix": {
         "_cdflib_wrappers.pxd": {
-            "gdtrix": "ddd->d"        }
+            "gdtrix": "ddd->d"
+        }
     },
     "huber": {
         "_convex_analysis.pxd": {

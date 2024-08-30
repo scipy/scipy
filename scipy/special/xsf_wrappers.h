@@ -314,6 +314,7 @@ double xsf_fdtrc(double a, double b, double x);
 double xsf_fdtri(double a, double b, double y);
 double xsf_gdtr(double a, double b, double x);
 double xsf_gdtrc(double a, double b, double x);
+double xsf_gdtrib(double a, double p, double x);
 double xsf_kolmogorov(double x);
 double xsf_kolmogc(double x);
 double xsf_kolmogi(double x);
@@ -361,8 +362,6 @@ double xsf_cosdg(double x);
 double xsf_tandg(double x);
 double xsf_cotdg(double x);
 double xsf_radian(double d, double m, double s);
-
-double special_gdtrib(double a, double p, double x);
 
 #ifdef __cplusplus
 } /* extern "C" */
