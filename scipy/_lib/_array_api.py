@@ -528,11 +528,11 @@ def xp_sign(x: Array, /, *, xp: ModuleType | None = None) -> Array:
     xp = array_namespace(x) if xp is None else xp
     if is_numpy(xp):  # only NumPy implements the special cases correctly
         return xp.sign(x)
-    sign = xp.full_like(x, xp.asarray(xp.nan))
+    sign = xp.zeros_like(x)
     one = xp.asarray(1, dtype=x.dtype)
     sign = xp.where(x > 0, one, sign)
     sign = xp.where(x < 0, -one, sign)
-    sign = xp.where(x == 0, 0*one, sign)
+    sign = xp.where(xp.isnan(x), xp.nan*one, sign)
     return sign
 
 # maybe use `scipy.linalg` if/when array API support is added

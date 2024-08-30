@@ -1,3 +1,5 @@
+fs = import('fs')
+
 # Platform detection
 is_mingw = is_windows and cc.get_id() == 'gcc'
 if is_mingw and ff.get_id() != 'gcc'
@@ -279,18 +281,26 @@ endif
 
 scipy_dir = py3.get_install_dir() / 'scipy'
 
-version_utils = find_program('../tools/version_utils.py')
-generate_version = custom_target(
-  'generate-version',
-  install: true,
-  build_always_stale: true,
-  build_by_default: true,
-  output: 'version.py',
-  input: '../tools/version_utils.py',
-  command: [version_utils, '--source-root', '@SOURCE_ROOT@'],
-  install_dir: scipy_dir,
-  install_tag: 'python-runtime',
+# Generate version.py for sdist
+meson.add_dist_script(
+   ['../tools/gitversion.py', '--meson-dist', '--write', 'scipy/version.py']
 )
+if not fs.exists('version.py')
+  generate_version = custom_target(
+    'generate-version',
+    install: true,
+    build_always_stale: true,
+    build_by_default: true,
+    output: 'version.py',
+    input: '../tools/gitversion.py',
+    command: ['../tools/gitversion.py', '--meson-dist', '--write', 'scipy/version.py'],
+    install_dir: scipy_dir,
+    install_tag: 'python-runtime',
+  )
+else
+  # When building from sdist, version.py exists and should be included
+  py3.install_sources(['version.py'], subdir : 'scipy')
+endif
 
 python_sources = [
   '__init__.py',
@@ -301,7 +311,6 @@ python_sources = [
   'special.pxd',
 ]
 
-fs = import('fs')
 if fs.exists('_distributor_init_local.py')
   python_sources += ['_distributor_init_local.py']
 endif

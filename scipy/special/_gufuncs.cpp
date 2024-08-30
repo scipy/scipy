@@ -1,74 +1,25 @@
-#include "ufunc.h"
+#include "xsf/numpy.h"
 
 #include "xsf_special.h"
 
-using namespace std;
-
-using cfloat = complex<float>;
-using cdouble = complex<double>;
-
-using float_1d = mdspan<float, dextents<ptrdiff_t, 1>, layout_stride>;
-using float_2d = mdspan<float, dextents<ptrdiff_t, 2>, layout_stride>;
-using float_3d = mdspan<float, dextents<ptrdiff_t, 3>, layout_stride>;
-using float_4d = mdspan<float, dextents<ptrdiff_t, 4>, layout_stride>;
-using double_1d = mdspan<double, dextents<ptrdiff_t, 1>, layout_stride>;
-using double_2d = mdspan<double, dextents<ptrdiff_t, 2>, layout_stride>;
-using double_3d = mdspan<double, dextents<ptrdiff_t, 3>, layout_stride>;
-using double_4d = mdspan<double, dextents<ptrdiff_t, 4>, layout_stride>;
-using cfloat_1d = mdspan<cfloat, dextents<ptrdiff_t, 1>, layout_stride>;
-using cfloat_2d = mdspan<cfloat, dextents<ptrdiff_t, 2>, layout_stride>;
-using cfloat_3d = mdspan<cfloat, dextents<ptrdiff_t, 3>, layout_stride>;
-using cfloat_4d = mdspan<cfloat, dextents<ptrdiff_t, 4>, layout_stride>;
-using cdouble_1d = mdspan<cdouble, dextents<ptrdiff_t, 1>, layout_stride>;
-using cdouble_2d = mdspan<cdouble, dextents<ptrdiff_t, 2>, layout_stride>;
-using cdouble_3d = mdspan<cdouble, dextents<ptrdiff_t, 3>, layout_stride>;
-using cdouble_4d = mdspan<cdouble, dextents<ptrdiff_t, 4>, layout_stride>;
-
-// 1 input, 1 output
-using func_f_f1_t = void (*)(float, float_1d);
-using func_f_f2_t = void (*)(float, float_2d);
-using func_d_d1_t = void (*)(double, double_1d);
-using func_d_d2_t = void (*)(double, double_2d);
-using func_F_F1_t = void (*)(cfloat, cfloat_1d);
-using func_D_D1_t = void (*)(cdouble, cdouble_1d);
-
-// 1 input, 2 outputs
-using func_f_f1f1_t = void (*)(float, float_1d, float_1d);
-using func_f_f2f2_t = void (*)(float, float_2d, float_2d);
-using func_d_d1d1_t = void (*)(double, double_1d, double_1d);
-using func_d_d2d2_t = void (*)(double, double_2d, double_2d);
-using func_F_F1F1_t = void (*)(cfloat, cfloat_1d, cfloat_1d);
-using func_F_F2F2_t = void (*)(cfloat, cfloat_2d, cfloat_2d);
-using func_D_D1D1_t = void (*)(cdouble, cdouble_1d, cdouble_1d);
-using func_D_D2D2_t = void (*)(cdouble, cdouble_2d, cdouble_2d);
-
-// 1 input, 3 outputs
-using func_f_f1f1f1_t = void (*)(float, float_1d, float_1d, float_1d);
-using func_f_f2f2f2_t = void (*)(float, float_2d, float_2d, float_2d);
-using func_d_d1d1d1_t = void (*)(double, double_1d, double_1d, double_1d);
-using func_d_d2d2d2_t = void (*)(double, double_2d, double_2d, double_2d);
-using func_F_F1F1F1_t = void (*)(cfloat, cfloat_1d, cfloat_1d, cfloat_1d);
-using func_D_D1D1D1_t = void (*)(cdouble, cdouble_1d, cdouble_1d, cdouble_1d);
-
-// 2 inputs, 1 output
-using func_ff_F2_t = void (*)(float, float, cfloat_2d);
-using func_dd_D2_t = void (*)(double, double, cdouble_2d);
-using func_qF_F2_t = void (*)(long long int, cfloat, cfloat_2d);
-using func_qD_D2_t = void (*)(long long int, cdouble, cdouble_2d);
-
-// 2 inputs, 2 outputs
-using func_qF_F2F2_t = void (*)(long long int, cfloat, cfloat_2d, cfloat_2d);
-using func_qD_D2D2_t = void (*)(long long int, cdouble, cdouble_2d, cdouble_2d);
-using func_ff_F2F3_t = void (*)(float, float, cfloat_2d, cfloat_3d);
-using func_dd_D2D3_t = void (*)(double, double, cdouble_2d, cdouble_3d);
-
-// 2 inputs, 3 outputs
-using func_qF_F2F2F2_t = void (*)(long long int, cfloat, cfloat_2d, cfloat_2d, cfloat_2d);
-using func_qD_D2D2D2_t = void (*)(long long int, cdouble, cdouble_2d, cdouble_2d, cdouble_2d);
-
-// 2 inputs, 4 outputs
-using func_ff_F2F3F4_t = void (*)(float, float, cfloat_2d, cfloat_3d, cfloat_4d);
-using func_dd_D2D3D4_t = void (*)(double, double, cdouble_2d, cdouble_3d, cdouble_4d);
+using xsf::numpy::cdouble;
+using xsf::numpy::cdouble_1d;
+using xsf::numpy::cdouble_2d;
+using xsf::numpy::cdouble_3d;
+using xsf::numpy::cdouble_4d;
+using xsf::numpy::cfloat;
+using xsf::numpy::cfloat_1d;
+using xsf::numpy::cfloat_2d;
+using xsf::numpy::cfloat_3d;
+using xsf::numpy::cfloat_4d;
+using xsf::numpy::double_1d;
+using xsf::numpy::double_2d;
+using xsf::numpy::double_3d;
+using xsf::numpy::double_4d;
+using xsf::numpy::float_1d;
+using xsf::numpy::float_2d;
+using xsf::numpy::float_3d;
+using xsf::numpy::float_4d;
 
 extern const char *lpn_all_doc;
 extern const char *lpmn_doc;
@@ -151,54 +102,55 @@ PyMODINIT_FUNC PyInit__gufuncs() {
     PyUnstable_Module_SetGIL(_gufuncs, Py_MOD_GIL_NOT_USED);
 #endif
 
-
     PyObject *legendre_p_all = Py_BuildValue(
         "(N, N, N)",
-        SpecFun_NewGUFunc({static_cast<func_d_d1_t>(::legendre_p_all), static_cast<func_f_f1_t>(::legendre_p_all),
-                           static_cast<func_D_D1_t>(::legendre_p_all), static_cast<func_F_F1_t>(::legendre_p_all)},
-                          1, "legendre_p_all", nullptr, "()->(np1)", legendre_map_dims<1>),
-        SpecFun_NewGUFunc({static_cast<func_d_d1d1_t>(::legendre_p_all), static_cast<func_f_f1f1_t>(::legendre_p_all),
-                           static_cast<func_D_D1D1_t>(::legendre_p_all), static_cast<func_F_F1F1_t>(::legendre_p_all)},
-                          2, "legendre_p_all", nullptr, "()->(np1),(np1)", legendre_map_dims<2>),
-        SpecFun_NewGUFunc(
-            {static_cast<func_d_d1d1d1_t>(::legendre_p_all), static_cast<func_f_f1f1f1_t>(::legendre_p_all),
-             static_cast<func_D_D1D1D1_t>(::legendre_p_all), static_cast<func_F_F1F1F1_t>(::legendre_p_all)},
+        xsf::numpy::gufunc(
+            {static_cast<xsf::numpy::d_d1>(::legendre_p_all), static_cast<xsf::numpy::f_f1>(::legendre_p_all),
+             static_cast<xsf::numpy::D_D1>(::legendre_p_all), static_cast<xsf::numpy::F_F1>(::legendre_p_all)},
+            1, "legendre_p_all", nullptr, "()->(np1)", legendre_map_dims<1>),
+        xsf::numpy::gufunc(
+            {static_cast<xsf::numpy::d_d1d1>(::legendre_p_all), static_cast<xsf::numpy::f_f1f1>(::legendre_p_all),
+             static_cast<xsf::numpy::D_D1D1>(::legendre_p_all), static_cast<xsf::numpy::F_F1F1>(::legendre_p_all)},
+            2, "legendre_p_all", nullptr, "()->(np1),(np1)", legendre_map_dims<2>),
+        xsf::numpy::gufunc(
+            {static_cast<xsf::numpy::d_d1d1d1>(::legendre_p_all), static_cast<xsf::numpy::f_f1f1f1>(::legendre_p_all),
+             static_cast<xsf::numpy::D_D1D1D1>(::legendre_p_all), static_cast<xsf::numpy::F_F1F1F1>(::legendre_p_all)},
             3, "legendre_p_all", nullptr, "()->(np1),(np1),(np1)", legendre_map_dims<3>));
     PyModule_AddObjectRef(_gufuncs, "legendre_p_all", legendre_p_all);
 
     // key is norm, diff_n
     PyObject *assoc_legendre_p_all = Py_BuildValue(
         "{(O, i): N, (O, i): N, (O, i): N, (O, i): N, (O, i): N, (O, i): N}", Py_True, 0,
-        SpecFun_NewGUFunc({[](double z, long long int branch_cut, double_2d res) {
-                               ::assoc_legendre_p_all(assoc_legendre_norm, z, branch_cut, res);
-                           },
-                           [](float z, long long int branch_cut, float_2d res) {
-                               ::assoc_legendre_p_all(assoc_legendre_norm, z, branch_cut, res);
-                           },
-                           [](cdouble z, long long int branch_cut, cdouble_2d res) {
-                               ::assoc_legendre_p_all(assoc_legendre_norm, z, branch_cut, res);
-                           },
-                           [](cfloat z, long long int branch_cut, cfloat_2d res) {
-                               ::assoc_legendre_p_all(assoc_legendre_norm, z, branch_cut, res);
-                           }},
-                          1, "assoc_legendre_p_all", nullptr, "(),()->(np1,mpmp1)", assoc_legendre_map_dims<1>),
+        xsf::numpy::gufunc({[](double z, long long int branch_cut, double_2d res) {
+                                ::assoc_legendre_p_all(assoc_legendre_norm, z, branch_cut, res);
+                            },
+                            [](float z, long long int branch_cut, float_2d res) {
+                                ::assoc_legendre_p_all(assoc_legendre_norm, z, branch_cut, res);
+                            },
+                            [](cdouble z, long long int branch_cut, cdouble_2d res) {
+                                ::assoc_legendre_p_all(assoc_legendre_norm, z, branch_cut, res);
+                            },
+                            [](cfloat z, long long int branch_cut, cfloat_2d res) {
+                                ::assoc_legendre_p_all(assoc_legendre_norm, z, branch_cut, res);
+                            }},
+                           1, "assoc_legendre_p_all", nullptr, "(),()->(np1,mpmp1)", assoc_legendre_map_dims<1>),
         Py_True, 1,
-        SpecFun_NewGUFunc({[](double z, long long int branch_cut, double_2d res, double_2d res_jac) {
-                               ::assoc_legendre_p_all(assoc_legendre_norm, z, branch_cut, res, res_jac);
-                           },
-                           [](float z, long long int branch_cut, float_2d res, float_2d res_jac) {
-                               ::assoc_legendre_p_all(assoc_legendre_norm, z, branch_cut, res, res_jac);
-                           },
-                           [](cdouble z, long long int branch_cut, cdouble_2d res, cdouble_2d res_jac) {
-                               ::assoc_legendre_p_all(assoc_legendre_norm, z, branch_cut, res, res_jac);
-                           },
-                           [](cfloat z, long long int branch_cut, cfloat_2d res, cfloat_2d res_jac) {
-                               ::assoc_legendre_p_all(assoc_legendre_norm, z, branch_cut, res, res_jac);
-                           }},
-                          2, "assoc_legendre_p_all", nullptr, "(),()->(np1,mpmp1),(np1,mpmp1)",
-                          assoc_legendre_map_dims<2>),
+        xsf::numpy::gufunc({[](double z, long long int branch_cut, double_2d res, double_2d res_jac) {
+                                ::assoc_legendre_p_all(assoc_legendre_norm, z, branch_cut, res, res_jac);
+                            },
+                            [](float z, long long int branch_cut, float_2d res, float_2d res_jac) {
+                                ::assoc_legendre_p_all(assoc_legendre_norm, z, branch_cut, res, res_jac);
+                            },
+                            [](cdouble z, long long int branch_cut, cdouble_2d res, cdouble_2d res_jac) {
+                                ::assoc_legendre_p_all(assoc_legendre_norm, z, branch_cut, res, res_jac);
+                            },
+                            [](cfloat z, long long int branch_cut, cfloat_2d res, cfloat_2d res_jac) {
+                                ::assoc_legendre_p_all(assoc_legendre_norm, z, branch_cut, res, res_jac);
+                            }},
+                           2, "assoc_legendre_p_all", nullptr, "(),()->(np1,mpmp1),(np1,mpmp1)",
+                           assoc_legendre_map_dims<2>),
         Py_True, 2,
-        SpecFun_NewGUFunc(
+        xsf::numpy::gufunc(
             {[](double z, long long int branch_cut, double_2d res, double_2d res_jac, double_2d res_hess) {
                  ::assoc_legendre_p_all(assoc_legendre_norm, z, branch_cut, res, res_jac, res_hess);
              },
@@ -214,36 +166,36 @@ PyMODINIT_FUNC PyInit__gufuncs() {
             3, "assoc_legendre_p_all", nullptr, "(),()->(np1,mpmp1),(np1,mpmp1),(np1,mpmp1)",
             assoc_legendre_map_dims<3>),
         Py_False, 0,
-        SpecFun_NewGUFunc({[](double z, long long int branch_cut, double_2d res) {
-                               ::assoc_legendre_p_all(assoc_legendre_unnorm, z, branch_cut, res);
-                           },
-                           [](float z, long long int branch_cut, float_2d res) {
-                               ::assoc_legendre_p_all(assoc_legendre_unnorm, z, branch_cut, res);
-                           },
-                           [](cdouble z, long long int branch_cut, cdouble_2d res) {
-                               ::assoc_legendre_p_all(assoc_legendre_unnorm, z, branch_cut, res);
-                           },
-                           [](cfloat z, long long int branch_cut, cfloat_2d res) {
-                               ::assoc_legendre_p_all(assoc_legendre_unnorm, z, branch_cut, res);
-                           }},
-                          1, "assoc_legendre_p_all", nullptr, "(),()->(np1,mpmp1)", assoc_legendre_map_dims<1>),
+        xsf::numpy::gufunc({[](double z, long long int branch_cut, double_2d res) {
+                                ::assoc_legendre_p_all(assoc_legendre_unnorm, z, branch_cut, res);
+                            },
+                            [](float z, long long int branch_cut, float_2d res) {
+                                ::assoc_legendre_p_all(assoc_legendre_unnorm, z, branch_cut, res);
+                            },
+                            [](cdouble z, long long int branch_cut, cdouble_2d res) {
+                                ::assoc_legendre_p_all(assoc_legendre_unnorm, z, branch_cut, res);
+                            },
+                            [](cfloat z, long long int branch_cut, cfloat_2d res) {
+                                ::assoc_legendre_p_all(assoc_legendre_unnorm, z, branch_cut, res);
+                            }},
+                           1, "assoc_legendre_p_all", nullptr, "(),()->(np1,mpmp1)", assoc_legendre_map_dims<1>),
         Py_False, 1,
-        SpecFun_NewGUFunc({[](double z, long long int branch_cut, double_2d res, double_2d res_jac) {
-                               ::assoc_legendre_p_all(assoc_legendre_unnorm, z, branch_cut, res, res_jac);
-                           },
-                           [](float z, long long int branch_cut, float_2d res, float_2d res_jac) {
-                               ::assoc_legendre_p_all(assoc_legendre_unnorm, z, branch_cut, res, res_jac);
-                           },
-                           [](cdouble z, long long int branch_cut, cdouble_2d res, cdouble_2d res_jac) {
-                               ::assoc_legendre_p_all(assoc_legendre_unnorm, z, branch_cut, res, res_jac);
-                           },
-                           [](cfloat z, long long int branch_cut, cfloat_2d res, cfloat_2d res_jac) {
-                               ::assoc_legendre_p_all(assoc_legendre_unnorm, z, branch_cut, res, res_jac);
-                           }},
-                          2, "assoc_legendre_p_all", nullptr, "(),()->(np1,mpmp1),(np1,mpmp1)",
-                          assoc_legendre_map_dims<2>),
+        xsf::numpy::gufunc({[](double z, long long int branch_cut, double_2d res, double_2d res_jac) {
+                                ::assoc_legendre_p_all(assoc_legendre_unnorm, z, branch_cut, res, res_jac);
+                            },
+                            [](float z, long long int branch_cut, float_2d res, float_2d res_jac) {
+                                ::assoc_legendre_p_all(assoc_legendre_unnorm, z, branch_cut, res, res_jac);
+                            },
+                            [](cdouble z, long long int branch_cut, cdouble_2d res, cdouble_2d res_jac) {
+                                ::assoc_legendre_p_all(assoc_legendre_unnorm, z, branch_cut, res, res_jac);
+                            },
+                            [](cfloat z, long long int branch_cut, cfloat_2d res, cfloat_2d res_jac) {
+                                ::assoc_legendre_p_all(assoc_legendre_unnorm, z, branch_cut, res, res_jac);
+                            }},
+                           2, "assoc_legendre_p_all", nullptr, "(),()->(np1,mpmp1),(np1,mpmp1)",
+                           assoc_legendre_map_dims<2>),
         Py_False, 2,
-        SpecFun_NewGUFunc(
+        xsf::numpy::gufunc(
             {[](double z, long long int branch_cut, double_2d res, double_2d res_jac, double_2d res_hess) {
                  ::assoc_legendre_p_all(assoc_legendre_unnorm, z, branch_cut, res, res_jac, res_hess);
              },
@@ -262,45 +214,52 @@ PyMODINIT_FUNC PyInit__gufuncs() {
 
     PyObject *sph_legendre_p_all = Py_BuildValue(
         "(N, N, N)",
-        SpecFun_NewGUFunc(
-            {static_cast<func_d_d2_t>(::sph_legendre_p_all), static_cast<func_f_f2_t>(::sph_legendre_p_all)}, 1,
-            "sph_legendre_p_all", nullptr, "()->(np1,mpmp1)", assoc_legendre_map_dims<1>),
-        SpecFun_NewGUFunc(
-            {static_cast<func_d_d2d2_t>(::sph_legendre_p_all), static_cast<func_f_f2f2_t>(::sph_legendre_p_all)}, 2,
-            "sph_legendre_p_all", nullptr, "()->(np1,mpmp1),(np1,mpmp1)", assoc_legendre_map_dims<2>),
-        SpecFun_NewGUFunc(
-            {static_cast<func_d_d2d2d2_t>(::sph_legendre_p_all), static_cast<func_f_f2f2f2_t>(::sph_legendre_p_all)}, 3,
-            "sph_legendre_p_all", nullptr, "()->(np1,mpmp1),(np1,mpmp1),(np1,mpmp1)", assoc_legendre_map_dims<3>));
+        xsf::numpy::gufunc(
+            {static_cast<xsf::numpy::d_d2>(::sph_legendre_p_all), static_cast<xsf::numpy::f_f2>(::sph_legendre_p_all)},
+            1, "sph_legendre_p_all", nullptr, "()->(np1,mpmp1)", assoc_legendre_map_dims<1>),
+        xsf::numpy::gufunc({static_cast<xsf::numpy::d_d2d2>(::sph_legendre_p_all),
+                            static_cast<xsf::numpy::f_f2f2>(::sph_legendre_p_all)},
+                           2, "sph_legendre_p_all", nullptr, "()->(np1,mpmp1),(np1,mpmp1)", assoc_legendre_map_dims<2>),
+        xsf::numpy::gufunc({static_cast<xsf::numpy::d_d2d2d2>(::sph_legendre_p_all),
+                            static_cast<xsf::numpy::f_f2f2f2>(::sph_legendre_p_all)},
+                           3, "sph_legendre_p_all", nullptr, "()->(np1,mpmp1),(np1,mpmp1),(np1,mpmp1)",
+                           assoc_legendre_map_dims<3>));
     PyModule_AddObjectRef(_gufuncs, "sph_legendre_p_all", sph_legendre_p_all);
 
-    PyObject *_lqn = SpecFun_NewGUFunc({static_cast<func_d_d1d1_t>(xsf::lqn), static_cast<func_f_f1f1_t>(xsf::lqn),
-                                        static_cast<func_D_D1D1_t>(xsf::lqn), static_cast<func_F_F1F1_t>(xsf::lqn)},
-                                       2, "_lqn", lqn_doc, "()->(np1),(np1)", legendre_map_dims<2>);
+    PyObject *_lqn =
+        xsf::numpy::gufunc({static_cast<xsf::numpy::d_d1d1>(xsf::lqn), static_cast<xsf::numpy::f_f1f1>(xsf::lqn),
+                            static_cast<xsf::numpy::D_D1D1>(xsf::lqn), static_cast<xsf::numpy::F_F1F1>(xsf::lqn)},
+                           2, "_lqn", lqn_doc, "()->(np1),(np1)", legendre_map_dims<2>);
     PyModule_AddObjectRef(_gufuncs, "_lqn", _lqn);
 
-    PyObject *_lqmn = SpecFun_NewGUFunc({static_cast<func_d_d2d2_t>(xsf::lqmn), static_cast<func_f_f2f2_t>(xsf::lqmn),
-                                         static_cast<func_D_D2D2_t>(xsf::lqmn), static_cast<func_F_F2F2_t>(xsf::lqmn)},
-                                        2, "_lqmn", lqmn_doc, "()->(mp1,np1),(mp1,np1)", assoc_legendre_map_dims<2>);
+    PyObject *_lqmn =
+        xsf::numpy::gufunc({static_cast<xsf::numpy::d_d2d2>(xsf::lqmn), static_cast<xsf::numpy::f_f2f2>(xsf::lqmn),
+                            static_cast<xsf::numpy::D_D2D2>(xsf::lqmn), static_cast<xsf::numpy::F_F2F2>(xsf::lqmn)},
+                           2, "_lqmn", lqmn_doc, "()->(mp1,np1),(mp1,np1)", assoc_legendre_map_dims<2>);
     PyModule_AddObjectRef(_gufuncs, "_lqmn", _lqmn);
 
     PyObject *sph_harm_y_all = Py_BuildValue(
         "(N,N,N)",
-        SpecFun_NewGUFunc({static_cast<func_dd_D2_t>(::sph_harm_y_all), static_cast<func_ff_F2_t>(::sph_harm_y_all)}, 1,
-                          "sph_harm_y_all", nullptr, "(),()->(np1,mpmp1)", sph_harm_map_dims<1>),
-        SpecFun_NewGUFunc(
-            {static_cast<func_dd_D2D3_t>(::sph_harm_y_all), static_cast<func_ff_F2F3_t>(::sph_harm_y_all)}, 2,
+        xsf::numpy::gufunc(
+            {static_cast<xsf::numpy::dd_D2>(::sph_harm_y_all), static_cast<xsf::numpy::ff_F2>(::sph_harm_y_all)}, 1,
+            "sph_harm_y_all", nullptr, "(),()->(np1,mpmp1)", sph_harm_map_dims<1>),
+        xsf::numpy::gufunc(
+            {static_cast<xsf::numpy::dd_D2D3>(::sph_harm_y_all), static_cast<xsf::numpy::ff_F2F3>(::sph_harm_y_all)}, 2,
             "sph_harm_y_all", nullptr, "(),()->(np1,mpmp1),(2,np1,mpmp1)", sph_harm_map_dims<2>),
-        SpecFun_NewGUFunc(
-            {static_cast<func_dd_D2D3D4_t>(::sph_harm_y_all), static_cast<func_ff_F2F3F4_t>(::sph_harm_y_all)}, 3,
-            "sph_harm_y_all", nullptr, "(),()->(np1,mpmp1),(2,np1,mpmp1),(2,2,np1,mpmp1)", sph_harm_map_dims<3>));
+        xsf::numpy::gufunc({static_cast<xsf::numpy::dd_D2D3D4>(::sph_harm_y_all),
+                            static_cast<xsf::numpy::ff_F2F3F4>(::sph_harm_y_all)},
+                           3, "sph_harm_y_all", nullptr, "(),()->(np1,mpmp1),(2,np1,mpmp1),(2,2,np1,mpmp1)",
+                           sph_harm_map_dims<3>));
     PyModule_AddObjectRef(_gufuncs, "sph_harm_y_all", sph_harm_y_all);
 
-    PyObject *_rctj = SpecFun_NewGUFunc({static_cast<func_d_d1d1_t>(xsf::rctj), static_cast<func_f_f1f1_t>(xsf::rctj)},
-                                        2, "_rctj", rctj_doc, "()->(np1),(np1)", legendre_map_dims<2>);
+    PyObject *_rctj =
+        xsf::numpy::gufunc({static_cast<xsf::numpy::d_d1d1>(xsf::rctj), static_cast<xsf::numpy::f_f1f1>(xsf::rctj)}, 2,
+                           "_rctj", rctj_doc, "()->(np1),(np1)", legendre_map_dims<2>);
     PyModule_AddObjectRef(_gufuncs, "_rctj", _rctj);
 
-    PyObject *_rcty = SpecFun_NewGUFunc({static_cast<func_d_d1d1_t>(xsf::rcty), static_cast<func_f_f1f1_t>(xsf::rcty)},
-                                        2, "_rcty", rcty_doc, "()->(np1),(np1)", legendre_map_dims<2>);
+    PyObject *_rcty =
+        xsf::numpy::gufunc({static_cast<xsf::numpy::d_d1d1>(xsf::rcty), static_cast<xsf::numpy::f_f1f1>(xsf::rcty)}, 2,
+                           "_rcty", rcty_doc, "()->(np1),(np1)", legendre_map_dims<2>);
     PyModule_AddObjectRef(_gufuncs, "_rcty", _rcty);
 
     return _gufuncs;
