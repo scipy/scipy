@@ -734,7 +734,8 @@ class _coo_base(_data_matrix, _minmax_mixin):
 
             # reshape back if a or b were originally 1-D
             if self_is_1d:
-                result = result.reshape(result.shape[1:])
+                # if self was originally 1-D, reshape result accordingly
+                result = result.reshape(tuple(result.shape[:-2]) + tuple(result.shape[-1:]))
             if other_is_1d:
                 result = result.reshape(result.shape[:-1])
             return result
@@ -1045,7 +1046,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
         C (COO): The resulting n-D sparse array after multiplication.
         """
         if A.ndim < 3 and B.ndim < 3:
-            return _data_matrix._matmul_sparse(A, B)
+            return _spbase._matmul_sparse(A, B)
 
         # Get the shapes of A and B
         shape_A = A.shape
