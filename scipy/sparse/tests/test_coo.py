@@ -663,28 +663,58 @@ def test_nd_matmul_vector(mat_shape, vec_shape):
     assert_equal(res,exp)
 
 
-dot_shapes = [
-    ((3,3), (3,3)), ((4,6), (6,7)), ((1,4), (4,1)),# matrix multiplication 2-D
-    ((3,2,4,7), (7,)), ((5,), (6,3,5,2)), # dot of n-D and 1-D arrays
-    ((4,5,7,6), (3,2,6,4)), ((2,8,7), (4,5,7,7,2)), # dot of n-D and m-D arrays
+mat_mat_shapes = [
+    ((2, 3, 4, 5), (2, 3, 5, 7)), 
+    ((0, 0), (0,)), 
+    ((4, 4, 2, 0), (0,)),
+    ((7, 8, 3), (3,)),
+    ((7, 8, 3), (3, 1)),
+    ((6, 5, 3, 2, 4), (4, 3)),
+    ((1, 3, 2, 4), (6, 5, 1, 4, 3)),
+    ((6, 1, 1, 2, 4), (1, 3, 4, 3)),
+    ((4,), (2, 4, 3)),
+    ((3,), (5, 6, 7, 3, 2)),
+    ((4,), (4, 3)),
+    ((2, 5), (5, 1)),
 ]
-@pytest.mark.parametrize(('a_shape', 'b_shape'), dot_shapes)
-def test_dot_sparse_sparse(a_shape, b_shape): 
+@pytest.mark.parametrize(('mat_shape1', 'mat_shape2'), mat_mat_shapes)
+def test_nd_matmul(mat_shape1, mat_shape2):
     rng = np.random.default_rng(23409823)
-    
-    arr_a = random_array(a_shape, density=0.6, random_state=rng, dtype=int)
-    arr_b = random_array(b_shape, density=0.6, random_state=rng, dtype=int)
 
-    exp = np.dot(arr_a.toarray(), arr_b.toarray())
-    res = arr_a.dot(arr_b)
+    sp_x = random_array(mat_shape1, density=0.6, random_state=rng, dtype=int)
+    sp_y = random_array(mat_shape2, density=0.6, random_state=rng, dtype=int)
+    den_x, den_y = sp_x.toarray(), sp_y.toarray()
+    exp = den_x @ den_y
+    # sparse-sparse
+    res = sp_x @ sp_y
     assert_equal(res.toarray(), exp)
+    # sparse-dense
+    res = sp_x @ den_y
+    assert_equal(res, exp)
+    res = sp_x @ list(den_y)
+    assert_equal(res, exp)
+
+
+def test_nd_matmul_sparse_with_inconsistent_arrays():
+    rng = np.random.default_rng(23409823)
+
+    sp_x = random_array((4,5,7,6,3), density=0.6, random_state=rng, dtype=int)
+    sp_y = random_array((1,5,3,2,5), density=0.6, random_state=rng, dtype=int)
+    with pytest.raises(ValueError, match="matmul: dimension mismatch with signature"):
+        sp_x @ sp_y
+    
+    sp_z = random_array((1,5,3,2), density=0.6, random_state=rng, dtype=int)
+    with pytest.raises(ValueError, match="Batch dimensions are not broadcastable"):
+        sp_x @ sp_z
 
 
 def test_dot_1d_1d(): # 1-D inner product
     a = coo_array([1,2,3])
     b = coo_array([4,5,6])
-    res = a.dot(b)
     exp = np.dot(a.toarray(), b.toarray())
+    res = a.dot(b)
+    assert_equal(res, exp)
+    res = a.dot(b.toarray())
     assert_equal(res, exp)
 
 
@@ -703,6 +733,31 @@ def test_dot_with_inconsistent_shapes():
         arr_a.dot(arr_b)
 
 
+dot_shapes = [
+    ((3,3), (3,3)), ((4,6), (6,7)), ((1,4), (4,1)), # matrix multiplication 2-D
+    ((3,2,4,7), (7,)), ((5,), (6,3,5,2)), # dot of n-D and 1-D arrays
+    ((3,2,4,7), (7,1)), ((1,5,), (6,3,5,2)),
+    ((4,6), (3,2,6,4)), ((2,8,7), (4,5,7,7,2)), # dot of n-D and m-D arrays
+    ((4,5,7,6), (3,2,6,4)), 
+]
+@pytest.mark.parametrize(('a_shape', 'b_shape'), dot_shapes)
+def test_dot_nd(a_shape, b_shape): 
+    rng = np.random.default_rng(23409823)
+    
+    arr_a = random_array(a_shape, density=0.6, random_state=rng, dtype=int)
+    arr_b = random_array(b_shape, density=0.6, random_state=rng, dtype=int)
+
+    exp = np.dot(arr_a.toarray(), arr_b.toarray())
+    # sparse-dense
+    res = arr_a.dot(arr_b.toarray())
+    assert_equal(res, exp)
+    res = arr_a.dot(list(arr_b.toarray()))
+    assert_equal(res, exp)
+    # sparse-sparse
+    res = arr_a.dot(arr_b)
+    assert_equal(res.toarray(), exp)
+
+
 tensordot_shapes_and_axes = [
     ((4,6), (6,7), ([1], [0])),
     ((3,2,4,7), (7,), ([3], [0])),
@@ -714,13 +769,21 @@ tensordot_shapes_and_axes = [
     ((2,3,4), (2,3,4), ([0, 1, 2], [0, 1, 2])),
 ]
 @pytest.mark.parametrize(('a_shape', 'b_shape', 'axes'), tensordot_shapes_and_axes)
-def test_tensordot(a_shape, b_shape, axes): 
+def test_tensordot_sparse_dense(a_shape, b_shape, axes): 
     rng = np.random.default_rng(23409823)
     
     arr_a = random_array(a_shape, density=0.6, random_state=rng, dtype=int)
     arr_b = random_array(b_shape, density=0.6, random_state=rng, dtype=int)
 
     exp = np.tensordot(arr_a.toarray(), arr_b.toarray(), axes=axes)
+
+    # sparse-dense
+    res = arr_a.tensordot(arr_b.toarray(), axes=axes)
+    assert_equal(res, exp)
+    res = arr_a.tensordot(list(arr_b.toarray()), axes=axes)
+    assert_equal(res, exp)
+
+    # sparse-sparse
     res = arr_a.tensordot(arr_b, axes=axes)
     if type(res) is coo_array:
         assert_equal(res.toarray(), exp)
@@ -744,6 +807,20 @@ def test_tensordot_with_invalid_args():
     axes = ([2,0,1], [1,3]) # lists have different lengths
     with pytest.raises(ValueError, match="axes lists/tuples must be of the same length"):
         arr_a.tensordot(arr_b, axes=axes)
+
+
+@pytest.mark.parametrize(('actual_shape', 'broadcast_shape'),
+                         [((1,3,5,4), (2,3,5,4)), ((2,1,5,4), (6,2,3,5,4)),
+                          ((1,1,7,8,9), (4,5,6,7,8,9)), ((1,3), (4,5,3)),
+                          ((7,8,1), (7,8,5)), ((3,1), (3,4)), ((1,), (5,)),
+                          ((1,1,1), (4,5,6)), ((1,3,1,5,4), (8,2,3,9,5,4)),])
+def test_broadcast_to(actual_shape, broadcast_shape):
+    rng = np.random.default_rng(23409823)
+    
+    arr = random_array(actual_shape, density=0.6, random_state=rng, dtype=int)
+    res = arr.broadcast_to(broadcast_shape)
+    exp = np.broadcast_to(arr.toarray(), broadcast_shape)
+    assert_equal(res.toarray(), exp)
 
 
 @pytest.mark.parametrize(('shape'), [(4,5,6,7,8), (6,4),
@@ -774,118 +851,3 @@ def test_extract_block_diag(shape):
     res = _extract_block_diag(_block_diag(sp_x), shape)
 
     assert_equal(res.toarray(), sp_x.toarray())
-
-
-mat_mat_shapes = [
-    ((2, 3, 4, 5), (2, 3, 5, 7)), 
-    ((0, 0), (0,)), 
-    ((4, 4, 2, 0), (0,)),
-    ((7,8,3), (3,)),
-    ((6, 5, 3, 2, 4), (4, 3)),
-    ((1, 3, 2, 4), (6, 5, 1, 4, 3)),
-    ((6, 1, 1, 2, 4), (1, 3, 4, 3)),
-    ((2, 5), (5, 1))
-]
-@pytest.mark.parametrize(('mat_shape1', 'mat_shape2'), mat_mat_shapes)
-def test_nd_matmul_sparse(mat_shape1, mat_shape2):
-    rng = np.random.default_rng(23409823)
-
-    sp_x = random_array(mat_shape1, density=0.6, random_state=rng, dtype=int)
-    sp_y = random_array(mat_shape2, density=0.6, random_state=rng, dtype=int)
-    den_x, den_y = sp_x.toarray(), sp_y.toarray()
-    exp = den_x @ den_y
-    res = sp_x @ sp_y
-    assert_equal(res.toarray(), exp)
-
-
-def test_nd_matmul_sparse_with_inconsistent_arrays():
-    rng = np.random.default_rng(23409823)
-
-    sp_x = random_array((4,5,7,6,3), density=0.6, random_state=rng, dtype=int)
-    sp_y = random_array((1,5,3,2,5), density=0.6, random_state=rng, dtype=int)
-    with pytest.raises(ValueError, match="matmul: dimension mismatch with signature"):
-        sp_x @ sp_y
-    
-    sp_z = random_array((1,5,3,2), density=0.6, random_state=rng, dtype=int)
-    with pytest.raises(ValueError, match="Batch dimensions are not broadcastable"):
-        sp_x @ sp_z
-
-
-mat_mat_shapes = [
-    ((2, 3, 4, 5), (2, 3, 5, 7)), 
-    ((0, 0), (0,)), 
-    ((4, 4, 2, 0), (0,)),
-    ((7, 8, 3), (3,)),
-    ((7, 8, 3), (3, 1)),
-    ((6, 5, 3, 2, 4), (4, 3)),
-    ((1, 3, 2, 4), (6, 5, 1, 4, 3)),
-    ((6, 1, 1, 2, 4), (1, 3, 4, 3)),
-    ((4,), (2, 4, 3)),
-    ((2, 5), (5, 1))
-]
-@pytest.mark.parametrize(('mat_shape1', 'mat_shape2'), mat_mat_shapes)
-def test_nd_matmul_dense(mat_shape1, mat_shape2):
-    rng = np.random.default_rng(23409823)
-
-    sp_x = random_array(mat_shape1, density=0.6, random_state=rng, dtype=int)
-    sp_y = random_array(mat_shape2, density=0.6, random_state=rng, dtype=int)
-    den_x, den_y = sp_x.toarray(), sp_y.toarray()
-    exp = den_x @ den_y
-    res = sp_x @ den_y
-    assert_equal(res, exp)
-    res = sp_x @ list(den_y)
-    assert_equal(res, exp)
-
-
-dot_shapes = [
-    ((4,), (4,)), ((16,), (16,)), # 1d-1d dot
-    ((3,3), (3,3)), ((4,6), (6,7)), ((1,4), (4,1)), # matrix multiplication 2-D
-    ((3,2,4,7), (7,)), ((5,), (6,3,5,2)), # dot of n-D and 1-D arrays
-    ((4,6), (3,2,6,4)), ((2,8,7), (4,5,7,7,2)), # dot of n-D and m-D arrays
-]
-@pytest.mark.parametrize(('a_shape', 'b_shape'), dot_shapes)
-def test_dot_sparse_dense(a_shape, b_shape): 
-    rng = np.random.default_rng(23409823)
-    
-    arr_a = random_array(a_shape, density=0.6, random_state=rng, dtype=int)
-    arr_b = random_array(b_shape, density=0.6, random_state=rng, dtype=int)
-
-    exp = np.dot(arr_a.toarray(), arr_b.toarray())
-    res = arr_a.dot(arr_b.toarray())
-    assert_equal(res, exp)
-
-
-tensordot_shapes_and_axes = [
-    ((4,6), (6,7), ([1], [0])),
-    ((3,2,4,7), (7,), ([3], [0])),
-    ((5,), (6,3,5,2), ([0], [2])),
-    ((4,5,7,6), (3,2,6,4), ([0, 3], [3, 2])),
-    ((2,8,7), (4,5,7,8,2), ([0, 1, 2], [4, 3, 2])),
-    ((4,5,3,2,6), (3,2,6,7,8), 3),
-    ((4,5,7),(7,3,7), 1),
-    ((2,3,4), (2,3,4), ([0, 1, 2], [0, 1, 2])),
-]
-@pytest.mark.parametrize(('a_shape', 'b_shape', 'axes'), tensordot_shapes_and_axes)
-def test_tensordot_sparse_dense(a_shape, b_shape, axes): 
-    rng = np.random.default_rng(23409823)
-    
-    arr_a = random_array(a_shape, density=0.6, random_state=rng, dtype=int)
-    arr_b = random_array(b_shape, density=0.6, random_state=rng, dtype=int)
-
-    exp = np.tensordot(arr_a.toarray(), arr_b.toarray(), axes=axes)
-    res = arr_a.tensordot(arr_b.toarray(), axes=axes)
-    assert_equal(res, exp)
-
-
-@pytest.mark.parametrize(('actual_shape', 'broadcast_shape'),
-                         [((1,3,5,4), (2,3,5,4)), ((2,1,5,4), (6,2,3,5,4)),
-                          ((1,1,7,8,9), (4,5,6,7,8,9)), ((1,3), (4,5,3)),
-                          ((7,8,1), (7,8,5)), ((3,1), (3,4)), ((1,), (5,)),
-                          ((1,1,1), (4,5,6)), ((1,3,1,5,4), (8,2,3,9,5,4)),])
-def test_broadcast_to(actual_shape, broadcast_shape):
-    rng = np.random.default_rng(23409823)
-    
-    arr = random_array(actual_shape, density=0.6, random_state=rng, dtype=int)
-    res = arr.broadcast_to(broadcast_shape)
-    exp = np.broadcast_to(arr.toarray(), broadcast_shape)
-    assert_equal(res.toarray(), exp)
