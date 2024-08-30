@@ -61,7 +61,7 @@ XSF_HOST_DEVICE inline double gdtrib(double a, double p, double x) {
     double lower_bound = std::numeric_limits<double>::min();
     double upper_bound = std::numeric_limits<double>::max();
     auto [xl, xr, f_xl, f_xr, bracket_status] = detail::bracket_root_for_cdf_inversion(
-        func, 1.0, lower_bound, upper_bound, -0.875, 7.0, 0.125, 8, false, 310, args
+        func, 1.0, lower_bound, upper_bound, -0.875, 7.0, 0.125, 8, false, 342, args
     );
     if (bracket_status == 1) {
         set_error("gdtrib", SF_ERROR_UNDERFLOW, NULL);
