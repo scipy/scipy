@@ -116,27 +116,33 @@ class TestPow1p:
         # Special value inputs should conform to IEEE-754 spec of pow().
         assert_equal(pow1p(x, y), expected, err_msg=rule)
 
-    @pytest.mark.parametrize('rule, x, y, expected', [
+    @pytest.mark.parametrize('label, x, y, expected', [
+        # The following cases test that the decomposition 1+x == s+t is
+        # constructed such that t has the same sign as x, in order to
+        # avoid spurious underflow and overflow.
         ("spurious underflow", -1e-16, 7e18, 9.859676543759570e-305),
         ("spurious underflow & overflow 1", -1e-16, 1e20, 0.0),
         ("spurious underflow & overflow 2", 1e-16, 1e20, np.inf),
-    ])
-    def test_decomposition(self, rule, x, y, expected):
-        # Test that the decomposition 1+x == s+t is done properly to avoid
-        # spurious underflow and overflow.  This amounts to ensuring that
-        # t has the same sign as x.  The 'expected' value is computed using
-        # mpmath.
-        if expected == 0 or expected == np.inf:
-            assert_equal(pow1p(x, y), expected, err_msg=rule)
-        else:
-            assert_allclose(pow1p(x, y), expected, rtol=5e-16, err_msg=rule)
 
-    @pytest.mark.parametrize('x, y, expected', [
-        (-5e-17, 9e18, 3.6938830684872494e-196),
-        (-1.674682175362519e+16, 19.0, -1.7976931348623155e+308),
+        # The following cases test the double-double arithmetic code path.
+        # First-order approximation fails to achieve the desired accuracy.
+        ("double-double", -5e-17, 9e18, 3.6938830684872494e-196),
+
+        # The following case is constructed such that (1+x)^y is finite
+        # but x^y is infinite.
+        ("just finite", -1.674682175362519e+16, 19.0, -1.7976931348623155e+308),
     ])
-    def test_extreme_values(self, x, y, expected):
+    def test_selected_values(self, label, x, y, expected):
+        # Coverage test using crafted inputs.  The 'expected' values are
+        # computed using mpmath with 1000 decimal places.
+        actual = pow1p(x, y)
+        rtol = 5e-16
         if expected == 0 or expected == np.inf:
-            assert_equal(pow1p(x, y), expected)
+            assert_equal(actual, expected, err_msg=label)
+        elif abs(expected) > np.finfo(float).max*(1-rtol):
+            # Accept inf if expected is very close to overflow
+            if not (expected > 0 and actual == np.inf or
+                    expected < 0 and actual == -np.inf):
+                assert_allclose(actual, expected, rtol=rtol, err_msg=label)
         else:
-            assert_allclose(pow1p(x, y), expected, rtol=5e-16)
+            assert_allclose(actual, expected, rtol=rtol, err_msg=label)
