@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include "cephes/igam.h"
@@ -60,7 +61,7 @@ XSF_HOST_DEVICE inline double gdtrib(double a, double p, double x) {
     double lower_bound = std::numeric_limits<double>::min();
     double upper_bound = std::numeric_limits<double>::max();
     auto [xl, xr, f_xl, f_xr, bracket_status] =
-        detail::bracket_root_for_cdf_inversion(func, 0.1, 1.0, lower_bound, upper_bound, 10.0, false, 100, args);
+        detail::bracket_root_for_cdf_inversion(func, 1.0, lower_bound, upper_bound, -0.9, 9.0, 0.1, 10.0, false, 310, args);
     if (bracket_status == 1) {
         set_error("gdtrib", SF_ERROR_UNDERFLOW, NULL);
         return 0.0;

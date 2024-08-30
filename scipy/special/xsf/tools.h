@@ -263,8 +263,9 @@ namespace detail {
     }
 
     /* Find initial bracket for a bracketing scalar root finder. A valid bracket is a pair of points a < b for
-     * which the signs of f(a) and f(b) differ. x_left and x_right give the initial bracket, and x_min and
-     * x_max define the search space. This is a private function intended specifically for the situation where
+     * which the signs of f(a) and f(b) differ.
+     *
+     * This is a private function intended specifically for the situation where
      * the goal is to invert a CDF function F for a parametrized family of distributions with respect to one
      * parameter, when the other parameters are known, and where F is monotonic with respect to the unknown parameter.
      *
@@ -275,55 +276,50 @@ namespace detail {
      * This should be revisited in the future in order to allow simplifying this code. */
     template <typename... Args>
     XSF_HOST_DEVICE inline std::tuple<double, double, double, double, int> bracket_root_for_cdf_inversion(
-        double (*func)(double, std::tuple<Args...>), double x_left, double x_right, double xmin, double xmax,
-        double factor, bool increasing, std::uint64_t maxiter, std::tuple<Args...> args
+	double (*func)(double, std::tuple<Args...>), double x0, double xmin, double xmax, double step0_left, double step0_right,
+        double factor_left, double factor_right, bool increasing, std::uint64_t maxiter, std::tuple<Args...> args
     ) {
-        double y_left = func(x_left, args), y_right = func(x_right, args);
-        double y_left_sgn = std::signbit(y_left), y_right_sgn = std::signbit(y_right);
+        double y0 = func(x0, args);
 
-        if (y_left_sgn != y_right_sgn || (y_left == 0 || y_right == 0)) {
-            /* The initial bracket is valid. */
-            std::tuple<double, double, double, double, int> result(x_left, x_right, y_left, y_right, 0);
-            return result;
-        }
+	if (y0 == 0) {
+	    // Initial guess is correct.
+	    std::tuple<double, double, double, double, int> result(x0, x0, y0, y0, 0);
+	    return result;
+	}
+
+        double y0_sgn = std::signbit(y0);
+
         bool search_left;
         /* The frontier is the new leading endpoint of the expanding bracket. The
          * interior endpoint trails behind the frontier. In each step, the old frontier
          * endpoint becomes the new interior endpoint. */
-        double interior, frontier, y_interior, y_frontier, y_interior_sgn, y_frontier_sgn, boundary;
-        if ((increasing && y_right < 0) || (!increasing && y_right > 0)) {
+        double interior, frontier, y_interior, y_frontier, y_interior_sgn, y_frontier_sgn, boundary, factor;
+        if ((increasing && y0 < 0) || (!increasing && y0 > 0)) {
             /* If func is increasing  and func(x_right) < 0 or if func is decreasing and
              *  f(y_right) > 0, we should expand the bracket to the right. */
-            interior = x_left, frontier = x_right, y_interior = y_left, y_frontier = y_right;
-            y_interior_sgn = y_left_sgn;
-            y_frontier_sgn = y_right_sgn;
+            interior = x0, y_interior = y0;
+	    frontier = x0 + step0_right;
+	    y_frontier = func(frontier, args);
+            y_interior_sgn = y0_sgn;
+            y_frontier_sgn = std::signbit(y_frontier);
             search_left = false;
             boundary = xmax;
+	    factor = factor_right;
         } else {
-            /* Otherwise we move and expand the bracket to the left. */
-            interior = x_right, frontier = x_left, y_interior = y_right, y_frontier = y_left;
-            y_interior_sgn = y_right_sgn;
-            y_frontier_sgn = y_left_sgn;
+	    /* Otherwise we move and expand the bracket to the left. */
+	    interior = x0, y_interior = y0;
+	    frontier = x0 + step0_left;
+	    y_frontier = func(frontier, args);
+            y_interior_sgn = y0_sgn;
+            y_frontier_sgn = std::signbit(y_frontier);
             search_left = true;
             boundary = xmin;
+	    factor = factor_left;
         }
 
-        bool stop = false;
+        bool reached_boundary = false;
         for (std::uint64_t i = 0; i < maxiter; i++) {
-            double step = (frontier - interior) * factor;
-            interior = frontier;
-            y_interior = y_frontier;
-            y_interior_sgn = y_frontier_sgn;
-            frontier += step;
-            if ((search_left && frontier <= boundary) || (!search_left && frontier >= boundary)) {
-                /* If the frontier has reached the boundary, set it to the boundary and signal
-                 * the algorithm to stop. We cannot search further. */
-                frontier = boundary;
-                stop = true;
-            }
-            y_frontier = func(frontier, args);
-            y_frontier_sgn = std::signbit(y_frontier);
-            if (y_frontier_sgn != y_interior_sgn || (y_frontier == 0.0)) {
+	    if (y_frontier_sgn != y_interior_sgn || (y_frontier == 0.0)) {
                 /* Stopping condition, func evaluated at endpoints of bracket has opposing signs,
                  * meeting requirement for bracketing root finder. (Or endpoint has reached a
                  * zero.) */
@@ -335,8 +331,7 @@ namespace detail {
                 std::tuple<double, double, double, double, int> result(interior, frontier, y_interior, y_frontier, 0);
                 return result;
             }
-
-            if (stop) {
+	    if (reached_boundary) {
                 /* We've reached a boundary point without finding a root . */
                 std::tuple<double, double, double, double, int> result(
                     std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN(),
@@ -345,10 +340,24 @@ namespace detail {
                 );
                 return result;
             }
+            double step = (frontier - interior) * factor;
+            interior = frontier;
+            y_interior = y_frontier;
+            y_interior_sgn = y_frontier_sgn;
+            frontier += step;
+            if ((search_left && frontier <= boundary) || (!search_left && frontier >= boundary)) {
+                /* If the frontier has reached the boundary, set a flag so the algorithm will know
+		 * not to search beyond this point. */
+                frontier = boundary;
+                reached_boundary = true;
+            }
+            y_frontier = func(frontier, args);
+            y_frontier_sgn = std::signbit(y_frontier);
+
         }
         /* Failed to converge within maxiter iterations. If maxiter is sufficiently high and
-         * factor > 1, this should only happen due to a bug in this function. Limiting the number
-	 * of iterations is a defensive programming measure. */
+         * factor_left and factor_right are set appropriately, this should only happen due to
+	 * a bug in this function. Limiting the number of iterations is a defensive programming measure. */
         std::tuple<double, double, double, double, int> result(
             std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN(),
             std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN(), 3
