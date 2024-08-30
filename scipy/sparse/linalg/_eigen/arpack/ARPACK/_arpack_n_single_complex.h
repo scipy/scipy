@@ -2,7 +2,6 @@
 #define _ARPACK_N_SINGLE_COMPLEX_H
 
 #include "_arpack.h"
-#include "_arpack_complexdefs.h"
 
 // BLAS Routines used
 void caxpy_(int* n, ARPACK_CPLXF_TYPE* alpha, ARPACK_CPLXF_TYPE* x, int* incx, ARPACK_CPLXF_TYPE* y, int* incy);
