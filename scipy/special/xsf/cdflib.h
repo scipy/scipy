@@ -15,11 +15,11 @@ XSF_HOST_DEVICE inline double gdtrib(double a, double p, double x) {
         set_error("gdtrib", SF_ERROR_DOMAIN, "Input parameter p is out of range");
         return std::numeric_limits<double>::quiet_NaN();
     }
-    if (!(a > 0)) {
+    if (!(a > 0) || std::isinf(a)) {
         set_error("gdtrib", SF_ERROR_DOMAIN, "Input parameter a is out of range");
         return std::numeric_limits<double>::quiet_NaN();
     }
-    if (!(x >= 0)) {
+    if (!(x >= 0) || std::isinf(x)) {
         set_error("gdtrib", SF_ERROR_DOMAIN, "Input parameter x is out of range");
         return std::numeric_limits<double>::quiet_NaN();
     }
