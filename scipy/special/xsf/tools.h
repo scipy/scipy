@@ -276,16 +276,17 @@ namespace detail {
      * This should be revisited in the future in order to allow simplifying this code. */
     template <typename... Args>
     XSF_HOST_DEVICE inline std::tuple<double, double, double, double, int> bracket_root_for_cdf_inversion(
-	double (*func)(double, std::tuple<Args...>), double x0, double xmin, double xmax, double step0_left, double step0_right,
-        double factor_left, double factor_right, bool increasing, std::uint64_t maxiter, std::tuple<Args...> args
+        double (*func)(double, std::tuple<Args...>), double x0, double xmin, double xmax, double step0_left,
+        double step0_right, double factor_left, double factor_right, bool increasing, std::uint64_t maxiter,
+        std::tuple<Args...> args
     ) {
         double y0 = func(x0, args);
 
-	if (y0 == 0) {
-	    // Initial guess is correct.
-	    std::tuple<double, double, double, double, int> result(x0, x0, y0, y0, 0);
-	    return result;
-	}
+        if (y0 == 0) {
+            // Initial guess is correct.
+            std::tuple<double, double, double, double, int> result(x0, x0, y0, y0, 0);
+            return result;
+        }
 
         double y0_sgn = std::signbit(y0);
 
@@ -298,26 +299,26 @@ namespace detail {
             /* If func is increasing  and func(x_right) < 0 or if func is decreasing and
              *  f(y_right) > 0, we should expand the bracket to the right. */
             interior = x0, y_interior = y0;
-	    frontier = x0 + step0_right;
+            frontier = x0 + step0_right;
             y_interior_sgn = y0_sgn;
             search_left = false;
             boundary = xmax;
-	    factor = factor_right;
+            factor = factor_right;
         } else {
-	    /* Otherwise we move and expand the bracket to the left. */
-	    interior = x0, y_interior = y0;
-	    frontier = x0 + step0_left;
+            /* Otherwise we move and expand the bracket to the left. */
+            interior = x0, y_interior = y0;
+            frontier = x0 + step0_left;
             y_interior_sgn = y0_sgn;
             search_left = true;
             boundary = xmin;
-	    factor = factor_left;
+            factor = factor_left;
         }
 
         bool reached_boundary = false;
         for (std::uint64_t i = 0; i < maxiter; i++) {
-	    y_frontier = func(frontier, args);
-	    y_frontier_sgn = std::signbit(y_frontier);
-	    if (y_frontier_sgn != y_interior_sgn || (y_frontier == 0.0)) {
+            y_frontier = func(frontier, args);
+            y_frontier_sgn = std::signbit(y_frontier);
+            if (y_frontier_sgn != y_interior_sgn || (y_frontier == 0.0)) {
                 /* Stopping condition, func evaluated at endpoints of bracket has opposing signs,
                  * meeting requirement for bracketing root finder. (Or endpoint has reached a
                  * zero.) */
@@ -329,7 +330,7 @@ namespace detail {
                 std::tuple<double, double, double, double, int> result(interior, frontier, y_interior, y_frontier, 0);
                 return result;
             }
-	    if (reached_boundary) {
+            if (reached_boundary) {
                 /* We've reached a boundary point without finding a root . */
                 std::tuple<double, double, double, double, int> result(
                     std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN(),
@@ -345,14 +346,14 @@ namespace detail {
             frontier += step;
             if ((search_left && frontier <= boundary) || (!search_left && frontier >= boundary)) {
                 /* If the frontier has reached the boundary, set a flag so the algorithm will know
-		 * not to search beyond this point. */
+                 * not to search beyond this point. */
                 frontier = boundary;
                 reached_boundary = true;
             }
         }
         /* Failed to converge within maxiter iterations. If maxiter is sufficiently high and
          * factor_left and factor_right are set appropriately, this should only happen due to
-	 * a bug in this function. Limiting the number of iterations is a defensive programming measure. */
+         * a bug in this function. Limiting the number of iterations is a defensive programming measure. */
         std::tuple<double, double, double, double, int> result(
             std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN(),
             std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN(), 3
