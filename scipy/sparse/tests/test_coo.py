@@ -805,7 +805,8 @@ def test_tensordot_with_invalid_args():
     arr_b = random_array((4,6,3,2), density=0.6, random_state=rng, dtype=int)
 
     axes = ([2,0,1], [1,3]) # lists have different lengths
-    with pytest.raises(ValueError, match="axes lists/tuples must be of the same length"):
+    with pytest.raises(ValueError, match="axes lists/tuples must be of the"
+                       " same length"):
         arr_a.tensordot(arr_b, axes=axes)
 
 
@@ -847,7 +848,6 @@ def test_block_diag(shape):
 def test_extract_block_diag(shape):
     rng = np.random.default_rng(23409823)
     sp_x = random_array(shape, density=0.6, random_state=rng, dtype=int)
-    den_x = sp_x.toarray()
     res = _extract_block_diag(_block_diag(sp_x), shape)
 
     assert_equal(res.toarray(), sp_x.toarray())
