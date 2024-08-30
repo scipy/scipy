@@ -815,10 +815,12 @@ mat_mat_shapes = [
     ((2, 3, 4, 5), (2, 3, 5, 7)), 
     ((0, 0), (0,)), 
     ((4, 4, 2, 0), (0,)),
-    ((7,8,3), (3,)),
+    ((7, 8, 3), (3,)),
+    ((7, 8, 3), (3, 1)),
     ((6, 5, 3, 2, 4), (4, 3)),
     ((1, 3, 2, 4), (6, 5, 1, 4, 3)),
     ((6, 1, 1, 2, 4), (1, 3, 4, 3)),
+    ((4,), (2, 4, 3)),
     ((2, 5), (5, 1))
 ]
 @pytest.mark.parametrize(('mat_shape1', 'mat_shape2'), mat_mat_shapes)
@@ -830,6 +832,8 @@ def test_nd_matmul_dense(mat_shape1, mat_shape2):
     den_x, den_y = sp_x.toarray(), sp_y.toarray()
     exp = den_x @ den_y
     res = sp_x @ den_y
+    assert_equal(res, exp)
+    res = sp_x @ list(den_y)
     assert_equal(res, exp)
 
 
@@ -883,7 +887,5 @@ def test_broadcast_to(actual_shape, broadcast_shape):
     
     arr = random_array(actual_shape, density=0.6, random_state=rng, dtype=int)
     res = arr.broadcast_to(broadcast_shape)
-    print(res.shape)
     exp = np.broadcast_to(arr.toarray(), broadcast_shape)
-    print(exp.shape)
     assert_equal(res.toarray(), exp)
