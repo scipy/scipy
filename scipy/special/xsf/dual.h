@@ -56,6 +56,12 @@ struct dual {
         return *this;
     }
 
+    dual &operator+=(const T &rhs) {
+        values[0] += rhs;
+
+        return *this;
+    }
+
     dual &operator-=(const dual &rhs) {
         for (size_t i = 0; i <= N; ++i) {
             values[i] -= rhs.values[i];
@@ -152,6 +158,16 @@ dual<T, N> operator-(const dual<T, N> &lhs, const dual<T, N> &rhs) {
 }
 
 template <typename T, size_t N>
+dual<T, N> operator*(const T &lhs, const dual<T, N> &rhs) {
+    dual<T, N> res;
+    for (int i = 0; i <= N; ++i) {
+        res.values[i] = lhs * rhs[i];
+    }
+
+    return res;
+}
+
+template <typename T, size_t N>
 dual<T, N> operator*(const dual<T, N> &lhs, const T &rhs) {
     dual<T, N> res;
     for (int i = 0; i <= N; ++i) {
@@ -183,6 +199,26 @@ dual<T, N> operator/(const dual<T, N> &lhs, const dual<T, N> &rhs) {
             res.values[i] -= rhs.values[j] * res.values[i - j];
         }
         res.values[i] /= rhs.values[0];
+    }
+
+    return res;
+}
+
+template <typename T, size_t N>
+dual<T, N> operator/(const T &lhs, const dual<T, N> &rhs) {
+    dual<T, N> res;
+    for (int i = 0; i <= N; ++i) {
+        res[i] = lhs / rhs[i];
+    }
+
+    return res;
+}
+
+template <typename T, size_t N>
+dual<T, N> operator/(const dual<T, N> &lhs, const T &rhs) {
+    dual<T, N> res;
+    for (int i = 0; i <= N; ++i) {
+        res[i] = lhs[i] / rhs;
     }
 
     return res;
@@ -222,6 +258,11 @@ xsf::dual<T, 0> abs(xsf::dual<T, 0> z) {
 }
 
 template <typename T>
+xsf::dual<T, 0> abs(xsf::dual<std::complex<T>, 0> z) {
+    return z.from_coef({std::abs(z[0])});
+}
+
+template <typename T>
 xsf::dual<T, 1> abs(xsf::dual<T, 1> z) {
     if (z < 0) {
         return z.from_coef({std::abs(z.value()), T(-1)});
@@ -231,12 +272,30 @@ xsf::dual<T, 1> abs(xsf::dual<T, 1> z) {
 }
 
 template <typename T>
+xsf::dual<T, 1> abs(xsf::dual<std::complex<T>, 1> z) {
+    if (std::real(z) < 0) {
+        return z.from_coef({std::abs(z.value()), std::real(z[0]) / std::abs(z[0])});
+    }
+
+    return z.from_coef({std::abs(z.value()), std::real(z[0]) / std::abs(z[0])});
+}
+
+template <typename T>
 xsf::dual<T, 2> abs(xsf::dual<T, 2> z) {
     if (z < 0) {
         return z.from_coef({std::abs(z.value()), T(-1), T(0)});
     }
 
     return z.from_coef({std::abs(z.value()), T(1), T(0)});
+}
+
+template <typename T>
+xsf::dual<T, 2> abs(xsf::dual<std::complex<T>, 2> z) {
+    if (std::real(z) < 0) {
+        return z.from_coef({std::abs(z.value()), std::real(z[0]) / std::abs(z[0]), T(0)});
+    }
+
+    return z.from_coef({std::abs(z.value()), std::real(z[0]) / std::abs(z[0]), T(0)});
 }
 
 template <typename T>

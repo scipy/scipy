@@ -46,24 +46,7 @@ void legendre_p_for_each_n(int n, T z, T (&res)[2], Func f) {
     forward_recur(0, n + 1, re_n, res, f);
 }
 
-/**
- * Compute the Legendre polynomial of degree n.
- *
- * @param n degree of the polynomial
- * @param z argument of the polynomial, either real or complex
- * @param res result (gradient)
- */
-template <typename T, typename... OutputVals>
-void legendre_p(int n, T z, std::tuple<OutputVals &...> res) {
-    static constexpr size_t N = sizeof...(OutputVals) - 1;
-
-    dual<T, N> res_n[2];
-    legendre_p_for_each_n(n, make_dual<N>(z), res_n, [](int n, const dual<T, N>(&res_n)[2]) {});
-
-    res = res_n[1].derivatives();
-}
-
-/**
+/*
  * Compute the Legendre polynomial of degree n.
  *
  * @param n degree of the polynomial
@@ -88,13 +71,11 @@ T legendre_p(int n, T z) {
  */
 template <typename T, typename... OutputVecs>
 void legendre_p_all(T z, std::tuple<OutputVecs &...> res) {
-    static constexpr size_t N = sizeof...(OutputVecs) - 1;
-
     auto &res0 = std::get<0>(res);
     int n = res0.extent(0) - 1;
 
-    dual<T, N> res_n[2];
-    legendre_p_for_each_n(n, make_dual<N>(z), res_n, [&res](int n, dual<T, N>(&res_n)[2]) {
+    T res_n[2];
+    legendre_p_for_each_n(n, z, res_n, [&res](int n, const T(&res_n)[2]) {
         tuples::call(res, n) = res_n[1].derivatives();
     });
 }
@@ -137,30 +118,12 @@ struct assoc_legendre_p_initializer_m_abs_m<T, assoc_legendre_unnorm_policy> {
         }
     }
 
-    void operator()(std::tuple<T (&)[2]> res) const {
-        tuples::assign(res, {{T(1), w}});
+    void operator()(T (&res)[2]) const {
+        res[0] = T(1);
+        res[1] = w;
 
         if (m_signbit) {
-            std::get<0>(res)[1] /= 2;
-        }
-    }
-
-    void operator()(std::tuple<T (&)[2], T (&)[2]> res) const {
-        tuples::assign(res, {{T(1), w}, {T(0), -branch_cut_sign * z / w}});
-
-        if (m_signbit) {
-            std::get<0>(res)[1] /= 2;
-            std::get<1>(res)[1] /= 2;
-        }
-    }
-
-    void operator()(std::tuple<T (&)[2], T (&)[2], T (&)[2]> res) const {
-        tuples::assign(res, {{T(1), w}, {T(0), -branch_cut_sign * z / w}, {T(0), T(1) / ((z * z - T(1)) * w)}});
-
-        if (m_signbit) {
-            std::get<0>(res)[1] /= 2;
-            std::get<1>(res)[1] /= 2;
-            std::get<2>(res)[1] /= 2;
+            res[1] /= 2;
         }
     }
 };
@@ -192,23 +155,9 @@ struct assoc_legendre_p_initializer_m_abs_m<T, assoc_legendre_norm_policy> {
         }
     }
 
-    void operator()(std::tuple<T (&)[2]> res) const {
-        tuples::assign(res, {{T(1) / std::sqrt(T(2)), std::sqrt(T(3)) * w / T(2)}});
-    }
-
-    void operator()(std::tuple<T (&)[2], T (&)[2]> res) const {
-        tuples::assign(
-            res, {{T(1) / std::sqrt(T(2)), std::sqrt(T(3)) * w / T(2)},
-                  {0, -branch_cut_sign * std::sqrt(T(3)) * z / (T(2) * w)}}
-        );
-    }
-
-    void operator()(std::tuple<T (&)[2], T (&)[2], T (&)[2]> res) const {
-        tuples::assign(
-            res, {{T(1) / std::sqrt(T(2)), std::sqrt(T(3)) * w / T(2)},
-                  {0, -branch_cut_sign * std::sqrt(T(3)) * z / (T(2) * w)},
-                  {0, std::sqrt(T(3)) * T(1) / ((z * z - T(1)) * w) / (T(2))}}
-        );
+    void operator()(T (&res)[2]) const {
+        res[0] = T(1) / std::sqrt(T(2));
+        res[1] = std::sqrt(T(3)) * w / T(2);
     }
 };
 
@@ -231,7 +180,7 @@ struct assoc_legendre_p_recurrence_m_abs_m<T, assoc_legendre_unnorm_policy> {
 
     // other square roots can be avoided if each iteration increments by 2
 
-    void operator()(int m, std::tuple<T (&)[2]> res) const {
+    void operator()(int m, T (&res)[2]) const {
         int m_abs = std::abs(m);
 
         T fac;
@@ -241,33 +190,8 @@ struct assoc_legendre_p_recurrence_m_abs_m<T, assoc_legendre_unnorm_policy> {
             fac = branch_cut_sign * T((2 * m_abs - 1) * (2 * m_abs - 3));
         }
 
-        tuples::assign(res, {{fac * (T(1) - z * z), T(0)}});
-    }
-
-    void operator()(int m, std::tuple<T (&)[2], T (&)[2]> res) const {
-        int m_abs = std::abs(m);
-
-        T fac;
-        if (m < 0) {
-            fac = branch_cut_sign / T((2 * m_abs) * (2 * m_abs - 2));
-        } else {
-            fac = branch_cut_sign * T((2 * m_abs - 1) * (2 * m_abs - 3));
-        }
-
-        tuples::assign(res, {{fac * (T(1) - z * z), 0}, {-T(2) * fac * z, 0}});
-    }
-
-    void operator()(int m, std::tuple<T (&)[2], T (&)[2], T (&)[2]> res) const {
-        int m_abs = std::abs(m);
-
-        T fac;
-        if (m < 0) {
-            fac = branch_cut_sign / T((2 * m_abs) * (2 * m_abs - 2));
-        } else {
-            fac = branch_cut_sign * T((2 * m_abs - 1) * (2 * m_abs - 3));
-        }
-
-        tuples::assign(res, {{fac * (T(1) - z * z), 0}, {-T(2) * fac * z, 0}, {-T(2) * fac, 0}});
+        res[0] = fac * (T(1) - z * z);
+        res[1] = T(0);
     }
 };
 
@@ -285,35 +209,18 @@ struct assoc_legendre_p_recurrence_m_abs_m<T, assoc_legendre_norm_policy> {
         }
     }
 
-    void operator()(int m, std::tuple<T (&)[2]> res) const {
+    void operator()(int m, T (&res)[2]) const {
         int m_abs = std::abs(m);
 
         T fac = branch_cut_sign * std::sqrt(T((2 * m_abs + 1) * (2 * m_abs - 1)) / T(4 * m_abs * (m_abs - 1)));
 
-        tuples::assign(res, {{fac * (T(1) - z * z), T(0)}});
-    }
-
-    void operator()(int m, std::tuple<T (&)[2], T (&)[2]> res) const {
-        int m_abs = std::abs(m);
-
-        T fac = branch_cut_sign * std::sqrt(T((2 * m_abs + 1) * (2 * m_abs - 1)) / T(4 * m_abs * (m_abs - 1)));
-
-        tuples::assign(res, {{fac * (T(1) - z * z), 0}, {-T(2) * fac * z, 0}});
-    }
-
-    void operator()(int m, std::tuple<T (&)[2], T (&)[2], T (&)[2]> res) const {
-        int m_abs = std::abs(m);
-
-        T fac = branch_cut_sign * std::sqrt(T((2 * m_abs + 1) * (2 * m_abs - 1)) / T(4 * m_abs * (m_abs - 1)));
-
-        tuples::assign(res, {{fac * (T(1) - z * z), 0}, {-T(2) * fac * z, 0}, {-T(2) * fac, 0}});
+        res[0] = fac * (T(1) - z * z);
+        res[1] = T(0);
     }
 };
 
-template <typename NormPolicy, typename T, typename... OutputVals, typename Func>
-void assoc_legendre_p_for_each_m_abs_m(
-    NormPolicy norm, int m, T z, int branch_cut, std::tuple<OutputVals (&)[2]...> res, Func f
-) {
+template <typename NormPolicy, typename T, typename Func>
+void assoc_legendre_p_for_each_m_abs_m(NormPolicy norm, int m, T z, int branch_cut, T (&res)[2], Func f) {
     bool m_signbit;
     if (m < 0) {
         m_signbit = true;
@@ -349,34 +256,12 @@ struct assoc_legendre_p_initializer_n<T, assoc_legendre_unnorm_policy> {
     T z;
     int type;
 
-    void operator()(std::tuple<const T &> res_m_abs_m, std::tuple<T (&)[2]> res) const {
+    void operator()(const T &res_m_abs_m, T (&res)[2]) const {
         int m_abs = std::abs(m);
         T fac = T(2 * (m_abs + 1) - 1) / T(m_abs + 1 - m);
 
-        tuples::assign(res, {{std::get<0>(res_m_abs_m), fac * z * std::get<0>(res_m_abs_m)}});
-    }
-
-    void operator()(std::tuple<const T &, const T &> res_m_abs_m, std::tuple<T (&)[2], T (&)[2]> res) const {
-        int m_abs = std::abs(m);
-        T fac = T(2 * (m_abs + 1) - 1) / T(m_abs + 1 - m);
-
-        tuples::assign(
-            res, {{std::get<0>(res_m_abs_m), fac * z * std::get<0>(res_m_abs_m)},
-                  {std::get<1>(res_m_abs_m), fac * (std::get<0>(res_m_abs_m) + z * std::get<1>(res_m_abs_m))}}
-        );
-    }
-
-    void operator()(
-        std::tuple<const T &, const T &, const T &> res_m_abs_m, std::tuple<T (&)[2], T (&)[2], T (&)[2]> res
-    ) const {
-        int m_abs = std::abs(m);
-        T fac = T(2 * (m_abs + 1) - 1) / T(m_abs + 1 - m);
-
-        tuples::assign(
-            res, {{std::get<0>(res_m_abs_m), fac * z * std::get<0>(res_m_abs_m)},
-                  {std::get<1>(res_m_abs_m), fac * (std::get<0>(res_m_abs_m) + z * std::get<1>(res_m_abs_m))},
-                  {std::get<2>(res_m_abs_m), fac * (T(2) * std::get<1>(res_m_abs_m) + z * std::get<2>(res_m_abs_m))}}
-        );
+        res[0] = res_m_abs_m;
+        res[1] = fac * z * res_m_abs_m;
     }
 };
 
@@ -386,31 +271,11 @@ struct assoc_legendre_p_initializer_n<T, assoc_legendre_norm_policy> {
     T z;
     int type;
 
-    void operator()(std::tuple<const T &> res_m_abs_m, std::tuple<T (&)[2]> res) const {
+    void operator()(const T &res_m_abs_m, T (&res)[2]) const {
         T fac = std::sqrt(T(2 * std::abs(m) + 3));
 
-        tuples::assign(res, {{std::get<0>(res_m_abs_m), fac * z * std::get<0>(res_m_abs_m)}});
-    }
-
-    void operator()(std::tuple<const T &, const T &> res_m_abs_m, std::tuple<T (&)[2], T (&)[2]> res) const {
-        T fac = std::sqrt(T(2 * std::abs(m) + 3));
-
-        tuples::assign(
-            res, {{std::get<0>(res_m_abs_m), fac * z * std::get<0>(res_m_abs_m)},
-                  {std::get<1>(res_m_abs_m), fac * (std::get<0>(res_m_abs_m) + z * std::get<1>(res_m_abs_m))}}
-        );
-    }
-
-    void operator()(
-        std::tuple<const T &, const T &, const T &> res_m_abs_m, std::tuple<T (&)[2], T (&)[2], T (&)[2]> res
-    ) const {
-        T fac = std::sqrt(T(2 * std::abs(m) + 3));
-
-        tuples::assign(
-            res, {{std::get<0>(res_m_abs_m), fac * z * std::get<0>(res_m_abs_m)},
-                  {std::get<1>(res_m_abs_m), fac * (std::get<0>(res_m_abs_m) + z * std::get<1>(res_m_abs_m))},
-                  {std::get<2>(res_m_abs_m), fac * (T(2) * std::get<1>(res_m_abs_m) + z * std::get<2>(res_m_abs_m))}}
-        );
+        res[0] = res_m_abs_m;
+        res[1] = fac * z * res_m_abs_m;
     }
 };
 
@@ -423,25 +288,12 @@ struct assoc_legendre_p_recurrence_n<T, assoc_legendre_unnorm_policy> {
     T z;
     int type;
 
-    void operator()(int n, std::tuple<T (&)[2]> res) const {
+    void operator()(int n, T (&res)[2]) const {
         T fac0 = -T(n + m - 1) / T(n - m);
         T fac1 = T(2 * n - 1) / T(n - m);
 
-        tuples::assign(res, {{fac0, fac1 * z}});
-    }
-
-    void operator()(int n, std::tuple<T (&)[2], T (&)[2]> res) const {
-        T fac0 = -T(n + m - 1) / T(n - m);
-        T fac1 = T(2 * n - 1) / T(n - m);
-
-        tuples::assign(res, {{fac0, fac1 * z}, {0, fac1}});
-    }
-
-    void operator()(int n, std::tuple<T (&)[2], T (&)[2], T (&)[2]> res) const {
-        T fac0 = -T(n + m - 1) / T(n - m);
-        T fac1 = T(2 * n - 1) / T(n - m);
-
-        tuples::assign(res, {{fac0, fac1 * z}, {0, fac1}, {0, 0}});
+        res[0] = fac0;
+        res[1] = fac1 * z;
     }
 };
 
@@ -451,27 +303,111 @@ struct assoc_legendre_p_recurrence_n<T, assoc_legendre_norm_policy> {
     T z;
     int type;
 
-    void operator()(int n, std::tuple<T (&)[2]> res) const {
+    void operator()(int n, T (&res)[2]) const {
         T fac0 = -std::sqrt(T((2 * n + 1) * ((n - 1) * (n - 1) - m * m)) / T((2 * n - 3) * (n * n - m * m)));
         T fac1 = std::sqrt(T((2 * n + 1) * (4 * (n - 1) * (n - 1) - 1)) / T((2 * n - 3) * (n * n - m * m)));
 
-        tuples::assign(res, {{fac0, fac1 * z}});
-    }
-
-    void operator()(int n, std::tuple<T (&)[2], T (&)[2]> res) const {
-        T fac0 = -std::sqrt(T((2 * n + 1) * ((n - 1) * (n - 1) - m * m)) / T((2 * n - 3) * (n * n - m * m)));
-        T fac1 = std::sqrt(T((2 * n + 1) * (4 * (n - 1) * (n - 1) - 1)) / T((2 * n - 3) * (n * n - m * m)));
-
-        tuples::assign(res, {{fac0, fac1 * z}, {T(0), fac1}});
-    }
-
-    void operator()(int n, std::tuple<T (&)[2], T (&)[2], T (&)[2]> res) const {
-        T fac0 = -std::sqrt(T((2 * n + 1) * ((n - 1) * (n - 1) - m * m)) / T((2 * n - 3) * (n * n - m * m)));
-        T fac1 = std::sqrt(T((2 * n + 1) * (4 * (n - 1) * (n - 1) - 1)) / T((2 * n - 3) * (n * n - m * m)));
-
-        tuples::assign(res, {{fac0, fac1 * z}, {T(0), fac1}, {T(0), T(0)}});
+        res[0] = fac0;
+        res[1] = fac1 * z;
     }
 };
+
+template <typename NormPolicy, typename T>
+void assoc_legendre_p_pm1(NormPolicy norm, int n, int m, T z, int branch_cut, T &res) {
+    if (m == 0) {
+        res = T(1);
+    } else {
+        res = T(0);
+    }
+}
+
+template <typename NormPolicy, typename T>
+void assoc_legendre_p_pm1(NormPolicy norm, int n, int m, dual<T, 1> z, int branch_cut, dual<T, 1> &res) {
+    if (m == 0) {
+        res[0] = T(1);
+    } else {
+        res[0] = T(0);
+    }
+
+    T branch_cut_sign;
+    if (branch_cut == 3) {
+        branch_cut_sign = -1;
+    } else {
+        branch_cut_sign = 1;
+    }
+
+    if (std::abs(m) > n) {
+        res[1] = 0;
+    } else if (m == 0) {
+        res[1] = T(n) * T(n + 1) * std::pow(z[0], T(n + 1)) / T(2);
+    } else if (m == 1) {
+        res[1] = std::pow(z[0], T(n)) * std::numeric_limits<remove_complex_t<T>>::infinity();
+    } else if (m == 2) {
+        res[1] = -branch_cut_sign * T(n + 2) * T(n + 1) * T(n) * T(n - 1) * std::pow(z[0], T(n + 1)) / T(4);
+    } else if (m == -2) {
+        res[1] = -branch_cut_sign * std::pow(z[0], T(n + 1)) / T(4);
+    } else if (m == -1) {
+        res[1] = -std::pow(z[0], T(n)) * std::numeric_limits<remove_complex_t<T>>::infinity();
+    } else {
+        res[1] = 0;
+    }
+}
+
+template <typename NormPolicy, typename T>
+void assoc_legendre_p_pm1(NormPolicy norm, int n, int m, dual<T, 2> z, int branch_cut, dual<T, 2> &res) {
+    if (m == 0) {
+        res[0] = T(1);
+    } else {
+        res[0] = T(0);
+    }
+
+    T branch_cut_sign;
+    if (branch_cut == 3) {
+        branch_cut_sign = -1;
+    } else {
+        branch_cut_sign = 1;
+    }
+
+    if (std::abs(m) > n) {
+        res[1] = 0;
+    } else if (m == 0) {
+        res[1] = T(n) * T(n + 1) * std::pow(z[0], T(n + 1)) / T(2);
+    } else if (m == 1) {
+        res[1] = std::pow(z[0], T(n)) * std::numeric_limits<remove_complex_t<T>>::infinity();
+    } else if (m == 2) {
+        res[1] = -branch_cut_sign * T(n + 2) * T(n + 1) * T(n) * T(n - 1) * std::pow(z[0], T(n + 1)) / T(4);
+    } else if (m == -2) {
+        res[1] = -branch_cut_sign * std::pow(z[0], T(n + 1)) / T(4);
+    } else if (m == -1) {
+        res[1] = -std::pow(z[0], T(n)) * std::numeric_limits<remove_complex_t<T>>::infinity();
+    } else {
+        res[1] = 0;
+    }
+
+    if (std::abs(m) > n) {
+        res[2] = 0;
+    } else if (m == 0) {
+        res[2] = T(n + 2) * T(n + 1) * T(n) * T(n - 1) / T(8);
+    } else if (m == 1) {
+        res[2] = std::numeric_limits<remove_complex_t<T>>::infinity();
+    } else if (m == 2) {
+        res[2] = -T((n + 1) * n - 3) * T(n + 2) * T(n + 1) * T(n) * T(n - 1) / T(12);
+    } else if (m == 3) {
+        res[2] = std::numeric_limits<remove_complex_t<T>>::infinity();
+    } else if (m == 4) {
+        res[2] = T(n + 4) * T(n + 3) * T(n + 2) * T(n + 1) * T(n) * T(n - 1) * T(n - 2) * T(n - 3) / T(48);
+    } else if (m == -4) {
+        res[2] = 0;
+    } else if (m == -3) {
+        res[2] = -std::numeric_limits<remove_complex_t<T>>::infinity();
+    } else if (m == -2) {
+        res[2] = -T(1) / T(4);
+    } else if (m == -1) {
+        res[2] = -std::numeric_limits<remove_complex_t<T>>::infinity();
+    } else {
+        res[2] = 0;
+    }
+}
 
 template <typename NormPolicy, typename T>
 void assoc_legendre_p_pm1(NormPolicy norm, int n, int m, T z, int branch_cut, std::tuple<T &> res) {
@@ -551,12 +487,12 @@ void assoc_legendre_p_pm1(NormPolicy norm, int n, int m, T z, int branch_cut, st
  *
  * @return value of the polynomial
  */
-template <typename NormPolicy, typename T, typename... OutputVals, typename Func>
+template <typename NormPolicy, typename T, typename Func>
 void assoc_legendre_p_for_each_n(
-    NormPolicy norm, int n, int m, T z, int branch_cut, std::tuple<OutputVals &...> res_m_abs_m,
-    std::tuple<OutputVals (&)[2]...> res, Func f
+    NormPolicy norm, int n, int m, T z, int branch_cut, const T &res_m_abs_m, T (&res)[2], Func f
 ) {
-    tuples::fill(res, 0);
+    res[0] = 0;
+    res[1] = 0;
 
     int m_abs = std::abs(m);
     if (m_abs > n) {
@@ -571,7 +507,7 @@ void assoc_legendre_p_for_each_n(
         if (std::abs(std::real(z)) == 1 && std::imag(z) == 0) {
             for (int j = m_abs; j <= n; ++j) {
                 forward_recur_shift_left(res);
-                assoc_legendre_p_pm1(norm, j, m, z, branch_cut, tuples::access(res, 1));
+                assoc_legendre_p_pm1(norm, j, m, z, branch_cut, res[1]);
 
                 f(j, res);
             }
@@ -585,44 +521,34 @@ void assoc_legendre_p_for_each_n(
     }
 }
 
-template <typename NormPolicy, typename T, typename... OutputVals, typename Func>
-void assoc_legendre_p_for_each_n(
-    NormPolicy norm, int n, int m, T z, int branch_cut, std::tuple<OutputVals (&)[2]...> res, Func f
-) {
-    static constexpr size_t N = sizeof...(OutputVals) - 1;
+template <typename NormPolicy, typename T, typename Func>
+void assoc_legendre_p_for_each_n(NormPolicy norm, int n, int m, T z, int branch_cut, T (&res)[2], Func f) {
+    assoc_legendre_p_for_each_m_abs_m(norm, m, z, branch_cut, res, [](int m, const T(&res)[2]) {});
 
-    assoc_legendre_p_for_each_m_abs_m(norm, m, z, branch_cut, res, [](int m, grad_tuple_t<T(&)[2], N>) {});
-
-    grad_tuple_t<T, N> res_m_abs_m = tuples::access(res, 1);
-    assoc_legendre_p_for_each_n(norm, n, m, z, branch_cut, tuples::ref(res_m_abs_m), res, f);
+    T res_m_abs_m = res[1];
+    assoc_legendre_p_for_each_n(norm, n, m, z, branch_cut, res_m_abs_m, res, f);
 }
 
-template <typename NormPolicy, typename T, typename... OutputVals, typename Func>
-void assoc_legendre_p_for_each_n_m(
-    NormPolicy norm, int n, int m, T z, int branch_cut, std::tuple<OutputVals (&)[2]...> res, Func f
-) {
-    static constexpr size_t N = sizeof...(OutputVals) - 1;
-
-    grad_tuple_t<T[2], N> res_m_abs_m;
+template <typename NormPolicy, typename T, typename Func>
+void assoc_legendre_p_for_each_n_m(NormPolicy norm, int n, int m, T z, int branch_cut, T (&res)[2], Func f) {
+    T res_m_abs_m[2];
     assoc_legendre_p_for_each_m_abs_m(
-        norm, m, z, branch_cut, tuples::ref(res_m_abs_m),
-        [norm, n, z, branch_cut, &res, f](int m, grad_tuple_t<T(&)[2], N> res_m_abs_m) {
-            tuples::access(res, 0) = tuples::access(res_m_abs_m, 1);
+        norm, m, z, branch_cut, res_m_abs_m,
+        [norm, n, z, branch_cut, &res, f](int m, const T(&res_m_abs_m)[2]) {
+            res[0] = res_m_abs_m[1];
 
             assoc_legendre_p_for_each_n(
-                norm, n, m, z, branch_cut, tuples::access(res_m_abs_m, 1), res,
-                [f, m](int n, grad_tuple_t<T(&)[2], N> res_n) { f(n, m, res_n); }
+                norm, n, m, z, branch_cut, res_m_abs_m[1], res, [f, m](int n, const T(&res_n)[2]) { f(n, m, res_n); }
             );
         }
     );
     assoc_legendre_p_for_each_m_abs_m(
-        norm, -m, z, branch_cut, tuples::ref(res_m_abs_m),
-        [norm, n, z, branch_cut, &res, f](int m, grad_tuple_t<T(&)[2], N> res_m_abs_m) {
-            tuples::access(res, 0) = tuples::access(res_m_abs_m, 1);
+        norm, -m, z, branch_cut, res_m_abs_m,
+        [norm, n, z, branch_cut, &res, f](int m, const T(&res_m_abs_m)[2]) {
+            res[0] = res_m_abs_m[1];
 
             assoc_legendre_p_for_each_n(
-                norm, n, m, z, branch_cut, tuples::access(res_m_abs_m, 1), res,
-                [f, m](int n, grad_tuple_t<T(&)[2], N> res_n) { f(n, m, res_n); }
+                norm, n, m, z, branch_cut, res_m_abs_m[1], res, [f, m](int n, const T(&res_n)[2]) { f(n, m, res_n); }
             );
         }
     );
@@ -639,23 +565,11 @@ void assoc_legendre_p_for_each_n_m(
  * @return value of the polynomial
  */
 template <typename NormPolicy, typename T, typename... OutputVals>
-void assoc_legendre_p(NormPolicy norm, int n, int m, T z, int branch_cut, std::tuple<OutputVals &...> res) {
-    static constexpr size_t N = sizeof...(OutputVals) - 1;
-
-    grad_tuple_t<T[2], N> res_n;
-    assoc_legendre_p_for_each_n(
-        norm, n, m, z, branch_cut, tuples::ref(res_n), [](int n, grad_tuple_t<T(&)[2], N> res_n) {}
-    );
-
-    res = tuples::access(res_n, 1);
-}
-
-template <typename NormPolicy, typename T>
 T assoc_legendre_p(NormPolicy norm, int n, int m, T z, int branch_cut) {
-    T res;
-    assoc_legendre_p(norm, n, m, z, branch_cut, std::tie(res));
+    T res_n[2];
+    assoc_legendre_p_for_each_n(norm, n, m, z, branch_cut, res_n, [](int n, const T(&res_n)[2]) {});
 
-    return res;
+    return res_n[1];
 }
 
 /**
@@ -669,24 +583,19 @@ T assoc_legendre_p(NormPolicy norm, int n, int m, T z, int branch_cut) {
  */
 template <typename NormPolicy, typename T, typename... OutputMats>
 void assoc_legendre_p_all(NormPolicy norm, T z, int branch_cut, std::tuple<OutputMats &...> res) {
-    static constexpr size_t N = sizeof...(OutputMats) - 1;
-
     auto &res0 = std::get<0>(res);
     int n = res0.extent(0) - 1;
     int m = (res0.extent(1) - 1) / 2;
 
-    grad_tuple_t<T[2], N> p;
-    assoc_legendre_p_for_each_n_m(
-        norm, n, m, z, branch_cut, tuples::ref(p),
-        [&res](int n, int m, grad_tuple_t<T(&)[2], N> res_n_m) {
-            if (m >= 0) {
-                tuples::call(res, n, m) = tuples::access(res_n_m, 1);
-            } else {
-                auto &res0 = std::get<0>(res);
-                tuples::call(res, n, m + res0.extent(1)) = tuples::access(res_n_m, 1);
-            }
+    T p[2];
+    assoc_legendre_p_for_each_n_m(norm, n, m, z, branch_cut, p, [&res](int n, int m, const T(&res_n_m)[2]) {
+        if (m >= 0) {
+            tuples::call(res, n, m) = res_n_m[1].derivatives();
+        } else {
+            auto &res0 = std::get<0>(res);
+            tuples::call(res, n, m + res0.extent(1)) = res_n_m[1].derivatives();
         }
-    );
+    });
 }
 
 template <typename T>

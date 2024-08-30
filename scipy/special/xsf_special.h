@@ -31,17 +31,17 @@ void legendre_p(long long int n, T z, T &res, T &res_jac, T &res_hess) {
 
 template <typename T, typename OutputVec1>
 void legendre_p_all(T z, OutputVec1 res) {
-    xsf::legendre_p_all(z, std::tie(res));
+    xsf::legendre_p_all(xsf::make_dual<0>(z), std::tie(res));
 }
 
 template <typename T, typename OutputVec1, typename OutputVec2>
 void legendre_p_all(T z, OutputVec1 res, OutputVec2 res_jac) {
-    xsf::legendre_p_all(z, std::tie(res, res_jac));
+    xsf::legendre_p_all(xsf::make_dual<1>(z), std::tie(res, res_jac));
 }
 
 template <typename T, typename OutputVec1, typename OutputVec2, typename OutputVec3>
 void legendre_p_all(T z, OutputVec1 res, OutputVec2 res_jac, OutputVec3 res_hess) {
-    xsf::legendre_p_all(z, std::tie(res, res_jac, res_hess));
+    xsf::legendre_p_all(xsf::make_dual<2>(z), std::tie(res, res_jac, res_hess));
 }
 
 using xsf::assoc_legendre_norm;
@@ -67,18 +67,18 @@ void assoc_legendre_p(NormPolicy norm, long long int n, long long int m, T z, lo
 
 template <typename NormPolicy, typename T, typename OutputMat1>
 void assoc_legendre_p_all(NormPolicy norm, T z, long long int branch_cut, OutputMat1 res) {
-    xsf::assoc_legendre_p_all(norm, z, branch_cut, std::tie(res));
+    xsf::assoc_legendre_p_all(norm, xsf::make_dual<0>(z), branch_cut, std::tie(res));
 }
 
 template <typename NormPolicy, typename T, typename OutputMat1, typename OutputMat2>
 void assoc_legendre_p_all(NormPolicy norm, T z, long long int branch_cut, OutputMat1 res, OutputMat2 res_jac) {
-    xsf::assoc_legendre_p_all(norm, z, branch_cut, std::tie(res, res_jac));
+    xsf::assoc_legendre_p_all(norm, xsf::make_dual<1>(z), branch_cut, std::tie(res, res_jac));
 }
 
 template <typename NormPolicy, typename T, typename OutputMat1, typename OutputMat2, typename OutputMat3>
 void assoc_legendre_p_all(NormPolicy norm, T z, long long int branch_cut, OutputMat1 res, OutputMat2 res_jac,
                           OutputMat3 res_hess) {
-    xsf::assoc_legendre_p_all(norm, z, branch_cut, std::tie(res, res_jac, res_hess));
+    xsf::assoc_legendre_p_all(norm, xsf::make_dual<2>(z), branch_cut, std::tie(res, res_jac, res_hess));
 }
 
 template <typename T>

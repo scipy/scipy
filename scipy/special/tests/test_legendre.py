@@ -130,6 +130,7 @@ class TestAssocLegendreP:
         x = rng.uniform(-0.99, 0.99, shape)
 
         p, p_jac, p_hess = assoc_legendre_p_all(n_max, m_max, x, diff_n=2)
+#        p, p_jac = assoc_legendre_p_all(n_max, m_max, x, diff_n=0)
 
         m = np.concatenate([np.arange(m_max + 1), np.arange(-m_max, 0)])
         n = np.arange(n_max + 1)

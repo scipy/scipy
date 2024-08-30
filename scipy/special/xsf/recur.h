@@ -137,6 +137,31 @@ void forward_recur(InputIt first, InputIt last, Recurrence r, T (&res)[K], Func 
     }
 }
 
+template <typename InputIt, typename Recurrence, typename T, ptrdiff_t K, typename Func>
+void backward_recur(InputIt first, InputIt last, Recurrence r, T (&res)[K], Func f) {
+    InputIt it = first;
+    while (std::abs(it - first) != K && it != last) {
+        forward_recur_rotate_left(res);
+
+        f(it, res);
+        --it;
+    }
+
+    if (std::abs(last - first) > K) {
+        while (it != last) {
+            T coef[K];
+            r(it, coef);
+
+            T tmp = dot(coef, res);
+            forward_recur_shift_left(res);
+            res[K - 1] = tmp;
+
+            f(it, res);
+            --it;
+        }
+    }
+}
+
 template <typename InputIt, typename Recurrence, typename... T, ptrdiff_t K, typename Func>
 void backward_recur(InputIt first, InputIt last, Recurrence r, std::tuple<T (&)[K]...> res, Func f) {
     InputIt it = first;
