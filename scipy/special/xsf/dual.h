@@ -34,7 +34,7 @@ struct dual {
         for (auto it = values.begin(); it != values.end(); ++it) {
             this->values[it - values.begin()] = *it;
         }
-        for (int i = values.size(); i <= N; ++i) {
+        for (size_t i = values.size(); i <= N; ++i) {
             this->values[i] = 0;
         }
     }
@@ -119,7 +119,7 @@ struct dual {
         return *this;
     }
 
-    dual apply(const T (&coef)[N + 1]) {
+    dual apply(const T (&coef)[N + 1]) const {
         dual res(0);
 
         dual x = *this;
@@ -153,7 +153,7 @@ struct dual {
 template <typename T, size_t N>
 dual<T, N> operator-(const dual<T, N> &rhs) {
     dual<T, N> out;
-    for (int i = 0; i <= N; ++i) {
+    for (size_t i = 0; i <= N; ++i) {
         out.values[i] = -rhs.values[i];
     }
 
@@ -264,6 +264,29 @@ dual<T, N> make_dual(T value) {
     return {value, 1};
 }
 
+using std::sqrt;
+
+template <typename T>
+dual<T, 0> sqrt(const dual<T, 0> &z) {
+    T z0_sqrt = std::sqrt(z[0]);
+
+    return z.apply({z0_sqrt});
+}
+
+template <typename T>
+dual<T, 1> sqrt(const dual<T, 1> &z) {
+    T z0_sqrt = std::sqrt(z[0]);
+
+    return z.apply({z0_sqrt, T(1) / (T(2) * z0_sqrt)});
+}
+
+template <typename T>
+dual<T, 2> sqrt(const dual<T, 2> &z) {
+    T z0_sqrt = std::sqrt(z[0]);
+
+    return z.apply({z0_sqrt, T(1) / (T(2) * z0_sqrt), -T(1) / (T(4) * z0_sqrt * z[0])});
+}
+
 } // namespace xsf
 
 namespace std {
@@ -312,27 +335,6 @@ xsf::dual<T, 2> abs(xsf::dual<std::complex<T>, 2> z) {
     }
 
     return z.apply({std::abs(z.value()), std::real(z[0]) / std::abs(z[0]), T(0)});
-}
-
-template <typename T>
-xsf::dual<T, 0> sqrt(xsf::dual<T, 0> z) {
-    T z0_sqrt = std::sqrt(z[0]);
-
-    return z.apply({z0_sqrt});
-}
-
-template <typename T>
-xsf::dual<T, 1> sqrt(xsf::dual<T, 1> z) {
-    T z0_sqrt = std::sqrt(z[0]);
-
-    return z.apply({z0_sqrt, T(1) / (T(2) * z0_sqrt)});
-}
-
-template <typename T>
-xsf::dual<T, 2> sqrt(xsf::dual<T, 2> z) {
-    T z0_sqrt = std::sqrt(z[0]);
-
-    return z.apply({z0_sqrt, T(1) / (T(2) * z0_sqrt), -T(1) / (T(4) * z0_sqrt * z[0])});
 }
 
 template <typename T, size_t N>

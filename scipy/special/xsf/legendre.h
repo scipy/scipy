@@ -104,16 +104,16 @@ struct assoc_legendre_p_initializer_m_abs_m<T, assoc_legendre_unnorm_policy> {
         if (branch_cut == 3) {
 //            branch_cut_sign = T(-1);
 
-            w = std::sqrt(z - T(1)) * std::sqrt(z + T(1)); // do not modify, see function comment
+            w = sqrt(z - T(1)) * sqrt(z + T(1)); // do not modify, see function comment
 
-//            w = std::sqrt(z * z - T(1)); // do not modify, see function comment
+//            w = sqrt(z * z - T(1)); // do not modify, see function comment
 //            if (std::real(z) < 0) {
   //              w = -w;
     //        }
         } else {
 //            branch_cut_sign = T(1);
 
-            w = -std::sqrt(T(1) - z * z); // do not modify, see function comment
+            w = -sqrt(T(1) - z * z); // do not modify, see function comment
             if (m_signbit) {
                 w = -w;
             }
@@ -143,16 +143,16 @@ struct assoc_legendre_p_initializer_m_abs_m<T, assoc_legendre_norm_policy> {
         if (branch_cut == 3) {
 //            branch_cut_sign = T(-1);
 
-//            w = std::sqrt(z * z - T(1)); // do not modify, see function comment
+//            w = sqrt(z * z - T(1)); // do not modify, see function comment
   //          if (std::real(z) < 0) {
     //            w = -w;
       //      }
-            w = std::sqrt(z - T(1)) * std::sqrt(z + T(1)); // do not modify, see function comment
+            w = sqrt(z - T(1)) * sqrt(z + T(1)); // do not modify, see function comment
 
         } else {
 //            branch_cut_sign = T(1);
 
-            w = -std::sqrt(T(1) - z * z); // do not modify, see function comment
+            w = -sqrt(T(1) - z * z); // do not modify, see function comment
             if (m_signbit) {
                 w = -w;
             }
@@ -160,8 +160,8 @@ struct assoc_legendre_p_initializer_m_abs_m<T, assoc_legendre_norm_policy> {
     }
 
     void operator()(T (&res)[2]) const {
-        res[0] = T(1) / std::sqrt(T(2));
-        res[1] = std::sqrt(T(3)) * w / T(2);
+        res[0] = T(1) / sqrt(T(2));
+        res[1] = sqrt(T(3)) * w / T(2);
     }
 };
 
@@ -216,7 +216,7 @@ struct assoc_legendre_p_recurrence_m_abs_m<T, assoc_legendre_norm_policy> {
     void operator()(int m, T (&res)[2]) const {
         int m_abs = std::abs(m);
 
-        T fac = branch_cut_sign * std::sqrt(T((2 * m_abs + 1) * (2 * m_abs - 1)) / T(4 * m_abs * (m_abs - 1)));
+        T fac = branch_cut_sign * sqrt(T((2 * m_abs + 1) * (2 * m_abs - 1)) / T(4 * m_abs * (m_abs - 1)));
 
         res[0] = fac * (T(1) - z * z);
         res[1] = T(0);
@@ -276,7 +276,7 @@ struct assoc_legendre_p_initializer_n<T, assoc_legendre_norm_policy> {
     int type;
 
     void operator()(const T &res_m_abs_m, T (&res)[2]) const {
-        T fac = std::sqrt(T(2 * std::abs(m) + 3));
+        T fac = sqrt(T(2 * std::abs(m) + 3));
 
         res[0] = res_m_abs_m;
         res[1] = fac * z * res_m_abs_m;
@@ -308,8 +308,8 @@ struct assoc_legendre_p_recurrence_n<T, assoc_legendre_norm_policy> {
     int type;
 
     void operator()(int n, T (&res)[2]) const {
-        T fac0 = -std::sqrt(T((2 * n + 1) * ((n - 1) * (n - 1) - m * m)) / T((2 * n - 3) * (n * n - m * m)));
-        T fac1 = std::sqrt(T((2 * n + 1) * (4 * (n - 1) * (n - 1) - 1)) / T((2 * n - 3) * (n * n - m * m)));
+        T fac0 = -sqrt(T((2 * n + 1) * ((n - 1) * (n - 1) - m * m)) / T((2 * n - 3) * (n * n - m * m)));
+        T fac1 = sqrt(T((2 * n + 1) * (4 * (n - 1) * (n - 1) - 1)) / T((2 * n - 3) * (n * n - m * m)));
 
         res[0] = fac0;
         res[1] = fac1 * z;
@@ -613,8 +613,8 @@ struct sph_legendre_p_initializer_m_abs_m {
         : m_signbit(m_signbit), theta(theta), theta_cos(std::cos(theta)), theta_sin(std::sin(theta)) {}
 
     void operator()(std::tuple<T (&)[2]> res) const {
-        T fac0 = T(1) / (T(2) * std::sqrt(T(M_PI)));
-        T fac1 = -std::sqrt(T(3)) / (T(2) * std::sqrt(T(2) * T(M_PI)));
+        T fac0 = T(1) / (T(2) * sqrt(T(M_PI)));
+        T fac1 = -sqrt(T(3)) / (T(2) * sqrt(T(2) * T(M_PI)));
         if (m_signbit) {
             fac1 = -fac1;
         }
@@ -623,8 +623,8 @@ struct sph_legendre_p_initializer_m_abs_m {
     }
 
     void operator()(std::tuple<T (&)[2], T (&)[2]> res) const {
-        T fac0 = T(1) / (T(2) * std::sqrt(T(M_PI)));
-        T fac1 = -std::sqrt(T(3)) / (T(2) * std::sqrt(T(2) * T(M_PI)));
+        T fac0 = T(1) / (T(2) * sqrt(T(M_PI)));
+        T fac1 = -sqrt(T(3)) / (T(2) * sqrt(T(2) * T(M_PI)));
         if (m_signbit) {
             fac1 = -fac1;
         }
@@ -635,8 +635,8 @@ struct sph_legendre_p_initializer_m_abs_m {
     }
 
     void operator()(std::tuple<T (&)[2], T (&)[2], T (&)[2]> res) const {
-        T fac0 = T(1) / (T(2) * std::sqrt(T(M_PI)));
-        T fac1 = -std::sqrt(T(3)) / (T(2) * std::sqrt(T(2) * T(M_PI)));
+        T fac0 = T(1) / (T(2) * sqrt(T(M_PI)));
+        T fac1 = -sqrt(T(3)) / (T(2) * sqrt(T(2) * T(M_PI)));
         if (m_signbit) {
             fac1 = -fac1;
         }
@@ -660,7 +660,7 @@ struct sph_legendre_p_recurrence_m_abs_m {
     void operator()(int m, std::tuple<T (&)[2]> res) const {
         int m_abs = std::abs(m);
 
-        T fac = std::sqrt(T((2 * m_abs + 1) * (2 * m_abs - 1)) / T(4 * m_abs * (m_abs - 1)));
+        T fac = sqrt(T((2 * m_abs + 1) * (2 * m_abs - 1)) / T(4 * m_abs * (m_abs - 1)));
 
         tuples::assign(res, {{fac * theta_sin * theta_sin, 0}});
     }
@@ -668,7 +668,7 @@ struct sph_legendre_p_recurrence_m_abs_m {
     void operator()(int m, std::tuple<T (&)[2], T (&)[2]> res) const {
         int m_abs = std::abs(m);
 
-        T fac = std::sqrt(T((2 * m_abs + 1) * (2 * m_abs - 1)) / T(4 * m_abs * (m_abs - 1)));
+        T fac = sqrt(T((2 * m_abs + 1) * (2 * m_abs - 1)) / T(4 * m_abs * (m_abs - 1)));
 
         tuples::assign(res, {{fac * theta_sin * theta_sin, 0}, {2 * fac * theta_sin * theta_cos, 0}});
     }
@@ -676,7 +676,7 @@ struct sph_legendre_p_recurrence_m_abs_m {
     void operator()(int m, std::tuple<T (&)[2], T (&)[2], T (&)[2]> res) const {
         int m_abs = std::abs(m);
 
-        T fac = std::sqrt(T((2 * m_abs + 1) * (2 * m_abs - 1)) / T(4 * m_abs * (m_abs - 1)));
+        T fac = sqrt(T((2 * m_abs + 1) * (2 * m_abs - 1)) / T(4 * m_abs * (m_abs - 1)));
 
         tuples::assign(
             res, {{fac * theta_sin * theta_sin, 0},
@@ -717,13 +717,13 @@ struct sph_legendre_p_initializer_n {
         : m(m), theta(theta), theta_cos(std::cos(theta)), theta_sin(std::sin(theta)) {}
 
     void operator()(std::tuple<const T &> res_m_abs_m, std::tuple<T (&)[2]> res) const {
-        T fac = std::sqrt(T(2 * std::abs(m) + 3));
+        T fac = sqrt(T(2 * std::abs(m) + 3));
 
         tuples::assign(res, {{std::get<0>(res_m_abs_m), fac * theta_cos * std::get<0>(res_m_abs_m)}});
     }
 
     void operator()(std::tuple<const T &, const T &> res_m_abs_m, std::tuple<T (&)[2], T (&)[2]> res) const {
-        T fac = std::sqrt(T(2 * std::abs(m) + 3));
+        T fac = sqrt(T(2 * std::abs(m) + 3));
 
         tuples::assign(
             res, {{std::get<0>(res_m_abs_m), fac * theta_cos * std::get<0>(res_m_abs_m)},
@@ -735,7 +735,7 @@ struct sph_legendre_p_initializer_n {
     void operator()(
         std::tuple<const T &, const T &, const T &> res_m_abs_m, std::tuple<T (&)[2], T (&)[2], T (&)[2]> res
     ) const {
-        T fac = std::sqrt(T(2 * std::abs(m) + 3));
+        T fac = sqrt(T(2 * std::abs(m) + 3));
 
         tuples::assign(
             res, {{std::get<0>(res_m_abs_m), fac * theta_cos * std::get<0>(res_m_abs_m)},
@@ -759,22 +759,22 @@ struct sph_legendre_p_recurrence_n {
         : m(m), theta(theta), theta_cos(std::cos(theta)), theta_sin(std::sin(theta)) {}
 
     void operator()(int n, std::tuple<T (&)[2]> res) const {
-        T fac0 = -std::sqrt(T((2 * n + 1) * ((n - 1) * (n - 1) - m * m)) / T((2 * n - 3) * (n * n - m * m)));
-        T fac1 = std::sqrt(T((2 * n + 1) * (4 * (n - 1) * (n - 1) - 1)) / T((2 * n - 3) * (n * n - m * m)));
+        T fac0 = -sqrt(T((2 * n + 1) * ((n - 1) * (n - 1) - m * m)) / T((2 * n - 3) * (n * n - m * m)));
+        T fac1 = sqrt(T((2 * n + 1) * (4 * (n - 1) * (n - 1) - 1)) / T((2 * n - 3) * (n * n - m * m)));
 
         tuples::assign(res, {{fac0, fac1 * theta_cos}});
     }
 
     void operator()(int n, std::tuple<T (&)[2], T (&)[2]> res) const {
-        T fac0 = -std::sqrt(T((2 * n + 1) * ((n - 1) * (n - 1) - m * m)) / T((2 * n - 3) * (n * n - m * m)));
-        T fac1 = std::sqrt(T((2 * n + 1) * (4 * (n - 1) * (n - 1) - 1)) / T((2 * n - 3) * (n * n - m * m)));
+        T fac0 = -sqrt(T((2 * n + 1) * ((n - 1) * (n - 1) - m * m)) / T((2 * n - 3) * (n * n - m * m)));
+        T fac1 = sqrt(T((2 * n + 1) * (4 * (n - 1) * (n - 1) - 1)) / T((2 * n - 3) * (n * n - m * m)));
 
         tuples::assign(res, {{fac0, fac1 * theta_cos}, {0, -fac1 * theta_sin}});
     }
 
     void operator()(int n, std::tuple<T (&)[2], T (&)[2], T (&)[2]> res) const {
-        T fac0 = -std::sqrt(T((2 * n + 1) * ((n - 1) * (n - 1) - m * m)) / T((2 * n - 3) * (n * n - m * m)));
-        T fac1 = std::sqrt(T((2 * n + 1) * (4 * (n - 1) * (n - 1) - 1)) / T((2 * n - 3) * (n * n - m * m)));
+        T fac0 = -sqrt(T((2 * n + 1) * ((n - 1) * (n - 1) - m * m)) / T((2 * n - 3) * (n * n - m * m)));
+        T fac1 = sqrt(T((2 * n + 1) * (4 * (n - 1) * (n - 1) - 1)) / T((2 * n - 3) * (n * n - m * m)));
 
         tuples::assign(res, {{fac0, fac1 * theta_cos}, {0, -fac1 * theta_sin}, {0, -fac1 * theta_cos}});
     }
@@ -1203,7 +1203,7 @@ void lqmn(std::complex<T> z, OutputMat1 cqm, OutputMat2 cqd) {
         ls = -1;
     }
     zs = static_cast<T>(ls) * (static_cast<T>(1) - z * z);
-    zq = std::sqrt(zs);
+    zq = sqrt(zs);
 
     cq0 = std::log(static_cast<T>(ls) * (static_cast<T>(1) + z) / (static_cast<T>(1) - z)) / static_cast<T>(2);
     if (xc < 1.0001) {
