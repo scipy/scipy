@@ -489,6 +489,12 @@ def sh_jacobi(n, p, q, monic=False):
     orthogonal over :math:`[0, 1]` with weight function :math:`(1 -
     x)^{p - q}x^{q - 1}`.
 
+    References
+    ----------
+    .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
+        Handbook of Mathematical Functions with Formulas,
+        Graphs, and Mathematical Tables. New York: Dover, 1972.
+
     """
     if n < 0:
         raise ValueError("n must be nonnegative.")
