@@ -48,43 +48,78 @@ struct dual {
         return *this;
     }
 
-    dual &operator+=(const dual &rhs) {
+    dual &operator+=(const dual &other) {
         for (size_t i = 0; i <= N; ++i) {
-            values[i] += rhs.values[i];
+            values[i] += other[i];
         }
 
         return *this;
     }
 
-    dual &operator+=(const T &rhs) {
-        values[0] += rhs;
+    dual &operator+=(const T &other) {
+        values[0] += other;
 
         return *this;
     }
 
-    dual &operator-=(const dual &rhs) {
+    dual &operator-=(const dual &other) {
         for (size_t i = 0; i <= N; ++i) {
-            values[i] -= rhs.values[i];
+            values[i] -= other[i];
         }
 
         return *this;
     }
 
-    dual &operator/=(const dual &rhs) {
-        *this = (*this / rhs);
+    dual &operator-=(const T &other) {
+        values[0] -= other;
 
         return *this;
     }
 
-    dual &operator/=(const T &rhs) {
+    dual &operator*=(const dual &other) {
+        T tmp[N + 1];
         for (size_t i = 0; i <= N; ++i) {
-            values[i] /= rhs;
+            tmp[i] = values[i];
+        }
+
+        for (size_t i = 0; i <= N; ++i) {
+            values[i] = 0;
+            for (size_t j = 0; j <= i; ++j) {
+                values[i] += tmp[j] * other[i - j];
+            }
         }
 
         return *this;
     }
 
-    dual from_coef(const T (&coef)[N + 1]) {
+    dual &operator*=(const T &other) {
+        for (size_t i = 0; i <= N; ++i) {
+            values[i] *= other;
+        }
+
+        return *this;
+    }
+
+    dual &operator/=(const dual &other) {
+        for (size_t i = 0; i <= N; ++i) {
+            for (size_t j = 1; j <= i; ++j) {
+                values[i] -= other.values[j] * values[i - j];
+            }
+            values[i] /= other.values[0];
+        }
+
+        return *this;
+    }
+
+    dual &operator/=(const T &other) {
+        for (size_t i = 0; i <= N; ++i) {
+            values[i] /= other;
+        }
+
+        return *this;
+    }
+
+    dual apply(const T (&coef)[N + 1]) {
         dual res(0);
 
         dual x = *this;
@@ -113,18 +148,6 @@ struct dual {
     T &operator[](size_t i) { return values[i]; }
 
     const T &operator[](size_t i) const { return values[i]; }
-
-    template <typename Func>
-    dual<std::result_of_t<Func(T)>, N> apply(Func f) {
-        using U = std::result_of_t<Func(T)>;
-
-        dual<U, N> res;
-        for (size_t i = 0; i <= N; ++i) {
-            res.values[i] = f(values[i]);
-        }
-
-        return res;
-    }
 };
 
 template <typename T, size_t N>
@@ -139,87 +162,80 @@ dual<T, N> operator-(const dual<T, N> &rhs) {
 
 template <typename T, size_t N>
 dual<T, N> operator+(const dual<T, N> &lhs, const dual<T, N> &rhs) {
-    dual<T, N> out;
-    for (int i = 0; i <= N; ++i) {
-        out.values[i] = lhs.values[i] + rhs.values[i];
-    }
-
-    return out;
-}
-
-template <typename T, size_t N>
-dual<T, N> operator-(const dual<T, N> &lhs, const dual<T, N> &rhs) {
-    dual<T, N> out;
-    for (int i = 0; i <= N; ++i) {
-        out.values[i] = lhs.values[i] - rhs.values[i];
-    }
-
-    return out;
-}
-
-template <typename T, size_t N>
-dual<T, N> operator*(const T &lhs, const dual<T, N> &rhs) {
-    dual<T, N> res;
-    for (int i = 0; i <= N; ++i) {
-        res.values[i] = lhs * rhs[i];
-    }
+    dual<T, N> res = lhs;
+    res += rhs;
 
     return res;
 }
 
 template <typename T, size_t N>
-dual<T, N> operator*(const dual<T, N> &lhs, const T &rhs) {
-    dual<T, N> res;
-    for (int i = 0; i <= N; ++i) {
-        res.values[i] = lhs.values[i] * rhs;
-    }
+dual<T, N> operator+(const dual<T, N> &lhs, const T &rhs) {
+    dual<T, N> res = lhs;
+    res += rhs;
+
+    return res;
+}
+
+template <typename T, size_t N>
+dual<T, N> operator+(const T &lhs, const dual<T, N> &rhs) {
+    dual<T, N> res = lhs;
+    res += rhs;
+
+    return res;
+}
+
+template <typename T, size_t N>
+dual<T, N> operator-(const dual<T, N> &lhs, const dual<T, N> &rhs) {
+    dual<T, N> res = lhs;
+    res -= rhs;
 
     return res;
 }
 
 template <typename T, size_t N>
 dual<T, N> operator*(const dual<T, N> &lhs, const dual<T, N> &rhs) {
-    dual<T, N> res;
-    for (int i = 0; i <= N; ++i) {
-        res.values[i] = 0;
-        for (int j = 0; j <= i; ++j) {
-            res.values[i] += lhs.values[j] * rhs.values[i - j];
-        }
-    }
+    dual<T, N> res = lhs;
+    res *= rhs;
+
+    return res;
+}
+
+template <typename T, size_t N>
+dual<T, N> operator*(const dual<T, N> &lhs, const T &rhs) {
+    dual<T, N> res = lhs;
+    res *= rhs;
+
+    return res;
+}
+
+template <typename T, size_t N>
+dual<T, N> operator*(const T &lhs, const dual<T, N> &rhs) {
+    dual<T, N> res = rhs;
+    res *= lhs;
 
     return res;
 }
 
 template <typename T, size_t N>
 dual<T, N> operator/(const dual<T, N> &lhs, const dual<T, N> &rhs) {
-    dual<T, N> res;
-    for (int i = 0; i <= N; ++i) {
-        res.values[i] = lhs.values[i];
-        for (int j = 1; j <= i; ++j) {
-            res.values[i] -= rhs.values[j] * res.values[i - j];
-        }
-        res.values[i] /= rhs.values[0];
-    }
-
-    return res;
-}
-
-template <typename T, size_t N>
-dual<T, N> operator/(const T &lhs, const dual<T, N> &rhs) {
-    dual<T, N> res;
-    for (int i = 0; i <= N; ++i) {
-        res[i] = lhs / rhs[i];
-    }
+    dual<T, N> res = lhs;
+    res /= rhs;
 
     return res;
 }
 
 template <typename T, size_t N>
 dual<T, N> operator/(const dual<T, N> &lhs, const T &rhs) {
-    dual<T, N> res;
-    for (int i = 0; i <= N; ++i) {
-        res[i] = lhs[i] / rhs;
-    }
+    dual<T, N> res = lhs;
+    res /= rhs;
+
+    return res;
+}
+
+template <typename T, size_t N>
+dual<T, N> operator/(const T &lhs, const dual<T, N> &rhs) {
+    dual<T, N> res = lhs;
+    res /= rhs;
 
     return res;
 }
@@ -254,69 +270,69 @@ namespace std {
 
 template <typename T>
 xsf::dual<T, 0> abs(xsf::dual<T, 0> z) {
-    return z.from_coef({std::abs(z[0])});
+    return z.apply({std::abs(z[0])});
 }
 
 template <typename T>
 xsf::dual<T, 0> abs(xsf::dual<std::complex<T>, 0> z) {
-    return z.from_coef({std::abs(z[0])});
+    return z.apply({std::abs(z[0])});
 }
 
 template <typename T>
 xsf::dual<T, 1> abs(xsf::dual<T, 1> z) {
     if (z < 0) {
-        return z.from_coef({std::abs(z.value()), T(-1)});
+        return z.apply({std::abs(z.value()), T(-1)});
     }
 
-    return z.from_coef({std::abs(z.value()), T(1)});
+    return z.apply({std::abs(z.value()), T(1)});
 }
 
 template <typename T>
 xsf::dual<T, 1> abs(xsf::dual<std::complex<T>, 1> z) {
     if (std::real(z) < 0) {
-        return z.from_coef({std::abs(z.value()), std::real(z[0]) / std::abs(z[0])});
+        return z.apply({std::abs(z.value()), std::real(z[0]) / std::abs(z[0])});
     }
 
-    return z.from_coef({std::abs(z.value()), std::real(z[0]) / std::abs(z[0])});
+    return z.apply({std::abs(z.value()), std::real(z[0]) / std::abs(z[0])});
 }
 
 template <typename T>
 xsf::dual<T, 2> abs(xsf::dual<T, 2> z) {
     if (z < 0) {
-        return z.from_coef({std::abs(z.value()), T(-1), T(0)});
+        return z.apply({std::abs(z.value()), T(-1), T(0)});
     }
 
-    return z.from_coef({std::abs(z.value()), T(1), T(0)});
+    return z.apply({std::abs(z.value()), T(1), T(0)});
 }
 
 template <typename T>
 xsf::dual<T, 2> abs(xsf::dual<std::complex<T>, 2> z) {
     if (std::real(z) < 0) {
-        return z.from_coef({std::abs(z.value()), std::real(z[0]) / std::abs(z[0]), T(0)});
+        return z.apply({std::abs(z.value()), std::real(z[0]) / std::abs(z[0]), T(0)});
     }
 
-    return z.from_coef({std::abs(z.value()), std::real(z[0]) / std::abs(z[0]), T(0)});
+    return z.apply({std::abs(z.value()), std::real(z[0]) / std::abs(z[0]), T(0)});
 }
 
 template <typename T>
 xsf::dual<T, 0> sqrt(xsf::dual<T, 0> z) {
-    T coef[1] = {std::sqrt(z.value())};
+    T z0_sqrt = std::sqrt(z[0]);
 
-    return z.from_coef(coef);
+    return z.apply({z0_sqrt});
 }
 
 template <typename T>
 xsf::dual<T, 1> sqrt(xsf::dual<T, 1> z) {
-    T z_sqrt = std::sqrt(z.value());
+    T z0_sqrt = std::sqrt(z[0]);
 
-    return z.from_coef({z_sqrt, T(1) / (T(2) * z_sqrt)});
+    return z.apply({z0_sqrt, T(1) / (T(2) * z0_sqrt)});
 }
 
 template <typename T>
 xsf::dual<T, 2> sqrt(xsf::dual<T, 2> z) {
-    T z_sqrt = std::sqrt(z.value());
+    T z0_sqrt = std::sqrt(z[0]);
 
-    return z.from_coef({z_sqrt, T(1) / (T(2) * z_sqrt), -T(1) / (T(4) * z.value() * z_sqrt)});
+    return z.apply({z0_sqrt, T(1) / (T(2) * z0_sqrt), -T(1) / (T(4) * z0_sqrt * z[0])});
 }
 
 template <typename T, size_t N>

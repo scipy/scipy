@@ -96,20 +96,22 @@ struct assoc_legendre_p_initializer_m_abs_m<T, assoc_legendre_unnorm_policy> {
     bool m_signbit;
     T z;
     int branch_cut;
-    T branch_cut_sign;
+//    T branch_cut_sign;
     T w;
 
     assoc_legendre_p_initializer_m_abs_m(bool m_signbit, T z, int branch_cut)
         : m_signbit(m_signbit), z(z), branch_cut(branch_cut) {
         if (branch_cut == 3) {
-            branch_cut_sign = T(-1);
+//            branch_cut_sign = T(-1);
 
-            w = std::sqrt(z * z - T(1)); // do not modify, see function comment
-            if (std::real(z) < 0) {
-                w = -w;
-            }
+            w = std::sqrt(z - T(1)) * std::sqrt(z + T(1)); // do not modify, see function comment
+
+//            w = std::sqrt(z * z - T(1)); // do not modify, see function comment
+//            if (std::real(z) < 0) {
+  //              w = -w;
+    //        }
         } else {
-            branch_cut_sign = T(1);
+//            branch_cut_sign = T(1);
 
             w = -std::sqrt(T(1) - z * z); // do not modify, see function comment
             if (m_signbit) {
@@ -133,20 +135,22 @@ struct assoc_legendre_p_initializer_m_abs_m<T, assoc_legendre_norm_policy> {
     bool m_signbit;
     T z;
     int branch_cut;
-    T branch_cut_sign;
+//    T branch_cut_sign;
     T w;
 
     assoc_legendre_p_initializer_m_abs_m(bool m_signbit, T z, int branch_cut)
         : m_signbit(m_signbit), z(z), branch_cut(branch_cut) {
         if (branch_cut == 3) {
-            branch_cut_sign = T(-1);
+//            branch_cut_sign = T(-1);
 
-            w = std::sqrt(z * z - T(1)); // do not modify, see function comment
-            if (std::real(z) < 0) {
-                w = -w;
-            }
+//            w = std::sqrt(z * z - T(1)); // do not modify, see function comment
+  //          if (std::real(z) < 0) {
+    //            w = -w;
+      //      }
+            w = std::sqrt(z - T(1)) * std::sqrt(z + T(1)); // do not modify, see function comment
+
         } else {
-            branch_cut_sign = T(1);
+//            branch_cut_sign = T(1);
 
             w = -std::sqrt(T(1) - z * z); // do not modify, see function comment
             if (m_signbit) {
