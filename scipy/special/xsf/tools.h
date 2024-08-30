@@ -263,7 +263,9 @@ namespace detail {
     }
 
     /* Find initial bracket for a bracketing scalar root finder. A valid bracket is a pair of points a < b for
-     * which the signs of f(a) and f(b) differ.
+     * which the signs of f(a) and f(b) differ. If f(x0) = 0, where x0 is the initial guess, this bracket finder
+     * will return the bracket (x0, x0). It is expected that the rootfinder will check if the bracket
+     * endpoints are roots.
      *
      * This is a private function intended specifically for the situation where
      * the goal is to invert a CDF function F for a parametrized family of distributions with respect to one
@@ -272,7 +274,7 @@ namespace detail {
      * Note that this takes a pointer to a function taking a tuple of args along with a scalar
      * double argument. A tuple of args for specializing func is also passed as the final argument.
      * It would be much cleaner to use std::function and capturing lambda's to specialize the
-     * function we are finding a root for, but this was found unworkable in CuPy using NVRTC.
+     * function we are finding a root for, but I couldn't get this working in CuPy using NVRTC.
      * This should be revisited in the future in order to allow simplifying this code. */
     template <typename... Args>
     XSF_HOST_DEVICE inline std::tuple<double, double, double, double, int> bracket_root_for_cdf_inversion(
