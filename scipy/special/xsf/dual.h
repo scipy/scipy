@@ -19,6 +19,11 @@ std::tuple<T, T, T> derivatives_impl(const T (&values)[3]) {
 
 template <typename T, size_t N>
 struct dual {
+    using value_type = T;
+    using reference = value_type &;
+    using const_reference = const value_type &;
+
+    // value and partials?
     T values[N + 1];
 
     dual() = default;
@@ -136,6 +141,10 @@ struct dual {
 
         return res;
     }
+
+    reference front() { return values[0]; }
+
+    const_reference front() const { return values[0]; }
 
     T value() const { return values[0]; }
 
@@ -287,55 +296,43 @@ dual<T, 2> sqrt(const dual<T, 2> &z) {
     return z.apply({z0_sqrt, T(1) / (T(2) * z0_sqrt), -T(1) / (T(4) * z0_sqrt * z[0])});
 }
 
+using std::sin;
+
+template <typename T>
+dual<T, 0> sin(const dual<T, 0> &z) {
+    return z.apply({sin(z.front())});
+}
+
+template <typename T, size_t N>
+dual<T, N> sin(const dual<T, N> &z) {
+    T coef[N + 1] = {sin(z.front()), cos(z.front())};
+    for (size_t i = 2; i <= N; ++i) {
+        coef[i] = -coef[i - 2];
+    }
+
+    return z.apply(coef);
+}
+
+using std::cos;
+
+template <typename T>
+dual<T, 0> cos(const dual<T, 0> &z) {
+    return z.apply({cos(z.front())});
+}
+
+template <typename T, size_t N>
+dual<T, N> cos(const dual<T, N> &z) {
+    T coef[N + 1] = {cos(z.front()), -sin(z.front())};
+    for (size_t i = 2; i <= N; ++i) {
+        coef[i] = -coef[i - 2];
+    }
+
+    return z.apply(coef);
+}
+
 } // namespace xsf
 
 namespace std {
-
-template <typename T>
-xsf::dual<T, 0> sin(const xsf::dual<T, 0> &z) {
-    T z0_sin = std::sin(z[0]);
-
-    return z.apply({z0_sin});
-}
-
-template <typename T>
-xsf::dual<T, 1> sin(const xsf::dual<T, 1> &z) {
-    T z0_sin = std::sin(z[0]);
-    T z0_cos = std::cos(z[0]);
-
-    return z.apply({z0_sin, z0_cos});
-}
-
-template <typename T>
-xsf::dual<T, 2> sin(const xsf::dual<T, 2> &z) {
-    T z0_sin = std::sin(z[0]);
-    T z0_cos = std::cos(z[0]);
-
-    return z.apply({z0_sin, z0_cos, -z0_sin});
-}
-
-template <typename T>
-xsf::dual<T, 0> cos(const xsf::dual<T, 0> &z) {
-    T z0_cos = std::cos(z[0]);
-
-    return z.apply({z0_cos});
-}
-
-template <typename T>
-xsf::dual<T, 1> cos(const xsf::dual<T, 1> &z) {
-    T z0_cos = std::cos(z[0]);
-    T z0_sin = std::sin(z[0]);
-
-    return z.apply({z0_cos, -z0_sin});
-}
-
-template <typename T>
-xsf::dual<T, 2> cos(const xsf::dual<T, 2> &z) {
-    T z0_cos = std::cos(z[0]);
-    T z0_sin = std::sin(z[0]);
-
-    return z.apply({z0_cos, -z0_sin, -z0_cos});
-}
 
 template <typename T>
 xsf::dual<T, 0> abs(xsf::dual<T, 0> z) {
