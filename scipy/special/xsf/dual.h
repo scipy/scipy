@@ -9,13 +9,15 @@ namespace xsf {
 
 template <typename T, size_t N>
 struct dual {
+  public:
     using value_type = T;
     using reference = value_type &;
     using const_reference = const value_type &;
 
-    // value and partials?
+  public:
     T values[N + 1];
 
+  public:
     dual() = default;
 
     dual(T value) {
@@ -137,10 +139,6 @@ struct dual {
     const_reference front() const { return values[0]; }
 
     T value() const { return values[0]; }
-
-    T jac() const { return values[1]; }
-
-    T hess() const { return T(2) * values[2]; }
 
     T &operator[](size_t i) { return values[i]; }
 
