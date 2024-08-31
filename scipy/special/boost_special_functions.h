@@ -1494,8 +1494,6 @@ hypergeom_skewness_double(double n, double N, double M)
     return boost::math::skewness(boost::math::hypergeometric_distribution<double, StatsPolicy>(n, N, M));
 }
 
-#endif
-
 template<typename Real>
 Real
 landau_pdf_wrap(const Real x, const Real loc, const Real scale)
@@ -1610,3 +1608,5 @@ landau_isf_double(double p, double loc, double scale)
 {
     return landau_isf_wrap(p, loc, scale);
 }
+
+#endif
