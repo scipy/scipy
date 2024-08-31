@@ -539,16 +539,4 @@ xsf::dual<T, 2> abs(xsf::dual<std::complex<T>, 2> z) {
     return z.apply({std::abs(z.value()), std::real(z[0]) / std::abs(z[0]), T(0)});
 }
 
-using std::exp;
-
-template <typename T, size_t N>
-xsf::dual<T, N> exp(const xsf::dual<T, N> &z) {
-    T coef[N + 1] = {std::exp(z.front())};
-    //    for (size_t i = 1; i <= N; ++i) {
-    //      coef[i] = -coef[i - 2];
-    //}
-
-    return z.apply(coef);
-}
-
 } // namespace std
