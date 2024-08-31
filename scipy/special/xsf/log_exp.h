@@ -4,13 +4,13 @@
 #include <cstdio>
 #include <cfloat>
 
-#ifndef FLT_EVAL_METHOD
-#error FLT_EVAL_METHOD not defined; too old compiler?
-#endif
-
-#if FLT_EVAL_METHOD != 0
-#error The pow1p function requires FLT_EVAL_METHOD to be zero
-#endif
+//#ifndef FLT_EVAL_METHOD
+//#error FLT_EVAL_METHOD not defined; too old compiler?
+//#endif
+//
+//#if FLT_EVAL_METHOD != 0
+//#error The pow1p function requires FLT_EVAL_METHOD to be zero
+//#endif
 
 #include "config.h"
 
@@ -74,6 +74,12 @@ T log_expit(T x) {
 
     return -std::log1p(std::exp(-x));
 };
+
+template <typename T>
+T fadd(const T &x, const T &y) { return static_cast<T>(x + y); }
+
+template <typename T>
+T fsub(const T &x, const T &y) { return static_cast<T>(x - y); }
 
 // Compute pow(1+x,y) accurately for real x and y.
 template <typename T>
@@ -146,34 +152,34 @@ T pow1p_impl(T x, T y) {
     T s, t;
     if (x < -1) {
         s = std::nextafter(-x, T(0));
-        t = (-x - s);
-        t = t - T(1);
+        t = fsub(-x, s);
+        t = fsub(t, T(1));
     } else if (x < 0) {
-        s = T(1) + x;
-        t = s - T(1);
-        t = x - t;
+        s = fadd(T(1), x);
+        t = fsub(s, T(1));
+        t = fsub(x, t);
         if (t > 0) {
             s = std::nextafter(s, T(1));
-            t = s - T(1);
-            t = x - t;
+            t = fsub(s, T(1));
+            t = fsub(x, t);
         }
     } else if (x < 1) {
-        s = T(1) + x;
-        t = s - T(1);
-        t = x - t;
+        s = fadd(T(1), x);
+        t = fsub(s, T(1));
+        t = fsub(x, t);
         if (t < 0) {
             s = std::nextafter(s, T(0));
-            t = s - T(1);
-            t = x - t;
+            t = fsub(s, T(1));
+            t = fsub(x, t);
         }
     } else {
-        s = x + T(1);
-        t = s - x;
-        t = T(1) - t;
+        s = fadd(x, T(1));
+        t = fsub(s, x);
+        t = fsub(T(1), t);
         if (t < 0) {
             s = std::nextafter(s, T(0));
-            t = s - x;
-            t = T(1) - t;
+            t = fsub(s, x);
+            t = fsub(T(1), t);
         }
     }
     fprintf(out, "[pow1p] s=%.16e t=%.16e\n", s, t);
