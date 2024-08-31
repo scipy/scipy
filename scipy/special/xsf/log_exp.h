@@ -76,9 +76,15 @@ T log_expit(T x) {
 };
 
 template <typename T>
+#if !defined(FLT_EVAL_METHOD) || (FLT_EVAL_METHOD != 0)
+volatile
+#endif
 T fadd(const T &x, const T &y) { return static_cast<T>(x + y); }
 
 template <typename T>
+#if !defined(FLT_EVAL_METHOD) || (FLT_EVAL_METHOD != 0)
+volatile
+#endif
 T fsub(const T &x, const T &y) { return static_cast<T>(x - y); }
 
 // Compute pow(1+x,y) accurately for real x and y.
