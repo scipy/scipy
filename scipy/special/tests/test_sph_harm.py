@@ -7,6 +7,8 @@ import scipy.special as sc
 class TestSphHarm:
     """
     def test_sph_harm_der(self):
+        print()
+
         n = 2
         n = np.atleast_1d(n)
 
@@ -20,6 +22,7 @@ class TestSphHarm:
         phi = np.atleast_1d(phi)
 
         out, out_jac, out_hess = sc.sph_harm_y(n, m, theta, phi, diff_n = 2)
+        print(out, out_jac, out_hess)
     """
 
     @pytest.mark.slow

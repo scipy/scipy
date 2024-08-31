@@ -268,4 +268,12 @@ struct remove_complex<std::complex<T>> {
 template <typename T>
 using remove_complex_t = typename remove_complex<T>::type;
 
+template <typename T>
+struct complex_type {
+    using type = std::complex<T>;
+};
+
+template <typename T>
+using complex_type_t = typename complex_type<T>::type;
+
 } // namespace xsf

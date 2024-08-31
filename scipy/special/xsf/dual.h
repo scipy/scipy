@@ -36,6 +36,13 @@ struct dual {
         }
     }
 
+    template <typename U>
+    dual(const dual<U, N> &other) {
+        for (size_t i = 0; i <= N; ++i) {
+            values[i] = other.values[i];
+        }
+    }
+
     dual &operator=(const T &other) {
         values[0] = other;
         for (size_t i = 1; i <= N; ++i) {
@@ -122,7 +129,7 @@ struct dual {
         dual x = *this;
         x.values[0] = 0;
 
-        T fac = 1;
+        T fac = T(1);
 
         res.values[0] = coef[0];
         for (size_t i = 1; i <= N; ++i) {
@@ -167,6 +174,38 @@ void dual_assign_grad(const dual<T, 2> &x, std::tuple<T &, T &, T &> res) {
     res0 = x[0];
     res1 = x[1];
     res2 = T(2) * x[2];
+}
+
+template <typename T>
+void dual_assign_grad(const dual<dual<T, 0>, 0> &x, std::tuple<T &> res) {
+    auto &[res0] = res;
+
+    res0 = x[0][0];
+}
+
+template <typename T>
+void dual_assign_grad(const dual<dual<T, 1>, 1> &z, std::tuple<T &, T (&)[2]> res) {
+    auto &[res0, res1] = res;
+
+    res0 = z[0][0];
+
+    res1[0] = z[1][0];
+    res1[1] = z[0][1];
+}
+
+template <typename T>
+void dual_assign_grad(const dual<dual<T, 2>, 2> &z, std::tuple<T &, T (&)[2], T (&)[2][2]> res) {
+    auto &[res0, res1, res2] = res;
+
+    res0 = z[0][0];
+
+    res1[0] = z[1][0];
+    res1[1] = z[0][1];
+
+    res2[0][0] = T(2) * z[2][0];
+    res2[0][1] = z[1][1];
+    res2[1][0] = z[1][1];
+    res2[1][1] = T(2) * z[0][2];
 }
 
 template <typename T>
@@ -229,6 +268,45 @@ void dual_assign_grad(
     res2[0][1] = std::complex(z_real[1][1], z_imag[1][1]);
     res2[1][0] = std::complex(z_real[1][1], z_imag[1][1]);
     res2[1][1] = T(2) * std::complex(z_real[0][2], z_imag[0][2]);
+}
+
+template <typename T>
+void dual_assign_grad(const dual<dual<T, 1>, 1> &z, std::tuple<T &> res) {
+    auto &[res0] = res;
+
+    res0 = z[0][0];
+}
+
+template <typename T>
+void dual_assign_grad(
+    const dual<dual<T, 1>, 1> &z, std::tuple<T &, std::mdspan<T, std::dextents<ptrdiff_t, 1>, std::layout_stride>> res
+) {
+    auto &[res0, res1] = res;
+
+    res0 = z[0][0];
+
+    res1(0) = z[1][0];
+    res1(1) = z[0][1];
+}
+
+template <typename T>
+void dual_assign_grad(
+    const dual<dual<T, 2>, 2> &z, std::tuple<
+                                      T &, std::mdspan<T, std::dextents<ptrdiff_t, 1>, std::layout_stride>,
+                                      std::mdspan<T, std::dextents<ptrdiff_t, 2>, std::layout_stride>>
+                                      res
+) {
+    auto &[res0, res1, res2] = res;
+
+    res0 = z[0][0];
+
+    res1(0) = z[1][0];
+    res1(1) = z[0][1];
+
+    res2(0, 0) = T(2) * z[2][0];
+    res2(0, 1) = z[1][1];
+    res2(1, 0) = z[1][1];
+    res2(1, 1) = T(2) * z[0][2];
 }
 
 template <typename T>
@@ -486,6 +564,11 @@ template <typename T, size_t N>
 dual<T, N> copysign(const dual<T, N> &z, const dual<T, N> &z2) {
     return z;
 }
+
+template <typename T, size_t N>
+struct complex_type<dual<T, N>> {
+    using type = dual<typename complex_type<T>::type, N>;
+};
 
 } // namespace xsf
 

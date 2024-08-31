@@ -126,32 +126,6 @@ std::complex<T> sph_harm_y(long long int n, long long int m, T theta, T phi) {
 }
 
 template <typename T>
-std::complex<T> sph_harm(long long int m, long long int n, T theta, T phi) {
-    if (n < 0) {
-        xsf::set_error("sph_harm", SF_ERROR_ARG, "n should not be negative");
-        return std::numeric_limits<T>::quiet_NaN();
-    }
-
-    if (std::abs(m) > n) {
-        xsf::set_error("sph_harm", SF_ERROR_ARG, "m should not be greater than n");
-        return std::numeric_limits<T>::quiet_NaN();
-    }
-
-    return sph_harm_y(n, m, phi, theta);
-}
-
-template <typename T>
-std::complex<T> sph_harm(T m, T n, T theta, T phi) {
-    if (static_cast<long>(m) != m || static_cast<long>(n) != n) {
-        PyGILState_STATE gstate = PyGILState_Ensure();
-        PyErr_WarnEx(PyExc_RuntimeWarning, "floating point number truncated to an integer", 1);
-        PyGILState_Release(gstate);
-    }
-
-    return sph_harm(static_cast<long>(m), static_cast<long>(n), theta, phi);
-}
-
-template <typename T>
 void sph_harm_y(long long int n, long long int m, T theta, T phi, std::complex<T> &res, std::complex<T> (&res_jac)[2]) {
     xsf::dual<xsf::dual<T, 1>, 1> theta_dual;
     theta_dual[0][0] = theta;
@@ -194,6 +168,32 @@ void sph_harm_y(long long int n, long long int m, T theta, T phi, std::complex<T
     phi_dual[2][2] = 0;
 
     dual_assign_grad(xsf::sph_harm_y(n, m, theta_dual, phi_dual), std::tie(res, res_jac, res_hess));
+}
+
+template <typename T>
+std::complex<T> sph_harm(long long int m, long long int n, T theta, T phi) {
+    if (n < 0) {
+        xsf::set_error("sph_harm", SF_ERROR_ARG, "n should not be negative");
+        return std::numeric_limits<T>::quiet_NaN();
+    }
+
+    if (std::abs(m) > n) {
+        xsf::set_error("sph_harm", SF_ERROR_ARG, "m should not be greater than n");
+        return std::numeric_limits<T>::quiet_NaN();
+    }
+
+    return sph_harm_y(n, m, phi, theta);
+}
+
+template <typename T>
+std::complex<T> sph_harm(T m, T n, T theta, T phi) {
+    if (static_cast<long>(m) != m || static_cast<long>(n) != n) {
+        PyGILState_STATE gstate = PyGILState_Ensure();
+        PyErr_WarnEx(PyExc_RuntimeWarning, "floating point number truncated to an integer", 1);
+        PyGILState_Release(gstate);
+    }
+
+    return sph_harm(static_cast<long>(m), static_cast<long>(n), theta, phi);
 }
 
 template <typename T, typename OutputMat1>
