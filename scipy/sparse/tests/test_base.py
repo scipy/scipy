@@ -69,7 +69,7 @@ def sparse_may_share_memory(A, B):
 
         arrays = []
         for a in x.__dict__.values():
-            if isinstance(a, (np.ndarray, np.generic)):
+            if isinstance(a, np.ndarray | np.generic):
                 arrays.append(a)
         return arrays
 
