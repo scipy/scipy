@@ -7,8 +7,11 @@
 
 namespace xsf {
 
+template <typename T, size_t... N>
+struct dual;
+
 template <typename T, size_t N>
-struct dual {
+struct dual<T, N> {
   public:
     using value_type = T;
     using reference = value_type &;

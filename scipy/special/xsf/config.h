@@ -276,4 +276,7 @@ struct complex_type {
 template <typename T>
 using complex_type_t = typename complex_type<T>::type;
 
+template <typename T>
+using complex = complex_type_t<T>;
+
 } // namespace xsf

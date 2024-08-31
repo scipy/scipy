@@ -499,14 +499,6 @@ def _(diff_n):
     return diff_n
 
 
-#@sph_harm_y._override_ufunc_default_kwargs
-#def _(diff_n):
- #   if (diff_n > 0):
-  #      return {'axes': [(), (), (), ()] + [tuple(range(axis)) for axis in range(2, diff_n + 1)]}
-#
- #   return {}
-
-
 sph_harm_y_all = MultiUFunc(
     sph_harm_y_all,
     """sph_harm_y_all(n, m, theta, phi, *, diff_n=0)
