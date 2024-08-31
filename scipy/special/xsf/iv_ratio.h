@@ -53,7 +53,11 @@ private:
     std::uint64_t k_; // current index
 };
 
-// Computes f(v, x) of using Perron's continued fraction.
+// Computes f(v, x) using Perron's continued fraction.
+//
+// T specifies the working type.  This allows the function to perform
+// calculations in a higher precision, such as double-double, even if
+// the return type is hardcoded to be double.
 template <class T>
 XSF_HOST_DEVICE inline std::pair<double, std::uint64_t>
 _iv_ratio_cf(double v, double x, bool complement) {
@@ -90,7 +94,7 @@ XSF_HOST_DEVICE inline double iv_ratio(double v, double x) {
         return std::numeric_limits<double>::quiet_NaN();
     }
     if (x == 0.0) {
-        return x; // keep sign of x
+        return x; // keep sign of x because iv_ratio is an odd function
     }
     if (std::isinf(v)) {
         return 0.0;
@@ -136,6 +140,8 @@ XSF_HOST_DEVICE inline double iv_ratio_c(double v, double x) {
     }
 
     if (v >= 1) {
+        // Numerical experiments show that evaluating the Perron c.f.
+        // in double precision is sufficiently accurate if v >= 1.
         auto [ret, terms] = _iv_ratio_cf<double>(v, x, true);
         if (terms == 0) { // failed to converge; should not happen
             set_error("iv_ratio_c", SF_ERROR_NO_RESULT, NULL);
@@ -144,7 +150,7 @@ XSF_HOST_DEVICE inline double iv_ratio_c(double v, double x) {
         return ret;
     } else if (v > 0.5) {
         // double-double arithmetic is needed for 0.5 < v < 1 to
-        // achieve relative error on the scale of machine precision
+        // achieve relative error on the scale of machine precision.
         using cephes::detail::double_double;
         auto [ret, terms] = _iv_ratio_cf<double_double>(v, x, true);
         if (terms == 0) { // failed to converge; should not happen
@@ -153,7 +159,8 @@ XSF_HOST_DEVICE inline double iv_ratio_c(double v, double x) {
         }
         return ret;
     } else {
-        // R(0.5, x) = 1 - tanh(x)
+        // The previous branch (v > 0.5) also works for v == 0.5, but
+        // the closed-form formula "1 - tanh(x)" is more efficient.
         double t = std::exp(-2*x);
         return (2 * t) / (1 + t);
     }
