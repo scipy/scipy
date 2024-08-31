@@ -1504,17 +1504,17 @@ def order_filter(a, domain, rank):
            [15, 16, 17, 18, 19],
            [20, 21, 22, 23, 24]])
     >>> signal.order_filter(x, domain, 0)
-    array([[  0.,   0.,   0.,   0.,   0.],
-           [  0.,   0.,   1.,   2.,   0.],
-           [  0.,   5.,   6.,   7.,   0.],
-           [  0.,  10.,  11.,  12.,   0.],
-           [  0.,   0.,   0.,   0.,   0.]])
+    array([[  0,   0,   0,   0,   0],
+           [  0,   0,   1,   2,   0],
+           [  0,   5,   6,   7,   0],
+           [  0,  10,  11,  12,   0],
+           [  0,   0,   0,   0,   0]])
     >>> signal.order_filter(x, domain, 2)
-    array([[  6.,   7.,   8.,   9.,   4.],
-           [ 11.,  12.,  13.,  14.,   9.],
-           [ 16.,  17.,  18.,  19.,  14.],
-           [ 21.,  22.,  23.,  24.,  19.],
-           [ 20.,  21.,  22.,  23.,  24.]])
+    array([[  6,   7,   8,   9,   4],
+           [ 11,  12,  13,  14,   9],
+           [ 16,  17,  18,  19,  14],
+           [ 21,  22,  23,  24,  19],
+           [ 20,  21,  22,  23,  24]])
 
     """
     domain = np.asarray(domain)
@@ -3405,7 +3405,7 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0),
     n_out = n_in * up
     n_out = n_out // down + bool(n_out % down)
 
-    if isinstance(window, (list, np.ndarray)):
+    if isinstance(window, (list | np.ndarray)):
         window = np.array(window)  # use array to force a copy (we modify it)
         if window.ndim > 1:
             raise ValueError('window must be 1-D')

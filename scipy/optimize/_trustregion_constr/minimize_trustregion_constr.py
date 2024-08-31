@@ -340,7 +340,7 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
                                finite_diff_rel_step, finite_diff_bounds)
 
     # Put constraints in list format when needed.
-    if isinstance(constraints, (NonlinearConstraint, LinearConstraint)):
+    if isinstance(constraints, (NonlinearConstraint | LinearConstraint)):
         constraints = [constraints]
 
     # Prepare constraints.
@@ -538,7 +538,7 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
             xtol, state, initial_barrier_parameter,
             initial_barrier_tolerance,
             initial_constr_penalty, initial_tr_radius,
-            factorization_method)
+            factorization_method, finite_diff_bounds)
 
     # Status 3 occurs when the callback function requests termination,
     # this is assumed to not be a success.

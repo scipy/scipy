@@ -345,7 +345,10 @@ xsf_cephes_sources = [
   'xsf/cephes/ellpe.h',
   'xsf/cephes/ellpk.h',
   'xsf/cephes/sici.h',
-  'xsf/cephes/shichi.h'
+  'xsf/cephes/shichi.h',
+  'xsf/cephes/sindg.h',
+  'xsf/cephes/tandg.h'
+  
 ]
 
 py3.install_sources(xsf_sources, subdir: 'scipy/special/xsf')

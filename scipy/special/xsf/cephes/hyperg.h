@@ -191,7 +191,7 @@ namespace cephes {
                 asum = std::numeric_limits<double>::infinity();
                 goto adone;
             }
-            temp = log(std::abs(x));
+            temp = std::log(std::abs(x));
             t = x + temp * (a - b);
             u = -temp * a;
 

@@ -155,6 +155,7 @@ This wrapper can be used as a(n almost) drop-in replacement for the
     >>> rgi([[1.5, 1.5], [3.5, 2.6]])
     array([ 9. , 64.9])
     >>> cgi = CartesianGridInterpolator((x, y), values, method='linear')
+    >>> cgi([[1.5, 1.5], [3.5, 2.6]])
     array([ 9. , 64.9])
 
 Note that the example above uses the ``map_coordinates`` boundary conditions.
