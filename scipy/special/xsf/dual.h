@@ -273,8 +273,6 @@ dual<T, N> make_dual(T value) {
     return {value, 1};
 }
 
-using std::sqrt;
-
 template <typename T>
 dual<T, 0> sqrt(const dual<T, 0> &z) {
     T z0_sqrt = std::sqrt(z[0]);
@@ -296,8 +294,6 @@ dual<T, 2> sqrt(const dual<T, 2> &z) {
     return z.apply({z0_sqrt, T(1) / (T(2) * z0_sqrt), -T(1) / (T(4) * z0_sqrt * z[0])});
 }
 
-using std::sin;
-
 template <typename T>
 dual<T, 0> sin(const dual<T, 0> &z) {
     return z.apply({sin(z.front())});
@@ -313,8 +309,6 @@ dual<T, N> sin(const dual<T, N> &z) {
     return z.apply(coef);
 }
 
-using std::cos;
-
 template <typename T>
 dual<T, 0> cos(const dual<T, 0> &z) {
     return z.apply({cos(z.front())});
@@ -328,6 +322,46 @@ dual<T, N> cos(const dual<T, N> &z) {
     }
 
     return z.apply(coef);
+}
+
+template <typename T, size_t N>
+dual<T, N> real(dual<std::complex<T>, N> z) {
+    dual<T, N> res;
+    for (size_t i = 0; i <= N; ++i) {
+        res[i] = real(z[i]);
+    }
+
+    return res;
+}
+
+template <typename T, size_t N>
+dual<T, N> real(dual<T, N> z) {
+    dual<T, N> res;
+    for (size_t i = 0; i <= N; ++i) {
+        res[i] = real(z[i]);
+    }
+
+    return res;
+}
+
+template <typename T, size_t N>
+dual<T, N> imag(dual<std::complex<T>, N> z) {
+    dual<T, N> res;
+    for (size_t i = 0; i <= N; ++i) {
+        res[i] = imag(z[i]);
+    }
+
+    return res;
+}
+
+template <typename T, size_t N>
+dual<T, N> imag(dual<T, N> z) {
+    dual<T, N> res;
+    for (size_t i = 0; i <= N; ++i) {
+        res[i] = imag(z[i]);
+    }
+
+    return res;
 }
 
 } // namespace xsf
@@ -355,7 +389,7 @@ xsf::dual<T, 1> abs(xsf::dual<T, 1> z) {
 
 template <typename T>
 xsf::dual<T, 1> abs(xsf::dual<std::complex<T>, 1> z) {
-    if (std::real(z) < 0) {
+    if (std::real(z[0]) < 0) {
         return z.apply({std::abs(z.value()), std::real(z[0]) / std::abs(z[0])});
     }
 
@@ -373,51 +407,11 @@ xsf::dual<T, 2> abs(xsf::dual<T, 2> z) {
 
 template <typename T>
 xsf::dual<T, 2> abs(xsf::dual<std::complex<T>, 2> z) {
-    if (std::real(z) < 0) {
+    if (std::real(z[0]) < 0) {
         return z.apply({std::abs(z.value()), std::real(z[0]) / std::abs(z[0]), T(0)});
     }
 
     return z.apply({std::abs(z.value()), std::real(z[0]) / std::abs(z[0]), T(0)});
-}
-
-template <typename T, size_t N>
-xsf::dual<T, N> real(xsf::dual<complex<T>, N> z) {
-    xsf::dual<T, N> res;
-    for (size_t i = 0; i <= N; ++i) {
-        res[i] = std::real(z[i]);
-    }
-
-    return res;
-}
-
-template <typename T, size_t N>
-xsf::dual<T, N> real(xsf::dual<T, N> z) {
-    xsf::dual<T, N> res;
-    for (size_t i = 0; i <= N; ++i) {
-        res[i] = std::real(z[i]);
-    }
-
-    return res;
-}
-
-template <typename T, size_t N>
-xsf::dual<T, N> imag(xsf::dual<complex<T>, N> z) {
-    xsf::dual<T, N> res;
-    for (size_t i = 0; i <= N; ++i) {
-        res[i] = std::imag(z[i]);
-    }
-
-    return res;
-}
-
-template <typename T, size_t N>
-xsf::dual<T, N> imag(xsf::dual<T, N> z) {
-    xsf::dual<T, N> res;
-    for (size_t i = 0; i <= N; ++i) {
-        res[i] = std::imag(z[i]);
-    }
-
-    return res;
 }
 
 } // namespace std

@@ -442,7 +442,7 @@ void assoc_legendre_p_for_each_n(
             f(j, res);
         }
 
-        if (std::abs(std::real(z)) == 1 && std::imag(z) == 0) {
+        if (std::abs(real(z)) == 1 && imag(z) == 0) {
             for (int j = m_abs; j <= n; ++j) {
                 forward_recur_shift_left(res);
                 assoc_legendre_p_pm1(norm, j, m, z, branch_cut, res[1]);
@@ -819,7 +819,7 @@ void lqn(std::complex<T> z, OutputVec1 cqn, OutputVec2 cqd) {
 
     std::complex<T> cq0, cq1, cqf0 = 0.0, cqf1, cqf2;
 
-    if (std::real(z) == 1) {
+    if (real(z) == 1) {
         for (int k = 0; k <= n; ++k) {
             cqn(k) = 1e300;
             cqd(k) = 1e300;
@@ -1006,7 +1006,7 @@ void lqmn(std::complex<T> z, OutputMat1 cqm, OutputMat2 cqd) {
     int i, j, k, km, ls;
     std::complex<T> cq0, cq1, cq10, cqf0 = 0, cqf, cqf1, cqf2, zq, zs;
 
-    if ((std::abs(std::real(z)) == 1) && (std::imag(z) == 0)) {
+    if ((std::abs(real(z)) == 1) && (imag(z) == 0)) {
         for (i = 0; i < (m + 1); i++) {
             for (j = 0; j < (n + 1); j++) {
                 cqm(i, j) = 1e300;
@@ -1019,7 +1019,7 @@ void lqmn(std::complex<T> z, OutputMat1 cqm, OutputMat2 cqd) {
 
     T xc = std::abs(z);
     ls = 0;
-    if ((std::imag(z) == 0) || (xc < 1)) {
+    if ((imag(z) == 0) || (xc < 1)) {
         ls = 1;
     }
     if (xc > 1) {

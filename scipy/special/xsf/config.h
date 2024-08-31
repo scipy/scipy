@@ -56,10 +56,9 @@
 #ifdef __CUDACC__
 #define XSF_HOST_DEVICE __host__ __device__
 
-
 #include <cuda/std/cmath>
-#include <cuda/std/cstdint>
 #include <cuda/std/cstddef>
+#include <cuda/std/cstdint>
 #include <cuda/std/limits>
 #include <cuda/std/type_traits>
 #include <cuda/std/utility>
@@ -144,7 +143,7 @@ XSF_HOST_DEVICE void swap(T &a, T &b) {
 }
 
 // Reimplement std::clamp until it's available in CuPy
-template<typename T>
+template <typename T>
 XSF_HOST_DEVICE constexpr T clamp(T &v, T &lo, T &hi) {
     return v < lo ? lo : (v > hi ? lo : v);
 }
@@ -212,9 +211,9 @@ using invoke_result = cuda::std::invoke_result<T>;
 template <typename T1, typename T2>
 using pair = cuda::std::pair<T1, T2>;
 
-using cuda::std::uint64_t;
-using cuda::std::size_t;
 using cuda::std::ptrdiff_t;
+using cuda::std::size_t;
+using cuda::std::uint64_t;
 
 #define XSF_ASSERT(a)
 
@@ -244,6 +243,13 @@ using cuda::std::ptrdiff_t;
 #endif
 
 namespace xsf {
+
+using std::cos;
+using std::sin;
+using std::sqrt;
+
+using std::imag;
+using std::real;
 
 template <typename T>
 struct remove_complex {
