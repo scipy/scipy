@@ -614,7 +614,19 @@ def csd(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
                     Pxy = np.median(Pxy, axis=-1)
                 Pxy /= bias
             elif average == 'mean':
-                Pxy = Pxy.mean(axis=-1)
+                Pxy = Pxy.mean(axis=-1)                       
+            elif average == 'maxhold':
+                if np.iscomplexobj(Pxy):
+                    Pxy = (np.max(np.real(Pxy), axis=-1) \
+                           + 1j * np.max(np.imag(Pxy), axis=-1))
+                else:
+                    Pxy = np.max(Pxy, axis=-1)
+            elif average == 'minhold':
+                if np.iscomplexobj(Pxy):
+                    Pxy = (np.min(np.real(Pxy), axis=-1) \
+                           + 1j * np.min(np.imag(Pxy), axis=-1))
+                else:
+                    Pxy = np.min(Pxy, axis=-1)    
             else:
                 raise ValueError(f'average must be "median" or "mean", got {average}')
         else:
