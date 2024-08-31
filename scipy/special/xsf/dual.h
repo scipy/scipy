@@ -9,51 +9,56 @@ namespace xsf {
 namespace detail {
 
     template <typename T>
-    void poly_plus_equal(T &lhs, const T &rhs) {
+    void dual_plus_equal(T &lhs, const T &rhs) {
         lhs += rhs;
     }
 
     template <typename T, size_t N>
-    void poly_plus_equal(T (&lhs)[N], const T (&rhs)[N]) {
+    void dual_plus_equal(T (&lhs)[N], const T (&rhs)[N]) {
         for (size_t i = 0; i < N; ++i) {
-            poly_plus_equal(lhs[i], rhs[i]);
+            dual_plus_equal(lhs[i], rhs[i]);
         }
     }
 
     template <typename T>
-    void poly_minus_equal(T &lhs, const T &rhs) {
+    void dual_minus_equal(T &lhs, const T &rhs) {
         lhs -= rhs;
     }
 
     template <typename T, size_t N>
-    void poly_minus_equal(T (&lhs)[N], const T (&rhs)[N]) {
+    void dual_minus_equal(T (&lhs)[N], const T (&rhs)[N]) {
         for (size_t i = 0; i < N; ++i) {
-            poly_minus_equal(lhs[i], rhs[i]);
+            dual_minus_equal(lhs[i], rhs[i]);
         }
     }
 
-    template <typename T, size_t N>
-    void poly_multiplies_equal(T (&lhs)[N], const T (&rhs)[N]) {
-        T tmp[N];
-        for (size_t i = 0; i < N; ++i) {
-            tmp[i] = lhs[i];
-        }
+    template <typename T>
+    void dual_multiplies_equal(T &lhs, const T &rhs) {
+        lhs *= rhs;
+    }
 
-        for (size_t i = 0; i < N; ++i) {
-            lhs[i] = 0;
-            for (size_t j = 0; j <= i; ++j) {
-                lhs[i] += tmp[j] * rhs[i - j];
+    template <typename T, size_t N>
+    void dual_multiplies_equal(T (&lhs)[N], const T (&rhs)[N]) {
+        for (size_t i = N; i-- > 0;) {
+            dual_multiplies_equal(lhs[i], rhs[0]);
+            for (size_t j = 0; j < i; ++j) {
+                lhs[i] += lhs[j] * rhs[i - j];
             }
         }
     }
 
+    template <typename T>
+    void dual_divides_equal(T &lhs, const T &rhs) {
+        lhs /= rhs;
+    }
+
     template <typename T, size_t N>
-    void poly_divides_equal(T (&lhs)[N], const T (&rhs)[N]) {
+    void dual_divides_equal(T (&lhs)[N], const T (&rhs)[N]) {
         for (size_t i = 0; i < N; ++i) {
             for (size_t j = 1; j <= i; ++j) {
                 lhs[i] -= rhs[j] * lhs[i - j];
             }
-            lhs[i] /= rhs[0];
+            dual_divides_equal(lhs[i], rhs[0]);
         }
     }
 
@@ -108,7 +113,7 @@ struct dual<T, N> {
     }
 
     dual &operator+=(const dual &other) {
-        detail::poly_plus_equal(values, other.values);
+        detail::dual_plus_equal(values, other.values);
 
         return *this;
     }
@@ -120,7 +125,7 @@ struct dual<T, N> {
     }
 
     dual &operator-=(const dual &other) {
-        detail::poly_minus_equal(values, other.values);
+        detail::dual_minus_equal(values, other.values);
 
         return *this;
     }
@@ -132,7 +137,7 @@ struct dual<T, N> {
     }
 
     dual &operator*=(const dual &other) {
-        detail::poly_multiplies_equal(values, other.values);
+        detail::dual_multiplies_equal(values, other.values);
 
         return *this;
     }
@@ -146,7 +151,7 @@ struct dual<T, N> {
     }
 
     dual &operator/=(const dual &other) {
-        detail::poly_divides_equal(values, other.values);
+        detail::dual_divides_equal(values, other.values);
 
         return *this;
     }
