@@ -6,6 +6,7 @@ prima_f = static_library('prima_f',
   fortran_args : [
     '-DPRIMA_REAL_PRECISION=64',
     '-DPRIMA_INTEGER_KIND=0',
+    _fflag_fpp,
   ],
   sources:[
     '../../_lib/prima/fortran/common/linalg.f90',
