@@ -75,17 +75,27 @@ T log_expit(T x) {
     return -std::log1p(std::exp(-x));
 };
 
-template <typename T>
-#if !defined(FLT_EVAL_METHOD) || (FLT_EVAL_METHOD != 0)
-volatile
+#ifndef FLT_EVAL_METHOD
+#error Missing definition of FLT_EVAL_METHOD
 #endif
-T fadd(const T &x, const T &y) { return static_cast<T>(x + y); }
 
 template <typename T>
-#if !defined(FLT_EVAL_METHOD) || (FLT_EVAL_METHOD != 0)
-volatile
+T fadd(const T &x, const T &y) {
+#if FLT_EVAL_METHOD != 0
+    return std::fma(T(1), x, y);
+#else
+    return static_cast<T>(x + y);
 #endif
-T fsub(const T &x, const T &y) { return static_cast<T>(x - y); }
+}
+
+template <typename T>
+T fsub(const T &x, const T &y) {
+#if FLT_EVAL_METHOD != 0
+    return std::fma(T(-1), y, x);
+#else
+    return static_cast<T>(x - y);
+#endif
+}
 
 // Compute pow(1+x,y) accurately for real x and y.
 template <typename T>
