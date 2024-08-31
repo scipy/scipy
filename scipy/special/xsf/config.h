@@ -244,7 +244,11 @@ using cuda::std::uint64_t;
 
 namespace xsf {
 
+using std::isfinite;
+using std::isinf;
+
 using std::cos;
+using std::exp;
 using std::sin;
 using std::sqrt;
 

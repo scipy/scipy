@@ -76,7 +76,7 @@ void legendre_p_all(T z, std::tuple<OutputVecs &...> res) {
 
     T res_n[2];
     legendre_p_for_each_n(n, z, res_n, [&res](int n, const T(&res_n)[2]) {
-        tuples::call(res, n) = res_n[1].derivatives();
+        dual_assign_grad(res_n[1], tuples::call(res, n));
     });
 }
 
@@ -528,10 +528,10 @@ void assoc_legendre_p_all(NormPolicy norm, T z, int branch_cut, std::tuple<Outpu
     T p[2];
     assoc_legendre_p_for_each_n_m(norm, n, m, z, branch_cut, p, [&res](int n, int m, const T(&res_n_m)[2]) {
         if (m >= 0) {
-            tuples::call(res, n, m) = res_n_m[1].derivatives();
+            dual_assign_grad(res_n_m[1], tuples::call(res, n, m));
         } else {
             auto &res0 = std::get<0>(res);
-            tuples::call(res, n, m + res0.extent(1)) = res_n_m[1].derivatives();
+            dual_assign_grad(res_n_m[1], tuples::call(res, n, m + res0.extent(1)));
         }
     });
 }
@@ -707,11 +707,11 @@ void sph_legendre_p_all(T theta, std::tuple<OutputMats &...> res) {
     int m_max = (res0.extent(1) - 1) / 2;
 
     T res_n_m[2];
-    sph_legendre_p_for_each_n_m(n_max, m_max, theta, res_n_m, [m_max, &res](int n, int m, const auto &res_n_m) {
+    sph_legendre_p_for_each_n_m(n_max, m_max, theta, res_n_m, [m_max, &res](int n, int m, const T(&res_n_m)[2]) {
         if (m >= 0) {
-            tuples::call(res, n, m) = res_n_m[1].derivatives();
+            dual_assign_grad(res_n_m[1], tuples::call(res, n, m));
         } else {
-            tuples::call(res, n, m + 2 * m_max + 1) = res_n_m[1].derivatives();
+            dual_assign_grad(res_n_m[1], tuples::call(res, n, m + 2 * m_max + 1));
         }
     });
 }

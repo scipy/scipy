@@ -21,12 +21,12 @@ T legendre_p(long long int n, T z) {
 
 template <typename T>
 void legendre_p(long long int n, T z, T &res, T &res_jac) {
-    std::tie(res, res_jac) = xsf::legendre_p(n, xsf::make_dual<1>(z)).derivatives();
+    dual_assign_grad(xsf::legendre_p(n, xsf::make_dual<1>(z)), std::tie(res, res_jac));
 }
 
 template <typename T>
 void legendre_p(long long int n, T z, T &res, T &res_jac, T &res_hess) {
-    std::tie(res, res_jac, res_hess) = xsf::legendre_p(n, xsf::make_dual<2>(z)).derivatives();
+    dual_assign_grad(xsf::legendre_p(n, xsf::make_dual<2>(z)), std::tie(res, res_jac, res_hess));
 }
 
 template <typename T, typename OutputVec1>
@@ -55,14 +55,14 @@ T assoc_legendre_p(NormPolicy norm, long long int n, long long int m, T z, long 
 template <typename NormPolicy, typename T>
 void assoc_legendre_p(NormPolicy norm, long long int n, long long int m, T z, long long int branch_cut, T &res,
                       T &res_jac) {
-    std::tie(res, res_jac) = xsf::assoc_legendre_p(norm, n, m, xsf::make_dual<1>(z), branch_cut).derivatives();
+    xsf::dual_assign_grad(xsf::assoc_legendre_p(norm, n, m, xsf::make_dual<1>(z), branch_cut), std::tie(res, res_jac));
 }
 
 template <typename NormPolicy, typename T>
 void assoc_legendre_p(NormPolicy norm, long long int n, long long int m, T z, long long int branch_cut, T &res,
                       T &res_jac, T &res_hess) {
-    std::tie(res, res_jac, res_hess) =
-        xsf::assoc_legendre_p(norm, n, m, xsf::make_dual<2>(z), branch_cut).derivatives();
+    xsf::dual_assign_grad(xsf::assoc_legendre_p(norm, n, m, xsf::make_dual<2>(z), branch_cut),
+                          std::tie(res, res_jac, res_hess));
 }
 
 template <typename NormPolicy, typename T, typename OutputMat1>
@@ -83,17 +83,17 @@ void assoc_legendre_p_all(NormPolicy norm, T z, long long int branch_cut, Output
 
 template <typename T>
 T sph_legendre_p(long long int n, long long int m, T theta) {
-    return xsf::sph_legendre_p(n, m, xsf::make_dual<0>(theta)).value();
+    return xsf::sph_legendre_p(n, m, xsf::make_dual<0>(theta)).front();
 }
 
 template <typename T>
 void sph_legendre_p(long long int n, long long int m, T theta, T &res, T &res_jac) {
-    std::tie(res, res_jac) = xsf::sph_legendre_p(n, m, xsf::make_dual<1>(theta)).derivatives();
+    xsf::dual_assign_grad(xsf::sph_legendre_p(n, m, xsf::make_dual<1>(theta)), std::tie(res, res_jac));
 }
 
 template <typename T>
 void sph_legendre_p(long long int n, long long int m, T theta, T &res, T &res_jac, T &res_hess) {
-    std::tie(res, res_jac, res_hess) = xsf::sph_legendre_p(n, m, xsf::make_dual<2>(theta)).derivatives();
+    xsf::dual_assign_grad(xsf::sph_legendre_p(n, m, xsf::make_dual<2>(theta)), std::tie(res, res_jac, res_hess));
 }
 
 template <typename T, typename OutputMat1>
@@ -112,6 +112,20 @@ void sph_legendre_p_all(T theta, OutputMat1 res, OutputMat2 res_jac, OutputMat3 
 }
 
 template <typename T>
+std::complex<T> sph_harm_y(long long int n, long long int m, T theta, T phi) {
+    xsf::dual<xsf::dual<T, 0>, 0> theta_dual;
+    theta_dual[0][0] = theta;
+
+    xsf::dual<xsf::dual<T, 0>, 0> phi_dual;
+    phi_dual[0][0] = phi;
+
+    std::complex<T> res;
+    dual_assign_grad(xsf::sph_harm_y(n, m, theta_dual, phi_dual), std::tie(res));
+
+    return res;
+}
+
+template <typename T>
 std::complex<T> sph_harm(long long int m, long long int n, T theta, T phi) {
     if (n < 0) {
         xsf::set_error("sph_harm", SF_ERROR_ARG, "n should not be negative");
@@ -123,7 +137,7 @@ std::complex<T> sph_harm(long long int m, long long int n, T theta, T phi) {
         return std::numeric_limits<T>::quiet_NaN();
     }
 
-    return xsf::sph_harm_y(n, m, phi, theta);
+    return sph_harm_y(n, m, phi, theta);
 }
 
 template <typename T>
@@ -138,34 +152,103 @@ std::complex<T> sph_harm(T m, T n, T theta, T phi) {
 }
 
 template <typename T>
-std::complex<T> sph_harm_y(long long int n, long long int m, T theta, T phi) {
-    return xsf::sph_harm_y(n, m, theta, phi);
-}
-
-template <typename T>
 void sph_harm_y(long long int n, long long int m, T theta, T phi, std::complex<T> &res, std::complex<T> (&res_jac)[2]) {
-    xsf::sph_harm_y(n, m, theta, phi, std::tie(res, res_jac));
+    xsf::dual<xsf::dual<T, 1>, 1> theta_dual;
+    theta_dual[0][0] = theta;
+    theta_dual[0][1] = 0;
+    theta_dual[1][0] = 1;
+    theta_dual[1][1] = 0;
+
+    xsf::dual<xsf::dual<T, 1>, 1> phi_dual;
+    phi_dual[0][0] = phi;
+    phi_dual[0][1] = 1;
+    phi_dual[1][0] = 0;
+    phi_dual[1][1] = 0;
+
+    dual_assign_grad(xsf::sph_harm_y(n, m, theta_dual, phi_dual), std::tie(res, res_jac));
 }
 
 template <typename T>
 void sph_harm_y(long long int n, long long int m, T theta, T phi, std::complex<T> &res, std::complex<T> (&res_jac)[2],
                 std::complex<T> (&res_hess)[2][2]) {
-    xsf::sph_harm_y(n, m, theta, phi, std::tie(res, res_jac, res_hess));
+    xsf::dual<xsf::dual<T, 2>, 2> theta_dual;
+    theta_dual[0][0] = theta;
+    theta_dual[0][1] = 0;
+    theta_dual[0][2] = 0;
+    theta_dual[1][0] = 1;
+    theta_dual[1][1] = 0;
+    theta_dual[1][2] = 0;
+    theta_dual[2][0] = 0;
+    theta_dual[2][1] = 0;
+    theta_dual[2][2] = 0;
+
+    xsf::dual<xsf::dual<T, 2>, 2> phi_dual;
+    phi_dual[0][0] = phi;
+    phi_dual[0][1] = 1;
+    phi_dual[0][2] = 0;
+    phi_dual[1][0] = 0;
+    phi_dual[1][1] = 0;
+    phi_dual[1][2] = 0;
+    phi_dual[2][0] = 0;
+    phi_dual[2][1] = 0;
+    phi_dual[2][2] = 0;
+
+    dual_assign_grad(xsf::sph_harm_y(n, m, theta_dual, phi_dual), std::tie(res, res_jac, res_hess));
 }
 
 template <typename T, typename OutputMat1>
 void sph_harm_y_all(T theta, T phi, OutputMat1 res) {
-    xsf::sph_harm_y_all(theta, phi, std::tie(res));
+    xsf::dual<xsf::dual<T, 0>, 0> theta_dual;
+    theta_dual[0][0] = theta;
+
+    xsf::dual<xsf::dual<T, 0>, 0> phi_dual;
+    phi_dual[0][0] = phi;
+
+    xsf::sph_harm_y_all(theta_dual, phi_dual, std::tie(res));
 }
 
 template <typename T, typename OutputMat1, typename OutputMat2>
 void sph_harm_y_all(T theta, T phi, OutputMat1 res, OutputMat2 res_jac) {
-    xsf::sph_harm_y_all(theta, phi, std::tie(res, res_jac));
+    xsf::dual<xsf::dual<T, 1>, 1> theta_dual;
+    theta_dual[0][0] = theta;
+    theta_dual[0][1] = 0;
+    theta_dual[1][0] = 1;
+    theta_dual[1][1] = 0;
+
+    xsf::dual<xsf::dual<T, 1>, 1> phi_dual;
+    phi_dual[0][0] = phi;
+    phi_dual[0][1] = 1;
+    phi_dual[1][0] = 0;
+    phi_dual[1][1] = 0;
+
+    xsf::sph_harm_y_all(theta_dual, phi_dual, std::tie(res, res_jac));
 }
 
 template <typename T, typename OutputMat1, typename OutputMat2, typename OutputMat3>
 void sph_harm_y_all(T theta, T phi, OutputMat1 res, OutputMat2 res_jac, OutputMat3 res_hess) {
-    xsf::sph_harm_y_all(theta, phi, std::tie(res, res_jac, res_hess));
+    xsf::dual<xsf::dual<T, 2>, 2> theta_dual;
+    theta_dual[0][0] = theta;
+    theta_dual[0][1] = 0;
+    theta_dual[0][2] = 0;
+    theta_dual[1][0] = 1;
+    theta_dual[1][1] = 0;
+    theta_dual[1][2] = 0;
+    theta_dual[2][0] = 0;
+    theta_dual[2][1] = 0;
+    theta_dual[2][2] = 0;
+
+    xsf::dual<xsf::dual<T, 2>, 2> phi_dual;
+    phi_dual[0][0] = phi;
+    phi_dual[0][1] = 1;
+    phi_dual[0][2] = 0;
+    phi_dual[1][0] = 0;
+    phi_dual[1][1] = 0;
+    phi_dual[1][2] = 0;
+    phi_dual[2][0] = 0;
+    phi_dual[2][1] = 0;
+    phi_dual[2][2] = 0;
+
+    xsf::sph_harm_y_all(theta_dual, phi_dual, std::tie(res, res_jac, res_hess));
 }
 
 } // namespace

@@ -1,21 +1,11 @@
 #pragma once
 
+#include <tuple>
+
+#include "config.h"
+#include "tuples.h"
+
 namespace xsf {
-
-template <typename T>
-std::tuple<T> derivatives_impl(const T (&values)[1]) {
-    return {values[0]};
-}
-
-template <typename T>
-std::tuple<T, T> derivatives_impl(const T (&values)[2]) {
-    return {values[0], values[1]};
-}
-
-template <typename T>
-std::tuple<T, T, T> derivatives_impl(const T (&values)[3]) {
-    return {values[0], values[1], T(2) * values[2]};
-}
 
 template <typename T, size_t N>
 struct dual {
@@ -44,8 +34,8 @@ struct dual {
         }
     }
 
-    dual &operator=(const T &rhs) {
-        values[0] = rhs;
+    dual &operator=(const T &other) {
+        values[0] = other;
         for (size_t i = 1; i <= N; ++i) {
             values[i] = 0;
         }
@@ -125,7 +115,7 @@ struct dual {
     }
 
     dual apply(const T (&coef)[N + 1]) const {
-        dual res(0);
+        dual res = T(0);
 
         dual x = *this;
         x.values[0] = 0;
@@ -152,12 +142,120 @@ struct dual {
 
     T hess() const { return T(2) * values[2]; }
 
-    decltype(auto) derivatives() const { return derivatives_impl(values); }
-
     T &operator[](size_t i) { return values[i]; }
 
     const T &operator[](size_t i) const { return values[i]; }
 };
+
+template <typename T>
+void dual_assign_grad(const dual<T, 0> &x, std::tuple<T &> res) {
+    auto &[res0] = res;
+
+    res0 = x[0];
+}
+
+template <typename T>
+void dual_assign_grad(const dual<T, 1> &x, std::tuple<T &, T &> res) {
+    auto &[res0, res1] = res;
+
+    res0 = x[0];
+    res1 = x[1];
+}
+
+template <typename T>
+void dual_assign_grad(const dual<T, 2> &x, std::tuple<T &, T &, T &> res) {
+    auto &[res0, res1, res2] = res;
+
+    res0 = x[0];
+    res1 = x[1];
+    res2 = T(2) * x[2];
+}
+
+template <typename T>
+void dual_assign_grad(const std::complex<dual<dual<T, 0>, 0>> &z, std::tuple<std::complex<T> &> res) {
+    dual<dual<T, 0>, 0> z_real = real(z);
+    dual<dual<T, 0>, 0> z_imag = imag(z);
+
+    auto &[res0] = res;
+
+    res0 = std::complex(z_real[0][0], z_imag[0][0]);
+}
+
+template <typename T>
+void dual_assign_grad(
+    const std::complex<dual<dual<T, 1>, 1>> &z, std::tuple<std::complex<T> &, std::complex<T> (&)[2]> res
+) {
+    dual<dual<T, 1>, 1> z_real = real(z);
+    dual<dual<T, 1>, 1> z_imag = imag(z);
+
+    auto &[res0, res1] = res;
+
+    res0 = std::complex(z_real[0][0], z_imag[0][0]);
+
+    res1[0] = std::complex(z_real[1][0], z_imag[1][0]);
+    res1[1] = std::complex(z_real[0][1], z_imag[0][1]);
+}
+
+template <typename T>
+void dual_assign_grad(
+    const std::complex<dual<dual<T, 1>, 1>> &z,
+    std::tuple<std::complex<T> &, std::mdspan<std::complex<T>, std::dextents<ptrdiff_t, 1>, std::layout_stride>> res
+) {
+    dual<dual<T, 1>, 1> z_real = real(z);
+    dual<dual<T, 1>, 1> z_imag = imag(z);
+
+    auto &[res0, res1] = res;
+
+    res0 = std::complex(z_real[0][0], z_imag[0][0]);
+
+    res1(0) = std::complex(z_real[1][0], z_imag[1][0]);
+    res1(1) = std::complex(z_real[0][1], z_imag[0][1]);
+}
+
+template <typename T>
+void dual_assign_grad(
+    const std::complex<dual<dual<T, 2>, 2>> &z,
+    std::tuple<std::complex<T> &, std::complex<T> (&)[2], std::complex<T> (&)[2][2]> res
+) {
+    dual<dual<T, 2>, 2> z_real = real(z);
+    dual<dual<T, 2>, 2> z_imag = imag(z);
+
+    auto &[res0, res1, res2] = res;
+
+    res0 = std::complex(z_real[0][0], z_imag[0][0]);
+
+    res1[0] = std::complex(z_real[1][0], z_imag[1][0]);
+    res1[1] = std::complex(z_real[0][1], z_imag[0][1]);
+
+    res2[0][0] = T(2) * std::complex(z_real[2][0], z_imag[2][0]);
+    res2[0][1] = std::complex(z_real[1][1], z_imag[1][1]);
+    res2[1][0] = std::complex(z_real[1][1], z_imag[1][1]);
+    res2[1][1] = T(2) * std::complex(z_real[0][2], z_imag[0][2]);
+}
+
+template <typename T>
+void dual_assign_grad(
+    const std::complex<dual<dual<T, 2>, 2>> &z,
+    std::tuple<
+        std::complex<T> &, std::mdspan<std::complex<T>, std::dextents<ptrdiff_t, 1>, std::layout_stride>,
+        std::mdspan<std::complex<T>, std::dextents<ptrdiff_t, 2>, std::layout_stride>>
+        res
+) {
+    dual<dual<T, 2>, 2> z_real = real(z);
+    dual<dual<T, 2>, 2> z_imag = imag(z);
+
+    auto &[res0, res1, res2] = res;
+
+    res0 = std::complex(z_real[0][0], z_imag[0][0]);
+
+    res1(0) = std::complex(z_real[1][0], z_imag[1][0]);
+    res1(1) = std::complex(z_real[0][1], z_imag[0][1]);
+
+    res2(0, 0) = T(2) * std::complex(z_real[2][0], z_imag[2][0]);
+    res2(0, 1) = std::complex(z_real[1][1], z_imag[1][1]);
+    res2(1, 0) = std::complex(z_real[1][1], z_imag[1][1]);
+    res2(1, 1) = T(2) * std::complex(z_real[0][2], z_imag[0][2]);
+}
 
 template <typename T, size_t N>
 dual<T, N> operator-(const dual<T, N> &rhs) {
@@ -250,18 +348,18 @@ dual<T, N> operator/(const T &lhs, const dual<T, N> &rhs) {
 }
 
 template <typename T, size_t N>
-dual<T, N> operator<(const dual<T, N> &lhs, const dual<T, N> &rhs) {
-    return lhs[0] < rhs[0];
+bool operator<(const dual<T, N> &lhs, const dual<T, N> &rhs) {
+    return lhs.front() < rhs.front();
 }
 
-template <typename T, typename U, size_t N>
+template <typename T, size_t N, typename U>
 bool operator<(const dual<T, N> &lhs, const U &rhs) {
-    return lhs.values[0] < rhs;
+    return lhs.front() < rhs;
 }
 
-template <typename T, typename U, size_t N>
+template <typename T, size_t N, typename U>
 bool operator==(const dual<T, N> &lhs, const U &rhs) {
-    return lhs.values[0] == rhs;
+    return lhs.front() == rhs;
 }
 
 template <size_t N, typename T>
@@ -275,21 +373,21 @@ dual<T, N> make_dual(T value) {
 
 template <typename T>
 dual<T, 0> sqrt(const dual<T, 0> &z) {
-    T z0_sqrt = std::sqrt(z[0]);
+    T z0_sqrt = sqrt(z[0]);
 
     return z.apply({z0_sqrt});
 }
 
 template <typename T>
 dual<T, 1> sqrt(const dual<T, 1> &z) {
-    T z0_sqrt = std::sqrt(z[0]);
+    T z0_sqrt = sqrt(z[0]);
 
     return z.apply({z0_sqrt, T(1) / (T(2) * z0_sqrt)});
 }
 
 template <typename T>
 dual<T, 2> sqrt(const dual<T, 2> &z) {
-    T z0_sqrt = std::sqrt(z[0]);
+    T z0_sqrt = sqrt(z[0]);
 
     return z.apply({z0_sqrt, T(1) / (T(2) * z0_sqrt), -T(1) / (T(4) * z0_sqrt * z[0])});
 }
@@ -364,6 +462,33 @@ dual<T, N> imag(dual<T, N> z) {
     return res;
 }
 
+template <typename T, size_t N>
+dual<T, N> exp(const dual<T, N> &z) {
+    T coef[N + 1] = {exp(z.front())};
+    for (size_t i = 1; i <= N; ++i) {
+        coef[i] = coef[0];
+    }
+
+    return z.apply(coef);
+}
+
+template <typename T, size_t N>
+bool isfinite(const dual<T, N> &z) {
+    return isfinite(z.front());
+}
+
+template <typename T, size_t N>
+bool isinf(const dual<T, N> &z) {
+    return isinf(z.front());
+}
+
+using std::copysign;
+
+template <typename T, size_t N>
+dual<T, N> copysign(const dual<T, N> &z, const dual<T, N> &z2) {
+    return z;
+}
+
 } // namespace xsf
 
 namespace std {
@@ -412,6 +537,18 @@ xsf::dual<T, 2> abs(xsf::dual<std::complex<T>, 2> z) {
     }
 
     return z.apply({std::abs(z.value()), std::real(z[0]) / std::abs(z[0]), T(0)});
+}
+
+using std::exp;
+
+template <typename T, size_t N>
+xsf::dual<T, N> exp(const xsf::dual<T, N> &z) {
+    T coef[N + 1] = {std::exp(z.front())};
+    //    for (size_t i = 1; i <= N; ++i) {
+    //      coef[i] = -coef[i - 2];
+    //}
+
+    return z.apply(coef);
 }
 
 } // namespace std

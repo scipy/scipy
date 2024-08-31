@@ -920,15 +920,16 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
                       xsf::numpy::gufunc({static_cast<xsf::numpy::qqdd_DD2_old>(::sph_harm_y),
                                           static_cast<xsf::numpy::qqff_FF2_old>(::sph_harm_y)},
                                          2, "sph_harm_y", nullptr, "(),(),(),()->(),(2)",
-                                         [](const npy_intp *dims, npy_intp *new_dims) { new_dims[0] = 2; }),
+                                         [](const npy_intp *dims, npy_intp *new_dims) { // new_dims[0] = 2;
+                                         }),
                       xsf::numpy::gufunc({static_cast<xsf::numpy::qqdd_DD2D22_old>(::sph_harm_y),
                                           static_cast<xsf::numpy::qqff_FF2F22_old>(::sph_harm_y)},
                                          3, "sph_harm_y", nullptr, "(),(),(),()->(),(2),(2,2)",
                                          [](const npy_intp *dims, npy_intp *new_dims) {
-                                             new_dims[0] = 2;
+                                             //new_dims[0] = 2;
 
-                                             new_dims[1] = 2;
-                                             new_dims[2] = 2;
+//                                             new_dims[1] = 2;
+  //                                           new_dims[2] = 2;
                                          }));
     PyModule_AddObjectRef(_special_ufuncs, "sph_harm_y", sph_harm_y);
 
