@@ -33,7 +33,151 @@ import scipy
 __all__ = ["AAA"]
 
 
-class AAA:
+class _Barycentric_Rational:
+    """Base class for Barycentric representation of a rational function."""
+    def __init__(self, points, values, **kwargs):
+        # input validation
+        z = np.asarray(points)
+        f = np.asarray(values)
+
+        if z.ndim != 1 or f.ndim != 1:
+            raise ValueError("`points` and `values` must be 1-D.")
+
+        if f.size != z.size:
+            raise ValueError("`points` and `values` must be the same size.")
+
+        if not np.all(np.isfinite(z)):
+            raise ValueError("`points` must be finite.")
+        
+        # Remove infinite or NaN function values and repeated entries
+        to_keep = (np.isfinite(f)) & (~np.isnan(f))
+        f = f[to_keep]
+        z = z[to_keep]
+        z, uni = np.unique(z, return_index=True)
+        f = f[uni]
+
+        self.support_points, self.support_values, self.weights = self._compute_weights(
+            z, f, **kwargs
+        )
+        
+        # only compute once
+        self._poles = None
+        self._residues = None
+        self._roots = None
+    
+    def _compute_weights(z, f, **kwargs):
+        raise NotImplementedError
+    
+    def __call__(self, z):
+        """Evaluate the rational approximation at given values.
+
+        Parameters
+        ----------
+        z : array_like
+            Input values.
+        """
+        # evaluate rational function in barycentric form.
+        z = np.asarray(z)
+        zv = np.ravel(z)
+
+        # Cauchy matrix
+        # Ignore errors due to inf/inf at support points, these will be fixed later
+        with np.errstate(invalid="ignore", divide="ignore"):
+            CC = 1 / np.subtract.outer(zv, self.support_points)
+            # Vector of values
+            r = CC @ (self.weights * self.support_values) / (CC @ self.weights)
+
+        # Deal with input inf: `r(inf) = lim r(z) = sum(w*f) / sum(w)`
+        if np.any(np.isinf(zv)):
+            r[np.isinf(zv)] = (np.sum(self.weights * self.support_values)
+                               / np.sum(self.weights))
+
+        # Deal with NaN
+        ii = np.nonzero(np.isnan(r))[0]
+        for jj in ii:
+            if np.isnan(zv[jj]) or not np.any(zv[jj] == self.support_points):
+                # r(NaN) = NaN is fine.
+                # The second case may happen if `r(zv[ii]) = 0/0` at some point.
+                pass
+            else:
+                # Clean up values `NaN = inf/inf` at support points.
+                # Find the corresponding node and set entry to correct value:
+                r[jj] = self.support_values[zv[jj] == self.support_points].squeeze()
+
+        return np.reshape(r, z.shape)
+
+    def poles(self):
+        """Compute the poles of the rational approximation.
+
+        Returns
+        -------
+        poles : array
+            Poles of the AAA approximation, repeated according to their multiplicity
+            but not in any specific order.
+        """
+        if self._poles is None:
+            # Compute poles via generalized eigenvalue problem
+            m = self.weights.size
+            B = np.eye(m + 1, dtype=self.weights.dtype)
+            B[0, 0] = 0
+
+            E = np.zeros_like(B, dtype=np.result_type(self.weights,
+                                                      self.support_points))
+            E[0, 1:] = self.weights
+            E[1:, 0] = 1
+            np.fill_diagonal(E[1:, 1:], self.support_points)
+
+            pol = scipy.linalg.eigvals(E, B)
+            self._poles = pol[np.isfinite(pol)]
+        return self._poles
+
+    def residues(self):
+        """Compute the residues of the poles of the approximation.
+
+        Returns
+        -------
+        residues : array
+            Residues associated with the `poles` of the approximation
+        """
+        if self._residues is None:
+            # Compute residues via formula for res of quotient of analytic functions
+            with np.errstate(divide="ignore", invalid="ignore"):
+                N = (1/(np.subtract.outer(self.poles(), self.support_points))) @ (
+                    self.support_values * self.weights
+                )
+                Ddiff = (
+                    -((1/np.subtract.outer(self.poles(), self.support_points))**2)
+                    @ self.weights
+                )
+                self._residues = N / Ddiff
+        return self._residues
+
+    def roots(self):
+        """Compute the zeros of the rational approximation.
+
+        Returns
+        -------
+        zeros : array
+            Zeros of the AAA approximation, repeated according to their multiplicity
+            but not in any specific order.
+        """
+        if self._roots is None:
+            # Compute zeros via generalized eigenvalue problem
+            m = self.weights.size
+            B = np.eye(m + 1, dtype=self.weights.dtype)
+            B[0, 0] = 0
+            E = np.zeros_like(B, dtype=np.result_type(self.weights, self.support_values,
+                                                      self.support_points))
+            E[0, 1:] = self.weights * self.support_values
+            E[1:, 0] = 1
+            np.fill_diagonal(E[1:, 1:], self.support_points)
+
+            zer = scipy.linalg.eigvals(E, B)
+            self._roots = zer[np.isfinite(zer)]
+        return self._roots
+
+
+class AAA(_Barycentric_Rational):
     r"""
     AAA real or complex rational approximation.
 
@@ -250,38 +394,13 @@ class AAA:
     """
     def __init__(self, points, values, *, rtol=None, max_terms=100, clean_up=True,
                  clean_up_tol=1e-13):
-        # input validation
-        z = np.asarray(points)
-        f = np.asarray(values)
-
-        if z.ndim != 1 or f.ndim != 1:
-            raise ValueError("`points` and `values` must be 1-D.")
-
-        if f.size != z.size:
-            raise ValueError("`points` and `values` must be the same size.")
-
-        if not np.all(np.isfinite(z)):
-            raise ValueError("`points` must be finite.")
-
         max_terms = operator.index(max_terms)
         if max_terms < 1:
             raise ValueError("`max_terms` must be an integer value greater than or "
                              "equal to one.")
 
-        # Remove infinite or NaN function values and repeated entries
-        to_keep = (np.isfinite(f)) & (~np.isnan(f))
-        f = f[to_keep]
-        z = z[to_keep]
-        z, uni = np.unique(z, return_index=True)
-        f = f[uni]
-
-        self._compute_weights(z, f, rtol, max_terms)
-
-        # only compute once
-        self._poles = None
-        self._residues = None
-        self._roots = None
-
+        super().__init__(points, values, rtol=rtol, max_terms=max_terms)
+        
         if clean_up:
             self.clean_up(clean_up_tol)
 
@@ -370,12 +489,10 @@ class AAA:
 
         # Remove support points with zero weight
         i_non_zero = wj != 0
-        self.support_points = zj[i_non_zero]
-        self.support_values = fj[i_non_zero]
-        self.weights = wj[i_non_zero]
         self.errors = errors[: m + 1]
         self._points = z
         self._values = f
+        return zj[i_non_zero], fj[i_non_zero], wj[i_non_zero]
 
     def clean_up(self, cleanup_tol=1e-13):
         """Automatic removal of Froissart doublets.
@@ -445,111 +562,3 @@ class AAA:
         self._roots = None
         
         return ni
-
-    def __call__(self, z):
-        """Evaluate the rational approximation at given values.
-
-        Parameters
-        ----------
-        z : array_like
-            Input values.
-        """
-        # evaluate rational function in barycentric form.
-        z = np.asarray(z)
-        zv = np.ravel(z)
-
-        # Cauchy matrix
-        # Ignore errors due to inf/inf at support points, these will be fixed later
-        with np.errstate(invalid="ignore", divide="ignore"):
-            CC = 1 / np.subtract.outer(zv, self.support_points)
-            # Vector of values
-            r = CC @ (self.weights * self.support_values) / (CC @ self.weights)
-
-        # Deal with input inf: `r(inf) = lim r(z) = sum(w*f) / sum(w)`
-        if np.any(np.isinf(zv)):
-            r[np.isinf(zv)] = (np.sum(self.weights * self.support_values)
-                               / np.sum(self.weights))
-
-        # Deal with NaN
-        ii = np.nonzero(np.isnan(r))[0]
-        for jj in ii:
-            if np.isnan(zv[jj]) or not np.any(zv[jj] == self.support_points):
-                # r(NaN) = NaN is fine.
-                # The second case may happen if `r(zv[ii]) = 0/0` at some point.
-                pass
-            else:
-                # Clean up values `NaN = inf/inf` at support points.
-                # Find the corresponding node and set entry to correct value:
-                r[jj] = self.support_values[zv[jj] == self.support_points].squeeze()
-
-        return np.reshape(r, z.shape)
-
-    def poles(self):
-        """Compute the poles of the rational approximation.
-
-        Returns
-        -------
-        poles : array
-            Poles of the AAA approximation, repeated according to their multiplicity
-            but not in any specific order.
-        """
-        if self._poles is None:
-            # Compute poles via generalized eigenvalue problem
-            m = self.weights.size
-            B = np.eye(m + 1, dtype=self.weights.dtype)
-            B[0, 0] = 0
-
-            E = np.zeros_like(B, dtype=np.result_type(self.weights,
-                                                      self.support_points))
-            E[0, 1:] = self.weights
-            E[1:, 0] = 1
-            np.fill_diagonal(E[1:, 1:], self.support_points)
-
-            pol = scipy.linalg.eigvals(E, B)
-            self._poles = pol[np.isfinite(pol)]
-        return self._poles
-
-    def residues(self):
-        """Compute the residues of the poles of the approximation.
-
-        Returns
-        -------
-        residues : array
-            Residues associated with the `poles` of the approximation
-        """
-        if self._residues is None:
-            # Compute residues via formula for res of quotient of analytic functions
-            with np.errstate(divide="ignore", invalid="ignore"):
-                N = (1/(np.subtract.outer(self.poles(), self.support_points))) @ (
-                    self.support_values * self.weights
-                )
-                Ddiff = (
-                    -((1/np.subtract.outer(self.poles(), self.support_points))**2)
-                    @ self.weights
-                )
-                self._residues = N / Ddiff
-        return self._residues
-
-    def roots(self):
-        """Compute the zeros of the rational approximation.
-
-        Returns
-        -------
-        zeros : array
-            Zeros of the AAA approximation, repeated according to their multiplicity
-            but not in any specific order.
-        """
-        if self._roots is None:
-            # Compute zeros via generalized eigenvalue problem
-            m = self.weights.size
-            B = np.eye(m + 1, dtype=self.weights.dtype)
-            B[0, 0] = 0
-            E = np.zeros_like(B, dtype=np.result_type(self.weights, self.support_values,
-                                                      self.support_points))
-            E[0, 1:] = self.weights * self.support_values
-            E[1:, 0] = 1
-            np.fill_diagonal(E[1:, 1:], self.support_points)
-
-            zer = scipy.linalg.eigvals(E, B)
-            self._roots = zer[np.isfinite(zer)]
-        return self._roots
