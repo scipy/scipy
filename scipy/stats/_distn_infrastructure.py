@@ -3393,7 +3393,7 @@ class rv_discrete(rv_generic):
         return np.sum(self._pmf(m, *args), axis=0)
 
     def _cdf(self, x, *args):
-        k = floor(x)
+        k = floor(x).astype(np.float64)
         return self._cdfvec(k, *args)
 
     # generic _logcdf, _sf, _logsf, _ppf, _isf, _rvs defined in rv_generic

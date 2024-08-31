@@ -119,10 +119,10 @@ def diags_array(diagonals, /, *, offsets=0, shape=None, format=None, dtype=None)
     >>> from scipy.sparse import diags_array
     >>> diagonals = [[1, 2, 3, 4], [1, 2, 3], [1, 2]]
     >>> diags_array(diagonals, offsets=[0, -1, 2]).toarray()
-    array([[1, 0, 1, 0],
-           [1, 2, 0, 2],
-           [0, 2, 3, 0],
-           [0, 0, 3, 4]])
+    array([[1., 0., 1., 0.],
+           [1., 2., 0., 2.],
+           [0., 2., 3., 0.],
+           [0., 0., 3., 4.]])
 
     Broadcasting of scalars is supported (but shape needs to be
     specified):
@@ -252,10 +252,10 @@ def diags(diagonals, offsets=0, shape=None, format=None, dtype=None):
     >>> from scipy.sparse import diags
     >>> diagonals = [[1, 2, 3, 4], [1, 2, 3], [1, 2]]
     >>> diags(diagonals, [0, -1, 2]).toarray()
-    array([[1, 0, 1, 0],
-           [1, 2, 0, 2],
-           [0, 2, 3, 0],
-           [0, 0, 3, 4]])
+    array([[1., 0., 1., 0.],
+           [1., 2., 0., 2.],
+           [0., 2., 3., 0.],
+           [0., 0., 3., 4.]])
 
     Broadcasting of scalars is supported (but shape needs to be
     specified):
@@ -602,23 +602,23 @@ def _compressed_sparse_stack(blocks, axis, return_spmatrix):
     """
     other_axis = 1 if axis == 0 else 0
     data = np.concatenate([b.data for b in blocks])
-    constant_dim = blocks[0].shape[other_axis]
+    constant_dim = blocks[0]._shape_as_2d[other_axis]
     idx_dtype = get_index_dtype(arrays=[b.indptr for b in blocks],
                                 maxval=max(data.size, constant_dim))
     indices = np.empty(data.size, dtype=idx_dtype)
-    indptr = np.empty(sum(b.shape[axis] for b in blocks) + 1, dtype=idx_dtype)
+    indptr = np.empty(sum(b._shape_as_2d[axis] for b in blocks) + 1, dtype=idx_dtype)
     last_indptr = idx_dtype(0)
     sum_dim = 0
     sum_indices = 0
     for b in blocks:
-        if b.shape[other_axis] != constant_dim:
+        if b._shape_as_2d[other_axis] != constant_dim:
             raise ValueError(f'incompatible dimensions for axis {other_axis}')
         indices[sum_indices:sum_indices+b.indices.size] = b.indices
         sum_indices += b.indices.size
-        idxs = slice(sum_dim, sum_dim + b.shape[axis])
+        idxs = slice(sum_dim, sum_dim + b._shape_as_2d[axis])
         indptr[idxs] = b.indptr[:-1]
         indptr[idxs] += last_indptr
-        sum_dim += b.shape[axis]
+        sum_dim += b._shape_as_2d[axis]
         last_indptr += b.indptr[-1]
     indptr[-1] = last_indptr
     # TODO remove this if-structure when sparse matrices removed
@@ -652,7 +652,7 @@ def _stack_along_minor_axis(blocks, axis):
 
     # check for incompatible dimensions
     other_axis = 1 if axis == 0 else 0
-    other_axis_dims = {b.shape[other_axis] for b in blocks}
+    other_axis_dims = {b._shape_as_2d[other_axis] for b in blocks}
     if len(other_axis_dims) > 1:
         raise ValueError(f'Mismatching dimensions along axis {other_axis}: '
                          f'{other_axis_dims}')
@@ -668,10 +668,10 @@ def _stack_along_minor_axis(blocks, axis):
     # - The max value in indptr is the number of non-zero entries. This is
     #   exceedingly unlikely to require int64, but is checked out of an
     #   abundance of caution.
-    sum_dim = sum(b.shape[axis] for b in blocks)
+    sum_dim = sum(b._shape_as_2d[axis] for b in blocks)
     nnz = sum(len(b.indices) for b in blocks)
     idx_dtype = get_index_dtype(maxval=max(sum_dim - 1, nnz))
-    stack_dim_cat = np.array([b.shape[axis] for b in blocks], dtype=idx_dtype)
+    stack_dim_cat = np.array([b._shape_as_2d[axis] for b in blocks], dtype=idx_dtype)
     if data_cat.size > 0:
         indptr_cat = np.concatenate(indptr_list).astype(idx_dtype)
         indices_cat = (np.concatenate([b.indices for b in blocks])
@@ -1051,7 +1051,7 @@ def block_diag(mats, format=None, dtype=None):
     r_idx = 0
     c_idx = 0
     for a in mats:
-        if isinstance(a, (list, numbers.Number)):
+        if isinstance(a, (list | numbers.Number)):
             a = coo_array(np.atleast_2d(a))
         if issparse(a):
             a = a.tocoo()

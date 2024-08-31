@@ -3283,7 +3283,7 @@ def stirling2(N, K, *, exact=False):
     >>> k = np.array([3, -1, 3])
     >>> n = np.array([10, 10, 9])
     >>> stirling2(n, k)
-    array([9330, 0, 3025], dtype=object)
+    array([9330.0, 0.0, 3025.0])
 
     """
     output_is_scalar = np.isscalar(N) and np.isscalar(K)

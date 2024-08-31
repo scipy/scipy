@@ -110,7 +110,7 @@ namespace cephes {
                 if (t < MINLOG) {
                     s = 0.0;
                 } else {
-                    s = exp(t);
+                    s = std::exp(t);
                 }
             }
             return (s);
