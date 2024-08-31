@@ -6,63 +6,6 @@
 #include "tuples.h"
 
 namespace xsf {
-namespace detail {
-
-    template <typename T>
-    void dual_plus_equal(T &lhs, const T &rhs) {
-        lhs += rhs;
-    }
-
-    template <typename T, size_t N>
-    void dual_plus_equal(T (&lhs)[N], const T (&rhs)[N]) {
-        for (size_t i = 0; i < N; ++i) {
-            dual_plus_equal(lhs[i], rhs[i]);
-        }
-    }
-
-    template <typename T>
-    void dual_minus_equal(T &lhs, const T &rhs) {
-        lhs -= rhs;
-    }
-
-    template <typename T, size_t N>
-    void dual_minus_equal(T (&lhs)[N], const T (&rhs)[N]) {
-        for (size_t i = 0; i < N; ++i) {
-            dual_minus_equal(lhs[i], rhs[i]);
-        }
-    }
-
-    template <typename T>
-    void dual_multiplies_equal(T &lhs, const T &rhs) {
-        lhs *= rhs;
-    }
-
-    template <typename T, size_t N>
-    void dual_multiplies_equal(T (&lhs)[N], const T (&rhs)[N]) {
-        for (size_t i = N; i-- > 0;) {
-            dual_multiplies_equal(lhs[i], rhs[0]);
-            for (size_t j = 0; j < i; ++j) {
-                lhs[i] += lhs[j] * rhs[i - j];
-            }
-        }
-    }
-
-    template <typename T>
-    void dual_divides_equal(T &lhs, const T &rhs) {
-        lhs /= rhs;
-    }
-
-    template <typename T, size_t N>
-    void dual_divides_equal(T (&lhs)[N], const T (&rhs)[N]) {
-        for (size_t i = 0; i < N; ++i) {
-            for (size_t j = 1; j <= i; ++j) {
-                lhs[i] -= rhs[j] * lhs[i - j];
-            }
-            dual_divides_equal(lhs[i], rhs[0]);
-        }
-    }
-
-} // namespace detail
 
 template <typename T, size_t... N>
 struct dual;
@@ -113,7 +56,9 @@ struct dual<T, N> {
     }
 
     dual &operator+=(const dual &other) {
-        detail::dual_plus_equal(values, other.values);
+        for (size_t i = 0; i <= N; ++i) {
+            operator[](i) += other[i];
+        }
 
         return *this;
     }
@@ -125,33 +70,45 @@ struct dual<T, N> {
     }
 
     dual &operator-=(const dual &other) {
-        detail::dual_minus_equal(values, other.values);
+        for (size_t i = 0; i <= N; ++i) {
+            operator[](i) -= other[i];
+        }
 
         return *this;
     }
 
     dual &operator-=(const T &other) {
-        values[0] -= other;
+        operator[](0) -= other;
 
         return *this;
     }
 
     dual &operator*=(const dual &other) {
-        detail::dual_multiplies_equal(values, other.values);
+        for (size_t i = N + 1; i-- > 0;) {
+            operator[](i) *= other[0];
+            for (size_t j = 0; j < i; ++j) {
+                operator[](i) += operator[](j) * other[i - j];
+            }
+        }
 
         return *this;
     }
 
     dual &operator*=(const T &other) {
         for (size_t i = 0; i <= N; ++i) {
-            values[i] *= other;
+            operator[](i) *= other;
         }
 
         return *this;
     }
 
     dual &operator/=(const dual &other) {
-        detail::dual_divides_equal(values, other.values);
+        for (size_t i = 0; i <= N; ++i) {
+            for (size_t j = 1; j <= i; ++j) {
+                operator[](i) -= other[j] * values[i - j];
+            }
+            operator[](i) /= other[0];
+        }
 
         return *this;
     }
