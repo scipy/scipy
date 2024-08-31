@@ -12,6 +12,11 @@ from scipy.special._ufuncs import (  # type: ignore[attr-defined]
 class TestIvRatio:
 
     @pytest.mark.parametrize('v,x,r', [
+        (0.5, 0.16666666666666666, 0.16514041292462933),
+        (0.5, 0.3333333333333333, 0.32151273753163434),
+        (0.5, 0.5, 0.46211715726000974),
+        (0.5, 0.6666666666666666, 0.5827829453479101),
+        (0.5, 0.8333333333333335, 0.6822617902381698),
         (1, 0.3380952380952381, 0.1666773049170313),
         (1, 0.7083333333333333, 0.33366443586989925),
         (1, 1.1666666666666667, 0.5023355231537423),
@@ -49,10 +54,10 @@ class TestIvRatio:
             r = np.arange(1, n+1) / (n+1)
             return r * (2*v-r*r) / (1-r*r)
 
-        for v in (1, 2.34, 56.789):
+        for v in (0.5, 1, 2.34, 56.789):
             xs = _sample(5, v=v)
             for x in xs:
-                print(f"({v}, {x}, {float(iv_ratio_mp_float(v,x))}),")
+                print(f"({v}, {x}, {float(iv_ratio_mp(v,x))}),")
         """
         assert_allclose(iv_ratio(v, x), r, rtol=4e-16, atol=0)
 
@@ -65,7 +70,7 @@ class TestIvRatio:
         should return 0 or 1 accordingly."""
         assert_equal(iv_ratio(v, x), r)
 
-    @pytest.mark.parametrize('v', [np.nextafter(1, 0), -np.inf, np.nan, np.inf])
+    @pytest.mark.parametrize('v', [0.49, -np.inf, np.nan, np.inf])
     @pytest.mark.parametrize('x', [-np.finfo(float).smallest_normal,
                                    -np.finfo(float).smallest_subnormal,
                                    -np.inf, np.nan, np.inf])
@@ -74,9 +79,9 @@ class TestIvRatio:
         the function should return nan."""
         assert_equal(iv_ratio(v, x), np.nan)
 
-    @pytest.mark.parametrize('v', [1, np.finfo(float).max, np.inf])
+    @pytest.mark.parametrize('v', [0.5, 1, np.finfo(float).max, np.inf])
     def test_zero_x(self, v):
-        """If x is +/-0.0, return x to agree with the limiting behavior."""
+        """If x is +/-0.0, return x to ensure iv_ratio is an odd function."""
         assert_equal(iv_ratio(v, 0.0), 0.0)
         assert_equal(iv_ratio(v, -0.0), -0.0)
 
@@ -139,6 +144,11 @@ class TestIvRatio:
 class TestIvRatioC:
 
     @pytest.mark.parametrize('v,x,r', [
+        (0.5, 0.16666666666666666, 0.8348595870753707),
+        (0.5, 0.3333333333333333, 0.6784872624683657),
+        (0.5, 0.5, 0.5378828427399902),
+        (0.5, 0.6666666666666666, 0.4172170546520899),
+        (0.5, 0.8333333333333335, 0.3177382097618302),
         (1, 0.3380952380952381, 0.8333226950829686),
         (1, 0.7083333333333333, 0.6663355641301008),
         (1, 1.1666666666666667, 0.4976644768462577),
@@ -168,7 +178,7 @@ class TestIvRatioC:
         should return 0 or 1 accordingly."""
         assert_equal(iv_ratio_c(v, x), r)
 
-    @pytest.mark.parametrize('v', [np.nextafter(1, 0), -np.inf, np.nan, np.inf])
+    @pytest.mark.parametrize('v', [0.49, -np.inf, np.nan, np.inf])
     @pytest.mark.parametrize('x', [-np.finfo(float).smallest_normal,
                                    -np.finfo(float).smallest_subnormal,
                                    -np.inf, np.nan, np.inf])
@@ -177,7 +187,7 @@ class TestIvRatioC:
         the function should return nan."""
         assert_equal(iv_ratio_c(v, x), np.nan)
 
-    @pytest.mark.parametrize('v', [1, np.finfo(float).max, np.inf])
+    @pytest.mark.parametrize('v', [0.5, 1, np.finfo(float).max, np.inf])
     def test_zero_x(self, v):
         """If x is +/-0.0, return 1."""
         assert_equal(iv_ratio_c(v, 0.0), 1.0)
