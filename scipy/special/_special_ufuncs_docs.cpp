@@ -3197,13 +3197,13 @@ const char *iv_ratio_doc = R"(
 
     Internal function.
 
-    Return `iv(v, x) / iv(v-1, x)` for `v >= 1` and `x >= 0`, where `iv`
+    Return `iv(v, x) / iv(v-1, x)` for `v >= 0.5` and `x >= 0`, where `iv`
     is the modified Bessel function of the first kind.
 
     Parameters
     ----------
     v : array_like of float
-        Order.  Must be `>= 1`.  May be `+inf` if `x` is finite.
+        Order.  Must be `>= 0.5`.  May be `+inf` if `x` is finite.
     x : array_like of float
         Argument.  Must be `>= 0`.  May be `+inf` if `v` is finite.
     out : ndarray, optional
@@ -3218,9 +3218,9 @@ const char *iv_ratio_doc = R"(
         If either `v` or `x` is `nan`, `nan` is returned.  Otherwise, the
         special values are:
 
-        - If `v < 1` or `x < 0`, set "domain" error and return `nan`.
-        - If `v >= 1` and `x == 0`, return `x`.
-        - If `v >= 1` and `x == +inf`, return `1.0`.
+        - If `v < 0.5` or `x < 0`, set "domain" error and return `nan`.
+        - If `v >= 0.5` and `x == 0`, return `x`.
+        - If `v >= 0.5` and `x == +inf`, return `1.0`.
         - If `v == +inf` and `0 < x < +inf`, return `0.0`.
         - If `v == +inf` and `x == +inf`, set "domain" error and return `nan`.
 
@@ -3253,7 +3253,7 @@ const char *iv_ratio_c_doc = R"(
 
     Internal function.
 
-    Return `1 - iv(v, x) / iv(v-1, x)` for `v >= 1` and `x >= 0`, where
+    Return `1 - iv(v, x) / iv(v-1, x)` for `v >= 0.5` and `x >= 0`, where
     `iv` is the modified Bessel function of the first kind.
 
     Notes
