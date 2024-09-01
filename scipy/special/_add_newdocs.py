@@ -2614,7 +2614,7 @@ add_newdoc(
 
     Notes
     -----
-    This function wraps the ``erf_inv`` routine from the C++ Boost library [2]_.
+    This function wraps the ``erf_inv`` routine from the C++ Boost library [1]_.
 
     References
     ----------
@@ -7919,7 +7919,7 @@ add_newdoc("powm1", """
     * ``powm1(1, y)`` returns 0 for any ``y``, including ``nan``
       and ``inf``.
 
-    This function wraps the ``powm1`` routine from the C++ Boost library [2]_.
+    This function wraps the ``powm1`` routine from the C++ Boost library [1]_.
 
     References
     ----------
