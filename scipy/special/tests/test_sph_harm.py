@@ -5,7 +5,6 @@ from numpy.testing import assert_allclose
 import scipy.special as sc
 
 class TestSphHarm:
-    """
     def test_sph_harm_der(self):
         print()
 
@@ -22,7 +21,7 @@ class TestSphHarm:
         phi = np.atleast_1d(phi)
 
         out, out_jac, out_hess = sc.sph_harm_y(n, m, theta, phi, diff_n=2)
-    """
+        print(out, out_jac, out_hess)
 
     @pytest.mark.slow
     def test_p(self):
