@@ -43,7 +43,8 @@ class binom_gen(rv_discrete):
     and :math:`1-p` is the probability of a single failure.
 
     This distribution uses routines from the Boost C++ library for
-    the computation of `pmf`, `cdf`, `sf`, `ppf` and `isf` methods. [1]_
+    the computation of the ``pmf``, ``cdf``, ``sf``, ``ppf`` and ``isf``
+    methods. [1]_
 
     %(after_notes)s
 
@@ -317,8 +318,8 @@ class nbinom_gen(rv_discrete):
        n &= \frac{\mu^2}{\sigma^2 - \mu}
 
     This distribution uses routines from the Boost C++ library for
-    the computation of `pmf`, `cdf`, `sf`, `ppf`, `isf`, and `stats`
-    methods. [1]_
+    the computation of the ``pmf``, ``cdf``, ``sf``, ``ppf``, ``isf``
+    and ``stats`` methods. [1]_
 
     %(after_notes)s
 
@@ -601,7 +602,7 @@ class hypergeom_gen(rv_discrete):
     .. math:: \binom{n}{k} \equiv \frac{n!}{k! (n - k)!}.
 
     This distribution uses routines from the Boost C++ library for
-    the computation of `pmf`, `cdf`, `sf` and `stats` methods. [1]_
+    the computation of the ``pmf``, ``cdf``, ``sf`` and ``stats`` methods. [1]_
 
     %(after_notes)s
 

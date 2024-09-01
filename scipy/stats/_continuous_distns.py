@@ -720,7 +720,8 @@ class beta_gen(rv_continuous):
     `beta` takes :math:`a` and :math:`b` as shape parameters.
 
     This distribution uses routines from the Boost C++ library for
-    the computation of the `pdf`, `cdf`, `ppf`, `sf` and `isf`. [1]_
+    the computation of the ``pdf``, ``cdf``, ``ppf``, ``sf`` and ``isf``
+    methods. [1]_
 
     %(after_notes)s
 
@@ -1448,7 +1449,7 @@ class cauchy_gen(rv_continuous):
     for a real number :math:`x`.
 
     This distribution uses routines from the Boost C++ library for
-    the computation of `ppf` and`isf` methods. [1]_
+    the computation of the ``ppf` and ``isf`` methods. [1]_
 
     %(after_notes)s
 
@@ -4847,7 +4848,7 @@ class invgauss_gen(rv_continuous):
     ``loc = 0``, and ``scale = lam``.
 
     This distribution uses routines from the Boost C++ library for
-    the computation of `ppf` and`isf` methods. [1]_
+    the computation of the ``ppf`` and ``isf`` methods. [1]_
 
     References
     ----------
@@ -5786,7 +5787,8 @@ class landau_gen(rv_continuous):
     with ``loc = mu + 2*c / np.pi * np.log(c)`` and ``scale = c``.
 
     This distribution uses routines from the Boost C++ library for
-    the computation of `pdf`, `cdf, `ppf`, `sf` and `isf` methods. [1]_
+    the computation of the ``pdf``, ``cdf``, ``ppf``, ``sf`` and ``isf``
+    methods. [1]_
 
     References
     ----------
@@ -7615,7 +7617,8 @@ class ncx2_gen(rv_continuous):
     `ncx2` takes ``df`` and ``nc`` as shape parameters.
 
     This distribution uses routines from the Boost C++ library for
-    the computation of `pdf`, `cdf`, `ppf`, `sf` and`isf` methods. [1]_
+    the computation of the ``pdf``, ``cdf``, ``ppf``, ``sf`` and ``isf``
+    methods. [1]_
 
     %(after_notes)s
 
@@ -7729,8 +7732,8 @@ class ncf_gen(rv_continuous):
     the distribution becomes equivalent to the Fisher distribution.
 
     This distribution uses routines from the Boost C++ library for
-    the computation of `pdf`, `cdf`, `ppf`, `stats`, `sf` and `isf`
-    methods. [1]_
+    the computation of the ``pdf``, ``cdf``, ``ppf``, ``stats``, ``sf`` and
+    ``isf`` methods. [1]_
 
     %(after_notes)s
 
@@ -7931,7 +7934,8 @@ class nct_gen(rv_continuous):
     :math:`c` (denoted ``nc`` in the implementation) is a real number.
 
     This distribution uses routines from the Boost C++ library for
-    the computation of `pdf`, `cdf`, `ppf`, `sf` and`isf` methods. [1]_
+    the computation of the ``pdf``, ``cdf``, ``ppf``, ``sf`` and ``isf``
+    methods. [1]_
 
     %(after_notes)s
 
@@ -9501,7 +9505,7 @@ class skewnorm_gen(rv_continuous):
     (`norm`). `rvs` implements the method of [1]_.
 
     This distribution uses routines from the Boost C++ library for
-    the computation of `cdf`, `ppf` and`isf` methods. [1]_
+    the computation of ``cdf``, ``ppf`` and ``isf`` methods. [1]_
 
     %(after_notes)s
 
