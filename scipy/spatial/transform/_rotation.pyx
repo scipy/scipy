@@ -588,6 +588,7 @@ cdef class Rotation:
     as_euler
     as_davenport
     concatenate
+    split
     apply
     __mul__
     __pow__
@@ -2349,7 +2350,8 @@ cdef class Rotation:
         """Concatenate a sequence of `Rotation` objects into a single object.
 
         This is useful if you want to, for example, take the mean of a set of
-        rotations and need to pack them into a single object to do so.
+        rotations and need to pack them into a single object to do so. This is
+        the inverse of `split`.
 
         Parameters
         ----------
@@ -2381,6 +2383,13 @@ cdef class Rotation:
         array([[0., 0., 1.],
                [0., 0., 2.]])
 
+        Concatenation of a split rotation recovers the original object.
+
+        >>> rc = R.concatenate(rc.split(len(rc)))
+        >>> rc.as_rotvec()
+        array([[0., 0., 1.],
+               [0., 0., 2.]])
+
         Notes
         -----
         .. versionadded:: 1.8.0
@@ -2390,6 +2399,87 @@ cdef class Rotation:
 
         quats = np.concatenate([np.atleast_2d(x.as_quat()) for x in rotations])
         return cls(quats, normalize=False)
+
+    def split(self, indices_or_sections):
+        """Split a `Rotation` object into a sequence of `Rotation` objects.
+
+        This matches the syntax of ``numpy.split`` [1]_, and is an inverse of
+        `concatenate`. To split out all rotations from a `Rotation` object
+        ``R``, use ``indices_or_sections`` equal to the number of rotations
+        it contains: ``R.split(len(R))``.
+
+        Parameters
+        ----------
+        indices_or_sections : int or 1-D array
+            If ``indices_or_sections`` is an integer, ``N``, the array will be
+            divided into ``N`` equal length rotations. If such a split is not
+            possible, an error is raised. The identity ``N == 1`` will return a
+            copy of the original object.
+
+            If ``indices_or_sections`` is a 1-D array of sorted integers, the
+            entries indicate where the rotation is split. For example,
+            ``[2, 4]`` would result in
+
+            - ``R[:2]``
+            - ``R[2:4]``
+            - ``R[4:]``
+
+            If an index exceeds the length of ``R``, it is ignored.
+
+        Returns
+        -------
+        rotations : `Rotation` or list of `Rotation` objects
+            The split rotations. If the input contains a single rotation or
+            ``N == 1``, a single `Rotation` object is returned. Otherwise, a
+            list of `Rotation` objects is returned.
+
+        References
+        ----------
+        .. [1] https://numpy.org/doc/stable/reference/generated/numpy.split.html
+
+        Notes
+        -----
+        .. versionadded:: 1.15.0
+
+        Examples
+        --------
+        Split a `Rotation` with multiple rotations into a list of single
+        rotations.
+
+        >>> from scipy.spatial.transform import Rotation as R
+        >>> r0 = R.from_rotvec([[0, 0, 0], [0, 0, 1], [0, 0, 2], [0, 0, 3]])
+        >>> rs = r0.split(len(r0))
+        >>> for r in rs:
+        ...     r.as_rotvec()
+        array([0., 0., 0.])
+        array([0., 0., 1.])
+        array([0., 0., 2.])
+        array([0., 0., 3.])
+
+        Here is a more complex split at the 1st and 2nd indices.
+
+        >>> rs = r0.split([1, 2])
+        >>> for r in rs:
+        ...     r.as_rotvec()
+        array([0., 0., 0.])
+        array([0., 0., 1.])
+        array([[0., 0., 2.],
+               [0., 0., 3.]])
+
+        Concatenation of a split rotation recovers the original object.
+
+        >>> R.concatenate(rs).as_rotvec()
+        array([[0., 0., 0.],
+               [0., 0., 1.],
+               [0., 0., 2.],
+               [0., 0., 3.]])
+        """
+        Rs = [self.__class__(np.squeeze(qs), normalize=False)
+                for qs in np.split(self.as_quat(), indices_or_sections)]
+        if len(Rs) == 1:
+            return Rs[0]
+        else:
+            return Rs
 
     @cython.embedsignature(True)
     def apply(self, vectors, inverse=False):

@@ -149,16 +149,23 @@ def test_quat_double_cover():
                     [0, 0, 0, -1], atol=2e-16)
 
 
-def test_malformed_1d_from_quat():
-    with pytest.raises(ValueError):
+def test_from_quat_wrong_shape():
+    # Wrong shape 1d array
+    with pytest.raises(ValueError, match='Expected `quat` to have shape'):
         Rotation.from_quat(np.array([1, 2, 3]))
 
-
-def test_malformed_2d_from_quat():
-    with pytest.raises(ValueError):
+    # Wrong shape 2d array
+    with pytest.raises(ValueError, match='Expected `quat` to have shape'):
         Rotation.from_quat(np.array([
             [1, 2, 3, 4, 5],
             [4, 5, 6, 7, 8]
+            ]))
+
+    # 3d array
+    with pytest.raises(ValueError, match='Expected `quat` to have shape'):
+        Rotation.from_quat(np.array([
+            [[1, 2, 3, 4]],
+            [[4, 5, 6, 7]]
             ]))
 
 
@@ -1762,6 +1769,43 @@ def test_concatenate():
 def test_concatenate_wrong_type():
     with pytest.raises(TypeError, match='Rotation objects only'):
         Rotation.concatenate([Rotation.identity(), 1, None])
+
+
+def test_split():
+    r1 = Rotation.from_rotvec([0, 0, 1])
+    r2 = Rotation.from_rotvec([0, 0, 2])
+    r3 = Rotation.from_rotvec([0, 0, 3])
+    r4 = Rotation.from_rotvec([0, 0, 4])
+    r34 = Rotation.concatenate([r3, r4])
+    rc = Rotation.concatenate([r1, r2, r3, r4])
+
+    # Test split by integer
+    for rs, r in zip(rc.split(len(rc)), [r1, r2, r3, r4]):
+        assert_equal(rs.as_quat(), r.as_quat())
+
+    # Test split by list
+    for rs, r in zip(rc.split([1, 2]), [r1, r2, r34]):
+        assert_equal(rs.as_quat(), r.as_quat())
+
+    # Test split by integer with invalid lengths
+    with pytest.raises(ValueError, match='does not result in an equal division'):
+        rc.split(7)
+    with pytest.raises(ValueError, match='does not result in an equal division'):
+        rc.split(3)
+    with pytest.raises(ZeroDivisionError):
+        rc.split(0)
+    with pytest.raises(ValueError, match='must be larger than 0'):
+        rc.split(-2)
+
+    # Test identity split
+    assert_equal(rc.split(1).as_quat(), rc.as_quat())
+
+    # Test single rotation split
+    assert isinstance(r1.split(1), Rotation)
+
+    # Test out of bounds split
+    with pytest.raises(ValueError, match='Expected `quat` to have shape'):
+        rc.split([1, 8])
 
 
 # Regression test for gh-16663
