@@ -21,8 +21,7 @@ class TestSphHarm:
         phi = np.pi / 4
         phi = np.atleast_1d(phi)
 
-        out, out_jac, out_hess = sc.sph_harm_y(n, m, theta, phi, diff_n = 2)
-        print(out, out_jac, out_hess)
+        out, out_jac, out_hess = sc.sph_harm_y(n, m, theta, phi, diff_n=2)
     """
 
     @pytest.mark.slow

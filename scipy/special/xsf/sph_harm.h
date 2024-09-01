@@ -15,8 +15,8 @@ std::complex<float> i_v<float> = 1if;
 template <>
 std::complex<double> i_v<double> = 1i;
 
-template <typename T, size_t N>
-dual<std::complex<T>, N> i_v<dual<T, N>> = i_v<T>;
+template <typename T, size_t... N>
+dual<std::complex<T>, N...> i_v<dual<T, N...>> = i_v<T>;
 
 template <typename T, size_t N>
 dual<dual<std::complex<T>, N>, N> i_v<dual<dual<T, N>, N>> = dual<dual<std::complex<T>, N>, N>(i_v<T>);

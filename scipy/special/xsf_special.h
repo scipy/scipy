@@ -2,6 +2,8 @@
 
 #include "Python.h"
 
+#include <iostream>
+
 #include "xsf/bessel.h"
 #include "xsf/dual.h"
 #include "xsf/legendre.h"
@@ -113,10 +115,10 @@ void sph_legendre_p_all(T theta, OutputMat1 res, OutputMat2 res_jac, OutputMat3 
 
 template <typename T>
 std::complex<T> sph_harm_y(long long int n, long long int m, T theta, T phi) {
-    xsf::dual<xsf::dual<T, 0>, 0> theta_dual;
+    xsf::dual<T, 0, 0> theta_dual;
     theta_dual[0][0] = theta;
 
-    xsf::dual<xsf::dual<T, 0>, 0> phi_dual;
+    xsf::dual<T, 0, 0> phi_dual;
     phi_dual[0][0] = phi;
 
     std::complex<T> res;
@@ -127,13 +129,13 @@ std::complex<T> sph_harm_y(long long int n, long long int m, T theta, T phi) {
 
 template <typename T>
 void sph_harm_y(long long int n, long long int m, T theta, T phi, std::complex<T> &res, std::complex<T> (&res_jac)[2]) {
-    xsf::dual<xsf::dual<T, 1>, 1> theta_dual;
+    xsf::dual<T, 1, 1> theta_dual;
     theta_dual[0][0] = theta;
     theta_dual[0][1] = 0;
     theta_dual[1][0] = 1;
     theta_dual[1][1] = 0;
 
-    xsf::dual<xsf::dual<T, 1>, 1> phi_dual;
+    xsf::dual<T, 1, 1> phi_dual;
     phi_dual[0][0] = phi;
     phi_dual[0][1] = 1;
     phi_dual[1][0] = 0;
@@ -145,7 +147,7 @@ void sph_harm_y(long long int n, long long int m, T theta, T phi, std::complex<T
 template <typename T>
 void sph_harm_y(long long int n, long long int m, T theta, T phi, std::complex<T> &res, std::complex<T> (&res_jac)[2],
                 std::complex<T> (&res_hess)[2][2]) {
-    xsf::dual<xsf::dual<T, 2>, 2> theta_dual;
+    xsf::dual<T, 2, 2> theta_dual;
     theta_dual[0][0] = theta;
     theta_dual[0][1] = 0;
     theta_dual[0][2] = 0;
@@ -156,7 +158,7 @@ void sph_harm_y(long long int n, long long int m, T theta, T phi, std::complex<T
     theta_dual[2][1] = 0;
     theta_dual[2][2] = 0;
 
-    xsf::dual<xsf::dual<T, 2>, 2> phi_dual;
+    xsf::dual<T, 2, 2> phi_dual;
     phi_dual[0][0] = phi;
     phi_dual[0][1] = 1;
     phi_dual[0][2] = 0;
@@ -198,10 +200,10 @@ std::complex<T> sph_harm(T m, T n, T theta, T phi) {
 
 template <typename T, typename OutputMat1>
 void sph_harm_y_all(T theta, T phi, OutputMat1 res) {
-    xsf::dual<xsf::dual<T, 0>, 0> theta_dual;
+    xsf::dual<T, 0, 0> theta_dual;
     theta_dual[0][0] = theta;
 
-    xsf::dual<xsf::dual<T, 0>, 0> phi_dual;
+    xsf::dual<T, 0, 0> phi_dual;
     phi_dual[0][0] = phi;
 
     xsf::sph_harm_y_all(theta_dual, phi_dual, std::tie(res));
@@ -209,13 +211,13 @@ void sph_harm_y_all(T theta, T phi, OutputMat1 res) {
 
 template <typename T, typename OutputMat1, typename OutputMat2>
 void sph_harm_y_all(T theta, T phi, OutputMat1 res, OutputMat2 res_jac) {
-    xsf::dual<xsf::dual<T, 1>, 1> theta_dual;
+    xsf::dual<T, 1, 1> theta_dual;
     theta_dual[0][0] = theta;
     theta_dual[0][1] = 0;
     theta_dual[1][0] = 1;
     theta_dual[1][1] = 0;
 
-    xsf::dual<xsf::dual<T, 1>, 1> phi_dual;
+    xsf::dual<T, 1, 1> phi_dual;
     phi_dual[0][0] = phi;
     phi_dual[0][1] = 1;
     phi_dual[1][0] = 0;
@@ -226,7 +228,7 @@ void sph_harm_y_all(T theta, T phi, OutputMat1 res, OutputMat2 res_jac) {
 
 template <typename T, typename OutputMat1, typename OutputMat2, typename OutputMat3>
 void sph_harm_y_all(T theta, T phi, OutputMat1 res, OutputMat2 res_jac, OutputMat3 res_hess) {
-    xsf::dual<xsf::dual<T, 2>, 2> theta_dual;
+    xsf::dual<T, 2, 2> theta_dual;
     theta_dual[0][0] = theta;
     theta_dual[0][1] = 0;
     theta_dual[0][2] = 0;
@@ -237,7 +239,7 @@ void sph_harm_y_all(T theta, T phi, OutputMat1 res, OutputMat2 res_jac, OutputMa
     theta_dual[2][1] = 0;
     theta_dual[2][2] = 0;
 
-    xsf::dual<xsf::dual<T, 2>, 2> phi_dual;
+    xsf::dual<T, 2, 2> phi_dual;
     phi_dual[0][0] = phi;
     phi_dual[0][1] = 1;
     phi_dual[0][2] = 0;
