@@ -1122,7 +1122,7 @@ add_newdoc(
     -----
     .. versionadded:: 1.11.0
 
-    This function wraps the ``ibeta_inv`` routine from the C++ Boost library [2]_.
+    This function wraps the ``ibetac_inv`` routine from the C++ Boost library [2]_.
 
     References
     ----------
