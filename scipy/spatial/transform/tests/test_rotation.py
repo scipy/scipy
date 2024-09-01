@@ -168,6 +168,10 @@ def test_from_quat_wrong_shape():
             [[4, 5, 6, 7]]
             ]))
 
+    # 0-length 2d array
+    with pytest.raises(ValueError, match='Expected `quat` to have shape'):
+        Rotation.from_quat(np.array([]).reshape((0, 4)))
+
 
 def test_zero_norms_from_quat():
     x = np.array([
@@ -1810,19 +1814,16 @@ def test_split():
 
 # Regression test for gh-16663
 def test_len_and_bool():
-    rotation_multi_empty = Rotation(np.empty((0, 4)))
     rotation_multi_one = Rotation([[0, 0, 0, 1]])
     rotation_multi = Rotation([[0, 0, 0, 1], [0, 0, 0, 1]])
     rotation_single = Rotation([0, 0, 0, 1])
 
-    assert len(rotation_multi_empty) == 0
     assert len(rotation_multi_one) == 1
     assert len(rotation_multi) == 2
     with pytest.raises(TypeError, match="Single rotation has no len()."):
         len(rotation_single)
 
     # Rotation should always be truthy. See gh-16663
-    assert rotation_multi_empty
     assert rotation_multi_one
     assert rotation_multi
     assert rotation_single

@@ -832,7 +832,9 @@ cdef class Rotation:
         self._single = False
         quat = np.asarray(quat, dtype=float)
 
-        if quat.ndim not in [1, 2] or quat.shape[len(quat.shape) - 1] != 4:
+        if (quat.ndim not in [1, 2]
+            or quat.shape[len(quat.shape) - 1] != 4
+            or quat.shape[0] == 0):
             raise ValueError("Expected `quat` to have shape (4,) or (N, 4), "
                              f"got {quat.shape}.")
 
