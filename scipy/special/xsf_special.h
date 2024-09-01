@@ -85,7 +85,7 @@ void assoc_legendre_p_all(NormPolicy norm, T z, long long int branch_cut, Output
 
 template <typename T>
 T sph_legendre_p(long long int n, long long int m, T theta) {
-    return xsf::sph_legendre_p(n, m, xsf::make_dual<0>(theta)).front();
+    return xsf::sph_legendre_p(n, m, theta);
 }
 
 template <typename T>

@@ -65,7 +65,7 @@ struct dual {
         }
     }
 
-    dual(std::initializer_list<T> data) {
+    dual(std::initializer_list<element_type> data) {
         for (auto it = data.begin(); it != data.end(); ++it) {
             this->data[it - data.begin()] = *it;
         }
@@ -156,11 +156,9 @@ struct dual {
         return *this;
     }
 
-    reference front() { return dual_get(*this); }
+    value_type &value() { return dual_get(*this); }
 
-    const_reference front() const { return dual_get(*this); }
-
-    value_type value() const { return dual_get(*this); }
+    const value_type &value() const { return dual_get(*this); }
 
     element_type &operator[](size_t i) { return data[i]; }
 
@@ -338,6 +336,14 @@ dual<T, N...> operator/(const dual<T, N...> &lhs, const dual_element_t<T, N...> 
 }
 
 template <typename T, size_t... N>
+dual<T, N...> operator/(const T &lhs, const dual<T, N...> &rhs) {
+    dual<T, N...> res = lhs;
+    res /= rhs;
+
+    return res;
+}
+
+template <typename T, size_t... N>
 dual<T, N...> operator/(const dual_element<T, N...> &lhs, const dual<T, N...> &rhs) {
     dual<T, N...> res = lhs;
     res /= rhs;
@@ -347,17 +353,17 @@ dual<T, N...> operator/(const dual_element<T, N...> &lhs, const dual<T, N...> &r
 
 template <typename T, size_t... N>
 bool operator<(const dual<T, N...> &lhs, const dual<T, N...> &rhs) {
-    return lhs.front() < rhs.front();
+    return lhs.value() < rhs.value();
 }
 
 template <typename T, size_t... N, typename U>
 bool operator<(const dual<T, N...> &lhs, const U &rhs) {
-    return lhs.front() < rhs;
+    return lhs.value() < rhs;
 }
 
 template <typename T, size_t... N, typename U>
 bool operator==(const dual<T, N...> &lhs, const U &rhs) {
-    return lhs.front() == rhs;
+    return lhs.value() == rhs;
 }
 
 template <size_t Order, typename T>
@@ -367,25 +373,6 @@ dual<T, Order> make_dual(T value) {
     }
 
     return {value, 1};
-}
-
-template <typename T, size_t N0, size_t... N>
-dual<T, N0, N...> dual_apply(const T (&coef)[N0 + 1], const dual<T, N0, N...> &z) {
-    dual<T, N0, N...> res = T(0);
-
-    dual<T, N0, N...> x = z;
-    x[0] = 0;
-
-    T fac = T(1);
-
-    res[0] = coef[0];
-    for (size_t i = 1; i <= N0; ++i) {
-        fac *= T(i);
-        res += x * (coef[i] / fac);
-        x = x * x;
-    }
-
-    return res;
 }
 
 template <typename T, size_t N0, size_t... N>
@@ -409,25 +396,25 @@ dual<T, N0, N...> dual_apply2(const dual_element_t<T, N0, N...> (&coef)[N0 + 1],
 
 template <typename T, size_t... N>
 dual<T, 0, N...> sqrt(const dual<T, 0, N...> &z) {
-    T coef[1] = {sqrt(z.front())};
+    dual_element_t<T, 0, N...> coef[1] = {sqrt(z[0])};
 
-    return dual_apply(coef, z);
+    return dual_apply2(coef, z);
 }
 
 template <typename T, size_t... N>
 dual<T, 1, N...> sqrt(const dual<T, 1, N...> &z) {
-    T z0_sqrt = sqrt(z.front());
-    T coef[2] = {z0_sqrt, T(1) / (T(2) * z0_sqrt)};
+    dual_element_t<T, 1, N...> z0_sqrt = sqrt(z[0]);
+    dual_element_t<T, 1, N...> coef[2] = {z0_sqrt, T(1) / (T(2) * z0_sqrt)};
 
-    return dual_apply(coef, z);
+    return dual_apply2(coef, z);
 }
 
 template <typename T, size_t... N>
 dual<T, 2, N...> sqrt(const dual<T, 2, N...> &z) {
-    T z0_sqrt = sqrt(z.front());
-    T coef[3] = {z0_sqrt, T(1) / (T(2) * z0_sqrt), -T(1) / (T(4) * z0_sqrt * z.front())};
+    dual_element_t<T, 2, N...> z0_sqrt = sqrt(z[0]);
+    dual_element_t<T, 2, N...> coef[3] = {z0_sqrt, T(1) / (T(2) * z0_sqrt), -T(1) / (T(4) * z0_sqrt * z[0])};
 
-    return dual_apply(coef, z);
+    return dual_apply2(coef, z);
 }
 
 template <typename T, size_t... N>
@@ -512,19 +499,19 @@ dual<T, N0, N...> exp(const dual<T, N0, N...> &z) {
 
 template <typename T, size_t... N>
 bool isfinite(const dual<T, N...> &z) {
-    return isfinite(z.front());
+    return isfinite(z.value());
 }
 
 template <typename T, size_t... N>
 bool isinf(const dual<T, N...> &z) {
-    return isinf(z.front());
+    return isinf(z.value());
 }
 
 using std::isnan;
 
 template <typename T, size_t... N>
 bool isnan(const dual<T, N...> &z) {
-    return isnan(z.front());
+    return isnan(z.value());
 }
 
 using std::copysign;
@@ -549,48 +536,48 @@ namespace std {
 
 template <typename T, size_t... N>
 xsf::dual<T, 0, N...> abs(xsf::dual<T, 0, N...> z) {
-    return dual_apply({std::abs(z.front())}, z);
+    return dual_apply2({std::abs(z[0])}, z);
 }
 
 template <typename T, size_t... N>
 xsf::dual<T, 0, N...> abs(xsf::dual<std::complex<T>, 0, N...> z) {
-    return dual_apply({std::abs(z.front())}, z);
+    return dual_apply2({std::abs(z[0])}, z);
 }
 
 template <typename T, size_t... N>
 xsf::dual<T, 1, N...> abs(xsf::dual<T, 1, N...> z) {
     if (z < 0) {
-        return dual_apply({std::abs(z.value()), T(-1)}, z);
+        return dual_apply2({std::abs(z[0]), T(-1)}, z);
     }
 
-    return dual_apply({std::abs(z.value()), T(1)}, z);
+    return dual_apply2({std::abs(z[0]), T(1)}, z);
 }
 
 template <typename T, size_t... N>
 xsf::dual<T, 1, N...> abs(xsf::dual<std::complex<T>, 1, N...> z) {
     if (std::real(z) < 0) {
-        return dual_apply({std::abs(z.front()), std::real(z.front()) / std::abs(z.front())}, z);
+        return dual_apply2({std::abs(z[0]), std::real(z[0]) / std::abs(z[0])}, z);
     }
 
-    return dual_apply({std::abs(z.front()), std::real(z.front()) / std::abs(z.front())}, z);
+    return dual_apply2({std::abs(z[0]), std::real(z[0]) / std::abs(z[0])}, z);
 }
 
 template <typename T, size_t... N>
 xsf::dual<T, 2, N...> abs(xsf::dual<T, 2, N...> z) {
     if (z < 0) {
-        return dual_apply({std::abs(z.value()), T(-1), T(0)}, z);
+        return dual_apply2({std::abs(z[0]), T(-1), T(0)}, z);
     }
 
-    return dual_apply({std::abs(z.value()), T(1), T(0)}, z);
+    return dual_apply2({std::abs(z[0]), T(1), T(0)}, z);
 }
 
 template <typename T, size_t... N>
 xsf::dual<T, 2, N...> abs(xsf::dual<std::complex<T>, 2, N...> z) {
     if (std::real(z.value()) < 0) {
-        return dual_apply({std::abs(z.value()), std::real(z.value()) / std::abs(z.value()), T(0)}, z);
+        return dual_apply2({std::abs(z[0]), std::real(z[0]) / std::abs(z[0]), T(0)}, z);
     }
 
-    return dual_apply({std::abs(z.value()), std::real(z.value()) / std::abs(z.value()), T(0)}, z);
+    return dual_apply2({std::abs(z[0]), std::real(z[0]) / std::abs(z[0]), T(0)}, z);
 }
 
 } // namespace std
