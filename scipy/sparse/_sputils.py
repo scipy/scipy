@@ -241,17 +241,14 @@ def isintlike(x) -> bool:
     return True
 
 
-def isshape(x, nonneg=False, *, allowed_ndims=(2,)) -> bool:
+def isshape(x, nonneg=False, *, allow_nd=(2,)) -> bool:
     """Is x a valid tuple of dimensions?
 
     If nonneg, also checks that the dimensions are non-negative.
-    If allowed_ndims is provided, shapes of lengths belonging in
-    allowed_ndims are allowed.
-    If allowed_ndims is not provided, only shapes of length 2 are
-    allowed.
+    Shapes of length in the tuple allow_nd are allowed.
     """
     ndim = len(x)
-    if ndim not in allowed_ndims:
+    if ndim not in allow_nd:
         return False
 
     for d in x:
@@ -301,7 +298,7 @@ def validateaxis(axis) -> None:
         raise ValueError("axis out of range")
 
 
-def check_shape(args, current_shape=None, *, allowed_ndims=(2,)):
+def check_shape(args, current_shape=None, *, allow_nd=(2,)) -> tuple[int, ...]:
     """Imitate numpy.matrix handling of shape arguments
 
     Parameters
@@ -311,12 +308,8 @@ def check_shape(args, current_shape=None, *, allowed_ndims=(2,)):
     current_shape : tuple, optional
         The current shape of the sparse array or matrix.
         If None (default), the current shape will be inferred from args.
-    allowed_ndims : tuple, optional
-        Tuple representing the set of valid dimensionalities.
-        If (1,2), then only 1-D or 2-D arrays are accepted.
-        If (2,), then only 2-D arrays are accepted.
-        Otherwise, n-D arrays are accepted.
-        Defaults to (2,).
+    allow_nd : tuple of ints, optional default: (2,)
+        If shape does not have a length in the tuple allow_nd an error is raised.
 
     Returns
     -------
@@ -324,8 +317,7 @@ def check_shape(args, current_shape=None, *, allowed_ndims=(2,)):
         The new shape after validation.
     """
     if len(args) == 0:
-        raise TypeError("function missing 1 required positional argument: "
-                        "'shape'")
+        raise TypeError("function missing 1 required positional argument: 'shape'")
     if len(args) == 1:
         try:
             shape_iter = iter(args[0])
@@ -337,12 +329,8 @@ def check_shape(args, current_shape=None, *, allowed_ndims=(2,)):
         new_shape = tuple(operator.index(arg) for arg in args)
 
     if current_shape is None:
-        ndim = len(new_shape)
-        if allowed_ndims == (2,) and ndim != 2:
-            raise ValueError('shape must be a 2-tuple of positive integers')
-        if allowed_ndims == (1,2) and ndim > 2:
-            raise ValueError('shape must be a 1- or 2-tuple of positive integers')
-
+        if len(new_shape) not in allow_nd:
+            raise ValueError(f'shape must have length in {allow_nd}. Got {new_shape=}')
         if any(d < 0 for d in new_shape):
             raise ValueError("'shape' elements cannot be negative")
     else:
@@ -368,12 +356,8 @@ def check_shape(args, current_shape=None, *, allowed_ndims=(2,)):
         else:
             raise ValueError('can only specify one unknown dimension')
 
-    ndim_new = len(new_shape)
-    if allowed_ndims == (2,) and ndim_new != 2:
-        raise ValueError('shape must be two-dimensional')
-
-    if ndim_new >= 3 and allowed_ndims == (1,2):
-        raise ValueError('shape must be one- or two-dimensional')
+    if len(new_shape) not in allow_nd:
+        raise ValueError(f'shape must have length in {allow_nd}. Got {new_shape=}')
 
     return new_shape
 
