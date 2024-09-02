@@ -244,18 +244,31 @@ using cuda::std::uint64_t;
 
 namespace xsf {
 
-using std::isfinite;
-using std::isinf;
+// basic
+using std::abs;
 
-using std::cos;
+// exponential
 using std::exp;
-using std::sin;
+
+// power
 using std::sqrt;
 
+// trigonometric
+using std::cos;
+using std::sin;
+
+// floating-point manipulation
+using std::copysign;
+
+// classification and comparison
+using std::isfinite;
+using std::isinf;
+using std::isnan;
+using std::signbit;
+
+// complex
 using std::imag;
 using std::real;
-
-using std::abs;
 
 template <typename T>
 struct remove_complex {

@@ -2,8 +2,6 @@
 
 #include "Python.h"
 
-#include <iostream>
-
 #include "xsf/bessel.h"
 #include "xsf/dual.h"
 #include "xsf/legendre.h"
