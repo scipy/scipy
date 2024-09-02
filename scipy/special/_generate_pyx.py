@@ -84,7 +84,7 @@ special_ufuncs = [
     'binom', 'exp1', 'expi', 'expit', 'exprel', 'gamma', 'gammaln', 'hankel1',
     'hankel1e', 'hankel2', 'hankel2e', 'hyp2f1', 'it2i0k0', 'it2j0y0', 'it2struve0',
     'itairy', 'iti0k0', 'itj0y0', 'itmodstruve0', 'itstruve0',
-    'iv', '_iv_ratio', 'ive', 'jv',
+    'iv', '_iv_ratio', '_iv_ratio_c', 'ive', 'jv',
     'jve', 'kei', 'keip', 'kelvin', 'ker', 'kerp', 'kv', 'kve', 'log_expit',
     'log_wright_bessel', 'loggamma', 'logit', 'mathieu_a', 'mathieu_b', 'mathieu_cem',
     'mathieu_modcem1', 'mathieu_modcem2', 'mathieu_modsem1', 'mathieu_modsem2',
