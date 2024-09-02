@@ -922,6 +922,8 @@ class TestNdimageFilters:
         expected = filter_func(array, *extra_args, all_sizes)
         xp_assert_close(output, expected)
 
+    @skip_xp_backends("cupy",
+                      reasons=["https://github.com/cupy/cupy/pull/8339"])
     @pytest.mark.parametrize('func', [ndimage.correlate, ndimage.convolve])
     @pytest.mark.parametrize(
         'dtype', [np.float32, np.float64, np.complex64, np.complex128]
