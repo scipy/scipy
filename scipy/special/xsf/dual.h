@@ -1,6 +1,6 @@
 #pragma once
 
-#include "config.h"
+#include "numbers.h"
 #include "tuples.h"
 
 namespace xsf {
@@ -150,6 +150,13 @@ class dual<T, Order0, Order1, Orders...> {
     dual() = default;
 
     dual(T value) {
+        data[0] = value;
+        for (size_t i = 1; i <= Order0; ++i) {
+            data[i] = 0;
+        }
+    }
+
+    dual(dual<T, Order1, Orders...> value) {
         data[0] = value;
         for (size_t i = 1; i <= Order0; ++i) {
             data[i] = 0;
@@ -438,9 +445,9 @@ dual<T, N...> operator*(const T &lhs, const dual<T, N...> &rhs) {
     return res;
 }
 
-template <typename T, size_t... N>
-dual<T, N...> operator/(const dual<T, N...> &lhs, const dual<T, N...> &rhs) {
-    dual<T, N...> res = lhs;
+template <typename T, size_t... Orders>
+dual<T, Orders...> operator/(const dual<T, Orders...> &lhs, const dual<T, Orders...> &rhs) {
+    dual<T, Orders...> res = lhs;
     res /= rhs;
 
     return res;
@@ -477,13 +484,27 @@ bool operator==(const dual<T, N...> &lhs, const U &rhs) {
 }
 
 template <size_t Order, typename T>
-dual<T, Order> dual_var(T value) {
-    dual<T, Order> res(value);
+dual<T, Order> dual_var(T value, size_t dim = 0) {
+    // dim must be zero
+
     if (Order >= 1) {
-        res[1] = 1;
+        return {value, 1};
     }
 
-    return res;
+    return value;
+}
+
+template <size_t Orders0, size_t Orders1, size_t... Orders, typename T>
+dual<T, Orders0, Orders1, Orders...> dual_var(T value, size_t dim = 0) {
+    if (dim == 0) {
+        if (Orders0 >= 1) {
+            return {value, 1};
+        }
+
+        return value;
+    }
+
+    return dual_var<Orders1, Orders...>(value, dim - 1);
 }
 
 template <typename T, size_t N, size_t... Orders>
@@ -652,6 +673,12 @@ struct complex_type<dual<T, Orders...>> {
     using type = dual<typename complex_type<T>::type, Orders...>;
 };
 
+namespace numbers {
+
+    template <typename T, size_t... N>
+    dual<std::complex<T>, N...> i_v<dual<T, N...>> = i_v<T>;
+
+} // namespace numbers
 } // namespace xsf
 
 namespace std {

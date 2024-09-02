@@ -1,29 +1,13 @@
 #pragma once
 
 #include "legendre.h"
+#include "numbers.h"
 
 namespace xsf {
 
-using namespace std::complex_literals;
-
-template <typename T>
-std::complex<T> i_v;
-
-template <>
-std::complex<float> i_v<float> = 1if;
-
-template <>
-std::complex<double> i_v<double> = 1i;
-
-template <typename T, size_t... N>
-dual<std::complex<T>, N...> i_v<dual<T, N...>> = i_v<T>;
-
-template <typename T, size_t N>
-dual<dual<std::complex<T>, N>, N> i_v<dual<dual<T, N>, N>> = dual<dual<std::complex<T>, N>, N>(i_v<T>);
-
 template <typename T>
 void sph_harm_y_next(int m, T phi, T p, complex<T> &res) {
-    res = complex<T>(p) * exp(i_v<T> * complex<T>(T(m) * phi));
+    res = complex<T>(p) * exp(numbers::i_v<T> * complex<T>(T(m) * phi));
 }
 
 template <typename T, typename Func>
