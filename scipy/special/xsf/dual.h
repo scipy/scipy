@@ -22,23 +22,21 @@ template <typename T, size_t Order>
 class dual<T, Order> {
   public:
     using value_type = T;
-    using reference = value_type &;
-    using const_reference = const value_type &;
 
   private:
-    T data[Order + 1];
+    value_type data[Order + 1];
 
   public:
     dual() = default;
 
-    dual(T value) {
+    dual(value_type value) {
         data[0] = value;
         for (size_t i = 1; i <= Order; ++i) {
             data[i] = 0;
         }
     }
 
-    dual(std::initializer_list<T> data) {
+    dual(std::initializer_list<value_type> data) {
         for (auto it = data.begin(); it != data.end(); ++it) {
             this->data[it - data.begin()] = *it;
         }
@@ -54,7 +52,7 @@ class dual<T, Order> {
         }
     }
 
-    dual &operator=(const T &other) {
+    dual &operator=(const value_type &other) {
         data[0] = other;
         for (size_t i = 1; i <= Order; ++i) {
             data[i] = 0;
@@ -71,7 +69,7 @@ class dual<T, Order> {
         return *this;
     }
 
-    dual &operator+=(const T &other) {
+    dual &operator+=(const value_type &other) {
         data[0] += other;
 
         return *this;
@@ -85,7 +83,7 @@ class dual<T, Order> {
         return *this;
     }
 
-    dual &operator-=(const T &other) {
+    dual &operator-=(const value_type &other) {
         data[0] -= other;
 
         return *this;
@@ -102,7 +100,7 @@ class dual<T, Order> {
         return *this;
     }
 
-    dual &operator*=(const T &other) {
+    dual &operator*=(const value_type &other) {
         for (size_t i = 0; i <= Order; ++i) {
             data[i] *= other;
         }
@@ -121,7 +119,7 @@ class dual<T, Order> {
         return *this;
     }
 
-    dual &operator/=(const T &other) {
+    dual &operator/=(const value_type &other) {
         for (size_t i = 0; i <= Order; ++i) {
             data[i] /= other;
         }
@@ -144,8 +142,6 @@ template <typename T, size_t Order0, size_t Order1, size_t... Orders>
 class dual<T, Order0, Order1, Orders...> {
   public:
     using value_type = T;
-    using reference = value_type &;
-    using const_reference = const value_type &;
 
   private:
     dual<T, Order1, Orders...> data[Order0 + 1];
@@ -176,7 +172,7 @@ class dual<T, Order0, Order1, Orders...> {
         }
     }
 
-    dual &operator=(const T &other) {
+    dual &operator=(const value_type &other) {
         data[0] = other;
         for (size_t i = 1; i <= Order0; ++i) {
             data[i] = 0;
@@ -378,17 +374,17 @@ dual<T, Order0, Orders...> operator-(const dual<T, Order0, Orders...> &x) {
     return res;
 }
 
-template <typename T, size_t... N>
-dual<T, N...> operator+(const dual<T, N...> &lhs, const dual<T, N...> &rhs) {
-    dual<T, N...> res = lhs;
+template <typename T, size_t... Orders>
+dual<T, Orders...> operator+(const dual<T, Orders...> &lhs, const dual<T, Orders...> &rhs) {
+    dual<T, Orders...> res = lhs;
     res += rhs;
 
     return res;
 }
 
-template <typename T, size_t... N>
-dual<T, N...> operator+(const dual<T, N...> &lhs, const T &rhs) {
-    dual<T, N...> res = lhs;
+template <typename T, size_t... Orders>
+dual<T, Orders...> operator+(const dual<T, Orders...> &lhs, const T &rhs) {
+    dual<T, Orders...> res = lhs;
     res += rhs;
 
     return res;
@@ -481,25 +477,26 @@ bool operator==(const dual<T, N...> &lhs, const U &rhs) {
 }
 
 template <size_t Order, typename T>
-dual<T, Order> make_dual(T value) {
-    if (Order == 0) {
-        return {value};
+dual<T, Order> dual_var(T value) {
+    dual<T, Order> res(value);
+    if (Order >= 1) {
+        res[1] = 1;
     }
 
-    return {value, 1};
+    return res;
 }
 
 template <typename T, size_t N, size_t... Orders>
-dual<T, Orders...> dual_taylor_series(const T (&coef)[N], const dual<T, Orders...> &x) {
+dual<T, Orders...> dual_taylor_series(const T (&coef)[N], const dual<T, Orders...> &x, T a) {
     dual<T, Orders...> res = coef[0];
     if (N >= 2) {
-        dual<T, Orders...> y = x - x.value();
+        dual<T, Orders...> y = x - a;
         T denom = 1;
 
         res += y * coef[1];
 
         for (size_t i = 2; i < N; ++i) {
-            y *= x - x.value();
+            y *= x - a;
             denom *= T(i);
 
             res += y * coef[i] / denom;
@@ -507,6 +504,11 @@ dual<T, Orders...> dual_taylor_series(const T (&coef)[N], const dual<T, Orders..
     }
 
     return res;
+}
+
+template <typename T, size_t N, size_t... Orders>
+dual<T, Orders...> dual_taylor_series(const T (&coef)[N], const dual<T, Orders...> &x) {
+    return dual_taylor_series(coef, x, x.value());
 }
 
 template <typename T, size_t... N>
@@ -545,7 +547,7 @@ dual<T, Orders...> sin(const dual<T, Orders...> &x) {
         }
     }
 
-    return dual_taylor_series(coef, x);
+    return dual_taylor_series(coef, x, x.value());
 }
 
 template <typename T, size_t... Orders>
@@ -561,7 +563,7 @@ dual<T, Orders...> cos(const dual<T, Orders...> &x) {
         }
     }
 
-    return dual_taylor_series(coef, x);
+    return dual_taylor_series(coef, x, x.value());
 }
 
 template <typename T, size_t Order0, size_t... Orders>
@@ -613,7 +615,7 @@ dual<T, Orders...> exp(const dual<T, Orders...> &x) {
         coef[i] = coef[0];
     }
 
-    return dual_taylor_series(coef, x);
+    return dual_taylor_series(coef, x, x.value());
 }
 
 template <typename T, size_t... Orders>
@@ -645,9 +647,9 @@ dual<T, Orders...> copysign(const dual<T, Orders...> &x, const dual<T, Orders...
     return -x;
 }
 
-template <typename T, size_t... N>
-struct complex_type<dual<T, N...>> {
-    using type = dual<typename complex_type<T>::type, N...>;
+template <typename T, size_t... Orders>
+struct complex_type<dual<T, Orders...>> {
+    using type = dual<typename complex_type<T>::type, Orders...>;
 };
 
 } // namespace xsf
