@@ -295,7 +295,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
             coo_todense_nd(np.array([1]), self.nnz, self.ndim,
                            self.coords[0], self.data, B.ravel('A'), fortran)
         elif self.ndim == 2:
-            M, N = self._shape_as_2d
+            M, N = self.shape
             coo_todense(M, N, self.nnz, self.row, self.col, self.data,
                         B.ravel('A'), fortran)
         else:

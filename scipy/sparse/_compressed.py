@@ -103,7 +103,6 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                 raise ValueError('unable to infer matrix dimensions') from e
 
             self._shape = check_shape(self._swap((M, N)), allow_nd=self._allow_nd)
-            self._shape = check_shape(self._swap((M, N)), allow_nd=self._allow_nd)
 
         if dtype is not None:
             newdtype = getdtype(dtype)
