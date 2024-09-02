@@ -79,22 +79,32 @@ T log_expit(T x) {
 #error Missing definition of FLT_EVAL_METHOD
 #endif
 
+//#if FLT_EVAL_METHOD == 0
+// Floating point arithmetic in target precision
 template <typename T>
-T fadd(const T &x, const T &y) {
-#if FLT_EVAL_METHOD != 0
-    return std::fma(T(1), x, y);
-#else
-    return static_cast<T>(x + y);
-#endif
+void fast_two_sum(const T &a, const T &b, T &s, T &t) {
+    s = a + b;
+    t = s - a;
+    t = b - t;
 }
+//#else
+//template <typename T>
+//void fast_two_sum(const T &a, const T &b, T &s, T &t) {
+//    using std::fma;
+//    s = fma(T(1), a, b);
+//    t = fma(T(-1), a, s);
+//    t = fma(T(-1), t, b);
+//}
+//#endif
 
 template <typename T>
-T fsub(const T &x, const T &y) {
-#if FLT_EVAL_METHOD != 0
-    return std::fma(T(-1), y, x);
-#else
-    return static_cast<T>(x - y);
-#endif
+void two_sum(const T &a, const T &b, T &s, T &t) {
+    using std::abs;
+    if (abs(a) >= abs(b)) {
+        fast_two_sum(a, b, s, t);
+    } else {
+        fast_two_sum(b, a, s, t);
+    }
 }
 
 // Compute pow(1+x,y) accurately for real x and y.
@@ -166,37 +176,15 @@ T pow1p_impl(T x, T y) {
     // To compute (1+x)^y, write |1+x| == (s+t) where s is equal to |1+x|
     // rounded toward 1, and t is the (exact) rounding error.
     T s, t;
+    two_sum(T(1), x, s, t);
+    if (t != T(0) && std::signbit(t) != std::signbit(x)) {
+        T delta = s - std::nextafter(s, T(1)); // exact
+        s -= delta; // exact
+        t += delta; // exact
+    }
     if (x < -1) {
-        s = std::nextafter(-x, T(0));
-        t = fsub(-x, s);
-        t = fsub(t, T(1));
-    } else if (x < 0) {
-        s = fadd(T(1), x);
-        t = fsub(s, T(1));
-        t = fsub(x, t);
-        if (t > 0) {
-            s = std::nextafter(s, T(1));
-            t = fsub(s, T(1));
-            t = fsub(x, t);
-        }
-    } else if (x < 1) {
-        s = fadd(T(1), x);
-        t = fsub(s, T(1));
-        t = fsub(x, t);
-        if (t < 0) {
-            s = std::nextafter(s, T(0));
-            t = fsub(s, T(1));
-            t = fsub(x, t);
-        }
-    } else {
-        s = fadd(x, T(1));
-        t = fsub(s, x);
-        t = fsub(T(1), t);
-        if (t < 0) {
-            s = std::nextafter(s, T(0));
-            t = fsub(s, x);
-            t = fsub(T(1), t);
-        }
+        s = -s;
+        t = -t;
     }
     fprintf(out, "[pow1p] s=%.16e t=%.16e\n", s, t);
 
