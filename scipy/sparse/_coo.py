@@ -181,7 +181,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
             axis += self.ndim
         if axis >= self.ndim:
             raise ValueError('axis out of bounds')
-        
+
         return np.bincount(downcast_intp_index(self.coords[1 - axis]),
                            minlength=self.shape[1 - axis])
 
@@ -591,7 +591,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
             coo_todense_nd(strides, self.nnz, self.ndim,
                            coords, self.data, result.ravel('A'), fortran)
         return self._container(result, copy=False)
-    
+
 
     def _add_sparse(self, other):
         if self.ndim < 3:
@@ -602,10 +602,10 @@ class _coo_base(_data_matrix, _minmax_mixin):
         other = self.__class__(other)
         new_data = np.concatenate((self.data, other.data))
         new_coords = tuple(np.concatenate((self.coords, other.coords), axis=1))
-        A = self.__class__((new_data, new_coords), shape=self.shape)         
+        A = self.__class__((new_data, new_coords), shape=self.shape)
         return A
 
-    
+
     def _sub_sparse(self, other):
         if self.ndim < 3:
             return self.tocsr()._sub_sparse(other)
@@ -617,7 +617,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
         new_coords = tuple(np.concatenate((self.coords, other.coords), axis=1))
         A = coo_array((new_data, new_coords), shape=self.shape)
         return A
-    
+
 
     def _matmul_vector(self, other):
         if self.ndim > 2:
@@ -628,10 +628,10 @@ class _coo_base(_data_matrix, _minmax_mixin):
             coords = np.concatenate(self.coords)
             coo_matvec_nd(self.nnz, len(self.shape), strides, coords, self.data,
                           other, result)
-            
+
             result = result.reshape(self.shape[:-1])
             return result
-        
+
         # self.ndim <= 2
         result_shape = self.shape[0] if self.ndim > 1 else 1
         result = np.zeros(result_shape,
@@ -656,7 +656,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
     def _matmul_dispatch(self, other):
         if self.ndim < 3:
             return _spbase._matmul_dispatch(self, other)
-        
+
         N = self.shape[-1]
         err_prefix = "matmul: dimension mismatch with signature"
         if other.__class__ is np.ndarray:
@@ -670,14 +670,14 @@ class _coo_base(_data_matrix, _minmax_mixin):
                 raise ValueError(msg)
             msg = "n-D matrix-matrix multiplication not implemented for ndim>2"
             raise NotImplementedError(msg)
-        
+
         if isscalarlike(other):
             # scalar value
             return self._mul_scalar(other)
-        
+
         if issparse(other):
             raise NotImplementedError("sparse-sparse matmul not implemented for ndim>2")
-        
+
         # If it's a list or whatever, treat it like an array
         other_a = np.asanyarray(other)
 
@@ -727,12 +727,12 @@ class _coo_base(_data_matrix, _minmax_mixin):
         else:
             raise NotImplementedError(
                 f"coo_matmat_dense not implemented for ndim={self.ndim}")
-  
+
         result = np.zeros(result_shape, dtype=result_dtype)
         coo_matmat_dense(self.nnz, other.shape[-1], row, col,
                          self.data, other.ravel('C'), result)
         return result.view(type=type(other))
-    
+
 
 def _ravel_coords(coords, shape, order='C'):
     """Like np.ravel_multi_index, but avoids some overflow issues."""

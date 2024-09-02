@@ -253,7 +253,7 @@ def isshape(x, nonneg=False, *, allowed_ndims=(2,)) -> bool:
     ndim = len(x)
     if ndim not in allowed_ndims:
         return False
-    
+
     for d in x:
         if not isintlike(d):
             return False

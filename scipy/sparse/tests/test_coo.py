@@ -142,11 +142,11 @@ def test_reshape():
     # attempting invalid reshape
     with pytest.raises(ValueError, match="cannot reshape array"):
         arr1d.reshape((3,3))
-    
+
     # attempting reshape with a size 0 dimension
     with pytest.raises(ValueError, match="cannot reshape array"):
         arr1d.reshape((3,0))
-    
+
     arr2d = coo_array([[1, 2, 0], [0, 0, 3]])
     assert arr2d.shape == (2, 3)
 
@@ -284,7 +284,7 @@ def test_sum_duplicates():
     arr4d.sum_duplicates()
     assert arr4d.nnz == 2
     assert_equal(arr4d.toarray(), expected)
-    
+
     # when there are no duplicates
     arr_nodups = coo_array(([1, 2, 3, 4], ([0, 0, 1, 1], [0, 1, 0, 1])))
     assert arr_nodups.nnz == 4
@@ -446,7 +446,7 @@ def test_nd_tuple_constructor_with_shape(shape):
     res = coo_array(arr, shape=shape)
     assert res.shape == shape
     assert_equal(res.toarray(), arr)
-    
+
 
 def test_tuple_constructor_for_dim_size_zero():
     # arrays with a dimension of size 0
@@ -455,7 +455,7 @@ def test_tuple_constructor_for_dim_size_zero():
 
     empty_arr = coo_array(([], ([],[])), shape=(4,0))
     assert_equal(empty_arr.toarray(), np.empty((4,0)))
-    
+
 
 @pytest.mark.parametrize(('shape', 'new_shape'), [((4,9,6,5), (3,6,15,4)),
                                                   ((4,9,6,5), (36,30)),
@@ -520,7 +520,7 @@ def test_nd_eliminate_zeros():
     arr3d = coo_array(([1, 0, 0, 4], ([0, 1, 1, 2], [0, 1, 0, 1], [1, 1, 2, 0])))
     assert arr3d.nnz == 4
     assert arr3d.count_nonzero() == 2
-    assert_equal(arr3d.toarray(), np.array([[[0, 1, 0], [0, 0, 0]], 
+    assert_equal(arr3d.toarray(), np.array([[[0, 1, 0], [0, 0, 0]],
                                     [[0, 0, 0], [0, 0, 0]], [[0, 0, 0], [4, 0, 0]]]))
     arr3d.eliminate_zeros()
     assert arr3d.nnz == 2
@@ -561,7 +561,7 @@ def test_nd_add_sparse(shape):
     sp_x = random_array((shape), density=0.6, random_state=rng, dtype=int)
     sp_y = random_array((shape), density=0.6, random_state=rng, dtype=int)
     den_x, den_y = sp_x.toarray(), sp_y.toarray()
-    
+
     dense_sum = den_x + den_y
     sparse_sum = sp_x + sp_y
     assert_equal(dense_sum, sparse_sum.toarray())
@@ -579,9 +579,9 @@ def test_add_sparse_with_inf():
 @pytest.mark.parametrize(('a_shape', 'b_shape'), [((7,), (12,)),
                                                   ((6,4), (6,5)),
                                                   ((5,9,3,2), (9,5,2,3)),])
-def test_nd_add_sparse_with_inconsistent_shapes(a_shape, b_shape): 
+def test_nd_add_sparse_with_inconsistent_shapes(a_shape, b_shape):
     rng = np.random.default_rng(23409823)
-    
+
     arr_a = random_array((a_shape), density=0.6, random_state=rng, dtype=int)
     arr_b = random_array((b_shape), density=0.6, random_state=rng, dtype=int)
     with pytest.raises(ValueError, match="inconsistent shapes"):
@@ -609,7 +609,7 @@ def test_nd_sub_sparse(shape):
     sp_x = random_array(shape, density=0.6, random_state=rng, dtype=int)
     sp_y = random_array(shape, density=0.6, random_state=rng, dtype=int)
     den_x, den_y = sp_x.toarray(), sp_y.toarray()
-    
+
     dense_sum = den_x - den_y
     sparse_sum = sp_x - sp_y
     assert_equal(dense_sum, sparse_sum.toarray())
@@ -627,9 +627,9 @@ def test_nd_sub_sparse_with_nan():
 @pytest.mark.parametrize(('a_shape', 'b_shape'), [((7,), (12,)),
                                                   ((6,4), (6,5)),
                                                   ((5,9,3,2), (9,5,2,3)),])
-def test_nd_sub_sparse_with_inconsistent_shapes(a_shape, b_shape): 
+def test_nd_sub_sparse_with_inconsistent_shapes(a_shape, b_shape):
     rng = np.random.default_rng(23409823)
-    
+
     arr_a = random_array((a_shape), density=0.6, random_state=rng, dtype=int)
     arr_b = random_array((b_shape), density=0.6, random_state=rng, dtype=int)
     with pytest.raises(ValueError, match="inconsistent shapes"):
@@ -637,8 +637,8 @@ def test_nd_sub_sparse_with_inconsistent_shapes(a_shape, b_shape):
 
 
 mat_vec_shapes = [
-    ((2, 3, 4, 5), (5,)), 
-    ((0, 0), (0,)), 
+    ((2, 3, 4, 5), (5,)),
+    ((0, 0), (0,)),
     ((2, 3, 4, 7, 8), (8,)),
     ((4, 4, 2, 0), (0,)),
     ((6, 5, 3, 2, 4), (4, 1)),
