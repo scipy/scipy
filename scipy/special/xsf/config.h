@@ -255,6 +255,8 @@ using std::sqrt;
 using std::imag;
 using std::real;
 
+using std::abs;
+
 template <typename T>
 struct remove_complex {
     using type = T;

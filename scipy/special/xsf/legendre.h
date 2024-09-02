@@ -185,7 +185,7 @@ struct assoc_legendre_p_recurrence_m_abs_m<T, assoc_legendre_unnorm_policy> {
     // other square roots can be avoided if each iteration increments by 2
 
     void operator()(int m, T (&res)[2]) const {
-        int m_abs = std::abs(m);
+        int m_abs = abs(m);
 
         T fac;
         if (m < 0) {
@@ -214,7 +214,7 @@ struct assoc_legendre_p_recurrence_m_abs_m<T, assoc_legendre_norm_policy> {
     }
 
     void operator()(int m, T (&res)[2]) const {
-        int m_abs = std::abs(m);
+        int m_abs = abs(m);
 
         T fac = branch_cut_sign * sqrt(T((2 * m_abs + 1) * (2 * m_abs - 1)) / T(4 * m_abs * (m_abs - 1)));
 
@@ -261,7 +261,7 @@ struct assoc_legendre_p_initializer_n<T, assoc_legendre_unnorm_policy> {
     int type;
 
     void operator()(const T &res_m_abs_m, T (&res)[2]) const {
-        int m_abs = std::abs(m);
+        int m_abs = abs(m);
         T fac = T(2 * (m_abs + 1) - 1) / T(m_abs + 1 - m);
 
         res[0] = res_m_abs_m;
@@ -276,7 +276,7 @@ struct assoc_legendre_p_initializer_n<T, assoc_legendre_norm_policy> {
     int type;
 
     void operator()(const T &res_m_abs_m, T (&res)[2]) const {
-        T fac = sqrt(T(2 * std::abs(m) + 3));
+        T fac = sqrt(T(2 * abs(m) + 3));
 
         res[0] = res_m_abs_m;
         res[1] = fac * z * res_m_abs_m;
@@ -340,7 +340,7 @@ void assoc_legendre_p_pm1(NormPolicy norm, int n, int m, dual<T, 1> z, int branc
         branch_cut_sign = 1;
     }
 
-    if (std::abs(m) > n) {
+    if (abs(m) > n) {
         res[1] = 0;
     } else if (m == 0) {
         res[1] = T(n) * T(n + 1) * std::pow(z[0], T(n + 1)) / T(2);
@@ -372,7 +372,7 @@ void assoc_legendre_p_pm1(NormPolicy norm, int n, int m, dual<T, 2> z, int branc
         branch_cut_sign = 1;
     }
 
-    if (std::abs(m) > n) {
+    if (abs(m) > n) {
         res[1] = 0;
     } else if (m == 0) {
         res[1] = T(n) * T(n + 1) * std::pow(z[0], T(n + 1)) / T(2);
@@ -388,7 +388,7 @@ void assoc_legendre_p_pm1(NormPolicy norm, int n, int m, dual<T, 2> z, int branc
         res[1] = 0;
     }
 
-    if (std::abs(m) > n) {
+    if (abs(m) > n) {
         res[2] = 0;
     } else if (m == 0) {
         res[2] = T(n + 2) * T(n + 1) * T(n) * T(n - 1) / T(8);
@@ -432,7 +432,7 @@ void assoc_legendre_p_for_each_n(
     res[0] = 0;
     res[1] = 0;
 
-    int m_abs = std::abs(m);
+    int m_abs = abs(m);
     if (m_abs > n) {
         for (int j = 0; j <= n; ++j) {
             f(j, res);
@@ -442,7 +442,7 @@ void assoc_legendre_p_for_each_n(
             f(j, res);
         }
 
-        if (std::abs(real(z)) == 1 && imag(z) == 0) {
+        if (abs(real(z)) == 1 && imag(z) == 0) {
             for (int j = m_abs; j <= n; ++j) {
                 forward_recur_shift_left(res);
                 assoc_legendre_p_pm1(norm, j, m, z, branch_cut, res[1]);
@@ -554,7 +554,7 @@ struct sph_legendre_p_initializer_m_abs_m {
         }
 
         res[0] = fac0;
-        res[1] = fac1 * std::abs(theta_sin);
+        res[1] = fac1 * abs(theta_sin);
     }
 };
 
@@ -567,7 +567,7 @@ struct sph_legendre_p_recurrence_m_abs_m {
     sph_legendre_p_recurrence_m_abs_m(T theta) : theta(theta), theta_sin(sin(theta)), theta_cos(cos(theta)) {}
 
     void operator()(int m, T (&res)[2]) const {
-        int m_abs = std::abs(m);
+        int m_abs = abs(m);
 
         T fac = sqrt(T((2 * m_abs + 1) * (2 * m_abs - 1)) / T(4 * m_abs * (m_abs - 1)));
 
@@ -606,7 +606,7 @@ struct sph_legendre_p_initializer_n {
     sph_legendre_p_initializer_n(int m, T theta) : m(m), theta(theta), theta_cos(cos(theta)), theta_sin(sin(theta)) {}
 
     void operator()(const T &res_m_abs_m, T (&res)[2]) const {
-        T fac = sqrt(T(2 * std::abs(m) + 3));
+        T fac = sqrt(T(2 * abs(m) + 3));
 
         res[0] = res_m_abs_m;
         res[1] = fac * theta_cos * res_m_abs_m;
@@ -647,7 +647,7 @@ void sph_legendre_p_for_each_n(int n, int m, T theta, const T &res_m_abs_m, T (&
     res[0] = 0;
     res[1] = 0;
 
-    int m_abs = std::abs(m);
+    int m_abs = abs(m);
     if (m_abs > n) {
         for (int j = 0; j <= n; ++j) {
             f(j, res);
@@ -826,7 +826,7 @@ void lqn(std::complex<T> z, OutputVec1 cqn, OutputVec2 cqd) {
         }
         return;
     }
-    int ls = ((std::abs(z) > 1.0) ? -1 : 1);
+    int ls = ((abs(z) > 1.0) ? -1 : 1);
 
     cq0 = std::log(static_cast<T>(ls) * (static_cast<T>(1) + z) / (static_cast<T>(1) - z)) / static_cast<T>(2);
     cq1 = z * cq0 - static_cast<T>(1);
@@ -834,7 +834,7 @@ void lqn(std::complex<T> z, OutputVec1 cqn, OutputVec2 cqd) {
     cqn(0) = cq0;
     cqn(1) = cq1;
 
-    if (std::abs(z) < 1.0001) {
+    if (abs(z) < 1.0001) {
         cqf0 = cq0;
         cqf1 = cq1;
         for (int k = 2; k <= n; k++) {
@@ -845,10 +845,10 @@ void lqn(std::complex<T> z, OutputVec1 cqn, OutputVec2 cqd) {
         }
     } else {
         int km;
-        if (std::abs(z) > 1.1) {
+        if (abs(z) > 1.1) {
             km = 40 + n;
         } else {
-            km = (int) ((40 + n) * floor(-1.0 - 1.8 * log(std::abs(z - static_cast<T>(1)))));
+            km = (int) ((40 + n) * floor(-1.0 - 1.8 * log(abs(z - static_cast<T>(1)))));
         }
 
         cqf2 = 0.0;
@@ -1006,7 +1006,7 @@ void lqmn(std::complex<T> z, OutputMat1 cqm, OutputMat2 cqd) {
     int i, j, k, km, ls;
     std::complex<T> cq0, cq1, cq10, cqf0 = 0, cqf, cqf1, cqf2, zq, zs;
 
-    if ((std::abs(real(z)) == 1) && (imag(z) == 0)) {
+    if ((abs(real(z)) == 1) && (imag(z) == 0)) {
         for (i = 0; i < (m + 1); i++) {
             for (j = 0; j < (n + 1); j++) {
                 cqm(i, j) = 1e300;
@@ -1017,7 +1017,7 @@ void lqmn(std::complex<T> z, OutputMat1 cqm, OutputMat2 cqd) {
         return;
     }
 
-    T xc = std::abs(z);
+    T xc = abs(z);
     ls = 0;
     if ((imag(z) == 0) || (xc < 1)) {
         ls = 1;

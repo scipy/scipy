@@ -397,17 +397,17 @@ dual<T, Orders...> operator+(const dual<T, Orders...> &lhs, const T &rhs) {
     return res;
 }
 
-template <typename T, size_t... N>
-dual<T, N...> operator+(const T &lhs, const dual<T, N...> &rhs) {
-    dual<T, N...> res = lhs;
+template <typename T, size_t... Orders>
+dual<T, Orders...> operator+(const T &lhs, const dual<T, Orders...> &rhs) {
+    dual<T, Orders...> res = lhs;
     res += rhs;
 
     return res;
 }
 
-template <typename T, size_t... N>
-dual<T, N...> operator-(const dual<T, N...> &lhs, const dual<T, N...> &rhs) {
-    dual<T, N...> res = lhs;
+template <typename T, size_t... Orders>
+dual<T, Orders...> operator-(const dual<T, Orders...> &lhs, const dual<T, Orders...> &rhs) {
+    dual<T, Orders...> res = lhs;
     res -= rhs;
 
     return res;
@@ -527,32 +527,20 @@ dual<T, Orders...> dual_taylor_series(const T (&coef)[N], const dual<T, Orders..
     return res;
 }
 
-template <typename T, size_t N, size_t... Orders>
-dual<T, Orders...> dual_taylor_series(const T (&coef)[N], const dual<T, Orders...> &x) {
-    return dual_taylor_series(coef, x, x.value());
-}
+template <typename T, size_t... Orders>
+dual<T, Orders...> sqrt(const dual<T, Orders...> &z) {
+    static constexpr size_t MaxOrder = dual<T, Orders...>::max_order();
 
-template <typename T, size_t... N>
-dual<T, 0, N...> sqrt(const dual<T, 0, N...> &z) {
-    T coef[1] = {sqrt(z.value())};
+    T coef[MaxOrder + 1] = {sqrt(z.value())};
+    if (MaxOrder >= 1) {
+        coef[1] = T(1) / (T(2) * coef[0]);
 
-    return dual_taylor_series(coef, z);
-}
+        if (MaxOrder >= 2) {
+            coef[2] = -T(1) / (T(4) * coef[0] * z.value());
+        }
+    }
 
-template <typename T, size_t... N>
-dual<T, 1, N...> sqrt(const dual<T, 1, N...> &z) {
-    T z0_sqrt = sqrt(z.value());
-    T coef[2] = {z0_sqrt, T(1) / (T(2) * z0_sqrt)};
-
-    return dual_taylor_series(coef, z);
-}
-
-template <typename T, size_t... N>
-dual<T, 2, N...> sqrt(const dual<T, 2, N...> &z) {
-    T z0_sqrt = sqrt(z.value());
-    T coef[3] = {z0_sqrt, T(1) / (T(2) * z0_sqrt), -T(1) / (T(4) * z0_sqrt * z.value())};
-
-    return dual_taylor_series(coef, z);
+    return dual_taylor_series(coef, z, z.value());
 }
 
 template <typename T, size_t... Orders>
@@ -673,6 +661,20 @@ struct complex_type<dual<T, Orders...>> {
     using type = dual<typename complex_type<T>::type, Orders...>;
 };
 
+template <typename T, size_t... Orders>
+dual<T, Orders...> abs(dual<T, Orders...> z) {
+    if (z.value() < 0) {
+        return dual_taylor_series({abs(z.value()), T(-1)}, z, z.value());
+    }
+
+    return dual_taylor_series({abs(z.value()), T(1)}, z, z.value());
+}
+
+template <typename T, size_t... Orders>
+dual<T, Orders...> abs(dual<std::complex<T>, Orders...> z) {
+    return dual_taylor_series({abs(z.value()), real(z.value()) / abs(z.value())}, z, z.value());
+}
+
 namespace numbers {
 
     template <typename T, size_t... N>
@@ -680,53 +682,3 @@ namespace numbers {
 
 } // namespace numbers
 } // namespace xsf
-
-namespace std {
-
-template <typename T, size_t... N>
-xsf::dual<T, 0, N...> abs(xsf::dual<T, 0, N...> z) {
-    return dual_taylor_series({std::abs(z.value())}, z);
-}
-
-template <typename T, size_t... N>
-xsf::dual<T, 0, N...> abs(xsf::dual<std::complex<T>, 0, N...> z) {
-    return dual_taylor_series({std::abs(z.value())}, z);
-}
-
-template <typename T, size_t... N>
-xsf::dual<T, 1, N...> abs(xsf::dual<T, 1, N...> z) {
-    if (z < 0) {
-        return dual_taylor_series({std::abs(z.value()), T(-1)}, z);
-    }
-
-    return dual_taylor_series({std::abs(z.value()), T(1)}, z);
-}
-
-template <typename T, size_t... N>
-xsf::dual<T, 1, N...> abs(xsf::dual<std::complex<T>, 1, N...> z) {
-    if (std::real(z) < 0) {
-        return dual_taylor_series({std::abs(z.value()), std::real(z.value()) / std::abs(z.value())}, z);
-    }
-
-    return dual_taylor_series({std::abs(z.value()), std::real(z.value()) / std::abs(z.value())}, z);
-}
-
-template <typename T, size_t... N>
-xsf::dual<T, 2, N...> abs(xsf::dual<T, 2, N...> z) {
-    if (z < 0) {
-        return dual_taylor_series({std::abs(z.value()), T(-1), T(0)}, z);
-    }
-
-    return dual_taylor_series({std::abs(z.value()), T(1), T(0)}, z);
-}
-
-template <typename T, size_t... N>
-xsf::dual<T, 2, N...> abs(xsf::dual<std::complex<T>, 2, N...> z) {
-    if (std::real(z.value()) < 0) {
-        return dual_taylor_series({std::abs(z.value()), std::real(z.value()) / std::abs(z.value()), T(0)}, z);
-    }
-
-    return dual_taylor_series({std::abs(z.value()), std::real(z.value()) / std::abs(z.value()), T(0)}, z);
-}
-
-} // namespace std
