@@ -468,19 +468,40 @@ dual<T, N...> operator/(const T &lhs, const dual<T, N...> &rhs) {
 
     return res;
 }
-template <typename T, size_t... N>
-bool operator<(const dual<T, N...> &lhs, const dual<T, N...> &rhs) {
+
+template <typename T, size_t... Orders>
+bool operator==(const dual<T, Orders...> &lhs, const dual<T, Orders...> &rhs) {
+    return lhs.value() == rhs.value();
+}
+
+template <typename T, size_t... Orders, typename U>
+bool operator==(const dual<T, Orders...> &lhs, const U &rhs) {
+    return lhs.value() == rhs;
+}
+
+template <typename T, size_t... Orders>
+bool operator!=(const dual<T, Orders...> &lhs, const dual<T, Orders...> &rhs) {
+    return lhs.value() != rhs.value();
+}
+
+template <typename T, size_t... Orders>
+bool operator<(const dual<T, Orders...> &lhs, const dual<T, Orders...> &rhs) {
     return lhs.value() < rhs.value();
 }
 
-template <typename T, size_t... N, typename U>
-bool operator<(const dual<T, N...> &lhs, const U &rhs) {
-    return lhs.value() < rhs;
+template <typename T, size_t... Orders>
+bool operator>(const dual<T, Orders...> &lhs, const dual<T, Orders...> &rhs) {
+    return lhs.value() > rhs.value();
 }
 
-template <typename T, size_t... N, typename U>
-bool operator==(const dual<T, N...> &lhs, const U &rhs) {
-    return lhs.value() == rhs;
+template <typename T, size_t... Orders>
+bool operator<=(const dual<T, Orders...> &lhs, const dual<T, Orders...> &rhs) {
+    return lhs.value() <= rhs.value();
+}
+
+template <typename T, size_t... Orders>
+bool operator>=(const dual<T, Orders...> &lhs, const dual<T, Orders...> &rhs) {
+    return lhs.value() >= rhs.value();
 }
 
 template <size_t Order, typename T>

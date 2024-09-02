@@ -325,8 +325,8 @@ void assoc_legendre_p_pm1(NormPolicy norm, int n, int m, T z, int branch_cut, T 
     }
 }
 
-template <typename NormPolicy, typename T>
-void assoc_legendre_p_pm1(NormPolicy norm, int n, int m, dual<T, 1> z, int branch_cut, dual<T, 1> &res) {
+template <typename NormPolicy, typename T, size_t Order>
+void assoc_legendre_p_pm1(NormPolicy norm, int n, int m, dual<T, Order> z, int branch_cut, dual<T, Order> &res) {
     if (m == 0) {
         res[0] = T(1);
     } else {
@@ -340,76 +340,48 @@ void assoc_legendre_p_pm1(NormPolicy norm, int n, int m, dual<T, 1> z, int branc
         branch_cut_sign = 1;
     }
 
-    if (abs(m) > n) {
-        res[1] = 0;
-    } else if (m == 0) {
-        res[1] = T(n) * T(n + 1) * std::pow(z[0], T(n + 1)) / T(2);
-    } else if (m == 1) {
-        res[1] = std::pow(z[0], T(n)) * std::numeric_limits<remove_complex_t<T>>::infinity();
-    } else if (m == 2) {
-        res[1] = -branch_cut_sign * T(n + 2) * T(n + 1) * T(n) * T(n - 1) * std::pow(z[0], T(n + 1)) / T(4);
-    } else if (m == -2) {
-        res[1] = -branch_cut_sign * std::pow(z[0], T(n + 1)) / T(4);
-    } else if (m == -1) {
-        res[1] = -std::pow(z[0], T(n)) * std::numeric_limits<remove_complex_t<T>>::infinity();
-    } else {
-        res[1] = 0;
-    }
-}
+    if (Order >= 1) {
+        if (abs(m) > n) {
+            res[1] = 0;
+        } else if (m == 0) {
+            res[1] = T(n) * T(n + 1) * std::pow(z[0], T(n + 1)) / T(2);
+        } else if (m == 1) {
+            res[1] = std::pow(z[0], T(n)) * std::numeric_limits<remove_complex_t<T>>::infinity();
+        } else if (m == 2) {
+            res[1] = -branch_cut_sign * T(n + 2) * T(n + 1) * T(n) * T(n - 1) * std::pow(z[0], T(n + 1)) / T(4);
+        } else if (m == -2) {
+            res[1] = -branch_cut_sign * std::pow(z[0], T(n + 1)) / T(4);
+        } else if (m == -1) {
+            res[1] = -std::pow(z[0], T(n)) * std::numeric_limits<remove_complex_t<T>>::infinity();
+        } else {
+            res[1] = 0;
+        }
 
-template <typename NormPolicy, typename T>
-void assoc_legendre_p_pm1(NormPolicy norm, int n, int m, dual<T, 2> z, int branch_cut, dual<T, 2> &res) {
-    if (m == 0) {
-        res[0] = T(1);
-    } else {
-        res[0] = T(0);
-    }
-
-    T branch_cut_sign;
-    if (branch_cut == 3) {
-        branch_cut_sign = -1;
-    } else {
-        branch_cut_sign = 1;
-    }
-
-    if (abs(m) > n) {
-        res[1] = 0;
-    } else if (m == 0) {
-        res[1] = T(n) * T(n + 1) * std::pow(z[0], T(n + 1)) / T(2);
-    } else if (m == 1) {
-        res[1] = std::pow(z[0], T(n)) * std::numeric_limits<remove_complex_t<T>>::infinity();
-    } else if (m == 2) {
-        res[1] = -branch_cut_sign * T(n + 2) * T(n + 1) * T(n) * T(n - 1) * std::pow(z[0], T(n + 1)) / T(4);
-    } else if (m == -2) {
-        res[1] = -branch_cut_sign * std::pow(z[0], T(n + 1)) / T(4);
-    } else if (m == -1) {
-        res[1] = -std::pow(z[0], T(n)) * std::numeric_limits<remove_complex_t<T>>::infinity();
-    } else {
-        res[1] = 0;
-    }
-
-    if (abs(m) > n) {
-        res[2] = 0;
-    } else if (m == 0) {
-        res[2] = T(n + 2) * T(n + 1) * T(n) * T(n - 1) / T(8);
-    } else if (m == 1) {
-        res[2] = std::numeric_limits<remove_complex_t<T>>::infinity();
-    } else if (m == 2) {
-        res[2] = -T((n + 1) * n - 3) * T(n + 2) * T(n + 1) * T(n) * T(n - 1) / T(12);
-    } else if (m == 3) {
-        res[2] = std::numeric_limits<remove_complex_t<T>>::infinity();
-    } else if (m == 4) {
-        res[2] = T(n + 4) * T(n + 3) * T(n + 2) * T(n + 1) * T(n) * T(n - 1) * T(n - 2) * T(n - 3) / T(48);
-    } else if (m == -4) {
-        res[2] = 0;
-    } else if (m == -3) {
-        res[2] = -std::numeric_limits<remove_complex_t<T>>::infinity();
-    } else if (m == -2) {
-        res[2] = -T(1) / T(4);
-    } else if (m == -1) {
-        res[2] = -std::numeric_limits<remove_complex_t<T>>::infinity();
-    } else {
-        res[2] = 0;
+        if (Order >= 2) {
+            if (abs(m) > n) {
+                res[2] = 0;
+            } else if (m == 0) {
+                res[2] = T(n + 2) * T(n + 1) * T(n) * T(n - 1) / T(8);
+            } else if (m == 1) {
+                res[2] = std::numeric_limits<remove_complex_t<T>>::infinity();
+            } else if (m == 2) {
+                res[2] = -T((n + 1) * n - 3) * T(n + 2) * T(n + 1) * T(n) * T(n - 1) / T(12);
+            } else if (m == 3) {
+                res[2] = std::numeric_limits<remove_complex_t<T>>::infinity();
+            } else if (m == 4) {
+                res[2] = T(n + 4) * T(n + 3) * T(n + 2) * T(n + 1) * T(n) * T(n - 1) * T(n - 2) * T(n - 3) / T(48);
+            } else if (m == -4) {
+                res[2] = 0;
+            } else if (m == -3) {
+                res[2] = -std::numeric_limits<remove_complex_t<T>>::infinity();
+            } else if (m == -2) {
+                res[2] = -T(1) / T(4);
+            } else if (m == -1) {
+                res[2] = -std::numeric_limits<remove_complex_t<T>>::infinity();
+            } else {
+                res[2] = 0;
+            }
+        }
     }
 }
 

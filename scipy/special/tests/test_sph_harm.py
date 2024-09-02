@@ -5,24 +5,6 @@ from numpy.testing import assert_allclose
 import scipy.special as sc
 
 class TestSphHarm:
-    def test_sph_harm_der(self):
-        print()
-
-        n = 2
-        n = np.atleast_1d(n)
-
-        m = 1
-        m = np.atleast_1d(m)
-
-        theta = np.pi / 3
-        theta = np.atleast_1d(theta)
-
-        phi = np.pi / 4
-        phi = np.atleast_1d(phi)
-
-        out, out_jac, out_hess = sc.sph_harm_y(n, m, theta, phi, diff_n=2)
-        print(out, out_jac, out_hess)
-
     @pytest.mark.slow
     def test_p(self):
         m_max = 20
