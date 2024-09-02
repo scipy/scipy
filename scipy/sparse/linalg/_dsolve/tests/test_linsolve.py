@@ -722,6 +722,17 @@ class TestSplu:
 
         assert_equal(len(oks), 20)
 
+    def test_singular_matrix(self):
+        # Test that SuperLU does not print to stdout when a singular matrix is
+        # passed. See gh-20993.
+        A = identity(10, format='csr').tocsr()
+        A[-1, -1] = 0
+        b = np.zeros(10)
+        with pytest.warns(MatrixRankWarning):
+            res = spsolve(A, b)
+            assert np.isnan(res).all()
+
+
 class TestGstrsErrors:
     def setup_method(self):
       self.A = array([[1.0,2.0,3.0],[4.0,5.0,6.0],[7.0,8.0,9.0]], dtype=np.float64)

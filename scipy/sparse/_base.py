@@ -612,8 +612,6 @@ class _spbase:
             elif other.shape == (N, 1):
                 result = self._matmul_vector(other.ravel())
                 if self.ndim == 1:
-                    result = self._matmul_vector(other.ravel())
-                if self.ndim == 1:
                     return result.reshape(1)
                 return result.reshape(M, 1)
             elif other.ndim == 2 and other.shape[0] == N:
@@ -1171,8 +1169,13 @@ class _spbase:
                 np.ones((N, 1), dtype=res_dtype)
             )
 
-        if out is not None and out.shape != ret.shape:
-            raise ValueError("dimensions do not match")
+        if out is not None:
+            if isinstance(self, sparray):
+                ret_shape = ret.shape[:axis] + ret.shape[axis + 1:]
+            else:
+                ret_shape = ret.shape
+            if out.shape != ret_shape:
+                raise ValueError("dimensions do not match")
 
         return ret.sum(axis=axis, dtype=dtype, out=out)
 

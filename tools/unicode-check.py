@@ -11,7 +11,8 @@ import argparse
 # allow in the source code.
 latin1_letters = set(chr(cp) for cp in range(192, 256))
 box_drawing_chars = set(chr(cp) for cp in range(0x2500, 0x2580))
-extra_symbols = set(['®', 'ő', 'λ', 'π', 'ω', '∫', '≠', '≥', '≤', 'μ'])
+extra_symbols = set(['®', 'ő', 'λ', 'π', 'ω', '∫', '≠', '≥', '≤', 'μ',
+                     '±', '∞'])
 allowed = latin1_letters | box_drawing_chars | extra_symbols
 
 
