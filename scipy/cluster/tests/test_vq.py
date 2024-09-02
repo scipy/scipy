@@ -95,9 +95,14 @@ class TestWhiten:
                           [0.45067590, 0.45464607]])
         xp_assert_close(whiten(obs), desired, rtol=1e-5)
 
+    @pytest.fixture
+    def whiten_lock(self):
+        from threading import Lock
+        return Lock()
+
     @skip_xp_backends('jax.numpy',
                       reason='jax arrays do not support item assignment')
-    def test_whiten_zero_std(self, xp):
+    def test_whiten_zero_std(self, xp, whiten_lock):
         desired = xp.asarray([[0., 1.0, 2.86666544],
                               [0., 1.0, 1.32460034],
                               [0., 1.0, 3.74382172]])
@@ -105,13 +110,15 @@ class TestWhiten:
         obs = xp.asarray([[0., 1., 0.74109533],
                           [0., 1., 0.34243798],
                           [0., 1., 0.96785929]])
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter('always')
 
-            xp_assert_close(whiten(obs), desired, rtol=1e-5)
+        with whiten_lock:
+            with warnings.catch_warnings(record=True) as w:
+                warnings.simplefilter('always')
 
-            assert_equal(len(w), 1)
-            assert_(issubclass(w[-1].category, RuntimeWarning))
+                xp_assert_close(whiten(obs), desired, rtol=1e-5)
+
+                assert_equal(len(w), 1)
+                assert_(issubclass(w[-1].category, RuntimeWarning))
 
     def test_whiten_not_finite(self, xp):
         for bad_value in xp.nan, xp.inf, -xp.inf:
@@ -310,7 +317,7 @@ class TestKMean:
 
         initc = data1[:3]
         code = xp_copy(initc, xp=xp)
-        
+
         # use `seed` to ensure backwards compatibility after SPEC7
         kmeans2(data1, code, iter=1, seed=1)[0]
         kmeans2(data1, code, iter=2)[0]

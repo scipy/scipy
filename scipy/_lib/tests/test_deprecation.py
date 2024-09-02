@@ -1,6 +1,8 @@
 import pytest
+from threading import Lock
 
 
+@pytest.mark.parallel_threads(1)
 def test_cython_api_deprecation():
     match = ("`scipy._lib._test_deprecation_def.foo_deprecated` "
              "is deprecated, use `foo` instead!\n"

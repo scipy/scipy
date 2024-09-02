@@ -1017,6 +1017,7 @@ def linkage(y, method='single', metric='euclidean', optimal_ordering=False):
     elif y.ndim == 2:
         if (y.shape[0] == y.shape[1] and np.allclose(np.diag(y), 0) and
                 xp.all(y >= 0) and np.allclose(y, y.T)):
+            print('----------------------')
             warnings.warn('The symmetric non-negative hollow observation '
                           'matrix looks suspiciously like an uncondensed '
                           'distance matrix',
