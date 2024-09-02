@@ -55,7 +55,7 @@ class TestConstructUtils:
             )
         ):
             cls(0)
-    
+
     @pytest.mark.parametrize("cls", [
         csc_matrix, csr_matrix, coo_matrix,
         bsr_matrix, dia_matrix, lil_matrix
@@ -796,7 +796,7 @@ class TestConstructUtils:
     def test_random_array_maintains_array_shape(self):
         arr = construct.random_array((0, 4), density=0.3, dtype=int)
         assert arr.shape == (0, 4)
-        
+
         arr = construct.random_array((10, 10, 10), density=0.3, dtype=int)
         assert arr.shape == (10, 10, 10)
 
