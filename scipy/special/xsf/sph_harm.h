@@ -4,17 +4,20 @@
 #include "numbers.h"
 
 namespace xsf {
+namespace detail {
 
-template <typename T>
-void sph_harm_y_next(int m, T phi, T p, complex<T> &res) {
-    res = complex<T>(p) * exp(numbers::i_v<T> * complex<T>(T(m) * phi));
-}
+    template <typename T>
+    void sph_harm_y_next(int m, T phi, T p, complex<T> &res) {
+        res = p * exp(numbers::i_v<T> * T(m) * phi);
+    }
+
+} // namespace detail
 
 template <typename T, typename Func>
 void sph_harm_y_for_each_n(int n, int m, T theta, T phi, complex<T> &res, Func f) {
     T p[2];
     sph_legendre_p_for_each_n(n, m, theta, p, [m, phi, &res, &f](int n, const T(&p)[2]) {
-        sph_harm_y_next(m, phi, p[1], res);
+        detail::sph_harm_y_next(m, phi, p[1], res);
 
         f(n, m, res);
     });
@@ -24,7 +27,7 @@ template <typename T, typename Func>
 void sph_harm_y_for_each_n_m(int n, int m, T theta, T phi, complex<T> &res, Func f) {
     T p[2];
     sph_legendre_p_for_each_n_m(n, m, theta, p, [phi, &res, &f](int n, int m, const T(&p)[2]) {
-        sph_harm_y_next(m, phi, p[1], res);
+        detail::sph_harm_y_next(m, phi, p[1], res);
 
         f(n, m, res);
     });

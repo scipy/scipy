@@ -360,6 +360,38 @@ dual<T, Orders...> operator*(const T &lhs, const dual<T, Orders...> &rhs) {
 }
 
 template <typename T, size_t... Orders>
+dual<std::complex<T>, Orders...> operator*(const dual<std::complex<T>, Orders...> &lhs, const dual<T, Orders...> &rhs) {
+    dual<std::complex<T>, Orders...> res = lhs;
+    res *= rhs;
+
+    return res;
+}
+
+template <typename T, size_t... Orders>
+dual<std::complex<T>, Orders...> operator*(const dual<T, Orders...> &lhs, const dual<std::complex<T>, Orders...> &rhs) {
+    dual<std::complex<T>, Orders...> res = lhs;
+    res *= rhs;
+
+    return res;
+}
+
+template <typename T, size_t... Orders>
+dual<std::complex<T>, Orders...> operator*(const dual<T, Orders...> &lhs, const std::complex<T> &rhs) {
+    dual<std::complex<T>, Orders...> res = lhs;
+    res *= rhs;
+
+    return res;
+}
+
+template <typename T, size_t... Orders>
+dual<std::complex<T>, Orders...> operator*(const std::complex<T> &lhs, const dual<T, Orders...> &rhs) {
+    dual<std::complex<T>, Orders...> res = rhs;
+    res *= lhs;
+
+    return res;
+}
+
+template <typename T, size_t... Orders>
 dual<T, Orders...> operator/(const dual<T, Orders...> &lhs, const dual<T, Orders...> &rhs) {
     dual<T, Orders...> res = lhs;
     res /= rhs;

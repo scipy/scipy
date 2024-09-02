@@ -96,24 +96,14 @@ struct assoc_legendre_p_initializer_m_abs_m<T, assoc_legendre_unnorm_policy> {
     bool m_signbit;
     T z;
     int branch_cut;
-    //    T branch_cut_sign;
     T w;
 
     assoc_legendre_p_initializer_m_abs_m(bool m_signbit, T z, int branch_cut)
         : m_signbit(m_signbit), z(z), branch_cut(branch_cut) {
         if (branch_cut == 3) {
-            //            branch_cut_sign = T(-1);
-
-            w = sqrt(z - T(1)) * sqrt(z + T(1)); // do not modify, see function comment
-
-            //            w = sqrt(z * z - T(1)); // do not modify, see function comment
-            //            if (std::real(z) < 0) {
-            //              w = -w;
-            //        }
+            w = sqrt(z - T(1)) * sqrt(z + T(1)); // form for this branch cut
         } else {
-            //            branch_cut_sign = T(1);
-
-            w = -sqrt(T(1) - z * z); // do not modify, see function comment
+            w = -sqrt(T(1) - z * z); // form for this branch cut
             if (m_signbit) {
                 w = -w;
             }
@@ -135,24 +125,15 @@ struct assoc_legendre_p_initializer_m_abs_m<T, assoc_legendre_norm_policy> {
     bool m_signbit;
     T z;
     int branch_cut;
-    //    T branch_cut_sign;
     T w;
 
     assoc_legendre_p_initializer_m_abs_m(bool m_signbit, T z, int branch_cut)
         : m_signbit(m_signbit), z(z), branch_cut(branch_cut) {
         if (branch_cut == 3) {
-            //            branch_cut_sign = T(-1);
 
-            //            w = sqrt(z * z - T(1)); // do not modify, see function comment
-            //          if (std::real(z) < 0) {
-            //            w = -w;
-            //      }
-            w = sqrt(z - T(1)) * sqrt(z + T(1)); // do not modify, see function comment
-
+            w = sqrt(z - T(1)) * sqrt(z + T(1)); // form for this branch cut
         } else {
-            //            branch_cut_sign = T(1);
-
-            w = -sqrt(T(1) - z * z); // do not modify, see function comment
+            w = -sqrt(T(1) - z * z); // form for this branch cut
             if (m_signbit) {
                 w = -w;
             }
@@ -183,7 +164,6 @@ struct assoc_legendre_p_recurrence_m_abs_m<T, assoc_legendre_unnorm_policy> {
     }
 
     // other square roots can be avoided if each iteration increments by 2
-
     void operator()(int m, T (&res)[2]) const {
         int m_abs = abs(m);
 
@@ -573,9 +553,8 @@ struct sph_legendre_p_initializer_n {
     int m;
     T theta;
     T theta_cos;
-    T theta_sin;
 
-    sph_legendre_p_initializer_n(int m, T theta) : m(m), theta(theta), theta_cos(cos(theta)), theta_sin(sin(theta)) {}
+    sph_legendre_p_initializer_n(int m, T theta) : m(m), theta(theta), theta_cos(cos(theta)) {}
 
     void operator()(const T &res_m_abs_m, T (&res)[2]) const {
         T fac = sqrt(T(2 * abs(m) + 3));
@@ -590,9 +569,8 @@ struct sph_legendre_p_recurrence_n {
     int m;
     T theta;
     T theta_cos;
-    T theta_sin;
 
-    sph_legendre_p_recurrence_n(int m, T theta) : m(m), theta(theta), theta_cos(cos(theta)), theta_sin(sin(theta)) {}
+    sph_legendre_p_recurrence_n(int m, T theta) : m(m), theta(theta), theta_cos(cos(theta)) {}
 
     void operator()(int n, T (&res)[2]) const {
         T fac0 = -sqrt(T((2 * n + 1) * ((n - 1) * (n - 1) - m * m)) / T((2 * n - 3) * (n * n - m * m)));
