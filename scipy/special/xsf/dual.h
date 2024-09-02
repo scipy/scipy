@@ -1,9 +1,5 @@
 #pragma once
 
-#include <tuple>
-
-#include <iostream>
-
 #include "config.h"
 #include "tuples.h"
 
@@ -19,58 +15,25 @@ inline int factorial(int n) {
 
 inline double binom2(double n, double m) { return factorial(n) / (factorial(m) * factorial(n - m)); }
 
-template <typename T, size_t N0, size_t... N>
-struct dual;
+template <typename T, size_t Order0, size_t... Orders>
+class dual;
 
-template <typename T, size_t N0, size_t... N>
-struct dual_element {
-    using type = dual<T, N...>;
-};
-
-template <typename T, size_t N0>
-struct dual_element<T, N0> {
-    using type = T;
-};
-
-template <typename T, size_t... N>
-using dual_element_t = typename dual_element<T, N...>::type;
-
-template <typename T, size_t N>
-const T &dual_get(const dual<T, N> &x) {
-    return x.data[0];
-}
-
-template <typename T, size_t... N>
-const T &dual_get(const dual<T, N...> &x) {
-    return dual_get(x.data[0]);
-}
-
-template <typename T, size_t N>
-T &dual_get(dual<T, N> &x) {
-    return x.data[0];
-}
-
-template <typename T, size_t... N>
-T &dual_get(dual<T, N...> &x) {
-    return dual_get(x.data[0]);
-}
-
-template <typename T, size_t N>
-struct dual<T, N> {
+template <typename T, size_t Order>
+class dual<T, Order> {
   public:
     using value_type = T;
     using reference = value_type &;
     using const_reference = const value_type &;
 
-  public:
-    T data[N + 1];
+  private:
+    T data[Order + 1];
 
   public:
     dual() = default;
 
     dual(T value) {
         data[0] = value;
-        for (size_t i = 1; i <= N; ++i) {
+        for (size_t i = 1; i <= Order; ++i) {
             data[i] = 0;
         }
     }
@@ -79,29 +42,29 @@ struct dual<T, N> {
         for (auto it = data.begin(); it != data.end(); ++it) {
             this->data[it - data.begin()] = *it;
         }
-        for (size_t i = data.size(); i <= N; ++i) {
+        for (size_t i = data.size(); i <= Order; ++i) {
             this->data[i] = 0;
         }
     }
 
     template <typename U>
-    dual(const dual<U, N> &other) {
-        for (size_t i = 0; i <= N; ++i) {
-            data[i] = other.data[i];
+    dual(const dual<U, Order> &other) {
+        for (size_t i = 0; i <= Order; ++i) {
+            data[i] = other[i];
         }
     }
 
     dual &operator=(const T &other) {
-        operator[](0) = other;
-        for (size_t i = 1; i <= N; ++i) {
-            operator[](i) = 0;
+        data[0] = other;
+        for (size_t i = 1; i <= Order; ++i) {
+            data[i] = 0;
         }
 
         return *this;
     }
 
     dual &operator+=(const dual &other) {
-        for (size_t i = 0; i <= N; ++i) {
+        for (size_t i = 0; i <= Order; ++i) {
             data[i] += other.data[i];
         }
 
@@ -115,7 +78,7 @@ struct dual<T, N> {
     }
 
     dual &operator-=(const dual &other) {
-        for (size_t i = 0; i <= N; ++i) {
+        for (size_t i = 0; i <= Order; ++i) {
             data[i] -= other.data[i];
         }
 
@@ -129,7 +92,7 @@ struct dual<T, N> {
     }
 
     dual &operator*=(const dual &other) {
-        for (size_t i = N + 1; i-- > 0;) {
+        for (size_t i = Order + 1; i-- > 0;) {
             data[i] *= other.data[0];
             for (size_t j = 0; j < i; ++j) {
                 data[i] += T(binom2(i, i - j)) * data[j] * other.data[i - j];
@@ -140,7 +103,7 @@ struct dual<T, N> {
     }
 
     dual &operator*=(const T &other) {
-        for (size_t i = 0; i <= N; ++i) {
+        for (size_t i = 0; i <= Order; ++i) {
             data[i] *= other;
         }
 
@@ -148,7 +111,7 @@ struct dual<T, N> {
     }
 
     dual &operator/=(const dual &other) {
-        for (size_t i = 0; i <= N; ++i) {
+        for (size_t i = 0; i <= Order; ++i) {
             for (size_t j = 1; j <= i; ++j) {
                 data[i] -= T(binom2(i, i - j)) * other.data[j] * data[i - j];
             }
@@ -159,7 +122,7 @@ struct dual<T, N> {
     }
 
     dual &operator/=(const T &other) {
-        for (size_t i = 0; i <= N; ++i) {
+        for (size_t i = 0; i <= Order; ++i) {
             data[i] /= other;
         }
 
@@ -174,59 +137,56 @@ struct dual<T, N> {
 
     const value_type &operator[](size_t i) const { return data[i]; }
 
-    static constexpr size_t max_order() { return N; }
-
-    static constexpr size_t max_order2 = N;
+    static constexpr size_t max_order() { return Order; }
 };
 
-template <typename T, size_t N0, size_t N1, size_t... N>
-struct dual<T, N0, N1, N...> {
+template <typename T, size_t Order0, size_t Order1, size_t... Orders>
+class dual<T, Order0, Order1, Orders...> {
   public:
     using value_type = T;
-    using element_type = dual_element_t<T, N0, N1, N...>;
     using reference = value_type &;
     using const_reference = const value_type &;
 
-  public:
-    dual<T, N1, N...> data[N0 + 1];
+  private:
+    dual<T, Order1, Orders...> data[Order0 + 1];
 
   public:
     dual() = default;
 
     dual(T value) {
         data[0] = value;
-        for (size_t i = 1; i <= N0; ++i) {
+        for (size_t i = 1; i <= Order0; ++i) {
             data[i] = 0;
         }
     }
 
-    dual(std::initializer_list<element_type> data) {
+    dual(std::initializer_list<dual<T, Order1, Orders...>> data) {
         for (auto it = data.begin(); it != data.end(); ++it) {
             this->data[it - data.begin()] = *it;
         }
-        for (size_t i = data.size(); i <= N0; ++i) {
+        for (size_t i = data.size(); i <= Order0; ++i) {
             this->data[i] = 0;
         }
     }
 
     template <typename U>
-    dual(const dual<U, N0, N1, N...> &other) {
-        for (size_t i = 0; i <= N0; ++i) {
-            data[i] = other.data[i];
+    dual(const dual<U, Order0, Order1, Orders...> &other) {
+        for (size_t i = 0; i <= Order0; ++i) {
+            data[i] = other[i];
         }
     }
 
     dual &operator=(const T &other) {
-        operator[](0) = other;
-        for (size_t i = 1; i <= N0; ++i) {
-            operator[](i) = 0;
+        data[0] = other;
+        for (size_t i = 1; i <= Order0; ++i) {
+            data[i] = 0;
         }
 
         return *this;
     }
 
     dual &operator+=(const dual &other) {
-        for (size_t i = 0; i <= N0; ++i) {
+        for (size_t i = 0; i <= Order0; ++i) {
             data[i] += other.data[i];
         }
 
@@ -240,7 +200,7 @@ struct dual<T, N0, N1, N...> {
     }
 
     dual &operator-=(const dual &other) {
-        for (size_t i = 0; i <= N0; ++i) {
+        for (size_t i = 0; i <= Order0; ++i) {
             data[i] -= other.data[i];
         }
 
@@ -254,7 +214,7 @@ struct dual<T, N0, N1, N...> {
     }
 
     dual &operator*=(const dual &other) {
-        for (size_t i = N0 + 1; i-- > 0;) {
+        for (size_t i = Order0 + 1; i-- > 0;) {
             data[i] *= other.data[0];
             for (size_t j = 0; j < i; ++j) {
                 data[i] += T(binom2(i, i - j)) * data[j] * other.data[i - j];
@@ -265,7 +225,7 @@ struct dual<T, N0, N1, N...> {
     }
 
     dual &operator*=(const T &other) {
-        for (size_t i = 0; i <= N0; ++i) {
+        for (size_t i = 0; i <= Order0; ++i) {
             data[i] *= other;
         }
 
@@ -273,7 +233,7 @@ struct dual<T, N0, N1, N...> {
     }
 
     dual &operator/=(const dual &other) {
-        for (size_t i = 0; i <= N0; ++i) {
+        for (size_t i = 0; i <= Order0; ++i) {
             for (size_t j = 1; j <= i; ++j) {
                 data[i] -= T(binom2(i, i - j)) * other.data[j] * data[i - j];
             }
@@ -284,24 +244,30 @@ struct dual<T, N0, N1, N...> {
     }
 
     dual &operator/=(const T &other) {
-        for (size_t i = 0; i <= N0; ++i) {
+        for (size_t i = 0; i <= Order0; ++i) {
             data[i] /= other;
         }
 
         return *this;
     }
 
-    value_type &value() { return dual_get(*this); }
+    value_type &value() {
+        dual<T, Order1, Orders...> &data0 = data[0];
 
-    const value_type &value() const { return dual_get(*this); }
+        return data0.value();
+    }
 
-    element_type &operator[](size_t i) { return data[i]; }
+    const value_type &value() const {
+        const dual<T, Order1, Orders...> &data0 = data[0];
 
-    const element_type &operator[](size_t i) const { return data[i]; }
+        return data0.value();
+    }
 
-    static constexpr size_t max_order() { return std::max({N0, N...}); }
+    dual<T, Order1, Orders...> &operator[](size_t i) { return data[i]; }
 
-    static constexpr size_t max_order2 = std::max({N0, N...});
+    const dual<T, Order1, Orders...> &operator[](size_t i) const { return data[i]; }
+
+    static constexpr size_t max_order() { return std::max({Order0, Order1, Orders...}); }
 };
 
 template <typename T>
@@ -392,14 +358,24 @@ void dual_assign_grad(
     res2(1, 1) = z[0][2];
 }
 
-template <typename T, size_t N0, size_t... N>
-dual<T, N0, N...> operator-(const dual<T, N0, N...> &rhs) {
-    dual<T, N0, N...> out;
-    for (size_t i = 0; i <= N0; ++i) {
-        out[i] = -rhs[i];
+template <typename T, size_t Order0, size_t... Orders>
+dual<T, Order0, Orders...> operator+(const dual<T, Order0, Orders...> &x) {
+    dual<T, Order0, Orders...> res;
+    for (size_t i = 0; i <= Order0; ++i) {
+        res[i] = +x[i];
     }
 
-    return out;
+    return res;
+}
+
+template <typename T, size_t Order0, size_t... Orders>
+dual<T, Order0, Orders...> operator-(const dual<T, Order0, Orders...> &x) {
+    dual<T, Order0, Orders...> res;
+    for (size_t i = 0; i <= Order0; ++i) {
+        res[i] = -x[i];
+    }
+
+    return res;
 }
 
 template <typename T, size_t... N>
@@ -434,9 +410,9 @@ dual<T, N...> operator-(const dual<T, N...> &lhs, const dual<T, N...> &rhs) {
     return res;
 }
 
-template <typename T, size_t... N>
-dual<T, N...> operator-(const dual<T, N...> &lhs, const T &rhs) {
-    dual<T, N...> res = lhs;
+template <typename T, size_t... Orders>
+dual<T, Orders...> operator-(const dual<T, Orders...> &lhs, const T &rhs) {
+    dual<T, Orders...> res = lhs;
     res -= rhs;
 
     return res;
@@ -588,56 +564,56 @@ dual<T, Orders...> cos(const dual<T, Orders...> &x) {
     return dual_taylor_series(coef, x);
 }
 
-template <typename T, size_t N0, size_t... N>
-dual<T, N0, N...> real(dual<std::complex<T>, N0, N...> z) {
-    dual<T, N0, N...> res;
-    for (size_t i = 0; i <= N0; ++i) {
+template <typename T, size_t Order0, size_t... Orders>
+dual<T, Order0, Orders...> real(dual<std::complex<T>, Order0, Orders...> z) {
+    dual<T, Order0, Orders...> res;
+    for (size_t i = 0; i <= Order0; ++i) {
         res[i] = real(z[i]);
     }
 
     return res;
 }
 
-template <typename T, size_t N0, size_t... N>
-dual<T, N0, N...> real(dual<T, N0, N...> z) {
-    dual<T, N0, N...> res;
-    for (size_t i = 0; i <= N0; ++i) {
-        res[i] = real(z[i]);
+template <typename T, size_t Order0, size_t... Orders>
+dual<T, Order0, Orders...> real(dual<T, Order0, Orders...> x) {
+    dual<T, Order0, Orders...> res;
+    for (size_t i = 0; i <= Order0; ++i) {
+        res[i] = real(x[i]);
     }
 
     return res;
 }
 
-template <typename T, size_t N0, size_t... N>
-dual<T, N0, N...> imag(dual<std::complex<T>, N0, N...> z) {
-    dual<T, N0, N...> res;
-    for (size_t i = 0; i <= N0; ++i) {
+template <typename T, size_t Order0, size_t... Orders>
+dual<T, Order0, Orders...> imag(dual<std::complex<T>, Order0, Orders...> z) {
+    dual<T, Order0, Orders...> res;
+    for (size_t i = 0; i <= Order0; ++i) {
         res[i] = imag(z[i]);
     }
 
     return res;
 }
 
-template <typename T, size_t N0, size_t... N>
-dual<T, N0, N...> imag(dual<T, N0, N...> z) {
-    dual<T, N0, N...> res;
-    for (size_t i = 0; i <= N0; ++i) {
+template <typename T, size_t Order0, size_t... Orders>
+dual<T, Order0, Orders...> imag(dual<T, Order0, Orders...> z) {
+    dual<T, Order0, Orders...> res;
+    for (size_t i = 0; i <= Order0; ++i) {
         res[i] = imag(z[i]);
     }
 
     return res;
 }
 
-template <typename T, size_t N0, size_t... N>
-dual<T, N0, N...> exp(const dual<T, N0, N...> &z) {
-    constexpr size_t M = N0 + 10;
+template <typename T, size_t... Orders>
+dual<T, Orders...> exp(const dual<T, Orders...> &x) {
+    static constexpr size_t MaxOrder = dual<T, Orders...>::max_order();
 
-    T coef[M] = {exp(z.value())};
-    for (size_t i = 1; i < M; ++i) {
+    T coef[MaxOrder + 1] = {exp(x.value())};
+    for (size_t i = 1; i <= MaxOrder; ++i) {
         coef[i] = coef[0];
     }
 
-    return dual_taylor_series(coef, z);
+    return dual_taylor_series(coef, x);
 }
 
 template <typename T, size_t... Orders>
@@ -661,12 +637,12 @@ using std::copysign;
 using std::signbit;
 
 template <typename T, size_t... Orders>
-dual<T, Orders...> copysign(const dual<T, Orders...> &z, const dual<T, Orders...> &z2) {
-    if (signbit(z.value()) == signbit(z2.value())) {
-        return z;
+dual<T, Orders...> copysign(const dual<T, Orders...> &x, const dual<T, Orders...> &y) {
+    if (signbit(x.value()) == signbit(y.value())) {
+        return x;
     }
 
-    return -z;
+    return -x;
 }
 
 template <typename T, size_t... N>
