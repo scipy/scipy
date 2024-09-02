@@ -1,5 +1,3 @@
-import itertools
-
 from scipy._lib._array_api import array_namespace, xp_size
 from scipy._lib._array_api import np_compat
 
@@ -340,8 +338,8 @@ class NestedFixedRule(FixedRule):
         if self.xp is None:
             self.xp = array_namespace(nodes)
 
-        error_nodes = self.xp.concat([nodes, lower_nodes], axis=0)
-        error_weights = self.xp.concat([weights, -lower_weights], axis=0)
+        error_nodes = _concat([nodes, lower_nodes], axis=0)
+        error_weights = _concat([weights, -lower_weights], axis=0)
 
         return self.xp.abs(
             _apply_fixed_rule(f, a, b, error_nodes, error_weights, args)
@@ -461,12 +459,14 @@ def _subregion_coordinates(a, b):
     xp = array_namespace(a, b)
     m = (a + b) * 0.5
 
-    # TODO: still relying on np
-    for a_sub, b_sub in zip(
-        itertools.product(*np_compat.asarray([a, m]).T),
-        itertools.product(*np_compat.asarray([m, b]).T),
-    ):
-        yield xp.asarray(a_sub), xp.asarray(b_sub)
+    left = [xp.asarray([a[i], m[i]]) for i in range(a.shape[0])]
+    right = [xp.asarray([m[i], b[i]]) for i in range(b.shape[0])]
+
+    a_sub = _cartesian_product(left)
+    b_sub = _cartesian_product(right)
+
+    for i in range(a_sub.shape[0]):
+        yield a_sub[i, ...], b_sub[i, ...]
 
 
 def _apply_fixed_rule(f, a, b, orig_nodes, orig_weights, args=()):
@@ -511,3 +511,17 @@ def _apply_fixed_rule(f, a, b, orig_nodes, orig_weights, args=()):
     est = xp.sum(weights_reshaped * f_nodes, axis=0)
 
     return est
+
+
+def _concat(arrays, axis=0):
+    xp = array_namespace(*arrays)
+
+    if hasattr(xp, "concat"):
+        return xp.concat(arrays, axis=axis)
+    elif hasattr(xp, "concatenate"):
+        return xp.concatenate(arrays, axis=axis)
+    else:
+        return xp.asarray(np_compat.concatenate(
+            [np_compat.asarray(arr) for arr in arrays],
+            axis=axis,
+        ))

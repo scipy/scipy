@@ -6,6 +6,7 @@ from functools import cached_property
 from scipy._lib._array_api import np_compat
 
 from scipy.integrate._rules import NestedFixedRule
+from scipy.integrate._rules._base import _concat
 
 
 class GenzMalikCubature(NestedFixedRule):
@@ -112,12 +113,12 @@ class GenzMalikCubature(NestedFixedRule):
         w_4 = (2**self.ndim) * (200 / 19683)
         w_5 = 6859 / 19683
 
-        weights = self.xp.concat([
-            [w_1] * 1,
-            [w_2] * (2 * self.ndim),
-            [w_3] * (2 * self.ndim),
-            [w_4] * (2 * (self.ndim - 1) * self.ndim),
-            [w_5] * (2**self.ndim),
+        weights = _concat([
+            self.xp.asarray([w_1] * 1),
+            self.xp.asarray([w_2] * (2 * self.ndim)),
+            self.xp.asarray([w_3] * (2 * self.ndim)),
+            self.xp.asarray([w_4] * (2 * (self.ndim - 1) * self.ndim)),
+            self.xp.asarray([w_5] * (2**self.ndim)),
         ])
 
         return nodes, weights
@@ -160,11 +161,11 @@ class GenzMalikCubature(NestedFixedRule):
         w_3 = (2**self.ndim) * (265 - 100*self.ndim) / 1458
         w_4 = (2**self.ndim) * (25 / 729)
 
-        weights = self.xp.concat([
-            [w_1] * 1,
-            [w_2] * (2 * self.ndim),
-            [w_3] * (2 * self.ndim),
-            [w_4] * (2 * (self.ndim - 1) * self.ndim),
+        weights = _concat([
+            self.xp.asarray([w_1] * 1),
+            self.xp.asarray([w_2] * (2 * self.ndim)),
+            self.xp.asarray([w_3] * (2 * self.ndim)),
+            self.xp.asarray([w_4] * (2 * (self.ndim - 1) * self.ndim)),
         ])
 
         return nodes, weights
