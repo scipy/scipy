@@ -76,26 +76,47 @@ T log_expit(T x) {
 };
 
 #ifndef FLT_EVAL_METHOD
-#error Missing definition of FLT_EVAL_METHOD
+#error "Missing definition of FLT_EVAL_METHOD; C++11 or above required"
 #endif
 
-//#if FLT_EVAL_METHOD == 0
-// Floating point arithmetic in target precision
+// fast_two_sum assuming "+" and "-" are correctly rounded to the nearest
+// with ties resolved in any way.
 template <typename T>
-void fast_two_sum(const T &a, const T &b, T &s, T &t) {
+void fast_two_sum_generic(const T &a, const T &b, T &s, T &t) {
     s = a + b;
     t = s - a;
     t = b - t;
 }
-//#else
-//template <typename T>
-//void fast_two_sum(const T &a, const T &b, T &s, T &t) {
-//    using std::fma;
-//    s = fma(T(1), a, b);
-//    t = fma(T(-1), a, s);
-//    t = fma(T(-1), t, b);
-//}
-//#endif
+
+// fast_two_sum that handles excess precision for a and b of built-in
+// floating point type.
+template <typename T>
+void fast_two_sum_force_round(const T &a, const T &b, T &s, T &t) {
+    using std::fma;
+    s = fma(T(1), a, b);
+    t = fma(T(-1), a, s);
+    t = fma(T(-1), t, b);
+}
+
+// Compute the exact sum of floating point number a and b and store the
+// result in s and t such that (a + b) == (s + t) exactly.
+// Requires |a| >= |b|.
+template <typename T>
+void fast_two_sum(const T &a, const T &b, T &s, T &t) {
+    fast_two_sum_generic(a, b, s, t);
+}
+
+#if FLT_EVAL_METHOD != 0
+inline void fast_two_sum(const float &a, const float &b, float &s, float &t) {
+    fast_two_sum_force_round(a, b, s, t);
+}
+#endif
+
+#if FLT_EVAL_METHOD != 0 && FLT_EVAL_METHOD != 1
+inline void fast_two_sum(const double &a, const double &b, double &s, double &t) {
+    fast_two_sum_force_round(a, b, s, t);
+}
+#endif
 
 template <typename T>
 void two_sum(const T &a, const T &b, T &s, T &t) {
@@ -107,6 +128,89 @@ void two_sum(const T &a, const T &b, T &s, T &t) {
     }
 }
 
+// Handles special values of pow(1+x,y) according to the spec of the special
+// values of pow() defined in IEEE-754, Section 9.2.1, plus a few others.
+//
+// If the input is handled, stores the (IEEE-754 conformant) return value in
+// 'result', and returns 'true'.
+//
+// If the input is not handled, returns 'false'.  In this case, it is
+// guaranteed that (1) x and y are finite, (2) x != 0, x != -1, y != 0, and
+// (3) y is an integer if x < -1.
+template <typename T>
+bool pow1p_special(const T &x, const T &y, T &result) {
+    result = 0;
+
+    // Handle y == 0 or (1+x) == 1.  IEEE-754 requires the result to be 1
+    // even if the other operand is nan.  Therefore this test must precede
+    // the test for nan.
+    if (y == 0 || x == 0) {
+        result = 1;
+        return true;
+    }
+
+    // Handle nan.
+    if (std::isnan(x)) {
+        result = x;
+        return true;
+    }
+    if (std::isnan(y)) {
+        result = y;
+        return true;
+    }
+
+    // Handle y == +/-inf.  This test must precede the test for x == +/-inf.
+    if (y == std::numeric_limits<T>::infinity()) {
+        result = (x == -2) ? T(1) :
+                 (x < 0 && x > -2) ? T(0) :
+                 std::numeric_limits<T>::infinity();
+        return true;
+    }
+    if (y == -std::numeric_limits<T>::infinity()) {
+        result = (x == -2) ? T(1) :
+                 (x < 0 && x > -2) ? std::numeric_limits<T>::infinity() :
+                 T(0);
+        return true;
+    }
+
+    // Handle 1+x == +/- inf.
+    if (x == std::numeric_limits<T>::infinity()) {
+        result = (y < 0) ? T(0) : std::numeric_limits<T>::infinity();
+        return true;
+    }
+    if (x == -std::numeric_limits<T>::infinity()) {
+        bool y_is_odd_int = (std::abs(std::fmod(y, T(2))) == 1);
+        if (y_is_odd_int) {
+            result = (y < 0)? -T(0) : -std::numeric_limits<T>::infinity();
+        } else {
+            result = (y < 0) ? T(0) : std::numeric_limits<T>::infinity();
+        }
+        return true;
+    }
+
+    // Handle 1+x == +/-0 (can only be +0 in fact).
+    if (x == -1) {
+        if (y < 0) {
+            // TODO: signal divideByZero exception
+            result = std::numeric_limits<T>::infinity();
+        } else {
+            // y == 0 is already handled above
+            result = 0;
+        }
+        return true;
+    }
+
+    // Handle 1+x < 0 and y not an integer
+    if ((x < -1) && std::fmod(y, T(1)) != 0) {
+        // TODO: signal invalid operation exception
+        result = std::numeric_limits<T>::quiet_NaN();
+        return true;
+    }
+
+    // Not a special input.
+    return false;
+}
+
 // Compute pow(1+x,y) accurately for real x and y.
 template <typename T>
 T pow1p_impl(T x, T y) {
@@ -114,59 +218,29 @@ T pow1p_impl(T x, T y) {
     fprintf(out, "[pow1p] ========\n");
     fprintf(out, "[pow1p] x=%.16e y=%.16e\n", x, y);
 
-    // The special values follow the spec of the pow() function defined in
-    // IEEE-754, Section 9.2.1.  The order of the `if` statements matters.
-    if (y == T(0)) { // pow(x, +/-0)
-        return T(1);
-    }
-    if (x == T(-1)) { // pow(+/-0, y)
-        if (std::isfinite(y) && y < 0) {
-            // TODO: signal divideByZero exception
-        }
-        return std::pow(T(0), y);
-    }
-    if (x == T(-2) && std::isinf(y)) { // pow(-1, +/-inf)
-        return T(1);
-    }
-    if (x == T(0)) { // pow(+1, y)
-        return T(1);
-    }
-    if (y == std::numeric_limits<T>::infinity()) { // pow(x, +inf)
-        return (x < 0 && x > -2) ? T(0) : std::numeric_limits<T>::infinity();
-    }
-    if (y == -std::numeric_limits<T>::infinity()) { // pow(x, -inf)
-        return (x < 0 && x > -2) ? std::numeric_limits<T>::infinity() : T(0);
-    }
-    if (std::isinf(x)) { // pow(+/-inf, y)
-        return std::pow(x, y);
+    // Handle special values.
+    T answer;
+    if (pow1p_special(x, y, answer)) {
+        return answer;
     }
 
-    // Up to this point, (1+x) = {+/-0, +/-1, +/-inf} have been handled, and
-    // and y = {+/-0, +/-inf} have been handled.  Next, we handle `nan` and
-    // y = {+/-1}.
-    if (std::isnan(x) || std::isnan(y)) {
-        return std::numeric_limits<T>::quiet_NaN();
-    }
-    if (y == T(1)) {
-        return T(1) + x;
-    }
-    if (y == T(-1)) {
-        return T(1) / (T(1) + x); // guaranteed no overflow
-    }
+    // Needed?
+//    if (y == T(1)) {
+//        return T(1) + x;
+//    }
+//    if (y == T(-1)) {
+//        return T(1) / (T(1) + x); // guaranteed no overflow
+//    }
 
     // Handle (1+x) < 0
     T sign = T(1);
-    if (x < -1) {
-        if (std::fmod(y, T(1)) != T(0)) { // y is not an integer
-            // TODO: signal invalid operation exception
-            return std::numeric_limits<T>::quiet_NaN();
-        }
+    if (x < T(-1)) { // y is guaranteed to be an integer
         constexpr T two_over_eps = T(2) / std::numeric_limits<T>::epsilon();
         // For 1 < (-x) <= 2^p = 2/eps, (1+x) is exact;
         // For (-x) > 2^(2p) = (2/eps)^2, (1+x)^y ~= x^y.
         // In both cases, we may delegate to pow() without loss of accuracy.
         if (x >= -two_over_eps || x < -two_over_eps*two_over_eps) {
-            return std::pow(1+x, y);
+            return std::pow(T(1) + x, y);
         }
         // Otherwise, we take the "slow path" as in the case (1+x) > 0.
         sign = (std::fmod(y, T(2)) == T(0)) ? T(1) : T(-1);
@@ -182,15 +256,13 @@ T pow1p_impl(T x, T y) {
         s -= delta; // exact
         t += delta; // exact
     }
-    if (x < -1) {
+    if (x < T(-1)) {
         s = -s;
         t = -t;
     }
     fprintf(out, "[pow1p] s=%.16e t=%.16e\n", s, t);
 
-    // Because x > -1 and s is rounded toward 1, s is guaranteed to be > 0.
-
-    // Write (1+x)^y == (s+t)^y == (s^y)*((1+t/s)^y) == term1*term2.
+    // Write |1+x|^y == (s+t)^y == (s^y)*((1+t/s)^y) == term1*term2.
     // It can be shown that either both terms <= 1 or both >= 1; so
     // if the first term over/underflows, then the result over/underflows.
     // And of course, term2 == 1 if t == 0.
@@ -210,7 +282,7 @@ T pow1p_impl(T x, T y) {
     T w = y * u;
     T term2 = std::exp(w);
     fprintf(out, "[pow1p] term2=%.16e\n", term2);
-    if (std::abs(w) <= 0.5) {
+    if (std::abs(w) <= T(0.5)) {
         return term1 * term2;
     }
 
@@ -223,7 +295,7 @@ T pow1p_impl(T x, T y) {
     T uu = r1 / s;
 
     // (u + vv) ~= log(1+(u+uu)) ~= log(1+t/s).
-    T vv = std::fma(-0.5*u, u, uu);
+    T vv = std::fma(T(-0.5) * u, u, uu);
 
     // (w + ww) ~= y*(u+vv) ~= y*log(1+t/s).
     T r2 = std::fma(y, u, -w);
