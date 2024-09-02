@@ -492,11 +492,10 @@ template <typename T>
 struct sph_legendre_p_initializer_m_abs_m {
     bool m_signbit;
     T theta;
-    T theta_cos;
     T theta_sin;
 
     sph_legendre_p_initializer_m_abs_m(bool m_signbit, T theta)
-        : m_signbit(m_signbit), theta(theta), theta_cos(cos(theta)), theta_sin(sin(theta)) {}
+        : m_signbit(m_signbit), theta(theta), theta_sin(sin(theta)) {}
 
     void operator()(T (&res)[2]) const {
         T fac0 = T(1) / (T(2) * sqrt(T(M_PI)));
@@ -514,9 +513,8 @@ template <typename T>
 struct sph_legendre_p_recurrence_m_abs_m {
     T theta;
     T theta_sin;
-    T theta_cos;
 
-    sph_legendre_p_recurrence_m_abs_m(T theta) : theta(theta), theta_sin(sin(theta)), theta_cos(cos(theta)) {}
+    sph_legendre_p_recurrence_m_abs_m(T theta) : theta(theta), theta_sin(sin(theta)) {}
 
     void operator()(int m, T (&res)[2]) const {
         int m_abs = abs(m);
