@@ -246,7 +246,10 @@ class _coo_base(_data_matrix, _minmax_mixin):
 
     def resize(self, *shape) -> None:
         shape = check_shape(shape, allow_nd=self._allow_nd)
-
+        if self.ndim > 2:
+            raise ValueError("only 1-D or 2-D input accepted")
+        if len(shape) > 2:
+            raise ValueError("shape argument must be 1-D or 2-D")
         # Check for added dimensions.
         if len(shape) > self.ndim:
             flat_coords = _ravel_coords(self.coords, self.shape)
