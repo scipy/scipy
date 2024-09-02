@@ -24,7 +24,7 @@ import operator
 
 class _coo_base(_data_matrix, _minmax_mixin):
     _format = 'coo'
-    _allow_nd = range(1,65)
+    _allow_nd = range(1, 65)
 
     def __init__(self, arg1, shape=None, dtype=None, copy=False, *, maxprint=None):
         _data_matrix.__init__(self, arg1, maxprint=maxprint)
