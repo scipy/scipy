@@ -327,7 +327,10 @@ class TestHyperu:
         #
         # cases = []
         # for a, x in it.product(
-        #         np.concat([np.logspace(-15, -0.01, 6), np.linspace(0.5, 0.9, 6)]), repeat=2
+        #         np.concat(
+        #             [np.logspace(-15, -0.01, 6), np.linspace(0.5, 0.9, 6)]
+        #         ),
+        #         repeat=2,
         # ):
         #     with mp.workdps(100):
         #         cases.append((float(a), 1.0, float(x), float(mp.hyperu(a, 1.0, x))))
