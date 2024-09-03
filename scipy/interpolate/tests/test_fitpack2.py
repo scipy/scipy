@@ -420,7 +420,7 @@ class TestLSQBivariateSpline:
             lut = LSQBivariateSpline(x,y,z,tx,ty,kx=1,ky=1)
             assert len(r) == 1
 
-        assert_almost_equal(lut(2, 2), 3., check_shape=False)
+        assert_almost_equal(lut(2, 2), 3.)
 
     def test_bilinearity(self):
         x = [1,1,1,2,2,2,3,3,3]

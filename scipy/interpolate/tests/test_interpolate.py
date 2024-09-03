@@ -203,7 +203,7 @@ class TestInterp1D:
         extrapolator = interp1d(self.x10, self.y10, kind=kind,
                                 fill_value='extrapolate')
         xp_assert_close(extrapolator([-1., 0, 9, 11]),
-                        [-1, 0, 9, 11], rtol=1e-14)
+                        [-1.0, 0, 9, 11], rtol=1e-14)
 
         opts = dict(kind=kind,
                     fill_value='extrapolate',
@@ -272,7 +272,7 @@ class TestInterp1D:
         extrapolator = interp1d(self.x10, self.y10, kind='nearest',
                                 fill_value='extrapolate')
         xp_assert_close(extrapolator([-1., 0, 9, 11]),
-                        [0, 0, 9, 9], rtol=1e-14)
+                        [0.0, 0, 9, 9], rtol=1e-14)
 
         opts = dict(kind='nearest',
                     fill_value='extrapolate',
@@ -293,7 +293,7 @@ class TestInterp1D:
         extrapolator = interp1d(self.x10, self.y10, kind='nearest-up',
                                 fill_value='extrapolate')
         xp_assert_close(extrapolator([-1., 0, 9, 11]),
-                        [0, 0, 9, 9], rtol=1e-14)
+                        [0.0, 0, 9, 9], rtol=1e-14)
 
         opts = dict(kind='nearest-up',
                     fill_value='extrapolate',
@@ -464,7 +464,7 @@ class TestInterp1D:
         xp_assert_equal(extrap10(11.2), np.array(self.fill_value))
         xp_assert_equal(extrap10(-3.4), np.array(self.fill_value))
         xp_assert_equal(extrap10([[[11.2], [-3.4], [12.6], [19.3]]]),
-                           np.array(self.fill_value),)
+                           np.array(self.fill_value), check_shape=False)
         xp_assert_equal(extrap10._check_bounds(
                                np.array([-1.0, 0.0, 5.0, 9.0, 11.0])),
                            np.array([[True, False, False, False, False],
@@ -1800,10 +1800,12 @@ class TestBPolyCalculus:
         xp_assert_close(bp_der(1.7), 0.7)
 
         # derivatives in-place
-        xp_assert_close([bp(0.4, nu=1), bp(0.4, nu=2), bp(0.4, nu=3)],
-                        [-6*(1-0.4), 6., 0.])
-        xp_assert_close([bp(1.7, nu=1), bp(1.7, nu=2), bp(1.7, nu=3)],
-                        [0.7, 1., 0])
+        xp_assert_close(np.asarray([bp(0.4, nu) for nu in [1, 2, 3]]),
+                        [-6*(1-0.4), 6., 0.]
+        )
+        xp_assert_close(np.asarray([bp(1.7, nu) for nu in [1, 2, 3]]),
+                        [0.7, 1., 0]
+        )
 
     def test_derivative_ppoly(self):
         # make sure it's consistent w/ power basis

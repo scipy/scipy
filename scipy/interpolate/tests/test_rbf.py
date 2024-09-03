@@ -21,7 +21,7 @@ def check_rbf1d_interpolation(function):
     rbf = Rbf(x, y, function=function)
     yi = rbf(x)
     assert_array_almost_equal(y, yi)
-    assert_almost_equal(rbf(float(x[0])), y[0], check_shape=False)
+    assert_almost_equal(rbf(float(x[0])), y[0])
 
 
 def check_rbf2d_interpolation(function):

@@ -148,7 +148,7 @@ class TestBSpline:
         b = _make_random_spline()
         b.c = np.ones_like(b.c)
         xx = np.linspace(b.t[b.k], b.t[-b.k-1], 100)
-        xp_assert_close(b(xx), 1., check_shape=False)
+        xp_assert_close(b(xx), np.ones_like(xx))
 
     def test_vectorization(self):
         n, k = 22, 3
@@ -348,8 +348,8 @@ class TestBSpline:
         xp_assert_close(b.integrate(1, 0), -0.5)
 
         # extrapolate or zeros outside of [0, 2]; default is yes
-        xp_assert_close(b.integrate(-1, 1), 0)
-        xp_assert_close(b.integrate(-1, 1, extrapolate=True), 0)
+        xp_assert_close(b.integrate(-1, 1), 0.0)
+        xp_assert_close(b.integrate(-1, 1, extrapolate=True), 0.0)
         xp_assert_close(b.integrate(-1, 1, extrapolate=False), 0.5)
         xp_assert_close(b.integrate(1, -1, extrapolate=False), -1 * 0.5)
 
@@ -736,9 +736,9 @@ class TestInsert:
         spl_1re = spl_re.insert_knot(xv)
         spl_1im = spl_im.insert_knot(xv)
 
-        assert_allclose(spl_1.t, spl_1re.t, atol=1e-15)
-        assert_allclose(spl_1.t, spl_1im.t, atol=1e-15)
-        assert_allclose(spl_1.c, spl_1re.c + 1j*spl_1im.c, atol=1e-15)
+        xp_assert_close(spl_1.t, spl_1re.t, atol=1e-15)
+        xp_assert_close(spl_1.t, spl_1im.t, atol=1e-15)
+        xp_assert_close(spl_1.c, spl_1re.c + 1j*spl_1im.c, atol=1e-15)
 
     def test_insert_periodic_too_few_internal_knots(self):
         # both FITPACK and spl.insert_knot raise when there's not enough
@@ -1065,7 +1065,7 @@ class TestInterop:
         integr = np.asarray(splint(0, 1, (b2.t, c2r, b2.k)))
         assert integr.shape == (3, 2)
         xp_assert_close(integr,
-                        splint(0, 1, b), atol=1e-14)
+                        splint(0, 1, b), atol=1e-14, check_shape=False)
 
     def test_splder(self):
         for b in [self.b, self.b2]:
@@ -1675,7 +1675,7 @@ class TestLSQ:
               for i in range(nrhs)]
         coefs = np.vstack([bb[i].c for i in range(nrhs)]).T
 
-        assert_allclose(coefs, b.c, atol=1e-15)
+        xp_assert_close(coefs, b.c, atol=1e-15)
 
     def test_complex(self):
         # cmplx-valued `y`
@@ -1699,7 +1699,7 @@ class TestLSQ:
         b_re = make_lsq_spline(x, yc.real, t, k)
         b_im = make_lsq_spline(x, yc.imag, t, k)
 
-        assert_allclose(b(x), b_re(x) + 1.j*b_im(x), atol=1e-15, rtol=1e-15)
+        xp_assert_close(b(x), b_re(x) + 1.j*b_im(x), atol=1e-15, rtol=1e-15)
 
         # repeat with num_trailing_dims > 1 : yc.shape[1:] = (2, 2)
         yc = np.stack((yc, yc), axis=1)
@@ -1708,7 +1708,7 @@ class TestLSQ:
         b_re = make_lsq_spline(x, yc.real, t, k)
         b_im = make_lsq_spline(x, yc.imag, t, k)
 
-        assert_allclose(b(x), b_re(x) + 1.j*b_im(x), atol=1e-15, rtol=1e-15)
+        xp_assert_close(b(x), b_re(x) + 1.j*b_im(x), atol=1e-15, rtol=1e-15)
 
     def test_int_xy(self):
         x = np.arange(10).astype(int)
@@ -2115,7 +2115,7 @@ class TestNdBSpline:
         result = bspl2_4(xy)
         val_single = NdBSpline(t2, c2, k)(xy)
         assert result.shape == (4,)
-        assert_allclose(result,
+        xp_assert_close(result,
                         [val_single, ]*4, atol=1e-14)
 
     def test_2D_random(self):

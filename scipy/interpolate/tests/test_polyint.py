@@ -644,14 +644,14 @@ class TestPCHIP:
     def test_pchip_interpolate(self):
         assert_array_almost_equal(
             pchip_interpolate([1,2,3], [4,5,6], [0.5], der=1),
-            [1.])
+            np.asarray([1.]))
 
         assert_array_almost_equal(
             pchip_interpolate([1,2,3], [4,5,6], [0.5], der=0),
-            [3.5])
+            np.asarray([3.5]))
 
         assert_array_almost_equal(
-            pchip_interpolate([1,2,3], [4,5,6], [0.5], der=[0, 1]),
+            np.asarray(pchip_interpolate([1,2,3], [4,5,6], [0.5], der=[0, 1])),
             np.asarray([[3.5], [1]]))
 
     def test_roots(self):
