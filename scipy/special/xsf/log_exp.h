@@ -3,6 +3,7 @@
 #include <cmath>
 #include <cstdio>
 #include <cfloat>
+#include <iostream>
 
 #include "config.h"
 
@@ -302,12 +303,66 @@ T pow1p_precise(T x, T y) {
     return pow1p_decomp(x, T(1), y);
 }
 
+// Compute pow(1+x,y) using exp(y*log1p(x)) or similar.
+template <typename T>
+T pow1p_approx(T x, T y) {
+    auto &out = std::cerr;
+    out.precision(std::numeric_limits<T>::digits10 - 1);
+    out.setf(std::ios::scientific, std::ios::floatfield);
+
+    // Note: different T has different denorm and overflow range.
+    out << "[pow1p] ========" << std::endl;
+    out << "[pow1p] x=" << x << " y=" << y << std::endl;
+
+    // Handle special values.
+    T answer;
+    if (pow1p_special(x, y, answer)) {
+        return answer;
+    }
+
+    if (x > -1) {
+        T z = std::log1p(x);
+        out << "[pow1] z=" << z << std::endl;
+        T yz = y * z;
+        out << "[pow1] y*z=" << yz << std::endl;
+        return std::exp(yz);
+    } else {
+        // x < -1
+        return std::pow(x+1, y);
+    }
+}
+
+// Return the extra number of bits needed for using the quick method.
+template <class T>
+constexpr int extra_bits_needed() {
+    constexpr int p = std::numeric_limits<T>::digits;
+    constexpr int emin = std::numeric_limits<T>::min_exponent;
+    constexpr int emax = std::numeric_limits<T>::max_exponent;
+    constexpr int m = (std::max)(p - emin, emax + 1);
+    return 1 + std::ilogb(1 + 1.05*m); // only constexpr since C++23
+}
+
 inline double pow1p(double x, double y) {
-    return pow1p_precise(x, y);
+    /*constexpr*/ int q = extra_bits_needed<double>();
+    if /*constexpr*/(std::numeric_limits<long double>::digits -
+                 std::numeric_limits<double>::digits >= q) {
+        return pow1p_approx<long double>(x, y);
+    } else {
+        return pow1p_precise(x, y);
+    }
 }
 
 inline float pow1p(float x, float y) {
-    return pow1p_precise(static_cast<double>(x), static_cast<double>(y));
+    /*constexpr*/ int q = extra_bits_needed<float>();
+    if /*constexpr*/(std::numeric_limits<double>::digits -
+                 std::numeric_limits<float>::digits >= q) {
+        return pow1p_approx<double>(x, y);
+    } else if /*constexpr*/(std::numeric_limits<long double>::digits -
+                        std::numeric_limits<float>::digits >= q) {
+        return pow1p_approx<long double>(x, y);
+    } else {
+        return pow1p_precise(x, y);
+    }
 }
 
 } // namespace xsf
