@@ -762,12 +762,16 @@ template<typename Real>
 Real
 ncf_cdf_wrap(const Real x, const Real v1, const Real v2, const Real l)
 {
+    if (std::isnan(x) || std::isnan(v1) || std::isnan(v2) || std::isnan(l)) {
+	return NAN;
+    }
     if (std::isfinite(x)) {
         return boost::math::cdf(
             boost::math::non_central_f_distribution<Real, StatsPolicy>(v1, v2, l), x);
     }
     // -inf => 0, inf => 1
     return 1.0 - std::signbit(x);
+
 }
 
 float
