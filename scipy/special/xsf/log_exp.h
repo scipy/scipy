@@ -4,14 +4,6 @@
 #include <cstdio>
 #include <cfloat>
 
-//#ifndef FLT_EVAL_METHOD
-//#error FLT_EVAL_METHOD not defined; too old compiler?
-//#endif
-//
-//#if FLT_EVAL_METHOD != 0
-//#error The pow1p function requires FLT_EVAL_METHOD to be zero
-//#endif
-
 #include "config.h"
 
 namespace xsf {
@@ -79,42 +71,37 @@ T log_expit(T x) {
 #error "Missing definition of FLT_EVAL_METHOD; C++11 or above required"
 #endif
 
-// fast_two_sum assuming "+" and "-" are correctly rounded to the nearest
-// with ties resolved in any way.
+// Compute the exact sum of floating point numbers a and b and store the
+// result in s and t such that (a + b) == (s + t) exactly and |s| >> |t|.
+// Requires |a| >= |b|.
+//
+// The following implementation assumes "+" and "-" are correctly rounded
+// to nearest with ties resolved in any way.
 template <typename T>
-void fast_two_sum_generic(const T &a, const T &b, T &s, T &t) {
+void fast_two_sum(const T &a, const T &b, T &s, T &t) {
     s = a + b;
     t = s - a;
     t = b - t;
 }
 
-// fast_two_sum that handles excess precision for a and b of built-in
-// floating point type.
+// fast_two_sum that handles excess precision by force rounding.
 template <typename T>
-void fast_two_sum_force_round(const T &a, const T &b, T &s, T &t) {
+void fast_two_sum_workaround(const T &a, const T &b, T &s, T &t) {
     using std::fma;
     s = fma(T(1), a, b);
     t = fma(T(-1), a, s);
     t = fma(T(-1), t, b);
 }
 
-// Compute the exact sum of floating point number a and b and store the
-// result in s and t such that (a + b) == (s + t) exactly.
-// Requires |a| >= |b|.
-template <typename T>
-void fast_two_sum(const T &a, const T &b, T &s, T &t) {
-    fast_two_sum_generic(a, b, s, t);
-}
-
 #if FLT_EVAL_METHOD != 0
 inline void fast_two_sum(const float &a, const float &b, float &s, float &t) {
-    fast_two_sum_force_round(a, b, s, t);
+    fast_two_sum_workaround(a, b, s, t);
 }
 #endif
 
 #if FLT_EVAL_METHOD != 0 && FLT_EVAL_METHOD != 1
 inline void fast_two_sum(const double &a, const double &b, double &s, double &t) {
-    fast_two_sum_force_round(a, b, s, t);
+    fast_two_sum_workaround(a, b, s, t);
 }
 #endif
 
@@ -211,65 +198,35 @@ bool pow1p_special(const T &x, const T &y, T &result) {
     return false;
 }
 
-// Compute pow(1+x,y) accurately for real x and y.
+// Compute pow(x1+x2,y) by decomposing x1+x2 == s+t exactly such that |t| << s
+// and sign(t)*sign(s-1) >= 0.  The caller must ensure that the decomposition
+// is actually possible.
 template <typename T>
-T pow1p_impl(T x, T y) {
+T pow1p_decomp(const T &x1, const T &x2, const T &y) {
     auto out = stderr;
     fprintf(out, "[pow1p] ========\n");
-    fprintf(out, "[pow1p] x=%.16e y=%.16e\n", x, y);
+    fprintf(out, "[pow1p] x1=%.15e x2=%.15e y=%.15e\n", x1, x2, y);
 
-    // Handle special values.
-    T answer;
-    if (pow1p_special(x, y, answer)) {
-        return answer;
-    }
-
-    // Needed?
-//    if (y == T(1)) {
-//        return T(1) + x;
-//    }
-//    if (y == T(-1)) {
-//        return T(1) / (T(1) + x); // guaranteed no overflow
-//    }
-
-    // Handle (1+x) < 0
-    T sign = T(1);
-    if (x < T(-1)) { // y is guaranteed to be an integer
-        constexpr T two_over_eps = T(2) / std::numeric_limits<T>::epsilon();
-        // For 1 < (-x) <= 2^p = 2/eps, (1+x) is exact;
-        // For (-x) > 2^(2p) = (2/eps)^2, (1+x)^y ~= x^y.
-        // In both cases, we may delegate to pow() without loss of accuracy.
-        if (x >= -two_over_eps || x < -two_over_eps*two_over_eps) {
-            return std::pow(T(1) + x, y);
-        }
-        // Otherwise, we take the "slow path" as in the case (1+x) > 0.
-        sign = (std::fmod(y, T(2)) == T(0)) ? T(1) : T(-1);
-    }
-
-    // Now x, y are finite and not equal to 0 or +/-1.
-    // To compute (1+x)^y, write |1+x| == (s+t) where s is equal to |1+x|
-    // rounded toward 1, and t is the (exact) rounding error.
+    // Write (x+dx) == (s+t) where s is equal to (x+dx) rounded toward 1
+    // and t is the (exact) rounding error.
     T s, t;
-    two_sum(T(1), x, s, t);
-    if (t != T(0) && std::signbit(t) != std::signbit(x)) {
+    two_sum(x1, x2, s, t);
+    if ((t > 0 && s < 1) || (t < 0 && s > 1)) {
         T delta = s - std::nextafter(s, T(1)); // exact
         s -= delta; // exact
-        t += delta; // exact
+        t += delta; // exact under precondition
     }
-    if (x < T(-1)) {
-        s = -s;
-        t = -t;
-    }
-    fprintf(out, "[pow1p] s=%.16e t=%.16e\n", s, t);
+    fprintf(out, "[pow1p] s=%.15e t=%.15e\n", s, t);
 
-    // Write |1+x|^y == (s+t)^y == (s^y)*((1+t/s)^y) == term1*term2.
-    // It can be shown that either both terms <= 1 or both >= 1; so
-    // if the first term over/underflows, then the result over/underflows.
+    // Write (s+t)^y == (s^y)*((1+t/s)^y) == term1*term2.  Since s is rounded
+    // toward one, both terms <= 1 or both >= 1.  So if term1 over/underflows,
+    // then term1*term2 necessarily over/underflows.
     // And of course, term2 == 1 if t == 0.
-    T term1 = sign * std::pow(s, y);
-    fprintf(out, "[pow1p] term1=%.16e\n", term1);
+    T term1 = std::pow(s, y);
+    fprintf(out, "[pow1p] term1=%.15e\n", term1);
 
-    if (t == T(0) || term1 == T(0) || std::isinf(term1)) {
+    if (t == 0 || term1 == 0 || std::isinf(term1)) {
+        // TODO: handle floating point exceptions
         return term1;
     }
 
@@ -281,8 +238,8 @@ T pow1p_impl(T x, T y) {
     T u = t / s;
     T w = y * u;
     T term2 = std::exp(w);
-    fprintf(out, "[pow1p] term2=%.16e\n", term2);
-    if (std::abs(w) <= T(0.5)) {
+    fprintf(out, "[pow1p] term2=%.15e\n", term2);
+    if (std::abs(w) <= 0.5) {
         return term1 * term2;
     }
 
@@ -295,7 +252,7 @@ T pow1p_impl(T x, T y) {
     T uu = r1 / s;
 
     // (u + vv) ~= log(1+(u+uu)) ~= log(1+t/s).
-    T vv = std::fma(T(-0.5) * u, u, uu);
+    T vv = std::fma(-0.5 * u, u, uu);
 
     // (w + ww) ~= y*(u+vv) ~= y*log(1+t/s).
     T r2 = std::fma(y, u, -w);
@@ -303,16 +260,54 @@ T pow1p_impl(T x, T y) {
 
     // TODO: maybe ww is small enough such that exp(ww) ~= 1+ww.
     T term3 = std::exp(ww);
-    fprintf(out, "[pow1p] term3=%.16e\n", term3);
+    fprintf(out, "[pow1p] term3=%.15e\n", term3);
     return term1 * term2 * term3;
 }
 
+// Compute pow(1+x,y) to full precision of T.
+template <typename T>
+T pow1p_precise(T x, T y) {
+    auto out = stderr;
+    fprintf(out, "[pow1p] ========\n");
+    fprintf(out, "[pow1p] x=%.16e y=%.16e\n", x, y);
+
+    // Handle special values.
+    T answer;
+    if (pow1p_special(x, y, answer)) {
+        return answer;
+    }
+
+    // Now (1) x and y are finite, (2) x != 0, x != -1, y != 0, and
+    // (3) y is an integer if x < -1.
+
+    // Handle (1+x) < 0 (and integer y).
+    if (x < -1) {
+        // If 1 < (-x) <= 2^p, ((-x)-1) is exact; if 2^p < (-x) <= 2^(2p),
+        // ((-x)-1) can be written as (s+t) exactly where t << s and t > 0.
+        // For both cases we delegate to pow1p_decomp().
+        //
+        // If (-x) > 2^(2p), ((-x)-1) ~= (-x) and the total error is small.
+        // We call pow() directly in this case.
+        constexpr T exp2p = T(2) / std::numeric_limits<T>::epsilon();
+        if (-x <= exp2p*exp2p) {
+            T sign = (std::fmod(y, T(2)) == 0) ? 1 : -1;
+            return sign * pow1p_decomp(-x, T(-1), y);
+        } else {
+            // TODO: handle floating point exceptions
+            return std::pow(T(1) + x, y);
+        }
+    }
+
+    // Now x, y are finite and (1+x) > 0.
+    return pow1p_decomp(x, T(1), y);
+}
+
 inline double pow1p(double x, double y) {
-    return pow1p_impl(x, y);
+    return pow1p_precise(x, y);
 }
 
 inline float pow1p(float x, float y) {
-    return pow1p_impl(static_cast<double>(x), static_cast<double>(y));
+    return pow1p_precise(static_cast<double>(x), static_cast<double>(y));
 }
 
 } // namespace xsf
