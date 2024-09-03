@@ -133,7 +133,7 @@ def pick_pade_structure(cnp.ndarray[ndim=3, dtype=numpy_lapack_t] Am):
 
     # First spin = normest(|A|, m=1), increase m when spun more
     np.matmul(absA, work_arr, out=work_arr)
-    normA = np.max(work_arr)
+    normA = work_arr.max()
 
     np.matmul(Am[0, :, :], Am[0, :, :], out=Am[1, :, :])
     np.matmul(Am[1, :, :], Am[1, :, :], out=Am[2, :, :])
@@ -146,9 +146,11 @@ def pick_pade_structure(cnp.ndarray[ndim=3, dtype=numpy_lapack_t] Am):
     # m = 3
     # -------
     # 1-norm of A ** 7
-    for i in range(6):
+    for i in range(4):
         np.matmul(absA, work_arr, out=work_arr)
-    temp = np.max(work_arr)
+    absA_pow4 = work_arr.copy()
+    np.matmul(absA_pow4, work_arr, out=work_arr)
+    temp = work_arr.max()
 
     lm = max(<int>ceil(log2(temp/normA/coeff[0])/6), 0)
     if eta0 < theta[0] and lm == 0:
@@ -157,9 +159,8 @@ def pick_pade_structure(cnp.ndarray[ndim=3, dtype=numpy_lapack_t] Am):
     # m = 5
     # -------
     # 1-norm of A ** 11
-    for i in range(4):
-        np.matmul(absA, work_arr, out=work_arr)
-    temp = np.max(work_arr)
+    np.matmul(absA_pow4, work_arr, out=work_arr)
+    temp = work_arr.max()
 
     lm = max(<int>ceil(log2(temp/normA/coeff[1])/10), 0)
     if eta1 < theta[1] and lm == 0:
@@ -176,9 +177,8 @@ def pick_pade_structure(cnp.ndarray[ndim=3, dtype=numpy_lapack_t] Am):
     eta2 = max(d6, d8)
 
     # 1-norm of A ** 15
-    for i in range(4):
-        np.matmul(absA, work_arr, out=work_arr)
-    temp = np.max(work_arr)
+    np.matmul(absA_pow4, work_arr, out=work_arr)
+    temp = work_arr.max()
 
     lm = max(<int>ceil(log2(temp/normA/coeff[2])/14), 0)
     if eta2 < theta[2] and lm == 0:
@@ -187,9 +187,8 @@ def pick_pade_structure(cnp.ndarray[ndim=3, dtype=numpy_lapack_t] Am):
     # m = 9
     # -------
     # 1-norm of A ** 19
-    for i in range(4):
-        np.matmul(absA, work_arr, out=work_arr)
-    temp = np.max(work_arr)
+    np.matmul(absA_pow4, work_arr, out=work_arr)
+    temp = work_arr.max()
 
     lm = max(<int>ceil(log2(temp/normA/coeff[3])/18), 0)
     if eta2 < theta[3] and lm == 0:
@@ -217,9 +216,9 @@ def pick_pade_structure(cnp.ndarray[ndim=3, dtype=numpy_lapack_t] Am):
         normA *= 2.**(-s)
 
     # 1-norm of A ** 27
-    for i in range(8):
-        np.matmul(absA, work_arr, out=work_arr)
-    temp = np.max(work_arr)
+    for i in range(2):
+        np.matmul(absA_pow4, work_arr, out=work_arr)
+    temp = work_arr.max()
 
     s += max(<int>ceil(log2(temp/normA/coeff[4])/26), 0)
     return 13, s

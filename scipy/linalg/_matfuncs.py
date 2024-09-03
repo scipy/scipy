@@ -287,7 +287,9 @@ def expm(A):
 
     if a.ndim < 2:
         raise LinAlgError('The input array must be at least two-dimensional')
-    if a.shape[-1] != a.shape[-2]:
+
+    n = a.shape[-1]
+    if n != a.shape[-2]:
         raise LinAlgError('Last 2 dimensions of the array must be square')
 
     # Empty array
@@ -308,7 +310,6 @@ def expm(A):
     # Kahan's method, numerical instabilities can occur (See gh-19584). Hence removed
     # here until we have a more stable implementation.
 
-    n = a.shape[-1]
     eA = np.empty(a.shape, dtype=a.dtype)
     # working memory to hold intermediate arrays
     Am = np.empty((5, n, n), dtype=a.dtype)
