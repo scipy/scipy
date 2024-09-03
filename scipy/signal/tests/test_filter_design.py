@@ -18,7 +18,7 @@ from scipy.signal import (argrelextrema, BadCoefficients, bessel, besselap, bili
                           gammatone, group_delay, iircomb, iirdesign, iirfilter,
                           iirnotch, iirpeak, lp2bp, lp2bs, lp2hp, lp2lp, normalize,
                           medfilt, order_filter,
-                          sos2tf, sos2zpk, freqz_sos, tf2sos, tf2zpk, zpk2sos,
+                          sos2tf, sos2zpk, sosfreqz, freqz_sos, tf2sos, tf2zpk, zpk2sos,
                           zpk2tf, bilinear_zpk, lp2lp_zpk, lp2hp_zpk, lp2bp_zpk,
                           lp2bs_zpk)
 from scipy.signal._filter_design import (_cplxreal, _cplxpair, _norm_factor,
@@ -945,7 +945,17 @@ class Testfreqz_sos:
         # must have at least one section
         assert_raises(ValueError, freqz_sos, sos[:0])
 
-    def test_sosfrez_design(self):
+    def test_backward_compat(self):
+        # For backward compatibility, test if None act as a wrapper for default
+        N = 500
+
+        sos = butter(4, 0.2, output='sos')
+        w1, h1 = freqz_sos(sos, worN=N)
+        w2, h2 = sosfreqz(sos, worN=N)
+        assert_array_almost_equal(w1, w2)
+        assert_array_almost_equal(h1, h2)
+
+    def test_freqz_sos_design(self):
         # Compare freqz_sos output against expected values for different
         # filter types
 
@@ -1034,7 +1044,7 @@ class Testfreqz_sos:
         assert dB[w <= 0.2].max() < -150*(1 - 1e-12)
 
     @mpmath_check("0.10")
-    def test_sos_freqz_against_mp(self):
+    def test_freqz_sos_against_mp(self):
         # Compare the result of freqz_sos applied to a high order Butterworth
         # filter against the result computed using mpmath.  (signal.freqz fails
         # miserably with such high order filters.)
