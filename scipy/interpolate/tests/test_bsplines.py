@@ -343,40 +343,43 @@ class TestBSpline:
 
     def test_integral(self):
         b = BSpline.basis_element([0, 1, 2])  # x for x < 1 else 2 - x
-        xp_assert_close(b.integrate(0, 1), 0.5)
-        xp_assert_close(b.integrate(1, 0), -1 * 0.5)
-        xp_assert_close(b.integrate(1, 0), -0.5)
+        xp_assert_close(b.integrate(0, 1), 0.5, check_0d=False)
+        xp_assert_close(b.integrate(1, 0), -1 * 0.5, check_0d=False)
+        xp_assert_close(b.integrate(1, 0), -0.5, check_0d=False)
 
         # extrapolate or zeros outside of [0, 2]; default is yes
-        xp_assert_close(b.integrate(-1, 1), 0.0)
-        xp_assert_close(b.integrate(-1, 1, extrapolate=True), 0.0)
-        xp_assert_close(b.integrate(-1, 1, extrapolate=False), 0.5)
-        xp_assert_close(b.integrate(1, -1, extrapolate=False), -1 * 0.5)
+        xp_assert_close(b.integrate(-1, 1), 0.0, check_0d=False)
+        xp_assert_close(b.integrate(-1, 1, extrapolate=True), 0.0, check_0d=False)
+        xp_assert_close(b.integrate(-1, 1, extrapolate=False), 0.5, check_0d=False)
+        xp_assert_close(b.integrate(1, -1, extrapolate=False), -1 * 0.5, check_0d=False)
 
         # Test ``_fitpack._splint()``
         xp_assert_close(b.integrate(1, -1, extrapolate=False),
-                        _impl.splint(1, -1, b.tck))
+                        _impl.splint(1, -1, b.tck), check_0d=False)
 
         # Test ``extrapolate='periodic'``.
         b.extrapolate = 'periodic'
         i = b.antiderivative()
         period_int = i(2) - i(0)
 
-        xp_assert_close(b.integrate(0, 2), period_int)
-        xp_assert_close(b.integrate(2, 0), -1 * period_int)
-        xp_assert_close(b.integrate(-9, -7), period_int)
-        xp_assert_close(b.integrate(-8, -4), 2 * period_int)
+        xp_assert_close(b.integrate(0, 2), period_int, check_0d=False)
+        xp_assert_close(b.integrate(2, 0), -1 * period_int, check_0d=False)
+        xp_assert_close(b.integrate(-9, -7), period_int, check_0d=False)
+        xp_assert_close(b.integrate(-8, -4), 2 * period_int, check_0d=False)
 
-        xp_assert_close(b.integrate(0.5, 1.5), i(1.5) - i(0.5))
-        xp_assert_close(b.integrate(1.5, 3), i(1) - i(0) + i(2) - i(1.5))
+        xp_assert_close(b.integrate(0.5, 1.5), i(1.5) - i(0.5), check_0d=False)
+        xp_assert_close(b.integrate(1.5, 3),
+                        i(1) - i(0) + i(2) - i(1.5), check_0d=False)
         xp_assert_close(b.integrate(1.5 + 12, 3 + 12),
-                        i(1) - i(0) + i(2) - i(1.5))
+                        i(1) - i(0) + i(2) - i(1.5), check_0d=False)
         xp_assert_close(b.integrate(1.5, 3 + 12),
-                        i(1) - i(0) + i(2) - i(1.5) + 6 * period_int)
+                        i(1) - i(0) + i(2) - i(1.5) + 6 * period_int, check_0d=False)
 
-        xp_assert_close(b.integrate(0, -1), i(0) - i(1))
-        xp_assert_close(b.integrate(-9, -10), i(0) - i(1))
-        xp_assert_close(b.integrate(0, -9), i(1) - i(2) - 4 * period_int)
+        xp_assert_close(b.integrate(0, -1), i(0) - i(1), check_0d=False)
+        xp_assert_close(b.integrate(-9, -10), i(0) - i(1), check_0d=False)
+        xp_assert_close(
+            b.integrate(0, -9), i(1) - i(2) - 4 * period_int, check_0d=False
+        )
 
     def test_integrate_ppoly(self):
         # test .integrate method to be consistent with PPoly.integrate
@@ -1051,10 +1054,11 @@ class TestInterop:
     def test_splint(self):
         # test that splint accepts BSpline objects
         b, b2 = self.b, self.b2
+
         xp_assert_close(splint(0, 1, b),
-                        splint(0, 1, b.tck), atol=1e-14)
+                        splint(0, 1, b.tck), atol=1e-14, check_0d=False)
         xp_assert_close(splint(0, 1, b),
-                        b.integrate(0, 1), atol=1e-14)
+                        b.integrate(0, 1), atol=1e-14, check_0d=False)
 
         # ... and deals with N-D arrays of coefficients
         with assert_raises(ValueError, match="Calling splint.. with BSpline"):
@@ -1283,12 +1287,16 @@ class TestInterp:
         # derivative at right-hand edge
         b = make_interp_spline(self.xx, self.yy, k=2, bc_type=(None, der))
         xp_assert_close(b(self.xx), self.yy, atol=1e-14, rtol=1e-14)
-        xp_assert_close(b(self.xx[-1], 1), der[0][1], atol=1e-14, rtol=1e-14)
+        xp_assert_close(
+            b(self.xx[-1], 1), der[0][1], atol=1e-14, rtol=1e-14, check_0d=False
+        )
 
         # derivative at left-hand edge
         b = make_interp_spline(self.xx, self.yy, k=2, bc_type=(der, None))
         xp_assert_close(b(self.xx), self.yy, atol=1e-14, rtol=1e-14)
-        xp_assert_close(b(self.xx[0], 1), der[0][1], atol=1e-14, rtol=1e-14)
+        xp_assert_close(
+            b(self.xx[0], 1), der[0][1], atol=1e-14, rtol=1e-14, check_0d=False
+        )
 
     def test_cubic_deriv(self):
         k = 3
@@ -1345,8 +1353,8 @@ class TestInterp:
                                bc_type=([(2, 0)], [(2, 0)]))
 
         xp_assert_close(b(self.xx), self.yy, atol=1e-14, rtol=1e-14)
-        xp_assert_close(b(self.xx[0], 2), 0.0, atol=1e-14)
-        xp_assert_close(b(self.xx[-1], 2), 0., atol=1e-14)
+        xp_assert_close(b(self.xx[0], 2), np.asarray(0.0), atol=1e-14)
+        xp_assert_close(b(self.xx[-1], 2), np.asarray(0.0), atol=1e-14)
 
     def test_minimum_points_and_deriv(self):
         # interpolation of f(x) = x**3 between 0 and 1. f'(x) = 3 * xx**2 and
@@ -1405,8 +1413,12 @@ class TestInterp:
         der_l, der_r = [(1, 3.j)], [(1, 4.+2.j)]
         b = make_interp_spline(xx, yy, k, bc_type=(der_l, der_r))
         xp_assert_close(b(xx), yy, atol=1e-14, rtol=1e-14)
-        xp_assert_close(b(xx[0], 1), der_l[0][1], atol=1e-14, rtol=1e-14)
-        xp_assert_close(b(xx[-1], 1), der_r[0][1], atol=1e-14, rtol=1e-14)
+        xp_assert_close(
+            b(xx[0], 1), der_l[0][1], atol=1e-14, rtol=1e-14, check_0d=False
+        )
+        xp_assert_close(
+            b(xx[-1], 1), der_r[0][1], atol=1e-14, rtol=1e-14, check_0d=False
+        )
 
         # also test zero and first order
         for k in (0, 1):
@@ -1895,8 +1907,9 @@ def bspline2(xy, t, c, k):
     assert (nx >= k+1)
     ny = len(ty) - k - 1
     assert (ny >= k+1)
-    return sum(c[ix, iy] * B(x, k, ix, tx) * B(y, k, iy, ty)
-               for ix in range(nx) for iy in range(ny))
+    res = sum(c[ix, iy] * B(x, k, ix, tx) * B(y, k, iy, ty)
+              for ix in range(nx) for iy in range(ny))
+    return np.asarray(res)
 
 
 def B(x, k, i, t):
@@ -1977,7 +1990,7 @@ class NdBSpline0:
             term = self.c[idx] * np.prod([B(x[d], self.k[d], idx[d], self.t[d])
                                           for d in range(ndim)])
             result += term
-        return result
+        return np.asarray(result)
 
 
 class TestNdBSpline:

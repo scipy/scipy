@@ -169,8 +169,8 @@ class TestKrogh:
 
     def test_scalar(self):
         P = KroghInterpolator(self.xs,self.ys)
-        assert_almost_equal(self.true_poly(7),P(7))
-        assert_almost_equal(self.true_poly(np.array(7)), P(np.array(7)))
+        assert_almost_equal(self.true_poly(7),P(7), check_0d=False)
+        assert_almost_equal(self.true_poly(np.array(7)), P(np.array(7)), check_0d=False)
 
     def test_derivatives(self):
         P = KroghInterpolator(self.xs,self.ys)
@@ -350,8 +350,8 @@ class TestBarycentric:
 
     def test_scalar(self):
         P = BarycentricInterpolator(self.xs, self.ys)
-        xp_assert_close(P(7), self.true_poly(7))
-        xp_assert_close(P(np.array(7)), self.true_poly(np.array(7)))
+        xp_assert_close(P(7), self.true_poly(7), check_0d=False)
+        xp_assert_close(P(np.array(7)), self.true_poly(np.array(7)), check_0d=False)
 
     def test_derivatives(self):
         P = BarycentricInterpolator(self.xs, self.ys)
@@ -478,7 +478,7 @@ class TestBarycentric:
         x = 1000 * np.arange(1, 11)  # np.prod(x[-1] - x[:-1]) overflows
         y = np.arange(1, 11)
         value = barycentric_interpolate(x, y, 1000 * 9.5)
-        assert_almost_equal(value, 9.5)
+        assert_almost_equal(value, np.asarray(9.5))
 
     def test_large_chebyshev(self):
         # The weights for Chebyshev points of the second kind have analytically
@@ -683,7 +683,8 @@ class TestCubicSpline:
 
         # Check that we found a parabola, the third derivative is 0.
         if x.size == 3 and bc_start == 'not-a-knot' and bc_end == 'not-a-knot':
-            xp_assert_close(c[0], 0, rtol=tol, atol=tol)
+            xp_assert_close(c[0], 0.0, rtol=tol, atol=tol,
+                check_0d=False, check_shape=False)
             return
 
         # Check periodic boundary conditions.
@@ -697,32 +698,37 @@ class TestCubicSpline:
         if bc_start == 'not-a-knot':
             if x.size == 2:
                 slope = (S(x[1]) - S(x[0])) / dx[0]
-                xp_assert_close(S(x[0], 1), slope, rtol=tol, atol=tol)
+                xp_assert_close(S(x[0], 1), slope, rtol=tol, atol=tol, check_0d=False)
             else:
                 xp_assert_close(c[0, 0], c[0, 1], rtol=tol, atol=tol)
         elif bc_start == 'clamped':
-            xp_assert_close(S(x[0], 1), np.asarray(0.0), rtol=tol, atol=tol)
+            xp_assert_close(
+                S(x[0], 1), np.asarray(0.0), rtol=tol, atol=tol, check_shape=False
+            )
         elif bc_start == 'natural':
             xp_assert_close(
-                S(x[0], 2), np.asarray(0.0), rtol=tol, atol=tol, check_dtype=False
+                S(x[0], 2), np.asarray(0.0), rtol=tol, atol=tol,
+                check_dtype=False, check_shape=False,
             )
         else:
             order, value = bc_start
-            xp_assert_close(S(x[0], order), value, rtol=tol, atol=tol)
+            xp_assert_close(S(x[0], order), value, rtol=tol, atol=tol, check_0d=False)
 
         if bc_end == 'not-a-knot':
             if x.size == 2:
                 slope = (S(x[1]) - S(x[0])) / dx[0]
-                xp_assert_close(S(x[1], 1), slope, rtol=tol, atol=tol)
+                xp_assert_close(S(x[1], 1), slope, rtol=tol, atol=tol, check_0d=False)
             else:
-                xp_assert_close(c[0, -1], c[0, -2], rtol=tol, atol=tol)
+                xp_assert_close(c[0, -1], c[0, -2], rtol=tol, atol=tol, check_0d=False)
         elif bc_end == 'clamped':
-            xp_assert_close(S(x[-1], 1), 0, rtol=tol, atol=tol)
+            xp_assert_close(S(x[-1], 1), 0.0, rtol=tol, atol=tol,
+                            check_0d=False, check_shape=False)
         elif bc_end == 'natural':
-            xp_assert_close(S(x[-1], 2), 0, rtol=2*tol, atol=2*tol)
+            xp_assert_close(S(x[-1], 2), 0.0, rtol=2*tol, atol=2*tol,
+                            check_0d=False, check_shape=False)
         else:
             order, value = bc_end
-            xp_assert_close(S(x[-1], order), value, rtol=tol, atol=tol)
+            xp_assert_close(S(x[-1], order), value, rtol=tol, atol=tol, check_0d=False)
 
     def check_all_bc(self, x, y, axis):
         deriv_shape = list(y.shape)

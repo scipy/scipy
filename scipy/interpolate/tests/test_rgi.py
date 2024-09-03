@@ -359,7 +359,7 @@ class TestRegularGridInterpolator:
         # check exrapolation w/ fill_value
         xp_assert_close(interp(np.array([1.1, 2.4])),
                         interp.fill_value,
-                        check_dtype=False, check_shape=False,
+                        check_dtype=False, check_shape=False, check_0d=False,
                         atol=1e-14)
 
         # check extrapolation: linear along the `y` axis, const along `x`

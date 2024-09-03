@@ -1497,7 +1497,8 @@ class TestPPoly:
         xp_assert_close(P.integrate(-10, -4), 2 * period_int, check_0d=False)
 
         xp_assert_close(P.integrate(1.5, 2.5), I(2.5) - I(1.5), check_0d=False)
-        xp_assert_close(P.integrate(3.5, 5), I(2) - I(1) + I(4) - I(3.5), check_0d=False)
+        xp_assert_close(P.integrate(3.5, 5), I(2) - I(1) + I(4) - I(3.5),
+                        check_0d=False)
         xp_assert_close(P.integrate(3.5 + 12, 5 + 12),
                         I(2) - I(1) + I(4) - I(3.5), check_0d=False)
         xp_assert_close(P.integrate(3.5, 5 + 12),
@@ -1505,7 +1506,8 @@ class TestPPoly:
 
         xp_assert_close(P.integrate(0, -1), I(2) - I(3), check_0d=False)
         xp_assert_close(P.integrate(-9, -10), I(2) - I(3), check_0d=False)
-        xp_assert_close(P.integrate(0, -10), I(2) - I(3) - 3 * period_int, check_0d=False)
+        xp_assert_close(P.integrate(0, -10), I(2) - I(3) - 3 * period_int,
+                        check_0d=False)
 
     def test_roots(self):
         x = np.linspace(0, 1, 31)**2
@@ -1605,7 +1607,8 @@ class TestPPoly:
                                 cmpval = pp(rr, nu=1,
                                             extrapolate=extrapolate)[:,i,j]
                                 msg = f"({extrapolate!r}) r = {repr(rr)}"
-                                xp_assert_close((val-y) / cmpval, np.asarray(0.0), atol=1e-7,
+                                xp_assert_close((val-y) / cmpval, np.asarray(0.0),
+                                                atol=1e-7,
                                                 err_msg=msg, check_shape=False)
 
         # Check that we checked a number of roots
