@@ -597,11 +597,6 @@
             "nbdtrin": "ddd->d"
         }
     },
-    "ncfdtr": {
-        "_cdflib_wrappers.pxd": {
-            "ncfdtr": "dddd->d"
-        }
-    },
     "ncfdtri": {
         "_cdflib_wrappers.pxd": {
             "ncfdtri": "dddd->d"
@@ -910,7 +905,7 @@
             "ncf_pdf_double": "dddd->d"
         }
     },
-    "_ncf_cdf": {
+    "ncfdtr": {
         "boost_special_functions.h++": {
             "ncf_cdf_float": "ffff->f",
             "ncf_cdf_double": "dddd->d"
