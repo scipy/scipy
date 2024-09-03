@@ -139,8 +139,6 @@ double cephes_ellpk_wrap(double x);
 int cephes_ellpj_wrap(double u, double m, double *sn, double *cn, double *dn, double *ph);
 int cephes_fresnl_wrap(double xxa, double *ssa, double *cca);
 double cephes_poch_wrap(double x, double m);
-int cephes_sici_wrap(double x, double *si, double *ci);
-int cephes_shichi_wrap(double x, double *si, double *ci);
 double cephes__struve_asymp_large_z(double v, double z, Py_ssize_t is_h, double *err);
 double cephes__struve_bessel_series(double v, double z, Py_ssize_t is_h, double *err);
 double cephes__struve_power_series(double v, double z, Py_ssize_t is_h, double *err);
@@ -160,6 +158,11 @@ double xsf_cbrt(double x);
 double xsf_gamma(double x);
 double xsf_gammasgn(double x);
 double xsf_gammaln(double x);
+
+int xsf_sici(double x, double *si, double *ci);
+int xsf_shichi(double x, double *shi, double *chi);
+int xsf_csici(npy_cdouble z, npy_cdouble *si, npy_cdouble *ci);
+int xsf_cshichi(npy_cdouble z, npy_cdouble *shi, npy_cdouble *chi);
 
 double xsf_hyp2f1(double a, double b, double c, double x);
 npy_cdouble xsf_chyp2f1(double a, double b, double c, npy_cdouble z);
