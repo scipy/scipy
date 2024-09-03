@@ -77,8 +77,8 @@ class TestHyperu:
 
     def test_gh_15650_sanity(self):
         # The purpose of this test is to sanity check hyperu in the region that
-        # was impacted by gh-15650 by making sure there are no excessively large results,
-        # as were reported there.
+        # was impacted by gh-15650 by making sure there are no excessively large
+        # results, as were reported there.
         a = np.linspace(-0.5, 0.5, 500)
         x = np.linspace(1e-6, 1e-1, 500)
         a, x = np.meshgrid(a, x)
