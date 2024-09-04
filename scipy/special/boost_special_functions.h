@@ -765,13 +765,18 @@ ncf_cdf_wrap(const Real v1, const Real v2, const Real l, const Real x)
     if (std::isnan(x) || std::isnan(v1) || std::isnan(v2) || std::isnan(l)) {
 	return NAN;
     }
-    if (std::isfinite(x)) {
-        return boost::math::cdf(
-            boost::math::non_central_f_distribution<Real, StatsPolicy>(v1, v2, l), x);
+    if ((v1 <= 0) || (v2 <= 0) || (l <= 0)) {
+	sf_error("ncfdtr", SF_ERROR_DOMAIN, NULL);
+	return NAN;
     }
-    // -inf => 0, inf => 1
-    return 1.0 - std::signbit(x);
-
+    if (std::isinf(x)) {
+	// -inf => 0, inf => 1
+	return 1.0 - std::signbit(x);
+    }
+    Real y;
+    y = boost::math::cdf(
+            boost::math::non_central_f_distribution<Real, SpecialPolicy>(v1, v2, l), x);
+    return y;
 }
 
 float
