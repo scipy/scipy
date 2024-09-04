@@ -468,19 +468,17 @@ T assoc_legendre_p(NormPolicy norm, int n, int m, T z, int branch_cut) {
  *
  * @return value of the polynomial
  */
-template <typename NormPolicy, typename T, typename... OutputMats>
-void assoc_legendre_p_all(NormPolicy norm, T z, int branch_cut, std::tuple<OutputMats &...> res) {
-    auto &res0 = std::get<0>(res);
-    int n = res0.extent(0) - 1;
-    int m = (res0.extent(1) - 1) / 2;
+template <typename NormPolicy, typename T, typename OutputMat>
+void assoc_legendre_p_all(NormPolicy norm, T z, int branch_cut, OutputMat res) {
+    int n = res.extent(0) - 1;
+    int m = (res.extent(1) - 1) / 2;
 
     T p[2];
     assoc_legendre_p_for_each_n_m(norm, n, m, z, branch_cut, p, [&res](int n, int m, const T(&res_n_m)[2]) {
         if (m >= 0) {
-            dual_assign_grad(res_n_m[1], tuples::call(res, n, m));
+            res(n, m) = res_n_m[1];
         } else {
-            auto &res0 = std::get<0>(res);
-            dual_assign_grad(res_n_m[1], tuples::call(res, n, m + res0.extent(1)));
+            res(n, m + res.extent(1)) = res_n_m[1];
         }
     });
 }
@@ -645,18 +643,17 @@ T sph_legendre_p(int n, int m, T theta) {
     return res_n[1];
 }
 
-template <typename T, typename... OutputMats>
-void sph_legendre_p_all(T theta, std::tuple<OutputMats &...> res) {
-    auto &res0 = std::get<0>(res);
-    int n_max = res0.extent(0) - 1;
-    int m_max = (res0.extent(1) - 1) / 2;
+template <typename T, typename OutputMat>
+void sph_legendre_p_all(T theta, OutputMat res) {
+    int n_max = res.extent(0) - 1;
+    int m_max = (res.extent(1) - 1) / 2;
 
     T res_n_m[2];
     sph_legendre_p_for_each_n_m(n_max, m_max, theta, res_n_m, [m_max, &res](int n, int m, const T(&res_n_m)[2]) {
         if (m >= 0) {
-            dual_assign_grad(res_n_m[1], tuples::call(res, n, m));
+            res(n, m) = res_n_m[1];
         } else {
-            dual_assign_grad(res_n_m[1], tuples::call(res, n, m + 2 * m_max + 1));
+            res(n, m + 2 * m_max + 1) = res_n_m[1];
         }
     });
 }

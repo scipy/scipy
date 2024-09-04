@@ -69,6 +69,19 @@ namespace numpy {
     using ad2_cfloat_1d = std::mdspan<dual<cfloat, 2>, std::dextents<ptrdiff_t, 1>, std::layout_stride>;
     using ad2_cdouble_1d = std::mdspan<dual<cdouble, 2>, std::dextents<ptrdiff_t, 1>, std::layout_stride>;
 
+    using ad0_float_2d = std::mdspan<dual<float, 0>, std::dextents<ptrdiff_t, 2>, std::layout_stride>;
+    using ad0_double_2d = std::mdspan<dual<double, 0>, std::dextents<ptrdiff_t, 2>, std::layout_stride>;
+    using ad0_cfloat_2d = std::mdspan<dual<cfloat, 0>, std::dextents<ptrdiff_t, 2>, std::layout_stride>;
+    using ad0_cdouble_2d = std::mdspan<dual<cdouble, 0>, std::dextents<ptrdiff_t, 2>, std::layout_stride>;
+    using ad1_float_2d = std::mdspan<dual<float, 1>, std::dextents<ptrdiff_t, 2>, std::layout_stride>;
+    using ad1_double_2d = std::mdspan<dual<double, 1>, std::dextents<ptrdiff_t, 2>, std::layout_stride>;
+    using ad1_cfloat_2d = std::mdspan<dual<cfloat, 1>, std::dextents<ptrdiff_t, 2>, std::layout_stride>;
+    using ad1_cdouble_2d = std::mdspan<dual<cdouble, 1>, std::dextents<ptrdiff_t, 2>, std::layout_stride>;
+    using ad2_float_2d = std::mdspan<dual<float, 2>, std::dextents<ptrdiff_t, 2>, std::layout_stride>;
+    using ad2_double_2d = std::mdspan<dual<double, 2>, std::dextents<ptrdiff_t, 2>, std::layout_stride>;
+    using ad2_cfloat_2d = std::mdspan<dual<cfloat, 2>, std::dextents<ptrdiff_t, 2>, std::layout_stride>;
+    using ad2_cdouble_2d = std::mdspan<dual<cdouble, 2>, std::dextents<ptrdiff_t, 2>, std::layout_stride>;
+
     // The following are based off NumPy's dtype type codes and functions like PyUFunc_dd_d
 
     // 1 input, 1 output
@@ -90,6 +103,19 @@ namespace numpy {
     using A2_d_d1 = void (*)(double, ad2_double_1d);
     using A2_F_F1 = void (*)(cfloat, ad2_cfloat_1d);
     using A2_D_D1 = void (*)(cdouble, ad2_cdouble_1d);
+
+    using A0_f_f2 = void (*)(float, ad0_float_2d);
+    using A0_d_d2 = void (*)(double, ad0_double_2d);
+    using A0_F_F2 = void (*)(cfloat, ad0_cfloat_2d);
+    using A0_D_D2 = void (*)(cdouble, ad0_cdouble_2d);
+    using A1_f_f2 = void (*)(float, ad1_float_2d);
+    using A1_d_d2 = void (*)(double, ad1_double_2d);
+    using A1_F_F2 = void (*)(cfloat, ad1_cfloat_2d);
+    using A1_D_D2 = void (*)(cdouble, ad1_cdouble_2d);
+    using A2_f_f2 = void (*)(float, ad2_float_2d);
+    using A2_d_d2 = void (*)(double, ad2_double_2d);
+    using A2_F_F2 = void (*)(cfloat, ad2_cfloat_2d);
+    using A2_D_D2 = void (*)(cdouble, ad2_cdouble_2d);
 
     // 1 input, 2 outputs
     using f_ff = void (*)(float, float &, float &);
@@ -164,6 +190,14 @@ namespace numpy {
     // 3 inputs, 1 output
     using qqf_f = float (*)(long long int, long long int, float);
     using qqd_d = double (*)(long long int, long long int, double);
+
+    // autodiff, 3 inputs, 1 ouput
+    using A0_qqf_f = dual<float, 0> (*)(long long int, long long int, float);
+    using A0_qqd_d = dual<double, 0> (*)(long long int, long long int, double);
+    using A1_qqf_f = dual<float, 1> (*)(long long int, long long int, float);
+    using A1_qqd_d = dual<double, 1> (*)(long long int, long long int, double);
+    using A2_qqf_f = dual<float, 2> (*)(long long int, long long int, float);
+    using A2_qqd_d = dual<double, 2> (*)(long long int, long long int, double);
 
     // 3 inputs, 2 outputs
     using qqf_ff = void (*)(long long int, long long int, float, float &, float &);

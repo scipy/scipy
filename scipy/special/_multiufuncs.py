@@ -188,6 +188,11 @@ def _(diff_n):
     return diff_n
 
 
+@sph_legendre_p._override_finalize_out
+def _(out):
+    return np.moveaxis(out, -1, 0)
+
+
 sph_legendre_p_all = MultiUFunc(
     sph_legendre_p_all,
     """sph_legendre_p_all(n, m, theta, *, diff_n=0)
@@ -219,15 +224,20 @@ def _(diff_n):
 
 @sph_legendre_p_all._override_ufunc_default_kwargs
 def _(diff_n):
-    return {'axes': [()] + (diff_n + 1) * [(0, 1)]}
+    return {'axes': [()] + [(0, 1, -1)]}
 
 
 @sph_legendre_p_all._override_resolve_out_shapes
-def _(n, m, theta_shape, nout, **kwargs):
+def _(n, m, theta_shape, nout, diff_n):
     if not isinstance(n, numbers.Integral) or (n < 0):
         raise ValueError("n must be a non-negative integer.")
 
-    return nout * ((n + 1, 2 * abs(m) + 1) + theta_shape,)
+    return ((n + 1, 2 * abs(m) + 1) + theta_shape + (diff_n + 1,),)
+
+
+@sph_legendre_p_all._override_finalize_out
+def _(out):
+    return np.moveaxis(out, -1, 0)
 
 
 assoc_legendre_p = MultiUFunc(
@@ -288,6 +298,11 @@ def _(branch_cut, norm, diff_n):
     return branch_cut,
 
 
+@assoc_legendre_p._override_finalize_out
+def _(out):
+    return np.moveaxis(out, -1, 0)
+
+
 assoc_legendre_p_all = MultiUFunc(
     assoc_legendre_p_all,
     """assoc_legendre_p_all(n, m, z, *, branch_cut=2, norm=False, diff_n=0)
@@ -328,18 +343,25 @@ def _(branch_cut, norm, diff_n):
 
 @assoc_legendre_p_all._override_ufunc_default_kwargs
 def _(branch_cut, norm, diff_n):
-    return {'axes': [(), ()] + (diff_n + 1) * [(0, 1)]}
+    return {'axes': [(), ()] + [(0, 1, -1)]}
 
 
 @assoc_legendre_p_all._override_resolve_out_shapes
 def _(n, m, z_shape, branch_cut_shape, nout, **kwargs):
+    diff_n = kwargs['diff_n']
+
     if not isinstance(n, numbers.Integral) or (n < 0):
         raise ValueError("n must be a non-negative integer.")
     if not isinstance(m, numbers.Integral) or (m < 0):
         raise ValueError("m must be a non-negative integer.")
 
-    return nout * ((n + 1, 2 * abs(m) + 1)
-                   + np.broadcast_shapes(z_shape, branch_cut_shape),)
+    return ((n + 1, 2 * abs(m) + 1) +
+        np.broadcast_shapes(z_shape, branch_cut_shape) + (diff_n + 1,),)
+
+
+@assoc_legendre_p_all._override_finalize_out
+def _(out):
+    return np.moveaxis(out, -1, 0)
 
 
 legendre_p = MultiUFunc(

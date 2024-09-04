@@ -29,68 +29,27 @@ void legendre_p_all(T z, OutputVec res) {
 using xsf::assoc_legendre_norm;
 using xsf::assoc_legendre_unnorm;
 
-template <typename NormPolicy, typename T>
-T assoc_legendre_p(NormPolicy norm, long long int n, long long int m, T z, long long int branch_cut) {
-    return xsf::assoc_legendre_p(norm, n, m, z, branch_cut);
+template <size_t N, typename NormPolicy, typename T>
+xsf::dual<T, N> assoc_legendre_p(NormPolicy norm, long long int n, long long int m, T z, long long int branch_cut) {
+    return xsf::assoc_legendre_p(norm, n, m, xsf::dual_var<N>(z), branch_cut);
 }
 
-template <typename NormPolicy, typename T>
-void assoc_legendre_p(NormPolicy norm, long long int n, long long int m, T z, long long int branch_cut, T &res,
-                      T &res_jac) {
-    xsf::dual_assign_grad(xsf::assoc_legendre_p(norm, n, m, xsf::dual_var<1>(z), branch_cut), std::tie(res, res_jac));
+template <typename NormPolicy, typename T, typename OutputMat>
+void assoc_legendre_p_all(NormPolicy norm, T z, long long int branch_cut, OutputMat res) {
+    static constexpr size_t N = OutputMat::value_type::max_order();
+
+    xsf::assoc_legendre_p_all(norm, xsf::dual_var<N>(z), branch_cut, res);
 }
 
-template <typename NormPolicy, typename T>
-void assoc_legendre_p(NormPolicy norm, long long int n, long long int m, T z, long long int branch_cut, T &res,
-                      T &res_jac, T &res_hess) {
-    xsf::dual_assign_grad(xsf::assoc_legendre_p(norm, n, m, xsf::dual_var<2>(z), branch_cut),
-                          std::tie(res, res_jac, res_hess));
+template <typename T, size_t N>
+xsf::dual<T, N> sph_legendre_p(long long int n, long long int m, T theta) {
+    return xsf::sph_legendre_p(n, m, xsf::dual_var<N>(theta));
 }
+template <typename T, typename OutputMat>
+void sph_legendre_p_all(T theta, OutputMat res) {
+    static constexpr size_t N = OutputMat::value_type::max_order();
 
-template <typename NormPolicy, typename T, typename OutputMat1>
-void assoc_legendre_p_all(NormPolicy norm, T z, long long int branch_cut, OutputMat1 res) {
-    xsf::assoc_legendre_p_all(norm, xsf::dual_var<0>(z), branch_cut, std::tie(res));
-}
-
-template <typename NormPolicy, typename T, typename OutputMat1, typename OutputMat2>
-void assoc_legendre_p_all(NormPolicy norm, T z, long long int branch_cut, OutputMat1 res, OutputMat2 res_jac) {
-    xsf::assoc_legendre_p_all(norm, xsf::dual_var<1>(z), branch_cut, std::tie(res, res_jac));
-}
-
-template <typename NormPolicy, typename T, typename OutputMat1, typename OutputMat2, typename OutputMat3>
-void assoc_legendre_p_all(NormPolicy norm, T z, long long int branch_cut, OutputMat1 res, OutputMat2 res_jac,
-                          OutputMat3 res_hess) {
-    xsf::assoc_legendre_p_all(norm, xsf::dual_var<2>(z), branch_cut, std::tie(res, res_jac, res_hess));
-}
-
-template <typename T>
-T sph_legendre_p(long long int n, long long int m, T theta) {
-    return xsf::sph_legendre_p(n, m, theta);
-}
-
-template <typename T>
-void sph_legendre_p(long long int n, long long int m, T theta, T &res, T &res_jac) {
-    xsf::dual_assign_grad(xsf::sph_legendre_p(n, m, xsf::dual_var<1>(theta)), std::tie(res, res_jac));
-}
-
-template <typename T>
-void sph_legendre_p(long long int n, long long int m, T theta, T &res, T &res_jac, T &res_hess) {
-    xsf::dual_assign_grad(xsf::sph_legendre_p(n, m, xsf::dual_var<2>(theta)), std::tie(res, res_jac, res_hess));
-}
-
-template <typename T, typename OutputMat1>
-void sph_legendre_p_all(T theta, OutputMat1 res) {
-    xsf::sph_legendre_p_all(xsf::dual_var<0>(theta), std::tie(res));
-}
-
-template <typename T, typename OutputMat1, typename OutputMat2>
-void sph_legendre_p_all(T theta, OutputMat1 res, OutputMat2 res_jac) {
-    xsf::sph_legendre_p_all(xsf::dual_var<1>(theta), std::tie(res, res_jac));
-}
-
-template <typename T, typename OutputMat1, typename OutputMat2, typename OutputMat3>
-void sph_legendre_p_all(T theta, OutputMat1 res, OutputMat2 res_jac, OutputMat3 res_hess) {
-    xsf::sph_legendre_p_all(xsf::dual_var<2>(theta), std::tie(res, res_jac, res_hess));
+    xsf::sph_legendre_p_all(xsf::dual_var<N>(theta), res);
 }
 
 template <typename T>
