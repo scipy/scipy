@@ -334,8 +334,13 @@ T pow1p_approx(T x, T y) {
         out << "[pow1] y*z=" << yz << std::endl;
         return std::exp(yz);
     } else {
-        // x < -1
-        return std::pow(x+1, y);
+        // x < -1 and y is integer
+        T sign = (std::fmod(y, T(2)) == 0) ? 1 : -1;
+        T z = std::log(-x - 1);
+        out << "[pow1] z=" << z << std::endl;
+        T yz = y * z;
+        out << "[pow1] y*z=" << yz << std::endl;
+        return sign * std::exp(yz);
     }
 }
 
