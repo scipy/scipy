@@ -80,31 +80,38 @@ T log_expit(T x) {
 // to nearest with ties resolved in any way.
 template <typename T>
 void fast_two_sum(const T &a, const T &b, T &s, T &t) {
+    // Raise error if T is likely to be promoted to excess precision
+    static_assert(
+        (!std::is_floating_point<T>::value) ||
+        (FLT_EVAL_METHOD == 0) ||
+        (sizeof(T) == sizeof(long double)) ||
+        (sizeof(T) == sizeof(double) && FLT_EVAL_METHOD == 1),
+        "fast_two_sum may give wrong result under excess precision");
     s = a + b;
     t = s - a;
     t = b - t;
 }
 
-// fast_two_sum that handles excess precision by force rounding.
-template <typename T>
-void fast_two_sum_workaround(const T &a, const T &b, T &s, T &t) {
-    using std::fma;
-    s = fma(T(1), a, b);
-    t = fma(T(-1), a, s);
-    t = fma(T(-1), t, b);
-}
-
-#if FLT_EVAL_METHOD != 0
-inline void fast_two_sum(const float &a, const float &b, float &s, float &t) {
-    fast_two_sum_workaround(a, b, s, t);
-}
-#endif
-
-#if FLT_EVAL_METHOD != 0 && FLT_EVAL_METHOD != 1
-inline void fast_two_sum(const double &a, const double &b, double &s, double &t) {
-    fast_two_sum_workaround(a, b, s, t);
-}
-#endif
+//// fast_two_sum that handles excess precision by force rounding.
+//template <typename T>
+//void fast_two_sum_workaround(const T &a, const T &b, T &s, T &t) {
+//    using std::fma;
+//    s = fma(T(1), a, b);
+//    t = fma(T(-1), a, s);
+//    t = fma(T(-1), t, b);
+//}
+//
+//#if FLT_EVAL_METHOD != 0
+//inline void fast_two_sum(const float &a, const float &b, float &s, float &t) {
+//    fast_two_sum_workaround(a, b, s, t);
+//}
+//#endif
+//
+//#if FLT_EVAL_METHOD != 0 && FLT_EVAL_METHOD != 1
+//inline void fast_two_sum(const double &a, const double &b, double &s, double &t) {
+//    fast_two_sum_workaround(a, b, s, t);
+//}
+//#endif
 
 template <typename T>
 void two_sum(const T &a, const T &b, T &s, T &t) {
@@ -332,6 +339,17 @@ T pow1p_approx(T x, T y) {
     }
 }
 
+// Simplistic implementation of std::bit_width() of C++20.
+template <class T>
+constexpr int bit_width(T val) {
+    int n = 0;
+    while (val > 0) {
+        n += 1;
+        val >>= 1;
+    }
+    return n;
+}
+
 // Return the extra number of bits needed for using the quick method.
 template <class T>
 constexpr int extra_bits_needed() {
@@ -339,29 +357,36 @@ constexpr int extra_bits_needed() {
     constexpr int emin = std::numeric_limits<T>::min_exponent;
     constexpr int emax = std::numeric_limits<T>::max_exponent;
     constexpr int m = (std::max)(p - emin, emax + 1);
-    return 1 + std::ilogb(1 + 1.05*m); // only constexpr since C++23
+    constexpr int qq = static_cast<int>(0.5 * (2.08 + 1.0 / p) * m + 2);
+    return bit_width(qq);
 }
 
 inline double pow1p(double x, double y) {
-    /*constexpr*/ int q = extra_bits_needed<double>();
-    if /*constexpr*/(std::numeric_limits<long double>::digits -
+    constexpr int q = extra_bits_needed<double>();
+    if constexpr(std::numeric_limits<long double>::digits -
                  std::numeric_limits<double>::digits >= q) {
         return pow1p_approx<long double>(x, y);
+    } else if constexpr(FLT_EVAL_METHOD != 0 && FLT_EVAL_METHOD != 1) {
+        return pow1p_precise<long double>(x, y);
     } else {
-        return pow1p_precise(x, y);
+        return pow1p_precise<double>(x, y);
     }
 }
 
 inline float pow1p(float x, float y) {
-    /*constexpr*/ int q = extra_bits_needed<float>();
-    if /*constexpr*/(std::numeric_limits<double>::digits -
+    constexpr int q = extra_bits_needed<float>();
+    if constexpr(std::numeric_limits<double>::digits -
                  std::numeric_limits<float>::digits >= q) {
         return pow1p_approx<double>(x, y);
-    } else if /*constexpr*/(std::numeric_limits<long double>::digits -
+    } else if constexpr(std::numeric_limits<long double>::digits -
                         std::numeric_limits<float>::digits >= q) {
         return pow1p_approx<long double>(x, y);
+    } else if constexpr(FLT_EVAL_METHOD == 1) {
+        return pow1p_precise<double>(x, y);
+    } else if constexpr(FLT_EVAL_METHOD != 0) {
+        return pow1p_precise<long double>(x, y);
     } else {
-        return pow1p_precise(x, y);
+        return pow1p_precise<float>(x, y);
     }
 }
 
