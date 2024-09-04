@@ -788,22 +788,22 @@ ncf_cdf_double(double v1, double v2, double l, double x)
 
 template<typename Real>
 Real
-ncf_ppf_wrap(const Real x, const Real v1, const Real v2, const Real l)
+ncf_ppf_wrap(const Real v1, const Real v2, const Real l, const Real x)
 {
     return boost::math::quantile<Real, StatsPolicy>(
         boost::math::non_central_f_distribution<Real, StatsPolicy>(v1, v2, l), x);
 }
 
 float
-ncf_ppf_float(float x, float v1, float v2, float l)
+ncf_ppf_float(float v1, float v2, float l, float x)
 {
-    return ncf_ppf_wrap(x, v1, v2, l);
+    return ncf_ppf_wrap(v1, v2, l, x);
 }
 
 double
-ncf_ppf_double(double x, double v1, double v2, double l)
+ncf_ppf_double(double v1, double v2, double l, double x)
 {
-    return ncf_ppf_wrap(x, v1, v2, l);
+    return ncf_ppf_wrap(v1, v2, l, x);
 }
 
 template<typename Real>

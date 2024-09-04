@@ -6901,7 +6901,7 @@ add_newdoc("ncfdtri",
     dfd : array_like
         Degrees of freedom of the denominator sum of squares.  Range (0, inf).
     nc : array_like
-        Noncentrality parameter.  Should be in range (0, 1e4).
+        Noncentrality parameter. Range (0, inf).
     p : array_like
         Value of the cumulative distribution function.  Must be in the
         range [0, 1].
@@ -6912,6 +6912,16 @@ add_newdoc("ncfdtri",
     -------
     f : scalar or ndarray
         Quantiles, i.e., the upper limit of integration.
+
+    Notes
+    -----
+
+    This function calculates the quantile function of the non-central f
+    distribution using the Boost Math C++ library [1]_.
+
+    References
+    ----------
+    .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
 
     See Also
     --------

@@ -716,12 +716,6 @@ class TestCephes:
     def test_ncfdtr(self):
         assert_equal(cephes.ncfdtr(1,1,1,0),0.0)
 
-    @pytest.mark.xfail(
-        reason=(
-            "ncfdtr uses a Boost math implementation but ncfdtri"
-            "inverts the less accurate cdflib implementation of ncfdtr."
-        )
-    )
     def test_ncfdtri(self):
         assert_equal(cephes.ncfdtri(1, 1, 1, 0), 0.0)
         f = [0.5, 1, 1.5]
