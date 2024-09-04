@@ -41,10 +41,12 @@ PTS = np.concatenate([-PTS[::-1], [0], PTS])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
 def test_dtype_preservation(method, dtype):
     rtol = np.finfo(dtype).eps ** 0.75 * 100
+    if method is FloaterHormannInterpolator:
+        rtol *= 100
     rng = np.random.default_rng(59846294526092468)
 
     z = np.linspace(-1, 1, dtype=dtype)
-    r = AAA(z, np.sin(z))
+    r = method(z, np.sin(z))
 
     z2 = rng.uniform(-1, 1, size=100).astype(dtype)
     assert_allclose(r(z2), np.sin(z2), rtol=rtol)

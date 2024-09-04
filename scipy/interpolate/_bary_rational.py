@@ -231,7 +231,8 @@ class AAA(_BarycentricRational):
 
     See Also
     --------
-    FloaterHormann : Floater-Hormann weights for barycentric rational interpolation.
+    FloaterHormannInterpolator : Floater-Hormann weights for barycentric rational
+    interpolation.
     pade : Padé approximation.
 
     Notes
