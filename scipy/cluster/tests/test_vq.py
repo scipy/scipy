@@ -1,6 +1,7 @@
 import warnings
 import sys
 from copy import deepcopy
+from threading import Lock
 
 import numpy as np
 from numpy.testing import (
@@ -96,7 +97,6 @@ class TestWhiten:
 
     @pytest.fixture
     def whiten_lock(self):
-        from threading import Lock
         return Lock()
 
     @skip_xp_backends('jax.numpy',
@@ -350,18 +350,17 @@ class TestKMean:
             kmeans2(data[:, 1], k, minit='random')  # special case (1-D)
 
     @pytest.fixture
-    def krand_semaphore(self):
-        from threading import Semaphore
-        return Semaphore(5)
+    def krand_lock(self):
+        return Lock()
 
     @pytest.mark.skipif(sys.platform == 'win32',
                         reason='Fails with MemoryError in Wine.')
-    def test_krandinit(self, xp, krand_semaphore):
+    def test_krandinit(self, xp, krand_lock):
         data = xp.asarray(TESTDATA_2D)
         datas = [xp.reshape(data, (200, 2)),
                  xp.reshape(data, (20, 20))[:10, :]]
         k = int(1e6)
-        with krand_semaphore:
+        with krand_lock:
             for data in datas:
                 rng = np.random.default_rng(1234)
                 init = _krandinit(data, k, rng, xp)
@@ -386,29 +385,36 @@ class TestKMean:
         xp_assert_close(res[0], xp.asarray([4.], dtype=xp.float64))
         xp_assert_close(res[1], xp.asarray(2.3999999999999999, dtype=xp.float64)[()])
 
-    @skip_xp_backends('jax.numpy',
-                      reason='jax arrays do not support item assignment')
-    def test_kmeans2_kpp_low_dim(self, xp):
-        # Regression test for gh-11462
-        prev_res = xp.asarray([[-1.95266667, 0.898],
-                               [-3.153375, 3.3945]], dtype=xp.float64)
-        np.random.seed(42)
-        res, _ = kmeans2(xp.asarray(TESTDATA_2D), 2, minit='++')
-        xp_assert_close(res, prev_res)
+    @pytest.fixture
+    def kmeans_lock(self):
+        return Lock()
 
     @skip_xp_backends('jax.numpy',
                       reason='jax arrays do not support item assignment')
-    def test_kmeans2_kpp_high_dim(self, xp):
+    def test_kmeans2_kpp_low_dim(self, xp, kmeans_lock):
+        # Regression test for gh-11462
+        prev_res = xp.asarray([[-1.95266667, 0.898],
+                               [-3.153375, 3.3945]], dtype=xp.float64)
+        with kmeans_lock:
+            np.random.seed(42)
+            res, _ = kmeans2(xp.asarray(TESTDATA_2D), 2, minit='++')
+            xp_assert_close(res, prev_res)
+
+    @skip_xp_backends('jax.numpy',
+                      reason='jax arrays do not support item assignment')
+    def test_kmeans2_kpp_high_dim(self, xp, kmeans_lock):
         # Regression test for gh-11462
         n_dim = 100
         size = 10
         centers = np.vstack([5 * np.ones(n_dim),
                              -5 * np.ones(n_dim)])
-        np.random.seed(42)
-        data = np.vstack([
-            np.random.multivariate_normal(centers[0], np.eye(n_dim), size=size),
-            np.random.multivariate_normal(centers[1], np.eye(n_dim), size=size)
-        ])
+
+        with kmeans_lock:
+            np.random.seed(42)
+            data = np.vstack([
+                np.random.multivariate_normal(centers[0], np.eye(n_dim), size=size),
+                np.random.multivariate_normal(centers[1], np.eye(n_dim), size=size)
+            ])
 
         data = xp.asarray(data)
         res, _ = kmeans2(data, 2, minit='++')
