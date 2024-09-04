@@ -31,6 +31,7 @@ Univariate interpolation
    CubicSpline
    PPoly
    BPoly
+   FloaterHormann
 
 
 Multivariate interpolation
@@ -145,7 +146,6 @@ Rational Approximation
 
    pade
    AAA
-   FloaterHormann
 
 Additional tools
 ================

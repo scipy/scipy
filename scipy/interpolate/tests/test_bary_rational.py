@@ -29,7 +29,7 @@ import numpy as np
 from numpy.testing import assert_allclose, assert_equal
 import pytest
 import scipy
-from scipy.interpolate import AAA, FloaterHormann, BarycentricInterpolator
+from scipy.interpolate import AAA, FloaterHormannInterpolator, BarycentricInterpolator
 
 TOL = 1e4 * np.finfo(np.float64).eps
 UNIT_INTERVAL = np.linspace(-1, 1, num=1000)
@@ -37,7 +37,7 @@ PTS = np.logspace(-15, 0, base=10, num=500)
 PTS = np.concatenate([-PTS[::-1], [0], PTS])
 
 
-@pytest.mark.parametrize("method", [AAA, FloaterHormann])
+@pytest.mark.parametrize("method", [AAA, FloaterHormannInterpolator])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
 def test_dtype_preservation(method, dtype):
     rtol = np.finfo(dtype).eps ** 0.75 * 100
@@ -250,11 +250,11 @@ class TestFloaterHormann:
 
     def test_iv(self):
         with pytest.raises(ValueError, match="`d`"):
-            FloaterHormann([0], [0], d=-1)
+            FloaterHormannInterpolator([0], [0], d=-1)
         with pytest.raises(ValueError, match="`d`"):
-            FloaterHormann([0], [0], d=10)
+            FloaterHormannInterpolator([0], [0], d=10)
         with pytest.raises(TypeError):
-            FloaterHormann([0], [0], d=0.0)
+            FloaterHormannInterpolator([0], [0], d=0.0)
 
     @pytest.mark.parametrize("d,expected", [
         (0, [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]),
@@ -266,7 +266,7 @@ class TestFloaterHormann:
     def test_uniform_grid(self, d, expected):
         # Check against explicit results on an uniform grid
         x = np.arange(11)
-        r = FloaterHormann(x, 0.0*x, d=d)
+        r = FloaterHormannInterpolator(x, 0.0*x, d=d)
         assert_allclose(r.weights*self.scale(x.size, d), expected,
                         rtol=1e-15, atol=1e-15)
 
@@ -277,7 +277,7 @@ class TestFloaterHormann:
         y = self.runge(x)
         h = x[1] - x[0]
 
-        r = FloaterHormann(x, y, d=d)
+        r = FloaterHormannInterpolator(x, y, d=d)
 
         tol = 10*h**(d+1)
         assert_allclose(r(xx), self.runge(xx), atol=1e-10, rtol=tol)
@@ -287,7 +287,7 @@ class TestFloaterHormann:
     def test_complex(self):
         x = np.linspace(-1, 1)
         z = x + x*1j
-        r = FloaterHormann(z, np.sin(z), d=12)
+        r = FloaterHormannInterpolator(z, np.sin(z), d=12)
         xx = np.linspace(-1, 1, num=1000)
         zz = xx + xx*1j
         assert_allclose(r(zz), np.sin(zz), rtol=1e-12)
@@ -297,6 +297,6 @@ class TestFloaterHormann:
         x = np.linspace(0, 1, 11)
         xx = np.linspace(0, 1, 1001)
         y = np.sin(x)
-        r = FloaterHormann(x, y, d=x.size-1)
+        r = FloaterHormannInterpolator(x, y, d=x.size-1)
         p = BarycentricInterpolator(x, y)
         assert_allclose(r(xx), p(xx), rtol=1e-12, atol=1e-12)

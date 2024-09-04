@@ -30,7 +30,7 @@ import numpy as np
 import scipy
 
 
-__all__ = ["AAA", "FloaterHormann"]
+__all__ = ["AAA", "FloaterHormannInterpolator"]
 
 
 class _BarycentricRational:
@@ -565,7 +565,7 @@ class AAA(_BarycentricRational):
         return ni
 
 
-class FloaterHormann(_BarycentricRational):
+class FloaterHormannInterpolator(_BarycentricRational):
     r"""
     Floater-Hormann barycentric rational interpolation.
 
