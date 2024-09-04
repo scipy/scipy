@@ -811,8 +811,31 @@ template<typename Real>
 Real
 ncf_ppf_wrap(const Real v1, const Real v2, const Real l, const Real x)
 {
-    return boost::math::quantile<Real, StatsPolicy>(
-        boost::math::non_central_f_distribution<Real, StatsPolicy>(v1, v2, l), x);
+    if (std::isnan(x) || std::isnan(v1) || std::isnan(v2) || std::isnan(l)) {
+	return NAN;
+    }
+    if ((v1 <= 0) || (v2 <= 0) || (l <= 0) || (x < 0) || (x > 1)) {
+	sf_error("ncfdtr", SF_ERROR_DOMAIN, NULL);
+	return NAN;
+    }
+    Real y;
+    try {
+	y = boost::math::quantile<Real, SpecialPolicy>(
+                boost::math::non_central_f_distribution<Real, SpecialPolicy>(v1, v2, l), x);
+    } catch (const std::domain_error& e) {
+        sf_error("ncfdtri", SF_ERROR_DOMAIN, NULL);
+        y = NAN;
+    } catch (const std::overflow_error& e) {
+        sf_error("ncfdtri", SF_ERROR_OVERFLOW, NULL);
+        y = INFINITY;
+    } catch (const std::underflow_error& e) {
+        sf_error("ncfdtri", SF_ERROR_UNDERFLOW, NULL);
+        y = 0;
+    } catch (...) {
+        sf_error("ncfdtri", SF_ERROR_OTHER, NULL);
+        y = NAN;
+    }
+    return y;
 }
 
 float
