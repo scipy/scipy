@@ -72,6 +72,24 @@ T log_expit(T x) {
 #error "Missing definition of FLT_EVAL_METHOD; C++11 or above required"
 #endif
 
+template <class T>
+constexpr int get_probable_working_precision() {
+    if (std::is_floating_point<T>::value) {
+        switch (FLT_EVAL_METHOD) {
+            case 0:
+                break;
+            case 1:
+                return std::numeric_limits<double>::digits;
+            case 2:
+                return std::numeric_limits<long double>::digits;
+            default:
+                // If we don't know, assume it's promoted to highest
+                return std::numeric_limits<long double>::digits;
+        }
+    }
+    return 0;
+}
+
 // Compute the exact sum of floating point numbers a and b and store the
 // result in s and t such that (a + b) == (s + t) exactly and |s| >> |t|.
 // Requires |a| >= |b|.
@@ -82,10 +100,7 @@ template <typename T>
 void fast_two_sum(const T &a, const T &b, T &s, T &t) {
     // Raise error if T is likely to be promoted to excess precision
     static_assert(
-        (!std::is_floating_point<T>::value) ||
-        (FLT_EVAL_METHOD == 0) ||
-        (sizeof(T) == sizeof(long double)) ||
-        (sizeof(T) == sizeof(double) && FLT_EVAL_METHOD == 1),
+        get_probable_working_precision<T>() <= std::numeric_limits<T>::digits,
         "fast_two_sum may give wrong result under excess precision");
     s = a + b;
     t = s - a;
@@ -367,11 +382,13 @@ constexpr int extra_bits_needed() {
 }
 
 inline double pow1p(double x, double y) {
+    // Promote double to long double only if FLT_EVAL_METHOD tells us to.
     constexpr int q = extra_bits_needed<double>();
-    if constexpr(std::numeric_limits<long double>::digits -
+    if constexpr(FLT_EVAL_METHOD == 2 &&
+                 std::numeric_limits<long double>::digits -
                  std::numeric_limits<double>::digits >= q) {
         return pow1p_approx<long double>(x, y);
-    } else if constexpr(FLT_EVAL_METHOD != 0 && FLT_EVAL_METHOD != 1) {
+    } else if constexpr(FLT_EVAL_METHOD == 2) {
         return pow1p_precise<long double>(x, y);
     } else {
         return pow1p_precise<double>(x, y);
@@ -379,17 +396,20 @@ inline double pow1p(double x, double y) {
 }
 
 inline float pow1p(float x, float y) {
+    // Promote to double by default, and to long double only if
+    // double is not enough and FLT_EVAL_METHOD tells us to.
     constexpr int q = extra_bits_needed<float>();
     if constexpr(std::numeric_limits<double>::digits -
                  std::numeric_limits<float>::digits >= q) {
         return pow1p_approx<double>(x, y);
-    } else if constexpr(std::numeric_limits<long double>::digits -
+    } else if constexpr(FLT_EVAL_METHOD == 2 &&
+                        std::numeric_limits<long double>::digits -
                         std::numeric_limits<float>::digits >= q) {
         return pow1p_approx<long double>(x, y);
+    } else if constexpr(FLT_EVAL_METHOD == 2) {
+        return pow1p_precise<long double>(x, y);
     } else if constexpr(FLT_EVAL_METHOD == 1) {
         return pow1p_precise<double>(x, y);
-    } else if constexpr(FLT_EVAL_METHOD != 0) {
-        return pow1p_precise<long double>(x, y);
     } else {
         return pow1p_precise<float>(x, y);
     }

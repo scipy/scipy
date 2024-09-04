@@ -133,7 +133,8 @@ class TestPow1p:
         ("just finite", -1.674682175362519e+16, 19.0, -1.7976931348623155e+308),
 
         # A randomly picked case with even exponent
-        ("even power", -1e+16, 18, 9.9999999999999825e+287),
+        ("even power neg", -1e+16, 18, 9.9999999999999825e+287),
+        ("even power pos", 9999999999999998, 18, 9.9999999999999825e+287),
     ])
     def test_selected_values(self, label, x, y, expected):
         # Coverage test using crafted inputs.  The 'expected' values are
