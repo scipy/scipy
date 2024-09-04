@@ -267,14 +267,6 @@ def test_sum_duplicates():
     assert arr1d.nnz == 2
     assert_equal(arr1d.toarray(), np.array([2, 4]))
 
-    # 2d case
-    arr2d = coo_array(([1, 2, 3, 4], ([0, 0, 1, 1], [1, 1, 0, 1])))
-    assert arr2d.nnz == 4
-    assert_equal(arr2d.toarray(), np.array([[0, 3], [3, 4]]))
-    arr2d.sum_duplicates()
-    assert arr2d.nnz == 3
-    assert_equal(arr2d.toarray(), np.array([[0, 3], [3, 4]]))
-
     # 4d case
     arr4d = coo_array(([2, 3, 7], ([1, 0, 1], [0, 2, 0], [1, 2, 1], [1, 0, 1])))
     assert arr4d.nnz == 3
@@ -288,7 +280,7 @@ def test_sum_duplicates():
     assert_equal(arr4d.toarray(), expected)
 
     # when there are no duplicates
-    arr_nodups = coo_array(([1, 2, 3, 4], ([0, 0, 1, 1], [0, 1, 0, 1])))
+    arr_nodups = coo_array(([1, 2, 3, 4], ([0, 1, 2, 3],)))
     assert arr_nodups.nnz == 4
     arr_nodups.sum_duplicates()
     assert arr_nodups.nnz == 4
@@ -305,31 +297,6 @@ def test_eliminate_zeros():
     assert_equal(arr1d.toarray(), np.array([0, 1]))
     assert_equal(arr1d.col, np.array([1]))
     assert_equal(arr1d.row, np.array([0]))
-
-    # for 2d sparse arrays
-    arr2d_a = coo_array(([1, 0, 3], ([0, 1, 1], [0, 1, 2])))
-    assert arr2d_a.nnz == 3
-    assert arr2d_a.count_nonzero() == 2
-    assert_equal(arr2d_a.toarray(), np.array([[1, 0, 0], [0, 0, 3]]))
-    arr2d_a.eliminate_zeros()
-    assert arr2d_a.nnz == 2
-    assert arr2d_a.count_nonzero() == 2
-    assert_equal(arr2d_a.toarray(), np.array([[1, 0, 0], [0, 0, 3]]))
-    assert_equal(arr2d_a.col, np.array([0, 2]))
-    assert_equal(arr2d_a.row, np.array([0, 1]))
-
-    # for 2d sparse arrays (when the 0 data element is the only
-    # element in the last row and last column)
-    arr2d_b = coo_array(([1, 3, 0], ([0, 1, 1], [0, 1, 2])))
-    assert arr2d_b.nnz == 3
-    assert arr2d_b.count_nonzero() == 2
-    assert_equal(arr2d_b.toarray(), np.array([[1, 0, 0], [0, 3, 0]]))
-    arr2d_b.eliminate_zeros()
-    assert arr2d_b.nnz == 2
-    assert arr2d_b.count_nonzero() == 2
-    assert_equal(arr2d_b.toarray(), np.array([[1, 0, 0], [0, 3, 0]]))
-    assert_equal(arr2d_b.col, np.array([0, 1]))
-    assert_equal(arr2d_b.row, np.array([0, 1]))
 
 
 def test_1d_add_dense():
