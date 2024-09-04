@@ -6821,7 +6821,7 @@ add_newdoc("ncfdtr",
     dfd : array_like
         Degrees of freedom of the denominator sum of squares.  Range (0, inf).
     nc : array_like
-        Noncentrality parameter.  Should be in range (0, 1e4).
+        Noncentrality parameter.  Range (0, inf).
     f : array_like
         Quantiles, i.e. the upper limit of integration.
     out : ndarray, optional
