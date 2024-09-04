@@ -774,8 +774,24 @@ ncf_cdf_wrap(const Real v1, const Real v2, const Real l, const Real x)
 	return 1.0 - std::signbit(x);
     }
     Real y;
-    y = boost::math::cdf(
-            boost::math::non_central_f_distribution<Real, SpecialPolicy>(v1, v2, l), x);
+    try {
+	/* Based on a study of the source code for the cdf of the noncentral F
+	 * distribution within Boost at:
+	 * https://github.com/boostorg/math/blob/develop/include/boost/math/distributions/non_central_f.hpp
+	 * which calls the cdf of the noncentral Beta distribution:
+	 * https://github.com/boostorg/math/blob/develop/include/boost/math/distributions/non_central_beta.hpp
+	 * It does not appear that Boost can raise any errors here other than domain
+	 * error, but domain errors are already handled earlier in the wrapper. If
+	 * this try-catch block catches something, that would be unexpected, but it
+	 * feels wrong to call to Boost directly without a try-catch block when
+	 * SpecialPolicy is being used.
+	 */
+	y = boost::math::cdf(
+                boost::math::non_central_f_distribution<Real, SpecialPolicy>(v1, v2, l), x);
+    } catch (...) {
+        sf_error("ncfdtr", SF_ERROR_OTHER, NULL);
+        y = NAN;
+    }
     return y;
 }
 
