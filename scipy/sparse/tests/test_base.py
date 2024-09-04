@@ -853,7 +853,6 @@ class _TestCommon:
             assert_equal(A.trace(offset=k), B.trace(offset=k))
 
     def test_reshape(self):
-        # This first example is taken from the lil_object reshaping test.
         x = self.spcreator([[1, 0, 7], [0, 0, 0], [0, 3, 0], [0, 0, 5]])
         for order in ['C', 'F']:
             for s in [(12, 1), (1, 12)]:
@@ -1945,8 +1944,7 @@ class _TestCommon:
             assert_equal(b.format,format)
             assert_array_equal(b.toarray(), D+3j)
 
-            _object_str = '_array' if self.is_array_test else '_matrix'
-            c = eval(format + _object_str)(A)
+            c = self.spcreator(D).asformat(format)
             assert_equal(c.format,format)
             assert_array_equal(c.toarray(), D)
 
@@ -2218,7 +2216,7 @@ class _TestCommon:
             if name == "sign":
                 pytest.skip("sign conflicts with comparison op "
                             "support on Numpy")
-            if self.datsp.format in ['dok', 'lil']:
+            if self.datsp.format in ["dok", "lil"]:
                 pytest.skip("Unary ops not implemented for dok/lil")
             ufunc = getattr(np, name)
 
@@ -3641,12 +3639,11 @@ class _TestMinMax:
             assert_equal(X.min(axis=axis, explicit=True).toarray(), expected)
 
         for axis in axes_odd:
-            if self.is_array_test:
-                expected_max = np.array([8, 0, 28, 38, 48])
-                expected_min = np.array([1, 0, -1, 30, 40])
-            else:
-                expected_max = np.array([[8], [0], [28], [38], [48]])
-                expected_min = np.array([[1], [0], [-1], [30], [40]])
+            expected_max = np.array([8, 0, 28, 38, 48])
+            expected_min = np.array([1, 0, -1, 30, 40])
+            if not self.is_array_test:
+                expected_max = expected_max.reshape((5, 1))
+                expected_min = expected_min.reshape((5, 1))
             assert_equal(X.max(axis=axis, explicit=True).toarray(), expected_max)
             assert_equal(X.min(axis=axis, explicit=True).toarray(), expected_min)
 
@@ -3662,16 +3659,17 @@ class _TestMinMax:
             )
 
         for axis in axes_even:
-            assert_equal(X.max(axis=axis, explicit=True).toarray(),
-                               self.asdense([46, 47, 48, 49, 50]))
-            assert_equal(X.min(axis=axis, explicit=True).toarray(),
-                               self.asdense([1, 2, 3, 4, 5]))
+            expected_max = D[-1, :]
+            expected_min = D[0, :]
+            if not self.is_array_test:
+                expected_max = D[None, -1, :]
+                expected_min = D[None, 0, :]
+            assert_equal(X.max(axis=axis, explicit=True).toarray(), expected_max)
+            assert_equal(X.min(axis=axis, explicit=True).toarray(), expected_min)
         for axis in axes_odd:
-            if self.is_array_test:
-                expected_max = np.array([5, 10, 15, 20, 25, 30, 35, 40, 45, 50])
-                expected_min = np.array([1, 6, 11, 16, 21, 26, 31, 36, 41, 46])
-            else:
-                # 2D-column version of expected values for is_array_test
+            expected_max = D[:, -1]
+            expected_min = D[:, 0]
+            if not self.is_array_test:
                 expected_max = D[:, -1, None]
                 expected_min = D[:, 0, None]
             assert_equal(X.max(axis=axis, explicit=True).toarray(), expected_max)
@@ -3818,20 +3816,15 @@ class _TestMinMax:
         assert_equal(mat.argmax(axis=0, explicit=True), self.asdense([3, 0, 3, 3]))
         assert_equal(mat.argmin(axis=0, explicit=True), self.asdense([0, 2, 2, 2]))
 
-        if self.is_array_test:
-            expected_max = np.array([1, 2, 0, 3, 1])
-            if mat.nnz != 16:
-                # Noncanonical case
-                expected_min = np.array([0, 3, 3, 0, 2])
-            else:
-                expected_min = np.array([0, 3, 3, 0, 0])
-        else:
-            expected_max = np.array([[1], [2], [0], [3], [1]])
-            if mat.nnz != 16:
-                # Noncanonical case
-                expected_min = np.array([[0], [3], [3], [0], [2]])
-            else:
-                expected_min = np.array([[0], [3], [3], [0], [0]])
+        expected_max = np.array([1, 2, 0, 3, 1])
+        expected_min = np.array([0, 3, 3, 0, 0])
+        if mat.nnz != 16:
+            # Noncanonical case
+            expected_min[-1] = 2
+        if not self.is_array_test:
+            expected_max = expected_max.reshape((5, 1))
+            expected_min = expected_min.reshape((5, 1))
+
         assert_equal(mat.argmax(axis=1, explicit=True), expected_max)
         assert_equal(asarray(mat.argmin(axis=1, explicit=True)), expected_min)
 
@@ -4039,6 +4032,7 @@ class TestCSR(sparse_test_class()):
                    [4, 3, 0],
                    [5, 0, 6]], 'd')
 
+        # sparray is less aggressive in downcasting indices to int32 than spmatrix
         expected_dtype = np.dtype(np.int64 if self.is_array_test else np.int32)
         assert_equal(a.indptr.dtype, expected_dtype)
         assert_equal(a.indices.dtype, expected_dtype)
@@ -5232,7 +5226,7 @@ class TestCSRNonCanonical(_NonCanonicalCSMixin, TestCSR):
     pass
 
 
-class TestCSRNonCanonical_matrix(TestCSRNonCanonical, TestCSRMatrix):
+class TestCSRNonCanonicalMatrix(TestCSRNonCanonical, TestCSRMatrix):
     pass
 
 
@@ -5240,7 +5234,7 @@ class TestCSCNonCanonical(_NonCanonicalCSMixin, TestCSC):
     pass
 
 
-class TestCSCNonCanonical_matrix(TestCSCNonCanonical, TestCSCMatrix):
+class TestCSCNonCanonicalMatrix(TestCSCNonCanonical, TestCSCMatrix):
     pass
 
 
@@ -5259,7 +5253,7 @@ class TestBSRNonCanonical(_NonCanonicalCompressedMixin, TestBSR):
         pass
 
 
-class TestBSRNonCanonical_matrix(TestBSRNonCanonical, TestBSRMatrix):
+class TestBSRNonCanonicalMatrix(TestBSRNonCanonical, TestBSRMatrix):
     pass
 
 
@@ -5283,7 +5277,7 @@ class TestCOONonCanonical(_NonCanonicalMixin, TestCOO):
         assert_(np.all(np.diff(m.col) >= 0))
 
 
-class TestCOONonCanonical_matrix(TestCOONonCanonical, TestCOOMatrix):
+class TestCOONonCanonicalMatrix(TestCOONonCanonical, TestCOOMatrix):
     pass
 
 
