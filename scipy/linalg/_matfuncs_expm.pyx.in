@@ -148,7 +148,8 @@ def pick_pade_structure(cnp.ndarray[ndim=3, dtype=numpy_lapack_t] Am):
     # 1-norm of A ** 7
     np.matmul(absA, work_arr, out=work_arr)
     np.matmul(absA, work_arr, out=work_arr)
-    absA_pow4 = np.matmul(absA, work_arr)
+    absA_pow4 = Am[1, :, :] # use the slice Am[1] as a working buffer
+    np.matmul(absA, work_arr, absA_pow4)
     del absA
     np.matmul(absA_pow4, work_arr, out=work_arr)
     temp = work_arr.max()
