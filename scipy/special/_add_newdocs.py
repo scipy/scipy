@@ -6821,7 +6821,7 @@ add_newdoc("ncfdtr",
     dfd : array_like
         Degrees of freedom of the denominator sum of squares.  Range (0, inf).
     nc : array_like
-        Noncentrality parameter.  Should be in range (0, 1e4).
+        Noncentrality parameter.  Range (0, inf).
     f : array_like
         Quantiles, i.e. the upper limit of integration.
     out : ndarray, optional
@@ -6839,6 +6839,7 @@ add_newdoc("ncfdtr",
     ncfdtridfd : Inverse of `ncfdtr` with respect to `dfd`.
     ncfdtridfn : Inverse of `ncfdtr` with respect to `dfn`.
     ncfdtrinc : Inverse of `ncfdtr` with respect to `nc`.
+    scipy.stats.ncf : Non-central F distribution.
 
     Notes
     -----
@@ -6854,6 +6855,10 @@ add_newdoc("ncfdtr",
 
     where :math:`I` is the regularized incomplete beta function, and
     :math:`x = f d_n/(f d_n + d_d)`.
+
+    Note that argument order of `ncfdtr` is different from that
+    of `scipy.stats.ncf.cdf`. `f` is the last parameter of `ncfdtr`
+    but the first parameter of `scipy.stats.ncf.cdf`.
 
     References
     ----------
