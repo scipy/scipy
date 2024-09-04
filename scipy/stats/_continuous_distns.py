@@ -7722,7 +7722,7 @@ class ncf_gen(rv_continuous):
 
     def _ppf(self, q, dfn, dfd, nc):
         with np.errstate(over='ignore'):  # see gh-17432
-            return scu._ncf_ppf(q, dfn, dfd, nc)
+            return sc.ncfdtri(dfn, dfd, nc, q)
 
     def _sf(self, x, dfn, dfd, nc):
         return scu._ncf_sf(x, dfn, dfd, nc)
