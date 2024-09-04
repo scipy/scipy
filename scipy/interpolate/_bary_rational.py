@@ -659,6 +659,7 @@ class FloaterHormann(_BarycentricRational):
     >>> plt.show()
     """
     def __init__(self, points, values, *, d=3):
+        d = operator.index(d)
         if not (0 <= d < len(points)):
             raise ValueError("`d` must satisfy 0 <= d < n")
 

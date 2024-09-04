@@ -253,6 +253,8 @@ class TestFloaterHormann:
             FloaterHormann([0], [0], d=-1)
         with pytest.raises(ValueError, match="`d`"):
             FloaterHormann([0], [0], d=10)
+        with pytest.raises(TypeError):
+            FloaterHormann([0], [0], d=0.0)
 
     @pytest.mark.parametrize("d,expected", [
         (0, [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]),
