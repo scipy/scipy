@@ -132,7 +132,7 @@ def pick_pade_structure(cnp.ndarray[ndim=3, dtype=numpy_lapack_t] Am):
     absA = np.abs(Am[0, :, :])
 
     # First spin = normest(|A|, m=1), increase m when spun more
-    np.matmul(absA, work_arr, out=work_arr)
+    np.copyto(work_arr, absA)
     normA = work_arr.max()
 
     np.matmul(Am[0, :, :], Am[0, :, :], out=Am[1, :, :])
@@ -146,11 +146,11 @@ def pick_pade_structure(cnp.ndarray[ndim=3, dtype=numpy_lapack_t] Am):
     # m = 3
     # -------
     # 1-norm of A ** 7
-    for i in range(3):
-        np.matmul(absA, work_arr, out=work_arr)
-    absA_pow4 = work_arr.copy()
-    for i in range(3):
-        np.matmul(absA, work_arr, out=work_arr)
+    np.matmul(absA, work_arr, out=work_arr)
+    np.matmul(absA, work_arr, out=work_arr)
+    absA_pow4 = np.matmul(absA, work_arr)
+    del absA
+    np.matmul(absA_pow4, work_arr, out=work_arr)
     temp = work_arr.max()
 
     lm = max(<int>ceil(log2(temp/normA/coeff[0])/6), 0)
@@ -209,7 +209,7 @@ def pick_pade_structure(cnp.ndarray[ndim=3, dtype=numpy_lapack_t] Am):
     s = max(<int>ceil(log2(eta4/theta[4])), 0)
     if s != 0:
         two_pow_s = 2.** (-s)
-        absA *= two_pow_s
+        absA_pow4 *= two_pow_s ** 4
 
         # work_arr has spun 19 times already
         two_pow_s = 2.** ((-s)*19.)
