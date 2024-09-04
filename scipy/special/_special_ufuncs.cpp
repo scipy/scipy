@@ -579,13 +579,13 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
         "(N, N, N)",
         xsf::numpy::gufunc(
             {static_cast<xsf::numpy::A0_qd_d>(::legendre_p), static_cast<xsf::numpy::A0_qf_f>(::legendre_p)},
-            "legendre_p", nullptr, "(),()->(n)", [](const npy_intp *dims, npy_intp *new_dims) {}),
+            "legendre_p", nullptr, "(),()->(1)", [](const npy_intp *dims, npy_intp *new_dims) {}),
         xsf::numpy::gufunc(
             {static_cast<xsf::numpy::A1_qd_d>(::legendre_p), static_cast<xsf::numpy::A1_qf_f>(::legendre_p)},
-            "legendre_p", nullptr, "(),()->(n)", [](const npy_intp *dims, npy_intp *new_dims) {}),
+            "legendre_p", nullptr, "(),()->(2)", [](const npy_intp *dims, npy_intp *new_dims) {}),
         xsf::numpy::gufunc(
             {static_cast<xsf::numpy::A2_qd_d>(::legendre_p), static_cast<xsf::numpy::A2_qf_f>(::legendre_p)},
-            "legendre_p", nullptr, "(),()->(n)", [](const npy_intp *dims, npy_intp *new_dims) {}));
+            "legendre_p", nullptr, "(),()->(3)", [](const npy_intp *dims, npy_intp *new_dims) {}));
     PyModule_AddObjectRef(_special_ufuncs, "legendre_p", legendre_p);
 
     PyObject *assoc_legendre_p = Py_BuildValue(

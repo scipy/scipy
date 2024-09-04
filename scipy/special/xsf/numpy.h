@@ -56,11 +56,17 @@ namespace numpy {
     using cdouble_3d = std::mdspan<cdouble, std::dextents<ptrdiff_t, 3>, std::layout_stride>;
     using cdouble_4d = std::mdspan<cdouble, std::dextents<ptrdiff_t, 4>, std::layout_stride>;
 
+    using ad0_float_1d = std::mdspan<dual<float, 0>, std::dextents<ptrdiff_t, 1>, std::layout_stride>;
     using ad0_double_1d = std::mdspan<dual<double, 0>, std::dextents<ptrdiff_t, 1>, std::layout_stride>;
+    using ad0_cfloat_1d = std::mdspan<dual<cfloat, 0>, std::dextents<ptrdiff_t, 1>, std::layout_stride>;
     using ad0_cdouble_1d = std::mdspan<dual<cdouble, 0>, std::dextents<ptrdiff_t, 1>, std::layout_stride>;
+    using ad1_float_1d = std::mdspan<dual<float, 1>, std::dextents<ptrdiff_t, 1>, std::layout_stride>;
     using ad1_double_1d = std::mdspan<dual<double, 1>, std::dextents<ptrdiff_t, 1>, std::layout_stride>;
+    using ad1_cfloat_1d = std::mdspan<dual<cfloat, 1>, std::dextents<ptrdiff_t, 1>, std::layout_stride>;
     using ad1_cdouble_1d = std::mdspan<dual<cdouble, 1>, std::dextents<ptrdiff_t, 1>, std::layout_stride>;
+    using ad2_float_1d = std::mdspan<dual<float, 2>, std::dextents<ptrdiff_t, 1>, std::layout_stride>;
     using ad2_double_1d = std::mdspan<dual<double, 2>, std::dextents<ptrdiff_t, 1>, std::layout_stride>;
+    using ad2_cfloat_1d = std::mdspan<dual<cfloat, 2>, std::dextents<ptrdiff_t, 1>, std::layout_stride>;
     using ad2_cdouble_1d = std::mdspan<dual<cdouble, 2>, std::dextents<ptrdiff_t, 1>, std::layout_stride>;
 
     // The following are based off NumPy's dtype type codes and functions like PyUFunc_dd_d
@@ -72,11 +78,17 @@ namespace numpy {
     using D_D = cdouble (*)(cdouble);
 
     // autodiff, 1 input, 1 output
+    using A0_f_f1 = void (*)(float, ad0_float_1d);
     using A0_d_d1 = void (*)(double, ad0_double_1d);
+    using A0_F_F1 = void (*)(cfloat, ad0_cfloat_1d);
     using A0_D_D1 = void (*)(cdouble, ad0_cdouble_1d);
+    using A1_f_f1 = void (*)(float, ad1_float_1d);
     using A1_d_d1 = void (*)(double, ad1_double_1d);
+    using A1_F_F1 = void (*)(cfloat, ad1_cfloat_1d);
     using A1_D_D1 = void (*)(cdouble, ad1_cdouble_1d);
+    using A2_f_f1 = void (*)(float, ad2_float_1d);
     using A2_d_d1 = void (*)(double, ad2_double_1d);
+    using A2_F_F1 = void (*)(cfloat, ad2_cfloat_1d);
     using A2_D_D1 = void (*)(cdouble, ad2_cdouble_1d);
 
     // 1 input, 2 outputs

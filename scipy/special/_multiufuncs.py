@@ -104,7 +104,8 @@ class MultiUFunc:
         if (self._resolve_out_shapes is not None):
             ufunc_arg_shapes = tuple(np.shape(ufunc_arg) for ufunc_arg in ufunc_args)
             ufunc_out_shapes = self._resolve_out_shapes(*args[:-ufunc.nin],
-                                                        *ufunc_arg_shapes, ufunc.nout, **kwargs)
+                                                        *ufunc_arg_shapes, ufunc.nout,
+                                                        **kwargs)
 
             ufunc_arg_dtypes = tuple(ufunc_arg.dtype if hasattr(ufunc_arg, 'dtype')
                                      else np.dtype(type(ufunc_arg))

@@ -44,11 +44,7 @@ void legendre_map_dims(const npy_intp *dims, npy_intp *new_dims) {
     }
 }
 
-void new_legendre_map_dims(const npy_intp *dims, npy_intp *new_dims) {
-    for (size_t i = 0; i < 1; ++i) {
-        new_dims[i] = dims[0];
-    }
-}
+void new_legendre_map_dims(const npy_intp *dims, npy_intp *new_dims) { new_dims[0] = dims[0]; }
 
 template <size_t NOut>
 void assoc_legendre_map_dims(const npy_intp *dims, npy_intp *new_dims) {
@@ -108,36 +104,21 @@ PyMODINIT_FUNC PyInit__gufuncs() {
     PyUnstable_Module_SetGIL(_gufuncs, Py_MOD_GIL_NOT_USED);
 #endif
 
-    PyObject *legendre_p_all =
-        Py_BuildValue("(N, N, N)",
-                      xsf::numpy::gufunc({static_cast<xsf::numpy::A0_d_d1>(::legendre_p_all),
-                                          static_cast<xsf::numpy::A0_D_D1>(::legendre_p_all)},
-                                         1, "legendre_p_all", nullptr, "()->(np1,1)", new_legendre_map_dims),
-                      xsf::numpy::gufunc({static_cast<xsf::numpy::A1_d_d1>(::legendre_p_all),
-                                          static_cast<xsf::numpy::A1_D_D1>(::legendre_p_all)},
-                                         1, "legendre_p_all", nullptr, "()->(np1,2)", new_legendre_map_dims),
-                      xsf::numpy::gufunc({static_cast<xsf::numpy::A2_d_d1>(::legendre_p_all),
-                                          static_cast<xsf::numpy::A2_D_D1>(::legendre_p_all)},
-                                         1, "legendre_p_all", nullptr, "()->(np1,3)", new_legendre_map_dims));
+    PyObject *legendre_p_all = Py_BuildValue(
+        "(N, N, N)",
+        xsf::numpy::gufunc(
+            {static_cast<xsf::numpy::A0_d_d1>(::legendre_p_all), static_cast<xsf::numpy::A0_f_f1>(::legendre_p_all),
+             static_cast<xsf::numpy::A0_D_D1>(::legendre_p_all), static_cast<xsf::numpy::A0_F_F1>(::legendre_p_all)},
+            1, "legendre_p_all", nullptr, "()->(np1,1)", new_legendre_map_dims),
+        xsf::numpy::gufunc(
+            {static_cast<xsf::numpy::A1_d_d1>(::legendre_p_all), static_cast<xsf::numpy::A1_f_f1>(::legendre_p_all),
+             static_cast<xsf::numpy::A1_D_D1>(::legendre_p_all), static_cast<xsf::numpy::A1_F_F1>(::legendre_p_all)},
+            1, "legendre_p_all", nullptr, "()->(np1,2)", new_legendre_map_dims),
+        xsf::numpy::gufunc(
+            {static_cast<xsf::numpy::A2_d_d1>(::legendre_p_all), static_cast<xsf::numpy::A2_f_f1>(::legendre_p_all),
+             static_cast<xsf::numpy::A2_D_D1>(::legendre_p_all), static_cast<xsf::numpy::A2_F_F1>(::legendre_p_all)},
+            1, "legendre_p_all", nullptr, "()->(np1,3)", new_legendre_map_dims));
     PyModule_AddObjectRef(_gufuncs, "legendre_p_all", legendre_p_all);
-
-    /*
-        PyObject *legendre_p_all = Py_BuildValue(
-            "(N, N, N)",
-            xsf::numpy::gufunc(
-                {static_cast<xsf::numpy::d_d1>(::legendre_p_all), static_cast<xsf::numpy::f_f1>(::legendre_p_all),
-                 static_cast<xsf::numpy::D_D1>(::legendre_p_all), static_cast<xsf::numpy::F_F1>(::legendre_p_all)},
-                1, "legendre_p_all", nullptr, "()->(np1)", legendre_map_dims<1>),
-            xsf::numpy::gufunc(
-                {static_cast<xsf::numpy::d_d1d1>(::legendre_p_all), static_cast<xsf::numpy::f_f1f1>(::legendre_p_all),
-                 static_cast<xsf::numpy::D_D1D1>(::legendre_p_all), static_cast<xsf::numpy::F_F1F1>(::legendre_p_all)},
-                2, "legendre_p_all", nullptr, "()->(np1),(np1)", legendre_map_dims<2>),
-            xsf::numpy::gufunc(
-                {static_cast<xsf::numpy::d_d1d1d1>(::legendre_p_all),
-       static_cast<xsf::numpy::f_f1f1f1>(::legendre_p_all), static_cast<xsf::numpy::D_D1D1D1>(::legendre_p_all),
-       static_cast<xsf::numpy::F_F1F1F1>(::legendre_p_all)}, 3, "legendre_p_all", nullptr, "()->(np1),(np1),(np1)",
-       legendre_map_dims<3>)); PyModule_AddObjectRef(_gufuncs, "legendre_p_all", legendre_p_all);
-    */
 
     // key is norm, diff_n
     PyObject *assoc_legendre_p_all = Py_BuildValue(

@@ -21,9 +21,9 @@ xsf::dual<T, N> legendre_p(long long int n, T z) {
 
 template <typename T, typename OutputVec>
 void legendre_p_all(T z, OutputVec res) {
-    using dual_type = typename OutputVec::value_type;
+    static constexpr size_t N = OutputVec::value_type::max_order();
 
-    xsf::legendre_p_all(xsf::dual_var<dual_type::max_order()>(z), res);
+    xsf::legendre_p_all(xsf::dual_var<N>(z), res);
 }
 
 using xsf::assoc_legendre_norm;
