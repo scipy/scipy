@@ -7718,7 +7718,7 @@ class ncf_gen(rv_continuous):
         return scu._ncf_pdf(x, dfn, dfd, nc)
 
     def _cdf(self, x, dfn, dfd, nc):
-        return sc.ncfdtr(x, dfn, dfd, nc)
+        return sc.ncfdtr(dfn, dfd, nc, x)
 
     def _ppf(self, q, dfn, dfd, nc):
         with np.errstate(over='ignore'):  # see gh-17432

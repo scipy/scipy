@@ -760,7 +760,7 @@ ncf_pdf_double(double x, double v1, double v2, double l)
 
 template<typename Real>
 Real
-ncf_cdf_wrap(const Real x, const Real v1, const Real v2, const Real l)
+ncf_cdf_wrap(const Real v1, const Real v2, const Real l, const Real x)
 {
     if (std::isnan(x) || std::isnan(v1) || std::isnan(v2) || std::isnan(l)) {
 	return NAN;
@@ -775,7 +775,7 @@ ncf_cdf_wrap(const Real x, const Real v1, const Real v2, const Real l)
 }
 
 float
-ncf_cdf_float(float x, float v1, float v2, float l)
+ncf_cdf_float(float v1, float v2, float l, float x)
 {
     return ncf_cdf_wrap(x, v1, v2, l);
 }
