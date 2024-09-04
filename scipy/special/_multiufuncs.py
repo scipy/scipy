@@ -49,6 +49,7 @@ class MultiUFunc:
         self.__force_complex_output = force_complex_output
         self._default_kwargs = default_kwargs
         self._resolve_out_shapes = None
+        self._finalize_out = None
         self._key = None
         self._ufunc_default_args = lambda *args, **kwargs: ()
         self._ufunc_default_kwargs = lambda *args, **kwargs: {}
@@ -76,6 +77,9 @@ class MultiUFunc:
         func.__name__ = "resolve_out_shapes"
         self._resolve_out_shapes = func
 
+    def _override_finalize_out(self, func):
+        self._finalize_out = func
+
     def _resolve_ufunc(self, **kwargs):
         """Resolve to a ufunc based on keyword arguments."""
 
@@ -100,7 +104,7 @@ class MultiUFunc:
         if (self._resolve_out_shapes is not None):
             ufunc_arg_shapes = tuple(np.shape(ufunc_arg) for ufunc_arg in ufunc_args)
             ufunc_out_shapes = self._resolve_out_shapes(*args[:-ufunc.nin],
-                                                        *ufunc_arg_shapes, ufunc.nout)
+                                                        *ufunc_arg_shapes, ufunc.nout, **kwargs)
 
             ufunc_arg_dtypes = tuple(ufunc_arg.dtype if hasattr(ufunc_arg, 'dtype')
                                      else np.dtype(type(ufunc_arg))
@@ -127,7 +131,11 @@ class MultiUFunc:
 
             ufunc_kwargs['out'] = out
 
-        return ufunc(*ufunc_args, **ufunc_kwargs)
+        out = ufunc(*ufunc_args, **ufunc_kwargs)
+        if (self._finalize_out is not None):
+            out = self._finalize_out(out)
+
+        return out
 
 
 sph_legendre_p = MultiUFunc(
@@ -214,7 +222,7 @@ def _(diff_n):
 
 
 @sph_legendre_p_all._override_resolve_out_shapes
-def _(n, m, theta_shape, nout):
+def _(n, m, theta_shape, nout, **kwargs):
     if not isinstance(n, numbers.Integral) or (n < 0):
         raise ValueError("n must be a non-negative integer.")
 
@@ -323,7 +331,7 @@ def _(branch_cut, norm, diff_n):
 
 
 @assoc_legendre_p_all._override_resolve_out_shapes
-def _(n, m, z_shape, branch_cut_shape, nout):
+def _(n, m, z_shape, branch_cut_shape, nout, **kwargs):
     if not isinstance(n, numbers.Integral) or (n < 0):
         raise ValueError("n must be a non-negative integer.")
     if not isinstance(m, numbers.Integral) or (m < 0):
@@ -381,6 +389,16 @@ def _(diff_n):
     return diff_n
 
 
+@legendre_p._override_resolve_out_shapes
+def _(n, z_shape, nout, diff_n):
+    return (z_shape + (diff_n + 1,),)
+
+
+@legendre_p._override_finalize_out
+def _(out):
+    return np.moveaxis(out, -1, 0)
+
+
 legendre_p_all = MultiUFunc(
     legendre_p_all,
     """legendre_p_all(n, z, *, diff_n=0)
@@ -411,14 +429,19 @@ def _(diff_n):
 
 @legendre_p_all._override_ufunc_default_kwargs
 def _(diff_n):
-    return {'axes': [()] + (diff_n + 1) * [(0,)]}
+    return {'axes': [(), (0, -1)]}
 
 
 @legendre_p_all._override_resolve_out_shapes
-def _(n, z_shape, nout):
+def _(n, z_shape, nout, diff_n):
     n = _nonneg_int_or_fail(n, 'n', strict=False)
 
-    return nout * ((n + 1,) + z_shape,)
+    return nout * ((n + 1,) + z_shape + (diff_n + 1,),)
+
+
+@legendre_p_all._override_finalize_out
+def _(out):
+    return np.moveaxis(out, -1, 0)
 
 
 sph_harm_y = MultiUFunc(
@@ -533,7 +556,7 @@ def _(diff_n):
 
 
 @sph_harm_y_all._override_resolve_out_shapes
-def _(n, m, theta_shape, phi_shape, nout):
+def _(n, m, theta_shape, phi_shape, nout, **kwargs):
     if not isinstance(n, numbers.Integral) or (n < 0):
         raise ValueError("n must be a non-negative integer.")
 

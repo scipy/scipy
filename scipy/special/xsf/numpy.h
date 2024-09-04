@@ -16,6 +16,7 @@
 #include <numpy/npy_3kcompat.h>
 #include <numpy/ufuncobject.h>
 
+#include "dual.h"
 #include "sf_error.h"
 #include "third_party/kokkos/mdspan.hpp"
 
@@ -55,6 +56,13 @@ namespace numpy {
     using cdouble_3d = std::mdspan<cdouble, std::dextents<ptrdiff_t, 3>, std::layout_stride>;
     using cdouble_4d = std::mdspan<cdouble, std::dextents<ptrdiff_t, 4>, std::layout_stride>;
 
+    using ad0_double_1d = std::mdspan<dual<double, 0>, std::dextents<ptrdiff_t, 1>, std::layout_stride>;
+    using ad0_cdouble_1d = std::mdspan<dual<cdouble, 0>, std::dextents<ptrdiff_t, 1>, std::layout_stride>;
+    using ad1_double_1d = std::mdspan<dual<double, 1>, std::dextents<ptrdiff_t, 1>, std::layout_stride>;
+    using ad1_cdouble_1d = std::mdspan<dual<cdouble, 1>, std::dextents<ptrdiff_t, 1>, std::layout_stride>;
+    using ad2_double_1d = std::mdspan<dual<double, 2>, std::dextents<ptrdiff_t, 1>, std::layout_stride>;
+    using ad2_cdouble_1d = std::mdspan<dual<cdouble, 2>, std::dextents<ptrdiff_t, 1>, std::layout_stride>;
+
     // The following are based off NumPy's dtype type codes and functions like PyUFunc_dd_d
 
     // 1 input, 1 output
@@ -62,6 +70,14 @@ namespace numpy {
     using d_d = double (*)(double);
     using F_F = cfloat (*)(cfloat);
     using D_D = cdouble (*)(cdouble);
+
+    // autodiff, 1 input, 1 output
+    using A0_d_d1 = void (*)(double, ad0_double_1d);
+    using A0_D_D1 = void (*)(cdouble, ad0_cdouble_1d);
+    using A1_d_d1 = void (*)(double, ad1_double_1d);
+    using A1_D_D1 = void (*)(cdouble, ad1_cdouble_1d);
+    using A2_d_d1 = void (*)(double, ad2_double_1d);
+    using A2_D_D1 = void (*)(cdouble, ad2_cdouble_1d);
 
     // 1 input, 2 outputs
     using f_ff = void (*)(float, float &, float &);
@@ -92,6 +108,14 @@ namespace numpy {
     using ld_d = double (*)(long int, double);
     using lF_F = cfloat (*)(long int, cfloat);
     using lD_D = cdouble (*)(long int, cdouble);
+
+    // autodiff, 2 inputs, 1 output
+    using A0_qf_f = dual<float, 0> (*)(long long int, float);
+    using A0_qd_d = dual<double, 0> (*)(long long int, double);
+    using A1_qf_f = dual<float, 1> (*)(long long int, float);
+    using A1_qd_d = dual<double, 1> (*)(long long int, double);
+    using A2_qf_f = dual<float, 2> (*)(long long int, float);
+    using A2_qd_d = dual<double, 2> (*)(long long int, double);
 
     // 2 inputs, 2 outputs
     using qf_ff = void (*)(long long int, float, float &, float &);
@@ -299,6 +323,11 @@ namespace numpy {
     template <typename T, typename Extents, typename LayoutPolicy, typename AccessorPolicy>
     struct rank_of<std::mdspan<T, Extents, LayoutPolicy, AccessorPolicy>> {
         static constexpr size_t value = Extents::rank();
+    };
+
+    template <typename T, size_t... Orders>
+    struct rank_of<dual<T, Orders...>> {
+        static constexpr size_t value = sizeof...(Orders);
     };
 
     template <typename T>
@@ -512,6 +541,11 @@ namespace numpy {
         static constexpr NPY_TYPES value = npy_typenum<T>::value;
     };
 
+    template <typename T, size_t... Orders>
+    struct npy_typenum<dual<T, Orders...>> {
+        static constexpr NPY_TYPES value = npy_typenum<T>::value;
+    };
+
     template <typename T>
     inline constexpr NPY_TYPES npy_typenum_v = npy_typenum<T>::value;
 
@@ -580,7 +614,8 @@ namespace numpy {
     struct npy_traits<std::mdspan<T, Extents, std::layout_stride, AccessorPolicy>> {
         static std::mdspan<T, Extents, std::layout_stride, AccessorPolicy>
         get(char *src, const npy_intp *dimensions, const npy_intp *steps) {
-            static_assert(sizeof(T) == sizeof(npy_type_t<T>), "NumPy type has different size than argument type");
+            //            static_assert(sizeof(T) == sizeof(npy_type_t<T>), "NumPy type has different size than argument
+            //            type");
 
             std::array<ptrdiff_t, Extents::rank()> strides;
             for (npy_uintp i = 0; i < strides.size(); ++i) {
@@ -593,6 +628,17 @@ namespace numpy {
             }
 
             return {reinterpret_cast<T *>(src), {exts, strides}};
+        }
+    };
+
+    template <typename T, size_t... Orders>
+    struct npy_traits<dual<T, Orders...>> {
+        //        static dual<T, Orders...> get(char *src, const npy_intp *dimensions, const npy_intp *steps) {
+        //          return *reinterpret_cast<dual<T, Orders...> *>(src);
+        //    }
+
+        static void set(char *dst, const dual<T, Orders...> &src) {
+            *reinterpret_cast<dual<T, Orders...> *>(dst) = src;
         }
     };
 

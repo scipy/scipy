@@ -69,15 +69,12 @@ T legendre_p(int n, T z) {
  * @param res a view into a multidimensional array with element type T and size n + 1 to store the value of each
  *            polynomial
  */
-template <typename T, typename... OutputVecs>
-void legendre_p_all(T z, std::tuple<OutputVecs &...> res) {
-    auto &res0 = std::get<0>(res);
-    int n = res0.extent(0) - 1;
+template <typename T, typename OutputVec>
+void legendre_p_all(T z, OutputVec res) {
+    int n = res.extent(0) - 1;
 
     T res_n[2];
-    legendre_p_for_each_n(n, z, res_n, [&res](int n, const T(&res_n)[2]) {
-        dual_assign_grad(res_n[1], tuples::call(res, n));
-    });
+    legendre_p_for_each_n(n, z, res_n, [&res](int n, const T(&res_n)[2]) { res(n) = res_n[1]; });
 }
 
 struct assoc_legendre_unnorm_policy {};

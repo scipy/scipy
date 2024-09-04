@@ -576,14 +576,16 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
     PyModule_AddObjectRef(_special_ufuncs, "loggamma", loggamma);
 
     PyObject *legendre_p = Py_BuildValue(
-        "(N,N,N)",
-        xsf::numpy::ufunc({static_cast<xsf::numpy::qd_d>(::legendre_p), static_cast<xsf::numpy::qf_f>(::legendre_p)},
-                          "legendre_p", nullptr),
-        xsf::numpy::ufunc({static_cast<xsf::numpy::qd_dd>(::legendre_p), static_cast<xsf::numpy::qf_ff>(::legendre_p)},
-                          2, "legendre_p", nullptr),
-        xsf::numpy::ufunc(
-            {static_cast<xsf::numpy::qd_ddd>(::legendre_p), static_cast<xsf::numpy::qf_fff>(::legendre_p)}, 3,
-            "legendre_p", nullptr));
+        "(N, N, N)",
+        xsf::numpy::gufunc(
+            {static_cast<xsf::numpy::A0_qd_d>(::legendre_p), static_cast<xsf::numpy::A0_qf_f>(::legendre_p)},
+            "legendre_p", nullptr, "(),()->(n)", [](const npy_intp *dims, npy_intp *new_dims) {}),
+        xsf::numpy::gufunc(
+            {static_cast<xsf::numpy::A1_qd_d>(::legendre_p), static_cast<xsf::numpy::A1_qf_f>(::legendre_p)},
+            "legendre_p", nullptr, "(),()->(n)", [](const npy_intp *dims, npy_intp *new_dims) {}),
+        xsf::numpy::gufunc(
+            {static_cast<xsf::numpy::A2_qd_d>(::legendre_p), static_cast<xsf::numpy::A2_qf_f>(::legendre_p)},
+            "legendre_p", nullptr, "(),()->(n)", [](const npy_intp *dims, npy_intp *new_dims) {}));
     PyModule_AddObjectRef(_special_ufuncs, "legendre_p", legendre_p);
 
     PyObject *assoc_legendre_p = Py_BuildValue(
@@ -926,10 +928,10 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
                                           static_cast<xsf::numpy::qqff_FF2F22_old>(::sph_harm_y)},
                                          3, "sph_harm_y", nullptr, "(),(),(),()->(),(2),(2,2)",
                                          [](const npy_intp *dims, npy_intp *new_dims) {
-                                             //new_dims[0] = 2;
+                                             // new_dims[0] = 2;
 
-//                                             new_dims[1] = 2;
-  //                                           new_dims[2] = 2;
+                                             //                                             new_dims[1] = 2;
+                                             //                                           new_dims[2] = 2;
                                          }));
     PyModule_AddObjectRef(_special_ufuncs, "sph_harm_y", sph_harm_y);
 

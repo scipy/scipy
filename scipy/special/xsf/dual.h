@@ -454,7 +454,7 @@ template <size_t Order, typename T>
 dual<T, Order> dual_var(T value, size_t dim = 0) {
     // dim must be zero
 
-    if (Order >= 1) {
+    if constexpr (Order >= 1) {
         return {value, 1};
     }
 
@@ -464,7 +464,7 @@ dual<T, Order> dual_var(T value, size_t dim = 0) {
 template <size_t Orders0, size_t Orders1, size_t... Orders, typename T>
 dual<T, Orders0, Orders1, Orders...> dual_var(T value, size_t dim = 0) {
     if (dim == 0) {
-        if (Orders0 >= 1) {
+        if constexpr (Orders0 >= 1) {
             return {value, 1};
         }
 
@@ -477,7 +477,7 @@ dual<T, Orders0, Orders1, Orders...> dual_var(T value, size_t dim = 0) {
 template <typename T, size_t N, size_t... Orders>
 dual<T, Orders...> dual_taylor_series(const T (&coef)[N], const dual<T, Orders...> &x, T a) {
     dual<T, Orders...> res = coef[0];
-    if (N >= 2) {
+    if constexpr (N >= 2) {
         dual<T, Orders...> y = x - a;
         T denom = 1; // factorial
 
@@ -525,10 +525,10 @@ dual<T, Orders...> sqrt(const dual<T, Orders...> &z) {
     static constexpr size_t MaxOrder = dual<T, Orders...>::max_order();
 
     T coef[MaxOrder + 1] = {sqrt(z.value())};
-    if (MaxOrder >= 1) {
+    if constexpr (MaxOrder >= 1) {
         coef[1] = T(1) / (T(2) * coef[0]);
 
-        if (MaxOrder >= 2) {
+        if constexpr (MaxOrder >= 2) {
             coef[2] = -T(1) / (T(4) * coef[0] * z.value());
         }
     }
@@ -541,7 +541,7 @@ dual<T, Orders...> sin(const dual<T, Orders...> &x) {
     static constexpr size_t MaxOrder = dual<T, Orders...>::max_order();
 
     T coef[MaxOrder + 1] = {sin(x.value())};
-    if (MaxOrder >= 1) {
+    if constexpr (MaxOrder >= 1) {
         coef[1] = cos(x.value());
 
         for (size_t i = 2; i <= MaxOrder; ++i) {
@@ -557,7 +557,7 @@ dual<T, Orders...> cos(const dual<T, Orders...> &x) {
     static constexpr size_t MaxOrder = dual<T, Orders...>::max_order();
 
     T coef[MaxOrder + 1] = {cos(x.value())};
-    if (MaxOrder >= 1) {
+    if constexpr (MaxOrder >= 1) {
         coef[1] = -sin(x.value());
 
         for (size_t i = 2; i <= MaxOrder; ++i) {

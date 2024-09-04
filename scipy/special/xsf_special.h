@@ -14,34 +14,16 @@
 
 namespace {
 
-template <typename T>
-T legendre_p(long long int n, T z) {
-    return xsf::legendre_p(n, z);
+template <typename T, size_t N>
+xsf::dual<T, N> legendre_p(long long int n, T z) {
+    return xsf::legendre_p(n, xsf::dual_var<N>(z));
 }
 
-template <typename T>
-void legendre_p(long long int n, T z, T &res, T &res_jac) {
-    dual_assign_grad(xsf::legendre_p(n, xsf::dual_var<1>(z)), std::tie(res, res_jac));
-}
+template <typename T, typename OutputVec>
+void legendre_p_all(T z, OutputVec res) {
+    using dual_type = typename OutputVec::value_type;
 
-template <typename T>
-void legendre_p(long long int n, T z, T &res, T &res_jac, T &res_hess) {
-    dual_assign_grad(xsf::legendre_p(n, xsf::dual_var<2>(z)), std::tie(res, res_jac, res_hess));
-}
-
-template <typename T, typename OutputVec1>
-void legendre_p_all(T z, OutputVec1 res) {
-    xsf::legendre_p_all(xsf::dual_var<0>(z), std::tie(res));
-}
-
-template <typename T, typename OutputVec1, typename OutputVec2>
-void legendre_p_all(T z, OutputVec1 res, OutputVec2 res_jac) {
-    xsf::legendre_p_all(xsf::dual_var<1>(z), std::tie(res, res_jac));
-}
-
-template <typename T, typename OutputVec1, typename OutputVec2, typename OutputVec3>
-void legendre_p_all(T z, OutputVec1 res, OutputVec2 res_jac, OutputVec3 res_hess) {
-    xsf::legendre_p_all(xsf::dual_var<2>(z), std::tie(res, res_jac, res_hess));
+    xsf::legendre_p_all(xsf::dual_var<dual_type::max_order()>(z), res);
 }
 
 using xsf::assoc_legendre_norm;
