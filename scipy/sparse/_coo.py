@@ -1662,24 +1662,24 @@ class _coo_base(_data_matrix, _minmax_mixin):
         return (coo_array((res.data, unraveled_coords), result_shape))
 
 
-    def max(self, axis=None, out=None):
+    def max(self, axis=None, out=None, *, explicit=False):
         if self.ndim<3:
-            return _minmax_mixin.max(self, axis, out)
+            return _minmax_mixin.max(self, axis, out, explicit=explicit)
         return self._find_max_or_min(axis, out, np.max, np.maximum)
     
-    def min(self, axis=None, out=None):
+    def min(self, axis=None, out=None, *, explicit=False):
         if self.ndim<3:
-            return _minmax_mixin.min(self, axis, out)
+            return _minmax_mixin.min(self, axis, out, explicit=explicit)
         return self._find_max_or_min(axis, out, np.min, np.minimum)
     
-    def nanmax(self, axis=None, out=None):
+    def nanmax(self, axis=None, out=None, *, explicit=False):
         if self.ndim<3:
-            return _minmax_mixin.nanmax(self, axis, out)
+            return _minmax_mixin.nanmax(self, axis, out, explicit=explicit)
         return self._find_max_or_min(axis, out, np.nanmax, np.fmax)
 
-    def nanmin(self, axis=None, out=None):
+    def nanmin(self, axis=None, out=None, *, explicit=False):
         if self.ndim<3:
-            return _minmax_mixin.nanmin(self, axis, out)
+            return _minmax_mixin.nanmin(self, axis, out, explicit=explicit)
         return self._find_max_or_min(axis, out, np.nanmin, np.fmin)
 
     def _find_arg_max_or_min(self, axis, out, _max_or_min, _max_or_min_axis):
@@ -1714,14 +1714,14 @@ class _coo_base(_data_matrix, _minmax_mixin):
         res = res_flattened.reshape(result_shape)      
         return res
     
-    def argmax(self, axis=None, out=None):
+    def argmax(self, axis=None, out=None, *, explicit=False):
         if self.ndim<3:
-            return _minmax_mixin.argmax(self, axis, out)
+            return _minmax_mixin.argmax(self, axis, out, explicit=explicit)
         return self._find_arg_max_or_min(axis, out, np.argmax, np.greater)
     
-    def argmin(self, axis=None, out=None):
+    def argmin(self, axis=None, out=None, *, explicit=False):
         if self.ndim<3:
-            return _minmax_mixin.argmin(self, axis, out)
+            return _minmax_mixin.argmin(self, axis, out, explicit=explicit)
         return self._find_arg_max_or_min(axis, out, np.argmin, np.less)
 
     def maximum(self, other):
@@ -1966,28 +1966,6 @@ def _ravel_coords(coords, shape, order='C'):
             raise ValueError("'order' must be 'C' or 'F'")
     return np.ravel_multi_index(coords, shape, order=order)
 
-def _validateaxis(axis) -> None:
-    if axis is None:
-        return
-    axis_type = type(axis)
-
-    # In NumPy, you can pass in tuples for 'axis', but they are
-    # not very useful for sparse matrices given their limited
-    # dimensions, so let's make it explicit that they are not
-    # allowed to be passed in
-    if isinstance(axis, tuple):
-        raise TypeError("Tuples are not accepted for the 'axis' parameter. "
-                        "Please pass in one of the following: "
-                        "{-2, -1, 0, 1, None}.")
-
-    # If not a tuple, check that the provided axis is actually
-    # an integer and raise a TypeError similar to NumPy's
-    if not np.issubdtype(np.dtype(axis_type), np.integer):
-        raise TypeError(f"axis must be an integer, not {axis_type.__name__}")
-
-    if not (-2 <= axis <= 1):
-        raise ValueError("axis out of range")
-    
 
 def isspmatrix_coo(x):
     """Is `x` of coo_matrix type?
