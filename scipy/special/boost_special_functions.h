@@ -777,13 +777,13 @@ ncf_cdf_wrap(const Real v1, const Real v2, const Real l, const Real x)
 float
 ncf_cdf_float(float v1, float v2, float l, float x)
 {
-    return ncf_cdf_wrap(x, v1, v2, l);
+    return ncf_cdf_wrap(v1, v2, l, x);
 }
 
 double
-ncf_cdf_double(double x, double v1, double v2, double l)
+ncf_cdf_double(double v1, double v2, double l, double x)
 {
-    return ncf_cdf_wrap(x, v1, v2, l);
+    return ncf_cdf_wrap(v1, v2, l, x);
 }
 
 template<typename Real>
