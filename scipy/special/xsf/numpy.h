@@ -93,14 +93,20 @@ namespace numpy {
     using autodiff2_cfloat_2d = std::mdspan<autodiff2_cfloat, std::dextents<ptrdiff_t, 2>, std::layout_stride>;
     using autodiff2_cdouble_2d = std::mdspan<autodiff2_cdouble, std::dextents<ptrdiff_t, 2>, std::layout_stride>;
 
+    using autodiff00_float = dual<float, 0, 0>;
+    using autodiff00_double = dual<double, 0, 0>;
     using autodiff00_cfloat = dual<cfloat, 0, 0>;
     using autodiff00_cdouble = dual<cdouble, 0, 0>;
     using autodiff00_cfloat_2d = std::mdspan<autodiff00_cfloat, std::dextents<ptrdiff_t, 2>, std::layout_stride>;
     using autodiff00_cdouble_2d = std::mdspan<autodiff00_cdouble, std::dextents<ptrdiff_t, 2>, std::layout_stride>;
+    using autodiff11_float = dual<float, 1, 1>;
+    using autodiff11_double = dual<double, 1, 1>;
     using autodiff11_cfloat = dual<cfloat, 1, 1>;
     using autodiff11_cdouble = dual<cdouble, 1, 1>;
     using autodiff11_cfloat_2d = std::mdspan<autodiff11_cfloat, std::dextents<ptrdiff_t, 2>, std::layout_stride>;
     using autodiff11_cdouble_2d = std::mdspan<autodiff11_cdouble, std::dextents<ptrdiff_t, 2>, std::layout_stride>;
+    using autodiff22_float = dual<float, 2, 2>;
+    using autodiff22_double = dual<double, 2, 2>;
     using autodiff22_cfloat = dual<cfloat, 2, 2>;
     using autodiff22_cdouble = dual<cdouble, 2, 2>;
     using autodiff22_cfloat_2d = std::mdspan<autodiff22_cfloat, std::dextents<ptrdiff_t, 2>, std::layout_stride>;
@@ -244,12 +250,15 @@ namespace numpy {
     using dddd_D = cdouble (*)(double, double, double, double);
 
     // autodiff, 4 inputs, 1 output
-    using autodiff00_qqff_F = autodiff00_cfloat (*)(long long int, long long int, float, float);
-    using autodiff00_qqdd_D = autodiff00_cdouble (*)(long long int, long long int, double, double);
-    using autodiff11_qqff_F = autodiff11_cfloat (*)(long long int, long long int, float, float);
-    using autodiff11_qqdd_D = autodiff11_cdouble (*)(long long int, long long int, double, double);
-    using autodiff22_qqff_F = autodiff22_cfloat (*)(long long int, long long int, float, float);
-    using autodiff22_qqdd_D = autodiff22_cdouble (*)(long long int, long long int, double, double);
+    using autodiff00_qqff_F = autodiff00_cfloat (*)(long long int, long long int, autodiff00_float, autodiff00_float);
+    using autodiff00_qqdd_D =
+        autodiff00_cdouble (*)(long long int, long long int, autodiff00_double, autodiff00_double);
+    using autodiff11_qqff_F = autodiff11_cfloat (*)(long long int, long long int, autodiff11_float, autodiff11_float);
+    using autodiff11_qqdd_D =
+        autodiff11_cdouble (*)(long long int, long long int, autodiff11_double, autodiff11_double);
+    using autodiff22_qqff_F = autodiff22_cfloat (*)(long long int, long long int, autodiff22_float, autodiff22_float);
+    using autodiff22_qqdd_D =
+        autodiff22_cdouble (*)(long long int, long long int, autodiff22_double, autodiff22_double);
 
     // 4 inputs, 2 outputs
     using qqqf_ff = void (*)(long long int, long long int, long long int, float, float &, float &);
@@ -964,13 +973,26 @@ namespace numpy {
 
     template <typename T, size_t... Orders>
     struct autodiff_cast<dual<T, Orders...>> {
-        static dual<T, Orders...> get(T arg, size_t i) { return dual_var<Orders...>(arg); }
+        static dual<T, Orders...> get(T arg, size_t i) { return dual_var<Orders...>(arg, i); }
     };
 
     template <
         typename Func, typename Signature = signature_of_t<Func>,
         typename Indices = std::make_index_sequence<arity_of_v<Signature>>>
     class wrap_autodiff;
+
+    template <typename T>
+    struct is_autodiff {
+        static constexpr bool value = false;
+    };
+
+    template <typename T, size_t... Orders>
+    struct is_autodiff<dual<T, Orders...>> {
+        static constexpr bool value = true;
+    };
+
+    template <typename T>
+    constexpr bool is_autodiff_v = is_autodiff<T>::value;
 
     template <typename Func, typename Res, typename... Args, size_t... I>
     class wrap_autodiff<Func, Res(Args...), std::index_sequence<I...>> {
@@ -979,7 +1001,15 @@ namespace numpy {
       public:
         wrap_autodiff(Func func) : func(func) {}
 
-        Res operator()(value_type_t<Args>... args) { return func(autodiff_cast<Args>::get(args, I)...); }
+        Res operator()(value_type_t<Args>... args) {
+            return func(autodiff_cast<Args>::get(args, i_scan[I])...);
+        }
+
+        static constexpr size_t is_autodiff[sizeof...(Args)] = {is_autodiff_v<Args>...};
+
+        static constexpr size_t i_scan[sizeof...(Args)] = {
+            detail::initializer_accumulate(is_autodiff, is_autodiff + I, 0)...,
+        };
     };
 
     template <typename Func>

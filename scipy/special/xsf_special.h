@@ -38,11 +38,6 @@ void sph_legendre_p_all(T theta, OutputMat res) {
     xsf::sph_legendre_p_all(xsf::dual_var<N>(theta), res);
 }
 
-template <typename T, size_t N>
-xsf::dual<std::complex<T>, N, N> sph_harm_y(long long int n, long long int m, T theta, T phi) {
-    return xsf::sph_harm_y(n, m, xsf::dual_var<N, N>(theta, 0), xsf::dual_var<N, N>(phi, 1));
-}
-
 template <typename T>
 std::complex<T> sph_harm(long long int m, long long int n, T theta, T phi) {
     if (n < 0) {

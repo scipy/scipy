@@ -933,19 +933,20 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
                           "sph_harm", sph_harm_doc);
     PyModule_AddObjectRef(_special_ufuncs, "sph_harm", sph_harm);
 
-    PyObject *sph_harm_y = Py_BuildValue("(N, N, N)",
-                                         xsf::numpy::gufunc({static_cast<xsf::numpy::autodiff00_qqdd_D>(::sph_harm_y),
-                                                             static_cast<xsf::numpy::autodiff00_qqff_F>(::sph_harm_y)},
-                                                            "sph_harm_y", nullptr, "(),(),(),()->(1,1)",
-                                                            [](const npy_intp *dims, npy_intp *new_dims) {}),
-                                         xsf::numpy::gufunc({static_cast<xsf::numpy::autodiff11_qqdd_D>(::sph_harm_y),
-                                                             static_cast<xsf::numpy::autodiff11_qqff_F>(::sph_harm_y)},
-                                                            "sph_harm_y", nullptr, "(),(),(),()->(2,2)",
-                                                            [](const npy_intp *dims, npy_intp *new_dims) {}),
-                                         xsf::numpy::gufunc({static_cast<xsf::numpy::autodiff22_qqdd_D>(::sph_harm_y),
-                                                             static_cast<xsf::numpy::autodiff22_qqff_F>(::sph_harm_y)},
-                                                            "sph_harm_y", nullptr, "(),(),(),()->(3,3)",
-                                                            [](const npy_intp *dims, npy_intp *new_dims) {}));
+    PyObject *sph_harm_y = Py_BuildValue(
+        "(N, N, N)",
+        xsf::numpy::gufunc({xsf::numpy::wrap_autodiff(static_cast<xsf::numpy::autodiff00_qqdd_D>(xsf::sph_harm_y)),
+                            xsf::numpy::wrap_autodiff(static_cast<xsf::numpy::autodiff00_qqff_F>(xsf::sph_harm_y))},
+                           "sph_harm_y", nullptr, "(),(),(),()->(1,1)",
+                           [](const npy_intp *dims, npy_intp *new_dims) {}),
+        xsf::numpy::gufunc({xsf::numpy::wrap_autodiff(static_cast<xsf::numpy::autodiff11_qqdd_D>(xsf::sph_harm_y)),
+                            xsf::numpy::wrap_autodiff(static_cast<xsf::numpy::autodiff11_qqff_F>(xsf::sph_harm_y))},
+                           "sph_harm_y", nullptr, "(),(),(),()->(2,2)",
+                           [](const npy_intp *dims, npy_intp *new_dims) {}),
+        xsf::numpy::gufunc({xsf::numpy::wrap_autodiff(static_cast<xsf::numpy::autodiff22_qqdd_D>(xsf::sph_harm_y)),
+                            xsf::numpy::wrap_autodiff(static_cast<xsf::numpy::autodiff22_qqff_F>(xsf::sph_harm_y))},
+                           "sph_harm_y", nullptr, "(),(),(),()->(3,3)",
+                           [](const npy_intp *dims, npy_intp *new_dims) {}));
     PyModule_AddObjectRef(_special_ufuncs, "sph_harm_y", sph_harm_y);
 
     PyObject *struve =
