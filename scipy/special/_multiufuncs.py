@@ -549,7 +549,8 @@ def _(out):
         return out[..., 0, 0], out[..., [1, 0], [0, 1]]
 
     if (out.shape[-1] == 3):
-        return out[..., 0, 0], out[..., [1, 0], [0, 1]], out[..., [[2, 1], [1, 0]], [[0, 1], [1, 2]]]
+        return (out[..., 0, 0], out[..., [1, 0], [0, 1]],
+            out[..., [[2, 1], [1, 0]], [[0, 1], [1, 2]]])
 
 
 sph_harm_y_all = MultiUFunc(
@@ -592,7 +593,8 @@ def _(n, m, theta_shape, phi_shape, nout, **kwargs):
     if not isinstance(n, numbers.Integral) or (n < 0):
         raise ValueError("n must be a non-negative integer.")
 
-    return ((n + 1, 2 * abs(m) + 1) + np.broadcast_shapes(theta_shape, phi_shape) + (diff_n + 1, diff_n + 1),)
+    return ((n + 1, 2 * abs(m) + 1) + np.broadcast_shapes(theta_shape, phi_shape) +
+        (diff_n + 1, diff_n + 1),)
 
 
 @sph_harm_y_all._override_finalize_out
@@ -604,4 +606,5 @@ def _(out):
         return out[..., 0, 0], out[..., [1, 0], [0, 1]]
 
     if (out.shape[-1] == 3):
-        return out[..., 0, 0], out[..., [1, 0], [0, 1]], out[..., [[2, 1], [1, 0]], [[0, 1], [1, 2]]]
+        return (out[..., 0, 0], out[..., [1, 0], [0, 1]],
+            out[..., [[2, 1], [1, 0]], [[0, 1], [1, 2]]])
