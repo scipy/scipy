@@ -412,11 +412,6 @@ def _(diff_n):
     return diff_n
 
 
-@legendre_p._override_resolve_out_shapes
-def _(n, z_shape, nout, diff_n):
-    return (z_shape + (diff_n + 1,),)
-
-
 @legendre_p._override_finalize_out
 def _(out):
     return np.moveaxis(out, -1, 0)
@@ -555,13 +550,6 @@ def _(out):
 
     if (out.shape[-1] == 3):
         return out[..., 0, 0], out[..., [1, 0], [0, 1]], out[..., [[2, 1], [1, 0]], [[0, 1], [1, 2]]]
-
-
-@sph_harm_y._override_resolve_out_shapes
-def _(n_shape, m_shape, theta_shape, phi_shape, nout, **kwargs):
-    diff_n = kwargs['diff_n']
-
-    return (np.broadcast_shapes(n_shape, m_shape, theta_shape, phi_shape) + (diff_n + 1, diff_n + 1),)
 
 
 sph_harm_y_all = MultiUFunc(

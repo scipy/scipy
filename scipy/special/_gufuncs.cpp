@@ -21,18 +21,18 @@ using xsf::numpy::float_2d;
 using xsf::numpy::float_3d;
 using xsf::numpy::float_4d;
 
-using xsf::numpy::ad0_cdouble_2d;
-using xsf::numpy::ad0_cfloat_2d;
-using xsf::numpy::ad0_double_2d;
-using xsf::numpy::ad0_float_2d;
-using xsf::numpy::ad1_cdouble_2d;
-using xsf::numpy::ad1_cfloat_2d;
-using xsf::numpy::ad1_double_2d;
-using xsf::numpy::ad1_float_2d;
-using xsf::numpy::ad2_cdouble_2d;
-using xsf::numpy::ad2_cfloat_2d;
-using xsf::numpy::ad2_double_2d;
-using xsf::numpy::ad2_float_2d;
+using xsf::numpy::autodiff0_cdouble_2d;
+using xsf::numpy::autodiff0_cfloat_2d;
+using xsf::numpy::autodiff0_double_2d;
+using xsf::numpy::autodiff0_float_2d;
+using xsf::numpy::autodiff1_cdouble_2d;
+using xsf::numpy::autodiff1_cfloat_2d;
+using xsf::numpy::autodiff1_double_2d;
+using xsf::numpy::autodiff1_float_2d;
+using xsf::numpy::autodiff2_cdouble_2d;
+using xsf::numpy::autodiff2_cfloat_2d;
+using xsf::numpy::autodiff2_double_2d;
+using xsf::numpy::autodiff2_float_2d;
 
 extern const char *lpn_all_doc;
 extern const char *lpmn_doc;
@@ -107,86 +107,86 @@ PyMODINIT_FUNC PyInit__gufuncs() {
     // key is norm, diff_n
     PyObject *assoc_legendre_p_all = Py_BuildValue(
         "{(O, i): N, (O, i): N, (O, i): N, (O, i): N, (O, i): N, (O, i): N}", Py_True, 0,
-        xsf::numpy::gufunc({[](double z, long long int branch_cut, ad0_double_2d res) {
+        xsf::numpy::gufunc({[](double z, long long int branch_cut, autodiff0_double_2d res) {
                                 ::assoc_legendre_p_all(assoc_legendre_norm, z, branch_cut, res);
                             },
-                            [](float z, long long int branch_cut, ad0_float_2d res) {
+                            [](float z, long long int branch_cut, autodiff0_float_2d res) {
                                 ::assoc_legendre_p_all(assoc_legendre_norm, z, branch_cut, res);
                             },
-                            [](cdouble z, long long int branch_cut, ad0_cdouble_2d res) {
+                            [](cdouble z, long long int branch_cut, autodiff0_cdouble_2d res) {
                                 ::assoc_legendre_p_all(assoc_legendre_norm, z, branch_cut, res);
                             },
-                            [](cfloat z, long long int branch_cut, ad0_cfloat_2d res) {
+                            [](cfloat z, long long int branch_cut, autodiff0_cfloat_2d res) {
                                 ::assoc_legendre_p_all(assoc_legendre_norm, z, branch_cut, res);
                             }},
                            1, "assoc_legendre_p_all", nullptr, "(),()->(np1,mpmp1,1)", assoc_legendre_map_dims<1>),
         Py_True, 1,
-        xsf::numpy::gufunc({[](double z, long long int branch_cut, ad1_double_2d res) {
+        xsf::numpy::gufunc({[](double z, long long int branch_cut, autodiff1_double_2d res) {
                                 ::assoc_legendre_p_all(assoc_legendre_norm, z, branch_cut, res);
                             },
-                            [](float z, long long int branch_cut, ad1_float_2d res) {
+                            [](float z, long long int branch_cut, autodiff1_float_2d res) {
                                 ::assoc_legendre_p_all(assoc_legendre_norm, z, branch_cut, res);
                             },
-                            [](cdouble z, long long int branch_cut, ad1_cdouble_2d res) {
+                            [](cdouble z, long long int branch_cut, autodiff1_cdouble_2d res) {
                                 ::assoc_legendre_p_all(assoc_legendre_norm, z, branch_cut, res);
                             },
-                            [](cfloat z, long long int branch_cut, ad1_cfloat_2d res) {
+                            [](cfloat z, long long int branch_cut, autodiff1_cfloat_2d res) {
                                 ::assoc_legendre_p_all(assoc_legendre_norm, z, branch_cut, res);
                             }},
                            1, "assoc_legendre_p_all", nullptr, "(),()->(np1,mpmp1,2)", assoc_legendre_map_dims<1>),
         Py_True, 2,
-        xsf::numpy::gufunc({[](double z, long long int branch_cut, ad2_double_2d res) {
+        xsf::numpy::gufunc({[](double z, long long int branch_cut, autodiff2_double_2d res) {
                                 ::assoc_legendre_p_all(assoc_legendre_norm, z, branch_cut, res);
                             },
-                            [](float z, long long int branch_cut, ad2_float_2d res) {
+                            [](float z, long long int branch_cut, autodiff2_float_2d res) {
                                 ::assoc_legendre_p_all(assoc_legendre_norm, z, branch_cut, res);
                             },
-                            [](cdouble z, long long int branch_cut, ad2_cdouble_2d res) {
+                            [](cdouble z, long long int branch_cut, autodiff2_cdouble_2d res) {
                                 ::assoc_legendre_p_all(assoc_legendre_norm, z, branch_cut, res);
                             },
-                            [](cfloat z, long long int branch_cut, ad2_cfloat_2d res) {
+                            [](cfloat z, long long int branch_cut, autodiff2_cfloat_2d res) {
                                 ::assoc_legendre_p_all(assoc_legendre_norm, z, branch_cut, res);
                             }},
                            1, "assoc_legendre_p_all", nullptr, "(),()->(np1,mpmp1,3)", assoc_legendre_map_dims<1>),
         Py_False, 0,
-        xsf::numpy::gufunc({[](double z, long long int branch_cut, ad0_double_2d res) {
+        xsf::numpy::gufunc({[](double z, long long int branch_cut, autodiff0_double_2d res) {
                                 ::assoc_legendre_p_all(assoc_legendre_unnorm, z, branch_cut, res);
                             },
-                            [](float z, long long int branch_cut, ad0_float_2d res) {
+                            [](float z, long long int branch_cut, autodiff0_float_2d res) {
                                 ::assoc_legendre_p_all(assoc_legendre_unnorm, z, branch_cut, res);
                             },
-                            [](cdouble z, long long int branch_cut, ad0_cdouble_2d res) {
+                            [](cdouble z, long long int branch_cut, autodiff0_cdouble_2d res) {
                                 ::assoc_legendre_p_all(assoc_legendre_unnorm, z, branch_cut, res);
                             },
-                            [](cfloat z, long long int branch_cut, ad0_cfloat_2d res) {
+                            [](cfloat z, long long int branch_cut, autodiff0_cfloat_2d res) {
                                 ::assoc_legendre_p_all(assoc_legendre_unnorm, z, branch_cut, res);
                             }},
                            1, "assoc_legendre_p_all", nullptr, "(),()->(np1,mpmp1,1)", assoc_legendre_map_dims<1>),
         Py_False, 1,
-        xsf::numpy::gufunc({[](double z, long long int branch_cut, ad1_double_2d res) {
+        xsf::numpy::gufunc({[](double z, long long int branch_cut, autodiff1_double_2d res) {
                                 ::assoc_legendre_p_all(assoc_legendre_unnorm, z, branch_cut, res);
                             },
-                            [](float z, long long int branch_cut, ad1_float_2d res) {
+                            [](float z, long long int branch_cut, autodiff1_float_2d res) {
                                 ::assoc_legendre_p_all(assoc_legendre_unnorm, z, branch_cut, res);
                             },
-                            [](cdouble z, long long int branch_cut, ad1_cdouble_2d res) {
+                            [](cdouble z, long long int branch_cut, autodiff1_cdouble_2d res) {
                                 ::assoc_legendre_p_all(assoc_legendre_unnorm, z, branch_cut, res);
                             },
-                            [](cfloat z, long long int branch_cut, ad1_cfloat_2d res) {
+                            [](cfloat z, long long int branch_cut, autodiff1_cfloat_2d res) {
                                 ::assoc_legendre_p_all(assoc_legendre_unnorm, z, branch_cut, res);
                             }},
                            1, "assoc_legendre_p_all", nullptr, "(),()->(np1,mpmp1,2)", assoc_legendre_map_dims<1>),
         Py_False, 2,
-        xsf::numpy::gufunc({[](double z, long long int branch_cut, ad2_double_2d res) {
+        xsf::numpy::gufunc({[](double z, long long int branch_cut, autodiff2_double_2d res) {
                                 ::assoc_legendre_p_all(assoc_legendre_unnorm, z, branch_cut, res);
                             },
-                            [](float z, long long int branch_cut, ad2_float_2d res) {
+                            [](float z, long long int branch_cut, autodiff2_float_2d res) {
                                 ::assoc_legendre_p_all(assoc_legendre_unnorm, z, branch_cut, res);
                             },
-                            [](cdouble z, long long int branch_cut, ad2_cdouble_2d res) {
+                            [](cdouble z, long long int branch_cut, autodiff2_cdouble_2d res) {
                                 ::assoc_legendre_p_all(assoc_legendre_unnorm, z, branch_cut, res);
                             },
-                            [](cfloat z, long long int branch_cut, ad2_cfloat_2d res) {
+                            [](cfloat z, long long int branch_cut, autodiff2_cfloat_2d res) {
                                 ::assoc_legendre_p_all(assoc_legendre_unnorm, z, branch_cut, res);
                             }},
                            1, "assoc_legendre_p_all", nullptr, "(),()->(np1,mpmp1,3)", assoc_legendre_map_dims<1>));
