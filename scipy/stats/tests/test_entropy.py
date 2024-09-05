@@ -7,8 +7,9 @@ import numpy as np
 from scipy import stats
 from scipy.stats import norm, expon  # type: ignore[attr-defined]
 from scipy.conftest import array_api_compatible
-from scipy._lib._array_api import (xp_assert_close, xp_assert_equal, xp_assert_less,
-                                   is_jax, is_array_api_strict, array_namespace)
+from scipy._lib._array_api import array_namespace, is_array_api_strict, is_jax
+from scipy._lib._array_api_no_0d import (xp_assert_close, xp_assert_equal,
+                                         xp_assert_less)
 
 class TestEntropy:
     @array_api_compatible

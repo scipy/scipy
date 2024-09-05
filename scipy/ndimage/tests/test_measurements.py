@@ -3,13 +3,16 @@ import os.path
 
 import numpy as np
 from numpy.testing import suppress_warnings
+
 from scipy._lib._array_api import (
+    is_jax,
+    is_torch,
+    array_namespace,
     xp_assert_equal,
     xp_assert_close,
     assert_array_almost_equal,
     assert_almost_equal,
 )
-from scipy._lib._array_api import is_jax, is_torch, array_namespace
 
 import pytest
 from pytest import raises as assert_raises
@@ -592,7 +595,7 @@ def test_sum03(xp):
         dtype = getattr(xp, type)
         input = xp.ones([], dtype=dtype)
         output = ndimage.sum(input)
-        assert_almost_equal(output, xp.asarray(1.0))
+        assert_almost_equal(output, xp.asarray(1.0), check_0d=False)
 
 
 def test_sum04(xp):
@@ -600,7 +603,7 @@ def test_sum04(xp):
         dtype = getattr(xp, type)
         input = xp.asarray([1, 2], dtype=dtype)
         output = ndimage.sum(input)
-        assert_almost_equal(output, xp.asarray(3.0))
+        assert_almost_equal(output, xp.asarray(3.0), check_0d=False)
 
 
 def test_sum05(xp):
@@ -608,7 +611,7 @@ def test_sum05(xp):
         dtype = getattr(xp, type)
         input = xp.asarray([[1, 2], [3, 4]], dtype=dtype)
         output = ndimage.sum(input)
-        assert_almost_equal(output, xp.asarray(10.0))
+        assert_almost_equal(output, xp.asarray(10.0), check_0d=False)
 
 
 def test_sum06(xp):
@@ -648,7 +651,7 @@ def test_sum09(xp):
         dtype = getattr(xp, type)
         input = xp.asarray([[1, 2], [3, 4]], dtype=dtype)
         output = ndimage.sum(input, labels=labels)
-        assert_almost_equal(output, xp.asarray(4.0))
+        assert_almost_equal(output, xp.asarray(4.0), check_0d=False)
 
 
 def test_sum10(xp):
@@ -658,7 +661,7 @@ def test_sum10(xp):
     labels = xp.asarray(labels)
     input = xp.asarray(input)
     output = ndimage.sum(input, labels=labels)
-    assert_almost_equal(output, xp.asarray(2.0))
+    assert_almost_equal(output, xp.asarray(2.0), check_0d=False)
 
 
 def test_sum11(xp):
@@ -668,7 +671,7 @@ def test_sum11(xp):
         input = xp.asarray([[1, 2], [3, 4]], dtype=dtype)
         output = ndimage.sum(input, labels=labels,
                              index=2)
-        assert_almost_equal(output, xp.asarray(6.0))
+        assert_almost_equal(output, xp.asarray(6.0), check_0d=False)
 
 
 def test_sum12(xp):
@@ -700,7 +703,7 @@ def test_mean01(xp):
         dtype = getattr(xp, type)
         input = xp.asarray([[1, 2], [3, 4]], dtype=dtype)
         output = ndimage.mean(input, labels=labels)
-        assert_almost_equal(output, xp.asarray(2.0))
+        assert_almost_equal(output, xp.asarray(2.0), check_0d=False)
 
 
 def test_mean02(xp):
@@ -710,7 +713,7 @@ def test_mean02(xp):
     labels = xp.asarray(labels)
     input = xp.asarray(input)
     output = ndimage.mean(input, labels=labels)
-    assert_almost_equal(output, xp.asarray(1.0))
+    assert_almost_equal(output, xp.asarray(1.0), check_0d=False)
 
 
 def test_mean03(xp):
@@ -720,7 +723,7 @@ def test_mean03(xp):
         input = xp.asarray([[1, 2], [3, 4]], dtype=dtype)
         output = ndimage.mean(input, labels=labels,
                               index=2)
-        assert_almost_equal(output, xp.asarray(3.0))
+        assert_almost_equal(output, xp.asarray(3.0), check_0d=False)
 
 
 def test_mean04(xp):
@@ -745,7 +748,7 @@ def test_minimum01(xp):
         dtype = getattr(xp, type)
         input = xp.asarray([[1, 2], [3, 4]], dtype=dtype)
         output = ndimage.minimum(input, labels=labels)
-        assert_almost_equal(output, xp.asarray(1.0))
+        assert_almost_equal(output, xp.asarray(1.0), check_0d=False)
 
 
 def test_minimum02(xp):
@@ -755,7 +758,7 @@ def test_minimum02(xp):
     labels = xp.asarray(labels)
     input = xp.asarray(input)
     output = ndimage.minimum(input, labels=labels)
-    assert_almost_equal(output, xp.asarray(1.0))
+    assert_almost_equal(output, xp.asarray(1.0), check_0d=False)
 
 
 def test_minimum03(xp):
@@ -766,7 +769,7 @@ def test_minimum03(xp):
         input = xp.asarray([[1, 2], [3, 4]], dtype=dtype)
         output = ndimage.minimum(input, labels=labels,
                                  index=2)
-        assert_almost_equal(output, xp.asarray(2.0))
+        assert_almost_equal(output, xp.asarray(2.0), check_0d=False)
 
 
 def test_minimum04(xp):
@@ -786,7 +789,7 @@ def test_maximum01(xp):
         dtype = getattr(xp, type)
         input = xp.asarray([[1, 2], [3, 4]], dtype=dtype)
         output = ndimage.maximum(input, labels=labels)
-        assert_almost_equal(output, xp.asarray(3.0))
+        assert_almost_equal(output, xp.asarray(3.0), check_0d=False)
 
 
 def test_maximum02(xp):
@@ -795,7 +798,7 @@ def test_maximum02(xp):
     labels = xp.asarray(labels)
     input = xp.asarray(input)
     output = ndimage.maximum(input, labels=labels)
-    assert_almost_equal(output, xp.asarray(1.0))
+    assert_almost_equal(output, xp.asarray(1.0), check_0d=False)
 
 
 def test_maximum03(xp):
@@ -805,7 +808,7 @@ def test_maximum03(xp):
         input = xp.asarray([[1, 2], [3, 4]], dtype=dtype)
         output = ndimage.maximum(input, labels=labels,
                                  index=2)
-        assert_almost_equal(output, xp.asarray(4.0))
+        assert_almost_equal(output, xp.asarray(4.0), check_0d=False)
 
 
 def test_maximum04(xp):
@@ -843,7 +846,7 @@ def test_median02(xp):
                     [0, 0, 0, 7],
                     [9, 3, 0, 0]])
     output = ndimage.median(a)
-    assert_almost_equal(output, xp.asarray(1.0))
+    assert_almost_equal(output, xp.asarray(1.0), check_0d=False)
 
 
 def test_median03(xp):
@@ -856,7 +859,7 @@ def test_median03(xp):
                          [0, 0, 0, 2],
                          [3, 3, 0, 0]])
     output = ndimage.median(a, labels=labels)
-    assert_almost_equal(output, xp.asarray(3.0))
+    assert_almost_equal(output, xp.asarray(3.0), check_0d=False)
 
 
 def test_median_gh12836_bool(xp):
@@ -890,7 +893,7 @@ def test_variance02(xp):
         dtype = getattr(xp, type)
         input = xp.asarray([1], dtype=dtype)
         output = ndimage.variance(input)
-        assert_almost_equal(output, xp.asarray(0.0))
+        assert_almost_equal(output, xp.asarray(0.0), check_0d=False)
 
 
 def test_variance03(xp):
@@ -898,14 +901,14 @@ def test_variance03(xp):
         dtype = getattr(xp, type)
         input = xp.asarray([1, 3], dtype=dtype)
         output = ndimage.variance(input)
-        assert_almost_equal(output, xp.asarray(1.0))
+        assert_almost_equal(output, xp.asarray(1.0), check_0d=False)
 
 
 def test_variance04(xp):
     input = np.asarray([1, 0], dtype=bool)
     input = xp.asarray(input)
     output = ndimage.variance(input)
-    assert_almost_equal(output, xp.asarray(0.25))
+    assert_almost_equal(output, xp.asarray(0.25), check_0d=False)
 
 
 def test_variance05(xp):
@@ -915,7 +918,7 @@ def test_variance05(xp):
 
         input = xp.asarray([1, 3, 8], dtype=dtype)
         output = ndimage.variance(input, labels, 2)
-        assert_almost_equal(output, xp.asarray(1.0))
+        assert_almost_equal(output, xp.asarray(1.0), check_0d=False)
 
 
 def test_variance06(xp):
@@ -944,7 +947,7 @@ def test_standard_deviation02(xp):
         dtype = getattr(xp, type)
         input = xp.asarray([1], dtype=dtype)
         output = ndimage.standard_deviation(input)
-        assert_almost_equal(output, xp.asarray(0.0))
+        assert_almost_equal(output, xp.asarray(0.0), check_0d=False)
 
 
 def test_standard_deviation03(xp):
@@ -952,14 +955,14 @@ def test_standard_deviation03(xp):
         dtype = getattr(xp, type)
         input = xp.asarray([1, 3], dtype=dtype)
         output = ndimage.standard_deviation(input)
-        assert_almost_equal(output, xp.asarray(1.0))
+        assert_almost_equal(output, xp.asarray(1.0), check_0d=False)
 
 
 def test_standard_deviation04(xp):
     input = np.asarray([1, 0], dtype=bool)
     input = xp.asarray(input)
     output = ndimage.standard_deviation(input)
-    assert_almost_equal(output, xp.asarray(0.5))
+    assert_almost_equal(output, xp.asarray(0.5), check_0d=False)
 
 
 def test_standard_deviation05(xp):
@@ -968,7 +971,7 @@ def test_standard_deviation05(xp):
         dtype = getattr(xp, type)
         input = xp.asarray([1, 3, 8], dtype=dtype)
         output = ndimage.standard_deviation(input, labels, 2)
-        assert_almost_equal(output, xp.asarray(1.0))
+        assert_almost_equal(output, xp.asarray(1.0), check_0d=False)
 
 
 def test_standard_deviation06(xp):

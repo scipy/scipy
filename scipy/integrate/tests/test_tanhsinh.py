@@ -8,8 +8,8 @@ from numpy.testing import assert_allclose, assert_equal
 
 from scipy.conftest import array_api_compatible
 import scipy._lib._elementwise_iterative_method as eim
-from scipy._lib._array_api import (array_namespace, xp_assert_close, xp_assert_equal,
-                                   xp_size, xp_ravel, xp_copy)
+from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal
+from scipy._lib._array_api import array_namespace, xp_size, xp_ravel, xp_copy
 from scipy import special, stats
 from scipy.integrate import quad_vec, nsum
 from scipy.integrate._tanhsinh import _tanhsinh, _pair_cache
@@ -322,7 +322,7 @@ class TestTanhSinh:
             f.nit += 1
             funcs = [lambda x: xp.exp(-x**2),  # converges
                      lambda x: xp.exp(x),  # reaches maxiter due to order=2
-                     lambda x: xp.full_like(x, xp.nan)[()]]  # stops due to NaN
+                     lambda x: xp.full_like(x, xp.nan)]  # stops due to NaN
             res = []
             for i in range(xp_size(js)):
                 x = xs[i, ...]
@@ -343,7 +343,7 @@ class TestTanhSinh:
         def f(x):
             res = [xp.exp(-x[0]**2),  # converges
                    xp.exp(x[1]),  # reaches maxiter due to order=2
-                   xp.full_like(x[2], xp.nan)[()]]  # stops due to NaN
+                   xp.full_like(x[2], xp.nan)]  # stops due to NaN
             return xp.stack(res)
 
         a = xp.asarray([xp.inf] * 3)
@@ -396,8 +396,8 @@ class TestTanhSinh:
 
         # Keep things simpler by leaving tolerances fixed rather than
         # having to make them dtype-dependent
-        a = xp.asarray(0., dtype=xp.float64)[()]
-        b = xp.asarray(1., dtype=xp.float64)[()]
+        a = xp.asarray(0., dtype=xp.float64)
+        b = xp.asarray(1., dtype=xp.float64)
 
         # Test default options
         f.feval, f.calls = 0, 0
@@ -517,8 +517,8 @@ class TestTanhSinh:
         def logf(x):
             return xp.log(norm_logpdf(x) + 0j) + norm_logpdf(x) + xp.pi * 1j
 
-        a = xp.asarray(-xp.inf, dtype=xp.float64)[()]
-        b = xp.asarray(xp.inf, dtype=xp.float64)[()]
+        a = xp.asarray(-xp.inf, dtype=xp.float64)
+        b = xp.asarray(xp.inf, dtype=xp.float64)
         res = _tanhsinh(logf, a, b, log=True)
         ref = _tanhsinh(f, a, b)
         # In gh-19173, we saw `invalid` warnings on one CI platform.
@@ -602,7 +602,7 @@ class TestTanhSinh:
     def test_dtype(self, limits, dtype, xp):
         # Test that dtypes are preserved
         dtype = getattr(xp, dtype)
-        a, b = xp.asarray(limits, dtype=dtype)[()]
+        a, b = xp.asarray(limits, dtype=dtype)
 
         def f(x):
             assert x.dtype == dtype
@@ -1017,7 +1017,7 @@ class TestNSum:
     def test_dtype(self, dtype):
         def f(k):
             assert k.dtype == dtype
-            return 1 / k ** np.asarray(2, dtype=dtype)[()]
+            return 1 / k ** np.asarray(2, dtype=dtype)
 
         a = np.asarray(1, dtype=dtype)
         b = np.asarray([10, np.inf], dtype=dtype)
