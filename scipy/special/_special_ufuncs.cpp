@@ -574,14 +574,14 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
 
     PyObject *legendre_p = Py_BuildValue(
         "(N, N, N)",
-        xsf::numpy::gufunc({static_cast<xsf::numpy::autodiff0_qd_d>(::legendre_p),
-                            static_cast<xsf::numpy::autodiff0_qf_f>(::legendre_p)},
+        xsf::numpy::gufunc({xsf::numpy::wrap_autodiff(static_cast<xsf::numpy::autodiff0_qd_d>(xsf::legendre_p)),
+                            xsf::numpy::wrap_autodiff(static_cast<xsf::numpy::autodiff0_qf_f>(xsf::legendre_p))},
                            "legendre_p", nullptr, "(),()->(1)", [](const npy_intp *dims, npy_intp *new_dims) {}),
-        xsf::numpy::gufunc({static_cast<xsf::numpy::autodiff1_qd_d>(::legendre_p),
-                            static_cast<xsf::numpy::autodiff1_qf_f>(::legendre_p)},
+        xsf::numpy::gufunc({xsf::numpy::wrap_autodiff(static_cast<xsf::numpy::autodiff1_qd_d>(xsf::legendre_p)),
+                            xsf::numpy::wrap_autodiff(static_cast<xsf::numpy::autodiff1_qf_f>(xsf::legendre_p))},
                            "legendre_p", nullptr, "(),()->(2)", [](const npy_intp *dims, npy_intp *new_dims) {}),
-        xsf::numpy::gufunc({static_cast<xsf::numpy::autodiff2_qd_d>(::legendre_p),
-                            static_cast<xsf::numpy::autodiff2_qf_f>(::legendre_p)},
+        xsf::numpy::gufunc({xsf::numpy::wrap_autodiff(static_cast<xsf::numpy::autodiff2_qd_d>(xsf::legendre_p)),
+                            xsf::numpy::wrap_autodiff(static_cast<xsf::numpy::autodiff2_qf_f>(xsf::legendre_p))},
                            "legendre_p", nullptr, "(),()->(3)", [](const npy_intp *dims, npy_intp *new_dims) {}));
     PyModule_AddObjectRef(_special_ufuncs, "legendre_p", legendre_p);
 

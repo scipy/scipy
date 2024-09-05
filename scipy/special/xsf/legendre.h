@@ -55,7 +55,7 @@ void legendre_p_for_each_n(int n, T z, T (&res)[2], Func f) {
  * @return value of the polynomial
  */
 template <typename T>
-T legendre_p(int n, T z) {
+T legendre_p(long long int n, T z) {
     T res_n[2];
     legendre_p_for_each_n(n, z, res_n, [](int n, const T(&res_n)[2]) {});
 

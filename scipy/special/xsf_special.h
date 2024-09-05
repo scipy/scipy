@@ -14,11 +14,6 @@
 
 namespace {
 
-template <typename T, size_t N>
-xsf::dual<T, N> legendre_p(long long int n, T z) {
-    return xsf::legendre_p(n, xsf::dual_var<N>(z));
-}
-
 template <typename T, typename OutputVec>
 void legendre_p_all(T z, OutputVec res) {
     static constexpr size_t N = OutputVec::value_type::max_order();

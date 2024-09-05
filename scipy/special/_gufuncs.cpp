@@ -56,6 +56,8 @@ PyMODINIT_FUNC PyInit__gufuncs() {
     PyUnstable_Module_SetGIL(_gufuncs, Py_MOD_GIL_NOT_USED);
 #endif
 
+    // xsf::numpy::wrap_autodiff()
+
     PyObject *legendre_p_all =
         Py_BuildValue("(N, N, N)",
                       xsf::numpy::gufunc({static_cast<xsf::numpy::autodiff0_d_d1>(::legendre_p_all),

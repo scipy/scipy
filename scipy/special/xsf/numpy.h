@@ -172,12 +172,12 @@ namespace numpy {
     using lD_D = cdouble (*)(long int, cdouble);
 
     // autodiff, 2 inputs, 1 output
-    using autodiff0_qf_f = autodiff0_float (*)(long long int, float);
-    using autodiff0_qd_d = autodiff0_double (*)(long long int, double);
-    using autodiff1_qf_f = autodiff1_float (*)(long long int, float);
-    using autodiff1_qd_d = autodiff1_double (*)(long long int, double);
-    using autodiff2_qf_f = autodiff2_float (*)(long long int, float);
-    using autodiff2_qd_d = autodiff2_double (*)(long long int, double);
+    using autodiff0_qf_f = autodiff0_float (*)(long long int, autodiff0_float);
+    using autodiff0_qd_d = autodiff0_double (*)(long long int, autodiff0_double);
+    using autodiff1_qf_f = autodiff1_float (*)(long long int, autodiff1_float);
+    using autodiff1_qd_d = autodiff1_double (*)(long long int, autodiff1_double);
+    using autodiff2_qf_f = autodiff2_float (*)(long long int, autodiff2_float);
+    using autodiff2_qd_d = autodiff2_double (*)(long long int, autodiff2_double);
 
     // 2 inputs, 2 outputs
     using qf_ff = void (*)(long long int, float, float &, float &);
@@ -942,6 +942,45 @@ namespace numpy {
 
         return gufunc(std::move(func), nout, name, doc, signature, map_dims);
     }
+
+    template <typename T>
+    struct value_type {
+        using type = T;
+    };
+
+    template <typename T, size_t... Orders>
+    struct value_type<dual<T, Orders...>> {
+        using type = T;
+    };
+
+    template <typename T>
+    using value_type_t = typename value_type<T>::type;
+
+    template <typename T>
+    struct autodiff_cast {
+        static T get(T arg) { return arg; }
+    };
+
+    template <typename T, size_t... Orders>
+    struct autodiff_cast<dual<T, Orders...>> {
+        static dual<T, Orders...> get(T arg) { return dual_var<Orders...>(arg); }
+    };
+
+    template <typename Func, typename Sig = signature_of_t<Func>>
+    class wrap_autodiff;
+
+    template <typename Func, typename Res, typename... Args>
+    class wrap_autodiff<Func, Res(Args...)> {
+        Func func;
+
+      public:
+        wrap_autodiff(Func func) : func(func) {}
+
+        Res operator()(value_type_t<Args>... args) { return func(autodiff_cast<Args>::get(args)...); }
+    };
+
+    template <typename Func>
+    wrap_autodiff(Func func) -> wrap_autodiff<Func>;
 
 } // namespace numpy
 } // namespace xsf
