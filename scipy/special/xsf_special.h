@@ -24,11 +24,6 @@ void legendre_p_all(T z, OutputVec res) {
 using xsf::assoc_legendre_norm;
 using xsf::assoc_legendre_unnorm;
 
-template <size_t N, typename NormPolicy, typename T>
-xsf::dual<T, N> assoc_legendre_p(NormPolicy norm, long long int n, long long int m, T z, long long int branch_cut) {
-    return xsf::assoc_legendre_p(norm, n, m, xsf::dual_var<N>(z), branch_cut);
-}
-
 template <typename NormPolicy, typename T, typename OutputMat>
 void assoc_legendre_p_all(NormPolicy norm, T z, long long int branch_cut, OutputMat res) {
     static constexpr size_t N = OutputMat::value_type::max_order();

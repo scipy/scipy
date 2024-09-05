@@ -451,8 +451,8 @@ void assoc_legendre_p_for_each_n_m(NormPolicy norm, int n, int m, T z, int branc
  *
  * @return value of the polynomial
  */
-template <typename NormPolicy, typename T, typename... OutputVals>
-T assoc_legendre_p(NormPolicy norm, int n, int m, T z, int branch_cut) {
+template <typename NormPolicy, typename T>
+T assoc_legendre_p(NormPolicy norm, long long int n, long long int m, T z, long long int branch_cut) {
     T res_n[2];
     assoc_legendre_p_for_each_n(norm, n, m, z, branch_cut, res_n, [](int n, const T(&res_n)[2]) {});
 
