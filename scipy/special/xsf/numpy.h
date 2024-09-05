@@ -216,12 +216,12 @@ namespace numpy {
     using qqd_d = double (*)(long long int, long long int, double);
 
     // autodiff, 3 inputs, 1 ouput
-    using autodiff0_qqf_f = autodiff0_float (*)(long long int, long long int, float);
-    using autodiff0_qqd_d = autodiff0_double (*)(long long int, long long int, double);
-    using autodiff1_qqf_f = autodiff1_float (*)(long long int, long long int, float);
-    using autodiff1_qqd_d = autodiff1_double (*)(long long int, long long int, double);
-    using autodiff2_qqf_f = autodiff2_float (*)(long long int, long long int, float);
-    using autodiff2_qqd_d = autodiff2_double (*)(long long int, long long int, double);
+    using autodiff0_qqf_f = autodiff0_float (*)(long long int, long long int, autodiff0_float);
+    using autodiff0_qqd_d = autodiff0_double (*)(long long int, long long int, autodiff0_double);
+    using autodiff1_qqf_f = autodiff1_float (*)(long long int, long long int, autodiff1_float);
+    using autodiff1_qqd_d = autodiff1_double (*)(long long int, long long int, autodiff1_double);
+    using autodiff2_qqf_f = autodiff2_float (*)(long long int, long long int, autodiff2_float);
+    using autodiff2_qqd_d = autodiff2_double (*)(long long int, long long int, autodiff2_double);
 
     // 3 inputs, 2 outputs
     using qqf_ff = void (*)(long long int, long long int, float, float &, float &);
@@ -956,27 +956,30 @@ namespace numpy {
     template <typename T>
     using value_type_t = typename value_type<T>::type;
 
+    // rename to autodiff_var?
     template <typename T>
     struct autodiff_cast {
-        static T get(T arg) { return arg; }
+        static T get(T arg, size_t i) { return arg; }
     };
 
     template <typename T, size_t... Orders>
     struct autodiff_cast<dual<T, Orders...>> {
-        static dual<T, Orders...> get(T arg) { return dual_var<Orders...>(arg); }
+        static dual<T, Orders...> get(T arg, size_t i) { return dual_var<Orders...>(arg); }
     };
 
-    template <typename Func, typename Sig = signature_of_t<Func>>
+    template <
+        typename Func, typename Signature = signature_of_t<Func>,
+        typename Indices = std::make_index_sequence<arity_of_v<Signature>>>
     class wrap_autodiff;
 
-    template <typename Func, typename Res, typename... Args>
-    class wrap_autodiff<Func, Res(Args...)> {
+    template <typename Func, typename Res, typename... Args, size_t... I>
+    class wrap_autodiff<Func, Res(Args...), std::index_sequence<I...>> {
         Func func;
 
       public:
         wrap_autodiff(Func func) : func(func) {}
 
-        Res operator()(value_type_t<Args>... args) { return func(autodiff_cast<Args>::get(args)...); }
+        Res operator()(value_type_t<Args>... args) { return func(autodiff_cast<Args>::get(args, I)...); }
     };
 
     template <typename Func>

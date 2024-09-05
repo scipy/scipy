@@ -36,11 +36,6 @@ void assoc_legendre_p_all(NormPolicy norm, T z, long long int branch_cut, Output
     xsf::assoc_legendre_p_all(norm, xsf::dual_var<N>(z), branch_cut, res);
 }
 
-template <typename T, size_t N>
-xsf::dual<T, N> sph_legendre_p(long long int n, long long int m, T theta) {
-    return xsf::sph_legendre_p(n, m, xsf::dual_var<N>(theta));
-}
-
 template <typename T, typename OutputMat>
 void sph_legendre_p_all(T theta, OutputMat res) {
     static constexpr size_t N = OutputMat::value_type::max_order();

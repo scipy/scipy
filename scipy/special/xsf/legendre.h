@@ -636,7 +636,7 @@ void sph_legendre_p_for_each_n_m(int n, int m, T theta, T (&res)[2], Func f) {
 }
 
 template <typename T>
-T sph_legendre_p(int n, int m, T theta) {
+T sph_legendre_p(long long int n, long long int m, T theta) {
     T res_n[2];
     sph_legendre_p_for_each_n(n, m, theta, res_n, [](int n, const T(&res_n)[2]) {});
 
