@@ -258,6 +258,7 @@ class TestFloaterHormann:
         with pytest.raises(TypeError):
             FloaterHormannInterpolator([0], [0], d=0.0)
 
+    # reference values from Floater and Hormann 2007 page 8.
     @pytest.mark.parametrize("d,expected", [
         (0, [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]),
         (1, [1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1]),
