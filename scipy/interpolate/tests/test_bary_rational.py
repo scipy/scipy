@@ -52,11 +52,11 @@ def test_dtype_preservation(method, dtype):
     assert_allclose(r(z2), np.sin(z2), rtol=rtol)
     assert r(z2).dtype == dtype
 
-    assert r.support_points.dtype == dtype
-    assert r.support_values.dtype == dtype
-    assert r.weights.dtype == dtype
     if method is AAA:
+        assert r.support_points.dtype == dtype
+        assert r.support_values.dtype == dtype
         assert r.errors.dtype == z.real.dtype
+    assert r.weights.dtype == dtype
     assert r.poles().dtype == np.result_type(dtype, 1j)
     assert r.residues().dtype == np.result_type(dtype, 1j)
     assert r.roots().dtype == np.result_type(dtype, 1j)

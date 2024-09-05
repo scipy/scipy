@@ -56,7 +56,7 @@ class _BarycentricRational:
         z, uni = np.unique(z, return_index=True)
         f = f[uni]
 
-        self.support_points, self.support_values, self.weights = self._compute_weights(
+        self._support_points, self._support_values, self.weights = self._compute_weights(
             z, f, **kwargs
         )
 
@@ -83,26 +83,26 @@ class _BarycentricRational:
         # Cauchy matrix
         # Ignore errors due to inf/inf at support points, these will be fixed later
         with np.errstate(invalid="ignore", divide="ignore"):
-            CC = 1 / np.subtract.outer(zv, self.support_points)
+            CC = 1 / np.subtract.outer(zv, self._support_points)
             # Vector of values
-            r = CC @ (self.weights * self.support_values) / (CC @ self.weights)
+            r = CC @ (self.weights * self._support_values) / (CC @ self.weights)
 
         # Deal with input inf: `r(inf) = lim r(z) = sum(w*f) / sum(w)`
         if np.any(np.isinf(zv)):
-            r[np.isinf(zv)] = (np.sum(self.weights * self.support_values)
+            r[np.isinf(zv)] = (np.sum(self.weights * self._support_values)
                                / np.sum(self.weights))
 
         # Deal with NaN
         ii = np.nonzero(np.isnan(r))[0]
         for jj in ii:
-            if np.isnan(zv[jj]) or not np.any(zv[jj] == self.support_points):
+            if np.isnan(zv[jj]) or not np.any(zv[jj] == self._support_points):
                 # r(NaN) = NaN is fine.
                 # The second case may happen if `r(zv[ii]) = 0/0` at some point.
                 pass
             else:
                 # Clean up values `NaN = inf/inf` at support points.
                 # Find the corresponding node and set entry to correct value:
-                r[jj] = self.support_values[zv[jj] == self.support_points].squeeze()
+                r[jj] = self._support_values[zv[jj] == self._support_points].squeeze()
 
         return np.reshape(r, z.shape)
 
@@ -122,10 +122,10 @@ class _BarycentricRational:
             B[0, 0] = 0
 
             E = np.zeros_like(B, dtype=np.result_type(self.weights,
-                                                      self.support_points))
+                                                      self._support_points))
             E[0, 1:] = self.weights
             E[1:, 0] = 1
-            np.fill_diagonal(E[1:, 1:], self.support_points)
+            np.fill_diagonal(E[1:, 1:], self._support_points)
 
             pol = scipy.linalg.eigvals(E, B)
             self._poles = pol[np.isfinite(pol)]
@@ -142,11 +142,11 @@ class _BarycentricRational:
         if self._residues is None:
             # Compute residues via formula for res of quotient of analytic functions
             with np.errstate(divide="ignore", invalid="ignore"):
-                N = (1/(np.subtract.outer(self.poles(), self.support_points))) @ (
-                    self.support_values * self.weights
+                N = (1/(np.subtract.outer(self.poles(), self._support_points))) @ (
+                    self._support_values * self.weights
                 )
                 Ddiff = (
-                    -((1/np.subtract.outer(self.poles(), self.support_points))**2)
+                    -((1/np.subtract.outer(self.poles(), self._support_points))**2)
                     @ self.weights
                 )
                 self._residues = N / Ddiff
@@ -166,11 +166,11 @@ class _BarycentricRational:
             m = self.weights.size
             B = np.eye(m + 1, dtype=self.weights.dtype)
             B[0, 0] = 0
-            E = np.zeros_like(B, dtype=np.result_type(self.weights, self.support_values,
-                                                      self.support_points))
-            E[0, 1:] = self.weights * self.support_values
+            E = np.zeros_like(B, dtype=np.result_type(self.weights, self._support_values,
+                                                      self._support_points))
+            E[0, 1:] = self.weights * self._support_values
             E[1:, 0] = 1
-            np.fill_diagonal(E[1:, 1:], self.support_points)
+            np.fill_diagonal(E[1:, 1:], self._support_points)
 
             zer = scipy.linalg.eigvals(E, B)
             self._roots = zer[np.isfinite(zer)]
@@ -406,6 +406,14 @@ class AAA(_BarycentricRational):
         if clean_up:
             self.clean_up(clean_up_tol)
 
+    @property
+    def support_points(self):
+        return self._support_points
+
+    @property
+    def support_values(self):
+        return self._support_values
+
     def _compute_weights(self, z, f, rtol, max_terms):
         # Initialization for AAA iteration
         M = np.size(z)
@@ -532,14 +540,14 @@ class AAA(_BarycentricRational):
 
         # For each spurious pole find and remove closest support point
         closest_spt_point = np.argmin(
-            np.abs(np.subtract.outer(self.support_points, self.poles()[ii])), axis=0
+            np.abs(np.subtract.outer(self._support_points, self.poles()[ii])), axis=0
         )
-        self.support_points = np.delete(self.support_points, closest_spt_point)
-        self.support_values = np.delete(self.support_values, closest_spt_point)
+        self._support_points = np.delete(self._support_points, closest_spt_point)
+        self._support_values = np.delete(self._support_values, closest_spt_point)
 
         # Remove support points z from sample set
         mask = np.logical_and.reduce(
-            np.not_equal.outer(self._points, self.support_points), axis=1
+            np.not_equal.outer(self._points, self._support_points), axis=1
         )
         f = self._values[mask]
         z = self._points[mask]
@@ -547,12 +555,12 @@ class AAA(_BarycentricRational):
         # recompute weights, we resolve the least squares problem for the remaining
         # support points
 
-        m = self.support_points.size
+        m = self._support_points.size
 
         # Cauchy matrix
-        C = 1 / np.subtract.outer(z, self.support_points)
+        C = 1 / np.subtract.outer(z, self._support_points)
         # Loewner matrix
-        A = f[:, np.newaxis] * C - C * self.support_values
+        A = f[:, np.newaxis] * C - C * self._support_values
 
         # Solve least-squares problem to obtain weights
         _, _, V = scipy.linalg.svd(A, check_finite=False)
@@ -575,12 +583,12 @@ class FloaterHormannInterpolator(_BarycentricRational):
 
     Parameters
     ----------
-    points : 1D array_like, shape (n,)
+    x : 1D array_like, shape (n,)
         1-D array containing values of the independent variable. Values may be real or
         complex but must be finite.
-    values : 1D array_like, shape (n,)
-        Function values ``f(z)`` at `points`. Infinite and NaN values of `values` and
-        corresponding values of `points` will be discarded.
+    y : 1D array_like, shape (n,)
+        1-D array containing values of the dependent variable.. Infinite and NaN values
+        of `values` and corresponding values of `x` will be discarded.
     d : int, optional
         Blending parameter which controls the blending of interpolating polynomials, see
         notes for more details. For ``d=n-1`` it is equivalent to polynomial
@@ -588,10 +596,6 @@ class FloaterHormannInterpolator(_BarycentricRational):
 
     Attributes
     ----------
-    support_points : array
-        Support points of the interpolant. These are the provided `points`.
-    support_values : array
-        Value of the `interpolant` at the `support_points`.
     weights : array
         Weights of the barycentric approximation.
 
