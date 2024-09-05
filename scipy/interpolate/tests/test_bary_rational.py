@@ -276,7 +276,8 @@ class TestFloaterHormann:
     @pytest.mark.parametrize("d", range(10))
     def test_runge(self, d):
         x = np.linspace(0, 1, 51)
-        xx = np.linspace(0, 1, 1001)
+        rng = np.random.default_rng(802754237598370893)
+        xx = rng.uniform(0, 1, size=1000)
         y = self.runge(x)
         h = x[1] - x[0]
 
