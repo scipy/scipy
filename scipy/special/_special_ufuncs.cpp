@@ -914,13 +914,13 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
     PyObject *sph_harm_y = Py_BuildValue(
         "(N, N, N)",
         xsf::numpy::gufunc(
-            {static_cast<xsf::numpy::A0_qqdd_D>(::sph_harm_y), static_cast<xsf::numpy::A0_qqff_F>(::sph_harm_y)},
+            {static_cast<xsf::numpy::A00_qqdd_D>(::sph_harm_y), static_cast<xsf::numpy::A00_qqff_F>(::sph_harm_y)},
             "sph_harm_y", nullptr, "(),(),(),()->(1,1)", [](const npy_intp *dims, npy_intp *new_dims) {}),
         xsf::numpy::gufunc(
-            {static_cast<xsf::numpy::A1_qqdd_D>(::sph_harm_y), static_cast<xsf::numpy::A1_qqff_F>(::sph_harm_y)},
+            {static_cast<xsf::numpy::A11_qqdd_D>(::sph_harm_y), static_cast<xsf::numpy::A11_qqff_F>(::sph_harm_y)},
             "sph_harm_y", nullptr, "(),(),(),()->(2,2)", [](const npy_intp *dims, npy_intp *new_dims) {}),
         xsf::numpy::gufunc(
-            {static_cast<xsf::numpy::A2_qqdd_D>(::sph_harm_y), static_cast<xsf::numpy::A2_qqff_F>(::sph_harm_y)},
+            {static_cast<xsf::numpy::A22_qqdd_D>(::sph_harm_y), static_cast<xsf::numpy::A22_qqff_F>(::sph_harm_y)},
             "sph_harm_y", nullptr, "(),(),(),()->(3,3)", [](const npy_intp *dims, npy_intp *new_dims) {}));
     PyModule_AddObjectRef(_special_ufuncs, "sph_harm_y", sph_harm_y);
 

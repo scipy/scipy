@@ -227,12 +227,12 @@ namespace numpy {
     using dddd_D = cdouble (*)(double, double, double, double);
 
     // autodiff, 4 inputs, 1 output
-    using A0_qqff_F = dual<cfloat, 0, 0> (*)(long long int, long long int, float, float);
-    using A0_qqdd_D = dual<cdouble, 0, 0> (*)(long long int, long long int, double, double);
-    using A1_qqff_F = dual<cfloat, 1, 1> (*)(long long int, long long int, float, float);
-    using A1_qqdd_D = dual<cdouble, 1, 1> (*)(long long int, long long int, double, double);
-    using A2_qqff_F = dual<cfloat, 2, 2> (*)(long long int, long long int, float, float);
-    using A2_qqdd_D = dual<cdouble, 2, 2> (*)(long long int, long long int, double, double);
+    using A00_qqff_F = dual<cfloat, 0, 0> (*)(long long int, long long int, float, float);
+    using A00_qqdd_D = dual<cdouble, 0, 0> (*)(long long int, long long int, double, double);
+    using A11_qqff_F = dual<cfloat, 1, 1> (*)(long long int, long long int, float, float);
+    using A11_qqdd_D = dual<cdouble, 1, 1> (*)(long long int, long long int, double, double);
+    using A22_qqff_F = dual<cfloat, 2, 2> (*)(long long int, long long int, float, float);
+    using A22_qqdd_D = dual<cdouble, 2, 2> (*)(long long int, long long int, double, double);
 
     // 4 inputs, 2 outputs
     using qqqf_ff = void (*)(long long int, long long int, long long int, float, float &, float &);
@@ -384,7 +384,7 @@ namespace numpy {
 
     template <typename T, typename Extents, typename LayoutPolicy, typename AccessorPolicy>
     struct rank_of<std::mdspan<T, Extents, LayoutPolicy, AccessorPolicy>> {
-        static constexpr size_t value = Extents::rank();
+        static constexpr size_t value = Extents::rank() + rank_of<T>::value;
     };
 
     template <typename T, size_t... Orders>
