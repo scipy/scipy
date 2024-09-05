@@ -607,25 +607,32 @@ class FloaterHormannInterpolator(_BarycentricRational):
     Notes
     -----
     The Floater-Hormann interpolant is a rational function that interpolates the data
-    with approximation order :math:`O(h^{d+1})`. The rational function contains no poles
-    on the real axis, unlike `AAA`. The interpolant is given
+    with approximation order :math:`O(h^{d+1})`. The rational function blends ``n - d``
+    polynomials of degree `d` together to produce a rational interpolant that contains
+    no poles on the real axis, unlike `AAA`. The interpolant is given
     by
 
     .. math::
 
-        r(z) = \frac{\sum_{i=0}^{n-d} \lambda_i(z) p_i(z)}
-        {\sum_{i=0}^{n-d} \lambda_i(z)},
+        r(x) = \frac{\sum_{i=0}^{n-d} \lambda_i(x) p_i(x)}
+        {\sum_{i=0}^{n-d} \lambda_i(x)},
 
-    where :math:`p_i(z)` are unique interpolating polynomials of at most degree `d` of
-    the `points` and `values` :math:`(x_i,f_i),\dots,(x_{i+d},f_{i+d}), and
-    :math:`\lambda_i(z)` are blending functions. When ``d = n - 1`` this reduces to
-    polynomial interpolation.
-
-    In practice, the following barycentric representation is used instead
+    where :math:`p_i(x)` is an interpolating polynomials of at most degree `d` through
+    the points :math:`(x_i,y_i),\dots,(x_{i+d},y_{i+d}), and :math:`\lambda_i(z)` are
+    blending functions defined by
 
     .. math::
 
-        r(z) = \frac{\sum_{k=1}^m\ w_k f_k / (z - z_k)}{\sum_{k=1}^m w_k / (z - z_k)},
+        \lambda_i(x) = \frac{(-1)^i}{(x - x_i)\cdots(x - x_{i+d})}.
+
+    When ``d = n - 1`` this reduces to polynomial interpolation.
+
+    Due to its stability following barycentric representation of the above equation
+    is used instead for computation
+
+    .. math::
+
+        r(z) = \frac{\sum_{k=1}^m\ w_k f_k / (x - x_k)}{\sum_{k=1}^m w_k / (x - x_k)},
 
     where the weights :math:`w_j` are computed as
 
