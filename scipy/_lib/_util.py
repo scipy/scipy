@@ -5,16 +5,17 @@ import operator
 import warnings
 import numbers
 from collections import namedtuple
+from collections.abc import Callable
 import inspect
 import math
 from typing import (
-    Optional,
-    Union,
     TYPE_CHECKING,
     TypeVar,
+    cast,
 )
 
 import numpy as np
+import numpy.typing as npt
 from scipy._lib._array_api import array_namespace, is_numpy, xp_size
 
 
@@ -53,10 +54,9 @@ else:
     np_long = np.int_
     np_ulong = np.uint
 
-IntNumber = Union[int, np.integer]
-DecimalNumber = Union[float, np.floating, np.integer]
-
-copy_if_needed: Optional[bool]
+IntNumber = int | np.integer
+DecimalNumber = float | np.floating | np.integer
+copy_if_needed: bool | None
 
 if np.lib.NumpyVersion(np.__version__) >= "2.0.0":
     copy_if_needed = None
@@ -73,11 +73,9 @@ else:
 # Since Generator was introduced in numpy 1.17, the following condition is needed for
 # backward compatibility
 if TYPE_CHECKING:
-    SeedType = Optional[Union[IntNumber, np.random.Generator,
-                              np.random.RandomState]]
-    GeneratorType = TypeVar("GeneratorType", bound=Union[np.random.Generator,
-                                                         np.random.RandomState])
-
+    SeedType = IntNumber | np.random.Generator | np.random.RandomState | None
+    GeneratorType = TypeVar("GeneratorType",
+                            bound=np.random.Generator | np.random.RandomState)
 try:
     from numpy.random import Generator as Generator
 except ImportError:
@@ -271,18 +269,23 @@ def check_random_state(seed):
     """
     if seed is None or seed is np.random:
         return np.random.mtrand._rand
-    if isinstance(seed, (numbers.Integral, np.integer)):
+    if isinstance(seed, numbers.Integral | np.integer):
         return np.random.RandomState(seed)
-    if isinstance(seed, (np.random.RandomState, np.random.Generator)):
+    if isinstance(seed, np.random.RandomState | np.random.Generator):
         return seed
 
     raise ValueError(f"'{seed}' cannot be used to seed a numpy.random.RandomState"
                      " instance")
 
 
-def _asarray_validated(a, check_finite=True,
-                       sparse_ok=False, objects_ok=False, mask_ok=False,
-                       as_inexact=False):
+def _asarray_validated(
+    a: npt.ArrayLike,
+    check_finite: bool = True,
+    sparse_ok: bool = False,
+    objects_ok: bool = False,
+    mask_ok: bool = False,
+    as_inexact: bool = False,
+) -> np.ndarray:
     """
     Helper function for SciPy argument validation.
 
@@ -325,7 +328,10 @@ def _asarray_validated(a, check_finite=True,
     if not mask_ok:
         if np.ma.isMaskedArray(a):
             raise ValueError('masked arrays are not supported')
-    toarray = np.asarray_chkfinite if check_finite else np.asarray
+    toarray = cast(
+        Callable[..., np.ndarray],
+        np.asarray_chkfinite if check_finite else np.asarray,
+    )
     a = toarray(a)
     if not objects_ok:
         if a.dtype is np.dtype('O'):
