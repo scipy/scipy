@@ -715,19 +715,15 @@
         }
     },
     "shichi": {
-        "_sici.pxd": {
-            "cshichi": "D*DD->*i"
-        },
         "xsf_wrappers.h": {
-            "cephes_shichi_wrap": "d*dd->*i"
+            "xsf_cshichi": "D*DD->*i",
+            "xsf_shichi": "d*dd->*i"
         }
     },
     "sici": {
-        "_sici.pxd": {
-            "csici": "D*DD->*i"
-        },
         "xsf_wrappers.h": {
-            "cephes_sici_wrap": "d*dd->*i"
+            "xsf_csici": "D*DD->*i",
+            "xsf_sici": "d*dd->*i"
         }
     },
     "smirnov": {

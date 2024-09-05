@@ -1,6 +1,7 @@
 #
 # Author: Travis Oliphant, March 2002
 #
+import warnings
 from itertools import product
 
 import numpy as np
@@ -152,7 +153,7 @@ def logm(A, disp=True):
     A : (N, N) array_like
         Matrix whose logarithm to evaluate
     disp : bool, optional
-        Print warning if error in the result is estimated large
+        Emit warning if error in the result is estimated large
         instead of returning estimated error. (Default: True)
 
     Returns
@@ -195,17 +196,19 @@ def logm(A, disp=True):
            [ 1.,  4.]])
 
     """
-    A = _asarray_square(A)
+    A = np.asarray(A)  # squareness checked in `_logm`
     # Avoid circular import ... this is OK, right?
     import scipy.linalg._matfuncs_inv_ssq
     F = scipy.linalg._matfuncs_inv_ssq._logm(A)
     F = _maybe_real(A, F)
     errtol = 1000*eps
     # TODO use a better error approximation
-    errest = norm(expm(F)-A, 1) / norm(A, 1)
+    with np.errstate(divide='ignore', invalid='ignore'):
+        errest = norm(expm(F)-A, 1) / np.asarray(norm(A, 1), dtype=A.dtype).real[()]
     if disp:
         if not isfinite(errest) or errest >= errtol:
-            print("logm result may be inaccurate, approximate err =", errest)
+            message = f"logm result may be inaccurate, approximate err = {errest}"
+            warnings.warn(message, RuntimeWarning, stacklevel=2)
         return F
     else:
         return F, errest
