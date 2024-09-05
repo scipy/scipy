@@ -1,7 +1,7 @@
 import pytest
 import numpy as np
 from numpy.testing import assert_allclose, assert_equal
-from scipy.special import pow1p
+from scipy.special import errstate, SpecialFunctionError, pow1p
 
 
 class TestPow1p:
@@ -22,99 +22,104 @@ class TestPow1p:
         assert isinstance(res64, np.float64)
         assert_equal(res32, np.float32(res64))
 
-    @pytest.mark.parametrize('rule, x, y, expected', [
+    @pytest.mark.parametrize('rule, x, y, expected, fpe', [
         (
             "pow(anything, +0) is 1",
-            [1.5, -1.0, -np.inf, np.inf, np.nan], 0.0, 1.0
+            [1.5, -1.0, -np.inf, np.inf, np.nan], 0.0, 1.0, None
         ),
         (
             "pow(anything, -0) is 1",
-            [1.5, -1.0, -np.inf, np.inf, np.nan], -0.0, 1.0
+            [1.5, -1.0, -np.inf, np.inf, np.nan], -0.0, 1.0, None
         ),
         (
             "pow(±0, negative odd integer) is ±∞ and signals divideByZero",
-            -1, [-3.0, -1.0], np.inf
+            -1, [-3.0, -1.0], np.inf, 'singular'
         ),
         (
             "pow(±0, -∞) is +∞ with no exception",
-            -1.0, -np.inf, np.inf
+            -1.0, -np.inf, np.inf, None
         ),
         (
             "pow(±0, +∞) is +0 with no exception",
-            -1.0, np.inf, 0.0
+            -1.0, np.inf, 0.0, None
         ),
         (
             "pow(±0, positive odd integer) is ±0",
-            -1.0, [1.0, 3.0], 0.0,
+            -1.0, [1.0, 3.0], 0.0, None
         ),
         (
             "pow(-1, ±∞) is 1 with no exception",
-            -2.0, [np.inf, -np.inf], 1.0
+            -2.0, [np.inf, -np.inf], 1.0, None
         ),
         (
             "pow(+1, anything) is 1",
-            0.0, [1.5, -1.0, -np.inf, np.inf, np.nan], 1.0
+            0.0, [1.5, -1.0, -np.inf, np.inf, np.nan], 1.0, None
         ),
         (
             "pow(|x| < 1, +∞) is +0",
-            [np.nextafter(-2, 0), -1.0, np.nextafter(0, -1)], np.inf, 0.0
+            [np.nextafter(-2, 0), -1.0, np.nextafter(0, -1)], np.inf, 0.0, None
         ),
         (
             "pow(|x| > 1, +∞) is +∞",
-            [np.nextafter(-2, -3), np.nextafter(0, 1), -np.inf, np.inf],
-            np.inf, np.inf
+            [np.nextafter(-2, -3), np.nextafter(0, 1), -np.inf, np.inf], np.inf,
+            np.inf, None
         ),
         (
             "pow(|x| < 1, -∞) is +∞",
-            [np.nextafter(-2, 0), -1.0, np.nextafter(0, -1)], -np.inf, np.inf
+            [np.nextafter(-2, 0), -1.0, np.nextafter(0, -1)], -np.inf,
+            np.inf, None
         ),
         (
             "pow(|x| > 1, -∞) is +0",
             [np.nextafter(-2, -3), np.nextafter(0, 1), -np.inf, np.inf],
-            -np.inf, 0.0
+            -np.inf, 0.0, None
         ),
         (
             "pow(+∞, y < 0) is +0",
-            np.inf, [-np.inf, -2.5, np.nextafter(0, -1)], 0.0
+            np.inf, [-np.inf, -2.5, np.nextafter(0, -1)], 0.0, None
         ),
         (
             "pow(+∞, y > 0) is +∞",
-            np.inf, [np.inf, +2.5, np.nextafter(0, 1)], np.inf
+            np.inf, [np.inf, +2.5, np.nextafter(0, 1)], np.inf, None
         ),
         (
             "pow(-∞, negative odd integer y) is -0",
-            -np.inf, [-3.0, -1.0], -0.0
+            -np.inf, [-3.0, -1.0], -0.0, None
         ),
         (
             "pow(-∞, positive odd integer y) is -∞",
-            -np.inf, [1.0, 3.0], -np.inf
+            -np.inf, [1.0, 3.0], -np.inf, None
         ),
         (
             "pow(-∞, negative finite y not an odd integer) is +0",
-            -np.inf, [-2.0, -3.5], +0.0,
+            -np.inf, [-2.0, -3.5], +0.0, None
         ),
         (
             "pow(-∞, positive finite y not an odd integer) is +∞",
-            -np.inf, [2.0, 3.5], np.inf,
+            -np.inf, [2.0, 3.5], np.inf, None
         ),
         (
             "pow(±0, negative finite y not an odd integer) is +∞ "
             "and signals divideByZero",
-            -1, [-2.0, -3.5], np.inf,
+            -1, [-2.0, -3.5], np.inf, 'singular'
         ),
         (
             "pow(±0, positive finite y not an odd integer) is +0",
-            -1, [2.0, 3.5], 0,
+            -1, [2.0, 3.5], 0, None
         ),
         (
             "pow(finite negative x, finite non-integer y) "
             "signals the invalid operation exception",
-            -2.5, [1.5, -2.5], np.nan,
+            -2.5, [1.5, -2.5], np.nan, 'domain',
         )
     ])
-    def test_ieee754_special_values(self, rule, x, y, expected):
+    def test_ieee754_special_values(self, rule, x, y, expected, fpe):
         # Special value inputs should conform to IEEE-754 spec of pow().
         assert_equal(pow1p(x, y), expected, err_msg=rule)
+        if fpe:
+            with errstate(**{fpe: 'raise'}):
+                with pytest.raises(SpecialFunctionError):
+                    pow1p(x, y)
 
     @pytest.mark.parametrize('label, x, y, expected', [
         # The following cases test that the decomposition 1+x == s+t is
@@ -140,8 +145,17 @@ class TestPow1p:
         # Coverage test using crafted inputs.  The 'expected' values are
         # computed using mpmath with 1000 decimal places.
         actual = pow1p(x, y)
-        rtol = 5e-16
-        if expected == 0 or expected == np.inf:
+        if actual == 0:
+            with errstate(underflow='raise'):
+                with pytest.raises(SpecialFunctionError):
+                    pow1p(x, y)
+        elif actual in (np.inf, -np.inf):
+            with errstate(overflow='raise'):
+                with pytest.raises(SpecialFunctionError):
+                    pow1p(x, y)
+
+        rtol = 5 * np.finfo(float).eps  # mingw-w64's pow may give 5 eps error
+        if expected in (0, np.inf, -np.inf):
             assert_equal(actual, expected, err_msg=label)
         elif abs(expected) > np.finfo(float).max*(1-rtol):
             # Accept inf if expected is very close to overflow

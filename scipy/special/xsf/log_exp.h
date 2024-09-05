@@ -1,11 +1,11 @@
 #pragma once
 
 #include <cmath>
-#include <cstdio>
-#include <cfloat>
-#include <iostream>
+#include <cfloat> // for FLT_EVAL_METHOD
+#include <iostream> // for instrumentation
 
 #include "config.h"
+#include "error.h"
 
 namespace xsf {
 
@@ -138,11 +138,25 @@ void two_sum(const T &a, const T &b, T &s, T &t) {
     }
 }
 
-// Handles special values of pow(1+x,y) according to the spec of the special
-// values of pow() defined in IEEE-754, Section 9.2.1, plus a few others.
+inline void pow1p_error(sf_error_t code) {
+    set_error("pow1p", code, "");
+}
+
+template <class T>
+T check_answer(const T &answer) {
+    if (answer == 0) {
+        pow1p_error(SF_ERROR_UNDERFLOW);
+    } else if (std::isinf(answer)) {
+        pow1p_error(SF_ERROR_OVERFLOW);
+    }
+    return answer;
+}
+
+// Handles special values of pow(1+x,y) according to the spec of pow()
+// defined in IEEE-754, Section 9.2.1, plus a few others.
 //
 // If the input is handled, stores the (IEEE-754 conformant) return value in
-// 'result', and returns 'true'.
+// 'result' and returns 'true'.  Floating point exceptions may be raised.
 //
 // If the input is not handled, returns 'false'.  In this case, it is
 // guaranteed that (1) x and y are finite, (2) x != 0, x != -1, y != 0, and
@@ -201,7 +215,7 @@ bool pow1p_special(const T &x, const T &y, T &result) {
     // Handle 1+x == +/-0 (can only be +0 in fact).
     if (x == -1) {
         if (y < 0) {
-            // TODO: signal divideByZero exception
+            pow1p_error(SF_ERROR_SINGULAR); // signal divideByZero
             result = std::numeric_limits<T>::infinity();
         } else {
             // y == 0 is already handled above
@@ -212,7 +226,7 @@ bool pow1p_special(const T &x, const T &y, T &result) {
 
     // Handle 1+x < 0 and y not an integer
     if ((x < -1) && std::fmod(y, T(1)) != 0) {
-        // TODO: signal invalid operation exception
+        pow1p_error(SF_ERROR_DOMAIN); // signal invalid operation
         result = std::numeric_limits<T>::quiet_NaN();
         return true;
     }
@@ -226,9 +240,11 @@ bool pow1p_special(const T &x, const T &y, T &result) {
 // is actually possible.
 template <typename T>
 T pow1p_decomp(const T &x1, const T &x2, const T &y) {
-    auto out = stderr;
-    fprintf(out, "[pow1p] ========\n");
-    fprintf(out, "[pow1p] x1=%.15e x2=%.15e y=%.15e\n", x1, x2, y);
+    auto &out = std::cerr;
+    out.precision(std::numeric_limits<T>::digits10 - 1);
+    out.setf(std::ios::scientific, std::ios::floatfield);
+
+    out << "[pow1p_decomp] x1=" << x1 << " x2=" << x2 << " y=" << y << std::endl;
 
     // Write (x+dx) == (s+t) where s is equal to (x+dx) rounded toward 1
     // and t is the (exact) rounding error.
@@ -239,18 +255,17 @@ T pow1p_decomp(const T &x1, const T &x2, const T &y) {
         s -= delta; // exact
         t += delta; // exact under precondition
     }
-    fprintf(out, "[pow1p] s=%.15e t=%.15e\n", s, t);
+    out << "[pow1p_decomp] s=" << s << " t=" << t << std::endl;
 
     // Write (s+t)^y == (s^y)*((1+t/s)^y) == term1*term2.  Since s is rounded
     // toward one, both terms <= 1 or both >= 1.  So if term1 over/underflows,
     // then term1*term2 necessarily over/underflows.
     // And of course, term2 == 1 if t == 0.
     T term1 = std::pow(s, y);
-    fprintf(out, "[pow1p] term1=%.15e\n", term1);
+    out << "[pow1p_decomp] term1=" << term1 << std::endl;
 
-    if (t == 0 || term1 == 0 || std::isinf(term1)) {
-        // TODO: handle floating point exceptions
-        return term1;
+    if (t == 0 || term1 == 0 || term1 == std::numeric_limits<T>::infinity()) {
+        return check_answer(term1);
     }
 
     // (1+t/s)^y == exp(y*log(1+t/s)).  The relative error of the result is
@@ -261,9 +276,9 @@ T pow1p_decomp(const T &x1, const T &x2, const T &y) {
     T u = t / s;
     T w = y * u;
     T term2 = std::exp(w);
-    fprintf(out, "[pow1p] term2=%.15e\n", term2);
+    out << "[pow1p_decomp] term2=" << term2 << std::endl;
     if (std::abs(w) <= 0.5) {
-        return term1 * term2;
+        return check_answer(term1 * term2);
     }
 
     // Now y*log(1+t/s) is large, and its relative error is "magnified" by
@@ -283,16 +298,19 @@ T pow1p_decomp(const T &x1, const T &x2, const T &y) {
 
     // TODO: maybe ww is small enough such that exp(ww) ~= 1+ww.
     T term3 = std::exp(ww);
-    fprintf(out, "[pow1p] term3=%.15e\n", term3);
-    return term1 * term2 * term3;
+    out << "[pow1p_decomp] term3=" << term3 << std::endl;
+    return check_answer(term1 * term2 * term3);
 }
 
 // Compute pow(1+x,y) to full precision of T.
 template <typename T>
 T pow1p_precise(T x, T y) {
-    auto out = stderr;
-    fprintf(out, "[pow1p] ========\n");
-    fprintf(out, "[pow1p] x=%.16e y=%.16e\n", x, y);
+    auto &out = std::cerr;
+    out.precision(std::numeric_limits<T>::digits10 - 1);
+    out.setf(std::ios::scientific, std::ios::floatfield);
+
+    out << "[pow1p_precise] ========" << std::endl;
+    out << "[pow1p_precise] x=" << x << "y=" << y << std::endl;
 
     // Handle special values.
     T answer;
@@ -316,8 +334,7 @@ T pow1p_precise(T x, T y) {
             T sign = (std::fmod(y, T(2)) == 0) ? 1 : -1;
             return sign * pow1p_decomp(-x, T(-1), y);
         } else {
-            // TODO: handle floating point exceptions
-            return std::pow(T(1) + x, y);
+            return check_answer(std::pow(T(1) + x, y));
         }
     }
 
@@ -333,8 +350,8 @@ T pow1p_approx(T x, T y) {
     out.setf(std::ios::scientific, std::ios::floatfield);
 
     // Note: different T has different denorm and overflow range.
-    out << "[pow1p] ========" << std::endl;
-    out << "[pow1p] x=" << x << " y=" << y << std::endl;
+    out << "[pow1p_approx] ========" << std::endl;
+    out << "[pow1p_approx] x=" << x << " y=" << y << std::endl;
 
     // Handle special values.
     T answer;
@@ -342,20 +359,23 @@ T pow1p_approx(T x, T y) {
         return answer;
     }
 
+    // Now (1) x and y are finite, (2) x != 0, x != -1, y != 0, and
+    // (3) y is an integer if x < -1.
+
     if (x > -1) {
         T z = std::log1p(x);
-        out << "[pow1] z=" << z << std::endl;
+        out << "[pow1p_approx] z=" << z << std::endl;
         T yz = y * z;
-        out << "[pow1] y*z=" << yz << std::endl;
-        return std::exp(yz);
+        out << "[pow1p_approx] y*z=" << yz << std::endl;
+        return check_answer(std::exp(yz));
     } else {
         // x < -1 and y is integer
         T sign = (std::fmod(y, T(2)) == 0) ? 1 : -1;
         T z = std::log(-x - 1);
-        out << "[pow1] z=" << z << std::endl;
+        out << "[pow1p_approx] z=" << z << std::endl;
         T yz = y * z;
-        out << "[pow1] y*z=" << yz << std::endl;
-        return sign * std::exp(yz);
+        out << "[pow1p_approx] y*z=" << yz << std::endl;
+        return check_answer(sign * std::exp(yz));
     }
 }
 
