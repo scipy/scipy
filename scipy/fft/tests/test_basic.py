@@ -489,3 +489,13 @@ def test_non_standard_params(func, xp):
         assert_raises(ValueError, func, x, workers=2)
         # `plan` param is not tested since SciPy does not use it currently
         # but should be tested if it comes into use
+
+
+@pytest.mark.parametrize("dtype", ['float32', 'float64'])
+@pytest.mark.parametrize("func", [fft.fft, fft.ifft, fft.irfft,
+                                  fft.fftn, fft.ifftn,
+                                  fft.irfftn, fft.hfft,])
+def test_real_input(func, dtype, xp):
+    x = xp.asarray([1, 2, 3], dtype=getattr(xp, dtype))
+    # func(x) should not raise an exception
+    func(x)
