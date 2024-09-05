@@ -82,6 +82,13 @@ namespace numpy {
     using ad2_cfloat_2d = std::mdspan<dual<cfloat, 2>, std::dextents<ptrdiff_t, 2>, std::layout_stride>;
     using ad2_cdouble_2d = std::mdspan<dual<cdouble, 2>, std::dextents<ptrdiff_t, 2>, std::layout_stride>;
 
+    using ad00_cfloat_2d = std::mdspan<dual<cfloat, 0, 0>, std::dextents<ptrdiff_t, 2>, std::layout_stride>;
+    using ad00_cdouble_2d = std::mdspan<dual<cdouble, 0, 0>, std::dextents<ptrdiff_t, 2>, std::layout_stride>;
+    using ad11_cfloat_2d = std::mdspan<dual<cfloat, 1, 1>, std::dextents<ptrdiff_t, 2>, std::layout_stride>;
+    using ad11_cdouble_2d = std::mdspan<dual<cdouble, 1, 1>, std::dextents<ptrdiff_t, 2>, std::layout_stride>;
+    using ad22_cfloat_2d = std::mdspan<dual<cfloat, 2, 2>, std::dextents<ptrdiff_t, 2>, std::layout_stride>;
+    using ad22_cdouble_2d = std::mdspan<dual<cdouble, 2, 2>, std::dextents<ptrdiff_t, 2>, std::layout_stride>;
+
     // The following are based off NumPy's dtype type codes and functions like PyUFunc_dd_d
 
     // 1 input, 1 output
@@ -207,7 +214,7 @@ namespace numpy {
     using qqf_fff = void (*)(long long int, long long int, float, float &, float &, float &);
     using qqd_ddd = void (*)(long long int, long long int, double, double &, double &, double &);
 
-    // 4 inputs, 1 outputs
+    // 4 inputs, 1 output
     using qqqF_F = cfloat (*)(long long int, long long int, long long int, cfloat);
     using qqqD_D = cdouble (*)(long long int, long long int, long long int, cdouble);
     using qqff_F = cfloat (*)(long long int, long long int, float, float);
@@ -219,6 +226,14 @@ namespace numpy {
     using ffff_F = cfloat (*)(float, float, float, float);
     using dddd_D = cdouble (*)(double, double, double, double);
 
+    // autodiff, 4 inputs, 1 output
+    using A0_qqff_F = dual<cfloat, 0, 0> (*)(long long int, long long int, float, float);
+    using A0_qqdd_D = dual<cdouble, 0, 0> (*)(long long int, long long int, double, double);
+    using A1_qqff_F = dual<cfloat, 1, 1> (*)(long long int, long long int, float, float);
+    using A1_qqdd_D = dual<cdouble, 1, 1> (*)(long long int, long long int, double, double);
+    using A2_qqff_F = dual<cfloat, 2, 2> (*)(long long int, long long int, float, float);
+    using A2_qqdd_D = dual<cdouble, 2, 2> (*)(long long int, long long int, double, double);
+
     // 4 inputs, 2 outputs
     using qqqf_ff = void (*)(long long int, long long int, long long int, float, float &, float &);
     using ffff_ff = void (*)(float, float, float, float, float &, float &);
@@ -228,8 +243,6 @@ namespace numpy {
     using qqqD_DD = void (*)(long long int, long long int, long long int, cdouble, cdouble &, cdouble &);
     using qqff_FF = void (*)(long long int, long long int, float, float, cfloat &, cfloat &);
     using qqdd_DD = void (*)(long long int, long long int, double, double, cdouble &, cdouble &);
-    using qqff_FF2_old = void (*)(long long int, long long int, float, float, cfloat &, cfloat (&)[2]);
-    using qqdd_DD2_old = void (*)(long long int, long long int, double, double, cdouble &, cdouble (&)[2]);
 
     // 4 inputs, 3 outputs
     using qqqf_fff = void (*)(long long int, long long int, long long int, float, float &, float &, float &);
@@ -238,10 +251,6 @@ namespace numpy {
     using qqqD_DDD = void (*)(long long int, long long int, long long int, cdouble, cdouble &, cdouble &, cdouble &);
     using qqff_FFF = void (*)(long long int, long long int, float, float, cfloat &, cfloat &, cfloat &);
     using qqdd_DDD = void (*)(long long int, long long int, double, double, cdouble &, cdouble &, cdouble &);
-    using qqff_FF2F22_old =
-        void (*)(long long int, long long int, float, float, cfloat &, cfloat (&)[2], cfloat (&)[2][2]);
-    using qqdd_DD2D22_old =
-        void (*)(long long int, long long int, double, double, cdouble &, cdouble (&)[2], cdouble (&)[2][2]);
 
     // 5 inputs, 2 outputs
     using fffff_ff = void (*)(float, float, float, float, float, float &, float &);
@@ -286,6 +295,13 @@ namespace numpy {
     using dd_D2 = void (*)(double, double, cdouble_2d);
     using qF_F2 = void (*)(long long int, cfloat, cfloat_2d);
     using qD_D2 = void (*)(long long int, cdouble, cdouble_2d);
+
+    using A00_ff_F2 = void (*)(float, float, ad00_cfloat_2d);
+    using A00_dd_D2 = void (*)(double, double, ad00_cdouble_2d);
+    using A11_ff_F2 = void (*)(float, float, ad11_cfloat_2d);
+    using A11_dd_D2 = void (*)(double, double, ad11_cdouble_2d);
+    using A22_ff_F2 = void (*)(float, float, ad22_cfloat_2d);
+    using A22_dd_D2 = void (*)(double, double, ad22_cdouble_2d);
 
     // 2 inputs, 2 outputs
     using qF_F2F2 = void (*)(long long int, cfloat, cfloat_2d, cfloat_2d);

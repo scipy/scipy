@@ -67,38 +67,9 @@ void assoc_legendre_map_dims(const npy_intp *dims, npy_intp *new_dims) {
     }
 }
 
-template <size_t NOut>
-void sph_harm_map_dims(const npy_intp *dims, npy_intp *new_dims);
-
-template <>
-void sph_harm_map_dims<1>(const npy_intp *dims, npy_intp *new_dims) {
+void sph_harm_map_dims(const npy_intp *dims, npy_intp *new_dims) {
     new_dims[0] = dims[0];
     new_dims[1] = dims[1];
-}
-
-template <>
-void sph_harm_map_dims<2>(const npy_intp *dims, npy_intp *new_dims) {
-    new_dims[0] = dims[0];
-    new_dims[1] = dims[1];
-
-    new_dims[2] = 2;
-    new_dims[3] = dims[0];
-    new_dims[4] = dims[1];
-}
-
-template <>
-void sph_harm_map_dims<3>(const npy_intp *dims, npy_intp *new_dims) {
-    new_dims[0] = dims[0];
-    new_dims[1] = dims[1];
-
-    new_dims[2] = 2;
-    new_dims[3] = dims[0];
-    new_dims[4] = dims[1];
-
-    new_dims[5] = 2;
-    new_dims[6] = 2;
-    new_dims[7] = dims[0];
-    new_dims[8] = dims[1];
 }
 
 PyMODINIT_FUNC PyInit__gufuncs() {
@@ -246,18 +217,17 @@ PyMODINIT_FUNC PyInit__gufuncs() {
                            2, "_lqmn", lqmn_doc, "()->(mp1,np1),(mp1,np1)", assoc_legendre_map_dims<2>);
     PyModule_AddObjectRef(_gufuncs, "_lqmn", _lqmn);
 
-    PyObject *sph_harm_y_all = Py_BuildValue(
-        "(N,N,N)",
-        xsf::numpy::gufunc(
-            {static_cast<xsf::numpy::dd_D2>(::sph_harm_y_all), static_cast<xsf::numpy::ff_F2>(::sph_harm_y_all)}, 1,
-            "sph_harm_y_all", nullptr, "(),()->(np1,mpmp1)", sph_harm_map_dims<1>),
-        xsf::numpy::gufunc(
-            {static_cast<xsf::numpy::dd_D2D3>(::sph_harm_y_all), static_cast<xsf::numpy::ff_F2F3>(::sph_harm_y_all)}, 2,
-            "sph_harm_y_all", nullptr, "(),()->(np1,mpmp1),(2,np1,mpmp1)", sph_harm_map_dims<2>),
-        xsf::numpy::gufunc({static_cast<xsf::numpy::dd_D2D3D4>(::sph_harm_y_all),
-                            static_cast<xsf::numpy::ff_F2F3F4>(::sph_harm_y_all)},
-                           3, "sph_harm_y_all", nullptr, "(),()->(np1,mpmp1),(2,np1,mpmp1),(2,2,np1,mpmp1)",
-                           sph_harm_map_dims<3>));
+    PyObject *sph_harm_y_all =
+        Py_BuildValue("(N, N, N)",
+                      xsf::numpy::gufunc({static_cast<xsf::numpy::A00_dd_D2>(::sph_harm_y_all),
+                                          static_cast<xsf::numpy::A00_ff_F2>(::sph_harm_y_all)},
+                                         1, "sph_harm_y_all", nullptr, "(),()->(np1,mpmp1,1,1)", sph_harm_map_dims),
+                      xsf::numpy::gufunc({static_cast<xsf::numpy::A11_dd_D2>(::sph_harm_y_all),
+                                          static_cast<xsf::numpy::A11_ff_F2>(::sph_harm_y_all)},
+                                         1, "sph_harm_y_all", nullptr, "(),()->(np1,mpmp1,2,2)", sph_harm_map_dims),
+                      xsf::numpy::gufunc({static_cast<xsf::numpy::A22_dd_D2>(::sph_harm_y_all),
+                                          static_cast<xsf::numpy::A22_ff_F2>(::sph_harm_y_all)},
+                                         1, "sph_harm_y_all", nullptr, "(),()->(np1,mpmp1,3,3)", sph_harm_map_dims));
     PyModule_AddObjectRef(_gufuncs, "sph_harm_y_all", sph_harm_y_all);
 
     PyObject *_rctj =

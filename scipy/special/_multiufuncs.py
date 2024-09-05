@@ -545,6 +545,18 @@ def _(diff_n):
     return diff_n
 
 
+@sph_harm_y._override_finalize_out
+def _(out):
+    if (out.shape[-1] == 1):
+        return out[..., 0, 0]
+
+    if (out.shape[-1] == 2):
+        return out[..., 0, 0], out[..., [1, 0], [0, 1]]
+
+    if (out.shape[-1] == 3):
+        return out[..., 0, 0], out[..., [1, 0], [0, 1]], out[..., [[2, 0], [1, 1]], [[1, 1], [0, 2]]]
+
+
 sph_harm_y_all = MultiUFunc(
     sph_harm_y_all,
     """sph_harm_y_all(n, m, theta, phi, *, diff_n=0)
@@ -575,14 +587,26 @@ def _(diff_n):
 
 @sph_harm_y_all._override_ufunc_default_kwargs
 def _(diff_n):
-    return {'axes': [(), ()] + [tuple(range(axis)) for axis in range(2, diff_n + 3)]}
+    return {'axes': [(), ()] + [(0, 1, -2, -1)]}
 
 
 @sph_harm_y_all._override_resolve_out_shapes
 def _(n, m, theta_shape, phi_shape, nout, **kwargs):
+    diff_n = kwargs['diff_n']
+
     if not isinstance(n, numbers.Integral) or (n < 0):
         raise ValueError("n must be a non-negative integer.")
 
-    return tuple(diff_ndims * (2,) + (n + 1, 2 * abs(m) + 1)
-                 + np.broadcast_shapes(theta_shape, phi_shape)
-                 for diff_ndims in range(nout))
+    return (((n + 1, 2 * abs(m) + 1) + np.broadcast_shapes(theta_shape, phi_shape) + (diff_n + 1, diff_n + 1)),)
+
+
+@sph_harm_y_all._override_finalize_out
+def _(out):
+    if (out.shape[-1] == 1):
+        return out[..., 0, 0]
+
+    if (out.shape[-1] == 2):
+        return out[..., 0, 0], out[..., [1, 0], [0, 1]]
+
+    if (out.shape[-1] == 3):
+        return out[..., 0, 0], out[..., [1, 0], [0, 1]], out[..., [[2, 0], [1, 1]], [[1, 1], [0, 2]]]

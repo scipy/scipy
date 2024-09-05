@@ -1,7 +1,7 @@
 #pragma once
 
+#include "config.h"
 #include "numbers.h"
-#include "tuples.h"
 
 namespace xsf {
 
@@ -643,96 +643,4 @@ namespace numbers {
     dual<std::complex<T>, Orders...> i_v<dual<T, Orders...>> = i_v<T>;
 
 } // namespace numbers
-
-// The following dual_assign_grad functions only exist to help with how ufuncs currently expect derivatives.
-// They will be deleted after a future PR.
-
-template <typename T>
-void dual_assign_grad(const dual<T, 0> &x, std::tuple<T &> res) {
-    auto &[res0] = res;
-
-    res0 = x[0];
-}
-
-template <typename T>
-void dual_assign_grad(const dual<T, 1> &x, std::tuple<T &, T &> res) {
-    auto &[res0, res1] = res;
-
-    res0 = x[0];
-    res1 = x[1];
-}
-
-template <typename T>
-void dual_assign_grad(const dual<T, 2> &x, std::tuple<T &, T &, T &> res) {
-    auto &[res0, res1, res2] = res;
-
-    res0 = x[0];
-    res1 = x[1];
-    res2 = x[2];
-}
-
-template <typename T>
-void dual_assign_grad(const dual<T, 0, 0> &x, std::tuple<T &> res) {
-    auto &[res0] = res;
-
-    res0 = x[0][0];
-}
-
-template <typename T>
-void dual_assign_grad(const dual<T, 1, 1> &z, std::tuple<T &, T (&)[2]> res) {
-    auto &[res0, res1] = res;
-
-    res0 = z[0][0];
-
-    res1[0] = z[1][0];
-    res1[1] = z[0][1];
-}
-
-template <typename T>
-void dual_assign_grad(const dual<T, 2, 2> &z, std::tuple<T &, T (&)[2], T (&)[2][2]> res) {
-    auto &[res0, res1, res2] = res;
-
-    res0 = z[0][0];
-
-    res1[0] = z[1][0];
-    res1[1] = z[0][1];
-
-    res2[0][0] = z[2][0];
-    res2[0][1] = z[1][1];
-    res2[1][0] = z[1][1];
-    res2[1][1] = z[0][2];
-}
-
-template <typename T>
-void dual_assign_grad(
-    const dual<T, 1, 1> &z, std::tuple<T &, std::mdspan<T, std::dextents<ptrdiff_t, 1>, std::layout_stride>> res
-) {
-    auto &[res0, res1] = res;
-
-    res0 = z[0][0];
-
-    res1(0) = z[1][0];
-    res1(1) = z[0][1];
-}
-
-template <typename T>
-void dual_assign_grad(
-    const dual<T, 2, 2> &z, std::tuple<
-                                T &, std::mdspan<T, std::dextents<ptrdiff_t, 1>, std::layout_stride>,
-                                std::mdspan<T, std::dextents<ptrdiff_t, 2>, std::layout_stride>>
-                                res
-) {
-    auto &[res0, res1, res2] = res;
-
-    res0 = z[0][0];
-
-    res1(0) = z[1][0];
-    res1(1) = z[0][1];
-
-    res2(0, 0) = z[2][0];
-    res2(0, 1) = z[1][1];
-    res2(1, 0) = z[1][1];
-    res2(1, 1) = z[0][2];
-}
-
 } // namespace xsf

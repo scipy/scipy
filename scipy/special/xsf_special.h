@@ -52,25 +52,9 @@ void sph_legendre_p_all(T theta, OutputMat res) {
     xsf::sph_legendre_p_all(xsf::dual_var<N>(theta), res);
 }
 
-template <typename T>
-std::complex<T> sph_harm_y(long long int n, long long int m, T theta, T phi) {
-    std::complex<T> res;
-    dual_assign_grad(xsf::sph_harm_y(n, m, xsf::dual_var<0, 0>(theta, 0), xsf::dual_var<0, 0>(phi, 1)), std::tie(res));
-
-    return res;
-}
-
-template <typename T>
-void sph_harm_y(long long int n, long long int m, T theta, T phi, std::complex<T> &res, std::complex<T> (&res_jac)[2]) {
-    dual_assign_grad(xsf::sph_harm_y(n, m, xsf::dual_var<1, 1>(theta, 0), xsf::dual_var<1, 1>(phi, 1)),
-                     std::tie(res, res_jac));
-}
-
-template <typename T>
-void sph_harm_y(long long int n, long long int m, T theta, T phi, std::complex<T> &res, std::complex<T> (&res_jac)[2],
-                std::complex<T> (&res_hess)[2][2]) {
-    dual_assign_grad(xsf::sph_harm_y(n, m, xsf::dual_var<2, 2>(theta, 0), xsf::dual_var<2, 2>(phi, 1)),
-                     std::tie(res, res_jac, res_hess));
+template <typename T, size_t N>
+xsf::dual<std::complex<T>, N, N> sph_harm_y(long long int n, long long int m, T theta, T phi) {
+    return xsf::sph_harm_y(n, m, xsf::dual_var<N, N>(theta, 0), xsf::dual_var<N, N>(phi, 1));
 }
 
 template <typename T>
@@ -85,7 +69,7 @@ std::complex<T> sph_harm(long long int m, long long int n, T theta, T phi) {
         return std::numeric_limits<T>::quiet_NaN();
     }
 
-    return sph_harm_y(n, m, phi, theta);
+    return xsf::sph_harm_y(n, m, phi, theta);
 }
 
 template <typename T>
@@ -99,19 +83,11 @@ std::complex<T> sph_harm(T m, T n, T theta, T phi) {
     return sph_harm(static_cast<long>(m), static_cast<long>(n), theta, phi);
 }
 
-template <typename T, typename OutputMat1>
-void sph_harm_y_all(T theta, T phi, OutputMat1 res) {
-    xsf::sph_harm_y_all(xsf::dual_var<0, 0>(theta, 0), xsf::dual_var<0, 0>(phi, 1), std::tie(res));
-}
+template <typename T, typename OutputMat>
+void sph_harm_y_all(T theta, T phi, OutputMat res) {
+    static constexpr size_t N = OutputMat::value_type::max_order();
 
-template <typename T, typename OutputMat1, typename OutputMat2>
-void sph_harm_y_all(T theta, T phi, OutputMat1 res, OutputMat2 res_jac) {
-    xsf::sph_harm_y_all(xsf::dual_var<1, 1>(theta, 0), xsf::dual_var<1, 1>(phi, 1), std::tie(res, res_jac));
-}
-
-template <typename T, typename OutputMat1, typename OutputMat2, typename OutputMat3>
-void sph_harm_y_all(T theta, T phi, OutputMat1 res, OutputMat2 res_jac, OutputMat3 res_hess) {
-    xsf::sph_harm_y_all(xsf::dual_var<2, 2>(theta, 0), xsf::dual_var<2, 2>(phi, 1), std::tie(res, res_jac, res_hess));
+    xsf::sph_harm_y_all(xsf::dual_var<N, N>(theta, 0), xsf::dual_var<N, N>(phi, 1), res);
 }
 
 } // namespace

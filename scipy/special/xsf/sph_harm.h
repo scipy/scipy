@@ -41,18 +41,17 @@ complex<T> sph_harm_y(int n, int m, T theta, T phi) {
     return res_n;
 }
 
-template <typename T, typename... OutMats>
-void sph_harm_y_all(T theta, T phi, std::tuple<OutMats...> res) {
-    auto &res0 = std::get<0>(res);
-    int n_max = res0.extent(0) - 1;
-    int m_max = (res0.extent(1) - 1) / 2;
+template <typename T, typename OutputMat>
+void sph_harm_y_all(T theta, T phi, OutputMat res) {
+    int n_max = res.extent(0) - 1;
+    int m_max = (res.extent(1) - 1) / 2;
 
     complex<T> res_n_m;
-    sph_harm_y_for_each_n_m(n_max, m_max, theta, phi, res_n_m, [m_max, res](int n, int m, complex<T> &res_n_m) {
+    sph_harm_y_for_each_n_m(n_max, m_max, theta, phi, res_n_m, [m_max, &res](int n, int m, complex<T> &res_n_m) {
         if (m >= 0) {
-            dual_assign_grad(res_n_m, tuples::submdspan(res, n, m));
+            res(n, m) = res_n_m;
         } else {
-            dual_assign_grad(res_n_m, tuples::submdspan(res, n, m + 2 * m_max + 1));
+            res(n, m + 2 * m_max + 1) = res_n_m;
         }
     });
 }
