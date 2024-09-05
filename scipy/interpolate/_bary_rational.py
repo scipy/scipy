@@ -56,8 +56,8 @@ class _BarycentricRational:
         z, uni = np.unique(z, return_index=True)
         f = f[uni]
 
-        self._support_points, self._support_values, self.weights = self._compute_weights(
-            z, f, **kwargs
+        self._support_points, self._support_values, self.weights = (
+            self._compute_weights(z, f, **kwargs)
         )
 
         # only compute once
@@ -166,7 +166,8 @@ class _BarycentricRational:
             m = self.weights.size
             B = np.eye(m + 1, dtype=self.weights.dtype)
             B[0, 0] = 0
-            E = np.zeros_like(B, dtype=np.result_type(self.weights, self._support_values,
+            E = np.zeros_like(B, dtype=np.result_type(self.weights,
+                                                      self._support_values,
                                                       self._support_points))
             E[0, 1:] = self.weights * self._support_values
             E[1:, 0] = 1
