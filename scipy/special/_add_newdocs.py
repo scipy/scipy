@@ -6925,6 +6925,19 @@ add_newdoc("ncfdtri",
     ncfdtridfn : Inverse of `ncfdtr` with respect to `dfn`.
     ncfdtrinc : Inverse of `ncfdtr` with respect to `nc`.
 
+    Notes
+    -----
+    This function calculates the Quantile of the non-central f distribution
+    using the Boost Math C++ library [1]_.
+
+    Note that argument order of `ncfdtri` is different from that
+    of `scipy.stats.ncf.ppf`. `p` is the last parameter of `ncfdtri`
+    but the first parameter of `scipy.stats.ncf.ppf`.
+
+    References
+    ----------
+    .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
+
     Examples
     --------
     >>> from scipy.special import ncfdtr, ncfdtri
