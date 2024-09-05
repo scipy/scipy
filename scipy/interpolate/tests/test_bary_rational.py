@@ -83,7 +83,23 @@ class TestAAA:
         assert r.poles().dtype == np.result_type(z_dtype, f_dtype, 1j)
         assert r.residues().dtype == np.result_type(z_dtype, f_dtype, 1j)
         assert r.roots().dtype == np.result_type(z_dtype, f_dtype, 1j)
-    
+
+    @pytest.mark.parametrize("z_dtype,f_dtype",
+                             product([np.int16, np.int32, np.int64], repeat=2))
+    def test_int_dtypes(self, z_dtype, f_dtype):
+        z = np.arange(10, dtype=z_dtype)
+        f = z.astype(f_dtype)
+
+        r = AAA(z, f)
+        assert r(1).dtype == np.result_type(z_dtype, f_dtype, 1.0)
+        assert r.support_points.dtype == z_dtype
+        assert r.support_values.dtype == np.result_type(z_dtype, f_dtype)
+        assert r.weights.dtype == np.result_type(z_dtype, f_dtype, 1.0)
+        assert r.errors.dtype == np.result_type(z_dtype, f_dtype, 1.0)
+        assert r.poles().dtype == np.result_type(z_dtype, f_dtype, 1j)
+        assert r.residues().dtype == np.result_type(z_dtype, f_dtype, 1j)
+        assert r.roots().dtype == np.result_type(z_dtype, f_dtype, 1j)
+
     # The following tests are based on:
     # https://github.com/chebfun/chebfun/blob/master/tests/chebfun/test_aaa.m
     def test_exp(self):

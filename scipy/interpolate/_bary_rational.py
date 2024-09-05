@@ -412,7 +412,7 @@ class AAA(_Barycentric_Rational):
         rtol = np.finfo(dtype).eps**0.75 if rtol is None else rtol
         atol = rtol * np.linalg.norm(f, ord=np.inf)
         zj = np.empty(max_terms, dtype=z.dtype)
-        fj = np.empty(max_terms, dtype=dtype)
+        fj = np.empty(max_terms, dtype=np.result_type(z, f))
         # Cauchy matrix
         C = np.empty((M, max_terms), dtype=np.result_type(z, 1.0))
         # Loewner matrix
