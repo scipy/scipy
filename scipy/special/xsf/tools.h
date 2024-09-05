@@ -157,12 +157,13 @@ namespace detail {
     XSF_HOST_DEVICE std::pair<T, std::uint64_t> series_eval_kahan(
         Generator &&g, real_type_t<T> tol, std::uint64_t max_terms, T init_val = T(0)) {
 
+        using std::abs;
         T sum = init_val;
-        T comp = 0;
+        T comp = T(0);
         for (std::uint64_t i = 0; i < max_terms; ++i) {
             T term = g();
             kahan_step(sum, comp, term);
-            if (std::abs(term) <= tol * std::abs(sum)) {
+            if (abs(term) <= tol * abs(sum)) {
                 return {sum, i + 1};
             }
         }
@@ -203,6 +204,16 @@ namespace detail {
      * Remarks
      * -------
      * The series is computed using the recurrence relation described in [1].
+     * Let v[n], n >= 1 denote the terms of the series.  Then
+     *
+     *   v[1] = a[1] / b[1]
+     *   v[n] = v[n-1] * r[n-1], n >= 2
+     *
+     * where
+     *
+     *                              -(a[n] + a[n] * r[n-1])
+     *   r[1] = 0,  r[n] = ------------------------------------------, n >= 2
+     *                      (a[n] + a[n] * r[n-1]) + (b[n] * b[n-1])
      *
      * No error checking is performed.  The caller must ensure that all terms
      * are finite and that intermediary computations do not trigger floating
@@ -224,8 +235,8 @@ namespace detail {
             init();
         }
 
-        XSF_HOST_DEVICE double operator()() {
-            double v = v_;
+        XSF_HOST_DEVICE T operator()() {
+            T v = v_;
             advance();
             return v;
         }
@@ -235,7 +246,7 @@ namespace detail {
             auto [num, denom] = cf_();
             T a = num;
             T b = denom;
-            u_ = T(1);
+            r_ = T(0);
             v_ = a / b;
             b_ = b;
         }
@@ -244,14 +255,16 @@ namespace detail {
             auto [num, denom] = cf_();
             T a = num;
             T b = denom;
-            u_ = T(1) / (T(1) + (a * u_) / (b * b_));
-            v_ *= (u_ - T(1));
+            T p = a + a * r_;
+            T q = p + b * b_;
+            r_ = -p / q;
+            v_ = v_ * r_;
             b_ = b;
         }
 
         Generator& cf_; // reference to continued fraction generator
         T v_;           // v[n] == f[n] - f[n-1], n >= 1
-        T u_;           // u[1] = 1, u[n] = v[n]/v[n-1], n >= 2
+        T r_;           // r[1] = 0, r[n] = v[n]/v[n-1], n >= 2
         T b_;           // last denominator, i.e. b[n-1]
     };
 

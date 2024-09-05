@@ -17,6 +17,7 @@
 #include "xsf/loggamma.h"
 #include "xsf/mathieu.h"
 #include "xsf/par_cyl.h"
+#include "xsf/sici.h"
 #include "xsf/specfun.h"
 #include "xsf/sph_bessel.h"
 #include "xsf/sph_harm.h"
@@ -43,8 +44,6 @@
 #include "xsf/cephes/rgamma.h"
 #include "xsf/cephes/round.h"
 #include "xsf/cephes/scipy_iv.h"
-#include "xsf/cephes/shichi.h"
-#include "xsf/cephes/sici.h"
 #include "xsf/cephes/spence.h"
 #include "xsf/cephes/trig.h"
 #include "xsf/cephes/unity.h"
@@ -309,9 +308,21 @@ int cephes_ellpj_wrap(double u, double m, double *sn, double *cn, double *dn, do
     return xsf::cephes::ellpj(u, m, sn, cn, dn, ph);
 }
 
-int cephes_sici_wrap(double x, double *si, double *ci) { return xsf::cephes::sici(x, si, ci); }
+int xsf_sici(double x, double *si, double *ci) { return xsf::sici(x, si, ci); }
 
-int cephes_shichi_wrap(double x, double *si, double *ci) { return xsf::cephes::shichi(x, si, ci); }
+int xsf_shichi(double x, double *si, double *ci) { return xsf::shichi(x, si, ci); }
+
+int xsf_csici(npy_cdouble x, npy_cdouble *si, npy_cdouble *ci) {
+    return xsf::sici(to_complex(x),
+		     reinterpret_cast<complex<double> *>(si),
+		     reinterpret_cast<complex<double> *>(ci));
+}
+
+int xsf_cshichi(npy_cdouble x, npy_cdouble *shi, npy_cdouble *chi) {
+    return xsf::shichi(to_complex(x),
+		       reinterpret_cast<complex<double> *>(shi),
+		       reinterpret_cast<complex<double> *>(chi));
+}
 
 double cephes__struve_asymp_large_z(double v, double z, Py_ssize_t is_h, double *err) {
     return xsf::cephes::detail::struve_asymp_large_z(v, z, static_cast<int>(is_h), err);
