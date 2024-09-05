@@ -164,3 +164,24 @@ class TestPow1p:
                 assert_allclose(actual, expected, rtol=rtol, err_msg=label)
         else:
             assert_allclose(actual, expected, rtol=rtol, err_msg=label)
+
+    @pytest.mark.parametrize('dtype, x, y', [
+        (np.float64, 1000, 1000),
+        (np.float64, -1000, 1000),
+        (np.float64, -1000, 999),
+        (np.float32, 10, 300),
+        (np.float32, -10, 300),
+        (np.float32, -10, 299),
+    ])
+    def test_overflow_underflow(self, x, y, dtype):
+        # Overflow/underflow error should be set if the result is inf or 0.
+        # The test cases are constructed to cover all branches.  Only finite
+        # inputs are tested; special values are handled by test_special_values.
+        x = dtype(x)
+        y = dtype(y)
+        with errstate(overflow='raise'):
+            with pytest.raises(SpecialFunctionError):
+                pow1p(x, y)
+        with errstate(underflow='raise'):
+            with pytest.raises(SpecialFunctionError):
+                pow1p(x, -y)

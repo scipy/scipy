@@ -68,65 +68,34 @@ T log_expit(T x) {
     return -std::log1p(std::exp(-x));
 };
 
-#ifndef FLT_EVAL_METHOD
-#error "Missing definition of FLT_EVAL_METHOD; C++11 or above required"
-#endif
-
-template <class T>
-constexpr int get_probable_working_precision() {
-    if (std::is_floating_point<T>::value) {
-        switch (FLT_EVAL_METHOD) {
-            case 0:
-                break;
-            case 1:
-                return std::numeric_limits<double>::digits;
-            case 2:
-                return std::numeric_limits<long double>::digits;
-            default:
-                // If we don't know, assume it's promoted to highest
-                return std::numeric_limits<long double>::digits;
-        }
-    }
-    return 0;
-}
-
-// Compute the exact sum of floating point numbers a and b and store the
-// result in s and t such that (a + b) == (s + t) exactly and |s| >> |t|.
-// Requires |a| >= |b|.
+// Compute the exact sum of finite floating point numbers a and b where
+// |a| >= |b|.  Store the result in s and t such that (a + b) == (s + t)
+// exactly and |s| >> |t|.
 //
-// The following implementation assumes "+" and "-" are correctly rounded
-// to nearest with ties resolved in any way.
+// The binary operators "+" and "-" for T must be correctly rounded to
+// nearest, with ties resolved in any way.  If T is a built-in floating
+// point type, the rounding mode must be round-to-nearest.
+//
+// If T is a built-in floating point type and excess precision cannot be
+// ruled out, (the slow) `std::fma` is used to ensure exact rounding.
 template <typename T>
 void fast_two_sum(const T &a, const T &b, T &s, T &t) {
-    // Raise error if T is likely to be promoted to excess precision
-    static_assert(
-        get_probable_working_precision<T>() <= std::numeric_limits<T>::digits,
-        "fast_two_sum may give wrong result under excess precision");
-    s = a + b;
-    t = s - a;
-    t = b - t;
+    constexpr int p = std::numeric_limits<T>::digits;
+    constexpr bool use_fma = std::is_floating_point<T>::value && (
+        (FLT_EVAL_METHOD != 0 && FLT_EVAL_METHOD != 1 && FLT_EVAL_METHOD != 2) ||
+        (FLT_EVAL_METHOD == 1 && p < std::numeric_limits<double>::digits) ||
+        (FLT_EVAL_METHOD == 2 && p < std::numeric_limits<long double>::digits)
+    );
+    if constexpr(use_fma) {
+        s = std::fma(T(1), a, b);
+        t = std::fma(T(-1), a, s);
+        t = std::fma(T(-1), t, b);
+    } else {
+        s = a + b;
+        t = s - a;
+        t = b - t;
+    }
 }
-
-//// fast_two_sum that handles excess precision by force rounding.
-//template <typename T>
-//void fast_two_sum_workaround(const T &a, const T &b, T &s, T &t) {
-//    using std::fma;
-//    s = fma(T(1), a, b);
-//    t = fma(T(-1), a, s);
-//    t = fma(T(-1), t, b);
-//}
-//
-//#if FLT_EVAL_METHOD != 0
-//inline void fast_two_sum(const float &a, const float &b, float &s, float &t) {
-//    fast_two_sum_workaround(a, b, s, t);
-//}
-//#endif
-//
-//#if FLT_EVAL_METHOD != 0 && FLT_EVAL_METHOD != 1
-//inline void fast_two_sum(const double &a, const double &b, double &s, double &t) {
-//    fast_two_sum_workaround(a, b, s, t);
-//}
-//#endif
 
 template <typename T>
 void two_sum(const T &a, const T &b, T &s, T &t) {
@@ -136,20 +105,6 @@ void two_sum(const T &a, const T &b, T &s, T &t) {
     } else {
         fast_two_sum(b, a, s, t);
     }
-}
-
-inline void pow1p_error(sf_error_t code) {
-    set_error("pow1p", code, "");
-}
-
-template <class T>
-T check_answer(const T &answer) {
-    if (answer == 0) {
-        pow1p_error(SF_ERROR_UNDERFLOW);
-    } else if (std::isinf(answer)) {
-        pow1p_error(SF_ERROR_OVERFLOW);
-    }
-    return answer;
 }
 
 // Handles special values of pow(1+x,y) according to the spec of pow()
@@ -215,7 +170,7 @@ bool pow1p_special(const T &x, const T &y, T &result) {
     // Handle 1+x == +/-0 (can only be +0 in fact).
     if (x == -1) {
         if (y < 0) {
-            pow1p_error(SF_ERROR_SINGULAR); // signal divideByZero
+            set_error("pow1p", SF_ERROR_SINGULAR, ""); // signal divideByZero
             result = std::numeric_limits<T>::infinity();
         } else {
             // y == 0 is already handled above
@@ -226,7 +181,7 @@ bool pow1p_special(const T &x, const T &y, T &result) {
 
     // Handle 1+x < 0 and y not an integer
     if ((x < -1) && std::fmod(y, T(1)) != 0) {
-        pow1p_error(SF_ERROR_DOMAIN); // signal invalid operation
+        set_error("pow1p", SF_ERROR_DOMAIN, ""); // signal invalid operation
         result = std::numeric_limits<T>::quiet_NaN();
         return true;
     }
@@ -265,7 +220,7 @@ T pow1p_decomp(const T &x1, const T &x2, const T &y) {
     out << "[pow1p_decomp] term1=" << term1 << std::endl;
 
     if (t == 0 || term1 == 0 || term1 == std::numeric_limits<T>::infinity()) {
-        return check_answer(term1);
+        return term1;
     }
 
     // (1+t/s)^y == exp(y*log(1+t/s)).  The relative error of the result is
@@ -278,7 +233,7 @@ T pow1p_decomp(const T &x1, const T &x2, const T &y) {
     T term2 = std::exp(w);
     out << "[pow1p_decomp] term2=" << term2 << std::endl;
     if (std::abs(w) <= 0.5) {
-        return check_answer(term1 * term2);
+        return term1 * term2;
     }
 
     // Now y*log(1+t/s) is large, and its relative error is "magnified" by
@@ -299,7 +254,7 @@ T pow1p_decomp(const T &x1, const T &x2, const T &y) {
     // TODO: maybe ww is small enough such that exp(ww) ~= 1+ww.
     T term3 = std::exp(ww);
     out << "[pow1p_decomp] term3=" << term3 << std::endl;
-    return check_answer(term1 * term2 * term3);
+    return term1 * term2 * term3;
 }
 
 // Compute pow(1+x,y) to full precision of T.
@@ -334,7 +289,7 @@ T pow1p_precise(T x, T y) {
             T sign = (std::fmod(y, T(2)) == 0) ? 1 : -1;
             return sign * pow1p_decomp(-x, T(-1), y);
         } else {
-            return check_answer(std::pow(T(1) + x, y));
+            return std::pow(T(1) + x, y);
         }
     }
 
@@ -367,7 +322,7 @@ T pow1p_approx(T x, T y) {
         out << "[pow1p_approx] z=" << z << std::endl;
         T yz = y * z;
         out << "[pow1p_approx] y*z=" << yz << std::endl;
-        return check_answer(std::exp(yz));
+        return std::exp(yz);
     } else {
         // x < -1 and y is integer
         T sign = (std::fmod(y, T(2)) == 0) ? 1 : -1;
@@ -375,7 +330,7 @@ T pow1p_approx(T x, T y) {
         out << "[pow1p_approx] z=" << z << std::endl;
         T yz = y * z;
         out << "[pow1p_approx] y*z=" << yz << std::endl;
-        return check_answer(sign * std::exp(yz));
+        return sign * std::exp(yz);
     }
 }
 
@@ -401,38 +356,53 @@ constexpr int extra_bits_needed() {
     return bit_width(qq);
 }
 
+// Signal underflow or overflow error if needed, and then return `answer`.
+template <class T>
+T check_answer(const T &answer) {
+    if (answer == 0) {
+        set_error("pow1p", SF_ERROR_UNDERFLOW, "");
+    } else if (std::isinf(answer)) {
+        set_error("pow1p", SF_ERROR_OVERFLOW, "");
+    }
+    return answer;
+}
+
 inline double pow1p(double x, double y) {
     // Promote double to long double only if FLT_EVAL_METHOD tells us to.
+    double answer;
     constexpr int q = extra_bits_needed<double>();
     if constexpr(FLT_EVAL_METHOD == 2 &&
                  std::numeric_limits<long double>::digits -
                  std::numeric_limits<double>::digits >= q) {
-        return pow1p_approx<long double>(x, y);
+        answer = pow1p_approx<long double>(x, y);
     } else if constexpr(FLT_EVAL_METHOD == 2) {
-        return pow1p_precise<long double>(x, y);
+        answer = pow1p_precise<long double>(x, y);
     } else {
-        return pow1p_precise<double>(x, y);
+        answer = pow1p_precise<double>(x, y);
     }
+    return check_answer(answer);
 }
 
 inline float pow1p(float x, float y) {
     // Promote to double by default, and to long double only if
     // double is not enough and FLT_EVAL_METHOD tells us to.
+    float answer;
     constexpr int q = extra_bits_needed<float>();
     if constexpr(std::numeric_limits<double>::digits -
                  std::numeric_limits<float>::digits >= q) {
-        return pow1p_approx<double>(x, y);
+        answer = pow1p_approx<double>(x, y);
     } else if constexpr(FLT_EVAL_METHOD == 2 &&
                         std::numeric_limits<long double>::digits -
                         std::numeric_limits<float>::digits >= q) {
-        return pow1p_approx<long double>(x, y);
+        answer = pow1p_approx<long double>(x, y);
     } else if constexpr(FLT_EVAL_METHOD == 2) {
-        return pow1p_precise<long double>(x, y);
+        answer = pow1p_precise<long double>(x, y);
     } else if constexpr(FLT_EVAL_METHOD == 1) {
-        return pow1p_precise<double>(x, y);
+        answer = pow1p_precise<double>(x, y);
     } else {
-        return pow1p_precise<float>(x, y);
+        answer = pow1p_precise<float>(x, y);
     }
+    return check_answer(answer);
 }
 
 } // namespace xsf
