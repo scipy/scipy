@@ -23,6 +23,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+from itertools import product
 
 import numpy as np
 from numpy.testing import assert_allclose, assert_equal
@@ -52,26 +53,36 @@ class TestAAA:
         with pytest.warns(RuntimeWarning, match="AAA failed"):
             AAA(UNIT_INTERVAL, np.exp(UNIT_INTERVAL),  max_terms=1)
 
-    @pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, 
-                                       np.complex128])
-    def test_dtype_preservation(self, dtype):
-        rtol = np.finfo(dtype).eps ** 0.75 * 100
+    @pytest.mark.parametrize("z_dtype,f_dtype,z2_dtype",
+                             product([np.float32, np.float64,
+                                      np.complex64, np.complex128], repeat=3))
+    def test_dtype_preservation(self, z_dtype, f_dtype, z2_dtype):
+        rtol = max(np.finfo(f_dtype).eps ** 0.75 * 100,
+                   np.finfo(z_dtype).eps ** 0.75 * 100,
+                   np.finfo(z2_dtype).eps ** 0.75 * 100)
+
         rng = np.random.default_rng(59846294526092468)
 
-        z = np.linspace(-1, 1, dtype=dtype)
-        r = AAA(z, np.sin(z))
+        z = np.linspace(-1, 1, dtype=z_dtype)
+        f = np.sin(z)
+        if np.iscomplexobj(f):
+            f = f.real.astype(f_dtype)
+        else:
+            f = f.astype(f_dtype)
+        r = AAA(z, f)
         
-        z2 = rng.uniform(-1, 1, size=100).astype(dtype)
-        assert_allclose(r(z2), np.sin(z2), rtol=rtol)
-        assert r(z2).dtype == dtype
+        z2 = rng.uniform(-1, 1, size=100).astype(z2_dtype)
+        rz2 = r(z2)
+        assert_allclose(rz2, np.sin(z2), rtol=rtol)
+        assert rz2.dtype == np.result_type(z_dtype, f_dtype, z2_dtype)
         
-        assert r.support_points.dtype == dtype
-        assert r.support_values.dtype == dtype
-        assert r.weights.dtype == dtype
-        assert r.errors.dtype == z.real.dtype
-        assert r.poles().dtype == np.result_type(dtype, 1j)
-        assert r.residues().dtype == np.result_type(dtype, 1j)
-        assert r.roots().dtype == np.result_type(dtype, 1j)
+        assert r.support_points.dtype == z_dtype
+        assert r.support_values.dtype == np.result_type(z_dtype, f_dtype)
+        assert r.weights.dtype == np.result_type(z_dtype, f_dtype)
+        assert r.errors.dtype == np.result_type(z.real, f.real)
+        assert r.poles().dtype == np.result_type(z_dtype, f_dtype, 1j)
+        assert r.residues().dtype == np.result_type(z_dtype, f_dtype, 1j)
+        assert r.roots().dtype == np.result_type(z_dtype, f_dtype, 1j)
     
     # The following tests are based on:
     # https://github.com/chebfun/chebfun/blob/master/tests/chebfun/test_aaa.m
