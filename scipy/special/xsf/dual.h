@@ -637,6 +637,19 @@ struct complex_type<dual<T, Orders...>> {
     using type = dual<typename complex_type<T>::type, Orders...>;
 };
 
+template <typename T>
+struct remove_dual {
+    using type = T;
+};
+
+template <typename T, size_t... Orders>
+struct remove_dual<dual<T, Orders...>> {
+    using type = T;
+};
+
+template <typename T>
+using remove_dual_t = typename remove_dual<T>::type;
+
 namespace numbers {
 
     template <typename T, size_t... Orders>

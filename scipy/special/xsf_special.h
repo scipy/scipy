@@ -14,16 +14,6 @@
 
 namespace {
 
-using xsf::assoc_legendre_norm;
-using xsf::assoc_legendre_unnorm;
-
-template <typename NormPolicy, typename T, typename OutputMat>
-void assoc_legendre_p_all(NormPolicy norm, T z, long long int branch_cut, OutputMat res) {
-    static constexpr size_t N = OutputMat::value_type::max_order();
-
-    xsf::assoc_legendre_p_all(norm, xsf::dual_var<N>(z), branch_cut, res);
-}
-
 template <typename T>
 std::complex<T> sph_harm(long long int m, long long int n, T theta, T phi) {
     if (n < 0) {

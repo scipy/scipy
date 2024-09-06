@@ -952,19 +952,6 @@ namespace numpy {
         return gufunc(std::move(func), nout, name, doc, signature, map_dims);
     }
 
-    template <typename T>
-    struct value_type {
-        using type = T;
-    };
-
-    template <typename T, size_t... Orders>
-    struct value_type<dual<T, Orders...>> {
-        using type = T;
-    };
-
-    template <typename T>
-    using remove_dual_t = typename value_type<T>::type;
-
     // rename to autodiff_var?
     template <typename T>
     struct autodiff_traits {

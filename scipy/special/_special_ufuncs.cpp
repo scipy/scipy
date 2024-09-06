@@ -647,57 +647,57 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
         xsf::numpy::gufunc(
             {xsf::numpy::wrap_autodiff(
                  [](long long int n, long long int m, xsf::dual<double, 0> z, long long int branch_cut) {
-                     return xsf::assoc_legendre_p(assoc_legendre_unnorm, n, m, z, branch_cut);
+                     return xsf::assoc_legendre_p(xsf::assoc_legendre_unnorm, n, m, z, branch_cut);
                  }),
              xsf::numpy::wrap_autodiff(
                  [](long long int n, long long int m, xsf::dual<float, 0> z, long long int branch_cut) {
-                     return xsf::assoc_legendre_p(assoc_legendre_unnorm, n, m, z, branch_cut);
+                     return xsf::assoc_legendre_p(xsf::assoc_legendre_unnorm, n, m, z, branch_cut);
                  }),
              xsf::numpy::wrap_autodiff(
                  [](long long int n, long long int m, xsf::dual<xsf::numpy::cdouble, 0> z, long long int branch_cut) {
-                     return xsf::assoc_legendre_p(assoc_legendre_unnorm, n, m, z, branch_cut);
+                     return xsf::assoc_legendre_p(xsf::assoc_legendre_unnorm, n, m, z, branch_cut);
                  }),
              xsf::numpy::wrap_autodiff(
                  [](long long int n, long long int m, xsf::dual<xsf::numpy::cfloat, 0> z, long long int branch_cut) {
-                     return xsf::assoc_legendre_p(assoc_legendre_unnorm, n, m, z, branch_cut);
+                     return xsf::assoc_legendre_p(xsf::assoc_legendre_unnorm, n, m, z, branch_cut);
                  })},
             1, "assoc_legendre_p", nullptr, "(),(),(),()->(1)", [](const npy_intp *dims, npy_intp *new_dims) {}),
         Py_False, 1,
         xsf::numpy::gufunc(
             {xsf::numpy::wrap_autodiff(
                  [](long long int n, long long int m, xsf::dual<double, 1> z, long long int branch_cut) {
-                     return xsf::assoc_legendre_p(assoc_legendre_unnorm, n, m, z, branch_cut);
+                     return xsf::assoc_legendre_p(xsf::assoc_legendre_unnorm, n, m, z, branch_cut);
                  }),
              xsf::numpy::wrap_autodiff(
                  [](long long int n, long long int m, xsf::dual<float, 1> z, long long int branch_cut) {
-                     return xsf::assoc_legendre_p(assoc_legendre_unnorm, n, m, z, branch_cut);
+                     return xsf::assoc_legendre_p(xsf::assoc_legendre_unnorm, n, m, z, branch_cut);
                  }),
              xsf::numpy::wrap_autodiff(
                  [](long long int n, long long int m, xsf::dual<xsf::numpy::cdouble, 1> z, long long int branch_cut) {
-                     return xsf::assoc_legendre_p(assoc_legendre_unnorm, n, m, z, branch_cut);
+                     return xsf::assoc_legendre_p(xsf::assoc_legendre_unnorm, n, m, z, branch_cut);
                  }),
              xsf::numpy::wrap_autodiff(
                  [](long long int n, long long int m, xsf::dual<xsf::numpy::cfloat, 1> z, long long int branch_cut) {
-                     return xsf::assoc_legendre_p(assoc_legendre_unnorm, n, m, z, branch_cut);
+                     return xsf::assoc_legendre_p(xsf::assoc_legendre_unnorm, n, m, z, branch_cut);
                  })},
             1, "assoc_legendre_p", nullptr, "(),(),(),()->(2)", [](const npy_intp *dims, npy_intp *new_dims) {}),
         Py_False, 2,
         xsf::numpy::gufunc(
             {xsf::numpy::wrap_autodiff(
                  [](long long int n, long long int m, xsf::dual<double, 2> z, long long int branch_cut) {
-                     return xsf::assoc_legendre_p(assoc_legendre_unnorm, n, m, z, branch_cut);
+                     return xsf::assoc_legendre_p(xsf::assoc_legendre_unnorm, n, m, z, branch_cut);
                  }),
              xsf::numpy::wrap_autodiff(
                  [](long long int n, long long int m, xsf::dual<float, 2> z, long long int branch_cut) {
-                     return xsf::assoc_legendre_p(assoc_legendre_unnorm, n, m, z, branch_cut);
+                     return xsf::assoc_legendre_p(xsf::assoc_legendre_unnorm, n, m, z, branch_cut);
                  }),
              xsf::numpy::wrap_autodiff(
                  [](long long int n, long long int m, xsf::dual<xsf::numpy::cdouble, 2> z, long long int branch_cut) {
-                     return xsf::assoc_legendre_p(assoc_legendre_unnorm, n, m, z, branch_cut);
+                     return xsf::assoc_legendre_p(xsf::assoc_legendre_unnorm, n, m, z, branch_cut);
                  }),
              xsf::numpy::wrap_autodiff(
                  [](long long int n, long long int m, xsf::dual<xsf::numpy::cfloat, 2> z, long long int branch_cut) {
-                     return xsf::assoc_legendre_p(assoc_legendre_unnorm, n, m, z, branch_cut);
+                     return xsf::assoc_legendre_p(xsf::assoc_legendre_unnorm, n, m, z, branch_cut);
                  })},
             1, "assoc_legendre_p", nullptr, "(),(),(),()->(3)", [](const npy_intp *dims, npy_intp *new_dims) {}));
     PyModule_AddObjectRef(_special_ufuncs, "assoc_legendre_p", assoc_legendre_p);
