@@ -6932,8 +6932,8 @@ add_newdoc("ncfdtri",
     using the Boost Math C++ library [1]_.
 
     Note that argument order of `ncfdtri` is different from that of the
-    otherwise equivalent ``ppf`` method of `scipy.stats.ncf`. `p` is the last
-    parameter of `ncfdtri` but the first parameter of ``scipy.stats.ncf.ppf``.
+    similar ``ppf`` method of `scipy.stats.ncf`. `p` is the last parameter
+    of `ncfdtri` but the first parameter of ``scipy.stats.ncf.ppf``.
 
     References
     ----------
