@@ -3494,10 +3494,10 @@ def _minimize_powell(func, x0, args=(), callback=None, bounds=None,
                           OptimizeWarning, stacklevel=3)
 
     fval = squeeze(func(x))
-    x1 = x.copy()
     iter = 0
     while True:
         try:
+            x1 = x.copy()
             fx = fval
             bigind = 0
             delta = 0.0
