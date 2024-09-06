@@ -65,7 +65,7 @@ class _BarycentricRational:
     def _input_validation(self, x, y, **kwargs):
         if x.ndim != 1:
             raise ValueError("`x` must be 1-D.")
-        
+
         if not y.ndim >= 1:
             raise ValueError("`y` must be at least 1-D.")
 
@@ -422,10 +422,10 @@ class AAA(_BarycentricRational):
         if max_terms < 1:
             raise ValueError("`max_terms` must be an integer value greater than or "
                              "equal to one.")
-        
+
         if y.ndim != 1:
             raise ValueError("`y` must be 1-D.")
-        
+
         super()._input_validation(x, y)
 
     @property
@@ -677,7 +677,7 @@ class FloaterHormannInterpolator(_BarycentricRational):
     the polynomial interpolation fails due to Runge's phenomenon.
 
     >>> import numpy as np
-    >>> from scipy.interpolate import (FloaterHormannInterpolator, 
+    >>> from scipy.interpolate import (FloaterHormannInterpolator,
     ...                                BarycentricInterpolator)
     >>> def f(z):
     ...     return 1/(1 + z**2)
@@ -710,5 +710,5 @@ class FloaterHormannInterpolator(_BarycentricRational):
             for i in range(max(k-d, 0), min(k+1, n-d)):
                 w[k] += 1/np.prod(np.abs(np.delete(z[k] - z[i : i + d + 1], k - i)))
         w *= (-1.)**(np.arange(n) - d)
-        
+
         return z, f, w

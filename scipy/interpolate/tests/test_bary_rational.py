@@ -26,7 +26,7 @@
 from math import factorial
 
 import numpy as np
-from numpy.testing import assert_allclose, assert_equal
+from numpy.testing import assert_allclose, assert_equal, assert_array_less
 import pytest
 import scipy
 from scipy.interpolate import AAA, FloaterHormannInterpolator, BarycentricInterpolator
@@ -350,3 +350,10 @@ class TestFloaterHormann:
         rr = r(xx)
         assert rr.shape == xx.shape + y_shape
         assert_allclose(rr, yy, rtol=1e-6)
+
+    def test_zeros(self):
+        x = np.linspace(0, 10, num=100)
+        r = FloaterHormannInterpolator(x, np.sin(np.pi*x))
+
+        err = np.abs(np.subtract.outer(r.roots(), np.arange(11))).min(axis=0)
+        assert_array_less(err, 1e-5)
