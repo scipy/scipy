@@ -3,9 +3,6 @@
 #include "Python.h"
 
 #include "xsf/bessel.h"
-#include "xsf/dual.h"
-#include "xsf/legendre.h"
-#include "xsf/specfun.h"
 #include "xsf/sph_harm.h"
 
 // This header exists to add behaviors to special functions from the xsf library,
@@ -38,13 +35,6 @@ std::complex<T> sph_harm(T m, T n, T theta, T phi) {
     }
 
     return sph_harm(static_cast<long>(m), static_cast<long>(n), theta, phi);
-}
-
-template <typename T, typename OutputMat>
-void sph_harm_y_all(T theta, T phi, OutputMat res) {
-    static constexpr size_t N = OutputMat::value_type::max_order();
-
-    xsf::sph_harm_y_all(xsf::dual_var<N, N>(theta, 0), xsf::dual_var<N, N>(phi, 1), res);
 }
 
 } // namespace

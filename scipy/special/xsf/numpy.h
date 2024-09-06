@@ -322,12 +322,12 @@ namespace numpy {
     using qF_F2 = void (*)(long long int, cfloat, cfloat_2d);
     using qD_D2 = void (*)(long long int, cdouble, cdouble_2d);
 
-    using autodiff00_ff_F2 = void (*)(float, float, autodiff00_cfloat_2d);
-    using autodiff00_dd_D2 = void (*)(double, double, autodiff00_cdouble_2d);
-    using autodiff11_ff_F2 = void (*)(float, float, autodiff11_cfloat_2d);
-    using autodiff11_dd_D2 = void (*)(double, double, autodiff11_cdouble_2d);
-    using autodiff22_ff_F2 = void (*)(float, float, autodiff22_cfloat_2d);
-    using autodiff22_dd_D2 = void (*)(double, double, autodiff22_cdouble_2d);
+    using autodiff00_ff_F2 = void (*)(autodiff00_float, autodiff00_float, autodiff00_cfloat_2d);
+    using autodiff00_dd_D2 = void (*)(autodiff00_double, autodiff00_double, autodiff00_cdouble_2d);
+    using autodiff11_ff_F2 = void (*)(autodiff11_float, autodiff11_float, autodiff11_cfloat_2d);
+    using autodiff11_dd_D2 = void (*)(autodiff11_double, autodiff11_double, autodiff11_cdouble_2d);
+    using autodiff22_ff_F2 = void (*)(autodiff22_float, autodiff22_float, autodiff22_cfloat_2d);
+    using autodiff22_dd_D2 = void (*)(autodiff22_double, autodiff22_double, autodiff22_cdouble_2d);
 
     // 2 inputs, 2 outputs
     using qF_F2F2 = void (*)(long long int, cfloat, cfloat_2d, cfloat_2d);

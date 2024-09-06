@@ -56,8 +56,6 @@ PyMODINIT_FUNC PyInit__gufuncs() {
     PyUnstable_Module_SetGIL(_gufuncs, Py_MOD_GIL_NOT_USED);
 #endif
 
-    // xsf::numpy::wrap_autodiff()
-
     PyObject *legendre_p_all = Py_BuildValue(
         "(N, N, N)",
         xsf::numpy::gufunc({xsf::numpy::wrap_autodiff(static_cast<xsf::numpy::autodiff0_d_d1>(xsf::legendre_p_all)),
@@ -217,17 +215,17 @@ PyMODINIT_FUNC PyInit__gufuncs() {
                            2, "_lqmn", lqmn_doc, "()->(mp1,np1),(mp1,np1)", assoc_legendre_map_dims<2>);
     PyModule_AddObjectRef(_gufuncs, "_lqmn", _lqmn);
 
-    PyObject *sph_harm_y_all =
-        Py_BuildValue("(N, N, N)",
-                      xsf::numpy::gufunc({static_cast<xsf::numpy::autodiff00_dd_D2>(::sph_harm_y_all),
-                                          static_cast<xsf::numpy::autodiff00_ff_F2>(::sph_harm_y_all)},
-                                         1, "sph_harm_y_all", nullptr, "(),()->(np1,mpmp1,1,1)", sph_harm_map_dims),
-                      xsf::numpy::gufunc({static_cast<xsf::numpy::autodiff11_dd_D2>(::sph_harm_y_all),
-                                          static_cast<xsf::numpy::autodiff11_ff_F2>(::sph_harm_y_all)},
-                                         1, "sph_harm_y_all", nullptr, "(),()->(np1,mpmp1,2,2)", sph_harm_map_dims),
-                      xsf::numpy::gufunc({static_cast<xsf::numpy::autodiff22_dd_D2>(::sph_harm_y_all),
-                                          static_cast<xsf::numpy::autodiff22_ff_F2>(::sph_harm_y_all)},
-                                         1, "sph_harm_y_all", nullptr, "(),()->(np1,mpmp1,3,3)", sph_harm_map_dims));
+    PyObject *sph_harm_y_all = Py_BuildValue(
+        "(N, N, N)",
+        xsf::numpy::gufunc({xsf::numpy::wrap_autodiff(static_cast<xsf::numpy::autodiff00_dd_D2>(xsf::sph_harm_y_all)),
+                            xsf::numpy::wrap_autodiff(static_cast<xsf::numpy::autodiff00_ff_F2>(xsf::sph_harm_y_all))},
+                           1, "sph_harm_y_all", nullptr, "(),()->(np1,mpmp1,1,1)", sph_harm_map_dims),
+        xsf::numpy::gufunc({xsf::numpy::wrap_autodiff(static_cast<xsf::numpy::autodiff11_dd_D2>(xsf::sph_harm_y_all)),
+                            xsf::numpy::wrap_autodiff(static_cast<xsf::numpy::autodiff11_ff_F2>(xsf::sph_harm_y_all))},
+                           1, "sph_harm_y_all", nullptr, "(),()->(np1,mpmp1,2,2)", sph_harm_map_dims),
+        xsf::numpy::gufunc({xsf::numpy::wrap_autodiff(static_cast<xsf::numpy::autodiff22_dd_D2>(xsf::sph_harm_y_all)),
+                            xsf::numpy::wrap_autodiff(static_cast<xsf::numpy::autodiff22_ff_F2>(xsf::sph_harm_y_all))},
+                           1, "sph_harm_y_all", nullptr, "(),()->(np1,mpmp1,3,3)", sph_harm_map_dims));
     PyModule_AddObjectRef(_gufuncs, "sph_harm_y_all", sph_harm_y_all);
 
     PyObject *_rctj =
