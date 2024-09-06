@@ -602,9 +602,8 @@ class FloaterHormannInterpolator(_BarycentricRational):
         1-D array containing values of the dependent variable.. Infinite and NaN values
         of `values` and corresponding values of `x` will be discarded.
     d : int, optional
-        Blending parameter which controls the blending of interpolating polynomials, see
-        notes for more details. For ``d=n-1`` it is equivalent to polynomial
-        interpolation. Must satisfy ``0 <= d < n``, defaults to 3.
+        Blends ``n - d`` degree `d` polynomials together. For ``d=n-1`` it is equivalent
+        to polynomial interpolation. Must satisfy ``0 <= d < n``, defaults to 3.
 
     Attributes
     ----------
