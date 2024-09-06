@@ -3467,7 +3467,7 @@ def wilcoxon_outputs(kwds):
     n_samples=lambda kwds: 2 if kwds.get('y', None) is not None else 1,
     result_to_tuple=wilcoxon_result_unpacker, n_outputs=wilcoxon_outputs,
 )
-def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
+def wilcoxon(x, y=None, zero_method="wilcox", correction=True,
              alternative="two-sided", method='auto', *, axis=0):
     """Calculate the Wilcoxon signed-rank test.
 
@@ -3512,7 +3512,7 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     correction : bool, optional
         If True, apply continuity correction by adjusting the Wilcoxon rank
         statistic by 0.5 towards the mean value when computing the
-        z-statistic if a normal approximation is used.  Default is False.
+        z-statistic if a normal approximation is used.  Default is True.
     alternative : {"two-sided", "greater", "less"}, optional
         Defines the alternative hypothesis. Default is 'two-sided'.
         In the following, let ``d`` represent the difference between the paired

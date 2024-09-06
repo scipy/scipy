@@ -1492,7 +1492,8 @@ class TestWilcoxon:
         y = [1, 2, 3, 5]
         with suppress_warnings() as sup:
             sup.filter(UserWarning, message="Sample size too small")
-            res = stats.wilcoxon(x, y, zero_method="pratt", mode="approx")
+            res = stats.wilcoxon(x, y, zero_method="pratt", mode="approx",
+                                 correction=False)
         assert_allclose(res, (0.0, 0.31731050786291415))
 
     def test_wilcoxon_arg_type(self):
@@ -1510,15 +1511,15 @@ class TestWilcoxon:
         x = np.concatenate([[u] * v for u, v in zip(nums, freq)])
         y = np.zeros(x.size)
 
-        T, p = stats.wilcoxon(x, y, "pratt", mode="approx")
+        T, p = stats.wilcoxon(x, y, "pratt", mode="approx", correction=False)
         assert_allclose(T, 423)
         assert_allclose(p, 0.0031724568006762576)
 
-        T, p = stats.wilcoxon(x, y, "zsplit", mode="approx")
+        T, p = stats.wilcoxon(x, y, "zsplit", mode="approx", correction=False)
         assert_allclose(T, 441)
         assert_allclose(p, 0.0032145343172473055)
 
-        T, p = stats.wilcoxon(x, y, "wilcox", mode="approx")
+        T, p = stats.wilcoxon(x, y, "wilcox", mode="approx", correction=False)
         assert_allclose(T, 327)
         assert_allclose(p, 0.00641346115861)
 
@@ -1563,7 +1564,7 @@ class TestWilcoxon:
         #   > result = wilcox.test(rep(0.1, 10), exact=FALSE, correct=TRUE)
         #   > result$p.value
         #   [1] 0.001904195
-        stat, p = stats.wilcoxon([0.1] * 10, mode="approx")
+        stat, p = stats.wilcoxon([0.1] * 10, mode="approx", correction=False)
         expected_p = 0.001565402
         assert_equal(stat, 0)
         assert_allclose(p, expected_p, rtol=1e-6)
@@ -1587,7 +1588,8 @@ class TestWilcoxon:
 
         with suppress_warnings() as sup:
             sup.filter(UserWarning, message="Sample size too small")
-            w, p = stats.wilcoxon(x, y, alternative="less", mode="approx")
+            w, p = stats.wilcoxon(x, y, alternative="less", mode="approx",
+                                  correction=False)
         assert_equal(w, 27)
         assert_almost_equal(p, 0.7031847, decimal=6)
 
@@ -1600,7 +1602,8 @@ class TestWilcoxon:
 
         with suppress_warnings() as sup:
             sup.filter(UserWarning, message="Sample size too small")
-            w, p = stats.wilcoxon(x, y, alternative="greater", mode="approx")
+            w, p = stats.wilcoxon(x, y, alternative="greater", mode="approx",
+                                  correction=False)
         assert_equal(w, 27)
         assert_almost_equal(p, 0.2968153, decimal=6)
 
