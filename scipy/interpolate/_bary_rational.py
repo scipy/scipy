@@ -156,8 +156,7 @@ class AAA(_BarycentricRational):
 
     See Also
     --------
-    FloaterHormannInterpolator : Floater-Hormann weights for barycentric rational
-    interpolation.
+    FloaterHormannInterpolator : Floater-Hormann barycentric rational interpolation.
     pade : Padé approximation.
 
     Notes
@@ -667,11 +666,11 @@ class FloaterHormannInterpolator(_BarycentricRational):
     the polynomial interpolation fails due to Runge's phenomenon.
 
     >>> import numpy as np
-    >>> from scipy.interpolate import FloaterHormann, BarycentricInterpolator
+    >>> from scipy.interpolate import FloaterHormannInterpolator, BarycentricInterpolator
     >>> def f(z):
     ...     return 1/(1 + z**2)
     >>> z = np.linspace(-5, 5, num=15)
-    >>> r = FloaterHormann(z, f(z))
+    >>> r = FloaterHormannInterpolator(z, f(z))
     >>> p = BarycentricInterpolator(z, f(z))
     >>> zz = np.linspace(-5, 5, num=1000)
     >>> import matplotlib.pyplot as plt
