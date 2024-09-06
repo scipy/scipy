@@ -57,6 +57,11 @@ class _BarycentricRational:
             self._compute_weights(z, f, **kwargs)
         )
 
+        # only compute once
+        self._poles = None
+        self._residues = None
+        self._roots = None
+
     def _input_validation(self, z, f, **kwargs):
         raise NotImplementedError
 
@@ -100,6 +105,77 @@ class _BarycentricRational:
                 r[jj] = self._support_values[zv[jj] == self._support_points].squeeze()
 
         return np.reshape(r, z.shape + self._shape)
+
+    def poles(self):
+        """Compute the poles of the rational approximation.
+
+        Returns
+        -------
+        poles : array
+            Poles of the AAA approximation, repeated according to their multiplicity
+            but not in any specific order.
+        """
+        if self._poles is None:
+            # Compute poles via generalized eigenvalue problem
+            m = self.weights.size
+            B = np.eye(m + 1, dtype=self.weights.dtype)
+            B[0, 0] = 0
+
+            E = np.zeros_like(B, dtype=np.result_type(self.weights,
+                                                      self._support_points))
+            E[0, 1:] = self.weights
+            E[1:, 0] = 1
+            np.fill_diagonal(E[1:, 1:], self._support_points)
+
+            pol = scipy.linalg.eigvals(E, B)
+            self._poles = pol[np.isfinite(pol)]
+        return self._poles
+
+    def residues(self):
+        """Compute the residues of the poles of the approximation.
+
+        Returns
+        -------
+        residues : array
+            Residues associated with the `poles` of the approximation
+        """
+        if self._residues is None:
+            # Compute residues via formula for res of quotient of analytic functions
+            with np.errstate(divide="ignore", invalid="ignore"):
+                N = (1/(np.subtract.outer(self.poles(), self._support_points))) @ (
+                    self._support_values * self.weights
+                )
+                Ddiff = (
+                    -((1/np.subtract.outer(self.poles(), self._support_points))**2)
+                    @ self.weights
+                )
+                self._residues = N / Ddiff
+        return self._residues
+
+    def roots(self):
+        """Compute the zeros of the rational approximation.
+
+        Returns
+        -------
+        zeros : array
+            Zeros of the AAA approximation, repeated according to their multiplicity
+            but not in any specific order.
+        """
+        if self._roots is None:
+            # Compute zeros via generalized eigenvalue problem
+            m = self.weights.size
+            B = np.eye(m + 1, dtype=self.weights.dtype)
+            B[0, 0] = 0
+            E = np.zeros_like(B, dtype=np.result_type(self.weights,
+                                                      self._support_values,
+                                                      self._support_points))
+            E[0, 1:] = self.weights * self._support_values
+            E[1:, 0] = 1
+            np.fill_diagonal(E[1:, 1:], self._support_points)
+
+            zer = scipy.linalg.eigvals(E, B)
+            self._roots = zer[np.isfinite(zer)]
+        return self._roots
 
 
 class AAA(_BarycentricRational):
@@ -322,11 +398,6 @@ class AAA(_BarycentricRational):
                  clean_up_tol=1e-13):
         super().__init__(points, values, rtol=rtol, max_terms=max_terms)
 
-        # only compute once
-        self._poles = None
-        self._residues = None
-        self._roots = None
-
         if clean_up:
             self.clean_up(clean_up_tol)
 
@@ -512,77 +583,6 @@ class AAA(_BarycentricRational):
         self._roots = None
 
         return ni
-
-    def poles(self):
-        """Compute the poles of the rational approximation.
-
-        Returns
-        -------
-        poles : array
-            Poles of the AAA approximation, repeated according to their multiplicity
-            but not in any specific order.
-        """
-        if self._poles is None:
-            # Compute poles via generalized eigenvalue problem
-            m = self.weights.size
-            B = np.eye(m + 1, dtype=self.weights.dtype)
-            B[0, 0] = 0
-
-            E = np.zeros_like(B, dtype=np.result_type(self.weights,
-                                                      self._support_points))
-            E[0, 1:] = self.weights
-            E[1:, 0] = 1
-            np.fill_diagonal(E[1:, 1:], self._support_points)
-
-            pol = scipy.linalg.eigvals(E, B)
-            self._poles = pol[np.isfinite(pol)]
-        return self._poles
-
-    def residues(self):
-        """Compute the residues of the poles of the approximation.
-
-        Returns
-        -------
-        residues : array
-            Residues associated with the `poles` of the approximation
-        """
-        if self._residues is None:
-            # Compute residues via formula for res of quotient of analytic functions
-            with np.errstate(divide="ignore", invalid="ignore"):
-                N = (1/(np.subtract.outer(self.poles(), self._support_points))) @ (
-                    self._support_values * self.weights
-                )
-                Ddiff = (
-                    -((1/np.subtract.outer(self.poles(), self._support_points))**2)
-                    @ self.weights
-                )
-                self._residues = N / Ddiff
-        return self._residues
-
-    def roots(self):
-        """Compute the zeros of the rational approximation.
-
-        Returns
-        -------
-        zeros : array
-            Zeros of the AAA approximation, repeated according to their multiplicity
-            but not in any specific order.
-        """
-        if self._roots is None:
-            # Compute zeros via generalized eigenvalue problem
-            m = self.weights.size
-            B = np.eye(m + 1, dtype=self.weights.dtype)
-            B[0, 0] = 0
-            E = np.zeros_like(B, dtype=np.result_type(self.weights,
-                                                      self._support_values,
-                                                      self._support_points))
-            E[0, 1:] = self.weights * self._support_values
-            E[1:, 0] = 1
-            np.fill_diagonal(E[1:, 1:], self._support_points)
-
-            zer = scipy.linalg.eigvals(E, B)
-            self._roots = zer[np.isfinite(zer)]
-        return self._roots
 
 
 class FloaterHormannInterpolator(_BarycentricRational):

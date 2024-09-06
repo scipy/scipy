@@ -56,10 +56,10 @@ def test_dtype_preservation(method, dtype):
         assert r.support_points.dtype == dtype
         assert r.support_values.dtype == dtype
         assert r.errors.dtype == z.real.dtype
-        assert r.poles().dtype == np.result_type(dtype, 1j)
-        assert r.residues().dtype == np.result_type(dtype, 1j)
-        assert r.roots().dtype == np.result_type(dtype, 1j)
     assert r.weights.dtype == dtype
+    assert r.poles().dtype == np.result_type(dtype, 1j)
+    assert r.residues().dtype == np.result_type(dtype, 1j)
+    assert r.roots().dtype == np.result_type(dtype, 1j)
 
 
 @pytest.mark.parametrize("method", [AAA, FloaterHormannInterpolator])
