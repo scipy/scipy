@@ -58,23 +58,23 @@ PyMODINIT_FUNC PyInit__gufuncs() {
 
     // xsf::numpy::wrap_autodiff()
 
-    PyObject *legendre_p_all =
-        Py_BuildValue("(N, N, N)",
-                      xsf::numpy::gufunc({static_cast<xsf::numpy::autodiff0_d_d1>(::legendre_p_all),
-                                          static_cast<xsf::numpy::autodiff0_f_f1>(::legendre_p_all),
-                                          static_cast<xsf::numpy::autodiff0_D_D1>(::legendre_p_all),
-                                          static_cast<xsf::numpy::autodiff0_F_F1>(::legendre_p_all)},
-                                         1, "legendre_p_all", nullptr, "()->(np1,1)", new_legendre_map_dims),
-                      xsf::numpy::gufunc({static_cast<xsf::numpy::autodiff1_d_d1>(::legendre_p_all),
-                                          static_cast<xsf::numpy::autodiff1_f_f1>(::legendre_p_all),
-                                          static_cast<xsf::numpy::autodiff1_D_D1>(::legendre_p_all),
-                                          static_cast<xsf::numpy::autodiff1_F_F1>(::legendre_p_all)},
-                                         1, "legendre_p_all", nullptr, "()->(np1,2)", new_legendre_map_dims),
-                      xsf::numpy::gufunc({static_cast<xsf::numpy::autodiff2_d_d1>(::legendre_p_all),
-                                          static_cast<xsf::numpy::autodiff2_f_f1>(::legendre_p_all),
-                                          static_cast<xsf::numpy::autodiff2_D_D1>(::legendre_p_all),
-                                          static_cast<xsf::numpy::autodiff2_F_F1>(::legendre_p_all)},
-                                         1, "legendre_p_all", nullptr, "()->(np1,3)", new_legendre_map_dims));
+    PyObject *legendre_p_all = Py_BuildValue(
+        "(N, N, N)",
+        xsf::numpy::gufunc({xsf::numpy::wrap_autodiff(static_cast<xsf::numpy::autodiff0_d_d1>(xsf::legendre_p_all)),
+                            xsf::numpy::wrap_autodiff(static_cast<xsf::numpy::autodiff0_f_f1>(xsf::legendre_p_all)),
+                            xsf::numpy::wrap_autodiff(static_cast<xsf::numpy::autodiff0_D_D1>(xsf::legendre_p_all)),
+                            xsf::numpy::wrap_autodiff(static_cast<xsf::numpy::autodiff0_F_F1>(xsf::legendre_p_all))},
+                           1, "legendre_p_all", nullptr, "()->(np1,1)", new_legendre_map_dims),
+        xsf::numpy::gufunc({xsf::numpy::wrap_autodiff(static_cast<xsf::numpy::autodiff1_d_d1>(xsf::legendre_p_all)),
+                            xsf::numpy::wrap_autodiff(static_cast<xsf::numpy::autodiff1_f_f1>(xsf::legendre_p_all)),
+                            xsf::numpy::wrap_autodiff(static_cast<xsf::numpy::autodiff1_D_D1>(xsf::legendre_p_all)),
+                            xsf::numpy::wrap_autodiff(static_cast<xsf::numpy::autodiff1_F_F1>(xsf::legendre_p_all))},
+                           1, "legendre_p_all", nullptr, "()->(np1,2)", new_legendre_map_dims),
+        xsf::numpy::gufunc({xsf::numpy::wrap_autodiff(static_cast<xsf::numpy::autodiff2_d_d1>(xsf::legendre_p_all)),
+                            xsf::numpy::wrap_autodiff(static_cast<xsf::numpy::autodiff2_f_f1>(xsf::legendre_p_all)),
+                            xsf::numpy::wrap_autodiff(static_cast<xsf::numpy::autodiff2_D_D1>(xsf::legendre_p_all)),
+                            xsf::numpy::wrap_autodiff(static_cast<xsf::numpy::autodiff2_F_F1>(xsf::legendre_p_all))},
+                           1, "legendre_p_all", nullptr, "()->(np1,3)", new_legendre_map_dims));
     PyModule_AddObjectRef(_gufuncs, "legendre_p_all", legendre_p_all);
 
     // key is norm, diff_n
@@ -165,17 +165,20 @@ PyMODINIT_FUNC PyInit__gufuncs() {
                            1, "assoc_legendre_p_all", nullptr, "(),()->(np1,mpmp1,3)", assoc_legendre_map_dims<1>));
     PyModule_AddObjectRef(_gufuncs, "assoc_legendre_p_all", assoc_legendre_p_all);
 
-    PyObject *sph_legendre_p_all = Py_BuildValue(
-        "(N, N, N)",
-        xsf::numpy::gufunc({static_cast<xsf::numpy::autodiff0_d_d2>(::sph_legendre_p_all),
-                            static_cast<xsf::numpy::autodiff0_f_f2>(::sph_legendre_p_all)},
-                           1, "sph_legendre_p_all", nullptr, "()->(np1,mpmp1,1)", assoc_legendre_map_dims<1>),
-        xsf::numpy::gufunc({static_cast<xsf::numpy::autodiff1_d_d2>(::sph_legendre_p_all),
-                            static_cast<xsf::numpy::autodiff1_f_f2>(::sph_legendre_p_all)},
-                           1, "sph_legendre_p_all", nullptr, "()->(np1,mpmp1,2)", assoc_legendre_map_dims<1>),
-        xsf::numpy::gufunc({static_cast<xsf::numpy::autodiff2_d_d2>(::sph_legendre_p_all),
-                            static_cast<xsf::numpy::autodiff2_f_f2>(::sph_legendre_p_all)},
-                           1, "sph_legendre_p_all", nullptr, "()->(np1,mpmp1,3)", assoc_legendre_map_dims<1>));
+    PyObject *sph_legendre_p_all =
+        Py_BuildValue("(N, N, N)",
+                      xsf::numpy::gufunc(
+                          {xsf::numpy::wrap_autodiff(static_cast<xsf::numpy::autodiff0_d_d2>(xsf::sph_legendre_p_all)),
+                           xsf::numpy::wrap_autodiff(static_cast<xsf::numpy::autodiff0_f_f2>(xsf::sph_legendre_p_all))},
+                          1, "sph_legendre_p_all", nullptr, "()->(np1,mpmp1,1)", assoc_legendre_map_dims<1>),
+                      xsf::numpy::gufunc(
+                          {xsf::numpy::wrap_autodiff(static_cast<xsf::numpy::autodiff1_d_d2>(xsf::sph_legendre_p_all)),
+                           xsf::numpy::wrap_autodiff(static_cast<xsf::numpy::autodiff1_f_f2>(xsf::sph_legendre_p_all))},
+                          1, "sph_legendre_p_all", nullptr, "()->(np1,mpmp1,2)", assoc_legendre_map_dims<1>),
+                      xsf::numpy::gufunc(
+                          {xsf::numpy::wrap_autodiff(static_cast<xsf::numpy::autodiff2_d_d2>(xsf::sph_legendre_p_all)),
+                           xsf::numpy::wrap_autodiff(static_cast<xsf::numpy::autodiff2_f_f2>(xsf::sph_legendre_p_all))},
+                          1, "sph_legendre_p_all", nullptr, "()->(np1,mpmp1,3)", assoc_legendre_map_dims<1>));
     PyModule_AddObjectRef(_gufuncs, "sph_legendre_p_all", sph_legendre_p_all);
 
     PyObject *_lqn =

@@ -14,13 +14,6 @@
 
 namespace {
 
-template <typename T, typename OutputVec>
-void legendre_p_all(T z, OutputVec res) {
-    static constexpr size_t N = OutputVec::value_type::max_order();
-
-    xsf::legendre_p_all(xsf::dual_var<N>(z), res);
-}
-
 using xsf::assoc_legendre_norm;
 using xsf::assoc_legendre_unnorm;
 
@@ -29,13 +22,6 @@ void assoc_legendre_p_all(NormPolicy norm, T z, long long int branch_cut, Output
     static constexpr size_t N = OutputMat::value_type::max_order();
 
     xsf::assoc_legendre_p_all(norm, xsf::dual_var<N>(z), branch_cut, res);
-}
-
-template <typename T, typename OutputMat>
-void sph_legendre_p_all(T theta, OutputMat res) {
-    static constexpr size_t N = OutputMat::value_type::max_order();
-
-    xsf::sph_legendre_p_all(xsf::dual_var<N>(theta), res);
 }
 
 template <typename T>

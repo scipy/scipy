@@ -121,31 +121,31 @@ namespace numpy {
     using D_D = cdouble (*)(cdouble);
 
     // autodiff, 1 input, 1 output
-    using autodiff0_f_f1 = void (*)(float, autodiff0_float_1d);
-    using autodiff0_d_d1 = void (*)(double, autodiff0_double_1d);
-    using autodiff0_F_F1 = void (*)(cfloat, autodiff0_cfloat_1d);
-    using autodiff0_D_D1 = void (*)(cdouble, autodiff0_cdouble_1d);
-    using autodiff1_f_f1 = void (*)(float, autodiff1_float_1d);
-    using autodiff1_d_d1 = void (*)(double, autodiff1_double_1d);
-    using autodiff1_F_F1 = void (*)(cfloat, autodiff1_cfloat_1d);
-    using autodiff1_D_D1 = void (*)(cdouble, autodiff1_cdouble_1d);
-    using autodiff2_f_f1 = void (*)(float, autodiff2_float_1d);
-    using autodiff2_d_d1 = void (*)(double, autodiff2_double_1d);
-    using autodiff2_F_F1 = void (*)(cfloat, autodiff2_cfloat_1d);
-    using autodiff2_D_D1 = void (*)(cdouble, autodiff2_cdouble_1d);
+    using autodiff0_f_f1 = void (*)(autodiff0_float, autodiff0_float_1d);
+    using autodiff0_d_d1 = void (*)(autodiff0_double, autodiff0_double_1d);
+    using autodiff0_F_F1 = void (*)(autodiff0_cfloat, autodiff0_cfloat_1d);
+    using autodiff0_D_D1 = void (*)(autodiff0_cdouble, autodiff0_cdouble_1d);
+    using autodiff1_f_f1 = void (*)(autodiff1_float, autodiff1_float_1d);
+    using autodiff1_d_d1 = void (*)(autodiff1_double, autodiff1_double_1d);
+    using autodiff1_F_F1 = void (*)(autodiff1_cfloat, autodiff1_cfloat_1d);
+    using autodiff1_D_D1 = void (*)(autodiff1_cdouble, autodiff1_cdouble_1d);
+    using autodiff2_f_f1 = void (*)(autodiff2_float, autodiff2_float_1d);
+    using autodiff2_d_d1 = void (*)(autodiff2_double, autodiff2_double_1d);
+    using autodiff2_F_F1 = void (*)(autodiff2_cfloat, autodiff2_cfloat_1d);
+    using autodiff2_D_D1 = void (*)(autodiff2_cdouble, autodiff2_cdouble_1d);
 
-    using autodiff0_f_f2 = void (*)(float, autodiff0_float_2d);
-    using autodiff0_d_d2 = void (*)(double, autodiff0_double_2d);
-    using autodiff0_F_F2 = void (*)(cfloat, autodiff0_cfloat_2d);
-    using autodiff0_D_D2 = void (*)(cdouble, autodiff0_cdouble_2d);
-    using autodiff1_f_f2 = void (*)(float, autodiff1_float_2d);
-    using autodiff1_d_d2 = void (*)(double, autodiff1_double_2d);
-    using autodiff1_F_F2 = void (*)(cfloat, autodiff1_cfloat_2d);
-    using autodiff1_D_D2 = void (*)(cdouble, autodiff1_cdouble_2d);
-    using autodiff2_f_f2 = void (*)(float, autodiff2_float_2d);
-    using autodiff2_d_d2 = void (*)(double, autodiff2_double_2d);
-    using autodiff2_F_F2 = void (*)(cfloat, autodiff2_cfloat_2d);
-    using autodiff2_D_D2 = void (*)(cdouble, autodiff2_cdouble_2d);
+    using autodiff0_f_f2 = void (*)(autodiff0_float, autodiff0_float_2d);
+    using autodiff0_d_d2 = void (*)(autodiff0_double, autodiff0_double_2d);
+    using autodiff0_F_F2 = void (*)(autodiff0_cfloat, autodiff0_cfloat_2d);
+    using autodiff0_D_D2 = void (*)(autodiff0_cdouble, autodiff0_cdouble_2d);
+    using autodiff1_f_f2 = void (*)(autodiff1_float, autodiff1_float_2d);
+    using autodiff1_d_d2 = void (*)(autodiff1_double, autodiff1_double_2d);
+    using autodiff1_F_F2 = void (*)(autodiff1_cfloat, autodiff1_cfloat_2d);
+    using autodiff1_D_D2 = void (*)(autodiff1_cdouble, autodiff1_cdouble_2d);
+    using autodiff2_f_f2 = void (*)(autodiff2_float, autodiff2_float_2d);
+    using autodiff2_d_d2 = void (*)(autodiff2_double, autodiff2_double_2d);
+    using autodiff2_F_F2 = void (*)(autodiff2_cfloat, autodiff2_cfloat_2d);
+    using autodiff2_D_D2 = void (*)(autodiff2_cdouble, autodiff2_cdouble_2d);
 
     // 1 input, 2 outputs
     using f_ff = void (*)(float, float &, float &);
@@ -963,36 +963,23 @@ namespace numpy {
     };
 
     template <typename T>
-    using value_type_t = typename value_type<T>::type;
+    using remove_dual_t = typename value_type<T>::type;
 
     // rename to autodiff_var?
     template <typename T>
-    struct autodiff_cast {
-        static T get(T arg, size_t i) { return arg; }
+    struct autodiff_traits {
+        static T to_var(T arg, size_t i) { return arg; }
     };
 
     template <typename T, size_t... Orders>
-    struct autodiff_cast<dual<T, Orders...>> {
-        static dual<T, Orders...> get(T arg, size_t i) { return dual_var<Orders...>(arg, i); }
+    struct autodiff_traits<dual<T, Orders...>> {
+        static dual<T, Orders...> to_var(T arg, size_t i) { return dual_var<Orders...>(arg, i); }
     };
 
     template <
         typename Func, typename Signature = signature_of_t<Func>,
         typename Indices = std::make_index_sequence<arity_of_v<Signature>>>
     class wrap_autodiff;
-
-    template <typename T>
-    struct is_autodiff {
-        static constexpr bool value = false;
-    };
-
-    template <typename T, size_t... Orders>
-    struct is_autodiff<dual<T, Orders...>> {
-        static constexpr bool value = true;
-    };
-
-    template <typename T>
-    constexpr bool is_autodiff_v = is_autodiff<T>::value;
 
     template <typename Func, typename Res, typename... Args, size_t... I>
     class wrap_autodiff<Func, Res(Args...), std::index_sequence<I...>> {
@@ -1001,11 +988,9 @@ namespace numpy {
       public:
         wrap_autodiff(Func func) : func(func) {}
 
-        Res operator()(value_type_t<Args>... args) {
-            return func(autodiff_cast<Args>::get(args, i_scan[I])...);
-        }
+        Res operator()(remove_dual_t<Args>... args) { return func(autodiff_traits<Args>::to_var(args, i_scan[I])...); }
 
-        static constexpr size_t is_autodiff[sizeof...(Args)] = {is_autodiff_v<Args>...};
+        static constexpr size_t is_autodiff[sizeof...(Args)] = {std::is_same_v<Args, remove_dual_t<Args>>...};
 
         static constexpr size_t i_scan[sizeof...(Args)] = {
             detail::initializer_accumulate(is_autodiff, is_autodiff + I, 0)...,
