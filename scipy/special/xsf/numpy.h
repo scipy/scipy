@@ -815,6 +815,11 @@ namespace numpy {
         }
     };
 
+    template <
+        typename Func, typename Signature = signature_of_t<Func>,
+        typename Indices = std::make_index_sequence<arity_of_v<Signature>>>
+    class wrap_autodiff;
+
     class SpecFun_UFunc {
       public:
         using data_handle_type = void *;
@@ -823,6 +828,8 @@ namespace numpy {
       private:
         // This is an internal class designed only to help construction from an initializer list of functions
         struct SpecFun_Func {
+            struct construct_t {};
+
             bool has_return;
             int nin_and_nout;
             PyUFuncGenericFunction func;
@@ -963,11 +970,6 @@ namespace numpy {
         static dual<T, Orders...> to_var(T arg, size_t i) { return dual_var<Orders...>(arg, i); }
     };
 
-    template <
-        typename Func, typename Signature = signature_of_t<Func>,
-        typename Indices = std::make_index_sequence<arity_of_v<Signature>>>
-    class wrap_autodiff;
-
     template <typename Func, typename Res, typename... Args, size_t... I>
     class wrap_autodiff<Func, Res(Args...), std::index_sequence<I...>> {
         Func func;
@@ -975,7 +977,7 @@ namespace numpy {
       public:
         wrap_autodiff(Func func) : func(func) {}
 
-        Res operator()(remove_dual_t<Args>... args) { return func(autodiff_traits<Args>::to_var(args, i_scan[I])...); }
+        Res operator()(remove_dual_t<Args>... args) { return func(autodiff_traits<Args>::to_var(args, I - i_scan[I])...); }
 
         static constexpr size_t is_autodiff[sizeof...(Args)] = {std::is_same_v<Args, remove_dual_t<Args>>...};
 
