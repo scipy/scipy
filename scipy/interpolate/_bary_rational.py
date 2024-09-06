@@ -40,26 +40,25 @@ class _BarycentricRational:
         z = np.asarray(points)
         f = np.asarray(values)
 
-        if z.ndim != 1 or f.ndim != 1:
-            raise ValueError("`points` and `values` must be 1-D.")
-
-        if f.size != z.size:
-            raise ValueError("`points` and `values` must be the same size.")
-
-        if not np.all(np.isfinite(z)):
-            raise ValueError("`points` must be finite.")
+        self._input_validation(z, f, **kwargs)
 
         # Remove infinite or NaN function values and repeated entries
-        to_keep = (np.isfinite(f)) & (~np.isnan(f))
-        f = f[to_keep]
+        to_keep = np.logical_and.reduce(
+            ((np.isfinite(f)) & (~np.isnan(f))).reshape(f.shape[0], -1),
+            axis=-1
+        )
+        f = f[to_keep, ...]
         z = z[to_keep]
         z, uni = np.unique(z, return_index=True)
-        f = f[uni]
+        f = f[uni, ...]
 
+        self._shape = f.shape[1:]
         self._support_points, self._support_values, self.weights = (
             self._compute_weights(z, f, **kwargs)
         )
 
+    def _input_validation(self, z, f, **kwargs):
+        raise NotImplementedError
 
     def _compute_weights(z, f, **kwargs):
         raise NotImplementedError
@@ -100,7 +99,7 @@ class _BarycentricRational:
                 # Find the corresponding node and set entry to correct value:
                 r[jj] = self._support_values[zv[jj] == self._support_points].squeeze()
 
-        return np.reshape(r, z.shape)
+        return np.reshape(r, z.shape + self._shape)
 
 
 class AAA(_BarycentricRational):
@@ -322,11 +321,6 @@ class AAA(_BarycentricRational):
     """
     def __init__(self, points, values, *, rtol=None, max_terms=100, clean_up=True,
                  clean_up_tol=1e-13):
-        max_terms = operator.index(max_terms)
-        if max_terms < 1:
-            raise ValueError("`max_terms` must be an integer value greater than or "
-                             "equal to one.")
-
         super().__init__(points, values, rtol=rtol, max_terms=max_terms)
 
         # only compute once
@@ -336,6 +330,22 @@ class AAA(_BarycentricRational):
 
         if clean_up:
             self.clean_up(clean_up_tol)
+
+    def _input_validation(self, points, values, rtol=None, max_terms=100,
+                                     clean_up=True, clean_up_tol=1e-13):
+        max_terms = operator.index(max_terms)
+        if max_terms < 1:
+            raise ValueError("`max_terms` must be an integer value greater than or "
+                             "equal to one.")
+        
+        if points.ndim != 1 or values.ndim != 1:
+            raise ValueError("`points` and `values` must be 1-D.")
+
+        if points.size != values.size:
+            raise ValueError("`points` and `values` must be the same size.")
+
+        if not np.all(np.isfinite(points)):
+            raise ValueError("`points` must be finite.")
 
     @property
     def support_points(self):
@@ -588,7 +598,7 @@ class FloaterHormannInterpolator(_BarycentricRational):
     x : 1D array_like, shape (n,)
         1-D array containing values of the independent variable. Values may be real or
         complex but must be finite.
-    y : 1D array_like, shape (n,)
+    y : array_like, shape (n, ...)
         1-D array containing values of the dependent variable.. Infinite and NaN values
         of `values` and corresponding values of `x` will be discarded.
     d : int, optional
@@ -673,11 +683,24 @@ class FloaterHormannInterpolator(_BarycentricRational):
     >>> plt.show()
     """
     def __init__(self, points, values, *, d=3):
+        super().__init__(points, values, d=d)
+
+    def _input_validation(self, x, y, d):
         d = operator.index(d)
-        if not (0 <= d < len(points)):
+        if not (0 <= d < len(x)):
             raise ValueError("`d` must satisfy 0 <= d < n")
 
-        super().__init__(points, values, d=d)
+        if x.ndim != 1:
+            raise ValueError("`x` must be 1-D.")
+        
+        if not y.ndim >= 1:
+            raise ValueError("`y` must be at least 1-D.")
+
+        if x.size != y.shape[0]:
+            raise ValueError("`x` be the same size as the first dimension of `y`.")
+
+        if not np.all(np.isfinite(x)):
+            raise ValueError("`x` must be finite.")
 
     def _compute_weights(self, z, f, d):
         # Floater and Hormann 2007 Eqn. (18) 3 equations later
@@ -687,4 +710,5 @@ class FloaterHormannInterpolator(_BarycentricRational):
             for i in range(max(k-d, 0), min(k+1, n-d)):
                 w[k] += 1/np.prod(np.abs(np.delete(z[k] - z[i : i + d + 1], k - i)))
         w *= (-1.)**(np.arange(n) - d)
-        return z, f, w
+        
+        return z, f.reshape((f.shape[0], -1)), w[..., np.newaxis]

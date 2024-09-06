@@ -251,6 +251,14 @@ class TestFloaterHormann:
         return (-1)**(np.arange(n) + d) * factorial(d)
 
     def test_iv(self):
+        with pytest.raises(ValueError, match="`x`"):
+            FloaterHormannInterpolator([[0]], [0], d=0)
+        with pytest.raises(ValueError, match="`y`"):
+            FloaterHormannInterpolator([0], 0, d=0)
+        with pytest.raises(ValueError, match="dimension"):
+            FloaterHormannInterpolator([0], [[1, 1], [1, 1]], d=0)
+        with pytest.raises(ValueError, match="finite"):
+            FloaterHormannInterpolator([np.inf], [1], d=0)
         with pytest.raises(ValueError, match="`d`"):
             FloaterHormannInterpolator([0], [0], d=-1)
         with pytest.raises(ValueError, match="`d`"):
@@ -270,7 +278,7 @@ class TestFloaterHormann:
         # Check against explicit results on an uniform grid
         x = np.arange(11)
         r = FloaterHormannInterpolator(x, 0.0*x, d=d)
-        assert_allclose(r.weights*self.scale(x.size, d), expected,
+        assert_allclose(r.weights.ravel()*self.scale(x.size, d), expected,
                         rtol=1e-15, atol=1e-15)
 
     @pytest.mark.parametrize("d", range(10))
@@ -304,3 +312,24 @@ class TestFloaterHormann:
         r = FloaterHormannInterpolator(x, y, d=x.size-1)
         p = BarycentricInterpolator(x, y)
         assert_allclose(r(xx), p(xx), rtol=1e-12, atol=1e-12)
+
+    @pytest.mark.parametrize("y_shape", [(2,), (2, 3, 1), (1, 5, 6, 4)])
+    @pytest.mark.parametrize("xx_shape", [(100), (10, 10)])
+    def test_trailing_dim(self, y_shape, xx_shape):
+        x = np.linspace(0, 1)
+        y = np.broadcast_to(
+            np.expand_dims(np.sin(x), tuple(range(1, len(y_shape) + 1))),
+            x.shape + y_shape
+        )
+
+        r = FloaterHormannInterpolator(x, y)
+
+        rng = np.random.default_rng(897138947238097528091759187597)
+        xx = rng.random(xx_shape)
+        yy = np.broadcast_to(
+            np.expand_dims(np.sin(xx), tuple(range(xx.ndim, len(y_shape) + xx.ndim))),
+            xx.shape + y_shape
+        )
+        rr = r(xx)
+        assert rr.shape == xx.shape + y_shape
+        assert_allclose(rr, yy, rtol=1e-6)
