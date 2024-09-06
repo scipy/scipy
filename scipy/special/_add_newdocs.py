@@ -6857,7 +6857,7 @@ add_newdoc("ncfdtr",
     :math:`x = f d_n/(f d_n + d_d)`.
 
     Note that argument order of `ncfdtr` is different from that of the
-    otherwise equivalent ``cdf`` method of `scipy.stats.ncf`. `f` is the last
+    similar ``cdf`` method of `scipy.stats.ncf`: `f` is the last
     parameter of `ncfdtr` but the first parameter of ``scipy.stats.ncf.cdf``.
 
     References
