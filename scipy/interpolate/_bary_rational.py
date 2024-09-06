@@ -35,10 +35,10 @@ __all__ = ["AAA", "FloaterHormannInterpolator"]
 
 class _BarycentricRational:
     """Base class for Barycentric representation of a rational function."""
-    def __init__(self, points, values, **kwargs):
+    def __init__(self, x, y, **kwargs):
         # input validation
-        z = np.asarray(points)
-        f = np.asarray(values)
+        z = np.asarray(x)
+        f = np.asarray(y)
 
         self._input_validation(z, f, **kwargs)
 
@@ -62,8 +62,18 @@ class _BarycentricRational:
         self._residues = None
         self._roots = None
 
-    def _input_validation(self, z, f, **kwargs):
-        raise NotImplementedError
+    def _input_validation(self, x, y, **kwargs):
+        if x.ndim != 1:
+            raise ValueError("`x` must be 1-D.")
+        
+        if not y.ndim >= 1:
+            raise ValueError("`y` must be at least 1-D.")
+
+        if x.size != y.shape[0]:
+            raise ValueError("`x` be the same size as the first dimension of `y`.")
+
+        if not np.all(np.isfinite(x)):
+            raise ValueError("`x` must be finite.")
 
     def _compute_weights(z, f, **kwargs):
         raise NotImplementedError
@@ -80,17 +90,22 @@ class _BarycentricRational:
         z = np.asarray(z)
         zv = np.ravel(z)
 
+        support_values = self._support_values.reshape(
+            (self._support_values.shape[0], -1)
+        )
+        weights = self.weights[..., np.newaxis]
+
         # Cauchy matrix
         # Ignore errors due to inf/inf at support points, these will be fixed later
         with np.errstate(invalid="ignore", divide="ignore"):
             CC = 1 / np.subtract.outer(zv, self._support_points)
             # Vector of values
-            r = CC @ (self.weights * self._support_values) / (CC @ self.weights)
+            r = CC @ (weights * support_values) / (CC @ weights)
 
         # Deal with input inf: `r(inf) = lim r(z) = sum(w*f) / sum(w)`
         if np.any(np.isinf(zv)):
-            r[np.isinf(zv)] = (np.sum(self.weights * self._support_values)
-                               / np.sum(self.weights))
+            r[np.isinf(zv)] = (np.sum(weights * support_values)
+                               / np.sum(weights))
 
         # Deal with NaN
         ii = np.nonzero(np.isnan(r))[0]
@@ -102,7 +117,7 @@ class _BarycentricRational:
             else:
                 # Clean up values `NaN = inf/inf` at support points.
                 # Find the corresponding node and set entry to correct value:
-                r[jj] = self._support_values[zv[jj] == self._support_points].squeeze()
+                r[jj] = support_values[zv[jj] == self._support_points].squeeze()
 
         return np.reshape(r, z.shape + self._shape)
 
@@ -189,11 +204,11 @@ class AAA(_BarycentricRational):
 
     Parameters
     ----------
-    points : 1D array_like, shape (n,)
+    x : 1D array_like, shape (n,)
         1-D array containing values of the independent variable. Values may be real or
         complex but must be finite.
-    values : 1D array_like, shape (n,)
-        Function values ``f(z)`` at `points`. Infinite and NaN values of `values` and
+    y : 1D array_like, shape (n,)
+        Function values ``f(x)``. Infinite and NaN values of `values` and
         corresponding values of `points` will be discarded.
     rtol : float, optional
         Relative tolerance, defaults to ``eps**0.75``. If a small subset of the entries
@@ -214,8 +229,8 @@ class AAA(_BarycentricRational):
     Attributes
     ----------
     support_points : array
-        Support points of the approximation. These are a subset of the provided
-        `points` at which the approximation strictly interpolates the provided `values`.
+        Support points of the approximation. These are a subset of the provided `x` at
+        which the approximation strictly interpolates `y`.
         See notes for more details.
     support_values : array
         Value of the approximation at the `support_points`.
@@ -247,13 +262,13 @@ class AAA(_BarycentricRational):
         \frac{\sum_{j=1}^m\ w_j f_j / (z - z_j)}{\sum_{j=1}^m w_j / (z - z_j)},
 
     where :math:`z_1,\dots,z_m` are real or complex support points selected from
-    `points`, :math:`f_1,\dots,f_m` are the corresponding real or complex data values
-    from `values`, and :math:`w_1,\dots,w_m` are real or complex weights.
+    `x`, :math:`f_1,\dots,f_m` are the corresponding real or complex data values
+    from `y`, and :math:`w_1,\dots,w_m` are real or complex weights.
 
     Each iteration of the algorithm has two parts: the greedy selection the next support
     point and the computation of the weights. The first part of each iteration is to
     select the next support point to be added :math:`z_{m+1}` from the remaining
-    unselected `points`, such that the nonlinear residual
+    unselected `x`, such that the nonlinear residual
     :math:`|f(z_{m+1}) - n(z_{m+1})/d(z_{m+1})|` is maximised. The algorithm terminates
     when this maximum is less than ``rtol * np.linalg.norm(f, ord=np.inf)``. This means
     the interpolation property is only satisfied up to a tolerance, except at the
@@ -267,7 +282,7 @@ class AAA(_BarycentricRational):
         \text{minimise}_{w_j}|fd - n| \quad \text{subject to} \quad
         \sum_{j=1}^{m+1} w_j = 1,
 
-    over the unselected elements of `points`.
+    over the unselected elements of `x`.
 
     One of the challenges with working with rational approximations is the presence of
     Froissart doublets, which are either poles with vanishingly small residues or
@@ -394,28 +409,24 @@ class AAA(_BarycentricRational):
     poles with residue less than ``10^-13`` in absolute value shown in red. The right
     image then shows the poles after the `clean_up` method has been called.
     """
-    def __init__(self, points, values, *, rtol=None, max_terms=100, clean_up=True,
+    def __init__(self, x, y, *, rtol=None, max_terms=100, clean_up=True,
                  clean_up_tol=1e-13):
-        super().__init__(points, values, rtol=rtol, max_terms=max_terms)
+        super().__init__(x, y, rtol=rtol, max_terms=max_terms)
 
         if clean_up:
             self.clean_up(clean_up_tol)
 
-    def _input_validation(self, points, values, rtol=None, max_terms=100,
-                                     clean_up=True, clean_up_tol=1e-13):
+    def _input_validation(self, x, y, rtol=None, max_terms=100, clean_up=True,
+                          clean_up_tol=1e-13):
         max_terms = operator.index(max_terms)
         if max_terms < 1:
             raise ValueError("`max_terms` must be an integer value greater than or "
                              "equal to one.")
         
-        if points.ndim != 1 or values.ndim != 1:
-            raise ValueError("`points` and `values` must be 1-D.")
-
-        if points.size != values.size:
-            raise ValueError("`points` and `values` must be the same size.")
-
-        if not np.all(np.isfinite(points)):
-            raise ValueError("`points` must be finite.")
+        if y.ndim != 1:
+            raise ValueError("`y` must be 1-D.")
+        
+        super()._input_validation(x, y)
 
     @property
     def support_points(self):
@@ -666,7 +677,8 @@ class FloaterHormannInterpolator(_BarycentricRational):
     the polynomial interpolation fails due to Runge's phenomenon.
 
     >>> import numpy as np
-    >>> from scipy.interpolate import FloaterHormannInterpolator, BarycentricInterpolator
+    >>> from scipy.interpolate import (FloaterHormannInterpolator, 
+    ...                                BarycentricInterpolator)
     >>> def f(z):
     ...     return 1/(1 + z**2)
     >>> z = np.linspace(-5, 5, num=15)
@@ -688,17 +700,7 @@ class FloaterHormannInterpolator(_BarycentricRational):
         if not (0 <= d < len(x)):
             raise ValueError("`d` must satisfy 0 <= d < n")
 
-        if x.ndim != 1:
-            raise ValueError("`x` must be 1-D.")
-        
-        if not y.ndim >= 1:
-            raise ValueError("`y` must be at least 1-D.")
-
-        if x.size != y.shape[0]:
-            raise ValueError("`x` be the same size as the first dimension of `y`.")
-
-        if not np.all(np.isfinite(x)):
-            raise ValueError("`x` must be finite.")
+        super()._input_validation(x, y)
 
     def _compute_weights(self, z, f, d):
         # Floater and Hormann 2007 Eqn. (18) 3 equations later
@@ -709,4 +711,4 @@ class FloaterHormannInterpolator(_BarycentricRational):
                 w[k] += 1/np.prod(np.abs(np.delete(z[k] - z[i : i + d + 1], k - i)))
         w *= (-1.)**(np.arange(n) - d)
         
-        return z, f.reshape((f.shape[0], -1)), w[..., np.newaxis]
+        return z, f, w
