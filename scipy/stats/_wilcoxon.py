@@ -97,12 +97,12 @@ def _wilcoxon_iv(x, y, zero_method, correction, alternative, method, axis):
         raise ValueError(message)
 
     if not isinstance(method, stats.PermutationMethod):
-        methods = {"auto", "approx", "exact"}
+        methods = {"auto", "asymptotic", "exact"}
         message = (f"`method` must be one of {methods} or "
                    "an instance of `stats.PermutationMethod`.")
         if method not in methods:
             raise ValueError(message)
-    output_z = True if method == 'approx' else False
+    output_z = True if method == 'asymptotic' else False
 
     # logic unchanged here for backward compatibility
     n_zero = np.sum(d == 0, axis=-1)
@@ -111,21 +111,21 @@ def _wilcoxon_iv(x, y, zero_method, correction, alternative, method, axis):
         if d.shape[-1] <= 50 and not has_zeros:
             method = "exact"
         else:
-            method = "approx"
+            method = "asymptotic"
 
     n_zero = np.sum(d == 0)
     if n_zero > 0 and method == "exact":
-        method = "approx"
         warnings.warn("Exact p-value calculation does not work if there are "
-                      "zeros. Switching to normal approximation.",
+                      "zeros. Consider using method `asymptotic` or "
+                      "`stats.PermutationMethod`",
                       stacklevel=2)
 
-    if (method == "approx" and zero_method in ["wilcox", "pratt"]
+    if (method == "asymptotic" and zero_method in ["wilcox", "pratt"]
             and n_zero == d.size and d.size > 0 and d.ndim == 1):
         raise ValueError("zero_method 'wilcox' and 'pratt' do not "
                          "work if x - y is zero for all elements.")
 
-    if 0 < d.shape[-1] < 10 and method == "approx":
+    if 0 < d.shape[-1] < 10 and method == "asymptotic":
         warnings.warn("Sample size too small for normal approximation.", stacklevel=2)
 
     return d, zero_method, correction, alternative, method, axis, output_z
@@ -202,13 +202,13 @@ def _wilcoxon_nd(x, y=None, zero_method='wilcox', correction=True,
     if d.size == 0:
         NaN = _get_nan(d)
         res = _morestats.WilcoxonResult(statistic=NaN, pvalue=NaN)
-        if method == 'approx':
+        if method == 'asymptotic':
             res.zstatistic = NaN
         return res
 
     r_plus, r_minus, se, z, count = _wilcoxon_statistic(d, zero_method)
 
-    if method == 'approx':
+    if method == 'asymptotic':
         if correction:
             sign = _correction_sign(z, alternative)
             z -= sign * 0.5 / se
@@ -238,7 +238,7 @@ def _wilcoxon_nd(x, y=None, zero_method='wilcox', correction=True,
 
     # for backward compatibility...
     statistic = np.minimum(r_plus, r_minus) if alternative=='two-sided' else r_plus
-    z = -np.abs(z) if (alternative == 'two-sided' and method == 'approx') else z
+    z = -np.abs(z) if (alternative == 'two-sided' and method == 'asymptotic') else z
 
     res = _morestats.WilcoxonResult(statistic=statistic, pvalue=p[()])
     if output_z:
