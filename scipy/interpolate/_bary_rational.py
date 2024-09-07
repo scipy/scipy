@@ -609,7 +609,7 @@ class FloaterHormannInterpolator(_BarycentricRational):
         1-D array containing values of the independent variable. Values may be real or
         complex but must be finite.
     y : array_like, shape (n, ...)
-        1-D array containing values of the dependent variable.. Infinite and NaN values
+        Array containing values of the dependent variable. Infinite and NaN values
         of `values` and corresponding values of `x` will be discarded.
     d : int, optional
         Blends ``n - d`` degree `d` polynomials together. For ``d=n-1`` it is equivalent
