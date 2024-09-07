@@ -816,14 +816,19 @@ namespace numpy {
         }
     };
 
+    template <typename Func>
+    decltype(auto) do_apply(Func func) {
+        return func;
+    }
+
     template <typename Func, typename Arg0>
     decltype(auto) do_apply(Func func, Arg0 arg0) {
         return arg0(func);
     }
 
-    template <typename Func, typename Arg0, typename Arg1, typename... Args>
-    decltype(auto) do_apply(Func func, Arg0 arg0, Arg1 arg1, Args... args) {
-        return do_apply(arg0(func), arg1, args...);
+    template <typename Func, typename Arg0, typename Arg1>
+    decltype(auto) do_apply(Func func, Arg0 arg0, Arg1 arg1) {
+        return arg1(arg0(func));
     }
 
     template <typename... Tr>
@@ -898,8 +903,8 @@ namespace numpy {
             }
         }
 
-        template <typename Func0, typename... Funcs, typename... Tr>
-        ufunc_overloads(applies<Tr...> t, Func0 func0, Funcs... funcs) : ufunc_overloads(t(func0), t(funcs)...) {}
+        template <typename... Funcs, typename... Tr>
+        ufunc_overloads(applies<Tr...> t, Funcs... funcs) : ufunc_overloads(t(funcs)...) {}
 
         ufunc_overloads(ufunc_overloads &&other) = default;
 
