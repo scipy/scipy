@@ -784,6 +784,13 @@ ncf_cdf_wrap(const Real v1, const Real v2, const Real l, const Real x)
         sf_error("ncfdtr", SF_ERROR_NO_RESULT, NULL);
         y = NAN;
     }
+    if ((y < 0) || (y > 1)) {
+	/* Boost can return results far out of bounds when dfd and dfn are both large
+	 * and of similar magnitude. Return NAN if the result is out of bounds because
+	 * the answer cannot be trusted. */
+	sf_error("ncfdtr", SF_ERROR_NO_RESULT, NULL);
+        y = NAN;
+    }
     return y;
 }
 
