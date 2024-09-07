@@ -357,3 +357,10 @@ class TestFloaterHormann:
 
         err = np.abs(np.subtract.outer(r.roots(), np.arange(11))).min(axis=0)
         assert_array_less(err, 1e-5)
+
+    def test_no_poles(self):
+        x = np.linspace(-1, 1)
+        r = FloaterHormannInterpolator(x, 1/x**2)
+        p = r.poles()
+        mask = (p.real >= -1) & (p.real <= 1) & (np.abs(p.imag) < 1.e-12)
+        assert np.sum(mask) == 0
