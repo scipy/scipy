@@ -735,6 +735,7 @@ namespace numpy {
     struct base_ufunc_data {
         const char *name;
         map_dims_type map_dims;
+        int flags;
     };
 
     template <typename Func>
@@ -818,18 +819,39 @@ namespace numpy {
     template <
         typename Func, typename Signature = signature_of_t<Func>,
         typename Indices = std::make_index_sequence<arity_of_v<Signature>>>
-    class wrap_autodiff;
+    class wrap_autodiffx;
 
-    class SpecFun_UFunc {
+    template <typename Func>
+    struct tester {
+        Func func;
+
+        template <typename Arg0, typename... Args>
+        decltype(auto) operator()(Arg0 arg0, Args... args) {
+            return arg0(func);
+        }
+    };
+
+    template <typename... Tr>
+    struct applies {
+        std::tuple<Tr...> tr;
+
+        template <typename Func>
+        decltype(auto) operator()(Func func) {
+            return std::apply(tester<Func>{func}, tr);
+        }
+    };
+
+    template <typename... Ts>
+    applies(Ts...) -> applies<Ts...>;
+
+    class ufunc_overload {
       public:
         using data_handle_type = void *;
         using data_deleter_type = void (*)(void *);
 
       private:
         // This is an internal class designed only to help construction from an initializer list of functions
-        struct SpecFun_Func {
-            struct construct_t {};
-
+        struct generic_wrapper {
             bool has_return;
             int nin_and_nout;
             PyUFuncGenericFunction func;
@@ -838,12 +860,15 @@ namespace numpy {
             const char *types;
 
             template <typename Func>
-            SpecFun_Func(Func func)
+            generic_wrapper(Func func)
                 : has_return(has_return_v<Func>), nin_and_nout(arity_of_v<Func> + has_return),
                   func(ufunc_traits<Func>::loop), data(new ufunc_data<Func>{{nullptr}, func}),
                   data_deleter([](void *ptr) { delete static_cast<ufunc_data<Func> *>(ptr); }),
                   types(ufunc_traits<Func>::types) {}
         };
+
+        //      template <typename Func>
+        //        generic_wrapper(Func func, C c) -> generic_wrapper<C>;
 
         int m_ntypes;
         bool m_has_return;
@@ -854,10 +879,15 @@ namespace numpy {
         std::unique_ptr<char[]> m_types;
 
       public:
-        SpecFun_UFunc(std::initializer_list<SpecFun_Func> func)
-            : m_ntypes(func.size()), m_has_return(func.begin()->has_return), m_nin_and_nout(func.begin()->nin_and_nout),
-              m_func(new PyUFuncGenericFunction[m_ntypes]), m_data(new data_handle_type[m_ntypes]),
-              m_data_deleters(new data_deleter_type[m_ntypes]), m_types(new char[m_ntypes * m_nin_and_nout]) {
+        template <typename Func0, typename... Funcs>
+        ufunc_overload(Func0 func0, Funcs... funcs)
+            : m_ntypes(sizeof...(Funcs) + 1), m_has_return(has_return_v<Func0>),
+              m_nin_and_nout(arity_of_v<Func0> + m_has_return), m_func(new PyUFuncGenericFunction[m_ntypes]),
+              m_data(new data_handle_type[m_ntypes]), m_data_deleters(new data_deleter_type[m_ntypes]),
+              m_types(new char[m_ntypes * m_nin_and_nout]) {
+
+            std::array<generic_wrapper, 1 + sizeof...(Funcs)> func = {func0, funcs...};
+
             for (auto it = func.begin(); it != func.end(); ++it) {
                 if (it->nin_and_nout != m_nin_and_nout) {
                     PyErr_SetString(PyExc_RuntimeError, "all functions must have the same number of arguments");
@@ -874,9 +904,12 @@ namespace numpy {
             }
         }
 
-        SpecFun_UFunc(SpecFun_UFunc &&other) = default;
+        template <typename... Funcs, typename... Tr>
+        ufunc_overload(applies<Tr...> t, Funcs... funcs) : ufunc_overload(t(funcs)...) {}
 
-        ~SpecFun_UFunc() {
+        ufunc_overload(ufunc_overload &&other) = default;
+
+        ~ufunc_overload() {
             if (m_data) {
                 for (int i = 0; i < m_ntypes; ++i) {
                     data_deleter_type data_deleter = m_data_deleters[i];
@@ -910,14 +943,14 @@ namespace numpy {
         }
     };
 
-    PyObject *ufunc(SpecFun_UFunc func, int nout, const char *name, const char *doc) {
-        static std::vector<SpecFun_UFunc> ufuncs;
+    PyObject *ufunc(ufunc_overload func, int nout, const char *name, const char *doc) {
+        static std::vector<ufunc_overload> ufuncs;
 
         if (PyErr_Occurred()) {
             return nullptr;
         }
 
-        SpecFun_UFunc &ufunc = ufuncs.emplace_back(std::move(func));
+        ufunc_overload &ufunc = ufuncs.emplace_back(std::move(func));
         ufunc.set_name(name);
         ufunc.set_map_dims([](const npy_intp *dims, npy_intp *new_dims) {});
 
@@ -927,22 +960,22 @@ namespace numpy {
         );
     }
 
-    PyObject *ufunc(SpecFun_UFunc func, const char *name, const char *doc) {
+    PyObject *ufunc(ufunc_overload func, const char *name, const char *doc) {
         int nout = func.has_return();
 
         return ufunc(std::move(func), nout, name, doc);
     }
 
     PyObject *gufunc(
-        SpecFun_UFunc func, int nout, const char *name, const char *doc, const char *signature, map_dims_type map_dims
+        ufunc_overload func, int nout, const char *name, const char *doc, const char *signature, map_dims_type map_dims
     ) {
-        static std::vector<SpecFun_UFunc> ufuncs;
+        static std::vector<ufunc_overload> ufuncs;
 
         if (PyErr_Occurred()) {
             return nullptr;
         }
 
-        SpecFun_UFunc &ufunc = ufuncs.emplace_back(std::move(func));
+        ufunc_overload &ufunc = ufuncs.emplace_back(std::move(func));
         ufunc.set_name(name);
         ufunc.set_map_dims(map_dims);
 
@@ -953,7 +986,7 @@ namespace numpy {
     }
 
     PyObject *
-    gufunc(SpecFun_UFunc func, const char *name, const char *doc, const char *signature, map_dims_type map_dims) {
+    gufunc(ufunc_overload func, const char *name, const char *doc, const char *signature, map_dims_type map_dims) {
         int nout = func.has_return();
 
         return gufunc(std::move(func), nout, name, doc, signature, map_dims);
@@ -971,13 +1004,15 @@ namespace numpy {
     };
 
     template <typename Func, typename Res, typename... Args, size_t... I>
-    class wrap_autodiff<Func, Res(Args...), std::index_sequence<I...>> {
+    class wrap_autodiffx<Func, Res(Args...), std::index_sequence<I...>> {
         Func func;
 
       public:
-        wrap_autodiff(Func func) : func(func) {}
+        wrap_autodiffx(Func func) : func(func) {}
 
-        Res operator()(remove_dual_t<Args>... args) { return func(autodiff_traits<Args>::to_var(args, I - i_scan[I])...); }
+        Res operator()(remove_dual_t<Args>... args) {
+            return func(autodiff_traits<Args>::to_var(args, I - i_scan[I])...);
+        }
 
         static constexpr size_t is_autodiff[sizeof...(Args)] = {std::is_same_v<Args, remove_dual_t<Args>>...};
 
@@ -987,7 +1022,14 @@ namespace numpy {
     };
 
     template <typename Func>
-    wrap_autodiff(Func func) -> wrap_autodiff<Func>;
+    wrap_autodiffx(Func func)->wrap_autodiffx<Func>;
+
+    struct {
+        template <typename Func>
+        decltype(auto) operator()(Func f) {
+            return wrap_autodiffx(f);
+        }
+    } wrap_autodiff;
 
 } // namespace numpy
 } // namespace xsf
