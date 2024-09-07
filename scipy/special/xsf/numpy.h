@@ -821,9 +821,9 @@ namespace numpy {
         return arg0(func);
     }
 
-    template <typename Func, typename Arg0, typename... Args>
-    decltype(auto) do_apply(Func func, Arg0 arg0, Args... args) {
-        return do_apply(arg0(func), args...);
+    template <typename Func, typename Arg0, typename Arg1, typename... Args>
+    decltype(auto) do_apply(Func func, Arg0 arg0, Arg1 arg1, Args... args) {
+        return do_apply(arg0(func), arg1, args...);
     }
 
     template <typename... Tr>
