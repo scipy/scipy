@@ -372,8 +372,7 @@ def freqz(b, a=1, worN=512, whole=False, plot=None, fs=2*pi,
 
     >>> import matplotlib.pyplot as plt
     >>> fig, ax1 = plt.subplots(tight_layout=True)
-    >>> ax1.set_title(f"Frequency Response of {taps} tap FIR Filter " +
-                      f"($f_c={f_c}$ rad/sample)")
+    >>> ax1.set_title(f"Frequency Response of {taps} tap FIR Filter ($f_c={f_c}$ rad/sample)")
     >>> ax1.axvline(f_c, color='black', linestyle=':', linewidth=0.8)
     >>> ax1.plot(w, 20 * np.log10(abs(h)), 'C0')
     >>> ax1.set_ylabel("Amplitude in dB", color='C0')
