@@ -721,9 +721,9 @@ namespace numpy {
 
     template <typename T, size_t... Orders>
     struct npy_traits<dual<T, Orders...>> {
-        //        static dual<T, Orders...> get(char *src, const npy_intp *dimensions, const npy_intp *steps) {
-        //          return *reinterpret_cast<dual<T, Orders...> *>(src);
-        //    }
+        static dual<T, Orders...> get(char *src, const npy_intp *dimensions, const npy_intp *steps) {
+            return *reinterpret_cast<dual<T, Orders...> *>(src);
+        }
 
         static void set(char *dst, const dual<T, Orders...> &src) {
             *reinterpret_cast<dual<T, Orders...> *>(dst) = src;
