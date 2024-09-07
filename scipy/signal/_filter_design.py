@@ -366,11 +366,12 @@ def freqz(b, a=1, worN=512, whole=False, plot=None, fs=2*pi,
     --------
     >>> from scipy import signal
     >>> import numpy as np
-    >>> b = signal.firwin(80, 0.5, window=('kaiser', 8), fs=2*np.pi)
+    >>> taps, f_c = 80, 1.0  # number of taps and cut-off frequency
+    >>> b = signal.firwin(taps, f_c, window=('kaiser', 8), fs=2*np.pi)
     >>> w, h = signal.freqz(b)
 
     >>> import matplotlib.pyplot as plt
-    >>> fig, ax1 = plt.subplots()
+    >>> fig, ax1 = plt.subplots(tight_layout=True)
     >>> ax1.set_title('Digital filter frequency response')
 
     >>> ax1.plot(w, 20 * np.log10(abs(h)), 'b')
