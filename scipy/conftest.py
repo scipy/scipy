@@ -133,7 +133,7 @@ if SCIPY_ARRAY_API and isinstance(SCIPY_ARRAY_API, str):
 
     try:
         import torch  # type: ignore[import-not-found]
-        xp_available_backends.update({'pytorch': torch})
+        xp_available_backends.update({'torch': torch})
         # can use `mps` or `cpu`
         torch.set_default_device(SCIPY_DEVICE)
     except ImportError:
