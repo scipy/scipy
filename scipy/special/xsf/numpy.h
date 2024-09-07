@@ -222,12 +222,12 @@ namespace numpy {
     using qqd_d = double (*)(long long int, long long int, double);
 
     // autodiff, 3 inputs, 1 ouput
-    using autodiff0_qqf_f = autodiff0_float (*)(long long int, long long int, autodiff0_float);
-    using autodiff0_qqd_d = autodiff0_double (*)(long long int, long long int, autodiff0_double);
-    using autodiff1_qqf_f = autodiff1_float (*)(long long int, long long int, autodiff1_float);
-    using autodiff1_qqd_d = autodiff1_double (*)(long long int, long long int, autodiff1_double);
-    using autodiff2_qqf_f = autodiff2_float (*)(long long int, long long int, autodiff2_float);
-    using autodiff2_qqd_d = autodiff2_double (*)(long long int, long long int, autodiff2_double);
+    using autodiff0_iif_f = autodiff0_float (*)(int, int, autodiff0_float);
+    using autodiff0_iid_d = autodiff0_double (*)(int, int, autodiff0_double);
+    using autodiff1_iif_f = autodiff1_float (*)(int, int, autodiff1_float);
+    using autodiff1_iid_d = autodiff1_double (*)(int, int, autodiff1_double);
+    using autodiff2_iif_f = autodiff2_float (*)(int, int, autodiff2_float);
+    using autodiff2_iid_d = autodiff2_double (*)(int, int, autodiff2_double);
 
     // 3 inputs, 2 outputs
     using qqf_ff = void (*)(long long int, long long int, float, float &, float &);
@@ -250,15 +250,12 @@ namespace numpy {
     using dddd_D = cdouble (*)(double, double, double, double);
 
     // autodiff, 4 inputs, 1 output
-    using autodiff00_qqff_F = autodiff00_cfloat (*)(long long int, long long int, autodiff00_float, autodiff00_float);
-    using autodiff00_qqdd_D =
-        autodiff00_cdouble (*)(long long int, long long int, autodiff00_double, autodiff00_double);
-    using autodiff11_qqff_F = autodiff11_cfloat (*)(long long int, long long int, autodiff11_float, autodiff11_float);
-    using autodiff11_qqdd_D =
-        autodiff11_cdouble (*)(long long int, long long int, autodiff11_double, autodiff11_double);
-    using autodiff22_qqff_F = autodiff22_cfloat (*)(long long int, long long int, autodiff22_float, autodiff22_float);
-    using autodiff22_qqdd_D =
-        autodiff22_cdouble (*)(long long int, long long int, autodiff22_double, autodiff22_double);
+    using autodiff00_iiff_F = autodiff00_cfloat (*)(int, int, autodiff00_float, autodiff00_float);
+    using autodiff00_iidd_D = autodiff00_cdouble (*)(int, int, autodiff00_double, autodiff00_double);
+    using autodiff11_iiff_F = autodiff11_cfloat (*)(int, int, autodiff11_float, autodiff11_float);
+    using autodiff11_iidd_D = autodiff11_cdouble (*)(int, int, autodiff11_double, autodiff11_double);
+    using autodiff22_iiff_F = autodiff22_cfloat (*)(int, int, autodiff22_float, autodiff22_float);
+    using autodiff22_iidd_D = autodiff22_cdouble (*)(int, int, autodiff22_double, autodiff22_double);
 
     // 4 inputs, 2 outputs
     using qqqf_ff = void (*)(long long int, long long int, long long int, float, float &, float &);

@@ -34,7 +34,7 @@ void sph_harm_y_for_each_n_m(int n, int m, T theta, T phi, complex<T> &res, Func
 }
 
 template <typename T>
-complex<T> sph_harm_y(long long int n, long long int m, T theta, T phi) {
+complex<T> sph_harm_y(int n, int m, T theta, T phi) {
     complex<T> res_n;
     sph_harm_y_for_each_n(n, m, theta, phi, res_n, [](int n, int m, const complex<T> &res_n) {});
 
