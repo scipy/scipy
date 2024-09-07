@@ -816,33 +816,26 @@ namespace numpy {
         }
     };
 
-    template <typename Func>
-    struct tester {
-        Func func;
+    template <typename Func, typename Arg0>
+    decltype(auto) do_apply(Func func, Arg0 arg0) {
+        return arg0(func);
+    }
 
-        template <typename Arg0>
-        decltype(auto) operator()(Arg0 arg0) {
-            return arg0(func);
-        }
-
-        template <typename Arg0, typename... Args>
-        decltype(auto) operator()(Arg0 arg0, Args... args) {
-            auto f_new = arg0(func);
-
-            return tester<decltype(f_new)>{f_new}(args...);
-        }
-    };
+    template <typename Func, typename Arg0, typename... Args>
+    decltype(auto) do_apply(Func func, Arg0 arg0, Args... args) {
+        return do_apply(arg0(func), args...);
+    }
 
     template <typename... Tr>
     struct applies {
         std::tuple<Tr...> tr;
 
-        template <typename... U>
-        applies(U... u) : tr(u...) {}
+        template <typename... Args>
+        applies(Args &&...args) : tr(std::forward<Args>(args)...) {}
 
         template <typename Func>
         decltype(auto) operator()(Func func) {
-            return std::apply(tester<Func>{func}, tr);
+            return std::apply([func](auto... args) { return do_apply(func, args...); }, tr);
         }
     };
 
