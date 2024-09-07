@@ -552,7 +552,7 @@ class TestRegularGridInterpolator:
         interp = RegularGridInterpolator(points, values, method=method,
                                          bounds_error=False)
         v = interp(sample)
-        assert v.shape == (7, 3, 8)
+        assert v.shape == (7, 3, 8), method
 
         vs = []
         for j in range(8):
@@ -851,7 +851,7 @@ class TestInterpN:
 
         v1 = interpn(points, values, sample, method='nearest',
                      bounds_error=False)
-        assert v1.shape, (2 == 3)
+        assert v1.shape == (2, 3)
 
         v2 = interpn(points, values, sample.reshape(-1, 4),
                      method='nearest', bounds_error=False)
@@ -868,7 +868,7 @@ class TestInterpN:
 
         sample = (xi[:, None], yi[None, :])
         v1 = interpn(points, values, sample, method=method, bounds_error=False)
-        assert v1.shape, (2 == 3)
+        assert v1.shape == (2, 3)
 
         xx, yy = np.meshgrid(xi, yi)
         sample = np.c_[xx.T.ravel(), yy.T.ravel()]
@@ -895,7 +895,7 @@ class TestInterpN:
 
         v = interpn(points, values, sample, method=method,
                     bounds_error=False)
-        assert v.shape == (7, 3, 8)
+        assert v.shape == (7, 3, 8), method
 
         vs = [interpn(points, values[..., j], sample, method=method,
                       bounds_error=False) for j in range(8)]

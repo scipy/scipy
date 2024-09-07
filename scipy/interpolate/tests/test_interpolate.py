@@ -203,7 +203,7 @@ class TestInterp1D:
         extrapolator = interp1d(self.x10, self.y10, kind=kind,
                                 fill_value='extrapolate')
         xp_assert_close(extrapolator([-1., 0, 9, 11]),
-                        [-1.0, 0, 9, 11], rtol=1e-14)
+                        np.asarray([-1.0, 0, 9, 11]), rtol=1e-14)
 
         opts = dict(kind=kind,
                     fill_value='extrapolate',
@@ -712,7 +712,7 @@ class TestInterp1D:
             x2 = np.arange(2*3*1).reshape((2,3,1)) / 12.
             b = list(a)
             b[n:n+1] = [2, 3, 1]
-            assert z(x2).shape == tuple(b)
+            assert z(x2).shape == tuple(b), kind
 
     def test_nd(self):
         for kind in ('linear', 'cubic', 'slinear', 'quadratic', 'nearest',
@@ -1061,7 +1061,7 @@ class TestPPolyCommon:
         xp = np.random.rand(3, 4)
         for cls in (PPoly, BPoly):
             p = cls(c, x)
-            assert p(xp).shape, (3, 4, 5, 6 == 7)
+            assert p(xp).shape == (3, 4, 5, 6, 7)
 
         # 'scalars'
         for cls in (PPoly, BPoly):
@@ -1266,12 +1266,12 @@ class TestPPoly:
         assert p.c.shape == c.shape
         assert p(0.3).shape == c.shape[2:]
 
-        assert p(np.random.rand(5, 6)).shape, (5 == 6) + c.shape[2:]
+        assert p(np.random.rand(5, 6)).shape == (5, 6) + c.shape[2:]
 
         dp = p.derivative()
-        assert dp.c.shape, (5, 2, 1, 2 == 3)
+        assert dp.c.shape == (5, 2, 1, 2, 3)
         ip = p.antiderivative()
-        assert ip.c.shape, (7, 2, 1, 2 == 3)
+        assert ip.c.shape == (7, 2, 1, 2, 3)
 
     def test_construct_fast(self):
         np.random.seed(1234)
@@ -1293,7 +1293,7 @@ class TestPPoly:
         xp_assert_close(p(xp), expected)
 
         expected = _ppoly_eval_2(c[:,:,0], x, xp)
-        xp_assert_close(p(xp)[:,0], expected)
+        xp_assert_close(p(xp)[:, 0], expected)
 
     def test_from_spline(self):
         np.random.seed(1234)
@@ -1370,7 +1370,8 @@ class TestPPoly:
         xp_assert_equal(q.c, [[1, 0.5], [0, 1]])
         xp_assert_equal(q.x, [0.0, 1, 2])
         xp_assert_close(p.integrate(0, 2), np.asarray(1.5))
-        xp_assert_close(q(2) - q(0), 1.5, check_0d=False)
+        xp_assert_close(np.asarray(q(2) - q(0)),
+                        np.asarray(1.5))
 
     def test_antiderivative_simple(self):
         np.random.seed(1234)
@@ -1490,24 +1491,26 @@ class TestPPoly:
         P = PPoly(c, x, extrapolate='periodic')
         I = P.antiderivative()
 
-        period_int = I(4) - I(1)
+        period_int = np.asarray(I(4) - I(1))
 
-        xp_assert_close(P.integrate(1, 4), period_int, check_0d=False)
-        xp_assert_close(P.integrate(-10, -7), period_int, check_0d=False)
-        xp_assert_close(P.integrate(-10, -4), 2 * period_int, check_0d=False)
+        xp_assert_close(P.integrate(1, 4), period_int)
+        xp_assert_close(P.integrate(-10, -7), period_int)
+        xp_assert_close(P.integrate(-10, -4), np.asarray(2 * period_int))
 
-        xp_assert_close(P.integrate(1.5, 2.5), I(2.5) - I(1.5), check_0d=False)
-        xp_assert_close(P.integrate(3.5, 5), I(2) - I(1) + I(4) - I(3.5),
-                        check_0d=False)
+        xp_assert_close(P.integrate(1.5, 2.5),
+                        np.asarray(I(2.5) - I(1.5)))
+        xp_assert_close(P.integrate(3.5, 5),
+                        np.asarray(I(2) - I(1) + I(4) - I(3.5)))
         xp_assert_close(P.integrate(3.5 + 12, 5 + 12),
-                        I(2) - I(1) + I(4) - I(3.5), check_0d=False)
+                        np.asarray(I(2) - I(1) + I(4) - I(3.5)))
         xp_assert_close(P.integrate(3.5, 5 + 12),
-                        I(2) - I(1) + I(4) - I(3.5) + 4 * period_int, check_0d=False)
-
-        xp_assert_close(P.integrate(0, -1), I(2) - I(3), check_0d=False)
-        xp_assert_close(P.integrate(-9, -10), I(2) - I(3), check_0d=False)
-        xp_assert_close(P.integrate(0, -10), I(2) - I(3) - 3 * period_int,
-                        check_0d=False)
+                        np.asarray(I(2) - I(1) + I(4) - I(3.5) + 4 * period_int))
+        xp_assert_close(P.integrate(0, -1),
+                        np.asarray(I(2) - I(3)))
+        xp_assert_close(P.integrate(-9, -10),
+                        np.asarray(I(2) - I(3)))
+        xp_assert_close(P.integrate(0, -10),
+                        np.asarray(I(2) - I(3) - 3 * period_int))
 
     def test_roots(self):
         x = np.linspace(0, 1, 31)**2
@@ -1528,7 +1531,7 @@ class TestPPoly:
 
         pp = PPoly(c, x)
         xp_assert_equal(pp.roots(),
-                           [0.25, 0.4, np.nan, 0.6 + 0.25])
+                        [0.25, 0.4, np.nan, 0.6 + 0.25])
 
         # ditto for p.solve(const) with sections identically equal const
         const = 2.
@@ -1537,7 +1540,7 @@ class TestPPoly:
         pp1 = PPoly(c1, x)
 
         xp_assert_equal(pp1.solve(const),
-                           [0.25, 0.4, np.nan, 0.6 + 0.25])
+                        [0.25, 0.4, np.nan, 0.6 + 0.25])
 
     def test_roots_all_zero(self):
         # test the code path for the polynomial being identically zero everywhere
@@ -1572,15 +1575,15 @@ class TestPPoly:
         c = np.array([[1], [-1]]).T
         x = np.array([0, 0.5, 1])
         pp = PPoly(c, x)
-        xp_assert_equal(pp.roots(), [0.5])
-        xp_assert_equal(pp.roots(discontinuity=False), [])
+        xp_assert_equal(pp.roots(), np.asarray([0.5]))
+        xp_assert_equal(pp.roots(discontinuity=False), np.asarray([]))
 
         # ditto for a discontinuity across y:
-        xp_assert_equal(pp.solve(0.5), [0.5])
-        xp_assert_equal(pp.solve(0.5, discontinuity=False), [])
+        xp_assert_equal(pp.solve(0.5), np.asarray([0.5]))
+        xp_assert_equal(pp.solve(0.5, discontinuity=False), np.asarray([]))
 
-        xp_assert_equal(pp.solve(1.5), [])
-        xp_assert_equal(pp.solve(1.5, discontinuity=False), [])
+        xp_assert_equal(pp.solve(1.5), np.asarray([]))
+        xp_assert_equal(pp.solve(1.5, discontinuity=False), np.asarray([]))
 
     def test_roots_random(self):
         # Check high-order polynomials with random coefficients
@@ -1812,10 +1815,10 @@ class TestBPolyCalculus:
 
         # derivatives in-place
         xp_assert_close(np.asarray([bp(0.4, nu) for nu in [1, 2, 3]]),
-                        [-6*(1-0.4), 6., 0.]
+                        np.asarray([-6*(1-0.4), 6., 0.])
         )
         xp_assert_close(np.asarray([bp(1.7, nu) for nu in [1, 2, 3]]),
-                        [0.7, 1., 0]
+                        np.asarray([0.7, 1., 0])
         )
 
     def test_derivative_ppoly(self):
@@ -1913,12 +1916,14 @@ class TestBPolyCalculus:
         b = BPoly(c, x)
 
         # default is extrapolate=True
-        xp_assert_close(b.integrate(0, 2), 2., atol=1e-14, check_0d=False)
+        xp_assert_close(b.integrate(0, 2), np.asarray(2.),
+                        atol=1e-14, check_0d=False)
 
         # .integrate argument overrides self.extrapolate
         b1 = BPoly(c, x, extrapolate=False)
         assert np.isnan(b1.integrate(0, 2))
-        xp_assert_close(b1.integrate(0, 2, extrapolate=True), 2., atol=1e-14)
+        xp_assert_close(b1.integrate(0, 2, extrapolate=True),
+                        np.asarray(2.), atol=1e-14, check_0d=False)
 
     def test_integrate_periodic(self):
         x = np.array([1, 2, 4])
@@ -1929,7 +1934,7 @@ class TestBPolyCalculus:
 
         period_int = I(4) - I(1)
 
-        xp_assert_close(P.integrate(1, 4), period_int)
+        xp_assert_close(P.integrate(1, 4), period_int) #, check_0d=False)
         xp_assert_close(P.integrate(-10, -7), period_int)
         xp_assert_close(P.integrate(-10, -4), 2 * period_int)
 
@@ -2153,7 +2158,7 @@ class TestBPolyFromDerivatives:
         xi = np.sort(np.random.random(m+1))
         yi = np.random.random((m+1, k, 6, 7, 8))
         pp = BPoly.from_derivatives(xi, yi)
-        assert pp.c.shape, (2*k, m, 6, 7 == 8)
+        assert pp.c.shape == (2*k, m, 6, 7, 8)
 
     def test_gh_5430(self):
         # At least one of these raises an error unless gh-5430 is
@@ -2162,14 +2167,14 @@ class TestBPolyFromDerivatives:
         # one arbitrary precision integer type, so both should fail.
         orders = np.int32(1)
         p = BPoly.from_derivatives([0, 1], [[0], [0]], orders=orders)
-        assert_almost_equal(p(0), 0, check_0d=False)
+        assert_almost_equal(p(0), np.asarray(0))
         orders = np.int64(1)
         p = BPoly.from_derivatives([0, 1], [[0], [0]], orders=orders)
-        assert_almost_equal(p(0), 0, check_0d=False)
+        assert_almost_equal(p(0), np.asarray(0))
         orders = 1
         # This worked before; make sure it still works
         p = BPoly.from_derivatives([0, 1], [[0], [0]], orders=orders)
-        assert_almost_equal(p(0), 0, check_0d=False)
+        assert_almost_equal(p(0), np.asarray(0))
         orders = 1
 
 

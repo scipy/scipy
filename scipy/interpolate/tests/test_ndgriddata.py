@@ -64,7 +64,7 @@ class TestGriddata:
                 msg = repr((method, rescale))
                 yi = griddata(x, y, xi, method=method, rescale=rescale)
 
-                assert yi.shape == (5, 3)
+                assert yi.shape == (5, 3), msg
                 xp_assert_close(yi, np.tile(y[:,None], (1, 3)),
                                 atol=1e-14, err_msg=msg)
 

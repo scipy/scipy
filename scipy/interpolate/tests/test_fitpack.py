@@ -321,7 +321,7 @@ class TestSplint:
         # integrate directly: $\int_0^6 x^3 dx = 6^4 / 4$
         res = splint(0, 6, (t, c, k))
         expected = 6**4 / 4
-        assert abs(res - expected)  < 1e-13
+        assert abs(res - expected) < 1e-13
 
         # check that the coefficients past len(t) - k - 1 are ignored
         c0 = c.copy()

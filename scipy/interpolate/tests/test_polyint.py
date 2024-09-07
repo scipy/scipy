@@ -169,7 +169,7 @@ class TestKrogh:
 
     def test_scalar(self):
         P = KroghInterpolator(self.xs,self.ys)
-        assert_almost_equal(self.true_poly(7),P(7), check_0d=False)
+        assert_almost_equal(self.true_poly(7), P(7), check_0d=False)
         assert_almost_equal(self.true_poly(np.array(7)), P(np.array(7)), check_0d=False)
 
     def test_derivatives(self):
@@ -643,15 +643,15 @@ class TestPCHIP:
 
     def test_pchip_interpolate(self):
         assert_array_almost_equal(
-            pchip_interpolate([1,2,3], [4,5,6], [0.5], der=1),
+            pchip_interpolate([1, 2, 3], [4, 5, 6], [0.5], der=1),
             np.asarray([1.]))
 
         assert_array_almost_equal(
-            pchip_interpolate([1,2,3], [4,5,6], [0.5], der=0),
+            pchip_interpolate([1, 2, 3], [4, 5, 6], [0.5], der=0),
             np.asarray([3.5]))
 
         assert_array_almost_equal(
-            np.asarray(pchip_interpolate([1,2,3], [4,5,6], [0.5], der=[0, 1])),
+            np.asarray(pchip_interpolate([1, 2, 3], [4, 5, 6], [0.5], der=[0, 1])),
             np.asarray([[3.5], [1]]))
 
     def test_roots(self):
@@ -683,8 +683,7 @@ class TestCubicSpline:
 
         # Check that we found a parabola, the third derivative is 0.
         if x.size == 3 and bc_start == 'not-a-knot' and bc_end == 'not-a-knot':
-            xp_assert_close(c[0], 0.0, rtol=tol, atol=tol,
-                check_0d=False, check_shape=False)
+            xp_assert_close(c[0], np.zeros_like(c[0]), rtol=tol, atol=tol)
             return
 
         # Check periodic boundary conditions.
@@ -698,37 +697,36 @@ class TestCubicSpline:
         if bc_start == 'not-a-knot':
             if x.size == 2:
                 slope = (S(x[1]) - S(x[0])) / dx[0]
-                xp_assert_close(S(x[0], 1), slope, rtol=tol, atol=tol, check_0d=False)
+                slope = np.asarray(slope)
+                xp_assert_close(S(x[0], 1), slope, rtol=tol, atol=tol)
             else:
                 xp_assert_close(c[0, 0], c[0, 1], rtol=tol, atol=tol)
         elif bc_start == 'clamped':
             xp_assert_close(
-                S(x[0], 1), np.asarray(0.0), rtol=tol, atol=tol, check_shape=False
-            )
+                S(x[0], 1), np.zeros_like(S(x[0], 1)), rtol=tol, atol=tol)
         elif bc_start == 'natural':
             xp_assert_close(
-                S(x[0], 2), np.asarray(0.0), rtol=tol, atol=tol,
-                check_dtype=False, check_shape=False,
-            )
+                S(x[0], 2), np.zeros_like(S(x[0], 2)), rtol=tol, atol=tol)
         else:
             order, value = bc_start
-            xp_assert_close(S(x[0], order), value, rtol=tol, atol=tol, check_0d=False)
+            xp_assert_close(S(x[0], order), np.asarray(value), rtol=tol, atol=tol)
 
         if bc_end == 'not-a-knot':
             if x.size == 2:
                 slope = (S(x[1]) - S(x[0])) / dx[0]
-                xp_assert_close(S(x[1], 1), slope, rtol=tol, atol=tol, check_0d=False)
+                slope = np.asarray(slope)
+                xp_assert_close(S(x[1], 1), slope, rtol=tol, atol=tol)
             else:
-                xp_assert_close(c[0, -1], c[0, -2], rtol=tol, atol=tol, check_0d=False)
+                xp_assert_close(c[0, -1], c[0, -2], rtol=tol, atol=tol)
         elif bc_end == 'clamped':
-            xp_assert_close(S(x[-1], 1), 0.0, rtol=tol, atol=tol,
-                            check_0d=False, check_shape=False)
+            xp_assert_close(S(x[-1], 1), np.zeros_like(S(x[-1], 1)),
+                            rtol=tol, atol=tol)
         elif bc_end == 'natural':
-            xp_assert_close(S(x[-1], 2), 0.0, rtol=2*tol, atol=2*tol,
-                            check_0d=False, check_shape=False)
+            xp_assert_close(S(x[-1], 2), np.zeros_like(S(x[-1], 2)),
+                            rtol=2*tol, atol=2*tol)
         else:
             order, value = bc_end
-            xp_assert_close(S(x[-1], order), value, rtol=tol, atol=tol, check_0d=False)
+            xp_assert_close(S(x[-1], order), np.asarray(value), rtol=tol, atol=tol)
 
     def check_all_bc(self, x, y, axis):
         deriv_shape = list(y.shape)
@@ -892,7 +890,7 @@ def test_CubicHermiteSpline_correctness():
     dydx = [0, 3, 7]
     s = CubicHermiteSpline(x, y, dydx)
     xp_assert_close(s(x), y, check_shape=False, check_dtype=False, rtol=1e-15)
-    xp_assert_close(s(x, 1), dydx, check_shape=False, check_dtype=False,rtol=1e-15)
+    xp_assert_close(s(x, 1), dydx, check_shape=False, check_dtype=False, rtol=1e-15)
 
 
 def test_CubicHermiteSpline_error_handling():

@@ -343,43 +343,43 @@ class TestBSpline:
 
     def test_integral(self):
         b = BSpline.basis_element([0, 1, 2])  # x for x < 1 else 2 - x
-        xp_assert_close(b.integrate(0, 1), 0.5, check_0d=False)
-        xp_assert_close(b.integrate(1, 0), -1 * 0.5, check_0d=False)
-        xp_assert_close(b.integrate(1, 0), -0.5, check_0d=False)
+        xp_assert_close(b.integrate(0, 1), np.asarray(0.5))
+        xp_assert_close(b.integrate(1, 0), np.asarray(-1 * 0.5))
+        xp_assert_close(b.integrate(1, 0), np.asarray(-0.5))
 
         # extrapolate or zeros outside of [0, 2]; default is yes
-        xp_assert_close(b.integrate(-1, 1), 0.0, check_0d=False)
-        xp_assert_close(b.integrate(-1, 1, extrapolate=True), 0.0, check_0d=False)
-        xp_assert_close(b.integrate(-1, 1, extrapolate=False), 0.5, check_0d=False)
-        xp_assert_close(b.integrate(1, -1, extrapolate=False), -1 * 0.5, check_0d=False)
+        xp_assert_close(b.integrate(-1, 1), np.asarray(0.0))
+        xp_assert_close(b.integrate(-1, 1, extrapolate=True), np.asarray(0.0))
+        xp_assert_close(b.integrate(-1, 1, extrapolate=False), np.asarray(0.5))
+        xp_assert_close(b.integrate(1, -1, extrapolate=False), np.asarray(-1 * 0.5))
 
         # Test ``_fitpack._splint()``
         xp_assert_close(b.integrate(1, -1, extrapolate=False),
-                        _impl.splint(1, -1, b.tck), check_0d=False)
+                        np.asarray(_impl.splint(1, -1, b.tck)))
 
         # Test ``extrapolate='periodic'``.
         b.extrapolate = 'periodic'
         i = b.antiderivative()
-        period_int = i(2) - i(0)
+        period_int = np.asarray(i(2) - i(0))
 
-        xp_assert_close(b.integrate(0, 2), period_int, check_0d=False)
-        xp_assert_close(b.integrate(2, 0), -1 * period_int, check_0d=False)
-        xp_assert_close(b.integrate(-9, -7), period_int, check_0d=False)
-        xp_assert_close(b.integrate(-8, -4), 2 * period_int, check_0d=False)
+        xp_assert_close(b.integrate(0, 2), period_int)
+        xp_assert_close(b.integrate(2, 0), np.asarray(-1 * period_int))
+        xp_assert_close(b.integrate(-9, -7), period_int)
+        xp_assert_close(b.integrate(-8, -4), np.asarray(2 * period_int))
 
-        xp_assert_close(b.integrate(0.5, 1.5), i(1.5) - i(0.5), check_0d=False)
+        xp_assert_close(b.integrate(0.5, 1.5),
+                        np.asarray(i(1.5) - i(0.5)))
         xp_assert_close(b.integrate(1.5, 3),
-                        i(1) - i(0) + i(2) - i(1.5), check_0d=False)
+                        np.asarray(i(1) - i(0) + i(2) - i(1.5)))
         xp_assert_close(b.integrate(1.5 + 12, 3 + 12),
-                        i(1) - i(0) + i(2) - i(1.5), check_0d=False)
+                        np.asarray(i(1) - i(0) + i(2) - i(1.5)))
         xp_assert_close(b.integrate(1.5, 3 + 12),
-                        i(1) - i(0) + i(2) - i(1.5) + 6 * period_int, check_0d=False)
+                        np.asarray(i(1) - i(0) + i(2) - i(1.5) + 6 * period_int))
 
-        xp_assert_close(b.integrate(0, -1), i(0) - i(1), check_0d=False)
-        xp_assert_close(b.integrate(-9, -10), i(0) - i(1), check_0d=False)
-        xp_assert_close(
-            b.integrate(0, -9), i(1) - i(2) - 4 * period_int, check_0d=False
-        )
+        xp_assert_close(b.integrate(0, -1), np.asarray(i(0) - i(1)))
+        xp_assert_close(b.integrate(-9, -10), np.asarray(i(0) - i(1)))
+        xp_assert_close(b.integrate(0, -9),
+                        np.asarray(i(1) - i(2) - 4 * period_int))
 
     def test_integrate_ppoly(self):
         # test .integrate method to be consistent with PPoly.integrate
