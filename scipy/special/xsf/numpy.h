@@ -831,20 +831,18 @@ namespace numpy {
         return arg1(arg0(func));
     }
 
-    template <typename... Tr>
-    struct applies {
-        std::tuple<Tr...> tr;
+    template <typename... Trs>
+    class composes {
+        std::tuple<Trs...> m_trs;
 
-        applies(Tr... ts) : tr(ts...) {}
+      public:
+        composes(Trs... trs) : m_trs(trs...) {}
 
         template <typename Func>
         decltype(auto) operator()(Func func) const {
-            return std::apply([func](auto... args) { return do_apply(func, args...); }, tr);
+            return std::apply([func](auto... trs) { return do_apply(func, trs...); }, m_trs);
         }
     };
-
-    template <typename... Ts>
-    applies(Ts...) -> applies<Ts...>;
 
     struct ufunc_wraps {
         bool has_return;
@@ -902,8 +900,8 @@ namespace numpy {
             }
         }
 
-        template <typename... Funcs, typename... Tr>
-        ufunc_overloads(applies<Tr...> t, Funcs... funcs) : ufunc_overloads(t(funcs)...) {}
+        template <typename... Trs, typename... Funcs>
+        ufunc_overloads(composes<Trs...> trs, Funcs... funcs) : ufunc_overloads(trs(funcs)...) {}
 
         ufunc_overloads(ufunc_overloads &&other) = default;
 
