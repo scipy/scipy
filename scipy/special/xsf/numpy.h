@@ -816,20 +816,19 @@ namespace numpy {
         }
     };
 
-    template <typename Func>
-    decltype(auto) do_apply(Func func) {
-        return func;
-    }
+    namespace detail {
 
-    template <typename Func, typename Arg0>
-    decltype(auto) do_apply(Func func, Arg0 arg0) {
-        return arg0(func);
-    }
+        template <typename Func, typename Tr>
+        decltype(auto) compose(Func func, Tr tr) {
+            return tr(func);
+        }
 
-    template <typename Func, typename Arg0, typename Arg1>
-    decltype(auto) do_apply(Func func, Arg0 arg0, Arg1 arg1) {
-        return arg1(arg0(func));
-    }
+        template <typename Func, typename Tr0, typename Tr1>
+        decltype(auto) compose(Func func, Tr0 tr0, Tr1 tr1) {
+            return compose(tr0(func), tr1);
+        }
+
+    } // namespace detail
 
     template <typename... Trs>
     class composes {
@@ -840,7 +839,7 @@ namespace numpy {
 
         template <typename Func>
         decltype(auto) operator()(Func func) const {
-            return std::apply([func](auto... trs) { return do_apply(func, trs...); }, m_trs);
+            return std::apply([func](auto... trs) { return detail::compose(func, trs...); }, m_trs);
         }
     };
 
@@ -881,10 +880,8 @@ namespace numpy {
               m_nin_and_nout(arity_of_v<Func0> + m_has_return), m_func(new PyUFuncGenericFunction[m_ntypes]),
               m_data(new data_handle_type[m_ntypes]), m_data_deleters(new data_deleter_type[m_ntypes]),
               m_types(new char[m_ntypes * m_nin_and_nout]) {
-
-            std::array<ufunc_wraps, 1 + sizeof...(Funcs)> func = {func0, funcs...};
-
-            for (auto it = func.begin(); it != func.end(); ++it) {
+            ufunc_wraps func[sizeof...(Funcs) + 1] = {func0, funcs...};
+            for (auto it = std::begin(func); it != std::end(func); ++it) {
                 if (it->nin_and_nout != m_nin_and_nout) {
                     PyErr_SetString(PyExc_RuntimeError, "all functions must have the same number of arguments");
                 }
@@ -892,7 +889,7 @@ namespace numpy {
                     PyErr_SetString(PyExc_RuntimeError, "all functions must be void if any function is");
                 }
 
-                size_t i = it - func.begin();
+                size_t i = it - std::begin(func);
                 m_func[i] = it->func;
                 m_data[i] = it->data;
                 m_data_deleters[i] = it->data_deleter;
