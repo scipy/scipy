@@ -1576,7 +1576,7 @@ class TestWatershedIft:
         assert_array_almost_equal(out, xp.asarray(expected))
 
     @skip_xp_backends(
-        "cupy", "pytorch", reasons=["no watershed_ift on CuPy", "torch.uint16"],
+        "cupy", reasons=["no watershed_ift on CuPy"],
         cpu_only=True, exceptions=['cupy', 'jax.numpy'],
     )
     def test_watershed_ift08(self, xp):
@@ -1591,7 +1591,7 @@ class TestWatershedIft:
         assert_array_almost_equal(out, xp.asarray(expected))
 
     @skip_xp_backends(
-        "cupy", "pytorch", reasons=["no watershed_ift on CuPy", "torch.uint16"],
+        "cupy", reasons=["no watershed_ift on CuPy"],
         cpu_only=True, exceptions=['cupy', 'jax.numpy'],
     )
     def test_watershed_ift09(self, xp):
