@@ -82,7 +82,7 @@ PyMODINIT_FUNC PyInit__gufuncs() {
     PyObject *assoc_legendre_p_all = Py_BuildValue(
         "{(O, i): N, (O, i): N, (O, i): N, (O, i): N, (O, i): N, (O, i): N}", Py_True, 0,
         xsf::numpy::gufunc(
-            {xsf::numpy::applies{xsf::numpy::autodiff},
+            {xsf::numpy::applies{xsf::numpy::autodiff, xsf::numpy::use_long_long_int},
              [](xsf::numpy::autodiff0_double z, long long int branch_cut, xsf::numpy::autodiff0_double_2d res) {
                  xsf::assoc_legendre_p_all(xsf::assoc_legendre_norm, z, branch_cut, res);
              },
@@ -98,7 +98,7 @@ PyMODINIT_FUNC PyInit__gufuncs() {
             1, "assoc_legendre_p_all", nullptr, "(),()->(np1,mpmp1,1)", assoc_legendre_map_dims<1>),
         Py_True, 1,
         xsf::numpy::gufunc(
-            {xsf::numpy::applies{xsf::numpy::autodiff},
+            {xsf::numpy::applies{xsf::numpy::autodiff, xsf::numpy::use_long_long_int},
              [](xsf::numpy::autodiff1_double z, long long int branch_cut, xsf::numpy::autodiff1_double_2d res) {
                  xsf::assoc_legendre_p_all(xsf::assoc_legendre_norm, z, branch_cut, res);
              },
@@ -114,7 +114,7 @@ PyMODINIT_FUNC PyInit__gufuncs() {
             1, "assoc_legendre_p_all", nullptr, "(),()->(np1,mpmp1,2)", assoc_legendre_map_dims<1>),
         Py_True, 2,
         xsf::numpy::gufunc(
-            {xsf::numpy::applies{xsf::numpy::autodiff},
+            {xsf::numpy::applies{xsf::numpy::autodiff, xsf::numpy::use_long_long_int},
              [](xsf::numpy::autodiff2_double z, long long int branch_cut, xsf::numpy::autodiff2_double_2d res) {
                  xsf::assoc_legendre_p_all(xsf::assoc_legendre_norm, z, branch_cut, res);
              },
@@ -130,7 +130,7 @@ PyMODINIT_FUNC PyInit__gufuncs() {
             1, "assoc_legendre_p_all", nullptr, "(),()->(np1,mpmp1,3)", assoc_legendre_map_dims<1>),
         Py_False, 0,
         xsf::numpy::gufunc(
-            {xsf::numpy::applies{xsf::numpy::autodiff},
+            {xsf::numpy::applies{xsf::numpy::autodiff, xsf::numpy::use_long_long_int},
              [](xsf::numpy::autodiff0_double z, long long int branch_cut, xsf::numpy::autodiff0_double_2d res) {
                  xsf::assoc_legendre_p_all(xsf::assoc_legendre_unnorm, z, branch_cut, res);
              },
@@ -146,7 +146,7 @@ PyMODINIT_FUNC PyInit__gufuncs() {
             1, "assoc_legendre_p_all", nullptr, "(),()->(np1,mpmp1,1)", assoc_legendre_map_dims<1>),
         Py_False, 1,
         xsf::numpy::gufunc(
-            {xsf::numpy::applies{xsf::numpy::autodiff},
+            {xsf::numpy::applies{xsf::numpy::autodiff, xsf::numpy::use_long_long_int},
              [](xsf::numpy::autodiff1_double z, long long int branch_cut, xsf::numpy::autodiff1_double_2d res) {
                  xsf::assoc_legendre_p_all(xsf::assoc_legendre_unnorm, z, branch_cut, res);
              },
@@ -162,7 +162,7 @@ PyMODINIT_FUNC PyInit__gufuncs() {
             1, "assoc_legendre_p_all", nullptr, "(),()->(np1,mpmp1,2)", assoc_legendre_map_dims<1>),
         Py_False, 2,
         xsf::numpy::gufunc(
-            {xsf::numpy::applies{xsf::numpy::autodiff},
+            {xsf::numpy::applies{xsf::numpy::autodiff, xsf::numpy::use_long_long_int},
              [](xsf::numpy::autodiff2_double z, long long int branch_cut, xsf::numpy::autodiff2_double_2d res) {
                  xsf::assoc_legendre_p_all(xsf::assoc_legendre_unnorm, z, branch_cut, res);
              },
