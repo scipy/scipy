@@ -839,7 +839,7 @@ namespace numpy {
         applies(Args &&...args) : tr(std::forward<Args>(args)...) {}
 
         template <typename Func>
-        decltype(auto) operator()(Func func) {
+        decltype(auto) operator()(Func func) const {
             return std::apply([func](auto... args) { return do_apply(func, args...); }, tr);
         }
     };
@@ -904,7 +904,7 @@ namespace numpy {
         }
 
         template <typename... Funcs, typename... Tr>
-        ufunc_overloads(applies<Tr...> t, Funcs... funcs) : ufunc_overloads(t(funcs)...) {}
+        ufunc_overloads(const applies<Tr...> &t, Funcs... funcs) : ufunc_overloads(t(funcs)...) {}
 
         ufunc_overloads(ufunc_overloads &&other) = default;
 
