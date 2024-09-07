@@ -1042,12 +1042,12 @@ namespace numpy {
     template <typename Func>
     use_long_long_int_wrapper(Func func) -> use_long_long_int_wrapper<Func>;
 
-    struct {
+    struct use_long_long_int {
         template <typename Func>
         decltype(auto) operator()(Func f) {
             return use_long_long_int_wrapper{f};
         }
-    } use_long_long_int;
+    };
 
 } // namespace numpy
 } // namespace xsf
