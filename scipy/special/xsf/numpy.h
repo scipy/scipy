@@ -816,11 +816,6 @@ namespace numpy {
         }
     };
 
-    template <
-        typename Func, typename Signature = signature_of_t<Func>,
-        typename Indices = std::make_index_sequence<arity_of_v<Signature>>>
-    class wrap_autodiffx;
-
     template <typename Func>
     struct tester {
         Func func;
@@ -1003,12 +998,14 @@ namespace numpy {
         static dual<T, Orders...> to_var(T arg, size_t i) { return dual_var<Orders...>(arg, i); }
     };
 
-    template <typename Func, typename Res, typename... Args, size_t... I>
-    class wrap_autodiffx<Func, Res(Args...), std::index_sequence<I...>> {
-        Func func;
+    template <
+        typename Func, typename Signature = signature_of_t<Func>,
+        typename Indices = std::make_index_sequence<arity_of_v<Signature>>>
+    struct autodiff_wrapper;
 
-      public:
-        wrap_autodiffx(Func func) : func(func) {}
+    template <typename Func, typename Res, typename... Args, size_t... I>
+    struct autodiff_wrapper<Func, Res(Args...), std::index_sequence<I...>> {
+        Func func;
 
         Res operator()(remove_dual_t<Args>... args) {
             return func(autodiff_traits<Args>::to_var(args, I - i_scan[I])...);
@@ -1022,14 +1019,14 @@ namespace numpy {
     };
 
     template <typename Func>
-    wrap_autodiffx(Func func)->wrap_autodiffx<Func>;
+    autodiff_wrapper(Func func) -> autodiff_wrapper<Func>;
 
     struct {
         template <typename Func>
         decltype(auto) operator()(Func f) {
-            return wrap_autodiffx(f);
+            return autodiff_wrapper{f};
         }
-    } wrap_autodiff;
+    } autodiff;
 
 } // namespace numpy
 } // namespace xsf

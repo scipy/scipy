@@ -58,19 +58,19 @@ PyMODINIT_FUNC PyInit__gufuncs() {
 
     PyObject *legendre_p_all =
         Py_BuildValue("(N, N, N)",
-                      xsf::numpy::gufunc({xsf::numpy::applies{xsf::numpy::wrap_autodiff},
+                      xsf::numpy::gufunc({xsf::numpy::applies{xsf::numpy::autodiff},
                                           static_cast<xsf::numpy::autodiff0_d_d1>(xsf::legendre_p_all),
                                           static_cast<xsf::numpy::autodiff0_f_f1>(xsf::legendre_p_all),
                                           static_cast<xsf::numpy::autodiff0_D_D1>(xsf::legendre_p_all),
                                           static_cast<xsf::numpy::autodiff0_F_F1>(xsf::legendre_p_all)},
                                          1, "legendre_p_all", nullptr, "()->(np1,1)", new_legendre_map_dims),
-                      xsf::numpy::gufunc({xsf::numpy::applies{xsf::numpy::wrap_autodiff},
+                      xsf::numpy::gufunc({xsf::numpy::applies{xsf::numpy::autodiff},
                                           static_cast<xsf::numpy::autodiff1_d_d1>(xsf::legendre_p_all),
                                           static_cast<xsf::numpy::autodiff1_f_f1>(xsf::legendre_p_all),
                                           static_cast<xsf::numpy::autodiff1_D_D1>(xsf::legendre_p_all),
                                           static_cast<xsf::numpy::autodiff1_F_F1>(xsf::legendre_p_all)},
                                          1, "legendre_p_all", nullptr, "()->(np1,2)", new_legendre_map_dims),
-                      xsf::numpy::gufunc({xsf::numpy::applies{xsf::numpy::wrap_autodiff},
+                      xsf::numpy::gufunc({xsf::numpy::applies{xsf::numpy::autodiff},
                                           static_cast<xsf::numpy::autodiff2_d_d1>(xsf::legendre_p_all),
                                           static_cast<xsf::numpy::autodiff2_f_f1>(xsf::legendre_p_all),
                                           static_cast<xsf::numpy::autodiff2_D_D1>(xsf::legendre_p_all),
@@ -82,7 +82,7 @@ PyMODINIT_FUNC PyInit__gufuncs() {
     PyObject *assoc_legendre_p_all = Py_BuildValue(
         "{(O, i): N, (O, i): N, (O, i): N, (O, i): N, (O, i): N, (O, i): N}", Py_True, 0,
         xsf::numpy::gufunc(
-            {xsf::numpy::applies{xsf::numpy::wrap_autodiff},
+            {xsf::numpy::applies{xsf::numpy::autodiff},
              [](xsf::numpy::autodiff0_double z, long long int branch_cut, xsf::numpy::autodiff0_double_2d res) {
                  xsf::assoc_legendre_p_all(xsf::assoc_legendre_norm, z, branch_cut, res);
              },
@@ -98,7 +98,7 @@ PyMODINIT_FUNC PyInit__gufuncs() {
             1, "assoc_legendre_p_all", nullptr, "(),()->(np1,mpmp1,1)", assoc_legendre_map_dims<1>),
         Py_True, 1,
         xsf::numpy::gufunc(
-            {xsf::numpy::applies{xsf::numpy::wrap_autodiff},
+            {xsf::numpy::applies{xsf::numpy::autodiff},
              [](xsf::numpy::autodiff1_double z, long long int branch_cut, xsf::numpy::autodiff1_double_2d res) {
                  xsf::assoc_legendre_p_all(xsf::assoc_legendre_norm, z, branch_cut, res);
              },
@@ -114,7 +114,7 @@ PyMODINIT_FUNC PyInit__gufuncs() {
             1, "assoc_legendre_p_all", nullptr, "(),()->(np1,mpmp1,2)", assoc_legendre_map_dims<1>),
         Py_True, 2,
         xsf::numpy::gufunc(
-            {xsf::numpy::applies{xsf::numpy::wrap_autodiff},
+            {xsf::numpy::applies{xsf::numpy::autodiff},
              [](xsf::numpy::autodiff2_double z, long long int branch_cut, xsf::numpy::autodiff2_double_2d res) {
                  xsf::assoc_legendre_p_all(xsf::assoc_legendre_norm, z, branch_cut, res);
              },
@@ -130,7 +130,7 @@ PyMODINIT_FUNC PyInit__gufuncs() {
             1, "assoc_legendre_p_all", nullptr, "(),()->(np1,mpmp1,3)", assoc_legendre_map_dims<1>),
         Py_False, 0,
         xsf::numpy::gufunc(
-            {xsf::numpy::applies{xsf::numpy::wrap_autodiff},
+            {xsf::numpy::applies{xsf::numpy::autodiff},
              [](xsf::numpy::autodiff0_double z, long long int branch_cut, xsf::numpy::autodiff0_double_2d res) {
                  xsf::assoc_legendre_p_all(xsf::assoc_legendre_unnorm, z, branch_cut, res);
              },
@@ -146,7 +146,7 @@ PyMODINIT_FUNC PyInit__gufuncs() {
             1, "assoc_legendre_p_all", nullptr, "(),()->(np1,mpmp1,1)", assoc_legendre_map_dims<1>),
         Py_False, 1,
         xsf::numpy::gufunc(
-            {xsf::numpy::applies{xsf::numpy::wrap_autodiff},
+            {xsf::numpy::applies{xsf::numpy::autodiff},
              [](xsf::numpy::autodiff1_double z, long long int branch_cut, xsf::numpy::autodiff1_double_2d res) {
                  xsf::assoc_legendre_p_all(xsf::assoc_legendre_unnorm, z, branch_cut, res);
              },
@@ -162,7 +162,7 @@ PyMODINIT_FUNC PyInit__gufuncs() {
             1, "assoc_legendre_p_all", nullptr, "(),()->(np1,mpmp1,2)", assoc_legendre_map_dims<1>),
         Py_False, 2,
         xsf::numpy::gufunc(
-            {xsf::numpy::applies{xsf::numpy::wrap_autodiff},
+            {xsf::numpy::applies{xsf::numpy::autodiff},
              [](xsf::numpy::autodiff2_double z, long long int branch_cut, xsf::numpy::autodiff2_double_2d res) {
                  xsf::assoc_legendre_p_all(xsf::assoc_legendre_unnorm, z, branch_cut, res);
              },
@@ -180,15 +180,15 @@ PyMODINIT_FUNC PyInit__gufuncs() {
 
     PyObject *sph_legendre_p_all = Py_BuildValue(
         "(N, N, N)",
-        xsf::numpy::gufunc({xsf::numpy::applies{xsf::numpy::wrap_autodiff},
+        xsf::numpy::gufunc({xsf::numpy::applies{xsf::numpy::autodiff},
                             static_cast<xsf::numpy::autodiff0_d_d2>(xsf::sph_legendre_p_all),
                             static_cast<xsf::numpy::autodiff0_f_f2>(xsf::sph_legendre_p_all)},
                            1, "sph_legendre_p_all", nullptr, "()->(np1,mpmp1,1)", assoc_legendre_map_dims<1>),
-        xsf::numpy::gufunc({xsf::numpy::applies{xsf::numpy::wrap_autodiff},
+        xsf::numpy::gufunc({xsf::numpy::applies{xsf::numpy::autodiff},
                             static_cast<xsf::numpy::autodiff1_d_d2>(xsf::sph_legendre_p_all),
                             static_cast<xsf::numpy::autodiff1_f_f2>(xsf::sph_legendre_p_all)},
                            1, "sph_legendre_p_all", nullptr, "()->(np1,mpmp1,2)", assoc_legendre_map_dims<1>),
-        xsf::numpy::gufunc({xsf::numpy::applies{xsf::numpy::wrap_autodiff},
+        xsf::numpy::gufunc({xsf::numpy::applies{xsf::numpy::autodiff},
                             static_cast<xsf::numpy::autodiff2_d_d2>(xsf::sph_legendre_p_all),
                             static_cast<xsf::numpy::autodiff2_f_f2>(xsf::sph_legendre_p_all)},
                            1, "sph_legendre_p_all", nullptr, "()->(np1,mpmp1,3)", assoc_legendre_map_dims<1>));
@@ -208,15 +208,15 @@ PyMODINIT_FUNC PyInit__gufuncs() {
 
     PyObject *sph_harm_y_all =
         Py_BuildValue("(N, N, N)",
-                      xsf::numpy::gufunc({xsf::numpy::applies{xsf::numpy::wrap_autodiff},
+                      xsf::numpy::gufunc({xsf::numpy::applies{xsf::numpy::autodiff},
                                           static_cast<xsf::numpy::autodiff00_dd_D2>(xsf::sph_harm_y_all),
                                           static_cast<xsf::numpy::autodiff00_ff_F2>(xsf::sph_harm_y_all)},
                                          1, "sph_harm_y_all", nullptr, "(),()->(np1,mpmp1,1,1)", sph_harm_map_dims),
-                      xsf::numpy::gufunc({xsf::numpy::applies{xsf::numpy::wrap_autodiff},
+                      xsf::numpy::gufunc({xsf::numpy::applies{xsf::numpy::autodiff},
                                           static_cast<xsf::numpy::autodiff11_dd_D2>(xsf::sph_harm_y_all),
                                           static_cast<xsf::numpy::autodiff11_ff_F2>(xsf::sph_harm_y_all)},
                                          1, "sph_harm_y_all", nullptr, "(),()->(np1,mpmp1,2,2)", sph_harm_map_dims),
-                      xsf::numpy::gufunc({xsf::numpy::applies{xsf::numpy::wrap_autodiff},
+                      xsf::numpy::gufunc({xsf::numpy::applies{xsf::numpy::autodiff},
                                           static_cast<xsf::numpy::autodiff22_dd_D2>(xsf::sph_harm_y_all),
                                           static_cast<xsf::numpy::autodiff22_ff_F2>(xsf::sph_harm_y_all)},
                                          1, "sph_harm_y_all", nullptr, "(),()->(np1,mpmp1,3,3)", sph_harm_map_dims));
