@@ -55,7 +55,7 @@ void legendre_p_for_each_n(int n, T z, T (&res)[2], Func f) {
  * @return value of the polynomial
  */
 template <typename T>
-T legendre_p(long long int n, T z) {
+T legendre_p(int n, T z) {
     T res_n[2];
     legendre_p_for_each_n(n, z, res_n, [](int n, const T(&res_n)[2]) {});
 
@@ -452,7 +452,7 @@ void assoc_legendre_p_for_each_n_m(NormPolicy norm, int n, int m, T z, int branc
  * @return value of the polynomial
  */
 template <typename NormPolicy, typename T>
-T assoc_legendre_p(NormPolicy norm, long long int n, long long int m, T z, long long int branch_cut) {
+T assoc_legendre_p(NormPolicy norm, int n, int m, T z, int branch_cut) {
     T res_n[2];
     assoc_legendre_p_for_each_n(norm, n, m, z, branch_cut, res_n, [](int n, const T(&res_n)[2]) {});
 

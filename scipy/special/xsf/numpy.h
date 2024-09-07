@@ -178,12 +178,12 @@ namespace numpy {
     using lD_D = cdouble (*)(long int, cdouble);
 
     // autodiff, 2 inputs, 1 output
-    using autodiff0_qf_f = autodiff0_float (*)(long long int, autodiff0_float);
-    using autodiff0_qd_d = autodiff0_double (*)(long long int, autodiff0_double);
-    using autodiff1_qf_f = autodiff1_float (*)(long long int, autodiff1_float);
-    using autodiff1_qd_d = autodiff1_double (*)(long long int, autodiff1_double);
-    using autodiff2_qf_f = autodiff2_float (*)(long long int, autodiff2_float);
-    using autodiff2_qd_d = autodiff2_double (*)(long long int, autodiff2_double);
+    using autodiff0_if_f = autodiff0_float (*)(int, autodiff0_float);
+    using autodiff0_id_d = autodiff0_double (*)(int, autodiff0_double);
+    using autodiff1_if_f = autodiff1_float (*)(int, autodiff1_float);
+    using autodiff1_id_d = autodiff1_double (*)(int, autodiff1_double);
+    using autodiff2_if_f = autodiff2_float (*)(int, autodiff2_float);
+    using autodiff2_id_d = autodiff2_double (*)(int, autodiff2_double);
 
     // 2 inputs, 2 outputs
     using qf_ff = void (*)(long long int, float, float &, float &);
@@ -820,15 +820,25 @@ namespace numpy {
     struct tester {
         Func func;
 
+        template <typename Arg0>
+        decltype(auto) operator()(Arg0 arg0) {
+            return arg0(func);
+        }
+
         template <typename Arg0, typename... Args>
         decltype(auto) operator()(Arg0 arg0, Args... args) {
-            return arg0(func);
+            auto f_new = arg0(func);
+
+            return tester<decltype(f_new)>{f_new}(args...);
         }
     };
 
     template <typename... Tr>
     struct applies {
         std::tuple<Tr...> tr;
+
+        template <typename... U>
+        applies(U... u) : tr(u...) {}
 
         template <typename Func>
         decltype(auto) operator()(Func func) {
@@ -861,9 +871,6 @@ namespace numpy {
                   data_deleter([](void *ptr) { delete static_cast<ufunc_data<Func> *>(ptr); }),
                   types(ufunc_traits<Func>::types) {}
         };
-
-        //      template <typename Func>
-        //        generic_wrapper(Func func, C c) -> generic_wrapper<C>;
 
         int m_ntypes;
         bool m_has_return;
@@ -1027,6 +1034,30 @@ namespace numpy {
             return autodiff_wrapper{f};
         }
     } autodiff;
+
+    template <typename Func, typename Signature = signature_of_t<Func>>
+    struct use_long_long_int_wrapper;
+
+    template <typename Func, typename Res, typename... Args>
+    struct use_long_long_int_wrapper<Func, Res(Args...)> {
+        Func func;
+
+        Res operator()(
+            std::conditional_t<std::is_integral_v<Args> && !std::is_same_v<Args, bool>, long long int, Args>... args
+        ) {
+            return func(args...);
+        }
+    };
+
+    template <typename Func>
+    use_long_long_int_wrapper(Func func) -> use_long_long_int_wrapper<Func>;
+
+    struct {
+        template <typename Func>
+        decltype(auto) operator()(Func f) {
+            return use_long_long_int_wrapper{f};
+        }
+    } use_long_long_int;
 
 } // namespace numpy
 } // namespace xsf
