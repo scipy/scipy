@@ -849,7 +849,7 @@ namespace numpy {
     template <typename... Ts>
     applies(Ts...) -> applies<Ts...>;
 
-    class ufunc_overload {
+    class ufunc_overloads {
       public:
         using data_handle_type = void *;
         using data_deleter_type = void (*)(void *);
@@ -882,7 +882,7 @@ namespace numpy {
 
       public:
         template <typename Func0, typename... Funcs>
-        ufunc_overload(Func0 func0, Funcs... funcs)
+        ufunc_overloads(Func0 func0, Funcs... funcs)
             : m_ntypes(sizeof...(Funcs) + 1), m_has_return(has_return_v<Func0>),
               m_nin_and_nout(arity_of_v<Func0> + m_has_return), m_func(new PyUFuncGenericFunction[m_ntypes]),
               m_data(new data_handle_type[m_ntypes]), m_data_deleters(new data_deleter_type[m_ntypes]),
@@ -907,11 +907,11 @@ namespace numpy {
         }
 
         template <typename... Funcs, typename... Tr>
-        ufunc_overload(applies<Tr...> t, Funcs... funcs) : ufunc_overload(t(funcs)...) {}
+        ufunc_overloads(applies<Tr...> t, Funcs... funcs) : ufunc_overload(t(funcs)...) {}
 
-        ufunc_overload(ufunc_overload &&other) = default;
+        ufunc_overloads(ufunc_overload &&other) = default;
 
-        ~ufunc_overload() {
+        ~ufunc_overloads() {
             if (m_data) {
                 for (int i = 0; i < m_ntypes; ++i) {
                     data_deleter_type data_deleter = m_data_deleters[i];
@@ -945,7 +945,7 @@ namespace numpy {
         }
     };
 
-    PyObject *ufunc(ufunc_overload func, int nout, const char *name, const char *doc) {
+    PyObject *ufunc(ufunc_overloads func, int nout, const char *name, const char *doc) {
         static std::vector<ufunc_overload> ufuncs;
 
         if (PyErr_Occurred()) {
@@ -962,22 +962,22 @@ namespace numpy {
         );
     }
 
-    PyObject *ufunc(ufunc_overload func, const char *name, const char *doc) {
+    PyObject *ufunc(ufunc_overloads func, const char *name, const char *doc) {
         int nout = func.has_return();
 
         return ufunc(std::move(func), nout, name, doc);
     }
 
     PyObject *gufunc(
-        ufunc_overload func, int nout, const char *name, const char *doc, const char *signature, map_dims_type map_dims
+        ufunc_overloads func, int nout, const char *name, const char *doc, const char *signature, map_dims_type map_dims
     ) {
-        static std::vector<ufunc_overload> ufuncs;
+        static std::vector<ufunc_overloads> ufuncs;
 
         if (PyErr_Occurred()) {
             return nullptr;
         }
 
-        ufunc_overload &ufunc = ufuncs.emplace_back(std::move(func));
+        ufunc_overloads &ufunc = ufuncs.emplace_back(std::move(func));
         ufunc.set_name(name);
         ufunc.set_map_dims(map_dims);
 
@@ -988,7 +988,7 @@ namespace numpy {
     }
 
     PyObject *
-    gufunc(ufunc_overload func, const char *name, const char *doc, const char *signature, map_dims_type map_dims) {
+    gufunc(ufunc_overloads func, const char *name, const char *doc, const char *signature, map_dims_type map_dims) {
         int nout = func.has_return();
 
         return gufunc(std::move(func), nout, name, doc, signature, map_dims);
