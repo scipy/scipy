@@ -770,8 +770,8 @@ ncf_cdf_wrap(const Real v1, const Real v2, const Real l, const Real x)
 	return NAN;
     }
     if (std::isinf(x)) {
-	// -inf => 0, inf => 1
-	return 1.0 - std::signbit(x);
+	// inf => 1. We've already returned if x < 0, so this can only be +inf.
+	return 1.0;
     }
     Real y;
     try {
