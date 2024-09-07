@@ -45,11 +45,12 @@ def _vectorize(xp):
 
 @array_api_compatible
 @pytest.mark.usefixtures("skip_xp_backends")
-@pytest.mark.skip_xp_backends('array_api_strict', 'jax.numpy', 'cupy',
-                              reasons=['Currently uses fancy indexing assignment.',
-                                       'JAX arrays do not support item assignment.',
-                                       'cupy/cupy#8391',],
-                              cpu_only=True,) # cpu only until gh-21149 merges
+@pytest.mark.skip_xp_backends(
+    'array_api_strict', 'jax.numpy', 'cupy',
+    reasons=['Currently uses fancy indexing assignment.',
+             'JAX arrays do not support item assignment.',
+             'cupy/cupy#8391',],
+)
 class TestTanhSinh:
 
     # Test problems from [1] Section 6
@@ -496,6 +497,15 @@ class TestTanhSinh:
         assert res.success
         assert res.status == 0
 
+    @pytest.mark.skip_xp_backends(
+        'array_api_strict', 'jax.numpy', 'cupy', 'torch',
+        reasons=[
+            'Currently uses fancy indexing assignment.',
+            'JAX arrays do not support item assignment.',
+            'cupy/cupy#8391',
+            'https://github.com/scipy/scipy/pull/21149#issuecomment-2330477359',
+        ],
+    )
     @pytest.mark.parametrize('rtol', [1e-4, 1e-14])
     def test_log(self, rtol, xp):
         # Test equivalence of log-integration and regular integration
