@@ -372,16 +372,17 @@ def freqz(b, a=1, worN=512, whole=False, plot=None, fs=2*pi,
 
     >>> import matplotlib.pyplot as plt
     >>> fig, ax1 = plt.subplots(tight_layout=True)
-    >>> ax1.set_title('Digital filter frequency response')
-
-    >>> ax1.plot(w, 20 * np.log10(abs(h)), 'b')
-    >>> ax1.set_ylabel('Amplitude [dB]', color='b')
-    >>> ax1.set_xlabel('Frequency [rad/sample]')
+    >>> ax1.set_title(f"Frequency Response of {taps} tap FIR Filter " +
+                      f"($f_c={f_c}$ rad/sample)")
+    >>> ax1.axvline(f_c, color='black', linestyle=':', linewidth=0.8)
+    >>> ax1.plot(w, 20 * np.log10(abs(h)), 'C0')
+    >>> ax1.set_ylabel("Amplitude in dB", color='C0')
+    >>> ax1.set(xlabel="Frequency in rad/sample", xlim=(0, np.pi))
 
     >>> ax2 = ax1.twinx()
     >>> angles = np.unwrap(np.angle(h))
-    >>> ax2.plot(w, angles, 'g')
-    >>> ax2.set_ylabel('Angle (radians)', color='g')
+    >>> ax2.plot(w, angles, 'C1')
+    >>> ax2.set_ylabel('Angle (radians)', color='C1')
     >>> ax2.grid(True)
     >>> ax2.axis('tight')
     >>> plt.show()
