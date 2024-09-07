@@ -397,7 +397,7 @@ def differentiate(f, x, *, args=(), tolerances=None, maxiter=10,
     h0 = xp.broadcast_to(h0, shape)
     h0 = xp.reshape(h0, (-1,))
     h0 = xp.astype(h0, dtype)
-    h0[h0 <= 0] = xp.asarray(xp.nan)
+    h0[h0 <= 0] = xp.asarray(xp.nan, dtype=dtype)
 
     status = xp.full_like(x, eim._EINPROGRESS, dtype=xp.int32)  # in progress
     nit, nfev = 0, 1  # one function evaluations performed above
