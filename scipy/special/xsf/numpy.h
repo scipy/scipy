@@ -898,8 +898,8 @@ namespace numpy {
             }
         }
 
-        template <typename... Funcs, typename... Tr>
-        ufunc_overloads(applies<Tr...> t, Funcs... funcs) : ufunc_overloads(t(funcs)...) {}
+        template <typename Func0, typename... Funcs, typename... Tr>
+        ufunc_overloads(applies<Tr...> t, Func0 func0, Funcs... funcs) : ufunc_overloads(t(func0), t(funcs)...) {}
 
         ufunc_overloads(ufunc_overloads &&other) = default;
 
