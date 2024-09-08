@@ -303,8 +303,6 @@ class TestSmirnovp:
             _smirnovp, dataset0, (0, 1), 2, rtol=_rtol
         ).check(dtypes=[int, float, float])
 
-    @pytest.mark.xfail(sys.maxsize <= 2**32,
-                       reason="requires 64-bit platform")
     def test_oneovernclose(self):
         # Check derivative at x=1/n
         # (Discontinuous at x=1/n, test on either side: x=1/n +/- 2epsilon)
