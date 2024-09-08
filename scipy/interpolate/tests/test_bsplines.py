@@ -4,6 +4,7 @@ import itertools
 import math
 
 import numpy as np
+from numpy.testing import suppress_warnings
 from scipy._lib._array_api import xp_assert_equal, xp_assert_close
 from pytest import raises as assert_raises
 import pytest
@@ -1969,9 +1970,9 @@ class TestGivensQR:
 
         # signs may differ
         xp_assert_close(np.minimum(R.todense() + r,
-                                   R.todense() - r), 0, atol=1e-15)
+                                   R.todense() - r), np.zeros_like(r), atol=1e-15)
         xp_assert_close(np.minimum(abs(qTy - y_[:, 0]),
-                                   abs(qTy + y_[:, 0])), 0, atol=2e-13)
+                                   abs(qTy + y_[:, 0])), np.zeros_like(qTy), atol=2e-13)
 
         # sign changes are consistent between Q and R:
         c_full = sl.solve(r, qTy)
@@ -1999,7 +2000,7 @@ class TestGivensQR:
         _bspl._qr_reduce(A, offset, nc , y_)   # in-place
 
         xp_assert_close(RR.a, R.a, atol=1e-15)
-        assert_equal(RR.offset, R.offset)
+        xp_assert_equal(RR.offset, R.offset, check_dtype=False)
         assert RR.nc == R.nc
         xp_assert_close(yy, y_, atol=1e-15)
 
@@ -2018,7 +2019,7 @@ class TestGivensQR:
         offset_ = a_w.indices[::(k+1)]
 
         xp_assert_close(A, A_, atol=1e-15)
-        assert_equal(offset, offset_)
+        xp_assert_equal(offset, offset_, check_dtype=False)
         assert nc == t.shape[0] - k - 1
 
     def test_fpback(self):
@@ -3054,7 +3055,7 @@ def _split(x, t, k, residuals):
 
     fparts[-1] += residuals[-1]       # add the contribution of the last knot
 
-    assert_allclose(sum(fparts), sum(residuals), atol=1e-15)
+    xp_assert_close(sum(fparts), sum(residuals), atol=1e-15)
 
     return fparts, ix
 
@@ -3096,7 +3097,7 @@ class TestGenerateKnots:
         new_t = _fr.add_knot(x, t, k, residuals)
         new_t_py = _add_knot(x, t, k, residuals)
 
-        assert_allclose(new_t, new_t_py, atol=1e-15)
+        xp_assert_close(new_t, new_t_py, atol=1e-15)
 
         # redo with new knots
         spl2 = make_lsq_spline(x, y, k=k, t=new_t)
@@ -3105,16 +3106,16 @@ class TestGenerateKnots:
         new_t2 = _fr.add_knot(x, new_t, k, residuals2)
         new_t2_py = _add_knot(x, new_t, k, residuals2)
 
-        assert_allclose(new_t2, new_t2_py, atol=1e-15)
+        xp_assert_close(new_t2, new_t2_py, atol=1e-15)
 
     @pytest.mark.parametrize('k', [1, 2, 3, 4, 5])
     def test_s0(self, k):
-        x = np.arange(8)
+        x = np.arange(8, dtype=np.float64)
         y = np.sin(x*np.pi/8)
         t = list(generate_knots(x, y, k=k, s=0))[-1]
 
         tt = splrep(x, y, k=k, s=0)[0]
-        assert_allclose(t, tt, atol=1e-15)
+        xp_assert_close(t, tt, atol=1e-15)
 
     def test_s0_1(self):
         # with these data, naive algorithm tries to insert >= nmax knots
@@ -3122,14 +3123,14 @@ class TestGenerateKnots:
         x = np.arange(n)
         y = x**3
         knots = list(generate_knots(x, y, k=3, s=0))   # does not error out
-        assert_allclose(knots[-1], _not_a_knot(x, 3), atol=1e-15)
+        xp_assert_close(knots[-1], _not_a_knot(x, 3), atol=1e-15)
 
     def test_s0_n20(self):
         n = 20
         x = np.arange(n)
         y = x**3
         knots = list(generate_knots(x, y, k=3, s=0))
-        assert_allclose(knots[-1], _not_a_knot(x, 3), atol=1e-15)
+        xp_assert_close(knots[-1], _not_a_knot(x, 3), atol=1e-15)
 
     def test_s0_nest(self):
         # s=0 and non-default nest: not implemented, errors out
@@ -3175,11 +3176,11 @@ index 1afb1900f1..d817e51ad8 100644
 
         assert len(knots) == len(wanted)
         for t, tt in zip(knots, wanted):
-            assert_allclose(t, tt, atol=1e-15)
+            xp_assert_close(t, tt, atol=1e-15)
 
         # also check that the last knot vector matches FITPACK
         t, _, _ = splrep(x, y, k=k, s=1e-7)
-        assert_allclose(knots[-1], t, atol=1e-15)
+        xp_assert_close(knots[-1], t, atol=1e-15)
 
     def test_list_input(self):
         # test that list inputs are accepted
@@ -3194,7 +3195,7 @@ index 1afb1900f1..d817e51ad8 100644
         s = 1e-7
 
         knots = list(generate_knots(x, y, k=3, s=s, nest=10))
-        assert_allclose(knots[-1],
+        xp_assert_close(knots[-1],
                         [0., 0., 0., 0., 2., 4., 7., 7., 7., 7.], atol=1e-15)
 
         with assert_raises(ValueError):
@@ -3228,7 +3229,7 @@ index 1afb1900f1..d817e51ad8 100644
         t = splrep(x, y, k=k, s=s)[0]
         tt = list(generate_knots(x, y, k=k, s=s))[-1]
 
-        assert_allclose(tt, t, atol=1e-15)
+        xp_assert_close(tt, t, atol=1e-15)
 
     def test_s_too_small(self):
         n = 14
@@ -3242,7 +3243,7 @@ index 1afb1900f1..d817e51ad8 100644
             r = sup.record(RuntimeWarning)
             tck = splrep(x, y, k=3, s=1e-50)
             assert len(r) == 1
-        assert_equal(knots[-1], tck[0])
+        xp_assert_equal(knots[-1], tck[0])
 
 
 def disc_naive(t, k):
@@ -3391,7 +3392,7 @@ class TestMakeSplrep:
         f = F(x, y[:, None], t, k, s)    # F expects y to be 2D
         f_d = F_dense(x, y, t, k, s)
         for p in [1, 10, 100]:
-            assert_allclose(f(p), f_d(p), atol=1e-15)
+            xp_assert_close(f(p), f_d(p), atol=1e-15)
 
     def test_fitpack_F_with_weights(self):
         # repeat test_fitpack_F, with weights
@@ -3405,7 +3406,7 @@ class TestMakeSplrep:
         f_d = F_dense(x, y, t, k, s)   # no weights
 
         for p in [1, 10, 100]:
-            assert_allclose(fw(p), fw_d(p), atol=1e-15)
+            xp_assert_close(fw(p), fw_d(p), atol=1e-15)
             assert not np.allclose(f_d(p), fw_d(p), atol=1e-15)
 
     def test_disc_matrix(self):
@@ -3420,7 +3421,7 @@ class TestMakeSplrep:
         D = PackedMatrix(*_fr.disc(t, k)).todense()
         D_dense = disc_naive(t, k)
         assert D.shape[0] == n - 2*k - 2   # number of internal knots
-        assert_allclose(D, D_dense, atol=1e-15)
+        xp_assert_close(D, D_dense, atol=1e-15)
 
     def test_simple_vs_splrep(self):
         x, y, k, s, tt = self._get_xykt()
@@ -3430,7 +3431,7 @@ class TestMakeSplrep:
         assert all(t == tt)
  
         spl = make_splrep(x, y, k=k, s=s)
-        assert_allclose(c[:spl.c.size], spl.c, atol=1e-15)
+        xp_assert_close(c[:spl.c.size], spl.c, atol=1e-15)
 
     def test_with_knots(self):
         x, y, k, s, _ = self._get_xykt()
@@ -3440,9 +3441,9 @@ class TestMakeSplrep:
         spl_auto = make_splrep(x, y, k=k, s=s)
         spl_t = make_splrep(x, y, t=t, k=k, s=s)
 
-        assert_allclose(spl_auto.t, spl_t.t, atol=1e-15)
-        assert_allclose(spl_auto.c, spl_t.c, atol=1e-15)
-        assert_allclose(spl_auto.k, spl_t.k, atol=1e-15)
+        xp_assert_close(spl_auto.t, spl_t.t, atol=1e-15)
+        xp_assert_close(spl_auto.c, spl_t.c, atol=1e-15)
+        assert spl_auto.k == spl_t.k
 
     def test_no_internal_knots(self):
         # should not fail if there are no internal knots
@@ -3460,7 +3461,7 @@ class TestMakeSplrep:
         spl = make_splrep(x, y, k=3)
         spl_i = make_interp_spline(x, y, k=3)
 
-        assert_allclose(spl.c, spl_i.c, atol=1e-15)
+        xp_assert_close(spl.c, spl_i.c, atol=1e-15)
 
     def test_s_too_small(self):
         # both splrep and make_splrep warn that "s too small": ier=2
@@ -3473,8 +3474,8 @@ class TestMakeSplrep:
             tck = splrep(x, y, k=3, s=1e-50)
             spl = make_splrep(x, y, k=3, s=1e-50)
             assert len(r) == 2
-            assert_equal(spl.t, tck[0])
-            assert_allclose(np.r_[spl.c, [0]*(spl.k+1)],
+            xp_assert_equal(spl.t, tck[0])
+            xp_assert_close(np.r_[spl.c, [0]*(spl.k+1)],
                             tck[1], atol=5e-13)
 
     def test_shape(self):
@@ -3531,18 +3532,18 @@ class TestMakeSplprep:
         spl, u = make_splprep(y, s=s)
 
         # parameters
-        assert_allclose(u, u_, atol=1e-15)
+        xp_assert_close(u, u_, atol=1e-15)
 
         # knots
-        assert_allclose(spl.t, t, atol=1e-15)
+        xp_assert_close(spl.t, t, atol=1e-15)
         assert len(t) == num_knots[s]
 
         # coefficients: note the transpose
         cc = np.asarray(c).T
-        assert_allclose(spl.c, cc, atol=1e-15)
+        xp_assert_close(spl.c, cc, atol=1e-15)
 
         # values: note axis=1
-        assert_allclose(spl(u),
+        xp_assert_close(spl(u),
                         BSpline(t, c, k, axis=1)(u), atol=1e-15)
 
     @pytest.mark.parametrize('s', [0, 0.1, 1e-3, 1e-5])
@@ -3555,23 +3556,25 @@ class TestMakeSplprep:
         # assert the behavior of FITPACK's splrep
         tck, u = splprep(y, s=s)
         tck_a, u_a = splprep(np.asarray(y), s=s)
-        assert_allclose(u, u_a, atol=s)
-        assert_allclose(tck[0], tck_a[0], atol=1e-15)
-        assert_allclose(tck[1], tck_a[1], atol=1e-15)
+        xp_assert_close(u, u_a, atol=s)
+        xp_assert_close(tck[0], tck_a[0], atol=1e-15)
+        assert len(tck[1]) == len(tck_a[1])
+        for c1, c2 in zip(tck[1], tck_a[1]):
+            xp_assert_close(c1, c2, atol=1e-15)
         assert tck[2] == tck_a[2]
         assert np.shape(splev(u, tck)) == np.shape(y)
 
         spl, u = make_splprep(y, s=s)
-        assert_allclose(u, u_a, atol=1e-15)
-        assert_allclose(spl.t, tck_a[0], atol=1e-15)
-        assert_allclose(spl.c.T, tck_a[1], atol=1e-15)
+        xp_assert_close(u, u_a, atol=1e-15)
+        xp_assert_close(spl.t, tck_a[0], atol=1e-15)
+        xp_assert_close(spl.c.T, tck_a[1], atol=1e-15)
         assert spl.k == tck_a[2]
         assert spl(u).shape == np.shape(y)
 
         spl, u = make_splprep(np.asarray(y), s=s)
-        assert_allclose(u, u_a, atol=1e-15)
-        assert_allclose(spl.t, tck_a[0], atol=1e-15)
-        assert_allclose(spl.c.T, tck_a[1], atol=1e-15)
+        xp_assert_close(u, u_a, atol=1e-15)
+        xp_assert_close(spl.t, tck_a[0], atol=1e-15)
+        xp_assert_close(spl.c.T, tck_a[1], atol=1e-15)
         assert spl.k == tck_a[2]
         assert spl(u).shape == np.shape(y)
 
@@ -3582,7 +3585,7 @@ class TestMakeSplprep:
         x, y, k = self._get_xyk(m=10)
 
         spl, u = make_splprep(y)
-        assert_allclose(spl(u), y, atol=1e-15)
+        xp_assert_close(spl(u), y, atol=1e-15)
 
     def test_s_zero_vs_near_zero(self):
         # s=0 and s \approx 0 are consistent
@@ -3591,9 +3594,9 @@ class TestMakeSplprep:
         spl_i, u_i = make_splprep(y, s=0)
         spl_n, u_n = make_splprep(y, s=1e-15)
 
-        assert_allclose(u_i, u_n, atol=1e-15)
-        assert_allclose(spl_i(u_i), y, atol=1e-15)
-        assert_allclose(spl_n(u_n), y, atol=1e-7)
+        xp_assert_close(u_i, u_n, atol=1e-15)
+        xp_assert_close(spl_i(u_i), y, atol=1e-15)
+        xp_assert_close(spl_n(u_n), y, atol=1e-7)
         assert spl_i.axis == spl_n.axis
         assert spl_i.c.shape == spl_n.c.shape
 
@@ -3612,5 +3615,5 @@ class TestMakeSplprep:
         spl, u = make_splprep([x], s=1e-5)
 
         assert spl(u).shape == (1, 8)
-        assert_allclose(spl(u), [x], atol=1e-15)
+        xp_assert_close(spl(u), [x], atol=1e-15)
 

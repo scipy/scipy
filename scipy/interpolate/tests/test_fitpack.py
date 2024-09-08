@@ -84,8 +84,8 @@ class TestSmokeTests:
             if not per:
                 spl = make_splrep(x, v, k=k, s=s, xb=xb, xe=xe)
                 if len(spl.t) == len(tck[0]):
-                    assert_allclose(spl.t, tck[0], atol=1e-15)
-                    assert_allclose(spl.c, tck[1][:spl.c.size], atol=1e-13)
+                    xp_assert_close(spl.t, tck[0], atol=1e-15)
+                    xp_assert_close(spl.c, tck[1][:spl.c.size], atol=1e-13)
                 else:
                     assert k == 5   # knot length differ in some k=5 cases
 
