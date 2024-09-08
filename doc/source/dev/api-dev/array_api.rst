@@ -326,14 +326,14 @@ markers to every test function using ``pytestmark``::
 After applying these markers, ``dev.py test`` can be used with the new option
 ``-b`` or ``--array-api-backend``::
 
-  python dev.py test -b numpy -b pytorch -s cluster
+  python dev.py test -b numpy -b torch -s cluster
 
 This automatically sets ``SCIPY_ARRAY_API`` appropriately. To test a library
 that has multiple devices with a non-default device, a second environment
 variable (``SCIPY_DEVICE``, only used in the test suite) can be set. Valid
 values depend on the array library under test, e.g. for PyTorch, valid values are
 ``"cpu", "cuda", "mps"``. To run the test suite with the PyTorch MPS
-backend, use: ``SCIPY_DEVICE=mps python dev.py test -b pytorch``.
+backend, use: ``SCIPY_DEVICE=mps python dev.py test -b torch``.
 
 Note that there is a GitHub Actions workflow which tests with array-api-strict,
 PyTorch, and JAX on CPU.
