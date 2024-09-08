@@ -820,19 +820,19 @@ namespace numpy {
             return tr(func);
         }
 
-        template <typename Func, typename Tr0, typename Tr1>
-        decltype(auto) compose(Func func, Tr0 tr0, Tr1 tr1) {
-            return compose(tr0(func), tr1);
+        template <typename Func, typename Tr0, typename Tr1, typename... Trs>
+        decltype(auto) compose(Func func, Tr0 tr0, Tr1 tr1, Trs... trs) {
+            return compose(tr0(func), tr1, trs...);
         }
 
     } // namespace detail
 
     template <typename... Trs>
-    class composes {
+    class compose {
         std::tuple<Trs...> m_trs;
 
       public:
-        composes(Trs... trs) : m_trs(trs...) {}
+        compose(Trs... trs) : m_trs(trs...) {}
 
         template <typename Func>
         decltype(auto) operator()(Func func) const {
@@ -895,7 +895,7 @@ namespace numpy {
         }
 
         template <typename... Trs, typename... Funcs>
-        ufunc_overloads(composes<Trs...> trs, Funcs... funcs) : ufunc_overloads(trs(funcs)...) {}
+        ufunc_overloads(compose<Trs...> trs, Funcs... funcs) : ufunc_overloads(trs(funcs)...) {}
 
         ufunc_overloads(ufunc_overloads &&other) = default;
 
@@ -1018,12 +1018,12 @@ namespace numpy {
     template <typename Func>
     autodiff_wrapper(Func func) -> autodiff_wrapper<Func>;
 
-    struct {
+    struct autodiff {
         template <typename Func>
         decltype(auto) operator()(Func f) {
             return autodiff_wrapper{f};
         }
-    } autodiff;
+    };
 
     template <typename Func, typename Signature = signature_of_t<Func>>
     struct use_long_long_int_wrapper;

@@ -574,15 +574,15 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
 
     PyObject *legendre_p = Py_BuildValue(
         "(N, N, N)",
-        xsf::numpy::gufunc({xsf::numpy::composes{xsf::numpy::autodiff, xsf::numpy::use_long_long_int()},
+        xsf::numpy::gufunc({xsf::numpy::compose{xsf::numpy::autodiff(), xsf::numpy::use_long_long_int()},
                             static_cast<xsf::numpy::autodiff0_id_d>(xsf::legendre_p),
                             static_cast<xsf::numpy::autodiff0_if_f>(xsf::legendre_p)},
                            "legendre_p", nullptr, "(),()->(1)", [](const npy_intp *dims, npy_intp *new_dims) {}),
-        xsf::numpy::gufunc({xsf::numpy::composes{xsf::numpy::autodiff, xsf::numpy::use_long_long_int()},
+        xsf::numpy::gufunc({xsf::numpy::compose{xsf::numpy::autodiff(), xsf::numpy::use_long_long_int()},
                             static_cast<xsf::numpy::autodiff1_id_d>(xsf::legendre_p),
                             static_cast<xsf::numpy::autodiff1_if_f>(xsf::legendre_p)},
                            "legendre_p", nullptr, "(),()->(2)", [](const npy_intp *dims, npy_intp *new_dims) {}),
-        xsf::numpy::gufunc({xsf::numpy::composes{xsf::numpy::autodiff, xsf::numpy::use_long_long_int()},
+        xsf::numpy::gufunc({xsf::numpy::compose{xsf::numpy::autodiff(), xsf::numpy::use_long_long_int()},
                             static_cast<xsf::numpy::autodiff2_id_d>(xsf::legendre_p),
                             static_cast<xsf::numpy::autodiff2_if_f>(xsf::legendre_p)},
                            "legendre_p", nullptr, "(),()->(3)", [](const npy_intp *dims, npy_intp *new_dims) {}));
@@ -590,7 +590,7 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
 
     PyObject *assoc_legendre_p = Py_BuildValue(
         "{(O, i): N, (O, i): N, (O, i): N, (O, i): N, (O, i): N,(O, i): N}", Py_True, 0,
-        xsf::numpy::gufunc({xsf::numpy::composes{xsf::numpy::autodiff, xsf::numpy::use_long_long_int()},
+        xsf::numpy::gufunc({xsf::numpy::compose{xsf::numpy::autodiff(), xsf::numpy::use_long_long_int()},
                             [](int n, int m, xsf::dual<double, 0> z, int branch_cut) {
                                 return xsf::assoc_legendre_p(xsf::assoc_legendre_norm, n, m, z, branch_cut);
                             },
@@ -606,7 +606,7 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
                            1, "assoc_legendre_p", nullptr, "(),(),(),()->(1)",
                            [](const npy_intp *dims, npy_intp *new_dims) {}),
         Py_True, 1,
-        xsf::numpy::gufunc({xsf::numpy::composes{xsf::numpy::autodiff, xsf::numpy::use_long_long_int()},
+        xsf::numpy::gufunc({xsf::numpy::compose{xsf::numpy::autodiff(), xsf::numpy::use_long_long_int()},
                             [](int n, int m, xsf::dual<double, 1> z, int branch_cut) {
                                 return xsf::assoc_legendre_p(xsf::assoc_legendre_norm, n, m, z, branch_cut);
                             },
@@ -622,7 +622,7 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
                            1, "assoc_legendre_p", nullptr, "(),(),(),()->(2)",
                            [](const npy_intp *dims, npy_intp *new_dims) {}),
         Py_True, 2,
-        xsf::numpy::gufunc({xsf::numpy::composes{xsf::numpy::autodiff, xsf::numpy::use_long_long_int()},
+        xsf::numpy::gufunc({xsf::numpy::compose{xsf::numpy::autodiff(), xsf::numpy::use_long_long_int()},
                             [](int n, int m, xsf::dual<double, 2> z, int branch_cut) {
                                 return xsf::assoc_legendre_p(xsf::assoc_legendre_norm, n, m, z, branch_cut);
                             },
@@ -638,7 +638,7 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
                            1, "assoc_legendre_p", nullptr, "(),(),(),()->(3)",
                            [](const npy_intp *dims, npy_intp *new_dims) {}),
         Py_False, 0,
-        xsf::numpy::gufunc({xsf::numpy::composes{xsf::numpy::autodiff, xsf::numpy::use_long_long_int()},
+        xsf::numpy::gufunc({xsf::numpy::compose{xsf::numpy::autodiff(), xsf::numpy::use_long_long_int()},
                             [](int n, int m, xsf::dual<double, 0> z, int branch_cut) {
                                 return xsf::assoc_legendre_p(xsf::assoc_legendre_unnorm, n, m, z, branch_cut);
                             },
@@ -654,7 +654,7 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
                            1, "assoc_legendre_p", nullptr, "(),(),(),()->(1)",
                            [](const npy_intp *dims, npy_intp *new_dims) {}),
         Py_False, 1,
-        xsf::numpy::gufunc({xsf::numpy::composes{xsf::numpy::autodiff, xsf::numpy::use_long_long_int()},
+        xsf::numpy::gufunc({xsf::numpy::compose{xsf::numpy::autodiff(), xsf::numpy::use_long_long_int()},
                             [](int n, int m, xsf::dual<double, 1> z, int branch_cut) {
                                 return xsf::assoc_legendre_p(xsf::assoc_legendre_unnorm, n, m, z, branch_cut);
                             },
@@ -670,7 +670,7 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
                            1, "assoc_legendre_p", nullptr, "(),(),(),()->(2)",
                            [](const npy_intp *dims, npy_intp *new_dims) {}),
         Py_False, 2,
-        xsf::numpy::gufunc({xsf::numpy::composes{xsf::numpy::autodiff, xsf::numpy::use_long_long_int()},
+        xsf::numpy::gufunc({xsf::numpy::compose{xsf::numpy::autodiff(), xsf::numpy::use_long_long_int()},
                             [](int n, int m, xsf::dual<double, 2> z, int branch_cut) {
                                 return xsf::assoc_legendre_p(xsf::assoc_legendre_unnorm, n, m, z, branch_cut);
                             },
@@ -900,15 +900,15 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
 
     PyObject *sph_legendre_p = Py_BuildValue(
         "(N, N, N)",
-        xsf::numpy::gufunc({xsf::numpy::composes{xsf::numpy::autodiff, xsf::numpy::use_long_long_int()},
+        xsf::numpy::gufunc({xsf::numpy::compose{xsf::numpy::autodiff(), xsf::numpy::use_long_long_int()},
                             static_cast<xsf::numpy::autodiff0_iid_d>(xsf::sph_legendre_p),
                             static_cast<xsf::numpy::autodiff0_iif_f>(xsf::sph_legendre_p)},
                            "sph_legendre_p", nullptr, "(),(),()->(1)", [](const npy_intp *dims, npy_intp *new_dims) {}),
-        xsf::numpy::gufunc({xsf::numpy::composes{xsf::numpy::autodiff, xsf::numpy::use_long_long_int()},
+        xsf::numpy::gufunc({xsf::numpy::compose{xsf::numpy::autodiff(), xsf::numpy::use_long_long_int()},
                             static_cast<xsf::numpy::autodiff1_iid_d>(xsf::sph_legendre_p),
                             static_cast<xsf::numpy::autodiff1_iif_f>(xsf::sph_legendre_p)},
                            "sph_legendre_p", nullptr, "(),(),()->(2)", [](const npy_intp *dims, npy_intp *new_dims) {}),
-        xsf::numpy::gufunc({xsf::numpy::composes{xsf::numpy::autodiff, xsf::numpy::use_long_long_int()},
+        xsf::numpy::gufunc({xsf::numpy::compose{xsf::numpy::autodiff(), xsf::numpy::use_long_long_int()},
                             static_cast<xsf::numpy::autodiff2_iid_d>(xsf::sph_legendre_p),
                             static_cast<xsf::numpy::autodiff2_iif_f>(xsf::sph_legendre_p)},
                            "sph_legendre_p", nullptr, "(),(),()->(3)",
@@ -923,17 +923,17 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
 
     PyObject *sph_harm_y =
         Py_BuildValue("(N, N, N)",
-                      xsf::numpy::gufunc({xsf::numpy::composes{xsf::numpy::autodiff, xsf::numpy::use_long_long_int()},
+                      xsf::numpy::gufunc({xsf::numpy::compose{xsf::numpy::autodiff(), xsf::numpy::use_long_long_int()},
                                           static_cast<xsf::numpy::autodiff00_iidd_D>(xsf::sph_harm_y),
                                           static_cast<xsf::numpy::autodiff00_iiff_F>(xsf::sph_harm_y)},
                                          "sph_harm_y", nullptr, "(),(),(),()->(1,1)",
                                          [](const npy_intp *dims, npy_intp *new_dims) {}),
-                      xsf::numpy::gufunc({xsf::numpy::composes{xsf::numpy::autodiff, xsf::numpy::use_long_long_int()},
+                      xsf::numpy::gufunc({xsf::numpy::compose{xsf::numpy::autodiff(), xsf::numpy::use_long_long_int()},
                                           static_cast<xsf::numpy::autodiff11_iidd_D>(xsf::sph_harm_y),
                                           static_cast<xsf::numpy::autodiff11_iiff_F>(xsf::sph_harm_y)},
                                          "sph_harm_y", nullptr, "(),(),(),()->(2,2)",
                                          [](const npy_intp *dims, npy_intp *new_dims) {}),
-                      xsf::numpy::gufunc({xsf::numpy::composes{xsf::numpy::autodiff, xsf::numpy::use_long_long_int()},
+                      xsf::numpy::gufunc({xsf::numpy::compose{xsf::numpy::autodiff(), xsf::numpy::use_long_long_int()},
                                           static_cast<xsf::numpy::autodiff22_iidd_D>(xsf::sph_harm_y),
                                           static_cast<xsf::numpy::autodiff22_iiff_F>(xsf::sph_harm_y)},
                                          "sph_harm_y", nullptr, "(),(),(),()->(3,3)",
