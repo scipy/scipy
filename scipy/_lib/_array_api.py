@@ -312,6 +312,13 @@ def xp_assert_close(actual, desired, *, rtol=None, atol=0, check_namespace=True,
     __tracebackhide__ = True  # Hide traceback for py.test
     if xp is None:
         xp = array_namespace(actual)
+
+    if (isinstance(actual, (int, float, complex)) and
+        isinstance(desired, (int, float, complex))
+    ):
+        actual = xp.asarray(actual)
+        desired = xp.asarray(desired)
+
     desired = _strict_check(actual, desired, xp, check_namespace=check_namespace,
                             check_dtype=check_dtype, check_shape=check_shape,
                             check_0d=check_0d)
