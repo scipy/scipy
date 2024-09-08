@@ -379,8 +379,10 @@ class TestCephes:
         p = 0.8756751669632105666874
         assert_allclose(cephes.fdtri(0.1, 1, p), 3, rtol=1e-12)
 
-    @pytest.mark.xfail(reason='Returns nan on i686.')
     def test_fdtri_mysterious_failure(self):
+        # This was failing on i686; reason not identified.
+        # It passes after the Cephes translation to C++.
+        # https://github.com/scipy/scipy/issues/7931
         assert_allclose(cephes.fdtri(1, 1, 0.5), 1)
 
     def test_fdtridfd(self):
