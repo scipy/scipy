@@ -1,6 +1,6 @@
 import pytest
 import numpy as np
-from numpy.testing import assert_equal, assert_allclose, suppress_warnings
+from numpy.testing import assert_equal, assert_array_equal, assert_allclose, suppress_warnings
 
 from scipy.special._ufuncs import sinpi, cospi, tanpi, cotpi
 
@@ -161,266 +161,41 @@ def test_cotpi_complex_near_pole():
             assert_allclose(expected.imag, actual.imag, rtol=1e-13, atol=1e-13)
 
 def test_sinpi_zero_sign_ieee754_2008():
-    y = sinpi(-3.0)
-    assert y == 0.0
-    assert np.signbit(y)
-    
-    y = sinpi(-2.0)
-    assert y == 0.0
-    assert np.signbit(y)
-    
-    y = sinpi(-1.0)
-    assert y == 0.0
-    assert np.signbit(y)
-    
-    y = sinpi(-0.0)
-    assert y == 0.0
-    assert np.signbit(y)
-
-    y = sinpi(0.0)
-    assert y == 0.0
-    assert not np.signbit(y)
-
-    y = sinpi(1.0)
-    assert y == 0.0
-    assert not np.signbit(y)
-
-    y = sinpi(2.0)
-    assert y == 0.0
-    assert not np.signbit(y)
-
-    y = sinpi(3.0)
-    assert y == 0.0
-    assert not np.signbit(y)
+    y = sinpi([-3.0, -2.0, -1.0, -0.0, +0.0, 1.0, 2.0, 3.0])
+    assert_array_equal(y, np.zeros(8))
+    assert_array_equal(np.signbit(y), [True, True, True, True, False, False, False, False])
 
 def test_cospi_zero_sign_ieee754_2008():
-    y = cospi(-2.5)
-    assert y == 0.0
-    assert not np.signbit(y)
-
-    y = cospi(-1.5)
-    assert y == 0.0
-    assert not np.signbit(y)
-
-    y = cospi(-0.5)
-    assert y == 0.0
-    assert not np.signbit(y)
-
-    y = cospi(0.5)
-    assert y == 0.0
-    assert not np.signbit(y)
-
-    y = cospi(1.5)
-    assert y == 0.0
-    assert not np.signbit(y)
-
-    y = cospi(2.5)
-    assert y == 0.0
-    assert not np.signbit(y)
+    y = cospi([-2.5, -1.5, -0.5, 0.5, 1.5, 2.5])
+    assert_array_equal(y, np.zeros(6))
+    assert_array_equal(np.signbit(y), [False, False, False, False, False, False])
 
 def test_tanpi_zero_sign_ieee754_2019():
-    y = tanpi(-4.0)
-    assert y == 0.0
-    assert np.signbit(y)
-
-    y = tanpi(-3.0)
-    assert y == 0.0
-    assert not np.signbit(y)
-
-    y = tanpi(-2.0)
-    assert y == 0.0
-    assert np.signbit(y)
-    
-    y = tanpi(-1.0)
-    assert y == 0.0
-    assert not np.signbit(y)
-    
-    y = tanpi(-0.0)
-    assert y == 0.0
-    assert np.signbit(y)
-
-    y = tanpi(0.0)
-    assert y == 0.0
-    assert not np.signbit(y)
-
-    y = tanpi(1.0)
-    assert y == 0.0
-    assert np.signbit(y)
-
-    y = tanpi(2.0)
-    assert y == 0.0
-    assert not np.signbit(y)
-
-    y = tanpi(3.0)
-    assert y == 0.0
-    assert np.signbit(y)
-
-    y = tanpi(4.0)
-    assert y == 0.0
-    assert not np.signbit(y)
+    y = tanpi([-3.0, -2.0, -1.0, -0.0, +0.0, 1.0, 2.0, 3.0])
+    assert_array_equal(y, np.zeros(8))
+    assert_array_equal(np.signbit(y), [False, True, False, True, False, True, False, True])
 
 def test_cotpi_zero_sign():
-    y = cotpi(-3.5)
-    assert y == 0.0
-    assert not np.signbit(y)
-
-    y = cotpi(-2.5)
-    assert y == 0.0
-    assert np.signbit(y)
-
-    y = cotpi(-1.5)
-    assert y == 0.0
-    assert not np.signbit(y)
-
-    y = cotpi(-0.5)
-    assert y == 0.0
-    assert np.signbit(y)
-
-    y = cotpi(0.5)
-    assert y == 0.0
-    assert not np.signbit(y)
-
-    y = cotpi(1.5)
-    assert y == 0.0
-    assert np.signbit(y)
-
-    y = cotpi(2.5)
-    assert y == 0.0
-    assert not np.signbit(y)
-
-    y = cotpi(3.5)
-    assert y == 0.0
-    assert np.signbit(y)
-
+    y = cotpi([-3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5])
+    assert_array_equal(y, np.zeros(8))
+    assert_array_equal(np.signbit(y), [False, True, False, True, False, True, False, True])
 
 def test_sinpi_zero_sign_ieee754_2008_complex():
-    y = sinpi(-3.0+0.0j)
-    assert y.real == 0.0
-    assert np.signbit(y.real)
-    
-    y = sinpi(-2.0+0.0j)
-    assert y.real == 0.0
-    assert np.signbit(y.real)
-    
-    y = sinpi(-1.0+0.0j)
-    assert y.real == 0.0
-    assert np.signbit(y.real)
-    
-    y = sinpi(complex(-0.0, 0.0))
-    assert y.real == 0.0
-    assert np.signbit(y.real)
-
-    y = sinpi(0.0+0.0j)
-    assert y.real == 0.0
-    assert not np.signbit(y.real)
-
-    y = sinpi(1.0+0.0j)
-    assert y.real == 0.0
-    assert not np.signbit(y.real)
-
-    y = sinpi(2.0+0.0j)
-    assert y.real == 0.0
-    assert not np.signbit(y.real)
-
-    y = sinpi(3.0+0.0j)
-    assert y.real == 0.0
-    assert not np.signbit(y.real)
+    y = sinpi(np.array([-3.0, -2.0, -1.0, -0.0, +0.0, 1.0, 2.0, 3.0], dtype=np.complex128))
+    assert_array_equal(y.real, np.zeros(8))
+    assert_array_equal(np.signbit(y.real), [True, True, True, True, False, False, False, False])
 
 def test_cospi_zero_sign_ieee754_2008_complex():
-    y = cospi(-2.5+0.0j)
-    assert y.real == 0.0
-    assert not np.signbit(y.real)
-
-    y = cospi(-1.5+0.0j)
-    assert y.real == 0.0
-    assert not np.signbit(y.real)
-
-    y = cospi(-0.5+0.0j)
-    assert y.real == 0.0
-    assert not np.signbit(y.real)
-
-    y = cospi(0.5+0.0j)
-    assert y.real == 0.0
-    assert not np.signbit(y.real)
-
-    y = cospi(1.5+0.0j)
-    assert y.real == 0.0
-    assert not np.signbit(y.real)
-
-    y = cospi(2.5+0.0j)
-    assert y.real == 0.0
-    assert not np.signbit(y.real)
+    y = cospi(np.array([-2.5, -1.5, -0.5, 0.5, 1.5, 2.5], dtype=np.complex128))
+    assert_array_equal(y.real, np.zeros(6))
+    assert_array_equal(np.signbit(y.real), [False, False, False, False, False, False])
 
 def test_tanpi_zero_sign_ieee754_2019_complex():
-    y = tanpi(-4.0+0.0j)
-    assert y.real == 0.0
-    assert np.signbit(y.real)
-
-    y = tanpi(-3.0+0.0j)
-    assert y.real == 0.0
-    assert not np.signbit(y.real)
-
-    y = tanpi(-2.0+0.0j)
-    assert y.real == 0.0
-    assert np.signbit(y.real)
-    
-    y = tanpi(-1.0+0.0j)
-    assert y.real == 0.0
-    assert not np.signbit(y.real)
-    
-    y = tanpi(complex(-0.0, 0.0))
-    assert y.real == 0.0
-    assert np.signbit(y.real)
-
-    y = tanpi(0.0+0.0j)
-    assert y.real == 0.0
-    assert not np.signbit(y.real)
-
-    y = tanpi(1.0+0.0j)
-    assert y.real == 0.0
-    assert np.signbit(y.real)
-
-    y = tanpi(2.0+0.0j)
-    assert y.real == 0.0
-    assert not np.signbit(y.real)
-
-    y = tanpi(3.0+0.0j)
-    assert y.real == 0.0
-    assert np.signbit(y.real)
-
-    y = tanpi(4.0+0.0j)
-    assert y.real == 0.0
-    assert not np.signbit(y.real)
+    y = tanpi(np.array([-3.0, -2.0, -1.0, -0.0, +0.0, 1.0, 2.0, 3.0], dtype=np.complex128))
+    assert_array_equal(y.real, np.zeros(8))
+    assert_array_equal(np.signbit(y.real), [False, True, False, True, False, True, False, True])
 
 def test_cotpi_zero_sign_complex():
-    y = cotpi(-3.5+0.0j)
-    assert y.real == 0.0
-    assert not np.signbit(y.real)
-
-    y = cotpi(-2.5+0.0j)
-    assert y.real == 0.0
-    assert np.signbit(y.real)
-
-    y = cotpi(-1.5+0.0j)
-    assert y.real == 0.0
-    assert not np.signbit(y.real)
-
-    y = cotpi(-0.5+0.0j)
-    assert y.real == 0.0
-    assert np.signbit(y.real)
-
-    y = cotpi(0.5+0.0j)
-    assert y.real == 0.0
-    assert not np.signbit(y.real)
-
-    y = cotpi(1.5+0.0j)
-    assert y.real == 0.0
-    assert np.signbit(y.real)
-
-    y = cotpi(2.5+0.0j)
-    assert y.real == 0.0
-    assert not np.signbit(y.real)
-
-    y = cotpi(3.5+0.0j)
-    assert y.real == 0.0
-    assert np.signbit(y.real)
+    y = cotpi(np.array([-3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5], dtype=np.complex128))
+    assert_array_equal(y.real, np.zeros(8))
+    assert_array_equal(np.signbit(y.real), [False, True, False, True, False, True, False, True])
