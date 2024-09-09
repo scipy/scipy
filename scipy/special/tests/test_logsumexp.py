@@ -11,6 +11,9 @@ from scipy._lib._array_api_no_0d import xp_assert_equal, xp_assert_close
 from scipy.special import logsumexp, softmax
 
 
+dtypes = ['float32', 'float64', 'int32', 'int64', 'complex64', 'complex128']
+integral_dtypes = ['int32', 'int64']
+
 @array_api_compatible
 @pytest.mark.usefixtures("skip_xp_backends")
 @pytest.mark.skip_xp_backends('jax.numpy',
@@ -155,16 +158,36 @@ class TestLogSumExp:
     def test_xp_invalid_input(self, arg, xp):
         assert logsumexp(arg) == logsumexp(np.asarray(np.atleast_1d(arg)))
 
-    @pytest.mark.parametrize(
-        'dtype', ['float32', 'float64', 'int32', 'int64', 'complex64', 'complex128']
-    )
-    def test_dtypes(self, dtype, xp):
+    @pytest.mark.skip_xp_backends(np_only=True,
+                                  reasons=["Lists correspond with NumPy backend"])
+    def test_list(self, xp):
+        a = [1000, 1000]
+        desired = xp.asarray(1000.0 + math.log(2.0), dtype=np.float64)
+        xp_assert_close(logsumexp(a), desired)
+
+    @pytest.mark.parametrize('dtype', dtypes)
+    def test_dtypes_a(self, dtype, xp):
+        if xp.__name__ == 'array_api_strict' and dtype in integral_dtypes:
+            pytest.skip('`array_api_strict` does not promote ints to floats')
         dtype = getattr(xp, dtype)
-        desired_dtype = xp.asarray(1.).dtype if dtype in {xp.int32, xp.int64} else dtype
+        desired_dtype = xp.result_type(dtype, xp.float32)
         a = xp.asarray([1000., 1000.], dtype=dtype)
         desired = xp.asarray(1000.0 + math.log(2.0), dtype=desired_dtype)
         xp_assert_close(logsumexp(a), desired)
 
+    @pytest.mark.parametrize('dtype_a', dtypes)
+    @pytest.mark.parametrize('dtype_b', dtypes)
+    def test_dtypes_ab(self, dtype_a, dtype_b, xp):
+        dtype_is_integral = dtype_a in integral_dtypes or dtype_b in integral_dtypes
+        if xp.__name__ == 'array_api_strict' and dtype_is_integral:
+            pytest.skip('`array_api_strict` does not promote ints to floats')
+        xp_dtype_a = getattr(xp, dtype_a)
+        xp_dtype_b = getattr(xp, dtype_b)
+        a = xp.asarray([2, 1], dtype=xp_dtype_a)
+        b = xp.asarray([1, -1], dtype=xp_dtype_b)
+        result_dtype = xp.result_type(xp_dtype_a, xp_dtype_b, xp.float32)
+        desired = xp.asarray(math.log(math.exp(2) - math.exp(1)), dtype=result_dtype)
+        xp_assert_close(logsumexp(a, b=b), desired)
 
 class TestSoftmax:
     def test_softmax_fixtures(self):

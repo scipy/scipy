@@ -583,6 +583,8 @@ def xp_broadcast_promote(*args, ensure_writeable=False, force_floating=False, xp
     dtypes = [arg.dtype for arg in args_not_none]
     dtype = xp.result_type(*dtypes)
     if force_floating and xp.isdtype(dtype, 'integral'):
+        # If we were to add `xp.float32` before checking whether the result
+        # type is otherwise integral, we risk promotion from lower float.
         dtype = xp.result_type(dtype, xp.float32)
 
     # determine result shape
