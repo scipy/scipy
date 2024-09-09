@@ -12,6 +12,8 @@ from scipy.integrate import (romb, newton_cotes,
                              qmc_quad, cumulative_simpson)
 from scipy.integrate._quadrature import _cumulative_simpson_unequal_intervals
 from scipy import stats, special
+from scipy.conftest import array_api_compatible, skip_xp_invalid_arg
+from scipy._lib._array_api import xp_assert_close
 
 
 class TestFixedQuad:
@@ -264,51 +266,53 @@ class TestCumulative_trapezoid:
             cumulative_trapezoid(y=[])
 
 
+@array_api_compatible
 class TestTrapezoid:
-    def test_simple(self):
-        x = np.arange(-10, 10, .1)
-        r = trapezoid(np.exp(-.5 * x ** 2) / np.sqrt(2 * np.pi), dx=0.1)
+    def test_simple(self, xp):
+        x = xp.arange(-10, 10, .1)
+        r = trapezoid(xp.exp(-.5 * x ** 2) / xp.sqrt(2 * xp.asarray(xp.pi)), dx=0.1)
         # check integral of normal equals 1
-        assert_allclose(r, 1)
+        xp_assert_close(xp.asarray(r), xp.asarray(1.0))
 
-    def test_ndim(self):
-        x = np.linspace(0, 1, 3)
-        y = np.linspace(0, 2, 8)
-        z = np.linspace(0, 3, 13)
+    def test_ndim(self, xp):
+        x = xp.linspace(0, 1, 3)
+        y = xp.linspace(0, 2, 8)
+        z = xp.linspace(0, 3, 13)
 
-        wx = np.ones_like(x) * (x[1] - x[0])
+        wx = xp.ones_like(x) * (x[1] - x[0])
         wx[0] /= 2
         wx[-1] /= 2
-        wy = np.ones_like(y) * (y[1] - y[0])
+        wy = xp.ones_like(y) * (y[1] - y[0])
         wy[0] /= 2
         wy[-1] /= 2
-        wz = np.ones_like(z) * (z[1] - z[0])
+        wz = xp.ones_like(z) * (z[1] - z[0])
         wz[0] /= 2
         wz[-1] /= 2
 
         q = x[:, None, None] + y[None,:, None] + z[None, None,:]
 
-        qx = (q * wx[:, None, None]).sum(axis=0)
-        qy = (q * wy[None, :, None]).sum(axis=1)
-        qz = (q * wz[None, None, :]).sum(axis=2)
+        qx = xp.sum(q * wx[:, None, None], axis=0)
+        qy = xp.sum(q * wy[None, :, None], axis=1)
+        qz = xp.sum(q * wz[None, None, :], axis=2)
 
         # n-d `x`
         r = trapezoid(q, x=x[:, None, None], axis=0)
-        assert_allclose(r, qx)
+        xp_assert_close(r, qx)
         r = trapezoid(q, x=y[None,:, None], axis=1)
-        assert_allclose(r, qy)
+        xp_assert_close(r, qy)
         r = trapezoid(q, x=z[None, None,:], axis=2)
-        assert_allclose(r, qz)
+        xp_assert_close(r, qz)
 
         # 1-d `x`
         r = trapezoid(q, x=x, axis=0)
-        assert_allclose(r, qx)
+        xp_assert_close(r, qx)
         r = trapezoid(q, x=y, axis=1)
-        assert_allclose(r, qy)
+        xp_assert_close(r, qy)
         r = trapezoid(q, x=z, axis=2)
-        assert_allclose(r, qz)
+        xp_assert_close(r, qz)
 
-    def test_masked(self):
+    @skip_xp_invalid_arg
+    def test_masked(self, xp):
         # Testing that masked arrays behave as if the function is 0 where
         # masked
         x = np.arange(5)
