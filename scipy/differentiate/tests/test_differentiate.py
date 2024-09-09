@@ -5,8 +5,8 @@ from numpy.testing import assert_allclose
 
 from scipy.conftest import array_api_compatible
 import scipy._lib._elementwise_iterative_method as eim
-from scipy._lib._array_api import (xp_assert_close, xp_assert_equal, xp_assert_less,
-                                   is_numpy, is_torch, array_namespace)
+from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal, xp_assert_less
+from scipy._lib._array_api import is_numpy, is_torch, array_namespace
 
 from scipy import stats, optimize, special
 from scipy.differentiate import differentiate, jacobian
@@ -103,7 +103,7 @@ class TestDifferentiate:
             funcs = [lambda x: x - 2.5,  # converges
                      lambda x: xp.exp(x)*rng.random(),  # error increases
                      lambda x: xp.exp(x),  # reaches maxiter due to order=2
-                     lambda x: xp.full_like(x, xp.nan)[()]]  # stops due to NaN
+                     lambda x: xp.full_like(x, xp.nan)]  # stops due to NaN
             res = [funcs[int(j)](x) for x, j in zip(xs, xp.reshape(js, (-1,)))]
             return xp.stack(res)
         f.nit = 0
@@ -126,7 +126,7 @@ class TestDifferentiate:
             out = [x - 2.5,  # converges
                    xp.exp(x)*rng.random(),  # error increases
                    xp.exp(x),  # reaches maxiter due to order=2
-                   xp.full_like(x, xp.nan)[()]]  # stops due to NaN
+                   xp.full_like(x, xp.nan)]  # stops due to NaN
             return xp.stack(out)
 
         res = differentiate(f, xp.asarray(1, dtype=xp.float64),
@@ -308,7 +308,7 @@ class TestDifferentiate:
 
         # Test that dtypes are preserved
         dtype = getattr(xp, dtype)
-        x = xp.asarray(x, dtype=dtype)[()]
+        x = xp.asarray(x, dtype=dtype)
 
         def f(x):
             assert x.dtype == dtype

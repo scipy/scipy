@@ -611,7 +611,7 @@ class _spbase:
             elif other.shape == (N, 1):
                 result = self._matmul_vector(other.ravel())
                 if self.ndim == 1:
-                    return result
+                    return result.reshape(1)
                 return result.reshape(M, 1)
             elif other.ndim == 2 and other.shape[0] == N:
                 return self._matmul_multivector(other)
@@ -655,7 +655,10 @@ class _spbase:
 
             if other.ndim == 2 and other.shape[1] == 1:
                 # If 'other' was an (nx1) column vector, reshape the result
-                result = result.reshape(-1, 1)
+                if self.ndim == 1:
+                    result = result.reshape(1)
+                else:
+                    result = result.reshape(-1, 1)
 
             return result
 

@@ -1,5 +1,10 @@
 import numpy as np
 from scipy._lib._util import _asarray_validated
+from scipy._lib._array_api import (
+    array_namespace,
+    xp_size,
+    xp_broadcast_promote,
+)
 
 __all__ = ["logsumexp", "softmax", "log_softmax"]
 
@@ -93,43 +98,49 @@ def logsumexp(a, axis=None, b=None, keepdims=False, return_sign=False):
     1.6094379124341005, 1.6094379124341005
 
     """
-    a = _asarray_validated(a, check_finite=False)
+    xp = array_namespace(a, b)
+    a, b = xp_broadcast_promote(a, b, ensure_writeable=True, force_floating=True, xp=xp)
+    axis = tuple(range(a.ndim)) if axis is None else axis
+
     if b is not None:
-        a, b = np.broadcast_arrays(a, b)
-        if np.any(b == 0):
-            a = a + 0.  # promote to at least float
-            a[b == 0] = -np.inf
+        a[b == 0] = -xp.inf
 
     # Scale by real part for complex inputs, because this affects
     # the magnitude of the exponential.
-    initial_value = -np.inf if np.size(a) == 0 else None
-    a_max = np.amax(a.real, axis=axis, keepdims=True, initial=initial_value)
+    if xp_size(a) == 0:
+        # because `xp.max` doesn't have `initial` argument...
+        shape = np.asarray(a.shape)  # NumPy is concise for scalar or tuple `axis`
+        shape[axis] = 1
+        a_max = xp.full(tuple(shape), -xp.inf, dtype=a.dtype)
+    else:
+        real = xp.real(a) if xp.isdtype(a.dtype, "complex floating") else a
+        a_max = xp.max(real, axis=axis, keepdims=True)
 
     if a_max.ndim > 0:
-        a_max[~np.isfinite(a_max)] = 0
-    elif not np.isfinite(a_max):
+        a_max[~xp.isfinite(a_max)] = 0
+    elif not xp.isfinite(a_max):
         a_max = 0
 
     if b is not None:
-        b = np.asarray(b)
-        tmp = b * np.exp(a - a_max)
+        b = xp.asarray(b)
+        tmp = b * xp.exp(a - a_max)
     else:
-        tmp = np.exp(a - a_max)
+        tmp = xp.exp(a - a_max)
 
     # suppress warnings about log of zero
     with np.errstate(divide='ignore'):
-        s = np.sum(tmp, axis=axis, keepdims=keepdims)
+        s = xp.sum(tmp, axis=axis, keepdims=keepdims)
         if return_sign:
             # For complex, use the numpy>=2.0 convention for sign.
-            if np.issubdtype(s.dtype, np.complexfloating):
-                sgn = s / np.where(s == 0, 1, abs(s))
+            if xp.isdtype(s.dtype, "complex floating"):
+                sgn = s / xp.where(s == 0, xp.asarray(1, dtype=s.dtype), xp.abs(s))
             else:
-                sgn = np.sign(s)
-            s = abs(s)
-        out = np.log(s)
+                sgn = xp.sign(s)
+            s = xp.abs(s)
+        out = xp.log(s)
 
     if not keepdims:
-        a_max = np.squeeze(a_max, axis=axis)
+        a_max = xp.squeeze(a_max, axis=axis)
     out += a_max
 
     if return_sign:

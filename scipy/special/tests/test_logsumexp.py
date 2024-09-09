@@ -1,138 +1,136 @@
+import math
+import pytest
+
 import numpy as np
-from numpy.testing import (assert_almost_equal, assert_equal, assert_allclose,
-                           assert_array_almost_equal)
+from numpy.testing import assert_allclose
+
+from scipy.conftest import array_api_compatible
+from scipy._lib._array_api import array_namespace
+from scipy._lib._array_api_no_0d import xp_assert_equal, xp_assert_close
 
 from scipy.special import logsumexp, softmax
 
 
+@array_api_compatible
+@pytest.mark.usefixtures("skip_xp_backends")
+@pytest.mark.skip_xp_backends('jax.numpy',
+                              reasons=["JAX arrays do not support item assignment"])
 class TestLogSumExp:
-    def test_logsumexp(self):
+    def test_logsumexp(self, xp):
         # Test with zero-size array
-        a = []
-        desired = -np.inf
-        assert_equal(logsumexp(a), desired)
+        a = xp.asarray([])
+        desired = xp.asarray(-xp.inf)
+        xp_assert_equal(logsumexp(a), desired)
 
         # Test whether logsumexp() function correctly handles large inputs.
-        a = np.arange(200)
-        desired = np.log(np.sum(np.exp(a)))
-        assert_almost_equal(logsumexp(a), desired)
+        a = xp.arange(200., dtype=xp.float64)
+        desired = xp.log(xp.sum(xp.exp(a)))
+        xp_assert_close(logsumexp(a), desired)
 
         # Now test with large numbers
-        b = [1000, 1000]
-        desired = 1000.0 + np.log(2.0)
-        assert_almost_equal(logsumexp(b), desired)
+        b = xp.asarray([1000., 1000.])
+        desired = xp.asarray(1000.0 + math.log(2.0))
+        xp_assert_close(logsumexp(b), desired)
 
         n = 1000
-        b = np.full(n, 10000, dtype='float64')
-        desired = 10000.0 + np.log(n)
-        assert_almost_equal(logsumexp(b), desired)
+        b = xp.full((n,), 10000)
+        desired = xp.asarray(10000.0 + math.log(n))
+        xp_assert_close(logsumexp(b), desired)
 
-        x = np.array([1e-40] * 1000000)
-        logx = np.log(x)
-
-        X = np.vstack([x, x])
-        logX = np.vstack([logx, logx])
-        assert_array_almost_equal(np.exp(logsumexp(logX)), X.sum())
-        assert_array_almost_equal(np.exp(logsumexp(logX, axis=0)), X.sum(axis=0))
-        assert_array_almost_equal(np.exp(logsumexp(logX, axis=1)), X.sum(axis=1))
+        x = xp.asarray([1e-40] * 1000000)
+        logx = xp.log(x)
+        X = xp.stack([x, x])
+        logX = xp.stack([logx, logx])
+        xp_assert_close(xp.exp(logsumexp(logX)), xp.sum(X))
+        xp_assert_close(xp.exp(logsumexp(logX, axis=0)), xp.sum(X, axis=0))
+        xp_assert_close(xp.exp(logsumexp(logX, axis=1)), xp.sum(X, axis=1))
 
         # Handling special values properly
-        assert_equal(logsumexp(np.inf), np.inf)
-        assert_equal(logsumexp(-np.inf), -np.inf)
-        assert_equal(logsumexp(np.nan), np.nan)
-        assert_equal(logsumexp([-np.inf, -np.inf]), -np.inf)
+        inf = xp.asarray([xp.inf])
+        nan = xp.asarray([xp.nan])
+        xp_assert_equal(logsumexp(inf), inf[0])
+        xp_assert_equal(logsumexp(-inf), -inf[0])
+        xp_assert_equal(logsumexp(nan), nan[0])
+        xp_assert_equal(logsumexp(xp.asarray([-xp.inf, -xp.inf])), -inf[0])
 
         # Handling an array with different magnitudes on the axes
-        assert_array_almost_equal(logsumexp([[1e10, 1e-10],
-                                            [-1e10, -np.inf]], axis=-1),
-                                [1e10, -1e10])
+        a = xp.asarray([[1e10, 1e-10],
+                        [-1e10, -np.inf]])
+        ref = xp.asarray([1e10, -1e10])
+        xp_assert_close(logsumexp(a, axis=-1), ref)
 
         # Test keeping dimensions
-        assert_array_almost_equal(logsumexp([[1e10, 1e-10],
-                                            [-1e10, -np.inf]],
-                                            axis=-1,
-                                            keepdims=True),
-                                [[1e10], [-1e10]])
+        xp_test = array_namespace(a) # `torch` needs `expand_dims`
+        ref = xp_test.expand_dims(ref, axis=-1)
+        xp_assert_close(logsumexp(a, axis=-1, keepdims=True), ref)
 
         # Test multiple axes
-        assert_array_almost_equal(logsumexp([[1e10, 1e-10],
-                                            [-1e10, -np.inf]],
-                                            axis=(-1,-2)),
-                                1e10)
+        xp_assert_close(logsumexp(a, axis=(-1, -2)), xp.asarray(1e10))
 
+    def test_logsumexp_b(self, xp):
+        a = xp.arange(200., dtype=xp.float64)
+        b = xp.arange(200., 0., -1.)
+        desired = xp.log(xp.sum(b*xp.exp(a)))
+        xp_assert_close(logsumexp(a, b=b), desired)
 
-    def test_logsumexp_b(self):
-        a = np.arange(200)
-        b = np.arange(200, 0, -1)
-        desired = np.log(np.sum(b*np.exp(a)))
-        assert_almost_equal(logsumexp(a, b=b), desired)
+        a = xp.asarray([1000, 1000])
+        b = xp.asarray([1.2, 1.2])
+        desired = xp.asarray(1000 + math.log(2 * 1.2))
+        xp_assert_close(logsumexp(a, b=b), desired)
 
-        a = [1000, 1000]
-        b = [1.2, 1.2]
-        desired = 1000 + np.log(2 * 1.2)
-        assert_almost_equal(logsumexp(a, b=b), desired)
+        x = xp.asarray([1e-40] * 100000)
+        b = xp.linspace(1, 1000, 100000)
+        logx = xp.log(x)
+        X = xp.stack((x, x))
+        logX = xp.stack((logx, logx))
+        B = xp.stack((b, b))
+        xp_assert_close(xp.exp(logsumexp(logX, b=B)), xp.sum(B * X))
+        xp_assert_close(xp.exp(logsumexp(logX, b=B, axis=0)), xp.sum(B * X, axis=0))
+        xp_assert_close(xp.exp(logsumexp(logX, b=B, axis=1)), xp.sum(B * X, axis=1))
 
-        x = np.array([1e-40] * 100000)
-        b = np.linspace(1, 1000, 100000)
-        logx = np.log(x)
-
-        X = np.vstack((x, x))
-        logX = np.vstack((logx, logx))
-        B = np.vstack((b, b))
-        assert_array_almost_equal(np.exp(logsumexp(logX, b=B)), (B * X).sum())
-        assert_array_almost_equal(np.exp(logsumexp(logX, b=B, axis=0)),
-                                    (B * X).sum(axis=0))
-        assert_array_almost_equal(np.exp(logsumexp(logX, b=B, axis=1)),
-                                    (B * X).sum(axis=1))
-
-
-    def test_logsumexp_sign(self):
-        a = [1,1,1]
-        b = [1,-1,-1]
+    def test_logsumexp_sign(self, xp):
+        a = xp.asarray([1, 1, 1])
+        b = xp.asarray([1, -1, -1])
 
         r, s = logsumexp(a, b=b, return_sign=True)
-        assert_almost_equal(r,1)
-        assert_equal(s,-1)
+        xp_assert_close(r, xp.asarray(1.))
+        xp_assert_equal(s, xp.asarray(-1.))
 
-
-    def test_logsumexp_sign_zero(self):
-        a = [1,1]
-        b = [1,-1]
+    def test_logsumexp_sign_zero(self, xp):
+        a = xp.asarray([1, 1])
+        b = xp.asarray([1, -1])
 
         r, s = logsumexp(a, b=b, return_sign=True)
-        assert not np.isfinite(r)
-        assert not np.isnan(r)
+        assert not xp.isfinite(r)
+        assert not xp.isnan(r)
         assert r < 0
         assert s == 0
 
-
-    def test_logsumexp_sign_shape(self):
-        a = np.ones((1,2,3,4))
-        b = np.ones_like(a)
+    def test_logsumexp_sign_shape(self, xp):
+        a = xp.ones((1, 2, 3, 4))
+        b = xp.ones_like(a)
 
         r, s = logsumexp(a, axis=2, b=b, return_sign=True)
         assert r.shape == s.shape == (1, 2, 4)
 
-        r, s = logsumexp(a, axis=(1,3), b=b, return_sign=True)
-        assert r.shape == s.shape == (1, 3)
+        r, s = logsumexp(a, axis=(1, 3), b=b, return_sign=True)
+        assert r.shape == s.shape == (1,3)
 
-
-    def test_logsumexp_complex_sign(self):
-        a = np.array([1 + 1j, 2 - 1j, -2 + 3j])
+    def test_logsumexp_complex_sign(self, xp):
+        a = xp.asarray([1 + 1j, 2 - 1j, -2 + 3j])
 
         r, s = logsumexp(a, return_sign=True)
 
-        expected_sumexp = np.exp(a).sum()
+        expected_sumexp = xp.sum(xp.exp(a))
         # This is the numpy>=2.0 convention for np.sign
-        expected_sign = expected_sumexp / abs(expected_sumexp)
+        expected_sign = expected_sumexp / xp.abs(expected_sumexp)
 
-        assert_allclose(s, expected_sign)
-        assert_allclose(s * np.exp(r), expected_sumexp)
+        xp_assert_close(s, expected_sign)
+        xp_assert_close(s * xp.exp(r), expected_sumexp)
 
-
-    def test_logsumexp_shape(self):
-        a = np.ones((1, 2, 3, 4))
-        b = np.ones_like(a)
+    def test_logsumexp_shape(self, xp):
+        a = xp.ones((1, 2, 3, 4))
+        b = xp.ones_like(a)
 
         r = logsumexp(a, axis=2, b=b)
         assert r.shape == (1, 2, 4)
@@ -140,19 +138,22 @@ class TestLogSumExp:
         r = logsumexp(a, axis=(1, 3), b=b)
         assert r.shape == (1, 3)
 
+    def test_logsumexp_b_zero(self, xp):
+        a = xp.asarray([1, 10000])
+        b = xp.asarray([1, 0])
 
-    def test_logsumexp_b_zero(self):
-        a = [1,10000]
-        b = [1,0]
+        xp_assert_close(logsumexp(a, b=b), xp.asarray(1.))
 
-        assert_almost_equal(logsumexp(a, b=b), 1)
-
-
-    def test_logsumexp_b_shape(self):
-        a = np.zeros((4,1,2,1))
-        b = np.ones((3,1,5))
+    def test_logsumexp_b_shape(self, xp):
+        a = xp.zeros((4, 1, 2, 1))
+        b = xp.ones((3, 1, 5))
 
         logsumexp(a, b=b)
+
+    @pytest.mark.parametrize('arg', (1, [1, 2, 3]))
+    @pytest.mark.skip_xp_backends(np_only=True)
+    def test_xp_invalid_input(self, arg, xp):
+        assert logsumexp(arg) == logsumexp(np.asarray(np.atleast_1d(arg)))
 
 
 class TestSoftmax:

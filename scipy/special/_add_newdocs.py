@@ -6821,7 +6821,7 @@ add_newdoc("ncfdtr",
     dfd : array_like
         Degrees of freedom of the denominator sum of squares.  Range (0, inf).
     nc : array_like
-        Noncentrality parameter.  Should be in range (0, 1e4).
+        Noncentrality parameter.  Range [0, inf).
     f : array_like
         Quantiles, i.e. the upper limit of integration.
     out : ndarray, optional
@@ -6839,10 +6839,12 @@ add_newdoc("ncfdtr",
     ncfdtridfd : Inverse of `ncfdtr` with respect to `dfd`.
     ncfdtridfn : Inverse of `ncfdtr` with respect to `dfn`.
     ncfdtrinc : Inverse of `ncfdtr` with respect to `nc`.
+    scipy.stats.ncf : Non-central F distribution.
 
     Notes
     -----
-    Wrapper for the CDFLIB [1]_ Fortran routine `cdffnc`.
+    This function calculates the CDF of the non-central f distribution using
+    the Boost Math C++ library [1]_.
 
     The cumulative distribution function is computed using Formula 26.6.20 of
     [2]_:
@@ -6854,16 +6856,13 @@ add_newdoc("ncfdtr",
     where :math:`I` is the regularized incomplete beta function, and
     :math:`x = f d_n/(f d_n + d_d)`.
 
-    The computation time required for this routine is proportional to the
-    noncentrality parameter `nc`.  Very large values of this parameter can
-    consume immense computer resources.  This is why the search range is
-    bounded by 10,000.
+    Note that argument order of `ncfdtr` is different from that of the
+    similar ``cdf`` method of `scipy.stats.ncf`: `f` is the last
+    parameter of `ncfdtr` but the first parameter of ``scipy.stats.ncf.cdf``.
 
     References
     ----------
-    .. [1] Barry Brown, James Lovato, and Kathy Russell,
-           CDFLIB: Library of Fortran Routines for Cumulative Distribution
-           Functions, Inverses, and Other Parameters.
+    .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
     .. [2] Milton Abramowitz and Irene A. Stegun, eds.
            Handbook of Mathematical Functions with Formulas,
            Graphs, and Mathematical Tables. New York: Dover, 1972.
@@ -6907,7 +6906,7 @@ add_newdoc("ncfdtri",
     dfd : array_like
         Degrees of freedom of the denominator sum of squares.  Range (0, inf).
     nc : array_like
-        Noncentrality parameter.  Should be in range (0, 1e4).
+        Noncentrality parameter.  Range [0, inf).
     p : array_like
         Value of the cumulative distribution function.  Must be in the
         range [0, 1].
@@ -6925,6 +6924,20 @@ add_newdoc("ncfdtri",
     ncfdtridfd : Inverse of `ncfdtr` with respect to `dfd`.
     ncfdtridfn : Inverse of `ncfdtr` with respect to `dfn`.
     ncfdtrinc : Inverse of `ncfdtr` with respect to `nc`.
+    scipy.stats.ncf : Non-central F distribution.
+
+    Notes
+    -----
+    This function calculates the Quantile of the non-central f distribution
+    using the Boost Math C++ library [1]_.
+
+    Note that argument order of `ncfdtri` is different from that of the
+    similar ``ppf`` method of `scipy.stats.ncf`. `p` is the last parameter
+    of `ncfdtri` but the first parameter of ``scipy.stats.ncf.ppf``.
+
+    References
+    ----------
+    .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
 
     Examples
     --------

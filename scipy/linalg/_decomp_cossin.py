@@ -208,7 +208,7 @@ def cossin(X, p=None, q=None, separate=False,
 
     CS[p:p + n22, q:q + n22] = Id[:n22, :n22]
     CS[n11:n11 + r, n11:n11 + r] = c
-    CS[p + n22:p + n22 + r, r + n21 + n22:2 * r + n21 + n22] = c
+    CS[p + n22:p + n22 + r, n11 + r + n21 + n22:2 * r + n11 + n21 + n22] = c
 
     xs = n11
     xe = n11 + r

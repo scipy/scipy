@@ -2,7 +2,7 @@
 
 This --- private! --- module only collects implementations of public ndimage API
 for _support_alternative_backends.
-The latter --- also private! --- module adds dispatch to CuPy etc and
+The latter --- also private! --- module adds delegation to CuPy etc and
 re-exports decorated names to __init__.py
 """
 
