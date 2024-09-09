@@ -155,6 +155,16 @@ class TestLogSumExp:
     def test_xp_invalid_input(self, arg, xp):
         assert logsumexp(arg) == logsumexp(np.asarray(np.atleast_1d(arg)))
 
+    @pytest.mark.parametrize(
+        'dtype', ['float32', 'float64', 'int32', 'int64', 'complex64', 'complex128']
+    )
+    def test_dtypes(self, dtype, xp):
+        dtype = getattr(xp, dtype)
+        desired_dtype = xp.asarray(1.).dtype if dtype in {xp.int32, xp.int64} else dtype
+        a = xp.asarray([1000., 1000.], dtype=dtype)
+        desired = xp.asarray(1000.0 + math.log(2.0), dtype=desired_dtype)
+        xp_assert_close(logsumexp(a), desired)
+
 
 class TestSoftmax:
     def test_softmax_fixtures(self):

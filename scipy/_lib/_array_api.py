@@ -580,11 +580,19 @@ def xp_broadcast_promote(*args, ensure_writeable=False, force_floating=False, xp
     args_not_none = [arg for arg in args if arg is not None]
 
     # determine minimum dtype
-    dtypes = [arg.dtype for arg in args_not_none
-              if not xp.isdtype(arg.dtype, 'integral')]
-    if force_floating:
-        dtypes.append(xp.asarray(1.).dtype)
-    dtype = xp.result_type(*dtypes)
+    floating_dtypes = [
+        arg.dtype for arg in args_not_none
+        if not xp.isdtype(arg.dtype, 'integral')
+    ]
+
+    if not floating_dtypes:
+        if force_floating:
+            dtype = xp.asarray(1.).dtype
+        else:
+            dtypes = [arg.dtype for arg in args_not_none]
+            dtype = xp.result_type(*dtypes)
+    else:
+        dtype = xp.result_type(*floating_dtypes)
 
     # determine result shape
     shapes = {arg.shape for arg in args_not_none}
