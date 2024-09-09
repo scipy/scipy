@@ -106,7 +106,10 @@ def cubature(f, a, b, rule="gk21", rtol=1e-8, atol=0, max_subdivisions=10000,
     Returns
     -------
     res : CubatureResult
-        Result of estimation. See `CubatureResult`.
+        Result of estimation. The estimate of the integral is `res.estimate`, and the
+        estimated error is `res.error`. If the integral converges within
+        `max_subdivions`, then `res.status` will be ``"converged"``, otherwise it will
+        be ``"not_converged"``. See `CubatureResult`.
 
     Examples
     --------
