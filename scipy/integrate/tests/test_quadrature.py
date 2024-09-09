@@ -303,6 +303,14 @@ class TestTrapezoid:
         r = trapezoid(q, x=z[None, None,:], axis=2)
         xp_assert_close(r, qz)
 
+        # n-d `x` but not the same as `y`
+        r = trapezoid(q, x=xp.reshape(x[:, None, None], (3, 1)), axis=0)
+        xp_assert_close(r, qx)
+        r = trapezoid(q, x=xp.reshape(y[None,:, None], (8, 1)), axis=1)
+        xp_assert_close(r, qy)
+        r = trapezoid(q, x=xp.reshape(z[None, None,:], (13, 1)), axis=2)
+        xp_assert_close(r, qz)
+
         # 1-d `x`
         r = trapezoid(q, x=x, axis=0)
         xp_assert_close(r, qx)
