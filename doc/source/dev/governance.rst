@@ -28,7 +28,7 @@ documentation, designs, or other work to the Project. Anyone can be a
 Contributor. Contributors can be affiliated with any legal entity or
 none. Contributors participate in the project by submitting, reviewing,
 and discussing GitHub Pull Requests and Issues and participating in open
-and public Project discussions on GitHub, mailing lists, and other
+and public Project discussions on GitHub, forums, and other
 channels. The foundation of Project participation is openness and
 transparency.
 
@@ -146,7 +146,7 @@ active over the last two years.
 
 When considering potential Members, the Council will look at candidates with a
 comprehensive view of their contributions. This will include, but is not limited
-to, code, code review, infrastructure work, mailing list and chat participation,
+to, code, code review, infrastructure work, forum and chat participation,
 community help/building, education and outreach, design work, etc. We are
 deliberately not setting arbitrary quantitative metrics (like “100 commits in
 this repo”) to avoid encouraging behavior that plays to the metrics rather than
@@ -186,10 +186,10 @@ responsible for:
   the :ref:`scipy-roadmap`) bi-yearly, around mid-April and mid-October.
 - At the same times of the year, summarizing any relevant
   organizational updates and issues in the preceding period, and asking for
-  feedback/suggestions on the mailing list.
+  feedback/suggestions on the forum.
 - Ensuring the composition of the Steering Council stays current.
 - Ensuring matters discussed in private by the Steering Council get
-  summarized on the mailing list to keep the Community informed.
+  summarized on the forum to keep the Community informed.
 - Ensuring other important organizational documents (e.g., Code of Conduct,
   Fiscal Sponsorship Agreement) stay current after they are added.
 

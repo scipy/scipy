@@ -17,7 +17,6 @@ py3.install_sources([
     'test_constraints.py',
     'test_cython_optimize.py',
     'test_differentiable_functions.py',
-    'test_differentiate.py',
     'test_direct.py',
     'test_extending.py',
     'test_hessian_update_strategy.py',
@@ -45,10 +44,12 @@ py3.install_sources([
     'test_trustregion_krylov.py',
     'test_zeros.py'
   ],
-  subdir: 'scipy/optimize/tests'
+  subdir: 'scipy/optimize/tests',
+  install_tag: 'tests'
 )
 
 py3.install_sources(
   ['_cython_examples/extending.pyx', '_cython_examples/meson.build'],
-  subdir: 'scipy/optimize/tests/_cython_examples'
+  subdir: 'scipy/optimize/tests/_cython_examples',
+  install_tag: 'tests'
 )

@@ -573,7 +573,7 @@ def gmres(A, b, x0=None, *, rtol=1e-5, atol=0., restart=None, maxiter=None, M=No
         convergence is tested with respect to the ``b - A @ x`` residual.
     callback : function
         User-supplied function to call after each iteration.  It is called
-        as `callback(args)`, where `args` are selected by `callback_type`.
+        as ``callback(args)``, where ``args`` are selected by `callback_type`.
     callback_type : {'x', 'pr_norm', 'legacy'}, optional
         Callback function argument requested:
           - ``x``: current iterate (ndarray), called on every restart

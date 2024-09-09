@@ -1,15 +1,20 @@
 import os
+import sys
 
 import numpy as np
-from numpy.testing import (assert_equal, assert_allclose, assert_almost_equal,
-                           suppress_warnings)
+from numpy.testing import suppress_warnings
 from pytest import raises as assert_raises
 import pytest
+from scipy._lib._array_api import xp_assert_close, assert_almost_equal
 
+from scipy._lib._testutils import check_free_memory
 import scipy.interpolate.interpnd as interpnd
 import scipy.spatial._qhull as qhull
 
 import pickle
+import threading
+
+_IS_32BIT = (sys.maxsize < 2**32)
 
 
 def data_file(basename):
@@ -54,8 +59,10 @@ class TestLinearNDInterpolation:
         y = y - 3j*y
 
         tri = qhull.Delaunay(x)
-        yi = interpnd.LinearNDInterpolator(tri, y)(x)
+        interpolator = interpnd.LinearNDInterpolator(tri, y)
+        yi = interpolator(x)
         assert_almost_equal(y, yi)
+        assert interpolator.tri is tri
 
     def test_square(self):
         # Test barycentric interpolation on a square against a manual
@@ -166,6 +173,49 @@ class TestLinearNDInterpolation:
 
         assert_almost_equal(ip(0.5, 0.5), ip2(0.5, 0.5))
 
+    @pytest.mark.slow
+    @pytest.mark.skipif(_IS_32BIT, reason='it fails on 32-bit')
+    def test_threading(self):
+        # This test was taken from issue 8856
+        # https://github.com/scipy/scipy/issues/8856
+        check_free_memory(10000)
+
+        r_ticks = np.arange(0, 4200, 10)
+        phi_ticks = np.arange(0, 4200, 10)
+        r_grid, phi_grid = np.meshgrid(r_ticks, phi_ticks)
+
+        def do_interp(interpolator, slice_rows, slice_cols):
+            grid_x, grid_y = np.mgrid[slice_rows, slice_cols]
+            res = interpolator((grid_x, grid_y))
+            return res
+
+        points = np.vstack((r_grid.ravel(), phi_grid.ravel())).T
+        values = (r_grid * phi_grid).ravel()
+        interpolator = interpnd.LinearNDInterpolator(points, values)
+
+        worker_thread_1 = threading.Thread(
+            target=do_interp,
+            args=(interpolator, slice(0, 2100), slice(0, 2100)))
+        worker_thread_2 = threading.Thread(
+            target=do_interp,
+            args=(interpolator, slice(2100, 4200), slice(0, 2100)))
+        worker_thread_3 = threading.Thread(
+            target=do_interp,
+            args=(interpolator, slice(0, 2100), slice(2100, 4200)))
+        worker_thread_4 = threading.Thread(
+            target=do_interp,
+            args=(interpolator, slice(2100, 4200), slice(2100, 4200)))
+
+        worker_thread_1.start()
+        worker_thread_2.start()
+        worker_thread_3.start()
+        worker_thread_4.start()
+
+        worker_thread_1.join()
+        worker_thread_2.join()
+        worker_thread_3.join()
+        worker_thread_4.join()
+
 
 class TestEstimateGradients2DGlobal:
     def test_smoketest(self):
@@ -186,8 +236,8 @@ class TestEstimateGradients2DGlobal:
             z = func(x[:,0], x[:,1])
             dz = interpnd.estimate_gradients_2d_global(tri, z, tol=1e-6)
 
-            assert_equal(dz.shape, (6, 2))
-            assert_allclose(dz, np.array(grad)[None,:] + 0*dz,
+            assert dz.shape == (6, 2)
+            xp_assert_close(dz, np.array(grad)[None,:] + 0*dz,
                             rtol=1e-5, atol=1e-5, err_msg="item %d" % j)
 
     def test_regression_2359(self):
@@ -232,7 +282,7 @@ class TestCloughTocher2DInterpolator:
         b = func(p[:,0], p[:,1])
 
         try:
-            assert_allclose(a, b, **kw)
+            xp_assert_close(a, b, **kw)
         except AssertionError:
             print("_check_accuracy: abs(a-b):", abs(a - b))
             print("ip.grad:", ip.grad)
@@ -311,6 +361,7 @@ class TestCloughTocher2DInterpolator:
         yi_rescale = interpnd.CloughTocher2DInterpolator(tri.points, y, rescale=True)(x)
         assert_almost_equal(yi, yi_rescale)
 
+    @pytest.mark.fail_slow(5)
     def test_dense(self):
         # Should be more accurate for dense meshes
         funcs = [
@@ -367,7 +418,7 @@ class TestCloughTocher2DInterpolator:
 
         v1 = ip(p1)
         v2 = ip(p2)
-        assert_allclose(v1, v2)
+        xp_assert_close(v1, v2)
 
         # ... and affine invariant
         np.random.seed(1)
@@ -383,5 +434,5 @@ class TestCloughTocher2DInterpolator:
 
         w1 = ip(p1)
         w2 = ip(p2)
-        assert_allclose(w1, v1)
-        assert_allclose(w2, v2)
+        xp_assert_close(w1, v1)
+        xp_assert_close(w2, v2)

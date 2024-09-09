@@ -881,6 +881,8 @@ def binary_hit_or_miss(input, structure1=None, structure2=None,
     input = np.asarray(input)
     if structure1 is None:
         structure1 = generate_binary_structure(input.ndim, 1)
+    else:
+        structure1 = np.asarray(structure1)
     if structure2 is None:
         structure2 = np.logical_not(structure1)
     origin1 = _ni_support._normalize_sequence(origin1, input.ndim)
@@ -1106,6 +1108,7 @@ def binary_fill_holes(input, structure=None, output=None, origin=0):
            [0, 0, 0, 0, 0]])
 
     """
+    input = np.asarray(input)
     mask = np.logical_not(input)
     tmp = np.zeros(mask.shape, bool)
     inplace = isinstance(output, np.ndarray)
@@ -1142,7 +1145,8 @@ def grey_erosion(input, size=None, footprint=None, structure=None,
         neighbors of the center over which the minimum is chosen.
     structure : array of ints, optional
         Structuring element used for the grayscale erosion. `structure`
-        may be a non-flat structuring element.
+        may be a non-flat structuring element. The `structure` array applies a
+        subtractive offset for each pixel in the neighborhood.
     output : array, optional
         An array used for storing the output of the erosion may be provided.
     mode : {'reflect','constant','nearest','mirror', 'wrap'}, optional
@@ -1253,7 +1257,8 @@ def grey_dilation(input, size=None, footprint=None, structure=None,
         neighbors of the center over which the maximum is chosen.
     structure : array of ints, optional
         Structuring element used for the grayscale dilation. `structure`
-        may be a non-flat structuring element.
+        may be a non-flat structuring element. The `structure` array applies an
+        additive offset for each pixel in the neighborhood.
     output : array, optional
         An array used for storing the output of the dilation may be provided.
     mode : {'reflect','constant','nearest','mirror', 'wrap'}, optional
@@ -1399,7 +1404,9 @@ def grey_opening(input, size=None, footprint=None, structure=None,
         used for the grayscale opening.
     structure : array of ints, optional
         Structuring element used for the grayscale opening. `structure`
-        may be a non-flat structuring element.
+        may be a non-flat structuring element. The `structure` array applies
+        offsets to the pixels in a neighborhood (the offset is additive during
+        dilation and subtractive during erosion).
     output : array, optional
         An array used for storing the output of the opening may be provided.
     mode : {'reflect', 'constant', 'nearest', 'mirror', 'wrap'}, optional
@@ -1484,7 +1491,9 @@ def grey_closing(input, size=None, footprint=None, structure=None,
         used for the grayscale closing.
     structure : array of ints, optional
         Structuring element used for the grayscale closing. `structure`
-        may be a non-flat structuring element.
+        may be a non-flat structuring element. The `structure` array applies
+        offsets to the pixels in a neighborhood (the offset is additive during
+        dilation and subtractive during erosion)
     output : array, optional
         An array used for storing the output of the closing may be provided.
     mode : {'reflect', 'constant', 'nearest', 'mirror', 'wrap'}, optional
@@ -1570,8 +1579,10 @@ def morphological_gradient(input, size=None, footprint=None, structure=None,
         used for the morphology operations. Larger footprints
         give a more blurred morphological gradient.
     structure : array of ints, optional
-        Structuring element used for the morphology operations.
-        `structure` may be a non-flat structuring element.
+        Structuring element used for the morphology operations. `structure` may
+        be a non-flat structuring element. The `structure` array applies
+        offsets to the pixels in a neighborhood (the offset is additive during
+        dilation and subtractive during erosion)
     output : array, optional
         An array used for storing the output of the morphological gradient
         may be provided.
@@ -1673,12 +1684,18 @@ def morphological_laplace(input, size=None, footprint=None,
     ----------
     input : array_like
         Input.
-    size : int or sequence of ints, optional
-        See `structure`.
-    footprint : bool or ndarray, optional
-        See `structure`.
-    structure : structure, optional
-        Either `size`, `footprint`, or the `structure` must be provided.
+    size : tuple of ints
+        Shape of a flat and full structuring element used for the mathematical
+        morphology operations. Optional if `footprint` or `structure` is
+        provided.
+    footprint : array of ints, optional
+        Positions of non-infinite elements of a flat structuring element
+        used for the morphology operations.
+    structure : array of ints, optional
+        Structuring element used for the morphology operations. `structure` may
+        be a non-flat structuring element. The `structure` array applies
+        offsets to the pixels in a neighborhood (the offset is additive during
+        dilation and subtractive during erosion)
     output : ndarray, optional
         An output array can optionally be provided.
     mode : {'reflect','constant','nearest','mirror', 'wrap'}, optional
@@ -1730,8 +1747,10 @@ def white_tophat(input, size=None, footprint=None, structure=None,
         Positions of elements of a flat structuring element
         used for the white tophat filter.
     structure : array of ints, optional
-        Structuring element used for the filter. `structure`
-        may be a non-flat structuring element.
+        Structuring element used for the filter. `structure` may be a non-flat
+        structuring element. The `structure` array applies offsets to the
+        pixels in a neighborhood (the offset is additive during dilation and
+        subtractive during erosion)
     output : array, optional
         An array used for storing the output of the filter may be provided.
     mode : {'reflect', 'constant', 'nearest', 'mirror', 'wrap'}, optional
@@ -1774,6 +1793,8 @@ def white_tophat(input, size=None, footprint=None, structure=None,
            [0, 0, 0, 0, 0]])
 
     """
+    input = np.asarray(input)
+
     if (size is not None) and (footprint is not None):
         warnings.warn("ignoring size because footprint is set",
                       UserWarning, stacklevel=2)
@@ -1808,8 +1829,10 @@ def black_tophat(input, size=None, footprint=None,
         Positions of non-infinite elements of a flat structuring element
         used for the black tophat filter.
     structure : array of ints, optional
-        Structuring element used for the filter. `structure`
-        may be a non-flat structuring element.
+        Structuring element used for the filter. `structure` may be a non-flat
+        structuring element. The `structure` array applies offsets to the
+        pixels in a neighborhood (the offset is additive during dilation and
+        subtractive during erosion)
     output : array, optional
         An array used for storing the output of the filter may be provided.
     mode : {'reflect', 'constant', 'nearest', 'mirror', 'wrap'}, optional
@@ -1852,6 +1875,8 @@ def black_tophat(input, size=None, footprint=None,
            [0, 0, 0, 0, 0]])
 
     """
+    input = np.asarray(input)
+
     if (size is not None) and (footprint is not None):
         warnings.warn("ignoring size because footprint is set",
                       UserWarning, stacklevel=2)
@@ -1911,7 +1936,7 @@ def distance_transform_bf(input, metric="euclidean", sampling=None,
         An output array to store the calculated feature transform, instead of
         returning it.
         `return_indicies` must be True.
-        Its shape must be `(input.ndim,) + input.shape`.
+        Its shape must be ``(input.ndim,) + input.shape``.
 
     Returns
     -------
@@ -2150,7 +2175,7 @@ def distance_transform_cdt(input, metric='chessboard', return_distances=True,
         An output array to store the calculated feature transform, instead of
         returning it.
         `return_indicies` must be True.
-        Its shape must be `(input.ndim,) + input.shape`.
+        Its shape must be ``(input.ndim,) + input.shape``.
 
     Returns
     -------
@@ -2355,7 +2380,7 @@ def distance_transform_edt(input, sampling=None, return_distances=True,
         An output array to store the calculated feature transform, instead of
         returning it.
         `return_indicies` must be True.
-        Its shape must be `(input.ndim,) + input.shape`.
+        Its shape must be ``(input.ndim,) + input.shape``.
 
     Returns
     -------
@@ -2420,7 +2445,7 @@ def distance_transform_edt(input, sampling=None, return_distances=True,
             [0, 1, 1, 1, 4],
             [0, 0, 1, 4, 4],
             [0, 0, 3, 3, 4],
-            [0, 0, 3, 3, 4]]])
+            [0, 0, 3, 3, 4]]], dtype=int32)
 
     With arrays provided for inplace outputs:
 
@@ -2441,7 +2466,7 @@ def distance_transform_edt(input, sampling=None, return_distances=True,
             [0, 1, 1, 1, 4],
             [0, 0, 1, 4, 4],
             [0, 0, 3, 3, 4],
-            [0, 0, 3, 3, 4]]])
+            [0, 0, 3, 3, 4]]], dtype=int32)
 
     """
     ft_inplace = isinstance(indices, np.ndarray)

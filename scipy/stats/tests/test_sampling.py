@@ -1377,9 +1377,6 @@ class TestSimpleRatioUniforms:
 
 
 class TestRatioUniforms:
-    """ Tests for rvs_ratio_uniforms.
-    """
-
     def test_rv_generation(self):
         # use KS test to check distribution of rvs
         # normal distribution

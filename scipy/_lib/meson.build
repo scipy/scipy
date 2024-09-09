@@ -45,7 +45,8 @@ py3.extension_module('_test_ccallback',
   include_directories: 'src',
   link_args: version_link_args,
   install: true,
-  subdir: 'scipy/_lib'
+  subdir: 'scipy/_lib',
+  install_tag: 'tests'
 )
 
 py3.extension_module('_fpumode',
@@ -62,7 +63,8 @@ py3.extension_module('_test_deprecation_call',
   include_directories: 'src',
   link_args: version_link_args,
   install: true,
-  subdir: 'scipy/_lib'
+  subdir: 'scipy/_lib',
+  install_tag: 'tests'
 )
 
 py3.extension_module('_test_deprecation_def',
@@ -71,7 +73,8 @@ py3.extension_module('_test_deprecation_def',
   include_directories: 'src',
   link_args: version_link_args,
   install: true,
-  subdir: 'scipy/_lib'
+  subdir: 'scipy/_lib',
+  install_tag: 'tests'
 )
 
 # May be easier as a compile flag, but use a config header file to stay
@@ -84,7 +87,7 @@ py3.extension_module('_test_deprecation_def',
 conf_memstream = configuration_data()
 
 if meson.get_compiler('c').has_function('open_memstream',
-                                        prefix: '#include <stdio.h>')
+                                        prefix: '#define _POSIX_C_SOURCE 200809L\n#include <stdio.h>')
   conf_memstream.set('has_openmemstream', '1')
 else
   conf_memstream.set('has_openmemstream', '0')
@@ -108,6 +111,7 @@ py3.extension_module('messagestream',
 python_sources = [
   '__init__.py',
   '_array_api.py',
+  '_array_api_no_0d.py',
   '_bunch.py',
   '_ccallback.py',
   '_disjoint_set.py',

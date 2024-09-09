@@ -9,6 +9,7 @@ import ctypes
 
 import numpy as np
 from numpy.polynomial import Polynomial
+from scipy.interpolate import BSpline
 from scipy._lib.doccer import (extend_notes_in_docstring,
                                replace_notes_in_docstring,
                                inherit_docstring_from)
@@ -23,17 +24,16 @@ from scipy._lib._util import _lazyselect, _lazywhere
 from . import _stats
 from ._tukeylambda_stats import (tukeylambda_variance as _tlvar,
                                  tukeylambda_kurtosis as _tlkurt)
-from ._distn_infrastructure import (
-    get_distribution_names, _kurtosis,
+from ._distn_infrastructure import (_vectorize_rvs_over_shapes,
+    get_distribution_names, _kurtosis, _isintegral,
     rv_continuous, _skew, _get_fixed_fit_value, _check_shape, _ShapeInfo)
 from ._ksstats import kolmogn, kolmognp, kolmogni
 from ._constants import (_XMIN, _LOGXMIN, _EULER, _ZETA3, _SQRT_PI,
-                         _SQRT_2_OVER_PI, _LOG_SQRT_2_OVER_PI)
+                         _SQRT_2_OVER_PI, _LOG_PI, _LOG_SQRT_2_OVER_PI)
 from ._censored_data import CensoredData
 from scipy.optimize import root_scalar
 from scipy.stats._warnings_errors import FitError
 import scipy.stats as stats
-
 
 def _remove_optimizer_parameters(kwds):
     """
@@ -51,7 +51,7 @@ def _remove_optimizer_parameters(kwds):
     kwds.pop('optimizer', None)
     kwds.pop('method', None)
     if kwds:
-        raise TypeError("Unknown arguments: %s." % kwds)
+        raise TypeError(f"Unknown arguments: {kwds}.")
 
 
 def _call_super_mom(fun):
@@ -1034,16 +1034,20 @@ class betaprime_gen(rv_continuous):
 
     def _ppf(self, p, a, b):
         p, a, b = np.broadcast_arrays(p, a, b)
-        # by default, compute compute the ppf by solving the following:
+        # By default, compute the ppf by solving the following:
         # p = beta._cdf(x/(1+x), a, b). This implies x = r/(1-r) with
         # r = beta._ppf(p, a, b). This can cause numerical issues if r is
-        # very close to 1. in that case, invert the alternative expression of
+        # very close to 1. In that case, invert the alternative expression of
         # the cdf: p = beta._sf(1/(1+x), b, a).
         r = stats.beta._ppf(p, a, b)
         with np.errstate(divide='ignore'):
             out = r / (1 - r)
-        i = (r > 0.9999)
-        out[i] = 1/stats.beta._isf(p[i], b[i], a[i]) - 1
+        rnear1 = r > 0.9999
+        if np.isscalar(r):
+            if rnear1:
+                out = 1/stats.beta._isf(p, b, a) - 1
+        else:
+            out[rnear1] = 1/stats.beta._isf(p[rnear1], b[rnear1], a[rnear1]) - 1
         return out
 
     def _munp(self, n, a, b):
@@ -1446,19 +1450,36 @@ class cauchy_gen(rv_continuous):
 
     def _pdf(self, x):
         # cauchy.pdf(x) = 1 / (pi * (1 + x**2))
-        return 1.0/np.pi/(1.0+x*x)
+        with np.errstate(over='ignore'):
+            return 1.0/np.pi/(1.0+x*x)
+
+    def _logpdf(self, x):
+        # The formulas
+        #     log(1/(pi*(1 + x**2))) = -log(pi) - log(1 + x**2)
+        #                            = -log(pi) - log(x**2*(1 + 1/x**2))
+        #                            = -log(pi) - (2log(|x|) + log1p(1/x**2))
+        # are used here.
+        absx = np.abs(x)
+        # In the following _lazywhere, `f` provides better precision than `f2`
+        # for small and moderate x, while `f2` avoids the overflow that can
+        # occur with absx**2.
+        y = _lazywhere(absx < 1, (absx,),
+                       f=lambda absx: -_LOG_PI - np.log1p(absx**2),
+                       f2=lambda absx: (-_LOG_PI -
+                                        (2*np.log(absx) + np.log1p((1/absx)**2))))
+        return y
 
     def _cdf(self, x):
-        return 0.5 + 1.0/np.pi*np.arctan(x)
+        return np.arctan2(1, -x)/np.pi
 
     def _ppf(self, q):
-        return np.tan(np.pi*q-np.pi/2.0)
+        return scu._cauchy_ppf(q, 0, 1)
 
     def _sf(self, x):
-        return 0.5 - 1.0/np.pi*np.arctan(x)
+        return np.arctan2(1, x)/np.pi
 
     def _isf(self, q):
-        return np.tan(np.pi/2.0-np.pi*q)
+        return scu._cauchy_isf(q, 0, 1)
 
     def _stats(self):
         return np.nan, np.nan, np.nan, np.nan
@@ -3343,7 +3364,7 @@ def _digammainv(y):
     value, info, ier, mesg = optimize.fsolve(func, x0, xtol=1e-11,
                                              full_output=True)
     if ier != 1:
-        raise RuntimeError("_digammainv: fsolve failed, y = %r" % y)
+        raise RuntimeError(f"_digammainv: fsolve failed, y = {y!r}")
 
     return value[0]
 
@@ -3902,10 +3923,7 @@ class genhyperbolic_gen(rv_continuous):
     # np.vectorize isn't currently designed to be used as a decorator,
     # so use a lambda instead.  This allows us to decorate the function
     # with `np.vectorize` and still provide the `otypes` parameter.
-    # The first argument to `vectorize` is `func.__get__(object)` for
-    # compatibility with Python 3.9.  In Python 3.10, this can be
-    # simplified to just `func`.
-    @lambda func: np.vectorize(func.__get__(object), otypes=[np.float64])
+    @lambda func: np.vectorize(func, otypes=[np.float64])
     @staticmethod
     def _integrate_pdf(x0, x1, p, a, b):
         """
@@ -4882,7 +4900,7 @@ class invgauss_gen(rv_continuous):
     def fit(self, data, *args, **kwds):
         method = kwds.get('method', 'mle')
 
-        if (isinstance(data, CensoredData) or type(self) == wald_gen
+        if (isinstance(data, CensoredData) or isinstance(self, wald_gen)
                 or method.lower() == 'mm'):
             return super().fit(data, *args, **kwds)
 
@@ -4942,14 +4960,14 @@ class geninvgauss_gen(rv_continuous):
 
         f(x, p, b) = x^{p-1} \exp(-b (x + 1/x) / 2) / (2 K_p(b))
 
-    where `x > 0`, `p` is a real number and `b > 0`\([1]_).
+    where ``x > 0``, `p` is a real number and ``b > 0``\([1]_).
     :math:`K_p` is the modified Bessel function of second kind of order `p`
     (`scipy.special.kv`).
 
     %(after_notes)s
 
     The inverse Gaussian distribution `stats.invgauss(mu)` is a special case of
-    `geninvgauss` with `p = -1/2`, `b = 1 / mu` and `scale = mu`.
+    `geninvgauss` with ``p = -1/2``, ``b = 1 / mu`` and ``scale = mu``.
 
     Generating random variates is challenging for this distribution. The
     implementation is based on [2]_.
@@ -5273,8 +5291,8 @@ class norminvgauss_gen(rv_continuous):
 
     A normal inverse Gaussian random variable `Y` with parameters `a` and `b`
     can be expressed as a normal mean-variance mixture:
-    `Y = b * V + sqrt(V) * X` where `X` is `norm(0,1)` and `V` is
-    `invgauss(mu=1/sqrt(a**2 - b**2))`. This representation is used
+    ``Y = b * V + sqrt(V) * X`` where `X` is ``norm(0,1)`` and `V` is
+    ``invgauss(mu=1/sqrt(a**2 - b**2))``. This representation is used
     to generate random variates.
 
     Another common parametrization of the distribution (see Equation 2.1 in
@@ -5721,6 +5739,94 @@ class johnsonsu_gen(rv_continuous):
 
 
 johnsonsu = johnsonsu_gen(name='johnsonsu')
+
+
+class landau_gen(rv_continuous):
+    r"""A Landau continuous random variable.
+
+    %(before_notes)s
+
+    Notes
+    -----
+    The probability density function for `landau` ([1]_, [2]_) is:
+
+    .. math::
+
+        f(x) = \frac{1}{\pi}\int_0^\infty \exp(-t \log t - xt)\sin(\pi t) dt
+
+    for a real number :math:`x`.
+
+    %(after_notes)s
+
+    Often (e.g. [2]_), the Landau distribution is parameterized in terms of a
+    location parameter :math:`\mu` and scale parameter :math:`c`, the latter of
+    which *also* introduces a location shift. If ``mu`` and ``c`` are used to
+    represent these parameters, this corresponds with SciPy's parameterization
+    with ``loc = mu + 2*c / np.pi * np.log(c)`` and ``scale = c``.
+
+    References
+    ----------
+    .. [1] Landau, L. (1944). "On the energy loss of fast particles by
+           ionization". J. Phys. (USSR). 8: 201.
+    .. [2] "Landau Distribution", Wikipedia,
+           https://en.wikipedia.org/wiki/Landau_distribution
+    .. [3] Chambers, J. M., Mallows, C. L., & Stuck, B. (1976).
+           "A method for simulating stable random variables."
+           Journal of the American Statistical Association, 71(354), 340-344.
+    .. [4] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
+    .. [5] Yoshimura, T. "Numerical Evaluation and High Precision Approximation
+           Formula for Landau Distribution".
+           :doi:`10.36227/techrxiv.171822215.53612870/v2`
+
+    %(example)s
+
+    """
+    def _shape_info(self):
+        return []
+
+    def _entropy(self):
+        # Computed with mpmath - see gh-19145
+        return 2.37263644000448182
+
+    def _pdf(self, x):
+        return scu._landau_pdf(x, 0, 1)
+
+    def _cdf(self, x):
+        return scu._landau_cdf(x, 0, 1)
+
+    def _sf(self, x):
+        return scu._landau_sf(x, 0, 1)
+
+    def _ppf(self, p):
+        return scu._landau_ppf(p, 0, 1)
+
+    def _isf(self, p):
+        return scu._landau_isf(p, 0, 1)
+
+    def _stats(self):
+        return np.nan, np.nan, np.nan, np.nan
+
+    def _munp(self, n):
+        return np.nan
+
+    def _fitstart(self, data, args=None):
+        # Initialize ML guesses using quartiles instead of moments.
+        if isinstance(data, CensoredData):
+            data = data._uncensor()
+        p25, p50, p75 = np.percentile(data, [25, 50, 75])
+        return p50, (p75 - p25)/2
+
+    def _rvs(self, size=None, random_state=None):
+        # Method from https://www.jstor.org/stable/2285309 Eq. 2.4
+        pi_2 = np.pi / 2
+        U = random_state.uniform(-np.pi / 2, np.pi / 2, size=size)
+        W = random_state.standard_exponential(size=size)
+        S = 2 / np.pi * ((pi_2 + U) * np.tan(U)
+                         - np.log((pi_2 * W * np.cos(U)) / (pi_2 + U)))
+        return S
+
+
+landau = landau_gen(name='landau')
 
 
 class laplace_gen(rv_continuous):
@@ -7609,20 +7715,14 @@ class ncf_gen(rv_continuous):
         return random_state.noncentral_f(dfn, dfd, nc, size)
 
     def _pdf(self, x, dfn, dfd, nc):
-        # ncf.pdf(x, df1, df2, nc) = exp(nc/2 + nc*df1*x/(2*(df1*x+df2))) *
-        #             df1**(df1/2) * df2**(df2/2) * x**(df1/2-1) *
-        #             (df2+df1*x)**(-(df1+df2)/2) *
-        #             gamma(df1/2)*gamma(1+df2/2) *
-        #             L^{v1/2-1}^{v2/2}(-nc*v1*x/(2*(v1*x+v2))) /
-        #             (B(v1/2, v2/2) * gamma((v1+v2)/2))
         return scu._ncf_pdf(x, dfn, dfd, nc)
 
     def _cdf(self, x, dfn, dfd, nc):
-        return scu._ncf_cdf(x, dfn, dfd, nc)
+        return sc.ncfdtr(dfn, dfd, nc, x)
 
     def _ppf(self, q, dfn, dfd, nc):
         with np.errstate(over='ignore'):  # see gh-17432
-            return scu._ncf_ppf(q, dfn, dfd, nc)
+            return sc.ncfdtri(dfn, dfd, nc, q)
 
     def _sf(self, x, dfn, dfd, nc):
         return scu._ncf_sf(x, dfn, dfd, nc)
@@ -7810,23 +7910,7 @@ class nct_gen(rv_continuous):
         return n * np.sqrt(df) / np.sqrt(c2)
 
     def _pdf(self, x, df, nc):
-        # Boost version has accuracy issues in left tail; see gh-16591
-        n = df*1.0
-        nc = nc*1.0
-        x2 = x*x
-        ncx2 = nc*nc*x2
-        fac1 = n + x2
-        trm1 = (n/2.*np.log(n) + sc.gammaln(n+1)
-                - (n*np.log(2) + nc*nc/2 + (n/2)*np.log(fac1)
-                   + sc.gammaln(n/2)))
-        Px = np.exp(trm1)
-        valF = ncx2 / (2*fac1)
-        trm1 = (np.sqrt(2)*nc*x*sc.hyp1f1(n/2+1, 1.5, valF)
-                / np.asarray(fac1*sc.gamma((n+1)/2)))
-        trm2 = (sc.hyp1f1((n+1)/2, 0.5, valF)
-                / np.asarray(np.sqrt(fac1)*sc.gamma(n/2+1)))
-        Px *= trm1+trm2
-        return np.clip(Px, 0, None)
+        return scu._nct_pdf(x, df, nc)
 
     def _cdf(self, x, df, nc):
         with np.errstate(over='ignore'):  # see gh-17432
@@ -9036,6 +9120,135 @@ class rice_gen(rv_continuous):
 
 rice = rice_gen(a=0.0, name="rice")
 
+class irwinhall_gen(rv_continuous):
+    r"""An Irwin-Hall (Uniform Sum) continuous random variable.
+
+    An `Irwin-Hall <https://en.wikipedia.org/wiki/Irwin-Hall_distribution/>`_
+    continuous random variable is the sum of :math:`n` independent
+    standard uniform random variables [1]_ [2]_.
+
+    %(before_notes)s
+
+    Notes
+    -----
+    Applications include `Rao's Spacing Test
+    <https://jammalam.faculty.pstat.ucsb.edu/html/favorite/test.htm>`_,
+    a more powerful alternative to the Rayleigh test
+    when the data are not unimodal, and radar [3]_.
+
+    Conveniently, the pdf and cdf are the :math:`n`-fold convolution of
+    the ones for the standard uniform distribution, which is also the
+    definition of the cardinal B-splines of degree :math:`n-1`
+    having knots evenly spaced from :math:`1` to :math:`n` [4]_ [5]_.
+
+    The Bates distribution, which represents the *mean* of statistically
+    independent, uniformly distributed random variables, is simply the
+    Irwin-Hall distribution scaled by :math:`1/n`. For example, the frozen
+    distribution ``bates = irwinhall(10, scale=1/10)`` represents the
+    distribution of the mean of 10 uniformly distributed random variables.
+    
+    %(after_notes)s
+
+    References
+    ----------
+    .. [1] P. Hall, "The distribution of means for samples of size N drawn
+            from a population in which the variate takes values between 0 and 1,
+            all such values being equally probable",
+            Biometrika, Volume 19, Issue 3-4, December 1927, Pages 240-244,
+            :doi:`10.1093/biomet/19.3-4.240`.
+    .. [2] J. O. Irwin, "On the frequency distribution of the means of samples
+            from a population having any law of frequency with finite moments,
+            with special reference to Pearson's Type II,
+            Biometrika, Volume 19, Issue 3-4, December 1927, Pages 225-239,
+            :doi:`0.1093/biomet/19.3-4.225`.
+    .. [3] K. Buchanan, T. Adeyemi, C. Flores-Molina, S. Wheeland and D. Overturf, 
+            "Sidelobe behavior and bandwidth characteristics
+            of distributed antenna arrays,"
+            2018 United States National Committee of
+            URSI National Radio Science Meeting (USNC-URSI NRSM),
+            Boulder, CO, USA, 2018, pp. 1-2.
+            https://www.usnc-ursi-archive.org/nrsm/2018/papers/B15-9.pdf.
+    .. [4] Amos Ron, "Lecture 1: Cardinal B-splines and convolution operators", p. 1
+            https://pages.cs.wisc.edu/~deboor/887/lec1new.pdf.
+    .. [5] Trefethen, N. (2012, July). B-splines and convolution. Chebfun. 
+            Retrieved April 30, 2024, from http://www.chebfun.org/examples/approx/BSplineConv.html.
+
+    %(example)s
+    """  # noqa: E501
+
+    @replace_notes_in_docstring(rv_continuous, notes="""\
+        Raises a ``NotImplementedError`` for the Irwin-Hall distribution because
+        the generic `fit` implementation is unreliable and no custom implementation
+        is available. Consider using `scipy.stats.fit`.\n\n""")
+    def fit(self, data, *args, **kwds):
+        fit_notes = ("The generic `fit` implementation is unreliable for this "
+                     "distribution, and no custom implementation is available. "
+                     "Consider using `scipy.stats.fit`.")
+        raise NotImplementedError(fit_notes)
+
+    def _argcheck(self, n):
+        return (n > 0) & _isintegral(n) & np.isrealobj(n)
+
+    def _get_support(self, n):
+        return 0, n
+
+    def _shape_info(self):
+        return [_ShapeInfo("n", True, (1, np.inf), (True, False))]
+
+    def _munp(self, order, n):
+        # see https://link.springer.com/content/pdf/10.1007/s10959-020-01050-9.pdf
+        # page 640, with m=n, j=n+order
+        def vmunp(order, n):
+            return (sc.stirling2(n+order, n, exact=True)
+                    / sc.comb(n+order, n, exact=True))
+
+        # exact rationals, but we convert to float anyway
+        return np.vectorize(vmunp, otypes=[np.float64])(order, n)
+
+    @staticmethod
+    def _cardbspl(n):
+        t = np.arange(n+1)
+        return BSpline.basis_element(t)
+
+    def _pdf(self, x, n):
+        def vpdf(x, n):
+            return self._cardbspl(n)(x)
+        return np.vectorize(vpdf, otypes=[np.float64])(x, n)
+
+    def _cdf(self, x, n):
+        def vcdf(x, n):
+            return self._cardbspl(n).antiderivative()(x)
+        return np.vectorize(vcdf, otypes=[np.float64])(x, n)
+
+    def _sf(self, x, n):
+        def vsf(x, n):
+            return self._cardbspl(n).antiderivative()(n-x)
+        return np.vectorize(vsf, otypes=[np.float64])(x, n)
+
+    def _rvs(self, n, size=None, random_state=None, *args):
+        @_vectorize_rvs_over_shapes
+        def _rvs1(n, size=None, random_state=None):
+            n = np.floor(n).astype(int)
+            usize = (n,) if size is None else (n, *size)
+            return random_state.uniform(size=usize).sum(axis=0)
+        return _rvs1(n, size=size, random_state=random_state)
+
+    def _stats(self, n):
+        # mgf = ((exp(t) - 1)/t)**n
+        # m'th derivative follows from the generalized Leibniz rule
+        # Moments follow directly from the definition as the sum of n iid unif(0,1)
+        # and the summation rules for moments of a sum of iid random variables
+        # E(IH((n))) = n*E(U(0,1)) = n/2
+        # Var(IH((n))) = n*Var(U(0,1)) = n/12
+        # Skew(IH((n))) = Skew(U(0,1))/sqrt(n) = 0
+        # Kurt(IH((n))) = Kurt(U(0,1))/n = -6/(5*n) -- Fisher's excess kurtosis
+        # See e.g. https://en.wikipedia.org/wiki/Irwin%E2%80%93Hall_distribution
+
+        return n/2, n/12, 0, -6/(5*n)
+
+
+irwinhall = irwinhall_gen(name="irwinhall")
+
 
 class recipinvgauss_gen(rv_continuous):
     r"""A reciprocal inverse Gaussian continuous random variable.
@@ -9112,7 +9325,7 @@ class semicircular_gen(rv_continuous):
 
     for :math:`-1 \le x \le 1`.
 
-    The distribution is a special case of `rdist` with `c = 3`.
+    The distribution is a special case of `rdist` with ``c = 3``.
 
     %(after_notes)s
 
@@ -9393,6 +9606,7 @@ class skewnorm_gen(rv_continuous):
         def skew_d(d):  # skewness in terms of delta
             return (4-np.pi)/2 * ((d * np.sqrt(2 / np.pi))**3
                                   / (1 - 2*d**2 / np.pi)**(3/2))
+
         def d_skew(skew):  # delta in terms of skewness
             s_23 = np.abs(skew)**(2/3)
             return np.sign(skew) * np.sqrt(
@@ -9555,12 +9769,51 @@ class trapezoid_gen(rv_continuous):
         return 0.5 * (1.0-d+c) / (1.0+d-c) + np.log(0.5 * (1.0+d-c))
 
 
+# deprecation of trapz, see #20486
+deprmsg = ("`trapz` is deprecated in favour of `trapezoid` "
+           "and will be removed in SciPy 1.16.0.")
+
+
+class trapz_gen(trapezoid_gen):
+    # override __call__ protocol from rv_generic to also
+    # deprecate instantiation of frozen distributions
+    """
+
+    .. deprecated:: 1.14.0
+        `trapz` is deprecated and will be removed in SciPy 1.16.
+        Plese use `trapezoid` instead!
+    """
+    def __call__(self, *args, **kwds):
+        warnings.warn(deprmsg, DeprecationWarning, stacklevel=2)
+        return self.freeze(*args, **kwds)
+
+
 trapezoid = trapezoid_gen(a=0.0, b=1.0, name="trapezoid")
-# Note: alias kept for backwards compatibility. Rename was done
-# because trapz is a slur in colloquial English (see gh-12924).
-trapz = trapezoid_gen(a=0.0, b=1.0, name="trapz")
-if trapz.__doc__:
-    trapz.__doc__ = "trapz is an alias for `trapezoid`"
+trapz = trapz_gen(a=0.0, b=1.0, name="trapz")
+
+# since the deprecated class gets intantiated upon import (and we only want to
+# warn upon use), add the deprecation to each class method
+_method_names = [
+    "cdf", "entropy", "expect", "fit", "interval", "isf", "logcdf", "logpdf",
+    "logsf", "mean", "median", "moment", "pdf", "ppf", "rvs", "sf", "stats",
+    "std", "var"
+]
+
+
+class _DeprecationWrapper:
+    def __init__(self, method):
+        self.msg = (f"`trapz.{method}` is deprecated in favour of trapezoid.{method}. "
+                     "Please replace all uses of the distribution class "
+                     "`trapz` with `trapezoid`. `trapz` will be removed in SciPy 1.16.")
+        self.method = getattr(trapezoid, method)
+
+    def __call__(self, *args, **kwargs):
+        warnings.warn(self.msg, DeprecationWarning, stacklevel=2)
+        return self.method(*args, **kwargs)
+
+
+for m in _method_names:
+    setattr(trapz, m, _DeprecationWrapper(m))
 
 
 class triang_gen(rv_continuous):
@@ -10335,17 +10588,26 @@ class tukeylambda_gen(rv_continuous):
     %(example)s
 
     """
+    _support_mask = rv_continuous._open_support_mask
+
     def _argcheck(self, lam):
         return np.isfinite(lam)
 
     def _shape_info(self):
         return [_ShapeInfo("lam", False, (-np.inf, np.inf), (False, False))]
 
+    def _get_support(self, lam):
+        b = _lazywhere(lam > 0, (lam,),
+                       f=lambda lam: 1/lam,
+                       fillvalue=np.inf)
+        return -b, b
+
     def _pdf(self, x, lam):
         Fx = np.asarray(sc.tklmbda(x, lam))
         Px = Fx**(lam-1.0) + (np.asarray(1-Fx))**(lam-1.0)
-        Px = 1.0/np.asarray(Px)
-        return np.where((lam <= 0) | (abs(x) < 1.0/np.asarray(lam)), Px, 0.0)
+        with np.errstate(divide='ignore'):
+            Px = 1.0/np.asarray(Px)
+            return np.where((lam <= 0) | (abs(x) < 1.0/np.asarray(lam)), Px, 0.0)
 
     def _cdf(self, x, lam):
         return sc.tklmbda(x, lam)
@@ -10458,7 +10720,7 @@ class uniform_gen(rv_continuous):
         11.0
 
         If we know the data comes from a uniform distribution where the support
-        starts at 0, we can use `floc=0`:
+        starts at 0, we can use ``floc=0``:
 
         >>> loc, scale = uniform.fit(x, floc=0)
         >>> loc
@@ -10467,7 +10729,7 @@ class uniform_gen(rv_continuous):
         13.0
 
         Alternatively, if we know the length of the support is 12, we can use
-        `fscale=12`:
+        ``fscale=12``:
 
         >>> loc, scale = uniform.fit(x, fscale=12)
         >>> loc
@@ -11199,6 +11461,22 @@ class crystalball_gen(rv_continuous):
 
         return N * _lazywhere(x > -beta, (x, beta, m), f=rhs, f2=lhs)
 
+    def _sf(self, x, beta, m):
+        """
+        Survival function of the crystalball distribution.
+        """
+
+        def rhs(x, beta, m):
+            # M is the same as 1/N used elsewhere.
+            M = m/beta/(m - 1)*np.exp(-beta**2/2) + _norm_pdf_C*_norm_cdf(beta)
+            return _norm_pdf_C*_norm_sf(x)/M
+
+        def lhs(x, beta, m):
+            # Default behavior is OK in the left tail of the SF.
+            return 1 - self._cdf(x, beta, m)
+
+        return _lazywhere(x > -beta, (x, beta, m), f=rhs, f2=lhs)
+
     def _ppf(self, p, beta, m):
         N = 1.0 / (m/beta / (m-1) * np.exp(-beta**2 / 2.0) +
                    _norm_pdf_C * _norm_cdf(beta))
@@ -11321,7 +11599,7 @@ class argus_gen(rv_continuous):
         return 1.0 - self._sf(x, chi)
 
     def _sf(self, x, chi):
-        return _argus_phi(chi * np.sqrt(1 - x**2)) / _argus_phi(chi)
+        return _argus_phi(chi * np.sqrt((1 - x)*(1 + x))) / _argus_phi(chi)
 
     def _rvs(self, chi, size=None, random_state=None):
         chi = np.asarray(chi)
