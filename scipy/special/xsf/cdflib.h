@@ -42,7 +42,7 @@ XSF_HOST_DEVICE inline double gdtrib(double a, double p, double x) {
         return 0.0;
     }
     double q = 1.0 - p;
-    auto func = [a, p, q, x](double b) -> double {
+    auto func = [a, p, q, x](double b) {
 	if (p <= q) {
 	    return cephes::igam(b, a * x) - p;
 	}
