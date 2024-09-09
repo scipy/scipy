@@ -5,12 +5,9 @@
 from scipy._lib.deprecation import _sub_module_deprecation
 
 __all__ = [  # noqa: F822
-    'spline_filter', 'bspline', 'gauss_spline', 'cubic', 'quadratic',
+    'spline_filter', 'gauss_spline',
     'cspline1d', 'qspline1d', 'cspline1d_eval', 'qspline1d_eval',
-    'logical_and', 'zeros_like', 'piecewise', 'array', 'arctan2',
-    'tan', 'arange', 'floor', 'exp', 'greater', 'less', 'add',
-    'less_equal', 'greater_equal', 'cspline2d', 'sepfir2d', 'comb',
-    'float_factorial'
+    'cspline2d', 'sepfir2d'
 ]
 
 
@@ -20,5 +17,5 @@ def __dir__():
 
 def __getattr__(name):
     return _sub_module_deprecation(sub_package="signal", module="bsplines",
-                                   private_modules=["_bsplines"], all=__all__,
+                                   private_modules=["_spline_filters"], all=__all__,
                                    attribute=name)

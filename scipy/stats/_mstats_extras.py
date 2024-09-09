@@ -25,7 +25,7 @@ from . import _mstats_basic as mstats
 from scipy.stats.distributions import norm, beta, t, binom
 
 
-def hdquantiles(data, prob=list([.25,.5,.75]), axis=None, var=False,):
+def hdquantiles(data, prob=(.25, .5, .75), axis=None, var=False,):
     """
     Computes quantile estimates with the Harrell-Davis method.
 
@@ -108,7 +108,7 @@ def hdquantiles(data, prob=list([.25,.5,.75]), axis=None, var=False,):
         return hd[0]
     # Initialization & checks
     data = ma.array(data, copy=False, dtype=float64)
-    p = np.array(prob, copy=False, ndmin=1)
+    p = np.atleast_1d(np.asarray(prob))
     # Computes quantiles along axis (or globally)
     if (axis is None) or (data.ndim == 1):
         result = _hd_1D(data, p, var)
@@ -147,7 +147,7 @@ def hdmedian(data, axis=-1, var=False):
     return result.squeeze()
 
 
-def hdquantiles_sd(data, prob=list([.25,.5,.75]), axis=None):
+def hdquantiles_sd(data, prob=(.25, .5, .75), axis=None):
     """
     The standard error of the Harrell-Davis quantile estimates by jackknife.
 
@@ -197,7 +197,7 @@ def hdquantiles_sd(data, prob=list([.25,.5,.75]), axis=None):
 
     # Initialization & checks
     data = ma.array(data, copy=False, dtype=float64)
-    p = np.array(prob, copy=False, ndmin=1)
+    p = np.atleast_1d(np.asarray(prob))
     # Computes quantiles along axis (or globally)
     if (axis is None):
         result = _hdsd_1D(data, p)
@@ -261,7 +261,7 @@ def trimmed_mean_ci(data, limits=(0.2,0.2), inclusive=(True,True),
     return np.array((tmean - tppf*tstde, tmean+tppf*tstde))
 
 
-def mjci(data, prob=[0.25,0.5,0.75], axis=None):
+def mjci(data, prob=(0.25, 0.5, 0.75), axis=None):
     """
     Returns the Maritz-Jarrett estimators of the standard error of selected
     experimental quantiles of the data.
@@ -298,7 +298,7 @@ def mjci(data, prob=[0.25,0.5,0.75], axis=None):
         raise ValueError("Array 'data' must be at most two dimensional, "
                          "but got data.ndim = %d" % data.ndim)
 
-    p = np.array(prob, copy=False, ndmin=1)
+    p = np.atleast_1d(np.asarray(prob))
     # Computes quantiles along axis (or globally)
     if (axis is None):
         return _mjci_1D(data, p)
@@ -306,7 +306,7 @@ def mjci(data, prob=[0.25,0.5,0.75], axis=None):
         return ma.apply_along_axis(_mjci_1D, axis, data, p)
 
 
-def mquantiles_cimj(data, prob=[0.25,0.50,0.75], alpha=0.05, axis=None):
+def mquantiles_cimj(data, prob=(0.25, 0.50, 0.75), alpha=0.05, axis=None):
     """
     Computes the alpha confidence interval for the selected quantiles of the
     data, with Maritz-Jarrett estimators.
@@ -508,7 +508,7 @@ def rsh(data, points=None):
     if points is None:
         points = data
     else:
-        points = np.array(points, copy=False, ndmin=1)
+        points = np.atleast_1d(np.asarray(points))
 
     if data.ndim != 1:
         raise AttributeError("The input array should be 1D only !")

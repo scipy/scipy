@@ -52,7 +52,7 @@ def _as2d(ar):
     if ar.ndim == 2:
         return ar
     else:  # Assume 1!
-        aux = np.array(ar, copy=False)
+        aux = np.asarray(ar)
         aux.shape = (ar.shape[0], 1)
         return aux
 
@@ -352,9 +352,7 @@ def lobpcg(
 
     >>> eigenvalues, _ = lobpcg(A, X, maxiter=60)
     >>> eigenvalues
-    array([100.])
-    >>> eigenvalues.dtype
-    dtype('float32')
+    array([100.], dtype=float32)
 
     `lobpcg` needs only access the matrix product with `A` rather
     then the matrix itself. Since the matrix `A` is diagonal in
@@ -373,10 +371,10 @@ def lobpcg(
 
     >>> eigenvalues, _ = lobpcg(A_lambda, X, maxiter=60)
     >>> eigenvalues
-    array([100.])
+    array([100.], dtype=float32)
     >>> eigenvalues, _ = lobpcg(A_matmat, X, maxiter=60)
     >>> eigenvalues
-    array([100.])
+    array([100.], dtype=float32)
 
     The traditional callable `LinearOperator` is no longer
     necessary but still supported as the input to `lobpcg`.
@@ -385,13 +383,13 @@ def lobpcg(
     >>> A_lo = LinearOperator((n, n), matvec=A_matmat, matmat=A_matmat, dtype=np.int16)
     >>> eigenvalues, _ = lobpcg(A_lo, X, maxiter=80)
     >>> eigenvalues
-    array([100.])
+    array([100.], dtype=float32)
 
     The least efficient callable option is `aslinearoperator`:
 
     >>> eigenvalues, _ = lobpcg(aslinearoperator(A), X, maxiter=80)
     >>> eigenvalues
-    array([100.])
+    array([100.], dtype=float32)
 
     We now switch to computing the three smallest eigenvalues specifying
 
@@ -400,7 +398,7 @@ def lobpcg(
 
     and ``largest=False`` parameter
 
-    >>> eigenvalues, _ = lobpcg(A, X, largest=False, maxiter=80)
+    >>> eigenvalues, _ = lobpcg(A, X, largest=False, maxiter=90)
     >>> print(eigenvalues)  
     [1. 2. 3.]
 

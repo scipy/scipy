@@ -1,5 +1,10 @@
 import numpy as np
 from scipy._lib._util import _asarray_validated
+from scipy._lib._array_api import (
+    array_namespace,
+    xp_size,
+    xp_broadcast_promote,
+)
 
 __all__ = ["logsumexp", "softmax", "log_softmax"]
 
@@ -40,11 +45,14 @@ def logsumexp(a, axis=None, b=None, keepdims=False, return_sign=False):
     res : ndarray
         The result, ``np.log(np.sum(np.exp(a)))`` calculated in a numerically
         more stable way. If `b` is given then ``np.log(np.sum(b*np.exp(a)))``
-        is returned.
+        is returned. If ``return_sign`` is True, ``res`` contains the log of
+        the absolute value of the argument.
     sgn : ndarray
-        If return_sign is True, this will be an array of floating-point
-        numbers matching res and +1, 0, or -1 depending on the sign
-        of the result. If False, only one result is returned.
+        If ``return_sign`` is True, this will be an array of floating-point
+        numbers matching res containing +1, 0, -1 (for real-valued inputs)
+        or a complex phase (for complex inputs). This gives the sign of the
+        argument of the logarithm in ``res``.
+        If ``return_sign`` is False, only one result is returned.
 
     See Also
     --------
@@ -90,36 +98,49 @@ def logsumexp(a, axis=None, b=None, keepdims=False, return_sign=False):
     1.6094379124341005, 1.6094379124341005
 
     """
-    a = _asarray_validated(a, check_finite=False)
-    if b is not None:
-        a, b = np.broadcast_arrays(a, b)
-        if np.any(b == 0):
-            a = a + 0.  # promote to at least float
-            a[b == 0] = -np.inf
+    xp = array_namespace(a, b)
+    a, b = xp_broadcast_promote(a, b, ensure_writeable=True, force_floating=True, xp=xp)
+    axis = tuple(range(a.ndim)) if axis is None else axis
 
-    a_max = np.amax(a, axis=axis, keepdims=True)
+    if b is not None:
+        a[b == 0] = -xp.inf
+
+    # Scale by real part for complex inputs, because this affects
+    # the magnitude of the exponential.
+    if xp_size(a) == 0:
+        # because `xp.max` doesn't have `initial` argument...
+        shape = np.asarray(a.shape)  # NumPy is concise for scalar or tuple `axis`
+        shape[axis] = 1
+        a_max = xp.full(tuple(shape), -xp.inf, dtype=a.dtype)
+    else:
+        real = xp.real(a) if xp.isdtype(a.dtype, "complex floating") else a
+        a_max = xp.max(real, axis=axis, keepdims=True)
 
     if a_max.ndim > 0:
-        a_max[~np.isfinite(a_max)] = 0
-    elif not np.isfinite(a_max):
+        a_max[~xp.isfinite(a_max)] = 0
+    elif not xp.isfinite(a_max):
         a_max = 0
 
     if b is not None:
-        b = np.asarray(b)
-        tmp = b * np.exp(a - a_max)
+        b = xp.asarray(b)
+        tmp = b * xp.exp(a - a_max)
     else:
-        tmp = np.exp(a - a_max)
+        tmp = xp.exp(a - a_max)
 
     # suppress warnings about log of zero
     with np.errstate(divide='ignore'):
-        s = np.sum(tmp, axis=axis, keepdims=keepdims)
+        s = xp.sum(tmp, axis=axis, keepdims=keepdims)
         if return_sign:
-            sgn = np.sign(s)
-            s *= sgn  # /= makes more sense but we need zero -> zero
-        out = np.log(s)
+            # For complex, use the numpy>=2.0 convention for sign.
+            if xp.isdtype(s.dtype, "complex floating"):
+                sgn = s / xp.where(s == 0, xp.asarray(1, dtype=s.dtype), xp.abs(s))
+            else:
+                sgn = xp.sign(s)
+            s = xp.abs(s)
+        out = xp.log(s)
 
     if not keepdims:
-        a_max = np.squeeze(a_max, axis=axis)
+        a_max = xp.squeeze(a_max, axis=axis)
     out += a_max
 
     if return_sign:

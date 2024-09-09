@@ -227,7 +227,7 @@ cgsrfs(trans_t trans, SuperMatrix *A, SuperMatrix *L, SuperMatrix *U,
     colequ = strncmp(equed, "C", 1)==0 || strncmp(equed, "B", 1)==0;
     
     /* Allocate working space */
-    work = complexMalloc(2*A->nrow);
+    work = singlecomplexMalloc(2*A->nrow);
     rwork = (float *) SUPERLU_MALLOC( A->nrow * sizeof(float) );
     iwork = int32Malloc(A->nrow);
     if ( !work || !rwork || !iwork ) 

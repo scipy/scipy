@@ -134,7 +134,7 @@ from collections import deque
 import numpy as np
 from . import _hierarchy, _optimal_leaf_ordering
 import scipy.spatial.distance as distance
-from scipy._lib._array_api import array_namespace, as_xparray, copy
+from scipy._lib._array_api import array_namespace, _asarray, xp_copy, is_jax
 from scipy._lib._disjoint_set import DisjointSet
 
 
@@ -157,13 +157,13 @@ class ClusterWarning(UserWarning):
 
 
 def _warning(s):
-    warnings.warn('scipy.cluster: %s' % s, ClusterWarning, stacklevel=3)
+    warnings.warn(f'scipy.cluster: {s}', ClusterWarning, stacklevel=3)
 
 
 def int_floor(arr, xp):
-    # numpy.array_api is strict about not allowing `int()` on a float array.
+    # array_api_strict is strict about not allowing `int()` on a float array.
     # That's typically not needed, here it is - so explicitly convert
-    return int(xp.astype(arr, xp.int64))
+    return int(xp.astype(xp.asarray(arr), xp.int64))
 
 
 def single(y):
@@ -1003,7 +1003,7 @@ def linkage(y, method='single', metric='euclidean', optimal_ordering=False):
     >>> plt.show()
     """
     xp = array_namespace(y)
-    y = as_xparray(y, order='C', dtype=xp.float64, xp=xp)
+    y = _asarray(y, order='C', dtype=xp.float64, xp=xp)
 
     if method not in _LINKAGE_METHODS:
         raise ValueError(f"Invalid method: {method}")
@@ -1358,7 +1358,7 @@ def cut_tree(Z, n_clusters=None, height=None):
 
     for i, node in enumerate(nodes):
         idx = node.pre_order()
-        this_group = copy(last_group, xp=xp)
+        this_group = xp_copy(last_group, xp=xp)
         # TODO ARRAY_API complex indexing not supported
         this_group[idx] = xp.min(last_group[idx])
         this_group[this_group > xp.max(last_group[idx])] -= 1
@@ -1430,7 +1430,7 @@ def to_tree(Z, rd=False):
 
     """
     xp = array_namespace(Z)
-    Z = as_xparray(Z, order='c', xp=xp)
+    Z = _asarray(Z, order='c', xp=xp)
     is_valid_linkage(Z, throw=True, name='Z')
 
     # Number of original objects is equal to the number of rows plus 1.
@@ -1512,10 +1512,10 @@ def optimal_leaf_ordering(Z, y, metric='euclidean'):
 
     """
     xp = array_namespace(Z, y)
-    Z = as_xparray(Z, order='C', xp=xp)
+    Z = _asarray(Z, order='C', xp=xp)
     is_valid_linkage(Z, throw=True, name='Z')
 
-    y = as_xparray(y, order='C', dtype=xp.float64, xp=xp)
+    y = _asarray(y, order='C', dtype=xp.float64, xp=xp)
 
     if y.ndim == 1:
         distance.is_valid_y(y, throw=True, name='y')
@@ -1649,7 +1649,7 @@ def cophenet(Z, Y=None):
     """
     xp = array_namespace(Z, Y)
     # Ensure float64 C-contiguous array. Cython code doesn't deal with striding.
-    Z = as_xparray(Z, order='C', dtype=xp.float64, xp=xp)
+    Z = _asarray(Z, order='C', dtype=xp.float64, xp=xp)
     is_valid_linkage(Z, throw=True, name='Z')
     n = Z.shape[0] + 1
     zz = np.zeros((n * (n-1)) // 2, dtype=np.float64)
@@ -1660,7 +1660,7 @@ def cophenet(Z, Y=None):
     if Y is None:
         return zz
 
-    Y = as_xparray(Y, order='C', xp=xp)
+    Y = _asarray(Y, order='C', xp=xp)
     distance.is_valid_y(Y, throw=True, name='Y')
 
     z = xp.mean(zz)
@@ -1730,7 +1730,7 @@ def inconsistent(Z, d=2):
 
     """
     xp = array_namespace(Z)
-    Z = as_xparray(Z, order='C', dtype=xp.float64, xp=xp)
+    Z = _asarray(Z, order='C', dtype=xp.float64, xp=xp)
     is_valid_linkage(Z, throw=True, name='Z')
 
     if (not d == np.floor(d)) or d < 0:
@@ -1817,27 +1817,30 @@ def from_mlab_linkage(Z):
 
     """
     xp = array_namespace(Z)
-    Z = as_xparray(Z, dtype=xp.float64, order='C', xp=xp)
+    Z = _asarray(Z, dtype=xp.float64, order='C', xp=xp)
     Zs = Z.shape
 
     # If it's empty, return it.
     if len(Zs) == 0 or (len(Zs) == 1 and Zs[0] == 0):
-        return copy(Z, xp=xp)
+        return xp_copy(Z, xp=xp)
 
     if len(Zs) != 2:
         raise ValueError("The linkage array must be rectangular.")
 
     # If it contains no rows, return it.
     if Zs[0] == 0:
-        return copy(Z, xp=xp)
+        return xp_copy(Z, xp=xp)
 
-    Zpart = copy(Z, xp=xp)
-    if xp.min(Zpart[:, 0:2]) != 1.0 and xp.max(Zpart[:, 0:2]) != 2 * Zs[0]:
+    if xp.min(Z[:, 0:2]) != 1.0 and xp.max(Z[:, 0:2]) != 2 * Zs[0]:
         raise ValueError('The format of the indices is not 1..N')
 
-    Zpart[:, 0:2] -= 1.0
+    Zpart = xp.concat((Z[:, 0:2] - 1.0, Z[:, 2:]), axis=1)
     CS = np.zeros((Zs[0],), dtype=np.float64)
-    Zpart = np.asarray(Zpart)
+    if is_jax(xp):
+        # calculate_cluster_sizes doesn't accept read-only arrays
+        Zpart = np.array(Zpart, copy=True)
+    else:
+        Zpart = np.asarray(Zpart)
     _hierarchy.calculate_cluster_sizes(Zpart, CS, int(Zs[0]) + 1)
     res = np.hstack([Zpart, CS.reshape(Zs[0], 1)])
     return xp.asarray(res)
@@ -1919,16 +1922,13 @@ def to_mlab_linkage(Z):
 
     """
     xp = array_namespace(Z)
-    Z = as_xparray(Z, order='C', dtype=xp.float64)
+    Z = _asarray(Z, order='C', dtype=xp.float64, xp=xp)
     Zs = Z.shape
     if len(Zs) == 0 or (len(Zs) == 1 and Zs[0] == 0):
-        return copy(Z, xp=xp)
+        return xp_copy(Z, xp=xp)
     is_valid_linkage(Z, throw=True, name='Z')
 
-    ZP = copy(Z[:, 0:3], xp=xp)
-    ZP[:, 0:2] += 1.0
-
-    return ZP
+    return xp.concat((Z[:, :2] + 1.0, Z[:, 2:3]), axis=1)
 
 
 def is_monotonic(Z):
@@ -2010,7 +2010,7 @@ def is_monotonic(Z):
 
     """
     xp = array_namespace(Z)
-    Z = as_xparray(Z, order='c', xp=xp)
+    Z = _asarray(Z, order='c', xp=xp)
     is_valid_linkage(Z, throw=True, name='Z')
 
     # We expect the i'th value to be greater than its successor.
@@ -2105,31 +2105,31 @@ def is_valid_im(R, warning=False, throw=False, name=None):
 
     """
     xp = array_namespace(R)
-    R = as_xparray(R, order='c', xp=xp)
+    R = _asarray(R, order='c', xp=xp)
     valid = True
-    name_str = "%r " % name if name else ''
+    name_str = f"{name!r} " if name else ''
     try:
         if R.dtype != xp.float64:
-            raise TypeError('Inconsistency matrix %smust contain doubles '
-                            '(double).' % name_str)
+            raise TypeError(f'Inconsistency matrix {name_str}must contain doubles '
+                            '(double).')
         if len(R.shape) != 2:
-            raise ValueError('Inconsistency matrix %smust have shape=2 (i.e. '
-                             'be two-dimensional).' % name_str)
+            raise ValueError(f'Inconsistency matrix {name_str}must have shape=2 (i.e. '
+                             'be two-dimensional).')
         if R.shape[1] != 4:
-            raise ValueError('Inconsistency matrix %smust have 4 columns.' %
-                             name_str)
+            raise ValueError(f'Inconsistency matrix {name_str}'
+                             'must have 4 columns.')
         if R.shape[0] < 1:
-            raise ValueError('Inconsistency matrix %smust have at least one '
-                             'row.' % name_str)
+            raise ValueError(f'Inconsistency matrix {name_str}'
+                             'must have at least one row.')
         if xp.any(R[:, 0] < 0):
-            raise ValueError('Inconsistency matrix %scontains negative link '
-                             'height means.' % name_str)
+            raise ValueError(f'Inconsistency matrix {name_str}'
+                             'contains negative link height means.')
         if xp.any(R[:, 1] < 0):
-            raise ValueError('Inconsistency matrix %scontains negative link '
-                             'height standard deviations.' % name_str)
+            raise ValueError(f'Inconsistency matrix {name_str}'
+                             'contains negative link height standard deviations.')
         if xp.any(R[:, 2] < 0):
-            raise ValueError('Inconsistency matrix %scontains negative link '
-                             'counts.' % name_str)
+            raise ValueError(f'Inconsistency matrix {name_str}'
+                             'contains negative link counts.')
     except Exception as e:
         if throw:
             raise
@@ -2222,37 +2222,33 @@ def is_valid_linkage(Z, warning=False, throw=False, name=None):
 
     """
     xp = array_namespace(Z)
-    Z = as_xparray(Z, order='c', xp=xp)
+    Z = _asarray(Z, order='c', xp=xp)
     valid = True
-    name_str = "%r " % name if name else ''
+    name_str = f"{name!r} " if name else ''
     try:
         if Z.dtype != xp.float64:
-            raise TypeError('Linkage matrix %smust contain doubles.' % name_str)
+            raise TypeError(f'Linkage matrix {name_str}must contain doubles.')
         if len(Z.shape) != 2:
-            raise ValueError('Linkage matrix %smust have shape=2 (i.e. be '
-                             'two-dimensional).' % name_str)
+            raise ValueError(f'Linkage matrix {name_str}must have shape=2 (i.e. be'
+                             ' two-dimensional).')
         if Z.shape[1] != 4:
-            raise ValueError('Linkage matrix %smust have 4 columns.' % name_str)
+            raise ValueError(f'Linkage matrix {name_str}must have 4 columns.')
         if Z.shape[0] == 0:
             raise ValueError('Linkage must be computed on at least two '
                              'observations.')
         n = Z.shape[0]
         if n > 1:
             if (xp.any(Z[:, 0] < 0) or xp.any(Z[:, 1] < 0)):
-                raise ValueError('Linkage %scontains negative indices.' %
-                                 name_str)
+                raise ValueError(f'Linkage {name_str}contains negative indices.')
             if xp.any(Z[:, 2] < 0):
-                raise ValueError('Linkage %scontains negative distances.' %
-                                 name_str)
+                raise ValueError(f'Linkage {name_str}contains negative distances.')
             if xp.any(Z[:, 3] < 0):
-                raise ValueError('Linkage %scontains negative counts.' %
-                                 name_str)
+                raise ValueError(f'Linkage {name_str}contains negative counts.')
         if _check_hierarchy_uses_cluster_before_formed(Z):
-            raise ValueError('Linkage %suses non-singleton cluster before '
-                             'it is formed.' % name_str)
+            raise ValueError(f'Linkage {name_str}uses non-singleton cluster before'
+                             ' it is formed.')
         if _check_hierarchy_uses_cluster_more_than_once(Z):
-            raise ValueError('Linkage %suses the same cluster more than once.'
-                             % name_str)
+            raise ValueError(f'Linkage {name_str}uses the same cluster more than once.')
     except Exception as e:
         if throw:
             raise
@@ -2330,7 +2326,8 @@ def num_obs_linkage(Z):
     12
 
     """
-    Z = as_xparray(Z, order='c')
+    xp = array_namespace(Z)
+    Z = _asarray(Z, order='c', xp=xp)
     is_valid_linkage(Z, throw=True, name='Z')
     return (Z.shape[0] + 1)
 
@@ -2387,8 +2384,8 @@ def correspond(Z, Y):
     is_valid_linkage(Z, throw=True)
     distance.is_valid_y(Y, throw=True)
     xp = array_namespace(Z, Y)
-    Z = as_xparray(Z, order='c', xp=xp)
-    Y = as_xparray(Y, order='c', xp=xp)
+    Z = _asarray(Z, order='c', xp=xp)
+    Y = _asarray(Y, order='c', xp=xp)
     return distance.num_obs_y(Y) == num_obs_linkage(Z)
 
 
@@ -2544,7 +2541,7 @@ def fcluster(Z, t, criterion='inconsistent', depth=2, R=None, monocrit=None):
 
     """
     xp = array_namespace(Z)
-    Z = as_xparray(Z, order='C', dtype=xp.float64, xp=xp)
+    Z = _asarray(Z, order='C', dtype=xp.float64, xp=xp)
     is_valid_linkage(Z, throw=True, name='Z')
 
     n = Z.shape[0] + 1
@@ -2559,7 +2556,7 @@ def fcluster(Z, t, criterion='inconsistent', depth=2, R=None, monocrit=None):
         if R is None:
             R = inconsistent(Z, depth)
         else:
-            R = as_xparray(R, order='C', dtype=xp.float64, xp=xp)
+            R = _asarray(R, order='C', dtype=xp.float64, xp=xp)
             is_valid_im(R, throw=True, name='R')
             # Since the C code does not support striding using strides.
             # The dimensions are used instead.
@@ -2574,8 +2571,7 @@ def fcluster(Z, t, criterion='inconsistent', depth=2, R=None, monocrit=None):
     elif criterion == 'maxclust_monocrit':
         _hierarchy.cluster_maxclust_monocrit(Z, monocrit, T, int(n), int(t))
     else:
-        raise ValueError('Invalid cluster formation criterion: %s'
-                         % str(criterion))
+        raise ValueError(f'Invalid cluster formation criterion: {str(criterion)}')
     return xp.asarray(T)
 
 
@@ -2665,7 +2661,7 @@ def fclusterdata(X, t, criterion='inconsistent',
 
     """
     xp = array_namespace(X)
-    X = as_xparray(X, order='C', dtype=xp.float64)
+    X = _asarray(X, order='C', dtype=xp.float64, xp=xp)
 
     if X.ndim != 2:
         raise TypeError('The observation matrix X must be an n by m '
@@ -2677,7 +2673,7 @@ def fclusterdata(X, t, criterion='inconsistent',
     if R is None:
         R = inconsistent(Z, d=depth)
     else:
-        R = as_xparray(R, order='c', xp=xp)
+        R = _asarray(R, order='c', xp=xp)
     T = fcluster(Z, criterion=criterion, depth=depth, R=R, t=t)
     return T
 
@@ -2731,7 +2727,7 @@ def leaves_list(Z):
 
     """
     xp = array_namespace(Z)
-    Z = as_xparray(Z, order='C', xp=xp)
+    Z = _asarray(Z, order='C', xp=xp)
     is_valid_linkage(Z, throw=True, name='Z')
     n = Z.shape[0] + 1
     ML = np.zeros((n,), dtype='i')
@@ -3267,7 +3263,8 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
     #         or results in a crossing, an exception will be thrown. Passing
     #         None orders leaf nodes based on the order they appear in the
     #         pre-order traversal.
-    Z = as_xparray(Z, order='c')
+    xp = array_namespace(Z)
+    Z = _asarray(Z, order='c', xp=xp)
 
     if orientation not in ["top", "left", "bottom", "right"]:
         raise ValueError("orientation must be one of 'top', 'left', "
@@ -3319,7 +3316,7 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
 
     if color_threshold is None or (isinstance(color_threshold, str) and
                                    color_threshold == 'default'):
-        color_threshold = max(Z[:, 2]) * 0.7
+        color_threshold = xp.max(Z[:, 2]) * 0.7
 
     R = {'icoord': icoord_list, 'dcoord': dcoord_list, 'ivl': ivl,
          'leaves': lvs, 'color_list': color_list}
@@ -3353,7 +3350,7 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
         above_threshold_color=above_threshold_color)
 
     if not no_plot:
-        mh = max(Z[:, 2])
+        mh = xp.max(Z[:, 2])
         _plot_dendrogram(icoord_list, dcoord_list, ivl, p, n, mh, orientation,
                          no_labels, color_list,
                          leaf_font_size=leaf_font_size,
@@ -3449,10 +3446,10 @@ def _dendrogram_calculate_info(Z, p, truncate_mode,
                                orientation='top', labels=None,
                                count_sort=False, distance_sort=False,
                                show_leaf_counts=False, i=-1, iv=0.0,
-                               ivl=[], n=0, icoord_list=[], dcoord_list=[],
+                               ivl=None, n=0, icoord_list=None, dcoord_list=None,
                                lvs=None, mhr=False,
-                               current_color=[], color_list=[],
-                               currently_below_threshold=[],
+                               current_color=None, color_list=None,
+                               currently_below_threshold=None,
                                leaf_label_func=None, level=0,
                                contraction_marks=None,
                                link_color_func=None,
@@ -3838,7 +3835,7 @@ def maxdists(Z):
 
     """
     xp = array_namespace(Z)
-    Z = as_xparray(Z, order='C', dtype=xp.float64, xp=xp)
+    Z = _asarray(Z, order='C', dtype=xp.float64, xp=xp)
     is_valid_linkage(Z, throw=True, name='Z')
 
     n = Z.shape[0] + 1
@@ -3925,8 +3922,8 @@ def maxinconsts(Z, R):
 
     """
     xp = array_namespace(Z, R)
-    Z = as_xparray(Z, order='C', dtype=xp.float64, xp=xp)
-    R = as_xparray(R, order='C', dtype=xp.float64, xp=xp)
+    Z = _asarray(Z, order='C', dtype=xp.float64, xp=xp)
+    R = _asarray(R, order='C', dtype=xp.float64, xp=xp)
     is_valid_linkage(Z, throw=True, name='Z')
     is_valid_im(R, throw=True, name='R')
 
@@ -4020,8 +4017,8 @@ def maxRstat(Z, R, i):
 
     """
     xp = array_namespace(Z, R)
-    Z = as_xparray(Z, order='C', dtype=xp.float64, xp=xp)
-    R = as_xparray(R, order='C', dtype=xp.float64, xp=xp)
+    Z = _asarray(Z, order='C', dtype=xp.float64, xp=xp)
+    R = _asarray(R, order='C', dtype=xp.float64, xp=xp)
     is_valid_linkage(Z, throw=True, name='Z')
     is_valid_im(R, throw=True, name='R')
 
@@ -4147,8 +4144,8 @@ def leaders(Z, T):
 
     """
     xp = array_namespace(Z, T)
-    Z = as_xparray(Z, order='C', dtype=xp.float64)
-    T = as_xparray(T, order='C')
+    Z = _asarray(Z, order='C', dtype=xp.float64, xp=xp)
+    T = _asarray(T, order='C', xp=xp)
     is_valid_linkage(Z, throw=True, name='Z')
 
     if T.dtype != xp.int32:

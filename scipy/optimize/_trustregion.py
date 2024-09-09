@@ -89,7 +89,7 @@ class BaseQuadraticSubproblem:
 
     def get_boundaries_intersections(self, z, d, trust_radius):
         """
-        Solve the scalar quadratic equation ||z + t d|| == trust_radius.
+        Solve the scalar quadratic equation ``||z + t d|| == trust_radius``.
         This is like a line-sphere intersection.
         Return the two values of t, sorted from low to high.
         """
@@ -284,7 +284,7 @@ def _minimize_trust_region(fun, x0, args=(), jac=None, hess=None, hessp=None,
             print(status_messages[warnflag])
         else:
             warnings.warn(status_messages[warnflag], RuntimeWarning, stacklevel=3)
-        print("         Current function value: %f" % m.fun)
+        print(f"         Current function value: {m.fun:f}")
         print("         Iterations: %d" % k)
         print("         Function evaluations: %d" % sf.nfev)
         print("         Gradient evaluations: %d" % sf.ngev)

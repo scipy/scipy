@@ -3,6 +3,7 @@ import warnings
 from scipy._lib import _pep440
 import numpy as np
 from numpy.testing import (assert_array_almost_equal,
+                           assert_array_almost_equal_nulp,
                            assert_array_equal, assert_array_less,
                            assert_equal, assert_,
                            assert_allclose, assert_warns, suppress_warnings)
@@ -17,7 +18,7 @@ from scipy.signal import (argrelextrema, BadCoefficients, bessel, besselap, bili
                           gammatone, group_delay, iircomb, iirdesign, iirfilter,
                           iirnotch, iirpeak, lp2bp, lp2bs, lp2hp, lp2lp, normalize,
                           medfilt, order_filter,
-                          sos2tf, sos2zpk, sosfreqz, tf2sos, tf2zpk, zpk2sos,
+                          sos2tf, sos2zpk, sosfreqz, freqz_sos, tf2sos, tf2zpk, zpk2sos,
                           zpk2tf, bilinear_zpk, lp2lp_zpk, lp2hp_zpk, lp2bp_zpk,
                           lp2bs_zpk)
 from scipy.signal._filter_design import (_cplxreal, _cplxpair, _norm_factor,
@@ -912,11 +913,18 @@ class TestFreqz:
         _, Dpoly = freqz(d, worN=w)
         assert_allclose(Drfft, Dpoly)
 
+    def test_fs_validation(self):
+        with pytest.raises(ValueError, match="Sampling.*single scalar"):
+            freqz([1.0], fs=np.array([10, 20]))
 
-class TestSOSFreqz:
+        with pytest.raises(ValueError, match="Sampling.*be none."):
+            freqz([1.0], fs=None)
 
-    def test_sosfreqz_basic(self):
-        # Compare the results of freqz and sosfreqz for a low order
+
+class Testfreqz_sos:
+
+    def test_freqz_sos_basic(self):
+        # Compare the results of freqz and freqz_sos for a low order
         # Butterworth filter.
 
         N = 500
@@ -924,27 +932,37 @@ class TestSOSFreqz:
         b, a = butter(4, 0.2)
         sos = butter(4, 0.2, output='sos')
         w, h = freqz(b, a, worN=N)
-        w2, h2 = sosfreqz(sos, worN=N)
+        w2, h2 = freqz_sos(sos, worN=N)
         assert_equal(w2, w)
         assert_allclose(h2, h, rtol=1e-10, atol=1e-14)
 
         b, a = ellip(3, 1, 30, (0.2, 0.3), btype='bandpass')
         sos = ellip(3, 1, 30, (0.2, 0.3), btype='bandpass', output='sos')
         w, h = freqz(b, a, worN=N)
-        w2, h2 = sosfreqz(sos, worN=N)
+        w2, h2 = freqz_sos(sos, worN=N)
         assert_equal(w2, w)
         assert_allclose(h2, h, rtol=1e-10, atol=1e-14)
         # must have at least one section
-        assert_raises(ValueError, sosfreqz, sos[:0])
+        assert_raises(ValueError, freqz_sos, sos[:0])
 
-    def test_sosfrez_design(self):
-        # Compare sosfreqz output against expected values for different
+    def test_backward_compat(self):
+        # For backward compatibility, test if None act as a wrapper for default
+        N = 500
+
+        sos = butter(4, 0.2, output='sos')
+        w1, h1 = freqz_sos(sos, worN=N)
+        w2, h2 = sosfreqz(sos, worN=N)
+        assert_array_almost_equal(w1, w2)
+        assert_array_almost_equal(h1, h2)
+
+    def test_freqz_sos_design(self):
+        # Compare freqz_sos output against expected values for different
         # filter types
 
         # from cheb2ord
         N, Wn = cheb2ord([0.1, 0.6], [0.2, 0.5], 3, 60)
         sos = cheby2(N, 60, Wn, 'stop', output='sos')
-        w, h = sosfreqz(sos)
+        w, h = freqz_sos(sos)
         h = np.abs(h)
         w /= np.pi
         assert_allclose(20 * np.log10(h[w <= 0.1]), 0, atol=3.01)
@@ -953,7 +971,7 @@ class TestSOSFreqz:
 
         N, Wn = cheb2ord([0.1, 0.6], [0.2, 0.5], 3, 150)
         sos = cheby2(N, 150, Wn, 'stop', output='sos')
-        w, h = sosfreqz(sos)
+        w, h = freqz_sos(sos)
         dB = 20*np.log10(np.abs(h))
         w /= np.pi
         assert_allclose(dB[w <= 0.1], 0, atol=3.01)
@@ -963,7 +981,7 @@ class TestSOSFreqz:
         # from cheb1ord
         N, Wn = cheb1ord(0.2, 0.3, 3, 40)
         sos = cheby1(N, 3, Wn, 'low', output='sos')
-        w, h = sosfreqz(sos)
+        w, h = freqz_sos(sos)
         h = np.abs(h)
         w /= np.pi
         assert_allclose(20 * np.log10(h[w <= 0.2]), 0, atol=3.01)
@@ -971,7 +989,7 @@ class TestSOSFreqz:
 
         N, Wn = cheb1ord(0.2, 0.3, 1, 150)
         sos = cheby1(N, 1, Wn, 'low', output='sos')
-        w, h = sosfreqz(sos)
+        w, h = freqz_sos(sos)
         dB = 20*np.log10(np.abs(h))
         w /= np.pi
         assert_allclose(dB[w <= 0.2], 0, atol=1.01)
@@ -980,7 +998,7 @@ class TestSOSFreqz:
         # adapted from ellipord
         N, Wn = ellipord(0.3, 0.2, 3, 60)
         sos = ellip(N, 0.3, 60, Wn, 'high', output='sos')
-        w, h = sosfreqz(sos)
+        w, h = freqz_sos(sos)
         h = np.abs(h)
         w /= np.pi
         assert_allclose(20 * np.log10(h[w >= 0.3]), 0, atol=3.01)
@@ -989,7 +1007,7 @@ class TestSOSFreqz:
         # adapted from buttord
         N, Wn = buttord([0.2, 0.5], [0.14, 0.6], 3, 40)
         sos = butter(N, Wn, 'band', output='sos')
-        w, h = sosfreqz(sos)
+        w, h = freqz_sos(sos)
         h = np.abs(h)
         w /= np.pi
         assert_allclose(h[w <= 0.14], 0., atol=1e-2)  # <= -40 dB
@@ -999,17 +1017,17 @@ class TestSOSFreqz:
 
         N, Wn = buttord([0.2, 0.5], [0.14, 0.6], 3, 100)
         sos = butter(N, Wn, 'band', output='sos')
-        w, h = sosfreqz(sos)
+        w, h = freqz_sos(sos)
         dB = 20*np.log10(np.maximum(np.abs(h), 1e-10))
         w /= np.pi
         assert_array_less(dB[(w > 0) & (w <= 0.14)], -99.9)
         assert_array_less(dB[w >= 0.6], -99.9)
         assert_allclose(dB[(w >= 0.2) & (w <= 0.5)], 0, atol=3.01)
 
-    def test_sosfreqz_design_ellip(self):
+    def test_freqz_sos_design_ellip(self):
         N, Wn = ellipord(0.3, 0.1, 3, 60)
         sos = ellip(N, 0.3, 60, Wn, 'high', output='sos')
-        w, h = sosfreqz(sos)
+        w, h = freqz_sos(sos)
         h = np.abs(h)
         w /= np.pi
         assert_allclose(20 * np.log10(h[w >= 0.3]), 0, atol=3.01)
@@ -1017,7 +1035,7 @@ class TestSOSFreqz:
 
         N, Wn = ellipord(0.3, 0.2, .5, 150)
         sos = ellip(N, .5, 150, Wn, 'high', output='sos')
-        w, h = sosfreqz(sos)
+        w, h = freqz_sos(sos)
         dB = 20*np.log10(np.maximum(np.abs(h), 1e-10))
         w /= np.pi
         assert_allclose(dB[w >= 0.3], 0, atol=.55)
@@ -1026,8 +1044,8 @@ class TestSOSFreqz:
         assert dB[w <= 0.2].max() < -150*(1 - 1e-12)
 
     @mpmath_check("0.10")
-    def test_sos_freqz_against_mp(self):
-        # Compare the result of sosfreqz applied to a high order Butterworth
+    def test_freqz_sos_against_mp(self):
+        # Compare the result of freqz_sos applied to a high order Butterworth
         # filter against the result computed using mpmath.  (signal.freqz fails
         # miserably with such high order filters.)
         from . import mpsig
@@ -1041,7 +1059,7 @@ class TestSOSFreqz:
         h_mp = np.array([complex(x) for x in h_mp])
 
         sos = butter(order, Wn, output='sos')
-        w, h = sosfreqz(sos, worN=N)
+        w, h = freqz_sos(sos, worN=N)
         assert_allclose(w, w_mp, rtol=1e-12, atol=1e-14)
         assert_allclose(h, h_mp, rtol=1e-12, atol=1e-14)
 
@@ -1052,34 +1070,34 @@ class TestSOSFreqz:
                [1.0, 1.0, 0.0, 1.0, -0.9495739996946778, 0.45125966317124144]]
 
         # N = None, whole=False
-        w1, h1 = sosfreqz(sos, fs=fs)
-        w2, h2 = sosfreqz(sos)
+        w1, h1 = freqz_sos(sos, fs=fs)
+        w2, h2 = freqz_sos(sos)
         assert_allclose(h1, h2)
         assert_allclose(w1, np.linspace(0, fs/2, 512, endpoint=False))
 
         # N = None, whole=True
-        w1, h1 = sosfreqz(sos, whole=True, fs=fs)
-        w2, h2 = sosfreqz(sos, whole=True)
+        w1, h1 = freqz_sos(sos, whole=True, fs=fs)
+        w2, h2 = freqz_sos(sos, whole=True)
         assert_allclose(h1, h2, atol=1e-27)
         assert_allclose(w1, np.linspace(0, fs, 512, endpoint=False))
 
         # N = 5, whole=False
-        w1, h1 = sosfreqz(sos, 5, fs=fs)
-        w2, h2 = sosfreqz(sos, 5)
+        w1, h1 = freqz_sos(sos, 5, fs=fs)
+        w2, h2 = freqz_sos(sos, 5)
         assert_allclose(h1, h2)
         assert_allclose(w1, np.linspace(0, fs/2, 5, endpoint=False))
 
         # N = 5, whole=True
-        w1, h1 = sosfreqz(sos, 5, whole=True, fs=fs)
-        w2, h2 = sosfreqz(sos, 5, whole=True)
+        w1, h1 = freqz_sos(sos, 5, whole=True, fs=fs)
+        w2, h2 = freqz_sos(sos, 5, whole=True)
         assert_allclose(h1, h2)
         assert_allclose(w1, np.linspace(0, fs, 5, endpoint=False))
 
         # w is an array_like
         for w in ([123], (123,), np.array([123]), (50, 123, 230),
                   np.array([50, 123, 230])):
-            w1, h1 = sosfreqz(sos, w, fs=fs)
-            w2, h2 = sosfreqz(sos, 2*pi*np.array(w)/fs)
+            w1, h1 = freqz_sos(sos, w, fs=fs)
+            w2, h2 = freqz_sos(sos, 2*pi*np.array(w)/fs)
             assert_allclose(h1, h2)
             assert_allclose(w, w1)
 
@@ -1090,20 +1108,25 @@ class TestSOSFreqz:
                   8, np.int8(8), np.int16(8), np.int32(8), np.int64(8),
                   np.array(8)):
 
-            w, h = sosfreqz([1, 0, 0, 1, 0, 0], worN=N)
+            w, h = freqz_sos([1, 0, 0, 1, 0, 0], worN=N)
             assert_array_almost_equal(w, np.pi * np.arange(N) / N)
             assert_array_almost_equal(h, np.ones(N))
 
-            w, h = sosfreqz([1, 0, 0, 1, 0, 0], worN=N, fs=100)
+            w, h = freqz_sos([1, 0, 0, 1, 0, 0], worN=N, fs=100)
             assert_array_almost_equal(w, np.linspace(0, 50, N, endpoint=False))
             assert_array_almost_equal(h, np.ones(N))
 
         # Measure at frequency 8 Hz
         for w in (8.0, 8.0+0j):
             # Only makes sense when fs is specified
-            w_out, h = sosfreqz([1, 0, 0, 1, 0, 0], worN=w, fs=100)
+            w_out, h = freqz_sos([1, 0, 0, 1, 0, 0], worN=w, fs=100)
             assert_array_almost_equal(w_out, [8])
             assert_array_almost_equal(h, [1])
+
+    def test_fs_validation(self):
+        sos = butter(4, 0.2, output='sos')
+        with pytest.raises(ValueError, match="Sampling.*single scalar"):
+            freqz_sos(sos, fs=np.array([10, 20]))
 
 
 class TestFreqz_zpk:
@@ -1201,6 +1224,13 @@ class TestFreqz_zpk:
             w_out, h = freqz_zpk([], [], 1, worN=w, fs=100)
             assert_array_almost_equal(w_out, [8])
             assert_array_almost_equal(h, [1])
+
+    def test_fs_validation(self):
+        with pytest.raises(ValueError, match="Sampling.*single scalar"):
+            freqz_zpk([1.0], [1.0], [1.0], fs=np.array([10, 20]))
+
+        with pytest.raises(ValueError, match="Sampling.*be none."):
+            freqz_zpk([1.0], [1.0], [1.0], fs=None)
 
 
 class TestNormalize:
@@ -1321,6 +1351,15 @@ class TestBilinear:
         assert_array_almost_equal(a_z, [1, -1.2158, 0.72826],
                                   decimal=4)
 
+    def test_fs_validation(self):
+        b = [0.14879732743343033]
+        a = [1, 0.54552236880522209, 0.14879732743343033]
+        with pytest.raises(ValueError, match="Sampling.*single scalar"):
+            bilinear(b, a, fs=np.array([10, 20]))
+
+        with pytest.raises(ValueError, match="Sampling.*be none"):
+            bilinear(b, a, fs=None)
+
 
 class TestLp2lp_zpk:
 
@@ -1341,6 +1380,17 @@ class TestLp2lp_zpk:
         assert_allclose(sort(z_lp), sort([-40j, +40j]))
         assert_allclose(sort(p_lp), sort([-15, -10-10j, -10+10j]))
         assert_allclose(k_lp, 60)
+
+    def test_fs_validation(self):
+        z = [-2j, +2j]
+        p = [-0.75, -0.5 - 0.5j, -0.5 + 0.5j]
+        k = 3
+
+        with pytest.raises(ValueError, match="Sampling.*single scalar"):
+            bilinear_zpk(z, p, k, fs=np.array([10, 20]))
+
+        with pytest.raises(ValueError, match="Sampling.*be none"):
+            bilinear_zpk(z, p, k, fs=None)
 
 
 class TestLp2hp_zpk:
@@ -1563,7 +1613,8 @@ class TestButtord:
         assert "gstop should be larger than 0.0" in str(exc_info.value)
 
     def test_runtime_warnings(self):
-        with pytest.warns(RuntimeWarning, match=r'Order is zero'):
+        msg = "Order is zero.*|divide by zero encountered"
+        with pytest.warns(RuntimeWarning, match=msg):
             buttord(0.0, 1.0, 3, 60)
 
     def test_ellip_butter(self):
@@ -1572,6 +1623,15 @@ class TestButtord:
         # 1.9.1 (there is nothing special about this particular version though)
         n, wn = buttord([0.1, 0.6], [0.2, 0.5], 3, 60)
         assert n == 14
+
+    def test_fs_validation(self):
+        wp = 0.2
+        ws = 0.3
+        rp = 3
+        rs = 60
+
+        with pytest.raises(ValueError, match="Sampling.*single scalar"):
+            buttord(wp, ws, rp, rs, False, fs=np.array([10, 20]))
 
 
 class TestCheb1ord:
@@ -1693,6 +1753,15 @@ class TestCheb1ord:
 
         n2, w2 = cheb2ord([0.1, 0.6], [0.2, 0.5], 3, 60)
         assert not (wn == w2).all()
+
+    def test_fs_validation(self):
+        wp = 0.2
+        ws = 0.3
+        rp = 3
+        rs = 60
+
+        with pytest.raises(ValueError, match="Sampling.*single scalar"):
+            cheb1ord(wp, ws, rp, rs, False, fs=np.array([10, 20]))
 
 
 class TestCheb2ord:
@@ -1818,6 +1887,15 @@ class TestCheb2ord:
         n1, w1 = cheb1ord([0.1, 0.6], [0.2, 0.5], 3, 60)
         assert not (wn == w1).all()
 
+    def test_fs_validation(self):
+        wp = 0.2
+        ws = 0.3
+        rp = 3
+        rs = 60
+
+        with pytest.raises(ValueError, match="Sampling.*single scalar"):
+            cheb2ord(wp, ws, rp, rs, False, fs=np.array([10, 20]))
+
 
 class TestEllipord:
 
@@ -1844,7 +1922,7 @@ class TestEllipord:
         rs = 1000
         N, Wn = ellipord(wp, ws, rp, rs, False)
         sos = ellip(N, rp, rs, Wn, 'lp', False, output='sos')
-        w, h = sosfreqz(sos)
+        w, h = freqz_sos(sos)
         w /= np.pi
         assert_array_less(-rp - 0.1, dB(h[w <= wp]))
         assert_array_less(dB(h[ws <= w]), -rs + 0.1)
@@ -1952,6 +2030,15 @@ class TestEllipord:
         # 1.9.1 (there is nothing special about this particular version though)
         n, wn = ellipord([0.1, 0.6], [0.2, 0.5], 3, 60)
         assert n == 5
+
+    def test_fs_validation(self):
+        wp = 0.2
+        ws = 0.3
+        rp = 3
+        rs = 60
+
+        with pytest.raises(ValueError, match="Sampling.*single scalar"):
+            ellipord(wp, ws, rp, rs, False, fs=np.array([10, 20]))
 
 
 class TestBessel:
@@ -2416,6 +2503,7 @@ class TestBessel:
         assert_raises(ValueError, _bessel_poly, -3)
         assert_raises(ValueError, _bessel_poly, 3.3)
 
+    @pytest.mark.fail_slow(10)
     def test_fs_param(self):
         for norm in ('phase', 'mag', 'delay'):
             for fs in (900, 900.1, 1234.567):
@@ -3537,6 +3625,13 @@ class TestEllip:
                             ba2 = ellip(N, 1, 20, fcnorm, btype)
                             assert_allclose(ba1, ba2)
 
+    def test_fs_validation(self):
+        with pytest.raises(ValueError, match="Sampling.*single scalar"):
+            iirnotch(0.06, 30, fs=np.array([10, 20]))
+
+        with pytest.raises(ValueError, match="Sampling.*be none"):
+            iirnotch(0.06, 30, fs=None)
+
 
 def test_sos_consistency():
     # Consistency checks of output='sos' for the specialized IIR filter
@@ -3551,15 +3646,15 @@ def test_sos_consistency():
 
         b, a = func(2, *args, output='ba')
         sos = func(2, *args, output='sos')
-        assert_allclose(sos, [np.hstack((b, a))], err_msg="%s(2,...)" % name)
+        assert_allclose(sos, [np.hstack((b, a))], err_msg=f"{name}(2,...)")
 
         zpk = func(3, *args, output='zpk')
         sos = func(3, *args, output='sos')
-        assert_allclose(sos, zpk2sos(*zpk), err_msg="%s(3,...)" % name)
+        assert_allclose(sos, zpk2sos(*zpk), err_msg=f"{name}(3,...)")
 
         zpk = func(4, *args, output='zpk')
         sos = func(4, *args, output='sos')
-        assert_allclose(sos, zpk2sos(*zpk), err_msg="%s(4,...)" % name)
+        assert_allclose(sos, zpk2sos(*zpk), err_msg=f"{name}(4,...)")
 
 
 class TestIIRNotch:
@@ -3855,6 +3950,13 @@ class TestIIRComb:
         # Now N = 882 correctly and 22 kHz should be a notch <-220 dB
         assert abs(response[0]) < 1e-10
 
+    def test_fs_validation(self):
+        with pytest.raises(ValueError, match="Sampling.*single scalar"):
+            iircomb(1000, 30, fs=np.array([10, 20]))
+
+        with pytest.raises(ValueError, match="Sampling.*be none"):
+            iircomb(1000, 30, fs=None)
+
 
 class TestIIRDesign:
 
@@ -3972,6 +4074,10 @@ class TestIIRDesign:
         with pytest.raises(ValueError, match="strictly inside stopband"):
             iirdesign([0.4, 0.7], [0.3, 0.6], 1, 40)
 
+    def test_fs_validation(self):
+        with pytest.raises(ValueError, match="Sampling.*single scalar"):
+            iirfilter(1, 1, btype="low", fs=np.array([10, 20]))
+
 
 class TestIIRFilter:
 
@@ -4000,6 +4106,11 @@ class TestIIRFilter:
                       output='zpk')[2]
         k2 = 9.999999999999989e+47
         assert_allclose(k, k2)
+        # if fs is specified then the normalization of Wn to have 
+        # 0 <= Wn <= 1 should not cause an integer overflow
+        # the following line should not raise an exception
+        iirfilter(20, [1000000000, 1100000000], btype='bp', 
+                      analog=False, fs=6250000000)
 
     def test_invalid_wn_size(self):
         # low and high have 1 Wn, band and stop have 2 Wn
@@ -4124,6 +4235,50 @@ class TestGroupDelay:
             assert_array_almost_equal(w_out, [8])
             assert_array_almost_equal(gd, [0])
 
+    def test_complex_coef(self):
+        # gh-19586: handle complex coef TFs
+        #
+        # for g(z) = (alpha*z+1)/(1+conjugate(alpha)), group delay is
+        # given by function below.
+        #
+        # def gd_expr(w, alpha):
+        #     num = 1j*(abs(alpha)**2-1)*np.exp(1j*w)
+        #     den = (alpha*np.exp(1j*w)+1)*(np.exp(1j*w)+np.conj(alpha))
+        #     return -np.imag(num/den)
+
+        # arbitrary non-real alpha
+        alpha = -0.6143077933232609+0.3355978770229421j
+        # 8 points from from -pi to pi
+        wref = np.array([-3.141592653589793 ,
+                         -2.356194490192345 ,
+                         -1.5707963267948966,
+                         -0.7853981633974483,
+                         0.                ,
+                         0.7853981633974483,
+                         1.5707963267948966,
+                         2.356194490192345 ])
+        gdref =  array([0.18759548150354619,
+                        0.17999770352712252,
+                        0.23598047471879877,
+                        0.46539443069907194,
+                        1.9511492420564165 ,
+                        3.478129975138865  ,
+                        0.6228594960517333 ,
+                        0.27067831839471224])
+        b = [alpha,1]
+        a = [1, np.conjugate(alpha)]
+        gdtest = group_delay((b,a), wref)[1]
+        # need nulp=14 for macOS arm64 wheel builds; added 2 for some
+        # robustness on other platforms.
+        assert_array_almost_equal_nulp(gdtest, gdref, nulp=16)
+
+    def test_fs_validation(self):
+        with pytest.raises(ValueError, match="Sampling.*single scalar"):
+            group_delay((1, 1), fs=np.array([10, 20]))
+
+        with pytest.raises(ValueError, match="Sampling.*be none"):
+            group_delay((1, 1), fs=None)
+
 
 class TestGammatone:
     # Test erroneous input cases.
@@ -4208,6 +4363,10 @@ class TestGammatone:
               0.793651554625368]
         assert_allclose(b, b2)
         assert_allclose(a, a2)
+
+    def test_fs_validation(self):
+        with pytest.raises(ValueError, match="Sampling.*single scalar"):
+            gammatone(440, 'iir', fs=np.array([10, 20]))
 
 
 class TestOrderFilter:
