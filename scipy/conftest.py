@@ -118,7 +118,7 @@ def check_fpu_mode(request):
 # Array API backend handling
 xp_available_backends = {'numpy': np}
 
-if SCIPY_ARRAY_API and isinstance(SCIPY_ARRAY_API, str):
+if SCIPY_ARRAY_API:
     # fill the dict of backends with available libraries
     try:
         import array_api_strict

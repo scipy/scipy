@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import os
 import warnings
+from dataclasses import dataclass
 
 from types import ModuleType
 from typing import Any, Literal, TYPE_CHECKING
@@ -27,9 +28,9 @@ from scipy._lib.array_api_compat import (
 
 __all__ = [
     '_asarray', 'array_namespace', 'assert_almost_equal', 'assert_array_almost_equal',
-    'get_xp_devices',
+    'get_xp_devices', 'GLOBAL_CONFIG',
     'is_array_api_strict', 'is_complex', 'is_cupy', 'is_jax', 'is_numpy', 'is_torch', 
-    'SCIPY_ARRAY_API', 'SCIPY_DEVICE', 'scipy_namespace_for',
+    'SCIPY_ARRAY_API', 'SCIPY_DEVICE', 'scipy_namespace_for', 'set_scipy_array_api',
     'xp_assert_close', 'xp_assert_equal', 'xp_assert_less',
     'xp_atleast_nd', 'xp_copy', 'xp_copysign', 'xp_device',
     'xp_moveaxis_to_end', 'xp_ravel', 'xp_real', 'xp_sign', 'xp_size',
@@ -40,17 +41,27 @@ __all__ = [
 # To enable array API and strict array-like input validation
 SCIPY_ARRAY_API: str | bool = os.environ.get("SCIPY_ARRAY_API", False)
 # To control the default device - for use in the test suite only
-SCIPY_DEVICE = os.environ.get("SCIPY_DEVICE", "cpu")
+SCIPY_DEVICE: str = os.environ.get("SCIPY_DEVICE", "cpu")
 
-_GLOBAL_CONFIG = {
-    "SCIPY_ARRAY_API": SCIPY_ARRAY_API,
-    "SCIPY_DEVICE": SCIPY_DEVICE,
-}
+# _GLOBAL_CONFIG = {
+#     "SCIPY_ARRAY_API": SCIPY_ARRAY_API,
+#     "SCIPY_DEVICE": SCIPY_DEVICE,
+# }
+
+# To enable changing the config programmatically
+@dataclass
+class GLOBAL_CONFIG:
+    SCIPY_ARRAY_API: str | bool = SCIPY_ARRAY_API
+    SCIPY_DEVICE: str = SCIPY_DEVICE
 
 
 if TYPE_CHECKING:
     Array = Any  # To be changed to a Protocol later (see array-api#589)
     ArrayLike = Array | npt.ArrayLike
+
+
+def set_scipy_array_api(val: str | bool) -> None:
+    GLOBAL_CONFIG.SCIPY_ARRAY_API = val
 
 
 def _compliance_scipy(arrays: list[ArrayLike]) -> list[Array]:
@@ -127,8 +138,7 @@ def array_namespace(*arrays: Array) -> ModuleType:
     -----
     Thin wrapper around `array_api_compat.array_namespace`.
 
-    1. Check for the global switch: SCIPY_ARRAY_API. This can also be accessed
-       dynamically through ``_GLOBAL_CONFIG['SCIPY_ARRAY_API']``.
+    1. Check for the global switch: SCIPY_ARRAY_API.
     2. `_compliance_scipy` raise exceptions on known-bad subclasses. See
        its definition for more details.
 
@@ -136,7 +146,7 @@ def array_namespace(*arrays: Array) -> ModuleType:
     In that case, there is no compliance check. This is a convenience to
     ease the adoption. Otherwise, arrays must comply with the new rules.
     """
-    if not _GLOBAL_CONFIG["SCIPY_ARRAY_API"]:
+    if not GLOBAL_CONFIG.SCIPY_ARRAY_API:
         # here we could wrap the namespace if needed
         return np_compat
 
@@ -523,7 +533,7 @@ def xp_vector_norm(x: Array, /, *,
                    xp: ModuleType | None = None) -> Array:
     xp = array_namespace(x) if xp is None else xp
 
-    if SCIPY_ARRAY_API:
+    if GLOBAL_CONFIG.SCIPY_ARRAY_API:
         # check for optional `linalg` extension
         if hasattr(xp, 'linalg'):
             return xp.linalg.vector_norm(x, axis=axis, keepdims=keepdims, ord=ord)

@@ -12,7 +12,7 @@ from pytest import raises as assert_raises
 from scipy.cluster.vq import (kmeans, kmeans2, py_vq, vq, whiten,
                               ClusterError, _krandinit)
 from scipy.cluster import _vq
-from scipy.conftest import array_api_compatible
+from scipy.conftest import array_api_compatible, skip_xp_invalid_arg
 from scipy.sparse._sputils import matrix
 
 from scipy._lib._array_api import (
@@ -121,8 +121,7 @@ class TestWhiten:
                               [0.45067590, 0.45464607]])
             assert_raises(ValueError, whiten, obs)
 
-    @pytest.mark.skipif(SCIPY_ARRAY_API,
-                        reason='`np.matrix` unsupported in array API mode')
+    @skip_xp_invalid_arg
     def test_whiten_not_finite_matrix(self, xp):
         for bad_value in np.nan, np.inf, -np.inf:
             obs = matrix([[0.98744510, bad_value],
@@ -143,8 +142,7 @@ class TestVq:
         xp_assert_equal(label1, xp.asarray(LABEL1, dtype=xp.int64),
                         check_dtype=False)
 
-    @pytest.mark.skipif(SCIPY_ARRAY_API,
-                        reason='`np.matrix` unsupported in array API mode')
+    @skip_xp_invalid_arg
     def test_py_vq_matrix(self, xp):
         initc = np.concatenate([[X[0]], [X[1]], [X[2]]])
         # label1.dtype varies between int32 and int64 over platforms
@@ -158,8 +156,7 @@ class TestVq:
         assert_array_equal(label1, LABEL1)
         _, _ = vq(xp.asarray(X), xp.asarray(initc))
 
-    @pytest.mark.skipif(SCIPY_ARRAY_API,
-                        reason='`np.matrix` unsupported in array API mode')
+    @skip_xp_invalid_arg
     def test_vq_matrix(self, xp):
         initc = np.concatenate([[X[0]], [X[1]], [X[2]]])
         label1, _ = _vq.vq(matrix(X), matrix(initc))
@@ -256,8 +253,7 @@ class TestKMean:
         code1 = kmeans(xp.asarray(X), xp.asarray(initc), iter=1)[0]
         xp_assert_close(code1, xp.asarray(CODET2))
 
-    @pytest.mark.skipif(SCIPY_ARRAY_API,
-                        reason='`np.matrix` unsupported in array API mode')
+    @skip_xp_invalid_arg
     def test_kmeans_simple_matrix(self, xp):
         np.random.seed(54321)
         initc = np.concatenate([[X[0]], [X[1]], [X[2]]])
@@ -291,8 +287,7 @@ class TestKMean:
             xp_assert_close(code1, xp.asarray(CODET1))
             xp_assert_close(code2, xp.asarray(CODET2))
 
-    @pytest.mark.skipif(SCIPY_ARRAY_API,
-                        reason='`np.matrix` unsupported in array API mode')
+    @skip_xp_invalid_arg
     def test_kmeans2_simple_matrix(self, xp):
         np.random.seed(12345678)
         initc = xp.asarray(np.concatenate([[X[0]], [X[1]], [X[2]]]))
