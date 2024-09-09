@@ -50,7 +50,7 @@ class TestFFT:
         for i in [1, 2, 16, 128, 512, 53, 149, 281, 397]:
             xp_assert_close(fft.ifft(fft.fft(x[0:i])), x[0:i])
             xp_assert_close(fft.irfft(fft.rfft(xr[0:i]), i), xr[0:i])
-    
+
     @skip_xp_backends(np_only=True, reason='significant overhead for some backends')
     def test_identity_extensive(self, xp):
         maxlen = 512
@@ -333,7 +333,8 @@ class TestFFT:
 
     @pytest.mark.parametrize("dtype", ["complex64", "complex128"])
     def test_dtypes_complex(self, dtype, xp):
-        x = xp.asarray(random(30), dtype=getattr(xp, dtype))
+        rng = np.random.default_rng(1234)
+        x = xp.asarray(rng.random(30), dtype=getattr(xp, dtype))
 
         res_fft = fft.ifft(fft.fft(x))
         # Check both numerical results and exact dtype matches
