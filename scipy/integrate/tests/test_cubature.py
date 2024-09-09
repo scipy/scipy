@@ -11,7 +11,7 @@ from scipy.integrate import cubature
 
 from scipy.integrate._rules import (
     Rule, FixedRule,
-    NestedFixedRule, NestedRule,
+    NestedFixedRule,
     GaussLegendreQuadrature, GaussKronrodQuadrature,
     GenzMalikCubature,
 )
@@ -701,7 +701,7 @@ class TestRules:
             # 2D problem, 1D rule
             np.array([0, 0]),
             np.array([1, 1]),
-            NestedRule(GaussLegendreQuadrature(10), GaussLegendreQuadrature(5)),
+            NestedFixedRule(GaussKronrodQuadrature(21), GaussKronrodQuadrature(21)),
         ),
         (
             # 1D problem, 2D rule

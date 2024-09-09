@@ -32,7 +32,7 @@ class Rule:
     >>> import numpy as np
     >>> from scipy.integrate import cubature
     >>> from scipy.integrate._rules import (
-    ...     Rule, ProductFixed, GenzMalikCubature, GaussLegendreQuadrature
+    ...     Rule, ProductNestedFixed, GenzMalikCubature, GaussLegendreQuadrature
     ... )
     >>> def f(x, r, alphas):
     ...     # f(x) = cos(2*pi*r + alpha @ x)
@@ -42,9 +42,9 @@ class Rule:
     ...     x_reshaped = x.reshape(npoints, *([1]*(len(alphas.shape) - 1)), ndim)
     ...     return np.cos(2*np.pi*r + np.sum(alphas_reshaped * x_reshaped, axis=-1))
     >>> genz = GenzMalikCubature(ndim=3)
-    >>> gauss = GaussLegendreQuadrature(npoints=5)
-    >>> # Gauss-Legendre is 1D, so we find the 3D product rule:
-    >>> gauss_3d = ProductFixed([gauss, gauss, gauss])
+    >>> gauss = GaussKronrodQuadrature(npoints=21)
+    >>> # Gauss-Kronrod is 1D, so we find the 3D product rule:
+    >>> gauss_3d = ProductNestedFixed([gauss, gauss, gauss])
     >>> class CustomRule(Rule):
     ...     def estimate(self, f, a, b, args=()):
     ...         return genz.estimate(f, a, b, args)
@@ -65,16 +65,6 @@ class Rule:
      array([[-0.95179502,  0.12444608],
             [-0.96247411,  0.60866385],
             [-0.97360014,  0.25515587]])
-
-    This particular example estimates the error using the difference between two
-    approximations, one more accurate than the other. These are called nested rules
-    and can be created using `NestedRule`:
-
-    >>> from scipy.integrate._rules import NestedRule
-    >>> rule = NestedRule(
-    ...     higher=genz,
-    ...     lower=gauss_3d,
-    ... ) # Equivalent to CustomRule()
     """
 
     def estimate(self, f, a, b, args=()):
@@ -180,8 +170,7 @@ class FixedRule(Rule):
 
     See Also
     --------
-    NestedRule, GaussLegendreQuadrature, GaussKronrodQuadrature,
-    GenzMalikCubature
+    GaussLegendreQuadrature, GaussKronrodQuadrature, GenzMalikCubature
 
     Examples
     --------
@@ -250,86 +239,6 @@ class FixedRule(Rule):
         return _apply_fixed_rule(f, a, b, nodes, weights, args)
 
 
-class NestedRule(Rule):
-    r"""
-    A rule with error estimate given by the difference between two underlying rules.
-
-    If constructed as ``NestedRule(higher, lower)``, this will use::
-
-        estimate(f, a, b) := higher.estimate(f, a, b)
-        estimate_error(f, a, b) := \|higher.estimate(f, a, b) - lower.estimate(f, a, b)|
-
-    (where the absolute value is taken elementwise).
-
-    If the two underlying rules are instances of `FixedRule`, you should instead use
-    `NestedFixedRule`. This preserves the nodes and weights information. See Examples.
-
-    Attributes
-    ----------
-    higher : Rule
-        Higher accuracy rule.
-
-    lower : Rule
-        Lower accuracy rule.
-
-    See Also
-    --------
-    GaussKronrodQuadrature, NestedFixedRule
-
-    Examples
-    --------
-
-    If a `FixedRule` is given as one of the two underlying rules, the nodes and weights
-    information will be lost, and you won't be able to take the product of two
-    `NestedRule`:
-
-    >>> from scipy.integrate import cubature
-    >>> from scipy.integrate._rules import (
-    ...     GaussLegendreQuadrature, NestedRule, ProductFixed
-    ... )
-    >>> higher = GaussLegendreQuadrature(10)
-    >>> lower = GaussLegendreQuadrature(5)
-    >>> rule = NestedRule(
-    ...     higher,
-    ...     lower,
-    ... )
-    >>> rule.nodes_and_weights # doctest: +IGNORE_EXCEPTION_DETAIL
-    Traceback (most recent call last):
-    AttributeError: 'NestedRule' object has no attribute 'nodes_and_weights'
-    >>>
-
-    Instead, you can use `NestedFixedRule`:
-
-    >>> from scipy.integrate._rules import NestedFixedRule
-    >>> rule = NestedFixedRule(
-    ...     higher,
-    ...     lower
-    ... )
-    >>> rule.nodes_and_weights == higher.nodes_and_weights
-     True
-    >>> rule.lower_nodes_and_weights == lower.nodes_and_weights
-     True
-
-    This means it is possible to find the product rule:
-
-    >>> from scipy.integrate._rules import ProductNestedFixed
-    >>> rule_2d = ProductNestedFixed([rule, rule])
-    """
-
-    def __init__(self, higher, lower):
-        self.higher = higher
-        self.lower = lower
-
-    def estimate(self, f, a, b, args=()):
-        return self.higher.estimate(f, a, b, args)
-
-    def estimate_error(self, f, a, b, args=()):
-        return np.abs(
-            self.higher.estimate(f, a, b, args)
-            - self.lower.estimate(f, a, b, args)
-        )
-
-
 class NestedFixedRule(FixedRule):
     r"""
     A cubature rule with error estimate given by the difference between two underlying
@@ -352,7 +261,7 @@ class NestedFixedRule(FixedRule):
 
     See Also
     --------
-    GaussKronrodQuadrature, NestedRule
+    GaussKronrodQuadrature
 
     Examples
     --------
@@ -433,87 +342,26 @@ class NestedFixedRule(FixedRule):
         )
 
 
-class ProductFixed(FixedRule):
-    """
-    Find the n-dimensional cubature rule constructed from the Cartesian product of 1D
-    fixed quadrature rules.
-
-    Parameters
-    ----------
-    base_rules : list of FixedRule
-        List of base 1-dimensional FixedRule rules.
-
-    Attributes
-    ----------
-    base_rules : list of FixedRule
-        List of base 1-dimensional FixedRule rules.
-
-    Examples
-    --------
-
-    Evaluate a 2D integral by taking the product of two 1D rules:
-
-    >>> import numpy as np
-    >>> from scipy.integrate import cubature
-    >>> from scipy.integrate._rules import (
-    ...  ProductFixed, GaussLegendreQuadrature
-    ... )
-    >>> def f(x):
-    ...     # f(x) = cos(x_1) + cos(x_2)
-    ...     return np.sum(np.cos(x), axis=-1)
-    >>> rule = ProductFixed(
-    ...     [GaussLegendreQuadrature(10), GaussLegendreQuadrature(10)]
-    ... ) # Use 10-point GaussLegendreQuadrature
-    >>> a, b = np.array([0, 0]), np.array([1, 1])
-    >>> rule.estimate(f, a, b) # True value 2*sin(1), approximately 1.6829
-     np.float64(1.682941969615793)
-    >>> rule.estimate_error(f, a, b)  # Using default error estimation
-     np.float64(2.220446049250313e-16)
-    """
-
-    def __init__(self, base_rules):
-        for rule in base_rules:
-            if not isinstance(rule, FixedRule):
-                raise ValueError("base rules need to be instance of FixedRule")
-
-        self.base_rules = base_rules
-
-    @cached_property
-    def nodes_and_weights(self):
-        nodes = _cartesian_product(
-            [rule.nodes_and_weights[0] for rule in self.base_rules]
-        )
-
-        weights = np.prod(
-            _cartesian_product(
-                [rule.nodes_and_weights[1] for rule in self.base_rules]
-            ),
-            axis=-1,
-        )
-
-        return nodes, weights
-
-
 class ProductNestedFixed(NestedFixedRule):
     """
     Find the n-dimensional cubature rule constructed from the Cartesian product of 1-D
     `NestedFixedRule` quadrature rules.
 
     Given a list of N 1-dimensional quadrature rules which support error estimation
-    using NestedFixedRule, this will find the N-dimensional NestedRule cubature rule
-    obtained by taking the Cartesian product of their nodes, and estimating the error by
-    taking the difference with a lower-accuracy N-dimensional cubature rule obtained
-    using the ``.lower_nodes_and_weights`` rule in each of the base 1-dimensional rules.
+    using NestedFixedRule, this will find the N-dimensional cubature rule obtained by
+    taking the Cartesian product of their nodes, and estimating the error by taking the
+    difference with a lower-accuracy N-dimensional cubature rule obtained using the
+    ``.lower_nodes_and_weights`` rule in each of the base 1-dimensional rules.
 
     Parameters
     ----------
-    base_rules : list of NestedRule
-        List of base 1-dimensional `NestedRule` quadrature rules.
+    base_rules : list of NestedFixedRule
+        List of base 1-dimensional `NestedFixedRule` quadrature rules.
 
     Attributes
     ----------
-    base_rules : list of NestedRule
-        List of base 1-dimensional `NestedRule` qudarature rules.
+    base_rules : list of NestedFixedRule
+        List of base 1-dimensional `NestedFixedRule` qudarature rules.
 
     Examples
     --------
@@ -530,7 +378,7 @@ class ProductNestedFixed(NestedFixedRule):
     ...     return np.sum(np.cos(x), axis=-1)
     >>> rule = ProductNestedFixed(
     ...     [GaussKronrodQuadrature(15), GaussKronrodQuadrature(15)]
-    ... ) # Use 15-point Gauss-Kronrod, which implements NestedRule
+    ... ) # Use 15-point Gauss-Kronrod, which implements NestedFixedRule
     >>> a, b = np.array([0, 0]), np.array([1, 1])
     >>> rule.estimate(f, a, b) # True value 2*sin(1), approximately 1.6829
      np.float64(1.682941969615793)

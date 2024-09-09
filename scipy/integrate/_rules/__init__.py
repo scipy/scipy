@@ -2,8 +2,8 @@
 
 from ._base import (
     Rule, FixedRule,
-    NestedFixedRule, NestedRule,
-    ProductFixed, ProductNestedFixed,
+    NestedFixedRule,
+    ProductNestedFixed,
 )
 from ._genz_malik import GenzMalikCubature
 from ._gauss_kronrod import GaussKronrodQuadrature
