@@ -12,7 +12,7 @@ from scipy.integrate import cubature
 from scipy.integrate._rules import (
     Rule, FixedRule,
     NestedFixedRule, NestedRule,
-    NewtonCotesQuadrature, GaussLegendreQuadrature, GaussKronrodQuadrature,
+    GaussLegendreQuadrature, GaussKronrodQuadrature,
     GenzMalikCubature,
 )
 
@@ -282,11 +282,9 @@ class TestCubature:
 
     @pytest.mark.parametrize("rule_str", [
         "gauss-kronrod",
-        "newton-cotes",
         "genz-malik",
         "gk21",
         "gk15",
-        "trapezoid",
     ])
     def test_pass_str(self, rule_str):
         n = np.arange(5)
@@ -337,7 +335,6 @@ class TestCubature:
         )
 
         assert res.subdivisions == 10
-        assert not res.success
         assert res.status == "not_converged"
 
     def test_a_and_b_must_be_1d(self):
@@ -704,7 +701,7 @@ class TestRules:
             # 2D problem, 1D rule
             np.array([0, 0]),
             np.array([1, 1]),
-            NestedRule(NewtonCotesQuadrature(10), NewtonCotesQuadrature(5)),
+            NestedRule(GaussLegendreQuadrature(10), GaussLegendreQuadrature(5)),
         ),
         (
             # 1D problem, 2D rule
@@ -734,12 +731,6 @@ class TestRulesQuadrature:
     """
 
     @pytest.mark.parametrize("quadrature", [
-        NewtonCotesQuadrature(3),
-        NewtonCotesQuadrature(5),
-        NewtonCotesQuadrature(10),
-        NewtonCotesQuadrature(3, open=True),
-        NewtonCotesQuadrature(5, open=True),
-        NewtonCotesQuadrature(10, open=True),
         GaussLegendreQuadrature(3),
         GaussLegendreQuadrature(5),
         GaussLegendreQuadrature(10),
@@ -769,7 +760,6 @@ class TestRulesQuadrature:
         )
 
     @pytest.mark.parametrize("quadrature_pair", [
-        (NewtonCotesQuadrature(10), NewtonCotesQuadrature(5)),
         (GaussLegendreQuadrature(10), GaussLegendreQuadrature(5))
     ])
     def test_base_1d_quadratures_error_from_difference(self, quadrature_pair):
@@ -792,7 +782,6 @@ class TestRulesQuadrature:
         )
 
     @pytest.mark.parametrize("quadrature", [
-        NewtonCotesQuadrature,
         GaussLegendreQuadrature
     ])
     def test_one_point_fixed_quad_impossible(self, quadrature):

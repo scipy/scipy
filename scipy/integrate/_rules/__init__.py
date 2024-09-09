@@ -6,7 +6,6 @@ from ._base import (
     ProductFixed, ProductNestedFixed,
 )
 from ._genz_malik import GenzMalikCubature
-from ._newton_cotes import NewtonCotesQuadrature
 from ._gauss_kronrod import GaussKronrodQuadrature
 from ._gauss_legendre import GaussLegendreQuadrature
 

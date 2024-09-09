@@ -7,8 +7,8 @@ from scipy._lib._util import MapWrapper
 import numpy as np
 
 from scipy.integrate._rules import (
-    ProductNestedFixed, NestedFixedRule,
-    GaussKronrodQuadrature, NewtonCotesQuadrature,
+    ProductNestedFixed,
+    GaussKronrodQuadrature,
     GenzMalikCubature,
 )
 from scipy.integrate._rules._base import _subregion_coordinates
@@ -36,7 +36,6 @@ class CubatureRegion:
 class CubatureResult:
     estimate: np.ndarray
     error: np.ndarray
-    success: bool
     status: str
     regions: list[CubatureRegion]
     subdivisions: int
@@ -75,12 +74,11 @@ def cubature(f, a, b, rule="gk21", rtol=1e-8, atol=0, max_subdivisions=10000,
         not supported.
     rule : str, optional
         Rule used to estimate the integral. If passing a string, the options are
-        "gauss-kronrod" (21 node), "newton-cotes" (5 node) or "genz-malik" (degree 7).
-        If a rule like "gauss-kronrod" or "newton-cotes" is specified for an ``n``-dim
-        integrand, the corresponding Cartesian product rule is used. See Notes.
+        "gauss-kronrod" (21 node), or "genz-malik" (degree 7). If a rule like
+        "gauss-kronrod" is specified for an ``n``-dim integrand, the corresponding
+        Cartesian product rule is used. See Notes.
 
-        "gk21", "gk15" and "trapezoid" are also supported for compatibility with
-        `quad_vec`.
+        "gk21", "gk15" are also supported for compatibility with `quad_vec`.
     rtol, atol : float, optional
         Relative and absolute tolerances. Iterations are performed until the error is
         estimated to be less than ``atol + rtol * abs(est)``. Here `rtol` controls
@@ -191,12 +189,11 @@ def cubature(f, a, b, rule="gk21", rtol=1e-8, atol=0, max_subdivisions=10000,
     The rules currently supported via the `rule` argument are:
 
     - ``"gauss-kronrod"``, 21-node Gauss-Kronrod
-    - ``"newton-cotes"``, 5-node Newton-Cotes
     - ``"genz-malik"``, n-node Genz-Malik
 
-    If using Gauss-Kronrod or Newton-Cotes for an ``n``-dim integrand where ``n > 2``,
-    then the corresponding Cartesian product rule will be found by taking the Cartesian
-    product of the nodes in the 1D case. This means that the number of nodes scales
+    If using Gauss-Kronrod for an ``n``-dim integrand where ``n > 2``, then the
+    corresponding Cartesian product rule will be found by taking the Cartesian product
+    of the nodes in the 1D case. This means that the number of nodes scales
     exponentially as ``21^n`` in the Gauss-Kronrod case, which may be problematic in a
     moderate number of dimensions.
 
@@ -225,18 +222,10 @@ def cubature(f, a, b, rule="gk21", rtol=1e-8, atol=0, max_subdivisions=10000,
         else:
             quadratues = {
                 "gauss-kronrod": GaussKronrodQuadrature(21),
-                "newton-cotes": NestedFixedRule(
-                    NewtonCotesQuadrature(5),
-                    NewtonCotesQuadrature(3),
-                ),
 
                 # Also allow names quad_vec uses:
                 "gk21": GaussKronrodQuadrature(21),
                 "gk15": GaussKronrodQuadrature(15),
-                "trapezoid": NestedFixedRule(
-                    NewtonCotesQuadrature(5),
-                    NewtonCotesQuadrature(3),
-                ),
             }
 
             base_rule = quadratues.get(rule)
@@ -306,7 +295,6 @@ def cubature(f, a, b, rule="gk21", rtol=1e-8, atol=0, max_subdivisions=10000,
         return CubatureResult(
             estimate=est,
             error=err,
-            success=success,
             status=status,
             subdivisions=subdivisions,
             regions=regions,

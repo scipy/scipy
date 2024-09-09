@@ -180,7 +180,7 @@ class FixedRule(Rule):
 
     See Also
     --------
-    NestedRule, NewtonCotesQuadrature, GaussLegendreQuadrature, GaussKronrodQuadrature,
+    NestedRule, GaussLegendreQuadrature, GaussKronrodQuadrature,
     GenzMalikCubature
 
     Examples
@@ -456,14 +456,14 @@ class ProductFixed(FixedRule):
     >>> import numpy as np
     >>> from scipy.integrate import cubature
     >>> from scipy.integrate._rules import (
-    ...  ProductFixed, NewtonCotesQuadrature
+    ...  ProductFixed, GaussLegendreQuadrature
     ... )
     >>> def f(x):
     ...     # f(x) = cos(x_1) + cos(x_2)
     ...     return np.sum(np.cos(x), axis=-1)
     >>> rule = ProductFixed(
-    ...     [NewtonCotesQuadrature(10), NewtonCotesQuadrature(10)]
-    ... ) # Use 10-point NewtonCotesQuadrature
+    ...     [GaussLegendreQuadrature(10), GaussLegendreQuadrature(10)]
+    ... ) # Use 10-point GaussLegendreQuadrature
     >>> a, b = np.array([0, 0]), np.array([1, 1])
     >>> rule.estimate(f, a, b) # True value 2*sin(1), approximately 1.6829
      np.float64(1.682941969615793)

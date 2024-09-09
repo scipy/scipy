@@ -4,7 +4,6 @@ py3.install_sources([
     '_gauss_kronrod.py',
     '_gauss_legendre.py',
     '_genz_malik.py',
-    '_newton_cotes.py',
   ],
   subdir: 'scipy/integrate/_rules'
 )
