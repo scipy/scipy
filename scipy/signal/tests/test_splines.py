@@ -150,11 +150,11 @@ class TestSymIIR:
         out = symiirorder1(signal, c0, z1, precision)
         xp_assert_close(out, exp_out, atol=4e-6, rtol=6e-7)
 
-    @pytest.mark.parametrize('dtyp', ['float32', 'float64'])
-    def test_symiir1_values(self, dtyp):
+    @pytest.mark.parametrize('dtype', ['float32', 'float64'])
+    def test_symiir1_values(self, dtype):
         rng = np.random.RandomState(1234)
-        dtyp = getattr(np, dtyp)
-        s = rng.uniform(size=16).astype(dtyp)
+        dtype = getattr(np, dtype)
+        s = rng.uniform(size=16).astype(dtype)
         res = symiirorder1(s, 0.5, 0.1)
 
         # values from scipy 1.9.1
@@ -162,13 +162,13 @@ class TestSymIIR:
                             0.19982875, 0.20355805, 0.47378628, 0.57232247, 0.51597393,
                            0.25935107, 0.31438554, 0.41096728, 0.4190693 , 0.25812255,
                            0.33671467], dtype=res.dtype)
-        assert res.dtype == dtyp
-        atol = {np.float64: 1e-15, np.float32: 1e-7}[dtyp]
+        assert res.dtype == dtype
+        atol = {np.float64: 1e-15, np.float32: 1e-7}[dtype]
         xp_assert_close(res, exp_res, atol=atol)
 
         s = s + 1j*s
         res = symiirorder1(s, 0.5, 0.1)
-        assert res.dtype == np.complex64 if dtyp == np.float32 else np.complex128
+        assert res.dtype == np.complex64 if dtype == np.float32 else np.complex128
         xp_assert_close(res, exp_res + 1j*exp_res, atol=atol)
 
     @pytest.mark.parametrize(

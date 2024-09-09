@@ -50,8 +50,7 @@ class TestMLS:
                     # impulse amplitude == test_len
                     err_msg = "mls impulse has incorrect value"
                     xp_assert_close(tester[0],
-                                    np.asarray(out_len, dtype=np.float64),
-                                    check_0d=False,
+                                    float(out_len),
                                     err_msg=err_msg
                     )
                     # steady-state is -1
