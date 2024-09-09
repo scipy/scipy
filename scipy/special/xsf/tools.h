@@ -329,17 +329,15 @@ namespace detail {
                     std::swap(interior, frontier);
                     std::swap(y_interior, y_frontier);
                 }
-                std::tuple<double, double, double, double, int> result(interior, frontier, y_interior, y_frontier, 0);
-                return result;
+		return {interior, frontier, y_interior, y_frontier, 0};
             }
             if (reached_boundary) {
                 /* We've reached a boundary point without finding a root . */
-                std::tuple<double, double, double, double, int> result(
+                return {
                     std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN(),
                     std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN(),
                     search_left ? 1 : 2
-                );
-                return result;
+                };
             }
             double step = (frontier - interior) * factor;
             interior = frontier;
@@ -356,11 +354,10 @@ namespace detail {
         /* Failed to converge within maxiter iterations. If maxiter is sufficiently high and
          * factor_left and factor_right are set appropriately, this should only happen due to
          * a bug in this function. Limiting the number of iterations is a defensive programming measure. */
-        std::tuple<double, double, double, double, int> result(
+	return {
             std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN(),
             std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN(), 3
-        );
-        return result;
+        };
     }
 
     /* Find root of a scalar function using Chandrupatla's algorithm */
