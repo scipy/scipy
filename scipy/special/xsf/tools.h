@@ -276,13 +276,12 @@ namespace detail {
      * It would be much cleaner to use std::function and capturing lambda's to specialize the
      * function we are finding a root for, but I couldn't get this working in CuPy using NVRTC.
      * This should be revisited in the future in order to allow simplifying this code. */
-    template <typename... Args>
+    template <typename Function>
     XSF_HOST_DEVICE inline std::tuple<double, double, double, double, int> bracket_root_for_cdf_inversion(
-        double (*func)(double, std::tuple<Args...>), double x0, double xmin, double xmax, double step0_left,
-        double step0_right, double factor_left, double factor_right, bool increasing, std::uint64_t maxiter,
-        std::tuple<Args...> args
+        Function func, double x0, double xmin, double xmax, double step0_left,
+        double step0_right, double factor_left, double factor_right, bool increasing, std::uint64_t maxiter
     ) {
-        double y0 = func(x0, args);
+        double y0 = func(x0);
 
         if (y0 == 0) {
             // Initial guess is correct.
@@ -318,7 +317,7 @@ namespace detail {
 
         bool reached_boundary = false;
         for (std::uint64_t i = 0; i < maxiter; i++) {
-            y_frontier = func(frontier, args);
+            y_frontier = func(frontier);
             y_frontier_sgn = std::signbit(y_frontier);
             if (y_frontier_sgn != y_interior_sgn || (y_frontier == 0.0)) {
                 /* Stopping condition, func evaluated at endpoints of bracket has opposing signs,
@@ -361,10 +360,10 @@ namespace detail {
     }
 
     /* Find root of a scalar function using Chandrupatla's algorithm */
-    template <typename... Args>
+    template <typename Function>
     XSF_HOST_DEVICE inline std::pair<double, int> find_root_chandrupatla(
-        double (*func)(double, std::tuple<Args...>), double x1, double x2, double f1, double f2, double rtol,
-        double atol, std::uint64_t maxiter, std::tuple<Args...> args
+        Function func, double x1, double x2, double f1, double f2, double rtol,
+        double atol, std::uint64_t maxiter
     ) {
         if (f1 == 0) {
             return {x1, 0};
@@ -375,7 +374,7 @@ namespace detail {
         double t = 0.5, x3, f3;
         for (uint64_t i = 0; i < maxiter; i++) {
             double x = x1 + t * (x2 - x1);
-            double f = func(x, args);
+            double f = func(x);
             if (std::signbit(f) == std::signbit(f1)) {
                 x3 = x1;
                 x1 = x;
