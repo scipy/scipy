@@ -2257,7 +2257,8 @@ class TestNdimageMorphology:
         out = ndimage.binary_fill_holes(data)
         assert_array_almost_equal(out, expected)
 
-
+    @skip_xp_backends("cupy",
+                      reasons=["these filters do not yet have axes support"])
     @pytest.mark.parametrize('border_value',[0, 1])
     @pytest.mark.parametrize('origin', [(0, 0), (-1, 0)])
     @pytest.mark.parametrize('expand_axis', [0, 1, 2])
@@ -2645,6 +2646,8 @@ class TestNdimageMorphology:
         output = xp.empty_like(array, dtype=xp.float64)
         ndimage.black_tophat(array, structure=structure, output=output)
 
+    @skip_xp_backends("cupy",
+                      reasons=["these filters do not yet have axes support"])
     @pytest.mark.parametrize('origin', [(0, 0), (-1, 0)])
     @pytest.mark.parametrize('expand_axis', [0, 1, 2])
     @pytest.mark.parametrize('mode', ['reflect', 'constant', 'nearest',
