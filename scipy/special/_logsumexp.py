@@ -129,7 +129,7 @@ def logsumexp(a, axis=None, b=None, keepdims=False, return_sign=False):
 
     # suppress warnings about log of zero
     with np.errstate(divide='ignore'):
-        s = xp.sum(tmp, axis=axis, keepdims=keepdims)
+        s = xp.sum(tmp, axis=axis, keepdims=keepdims, dtype=tmp.dtype)
         if return_sign:
             # For complex, use the numpy>=2.0 convention for sign.
             if xp.isdtype(s.dtype, "complex floating"):
