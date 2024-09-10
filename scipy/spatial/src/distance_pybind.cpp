@@ -228,34 +228,25 @@ ALWAYS_INLINE void _compute_variance_across_rows(
     ArrayDescriptor y, const T* y_data) {
     const intptr_t num_rowsX = x.shape[0], num_rowsY = y.shape[0];
     const intptr_t num_cols = x.shape[1];
-
+    const intptr_t ilp_factor1 = 4;
     for( intptr_t j = 0; j < num_cols; j++ ) {
-        T sum[4] = {0, 0, 0, 0};
+        T sum[ilp_factor1];
+        std::memset(sum, 0, ilp_factor1 * sizeof(T));
         intptr_t i;
-        for( i = 0; i + 3 < num_rowsX; i += 4 ) {
-            const intptr_t index0 = i * x.strides[0] + j * x.strides[1];
-            const intptr_t index1 = (i + 1) * x.strides[0] + j * x.strides[1];
-            const intptr_t index2 = (i + 2) * x.strides[0] + j * x.strides[1];
-            const intptr_t index3 = (i + 3) * x.strides[0] + j * x.strides[1];
-            sum[0] += x_data[index0];
-            sum[1] += x_data[index1];
-            sum[2] += x_data[index2];
-            sum[3] += x_data[index3];
+        for( i = 0; i + (ilp_factor1 - 1) < num_rowsX; i += ilp_factor1 ) {
+            ForceUnroll<ilp_factor1>{}([&](int k) {
+                sum[k] += x_data[(i + k) * x.strides[0] + j * x.strides[1]];
+            });
         }
         for( ; i < num_rowsX; i++ ) {
             const intptr_t index = i * x.strides[0] + j * x.strides[1];
             sum[0] += x_data[index];
         }
 
-        for( i = 0; i + 3 < num_rowsY; i += 4 ) {
-            const intptr_t index0 = i * y.strides[0] + j * y.strides[1];
-            const intptr_t index1 = (i + 1) * y.strides[0] + j * y.strides[1];
-            const intptr_t index2 = (i + 2) * y.strides[0] + j * y.strides[1];
-            const intptr_t index3 = (i + 3) * y.strides[0] + j * y.strides[1];
-            sum[0] += y_data[index0];
-            sum[1] += y_data[index1];
-            sum[2] += y_data[index2];
-            sum[3] += y_data[index3];
+        for( i = 0; i + (ilp_factor1 - 1) < num_rowsY; i += ilp_factor1 ) {
+            ForceUnroll<ilp_factor1>{}([&](int k) {
+                sum[k] += y_data[(i + k) * y.strides[0] + j * y.strides[1]];
+            });
         }
         for( ; i < num_rowsY; i++ ) {
             const intptr_t index = i * y.strides[0] + j * y.strides[1];
@@ -264,25 +255,27 @@ ALWAYS_INLINE void _compute_variance_across_rows(
         var[j] = (sum[0] + sum[1] + sum[2] + sum[3])/(num_rowsX + num_rowsY);
     }
 
+    const intptr_t ilp_factor2 = 2;
     for( intptr_t j = 0; j < num_cols; j++ ) {
-        T sum[2] = {0, 0};
+        T sum[ilp_factor2];
+        std::memset(sum, 0, ilp_factor2 * sizeof(T));
         T mean = var[j];
         intptr_t i;
-        for( i = 0; i + 1 < num_rowsX; i += 2 ) {
-            const intptr_t index0 = i * x.strides[0] + j * x.strides[1];
-            const intptr_t index1 = (i + 1) * x.strides[0] + j * x.strides[1];
-            sum[0] += (x_data[index0] - mean) * (x_data[index0] - mean);
-            sum[1] += (x_data[index1] - mean) * (x_data[index1] - mean);
+        for( i = 0; i + (ilp_factor2 - 1) < num_rowsX; i += ilp_factor2 ) {
+            ForceUnroll<ilp_factor2>{}([&](int k) {
+                const intptr_t index = (i + k) * x.strides[0] + j * x.strides[1];
+                sum[k] += (x_data[index] - mean) * (x_data[index] - mean);
+            });
         }
         for( ; i < num_rowsX; i++ ) {
             const intptr_t index = i * x.strides[0] + j * x.strides[1];
             sum[0] += (x_data[index] - mean) * (x_data[index] - mean);
         }
-        for( i = 0; i + 1 < num_rowsY; i += 2 ) {
-            const intptr_t index0 = i * y.strides[0] + j * y.strides[1];
-            const intptr_t index1 = (i + 1) * y.strides[0] + j * y.strides[1];
-            sum[0] += (y_data[index0] - mean) * (y_data[index0] - mean);
-            sum[1] += (y_data[index1] - mean) * (y_data[index1] - mean);
+        for( i = 0; i + (ilp_factor2 - 1) < num_rowsY; i += ilp_factor2 ) {
+            ForceUnroll<ilp_factor2>{}([&](int k) {
+                const intptr_t index = (i + k) * y.strides[0] + j * y.strides[1];
+                sum[k] += (y_data[index] - mean) * (y_data[index] - mean);
+            });
         }
         for( ; i < num_rowsY; i++ ) {
             const intptr_t index = i * y.strides[0] + j * y.strides[1];
