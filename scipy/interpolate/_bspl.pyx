@@ -302,57 +302,6 @@ def _colloc(const double[::1] x, const double[::1] t, int k, double[::1, :] ab,
 
 @cython.wraparound(False)
 @cython.boundscheck(False)
-def _handle_lhs_derivatives(const double[::1]t, int k, double xval,
-                            double[::1, :] ab,
-                            int kl, int ku,
-                            const cnp.npy_long[::1] deriv_ords,
-                            int offset=0):
-    """ Fill in the entries of the collocation matrix corresponding to known
-    derivatives at xval.
-
-    The collocation matrix is in the banded storage, as prepared by _colloc.
-    No error checking.
-
-    Parameters
-    ----------
-    t : ndarray, shape (nt + k + 1,)
-        knots
-    k : integer
-        B-spline order
-    xval : float
-        The value at which to evaluate the derivatives at.
-    ab : ndarray, shape(2*kl + ku + 1, nt), Fortran order
-        B-spline collocation matrix.
-        This argument is modified *in-place*.
-    kl : integer
-        Number of lower diagonals of ab.
-    ku : integer
-        Number of upper diagonals of ab.
-    deriv_ords : 1D ndarray
-        Orders of derivatives known at xval
-    offset : integer, optional
-        Skip this many rows of the matrix ab.
-
-    """
-    cdef:
-        int left, nu, a, clmn, row
-        double[::1] wrk = np.empty(2*k+2, dtype=np.float64)
-
-    # derivatives @ xval
-    with nogil:
-        left = find_interval(t, k, xval, k, extrapolate=False)
-        for row in range(deriv_ords.shape[0]):
-            nu = deriv_ords[row]
-            _deBoor_D(&t[0], xval, k, left, nu, &wrk[0])
-            # if A were a full matrix, it would be just
-            # ``A[row + offset, left-k:left+1] = bb``.
-            for a in range(k+1):
-                clmn = left - k + a
-                ab[kl + ku + offset + row - clmn, clmn] = wrk[a]
-
-
-@cython.wraparound(False)
-@cython.boundscheck(False)
 def _norm_eq_lsq(const double[::1] x,
                  const double[::1] t,
                  int k,
