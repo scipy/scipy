@@ -10,8 +10,9 @@ import pytest
 from scipy.fft import fft, fft2, fftshift
 from scipy.special import sinc
 from scipy.signal import kaiser_beta, kaiser_atten, kaiserord, \
-    firwin, firwin2, freqz, remez, firls, minimum_phase, fwind1, \
+    firwin, firwin2, freqz, remez, firls, minimum_phase, \
     firwin, convolve2d
+from scipy.signal._fir_filter_design import fwind1
 
 def test_kaiser_beta():
     b = kaiser_beta(58.7)

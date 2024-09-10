@@ -8,7 +8,6 @@ from typing import Literal
 import numpy as np
 from numpy.fft import irfft, fft, ifft
 from scipy.signal.windows import get_window
-from scipy.signal._fir_filter_design import firwin
 from scipy.special import sinc
 from scipy.linalg import (toeplitz, hankel, solve, LinAlgError, LinAlgWarning,
                           lstsq)
@@ -1360,16 +1359,13 @@ def fwind1(hsize, window, fc=None, fs=2, circular=False):
         raise ValueError("hsize must be a 2-element tuple or list")
 
     if circular:
-        if isinstance(window, str):
-            win_1d = get_window(window, hsize[0])
-        elif isinstance(window, (tuple, list)):
-            win_1d = get_window(window, hsize[0])
-        else:
-            raise ValueError("window must be a string or a tuple/list of length 2")
+        n_r = max(hsize[0], hsize[1]) * 8   # oversample 1d window by factor 8 
+        win_r = get_window(window, n_r)
 
         f1, f2 = np.meshgrid(np.linspace(-1, 1, hsize[0]), np.linspace(-1, 1, hsize[1]))
-        r = np.sqrt(f1**2 + f2**2)
-        win_2d = np.interp(r, np.linspace(0, 1, hsize[0]), win_1d)
+        r = np.sqrt(f1**2 + f2**2) 
+
+        win_2d = np.interp(r, np.linspace(0, 1, n_r), win_r)
         return win_2d
 
     if len(window) != 2:
