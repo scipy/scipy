@@ -7,6 +7,7 @@ from numpy.testing import assert_warns
 from scipy._lib._array_api import (
     xp_assert_equal, xp_assert_close, assert_array_almost_equal
 )
+from scipy.conftest import skip_xp_invalid_arg
 
 from pytest import raises as assert_raises
 
@@ -1001,8 +1002,10 @@ class TestInterpN:
         v2 = interpn((x, y), values._v, [0.4, 0.7], method=method)
         xp_assert_close(v1, v2, check_dtype=False)
 
+    @skip_xp_invalid_arg
     @parametrize_rgi_interp_methods
     def test_matrix_input(self, method):
+        """np.matrix inputs are allowed for backwards compatibility"""
         x = np.linspace(0, 2, 6)
         y = np.linspace(0, 1, 7)
 
