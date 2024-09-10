@@ -22,7 +22,7 @@ class MissingModule:
 
 
 def check_version(module, min_ver):
-    if type(module) == MissingModule:
+    if type(module) is MissingModule:
         return pytest.mark.skip(reason=f"{module.name} is not installed")
     return pytest.mark.skipif(
         _pep440.parse(module.__version__) < _pep440.Version(min_ver),
@@ -309,7 +309,7 @@ class FuncData:
                 assert_(False, "\n".join(msg))
 
     def __repr__(self):
-        """Pretty-printing, esp. for Nose output"""
+        """Pretty-printing"""
         if np.any(list(map(np.iscomplexobj, self.param_columns))):
             is_complex = " (complex)"
         else:

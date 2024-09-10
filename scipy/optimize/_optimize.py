@@ -123,9 +123,11 @@ class OptimizeResult(_RichResult):
         underlying solver. Refer to `message` for details.
     message : str
         Description of the cause of the termination.
-    fun, jac, hess: ndarray
-        Values of objective function, its Jacobian and its Hessian (if
-        available). The Hessians may be approximations, see the documentation
+    fun : float
+        Value of objective function at `x`.
+    jac, hess : ndarray
+        Values of objective function's Jacobian and its Hessian at `x` (if
+        available). The Hessian may be an approximation, see the documentation
         of the function in question.
     hess_inv : object
         Inverse of the objective function's Hessian; may be an approximation.

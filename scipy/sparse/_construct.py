@@ -1051,7 +1051,7 @@ def block_diag(mats, format=None, dtype=None):
     r_idx = 0
     c_idx = 0
     for a in mats:
-        if isinstance(a, (list, numbers.Number)):
+        if isinstance(a, (list | numbers.Number)):
             a = coo_array(np.atleast_2d(a))
         if issparse(a):
             a = a.tocoo()

@@ -1,3 +1,4 @@
+
 # TODO: 64-bit BLAS and LAPACK
 
 _ufuncs_pxi_pxd_sources = [
@@ -286,9 +287,9 @@ foreach npz_file: npz_files
   )
 endforeach
 
-
 # Headers for special functions in `xsf` library are included in
 # both build and install dirs for development purposes. Not public!
+
 xsf_sources = [
   'xsf/config.h',
   'xsf/error.h',
@@ -302,7 +303,9 @@ xsf_sources = [
   'xsf/wright_bessel.h',
   'xsf/hyp2f1.h',
   'xsf/tools.h',
-  'xsf/iv_ratio.h'
+  'xsf/iv_ratio.h',
+  'xsf/sici.h',
+  'xsf/expint.h'
 ]
 
 xsf_cephes_sources = [
@@ -340,7 +343,12 @@ xsf_cephes_sources = [
   'xsf/cephes/ellie.h',
   'xsf/cephes/ellik.h',
   'xsf/cephes/ellpe.h',
-  'xsf/cephes/ellpk.h'
+  'xsf/cephes/ellpk.h',
+  'xsf/cephes/sici.h',
+  'xsf/cephes/shichi.h',
+  'xsf/cephes/sindg.h',
+  'xsf/cephes/tandg.h'
+  
 ]
 
 py3.install_sources(xsf_sources, subdir: 'scipy/special/xsf')
