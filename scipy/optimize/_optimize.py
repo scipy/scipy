@@ -29,8 +29,7 @@ import math
 import warnings
 import sys
 import inspect
-from numpy import (atleast_1d, eye, argmin, zeros, shape, squeeze,
-                   asarray, sqrt)
+from numpy import atleast_1d, eye, argmin, zeros, shape, asarray, sqrt
 import numpy as np
 from scipy.linalg import cholesky, issymmetric, LinAlgError
 from scipy.sparse.linalg import LinearOperator
@@ -3186,7 +3185,7 @@ def _linesearch_powell(func, p, xi, tol=1e-3,
                                           myfunc, None, tuple(), xtol=tol)
         alpha_min, fret = res.x, res.fun
         xi = alpha_min * xi
-        return squeeze(fret), p + xi, xi
+        return fret, p + xi, xi
     else:
         bound = _line_for_search(p, xi, lower_bound, upper_bound)
         if np.isneginf(bound[0]) and np.isposinf(bound[1]):
@@ -3196,7 +3195,7 @@ def _linesearch_powell(func, p, xi, tol=1e-3,
             # we can use a bounded scalar minimization
             res = _minimize_scalar_bounded(myfunc, bound, xatol=tol / 100)
             xi = res.x * xi
-            return squeeze(res.fun), p + xi, xi
+            return res.fun, p + xi, xi
         else:
             # only bounded on one side. use the tangent function to convert
             # the infinity bound to a finite bound. The new bounded region
@@ -3207,7 +3206,7 @@ def _linesearch_powell(func, p, xi, tol=1e-3,
                 bound,
                 xatol=tol / 100)
             xi = np.tan(res.x) * xi
-            return squeeze(res.fun), p + xi, xi
+            return res.fun, p + xi, xi
 
 
 def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
@@ -3495,7 +3494,7 @@ def _minimize_powell(func, x0, args=(), callback=None, bounds=None,
             warnings.warn("Initial guess is not within the specified bounds",
                           OptimizeWarning, stacklevel=3)
 
-    fval = squeeze(func(x))
+    fval = func(x)
     x1 = x.copy()
     iter = 0
     while True:
@@ -3540,7 +3539,7 @@ def _minimize_powell(func, x0, args=(), callback=None, bounds=None,
             else:
                 _, lmax = _line_for_search(x, direc1, lower_bound, upper_bound)
             x2 = x + min(lmax, 1) * direc1
-            fx2 = squeeze(func(x2))
+            fx2 = func(x2)
 
             if (fx > fx2):
                 t = 2.0*(fx + fx2 - 2.0*fval)
@@ -3586,7 +3585,6 @@ def _minimize_powell(func, x0, args=(), callback=None, bounds=None,
         print(f"         Current function value: {fval:f}")
         print("         Iterations: %d" % iter)
         print("         Function evaluations: %d" % fcalls[0])
-
     result = OptimizeResult(fun=fval, direc=direc, nit=iter, nfev=fcalls[0],
                             status=warnflag, success=(warnflag == 0),
                             message=msg, x=x)
