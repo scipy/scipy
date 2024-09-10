@@ -287,6 +287,43 @@ py_data_matrix(PyObject *self, PyObject *args)
 }
 
 
+/*
+ * def _py_find_interval(const double[::1] t,
+ *                       int k,
+ *                       double xval,
+ *                       int prev_l,
+ *                       bint extrapolate):
+ */
+static PyObject*
+py_find_interval(PyObject *self, PyObject *args)
+{
+    PyObject *py_t = NULL;
+    double xval;
+    int k, prev_l, i_extrap;
+
+    if(!PyArg_ParseTuple(args, "Oidip", &py_t, &k, &xval, &prev_l, &i_extrap)) {
+        return NULL;
+    }
+
+    if (!check_array(py_t, 1, NPY_DOUBLE)) {
+        return NULL;
+    }
+    PyArrayObject *a_t = (PyArrayObject *)py_t;
+
+    Py_ssize_t interval = fitpack::_find_interval(
+        static_cast<const double *>(PyArray_DATA(a_t)), PyArray_DIM(a_t, 0),
+        k,
+        xval,
+        prev_l,
+        i_extrap
+    );
+
+    PyObject *py_interval = PyLong_FromSsize_t(interval);
+    return py_interval;
+
+}
+
+
 /////////////////////////////////////
 
 static PyMethodDef DierckxMethods[] = {
@@ -299,6 +336,8 @@ static PyMethodDef DierckxMethods[] = {
      "row-by-row QR triangularization"},
     {"data_matrix", py_data_matrix, METH_VARARGS,
      "(m, k+1) array of non-zero b-splines"},
+    {"py_find_interval", py_find_interval, METH_VARARGS,
+     "find interval"},
     //...
     {NULL, NULL, 0, NULL}        /* Sentinel */
 };
