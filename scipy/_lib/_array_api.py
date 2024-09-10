@@ -580,12 +580,23 @@ def xp_broadcast_promote(*args, ensure_writeable=False, force_floating=False, xp
     args_not_none = [arg for arg in args if arg is not None]
 
     # determine minimum dtype
+    default_float = xp.asarray(1.).dtype
     dtypes = [arg.dtype for arg in args_not_none]
-    dtype = xp.result_type(*dtypes)
-    if force_floating and xp.isdtype(dtype, 'integral'):
-        # If we were to add `xp.float32` before checking whether the result
-        # type is otherwise integral, we risk promotion from lower float.
-        dtype = xp.result_type(dtype, xp.float32)
+    try:  # follow library's prefered mixed promotion rules
+        dtype = xp.result_type(*dtypes)
+        if force_floating and xp.isdtype(dtype, 'integral'):
+            # If we were to add `default_float` before checking whether the result
+            # type is otherwise integral, we risk promotion from lower float.
+            dtype = xp.result_type(dtype, default_float)
+    except TypeError:  # mixed type promotion isn't defined
+        float_dtypes = [arg.dtype for arg in args_not_none
+                        if not xp.isdtype(dtype, 'integral')]
+        if float_dtypes:
+            dtype = xp.result_type(*float_dtypes)
+        elif force_floating:
+            dtype = default_float
+        else:
+            dtype = xp.result_type(*dtypes)
 
     # determine result shape
     shapes = {arg.shape for arg in args_not_none}
