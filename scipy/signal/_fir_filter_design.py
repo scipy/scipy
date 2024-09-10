@@ -1338,7 +1338,7 @@ def fwind1(hsize, window, fc=None, fs=2, circular=False):
     >>> import numpy as np
     >>> from scipy.signal import get_window
     >>> from scipy.signal import fwind1
-    >>> hsize = (51, 51)
+    >>> hsize = (5, 5)
     >>> window = (("kaiser", 5.0), ("kaiser", 5.0))
     >>> fc = 0.1
     >>> filter_2d = fwind1(hsize, window, fc)
