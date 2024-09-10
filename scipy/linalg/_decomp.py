@@ -127,7 +127,7 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False,
     The documentation is written assuming array arguments of are of specified
     shapes. However, array argument(s) of this function may be N-dimensional, in
     which case they follow standard rules for batched linear algebra operations;
-    see :ref:`linalg-batch` for details.
+    see :doc:`linalg_batch` for details.
 
     Parameters
     ----------

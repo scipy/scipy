@@ -960,7 +960,7 @@ For examples of the use of these functions, see their respective docstrings.
 Advanced Features
 -----------------
 
-.. _linalg-batch:
-
 Batch Support
 ^^^^^^^^^^^^^
+Some of SciPy's linear algebra functions can process batches of lower-dimensional
+arrays given N-d array input. For more information, see :doc:`linalg_batch`.
