@@ -36,7 +36,7 @@ class TestLogSumExp:
         xp_assert_close(logsumexp(b), desired)
 
         n = 1000
-        b = xp.full((n,), 10000.)
+        b = xp.full((n,), 10000)
         desired = xp.asarray(10000.0 + math.log(n))
         xp_assert_close(logsumexp(b), desired)
 
@@ -76,7 +76,7 @@ class TestLogSumExp:
         desired = xp.log(xp.sum(b*xp.exp(a)))
         xp_assert_close(logsumexp(a, b=b), desired)
 
-        a = xp.asarray([1000., 1000.])
+        a = xp.asarray([1000, 1000])
         b = xp.asarray([1.2, 1.2])
         desired = xp.asarray(1000 + math.log(2 * 1.2))
         xp_assert_close(logsumexp(a, b=b), desired)
@@ -92,16 +92,16 @@ class TestLogSumExp:
         xp_assert_close(xp.exp(logsumexp(logX, b=B, axis=1)), xp.sum(B * X, axis=1))
 
     def test_logsumexp_sign(self, xp):
-        a = xp.asarray([1., 1., 1.])
-        b = xp.asarray([1., -1., -1.])
+        a = xp.asarray([1, 1, 1])
+        b = xp.asarray([1, -1, -1])
 
         r, s = logsumexp(a, b=b, return_sign=True)
         xp_assert_close(r, xp.asarray(1.))
         xp_assert_equal(s, xp.asarray(-1.))
 
     def test_logsumexp_sign_zero(self, xp):
-        a = xp.asarray([1., 1.])
-        b = xp.asarray([1., -1.])
+        a = xp.asarray([1, 1])
+        b = xp.asarray([1, -1])
 
         r, s = logsumexp(a, b=b, return_sign=True)
         assert not xp.isfinite(r)
@@ -142,8 +142,8 @@ class TestLogSumExp:
         assert r.shape == (1, 3)
 
     def test_logsumexp_b_zero(self, xp):
-        a = xp.asarray([1., 10000.])
-        b = xp.asarray([1., 0.])
+        a = xp.asarray([1, 10000])
+        b = xp.asarray([1, 0])
 
         xp_assert_close(logsumexp(a, b=b), xp.asarray(1.))
 
@@ -167,28 +167,32 @@ class TestLogSumExp:
 
     @pytest.mark.parametrize('dtype', dtypes)
     def test_dtypes_a(self, dtype, xp):
-        if xp.__name__ == 'array_api_strict' and dtype in integral_dtypes:
-            pytest.skip('`array_api_strict` does not promote ints to floats')
         dtype = getattr(xp, dtype)
         a = xp.asarray([1000., 1000.], dtype=dtype)
-        xp_test = array_namespace(a)  # torch needs compatible result_type
-        desired_dtype = xp_test.result_type(dtype, xp.float32)
+        xp_test = array_namespace(a)  # torch needs compatible `isdtype`
+        desired_dtype = (xp.asarray(1.).dtype if xp_test.isdtype(dtype, 'integral')
+                         else dtype)  # true for all libraries tested
         desired = xp.asarray(1000.0 + math.log(2.0), dtype=desired_dtype)
         xp_assert_close(logsumexp(a), desired)
 
     @pytest.mark.parametrize('dtype_a', dtypes)
     @pytest.mark.parametrize('dtype_b', dtypes)
     def test_dtypes_ab(self, dtype_a, dtype_b, xp):
-        dtype_is_integral = dtype_a in integral_dtypes or dtype_b in integral_dtypes
-        if xp.__name__ == 'array_api_strict' and dtype_is_integral:
-            pytest.skip('`array_api_strict` does not promote ints to floats')
         xp_dtype_a = getattr(xp, dtype_a)
         xp_dtype_b = getattr(xp, dtype_b)
         a = xp.asarray([2, 1], dtype=xp_dtype_a)
         b = xp.asarray([1, -1], dtype=xp_dtype_b)
         xp_test = array_namespace(a, b)  # torch needs compatible result_type
-        result_dtype = xp_test.result_type(xp_dtype_a, xp_dtype_b, xp.float32)
-        desired = xp.asarray(math.log(math.exp(2) - math.exp(1)), dtype=result_dtype)
+        if xp.__name__ == 'array_api_strict':
+            xp_float_dtypes = [dtype for dtype in [xp_dtype_a, xp_dtype_b]
+                               if not xp_test.isdtype(dtype, 'integral')]
+            if len(xp_float_dtypes) < 2:  # at least one is integral
+                xp_float_dtypes.append(xp.asarray(1.).dtype)
+            desired_dtype = xp_test.result_type(*xp_float_dtypes)
+        else:
+            # True for all libraries tested
+            desired_dtype = xp_test.result_type(xp_dtype_a, xp_dtype_b, xp.float32)
+        desired = xp.asarray(math.log(math.exp(2) - math.exp(1)), dtype=desired_dtype)
         xp_assert_close(logsumexp(a, b=b), desired)
 
 class TestSoftmax:

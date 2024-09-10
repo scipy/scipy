@@ -589,10 +589,10 @@ def xp_broadcast_promote(*args, ensure_writeable=False, force_floating=False, xp
             # type is otherwise integral, we risk promotion from lower float.
             dtype = xp.result_type(dtype, default_float)
     except TypeError:  # mixed type promotion isn't defined
-        float_dtypes = [arg.dtype for arg in args_not_none
+        float_dtypes = [dtype for dtype in dtypes
                         if not xp.isdtype(dtype, 'integral')]
         if float_dtypes:
-            dtype = xp.result_type(*float_dtypes)
+            dtype = xp.result_type(*float_dtypes, default_float)
         elif force_floating:
             dtype = default_float
         else:
