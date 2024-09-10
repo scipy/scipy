@@ -11,7 +11,7 @@ from scipy.fft import fft, fft2, fftshift
 from scipy.special import sinc
 from scipy.signal import kaiser_beta, kaiser_atten, kaiserord, \
     firwin, firwin2, freqz, remez, firls, minimum_phase, \
-    firwin, convolve2d
+    convolve2d
 from scipy.signal._fir_filter_design import fwind1
 
 def test_kaiser_beta():
@@ -656,11 +656,16 @@ class TestMinimumPhase:
 
 class TestFwind1:
     def test_invalid_args(self):
-        with pytest.raises(ValueError, match="hsize must be a 2-element tuple or list"):
+        with pytest.raises(ValueError, 
+                           match="hsize must be a 2-element tuple or list"):
             fwind1((50,), window=(("kaiser", 5.0), "boxcar"), fc=0.4)
-        with pytest.raises(ValueError, match="window must be a 2-element tuple or list"):
+        
+        with pytest.raises(ValueError, 
+                           match="window must be a 2-element tuple or list"):
             fwind1((51, 51), window=("hamming",), fc=0.5)
-        with pytest.raises(ValueError, match="window must be a 2-element tuple or list"):
+        
+        with pytest.raises(ValueError, 
+                           match="window must be a 2-element tuple or list"):
             fwind1((51, 51), window="invalid_window", fc=0.5)
 
     def test_filter_design(self):
@@ -697,7 +702,9 @@ class TestFwind1:
         freq_response = fftshift(fft2(taps))
 
         magnitude = np.abs(freq_response)
-        assert np.isclose(magnitude.max(), 1.0, atol=0.01), f"Max magnitude is {magnitude.max()}"
+        assert np.isclose(magnitude.max(), 1.0, atol=0.01), (
+            f"Max magnitude is {magnitude.max()}"
+        )        
         assert magnitude.min() >= 0.0, f"Min magnitude is {magnitude.min()}"
 
     def test_symmetry(self):
@@ -737,5 +744,9 @@ class TestFwind1:
         known_result = np.outer(row_filter, col_filter)
 
         taps = fwind1(hsize, (window, window), fc)
-        assert taps.shape == known_result.shape, f"Shape mismatch: {taps.shape} vs {known_result.shape}"
-        assert np.allclose(taps, known_result, rtol=1e-1), f"Filter shape mismatch: {taps} vs {known_result}"
+        assert taps.shape == known_result.shape, (
+            f"Shape mismatch: {taps.shape} vs {known_result.shape}"
+        )
+        assert np.allclose(taps, known_result, rtol=1e-1), (
+            f"Filter shape mismatch: {taps} vs {known_result}"
+        )
