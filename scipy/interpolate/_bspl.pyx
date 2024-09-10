@@ -97,17 +97,6 @@ cdef inline int find_interval(const double[::1] t,
     return _find_interval(&t[0], t.shape[0], k, xval, prev_l, extrapolate)
 
 
-# NB: a python wrapper for find_interval. The leading underscore signals
-# it's not meant to be user-visible outside of _bsplines.py
-@cython.wraparound(False)
-@cython.boundscheck(False)
-def _py_find_interval(const double[::1] t,
-                   int k,
-                   double xval,
-                   int prev_l,
-                   bint extrapolate):
-    return find_interval(t, k, xval, prev_l, extrapolate)
-
 
 @cython.wraparound(False)
 @cython.boundscheck(False)
