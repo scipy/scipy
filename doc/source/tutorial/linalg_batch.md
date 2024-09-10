@@ -6,12 +6,13 @@ jupytext:
     format_version: 0.13
     jupytext_version: 1.16.4
 kernelspec:
-  display_name: Python 3
+  display_name: Python 3 (ipykernel)
   language: python
   name: python3
-orphan: True
+orphan: true
 ---
 
+(linalg_batch)=
 # Batched Linear Operations
 
 Some of SciPy's linear algebra functions support N-dimensional array input. These operations have not been mathematically generalized to higher-order tensors; rather, the indicated operation is performed on a *batch* (or "stack") of input scalars, vectors, and/or matrices.
@@ -69,7 +70,7 @@ input.shape
 Since each 3 x 3 matrix is converted to a zero-dimensional scalar, we say that the core shape of the outuput is `()`. The shape of the output is the sum of the batch shape and core shape, so the result is a 2 x 4 array.
 
 ```{code-cell} ipython3
-output = linalg.det(batch)
+output = linalg.det(input)
 output
 ```
 
@@ -112,32 +113,36 @@ evals, evecs = linalg.eig(input, b=input)
 evals.shape, evecs.shape
 ```
 
-The rules when the shapes are not identical follow logically enough. Each input can have its own batch shape as long as the shapes are broadcastable according to NumPy's broadcasting rules. The net batch shape is the broadcasted shape of the individual batch shapes, and the shape of each output is the net batch shape plus its core shape.
+The rules when the shapes are not identical follow logically. Each input can have its own batch shape as long as the shapes are broadcastable according to NumPy's broadcasting rules. The net batch shape is the broadcasted shape of the individual batch shapes, and the shape of each output is the net batch shape plus its core shape.
 
 ```{code-cell} ipython3
 rng = np.random.default_rng(2859239482)
+
+# Define input core shapes
 m = 3
-
-batch_shape_a = (2, 4)
-batch_shape_b = (5, 1, 4)
-
 core_shape_a = (m, m)
 core_shape_b = (m, m)
 
-net_batch_shape = np.broadcast_shapes(batch_shape_a, batch_shape_b)
+# Define broadcastable batch shapes
+batch_shape_a = (2, 4)
+batch_shape_b = (5, 1, 4)
 
-input_a = rng.random(batch_shape_a + core_shape_a)
-input_b = rng.random(batch_shape_b + core_shape_b)
-
+# Define output core shapes
 core_shape_evals = (m,)
 core_shape_evecs = (m, m)
 
+# Predict shapes of outputs: broadcast batch shapes,
+# and append output core shapes
+net_batch_shape = np.broadcast_shapes(batch_shape_a, batch_shape_b)
 output_shape_evals = net_batch_shape + core_shape_evals
 output_shape_evecs = net_batch_shape + core_shape_evecs
 output_shape_evals, output_shape_evecs
 ```
 
 ```{code-cell} ipython3
+# Check predictions
+input_a = rng.random(batch_shape_a + core_shape_a)
+input_b = rng.random(batch_shape_b + core_shape_b)
 evals, evecs = linalg.eig(input_a, b=input_b)
 evals.shape, evecs.shape
 ```

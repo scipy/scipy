@@ -1041,11 +1041,6 @@ def _apply_over_batch(*argdefs):
                 # generalized by allowing the contributor to pass an `unpack_result`
                 # callable to the decorator factory.
                 result = (result,) if not isinstance(result, tuple) else result
-                if not results:
-                    core_shapes = [array.shape for array in result]
-
-                    results = [np.empty(batch_shape)]
-
                 results.append(result)
             results = list(zip(*results))
 
