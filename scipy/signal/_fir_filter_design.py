@@ -17,7 +17,7 @@ from . import _sigtools
 
 
 __all__ = ['kaiser_beta', 'kaiser_atten', 'kaiserord',
-           'firwin', 'firwin2', 'remez', 'firls', 'minimum_phase']
+           'firwin', 'firwin2', 'fwind1', 'remez', 'firls', 'minimum_phase']
 
 
 # Some notes on function parameters:
