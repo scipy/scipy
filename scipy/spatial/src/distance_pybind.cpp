@@ -954,35 +954,33 @@ ALWAYS_INLINE void _compute_inverse_matrix(ArrayDescriptor vi, scalar_t* vi_data
 template <typename scalar_t>
 ALWAYS_INLINE scalar_t _compute_mean(
     ArrayDescriptor x[], const scalar_t* x_data[], intptr_t nx, intptr_t j) {
-    scalar_t sum[4] = {0, 0, 0, 0};
+    const intptr_t ilp_factor = 4;
+    scalar_t sum[ilp_factor];
+    std::memset(sum, 0, sizeof(scalar_t) * ilp_factor);
     intptr_t total_values = 0;
 
     for( intptr_t ix = 0; ix < nx; ix++ ) {
         const intptr_t num_rows = x[ix].shape[0];
         total_values += num_rows;
         intptr_t i;
-        for( i = 0; i + 3 < num_rows; i += 4 ) {
-            auto index0 = i*x[ix].strides[0] + j*x[ix].strides[1];
-            auto index1 = (i + 1)*x[ix].strides[0] + j*x[ix].strides[1];
-            auto index2 = (i + 2)*x[ix].strides[0] + j*x[ix].strides[1];
-            auto index3 = (i + 3)*x[ix].strides[0] + j*x[ix].strides[1];
-            sum[0] += x_data[ix][index0];
-            sum[1] += x_data[ix][index1];
-            sum[2] += x_data[ix][index2];
-            sum[3] += x_data[ix][index3];
+        for( i = 0; i + (ilp_factor - 1) < num_rows; i += ilp_factor ) {
+            ForceUnroll<ilp_factor>{}([&](int k) {
+                sum[k] += x_data[ix][(i + k) * x[ix].strides[0] + j * x[ix].strides[1]];
+            });
         }
         for( ; i < num_rows; i++ ) {
             auto index = i*x[ix].strides[0] + j*x[ix].strides[1];
             sum[0] += x_data[ix][index];
         }
     }
-    return (sum[0] + sum[1] + sum[2] + sum[3])/total_values;
+    return reduce_loop(sum, ilp_factor)/total_values;
 }
 
 template <typename scalar_t>
 ALWAYS_INLINE scalar_t _compute_covariance(
     ArrayDescriptor x[], const scalar_t* x_data[],
     intptr_t nx, intptr_t j, intptr_t k) {
+    const intptr_t ilp_factor = 4;
     scalar_t j_mean = _compute_mean(x, x_data, nx, j);
     scalar_t k_mean = _compute_mean(x, x_data, nx, k);
     scalar_t cov_jk[4] = {0, 0, 0, 0};
@@ -992,19 +990,12 @@ ALWAYS_INLINE scalar_t _compute_covariance(
         const intptr_t num_rows = x[ix].shape[0];
         total_values += num_rows;
         intptr_t i;
-        for( i = 0; i + 3 < num_rows; i += 4 ) {
-            auto jindex0 = i*x[ix].strides[0] + j*x[ix].strides[1];
-            auto kindex0 = i*x[ix].strides[0] + k*x[ix].strides[1];
-            auto jindex1 = (i + 1)*x[ix].strides[0] + j*x[ix].strides[1];
-            auto kindex1 = (i + 1)*x[ix].strides[0] + k*x[ix].strides[1];
-            auto jindex2 = (i + 2)*x[ix].strides[0] + j*x[ix].strides[1];
-            auto kindex2 = (i + 2)*x[ix].strides[0] + k*x[ix].strides[1];
-            auto jindex3 = (i + 3)*x[ix].strides[0] + j*x[ix].strides[1];
-            auto kindex3 = (i + 3)*x[ix].strides[0] + k*x[ix].strides[1];
-            cov_jk[0] += (x_data[ix][jindex0] - j_mean)*(x_data[ix][kindex0] - k_mean);
-            cov_jk[1] += (x_data[ix][jindex1] - j_mean)*(x_data[ix][kindex1] - k_mean);
-            cov_jk[2] += (x_data[ix][jindex2] - j_mean)*(x_data[ix][kindex2] - k_mean);
-            cov_jk[3] += (x_data[ix][jindex3] - j_mean)*(x_data[ix][kindex3] - k_mean);
+        for( i = 0; i + (ilp_factor - 1) < num_rows; i += ilp_factor ) {
+            ForceUnroll<ilp_factor>{}([&](int kk) {
+                auto jindex = (i + kk)*x[ix].strides[0] + j*x[ix].strides[1];
+                auto kindex = (i + kk)*x[ix].strides[0] + k*x[ix].strides[1];
+                cov_jk[kk] += (x_data[ix][jindex] - j_mean)*(x_data[ix][kindex] - k_mean);
+            });
         }
         for( ; i < num_rows; i++ ) {
             auto jindex = i*x[ix].strides[0] + j*x[ix].strides[1];
@@ -1012,7 +1003,7 @@ ALWAYS_INLINE scalar_t _compute_covariance(
             cov_jk[0] += (x_data[ix][jindex] - j_mean)*(x_data[ix][kindex] - k_mean);
         }
     }
-    return (cov_jk[0] + cov_jk[1] + cov_jk[2] + cov_jk[3])/(total_values - 1);
+    return reduce_loop(cov_jk, ilp_factor)/(total_values - 1);
 }
 
 template <typename scalar_t>
@@ -1020,29 +1011,27 @@ ALWAYS_INLINE scalar_t _compute_covariance(
     ArrayDescriptor x[], const scalar_t* x_data[],
     intptr_t nx, intptr_t j) {
     scalar_t j_mean = _compute_mean(x, x_data, nx, j);
-    scalar_t cov_jj[4] = {0, 0, 0, 0};
+    const intptr_t ilp_factor = 4;
+    scalar_t cov_jj[4];
+    std::memset(cov_jj, 0, ilp_factor * sizeof(scalar_t));
     intptr_t total_values = 0;
 
     for( intptr_t ix = 0; ix < nx; ix++ ) {
         const intptr_t num_rows = x[ix].shape[0];
         total_values += num_rows;
         intptr_t i;
-        for( i = 0; i + 3 < num_rows; i += 4 ) {
-            auto jindex0 = i*x[ix].strides[0] + j*x[ix].strides[1];
-            auto jindex1 = (i + 1)*x[ix].strides[0] + j*x[ix].strides[1];
-            auto jindex2 = (i + 2)*x[ix].strides[0] + j*x[ix].strides[1];
-            auto jindex3 = (i + 3)*x[ix].strides[0] + j*x[ix].strides[1];
-            cov_jj[0] += (x_data[ix][jindex0] - j_mean)*(x_data[ix][jindex0] - j_mean);
-            cov_jj[1] += (x_data[ix][jindex1] - j_mean)*(x_data[ix][jindex1] - j_mean);
-            cov_jj[2] += (x_data[ix][jindex2] - j_mean)*(x_data[ix][jindex2] - j_mean);
-            cov_jj[3] += (x_data[ix][jindex3] - j_mean)*(x_data[ix][jindex3] - j_mean);
+        for( i = 0; i + (ilp_factor - 1) < num_rows; i += ilp_factor ) {
+            ForceUnroll<ilp_factor>{}([&](int kk) {
+                auto jindex = (i + kk)*x[ix].strides[0] + j*x[ix].strides[1];
+                cov_jj[kk] += (x_data[ix][jindex] - j_mean)*(x_data[ix][jindex] - j_mean);
+            });
         }
         for( ; i < num_rows; i++ ) {
             auto jindex = i*x[ix].strides[0] + j*x[ix].strides[1];
             cov_jj[0] += (x_data[ix][jindex] - j_mean)*(x_data[ix][jindex] - j_mean);
         }
     }
-    return (cov_jj[0] + cov_jj[1] + cov_jj[2] + cov_jj[3])/(total_values - 1);
+    return reduce_loop(cov_jj, ilp_factor)/(total_values - 1);
 }
 
 template <typename scalar_t>
