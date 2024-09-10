@@ -338,8 +338,8 @@ class NestedFixedRule(FixedRule):
         if self.xp is None:
             self.xp = array_namespace(nodes)
 
-        error_nodes = _concat([nodes, lower_nodes], axis=0)
-        error_weights = _concat([weights, -lower_weights], axis=0)
+        error_nodes = self.xp.concat([nodes, lower_nodes], axis=0)
+        error_weights = self.xp.concat([weights, -lower_weights], axis=0)
 
         return self.xp.abs(
             _apply_fixed_rule(f, a, b, error_nodes, error_weights, args)
@@ -511,17 +511,3 @@ def _apply_fixed_rule(f, a, b, orig_nodes, orig_weights, args=()):
     est = xp.sum(weights_reshaped * f_nodes, axis=0)
 
     return est
-
-
-def _concat(arrays, axis=0):
-    xp = array_namespace(*arrays)
-
-    if hasattr(xp, "concat"):
-        return xp.concat(arrays, axis=axis)
-    elif hasattr(xp, "concatenate"):
-        return xp.concatenate(arrays, axis=axis)
-    else:
-        return xp.asarray(np_compat.concatenate(
-            [np_compat.asarray(arr) for arr in arrays],
-            axis=axis,
-        ))

@@ -3,10 +3,9 @@ import itertools
 
 from functools import cached_property
 
-from scipy._lib._array_api import np_compat
+from scipy._lib._array_api import is_numpy, np_compat
 
 from scipy.integrate._rules import NestedFixedRule
-from scipy.integrate._rules._base import _concat
 
 
 class GenzMalikCubature(NestedFixedRule):
@@ -65,7 +64,7 @@ class GenzMalikCubature(NestedFixedRule):
         self.degree = degree
         self.lower_degree = lower_degree
 
-        if xp is None:
+        if xp is None or is_numpy(xp):
             xp = np_compat
 
         self.xp = xp
@@ -113,7 +112,7 @@ class GenzMalikCubature(NestedFixedRule):
         w_4 = (2**self.ndim) * (200 / 19683)
         w_5 = 6859 / 19683
 
-        weights = _concat([
+        weights = self.xp.concat([
             self.xp.asarray([w_1] * 1),
             self.xp.asarray([w_2] * (2 * self.ndim)),
             self.xp.asarray([w_3] * (2 * self.ndim)),
@@ -161,7 +160,7 @@ class GenzMalikCubature(NestedFixedRule):
         w_3 = (2**self.ndim) * (265 - 100*self.ndim) / 1458
         w_4 = (2**self.ndim) * (25 / 729)
 
-        weights = _concat([
+        weights = self.xp.concat([
             self.xp.asarray([w_1] * 1),
             self.xp.asarray([w_2] * (2 * self.ndim)),
             self.xp.asarray([w_3] * (2 * self.ndim)),

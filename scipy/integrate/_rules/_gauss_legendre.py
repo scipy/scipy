@@ -1,4 +1,4 @@
-from scipy._lib._array_api import np_compat
+from scipy._lib._array_api import is_numpy, np_compat
 
 from functools import cached_property
 
@@ -42,7 +42,7 @@ class GaussLegendreQuadrature(FixedRule):
 
         self.npoints = npoints
 
-        if xp is None:
+        if xp is None or is_numpy(xp):
             xp = np_compat
 
         self.xp = xp

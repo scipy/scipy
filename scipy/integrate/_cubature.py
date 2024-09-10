@@ -5,7 +5,6 @@ from dataclasses import dataclass
 from types import ModuleType
 from typing import Any, TYPE_CHECKING
 
-from scipy._lib._array_api import np_compat
 from scipy._lib._array_api import array_namespace, xp_size
 from scipy._lib._util import MapWrapper
 
@@ -217,11 +216,6 @@ def cubature(f, a, b, rule="gk21", rtol=1e-8, atol=0, max_subdivisions=10000,
 
     # It is also possible to use a custom rule, but this is not yet part of the public
     # API. An example of this can be found in the class scipy.integrate._rules.Rule.
-
-    # If a and b are ordinary Python lists, default to NumPy
-    if isinstance(a, list) and isinstance(b, list):
-        a = np_compat.array(a)
-        b = np_compat.array(b)
 
     xp = array_namespace(a, b)
     max_subdivisions = float("inf") if max_subdivisions is None else max_subdivisions
