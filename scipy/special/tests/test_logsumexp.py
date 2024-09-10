@@ -5,7 +5,7 @@ import numpy as np
 from numpy.testing import assert_allclose
 
 from scipy.conftest import array_api_compatible
-from scipy._lib._array_api import array_namespace
+from scipy._lib._array_api import array_namespace, is_array_api_strict
 from scipy._lib._array_api_no_0d import xp_assert_equal, xp_assert_close
 
 from scipy.special import logsumexp, softmax
@@ -183,7 +183,7 @@ class TestLogSumExp:
         a = xp.asarray([2, 1], dtype=xp_dtype_a)
         b = xp.asarray([1, -1], dtype=xp_dtype_b)
         xp_test = array_namespace(a, b)  # torch needs compatible result_type
-        if xp.__name__ == 'array_api_strict':
+        if is_array_api_strict(xp):
             xp_float_dtypes = [dtype for dtype in [xp_dtype_a, xp_dtype_b]
                                if not xp_test.isdtype(dtype, 'integral')]
             if len(xp_float_dtypes) < 2:  # at least one is integral
@@ -194,6 +194,7 @@ class TestLogSumExp:
             desired_dtype = xp_test.result_type(xp_dtype_a, xp_dtype_b, xp.float32)
         desired = xp.asarray(math.log(math.exp(2) - math.exp(1)), dtype=desired_dtype)
         xp_assert_close(logsumexp(a, b=b), desired)
+
 
 class TestSoftmax:
     def test_softmax_fixtures(self):
