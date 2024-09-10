@@ -356,6 +356,7 @@ class TestTrapezoid:
 
 
 class TestQMCQuad:
+    @pytest.mark.parallel_threads(1)
     def test_input_validation(self):
         message = "`func` must be callable."
         with pytest.raises(TypeError, match=message):
@@ -432,6 +433,7 @@ class TestQMCQuad:
     def test_sign(self, signs):
         self.basic_test(signs=signs)
 
+    @pytest.mark.parallel_threads(1)
     @pytest.mark.parametrize("log", [False, True])
     def test_zero(self, log):
         message = "A lower limit was equal to an upper limit, so"
@@ -614,6 +616,7 @@ class TestCumulativeSimpson:
         # `simpson` uses the trapezoidal rule
         return theoretical_difference
 
+    @pytest.mark.parallel_threads(1)
     @pytest.mark.slow
     @given(
         y=hyp_num.arrays(
@@ -644,6 +647,7 @@ class TestCumulativeSimpson:
             res[..., 1:], ref[..., 1:] + theoretical_difference[..., 1:]
         )
 
+    @pytest.mark.parallel_threads(1)
     @pytest.mark.slow
     @given(
         y=hyp_num.arrays(

@@ -183,16 +183,17 @@ class TestBSpline:
         xp_assert_close(b(xx), splev(xx, (t, c, k)), atol=1e-14)
         xp_assert_close(b(xx), splev(xx, (t, c_pad, k)), atol=1e-14)
 
-    def test_endpoints(self):
+    def test_endpoints(self, num_parallel_threads):
         # base interval is closed
         b = _make_random_spline()
         t, _, k = b.tck
         tm, tp = t[k], t[-k-1]
+        atol = 1e-9 if num_parallel_threads == 1 else 1e-7
         for extrap in (True, False):
             xp_assert_close(b([tm, tp], extrap),
                             b([tm + 1e-10, tp - 1e-10], extrap), atol=1e-9, rtol=1e-7)
 
-    def test_continuity(self):
+    def test_continuity(self, num_parallel_threads):
         # assert continuity at internal knots
         b = _make_random_spline()
         t, _, k = b.tck
@@ -466,9 +467,9 @@ class TestBSpline:
             '''
             To avoid repetition of code the following function is provided.
             '''
-            np.random.seed(1234)
-            x = np.sort(np.random.random_sample(n) * 40 - 20)
-            y = np.random.random_sample(n) * 40 - 20
+            rng = np.random.RandomState(1234)
+            x = np.sort(rng.random_sample(n) * 40 - 20)
+            y = rng.random_sample(n) * 40 - 20
             if bc_type == "periodic":
                 y[0] = y[-1]
 
@@ -501,8 +502,8 @@ class TestBSpline:
     @pytest.mark.parametrize('degree', range(5))
     def test_design_matrix_same_as_BSpline_call(self, extrapolate, degree):
         """Test that design_matrix(x) is equivalent to BSpline(..)(x)."""
-        np.random.seed(1234)
-        x = np.random.random_sample(10 * (degree + 1))
+        rng = np.random.RandomState(1234)
+        x = rng.random_sample(10 * (degree + 1))
         xmin, xmax = np.amin(x), np.amax(x)
         k = degree
         t = np.r_[np.linspace(xmin - 2, xmin - 1, degree),
@@ -527,11 +528,11 @@ class TestBSpline:
 
     def test_design_matrix_x_shapes(self):
         # test for different `x` shapes
-        np.random.seed(1234)
+        rng = np.random.RandomState(1234)
         n = 10
         k = 3
-        x = np.sort(np.random.random_sample(n) * 40 - 20)
-        y = np.random.random_sample(n) * 40 - 20
+        x = np.sort(rng.random_sample(n) * 40 - 20)
+        y = rng.random_sample(n) * 40 - 20
 
         bspl = make_interp_spline(x, y, k=k)
         for i in range(1, 4):
@@ -551,11 +552,11 @@ class TestBSpline:
                         atol=1e-14)
 
     def test_design_matrix_asserts(self):
-        np.random.seed(1234)
+        rng = np.random.RandomState(1234)
         n = 10
         k = 3
-        x = np.sort(np.random.random_sample(n) * 40 - 20)
-        y = np.random.random_sample(n) * 40 - 20
+        x = np.sort(rng.random_sample(n) * 40 - 20)
+        y = rng.random_sample(n) * 40 - 20
         bspl = make_interp_spline(x, y, k=k)
         # invalid vector of knots (should be a 1D non-descending array)
         # here the actual vector of knots is reversed, so it is invalid
@@ -571,9 +572,9 @@ class TestBSpline:
     @pytest.mark.parametrize('bc_type', ['natural', 'clamped',
                                          'periodic', 'not-a-knot'])
     def test_from_power_basis(self, bc_type):
-        np.random.seed(1234)
-        x = np.sort(np.random.random(20))
-        y = np.random.random(20)
+        rng = np.random.RandomState(1234)
+        x = np.sort(rng.random(20))
+        y = rng.random(20)
         if bc_type == 'periodic':
             y[-1] = y[0]
         cb = CubicSpline(x, y, bc_type=bc_type)
@@ -586,9 +587,9 @@ class TestBSpline:
     @pytest.mark.parametrize('bc_type', ['natural', 'clamped',
                                          'periodic', 'not-a-knot'])
     def test_from_power_basis_complex(self, bc_type):
-        np.random.seed(1234)
-        x = np.sort(np.random.random(20))
-        y = np.random.random(20) + np.random.random(20) * 1j
+        rng = np.random.RandomState(1234)
+        x = np.sort(rng.random(20))
+        y = rng.random(20) + rng.random(20) * 1j
         if bc_type == 'periodic':
             y[-1] = y[0]
         cb = CubicSpline(x, y, bc_type=bc_type)
@@ -1681,7 +1682,7 @@ class TestLSQ:
         assert b.k == b_w.k
 
     def test_weights_same(self):
-        # both methods treat weights 
+        # both methods treat weights
         x, y, t, k = self.x, self.y, self.t, self.k
         w = np.random.default_rng(1234).uniform(size=x.shape[0])
 
@@ -2710,6 +2711,7 @@ class TestNdBSpline:
         with assert_raises(ValueError, match="Data and knots*"):
             NdBSpline.design_matrix([[1, 2]], t3, [k]*3)
 
+    @pytest.mark.parallel_threads(1)
     def test_concurrency(self):
         rng = np.random.default_rng(12345)
         k = 3
@@ -3169,7 +3171,7 @@ index 1afb1900f1..d817e51ad8 100644
         knots = list(generate_knots(x, y, k=k, s=1e-7))
         wanted = [[0., 0., 0., 0., 7., 7., 7., 7.],
                   [0., 0., 0., 0., 4., 7., 7., 7., 7.],
-                  [0., 0., 0., 0., 2., 4., 7., 7., 7., 7.], 
+                  [0., 0., 0., 0., 2., 4., 7., 7., 7., 7.],
                   [0., 0., 0., 0., 2., 4., 6., 7., 7., 7., 7.],
                   [0., 0., 0., 0., 2., 3., 4., 5., 7, 7., 7., 7.]
         ]
@@ -3427,7 +3429,7 @@ class TestMakeSplrep:
 
         t,c,k = splrep(x, y, k=k, s=s)
         assert all(t == tt)
- 
+
         spl = make_splrep(x, y, k=k, s=s)
         xp_assert_close(c[:spl.c.size], spl.c, atol=1e-15)
 

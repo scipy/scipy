@@ -9,6 +9,7 @@ from numpy import (arange, zeros, array, dot, sqrt, cos, sin, eye, pi, exp,
 from numpy.testing import (
     assert_, assert_array_almost_equal,
     assert_allclose, assert_array_equal, assert_equal, assert_warns)
+import pytest
 from pytest import raises as assert_raises
 from scipy.integrate import odeint, ode, complex_ode
 
@@ -109,8 +110,10 @@ class TestOde(TestODEClass):
                 self._do_problem(problem, 'zvode', 'adams')
             self._do_problem(problem, 'zvode', 'bdf')
 
-    def test_lsoda(self):
+    def test_lsoda(self, num_parallel_threads):
         # Check the lsoda solver
+        if num_parallel_threads > 1:
+            pytest.skip(reason='LSODA does not allow for concurrent execution')
         for problem_cls in PROBLEMS:
             problem = problem_cls()
             if problem.cmplx:
@@ -141,6 +144,7 @@ class TestOde(TestODEClass):
                 continue
             self._do_problem(problem, 'dop853')
 
+    @pytest.mark.parallel_threads(1)
     def test_concurrent_fail(self):
         for sol in ('vode', 'zvode', 'lsoda'):
             def f(t, y):
@@ -157,12 +161,14 @@ class TestOde(TestODEClass):
 
             assert_raises(RuntimeError, r.integrate, r.t + 0.1)
 
-    def test_concurrent_ok(self):
+    def test_concurrent_ok(self, num_parallel_threads):
         def f(t, y):
             return 1.0
 
         for k in range(3):
             for sol in ('vode', 'zvode', 'lsoda', 'dopri5', 'dop853'):
+                if sol in {'vode', 'zvode', 'lsoda'} and num_parallel_threads > 1:
+                    continue
                 r = ode(f).set_integrator(sol)
                 r.set_initial_value(0, 0)
 
@@ -206,7 +212,10 @@ class TestComplexOde(TestODEClass):
             else:
                 self._do_problem(problem, 'vode', 'bdf')
 
-    def test_lsoda(self):
+    def test_lsoda(self, num_parallel_threads):
+        if num_parallel_threads > 1:
+            pytest.skip(reason='LSODA does not allow for concurrent execution')
+
         # Check the lsoda solver
         for problem_cls in PROBLEMS:
             problem = problem_cls()
@@ -601,11 +610,21 @@ class ODECheckParameterUse:
         solver.integrate(pi)
         assert_array_almost_equal(solver.y, [-1.0, 0.0])
 
-    def test_no_params(self):
+    def test_no_params(self, num_parallel_threads):
+        if (self.solver_name in {'vode', 'lsoda', 'zvode'} and
+                num_parallel_threads > 1):
+            pytest.skip(reason=f'{self.solver_name} does not allow for '
+                        'concurrent execution')
+
         solver = self._get_solver(f, jac)
         self._check_solver(solver)
 
-    def test_one_scalar_param(self):
+    def test_one_scalar_param(self, num_parallel_threads):
+        if (self.solver_name in {'vode', 'lsoda', 'zvode'} and
+                num_parallel_threads > 1):
+            pytest.skip(reason=f'{self.solver_name} does not allow for '
+                        'concurrent execution')
+
         solver = self._get_solver(f1, jac1)
         omega = 1.0
         solver.set_f_params(omega)
@@ -613,7 +632,11 @@ class ODECheckParameterUse:
             solver.set_jac_params(omega)
         self._check_solver(solver)
 
-    def test_two_scalar_params(self):
+    def test_two_scalar_params(self, num_parallel_threads):
+        if (self.solver_name in {'vode', 'lsoda', 'zvode'} and
+                num_parallel_threads > 1):
+            pytest.skip(reason=f'{self.solver_name} does not allow for '
+                        'concurrent execution')
         solver = self._get_solver(f2, jac2)
         omega1 = 1.0
         omega2 = 1.0
@@ -622,7 +645,11 @@ class ODECheckParameterUse:
             solver.set_jac_params(omega1, omega2)
         self._check_solver(solver)
 
-    def test_vector_param(self):
+    def test_vector_param(self, num_parallel_threads):
+        if (self.solver_name in {'vode', 'lsoda', 'zvode'} and
+                num_parallel_threads > 1):
+            pytest.skip(reason=f'{self.solver_name} does not allow for '
+                        'concurrent execution')
         solver = self._get_solver(fv, jacv)
         omega = [1.0, 1.0]
         solver.set_f_params(omega)
@@ -630,6 +657,7 @@ class ODECheckParameterUse:
             solver.set_jac_params(omega)
         self._check_solver(solver)
 
+    @pytest.mark.parallel_threads(1)
     def test_warns_on_failure(self):
         # Set nsteps small to ensure failure
         solver = self._get_solver(f, jac)
