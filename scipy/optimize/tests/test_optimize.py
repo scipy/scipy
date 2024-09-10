@@ -1259,6 +1259,26 @@ class TestOptimizeSimple(CheckOptimize):
             assert func(sol1.x) < func(sol2.x), \
                    f"{method}: {func(sol1.x)} vs. {func(sol2.x)}"
 
+    @pytest.mark.parametrize(
+        'bounds', [None, [[0.0, 0.0], [-np.inf, +np.inf], [-np.inf, +np.inf]]],
+    )
+    @pytest.mark.parametrize('method', ['l-bfgs-b'])
+    def test_minimize_callback_result(self, method, bounds):
+        """Check if `OptimizeResult` is passed to the callback function.
+
+        The issue related to fixed bounds (gh-21537) is also checked.
+        """
+        def callback(intermediate_result):
+            assert isinstance(intermediate_result, optimize.OptimizeResult)
+
+        res = optimize.minimize(self.func, np.zeros(3), method=method,
+                                bounds=bounds, callback=callback)
+
+        if bounds is not None:
+            for i in range(3):
+                assert bounds[i][0] <= res.x[i]  # check lower bounds
+                assert bounds[i][1] >= res.x[i]  # check upper bounds
+
     @pytest.mark.fail_slow(10)
     @pytest.mark.filterwarnings('ignore::UserWarning')
     @pytest.mark.filterwarnings('ignore::RuntimeWarning')  # See gh-18547

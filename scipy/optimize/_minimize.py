@@ -10,6 +10,7 @@ Functions
 __all__ = ['minimize', 'minimize_scalar']
 
 
+import inspect
 from warnings import warn
 
 import numpy as np
@@ -696,7 +697,9 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
                 bounds = _remove_from_bounds(bounds, i_fixed)
                 fun = _remove_from_func(fun, i_fixed, x_fixed)
                 if callable(callback):
-                    callback = _remove_from_func(callback, i_fixed, x_fixed)
+                    sig = inspect.signature(callback)
+                    if set(sig.parameters) != {'intermediate_result'}:
+                        callback = _remove_from_func(callback, i_fixed, x_fixed)
                 if callable(jac):
                     jac = _remove_from_func(jac, i_fixed, x_fixed, remove=1)
 
