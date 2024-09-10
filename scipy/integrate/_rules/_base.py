@@ -1,5 +1,4 @@
 from scipy._lib._array_api import array_namespace, xp_size
-from scipy._lib._array_api import np_compat
 
 import math
 
