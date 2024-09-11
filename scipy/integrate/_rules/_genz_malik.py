@@ -19,6 +19,10 @@ class GenzMalikCubature(NestedFixedRule):
     ndim : int
         The spatial dimension of the integrand.
 
+    xp : array_namespace, optional
+        The namespace for the node and weight arrays. Default is None, where NumPy is
+        used.
+
     Attributes
     ----------
     higher : Cubature

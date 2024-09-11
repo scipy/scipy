@@ -27,6 +27,10 @@ class GaussKronrodQuadrature(NestedFixedRule):
     npoints : int
         Number of nodes for the higher-order rule.
 
+    xp : array_namespace, optional
+        The namespace for the node and weight arrays. Default is None, where NumPy is
+        used.
+
     Attributes
     ----------
     lower : Rule

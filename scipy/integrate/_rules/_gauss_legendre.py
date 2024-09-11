@@ -16,6 +16,10 @@ class GaussLegendreQuadrature(FixedRule):
     npoints : int
         Number of nodes for the higher-order rule.
 
+    xp : array_namespace, optional
+        The namespace for the node and weight arrays. Default is None, where NumPy is
+        used.
+
     Examples
     --------
     Evaluate a 1D integral. Note in this example that ``f`` returns an array, so the
