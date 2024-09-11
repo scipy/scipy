@@ -942,7 +942,7 @@ def _insert(xval, t, c, k, periodic=False):
     # satisfy these boundary constraints, i.e.
     #      tt(i+nn-2*k-1) = tt(i)+per  ,i=1,2,...,2*k+1
     #      cc(i+nn-2*k-1) = cc(i)      ,i=1,2,...,k
-    interval = _dierckx.py_find_interval(t, k, float(xval), k, False)
+    interval = _dierckx.find_interval(t, k, float(xval), k, False)
     if interval < 0:
         # extrapolated values are guarded for in BSpline.insert_knot
         raise ValueError(f"Cannot insert the knot at {xval}.")
@@ -1247,7 +1247,7 @@ def _handle_lhs_derivatives(t, k, xval, ab, kl, ku, deriv_ords, offset=0):
 
     """
     # find where `xval` is in the knot vector, `t`
-    left = _dierckx.py_find_interval(t, k, float(xval), k, False)
+    left = _dierckx.find_interval(t, k, float(xval), k, False)
 
     # compute and fill in the derivatives @ xval
     for row in range(deriv_ords.shape[0]):
