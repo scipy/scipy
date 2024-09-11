@@ -553,7 +553,8 @@ def sobel(input, axis=-1, output=None, mode="reflect", cval=0.0):
 def generic_laplace(input, derivative2, output=None, mode="reflect",
                     cval=0.0,
                     extra_arguments=(),
-                    extra_keywords=None):
+                    extra_keywords=None,
+                    *, axes=None):
     """
     N-D Laplace filter using a provided second derivative function.
 
@@ -572,6 +573,9 @@ def generic_laplace(input, derivative2, output=None, mode="reflect",
     %(cval)s
     %(extra_keywords)s
     %(extra_arguments)s
+    axes : tuple of int or None
+        The axes over which to apply the filter. If a `mode` tuple is
+        provided, its length must match the number of axes.
 
     Returns
     -------
@@ -583,7 +587,7 @@ def generic_laplace(input, derivative2, output=None, mode="reflect",
         extra_keywords = {}
     input = np.asarray(input)
     output = _ni_support._get_output(output, input)
-    axes = list(range(input.ndim))
+    axes = _ni_support._check_axes(axes, input.ndim)
     if len(axes) > 0:
         modes = _ni_support._normalize_sequence(mode, len(axes))
         derivative2(input, axes[0], output, modes[0], cval,
@@ -598,7 +602,7 @@ def generic_laplace(input, derivative2, output=None, mode="reflect",
 
 
 @_ni_docstrings.docfiller
-def laplace(input, output=None, mode="reflect", cval=0.0):
+def laplace(input, output=None, mode="reflect", cval=0.0, *, axes=None):
     """N-D Laplace filter based on approximate second derivatives.
 
     Parameters
@@ -607,6 +611,9 @@ def laplace(input, output=None, mode="reflect", cval=0.0):
     %(output)s
     %(mode_multiple)s
     %(cval)s
+    axes : tuple of int or None
+        The axes over which to apply the filter. If a `mode` tuple is
+        provided, its length must match the number of axes.
 
     Returns
     -------
@@ -629,12 +636,12 @@ def laplace(input, output=None, mode="reflect", cval=0.0):
     """
     def derivative2(input, axis, output, mode, cval):
         return correlate1d(input, [1, -2, 1], axis, output, mode, cval, 0)
-    return generic_laplace(input, derivative2, output, mode, cval)
+    return generic_laplace(input, derivative2, output, mode, cval, axes=axes)
 
 
 @_ni_docstrings.docfiller
 def gaussian_laplace(input, sigma, output=None, mode="reflect",
-                     cval=0.0, **kwargs):
+                     cval=0.0, *, axes=None, **kwargs):
     """Multidimensional Laplace filter using Gaussian second derivatives.
 
     Parameters
@@ -647,6 +654,9 @@ def gaussian_laplace(input, sigma, output=None, mode="reflect",
     %(output)s
     %(mode_multiple)s
     %(cval)s
+    axes : tuple of int or None
+        The axes over which to apply the filter. If `sigma` or `mode` tuples
+        are provided, their length must match the number of axes.
     Extra keyword arguments will be passed to gaussian_filter().
 
     Returns
@@ -680,15 +690,27 @@ def gaussian_laplace(input, sigma, output=None, mode="reflect",
         return gaussian_filter(input, sigma, order, output, mode, cval,
                                **kwargs)
 
+    axes = _ni_support._check_axes(axes, input.ndim)
+    num_axes = len(axes)
+    sigma = _ni_support._normalize_sequence(sigma, num_axes)
+    if num_axes < input.ndim:
+        # set sigma = 0 for any axes not being filtered
+        sigma_temp = [0,] * input.ndim
+        for s, ax in zip(sigma, axes):
+            sigma_temp[ax] = s
+        sigma = sigma_temp
+
     return generic_laplace(input, derivative2, output, mode, cval,
                            extra_arguments=(sigma,),
-                           extra_keywords=kwargs)
+                           extra_keywords=kwargs,
+                           axes=axes)
 
 
 @_ni_docstrings.docfiller
 def generic_gradient_magnitude(input, derivative, output=None,
                                mode="reflect", cval=0.0,
-                               extra_arguments=(), extra_keywords=None):
+                               extra_arguments=(), extra_keywords=None,
+                               *, axes=None):
     """Gradient magnitude using a provided gradient function.
 
     Parameters
@@ -709,6 +731,9 @@ def generic_gradient_magnitude(input, derivative, output=None,
     %(cval)s
     %(extra_keywords)s
     %(extra_arguments)s
+    axes : tuple of int or None
+        The axes over which to apply the filter. If a `mode` tuple is
+        provided, its length must match the number of axes.
 
     Returns
     -------
@@ -720,7 +745,7 @@ def generic_gradient_magnitude(input, derivative, output=None,
         extra_keywords = {}
     input = np.asarray(input)
     output = _ni_support._get_output(output, input)
-    axes = list(range(input.ndim))
+    axes = _ni_support._check_axes(axes, input.ndim)
     if len(axes) > 0:
         modes = _ni_support._normalize_sequence(mode, len(axes))
         derivative(input, axes[0], output, modes[0], cval,
@@ -740,7 +765,8 @@ def generic_gradient_magnitude(input, derivative, output=None,
 
 @_ni_docstrings.docfiller
 def gaussian_gradient_magnitude(input, sigma, output=None,
-                                mode="reflect", cval=0.0, **kwargs):
+                                mode="reflect", cval=0.0, *, axes=None,
+                                **kwargs):
     """Multidimensional gradient magnitude using Gaussian derivatives.
 
     Parameters
@@ -753,6 +779,9 @@ def gaussian_gradient_magnitude(input, sigma, output=None,
     %(output)s
     %(mode_multiple)s
     %(cval)s
+    axes : tuple of int or None
+        The axes over which to apply the filter. If `sigma` or `mode` tuples
+        are provided, their length must match the number of axes.
     Extra keyword arguments will be passed to gaussian_filter().
 
     Returns
@@ -784,7 +813,7 @@ def gaussian_gradient_magnitude(input, sigma, output=None,
 
     return generic_gradient_magnitude(input, derivative, output, mode,
                                       cval, extra_arguments=(sigma,),
-                                      extra_keywords=kwargs)
+                                      extra_keywords=kwargs, axes=axes)
 
 
 def _correlate_or_convolve(input, weights, output, mode, cval, origin,
@@ -1772,7 +1801,7 @@ def generic_filter1d(input, function, filter_size, axis=-1,
 @_ni_docstrings.docfiller
 def generic_filter(input, function, size=None, footprint=None,
                    output=None, mode="reflect", cval=0.0, origin=0,
-                   extra_arguments=(), extra_keywords=None):
+                   extra_arguments=(), extra_keywords=None, *, axes=None):
     """Calculate a multidimensional filter using the given function.
 
     At each element the provided function is called. The input values
@@ -1791,6 +1820,12 @@ def generic_filter(input, function, size=None, footprint=None,
     %(origin_multiple)s
     %(extra_arguments)s
     %(extra_keywords)s
+    axes : tuple of int or None, optional
+        If None, `input` is filtered along all axes. Otherwise,
+        `input` is filtered along the specified axes. When `axes` is
+        specified, any tuples used for `size` or `origin` must match the length
+        of `axes`. The ith entry in any of these tuples corresponds to the ith
+        entry in `axes`.
 
     Returns
     -------
@@ -1877,23 +1912,31 @@ def generic_filter(input, function, size=None, footprint=None,
     input = np.asarray(input)
     if np.iscomplexobj(input):
         raise TypeError('Complex type not supported')
-    origins = _ni_support._normalize_sequence(origin, input.ndim)
+    axes = _ni_support._check_axes(axes, input.ndim)
+    num_axes = len(axes)
     if footprint is None:
         if size is None:
             raise RuntimeError("no footprint or filter size provided")
-        sizes = _ni_support._normalize_sequence(size, input.ndim)
+        sizes = _ni_support._normalize_sequence(size, num_axes)
         footprint = np.ones(sizes, dtype=bool)
     else:
         footprint = np.asarray(footprint, dtype=bool)
+
+    # expand origins, footprint if num_axes < input.ndim
+    footprint = _expand_footprint(input.ndim, axes, footprint)
+    origins = _expand_origin(input.ndim, axes, origin)
+
     fshape = [ii for ii in footprint.shape if ii > 0]
     if len(fshape) != input.ndim:
-        raise RuntimeError('filter footprint array has incorrect shape.')
+        raise RuntimeError(f"footprint.ndim ({footprint.ndim}) "
+                           f"must match len(axes) ({num_axes})")
     for origin, lenf in zip(origins, fshape):
         if (lenf // 2 + origin < 0) or (lenf // 2 + origin >= lenf):
             raise ValueError('invalid origin')
     if not footprint.flags.contiguous:
         footprint = footprint.copy()
     output = _ni_support._get_output(output, input)
+
     mode = _ni_support._extend_mode_to_code(mode)
     _nd_image.generic_filter(input, function, footprint, output, mode,
                              cval, origins, extra_arguments, extra_keywords)

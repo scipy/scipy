@@ -917,9 +917,72 @@ class TestNdimageFilters:
 
         # result should be equivalent to sigma=0.0/size=1 on unfiltered axes
         axes = xp.asarray(axes)
-        all_sizes = (size if ax in (axes % array.ndim) else size0
-                     for ax in range(array.ndim))
+        all_sizes = tuple(size if ax in (axes % array.ndim) else size0
+                          for ax in range(array.ndim))
         expected = filter_func(array, *extra_args, all_sizes)
+        xp_assert_close(output, expected)
+
+    @skip_xp_backends("cupy",
+                      reasons=["these filters do not yet have axes support"])
+    @pytest.mark.parametrize(('filter_func', 'kwargs'),
+                             [(ndimage.laplace, {}),
+                              (ndimage.gaussian_gradient_magnitude,
+                               {"sigma": 1.0}),
+                              (ndimage.gaussian_laplace, {"sigma": 0.5})])
+    def test_derivative_filter_axes(self, xp, filter_func, kwargs):
+        array = xp.arange(6 * 8 * 12, dtype=xp.float64)
+        array = xp.reshape(array, (6, 8, 12))
+
+        # duplicate axes raises an error
+        with pytest.raises(ValueError, match="axes must be unique"):
+            filter_func(array, axes=(1, 1), **kwargs)
+
+        # compare results to manually looping over the non-filtered axes
+        output = filter_func(array, axes=(1, 2), **kwargs)
+        expected = xp.empty_like(output)
+        expected = []
+        for i in range(array.shape[0]):
+            expected.append(filter_func(array[i, ...], **kwargs))
+        expected = xp.stack(expected, axis=0)
+        xp_assert_close(output, expected)
+
+        output = filter_func(array, axes=(0, -1), **kwargs)
+        expected = []
+        for i in range(array.shape[1]):
+            expected.append(filter_func(array[:, i, :], **kwargs))
+        expected = xp.stack(expected, axis=1)
+        xp_assert_close(output, expected)
+
+        output = filter_func(array, axes=(1), **kwargs)
+        expected = []
+        for i in range(array.shape[0]):
+            exp_inner = []
+            for j in range(array.shape[2]):
+                exp_inner.append(filter_func(array[i, :, j], **kwargs))
+            expected.append(xp.stack(exp_inner, axis=-1))
+        expected = xp.stack(expected, axis=0)
+        xp_assert_close(output, expected)
+
+    @skip_xp_backends("cupy",
+                      reasons=["generic_filter does not yet have axes support"])
+    @pytest.mark.parametrize(
+        'axes',
+        tuple(itertools.combinations(range(-3, 3), 1))
+        + tuple(itertools.combinations(range(-3, 3), 2))
+        + ((0, 1, 2),))
+    def test_generic_filter_axes(self, xp, axes):
+        array = xp.arange(6 * 8 * 12, dtype=xp.float64)
+        array = xp.reshape(array, (6, 8, 12))
+        size = 3
+        if len(set(ax % array.ndim for ax in axes)) != len(axes):
+            # parametrized cases with duplicate axes raise an error
+            with pytest.raises(ValueError, match="axes must be unique"):
+                ndimage.generic_filter(array, np.amax, size=size, axes=axes)
+            return
+
+        # choose np.amax as the function so we can compare to maximum_filter
+        output = ndimage.generic_filter(array, np.amax, size=size, axes=axes)
+        expected = ndimage.maximum_filter(array, size=size, axes=axes)
         xp_assert_close(output, expected)
 
     @skip_xp_backends("cupy",
@@ -1019,6 +1082,7 @@ class TestNdimageFilters:
             kwargs['origin'] = origin
         expected = filter_func(array, *args, size_3d, **kwargs)
         xp_assert_close(output, expected)
+
 
     @pytest.mark.parametrize("filter_func, kwargs",
                              [(ndimage.convolve, {}),
