@@ -67,9 +67,12 @@ def genz_malik_1980_f_1_exact(a, b, r, alphas, xp):
     a = xp.reshape(a, (*([1]*(len(alphas.shape) - 1)), ndim))
     b = xp.reshape(b, (*([1]*(len(alphas.shape) - 1)), ndim))
 
-    return (-2)**ndim * 1/xp.prod(alphas, axis=-1) \
-        * xp.cos(2*math.pi*r + xp.sum(alphas * (a+b) * 0.5, axis=-1)) \
+    return (
+        (-2)**ndim
+        * 1/xp.prod(alphas, axis=-1)
+        * xp.cos(2*math.pi*r + xp.sum(alphas * (a+b) * 0.5, axis=-1))
         * xp.prod(xp.sin(alphas * (a-b)/2), axis=-1)
+    )
 
 
 def genz_malik_1980_f_1_random_args(rng, shape, xp):
@@ -110,11 +113,13 @@ def genz_malik_1980_f_2_exact(a, b, alphas, betas, xp):
     # `xp` is the unwrapped namespace, so `.atan` won't work for `xp = np` and np<2.
     xp_test = array_namespace(a)
 
-    return (-1)**ndim * 1/xp.prod(alphas, axis=-1) \
+    return (
+        (-1)**ndim * 1/xp.prod(alphas, axis=-1)
         * xp.prod(
             xp_test.atan((a - betas)/alphas) - xp_test.atan((b - betas)/alphas),
-            axis=-1
+            axis=-1,
         )
+    )
 
 
 def genz_malik_1980_f_2_random_args(rng, shape, xp):
@@ -125,9 +130,7 @@ def genz_malik_1980_f_2_random_args(rng, shape, xp):
     difficulty = 25.0
     products = xp.prod(alphas**xp.asarray(-2.0), axis=-1)
     normalisation_factors = (products**xp.asarray(1 / (2*ndim)))[..., None]
-    alphas = alphas \
-        * normalisation_factors \
-        / math.pow(difficulty, 1 / (2*ndim))
+    alphas = alphas * normalisation_factors * math.pow(difficulty, 1 / (2*ndim))
 
     # Adjust alphas from distribution used in Genz and Malik 1980 since denominator
     # is very small for high dimensions.
@@ -158,8 +161,10 @@ def genz_malik_1980_f_3_exact(a, b, alphas, xp):
     a = xp.reshape(a, (*([1]*(len(alphas.shape) - 1)), ndim))
     b = xp.reshape(b, (*([1]*(len(alphas.shape) - 1)), ndim))
 
-    return (-1)**ndim * 1/xp.prod(alphas, axis=-1) \
+    return (
+        (-1)**ndim * 1/xp.prod(alphas, axis=-1)
         * xp.prod(xp.exp(alphas * a) - xp.exp(alphas * b), axis=-1)
+    )
 
 
 def genz_malik_1980_f_3_random_args(rng, shape, xp):
@@ -185,7 +190,7 @@ def genz_malik_1980_f_4(x, alphas, xp):
     alphas_reshaped = alphas[None, ...]
     x_reshaped = xp.reshape(x, (npoints, *([1]*(len(alphas.shape) - 1)), ndim))
 
-    return ((1 + xp.sum(alphas_reshaped * x_reshaped, axis=-1))**(-ndim-1))
+    return (1 + xp.sum(alphas_reshaped * x_reshaped, axis=-1))**(-ndim-1)
 
 
 def genz_malik_1980_f_4_exact(a, b, alphas, xp):
@@ -194,8 +199,10 @@ def genz_malik_1980_f_4_exact(a, b, alphas, xp):
     def F(x):
         x_reshaped = xp.reshape(x, (*([1]*(len(alphas.shape) - 1)), ndim))
 
-        return (-1)**ndim/xp.prod(alphas, axis=-1) / (
-            math.factorial(ndim) * (1 + xp.sum(alphas * x_reshaped, axis=-1))
+        return (
+            (-1)**ndim/xp.prod(alphas, axis=-1)
+            / math.factorial(ndim)
+            / (1 + xp.sum(alphas * x_reshaped, axis=-1))
         )
 
     return _eval_indefinite_integral(F, a, b, xp)
@@ -258,13 +265,16 @@ def genz_malik_1980_f_5_exact(a, b, alphas, betas, xp):
     a = xp.reshape(a, (*([1]*(len(alphas.shape) - 1)), ndim))
     b = xp.reshape(b, (*([1]*(len(alphas.shape) - 1)), ndim))
 
-    return (1/2)**ndim * 1/xp.prod(alphas, axis=-1) \
-        * (math.pi**(ndim/2)) \
+    return (
+        (1/2)**ndim
+        * 1/xp.prod(alphas, axis=-1)
+        * (math.pi**(ndim/2))
         * xp.prod(
             scipy.special.erf(alphas * (betas - a))
             + scipy.special.erf(alphas * (b - betas)),
             axis=-1,
         )
+    )
 
 
 def genz_malik_1980_f_5_random_args(rng, shape, xp):
@@ -272,9 +282,7 @@ def genz_malik_1980_f_5_random_args(rng, shape, xp):
     betas = xp.asarray(rng.random(shape))
 
     difficulty = 21.0
-    normalisation_factors = xp.sqrt(
-        xp.sum(alphas**xp.asarray(2.0), axis=-1)
-    )[..., None]
+    normalisation_factors = xp.sqrt(xp.sum(alphas**xp.asarray(2.0), axis=-1))[..., None]
     alphas = alphas / normalisation_factors * math.sqrt(difficulty)
 
     return alphas, betas
@@ -717,6 +725,13 @@ class TestRules:
             GaussKronrodQuadrature,
             (21,),
         ),
+        (
+            # 1D problem, 2D rule
+            [0],
+            [1],
+            GenzMalikCubature,
+            (2,),
+        )
     ])
     def test_incompatible_dimension_raises_error(self, problem, xp):
         a, b, quadrature, quadrature_args = problem
