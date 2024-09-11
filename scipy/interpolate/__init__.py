@@ -31,6 +31,7 @@ Univariate interpolation
    CubicSpline
    PPoly
    BPoly
+   FloaterHormannInterpolator
 
 
 Multivariate interpolation
