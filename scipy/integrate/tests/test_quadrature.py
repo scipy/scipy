@@ -325,6 +325,60 @@ class TestTrapezoid:
         assert_allclose(trapezoid(y, xm), r)
 
 
+class TestSimpson:
+    def test_simple(self):
+        x = np.arange(-10, 10, .1)
+        r = simpson(np.exp(-.5 * x ** 2) / np.sqrt(2 * np.pi), dx=0.1)
+        # check integral of normal equals 1
+        assert_allclose(r, 1)
+
+    def test_ndim(self):
+        x = np.linspace(0, 1, 3)
+        y = np.linspace(0, 2, 8)
+        z = np.linspace(0, 3, 13)
+
+        wx = np.ones_like(x) * (x[1] - x[0])
+        wx[0] /= 2
+        wx[-1] /= 2
+        wy = np.ones_like(y) * (y[1] - y[0])
+        wy[0] /= 2
+        wy[-1] /= 2
+        wz = np.ones_like(z) * (z[1] - z[0])
+        wz[0] /= 2
+        wz[-1] /= 2
+
+        q = x[:, None, None] + y[None,:, None] + z[None, None,:]
+
+        qx = (q * wx[:, None, None]).sum(axis=0)
+        qy = (q * wy[None, :, None]).sum(axis=1)
+        qz = (q * wz[None, None, :]).sum(axis=2)
+
+        # n-d `x`
+        r = simpson(q, x=x[:, None, None], axis=0)
+        assert_allclose(r, qx)
+        r = simpson(q, x=y[None,:, None], axis=1)
+        assert_allclose(r, qy)
+        r = simpson(q, x=z[None, None,:], axis=2)
+        assert_allclose(r, qz)
+
+        # n-d `x` but not the same as `y`
+        message = "If given, shape of x must be 1-D or the same as y."
+        with pytest.raises(ValueError, match=message):
+            simpson(q, x=np.reshape(x[:, None, None], (3, 1)), axis=0)
+        with pytest.raises(ValueError, match=message):
+            simpson(q, x=np.reshape(y[None,:, None], (8, 1)), axis=1)
+        with pytest.raises(ValueError, match=message):
+            simpson(q, x=np.reshape(z[None, None,:], (13, 1)), axis=2)
+
+        # 1-d `x`
+        r = simpson(q, x=x, axis=0)
+        assert_allclose(r, qx)
+        r = simpson(q, x=y, axis=1)
+        assert_allclose(r, qy)
+        r = simpson(q, x=z, axis=2)
+        assert_allclose(r, qz)
+
+
 class TestQMCQuad:
     def test_input_validation(self):
         message = "`func` must be callable."
