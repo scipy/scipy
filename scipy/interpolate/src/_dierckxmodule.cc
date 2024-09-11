@@ -390,7 +390,7 @@ py_norm_eq_lsq(PyObject *self, PyObject *args)
     PyArrayObject *a_abT = (PyArrayObject *)py_abT;
     PyArrayObject *a_rhs = (PyArrayObject *)py_rhs;
 
-    // allocate the temp storage
+    // allocate temp storage
     unique_fptr<double> wrk( (double*)malloc((2*k+2)*sizeof(double)) );
 
     // heavy lifting happens here
@@ -417,6 +417,104 @@ py_norm_eq_lsq(PyObject *self, PyObject *args)
 }
 
 
+/*
+ * def evaluate_spline(const double[::1] t,
+ *            const double[:, ::1] c,
+ *            int k,
+ *            const double[::1] xp,
+ *            int nu,
+ *            bint extrapolate,
+ *            double[:, ::1] out):
+ */
+static PyObject*
+py_evaluate_spline(PyObject *self, PyObject *args)
+{
+    PyObject *py_t=NULL, *py_c=NULL, *py_xp=NULL, *py_out=NULL;
+    int k, nu, i_extrap;
+
+    if(!PyArg_ParseTuple(args, "OOiOipO", &py_t, &py_c, &k, &py_xp, &nu, &i_extrap, &py_out)) {
+        return NULL;
+    }
+
+    if (!(check_array(py_t, 1, NPY_DOUBLE) &&
+          check_array(py_c, 2, NPY_DOUBLE) &&
+          check_array(py_xp, 1, NPY_DOUBLE) &&
+          check_array(py_out, 2, NPY_DOUBLE))) {
+        return NULL;
+    }
+    PyArrayObject *a_t = (PyArrayObject *)py_t;
+    PyArrayObject *a_c = (PyArrayObject *)py_c;
+    PyArrayObject *a_xp = (PyArrayObject *)py_xp;
+    PyArrayObject *a_out = (PyArrayObject *)py_out;
+
+    // check derivative order
+    if (nu < 0) {
+        std::string msg = "Cannot do derivative order nu= " + std::to_string(nu);
+        PyErr_SetString(PyExc_NotImplementedError, msg.c_str());
+        return NULL;
+    }
+
+    // sanity check sizes
+    if (PyArray_DIM(a_out, 0) != PyArray_DIM(a_xp, 0)) {
+        PyErr_SetString(PyExc_ValueError, "out and xp have incompatible shapes");
+        return NULL;
+    }
+    if (PyArray_DIM(a_out, 1) != PyArray_DIM(a_c, 1)) {
+        PyErr_SetString(PyExc_ValueError, "out and c have incompatible shapes");
+        return NULL;
+    }
+
+    // allocate temp storage
+    unique_fptr<double> wrk( (double*)malloc((2*k+2)*sizeof(double)) );
+
+    // heavy lifting happens here
+    try {
+        fitpack::_evaluate_spline(
+            static_cast<const double*>(PyArray_DATA(a_t)), PyArray_DIM(a_t, 0),
+            static_cast<const double*>(PyArray_DATA(a_c)), PyArray_DIM(a_c, 0), PyArray_DIM(a_c, 1),
+            k,
+            static_cast<const double*>(PyArray_DATA(a_xp)), PyArray_DIM(a_xp, 0),
+            nu,
+            i_extrap,
+            static_cast<double*>(PyArray_DATA(a_out)),
+            wrk.get()
+        );
+
+        Py_RETURN_NONE;
+    }
+    catch (std::exception& e) {
+        PyErr_SetString(PyExc_RuntimeError, e.what());
+        return NULL;
+    }
+    
+
+};
+
+
+static char doc_find_interval[] = 
+    "Find an interval such that t[interval] <= xval < t[interval+1]. \n"
+    "\n"
+    "Uses a linear search with locality, see fitpack's splev. \n"
+    "\n"
+    "Parameters \n"
+    "---------- \n"
+    "t : ndarray, shape (nt,) \n"
+    "    Knots \n"
+    "k : int \n"
+    "    B-spline degree \n"
+    "xval : double \n"
+    "    value to find the interval for \n"
+    "prev_l : int \n"
+    "    interval where the previous value was located. \n"
+    "    if unknown, use any value < k to start the search. \n"
+    "extrapolate : int \n"
+    "    whether to return the last or the first interval if xval \n"
+    "    is out of bounds. \n"
+    "\n"
+    "Returns \n"
+    "------- \n"
+    "interval : int \n"
+    "    Suitable interval or -1 if xval was nan. \n";
 /*
  * def _py_find_interval(const double[::1] t,
  *                       int k,
@@ -470,8 +568,10 @@ static PyMethodDef DierckxMethods[] = {
      "colocation matrix in the F banded storage"},
     {"_norm_eq_lsq", py_norm_eq_lsq, METH_VARARGS,
      "lhs and rhs of the normal equations for a spline fit"},
-    {"py_find_interval", py_find_interval, METH_VARARGS,
-     "find interval"},
+    {"evaluate_spline", py_evaluate_spline, METH_VARARGS,
+     "evaluate the spline function"},
+    {"find_interval", py_find_interval, METH_VARARGS,
+     doc_find_interval},
     //...
     {NULL, NULL, 0, NULL}        /* Sentinel */
 };

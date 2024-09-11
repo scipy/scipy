@@ -513,7 +513,7 @@ class BSpline:
         if self.c.ndim == 1 and self.c.dtype.kind == 'c':
             cc = cc.reshape(self.c.shape[0], 2)
 
-        _bspl.evaluate_spline(self.t, cc.reshape(cc.shape[0], -1),
+        _dierckx.evaluate_spline(self.t, cc.reshape(cc.shape[0], -1),
                               self.k, x, nu, extrapolate, out.view(float))
 
         out = out.reshape(x_shape + self.c.shape[1:])
@@ -696,7 +696,7 @@ class BSpline:
             if n_periods > 0:
                 # Evaluate the difference of antiderivatives.
                 x = np.asarray([ts, te], dtype=np.float64)
-                _bspl.evaluate_spline(ta, ca.reshape(ca.shape[0], -1),
+                _dierckx.evaluate_spline(ta, ca.reshape(ca.shape[0], -1),
                                       ka, x, 0, False, out)
                 integral = out[1] - out[0]
                 integral *= n_periods
@@ -712,23 +712,23 @@ class BSpline:
             # over [a, te] and from xs to what is remained.
             if b <= te:
                 x = np.asarray([a, b], dtype=np.float64)
-                _bspl.evaluate_spline(ta, ca.reshape(ca.shape[0], -1),
+                _dierckx.evaluate_spline(ta, ca.reshape(ca.shape[0], -1),
                                       ka, x, 0, False, out)
                 integral += out[1] - out[0]
             else:
                 x = np.asarray([a, te], dtype=np.float64)
-                _bspl.evaluate_spline(ta, ca.reshape(ca.shape[0], -1),
+                _dierckx.evaluate_spline(ta, ca.reshape(ca.shape[0], -1),
                                       ka, x, 0, False, out)
                 integral += out[1] - out[0]
 
                 x = np.asarray([ts, ts + b - te], dtype=np.float64)
-                _bspl.evaluate_spline(ta, ca.reshape(ca.shape[0], -1),
+                _dierckx.evaluate_spline(ta, ca.reshape(ca.shape[0], -1),
                                       ka, x, 0, False, out)
                 integral += out[1] - out[0]
         else:
             # Evaluate the difference of antiderivatives.
             x = np.asarray([a, b], dtype=np.float64)
-            _bspl.evaluate_spline(ta, ca.reshape(ca.shape[0], -1),
+            _dierckx.evaluate_spline(ta, ca.reshape(ca.shape[0], -1),
                                   ka, x, 0, extrapolate, out)
             integral = out[1] - out[0]
 

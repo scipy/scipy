@@ -22,15 +22,15 @@ cdef extern from "src/__fitpack.h" namespace "fitpack":
                            ssize_t prev_l,
                            int extrapolate
     ) noexcept nogil
-    void _evaluate_spline(const double *tptr, ssize_t len_t,
-                          const double *cptr, ssize_t n, ssize_t m,
-                          ssize_t k,
-                          const double *xp_ptr, ssize_t s,
-                          ssize_t nu,
-                          int extrapolate,
-                          double *out_ptr,
-                          double *wrk
-    ) noexcept nogil
+#    void _evaluate_spline(const double *tptr, ssize_t len_t,
+#                          const double *cptr, ssize_t n, ssize_t m,
+#                          ssize_t k,
+#                          const double *xp_ptr, ssize_t s,
+#                          ssize_t nu,
+#                          int extrapolate,
+#                          double *out_ptr,
+#                          double *wrk
+#    ) noexcept nogil
 
 #    void _coloc_matrix(const double *xptr, ssize_t m,
 #                        const double *tptr, ssize_t len_t,
@@ -97,7 +97,7 @@ cdef inline int find_interval(const double[::1] t,
     return _find_interval(&t[0], t.shape[0], k, xval, prev_l, extrapolate)
 
 
-
+'''
 @cython.wraparound(False)
 @cython.boundscheck(False)
 @cython.cdivision(True)
@@ -156,7 +156,7 @@ def evaluate_spline(const double[::1] t,
                          &out[0, 0],
                          &work[0]
         )
-
+'''
 
 def evaluate_all_bspl(const double[::1] t, int k, double xval, int m, int nu=0):
     """Evaluate the ``k+1`` B-splines which are non-zero on interval ``m``.
