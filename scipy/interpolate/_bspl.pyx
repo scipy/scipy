@@ -32,42 +32,6 @@ ctypedef fused int32_or_int64:
 # B-splines
 #------------------------------------------------------------------------------
 
-@cython.wraparound(False)
-@cython.boundscheck(False)
-cdef inline int find_interval(const double[::1] t,
-                       int k,
-                       double xval,
-                       int prev_l,
-                       bint extrapolate) noexcept nogil:
-    """
-    Find an interval such that t[interval] <= xval < t[interval+1].
-
-    Uses a linear search with locality, see fitpack's splev.
-
-    Parameters
-    ----------
-    t : ndarray, shape (nt,)
-        Knots
-    k : int
-        B-spline degree
-    xval : double
-        value to find the interval for
-    prev_l : int
-        interval where the previous value was located.
-        if unknown, use any value < k to start the search.
-    extrapolate : int
-        whether to return the last or the first interval if xval
-        is out of bounds.
-
-    Returns
-    -------
-    interval : int
-        Suitable interval or -1 if xval was nan.
-
-    """
-    return _find_interval(&t[0], t.shape[0], k, xval, prev_l, extrapolate)
-
-
 def evaluate_all_bspl(const double[::1] t, int k, double xval, int m, int nu=0):
     """Evaluate the ``k+1`` B-splines which are non-zero on interval ``m``.
 
@@ -178,7 +142,7 @@ def _make_design_matrix(const double[::1] x,
         # Find correct interval. Note that interval >= 0 always as
         # extrapolate=False and out of bound values are already dealt with in
         # design_matrix
-        ind = find_interval(t, k, xval, ind, extrapolate)
+        ind = _find_interval(&t[0], t.shape[0], k, xval, ind, extrapolate)
         _deBoor_D(&t[0], xval, k, ind, 0, &work[0])
 
         # data[(k + 1) * i : (k + 1) * (i + 1)] = work[:k + 1]
@@ -337,7 +301,7 @@ def evaluate_ndbspline(const double[:, ::1] xi,
                     kd = k[d]
 
                     # get the location of x[d] in t[d]
-                    i[d] = find_interval(td, kd, xd, kd, extrapolate)
+                    i[d] = _find_interval(&td[0], td.shape[0], kd, xd, kd, extrapolate)
 
                     if i[d] < 0:
                         out_of_bounds = 1
@@ -497,7 +461,7 @@ def _colloc_nd(const double[:, ::1] xvals,
             kd = k[d]
 
             # get the location of x[d] in t[d]
-            i[d] = find_interval(td, kd, xd, kd, extrapolate=True)
+            i[d] = _find_interval(&td[0], td.shape[0], kd, xd, kd, True)
 
             if i[d] < 0:
                 out_of_bounds = 1
