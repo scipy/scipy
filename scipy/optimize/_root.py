@@ -31,6 +31,11 @@ def root(fun, x0, args=(), method='hybr', jac=None, tol=None, callback=None,
     ----------
     fun : callable
         A vector function to find a root of.
+
+        Suppose the callable has signature ``f0(x, *args, **kwargs)``, where ``args``
+        and ``kwargs`` are required positional and keyword arguments. Rather than
+        passing ``f0`` as the callable, consider wrapping it to accept only ``x``;
+        e.g., pass ``fun=lambda x: f0(x, *args, **kwargs)`` as the callable.
     x0 : ndarray
         Initial guess.
     args : tuple, optional

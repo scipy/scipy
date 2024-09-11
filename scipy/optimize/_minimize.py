@@ -65,6 +65,11 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         where ``x`` is a 1-D array with shape (n,) and ``args``
         is a tuple of the fixed parameters needed to completely
         specify the function.
+
+        Suppose the callable has signature ``f0(x, *args, **kwargs)``, where ``args``
+        and ``kwargs`` are required positional and keyword arguments. Rather than
+        passing ``f0`` as the callable, consider wrapping it to accept only ``x``;
+        e.g., pass ``fun=lambda x: f0(x, *args, **kwargs)`` as the callable.
     x0 : ndarray, shape (n,)
         Initial guess. Array of real elements of size (n,),
         where ``n`` is the number of independent variables.
@@ -784,6 +789,12 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
     fun : callable
         Objective function.
         Scalar function, must return a scalar.
+
+        Suppose the callable has signature ``f0(x, *args, **kwargs)``, where ``args``
+        and ``kwargs`` are required positional and keyword arguments. Rather than
+        passing ``f0`` as the callable, consider wrapping it to accept only ``x``;
+        e.g., pass ``fun=lambda x: f0(x, *args, **kwargs)`` as the callable.
+
     bracket : sequence, optional
         For methods 'brent' and 'golden', `bracket` defines the bracketing
         interval and is required.
