@@ -330,7 +330,7 @@ def expm(A):
         if s != 0:  # scaling needed
             Am[:4] *= [[[2**(-s)]], [[4**(-s)]], [[16**(-s)]], [[64**(-s)]]]
 
-        pade_UV_calc(Am, n, m)
+        pade_UV_calc(Am, m)
         eAw = Am[0]
 
         if s != 0:  # squaring needed
