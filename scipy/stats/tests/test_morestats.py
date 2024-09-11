@@ -1929,8 +1929,8 @@ class TestPpccMax:
                             -0.71215366521264145, decimal=7)
 
 
+@skip_xp_backends('jax.numpy', reasons=["JAX arrays do not support item assignment"])
 @pytest.mark.usefixtures("skip_xp_backends")
-@skip_xp_backends(cpu_only=True)
 @array_api_compatible
 class TestBoxcox_llf:
 
