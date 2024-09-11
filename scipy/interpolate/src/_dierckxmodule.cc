@@ -2,6 +2,7 @@
 #include <Python.h>
 #include <iostream>
 #include <string>
+#include <memory>
 #include "numpy/arrayobject.h"
 #include "__fitpack.h"
 
@@ -36,6 +37,20 @@ check_array(PyObject *obj, npy_intp ndim, int typenum) {
     }
     return 1;
 }
+
+
+/*
+ * RAII malloc-d work arrays
+ */
+struct malloc_deleter {
+    void operator()(void *p) const { std::free(p); }
+};
+
+template <typename T>
+using unique_fptr = std::unique_ptr<T, malloc_deleter>;
+
+
+
 
 /*
 def _fpknot(const double[::1] x,
@@ -252,13 +267,14 @@ py_data_matrix(PyObject *self, PyObject *args)
     PyArrayObject *a_A = (PyArrayObject*)PyArray_EMPTY(2, dims, NPY_DOUBLE, 0);
     // np.zeros(m, dtype=np.intp)
     PyArrayObject *a_offs = (PyArrayObject*)PyArray_ZEROS(1, dims, NPY_INTP, 0);
-    double *wrk = (double *)malloc((2*k+2)*sizeof(double));
 
-    if ((a_A == NULL) || (a_offs == NULL) || (wrk == NULL)) {
+    unique_fptr<double> wrk( (double*)malloc((2*k+2)*sizeof(double)) );
+
+
+    if ((a_A == NULL) || (a_offs == NULL) || (wrk.get() == NULL)) {
         PyErr_NoMemory();
         Py_XDECREF(a_A);
         Py_XDECREF(a_offs);
-        free(wrk);
         return NULL;
     }
 
@@ -272,7 +288,7 @@ py_data_matrix(PyObject *self, PyObject *args)
             static_cast<double *>(PyArray_DATA(a_A)),     // output: (A, offset, nc)
             static_cast<npy_intp*>(PyArray_DATA(a_offs)),   // XXX: callee expects ssize_t*
             &nc,
-            wrk
+            wrk.get()
         );
 
         // np.asarray(A), np.asarray(offset), int(nc)
@@ -280,7 +296,6 @@ py_data_matrix(PyObject *self, PyObject *args)
         return Py_BuildValue("(NNN)", PyArray_Return(a_A), PyArray_Return(a_offs), py_nc);
     }
     catch (const std::exception& e) {
-        free(wrk);
         PyErr_SetString(PyExc_RuntimeError, e.what());
         return NULL;
     }
@@ -318,9 +333,9 @@ py_coloc(PyObject *self, PyObject *args)
     PyArrayObject *a_abT = (PyArrayObject *)py_abT;
 
     // allocate the temp storage
-    double *wrk = (double *)malloc((2*k+2)*sizeof(double));
+    unique_fptr<double> wrk( (double*)malloc((2*k+2)*sizeof(double)) );
 
-    // FIXME: try-except + free wrk
+    // heavy lifting happens here
     try {
         fitpack::_coloc_matrix(
             static_cast<const double *>(PyArray_DATA(a_x)), PyArray_DIM(a_x, 0),
@@ -329,14 +344,12 @@ py_coloc(PyObject *self, PyObject *args)
             // abT.shape[1] is nbands because ab.shape == (nbands, nt) and abT is ab.T
             static_cast<double *>(PyArray_DATA(a_abT)), PyArray_DIM(a_abT, 1),
             offset,
-            wrk
+            wrk.get();
         );
 
-        free(wrk);
         Py_RETURN_NONE;
     }
     catch (std::exception& e) {
-        free(wrk);
         PyErr_SetString(PyExc_RuntimeError, e.what());
         return NULL;
     }
