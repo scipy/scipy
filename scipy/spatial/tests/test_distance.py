@@ -1252,48 +1252,6 @@ class TestPdist:
         Y = pdist(np.zeros((5, 3)), 'test_jaccard')
         assert_allclose(np.zeros(10), Y, rtol=eps)
 
-    def test_pdist_chebyshev_random(self):
-        eps = 1e-8
-        X = eo['pdist-double-inp']
-        Y_right = eo['pdist-chebyshev']
-        Y_test1 = pdist(X, 'chebyshev')
-        assert_allclose(Y_test1, Y_right, rtol=eps)
-
-    def test_pdist_chebyshev_random_float32(self):
-        eps = 1e-7
-        X = np.float32(eo['pdist-double-inp'])
-        Y_right = eo['pdist-chebyshev']
-        Y_test1 = pdist(X, 'chebyshev')
-        assert_allclose(Y_test1, Y_right, rtol=eps, verbose=verbose > 2)
-
-    def test_pdist_chebyshev_random_nonC(self):
-        eps = 1e-8
-        X = eo['pdist-double-inp']
-        Y_right = eo['pdist-chebyshev']
-        Y_test2 = pdist(X, 'test_chebyshev')
-        assert_allclose(Y_test2, Y_right, rtol=eps)
-
-    def test_pdist_chebyshev_iris(self):
-        eps = 1e-14
-        X = eo['iris']
-        Y_right = eo['pdist-chebyshev-iris']
-        Y_test1 = pdist(X, 'chebyshev')
-        assert_allclose(Y_test1, Y_right, rtol=eps)
-
-    def test_pdist_chebyshev_iris_float32(self):
-        eps = 1e-5
-        X = np.float32(eo['iris'])
-        Y_right = eo['pdist-chebyshev-iris']
-        Y_test1 = pdist(X, 'chebyshev')
-        assert_allclose(Y_test1, Y_right, rtol=eps, verbose=verbose > 2)
-
-    def test_pdist_chebyshev_iris_nonC(self):
-        eps = 1e-14
-        X = eo['iris']
-        Y_right = eo['pdist-chebyshev-iris']
-        Y_test2 = pdist(X, 'test_chebyshev')
-        assert_allclose(Y_test2, Y_right, rtol=eps)
-
     def test_pdist_matching_mtica1(self):
         # Test matching(*,*) with mtica example #1 (nums).
         m = wmatching(np.array([1, 0, 1, 1, 0]),
@@ -2276,3 +2234,67 @@ def test_immutable_input(metric):
     x = np.arange(10, dtype=np.float64)
     x.setflags(write=False)
     getattr(scipy.spatial.distance, metric)(x, x, w=x)
+
+
+class TestChebyshev:
+
+    def test_pdist_chebyshev_random(self):
+        eps = 1e-8
+        X = eo['pdist-double-inp']
+        Y_right = eo['pdist-chebyshev']
+        Y_test1 = pdist(X, 'chebyshev')
+        assert_allclose(Y_test1, Y_right, rtol=eps)
+
+    def test_pdist_chebyshev_random_float32(self):
+        eps = 1e-7
+        X = np.float32(eo['pdist-double-inp'])
+        Y_right = eo['pdist-chebyshev']
+        Y_test1 = pdist(X, 'chebyshev')
+        assert_allclose(Y_test1, Y_right, rtol=eps, verbose=verbose > 2)
+
+    def test_pdist_chebyshev_random_nonC(self):
+        eps = 1e-8
+        X = eo['pdist-double-inp']
+        Y_right = eo['pdist-chebyshev']
+        Y_test2 = pdist(X, 'test_chebyshev')
+        assert_allclose(Y_test2, Y_right, rtol=eps)
+
+    def test_pdist_chebyshev_iris(self):
+        eps = 1e-14
+        X = eo['iris']
+        Y_right = eo['pdist-chebyshev-iris']
+        Y_test1 = pdist(X, 'chebyshev')
+        assert_allclose(Y_test1, Y_right, rtol=eps)
+
+    def test_pdist_chebyshev_iris_float32(self):
+        eps = 1e-5
+        X = np.float32(eo['iris'])
+        Y_right = eo['pdist-chebyshev-iris']
+        Y_test1 = pdist(X, 'chebyshev')
+        assert_allclose(Y_test1, Y_right, rtol=eps, verbose=verbose > 2)
+
+    def test_pdist_chebyshev_iris_nonC(self):
+        eps = 1e-14
+        X = eo['iris']
+        Y_right = eo['pdist-chebyshev-iris']
+        Y_test2 = pdist(X, 'test_chebyshev')
+        assert_allclose(Y_test2, Y_right, rtol=eps)
+
+    def test_weighted(self):
+        # Basic test for weighted Chebyshev.  Only components with non-zero
+        # weight participate in the 'max'.
+        x = [1, 2, 3]
+        y = [6, 5, 4]
+        w = [0, 1, 5]
+        assert_equal(chebyshev(x, y, w), 3)
+        assert_equal(pdist([x, y], 'chebyshev', w=w), [3])
+        assert_equal(cdist([x], [y], 'chebyshev', w=w), [[3]])
+
+    def test_zero_weight(self):
+        # If the weight is identically zero, the distance should be zero.
+        x = [1, 2, 3]
+        y = [6, 5, 4]
+        w = [0, 0, 0]
+        assert_equal(chebyshev(x, y, w), 0)
+        assert_equal(pdist([x, y], 'chebyshev', w=w), [0])
+        assert_equal(cdist([x], [y], 'chebyshev', w=w), [[0]])
