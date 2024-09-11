@@ -12,6 +12,11 @@ kernelspec:
 orphan: true
 ---
 
+```{eval-rst}
+.. jupyterlite:: ../../_contents/linalg_batch.ipynb
+   :new_tab: True
+```
+
 (linalg_batch)=
 # Batched Linear Operations
 
@@ -78,7 +83,7 @@ output
 output.shape
 ```
 
-Not all linear algebra functions map to scalars. For instance, the `linalg.expm` function maps from a matrix to a matrix with the same shape.
+Not all linear algebra functions map to scalars. For instance, the {func}`scipy.linalg.expm` function maps from a matrix to a matrix with the same shape.
 
 ```{code-cell} ipython3
 A = np.eye(3)
@@ -92,7 +97,7 @@ output = linalg.expm(input)
 output.shape
 ```
 
-Generalization of these rules to functions with multiple inputs and outputs is straightforward. For instance, the `linalg.eig` function produces two outputs by default, a vector and a matrix.
+Generalization of these rules to functions with multiple inputs and outputs is straightforward. For instance, the {func}`scipy.linalg.eig` function produces two outputs by default, a vector and a matrix.
 
 ```{code-cell} ipython3
 evals, evecs = linalg.eig(A)
@@ -113,7 +118,7 @@ evals, evecs = linalg.eig(input, b=input)
 evals.shape, evecs.shape
 ```
 
-The rules when the shapes are not identical follow logically. Each input can have its own batch shape as long as the shapes are broadcastable according to NumPy's broadcasting rules. The net batch shape is the broadcasted shape of the individual batch shapes, and the shape of each output is the net batch shape plus its core shape.
+The rules when the shapes are not identical follow logically. Each input can have its own batch shape as long as the shapes are broadcastable according to [NumPy's broadcasting rules](#array-broadcasting-in-numpy). The net batch shape is the broadcasted shape of the individual batch shapes, and the shape of each output is the net batch shape plus its core shape.
 
 ```{code-cell} ipython3
 rng = np.random.default_rng(2859239482)

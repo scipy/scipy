@@ -962,5 +962,5 @@ Advanced Features
 
 Batch Support
 ^^^^^^^^^^^^^
-Some of SciPy's linear algebra functions can process batches of lower-dimensional
-arrays given N-d array input. For more information, see :doc:`linalg_batch`.
+Some of SciPy's linear algebra functions can process batches of scalars, 1D-, or
+2D-arrays given N-d array input. For more information, see :doc:`linalg_batch`.
