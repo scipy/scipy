@@ -1527,7 +1527,10 @@ class TestWilcoxon:
         assert_allclose(p, 0.00641346115861)
 
         # removed keyword argument "approx" is still accepted
-        T, p = stats.wilcoxon(x, y, "wilcox", mode="approx", correction=False)
+        msg = "`approx` has been renamed"
+        with pytest.warns(DeprecationWarning, match=msg):
+            T, p = stats.wilcoxon(x, y, "wilcox", mode="approx",
+                                  correction=False)
         assert_allclose(T, 327)
         assert_allclose(p, 0.00641346115861)
 

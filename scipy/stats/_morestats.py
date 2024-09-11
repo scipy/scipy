@@ -3681,6 +3681,9 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=True,
     """
     # replace approx by asymptotic to ensure backwards compatability
     if method == "approx":
+        depr_msg = ("The method `approx` has been renamed to `aymptotic`. "
+                    "`approx` will be removed in SciPy 1.17.")
+        warnings.warn(depr_msg, DeprecationWarning, stacklevel=2)
         method = "asymptotic"
     return _wilcoxon._wilcoxon_nd(x, y, zero_method, correction, alternative,
                                   method, axis)
