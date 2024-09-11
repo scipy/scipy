@@ -1193,9 +1193,9 @@ def _make_interp_per_full_matr(x, y, t, k):
 
     # derivatives at x[0] and x[-1]:
     for i in range(k - 1):
-        bb = _bspl.evaluate_all_bspl(t, k, x[0], k, nu=i + 1)
+        bb = _dierckx.evaluate_all_bspl(t, k, x[0], k, i + 1)
         matr[i, : k + 1] += bb
-        bb = _bspl.evaluate_all_bspl(t, k, x[-1], n + k - 1, nu=i + 1)[:-1]
+        bb = _dierckx.evaluate_all_bspl(t, k, x[-1], n + k - 1, i + 1)[:-1]
         matr[i, -k:] -= bb
 
     # colocation matrix
@@ -1208,7 +1208,7 @@ def _make_interp_per_full_matr(x, y, t, k):
             left = np.searchsorted(t, xval) - 1
 
         # fill a row
-        bb = _bspl.evaluate_all_bspl(t, k, xval, left)
+        bb = _dierckx.evaluate_all_bspl(t, k, xval, left)
         matr[i + k - 1, left-k:left+1] = bb
 
     # RHS
@@ -1252,7 +1252,7 @@ def _handle_lhs_derivatives(t, k, xval, ab, kl, ku, deriv_ords, offset=0):
     # compute and fill in the derivatives @ xval
     for row in range(deriv_ords.shape[0]):
         nu = deriv_ords[row]
-        wrk = _bspl.evaluate_all_bspl(t, k, xval, left, nu)
+        wrk = _dierckx.evaluate_all_bspl(t, k, xval, left, nu)
 
         # if A were a full matrix, it would be just
         # ``A[row + offset, left-k:left+1] = bb``.

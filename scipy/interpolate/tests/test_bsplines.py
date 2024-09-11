@@ -32,7 +32,6 @@ from scipy.interpolate._ndbspline import make_ndbspl
 
 from scipy.interpolate import _dfitpack as dfitpack
 from scipy.interpolate import _bsplines as _b
-from scipy.interpolate import _bspl
 from scipy.interpolate import _dierckx
 
 
@@ -1605,7 +1604,7 @@ def make_interp_full_matr(x, y, t, k):
             left = np.searchsorted(t, xval) - 1
 
         # fill a row
-        bb = _bspl.evaluate_all_bspl(t, k, xval, left)
+        bb = _dierckx.evaluate_all_bspl(t, k, xval, left)
         A[j, left-k:left+1] = bb
 
     c = sl.solve(A, y)
@@ -1629,7 +1628,7 @@ def make_lsq_full_matrix(x, y, t, k=3):
             left = np.searchsorted(t, xval) - 1
 
         # fill a row
-        bb = _bspl.evaluate_all_bspl(t, k, xval, left)
+        bb = _dierckx.evaluate_all_bspl(t, k, xval, left)
         A[j, left-k:left+1] = bb
 
     # have observation matrix, can solve the LSQ problem

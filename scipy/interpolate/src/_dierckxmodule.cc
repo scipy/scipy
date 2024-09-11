@@ -24,8 +24,8 @@ int
 check_array(PyObject *obj, npy_intp ndim, int typenum) {
 
     int cond = (PyArray_CheckExact(obj) &&
-                (PyArray_TYPE((PyArrayObject*)obj) == typenum) &&
-                (PyArray_NDIM((PyArrayObject*)obj) == ndim) &&
+               (PyArray_TYPE((PyArrayObject*)obj) == typenum) &&
+               (PyArray_NDIM((PyArrayObject*)obj) == ndim) &&
                 PyArray_CHKFLAGS((PyArrayObject*)obj, NPY_ARRAY_ALIGNED | NPY_ARRAY_C_CONTIGUOUS)
     );
 
@@ -503,8 +503,6 @@ static char doc_evaluate_spline[] =
    " out : ndarray, shape (s, m) \n"
    "     Computed values of the spline at each of the input points. \n"
    "     This argument is modified in-place. \n";
-
-
 /*
  * def evaluate_spline(const double[::1] t,
  *            const double[:, ::1] c,
@@ -574,9 +572,103 @@ py_evaluate_spline(PyObject *self, PyObject *args)
         PyErr_SetString(PyExc_RuntimeError, e.what());
         return NULL;
     }
-    
-
 };
+
+
+static char doc_evaluate_all_bspl[] =
+    "Evaluate the ``k+1`` B-splines which are non-zero on interval ``m``. \n"
+    " \n"
+    "Parameters \n"
+    "---------- \n"
+    "t : ndarray, shape (nt + k + 1,) \n"
+    "    sorted 1D array of knots \n"
+    "k : int \n"
+    "    spline order \n"
+    "xval: float \n"
+    "    argument at which to evaluate the B-splines \n"
+    "m : int \n"
+    "    index of the left edge of the evaluation interval, ``t[m] <= x < t[m+1]`` \n"
+    "nu : int, optional \n"
+    "    Evaluate derivatives order `nu`. Default is zero. \n"
+    " \n"
+    "Returns \n"
+    "------- \n"
+    "ndarray, shape (k+1,) \n"
+    "    The values of B-splines :math:`[B_{m-k}(xval), ..., B_{m}(xval)]` if \n"
+    "    `nu` is zero, otherwise the derivatives of order `nu`. \n"
+    " \n"
+    "Examples \n"
+    "-------- \n"
+    " \n"
+    "A textbook use of this sort of routine is plotting the ``k+1`` polynomial \n"
+    "pieces which make up a B-spline of order `k`. \n"
+    " \n"
+    "Consider a cubic spline \n"
+    " \n"
+    ">>> k = 3 \n"
+    ">>> t = [0., 1., 2., 3., 4.]   # internal knots \n"
+    ">>> a, b = t[0], t[-1]    # base interval is [a, b) \n"
+    ">>> t = np.array([a]*k + t + [b]*k)  # add boundary knots \n"
+    " \n"
+    ">>> import matplotlib.pyplot as plt \n"
+    ">>> xx = np.linspace(a, b, 100) \n"
+    ">>> plt.plot(xx, BSpline.basis_element(t[k:-k])(xx), \n"
+    "...          lw=3, alpha=0.5, label='basis_element') \n"
+    " \n"
+    "Now we use slide an interval ``t[m]..t[m+1]`` along the base interval \n"
+    "``a..b`` and use `evaluate_all_bspl` to compute the restriction of \n"
+    "the B-spline of interest to this interval: \n"
+    " \n"
+    ">>> for i in range(k+1): \n"
+    "...    x1, x2 = t[2*k - i], t[2*k - i + 1] \n"
+    "...    xx = np.linspace(x1 - 0.5, x2 + 0.5) \n"
+    "...    yy = [evaluate_all_bspl(t, k, x, 2*k - i)[i] for x in xx] \n"
+    "...    plt.plot(xx, yy, '--', label=str(i)) \n"
+    ">>> plt.grid(True) \n"
+    ">>> plt.legend() \n"
+    ">>> plt.show() \n";
+/*
+ * def evaluate_all_bspl(const double[::1] t, int k, double xval, int m, int nu=0):
+ */
+static PyObject*
+py_evaluate_all_bspl(PyObject* self, PyObject* args)
+{
+    PyObject *py_t=NULL;
+    int k, m, nu=0;
+    double xval;
+
+    if(!PyArg_ParseTuple(args, "Oidi|i", &py_t, &k, &xval, &m, &nu)) {
+        return NULL;
+    }
+    if (!check_array(py_t, 1, NPY_DOUBLE)) {
+        return NULL;
+    }
+    PyArrayObject *a_t = (PyArrayObject *)py_t;
+
+    // allocate temp storage
+    unique_fptr<double> wrk( (double*)malloc((2*k+2)*sizeof(double)) );
+
+    // compute non-zero bsplines
+    fitpack::_deBoor_D(
+        static_cast<const double*>(PyArray_DATA(a_t)),
+        xval,
+        k,
+        m,
+        nu,
+        wrk.get()
+    );
+
+    // allocate and fill the output
+    npy_intp dims[1] = {k+1};
+    PyArrayObject *arr = (PyArrayObject *)PyArray_SimpleNew(1, dims, NPY_DOUBLE);
+    if (arr == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+
+    memcpy(PyArray_DATA(arr), wrk.get(), (k+1)*sizeof(double));
+    return (PyObject *)arr;
+}
 
 
 static char doc_find_interval[] = 
@@ -658,6 +750,8 @@ static PyMethodDef DierckxMethods[] = {
      doc_norm_eq_lsq},
     {"evaluate_spline", py_evaluate_spline, METH_VARARGS,
      doc_evaluate_spline},
+    {"evaluate_all_bspl", py_evaluate_all_bspl, METH_VARARGS,
+     doc_evaluate_all_bspl},
     {"find_interval", py_find_interval, METH_VARARGS,
      doc_find_interval},
     //...
