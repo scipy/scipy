@@ -288,6 +288,62 @@ py_data_matrix(PyObject *self, PyObject *args)
 
 
 /*
+ * def _coloc(const double[::1] x,
+ *             const double[::1] t,
+ *             int k,
+ *             double[::1, :] ab,  // NOTE: receive the transposed ab
+ *             int offset=0):
+ *
+ * Similar to data_matrix:
+ *   - data_matrix constructs the array in the "packed" storage;
+ *   - _coloc constructs the array in the LAPACK banded storage;
+ */
+static PyObject*
+py_coloc(PyObject *self, PyObject *args)
+{
+    PyObject *py_x=NULL, *py_t=NULL, *py_abT=NULL;
+    int k, offset=0;
+
+    if(!PyArg_ParseTuple(args, "OOiOi", &py_x, &py_t, &k, &py_abT, &offset)) {
+        return NULL;
+    }
+
+    if (!(check_array(py_x, 1, NPY_DOUBLE) &&
+          check_array(py_t, 1, NPY_DOUBLE) &&
+          check_array(py_abT, 2, NPY_DOUBLE))) {
+        return NULL;
+    }
+    PyArrayObject *a_x = (PyArrayObject *)py_x;
+    PyArrayObject *a_t = (PyArrayObject *)py_t;
+    PyArrayObject *a_abT = (PyArrayObject *)py_abT;
+
+    // allocate the temp storage
+    double *wrk = (double *)malloc((2*k+2)*sizeof(double));
+
+    // FIXME: try-except + free wrk
+    try {
+        fitpack::_coloc_matrix(
+            static_cast<const double *>(PyArray_DATA(a_x)), PyArray_DIM(a_x, 0),
+            static_cast<const double *>(PyArray_DATA(a_t)), PyArray_DIM(a_t, 0),
+            k,
+            // abT.shape[1] is nbands because ab.shape == (nbands, nt) and abT is ab.T
+            static_cast<double *>(PyArray_DATA(a_abT)), PyArray_DIM(a_abT, 1),
+            offset,
+            wrk
+        );
+
+        free(wrk);
+        Py_RETURN_NONE;
+    }
+    catch (std::exception& e) {
+        free(wrk);
+        PyErr_SetString(PyExc_RuntimeError, e.what());
+        return NULL;
+    }
+}
+
+
+/*
  * def _py_find_interval(const double[::1] t,
  *                       int k,
  *                       double xval,
@@ -336,6 +392,8 @@ static PyMethodDef DierckxMethods[] = {
      "row-by-row QR triangularization"},
     {"data_matrix", py_data_matrix, METH_VARARGS,
      "(m, k+1) array of non-zero b-splines"},
+    {"_coloc", py_coloc, METH_VARARGS,
+     "colocation matrix in the F banded storage"},
     {"py_find_interval", py_find_interval, METH_VARARGS,
      "find interval"},
     //...

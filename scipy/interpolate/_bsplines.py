@@ -1188,7 +1188,7 @@ def _make_interp_per_full_matr(x, y, t, k):
     x, y, t = map(np.asarray, (x, y, t))
 
     n = x.size
-    # LHS: the collocation matrix + derivatives at edges
+    # LHS: the colocation matrix + derivatives at edges
     matr = np.zeros((n + k - 1, n + k - 1))
 
     # derivatives at x[0] and x[-1]:
@@ -1198,7 +1198,7 @@ def _make_interp_per_full_matr(x, y, t, k):
         bb = _bspl.evaluate_all_bspl(t, k, x[-1], n + k - 1, nu=i + 1)[:-1]
         matr[i, -k:] -= bb
 
-    # collocation matrix
+    # colocation matrix
     for i in range(n):
         xval = x[i]
         # find interval
@@ -1219,10 +1219,10 @@ def _make_interp_per_full_matr(x, y, t, k):
 
 
 def _handle_lhs_derivatives(t, k, xval, ab, kl, ku, deriv_ords, offset=0):
-    """ Fill in the entries of the collocation matrix corresponding to known
+    """ Fill in the entries of the colocation matrix corresponding to known
     derivatives at `xval`.
 
-    The collocation matrix is in the banded storage, as prepared by _colloc.
+    The colocation matrix is in the banded storage, as prepared by _coloc.
     No error checking.
 
     Parameters
@@ -1234,7 +1234,7 @@ def _handle_lhs_derivatives(t, k, xval, ab, kl, ku, deriv_ords, offset=0):
     xval : float
         The value at which to evaluate the derivatives at.
     ab : ndarray, shape(2*kl + ku + 1, nt), Fortran order
-        B-spline collocation matrix.
+        B-spline colocation matrix.
         This argument is modified *in-place*.
     kl : integer
         Number of lower diagonals of ab.
@@ -1327,8 +1327,10 @@ def _make_periodic_spline(x, y, t, k, axis):
 
     # `offset` is made to shift all the non-zero elements to the end of the
     # matrix
-    # NB: drop the last element of `x` because `x[0] = x[-1] + T` & `y[0] == y[-1]`
-    _bspl._colloc(x[:-1], t, k, ab, offset=k)
+    # NB: 1. drop the last element of `x` because `x[0] = x[-1] + T` & `y[0] == y[-1]`
+    #     2. pass ab.T to _coloc to make it C-ordered; below it'll be fed to banded
+    #        LAPACK, which needs F-ordered arrays
+    _dierckx._coloc(x[:-1], t, k, ab.T, k)
 
     # remove zeros before the matrix
     ab = ab[-k - (k + 1) % 2:, :]
@@ -1592,10 +1594,12 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
         c = np.zeros((nt,) + y.shape[1:], dtype=float)
         return BSpline.construct_fast(t, c, k, axis=axis)
 
-    # set up the LHS: the collocation matrix + derivatives at boundaries
+    # set up the LHS: the colocation matrix + derivatives at boundaries
+    # NB: ab is in F order for banded LAPACK; _coloc needs C-ordered arrays,
+    #     this pass ab.T into _coloc
     kl = ku = k
     ab = np.zeros((2*kl + ku + 1, nt), dtype=np.float64, order='F')
-    _bspl._colloc(x, t, k, ab, offset=nleft)
+    _dierckx._coloc(x, t, k, ab.T, nleft)
     if nleft > 0:
         _handle_lhs_derivatives(t, k, x[0], ab, kl, ku, deriv_l_ords)
     if nright > 0:
@@ -1619,7 +1623,7 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
                             overwrite_ab=True, overwrite_b=True)
 
     if info > 0:
-        raise LinAlgError("Collocation matrix is singular.")
+        raise LinAlgError("Colocation matrix is singular.")
     elif info < 0:
         raise ValueError('illegal value in %d-th argument of internal gbsv' % -info)
 
@@ -1795,7 +1799,7 @@ def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True, *, method="
     yy = yy.reshape(-1, extradim)
 
     if method == "norm-eq":
-        # construct A.T @ A and rhs with A the collocation matrix, and
+        # construct A.T @ A and rhs with A the colocation matrix, and
         # rhs = A.T @ y for solving the LSQ problem  ``A.T @ A @ c = A.T @ y``
         lower = True
         ab = np.zeros((k+1, n), dtype=np.float64, order='F')
