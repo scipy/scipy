@@ -32,13 +32,13 @@ cdef extern from "src/__fitpack.h" namespace "fitpack":
                           double *wrk
     ) noexcept nogil
 
-    void _colloc_matrix(const double *xptr, ssize_t m,
-                        const double *tptr, ssize_t len_t,
-                        int k,
-                        double *abT, ssize_t nbands,   # ab(nbands, len_t - k - 1) in F order!
-                        int offset,
-                        double *wrk
-    ) except+ nogil
+#    void _coloc_matrix(const double *xptr, ssize_t m,
+#                        const double *tptr, ssize_t len_t,
+#                        int k,
+#                        double *abT, ssize_t nbands,   # ab(nbands, len_t - k - 1) in F order!
+#                        int offset,
+#                        double *wrk
+#    ) except+ nogil
 
 
     void norm_eq_lsq(const double *xptr, ssize_t m,      # x, shape (m,)
@@ -219,6 +219,7 @@ def evaluate_all_bspl(const double[::1] t, int k, double xval, int m, int nu=0):
     return bbb[:k+1]
 
 
+'''
 @cython.wraparound(False)
 @cython.boundscheck(False)
 def _colloc(const double[::1] x, const double[::1] t, int k, double[::1, :] ab,
@@ -249,7 +250,7 @@ def _colloc(const double[::1] x, const double[::1] t, int k, double[::1, :] ab,
         spline order
     ab : ndarray, shape (2*kl + ku + 1, nt), F-order
         This parameter is modified in-place.
-        On exit: B-spline collocation matrix in the band storage with
+        On exit: B-spline colocation matrix in the band storage with
         ``ku`` upper diagonals and ``kl`` lower diagonals.
         Here ``kl = ku = k``.
     offset : int, optional
@@ -259,14 +260,14 @@ def _colloc(const double[::1] x, const double[::1] t, int k, double[::1, :] ab,
     cdef double[::1] wrk = np.empty(2*k + 2, dtype=np.float64)
 
     with nogil:
-        _colloc_matrix(&x[0], x.shape[0],    # drop the last element since x[0] == x[-1]
+        _coloc_matrix(&x[0], x.shape[0],    # drop the last element since x[0] == x[-1]
                        &t[0], t.shape[0],
                        k,
                        &ab[0, 0], ab.shape[0],
                        offset,
                        &wrk[0]
         )
-
+'''
 
 @cython.wraparound(False)
 @cython.boundscheck(False)

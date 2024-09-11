@@ -204,7 +204,7 @@ _evaluate_spline(
  * Spline collocation matrix in the LAPACK banded storage
  */
 void
-_colloc_matrix(const double *xptr, ssize_t m,       // x, shape(m,)
+_coloc_matrix(const double *xptr, ssize_t m,        // x, shape(m,)
                const double *tptr, ssize_t len_t,   // t, shape(len_t,)
                int k,
                double *abT, ssize_t nbands,         // ab(nbands, len_t - k - 1) in F order!
