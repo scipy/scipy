@@ -1671,20 +1671,24 @@ class TestWilcoxon:
         assert_equal(p, 1)
 
     def test_auto(self):
-        # auto default to exact if there are no ties and n<= 25
-        x = np.arange(0, 25) + 0.5
-        y = np.arange(25, 0, -1)
+        # auto default to exact if there are no ties and n <= 50
+        x = np.arange(0, 50) + 0.5
+        y = np.arange(50, 0, -1)
         assert_equal(stats.wilcoxon(x, y),
                      stats.wilcoxon(x, y, mode="exact"))
 
-        # if there are ties (i.e. zeros in d = x-y), then switch to asymptotic
+        # n <= 50: if there are zeros in d = x-y, use PermutationMethod
+        pm = stats.PermutationMethod()
         d = np.arange(0, 13)
-        with suppress_warnings() as sup:
-            sup.filter(UserWarning, message="Exact p-value calculation")
-            w, p = stats.wilcoxon(d)
-        assert_equal(stats.wilcoxon(d, mode="asymptotic"), (w, p))
+        w, p = stats.wilcoxon(d)
+        assert_equal(stats.wilcoxon(d, method=pm), (w, p))
 
-        # use approximation for samples > 25
+        # n <= 50: if there are ties in d = x-y, use PermutationMethod
+        d = np.array([1, 2, 2, 7, 5, -6, 9, -4])
+        w, p = stats.wilcoxon(d)
+        assert_equal(stats.wilcoxon(d, method=pm), (w, p))
+
+        # use approximation for samples > 50
         d = np.arange(1, 52)
         assert_equal(stats.wilcoxon(d), stats.wilcoxon(d, mode="asymptotic"))
 
