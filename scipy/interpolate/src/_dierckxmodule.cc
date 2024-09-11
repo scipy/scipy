@@ -344,7 +344,7 @@ py_coloc(PyObject *self, PyObject *args)
             // abT.shape[1] is nbands because ab.shape == (nbands, nt) and abT is ab.T
             static_cast<double *>(PyArray_DATA(a_abT)), PyArray_DIM(a_abT, 1),
             offset,
-            wrk.get();
+            wrk.get()
         );
 
         Py_RETURN_NONE;
@@ -353,6 +353,67 @@ py_coloc(PyObject *self, PyObject *args)
         PyErr_SetString(PyExc_RuntimeError, e.what());
         return NULL;
     }
+}
+
+
+/*
+ * def _norm_eq_lsq(const double[::1] x,
+ *                  const double[::1] t,
+ *                  int k,
+ *                  const double[:, ::1] y,
+ *                  const double[::1] w,
+ *                  double[::1, :] ab,
+ *                  double[:, ::1] rhs):
+ */
+static PyObject*
+py_norm_eq_lsq(PyObject *self, PyObject *args)
+{
+    PyObject *py_x=NULL, *py_t=NULL, *py_y=NULL, *py_w=NULL, *py_abT=NULL, *py_rhs=NULL;
+    int k;
+
+    if(!PyArg_ParseTuple(args, "OOiOOOO", &py_x, &py_t, &k, &py_y, &py_w, &py_abT, &py_rhs)) {
+        return NULL;
+    }
+
+    if (!(check_array(py_x, 1, NPY_DOUBLE) &&
+          check_array(py_t, 1, NPY_DOUBLE) &&
+          check_array(py_y, 2, NPY_DOUBLE) &&
+          check_array(py_w, 1, NPY_DOUBLE) &&
+          check_array(py_abT, 2, NPY_DOUBLE) &&
+          check_array(py_rhs, 2, NPY_DOUBLE))) {
+        return NULL;
+    }
+    PyArrayObject *a_x = (PyArrayObject *)py_x;
+    PyArrayObject *a_t = (PyArrayObject *)py_t;
+    PyArrayObject *a_y = (PyArrayObject *)py_y;
+    PyArrayObject *a_w = (PyArrayObject *)py_w;
+    PyArrayObject *a_abT = (PyArrayObject *)py_abT;
+    PyArrayObject *a_rhs = (PyArrayObject *)py_rhs;
+
+    // allocate the temp storage
+    unique_fptr<double> wrk( (double*)malloc((2*k+2)*sizeof(double)) );
+
+    // heavy lifting happens here
+    try {
+        fitpack::norm_eq_lsq(
+            static_cast<const double*>(PyArray_DATA(a_x)), PyArray_DIM(a_x, 0),
+            static_cast<const double*>(PyArray_DATA(a_t)), PyArray_DIM(a_t, 0),
+            k,
+            static_cast<const double*>(PyArray_DATA(a_y)), PyArray_DIM(a_y, 1),
+            static_cast<const double*>(PyArray_DATA(a_w)),
+            static_cast<double*>(PyArray_DATA(a_abT)),
+            static_cast<double*>(PyArray_DATA(a_rhs)),
+            wrk.get()
+        );
+
+        Py_RETURN_NONE;
+
+    }
+    catch (std::exception& e) {
+        PyErr_SetString(PyExc_RuntimeError, e.what());
+        return NULL;
+    }
+
 }
 
 
@@ -407,6 +468,8 @@ static PyMethodDef DierckxMethods[] = {
      "(m, k+1) array of non-zero b-splines"},
     {"_coloc", py_coloc, METH_VARARGS,
      "colocation matrix in the F banded storage"},
+    {"_norm_eq_lsq", py_norm_eq_lsq, METH_VARARGS,
+     "lhs and rhs of the normal equations for a spline fit"},
     {"py_find_interval", py_find_interval, METH_VARARGS,
      "find interval"},
     //...
