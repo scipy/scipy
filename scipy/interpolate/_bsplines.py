@@ -1804,10 +1804,10 @@ def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True, *, method="
         lower = True
         ab = np.zeros((k+1, n), dtype=np.float64, order='F')
         rhs = np.zeros((n, extradim), dtype=np.float64)
-        _bspl._norm_eq_lsq(x, t, k,
-                           yy,
-                           w,
-                           ab, rhs)
+        _dierckx._norm_eq_lsq(x, t, k,
+                              yy,
+                              w,
+                              ab.T, rhs)
 
         # undo complex -> float and flattening the trailing dims
         if was_complex:

@@ -41,16 +41,16 @@ cdef extern from "src/__fitpack.h" namespace "fitpack":
 #    ) except+ nogil
 
 
-    void norm_eq_lsq(const double *xptr, ssize_t m,      # x, shape (m,)
-                     const double *tptr, ssize_t len_t,   # t, shape (len_t,)
-                     int k,
-                     const double *yptr, ssize_t ydim2,  # y, shape(m, ydim2)
-                     const double *wptr,                 # w, shape (m,)
-                     # outputs
-                     double *abT_ptr,                    # ab, shape (k+1, m) IN FORTRAN ORDER
-                     double *rhs_ptr,                    # rhs, shape (m, ydim2)
-                     double *wrk
-    ) except+ nogil
+#    void norm_eq_lsq(const double *xptr, ssize_t m,      # x, shape (m,)
+#                     const double *tptr, ssize_t len_t,   # t, shape (len_t,)
+#                     int k,
+#                     const double *yptr, ssize_t ydim2,  # y, shape(m, ydim2)
+#                     const double *wptr,                 # w, shape (m,)
+#                     # outputs
+#                     double *abT_ptr,                    # ab, shape (k+1, m) IN FORTRAN ORDER
+#                     double *rhs_ptr,                    # rhs, shape (m, ydim2)
+#                     double *wrk
+#    ) except+ nogil
 
 
 ctypedef fused int32_or_int64:
@@ -269,6 +269,7 @@ def _colloc(const double[::1] x, const double[::1] t, int k, double[::1, :] ab,
         )
 '''
 
+'''
 @cython.wraparound(False)
 @cython.boundscheck(False)
 def _norm_eq_lsq(const double[::1] x,
@@ -330,6 +331,7 @@ def _norm_eq_lsq(const double[::1] x,
                     &rhs[0, 0],
                     &wrk[0]
         )
+'''
 
 @cython.wraparound(False)
 @cython.boundscheck(False)
