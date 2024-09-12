@@ -42,8 +42,13 @@ def pytest_configure(config):
         config.addinivalue_line(
             "markers", 'fail_slow: mark a test for a non-default timeout failure')
     config.addinivalue_line("markers",
-        "skip_xp_backends(*backends, reasons=None, np_only=False, cpu_only=False): "
+        "skip_xp_backends(*backends, reasons=None, np_only=False, cpu_only=False, "
+        "exceptions=None): "
         "mark the desired skip configuration for the `skip_xp_backends` fixture.")
+    config.addinivalue_line("markers",
+        "xfail_xp_backends(*backends, reasons=None, np_only=False, cpu_only=False, "
+        "exceptions=None): "
+        "mark the desired xfail configuration for the `xfail_xp_backends` fixture.")
 
 
 def pytest_runtest_setup(item):
@@ -128,7 +133,7 @@ if SCIPY_ARRAY_API and isinstance(SCIPY_ARRAY_API, str):
 
     try:
         import torch  # type: ignore[import-not-found]
-        xp_available_backends.update({'pytorch': torch})
+        xp_available_backends.update({'torch': torch})
         # can use `mps` or `cpu`
         torch.set_default_device(SCIPY_DEVICE)
     except ImportError:
@@ -177,8 +182,28 @@ skip_xp_invalid_arg = pytest.mark.skipif(SCIPY_ARRAY_API,
 
 @pytest.fixture
 def skip_xp_backends(xp, request):
+    """See the `skip_or_xfail_xp_backends` docstring."""
+    if "skip_xp_backends" not in request.keywords:
+        return
+    backends = request.keywords["skip_xp_backends"].args
+    kwargs = request.keywords["skip_xp_backends"].kwargs
+    skip_or_xfail_xp_backends(xp, backends, kwargs, skip_or_xfail='skip')
+
+@pytest.fixture
+def xfail_xp_backends(xp, request):
+    """See the `skip_or_xfail_xp_backends` docstring."""
+    if "xfail_xp_backends" not in request.keywords:
+        return
+    backends = request.keywords["xfail_xp_backends"].args
+    kwargs = request.keywords["xfail_xp_backends"].kwargs
+    skip_or_xfail_xp_backends(xp, backends, kwargs, skip_or_xfail='xfail')
+    
+
+def skip_or_xfail_xp_backends(xp, backends, kwargs, skip_or_xfail='skip'):
     """
-    Skip based on the ``skip_xp_backends`` marker.
+    Skip based on the ``skip_xp_backends`` or ``xfail_xp_backends`` marker.
+    
+    See the "Support for the array API standard" docs page for usage examples.
 
     Parameters
     ----------
@@ -198,35 +223,50 @@ def skip_xp_backends(xp, request):
         any ``backends`` in this case. To specify a reason, pass a
         singleton list to ``reasons``. Default: ``False``.
     cpu_only : bool, optional
-        When ``True``, the test is skipped on non-CPU devices.
+        When ``True``, the test is skipped/x-failed on non-CPU devices.
         There is no need to provide any ``backends`` in this case,
         but any ``backends`` will also be skipped on the CPU.
         Default: ``False``.
+    exceptions : list, optional
+        A list of exceptions for use with `cpu_only` or `np_only`.
+        This should be provided when delegation is implemented for some,
+        but not all, non-CPU/non-NumPy backends.
     """
-    if "skip_xp_backends" not in request.keywords:
-        return
-    backends = request.keywords["skip_xp_backends"].args
-    kwargs = request.keywords["skip_xp_backends"].kwargs
+    skip_or_xfail = getattr(pytest, skip_or_xfail)
+
     np_only = kwargs.get("np_only", False)
     cpu_only = kwargs.get("cpu_only", False)
+    exceptions = kwargs.get("exceptions", [])
+    
+    # input validation
+    if np_only and cpu_only:
+        raise ValueError("at most one of `np_only` and `cpu_only` should be provided")
+    if exceptions and not (cpu_only or np_only):
+        raise ValueError("`exceptions` is only valid alongside `cpu_only` or `np_only`")
+
     if np_only:
         reasons = kwargs.get("reasons", ["do not run with non-NumPy backends."])
+        if len(reasons) > 1:
+            raise ValueError("please provide a singleton list to `reasons` "
+                             "when using `np_only`")
         reason = reasons[0]
-        if xp.__name__ != 'numpy':
-            pytest.skip(reason=reason)
+        if xp.__name__ != 'numpy' and xp.__name__ not in exceptions:
+            skip_or_xfail(reason=reason)
         return
     if cpu_only:
-        reason = "do not run with `SCIPY_ARRAY_API` set and not on CPU"
+        reason = ("no array-agnostic implementation or delegation available "
+                  "for this backend and device")
+        exceptions = [] if exceptions is None else exceptions
         if SCIPY_ARRAY_API and SCIPY_DEVICE != 'cpu':
-            if xp.__name__ == 'cupy':
-                pytest.skip(reason=reason)
-            elif xp.__name__ == 'torch':
+            if xp.__name__ == 'cupy' and 'cupy' not in exceptions:
+                skip_or_xfail(reason=reason)
+            elif xp.__name__ == 'torch' and 'torch' not in exceptions:
                 if 'cpu' not in xp.empty(0).device.type:
-                    pytest.skip(reason=reason)
-            elif xp.__name__ == 'jax.numpy':
+                    skip_or_xfail(reason=reason)
+            elif xp.__name__ == 'jax.numpy' and 'jax.numpy' not in exceptions:
                 for d in xp.empty(0).devices():
                     if 'cpu' not in d.device_kind:
-                        pytest.skip(reason=reason)
+                        skip_or_xfail(reason=reason)
 
     if backends is not None:
         reasons = kwargs.get("reasons", False)
@@ -236,7 +276,7 @@ def skip_xp_backends(xp, request):
                     reason = f"do not run with array API backend: {backend}"
                 else:
                     reason = reasons[i]
-                pytest.skip(reason=reason)
+                skip_or_xfail(reason=reason)
 
 
 # Following the approach of NumPy's conftest.py...
@@ -407,7 +447,6 @@ if HAVE_SCPDT:
 
     dt_config.pytest_extra_xfail = {
         # name: reason
-        "io.rst": "",
         "ND_regular_grid.rst": "ReST parser limitation",
         "extrapolation_examples.rst": "ReST parser limitation",
         "sampling_pinv.rst": "__cinit__ unexpected argument",
@@ -417,5 +456,13 @@ if HAVE_SCPDT:
 
     # tutorials
     dt_config.pseudocode = set(['integrate.nquad(func,'])
-    dt_config.local_resources = {'io.rst': ["octave_a.mat"]}
+    dt_config.local_resources = {
+        'io.rst': [
+            "octave_a.mat",
+            "octave_cells.mat",
+            "octave_struct.mat"
+        ]
+    }
+
+    dt_config.strict_check = True
 ############################################################################

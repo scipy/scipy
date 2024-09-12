@@ -13,7 +13,7 @@ from hypothesis import given, strategies, reproduce_failure  # noqa: F401
 from scipy.conftest import array_api_compatible, skip_xp_invalid_arg
 
 from scipy._lib._array_api import (xp_assert_equal, xp_assert_close, is_numpy,
-                                   copy as xp_copy, is_array_api_strict)
+                                   xp_copy, is_array_api_strict)
 from scipy._lib._util import (_aligned_zeros, check_random_state, MapWrapper,
                               getfullargspec_no_self, FullArgSpec,
                               rng_integers, _validate_int, _rename_parameter,
@@ -445,7 +445,7 @@ class TestLazywhere:
             ref2 = ref2.reshape(result_shape)
             ref3 = ref3.reshape(result_shape)
 
-        xp_assert_close(res1, ref1, rtol=2e-16, allow_0d=True)
-        xp_assert_equal(res2, ref2, allow_0d=True)
+        xp_assert_close(res1, ref1, rtol=2e-16)
+        xp_assert_equal(res2, ref2)
         if not is_array_api_strict(xp):
-            xp_assert_equal(res3, ref3, allow_0d=True)
+            xp_assert_equal(res3, ref3)

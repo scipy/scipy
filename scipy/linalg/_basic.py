@@ -13,7 +13,8 @@ from ._misc import LinAlgError, _datacopied, LinAlgWarning
 from ._decomp import _asarray_validated
 from . import _decomp, _decomp_svd
 from ._solve_toeplitz import levinson
-from ._cythonized_array_utils import find_det_from_lu
+from ._cythonized_array_utils import (find_det_from_lu, bandwidth, issymmetric,
+                                      ishermitian)
 
 __all__ = ['solve', 'solve_triangular', 'solveh_banded', 'solve_banded',
            'solve_toeplitz', 'solve_circulant', 'inv', 'det', 'lstsq',
@@ -48,8 +49,29 @@ def _solve_check(n, info, lamch=None, rcond=None):
              LinAlgWarning, stacklevel=3)
 
 
+def _find_matrix_structure(a):
+    n = a.shape[0]
+    below, above = bandwidth(a)
+
+    if below == above == 0:
+        return 'diagonal'
+    elif above == 0:
+        return 'lower triangular'
+    elif below == 0:
+        return 'upper triangular'
+    elif above <= 1 and below <= 1 and n > 3:
+        return 'tridiagonal'
+
+    if np.issubdtype(a.dtype, np.complexfloating) and ishermitian(a):
+        return 'hermitian'
+    elif issymmetric(a):
+        return 'symmetric'
+
+    return 'general'
+
+
 def solve(a, b, lower=False, overwrite_a=False,
-          overwrite_b=False, check_finite=True, assume_a='gen',
+          overwrite_b=False, check_finite=True, assume_a=None,
           transposed=False):
     """
     Solves the linear equation set ``a @ x == b`` for the unknown ``x``
@@ -59,19 +81,16 @@ def solve(a, b, lower=False, overwrite_a=False,
     corresponding string to ``assume_a`` key chooses the dedicated solver.
     The available options are
 
-    ===================  ========
-     generic matrix       'gen'
-     symmetric            'sym'
-     hermitian            'her'
-     positive definite    'pos'
-    ===================  ========
-
-    If omitted, ``'gen'`` is the default structure.
-
-    The datatype of the arrays define which solver is called regardless
-    of the values. In other words, even when the complex array entries have
-    precisely zero imaginary parts, the complex solver will be called based
-    on the data type of the array.
+    ===================  ================================
+     diagonal             'diagonal'
+     tridiagonal          'tridiagonal'
+     upper triangular     'upper triangular'
+     lower triangular     'lower triangular'
+     symmetric            'symmetric' (or 'sym')
+     hermitian            'hermitian' (or 'her')
+     positive definite    'positive definite' (or 'pos')
+     general              'general' (or 'gen')
+    ===================  ================================
 
     Parameters
     ----------
@@ -80,8 +99,8 @@ def solve(a, b, lower=False, overwrite_a=False,
     b : (N, NRHS) array_like
         Input data for the right hand side.
     lower : bool, default: False
-        Ignored if ``assume_a == 'gen'`` (the default). If True, the
-        calculation uses only the data in the lower triangle of `a`;
+        Ignored unless ``assume_a`` is one of ``'sym'``, ``'her'``, or ``'pos'``.
+        If True, the calculation uses only the data in the lower triangle of `a`;
         entries above the diagonal are ignored. If False (default), the
         calculation uses only the data in the upper triangle of `a`; entries
         below the diagonal are ignored.
@@ -93,8 +112,10 @@ def solve(a, b, lower=False, overwrite_a=False,
         Whether to check that the input matrices contain only finite numbers.
         Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
-    assume_a : str, {'gen', 'sym', 'her', 'pos'}
-        Valid entries are explained above.
+    assume_a : str, optional
+        Valid entries are described above.
+        If omitted or ``None``, checks are performed to identify structure so the
+        appropriate solver can be called.
     transposed : bool, default: False
         If True, solve ``a.T @ x == b``. Raises `NotImplementedError`
         for complex `a`.
@@ -122,9 +143,14 @@ def solve(a, b, lower=False, overwrite_a=False,
     despite the apparent size mismatch. This is compatible with the
     numpy.dot() behavior and the returned result is still 1-D array.
 
-    The generic, symmetric, Hermitian and positive definite solutions are
+    The general, symmetric, Hermitian and positive definite solutions are
     obtained via calling ?GESV, ?SYSV, ?HESV, and ?POSV routines of
     LAPACK respectively.
+
+    The datatype of the arrays define which solver is called regardless
+    of the values. In other words, even when the complex array entries have
+    precisely zero imaginary parts, the complex solver will be called based
+    on the data type of the array.
 
     Examples
     --------
@@ -146,6 +172,7 @@ def solve(a, b, lower=False, overwrite_a=False,
 
     a1 = atleast_2d(_asarray_validated(a, check_finite=check_finite))
     b1 = atleast_1d(_asarray_validated(b, check_finite=check_finite))
+    a1, b1 = _ensure_dtype_cdsz(a1, b1)
     n = a1.shape[0]
 
     overwrite_a = overwrite_a or _datacopied(a1, a)
@@ -173,13 +200,18 @@ def solve(a, b, lower=False, overwrite_a=False,
             b1 = b1[:, None]
         b_is_1D = True
 
-    if assume_a not in ('gen', 'sym', 'her', 'pos'):
+    if assume_a not in {None, 'diagonal', 'tridiagonal', 'lower triangular',
+                        'upper triangular', 'symmetric', 'hermitian',
+                        'positive definite', 'general', 'sym', 'her', 'pos', 'gen'}:
         raise ValueError(f'{assume_a} is not a recognized matrix structure')
 
     # for a real matrix, describe it as "symmetric", not "hermitian"
     # (lapack doesn't know what to do with real hermitian matrices)
-    if assume_a == 'her' and not np.iscomplexobj(a1):
-        assume_a = 'sym'
+    if assume_a in {'hermitian', 'her'} and not np.iscomplexobj(a1):
+        assume_a = 'symmetric'
+
+    if assume_a is None:
+        assume_a = _find_matrix_structure(a1)
 
     # Get the correct lamch function.
     # The LAMCH functions only exists for S and D
@@ -192,7 +224,12 @@ def solve(a, b, lower=False, overwrite_a=False,
     # Currently we do not have the other forms of the norm calculators
     #   lansy, lanpo, lanhe.
     # However, in any case they only reduce computations slightly...
-    lange = get_lapack_funcs('lange', (a1,))
+    if assume_a == 'diagonal':
+        lange = _lange_diagonal
+    elif assume_a == 'tridiagonal':
+        lange = _lange_tridiagonal
+    else:
+        lange = get_lapack_funcs('lange', (a1,))
 
     # Since the I-norm and 1-norm are the same for symmetric matrices
     # we can collect them all in this one call
@@ -211,8 +248,10 @@ def solve(a, b, lower=False, overwrite_a=False,
 
     anorm = lange(norm, a1)
 
+    info, rcond = 0, np.inf
+
     # Generalized case 'gesv'
-    if assume_a == 'gen':
+    if assume_a in {'general', 'gen'}:
         gecon, getrf, getrs = get_lapack_funcs(('gecon', 'getrf', 'getrs'),
                                                (a1, b1))
         lu, ipvt, info = getrf(a1, overwrite_a=overwrite_a)
@@ -222,7 +261,7 @@ def solve(a, b, lower=False, overwrite_a=False,
         _solve_check(n, info)
         rcond, info = gecon(lu, anorm, norm=norm)
     # Hermitian case 'hesv'
-    elif assume_a == 'her':
+    elif assume_a in {'hermitian', 'her'}:
         hecon, hesv, hesv_lw = get_lapack_funcs(('hecon', 'hesv',
                                                  'hesv_lwork'), (a1, b1))
         lwork = _compute_lwork(hesv_lw, n, lower)
@@ -233,7 +272,7 @@ def solve(a, b, lower=False, overwrite_a=False,
         _solve_check(n, info)
         rcond, info = hecon(lu, ipvt, anorm)
     # Symmetric case 'sysv'
-    elif assume_a == 'sym':
+    elif assume_a in {'symmetric', 'sym'}:
         sycon, sysv, sysv_lw = get_lapack_funcs(('sycon', 'sysv',
                                                  'sysv_lwork'), (a1, b1))
         lwork = _compute_lwork(sysv_lw, n, lower)
@@ -243,6 +282,23 @@ def solve(a, b, lower=False, overwrite_a=False,
                                  overwrite_b=overwrite_b)
         _solve_check(n, info)
         rcond, info = sycon(lu, ipvt, anorm)
+    # Diagonal case
+    elif assume_a == 'diagonal':
+        diag_a = np.diag(a1)
+        x = (b1.T / diag_a).T
+        abs_diag_a = np.abs(diag_a)
+        rcond = abs_diag_a.min() / abs_diag_a.max()
+    # Tri-diagonal case
+    elif assume_a == 'tridiagonal':
+        a1 = a1.T if transposed else a1
+        dl, d, du = np.diag(a1, -1), np.diag(a1, 0), np.diag(a1, 1)
+        _gtsv = get_lapack_funcs('gtsv', (a1, b1))
+        x, info = _gtsv(dl, d, du, b1, False, False, False, overwrite_b)[3:]
+    # Triangular case
+    elif assume_a in {'lower triangular', 'upper triangular'}:
+        lower = assume_a == 'lower triangular'
+        x = _solve_triangular(a1, b1, lower=lower, overwrite_b=overwrite_b,
+                              trans=transposed)
     # Positive definite case 'posv'
     else:
         pocon, posv = get_lapack_funcs(('pocon', 'posv'),
@@ -259,6 +315,38 @@ def solve(a, b, lower=False, overwrite_a=False,
         x = x.ravel()
 
     return x
+
+
+def _lange_diagonal(_, a):
+    # Equivalent of dlange for diagonal matrix, assuming
+    # norm is either 'I' or '1' (really just not the Frobenius norm)
+    return np.abs(np.diag(a)).max()
+
+
+def _lange_tridiagonal(norm, a):
+    # Equivalent of dlange for tridiagonal matrix, assuming
+    # norm is either 'I' or '1'
+    if norm == 'I':
+        a = a.T
+    d = np.abs(np.diag(a))
+    d[1:] += np.abs(np.diag(a, 1))
+    d[:-1] += np.abs(np.diag(a, -1))
+    return d.max()
+
+
+def _ensure_dtype_cdsz(*arrays):
+    # Ensure that the dtype of arrays is one of the standard types
+    # compatible with LAPACK functions (single or double precision
+    # real or complex).
+    dtype = np.result_type(*arrays)
+    if not np.issubdtype(dtype, np.inexact):
+        return (array.astype(np.float64) for array in arrays)
+    complex = np.issubdtype(dtype, np.complexfloating)
+    if np.finfo(dtype).bits <= 32:
+        dtype = np.complex64 if complex else np.float32
+    elif np.finfo(dtype).bits >= 64:
+        dtype = np.complex128 if complex else np.float64
+    return (array.astype(dtype, copy=False) for array in arrays)
 
 
 def solve_triangular(a, b, trans=0, lower=False, unit_diagonal=False,
@@ -347,6 +435,13 @@ def solve_triangular(a, b, trans=0, lower=False, unit_diagonal=False,
         return np.empty_like(b1, dtype=dt_nonempty)
 
     overwrite_b = overwrite_b or _datacopied(b1, b)
+
+    return _solve_triangular(a1, b1, trans, lower, unit_diagonal, overwrite_b)
+
+
+# solve_triangular without the input validation
+def _solve_triangular(a1, b1, trans=0, lower=False, unit_diagonal=False,
+                      overwrite_b=False):
 
     trans = {'N': 0, 'T': 1, 'C': 2}.get(trans, trans)
     trtrs, = get_lapack_funcs(('trtrs',), (a1, b1))
@@ -458,7 +553,12 @@ def solve_banded(l_and_u, ab, b, overwrite_ab=False, overwrite_b=False,
     overwrite_b = overwrite_b or _datacopied(b1, b)
     if a1.shape[-1] == 1:
         b2 = np.array(b1, copy=(not overwrite_b))
-        b2 /= a1[1, 0]
+        # a1.shape[-1] == 1 -> original matrix is 1x1. Typically, the user
+        # will pass u = l = 0 and `a1` will be 1x1. However, the rest of the
+        # function works with unnecessary rows in `a1` as long as
+        # `a1[u + i - j, j] == a[i,j]`. In the 1x1 case, we want i = j = 0,
+        # so the diagonal is in row `u` of `a1`. See gh-8906.
+        b2 /= a1[nupper, 0]
         return b2
     if nlower == nupper == 1:
         overwrite_ab = overwrite_ab or _datacopied(a1, ab)

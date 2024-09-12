@@ -123,8 +123,11 @@ def hankel(c, r=None):
     Construct a Hankel matrix.
 
     The Hankel matrix has constant anti-diagonals, with `c` as its
-    first column and `r` as its last row. If `r` is not given, then
-    `r = zeros_like(c)` is assumed.
+    first column and `r` as its last row. If the first element of `r`
+    differs from the last element of `c`, the first element of `r` is
+    replaced by the last element of `c` to ensure that anti-diagonals
+    remain constant. If `r` is not given, then `r = zeros_like(c)` is
+    assumed.
 
     Parameters
     ----------
@@ -443,22 +446,26 @@ def companion(a):
 
     Parameters
     ----------
-    a : (N,) array_like
+    a : (..., N) array_like
         1-D array of polynomial coefficients. The length of `a` must be
         at least two, and ``a[0]`` must not be zero.
+        M-dimensional arrays are treated as a batch: each slice along the last
+        axis is a 1-D array of polynomial coefficients.
 
     Returns
     -------
-    c : (N-1, N-1) ndarray
-        The first row of `c` is ``-a[1:]/a[0]``, and the first
+    c : (..., N-1, N-1) ndarray
+        For 1-D input, the first row of `c` is ``-a[1:]/a[0]``, and the first
         sub-diagonal is all ones.  The data-type of the array is the same
         as the data-type of ``1.0*a[0]``.
+        For batch input, each slice of shape ``(N-1, N-1)`` along the last two
+        dimensions of the output corresponds with a slice of shape ``(N,)``
+        along the last dimension of the input.
 
     Raises
     ------
     ValueError
-        If any of the following are true: a) ``a.ndim != 1``;
-        b) ``a.size < 2``; c) ``a[0] == 0``.
+        If any of the following are true: a) ``a.shape[-1] < 2``; b) ``a[..., 0] == 0``.
 
     Notes
     -----
@@ -479,22 +486,19 @@ def companion(a):
 
     """
     a = np.atleast_1d(a)
+    n = a.shape[-1]
 
-    if a.ndim != 1:
-        raise ValueError("Incorrect shape for `a`.  `a` must be "
-                         "one-dimensional.")
+    if n < 2:
+        raise ValueError("The length of `a` along the last axis must be at least 2.")
 
-    if a.size < 2:
-        raise ValueError("The length of `a` must be at least 2.")
+    if np.any(a[..., 0] == 0):
+        raise ValueError("The first coefficient(s) of `a` (i.e. elements "
+                         "of `a[..., 0]`) must not be zero.")
 
-    if a[0] == 0:
-        raise ValueError("The first coefficient in `a` must not be zero.")
-
-    first_row = -a[1:] / (1.0 * a[0])
-    n = a.size
-    c = np.zeros((n - 1, n - 1), dtype=first_row.dtype)
-    c[0] = first_row
-    c[list(range(1, n - 1)), list(range(0, n - 2))] = 1
+    first_row = -a[..., 1:] / (1.0 * a[..., 0:1])
+    c = np.zeros(a.shape[:-1] + (n - 1, n - 1), dtype=first_row.dtype)
+    c[..., 0, :] = first_row
+    c[..., np.arange(1, n - 1), np.arange(0, n - 2)] = 1
     return c
 
 

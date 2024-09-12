@@ -1528,6 +1528,7 @@ class TestSystematic:
             mp_igam_fac,
             [Arg(0, 1e14, inclusive_a=False), Arg(0, 1e14)],
             rtol=1e-10,
+            dps=29,
         )
 
     def test_j0(self):
@@ -2032,7 +2033,7 @@ class TestSystematic:
                 # larger DPS needed for correct results
                 old_dps = mpmath.mp.dps
                 try:
-                    mpmath.mp.dps = 300
+                    mpmath.mp.dps = 500
                     return mpmath.struvel(v, z)
                 finally:
                     mpmath.mp.dps = old_dps

@@ -154,9 +154,19 @@ class TestSolveBanded:
         assert_raises(ValueError, solve_banded, (1, 1), ab, [1.0, 2.0])
 
     def test_1x1(self):
+        # gh-8906 noted that the case of A@x = b with 1x1 A was handled
+        # incorrectly; check that this is resolved. Typical case:
+        # nupper == nlower == 0
+        # A = [[2]]
         b = array([[1., 2., 3.]])
+        ref = array([[0.5, 1.0, 1.5]])
+        x = solve_banded((0, 0), [[2]], b)
+        assert_allclose(x, ref, rtol=1e-15)
+
+        # However, the user *can* represent the same system with garbage rows
+        # in `ab`. Test the case with `nupper == 1, nlower == 1`.
         x = solve_banded((1, 1), [[0], [2], [0]], b)
-        assert_array_equal(x, [[0.5, 1.0, 1.5]])
+        assert_allclose(x, ref, rtol=1e-15)
         assert_equal(x.dtype, np.dtype('f8'))
         assert_array_equal(b, [[1.0, 2.0, 3.0]])
 
@@ -763,8 +773,11 @@ class TestSolve:
         assert_raises(LinAlgError, solve, a, b)
 
     def test_ill_condition_warning(self):
-        a = np.array([[1, 1], [1+1e-16, 1-1e-16]])
-        b = np.ones(2)
+        a = np.array([[1, 1, 1],
+                      [1+1e-16, 1-1e-16, 1],
+                      [1-1e-16, 1+1e-16, 1],
+                      ])
+        b = np.ones(3)
         with warnings.catch_warnings():
             warnings.simplefilter('error')
             assert_raises(LinAlgWarning, solve, a, b)
@@ -863,6 +876,72 @@ class TestSolve:
         x = solve(a, b)
         assert_(x.size == 0, 'Returned array is not empty')
         assert_(x.shape == (2, 0), 'Returned empty array shape is wrong')
+
+    @pytest.mark.parametrize('dtype', [np.float64, np.complex128])
+    @pytest.mark.parametrize('assume_a', ['diagonal', 'tridiagonal', 'lower triangular',
+                                          'upper triangular', 'symmetric', 'hermitian',
+                                          'positive definite', 'general',
+                                          'sym', 'her', 'pos', 'gen'])
+    @pytest.mark.parametrize('nrhs', [(), (5,)])
+    @pytest.mark.parametrize('transposed', [True, False])
+    @pytest.mark.parametrize('overwrite', [True, False])
+    @pytest.mark.parametrize('fortran', [True, False])
+    def test_structure_detection(self, dtype, assume_a, nrhs, transposed,
+                                 overwrite, fortran):
+        rng = np.random.default_rng(982345982439826)
+        n = 5
+        b = rng.random(size=(n,) + nrhs)
+        A = rng.random(size=(n, n))
+
+        if np.issubdtype(dtype, np.complexfloating):
+            b = b + rng.random(size=(n,) + nrhs) * 1j
+            A = A + rng.random(size=(n, n)) * 1j
+
+        if assume_a == 'diagonal':
+            A = np.diag(np.diag(A))
+        elif assume_a == 'lower triangular':
+            A = np.tril(A)
+        elif assume_a == 'upper triangular':
+            A = np.triu(A)
+        elif assume_a == 'tridiagonal':
+            A = (np.diag(np.diag(A))
+                 + np.diag(np.diag(A, -1), -1)
+                 + np.diag(np.diag(A, 1), 1))
+        elif assume_a in {'symmetric', 'sym'}:
+            A = A + A.T
+        elif assume_a in {'hermitian', 'her'}:
+            A = A + A.conj().T
+        elif assume_a in {'positive definite', 'pos'}:
+            A = A + A.T
+            A += np.diag(A.sum(axis=1))
+
+        if fortran:
+            A = np.asfortranarray(A)
+
+        A_copy = A.copy(order='A')
+        b_copy = b.copy()
+
+        if np.issubdtype(dtype, np.complexfloating) and transposed:
+            message = "scipy.linalg.solve can currently..."
+            with pytest.raises(NotImplementedError, match=message):
+                solve(A, b, overwrite_a=overwrite, overwrite_b=overwrite,
+                      transposed=transposed)
+            return
+
+        res = solve(A, b, overwrite_a=overwrite, overwrite_b=overwrite,
+                    transposed=transposed)
+
+        if not overwrite:
+            assert_equal(A, A_copy)
+            assert_equal(b, b_copy)
+
+        assume_a = 'sym' if assume_a in {'positive definite', 'pos'} else assume_a
+
+        ref = solve(A_copy, b_copy, assume_a=assume_a, transposed=transposed)
+        assert_equal(res, ref)
+
+        ref = np.linalg.solve(A_copy.T if transposed else A_copy, b_copy)
+        assert_allclose(res, ref)
 
 
 class TestSolveTriangular:
@@ -1084,7 +1163,7 @@ class TestDet:
     def test_sample_compatible_dtype_input(self, typ):
         n = 4
         a = self.rng.random([n, n]).astype(typ)  # value is not important
-        assert isinstance(det(a), (np.float64, np.complex128))
+        assert isinstance(det(a), (np.float64 | np.complex128))
 
     def test_incompatible_dtype_input(self):
         # Double backslashes needed for escaping pytest regex.

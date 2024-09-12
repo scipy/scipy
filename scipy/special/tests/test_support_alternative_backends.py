@@ -4,7 +4,8 @@ from scipy.special._support_alternative_backends import (get_array_special_func,
                                                          array_special_func_map)
 from scipy.conftest import array_api_compatible
 from scipy import special
-from scipy._lib._array_api import xp_assert_close, is_jax
+from scipy._lib._array_api_no_0d import xp_assert_close
+from scipy._lib._array_api import is_jax, is_torch, SCIPY_DEVICE
 from scipy._lib.array_api_compat import numpy as np
 
 try:
@@ -56,6 +57,14 @@ def test_rel_entr_generic(dtype):
                                     [(10,), (11, 1), (12, 1, 1), (13, 1, 1, 1)]])
 def test_support_alternative_backends(xp, f_name_n_args, dtype, shapes):
     f_name, n_args = f_name_n_args
+
+    if (SCIPY_DEVICE != 'cpu'
+        and is_torch(xp)
+        and f_name in {'stdtr', 'betaincc', 'betainc'}
+    ):
+        pytest.skip(f"`{f_name}` does not have an array-agnostic implementation "
+                    f"and cannot delegate to PyTorch.")
+
     shapes = shapes[:n_args]
     f = getattr(special, f_name)
 
@@ -90,3 +99,15 @@ def test_support_alternative_backends(xp, f_name_n_args, dtype, shapes):
 
     eps = np.finfo(dtype_np).eps
     xp_assert_close(res, ref, atol=10*eps)
+
+
+@array_api_compatible
+def test_chdtr_gh21311(xp):
+    # the edge case behavior of generic chdtr was not right; see gh-21311
+    # be sure to test at least these cases
+    # should add `np.nan` into the mix when gh-21317 is resolved
+    x = np.asarray([-np.inf, -1., 0., 1., np.inf])
+    v = x.reshape(-1, 1)
+    ref = special.chdtr(v, x)
+    res = special.chdtr(xp.asarray(v), xp.asarray(x))
+    xp_assert_close(res, xp.asarray(ref))

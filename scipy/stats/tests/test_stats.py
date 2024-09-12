@@ -41,9 +41,9 @@ from scipy.stats._stats_py import (_permutation_distribution_t, _chk_asarray, _m
                                    LinregressResult, _xp_mean, _xp_var)
 from scipy._lib._util import AxisError
 from scipy.conftest import array_api_compatible, skip_xp_invalid_arg
-from scipy._lib._array_api import (xp_assert_close, xp_assert_equal, array_namespace,
-                                   copy, is_numpy, is_torch, SCIPY_ARRAY_API,
-                                   size as xp_size, copy as xp_copy)
+from scipy._lib._array_api import (array_namespace, xp_copy, is_numpy,
+                                   is_torch, xp_size, SCIPY_ARRAY_API)
+from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal
 
 skip_xp_backends = pytest.mark.skip_xp_backends
 
@@ -129,6 +129,11 @@ class TestTrimmedStats:
         y_true = [4.5, 10, 17, 21, xp.nan, xp.nan, xp.nan, xp.nan, xp.nan]
         xp_assert_close(y, xp.asarray(y_true))
 
+    @skip_xp_backends('array_api_strict', 'jax.numpy', 'cupy',
+                      reasons=["`array_api_strict.where` `fillvalue` doesn't "
+                               "accept Python floats. See data-apis/array-api#807.",
+                               "JAX doesn't allow item assignment.",
+                               "cupy/cupy#8391",])
     def test_tvar(self, xp):
         x = xp.asarray(X.tolist())  # use default dtype of xp
         xp_test = array_namespace(x)  # need array-api-compat var for `correction`
@@ -706,7 +711,7 @@ class TestPearsonr:
 
         message = 'An input array is constant'
         with pytest.warns(stats.ConstantInputWarning, match=message):
-            x = copy(x0)
+            x = xp_copy(x0)
             x[0, ...] = 1
             res = stats.pearsonr(x, y0, axis=1)
             ci = res.confidence_interval()
@@ -1390,7 +1395,7 @@ def test_kendalltau():
     # cor.test(x,y,method="kendall",exact=1)
     expected = (0.0, 1.0)
     for taux in variants:
-        res = stats.kendalltau(x, y)
+        res = stats.kendalltau(x, y, variant=taux)
         assert_approx_equal(res[0], expected[0])
         assert_approx_equal(res[1], expected[1])
 
@@ -1401,7 +1406,7 @@ def test_kendalltau():
     # cor.test(x,y,method="kendall",exact=1)
     expected = (0.0, 1.0)
     for taux in variants:
-        res = stats.kendalltau(x, y)
+        res = stats.kendalltau(x, y, variant=taux)
         assert_approx_equal(res[0], expected[0])
         assert_approx_equal(res[1], expected[1])
 
@@ -1412,7 +1417,7 @@ def test_kendalltau():
     # cor.test(x,y,method="kendall",exact=1)
     expected = (-0.14285714286, 0.77261904762)
     for taux in variants:
-        res = stats.kendalltau(x, y)
+        res = stats.kendalltau(x, y, variant=taux)
         assert_approx_equal(res[0], expected[0])
         assert_approx_equal(res[1], expected[1])
 
@@ -1423,7 +1428,7 @@ def test_kendalltau():
     # cor.test(x,y,method="kendall",exact=1)
     expected = (0.047619047619, 1.0)
     for taux in variants:
-        res = stats.kendalltau(x, y)
+        res = stats.kendalltau(x, y, variant=taux)
         assert_approx_equal(res[0], expected[0])
         assert_approx_equal(res[1], expected[1])
 
@@ -2888,6 +2893,8 @@ class TestZmapZscore:
         xp_assert_close(z[0, :], z0_expected)
         xp_assert_close(z[1, :], z1_expected)
 
+    @skip_xp_backends('cupy', 'jax.numpy',
+                      reasons=["cupy/cupy#8391", "JAX can't do item assignment"])
     def test_zscore_nan_propagate(self, xp):
         x = xp.asarray([1, 2, np.nan, 4, 5])
         z = stats.zscore(x, nan_policy='propagate')
@@ -2918,6 +2925,8 @@ class TestZmapZscore:
         with pytest.raises(ValueError, match="The input contains nan..."):
             stats.zscore(x, nan_policy='raise')
 
+    @skip_xp_backends('cupy', 'jax.numpy',
+                      reasons=["cupy/cupy#8391", "JAX can't do item assignment"])
     def test_zscore_constant_input_1d(self, xp):
         x = xp.asarray([-0.087] * 3)
         with pytest.warns(RuntimeWarning, match="Precision loss occurred..."):
@@ -2972,6 +2981,8 @@ class TestZmapZscore:
         xp_assert_close(z, xp.asarray([[np.nan, np.nan, np.nan, np.nan],
                                        [-1.0, -1.0, 1.0, 1.0]]))
 
+    @skip_xp_backends('cupy', 'jax.numpy',
+                      reasons=["cupy/cupy#8391", "JAX can't do item assignment"])
     def test_zscore_2d_all_nan(self, xp):
         # The entire 2d array is nan, and we use axis=None.
         y = xp.full((2, 3), xp.nan)
@@ -3453,6 +3464,8 @@ class TestMoments:
         assert_raises(ValueError, stats.moment, x, nan_policy='raise')
         assert_raises(ValueError, stats.moment, x, nan_policy='foobar')
 
+    @skip_xp_backends('cupy', reasons=['cupy/cupy#8391'])
+    @pytest.mark.usefixtures("skip_xp_backends")
     @array_api_compatible
     @pytest.mark.parametrize('dtype', ['float32', 'float64', 'complex128'])
     @pytest.mark.parametrize('expect, order', [(0, 1), (1, 0)])
@@ -6015,6 +6028,8 @@ def test_ttest_ind_empty_1d_returns_nan(xp):
     xp_assert_equal(res.pvalue, NaN)
 
 
+@skip_xp_backends('cupy', reasons=['cupy/cupy#8391'])
+@pytest.mark.usefixtures("skip_xp_backends")
 @array_api_compatible
 @pytest.mark.parametrize('b, expected_shape',
                          [(np.empty((1, 5, 0)), (3, 5)),
@@ -6271,6 +6286,8 @@ class TestDescribe:
         xp_assert_equal(sk, xp.asarray(xp.nan))
         xp_assert_equal(kurt, xp.asarray(xp.nan))
 
+    @skip_xp_backends('cupy', reasons=['cupy/cupy#8391'])
+    @pytest.mark.usefixtures("skip_xp_backends")
     @array_api_compatible
     def test_describe_numbers(self, xp):
         xp_test = array_namespace(xp.asarray(1.))  # numpy needs `concat`
@@ -6353,6 +6370,8 @@ class TestDescribe:
         attributes = ('nobs', 'minmax', 'mean', 'variance', 'skewness', 'kurtosis')
         check_named_results(actual, attributes)
 
+    @skip_xp_backends('cupy', reasons=['cupy/cupy#8391'])
+    @pytest.mark.usefixtures("skip_xp_backends")
     @array_api_compatible
     def test_describe_ddof(self, xp):
         xp_test = array_namespace(xp.asarray(1.))  # numpy needs `concat`
@@ -6372,6 +6391,8 @@ class TestDescribe:
         xp_assert_close(sk, skc)
         xp_assert_close(kurt, kurtc)
 
+    @skip_xp_backends('cupy', reasons=['cupy/cupy#8391'])
+    @pytest.mark.usefixtures("skip_xp_backends")
     @array_api_compatible
     def test_describe_axis_none(self, xp):
         xp_test = array_namespace(xp.asarray(1.))  # numpy needs `concat`
@@ -6420,6 +6441,8 @@ class NormalityTests:
             with pytest.raises(ValueError, match=message):
                 test_fun(x)
 
+    @skip_xp_backends('cupy', reasons=['cupy/cupy#8391'])
+    @pytest.mark.usefixtures("skip_xp_backends")
     @pytest.mark.parametrize("alternative", ['two-sided', 'less', 'greater'])
     def test_against_R(self, alternative, xp):
         # testa against R `dagoTest` from package `fBasics`
@@ -6451,6 +6474,8 @@ class NormalityTests:
         xp_assert_close(res_pvalue, ref_pvalue)
         check_named_results(res, ('statistic', 'pvalue'), xp=xp)
 
+    @skip_xp_backends('cupy', reasons=['cupy/cupy#8391'])
+    @pytest.mark.usefixtures("skip_xp_backends")
     def test_nan(self, xp):
         # nan in input -> nan output (default nan_policy='propagate')
         test_fun = getattr(stats, self.test_name)
@@ -6495,6 +6520,8 @@ class TestKurtosisTest(NormalityTests):
     test_name = 'kurtosistest'
     case_ref = (-0.01403734404759738, 0.98880018772590561)  # statistic, pvalue
 
+    @skip_xp_backends('cupy', reasons=['cupy/cupy#8391'])
+    @pytest.mark.usefixtures("skip_xp_backends")
     def test_intuitive(self, xp):
         # intuitive tests; see gh-13549. excess kurtosis of laplace is 3 > 0
         a2 = stats.laplace.rvs(size=10000, random_state=123)
@@ -6502,6 +6529,8 @@ class TestKurtosisTest(NormalityTests):
         pval = stats.kurtosistest(a2_xp, alternative='greater').pvalue
         xp_assert_close(pval, xp.asarray(0.0, dtype=a2_xp.dtype), atol=1e-15)
 
+    @skip_xp_backends('cupy', reasons=['cupy/cupy#8391'])
+    @pytest.mark.usefixtures("skip_xp_backends")
     def test_gh9033_regression(self, xp):
         # regression test for issue gh-9033: x clearly non-normal but power of
         # negative denom needs to be handled correctly to reject normality
@@ -6510,6 +6539,8 @@ class TestKurtosisTest(NormalityTests):
         x = xp.asarray(x, dtype=xp.float64)
         assert stats.kurtosistest(x)[1] < 0.01
 
+    @skip_xp_backends('cupy', reasons=['cupy/cupy#8391'])
+    @pytest.mark.usefixtures("skip_xp_backends")
     def test_kurtosistest_too_few_observations(self, xp):
         # kurtosistest requires at least 5 observations; 4 should raise a ValueError.
         # At least 20 are needed to avoid warning
@@ -8057,6 +8088,11 @@ class TestKruskal:
             stats.kruskal()
 
 
+@skip_xp_backends(cpu_only=True,
+                  exceptions=['cupy', 'jax.numpy'],
+                  reasons=['Delegation for `special.stdtr` only implemented '
+                           'for CuPy and JAX.'])
+@pytest.mark.usefixtures("skip_xp_backends")
 @array_api_compatible
 class TestCombinePvalues:
     # Reference values computed using the following R code:

@@ -18,7 +18,7 @@ from scipy.signal import (argrelextrema, BadCoefficients, bessel, besselap, bili
                           gammatone, group_delay, iircomb, iirdesign, iirfilter,
                           iirnotch, iirpeak, lp2bp, lp2bs, lp2hp, lp2lp, normalize,
                           medfilt, order_filter,
-                          sos2tf, sos2zpk, sosfreqz, tf2sos, tf2zpk, zpk2sos,
+                          sos2tf, sos2zpk, sosfreqz, freqz_sos, tf2sos, tf2zpk, zpk2sos,
                           zpk2tf, bilinear_zpk, lp2lp_zpk, lp2hp_zpk, lp2bp_zpk,
                           lp2bs_zpk)
 from scipy.signal._filter_design import (_cplxreal, _cplxpair, _norm_factor,
@@ -921,10 +921,10 @@ class TestFreqz:
             freqz([1.0], fs=None)
 
 
-class TestSOSFreqz:
+class Testfreqz_sos:
 
-    def test_sosfreqz_basic(self):
-        # Compare the results of freqz and sosfreqz for a low order
+    def test_freqz_sos_basic(self):
+        # Compare the results of freqz and freqz_sos for a low order
         # Butterworth filter.
 
         N = 500
@@ -932,27 +932,37 @@ class TestSOSFreqz:
         b, a = butter(4, 0.2)
         sos = butter(4, 0.2, output='sos')
         w, h = freqz(b, a, worN=N)
-        w2, h2 = sosfreqz(sos, worN=N)
+        w2, h2 = freqz_sos(sos, worN=N)
         assert_equal(w2, w)
         assert_allclose(h2, h, rtol=1e-10, atol=1e-14)
 
         b, a = ellip(3, 1, 30, (0.2, 0.3), btype='bandpass')
         sos = ellip(3, 1, 30, (0.2, 0.3), btype='bandpass', output='sos')
         w, h = freqz(b, a, worN=N)
-        w2, h2 = sosfreqz(sos, worN=N)
+        w2, h2 = freqz_sos(sos, worN=N)
         assert_equal(w2, w)
         assert_allclose(h2, h, rtol=1e-10, atol=1e-14)
         # must have at least one section
-        assert_raises(ValueError, sosfreqz, sos[:0])
+        assert_raises(ValueError, freqz_sos, sos[:0])
 
-    def test_sosfrez_design(self):
-        # Compare sosfreqz output against expected values for different
+    def test_backward_compat(self):
+        # For backward compatibility, test if None act as a wrapper for default
+        N = 500
+
+        sos = butter(4, 0.2, output='sos')
+        w1, h1 = freqz_sos(sos, worN=N)
+        w2, h2 = sosfreqz(sos, worN=N)
+        assert_array_almost_equal(w1, w2)
+        assert_array_almost_equal(h1, h2)
+
+    def test_freqz_sos_design(self):
+        # Compare freqz_sos output against expected values for different
         # filter types
 
         # from cheb2ord
         N, Wn = cheb2ord([0.1, 0.6], [0.2, 0.5], 3, 60)
         sos = cheby2(N, 60, Wn, 'stop', output='sos')
-        w, h = sosfreqz(sos)
+        w, h = freqz_sos(sos)
         h = np.abs(h)
         w /= np.pi
         assert_allclose(20 * np.log10(h[w <= 0.1]), 0, atol=3.01)
@@ -961,7 +971,7 @@ class TestSOSFreqz:
 
         N, Wn = cheb2ord([0.1, 0.6], [0.2, 0.5], 3, 150)
         sos = cheby2(N, 150, Wn, 'stop', output='sos')
-        w, h = sosfreqz(sos)
+        w, h = freqz_sos(sos)
         dB = 20*np.log10(np.abs(h))
         w /= np.pi
         assert_allclose(dB[w <= 0.1], 0, atol=3.01)
@@ -971,7 +981,7 @@ class TestSOSFreqz:
         # from cheb1ord
         N, Wn = cheb1ord(0.2, 0.3, 3, 40)
         sos = cheby1(N, 3, Wn, 'low', output='sos')
-        w, h = sosfreqz(sos)
+        w, h = freqz_sos(sos)
         h = np.abs(h)
         w /= np.pi
         assert_allclose(20 * np.log10(h[w <= 0.2]), 0, atol=3.01)
@@ -979,7 +989,7 @@ class TestSOSFreqz:
 
         N, Wn = cheb1ord(0.2, 0.3, 1, 150)
         sos = cheby1(N, 1, Wn, 'low', output='sos')
-        w, h = sosfreqz(sos)
+        w, h = freqz_sos(sos)
         dB = 20*np.log10(np.abs(h))
         w /= np.pi
         assert_allclose(dB[w <= 0.2], 0, atol=1.01)
@@ -988,7 +998,7 @@ class TestSOSFreqz:
         # adapted from ellipord
         N, Wn = ellipord(0.3, 0.2, 3, 60)
         sos = ellip(N, 0.3, 60, Wn, 'high', output='sos')
-        w, h = sosfreqz(sos)
+        w, h = freqz_sos(sos)
         h = np.abs(h)
         w /= np.pi
         assert_allclose(20 * np.log10(h[w >= 0.3]), 0, atol=3.01)
@@ -997,7 +1007,7 @@ class TestSOSFreqz:
         # adapted from buttord
         N, Wn = buttord([0.2, 0.5], [0.14, 0.6], 3, 40)
         sos = butter(N, Wn, 'band', output='sos')
-        w, h = sosfreqz(sos)
+        w, h = freqz_sos(sos)
         h = np.abs(h)
         w /= np.pi
         assert_allclose(h[w <= 0.14], 0., atol=1e-2)  # <= -40 dB
@@ -1007,17 +1017,17 @@ class TestSOSFreqz:
 
         N, Wn = buttord([0.2, 0.5], [0.14, 0.6], 3, 100)
         sos = butter(N, Wn, 'band', output='sos')
-        w, h = sosfreqz(sos)
+        w, h = freqz_sos(sos)
         dB = 20*np.log10(np.maximum(np.abs(h), 1e-10))
         w /= np.pi
         assert_array_less(dB[(w > 0) & (w <= 0.14)], -99.9)
         assert_array_less(dB[w >= 0.6], -99.9)
         assert_allclose(dB[(w >= 0.2) & (w <= 0.5)], 0, atol=3.01)
 
-    def test_sosfreqz_design_ellip(self):
+    def test_freqz_sos_design_ellip(self):
         N, Wn = ellipord(0.3, 0.1, 3, 60)
         sos = ellip(N, 0.3, 60, Wn, 'high', output='sos')
-        w, h = sosfreqz(sos)
+        w, h = freqz_sos(sos)
         h = np.abs(h)
         w /= np.pi
         assert_allclose(20 * np.log10(h[w >= 0.3]), 0, atol=3.01)
@@ -1025,7 +1035,7 @@ class TestSOSFreqz:
 
         N, Wn = ellipord(0.3, 0.2, .5, 150)
         sos = ellip(N, .5, 150, Wn, 'high', output='sos')
-        w, h = sosfreqz(sos)
+        w, h = freqz_sos(sos)
         dB = 20*np.log10(np.maximum(np.abs(h), 1e-10))
         w /= np.pi
         assert_allclose(dB[w >= 0.3], 0, atol=.55)
@@ -1034,8 +1044,8 @@ class TestSOSFreqz:
         assert dB[w <= 0.2].max() < -150*(1 - 1e-12)
 
     @mpmath_check("0.10")
-    def test_sos_freqz_against_mp(self):
-        # Compare the result of sosfreqz applied to a high order Butterworth
+    def test_freqz_sos_against_mp(self):
+        # Compare the result of freqz_sos applied to a high order Butterworth
         # filter against the result computed using mpmath.  (signal.freqz fails
         # miserably with such high order filters.)
         from . import mpsig
@@ -1049,7 +1059,7 @@ class TestSOSFreqz:
         h_mp = np.array([complex(x) for x in h_mp])
 
         sos = butter(order, Wn, output='sos')
-        w, h = sosfreqz(sos, worN=N)
+        w, h = freqz_sos(sos, worN=N)
         assert_allclose(w, w_mp, rtol=1e-12, atol=1e-14)
         assert_allclose(h, h_mp, rtol=1e-12, atol=1e-14)
 
@@ -1060,34 +1070,34 @@ class TestSOSFreqz:
                [1.0, 1.0, 0.0, 1.0, -0.9495739996946778, 0.45125966317124144]]
 
         # N = None, whole=False
-        w1, h1 = sosfreqz(sos, fs=fs)
-        w2, h2 = sosfreqz(sos)
+        w1, h1 = freqz_sos(sos, fs=fs)
+        w2, h2 = freqz_sos(sos)
         assert_allclose(h1, h2)
         assert_allclose(w1, np.linspace(0, fs/2, 512, endpoint=False))
 
         # N = None, whole=True
-        w1, h1 = sosfreqz(sos, whole=True, fs=fs)
-        w2, h2 = sosfreqz(sos, whole=True)
+        w1, h1 = freqz_sos(sos, whole=True, fs=fs)
+        w2, h2 = freqz_sos(sos, whole=True)
         assert_allclose(h1, h2, atol=1e-27)
         assert_allclose(w1, np.linspace(0, fs, 512, endpoint=False))
 
         # N = 5, whole=False
-        w1, h1 = sosfreqz(sos, 5, fs=fs)
-        w2, h2 = sosfreqz(sos, 5)
+        w1, h1 = freqz_sos(sos, 5, fs=fs)
+        w2, h2 = freqz_sos(sos, 5)
         assert_allclose(h1, h2)
         assert_allclose(w1, np.linspace(0, fs/2, 5, endpoint=False))
 
         # N = 5, whole=True
-        w1, h1 = sosfreqz(sos, 5, whole=True, fs=fs)
-        w2, h2 = sosfreqz(sos, 5, whole=True)
+        w1, h1 = freqz_sos(sos, 5, whole=True, fs=fs)
+        w2, h2 = freqz_sos(sos, 5, whole=True)
         assert_allclose(h1, h2)
         assert_allclose(w1, np.linspace(0, fs, 5, endpoint=False))
 
         # w is an array_like
         for w in ([123], (123,), np.array([123]), (50, 123, 230),
                   np.array([50, 123, 230])):
-            w1, h1 = sosfreqz(sos, w, fs=fs)
-            w2, h2 = sosfreqz(sos, 2*pi*np.array(w)/fs)
+            w1, h1 = freqz_sos(sos, w, fs=fs)
+            w2, h2 = freqz_sos(sos, 2*pi*np.array(w)/fs)
             assert_allclose(h1, h2)
             assert_allclose(w, w1)
 
@@ -1098,25 +1108,25 @@ class TestSOSFreqz:
                   8, np.int8(8), np.int16(8), np.int32(8), np.int64(8),
                   np.array(8)):
 
-            w, h = sosfreqz([1, 0, 0, 1, 0, 0], worN=N)
+            w, h = freqz_sos([1, 0, 0, 1, 0, 0], worN=N)
             assert_array_almost_equal(w, np.pi * np.arange(N) / N)
             assert_array_almost_equal(h, np.ones(N))
 
-            w, h = sosfreqz([1, 0, 0, 1, 0, 0], worN=N, fs=100)
+            w, h = freqz_sos([1, 0, 0, 1, 0, 0], worN=N, fs=100)
             assert_array_almost_equal(w, np.linspace(0, 50, N, endpoint=False))
             assert_array_almost_equal(h, np.ones(N))
 
         # Measure at frequency 8 Hz
         for w in (8.0, 8.0+0j):
             # Only makes sense when fs is specified
-            w_out, h = sosfreqz([1, 0, 0, 1, 0, 0], worN=w, fs=100)
+            w_out, h = freqz_sos([1, 0, 0, 1, 0, 0], worN=w, fs=100)
             assert_array_almost_equal(w_out, [8])
             assert_array_almost_equal(h, [1])
 
     def test_fs_validation(self):
         sos = butter(4, 0.2, output='sos')
         with pytest.raises(ValueError, match="Sampling.*single scalar"):
-            sosfreqz(sos, fs=np.array([10, 20]))
+            freqz_sos(sos, fs=np.array([10, 20]))
 
 
 class TestFreqz_zpk:
@@ -1912,7 +1922,7 @@ class TestEllipord:
         rs = 1000
         N, Wn = ellipord(wp, ws, rp, rs, False)
         sos = ellip(N, rp, rs, Wn, 'lp', False, output='sos')
-        w, h = sosfreqz(sos)
+        w, h = freqz_sos(sos)
         w /= np.pi
         assert_array_less(-rp - 0.1, dB(h[w <= wp]))
         assert_array_less(dB(h[ws <= w]), -rs + 0.1)

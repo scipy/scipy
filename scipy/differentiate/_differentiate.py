@@ -2,13 +2,14 @@
 import numpy as np
 import scipy._lib._elementwise_iterative_method as eim
 from scipy._lib._util import _RichResult
-from scipy._lib._array_api import array_namespace
+from scipy._lib._array_api import array_namespace, xp_sign
 
 _EERRORINCREASE = -1  # used in differentiate
 
 def _differentiate_iv(func, x, args, tolerances, maxiter, order, initial_step,
                       step_factor, step_direction, preserve_shape, callback):
     # Input validation for `differentiate`
+    xp = array_namespace(x)
 
     if not callable(func):
         raise ValueError('`func` must be callable.')
@@ -24,12 +25,11 @@ def _differentiate_iv(func, x, args, tolerances, maxiter, order, initial_step,
     message = 'Tolerances and step parameters must be non-negative scalars.'
     tols = np.asarray([atol if atol is not None else 1,
                        rtol if rtol is not None else 1,
-                       initial_step, step_factor])
+                       step_factor])
     if (not np.issubdtype(tols.dtype, np.number) or np.any(tols < 0)
-            or np.any(np.isnan(tols)) or tols.shape != (4,)):
+            or np.any(np.isnan(tols)) or tols.shape != (3,)):
         raise ValueError(message)
-    initial_step = float(tols[2])
-    step_factor = float(tols[3])
+    step_factor = float(tols[2])
 
     maxiter_int = int(maxiter)
     if maxiter != maxiter_int or maxiter <= 0:
@@ -39,8 +39,10 @@ def _differentiate_iv(func, x, args, tolerances, maxiter, order, initial_step,
     if order_int != order or order <= 0:
         raise ValueError('`order` must be a positive integer.')
 
-    xp_temp = array_namespace(x)
-    x, step_direction = xp_temp.broadcast_arrays(x, xp_temp.asarray(step_direction))
+    step_direction = xp.asarray(step_direction)
+    initial_step = xp.asarray(initial_step)
+    temp = xp.broadcast_arrays(x, step_direction, initial_step)
+    x, step_direction, initial_step = temp
 
     message = '`preserve_shape` must be True or False.'
     if preserve_shape not in {True, False}:
@@ -99,7 +101,7 @@ def differentiate(f, x, *, args=(), tolerances=None, maxiter=10,
     order : int, default: 8
         The (positive integer) order of the finite difference formula to be
         used. Odd integers will be rounded up to the next even integer.
-    initial_step : float, default: 0.5
+    initial_step : float array_like, default: 0.5
         The (absolute) initial step size for the finite difference derivative
         approximation.
     step_factor : float, default: 2.0
@@ -318,7 +320,7 @@ def differentiate(f, x, *, args=(), tolerances=None, maxiter=10,
     accuracy:
 
     >>> res.nfev
-    array([11, 13, 15, 17])
+    array([11, 13, 15, 17], dtype=int32)
 
     The initial ``shape``, ``(4,)``, corresponds with evaluating the
     function at a single abscissa and all four frequencies; this is used
@@ -363,7 +365,6 @@ def differentiate(f, x, *, args=(), tolerances=None, maxiter=10,
     """
     # TODO (followup):
     #  - investigate behavior at saddle points
-    #  - array initial_step / step_factor?
     #  - multivariate functions?
 
     res = _differentiate_iv(f, x, args, tolerances, maxiter, order, initial_step,
@@ -389,10 +390,14 @@ def differentiate(f, x, *, args=(), tolerances=None, maxiter=10,
     # Ideally we'd broadcast the shape of `hdir` in `_elementwise_algo_init`, but
     # it's simpler to do it here than to generalize `_elementwise_algo_init` further.
     # `hdir` and `x` are already broadcasted in `_differentiate_iv`, so we know
-    # that `hdir` can be broadcasted to the final shape.
-    hdir = xp.astype(xp.sign(hdir), dtype)
+    # that `hdir` can be broadcasted to the final shape. Same with `h0`.
     hdir = xp.broadcast_to(hdir, shape)
     hdir = xp.reshape(hdir, (-1,))
+    hdir = xp.astype(xp_sign(hdir), dtype)
+    h0 = xp.broadcast_to(h0, shape)
+    h0 = xp.reshape(h0, (-1,))
+    h0 = xp.astype(h0, dtype)
+    h0[h0 <= 0] = xp.asarray(xp.nan, dtype=dtype)
 
     status = xp.full_like(x, eim._EINPROGRESS, dtype=xp.int32)  # in progress
     nit, nfev = 0, 1  # one function evaluations performed above
@@ -410,7 +415,7 @@ def differentiate(f, x, *, args=(), tolerances=None, maxiter=10,
     # - `terms` (which could probably use a better name) is half the `order`,
     #   which is always even.
     work = _RichResult(x=x, df=df, fs=f[:, xp.newaxis], error=xp.nan, h=h0,
-                       df_last=xp.nan, error_last=xp.nan, h0=h0, fac=fac,
+                       df_last=xp.nan, error_last=xp.nan, fac=fac,
                        atol=atol, rtol=rtol, nit=nit, nfev=nfev,
                        status=status, dtype=dtype, terms=(order+1)//2,
                        hdir=hdir, il=il, ic=ic, ir=ir, io=io)
@@ -442,28 +447,28 @@ def differentiate(f, x, *, args=(), tolerances=None, maxiter=10,
           steps or no one-sided steps.
         """
         n = work.terms  # half the order
-        h = work.h  # step size
+        h = work.h[:, xp.newaxis]  # step size
         c = work.fac  # step reduction factor
         d = c**0.5  # square root of step reduction factor (one-sided stencil)
         # Note - no need to be careful about dtypes until we allocate `x_eval`
 
         if work.nit == 0:
             hc = h / c**xp.arange(n, dtype=work.dtype)
-            hc = xp.concat((-xp.flip(hc), hc))
+            hc = xp.concat((-xp.flip(hc, axis=-1), hc), axis=-1)
         else:
-            hc = xp.asarray([-h, h]) / c**(n-1)
+            hc = xp.concat((-h, h), axis=-1) / c**(n-1)
 
         if work.nit == 0:
             hr = h / d**xp.arange(2*n, dtype=work.dtype)
         else:
-            hr = xp.asarray([h, h/d]) / c**(n-1)
+            hr = xp.concat((h, h/d), axis=-1) / c**(n-1)
 
         n_new = 2*n if work.nit == 0 else 2  # number of new abscissae
         x_eval = xp.zeros((work.hdir.shape[0], n_new), dtype=work.dtype)
         il, ic, ir = work.il, work.ic, work.ir
-        x_eval[ir] = work.x[ir][:, xp.newaxis] + hr
-        x_eval[ic] = work.x[ic][:, xp.newaxis] + hc
-        x_eval[il] = work.x[il][:, xp.newaxis] - hr
+        x_eval[ir] = work.x[ir][:, xp.newaxis] + hr[ir]
+        x_eval[ic] = work.x[ic][:, xp.newaxis] + hc[ic]
+        x_eval[il] = work.x[il][:, xp.newaxis] - hr[il]
         return x_eval
 
     def post_func_eval(x, f, work):
@@ -518,8 +523,8 @@ def differentiate(f, x, *, args=(), tolerances=None, maxiter=10,
 
         wc, wo = _differentiate_weights(work, n, xp)
         work.df_last = xp.asarray(work.df, copy=True)
-        work.df[ic] = fc @ wc / work.h
-        work.df[io] = fo @ wo / work.h
+        work.df[ic] = fc @ wc / work.h[ic]
+        work.df[io] = fo @ wo / work.h[io]
         work.df[il] *= -1
 
         work.h /= work.fac

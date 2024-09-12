@@ -57,7 +57,7 @@ jobs:
 
       - name: Install packages from conda
         run: |
-          conda install -c conda-forge pkg-config meson=1.4.0 meson-python=0.16.0 ninja openblas libblas=*=*openblas numpy==2.0 cython pybind11 pytest pytest-xdist pytest-timeout pytest-fail-slow pooch rich-click click doit pydevtool hypothesis
+          conda install -c conda-forge pkg-config meson meson-python ninja openblas libblas=*=*openblas numpy==2.0 cython pybind11 pytest pytest-xdist pytest-timeout pytest-fail-slow pooch rich-click click doit pydevtool hypothesis
 
       - name: cache install
         id: cache-install

@@ -241,8 +241,8 @@ def construct_loss_function(m, loss, f_scale):
 def least_squares(
         fun, x0, jac='2-point', bounds=(-np.inf, np.inf), method='trf',
         ftol=1e-8, xtol=1e-8, gtol=1e-8, x_scale=1.0, loss='linear',
-        f_scale=1.0, diff_step=None, tr_solver=None, tr_options={},
-        jac_sparsity=None, max_nfev=None, verbose=0, args=(), kwargs={}):
+        f_scale=1.0, diff_step=None, tr_solver=None, tr_options=None,
+        jac_sparsity=None, max_nfev=None, verbose=0, args=(), kwargs=None):
     """Solve a nonlinear least-squares problem with bounds on the variables.
 
     Given the residuals f(x) (an m-D real function of n real
@@ -826,6 +826,11 @@ def least_squares(
 
     if method == 'trf':
         x0 = make_strictly_feasible(x0, lb, ub)
+
+    if kwargs is None:
+        kwargs = {}
+    if tr_options is None:
+        tr_options = {}
 
     def fun_wrapped(x):
         return np.atleast_1d(fun(x, *args, **kwargs))

@@ -93,6 +93,22 @@ def _inputs_swap_needed(mode, shape1, shape2, axes=None):
     return not ok1
 
 
+def _reject_objects(arr, name):
+    """Warn if arr.dtype is object or longdouble.
+    """
+    dt = np.asarray(arr).dtype
+    if not (np.issubdtype(dt, np.integer)
+            or dt in [np.bool_, np.float16, np.float32, np.float64,
+                      np.complex64, np.complex128]
+    ):
+        msg = (
+            f"dtype={dt} is not supported by {name} and will raise an error in "
+            f"SciPy 1.17.0. Supported dtypes are: boolean, integer, `np.float16`,"
+            f"`np.float32`, `np.float64`, `np.complex64`, `np.complex128`."
+        )
+        warnings.warn(msg, category=DeprecationWarning, stacklevel=3)
+
+
 def correlate(in1, in2, mode='full', method='auto'):
     r"""
     Cross-correlate two N-dimensional arrays.
@@ -229,6 +245,8 @@ def correlate(in1, in2, mode='full', method='auto'):
     """
     in1 = np.asarray(in1)
     in2 = np.asarray(in2)
+    _reject_objects(in1, 'correlate')
+    _reject_objects(in1, 'correlate')
 
     if in1.ndim == in2.ndim == 0:
         return in1 * in2.conj()
@@ -1009,7 +1027,7 @@ def _numeric_arrays(arrays, kinds='buifc'):
         the ndarrays are not in this string the function returns False and
         otherwise returns True.
     """
-    if type(arrays) == np.ndarray:
+    if isinstance(arrays, np.ndarray):
         return arrays.dtype.kind in kinds
     for array_ in arrays:
         if array_.dtype.kind not in kinds:
@@ -1273,6 +1291,9 @@ def choose_conv_method(in1, in2, mode='full', measure=False):
     volume = np.asarray(in1)
     kernel = np.asarray(in2)
 
+    _reject_objects(in1, 'choose_conv_method')
+    _reject_objects(in1, 'choose_conv_method')
+
     if measure:
         times = {}
         for method in ['fft', 'direct']:
@@ -1402,6 +1423,9 @@ def convolve(in1, in2, mode='full', method='auto'):
     volume = np.asarray(in1)
     kernel = np.asarray(in2)
 
+    _reject_objects(volume, 'correlate')
+    _reject_objects(kernel, 'correlate')
+
     if volume.ndim == kernel.ndim == 0:
         return volume * kernel
     elif volume.ndim != kernel.ndim:
@@ -1480,17 +1504,17 @@ def order_filter(a, domain, rank):
            [15, 16, 17, 18, 19],
            [20, 21, 22, 23, 24]])
     >>> signal.order_filter(x, domain, 0)
-    array([[  0.,   0.,   0.,   0.,   0.],
-           [  0.,   0.,   1.,   2.,   0.],
-           [  0.,   5.,   6.,   7.,   0.],
-           [  0.,  10.,  11.,  12.,   0.],
-           [  0.,   0.,   0.,   0.,   0.]])
+    array([[  0,   0,   0,   0,   0],
+           [  0,   0,   1,   2,   0],
+           [  0,   5,   6,   7,   0],
+           [  0,  10,  11,  12,   0],
+           [  0,   0,   0,   0,   0]])
     >>> signal.order_filter(x, domain, 2)
-    array([[  6.,   7.,   8.,   9.,   4.],
-           [ 11.,  12.,  13.,  14.,   9.],
-           [ 16.,  17.,  18.,  19.,  14.],
-           [ 21.,  22.,  23.,  24.,  19.],
-           [ 20.,  21.,  22.,  23.,  24.]])
+    array([[  6,   7,   8,   9,   4],
+           [ 11,  12,  13,  14,   9],
+           [ 16,  17,  18,  19,  14],
+           [ 21,  22,  23,  24,  19],
+           [ 20,  21,  22,  23,  24]])
 
     """
     domain = np.asarray(domain)
@@ -2077,6 +2101,11 @@ def lfilter(b, a, x, axis=-1, zi=None):
     """
     b = np.atleast_1d(b)
     a = np.atleast_1d(a)
+
+    _reject_objects(x, 'lfilter')
+    _reject_objects(a, 'lfilter')
+    _reject_objects(b, 'lfilter')
+
     if len(a) == 1:
         # This path only supports types fdgFDGO to mirror _linear_filter below.
         # Any of b, a, x, or zi can set the dtype, but there is no default
@@ -3376,7 +3405,7 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0),
     n_out = n_in * up
     n_out = n_out // down + bool(n_out % down)
 
-    if isinstance(window, (list, np.ndarray)):
+    if isinstance(window, (list | np.ndarray)):
         window = np.array(window)  # use array to force a copy (we modify it)
         if window.ndim > 1:
             raise ValueError('window must be 1-D')
@@ -4315,7 +4344,7 @@ def sosfilt(sos, x, axis=-1, zi=None):
 
     See Also
     --------
-    zpk2sos, sos2zpk, sosfilt_zi, sosfiltfilt, sosfreqz
+    zpk2sos, sos2zpk, sosfilt_zi, sosfiltfilt, freqz_sos
 
     Notes
     -----
@@ -4432,7 +4461,7 @@ def sosfiltfilt(sos, x, axis=-1, padtype='odd', padlen=None):
 
     See Also
     --------
-    filtfilt, sosfilt, sosfilt_zi, sosfreqz
+    filtfilt, sosfilt, sosfilt_zi, freqz_sos
 
     Notes
     -----

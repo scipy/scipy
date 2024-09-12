@@ -25,18 +25,7 @@ cython_linalg = custom_target('cython_linalg',
   install_dir: py3.get_install_dir() / 'scipy/linalg',
   install_tag: 'devel'
 )
-
-# This dummy custom target is only needed to establish a dependency on
-# cython_linalg in a generator below. Adding that dependency directly yields
-# warnings about multiple outputs. And using `depends: cython_linalg[2]` does
-# not work, because that generator depends does not accept CustomTargetIndex,
-# only CustomTarget. See https://github.com/mesonbuild/meson/issues/9837
-_echo = find_program('../_build_utils/echo.py')
-cython_blas_pxd = custom_target(
-  output: '_dummy_cython_blas.pxd',
-  input: cython_linalg[2],
-  command: [_echo, '@INPUT@'],
-)
+cython_blas_pxd = cython_linalg[2]
 
 # pyx -> c, pyx -> cpp generators, depending on __init__.py here.
 linalg_init_cython_gen = generator(cython,
@@ -216,6 +205,22 @@ _cythonized_array_utils = py3.extension_module('_cythonized_array_utils',
   subdir: 'scipy/linalg'
 )
 
+if use_pythran
+  py3.extension_module('_linalg_pythran',
+    pythran_gen.process('_linalg_pythran.py'),
+    cpp_args: cpp_args_pythran,
+    dependencies: [pythran_dep, np_dep],
+    link_args: version_link_args,
+    install: true,
+    subdir: 'scipy/linalg'
+  )
+else
+  py3.install_sources(
+    ['_linalg_pythran.py'],
+    subdir: 'scipy/linalg'
+  )
+endif
+
 
 python_sources = [
   '__init__.py',
@@ -284,6 +289,8 @@ py3.install_sources(
 #  cython_linalg[2],  # cython_blas.pxd
 #  cython_linalg[3],  # cython_lapack.pxd
 #]
+#py.install_sources(pxd_files)
+
 #custom_target('cython_blas_lapack_pxd',
 #  input : pxd_files,
 #  output : ['cython_blas2.pxd', 'cython_lapack2.pxd'],

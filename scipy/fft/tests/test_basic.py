@@ -9,7 +9,7 @@ from pytest import raises as assert_raises
 import scipy.fft as fft
 from scipy.conftest import array_api_compatible
 from scipy._lib._array_api import (
-    array_namespace, size, xp_assert_close, xp_assert_equal
+    array_namespace, xp_size, xp_assert_close, xp_assert_equal
 )
 
 pytestmark = [array_api_compatible, pytest.mark.usefixtures("skip_xp_backends")]
@@ -123,7 +123,7 @@ class TestFFT:
 
     def test_rfft(self, xp):
         x = xp.asarray(random(29), dtype=xp.float64)
-        for n in [size(x), 2*size(x)]:
+        for n in [xp_size(x), 2*xp_size(x)]:
             for norm in [None, "backward", "ortho", "forward"]:
                 xp_assert_close(fft.rfft(x, n=n, norm=norm),
                                 fft.fft(xp.asarray(x, dtype=xp.complex128),
@@ -285,7 +285,7 @@ class TestFFT:
         x = xp.asarray(random(30), dtype=xp.float64)
         xp_test = array_namespace(x)
         x_norm = xp_test.linalg.vector_norm(x)
-        n = size(x) * 2
+        n = xp_size(x) * 2
         func_pairs = [(fft.rfft, fft.irfft),
                       # hfft: order so the first function takes x.size samples
                       #       (necessary for comparison to x_norm above)
@@ -297,7 +297,7 @@ class TestFFT:
             if forw == fft.fft:
                 x = xp.asarray(x, dtype=xp.complex128)
                 x_norm = xp_test.linalg.vector_norm(x)
-            for n in [size(x), 2*size(x)]:
+            for n in [xp_size(x), 2*xp_size(x)]:
                 for norm in ['backward', 'ortho', 'forward']:
                     tmp = forw(x, n=n, norm=norm)
                     tmp = back(tmp, n=n, norm=norm)
@@ -489,3 +489,13 @@ def test_non_standard_params(func, xp):
         assert_raises(ValueError, func, x, workers=2)
         # `plan` param is not tested since SciPy does not use it currently
         # but should be tested if it comes into use
+
+
+@pytest.mark.parametrize("dtype", ['float32', 'float64'])
+@pytest.mark.parametrize("func", [fft.fft, fft.ifft, fft.irfft,
+                                  fft.fftn, fft.ifftn,
+                                  fft.irfftn, fft.hfft,])
+def test_real_input(func, dtype, xp):
+    x = xp.asarray([1, 2, 3], dtype=getattr(xp, dtype))
+    # func(x) should not raise an exception
+    func(x)

@@ -3,8 +3,9 @@ import pytest
 
 from scipy.conftest import array_api_compatible
 from scipy._lib._array_api import (
-    _GLOBAL_CONFIG, array_namespace, _asarray, copy, xp_assert_equal, is_numpy
+    _GLOBAL_CONFIG, array_namespace, _asarray, xp_copy, xp_assert_equal, is_numpy
 )
+from scipy._lib._array_api_no_0d import xp_assert_equal as xp_assert_equal_no_0d
 import scipy._lib.array_api_compat.numpy as np_compat
 
 skip_xp_backends = pytest.mark.skip_xp_backends
@@ -60,7 +61,7 @@ class TestArrayAPI:
     def test_copy(self, xp):
         for _xp in [xp, None]:
             x = xp.asarray([1, 2, 3])
-            y = copy(x, xp=_xp)
+            y = xp_copy(x, xp=_xp)
             # with numpy we'd want to use np.shared_memory, but that's not specified
             # in the array-api
             x[0] = 10
@@ -82,26 +83,34 @@ class TestArrayAPI:
         x = x if shape else x[()]
         y = np_compat.asarray(1)[()]
 
-        options = dict(check_namespace=True, check_dtype=False, check_shape=False)
+        kwarg_names = ["check_namespace", "check_dtype", "check_shape", "check_0d"]
+        options = dict(zip(kwarg_names, [True, False, False, False]))
         if xp == np:
             xp_assert_equal(x, y, **options)
         else:
             with pytest.raises(AssertionError, match="Namespaces do not match."):
                 xp_assert_equal(x, y, **options)
 
-        options = dict(check_namespace=False, check_dtype=True, check_shape=False)
+        options = dict(zip(kwarg_names, [False, True, False, False]))
         if y.dtype.name in str(x.dtype):
             xp_assert_equal(x, y, **options)
         else:
             with pytest.raises(AssertionError, match="dtypes do not match."):
                 xp_assert_equal(x, y, **options)
 
-        options = dict(check_namespace=False, check_dtype=False, check_shape=True)
+        options = dict(zip(kwarg_names, [False, False, True, False]))
         if x.shape == y.shape:
             xp_assert_equal(x, y, **options)
         else:
             with pytest.raises(AssertionError, match="Shapes do not match."):
-                xp_assert_equal(x, xp.asarray(y), allow_0d=True, **options)
+                xp_assert_equal(x, xp.asarray(y), **options)
+
+        options = dict(zip(kwarg_names, [False, False, False, True]))
+        if is_numpy(xp) and x.shape == y.shape:
+            xp_assert_equal(x, y, **options)
+        elif is_numpy(xp):
+            with pytest.raises(AssertionError, match="Array-ness does not match."):
+                xp_assert_equal(x, y, **options)
 
 
     @array_api_compatible
@@ -109,21 +118,70 @@ class TestArrayAPI:
         if not is_numpy(xp):
             pytest.skip("Scalars only exist in NumPy")
 
-        if is_numpy(xp):
-            # Check default convention: 0d arrays are not allowed
-            message = "Result is a NumPy 0d array. Many SciPy functions..."
-            with pytest.raises(AssertionError, match=message):
-                xp_assert_equal(xp.asarray(0.), xp.float64(0))
-            with pytest.raises(AssertionError, match=message):
-                xp_assert_equal(xp.asarray(0.), xp.asarray(0.))
-            xp_assert_equal(xp.float64(0), xp.asarray(0.))
-            xp_assert_equal(xp.float64(0), xp.float64(0))
+        # identity always passes
+        xp_assert_equal(xp.float64(0), xp.float64(0))
+        xp_assert_equal(xp.asarray(0.), xp.asarray(0.))
+        xp_assert_equal(xp.float64(0), xp.float64(0), check_0d=False)
+        xp_assert_equal(xp.asarray(0.), xp.asarray(0.), check_0d=False)
 
-            # Check `allow_0d`
-            message = "Types do not match:\n..."
-            with pytest.raises(AssertionError, match=message):
-                xp_assert_equal(xp.asarray(0.), xp.float64(0), allow_0d=True)
-            with pytest.raises(AssertionError, match=message):
-                xp_assert_equal(xp.float64(0), xp.asarray(0.), allow_0d=True)
-            xp_assert_equal(xp.float64(0), xp.float64(0), allow_0d=True)
-            xp_assert_equal(xp.asarray(0.), xp.asarray(0.), allow_0d=True)
+        # Check default convention: 0d-arrays are distinguished from scalars
+        message = "Array-ness does not match:.*"
+        with pytest.raises(AssertionError, match=message):
+            xp_assert_equal(xp.asarray(0.), xp.float64(0))
+        with pytest.raises(AssertionError, match=message):
+            xp_assert_equal(xp.float64(0), xp.asarray(0.))
+        with pytest.raises(AssertionError, match=message):
+            xp_assert_equal(xp.asarray(42), xp.int64(42))
+        with pytest.raises(AssertionError, match=message):
+            xp_assert_equal(xp.int64(42), xp.asarray(42))
+
+        # with `check_0d=False`, scalars-vs-0d passes (if values match)
+        xp_assert_equal(xp.asarray(0.), xp.float64(0), check_0d=False)
+        xp_assert_equal(xp.float64(0), xp.asarray(0.), check_0d=False)
+        # also with regular python objects
+        xp_assert_equal(xp.asarray(0.), 0., check_0d=False)
+        xp_assert_equal(0., xp.asarray(0.), check_0d=False)
+        xp_assert_equal(xp.asarray(42), 42, check_0d=False)
+        xp_assert_equal(42, xp.asarray(42), check_0d=False)
+
+        # as an alternative to `check_0d=False`, explicitly expect scalar
+        xp_assert_equal(xp.float64(0), xp.asarray(0.)[()])
+
+
+    @array_api_compatible
+    def test_check_scalar_no_0d(self, xp):
+        if not is_numpy(xp):
+            pytest.skip("Scalars only exist in NumPy")
+
+        # identity passes, if first argument is not 0d (or check_0d=True)
+        xp_assert_equal_no_0d(xp.float64(0), xp.float64(0))
+        xp_assert_equal_no_0d(xp.float64(0), xp.float64(0), check_0d=True)
+        xp_assert_equal_no_0d(xp.asarray(0.), xp.asarray(0.), check_0d=True)
+
+        # by default, 0d values are forbidden as the first argument
+        message = "Result is a NumPy 0d-array.*"
+        with pytest.raises(AssertionError, match=message):
+            xp_assert_equal_no_0d(xp.asarray(0.), xp.asarray(0.))
+        with pytest.raises(AssertionError, match=message):
+            xp_assert_equal_no_0d(xp.asarray(0.), xp.float64(0))
+        with pytest.raises(AssertionError, match=message):
+            xp_assert_equal_no_0d(xp.asarray(42), xp.int64(42))
+
+        # Check default convention: 0d-arrays are NOT distinguished from scalars
+        xp_assert_equal_no_0d(xp.float64(0), xp.asarray(0.))
+        xp_assert_equal_no_0d(xp.int64(42), xp.asarray(42))
+
+        # opt in to 0d-check remains possible
+        message = "Array-ness does not match:.*"
+        with pytest.raises(AssertionError, match=message):
+            xp_assert_equal_no_0d(xp.asarray(0.), xp.float64(0), check_0d=True)
+        with pytest.raises(AssertionError, match=message):
+            xp_assert_equal_no_0d(xp.float64(0), xp.asarray(0.), check_0d=True)
+        with pytest.raises(AssertionError, match=message):
+            xp_assert_equal_no_0d(xp.asarray(42), xp.int64(0), check_0d=True)
+        with pytest.raises(AssertionError, match=message):
+            xp_assert_equal_no_0d(xp.int64(0), xp.asarray(42), check_0d=True)
+
+        # scalars-vs-0d passes (if values match) also with regular python objects
+        xp_assert_equal_no_0d(0., xp.asarray(0.))
+        xp_assert_equal_no_0d(42, xp.asarray(42))

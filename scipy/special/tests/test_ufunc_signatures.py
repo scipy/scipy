@@ -32,7 +32,8 @@ def test_ufunc_signatures(ufunc):
     # For instance sph_harm(0,[0],0,0).dtype == complex64
     # This may be a NumPy bug, but we need to work around it.
     # cf. gh-4895, https://github.com/numpy/numpy/issues/5895"
-    types = set(sig for sig in ufunc.types if not ("l" in sig or "i" in sig))
+    types = set(sig for sig in ufunc.types
+                if not ("l" in sig or "i" in sig or "q" in sig or "p" in sig))
 
     # Generate the full expanded set of signatures which should exist. There
     # should be matching float and double versions of any existing signature.

@@ -8,7 +8,6 @@ import sys
 from functools import partial
 
 import numpy as np
-import numpy.testing
 from numpy.random import RandomState
 from numpy.testing import (assert_array_equal, assert_almost_equal,
                            assert_array_less, assert_array_almost_equal,
@@ -27,9 +26,8 @@ from scipy.stats._axis_nan_policy import (SmallSampleWarning, too_small_nd_omit,
                                           too_small_1d_omit, too_small_1d_not_omit)
 
 from scipy.conftest import array_api_compatible
-from scipy._lib._array_api import (
-    array_namespace,
-    is_numpy,
+from scipy._lib._array_api import array_namespace, is_numpy
+from scipy._lib._array_api_no_0d import (
     xp_assert_close,
     xp_assert_equal,
     xp_assert_less,
@@ -782,6 +780,13 @@ class TestBartlett:
         NaN = xp.asarray(xp.nan)
         xp_assert_equal(res.statistic, NaN)
         xp_assert_equal(res.pvalue, NaN)
+
+    def test_negative_pvalue_gh21152(self, xp):
+        a = xp.asarray([10.1, 10.2, 10.3, 10.4], dtype=xp.float32)
+        b = xp.asarray([10.15, 10.25, 10.35, 10.45], dtype=xp.float32)
+        c = xp.asarray([10.05, 10.15, 10.25, 10.35], dtype=xp.float32)
+        res = stats.bartlett(a, b, c)
+        assert xp.all(res.statistic >= 0)
 
 
 class TestLevene:
@@ -1924,8 +1929,8 @@ class TestPpccMax:
                             -0.71215366521264145, decimal=7)
 
 
+@skip_xp_backends('jax.numpy', reasons=["JAX arrays do not support item assignment"])
 @pytest.mark.usefixtures("skip_xp_backends")
-@skip_xp_backends(cpu_only=True)
 @array_api_compatible
 class TestBoxcox_llf:
 
@@ -2681,6 +2686,7 @@ class TestCircFuncs:
         x = xp.asarray([355, 5, 2, 359, 10, 350, np.nan])
         xp_assert_equal(test_func(x, high=360), xp.asarray(xp.nan))
 
+    @skip_xp_backends('cupy', reasons=['cupy/cupy#8391'])
     @pytest.mark.parametrize("test_func,expected",
                              [(stats.circmean,
                                {None: np.nan, 0: 355.66582264, 1: 0.28725053}),

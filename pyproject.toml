@@ -19,7 +19,7 @@ build-backend = 'mesonpy'
 requires = [
     "meson-python>=0.15.0",
     "Cython>=3.0.8",        # when updating version, also update check in meson.build
-    "pybind11>=2.12.0",     # when updating version, also update check in scipy/meson.build
+    "pybind11>=2.13.1",     # when updating version, also update check in scipy/meson.build
     "pythran>=0.14.0",
 
     # numpy requirement for wheel builds for distribution on PyPI - building
@@ -88,7 +88,7 @@ test = [
     'ninja; sys_platform != "emscripten"',
 ]
 doc = [
-    "sphinx>=5.0.0",
+    "sphinx>=5.0.0,<8.0.0",
     "intersphinx_registry",
     "pydata-sphinx-theme>=0.15.2",
     "sphinx-copybutton",
@@ -98,7 +98,7 @@ doc = [
     "jupytext",
     "myst-nb",
     "pooch",
-    "jupyterlite-sphinx>=0.16.2",
+    "jupyterlite-sphinx>=0.16.5",
     "jupyterlite-pyodide-kernel",
 ]
 dev = [

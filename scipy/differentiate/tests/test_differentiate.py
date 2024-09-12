@@ -5,8 +5,8 @@ from numpy.testing import assert_allclose
 
 from scipy.conftest import array_api_compatible
 import scipy._lib._elementwise_iterative_method as eim
-from scipy._lib._array_api import (xp_assert_close, xp_assert_equal, xp_assert_less,
-                                   is_numpy, is_torch, array_namespace)
+from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal, xp_assert_less
+from scipy._lib._array_api import is_numpy, is_torch, array_namespace
 
 from scipy import stats, optimize, special
 from scipy.differentiate import differentiate, jacobian
@@ -15,9 +15,10 @@ from scipy.differentiate._differentiate import _EERRORINCREASE
 
 @array_api_compatible
 @pytest.mark.usefixtures("skip_xp_backends")
-@pytest.mark.skip_xp_backends('array_api_strict', 'jax.numpy',
+@pytest.mark.skip_xp_backends('array_api_strict', 'jax.numpy', 'cupy',
                               reasons=['Currently uses fancy indexing assignment.',
-                                       'JAX arrays do not support item assignment.'])
+                                       'JAX arrays do not support item assignment.',
+                                       'cupy/cupy#8391',],)
 class TestDifferentiate:
 
     def f(self, x):
@@ -85,13 +86,13 @@ class TestDifferentiate:
 
         ref_nfev = [np.int32(ref.nfev) for ref in refs]
         xp_assert_equal(xp.reshape(res.nfev, (-1,)), xp.asarray(ref_nfev))
-        if not is_numpy(xp):  # can't expect other backends to be exactly the same
-            xp.max(res.nfev) == f.feval
+        if is_numpy(xp):  # can't expect other backends to be exactly the same
+            assert xp.max(res.nfev) == f.feval
 
         ref_nit = [np.int32(ref.nit) for ref in refs]
         xp_assert_equal(xp.reshape(res.nit, (-1,)), xp.asarray(ref_nit))
-        if not is_numpy(xp):  # can't expect other backends to be exactly the same
-            xp.max(res.nit) == f.nit
+        if is_numpy(xp):  # can't expect other backends to be exactly the same
+            assert xp.max(res.nit) == f.nit
 
     def test_flags(self, xp):
         # Test cases that should produce different status flags; show that all
@@ -102,7 +103,7 @@ class TestDifferentiate:
             funcs = [lambda x: x - 2.5,  # converges
                      lambda x: xp.exp(x)*rng.random(),  # error increases
                      lambda x: xp.exp(x),  # reaches maxiter due to order=2
-                     lambda x: xp.full_like(x, xp.nan)[()]]  # stops due to NaN
+                     lambda x: xp.full_like(x, xp.nan)]  # stops due to NaN
             res = [funcs[int(j)](x) for x, j in zip(xs, xp.reshape(js, (-1,)))]
             return xp.stack(res)
         f.nit = 0
@@ -125,7 +126,7 @@ class TestDifferentiate:
             out = [x - 2.5,  # converges
                    xp.exp(x)*rng.random(),  # error increases
                    xp.exp(x),  # reaches maxiter due to order=2
-                   xp.full_like(x, xp.nan)[()]]  # stops due to NaN
+                   xp.full_like(x, xp.nan)]  # stops due to NaN
             return xp.stack(out)
 
         res = differentiate(f, xp.asarray(1, dtype=xp.float64),
@@ -238,6 +239,28 @@ class TestDifferentiate:
         ref = xp.asarray(ref, dtype=xp.asarray(1.).dtype)
         xp_assert_close(res.df, ref)
 
+    def test_initial_step(self, xp):
+        # Test that `initial_step` works as expected and is vectorized
+        def f(x):
+            return xp.exp(x)
+
+        x = xp.asarray(0., dtype=xp.float64)
+        step_direction = xp.asarray([-1, 0, 1])
+        h0 = xp.reshape(xp.logspace(-3, 0, 10), (-1, 1))
+        res = differentiate(f, x, initial_step=h0, order=2, maxiter=1,
+                            step_direction=step_direction)
+        err = xp.abs(res.df - f(x))
+
+        # error should be smaller for smaller step sizes
+        assert xp.all(err[:-1, ...] < err[1:, ...])
+
+        # results of vectorized call should match results with
+        # initial_step taken one at a time
+        for i in range(h0.shape[0]):
+            ref = differentiate(f, x, initial_step=h0[i, 0], order=2, maxiter=1,
+                                step_direction=step_direction)
+            xp_assert_close(res.df[i, :], ref.df, rtol=1e-14)
+
     def test_maxiter_callback(self, xp):
         # Test behavior of `maxiter` parameter and `callback` interface
         x = xp.asarray(0.612814, dtype=xp.float64)
@@ -285,7 +308,7 @@ class TestDifferentiate:
 
         # Test that dtypes are preserved
         dtype = getattr(xp, dtype)
-        x = xp.asarray(x, dtype=dtype)[()]
+        x = xp.asarray(x, dtype=dtype)
 
         def f(x):
             assert x.dtype == dtype
@@ -328,8 +351,6 @@ class TestDifferentiate:
         with pytest.raises(ValueError, match=message):
             differentiate(lambda x: x, one, tolerances=dict(rtol='ekki'))
         with pytest.raises(ValueError, match=message):
-            differentiate(lambda x: x, one, initial_step=None)
-        with pytest.raises(ValueError, match=message):
             differentiate(lambda x: x, one, step_factor=object())
 
         message = '`maxiter` must be a positive integer.'
@@ -366,6 +387,15 @@ class TestDifferentiate:
             res = differentiate(f, xp.asarray(7), tolerances=dict(rtol=1e-10))
             assert res.success
             xp_assert_close(res.df, xp.asarray(99*7.**98))
+
+        # Test invalid step size and direction
+        res = differentiate(xp.exp, xp.asarray(1), step_direction=xp.nan)
+        xp_assert_equal(res.df, xp.asarray(xp.nan))
+        xp_assert_equal(res.status, xp.asarray(-3, dtype=xp.int32))
+
+        res = differentiate(xp.exp, xp.asarray(1), initial_step=0)
+        xp_assert_equal(res.df, xp.asarray(xp.nan))
+        xp_assert_equal(res.status, xp.asarray(-3, dtype=xp.int32))
 
         # Test that if success is achieved in the correct number
         # of iterations if function is a polynomial. Ideally, all polynomials
@@ -516,8 +546,6 @@ class TestJacobian:
             jacobian(func, x, tolerances=dict(atol=-1))
         with pytest.raises(ValueError, match=message):
             jacobian(func, x, tolerances=dict(rtol=-1))
-        with pytest.raises(ValueError, match=message):
-            jacobian(func, x, initial_step=-1)
         with pytest.raises(ValueError, match=message):
             jacobian(func, x, step_factor=-1)
 

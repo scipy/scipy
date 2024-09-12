@@ -722,16 +722,34 @@ class TestCephes:
         p = cephes.ncfdtr(2, 3, 1.5, f)
         assert_allclose(cephes.ncfdtri(2, 3, 1.5, p), f)
 
+    @pytest.mark.xfail(
+        reason=(
+            "ncfdtr uses a Boost math implementation but ncfdtridfd"
+            "inverts the less accurate cdflib implementation of ncfdtr."
+        )
+    )
     def test_ncfdtridfd(self):
         dfd = [1, 2, 3]
         p = cephes.ncfdtr(2, dfd, 0.25, 15)
         assert_allclose(cephes.ncfdtridfd(2, p, 0.25, 15), dfd)
 
+    @pytest.mark.xfail(
+        reason=(
+            "ncfdtr uses a Boost math implementation but ncfdtridfn"
+            "inverts the less accurate cdflib implementation of ncfdtr."
+        )
+    )
     def test_ncfdtridfn(self):
         dfn = [0.1, 1, 2, 3, 1e4]
         p = cephes.ncfdtr(dfn, 2, 0.25, 15)
         assert_allclose(cephes.ncfdtridfn(p, 2, 0.25, 15), dfn, rtol=1e-5)
 
+    @pytest.mark.xfail(
+        reason=(
+            "ncfdtr uses a Boost math implementation but ncfdtrinc"
+            "inverts the less accurate cdflib implementation of ncfdtr."
+        )
+    )
     def test_ncfdtrinc(self):
         nc = [0.5, 1.5, 2.0]
         p = cephes.ncfdtr(2, 3, nc, 15)

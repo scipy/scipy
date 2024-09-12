@@ -5,9 +5,6 @@ Authors:
    Ed Schofield, Nov 2005
    Andrew Straw, April 2008
 
-To run it in its simplest form::
-  nosetests test_optimize.py
-
 """
 import itertools
 import platform
@@ -2422,6 +2419,13 @@ def test_powell_limits():
         return np.exp(x)
 
     optimize.minimize(fun=func, x0=[0.5], method='powell', bounds=bounds)
+
+
+def test_powell_output():
+    funs = [rosen, lambda x: np.array(rosen(x)), lambda x: np.array([rosen(x)])]
+    for fun in funs:
+        res = optimize.minimize(fun, x0=[0.6, 20], method='Powell')
+        assert np.isscalar(res.fun)
 
 
 class TestRosen:

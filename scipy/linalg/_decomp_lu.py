@@ -276,7 +276,7 @@ def lu(a, permute_l=False, overwrite_a=False, check_finite=True,
            [0., 0., 1., 0.]]) # Row index 2
     >>> p, _, _ = lu(A, p_indices=True)
     >>> p
-    array([1, 3, 0, 2])  # as given by row indices above
+    array([1, 3, 0, 2], dtype=int32)  # as given by row indices above
     >>> np.allclose(A, l[p, :] @ u)
     True
 
