@@ -298,8 +298,7 @@ namespace detail {
 
         if (y0 == 0) {
             // Initial guess is correct.
-            std::tuple<double, double, double, double, int> result(x0, x0, y0, y0, 0);
-            return result;
+            return {x0, x0, y0, y0, 0};
         }
 
         double y0_sgn = std::signbit(y0);
