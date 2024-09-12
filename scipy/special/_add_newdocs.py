@@ -4435,10 +4435,10 @@ add_newdoc("gdtrib",
     .. [1] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
     .. [2] Chandrupatla, Tirupathi R.
-        "A new hybrid quadratic/bisection algorithm for finding the zero of a
-        nonlinear function without using derivatives".
-        Advances in Engineering Software, 28(3), 145-149.
-        https://doi.org/10.1016/s0965-9978(96)00051-8
+           "A new hybrid quadratic/bisection algorithm for finding the zero of a
+           nonlinear function without using derivatives".
+           Advances in Engineering Software, 28(3), 145-149.
+           https://doi.org/10.1016/s0965-9978(96)00051-8
 
     Examples
     --------
