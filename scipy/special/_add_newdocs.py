@@ -4430,6 +4430,13 @@ add_newdoc("gdtrib",
     that produces the desired value of `p` using Chandrupatla's bracketing
     root finding algorithm [2]_.
 
+    Note that there are some edge cases where `gdtrib` is extended by taking
+    limits where they are uniquely defined. In particular
+    ``x == 0`` with ``p > 0`` and ``p == 0`` with ``x > 0``.
+    For these edge cases, a numerical result will be returned for
+    ``gdtrib(a, p, x)`` even though ``gdtr(a, gdtrib(a, p, x), x)`` is
+    undefined.
+
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
