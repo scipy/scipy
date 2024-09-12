@@ -280,7 +280,7 @@ def _strict_check(actual, desired, xp, *,
         assert actual.shape == desired.shape, _msg
 
     desired = xp.broadcast_to(desired, actual.shape)
-    return desired
+    return actual, desired
 
 
 def _assert_matching_namespace(actual, desired):
@@ -300,9 +300,13 @@ def xp_assert_equal(actual, desired, *, check_namespace=True, check_dtype=True,
     __tracebackhide__ = True  # Hide traceback for py.test
     if xp is None:
         xp = array_namespace(actual)
-    desired = _strict_check(actual, desired, xp, check_namespace=check_namespace,
-                            check_dtype=check_dtype, check_shape=check_shape,
-                            check_0d=check_0d)
+
+    actual, desired = _strict_check(
+        actual, desired, xp, check_namespace=check_namespace,
+        check_dtype=check_dtype, check_shape=check_shape,
+        check_0d=check_0d
+    )
+
     if is_cupy(xp):
         return xp.testing.assert_array_equal(actual, desired, err_msg=err_msg)
     elif is_torch(xp):
@@ -321,9 +325,12 @@ def xp_assert_close(actual, desired, *, rtol=None, atol=0, check_namespace=True,
     __tracebackhide__ = True  # Hide traceback for py.test
     if xp is None:
         xp = array_namespace(actual)
-    desired = _strict_check(actual, desired, xp, check_namespace=check_namespace,
-                            check_dtype=check_dtype, check_shape=check_shape,
-                            check_0d=check_0d)
+
+    actual, desired = _strict_check(
+        actual, desired, xp,
+        check_namespace=check_namespace, check_dtype=check_dtype,
+        check_shape=check_shape, check_0d=check_0d
+    )
 
     floating = xp.isdtype(actual.dtype, ('real floating', 'complex floating'))
     if rtol is None and floating:
@@ -351,9 +358,13 @@ def xp_assert_less(actual, desired, *, check_namespace=True, check_dtype=True,
     __tracebackhide__ = True  # Hide traceback for py.test
     if xp is None:
         xp = array_namespace(actual)
-    desired = _strict_check(actual, desired, xp, check_namespace=check_namespace,
-                            check_dtype=check_dtype, check_shape=check_shape,
-                            check_0d=check_0d)
+
+    actual, desired = _strict_check(
+        actual, desired, xp, check_namespace=check_namespace,
+        check_dtype=check_dtype, check_shape=check_shape,
+        check_0d=check_0d
+    )
+
     if is_cupy(xp):
         return xp.testing.assert_array_less(actual, desired,
                                             err_msg=err_msg, verbose=verbose)

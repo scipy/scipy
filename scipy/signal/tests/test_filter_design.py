@@ -2,13 +2,15 @@ import warnings
 
 from scipy._lib import _pep440
 import numpy as np
-from numpy.testing import (assert_array_almost_equal,
-                           assert_array_almost_equal_nulp,
-                           assert_array_equal, assert_array_less,
-                           assert_equal, assert_,
-                           assert_allclose, assert_warns, suppress_warnings)
+from numpy.testing import (
+    assert_array_almost_equal_nulp, assert_warns, suppress_warnings
+)
 import pytest
 from pytest import raises as assert_raises
+from scipy._lib._array_api import (
+    xp_assert_close, xp_assert_equal,
+    assert_array_almost_equal,
+)
 
 from numpy import array, spacing, sin, pi, sort, sqrt
 from scipy.signal import (argrelextrema, BadCoefficients, bessel, besselap, bilinear,
@@ -41,25 +43,25 @@ def mpmath_check(min_ver):
 class TestCplxPair:
 
     def test_trivial_input(self):
-        assert_equal(_cplxpair([]).size, 0)
-        assert_equal(_cplxpair(1), 1)
+        assert _cplxpair([]).size == 0
+        assert _cplxpair(1) == 1
 
     def test_output_order(self):
-        assert_allclose(_cplxpair([1+1j, 1-1j]), [1-1j, 1+1j])
+        xp_assert_close(_cplxpair([1+1j, 1-1j]), [1-1j, 1+1j])
 
         a = [1+1j, 1+1j, 1, 1-1j, 1-1j, 2]
         b = [1-1j, 1+1j, 1-1j, 1+1j, 1, 2]
-        assert_allclose(_cplxpair(a), b)
+        xp_assert_close(_cplxpair(a), b)
 
         # points spaced around the unit circle
         z = np.exp(2j*pi*array([4, 3, 5, 2, 6, 1, 0])/7)
         z1 = np.copy(z)
         np.random.shuffle(z)
-        assert_allclose(_cplxpair(z), z1)
+        xp_assert_close(_cplxpair(z), z1)
         np.random.shuffle(z)
-        assert_allclose(_cplxpair(z), z1)
+        xp_assert_close(_cplxpair(z), z1)
         np.random.shuffle(z)
-        assert_allclose(_cplxpair(z), z1)
+        xp_assert_close(_cplxpair(z), z1)
 
         # Should be able to pair up all the conjugates
         x = np.random.rand(10000) + 1j * np.random.rand(10000)
@@ -70,24 +72,24 @@ class TestCplxPair:
         c = _cplxpair(x)
 
         # Every other element of head should be conjugates:
-        assert_allclose(c[0:20000:2], np.conj(c[1:20000:2]))
+        xp_assert_close(c[0:20000:2], np.conj(c[1:20000:2]))
         # Real parts of head should be in sorted order:
-        assert_allclose(c[0:20000:2].real, np.sort(c[0:20000:2].real))
+        xp_assert_close(c[0:20000:2].real, np.sort(c[0:20000:2].real))
         # Tail should be sorted real numbers:
-        assert_allclose(c[20000:], np.sort(c[20000:]))
+        xp_assert_close(c[20000:], np.sort(c[20000:]))
 
     def test_real_integer_input(self):
-        assert_array_equal(_cplxpair([2, 0, 1]), [0, 1, 2])
+        xp_assert_equal(_cplxpair([2, 0, 1]), [0, 1, 2])
 
     def test_tolerances(self):
         eps = spacing(1)
-        assert_allclose(_cplxpair([1j, -1j, 1+1j*eps], tol=2*eps),
+        xp_assert_close(_cplxpair([1j, -1j, 1+1j*eps], tol=2*eps),
                         [-1j, 1j, 1+1j*eps])
 
         # sorting close to 0
-        assert_allclose(_cplxpair([-eps+1j, +eps-1j]), [-1j, +1j])
-        assert_allclose(_cplxpair([+eps+1j, -eps-1j]), [-1j, +1j])
-        assert_allclose(_cplxpair([+1j, -1j]), [-1j, +1j])
+        xp_assert_close(_cplxpair([-eps+1j, +eps-1j]), [-1j, +1j])
+        xp_assert_close(_cplxpair([+eps+1j, -eps-1j]), [-1j, +1j])
+        xp_assert_close(_cplxpair([+1j, -1j]), [-1j, +1j])
 
     def test_unmatched_conjugates(self):
         # 1+2j is unmatched
@@ -111,12 +113,16 @@ class TestCplxPair:
 class TestCplxReal:
 
     def test_trivial_input(self):
-        assert_equal(_cplxreal([]), ([], []))
-        assert_equal(_cplxreal(1), ([], [1]))
+        assert all(x.size == 0 for x in _cplxreal([]))
+
+        x = _cplxreal(1)
+        assert x[0].size == 0
+        xp_assert_equal(x[1], np.asarray([1]))
+
 
     def test_output_order(self):
         zc, zr = _cplxreal(np.roots(array([1, 0, 0, 1])))
-        assert_allclose(np.append(zc, zr), [1/2 + 1j*sin(pi/3), -1])
+        xp_assert_close(np.append(zc, zr), [1/2 + 1j*sin(pi/3), -1])
 
         eps = spacing(1)
 
@@ -127,18 +133,18 @@ class TestCplxReal:
              3+1j, 3+1j, 3+1j, 3-1j, 3-1j, 3-1j,
              2-3j, 2+3j]
         zc, zr = _cplxreal(a)
-        assert_allclose(zc, [1j, 1j, 1j, 1+1j, 1+2j, 2+3j, 2+3j, 3+1j, 3+1j,
+        xp_assert_close(zc, [1j, 1j, 1j, 1+1j, 1+2j, 2+3j, 2+3j, 3+1j, 3+1j,
                              3+1j])
-        assert_allclose(zr, [0, 0, 1, 2, 3, 4])
+        xp_assert_close(zr, [0.0, 0, 1, 2, 3, 4])
 
         z = array([1-eps + 1j, 1+2j, 1-2j, 1+eps - 1j, 1+eps+3j, 1-2*eps-3j,
                    0+1j, 0-1j, 2+4j, 2-4j, 2+3j, 2-3j, 3+7j, 3-7j, 4-eps+1j,
                    4+eps-2j, 4-1j, 4-eps+2j])
 
         zc, zr = _cplxreal(z)
-        assert_allclose(zc, [1j, 1+1j, 1+2j, 1+3j, 2+3j, 2+4j, 3+7j, 4+1j,
+        xp_assert_close(zc, [1j, 1+1j, 1+2j, 1+3j, 2+3j, 2+4j, 3+7j, 4+1j,
                              4+2j])
-        assert_equal(zr, [])
+        xp_assert_equal(zr, np.asarray([]))
 
     def test_unmatched_conjugates(self):
         # 1+2j is unmatched
@@ -156,8 +162,8 @@ class TestCplxReal:
 
     def test_real_integer_input(self):
         zc, zr = _cplxreal([2, 0, 1, 4])
-        assert_array_equal(zc, [])
-        assert_array_equal(zr, [0, 1, 2, 4])
+        xp_assert_equal(zc, [])
+        xp_assert_equal(zr, [0, 1, 2, 4])
 
 
 class TestTf2zpk:
@@ -204,10 +210,10 @@ class TestZpk2Tf:
         # The test for the *type* of the return values is a regression
         # test for ticket #1095. In the case p=[], zpk2tf used to
         # return the scalar 1.0 instead of array([1.0]).
-        assert_array_equal(b, b_r)
-        assert_(isinstance(b, np.ndarray))
-        assert_array_equal(a, a_r)
-        assert_(isinstance(a, np.ndarray))
+        xp_assert_equal(b, b_r)
+        assert isinstance(b, np.ndarray)
+        xp_assert_equal(a, a_r)
+        assert isinstance(a, np.ndarray)
 
 
 class TestSos2Zpk:
@@ -243,9 +249,9 @@ class TestSos2Zpk:
                   -0.1 - 0.538516480713450j, -0.1 + 0.538516480713450j])
         k = 4
         z2, p2, k2 = sos2zpk(sos)
-        assert_allclose(_cplxpair(z2), z)
-        assert_allclose(_cplxpair(p2), p)
-        assert_allclose(k2, k)
+        xp_assert_close(_cplxpair(z2), z)
+        xp_assert_close(_cplxpair(p2), p)
+        assert k2 == k
 
     def test_fewer_zeros(self):
         """Test not the expected number of p/z (effectively at origin)."""
@@ -402,7 +408,7 @@ class TestZpk2Sos:
                     [1, 1.25, 1.5, 1, 0.4, 0.5]]  # MATLAB
             # sos2 = [[4, 8, 12, 1, 0.4, 0.5],
             #         [1, 1.25, 1.5, 1, 0.2, 0.3]]  # octave
-            assert_allclose(sos, sos2, rtol=1e-4, atol=1e-4)
+            xp_assert_close(sos, sos2, rtol=1e-4, atol=1e-4)
 
             z = []
             p = [0.2, -0.5+0.25j, -0.5-0.25j]
@@ -552,7 +558,7 @@ class TestFreqs:
         for N in (8, np.int8(8), np.int16(8), np.int32(8), np.int64(8),
                   np.array(8)):
             w, h = freqs([1.0], [1.0], worN=N)
-            assert_equal(len(w), 8)
+            assert len(w) == 8
             assert_array_almost_equal(h, np.ones(8))
 
         # Measure at frequency 8 rad/sec
@@ -598,8 +604,8 @@ class TestFreqs_zpk:
 
         w1, h1 = freqs(b, a)
         w2, h2 = freqs_zpk(z, p, k)
-        assert_allclose(w1, w2)
-        assert_allclose(h1, h2, rtol=1e-6)
+        xp_assert_close(w1, w2)
+        xp_assert_close(h1, h2, rtol=1e-6)
 
     def test_backward_compat(self):
         # For backward compatibility, test if None act as a wrapper for default
@@ -613,7 +619,7 @@ class TestFreqs_zpk:
         for N in (8, np.int8(8), np.int16(8), np.int32(8), np.int64(8),
                   np.array(8)):
             w, h = freqs_zpk([], [], 1, worN=N)
-            assert_equal(len(w), 8)
+            assert len(w) == 8
             assert_array_almost_equal(h, np.ones(8))
 
         # Measure at frequency 8 rad/sec
@@ -632,7 +638,7 @@ class TestFreqz:
         # requested.
         N = 100000
         w, h = freqz([1.0], worN=N)
-        assert_equal(w.shape, (N,))
+        assert w.shape == (N,)
 
     def test_basic(self):
         w, h = freqz([1.0], worN=8)
@@ -644,9 +650,9 @@ class TestFreqz:
 
         for a in [1, np.ones(2)]:
             w, h = freqz(np.ones(2), a, worN=0)
-            assert_equal(w.shape, (0,))
-            assert_equal(h.shape, (0,))
-            assert_equal(h.dtype, np.dtype('complex128'))
+            assert w.shape == (0,)
+            assert h.shape == (0,)
+            assert h.dtype == np.dtype('complex128')
 
         t = np.linspace(0, 1, 4, endpoint=False)
         for b, a, h_whole in zip(
@@ -759,8 +765,8 @@ class TestFreqz:
                     bk = b[:, k, 0]
                     ak = a[:, 0]
                     ww, hh = freqz(bk, ak, worN=worN, whole=whole)
-                    assert_allclose(ww, w)
-                    assert_allclose(hh, h[k])
+                    xp_assert_close(ww, w)
+                    xp_assert_close(hh, h[k])
 
     def test_broadcasting2(self):
         # Test broadcasting with worN an integer or a 1-D array,
@@ -773,8 +779,8 @@ class TestFreqz:
                 for k in range(b.shape[1]):
                     bk = b[:, k, 0]
                     ww, hh = freqz(bk, worN=worN, whole=whole)
-                    assert_allclose(ww, w)
-                    assert_allclose(hh, h[k])
+                    xp_assert_close(ww, w)
+                    xp_assert_close(hh, h[k])
 
     def test_broadcasting3(self):
         # Test broadcasting where b.shape[-1] is the same length
@@ -785,12 +791,12 @@ class TestFreqz:
         for whole in [False, True]:
             for worN in [N, np.linspace(0, 1, N)]:
                 w, h = freqz(b, worN=worN, whole=whole)
-                assert_equal(w.size, N)
+                assert w.size == N
                 for k in range(N):
                     bk = b[:, k]
                     ww, hh = freqz(bk, worN=w[k], whole=whole)
-                    assert_allclose(ww, w[k])
-                    assert_allclose(hh, h[k])
+                    xp_assert_close(ww, np.asarray(w[k])[None])
+                    xp_assert_close(hh, np.asarray(h[k])[None])
 
     def test_broadcasting4(self):
         # Test broadcasting with worN a 2-D array.
@@ -800,14 +806,14 @@ class TestFreqz:
         for whole in [False, True]:
             for worN in [np.random.rand(6, 7), np.empty((6, 0))]:
                 w, h = freqz(b, a, worN=worN, whole=whole)
-                assert_allclose(w, worN, rtol=1e-14)
-                assert_equal(h.shape, (2,) + worN.shape)
+                xp_assert_close(w, worN, rtol=1e-14)
+                assert h.shape == (2,) + worN.shape
                 for k in range(2):
                     ww, hh = freqz(b[:, k, 0, 0], a[:, k, 0, 0],
                                    worN=worN.ravel(),
                                    whole=whole)
-                    assert_allclose(ww, worN.ravel(), rtol=1e-14)
-                    assert_allclose(hh, h[k, :, :].ravel())
+                    xp_assert_close(ww, worN.ravel(), rtol=1e-14)
+                    xp_assert_close(hh, h[k, :, :].ravel())
 
     def test_backward_compat(self):
         # For backward compatibility, test if None act as a wrapper for default
@@ -826,34 +832,34 @@ class TestFreqz:
         # N = None, whole=False
         w1, h1 = freqz(b, a, fs=fs)
         w2, h2 = freqz(b, a)
-        assert_allclose(h1, h2)
-        assert_allclose(w1, np.linspace(0, fs/2, 512, endpoint=False))
+        xp_assert_close(h1, h2)
+        xp_assert_close(w1, np.linspace(0, fs/2, 512, endpoint=False))
 
         # N = None, whole=True
         w1, h1 = freqz(b, a, whole=True, fs=fs)
         w2, h2 = freqz(b, a, whole=True)
-        assert_allclose(h1, h2)
-        assert_allclose(w1, np.linspace(0, fs, 512, endpoint=False))
+        xp_assert_close(h1, h2)
+        xp_assert_close(w1, np.linspace(0, fs, 512, endpoint=False))
 
         # N = 5, whole=False
         w1, h1 = freqz(b, a, 5, fs=fs)
         w2, h2 = freqz(b, a, 5)
-        assert_allclose(h1, h2)
-        assert_allclose(w1, np.linspace(0, fs/2, 5, endpoint=False))
+        xp_assert_close(h1, h2)
+        xp_assert_close(w1, np.linspace(0, fs/2, 5, endpoint=False))
 
         # N = 5, whole=True
         w1, h1 = freqz(b, a, 5, whole=True, fs=fs)
         w2, h2 = freqz(b, a, 5, whole=True)
-        assert_allclose(h1, h2)
-        assert_allclose(w1, np.linspace(0, fs, 5, endpoint=False))
+        xp_assert_close(h1, h2)
+        xp_assert_close(w1, np.linspace(0, fs, 5, endpoint=False))
 
         # w is an array_like
         for w in ([123], (123,), np.array([123]), (50, 123, 230),
                   np.array([50, 123, 230])):
             w1, h1 = freqz(b, a, w, fs=fs)
             w2, h2 = freqz(b, a, 2*pi*np.array(w)/fs)
-            assert_allclose(h1, h2)
-            assert_allclose(w, w1)
+            xp_assert_close(h1, h2)
+            xp_assert_close(w, w1, check_dtype=False)
 
     def test_w_or_N_types(self):
         # Measure at 7 (polyval) or 8 (fft) equally-spaced points
@@ -887,9 +893,9 @@ class TestFreqz:
 
         for a in [1, np.ones(2)]:
             w, h = freqz(np.ones(2), a, worN=0, include_nyquist=True)
-            assert_equal(w.shape, (0,))
-            assert_equal(h.shape, (0,))
-            assert_equal(h.dtype, np.dtype('complex128'))
+            assert w.shape == (0,)
+            assert h.shape == (0,)
+            assert h.dtype == np.dtype('complex128')
 
         w1, h1 = freqz([1.0], worN=8, whole = True, include_nyquist=True)
         w2, h2 = freqz([1.0], worN=8, whole = True, include_nyquist=False)
@@ -911,7 +917,7 @@ class TestFreqz:
         d = [0, 1]
         w, Drfft = freqz(d, worN=32, whole=whole, include_nyquist=nyquist)
         _, Dpoly = freqz(d, worN=w)
-        assert_allclose(Drfft, Dpoly)
+        xp_assert_close(Drfft, Dpoly)
 
     def test_fs_validation(self):
         with pytest.raises(ValueError, match="Sampling.*single scalar"):
@@ -933,15 +939,15 @@ class Testfreqz_sos:
         sos = butter(4, 0.2, output='sos')
         w, h = freqz(b, a, worN=N)
         w2, h2 = freqz_sos(sos, worN=N)
-        assert_equal(w2, w)
-        assert_allclose(h2, h, rtol=1e-10, atol=1e-14)
+        xp_assert_equal(w2, w)
+        xp_assert_close(h2, h, rtol=1e-10, atol=1e-14)
 
         b, a = ellip(3, 1, 30, (0.2, 0.3), btype='bandpass')
         sos = ellip(3, 1, 30, (0.2, 0.3), btype='bandpass', output='sos')
         w, h = freqz(b, a, worN=N)
         w2, h2 = freqz_sos(sos, worN=N)
-        assert_equal(w2, w)
-        assert_allclose(h2, h, rtol=1e-10, atol=1e-14)
+        xp_assert_equal(w2, w)
+        xp_assert_close(h2, h, rtol=1e-10, atol=1e-14)
         # must have at least one section
         assert_raises(ValueError, freqz_sos, sos[:0])
 
@@ -965,18 +971,22 @@ class Testfreqz_sos:
         w, h = freqz_sos(sos)
         h = np.abs(h)
         w /= np.pi
-        assert_allclose(20 * np.log10(h[w <= 0.1]), 0, atol=3.01)
-        assert_allclose(20 * np.log10(h[w >= 0.6]), 0., atol=3.01)
-        assert_allclose(h[(w >= 0.2) & (w <= 0.5)], 0., atol=1e-3)  # <= -60 dB
+        xp_assert_close(20 * np.log10(h[w <= 0.1]), np.asarray(0.), atol=3.01,
+                        check_shape=False)
+        xp_assert_close(20 * np.log10(h[w >= 0.6]), np.asarray(0.), atol=3.01,
+                        check_shape=False)
+        xp_assert_close(h[(w >= 0.2) & (w <= 0.5)],
+                        np.asarray(0.), atol=1e-3,
+                        check_shape=False)  # <= -60 dB
 
         N, Wn = cheb2ord([0.1, 0.6], [0.2, 0.5], 3, 150)
         sos = cheby2(N, 150, Wn, 'stop', output='sos')
         w, h = freqz_sos(sos)
         dB = 20*np.log10(np.abs(h))
         w /= np.pi
-        assert_allclose(dB[w <= 0.1], 0, atol=3.01)
-        assert_allclose(dB[w >= 0.6], 0., atol=3.01)
-        assert_array_less(dB[(w >= 0.2) & (w <= 0.5)], -149.9)
+        xp_assert_close(dB[w <= 0.1], np.asarray(0.0), atol=3.01, check_shape=False)
+        xp_assert_close(dB[w >= 0.6], np.asarray(0.0), atol=3.01, check_shape=False)
+        assert np.all(dB[(w >= 0.2) & (w <= 0.5)] < -149.9)
 
         # from cheb1ord
         N, Wn = cheb1ord(0.2, 0.3, 3, 40)
@@ -984,16 +994,19 @@ class Testfreqz_sos:
         w, h = freqz_sos(sos)
         h = np.abs(h)
         w /= np.pi
-        assert_allclose(20 * np.log10(h[w <= 0.2]), 0, atol=3.01)
-        assert_allclose(h[w >= 0.3], 0., atol=1e-2)  # <= -40 dB
+        xp_assert_close(20 * np.log10(h[w <= 0.2]), np.asarray(0.0), atol=3.01,
+                        check_shape=False)
+        xp_assert_close(h[w >= 0.3], np.asarray(0.0), atol=1e-2,
+                        check_shape=False)  # <= -40 dB
 
         N, Wn = cheb1ord(0.2, 0.3, 1, 150)
         sos = cheby1(N, 1, Wn, 'low', output='sos')
         w, h = freqz_sos(sos)
         dB = 20*np.log10(np.abs(h))
         w /= np.pi
-        assert_allclose(dB[w <= 0.2], 0, atol=1.01)
-        assert_array_less(dB[w >= 0.3], -149.9)
+        xp_assert_close(dB[w <= 0.2], np.asarray(0.0), atol=1.01,
+                        check_shape=False)
+        assert np.all(dB[w >= 0.3] < -149.9)
 
         # adapted from ellipord
         N, Wn = ellipord(0.3, 0.2, 3, 60)
@@ -1001,8 +1014,10 @@ class Testfreqz_sos:
         w, h = freqz_sos(sos)
         h = np.abs(h)
         w /= np.pi
-        assert_allclose(20 * np.log10(h[w >= 0.3]), 0, atol=3.01)
-        assert_allclose(h[w <= 0.1], 0., atol=1.5e-3)  # <= -60 dB (approx)
+        xp_assert_close(20 * np.log10(h[w >= 0.3]), np.asarray(0.0), atol=3.01,
+                        check_shape=False)
+        xp_assert_close(h[w <= 0.1], np.asarray(0.0), atol=1.5e-3,
+                        check_shape=False)  # <= -60 dB (approx)
 
         # adapted from buttord
         N, Wn = buttord([0.2, 0.5], [0.14, 0.6], 3, 40)
@@ -1010,19 +1025,24 @@ class Testfreqz_sos:
         w, h = freqz_sos(sos)
         h = np.abs(h)
         w /= np.pi
-        assert_allclose(h[w <= 0.14], 0., atol=1e-2)  # <= -40 dB
-        assert_allclose(h[w >= 0.6], 0., atol=1e-2)  # <= -40 dB
-        assert_allclose(20 * np.log10(h[(w >= 0.2) & (w <= 0.5)]),
-                        0, atol=3.01)
+
+        h014 = h[w <= 0.14]
+        xp_assert_close(h014, np.zeros_like(h014), atol=1e-2)  # <= -40 dB
+        h06 = h[w >= 0.6]
+        xp_assert_close(h06, np.zeros_like(h06), atol=1e-2)  # <= -40 dB
+        h0205 = 20 * np.log10(h[(w >= 0.2) & (w <= 0.5)])
+        xp_assert_close(h0205, np.zeros_like(h0205), atol=3.01)
 
         N, Wn = buttord([0.2, 0.5], [0.14, 0.6], 3, 100)
         sos = butter(N, Wn, 'band', output='sos')
         w, h = freqz_sos(sos)
         dB = 20*np.log10(np.maximum(np.abs(h), 1e-10))
         w /= np.pi
-        assert_array_less(dB[(w > 0) & (w <= 0.14)], -99.9)
-        assert_array_less(dB[w >= 0.6], -99.9)
-        assert_allclose(dB[(w >= 0.2) & (w <= 0.5)], 0, atol=3.01)
+
+        assert np.all(dB[(w > 0) & (w <= 0.14)] < -99.9)
+        assert np.all(dB[w >= 0.6] < -99.9)
+        db0205 = dB[(w >= 0.2) & (w <= 0.5)]
+        xp_assert_close(db0205, np.zeros_like(db0205), atol=3.01)
 
     def test_freqz_sos_design_ellip(self):
         N, Wn = ellipord(0.3, 0.1, 3, 60)
@@ -1030,15 +1050,20 @@ class Testfreqz_sos:
         w, h = freqz_sos(sos)
         h = np.abs(h)
         w /= np.pi
-        assert_allclose(20 * np.log10(h[w >= 0.3]), 0, atol=3.01)
-        assert_allclose(h[w <= 0.1], 0., atol=1.5e-3)  # <= -60 dB (approx)
+
+        h03 = 20 * np.log10(h[w >= 0.3])
+        xp_assert_close(h03, np.zeros_like(h03), atol=3.01)
+        h01 = h[w <= 0.1]
+        xp_assert_close(h01, np.zeros_like(h01), atol=1.5e-3)  # <= -60 dB (approx)
 
         N, Wn = ellipord(0.3, 0.2, .5, 150)
         sos = ellip(N, .5, 150, Wn, 'high', output='sos')
         w, h = freqz_sos(sos)
         dB = 20*np.log10(np.maximum(np.abs(h), 1e-10))
         w /= np.pi
-        assert_allclose(dB[w >= 0.3], 0, atol=.55)
+
+        db03 = dB[w >= 0.3]
+        xp_assert_close(db03, np.zeros_like(db03), atol=.55)
         # Allow some numerical slop in the upper bound -150, so this is
         # a check that dB[w <= 0.2] is less than or almost equal to -150.
         assert dB[w <= 0.2].max() < -150*(1 - 1e-12)
@@ -1060,8 +1085,8 @@ class Testfreqz_sos:
 
         sos = butter(order, Wn, output='sos')
         w, h = freqz_sos(sos, worN=N)
-        assert_allclose(w, w_mp, rtol=1e-12, atol=1e-14)
-        assert_allclose(h, h_mp, rtol=1e-12, atol=1e-14)
+        xp_assert_close(w, w_mp, rtol=1e-12, atol=1e-14)
+        xp_assert_close(h, h_mp, rtol=1e-12, atol=1e-14)
 
     def test_fs_param(self):
         fs = 900
@@ -1072,34 +1097,34 @@ class Testfreqz_sos:
         # N = None, whole=False
         w1, h1 = freqz_sos(sos, fs=fs)
         w2, h2 = freqz_sos(sos)
-        assert_allclose(h1, h2)
-        assert_allclose(w1, np.linspace(0, fs/2, 512, endpoint=False))
+        xp_assert_close(h1, h2)
+        xp_assert_close(w1, np.linspace(0, fs/2, 512, endpoint=False))
 
         # N = None, whole=True
         w1, h1 = freqz_sos(sos, whole=True, fs=fs)
         w2, h2 = freqz_sos(sos, whole=True)
-        assert_allclose(h1, h2, atol=1e-27)
-        assert_allclose(w1, np.linspace(0, fs, 512, endpoint=False))
+        xp_assert_close(h1, h2, atol=1e-27)
+        xp_assert_close(w1, np.linspace(0, fs, 512, endpoint=False))
 
         # N = 5, whole=False
         w1, h1 = freqz_sos(sos, 5, fs=fs)
         w2, h2 = freqz_sos(sos, 5)
-        assert_allclose(h1, h2)
-        assert_allclose(w1, np.linspace(0, fs/2, 5, endpoint=False))
+        xp_assert_close(h1, h2)
+        xp_assert_close(w1, np.linspace(0, fs/2, 5, endpoint=False))
 
         # N = 5, whole=True
         w1, h1 = freqz_sos(sos, 5, whole=True, fs=fs)
         w2, h2 = freqz_sos(sos, 5, whole=True)
-        assert_allclose(h1, h2)
-        assert_allclose(w1, np.linspace(0, fs, 5, endpoint=False))
+        xp_assert_close(h1, h2)
+        xp_assert_close(w1, np.linspace(0, fs, 5, endpoint=False))
 
         # w is an array_like
         for w in ([123], (123,), np.array([123]), (50, 123, 230),
                   np.array([50, 123, 230])):
             w1, h1 = freqz_sos(sos, w, fs=fs)
             w2, h2 = freqz_sos(sos, 2*pi*np.array(w)/fs)
-            assert_allclose(h1, h2)
-            assert_allclose(w, w1)
+            xp_assert_close(h1, h2)
+            xp_assert_close(w, w1, check_dtype=False)
 
     def test_w_or_N_types(self):
         # Measure at 7 (polyval) or 8 (fft) equally-spaced points
@@ -1138,7 +1163,7 @@ class TestFreqz_zpk:
         # requested.
         N = 100000
         w, h = freqz_zpk([0.5], [0.5], 1.0, worN=N)
-        assert_equal(w.shape, (N,))
+        assert w.shape == (N,)
 
     def test_basic(self):
         w, h = freqz_zpk([0.5], [0.5], 1.0, worN=8)
@@ -1156,8 +1181,8 @@ class TestFreqz_zpk:
 
         w1, h1 = freqz(b, a)
         w2, h2 = freqz_zpk(z, p, k)
-        assert_allclose(w1, w2)
-        assert_allclose(h1, h2, rtol=1e-6)
+        xp_assert_close(w1, w2)
+        xp_assert_close(h1, h2, rtol=1e-6)
 
     def test_backward_compat(self):
         # For backward compatibility, test if None act as a wrapper for default
@@ -1176,34 +1201,34 @@ class TestFreqz_zpk:
         # N = None, whole=False
         w1, h1 = freqz_zpk(z, p, k, whole=False, fs=fs)
         w2, h2 = freqz_zpk(z, p, k, whole=False)
-        assert_allclose(h1, h2)
-        assert_allclose(w1, np.linspace(0, fs/2, 512, endpoint=False))
+        xp_assert_close(h1, h2)
+        xp_assert_close(w1, np.linspace(0, fs/2, 512, endpoint=False))
 
         # N = None, whole=True
         w1, h1 = freqz_zpk(z, p, k, whole=True, fs=fs)
         w2, h2 = freqz_zpk(z, p, k, whole=True)
-        assert_allclose(h1, h2)
-        assert_allclose(w1, np.linspace(0, fs, 512, endpoint=False))
+        xp_assert_close(h1, h2)
+        xp_assert_close(w1, np.linspace(0, fs, 512, endpoint=False))
 
         # N = 5, whole=False
         w1, h1 = freqz_zpk(z, p, k, 5, fs=fs)
         w2, h2 = freqz_zpk(z, p, k, 5)
-        assert_allclose(h1, h2)
-        assert_allclose(w1, np.linspace(0, fs/2, 5, endpoint=False))
+        xp_assert_close(h1, h2)
+        xp_assert_close(w1, np.linspace(0, fs/2, 5, endpoint=False))
 
         # N = 5, whole=True
         w1, h1 = freqz_zpk(z, p, k, 5, whole=True, fs=fs)
         w2, h2 = freqz_zpk(z, p, k, 5, whole=True)
-        assert_allclose(h1, h2)
-        assert_allclose(w1, np.linspace(0, fs, 5, endpoint=False))
+        xp_assert_close(h1, h2)
+        xp_assert_close(w1, np.linspace(0, fs, 5, endpoint=False))
 
         # w is an array_like
         for w in ([123], (123,), np.array([123]), (50, 123, 230),
                   np.array([50, 123, 230])):
             w1, h1 = freqz_zpk(z, p, k, w, fs=fs)
             w2, h2 = freqz_zpk(z, p, k, 2*pi*np.array(w)/fs)
-            assert_allclose(h1, h2)
-            assert_allclose(w, w1)
+            xp_assert_close(h1, h2)
+            xp_assert_close(w, w1, check_dtype=False)
 
     def test_w_or_N_types(self):
         # Measure at 8 equally-spaced points
@@ -1308,8 +1333,8 @@ class TestLp2hp:
         b = [0.25059432325190018]
         a = [1, 0.59724041654134863, 0.92834805757524175, 0.25059432325190018]
         b_hp, a_hp = lp2hp(b, a, 2*np.pi*5000)
-        assert_allclose(b_hp, [1, 0, 0, 0])
-        assert_allclose(a_hp, [1, 1.1638e5, 2.3522e9, 1.2373e14], rtol=1e-4)
+        xp_assert_close(b_hp, [1.0, 0, 0, 0])
+        xp_assert_close(a_hp, [1, 1.1638e5, 2.3522e9, 1.2373e14], rtol=1e-4)
 
 
 class TestLp2bp:
@@ -1318,8 +1343,8 @@ class TestLp2bp:
         b = [1]
         a = [1, 2, 2, 1]
         b_bp, a_bp = lp2bp(b, a, 2*np.pi*4000, 2*np.pi*2000)
-        assert_allclose(b_bp, [1.9844e12, 0, 0, 0], rtol=1e-6)
-        assert_allclose(a_bp, [1, 2.5133e4, 2.2108e9, 3.3735e13,
+        xp_assert_close(b_bp, [1.9844e12, 0, 0, 0], rtol=1e-6)
+        xp_assert_close(a_bp, [1, 2.5133e4, 2.2108e9, 3.3735e13,
                                1.3965e18, 1.0028e22, 2.5202e26], rtol=1e-4)
 
 
@@ -1368,18 +1393,18 @@ class TestLp2lp_zpk:
         p = [(-1+1j)/np.sqrt(2), (-1-1j)/np.sqrt(2)]
         k = 1
         z_lp, p_lp, k_lp = lp2lp_zpk(z, p, k, 5)
-        assert_array_equal(z_lp, [])
-        assert_allclose(sort(p_lp), sort(p)*5)
-        assert_allclose(k_lp, 25)
+        xp_assert_equal(z_lp, [])
+        xp_assert_close(sort(p_lp), sort(p)*5)
+        xp_assert_close(k_lp, 25.)
 
         # Pseudo-Chebyshev with both poles and zeros
         z = [-2j, +2j]
         p = [-0.75, -0.5-0.5j, -0.5+0.5j]
         k = 3
         z_lp, p_lp, k_lp = lp2lp_zpk(z, p, k, 20)
-        assert_allclose(sort(z_lp), sort([-40j, +40j]))
-        assert_allclose(sort(p_lp), sort([-15, -10-10j, -10+10j]))
-        assert_allclose(k_lp, 60)
+        xp_assert_close(sort(z_lp), sort([-40j, +40j]))
+        xp_assert_close(sort(p_lp), sort([-15, -10-10j, -10+10j]))
+        xp_assert_close(k_lp, 60.)
 
     def test_fs_validation(self):
         z = [-2j, +2j]
@@ -1401,17 +1426,17 @@ class TestLp2hp_zpk:
         k = 1
 
         z_hp, p_hp, k_hp = lp2hp_zpk(z, p, k, 5)
-        assert_array_equal(z_hp, [0, 0])
-        assert_allclose(sort(p_hp), sort(p)*5)
-        assert_allclose(k_hp, 1)
+        xp_assert_equal(z_hp, np.asarray([0.0, 0.0]))
+        xp_assert_close(sort(p_hp), sort(p)*5)
+        xp_assert_close(k_hp, 1.0)
 
         z = [-2j, +2j]
         p = [-0.75, -0.5-0.5j, -0.5+0.5j]
         k = 3
         z_hp, p_hp, k_hp = lp2hp_zpk(z, p, k, 6)
-        assert_allclose(sort(z_hp), sort([-3j, 0, +3j]))
-        assert_allclose(sort(p_hp), sort([-8, -6-6j, -6+6j]))
-        assert_allclose(k_hp, 32)
+        xp_assert_close(sort(z_hp), sort([-3j, 0, +3j]))
+        xp_assert_close(sort(p_hp), sort([-8, -6-6j, -6+6j]))
+        xp_assert_close(k_hp, 32.0)
 
 
 class TestLp2bp_zpk:
@@ -1421,14 +1446,14 @@ class TestLp2bp_zpk:
         p = [-0.75, -0.5-0.5j, -0.5+0.5j]
         k = 3
         z_bp, p_bp, k_bp = lp2bp_zpk(z, p, k, 15, 8)
-        assert_allclose(sort(z_bp), sort([-25j, -9j, 0, +9j, +25j]))
-        assert_allclose(sort(p_bp), sort([-3 + 6j*sqrt(6),
+        xp_assert_close(sort(z_bp), sort([-25j, -9j, 0, +9j, +25j]))
+        xp_assert_close(sort(p_bp), sort([-3 + 6j*sqrt(6),
                                           -3 - 6j*sqrt(6),
                                           +2j+sqrt(-8j-225)-2,
                                           -2j+sqrt(+8j-225)-2,
                                           +2j-sqrt(-8j-225)-2,
                                           -2j-sqrt(+8j-225)-2, ]))
-        assert_allclose(k_bp, 24)
+        xp_assert_close(k_bp, 24.0)
 
 
 class TestLp2bs_zpk:
@@ -1440,18 +1465,18 @@ class TestLp2bs_zpk:
 
         z_bs, p_bs, k_bs = lp2bs_zpk(z, p, k, 35, 12)
 
-        assert_allclose(sort(z_bs), sort([+35j, -35j,
+        xp_assert_close(sort(z_bs), sort([+35j, -35j,
                                           +3j+sqrt(1234)*1j,
                                           -3j+sqrt(1234)*1j,
                                           +3j-sqrt(1234)*1j,
                                           -3j-sqrt(1234)*1j]))
-        assert_allclose(sort(p_bs), sort([+3j*sqrt(129) - 8,
+        xp_assert_close(sort(p_bs), sort([+3j*sqrt(129) - 8,
                                           -3j*sqrt(129) - 8,
                                           (-6 + 6j) - sqrt(-1225 - 72j),
                                           (-6 - 6j) - sqrt(-1225 + 72j),
                                           (-6 + 6j) + sqrt(-1225 - 72j),
                                           (-6 - 6j) + sqrt(-1225 + 72j), ]))
-        assert_allclose(k_bs, 32)
+        xp_assert_close(k_bs, 32.0)
 
 
 class TestBilinear_zpk:
@@ -1463,12 +1488,12 @@ class TestBilinear_zpk:
 
         z_d, p_d, k_d = bilinear_zpk(z, p, k, 10)
 
-        assert_allclose(sort(z_d), sort([(20-2j)/(20+2j), (20+2j)/(20-2j),
+        xp_assert_close(sort(z_d), sort([(20-2j)/(20+2j), (20+2j)/(20-2j),
                                          -1]))
-        assert_allclose(sort(p_d), sort([77/83,
+        xp_assert_close(sort(p_d), sort([77/83,
                                          (1j/2 + 39/2) / (41/2 - 1j/2),
                                          (39/2 - 1j/2) / (1j/2 + 41/2), ]))
-        assert_allclose(k_d, 9696/69803)
+        xp_assert_close(k_d, 9696/69803)
 
 
 class TestPrototypeType:
@@ -1483,8 +1508,8 @@ class TestPrototypeType:
                      lambda N: ellipap(N, 1, 20)):
             for N in range(7):
                 z, p, k = func(N)
-                assert_(isinstance(z, np.ndarray))
-                assert_(isinstance(p, np.ndarray))
+                assert isinstance(z, np.ndarray)
+                assert isinstance(p, np.ndarray)
 
 
 def dB(x):
@@ -1504,11 +1529,12 @@ class TestButtord:
         b, a = butter(N, Wn, 'lowpass', False)
         w, h = freqz(b, a)
         w /= np.pi
-        assert_array_less(-rp, dB(h[w <= wp]))
-        assert_array_less(dB(h[ws <= w]), -rs)
+        assert np.all(-rp < dB(h[w <= wp]))
+        assert np.all(dB(h[ws <= w]) < -rs)
 
-        assert_equal(N, 16)
-        assert_allclose(Wn, 2.0002776782743284e-01, rtol=1e-15)
+        assert N == 16
+        xp_assert_close(Wn,
+                        2.0002776782743284e-01, rtol=1e-15)
 
     def test_highpass(self):
         wp = 0.3
@@ -1519,11 +1545,12 @@ class TestButtord:
         b, a = butter(N, Wn, 'highpass', False)
         w, h = freqz(b, a)
         w /= np.pi
-        assert_array_less(-rp, dB(h[wp <= w]))
-        assert_array_less(dB(h[w <= ws]), -rs)
+        assert np.all(-rp < dB(h[wp <= w]))
+        assert np.all(dB(h[w <= ws]) < -rs)
 
-        assert_equal(N, 18)
-        assert_allclose(Wn, 2.9996603079132672e-01, rtol=1e-15)
+        assert N == 18
+        xp_assert_close(Wn,
+                        2.9996603079132672e-01, rtol=1e-15)
 
     def test_bandpass(self):
         wp = [0.2, 0.5]
@@ -1534,13 +1561,13 @@ class TestButtord:
         b, a = butter(N, Wn, 'bandpass', False)
         w, h = freqz(b, a)
         w /= np.pi
-        assert_array_less(-rp - 0.1,
-                          dB(h[np.logical_and(wp[0] <= w, w <= wp[1])]))
-        assert_array_less(dB(h[np.logical_or(w <= ws[0], ws[1] <= w)]),
-                          -rs + 0.1)
+ 
+        assert np.all((-rp - 0.1) < dB(h[np.logical_and(wp[0] <= w, w <= wp[1])]))
 
-        assert_equal(N, 18)
-        assert_allclose(Wn, [1.9998742411409134e-01, 5.0002139595676276e-01],
+        assert np.all(dB(h[np.logical_or(w <= ws[0], ws[1] <= w)]) < (-rs + 0.1))
+
+        assert N == 18
+        xp_assert_close(Wn, [1.9998742411409134e-01, 5.0002139595676276e-01],
                         rtol=1e-15)
 
     def test_bandstop(self):
@@ -1552,13 +1579,12 @@ class TestButtord:
         b, a = butter(N, Wn, 'bandstop', False)
         w, h = freqz(b, a)
         w /= np.pi
-        assert_array_less(-rp,
-                          dB(h[np.logical_or(w <= wp[0], wp[1] <= w)]))
-        assert_array_less(dB(h[np.logical_and(ws[0] <= w, w <= ws[1])]),
-                          -rs)
 
-        assert_equal(N, 20)
-        assert_allclose(Wn, [1.4759432329294042e-01, 5.9997365985276407e-01],
+        assert np.all(-rp < dB(h[np.logical_or(w <= wp[0], wp[1] <= w)]))
+        assert np.all(dB(h[np.logical_and(ws[0] <= w, w <= ws[1])]) < -rs)
+
+        assert N == 20
+        xp_assert_close(Wn, [1.4759432329294042e-01, 5.9997365985276407e-01],
                         rtol=1e-6)
 
     def test_analog(self):
@@ -1569,17 +1595,17 @@ class TestButtord:
         N, Wn = buttord(wp, ws, rp, rs, True)
         b, a = butter(N, Wn, 'lowpass', True)
         w, h = freqs(b, a)
-        assert_array_less(-rp, dB(h[w <= wp]))
-        assert_array_less(dB(h[ws <= w]), -rs)
+        assert np.all(-rp < dB(h[w <= wp]))
+        assert np.all(dB(h[ws <= w]) < -rs)
 
-        assert_equal(N, 7)
-        assert_allclose(Wn, 2.0006785355671877e+02, rtol=1e-15)
+        assert N == 7
+        xp_assert_close(Wn, 2.0006785355671877e+02, rtol=1e-15)
 
         n, Wn = buttord(1, 550/450, 1, 26, analog=True)
-        assert_equal(n, 19)
-        assert_allclose(Wn, 1.0361980524629517, rtol=1e-15)
+        assert n == 19
+        xp_assert_close(Wn, 1.0361980524629517, rtol=1e-15)
 
-        assert_equal(buttord(1, 1.2, 1, 80, analog=True)[0], 55)
+        xp_assert_equal(buttord(1, 1.2, 1, 80, analog=True)[0], 55)
 
     def test_fs_param(self):
         wp = [4410, 11025]
@@ -1590,13 +1616,11 @@ class TestButtord:
         N, Wn = buttord(wp, ws, rp, rs, False, fs=fs)
         b, a = butter(N, Wn, 'bandpass', False, fs=fs)
         w, h = freqz(b, a, fs=fs)
-        assert_array_less(-rp - 0.1,
-                          dB(h[np.logical_and(wp[0] <= w, w <= wp[1])]))
-        assert_array_less(dB(h[np.logical_or(w <= ws[0], ws[1] <= w)]),
-                          -rs + 0.1)
+        assert np.all(-rp - 0.1 < dB(h[np.logical_and(wp[0] <= w, w <= wp[1])]))
+        assert np.all(dB(h[np.logical_or(w <= ws[0], ws[1] <= w)]) < -rs + 0.1)
 
-        assert_equal(N, 18)
-        assert_allclose(Wn, [4409.722701715714, 11025.47178084662],
+        assert N == 18
+        xp_assert_close(Wn, [4409.722701715714, 11025.47178084662],
                         rtol=1e-15)
 
     def test_invalid_input(self):
@@ -1645,11 +1669,11 @@ class TestCheb1ord:
         b, a = cheby1(N, rp, Wn, 'low', False)
         w, h = freqz(b, a)
         w /= np.pi
-        assert_array_less(-rp - 0.1, dB(h[w <= wp]))
-        assert_array_less(dB(h[ws <= w]), -rs + 0.1)
+        assert np.all(-rp - 0.1 < dB(h[w <= wp]))
+        assert np.all(dB(h[ws <= w]) < -rs + 0.1)
 
-        assert_equal(N, 8)
-        assert_allclose(Wn, 0.2, rtol=1e-15)
+        assert N == 8
+        xp_assert_close(Wn, 0.2, rtol=1e-15)
 
     def test_highpass(self):
         wp = 0.3
@@ -1660,11 +1684,11 @@ class TestCheb1ord:
         b, a = cheby1(N, rp, Wn, 'high', False)
         w, h = freqz(b, a)
         w /= np.pi
-        assert_array_less(-rp - 0.1, dB(h[wp <= w]))
-        assert_array_less(dB(h[w <= ws]), -rs + 0.1)
+        assert np.all(-rp - 0.1 < dB(h[wp <= w]))
+        assert np.all(dB(h[w <= ws]) < -rs + 0.1)
 
-        assert_equal(N, 9)
-        assert_allclose(Wn, 0.3, rtol=1e-15)
+        assert N == 9
+        xp_assert_close(Wn, 0.3, rtol=1e-15)
 
     def test_bandpass(self):
         wp = [0.2, 0.5]
@@ -1675,13 +1699,11 @@ class TestCheb1ord:
         b, a = cheby1(N, rp, Wn, 'band', False)
         w, h = freqz(b, a)
         w /= np.pi
-        assert_array_less(-rp - 0.1,
-                          dB(h[np.logical_and(wp[0] <= w, w <= wp[1])]))
-        assert_array_less(dB(h[np.logical_or(w <= ws[0], ws[1] <= w)]),
-                          -rs + 0.1)
+        assert np.all(-rp - 0.1 < dB(h[np.logical_and(wp[0] <= w, w <= wp[1])]))
+        assert np.all(dB(h[np.logical_or(w <= ws[0], ws[1] <= w)]) < -rs + 0.1)
 
-        assert_equal(N, 9)
-        assert_allclose(Wn, [0.2, 0.5], rtol=1e-15)
+        assert N == 9
+        xp_assert_close(Wn, [0.2, 0.5], rtol=1e-15)
 
     def test_bandstop(self):
         wp = [0.1, 0.6]
@@ -1692,13 +1714,11 @@ class TestCheb1ord:
         b, a = cheby1(N, rp, Wn, 'stop', False)
         w, h = freqz(b, a)
         w /= np.pi
-        assert_array_less(-rp - 0.1,
-                          dB(h[np.logical_or(w <= wp[0], wp[1] <= w)]))
-        assert_array_less(dB(h[np.logical_and(ws[0] <= w, w <= ws[1])]),
-                          -rs + 0.1)
+        assert np.all(-rp - 0.1 < dB(h[np.logical_or(w <= wp[0], wp[1] <= w)]))
+        assert np.all(dB(h[np.logical_and(ws[0] <= w, w <= ws[1])]) < -rs + 0.1)
 
-        assert_equal(N, 10)
-        assert_allclose(Wn, [0.14758232569947785, 0.6], rtol=1e-5)
+        assert N == 10
+        xp_assert_close(Wn, [0.14758232569947785, 0.6], rtol=1e-5)
 
     def test_analog(self):
         wp = 700
@@ -1708,13 +1728,13 @@ class TestCheb1ord:
         N, Wn = cheb1ord(wp, ws, rp, rs, True)
         b, a = cheby1(N, rp, Wn, 'high', True)
         w, h = freqs(b, a)
-        assert_array_less(-rp - 0.1, dB(h[wp <= w]))
-        assert_array_less(dB(h[w <= ws]), -rs + 0.1)
+        assert np.all(-rp - 0.1 < dB(h[wp <= w]))
+        assert np.all(dB(h[w <= ws]) < -rs + 0.1)
 
-        assert_equal(N, 4)
-        assert_allclose(Wn, 700, rtol=1e-15)
+        assert N == 4
+        xp_assert_close(Wn, 700.0, rtol=1e-15)
 
-        assert_equal(cheb1ord(1, 1.2, 1, 80, analog=True)[0], 17)
+        xp_assert_equal(cheb1ord(1, 1.2, 1, 80, analog=True)[0], 17)
 
     def test_fs_param(self):
         wp = 4800
@@ -1725,11 +1745,11 @@ class TestCheb1ord:
         N, Wn = cheb1ord(wp, ws, rp, rs, False, fs=fs)
         b, a = cheby1(N, rp, Wn, 'low', False, fs=fs)
         w, h = freqz(b, a, fs=fs)
-        assert_array_less(-rp - 0.1, dB(h[w <= wp]))
-        assert_array_less(dB(h[ws <= w]), -rs + 0.1)
+        assert np.all(-rp - 0.1 < dB(h[w <= wp]))
+        assert np.all(dB(h[ws <= w]) < -rs + 0.1)
 
-        assert_equal(N, 8)
-        assert_allclose(Wn, 4800, rtol=1e-15)
+        assert N == 8
+        xp_assert_close(Wn, 4800.0, rtol=1e-15)
 
     def test_invalid_input(self):
         with pytest.raises(ValueError) as exc_info:
@@ -1775,11 +1795,11 @@ class TestCheb2ord:
         b, a = cheby2(N, rs, Wn, 'lp', False)
         w, h = freqz(b, a)
         w /= np.pi
-        assert_array_less(-rp - 0.1, dB(h[w <= wp]))
-        assert_array_less(dB(h[ws <= w]), -rs + 0.1)
+        assert np.all(-rp - 0.1 < dB(h[w <= wp]))
+        assert np.all(dB(h[ws <= w]) < -rs + 0.1)
 
-        assert_equal(N, 8)
-        assert_allclose(Wn, 0.28647639976553163, rtol=1e-15)
+        assert N == 8
+        xp_assert_close(Wn, 0.28647639976553163, rtol=1e-15)
 
     def test_highpass(self):
         wp = 0.3
@@ -1790,11 +1810,11 @@ class TestCheb2ord:
         b, a = cheby2(N, rs, Wn, 'hp', False)
         w, h = freqz(b, a)
         w /= np.pi
-        assert_array_less(-rp - 0.1, dB(h[wp <= w]))
-        assert_array_less(dB(h[w <= ws]), -rs + 0.1)
+        assert np.all(-rp - 0.1 < dB(h[wp <= w]))
+        assert np.all(dB(h[w <= ws]) < -rs + 0.1)
 
-        assert_equal(N, 9)
-        assert_allclose(Wn, 0.20697492182903282, rtol=1e-15)
+        assert N == 9
+        xp_assert_close(Wn, 0.20697492182903282, rtol=1e-15)
 
     def test_bandpass(self):
         wp = [0.2, 0.5]
@@ -1805,13 +1825,11 @@ class TestCheb2ord:
         b, a = cheby2(N, rs, Wn, 'bp', False)
         w, h = freqz(b, a)
         w /= np.pi
-        assert_array_less(-rp - 0.1,
-                          dB(h[np.logical_and(wp[0] <= w, w <= wp[1])]))
-        assert_array_less(dB(h[np.logical_or(w <= ws[0], ws[1] <= w)]),
-                          -rs + 0.1)
+        assert np.all(-rp - 0.1 < dB(h[np.logical_and(wp[0] <= w, w <= wp[1])]))
+        assert np.all(dB(h[np.logical_or(w <= ws[0], ws[1] <= w)]) < -rs + 0.1)
 
-        assert_equal(N, 9)
-        assert_allclose(Wn, [0.14876937565923479, 0.59748447842351482],
+        assert N == 9
+        xp_assert_close(Wn, [0.14876937565923479, 0.59748447842351482],
                         rtol=1e-15)
 
     def test_bandstop(self):
@@ -1823,13 +1841,11 @@ class TestCheb2ord:
         b, a = cheby2(N, rs, Wn, 'bs', False)
         w, h = freqz(b, a)
         w /= np.pi
-        assert_array_less(-rp - 0.1,
-                          dB(h[np.logical_or(w <= wp[0], wp[1] <= w)]))
-        assert_array_less(dB(h[np.logical_and(ws[0] <= w, w <= ws[1])]),
-                          -rs + 0.1)
+        assert np.all(-rp - 0.1 < dB(h[np.logical_or(w <= wp[0], wp[1] <= w)]))
+        assert np.all(dB(h[np.logical_and(ws[0] <= w, w <= ws[1])]) < -rs + 0.1)
 
-        assert_equal(N, 10)
-        assert_allclose(Wn, [0.19926249974781743, 0.50125246585567362],
+        assert N == 10
+        xp_assert_close(Wn, [0.19926249974781743, 0.50125246585567362],
                         rtol=1e-6)
 
     def test_analog(self):
@@ -1840,13 +1856,11 @@ class TestCheb2ord:
         N, Wn = cheb2ord(wp, ws, rp, rs, True)
         b, a = cheby2(N, rs, Wn, 'bp', True)
         w, h = freqs(b, a)
-        assert_array_less(-rp - 0.1,
-                          dB(h[np.logical_and(wp[0] <= w, w <= wp[1])]))
-        assert_array_less(dB(h[np.logical_or(w <= ws[0], ws[1] <= w)]),
-                          -rs + 0.1)
+        assert np.all(-rp - 0.1 < dB(h[np.logical_and(wp[0] <= w, w <= wp[1])]))
+        assert np.all(dB(h[np.logical_or(w <= ws[0], ws[1] <= w)]) < -rs + 0.1)
 
-        assert_equal(N, 11)
-        assert_allclose(Wn, [1.673740595370124e+01, 5.974641487254268e+01],
+        assert N == 11
+        xp_assert_close(Wn, [1.673740595370124e+01, 5.974641487254268e+01],
                         rtol=1e-15)
 
     def test_fs_param(self):
@@ -1858,11 +1872,11 @@ class TestCheb2ord:
         N, Wn = cheb2ord(wp, ws, rp, rs, False, fs=fs)
         b, a = cheby2(N, rs, Wn, 'hp', False, fs=fs)
         w, h = freqz(b, a, fs=fs)
-        assert_array_less(-rp - 0.1, dB(h[wp <= w]))
-        assert_array_less(dB(h[w <= ws]), -rs + 0.1)
+        assert np.all(-rp - 0.1 < dB(h[wp <= w]))
+        assert np.all(dB(h[w <= ws]) < -rs + 0.1)
 
-        assert_equal(N, 9)
-        assert_allclose(Wn, 103.4874609145164, rtol=1e-15)
+        assert N == 9
+        xp_assert_close(Wn, 103.4874609145164, rtol=1e-15)
 
     def test_invalid_input(self):
         with pytest.raises(ValueError) as exc_info:
@@ -1908,11 +1922,11 @@ class TestEllipord:
         b, a = ellip(N, rp, rs, Wn, 'lp', False)
         w, h = freqz(b, a)
         w /= np.pi
-        assert_array_less(-rp - 0.1, dB(h[w <= wp]))
-        assert_array_less(dB(h[ws <= w]), -rs + 0.1)
+        assert np.all(-rp - 0.1 < dB(h[w <= wp]))
+        assert np.all(dB(h[ws <= w]) < -rs + 0.1)
 
-        assert_equal(N, 5)
-        assert_allclose(Wn, 0.2, rtol=1e-15)
+        assert N == 5
+        xp_assert_close(Wn, 0.2, rtol=1e-15)
 
     def test_lowpass_1000dB(self):
         # failed when ellipkm1 wasn't used in ellipord and ellipap
@@ -1924,8 +1938,8 @@ class TestEllipord:
         sos = ellip(N, rp, rs, Wn, 'lp', False, output='sos')
         w, h = freqz_sos(sos)
         w /= np.pi
-        assert_array_less(-rp - 0.1, dB(h[w <= wp]))
-        assert_array_less(dB(h[ws <= w]), -rs + 0.1)
+        assert np.all(-rp - 0.1 < dB(h[w <= wp]))
+        assert np.all(dB(h[ws <= w]) < -rs + 0.1)
 
     def test_highpass(self):
         wp = 0.3
@@ -1936,11 +1950,11 @@ class TestEllipord:
         b, a = ellip(N, rp, rs, Wn, 'hp', False)
         w, h = freqz(b, a)
         w /= np.pi
-        assert_array_less(-rp - 0.1, dB(h[wp <= w]))
-        assert_array_less(dB(h[w <= ws]), -rs + 0.1)
+        assert np.all(-rp - 0.1 < dB(h[wp <= w]))
+        assert np.all(dB(h[w <= ws]) < -rs + 0.1)
 
-        assert_equal(N, 6)
-        assert_allclose(Wn, 0.3, rtol=1e-15)
+        assert N == 6
+        xp_assert_close(Wn, 0.3, rtol=1e-15)
 
     def test_bandpass(self):
         wp = [0.2, 0.5]
@@ -1951,13 +1965,11 @@ class TestEllipord:
         b, a = ellip(N, rp, rs, Wn, 'bp', False)
         w, h = freqz(b, a)
         w /= np.pi
-        assert_array_less(-rp - 0.1,
-                          dB(h[np.logical_and(wp[0] <= w, w <= wp[1])]))
-        assert_array_less(dB(h[np.logical_or(w <= ws[0], ws[1] <= w)]),
-                          -rs + 0.1)
+        assert np.all(-rp - 0.1 < dB(h[np.logical_and(wp[0] <= w, w <= wp[1])]))
+        assert np.all(dB(h[np.logical_or(w <= ws[0], ws[1] <= w)]) < -rs + 0.1)
 
-        assert_equal(N, 6)
-        assert_allclose(Wn, [0.2, 0.5], rtol=1e-15)
+        assert N == 6
+        xp_assert_close(Wn, [0.2, 0.5], rtol=1e-15)
 
     def test_bandstop(self):
         wp = [0.1, 0.6]
@@ -1968,13 +1980,11 @@ class TestEllipord:
         b, a = ellip(N, rp, rs, Wn, 'bs', False)
         w, h = freqz(b, a)
         w /= np.pi
-        assert_array_less(-rp - 0.1,
-                          dB(h[np.logical_or(w <= wp[0], wp[1] <= w)]))
-        assert_array_less(dB(h[np.logical_and(ws[0] <= w, w <= ws[1])]),
-                          -rs + 0.1)
+        assert np.all(-rp - 0.1 < dB(h[np.logical_or(w <= wp[0], wp[1] <= w)]))
+        assert np.all(dB(h[np.logical_and(ws[0] <= w, w <= ws[1])]) < -rs + 0.1)
 
-        assert_equal(N, 7)
-        assert_allclose(Wn, [0.14758232794342988, 0.6], rtol=1e-5)
+        assert N == 7
+        xp_assert_close(Wn, [0.14758232794342988, 0.6], rtol=1e-5)
 
     def test_analog(self):
         wp = [1000, 6000]
@@ -1984,15 +1994,13 @@ class TestEllipord:
         N, Wn = ellipord(wp, ws, rp, rs, True)
         b, a = ellip(N, rp, rs, Wn, 'bs', True)
         w, h = freqs(b, a)
-        assert_array_less(-rp - 0.1,
-                          dB(h[np.logical_or(w <= wp[0], wp[1] <= w)]))
-        assert_array_less(dB(h[np.logical_and(ws[0] <= w, w <= ws[1])]),
-                          -rs + 0.1)
+        assert np.all(-rp - 0.1 < dB(h[np.logical_or(w <= wp[0], wp[1] <= w)]))
+        assert np.all(dB(h[np.logical_and(ws[0] <= w, w <= ws[1])]) < -rs + 0.1)
 
-        assert_equal(N, 8)
-        assert_allclose(Wn, [1666.6666, 6000])
+        assert N == 8
+        xp_assert_close(Wn, [1666.6666, 6000])
 
-        assert_equal(ellipord(1, 1.2, 1, 80, analog=True)[0], 9)
+        assert ellipord(1, 1.2, 1, 80, analog=True)[0] == 9
 
     def test_fs_param(self):
         wp = [400, 2400]
@@ -2003,13 +2011,11 @@ class TestEllipord:
         N, Wn = ellipord(wp, ws, rp, rs, False, fs=fs)
         b, a = ellip(N, rp, rs, Wn, 'bs', False, fs=fs)
         w, h = freqz(b, a, fs=fs)
-        assert_array_less(-rp - 0.1,
-                          dB(h[np.logical_or(w <= wp[0], wp[1] <= w)]))
-        assert_array_less(dB(h[np.logical_and(ws[0] <= w, w <= ws[1])]),
-                          -rs + 0.1)
+        assert np.all(-rp - 0.1 < dB(h[np.logical_or(w <= wp[0], wp[1] <= w)]))
+        assert np.all(dB(h[np.logical_and(ws[0] <= w, w <= ws[1])]) < -rs + 0.1)
 
-        assert_equal(N, 7)
-        assert_allclose(Wn, [590.3293117737195, 2400], rtol=1e-5)
+        assert N == 7
+        xp_assert_close(Wn, [590.3293117737195, 2400], rtol=1e-5)
 
     def test_invalid_input(self):
         with pytest.raises(ValueError) as exc_info:
@@ -2047,18 +2053,18 @@ class TestBessel:
         for norm in ('delay', 'phase', 'mag'):
             # 0-order filter is just a passthrough
             b, a = bessel(0, 1, analog=True, norm=norm)
-            assert_array_equal(b, [1])
-            assert_array_equal(a, [1])
+            xp_assert_equal(b, np.asarray([1.0]))
+            xp_assert_equal(a, np.asarray([1.0]))
 
             # 1-order filter is same for all types
             b, a = bessel(1, 1, analog=True, norm=norm)
-            assert_allclose(b, [1], rtol=1e-15)
-            assert_allclose(a, [1, 1], rtol=1e-15)
+            xp_assert_close(b, np.asarray([1.0]), rtol=1e-15)
+            xp_assert_close(a, np.asarray([1.0, 1]), rtol=1e-15)
 
             z, p, k = bessel(1, 0.3, analog=True, output='zpk', norm=norm)
-            assert_array_equal(z, [])
-            assert_allclose(p, [-0.3], rtol=1e-14)
-            assert_allclose(k, 0.3, rtol=1e-14)
+            xp_assert_equal(z, np.asarray([]))
+            xp_assert_close(p, np.asarray([-0.3+0j]), rtol=1e-14)
+            xp_assert_close(k, 0.3, rtol=1e-14)
 
     def test_high_order(self):
         # high even order, 'phase'
@@ -2079,10 +2085,10 @@ class TestBessel:
              -2.433481337524861e+01 + 1.207298683731973e+02j,
              ]
         k2 = 9.999999999999989e+47
-        assert_array_equal(z, z2)
-        assert_allclose(sorted(p, key=np.imag),
+        xp_assert_equal(z, z2)
+        xp_assert_close(sorted(p, key=np.imag),
                         sorted(np.union1d(p2, np.conj(p2)), key=np.imag))
-        assert_allclose(k, k2, rtol=1e-14)
+        xp_assert_close(k, k2, rtol=1e-14)
 
         # high odd order, 'phase'
         z, p, k = bessel(23, 1000, analog=True, output='zpk')
@@ -2101,10 +2107,10 @@ class TestBessel:
              -6.225903228776276e+02 + 8.301558302815096e+02j,
              -9.066732476324988e+02]
         k2 = 9.999999999999983e+68
-        assert_array_equal(z, z2)
-        assert_allclose(sorted(p, key=np.imag),
+        xp_assert_equal(z, z2)
+        xp_assert_close(sorted(p, key=np.imag),
                         sorted(np.union1d(p2, np.conj(p2)), key=np.imag))
-        assert_allclose(k, k2, rtol=1e-14)
+        xp_assert_close(k, k2, rtol=1e-14)
 
         # high even order, 'delay' (Orchard 1965 "The Roots of the
         # Maximally Flat-Delay Polynomials" Table 1)
@@ -2126,7 +2132,7 @@ class TestBessel:
               - 8.005600 + 25.875019j,
               - 4.792045 + 28.406037j,
               ]
-        assert_allclose(sorted(p, key=np.imag),
+        xp_assert_close(sorted(p, key=np.imag),
                         sorted(np.union1d(p2, np.conj(p2)), key=np.imag))
 
         # high odd order, 'delay'
@@ -2147,17 +2153,17 @@ class TestBessel:
               - 7.901170 + 24.924391j,
               - 4.734679 + 27.435615j,
               ]
-        assert_allclose(sorted(p, key=np.imag),
+        xp_assert_close(sorted(p, key=np.imag),
                         sorted(np.union1d(p2, np.conj(p2)), key=np.imag))
 
     def test_refs(self):
         # Compare to http://www.crbond.com/papers/bsf2.pdf
         # "Delay Normalized Bessel Polynomial Coefficients"
-        bond_b = 10395
-        bond_a = [1, 21, 210, 1260, 4725, 10395, 10395]
+        bond_b = np.asarray([10395.0])
+        bond_a = np.asarray([1.0, 21, 210, 1260, 4725, 10395, 10395])
         b, a = bessel(6, 1, norm='delay', analog=True)
-        assert_allclose(bond_b, b)
-        assert_allclose(bond_a, a)
+        xp_assert_close(b, bond_b)
+        xp_assert_close(a, bond_a)
 
         # "Delay Normalized Bessel Pole Locations"
         bond_poles = {
@@ -2215,44 +2221,44 @@ class TestBessel:
 
         # Compare to https://www.ranecommercial.com/legacy/note147.html
         # "Table 1 - Bessel Crossovers of Second, Third, and Fourth-Order"
-        a = [1, 1, 1/3]
+        a = np.asarray([1, 1, 1/3])
         b2, a2 = bessel(2, 1, norm='delay', analog=True)
-        assert_allclose(a[::-1], a2/b2)
+        xp_assert_close(a[::-1], a2/b2)
 
-        a = [1, 1, 2/5, 1/15]
+        a = np.asarray([1, 1, 2/5, 1/15])
         b2, a2 = bessel(3, 1, norm='delay', analog=True)
-        assert_allclose(a[::-1], a2/b2)
+        xp_assert_close(a[::-1], a2/b2)
 
-        a = [1, 1, 9/21, 2/21, 1/105]
+        a = np.asarray([1, 1, 9/21, 2/21, 1/105])
         b2, a2 = bessel(4, 1, norm='delay', analog=True)
-        assert_allclose(a[::-1], a2/b2)
+        xp_assert_close(a[::-1], a2/b2)
 
-        a = [1, np.sqrt(3), 1]
+        a = np.asarray([1, np.sqrt(3), 1])
         b2, a2 = bessel(2, 1, norm='phase', analog=True)
-        assert_allclose(a[::-1], a2/b2)
+        xp_assert_close(a[::-1], a2/b2)
 
         # TODO: Why so inaccurate?  Is reference flawed?
-        a = [1, 2.481, 2.463, 1.018]
+        a = np.asarray([1, 2.481, 2.463, 1.018])
         b2, a2 = bessel(3, 1, norm='phase', analog=True)
         assert_array_almost_equal(a[::-1], a2/b2, decimal=1)
 
         # TODO: Why so inaccurate?  Is reference flawed?
-        a = [1, 3.240, 4.5, 3.240, 1.050]
+        a = np.asarray([1, 3.240, 4.5, 3.240, 1.050])
         b2, a2 = bessel(4, 1, norm='phase', analog=True)
         assert_array_almost_equal(a[::-1], a2/b2, decimal=1)
 
         # Table of -3 dB factors:
-        N, scale = 2, 1.272
+        N, scale = 2, np.asarray([1.272, 1.272], dtype=np.complex128)
         scale2 = besselap(N, 'mag')[1] / besselap(N, 'phase')[1]
-        assert_array_almost_equal(scale, scale2, decimal=3)
+        assert_array_almost_equal(scale2, scale, decimal=3)
 
         # TODO: Why so inaccurate?  Is reference flawed?
-        N, scale = 3, 1.413
+        N, scale = 3, np.asarray([1.413, 1.413, 1.413], dtype=np.complex128)
         scale2 = besselap(N, 'mag')[1] / besselap(N, 'phase')[1]
-        assert_array_almost_equal(scale, scale2, decimal=2)
+        assert_array_almost_equal(scale2, scale, decimal=2)
 
         # TODO: Why so inaccurate?  Is reference flawed?
-        N, scale = 4, 1.533
+        N, scale = 4, np.asarray([1.533]*4, dtype=np.complex128)
         scale2 = besselap(N, 'mag')[1] / besselap(N, 'phase')[1]
         assert_array_almost_equal(scale, scale2, decimal=1)
 
@@ -2434,7 +2440,8 @@ class TestBessel:
             p1 = sorted(np.union1d(originals[N],
                                    np.conj(originals[N])), key=np.imag)
             p2 = sorted(besselap(N)[1], key=np.imag)
-            assert_allclose(p1, p2, rtol=1e-14)
+            xp_assert_close(p1,
+                            p2, rtol=1e-14, check_dtype=False)
 
     def test_norm_phase(self):
         # Test some orders and frequencies and see that they have the right
@@ -2445,7 +2452,7 @@ class TestBessel:
                 w = np.linspace(0, w0, 100)
                 w, h = freqs(b, a, w)
                 phase = np.unwrap(np.angle(h))
-                assert_allclose(phase[[0, -1]], (0, -N*pi/4), rtol=1e-1)
+                xp_assert_close(phase[[0, -1]], (0, -N*pi/4), rtol=1e-1)
 
     def test_norm_mag(self):
         # Test some orders and frequencies and see that they have the right
@@ -2456,7 +2463,7 @@ class TestBessel:
                 w = (0, w0)
                 w, h = freqs(b, a, w)
                 mag = abs(h)
-                assert_allclose(mag, (1, 1/np.sqrt(2)))
+                xp_assert_close(mag, (1, 1/np.sqrt(2)))
 
     def test_norm_delay(self):
         # Test some orders and frequencies and see that they have the right
@@ -2467,11 +2474,11 @@ class TestBessel:
                 w = np.linspace(0, 10*w0, 1000)
                 w, h = freqs(b, a, w)
                 delay = -np.diff(np.unwrap(np.angle(h)))/np.diff(w)
-                assert_allclose(delay[0], 1/w0, rtol=1e-4)
+                xp_assert_close(delay[0], 1/w0, rtol=1e-4)
 
     def test_norm_factor(self):
         mpmath_values = {
-            1: 1, 2: 1.361654128716130520, 3: 1.755672368681210649,
+            1: 1.0, 2: 1.361654128716130520, 3: 1.755672368681210649,
             4: 2.113917674904215843, 5: 2.427410702152628137,
             6: 2.703395061202921876, 7: 2.951722147038722771,
             8: 3.179617237510651330, 9: 3.391693138911660101,
@@ -2487,14 +2494,14 @@ class TestBessel:
             }
         for N in mpmath_values:
             z, p, k = besselap(N, 'delay')
-            assert_allclose(mpmath_values[N], _norm_factor(p, k), rtol=1e-13)
+            xp_assert_close(mpmath_values[N], _norm_factor(p, k), rtol=1e-13)
 
     def test_bessel_poly(self):
-        assert_array_equal(_bessel_poly(5), [945, 945, 420, 105, 15, 1])
-        assert_array_equal(_bessel_poly(4, True), [1, 10, 45, 105, 105])
+        xp_assert_equal(_bessel_poly(5), [945, 945, 420, 105, 15, 1])
+        xp_assert_equal(_bessel_poly(4, True), [1, 10, 45, 105, 105])
 
     def test_bessel_zeros(self):
-        assert_array_equal(_bessel_zeros(0), [])
+        xp_assert_equal(_bessel_zeros(0), [])
 
     def test_invalid(self):
         assert_raises(ValueError, besselap, 5, 'nonsense')
@@ -2512,14 +2519,16 @@ class TestBessel:
                         for btype in ('lp', 'hp'):
                             ba1 = bessel(N, fc, btype, norm=norm, fs=fs)
                             ba2 = bessel(N, fc/(fs/2), btype, norm=norm)
-                            assert_allclose(ba1, ba2)
+                            for ba1_, ba2_ in zip(ba1, ba2):
+                                xp_assert_close(ba1_, ba2_)
                     for fc in ((100, 200), (100.1, 200.2), (321.123, 432.123)):
                         for btype in ('bp', 'bs'):
                             ba1 = bessel(N, fc, btype, norm=norm, fs=fs)
                             for seq in (list, tuple, array):
                                 fcnorm = seq([f/(fs/2) for f in fc])
                                 ba2 = bessel(N, fcnorm, btype, norm=norm)
-                                assert_allclose(ba1, ba2)
+                                for ba1_, ba2_ in zip(ba1, ba2):
+                                    xp_assert_close(ba1_, ba2_)
 
 
 class TestButter:
@@ -2527,8 +2536,8 @@ class TestButter:
     def test_degenerate(self):
         # 0-order filter is just a passthrough
         b, a = butter(0, 1, analog=True)
-        assert_array_equal(b, [1])
-        assert_array_equal(a, [1])
+        xp_assert_equal(b, np.asarray([1.0]))
+        xp_assert_equal(a, np.asarray([1.0]))
 
         # 1-order filter is same for all types
         b, a = butter(1, 1, analog=True)
@@ -2536,9 +2545,9 @@ class TestButter:
         assert_array_almost_equal(a, [1, 1])
 
         z, p, k = butter(1, 0.3, output='zpk')
-        assert_array_equal(z, [-1])
-        assert_allclose(p, [3.249196962329063e-01], rtol=1e-14)
-        assert_allclose(k, 3.375401518835469e-01, rtol=1e-14)
+        xp_assert_equal(z, np.asarray([-1.0]))
+        xp_assert_close(p, [3.249196962329063e-01 + 0j], rtol=1e-14)
+        xp_assert_close(k, 3.375401518835469e-01, rtol=1e-14)
 
     def test_basic(self):
         # analog s-plane
@@ -2546,18 +2555,18 @@ class TestButter:
             wn = 0.01
             z, p, k = butter(N, wn, 'low', analog=True, output='zpk')
             assert_array_almost_equal([], z)
-            assert_(len(p) == N)
+            assert len(p) == N
             # All poles should be at distance wn from origin
-            assert_array_almost_equal(wn, abs(p))
-            assert_(all(np.real(p) <= 0))  # No poles in right half of S-plane
+            assert_array_almost_equal(abs(p), np.asarray(wn))
+            assert all(np.real(p) <= 0)  # No poles in right half of S-plane
             assert_array_almost_equal(wn**N, k)
 
         # digital z-plane
         for N in range(25):
             wn = 0.01
             z, p, k = butter(N, wn, 'high', analog=False, output='zpk')
-            assert_array_equal(np.ones(N), z)  # All zeros exactly at DC
-            assert_(all(np.abs(p) <= 1))  # No poles outside unit circle
+            xp_assert_equal(np.ones(N), z)  # All zeros exactly at DC
+            assert all(np.abs(p) <= 1)  # No poles outside unit circle
 
         b1, a1 = butter(2, 1, analog=True)
         assert_array_almost_equal(b1, [1])
@@ -2623,10 +2632,10 @@ class TestButter:
             1.176516491045901e-01 - 2.546021573417188e-01j,
             ]
         k2 = 1.446671081817286e-06
-        assert_array_equal(z, z2)
-        assert_allclose(sorted(p, key=np.imag),
+        xp_assert_equal(z, z2)
+        xp_assert_close(sorted(p, key=np.imag),
                         sorted(p2, key=np.imag), rtol=1e-7)
-        assert_allclose(k, k2, rtol=1e-10)
+        xp_assert_close(k, k2, rtol=1e-10)
 
         # highpass, high odd order
         z, p, k = butter(27, 0.56, 'high', output='zpk')
@@ -2661,10 +2670,10 @@ class TestButter:
             -9.452783117928215e-02
             ]
         k2 = 9.585686688851069e-09
-        assert_array_equal(z, z2)
-        assert_allclose(sorted(p, key=np.imag),
+        xp_assert_equal(z, z2)
+        xp_assert_close(sorted(p, key=np.imag),
                         sorted(p2, key=np.imag), rtol=1e-8)
-        assert_allclose(k, k2)
+        xp_assert_close(k, k2)
 
     def test_bandpass(self):
         z, p, k = butter(8, [0.25, 0.33], 'band', output='zpk')
@@ -2689,14 +2698,14 @@ class TestButter:
             6.521767004237027e-01 - 6.744414640183752e-01j,
             ]
         k2 = 3.398854055800844e-08
-        assert_array_equal(z, z2)
-        assert_allclose(sorted(p, key=np.imag),
+        xp_assert_equal(z, z2, check_dtype=False)
+        xp_assert_close(sorted(p, key=np.imag),
                         sorted(p2, key=np.imag), rtol=1e-13)
-        assert_allclose(k, k2, rtol=1e-13)
+        xp_assert_close(k, k2, rtol=1e-13)
 
         # bandpass analog
         z, p, k = butter(4, [90.5, 110.5], 'bp', analog=True, output='zpk')
-        z2 = np.zeros(4)
+        z2 = np.zeros(4, dtype=z.dtype)
         p2 = [
             -4.179137760733086e+00 + 1.095935899082837e+02j,
             -4.179137760733086e+00 - 1.095935899082837e+02j,
@@ -2708,9 +2717,10 @@ class TestButter:
             -3.474530886568715e+00 - 9.111599925805801e+01j,
             ]
         k2 = 1.600000000000001e+05
-        assert_array_equal(z, z2)
-        assert_allclose(sorted(p, key=np.imag), sorted(p2, key=np.imag))
-        assert_allclose(k, k2, rtol=1e-15)
+        xp_assert_equal(z, z2)
+        xp_assert_close(sorted(p, key=np.imag),
+                        sorted(p2, key=np.imag))
+        xp_assert_close(k, k2, rtol=1e-15)
 
     def test_bandstop(self):
         z, p, k = butter(7, [0.45, 0.56], 'stop', output='zpk')
@@ -2743,9 +2753,11 @@ class TestButter:
               -1.357545000491310e-02 + 8.382287744986582e-01j,
               -1.357545000491310e-02 - 8.382287744986582e-01j]
         k2 = 4.577122512960063e-01
-        assert_allclose(sorted(z, key=np.imag), sorted(z2, key=np.imag))
-        assert_allclose(sorted(p, key=np.imag), sorted(p2, key=np.imag))
-        assert_allclose(k, k2, rtol=1e-14)
+        xp_assert_close(sorted(z, key=np.imag),
+                        sorted(z2, key=np.imag))
+        xp_assert_close(sorted(p, key=np.imag),
+                        sorted(p2, key=np.imag))
+        xp_assert_close(k, k2, rtol=1e-14)
 
     def test_ba_output(self):
         b, a = butter(4, [100, 300], 'bandpass', analog=True)
@@ -2755,8 +2767,8 @@ class TestButter:
               1.519411254969542e+10, 2.038238225207147e+12,
               2.309116882454312e+14, 1.411088002066486e+16,
               8.099999999999991e+17]
-        assert_allclose(b, b2, rtol=1e-14)
-        assert_allclose(a, a2, rtol=1e-14)
+        xp_assert_close(b, b2, rtol=1e-14)
+        xp_assert_close(a, a2, rtol=1e-14)
 
     def test_fs_param(self):
         for fs in (900, 900.1, 1234.567):
@@ -2765,14 +2777,16 @@ class TestButter:
                     for btype in ('lp', 'hp'):
                         ba1 = butter(N, fc, btype, fs=fs)
                         ba2 = butter(N, fc/(fs/2), btype)
-                        assert_allclose(ba1, ba2)
+                        for ba1_, ba2_ in zip(ba1, ba2):
+                            xp_assert_close(ba1_, ba2_)
                 for fc in ((100, 200), (100.1, 200.2), (321.123, 432.123)):
                     for btype in ('bp', 'bs'):
                         ba1 = butter(N, fc, btype, fs=fs)
                         for seq in (list, tuple, array):
                             fcnorm = seq([f/(fs/2) for f in fc])
                             ba2 = butter(N, fcnorm, btype)
-                            assert_allclose(ba1, ba2)
+                            for ba1_, ba2_ in zip(ba1, ba2):
+                                xp_assert_close(ba1_, ba2_)
 
 
 class TestCheby1:
@@ -2782,7 +2796,7 @@ class TestCheby1:
         # Even-order filters have DC gain of -rp dB
         b, a = cheby1(0, 10*np.log10(2), 1, analog=True)
         assert_array_almost_equal(b, [1/np.sqrt(2)])
-        assert_array_equal(a, [1])
+        xp_assert_equal(a, np.asarray([1.0]))
 
         # 1-order filter is same for all types
         b, a = cheby1(1, 10*np.log10(2), 1, analog=True)
@@ -2790,23 +2804,23 @@ class TestCheby1:
         assert_array_almost_equal(a, [1, 1])
 
         z, p, k = cheby1(1, 0.1, 0.3, output='zpk')
-        assert_array_equal(z, [-1])
-        assert_allclose(p, [-5.390126972799615e-01], rtol=1e-14)
-        assert_allclose(k, 7.695063486399808e-01, rtol=1e-14)
+        xp_assert_equal(z, np.asarray([-1.0]))
+        xp_assert_close(p, [-5.390126972799615e-01 + 0j], rtol=1e-14)
+        xp_assert_close(k, 7.695063486399808e-01, rtol=1e-14)
 
     def test_basic(self):
         for N in range(25):
             wn = 0.01
             z, p, k = cheby1(N, 1, wn, 'low', analog=True, output='zpk')
             assert_array_almost_equal([], z)
-            assert_(len(p) == N)
-            assert_(all(np.real(p) <= 0))  # No poles in right half of S-plane
+            assert len(p) == N
+            assert all(np.real(p) <= 0)  # No poles in right half of S-plane
 
         for N in range(25):
             wn = 0.01
             z, p, k = cheby1(N, 1, wn, 'high', analog=False, output='zpk')
-            assert_array_equal(np.ones(N), z)  # All zeros exactly at DC
-            assert_(all(np.abs(p) <= 1))  # No poles outside unit circle
+            xp_assert_equal(np.ones(N), z)  # All zeros exactly at DC
+            assert all(np.abs(p) <= 1)  # No poles outside unit circle
 
         # Same test as TestNormalize
         b, a = cheby1(8, 0.5, 0.048)
@@ -2888,10 +2902,10 @@ class TestCheby1:
               8.069756417293870e-01 + 5.862214589217275e-01j,
               8.069756417293870e-01 - 5.862214589217275e-01j]
         k2 = 6.190427617192018e-04
-        assert_array_equal(z, z2)
-        assert_allclose(sorted(p, key=np.imag),
+        xp_assert_equal(z, z2)
+        xp_assert_close(sorted(p, key=np.imag),
                         sorted(p2, key=np.imag), rtol=1e-10)
-        assert_allclose(k, k2, rtol=1e-10)
+        xp_assert_close(k, k2, rtol=1e-10)
 
         # high odd order
         z, p, k = cheby1(23, 0.8, 0.3, 'high', output='zpk')
@@ -2920,10 +2934,10 @@ class TestCheby1:
               5.688812849391721e-01 + 8.086497795114683e-01j,
               5.688812849391721e-01 - 8.086497795114683e-01j]
         k2 = 1.941697029206324e-05
-        assert_array_equal(z, z2)
-        assert_allclose(sorted(p, key=np.imag),
+        xp_assert_equal(z, z2)
+        xp_assert_close(sorted(p, key=np.imag),
                         sorted(p2, key=np.imag), rtol=1e-10)
-        assert_allclose(k, k2, rtol=1e-10)
+        xp_assert_close(k, k2, rtol=1e-10)
 
         z, p, k = cheby1(10, 1, 1000, 'high', analog=True, output='zpk')
         z2 = np.zeros(10)
@@ -2938,10 +2952,10 @@ class TestCheby1:
               -2.250315039031946e+01 + 1.001723931471477e+03j,
               -2.250315039031946e+01 - 1.001723931471477e+03j]
         k2 = 8.912509381337453e-01
-        assert_array_equal(z, z2)
-        assert_allclose(sorted(p, key=np.imag),
+        xp_assert_equal(z, z2)
+        xp_assert_close(sorted(p, key=np.imag),
                         sorted(p2, key=np.imag), rtol=1e-13)
-        assert_allclose(k, k2, rtol=1e-15)
+        xp_assert_close(k, k2, rtol=1e-15)
 
     def test_bandpass(self):
         z, p, k = cheby1(8, 1, [0.3, 0.4], 'bp', output='zpk')
@@ -2963,10 +2977,10 @@ class TestCheby1:
               5.615189063336070e-01 + 8.100667803850766e-01j,
               5.615189063336070e-01 - 8.100667803850766e-01j]
         k2 = 5.007028718074307e-09
-        assert_array_equal(z, z2)
-        assert_allclose(sorted(p, key=np.imag),
+        xp_assert_equal(z, z2, check_dtype=False)
+        xp_assert_close(sorted(p, key=np.imag),
                         sorted(p2, key=np.imag), rtol=1e-13)
-        assert_allclose(k, k2, rtol=1e-13)
+        xp_assert_close(k, k2, rtol=1e-13)
 
     def test_bandstop(self):
         z, p, k = cheby1(7, 1, [0.5, 0.6], 'stop', output='zpk')
@@ -2999,11 +3013,11 @@ class TestCheby1:
               -3.072658345097743e-01 + 9.443589759799366e-01j,
               -3.072658345097743e-01 - 9.443589759799366e-01j]
         k2 = 3.619438310405028e-01
-        assert_allclose(sorted(z, key=np.imag),
+        xp_assert_close(sorted(z, key=np.imag),
                         sorted(z2, key=np.imag), rtol=1e-13)
-        assert_allclose(sorted(p, key=np.imag),
+        xp_assert_close(sorted(p, key=np.imag),
                         sorted(p2, key=np.imag), rtol=1e-13)
-        assert_allclose(k, k2, rtol=0, atol=5e-16)
+        xp_assert_close(k, k2, rtol=0, atol=5e-16)
 
     def test_ba_output(self):
         # with transfer function conversion,  without digital conversion
@@ -3022,8 +3036,8 @@ class TestCheby1:
               1.114411200988328e+20, 8.316815934908471e+21,
               1.169243442282517e+24
               ]
-        assert_allclose(b, b2, rtol=1e-14)
-        assert_allclose(a, a2, rtol=1e-14)
+        xp_assert_close(b, b2, rtol=1e-14)
+        xp_assert_close(a, a2, rtol=1e-14)
 
     def test_fs_param(self):
         for fs in (900, 900.1, 1234.567):
@@ -3032,15 +3046,16 @@ class TestCheby1:
                     for btype in ('lp', 'hp'):
                         ba1 = cheby1(N, 1, fc, btype, fs=fs)
                         ba2 = cheby1(N, 1, fc/(fs/2), btype)
-                        assert_allclose(ba1, ba2)
+                        for ba1_, ba2_ in zip(ba1, ba2):
+                            xp_assert_close(ba1_, ba2_)
                 for fc in ((100, 200), (100.1, 200.2), (321.123, 432.123)):
                     for btype in ('bp', 'bs'):
                         ba1 = cheby1(N, 1, fc, btype, fs=fs)
                         for seq in (list, tuple, array):
                             fcnorm = seq([f/(fs/2) for f in fc])
                             ba2 = cheby1(N, 1, fcnorm, btype)
-                            assert_allclose(ba1, ba2)
-
+                            for ba1_, ba2_ in zip(ba1, ba2):
+                                xp_assert_close(ba1_, ba2_)
 
 class TestCheby2:
 
@@ -3048,8 +3063,8 @@ class TestCheby2:
         # 0-order filter is just a passthrough
         # Stopband ripple factor doesn't matter
         b, a = cheby2(0, 123.456, 1, analog=True)
-        assert_array_equal(b, [1])
-        assert_array_equal(a, [1])
+        xp_assert_equal(b, np.asarray([1.0]))
+        xp_assert_equal(a, np.asarray([1.0]))
 
         # 1-order filter is same for all types
         b, a = cheby2(1, 10*np.log10(2), 1, analog=True)
@@ -3057,21 +3072,21 @@ class TestCheby2:
         assert_array_almost_equal(a, [1, 1])
 
         z, p, k = cheby2(1, 50, 0.3, output='zpk')
-        assert_array_equal(z, [-1])
-        assert_allclose(p, [9.967826460175649e-01], rtol=1e-14)
-        assert_allclose(k, 1.608676991217512e-03, rtol=1e-14)
+        xp_assert_equal(z, np.asarray([-1], dtype=np.complex128))
+        xp_assert_close(p, [9.967826460175649e-01 + 0j], rtol=1e-14)
+        xp_assert_close(k, 1.608676991217512e-03, rtol=1e-14)
 
     def test_basic(self):
         for N in range(25):
             wn = 0.01
             z, p, k = cheby2(N, 40, wn, 'low', analog=True, output='zpk')
-            assert_(len(p) == N)
-            assert_(all(np.real(p) <= 0))  # No poles in right half of S-plane
+            assert len(p) == N
+            assert all(np.real(p) <= 0)  # No poles in right half of S-plane
 
         for N in range(25):
             wn = 0.01
             z, p, k = cheby2(N, 40, wn, 'high', analog=False, output='zpk')
-            assert_(all(np.abs(p) <= 1))  # No poles outside unit circle
+            assert all(np.abs(p) <= 1)  # No poles outside unit circle
 
         B, A = cheby2(18, 100, 0.5)
         assert_array_almost_equal(B, [
@@ -3147,11 +3162,11 @@ class TestCheby2:
               5.747812938519067e-01 + 6.643001536914696e-01j,
               5.747812938519067e-01 - 6.643001536914696e-01j]
         k2 = 9.932997786497189e-02
-        assert_allclose(sorted(z, key=np.angle),
+        xp_assert_close(sorted(z, key=np.angle),
                         sorted(z2, key=np.angle), rtol=1e-13)
-        assert_allclose(sorted(p, key=np.angle),
+        xp_assert_close(sorted(p, key=np.angle),
                         sorted(p2, key=np.angle), rtol=1e-12)
-        assert_allclose(k, k2, rtol=1e-11)
+        xp_assert_close(k, k2, rtol=1e-11)
 
         # high odd order
         z, p, k = cheby2(25, 80, 0.5, 'high', output='zpk')
@@ -3206,11 +3221,11 @@ class TestCheby2:
               6.857277464483946e-03 + 8.383275456264492e-01j,
               6.857277464483946e-03 - 8.383275456264492e-01j]
         k2 = 6.507068761705037e-03
-        assert_allclose(sorted(z, key=np.angle),
+        xp_assert_close(sorted(z, key=np.angle),
                         sorted(z2, key=np.angle), rtol=1e-13)
-        assert_allclose(sorted(p, key=np.angle),
+        xp_assert_close(sorted(p, key=np.angle),
                         sorted(p2, key=np.angle), rtol=1e-12)
-        assert_allclose(k, k2, rtol=1e-11)
+        xp_assert_close(k, k2, rtol=1e-11)
 
     def test_bandpass(self):
         z, p, k = cheby2(9, 40, [0.07, 0.2], 'pass', output='zpk')
@@ -3251,11 +3266,11 @@ class TestCheby2:
               9.438104703725529e-01 + 2.193509900269860e-01j,
               9.438104703725529e-01 - 2.193509900269860e-01j]
         k2 = 9.345352824659604e-03
-        assert_allclose(sorted(z, key=np.angle),
+        xp_assert_close(sorted(z, key=np.angle),
                         sorted(z2, key=np.angle), rtol=1e-13)
-        assert_allclose(sorted(p, key=np.angle),
+        xp_assert_close(sorted(p, key=np.angle),
                         sorted(p2, key=np.angle), rtol=1e-13)
-        assert_allclose(k, k2, rtol=1e-11)
+        xp_assert_close(k, k2, rtol=1e-11)
 
     def test_bandstop(self):
         z, p, k = cheby2(6, 55, [0.1, 0.9], 'stop', output='zpk')
@@ -3284,11 +3299,11 @@ class TestCheby2:
                8.715844103386721e-01 + 1.370665039509331e-01j,
                8.715844103386721e-01 - 1.370665039509331e-01j]
         k2 = 2.917823332763358e-03
-        assert_allclose(sorted(z, key=np.angle),
+        xp_assert_close(sorted(z, key=np.angle),
                         sorted(z2, key=np.angle), rtol=1e-13)
-        assert_allclose(sorted(p, key=np.angle),
+        xp_assert_close(sorted(p, key=np.angle),
                         sorted(p2, key=np.angle), rtol=1e-13)
-        assert_allclose(k, k2, rtol=1e-11)
+        xp_assert_close(k, k2, rtol=1e-11)
 
     def test_ba_output(self):
         # with transfer function conversion, without digital conversion
@@ -3305,8 +3320,8 @@ class TestCheby2:
               7.535048322653831e+20, 5.567966191263037e+22,
               1.589246884221346e+27, 5.871210648525566e+28,
               1.339913493808590e+33]
-        assert_allclose(b, b2, rtol=1e-14)
-        assert_allclose(a, a2, rtol=1e-14)
+        xp_assert_close(b, b2, rtol=1e-14)
+        xp_assert_close(a, a2, rtol=1e-14)
 
     def test_fs_param(self):
         for fs in (900, 900.1, 1234.567):
@@ -3315,14 +3330,16 @@ class TestCheby2:
                     for btype in ('lp', 'hp'):
                         ba1 = cheby2(N, 20, fc, btype, fs=fs)
                         ba2 = cheby2(N, 20, fc/(fs/2), btype)
-                        assert_allclose(ba1, ba2)
+                        for ba1_, ba2_ in zip(ba1, ba2):
+                            xp_assert_close(ba1_, ba2_)
                 for fc in ((100, 200), (100.1, 200.2), (321.123, 432.123)):
                     for btype in ('bp', 'bs'):
                         ba1 = cheby2(N, 20, fc, btype, fs=fs)
                         for seq in (list, tuple, array):
                             fcnorm = seq([f/(fs/2) for f in fc])
                             ba2 = cheby2(N, 20, fcnorm, btype)
-                            assert_allclose(ba1, ba2)
+                            for ba1_, ba2_ in zip(ba1, ba2):
+                                xp_assert_close(ba1_, ba2_)
 
 class TestEllip:
 
@@ -3332,7 +3349,7 @@ class TestEllip:
         # Stopband ripple factor doesn't matter
         b, a = ellip(0, 10*np.log10(2), 123.456, 1, analog=True)
         assert_array_almost_equal(b, [1/np.sqrt(2)])
-        assert_array_equal(a, [1])
+        xp_assert_equal(a, np.asarray([1.0]))
 
         # 1-order filter is same for all types
         b, a = ellip(1, 10*np.log10(2), 1, 1, analog=True)
@@ -3340,21 +3357,21 @@ class TestEllip:
         assert_array_almost_equal(a, [1, 1])
 
         z, p, k = ellip(1, 1, 55, 0.3, output='zpk')
-        assert_allclose(z, [-9.999999999999998e-01], rtol=1e-14)
-        assert_allclose(p, [-6.660721153525525e-04], rtol=1e-10)
-        assert_allclose(k, 5.003330360576763e-01, rtol=1e-14)
+        xp_assert_close(z, [-9.999999999999998e-01], rtol=1e-14)
+        xp_assert_close(p, [-6.660721153525525e-04], rtol=1e-10)
+        xp_assert_close(k, 5.003330360576763e-01, rtol=1e-14)
 
     def test_basic(self):
         for N in range(25):
             wn = 0.01
             z, p, k = ellip(N, 1, 40, wn, 'low', analog=True, output='zpk')
-            assert_(len(p) == N)
-            assert_(all(np.real(p) <= 0))  # No poles in right half of S-plane
+            assert len(p) == N
+            assert all(np.real(p) <= 0)  # No poles in right half of S-plane
 
         for N in range(25):
             wn = 0.01
             z, p, k = ellip(N, 1, 40, wn, 'high', analog=False, output='zpk')
-            assert_(all(np.abs(p) <= 1))  # No poles outside unit circle
+            assert all(np.abs(p) <= 1)  # No poles outside unit circle
 
         b3, a3 = ellip(5, 3, 26, 1, analog=True)
         assert_array_almost_equal(b3, [0.1420, 0, 0.3764, 0,
@@ -3420,11 +3437,11 @@ class TestEllip:
                5.877753105317594e-01 + 8.090050577978136e-01j,
                5.877753105317594e-01 - 8.090050577978136e-01j]
         k2 = 4.918081266957108e-02
-        assert_allclose(sorted(z, key=np.angle),
+        xp_assert_close(sorted(z, key=np.angle),
                         sorted(z2, key=np.angle), rtol=1e-4)
-        assert_allclose(sorted(p, key=np.angle),
+        xp_assert_close(sorted(p, key=np.angle),
                         sorted(p2, key=np.angle), rtol=1e-4)
-        assert_allclose(k, k2, rtol=1e-3)
+        xp_assert_close(k, k2, rtol=1e-3)
 
         # high odd order
         z, p, k = ellip(23, 1, 70, 0.5, 'high', output='zpk')
@@ -3475,11 +3492,11 @@ class TestEllip:
               -6.948417068525226e-07 + 9.999882737700173e-01j,
               -6.948417068525226e-07 - 9.999882737700173e-01j]
         k2 = 1.220910020289434e-02
-        assert_allclose(sorted(z, key=np.angle),
+        xp_assert_close(sorted(z, key=np.angle),
                         sorted(z2, key=np.angle), rtol=1e-4)
-        assert_allclose(sorted(p, key=np.angle),
+        xp_assert_close(sorted(p, key=np.angle),
                         sorted(p2, key=np.angle), rtol=1e-4)
-        assert_allclose(k, k2, rtol=1e-3)
+        xp_assert_close(k, k2, rtol=1e-3)
 
     def test_bandpass(self):
         z, p, k = ellip(7, 1, 40, [0.07, 0.2], 'pass', output='zpk')
@@ -3512,11 +3529,11 @@ class TestEllip:
               9.747235066273385e-01 + 2.178937926146544e-01j,
               9.747235066273385e-01 - 2.178937926146544e-01j]
         k2 = 8.354782670263239e-03
-        assert_allclose(sorted(z, key=np.angle),
+        xp_assert_close(sorted(z, key=np.angle),
                         sorted(z2, key=np.angle), rtol=1e-4)
-        assert_allclose(sorted(p, key=np.angle),
+        xp_assert_close(sorted(p, key=np.angle),
                         sorted(p2, key=np.angle), rtol=1e-4)
-        assert_allclose(k, k2, rtol=1e-3)
+        xp_assert_close(k, k2, rtol=1e-3)
 
         z, p, k = ellip(5, 1, 75, [90.5, 110.5], 'pass', True, 'zpk')
         z2 = [-5.583607317695175e-14 + 1.433755965989225e+02j,
@@ -3539,11 +3556,11 @@ class TestEllip:
               -7.230484977485752e-01 + 9.056598800801140e+01j,
               -7.230484977485752e-01 - 9.056598800801140e+01j]
         k2 = 3.774571622827070e-02
-        assert_allclose(sorted(z, key=np.imag),
+        xp_assert_close(sorted(z, key=np.imag),
                         sorted(z2, key=np.imag), rtol=1e-4)
-        assert_allclose(sorted(p, key=np.imag),
+        xp_assert_close(sorted(p, key=np.imag),
                         sorted(p2, key=np.imag), rtol=1e-6)
-        assert_allclose(k, k2, rtol=1e-3)
+        xp_assert_close(k, k2, rtol=1e-3)
 
     def test_bandstop(self):
         z, p, k = ellip(8, 1, 65, [0.2, 0.4], 'stop', output='zpk')
@@ -3581,11 +3598,11 @@ class TestEllip:
                8.062787978834571e-01 + 5.855780880424964e-01j,
                8.062787978834571e-01 - 5.855780880424964e-01j]
         k2 = 2.068622545291259e-01
-        assert_allclose(sorted(z, key=np.angle),
+        xp_assert_close(sorted(z, key=np.angle),
                         sorted(z2, key=np.angle), rtol=1e-6)
-        assert_allclose(sorted(p, key=np.angle),
+        xp_assert_close(sorted(p, key=np.angle),
                         sorted(p2, key=np.angle), rtol=1e-5)
-        assert_allclose(k, k2, rtol=1e-5)
+        xp_assert_close(k, k2, rtol=1e-5)
 
     def test_ba_output(self):
         # with transfer function conversion,  without digital conversion
@@ -3606,8 +3623,8 @@ class TestEllip:
              2.791577695211466e+19, 7.241811142725384e+20,
              2.612380874940182e+23
              ]
-        assert_allclose(b, b2, rtol=1e-6)
-        assert_allclose(a, a2, rtol=1e-4)
+        xp_assert_close(b, b2, rtol=1e-6)
+        xp_assert_close(a, a2, rtol=1e-4)
 
     def test_fs_param(self):
         for fs in (900, 900.1, 1234.567):
@@ -3616,14 +3633,16 @@ class TestEllip:
                     for btype in ('lp', 'hp'):
                         ba1 = ellip(N, 1, 20, fc, btype, fs=fs)
                         ba2 = ellip(N, 1, 20, fc/(fs/2), btype)
-                        assert_allclose(ba1, ba2)
+                        for ba1_, ba2_ in zip(ba1, ba2):
+                            xp_assert_close(ba1_, ba2_)
                 for fc in ((100, 200), (100.1, 200.2), (321.123, 432.123)):
                     for btype in ('bp', 'bs'):
                         ba1 = ellip(N, 1, 20, fc, btype, fs=fs)
                         for seq in (list, tuple, array):
                             fcnorm = seq([f/(fs/2) for f in fc])
                             ba2 = ellip(N, 1, 20, fcnorm, btype)
-                            assert_allclose(ba1, ba2)
+                            for ba1_, ba2_ in zip(ba1, ba2):
+                                xp_assert_close(ba1_, ba2_)
 
     def test_fs_validation(self):
         with pytest.raises(ValueError, match="Sampling.*single scalar"):
@@ -3646,15 +3665,15 @@ def test_sos_consistency():
 
         b, a = func(2, *args, output='ba')
         sos = func(2, *args, output='sos')
-        assert_allclose(sos, [np.hstack((b, a))], err_msg=f"{name}(2,...)")
+        xp_assert_close(sos, [np.hstack((b, a))], err_msg=f"{name}(2,...)")
 
         zpk = func(3, *args, output='zpk')
         sos = func(3, *args, output='sos')
-        assert_allclose(sos, zpk2sos(*zpk), err_msg=f"{name}(3,...)")
+        xp_assert_close(sos, zpk2sos(*zpk), err_msg=f"{name}(3,...)")
 
         zpk = func(4, *args, output='zpk')
         sos = func(4, *args, output='sos')
-        assert_allclose(sos, zpk2sos(*zpk), err_msg=f"{name}(4,...)")
+        xp_assert_close(sos, zpk2sos(*zpk), err_msg=f"{name}(4,...)")
 
 
 class TestIIRNotch:
@@ -3672,8 +3691,8 @@ class TestIIRNotch:
              9.9373647e-01
              ]
 
-        assert_allclose(b, b2, rtol=1e-8)
-        assert_allclose(a, a2, rtol=1e-8)
+        xp_assert_close(b, b2, rtol=1e-8)
+        xp_assert_close(a, a2, rtol=1e-8)
 
     def test_frequency_response(self):
         # Get filter coefficients
@@ -3695,17 +3714,17 @@ class TestIIRNotch:
         # Check if the frequency response fulfill the specifications:
         # hp[0] and hp[4]  correspond to frequencies distant from
         # w0 = 0.3 and should be close to 1
-        assert_allclose(abs(hp[0]), 1, rtol=1e-2)
-        assert_allclose(abs(hp[4]), 1, rtol=1e-2)
+        xp_assert_close(abs(hp[0]), np.asarray(1.), rtol=1e-2, check_0d=False)
+        xp_assert_close(abs(hp[4]), np.asarray(1.), rtol=1e-2, check_0d=False)
 
         # hp[1] and hp[3] correspond to frequencies approximately
         # on the edges of the passband and should be close to -3dB
-        assert_allclose(abs(hp[1]), 1/np.sqrt(2), rtol=1e-2)
-        assert_allclose(abs(hp[3]), 1/np.sqrt(2), rtol=1e-2)
+        xp_assert_close(abs(hp[1]), 1/np.sqrt(2), rtol=1e-2)
+        xp_assert_close(abs(hp[3]), 1/np.sqrt(2), rtol=1e-2)
 
         # hp[2] correspond to the frequency that should be removed
         # the frequency response should be very close to 0
-        assert_allclose(abs(hp[2]), 0, atol=1e-10)
+        xp_assert_close(abs(hp[2]), np.asarray(0.0), atol=1e-10, check_0d=False)
 
     def test_errors(self):
         # Exception should be raised if w0 > 1 or w0 <0
@@ -3737,17 +3756,19 @@ class TestIIRNotch:
         # Check if the frequency response fulfill the specifications:
         # hp[0] and hp[4]  correspond to frequencies distant from
         # w0 = 1500 and should be close to 1
-        assert_allclose(abs(hp[0]), 1, rtol=1e-2)
-        assert_allclose(abs(hp[4]), 1, rtol=1e-2)
+        xp_assert_close(abs(hp[0]), np.ones_like(abs(hp[0])), rtol=1e-2,
+                        check_0d=False)
+        xp_assert_close(abs(hp[4]), np.ones_like(abs(hp[4])), rtol=1e-2,
+                        check_0d=False)
 
         # hp[1] and hp[3] correspond to frequencies approximately
         # on the edges of the passband and should be close to -3dB
-        assert_allclose(abs(hp[1]), 1/np.sqrt(2), rtol=1e-2)
-        assert_allclose(abs(hp[3]), 1/np.sqrt(2), rtol=1e-2)
+        xp_assert_close(abs(hp[1]), 1/np.sqrt(2), rtol=1e-2)
+        xp_assert_close(abs(hp[3]), 1/np.sqrt(2), rtol=1e-2)
 
         # hp[2] correspond to the frequency that should be removed
         # the frequency response should be very close to 0
-        assert_allclose(abs(hp[2]), 0, atol=1e-10)
+        xp_assert_close(abs(hp[2]), np.asarray(0.0), atol=1e-10, check_0d=False)
 
 
 class TestIIRPeak:
@@ -3764,8 +3785,8 @@ class TestIIRPeak:
              1.0000000e+00, -1.958421917e+00,
              9.9373647e-01
              ]
-        assert_allclose(b, b2, rtol=1e-8)
-        assert_allclose(a, a2, rtol=1e-8)
+        xp_assert_close(b, b2, rtol=1e-8)
+        xp_assert_close(a, a2, rtol=1e-8)
 
     def test_frequency_response(self):
         # Get filter coefficients
@@ -3787,17 +3808,19 @@ class TestIIRPeak:
         # Check if the frequency response fulfill the specifications:
         # hp[0] and hp[4]  correspond to frequencies distant from
         # w0 = 0.3 and should be close to 0
-        assert_allclose(abs(hp[0]), 0, atol=1e-2)
-        assert_allclose(abs(hp[4]), 0, atol=1e-2)
+        xp_assert_close(abs(hp[0]),
+                        np.zeros_like(abs(hp[0])), atol=1e-2, check_0d=False)
+        xp_assert_close(abs(hp[4]),
+                        np.zeros_like(abs(hp[4])), atol=1e-2, check_0d=False)
 
         # hp[1] and hp[3] correspond to frequencies approximately
         # on the edges of the passband and should be close to 10**(-3/20)
-        assert_allclose(abs(hp[1]), 1/np.sqrt(2), rtol=1e-2)
-        assert_allclose(abs(hp[3]), 1/np.sqrt(2), rtol=1e-2)
+        xp_assert_close(abs(hp[1]), 1/np.sqrt(2), rtol=1e-2)
+        xp_assert_close(abs(hp[3]), 1/np.sqrt(2), rtol=1e-2)
 
         # hp[2] correspond to the frequency that should be retained and
         # the frequency response should be very close to 1
-        assert_allclose(abs(hp[2]), 1, rtol=1e-10)
+        xp_assert_close(abs(hp[2]), np.asarray(1.0), rtol=1e-10, check_0d=False)
 
     def test_errors(self):
         # Exception should be raised if w0 > 1 or w0 <0
@@ -3829,17 +3852,20 @@ class TestIIRPeak:
         # Check if the frequency response fulfill the specifications:
         # hp[0] and hp[4]  correspond to frequencies distant from
         # w0 = 1200 and should be close to 0
-        assert_allclose(abs(hp[0]), 0, atol=1e-2)
-        assert_allclose(abs(hp[4]), 0, atol=1e-2)
+        xp_assert_close(abs(hp[0]),
+                        np.zeros_like(abs(hp[0])), atol=1e-2, check_0d=False)
+        xp_assert_close(abs(hp[4]),
+                        np.zeros_like(abs(hp[4])), atol=1e-2, check_0d=False)
 
         # hp[1] and hp[3] correspond to frequencies approximately
         # on the edges of the passband and should be close to 10**(-3/20)
-        assert_allclose(abs(hp[1]), 1/np.sqrt(2), rtol=1e-2)
-        assert_allclose(abs(hp[3]), 1/np.sqrt(2), rtol=1e-2)
+        xp_assert_close(abs(hp[1]), 1/np.sqrt(2), rtol=1e-2)
+        xp_assert_close(abs(hp[3]), 1/np.sqrt(2), rtol=1e-2)
 
         # hp[2] correspond to the frequency that should be retained and
         # the frequency response should be very close to 1
-        assert_allclose(abs(hp[2]), 1, rtol=1e-10)
+        xp_assert_close(abs(hp[2]),
+                        np.ones_like(abs(hp[2])), rtol=1e-10, check_0d=False)
 
 
 class TestIIRComb:
@@ -3885,7 +3911,7 @@ class TestIIRComb:
 
         # Verify that the first notch sits at 1000 Hz
         comb1 = comb_points[0]
-        assert_allclose(freqs[comb1], 1000)
+        xp_assert_close(freqs[comb1], np.asarray(1000.), check_0d=False)
 
     # Verify pass_zero parameter
     @pytest.mark.parametrize('ftype,pass_zero,peak,notch',
@@ -3913,9 +3939,9 @@ class TestIIRComb:
     def test_iir_symmetry(self):
         b, a = iircomb(400, 30, fs=24000)
         z, p, k = tf2zpk(b, a)
-        assert_array_equal(sorted(z), sorted(z.conj()))
-        assert_array_equal(sorted(p), sorted(p.conj()))
-        assert_equal(k, np.real(k))
+        xp_assert_equal(sorted(z), sorted(z.conj()))
+        xp_assert_equal(sorted(p), sorted(p.conj()))
+        xp_assert_equal(k, np.real(k))
 
         assert issubclass(b.dtype.type, np.floating)
         assert issubclass(a.dtype.type, np.floating)
@@ -3927,16 +3953,16 @@ class TestIIRComb:
                     0.0, 0.0, 0.0, 0.0, -0.957020174408697]
         a_notch2 = [1.0, 0.0, 0.0, 0.0, 0.0, 0.0,
                     0.0, 0.0, 0.0, 0.0, -0.914040348817395]
-        assert_allclose(b_notch, b_notch2)
-        assert_allclose(a_notch, a_notch2)
+        xp_assert_close(b_notch, b_notch2)
+        xp_assert_close(a_notch, a_notch2)
 
         b_peak, a_peak = iircomb(60, 35, ftype='peak', fs=600)
         b_peak2 = [0.0429798255913026, 0.0, 0.0, 0.0, 0.0, 0.0,
                    0.0, 0.0, 0.0, 0.0, -0.0429798255913026]
         a_peak2 = [1.0, 0.0, 0.0, 0.0, 0.0, 0.0,
                    0.0, 0.0, 0.0, 0.0, 0.914040348817395]
-        assert_allclose(b_peak, b_peak2)
-        assert_allclose(a_peak, a_peak2)
+        xp_assert_close(b_peak, b_peak2)
+        xp_assert_close(a_peak, a_peak2)
 
     # Verify that https://github.com/scipy/scipy/issues/14043 is fixed
     def test_nearest_divisor(self):
@@ -4090,14 +4116,16 @@ class TestIIRFilter:
             for ftype in ('butter', 'bessel', 'cheby1', 'cheby2', 'ellip'):
                 z, p, k = iirfilter(N, 1.1, 1, 20, 'low', analog=True,
                                     ftype=ftype, output='zpk')
-                assert_array_equal(sorted(z), sorted(z.conj()))
-                assert_array_equal(sorted(p), sorted(p.conj()))
-                assert_equal(k, np.real(k))
+                xp_assert_equal(sorted(z),
+                                sorted(z.conj()))
+                xp_assert_equal(sorted(p),
+                                sorted(p.conj()))
+                xp_assert_equal(k, np.real(k))
 
                 b, a = iirfilter(N, 1.1, 1, 20, 'low', analog=True,
                                  ftype=ftype, output='ba')
-                assert_(issubclass(b.dtype.type, np.floating))
-                assert_(issubclass(a.dtype.type, np.floating))
+                assert issubclass(b.dtype.type, np.floating)
+                assert issubclass(a.dtype.type, np.floating)
 
     def test_int_inputs(self):
         # Using integer frequency arguments and large N should not produce
@@ -4105,7 +4133,7 @@ class TestIIRFilter:
         k = iirfilter(24, 100, btype='low', analog=True, ftype='bessel',
                       output='zpk')[2]
         k2 = 9.999999999999989e+47
-        assert_allclose(k, k2)
+        xp_assert_close(np.asarray(k),  np.asarray(k2))
         # if fs is specified then the normalization of Wn to have 
         # 0 <= Wn <= 1 should not cause an integer overflow
         # the following line should not raise an exception
@@ -4173,7 +4201,7 @@ class TestGroupDelay:
         N = 100
         b = firwin(N + 1, 0.1)
         w, gd = group_delay((b, 1))
-        assert_allclose(gd, 0.5 * N)
+        xp_assert_close(gd, np.ones_like(gd)*(0.5 * N))
 
     def test_iir(self):
         # Let's design Butterworth filter and test the group delay at
@@ -4319,8 +4347,10 @@ class TestGammatone:
             freq_hz = freqs[np.argmax(np.abs(response))] / ((2 * np.pi) / fs)
 
             # Check that the peak magnitude is 1 and the frequency is 1000 Hz.
-            assert_allclose(response_max, 1, rtol=1e-2)
-            assert_allclose(freq_hz, 1000, rtol=1e-2)
+            xp_assert_close(response_max,
+                            np.ones_like(response_max), rtol=1e-2, check_0d=False)
+            xp_assert_close(freq_hz,
+                            1000*np.ones_like(freq_hz), rtol=1e-2, check_0d=False)
 
     # All built-in IIR filters are real, so should have perfectly
     # symmetrical poles and zeros. Then ba representation (using
@@ -4329,12 +4359,12 @@ class TestGammatone:
     def test_iir_symmetry(self):
         b, a = gammatone(440, 'iir', fs=24000)
         z, p, k = tf2zpk(b, a)
-        assert_array_equal(sorted(z), sorted(z.conj()))
-        assert_array_equal(sorted(p), sorted(p.conj()))
-        assert_equal(k, np.real(k))
+        xp_assert_equal(sorted(z), sorted(z.conj()))
+        xp_assert_equal(sorted(p), sorted(p.conj()))
+        xp_assert_equal(k, np.real(k))
 
-        assert_(issubclass(b.dtype.type, np.floating))
-        assert_(issubclass(a.dtype.type, np.floating))
+        assert issubclass(b.dtype.type, np.floating)
+        assert issubclass(a.dtype.type, np.floating)
 
     # Verify FIR filter coefficients with the paper's
     # Mathematica implementation
@@ -4348,7 +4378,7 @@ class TestGammatone:
               2.9293319149544e-02, 2.852976858014e-02,
               2.6176557156294e-02, 2.2371510270395e-02,
               1.7332485267759e-02]
-        assert_allclose(b, b2)
+        xp_assert_close(b, b2)
 
     # Verify IIR filter coefficients with the paper's MATLAB implementation
     def test_iir_ba_output(self):
@@ -4361,8 +4391,8 @@ class TestGammatone:
               60.2667361289181, -46.9399590980486,
               22.9474798808461, -6.43799381299034,
               0.793651554625368]
-        assert_allclose(b, b2)
-        assert_allclose(a, a2)
+        xp_assert_close(b, b2)
+        xp_assert_close(a, a2)
 
     def test_fs_validation(self):
         with pytest.raises(ValueError, match="Sampling.*single scalar"):
@@ -4383,7 +4413,7 @@ class TestOrderFilter:
              [0., 10., 11., 12., 0.],
              [0., 0., 0., 0., 0.]],
         )
-        assert_allclose(order_filter(x, domain, 0), expected)
+        xp_assert_close(order_filter(x, domain, 0), expected, check_dtype=False)
 
         # maximum of elements 1,3,9 (zero-padded) on phone pad
         # 7,5,3 on numpad
@@ -4394,7 +4424,7 @@ class TestOrderFilter:
              [21., 22., 23., 24., 19.],
              [20., 21., 22., 23., 24.]],
         )
-        assert_allclose(order_filter(x, domain, 2), expected)
+        xp_assert_close(order_filter(x, domain, 2), expected, check_dtype=False)
 
         # and, just to complete the set, median of zero-padded elements
         expected = np.array(
@@ -4404,7 +4434,7 @@ class TestOrderFilter:
              [15, 16, 17, 18, 13],
              [0, 15, 16, 17, 18]],
         )
-        assert_allclose(order_filter(x, domain, 1), expected)
+        xp_assert_close(order_filter(x, domain, 1), expected)
 
     def test_medfilt_order_filter(self):
         x = np.arange(25).reshape(5, 5)
@@ -4418,9 +4448,9 @@ class TestOrderFilter:
              [11, 16, 17, 18, 14],
              [0, 16, 17, 18, 0]],
         )
-        assert_allclose(medfilt(x, 3), expected)
+        xp_assert_close(medfilt(x, 3), expected)
 
-        assert_allclose(
+        xp_assert_close(
             order_filter(x, np.ones((3, 3)), 4),
             expected
         )
@@ -4440,7 +4470,7 @@ class TestOrderFilter:
              [0, 10, 11, 12, 13],
              [0, 15, 16, 17, 18]]
         )
-        assert_allclose(order_filter(x, domain, 0), expected)
+        xp_assert_close(order_filter(x, domain, 0), expected)
 
         expected = np.array(
             [[0, 0, 0, 0, 0],
@@ -4449,4 +4479,4 @@ class TestOrderFilter:
              [10, 11, 12, 13, 14],
              [15, 16, 17, 18, 19]]
         )
-        assert_allclose(order_filter(x, domain, 1), expected)
+        xp_assert_close(order_filter(x, domain, 1), expected)
