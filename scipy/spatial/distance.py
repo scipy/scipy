@@ -110,8 +110,7 @@ import warnings
 import numpy as np
 import dataclasses
 
-from typing import Optional, Callable
-
+from collections.abc import Callable
 from functools import partial
 from scipy._lib._util import _asarray_validated
 
@@ -1759,7 +1758,7 @@ class MetricInfo:
     pdist_func: Callable
     # function that checks kwargs and computes default values:
     # f(X, m, n, **kwargs)
-    validator: Optional[Callable] = None
+    validator: Callable | None = None
     # list of supported types:
     # X (pdist) and XA (cdist) are used to choose the type. if there is no
     # match the first type is used. Default double
